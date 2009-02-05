@@ -1,0 +1,5 @@
+* Library to handle register values for multiple architectures
+* Designed to be used from radare libr within the modules:
+  - r_vm : to properly setup the per-architecture register configuration
+  - r_debug : to get/set register values
+  - r_core : to display register values in 'd' (debug) command. dr

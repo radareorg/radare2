@@ -1,0 +1,1432 @@
+/* --------------------------------------------------- */
+2008-02-05 : Changes before the initial repository import
+The ones not related with libr have been stripped from
+this ChangeLog. The previous home for libr was in the old
+radare1 mercurial repository
+/* --------------------------------------------------- */
+
+changeset:   880:ed9c8383c7b9
+user:        pancake <youterm.com>
+date:        Thu Feb 05 18:55:15 2009 +0100
+files:       src/libr/core/cmd.c src/libr/core/core.c src/libr/core/t/Makefile src/libr/include/r_core.h src/libr/include/r_lang.h src/libr/include/r_lib.h src/libr/io/io.c src/libr/lang/Makefile src/libr/lang/lang.c
+description:
+* Added 'oobi support' for libr
+  - oobi stands for 'Out Of Band Input'
+  - Enables '<' and '<<' command modifiers
+  - '<' : read from file
+  - '<<' : read until EOF mark
+  - Lot of commands will
+* Added r_lang
+  - Nonworking integration with r_core in the '#!' command
+  - Use: #!perl < file.pl for example
+
+
+changeset:   879:056a0f472dcb
+user:        pancake <youterm.com>
+date:        Thu Feb 05 02:35:14 2009 +0100
+files:       src/libr/TODO src/libr/bp/README src/libr/bp/bp.c src/libr/core/cmd.c src/libr/core/core.c src/libr/debug/Makefile src/libr/debug/debug.c src/libr/debug/handle.c src/libr/debug/p/ptrace.c src/libr/debug/ptrace.c src/libr/include/r.h src/libr/include/r_debug.h src/libr/include/r_lib.h src/libr/io/io.c src/libr/line/dietline.c
+description:
+* Fix build for libr
+* Some refactor for libr_debug
+  - Basic r_debug_handle api
+  - Loaded debugger plugins integrated with core
+* Drop label related code from dietline
+
+
+changeset:   878:7d0081787d00
+user:        pancake <@youterm.com>
+date:        Wed Feb 04 20:11:51 2009 +0100
+files:       src/libr/include/r_io.h src/libr/include/r_io_section.h src/libr/io/plugins/Makefile src/libr/io/plugins/dbg.c src/libr/io/plugins/malloc.c src/libr/io/plugins/ptrace.c src/libr/io/section.c src/libr/rules.mk src/libr/socket/socket.c src/libr/vapi/r_io.vapi
+description:
+* Remove r_io_section.h (merge with r_io.h)
+* Added malloc io plugin for libr
+  - Ported from radare in few mins
+* Fix some issues with the dbg:// io-redirect plugin
+* Add plugins/ as subdir build rule if found
+* Change some old-to-new license lines
+
+
+changeset:   877:46f48b48c5d1
+user:        pancake <youterm.com>
+date:        Wed Feb 04 12:10:59 2009 +0100
+files:       src/libr/cons/pipe.c src/libr/core/cmd.c src/libr/core/core.c src/libr/core/file.c src/libr/core/io.c src/libr/core/t/Makefile src/libr/hash/t/hello.c src/libr/include/r_cons.h src/libr/include/r_core.h src/libr/include/r_io.h src/libr/include/r_io_section.h src/libr/include/r_lib.h src/libr/include/r_util.h src/libr/io/handle.c src/libr/io/io.c src/libr/io/map.c src/libr/io/plugins/dbg.c src/libr/io/plugins/ptrace.c src/libr/io/section.c src/libr/io/t/Makefile src/libr/io/t/cat.c src/libr/io/t/read4.c src/libr/lib/lib.c src/libr/util/file.c
+description:
+* Major refactoring for the r_io
+  - API has changed. Now r_io is OO
+  - Added r_io_redirect()
+  - Makes ptrace() and dbg:// plugins work!
+  - Sync program examples with new api
+* Remove lot of debugging mesages
+  - Fix warnings
+* Added r_file_exist() helper in r_util
+* Added '|' command in the core
+  - list io plugins and send commands thru io_system
+
+
+changeset:   876:6cf4c3d48ae8
+user:        pancake <@youterm.com>
+date:        Tue Feb 03 20:16:11 2009 +0100
+files:       src/dbg/pt-example.c src/libr/core/core.c src/libr/include/r_io.h src/libr/io/io.c src/libr/io/plugins/Makefile src/libr/io/plugins/dbg.c src/libr/io/plugins/ptrace.c
+description:
+* Some more shitty updates for the debug io
+  - Needs full io refactoring to make this io_redirect work
+
+
+changeset:   875:c927fcb736a7
+user:        pancake <youterm.com>
+date:        Tue Feb 03 10:43:59 2009 +0100
+files:       src/libr/core/t/Makefile src/libr/io/io.c src/libr/io/plugins/Makefile src/libr/io/plugins/dbg.c src/libr/io/plugins/ptrace.c src/libr/util/str.c
+description:
+* Initial import of the dbg:// io plugin
+  - Forks a new process and redirects the uri to ptrace:// on *nix
+  - If process name is a number directly pass the control to ptrace as a pid
+  - The resulting process is not attachable :/ will have to fix this :)
+* radare2 is now linked dinamicly against libr
+  - Fixes the problem of dupped r_io while using io plugins
+  - Everything needs to be dynamic if we want to use r_io
+
+
+changeset:   874:7d6363813c0d
+user:        pancake <youterm.com>
+date:        Mon Feb 02 04:28:02 2009 +0100
+files:       src/libr/core/cmd.c src/libr/core/core.c src/libr/core/t/Makefile src/libr/include/r_core.h src/libr/include/r_io.h src/libr/io/handle.c src/libr/io/io.c src/libr/io/plugins/Makefile src/libr/io/plugins/ptrace.c src/libr/lib/lib.c
+description:
+* Initial working implementation of the ptrace io plugin
+  - Now r_core uses r_lib
+  - Plugins are autoloaded at startup time
+  - attach to process and read memory works
+
+
+changeset:   873:55c830447283
+user:        pancake <youterm.com>
+date:        Mon Feb 02 03:25:52 2009 +0100
+files:       src/libr/Makefile src/libr/include/r_lib.h src/libr/io/io.c src/libr/io/plugins/Makefile src/libr/io/plugins/ptrace.c src/rabin/rabin.c
+description:
+* Initial import of the ptrace io plugin
+  - core does not yet uses r_lib to load io/plugins
+  - Added R_LIB_TYPE_IO..more to come
+* Make rabin properly identify the redsn0w mach0 binary header
+
+
+changeset:   872:b24b3e49eb8d
+user:        pancake <youterm.com>
+date:        Mon Feb 02 01:59:44 2009 +0100
+files:       src/libr/bp/bp.c src/libr/debug/debug.c src/libr/include/r_asm.h src/libr/include/r_reg.h src/libr/io/plugins/README src/libr/io_plugins/README src/libr/reg/reg.c
+description:
+* More draft code for r_bp and r_reg
+
+
+changeset:   871:34d24ca37ff9
+user:        nibble
+date:        Mon Feb 02 00:50:19 2009 +0100
+files:       src/libr/asm/arch/arm/asm.c src/libr/asm/arch/bf/asm.c src/libr/asm/arch/mips/asm.c src/libr/asm/arch/ppc/asm.c src/libr/asm/arch/sparc/asm.c src/libr/asm/arch/x86/asm.c src/libr/asm/arch/x86/pseudo.c src/libr/asm/arch/x86/realloc.c src/libr/asm/asm.c src/libr/asm/t/asm_x86.c src/libr/asm/t/disasm_arm.c src/libr/asm/t/disasm_bf.c src/libr/asm/t/disasm_mips.c src/libr/asm/t/disasm_ppc.c src/libr/asm/t/disasm_sparc.c src/libr/asm/t/disasm_x86.c src/libr/asm/t/rasm2.c src/libr/asm/t/realloc_x86.c src/libr/include/r_asm.h src/libr/vapi/r_asm.vapi
+description:
+* Types fixups in r_asm
+
+
+changeset:   870:3e992e014cb6
+user:        nibble
+date:        Sun Feb 01 14:54:33 2009 +0100
+files:       src/libr/vapi/r_bin.vapi src/libr/vapi/t/bin.vala
+description:
+* Fixed r_bin vapi and test program
+
+
+changeset:   869:568b3537dc9c
+parent:      867:aeede8dbbdd7
+parent:      868:b66d5b37d514
+user:        pancake <youterm.com>
+date:        Sun Feb 01 04:50:30 2009 +0100
+files:       src/libr/asm/arch/arm/gnu/ansidecl.h src/libr/asm/arch/arm/gnu/bfd.h src/libr/asm/arch/arm/gnu/dis-asm.h src/libr/asm/arch/arm/gnu/symcat.h src/libr/asm/arch/mips/gnu/ansidecl.h src/libr/asm/arch/mips/gnu/bfd.h src/libr/asm/arch/mips/gnu/bfdlink.h src/libr/asm/arch/mips/gnu/dis-asm.h src/libr/asm/arch/mips/gnu/elf-bfd.h src/libr/asm/arch/mips/gnu/elf/common.h src/libr/asm/arch/mips/gnu/elf/external.h src/libr/asm/arch/mips/gnu/elf/internal.h src/libr/asm/arch/mips/gnu/elf/mips.h src/libr/asm/arch/mips/gnu/elf/reloc-macros.h src/libr/asm/arch/mips/gnu/libiberty.h src/libr/asm/arch/mips/gnu/opcode/mips.h src/libr/asm/arch/mips/gnu/opintl.h src/libr/asm/arch/mips/gnu/symcat.h src/libr/asm/arch/mips/gnu/sysdep.h src/libr/include/r_asm.h src/libr/vapi/r_bin.vapi src/libr/vapi/t/bin.vala
+description:
+* Oops. merge
+
+
+changeset:   868:b66d5b37d514
+parent:      866:783ecba9af73
+user:        nibble
+date:        Fri Jan 30 20:13:46 2009 +0100
+files:       src/libr/TODO src/libr/asm/Makefile src/libr/asm/arch/arm/asm.c src/libr/asm/arch/arm/gnu/ansidecl.h src/libr/asm/arch/arm/gnu/bfd.h src/libr/asm/arch/arm/gnu/dis-asm.h src/libr/asm/arch/arm/gnu/symcat.h src/libr/asm/arch/include/ansidecl.h src/libr/asm/arch/include/bfd.h src/libr/asm/arch/include/bfdlink.h src/libr/asm/arch/include/dis-asm.h src/libr/asm/arch/include/elf-bfd.h src/libr/asm/arch/include/elf/common.h src/libr/asm/arch/include/elf/external.h src/libr/asm/arch/include/elf/internal.h src/libr/asm/arch/include/elf/mips.h src/libr/asm/arch/include/elf/reloc-macros.h src/libr/asm/arch/include/libiberty.h src/libr/asm/arch/include/opcode/mips.h src/libr/asm/arch/include/opcode/sparc.h src/libr/asm/arch/include/opintl.h src/libr/asm/arch/include/symcat.h src/libr/asm/arch/include/sysdep.h src/libr/asm/arch/mips/asm.c src/libr/asm/arch/mips/gnu/ansidecl.h src/libr/asm/arch/mips/gnu/bfd.h src/libr/asm/arch/mips/gnu/bfdlink.h src/libr/asm/arch/mips/gnu/dis-asm.h src/libr/asm/arch/mips/gnu/elf-bfd.h src/libr/asm/arch/mips/gnu/elf/common.h src/libr/asm/arch/mips/gnu/elf/external.h src/libr/asm/arch/mips/gnu/elf/internal.h src/libr/asm/arch/mips/gnu/elf/mips.h src/libr/asm/arch/mips/gnu/elf/reloc-macros.h src/libr/asm/arch/mips/gnu/libiberty.h src/libr/asm/arch/mips/gnu/opcode/mips.h src/libr/asm/arch/mips/gnu/opintl.h src/libr/asm/arch/mips/gnu/symcat.h src/libr/asm/arch/mips/gnu/sysdep.h src/libr/asm/arch/sparc/asm.c src/libr/asm/arch/sparc/gnu/sparc-dis.c src/libr/asm/arch/sparc/gnu/sparc-opc.c src/libr/asm/asm.c src/libr/asm/t/Makefile src/libr/asm/t/disasm_sparc.c src/libr/config.mk src/libr/include/r_asm.h src/libr/include/r_bin.h src/libr/include/r_bin_elf.h src/libr/include/r_bin_pe.h src/libr/vapi/r_asm.vapi src/libr/vapi/r_bin.vapi src/libr/vapi/t/asm.vala src/libr/vapi/t/bin.vala
+description:
+* r_asm
+  - Added sparc support
+  - Added test (disasm_sparc)
+  - Major reorganization of headers
+* Minor fixups in r_asm & r_bin vapis
+
+
+changeset:   867:aeede8dbbdd7
+user:        pancake <youterm.com>
+date:        Sun Feb 01 04:48:03 2009 +0100
+files:       src/libr/Makefile src/libr/bp/README src/libr/cmd/cmd.c src/libr/core/cmd.c src/libr/core/t/Makefile src/libr/debug/Makefile src/libr/debug/debug.c src/libr/debug/ptrace.c src/libr/include/r_asm.h src/libr/include/r_cmd.h src/libr/include/r_core.h src/libr/include/r_debug.h src/libr/include/r_reg.h src/libr/reg/Makefile src/libr/reg/README src/libr/reg/reg.c src/libr/util/Makefile src/libr/util/alloca.c src/libr/util/alloca.s src/libr/util/t/Makefile src/libr/util/t/ralloc.c src/libr/vapi/r_bin.vapi src/libr/vapi/t/bin.vala
+description:
+* Initial nonworking draft for r_debug and r_reg
+  - Basic debugger api defined
+    - Needs implementation for various operating systems
+  - Debugger is now designed to be modular at breakpoint, register,
+    io, and debugging layers based on function pointers.
+  - Lot of things to do here.
+  - r_reg handles lists and definitions for registers of multiple architectures
+* Initial import of ralloc.
+  - A minimalistic and fast stacked heap memory allocation
+  - 40% faster than glibc's malloc and 60% faster than alloca
+    - Exposes a bug in gcc optimizations.
+    fmi: http://news.nopcode.org/gccfail
+    - Added benchmarking test program
+* Some cleanup of the r_bin api. missing "public" attributes
+  - Looks like arrays like Entry[] are not well integrated with vala
+  - Test program now crashes. needs redesign solution
+* Dummy r_cmd_args() to be integrated easily with dietline
+* Added dummy help message for 'd' command in radare2
+
+
+changeset:   866:783ecba9af73
+user:        nibble
+date:        Fri Jan 30 16:08:53 2009 +0100
+files:       src/libr/TODO src/libr/asm/arch/bf/asm.c src/libr/asm/arch/x86/pseudo.c src/libr/asm/arch/x86/realloc.c src/libr/include/r_bin_elf.h src/libr/vapi/r_asm.vapi src/libr/vapi/r_bin.vapi src/libr/vapi/t/Makefile src/libr/vapi/t/asm.vala src/libr/vapi/t/bin.vala
+description:
+* r_asm
+  - More refactoring
+* r_bin
+  - Fixed header issue
+* vapis
+  - Added r_asm and r_bin vapi
+  - Modified t/asm including parsing
+  - Added test (t/bin)
+
+
+changeset:   865:50e3b2e29e41
+user:        pancake <youterm.com>
+date:        Fri Jan 30 12:20:48 2009 +0100
+files:       src/libr/TODO src/libr/bp/Makefile src/libr/bp/README src/libr/cons/Makefile src/libr/cons/TODO src/libr/cons/color.c src/libr/cons/cons.c src/libr/cons/input.c src/libr/cons/pipe.c src/libr/cons/print.c src/libr/core/cmd.c src/libr/include/r_cons.h src/libr/include/r_util.h src/libr/stripsyms.sh src/libr/util/num.c src/libr/util/str.c
+description:
+* Split cons in multiple files
+* Initial README for r_bp breakpoint management library
+* File pipes are now working in radare2 ('>' and '>>')
+* stripsyms.sh only filters symbols in r_util starting with r_
+* Added r_str_nchr in util/str.c - simplifies some cons code
+
+
+changeset:   864:cc8bad644a1d
+user:        nibble
+date:        Thu Jan 29 19:00:38 2009 +0100
+files:       src/libr/asm/t/realloc_x86.c src/libr/bin/bin.c src/libr/bin/t/baddr.c src/libr/bin/t/entry.c src/libr/bin/t/imports.c src/libr/bin/t/info.c src/libr/bin/t/rabin2.c src/libr/bin/t/sections.c src/libr/bin/t/symbols.c src/libr/include/r_bin.h
+description:
+* r_bin
+  - Added r_bin_new and r_bin_free
+  - r_bin_open renamed to r_bin_init
+  - Tests modified accordingly
+
+
+changeset:   863:279b0b1bb362
+user:        nibble
+date:        Thu Jan 29 12:15:18 2009 +0100
+files:       src/libr/asm/Makefile src/libr/asm/arch/bf/asm.c src/libr/asm/asm.c src/libr/asm/t/Makefile src/libr/asm/t/disasm_bf.c src/libr/include/r_asm.h
+description:
+* r_asm
+  - Added bf support ;)
+  - Added test (disasm_bf)
+
+
+changeset:   862:612f9aabcb39
+user:        pancake <youterm.com>
+date:        Thu Jan 29 12:24:47 2009 +0100
+files:       src/libr/TODO src/libr/include/r_core.h src/libr/include/r_range.h src/libr/range/range.c src/libr/vapi/r_cons.vapi src/libr/vapi/r_core.vapi src/libr/vapi/r_range.vapi src/libr/vapi/r_socket.vapi src/libr/vapi/r_syscall.vapi src/libr/vapi/t/Makefile src/libr/vapi/t/core.vala src/libr/vapi/t/hash.vala
+description:
+* Initial import of r_cons, r_range and r_core VAPI files
+* Verboser TODO file
+* Fix out of namespace range function
+* Added Hello world test for vala-core
+
+
+changeset:   861:281224e02f42
+user:        nibble
+date:        Thu Jan 29 10:49:27 2009 +0100
+files:       src/libr/asm/Makefile src/libr/asm/arch/arm/asm.c src/libr/asm/arch/mips/asm.c src/libr/asm/arch/ppc/asm.c src/libr/asm/arch/ppc/ppc_disasm/ppc_disasm.c src/libr/asm/arch/ppc/ppc_disasm/ppc_disasm.h src/libr/asm/arch/x86/asm.c src/libr/asm/asm.c src/libr/asm/t/Makefile src/libr/asm/t/disasm_ppc.c src/libr/bin/Makefile src/libr/include/r_asm.h src/libr/include/r_util.h src/libr/util/hex.c
+description:
+* r_asm
+  - Added ppc support
+  - Added test (disasm_ppc)
+* r_util
+  - Minor fix
+
+
+changeset:   860:996ef907bde5
+user:        nibble
+date:        Thu Jan 29 00:38:47 2009 +0100
+files:       src/libr/asm/Makefile src/libr/asm/arch/arm/asm.c src/libr/asm/arch/mips/asm.c src/libr/asm/arch/mips/gnu/ansidecl.h src/libr/asm/arch/mips/gnu/bfd.h src/libr/asm/arch/mips/gnu/bfdlink.h src/libr/asm/arch/mips/gnu/dis-asm.h src/libr/asm/arch/mips/gnu/elf-bfd.h src/libr/asm/arch/mips/gnu/elf/common.h src/libr/asm/arch/mips/gnu/elf/external.h src/libr/asm/arch/mips/gnu/elf/internal.h src/libr/asm/arch/mips/gnu/elf/mips.h src/libr/asm/arch/mips/gnu/elf/reloc-macros.h src/libr/asm/arch/mips/gnu/libiberty.h src/libr/asm/arch/mips/gnu/mips-dis.c src/libr/asm/arch/mips/gnu/mips-opc.c src/libr/asm/arch/mips/gnu/mips16-opc.c src/libr/asm/arch/mips/gnu/opcode/mips.h src/libr/asm/arch/mips/gnu/opintl.h src/libr/asm/arch/mips/gnu/symcat.h src/libr/asm/arch/mips/gnu/sysdep.h src/libr/asm/asm.c src/libr/asm/t/Makefile src/libr/asm/t/asm_x86.c src/libr/asm/t/disasm_arm.c src/libr/asm/t/disasm_mips.c src/libr/asm/t/disasm_x86.c src/libr/asm/t/rasm2.c src/libr/asm/t/realloc_x86.c src/libr/include/r_asm.h
+description:
+* r_asm
+  - Added mips support
+  - Added new test (disasm_mips)
+  - Minor fixups in arm
+
+
+changeset:   859:01693373b933
+user:        pancake <youterm.com>
+date:        Thu Jan 29 01:25:55 2009 +0100
+files:       src/libr/bin/bin.c src/libr/core/Makefile src/libr/core/cmd.c src/libr/core/core.c src/libr/core/file.c src/libr/core/io.c src/libr/core/write.c src/libr/sign/sign.c src/libr/vapi/r_bin.vapi src/libr/vapi/r_core.vapi src/libr/vapi/r_io.vapi src/libr/vapi/t/Makefile
+description:
+* Initial vapi files for core, io and bin
+* Added simple core vapi test program
+
+
+changeset:   858:00abc72fdb25
+user:        pancake <@youterm.com>
+date:        Wed Jan 28 19:48:38 2009 +0100
+files:       Makefile.acr src/vars.c
+description:
+* Applied build and installation bugfix patch
+  - Thanks Mathias Krause!
+
+
+changeset:   857:813ac0b0aa61
+user:        pancake <@youterm.com>
+date:        Wed Jan 28 19:14:07 2009 +0100
+files:       Makefile.acr configure configure.acr
+description:
+* Added 'make release'
+* Upgrade to 1.2 O:)
+
+
+changeset:   856:c2cf92963d1d
+user:        nibble
+date:        Wed Jan 28 14:12:15 2009 +0100
+files:       src/libr/asm/arch/x86/pseudo.c src/libr/asm/arch/x86/realloc.c src/libr/asm/asm.c src/libr/asm/t/disasm_arm.c src/libr/asm/t/disasm_x86.c src/libr/asm/t/realloc_x86.c src/libr/include/r_asm.h src/libr/include/r_util.h src/libr/util/file.c
+description:
+* r_util
+  - Added r_file_slurp_range
+* r_asm
+  - Added callback support
+  - More refactoring
+
+
+changeset:   855:df3f89356a12
+user:        pancake <@youterm.com>
+date:        Wed Jan 28 14:12:34 2009 +0100
+files:       src/libr/diff/diff.c src/libr/diff/t/radiff2.c src/libr/diff/t/test.c src/libr/include/r_diff.h
+description:
+* Structural changes in r_diff callback
+  - Feed it with a single structure instead of 6+2 args
+  - radiff2 output features less useless spaces
+
+
+changeset:   854:d4bf592cbb65
+user:        pancake <youterm.com>
+date:        Wed Jan 28 12:41:52 2009 +0100
+files:       src/libr/diff/t/Makefile src/libr/diff/t/radiff2.c src/libr/include/r_sign.h src/libr/include/r_types.h src/libr/include/r_util.h src/libr/sign/Makefile src/libr/sign/sign.c src/libr/util/file.c
+description:
+* Added 'radiff2' test program for r_diff API
+* Initial import of r_sign
+* #define R_TRUE and R_FALSE for boolean
+* r_file_slurp now returns file size as u32
+
+
+changeset:   853:f427cbc96173
+user:        pancake <youterm.com>
+date:        Wed Jan 28 11:45:28 2009 +0100
+files:       src/libr/Makefile src/libr/TODO src/libr/cmd/cmd.c src/libr/diff/Makefile src/libr/diff/diff.c src/libr/diff/t/Makefile src/libr/diff/t/test.c src/libr/include/r_diff.h src/libr/include/r_util.h src/libr/range/Makefile src/libr/util/Makefile src/libr/util/file.c src/libr/util/str.c src/rsc/pool/uncolor
+description:
+* Added 'r_diff'
+  - Initial api working
+  - Added test program
+* TODO file for libr
+* New stuff in r_util
+  - r_str_ichr (like a negated strchr)
+  - r_str_escape
+  - Added file stuff in r_util
+    (slurp, randomline, dump, rm)
+* Added rsc uncolor
+
+
+changeset:   852:17c9f42fc33a
+user:        pancake <@youterm.com>
+date:        Tue Jan 27 22:59:40 2009 +0100
+files:       src/libr/Makefile src/libr/vapi/t/crash-vala00.vala src/libr/vapi/t/search.vala
+description:
+* Build r_search by default
+* vala/search example now uses a lambda
+  - remove crash.vala
+
+
+changeset:   851:67023951771d
+user:        nibble
+date:        Tue Jan 27 22:55:53 2009 +0100
+files:       src/libr/asm/Makefile src/libr/asm/arch/x86/realloc.c src/libr/asm/asm.c src/libr/asm/t/Makefile src/libr/asm/t/realloc_x86.c src/libr/bin/bin.c src/libr/bin/elf.c src/libr/bin/t/Makefile src/libr/bin/t/scn_resize.c src/libr/include/r_asm.h src/libr/include/r_bin.h src/libr/include/r_bin_elf.h
+description:
+* r_asm
+  - Added parser "realloc" (doesn't work yet)
+  - Added test realloc_x86
+* r_bin
+  - Added r_bin_resize_section (ELF)
+  - Improved r_bin_elf_resize_section
+  - Purged superfluous test
+
+
+changeset:   850:a4e008698c6a
+user:        pancake <youterm.com>
+date:        Tue Jan 27 12:37:42 2009 +0100
+files:       src/libr/include/r_search.h src/libr/search/aes-find.c src/libr/search/search.c src/libr/search/stripstr.c src/libr/search/t/Makefile src/libr/search/t/test-str.c src/libr/search/t/test.c
+description:
+* Make strings_update work (R_SEARCH_STRING) method
+  - Added test program for searching strings
+* Fix bug in aes-key-test algorithm for r_search
+* Simplify some code in search.c by using hex.c
+
+
+changeset:   849:f15ae0b87ed3
+user:        pancake <youterm.com>
+date:        Tue Jan 27 01:58:04 2009 +0100
+files:       src/libr/include/r_search.h src/libr/search/Makefile src/libr/search/aes-find.c src/libr/search/bytepat.c src/libr/search/search.c src/libr/search/stripstr.c src/libr/search/t/test.c src/libr/vapi/r_search.vapi src/libr/vapi/t/Makefile src/libr/vapi/t/crash-vala00.vala src/libr/vapi/t/search.vala
+description:
+* Initial working implementation of the search api
+  - New search engine using native structures (mybinparse)
+  - Integrate aes_update method
+  - pattern update not yet working
+  - string update callback is implemented but not tested
+* Added vala api interface
+  - Use standard return values (1=true, 0=false)
+  - Added search hello world in vala
+
+
+changeset:   848:3a9a2d68c7b3
+user:        nibble
+date:        Mon Jan 26 19:48:11 2009 +0100
+files:       src/libr/asm/arch/arm/asm.c src/libr/asm/arch/arm/gnu/arm-dis.c src/libr/asm/arch/arm/gnu/dis-asm.h src/libr/asm/arch/x86/pseudo.c src/libr/asm/asm.c src/libr/asm/t/disasm_arm.c src/libr/asm/t/disasm_x86.c src/libr/include/r_asm.h
+description:
+* r_asm
+  - Fix arm
+  - Some refactoring in tests
+
+
+changeset:   847:a04143d2ef50
+user:        pancake <@youterm.com>
+date:        Mon Jan 26 16:59:28 2009 +0100
+files:       ChangeLog
+description:
+* Sync changelog for 1.2 release
+
+
+changeset:   846:a4d83e09a192
+user:        pancake <@youterm.com>
+date:        Mon Jan 26 14:03:47 2009 +0100
+files:       src/libr/asm/arch/arm/asm.c src/libr/asm/arch/arm/gnu/arm-dis.c src/libr/asm/arch/x86/ollyasm/asmserv.c src/libr/asm/arch/x86/ollyasm/disasm.h src/libr/cmd/cmd.c src/libr/core/cmd.c src/libr/core/write.c src/libr/include/r_asm.h src/libr/include/r_macro.h src/libr/include/r_types.h src/libr/include/r_util.h src/libr/print/print.c src/libr/util/hex.c src/libr/util/str.c src/libr/vapi/r_asm.vapi src/libr/vapi/t/asm.vala src/rsc/pool/add src/rsc/pool/ffftoneg src/rsc/pool/move src/rsc/pool/strings-flag
+description:
+* Fix some warnings in libr
+  - Maybe ollydasm works fine now
+* Added missing write.c file
+* asm.vala test program is compiling now :)
+* Use 'rax' instead of 'xc' in rsc pool
+
+
+changeset:   845:7153fe12402a
+user:        pancake <youterm.com>
+date:        Mon Jan 26 13:58:56 2009 +0100
+files:       src/libr/core/Makefile src/libr/core/cmd.c src/libr/core/t/radare2.c src/libr/include/r_util.h
+description:
+* Added 'wo' comamnd to r_core_cmd
+* Added 'wv' one
+* Simplify help message in radare2
+
+
+changeset:   844:32d6665be870
+parent:      841:f901be9168fc
+parent:      843:25ac60c5415e
+user:        pancake <youterm.com>
+date:        Mon Jan 26 00:40:37 2009 +0100
+files:       src/libr/asm/arch/x86/udis86/syn-pseudo.c
+description:
+* Merge
+
+
+changeset:   843:25ac60c5415e
+user:        nibble
+date:        Sun Jan 25 12:19:14 2009 +0100
+files:       src/libr/asm/arch/x86/asm.c src/libr/asm/arch/x86/pseudo.c src/libr/asm/asm.c src/libr/asm/t/disasm_x86.c src/libr/include/r_asm.h
+description:
+* r_asm
+  - Add r_asm_parse
+  - Refactoring
+
+
+changeset:   842:6834b2717a02
+parent:      840:125a3bb07de0
+user:        nibble
+date:        Sun Jan 25 04:46:54 2009 +0100
+files:       src/libr/asm/Makefile src/libr/asm/arch/x86/asm.c src/libr/asm/arch/x86/pseudo.c src/libr/asm/arch/x86/udis86/extern.h src/libr/asm/arch/x86/udis86/syn-pseudo.c src/libr/asm/arch/x86/udis86/types.h src/libr/asm/asm.c src/libr/asm/t/disasm_arm.c src/libr/asm/t/disasm_x86.c src/libr/asm/t/rasm2.c src/libr/bin/t/Makefile src/libr/bin/t/rabin2.c src/libr/include/r_asm.h
+description:
+* r_asm
+  - Added parsing support
+  - Added parser "pseudo" (dirty copy&paste)
+  - Removed syntax "pseudo" from udis86
+  - Minor refactoring
+  - Minor fixups in rasm2
+* rabin2 now uses r_num
+
+
+changeset:   841:f901be9168fc
+user:        pancake <youterm.com>
+date:        Mon Jan 26 00:40:15 2009 +0100
+files:       src/libr/core/cmd.c src/libr/include/r_io.h src/libr/include/r_search.h src/libr/include/r_util.h src/libr/io/io.c src/libr/search/Makefile src/libr/search/binparse.c src/libr/search/search.c src/libr/search/stripstr.c src/libr/search/t/test.c src/libr/util/hex.c src/libr/util/str.c
+description:
+* Added some implementations for the write command in r_core
+  - w, ww, wx, wb, wm
+  - Added support for write binary mask to r_io_write
+* Added slurp_random_line for r_util
+  - Added some hex2bin bin2hex helpers
+* Added stripstr algorithm to r_search
+  - r_search is borken, needs a new binparse
+
+
+changeset:   840:125a3bb07de0
+user:        pancake <youterm.com>
+date:        Sat Jan 24 22:47:41 2009 +0100
+files:       src/libr/core/cmd.c src/libr/include/r_search.h src/libr/search/search.c
+description:
+* Added fake commands 'w' and '/' in core
+* Added mode search
+
+
+changeset:   839:2816afbe6e3c
+user:        pancake <youterm.com>
+date:        Sat Jan 24 21:07:10 2009 +0100
+files:       src/libr/search/binparse.c src/libr/search/t/test.c
+description:
+* Fix segfault in test program of r_search
+  - First working version. API not yet stabilized
+
+
+changeset:   838:9253acf8b6bc
+user:        pancake <youterm.com>
+date:        Sat Jan 24 20:57:15 2009 +0100
+files:       src/binparse.c src/libr/asm/t/asm_x86.c src/libr/asm/t/rasm2.c src/libr/include/r_search.h src/libr/search/Makefile src/libr/search/aes-find.c src/libr/search/binparse.c src/libr/search/bytepat.c src/libr/search/search.c src/libr/search/t/Makefile src/libr/search/t/test.c src/libr/util/num.c
+description:
+* Make r-search compile
+  - Much more work required :P
+  - Added a example test program that segfaults
+  - Added aes-search inside r_search (not yet integrated)
+* Minor code indent for rasm2
+
+
+changeset:   837:9a4387970e51
+user:        pancake <youterm.com>
+date:        Sat Jan 24 19:14:15 2009 +0100
+files:       src/libr/cons/cons.c src/libr/include/r_range.h src/libr/include/r_search.h src/libr/include/r_util.h src/libr/range/Makefile src/libr/range/range.c src/libr/search/Makefile src/libr/search/search.c src/libr/util/num.c
+description:
+* New libr module: "r_range"
+  - Needs some cleanup but it is almost defined
+* Add r_cons_progressbar() to r_cons api
+* Some more work on r_search refactoring
+  - Needs even more cleanup
+  - Not yet defined
+  - Lot of structures needs to change name
+  - Integrate bytepat and esteve's search engine
+* Add r_num_minmax_swap helper in r_util
+
+
+changeset:   836:cbd01aba74e2
+user:        nibble
+date:        Sat Jan 24 17:15:47 2009 +0100
+files:       src/libr/asm/arch/arm/asm.c src/libr/asm/arch/x86/asm.c src/libr/asm/asm.c src/libr/asm/t/Makefile src/libr/asm/t/asm_x86.c src/libr/asm/t/disasm_x86.c src/libr/asm/t/rasm2.c src/libr/bin/t/rabin2.c
+description:
+* r_asm
+  - Initial rasm2 implementation
+  - Minor bug fixing
+  - Remove unnecessary includes
+
+
+changeset:   835:ba092ed637f0
+user:        nibble
+date:        Sat Jan 24 13:46:46 2009 +0100
+files:       src/libr/asm/arch/x86/asm.c src/libr/asm/asm.c src/libr/asm/t/Makefile src/libr/asm/t/asm_x86.c src/libr/asm/t/disasm_arm.c src/libr/asm/t/disasm_x86.c src/libr/asm/t/test_arm.c src/libr/asm/t/test_x86.c src/libr/bin/t/rabin2.c src/libr/include/r_asm.h
+description:
+* r_asm
+  - Add x86 assembly support using olly
+  - Add assembly test
+* rabin2
+  - Aesthetic fixups
+
+
+changeset:   834:fadf69282565
+user:        pancake <youterm.com>
+date:        Fri Jan 23 11:29:53 2009 +0100
+files:       src/libr/include/r_search.h src/libr/include/r_util.h src/libr/search/binparse.c src/libr/search/search.c src/libr/util/Makefile src/libr/util/hex.c
+description:
+* More work on r_search
+  - Not yet finished
+
+
+changeset:   833:e291ca31ca35
+user:        pancake <youterm.com>
+date:        Thu Jan 22 22:04:05 2009 +0100
+files:       src/libr/core/t/radare2.c src/libr/include/r_vm.h src/libr/io/README src/libr/io/undo.c src/libr/io/undo.h src/libr/print/print.c src/libr/vm/extra.c src/libr/vm/mmu.c src/libr/vm/reg.c src/libr/vm/setup.c src/libr/vm/vm.c
+description:
+* Initial compilable version of r_vm
+  - Not yet tested
+  - Fix lot of warning messages
+* Added undo.* in rio
+  - Not yet integrated
+* Added lsbstego into r_print
+
+
+changeset:   832:b8c90a3ad8f3
+user:        pancake <@youterm.com>
+date:        Thu Jan 22 19:53:14 2009 +0100
+files:       src/libr/include/r_vm.h src/libr/vm/Makefile src/libr/vm/extra.c src/libr/vm/mmu.c src/libr/vm/op.c src/libr/vm/reg.c src/libr/vm/setup.c src/libr/vm/stack.c src/libr/vm/vm.c
+description:
+* Lot of work on libr_vm
+  - Not yet usable, stills not compiling
+  - Major refactoring in C sucks :P
+
+
+changeset:   831:3c1f91e2cd23
+user:        pancake <@youterm.com>
+date:        Thu Jan 22 11:51:05 2009 +0100
+files:       src/libr/core/cmd.c src/libr/core/core.c src/libr/core/t/radare2.c src/libr/macro/macro.c src/libr/util/str.c
+description:
+* Initial working implementation of macros
+  - Pointers required maybe needs a bit of work
+* Check for ending '"' and ')' chars
+  - Properly parse commands starting with '"'
+* Added -n flag to radare2
+  - Run ~/.radarerc by default
+* Added r_str_home() helper
+
+
+changeset:   830:55d688044fa3
+user:        pancake <youterm.com>
+date:        Thu Jan 22 11:57:54 2009 +0100
+files:       src/libr/core/cmd.c src/libr/core/core.c src/libr/core/t/Makefile src/libr/include/r_cons.h src/libr/include/r_core.h src/libr/include/r_print.h src/libr/include/r_vm.h src/libr/io/README src/libr/macro/macro.c src/libr/print/Makefile src/libr/print/format.c src/libr/print/print.c src/libr/vm/Makefile src/libr/vm/vm.c
+description:
+* Make the '.' command work happier
+  - Add support for .() to call macros
+  - Command '(' is now also working
+  - Needs some fun pointers to be properly initialized
+* Added $$ and $b in r_num_callback
+* Added pr in help
+* Initial implementation of '#' using r_hash from core
+* Initial import of r_vm
+  - Just c&p from r1..needs some work
+
+
+changeset:   829:375a0e8afbe5
+user:        pancake <youterm.com>
+date:        Thu Jan 22 02:46:48 2009 +0100
+files:       src/libr/include/r_lib.h src/libr/lib/Makefile src/libr/lib/lib.c src/libr/lib/t/Makefile src/libr/lib/t/test-plugin.c
+description:
+* Major refactoring over the initial design
+* Added support for destructors
+  - Some structure and field renamings
+  - More methods defined in .h
+  - Build with -Wall
+  - Optimization thru the use of pointers
+  - Needs another review for simplification
+* Make the test program close and free all loaded
+  plugins before exiting
+
+
+changeset:   828:e01213be6562
+user:        pancake <youterm.com>
+date:        Wed Jan 21 23:32:52 2009 +0100
+files:       src/libr/bin/t/rabin2.c src/libr/include/r_lib.h src/libr/lib/lib.c src/libr/lib/t/Makefile src/libr/lib/t/plugin.c src/libr/lib/t/test-plugin.c src/libr/stripsyms.sh
+description:
+* Fix stirpsyms for gentoo
+* Some syntax fixups for rabin2
+* Initial working implementation of r_lib
+  - Added a test program
+  - Pointer to internal data not yet working at all
+
+
+changeset:   827:6969c38f1d27
+user:        nibble
+date:        Wed Jan 21 20:59:39 2009 +0100
+files:       src/libr/bin/bin.c src/libr/bin/elf.c src/libr/bin/elf64.c src/libr/bin/pe.c src/libr/bin/t/Makefile src/libr/bin/t/rabin2.c src/libr/include/r_asm.h src/libr/include/r_bin.h src/libr/include/r_bin_elf.h src/libr/include/r_bin_elf64.h src/libr/include/r_bin_pe.h src/libr/include/r_bin_pe_specs.h
+description:
+* Add radare output to rabin2
+
+
+changeset:   826:4f3d7a3cf4d0
+user:        pancake <@youterm.com>
+date:        Tue Jan 20 20:10:14 2009 +0100
+files:       src/libr/Makefile src/libr/cons/cons.c src/libr/core/cmd.c src/libr/include/r_cons.h src/libr/print/print.c src/libr/stripsyms.sh
+description:
+* Add 'macro' in makefile build
+* Initial nonworking and ugly implementation of cons_pipe
+* Added r_cons_memcat and 'pr' command for r_print
+
+
+changeset:   825:546ca0a46e75
+user:        nibble
+date:        Tue Jan 20 19:19:01 2009 +0100
+files:       src/libr/asm/Makefile src/libr/asm/arch/arm/asm.c src/libr/asm/arch/arm/gnu/ansidecl.h src/libr/asm/arch/arm/gnu/arm-dis.c src/libr/asm/arch/arm/gnu/bfd.h src/libr/asm/arch/arm/gnu/dis-asm.h src/libr/asm/arch/arm/gnu/symcat.h src/libr/asm/arch/x86/asm.c src/libr/asm/asm.c src/libr/asm/t/Makefile src/libr/asm/t/test.c src/libr/asm/t/test_arm.c src/libr/asm/t/test_x86.c src/libr/core/core.c src/libr/include/r_asm.h
+description:
+* r_asm
+  - Add initial arm support (needs more love)
+  - Add new tests
+* r_core
+  - Remove unnecessary include
+
+
+changeset:   824:863327273c45
+user:        nibble
+date:        Tue Jan 20 13:27:37 2009 +0100
+files:       src/libr/asm/Makefile src/libr/asm/arch/x86/asm.c src/libr/asm/arch/x86/udis86/syn-pseudo.c src/libr/asm/arch/x86/udis86/udcli/udcli.c src/libr/asm/t/test.c src/libr/core/cmd.c src/libr/core/core.c src/libr/core/t/Makefile src/libr/include/r_cons.h src/libr/include/r_core.h src/libr/include/r_flags.h src/libr/macro/Makefile src/libr/macro/macro.c src/libr/macro/macros.h
+description:
+* r_asm
+  - Add pseudo syntax using udis86
+  - Remove unnecessary files
+* r_core
+  - Remove some warnings
+  - Partially Fix build
+* r_macro
+  - Add Makefile
+  - Remove macros.h
+
+
+changeset:   823:a1b09db6da5c
+user:        pancake <youterm.com>
+date:        Tue Jan 20 13:07:32 2009 +0100
+files:       src/libr/asm/asm.c src/libr/core/cmd.c src/libr/core/core.c src/libr/include/r_core.h src/libr/include/r_macro.h src/libr/macro/macro.c src/libr/macro/macros.h
+description:
+* Added dummy macro and interpret commands for r_core
+* Initial implementation of r_macro
+  - Needs testing and integration with r_core
+
+
+changeset:   822:16ef87931fdb
+user:        nibble
+date:        Tue Jan 20 11:59:53 2009 +0100
+files:       src/libr/asm/arch/x86/ollyasm/asmserv.c src/libr/asm/arch/x86/ollyasm/assembl.c
+description:
+* Ooops, add missing files
+
+
+changeset:   821:51665340300f
+user:        nibble
+date:        Tue Jan 20 11:56:56 2009 +0100
+files:       src/libr/asm/Makefile src/libr/asm/arch/x86/asm.c src/libr/asm/arch/x86/ollyasm/disasm.c src/libr/asm/arch/x86/ollyasm/disasm.h src/libr/asm/asm.c src/libr/asm/t/test.c src/libr/include/r_asm.h
+description:
+* r_asm
+  - Add r_asm_free
+  - Add olly syntax for x86
+  - Huge dewarnification (olly code)
+
+
+changeset:   820:5f9fa04311bc
+user:        nibble
+date:        Tue Jan 20 03:58:27 2009 +0100
+files:       src/libr/asm/arch/x86/asm.c src/libr/asm/asm.c src/libr/include/r_asm.h
+description:
+* Fix r_asm build O:-)
+
+
+changeset:   819:f242a181f93a
+user:        nibble
+date:        Tue Jan 20 03:53:11 2009 +0100
+files:       src/libr/asm/arch/x86/asm.c src/libr/asm/asm.c src/libr/asm/t/test.c src/libr/core/cmd.c src/libr/include/r_asm.h
+description:
+* r_asm refactoring
+
+
+changeset:   818:fb3f69373af5
+user:        pancake <youterm.com>
+date:        Tue Jan 20 04:55:02 2009 +0100
+files:       src/libr/vapi/r_asm.vapi src/libr/vapi/t/Makefile src/libr/vapi/t/asm.vala
+description:
+* Added r_asm vala api and test program
+
+
+changeset:   817:26a9c7a6e782
+user:        pancake <youterm.com>
+date:        Tue Jan 20 04:21:17 2009 +0100
+files:       src/libr/Makefile src/libr/core/cmd.c src/libr/core/config.c src/libr/core/core.c src/libr/core/t/Makefile src/libr/core/t/radare2.c src/libr/flags/flags.c src/libr/include/r_config.h src/libr/include/r_flags.h
+description:
+* Lot of work on radare2 (libr based)
+* Build r_asm by default
+  - Initial pd command working
+* 'x' command accepts numeric argument
+* 'f' command working, f+ for adding
+* 'px-' shows hexdump without headers
+* Make radare2 test program open multiple files
+  - Add -w and -e flags
+* Add r_flag_list and ..unset
+
+
+changeset:   816:10cac3656cf5
+user:        nibble
+date:        Tue Jan 20 03:01:03 2009 +0100
+files:       src/libr/asm/arch/x86/asm.c src/libr/asm/asm.c src/libr/asm/t/test.c src/libr/include/r_asm.h
+description:
+* Move buf_asm & buf_hex into r_asm_t
+
+
+changeset:   815:817f2ba7ce1f
+user:        nibble
+date:        Tue Jan 20 02:44:28 2009 +0100
+files:       src/libr/asm/Makefile src/libr/asm/arch/x86/asm.c src/libr/asm/arch/x86/ollyasm/disasm.c src/libr/asm/arch/x86/ollyasm/disasm.h src/libr/asm/arch/x86/udis86/LICENSE src/libr/asm/arch/x86/udis86/README src/libr/asm/arch/x86/udis86/decode.c src/libr/asm/arch/x86/udis86/decode.h src/libr/asm/arch/x86/udis86/extern.h src/libr/asm/arch/x86/udis86/input.c src/libr/asm/arch/x86/udis86/input.h src/libr/asm/arch/x86/udis86/itab.c src/libr/asm/arch/x86/udis86/itab.h src/libr/asm/arch/x86/udis86/syn-att.c src/libr/asm/arch/x86/udis86/syn-intel.c src/libr/asm/arch/x86/udis86/syn.c src/libr/asm/arch/x86/udis86/syn.h src/libr/asm/arch/x86/udis86/types.h src/libr/asm/arch/x86/udis86/udcli/udcli.c src/libr/asm/arch/x86/udis86/udis86.c src/libr/asm/asm.c src/libr/asm/t/Makefile src/libr/asm/t/test.c src/libr/bin/t/rabin2.c src/libr/include/r_asm.h
+description:
+* x86 support for r_asm :)
+
+
+changeset:   814:092c61e62303
+user:        pancake <youterm.com>
+date:        Tue Jan 20 03:11:09 2009 +0100
+files:       src/libr/config/config.c src/libr/core/cmd.c src/libr/core/config.c src/libr/core/visual.c src/libr/include/r_config.h src/libr/include/r_util.h src/libr/util/num.c
+description:
+* Lot of enhacements and new commands for radare2
+  - eval, flags, quit with args, !system, seek
+  - support for:
+    . internal grep ~
+    . temporary seek @
+    . internal cmd output subst ``
+    . conditional commands now supported
+      ?? ?! ?+ ?- (==0, !=0, >0, <0)
+  - Added lot of help messages '?' everywhere
+  - Support repeat prefix for commands (3x)
+  - r_num_t now stores the comparision result
+    - Used for conditional
+* Commands without arguments return numeric value
+* Define MIN, MAX, LESSTHAN and GREATERTHAN defines
+
+
+changeset:   813:3c35297f2e83
+user:        pancake <@youterm.com>
+date:        Mon Jan 19 19:03:33 2009 +0100
+files:       src/libr/README src/libr/cmd/cmd.c src/libr/cmd/t/Makefile src/libr/cmd/t/test.c src/libr/cons/cons.c src/libr/core/core.c src/libr/core/t/radare2.c src/libr/flags/flags.c src/libr/include/r_cmd.h src/libr/include/r_core.h src/libr/include/r_io.h src/libr/include/r_util.h src/libr/io/io.c src/libr/io/section.c src/libr/io/t/Makefile src/libr/io/t/read4.c src/libr/rules.mk src/libr/util/str.c src/libr/vapi/r_socket.vapi src/libr/vapi/t/socket.vala
+description:
+* Rewrite 'libr' README
+* Add long command support for r_cmd
+* Fix bug in r_core related to seeking
+* Fix crash in r_flag_get
+* Fix vala socket example
+
+
+changeset:   812:7238036d3083
+user:        pancake <youterm.com>
+date:        Mon Jan 19 02:40:27 2009 +0100
+files:       src/libr/Makefile src/libr/print/Makefile
+description:
+* Build r_flags and r_print by default
+
+
+changeset:   811:4d141b319960
+user:        pancake <youterm.com>
+date:        Mon Jan 19 02:38:11 2009 +0100
+files:       src/libr/include/r_cmd.h
+description:
+* Oops for r_cmd build
+
+
+changeset:   810:038e7697fb89
+user:        pancake <youterm.com>
+date:        Mon Jan 19 02:34:57 2009 +0100
+files:       src/libr/vapi/r_socket.vapi src/libr/vapi/t/Makefile src/libr/vapi/t/socket.vala
+description:
+* Added socket example
+  - Crashing everytime
+
+
+changeset:   809:7d75819b583b
+user:        nibble
+date:        Mon Jan 19 01:08:49 2009 +0100
+files:       src/libr/bin/bin.c src/libr/bin/t/Makefile src/libr/bin/t/rabin2.c src/libr/include/r_bin.h
+description:
+* Initial implementation of rabin2 using r_bin
+
+
+changeset:   808:07b21a0c6224
+user:        pancake <youterm.com>
+date:        Mon Jan 19 02:11:07 2009 +0100
+files:       src/libr/cmd/cmd.c src/libr/cons/cons.c src/libr/core/Makefile src/libr/core/cmd.c src/libr/core/core.c src/libr/core/t/Makefile src/libr/core/t/radare2.c src/libr/core/visual.c src/libr/flags/Makefile src/libr/flags/flags.c src/libr/flags/name.c src/libr/flags/old_flags.c src/libr/flags/old_flags.h src/libr/include/r_cmd.h src/libr/include/r_core.h src/libr/include/r_flags.h src/libr/include/r_print.h src/libr/include/r_util.h src/libr/print/print.c src/libr/print/t/Makefile
+description:
+* Added null command callback for libr_cmd
+* Added basic support for command preprocessing
+  - Supports '@' and '"'
+  - Temporally seek works fine
+* Resolve numbers with flag names
+  - Enhacements for the r_flags library
+  - r_num_t is now initialized and used
+* Added p8 and px commands
+  - Added r_print_bytes with format string
+  - Initial nonworking 'f' command
+
+
+changeset:   807:3983b9bfb385
+user:        pancake <youterm.com>
+date:        Sun Jan 18 21:55:04 2009 +0100
+files:       doc/fortunes src/libr/Makefile src/libr/cmd/TODO src/libr/cmd/cmd.c src/libr/cmd/t/test.c src/libr/config/callback.c src/libr/config/config.c src/libr/cons/Makefile src/libr/cons/cons.c src/libr/cons/strsub.c src/libr/cons/t/Makefile src/libr/core/Makefile src/libr/core/cmd.c src/libr/core/config.c src/libr/core/core.c src/libr/core/file.c src/libr/core/t/Makefile src/libr/core/t/radare2.c src/libr/flags/Makefile src/libr/flags/flags.c src/libr/flags/old_flags.c src/libr/flags/old_flags.h src/libr/include/r_cmd.h src/libr/include/r_core.h src/libr/include/r_flags.h src/libr/include/r_radare.h src/libr/include/r_util.h src/libr/io/io.c src/libr/io/section.c src/libr/line/Makefile src/libr/line/dietline.c src/libr/line/t/Makefile src/libr/radare/Makefile src/libr/radare/radare.c src/libr/radare/t/Makefile src/libr/radare/t/radare2.c src/libr/util/str.c
+description:
+* Lot of work on libr
+  - Initial radare2 test program in libr/core/t
+    - Some basic commands (s, b, x, q)
+  - r_cmd is working .. needs support for long commands
+  - Lot of refactoring
+* Remove r_radare .. moved into r_core
+* Some recursive dependencies needs to be cleaned up
+  - r_cons is not depending on r_line
+  - uses dietline for everything (no readline for radare2)
+* Link test programs against object archives (.a)
+
+changeset:   805:16cd084fcda8
+user:        nibble
+date:        Sun Jan 18 02:04:23 2009 +0100
+files:       src/libr/asm/Makefile src/libr/asm/asm.c src/libr/bin/elf.c src/libr/include/r_asm.h
+description:
+* initial work on r_asm
+
+
+changeset:   804:add36c5d9140
+user:        pancake <youterm.com>
+date:        Sun Jan 18 03:06:37 2009 +0100
+files:       src/libr/cmd/Makefile src/libr/cmd/cmd.c src/libr/cmd/t/Makefile src/libr/cmd/t/test.c src/libr/config.mk src/libr/core/core.c src/libr/include/r_cmd.h src/libr/include/r_cons.h src/libr/include/r_core.h src/libr/include/r_print.h src/libr/include/r_radare.h src/libr/include/r_types.h src/libr/io/handle.c src/libr/io/map.c src/libr/print/print.c src/libr/print/t/Makefile src/libr/print/t/hex.c src/libr/radare/Makefile src/libr/radare/radare.c src/libr/radare/t/radare2.c src/libr/rules.mk src/libr/util/Makefile src/libr/util/str.c
+description:
+* Initial implementation of r_cmd with test
+* More work on r_radare and r_core
+* Added r_print_hexdump to r_print
+
+
+changeset:   802:d32bbdd45b32
+user:        pancake <@youterm.com>
+date:        Fri Jan 16 18:30:17 2009 +0100
+files:       src/libr/Makefile src/libr/include/r_util.h src/libr/util/Makefile src/libr/util/mem.c src/libr/util/num.c src/libr/util/re.c src/libr/util/t/Makefile src/libr/util/t/calc.c src/libr/util/t/test.c src/radare.c src/stripstr.c src/visual.c
+description:
+* Use portable flags for find(1) in libr make install
+* Twice-ESC quits from visual-insert mode (thx mandingo)
+* Added r_str_re for regular expression helpers
+* Fixups for stripstr for ranges
+  - Starting getting hits from the begging
+  - Properly get hits of ascii outside the first block
+  - Rename 'unicode' as 'widechar'
+
+
+changeset:   801:40754edd72c0
+user:        pancake <youterm.com>
+date:        Fri Jan 16 12:23:58 2009 +0100
+files:       src/libr/Makefile src/libr/line/dietline.c src/libr/util/mem.c
+description:
+* Better make install for libr
+* Initial ^R support for r_line
+
+changeset:   798:0dd3aa0480eb
+user:        pancake <youterm.com>
+date:        Fri Jan 16 04:17:44 2009 +0100
+files:       src/config.c src/libr/Makefile src/libr/include/r_util.h src/libr/util/Makefile src/libr/util/mem.c src/libr/util/num.c src/libr/util/str.c src/libr/util/t/calc.c src/libr/util/t/rax2.c src/radare.c src/ranges.c src/ranges.h src/search.c
+description:
+* New config key "search.inar"
+  - Search for /z and / /x .. using ranges defined by 'ar'
+  - Thanks mandingo again for the ideas!
+* Added 'install' target for libr
+  - installed at /tmp/libr-install
+  - just for development
+  - Initial working version of 'rax2' using r_util
+  - Basic nested math expression support with ( and )
+  - Added test program with check failres for math exprs
+
+
+changeset:   797:29bc0d2e8725
+user:        pancake <youterm.com>
+date:        Fri Jan 16 00:59:08 2009 +0100
+files:       src/cmds.c src/libr/include/r_core.h src/libr/include/r_radare.h src/libr/include/r_util.h src/libr/radare/t/Makefile src/libr/radare/t/radare2.c src/libr/util/num.c src/libr/util/str.c src/libr/util/t/Makefile src/libr/util/t/calc.c src/libr/util/t/rax2.c
+description:
+* Initial import of r_radare
+* Added new command /v to search for values
+  - Little and big endian support
+  - Thanks mandingo for the idea! :)
+* Enhacements for the r_util API
+  - stable numeric and string api
+  - needs more love
+  - Added some tests
+  - extensible state based get value function
+* rax2 and radare2 will be implemented as test
+  programs for libr
+
+
+changeset:   796:8b01b2397d20
+user:        pancake <youterm.com>
+date:        Thu Jan 15 11:45:19 2009 +0100
+files:       TODO src/libr/include/r_radare.h src/libr/io/README src/libr/io/desc.c src/libr/io/io.c src/libr/radare/Makefile src/libr/radare/radare.c src/vars.c
+description:
+* Some more work on the r_io module
+* Initial import of r_radare module
+  - Will implement a full radare client into a library
+  - Small c program will be enought to implement radare2
+* Pseudofix var_add_access recursivity bug
+  - Needs some love
+
+changeset:   790:5726a923ccd1
+user:        pancake <youterm.com>
+date:        Wed Jan 14 01:42:04 2009 +0100
+files:       src/bytepat.c src/libr/search/bytepat.c
+description:
+* Apply esteve's patch for bytepat.c
+  - Do not show nested patterns (much more clean output :D)
+  - Some code cleanup
+  - Make use of search.from and search.to
+  - Control read errors
+* Added bytepat into libr_search for future integration
+
+
+changeset:   788:ac6937ff37cf
+user:        pancake <@youterm.com>
+date:        Tue Jan 13 13:47:29 2009 +0100
+files:       scripts/macros src/cons.c src/dietline.c src/libr/cons/cons.c
+description:
+* Added macro label example
+* Added support for negative column indexing in cons_grep
+  - Shows column -N and the following
+  - Sync r_cons
+* Drop label stuff for the basic shell
+  - Only works for macros
+
+changeset:   781:de35b5e467a9
+user:        nibble
+date:        Fri Jan 09 15:36:33 2009 +0100
+files:       src/libr/bin/elf.c
+description:
+* More love and refactoring for the elf section resizer
+
+
+changeset:   780:5b63ce2692f6
+user:        pancake <@youterm.com>
+date:        Fri Jan 09 14:47:48 2009 +0100
+files:       src/libr/bin/elf.c src/libr/bin/t/rsz_test.sh src/libr/cmd/cmd.c src/libr/config/callback.c src/libr/config/config.c src/libr/config/t/Makefile src/libr/config/t/test.c src/libr/core/core.c src/libr/include/r_config.h src/libr/include/r_io_section.h src/libr/include/r_util.h src/libr/io/section.c src/libr/util/num.c src/libr/util/str.c src/libr/vapi/r_config.vapi
+description:
+* Working implementation of the ELF section resizer
+  - Needs to be cleaned up (so many debug printfs everywhere)
+* Fixups for the r_config library
+  - Less warnings
+  - Test program is now compiling and working
+  - r_util needs more love
+  - Added new/free interface for it
+  - vapi template for it (not yet done)
+* Added rwx property to rio_sections
+
+
+changeset:   779:4808a5aa94db
+user:        pancake <@youterm.com>
+date:        Fri Jan 09 13:04:16 2009 +0100
+files:       src/cmds.c src/libr/bin/elf.c src/libr/bin/t/data_resize.c src/libr/config/Makefile src/libr/config/callback.c src/libr/config/config.c src/libr/config/config.h src/libr/include/r_config.h src/libr/include/r_types.h src/rio.c src/section.h
+description:
+* Added documentation for the 'Sp' command
+  - rio_write_at checks for section perms before writing
+  - rio_write_at checks for undowrite config var
+  - RWX is now handled as in UNIX 4+2+1
+* Fix type warnings in r_bin/elf.c
+* Initial pseudo defined r_config API
+  - Lot of code cleanup has been done
+  - Needs more work
+
+
+changeset:   778:24660d2b35a4
+user:        nibble
+date:        Fri Jan 09 10:15:11 2009 +0100
+files:       src/libr/bin/elf.c
+description:
+* r_bin_elf
+  - more work on resize_section
+
+
+changeset:   777:cef58a465a52
+user:        nibble
+date:        Fri Jan 09 03:22:21 2009 +0100
+files:       src/libr/bin/bin.c src/libr/bin/elf.c src/libr/bin/t/Makefile src/libr/bin/t/baddr.c src/libr/bin/t/data_resize.c src/libr/bin/t/entry.c src/libr/bin/t/imports.c src/libr/bin/t/info.c src/libr/bin/t/scn_resize.c src/libr/bin/t/sections.c src/libr/bin/t/symbols.c src/libr/include/r_bin.h src/libr/include/r_bin_elf.h
+description:
+* r_bin_elf
+  - initial implementation of resize_section
+
+
+changeset:   776:f481467caa56
+user:        pancake <youterm.com>
+date:        Fri Jan 09 02:04:16 2009 +0100
+files:       src/cmds.c src/libr/cmd/Makefile src/libr/cmd/cmd.c src/libr/config/Makefile src/libr/config/config.c src/libr/config/config.h src/libr/config/deprecated.c src/libr/core/Makefile src/libr/core/core.c src/libr/include/r_cmd.h src/section.c src/section.h
+description:
+* Added trash code into libr
+* Added undocumented code in section.c for rwx perms
+  - Needs to be integrated
+
+changeset:   773:df3a34f2b0f9
+user:        pancake <youterm.com>
+date:        Mon Jan 05 01:51:15 2009 +0100
+files:       src/libr/bin/elf.c src/rabin/aux.c src/rabin/dietelf.c src/rabin/dietelf.h src/rabin/rabin.c
+description:
+* Use LD_TRACE_LOADED_OBJECTS to get list of libraries
+  - Hacky but functional for mangled shoff bins
+* Allow to load binaries where shoff is 0xffffffff
+  - Maybe we are ignoring another case..
+
+
+changeset:   772:8380e8e20f08
+user:        pancake <youterm.com>
+date:        Mon Jan 05 01:18:51 2009 +0100
+files:       src/libr/bin/elf.c src/libr/include/r_types.h src/rabin/dietelf.c src/rabin/dietelf.h src/rabin/rabin.c
+description:
+* Make dietelf handle mangled elf headers
+  - Set shnum=0 if cannot read section headers
+  - Set phnum=0 if cannot read program headers
+* Make rabin add ph and sh offsets
+  - Stored inside 'elf' flagspace
+  - Store offset of pointer and offset of struct
+* Show file:line in perror() for libr
+
+changeset:   768:63f0bf2fc4cf
+user:        pancake <@youterm.com>
+date:        Fri Jan 02 19:09:55 2009 +0100
+files:       src/libr/bin/t/symbols.c src/libr/include/r_socket.h src/libr/include/r_syscall.h src/libr/lib/lib.c src/libr/syscall/example.syscall-file src/libr/syscall/syscall.c src/libr/syscall/t/hello.c src/libr/vapi/r_socket.vapi src/libr/vapi/r_syscall.vapi src/libr/vapi/t/Makefile src/libr/vapi/t/hash.vala src/libr/vapi/t/hello.vala src/libr/vapi/t/sc.vala src/rax.c
+description:
+* Initial vapi implementation for r_syscall and r_socket
+  - Some minor refactoring to fit with gobject
+  - Added vala syscall example
+* Final implementation for r_hash state calling conventions
+  - Fix hash example (now digest can be calculated once)
+* Another minor code cleanup for rax(1)
+
+
+changeset:   767:451e591e52c1
+user:        pancake <@youterm.com>
+date:        Fri Jan 02 17:49:52 2009 +0100
+files:       src/libr/hash/state.c src/libr/vapi/t/hello.vala src/rax.c
+description:
+* Make r_hash state api flush digest when init receives false and len is 0
+  - Sync example program
+* 'rax' ends up with \n when '-' is given as arg
+
+
+changeset:   766:a8fa52c02a9b
+user:        pancake <@youterm.com>
+date:        Fri Jan 02 15:11:27 2009 +0100
+files:       src/libr/hash/state.c src/libr/include/r_hash.h src/libr/syscall/darwin.o src/libr/syscall/freebsd.o src/libr/syscall/linux.o src/libr/syscall/netbsd.o src/libr/syscall/syscall.o src/libr/vapi/r_hash.vapi src/libr/vapi/t/hello.vala
+description:
+* Added init flag to r_hash state api
+  - Sync with vapi and example
+  - add Algorithm enum
+* OMFG! There are bin objects in the repo!
+
+
+changeset:   765:e34c1320b26c
+user:        pancake <@youterm.com>
+date:        Fri Jan 02 14:44:39 2009 +0100
+files:       src/libr/bin/Makefile src/libr/cons/Makefile src/libr/hash/Makefile src/libr/hash/init.c src/libr/hash/state.c src/libr/hash/t/hello.c src/libr/include/r_hash.h src/libr/io/Makefile src/libr/lib/Makefile src/libr/line/Makefile src/libr/rules.mk src/libr/socket/Makefile src/libr/stripsyms.sh src/libr/syscall/Makefile src/libr/vapi/r_hash.deps src/libr/vapi/r_hash.vapi src/libr/vapi/t/Makefile src/libr/vapi/t/hello.vala
+description:
+* Initial import of the vala api for r_hash
+* Added stripsyms.sh helper to strip out-of-namespace symbols
+  for the different 'R' libraries. Used from rules.mk
+* Some refactoring for r_hash has been done
+
+
+changeset:   764:d600407b72a7
+user:        pancake <youterm.com>
+date:        Fri Jan 02 02:44:46 2009 +0100
+files:       src/libr/include/r_syscall.h src/libr/syscall/TODO src/libr/syscall/darwin.o src/libr/syscall/netbsd.o src/libr/syscall/syscall.c src/libr/syscall/syscall.o src/libr/syscall/t/hello.c
+description:
+* Make r_syscall API have a context argument
+  - Avoid static library configurations
+
+
+changeset:   763:8a65d15c0bcf
+user:        pancake <youterm.com>
+date:        Fri Jan 02 02:29:01 2009 +0100
+files:       src/libr/hash/Makefile src/libr/hash/entropy.c src/libr/hash/hash.c src/libr/hash/init.c src/libr/hash/md4.c src/libr/hash/md5.h src/libr/hash/md5c.c src/libr/hash/sha1.c src/libr/hash/sha1.h src/libr/hash/sha2.c src/libr/hash/sha2.h src/libr/hash/t/hello.c src/libr/include/r_hash.h
+description:
+* Full implementation of r_hash api
+  - Standarized function groups into:
+    - checksumming, hashing and algorithm
+  - Needs code cleanup
+  - Test example now checks for the hashing api
+
+changeset:   758:cac692f9f997
+user:        pancake <youterm.com>
+date:        Wed Dec 31 02:53:28 2008 +0100
+files:       src/libr/include/r_io_section.h src/libr/io/Makefile src/libr/io/io.c src/libr/io/section.c
+description:
+* Added vaddr/paddr support to r_io
+  - Also added support for sections
+  - Needs test
+
+changeset:   730:0e9f21845b85
+user:        pancake <youterm.com>
+date:        Sat Dec 20 05:23:34 2008 +0100
+files:       TODO src/flags.c src/libr/config.mk src/libr/rules.mk src/libr/syscall/freebsd.o src/libr/syscall/linux.o src/vm.c
+description:
+* Added few default opcodes
+* FLAGSPACES=32
+
+
+changeset:   729:aae9ee1b4586
+user:        pancake <youterm.com>
+date:        Sat Dec 20 05:12:11 2008 +0100
+files:       src/section.c
+description:
+* Show ondisk section info in section list command
+
+
+changeset:   728:3a8283fc8c51
+user:        pancake <youterm.com>
+date:        Sat Dec 20 05:05:34 2008 +0100
+files:       src/cmds.c src/libr/bin/pe.c src/rio.c src/section.c src/section.h src/vm.c
+description:
+* Added 'Sd' to define ondisk access offset for sections
+  - added 'ondisk' attribute
+  - Thanks esteve! :D
+  - On the way to fix the problems with PE RVA's
+* rio.c: radare_seek now uses section-align before seeking
+* Fix PE-THUMB problem in libr/bin
+* Added support for 8,16,32,64 read and write eval operations
+  for the virtual machine.
+  > ave eax=[8:0x8048000]
+
+
+changeset:   727:ec0af28a3d92
+user:        pancake <youterm.com>
+date:        Sat Dec 20 04:23:34 2008 +0100
+files:       Makefile.acr config.mk.acr configure configure.acr src/analyze.c src/cmds.c src/cons.c src/libr/cons/cons.c src/libr/syscall/freebsd.c src/libr/syscall/linux.c src/print.c src/rabin/dietpe.c src/readline.c src/vm.c src/vm.h tests/Makefile
+description:
+* Fix ${INSTALL} path problem (thanks erg0t)
+* Added 'avo' command to manage opcodes
+  - add, list opcodes
+  - Allows to generate new userdefined opcodes
+  - Semi replaces the pas functionality
+* Remove 'time' in tests/
+* Fix greptoken bug f~[0] now works
+* Make !bp autocomplete with flags (readline)
+* Documentate the X format for pm command
+* Fix THUMB PE binaries support for dietpe in rabin
+
+
+changeset:   726:8f72dcbcc28e
+user:        pancake <@youterm.com>
+date:        Thu Dec 18 20:02:26 2008 +0100
+files:       src/code.c src/cons.c src/io.c src/libr/cons/cons.c src/libr/cons/strsub.c src/libr/include/r_io.h src/libr/io/io.c src/libr/io/map.c src/libr/line/TODO src/libr/syscall/darwin.o src/libr/syscall/freebsd.o src/libr/syscall/linux.o src/libr/syscall/netbsd.o src/libr/syscall/syscall.o src/visual.c
+description:
+* Added grepneg with ~! into cons and libr_cons
+* Fix some signatures in r_io
+  - Added r_io_size() to return maximum size for a fd
+* Added 'm' and ''' chars in visual like in vim (mark and go)
+
+
+changeset:   725:102292b65b84
+user:        pancake <@youterm.com>
+date:        Thu Dec 18 17:28:24 2008 +0100
+files:       src/libr/Makefile src/libr/cons/cons.c src/libr/hash/Makefile src/libr/hash/t/Makefile src/libr/hash/t/hello.c src/libr/include/r_io.h src/libr/include/r_search.h src/libr/include/r_socket.h src/libr/include/r_syscall.h src/libr/include/r_types.h src/libr/io/Makefile src/libr/io/io.c src/libr/io/map.c src/libr/rules.mk src/libr/search/Makefile src/libr/search/search.c src/libr/socket/socket.c src/libr/syscall/darwin.c src/libr/syscall/freebsd.c src/libr/syscall/linux.c src/libr/syscall/netbsd.c src/libr/syscall/syscall.c src/radare.c
+description:
+* Create default ~/.radarerc if does not exists
+  - Thanks jfv for the tip :)
+* Some build fixups on libr
+  - Added some missing include files
+  - Added test for r_hash using r_io
+  - Use -Wall by default
+  - Fix build for r_cons
+* Initial dummy r_search interface (not yet implemented)
+* Some redesign for r_syscall
+
+
+changeset:   724:dd11208a4978
+user:        pancake <youterm.com>
+date:        Thu Dec 18 11:14:02 2008 +0100
+files:       src/libr/Makefile src/libr/config.mk src/libr/io_plugins/README src/libr/rules.mk src/libr/socket/Makefile src/libr/socket/socket.c src/libr/syscall/syscall.o src/libr/tests.mk
+description:
+* Added r_socket and r_io_plugins
+* Dummy config.mk for libr
+
+changeset:   721:a492cfcab48f
+user:        nibble
+date:        Wed Dec 17 14:00:57 2008 +0100
+files:       src/libr/bin/bin.c src/libr/bin/elf.c src/libr/bin/pe.c src/libr/bin/t/scn_resize.c src/libr/include/r_bin.h src/libr/include/r_bin_elf.h src/libr/include/r_bin_pe.h
+description:
+* r_bin
+  - Adds get_section_rva, useful for PE bins
+* r_bin_elf, r_bin_pe
+  - Fixes minor bugs
+  - Minor refactoring
+
+changeset:   720:73c29d2c53e0
+user:        pancake <@youterm.com>
+date:        Wed Dec 17 12:49:02 2008 +0100
+files:       doc/xtra/vmware-gdbwrap src/config.c src/dbg/system.c src/libr/bin/bin.c src/libr/bin/elf.c src/libr/bin/pe.c src/main.c src/radare.c
+description:
+* Added bouncer helper script for vmware debugging
+* Added cfg.debug (can be changed in runtime :D)
+  - The -d flag is now just setting cfg.debug to true
+  - Any IO layer can be manually defined to be a debug
+* Syntax and indent fixups for libr.bin
+  - Some minor cleanup and added few tips
+
+
+changeset:   719:4d7b78dc02ae
+user:        nibble
+date:        Wed Dec 17 03:23:50 2008 +0100
+files:       src/libr/bin/bin.c src/libr/bin/elf.c src/libr/bin/t/Makefile src/libr/bin/t/info.c src/libr/bin/t/scn_resize.c src/libr/include/r_bin.h src/libr/include/r_bin_elf.h
+description:
+* r_bin
+  - Adds get_section_size and get_section_offset
+  - Adds "class" in r_bin_info
+  - Dummy section resizing example using libr_bin
+* r_bin_elf
+  - Minor refactoring
+
+
+changeset:   718:9e7b0d94efbc
+user:        nibble
+date:        Wed Dec 17 01:10:30 2008 +0100
+files:       src/libr/bin/bin.c src/libr/bin/pe.c src/libr/bin/t/Makefile src/libr/bin/t/info.c src/libr/bin/t/sections.c src/libr/include/r_bin.h src/libr/include/r_bin_pe.h
+description:
+* libr_bin
+  - Add get_info function
+  - Add examples
+
+changeset:   706:4954519ffc86
+user:        pancake <youterm.com>
+date:        Mon Dec 08 04:34:51 2008 +0100
+files:       src/libr/Makefile src/libr/syscall/Makefile src/libr/syscall/TODO src/libr/syscall/darwin.c src/libr/syscall/darwin.o src/libr/syscall/freebsd.c src/libr/syscall/freebsd.o src/libr/syscall/linux.c src/libr/syscall/linux.o src/libr/syscall/netbsd.c src/libr/syscall/netbsd.o src/libr/syscall/syscall.c src/libr/syscall/syscall.o src/libr/syscall/t/Makefile src/libr/syscall/t/hello.c
+description:
+* Initial import of libr.syscall
+  - Stable api for getting information from
+    syscall numbers and strings
+  - Should be used from the core and the debugger
+  - Added test program
+
+changeset:   699:649c89c9109e
+user:        pancake <@youterm.com>
+date:        Thu Dec 04 16:22:38 2008 +0100
+files:       src/cmds.c src/config.c src/cons.c src/libr/cons/cons.c src/rio.c src/undo.c
+description:
+* Initial implementation of 'wm'
+  - Binary write mask (f.ex: wm ff00ff)
+* Added file.undowrite toggle to disable undos
+* Merged grepcounter into libr.cons
+
+changeset:   697:aa11fbcb3f63
+user:        nibble
+date:        Thu Dec 04 01:39:25 2008 +0100
+files:       src/libr/bin/elf.c
+description:
+* r_bin_elf
+  - fix r_bin_elf_get_symbols
+
+changeset:   692:2e9fdc583d27
+user:        pancake <@youterm.com>
+date:        Tue Dec 02 19:59:47 2008 +0100
+files:       src/cmds.c src/config.c src/dbg/arch/i386.c
+description:
+* Added 'dbg.btlast' to avoid ultra-large backtraces
+* Use graph.depth only for 'ac', not for a*
+
+
+changeset:   691:48d476760ad7
+user:        pancake <@youterm.com>
+date:        Mon Dec 01 19:46:14 2008 +0100
+files:       src/hist.c src/libr/cons/Makefile src/libr/cons/cons.c src/libr/cons/strsub.c src/libr/cons/t/hello.c src/libr/include/r_cons.h src/libr/include/r_line.h src/libr/line/Makefile src/libr/line/TODO src/libr/line/dietline.c src/libr/line/dietline.h src/libr/line/t/Makefile src/libr/line/t/hello.c src/libr/rules.mk src/libr/tests.mk src/objects.mk src/ranges.c src/ranges.h src/utils.c src/wscript_build
+description:
+* Remove unused/deprecated hist.c
+* Fix ignored error for libr
+* Initial working implementation of r_cons and r_line
+  - Added hello world examples for both
+  - r_line depends on r_cons
+  - r_cons is independent
+  - We need to optionally link against readline
+* Some minor fixups for ar command
+  - arm -> merge ranges
+  - fixups for ranges_sub
+  - str_grep is now handling '*' endchar
+
+
+changeset:   690:e8211d1a6dc8
+user:        nibble
+date:        Mon Dec 01 13:16:36 2008 +0100
+files:       src/libr/bin/Makefile src/libr/bin/bin.c src/libr/bin/dietelf.c src/libr/bin/dietelf64.c src/libr/bin/dietpe.c src/libr/bin/elf.c src/libr/bin/elf64.c src/libr/bin/pe.c src/libr/bin/t/sections.c src/libr/include/r_bin.h src/libr/include/r_bin_dietelf.h src/libr/include/r_bin_dietelf64.h src/libr/include/r_bin_dietelf_static.h src/libr/include/r_bin_dietelf_types.h src/libr/include/r_bin_dietpe.h src/libr/include/r_bin_dietpe_static.h src/libr/include/r_bin_dietpe_types.h src/libr/include/r_bin_elf.h src/libr/include/r_bin_elf64.h src/libr/include/r_bin_elf_specs.h src/libr/include/r_bin_pe.h src/libr/include/r_bin_pe_specs.h src/libr/rules.mk
+description:
+* r_bin
+  - r_bin_dietelf -> r_bin_elf
+  - r_bin_dietpe -> r_bin_pe
+  - merge headers
+* libr
+  - fix .a generation
+
+changeset:   689:af97306bf150
+user:        pancake <@youterm.com>
+date:        Mon Dec 01 11:08:31 2008 +0100
+files:       src/libr/Makefile src/libr/bin/Makefile src/libr/bin/bin.c src/libr/bin/dietelf.c src/libr/bin/dietelf64.c src/libr/bin/dietpe.c src/libr/bin/t/Makefile src/libr/bin/t/baddr.c src/libr/bin/t/entry.c src/libr/bin/t/imports.c src/libr/bin/t/sections.c src/libr/bin/t/symbols.c src/libr/include/r.h src/libr/include/r_bin.h src/libr/include/r_bin_dietelf.h src/libr/include/r_bin_dietelf64.h src/libr/include/r_bin_dietelf_static.h src/libr/include/r_bin_dietelf_types.h src/libr/include/r_bin_dietpe.h src/libr/include/r_bin_dietpe_static.h src/libr/include/r_bin_dietpe_types.h src/libr/include/r_bin_elf.h src/libr/include/r_bin_pe.h
+description:
+* Import r_bin library patch from Nibble
+  - Mostly working implementation for ELF32/64 and PE
+  - Added some usage examples
+
+changeset:   670:9d055a107f4f
+user:        pancake <youterm.com>
+date:        Tue Nov 25 10:59:55 2008 +0100
+files:       src/cons.c src/cons.h src/libr/cons/TODO src/libr/cons/cons.c src/libr/cons/t/Makefile src/libr/cons/t/hello.c src/libr/include/r_cons.h src/libr/include/r_util.h src/libr/rules.mk src/libr/tests.mk src/libr/util/Makefile src/libr/util/mem.c src/libr/util/num.c src/libr/util/str.c src/libr/util/string.c src/macros.c src/radare.c
+description:
+* r_cons initial build
+  - Some more refactoring needed
+  - Depends on libr_util
+* Add tests.mk to ease tests build
+* Fix build for libr_util
+* Use ',' as separator for oneliner macros
+  - Fix infinite loop bug in macros_add when replacing a macro
+
+changeset:   668:59151080af34
+user:        pancake <youterm.com>
+date:        Tue Nov 25 03:39:42 2008 +0100
+files:       src/code.h src/config.c src/cons.c src/cons.h src/visual.c
+description:
+* Major refactoring and optimizations for cons.c
+  - Prepared to be moved into libr!
+  - Externalize config_ stuff to avoid excessive linkedlist abuse
+  - Make cons_print_real work with buffer_len
+  - Remove strcat! use hand-made memcpy version (speed++)
+  - Recicle vsnprintf return values to get length
+  - More optimal management of console buffer allocation
+  - Avoid strlen as much as possible
+  - Remove noisy code
+* Fix scrseek to _always_ seek to scr.seek
+
+changeset:   629:ff0ba4b31d2c
+user:        pancake <youterm.com>
+date:        Sat Nov 15 15:49:16 2008 +0100
+files:       src/libr/Makefile src/libr/include/r_lib.h src/libr/lib/Makefile src/libr/lib/lib.c src/libr/rules.mk
+description:
+* Initial import of libr_lib for portable dynlib support
+
+
+changeset:   628:13a23cec2a23
+user:        pancake <youterm.com>
+date:        Sat Nov 15 15:06:42 2008 +0100
+files:       src/libr/include/r_io.h src/libr/include/r_types.h src/libr/io/handle.c src/libr/io/io.c src/libr/io/map.c src/libr/io/t/Makefile src/libr/io/t/cat.c src/libr/rules.mk
+description:
+* Initial full implementation of libr_io
+  - Implements a full handle plugin
+  - Adds per-plugin handled file-descriptor list
+  - Adds cache for plugins use
+  - Add test example program ('cat' using r_io)
+  - Cache last seek information
+  - Build libs using -fPIC to avoid data relocations
+
+
+changeset:   627:6ca6bc467e85
+user:        pancake <@youterm.com>
+date:        Fri Nov 14 19:28:43 2008 +0100
+files:       src/cmds.c src/libr/hash/rahash.c src/libr/hash/sha1.c
+description:
+* Add 'wt' dummy command
+* Some indent for libr_hash
+
+
+changeset:   626:da1f0c2f2a74
+user:        pancake <@youterm.com>
+date:        Fri Nov 14 16:18:53 2008 +0100
+files:       src/dbg/close.c src/libr/Makefile src/libr/include/list.h src/libr/include/r.h src/libr/include/r_io.h src/libr/include/r_util.h src/libr/io/Makefile src/libr/io/handle.c src/libr/io/io.c src/libr/io/map.c src/libr/line/dietline.c src/libr/util/Makefile src/libr/util/mem.c src/libr/util/num.c src/libr/util/string.c src/plugin.c src/print.c src/utils.c
+description:
+* Initial import of libr_util
+* Some more work on libr
+
+
+changeset:   625:9a82e506b5b1
+user:        pancake <@youterm.com>
+date:        Fri Nov 14 12:30:01 2008 +0100
+files:       TODO src/code.c src/libr/Makefile src/libr/README src/libr/cons/Makefile src/libr/cons/cons.c src/libr/hash/Makefile src/libr/hash/crc16.c src/libr/hash/crc32.c src/libr/hash/crc32.h src/libr/hash/crca.c src/libr/hash/entropy.c src/libr/hash/hamdist.c src/libr/hash/hash.c src/libr/hash/hash.h src/libr/hash/md4.c src/libr/hash/md5.h src/libr/hash/md5c.c src/libr/hash/rahash.c src/libr/hash/sha1.c src/libr/hash/sha1.h src/libr/hash/sha2.c src/libr/hash/sha2.h src/libr/include/r_cons.h src/libr/include/r_hash.h src/libr/include/r_io.h src/libr/include/r_print.h src/libr/include/r_types.h src/libr/io/Makefile src/libr/io/handle.c src/libr/io/io.c src/libr/line/Makefile src/libr/line/TODO src/libr/line/dietline.c src/libr/line/dietline.h src/libr/print/Makefile src/libr/print/print.c src/libr/rules.mk src/main.h src/print.c src/rabin/dietmach0.c src/rabin/dietpe.c src/rahash/md5c.c src/visual.c
+description:
+* Initial import of libr
+  - libr is composed by multiple sublibs
+  - libr_hash fully implemented
+  * io, hash, line, print, asm...
+* Some syntax fixups for dietmach0 and dietpe
+* Oops for px % (15 -> 16)

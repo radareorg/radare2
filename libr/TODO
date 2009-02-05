@@ -1,0 +1,79 @@
+
+ ____  ___ ____  ___ ____  ___  ______   ____
+|  _ \/   \'   \/   \  _ \/ _ \ \__   | /    \
+|    <  V  . T  . V      <   _/ .--'_/ |  ()  |
+|_|\__|_|__|___/|_|_|_|\__\___/ |_____(_)____/
+
+----------------------------------------[ todo 
+
+|| asm || 
+---------
+  - Add support for more architectures
+  - Add lua disassembler
+  - Add java, dalvik, xtensa achiecture (mm cpu)
+  - http://git.linux-xtensa.org/cgi-bin/git.cgi?p=buildroot/buildroot-xtensa;a=blob;f=toolchain/binutils/binutils-xtensa_dc232b.tgz;h=214164399158c540a3033e52b3bb9f65c55289af;hb=HEAD
+  - Vala API should not use State
+  - Fix cpp issues
+  - Fix endianess issues
+
+|| anal ||  **MISSING**
+----------
+  - define api, write vapi, integrate in core, etc..
+
+|| bin || 
+---------
+  - No Vala api yet
+  - Add support for PE64, mach0 and java class
+  - Add dex format support (android)
+
+|| cmd ||
+---------
+  - long commands not yet tested at all
+  - added interface to export command list into an autocompletable
+    argc, argv for dietline
+
+|| line ||
+----------
+  - make it work with state like teh rest
+  - add support for readline callbacks
+
+|| config ||
+------------
+  - missing default callback for int assign
+
+|| cons ||
+----------
+  - add pipe_to_buffer..not only file descriptors
+  - major cleanup
+  - split in multiple files
+  - get_real_columns() should be renamed to get_columns()
+
+|| flags ||
+-----------
+  - Define a way to iterate flags from vala
+  - We probably need more methods
+
+|| hash ||
+----------
+  - Drop State() ?
+
+|| diff ||
+----------
+  - Needs to fix the delta diffing algorithm
+  - Reimplement delta diffing in C
+
+|| sign ||
+----------
+  - Define attributes and weights
+  - Decide collissions based on these patterns
+
+|| meta || **MISSING**
+----------
+
+|| lib ||
+---------
+  - Cleanup and test w32/osx support
+
+|| debug ||
+-----------
+  - define plugin extensions (use vm from here)

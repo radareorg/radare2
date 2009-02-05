@@ -1,0 +1,4 @@
+* Optionally link against libreadline
+* Remove all label-related stuff
+* Make dietline fully compatible with readline
+* Define API outside as r_line_... in ../include/
