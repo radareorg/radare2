@@ -652,7 +652,7 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 		*times = len;
 	}
 	if (cmd[0]=='\0')
-		return;
+		return 0;
 
 	/* quoted / raw command */
 	if (cmd[0]=='"') {
