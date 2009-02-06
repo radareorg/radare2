@@ -22,7 +22,7 @@ int fun(const char *str, int iters)
 	int ret;
 	char *ptr;
 	if (iters == 0) return 0;
- 	ptr = r_alloca_str(str);
+ 	ptr = (char *)r_alloca_str(str);
 	ret = fun(str, iters-1);
 	return r_alloca_ret_i( ret );
 }

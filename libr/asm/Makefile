@@ -1,5 +1,7 @@
 NAME=r_asm
 OBJ=asm.o
+DEPS=r_util
+
 CFLAGS+=-Iarch/include
 # XXX
 CFLAGS+=-DLIL_ENDIAN=1

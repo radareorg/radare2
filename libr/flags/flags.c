@@ -40,9 +40,9 @@ struct r_flag_item_t *r_flag_list(struct r_flag_t *f, int rad)
 	struct list_head *pos;
 	list_for_each_prev(pos, &f->flags) {
 		struct r_flag_item_t *flag = list_entry(pos, struct r_flag_item_t, list);
-		if (rad) r_cons_printf("f %s %d @ 0x%08llx\n", flag->name,
+		if (rad) printf("f %s %d @ 0x%08llx\n", flag->name,
 			flag->size, flag->offset);
-		else r_cons_printf("0x%08llx %d %s\n",
+		else printf("0x%08llx %d %s\n",
 			flag->offset, flag->size, flag->name);
 	}
 	return NULL;

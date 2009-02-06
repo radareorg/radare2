@@ -1,7 +1,18 @@
+ifeq (${BINDEPS},)
 include ../config.mk
+else
+include ../../config.mk
+endif
 
 CFLAGS+=-DUSE_RIO=${USE_RIO}
 CFLAGS+=${CFLAGS_APPEND}
+LDFLAGS+=$(subst r_,-lr_,$(DEPS))
+LDFLAGS+=$(subst r_,-L../,$(DEPS))
+
+LDFLAGS+=$(subst r_,-lr_,$(BINDEPS))
+LDFLAGS+=$(subst r_,-L../../,$(BINDEPS))
+BOO=-Wl,-R../../
+LDFLAGS+=$(subst r_,${BOO},$(BINDEPS))
 
 # Compiler
 CC?=gcc
@@ -19,21 +30,27 @@ EXT_SO=so
 LIB=lib${NAME}
 LIBAR=${LIB}.${EXT_AR}
 LIBSO=${LIB}.${EXT_SO}
-
+# ${LIBAR}
 # Rules
-all: ${OBJ} ${LIBSO} ${LIBAR}
-	@if [ -e t/Makefile ]; then (cd t && ${MAKE} all) ; else true ; fi
-	@if [ -e plugins/Makefile ]; then (cd plugins && ${MAKE} all) ; else true ; fi
+ifneq ($(NAME),)
+all: ${LIBSO}
+	echo $(NAME)
+	@-if [ -e t/Makefile ]; then (cd t && ${MAKE} all) ; fi
+	@-if [ -e p/Makefile ]; then (cd p && ${MAKE} all) ; fi
+	@true
 
-${LIBSO}:
+${LIBSO}: ${OBJ}
 	${CC_LIB} ${LDFLAGS} ${LINK} ${OBJ}
-	@sh ../stripsyms.sh ${LIBSO} ${NAME}
+	@if [ -f "../stripsyms.sh" ]; then sh ../stripsyms.sh ${LIBSO} ${NAME} ; fi
 
-${LIBAR}:
+${LIBAR}: ${OBJ}
 	${CC_AR} ${OBJ}
 
 clean:
-	-rm -f ${LIBSO} ${LIBAR} ${OBJ} ${BIN} *.so a.out *.a
-	@if [ -e t/Makefile ]; then (cd t && ${MAKE} clean) ; else true ; fi
+	-rm -f ${LIBSO} ${LIBAR} ${OBJ} ${BIN} *.so a.out *.a *.exe
+	@if [ -e t/Makefile ]; then (cd t && ${MAKE} clean) ; fi
+	@if [ -e p/Makefile ]; then (cd p && ${MAKE} clean) ; fi
+	@true
 
 .PHONY: all clean ${LIBSO} ${LIBAR}
+endif

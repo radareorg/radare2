@@ -5,7 +5,7 @@ plugin.so:
 	gcc -Wall -o plugin.so -shared plugin.c -I../../include
 
 test-plugin:
-	gcc -Wall -o test-plugin test-plugin.c -I ../../include ../../lib/*.a -ldl
+	gcc -Wall -o test-plugin test-plugin.c -I ../../include ../../lib/*.o -ldl
 
 clean:
 	-rm -f plugin.so test-plugin

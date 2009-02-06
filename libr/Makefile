@@ -1,8 +1,8 @@
 # XXX
-PREFIX=/tmp/libr-install
+PREFIX=../prefix
 
 # Libraries
-LIBLIST=io io/p util lib lang bin macro hash line cons print config flags syscall range socket cmd asm search diff debug reg core
+LIBLIST=io util lib lang flags bin macro hash line cons line print config syscall range socket cmd asm search diff debug reg core
 
 
 # Under development
@@ -31,10 +31,11 @@ install:
 	cp -f include/* ${PREFIX}/include
 	# programs
 	@mkdir -p ${PREFIX}/bin
-	cp -f util/t/rax2 ${PREFIX}/bin
+	@for a in `find */t -perm /u+x -type f | grep 2`; \
+	do echo " $$a"; cp $$a ${PREFIX}/bin ; done
 	# test programs
 	@mkdir -p ${PREFIX}/bin-test
-	@for a in `find */t -perm /u+x -type f`; \
+	@for a in `find */t -perm /u+x -type f | grep -v 2`; \
 	do echo " $$a"; cp $$a ${PREFIX}/bin-test ; done
 	@echo libr aka radare2 has been installed in PREFIX=${PREFIX}
 

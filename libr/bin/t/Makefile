@@ -15,7 +15,8 @@ imports:
 data_resize:
 	${CC} -g -I ../../include data_resize.c ../*.o -o data_resize
 rabin2:
-	${CC} -g -I ../../include rabin2.c ../*.a ../../util/*.a ../../flags/*.a -o rabin2
+	${CC} -g -I ../../include rabin2.c -lr_bin -lr_util -lr_flags \
+	-L.. -L../..bin -L../../flags -L../../util -o rabin2
 
 clean:
 	rm -f baddr entry info sections symbols imports data_resize rabin2

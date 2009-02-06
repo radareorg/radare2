@@ -6,6 +6,11 @@
 
 ----------------------------------------[ todo 
 
+|| search ||
+------------
+  - implement r_search_xrefs
+  - configure before throw the search
+
 || asm || 
 ---------
   - Add support for more architectures

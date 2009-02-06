@@ -1,7 +1,6 @@
-all: test
+BIN=test
+OBJ=test.o
+BINDEPS=r_util r_cmd
 
-test:
-	${CC} -g -I ../../include test.c ../*.o ../../util/*.a -o test
-
-clean:
-	rm -f test test.o
+include ../../rules.mk
+include ../../tests.mk

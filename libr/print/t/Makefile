@@ -1,7 +1,6 @@
-all: hex
+BIN=hex
+OBJ=hex.o
+BINDEPS=r_cons r_util r_line r_print
 
-hex:
-	${CC} ${CFLAGS} -I ../../include hex.c ../*.o ../../cons/*.o ../../util/*.a ../../line/*.a -o hex
-
-clean:
-	rm -f hex
+include ../../rules.mk
+include ../../tests.mk

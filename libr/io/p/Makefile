@@ -1,4 +1,5 @@
 CFLAGS=-I../../include -Wall
+BINDEPS=
 
 all: ptrace.so dbg.so malloc.so
 	@true
@@ -12,7 +13,7 @@ ptrace.so: ptrace.o
 	#strip -s ptrace.so
 
 dbg.so: dbg.o
-	${CC} ${CFLAGS} -fPIC -shared -o dbg.so dbg.c -lr_io -L../../io
+	${CC} ${CFLAGS} -fPIC -shared -o dbg.so dbg.c -lr_io -L../../io -Wl,-R..
 	#strip -s ptrace.so
 
 clean:

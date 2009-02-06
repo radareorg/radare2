@@ -10,6 +10,7 @@ LIBAR=${LIB}.${EXT_AR}
 LIBSO=${LIB}.${EXT_SO}
 
 # Rules
+ifeq ($(NAME),)
 all: ${BIN}
 	@true
 
@@ -20,3 +21,4 @@ clean:
 	-rm -f ${OBJ} ${BIN}
 
 .PHONY: all clean ${BIN}
+endif
