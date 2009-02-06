@@ -1,9 +1,3 @@
-ifeq (${BINDEPS},)
-include ../config.mk
-else
-include ../../config.mk
-endif
-
 CFLAGS+=-DUSE_RIO=${USE_RIO}
 CFLAGS+=${CFLAGS_APPEND}
 LDFLAGS+=$(subst r_,-lr_,$(DEPS))
@@ -16,7 +10,7 @@ LDFLAGS+=$(subst r_,${BOO},$(BINDEPS))
 
 # Compiler
 CC?=gcc
-CFLAGS+=-I../include -fPIC
+CFLAGS+=-fPIC
 CC_LIB=${CC} -shared -o ${LIBSO}
 CC_AR=ar -r ${LIBAR}
 LINK?=
@@ -32,7 +26,10 @@ LIBAR=${LIB}.${EXT_AR}
 LIBSO=${LIB}.${EXT_SO}
 # ${LIBAR}
 # Rules
+ifeq (${BINDEPS},)
 ifneq ($(NAME),)
+include ../config.mk
+CFLAGS+=-I../include
 all: ${LIBSO}
 	echo $(NAME)
 	@-if [ -e t/Makefile ]; then (cd t && ${MAKE} all) ; fi
@@ -51,6 +48,19 @@ clean:
 	@if [ -e t/Makefile ]; then (cd t && ${MAKE} clean) ; fi
 	@if [ -e p/Makefile ]; then (cd p && ${MAKE} clean) ; fi
 	@true
-
 .PHONY: all clean ${LIBSO} ${LIBAR}
+endif
+else
+include ../../config.mk
+CFLAGS+=-I../../include
+all: ${BIN}
+	@true
+
+${BIN}: ${OBJ}
+	${CC} ${LDFLAGS} ${OBJ} -o ${BIN} ${LIBS}
+
+clean:
+	-rm -f ${OBJ} ${BIN}
+
+.PHONY: all clean ${BIN}
 endif

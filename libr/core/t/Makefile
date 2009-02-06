@@ -60,4 +60,3 @@ LIBS+=-ldl
 LIBS+=-ldl
 
 include ../../rules.mk
-include ../../tests.mk

@@ -33,6 +33,10 @@ install:
 	@mkdir -p ${PREFIX}/bin
 	@for a in `find */t -perm /u+x -type f | grep 2`; \
 	do echo " $$a"; cp $$a ${PREFIX}/bin ; done
+	# plugins
+	@mkdir -p ${PREFIX}/plugins
+	@for a in `find */p -perm /u+x -type f`; \
+	do echo " $$a"; cp $$a ${PREFIX}/plugins ; done
 	# test programs
 	@mkdir -p ${PREFIX}/bin-test
 	@for a in `find */t -perm /u+x -type f | grep -v 2`; \

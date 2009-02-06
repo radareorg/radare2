@@ -8,4 +8,3 @@ BINDEPS=r_cons r_line r_util
 #	${CC} ${LDFLAGS} ${OBJ} -o hello
 
 include ../../rules.mk
-include ../../tests.mk

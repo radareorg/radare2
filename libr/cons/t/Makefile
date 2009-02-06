@@ -4,4 +4,3 @@ BIN=hello
 #LIBS=../*.o ../../line/*.a ../../util/*.a
 
 include ../../rules.mk
-include ../../tests.mk
