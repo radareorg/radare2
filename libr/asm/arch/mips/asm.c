@@ -57,7 +57,6 @@ static int buf_fprintf(void *stream, const char *format, ...)
 int r_asm_mips_disasm(struct r_asm_t *a, u8 *buf, u64 len)
 {
 	struct disassemble_info disasm_obj;
-	int ret;
 
 	buf_global = a->buf_asm;
 	Offset = a->pc;
@@ -81,11 +80,14 @@ int r_asm_mips_disasm(struct r_asm_t *a, u8 *buf, u64 len)
 
 	a->buf_asm[0]='\0';
 	if (a->big_endian)
-		ret = print_insn_big_mips((bfd_vma)Offset, &disasm_obj);
-	else ret = print_insn_little_mips((bfd_vma)Offset, &disasm_obj);
+		a->inst_len = print_insn_big_mips((bfd_vma)Offset, &disasm_obj);
+	else a->inst_len = print_insn_little_mips((bfd_vma)Offset, &disasm_obj);
 			
-	if (ret == -1)
+	if (a->inst_len == -1)
 		strcpy(a->buf_asm, " (data)");
 
-	return ret;
+	if (a->inst_len > 0)
+		memcpy(a->buf, buf, a->inst_len);
+
+	return a->inst_len;
 }

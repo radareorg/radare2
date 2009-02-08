@@ -110,6 +110,11 @@ int r_asm_set_parser(struct r_asm_t *a,
 			a->r_asm_parse = &r_asm_x86_pseudo;
 			break;
 		} else return R_FALSE;
+	case R_ASM_PAR_AOP:
+		if (a->arch == R_ASM_ARCH_X86) {
+			a->r_asm_parse = &r_asm_x86_aop;
+			break;
+		} else return R_FALSE;
 	case R_ASM_PAR_REALLOC:
 		if (a->arch == R_ASM_ARCH_X86 && a->syntax == R_ASM_SYN_INTEL) {
 			a->r_asm_parse = &r_asm_x86_realloc;

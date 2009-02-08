@@ -8,7 +8,7 @@
 #include <r_util.h>
 #include <r_asm.h>
 
-static int r_asm_x86_aop(int argc, const char *argv[], char *newstr)
+static int r_asm_x86_replace(int argc, const char *argv[], char *newstr)
 {
 	int i,j,k;
 	struct {
@@ -117,7 +117,7 @@ int r_asm_x86_pseudo(struct r_asm_t *a)
 				nw++;
 			}
 
-			r_asm_x86_aop(nw, wa, (char*)a->aux);
+			r_asm_x86_replace(nw, wa, (char*)a->aux);
 		}
 	}
 

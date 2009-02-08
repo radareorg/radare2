@@ -3,7 +3,7 @@
 struct r_anal_t *r_anal_new()
 {
 	struct r_anal_t *a = MALLOC_STRUCT(struct r_anal_t);
-	r_asm_init(a);
+	r_anal_init(a);
 	return a;
 }
 
@@ -16,3 +16,4 @@ int r_anal_init(struct r_anal_t *a)
 {
 	return R_TRUE;
 }
+

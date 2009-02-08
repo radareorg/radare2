@@ -1,5 +1,5 @@
 OBJ=hello.o
 BIN=hello
-LIBS=../*.o
+BINDEPS=r_syscall
 
 include ../../rules.mk

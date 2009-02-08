@@ -6,7 +6,7 @@
 #include "r_types.h"
 
 enum {
-	R_ANAL_AOP_NULL = 0,
+	R_ANAL_AOP_TYPE_NULL = 0,
 	R_ANAL_AOP_TYPE_JMP,   /* mandatory jump */
 	R_ANAL_AOP_TYPE_UJMP,  /* unknown jump (register or so) */
 	R_ANAL_AOP_TYPE_CJMP,  /* conditional jump */
@@ -57,8 +57,8 @@ enum {
 
 enum {
 	R_ANAL_STACK_NULL = 0,
-	R_ANAL_STACK_NOP,       /* sub $0xc, %esp */
-	R_ANAL_STACK_INCSTACK,  /* sub $0xc, %esp */
+	R_ANAL_STACK_NOP,
+	R_ANAL_STACK_INCSTACK,
 	R_ANAL_STACK_LOCAL_GET,
 	R_ANAL_STACK_LOCAL_SET,
 	R_ANAL_STACK_ARG_GET,
@@ -78,9 +78,11 @@ struct r_anal_aop_t {
 	u64 i_dst,i_src1,i_src2; /* inmediate arguments */
 };
 
+#if 0
 struct r_anal_t {
 
 };
+#endif
 
 /* anal.c */
 struct r_anal_t *r_anal_new();

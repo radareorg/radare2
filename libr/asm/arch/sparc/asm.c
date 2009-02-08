@@ -58,7 +58,6 @@ static int buf_fprintf(void *stream, const char *format, ...)
 int r_asm_sparc_disasm(struct r_asm_t *a, u8 *buf, u64 len)
 {
 	struct disassemble_info disasm_obj;
-	int ret;
 
 	buf_global = a->buf_asm;
 	Offset = a->pc;
@@ -78,10 +77,13 @@ int r_asm_sparc_disasm(struct r_asm_t *a, u8 *buf, u64 len)
 	disasm_obj.stream = stdout;
 
 	a->buf_asm[0]='\0';
-	ret = print_insn_sparc((bfd_vma)Offset, &disasm_obj);
+	a->inst_len = print_insn_sparc((bfd_vma)Offset, &disasm_obj);
 
-	if (ret == -1)
+	if (a->inst_len == -1)
 		strcpy(a->buf_asm, " (data)");
 
-	return ret;
+	if (a->inst_len > 0)
+		memcpy(a->buf, buf, a->inst_len);
+
+	return a->inst_len;
 }

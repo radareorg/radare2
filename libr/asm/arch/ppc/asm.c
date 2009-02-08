@@ -26,6 +26,7 @@ int r_asm_ppc_disasm(struct r_asm_t *a, u8 *buf, u64 len)
 	PPC_Disassemble(&dp, a->big_endian);
 	r_hex_bin2str((u8*)bof, 4, a->buf_hex);
 	sprintf(a->buf_asm, "%s %s", opcode, operands);
+	memcpy(a->buf, buf, 4);
 
 	return 4;
 }
