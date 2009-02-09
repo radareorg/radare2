@@ -10,6 +10,7 @@
 #include "r_line.h"
 #include "r_print.h"
 #include "r_macro.h"
+#include "r_search.h"
 #include "r_debug.h"
 #include "r_flags.h"
 #include "r_config.h"
@@ -43,8 +44,9 @@ struct r_core_t {
 	struct r_lang_t lang;
 	struct r_debug_t dbg;
 	struct r_flag_t flags;
-	struct r_config_t config;
 	struct r_macro_t macro;
+	struct r_config_t config;
+	struct r_search_t *search;
 };
 
 int r_core_init(struct r_core_t *core);
@@ -60,9 +62,11 @@ int r_core_seek(struct r_core_t *core, u64 addr);
 int r_core_block_read(struct r_core_t *core, int next);
 int r_core_block_size(struct r_core_t *core, u32 bsize);
 int r_core_cmd_init(struct r_core_t *core);
-int r_core_visual(struct r_core_t *core);
+int r_core_visual(struct r_core_t *core, const char *input);
+int r_core_visual_cmd(struct r_core_t *core, int ch);
 
 struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int mode);
+int r_core_file_close(struct r_core_t *r, struct r_core_file_t *fh);
 
 int r_core_write_at(struct r_core_t *core, u64 addr, const u8 *buf, int size);
 

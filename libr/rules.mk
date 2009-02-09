@@ -43,6 +43,9 @@ ${LIBSO}: ${OBJ}
 ${LIBAR}: ${OBJ}
 	${CC_AR} ${OBJ}
 
+install:
+	cd .. && ${MAKE} install
+
 clean:
 	-rm -f ${LIBSO} ${LIBAR} ${OBJ} ${BIN} *.so a.out *.a *.exe
 	@if [ -e t/Makefile ]; then (cd t && ${MAKE} clean) ; fi

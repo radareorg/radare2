@@ -18,6 +18,32 @@ int r_file_exist(const char *str)
 	return R_TRUE;
 }
 
+char *r_file_path(const char *bin)
+{
+	char file[1024];
+	char *path_env = getenv("PATH");
+	char *path = NULL;
+	char *str, *ptr;
+
+	if (path_env) {
+		str = path = strdup(path_env);
+		do {
+			ptr = strchr(str, ':');
+			if (ptr) {
+				ptr[0]='\0';
+				snprintf(file, "%s/%s", str, bin);
+				if (r_file_exist(file)) {
+					free(path);
+					return strdup(file);
+				}
+				str = ptr+1;
+			}
+		} while(ptr);
+	} else return strdup(bin);
+	free(path);
+	return strdup(bin);
+}
+
 char *r_file_slurp(const char *str, u32 *usz)
 {
         char *ret;

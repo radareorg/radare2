@@ -86,15 +86,19 @@ static int cmd_seek(void *data, const char *input)
 			r_core_seek(core, off);
 			break;
 		case '+':
-			r_core_seek(core, core->seek + off);
+			if (input[1]=='+') r_core_seek(core, core->seek + core->blocksize);
+			else r_core_seek(core, core->seek + off);
 			break;
 		case '-':
-			r_core_seek(core, core->seek - off);
+			if (input[1]=='-') r_core_seek(core, core->seek - core->blocksize);
+			else r_core_seek(core, core->seek - off);
 			break;
 		case '?':
 			fprintf(stderr,
 			"Usage: s[+-] [addr]\n"
 			" s 0x320   ; seek to this address\n"
+			" s++       ; seek blocksize bytes forward\n"
+			" s--       ; seek blocksize bytes backward\n"
 			" s+ 512    ; seek 512 bytes forward\n"
 			" s- 512    ; seek 512 bytes backward\n");
 			break;
@@ -238,9 +242,16 @@ static int cmd_print(void *data, const char *input)
 			for(idx=ret=0; idx < len; idx+=ret) {
 				r_asm_set_pc(&a, a.pc + ret);
 				ret = r_asm_disasm(&a, buf+idx, len-idx);
-				r_cons_printf("0x%08llx  %14s  %s\n", core->seek+idx, a.buf_hex, a.buf_asm);
+				r_cons_printf("0x%08llx  %14s  %s\n",
+					core->seek+idx, a.buf_hex, a.buf_asm);
 			}
 		}
+		break;
+	case 's':
+		r_print_string(core->seek, core->block, len, 1, 78, 1);
+		break;
+	case 'c':
+		r_print_code(core->seek, core->block, len, 1, 78, 1);
 		break;
 	case 'r':
 		r_print_raw(core->block, len);
@@ -252,9 +263,11 @@ static int cmd_print(void *data, const char *input)
 		r_print_bytes(core->block, len, "%02x");
 		break;
 	default:
-		fprintf(stderr, "Usage: p[8] [len]"
+		fprintf(stderr, "Usage: p[8] [len]\n"
 		" p8 [len]    8bit hexpair list of bytes\n"
 		" px [len]    hexdump of N bytes\n"
+		" pc [len]    output C format\n"
+		" ps [len]    print string\n"
 		" pd [len]    disassemble N bytes\n"
 		" pr [len]    print N raw bytes\n");
 		break;
@@ -482,10 +495,68 @@ static int cmd_write(void *data, const char *input)
 	return 0;
 }
 
+static int __cb_hit(struct r_search_kw_t *kw, void *user, u64 addr)
+{
+	r_cons_printf("f hit0_%d @ 0x%08llx\n", kw->count, addr);
+	return R_TRUE;
+}
+
 static int cmd_search(void *data, const char *input)
 {
-	//struct r_core_t *core = (struct r_core_t *)data;
-	/* TODO */
+	struct r_core_t *core = (struct r_core_t *)data;
+	u64 at;
+	u32 n32;
+	int ret, dosearch = 0;
+	u8 *buf;
+	switch (input[0]) {
+	case '/':
+		r_search_initialize(core->search);
+		dosearch = 1;
+		break;
+	case 'v':
+		r_search_free(core->search);
+		core->search = r_search_new(R_SEARCH_KEYWORD);
+		n32 = r_num_math(&core->num, input+1);
+		r_search_kw_add_bin(core->search, &n32, 4, "",0);
+		r_search_initialize(core->search);
+		dosearch = 1;
+		break;
+	case ' ': /* search string */
+		r_search_free(core->search);
+		core->search = r_search_new(R_SEARCH_KEYWORD);
+		r_search_kw_add(core->search, input+1, "");
+		r_search_initialize(core->search);
+		dosearch = 1;
+		break;
+	case 'x': /* search hex */
+		r_search_free(core->search);
+		core->search = r_search_new(R_SEARCH_KEYWORD);
+		r_search_kw_add_hex(core->search, input+2, "");
+		r_search_initialize(core->search);
+		dosearch = 1;
+		break;
+	default:
+		r_cons_printf("Usage: /[x/] [arg]\n"
+		" / foo     ; search for string 'foo'\n"
+		" /x ff0033 ; search for hex string\n"
+		" //        ; repeat last search\n");
+		break;
+	}
+	if (dosearch) {
+		/* set callback */
+		/* TODO: handle last block of data */
+		/* TODO: handle ^C */
+		/* TODO: launch search in background support */
+		buf = (u8 *)malloc(core->blocksize);
+		r_search_set_callback(core->search, &__cb_hit, &core);
+		for(at = core->seek; at < core->file->size; at += core->blocksize) {
+			r_io_lseek(&core->io, core->file->fd, at, R_IO_SEEK_SET);
+			ret = r_io_read(&core->io, core->file->fd, buf, core->blocksize);
+			if (ret != core->blocksize)
+				break;
+			r_search_update(core->search, &at, buf, ret);
+		}
+	}
 	return R_TRUE;
 }
 
@@ -567,7 +638,7 @@ static int cmd_hash(void *data, const char *input)
 static int cmd_visual(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
-	r_core_visual(core);
+	r_core_visual(core, input);
 	return 0;
 }
 

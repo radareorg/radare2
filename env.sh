@@ -1,7 +1,7 @@
 #!/bin/sh
 
 new_env='
-LIBR_PLUGINS=$PATH:$PWD/prefix/lib/radare2
+LIBR_PLUGINS=$PWD/prefix/lib/radare2
 PATH=$PATH:$PWD/prefix/bin
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/prefix/lib
 '

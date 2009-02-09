@@ -34,9 +34,9 @@ install:
 	@for a in `find */t -perm /u+x -type f | grep 2`; \
 	do echo " $$a"; cp $$a ${PREFIX}/bin ; done
 	# plugins
-	@mkdir -p ${PREFIX}/plugins
+	@mkdir -p ${PREFIX}/lib/radare2
 	@for a in `find */p -perm /u+x -type f`; \
-	do echo " $$a"; cp $$a ${PREFIX}/plugins ; done
+	do echo " $$a"; cp $$a ${PREFIX}/lib/radare2 ; done
 	# test programs
 	@mkdir -p ${PREFIX}/bin-test
 	@for a in `find */t -perm /u+x -type f | grep -v 2`; \

@@ -108,8 +108,10 @@ int r_cons_readchar()
 		return -1;
 	SetConsoleMode(h, mode);
 #else
+	r_cons_set_raw(1);
 	if (read(0, buf, 1)==-1)
 		return -1;
+	r_cons_set_raw(0);
 #endif
 	return buf[0];
 }

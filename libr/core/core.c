@@ -76,6 +76,7 @@ int r_core_init(struct r_core_t *core)
 	core->num.userptr = core;
 	r_lang_init(&core->lang);
 	r_cons_init();
+	core->search = r_search_new(R_SEARCH_KEYWORD);
 	r_io_init(&core->io);
 	r_macro_init(&core->macro);
 	core->macro.num = &core->num;

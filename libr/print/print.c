@@ -12,6 +12,8 @@ void r_print_set_flags(int _flags)
 	flags = _flags;
 }
 
+int r_print_cursor = 0;
+
 void r_print_addr(u64 addr)
 {
 	//config_get_i("cfg.addrmod");
@@ -22,6 +24,39 @@ void r_print_addr(u64 addr)
 		r_cons_printf("%s0x%08llx"C_RESET"%c ",
 			r_cons_palette[PAL_ADDRESS], addr, ch);
 	} else r_cons_printf("0x%08llx%c ", addr, ch);
+}
+
+void r_print_byte(int idx, u8 ch)
+{
+	if (flags & R_PRINT_FLAGS_CURSOR && idx == r_print_cursor)
+		r_cons_printf("[%c]", ch);
+	else r_cons_printf("%c", ch);
+}
+
+void r_print_code(u64 addr, u8 *buf, int len, int step, int columns, int header)
+{
+	int i, w = 0;
+	r_cons_printf("#define _BUFFER_SIZE %d\n", len);
+	r_cons_printf("unsigned char buffer[%d] = {", len);
+	for(i=0;i<len;i++) {
+		if (!(w%columns)) {
+			r_cons_printf("\n  ");
+		}
+		r_cons_printf("0x%02x, ", buf[i]);
+		w+=6;
+	}
+	r_cons_printf("}\n");
+}
+
+void r_print_string(u64 addr, u8 *buf, int len, int step, int columns, int header)
+{
+	int i;
+	for(i=0;i<len;i++) {
+		if (IS_PRINTABLE(buf[i]))
+			r_cons_printf("%c", buf[i]);
+		else r_cons_printf("\\x%02x", buf[i]);
+	}
+	r_cons_newline();
 }
 
 static const char hex[16] = "0123456789ABCDEF";

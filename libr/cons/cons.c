@@ -105,9 +105,8 @@ void r_cons_gotoxy(int x, int y)
 
 void r_cons_clear00()
 {
-	r_cons_lines = 0;
 	r_cons_clear();
-	r_cons_gotoxy(0,0);
+	r_cons_gotoxy(0, 0);
 }
 
 void r_cons_clear()
@@ -137,13 +136,13 @@ void r_cons_reset()
 	if (r_cons_buffer)
 		r_cons_buffer[0] = '\0';
 	r_cons_buffer_len = 0;
+	r_cons_lines = 0;
 }
 
 const char *r_cons_get_buffer()
 {
 	return r_cons_buffer;
 }
-
 
 void r_cons_grep(const char *str)
 {

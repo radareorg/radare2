@@ -57,12 +57,15 @@ const char *r_cons_color_names[CONS_COLORS_SIZE+1] = {
 	NULL
 };
 
-void r_cons_invert(int set)
+void r_cons_invert(int set, int color)
 {
-  if (set)
-    r_cons_strcat("\x1b[7m");
-  else
-    r_cons_strcat("\x1b[0m");
+	if (color) {
+		if (set) r_cons_strcat("\x1b[7m");
+		else r_cons_strcat("\x1b[0m");
+	} else {
+		if (set) r_cons_strcat("[");
+		else r_cons_strcat("]");
+	}
 }
 
 const char *r_cons_colors[CONS_COLORS_SIZE+1] = {

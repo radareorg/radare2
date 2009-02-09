@@ -28,6 +28,7 @@ struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int
 		fh->filename = p+3;
 	fh->rwx = mode;
 	r->file = fh;
+	fh->size = r_io_size(&r->io, fd);
 	r_core_block_read(r, 0);
 	list_add(&(fh->list), &r->files);
 	return fh;
