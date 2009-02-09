@@ -1,0 +1,8 @@
+* Specify binmask in hexpairs
+  - wx 1234:ff0f
+  - /x 1234:ff0f
+* radare2 -e dbg.engine=vm -d ls
+  - resolve path for ls
+  - load the program using r_bin in virtual space
+  - initialize vm and set regs
+  - debug backend should use the vm

@@ -132,4 +132,7 @@ extern char r_cons_palette[CONS_PALETTE_SIZE][8];
 const char *r_cons_get_buffer();
 void r_cons_grep(const char *str);
 
+void r_cons_invert(int set, int color);
+
+
 #endif

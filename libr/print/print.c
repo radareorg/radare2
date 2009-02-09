@@ -12,7 +12,34 @@ void r_print_set_flags(int _flags)
 	flags = _flags;
 }
 
-int r_print_cursor = 0;
+static int r_print_cur_enabled = 0;
+static int r_print_cur = -1;
+static int r_print_ocur = -1;
+
+void r_print_set_cursor(int enable, int ocursor, int cursor)
+{
+	r_print_cur_enabled = enable;
+	//if (ocursor<0) ocursor=0;
+	r_print_ocur = ocursor;
+	if (cursor<0) cursor=0;
+	r_print_cur = cursor;
+}
+
+void r_print_cursor(int cur, int set)
+{
+	if (!r_print_cur_enabled)
+		return;
+	if (r_print_ocur == -1) {
+		if (cur==r_print_cur)
+			r_cons_invert(set, flags&R_PRINT_FLAGS_COLOR);
+	} else {
+		int from = r_print_ocur;
+		int to = r_print_cur;
+		r_num_minmax_swap_i(&from, &to);
+		if (cur>=from&&cur<=to)
+			r_cons_invert(set, flags&R_PRINT_FLAGS_COLOR);
+	}
+}
 
 void r_print_addr(u64 addr)
 {
@@ -28,9 +55,9 @@ void r_print_addr(u64 addr)
 
 void r_print_byte(int idx, u8 ch)
 {
-	if (flags & R_PRINT_FLAGS_CURSOR && idx == r_print_cursor)
-		r_cons_printf("[%c]", ch);
-	else r_cons_printf("%c", ch);
+//	if (flags & R_PRINT_FLAGS_CURSOR && idx == r_print_cur)
+		r_cons_printf("%c", ch);
+//	else r_cons_printf("%c", ch);
 }
 
 void r_print_code(u64 addr, u8 *buf, int len, int step, int columns, int header)
@@ -39,22 +66,25 @@ void r_print_code(u64 addr, u8 *buf, int len, int step, int columns, int header)
 	r_cons_printf("#define _BUFFER_SIZE %d\n", len);
 	r_cons_printf("unsigned char buffer[%d] = {", len);
 	for(i=0;i<len;i++) {
-		if (!(w%columns)) {
+		if (!(w%columns))
 			r_cons_printf("\n  ");
-		}
+		r_print_cursor(i, 1);
 		r_cons_printf("0x%02x, ", buf[i]);
+		r_print_cursor(i, 0);
 		w+=6;
 	}
-	r_cons_printf("}\n");
+	r_cons_printf("};\n");
 }
 
 void r_print_string(u64 addr, u8 *buf, int len, int step, int columns, int header)
 {
 	int i;
 	for(i=0;i<len;i++) {
+		r_print_cursor(i, 1);
 		if (IS_PRINTABLE(buf[i]))
 			r_cons_printf("%c", buf[i]);
 		else r_cons_printf("\\x%02x", buf[i]);
+		r_print_cursor(i, 0);
 	}
 	r_cons_newline();
 }
@@ -91,7 +121,9 @@ void r_print_hexdump(u64 addr, u8 *buf, int len, int step, int columns, int head
 				if (j%2) r_cons_printf(" ");
 				continue;
 			}
+			r_print_cursor(j, 1);
 			r_cons_printf("%02x", (u8)buf[j]);
+			r_print_cursor(j, 0);
 			//print_color_byte_i(j, "%02x", (unsigned char)buf[j]);
 			if (j%2) r_cons_strcat(" ");
 		}
@@ -99,9 +131,13 @@ void r_print_hexdump(u64 addr, u8 *buf, int len, int step, int columns, int head
 		for(j=i; j<i+inc; j++) {
 			if (j >= len)
 				r_cons_strcat(" ");
-			else r_cons_printf("%c",
+			else {
+				r_print_cursor(j, 1);
+				r_cons_printf("%c",
 				(IS_PRINTABLE(buf[j]))?
 					buf[j] : '.');
+				r_print_cursor(j, 0);
+			}
 		}
 		r_cons_newline();
 		addr+=inc;

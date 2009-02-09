@@ -35,6 +35,7 @@ struct r_debug_t {
 int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
 int r_debug_handle_set(struct r_debug_t *dbg, const char *str);
 int r_debug_handle_init(struct r_debug_t *dbg);
+int r_debug_init(struct r_debug_t *dbg);
 
 int r_debug_continue(struct r_debug_t *dbg);
 

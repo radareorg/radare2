@@ -38,6 +38,7 @@ int r_search_set_mode(struct r_search_t *s, int mode)
 	case R_SEARCH_REGEXP:
 	case R_SEARCH_PATTERN:
 	case R_SEARCH_STRING:
+	case R_SEARCH_XREFS:
 	case R_SEARCH_AES:
 		s->mode = mode;
 		ret = 1;
@@ -127,6 +128,9 @@ int r_search_update(struct r_search_t *s, u64 *from, const u8 *buf, u32 len)
 	switch(s->mode) {
 	case R_SEARCH_KEYWORD:
 		r_search_mybinparse_update(s, *from, buf, len);
+		break;
+	case R_SEARCH_XREFS:
+		//r_search_xrefs_update(s, *from, buf, len);
 		break;
 	case R_SEARCH_REGEXP:
 		break;

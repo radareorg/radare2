@@ -32,6 +32,15 @@ void r_num_minmax_swap(u64 *a, u64 *b)
 	}
 }
 
+void r_num_minmax_swap_i(int *a, int *b)
+{
+	if (*a>*b) {
+		u64 tmp = *a;
+		*a = *b;
+		*b = tmp;
+	}
+}
+
 void r_num_init(struct r_num_t *num)
 {
 	num->callback = NULL;
