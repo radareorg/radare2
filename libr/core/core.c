@@ -49,7 +49,7 @@ int __lib_dbg_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 {
 	struct r_debug_handle_t *hand = (struct r_debug_handle_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
-	printf(" * Added debugger handler\n");
+	//printf(" * Added debugger handler\n");
 	r_debug_handle_add(&core->dbg, hand);
 	return R_TRUE;
 }
@@ -61,7 +61,7 @@ int __lib_lng_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 {
 	struct r_debug_handle_t *hand = (struct r_debug_handle_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
-	printf(" * Added language handler\n");
+	//printf(" * Added language handler\n");
 	r_lang_add(&core->lang, hand);
 	return R_TRUE;
 }
@@ -75,6 +75,7 @@ int r_core_init(struct r_core_t *core)
 	core->num.callback = &num_callback;
 	core->num.userptr = core;
 	r_lang_init(&core->lang);
+	r_lang_set_user_ptr(&core->lang, core);
 	r_cons_init();
 	core->search = r_search_new(R_SEARCH_KEYWORD);
 	r_io_init(&core->io);
@@ -96,7 +97,7 @@ int r_core_init(struct r_core_t *core)
 		&__lib_io_cb, &__lib_io_dt, core);
 	r_lib_add_handler(&core->lib, R_LIB_TYPE_DBG, "debug plugins",
 		&__lib_dbg_cb, &__lib_dbg_dt, core);
-	r_lib_add_handler(&core->lib, R_LIB_TYPE_LNG, "language plugins",
+	r_lib_add_handler(&core->lib, R_LIB_TYPE_LANG, "language plugins",
 		&__lib_lng_cb, &__lib_lng_dt, core);
 	r_lib_opendir(&core->lib, getenv("LIBR_PLUGINS"));
 	{

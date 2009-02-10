@@ -44,7 +44,7 @@ char *r_file_path(const char *bin)
 	return strdup(bin);
 }
 
-char *r_file_slurp(const char *str, u32 *usz)
+char *r_file_slurp(const char *str, int *usz)
 {
         char *ret;
         long sz;

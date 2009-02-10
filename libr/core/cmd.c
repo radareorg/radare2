@@ -603,8 +603,15 @@ static int cmd_hash(void *data, const char *input)
 		#!lua
 		#!lua foo bar
 #endif
-		r_lang_run(&core->lang, core->oobi, core->oobi_len);
-		r_cons_printf("TODO\n");
+		if (input[1]=='\0') {
+			r_lang_list(&core->lang);
+			return R_TRUE;
+		}
+		// TODO: set argv here
+		r_lang_set(&core->lang, input+1);
+		if (core->oobi)
+			r_lang_run(&core->lang, core->oobi, core->oobi_len);
+		else r_lang_prompt(&core->lang, core->oobi, core->oobi_len);
 		return R_TRUE;
 	}
 

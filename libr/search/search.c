@@ -63,7 +63,6 @@ struct r_search_t *r_search_free(struct r_search_t *s)
 }
 
 /* control */
-
 int r_search_initialize(struct r_search_t *s)
 {
 	struct list_head *pos;

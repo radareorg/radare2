@@ -36,10 +36,10 @@ struct r_lib_struct_t {
 };
 
 enum {
-	R_LIB_TYPE_IO,  /* io layer */
-	R_LIB_TYPE_DBG, /* debugger */
-	R_LIB_TYPE_LNG, /* language */
-	R_LIB_TYPE_ASM, /* assembler */
+	R_LIB_TYPE_IO,   /* io layer */
+	R_LIB_TYPE_DBG,  /* debugger */
+	R_LIB_TYPE_LANG, /* language */
+	R_LIB_TYPE_ASM,  /* assembler */
 	//R_LIB_TYPE_DIS, /* disassembler */
 };
 

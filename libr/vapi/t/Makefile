@@ -18,6 +18,7 @@ core:
 		-lr_macro -Wl,-R../../macro -L../../macro \
 		-lr_print -Wl,-R../../print -L../../print \
 		-lr_config -Wl,-R../../config -L../../config \
+		-lr_search -Wl,-R../../search -L../../search \
 		-lr_cmd -Wl,-R../../cmd -L../../cmd \
 		-lr_hash -Wl,-R../../hash -L../../hash \
 		-g -o core
