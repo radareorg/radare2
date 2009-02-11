@@ -10,8 +10,15 @@ int r_lang_init(struct r_lang_t *lang)
 	return R_TRUE;
 }
 
+void r_lang_set_user_ptr(struct r_lang_t *lang, void *user)
+{
+	lang->user = user;
+}
+
 int r_lang_add(struct r_lang_t *lang, struct r_lang_handle_t *foo)
 {
+	if (foo->init)
+		foo->init(lang->user);
 	list_add_tail(&(foo->list), &(lang->langs));
 	return R_TRUE;
 }
@@ -37,11 +44,6 @@ int r_lang_set(struct r_lang_t *lang, const char *name)
 		}
 	}
 	return R_FALSE;
-}
-
-void r_lang_set_user_ptr(struct r_lang_t *lang, void *user)
-{
-	lang->user = user;
 }
 
 int r_lang_set_argv(struct r_lang_t *lang, int argc, char **argv)
@@ -86,7 +88,9 @@ int r_lang_prompt(struct r_lang_t *lang)
 		buf[strlen(buf)-1]='\0';
 		if (!strcmp(buf, "q"))
 			return R_TRUE;
-		r_lang_run(lang, buf, strlen(buf));
+		if (!strcmp(buf, "?"))
+			printf(lang->cur->help);
+		else r_lang_run(lang, buf, strlen(buf));
 	}
 	return R_TRUE;
 }

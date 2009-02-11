@@ -21,7 +21,7 @@ all:
 install:
 	# libraries
 	@mkdir -p ${PREFIX}/lib
-	@for a in `find * | grep -e '\.so$$'` ; do \
+	@for a in `find * | grep -e '\.so$$' | grep lib` ; do \
 	echo " $$a "; cp $$a ${PREFIX}/lib ; done
 	# object archives
 	@for a in `find * | grep -e '\.a$$'` ; do \
