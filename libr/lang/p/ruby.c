@@ -5,10 +5,10 @@
 #include "r_lang.h"
 #include "ruby.h"
 
+/* XXX: fix path */
 #define LIBDIR "/usr/lib"
 #define RUBYAPI  LIBDIR"/ruby1.8/radare.rb"
 
-/* for the basic r_core_cmd calls */
 #include "r_core.h"
 static struct r_core_t *core = NULL;
 
@@ -24,13 +24,13 @@ static VALUE radare_ruby_cmd(VALUE self, VALUE string)
 
 static int run(void *user, const char *code, int len)
 {
-	int err;
-	//"require 'irb'; $r = Radare.new(); IRB.start();", &err);
+	int err, ret = R_TRUE;
 	rb_eval_string_protect(code, &err);
 	if (err != 0) {
 		printf("error %d handled\n", err);
+		ret = R_FALSE;
 	}
-	return (err==0)?R_TRUE:R_FALSE;
+	return ret;
 }
 
 static int slurp_ruby(const char *file)
@@ -48,14 +48,15 @@ static int run_file(void *user, const char *file)
 static int init(void *user)
 {
 	VALUE rb_RadareCmd;
-	core = user;
 
 	ruby_init();
 	ruby_init_loadpath();
 
-	rb_RadareCmd = rb_define_class("Radare", rb_cObject);
+	rb_eval_string_protect("require 'irb'", &err);
+	core = user;
+	rb_RadareCmd = rb_define_class("RadareInternal", rb_cObject);
 	rb_define_method(rb_RadareCmd, "cmd", radare_ruby_cmd, 1);
-	rb_eval_string_protect("$r = Radare.new()", NULL);
+	rb_eval_string_protect("$r = RadareInternal.new()", NULL);
 
 	if (!slurp_ruby(RUBYAPI)) {
 		printf("[ruby] error loading ruby api\n");
@@ -64,21 +65,32 @@ static int init(void *user)
 	return R_TRUE;
 }
 
-static int rb_fini()
+static int prompt(void *user)
+{
+	int err;
+	rb_eval_string_protect("IRB.start();", &err);
+	if (err != 0)
+		return R_FALSE;
+	return R_TRUE;
+}
+
+static int fini(void *user)
 {
 	ruby_finalize();
 	return R_TRUE;
 }
 
-const char *help =
+static const char *help =
 	"Ruby plugin usage:\n"
+	" $r = RadareInternal.new()\n"
 	" bytes = $r.cmd(\"p8 10\");\n";
 
 static struct r_lang_handle_t r_lang_plugin_ruby = {
 	.name = "ruby",
-	.desc = "RUBY language extension",
+	.desc = "Ruby language extension",
 	.init = &init,
 	.help = &help,
+	.prompt = &prompt,
 	.run = &run,
 	.run_file = &run_file,
 	.set_argv = NULL,

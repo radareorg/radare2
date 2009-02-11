@@ -78,8 +78,14 @@ int r_lang_run_file(struct r_lang_t *lang, const char *file)
 int r_lang_prompt(struct r_lang_t *lang)
 {
 	char buf[1024];
+
 	if (lang->cur == NULL)
 		return R_FALSE;
+
+	if (lang->cur->prompt)
+		if (lang->cur->prompt(lang->user) == R_TRUE)
+			return R_TRUE;
+
 	while(1) {
 		printf("%s> ", lang->cur->name);
 		fflush(stdout);

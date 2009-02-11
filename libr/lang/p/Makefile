@@ -1,11 +1,15 @@
 CFLAGS=-I../../include -Wall
 BINDEPS=
 
-all: lua.so dummy.so ruby.so
+all: lua.so dummy.so ruby.so python.so
 	@true
 
+python.so:
+	-${CC} ${CFLAGS} -I/usr/include/python2.5 \
+	-fPIC -shared -o python.so python.c -lpython
+
 lua.so: lua.o
-	${CC} ${CFLAGS} -fPIC -shared -o lua.so lua.c -Wl,-R..
+	-${CC} ${CFLAGS} -fPIC -shared -o lua.so lua.c -Wl,-R..
 	@#strip -s lua.so
 
 ruby.so:

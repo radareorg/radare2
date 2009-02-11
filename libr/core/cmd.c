@@ -171,7 +171,7 @@ static int cmd_help(void *data, const char *input)
 		" ? [expr]         ; evaluate math expression\n"
 		" |[cmd]           ; run this command thru the io pipe (no args=list)\n"
 		" #[algo] [len]    ; calculate hash checksum of current block\n"
-		" q [ret]          ; quit r\n"
+		" q [ret]          ; quit program with a return value\n"
 		"Append '?' to any char command to get detailed help\n"
 		"");
 		break;

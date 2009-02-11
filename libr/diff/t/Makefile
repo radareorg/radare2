@@ -2,8 +2,6 @@ BINDEPS=r_diff r_util
 
 include ../../rules.mk
 
-.PHONY: clean
-
 all: test radiff2
 
 test:

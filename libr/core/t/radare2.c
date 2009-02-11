@@ -5,16 +5,25 @@
 #include <stdio.h>
 #include <getopt.h>
 
-struct r_core_t r;
+#define VERSION "0.1"
 
-int main_help(int line)
+static struct r_core_t r;
+
+static int main_help(int line)
 {
-	printf("Usage: radare2 [-dwn] [-e k=v] [file] [...]\n");
+	printf("Usage: radare2 [-dwnV] [-e k=v] [file] [...]\n");
 	if (!line) printf(
 		" -d      use 'file' as a program to debug\n"
 		" -w      open file in write mode\n"
 		" -n      do not run ~/.radarerc\n"
+		" -V      show radare2 version\n"
 		" -e k=v  evaluate config var\n");
+	return 0;
+}
+
+static int main_version()
+{
+	printf("radare2 "VERSION"\n");
 	return 0;
 }
 
@@ -30,18 +39,21 @@ int main(int argc, char **argv)
 
 	r_core_init(&r);
 
-	while((c = getopt(argc, argv, "whend"))!=-1) {
+	while((c = getopt(argc, argv, "whendV"))!=-1) {
 		switch(c) {
-		case 'h':
-			return main_help(0);
 		case 'd':
 			debug = 1;
 			break;
 		case 'e':
 			r_config_eval(&r.config, optarg);
 			break;
+		case 'h':
+			return main_help(0);
 		case 'n':
 			run_rc = 0;
+			break;
+		case 'V':
+			return main_version();
 			break;
 		case 'w':
 			perms = R_IO_RDWR;
@@ -79,14 +91,12 @@ int main(int argc, char **argv)
 		
 	} else
 	while (optind<argc) {
-		const char *file = argv[optind];
-		fh = r_core_file_open(&r, argv[optind++], perms);
+		const char *file = argv[optind++];
+		fh = r_core_file_open(&r, file, perms);
 		if (fh == NULL) {
-			fprintf(stderr,
-			"Cannot open file '%s'\n", argv[1]);
+			fprintf(stderr, "Cannot open file '%s'\n", file);
 			return 1;
 		}
-		optind++;
 	}
 
 	if (r.file == NULL) {

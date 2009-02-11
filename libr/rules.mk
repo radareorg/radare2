@@ -31,7 +31,6 @@ ifneq ($(NAME),)
 include ../config.mk
 CFLAGS+=-I../include
 all: ${LIBSO}
-	echo $(NAME)
 	@-if [ -e t/Makefile ]; then (cd t && ${MAKE} all) ; fi
 	@-if [ -e p/Makefile ]; then (cd p && ${MAKE} all) ; fi
 	@true

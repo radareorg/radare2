@@ -5,11 +5,12 @@
 #include <list.h>
 
 struct r_lang_handle_t {
-	char *name;
-	char *desc;
-	char *help;
-	int (*init)();
-	int (*fini)();
+	const char *name;
+	const char *desc;
+	const char *help;
+	int (*init)(void *user);
+	int (*fini)(void *user);
+	int (*prompt)(void *user);
 	int (*run)(void *user, const char *code, int len);
 	int (*run_file)(void *user, const char *file);
 	int (*set_argv)(void *user, int argc, char **argv);
