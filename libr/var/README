@@ -1,0 +1,9 @@
+r_vars_add()
+...
+Contains old:
+  vars.c
+  data.c
+  analyze.c  - related code var analysis (after analyze a function
+               return a list of accesses to local and lgobal vars)
+
+See tmp/ fmi

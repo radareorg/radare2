@@ -52,7 +52,7 @@ static int init(void *user)
 	ruby_init();
 	ruby_init_loadpath();
 
-	rb_eval_string_protect("require 'irb'", &err);
+	rb_eval_string_protect("require 'irb'", NULL);
 	core = user;
 	rb_RadareCmd = rb_define_class("RadareInternal", rb_cObject);
 	rb_define_method(rb_RadareCmd, "cmd", radare_ruby_cmd, 1);

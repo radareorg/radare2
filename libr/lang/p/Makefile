@@ -6,7 +6,7 @@ all: lua.so dummy.so ruby.so python.so
 
 python.so:
 	-${CC} ${CFLAGS} -I/usr/include/python2.5 \
-	-fPIC -shared -o python.so python.c -lpython
+	-fPIC -shared -o python.so python.c -lpython >/dev/null 2>&1
 
 lua.so: lua.o
 	-${CC} ${CFLAGS} -fPIC -shared -o lua.so lua.c -Wl,-R..

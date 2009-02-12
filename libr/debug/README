@@ -1,0 +1,26 @@
+r_debug
+=======
+
+  Debugger API for radare2
+
+
+We need to connect multiple pieces...
+
+debugger engine: vm, qemu, bochs, ptrace, mach, w32dbg...
+
+controlflow commands: (should be splitted in two layers)
+
+ - continue -- low level
+ - step     -- low level
+ - trace   --- high level one
+ - ...
+
+ the control flow commands depend on other stuff to decide
+ how to work..this is for example if the arch doesnt supports
+ continuation, we should provide a step based continue. The
+ same when a watchpoint is activated and the arch didnt
+ supports hardware regs for this purpose.
+
+We also need a load/store/dump/restore functions to move the
+program from one engine to another (ptrace -> qemu).. we should
+provide a way for all this operations between them.

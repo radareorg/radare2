@@ -57,6 +57,8 @@
 -----------
   - Define a way to iterate flags from vala
   - We probably need more methods
+  - support to define relations between flags
+    (flag hirearchies)
 
 || hash ||
 ----------
