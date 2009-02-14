@@ -95,7 +95,7 @@ int r_lang_prompt(struct r_lang_t *lang)
 		if (!strcmp(buf, "q"))
 			return R_TRUE;
 		if (!strcmp(buf, "?"))
-			printf(lang->cur->help);
+			printf(*lang->cur->help);
 		else r_lang_run(lang, buf, strlen(buf));
 	}
 	return R_TRUE;

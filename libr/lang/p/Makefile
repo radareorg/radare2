@@ -1,7 +1,7 @@
 CFLAGS=-I../../include -Wall
 BINDEPS=
 
-all: lua.so dummy.so ruby.so python.so
+all: lua.so dummy.so ruby.so python.so perl.so
 	@true
 
 python.so:
@@ -14,6 +14,12 @@ lua.so: lua.o
 
 ruby.so:
 	-ruby mkruby.rb
+
+perl.so:
+	-${CC} ${CFLAGS} -I/usr/lib/perl/5.10/CORE/ \
+		-fPIC -shared -o perl.so perl.c -Wl,-R.. \
+		`perl -MExtUtils::Embed -e ccopts` \
+		`perl -MExtUtils::Embed -e ldopts` -lncurses
 
 dummy.so: dummy.o
 	${CC} ${CFLAGS} -fPIC -shared -o dummy.so dummy.c -Wl,-R..

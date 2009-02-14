@@ -7,7 +7,7 @@
 struct r_lang_handle_t {
 	const char *name;
 	const char *desc;
-	const char *help;
+	const char **help;
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	int (*prompt)(void *user);
