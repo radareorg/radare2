@@ -1,6 +1,15 @@
 r_meta
 ======
 
+** Should we store traces here??..or do we have to use r_trace
+** xrefs stuff should be delegated to the flags?
+  - we can generate xrefs metadata from flags analysis
+  - we can use r_meta as 'static storage' and flags as playground.
+** data_* api should be refactored to use less functions with more
+   flexible arguments.
+** We can store multiple linked lists depending on type of data, to
+   reduce the search space.
+
 enum {
  R_META_DATA,
  R_META_CODE,
@@ -43,5 +52,3 @@ r_meta_get_range(meta, R_META_COMMENT, 0x804800, 0x8049000);
 
 // TODO: rethink argument order
 r_meta_get_closer(meta, 0x0394, R_META_STRING, R_META_GET_FORWARD);
-
-

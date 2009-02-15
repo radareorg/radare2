@@ -1,4 +1,5 @@
 * Library to handle register values for multiple architectures
+* Architecture register sets are handled as plugins?
 * Designed to be used from radare libr within the modules:
   - r_vm : to properly setup the per-architecture register configuration
   - r_debug : to get/set register values

@@ -12,6 +12,7 @@ void r_print_set_flags(int _flags)
 	flags = _flags;
 }
 
+// XXX this is not thread safe...store into r_print_t ?
 static int r_print_cur_enabled = 0;
 static int r_print_cur = -1;
 static int r_print_ocur = -1;

@@ -18,13 +18,11 @@ int r_flag_init(struct r_flag_t *f)
 	return 0;
 }
 
-
 int r_flag_set_base(struct r_flag_t *f, u64 new_base)
 {
 	f->base = new_base;
 	return 0;
 }
-
 
 const const char *r_flag_space_get(struct r_flag_t *f, int idx)
 {

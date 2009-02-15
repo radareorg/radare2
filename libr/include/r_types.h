@@ -1,6 +1,13 @@
 #ifndef _INCLUDE_R_TYPES_H_
 #define _INCLUDE_R_TYPES_H_
 
+/* provide a per-module debug-enabled feature */
+#if DEBUG_ENABLED
+#define IFDBG
+#else
+#define IFDBG //
+#endif
+
 /* basic types */
 
 #define u64 unsigned long long

@@ -3,8 +3,6 @@
 #include "r_types.h"
 #include "r_line.h"
 
-#undef RADARE_CORE
-
 /* dietline is a lighweight and portable library similar to GNU readline */
 
 #include <string.h>
@@ -378,9 +376,7 @@ char *r_line_readline(int argc, const char **argv)
 
 	r_line_buffer_idx = r_line_buffer_len = 0;
 	r_line_buffer[0]='\0';
-#if RADARE_CORE
-	r_line_echo = config.verbose;
-#endif
+	// r_line_echo = config.verbose;
 	if (r_line_disable) {
 		r_line_buffer[0]='\0';
 		fgets(r_line_buffer, R_LINE_BUFSIZE-1, stdin);
@@ -531,7 +527,6 @@ char *r_line_readline(int argc, const char **argv)
 					break;
 				}
 			}
-
 			break;
 		case 8:
 		case 127:
@@ -654,6 +649,6 @@ _end:
 		r_line_hist_list();
 		return r_line_nullstr;
 	}
-	//write(1,"\n",1);
+	IFDBG write(1,"\n",1);
 	return r_line_buffer;
 }

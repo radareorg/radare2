@@ -1,3 +1,6 @@
+#ifndef _INCLUDE_R_VAR_H_
+#define _INCLUDE_R_VAR_H_
+
 #include "r_types.h"
 #include "list.h"
 
@@ -68,3 +71,5 @@ int r_var_list(struct r_var_t *var, u64 addr, int delta);
 int r_var_anal_get(struct r_var_t *var, int type);
 void r_var_anal_reset(struct r_var_t *var);
 int r_var_anal_add(struct r_var_t *var, int type, int delta);
+
+#endif
