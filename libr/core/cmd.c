@@ -327,6 +327,37 @@ static int cmd_flag(void *data, const char *input)
 	return 0;
 }
 
+static int cmd_anal(void *data, const char *input)
+{
+	struct r_core_t *core = (struct r_core_t *)data;
+	int l, len = core->blocksize;
+	u32 tbs = core->blocksize;
+
+	if (input[0] && input[1]) {
+		l = (int) r_num_get(&core->num, input+2);
+		if (l>0) len = l;
+		if (l>tbs) {
+			r_core_block_size(core, l);
+			len = l;
+		}
+	}
+	
+	switch(input[0]) {
+	case '\0':
+		r_anal_list(&core->anal);
+		break;
+	case 'o':
+		break;
+	default:
+		fprintf(stderr, "Usage: a[o] [len]\n"
+		" ao [len]    Analyze raw bytes\n");
+		break;
+	}
+	if (tbs != core->blocksize)
+		r_core_block_size(core, tbs);
+	return 0;
+}
+
 /* TODO: simplify using r_write */
 static int cmd_write(void *data, const char *input)
 {
@@ -968,6 +999,7 @@ int r_core_cmd_init(struct r_core_t *core)
 	r_cmd_init(&core->cmd);
 	r_cmd_set_data(&core->cmd, core);
 	r_cmd_add(&core->cmd, "x",     "alias for px", &cmd_hexdump);
+	r_cmd_add(&core->cmd, "anal",  "analysis", &cmd_anal);
 	r_cmd_add(&core->cmd, "flag",  "get/set flags", &cmd_flag);
 	r_cmd_add(&core->cmd, "debug", "debugger operations", &cmd_debug);
 	r_cmd_add(&core->cmd, "info",  "get file info", &cmd_info);

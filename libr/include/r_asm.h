@@ -30,7 +30,6 @@ enum {
 enum {
 	R_ASM_PAR_NULL = 0,
 	R_ASM_PAR_PSEUDO,
-	R_ASM_PAR_AOP,
 	R_ASM_PAR_REALLOC
 };
 
@@ -73,8 +72,6 @@ int r_asm_x86_disasm(struct r_asm_t *a, u8 *buf, u64 len);
 int r_asm_x86_asm(struct r_asm_t *a, char *buf);
 /* arch/x86/pseudo.c */
 int r_asm_x86_pseudo(struct r_asm_t *a);
-/* arch/x86/aop.c */
-int r_asm_x86_aop(struct r_asm_t *a);
 /* arch/x86/realloc.c */
 struct r_asm_realloc_t {
 	u64 offset;

@@ -1,35 +1,15 @@
-/*
- * Copyright (C) 2007, 2008
- *       pancake <youterm.com>
- *       esteve <eslack.org>
- *
- * radare is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * radare is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with radare; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- *
- */
-
-/* code analysis functions */
+/* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
 
 #include <string.h>
 
 #include <r_types.h>
+#include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
 
+/* code analysis functions */
+
 /* arch_aop for x86 */
-
-
 // CMP ARG1
 // 837d0801        cmp dword [ebp+0x8], 0x1
 // SET VAR_41c
@@ -43,8 +23,9 @@
 
 // NOTE: buf should be at least 16 bytes!
 // XXX addr should be off_t for 64 love
-int r_asm_x86_aop(struct r_asm_t *a)
+static int aop(void *user)
 {
+	struct r_asm_t *a = (struct r_asm_t*)user;
 	struct r_anal_aop_t *aop = a->aux;
 	u8 *buf = a->buf;
 
@@ -420,3 +401,16 @@ int r_asm_x86_aop(struct r_asm_t *a)
 
 	return aop->length;
 }
+
+static struct r_anal_handle_t r_anal_plugin_x86 = {
+	.name = "anal_x86",
+	.desc = "X86 analysis plugin",
+	.init = NULL,
+	.fini = NULL,
+	.aop = &aop
+};
+
+struct r_lib_struct_t radare_plugin = {
+	.type = R_LIB_TYPE_ANAL,
+	.data = &r_anal_plugin_x86
+};

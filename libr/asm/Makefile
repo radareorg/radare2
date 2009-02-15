@@ -9,7 +9,6 @@ CFLAGS+=-DLIL_ENDIAN=1
 # X86
 OBJ+=arch/x86/asm.o
 OBJ+=arch/x86/pseudo.o
-OBJ+=arch/x86/aop.o
 OBJ+=arch/x86/realloc.o
 # udis86
 OBJ+=arch/x86/udis86/syn.o

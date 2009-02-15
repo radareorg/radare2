@@ -4,6 +4,22 @@
 #define _INCLUDE_R_ANAL_H_
 
 #include "r_types.h"
+#include "list.h"
+
+enum {
+	R_ANAL_ARCH_NULL = 0,
+	R_ANAL_ARCH_X86,
+	R_ANAL_ARCH_ARM,
+	R_ANAL_ARCH_PPC,
+	R_ANAL_ARCH_M68K,
+	R_ANAL_ARCH_JAVA,
+	R_ANAL_ARCH_MIPS,
+	R_ANAL_ARCH_SPARC,
+	R_ANAL_ARCH_CSR,
+	R_ANAL_ARCH_MSIL,
+	R_ANAL_ARCH_OBJD,
+	R_ANAL_ARCH_BF
+};
 
 enum {
 	R_ANAL_AOP_TYPE_NULL = 0,
@@ -65,6 +81,23 @@ enum {
 	R_ANAL_STACK_ARG_SET
 };
 
+struct r_anal_t {
+	int bits;
+	int big_endian;
+	void *user;
+	struct r_anal_handle_t *cur;
+	struct list_head anals;
+};
+
+struct r_anal_handle_t {
+	char *name;
+	char *desc;
+	int (*init)(void *user);
+	int (*fini)(void *user);
+	int (*aop)(void *user);
+	struct list_head list;
+};
+
 struct r_anal_aop_t {
 	int type;                /* type of opcode */
 	int stackop;             /* operation on stack? */
@@ -78,15 +111,14 @@ struct r_anal_aop_t {
 	u64 i_dst,i_src1,i_src2; /* inmediate arguments */
 };
 
-#if 0
-struct r_anal_t {
-
-};
-#endif
-
 /* anal.c */
-struct r_anal_t *r_anal_new();
-void r_anal_free(struct r_anal_t *a);
-int r_anal_init(struct r_anal_t *a);
+int r_anal_init(struct r_anal_t *anal);
+void r_anal_set_user_ptr(struct r_anal_t *anal, void *user);
+int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo);
+int r_anal_list(struct r_anal_t *anal);
+int r_anal_set(struct r_anal_t *anal, const char *name);
+int r_anal_aop(struct r_anal_t *anal);
+int r_anal_set_bits(struct r_anal_t *anal, int bits);
+int r_anal_set_big_endian(struct r_anal_t *anal, int boolean);
 
 #endif
