@@ -5,8 +5,15 @@ all: lua.so dummy.so ruby.so python.so perl.so
 	@true
 
 python.so:
-	-${CC} ${CFLAGS} -I/usr/include/python2.5 \
-	-fPIC -shared -o python.so python.c -lpython >/dev/null 2>&1
+	-gcc -lpython >/dev/null 2>&1 ; \
+		if [ $$? = 0 ]; then \
+		${CC} ${CFLAGS} -I/usr/include/python2.5 \
+		-fPIC -shared -o python.so python.c -lpython ; \
+		else \
+		${CC} ${CFLAGS} -I/usr/include/python2.5 \
+		-fPIC -shared -o python.so python.c \
+		-I/usr/include/python2.6/ -lpython2.6 ; \
+		fi
 
 lua.so: lua.o
 	-${CC} ${CFLAGS} -fPIC -shared -o lua.so lua.c -Wl,-R..

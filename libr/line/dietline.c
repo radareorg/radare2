@@ -649,6 +649,5 @@ _end:
 		r_line_hist_list();
 		return r_line_nullstr;
 	}
-	IFDBG write(1,"\n",1);
 	return r_line_buffer;
 }
