@@ -14,6 +14,10 @@ core:
 		-lr_bin -Wl,-R../../bin -L../../bin \
 		-lr_io -Wl,-R../../io -L../../io \
 		-lr_cons -Wl,-R../../cons -L../../cons \
+		-lr_debug -Wl,-R../../debug -L../../debug \
+		-lr_lang -Wl,-R../../lang -L../../lang \
+		-lr_line -Wl,-R../../line -L../../line \
+		-lr_lib -Wl,-R../../lib -L../../lib \
 		-lr_flags -Wl,-R../../flags -L../../flags \
 		-lr_macro -Wl,-R../../macro -L../../macro \
 		-lr_print -Wl,-R../../print -L../../print \

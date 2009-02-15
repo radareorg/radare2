@@ -63,6 +63,7 @@ struct r_search_t *r_search_free(struct r_search_t *s)
 }
 
 /* control */
+/* Rename to start(), begin() .. */
 int r_search_initialize(struct r_search_t *s)
 {
 	struct list_head *pos;
@@ -72,6 +73,15 @@ int r_search_initialize(struct r_search_t *s)
 		kw->count = 0;
 		kw->idx = 0;
 	}
+
+#if 0
+	/* TODO: compile regexpes */
+	switch(s->mode) {
+	case R_SEARCH_REGEXP:
+		break;
+	}
+#endif
+
 	return 1;
 }
 
@@ -126,12 +136,13 @@ int r_search_update(struct r_search_t *s, u64 *from, const u8 *buf, u32 len)
 	int i, ret = 0;
 	switch(s->mode) {
 	case R_SEARCH_KEYWORD:
-		r_search_mybinparse_update(s, *from, buf, len);
+		ret += r_search_mybinparse_update(s, *from, buf, len);
 		break;
 	case R_SEARCH_XREFS:
 		//r_search_xrefs_update(s, *from, buf, len);
 		break;
 	case R_SEARCH_REGEXP:
+		ret += r_search_regexp_update(s, *from, buf, len);
 		break;
 	case R_SEARCH_AES:
 		ret += r_search_aes_update(s, *from, buf, len);
@@ -160,14 +171,14 @@ int r_search_kw_add(struct r_search_t *s, const char *kw, const char *bm)
 {
 	struct r_search_kw_t *k = MALLOC_STRUCT(struct r_search_kw_t);
 	if (k == NULL)
-		return -1;
+		return R_FALSE;
 	strncpy(k->keyword, kw, sizeof(k->keyword));
 	strncpy(k->bin_keyword, kw, sizeof(k->keyword));
 	k->keyword_length = strlen(kw);
 	strncpy(k->binmask, bm, sizeof(k->binmask));
 	k->binmask_length = r_hex_str2bin(bm, k->bin_binmask);
 	list_add(&(k->list), &(s->kws));
-	return 0;
+	return R_TRUE;
 }
 
 /* hexpair string */
@@ -175,13 +186,13 @@ int r_search_kw_add_hex(struct r_search_t *s, const char *kw, const char *bm)
 {
 	struct r_search_kw_t *k = MALLOC_STRUCT(struct r_search_kw_t);
 	if (k == NULL)
-		return -1;
+		return R_FALSE;
 	strncpy(k->keyword, kw, sizeof(k->keyword));
 	k->keyword_length = r_hex_str2bin(kw, k->bin_keyword);
 	strncpy(k->binmask, bm, sizeof(k->binmask));
 	k->binmask_length = r_hex_str2bin(bm, k->bin_binmask);
 	list_add(&(k->list), &(s->kws));
-	return 0;
+	return R_TRUE;
 }
 
 /* raw bin */
@@ -189,7 +200,7 @@ int r_search_kw_add_bin(struct r_search_t *s, const u8 *kw, int kw_len, const u8
 {
 	struct r_search_kw_t *k = MALLOC_STRUCT(struct r_search_kw_t);
 	if (kw == NULL)
-		return -1;
+		return R_FALSE;
 	memcpy(k->bin_keyword, kw, kw_len);
 	k->keyword_length = kw_len;
 	memcpy(k->bin_binmask, bm, bm_len);
@@ -197,7 +208,7 @@ int r_search_kw_add_bin(struct r_search_t *s, const u8 *kw, int kw_len, const u8
 	r_hex_bin2str(kw, kw_len, k->keyword);
 	r_hex_bin2str(bm, bm_len, k->binmask);
 	list_add(&(k->list), &(s->kws));
-	return 0;
+	return R_TRUE;
 }
 
 /* show keywords */
