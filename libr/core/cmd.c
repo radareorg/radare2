@@ -362,7 +362,7 @@ static int cmd_anal(void *data, const char *input)
 				ret = r_asm_disasm(&a, buf+idx, len-idx);
 				r_cons_printf("0x%08llx  %14s  %s\n",
 					core->seek+idx, a.buf_hex, a.buf_asm);
-				r_anal_aop(&core->anal, &a, &aop);
+				r_anal_aop(&core->anal, &aop, &a);
 				r_cons_printf("JUMP: 0x%08llx\n",
 					aop.jump);
 			}

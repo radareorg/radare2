@@ -48,10 +48,10 @@ int r_anal_set(struct r_anal_t *anal, const char *name)
 	return R_FALSE;
 }
 
-int r_anal_aop(struct r_anal_t *anal, struct r_asm_t *data, struct r_anal_aop_t *aop)
+int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 { 
 	if (anal->cur && anal->cur->aop)
-		return anal->cur->aop(data, aop);
+		return anal->cur->aop(aop, data);
 	return R_FALSE;
 }
 

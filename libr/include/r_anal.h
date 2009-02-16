@@ -4,7 +4,6 @@
 #define _INCLUDE_R_ANAL_H_
 
 #include "r_types.h"
-#include "r_asm.h"
 #include "list.h"
 
 enum {
@@ -108,7 +107,7 @@ struct r_anal_handle_t {
 	char *desc;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-	int (*aop)(struct r_asm_t *data, struct r_anal_aop_t *aop);
+	int (*aop)(struct r_anal_aop_t *aop, void *data);
 	struct list_head list;
 };
 
@@ -118,7 +117,7 @@ void r_anal_set_user_ptr(struct r_anal_t *anal, void *user);
 int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo);
 int r_anal_list(struct r_anal_t *anal);
 int r_anal_set(struct r_anal_t *anal, const char *name);
-int r_anal_aop(struct r_anal_t *anal, struct r_asm_t *data, struct r_anal_aop_t *aop);
+int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data);
 int r_anal_set_bits(struct r_anal_t *anal, int bits);
 int r_anal_set_big_endian(struct r_anal_t *anal, int boolean);
 

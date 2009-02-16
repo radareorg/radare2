@@ -73,7 +73,7 @@ int __lib_anl_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 {
 	struct r_anal_handle_t *hand = (struct r_anal_handle_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
-	//printf(" * Added language handler\n");
+	//printf(" * Added analysis handler\n");
 	r_anal_add(&core->anal, hand);
 	return R_TRUE;
 }
@@ -89,6 +89,7 @@ int r_core_init(struct r_core_t *core)
 	r_lang_init(&core->lang);
 	r_lang_set_user_ptr(&core->lang, core);
 	r_anal_init(&core->anal);
+	r_anal_set_user_ptr(&core->anal, core);
 	r_cons_init();
 	core->search = r_search_new(R_SEARCH_KEYWORD);
 	r_io_init(&core->io);

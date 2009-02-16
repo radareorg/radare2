@@ -23,9 +23,10 @@
 
 // NOTE: buf should be at least 16 bytes!
 // XXX addr should be off_t for 64 love
-static int aop(struct r_asm_t *data, struct r_anal_aop_t *aop)
+static int aop(struct r_anal_aop_t *aop, void *data)
 {
-	u8 *buf = data->buf;
+	struct r_asm_t *asmdata = (struct r_asm_t*)data;
+	u8 *buf = asmdata->buf;
 
 	memset(aop, '\0', sizeof(struct r_anal_aop_t));
 	aop->type = R_ANAL_AOP_TYPE_UNK;
@@ -122,8 +123,8 @@ static int aop(struct r_asm_t *data, struct r_anal_aop_t *aop)
 		} else
 		if (buf[1]>=0x80 && buf[1]<=0x8f) {
 			aop->type   = R_ANAL_AOP_TYPE_CJMP;
-			aop->jump   = data->pc+6+buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24);//((unsigned long)((buf+2))+6);
-			aop->fail   = data->pc+6;
+			aop->jump   = asmdata->pc+6+buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24);//((unsigned long)((buf+2))+6);
+			aop->fail   = asmdata->pc+6;
 			aop->length = 6;
 			//aop->eob    = 1;
 		} 
@@ -141,24 +142,24 @@ static int aop(struct r_asm_t *data, struct r_anal_aop_t *aop)
 	case 0xe8: // call
 		aop->type   = R_ANAL_AOP_TYPE_CALL;
 		aop->length = 5;
-		//aop->jump   = data->pc+*ptr+5; //(unsigned long)((buf+1)+5);
-		aop->jump   = data->pc+5+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);//((unsigned long)((buf+2))+6);
-		aop->fail   = data->pc+5;
-//printf("data->pc: %08llx\n call %08llx \n ret %08llx\n", data->pc, aop->jump, aop->fail);
+		//aop->jump   = asmdata->pc+*ptr+5; //(unsigned long)((buf+1)+5);
+		aop->jump   = asmdata->pc+5+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);//((unsigned long)((buf+2))+6);
+		aop->fail   = asmdata->pc+5;
+//printf("asmdata->pc: %08llx\n call %08llx \n ret %08llx\n", asmdata->pc, aop->jump, aop->fail);
 	//	aop->eob    = 1;
 		break;
 	case 0xe9: // jmp
 		aop->type   = R_ANAL_AOP_TYPE_JMP;
 		aop->length = 5;
 		//aop->jump   = (unsigned long)((buf+1)+5);
-		aop->jump   = data->pc+5+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);//((unsigned long)((buf+2))+6);
+		aop->jump   = asmdata->pc+5+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);//((unsigned long)((buf+2))+6);
 		aop->fail   = 0L;
 		aop->eob    = 1;
 		break;
 	case 0xeb: // short jmp 
 		aop->type   = R_ANAL_AOP_TYPE_JMP;
 		aop->length = 2;
-		aop->jump   = data->pc+((unsigned long)((char)buf[1])+2);
+		aop->jump   = asmdata->pc+((unsigned long)((char)buf[1])+2);
 		aop->fail   = 0L;
 		aop->eob    = 1;
 		break;
@@ -189,7 +190,7 @@ static int aop(struct r_asm_t *data, struct r_anal_aop_t *aop)
 			aop->length = 2;
 			aop->eob    = 1;
 			//aop->jump   = vm_arch_x86_regs[VM_X86_EAX+buf[1]-0xd0];
-			aop->fail   = data->pc+2;
+			aop->fail   = asmdata->pc+2;
 		} else
 		if (buf[1]>=0xe0 && buf[1]<=0xe7) {
 			aop->type = R_ANAL_AOP_TYPE_UJMP;
@@ -318,34 +319,34 @@ static int aop(struct r_asm_t *data, struct r_anal_aop_t *aop)
 
 	case 0xa1: // mov eax, [addr]
 		aop->type = R_ANAL_AOP_TYPE_MOV;
-		//vm_arch_x86_regs[VM_X86_EAX] = data->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
+		//vm_arch_x86_regs[VM_X86_EAX] = asmdata->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
 		//radare_read_at((u64)vm_arch_x86_regs[VM_X86_EAX], (unsigned char *)&(vm_arch_x86_regs[VM_X86_EAX]), 4);
 		break;
 		
 	// roll to a switch range case
 	case 0xb8: // mov eax, <inmedate>
 		aop->type = R_ANAL_AOP_TYPE_MOV;
-		//vm_arch_x86_regs[VM_X86_EAX] = data->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
+		//vm_arch_x86_regs[VM_X86_EAX] = asmdata->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
 		break;
 	case 0xb9: // mov ecx, <inmedate>
 		aop->type = R_ANAL_AOP_TYPE_MOV;
-		//vm_arch_x86_regs[VM_X86_ECX] = data->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
+		//vm_arch_x86_regs[VM_X86_ECX] = asmdata->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
 		break;
 	case 0xba: // mov edx, <inmedate>
 		aop->type = R_ANAL_AOP_TYPE_MOV;
-		//vm_arch_x86_regs[VM_X86_EDX] = data->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
+		//vm_arch_x86_regs[VM_X86_EDX] = asmdata->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
 		break;
 	case 0xbb: // mov ebx, <inmedate>
 		aop->type = R_ANAL_AOP_TYPE_MOV;
-		//vm_arch_x86_regs[VM_X86_EBX] = data->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
+		//vm_arch_x86_regs[VM_X86_EBX] = asmdata->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
 		break;
 	case 0xbc: // mov esp, <inmedate>
 		aop->type = R_ANAL_AOP_TYPE_MOV;
-		//vm_arch_x86_regs[VM_X86_ESP] = data->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
+		//vm_arch_x86_regs[VM_X86_ESP] = asmdata->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
 		break;
 	case 0xbd: // mov esp, <inmedate>
 		aop->type = R_ANAL_AOP_TYPE_MOV;
-		//vm_arch_x86_regs[VM_X86_EBP] = data->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
+		//vm_arch_x86_regs[VM_X86_EBP] = asmdata->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
 		break;
 #if 0
 	case0xF
@@ -382,8 +383,8 @@ static int aop(struct r_asm_t *data, struct r_anal_aop_t *aop)
 			aop->type   = R_ANAL_AOP_TYPE_CJMP;
 			aop->length = 2;
 		//	aop->jump   = (unsigned long)((buf+2)+6);
-			aop->jump   = data->pc+bo+2; //(unsigned long)((buf+1)+5);
-			aop->fail   = data->pc+2;
+			aop->jump   = asmdata->pc+bo+2; //(unsigned long)((buf+1)+5);
+			aop->fail   = asmdata->pc+2;
 			aop->eob    = 1;
 			return 2;
 		}
@@ -392,7 +393,7 @@ static int aop(struct r_asm_t *data, struct r_anal_aop_t *aop)
 		//aop->type = R_ANAL_AOP_TYPE_UNK;
 	}
 
-	aop->length = data->inst_len;
+	aop->length = asmdata->inst_len;
 
 	if (!(aop->jump>>33))
 		aop->jump &= 0xFFFFFFFF; // XXX may break on 64 bits here
