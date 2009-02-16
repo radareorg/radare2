@@ -7,12 +7,14 @@ sc:
 
 core:
 	valac -C --vapidir=${PWD}/.. core.vala --pkg r_core --pkg r_cons
+	#gcc `PKG_CONFIG_PATH=../.. pkg-config --libs --cflags gobject-2.0 libr` core.c -o core
 	gcc core.c `pkg-config gobject-2.0 --libs --cflags` -I../../include/ \
 		-lr_core -Wl,-R../../core -L../../core \
 		-lr_util -Wl,-R../../util -L../../util \
 		-lr_asm -Wl,-R../../asm -L../../asm \
 		-lr_bin -Wl,-R../../bin -L../../bin \
 		-lr_io -Wl,-R../../io -L../../io \
+		-lr_anal -Wl,-R../../anal -L../../anal \
 		-lr_cons -Wl,-R../../cons -L../../cons \
 		-lr_debug -Wl,-R../../debug -L../../debug \
 		-lr_lang -Wl,-R../../lang -L../../lang \

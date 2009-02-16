@@ -1,4 +1,4 @@
-prefix=/usr
+prefix=${PWD}
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
@@ -6,6 +6,6 @@ includedir=${prefix}/include
 Name: libr
 Description: radare framework libraries
 Version: 0.1
-Requires: gobject-2.0 gmodule-no-export-2.0
-Libs: -L${libdir} -lr_core -lr_lang -lr_search -lr_cmd
+Requires:
+Libs: -L${libdir} -lr_core -lr_lang -lr_search -lr_cmd -lr_meta -lr_asm
 Cflags: -I${includedir}/libr

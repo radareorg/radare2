@@ -16,7 +16,7 @@ int main(int argc, char **argv)
 	rs = r_search_new(R_SEARCH_KEYWORD);
 	r_search_kw_add(rs, "lib", "");
 	r_search_set_callback(rs, &hit, buffer);
-	r_search_initialize(rs);
+	r_search_begin(rs);
 	printf("Searching for '%s' in '%s'\n", "lib", buffer);
 	r_search_update_i(rs, 0LL, buffer, strlen(buffer));
 	rs = r_search_free(rs);
@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 	rs = r_search_new(R_SEARCH_KEYWORD);
 	r_search_kw_add(rs, "lib", "ff00ff");
 	r_search_set_callback(rs, &hit, buffer);
-	r_search_initialize(rs);
+	r_search_begin(rs);
 	printf("Searching for '%s' with binmask 'ff00ff' in '%s'\n", "lib", buffer);
 	r_search_update_i(rs, 0LL, buffer, strlen(buffer));
 	rs = r_search_free(rs);

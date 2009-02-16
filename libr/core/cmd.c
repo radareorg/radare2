@@ -561,7 +561,7 @@ static int cmd_search(void *data, const char *input)
 	u8 *buf;
 	switch (input[0]) {
 	case '/':
-		r_search_initialize(core->search);
+		r_search_begin(core->search);
 		dosearch = 1;
 		break;
 	case 'v':
@@ -569,21 +569,21 @@ static int cmd_search(void *data, const char *input)
 		core->search = r_search_new(R_SEARCH_KEYWORD);
 		n32 = r_num_math(&core->num, input+1);
 		r_search_kw_add_bin(core->search, &n32, 4, "",0);
-		r_search_initialize(core->search);
+		r_search_begin(core->search);
 		dosearch = 1;
 		break;
 	case ' ': /* search string */
 		r_search_free(core->search);
 		core->search = r_search_new(R_SEARCH_KEYWORD);
 		r_search_kw_add(core->search, input+1, "");
-		r_search_initialize(core->search);
+		r_search_begin(core->search);
 		dosearch = 1;
 		break;
 	case 'x': /* search hex */
 		r_search_free(core->search);
 		core->search = r_search_new(R_SEARCH_KEYWORD);
 		r_search_kw_add_hex(core->search, input+2, "");
-		r_search_initialize(core->search);
+		r_search_begin(core->search);
 		dosearch = 1;
 		break;
 	default:

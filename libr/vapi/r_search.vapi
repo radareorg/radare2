@@ -16,7 +16,7 @@ namespace Radare.Search {
 		public State(Mode mode);
 		public bool set_mode(Mode mode);
 		public bool set_string_limits(uint32 min, uint32 max);
-		public bool initialize();
+		public bool begin();
 		//public bool set_callback(delegate callback, pointer user);
 		public bool update(out uint64 from, uint8 *buf, uint32 len);
 		public bool update_i(uint64 from, uint8 *buf, uint32 len);

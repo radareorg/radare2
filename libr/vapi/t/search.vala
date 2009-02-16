@@ -14,7 +14,7 @@ public class SearchExample
 				stdout.printf("Hit %d! at 0x%llx\n", (int)kw.count, addr);
 				return 0;
 			}, null);
-		s.initialize();
+		s.begin();
 
 		stdout.printf("string: \"%s\"\n", buf);
 		stdout.printf("length: %d\n", (int)buf.len());
