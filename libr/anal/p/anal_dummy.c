@@ -4,7 +4,7 @@
 #include <r_lib.h>
 #include <r_anal.h>
 
-static int aop(void *user)
+static int aop(struct r_anal_aop_t *aop, void *data)
 {
 	printf("Dummy analysis plugin");
 
