@@ -3,7 +3,7 @@
 #include <r_util.h>
 #include <stdlib.h>
 
-void r_mem_copyloop (u8 *dest, u8 *orig, int dsize, int osize)
+void r_mem_copyloop (u8 *dest, const u8 *orig, int dsize, int osize)
 {
         int i=0,j;
         while(i<dsize)
@@ -11,8 +11,16 @@ void r_mem_copyloop (u8 *dest, u8 *orig, int dsize, int osize)
                         dest[i++] = orig[j];
 }
 
+int r_mem_cmp_mask(const u8 *dest, const u8 *orig, const u8 *mask, int len)
+{
+	int i, ret = 0;
+	for(i=0;i<len;i++)
+		ret += (orig[i]&mask[i])&dest[i];
+	return ret;
+}
+
 /* TODO check and use system endian */
-void r_mem_copyendian (u8 *dest, u8 *orig, int size, int endian)
+void r_mem_copyendian (u8 *dest, const u8 *orig, int size, int endian)
 {
         if (endian) {
                 memcpy(dest, orig, size);

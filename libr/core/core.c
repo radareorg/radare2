@@ -89,6 +89,7 @@ int r_core_init(struct r_core_t *core)
 	r_lang_init(&core->lang);
 	r_lang_set_user_ptr(&core->lang, core);
 	r_anal_init(&core->anal);
+	r_meta_init(&core->meta);
 	r_anal_set_user_ptr(&core->anal, core);
 	r_cons_init();
 	core->search = r_search_new(R_SEARCH_KEYWORD);

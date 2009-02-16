@@ -85,7 +85,6 @@ u64 r_range_size(struct r_range_t *rgs)
 		r = list_entry(pos, struct r_range_item_t, list);
 		sum += r->to - r->from;
 	}
-
 	return sum;
 }
 

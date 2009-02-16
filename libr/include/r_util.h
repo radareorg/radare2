@@ -22,8 +22,9 @@
 #define R_TRUE 1
 
 /* memory */
-void r_mem_copyloop (u8 *dest, u8 *orig, int dsize, int osize);
-void r_mem_copyendian (u8 *dest, u8 *orig, int size, int endian);
+void r_mem_copyloop (u8 *dest, const u8 *orig, int dsize, int osize);
+void r_mem_copyendian (u8 *dest, const u8 *orig, int size, int endian);
+int r_mem_cmp_mask(const u8 *dest, const u8 *orig, const u8 *mask, int len);
 
 /* numbers */
 struct r_num_t {

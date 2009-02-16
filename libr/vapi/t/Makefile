@@ -19,6 +19,7 @@ core:
 		-lr_line -Wl,-R../../line -L../../line \
 		-lr_lib -Wl,-R../../lib -L../../lib \
 		-lr_flags -Wl,-R../../flags -L../../flags \
+		-lr_meta -Wl,-R../../meta -L../../meta \
 		-lr_macro -Wl,-R../../macro -L../../macro \
 		-lr_print -Wl,-R../../print -L../../print \
 		-lr_config -Wl,-R../../config -L../../config \

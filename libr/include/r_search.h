@@ -80,7 +80,7 @@ int r_search_strings_update_char(const unsigned char *buf, int min, int max, int
 int r_search_pattern(struct r_search_t *s, u32 size);
 int r_search_strings(struct r_search_t *s, u32 min, u32 max);
 int r_search_set_callback(struct r_search_t *s, int (*callback)(struct r_search_kw_t *, void *, u64), void *user);
-int r_search_initialize(struct r_search_t *s);
+int r_search_begin(struct r_search_t *s);
 
 #endif
 

@@ -1,6 +1,6 @@
 OBJ=radare2.o
 BIN=radare2
-BINDEPS=r_core r_cons r_macro r_util r_flags r_lib r_io r_hash r_cmd r_config r_asm r_anal r_lang r_debug r_print r_line r_bin r_search
+BINDEPS=r_core r_cons r_macro r_util r_flags r_lib r_io r_hash r_cmd r_config r_asm r_anal r_lang r_debug r_print r_line r_bin r_search r_meta
 
 #LIBS=-lr_core -L..
 ### shared

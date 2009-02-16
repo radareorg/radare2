@@ -8,7 +8,7 @@ int r_search_init(struct r_search_t *s, int mode)
 {
 	memset(s,'\0', sizeof(struct r_search_t));
 	if (!r_search_set_mode(s, mode))
-		return 0;
+		return R_FALSE;
 	s->mode = mode;
 	s->user = NULL;
 	s->callback = NULL;
@@ -18,21 +18,21 @@ int r_search_init(struct r_search_t *s, int mode)
 	INIT_LIST_HEAD(&(s->kws));
 	INIT_LIST_HEAD(&(s->hits));
 	INIT_LIST_HEAD(&(s->hits));
-	return 1;
+	return R_TRUE;
 }
 
 int r_search_set_string_limits(struct r_search_t *s, u32 min, u32 max)
 {
 	if (max < min)
-		return 0;
+		return R_FALSE;
 	s->string_min = min;
 	s->string_max = max;
-	return 1;
+	return R_TRUE;
 }
 
 int r_search_set_mode(struct r_search_t *s, int mode)
 {
-	int ret = 0;
+	int ret = R_FALSE;
 	switch(mode) {
 	case R_SEARCH_KEYWORD:
 	case R_SEARCH_REGEXP:
@@ -41,7 +41,7 @@ int r_search_set_mode(struct r_search_t *s, int mode)
 	case R_SEARCH_XREFS:
 	case R_SEARCH_AES:
 		s->mode = mode;
-		ret = 1;
+		ret = R_TRUE;
 	}
 	return ret;
 }
@@ -63,8 +63,7 @@ struct r_search_t *r_search_free(struct r_search_t *s)
 }
 
 /* control */
-/* Rename to start(), begin() .. */
-int r_search_initialize(struct r_search_t *s)
+int r_search_begin(struct r_search_t *s)
 {
 	struct list_head *pos;
 
@@ -85,6 +84,7 @@ int r_search_initialize(struct r_search_t *s)
 	return 1;
 }
 
+// TODO: move into a plugin */
 int r_search_mybinparse_update(struct r_search_t *s, u64 from, const u8 *buf, int len)
 {
 	struct list_head *pos;
@@ -139,7 +139,7 @@ int r_search_update(struct r_search_t *s, u64 *from, const u8 *buf, u32 len)
 		ret += r_search_mybinparse_update(s, *from, buf, len);
 		break;
 	case R_SEARCH_XREFS:
-		//r_search_xrefs_update(s, *from, buf, len);
+		r_search_xrefs_update(s, *from, buf, len);
 		break;
 	case R_SEARCH_REGEXP:
 		ret += r_search_regexp_update(s, *from, buf, len);

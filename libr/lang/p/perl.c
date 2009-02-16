@@ -8,7 +8,12 @@
 
 #include <EXTERN.h>
 #include <XSUB.h>
+#undef PL_madskills
+#undef PL_xmlfp
 #include <perl.h>
+
+#undef U32_MAX
+#undef U32_MIN
 
 #include "r_core.h"
 static struct r_core_t *core = NULL;

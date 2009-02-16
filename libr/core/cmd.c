@@ -727,6 +727,22 @@ static int cmd_system(void *data, const char *input)
 #endif
 }
 
+static int cmd_meta(void *data, const char *input)
+{
+	struct r_core_t *core = (struct r_core_t *)data;
+	switch(input[0]) {
+	case '\0':
+		/* meta help */
+		break;
+	case 'C': /* add comment */
+		// r_meta_add(&core->meta);
+		break;
+	case 'F': /* add function */
+		break;
+	}
+	return R_TRUE;
+}
+
 static int cmd_io_system(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
@@ -1018,26 +1034,27 @@ int r_core_cmd_init(struct r_core_t *core)
 {
 	r_cmd_init(&core->cmd);
 	r_cmd_set_data(&core->cmd, core);
-	r_cmd_add(&core->cmd, "x",     "alias for px", &cmd_hexdump);
-	r_cmd_add(&core->cmd, "anal",  "analysis", &cmd_anal);
-	r_cmd_add(&core->cmd, "flag",  "get/set flags", &cmd_flag);
-	r_cmd_add(&core->cmd, "debug", "debugger operations", &cmd_debug);
-	r_cmd_add(&core->cmd, "info",  "get file info", &cmd_info);
-	r_cmd_add(&core->cmd, "seek",  "seek to an offset", &cmd_seek);
-	r_cmd_add(&core->cmd, "bsize", "change block size", &cmd_bsize);
-	r_cmd_add(&core->cmd, "eval",  "evaluate configuration variable", &cmd_eval);
-	r_cmd_add(&core->cmd, "print", "print current block", &cmd_print);
-	r_cmd_add(&core->cmd, "write", "write bytes", &cmd_write);
-	r_cmd_add(&core->cmd, "Visual","enter visual mode", &cmd_visual);
-	r_cmd_add(&core->cmd, "!",     "run system command", &cmd_system);
-	r_cmd_add(&core->cmd, "|",     "run io system command", &cmd_io_system);
-	r_cmd_add(&core->cmd, "#",     "calculate hash", &cmd_hash);
-	r_cmd_add(&core->cmd, "?",     "help message", &cmd_help);
-	r_cmd_add(&core->cmd, ".",     "interpret", &cmd_interpret);
-	r_cmd_add(&core->cmd, "/",     "search kw, pattern aes", &cmd_search);
-	r_cmd_add(&core->cmd, "(",     "macro", &cmd_macro);
-	r_cmd_add(&core->cmd, "|",     "io pipe", &cmd_iopipe);
-	r_cmd_add(&core->cmd, "quit",  "exit program session", &cmd_quit);
+	r_cmd_add(&core->cmd, "x",        "alias for px", &cmd_hexdump);
+	r_cmd_add(&core->cmd, "analysis", "analysis", &cmd_anal);
+	r_cmd_add(&core->cmd, "flag",     "get/set flags", &cmd_flag);
+	r_cmd_add(&core->cmd, "debug",    "debugger operations", &cmd_debug);
+	r_cmd_add(&core->cmd, "info",     "get file info", &cmd_info);
+	r_cmd_add(&core->cmd, "seek",     "seek to an offset", &cmd_seek);
+	r_cmd_add(&core->cmd, "bsize",    "change block size", &cmd_bsize);
+	r_cmd_add(&core->cmd, "eval",     "evaluate configuration variable", &cmd_eval);
+	r_cmd_add(&core->cmd, "print",    "print current block", &cmd_print);
+	r_cmd_add(&core->cmd, "write",    "write bytes", &cmd_write);
+	r_cmd_add(&core->cmd, "Code",     "code metadata", &cmd_meta);
+	r_cmd_add(&core->cmd, "Visual",   "enter visual mode", &cmd_visual);
+	r_cmd_add(&core->cmd, "!",        "run system command", &cmd_system);
+	r_cmd_add(&core->cmd, "|",        "run io system command", &cmd_io_system);
+	r_cmd_add(&core->cmd, "#",        "calculate hash", &cmd_hash);
+	r_cmd_add(&core->cmd, "?",        "help message", &cmd_help);
+	r_cmd_add(&core->cmd, ".",        "interpret", &cmd_interpret);
+	r_cmd_add(&core->cmd, "/",        "search kw, pattern aes", &cmd_search);
+	r_cmd_add(&core->cmd, "(",        "macro", &cmd_macro);
+	r_cmd_add(&core->cmd, "|",        "io pipe", &cmd_iopipe);
+	r_cmd_add(&core->cmd, "quit",     "exit program session", &cmd_quit);
 
 	return 0;
 }

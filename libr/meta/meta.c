@@ -113,17 +113,57 @@ int r_meta_del(struct r_meta_t *m, int type, u64 from, u64 size, const char *str
 	return ret;
 }
 
+int r_meta_cleanup(struct r_meta_t *m, u64 from, u64 to)
+{
+	struct list_head *pos, *n;
+	int ret = R_FALSE;
+
+	list_for_each_safe(pos, n, &m->data) {
+		struct r_meta_item_t *d = (struct r_meta_item_t *)
+			list_entry(pos, struct r_meta_item_t, list);
+		switch(d->type) {
+		case R_META_CODE:
+		case R_META_DATA:
+		case R_META_STRING:
+		case R_META_STRUCT:
+#if 0
+			   |__| |__|  |___|  |_|
+			 |__|     |_|  |_|  |___|
+			 ====== ===== ===== =====
+#endif
+			if (to>d->from && to<d->to) {
+				d->from = to;
+				ret= R_TRUE;
+			} else
+			if (from>d->from && from<d->to &&to>d->to) {
+				d->to = from;
+				ret= R_TRUE;
+			} else
+			if (from>d->from&&from<d->to&&to<d->to) {
+				// XXX split!
+				d->to = from;
+				ret= R_TRUE;
+			} else
+			if (from>d->from&&to<d->to) {
+				list_del(&(d->list));
+				ret= R_TRUE;
+			}
+			break;
+		}
+	}
+	return ret;
+}
+
 int r_meta_add(struct r_meta_t *m, int type, u64 from, u64 size, const char *str)
 {
 	struct r_meta_item_t *mi;
 	switch(type) {
 	case R_META_CODE:
-		r_meta_del(m, R_META_CODE, from, size, str);
-		break;
 	case R_META_DATA:
 	case R_META_STRING:
 	case R_META_STRUCT:
 		/* we should remove overlapped types and so on.. */
+		r_meta_cleanup(m, from, from + size);
 	case R_META_FUNCTION:
 	case R_META_COMMENT:
 	case R_META_FOLDER:
@@ -226,6 +266,23 @@ const char *r_meta_type_to_string(int type)
 	}
 	return "(...)";
 }
+
+#if 0
+#include <r_range.h>
+struct r_range_t *r_meta_ranges(struct r_meta_t *m)
+{
+	struct r_range_t *r;
+	struct list_head *pos;
+
+	r = r_range_new();
+	list_for_each(pos, &m->data) {
+		struct r_meta_item_t *d = (struct r_meta_item_t *)
+			list_entry(pos, struct r_meta_item_t, list);
+		r_range_add(r, d->from, d->to, 1); //d->type);
+	}
+	return r;
+}
+#endif
 
 int r_meta_list(struct r_meta_t *m, int type)
 {

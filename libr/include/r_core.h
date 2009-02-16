@@ -7,6 +7,7 @@
 #include "r_lang.h"
 #include "r_anal.h"
 #include "r_cmd.h"
+#include "r_meta.h"
 #include "r_cons.h"
 #include "r_line.h"
 #include "r_print.h"
@@ -43,6 +44,7 @@ struct r_core_t {
 	struct r_lib_t lib;
 	struct r_cmd_t cmd;
 	struct r_anal_t anal;
+	struct r_meta_t meta;
 	struct r_lang_t lang;
 	struct r_debug_t dbg;
 	struct r_flag_t flags;

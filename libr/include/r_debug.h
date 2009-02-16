@@ -13,7 +13,7 @@ struct r_debug_handle_t {
 	const char *name;
 	int (*attach)(int pid);
 	int (*detach)(int pid);
-	int (*step)(int pid);
+	int (*step)(int pid); // if step() is NULL; reimplement it with traps
 	int (*cont)(int pid);
 	int (*contsc)(int pid, int sc);
 	struct list_head list;
