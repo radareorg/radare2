@@ -14,5 +14,5 @@ test-str:
 	${CC} -g -I ../../include test-str.c ${LDFLAGS} -o test-str
 
 clean:
-	rm -f test test.o test-str test-str.o
+	rm -f test test.o test-str test-str.o test-regexp
 

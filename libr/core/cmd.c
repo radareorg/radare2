@@ -347,6 +347,26 @@ static int cmd_anal(void *data, const char *input)
 		r_anal_list(&core->anal);
 		break;
 	case 'o':
+		{
+			/* XXX hardcoded */
+			int ret, idx; 
+			u8 *buf = core->block;
+			struct r_asm_t a;// TODO: move to core.h
+			struct r_anal_aop_t aop;
+			r_asm_init(&a);
+			r_asm_set_pc(&a, core->seek);
+			r_anal_set(&core->anal, "anal_x86");
+			
+			for(idx=ret=0; idx < len; idx+=ret) {
+				r_asm_set_pc(&a, a.pc + ret);
+				ret = r_asm_disasm(&a, buf+idx, len-idx);
+				r_cons_printf("0x%08llx  %14s  %s\n",
+					core->seek+idx, a.buf_hex, a.buf_asm);
+				r_anal_aop(&core->anal, &a, &aop);
+				r_cons_printf("JUMP: 0x%08llx\n",
+					aop.jump);
+			}
+		}
 		break;
 	default:
 		fprintf(stderr, "Usage: a[o] [len]\n"
