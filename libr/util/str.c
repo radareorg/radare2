@@ -3,6 +3,7 @@
 #include "r_types.h"
 #include "r_util.h"
 #include <stdio.h>
+#include <stdarg.h>
 
 /* stable code */
 static const char *nullstr = "";
@@ -218,6 +219,28 @@ char *r_str_dup(char *ptr, const char *string)
         if (ptr)
                 free(ptr);
         ptr = strdup(string);
+        return ptr;
+}
+
+char *r_str_concat(char *ptr, const char *string)
+{
+        if (!ptr)
+		return strdup(string);
+	ptr = realloc(ptr, strlen(string)+strlen(ptr)+1);
+	if (ptr == NULL)
+		return NULL;
+	strcat(ptr, string);
+        return ptr;
+}
+
+char *r_str_concatf(char *ptr, const char *fmt, ...)
+{
+	char string[1024];
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(string, 1023, fmt, ap);
+	ptr = r_str_concat(ptr, string);
+	va_end(ap);
         return ptr;
 }
 

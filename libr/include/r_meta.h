@@ -1,22 +1,65 @@
 #ifndef _INCLUDE_R_META_H_
 #define _INCLUDE_R_META_H_
 
+#include <r_types.h>
+#include <r_util.h>
+#include <list.h>
+
+struct r_meta_count_t {
+	int functions;
+	int xref_code;
+	int xref_data;
+	/* TODO: ... */
+};
+
 /* old data_t */
 struct r_meta_item_t {
 	u64 from;
 	u64 to;
-	int type;
-	int times;
 	u64 size;
-	char arg[128];
+	int type;
+//	int times;
+	char *str;
 	struct list_head list;
 };
 
 struct r_meta_t {
-//	struct reflines_t *reflines = NULL;
 	struct list_head data;
-	struct list_head comments;
-	struct list_head xrefs;
+//	struct reflines_t *reflines = NULL;
+//	struct list_head comments;
+//	struct list_head xrefs;
 };
+
+enum {
+	R_META_WHERE_PREV = -1,
+	R_META_WHERE_HERE = 0,
+	R_META_WHERE_NEXT = 1,
+};
+
+enum {
+	R_META_ANY = -1,
+	/* content type */
+	R_META_DATA = 0,
+	R_META_CODE,
+	R_META_STRING,
+	R_META_STRUCT,
+	/* line */
+	R_META_FUNCTION,
+	R_META_COMMENT,
+	R_META_FOLDER,
+	R_META_XREF_CODE,
+	R_META_XREF_DATA,
+};
+
+int r_meta_init(struct r_meta_t *m);
+struct r_meta_t *r_meta_new();
+void r_meta_free(struct r_meta_t *m);
+int r_meta_count(struct r_meta_t *m, int type, u64 from, u64 to, struct r_meta_count_t *c);
+char *r_meta_get_string(struct r_meta_t *m, int type, u64 addr);
+int r_meta_del(struct r_meta_t *m, int type, u64 from, u64 size, const char *str);
+int r_meta_add(struct r_meta_t *m, int type, u64 from, u64 size, const char *str);
+struct r_meta_item_t *r_meta_find(struct r_meta_t *m, u64 off, int type, int where);
+const char *r_meta_type_to_string(int type);
+int r_meta_list(struct r_meta_t *m, int type);
 
 #endif

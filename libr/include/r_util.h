@@ -75,6 +75,8 @@ int r_str_re_replace(const char *str, const char *reg, const char *sub);
 char *r_str_sub(char *string, char *pat, char *rep, int global);
 int r_str_escape(char *buf);
 char *r_str_home(const char *str);
+char *r_str_concat(char *ptr, const char *string);
+char *r_str_concatf(char *ptr, const char *fmt, ...);
 
 /* hex */
 int r_hex_pair2bin(const char *arg);

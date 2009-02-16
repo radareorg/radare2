@@ -2,6 +2,12 @@
 
 #include "r_meta.h"
 
+int r_meta_init(struct r_meta_t *m)
+{
+	INIT_LIST_HEAD(&m->data);
+	return R_TRUE;
+}
+
 struct r_meta_t *r_meta_new()
 {
 	struct r_meta_t *m = MALLOC_STRUCT(struct r_meta_t);
@@ -11,35 +17,173 @@ struct r_meta_t *r_meta_new()
 
 void r_meta_free(struct r_meta_t *m)
 {
+	/* TODO: memory leak */
 	free(m);
 }
 
-int r_meta_init(struct r_meta_t *m)
-{
-	INIT_LIST_HEAD(&m->data);
-	INIT_LIST_HEAD(&m->comments);
-	INIT_LIST_HEAD(&m->xrefs);
-	return R_TRUE;
-}
-
-/* snippet from data.c */
-/* XXX: we should add a 4th arg to define next or prev */
-u64 r_meta_prev(struct r_meta_t *m, u64 off, int type)
+int r_meta_count(struct r_meta_t *m, int type, u64 from, u64 to, struct r_meta_count_t *c)
 {
 	struct list_head *pos;
-	u64 ret = 0;
+	int count = 0;
 
 	list_for_each(pos, &m->data) {
 		struct r_meta_item_t *d = (struct r_meta_item_t *)
 			list_entry(pos, struct r_meta_item_t, list);
-		if (d->type == type) {
-			if (d->from < off && d->to > off)
-				ret = d->from;
+		if (d->type == type || type == R_META_ANY) {
+			if (from >= d->from && d->to < to) {
+				if (c) {
+					/* */
+				}
+				count++;
+			}
+		}
+	}
+	return count;
+}
+
+char *r_meta_get_string(struct r_meta_t *m, int type, u64 addr)
+{
+	char *str = NULL;
+	struct list_head *pos;
+
+	switch(type) {
+	case R_META_FUNCTION:
+	case R_META_COMMENT:
+	case R_META_FOLDER:
+	case R_META_XREF_CODE:
+	case R_META_XREF_DATA:
+	case R_META_ANY:
+		break;
+	case R_META_CODE:
+	case R_META_DATA:
+	case R_META_STRING:
+	case R_META_STRUCT:
+		/* we should remove overlapped types and so on.. */
+		return "(Unsupported meta type)";
+		break;
+	default:
+		fprintf(stderr, "Unhandled\n");
+		return "(Unhandled meta type)";
+	}
+	list_for_each(pos, &m->data) {
+		struct r_meta_item_t *d = (struct r_meta_item_t *)
+			list_entry(pos, struct r_meta_item_t, list);
+		if (d->type == type || type == R_META_ANY) {
+			if (d->from == addr)
+			switch(d->type) {
+			case R_META_FUNCTION:
+				str = r_str_concatf(str, "; FUNCTION SIZE %lld\n", d->size);
+				break;
+			case R_META_COMMENT:
+				str = r_str_concatf(str, "; %s\n", d->str);
+				break;
+			case R_META_FOLDER:
+				str = r_str_concatf(str, "; FOLDER %lld bytes\n", d->size);
+				break;
+			case R_META_XREF_CODE:
+				str = r_str_concatf(str, "; CODE XREF FROM 0x%08llx\n", d->to);
+				break;
+			case R_META_XREF_DATA:
+				str = r_str_concatf(str, "; DATA XREF FROM 0x%08llx\n", d->to);
+				break;
+			}
+		}
+	}
+	return str;
+}
+
+int r_meta_del(struct r_meta_t *m, int type, u64 from, u64 size, const char *str)
+{
+	int ret = R_FALSE;
+	struct list_head *pos, *n;
+
+	list_for_each_safe(pos, n, &m->data) {
+		struct r_meta_item_t *d = (struct r_meta_item_t *)
+			list_entry(pos, struct r_meta_item_t, list);
+		if (d->type == type || type == R_META_ANY) {
+			if (str != NULL && !strstr(d->str, str))
+				continue;
+			if (from >= d->from && from <= d->to) {
+				free(d->str);
+				list_del(&(d->list));
+				ret = R_TRUE;
+			}
 		}
 	}
 	return ret;
 }
 
+int r_meta_add(struct r_meta_t *m, int type, u64 from, u64 size, const char *str)
+{
+	struct r_meta_item_t *mi;
+	switch(type) {
+	case R_META_CODE:
+		r_meta_del(m, R_META_CODE, from, size, str);
+		break;
+	case R_META_DATA:
+	case R_META_STRING:
+	case R_META_STRUCT:
+		/* we should remove overlapped types and so on.. */
+	case R_META_FUNCTION:
+	case R_META_COMMENT:
+	case R_META_FOLDER:
+	case R_META_XREF_CODE:
+	case R_META_XREF_DATA:
+		mi = MALLOC_STRUCT(struct r_meta_item_t);
+		mi->type = type;
+		mi->from = from;
+		mi->size = size;
+		mi->to = from+size;
+		if (str) mi->str = strdup(str);
+		else mi->str = NULL;
+		list_add(&(mi->list), &m->data);
+		break;
+	default:
+		return R_FALSE;
+	}
+	return R_TRUE;
+}
+
+/* snippet from data.c */
+/* XXX: we should add a 4th arg to define next or prev */
+struct r_meta_item_t *r_meta_find(struct r_meta_t *m, u64 off, int type, int where)
+{
+	struct r_meta_item_t *it = NULL;
+	struct list_head *pos;
+
+	list_for_each(pos, &m->data) {
+		struct r_meta_item_t *d = (struct r_meta_item_t *)
+			list_entry(pos, struct r_meta_item_t, list);
+		if (d->type == type || type == R_META_ANY) {
+			switch(where) {
+			case R_META_WHERE_PREV:
+				if (d->from < off) {
+					if (it) {
+						if (d->from > it->from)
+							it = d;
+					} else it = d;
+				}
+				break;
+			case R_META_WHERE_HERE:
+				if (d->from < off && d->to > off)
+					it = d;
+				break;
+			case R_META_WHERE_NEXT:
+				if (d->from > off) {
+					if (it)  {
+						if (d->from < it->from)
+							it = d;
+					} else it = d;
+				}
+				break;
+			}
+		}
+	}
+	return it;
+}
+
+#if 0
+	/* not necessary */
 //int data_get_fun_for(u64 addr, u64 *from, u64 *to)
 int r_meta_get_bounds(struct r_meta_t *m, u64 addr, int type, u64 *from, u64 *to)
 {
@@ -64,4 +208,39 @@ int r_meta_get_bounds(struct r_meta_t *m, u64 addr, int type, u64 *from, u64 *to
 		return 1;
 	}
 	return 0;
+}
+#endif
+
+const char *r_meta_type_to_string(int type)
+{
+	switch(type) {
+	case R_META_CODE: return "Cc";
+	case R_META_DATA: return "Cd";
+	case R_META_STRING: return "Cs";
+	case R_META_STRUCT: return "Cm";
+	case R_META_FUNCTION: return "CF";
+	case R_META_COMMENT: return "CC";
+	case R_META_FOLDER: return "CF";
+	case R_META_XREF_CODE: return "Cx";
+	case R_META_XREF_DATA: return "CX";
+	}
+	return "(...)";
+}
+
+int r_meta_list(struct r_meta_t *m, int type)
+{
+	int count = 0;
+	struct list_head *pos;
+
+	list_for_each(pos, &m->data) {
+		struct r_meta_item_t *d = (struct r_meta_item_t *)
+			list_entry(pos, struct r_meta_item_t, list);
+		if (d->type == type || type == R_META_ANY) {
+			printf("%s 0x%08llx 0x%08llx %d %s\n",
+				r_meta_type_to_string(d->type),
+				d->from, d->to, (int)(d->to-d->from), d->str);
+			count++;
+		}
+	}
+	return count;
 }

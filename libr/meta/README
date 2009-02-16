@@ -10,31 +10,6 @@ r_meta
 ** We can store multiple linked lists depending on type of data, to
    reduce the search space.
 
-enum {
- R_META_DATA,
- R_META_CODE,
- R_META_CODE_XREF,
- R_META_DATA_XREF,
- R_META_STRING,
- R_META_FUNCTION,
- R_META_STRUCT,
- R_META_COMMENT,
- R_META_FOLDER
-}
-
-struct r_meta_item_t {
-  int type;
-  u64 addr;
-  u64 size;
-  char *data;
-  struct list_head list;
-};
-
-struct r_meta_t {
-  struct list_head comments;
-  struct list_head xrefs;
-};
-
 struct r_meta_t * meta = r_meta_new();
 
 /* get list of xrefs to this addr */
