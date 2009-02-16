@@ -180,7 +180,6 @@ int r_search_kw_add(struct r_search_t *s, const char *kw, const char *bm)
 	k->binmask_length = r_hex_str2bin(bm, k->bin_binmask);
 	if (k->binmask_length == -1)
 		k->binmask_length = strlen(bm);
-printf("kw add\n");
 	list_add(&(k->list), &(s->kws));
 	s->n_kws++;
 	return R_TRUE;

@@ -49,7 +49,6 @@ static void *r_cons_break_user;
 static void break_signal(int sig)
 {
 	r_cons_breaked = 1;
-	printf("break received\n");
 	if (r_cons_break_cb)
 		r_cons_break_cb(r_cons_break_user);
 }
@@ -59,7 +58,6 @@ void r_cons_break(void (*cb)(void *u), void *user)
 	r_cons_breaked = 0;
 	r_cons_break_user = user;
 	r_cons_break_cb = cb;
-	printf("break enabled\n");
 #if __UNIX__
 	signal(SIGINT, break_signal);
 #endif
@@ -67,7 +65,6 @@ void r_cons_break(void (*cb)(void *u), void *user)
 
 void r_cons_break_end()
 {
-	printf("break end\n");
 	r_cons_breaked = 0;
 #if __UNIX__
 	signal(SIGINT, SIG_IGN);
