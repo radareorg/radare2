@@ -96,8 +96,8 @@ int r_hex_str2bin(const char *in, u8 *out) // 0A 3B 4E A0
 			continue;
 		}
 		if (r_hex_to_byte(&c, ptr[0])) {
-			eprintf("binstr: Invalid hexa string at %d ('0x%02x') (%s).\n", (int)(ptr-in), ptr[0], in);
-			return 0;
+			//eprintf("binstr: Invalid hexa string at %d ('0x%02x') (%s).\n", (int)(ptr-in), ptr[0], in);
+			return -1;
 		}
 		c |= d;
 		if (j++ == 0) c <<= 4;

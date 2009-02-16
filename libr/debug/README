@@ -24,3 +24,15 @@ controlflow commands: (should be splitted in two layers)
 We also need a load/store/dump/restore functions to move the
 program from one engine to another (ptrace -> qemu).. we should
 provide a way for all this operations between them.
+
+[continue]
+    |--- check if bp api allows us to continue or we should step into..
+    |--- check if debug plugin supports continue
+
+[getregs]
+    |--- r_reg give us a list of registers
+    |    - dr (show bitsize debug registers) // 32 by default
+    |    - dr 32 (show 32 bit debug registers) // depends on size
+    |    - dr eax (show 'eax' register value)
+    |    - dr al  (show 8bit register 'al')
+    |    - dr eax=33 (set 'eax' register value)

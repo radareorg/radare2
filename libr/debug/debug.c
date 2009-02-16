@@ -149,6 +149,18 @@ int r_debug_register_set(struct r_debug_t *dbg, int reg, u64 value)
 	return R_TRUE;
 }
 
+/* for debugging purposes? */
+int r_debug_register_list(struct r_debug_t *dbg)
+{
+	int i =0;
+	for(i=0;i<dbg->reg.nregs;i++) {
+		u64 value;
+		r_debug_register_get(dbg, i, &value);
+		printf("%d %s 0x%08llx\n", i, dbg->reg.regs[i], value);
+	}
+	return R_TRUE;
+}
+
 /* mmu */
 
 int r_debug_mmu_alloc(struct r_debug_t *dbg, u64 size, u64 *addr)

@@ -18,7 +18,10 @@ extern FILE *stdin_fd;
 extern FILE *r_cons_stdin_fd;
 extern int r_cons_stdout_fd;
 extern int r_cons_stdout_file;
+extern int r_cons_breaked;
 
+void r_cons_break(void (*cb)(void *u), void *user);
+void r_cons_break_end();
 /* pipe */
 int r_cons_pipe_open(const char *file, int append);
 void r_cons_pipe_close(int fd);

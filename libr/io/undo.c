@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007, 2008
+ * Copyright (C) 2007, 2008, 2009
  *       pancake <@youterm.com>
  *
  * radare is free software; you can redistribute it and/or modify
@@ -23,6 +23,12 @@
 #include "list.h"
 #include "undo.h"
 
+#if 0
+* Handle changes in write and seeks
+* Per-fd history log
+#endif
+
+#if 0
 /* History for writes support indexing and undo/redo with state flags */
 static struct list_head undo_w_list;
 static int undo_w_init = 0;
@@ -33,6 +39,21 @@ static int undo_w_lock = 0;
 static u64 undos[UNDOS];
 static int undos_idx = 0;
 static int undos_lim = 0;
+#endif
+
+
+int r_io_undo_init(struct r_io_undo_t *undo)
+{
+	u->undo_w_init = 0;
+	u->undo_w_lock = 0;
+	u->undos_idx = 0;
+	u->undos_lim = 0;
+	return R_TRUE;
+}
+
+// u64 r_io_undo_get_last()
+{
+}
 
 u64 undo_get_last_seek()
 {

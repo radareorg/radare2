@@ -67,7 +67,22 @@ static int cmd_interpret(void *data, const char *input)
 		"Usage: . [file] | [!command] | [(macro)]\n"
 		" . foo.rs          ; interpret r script\n"
 		" .!rabin -ri $FILE ; interpret output of command\n"
-		" .(foo 1 2 3)      ; run macro 'foo' with args 1, 2, 3\n");
+		" .(foo 1 2 3)      ; run macro 'foo' with args 1, 2, 3\n"
+		" ./m ELF           ; interpret output of command /m ELF as r. commands\n");
+		break;
+	default:
+		{
+		char *str = r_core_cmd_str(core, input);
+		char *ptr = str;
+		while(1) {
+			char *eol = strchr(ptr, '\n');
+			if (eol) eol[0]='\0';
+			r_core_cmd(core, ptr, 0);
+			if (!eol) break;
+			ptr = eol+1;
+		}
+		free(str);
+		}
 		break;
 	}
 	return 0;
@@ -285,22 +300,20 @@ static int cmd_flag(void *data, const char *input)
 	char *str = alloca(len);
 	//u64 seek = core->seek;
 	//u64 size = core->blocksize;
-	memcpy(str, input, len);
+	memcpy(str, input+1, len);
 	ptr = strchr(str+1, ' ');
 	if (ptr) {
 		*ptr='\0';
 		ptr = strchr(ptr+1, ' ');
-		if (ptr) {
-			*ptr='\0';
-		}
+		if (ptr) *ptr='\0';
 		// TODO redefine seek and size here
 	}
 	switch(input[0]) {
 	case '+':
-		r_flag_set(&core->flags, input+1, core->seek, core->blocksize, 1);
+		r_flag_set(&core->flags, str, core->seek, core->blocksize, 1);
 		break;
 	case ' ':
-		r_flag_set(&core->flags, input+1, core->seek, core->blocksize, 0);
+		r_flag_set(&core->flags, str, core->seek, core->blocksize, 0);
 		break;
 	case '-':
 		r_flag_unset(&core->flags, input+1);
@@ -579,6 +592,24 @@ static int cmd_search(void *data, const char *input)
 		r_search_begin(core->search);
 		dosearch = 1;
 		break;
+	case 'm': /* match regexp */
+		{
+		char *inp = strdup(input+2);
+		char *res = r_str_lchr(inp+1, inp[0]);
+		char *opt = NULL;
+		if (res > inp) {
+			opt = strdup(res+1);
+			res[1]='\0';
+		}
+		r_search_free(core->search);
+		core->search = r_search_new(R_SEARCH_REGEXP);
+		r_search_kw_add(core->search, inp, opt);
+		r_search_begin(core->search);
+		dosearch = 1;
+		free(inp);
+		free(opt);
+		}
+		break;
 	case 'x': /* search hex */
 		r_search_free(core->search);
 		core->search = r_search_new(R_SEARCH_KEYWORD);
@@ -587,12 +618,16 @@ static int cmd_search(void *data, const char *input)
 		dosearch = 1;
 		break;
 	default:
-		r_cons_printf("Usage: /[x/] [arg]\n"
+		r_cons_printf("Usage: /[xm/] [arg]\n"
 		" / foo     ; search for string 'foo'\n"
+		" /m /E.F/i ; match regular expression\n"
 		" /x ff0033 ; search for hex string\n"
 		" //        ; repeat last search\n");
 		break;
 	}
+	if (core->search->n_kws==0) {
+		printf("No keywords defined\n");
+	} else
 	if (dosearch) {
 		/* set callback */
 		/* TODO: handle last block of data */
@@ -600,13 +635,20 @@ static int cmd_search(void *data, const char *input)
 		/* TODO: launch search in background support */
 		buf = (u8 *)malloc(core->blocksize);
 		r_search_set_callback(core->search, &__cb_hit, &core);
+		r_cons_break(NULL, NULL);
 		for(at = core->seek; at < core->file->size; at += core->blocksize) {
+			if (r_cons_breaked)
+				break;
 			r_io_lseek(&core->io, core->file->fd, at, R_IO_SEEK_SET);
 			ret = r_io_read(&core->io, core->file->fd, buf, core->blocksize);
 			if (ret != core->blocksize)
 				break;
-			r_search_update(core->search, &at, buf, ret);
+			if (r_search_update(core->search, &at, buf, ret) == -1) {
+				printf("search:update error\n");
+				break;
+			}
 		}
+		r_cons_break_end();
 	}
 	return R_TRUE;
 }
@@ -868,7 +910,12 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 	}
 	ptr = strchr(cmd, '@');
 	if (ptr) {
+		char *pt = ptr;
 		ptr[0]='\0';
+		while(pt[0]==' '||pt=='\t') {
+			pt[0]='\0';
+			pt = pt-1;
+		}
 		*rs = 1;
 		if (ptr[1]=='@') {
 			fprintf(stderr, "TODO: foreach @ loop\n");

@@ -22,4 +22,6 @@ struct r_reg_t {
 	char **regs;
 };
 
+int r_reg_set_arch(struct r_reg_t *reg, int arch, int bits);
+
 #endif

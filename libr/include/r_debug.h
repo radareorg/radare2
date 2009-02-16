@@ -24,7 +24,7 @@ struct r_debug_t {
 	int tid;    /* selected thread id */
 	int swstep; /* steps with software traps */
 	int steps;  /* counter of steps done */
-	struct r_reg_t reg;  /* counter of steps done */
+	struct r_reg_t reg;
 	/* io */
 	int (*read)(int pid, u64 addr, u8 *buf, int len);
 	int (*write)(int pid, u64 addr, u8 *buf, int len);

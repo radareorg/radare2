@@ -105,7 +105,7 @@ char *r_str_ichr(char *str, char chr)
 
 char *r_str_lchr(char *str, char chr)
 {
-        int len = strlen(str);
+        int len = strlen(str)+1;
         for(;len>=0;len--)
                 if (str[len]==chr)
                         return str+len;

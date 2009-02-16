@@ -16,16 +16,23 @@ int r_search_regexp_update(struct r_search_t *s, u64 from, const u8 *buf, int le
 	list_for_each_prev(pos, &s->kws) {
 		struct r_search_kw_t *kw = list_entry(pos, struct r_search_kw_t, list);
 		int reflags = REG_EXTENDED;
-		int delta = 0;
+		int ret, delta = 0;
 		regmatch_t matches[10];
 		regex_t compiled;
 
 		if (strchr(kw->binmask, 'i'))
 			reflags |= REG_ICASE;
 
-		regcomp(&compiled, kw->keyword, reflags);
+		if (regcomp(&compiled, kw->keyword, reflags)) {
+			fprintf(stderr, "Cannot compile '%s' regexp\n",kw->keyword);
+			return -1;
+		}
 		foo:
-		while (!regexec(&compiled, buffer+delta, 1, &matches, 0)) {
+		ret = regexec(&compiled, buffer+delta, 1, &matches, 0);
+		if (ret) {
+			return 0;
+		} else
+		do {
 			if (s->callback)
 				s->callback(kw, s->user, (u64)from+matches[0].rm_so+delta);
 			else printf("hit%d_%d 0x%08llx ; %s\n",
@@ -34,7 +41,9 @@ int r_search_regexp_update(struct r_search_t *s, u64 from, const u8 *buf, int le
 			delta += matches[0].rm_so+1;
 			kw->count++;
 			count++;
-		}
+		} while(!regexec(&compiled, buffer+delta, 1, &matches, 0));
+		if (delta == 0)
+			return 0;
 
 		/* TODO: check if skip 0 works */
 		skipz = strchr(buffer, '\0');
@@ -42,7 +51,8 @@ int r_search_regexp_update(struct r_search_t *s, u64 from, const u8 *buf, int le
 		if (skipz && skipz+1 < end) {
 			for(;!*skipz&&end;skipz=skipz+1);
 			delta = skipz-buffer;
-			goto foo;
+			if (kw->count>0)
+				goto foo;
 		}
 	}
 	return count;

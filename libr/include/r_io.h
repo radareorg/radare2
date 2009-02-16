@@ -14,13 +14,25 @@
 #define R_IO_SEEK_CUR 1
 #define R_IO_SEEK_END 2
 
-#define IO_MAP_N 10
+#define IO_MAP_N 32
 struct r_io_maps_t {
         int fd;
         char file[128];
         u64 from;
         u64 to;
         struct list_head list;
+};
+
+/* stores write and seek changes */
+#define R_IO_UNDOS 64
+struct r_io_undo_t {
+	struct list_head undo_w_list;
+	int w_init;
+	int w_lock;
+	u64 seek[R_IO_UNDOS];
+	int fd[R_IO_UNDOS];
+	int idx;
+	int lim;
 };
 
 struct r_io_t {
@@ -38,12 +50,17 @@ struct r_io_t {
 	struct list_head maps;
 };
 
+//struct r_io_handle_fd_t {
+// ... store io changes here
+//};
+
 struct r_io_handle_t {
         void *handle;
         char *name;
         char *desc;
         void *widget;
         int (*init)();
+	struct r_io_undo_t undo;
         struct debug_t *debug;
         int (*system)(struct r_io_t *io, int fd, const char *);
         int (*open)(struct r_io_t *io, const char *, int rw, int mode);

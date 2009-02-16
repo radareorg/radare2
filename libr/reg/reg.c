@@ -40,8 +40,10 @@ struct r_reg_arch_t x86 {
 }
 #endif
 
-int r_reg_set(struct r_reg_t *reg, int arch, int bits)
+int r_reg_set_arch(struct r_reg_t *reg, int arch, int bits)
 {
+	int ret = R_TRUE;
+
 	switch(arch) {
 	case R_ASM_ARCH_X86:
 		switch(bits) {
@@ -59,6 +61,12 @@ int r_reg_set(struct r_reg_t *reg, int arch, int bits)
 			break;
 		}
 		break;
+	/* TODO: add more architectures */
+	case R_ASM_ARCH_ARM:
+	case R_ASM_ARCH_MIPS:
+	default:
+		ret = R_FALSE;
+		break;
 	}
-	return R_TRUE;
+	return ret;
 }

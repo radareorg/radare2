@@ -2,7 +2,7 @@
 PREFIX=../prefix
 
 # Libraries
-LIBLIST=io util lib meta lang flags bin macro hash line cons line print config syscall range socket cmd asm anal search diff debug reg core
+LIBLIST=io util lib meta lang flags bin macro hash line cons line print config syscall range socket cmd asm anal search diff debug reg core var
 
 
 # Under development
@@ -48,3 +48,4 @@ todo:
 
 clean:
 	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} clean ); done
+	cd vapi/t && ${MAKE} clean

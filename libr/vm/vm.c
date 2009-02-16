@@ -196,6 +196,7 @@ int r_vm_init(struct r_vm_t *vm, int init)
 
 	//vm_mmu_real(vm, config_get_i("vm.realio"));
 	/* vm_dbg_arch_x86_nregs */
+	/* XXX: this is hardcoded ..should be moved outside or as in plugins */
 	switch (1) { //config.arch) {
 #if 0
 	case ARCH_X86_64:

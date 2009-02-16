@@ -31,11 +31,19 @@ int r_debug_ptrace_continue(int pid)
 	return ptrace(PTRACE_CONT, pid, addr, data);
 }
 
+int r_debug_ptrace_import(struct r_debug_handle_t *from)
+{
+	//int pid = from->export(R_DEBUG_GET_PID);
+	//int maps = from->export(R_DEBUG_GET_MAPS);
+}
+
 struct r_debug_handle_t {
 	.step = &r_debug_ptrace_step,
 	.cont = &r_debug_ptrace_continue,
 	.attach = &r_debug_ptrace_attach,
 	.detach = &r_debug_ptrace_detach,
+//	.import = &r_debug_ptrace_import,
+//	.export = &r_debug_ptrace_export,
 };
 #if 0
 int r_debug_ptrace_init(struct r_debug_t *dbg)
