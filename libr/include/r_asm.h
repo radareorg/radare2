@@ -94,4 +94,10 @@ int r_asm_ppc_disasm(struct r_asm_t *a, u8 *buf, u64 len);
 
 /* arch/bf/asm.c */
 int r_asm_bf_disasm(struct r_asm_t *a, u8 *buf, u64 len);
+
+/* arch/csr/asm.c */
+int r_asm_csr_disasm(struct r_asm_t *a, u8 *buf, u64 len);
+
+/* arch/m68k/asm.c */
+int r_asm_m68k_disasm(struct r_asm_t *a, u8 *buf, u64 len);
 #endif

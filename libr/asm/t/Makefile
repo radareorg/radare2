@@ -1,6 +1,6 @@
 LDFLAGS=-L../../util -lr_util -L../ -lr_asm
 LDFLAGS_BIN=${LDFLAGS} -lr_bin -L../../bin
-all: disasm_x86 disasm_arm disasm_mips disasm_sparc disasm_ppc disasm_bf asm_x86 rasm2 realloc_x86 aop_x86
+all: disasm_x86 disasm_arm disasm_mips disasm_sparc disasm_ppc disasm_csr disasm_m68k disasm_bf asm_x86 rasm2 realloc_x86
 
 disasm_x86:
 	${CC} -g -I ../../include disasm_x86.c ${LDFLAGS} -o disasm_x86
@@ -17,6 +17,12 @@ disasm_sparc:
 disasm_ppc:
 	${CC} -g -I ../../include disasm_ppc.c ${LDFLAGS} -o disasm_ppc
 
+disasm_csr:
+	${CC} -g -I ../../include disasm_csr.c ${LDFLAGS} -o disasm_csr
+
+disasm_m68k:
+	${CC} -g -I ../../include disasm_m68k.c ${LDFLAGS} -o disasm_m68k
+
 disasm_bf:
 	${CC} -g -I ../../include disasm_bf.c ${LDFLAGS} -o disasm_bf
 
@@ -29,8 +35,5 @@ rasm2:
 realloc_x86:
 	${CC} -g -I ../../include realloc_x86.c ${LDFLAGS_BIN} -o realloc_x86
 
-aop_x86:
-	${CC} -g -I ../../include aop_x86.c ${LDFLAGS_BIN} -o aop_x86
-
 clean:
-	rm -f disasm_x86 disasm_arm disasm_mips disasm_sparc disasm_ppc disasm_bf asm_x86 rasm2 realloc_x86 aop_x86
+	rm -f disasm_x86 disasm_arm disasm_mips disasm_sparc disasm_ppc disasm_csr disasm_m68k disasm_bf asm_x86 rasm2 realloc_x86

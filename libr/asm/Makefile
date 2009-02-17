@@ -49,4 +49,14 @@ OBJ+=arch/ppc/ppc_disasm/ppc_disasm.o
 # BF
 OBJ+=arch/bf/asm.o
 
+# CSR
+OBJ+=arch/csr/asm.o
+# ppc-disasm
+OBJ+=arch/csr/csr_disasm/dis.o
+
+# M68K
+OBJ+=arch/m68k/asm.o
+# mk8k-disasm
+OBJ+=arch/m68k/m68k_disasm/m68k_disasm.o
+
 include ../rules.mk

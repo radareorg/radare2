@@ -57,6 +57,14 @@ int r_asm_set_arch(struct r_asm_t *a, int arch)
 		a->r_asm_disasm = &r_asm_bf_disasm;
 		a->r_asm_asm = NULL;
 		break;
+	case R_ASM_ARCH_CSR:
+		a->r_asm_disasm = &r_asm_csr_disasm;
+		a->r_asm_asm = NULL;
+		break;
+	case R_ASM_ARCH_M68K:
+		a->r_asm_disasm = &r_asm_m68k_disasm;
+		a->r_asm_asm = NULL;
+		break;
 	default:
 		a->r_asm_disasm = NULL;
 		a->r_asm_asm = NULL;
