@@ -70,12 +70,12 @@ int r_var_type_list(struct r_var_t *var)
 	list_for_each(pos, &var->vartypes) {
 		struct r_var_type_t *d = (struct r_var_type_t *)
 			list_entry(pos, struct r_var_type_t, list);
-		cons_printf("%s %d %s\n", d->name, d->size, d->fmt);
+		printf("%s %d %s\n", d->name, d->size, d->fmt);
 	}
 	return ret;
 }
 
-struct r_var_type_d *r_var_type_get(struct r_var_t *var, const char *datatype)
+struct r_var_type_t *r_var_type_get(struct r_var_t *var, const char *datatype)
 {
 	struct list_head *pos;
 
@@ -136,7 +136,7 @@ int r_var_add_access(struct r_var_t *var, u64 addr, int delta, int type, int set
 	/* automatic init */
 	/* detect function in CF list */
 	from = to = 0LL;
-	// XXX THIS IS FOR R_META?
+	// XXX USE RMETA HERE!!
 	if ( data_get_fun_for(addr, &from, &to) ) {
 		char varname[32];
 		if (delta < 0) {
@@ -186,7 +186,7 @@ int r_var_item_print(struct r_var_t *var, struct r_var_item_t * v)
 {
 	struct r_var_type_t *t = r_var_type_get(var, v->vartype);
 	if (t == NULL) {
-		u32 value = var_dbg_read(v->delta);
+		u32 value = 0; //XXX var_dbg_read(v->delta);
 		// TODO: use var type to 
 		r_cons_printf("%x", value);
 	} else {
@@ -206,14 +206,13 @@ int r_var_item_print(struct r_var_t *var, struct r_var_item_t * v)
 /* CFV */
 int r_var_list_show(struct r_var_t *var, u64 addr)
 {
-	char buf[256];
 	struct list_head *pos;
 	struct r_var_item_t *v;
 
 	list_for_each(pos, &var->vars) {
 		v = (struct r_var_item_t*)list_entry(pos, struct r_var_item_t, list);
 		if (addr == 0 || (addr >= v->addr && addr <= v->eaddr)) {
-			u32 value = var_dbg_read(v->delta);
+			//u32 value = var_dbg_read(v->delta);
 			if (v->arraysize>1) {
 				r_cons_printf("%s %s %s[%d] = ",
 					r_var_type_to_string(v->type),
@@ -246,12 +245,12 @@ int r_var_list(struct r_var_t *var, u64 addr, int delta)
 	list_for_each(pos, &var->vars) {
 		v = (struct r_var_item_t*)list_entry(pos, struct r_var_item_t, list);
 		if (addr == 0 || (addr >= v->addr && addr <= v->eaddr)) {
-			cons_printf("0x%08llx - 0x%08llx type=%s type=%s name=%s delta=%d array=%d\n",
+			printf("0x%08llx - 0x%08llx type=%s type=%s name=%s delta=%d array=%d\n",
 				v->addr, v->eaddr, r_var_type_to_string(v->type),
 				v->vartype, v->name, v->delta, v->arraysize);
 			list_for_each_prev(pos2, &v->access) {
 				x = (struct r_var_access_t *)list_entry(pos2, struct r_var_access_t, list);
-				r_cons_printf("  0x%08llx %s\n", x->addr, x->set?"set":"get");
+				printf("  0x%08llx %s\n", x->addr, x->set?"set":"get");
 			}
 		}
 	}

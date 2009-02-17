@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
 
 #include <r_flags.h>
 #include <r_cons.h> // TODO: drop dependency
@@ -13,7 +13,7 @@ int r_flag_init(struct r_flag_t *f)
 	f->space_idx = -1;
 	f->space_idx2 = -1;
 	f->base = 0LL;
-	for(i=0;i<R_FLAG_SPACES;i++)
+	for(i=0;i<R_FLAG_SPACES_MAX;i++)
 		f->space[i] = NULL;
 	return 0;
 }
@@ -24,23 +24,14 @@ int r_flag_set_base(struct r_flag_t *f, u64 new_base)
 	return 0;
 }
 
-const const char *r_flag_space_get(struct r_flag_t *f, int idx)
-{
-	if (idx==-1)
-		return "";
-	if (idx>255||f->space[idx]=='\0')
-		return "";
-	return f->space[idx];
-}
-
 struct r_flag_item_t *r_flag_list(struct r_flag_t *f, int rad)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &f->flags) {
 		struct r_flag_item_t *flag = list_entry(pos, struct r_flag_item_t, list);
-		if (rad) printf("f %s %d @ 0x%08llx\n", flag->name,
+		if (rad) printf("f %s %lld @ 0x%08llx\n", flag->name,
 			flag->size, flag->offset);
-		else printf("0x%08llx %d %s\n",
+		else printf("0x%08llx %lld %s\n",
 			flag->offset, flag->size, flag->name);
 	}
 	return NULL;

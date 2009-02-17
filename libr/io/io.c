@@ -4,8 +4,6 @@
 #include "r_util.h"
 #include <stdio.h>
 
-//u64 io->seek = 0; // XXX should be store per io_handle
-
 int r_io_init(struct r_io_t *io)
 {
 	io->write_mask_fd = -1;

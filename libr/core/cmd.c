@@ -319,7 +319,9 @@ static int cmd_flag(void *data, const char *input)
 		r_flag_unset(&core->flags, input+1);
 		break;
 	case 's':
-		/* spaces */
+		if (input[1]==' ')
+			r_flag_space_set(&core->flags, input+2);
+		else r_flag_space_list(&core->flags, 0);
 		break;
 	case '*':
 		r_flag_list(&core->flags, 1);

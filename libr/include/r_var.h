@@ -59,7 +59,7 @@ int r_var_init(struct r_var_t *var);
 int r_var_type_add(struct r_var_t *var, const char *typename, int size, const char *fmt);
 int r_var_type_del(struct r_var_t *var, const char *typename);
 int r_var_type_list(struct r_var_t *var);
-const char *r_var_type_get(struct r_var_t *var, const char *datatype);
+struct r_var_type_t *r_var_type_get(struct r_var_t *var, const char *datatype);
 const char *r_var_type_to_string(int type);
 
 /* food */
