@@ -34,17 +34,36 @@ static int rasm_disasm(char *buf, u64 offset, char *arch, char *syntax, int big_
 	int ret = 0;
 	u64 idx = 0, word = 0, len = 0; 
 
-	while(ptr[0]) {
-		if (ptr[0]!= ' ')
-			if (0==(++word%2))len++;
-		ptr += 1;
+	if (arch != NULL && strcmp(arch, "bf")) {
+		while(ptr[0]) {
+			if (ptr[0]!= ' ')
+				if (0==(++word%2))len++;
+			ptr += 1;
+		}
+		data = alloca(len);
+		r_hex_str2bin(buf, data);
+	} else {
+		len = strlen(buf);
+		data = buf;
 	}
-	data = alloca(len);
-	r_hex_str2bin(buf, data);
 
-	if (!strcmp(arch, "arm"))
-		r_asm_set(&a, "asm_arm");
-	else r_asm_set(&a, "asm_x86");
+	if (arch != NULL) {
+		if (!strcmp(arch, "arm"))
+			r_asm_set(&a, "asm_arm");
+		else if (!strcmp(arch, "mips"))
+			r_asm_set(&a, "asm_mips");
+		else if (!strcmp(arch, "sparc"))
+			r_asm_set(&a, "asm_sparc");
+		else if (!strcmp(arch, "ppc"))
+			r_asm_set(&a, "asm_ppc");
+		else if (!strcmp(arch, "bf"))
+			r_asm_set(&a, "asm_bf");
+		else if (!strcmp(arch, "csr"))
+			r_asm_set(&a, "asm_csr");
+		else if (!strcmp(arch, "m68k"))
+			r_asm_set(&a, "asm_m68k");
+		else r_asm_set(&a, "asm_x86");
+	} else r_asm_set(&a, "asm_x86");
 
 	if (syntax != NULL) {
 		if (!strcmp(syntax, "att"))
@@ -52,7 +71,7 @@ static int rasm_disasm(char *buf, u64 offset, char *arch, char *syntax, int big_
 		else if (!strcmp(syntax, "olly"))
 			r_asm_set_syntax(&a, R_ASM_SYN_OLLY);
 		else r_asm_set_syntax(&a, R_ASM_SYN_INTEL);
-	}
+	} else r_asm_set_syntax(&a, R_ASM_SYN_INTEL);
 
 	r_asm_set_big_endian(&a, big_endian);
 	r_asm_set_pc(&a, offset);
@@ -92,7 +111,6 @@ static int rasm_asm(char *buf, u64 offset, char *arch, char *syntax, int big_end
 static int __lib_asm_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 {
 	struct r_asm_handle_t *hand = (struct r_asm_handle_t *)data;
-	struct r_core_t *core = (struct r_core_t *)user;
 	//printf(" * Added (dis)assembly handler\n");
 	r_asm_add(&a, hand);
 	return R_TRUE;
