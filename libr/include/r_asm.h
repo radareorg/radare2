@@ -6,6 +6,7 @@
 #include <r_types.h>
 #include <list.h>
 
+//XXX: Move to r_lib
 enum {
 	R_ASM_ARCH_NULL = 0,
 	R_ASM_ARCH_X86,
@@ -25,8 +26,7 @@ enum {
 enum {
 	R_ASM_SYN_NULL = 0,
 	R_ASM_SYN_INTEL,
-	R_ASM_SYN_ATT,
-	R_ASM_SYN_OLLY
+	R_ASM_SYN_ATT
 };
 
 struct r_asm_aop_t {

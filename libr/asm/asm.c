@@ -90,7 +90,6 @@ int r_asm_set_syntax(struct r_asm_t *a, int syntax)
 	switch (syntax) {
 	case R_ASM_SYN_INTEL:
 	case R_ASM_SYN_ATT:
-	case R_ASM_SYN_OLLY:
 		a->syntax = syntax;
 		return R_TRUE;
 	default:

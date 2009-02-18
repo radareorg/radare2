@@ -55,8 +55,6 @@ static int rasm_disasm(char *buf, u64 offset, char *arch, char *syntax, int big_
 	if (syntax != NULL) {
 		if (!strcmp(syntax, "att"))
 			r_asm_set_syntax(&a, R_ASM_SYN_ATT);
-		else if (!strcmp(syntax, "olly"))
-			r_asm_set_syntax(&a, R_ASM_SYN_OLLY);
 		else r_asm_set_syntax(&a, R_ASM_SYN_INTEL);
 	} else r_asm_set_syntax(&a, R_ASM_SYN_INTEL);
 
@@ -80,8 +78,7 @@ static int rasm_asm(char *buf, u64 offset, char *arch, char *syntax, int big_end
 
 
 	/* TODO: Arch, syntax... */
-	r_asm_set(&a, "asm_x86");
-	r_asm_set_syntax(&a, R_ASM_SYN_OLLY);
+	r_asm_set(&a, "asm_x86_olly");
 
 	r_asm_set_big_endian(&a, big_endian);
 	r_asm_set_pc(&a, offset);

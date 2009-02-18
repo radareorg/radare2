@@ -1,10 +1,11 @@
-CFLAGS=-I../../include -I../arch/ -I../arch/include -Wall
+CFLAGS=-I../../include -I../arch/ -I../arch/include -w
 # XXX
-CFLAGS+=-DLIL_ENDIAN=1
+# -Wall
+CFLAGS+=-DLIL_ENDIAN=1 -D__UNIX__
 
 ## X86
-OBJ_X86=asm_x86.o
 # udis86
+OBJ_X86=asm_x86.o
 OBJ_X86+=../arch/x86/udis86/syn.o
 OBJ_X86+=../arch/x86/udis86/input.o
 OBJ_X86+=../arch/x86/udis86/udis86.o
@@ -13,9 +14,13 @@ OBJ_X86+=../arch/x86/udis86/itab.o
 OBJ_X86+=../arch/x86/udis86/syn-intel.o
 OBJ_X86+=../arch/x86/udis86/syn-att.o
 # olly
-OBJ_X86+=../arch/x86/ollyasm/disasm.o
-OBJ_X86+=../arch/x86/ollyasm/asmserv.o
-OBJ_X86+=../arch/x86/ollyasm/assembl.o
+OBJ_X86_OLLY=asm_olly.o
+OBJ_X86_OLLY+=../arch/x86/ollyasm/disasm.o
+OBJ_X86_OLLY+=../arch/x86/ollyasm/asmserv.o
+OBJ_X86_OLLY+=../arch/x86/ollyasm/assembl.o
+# bea
+OBJ_X86_BEA=asm_bea.o
+OBJ_X86_BEA+=../arch/x86/bea/BeaEngine.o
 ## ARM
 OBJ_ARM=asm_arm.o
 # gnu arm-dis
@@ -46,9 +51,10 @@ OBJ_M68K=asm_m68k.o
 # mk8k-disasm
 OBJ_M68K+=../arch/m68k/m68k_disasm/m68k_disasm.o
 
-all: asm_dummy.so asm_x86.so asm_arm.so \
-		asm_mips.so asm_sparc.so asm_ppc.so \
-		asm_bf.so asm_csr.so asm_m68k.so
+all: asm_dummy.so asm_x86.so asm_olly.so \
+		asm_bea.so asm_arm.so asm_mips.so \
+		asm_sparc.so asm_ppc.so asm_bf.so \
+		asm_csr.so asm_m68k.so
 	@true
 
 asm_dummy.so: asm_dummy.o
@@ -56,39 +62,47 @@ asm_dummy.so: asm_dummy.o
 	@#strip -s asm_dummy.so
 
 asm_x86.so: ${OBJ_X86}
-	${CC} ${CFLAGS} -fPIC -shared -o asm_x86.so ${OBJ_X86} -Wl,-R..
+	${CC} ${CFLAGS}  -fPIC -shared -o asm_x86.so ${OBJ_X86} -Wl,-R..
 	@#strip -s asm_x86.so
 
+asm_olly.so: ${OBJ_X86_OLLY}
+	${CC} ${CFLAGS}  -fPIC -shared -o asm_olly.so ${OBJ_X86_OLLY} -w,-R..
+	@#strip -s asm_x86_olly.so
+
+asm_bea.so: ${OBJ_X86_BEA}
+	${CC} ${CFLAGS} -fPIC -shared -o asm_bea.so ${OBJ_X86_BEA} -Wl,-R..
+	@#strip -s asm_x86_bea.so
+
 asm_arm.so: ${OBJ_ARM}
-	${CC} ${CFLAGS} -fPIC -shared -o asm_arm.so ${OBJ_ARM} -Wl,-R..
+	${CC} ${CFLAGS}  -fPIC -shared -o asm_arm.so ${OBJ_ARM} -Wl,-R..
 	@#strip -s asm_x86.so
 
 asm_mips.so: ${OBJ_MIPS}
-	${CC} ${CFLAGS} -fPIC -shared -o asm_mips.so ${OBJ_MIPS} -Wl,-R..
+	${CC} ${CFLAGS}  -fPIC -shared -o asm_mips.so ${OBJ_MIPS} -Wl,-R..
 	@#strip -s asm_x86.so
 
 asm_sparc.so: ${OBJ_SPARC}
-	${CC} ${CFLAGS} -fPIC -shared -o asm_sparc.so ${OBJ_SPARC} -Wl,-R..
+	${CC} ${CFLAGS}  -fPIC -shared -o asm_sparc.so ${OBJ_SPARC} -Wl,-R..
 	@#strip -s asm_x86.so
 
 asm_ppc.so: ${OBJ_PPC}
-	${CC} ${CFLAGS} -fPIC -shared -o asm_ppc.so ${OBJ_PPC} -Wl,-R..
+	${CC} ${CFLAGS}  -fPIC -shared -o asm_ppc.so ${OBJ_PPC} -Wl,-R..
 	@#strip -s asm_x86.so
 
 asm_bf.so: ${OBJ_BF}
-	${CC} ${CFLAGS} -fPIC -shared -o asm_bf.so ${OBJ_BF} -Wl,-R..
+	${CC} ${CFLAGS}  -fPIC -shared -o asm_bf.so ${OBJ_BF} -Wl,-R..
 	@#strip -s asm_x86.so
 
 asm_csr.so: ${OBJ_CSR}
-	${CC} ${CFLAGS} -fPIC -shared -o asm_csr.so ${OBJ_CSR} -Wl,-R..
+	${CC} ${CFLAGS}  -fPIC -shared -o asm_csr.so ${OBJ_CSR} -Wl,-R..
 	@#strip -s asm_x86.so
 
 asm_m68k.so: ${OBJ_M68K}
-	${CC} ${CFLAGS} -fPIC -shared -o asm_m68k.so ${OBJ_M68K} -Wl,-R..
+	${CC} ${CFLAGS}  -fPIC -shared -o asm_m68k.so ${OBJ_M68K} -Wl,-R..
 	@#strip -s asm_x86.so
 
 clean:
 	-rm -f *.so *.o \
-		${OBJ_X86} ${OBJ_ARM} ${OBJ_MIPS} \
-		${OBJ_SPARC} ${OBJ_PPC} ${OBJ_BF} \
-		${OBJ_CSR} ${OBJ_M68K}
+		${OBJ_X86} ${OBJ_X86_OLLY} ${OBJ_X86_BEA} \
+		${OBJ_ARM} ${OBJ_MIPS} ${OBJ_SPARC} \
+		${OBJ_PPC} ${OBJ_BF} ${OBJ_CSR} ${OBJ_M68K}
