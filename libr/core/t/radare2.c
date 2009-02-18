@@ -11,13 +11,15 @@ static struct r_core_t r;
 
 static int main_help(int line)
 {
-	printf("Usage: radare2 [-dwnV] [-e k=v] [file] [...]\n");
+	printf("Usage: radare2 [-dwnV] [-s addr] [-b bsz] [-e k=v] [file] [...]\n");
 	if (!line) printf(
-		" -d      use 'file' as a program to debug\n"
-		" -w      open file in write mode\n"
-		" -n      do not run ~/.radarerc\n"
-		" -V      show radare2 version\n"
-		" -e k=v  evaluate config var\n");
+		" -d        use 'file' as a program to debug\n"
+		" -w        open file in write mode\n"
+		" -n        do not run ~/.radarerc\n"
+		" -s [addr] initial seek\n"
+		" -b [size] initial block size\n"
+		" -V        show radare2 version\n"
+		" -e k=v    evaluate config var\n");
 	return 0;
 }
 
@@ -33,13 +35,15 @@ int main(int argc, char **argv)
  	int c, perms = R_IO_READ;
 	int run_rc = 1;
 	int debug = 0;
+	int bsize = 0;
+	int seek = 0; // XXX use 64
 
 	if (argc<2)
 		return main_help(1);
 
 	r_core_init(&r);
 
-	while((c = getopt(argc, argv, "whendV"))!=-1) {
+	while((c = getopt(argc, argv, "whendVs:b:"))!=-1) {
 		switch(c) {
 		case 'd':
 			debug = 1;
@@ -57,6 +61,12 @@ int main(int argc, char **argv)
 			break;
 		case 'w':
 			perms = R_IO_RDWR;
+			break;
+		case 'b':
+			bsize = atoi(optarg); // XXX use r_num
+			break;
+		case 's':
+			seek = atoi(optarg); // XXX use r_num
 			break;
 		default:
 			return 1;
@@ -119,6 +129,11 @@ int main(int argc, char **argv)
 		r_core_cmd(&r, "e cmd.prompt=.dr",0);
 		r_core_cmd(&r, "\"e cmd.vprompt=.dr&&s eip\"",0);
 	}
+
+	if (seek)
+		r_core_seek(&r, seek);
+	if (bsize)
+		r_core_block_size(&r, bsize);
 
 	while(r_core_prompt(&r) != -1);
 

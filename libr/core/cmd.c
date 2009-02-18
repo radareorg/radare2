@@ -26,6 +26,41 @@ static int cmd_iopipe(void *data, const char *input)
 	return R_TRUE;
 }
 
+static int cmd_yank(void *data, const char *input)
+{
+	struct r_core_t *core = (struct r_core_t *)data;
+	switch(input[0]) {
+	case ' ':
+		r_core_yank(core, core->seek, atoi(input+1));
+		break;
+	case 'y':
+		r_core_yank_paste(core, r_num_math(&core->num, input+2), 0);
+		break;
+	case '\0':
+		if (core->yank == NULL) {
+			fprintf(stderr, "No buffer yanked already\n");
+		} else {
+			int i;
+			r_cons_printf("0x%08llx %d ",
+				core->yank_off, core->yank_len);
+			for(i=0;i<core->yank_len;i++)
+				r_cons_printf("%02x", core->yank[i]);
+			r_cons_newline();
+		}
+		break;
+	default:
+		r_cons_printf(
+		"Usage: y[y] [len] [[@]addr]\n"
+		" y            ; show yank buffer information (srcoff len bytes)\n"
+		" y 16         ; copy 16 bytes into clipboard\n"
+		" y 16 0x200   ; copy 16 bytes into clipboard from 0x200\n"
+		" y 16 @ 0x200 ; copy 16 bytes into clipboard from 0x200\n"
+		" yy 0x3344    ; paste clipboard\n");
+		break;
+	}
+	return R_TRUE;
+}
+
 static int cmd_quit(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
@@ -174,23 +209,30 @@ static int cmd_help(void *data, const char *input)
 		break;
 	case '\0':
 	default:
-		fprintf(stderr,
+		r_cons_printf(
 		"Usage:\n"
-		" b [bsz]          ; get or change block size\n"
-		" e [a[=b]]        ; list/get/set config evaluable vars\n"
-		" f [name][sz][at] ; set flag at current address\n"
-		" s [addr]         ; seek to address\n"
-		" i [file]         ; get info about opened file\n"
-		" p?[len]          ; print current block with format and length\n"
-		" x [len]          ; alias for 'px' (print hexadecimal\n"
-		" w[mode] [arg]    ; multiple write operations\n"
-		" V                ; enter visual mode\n"
-		" ? [expr]         ; evaluate math expression\n"
-		" |[cmd]           ; run this command thru the io pipe (no args=list)\n"
-		" #[algo] [len]    ; calculate hash checksum of current block\n"
-		" q [ret]          ; quit program with a return value\n"
-		"Append '?' to any char command to get detailed help\n"
-		"");
+		" a                 ; perform analysis of code\n"
+		" b [bsz]           ; get or change block size\n"
+		" d[hrscb]          ; debugger commands\n"
+		" C[CFf..]          ; Code metadata management\n"
+		" e [a[=b]]         ; list/get/set config evaluable vars\n"
+		" i                 ; get info of the current file\n"
+		" f [name][sz][at]  ; set flag at current address\n"
+		" s [addr]          ; seek to address\n"
+		" i [file]          ; get info about opened file\n"
+		" p?[len]           ; print current block with format and length\n"
+		" x [len]           ; alias for 'px' (print hexadecimal\n"
+		" y [len] [off]     ; yank/paste bytes from/to memory\n"
+		" w[mode] [arg]     ; multiple write operations\n"
+		" V[vcmds]          ; enter visual mode (vcmds=visualvisual  keystrokes)\n"
+		" ? [expr]          ; help or evaluate math expression\n"
+		" /[xmp/]           ; search for bytes, regexps, patterns, ..\n"
+		" |[cmd]            ; run this command thru the io pipe (no args=list)\n"
+		" #[algo] [len]     ; calculate hash checksum of current block\n"
+		" .[ file|!cmd|cmd|(macro)]  ; interpret as radare cmds\n"
+		" (macro arg0 arg1) ; define scripting macros\n"
+		" q [ret]           ; quit program with a return value\n"
+		"Append '?' to any char command to get detailed help\n");
 		break;
 	}
 	return 0;
@@ -1142,6 +1184,7 @@ int r_core_cmd_init(struct r_core_t *core)
 	r_cmd_add(&core->cmd, "print",    "print current block", &cmd_print);
 	r_cmd_add(&core->cmd, "write",    "write bytes", &cmd_write);
 	r_cmd_add(&core->cmd, "Code",     "code metadata", &cmd_meta);
+	r_cmd_add(&core->cmd, "yank",     "yank bytes", &cmd_yank);
 	r_cmd_add(&core->cmd, "Visual",   "enter visual mode", &cmd_visual);
 	r_cmd_add(&core->cmd, "!",        "run system command", &cmd_system);
 	r_cmd_add(&core->cmd, "|",        "run io system command", &cmd_io_system);

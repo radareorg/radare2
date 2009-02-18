@@ -96,6 +96,9 @@ int r_core_init(struct r_core_t *core)
 {
 	core->oobi = NULL;
 	core->oobi_len = 0;
+	core->yank = NULL;
+	core->yank_len = 0;
+	core->yank_off = 0LL;
 	core->num.callback = &num_callback;
 	core->num.userptr = core;
 	r_lang_init(&core->lang);

@@ -37,6 +37,9 @@ struct r_core_t {
 	u8 *block;
 	u8 *oobi;
 	int oobi_len;
+	u8 *yank;
+	int yank_len;
+	u64 yank_off;
 	/* files */
 	struct r_io_t io;
 	struct r_core_file_t *file;

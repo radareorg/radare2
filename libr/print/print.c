@@ -141,7 +141,7 @@ void r_print_hexdump(u64 addr, u8 *buf, int len, int step, int columns, int head
 			}
 		}
 		r_cons_newline();
-		addr+=inc;
+		//addr+=inc;
 	}
 }
 
