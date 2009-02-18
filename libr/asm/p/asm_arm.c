@@ -6,17 +6,18 @@
 
 #include <r_types.h>
 #include <r_util.h>
+#include <r_lib.h>
 #include <r_asm.h>
 
 #include "dis-asm.h"
 
 
-static int sparc_mode = 0;
+static int arm_mode = 0;
 static unsigned long Offset = 0;
 static char *buf_global = NULL;
 static unsigned char bytes[4];
 
-static int sparc_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info)
+static int arm_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info)
 {
 	memcpy (myaddr, bytes, length);
 	return 0;
@@ -55,20 +56,21 @@ static int buf_fprintf(void *stream, const char *format, ...)
 	return 0;
 }
 
-int r_asm_sparc_disasm(struct r_asm_t *a, u8 *buf, u64 len)
+static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len)
 {
 	struct disassemble_info disasm_obj;
 
-	buf_global = a->buf_asm;
+	buf_global = aop->buf_asm;
 	Offset = a->pc;
 	memcpy(bytes, buf, 4); // TODO handle thumb
-	r_hex_bin2str(bytes, 4, a->buf_hex);
+	r_hex_bin2str(bytes, 4, aop->buf_hex);
 
 	/* prepare disassembler */
 	memset(&disasm_obj,'\0', sizeof(struct disassemble_info));
-	sparc_mode = a->bits;
+	arm_mode = a->bits;
+	//info.arch = ARM_EXT_V1|ARM_EXT_V4T|ARM_EXT_V5;
 	disasm_obj.buffer = bytes;
-	disasm_obj.read_memory_func = &sparc_buffer_read_memory;
+	disasm_obj.read_memory_func = &arm_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &print_address;
@@ -76,14 +78,28 @@ int r_asm_sparc_disasm(struct r_asm_t *a, u8 *buf, u64 len)
 	disasm_obj.fprintf_func = &buf_fprintf;
 	disasm_obj.stream = stdout;
 
-	a->buf_asm[0]='\0';
-	a->inst_len = print_insn_sparc((bfd_vma)Offset, &disasm_obj);
+	aop->buf_asm[0]='\0';
+	aop->inst_len = print_insn_arm((bfd_vma)Offset, &disasm_obj);
 
-	if (a->inst_len == -1)
-		strcpy(a->buf_asm, " (data)");
+	if (aop->inst_len == -1)
+		strcpy(aop->buf_asm, " (data)");
 
-	if (a->inst_len > 0)
-		memcpy(a->buf, buf, a->inst_len);
+	if (aop->inst_len > 0)
+		memcpy(aop->buf, buf, aop->inst_len);
 
-	return a->inst_len;
+	return aop->inst_len;
 }
+
+static struct r_asm_handle_t r_asm_plugin_arm = {
+	.name = "asm_arm",
+	.desc = "ARM disassembly plugin",
+	.init = NULL,
+	.fini = NULL,
+	.disassemble = &disassemble,
+	.assemble = NULL
+};
+
+struct r_lib_struct_t radare_plugin = {
+	.type = R_LIB_TYPE_ASM,
+	.data = &r_asm_plugin_arm
+};

@@ -92,7 +92,7 @@ static struct r_asm_handle_t r_asm_plugin_x86 = {
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = &assemble,
+	.assemble = &assemble
 };
 
 struct r_lib_struct_t radare_plugin = {

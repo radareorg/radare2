@@ -7,6 +7,11 @@
 #include <r_types.h>
 #include <r_asm.h>
 #include <r_util.h>
+#include <r_lib.h>
+
+
+static struct r_lib_t l;
+static struct r_asm_t a;
 
 static int rasm_show_help()
 {
@@ -23,7 +28,7 @@ static int rasm_show_help()
 
 static int rasm_disasm(char *buf, u64 offset, char *arch, char *syntax, int big_endian)
 {
-	struct r_asm_t a;
+	struct r_asm_aop_t aop;
 	u8 *data;
 	char *ptr = buf;
 	int ret = 0;
@@ -37,11 +42,9 @@ static int rasm_disasm(char *buf, u64 offset, char *arch, char *syntax, int big_
 	data = alloca(len);
 	r_hex_str2bin(buf, data);
 
-	r_asm_init(&a);
-
 	if (!strcmp(arch, "arm"))
-		r_asm_set_arch(&a, R_ASM_ARCH_ARM);
-	else r_asm_set_arch(&a, R_ASM_ARCH_X86);
+		r_asm_set(&a, "asm_arm");
+	else r_asm_set(&a, "asm_x86");
 
 	if (syntax != NULL) {
 		if (!strcmp(syntax, "att"))
@@ -56,9 +59,9 @@ static int rasm_disasm(char *buf, u64 offset, char *arch, char *syntax, int big_
 
 	while (idx < len) {
 		r_asm_set_pc(&a, a.pc + ret);
-		ret = r_asm_disasm(&a, data+idx, len-idx);
+		ret = r_asm_disassemble(&a, &aop, data+idx, len-idx);
 		idx += ret;
-		printf("%s\n", a.buf_asm);
+		printf("%s\n", aop.buf_asm);
 	}
 
 	return (int)idx;
@@ -66,25 +69,35 @@ static int rasm_disasm(char *buf, u64 offset, char *arch, char *syntax, int big_
 
 static int rasm_asm(char *buf, u64 offset, char *arch, char *syntax, int big_endian)
 {
-	struct r_asm_t a;
+	struct r_asm_aop_t aop;
 	int ret;
 
-	r_asm_init(&a);
 
 	/* TODO: Arch, syntax... */
-	r_asm_set_arch(&a, R_ASM_ARCH_X86);
+	r_asm_set(&a, "asm_x86");
 	r_asm_set_syntax(&a, R_ASM_SYN_OLLY);
 
 	r_asm_set_big_endian(&a, big_endian);
 	r_asm_set_pc(&a, offset);
 
-	ret = r_asm_asm(&a, buf);
+	ret = r_asm_assemble(&a, &aop, buf);
 	if (!ret)
 		printf("invalid\n");
-	else printf("%s\n", a.buf_hex);
+	else printf("%s\n", aop.buf_hex);
 
 	return ret;
 }
+
+/* asm callback */
+static int __lib_asm_cb(struct r_lib_plugin_t *pl, void *user, void *data)
+{
+	struct r_asm_handle_t *hand = (struct r_asm_handle_t *)data;
+	struct r_core_t *core = (struct r_core_t *)user;
+	//printf(" * Added (dis)assembly handler\n");
+	r_asm_add(&a, hand);
+	return R_TRUE;
+}
+static int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
 
 int main(int argc, char *argv[])
 {
@@ -94,6 +107,12 @@ int main(int argc, char *argv[])
 
 	if (argc<2)
 		return rasm_show_help();
+
+	r_asm_init(&a);
+	r_lib_init(&l, "radare_plugin");
+	r_lib_add_handler(&l, R_LIB_TYPE_ASM, "(dis)assembly plugins",
+		&__lib_asm_cb, &__lib_asm_dt, NULL);
+	r_lib_opendir(&l, getenv("LIBR_PLUGINS"));
 
 	while ((c = getopt(argc, argv, "da:s:o:h")) != -1)
 	{
