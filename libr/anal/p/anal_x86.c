@@ -25,7 +25,7 @@
 // XXX addr should be off_t for 64 love
 static int aop(struct r_anal_aop_t *aop, void *data)
 {
-	struct r_asm_t *asmdata = (struct r_asm_t*)data;
+	struct r_asm_aop_t *asmdata = (struct r_asm_t*)data;
 	u8 *buf = asmdata->buf;
 
 	memset(aop, '\0', sizeof(struct r_anal_aop_t));

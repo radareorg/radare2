@@ -40,7 +40,6 @@ enum {
 	R_LIB_TYPE_DBG,  /* debugger */
 	R_LIB_TYPE_LANG, /* language */
 	R_LIB_TYPE_ASM,  /* assembler */
-	//R_LIB_TYPE_DIS, /* disassembler */
 	R_LIB_TYPE_ANAL, /* analysis */
 };
 

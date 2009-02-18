@@ -80,6 +80,18 @@ int __lib_anl_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 
 int __lib_anl_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
 
+/* asm callback */
+int __lib_asm_cb(struct r_lib_plugin_t *pl, void *user, void *data)
+{
+	struct r_asm_handle_t *hand = (struct r_asm_handle_t *)data;
+	struct r_core_t *core = (struct r_core_t *)user;
+	//printf(" * Added (dis)assembly handler\n");
+	r_asm_add(&core->assembler, hand);
+	return R_TRUE;
+}
+
+int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
+
 int r_core_init(struct r_core_t *core)
 {
 	core->oobi = NULL;
@@ -89,8 +101,10 @@ int r_core_init(struct r_core_t *core)
 	r_lang_init(&core->lang);
 	r_lang_set_user_ptr(&core->lang, core);
 	r_anal_init(&core->anal);
-	r_meta_init(&core->meta);
 	r_anal_set_user_ptr(&core->anal, core);
+	r_asm_init(&core->assembler);
+	r_asm_set_user_ptr(&core->assembler, core);
+	r_meta_init(&core->meta);
 	r_cons_init();
 	core->search = r_search_new(R_SEARCH_KEYWORD);
 	r_io_init(&core->io);
@@ -116,6 +130,8 @@ int r_core_init(struct r_core_t *core)
 		&__lib_lng_cb, &__lib_lng_dt, core);
 	r_lib_add_handler(&core->lib, R_LIB_TYPE_ANAL, "analysis plugins",
 		&__lib_anl_cb, &__lib_anl_dt, core);
+	r_lib_add_handler(&core->lib, R_LIB_TYPE_ASM, "(dis)assembly plugins",
+		&__lib_asm_cb, &__lib_asm_dt, core);
 	r_lib_opendir(&core->lib, getenv("LIBR_PLUGINS"));
 	{
 		char *homeplugindir = r_str_home(".radare/plugins");

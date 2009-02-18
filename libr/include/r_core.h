@@ -45,6 +45,7 @@ struct r_core_t {
 	struct r_lib_t lib;
 	struct r_cmd_t cmd;
 	struct r_anal_t anal;
+	struct r_asm_t assembler;
 	struct r_meta_t meta;
 	struct r_lang_t lang;
 	struct r_debug_t dbg;

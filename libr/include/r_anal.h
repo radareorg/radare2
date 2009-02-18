@@ -7,21 +7,6 @@
 #include "list.h"
 
 enum {
-	R_ANAL_ARCH_NULL = 0,
-	R_ANAL_ARCH_X86,
-	R_ANAL_ARCH_ARM,
-	R_ANAL_ARCH_PPC,
-	R_ANAL_ARCH_M68K,
-	R_ANAL_ARCH_JAVA,
-	R_ANAL_ARCH_MIPS,
-	R_ANAL_ARCH_SPARC,
-	R_ANAL_ARCH_CSR,
-	R_ANAL_ARCH_MSIL,
-	R_ANAL_ARCH_OBJD,
-	R_ANAL_ARCH_BF
-};
-
-enum {
 	R_ANAL_AOP_TYPE_NULL = 0,
 	R_ANAL_AOP_TYPE_JMP,   /* mandatory jump */
 	R_ANAL_AOP_TYPE_UJMP,  /* unknown jump (register or so) */
