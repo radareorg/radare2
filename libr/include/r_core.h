@@ -17,7 +17,7 @@
 #include "r_flags.h"
 #include "r_config.h"
 
-#define R_CORE_BLOCKSIZE 256
+#define R_CORE_BLOCKSIZE 64
 #define R_CORE_BLOCKSIZE_MAX 0x40000 /* 4 MB */
 
 struct r_core_file_t {

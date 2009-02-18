@@ -90,7 +90,7 @@ int r_lib_dl_check_filename(const char *file)
 int r_lib_run_handler(struct r_lib_t *lib, struct r_lib_plugin_t *plugin, struct r_lib_struct_t *symbol)
 {
 	struct r_lib_handler_t *h = plugin->handler;
-	if (h->constructor != NULL)
+	if (h && h->constructor != NULL)
 		return h->constructor(plugin, h->user, symbol->data);
 	return -1;
 }
@@ -154,7 +154,7 @@ int r_lib_open(struct r_lib_t *lib, const char *file)
 	
 	ret = r_lib_run_handler(lib, p, stru);
 	if (ret == -1) {
-		fprintf(stderr, "Library handler returned -1 for '%s'\n", file);
+		//fprintf(stderr, "Library handler returned -1 for '%s'\n", file);
 		free(p->file);
 		free(p);
 		r_lib_dl_close(handler);

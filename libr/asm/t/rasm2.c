@@ -18,10 +18,12 @@ static int rasm_show_help()
 	printf( "rasm2 [-e] [-o offset] [-a arch] [-s syntax] -d \"opcode\"|\"hexpairs\"|-\n"
 			" -d           Disassemble from hexpair bytes\n"
 			" -o [offset]  Offset where this opcode is suposed to be\n"
-			" -a [arch]    Select architecture (x86, arm)\n"
+			" -a [arch]    Select architecture plugin\n"
 			" -s [syntax]  Select syntax (intel, att, olly)\n"
 			" -e           Use big endian\n"
-			" If the last argument is '-' reads from stdin\n");
+			" If the last argument is '-' reads from stdin\n\n"
+			"Available plugins:\n");
+	r_asm_list(&a);
 	
 	return R_TRUE;
 }
@@ -34,7 +36,7 @@ static int rasm_disasm(char *buf, u64 offset, char *arch, char *syntax, int big_
 	int ret = 0;
 	u64 idx = 0, word = 0, len = 0; 
 
-	if (arch != NULL && strcmp(arch, "bf")) {
+	if (arch != NULL && strcmp(arch, "asm_bf")) {
 		while(ptr[0]) {
 			if (ptr[0]!= ' ')
 				if (0==(++word%2))len++;
@@ -44,26 +46,11 @@ static int rasm_disasm(char *buf, u64 offset, char *arch, char *syntax, int big_
 		r_hex_str2bin(buf, data);
 	} else {
 		len = strlen(buf);
-		data = buf;
+		data = (u8*)buf;
 	}
 
-	if (arch != NULL) {
-		if (!strcmp(arch, "arm"))
-			r_asm_set(&a, "asm_arm");
-		else if (!strcmp(arch, "mips"))
-			r_asm_set(&a, "asm_mips");
-		else if (!strcmp(arch, "sparc"))
-			r_asm_set(&a, "asm_sparc");
-		else if (!strcmp(arch, "ppc"))
-			r_asm_set(&a, "asm_ppc");
-		else if (!strcmp(arch, "bf"))
-			r_asm_set(&a, "asm_bf");
-		else if (!strcmp(arch, "csr"))
-			r_asm_set(&a, "asm_csr");
-		else if (!strcmp(arch, "m68k"))
-			r_asm_set(&a, "asm_m68k");
-		else r_asm_set(&a, "asm_x86");
-	} else r_asm_set(&a, "asm_x86");
+	if (arch == NULL || !r_asm_set(&a, arch))
+		r_asm_set(&a, "asm_x86");
 
 	if (syntax != NULL) {
 		if (!strcmp(syntax, "att"))
@@ -123,14 +110,14 @@ int main(int argc, char *argv[])
 	u64 offset = 0;
 	int big_endian = 0, dis = 0, c;
 
-	if (argc<2)
-		return rasm_show_help();
-
 	r_asm_init(&a);
 	r_lib_init(&l, "radare_plugin");
 	r_lib_add_handler(&l, R_LIB_TYPE_ASM, "(dis)assembly plugins",
 		&__lib_asm_cb, &__lib_asm_dt, NULL);
 	r_lib_opendir(&l, getenv("LIBR_PLUGINS"));
+
+	if (argc<2)
+		return rasm_show_help();
 
 	while ((c = getopt(argc, argv, "da:s:o:h")) != -1)
 	{
