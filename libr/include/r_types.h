@@ -11,6 +11,7 @@
 /* basic types */
 
 #define u64 unsigned long long
+#define s64 long long
 #define u32 unsigned long
 #define u16 unsigned short
 #define u8  unsigned char

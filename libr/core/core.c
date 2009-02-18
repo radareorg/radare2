@@ -138,6 +138,10 @@ int r_core_prompt(struct r_core_t *r)
 	char line[1024];
 	int ret;
 
+	char *cmdprompt = r_config_get(&r->config, "cmd.prompt");
+	if (cmdprompt && cmdprompt[0])
+		r_core_cmd(r, cmdprompt, 0);
+
 	sprintf(prompt, "[0x%08llx]> ", r->seek);
 	r_line_prompt = prompt;
 	ret = r_cons_fgets(line, sizeof(line), 0 , NULL);
@@ -174,6 +178,30 @@ int r_core_seek(struct r_core_t *core, u64 addr)
 {
 	u64 tmp = core->seek;
 	int ret;
+	core->seek = addr;
+	ret = r_core_block_read(core, 0);
+	if (ret == -1)
+		core->seek = tmp;
+	return ret;
+}
+
+int r_core_seek_delta(struct r_core_t *core, s64 addr)
+{
+	u64 tmp = core->seek;
+	int ret;
+	if (addr == 0)
+		return R_TRUE;
+	if (addr>0) {
+		/* check end of file */
+		if (0) { // tmp+addr>) {
+			addr = 0;
+		} else addr+=tmp;
+	} else {
+		/* check < 0 */
+		if (tmp+addr<0) {
+			addr = 0;
+		} else addr+=tmp;
+	}
 	core->seek = addr;
 	ret = r_core_block_read(core, 0);
 	if (ret == -1)

@@ -61,7 +61,7 @@ struct r_io_handle_t {
         void *widget;
         int (*init)();
 	struct r_io_undo_t undo;
-        struct debug_t *debug;
+        struct debug_t *debug; // ???
         int (*system)(struct r_io_t *io, int fd, const char *);
         int (*open)(struct r_io_t *io, const char *, int rw, int mode);
         int (*read)(struct r_io_t *io, int fd, u8 *buf, int count);

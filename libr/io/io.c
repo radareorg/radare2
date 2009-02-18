@@ -176,7 +176,8 @@ int r_io_system(struct r_io_t *io, int fd, const char *cmd)
 		io->fd = fd;
 		return io->plugin->system(io, fd, cmd);
 	}
-	return system(cmd);
+	//return system(cmd);
+	return 0;
 }
 
 int r_io_close(struct r_io_t *io, int fd)

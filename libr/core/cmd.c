@@ -5,6 +5,8 @@
 #include "r_hash.h"
 #include "r_asm.h"
 
+#include <stdarg.h>
+
 int r_core_write_op(struct r_core_t *core, const char *arg, char op);
 
 static int cmd_print(void *data, const char *input);
@@ -18,7 +20,7 @@ static int cmd_iopipe(void *data, const char *input)
 		r_io_handle_list(&core->io);
 		break;
 	default:
-		r_io_system(&core->io, core->file->fd, input+1);
+		r_io_system(&core->io, core->file->fd, input);
 		break;
 	}
 	return R_TRUE;
@@ -101,12 +103,12 @@ static int cmd_seek(void *data, const char *input)
 			r_core_seek(core, off);
 			break;
 		case '+':
-			if (input[1]=='+') r_core_seek(core, core->seek + core->blocksize);
-			else r_core_seek(core, core->seek + off);
+			if (input[1]=='+') r_core_seek_delta(core, core->blocksize);
+			else r_core_seek_delta(core, off);
 			break;
 		case '-':
-			if (input[1]=='-') r_core_seek(core, core->seek - core->blocksize);
-			else r_core_seek(core, core->seek - off);
+			if (input[1]=='-') r_core_seek_delta(core, -core->blocksize);
+			else r_core_seek_delta(core, -off);
 			break;
 		case '?':
 			fprintf(stderr,
@@ -318,6 +320,9 @@ static int cmd_flag(void *data, const char *input)
 	case '-':
 		r_flag_unset(&core->flags, input+1);
 		break;
+	case 'b':
+		r_flag_set_base(&core->flags, r_num_math(&core->num, input+1));
+		break;
 	case 's':
 		if (input[1]==' ')
 			r_flag_space_set(&core->flags, input+2);
@@ -331,6 +336,7 @@ static int cmd_flag(void *data, const char *input)
 		break;
 	case '?':
 		fprintf(stderr, "Usage: f[ ] [flagname]\n"
+		" fb 0x8048000     ; set base address for flagging\n"
 		" f name 12 @ 33   ; set flag 'name' with size 12 at 33\n"
 		" f name 12 33     ; same as above\n"
 		" f+name 12 @ 33   ; like above but creates new one if doesnt exist\n"
@@ -843,19 +849,10 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 	if (cmd[0]=='\0')
 		return 0;
 
-	/* quoted / raw command */
-	if (cmd[0]=='"') {
-		if (cmd[len]!='"') {
-			fprintf(stderr, "parse: Missing ending '\"': '%s'\n", cmd);
-			return 0;
-		}
-		cmd[len]='\0';
-		strcpy(cmd, cmd+1);
-		return 0;
-	}
 	ptr = strchr(cmd, ';');
 	if (ptr)
 		ptr[0]='\0';
+
 	ptr = strchr(cmd+1, '|');
 	if (ptr) {
 		ptr[0] = '\0';
@@ -951,6 +948,7 @@ int r_core_cmd(struct r_core_t *core, const char *command, int log)
 	int ret = -1;
 	int times = 1;
 	int newfd = 1;
+	int quoted = 0;
 	
 	u64 tmpseek = core->seek;
 	int restoreseek = 0;
@@ -964,15 +962,43 @@ int r_core_cmd(struct r_core_t *core, const char *command, int log)
 	cmd = alloca(len)+1024;
 	memcpy(cmd, command, len);
 
+	/* quoted / raw command */
+	len = strlen(cmd);
+	if (cmd[0]=='"') {
+		if (cmd[len-1]!='"') {
+			fprintf(stderr, "parse: Missing ending '\"': '%s' (%c) len=%d\n", cmd, cmd[2], len);
+			return 0;
+		}
+		cmd[len-1]='\0';
+		strcpy(cmd, cmd+1);
+		return r_cmd_call(&core->cmd, cmd);
+	}
+
 	ret = r_core_cmd_subst(core, cmd, &restoreseek, &newfd, &times);
 	if (ret == -1) {
 		fprintf(stderr, "Invalid conversion: '%s'\n", command);
 		ret = -1;
 	} else {
 		for(i=0;i<times;i++) {
-			ret = r_cmd_call(&core->cmd, cmd);
-			if (ret == -1) // stop on error?
-				break;
+			if (quoted) {
+				ret = r_cmd_call(&core->cmd, cmd);
+				if (ret == -1) // stop on error?
+					break;
+			} else {
+				char *ptr;
+				ptr = strchr(cmd, '&');
+				while (ptr&&ptr[1]=='&') {
+					ptr[0]='\0';
+					ret = r_cmd_call(&core->cmd, cmd);
+					if (ret == -1){
+						fprintf(stderr, "command error(%s)\n", cmd);
+						break;
+					}
+					for(cmd=ptr+2;cmd&&cmd[0]==' ';cmd=cmd+1);
+					ptr = strchr(cmd, '&');
+				}
+				r_cmd_call(&core->cmd, cmd);
+			}
 		}
 		if (ret == -1){
 			if (cmd[0])
@@ -1021,6 +1047,7 @@ static int cmd_debug(void *data, const char *input)
 	switch(input[0]) {
 	case 's':
 		fprintf(stderr, "step\n");
+		r_debug_step(&core->dbg);
 		break;
 	case 'b':
 		fprintf(stderr, "breakpoint\n");
@@ -1030,10 +1057,17 @@ static int cmd_debug(void *data, const char *input)
 		r_debug_continue(&core->dbg);
 		break;
 	case 'r':
-		fprintf(stderr, "show registers\n");
+		r_core_cmd(core, "|reg", 0); // XXX
+		break;
+	case 'p':
+		if (input[1]==' ')
+			r_debug_select(&core->dbg, atoi(input+2));
+		else fprintf(stderr, "TODO: List processes..\n");
 		break;
 	case 'h':
-		r_debug_handle_set(&core->dbg, input+1);
+		if (input[1]==' ')
+			r_debug_handle_set(&core->dbg, input+2);
+		else r_debug_handle_list(&core->dbg);
 		break;
 	default:
 		r_cons_printf("Usage: d[sbc] [arg]\n"
@@ -1055,6 +1089,18 @@ static int cmd_debug(void *data, const char *input)
 		break;
 	}
 	return 0;
+}
+
+int r_core_cmdf(void *user, const char *fmt, ...)
+{
+	char string[1024];
+	int ret;
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(string, 1023, fmt, ap);
+	ret = r_core_cmd((struct r_core_t *)user, string, 0);
+	va_end(ap);
+	return ret;
 }
 
 int r_core_cmd0(void *user, const char *cmd)

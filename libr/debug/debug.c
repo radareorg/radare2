@@ -90,6 +90,10 @@ int r_debug_step(struct r_debug_t *dbg, int steps)
 			ret = dbg->h->step(dbg->pid);
 			if (ret == R_FALSE)
 				break;
+			// TODO: create wrapper for dbg_wait
+			if (dbg->h->wait)
+				ret = dbg->h->wait(dbg->pid);
+			// TODO: check return value of wait and show error
 			dbg->steps++;
 		}
 	}

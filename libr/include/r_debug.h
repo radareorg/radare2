@@ -15,6 +15,7 @@ struct r_debug_handle_t {
 	int (*detach)(int pid);
 	int (*step)(int pid); // if step() is NULL; reimplement it with traps
 	int (*cont)(int pid);
+	int (*wait)(int pid);
 	int (*contsc)(int pid, int sc);
 	struct list_head list;
 };

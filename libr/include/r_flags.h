@@ -28,7 +28,7 @@ struct r_flag_t {
 };
 
 int r_flag_init(struct r_flag_t *f);
-int r_flag_set_base(struct r_flag_t *f, u64 new_base);
+int r_flag_set_base(struct r_flag_t *f, u64 base);
 struct r_flag_item_t *r_flag_list(struct r_flag_t *f, int rad);
 struct r_flag_item_t *r_flag_get(struct r_flag_t *f, const char *name);
 int r_flag_unset(struct r_flag_t *f, const char *name);

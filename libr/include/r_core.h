@@ -17,7 +17,7 @@
 #include "r_flags.h"
 #include "r_config.h"
 
-#define R_CORE_BLOCKSIZE 512
+#define R_CORE_BLOCKSIZE 256
 #define R_CORE_BLOCKSIZE_MAX 0x40000 /* 4 MB */
 
 struct r_core_file_t {
@@ -27,6 +27,7 @@ struct r_core_file_t {
 	u64 size;
 	int rwx;
 	int fd;
+	int dbg;
 	struct list_head list;
 };
 
@@ -71,6 +72,7 @@ int r_core_visual_cmd(struct r_core_t *core, int ch);
 
 struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int mode);
 int r_core_file_close(struct r_core_t *r, struct r_core_file_t *fh);
+int r_core_seek_delta(struct r_core_t *core, s64 addr);
 
 int r_core_write_at(struct r_core_t *core, u64 addr, const u8 *buf, int size);
 

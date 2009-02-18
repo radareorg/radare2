@@ -2,13 +2,39 @@
 
 #include "r_core.h"
 
-#define NPF 5
+#define NPF 6
 static int printidx = 0;
-const char *printfmt[] = { "x", "pd", "p8", "pc", "ps" };
+const char *printfmt[] = { "x", "pd", "p8", "pc", "ps", "s esp&&x 64&&dr&&s eip&&pd" };
 
 static int curset = 0, cursor = -1, ocursor=-1;
 static int color = 1;
 static int flags = R_PRINT_FLAGS_ADDRMOD;
+
+static int marks_init = 0;
+static u64 marks[256];
+
+static void r_core_visual_mark(struct r_core_t *core, u8 ch)
+{
+	if (marks_init==0) {
+		int i;
+		for(i=0;i<255;i++)
+			marks[i] = 0;
+		marks_init = 1;
+	}
+	marks[ch] = core->seek;
+}
+
+static void r_core_visual_mark_seek(struct r_core_t *core, u8 ch)
+{
+	if (marks_init==0) {
+		int i;
+		for(i=0;i<255;i++)
+			marks[i] = 0;
+		marks_init = 1;
+	}
+	if (marks[ch])
+		r_core_seek(core, marks[ch]);
+}
 
 /* TODO: use r_cmd here in core->vcmd..optimize over 255 table */ 
 int r_core_visual_cmd(struct r_core_t *core, int ch)
@@ -82,6 +108,11 @@ int r_core_visual_cmd(struct r_core_t *core, int ch)
 			ocursor=-1;
 		} else r_core_cmd(core, "s- 16", 0);
 		break;
+	case 's':
+		r_core_cmd(core, "ds", 0);
+		r_core_cmd(core, ".dr", 0);
+		r_core_cmd(core, "s eip", 0);
+		break;
 	case 'p':
 		printidx++;
 		break;
@@ -90,6 +121,12 @@ int r_core_visual_cmd(struct r_core_t *core, int ch)
 		break;
 	case '-':
 		r_core_block_size( core, core->blocksize-1);
+		break;
+	case 'm':
+		r_core_visual_mark(core, r_cons_readchar());
+		break;
+	case '\'':
+		r_core_visual_mark_seek(core, r_cons_readchar());
 		break;
 	case '+':
 		r_core_block_size( core, core->blocksize+1);
@@ -146,6 +183,9 @@ int r_core_visual(struct r_core_t *core, const char *input)
 
 	color = r_config_get_i(&core->config, "scr.color");
 	do {
+		char *cmdprompt = r_config_get(&core->config, "cmd.vprompt");
+		if (cmdprompt && cmdprompt[0])
+			r_core_cmd(core, cmdprompt, 0);
 		r_cons_clear00();
 		r_print_set_cursor(curset, ocursor, cursor);
 		r_core_visual_prompt(core);
@@ -153,5 +193,6 @@ int r_core_visual(struct r_core_t *core, const char *input)
 		r_cons_flush();
 		ch = r_cons_readchar();
 	} while (r_core_visual_cmd(core, ch));
+
 	return 0;
 }

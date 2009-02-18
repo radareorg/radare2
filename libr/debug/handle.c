@@ -23,6 +23,19 @@ int r_debug_handle_set(struct r_debug_t *dbg, const char *str)
 	return R_FALSE;
 }
 
+int r_debug_handle_list(struct r_debug_t *dbg, const char *str)
+{
+	int count = 0;
+	struct list_head *pos;
+	list_for_each_prev(pos, &dbg->handlers) {
+		struct r_debug_handle_t *h = list_entry(pos, struct r_debug_handle_t, list);
+		printf("%d %s %s\n", count, h->name, ((h==dbg->h)?"*":""));
+		count++;
+	}
+	
+	return R_FALSE;
+}
+
 int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo)
 {
 	list_add_tail(&(foo->list), &(dbg->handlers));

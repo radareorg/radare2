@@ -4,6 +4,7 @@
 
 #include <r_io.h>
 #include <r_lib.h>
+#include <r_cons.h>
 #include <errno.h>
 #include <sys/ptrace.h>
 #include <sys/types.h>
@@ -147,7 +148,26 @@ static int __close(struct r_io_t *io, int pid)
 
 static int __system(struct r_io_t *io, int fd, const char *cmd)
 {
-	printf("ptrace io command. %s\n", cmd);
+	//printf("ptrace io command (%s)\n", cmd);
+#if 1
+#include <sys/user.h>
+	/* ugly hack for testing purposes */
+	if (!strcmp(cmd, "reg")) {
+		struct user_regs_struct regs;
+		memset(&regs,0, sizeof(regs));
+		// TODO: swap 3-4 args in powerpc
+		ptrace(PTRACE_GETREGS, fd, 0, &regs);
+		r_cons_printf("f eax @ 0x%08x\n", regs.eax);
+		r_cons_printf("f ebx @ 0x%08x\n", regs.ebx);
+		r_cons_printf("f ecx @ 0x%08x\n", regs.ecx);
+		r_cons_printf("f edx @ 0x%08x\n", regs.edx);
+		r_cons_printf("f eip @ 0x%08x\n", regs.eip);
+		r_cons_printf("f ebp @ 0x%08x\n", regs.ebp);
+		r_cons_printf("f esp @ 0x%08x\n", regs.esp);
+	} else {
+		printf("Try: '|reg'\n");
+	}
+#endif
 	return R_TRUE;
 }
 

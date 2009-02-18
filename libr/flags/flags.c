@@ -93,7 +93,7 @@ int r_flag_set(struct r_flag_t *fo, const char *name, u64 addr, u32 size, int du
 				f->offset = addr + fo->base;
 				f->size = 1; // XXX
 				f->format = 0; // XXX
-				return 1;
+	//			return R_TRUE;
 			}
 		}
 	}

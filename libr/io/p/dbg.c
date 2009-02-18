@@ -129,6 +129,7 @@ static struct r_io_handle_t r_io_plugin_dbg = {
         .handle_fd = __handle_fd,
 	.lseek = NULL,
 	.system = NULL,
+	.debug = 1,
 	.init = __init,
         //void *widget;
 /*
