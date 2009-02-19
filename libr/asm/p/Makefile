@@ -1,4 +1,4 @@
-CFLAGS=-I../../include -I../arch/ -I../arch/include -w
+CFLAGS=-I../../include -I../arch/ -I../arch/include -w -fPIC -shared -Wl,-R..
 # XXX
 # -Wall
 CFLAGS+=-DLIL_ENDIAN=1 -D__UNIX__
@@ -58,47 +58,47 @@ all: asm_dummy.so asm_x86.so asm_olly.so \
 	@true
 
 asm_dummy.so: asm_dummy.o
-	${CC} ${CFLAGS} -fPIC -shared -o asm_dummy.so asm_dummy.o -Wl,-R..
+	${CC} ${CFLAGS} -o asm_dummy.so asm_dummy.o
 	@#strip -s asm_dummy.so
 
 asm_x86.so: ${OBJ_X86}
-	${CC} ${CFLAGS}  -fPIC -shared -o asm_x86.so ${OBJ_X86} -Wl,-R..
+	${CC} ${CFLAGS} -o asm_x86.so ${OBJ_X86}
 	@#strip -s asm_x86.so
 
 asm_olly.so: ${OBJ_X86_OLLY}
-	${CC} ${CFLAGS}  -fPIC -shared -o asm_olly.so ${OBJ_X86_OLLY} -w,-R..
+	${CC} ${CFLAGS} -o asm_olly.so ${OBJ_X86_OLLY}
 	@#strip -s asm_x86_olly.so
 
 asm_bea.so: ${OBJ_X86_BEA}
-	${CC} ${CFLAGS} -fPIC -shared -o asm_bea.so ${OBJ_X86_BEA} -Wl,-R..
+	${CC} ${CFLAGS} -o asm_bea.so ${OBJ_X86_BEA}
 	@#strip -s asm_x86_bea.so
 
 asm_arm.so: ${OBJ_ARM}
-	${CC} ${CFLAGS}  -fPIC -shared -o asm_arm.so ${OBJ_ARM} -Wl,-R..
+	${CC} ${CFLAGS} -o asm_arm.so ${OBJ_ARM}
 	@#strip -s asm_x86.so
 
 asm_mips.so: ${OBJ_MIPS}
-	${CC} ${CFLAGS}  -fPIC -shared -o asm_mips.so ${OBJ_MIPS} -Wl,-R..
+	${CC} ${CFLAGS} -o asm_mips.so ${OBJ_MIPS}
 	@#strip -s asm_x86.so
 
 asm_sparc.so: ${OBJ_SPARC}
-	${CC} ${CFLAGS}  -fPIC -shared -o asm_sparc.so ${OBJ_SPARC} -Wl,-R..
+	${CC} ${CFLAGS} -o asm_sparc.so ${OBJ_SPARC}
 	@#strip -s asm_x86.so
 
 asm_ppc.so: ${OBJ_PPC}
-	${CC} ${CFLAGS}  -fPIC -shared -o asm_ppc.so ${OBJ_PPC} -Wl,-R..
+	${CC} ${CFLAGS} -o asm_ppc.so ${OBJ_PPC}
 	@#strip -s asm_x86.so
 
 asm_bf.so: ${OBJ_BF}
-	${CC} ${CFLAGS}  -fPIC -shared -o asm_bf.so ${OBJ_BF} -Wl,-R..
+	${CC} ${CFLAGS} -o asm_bf.so ${OBJ_BF}
 	@#strip -s asm_x86.so
 
 asm_csr.so: ${OBJ_CSR}
-	${CC} ${CFLAGS}  -fPIC -shared -o asm_csr.so ${OBJ_CSR} -Wl,-R..
+	${CC} ${CFLAGS} -o asm_csr.so ${OBJ_CSR}
 	@#strip -s asm_x86.so
 
 asm_m68k.so: ${OBJ_M68K}
-	${CC} ${CFLAGS}  -fPIC -shared -o asm_m68k.so ${OBJ_M68K} -Wl,-R..
+	${CC} ${CFLAGS} -o asm_m68k.so ${OBJ_M68K}
 	@#strip -s asm_x86.so
 
 clean:

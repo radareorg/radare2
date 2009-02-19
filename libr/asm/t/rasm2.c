@@ -18,7 +18,8 @@ static int rasm_show_help()
 	printf( "rasm2 [-e] [-o offset] [-a arch] [-s syntax] -d \"opcode\"|\"hexpairs\"|-\n"
 			" -d           Disassemble from hexpair bytes\n"
 			" -o [offset]  Offset where this opcode is suposed to be\n"
-			" -a [arch]    Select architecture plugin\n"
+			" -a [arch]    Set architecture plugin\n"
+			" -b [bits]    Set architecture bits\n"
 			" -s [syntax]  Select syntax (intel, att, olly)\n"
 			" -e           Use big endian\n"
 			" If the last argument is '-' reads from stdin\n\n"
@@ -28,7 +29,7 @@ static int rasm_show_help()
 	return R_TRUE;
 }
 
-static int rasm_disasm(char *buf, u64 offset, char *arch, char *syntax, int big_endian)
+static int rasm_disasm(char *buf, u64 offset, int str)
 {
 	struct r_asm_aop_t aop;
 	u8 *data;
@@ -36,7 +37,7 @@ static int rasm_disasm(char *buf, u64 offset, char *arch, char *syntax, int big_
 	int ret = 0;
 	u64 idx = 0, word = 0, len = 0; 
 
-	if (arch != NULL && strcmp(arch, "asm_bf")) {
+	if (!str) {
 		while(ptr[0]) {
 			if (ptr[0]!= ' ')
 				if (0==(++word%2))len++;
@@ -49,20 +50,8 @@ static int rasm_disasm(char *buf, u64 offset, char *arch, char *syntax, int big_
 		data = (u8*)buf;
 	}
 
-	if (arch == NULL || !r_asm_set(&a, arch))
-		r_asm_set(&a, "asm_x86");
-
-	if (syntax != NULL) {
-		if (!strcmp(syntax, "att"))
-			r_asm_set_syntax(&a, R_ASM_SYN_ATT);
-		else r_asm_set_syntax(&a, R_ASM_SYN_INTEL);
-	} else r_asm_set_syntax(&a, R_ASM_SYN_INTEL);
-
-	r_asm_set_big_endian(&a, big_endian);
-	r_asm_set_pc(&a, offset);
-
 	while (idx < len) {
-		r_asm_set_pc(&a, a.pc + ret);
+		r_asm_set_pc(&a, offset + idx);
 		ret = r_asm_disassemble(&a, &aop, data+idx, len-idx);
 		idx += ret;
 		printf("%s\n", aop.buf_asm);
@@ -71,16 +60,14 @@ static int rasm_disasm(char *buf, u64 offset, char *arch, char *syntax, int big_
 	return (int)idx;
 }
 
-static int rasm_asm(char *buf, u64 offset, char *arch, char *syntax, int big_endian)
+static int rasm_asm(char *buf, u64 offset)
 {
 	struct r_asm_aop_t aop;
 	int ret;
 
 
 	/* TODO: Arch, syntax... */
-	r_asm_set(&a, "asm_x86_olly");
-
-	r_asm_set_big_endian(&a, big_endian);
+	r_asm_set(&a, "asm_olly");
 	r_asm_set_pc(&a, offset);
 
 	ret = r_asm_assemble(&a, &aop, buf);
@@ -103,9 +90,8 @@ static int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_
 
 int main(int argc, char *argv[])
 {
-	char *arch, *syntax;
-	u64 offset = 0;
-	int big_endian = 0, dis = 0, c;
+	u64 offset = 0x8048000;
+	int dis = 0, str = 0, c;
 
 	r_asm_init(&a);
 	r_lib_init(&l, "radare_plugin");
@@ -116,14 +102,21 @@ int main(int argc, char *argv[])
 	if (argc<2)
 		return rasm_show_help();
 
-	while ((c = getopt(argc, argv, "da:s:o:h")) != -1)
+	while ((c = getopt(argc, argv, "da:b:s:o:h")) != -1)
 	{
 		switch( c ) {
 		case 'a':
-			arch = optarg;
+			r_asm_set(&a, optarg);
+			if (!strcmp(optarg, "asm_bf"))
+				str = 1;
+			break;
+		case 'b':
+			r_asm_set_bits(&a, r_num_math(NULL, optarg));
 			break;
 		case 's':
-			syntax = optarg;
+			if (!strcmp(optarg, "att"))
+				r_asm_set_syntax(&a, R_ASM_SYN_ATT);
+			else r_asm_set_syntax(&a, R_ASM_SYN_INTEL);
 			break;
 		case 'd':
 			dis = 1;
@@ -132,7 +125,7 @@ int main(int argc, char *argv[])
 			offset = r_num_math(NULL, optarg);
 			break;
 		case 'e':
-			big_endian = 1;
+			r_asm_set_big_endian(&a, R_TRUE);
 			break;
 		case 'h':
 			return rasm_show_help();
@@ -148,14 +141,14 @@ int main(int argc, char *argv[])
 					break;
 				buf[strlen(buf)-1]='\0';
 				if (dis)
-					offset += rasm_disasm(buf, offset, arch, syntax, big_endian);
-				else offset += rasm_asm(buf, offset, arch, syntax, big_endian);
+					offset += rasm_disasm(buf, offset, str);
+				else offset += rasm_asm(buf, offset);
 			}
 			return 0;
 		}
 		if (dis)
-			return rasm_disasm(argv[optind], offset, arch, syntax, big_endian);
-		else return rasm_asm(argv[optind], offset, arch, syntax, big_endian);
+			return rasm_disasm(argv[optind], offset, str);
+		else return rasm_asm(argv[optind], offset);
 	}
 
 	return 0;

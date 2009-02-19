@@ -16,15 +16,17 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 	DISASM disasm_obj;
 
 	memset(&disasm_obj, '\0', sizeof(DISASM));
-	disasm_obj.EIP = (int)buf;
-	//disasm_obj.VirtualAddr = a->pc;
-	//disasm_obj.Archi = ((a->bits == 64) ? 64 : 0);
-	//disasm_obj.SecurityBlock = len;
-	//if (a->syntax == R_ASM_SYN_ATT)
-	//	disasm_obj.Options = 0x400;
-	//else
-	//	disasm_obj.Options = 0;
-	Disasm(&disasm_obj);
+	disasm_obj.EIP = (long long)buf;
+	disasm_obj.VirtualAddr = a->pc;
+	disasm_obj.Archi = ((a->bits == 64) ? 64 : 0);
+	disasm_obj.SecurityBlock = len;
+	if (a->syntax == R_ASM_SYN_ATT)
+		disasm_obj.Options = 0x400;
+	else
+		disasm_obj.Options = 0;
+
+	aop->inst_len = Disasm(&disasm_obj);
+
 	snprintf(aop->buf_asm, 256, &disasm_obj.CompleteInstr);
 
 	if (aop->inst_len > 0) {

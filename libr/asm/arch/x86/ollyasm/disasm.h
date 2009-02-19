@@ -18,6 +18,9 @@
 
 #ifndef _INCLUDE_OLLY_
 #define _INCLUDE_OLLY_
+
+#define Disasm Disasm_olly
+
 //#define strupr str
 //#define strlwr //
 #define pow10l //
