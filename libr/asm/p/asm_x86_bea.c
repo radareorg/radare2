@@ -37,8 +37,8 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 	return aop->inst_len;
 }
 
-static struct r_asm_handle_t r_asm_plugin_bea = {
-	.name = "asm_bea",
+static struct r_asm_handle_t r_asm_plugin_x86_bea = {
+	.name = "asm_x86_bea",
 	.desc = "X86 disassembly plugin (bea engine)",
 	.init = NULL,
 	.fini = NULL,
@@ -48,5 +48,5 @@ static struct r_asm_handle_t r_asm_plugin_bea = {
 
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_bea
+	.data = &r_asm_plugin_x86_bea
 };

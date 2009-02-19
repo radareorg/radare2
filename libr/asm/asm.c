@@ -58,7 +58,7 @@ int r_asm_set(struct r_asm_t *a, const char *name)
 	struct list_head *pos;
 	list_for_each_prev(pos, &a->asms) {
 		struct r_asm_handle_t *h = list_entry(pos, struct r_asm_handle_t, list);
-		if (!memcmp(h->name, name, strlen(h->name))) {
+		if (!strcmp(h->name, name)) {
 			a->cur = h;
 			return R_TRUE;
 		}

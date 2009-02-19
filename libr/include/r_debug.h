@@ -4,9 +4,23 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_reg.h>
-#include <r_asm.h>
 #include <r_syscall.h>
 #include "list.h"
+
+enum {
+	R_DBG_ARCH_NULL = 0,
+	R_DBG_ARCH_X86,
+	R_DBG_ARCH_ARM,
+	R_DBG_ARCH_PPC,
+	R_DBG_ARCH_M68K,
+	R_DBG_ARCH_JAVA,
+	R_DBG_ARCH_MIPS,
+	R_DBG_ARCH_SPARC,
+	R_DBG_ARCH_CSR,
+	R_DBG_ARCH_MSIL,
+	R_DBG_ARCH_OBJD,
+	R_DBG_ARCH_BF
+};
 
 /* TODO: pass dbg and user data pointer everywhere */
 struct r_debug_handle_t {

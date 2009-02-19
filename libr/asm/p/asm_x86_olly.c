@@ -48,8 +48,8 @@ static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 	return aop->inst_len;
 }
 
-static struct r_asm_handle_t r_asm_plugin_olly = {
-	.name = "asm_olly",
+static struct r_asm_handle_t r_asm_plugin_x86_olly = {
+	.name = "asm_x86_olly",
 	.desc = "X86 disassembly plugin (olly engine)",
 	.init = NULL,
 	.fini = NULL,
@@ -59,6 +59,6 @@ static struct r_asm_handle_t r_asm_plugin_olly = {
 
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_olly
+	.data = &r_asm_plugin_x86_olly
 };
 

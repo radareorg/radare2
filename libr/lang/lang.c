@@ -38,7 +38,7 @@ int r_lang_set(struct r_lang_t *lang, const char *name)
 	struct list_head *pos;
 	list_for_each_prev(pos, &lang->langs) {
 		struct r_lang_handle_t *h = list_entry(pos, struct r_lang_handle_t, list);
-		if (!memcmp(h->name, name, strlen(h->name))) {
+		if (!strcmp(h->name, name)) {
 			lang->cur = h;
 			return R_TRUE;
 		}

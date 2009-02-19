@@ -59,11 +59,11 @@ int r_debug_select(struct r_debug_t *dbg, int pid, int tid)
 int r_debug_set_arch(struct r_debug_t *dbg, int arch)
 {
 	switch(arch) {
-	case R_ASM_ARCH_BF:
+	case R_DBG_ARCH_BF:
 		// TODO: set callbacks for brainfuck debugger here
 		break;
-	case R_ASM_ARCH_X86:
-		//r_reg_set(dbg->reg->nregs, R_ASM_ARCH_X86);
+	case R_DBG_ARCH_X86:
+		//r_reg_set(dbg->reg->nregs, R_DBG_ARCH_X86);
 		break;
 	}
 	return R_TRUE;

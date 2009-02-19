@@ -40,7 +40,7 @@ int r_anal_set(struct r_anal_t *anal, const char *name)
 	struct list_head *pos;
 	list_for_each_prev(pos, &anal->anals) {
 		struct r_anal_handle_t *h = list_entry(pos, struct r_anal_handle_t, list);
-		if (!memcmp(h->name, name, strlen(h->name))) {
+		if (!strcmp(h->name, name)) {
 			anal->cur = h;
 			return R_TRUE;
 		}
@@ -71,5 +71,11 @@ int r_anal_set_bits(struct r_anal_t *anal, int bits)
 int r_anal_set_big_endian(struct r_anal_t *anal, int boolean)
 {
 	anal->big_endian = boolean;
+	return R_TRUE;
+}
+
+int r_anal_set_pc(struct r_anal_t *a, u64 pc)
+{
+	a->pc = pc;
 	return R_TRUE;
 }

@@ -69,6 +69,7 @@ enum {
 struct r_anal_t {
 	int bits;
 	int big_endian;
+	u64 pc;
 	void *user;
 	struct r_anal_handle_t *cur;
 	struct list_head anals;
@@ -105,5 +106,6 @@ int r_anal_set(struct r_anal_t *anal, const char *name);
 int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data);
 int r_anal_set_bits(struct r_anal_t *anal, int bits);
 int r_anal_set_big_endian(struct r_anal_t *anal, int boolean);
+int r_anal_set_pc(struct r_anal_t *a, u64 pc);
 
 #endif

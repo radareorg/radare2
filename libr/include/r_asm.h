@@ -6,22 +6,6 @@
 #include <r_types.h>
 #include <list.h>
 
-//XXX: Move to r_lib
-enum {
-	R_ASM_ARCH_NULL = 0,
-	R_ASM_ARCH_X86,
-	R_ASM_ARCH_ARM,
-	R_ASM_ARCH_PPC,
-	R_ASM_ARCH_M68K,
-	R_ASM_ARCH_JAVA,
-	R_ASM_ARCH_MIPS,
-	R_ASM_ARCH_SPARC,
-	R_ASM_ARCH_CSR,
-	R_ASM_ARCH_MSIL,
-	R_ASM_ARCH_OBJD,
-	R_ASM_ARCH_BF
-};
-
 
 enum {
 	R_ASM_SYN_NULL = 0,

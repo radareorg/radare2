@@ -14,12 +14,12 @@ OBJ_X86+=../arch/x86/udis86/itab.o
 OBJ_X86+=../arch/x86/udis86/syn-intel.o
 OBJ_X86+=../arch/x86/udis86/syn-att.o
 # olly
-OBJ_X86_OLLY=asm_olly.o
+OBJ_X86_OLLY=asm_x86_olly.o
 OBJ_X86_OLLY+=../arch/x86/ollyasm/disasm.o
 OBJ_X86_OLLY+=../arch/x86/ollyasm/asmserv.o
 OBJ_X86_OLLY+=../arch/x86/ollyasm/assembl.o
 # bea
-OBJ_X86_BEA=asm_bea.o
+OBJ_X86_BEA=asm_x86_bea.o
 OBJ_X86_BEA+=../arch/x86/bea/BeaEngine.o
 ## ARM
 OBJ_ARM=asm_arm.o
@@ -51,8 +51,8 @@ OBJ_M68K=asm_m68k.o
 # mk8k-disasm
 OBJ_M68K+=../arch/m68k/m68k_disasm/m68k_disasm.o
 
-all: asm_dummy.so asm_x86.so asm_olly.so \
-		asm_bea.so asm_arm.so asm_mips.so \
+all: asm_dummy.so asm_x86.so asm_x86_olly.so \
+		asm_x86_bea.so asm_arm.so asm_mips.so \
 		asm_sparc.so asm_ppc.so asm_bf.so \
 		asm_csr.so asm_m68k.so
 	@true
@@ -65,12 +65,12 @@ asm_x86.so: ${OBJ_X86}
 	${CC} ${CFLAGS} -o asm_x86.so ${OBJ_X86}
 	@#strip -s asm_x86.so
 
-asm_olly.so: ${OBJ_X86_OLLY}
-	${CC} ${CFLAGS} -o asm_olly.so ${OBJ_X86_OLLY}
+asm_x86_olly.so: ${OBJ_X86_OLLY}
+	${CC} ${CFLAGS} -o asm_x86_olly.so ${OBJ_X86_OLLY}
 	@#strip -s asm_x86_olly.so
 
-asm_bea.so: ${OBJ_X86_BEA}
-	${CC} ${CFLAGS} -o asm_bea.so ${OBJ_X86_BEA}
+asm_x86_bea.so: ${OBJ_X86_BEA}
+	${CC} ${CFLAGS} -o asm_x86_bea.so ${OBJ_X86_BEA}
 	@#strip -s asm_x86_bea.so
 
 asm_arm.so: ${OBJ_ARM}

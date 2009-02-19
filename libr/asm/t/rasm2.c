@@ -20,7 +20,7 @@ static int rasm_show_help()
 			" -o [offset]  Offset where this opcode is suposed to be\n"
 			" -a [arch]    Set architecture plugin\n"
 			" -b [bits]    Set architecture bits\n"
-			" -s [syntax]  Select syntax (intel, att, olly)\n"
+			" -s [syntax]  Select syntax (intel, att)\n"
 			" -e           Use big endian\n"
 			" If the last argument is '-' reads from stdin\n\n"
 			"Available plugins:\n");
@@ -67,7 +67,7 @@ static int rasm_asm(char *buf, u64 offset)
 
 
 	/* TODO: Arch, syntax... */
-	r_asm_set(&a, "asm_olly");
+	r_asm_set(&a, "asm_x86_olly");
 	r_asm_set_pc(&a, offset);
 
 	ret = r_asm_assemble(&a, &aop, buf);
@@ -107,7 +107,8 @@ int main(int argc, char *argv[])
 	{
 		switch( c ) {
 		case 'a':
-			r_asm_set(&a, optarg);
+			if (!r_asm_set(&a, optarg))
+				r_asm_set(&a, "asm_x86");
 			if (!strcmp(optarg, "asm_bf"))
 				str = 1;
 			break;
