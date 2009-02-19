@@ -94,6 +94,7 @@ int main(int argc, char *argv[])
 	int dis = 0, str = 0, c;
 
 	r_asm_init(&a);
+	r_asm_set(&a, "asm_x86");
 	r_lib_init(&l, "radare_plugin");
 	r_lib_add_handler(&l, R_LIB_TYPE_ASM, "(dis)assembly plugins",
 		&__lib_asm_cb, &__lib_asm_dt, NULL);
