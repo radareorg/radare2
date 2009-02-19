@@ -12,6 +12,7 @@ static int dummy_run(void *user, const char *code, int len)
 static struct r_lang_handle_t r_lang_plugin_dummy = {
 	.name = "dummy",
 	.desc = "Dummy language extension",
+	.help = NULL,
 	.run = &dummy_run,
 	.run_file = NULL,
 	.set_argv = NULL,

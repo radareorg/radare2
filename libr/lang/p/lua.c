@@ -12,6 +12,7 @@ static int lua_run(void *user, const char *code, int len)
 static struct r_lang_handle_t r_lang_plugin_lua = {
 	.name = "lua",
 	.desc = "LUA language extension",
+	.help = NULL,
 	.run = &lua_run,
 	.run_file = NULL,
 	.set_argv = NULL,

@@ -67,7 +67,10 @@ static int rasm_asm(char *buf, u64 offset)
 
 
 	/* TODO: Arch, syntax... */
-	r_asm_set(&a, "asm_x86_olly");
+	if (!r_asm_set(&a, "asm_x86_olly")) {
+		fprintf(stderr, "Error: Cannot find asm_x86 plugin\n");
+		return 1;
+	}
 	r_asm_set_pc(&a, offset);
 
 	ret = r_asm_assemble(&a, &aop, buf);
@@ -90,11 +93,11 @@ static int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_
 
 int main(int argc, char *argv[])
 {
+	char *arch = NULL;
 	u64 offset = 0x8048000;
 	int dis = 0, str = 0, c;
 
 	r_asm_init(&a);
-	r_asm_set(&a, "asm_x86");
 	r_lib_init(&l, "radare_plugin");
 	r_lib_add_handler(&l, R_LIB_TYPE_ASM, "(dis)assembly plugins",
 		&__lib_asm_cb, &__lib_asm_dt, NULL);
@@ -107,10 +110,7 @@ int main(int argc, char *argv[])
 	{
 		switch( c ) {
 		case 'a':
-			if (!r_asm_set(&a, optarg))
-				r_asm_set(&a, "asm_x86");
-			if (!strcmp(optarg, "asm_bf"))
-				str = 1;
+			arch = optarg;
 			break;
 		case 'b':
 			r_asm_set_bits(&a, r_num_math(NULL, optarg));
@@ -133,6 +133,19 @@ int main(int argc, char *argv[])
 			return rasm_show_help();
 		}
 	}
+
+	if (arch) {
+		if (!r_asm_set(&a, arch)) {
+			fprintf(stderr, "Error: Unknown plugin\n");
+			return 1;
+		}
+		if (!strcmp(arch, "asm_bf"))
+			str = 1;
+	} else if (!r_asm_set(&a, "asm_x86")) {
+		fprintf(stderr, "Error: Cannot find asm_x86 plugin\n");
+		return 1;
+	}
+			
 
 	if (argv[optind]) {
 		if (!strcmp(argv[optind], "-")) {

@@ -5,7 +5,7 @@
 #define BYTE unsigned char
 #define WORD unsigned short
 #define DWORD unsigned int
-#define __stdcall __attribute__((stdcall))
+#define __stdcall 
 #endif
 
 #define INSTRUCT_LENGTH 64

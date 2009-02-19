@@ -1,6 +1,5 @@
-CFLAGS=-I../../include -I../arch/ -I../arch/include -w -fPIC -shared -Wl,-R..
+CFLAGS=-I../../include -I../arch/ -I../arch/include -Wall -fPIC -shared -Wl,-R..
 # XXX
-# -Wall
 CFLAGS+=-DLIL_ENDIAN=1 -D__UNIX__
 
 ## X86

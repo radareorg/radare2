@@ -3029,7 +3029,7 @@ void print_disp(dis_buffer_t *dbuf, int disp, int sz, int rel, int dd)
     disp = (int)((short)disp);
   if (rel == -1) {
     /*phx - use sval to print real destination address */
-    nv = disp + (u_int)dbuf->sval + 2*(dd+1);
+    nv = disp + (u_long)dbuf->sval + 2*(dd+1);
     printu(dbuf, nv, SIZE_LONG);
   }
   else {
