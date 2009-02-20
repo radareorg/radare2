@@ -27,7 +27,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 
 	aop->inst_len = Disasm(&disasm_obj);
 
-	snprintf(aop->buf_asm, 256, &disasm_obj.CompleteInstr);
+	snprintf(aop->buf_asm, 256, disasm_obj.CompleteInstr);
 
 	if (aop->inst_len > 0) {
 		r_hex_bin2str(buf, aop->inst_len, aop->buf_hex);

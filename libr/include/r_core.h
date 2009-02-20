@@ -5,6 +5,7 @@
 #include "r_io.h"
 #include "r_lib.h"
 #include "r_lang.h"
+#include "r_asm.h"
 #include "r_anal.h"
 #include "r_cmd.h"
 #include "r_meta.h"
