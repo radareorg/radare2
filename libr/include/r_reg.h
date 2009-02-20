@@ -2,7 +2,6 @@
 #define _INCLUDE_R_REG_H_
 
 #include <r_types.h>
-#include <r_asm.h>
 
 enum {
 	R_REG_X86_EAX,

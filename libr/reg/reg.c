@@ -1,4 +1,5 @@
 #include <r_reg.h>
+#include <r_debug.h>
 
 static int x86_nregs = 10;
 static char *x86_regs[] = {
@@ -45,7 +46,7 @@ int r_reg_set_arch(struct r_reg_t *reg, int arch, int bits)
 	int ret = R_TRUE;
 
 	switch(arch) {
-	case R_ASM_ARCH_X86:
+	case R_DBG_ARCH_X86:
 		switch(bits) {
 		case 64:
 			reg->nregs = x86_nregs;
@@ -62,8 +63,8 @@ int r_reg_set_arch(struct r_reg_t *reg, int arch, int bits)
 		}
 		break;
 	/* TODO: add more architectures */
-	case R_ASM_ARCH_ARM:
-	case R_ASM_ARCH_MIPS:
+	case R_DBG_ARCH_ARM:
+	case R_DBG_ARCH_MIPS:
 	default:
 		ret = R_FALSE;
 		break;
