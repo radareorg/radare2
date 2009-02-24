@@ -41,6 +41,7 @@ enum {
 	R_LIB_TYPE_LANG, /* language */
 	R_LIB_TYPE_ASM,  /* assembler */
 	R_LIB_TYPE_ANAL, /* analysis */
+	R_LIB_TYPE_PARSE,/* parsers */
 };
 
 struct r_lib_t {

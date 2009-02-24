@@ -294,15 +294,20 @@ static int cmd_print(void *data, const char *input)
 			/* XXX hardcoded */
 			int ret, idx; 
 			u8 *buf = core->block;
+			u64 pseudo = r_config_get_i(&core->config, "asm.pseudo");
+			char str[128];
 			struct r_asm_aop_t aop;
 			r_asm_set_pc(&core->assembler, core->seek);
 			r_asm_set(&core->assembler, "asm_x86");
+			r_parse_set(&core->parser, "parse_x86_pseudo");
 			
 			for(idx=ret=0; idx < len; idx+=ret) {
 				r_asm_set_pc(&core->assembler, core->assembler.pc + ret);
 				ret = r_asm_disassemble(&core->assembler, &aop, buf+idx, len-idx);
+				r_parse_parse(&core->parser, aop.buf_asm, str);
 				r_cons_printf("0x%08llx  %14s  %s\n",
-					core->seek+idx, aop.buf_hex, aop.buf_asm);
+					core->seek+idx, aop.buf_hex, 
+					pseudo?str:aop.buf_asm);
 			}
 		}
 		break;

@@ -5,10 +5,11 @@
 #include <string.h>
 
 #include <r_types.h>
+#include <r_lib.h>
 #include <r_util.h>
-#include <r_asm.h>
+#include <r_parse.h>
 
-static int r_asm_x86_replace(int argc, const char *argv[], char *newstr)
+static int replace(int argc, const char *argv[], char *newstr)
 {
 	int i,j,k;
 	struct {
@@ -65,31 +66,31 @@ static int r_asm_x86_replace(int argc, const char *argv[], char *newstr)
 	return R_FALSE;
 }
 
-int r_asm_x86_pseudo(struct r_asm_t *a)
+static int parse(struct r_parse_t *p, void *data, char *str)
 {
-	int i, len = strlen(a->buf_asm);
+	int i, len = strlen((char*)data);
 	char w0[32];
 	char w1[32];
 	char w2[32];
 	char w3[32];
-	char *str, *ptr, *optr;
+	char *buf, *ptr, *optr;
 
-	if ((str = alloca(len+1)) == NULL)
+	if ((buf = alloca(len+1)) == NULL)
 		return R_FALSE;
-	memcpy(str, a->buf_asm, len+1);
+	memcpy(buf, (char*)data, len+1);
 
-	if (str[0]!='\0') {
+	if (buf[0]!='\0') {
 		w0[0]='\0';
 		w1[0]='\0';
 		w2[0]='\0';
 		w3[0]='\0';
-		ptr = strchr(str, ' ');
+		ptr = strchr(buf, ' ');
 		if (ptr == NULL)
-			ptr = strchr(str, '\t');
+			ptr = strchr(buf, '\t');
 		if (ptr) {
 			ptr[0]='\0';
 			for(ptr=ptr+1;ptr[0]==' ';ptr=ptr+1);
-			strcpy(w0, str);
+			strcpy(w0, buf);
 			strcpy(w1, ptr);
 
 			optr=ptr;
@@ -117,9 +118,22 @@ int r_asm_x86_pseudo(struct r_asm_t *a)
 				nw++;
 			}
 
-			r_asm_x86_replace(nw, wa, (char*)a->aux);
+			replace(nw, wa, str);
 		}
 	}
 
 	return R_TRUE;
 }
+
+static struct r_parse_handle_t r_parse_plugin_parse_x86_pseudo = {
+	.name = "parse_x86_pseudo",
+	.desc = "X86 pseudo syntax",
+	.init = NULL,
+	.fini = NULL,
+	.parse = &parse,
+};
+
+struct r_lib_struct_t radare_plugin = {
+	.type = R_LIB_TYPE_PARSE,
+	.data = &r_parse_plugin_parse_x86_pseudo
+};

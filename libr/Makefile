@@ -2,7 +2,7 @@
 PREFIX=../prefix
 
 # Libraries
-LIBLIST=io util lib meta lang flags bin macro hash line cons line print config syscall range socket cmd asm anal search diff debug reg core var
+LIBLIST=io util lib meta lang flags bin macro hash line cons line print config syscall range socket cmd asm anal parse search diff debug reg core var
 
 
 # Under development
