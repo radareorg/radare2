@@ -7,6 +7,8 @@
 #include <list.h>
 
 
+#define R_PARSE_STRLEN 256
+
 struct r_parse_t {
 	void *user;
 	struct r_parse_handle_t *cur;
