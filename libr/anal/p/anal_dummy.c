@@ -4,7 +4,7 @@
 #include <r_lib.h>
 #include <r_anal.h>
 
-static int aop(struct r_anal_aop_t *aop, void *data)
+static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 {
 	printf("Dummy analysis plugin");
 
@@ -12,7 +12,7 @@ static int aop(struct r_anal_aop_t *aop, void *data)
 }
 
 static struct r_anal_handle_t r_anal_plugin_dummy = {
-	.name = "dummy",
+	.name = "anal_dummy",
 	.desc = "Dummy analysis plugin",
 	.init = NULL,
 	.fini = NULL,

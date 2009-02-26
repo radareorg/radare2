@@ -18,7 +18,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 	char opcode[256];
 	char operands[256];
 
-	struct DisasmPara_68k dp;
+	static struct DisasmPara_68k dp;
 	/* initialize DisasmPara */
 	memcpy(bof, buf, 4);
 	dp.opcode = opcode;
@@ -26,6 +26,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 	dp.iaddr = &iaddr;
 	dp.instr = bof;
 	M68k_Disassemble(&dp);
+	aop->disasm_obj = &dp;
 	sprintf(aop->buf_asm, "%s %s", opcode, operands);
 	r_hex_bin2str((u8*)bof, 4, aop->buf_hex);
 	memcpy(aop->buf, bof, 4);

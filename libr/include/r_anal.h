@@ -93,7 +93,7 @@ struct r_anal_handle_t {
 	char *desc;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-	int (*aop)(struct r_anal_aop_t *aop, void *data);
+	int (*aop)(struct r_anal_t *a, struct r_anal_aop_t *aop, void *data);
 	struct list_head list;
 };
 

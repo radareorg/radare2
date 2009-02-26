@@ -19,6 +19,7 @@ struct r_asm_aop_t {
 	char buf_asm[256];
 	char buf_hex[256];
 	char buf_err[256];
+	void *disasm_obj;
 };
 
 struct r_asm_t {

@@ -27,13 +27,14 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 
 static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 {
-	t_asmmodel asm_obj;
+	static t_asmmodel asm_obj;
 	int idx;
 
 	aop->buf_err[0] = '\0';
 	/* constsize == 0: Address constants and inmediate data of 16/32b */
 	/* attempt == 0: First attempt */
 	aop->inst_len = Assemble(buf, a->pc, &asm_obj, 0, 0, aop->buf_err);
+	aop->disasm_obj = &asm_obj;
 	if (aop->buf_err[0])
 		aop->inst_len = 0;
 	else {

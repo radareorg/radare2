@@ -23,8 +23,9 @@
 
 // NOTE: buf should be at least 16 bytes!
 // XXX addr should be off_t for 64 love
-static int aop(struct r_anal_aop_t *aop, void *data)
+static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 {
+#if 0
 	struct r_asm_aop_t *asmdata = (struct r_asm_t*)data;
 	u8 *buf = asmdata->buf;
 
@@ -399,6 +400,8 @@ static int aop(struct r_anal_aop_t *aop, void *data)
 		aop->jump &= 0xFFFFFFFF; // XXX may break on 64 bits here
 
 	return aop->length;
+#endif
+	return R_FALSE;
 }
 
 static struct r_anal_handle_t r_anal_plugin_x86 = {

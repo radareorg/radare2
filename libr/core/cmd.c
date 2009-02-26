@@ -4,6 +4,10 @@
 #include "r_flags.h"
 #include "r_hash.h"
 #include "r_asm.h"
+#include "r_anal.h"
+
+/* Ugly */
+#include "../asm/arch/x86/bea/BeaEngine.h"
 
 #include <stdarg.h>
 
@@ -415,28 +419,25 @@ static int cmd_anal(void *data, const char *input)
 		r_anal_list(&core->anal);
 		break;
 	case 'o':
-#if 0
 		{
 			/* XXX hardcoded */
 			int ret, idx; 
 			u8 *buf = core->block;
-			struct r_asm_t a;// TODO: move to core.h
-			struct r_anal_aop_t aop;
-			r_asm_init(&a);
-			r_asm_set_pc(&a, core->seek);
-			r_anal_set(&core->anal, "anal_x86");
+			struct r_asm_aop_t aop;
+			struct r_anal_aop_t analop;
+			DISASM *disasm_obj;
+			r_asm_set(&core->assembler, "asm_x86_bea");
+			r_anal_set(&core->anal, "anal_x86_bea");
+			r_asm_set_pc(&core->assembler, core->seek);
+			r_anal_set_pc(&core->anal, core->seek);
 			
 			for(idx=ret=0; idx < len; idx+=ret) {
-				r_asm_set_pc(&a, a.pc + ret);
-				ret = r_asm_disasm(&a, buf+idx, len-idx);
-				r_cons_printf("0x%08llx  %14s  %s\n",
-					core->seek+idx, a.buf_hex, a.buf_asm);
-				r_anal_aop(&core->anal, &aop, &a);
-				r_cons_printf("JUMP: 0x%08llx\n",
-					aop.jump);
+				r_asm_set_pc(&core->assembler, core->assembler.pc + ret);
+				ret = r_asm_disassemble(&core->assembler, &aop, buf+idx, len-idx);
+				disasm_obj = aop.disasm_obj;
+				r_anal_aop(&core->anal, &analop, disasm_obj);
 			}
 		}
-#endif
 		break;
 	default:
 		fprintf(stderr, "Usage: a[o] [len]\n"

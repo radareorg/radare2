@@ -13,7 +13,7 @@
 
 static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len)
 {
-	DISASM disasm_obj;
+	static DISASM disasm_obj;
 
 	memset(&disasm_obj, '\0', sizeof(DISASM));
 	disasm_obj.EIP = (long long)buf;
@@ -26,6 +26,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 		disasm_obj.Options = 0;
 
 	aop->inst_len = Disasm(&disasm_obj);
+	aop->disasm_obj = &disasm_obj;
 
 	snprintf(aop->buf_asm, 256, disasm_obj.CompleteInstr);
 

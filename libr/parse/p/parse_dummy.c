@@ -1,12 +1,8 @@
 /* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
-#include <r_types.h>
 #include <r_lib.h>
-#include <r_util.h>
 #include <r_parse.h>
 
 static int parse(struct r_parse_t *p, void *data, char *str)

@@ -62,15 +62,15 @@ void sreplace(char *s,char *orig,char *rep,char multi,long dsize){
 
 char *mreplace(char *string, char *se,char *rep)
 {
-    	int    		status,m,i;
-	char		*s;
+    	int    		status,i; //,m;
+	//char		*s;
     	regex_t    	re;
 	size_t     	nmatch = 16;
 	regmatch_t 	pm[nmatch];
-	char		regError[64],*p;
+	char		*p; //,regError[64];
 	ulong		offset = 0;
 	char		field[16];
-	char		*sData;
+	//char		*sData;
 	memChunk	*result,*temp,*found,*ffound;
 	char *search;
 
@@ -93,7 +93,7 @@ char *mreplace(char *string, char *se,char *rep)
 	if(matchs(search,"\\d")) sreplace(search,"\\d","[0-9]\0",1,6);
 
     	if(regcomp(&re, search, REG_EXTENDED) != 0) if(regcomp(&re, search, REG_EXTENDED<<1)) return (char*)string; 
-    	if(status = regexec(&re, string, nmatch, pm, 0)) return (char*)string;
+    	if((status = regexec(&re, string, nmatch, pm, 0))) return (char*)string;
 	found  = memReserve(INPUTLINE_BUFFER_REPLACE_SIZE);
 	ffound = memReserve(INPUTLINE_BUFFER_REPLACE_SIZE);
 	while(!status){
@@ -140,11 +140,11 @@ char *mreplace(char *string, char *se,char *rep)
 }
 
 char *treplace(char *data,char *search,char *replace){
-	long offset=0,f;
+	//long offset=0,f;
 	char line[INPUTLINE_BUFFER_REPLACE_SIZE],*newline,*p;
 
 	memChunk *result;
-	ulong resultAllocSize;
+	//ulong resultAllocSize;
 
 #if DEBUG2
 	DBG("treplace(string,se,re)","string  : %s",data);
@@ -174,7 +174,7 @@ char *treplace(char *data,char *search,char *replace){
 
 void doChecks(){
 	char *checkBuffer,*checkresult,*sIn;
-	long i,n,total,invalid=0;
+	long i,n,total; //,invalid=0;
 	typedef struct {char *in,*s,*r,*out;} sCheck;
 	sCheck checks[]={
 		{"{{div.cOptions}}go {{tag.tag56}} {{get.link.parent.html}}/ edit {{tag.tag57}} / edit {{tag.tag58}} / rename {{tag.tag59}} / move {{tag.tag60}} / add {{tag.tag61}}{{get.delete.html}} / {{get.link.login.html}}{{enddiv}}", ".*(\\{\\{\\w+\\.\\w+(\\.\\w+)?\\}\\}).*","\\1","{{get.delete.html}}"},
@@ -207,12 +207,12 @@ void doChecks(){
 			sIn=strdup(checks[i].in);
 			if(strlen(sIn)>20) memcpy(sIn+15," ...\0",5);
 			if(strcmp(checkresult,checks[i].out)){
-				fprintf(stderr,"\r[%d/%d] %-20s s: %-30s r: %-20s  =>  %-25s ",i+1,total,sIn,checks[i].s,checks[i].r,checkresult);
+				fprintf(stderr,"\r[%ld/%ld] %-20s s: %-30s r: %-20s  =>  %-25s ",i+1,total,sIn,checks[i].s,checks[i].r,checkresult);
 				fprintf(stdout," ERR :(\n");
 				exit(0);
 			}else{
 				if(!n){
-					fprintf(stderr,"\r[%d/%d] %-20s s: %-30s r: %-20s  =>  %-25s 	",i+1,total,sIn,checks[i].s,checks[i].r,checkresult);
+					fprintf(stderr,"\r[%ld/%ld] %-20s s: %-30s r: %-20s  =>  %-25s 	",i+1,total,sIn,checks[i].s,checks[i].r,checkresult);
 					fprintf(stdout," OK :)\n");
 				}
 			}
@@ -220,7 +220,7 @@ void doChecks(){
 	}
 
 	for(n=1;n<=CHECKS_CHUNCK_COUNT;n+=1+CHECKS_CHUNCK_COUNT/10){
-		fprintf(stdout,"\r[ + ] Checking stability for different input sizes consistence %d bytes, memory allocated: %d bytes",n*CHECKS_CHUNCK_COUNT*CHECKS_CHUNCK_SIZE,memAllocated());
+		fprintf(stdout,"\r[ + ] Checking stability for different input sizes consistence %ld bytes, memory allocated: %ld bytes",n*CHECKS_CHUNCK_COUNT*CHECKS_CHUNCK_SIZE,memAllocated());
 		fflush(stdout);
 		memset(checkBuffer,'.',n*CHECKS_CHUNCK_SIZE-1);
 		checkBuffer[n*CHECKS_CHUNCK_SIZE]=0;
@@ -228,8 +228,9 @@ void doChecks(){
 		treplace(checkBuffer,"_",".");
 	}
 	fprintf(stdout,"\n");
-	fprintf(stdout,"[ m ] Memory allocated final: %d bytes\n",memAllocated());
+	fprintf(stdout,"[ m ] Memory allocated final: %ld bytes\n",memAllocated());
 }
+#if 0
 #if !defined LIB
 /* 
 	builds a binary for command line "search & replace" tests
@@ -249,4 +250,5 @@ int main(char argc,char **argv){
 
 	return 1;
 }
+#endif
 #endif

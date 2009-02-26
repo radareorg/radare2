@@ -4,9 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <r_types.h>
 #include <r_lib.h>
-#include <r_util.h>
 #include <r_parse.h>
 
 static int replace(int argc, const char *argv[], char *newstr)

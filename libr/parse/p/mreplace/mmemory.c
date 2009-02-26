@@ -99,7 +99,7 @@ void memCopy(memChunk *dest,memChunk *source){
 }
 
 void memStrCat(memChunk *dest,char *string){
-	long nbytes;
+	//long nbytes;
 	memChunk result,*temp;
 
 	temp           = memReserve(dest->size+strlen(string)+1);

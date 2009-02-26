@@ -13,7 +13,7 @@
 
 static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len)
 {
-	ud_t disasm_obj;
+	static ud_t disasm_obj;
 
 	ud_init(&disasm_obj);
 	if (a->syntax == R_ASM_SYN_ATT)
@@ -24,6 +24,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 	ud_set_pc(&disasm_obj, a->pc);
 	ud_set_input_buffer(&disasm_obj, buf, len);
 	ud_disassemble(&disasm_obj);
+	aop->disasm_obj = &disasm_obj;
 	aop->inst_len = ud_insn_len(&disasm_obj);
 	snprintf(aop->buf_asm, 256, "%s", ud_insn_asm(&disasm_obj));
 	snprintf(aop->buf_hex, 256, "%s", ud_insn_hex(&disasm_obj));

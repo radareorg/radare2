@@ -58,7 +58,7 @@ static int buf_fprintf(void *stream, const char *format, ...)
 
 static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len)
 {
-	struct disassemble_info disasm_obj;
+	static struct disassemble_info disasm_obj;
 
 	buf_global = aop->buf_asm;
 	Offset = a->pc;
@@ -84,6 +84,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 	if (a->big_endian)
 		aop->inst_len = print_insn_big_mips((bfd_vma)Offset, &disasm_obj);
 	else aop->inst_len = print_insn_little_mips((bfd_vma)Offset, &disasm_obj);
+	aop->disasm_obj = &disasm_obj;
 			
 	if (aop->inst_len == -1)
 		strcpy(aop->buf_asm, " (data)");
