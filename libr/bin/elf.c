@@ -13,9 +13,6 @@
 #include "r_types.h"
 #include "r_bin_elf.h"
 
-/* TODO: move into .h */
-#define IS_PRINTABLE(x) (x>=' '&&x<='~')
-
 /* TODO: move into bin_t */
 static int endian = 0;
 

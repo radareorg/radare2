@@ -27,7 +27,16 @@
 #define _GNU_SOURCE
 
 /* allocating */
-#define ERR(...) fprintf(stderr, ...)
+#include <stdarg.h>
+static inline int ERR(char *str, ...)
+{
+	va_list ap;
+	va_start(ap, str);
+	fprintf(stderr, str, ap);
+	va_end(ap);
+	return R_FALSE;
+}
+//#define ERR(...) fprintf(stderr, ...)
 #define MALLOC_STRUCT(x) (x*)malloc(sizeof(x))
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')
 

@@ -72,6 +72,9 @@ u64 r_num_get(struct r_num_t *num, const char *str)
 		if (ok) return ret;
 	}
 
+	if (str[0]=='\'' && str[2]=='\'')
+		return (u64)str[1];
+
 	if (str[0]=='0' && str[1]=='x') {
 		sscanf(str, "0x%llx", &ret);
 	} else {
