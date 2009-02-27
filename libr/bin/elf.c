@@ -104,7 +104,7 @@ static int ELF_(aux_stripstr_from_file)(const char *filename, int min, int encod
 
 	int fd = open(filename, O_RDONLY);
 	if (fd == -1) {
-		fprintf(stderr, "Cannot open target file.\n")    ;
+		ERR("Cannot open target file.\n");
 		return 1;
 	}
 
@@ -154,7 +154,7 @@ static int ELF_(aux_stripstr_from_file)(const char *filename, int min, int encod
 
 	munmap(buf, len); 
 #elif __WINDOWS__
-	fprintf(stderr, "Not yet implemented\n");
+	ERR("Not yet implemented\n");
 #endif
 	return ctr;
 }
@@ -164,12 +164,12 @@ static int ELF_(do_elf_checks)(ELF_(r_bin_elf_obj) *bin)
 	ELF_(Ehdr) *ehdr = &bin->ehdr;
 
 	if (strncmp((char *)ehdr->e_ident, ELFMAG, SELFMAG)) {
-		fprintf(stderr, "File not ELF\n");
+		ERR("File not ELF\n");
 		return -1;
 	}
 
 	if (ehdr->e_version != EV_CURRENT) {
-		fprintf(stderr, "ELF version not current\n");
+		ERR("ELF version not current\n");
 		return -1;
 	}
 
@@ -252,7 +252,7 @@ static int ELF_(r_bin_elf_init)(ELF_(r_bin_elf_obj) *bin)
 	}
 
 	if (read(bin->fd, bin->phdr, bin->plen) != bin->plen) {
-		fprintf(stderr, "Warning: Cannot read program headers (0x%08x->0x%08x)\n",
+		ERR("Warning: Cannot read program headers (0x%08x->0x%08x)\n",
 			(unsigned int)ehdr->e_phoff, (unsigned int)((long)&ehdr->e_phoff-(long)&ehdr->e_ident));
 		perror("read");
 		//return -1;
@@ -289,10 +289,10 @@ static int ELF_(r_bin_elf_init)(ELF_(r_bin_elf_obj) *bin)
 
 	//printf("shtlen = %d\n", slen);
 	if (read(bin->fd, bin->shdr, slen) != slen) {
-		fprintf(stderr, "Warning: Cannot read section headers (0x%08x->0x%08x)\n",
+		ERR("Warning: Cannot read section headers (0x%08x->0x%08x)\n",
 			(unsigned int)ehdr->e_shoff, (unsigned int)((long)&ehdr->e_shoff-(long)&ehdr->e_ident));
 		perror("read");
-		fprintf(stderr, "Warning: Cannot read %d sections.\n", ehdr->e_shnum);
+		ERR("Warning: Cannot read %d sections.\n", ehdr->e_shnum);
 		ehdr->e_shnum=0;
 		//return -1;
 	}
@@ -1196,7 +1196,7 @@ int ELF_(r_bin_elf_get_libs)(ELF_(r_bin_elf_obj) *bin, int str_limit, r_bin_elf_
 int ELF_(r_bin_elf_open)(ELF_(r_bin_elf_obj) *bin, const char *file, int rw)
 {
 	if ((bin->fd=open(file, rw?O_RDWR:O_RDONLY)) == -1) {
-		fprintf(stderr, "Error: Cannot open \"%s\"\n", file);
+		ERR("Error: Cannot open \"%s\"\n", file);
 		return -1;
 	}
 

@@ -27,8 +27,9 @@
 #define _GNU_SOURCE
 
 /* allocating */
-//#define eprintf(...) fprintf(stderr, ...)
+#define ERR(...) fprintf(stderr, ...)
 #define MALLOC_STRUCT(x) (x*)malloc(sizeof(x))
+#define IS_PRINTABLE(x) (x>=' '&&x<='~')
 
 /* operating system */
 

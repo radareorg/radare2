@@ -8,13 +8,13 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "r_types.h"
+#include <r_types.h>
 
 #if __UNIX__
 #include <sys/mman.h>
 #endif
 
-#include "r_bin_pe.h"
+#include <r_bin_pe.h>
 
 enum {
 	ENCODING_ASCII = 0,
@@ -88,12 +88,6 @@ static int r_bin_pe_aux_is_encoded(int encoding, unsigned char c)
 	return 0;
 }
 
-static int r_bin_pe_aux_is_printable(int c)
-{
-	if (c<' '||c>'~') return 0;
-	return 1;
-}
-
 static int r_bin_pe_aux_stripstr_from_file(r_bin_pe_obj *bin, int min, int encoding, PE_DWord seek, PE_DWord limit, const char *filter, int str_limit, r_bin_pe_string *strings)
 {
 	int fd = open(bin->file, O_RDONLY);
@@ -106,7 +100,7 @@ static int r_bin_pe_aux_stripstr_from_file(r_bin_pe_obj *bin, int min, int encod
 	char str[PE_STRING_LENGTH];
 
 	if (fd == -1) {
-		fprintf(stderr, "Cannot open target file.\n")    ;
+		ERR("Cannot open target file.\n")    ;
 		return 1;
 	}
 
@@ -128,7 +122,7 @@ static int r_bin_pe_aux_stripstr_from_file(r_bin_pe_obj *bin, int min, int encod
 
 	stringsp = strings;
 	for(i = seek; i < len && ctr < str_limit; i++) { 
-		if ((r_bin_pe_aux_is_printable(buf[i]) || (r_bin_pe_aux_is_encoded(encoding, buf[i])))) {
+		if ((IS_PRINTABLE(buf[i]) || (r_bin_pe_aux_is_encoded(encoding, buf[i])))) {
 			str[matches] = buf[i];
 			if (matches < sizeof(str))
 				matches++;
@@ -159,7 +153,7 @@ static int r_bin_pe_aux_stripstr_from_file(r_bin_pe_obj *bin, int min, int encod
 
 	munmap(buf, len); 
 #elif __WINDOWS__
-	fprintf(stderr, "Not yet implemented\n");
+	ERR("Not yet implemented\n");
 #endif
 	return ctr;
 }
@@ -167,12 +161,12 @@ static int r_bin_pe_aux_stripstr_from_file(r_bin_pe_obj *bin, int min, int encod
 static int r_bin_pe_do_checks(r_bin_pe_obj *bin)
 {
 	if (strncmp((char*)&bin->dos_header->e_magic, "MZ", 2)) {
-		fprintf(stderr, "File not PE\n");
+		ERR("File not PE\n");
 		return -1;
 	}
 
 	if (strncmp((char*)&bin->nt_headers->Signature, "PE", 2)) {
-		fprintf(stderr, "File not PE\n");
+		ERR("File not PE\n");
 		return -1;
 	}
 
