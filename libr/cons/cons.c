@@ -35,6 +35,7 @@ static char *r_cons_buffer = NULL;
 char *r_cons_filterline = NULL;
 char *r_cons_teefile = NULL;
 int r_cons_is_html = 0;
+int r_cons_interactive = 1;
 int r_cons_lines = 0;
 int r_cons_noflush = 0;
 
@@ -160,7 +161,6 @@ void r_cons_clear()
 	r_cons_lines = 0;
 }
 
-
 void r_cons_reset()
 {
 	if (r_cons_buffer)
@@ -227,6 +227,15 @@ void r_cons_flush()
 
 	if (r_cons_noflush)
 		return;
+
+	if (r_cons_interactive) {
+		if (r_cons_buffer_len > CONS_MAX_USER) {
+			if (r_cons_yesno('n', "Do you want to print %d bytes? (y/N)", r_cons_buffer_len)== 0) {
+				r_cons_reset();
+				return;
+			}
+		}
+	}
 
 	if (!STR_IS_NULL(r_cons_buffer)) {
 		char *file = r_cons_filterline;
@@ -503,30 +512,24 @@ int r_cons_get_real_columns()
 #endif
 }
 
-#ifdef RADARE_CORE
-int yesno(int def, const char *fmt, ...)
+int r_cons_yesno(int def, const char *fmt, ...)
 {
 	va_list ap;
 	int key = def;
 
-	if (config.visual)
-		key='y';
-	else D {
-		va_start(ap, fmt);
-		vfprintf(stderr, fmt, ap);
-		va_end(ap);
-		fflush(stderr);
-		r_cons_set_raw(1);
-		read(0, &key, 1); write(2, "\n", 1);
-		r_cons_set_raw(0);
-		if (key=='\n'||key=='\r')
-			key = def;
-	} else
-		key = 'y';
+	va_start(ap, fmt);
+	vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	fflush(stderr);
+	r_cons_set_raw(1);
+	read(0, &key, 1); write(2, "\n", 1);
+	r_cons_set_raw(0);
+	if (key=='\n'||key=='\r')
+		key = def;
+	else key = 'y';
 
 	return key=='y';
 }
-#endif
 
 /**
  *

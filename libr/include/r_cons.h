@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#define CONS_MAX_USER 102400
 #define CONS_BUFSZ 0x4f00
 #define STR_IS_NULL(x) (!x || !x[0])
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')
@@ -136,6 +137,6 @@ const char *r_cons_get_buffer();
 void r_cons_grep(const char *str);
 
 void r_cons_invert(int set, int color);
-
+int r_cons_yesno(int def, const char *fmt, ...);
 
 #endif
