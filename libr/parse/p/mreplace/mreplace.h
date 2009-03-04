@@ -1,6 +1,6 @@
 //
 // Library: Experimental PERL alike "search & replace", Copyleft, 2009-02-20
-// Author : Mandingo, mandingo [ at ]yoire.com
+// Author : Mandingo, mandingo [ at ] yoire.com
 //
 
 
@@ -14,4 +14,4 @@ extern void  sreplace(char *s,char *orig,char *rep,char multi,long dsize);
 //search & replace strings - regexp + multiline safe
 extern char *treplace(char *string,char *search,char *replace);
 
-extern char *mreplace(char *string, char *se,char *replace);
+extern char *mreplace(char *string, char *search,char *replace);

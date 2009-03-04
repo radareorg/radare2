@@ -61,7 +61,7 @@ memChunk *memReserve(long size){
 	//printf("- reservando %d bytes\n",size);
 	buffer->size=size;
 	bzero(buffer->address,buffer->size);
-	mInfo->allocated+=size;
+	mInfo->allocated+=buffer->size;
 	return buffer;
 }
 memChunk *memStringReserve(char *string,long nbytes){
@@ -84,12 +84,15 @@ memChunk *memString(char *string){
 
 void memCopy(memChunk *dest,memChunk *source){
 	long nbytes;
+	memCheckState();
+	if(!source->address) return;
 	if(!dest->address){
 		dest=memString(source->address);
 	}else{
 		nbytes=dest->size > source->size ? source->size : dest->size;
-		memCheckState();
-		//printf("Copying %d bytes to dest (size %d)\n",nbytes,dest->address,dest->size);
+		#if DEBUG3
+		printf("Copying %d bytes to dest (size %d)\n",nbytes,dest->address,dest->size);
+		#endif
 		#if USE_BCOPY
 			bcopy(source->address,dest->address,nbytes);
 		#else
@@ -99,7 +102,7 @@ void memCopy(memChunk *dest,memChunk *source){
 }
 
 void memStrCat(memChunk *dest,char *string){
-	//long nbytes;
+	long nbytes;
 	memChunk result,*temp;
 
 	temp           = memReserve(dest->size+strlen(string)+1);

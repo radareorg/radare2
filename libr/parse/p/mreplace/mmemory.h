@@ -1,6 +1,6 @@
 //
 // Library: Memory Manage Module v1.10, Copyleft, 2009-02-25
-// Author : Mandingo, mandingo [ at ]yoire.com
+// Author : Mandingo, mandingo [ at ] yoire.com
 //
 
 #define USE_BCOPY		1
@@ -20,12 +20,12 @@ typedef struct {
 
 memChunk *memReserve(long size);
 void      memCopy(memChunk *dest,memChunk *source);
-void      memStrCat(memChunk *dest,char *string);
 memInfo  *memInformation();
 long	  memAllocated();
 void      memFree(memChunk *chunk);
 void      memCheckState();
 
+void      memStrCat(memChunk *dest,char *string);
 memChunk *memString(char *string);
 void      memStringRealloc(memChunk *chunk);
 memChunk *memStringReserve(char *string,long nbytes);
