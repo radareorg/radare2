@@ -27,6 +27,7 @@
 #define _GNU_SOURCE
 
 /* allocating */
+#include <stdio.h>
 #include <stdarg.h>
 static inline int ERR(char *str, ...)
 {
