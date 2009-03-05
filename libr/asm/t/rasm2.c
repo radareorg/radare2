@@ -65,12 +65,13 @@ static int rasm_asm(char *buf, u64 offset)
 	struct r_asm_aop_t aop;
 	int ret;
 
-
+#if 0 
 	/* TODO: Arch, syntax... */
 	if (!r_asm_set(&a, "asm_x86_olly")) {
 		fprintf(stderr, "Error: Cannot find asm_x86 plugin\n");
 		return 1;
 	}
+#endif 
 	r_asm_set_pc(&a, offset);
 
 	ret = r_asm_assemble(&a, &aop, buf);
@@ -141,6 +142,11 @@ int main(int argc, char *argv[])
 		}
 		if (!strcmp(arch, "asm_bf"))
 			str = 1;
+	} else if (!dis) {
+		if (!r_asm_set(&a, "asm_x86_olly")) {
+			fprintf(stderr, "Error: Cannot find asm_x86_olly plugin\n");
+			return 1;
+		}
 	} else if (!r_asm_set(&a, "asm_x86")) {
 		fprintf(stderr, "Error: Cannot find asm_x86 plugin\n");
 		return 1;

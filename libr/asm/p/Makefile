@@ -49,11 +49,16 @@ OBJ_CSR+=../arch/csr/csr_disasm/dis.o
 OBJ_M68K=asm_m68k.o
 # mk8k-disasm
 OBJ_M68K+=../arch/m68k/m68k_disasm/m68k_disasm.o
+## JAVA
+OBJ_JAVA=asm_java.o
+# javasm
+OBJ_JAVA+=../arch/java/javasm/javasm.o
+
 
 all: asm_dummy.so asm_x86.so asm_x86_olly.so \
 		asm_x86_bea.so asm_arm.so asm_mips.so \
 		asm_sparc.so asm_ppc.so asm_bf.so \
-		asm_csr.so asm_m68k.so
+		asm_csr.so asm_m68k.so asm_java.so
 	@true
 
 asm_dummy.so: asm_dummy.o
@@ -100,8 +105,13 @@ asm_m68k.so: ${OBJ_M68K}
 	${CC} ${CFLAGS} -o asm_m68k.so ${OBJ_M68K}
 	@#strip -s asm_x86.so
 
+asm_java.so: ${OBJ_JAVA}
+	${CC} ${CFLAGS} -o asm_java.so ${OBJ_JAVA}
+	@#strip -s asm_x86.so
+
 clean:
 	-rm -f *.so *.o \
 		${OBJ_X86} ${OBJ_X86_OLLY} ${OBJ_X86_BEA} \
 		${OBJ_ARM} ${OBJ_MIPS} ${OBJ_SPARC} \
-		${OBJ_PPC} ${OBJ_BF} ${OBJ_CSR} ${OBJ_M68K}
+		${OBJ_PPC} ${OBJ_BF} ${OBJ_CSR} ${OBJ_M68K} \
+		${OBJ_JAVA}
