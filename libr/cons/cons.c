@@ -24,6 +24,8 @@
 #include <windows.h>
 #endif
 
+#define MOAR_VALUE 4096*4
+
 // WTF //
 char *strsub (char *string, char *pat, char *rep, int global);
 int r_cons_stdout_fd = 1;
@@ -85,12 +87,12 @@ int r_cons_init()
 static void palloc(int moar)
 {
 	if (r_cons_buffer == NULL) {
-		r_cons_buffer_sz = moar+4096;
+		r_cons_buffer_sz = moar+MOAR_VALUE;
 		r_cons_buffer = (char *)malloc(r_cons_buffer_sz);
 		r_cons_buffer[0]='\0';
 	} else
 	if (moar + r_cons_buffer_len > r_cons_buffer_sz) {
-		r_cons_buffer_sz += moar+4096;
+		r_cons_buffer_sz += moar+MOAR_VALUE;
 		r_cons_buffer = (char *)realloc(r_cons_buffer, r_cons_buffer_sz);
 	}
 }
