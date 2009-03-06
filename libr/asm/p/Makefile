@@ -2,6 +2,10 @@ CFLAGS=-I../../include -I../arch/ -I../arch/include -Wall -fPIC -shared -Wl,-R..
 # XXX
 CFLAGS+=-DLIL_ENDIAN=1 -D__UNIX__
 
+CFLAGS_IMP=-I../../include -I../arch/ -I../arch/include -w -fPIC -shared -Wl,-R..
+# XXX
+CFLAGS_IMP+=-DLIL_ENDIAN=1 -D__UNIX__
+
 ## X86
 # udis86
 OBJ_X86=asm_x86.o
@@ -17,9 +21,6 @@ OBJ_X86_OLLY=asm_x86_olly.o
 OBJ_X86_OLLY+=../arch/x86/ollyasm/disasm.o
 OBJ_X86_OLLY+=../arch/x86/ollyasm/asmserv.o
 OBJ_X86_OLLY+=../arch/x86/ollyasm/assembl.o
-# bea
-OBJ_X86_BEA=asm_x86_bea.o
-OBJ_X86_BEA+=../arch/x86/bea/BeaEngine.o
 ## ARM
 OBJ_ARM=asm_arm.o
 # gnu arm-dis
@@ -73,8 +74,9 @@ asm_x86_olly.so: ${OBJ_X86_OLLY}
 	${CC} ${CFLAGS} -o asm_x86_olly.so ${OBJ_X86_OLLY}
 	@#strip -s asm_x86_olly.so
 
-asm_x86_bea.so: ${OBJ_X86_BEA}
-	${CC} ${CFLAGS} -o asm_x86_bea.so ${OBJ_X86_BEA}
+asm_x86_bea.so:
+	${CC} ${CFLAGS_IMP} -o asm_x86_bea.so \
+		asm_x86_bea.c ../arch/x86/bea/BeaEngine.c
 	@#strip -s asm_x86_bea.so
 
 asm_arm.so: ${OBJ_ARM}
@@ -111,7 +113,6 @@ asm_java.so: ${OBJ_JAVA}
 
 clean:
 	-rm -f *.so *.o \
-		${OBJ_X86} ${OBJ_X86_OLLY} ${OBJ_X86_BEA} \
-		${OBJ_ARM} ${OBJ_MIPS} ${OBJ_SPARC} \
-		${OBJ_PPC} ${OBJ_BF} ${OBJ_CSR} ${OBJ_M68K} \
-		${OBJ_JAVA}
+		${OBJ_X86} ${OBJ_X86_OLLY} ${OBJ_ARM} \
+		${OBJ_MIPS} ${OBJ_SPARC} ${OBJ_PPC} \
+		${OBJ_BF} ${OBJ_CSR} ${OBJ_M68K} ${OBJ_JAVA}

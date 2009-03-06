@@ -67,12 +67,12 @@ int do_byte_pat(int patlen)
 	u64 intaddr;
 	/* end addr */
 	//u64 bytes =  (config.limit!=0)?(config.limit-config.seek):config.block_size;
-#warning bytes not defined
+//XXX bytes not defined
 	u64 bytes  = 0;
 	u64 bact = 0;
  	/* start addr */
 	//u64 bact = config.seek;
-#warning bact = curseek not defined
+//XXX bact = curseek not defined
 
 #if 0
 	if (patlen < 1 || patlen > MAX_PATLEN) {
@@ -103,7 +103,7 @@ int do_byte_pat(int patlen)
 	//	radare_seek ( bact , SEEK_SET );
 		bproc = bact + patlen ;
 //		read ( fd, sblk, patlen );
-#warning bytepattern should be used with a read callback
+//XXX bytepattern should be used with a read callback
 	//XXX	radare_read_at(bact, sblk, patlen);
 		sblk[patlen]=0;
 
@@ -116,7 +116,7 @@ int do_byte_pat(int patlen)
 			nr = nr + ( patlen - (nr % patlen) ); // tamany de bloc llegit multiple superior de tamany busqueda
 			//rb = read ( fd, block, nr );
 			//rb = radare_read_at(bproc, block, nr);
-#warning XXX
+//XXX
 			moar = 0;
 			for(i=0; i<nr; i++){
 				if (!memcmp(&block[i], sblk, patlen) && !is_fi_present(root, sblk, patlen)){
@@ -166,12 +166,12 @@ int r_search_pattern_update(int patlen)
 	u64 intaddr;
 	/* end addr */
 	//u64 bytes =  (config.limit!=0)?(config.limit-config.seek):config.block_size;
-#warning bytes not defined
+//XXX bytes not defined
 	u64 bytes  = 0;
 	u64 bact = 0;
  	/* start addr */
 	//u64 bact = config.seek;
-#warning bact = curseek not defined
+//XXX bact = curseek not defined
 
 #if 0
 	if (patlen < 1 || patlen > MAX_PATLEN) {
@@ -202,7 +202,7 @@ int r_search_pattern_update(int patlen)
 	//	radare_seek ( bact , SEEK_SET );
 		bproc = bact + patlen ;
 //		read ( fd, sblk, patlen );
-#warning bytepattern should be used with a read callback
+//XXX bytepattern should be used with a read callback
 	//XXX	radare_read_at(bact, sblk, patlen);
 		sblk[patlen]=0;
 
@@ -215,7 +215,7 @@ int r_search_pattern_update(int patlen)
 			nr = nr + ( patlen - (nr % patlen) ); // tamany de bloc llegit multiple superior de tamany busqueda
 			//rb = read ( fd, block, nr );
 			//rb = radare_read_at(bproc, block, nr);
-#warning XXX
+//XXX
 			moar = 0;
 			for(i=0; i<nr; i++){
 				if (!memcmp(&block[i], sblk, patlen) && !is_fi_present(root, sblk, patlen)){

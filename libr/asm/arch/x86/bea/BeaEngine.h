@@ -4,7 +4,7 @@
 #ifdef __UNIX__
 #define BYTE unsigned char
 #define WORD unsigned short
-#define DWORD unsigned int
+#define DWORD unsigned long
 #define __stdcall 
 #endif
 

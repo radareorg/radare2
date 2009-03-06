@@ -29,5 +29,5 @@ shot:
 	FILES=`hg status -mc|cut -c 3-|sed -e s,^,radare2-$${DATE}/,`; \
 	cd .. && mv radare2 radare2-$${DATE} && \
 	tar czvf radare2-$${DATE}.tar.gz $${FILES} ;\
-	mv radare2-$${DATE} radare && \
+	mv radare2-$${DATE} radare2 && \
 	scp radare2-$${DATE}.tar.gz news.nopcode.org:/home/www/radarenopcode/get/shot
