@@ -8,7 +8,7 @@ int r_search_regexp_update(struct r_search_t *s, u64 from, const u8 *buf, int le
 	struct list_head *pos;
 	char *buffer = malloc(len+1);
 	char *skipz, *end;
-	int i, count = 0;
+	int count = 0;
 
 	memcpy(buffer, buf, len);
 	buffer[len]='\0';
@@ -28,7 +28,7 @@ int r_search_regexp_update(struct r_search_t *s, u64 from, const u8 *buf, int le
 			return -1;
 		}
 		foo:
-		ret = regexec(&compiled, buffer+delta, 1, &matches, 0);
+		ret = regexec(&compiled, buffer+delta, 1, matches, 0);
 		if (ret) {
 			return 0;
 		} else
@@ -36,12 +36,12 @@ int r_search_regexp_update(struct r_search_t *s, u64 from, const u8 *buf, int le
 			if (s->callback)
 				s->callback(kw, s->user, (u64)from+matches[0].rm_so+delta);
 			else printf("hit%d_%d 0x%08llx ; %s\n",
-				count, kw->count, (u64)from+matches[0].rm_so,
+				count, kw->count, (u64)(from+matches[0].rm_so),
 				buf+matches[0].rm_so+delta);
 			delta += matches[0].rm_so+1;
 			kw->count++;
 			count++;
-		} while(!regexec(&compiled, buffer+delta, 1, &matches, 0));
+		} while(!regexec(&compiled, buffer+delta, 1, matches, 0));
 		if (delta == 0)
 			return 0;
 

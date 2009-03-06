@@ -7,7 +7,7 @@
 #if 0
  buf       |__________________________________|
  bufptr[]  ^     ^        ^  ^       ^
- bufidx  >---------------------------'
+ bufidx  >---------------------------/
 #endif
 
 /* 256 chunks with 30 KB */
@@ -31,7 +31,7 @@ int r_alloca_init()
 	return R_TRUE;
 }
 
-char *r_alloca_bytes(int len)
+u8 *r_alloca_bytes(int len)
 {
 	u8 *next = bufnext;
 	u8 *tnext = bufnext + len;
@@ -44,7 +44,7 @@ char *r_alloca_bytes(int len)
 char *r_alloca_str(const char *str)
 {
 	int len;
-	char *p;
+	u8 *p;
 	if (str == NULL) {
 		len = 1;
 		p = r_alloca_bytes(1);
@@ -55,7 +55,7 @@ char *r_alloca_str(const char *str)
 		if (p != NULL)
 			memcpy(p, str, len);
 	}
-	return p;
+	return (char *)p;
 }
 
 /* free last allocated buffer */

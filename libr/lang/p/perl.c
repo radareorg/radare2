@@ -30,7 +30,7 @@ static void perl_radare_cmd(pTHX_ CV* cv)
 	ST(0) = newSVpvn(str, strlen(str));
 	free(str);
 	XSRETURN(1);
-	str = items; /* dummy */
+	str = (char *)items; /* dummy unreachable code */
 }
 
 static void xs_init(pTHX)

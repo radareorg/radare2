@@ -84,6 +84,7 @@ int r_io_handle_open(struct r_io_t *io, int fd, struct r_io_handle_t *plugin);
 int r_io_handle_close(struct r_io_t *io, int fd, struct r_io_handle_t *plugin);
 int r_io_handle_generate(struct r_io_t *io);
 int r_io_handle_add(struct r_io_t *io, struct r_io_handle_t *plugin);
+int r_io_handle_list(struct r_io_t *io);
 // TODO: _del ??
 struct r_io_handle_t *r_io_handle_resolve(struct r_io_t *io, const char *filename);
 struct r_io_handle_t *r_io_handle_resolve_fd(struct r_io_t *io, int fd);

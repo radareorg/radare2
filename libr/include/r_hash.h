@@ -79,6 +79,7 @@ const u8 *r_hash_state_sha512(struct r_hash_t *ctx, const u8 *input, u32 len);
 /* OO */
 struct r_hash_t *r_hash_state_new(int init);
 void r_hash_init(struct r_hash_t *ptr, int flags);
+void r_hash_state_init(struct r_hash_t *ctx, int flags);
 void r_hash_state_free(struct r_hash_t *ctx);
 
 #endif

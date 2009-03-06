@@ -77,7 +77,7 @@ int r_core_write_at(struct r_core_t *core, u64 addr, const u8 *buf, int size)
 	return (ret==-1)?R_FALSE:R_TRUE;
 }
 
-int r_core_read_at(struct r_core_t *core, u64 addr, const u8 *buf, int size)
+int r_core_read_at(struct r_core_t *core, u64 addr, u8 *buf, int size)
 {
 	int ret;
 	r_io_lseek(&core->io, core->file->fd, addr, R_IO_SEEK_SET);

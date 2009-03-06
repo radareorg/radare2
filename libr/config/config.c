@@ -24,7 +24,7 @@ void r_config_list(struct r_config_t *cfg, const char *str, int rad)
 	int len = 0;
 
 	if (!strnull(str)) {
-		str = r_str_clean(str);
+		//str = r_str_clean(str);
 		len = strlen(str);
 	}
 

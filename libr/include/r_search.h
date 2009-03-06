@@ -26,7 +26,7 @@ struct r_search_kw_t {
 	u32 keyword_length;
 	u32 binmask_length;
 	u32 idx; // searching purposes
-	u32 count;
+	int count;
 	struct list_head list;
 };
 
@@ -75,6 +75,8 @@ int r_search_set_blocksize(struct r_search_t *s, u32 bsize);
 int r_search_mybinparse_update(struct r_search_t *s, u64 from, const u8 *buf, int len);
 int r_search_aes_update(struct r_search_t *s, u64 from, const u8 *buf, int len);
 int r_search_strings_update_char(const unsigned char *buf, int min, int max, int enc, u64 offset, const char *match);
+int r_search_regexp_update(struct r_search_t *s, u64 from, const u8 *buf, int len);
+int r_search_xrefs_update(struct r_search_t *s, u64 from, const u8 *buf, int len);
 
 /* pattern search */
 int r_search_pattern(struct r_search_t *s, u32 size);

@@ -3,11 +3,14 @@
 #include <r_debug.h>
 #include <r_lib.h>
 #include <sys/ptrace.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
 
 static int r_debug_ptrace_step(int pid)
 {
-	u32 addr = 0; /* should be eip */
-	u32 data = 0;
+	//u32 addr = 0; /* should be eip */
+	//u32 data = 0;
 	printf("NATIVE STEP over PID=%d\n", pid);
 	ptrace(PTRACE_SINGLESTEP, pid, 0, 0); //addr, data);
 	perror("ptrace-singlestep");
@@ -19,7 +22,7 @@ static int r_debug_ptrace_attach(int pid)
 	u32 addr;
 	u32 data;
 	int ret = ptrace(PTRACE_ATTACH, pid, addr, data);
-	return R_TRUE;
+	return (ret != -1)?R_TRUE:R_FALSE;
 }
 
 static int r_debug_ptrace_detach(int pid)
@@ -45,11 +48,14 @@ static int r_debug_ptrace_wait(int pid)
 	return status;
 }
 
+#if 0
 static int r_debug_ptrace_import(struct r_debug_handle_t *from)
 {
 	//int pid = from->export(R_DEBUG_GET_PID);
 	//int maps = from->export(R_DEBUG_GET_MAPS);
+	return R_FALSE;
 }
+#endif
 
 static struct r_debug_handle_t r_dbg_plugin_ptrace = {
 	.name = "ptrace",

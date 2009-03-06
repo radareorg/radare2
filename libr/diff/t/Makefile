@@ -10,6 +10,6 @@ test:
 radiff2:
 	${CC} -g -I ../../include radiff2.c ${LDFLAGS} -o radiff2
 
-clean:
+myclean:
 	rm -f test test.o radiff2
 

@@ -15,7 +15,7 @@ int main(int argc, char **argv)
 
 	rs = r_search_new(R_SEARCH_STRING);
 	r_search_set_callback(rs, &hit, buffer);
-	r_search_initialize(rs);
+	r_search_begin(rs);
 	printf("Searching strings in '%s'\n", buffer);
 	r_search_update_i(rs, 0LL, buffer, strlen(buffer));
 	rs = r_search_free(rs);

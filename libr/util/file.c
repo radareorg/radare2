@@ -31,7 +31,7 @@ char *r_file_path(const char *bin)
 			ptr = strchr(str, ':');
 			if (ptr) {
 				ptr[0]='\0';
-				snprintf(file, "%s/%s", str, bin);
+				snprintf(file, 1023, "%s/%s", str, bin);
 				if (r_file_exist(file)) {
 					free(path);
 					return strdup(file);
@@ -81,7 +81,7 @@ char *r_file_slurp_random_line(const char *file)
 {
 	int i, lines = 0;
 	struct timeval tv;
-	u32 sz;
+	int sz;
 	char *ptr, *str = r_file_slurp(file, &sz);
 	if (str) {
 		gettimeofday(&tv,NULL);

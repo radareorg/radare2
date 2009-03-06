@@ -61,7 +61,10 @@ all: ${BIN}
 ${BIN}: ${OBJ}
 	${CC} ${LDFLAGS} ${OBJ} -o ${BIN} ${LIBS}
 
-clean:
+#Dummy myclean rule that can be overriden by the t/ Makefile
+myclean:
+
+clean: myclean
 	-rm -f ${OBJ} ${BIN}
 
 .PHONY: all clean ${BIN}

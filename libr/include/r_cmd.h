@@ -28,6 +28,8 @@ struct r_cmd_t {
 int r_cmd_init(struct r_cmd_t *cmd);
 int r_cmd_set_data(struct r_cmd_t *cmd, void *data);
 int r_cmd_add(struct r_cmd_t *cmd, const char *command, const char *desc, r_cmd_callback(callback));
+int r_cmd_add_long(struct r_cmd_t *cmd, const char *longcmd, const char *shortcmd, const char *desc);
 int r_cmd_del(struct r_cmd_t *cmd, const char *command);
 int r_cmd_call(struct r_cmd_t *cmd, const char *command);
+int r_cmd_call_long(struct r_cmd_t *cmd, const char *input);
 char **r_cmd_args(struct r_cmd_t *cmd, int *argc);

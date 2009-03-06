@@ -116,9 +116,9 @@ int r_var_add_access(struct r_var_t *var, u64 addr, int delta, int type, int set
 	u64 from = 0LL, to = 0LL;
 	struct list_head *pos;
 	struct r_var_item_t *v;
-	int reloop = 0;
+	//int reloop = 0;
 
-	_reloop:
+	//_reloop:
 	list_for_each(pos, &var->vars) {
 		v = (struct r_var_item_t*)list_entry(pos, struct r_var_item_t, list);
 		if (addr >= v->addr) {
@@ -137,6 +137,7 @@ int r_var_add_access(struct r_var_t *var, u64 addr, int delta, int type, int set
 	/* detect function in CF list */
 	from = to = 0LL;
 	// XXX USE RMETA HERE!!
+#if 0
 	if ( data_get_fun_for(addr, &from, &to) ) {
 		char varname[32];
 		if (delta < 0) {
@@ -154,6 +155,7 @@ int r_var_add_access(struct r_var_t *var, u64 addr, int delta, int type, int set
 		goto _reloop;
 		return r_var_add_access(var, addr, delta, type, set);
 	} else fprintf(stderr, "Cannot find bounding function at 0x%08llx\n", addr);
+#endif
 	return 0;
 }
 

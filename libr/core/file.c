@@ -12,7 +12,6 @@ u64 r_core_file_resize(struct r_core_t *core, u64 newsize)
 struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int mode)
 {
 	struct r_core_file_t *fh;
-	struct r_io_handle_t *iofh;
 	int fd;
 	char *p;
 

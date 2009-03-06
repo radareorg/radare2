@@ -829,7 +829,7 @@ static int cmd_system(void *data, const char *input)
 
 static int cmd_meta(void *data, const char *input)
 {
-	struct r_core_t *core = (struct r_core_t *)data;
+	//struct r_core_t *core = (struct r_core_t *)data;
 	switch(input[0]) {
 	case '\0':
 		/* meta help */
@@ -1097,7 +1097,7 @@ static int cmd_debug(void *data, const char *input)
 	switch(input[0]) {
 	case 's':
 		fprintf(stderr, "step\n");
-		r_debug_step(&core->dbg);
+		r_debug_step(&core->dbg, 1);
 		break;
 	case 'b':
 		fprintf(stderr, "breakpoint\n");
@@ -1111,13 +1111,13 @@ static int cmd_debug(void *data, const char *input)
 		break;
 	case 'p':
 		if (input[1]==' ')
-			r_debug_select(&core->dbg, atoi(input+2));
+			r_debug_select(&core->dbg, core->dbg.pid, atoi(input+2));
 		else fprintf(stderr, "TODO: List processes..\n");
 		break;
 	case 'h':
 		if (input[1]==' ')
 			r_debug_handle_set(&core->dbg, input+2);
-		else r_debug_handle_list(&core->dbg);
+		else r_debug_handle_list(&core->dbg, "");
 		break;
 	default:
 		r_cons_printf("Usage: d[sbc] [arg]\n"

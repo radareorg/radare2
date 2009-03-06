@@ -50,13 +50,12 @@ void r_num_init(struct r_num_t *num);
 #define iswhitespace(x) (x==' '||x=='\t')
 #define ishexchar(x) ((x>='0'&&x<='9') ||  (x>='a'&&x<='f') ||  (x>='A'&&x<='F')) {
 
-int r_strhash(const char *str);
-
 /* stabilized */
 int r_str_word_count(const char *string);
 int r_str_word_set0(char *str);
 const char *r_str_word_get0(const char *str, int idx);
 
+int r_str_hash(const char *str);
 char *r_str_clean(char *str);
 int r_str_nstr(char *from, char *to, int size);
 char *r_str_lchr(char *str, char chr);

@@ -61,7 +61,7 @@ int do_byte_pat(int patlen)
 	static fnditem* root;
 	u64 bproc = 0;
 	u64 rb;
-	const char *str;
+	//const char *str;
 	int nr,i, moar;
 	int pcnt, cnt=0, k=0;
 	u64 intaddr;
@@ -160,7 +160,7 @@ int r_search_pattern_update(int patlen)
 	static fnditem* root;
 	u64 bproc = 0;
 	u64 rb;
-	const char *str;
+	//const char *str;
 	int nr,i, moar;
 	int pcnt, cnt=0, k=0;
 	u64 intaddr;

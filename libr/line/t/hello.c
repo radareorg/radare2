@@ -18,4 +18,6 @@ int main()
 		printf("%s\n", str);
 		r_line_hist_add(str);
 	}
+
+	return 0;
 }

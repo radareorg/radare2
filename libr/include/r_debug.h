@@ -52,7 +52,14 @@ int r_debug_handle_set(struct r_debug_t *dbg, const char *str);
 int r_debug_handle_init(struct r_debug_t *dbg);
 int r_debug_init(struct r_debug_t *dbg);
 
+int r_debug_step(struct r_debug_t *dbg, int steps);
 int r_debug_continue(struct r_debug_t *dbg);
+int r_debug_select(struct r_debug_t *dbg, int pid, int tid);
+/* handle.c */
+int r_debug_handle_init(struct r_debug_t *dbg);
+int r_debug_handle_set(struct r_debug_t *dbg, const char *str);
+int r_debug_handle_list(struct r_debug_t *dbg, const char *str);
+int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
 
 #if 0
 Missing callbacks

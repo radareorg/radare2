@@ -1,6 +1,5 @@
 /* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
 
-#include "r_types.h"
 #include "r_line.h"
 
 /* dietline is a lighweight and portable library similar to GNU readline */

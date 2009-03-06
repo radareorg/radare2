@@ -1,6 +1,9 @@
 #ifndef _INCLUDE_R_LINE_H_
 #define _INCLUDE_R_LINE_H_
 
+#include "r_types.h"
+#include "r_cons.h"
+
 #include <stdio.h>
 
 #define R_LINE_BUFSIZE 1024

@@ -66,6 +66,7 @@ struct r_core_t *r_core_new();
 int r_core_config_init(struct r_core_t *core);
 int r_core_prompt(struct r_core_t *r);
 int r_core_cmd(struct r_core_t *r, const char *cmd, int log);
+int r_core_cmdf(void *user, const char *fmt, ...);
 int r_core_cmd0(void *user, const char *cmd);
 int r_core_cmd_init(struct r_core_t *core);
 char *r_core_cmd_str(struct r_core_t *core, const char *cmd);
@@ -73,6 +74,7 @@ int r_core_cmd_file(struct r_core_t *core, const char *file);
 int r_core_seek(struct r_core_t *core, u64 addr);
 int r_core_block_read(struct r_core_t *core, int next);
 int r_core_block_size(struct r_core_t *core, u32 bsize);
+int r_core_read_at(struct r_core_t *core, u64 addr, u8 *buf, int size);
 int r_core_cmd_init(struct r_core_t *core);
 int r_core_visual(struct r_core_t *core, const char *input);
 int r_core_visual_cmd(struct r_core_t *core, int ch);
@@ -82,5 +84,9 @@ int r_core_file_close(struct r_core_t *r, struct r_core_file_t *fh);
 int r_core_seek_delta(struct r_core_t *core, s64 addr);
 
 int r_core_write_at(struct r_core_t *core, u64 addr, const u8 *buf, int size);
+
+/* yank */
+int r_core_yank(struct r_core_t *core, u64 addr, int len);
+int r_core_yank_paste(struct r_core_t *core, u64 addr, int len);
 
 #endif

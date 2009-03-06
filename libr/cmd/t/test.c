@@ -6,6 +6,7 @@ int cmd_quit(void *data, const char *input)
 {
 	printf("quit\n");
 	exit(1);
+	return 0;
 }
 
 int cmd_echo(void *data, const char *input)
@@ -14,6 +15,7 @@ int cmd_echo(void *data, const char *input)
 	if (arg == NULL)
 		arg = input;
 	printf("%s\n", arg+1);
+	return 0;
 }
 
 int main()
@@ -32,4 +34,6 @@ int main()
 	r_cmd_call_long(&cmd, "echo hello world long");
 	r_cmd_call_long(&cmd, "exit");
 	r_cmd_call(&cmd, "quit");
+
+	return 0;
 }

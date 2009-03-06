@@ -2,6 +2,7 @@
 
 #include "r_cons.h"
 #include "r_print.h"
+#include "r_util.h"
 
 static int flags =
 	R_PRINT_FLAGS_COLOR |

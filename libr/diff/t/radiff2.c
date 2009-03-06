@@ -60,8 +60,8 @@ int main(int argc, char **argv)
 	file = argv[optind];
 	file2 = argv[optind+1];
 
-	bufa = r_file_slurp(file, &sza);
-	bufb = r_file_slurp(file2, &szb);
+	bufa = (u8*)r_file_slurp(file, &sza);
+	bufb = (u8*)r_file_slurp(file2, &szb);
 	if (bufa == NULL || bufb == NULL) {
 		fprintf(stderr, "Error slurping source files\n");
 		return 1;
