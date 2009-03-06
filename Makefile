@@ -1,4 +1,6 @@
 VERSION=0.1
+PREFIX=${PWD}/prefix
+DESTDIR=
 
 all:
 	cd libr && make
@@ -7,11 +9,14 @@ clean:
 	cd libr && make clean
 
 install:
-	mkdir -p prefix
-	cd libr && make install PREFIX=${PWD}/prefix
+	mkdir -p ${DESTDIR}${PREFIX}
+	cd libr && make install PREFIX=${DESTDIR}${PREFIX}
 
-deinstall:
+uninstall:
 	rm -rf prefix
+
+deinstall: uninstall
+	cd libr && make uninstall PREFIX=${DESTDIR}${PREFIX}
 
 dist:
 	FILES=`hg st -mc .| cut -c 3-|sed -e s,^,radare2-${VERSION}/,` ; \

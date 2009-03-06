@@ -43,6 +43,34 @@ install:
 	do echo " $$a"; cp $$a ${PREFIX}/bin-test ; done
 	@echo libr aka radare2 has been installed in PREFIX=${PREFIX}
 
+uninstall:
+	# libraries
+	-@for a in `find * | grep -e '\.so$$' | grep lib` ; do \
+	a=`echo $$a|awk -F / '{ print $$NF; }'`; \
+	echo ${PREFIX}/lib/$$a ; rm -f ${PREFIX}/lib/$$a ; done
+	### object archives
+	-@for a in `find * | grep -e '\.a$$'` ; do \
+	a=`echo $$a|awk -F / '{ print $$NF; }'`; \
+	echo ${PREFIX}/lib/$$a ; rm -f ${PREFIX}/lib/$$a ; done
+	### includes
+	-for a in include/* ; do rm -f ${PREFIX}/$$a ; done
+	### programs
+	###@mkdir -p ${PREFIX}/bin
+	-@for a in `find */t -perm /u+x -type f | grep 2`; do \
+	a=`echo $$a|awk -F / '{ print $$NF; }'`; \
+	echo ${PREFIX}/bin/$$a ; rm -f ${PREFIX}/bin/$$a ; done
+	# plugins
+	-@for a in `find */p -perm /u+x -type f`; do \
+	a="${PREFIX}/lib/radare2/`echo $$a|awk -F / '{ print $$NF; }'`"; \
+	echo $$a ; rm -f $$a ; done
+	rm -rf ${PREFIX}/lib/radare2
+	# test programs
+	-@for a in `find */t -perm /u+x -type f | grep -v 2`; do \
+	a="${PREFIX}/bin-test/`echo $$a|awk -F / '{ print $$NF; }'`"; \
+	echo $$a ; rm -f $$a ; done
+	rm -rf ${PREFIX}/bin-test
+	@echo libr aka radare2 has been uninstalled from PREFIX=${PREFIX}
+
 todo:
 	grep -re TODO *
 
