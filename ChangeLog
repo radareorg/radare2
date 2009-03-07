@@ -1,3 +1,616 @@
+===== RELEASE 0.1 =====
+
+changeset:   54:ae3b6b66b9de
+tag:         tip
+user:        pancake@localhost.localdomain
+date:        Sat Mar 07 17:47:59 2009 +0000
+files:       Makefile TODO libr/Makefile
+description:
+* Cut release for r2-0.1
+* Merge dist+shot make targets
+  .PHONY them all
+* (Un)Install include files in $pfx/include/libr/
+
+
+changeset:   53:5e68aeb4a0b0
+user:        nibble
+date:        Fri Mar 06 12:53:19 2009 +0100
+files:       Makefile libr/asm/arch/x86/bea/BeaEngine.h libr/asm/p/Makefile libr/parse/p/Makefile libr/search/bytepat.c
+description:
+* Removed several warnings
+
+
+changeset:   52:d78c76f1ab77
+user:        pancake@localhost.localdomain
+date:        Fri Mar 06 00:38:23 2009 +0000
+files:       Makefile libr/Makefile
+description:
+* Added DESTDIR and 'uninstall' make targets
+
+
+changeset:   51:64f1fcb6980e
+user:        pancake@localhost.localdomain
+date:        Fri Mar 06 00:00:41 2009 +0000
+files:       libr/cmd/TODO libr/cmd/t/test.c libr/config/config.c libr/core/cmd.c libr/core/file.c libr/core/io.c libr/debug/p/dbg-ptrace.c libr/diff/t/Makefile libr/diff/t/radiff2.c libr/hash/t/hello.c libr/include/r_cmd.h libr/include/r_core.h libr/include/r_debug.h libr/include/r_hash.h libr/include/r_io.h libr/include/r_line.h libr/include/r_search.h libr/include/r_util.h libr/lang/p/perl.c libr/line/dietline.c libr/line/t/hello.c libr/print/print.c libr/print/t/hex.c libr/rules.mk libr/search/bytepat.c libr/search/regexp.c libr/search/t/Makefile libr/search/t/test-regexp.c libr/search/t/test-str.c libr/search/xrefs.c libr/util/alloca.c libr/util/file.c libr/var/var.c
+description:
+* Fix lot of warning messages
+
+
+changeset:   50:7468cf143a90
+user:        nibble
+date:        Thu Mar 05 16:58:13 2009 +0100
+files:       libr/asm/arch/java/javasm/javasm.c libr/asm/arch/java/javasm/javasm.h libr/asm/p/Makefile libr/asm/p/asm_java.c libr/asm/t/rasm2.c
+description:
+* Added java plugin for r_asm
+* Added java assembly support in rasm2
+
+
+changeset:   49:b4cf9824741d
+user:        pancake@flubox
+date:        Thu Mar 05 13:15:28 2009 +0100
+files:       Makefile libr/cons/cons.c
+description:
+* Add 'dist' and 'shot' make targets
+* Bigger console buffer by default
+
+
+changeset:   48:cc1aca5b4b00
+user:        nibble
+date:        Wed Mar 04 14:14:49 2009 +0100
+files:       libr/parse/p/mreplace/mmemory.c libr/parse/p/mreplace/mmemory.h libr/parse/p/mreplace/mreplace.c libr/parse/p/mreplace/mreplace.h
+description:
+* Updated mreplace
+
+
+changeset:   47:94d8f408c058
+user:        pancake@localhost.localdomain
+date:        Wed Mar 04 12:39:51 2009 +0000
+files:       libr/anal/Makefile libr/asm/Makefile libr/depgraph.pl libr/include/r_types.h
+description:
+* fix r_asm and r_anal deps
+* Initial import of depgraph.pl helper script to get the libr
+  internal library dependencies graph with graphviz
+
+
+changeset:   46:09e4372e9d09
+user:        pancake@localhost.localdomain
+date:        Fri Feb 27 01:06:37 2009 +0000
+files:       libr/bin/elf.c libr/include/r_types.h libr/util/num.c
+description:
+* Add 'A' (singlechar) values for math expressions
+  - Stripped down version based on the r1 implementation (ow yeah)
+* Fix build of r_bin (oops)
+  - Now ERR() is a static inline function instead of a macro
+
+
+changeset:   45:d4b2d4b202fe
+user:        pancake@localhost.localdomain
+date:        Fri Feb 27 00:54:26 2009 +0000
+files:       libr/bin/elf.c libr/bin/mach0.c libr/bin/pe.c libr/include/r_bin_mach0.h libr/include/r_types.h
+description:
+* Add IS_PRINTABLE in r_types
+* Add ERR() macro in r_types
+  - r_bin uses now ERR() instead of nonportable fprintf(stderr,
+* Initial dummy work on r_bin_mach0
+
+
+changeset:   44:b0999471dbed
+user:        pancake@localhost.localdomain
+date:        Fri Feb 27 00:18:19 2009 +0000
+files:       libr/cons/cons.c libr/include/r_cons.h
+description:
+* Import the cons_interactive functionality of r1 cons
+
+
+changeset:   43:be79171200c6
+user:        nibble
+date:        Thu Feb 26 15:15:19 2009 +0100
+files:       libr/anal/anal.c libr/anal/p/Makefile libr/anal/p/anal_dummy.c libr/anal/p/anal_x86.c libr/anal/p/anal_x86_bea.c libr/asm/p/asm_arm.c libr/asm/p/asm_bf.c libr/asm/p/asm_csr.c libr/asm/p/asm_m68k.c libr/asm/p/asm_mips.c libr/asm/p/asm_ppc.c libr/asm/p/asm_sparc.c libr/asm/p/asm_x86.c libr/asm/p/asm_x86_bea.c libr/asm/p/asm_x86_olly.c libr/core/cmd.c libr/include/r_anal.h libr/include/r_asm.h libr/parse/p/mreplace/mmemory.c libr/parse/p/mreplace/mreplace.c libr/parse/p/parse_dummy.c libr/parse/p/parse_mreplace.c libr/parse/p/parse_x86_pseudo.c
+description:
+* r_anal
+  - Added initial anal_x86_bea plugin (op analysis using bea engine)
+    'ao' command in radare2
+  - Minor fixups
+* r_asm
+  - Modified r_asm_aop_t to fit r_anal requirements
+  - Updated r_asm plugins
+* r_parse
+  - Removed several warnings from mreplace
+  - Removed unnecessary includes
+
+
+changeset:   42:f1c7311fc459
+user:        nibble
+date:        Thu Feb 26 02:31:03 2009 +0100
+files:       libr/include/r_parse.h libr/parse/p/Makefile libr/parse/p/mreplace/mmemory.c libr/parse/p/mreplace/mmemory.h libr/parse/p/mreplace/mreplace.c libr/parse/p/mreplace/mreplace.h libr/parse/p/parse_mreplace.c
+description:
+* Added r_parse plugin for mandingo's mreplace
+
+
+changeset:   41:387a5ca6074f
+user:        nibble
+date:        Tue Feb 24 15:58:21 2009 +0100
+files:       libr/Makefile libr/core/Makefile libr/core/cmd.c libr/core/config.c libr/core/core.c libr/core/t/Makefile libr/include/r_core.h libr/include/r_lib.h libr/include/r_parse.h libr/parse/Makefile libr/parse/p/Makefile libr/parse/p/parse_dummy.c libr/parse/p/parse_x86_pseudo.c libr/parse/parse.c libr/parse/pseudo.c
+description:
+* Added r_parse lib
+* Added pseudo syntax poc to radare2 (asm.pseudo)
+
+
+changeset:   40:56cf25d517a4
+user:        nibble
+date:        Fri Feb 20 16:29:12 2009 +0100
+files:       libr/asm/p/asm_x86_bea.c libr/include/r_core.h
+description:
+* Fixed build O:)
+* Removed warning from asm_x86_bea plugin
+
+
+changeset:   39:92b20e2994a8
+user:        nibble
+date:        Fri Feb 20 14:43:59 2009 +0100
+files:       libr/include/r_reg.h libr/io/p/ptrace.c libr/reg/reg.c
+description:
+* Fixed r_reg build
+* Fixed ptrace io plugin build (64bits)
+
+
+changeset:   38:db5c6b1d9e12
+user:        nibble
+date:        Thu Feb 19 18:13:34 2009 +0100
+files:       libr/asm/arch/m68k/m68k_disasm/m68k_disasm.c libr/asm/arch/x86/bea/BeaEngine.h libr/asm/p/Makefile libr/asm/t/rasm2.c libr/lang/lang.c libr/lang/p/dummy.c libr/lang/p/lua.c
+description:
+* r_asm
+  - Removed warnings
+  - Added error handling to rasm2
+* r_lang
+  - Fixed "print help" bug
+
+
+changeset:   37:6bee013c885e
+user:        nibble
+date:        Thu Feb 19 16:41:51 2009 +0100
+files:       libr/anal/anal.c libr/asm/asm.c libr/asm/p/Makefile libr/asm/p/asm_bea.c libr/asm/p/asm_olly.c libr/asm/p/asm_x86_bea.c libr/asm/p/asm_x86_olly.c libr/asm/t/rasm2.c libr/debug/debug.c libr/include/r_anal.h libr/include/r_asm.h libr/include/r_debug.h libr/lang/lang.c
+description:
+* Fixed plugin name length error in r_{asm, anal, lang}
+* r_asm
+  - asm_bea renamed to asm_x86_bea
+  - asm_olly renamed to asm_x86_olly
+  - Minor fixups in rasm2
+* r_debug
+  - R_ASM_ARCH_ renamed to R_DBG_ARCH_
+
+
+changeset:   36:f4a026ed73dc
+user:        nibble
+date:        Thu Feb 19 14:34:06 2009 +0100
+files:       libr/asm/t/rasm2.c
+description:
+* Fixed rasm2 init O:-)
+
+
+changeset:   35:c762b4fdbf89
+user:        nibble
+date:        Thu Feb 19 14:24:51 2009 +0100
+files:       libr/asm/arch/x86/bea/makeStaticLib32.bat libr/asm/arch/x86/bea/makeStaticLib64.bat libr/asm/arch/x86/bea/makedll32.bat libr/asm/arch/x86/bea/makedll64.bat libr/asm/arch/x86/ollyasm/disasm.h libr/asm/p/Makefile libr/asm/p/asm_bea.c libr/asm/p/asm_olly.c libr/asm/t/rasm2.c
+description:
+* r_asm
+  - Fixed asm_bea
+  - More refactoring on rasm2
+
+
+changeset:   34:abe8f2c269d9
+user:        nibble
+date:        Wed Feb 18 22:10:47 2009 +0100
+files:       libr/asm/arch/x86/bea/BeaEngine.c libr/asm/arch/x86/bea/BeaEngine.h libr/asm/arch/x86/bea/COPYING.LESSER.txt libr/asm/arch/x86/bea/COPYING.txt libr/asm/arch/x86/bea/Includes/Routines_Disasm.c libr/asm/arch/x86/bea/Includes/Routines_ModRM.c libr/asm/arch/x86/bea/Includes/instr_set/Data_opcode.h libr/asm/arch/x86/bea/Includes/instr_set/opcodes_A_M.c libr/asm/arch/x86/bea/Includes/instr_set/opcodes_FPU.c libr/asm/arch/x86/bea/Includes/instr_set/opcodes_Grp1.c libr/asm/arch/x86/bea/Includes/instr_set/opcodes_Grp12.c libr/asm/arch/x86/bea/Includes/instr_set/opcodes_Grp13.c libr/asm/arch/x86/bea/Includes/instr_set/opcodes_Grp14.c libr/asm/arch/x86/bea/Includes/instr_set/opcodes_Grp15.c libr/asm/arch/x86/bea/Includes/instr_set/opcodes_Grp16.c libr/asm/arch/x86/bea/Includes/instr_set/opcodes_Grp2.c libr/asm/arch/x86/bea/Includes/instr_set/opcodes_Grp3.c libr/asm/arch/x86/bea/Includes/instr_set/opcodes_Grp4.c libr/asm/arch/x86/bea/Includes/instr_set/opcodes_Grp5.c libr/asm/arch/x86/bea/Includes/instr_set/opcodes_Grp6.c libr/asm/arch/x86/bea/Includes/instr_set/opcodes_Grp7.c libr/asm/arch/x86/bea/Includes/instr_set/opcodes_Grp8.c libr/asm/arch/x86/bea/Includes/instr_set/opcodes_Grp9.c libr/asm/arch/x86/bea/Includes/instr_set/opcodes_MMX.c libr/asm/arch/x86/bea/Includes/instr_set/opcodes_N_Z.c libr/asm/arch/x86/bea/Includes/instr_set/opcodes_SSE.c libr/asm/arch/x86/bea/Includes/instr_set/opcodes_prefixes.c libr/asm/arch/x86/bea/Includes/internal_datas.h libr/asm/arch/x86/bea/Includes/protos.h libr/asm/arch/x86/bea/README.txt libr/asm/arch/x86/bea/makeStaticLib32.bat libr/asm/arch/x86/bea/makeStaticLib64.bat libr/asm/arch/x86/bea/makedll32.bat libr/asm/arch/x86/bea/makedll64.bat libr/asm/asm.c libr/asm/p/Makefile libr/asm/p/asm_arm.c libr/asm/p/asm_bea.c libr/asm/p/asm_bf.c libr/asm/p/asm_csr.c libr/asm/p/asm_dummy.c libr/asm/p/asm_m68k.c libr/asm/p/asm_mips.c libr/asm/p/asm_olly.c libr/asm/p/asm_ppc.c libr/asm/p/asm_sparc.c libr/asm/p/asm_x86.c libr/asm/t/rasm2.c libr/include/r_asm.h
+description:
+* r_asm
+  - Initial import of bea engine
+  - asm_x86 splited in asm_x86, asm_olly and asm_bea
+  - More refactoring
+
+
+changeset:   33:6ed35d713b28
+user:        nibble
+date:        Wed Feb 18 16:20:14 2009 +0100
+files:       libr/asm/t/rasm2.c libr/include/r_core.h libr/lib/lib.c
+description:
+* rasm2 refactoring
+* Fixed r_lib null handler issue
+* Default blocksize of 64B
+
+
+changeset:   32:ed355ef99683
+user:        nibble
+date:        Wed Feb 18 13:59:57 2009 +0100
+files:       libr/asm/t/rasm2.c
+description:
+* rasm2
+  - Fixed
+  - All the language plugins are now supported
+
+
+changeset:   31:8a18000d0286
+user:        pancake<@nopcode.org>
+date:        Wed Feb 18 13:10:59 2009 +0100
+files:       doc/changes-from-1.x libr/core/Makefile libr/core/cmd.c libr/core/core.c libr/core/t/radare2.c libr/core/yank.c libr/include/r_core.h libr/print/print.c
+description:
+* Added doc/changes-from-1.x
+* Added r_core_yank* methods and 'y' command
+  - Update help message
+* radare2 is now handling -s and -b cmdline flags
+* Fix r_print_hexdump
+
+
+changeset:   30:397d7cdebe99
+user:        nibble
+date:        Wed Feb 18 03:47:40 2009 +0100
+files:       libr/asm/arch/arm/asm.c libr/asm/arch/bf/asm.c libr/asm/arch/csr/asm.c libr/asm/arch/m68k/asm.c libr/asm/arch/mips/asm.c libr/asm/arch/ppc/asm.c libr/asm/arch/sparc/asm.c libr/asm/arch/x86/pseudo.c libr/asm/arch/x86/realloc.c libr/asm/p/Makefile libr/asm/p/asm_arm.c libr/asm/p/asm_bf.c libr/asm/p/asm_csr.c libr/asm/p/asm_dummy.c libr/asm/p/asm_m68k.c libr/asm/p/asm_mips.c libr/asm/p/asm_ppc.c libr/asm/p/asm_sparc.c libr/asm/p/asm_x86.c libr/asm/t/Makefile libr/asm/t/asm_x86.c libr/asm/t/disasm_arm.c libr/asm/t/disasm_bf.c libr/asm/t/disasm_csr.c libr/asm/t/disasm_m68k.c libr/asm/t/disasm_mips.c libr/asm/t/disasm_ppc.c libr/asm/t/disasm_sparc.c libr/asm/t/disasm_x86.c libr/asm/t/rasm2.c libr/asm/t/realloc_x86.c libr/parse/pseudo.c
+description:
+* r_asm
+  - Added arm plugin
+  - Added bf plugin
+  - Added csr plugin
+  - Added m68k plugin
+  - Added mips plugin
+  - Added ppc plugin
+  - Added sparc plugin
+  - Removed deprecated test programs
+  - Updated rasm2 (not working)
+* r_parse
+  - Initial import
+
+
+changeset:   29:30abcfb8e709
+user:        nibble
+date:        Wed Feb 18 01:49:26 2009 +0100
+files:       libr/anal/p/anal_x86.c libr/asm/Makefile libr/asm/arch/x86/asm.c libr/asm/asm.c libr/asm/p/Makefile libr/asm/p/asm_dummy.c libr/asm/p/asm_x86.c libr/asm/t/Makefile libr/core/cmd.c libr/core/core.c libr/include/r_anal.h libr/include/r_asm.h libr/include/r_core.h libr/include/r_lib.h
+description:
+* r_asm
+  - Used plugin infrastructure
+  - Huge refactoring
+  - Added x86 plugin
+
+
+changeset:   28:b53a7ded4de3
+user:        pancake<@nopcode.org>
+date:        Wed Feb 18 01:43:57 2009 +0100
+files:       libr/core/cmd.c libr/core/config.c libr/core/core.c libr/core/file.c libr/core/t/radare2.c libr/core/visual.c libr/debug/debug.c libr/debug/handle.c libr/debug/p/Makefile libr/debug/p/dbg-ptrace.c libr/debug/p/ptrace.c libr/flags/flags.c libr/include/r_core.h libr/include/r_debug.h libr/include/r_flags.h libr/include/r_io.h libr/include/r_types.h libr/io/io.c libr/io/p/dbg.c libr/io/p/ptrace.c
+description:
+* Initial working implementation of the debugger mode
+  - Some minor hacks everywhere to glue
+  - 'dr' command runs '|reg' io-ptrace command (reg dbg stuff needs more work)
+  - '|reg' is a temporal command that prints x86-ptrace-linux registers
+* Added debug visual print mode using && :)
+  - 's' key steps in debugger
+* Added m and ' keys in visual (mark and goto mark) like in vim or r1 :)
+  - store/use seek addresses
+* Make use of the cmd.prompt and cmd.vprompt magic
+* Added debug handlers list with 'dh'
+  - dh ptrace called at init
+  - dp pid called at init too (hacky style)
+* Added debug->wait method for the debug handlers
+* Add 'fb' command to set base for flags
+* Fix flag redefinition (f foo && f foo @ 33) now works
+* Added s64 type (signed 64 bit integer)
+* Fixed && and '"' special chars in commnad parsing
+
+
+changeset:   27:dc5b46849d40
+parent:      26:f09b987ec0b7
+parent:      25:67a5f5bd9efa
+user:        pancake<@nopcode.org>
+date:        Tue Feb 17 11:06:42 2009 +0100
+description:
+* Merge train vs head
+
+
+changeset:   26:f09b987ec0b7
+parent:      24:547924df2f72
+user:        pancake<@nopcode.org>
+date:        Tue Feb 17 10:59:26 2009 +0100
+files:       libr/TODO libr/core/cmd.c libr/flags/Makefile libr/flags/flags.c libr/flags/spaces.c libr/include/r_flags.h libr/include/r_var.h libr/io/io.c libr/var/var.c
+description:
+* Add initial 'fs' command to handle flag spaces
+  - Added the necessary stuff in r_flags
+  - Flag size is now 64 bit size
+* Some random and useless fixups for r_var
+
+
+changeset:   25:67a5f5bd9efa
+user:        nibble
+date:        Tue Feb 17 02:46:52 2009 +0100
+files:       libr/asm/Makefile libr/asm/arch/csr/asm.c libr/asm/arch/csr/csr_disasm/dis.c libr/asm/arch/csr/csr_disasm/dis.h libr/asm/arch/m68k/asm.c libr/asm/arch/m68k/m68k_disasm/m68k_disasm.c libr/asm/arch/m68k/m68k_disasm/m68k_disasm.h libr/asm/arch/ppc/asm.c libr/asm/asm.c libr/asm/t/Makefile libr/asm/t/disasm_csr.c libr/asm/t/disasm_m68k.c libr/include/r_asm.h
+description:
+* r_asm
+  - Added csr and m68k support
+  - Added csr and m68k test programs
+  - Fixed Makefile
+
+
+changeset:   24:547924df2f72
+user:        pancake<@nopcode.org>
+date:        Tue Feb 17 00:10:32 2009 +0100
+files:       libr/cons/cons.c libr/search/search.c
+description:
+* Remove debug printf
+
+
+changeset:   23:c9ee42105aa0
+user:        pancake<@nopcode.org>
+date:        Tue Feb 17 00:09:40 2009 +0100
+files:       libr/Makefile libr/cons/cons.c libr/core/cmd.c libr/core/config.c libr/debug/README libr/debug/debug.c libr/debug/p/ptrace.c libr/include/r_cons.h libr/include/r_debug.h libr/include/r_io.h libr/include/r_reg.h libr/io/undo.c libr/reg/reg.c libr/search/regexp.c libr/search/search.c libr/util/hex.c libr/util/str.c libr/vm/vm.c
+description:
+* Lot of random work on multiple fronts
+* Add 'var' in build liblist and 'vapi/t' for make clean
+* Add ^C handler for r_cons. support for callbacks
+* Add support for ./m ELF for example to interpret the output of commands
+* Fix a bug in the regexp algorithm that can get into infinite loop
+* Binmask can now contain non hexpair values
+* Add '/m' search regexp matches using the new R_SEARCH_REGEXP algorithm
+  - Handle ^C in search loop..needs to use callback method
+* Properly cleanup the flag names
+* Added asm.bits and asm.os eval vars
+* Added some random tips for debug in README
+  - Stupid snippets for import/export data between modules
+  - Register support requires a rethink
+* Initial work on the integration of r_io_undo() api
+
+
+changeset:   22:d5f1a547d106
+user:        pancake@flubox
+date:        Mon Feb 16 19:59:54 2009 +0100
+files:       libr/Makefile libr/core/cmd.c libr/libr.pc libr/search/t/test.c libr/search/xrefs.c libr/vapi/r_search.vapi libr/vapi/t/Makefile libr/vapi/t/search.vala
+description:
+* Fix build and some minor fixups
+
+
+changeset:   21:c3ce7f59551d
+user:        pancake<@nopcode.org>
+date:        Mon Feb 16 11:24:45 2009 +0100
+files:       README libr/core/cmd.c libr/core/core.c libr/core/t/Makefile libr/include/r_core.h libr/include/r_debug.h libr/include/r_search.h libr/include/r_util.h libr/lang/p/perl.c libr/meta/meta.c libr/range/range.c libr/search/Makefile libr/search/old_xrefs.c libr/search/search.c libr/search/xrefs.c libr/util/mem.c libr/vapi/t/Makefile
+description:
+* Added dummy xrefs
+* Added cmd_meta in r_core->cmd
+* Cleanup data type range before adding new one in r_meta
+  - mix idea for meta+ranges (commented)
+* Search -> initialize renamed to begin()
+* Added memcmp_mask for r_util
+* Fix crash issue in perl module
+
+
+changeset:   20:5cea89ae9aec
+parent:      19:1e634987cc7b
+parent:      18:5fcc9680921c
+user:        pancake<@nopcode.org>
+date:        Mon Feb 16 03:16:35 2009 +0100
+description:
+* Merge local commits with head
+
+
+changeset:   19:1e634987cc7b
+parent:      16:b1d795bf526e
+user:        pancake<@nopcode.org>
+date:        Mon Feb 16 03:14:19 2009 +0100
+files:       libr/include/r_meta.h libr/include/r_util.h libr/meta/Makefile libr/meta/README libr/meta/meta.c libr/meta/t/Makefile libr/meta/t/test.c libr/meta/tmp/data.c libr/meta/tmp/data.h libr/util/str.c
+description:
+* Initial working implementation of r_meta
+  - Added test program that sets and gets metadata.
+  - It needs much more features and stuff
+  - Integration with r_core is mandatory! :)
+  - Hard simplification from the old r1 code
+* Added r_str_concat and r_str_concatf in r_util
+
+
+changeset:   18:5fcc9680921c
+user:        nibble
+date:        Mon Feb 16 03:13:51 2009 +0100
+files:       libr/anal/anal.c libr/anal/p/anal_dummy.c libr/anal/p/anal_x86.c libr/core/cmd.c libr/core/core.c libr/include/r_anal.h
+description:
+* Minor fixups in r_anal
+
+
+changeset:   17:0a7217fd3bdc
+user:        nibble
+date:        Mon Feb 16 02:12:02 2009 +0100
+files:       libr/anal/anal.c libr/anal/p/anal_dummy.c libr/anal/p/anal_x86.c libr/core/cmd.c libr/include/r_anal.h libr/search/t/Makefile
+description:
+* r_anal
+  - Redefined r_anal_aop
+  - Fixed x86 plugin
+* r_core
+  - Added ao command (test)
+* Fixed r_search Makefile
+
+
+changeset:   16:b1d795bf526e
+user:        nibble
+date:        Mon Feb 16 00:57:03 2009 +0100
+files:       libr/Makefile libr/anal/Makefile libr/anal/anal.c libr/anal/p/Makefile libr/anal/p/anal_dummy.c libr/anal/p/anal_x86.c libr/asm/Makefile libr/asm/arch/x86/aop.c libr/asm/asm.c libr/asm/t/aop_x86.c libr/core/Makefile libr/core/cmd.c libr/core/core.c libr/core/t/Makefile libr/include/r_anal.h libr/include/r_asm.h libr/include/r_core.h libr/include/r_lib.h
+description:
+* r_anal
+  - Initial (non working) implementation
+  - Added dummy and x86 plugins
+* r_core
+  - Added 'anal' command
+* r_asm
+  - Removed aop parser
+
+
+changeset:   15:9dc9d76efb23
+user:        pancake<@nopcode.org>
+date:        Sun Feb 15 23:32:17 2009 +0100
+files:       env.sh libr/libr.pc libr/search/Makefile libr/search/regexp.c libr/search/search.c libr/search/t/Makefile libr/search/t/test-regexp.c libr/vapi/t/Makefile
+description:
+* Fix vapi/t build
+* Add regexp search method in r_search
+  - Uses libc regcomp+regexec
+  - Added regexp test example
+* Added libr.pc for pkg-config
+
+
+changeset:   14:81c90eee2a70
+user:        pancake<@nopcode.org>
+date:        Sat Feb 14 18:15:51 2009 -0800
+files:       libr/lang/p/Makefile libr/lang/p/perl.c libr/line/dietline.c
+description:
+* Fix build of python plugin in ArchLinux (python2.6 instead of 2.5)
+* Simplify the perl plugin
+* Drop stupid \n debug in dietline O:)
+
+
+changeset:   13:e6e4bd922a64
+user:        pancake<@nopcode.org>
+date:        Sat Feb 14 16:48:11 2009 -0800
+files:       libr/flags/flags.c libr/include/r_meta.h libr/include/r_types.h libr/include/r_var.h libr/line/dietline.c libr/meta/README libr/meta/meta.c libr/meta/tmp/data.c libr/meta/tmp/data.h libr/print/print.c libr/reg/README
+description:
+* Initial drafts for r_meta
+* Minor random cleanups
+
+
+changeset:   12:3f9111160d70
+user:        nibble
+date:        Sat Feb 14 12:49:02 2009 +0100
+files:       libr/include/r_lang.h libr/lang/lang.c libr/lang/p/Makefile libr/lang/p/perl.c
+description:
+- Added perl support
+
+
+changeset:   11:3605ce605bb0
+user:        pancake<@nopcode.org>
+date:        Fri Feb 13 15:25:15 2009 -0800
+files:       libr/include/r_var.h libr/var/Makefile libr/var/README libr/var/tmp/analyze.c libr/var/tmp/data.c libr/var/tmp/vars.c libr/var/var.c
+description:
+* Initial pseudo-working implementation of r_var API
+  - Remove temporal code
+
+
+changeset:   10:a22635e79a9e
+user:        pancake<@nopcode.org>
+date:        Thu Feb 12 15:47:13 2009 -0800
+files:       libr/TODO libr/debug/README libr/lang/p/Makefile libr/lang/p/ruby.c libr/meta/README libr/trace/trace.c libr/var/README libr/var/tmp/analyze.c libr/var/tmp/data.c libr/var/tmp/vars.c
+description:
+* Oops. fix ruby plugin build
+* Added dummy r_trace r_meta and r_var
+  - With readme, dummy code and comments..
+
+
+changeset:   9:8557947eeaac
+user:        pancake@flubox
+date:        Wed Feb 11 13:31:26 2009 +0100
+files:       libr/core/cmd.c libr/core/t/radare2.c libr/diff/t/Makefile libr/include/r_lang.h libr/lang/lang.c libr/lang/p/Makefile libr/lang/p/python.c libr/lang/p/ruby.c libr/rules.mk
+description:
+* Added python language binding for libr-radare2
+  - Same state as in r1 or ruby-r2
+  - Added prompt() function pointer to override
+    the default language prompt if available
+* Add -V flag to radare2
+  - Fix bug in foreach file open
+  - Fix help message for 'q' cmd
+
+
+changeset:   8:20ba7ccfcec2
+user:        pancake<@nopcode.org>
+date:        Wed Feb 11 15:04:30 2009 -0800
+files:       libr/Makefile libr/core/cmd.c libr/include/r_lang.h libr/lang/lang.c libr/lang/p/Makefile libr/lang/p/chkruby.rb libr/lang/p/mkruby.rb libr/lang/p/ruby.c
+description:
+* Initial import of the ruby plugin for r_lang
+  - Imported mkruby and chkruby from r1
+  - Some minor changes in r_lang for it
+
+
+changeset:   7:7d6b97b05625
+user:        pancake<@nopcode.org>
+date:        Tue Feb 10 15:56:20 2009 -0800
+files:       libr/core/cmd.c libr/core/core.c libr/include/r_lang.h libr/include/r_lib.h libr/include/r_util.h libr/lang/lang.c libr/lang/p/Makefile libr/lang/p/dummy.c libr/lang/p/lua.c libr/search/search.c libr/util/file.c libr/vapi/t/Makefile
+description:
+* Initial integrated implementation of r_lang in r_core
+  - Added two dummy plugins for r_lang (dummy and lua)
+  - Accessible thru the '#!' command.
+
+
+changeset:   6:39449fa3d2ac
+user:        pancake <youterm.com>
+date:        Mon Feb 09 12:42:54 2009 +0100
+files:       TODO libr/core/visual.c libr/include/r_cons.h libr/include/r_debug.h libr/include/r_print.h libr/include/r_search.h libr/include/r_util.h libr/print/date.c libr/print/print.c libr/search/search.c libr/search/xrefs.c libr/util/num.c
+description:
+* More work on visual core
+  - Added initial cursor support
+  - Q also for quit
+  - Added visual prompt
+* Added date.c
+* Move cursor responsability to r_print
+* Make r_cons_invert work also for noncolor terminals
+* Added r_num_minmax_swap_i in r_util
+
+
+changeset:   5:207b3061a5e5
+user:        pancake <youterm.com>
+date:        Mon Feb 09 01:54:09 2009 +0100
+files:       env.sh libr/Makefile libr/cons/color.c libr/cons/cons.c libr/cons/input.c libr/core/cmd.c libr/core/core.c libr/core/file.c libr/core/t/Makefile libr/core/t/radare2.c libr/core/visual.c libr/include/r_core.h libr/include/r_print.h libr/include/r_util.h libr/print/print.c libr/rules.mk libr/util/file.c
+description:
+* Fix LIBR_PLUGINS in env.sh
+* Initial implementation of the visual mode in core
+* Added pc and ps print formats (c code and string)
+* Added '/' command in core (search hexa and str)
+* Add '-d' to radare2 test program
+* New r_file_path to resolve file path thru $PATH
+* 'make install' works everywhere
+
+
+changeset:   4:d8bd91a53c6a
+user:        nibble
+date:        Mon Feb 09 00:19:06 2009 +0100
+files:       libr/anal/anal.c libr/asm/Makefile libr/asm/arch/arm/asm.c libr/asm/arch/mips/asm.c libr/asm/arch/ppc/asm.c libr/asm/arch/sparc/asm.c libr/asm/arch/x86/aop.c libr/asm/arch/x86/asm.c libr/asm/arch/x86/pseudo.c libr/asm/asm.c libr/asm/t/Makefile libr/asm/t/aop_x86.c libr/hash/t/Makefile libr/include/r_anal.h libr/include/r_asm.h libr/syscall/t/Makefile
+description:
+* r_anal // r_asm
+  - Initial AOP parser (needs more love)
+  - Adds buf and inst_len to r_asm_t
+  - Refactoring
+* More Makefile refactoring
+
+
+changeset:   3:a4955d6534c9
+user:        nibble
+date:        Fri Feb 06 18:22:27 2009 +0100
+files:       libr/Makefile libr/anal/anal.c libr/cmd/t/Makefile libr/cons/t/Makefile libr/core/t/Makefile libr/hash/t/Makefile libr/include/r_anal.h libr/include/r_asm.h libr/line/t/Makefile libr/print/t/Makefile libr/rules.mk libr/syscall/t/Makefile libr/tests.mk
+description:
+* More Makefile refactoring and cleanup
+* Minor cleanups in r_asm.h
+* First work in r_anal
+
+
+changeset:   2:e846f951ab9a
+user:        pancake <youterm.com>
+date:        Fri Feb 06 13:17:51 2009 +0100
+files:       AUTHORS libr/Makefile libr/TODO libr/asm/Makefile libr/asm/t/Makefile libr/asm/t/rasm2.c libr/bin/t/Makefile libr/cmd/Makefile libr/cmd/t/Makefile libr/config/Makefile libr/cons/Makefile libr/cons/t/Makefile libr/core/Makefile libr/core/core.c libr/core/t/Makefile libr/diff/Makefile libr/diff/t/Makefile libr/flags/flags.c libr/include/r_search.h libr/io/p/Makefile libr/lib/t/Makefile libr/line/Makefile libr/line/t/Makefile libr/print/t/Makefile libr/rules.mk libr/search/Makefile libr/search/t/Makefile libr/tests.mk libr/util/t/Makefile libr/util/t/ralloc.c
+description:
+* Lot of makefile refactoring and cleanup
+  - Make use of some gnu extensions to make it cleaner
+  - Fixes (mostly) build system
+
+
+changeset:   1:bb29c13a29b7
+user:        pancake <youterm.com>
+date:        Thu Feb 05 22:28:33 2009 +0100
+files:       Makefile env.sh libr/Makefile libr/core/cmd.c libr/io/p/Makefile libr/io/p/README libr/io/p/dbg.c libr/io/p/malloc.c libr/io/p/ptrace.c libr/io/plugins/Makefile libr/io/plugins/README libr/io/plugins/dbg.c libr/io/plugins/malloc.c libr/io/plugins/ptrace.c
+description:
+* Fix build issues - fix build order
+* Plugin directory renamed to 'p'
+* Add env.sh to enter into a "radare2 development shell"
+
+
+changeset:   0:e6484e0f3084
+user:        pancake <youterm.com>
+date:        Thu Feb 05 22:08:46 2009 +0100
+files:       ChangeLog Makefile README libr/Makefile libr/README libr/TODO libr/asm/Makefile libr/asm/arch/arm/asm.c libr/asm/arch/arm/gnu/arm-dis.c libr/asm/arch/bf/asm.c libr/asm/arch/include/ansidecl.h libr/asm/arch/include/bfd.h libr/asm/arch/include/bfdlink.h libr/asm/arch/include/dis-asm.h libr/asm/arch/include/elf-bfd.h libr/asm/arch/include/elf/common.h libr/asm/arch/include/elf/external.h libr/asm/arch/include/elf/internal.h libr/asm/arch/include/elf/mips.h libr/asm/arch/include/elf/reloc-macros.h libr/asm/arch/include/libiberty.h libr/asm/arch/include/opcode/mips.h libr/asm/arch/include/opcode/sparc.h libr/asm/arch/include/opintl.h libr/asm/arch/include/symcat.h libr/asm/arch/include/sysdep.h libr/asm/arch/mips/asm.c libr/asm/arch/mips/gnu/mips-dis.c libr/asm/arch/mips/gnu/mips-opc.c libr/asm/arch/mips/gnu/mips16-opc.c libr/asm/arch/ppc/asm.c libr/asm/arch/ppc/ppc_disasm/ppc_disasm.c libr/asm/arch/ppc/ppc_disasm/ppc_disasm.h libr/asm/arch/sparc/asm.c libr/asm/arch/sparc/gnu/sparc-dis.c libr/asm/arch/sparc/gnu/sparc-opc.c libr/asm/arch/x86/asm.c libr/asm/arch/x86/ollyasm/asmserv.c libr/asm/arch/x86/ollyasm/assembl.c libr/asm/arch/x86/ollyasm/disasm.c libr/asm/arch/x86/ollyasm/disasm.h libr/asm/arch/x86/pseudo.c libr/asm/arch/x86/realloc.c libr/asm/arch/x86/udis86/LICENSE libr/asm/arch/x86/udis86/README libr/asm/arch/x86/udis86/decode.c libr/asm/arch/x86/udis86/decode.h libr/asm/arch/x86/udis86/extern.h libr/asm/arch/x86/udis86/input.c libr/asm/arch/x86/udis86/input.h libr/asm/arch/x86/udis86/itab.c libr/asm/arch/x86/udis86/itab.h libr/asm/arch/x86/udis86/syn-att.c libr/asm/arch/x86/udis86/syn-intel.c libr/asm/arch/x86/udis86/syn.c libr/asm/arch/x86/udis86/syn.h libr/asm/arch/x86/udis86/types.h libr/asm/arch/x86/udis86/udis86.c libr/asm/asm.c libr/asm/t/Makefile libr/asm/t/asm_x86.c libr/asm/t/disasm_arm.c libr/asm/t/disasm_bf.c libr/asm/t/disasm_mips.c libr/asm/t/disasm_ppc.c libr/asm/t/disasm_sparc.c libr/asm/t/disasm_x86.c libr/asm/t/rasm2.c libr/asm/t/realloc_x86.c libr/bin/Makefile libr/bin/bin.c libr/bin/elf.c libr/bin/elf64.c libr/bin/pe.c libr/bin/t/Makefile libr/bin/t/baddr.c libr/bin/t/data_resize.c libr/bin/t/entry.c libr/bin/t/imports.c libr/bin/t/info.c libr/bin/t/rabin2.c libr/bin/t/rsz_test.sh libr/bin/t/sections.c libr/bin/t/symbols.c libr/bp/Makefile libr/bp/README libr/bp/bp.c libr/cmd/Makefile libr/cmd/TODO libr/cmd/cmd.c libr/cmd/t/Makefile libr/cmd/t/test.c libr/config.mk libr/config/Makefile libr/config/callback.c libr/config/config.c libr/config/deprecated.c libr/config/t/Makefile libr/config/t/test.c libr/cons/Makefile libr/cons/color.c libr/cons/cons.c libr/cons/input.c libr/cons/pipe.c libr/cons/print.c libr/cons/strsub.c libr/cons/t/Makefile libr/cons/t/hello.c libr/core/Makefile libr/core/cmd.c libr/core/config.c libr/core/core.c libr/core/file.c libr/core/io.c libr/core/t/Makefile libr/core/t/radare2.c libr/core/visual.c libr/debug/Makefile libr/debug/debug.c libr/debug/handle.c libr/debug/p/ptrace.c libr/diff/Makefile libr/diff/diff.c libr/diff/t/Makefile libr/diff/t/radiff2.c libr/diff/t/test.c libr/flags/Makefile libr/flags/flags.c libr/flags/name.c libr/flags/old_flags.c libr/flags/old_flags.h libr/hash/Makefile libr/hash/crc16.c libr/hash/crc32.c libr/hash/crc32.h libr/hash/crca.c libr/hash/entropy.c libr/hash/hamdist.c libr/hash/hash.c libr/hash/hash.h libr/hash/md4.c libr/hash/md5.h libr/hash/md5c.c libr/hash/sha1.c libr/hash/sha1.h libr/hash/sha2.c libr/hash/sha2.h libr/hash/state.c libr/hash/t/Makefile libr/hash/t/hello.c libr/include/list.h libr/include/r.h libr/include/r_asm.h libr/include/r_bin.h libr/include/r_bin_elf.h libr/include/r_bin_elf64.h libr/include/r_bin_elf_specs.h libr/include/r_bin_pe.h libr/include/r_bin_pe_specs.h libr/include/r_cmd.h libr/include/r_config.h libr/include/r_cons.h libr/include/r_core.h libr/include/r_debug.h libr/include/r_diff.h libr/include/r_flags.h libr/include/r_hash.h libr/include/r_io.h libr/include/r_lang.h libr/include/r_lib.h libr/include/r_line.h libr/include/r_macro.h libr/include/r_print.h libr/include/r_range.h libr/include/r_reg.h libr/include/r_search.h libr/include/r_sign.h libr/include/r_socket.h libr/include/r_syscall.h libr/include/r_types.h libr/include/r_util.h libr/include/r_vm.h libr/io/Makefile libr/io/README libr/io/desc.c libr/io/handle.c libr/io/io.c libr/io/map.c libr/io/plugins/Makefile libr/io/plugins/README libr/io/plugins/dbg.c libr/io/plugins/malloc.c libr/io/plugins/ptrace.c libr/io/section.c libr/io/t/Makefile libr/io/t/cat.c libr/io/t/read4.c libr/io/undo.c libr/io/undo.h libr/lang/Makefile libr/lang/lang.c libr/lib/Makefile libr/lib/lib.c libr/lib/t/Makefile libr/lib/t/plugin.c libr/lib/t/test-plugin.c libr/line/Makefile libr/line/TODO libr/line/dietline.c libr/line/t/Makefile libr/line/t/hello.c libr/macro/Makefile libr/macro/macro.c libr/print/Makefile libr/print/format.c libr/print/print.c libr/print/t/Makefile libr/print/t/hex.c libr/range/Makefile libr/range/range.c libr/reg/Makefile libr/reg/README libr/reg/reg.c libr/rules.mk libr/search/Makefile libr/search/aes-find.c libr/search/binparse.c libr/search/bytepat.c libr/search/search.c libr/search/stripstr.c libr/search/t/Makefile libr/search/t/test-str.c libr/search/t/test.c libr/sign/Makefile libr/sign/sign.c libr/socket/Makefile libr/socket/socket.c libr/stripsyms.sh libr/syscall/Makefile libr/syscall/TODO libr/syscall/darwin.c libr/syscall/example.syscall-file libr/syscall/freebsd.c libr/syscall/linux.c libr/syscall/netbsd.c libr/syscall/syscall.c libr/syscall/t/Makefile libr/syscall/t/hello.c libr/tests.mk libr/util/Makefile libr/util/alloca.c libr/util/alloca.s libr/util/file.c libr/util/hex.c libr/util/mem.c libr/util/num.c libr/util/re.c libr/util/str.c libr/util/t/Makefile libr/util/t/ralloc.c libr/util/t/rax2.c libr/util/t/test.c libr/vapi/r_asm.vapi libr/vapi/r_bin.vapi libr/vapi/r_config.vapi libr/vapi/r_cons.vapi libr/vapi/r_core.vapi libr/vapi/r_hash.deps libr/vapi/r_hash.vapi libr/vapi/r_io.vapi libr/vapi/r_range.vapi libr/vapi/r_search.vapi libr/vapi/r_socket.vapi libr/vapi/r_syscall.vapi libr/vapi/t/Makefile libr/vapi/t/asm.vala libr/vapi/t/bin.vala libr/vapi/t/core.vala libr/vapi/t/hash.vala libr/vapi/t/sc.vala libr/vapi/t/search.vala libr/vapi/t/socket.vala libr/vm/Makefile libr/vm/extra.c libr/vm/mmu.c libr/vm/op.c libr/vm/reg.c libr/vm/setup.c libr/vm/stack.c libr/vm/vm.c
+description:
+* Initial import of libr
+  - Previous commits has been reported in the ChangeLog file
+  - hg log has been lost (moved inside ChangeLog)
+  - Old radare1 repository has removed all the libr
+
+
+
 /* --------------------------------------------------- */
 2008-02-05 : Changes before the initial repository import
 The ones not related with libr have been stripped from

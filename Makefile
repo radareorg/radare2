@@ -1,5 +1,5 @@
 VERSION=0.1
-RELEASE=1
+RELEASE=0
 DESTDIR=
 ifeq (${RELEASE},1)
 PREFIX=/usr/local
