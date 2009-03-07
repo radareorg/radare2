@@ -1,3 +1,4 @@
+* Strip non input symbols in plugins (speed up loading)
 * Specify binmask in hexpairs
   - wx 1234:ff0f
   - /x 1234:ff0f

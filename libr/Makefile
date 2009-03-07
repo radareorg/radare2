@@ -27,8 +27,8 @@ install:
 	@for a in `find * | grep -e '\.a$$'` ; do \
 	echo " $$a"; cp $$a ${PREFIX}/lib ; done
 	# includes
-	@mkdir -p ${PREFIX}/include
-	cp -f include/* ${PREFIX}/include
+	@mkdir -p ${PREFIX}/include/libr
+	(cd include && cp -f * ${PREFIX}/include/libr)
 	# programs
 	@mkdir -p ${PREFIX}/bin
 	@for a in `find */t -perm /u+x -type f | grep 2`; \
@@ -53,9 +53,8 @@ uninstall:
 	a=`echo $$a|awk -F / '{ print $$NF; }'`; \
 	echo ${PREFIX}/lib/$$a ; rm -f ${PREFIX}/lib/$$a ; done
 	### includes
-	-for a in include/* ; do rm -f ${PREFIX}/$$a ; done
+	-(cd include && for a in * ; do rm -f ${PREFIX}/libr/$$a ; done)
 	### programs
-	###@mkdir -p ${PREFIX}/bin
 	-@for a in `find */t -perm /u+x -type f | grep 2`; do \
 	a=`echo $$a|awk -F / '{ print $$NF; }'`; \
 	echo ${PREFIX}/bin/$$a ; rm -f ${PREFIX}/bin/$$a ; done
