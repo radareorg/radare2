@@ -9,8 +9,7 @@
 
 #if __UNIX__
 #include <dlfcn.h>
-  //#define DLOPEN(x)  dlopen(x, RTLD_GLOBAL | RTLD_NOW)
-  #define DLOPEN(x)  dlopen(x, RTLD_GLOBAL | RTLD_LAZY)
+  #define DLOPEN(x)  dlopen(x, RTLD_GLOBAL | RTLD_NOW)
   #define DLSYM(x,y) dlsym(x,y)
   #define DLCLOSE(x) dlclose(x)
 #elif __WINDOWS__ && !__CYGWIN__
@@ -28,7 +27,7 @@ void *r_lib_dl_open(const char *libname)
 {
 	void *ret = DLOPEN(libname);
 	if (ret == NULL) {
-		fprintf(stderr, "dlerror: %s\n", dlerror());
+		IFDBG fprintf(stderr, "dlerror: %s\n", dlerror());
 	}
 	return ret;
 }
@@ -132,13 +131,13 @@ int r_lib_open(struct r_lib_t *lib, const char *file)
 
 	/* ignored by filename */
 	if (!r_lib_dl_check_filename(file)) {
-		//fprintf(stderr, "Invalid library extension: %s\n", file);
+		IFDBG fprintf(stderr, "Invalid library extension: %s\n", file);
 		return -1;
 	}
 
 	handler = r_lib_dl_open(file);
 	if (handler == NULL) {
-		fprintf(stderr, "Cannot open library: '%s'\n", file);
+		IFDBG fprintf(stderr, "Cannot open library: '%s'\n", file);
 		return -1;
 	}
 	stru = (struct r_lib_struct_t *) r_lib_dl_sym(handler, lib->symname);
@@ -155,7 +154,7 @@ int r_lib_open(struct r_lib_t *lib, const char *file)
 	
 	ret = r_lib_run_handler(lib, p, stru);
 	if (ret == -1) {
-		//fprintf(stderr, "Library handler returned -1 for '%s'\n", file);
+		IFDBG fprintf(stderr, "Library handler returned -1 for '%s'\n", file);
 		free(p->file);
 		free(p);
 		r_lib_dl_close(handler);
@@ -172,7 +171,7 @@ int r_lib_opendir(struct r_lib_t *lib, const char *path)
 	struct dirent *de;
 	DIR *dh = opendir(path);
 	if (dh == NULL) {
-		fprintf(stderr, "Cannot open directory '%s'\n", path);
+		IFDBG fprintf(stderr, "Cannot open directory '%s'\n", path);
 		return -1;
 	}
 	while((de = (struct dirent *)readdir(dh))) {
@@ -211,7 +210,7 @@ int r_lib_add_handler(struct r_lib_t *lib,
 	list_for_each_prev(pos, &lib->handlers) {
 		struct r_lib_handler_t *h = list_entry(pos, struct r_lib_handler_t, list);
 		if (type == h->type) {
-			fprintf(stderr, "Redefining library handler constructor for %d\n", type);
+			IFDBG fprintf(stderr, "Redefining library handler constructor for %d\n", type);
 			handler = h;
 			break;
 		}
