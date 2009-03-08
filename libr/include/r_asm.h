@@ -56,4 +56,9 @@ int r_asm_set_syntax(struct r_asm_t *a, int syntax);
 int r_asm_set_pc(struct r_asm_t *a, u64 pc);
 int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len);
 int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf);
+
+/* plugin pointers */
+extern struct r_asm_handle_t r_asm_plugin_bf;
+extern struct r_asm_handle_t r_asm_plugin_java;
+extern struct r_asm_handle_t r_asm_plugin_mips;
 #endif

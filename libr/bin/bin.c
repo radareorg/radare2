@@ -49,6 +49,12 @@ int r_bin_add(struct r_bin_t *bin, struct r_bin_handle_t *foo)
 {
 	if (foo->init)
 		foo->init(bin->user);
+	/* avoid dupped plugins */
+	list_for_each_prev(pos, &a->asms) {
+		struct r_asm_handle_t *h = list_entry(pos, struct r_asm_handle_t, list);
+		if (!strcmp(h->name, foo->name))
+			return R_FALSE;
+	}
 	list_add_tail(&(foo->list), &(bin->bins));
 	return R_TRUE;
 }

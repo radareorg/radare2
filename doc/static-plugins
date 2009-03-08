@@ -1,0 +1,11 @@
+Edit libr/config.h and libr/config.mk
+
+In libr/config.mk set a list of static asm plugins...
+
+STATIC_ASM_PLUGINS=p/java.mk p/mips.mk
+
+In libr/config.h define the list of struct plugins
+
+#define R_ASM_STATIC_PLUGINS \
+	&r_asm_plugin_java, 0
+

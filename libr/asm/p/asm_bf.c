@@ -66,7 +66,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 	return i;
 }
 
-static struct r_asm_handle_t r_asm_plugin_bf = {
+struct r_asm_handle_t r_asm_plugin_bf = {
 	.name = "asm_bf",
 	.desc = "BF disassembly plugin",
 	.init = NULL,

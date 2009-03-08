@@ -37,7 +37,7 @@ static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 	return aop->inst_len;
 }
 
-static struct r_asm_handle_t r_asm_plugin_java = {
+struct r_asm_handle_t r_asm_plugin_java = {
 	.name = "asm_java",
 	.desc = "java disassembly plugin",
 	.init = NULL,
@@ -46,7 +46,9 @@ static struct r_asm_handle_t r_asm_plugin_java = {
 	.assemble = &assemble
 };
 
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_java
 };
+#endif

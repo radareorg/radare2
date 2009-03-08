@@ -15,15 +15,15 @@ static struct r_asm_t a;
 
 static int rasm_show_help()
 {
-	printf( "rasm2 [-e] [-o offset] [-a arch] [-s syntax] -d \"opcode\"|\"hexpairs\"|-\n"
-			" -d           Disassemble from hexpair bytes\n"
-			" -o [offset]  Offset where this opcode is suposed to be\n"
-			" -a [arch]    Set architecture plugin\n"
-			" -b [bits]    Set architecture bits\n"
-			" -s [syntax]  Select syntax (intel, att)\n"
-			" -e           Use big endian\n"
-			" If the last argument is '-' reads from stdin\n\n"
-			"Available plugins:\n");
+	printf ("rasm2 [-e] [-o offset] [-a arch] [-s syntax] -d \"opcode\"|\"hexpairs\"|-\n"
+		" -d           Disassemble from hexpair bytes\n"
+		" -o [offset]  Offset where this opcode is suposed to be\n"
+		" -a [arch]    Set architecture plugin\n"
+		" -b [bits]    Set architecture bits\n"
+		" -s [syntax]  Select syntax (intel, att)\n"
+		" -e           Use big endian\n"
+		" If the last argument is '-' reads from stdin\n\n"
+		"Available plugins:\n");
 	r_asm_list(&a);
 	
 	return R_TRUE;
@@ -136,12 +136,16 @@ int main(int argc, char *argv[])
 	}
 
 	if (arch) {
-		if (!r_asm_set(&a, arch)) {
+		char *str = malloc(strlen(arch)+10);
+		sprintf(str, "asm_%s", arch);
+		if (!r_asm_set(&a, str)) {
 			fprintf(stderr, "Error: Unknown plugin\n");
+			free (str);
 			return 1;
 		}
-		if (!strcmp(arch, "asm_bf"))
+		if (!strcmp(str, "asm_bf"))
 			str = 1;
+		free (str);
 	} else if (!dis) {
 		if (!r_asm_set(&a, "asm_x86_olly")) {
 			fprintf(stderr, "Error: Cannot find asm_x86_olly plugin\n");
@@ -161,14 +165,12 @@ int main(int argc, char *argv[])
 				if (feof(stdin))
 					break;
 				buf[strlen(buf)-1]='\0';
-				if (dis)
-					offset += rasm_disasm(buf, offset, str);
+				if (dis) offset += rasm_disasm(buf, offset, str);
 				else offset += rasm_asm(buf, offset);
 			}
 			return 0;
 		}
-		if (dis)
-			return rasm_disasm(argv[optind], offset, str);
+		if (dis) return rasm_disasm(argv[optind], offset, str);
 		else return rasm_asm(argv[optind], offset);
 	}
 

@@ -4,3 +4,6 @@ BSD=0
 SOLARIS=0
 WINDOWS=0
 USE_RIO=1
+
+# static plugins
+STATIC_ASM_PLUGINS=p/java.mk p/mips.mk

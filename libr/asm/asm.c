@@ -6,6 +6,10 @@
 #include <r_util.h>
 #include <r_asm.h>
 #include <list.h>
+#include "../config.h"
+
+static struct r_asm_handle_t *asm_static_plugins[] = 
+	{ R_ASM_STATIC_PLUGINS, 0 };
 
 struct r_asm_t *r_asm_new()
 {
@@ -21,12 +25,15 @@ void r_asm_free(struct r_asm_t *a)
 
 int r_asm_init(struct r_asm_t *a)
 {
+	int i;
 	a->user = NULL;
 	INIT_LIST_HEAD(&a->asms);
 	r_asm_set_bits(a, 32);
 	r_asm_set_big_endian(a, 0);
 	r_asm_set_syntax(a, R_ASM_SYN_INTEL);
 	r_asm_set_pc(a, 0);
+	for(i=0;asm_static_plugins[i];i++)
+		r_asm_add(a, asm_static_plugins[i]);
 	return R_TRUE;
 }
 
@@ -37,8 +44,16 @@ void r_asm_set_user_ptr(struct r_asm_t *a, void *user)
 
 int r_asm_add(struct r_asm_t *a, struct r_asm_handle_t *foo)
 {
+	struct list_head *pos;
 	if (foo->init)
 		foo->init(a->user);
+	/* avoid dupped plugins */
+	list_for_each_prev(pos, &a->asms) {
+		struct r_asm_handle_t *h = list_entry(pos, struct r_asm_handle_t, list);
+		if (!strcmp(h->name, foo->name))
+			return R_FALSE;
+	}
+	
 	list_add_tail(&(foo->list), &(a->asms));
 	return R_TRUE;
 }
