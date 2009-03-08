@@ -25,8 +25,8 @@
     #define ELF_(name) Elf32_##name 
 #endif      
 
-#ifndef _INCLUDE_R_BIN_ELF_SPECS_H
-#define	_INCLUDE_R_BIN_ELF_SPECS_H
+#ifndef _INCLUDE_ELF_SPECS_H
+#define	_INCLUDE_ELF_SPECS_H
 
 /* Type for a 16-bit quantity.  */
 typedef unsigned short Elf32_Half;

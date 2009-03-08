@@ -14,7 +14,7 @@
 #include <sys/mman.h>
 #endif
 
-#include <r_bin_pe.h>
+#include "pe.h"
 
 enum {
 	ENCODING_ASCII = 0,

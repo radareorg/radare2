@@ -1,11 +1,11 @@
 /* radare - LGPL - Copyright 2008 nibble<.ds@gmail.com> */
 
-#include "r_types.h"
+#include <r_types.h>
 
-#include "r_bin_elf_specs.h"
+#include "elf_specs.h"
 
-#ifndef _INCLUDE_R_BIN_ELF_H_
-#define _INCLUDE_R_BIN_ELF_H_
+#ifndef _INCLUDE_ELF_H_
+#define _INCLUDE_ELF_H_
 
 #define R_BIN_ELF_SCN_IS_EXECUTABLE(x) x & SHF_EXECINSTR
 #define R_BIN_ELF_SCN_IS_READABLE(x)   x & SHF_ALLOC

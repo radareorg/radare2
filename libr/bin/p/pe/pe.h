@@ -5,7 +5,7 @@
 
 #include "r_types.h"
 
-#include "r_bin_pe_specs.h"
+#include "pe_specs.h"
 
 #define R_BIN_PE_SCN_IS_SHAREABLE(x)       x & PE_IMAGE_SCN_MEM_SHARED
 #define R_BIN_PE_SCN_IS_EXECUTABLE(x)      x & PE_IMAGE_SCN_MEM_EXECUTE

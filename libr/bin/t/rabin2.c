@@ -12,6 +12,7 @@
 #include <getopt.h>
 
 #include <r_types.h>
+#include <r_lib.h>
 #include <r_bin.h>
 #include <r_flags.h>
 #include <r_util.h>
@@ -23,33 +24,38 @@
 #define ACTION_SECTIONS  0x0008 
 #define ACTION_INFO      0x0010
 #define ACTION_OPERATION 0x0020
+#define ACTION_HELP      0x0040
 
+static struct r_lib_t l;
+static struct r_bin_t bin;
 static int verbose = 0;
 static int rad = 0;
 
 static int rabin_show_help()
 {
 	printf( "rabin2 [options] [file]\n"
-			" -e        Entrypoint\n"
-			" -i        Imports (symbols imported from libraries)\n"
-			" -s        Symbols (exports)\n"
-			" -S        Sections\n"
-			" -I        Binary info\n"
-			" -o [str]  Operation action (str=help for help)\n"
-			" -r        Radare output\n"
-			" -h        This help\n" );
+			" -e          Entrypoint\n"
+			" -i          Imports (symbols imported from libraries)\n"
+			" -s          Symbols (exports)\n"
+			" -S          Sections\n"
+			" -I          Binary info\n"
+			" -o [str]    Operation action (str=help for help)\n"
+			" -p [plugin] Force plugin\n"
+			" -r          Radare output\n"
+			" -h          This help\n"
+			"Available plugins:\n");
+	r_bin_list(&bin);
 
 	return 1;
 }
 
-static int rabin_show_entrypoint(const char *file)
+static int rabin_show_entrypoint()
 {
-	r_bin_obj bin;
-	r_bin_entry *entry;
+	struct r_bin_entry_t *entry;
 	u64 baddr;
 	char *env;
 
-	if (r_bin_init(&bin, file, 0) == -1) {
+	if (r_bin_open(&bin) == R_FALSE) {
 		fprintf(stderr, "Cannot open file\n");
 		return 1;
 	}
@@ -76,15 +82,13 @@ static int rabin_show_entrypoint(const char *file)
 	return 0;
 }
 
-static int rabin_show_imports(const char *file)
+static int rabin_show_imports()
 {
 	int ctr = 0;
-	r_bin_obj bin;
 	u64 baddr;
-	char name[R_BIN_SIZEOF_NAMES];
-	r_bin_import *imports, *importsp;
+	struct r_bin_import_t *imports, *importsp;
 
-	if (r_bin_init(&bin, file, 0) == -1) {
+	if (r_bin_open(&bin) == R_FALSE) {
 		fprintf(stderr, "Cannot open file\n");
 		return 1;
 	}
@@ -103,8 +107,8 @@ static int rabin_show_imports(const char *file)
 			r_flag_name_filter(importsp->name);
 			printf("f imp.%s @ 0x%08llx\n",
 					importsp->name, baddr+importsp->rva);
-		} else printf("address=0x%08llx offset=0x%08llx ordinal=%03i "
-				"hint=%03i bind=%s type=%s name=%s\n",
+		} else printf("address=0x%08llx offset=0x%08llx ordinal=%03lli "
+				"hint=%03lli bind=%s type=%s name=%s\n",
 				baddr+importsp->rva, importsp->offset,
 				importsp->ordinal, importsp->hint,  importsp->bind,
 				importsp->type, importsp->name);
@@ -119,14 +123,13 @@ static int rabin_show_imports(const char *file)
 	return 0;
 }
 
-static int rabin_show_symbols(const char *file)
+static int rabin_show_symbols()
 {
 	int ctr = 0;
-	r_bin_obj bin;
 	u64 baddr;
-	r_bin_symbol *symbols, *symbolsp;
+	struct r_bin_symbol_t *symbols, *symbolsp;
 
-	if (r_bin_init(&bin, file, 0) == -1) {
+	if (r_bin_open(&bin) == R_FALSE) {
 		fprintf(stderr, "Cannot open file\n");
 		return 1;
 	}
@@ -144,18 +147,18 @@ static int rabin_show_symbols(const char *file)
 			r_flag_name_filter(symbolsp->name);
 			if (symbolsp->size) {
 				if (!strncmp(symbolsp->type,"FUNC", 4))
-					printf("CF %li @ 0x%08llx\n",
+					printf("CF %lli @ 0x%08llx\n",
 							symbolsp->size, baddr+symbolsp->rva);
 				else
 				if (!strncmp(symbolsp->type,"OBJECT", 6))
-					printf("Cd %li @ 0x%08llx\n",
+					printf("Cd %lli @ 0x%08llx\n",
 							symbolsp->size, baddr+symbolsp->rva);
-				printf("b %li && ", symbolsp->size);
+				printf("b %lli && ", symbolsp->size);
 			}
 			printf("f sym.%s @ 0x%08llx\n",
 					symbolsp->name, baddr+symbolsp->rva);
-		} else printf("address=0x%08llx offset=0x%08llx ordinal=%03i "
-				"forwarder=%s size=%08i bind=%s type=%s name=%s\n",
+		} else printf("address=0x%08llx offset=0x%08llx ordinal=%03lli "
+				"forwarder=%s size=%08lli bind=%s type=%s name=%s\n",
 				baddr+symbolsp->rva, symbolsp->offset,
 				symbolsp->ordinal, symbolsp->forwarder,
 				symbolsp->size, symbolsp->bind, symbolsp->type, 
@@ -171,14 +174,13 @@ static int rabin_show_symbols(const char *file)
 	return 0;
 }
 
-static int rabin_show_sections(const char *file)
+static int rabin_show_sections()
 {
 	int ctr = 0;
-	r_bin_obj bin;
 	u64 baddr;
-	r_bin_section *sections, *sectionsp;
+	struct r_bin_section_t *sections, *sectionsp;
 
-	if (r_bin_init(&bin, file, 0) == -1) {
+	if (r_bin_open(&bin) == R_FALSE) {
 		fprintf(stderr, "Cannot open file\n");
 		return 1;
 	}
@@ -198,7 +200,7 @@ static int rabin_show_sections(const char *file)
 					sectionsp->name, baddr+sectionsp->rva);
 			printf("f section.%s_end @ 0x%08llx\n",
 					sectionsp->name, baddr+sectionsp->rva+sectionsp->size);
-			printf("[%02i] address=0x%08llx offset=0x%08llx size=%08li "
+			printf("[%02i] address=0x%08llx offset=0x%08llx size=%08lli "
 					"privileges=%c%c%c%c name=%s\n",
 					ctr, baddr+sectionsp->rva, sectionsp->offset, sectionsp->size,
 					R_BIN_SCN_SHAREABLE(sectionsp->characteristics)?'s':'-',
@@ -206,7 +208,7 @@ static int rabin_show_sections(const char *file)
 					R_BIN_SCN_WRITABLE(sectionsp->characteristics)?'w':'-',
 					R_BIN_SCN_EXECUTABLE(sectionsp->characteristics)?'x':'-',
 					sectionsp->name);
-		} else printf("idx=%02i address=0x%08llx offset=0x%08llx size=%08li "
+		} else printf("idx=%02i address=0x%08llx offset=0x%08llx size=%08lli "
 				"privileges=%c%c%c%c name=%s\n",
 				ctr, baddr+sectionsp->rva, sectionsp->offset, sectionsp->size,
 				R_BIN_SCN_SHAREABLE(sectionsp->characteristics)?'s':'-',
@@ -226,12 +228,11 @@ static int rabin_show_sections(const char *file)
 
 }
 
-static int rabin_show_info(const char *file)
+static int rabin_show_info()
 {
-	r_bin_obj bin;
-	r_bin_info *info;
+	struct r_bin_info_t *info;
 
-	if (r_bin_init(&bin, file, 0) == -1) {
+	if (r_bin_open(&bin) == R_FALSE) {
 		fprintf(stderr, "Cannot open file\n");
 		return 1;
 	}
@@ -273,9 +274,8 @@ static int rabin_show_info(const char *file)
 	return 0;
 }
 
-static int rabin_do_operation(const char *file, const char *op)
+static int rabin_do_operation(const char *op)
 {
-	r_bin_obj bin;
 	char *arg, *ptr, *ptr2;
 
 	if (!strcmp(op, "help")) {
@@ -292,7 +292,7 @@ static int rabin_do_operation(const char *file, const char *op)
 		return 1;
 	}
 
-	if (r_bin_init(&bin, file, 1) == -1) {
+	if (r_bin_open(&bin) == R_FALSE) {
 		fprintf(stderr, "cannot open file\n");
 		return 1;
 	}
@@ -314,14 +314,24 @@ static int rabin_do_operation(const char *file, const char *op)
 	return 0;
 }
 
+/* bin callback */
+static int __lib_bin_cb(struct r_lib_plugin_t *pl, void *user, void *data)
+{
+	struct r_bin_handle_t *hand = (struct r_bin_handle_t *)data;
+	//printf(" * Added (dis)assembly handler\n");
+	r_bin_add(&bin, hand);
+	return R_TRUE;
+}
+static int __lib_bin_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
+
 int main(int argc, char **argv)
 {
 	int c;
-	int action = ACTION_UNK;
-	const char *file = NULL;
+	int action = ACTION_UNK, rw = 0;
+	const char *file = NULL, *plugin = NULL;
 	const char *op = NULL;
 
-	while ((c = getopt(argc, argv, "isSIeo:rvh")) != -1)
+	while ((c = getopt(argc, argv, "isSIeo:p:rvh")) != -1)
 	{
 		switch( c ) {
 		case 'i':
@@ -342,6 +352,10 @@ int main(int argc, char **argv)
 		case 'o':
 			op = optarg;
 			action |= ACTION_OPERATION;
+			rw = 1;
+			break;
+		case 'p':
+			plugin = optarg;
 			break;
 		case 'r':
 			rad = 1;
@@ -351,29 +365,45 @@ int main(int argc, char **argv)
 			break;
 		case 'h':
 		default:
-			return rabin_show_help();
+			action |= ACTION_HELP;
 		}
 	}
 	
 	file = argv[optind];
 
-	if (action == ACTION_UNK)
-		return rabin_show_help();
-	else if (file == NULL)
+	r_bin_init(&bin, file, rw);
+	r_lib_init(&l, "radare_plugin");
+	r_lib_add_handler(&l, R_LIB_TYPE_BIN, "bin plugins",
+		&__lib_bin_cb, &__lib_bin_dt, NULL);
+	r_lib_opendir(&l, getenv("LIBR_PLUGINS"));
+	
+	if (plugin) {
+		if (!r_bin_set(&bin, plugin)) {
+			fprintf(stderr, "Unknown plugin\n");
+			return 1;
+		}
+	} else {
+		if (!r_bin_autoset(&bin)) {
+			fprintf(stderr, "Not supported format\n");
+			return 1;
+		}
+	}
+
+	if (action == ACTION_HELP || action == ACTION_UNK || file == NULL)
 		return rabin_show_help();
 
 	if (action&ACTION_ENTRY)
-		rabin_show_entrypoint(file);
+		rabin_show_entrypoint();
 	if (action&ACTION_IMPORTS)
-		rabin_show_imports(file);
+		rabin_show_imports();
 	if (action&ACTION_SYMBOLS)
-		rabin_show_symbols(file);
+		rabin_show_symbols();
 	if (action&ACTION_SECTIONS)
-		rabin_show_sections(file);
+		rabin_show_sections();
 	if (action&ACTION_INFO)
-		rabin_show_info(file);
+		rabin_show_info();
 	if (op != NULL && action&ACTION_OPERATION)
-		rabin_do_operation(file, op);
+		rabin_do_operation(op);
 
 	return 0;
 }

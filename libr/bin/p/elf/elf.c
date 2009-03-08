@@ -10,8 +10,9 @@
 #include <sys/mman.h>
 #endif
 
-#include "r_types.h"
-#include "r_bin_elf.h"
+#include <r_types.h>
+
+#include "elf.h"
 
 /* TODO: move into bin_t */
 static int endian = 0;

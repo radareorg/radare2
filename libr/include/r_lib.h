@@ -42,6 +42,7 @@ enum {
 	R_LIB_TYPE_ASM,  /* assembler */
 	R_LIB_TYPE_ANAL, /* analysis */
 	R_LIB_TYPE_PARSE,/* parsers */
+	R_LIB_TYPE_BIN,  /* bins */
 };
 
 struct r_lib_t {

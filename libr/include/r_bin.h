@@ -3,11 +3,8 @@
 #ifndef _INCLUDE_R_BIN_H_
 #define _INCLUDE_R_BIN_H_
 
-#include "r_types.h"
-
-#include "r_bin_elf.h"
-#include "r_bin_elf64.h"
-#include "r_bin_pe.h"
+#include <r_types.h>
+#include <list.h>
 
 #define R_BIN_SCN_EXECUTABLE(x) x & 0x1
 #define R_BIN_SCN_WRITABLE(x)   x & 0x2
@@ -22,61 +19,79 @@
 
 #define R_BIN_SIZEOF_NAMES 64
 
-/* types */
-typedef union {
-    Elf32_r_bin_elf_obj e32;
-	Elf64_r_bin_elf_obj e64;
-} r_bin_elf_obj;
+enum {
+	R_BIN_FMT_ELF32,
+	R_BIN_FMT_ELF64,
+	R_BIN_FMT_PE
+};
 
-typedef struct {
-	union {
-		r_bin_elf_obj elf;
-		r_bin_pe_obj pe;
-	} object;
-	u32 format;
+/* types */
+struct r_bin_t {
 	const char *file;
 	int fd;
-} r_bin_obj;
+	int rw;
+	void *bin_obj;
+	void *user;
+	struct r_bin_handle_t *cur;
+	struct list_head bins;
+};
 
-typedef struct {
+struct r_bin_handle_t {
+	char *name;
+	char *desc;
+	int (*init)(void *user);
+	int (*fini)(void *user);
+	int (*open)(struct r_bin_t *bin);
+	int (*close)(struct r_bin_t *bin);
+	u64 (*baddr)(struct r_bin_t *bin);
+	struct r_bin_entry_t* (*entry)(struct r_bin_t *bin);
+	struct r_bin_section_t* (*sections)(struct r_bin_t *bin);
+	struct r_bin_symbol_t* (*symbols)(struct r_bin_t *bin);
+	struct r_bin_import_t* (*imports)(struct r_bin_t *bin);
+	struct r_bin_info_t* (*info)(struct r_bin_t *bin);
+	u64 (*resize_section)(struct r_bin_t *bin, char *name, u64 size);
+	struct list_head list;
+};
+
+struct r_bin_entry_t {
 	u64 rva;
 	u64 offset;
-} r_bin_entry;
+};
 
-typedef struct {
+struct r_bin_section_t {
 	char name[R_BIN_SIZEOF_NAMES];
-	u32 size;
-	u32 vsize;
+	u64 size;
+	u64 vsize;
 	u64 rva;
 	u64 offset;
-	u32 characteristics;
+	u64 characteristics;
 	int last;
-} r_bin_section;
+};
 
-typedef struct {
+struct r_bin_symbol_t {
 	char name[R_BIN_SIZEOF_NAMES];
 	char forwarder[R_BIN_SIZEOF_NAMES];
 	char bind[R_BIN_SIZEOF_NAMES];
 	char type[R_BIN_SIZEOF_NAMES];
 	u64 rva;
 	u64 offset;
-	u32 size;
-	u32 ordinal;
+	u64 size;
+	u64 ordinal;
 	int last;
-} r_bin_symbol;
+};
 
-typedef struct {
+struct r_bin_import_t {
 	char name[R_BIN_SIZEOF_NAMES];
 	char bind[R_BIN_SIZEOF_NAMES];
 	char type[R_BIN_SIZEOF_NAMES];
 	u64 rva;
 	u64 offset;
-	u32 ordinal;
-	u32 hint;
+	u64 ordinal;
+	u64 hint;
 	int last;
-} r_bin_import;
+};
 
-typedef struct {
+struct r_bin_info_t {
 	char type[R_BIN_SIZEOF_NAMES];
 	char class[R_BIN_SIZEOF_NAMES];
 	char rclass[R_BIN_SIZEOF_NAMES];
@@ -85,23 +100,29 @@ typedef struct {
 	char os[R_BIN_SIZEOF_NAMES];
 	char subsystem[R_BIN_SIZEOF_NAMES];
 	int big_endian;
-	u32 dbg_info;
-} r_bin_info;
+	u64 dbg_info;
+};
 
-/* bin/r_bin.c */
-r_bin_obj *r_bin_new(char *file, int rw);
-void r_bin_free(r_bin_obj *bin);
-int r_bin_init(r_bin_obj *bin, const char *file, int rw);
-int r_bin_close(r_bin_obj *bin);
-u64 r_bin_get_baddr(r_bin_obj *bin);
-r_bin_entry* r_bin_get_entry(r_bin_obj *bin);
-r_bin_section* r_bin_get_sections(r_bin_obj *bin);
-u64 r_bin_get_section_offset(r_bin_obj *bin, char *name);
-u64 r_bin_get_section_rva(r_bin_obj *bin, char *name);
-u32 r_bin_get_section_size(r_bin_obj *bin, char *name);
-r_bin_symbol* r_bin_get_symbols(r_bin_obj *bin);
-r_bin_import* r_bin_get_imports(r_bin_obj *bin);
-r_bin_info* r_bin_get_info(r_bin_obj *bin);
-u64 r_bin_resize_section(r_bin_obj *bin, char *name, u64 size);
+/* bin.c */
+struct r_bin_t *r_bin_new(char *file, int rw);
+void r_bin_free(struct r_bin_t *bin);
+int r_bin_init(struct r_bin_t *bin, const char *file, int rw);
+void r_bin_set_user_ptr(struct r_bin_t *bin, void *user);
+int r_bin_add(struct r_bin_t *bin, struct r_bin_handle_t *foo);
+int r_bin_list(struct r_bin_t *bin);
+int r_bin_set(struct r_bin_t *bin, const char *name);
+int r_bin_autoset(struct r_bin_t *bin);
+int r_bin_open(struct r_bin_t *bin);
+int r_bin_close(struct r_bin_t *bin);
+u64 r_bin_get_baddr(struct r_bin_t *bin);
+struct r_bin_entry_t* r_bin_get_entry(struct r_bin_t *bin);
+struct r_bin_section_t* r_bin_get_sections(struct r_bin_t *bin);
+struct r_bin_symbol_t* r_bin_get_symbols(struct r_bin_t *bin);
+struct r_bin_import_t* r_bin_get_imports(struct r_bin_t *bin);
+struct r_bin_info_t* r_bin_get_info(struct r_bin_t *bin);
+u64 r_bin_resize_section(struct r_bin_t *bin, char *name, u64 size);
+u64 r_bin_get_section_offset(struct r_bin_t *bin, char *name);
+u64 r_bin_get_section_rva(struct r_bin_t *bin, char *name);
+u64 r_bin_get_section_size(struct r_bin_t *bin, char *name);
 
 #endif
