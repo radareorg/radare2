@@ -2,10 +2,10 @@
 #define _INCLUDE_R_TYPES_H_
 
 /* provide a per-module debug-enabled feature */
-#if DEBUG_ENABLED
+#if R_DEBUG
 #define IFDBG
 #else
-#define IFDBG //
+#define IFDBG if (0)
 #endif
 
 /* basic types */
