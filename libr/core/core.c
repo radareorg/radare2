@@ -104,6 +104,18 @@ int __lib_parse_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 
 int __lib_parse_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
 
+/* bin callback */
+int __lib_bin_cb(struct r_lib_plugin_t *pl, void *user, void *data)
+{
+	struct r_bin_handle_t *hand = (struct r_bin_handle_t *)data;
+	struct r_core_t *core = (struct r_core_t *)user;
+	//printf(" * Added (dis)assembly handler\n");
+	r_bin_add(&core->bin, hand);
+	return R_TRUE;
+}
+
+int __lib_bin_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
+
 int r_core_init(struct r_core_t *core)
 {
 	core->oobi = NULL;
@@ -121,6 +133,8 @@ int r_core_init(struct r_core_t *core)
 	r_asm_set_user_ptr(&core->assembler, core);
 	r_parse_init(&core->parser);
 	r_parse_set_user_ptr(&core->parser, core);
+	r_bin_init(&core->bin);
+	r_bin_set_user_ptr(&core->bin, core);
 	r_meta_init(&core->meta);
 	r_cons_init();
 	core->search = r_search_new(R_SEARCH_KEYWORD);
@@ -151,6 +165,8 @@ int r_core_init(struct r_core_t *core)
 		&__lib_asm_cb, &__lib_asm_dt, core);
 	r_lib_add_handler(&core->lib, R_LIB_TYPE_PARSE, "parsing plugins",
 		&__lib_parse_cb, &__lib_parse_dt, core);
+	r_lib_add_handler(&core->lib, R_LIB_TYPE_BIN, "bin plugins",
+		&__lib_bin_cb, &__lib_bin_dt, core);
 	r_lib_opendir(&core->lib, getenv("LIBR_PLUGINS"));
 	{
 		char *homeplugindir = r_str_home(".radare/plugins");

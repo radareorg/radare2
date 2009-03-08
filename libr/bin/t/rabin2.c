@@ -331,6 +331,12 @@ int main(int argc, char **argv)
 	const char *file = NULL, *plugin = NULL;
 	const char *op = NULL;
 
+	r_bin_init(&bin);
+	r_lib_init(&l, "radare_plugin");
+	r_lib_add_handler(&l, R_LIB_TYPE_BIN, "bin plugins",
+		&__lib_bin_cb, &__lib_bin_dt, NULL);
+	r_lib_opendir(&l, getenv("LIBR_PLUGINS"));
+
 	while ((c = getopt(argc, argv, "isSIeo:p:rvh")) != -1)
 	{
 		switch( c ) {
@@ -370,13 +376,11 @@ int main(int argc, char **argv)
 	}
 	
 	file = argv[optind];
-
-	r_bin_init(&bin, file, rw);
-	r_lib_init(&l, "radare_plugin");
-	r_lib_add_handler(&l, R_LIB_TYPE_BIN, "bin plugins",
-		&__lib_bin_cb, &__lib_bin_dt, NULL);
-	r_lib_opendir(&l, getenv("LIBR_PLUGINS"));
 	
+	if (action == ACTION_HELP || action == ACTION_UNK || file == NULL)
+		return rabin_show_help();
+
+	r_bin_set_file(&bin, file, rw);
 	if (plugin) {
 		if (!r_bin_set(&bin, plugin)) {
 			fprintf(stderr, "Unknown plugin\n");
@@ -388,9 +392,6 @@ int main(int argc, char **argv)
 			return 1;
 		}
 	}
-
-	if (action == ACTION_HELP || action == ACTION_UNK || file == NULL)
-		return rabin_show_help();
 
 	if (action&ACTION_ENTRY)
 		rabin_show_entrypoint();

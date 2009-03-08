@@ -12,9 +12,9 @@ parse_x86_pseudo.so: parse_x86_pseudo.o
 	${CC} ${CFLAGS} -o parse_x86_pseudo.so parse_x86_pseudo.o
 	@#strip -s parse_x86_pseudo.so
 
-parse_mreplace.so:
+parse_mreplace.so: parse_mreplace.o
 	${CC} ${CFLAGS_IMP} -o parse_mreplace.so \
-		mreplace/mreplace.c mreplace/mmemory.c
+		mreplace/mreplace.c mreplace/mmemory.c parse_mreplace.o
 	@#strip -s parse_mreplace.so
 
 clean:

@@ -9,7 +9,8 @@
 
 #if __UNIX__
 #include <dlfcn.h>
-  #define DLOPEN(x)  dlopen(x, RTLD_GLOBAL | RTLD_NOW)
+  //#define DLOPEN(x)  dlopen(x, RTLD_GLOBAL | RTLD_NOW)
+  #define DLOPEN(x)  dlopen(x, RTLD_GLOBAL | RTLD_LAZY)
   #define DLSYM(x,y) dlsym(x,y)
   #define DLCLOSE(x) dlclose(x)
 #elif __WINDOWS__ && !__CYGWIN__
