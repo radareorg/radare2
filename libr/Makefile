@@ -1,9 +1,10 @@
-# XXX
-PREFIX=../prefix
+PREFIX=${PWD}/../prefix
+DESTDIR?=../
+PFX=${DESTDIR}${PREFIX}
+#PREFIX=${PFX}
 
 # Libraries
 LIBLIST=io util lib meta lang flags bin macro hash line cons line print config syscall range socket cmd asm anal parse search diff debug reg core var
-
 
 # Under development
 #LIBLIST+=print
@@ -19,6 +20,7 @@ all:
 	@echo Build done for: ${LIBLIST}
 
 install:
+	echo Using prefix: ${PREFIX}
 	# libraries
 	@mkdir -p ${PREFIX}/lib
 	@for a in `find * | grep -e '\.so$$' | grep lib` ; do \

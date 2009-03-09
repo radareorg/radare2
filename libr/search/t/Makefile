@@ -1,8 +1,11 @@
-BINDEPS=r_util r_search
+BINDEPS=r_util r_search r_print r_io r_cons r_line
 
 include ../../rules.mk
 
-all: test test-str test-regexp
+all: test test-str test-regexp rafind2
+
+rafind2:
+	${CC} -g -I ../../include rafind2.c ${LDFLAGS} -o rafind2
 
 test:
 	${CC} -g -I ../../include test.c ${LDFLAGS} -o test

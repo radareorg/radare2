@@ -47,11 +47,12 @@ void r_bin_set_user_ptr(struct r_bin_t *bin, void *user)
 
 int r_bin_add(struct r_bin_t *bin, struct r_bin_handle_t *foo)
 {
+	struct list_head *pos;
 	if (foo->init)
 		foo->init(bin->user);
 	/* avoid dupped plugins */
-	list_for_each_prev(pos, &a->asms) {
-		struct r_asm_handle_t *h = list_entry(pos, struct r_asm_handle_t, list);
+	list_for_each_prev(pos, &bin->bins) {
+		struct r_bin_handle_t *h = list_entry(pos, struct r_bin_handle_t, list);
 		if (!strcmp(h->name, foo->name))
 			return R_FALSE;
 	}

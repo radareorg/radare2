@@ -16,13 +16,13 @@ clean:
 
 install:
 	mkdir -p ${DESTDIR}${PREFIX}
-	cd libr && make install PREFIX=${DESTDIR}${PREFIX}
+	cd libr && make install PARENT=1 PREFIX=${DESTDIR}${PREFIX}
 
 uninstall:
 	rm -rf prefix
 
 deinstall: uninstall
-	cd libr && make uninstall PREFIX=${DESTDIR}${PREFIX}
+	cd libr && make uninstall PARENT=1 PREFIX=${DESTDIR}${PREFIX}
 
 dist:
 	FILES=`hg st -mc .| cut -c 3-|sed -e s,^,radare2-${VERSION}/,` ; \
