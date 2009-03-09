@@ -9,16 +9,15 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/stat.h>
 
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_bin.h>
+#include "../config.h"
 
+static struct r_bin_handle_t *bin_static_plugins[] = 
+	{ R_BIN_STATIC_PLUGINS };
 
 struct r_bin_t *r_bin_new(char *file, int rw)
 {
@@ -34,9 +33,11 @@ void r_bin_free(struct r_bin_t *bin)
 
 int r_bin_init(struct r_bin_t *bin)
 {
+	int i;
 	bin->user = NULL;
 	INIT_LIST_HEAD(&bin->bins);
-
+	for(i=0;bin_static_plugins[i];i++)
+		r_bin_add(bin, bin_static_plugins[i]);
 	return R_TRUE;
 }
 

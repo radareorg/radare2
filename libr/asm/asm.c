@@ -9,7 +9,7 @@
 #include "../config.h"
 
 static struct r_asm_handle_t *asm_static_plugins[] = 
-	{ R_ASM_STATIC_PLUGINS, 0 };
+	{ R_ASM_STATIC_PLUGINS };
 
 struct r_asm_t *r_asm_new()
 {

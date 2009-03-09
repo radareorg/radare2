@@ -142,7 +142,7 @@ int r_lib_open(struct r_lib_t *lib, const char *file)
 	}
 	stru = (struct r_lib_struct_t *) r_lib_dl_sym(handler, lib->symname);
 	if (stru == NULL) {
-		fprintf(stderr, "No root symbol '%s' found in library '%s'\n", lib->symname, file);
+		IFDBG fprintf(stderr, "No root symbol '%s' found in library '%s'\n", lib->symname, file);
 		return -1;
 	}
 	struct r_lib_plugin_t *p = MALLOC_STRUCT(struct r_lib_plugin_t);

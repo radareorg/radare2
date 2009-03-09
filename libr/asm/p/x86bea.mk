@@ -6,10 +6,6 @@ TARGET_X86_BEA=asm_x86_bea.so
 
 ALL_TARGETS+=${TARGET_X86_BEA}
 
-#${TARGET_X86_BEA}: ${OBJ_X86_BEA}
-asm_x86_bea.so: ${OBJ_X86_BEA}
-	${CC} ${CFLAGS_IMP} -o asm_x86_bea.so \
-		asm_x86_bea.o ../arch/x86/bea/BeaEngine.o
-	@#strip -s asm_x86_bea.so
+${TARGET_X86_BEA}: ${OBJ_X86_BEA}
 	${CC} ${CFLAGS} -o ${TARGET_X86_BEA} ${OBJ_X86_BEA}
-	@#strip -s asm_x86.so
+	@#strip -s asm_x86_bea.so

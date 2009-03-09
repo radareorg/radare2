@@ -7,3 +7,4 @@ USE_RIO=1
 
 # static plugins
 STATIC_ASM_PLUGINS=p/java.mk p/mips.mk
+STATIC_BIN_PLUGINS=
