@@ -353,22 +353,30 @@ static int cmd_flag(void *data, const char *input)
 	int len = strlen(input)+1;
 	char *ptr;
 	char *str = alloca(len);
-	//u64 seek = core->seek;
-	//u64 size = core->blocksize;
 	memcpy(str, input+1, len);
-	ptr = strchr(str+1, ' ');
-	if (ptr) {
-		*ptr='\0';
-		ptr = strchr(ptr+1, ' ');
-		if (ptr) *ptr='\0';
-		// TODO redefine seek and size here
-	}
+
 	switch(input[0]) {
 	case '+':
 		r_flag_set(&core->flags, str, core->seek, core->blocksize, 1);
 		break;
-	case ' ':
-		r_flag_set(&core->flags, str, core->seek, core->blocksize, 0);
+	case ' ': {
+		char *s = NULL, *s2 = NULL;
+		u64 seek = core->seek;
+		u32 bsze = core->blocksize;
+		s = strchr(str, ' ');
+		if (s) {
+			*s = '\0';
+			s2 = strchr(s+1, ' ');
+			if (s2) {
+				*s2 = '\0';
+				seek = r_num_math(&core->num, s2+1);
+			}
+			bsze = r_num_math(&core->num, s+1);
+		}
+		r_flag_set(&core->flags, str, seek, bsze, 0);
+		if (s) *s=' ';
+		if (s2) *s2=' ';
+		}
 		break;
 	case '-':
 		r_flag_unset(&core->flags, input+1);
@@ -621,7 +629,7 @@ static int cmd_write(void *data, const char *input)
 
 static int __cb_hit(struct r_search_kw_t *kw, void *user, u64 addr)
 {
-	r_cons_printf("f hit0_%d @ 0x%08llx\n", kw->count, addr);
+	r_cons_printf("f hit0_%d %d 0x%08llx\n", kw->count, kw->keyword_length, addr);
 	return R_TRUE;
 }
 

@@ -36,6 +36,9 @@ install:
 	@for a in `find */t -perm /u+x -type f | grep 2`; \
 	do echo " $$a"; cp $$a ${PREFIX}/bin ; done
 	# plugins
+	@mkdir -p ${PREFIX}/lib/pkgconfig
+	@cat libr.pc.acr | sed -e 's,@PREFIX@,${PREFIX},g' > libr.pc
+	cp libr.pc ${PREFIX}/lib/pkgconfig
 	@mkdir -p ${PREFIX}/lib/radare2
 	@for a in `find */p -perm /u+x -type f`; \
 	do echo " $$a"; cp $$a ${PREFIX}/lib/radare2 ; done
@@ -65,6 +68,7 @@ uninstall:
 	a="${PREFIX}/lib/radare2/`echo $$a|awk -F / '{ print $$NF; }'`"; \
 	echo $$a ; rm -f $$a ; done
 	rm -rf ${PREFIX}/lib/radare2
+	rm -f ${PREFIX}/lib/pkgconfig/libr.pc
 	# test programs
 	-@for a in `find */t -perm /u+x -type f | grep -v 2`; do \
 	a="${PREFIX}/bin-test/`echo $$a|awk -F / '{ print $$NF; }'`"; \

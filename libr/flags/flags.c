@@ -91,7 +91,7 @@ int r_flag_set(struct r_flag_t *fo, const char *name, u64 addr, u32 size, int du
 			} else {
 				flag = f;
 				f->offset = addr + fo->base;
-				f->size = 1; // XXX
+				f->size = size; // XXX
 				f->format = 0; // XXX
 	//			return R_TRUE;
 			}
@@ -110,7 +110,7 @@ int r_flag_set(struct r_flag_t *fo, const char *name, u64 addr, u32 size, int du
 	flag->name[R_FLAG_NAME_SIZE-1]='\0';
 	flag->offset = addr + fo->base;
 	flag->space = fo->space_idx;
-	flag->size = 1; // XXX
+	flag->size = size; // XXX
 	flag->format = 0; // XXX
 	flag->cmd = NULL;
 
