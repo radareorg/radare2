@@ -20,18 +20,16 @@
 
 // TODO: add radare related commands to stdout with -r (R printf..)
 
-#if __UNIX__
-#include <arpa/inet.h>
-#endif
+#include <r_types.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <getopt.h>
 #include <stdarg.h>
-
 #include "javasm.h"
-
-#include <r_types.h>
+#if __UNIX__
+#include <arpa/inet.h>
+#endif
 
 
 static struct constant_t {

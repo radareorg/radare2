@@ -282,6 +282,8 @@ static int cmd_print(void *data, const char *input)
 	struct r_core_t *core = (struct r_core_t *)data;
 	int l, len = core->blocksize;
 	u32 tbs = core->blocksize;
+	int show_offset  = r_config_get(&core->config, "asm.offset");
+	int show_bytes = r_config_get(&core->config, "asm.bytes");
 
 	if (input[0] && input[1]) {
 		l = (int) r_num_get(&core->num, input+2);
@@ -309,9 +311,9 @@ static int cmd_print(void *data, const char *input)
 				r_asm_set_pc(&core->assembler, core->assembler.pc + ret);
 				ret = r_asm_disassemble(&core->assembler, &aop, buf+idx, len-idx);
 				r_parse_parse(&core->parser, aop.buf_asm, str);
-				r_cons_printf("0x%08llx  %14s  %s\n",
-					core->seek+idx, aop.buf_hex, 
-					pseudo?str:aop.buf_asm);
+				if (show_offset) r_cons_printf("0x%08llx ", core->seek + idx);
+				if (show_bytes) r_cons_printf("%14s ", aop.buf_hex);
+				r_cons_printf("%s\n", pseudo?str:aop.buf_asm);
 			}
 		}
 		break;

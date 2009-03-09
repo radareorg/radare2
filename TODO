@@ -7,3 +7,10 @@
   - load the program using r_bin in virtual space
   - initialize vm and set regs
   - debug backend should use the vm
+
+* Script plugins
+ - We should enable r_lib to implement plugins in any
+   scripting language, so we can for example prepare
+   a .c stub interface for python/perl/ruby/..
+ - Maybe having a preprocessor tool for this..
+

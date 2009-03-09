@@ -5,3 +5,9 @@
   |_|\__|_|__|___/|_|_|_|\__\___/ |_____(_)____/
 
 
+This is the rewrite of radare (1.x branch) to provide a
+framework with a set of libraries and programs to work
+with binary data.
+
+
+                                            --pancake

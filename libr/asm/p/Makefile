@@ -15,10 +15,6 @@ include $(ARCHS)
 all: ${ALL_TARGETS}
 	@true
 
-asm_x86.so: ${OBJ_X86}
-	${CC} ${CFLAGS} -o asm_x86.so ${OBJ_X86}
-	@#strip -s asm_x86.so
-
 clean:
 	-rm -f *.so *.o ${STATIC_OBJ} \
 		${OBJ_X86} ${OBJ_X86_OLLY} ${OBJ_ARM} \
