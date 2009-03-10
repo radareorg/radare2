@@ -18,17 +18,32 @@ LINK?=
 # Debug
 CFLAGS+=-g -Wall
 
+# XXX hardcoded XXX #
+OSTYPE=gnulinux
 # Output
+ifeq (${OSTYPE},windows)
+EXT_AR=lib
+EXT_SO=dll
+endif
+ifeq (${OSTYPE},gnulinux)
 EXT_AR=a
 EXT_SO=so
+endif
+ifeq (${OSTYPE},osx)
+EXT_AR=a
+EXT_SO=dylib
+endif
+
 LIB=lib${NAME}
 LIBAR=${LIB}.${EXT_AR}
 LIBSO=${LIB}.${EXT_SO}
-# ${LIBAR}
+
+#-------------------------------------#
 # Rules
 ifeq (${BINDEPS},)
 ifneq ($(NAME),)
-include ../config.mk
+include ../../config.mk
+
 CFLAGS+=-I../include
 all: ${LIBSO}
 	@-if [ -e t/Makefile ]; then (cd t && ${MAKE} all) ; fi
@@ -53,8 +68,10 @@ clean:
 .PHONY: all clean ${LIBSO} ${LIBAR}
 endif
 else
+
 include ../../config.mk
 CFLAGS+=-I../../include
+
 all: ${BIN}
 	@true
 
@@ -69,3 +86,5 @@ clean: myclean
 
 .PHONY: all clean ${BIN}
 endif
+
+#-------------------------------

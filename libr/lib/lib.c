@@ -171,6 +171,10 @@ int r_lib_opendir(struct r_lib_t *lib, const char *path)
 	struct dirent *de;
 	DIR *dh;
 
+#ifdef LIBR_PLUGINS
+	if (path == NULL)
+		path = LIBR_PLUGINS;
+#endif
 	if (path == NULL)
 		return R_FALSE;
 	dh = opendir(path);

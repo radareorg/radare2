@@ -9,6 +9,15 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+int r_file_mkdir(const char *path)
+{
+#if __WINDOWS__
+	return mkdir(path);
+#else
+	return mkdir(path, 0755);
+#endif
+}
+
 int r_file_exist(const char *str)
 {
 	struct stat buf;

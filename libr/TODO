@@ -17,7 +17,7 @@
   - Add lua disassembler
   - Add java, dalvik, xtensa achiecture (mm cpu)
   - http://git.linux-xtensa.org/cgi-bin/git.cgi?p=buildroot/buildroot-xtensa;a=blob;f=toolchain/binutils/binutils-xtensa_dc232b.tgz;h=214164399158c540a3033e52b3bb9f65c55289af;hb=HEAD
-  - Fix endianess issues
+  - Check if there are endianess issues
 
 || anal ||  **MISSING**
 ----------
@@ -25,7 +25,6 @@
 
 || bin || 
 ---------
-  - No Vala api yet
   - Add support for PE64, mach0 and java class
   - Add dex format support (android)
 
@@ -60,11 +59,11 @@
 
 || hash ||
 ----------
-  - Drop State() ?
+  - Extend it with plugins?
 
 || diff ||
 ----------
-  - Needs to fix the delta diffing algorithm
+  - Need to fix the delta diffing algorithm
   - Reimplement delta diffing in C
 
 || sign ||
