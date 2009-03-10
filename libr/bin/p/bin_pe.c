@@ -186,7 +186,7 @@ static struct r_bin_info_t* info(struct r_bin_t *bin)
 		return ret;
 }
 
-static struct r_bin_handle_t r_bin_plugin_pe = {
+struct r_bin_handle_t r_bin_plugin_pe = {
 	.name = "bin_pe",
 	.desc = "pe bin plugin",
 	.init = NULL,
@@ -202,7 +202,9 @@ static struct r_bin_handle_t r_bin_plugin_pe = {
 	.resize_section = NULL
 };
 
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_pe
 };
+#endif

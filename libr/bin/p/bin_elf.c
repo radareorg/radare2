@@ -177,7 +177,7 @@ static u64 resize_section(struct r_bin_t *bin, char *name, u64 size)
 	return Elf32_r_bin_elf_resize_section(bin->bin_obj, name, size);
 }
 
-static struct r_bin_handle_t r_bin_plugin_elf = {
+struct r_bin_handle_t r_bin_plugin_elf = {
 	.name = "bin_elf",
 	.desc = "elf bin plugin",
 	.init = NULL,
@@ -193,7 +193,9 @@ static struct r_bin_handle_t r_bin_plugin_elf = {
 	.resize_section = &resize_section
 };
 
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_elf
 };
+#endif

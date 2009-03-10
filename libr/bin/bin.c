@@ -34,6 +34,7 @@ void r_bin_free(struct r_bin_t *bin)
 int r_bin_init(struct r_bin_t *bin)
 {
 	int i;
+	bin->cur = NULL;
 	bin->user = NULL;
 	INIT_LIST_HEAD(&bin->bins);
 	for(i=0;bin_static_plugins[i];i++)

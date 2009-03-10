@@ -17,5 +17,5 @@ test-str:
 	${CC} -g -I ../../include test-str.c ${LDFLAGS} -o test-str
 
 myclean:
-	rm -f test test.o test-str test-str.o test-regexp
+	rm -f test test.o test-str test-str.o test-regexp rafind2
 

@@ -12,9 +12,6 @@ all: ${ALL_TARGETS}
 	@true
 
 clean:
-	-rm -f *.so *.o \
-		${OBJ_X86} ${OBJ_X86_OLLY} ${OBJ_X86_BEA} ${OBJ_ARM} \
-		${OBJ_MIPS} ${OBJ_SPARC} ${OBJ_PPC} \
-		${OBJ_BF} ${OBJ_CSR} ${OBJ_M68K} ${OBJ_JAVA}
+	-rm -f *.so *.o ${STATIC_OBJ}
 
 .PHONY: all clean foo

@@ -12,6 +12,6 @@ all: ${ALL_TARGETS}
 	@true
 
 clean:
-	-rm -f *.so *.o ${OBJ_ELF} ${OBJ_ELF64} ${OBJ_PE}
+	-rm -f *.so *.o ${STATIC_OBJ}
 
 .PHONY: all clean foo

@@ -61,7 +61,7 @@ uninstall:
 	echo ${PREFIX}/lib/$$a ; rm -f ${PREFIX}/lib/$$a ; done
 	### includes
 	-(cd include && for a in * ; do rm -f ${PREFIX}/libr/$$a ; done)
-	cd vapi/ ; for a in *.vapi *.deps ; do rm ${PREFIX}/share/vala/vapi/$$a ; done
+	cd vapi/ ; for a in *.vapi *.deps ; do rm -f ${PREFIX}/share/vala/vapi/$$a ; done
 	### programs
 	-@for a in `find */t -perm /u+x -type f | grep 2`; do \
 	a=`echo $$a|awk -F / '{ print $$NF; }'`; \
@@ -85,3 +85,4 @@ todo:
 clean:
 	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} clean ); done
 	cd vapi/t && ${MAKE} clean
+	rm -f libr.pc

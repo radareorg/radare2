@@ -12,7 +12,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 	return R_FALSE;
 }
 
-static struct r_asm_handle_t r_asm_plugin_dummy = {
+struct r_asm_handle_t r_asm_plugin_dummy = {
 	.name = "asm_dummy",
 	.desc = "dummy disassembly plugin",
 	.init = NULL,
@@ -21,7 +21,9 @@ static struct r_asm_handle_t r_asm_plugin_dummy = {
 	.assemble = NULL
 };
 
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_dummy
 };
+#endif
