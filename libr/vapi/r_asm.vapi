@@ -27,12 +27,23 @@ namespace Radare {
 			ATT   = 2,
 			OLLY  = 3
 		}
+
 		
 		[CCode (cprefix="R_ASM_PAR_")]
 		public enum Parser {
 			NULL    = 0,
 			PSEUDO  = 1,
 			REALLOC = 2
+		}
+
+		[CCode (cname="struct r_asm_aop_t")]
+		public struct Aop {
+			public int inst_len;
+			public uint8 *buf;
+			public string buf_asm;
+			public string buf_hex;
+			public string buf_err;
+			//pointer 
 		}
 
 		public int arch;
@@ -49,14 +60,16 @@ namespace Radare {
 		public Asm();
 
 		public int init();
-		public bool set_arch(Arch arch);
+		public int list();
+		public bool set(string name);
+		public bool set_arch(Asm.Arch arch);
 		public bool set_bits(int bits);
-		public bool set_syntax(Syntax syntax);
+		public bool set_syntax(Asm.Syntax syntax);
 		public bool set_pc(uint64 addr);
 		public bool set_big_endian(bool big);
-		public bool set_parser(Parser parser, parse_cb cb, void *aux);
-		public int disasm(uint8 *buf, uint64 length);
-		public int asm(string buf);
+		public bool set_parser(Asm.Parser parser, parse_cb cb, void *aux);
+		public int disassemble(Aop aop, uint8 *buf, uint64 length);
+		public int assemble(Aop aop, string buf);
 		public int parse();
 	}
 

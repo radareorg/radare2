@@ -6,5 +6,5 @@ WINDOWS=0
 USE_RIO=1
 
 # static plugins
-STATIC_ASM_PLUGINS=p/java.mk p/mips.mk
+STATIC_ASM_PLUGINS=p/x86olly.mk p/mips.mk p/java.mk
 STATIC_BIN_PLUGINS=

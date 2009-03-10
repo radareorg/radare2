@@ -35,7 +35,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 	return aop->inst_len;
 }
 
-static struct r_asm_handle_t r_asm_plugin_ppc = {
+struct r_asm_handle_t r_asm_plugin_ppc = {
 	.name = "asm_ppc",
 	.desc = "PPC disassembly plugin",
 	.init = NULL,

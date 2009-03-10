@@ -169,17 +169,21 @@ int r_lib_opendir(struct r_lib_t *lib, const char *path)
 {
 	char file[1024];
 	struct dirent *de;
-	DIR *dh = opendir(path);
+	DIR *dh;
+
+	if (path == NULL)
+		return R_FALSE;
+	dh = opendir(path);
 	if (dh == NULL) {
 		IFDBG fprintf(stderr, "Cannot open directory '%s'\n", path);
-		return -1;
+		return R_FALSE;
 	}
 	while((de = (struct dirent *)readdir(dh))) {
 		snprintf(file, 1023, "%s/%s", path, de->d_name);
 		r_lib_open(lib, file);
 	}
 	closedir(dh);
-	return 0;
+	return R_TRUE;
 }
 
 int r_lib_list(struct r_lib_t *lib)

@@ -35,7 +35,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 	return aop->inst_len;
 }
 
-static struct r_asm_handle_t r_asm_plugin_m68k = {
+struct r_asm_handle_t r_asm_plugin_m68k = {
 	.name = "asm_m68k",
 	.desc = "M68K disassembly plugin",
 	.init = NULL,
@@ -44,7 +44,9 @@ static struct r_asm_handle_t r_asm_plugin_m68k = {
 	.assemble = NULL
 };
 
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_m68k
 };
+#endif

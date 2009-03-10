@@ -4,7 +4,7 @@ PFX=${DESTDIR}${PREFIX}
 #PREFIX=${PFX}
 
 # Libraries
-LIBLIST=io util lib meta lang flags bin macro hash line cons line print config syscall range socket cmd asm anal parse search diff debug reg core var
+LIBLIST=io util lib meta lang flags bin macro hash line cons line print config syscall range socket cmd asm anal parse search diff debug reg core var sign
 
 # Under development
 #LIBLIST+=print
@@ -39,6 +39,8 @@ install:
 	@mkdir -p ${PREFIX}/lib/pkgconfig
 	@cat libr.pc.acr | sed -e 's,@PREFIX@,${PREFIX},g' > libr.pc
 	cp libr.pc ${PREFIX}/lib/pkgconfig
+	@mkdir -p ${PREFIX}/share/vala/vapi
+	cp vapi/*.vapi vapi/*.deps ${PREFIX}/share/vala/vapi
 	@mkdir -p ${PREFIX}/lib/radare2
 	@for a in `find */p -perm /u+x -type f`; \
 	do echo " $$a"; cp $$a ${PREFIX}/lib/radare2 ; done
@@ -59,6 +61,7 @@ uninstall:
 	echo ${PREFIX}/lib/$$a ; rm -f ${PREFIX}/lib/$$a ; done
 	### includes
 	-(cd include && for a in * ; do rm -f ${PREFIX}/libr/$$a ; done)
+	cd vapi/ ; for a in *.vapi *.deps ; do rm ${PREFIX}/share/vala/vapi/$$a ; done
 	### programs
 	-@for a in `find */t -perm /u+x -type f | grep 2`; do \
 	a=`echo $$a|awk -F / '{ print $$NF; }'`; \

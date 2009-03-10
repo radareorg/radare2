@@ -27,6 +27,7 @@ int r_asm_init(struct r_asm_t *a)
 {
 	int i;
 	a->user = NULL;
+	a->cur = NULL;
 	INIT_LIST_HEAD(&a->asms);
 	r_asm_set_bits(a, 32);
 	r_asm_set_big_endian(a, 0);

@@ -1,0 +1,34 @@
+There is a way to implement dynamic language plugins for radare...
+
+A stub generator will be appreciated to create all the necessary
+boilerplate to write a single .c file calling the perl/python/ruby
+interface from each method hook.
+
+We should define a common and simple way to design those inter-
+language communications.
+
+With this interface properly defined we can get some more fun and 
+write the language bindings using the same lang-C api.
+
+A simple perl script can be used to parse function signatures and
+enums to fill the structures in the proper way (SWIG replacement)
+
+help is welcome!
+
+------------------8<------------------------------
+
+some random food:
+
+#include <r_lang_lib.h>
+
+static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len)
+{
+	LANG_PERL_SET_U8P("$buf", buf);
+	LANG_PERL_SET_U64("$len", len);
+	LANG_PERL(
+	"print \"Hello World $len\";
+	$ret = 1;")
+	return LANG_PERL_GET($ret);
+}
+
+PLUGIN_ASM("asm_ppc", "PPC disassembly plugin", NULL, NULL, &disasm, NULL);

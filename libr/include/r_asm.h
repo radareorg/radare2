@@ -61,4 +61,11 @@ int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf);
 extern struct r_asm_handle_t r_asm_plugin_bf;
 extern struct r_asm_handle_t r_asm_plugin_java;
 extern struct r_asm_handle_t r_asm_plugin_mips;
+extern struct r_asm_handle_t r_asm_plugin_x86;
+extern struct r_asm_handle_t r_asm_plugin_arm;
+extern struct r_asm_handle_t r_asm_plugin_csr;
+extern struct r_asm_handle_t r_asm_plugin_m68k;
+extern struct r_asm_handle_t r_asm_plugin_x86_bea;
+extern struct r_asm_handle_t r_asm_plugin_x86_olly;
+
 #endif
