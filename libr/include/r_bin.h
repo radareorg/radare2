@@ -127,5 +127,8 @@ u64 r_bin_get_section_rva(struct r_bin_t *bin, char *name);
 u64 r_bin_get_section_size(struct r_bin_t *bin, char *name);
 
 /* plugin pointers */
+extern struct r_bin_handle_t r_bin_plugin_elf;
+extern struct r_bin_handle_t r_bin_plugin_elf64;
+extern struct r_bin_handle_t r_bin_plugin_pe;
 
 #endif

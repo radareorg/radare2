@@ -1,4 +1,4 @@
-CFLAGS=-I../../include -Wall -fPIC -shared -Wl,-R..
+CFLAGS=-I../../include -I../format/ -Wall -fPIC -shared -Wl,-R..
 # XXX
 CFLAGS+=-DLIL_ENDIAN=1 -D__UNIX__ -g
 

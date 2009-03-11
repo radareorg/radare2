@@ -40,7 +40,7 @@ static int rabin_show_help()
 			" -S          Sections\n"
 			" -I          Binary info\n"
 			" -o [str]    Operation action (str=help for help)\n"
-			" -p [plugin] Force plugin\n"
+			" -f [format] Override file format autodetection\n"
 			" -r          Radare output\n"
 			" -h          This help\n"
 			"Available plugins:\n");
@@ -328,7 +328,7 @@ int main(int argc, char **argv)
 {
 	int c;
 	int action = ACTION_UNK, rw = 0;
-	const char *file = NULL, *plugin = NULL;
+	const char *file = NULL, *format = NULL;
 	const char *op = NULL;
 
 	r_bin_init(&bin);
@@ -337,7 +337,7 @@ int main(int argc, char **argv)
 		&__lib_bin_cb, &__lib_bin_dt, NULL);
 	r_lib_opendir(&l, getenv("LIBR_PLUGINS"));
 
-	while ((c = getopt(argc, argv, "isSIeo:p:rvh")) != -1)
+	while ((c = getopt(argc, argv, "isSIeo:f:rvh")) != -1)
 	{
 		switch( c ) {
 		case 'i':
@@ -360,8 +360,8 @@ int main(int argc, char **argv)
 			action |= ACTION_OPERATION;
 			rw = 1;
 			break;
-		case 'p':
-			plugin = optarg;
+		case 'f':
+			format = optarg;
 			break;
 		case 'r':
 			rad = 1;
@@ -381,11 +381,14 @@ int main(int argc, char **argv)
 		return rabin_show_help();
 
 	r_bin_set_file(&bin, file, rw);
-	if (plugin) {
-		if (!r_bin_set(&bin, plugin)) {
-			fprintf(stderr, "Unknown plugin\n");
+	if (format) {
+		char *str = malloc(strlen(format)+10);
+		sprintf(str, "bin_%s", format);
+		if (!r_bin_set(&bin, str)) {
+			fprintf(stderr, "Unknown format\n");
 			return 1;
 		}
+		free (str);
 	} else {
 		if (!r_bin_autoset(&bin)) {
 			fprintf(stderr, "Not supported format\n");

@@ -1,4 +1,4 @@
-OBJ_ELF=./bin_elf.o ./elf/elf.o
+OBJ_ELF=bin_elf.o ../format/elf/elf.o
 
 STATIC_OBJ+=${OBJ_ELF}
 TARGET_ELF=bin_elf.so

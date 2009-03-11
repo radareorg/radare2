@@ -1,4 +1,4 @@
-OBJ_PE=./bin_pe.o ./pe/pe.o
+OBJ_PE=bin_pe.o ../format/pe/pe.o
 
 STATIC_OBJ+=${OBJ_PE}
 TARGET_PE=bin_pe.so
