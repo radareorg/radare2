@@ -46,13 +46,13 @@ int r_core_visual_cmd(struct r_core_t *core, int ch)
 		curset ^= 1;
 		if (curset) flags|=R_PRINT_FLAGS_CURSOR; // XXX dupped flag imho
 		else flags &= !(flags&R_PRINT_FLAGS_CURSOR);
-		r_print_set_flags(flags);
+		r_print_set_flags(&core->print, flags);
 		break;
 	case 'C':
 		color ^= 1;
 		if (color) flags|=R_PRINT_FLAGS_COLOR;
 		else flags &= !(flags&R_PRINT_FLAGS_COLOR);
-		r_print_set_flags(flags);
+		r_print_set_flags(&core->print, flags);
 		break;
 	/* select */
 	case 'H':
@@ -187,7 +187,7 @@ int r_core_visual(struct r_core_t *core, const char *input)
 		if (cmdprompt && cmdprompt[0])
 			r_core_cmd(core, cmdprompt, 0);
 		r_cons_clear00();
-		r_print_set_cursor(curset, ocursor, cursor);
+		r_print_set_cursor(&core->print, curset, ocursor, cursor);
 		r_core_visual_prompt(core);
 		r_core_cmd(core, printfmt[printidx%NPF], 0);
 		r_cons_flush();

@@ -318,19 +318,19 @@ static int cmd_print(void *data, const char *input)
 		}
 		break;
 	case 's':
-		r_print_string(core->seek, core->block, len, 1, 78, 1);
+		r_print_string(&core->print, core->seek, core->block, len); //, 78, 1);
 		break;
 	case 'c':
-		r_print_code(core->seek, core->block, len, 1, 78, 1);
+		r_print_code(&core->print, core->seek, core->block, len); //, 78, 1);
 		break;
 	case 'r':
-		r_print_raw(core->block, len);
+		r_print_raw(&core->print, core->block, len);
 		break;
 	case 'x':
-        	r_print_hexdump(core->seek, core->block, len, 1, 78, !(input[1]=='-'));
+        	r_print_hexdump(&core->print, core->seek, core->block, len, 1); //, 78, !(input[1]=='-'));
 		break;
 	case '8':
-		r_print_bytes(core->block, len, "%02x");
+		r_print_bytes(&core->print, core->block, len, "%02x");
 		break;
 	default:
 		fprintf(stderr, "Usage: p[8] [len]\n"

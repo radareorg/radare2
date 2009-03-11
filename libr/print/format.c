@@ -1,19 +1,46 @@
 /* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
 
 #include "r_cons.h"
+#include "r_util.h"
 #include "r_print.h"
 
-void r_print_format(const u8* buf, int len, const char *fmt)
+static void print_mem_help()
+{
+	printf(
+	"Usage: pm [times][format] [arg0 arg1]\n"
+	"Example: pm 10xiz pointer length string\n"
+	"Example: pm {array_size}b @ array_base\n"
+	" e - temporally swap endian\n"
+	//" D - double (8 bytes)\n"
+	" f - float value\n"
+	" b - one byte \n"
+	" B - show 10 first bytes of buffer\n"
+	" d - %%d integer value (4 bytes)\n"
+	" w - word (16 bit hexa)\n"
+	" q - quadword (8 bytes)\n"
+	" p - pointer reference\n"
+	" x - 0x%%08x hexadecimal value\n"
+	" X - 0x%%08x hexadecimal value and flag (fd @ addr)\n"
+	" z - \\0 terminated string\n"
+	" Z - \\0 terminated wide string\n"
+	" s - pointer to string\n"
+	" t - unix timestamp string\n"
+	" * - next char is pointer\n"
+	" . - skip 1 byte\n");
+}
+
+void r_print_format(struct r_print_t *p, u64 seek, const u8* buf, int len, const char *fmt)
 {
 	/* TODO: needs refactoring */
-#if 0
 	unsigned char buffer[256];
+	int endian = 0;
 	int i,j,idx;
 	int times, otimes;
 	char tmp, last;
 	char *args, *bracket;
 	int nargs;
 	const char *arg = fmt;
+	u64 addr = 0;
 	i = j = 0;
 
 	while(*arg && *arg==' ') arg = arg +1;
@@ -25,12 +52,12 @@ void r_print_format(const u8* buf, int len, const char *fmt)
 	if (bracket) {
 		char *end = strchr(arg,'}');
 		if (end == NULL) {
-			eprintf("No end bracket. Try pm {ecx}b @ esi\n");
+			fprintf(stderr, "No end bracket. Try pm {ecx}b @ esi\n");
 			return;
 		}
 		*end='\0';
-		times = get_math(bracket+1);
-		arg = end+1;
+		times = r_num_math(NULL, bracket+1);
+		arg = end + 1;
 	}
 
 	if (arg[0]=='\0') {
@@ -41,20 +68,19 @@ void r_print_format(const u8* buf, int len, const char *fmt)
 	args = strchr(arg, ' ');
 	if (args) {
 		args = strdup(args+1);
-		nargs = set0word(args);
+		nargs = r_str_word_set0(args);
 		if (nargs == 0)
-			efree((void **)&args);
+			free((void **)&args);
 	}
 
 	/* go format */
 	i = 0;
 	if (times==0) otimes=times=1;
-	for(;times;times--) {// repeat N times
+	for(;times;times--) { // repeat N times
 		const char * orig = arg;
 		if (otimes>1)
-			cons_printf("0x%08llx [%d] {\n", config.seek+i, otimes-times);
-		config.interrupted = 0;
-		for(idx=0;!config.interrupted && idx<len;idx++, arg=arg+1) {
+			r_cons_printf("0x%08llx [%d] {\n", seek+i, otimes-times);
+		for(idx=0;idx<len;idx++, arg=arg+1) {
 			addr = 0LL;
 			if (endian)
 				 addr = (*(buf+i))<<24   | (*(buf+i+1))<<16 | *(buf+i+2)<<8 | *(buf+i+3);
@@ -91,7 +117,7 @@ void r_print_format(const u8* buf, int len, const char *fmt)
 				continue;
 			}
 			if (idx<nargs)
-				cons_printf("%10s : ", get0word(args, idx));
+				r_cons_printf("%10s : ", r_str_word_get0(args, idx));
 			/* cmt chars */
 			switch(tmp) {
 	#if 0
@@ -99,6 +125,7 @@ void r_print_format(const u8* buf, int len, const char *fmt)
 				j ^= 1;
 				continue;
 	#endif
+#if 0
 			case 't':
 				/* unix timestamp */
 				D cons_printf("0x%08x = ", config.seek+i);
@@ -113,101 +140,111 @@ void r_print_format(const u8* buf, int len, const char *fmt)
 				radare_seek(old, SEEK_SET);
 				}
 				break;
+#endif
 			case 'e': {
 				double doub;
 				memcpy(&doub, buf+i, sizeof(double));
-				D cons_printf("%e = ", doub);
-				cons_printf("(double)");
+				r_cons_printf("%e = ", doub);
+				r_cons_printf("(double)");
 				i+=8;
 				}
 				break;
 			case 'q':
-				D cons_printf("0x%08x = ", config.seek+i);
-				cons_printf("(qword)");
+				r_cons_printf("0x%08x = ", seek+i);
+				r_cons_printf("(qword)");
 				i+=8;
 				break;
 			case 'b':
-				D cons_printf("0x%08x = ", config.seek+i);
-				cons_printf("%d ; 0x%02x ; '%c' ", 
-					buf[i], buf[i], is_printable(buf[i])?buf[i]:0);
+				r_cons_printf("0x%08x = ", seek+i);
+				r_cons_printf("%d ; 0x%02x ; '%c' ", 
+					buf[i], buf[i], IS_PRINTABLE(buf[i])?buf[i]:0);
 				i++;
 				break;
 			case 'B':
 				memset(buffer, '\0', 255);
-				radare_read_at((u64)addr, buffer, 248);
-				D cons_printf("0x%08x = ", config.seek+i);
-				for(j=0;j<10;j++) cons_printf("%02x ", buf[j]);
-				cons_strcat(" ... (");
+				if (p->read_at)
+					p->read_at((u64)addr, buffer, 248, p->user);
+				else {
+					printf("(cannot read memory)\n");
+					break;
+				}
+				r_cons_printf("0x%08x = ", seek+i);
+				for(j=0;j<10;j++) r_cons_printf("%02x ", buf[j]);
+				r_cons_strcat(" ... (");
 				for(j=0;j<10;j++)
-					if (is_printable(buf[j]))
-						cons_printf("%c", buf[j]);
-				cons_strcat(")");
+					if (IS_PRINTABLE(buf[j]))
+						r_cons_printf("%c", buf[j]);
+				r_cons_strcat(")");
 				i+=4;
 				break;
 			case 'd':
-				D cons_printf("0x%08x = ", config.seek+i);
-				cons_printf("%d", addr);
+				r_cons_printf("0x%08x = ", seek+i);
+				r_cons_printf("%d", addr);
 				i+=4;
 				break;
 			case 'x':
-				D cons_printf("0x%08x = ", config.seek+i);
-				cons_printf("0x%08x ", addr);
+				r_cons_printf("0x%08x = ", seek+i);
+				r_cons_printf("0x%08x ", addr);
 				i+=4;
 				break;
 			case 'X': {
 				u32 addr32 = (u32)addr;
-				char buf[128];
-				D cons_printf("0x%08x = ", config.seek+i);
-				cons_printf("0x%08llx ", addr32);
-				if (string_flag_offset(buf, (u64)addr32, -1))
-					cons_printf("; %s", buf);
+				//char buf[128];
+				r_cons_printf("0x%08x = ", seek+i);
+				r_cons_printf("0x%08llx ", addr32);
+				//if (string_flag_offset(buf, (u64)addr32, -1))
+				//	r_cons_printf("; %s", buf);
 				i+=4;
 				} break;
 			case 'w':
 			case '1': // word (16 bits)
-				D cons_printf("0x%08x = ", config.seek+i);
+				r_cons_printf("0x%08x = ", seek+i);
 				if (endian)
 					 addr = (*(buf+i))<<8  | (*(buf+i+1));
 				else     addr = (*(buf+i+1))<<8 | (*(buf+i));
-				cons_printf("0x%04x ", addr);
+				r_cons_printf("0x%04x ", addr);
 				break;
 			case 'z': // zero terminated string
-				D cons_printf("0x%08x = ", config.seek+i);
+				r_cons_printf("0x%08x = ", seek+i);
 				for(;buf[i]&&i<len;i++) {
-					if (is_printable(buf[i]))
-						cons_printf("%c", buf[i]);
-					else cons_strcat(".");
+					if (IS_PRINTABLE(buf[i]))
+						r_cons_printf("%c", buf[i]);
+					else r_cons_strcat(".");
 				}
 				break;
 			case 'Z': // zero terminated wide string
-				D cons_printf("0x%08x = ", config.seek+i);
+				r_cons_printf("0x%08x = ", seek+i);
 				for(;buf[i]&&i<len;i+=2) {
-					if (is_printable(buf[i]))
-						cons_printf("%c", buf[i]);
-					else cons_strcat(".");
+					if (IS_PRINTABLE(buf[i]))
+						r_cons_printf("%c", buf[i]);
+					else r_cons_strcat(".");
 				}
-				cons_strcat(" ");
+				r_cons_strcat(" ");
 				break;
 			case 's':
-				D cons_printf("0x%08x = ", config.seek+i);
+				r_cons_printf("0x%08x = ", seek+i);
 				memset(buffer, '\0', 255);
-				radare_read_at((u64)addr, buffer, 248);
-				D cons_printf("0x%08x -> 0x%08x ", config.seek+i, addr);
-				cons_printf("%s ", buffer);
+				if (p->read_at)
+					p->read_at((u64)addr, buffer, 248, p->user);
+				else {
+					printf("(cannot read memory)\n");
+					break;
+				}
+				r_cons_printf("0x%08x -> 0x%08x ", seek+i, addr);
+				r_cons_printf("%s ", buffer);
 				i+=4;
 				break;
 			default:
 				/* ignore unknown chars */
 				continue;
 			}
-		D cons_newline();
+		r_cons_newline();
 		last = tmp;
 		}
 		if (otimes>1)
-			cons_printf("}\n");
+			r_cons_printf("}\n");
 		arg = orig;
-		idx=0;
+		idx = 0;
 	}
-	efree((void *)&args);
-#endif
+//	free((void *)&args);
 }

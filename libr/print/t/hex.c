@@ -3,10 +3,12 @@
 
 int main()
 {
+	struct r_print_t *p;
 	u8 *buf = (u8*)main;
 
 	r_cons_init();
-	r_print_hexdump((u64)(u32)(main), buf, 128, 1, 78, 1);
+	p = r_print_new();
+	r_print_hexdump(p, (u64)(u32)(main), buf, 128, 1);
 	r_cons_flush();
 
 	return 0;

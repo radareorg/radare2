@@ -125,6 +125,7 @@ int r_core_init(struct r_core_t *core)
 	core->yank_off = 0LL;
 	core->num.callback = &num_callback;
 	core->num.userptr = core;
+	r_print_init(&core->print);
 	r_lang_init(&core->lang);
 	r_lang_set_user_ptr(&core->lang, core);
 	r_anal_init(&core->anal);

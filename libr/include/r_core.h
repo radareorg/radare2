@@ -53,6 +53,7 @@ struct r_core_t {
 	struct r_anal_t anal;
 	struct r_asm_t assembler;
 	struct r_parse_t parser;
+	struct r_print_t print;
 	struct r_bin_t bin;
 	struct r_meta_t meta;
 	struct r_lang_t lang;

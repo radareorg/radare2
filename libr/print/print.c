@@ -4,52 +4,78 @@
 #include "r_print.h"
 #include "r_util.h"
 
-static int flags =
-	R_PRINT_FLAGS_COLOR |
-	R_PRINT_FLAGS_ADDRMOD;
-
-void r_print_set_flags(int _flags)
+int r_print_init(struct r_print_t *p)
 {
-	flags = _flags;
+	if (p == NULL)
+		return R_FALSE;
+	/* read callback */
+	p->user = NULL;
+	p->read_at = NULL;
+
+	/* setup prefs */
+	p->width = 78;
+	p->cur_enabled = R_FALSE;
+	p->cur = p->ocur = -1;
+	p->addrmod = 4;
+	p->flags = \
+		R_PRINT_FLAGS_COLOR |
+		R_PRINT_FLAGS_HEADER |
+		R_PRINT_FLAGS_ADDRMOD;
+	return R_TRUE;
+}
+
+struct r_print_t *r_print_new()
+{
+	struct r_print_t *p = MALLOC_STRUCT(struct r_print_t);
+	r_print_init(p);
+	return p;
+}
+
+void r_print_set_flags(struct r_print_t *p, int _flags)
+{
+	p->flags = _flags;
+}
+
+struct r_print_t *r_print_free(struct r_print_t *p)
+{
+	free(p);
+	return NULL;
 }
 
 // XXX this is not thread safe...store into r_print_t ?
-static int r_print_cur_enabled = 0;
-static int r_print_cur = -1;
-static int r_print_ocur = -1;
 
-void r_print_set_cursor(int enable, int ocursor, int cursor)
+void r_print_set_cursor(struct r_print_t *p, int enable, int ocursor, int cursor)
 {
-	r_print_cur_enabled = enable;
+	p->cur_enabled = enable;
 	//if (ocursor<0) ocursor=0;
-	r_print_ocur = ocursor;
+	p->ocur = ocursor;
 	if (cursor<0) cursor=0;
-	r_print_cur = cursor;
+	p->cur = cursor;
 }
 
-void r_print_cursor(int cur, int set)
+void r_print_cursor(struct r_print_t *p, int cur, int set)
 {
-	if (!r_print_cur_enabled)
+	if (!p->cur_enabled)
 		return;
-	if (r_print_ocur == -1) {
-		if (cur==r_print_cur)
-			r_cons_invert(set, flags&R_PRINT_FLAGS_COLOR);
+	if (p->ocur == -1) {
+		if (cur==p->cur)
+			r_cons_invert(set, p->flags&R_PRINT_FLAGS_COLOR);
 	} else {
-		int from = r_print_ocur;
-		int to = r_print_cur;
+		int from = p->ocur;
+		int to = p->cur;
 		r_num_minmax_swap_i(&from, &to);
 		if (cur>=from&&cur<=to)
-			r_cons_invert(set, flags&R_PRINT_FLAGS_COLOR);
+			r_cons_invert(set, p->flags&R_PRINT_FLAGS_COLOR);
 	}
 }
 
-void r_print_addr(u64 addr)
+void r_print_addr(struct r_print_t *p, u64 addr)
 {
 	//config_get_i("cfg.addrmod");
-	int mod = flags & R_PRINT_FLAGS_ADDRMOD;
+	int mod = p->flags & R_PRINT_FLAGS_ADDRMOD;
 	char ch = (0==(addr%(mod?mod:1)))?',':' ';
 
-	if (flags & R_PRINT_FLAGS_COLOR) {
+	if (p->flags & R_PRINT_FLAGS_COLOR) {
 		r_cons_printf("%s0x%08llx"C_RESET"%c ",
 			r_cons_palette[PAL_ADDRESS], addr, ch);
 	} else r_cons_printf("0x%08llx%c ", addr, ch);
@@ -57,50 +83,57 @@ void r_print_addr(u64 addr)
 
 void r_print_byte(int idx, u8 ch)
 {
-//	if (flags & R_PRINT_FLAGS_CURSOR && idx == r_print_cur)
-		r_cons_printf("%c", ch);
+//	if (flags & R_PRINT_FLAGS_CURSOR && idx == p->cur)
+	r_cons_printf("%c", ch);
 //	else r_cons_printf("%c", ch);
 }
 
-void r_print_code(u64 addr, u8 *buf, int len, int step, int columns, int header)
+void r_print_code(struct r_print_t *p, u64 addr, u8 *buf, int len)
 {
 	int i, w = 0;
 	r_cons_printf("#define _BUFFER_SIZE %d\n", len);
 	r_cons_printf("unsigned char buffer[%d] = {", len);
 	for(i=0;i<len;i++) {
-		if (!(w%columns))
+		if (!(w%p->width))
 			r_cons_printf("\n  ");
-		r_print_cursor(i, 1);
+		r_print_cursor(p, i, 1);
 		r_cons_printf("0x%02x, ", buf[i]);
-		r_print_cursor(i, 0);
+		r_print_cursor(p, i, 0);
 		w+=6;
 	}
 	r_cons_printf("};\n");
 }
 
-void r_print_string(u64 addr, u8 *buf, int len, int step, int columns, int header)
+void r_print_string(struct r_print_t *p, u64 addr, u8 *buf, int len)
 {
 	int i;
 	for(i=0;i<len;i++) {
-		r_print_cursor(i, 1);
+		r_print_cursor(p, i, 1);
 		if (IS_PRINTABLE(buf[i]))
 			r_cons_printf("%c", buf[i]);
 		else r_cons_printf("\\x%02x", buf[i]);
-		r_print_cursor(i, 0);
+		r_print_cursor(p, i, 0);
 	}
 	r_cons_newline();
 }
 
 static const char hex[16] = "0123456789ABCDEF";
-void r_print_hexdump(u64 addr, u8 *buf, int len, int step, int columns, int header)
+// XXX: step is borken
+void r_print_hexdump(struct r_print_t *p, u64 addr, u8 *buf, int len, int step)
 {
 	int i,j,k,inc;
 
-	inc = 2+(int)((columns-14)/4);
+	if (p == NULL) {
+		// TODO: use defaults r_print_t (static one)
+		fprintf(stderr, "TODO: r_print_hexdump does not supports NULL as arg0\n");
+		return;
+	}
+
+	inc = 2 + (int)((p->width-14)/4);
 	if (inc%2) inc++;
 	inc = 16;
 
-	if (header) {
+	if (p->flags & R_PRINT_FLAGS_HEADER) {
 		// only for color..too many options .. brbr
 		r_cons_printf(r_cons_palette[PAL_HEADER]);
 		r_cons_strcat("   offset   ");
@@ -115,7 +148,7 @@ void r_print_hexdump(u64 addr, u8 *buf, int len, int step, int columns, int head
 	}
 
 	for(i=0; i<len; i+=inc) {
-		r_print_addr(addr+(i*step));
+		r_print_addr(p, addr+(i*step));
 
 		for(j=i;j<i+inc;j++) {
 			if (j>=len) {
@@ -123,9 +156,9 @@ void r_print_hexdump(u64 addr, u8 *buf, int len, int step, int columns, int head
 				if (j%2) r_cons_printf(" ");
 				continue;
 			}
-			r_print_cursor(j, 1);
+			r_print_cursor(p, j, 1);
 			r_cons_printf("%02x", (u8)buf[j]);
-			r_print_cursor(j, 0);
+			r_print_cursor(p, j, 0);
 			//print_color_byte_i(j, "%02x", (unsigned char)buf[j]);
 			if (j%2) r_cons_strcat(" ");
 		}
@@ -134,11 +167,11 @@ void r_print_hexdump(u64 addr, u8 *buf, int len, int step, int columns, int head
 			if (j >= len)
 				r_cons_strcat(" ");
 			else {
-				r_print_cursor(j, 1);
+				r_print_cursor(p, j, 1);
 				r_cons_printf("%c",
 				(IS_PRINTABLE(buf[j]))?
 					buf[j] : '.');
-				r_print_cursor(j, 0);
+				r_print_cursor(p, j, 0);
 			}
 		}
 		r_cons_newline();
@@ -146,7 +179,7 @@ void r_print_hexdump(u64 addr, u8 *buf, int len, int step, int columns, int head
 	}
 }
 
-void r_print_bytes(const u8* buf, int len, const char *fmt)
+void r_print_bytes(struct r_print_t *p, const u8* buf, int len, const char *fmt)
 {
 	int i;
 	for(i=0;i<len;i++)
@@ -154,7 +187,7 @@ void r_print_bytes(const u8* buf, int len, const char *fmt)
 	r_cons_newline();
 }
 
-void r_print_raw(const u8* buf, int len)
+void r_print_raw(struct r_print_t *p, const u8* buf, int len)
 {
 	r_cons_memcat((char *)buf, len);
 }
