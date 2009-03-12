@@ -2,12 +2,25 @@
 
 #include <r_core.h>
 
+void config_color_callback(void *user, void *data)
+{
+	struct r_core_t *core = (struct r_core_t *) user;
+	struct r_config_node_t *node =
+		(struct r_config_node_t *) data;
+		
+	if (node->i_value) {
+		core->print.flags|=R_PRINT_FLAGS_COLOR;
+	} else {
+		// XXX ??? sure
+		if (core->print.flags&R_PRINT_FLAGS_COLOR)
+			core->print.flags^=R_PRINT_FLAGS_COLOR;
+	}
+}
+
 int r_core_config_init(struct r_core_t *core)
 {
 	struct r_config_t *cfg = &core->config;
-	r_config_init(cfg);
-	//r_config_callback_int("");
-	
+	r_config_init(cfg, (void *)core);
 	r_config_set(cfg, "asm.arch", "x86");
 	r_config_set_i(cfg, "asm.bits", 32);
 	r_config_set(cfg, "asm.syntax", "x86");
@@ -17,6 +30,9 @@ int r_core_config_init(struct r_core_t *core)
 	r_config_set(cfg, "asm.os", "linux"); 
 	r_config_set(cfg, "cmd.prompt", ""); 
 	r_config_set(cfg, "cmd.vprompt", ""); 
+	r_config_set_cb(cfg, "scr.color",
+		(core->print.flags&R_PRINT_FLAGS_COLOR)?"true":"false",
+		&config_color_callback);
 #if 0
 	node = config_set("asm.profile", "default");
 //	node->callback = &config_asm_profile;
@@ -300,8 +316,6 @@ int r_core_config_init(struct r_core_t *core)
 		config_set_scr_pal("7f","magenta")
 
 		config_set("scr.seek", "eip");
-	node = config_set("scr.color", (config.color)?"true":"false");
-	node->callback = &config_color_callback;
 	config_set("scr.grephigh", "");
 	node = config_set("scr.tee", "");
 	node->callback = &config_teefile_callback;

@@ -39,6 +39,6 @@ int r_flag_name_filter(char *name);
 /* spaces */
 const const char *r_flag_space_get(struct r_flag_t *f, int idx);
 void r_flag_space_set(struct r_flag_t *f, const char *name);
-void flag_space_list(struct r_flag_t *f);
+void r_flag_space_list(struct r_flag_t *f);
 
 #endif

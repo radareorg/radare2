@@ -5,7 +5,7 @@ int main()
 	struct r_config_t *cfg;
 
 	/* initialize config table */
-	cfg = r_config_new();
+	cfg = r_config_new(NULL);
 	r_config_set(cfg, "foo", "bar");
 	r_config_set_i(cfg, "bar", 33);
 	r_config_lock(cfg, 1);

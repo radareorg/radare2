@@ -4,7 +4,7 @@
 #include "r_print.h"
 #include "r_util.h"
 
-int r_print_init(struct r_print_t *p)
+R_API int r_print_init(struct r_print_t *p)
 {
 	if (p == NULL)
 		return R_FALSE;
@@ -39,6 +39,11 @@ struct r_print_t *r_print_new()
 void r_print_set_flags(struct r_print_t *p, int _flags)
 {
 	p->flags = _flags;
+}
+
+void r_print_unset_flags(struct r_print_t *p, int flags)
+{
+	p->flags = p->flags & (p->flags^flags);
 }
 
 struct r_print_t *r_print_free(struct r_print_t *p)
@@ -126,9 +131,12 @@ void r_print_code(struct r_print_t *p, u64 addr, u8 *buf, int len)
 	p->printf("};\n");
 }
 
-R_API int r_print_string(struct r_print_t *p, const u8 *buf, int len, int wide, int zeroend, int urlencode)
+R_API int r_print_string(struct r_print_t *p, u64 seek, const u8 *buf, int len, int wide, int zeroend, int urlencode)
 {
 	int i;
+
+	//if (p->flags & R_PRINT_FLAGS_OFFSET)
+		// r_print_addr(p, seek);
 	p->interrupt = 0;
 	for(i=0;!p->interrupt&&i<len;i++) {
 		if (zeroend && buf[i]=='\0')
@@ -136,7 +144,7 @@ R_API int r_print_string(struct r_print_t *p, const u8 *buf, int len, int wide, 
 		r_print_cursor(p, i, 1);
 		if (urlencode) {
 			// TODO: some ascii can be bypassed here
-			p->printf("%02x", buf[i]);
+			p->printf("%%%02x", buf[i]);
 		} else {
 			if (IS_PRINTABLE(buf[i]))
 				p->printf("%c", buf[i]);
@@ -159,11 +167,17 @@ R_API void r_print_hexpairs(struct r_print_t *p, u64 addr, u8 *buf, int len)
 }
 
 // XXX: step is borken
-R_API void r_print_hexdump(struct r_print_t *p, u64 addr, u8 *buf, int len, int step)
+R_API void r_print_hexdump(struct r_print_t *p, u64 addr, u8 *buf, int len, int base, int step)
 {
 	int i,j,k,inc;
-	const char *fmt;
+	const char *fmt = "%02x";
+	const char *pre = "";
+	switch(base) {
+	case 8: fmt = "%03x"; pre = " "; break;
+	case 10: fmt = "%03d"; pre = " "; break;
+	}
 
+	// TODO: Use base to change %03o and so on
 	if (p == NULL) {
 		// TODO: use defaults r_print_t (static one)
 		fprintf(stderr, "TODO: r_print_hexdump does not supports NULL as arg0\n");
@@ -180,6 +194,7 @@ R_API void r_print_hexdump(struct r_print_t *p, u64 addr, u8 *buf, int len, int 
 		p->printf("   offset   ");
 		k = 0; // TODO: ??? SURE??? config.seek & 0xF;
 		for (i=0; i<inc; i++) {
+			p->printf(pre);
 			p->printf(" %c", hex[(i+k)%16]);
 			if (i&1) p->printf(" ");
 		}
@@ -206,10 +221,9 @@ R_API void r_print_hexdump(struct r_print_t *p, u64 addr, u8 *buf, int len, int 
 			if (j >= len)
 				p->printf(" ");
 			else {
-				r_print_cursor(p, j, 1);
-				p->printf("%c", (IS_PRINTABLE(buf[j]))?
+				r_print_byte(p, "%c", j,
+					(IS_PRINTABLE(buf[j]))?
 					buf[j] : '.');
-				r_print_cursor(p, j, 0);
 			}
 		}
 		p->printf("\n");

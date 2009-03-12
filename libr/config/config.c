@@ -85,7 +85,7 @@ u64 r_config_get_i(struct r_config_t *cfg, const char *name)
 	return (u64)0LL;
 }
 
-struct r_config_node_t *r_config_set_cb(struct r_config_t *cfg, const char *name, const char *value, int (*callback)(void *data))
+struct r_config_node_t *r_config_set_cb(struct r_config_t *cfg, const char *name, const char *value, int (*callback)(void *user, void *data))
 {
 	struct r_config_node_t *node;
 	node = r_config_set(cfg, name, value);
@@ -140,7 +140,7 @@ struct r_config_node_t *r_config_set(struct r_config_t *cfg, const char *name, c
 	}
 
 	if (node && node->callback)
-		node->callback(node);
+		node->callback(cfg->user, node);
 	return node;
 }
 
@@ -188,7 +188,7 @@ struct r_config_node_t *r_config_set_i(struct r_config_t *cfg, const char *name,
 	}
 
 	if (node && node->callback)
-		node->callback(node);
+		node->callback(cfg->user, node);
 
 	return node;
 }
@@ -249,20 +249,21 @@ void r_config_lock(struct r_config_t *cfg, int l)
 	cfg->lock = l;
 }
 
-int r_config_init(struct r_config_t *cfg)
+int r_config_init(struct r_config_t *cfg, void *user)
 {
+	cfg->user = user;
 	cfg->n_nodes = 0;
 	cfg->lock = 0;
-	cfg->printf = &printf;
+	cfg->printf = printf;
 	INIT_LIST_HEAD(&(cfg->nodes));
 	return 0;
 }
 
-struct r_config_t *r_config_new()
+struct r_config_t *r_config_new(void *user)
 {
 	struct r_config_t *cfg = (struct r_config_t *)
 		malloc(sizeof(struct r_config_t));
-	r_config_init(cfg);
+	r_config_init(cfg, user);
 	return cfg;
 }
 

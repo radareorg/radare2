@@ -282,8 +282,8 @@ static int cmd_print(void *data, const char *input)
 	struct r_core_t *core = (struct r_core_t *)data;
 	int l, len = core->blocksize;
 	u32 tbs = core->blocksize;
-	int show_offset  = r_config_get(&core->config, "asm.offset");
-	int show_bytes = r_config_get(&core->config, "asm.bytes");
+	int show_offset  = r_config_get_i(&core->config, "asm.offset");
+	int show_bytes = r_config_get_i(&core->config, "asm.bytes");
 
 	if (input[0] && input[1]) {
 		l = (int) r_num_get(&core->num, input+2);
@@ -318,7 +318,16 @@ static int cmd_print(void *data, const char *input)
 		}
 		break;
 	case 's':
-		r_print_string(&core->print, core->seek, core->block, len); //, 78, 1);
+		r_print_string(&core->print, core->seek, core->block, len, 0, 1, 0); //, 78, 1);
+		break;
+	case 'S':
+		r_print_string(&core->print, core->seek, core->block, len, 1, 1, 0); //, 78, 1);
+		break;
+	case 'u':
+		r_print_string(&core->print, core->seek, core->block, len, 0, 1, 1); //, 78, 1);
+		break;
+	case 'U':
+		r_print_string(&core->print, core->seek, core->block, len, 1, 1, 1); //, 78, 1);
 		break;
 	case 'c':
 		r_print_code(&core->print, core->seek, core->block, len); //, 78, 1);
@@ -326,8 +335,11 @@ static int cmd_print(void *data, const char *input)
 	case 'r':
 		r_print_raw(&core->print, core->block, len);
 		break;
+	case 'o':
+        	r_print_hexdump(&core->print, core->seek, core->block, len, 8, 1); //, 78, !(input[1]=='-'));
+		break;
 	case 'x':
-        	r_print_hexdump(&core->print, core->seek, core->block, len, 1); //, 78, !(input[1]=='-'));
+        	r_print_hexdump(&core->print, core->seek, core->block, len, 16, 1); //, 78, !(input[1]=='-'));
 		break;
 	case '8':
 		r_print_bytes(&core->print, core->block, len, "%02x");
@@ -336,10 +348,14 @@ static int cmd_print(void *data, const char *input)
 		fprintf(stderr, "Usage: p[8] [len]\n"
 		" p8 [len]    8bit hexpair list of bytes\n"
 		" px [len]    hexdump of N bytes\n"
+		" po [len]    octal dump of N bytes\n"
 		" pc [len]    output C format\n"
 		" ps [len]    print string\n"
+		" pS [len]    print wide string\n"
 		" pd [len]    disassemble N bytes\n"
-		" pr [len]    print N raw bytes\n");
+		" pr [len]    print N raw bytes\n"
+		" pu [len]    print N url encoded bytes\n"
+		" pU [len]    print N wide url encoded bytes\n");
 		break;
 	}
 	if (tbs != core->blocksize)
@@ -387,7 +403,7 @@ static int cmd_flag(void *data, const char *input)
 	case 's':
 		if (input[1]==' ')
 			r_flag_space_set(&core->flags, input+2);
-		else r_flag_space_list(&core->flags, 0);
+		else r_flag_space_list(&core->flags);
 		break;
 	case '*':
 		r_flag_list(&core->flags, 1);
@@ -729,7 +745,7 @@ static int cmd_eval(void *data, const char *input)
 		r_config_list(&core->config, NULL, 0);
 		break;
 	case '-':
-		r_config_init(&core->config);
+		r_config_init(&core->config, core);
 		break;
 	case '*':
 		r_config_list(&core->config, NULL, 1);
