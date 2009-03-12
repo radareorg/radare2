@@ -21,6 +21,8 @@
 #define R_FALSE 0
 #define R_TRUE 1
 
+#define R_FREE(x) { free(x); x=NULL; }
+
 /* memory */
 void r_mem_copyloop (u8 *dest, const u8 *orig, int dsize, int osize);
 void r_mem_copyendian (u8 *dest, const u8 *orig, int size, int endian);

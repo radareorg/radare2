@@ -11,8 +11,13 @@ int r_print_init(struct r_print_t *p)
 	/* read callback */
 	p->user = NULL;
 	p->read_at = NULL;
+	p->printf = printf;
+	p->interrupt = 0;
+
+	strcpy(p->datefmt, "%Y:%m:%d %H:%M:%S %z");
 
 	/* setup prefs */
+	p->bigendian = 0;
 	p->width = 78;
 	p->cur_enabled = R_FALSE;
 	p->cur = p->ocur = -1;
@@ -53,13 +58,13 @@ void r_print_set_cursor(struct r_print_t *p, int enable, int ocursor, int cursor
 	p->cur = cursor;
 }
 
-void r_print_cursor(struct r_print_t *p, int cur, int set)
+R_API void r_print_cursor(struct r_print_t *p, int cur, int set)
 {
 	if (!p->cur_enabled)
 		return;
 	if (p->ocur == -1) {
 		if (cur==p->cur)
-			r_cons_invert(set, p->flags&R_PRINT_FLAGS_COLOR);
+			r_cons_invert(set, p->flags & R_PRINT_FLAGS_COLOR);
 	} else {
 		int from = p->ocur;
 		int to = p->cur;
@@ -76,52 +81,88 @@ void r_print_addr(struct r_print_t *p, u64 addr)
 	char ch = (0==(addr%(mod?mod:1)))?',':' ';
 
 	if (p->flags & R_PRINT_FLAGS_COLOR) {
-		r_cons_printf("%s0x%08llx"C_RESET"%c ",
+		p->printf("%s0x%08llx"C_RESET"%c ",
 			r_cons_palette[PAL_ADDRESS], addr, ch);
 	} else r_cons_printf("0x%08llx%c ", addr, ch);
 }
 
-void r_print_byte(int idx, u8 ch)
+R_API void r_print_byte(struct r_print_t *p, const char *fmt, int idx, u8 ch)
 {
-//	if (flags & R_PRINT_FLAGS_CURSOR && idx == p->cur)
-	r_cons_printf("%c", ch);
-//	else r_cons_printf("%c", ch);
+	r_print_cursor(p, idx, 1);
+	//if (p->flags & R_PRINT_FLAGS_CURSOR && idx == p->cur) {
+	if (p->flags & R_PRINT_FLAGS_COLOR) {
+		char *pre = NULL;
+		switch(ch) {
+		case 0x00: pre = "\e[31m"; break;
+		case 0xFF: pre = "\e[32m"; break;
+		case 0x7F: pre = "\e[33m"; break;
+		default:
+			if (IS_PRINTABLE(ch))
+				pre = "\e[35m";
+		}
+		if (pre)
+			p->printf(pre);
+		p->printf(fmt, ch);
+		if (pre)
+			p->printf("\x1b[0m");
+	} else p->printf(fmt, ch);
+	r_print_cursor(p, idx, 0);
 }
 
 void r_print_code(struct r_print_t *p, u64 addr, u8 *buf, int len)
 {
 	int i, w = 0;
-	r_cons_printf("#define _BUFFER_SIZE %d\n", len);
-	r_cons_printf("unsigned char buffer[%d] = {", len);
-	for(i=0;i<len;i++) {
+	p->printf("#define _BUFFER_SIZE %d\n", len);
+	p->printf("unsigned char buffer[%d] = {", len);
+	p->interrupt = 0;
+	for(i=0;!p->interrupt&&i<len;i++) {
 		if (!(w%p->width))
-			r_cons_printf("\n  ");
+			p->printf("\n  ");
 		r_print_cursor(p, i, 1);
-		r_cons_printf("0x%02x, ", buf[i]);
+		p->printf("0x%02x, ", buf[i]);
 		r_print_cursor(p, i, 0);
 		w+=6;
 	}
-	r_cons_printf("};\n");
+	p->printf("};\n");
 }
 
-void r_print_string(struct r_print_t *p, u64 addr, u8 *buf, int len)
+R_API int r_print_string(struct r_print_t *p, const u8 *buf, int len, int wide, int zeroend, int urlencode)
 {
 	int i;
-	for(i=0;i<len;i++) {
+	p->interrupt = 0;
+	for(i=0;!p->interrupt&&i<len;i++) {
+		if (zeroend && buf[i]=='\0')
+			break;
 		r_print_cursor(p, i, 1);
-		if (IS_PRINTABLE(buf[i]))
-			r_cons_printf("%c", buf[i]);
-		else r_cons_printf("\\x%02x", buf[i]);
+		if (urlencode) {
+			// TODO: some ascii can be bypassed here
+			p->printf("%02x", buf[i]);
+		} else {
+			if (IS_PRINTABLE(buf[i]))
+				p->printf("%c", buf[i]);
+			else p->printf("\\x%02x", buf[i]);
+		}
 		r_print_cursor(p, i, 0);
+		if (wide) i++;
 	}
-	r_cons_newline();
+	p->printf("\n");
+	return i;
 }
 
 static const char hex[16] = "0123456789ABCDEF";
+R_API void r_print_hexpairs(struct r_print_t *p, u64 addr, u8 *buf, int len)
+{
+	int i;
+	for(i=0;i<len;i++) {
+		p->printf("%02x ", buf[i]);
+	}
+}
+
 // XXX: step is borken
-void r_print_hexdump(struct r_print_t *p, u64 addr, u8 *buf, int len, int step)
+R_API void r_print_hexdump(struct r_print_t *p, u64 addr, u8 *buf, int len, int step)
 {
 	int i,j,k,inc;
+	const char *fmt;
 
 	if (p == NULL) {
 		// TODO: use defaults r_print_t (static one)
@@ -135,61 +176,77 @@ void r_print_hexdump(struct r_print_t *p, u64 addr, u8 *buf, int len, int step)
 
 	if (p->flags & R_PRINT_FLAGS_HEADER) {
 		// only for color..too many options .. brbr
-		r_cons_printf(r_cons_palette[PAL_HEADER]);
-		r_cons_strcat("   offset   ");
+		p->printf(r_cons_palette[PAL_HEADER]);
+		p->printf("   offset   ");
 		k = 0; // TODO: ??? SURE??? config.seek & 0xF;
 		for (i=0; i<inc; i++) {
-			r_cons_printf(" %c", hex[(i+k)%16]);
-			if (i&1) r_cons_strcat(" ");
+			p->printf(" %c", hex[(i+k)%16]);
+			if (i&1) p->printf(" ");
 		}
 		for (i=0; i<inc; i++)
-			r_cons_printf("%c", hex[(i+k)%16]);
-		r_cons_newline();
+			p->printf("%c", hex[(i+k)%16]);
+		p->printf("\n");
 	}
 
-	for(i=0; i<len; i+=inc) {
+	p->interrupt = 0;
+	for(i=0; !p->interrupt&& i<len; i+=inc) {
 		r_print_addr(p, addr+(i*step));
 
 		for(j=i;j<i+inc;j++) {
 			if (j>=len) {
-				r_cons_printf("  ");
-				if (j%2) r_cons_printf(" ");
+				p->printf("  ");
+				if (j%2) p->printf(" ");
 				continue;
 			}
-			r_print_cursor(p, j, 1);
-			r_cons_printf("%02x", (u8)buf[j]);
-			r_print_cursor(p, j, 0);
-			//print_color_byte_i(j, "%02x", (unsigned char)buf[j]);
-			if (j%2) r_cons_strcat(" ");
+			r_print_byte(p, fmt, j, buf[j]);
+			if (j%2) p->printf(" ");
 		}
 
 		for(j=i; j<i+inc; j++) {
 			if (j >= len)
-				r_cons_strcat(" ");
+				p->printf(" ");
 			else {
 				r_print_cursor(p, j, 1);
-				r_cons_printf("%c",
-				(IS_PRINTABLE(buf[j]))?
+				p->printf("%c", (IS_PRINTABLE(buf[j]))?
 					buf[j] : '.');
 				r_print_cursor(p, j, 0);
 			}
 		}
-		r_cons_newline();
+		p->printf("\n");
 		//addr+=inc;
 	}
 }
 
-void r_print_bytes(struct r_print_t *p, const u8* buf, int len, const char *fmt)
+R_API void r_print_bytes(struct r_print_t *p, const u8* buf, int len, const char *fmt)
 {
 	int i;
 	for(i=0;i<len;i++)
-		r_cons_printf(fmt, buf[i]);
-	r_cons_newline();
+		p->printf(fmt, buf[i]);
+	p->printf("\n");
 }
 
-void r_print_raw(struct r_print_t *p, const u8* buf, int len)
+R_API void r_print_raw(struct r_print_t *p, const u8* buf, int len)
 {
+	// TODO independize from cons
 	r_cons_memcat((char *)buf, len);
+}
+
+
+R_API void r_print_c(struct r_print_t *p, const char *str, int len)
+{
+	int i,j;
+	int inc= p->width/6;
+	p->printf("#define _BUFFER_SIZE %d\n"
+		"unsigned char buffer[_BUFFER_SIZE] = {\n", len);
+	p->interrupt = 0;
+	for(j = i = 0; !p->interrupt && i < len;) {
+		r_print_byte(p, "0x%02x", i, str[i]);
+		
+		if (++i<len) p->printf(", ");
+		if (!(i%inc))
+			p->printf("\n");
+	}
+	p->printf(" };\n");
 }
 
 

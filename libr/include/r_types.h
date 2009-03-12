@@ -8,6 +8,12 @@
 #define IFDBG if (0)
 #endif
 
+#if R_INLINE
+#define R_API inline
+#else
+#define R_API
+#endif
+
 /* basic types */
 
 #define u64 unsigned long long

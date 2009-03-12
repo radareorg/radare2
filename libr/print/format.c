@@ -29,18 +29,20 @@ static void print_mem_help()
 	" . - skip 1 byte\n");
 }
 
+/* TODO: needs refactoring */
 void r_print_format(struct r_print_t *p, u64 seek, const u8* buf, int len, const char *fmt)
 {
-	/* TODO: needs refactoring */
 	unsigned char buffer[256];
 	int endian = 0;
 	int i,j,idx;
 	int times, otimes;
 	char tmp, last;
 	char *args, *bracket;
-	int nargs;
+	int nargs = 0;
 	const char *arg = fmt;
+	const char *argend = arg+strlen(fmt);
 	u64 addr = 0;
+	char namefmt[8];
 	i = j = 0;
 
 	while(*arg && *arg==' ') arg = arg +1;
@@ -67,10 +69,18 @@ void r_print_format(struct r_print_t *p, u64 seek, const u8* buf, int len, const
 	/* get args */
 	args = strchr(arg, ' ');
 	if (args) {
+		int l, maxl = 0;
+		argend = args;
 		args = strdup(args+1);
-		nargs = r_str_word_set0(args);
+		nargs = r_str_word_set0(args+1);
 		if (nargs == 0)
-			free((void **)&args);
+			R_FREE(args);
+		for(i=0;i<nargs;i++) {
+			int l = strlen(r_str_word_get0(args+1, i));
+			if (l>maxl) maxl = l;
+		}
+		l++;
+		sprintf(namefmt, "%%%ds : ", maxl);
 	}
 
 	/* go format */
@@ -79,8 +89,8 @@ void r_print_format(struct r_print_t *p, u64 seek, const u8* buf, int len, const
 	for(;times;times--) { // repeat N times
 		const char * orig = arg;
 		if (otimes>1)
-			r_cons_printf("0x%08llx [%d] {\n", seek+i, otimes-times);
-		for(idx=0;idx<len;idx++, arg=arg+1) {
+			p->printf("0x%08llx [%d] {\n", seek+i, otimes-times);
+		for(idx=0;arg<argend && idx<len;idx++, arg=arg+1) {
 			addr = 0LL;
 			if (endian)
 				 addr = (*(buf+i))<<24   | (*(buf+i+1))<<16 | *(buf+i+2)<<8 | *(buf+i+3);
@@ -92,10 +102,6 @@ void r_print_format(struct r_print_t *p, u64 seek, const u8* buf, int len, const
 				break;
 			/* skip chars */
 			switch(tmp) {
-			case ' ':
-//config.interrupted =1;
-				//i = len; // exit
-				continue;
 			case '*':
 				if (i<=0) break;
 				tmp = last;
@@ -116,8 +122,9 @@ void r_print_format(struct r_print_t *p, u64 seek, const u8* buf, int len, const
 				i=len; // exit
 				continue;
 			}
-			if (idx<nargs)
-				r_cons_printf("%10s : ", r_str_word_get0(args, idx));
+			if (idx<nargs) {
+				p->printf(namefmt, r_str_word_get0(args, idx));
+			}
 			/* cmt chars */
 			switch(tmp) {
 	#if 0
@@ -144,19 +151,19 @@ void r_print_format(struct r_print_t *p, u64 seek, const u8* buf, int len, const
 			case 'e': {
 				double doub;
 				memcpy(&doub, buf+i, sizeof(double));
-				r_cons_printf("%e = ", doub);
-				r_cons_printf("(double)");
+				p->printf("%e = ", doub);
+				p->printf("(double)");
 				i+=8;
 				}
 				break;
 			case 'q':
-				r_cons_printf("0x%08x = ", seek+i);
-				r_cons_printf("(qword)");
+				p->printf("0x%08x = ", seek+i);
+				p->printf("(qword)");
 				i+=8;
 				break;
 			case 'b':
-				r_cons_printf("0x%08x = ", seek+i);
-				r_cons_printf("%d ; 0x%02x ; '%c' ", 
+				p->printf("0x%08x = ", seek+i);
+				p->printf("%d ; 0x%02x ; '%c' ", 
 					buf[i], buf[i], IS_PRINTABLE(buf[i])?buf[i]:0);
 				i++;
 				break;
@@ -168,61 +175,61 @@ void r_print_format(struct r_print_t *p, u64 seek, const u8* buf, int len, const
 					printf("(cannot read memory)\n");
 					break;
 				}
-				r_cons_printf("0x%08x = ", seek+i);
-				for(j=0;j<10;j++) r_cons_printf("%02x ", buf[j]);
-				r_cons_strcat(" ... (");
+				p->printf("0x%08x = ", seek+i);
+				for(j=0;j<10;j++) p->printf("%02x ", buf[j]);
+				p->printf(" ... (");
 				for(j=0;j<10;j++)
 					if (IS_PRINTABLE(buf[j]))
-						r_cons_printf("%c", buf[j]);
-				r_cons_strcat(")");
+						p->printf("%c", buf[j]);
+				p->printf(")");
 				i+=4;
 				break;
 			case 'd':
-				r_cons_printf("0x%08x = ", seek+i);
-				r_cons_printf("%d", addr);
+				p->printf("0x%08x = ", seek+i);
+				p->printf("%d", addr);
 				i+=4;
 				break;
 			case 'x':
-				r_cons_printf("0x%08x = ", seek+i);
-				r_cons_printf("0x%08x ", addr);
+				p->printf("0x%08x = ", seek+i);
+				p->printf("0x%08x ", addr);
 				i+=4;
 				break;
 			case 'X': {
 				u32 addr32 = (u32)addr;
 				//char buf[128];
-				r_cons_printf("0x%08x = ", seek+i);
-				r_cons_printf("0x%08llx ", addr32);
+				p->printf("0x%08x = ", seek+i);
+				p->printf("0x%08llx ", addr32);
 				//if (string_flag_offset(buf, (u64)addr32, -1))
-				//	r_cons_printf("; %s", buf);
+				//	p->printf("; %s", buf);
 				i+=4;
 				} break;
 			case 'w':
 			case '1': // word (16 bits)
-				r_cons_printf("0x%08x = ", seek+i);
+				p->printf("0x%08x = ", seek+i);
 				if (endian)
 					 addr = (*(buf+i))<<8  | (*(buf+i+1));
 				else     addr = (*(buf+i+1))<<8 | (*(buf+i));
-				r_cons_printf("0x%04x ", addr);
+				p->printf("0x%04x ", addr);
 				break;
 			case 'z': // zero terminated string
-				r_cons_printf("0x%08x = ", seek+i);
+				p->printf("0x%08x = ", seek+i);
 				for(;buf[i]&&i<len;i++) {
 					if (IS_PRINTABLE(buf[i]))
-						r_cons_printf("%c", buf[i]);
-					else r_cons_strcat(".");
+						p->printf("%c", buf[i]);
+					else p->printf(".");
 				}
 				break;
 			case 'Z': // zero terminated wide string
-				r_cons_printf("0x%08x = ", seek+i);
+				p->printf("0x%08x = ", seek+i);
 				for(;buf[i]&&i<len;i+=2) {
 					if (IS_PRINTABLE(buf[i]))
-						r_cons_printf("%c", buf[i]);
-					else r_cons_strcat(".");
+						p->printf("%c", buf[i]);
+					else p->printf(".");
 				}
-				r_cons_strcat(" ");
+				p->printf(" ");
 				break;
 			case 's':
-				r_cons_printf("0x%08x = ", seek+i);
+				p->printf("0x%08x = ", seek+i);
 				memset(buffer, '\0', 255);
 				if (p->read_at)
 					p->read_at((u64)addr, buffer, 248, p->user);
@@ -230,19 +237,19 @@ void r_print_format(struct r_print_t *p, u64 seek, const u8* buf, int len, const
 					printf("(cannot read memory)\n");
 					break;
 				}
-				r_cons_printf("0x%08x -> 0x%08x ", seek+i, addr);
-				r_cons_printf("%s ", buffer);
+				p->printf("0x%08x -> 0x%08x ", seek+i, addr);
+				p->printf("%s ", buffer);
 				i+=4;
 				break;
 			default:
 				/* ignore unknown chars */
-				continue;
+				break;
 			}
-		r_cons_newline();
+		p->printf("\n");
 		last = tmp;
 		}
 		if (otimes>1)
-			r_cons_printf("}\n");
+			p->printf("}\n");
 		arg = orig;
 		idx = 0;
 	}
