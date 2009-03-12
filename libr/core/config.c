@@ -102,6 +102,7 @@ int r_core_config_init(struct r_core_t *core)
 	config_set("cmd.touchtrace", "");
 #endif
 	r_config_set(cfg, "cmd.prompt", "");
+	r_config_set(cfg, "cmd.visual", "? f && ?? s eip");
 	r_config_set(cfg, "cmd.vprompt", "p%");
 	r_config_set(cfg, "cmd.vprompt2", "CFV");
 	r_config_set(cfg, "cmd.vprompt3", "");

@@ -13,7 +13,7 @@ echo
 echo $new_env $SHELL \
    | sed -e 's, ,\n,g' \
    | sed -e 's,^,  ,g' \
-   | sed -e 's,$,\\,'
+   | sed -e 's,$, \\,'
 echo
 
 eval $new_env $SHELL

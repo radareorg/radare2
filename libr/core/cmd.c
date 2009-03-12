@@ -136,7 +136,8 @@ static int cmd_seek(void *data, const char *input)
 	if (input[0]=='\0') {
 		r_cons_printf("0x%llx\n", core->seek);
 	} else {
-		u64 off = r_num_math(&core->num, input+1);
+		int idelta = (input[1]==' ')?2:1;
+		u64 off = r_num_math(&core->num, input+idelta);
 		switch(input[0]) {
 		case ' ':
 			r_core_seek(core, off);
@@ -345,7 +346,7 @@ static int cmd_print(void *data, const char *input)
 		r_print_bytes(&core->print, core->block, len, "%02x");
 		break;
 	default:
-		fprintf(stderr, "Usage: p[8] [len]\n"
+		r_cons_printf("Usage: p[8] [len]\n"
 		" p8 [len]    8bit hexpair list of bytes\n"
 		" px [len]    hexdump of N bytes\n"
 		" po [len]    octal dump of N bytes\n"
@@ -367,7 +368,6 @@ static int cmd_flag(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
 	int len = strlen(input)+1;
-	char *ptr;
 	char *str = alloca(len);
 	memcpy(str, input+1, len);
 

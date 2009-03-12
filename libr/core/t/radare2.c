@@ -127,7 +127,8 @@ int main(int argc, char **argv)
 		r_core_cmd(&r, ".dr*", 0);
 		r_core_cmd(&r, "s eip", 0);
 		r_core_cmd(&r, "e cmd.prompt=.dr",0);
-		r_core_cmd(&r, "\"e cmd.vprompt=.dr&&s eip\"",0);
+		r_core_cmd(&r, "\"e cmd.vprompt=.dr\"",0);
+		r_core_cmd(&r, "\"e cmd.visual=.dr&&s eip\"",0);
 	}
 
 	if (seek)

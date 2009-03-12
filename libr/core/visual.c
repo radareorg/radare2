@@ -60,7 +60,7 @@ int r_core_visual_cmd(struct r_core_t *core, int ch)
 			if (ocursor ==-1) ocursor=cursor;
 			cursor--;
 		} else
-		r_core_cmd(core, "s- 2", 0);
+		r_core_cmd(core, "s-2", 0);
 		break;
 	case 'J':
 		if (curset) {
@@ -81,26 +81,26 @@ int r_core_visual_cmd(struct r_core_t *core, int ch)
 			if (ocursor ==-1) ocursor=cursor;
 			cursor++;
 		} else
-		r_core_cmd(core, "s+ 2", 0);
+		r_core_cmd(core, "s+2", 0);
 		break;
 	/* move */
 	case 'h':
 		if (curset) {
 			cursor--;
 			ocursor=-1;
-		} else r_core_cmd(core, "s- 1", 0);
+		} else r_core_cmd(core, "s-1", 0);
 		break;
 	case 'l':
 		if (curset) {
 			cursor++;
 			ocursor=-1;
-		} else r_core_cmd(core, "s+ 1", 0);
+		} else r_core_cmd(core, "s+1", 0);
 		break;
 	case 'j':
 		if (curset) {
 			cursor+=16;
 			ocursor=-1;
-		} else r_core_cmd(core, "s+ 16", 0);
+		} else r_core_cmd(core, "s+16", 0);
 		break;
 	case 'k':
 		if (curset) {
@@ -169,6 +169,9 @@ void r_core_visual_prompt(struct r_core_t *core)
 int r_core_visual(struct r_core_t *core, const char *input)
 {
 	int ch;
+
+	char *vi = r_config_get(&core->config, "cmd.visual");
+	if (vi) r_core_cmd(core, vi, 0);
 
 	while(input[0]) {
 		if (!r_core_visual_cmd(core, input[0])) {

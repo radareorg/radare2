@@ -126,6 +126,7 @@ int r_core_init(struct r_core_t *core)
 	core->num.callback = &num_callback;
 	core->num.userptr = core;
 	r_print_init(&core->print);
+	core->print.printf = r_cons_printf;
 	r_lang_init(&core->lang);
 	r_lang_set_user_ptr(&core->lang, core);
 	r_anal_init(&core->anal);
@@ -247,12 +248,12 @@ int r_core_seek_delta(struct r_core_t *core, s64 addr)
 		/* check end of file */
 		if (0) { // tmp+addr>) {
 			addr = 0;
-		} else addr+=tmp;
+		} else addr += tmp;
 	} else {
 		/* check < 0 */
 		if (tmp+addr<0) {
 			addr = 0;
-		} else addr+=tmp;
+		} else addr += tmp;
 	}
 	core->seek = addr;
 	ret = r_core_block_read(core, 0);
