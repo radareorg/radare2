@@ -33,7 +33,7 @@ struct r_core_t *r_core_new()
 
 /* TODO: move to a separated file */
 /* io callback */
-int __lib_io_cb(struct r_lib_plugin_t *pl, void *user, void *data)
+static int __lib_io_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 {
 	struct r_io_handle_t *hand = (struct r_io_handle_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
@@ -42,10 +42,10 @@ int __lib_io_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 	return R_TRUE;
 }
 
-int __lib_io_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
+static int __lib_io_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
 
 /* debug callback */
-int __lib_dbg_cb(struct r_lib_plugin_t *pl, void *user, void *data)
+static int __lib_dbg_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 {
 	struct r_debug_handle_t *hand = (struct r_debug_handle_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
@@ -54,10 +54,10 @@ int __lib_dbg_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 	return R_TRUE;
 }
 
-int __lib_dbg_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
+static int __lib_dbg_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
 
 /* lang callback */
-int __lib_lng_cb(struct r_lib_plugin_t *pl, void *user, void *data)
+static int __lib_lng_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 {
 	struct r_lang_handle_t *hand = (struct r_lang_handle_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
@@ -66,10 +66,10 @@ int __lib_lng_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 	return R_TRUE;
 }
 
-int __lib_lng_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
+static int __lib_lng_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
 
 /* anal callback */
-int __lib_anl_cb(struct r_lib_plugin_t *pl, void *user, void *data)
+static int __lib_anl_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 {
 	struct r_anal_handle_t *hand = (struct r_anal_handle_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
@@ -78,10 +78,10 @@ int __lib_anl_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 	return R_TRUE;
 }
 
-int __lib_anl_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
+static int __lib_anl_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
 
 /* asm callback */
-int __lib_asm_cb(struct r_lib_plugin_t *pl, void *user, void *data)
+static int __lib_asm_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 {
 	struct r_asm_handle_t *hand = (struct r_asm_handle_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
@@ -90,10 +90,10 @@ int __lib_asm_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 	return R_TRUE;
 }
 
-int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
+static int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
 
 /* parse callback */
-int __lib_parse_cb(struct r_lib_plugin_t *pl, void *user, void *data)
+static int __lib_parse_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 {
 	struct r_parse_handle_t *hand = (struct r_parse_handle_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
@@ -102,10 +102,10 @@ int __lib_parse_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 	return R_TRUE;
 }
 
-int __lib_parse_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
+static int __lib_parse_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
 
 /* bin callback */
-int __lib_bin_cb(struct r_lib_plugin_t *pl, void *user, void *data)
+static int __lib_bin_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 {
 	struct r_bin_handle_t *hand = (struct r_bin_handle_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
@@ -114,7 +114,7 @@ int __lib_bin_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 	return R_TRUE;
 }
 
-int __lib_bin_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
+static int __lib_bin_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
 
 int r_core_init(struct r_core_t *core)
 {
@@ -191,7 +191,7 @@ int r_core_prompt(struct r_core_t *r)
 	char line[1024];
 	int ret;
 
-	char *cmdprompt = r_config_get(&r->config, "cmd.prompt");
+	const char *cmdprompt = r_config_get(&r->config, "cmd.prompt");
 	if (cmdprompt && cmdprompt[0])
 		r_core_cmd(r, cmdprompt, 0);
 
@@ -225,6 +225,28 @@ int r_core_block_read(struct r_core_t *core, int next)
 		return -1;
 	r_io_lseek(&core->io, core->file->fd, core->seek+((next)?core->blocksize:0), R_IO_SEEK_SET);
 	return r_io_read(&core->io, core->file->fd, core->block, core->blocksize);
+}
+
+int r_core_seek_align(struct r_core_t *core, u64 align, int times)
+{
+	int inc = (times>=0)?1:-1;
+	int diff = core->seek%align;
+	u64 seek = core->seek;
+	
+	if (times == 0)
+		return R_FALSE;
+
+	if (diff) {
+		if (inc<0) {
+			diff = -diff;
+		} else diff += align-diff;
+		times -= inc;
+	}
+	while((times*inc)>0) {
+		times -= inc;
+		diff += align*inc;
+	}
+	return r_core_seek(core, seek+diff);
 }
 
 int r_core_seek(struct r_core_t *core, u64 addr)

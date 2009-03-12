@@ -164,6 +164,34 @@ static int cmd_seek(void *data, const char *input)
 	return 0;
 }
 
+static int cmd_seek_align_fwd(void *user, const char *cmd)
+{
+	struct r_core_t *core = (struct r_core_t *)user;
+	int times = 1;
+	if (cmd[0]=='>') {
+		while(cmd[0]=='>') {
+			times++;
+			cmd = cmd + 1;
+		}
+	} else times = (int)r_num_get(&core->num, cmd+1);
+	
+	return r_core_seek_align(core, core->blocksize, times);
+}
+
+static int cmd_seek_align_bwd(void *user, const char *cmd)
+{
+	struct r_core_t *core = (struct r_core_t *)user;
+	int times = -1;
+	if (cmd[0]=='<') {
+		while(cmd[0]=='<') {
+			times--;
+			cmd = cmd + 1;
+		}
+	} else times = -(int)r_num_get(&core->num, cmd+1);
+
+	return r_core_seek_align(core, core->blocksize, times);
+}
+
 static int cmd_help(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
@@ -938,7 +966,7 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 	/* Out Of Band Input */
 	free(core->oobi);
 	core->oobi = NULL;
-	ptr = strchr(cmd, '<');
+	ptr = strchr(cmd+1, '<');
 	if (ptr) {
 		ptr[0] = '\0';
 		if (ptr[1]=='<') {
@@ -977,7 +1005,7 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 		}
 	}
 	/* Pipe console to file */
-	ptr = strchr(cmd, '>');
+	ptr = strchr(cmd+1, '>');
 	if (ptr) {
 		ptr[0] = '\0';
 		for(str=ptr+1;str[0]== ' ';str=str+1);
@@ -1226,6 +1254,8 @@ int r_core_cmd_init(struct r_core_t *core)
 	r_cmd_add(&core->cmd, "/",        "search kw, pattern aes", &cmd_search);
 	r_cmd_add(&core->cmd, "(",        "macro", &cmd_macro);
 	r_cmd_add(&core->cmd, "|",        "io pipe", &cmd_iopipe);
+	r_cmd_add(&core->cmd, "<",        "aligned seek left", &cmd_seek_align_bwd);
+	r_cmd_add(&core->cmd, ">",        "aligned seek right", &cmd_seek_align_fwd);
 	r_cmd_add(&core->cmd, "quit",     "exit program session", &cmd_quit);
 
 	return 0;

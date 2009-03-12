@@ -129,13 +129,19 @@ int r_core_visual_cmd(struct r_core_t *core, int ch)
 		r_core_visual_mark_seek(core, r_cons_readchar());
 		break;
 	case '+':
-		r_core_block_size( core, core->blocksize+1);
+		r_core_block_size(core, core->blocksize+1);
 		break;
 	case '/':
-		r_core_block_size( core, core->blocksize-=16);
+		r_core_block_size(core, core->blocksize-=16);
 		break;
 	case '*':
-		r_core_block_size( core, core->blocksize+=16);
+		r_core_block_size(core, core->blocksize+=16);
+		break;
+	case '>':
+		r_core_seek_align(core, core->blocksize, 1);
+		break;
+	case '<':
+		r_core_seek_align(core, core->blocksize, -1);
 		break;
 	case ':':
 		r_cons_fgets(buf, 1023, 0, NULL);
@@ -145,6 +151,7 @@ int r_core_visual_cmd(struct r_core_t *core, int ch)
 		r_cons_clear00();
 		r_cons_printf(
 		"\nVisual mode help:\n\n"
+		" >||<  -  seek aligned to block size\n"
 		" hjkl  -  move around\n"
 		" HJKL  -  move around faster\n"
 		" P||p  -  rotate print modes\n"
@@ -170,7 +177,7 @@ int r_core_visual(struct r_core_t *core, const char *input)
 {
 	int ch;
 
-	char *vi = r_config_get(&core->config, "cmd.visual");
+	const char *vi = r_config_get(&core->config, "cmd.visual");
 	if (vi) r_core_cmd(core, vi, 0);
 
 	while(input[0]) {
@@ -186,7 +193,7 @@ int r_core_visual(struct r_core_t *core, const char *input)
 
 	color = r_config_get_i(&core->config, "scr.color");
 	do {
-		char *cmdprompt = r_config_get(&core->config, "cmd.vprompt");
+		const char *cmdprompt = r_config_get(&core->config, "cmd.vprompt");
 		if (cmdprompt && cmdprompt[0])
 			r_core_cmd(core, cmdprompt, 0);
 		r_cons_clear00();

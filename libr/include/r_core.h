@@ -75,6 +75,7 @@ int r_core_cmd_init(struct r_core_t *core);
 char *r_core_cmd_str(struct r_core_t *core, const char *cmd);
 int r_core_cmd_file(struct r_core_t *core, const char *file);
 int r_core_seek(struct r_core_t *core, u64 addr);
+int r_core_seek_align(struct r_core_t *core, u64 align, int times);
 int r_core_block_read(struct r_core_t *core, int next);
 int r_core_block_size(struct r_core_t *core, u32 bsize);
 int r_core_read_at(struct r_core_t *core, u64 addr, u8 *buf, int size);

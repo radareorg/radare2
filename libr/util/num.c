@@ -1,9 +1,6 @@
 /* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
 
-#include "r_types.h"
 #include "r_util.h"
-
-#define D  if(0)
 
 #define __htonq(x) (\
         (((x) & 0xff00000000000000LL) >> 56)  | \
@@ -119,7 +116,7 @@ u64 r_num_get(struct r_num_t *num, const char *str)
 
 u64 r_num_op(char op, u64 a, u64 b)
 {
-D printf("r_num_op: %lld %c %lld\n", a,op,b);
+	IFDBG printf("r_num_op: %lld %c %lld\n", a,op,b);
 	switch(op) {
 	case '+': return a+b;
 	case '-': return a-b;
@@ -138,7 +135,7 @@ static u64 r_num_math_internal(struct r_num_t *num, char *s)
 	char *p = s;
 	int i, nop, op='\0';
 
-	D printf("r_num_math_internal: %s\n", s);
+	IFDBG printf("r_num_math_internal: %s\n", s);
 
 	for(i=0;s[i];i++) {
 		switch(s[i]) {
@@ -162,12 +159,12 @@ static u64 r_num_math_internal(struct r_num_t *num, char *s)
 u64 r_num_math(struct r_num_t *num, const char *str)
 {
 	u64 ret = 0LL;
-	char op='+';
+	char op = '+';
 	int len = strlen(str)+1;
 	char *p, *s = alloca(len);
 	char *group;
 
-	D printf("r_num_math: %s\n", str);
+	IFDBG printf("r_num_math: %s\n", str);
 
 	memcpy(s, str, len);
 	for(;*s==' ';s+=1);

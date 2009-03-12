@@ -107,6 +107,8 @@ R_API void r_print_byte(struct r_print_t *p, const char *fmt, int idx, u8 ch)
 		}
 		if (pre)
 			p->printf(pre);
+		if (fmt[0]=='%'&&fmt[1]=='c')
+			ch = '.';
 		p->printf(fmt, ch);
 		if (pre)
 			p->printf("\x1b[0m");
@@ -221,9 +223,7 @@ R_API void r_print_hexdump(struct r_print_t *p, u64 addr, u8 *buf, int len, int 
 			if (j >= len)
 				p->printf(" ");
 			else {
-				r_print_byte(p, "%c", j,
-					(IS_PRINTABLE(buf[j]))?
-					buf[j] : '.');
+				r_print_byte(p, "%c", j, buf[j]);
 			}
 		}
 		p->printf("\n");
