@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-void config_color_callback(void *user, void *data)
+int config_color_callback(void *user, void *data)
 {
 	struct r_core_t *core = (struct r_core_t *) user;
 	struct r_config_node_t *node =
@@ -15,6 +15,7 @@ void config_color_callback(void *user, void *data)
 		if (core->print.flags&R_PRINT_FLAGS_COLOR)
 			core->print.flags^=R_PRINT_FLAGS_COLOR;
 	}
+	return R_TRUE;
 }
 
 int r_core_config_init(struct r_core_t *core)

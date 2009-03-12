@@ -233,14 +233,11 @@ int r_core_seek_align(struct r_core_t *core, u64 align, int times)
 	int diff = core->seek%align;
 	u64 seek = core->seek;
 	
-	if (times == 0)
-		return R_FALSE;
-
-	if (diff) {
-		if (inc<0) {
-			diff = -diff;
-		} else diff += align-diff;
-		times -= inc;
+	if (times == 0) diff = -diff;
+	else if (diff) {
+		if (inc>0) diff += align-diff;
+		else diff = -diff;
+		if (times) times -= inc;
 	}
 	while((times*inc)>0) {
 		times -= inc;

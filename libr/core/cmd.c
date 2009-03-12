@@ -138,6 +138,8 @@ static int cmd_seek(void *data, const char *input)
 	} else {
 		int idelta = (input[1]==' ')?2:1;
 		u64 off = r_num_math(&core->num, input+idelta);
+		if (input[0]==' ' && (input[1]=='+'||input[1]=='-'))
+			input = input+1;
 		switch(input[0]) {
 		case ' ':
 			r_core_seek(core, off);
@@ -150,15 +152,36 @@ static int cmd_seek(void *data, const char *input)
 			if (input[1]=='-') r_core_seek_delta(core, -core->blocksize);
 			else r_core_seek_delta(core, -off);
 			break;
+		case 'a':
+			{
+				u64 alsz = core->blocksize;
+
+				if (input[1]&&input[2]) {
+					char *cmd, *p; 
+					cmd = strdup(input);
+					p = strchr(cmd+2, ' ');
+					if (p) {
+						alsz = r_num_math(&core->num, p+1);;
+						*p='\0';
+					}
+					cmd[0]='s';
+					// perform real seek if provided
+					r_cmd_call(&core->cmd, cmd);
+					free(cmd);
+				}
+
+				r_core_seek_align(core, alsz, 0);
+			}
+			break;
 		case '?':
 			fprintf(stderr,
 			"Usage: s[+-] [addr]\n"
-			" s 0x320   ; seek to this address\n"
-			" s++       ; seek blocksize bytes forward\n"
-			" s--       ; seek blocksize bytes backward\n"
-			" s+ 512    ; seek 512 bytes forward\n"
-			" s- 512    ; seek 512 bytes backward\n");
-			//" sa num    ; seek aligned to address\n");
+			" s 0x320    ; seek to this address\n"
+			" s++        ; seek blocksize bytes forward\n"
+			" s--        ; seek blocksize bytes backward\n"
+			" s+ 512     ; seek 512 bytes forward\n"
+			" s- 512     ; seek 512 bytes backward\n"
+			" sa [[+-]a] [asz] ; seek asz (or bsize) aligned to addr\n");
 			break;
 		}
 	}
@@ -789,7 +812,7 @@ static int cmd_hash(void *data, const char *input)
 		r_lang_set(&core->lang, input+1);
 		if (core->oobi)
 			r_lang_run(&core->lang, core->oobi, core->oobi_len);
-		else r_lang_prompt(&core->lang, core->oobi, core->oobi_len);
+		else r_lang_prompt(&core->lang);
 		return R_TRUE;
 	}
 
@@ -988,7 +1011,7 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 	if (ptr) {
 		char *pt = ptr;
 		ptr[0]='\0';
-		while(pt[0]==' '||pt=='\t') {
+		while(pt[0]==' '||pt[0]=='\t') {
 			pt[0]='\0';
 			pt = pt-1;
 		}

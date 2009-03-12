@@ -32,5 +32,6 @@ void r_lang_set_user_ptr(struct r_lang_t *lang, void *user);
 int r_lang_set_argv(struct r_lang_t *lang, int argc, char **argv);
 int r_lang_run(struct r_lang_t *lang, const char *code, int len);
 int r_lang_run_file(struct r_lang_t *lang, const char *file);
+int r_lang_prompt(struct r_lang_t *lang);
 
 #endif
