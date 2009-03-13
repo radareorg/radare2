@@ -85,4 +85,34 @@ static inline int ERR(char *str, ...)
   { char buf[128];sprintf(buf, "%s:%d %s", file,line,str);perror(buf); }
 #define perror(x) _perror(x,__FILE__,__LINE__)
 
+#define eprintf(x,y...) fprintf(stderr,x,##y)
+
+/* limits */
+#define U64_MAX 0xFFFFFFFFFFFFFFFFLL
+#define U64_GT0 0x8000000000000000LL
+#define U64_LT0 0x7FFFFFFFFFFFFFFFLL
+#define U64_MIN 0LL
+#define U64_32U 0xFFFFFFFF00000000LL
+#define U32_MIN 0
+#define U32_GT0 0x80000000
+#define U32_LT0 0x7FFFFFFF
+#define U32_MAX 0xFFFFFFFF
+
+#define R_MAX(x,y) (x>y)?x:y
+#define R_MIN(x,y) (x>y)?y:x
+#define R_ABS(x) ((x<0)?-x:x)
+
+#define R_FALSE 0
+#define R_TRUE 1
+
+#define R_FREE(x) { free(x); x=NULL; }
+
+#if 0
+#define R_API_NEW(x) \
+  struct x##_t *##x##_new() \
+  { struct x##_t *t = (struct x##_t)malloc(sizeof(struct x##_t)); \
+   x##_init(t); return t; }
+R_API_NEW(r_trace);
+#endif
+
 #endif

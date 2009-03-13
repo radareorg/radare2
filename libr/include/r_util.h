@@ -3,26 +3,6 @@
 
 #include "r_types.h"
 
-/* limits */
-#define U64_MAX 0xFFFFFFFFFFFFFFFFLL
-#define U64_GT0 0x8000000000000000LL
-#define U64_LT0 0x7FFFFFFFFFFFFFFFLL
-#define U64_MIN 0LL
-#define U64_32U 0xFFFFFFFF00000000LL
-#define U32_MIN 0
-#define U32_GT0 0x80000000
-#define U32_LT0 0x7FFFFFFF
-#define U32_MAX 0xFFFFFFFF
-
-#define R_MAX(x,y) (x>y)?x:y
-#define R_MIN(x,y) (x>y)?y:x
-#define R_ABS(x) ((x<0)?-x:x)
-
-#define R_FALSE 0
-#define R_TRUE 1
-
-#define R_FREE(x) { free(x); x=NULL; }
-
 /* memory */
 void r_mem_copyloop (u8 *dest, const u8 *orig, int dsize, int osize);
 void r_mem_copyendian (u8 *dest, const u8 *orig, int size, int endian);
@@ -45,7 +25,6 @@ void r_num_init(struct r_num_t *num);
 /* strings */
 
 /* TODO */
-#define eprintf(x,y...) fprintf(stderr,x,##y)
 #define strnull(x) (!x||!*x)
 // XXX
 #define iswhitechar(x) (x==' '||x=='\t'||x=='\n'||x=='\r')
