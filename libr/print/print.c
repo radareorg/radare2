@@ -93,6 +93,10 @@ void r_print_addr(struct r_print_t *p, u64 addr)
 
 R_API void r_print_byte(struct r_print_t *p, const char *fmt, int idx, u8 ch)
 {
+	u8 rch = ch;
+	if (fmt[0]=='%'&&fmt[1]=='c')
+		rch = '.';
+
 	r_print_cursor(p, idx, 1);
 	//if (p->flags & R_PRINT_FLAGS_CURSOR && idx == p->cur) {
 	if (p->flags & R_PRINT_FLAGS_COLOR) {
@@ -107,12 +111,10 @@ R_API void r_print_byte(struct r_print_t *p, const char *fmt, int idx, u8 ch)
 		}
 		if (pre)
 			p->printf(pre);
-		if (fmt[0]=='%'&&fmt[1]=='c')
-			ch = '.';
-		p->printf(fmt, ch);
+		p->printf(fmt, rch);
 		if (pre)
 			p->printf("\x1b[0m");
-	} else p->printf(fmt, ch);
+	} else p->printf(fmt, rch);
 	r_print_cursor(p, idx, 0);
 }
 
@@ -222,9 +224,7 @@ R_API void r_print_hexdump(struct r_print_t *p, u64 addr, u8 *buf, int len, int 
 		for(j=i; j<i+inc; j++) {
 			if (j >= len)
 				p->printf(" ");
-			else {
-				r_print_byte(p, "%c", j, buf[j]);
-			}
+			else r_print_byte(p, "%c", j, buf[j]);
 		}
 		p->printf("\n");
 		//addr+=inc;

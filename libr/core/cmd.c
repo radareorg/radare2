@@ -219,16 +219,32 @@ static int cmd_help(void *data, const char *input)
 				r_core_cmd(core, input+1, 0);
 		} else r_cons_printf("0x%llx\n", core->num.value);
 		break;
-	case '?': // ??
+	case 'z':
+		for(input=input+1;input[0]==' ';input=input+1);
+		core->num.value = strlen(input);
+		break;
+	case 't':
+		{
+			struct r_prof_t prof;
+			r_prof_start(&prof);
+			r_core_cmd(core, input+1, 0);
+			r_prof_end(&prof);
+			core->num.value = (u64)prof.result;
+			eprintf("%lf\n", prof.result);
+		}
+		break;
+	case '?': // ???
 		if (input[1]=='?') {
 			fprintf(stderr,
 			"Usage: ?[?[?]] expression\n"
 			" ? eip-0x804800  ; calculate result for this math expr\n"
-			" ?= eip-0x804800  ; same as above without user feedback\n"
-			" ?? [cmd]    ; ? == 0  run command when math matches\n"
-			" ?! [cmd]    ; ? != 0\n"
-			" ?+ [cmd]    ; ? > 0\n"
-			" ?- [cmd]    ; ? < 0\n"
+			" ?= eip-0x804800 ; same as above without user feedback\n"
+			" ?? [cmd]        ; ? == 0  run command when math matches\n"
+			" ?z str          ; returns the length of string (0 if null)\n"
+			" ?t cmd          ; returns the time to run a command\n"
+			" ?! [cmd]        ; ? != 0\n"
+			" ?+ [cmd]        ; ? > 0\n"
+			" ?- [cmd]        ; ? < 0\n"
 			" ???             ; show this help\n");
 		} else
 		if (input[1]) {

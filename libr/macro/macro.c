@@ -292,8 +292,8 @@ int r_macro_call(struct r_macro_t *mac, const char *name)
 	ptr = strchr(str, ')');
 	if (ptr == NULL) {
 		fprintf(stderr, "Missing end ')' parenthesis.\n");
-		*ptr='\0';
-	}
+		return R_FALSE;
+	} else *ptr='\0';
 
 	args = strchr(str, ' ');
 	if (args) {
@@ -319,7 +319,7 @@ int r_macro_call(struct r_macro_t *mac, const char *name)
 			if (m->nargs != 0 && nargs != m->nargs) {
 				eprintf("Macro '%s' expects %d args\n", m->name, m->nargs);
 				macro_level --;
-				return 0;
+				return R_FALSE;
 			}
 
 			mac->brk = 0;
@@ -348,7 +348,7 @@ int r_macro_call(struct r_macro_t *mac, const char *name)
 					ptr = end + 1;
 				} else {
 					macro_level --;
-					return 1;
+					return R_TRUE;
 				}
 
 				/* Fetch next command */
@@ -357,13 +357,13 @@ int r_macro_call(struct r_macro_t *mac, const char *name)
 
 			if (mac->brk) {
 				macro_level --;
-				return 0;
+				return R_TRUE;
 			}
 		}
 	}
 	eprintf("No macro named '%s'\n", str);
 	macro_level --;
-	return 0;
+	return R_TRUE;
 }
 
 int r_macro_break(struct r_macro_t *mac, const char *value)

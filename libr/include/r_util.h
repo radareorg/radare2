@@ -3,6 +3,15 @@
 
 #include "r_types.h"
 
+/* profiling */
+#include <sys/time.h>
+struct r_prof_t {
+	struct timeval begin;
+	double result;
+};
+void r_prof_start(struct r_prof_t *p);
+double r_prof_end(struct r_prof_t *p);
+
 /* memory */
 void r_mem_copyloop (u8 *dest, const u8 *orig, int dsize, int osize);
 void r_mem_copyendian (u8 *dest, const u8 *orig, int size, int endian);
