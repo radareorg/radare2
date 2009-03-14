@@ -258,18 +258,17 @@ static int cmd_help(void *data, const char *input)
 		"Usage:\n"
 		" a                 ; perform analysis of code\n"
 		" b [bsz]           ; get or change block size\n"
-		" d[hrscb]          ; debugger commands\n"
 		" C[CFf..]          ; Code metadata management\n"
+		" d[hrscb]          ; debugger commands\n"
 		" e [a[=b]]         ; list/get/set config evaluable vars\n"
-		" i                 ; get info of the current file\n"
 		" f [name][sz][at]  ; set flag at current address\n"
 		" s [addr]          ; seek to address\n"
 		" i [file]          ; get info about opened file\n"
 		" p?[len]           ; print current block with format and length\n"
+		" V[vcmds]          ; enter visual mode (vcmds=visualvisual  keystrokes)\n"
+		" w[mode] [arg]     ; multiple write operations\n"
 		" x [len]           ; alias for 'px' (print hexadecimal\n"
 		" y [len] [off]     ; yank/paste bytes from/to memory\n"
-		" w[mode] [arg]     ; multiple write operations\n"
-		" V[vcmds]          ; enter visual mode (vcmds=visualvisual  keystrokes)\n"
 		" ? [expr]          ; help or evaluate math expression\n"
 		" /[xmp/]           ; search for bytes, regexps, patterns, ..\n"
 		" |[cmd]            ; run this command thru the io pipe (no args=list)\n"
@@ -972,7 +971,7 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 	ptr = strchr(cmd+1, '|');
 	if (ptr) {
 		ptr[0] = '\0';
-		fprintf(stderr, "System pipes not yet supported.\n");
+		eprintf("System pipes not yet supported.\n");
 	}
 
 	/* Out Of Band Input */
@@ -986,7 +985,7 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 			char *oprompt = r_line_prompt;
 			oprompt = ">";
 			for(str=ptr+2;str[0]== ' ';str=str+1);
-			fprintf(stderr, "==> Reading from stdin until '%s'\n", str);
+			eprintf("==> Reading from stdin until '%s'\n", str);
 			free(core->oobi);
 			core->oobi = malloc(1);
 			core->oobi[0] = '\0';
@@ -1009,11 +1008,12 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 			r_line_prompt = oprompt;
 		} else {
 			for(str=ptr+1;str[0]== ' ';str=str+1);
-			printf("SLURPING FILE '%s'\n", str);
+			eprintf("SLURPING FILE '%s'\n", str);
 			core->oobi = r_file_slurp(str, &core->oobi_len);
-			if (core->oobi == NULL) {
-				printf("Cannot open file\n");
-			}
+			if (core->oobi == NULL)
+				eprintf("Cannot open file\n");
+			else if (ptr == cmd)
+				return r_core_cmd_buffer(core, core->oobi);
 		}
 	}
 	/* Pipe console to file */
@@ -1186,7 +1186,7 @@ static int cmd_debug(void *data, const char *input)
 		else r_debug_handle_list(&core->dbg, "");
 		break;
 	default:
-		r_cons_printf("Usage: d[sbc] [arg]\n"
+		r_cons_printf("Usage: d[sbhcrbo] [arg]\n"
 		" dh [handler] ; list or set debugger handler\n"
 		" ds           ; perform one step\n"
 		" ds 3         ; perform 3 steps\n"
@@ -1205,6 +1205,22 @@ static int cmd_debug(void *data, const char *input)
 		break;
 	}
 	return 0;
+}
+
+int r_core_cmd_buffer(void *user, const char *buf)
+{
+	char *str = strdup(buf);
+	char *ptr = strchr(str, '\n');
+	char *optr = str;
+	while(ptr) {
+		ptr[0]='\0';
+		r_core_cmd(user, optr, 0);
+		optr = ptr+1;
+		ptr = strchr(str,'\n');
+	}
+	r_core_cmd(user, optr, 0);
+	free(str);
+	return R_TRUE;
 }
 
 int r_core_cmdf(void *user, const char *fmt, ...)

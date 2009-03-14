@@ -2,6 +2,19 @@
 
 #include <r_sign.h>
 
+struct r_sign_t *r_sign_new()
+{
+	struct r_sign_t *s = MALLOC_STRUCT(struct r_sign_t);
+	r_sign_init(s);
+	return s;
+}
+
+struct r_sign_t *r_sign_free(struct r_sign_t *s)
+{
+	free(s);
+	return NULL;
+}
+
 int r_sign_init(struct r_sign_t *sig)
 {
 	sig->count = 0;

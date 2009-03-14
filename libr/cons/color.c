@@ -2,9 +2,10 @@
 
 #include <r_cons.h>
 #include <string.h>
-const char *nullstr="";
 
+static const char *nullstr="";
 const char *r_cons_palette_default = "7624 6646 2378 6824 3623";
+
 char r_cons_palette[CONS_PALETTE_SIZE][8] = {
 	/* PROMPT */
 	/* ADDRESS */
@@ -33,28 +34,9 @@ char r_cons_palette[CONS_PALETTE_SIZE][8] = {
 };
 
 const char *r_cons_color_names[CONS_COLORS_SIZE+1] = {
-	"black",
-	"gray",
-	"white",
-	"red",
-	"magenta",
-	"blue",
-	"green",
-	"yellow",
-	"turqoise",
-	"bblack",
-	"bgray",
-	"bwhite",
-	"bred",
-	"bmagenta",
-	"bblue",
-	"bgreen",
-	"byellow",
-	"bturqoise",
-	"reset",
-	"bgblack",
-	"bgred",
-	NULL
+	"black", "gray", "white", "red", "magenta", "blue", "green", "yellow",
+	"turqoise", "bblack", "bgray", "bwhite", "bred", "bmagenta", "bblue",
+	"bgreen", "byellow", "bturqoise", "reset", "bgblack", "bgred", NULL
 };
 
 void r_cons_invert(int set, int color)
@@ -96,26 +78,9 @@ const char *r_cons_colors[CONS_COLORS_SIZE+1] = {
 };
 
 const char *pal_names[CONS_PALETTE_SIZE]={
-	"prompt",
-	"address",
-	"default",
-	"changed",
-	"jumps",
-	"calls",
-	"push",
-	"trap",
-	"cmp",
-	"ret",
-	"nop",
-	"metadata",
-	"header",
-	"printable",
-	"lines0",
-	"lines1",
-	"lines2",
-	"00",
-	"7f",
-	"ff",
+	"prompt", "address", "default", "changed", "jumps", "calls",
+	"push", "trap", "cmp", "ret", "nop", "metadata", "header",
+	"printable", "lines0", "lines1", "lines2", "00", "7f", "ff",
 	NULL
 };
 

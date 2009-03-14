@@ -7,6 +7,7 @@ static char *x86_regs[] = {
    "ax", "bx", "cx", "dx", "si", "di", "sp", "bp", "ip", // 16 tits
    "ah","al", "bh", "bl", "ch","cl", "dh","dl", // 8 tits
    NULL };
+
 #if 0
 // XXX
 - we need size of register

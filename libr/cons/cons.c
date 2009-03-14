@@ -273,7 +273,7 @@ void r_cons_flush()
 		// XXX merge grepstr with r_cons_lines loop //
 		r_cons_lines += r_str_nchr(buf, '\n');
 
-		// XXX major cleanup here!
+		// XXX buggy! this needs a major cleanup here!
 		if (grepstr != NULL) {
 			int line, len;
 			char *one = r_cons_buffer;
@@ -410,8 +410,7 @@ void r_cons_flush()
 		r_cons_buffer_len = strlen(buf);
 		r_cons_print_real(buf);
 	}
-	//r_cons_buffer_sz=0;
-	r_cons_buffer_len=0;
+	r_cons_buffer_len = 0;
 }
 
 /* stream is ignored */

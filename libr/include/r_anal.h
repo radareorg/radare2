@@ -99,6 +99,8 @@ struct r_anal_handle_t {
 
 /* anal.c */
 int r_anal_init(struct r_anal_t *anal);
+struct r_anal_t *r_anal_free(struct r_anal_t *r);
+struct r_anal_t *r_anal_new();
 void r_anal_set_user_ptr(struct r_anal_t *anal, void *user);
 int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo);
 int r_anal_list(struct r_anal_t *anal);

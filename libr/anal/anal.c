@@ -3,6 +3,19 @@
 #include <r_anal.h>
 #include <r_util.h>
 
+struct r_anal_t *r_anal_new()
+{
+	struct r_anal_t *r = MALLOC_STRUCT(struct r_anal_t);
+	r_anal_init(r);
+	return r;
+}
+
+struct r_anal_t *r_anal_free(struct r_anal_t *r)
+{
+	free(r);
+	return NULL;
+}
+
 int r_anal_init(struct r_anal_t *anal)
 {
 	anal->user = NULL;

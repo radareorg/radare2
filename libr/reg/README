@@ -4,3 +4,8 @@
   - r_vm : to properly setup the per-architecture register configuration
   - r_debug : to get/set register values
   - r_core : to display register values in 'd' (debug) command. dr
+
+---------------------------------
+We will have to split up every arch into a plugin
+- define an API to access to registers and get information about the type of regs.
+- we can base this stuff as in r_vm is done
