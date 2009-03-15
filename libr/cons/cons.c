@@ -43,6 +43,8 @@ int r_cons_noflush = 0;
 
 static int grepline = -1, greptoken = -1, grepcounter = 0, grepneg = 0;
 static char *grepstr = NULL;
+static char grepstrings[10][64] = { "", };
+static int grepstrings_n = 0;
 
 int r_cons_breaked = 0;
 
@@ -207,14 +209,33 @@ void r_cons_grep(const char *str)
 			grepline = atoi(ptr2+1);
 		}
 
+		grepstrings_n = 0;
 		if (*ptr) {
 			free(grepstr);
 			grepstr = (char *)strdup(ptr);
+		/* set the rest of words to grep */
+		grepstrings_n = 0;
+		{ // TODO: refactor this ugly loop
+			char *optr = grepstr;
+			char *tptr = strchr(optr, '!');
+			while(tptr) {
+				tptr[0] = '\0';
+				// TODO: check if keyword > 64
+				strncpy(grepstrings[grepstrings_n], optr, 63);
+				grepstrings_n++;
+				optr = tptr+1;
+				tptr = strchr(optr, '!');
+			}
+			strncpy(grepstrings[grepstrings_n], optr, 63);
+			grepstrings_n++;
+			ptr = optr;
+		}
+
 		}
 	} else {
 		greptoken = -1;
 		grepline = -1;
-		free(grepstr);
+		//free(grepstr);
 		grepstr = NULL;
 	}
 }
@@ -284,12 +305,20 @@ void r_cons_flush()
 			for(line=0;;) {
 				two = strchr(one, '\n');
 				if (two) {
+int grepstr_match = 0;
 					two[0] = '\0';
 					len = two-one;
 				//	len = strlen(one);
 //					if (strstr(one, grepstr)) {
-					if ( (!grepneg && strstr(one, grepstr))
-					|| (grepneg && !strstr(one, grepstr))) {
+for(i=0;i<grepstrings_n;i++) {
+	grepstr=grepstrings[i];
+	if ( (!grepneg && strstr(one, grepstr))
+	|| (grepneg && !strstr(one, grepstr))) {
+		grepstr_match=1;
+		break;
+	}
+}
+					if (grepstr_match) {
 						if (grepline ==-1 || grepline==line) {
 							if (greptoken != -1) {
 								ptr = alloca(len+1);
