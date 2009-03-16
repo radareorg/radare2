@@ -263,7 +263,7 @@ static struct java_op {
 	{ NULL, 0x0, 0 }
 };
 
-static struct cp_item cp_null_item; // NOTE: must be initialized for safe use
+static struct r_bin_java_cp_item_t cp_null_item; // NOTE: must be initialized for safe use
 
 static void check_eof(FILE *fd)
 {
@@ -281,14 +281,14 @@ static unsigned short read_short(FILE *fd)
 	return ntohs(sh);
 }
 
-static struct cp_item * get_cp(int i)
+static struct r_bin_java_cp_item_t* get_cp(struct r_bin_java_t *bin, int i)
 {
 	if (i<0||i>cf.cp_count)
 		return &cp_null_item;
-	return &cp_items[i];
+	return &bin->cp_items[i];
 }
 
-static int attributes_walk(FILE *fd, int sz2, int fields)
+static int attributes_walk(struct r_bin_java_t *bin, FILE *fd, int sz2, int fields)
 {
 	char buf[99999];
 	int sz3, sz4;
@@ -297,7 +297,7 @@ static int attributes_walk(FILE *fd, int sz2, int fields)
 
 	for(j=0;j<sz2;j++) {
 		fread(buf, 6, 1, fd);
-		name = (get_cp(USHORT(buf,0)-1))->value;//cp_items[USHORT(buf,0)-1].value;
+		name = (get_cp(bin, USHORT(buf,0)-1))->value;//cp_items[USHORT(buf,0)-1].value;
 		IFDBG printf("   %2d: Name Index: %d (%s)\n", j, USHORT(buf,0), name);
 		// TODO add comment with constant pool index
 		sz3 = UINT(buf, 2);
@@ -393,7 +393,7 @@ static int javasm_init(struct r_bin_java_t *bin)
 	bin->cf.cp_count--;
 
 	IFDBG printf("ConstantPoolCount %d\n", bin->cf.cp_count);
-	bin->cp_items = malloc(sizeof(struct cp_item)*(bin->cf.cp_count+1));
+	bin->cp_items = malloc(sizeof(struct r_bin_java_cp_item_t)*(bin->cf.cp_count+1));
 	for(i=0;i<bin->cf.cp_count;i++) {
 		struct constant_t *c;
 
@@ -469,6 +469,8 @@ static int javasm_init(struct r_bin_java_t *bin)
 	//printf("This class: %d (%s)\n", ntohs(bin->cf2.this_class), bin->cp_items[ntohs(bin->cf2.this_class)-1].value); // XXX this is a double pointer !!1
 	//printf("Super class: %d (%s)\n", ntohs(bin->cf2.super_class), bin->cp_items[ntohs(bin->cf2.super_class)-1].value);
 	sz = read_short(bin->fd);
+
+	/* TODO: intefaces*/
 	IFDBG printf("Interfaces count: %d\n", sz);
 	if (sz>0) {
 		fread(buf, sz*2, 1, bin->fd);
@@ -485,7 +487,7 @@ static int javasm_init(struct r_bin_java_t *bin)
 			fread(buf, 8, 1, bin->fd);
 			IFDBG { 
 				printf("%2d: Access Flags: %d\n", i, USHORT(buf, 0));
-				printf("    Name Index: %d (%s)\n", USHORT(buf, 2), get_cp(USHORT(buf,2)-1)->value);
+				printf("    Name Index: %d (%s)\n", USHORT(buf, 2), get_cp(bin, USHORT(buf,2)-1)->value);
 				printf("    Descriptor Index: %d\n", USHORT(buf, 4)); //, bin->cp_items[USHORT(buf, 4)-1].value);
 			}
 			sz2 = USHORT(buf, 6);
@@ -503,8 +505,8 @@ static int javasm_init(struct r_bin_java_t *bin)
 			
 			IFDBG { 
 				printf("%2d: Access Flags: %d\n", i, USHORT(buf, 0));
-				printf("    Name Index: %d (%s)\n", USHORT(buf, 2), get_cp(USHORT(buf, 2)-1)->value);
-				printf("    Descriptor Index: %d (%s)\n", USHORT(buf, 4), get_cp(USHORT(buf, 4)-1)->value);
+				printf("    Name Index: %d (%s)\n", USHORT(buf, 2), get_cp(bin, USHORT(buf, 2)-1)->value);
+				printf("    Descriptor Index: %d (%s)\n", USHORT(buf, 4), get_cp(bin, USHORT(buf, 4)-1)->value);
 			}
 
 			sz2 = USHORT(buf, 6);
@@ -539,7 +541,7 @@ int r_bin_java_get_version(struct r_bin_java_t *bin, char *version)
 	return R_TRUE;
 }
 
-int r_bin_java_get_entrypoint(struct r_bin_java_t *bin, r_bin_java_entrypoint*)
+int r_bin_java_get_entrypoint(struct r_bin_java_t *bin, r_bin_java_entrypoint *entry)
 {
 	return R_FALSE;
 }
