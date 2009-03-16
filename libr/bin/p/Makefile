@@ -1,11 +1,11 @@
 CFLAGS=-I../../include -I../format/ -Wall -fPIC -shared -Wl,-R..
 # XXX
-CFLAGS+=-DLIL_ENDIAN=1 -D__UNIX__ -g
+CFLAGS+=-DLIL_ENDIAN=1 -D__UNIX__ -g -DR_DEBUG=1
 
 foo: all
 
 ALL_TARGETS=
-FORMATS=elf.mk elf64.mk pe.mk
+FORMATS=elf.mk elf64.mk pe.mk java.mk
 include $(FORMATS)
 
 all: ${ALL_TARGETS}

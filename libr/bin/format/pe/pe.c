@@ -142,6 +142,7 @@ static int r_bin_pe_aux_stripstr_from_file(r_bin_pe_obj *bin, int min, int encod
 						stringsp->type = (unicode?'U':'A');
 						stringsp->size = string_len;
 						memcpy(stringsp->string, str, PE_STRING_LENGTH);
+						stringsp->string[PE_STRING_LENGTH-1] = '\0';
 						ctr++; stringsp++;
 					}
 				}
@@ -281,6 +282,7 @@ static int r_bin_pe_parse_imports(r_bin_pe_obj *bin, r_bin_pe_import **importp, 
 		
 		if (import_table) {
 			memcpy((*importp)->name, import_name, PE_NAME_LENGTH);
+			(*importp)->name[PE_NAME_LENGTH-1] = '\0';
 			(*importp)->rva = FirstThunk + i * sizeof(PE_DWord);
 			(*importp)->offset = r_bin_pe_aux_rva_to_offset(bin, FirstThunk) + i * sizeof(PE_DWord);
 			(*importp)->hint = import_hint;
@@ -407,7 +409,9 @@ int r_bin_pe_get_exports(r_bin_pe_obj *bin, r_bin_pe_export *export)
 		exportp->offset = r_bin_pe_aux_rva_to_offset(bin, function_rva);
 		exportp->ordinal = function_ordinal;
 		memcpy(exportp->forwarder, forwarder_name, PE_NAME_LENGTH);
+		exportp->forwarder[PE_NAME_LENGTH-1] = '\0';
 		memcpy(exportp->name, export_name, PE_NAME_LENGTH);
+		exportp->name[PE_NAME_LENGTH-1] = '\0';
 	}
 
 	return 0;
@@ -528,6 +532,7 @@ int r_bin_pe_get_libs(r_bin_pe_obj *bin, int limit, r_bin_pe_string *strings)
 		lseek(bin->fd, r_bin_pe_aux_rva_to_offset(bin, import_dirp->Name), SEEK_SET);
 		read(bin->fd, dll_name, PE_STRING_LENGTH);
 		memcpy(stringsp->string, dll_name, PE_STRING_LENGTH);
+		stringsp->string[PE_STRING_LENGTH-1] = '\0';
 		stringsp->type = 'A';
 		stringsp->offset = 0;
 		stringsp->size = 0;
@@ -539,6 +544,7 @@ int r_bin_pe_get_libs(r_bin_pe_obj *bin, int limit, r_bin_pe_string *strings)
 		lseek(bin->fd, r_bin_pe_aux_rva_to_offset(bin, delay_import_dirp->Name), SEEK_SET);
 		read(bin->fd, dll_name, PE_STRING_LENGTH);
 		memcpy(stringsp->string, dll_name, PE_STRING_LENGTH);
+		stringsp->string[PE_STRING_LENGTH-1] = '\0';
 		stringsp->type = 'A';
 		stringsp->offset = 0;
 		stringsp->size = 0;
@@ -708,6 +714,7 @@ int r_bin_pe_get_sections(r_bin_pe_obj *bin, r_bin_pe_section *section)
 	sectionp = section;
 	for (i = 0; i < sections_count; i++, shdrp++, sectionp++) {
 		memcpy(sectionp->name, shdrp->Name, PE_IMAGE_SIZEOF_SHORT_NAME);
+		sectionp->name[PE_IMAGE_SIZEOF_SHORT_NAME-1] = '\0';
 		sectionp->rva = shdrp->VirtualAddress;
 		sectionp->size = shdrp->SizeOfRawData;
 		sectionp->vsize = shdrp->Misc.VirtualSize;

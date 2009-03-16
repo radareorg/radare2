@@ -25,6 +25,7 @@
 #define ACTION_INFO      0x0010
 #define ACTION_OPERATION 0x0020
 #define ACTION_HELP      0x0040
+#define ACTION_STRINGS   0x0080 
 
 static struct r_lib_t l;
 static struct r_bin_t bin;
@@ -38,6 +39,7 @@ static int rabin_show_help()
 			" -i          Imports (symbols imported from libraries)\n"
 			" -s          Symbols (exports)\n"
 			" -S          Sections\n"
+			" -z          Strings\n"
 			" -I          Binary info\n"
 			" -o [str]    Operation action (str=help for help)\n"
 			" -f [format] Override file format autodetection\n"
@@ -46,7 +48,7 @@ static int rabin_show_help()
 			"Available plugins:\n");
 	r_bin_list(&bin);
 
-	return 1;
+	return R_FALSE;
 }
 
 static int rabin_show_entrypoint()
@@ -57,11 +59,12 @@ static int rabin_show_entrypoint()
 
 	if (r_bin_open(&bin) == R_FALSE) {
 		fprintf(stderr, "Cannot open file\n");
-		return 1;
+		return R_FALSE;
 	}
 
 	baddr = r_bin_get_baddr(&bin);
-	entry = r_bin_get_entry(&bin);
+	if ((entry = r_bin_get_entry(&bin)) == NULL)
+		return R_FALSE;
 
 	if (rad) {
 		env = getenv("DEBUG");
@@ -79,7 +82,7 @@ static int rabin_show_entrypoint()
 	r_bin_close(&bin);
 	free(entry);
 
-	return 0;
+	return R_TRUE;
 }
 
 static int rabin_show_imports()
@@ -90,12 +93,13 @@ static int rabin_show_imports()
 
 	if (r_bin_open(&bin) == R_FALSE) {
 		fprintf(stderr, "Cannot open file\n");
-		return 1;
+		return R_FALSE;
 	}
 
 	baddr = r_bin_get_baddr(&bin);
 
-	imports = r_bin_get_imports(&bin);
+	if ((imports = r_bin_get_imports(&bin)) == NULL)
+		return R_FALSE;
 
 	if (rad)
 		printf("fs imports\n");
@@ -120,7 +124,7 @@ static int rabin_show_imports()
 	r_bin_close(&bin);
 	free(imports);
 
-	return 0;
+	return R_TRUE;
 }
 
 static int rabin_show_symbols()
@@ -131,12 +135,13 @@ static int rabin_show_symbols()
 
 	if (r_bin_open(&bin) == R_FALSE) {
 		fprintf(stderr, "Cannot open file\n");
-		return 1;
+		return R_FALSE;
 	}
 
 	baddr = r_bin_get_baddr(&bin);
 
-	symbols = r_bin_get_symbols(&bin);
+	if ((symbols = r_bin_get_symbols(&bin)) == NULL)
+		return R_FALSE;
 
 	if (rad) printf("fs symbols\n");
 	else printf("[Symbols]\n");
@@ -171,7 +176,48 @@ static int rabin_show_symbols()
 	r_bin_close(&bin);
 	free(symbols);
 
-	return 0;
+	return R_TRUE;
+}
+
+static int rabin_show_strings()
+{
+	int ctr = 0;
+	u64 baddr;
+	struct r_bin_string_t *strings, *stringsp;
+
+	if (r_bin_open(&bin) == R_FALSE) {
+		fprintf(stderr, "Cannot open file\n");
+		return R_FALSE;
+	}
+
+	baddr = r_bin_get_baddr(&bin);
+
+	if ((strings = r_bin_get_strings(&bin)) == NULL)
+		return R_FALSE;
+
+	if (rad)
+		printf("fs strings\n");
+	else printf("[strings]\n");
+
+	stringsp = strings;
+	while (!stringsp->last) {
+		if (rad) {
+			r_flag_name_filter(stringsp->string);
+			printf("f str.%s @ 0x%08llx\n",
+					stringsp->string, baddr+stringsp->rva);
+		} else printf("address=0x%08llx offset=0x%08llx ordinal=%03lli "
+				"string=%s\n",
+				baddr+stringsp->rva, stringsp->offset,
+				stringsp->ordinal, stringsp->string);
+		stringsp++; ctr++;
+	}
+
+	if (!rad) printf("\n%i strings\n", ctr);
+
+	r_bin_close(&bin);
+	free(strings);
+
+	return R_TRUE;
 }
 
 static int rabin_show_sections()
@@ -182,12 +228,13 @@ static int rabin_show_sections()
 
 	if (r_bin_open(&bin) == R_FALSE) {
 		fprintf(stderr, "Cannot open file\n");
-		return 1;
+		return R_FALSE;
 	}
 
 	baddr = r_bin_get_baddr(&bin);
 
-	sections = r_bin_get_sections(&bin);
+	if ((sections = r_bin_get_sections(&bin)) == NULL)
+		return R_FALSE;
 	
 	if (rad) printf("fs sections\n");
 	else printf("[Sections]\n");
@@ -224,7 +271,7 @@ static int rabin_show_sections()
 	r_bin_close(&bin);
 	free(sections);
 
-	return 0;
+	return R_TRUE;
 
 }
 
@@ -234,10 +281,11 @@ static int rabin_show_info()
 
 	if (r_bin_open(&bin) == R_FALSE) {
 		fprintf(stderr, "Cannot open file\n");
-		return 1;
+		return R_FALSE;
 	}
 
-	info = r_bin_get_info(&bin);
+	if ((info = r_bin_get_info(&bin)) == NULL)
+		return R_FALSE;
 
 	if (rad) {
 		printf("e file.type=%s\n"
@@ -271,7 +319,7 @@ static int rabin_show_info()
 	r_bin_close(&bin);
 	free(info);
 
-	return 0;
+	return R_TRUE;
 }
 
 static int rabin_do_operation(const char *op)
@@ -281,7 +329,7 @@ static int rabin_do_operation(const char *op)
 	if (!strcmp(op, "help")) {
 		printf("Operation string:\n"
 				"  Resize section: r/.data/1024 (ONLY ELF32)\n");
-		return 1;
+		return R_FALSE;
 	}
 	arg = alloca(strlen(op)+1);
 	strcpy(arg, op);
@@ -289,12 +337,12 @@ static int rabin_do_operation(const char *op)
 	ptr = strchr(op, '/');
 	if (!ptr) {
 		printf("Unknown action. use -o help\n");
-		return 1;
+		return R_FALSE;
 	}
 
 	if (r_bin_open(&bin) == R_FALSE) {
 		fprintf(stderr, "cannot open file\n");
-		return 1;
+		return R_FALSE;
 	}
 
 	ptr = ptr+1;
@@ -305,13 +353,13 @@ static int rabin_do_operation(const char *op)
 
 		if (r_bin_resize_section(&bin, ptr, r_num_math(NULL,ptr2+1)) == 0) {
 			fprintf(stderr, "Delta = 0\n");
-			return 1;
+			return R_FALSE;
 		}
 	}
 
 	r_bin_close(&bin);
 
-	return 0;
+	return R_TRUE;
 }
 
 /* bin callback */
@@ -337,7 +385,7 @@ int main(int argc, char **argv)
 		&__lib_bin_cb, &__lib_bin_dt, NULL);
 	r_lib_opendir(&l, getenv("LIBR_PLUGINS"));
 
-	while ((c = getopt(argc, argv, "isSIeo:f:rvh")) != -1)
+	while ((c = getopt(argc, argv, "isSzIeo:f:rvh")) != -1)
 	{
 		switch( c ) {
 		case 'i':
@@ -348,6 +396,9 @@ int main(int argc, char **argv)
 			break;
 		case 'S':
 			action |= ACTION_SECTIONS;
+			break;
+		case 'z':
+			action |= ACTION_STRINGS;
 			break;
 		case 'I':
 			action |= ACTION_INFO;
@@ -386,13 +437,13 @@ int main(int argc, char **argv)
 		sprintf(str, "bin_%s", format);
 		if (!r_bin_set(&bin, str)) {
 			fprintf(stderr, "Unknown format\n");
-			return 1;
+			return R_FALSE;
 		}
 		free (str);
 	} else {
 		if (!r_bin_autoset(&bin)) {
 			fprintf(stderr, "Not supported format\n");
-			return 1;
+			return R_FALSE;
 		}
 	}
 
@@ -404,10 +455,12 @@ int main(int argc, char **argv)
 		rabin_show_symbols();
 	if (action&ACTION_SECTIONS)
 		rabin_show_sections();
+	if (action&ACTION_STRINGS)
+		rabin_show_strings();
 	if (action&ACTION_INFO)
 		rabin_show_info();
 	if (op != NULL && action&ACTION_OPERATION)
 		rabin_do_operation(op);
 
-	return 0;
+	return R_TRUE;
 }

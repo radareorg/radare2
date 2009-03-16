@@ -61,8 +61,8 @@ typedef Elf32_Half Elf32_Versym;
 typedef Elf64_Half Elf64_Versym;
 
 
-#define ELF_NAME_LENGTH 64
-#define ELF_STRING_LENGTH 128
+#define ELF_NAME_LENGTH 256
+#define ELF_STRING_LENGTH 256
 #define ELF_ADDR_MASK   0xffffffffffff8000LL
 #define ELF_GOTOFF_MASK 0xfffffffffffff000LL
 

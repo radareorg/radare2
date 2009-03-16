@@ -19,6 +19,11 @@
 static struct r_bin_handle_t *bin_static_plugins[] = 
 	{ R_BIN_STATIC_PLUGINS };
 
+static struct r_bin_string_t *get_strings(struct r_bin_t *bin)
+{
+	return NULL;
+}
+
 struct r_bin_t *r_bin_new(char *file, int rw)
 {
 	struct r_bin_t *bin = MALLOC_STRUCT(struct r_bin_t);
@@ -172,6 +177,15 @@ struct r_bin_import_t* r_bin_get_imports(struct r_bin_t *bin)
 {
 	if (bin->cur && bin->cur->imports)
 		return bin->cur->imports(bin);
+	
+	return NULL;
+}
+
+struct r_bin_string_t* r_bin_get_strings(struct r_bin_t *bin)
+{
+	if (bin->cur && bin->cur->strings)
+		return bin->cur->strings(bin);
+	else return get_strings(bin);
 	
 	return NULL;
 }

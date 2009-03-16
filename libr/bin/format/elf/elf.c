@@ -141,6 +141,7 @@ static int ELF_(aux_stripstr_from_file)(const char *filename, int min, int encod
 						stringsp->type = (unicode?'U':'A');
 						stringsp->size = string_len;
 						memcpy(stringsp->string, str, ELF_STRING_LENGTH);
+						stringsp->string[ELF_STRING_LENGTH-1] = '\0';
 						ctr++; stringsp++;
 					}
 				}
@@ -922,6 +923,7 @@ int ELF_(r_bin_elf_get_imports)(ELF_(r_bin_elf_obj) *bin, r_bin_elf_import *impo
 					continue;
 				if (symp->st_shndx == STN_UNDEF && ELF32_ST_BIND(symp->st_info) != STB_WEAK) {
 					memcpy(importp->name, &string[symp->st_name], ELF_NAME_LENGTH);
+					importp->name[ELF_NAME_LENGTH-1] = '\0';
 					if (symp->st_value)
 						importp->offset = symp->st_value;
 					else
@@ -1073,6 +1075,7 @@ int ELF_(r_bin_elf_get_symbols)(ELF_(r_bin_elf_obj) *bin, r_bin_elf_symbol *symb
 				if (symp->st_shndx != STN_UNDEF && ELF32_ST_TYPE(symp->st_info) != STT_SECTION && ELF32_ST_BIND(symp->st_info) != STB_WEAK) {
 					symbolp->size = (u64)symp->st_size; 
 					memcpy(symbolp->name, &string[symp->st_name], ELF_NAME_LENGTH); 
+					symbolp->name[ELF_NAME_LENGTH-1] = '\0';
 					symbolp->offset = (u64)symp->st_value + sym_offset;
 					if (symbolp->offset >= bin->base_addr)
 						symbolp->offset -= bin->base_addr;

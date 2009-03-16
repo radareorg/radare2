@@ -189,6 +189,7 @@ struct r_bin_handle_t r_bin_plugin_elf64 = {
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,
+	.strings = NULL,
 	.info = &info,
 	.resize_section = &resize_section
 };

@@ -7,10 +7,10 @@
 
 static int bopen(struct r_bin_t *bin)
 {
-	if((bin->bin_obj = MALLOC_STRUCT(Elf32_r_bin_elf_obj)) == NULL)
+	if((bin->bin_obj = MALLOC_STRUCT(struct r_bin_java_t)) == NULL)
 		return R_FALSE;
 
-	if ((bin->fd = Elf32_r_bin_elf_open(bin->bin_obj,bin->file,bin->rw)) == -1) {
+	if ((bin->fd = r_bin_java_open(bin->bin_obj, bin->file)) == -1) {
 		free(bin->bin_obj);
 		return R_FALSE;
 	}
@@ -20,12 +20,7 @@ static int bopen(struct r_bin_t *bin)
 
 static int bclose(struct r_bin_t *bin)
 {
-	return Elf32_r_bin_elf_close(bin->bin_obj);
-}
-
-static u64 baddr(struct r_bin_t *bin)
-{
-	return Elf32_r_bin_elf_get_base_addr(bin->bin_obj);
+	return r_bin_java_close(bin->bin_obj);
 }
 
 static struct r_bin_entry_t* entry(struct r_bin_t *bin)
@@ -36,71 +31,37 @@ static struct r_bin_entry_t* entry(struct r_bin_t *bin)
 		return NULL;
 	memset(ret, '\0', sizeof(struct r_bin_entry_t));
 
-	ret->offset = ret->rva = Elf32_r_bin_elf_get_entry_offset(bin->bin_obj);
+	ret->offset = ret->rva = r_bin_java_get_entrypoint(bin->bin_obj);
 	return ret;
 }
 
-static struct r_bin_section_t* sections(struct r_bin_t *bin)
+static u64 baddr(struct r_bin_t *bin)
 {
-	int sections_count, i;
-	struct r_bin_section_t *ret = NULL;
-	r_bin_elf_section *section = NULL;
-
-	sections_count = Elf32_r_bin_elf_get_sections_count(bin->bin_obj);
-
-	if((section = malloc(sections_count * sizeof(r_bin_elf_section))) == NULL)
-		return NULL;
-	if((ret = malloc((sections_count + 1) * sizeof(struct r_bin_section_t))) == NULL)
-		return NULL;
-	memset(ret, '\0', (sections_count + 1) * sizeof(struct r_bin_section_t));
-
-	Elf32_r_bin_elf_get_sections(bin->bin_obj,section);
-
-	for (i = 0; i < sections_count; i++) {
-		strncpy(ret[i].name, (char*)section[i].name, R_BIN_SIZEOF_NAMES);
-		ret[i].size = section[i].size;
-		ret[i].vsize = section[i].size;
-		ret[i].offset = section[i].offset;
-		ret[i].rva = section[i].offset;
-		ret[i].characteristics = 0;
-		if (R_BIN_ELF_SCN_IS_EXECUTABLE(section[i].flags))
-			ret[i].characteristics |= 0x1;
-		if (R_BIN_ELF_SCN_IS_WRITABLE(section[i].flags))
-			ret[i].characteristics |= 0x2;
-		if (R_BIN_ELF_SCN_IS_READABLE(section[i].flags))
-			ret[i].characteristics |= 0x4;
-		ret[i].last = 0;
-	}
-	ret[i].last = 1;
-
-	free(section);
-
-	return ret;
+	return 0;
 }
 
 static struct r_bin_symbol_t* symbols(struct r_bin_t *bin)
 {
 	int symbols_count, i;
 	struct r_bin_symbol_t *ret = NULL;
-	r_bin_elf_symbol *symbol = NULL;
+	struct r_bin_java_sym_t *symbol = NULL;
 
-	symbols_count = Elf32_r_bin_elf_get_symbols_count(bin->bin_obj);
+	symbols_count = r_bin_java_get_symbols_count(bin->bin_obj);
 
-	if ((symbol = malloc(symbols_count * sizeof(r_bin_elf_symbol))) == NULL)
+	if ((symbol = malloc(symbols_count * sizeof(struct r_bin_java_sym_t))) == NULL)
 		return NULL;
 	if ((ret = malloc((symbols_count + 1) * sizeof(struct r_bin_symbol_t))) == NULL)
 		return NULL;
 	memset(ret, '\0', (symbols_count + 1) * sizeof(struct r_bin_symbol_t));
 
-	Elf32_r_bin_elf_get_symbols(bin->bin_obj,symbol);
+	r_bin_java_get_symbols(bin->bin_obj,symbol);
 
 	for (i = 0; i < symbols_count; i++) {
 		strncpy(ret[i].name, symbol[i].name, R_BIN_SIZEOF_NAMES);
 		strncpy(ret[i].forwarder, "NONE", R_BIN_SIZEOF_NAMES);
-		strncpy(ret[i].bind, symbol[i].bind, R_BIN_SIZEOF_NAMES);
-		strncpy(ret[i].type, symbol[i].type, R_BIN_SIZEOF_NAMES);
-		ret[i].rva = symbol[i].offset;
-		ret[i].offset = symbol[i].offset;
+		strncpy(ret[i].bind, "NONE", R_BIN_SIZEOF_NAMES);
+		strncpy(ret[i].type, "Method", R_BIN_SIZEOF_NAMES);
+		ret[i].rva = ret[i].offset = symbol[i].offset;
 		ret[i].size = symbol[i].size;
 		ret[i].ordinal = 0;
 		ret[i].last = 0;
@@ -112,69 +73,40 @@ static struct r_bin_symbol_t* symbols(struct r_bin_t *bin)
 	return ret;
 }
 
-static struct r_bin_import_t* imports(struct r_bin_t *bin)
+static struct r_bin_string_t* strings(struct r_bin_t *bin)
 {
-	int imports_count, i;
-	struct r_bin_import_t *ret = NULL;
-	r_bin_elf_import *import = NULL;
+	int strings_count, i;
+	struct r_bin_string_t *ret = NULL;
+	struct r_bin_java_str_t *string = NULL;
 
-	imports_count = Elf32_r_bin_elf_get_imports_count(bin->bin_obj);
+	strings_count = r_bin_java_get_strings_count(bin->bin_obj);
 
-	if ((import = malloc(imports_count * sizeof(r_bin_elf_import))) == NULL)
+	if ((string = malloc(strings_count * sizeof(struct r_bin_java_str_t))) == NULL)
 		return NULL;
-	if ((ret = malloc((imports_count + 1) * sizeof(struct r_bin_import_t))) == NULL)
+	if ((ret = malloc((strings_count + 1) * sizeof(struct r_bin_string_t))) == NULL)
 		return NULL;
-	memset(ret, '\0', (imports_count + 1) * sizeof(struct r_bin_import_t));
+	memset(ret, '\0', (strings_count + 1) * sizeof(struct r_bin_string_t));
 
-	Elf32_r_bin_elf_get_imports(bin->bin_obj,import);
+	r_bin_java_get_strings(bin->bin_obj,string);
 
-	for (i = 0; i < imports_count; i++) {
-		strncpy(ret[i].name, import[i].name, R_BIN_SIZEOF_NAMES);
-		strncpy(ret[i].bind, import[i].bind, R_BIN_SIZEOF_NAMES);
-		strncpy(ret[i].type, import[i].type, R_BIN_SIZEOF_NAMES);
-		ret[i].rva = import[i].offset;
-		ret[i].offset = import[i].offset;
-		ret[i].ordinal = 0;
-		ret[i].hint = 0;
+	for (i = 0; i < strings_count; i++) {
+		strncpy(ret[i].string, string[i].str, R_BIN_SIZEOF_NAMES);
+		ret[i].rva = ret[i].offset = string[i].offset;
+		ret[i].size = 0;
+		ret[i].ordinal = string[i].ordinal;
 		ret[i].last = 0;
 	}
 	ret[i].last = 1;
-	free(import);
+
+	free(string);
+
 	return ret;
 }
 
+/* TODO: Info */
 static struct r_bin_info_t* info(struct r_bin_t *bin)
 {
-	struct r_bin_info_t *ret = NULL;
-
-	if((ret = malloc(sizeof(struct r_bin_info_t))) == NULL)
-		return NULL;
-	memset(ret, '\0', sizeof(struct r_bin_info_t));
-
-	strncpy(ret->type, Elf32_r_bin_elf_get_file_type(bin->bin_obj), R_BIN_SIZEOF_NAMES);
-	strncpy(ret->class, Elf32_r_bin_elf_get_elf_class(bin->bin_obj), R_BIN_SIZEOF_NAMES);
-	strncpy(ret->rclass, "elf", R_BIN_SIZEOF_NAMES);
-	strncpy(ret->os, Elf32_r_bin_elf_get_osabi_name(bin->bin_obj), R_BIN_SIZEOF_NAMES);
-	strncpy(ret->subsystem, Elf32_r_bin_elf_get_osabi_name(bin->bin_obj), R_BIN_SIZEOF_NAMES);
-	strncpy(ret->machine, Elf32_r_bin_elf_get_machine_name(bin->bin_obj), R_BIN_SIZEOF_NAMES);
-	strncpy(ret->arch, Elf32_r_bin_elf_get_arch(bin->bin_obj), R_BIN_SIZEOF_NAMES);
-	ret->big_endian=Elf32_r_bin_elf_is_big_endian(bin->bin_obj);
-	ret->dbg_info = 0;
-	if (Elf32_r_bin_elf_get_stripped(bin->bin_obj)) {
-		ret->dbg_info |= 0x01;
-	} else {
-		ret->dbg_info |= 0x04;
-		ret->dbg_info |= 0x08;
-		ret->dbg_info |= 0x10;
-	}
-	if (Elf32_r_bin_elf_get_static(bin->bin_obj))
-		ret->dbg_info |= 0x02;
-	return ret;
-}
-
-static u64 resize_section(struct r_bin_t *bin, char *name, u64 size)
-{
-	return Elf32_r_bin_elf_resize_section(bin->bin_obj, name, size);
+	return NULL;
 }
 
 struct r_bin_handle_t r_bin_plugin_java = {
@@ -186,11 +118,12 @@ struct r_bin_handle_t r_bin_plugin_java = {
 	.close = &bclose,
 	.baddr = &baddr,
 	.entry = &entry,
-	.sections = &sections,
+	.sections = NULL,
 	.symbols = &symbols,
-	.imports = &imports,
+	.imports = NULL,
+	.strings = &strings,
 	.info = &info,
-	.resize_section = &resize_section
+	.resize_section = NULL
 };
 
 #ifndef CORELIB

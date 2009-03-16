@@ -17,7 +17,7 @@
 #define R_BIN_DBG_SYMS(x)     x & 0x08
 #define R_BIN_DBG_RELOCS(x)   x & 0x10
 
-#define R_BIN_SIZEOF_NAMES 64
+#define R_BIN_SIZEOF_NAMES 256
 
 enum {
 	R_BIN_FMT_ELF32,
@@ -48,6 +48,7 @@ struct r_bin_handle_t {
 	struct r_bin_section_t* (*sections)(struct r_bin_t *bin);
 	struct r_bin_symbol_t* (*symbols)(struct r_bin_t *bin);
 	struct r_bin_import_t* (*imports)(struct r_bin_t *bin);
+	struct r_bin_string_t* (*strings)(struct r_bin_t *bin);
 	struct r_bin_info_t* (*info)(struct r_bin_t *bin);
 	u64 (*resize_section)(struct r_bin_t *bin, char *name, u64 size);
 	struct list_head list;
@@ -91,6 +92,15 @@ struct r_bin_import_t {
 	int last;
 };
 
+struct r_bin_string_t {
+	char string[R_BIN_SIZEOF_NAMES];
+	u64 rva;
+	u64 offset;
+	u64 ordinal;
+	u64 size;
+	int last;
+};
+
 struct r_bin_info_t {
 	char type[R_BIN_SIZEOF_NAMES];
 	char class[R_BIN_SIZEOF_NAMES];
@@ -120,6 +130,7 @@ struct r_bin_entry_t* r_bin_get_entry(struct r_bin_t *bin);
 struct r_bin_section_t* r_bin_get_sections(struct r_bin_t *bin);
 struct r_bin_symbol_t* r_bin_get_symbols(struct r_bin_t *bin);
 struct r_bin_import_t* r_bin_get_imports(struct r_bin_t *bin);
+struct r_bin_string_t* r_bin_get_strings(struct r_bin_t *bin);
 struct r_bin_info_t* r_bin_get_info(struct r_bin_t *bin);
 u64 r_bin_resize_section(struct r_bin_t *bin, char *name, u64 size);
 u64 r_bin_get_section_offset(struct r_bin_t *bin, char *name);
@@ -130,5 +141,6 @@ u64 r_bin_get_section_size(struct r_bin_t *bin, char *name);
 extern struct r_bin_handle_t r_bin_plugin_elf;
 extern struct r_bin_handle_t r_bin_plugin_elf64;
 extern struct r_bin_handle_t r_bin_plugin_pe;
+extern struct r_bin_handle_t r_bin_plugin_java;
 
 #endif
