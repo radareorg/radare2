@@ -73,7 +73,7 @@ static unsigned short read_short(int fd)
 	return ntohs(sh);
 }
 
-static struct r_bin_java_cp_item_t* get_cp(struct r_bin_java_t *bin, u64 i)
+static struct r_bin_java_cp_item_t* get_cp(struct r_bin_java_t *bin, unsigned short i)
 {
 	if (i<0||i>bin->cf.cp_count)
 		return &cp_null_item;
@@ -91,10 +91,8 @@ static int attributes_walk(struct r_bin_java_t *bin, struct r_bin_java_attr_t *a
 		read(fd, buf, 6);
 		attr->name_idx = R_BIN_JAVA_USHORT(buf,0);
 		attr->name = strdup((get_cp(bin, attr->name_idx-1))->value);
-		IFDBG {
-			name = (get_cp(bin, attr->name_idx-1))->value;//cp_items[R_BIN_JAVA_USHORT(buf,0)-1].value;
-			printf("   %2d: Name Index: %d (%s)\n", j, attr->name_idx, name);
-		}
+		name = (get_cp(bin, attr->name_idx-1))->value;//cp_items[R_BIN_JAVA_USHORT(buf,0)-1].value;
+		IFDBG printf("   %2d: Name Index: %d (%s)\n", j, attr->name_idx, name);
 		// TODO add comment with constant pool index
 		sz3 = R_BIN_JAVA_UINT(buf, 2);
 		if (fields) {
@@ -230,7 +228,8 @@ static int javasm_init(struct r_bin_java_t *bin)
 			case 1: // utf 8 string
 				read(bin->fd, buf, 2);
 				sz = R_BIN_JAVA_USHORT(buf,0); //(buf[0]<<8)|buf[1];
-				//bin->cp_items[i].len = sz;
+				bin->cp_items[i].length = sz;
+				bin->cp_items[i].off += 3;
 				read(bin->fd, buf, sz);
 				buf[sz] = '\0';
 				break;
@@ -421,6 +420,7 @@ int r_bin_java_get_strings(struct r_bin_java_t *bin, struct r_bin_java_str_t *st
 		if (bin->cp_items[i].tag == 1) {
 			str[ctr].offset = (u64)bin->cp_items[i].off;
 			str[ctr].ordinal = (u64)bin->cp_items[i].ord;
+			str[ctr].size = (u64)bin->cp_items[i].length;
 			memcpy(str[ctr].str, bin->cp_items[i].value, R_BIN_JAVA_MAXSTR);
 			ctr++;
 		}

@@ -30,6 +30,7 @@ struct r_bin_java_cp_item_t {
 	char name[32];
 	char *value;
 	u8 bytes[5];
+	unsigned short length;
 	unsigned short ord;
 	unsigned short off;
 };
@@ -96,6 +97,7 @@ struct r_bin_java_sym_t {
 struct r_bin_java_str_t {
 	u64 offset;
 	u64 ordinal;
+	u64 size;
 	char str[R_BIN_JAVA_MAXSTR];
 };
 

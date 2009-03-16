@@ -60,7 +60,7 @@ static struct r_bin_symbol_t* symbols(struct r_bin_t *bin)
 		strncpy(ret[i].name, symbol[i].name, R_BIN_SIZEOF_NAMES);
 		strncpy(ret[i].forwarder, "NONE", R_BIN_SIZEOF_NAMES);
 		strncpy(ret[i].bind, "NONE", R_BIN_SIZEOF_NAMES);
-		strncpy(ret[i].type, "Method", R_BIN_SIZEOF_NAMES);
+		strncpy(ret[i].type, "FUNC", R_BIN_SIZEOF_NAMES);
 		ret[i].rva = ret[i].offset = symbol[i].offset;
 		ret[i].size = symbol[i].size;
 		ret[i].ordinal = 0;
@@ -92,7 +92,7 @@ static struct r_bin_string_t* strings(struct r_bin_t *bin)
 	for (i = 0; i < strings_count; i++) {
 		strncpy(ret[i].string, string[i].str, R_BIN_SIZEOF_NAMES);
 		ret[i].rva = ret[i].offset = string[i].offset;
-		ret[i].size = 0;
+		ret[i].size = string[i].size;
 		ret[i].ordinal = string[i].ordinal;
 		ret[i].last = 0;
 	}

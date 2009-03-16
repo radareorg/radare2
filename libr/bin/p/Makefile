@@ -1,6 +1,6 @@
 CFLAGS=-I../../include -I../format/ -Wall -fPIC -shared -Wl,-R..
 # XXX
-CFLAGS+=-DLIL_ENDIAN=1 -D__UNIX__ -g -DR_DEBUG=1
+CFLAGS+=-DLIL_ENDIAN=1 -D__UNIX__ -g -DR_DEBUG=0
 
 foo: all
 

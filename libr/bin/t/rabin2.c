@@ -48,7 +48,7 @@ static int rabin_show_help()
 			"Available plugins:\n");
 	r_bin_list(&bin);
 
-	return R_FALSE;
+	return R_TRUE;
 }
 
 static int rabin_show_entrypoint()
@@ -158,10 +158,11 @@ static int rabin_show_symbols()
 				if (!strncmp(symbolsp->type,"OBJECT", 6))
 					printf("Cd %lli @ 0x%08llx\n",
 							symbolsp->size, baddr+symbolsp->rva);
-				printf("b %lli && ", symbolsp->size);
-			}
-			printf("f sym.%s @ 0x%08llx\n",
-					symbolsp->name, baddr+symbolsp->rva);
+				printf("f sym.%s %lli @ 0x%08llx\n",
+						symbolsp->name, symbolsp->size,
+						baddr+symbolsp->rva);
+			} else printf("f sym.%s @ 0x%08llx\n",
+						symbolsp->name, baddr+symbolsp->rva);
 		} else printf("address=0x%08llx offset=0x%08llx ordinal=%03lli "
 				"forwarder=%s size=%08lli bind=%s type=%s name=%s\n",
 				baddr+symbolsp->rva, symbolsp->offset,
@@ -203,12 +204,14 @@ static int rabin_show_strings()
 	while (!stringsp->last) {
 		if (rad) {
 			r_flag_name_filter(stringsp->string);
-			printf("f str.%s @ 0x%08llx\n",
-					stringsp->string, baddr+stringsp->rva);
+			printf( "f str.%s %lli @ 0x%08llx\n"
+					"Cs %lli @ 0x%08llx\n",
+					stringsp->string, stringsp->size, baddr+stringsp->rva,
+					stringsp->size, baddr+stringsp->rva);
 		} else printf("address=0x%08llx offset=0x%08llx ordinal=%03lli "
-				"string=%s\n",
+				"size=%08lli string=%s\n",
 				baddr+stringsp->rva, stringsp->offset,
-				stringsp->ordinal, stringsp->string);
+				stringsp->ordinal, stringsp->size, stringsp->string);
 		stringsp++; ctr++;
 	}
 
@@ -437,13 +440,13 @@ int main(int argc, char **argv)
 		sprintf(str, "bin_%s", format);
 		if (!r_bin_set(&bin, str)) {
 			fprintf(stderr, "Unknown format\n");
-			return R_FALSE;
+			return R_TRUE;
 		}
 		free (str);
 	} else {
 		if (!r_bin_autoset(&bin)) {
 			fprintf(stderr, "Not supported format\n");
-			return R_FALSE;
+			return R_TRUE;
 		}
 	}
 
@@ -462,5 +465,5 @@ int main(int argc, char **argv)
 	if (op != NULL && action&ACTION_OPERATION)
 		rabin_do_operation(op);
 
-	return R_TRUE;
+	return R_FALSE;
 }

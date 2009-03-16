@@ -19,9 +19,52 @@
 static struct r_bin_handle_t *bin_static_plugins[] = 
 	{ R_BIN_STATIC_PLUGINS };
 
-static struct r_bin_string_t *get_strings(struct r_bin_t *bin)
+static struct r_bin_string_t *get_strings(struct r_bin_t *bin, int min)
 {
-	return NULL;
+	struct r_bin_string_t *ret = NULL;
+	u8 *buf = NULL;
+	u64 len, max_str = 0;
+	int i, matches = 0, ctr = 0;
+	char str[R_BIN_SIZEOF_NAMES];
+
+	len = lseek(bin->fd, 0, SEEK_END);
+	max_str = (u64)(len/min);
+
+	ret = malloc(max_str*sizeof(struct r_bin_string_t));
+
+	buf = malloc(len);
+	if (buf == NULL) {
+		fprintf(stderr, "Error allocating file\n");
+		return NULL;
+	}
+	lseek(bin->fd, 0, SEEK_SET);
+	read(bin->fd, buf, len);
+
+	for(i = 0; i < len && ctr < max_str; i++) { 
+		if ((IS_PRINTABLE(buf[i]))) {
+			str[matches] = buf[i];
+			if (matches < sizeof(str))
+				matches++;
+		} else {
+			/* check if the length fits on our request */
+			if (matches >= min) {
+				str[matches] = '\0';
+				ret[ctr].offset = i-matches;
+				ret[ctr].size = matches;
+				memcpy(ret[ctr].string, str, R_BIN_SIZEOF_NAMES);
+				ret[ctr].string[R_BIN_SIZEOF_NAMES-1] = '\0';
+				ret[ctr].last = 0;
+				ctr++;
+			}
+			matches = 0;
+		}
+	}
+
+	ret[ctr].last = 1;
+
+	free(buf);
+
+	return ret;
 }
 
 struct r_bin_t *r_bin_new(char *file, int rw)
@@ -112,7 +155,10 @@ int r_bin_autoset(struct r_bin_t *bin)
 	} else if (!memcmp(buf, "\x4d\x5a", 2)) {
 		r_bin_set(bin, "bin_pe");
 		return R_TRUE;
-	} 
+	} else if (!memcmp(buf, "\xca\xfe\xba\xbe", 4)) {
+		r_bin_set(bin, "bin_java");
+		return R_TRUE;
+	}
 
 	return R_FALSE;
 }
@@ -185,7 +231,7 @@ struct r_bin_string_t* r_bin_get_strings(struct r_bin_t *bin)
 {
 	if (bin->cur && bin->cur->strings)
 		return bin->cur->strings(bin);
-	else return get_strings(bin);
+	else return get_strings(bin, 5);
 	
 	return NULL;
 }
