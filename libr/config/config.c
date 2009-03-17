@@ -90,6 +90,8 @@ struct r_config_node_t *r_config_set_cb(struct r_config_t *cfg, const char *name
 	struct r_config_node_t *node;
 	node = r_config_set(cfg, name, value);
 	node->callback = callback;
+	if (node->callback)
+		node->callback(cfg->user, node);
 	return node;
 }
 

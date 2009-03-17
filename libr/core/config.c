@@ -2,6 +2,28 @@
 
 #include <r_core.h>
 
+int config_asm_arch_callback(void *user, void *data)
+{
+	struct r_core_t *core = (struct r_core_t *) user;
+	struct r_config_node_t *node = (struct r_config_node_t *) data;
+	char buf[128];
+	snprintf(buf, 127, "asm_%s", node->value),
+	r_asm_set(&core->assembler, buf);
+// TODO: control error and restore old value (return false?) show errormsg?
+	return R_TRUE;
+}
+
+int config_asm_parser_callback(void *user, void *data)
+{
+	struct r_core_t *core = (struct r_core_t *) user;
+	struct r_config_node_t *node = (struct r_config_node_t *) data;
+	char buf[128];
+	snprintf(buf, 127, "parse_%s", node->value),
+	r_asm_set(&core->assembler, buf);
+// TODO: control error and restore old value (return false?) show errormsg?
+	return R_TRUE;
+}
+
 int config_color_callback(void *user, void *data)
 {
 	struct r_core_t *core = (struct r_core_t *) user;
@@ -22,10 +44,17 @@ int r_core_config_init(struct r_core_t *core)
 {
 	struct r_config_t *cfg = &core->config;
 	r_config_init(cfg, (void *)core);
-	r_config_set(cfg, "asm.arch", "x86");
+
+	r_config_set_cb(cfg, "asm.arch", "x86",
+		&config_asm_arch_callback);
+
+	r_parse_set(&core->parser, "parse_x86_pseudo");
+	r_config_set_cb(cfg, "asm.parser", "x86_pseudo",
+		&config_asm_parser_callback);
+
+	r_config_set(cfg, "asm.syntax", "intel");
 	r_config_set_i(cfg, "asm.bits", 32);
-	r_config_set(cfg, "asm.syntax", "x86");
-	r_config_set(cfg, "asm.pseudo", "false"); 
+	r_config_set(cfg, "asm.pseudo", "false");  // DEPRECATED ???
 	r_config_set(cfg, "asm.bytes", "true"); 
 	r_config_set(cfg, "asm.offset", "true"); 
 	r_config_set(cfg, "asm.os", "linux"); 

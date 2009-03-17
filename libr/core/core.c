@@ -132,6 +132,7 @@ int r_core_init(struct r_core_t *core)
 	r_anal_init(&core->anal);
 	r_anal_set_user_ptr(&core->anal, core);
 	r_asm_init(&core->assembler);
+	r_asm_set(&core->assembler, "asm_x86"); // XXX should be done by r_asm on init?
 	r_asm_set_user_ptr(&core->assembler, core);
 	r_parse_init(&core->parser);
 	r_parse_set_user_ptr(&core->parser, core);
@@ -151,7 +152,6 @@ int r_core_init(struct r_core_t *core)
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (u8*)malloc(R_CORE_BLOCKSIZE);
 	r_core_cmd_init(core);
-	r_core_config_init(core);
 	r_flag_init(&core->flags);
 	r_debug_init(&core->dbg);
 	r_lib_init(&core->lib, "radare_plugin");
@@ -175,6 +175,7 @@ int r_core_init(struct r_core_t *core)
 		r_lib_opendir(&core->lib, homeplugindir);
 		free(homeplugindir);
 	}
+	r_core_config_init(core);
 	// XXX fix path here
 	return 0;
 }

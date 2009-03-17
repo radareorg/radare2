@@ -340,20 +340,23 @@ static int cmd_print(void *data, const char *input)
 			/* XXX hardcoded */
 			int ret, idx; 
 			u8 *buf = core->block;
-			u64 pseudo = r_config_get_i(&core->config, "asm.pseudo");
+			int pseudo = (int)r_config_get_i(&core->config, "asm.pseudo");
 			char str[128];
 			struct r_asm_aop_t aop;
-			r_asm_set_pc(&core->assembler, core->seek);
-			r_asm_set(&core->assembler, "asm_x86");
-			r_parse_set(&core->parser, "parse_x86_pseudo");
 			
 			for(idx=ret=0; idx < len; idx+=ret) {
 				r_asm_set_pc(&core->assembler, core->assembler.pc + ret);
 				ret = r_asm_disassemble(&core->assembler, &aop, buf+idx, len-idx);
-				r_parse_parse(&core->parser, aop.buf_asm, str);
+				if (ret <1) {
+					ret = 1;
+					fprintf(stderr, "** invalid opcode at 0x%08llx **\n", core->assembler.pc + ret);
+				}
 				if (show_offset) r_cons_printf("0x%08llx ", core->seek + idx);
 				if (show_bytes) r_cons_printf("%14s ", aop.buf_hex);
-				r_cons_printf("%s\n", pseudo?str:aop.buf_asm);
+				if (pseudo) {
+					r_parse_parse(&core->parser, aop.buf_asm, str);
+					r_cons_printf("%s\n", str);
+				} else r_cons_printf("%s\n", aop.buf_asm);
 			}
 		}
 		break;
