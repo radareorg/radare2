@@ -149,16 +149,15 @@ int r_bin_autoset(struct r_bin_t *bin)
 
 	if (!memcmp(buf, "\x7F\x45\x4c\x46", 4)) {
 		if (buf[4] == 2)  /* buf[EI_CLASS] == ELFCLASS64 */
-			r_bin_set(bin, "bin_elf64");
-		else r_bin_set(bin, "bin_elf");
-		return R_TRUE;
-	} else if (!memcmp(buf, "\x4d\x5a", 2)) {
-		r_bin_set(bin, "bin_pe");
-		return R_TRUE;
-	} else if (!memcmp(buf, "\xca\xfe\xba\xbe", 4)) {
-		r_bin_set(bin, "bin_java");
-		return R_TRUE;
-	}
+			return r_bin_set(bin, "bin_elf64");
+		else return r_bin_set(bin, "bin_elf");
+	} else if (!memcmp(buf, "\x4d\x5a", 2) &&
+			!memcmp(buf+(buf[0x3c]|(buf[0x3d]<<8)), "\x50\x45", 2)) {
+		if (!memcmp(buf+(buf[0x3c]|buf[0x3d]<<8)+0x18, "\x0b\x02", 2))
+			return r_bin_set(bin, "bin_pe64");
+		else return r_bin_set(bin, "bin_pe");
+	} else if (!memcmp(buf, "\xca\xfe\xba\xbe", 4))
+		return r_bin_set(bin, "bin_java");
 
 	return R_FALSE;
 }

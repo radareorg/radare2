@@ -1,36 +1,74 @@
 /* radare - LGPL - Copyright 2008 nibble<.ds@gmail.com> */
 
+#undef PE_
+#undef ILT_MASK1
+#undef ILT_MASK2
+#undef PE_Word
+#undef PE_DWord
+
+#ifdef R_BIN_PE64
+#define PE_(name) Pe64_##name 
+#define ILT_MASK1 0x8000000000000000LL
+#define ILT_MASK2 0x7fffffffffffffffLL
+#define PE_Word u16
+#define PE_DWord u64
+#else
+#define PE_(name) Pe32_##name 
+#define ILT_MASK1 0x80000000
+#define ILT_MASK2 0x7fffffff
+#define PE_Word u16
+#define PE_DWord u32
+#endif
+
 #ifndef _INCLUDE_R_BIN_PE_SPECS_H_
 #define _INCLUDE_R_BIN_PE_SPECS_H_
-
-#define PE_Word unsigned short
-#define PE_DWord unsigned int
-#define PE_Byte unsigned char
 
 #define PE_NAME_LENGTH 256
 #define PE_STRING_LENGTH 256
 
 typedef struct {
-	PE_Word  e_magic;      /* 00: MZ Header signature */
-	PE_Word  e_cblp;       /* 02: Bytes on last page of file */
-	PE_Word  e_cp;         /* 04: Pages in file */
-	PE_Word  e_crlc;       /* 06: Relocations */
-	PE_Word  e_cparhdr;    /* 08: Size of header in paragraphs */
-	PE_Word  e_minalloc;   /* 0a: Minimum extra paragraphs needed */
-	PE_Word  e_maxalloc;   /* 0c: Maximum extra paragraphs needed */
-	PE_Word  e_ss;         /* 0e: Initial (relative) SS value */
-	PE_Word  e_sp;         /* 10: Initial SP value */
-	PE_Word  e_csum;       /* 12: Checksum */
-	PE_Word  e_ip;         /* 14: Initial IP value */
-	PE_Word  e_cs;         /* 16: Initial (relative) CS value */
-	PE_Word  e_lfarlc;     /* 18: File address of relocation table */
-	PE_Word  e_ovno;       /* 1a: Overlay number */
-	PE_Word  e_res[4];     /* 1c: Reserved words */
-	PE_Word  e_oemid;      /* 24: OEM identifier (for e_oeminfo) */
-	PE_Word  e_oeminfo;    /* 26: OEM information; e_oemid specific */
-	PE_Word  e_res2[10];   /* 28: Reserved words */
-	PE_DWord e_lfanew;     /* 3c: Offset to extended header */
-} pe_image_dos_header;
+	u16 e_magic;      /* 00: MZ Header signature */
+	u16 e_cblp;       /* 02: Bytes on last page of file */
+	u16 e_cp;         /* 04: Pages in file */
+	u16 e_crlc;       /* 06: Relocations */
+	u16 e_cparhdr;    /* 08: Size of header in paragraphs */
+	u16 e_minalloc;   /* 0a: Minimum extra paragraphs needed */
+	u16 e_maxalloc;   /* 0c: Maximum extra paragraphs needed */
+	u16 e_ss;         /* 0e: Initial (relative) SS value */
+	u16 e_sp;         /* 10: Initial SP value */
+	u16 e_csum;       /* 12: Checksum */
+	u16 e_ip;         /* 14: Initial IP value */
+	u16 e_cs;         /* 16: Initial (relative) CS value */
+	u16 e_lfarlc;     /* 18: File address of relocation table */
+	u16 e_ovno;       /* 1a: Overlay number */
+	u16 e_res[4];     /* 1c: Reserved words */
+	u16 e_oemid;      /* 24: OEM identifier (for e_oeminfo) */
+	u16 e_oeminfo;    /* 26: OEM information; e_oemid specific */
+	u16 e_res2[10];   /* 28: Reserved words */
+	u32 e_lfanew;     /* 3c: Offset to extended header */
+} Pe32_image_dos_header;
+
+typedef struct {
+	u16 e_magic;      /* 00: MZ Header signature */
+	u16 e_cblp;       /* 02: Bytes on last page of file */
+	u16 e_cp;         /* 04: Pages in file */
+	u16 e_crlc;       /* 06: Relocations */
+	u16 e_cparhdr;    /* 08: Size of header in paragraphs */
+	u16 e_minalloc;   /* 0a: Minimum extra paragraphs needed */
+	u16 e_maxalloc;   /* 0c: Maximum extra paragraphs needed */
+	u16 e_ss;         /* 0e: Initial (relative) SS value */
+	u16 e_sp;         /* 10: Initial SP value */
+	u16 e_csum;       /* 12: Checksum */
+	u16 e_ip;         /* 14: Initial IP value */
+	u16 e_cs;         /* 16: Initial (relative) CS value */
+	u16 e_lfarlc;     /* 18: File address of relocation table */
+	u16 e_ovno;       /* 1a: Overlay number */
+	u16 e_res[4];     /* 1c: Reserved words */
+	u16 e_oemid;      /* 24: OEM identifier (for e_oeminfo) */
+	u16 e_oeminfo;    /* 26: OEM information; e_oemid specific */
+	u16 e_res2[10];   /* 28: Reserved words */
+	u32 e_lfanew;     /* 3c: Offset to extended header */
+} Pe64_image_dos_header;
 
 #define PE_IMAGE_FILE_TYPE_PE32                0x10b
 #define PE_IMAGE_FILE_TYPE_PE32PLUS            0x20b
@@ -84,14 +122,24 @@ typedef struct {
 #define PE_IMAGE_FILE_BYTES_REVERSED_HI        0x8000
 
 typedef struct {
-	PE_Word  Machine;
-	PE_Word  NumberOfSections;
-	PE_DWord TimeDateStamp;
-	PE_DWord PointerToSymbolTable;
-	PE_DWord NumberOfSymbols;
-	PE_Word  SizeOfOptionalHeader;
-	PE_Word  Characteristics;
-} pe_image_file_header;
+	u16 Machine;
+	u16 NumberOfSections;
+	u32 TimeDateStamp;
+	u32 PointerToSymbolTable;
+	u32 NumberOfSymbols;
+	u16 SizeOfOptionalHeader;
+	u16 Characteristics;
+} Pe32_image_file_header;
+
+typedef struct {
+	u16 Machine;
+	u16 NumberOfSections;
+	u32 TimeDateStamp;
+	u32 PointerToSymbolTable;
+	u32 NumberOfSymbols;
+	u16 SizeOfOptionalHeader;
+	u16 Characteristics;
+} Pe64_image_file_header;
 
 #define PE_IMAGE_DIRECTORY_ENTRIES                 16
 #define PE_IMAGE_DIRECTORY_ENTRY_EXPORT             0
@@ -124,49 +172,85 @@ typedef struct {
 #define PE_IMAGE_SUBSYSTEM_XBOX                    14
 
 typedef struct {
-	PE_DWord VirtualAddress;
-	PE_DWord Size;
-} pe_image_data_directory;
+	u32 VirtualAddress;
+	u32 Size;
+} Pe32_image_data_directory;
 
 typedef struct {
+	u32 VirtualAddress;
+	u32 Size;
+} Pe64_image_data_directory;
 
+typedef struct {
 	/* Standard fields */
-
-	PE_Word  Magic;
-	PE_Byte  MajorLinkerVersion;
-	PE_Byte  MinorLinkerVersion;
-	PE_DWord SizeOfCode;
-	PE_DWord SizeOfInitializedData;
-	PE_DWord SizeOfUninitializedData;
-	PE_DWord AddressOfEntryPoint;
-	PE_DWord BaseOfCode;
-	PE_DWord BaseOfData;
-
+	u16 Magic;
+	u8  MajorLinkerVersion;
+	u8  MinorLinkerVersion;
+	u32 SizeOfCode;
+	u32 SizeOfInitializedData;
+	u32 SizeOfUninitializedData;
+	u32 AddressOfEntryPoint;
+	u32 BaseOfCode;
+	u32 BaseOfData;
 	/* NT additional fields */
+	u32 ImageBase;
+	u32 SectionAlignment;
+	u32 FileAlignment;
+	u16 MajorOperatingSystemVersion;
+	u16 MinorOperatingSystemVersion;
+	u16 MajorImageVersion;
+	u16 MinorImageVersion;
+	u16 MajorSubsystemVersion;
+	u16 MinorSubsystemVersion;
+	u32 Win32VersionValue;
+	u32 SizeOfImage;
+	u32 SizeOfHeaders;
+	u32 CheckSum;
+	u16 Subsystem;
+	u16 DllCharacteristics;
+	u32 SizeOfStackReserve;
+	u32 SizeOfStackCommit;
+	u32 SizeOfHeapReserve;
+	u32 SizeOfHeapCommit;
+	u32 LoaderFlags;
+	u32 NumberOfRvaAndSizes;
+	Pe32_image_data_directory DataDirectory[PE_IMAGE_DIRECTORY_ENTRIES];
+} Pe32_image_optional_header;
 
-	PE_DWord ImageBase;
-	PE_DWord SectionAlignment;
-	PE_DWord FileAlignment;
-	PE_Word  MajorOperatingSystemVersion;
-	PE_Word  MinorOperatingSystemVersion;
-	PE_Word  MajorImageVersion;
-	PE_Word  MinorImageVersion;
-	PE_Word  MajorSubsystemVersion;
-	PE_Word  MinorSubsystemVersion;
-	PE_DWord Win32VersionValue;
-	PE_DWord SizeOfImage;
-	PE_DWord SizeOfHeaders;
-	PE_DWord CheckSum;
-	PE_Word  Subsystem;
-	PE_Word  DllCharacteristics;
-	PE_DWord SizeOfStackReserve;
-	PE_DWord SizeOfStackCommit;
-	PE_DWord SizeOfHeapReserve;
-	PE_DWord SizeOfHeapCommit;
-	PE_DWord LoaderFlags;
-	PE_DWord NumberOfRvaAndSizes;
-	pe_image_data_directory DataDirectory[PE_IMAGE_DIRECTORY_ENTRIES];
-} pe_image_optional_header;
+typedef struct {
+	/* Standard fields */
+	u16 Magic;
+	u8  MajorLinkerVersion;
+	u8  MinorLinkerVersion;
+	u32 SizeOfCode;
+	u32 SizeOfInitializedData;
+	u32 SizeOfUninitializedData;
+	u32 AddressOfEntryPoint;
+	u32 BaseOfCode;
+	/* NT additional fields */
+	u64 ImageBase;
+	u32 SectionAlignment;
+	u32 FileAlignment;
+	u16 MajorOperatingSystemVersion;
+	u16 MinorOperatingSystemVersion;
+	u16 MajorImageVersion;
+	u16 MinorImageVersion;
+	u16 MajorSubsystemVersion;
+	u16 MinorSubsystemVersion;
+	u32 Win32VersionValue;
+	u32 SizeOfImage;
+	u32 SizeOfHeaders;
+	u32 CheckSum;
+	u16 Subsystem;
+	u16 DllCharacteristics;
+	u64 SizeOfStackReserve;
+	u64 SizeOfStackCommit;
+	u64 SizeOfHeapReserve;
+	u64 SizeOfHeapCommit;
+	u32 LoaderFlags;
+	u32 NumberOfRvaAndSizes;
+	Pe64_image_data_directory DataDirectory[PE_IMAGE_DIRECTORY_ENTRIES];
+} Pe64_image_optional_header;
 
 #define PE_IMAGE_SIZEOF_SHORT_NAME 8
 
@@ -176,58 +260,113 @@ typedef struct {
 #define PE_IMAGE_SCN_MEM_WRITE     0x80000000
 
 typedef struct {
-	PE_Byte  Name[PE_IMAGE_SIZEOF_SHORT_NAME];
+	u8  Name[PE_IMAGE_SIZEOF_SHORT_NAME];
 	union {
-		PE_DWord PhysicalAddress;
-		PE_DWord VirtualSize;
+		u32 PhysicalAddress;
+		u32 VirtualSize;
 	} Misc;
-	PE_DWord VirtualAddress;
-	PE_DWord SizeOfRawData;
-	PE_DWord PointerToRawData;
-	PE_DWord PointerToRelocations;
-	PE_DWord PointerToLinenumbers;
-	PE_Word  NumberOfRelocations;
-	PE_Word  NumberOfLinenumbers;
-	PE_DWord Characteristics;
-} pe_image_section_header;
+	u32 VirtualAddress;
+	u32 SizeOfRawData;
+	u32 PointerToRawData;
+	u32 PointerToRelocations;
+	u32 PointerToLinenumbers;
+	u16 NumberOfRelocations;
+	u16 NumberOfLinenumbers;
+	u32 Characteristics;
+} Pe32_image_section_header;
 
 typedef struct {
-	PE_DWord Characteristics;
-	PE_DWord TimeDateStamp;
-	PE_Word  MajorVersion;
-	PE_Word  MinorVersion;
-	PE_DWord Name;
-	PE_DWord Base;
-	PE_DWord NumberOfFunctions;
-	PE_DWord NumberOfNames;
-	PE_DWord AddressOfFunctions;
-	PE_DWord AddressOfNames;
-	PE_DWord AddressOfOrdinals;
-} pe_image_export_directory;
+	u8  Name[PE_IMAGE_SIZEOF_SHORT_NAME];
+	union {
+		u32 PhysicalAddress;
+		u32 VirtualSize;
+	} Misc;
+	u32 VirtualAddress;
+	u32 SizeOfRawData;
+	u32 PointerToRawData;
+	u32 PointerToRelocations;
+	u32 PointerToLinenumbers;
+	u16 NumberOfRelocations;
+	u16 NumberOfLinenumbers;
+	u32 Characteristics;
+} Pe64_image_section_header;
 
 typedef struct {
-	PE_DWord Characteristics;
-	PE_DWord TimeDateStamp;
-	PE_DWord ForwarderChain;
-	PE_DWord Name;
-	PE_DWord FirstThunk;
-} pe_image_import_directory;
+	u32 Characteristics;
+	u32 TimeDateStamp;
+	u16 MajorVersion;
+	u16 MinorVersion;
+	u32 Name;
+	u32 Base;
+	u32 NumberOfFunctions;
+	u32 NumberOfNames;
+	u32 AddressOfFunctions;
+	u32 AddressOfNames;
+	u32 AddressOfOrdinals;
+} Pe32_image_export_directory;
 
 typedef struct {
-	PE_DWord Attributes;
-	PE_DWord Name;
-	PE_DWord ModuleHandle;
-	PE_DWord DelayImportAddressTable;
-	PE_DWord DelayImportNameTable;
-	PE_DWord BoundDelayImportTable;
-	PE_DWord UnloadDelayImportTable;
-	PE_DWord TimeStamp;
-} pe_image_delay_import_directory;
+	u32 Characteristics;
+	u32 TimeDateStamp;
+	u16 MajorVersion;
+	u16 MinorVersion;
+	u32 Name;
+	u32 Base;
+	u32 NumberOfFunctions;
+	u32 NumberOfNames;
+	u32 AddressOfFunctions;
+	u32 AddressOfNames;
+	u32 AddressOfOrdinals;
+} Pe64_image_export_directory;
 
 typedef struct {
-	PE_DWord Signature;
-	pe_image_file_header file_header;
-	pe_image_optional_header optional_header;
-} pe_image_nt_headers;
+	u32 Characteristics;
+	u32 TimeDateStamp;
+	u32 ForwarderChain;
+	u32 Name;
+	u32 FirstThunk;
+} Pe32_image_import_directory;
+
+typedef struct {
+	u32 Characteristics;
+	u32 TimeDateStamp;
+	u32 ForwarderChain;
+	u32 Name;
+	u32 FirstThunk;
+} Pe64_image_import_directory;
+
+typedef struct {
+	u32 Attributes;
+	u32 Name;
+	u32 ModuleHandle;
+	u32 DelayImportAddressTable;
+	u32 DelayImportNameTable;
+	u32 BoundDelayImportTable;
+	u32 UnloadDelayImportTable;
+	u32 TimeStamp;
+} Pe32_image_delay_import_directory;
+
+typedef struct {
+	u32 Attributes;
+	u32 Name;
+	u32 ModuleHandle;
+	u32 DelayImportAddressTable;
+	u32 DelayImportNameTable;
+	u32 BoundDelayImportTable;
+	u32 UnloadDelayImportTable;
+	u32 TimeStamp;
+} Pe64_image_delay_import_directory;
+
+typedef struct {
+	u32 Signature;
+	Pe32_image_file_header file_header;
+	Pe32_image_optional_header optional_header;
+} Pe32_image_nt_headers;
+
+typedef struct {
+	u32 Signature;
+	Pe64_image_file_header file_header;
+	Pe64_image_optional_header optional_header;
+} Pe64_image_nt_headers;
 
 #endif

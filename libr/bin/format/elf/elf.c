@@ -111,7 +111,7 @@ static int ELF_(aux_stripstr_from_file)(const char *filename, int min, int encod
 	/* TODO: do not use mmap (is faster..but not portable) */
 #if __UNIX__
 	buf = mmap(NULL, len, PROT_READ, MAP_SHARED, fd, 0); // XXX SHARED?
-	if (((int)buf) == -1 ) {
+	if (((long)buf) == -1) {
 		perror("mmap");
 		return 1;
 	}

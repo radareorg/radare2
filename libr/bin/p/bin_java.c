@@ -103,10 +103,29 @@ static struct r_bin_string_t* strings(struct r_bin_t *bin)
 	return ret;
 }
 
-/* TODO: Info */
 static struct r_bin_info_t* info(struct r_bin_t *bin)
 {
-	return NULL;
+	struct r_bin_info_t *ret = NULL;
+	char version[32];
+
+	if((ret = malloc(sizeof(struct r_bin_info_t))) == NULL)
+		return NULL;
+	memset(ret, '\0', sizeof(struct r_bin_info_t));
+
+	version[0] = '\0';
+	r_bin_java_get_version(bin->bin_obj, version);
+
+	strncpy(ret->type, "JAVA CLASS", R_BIN_SIZEOF_NAMES);
+	strncpy(ret->class, version, R_BIN_SIZEOF_NAMES);
+	strncpy(ret->rclass, "class", R_BIN_SIZEOF_NAMES);
+	strncpy(ret->os, "any", R_BIN_SIZEOF_NAMES);
+	strncpy(ret->subsystem, "any", R_BIN_SIZEOF_NAMES);
+	strncpy(ret->machine, "Java VM", R_BIN_SIZEOF_NAMES);
+	strncpy(ret->arch, "javavm", R_BIN_SIZEOF_NAMES);
+	ret->big_endian= 0;
+	ret->dbg_info = 0x04 | 0x08; /* LineNums | Syms */
+
+	return ret;
 }
 
 struct r_bin_handle_t r_bin_plugin_java = {

@@ -25,9 +25,6 @@
 #include <getopt.h>
 #include <stdarg.h>
 #include <unistd.h>
-#if __UNIX__
-#include <arpa/inet.h>
-#endif
 
 #include "java.h"
 
@@ -55,22 +52,12 @@ static struct constant_t {
 
 static struct r_bin_java_cp_item_t cp_null_item; // NOTE: must be initialized for safe use
 
-static void check_eof(int fd)
-{
-#if 0 
-	if (feof(fd)) {
-		fprintf(stderr, "Unexpected eof\n");
-		exit(0);
-	}
-#endif 
-}
-
 static unsigned short read_short(int fd)
 {
 	unsigned short sh=0;
 
 	read(fd, &sh, 2);//sizeof(unsigned short), 1, fd);
-	return ntohs(sh);
+	return R_BIN_JAVA_SWAPUSHORT(sh);
 }
 
 static struct r_bin_java_cp_item_t* get_cp(struct r_bin_java_t *bin, unsigned short i)
@@ -189,7 +176,7 @@ static int javasm_init(struct r_bin_java_t *bin)
 		return R_FALSE;
 	}
 
-	bin->cf.cp_count = ntohs(bin->cf.cp_count);
+	bin->cf.cp_count = R_BIN_JAVA_SWAPUSHORT(bin->cf.cp_count);
 	if (bin->cf.major[0]==bin->cf.major[1] && bin->cf.major[0]==0) {
 		fprintf(stderr, "This is a MachO\n");
 		return R_FALSE;
@@ -267,13 +254,11 @@ static int javasm_init(struct r_bin_java_t *bin)
 	}
 
 	read(bin->fd, &bin->cf2, sizeof(struct r_bin_java_classfile2_t));
-	check_eof(bin->fd);
 	IFDBG printf("Access flags: 0x%04x\n", bin->cf2.access_flags);
-	bin->cf2.this_class = ntohs(bin->cf2.this_class);
+	bin->cf2.this_class = R_BIN_JAVA_SWAPUSHORT(bin->cf2.this_class);
 	IFDBG printf("This class: %d\n", bin->cf2.this_class);
-	check_eof(bin->fd);
-	//printf("This class: %d (%s)\n", ntohs(bin->cf2.this_class), bin->cp_items[ntohs(bin->cf2.this_class)-1].value); // XXX this is a double pointer !!1
-	//printf("Super class: %d (%s)\n", ntohs(bin->cf2.super_class), bin->cp_items[ntohs(bin->cf2.super_class)-1].value);
+	//printf("This class: %d (%s)\n", R_BIN_JAVA_SWAPUSHORT(bin->cf2.this_class), bin->cp_items[R_BIN_JAVA_SWAPUSHORT(bin->cf2.this_class)-1].value); // XXX this is a double pointer !!1
+	//printf("Super class: %d (%s)\n", R_BIN_JAVA_SWAPUSHORT(bin->cf2.super_class), bin->cp_items[R_BIN_JAVA_SWAPUSHORT(bin->cf2.super_class)-1].value);
 	sz = read_short(bin->fd);
 
 	/* TODO: intefaces*/
@@ -319,7 +304,6 @@ static int javasm_init(struct r_bin_java_t *bin)
 		bin->methods = malloc(sz * sizeof(struct r_bin_java_fm_t));
 		for (i=0;i<sz;i++) {
 			read(bin->fd, buf, 8);
-			check_eof(bin->fd);
 
 			bin->methods[i].flags = R_BIN_JAVA_USHORT(buf, 0);
 			IFDBG printf("%2d: Access Flags: %d\n", i, bin->methods[i].flags);

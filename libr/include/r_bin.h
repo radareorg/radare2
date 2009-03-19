@@ -19,12 +19,6 @@
 
 #define R_BIN_SIZEOF_NAMES 256
 
-enum {
-	R_BIN_FMT_ELF32,
-	R_BIN_FMT_ELF64,
-	R_BIN_FMT_PE
-};
-
 /* types */
 struct r_bin_t {
 	const char *file;
@@ -141,6 +135,7 @@ u64 r_bin_get_section_size(struct r_bin_t *bin, char *name);
 extern struct r_bin_handle_t r_bin_plugin_elf;
 extern struct r_bin_handle_t r_bin_plugin_elf64;
 extern struct r_bin_handle_t r_bin_plugin_pe;
+extern struct r_bin_handle_t r_bin_plugin_pe64;
 extern struct r_bin_handle_t r_bin_plugin_java;
 
 #endif
