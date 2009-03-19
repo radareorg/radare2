@@ -36,13 +36,14 @@ struct r_lib_struct_t {
 };
 
 enum {
-	R_LIB_TYPE_IO,   /* io layer */
-	R_LIB_TYPE_DBG,  /* debugger */
-	R_LIB_TYPE_LANG, /* language */
-	R_LIB_TYPE_ASM,  /* assembler */
-	R_LIB_TYPE_ANAL, /* analysis */
-	R_LIB_TYPE_PARSE,/* parsers */
-	R_LIB_TYPE_BIN,  /* bins */
+	R_LIB_TYPE_IO,      /* io layer */
+	R_LIB_TYPE_DBG,     /* debugger */
+	R_LIB_TYPE_LANG,    /* language */
+	R_LIB_TYPE_ASM,     /* assembler */
+	R_LIB_TYPE_ANAL,    /* analysis */
+	R_LIB_TYPE_PARSE,   /* parsers */
+	R_LIB_TYPE_BIN,     /* bins */
+	R_LIB_TYPE_BININFO, /* bin info */
 };
 
 struct r_lib_t {

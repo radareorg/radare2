@@ -12,4 +12,7 @@
 #define R_BIN_STATIC_PLUGINS \
 	0
 
+#define R_BININFO_STATIC_PLUGINS \
+	0
+
 #endif

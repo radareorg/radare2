@@ -9,6 +9,7 @@ USE_RIO=1
 # static plugins
 STATIC_ASM_PLUGINS=p/x86olly.mk p/mips.mk p/java.mk
 STATIC_BIN_PLUGINS=
+STATIC_BININFO_PLUGINS=
 
 ifneq (${BINDEPS},)
 include ../../../config.mk
