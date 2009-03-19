@@ -5,6 +5,7 @@
 #undef ILT_MASK2
 #undef PE_Word
 #undef PE_DWord
+#undef PE_CWord
 
 #ifdef R_BIN_PE64
 #define PE_(name) Pe64_##name 
@@ -12,12 +13,14 @@
 #define ILT_MASK2 0x7fffffffffffffffLL
 #define PE_Word u16
 #define PE_DWord u64
+#define PE_CWord u32
 #else
 #define PE_(name) Pe32_##name 
 #define ILT_MASK1 0x80000000
 #define ILT_MASK2 0x7fffffff
 #define PE_Word u16
 #define PE_DWord u32
+#define PE_CWord u32
 #endif
 
 #ifndef _INCLUDE_R_BIN_PE_SPECS_H_
@@ -46,29 +49,7 @@ typedef struct {
 	u16 e_oeminfo;    /* 26: OEM information; e_oemid specific */
 	u16 e_res2[10];   /* 28: Reserved words */
 	u32 e_lfanew;     /* 3c: Offset to extended header */
-} Pe32_image_dos_header;
-
-typedef struct {
-	u16 e_magic;      /* 00: MZ Header signature */
-	u16 e_cblp;       /* 02: Bytes on last page of file */
-	u16 e_cp;         /* 04: Pages in file */
-	u16 e_crlc;       /* 06: Relocations */
-	u16 e_cparhdr;    /* 08: Size of header in paragraphs */
-	u16 e_minalloc;   /* 0a: Minimum extra paragraphs needed */
-	u16 e_maxalloc;   /* 0c: Maximum extra paragraphs needed */
-	u16 e_ss;         /* 0e: Initial (relative) SS value */
-	u16 e_sp;         /* 10: Initial SP value */
-	u16 e_csum;       /* 12: Checksum */
-	u16 e_ip;         /* 14: Initial IP value */
-	u16 e_cs;         /* 16: Initial (relative) CS value */
-	u16 e_lfarlc;     /* 18: File address of relocation table */
-	u16 e_ovno;       /* 1a: Overlay number */
-	u16 e_res[4];     /* 1c: Reserved words */
-	u16 e_oemid;      /* 24: OEM identifier (for e_oeminfo) */
-	u16 e_oeminfo;    /* 26: OEM information; e_oemid specific */
-	u16 e_res2[10];   /* 28: Reserved words */
-	u32 e_lfanew;     /* 3c: Offset to extended header */
-} Pe64_image_dos_header;
+} Pe32_image_dos_header, Pe64_image_dos_header;
 
 #define PE_IMAGE_FILE_TYPE_PE32                0x10b
 #define PE_IMAGE_FILE_TYPE_PE32PLUS            0x20b
@@ -129,17 +110,7 @@ typedef struct {
 	u32 NumberOfSymbols;
 	u16 SizeOfOptionalHeader;
 	u16 Characteristics;
-} Pe32_image_file_header;
-
-typedef struct {
-	u16 Machine;
-	u16 NumberOfSections;
-	u32 TimeDateStamp;
-	u32 PointerToSymbolTable;
-	u32 NumberOfSymbols;
-	u16 SizeOfOptionalHeader;
-	u16 Characteristics;
-} Pe64_image_file_header;
+} Pe32_image_file_header, Pe64_image_file_header;
 
 #define PE_IMAGE_DIRECTORY_ENTRIES                 16
 #define PE_IMAGE_DIRECTORY_ENTRY_EXPORT             0
@@ -174,12 +145,7 @@ typedef struct {
 typedef struct {
 	u32 VirtualAddress;
 	u32 Size;
-} Pe32_image_data_directory;
-
-typedef struct {
-	u32 VirtualAddress;
-	u32 Size;
-} Pe64_image_data_directory;
+} Pe32_image_data_directory, Pe64_image_data_directory;
 
 typedef struct {
 	/* Standard fields */
@@ -273,23 +239,7 @@ typedef struct {
 	u16 NumberOfRelocations;
 	u16 NumberOfLinenumbers;
 	u32 Characteristics;
-} Pe32_image_section_header;
-
-typedef struct {
-	u8  Name[PE_IMAGE_SIZEOF_SHORT_NAME];
-	union {
-		u32 PhysicalAddress;
-		u32 VirtualSize;
-	} Misc;
-	u32 VirtualAddress;
-	u32 SizeOfRawData;
-	u32 PointerToRawData;
-	u32 PointerToRelocations;
-	u32 PointerToLinenumbers;
-	u16 NumberOfRelocations;
-	u16 NumberOfLinenumbers;
-	u32 Characteristics;
-} Pe64_image_section_header;
+} Pe32_image_section_header, Pe64_image_section_header;
 
 typedef struct {
 	u32 Characteristics;
@@ -303,21 +253,7 @@ typedef struct {
 	u32 AddressOfFunctions;
 	u32 AddressOfNames;
 	u32 AddressOfOrdinals;
-} Pe32_image_export_directory;
-
-typedef struct {
-	u32 Characteristics;
-	u32 TimeDateStamp;
-	u16 MajorVersion;
-	u16 MinorVersion;
-	u32 Name;
-	u32 Base;
-	u32 NumberOfFunctions;
-	u32 NumberOfNames;
-	u32 AddressOfFunctions;
-	u32 AddressOfNames;
-	u32 AddressOfOrdinals;
-} Pe64_image_export_directory;
+} Pe32_image_export_directory, Pe64_image_export_directory;
 
 typedef struct {
 	u32 Characteristics;
@@ -325,15 +261,7 @@ typedef struct {
 	u32 ForwarderChain;
 	u32 Name;
 	u32 FirstThunk;
-} Pe32_image_import_directory;
-
-typedef struct {
-	u32 Characteristics;
-	u32 TimeDateStamp;
-	u32 ForwarderChain;
-	u32 Name;
-	u32 FirstThunk;
-} Pe64_image_import_directory;
+} Pe32_image_import_directory, Pe64_image_import_directory;
 
 typedef struct {
 	u32 Attributes;
@@ -344,18 +272,7 @@ typedef struct {
 	u32 BoundDelayImportTable;
 	u32 UnloadDelayImportTable;
 	u32 TimeStamp;
-} Pe32_image_delay_import_directory;
-
-typedef struct {
-	u32 Attributes;
-	u32 Name;
-	u32 ModuleHandle;
-	u32 DelayImportAddressTable;
-	u32 DelayImportNameTable;
-	u32 BoundDelayImportTable;
-	u32 UnloadDelayImportTable;
-	u32 TimeStamp;
-} Pe64_image_delay_import_directory;
+} Pe32_image_delay_import_directory, Pe64_image_delay_import_directory;
 
 typedef struct {
 	u32 Signature;

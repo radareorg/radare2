@@ -70,7 +70,7 @@ int PE_(r_bin_pe_get_entrypoint)(PE_(r_bin_pe_obj)*, PE_(r_bin_pe_entrypoint)*);
 int PE_(r_bin_pe_get_exports)(PE_(r_bin_pe_obj)*, PE_(r_bin_pe_export)*);
 int PE_(r_bin_pe_get_exports_count)(PE_(r_bin_pe_obj)*);
 int PE_(r_bin_pe_get_file_alignment)(PE_(r_bin_pe_obj)*);
-PE_DWord PE_(r_bin_pe_get_image_base)(PE_(r_bin_pe_obj)*);
+u64 PE_(r_bin_pe_get_image_base)(PE_(r_bin_pe_obj)*);
 int PE_(r_bin_pe_get_image_size)(PE_(r_bin_pe_obj)*);
 int PE_(r_bin_pe_get_imports)(PE_(r_bin_pe_obj)*, PE_(r_bin_pe_import)*);
 int PE_(r_bin_pe_get_imports_count)(PE_(r_bin_pe_obj)*);

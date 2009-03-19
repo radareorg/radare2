@@ -29,6 +29,7 @@ static PE_DWord PE_(r_bin_pe_aux_rva_to_offset)(PE_(r_bin_pe_obj) *bin, PE_DWord
 	return 0;
 }
 
+#if 0
 static PE_DWord PE_(r_bin_pe_aux_offset_to_rva)(PE_(r_bin_pe_obj) *bin, PE_DWord offset)
 {
 	PE_(image_section_header) *shdrp;
@@ -45,6 +46,7 @@ static PE_DWord PE_(r_bin_pe_aux_offset_to_rva)(PE_(r_bin_pe_obj) *bin, PE_DWord
 		
 	return 0;
 }
+#endif
 
 static int PE_(r_bin_pe_do_checks)(PE_(r_bin_pe_obj) *bin)
 {
@@ -240,7 +242,7 @@ int PE_(r_bin_pe_get_entrypoint)(PE_(r_bin_pe_obj) *bin, PE_(r_bin_pe_entrypoint
 
 int PE_(r_bin_pe_get_exports)(PE_(r_bin_pe_obj) *bin, PE_(r_bin_pe_export) *export)
 {
-	PE_DWord functions_offset, names_offset, ordinals_offset, function_rva, name_rva, name_offset;
+	PE_CWord functions_offset, names_offset, ordinals_offset, function_rva, name_rva, name_offset;
 	PE_Word function_ordinal;
 	PE_(r_bin_pe_export) *exportp;
 	char function_name[PE_NAME_LENGTH], forwarder_name[PE_NAME_LENGTH];
@@ -248,7 +250,7 @@ int PE_(r_bin_pe_get_exports)(PE_(r_bin_pe_obj) *bin, PE_(r_bin_pe_export) *expo
 	int i;
 	PE_(image_data_directory) *data_dir_export =
 		&bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
-	PE_DWord export_dir_rva = data_dir_export->VirtualAddress;
+	PE_CWord export_dir_rva = data_dir_export->VirtualAddress;
 	int export_dir_size = data_dir_export->Size;
 	
 	if (PE_(r_bin_pe_init_exports)(bin) == -1)
@@ -263,12 +265,12 @@ int PE_(r_bin_pe_get_exports)(PE_(r_bin_pe_obj) *bin, PE_(r_bin_pe_export) *expo
 
 	exportp = export;
 	for (i = 0; i < bin->export_directory->NumberOfNames; i++, exportp++) {
-		lseek(bin->fd, functions_offset + i * sizeof(PE_DWord), SEEK_SET);
-		read(bin->fd, &function_rva, sizeof(PE_DWord));
+		lseek(bin->fd, functions_offset + i * sizeof(PE_CWord), SEEK_SET);
+		read(bin->fd, &function_rva, sizeof(PE_CWord));
 		lseek(bin->fd, ordinals_offset + i * sizeof(PE_Word), SEEK_SET);
 		read(bin->fd, &function_ordinal, sizeof(PE_Word));
-		lseek(bin->fd, names_offset + i * sizeof(PE_DWord), SEEK_SET);
-		read(bin->fd, &name_rva, sizeof(PE_DWord));
+		lseek(bin->fd, names_offset + i * sizeof(PE_CWord), SEEK_SET);
+		read(bin->fd, &name_rva, sizeof(PE_CWord));
 		name_offset = PE_(r_bin_pe_aux_rva_to_offset)(bin, name_rva);
 
 		if (name_offset) {
@@ -312,9 +314,9 @@ int PE_(r_bin_pe_get_file_alignment)(PE_(r_bin_pe_obj) *bin)
 	return bin->nt_headers->optional_header.FileAlignment;
 }
 
-PE_DWord PE_(r_bin_pe_get_image_base)(PE_(r_bin_pe_obj) *bin)
+u64 PE_(r_bin_pe_get_image_base)(PE_(r_bin_pe_obj) *bin)
 {
-	return bin->nt_headers->optional_header.ImageBase;
+	return(u64)bin->nt_headers->optional_header.ImageBase;
 }
 
 int PE_(r_bin_pe_get_imports)(PE_(r_bin_pe_obj) *bin, PE_(r_bin_pe_import) *import)
