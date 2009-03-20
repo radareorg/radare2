@@ -37,7 +37,7 @@ install:
 	do echo " $$a"; cp $$a ${PREFIX}/bin ; done
 	# plugins
 	@mkdir -p ${PREFIX}/lib/pkgconfig
-	@cat libr.pc.acr | sed -e 's,@PREFIX@,${PREFIX},g' > libr.pc
+	cat libr.pc.acr | sed -e 's,@PREFIX@,${PREFIX},g' > libr.pc
 	cp libr.pc ${PREFIX}/lib/pkgconfig
 	@mkdir -p ${PREFIX}/share/vala/vapi
 	cp vapi/*.vapi vapi/*.deps ${PREFIX}/share/vala/vapi

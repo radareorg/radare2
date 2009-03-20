@@ -43,6 +43,7 @@ struct r_core_t {
 	u8 *yank;
 	int yank_len;
 	u64 yank_off;
+	int interrupted; // XXX IS THIS DUPPED SOMEWHERE?
 	/* files */
 	struct r_io_t io;
 	struct r_core_file_t *file;

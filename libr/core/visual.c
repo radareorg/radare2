@@ -69,6 +69,13 @@ int r_core_visual_cmd(struct r_core_t *core, int ch)
 		} else
 		r_core_cmd(core, "s++", 0);
 		break;
+	case 'g':
+		r_core_cmd(core, "s 0", 0);
+		break;
+	case 'G':
+		// TODO: seek to file size
+		//r_core_cmd(core, "s 0", 0);
+		break;
 	case 'K':
 		if (curset) {
 			if (ocursor ==-1) ocursor=cursor;

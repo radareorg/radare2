@@ -9,12 +9,6 @@ struct r_sign_t *r_sign_new()
 	return s;
 }
 
-struct r_sign_t *r_sign_free(struct r_sign_t *s)
-{
-	free(s);
-	return NULL;
-}
-
 int r_sign_init(struct r_sign_t *sig)
 {
 	sig->count = 0;
@@ -31,7 +25,7 @@ int r_sign_set(struct r_sign_item_t *sig, const char *key, const char *value)
 		sig->size = atoi(value);
 	} else
 	if (!strcmp(key, "cksum")) {
-		sscanf(value, "%lx", &sig->csum);
+		sscanf(value, "%x", &sig->csum);
 	} 
 	return R_TRUE;
 //	fprintf(stderr, "%s:%s\n", key, value);
@@ -96,13 +90,13 @@ int r_sign_info(struct r_sign_t *sig)
 
 struct r_sign_t *r_sign_free(struct r_sign_t *sig)
 {
-	free (sig);
 	struct list_head *pos, *n;
 	list_for_each_safe(pos, n, &sig->items) {
 		struct r_sign_item_t *i = list_entry(pos, struct r_sign_item_t, list);
 		free(i->bytes);
 		free(i);
 	}
+	free (sig);
 	return NULL;
 }
 

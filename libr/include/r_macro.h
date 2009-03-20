@@ -15,6 +15,7 @@ struct r_macro_label_t {
 
 struct r_macro_item_t {
 	char *name;
+	char *args;
 	char *code;
 	int nargs;
 	struct list_head list;

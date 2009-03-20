@@ -37,7 +37,7 @@ int r_macro_add(struct r_macro_t *mac, const char *oname)
 	char *ptr;
 	int lidx;
 	int macro_update;
-	char *name;
+	char *name, *args;
 
 	if (oname[0]=='\0')
 		return r_macro_list(mac);
@@ -58,25 +58,32 @@ int r_macro_add(struct r_macro_t *mac, const char *oname)
 
 	macro = NULL;
 	macro_update = 0;
+	ptr = strchr(name, ' ');
+	if (ptr) {
+		*ptr='\0';
+		args = ptr +1;
+	}
 	list_for_each_prev(pos, &mac->macros) {
 		struct r_macro_item_t *m = list_entry(pos, struct r_macro_item_t, list);
 		if (!strcmp(name, m->name)) {
 			macro = m;
-			free(macro->name);
+	//		free(macro->name);
 			free(macro->code);
+			free(macro->args);
 			macro_update = 1;
 			break;
 		}
 	}
-	if (macro == NULL)
+	if (macro == NULL) {
 		macro = (struct r_macro_item_t *)malloc(sizeof(struct r_macro_item_t));
-	macro->name = strdup(name);
+		macro->name = strdup(name);
+	}
 	if (pbody) macro->code = (char *)malloc(strlen(pbody)+2);
-	else macro->code = (char *)malloc(1024);
+	else macro->code = (char *)malloc(4096);
 	macro->code[0]='\0';
 	macro->nargs = 0;
+	macro->args = strdup(args);
 	ptr = strchr(macro->name, ' ');
-
 	if (ptr != NULL) {
 		*ptr='\0';
 		macro->nargs = r_str_word_set0(ptr+1);
@@ -87,10 +94,11 @@ int r_macro_add(struct r_macro_t *mac, const char *oname)
 			if (pbody[lidx]==',')
 				pbody[lidx]='\n';
 			else
-			if (pbody[lidx]==')' && pbody[lidx-1]=='\n')
+			if (pbody[lidx]==')') // && pbody[lidx-1]=='\n')
 				pbody[lidx]='\0';
 		}
 		strcpy(macro->code, pbody);
+		strcat(macro->code, ",");
 	} else {
 		while(1) { // XXX input from mac->fd
 #if 0
@@ -147,7 +155,7 @@ int r_macro_list(struct r_macro_t *mac)
 	struct list_head *pos;
 	list_for_each_prev(pos, &mac->macros) {
 		struct r_macro_item_t *m = list_entry(pos, struct r_macro_item_t, list);
-		/* mac-> */ printf("%d (%s, ", idx, m->name);
+		/* mac-> */ printf("%d (%s %s, ", idx, m->name, m->args);
 		for(j=0;m->code[j];j++) {
 			if (m->code[j]=='\n')
 				/* mac-> */ printf(", ");

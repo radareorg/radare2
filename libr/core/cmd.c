@@ -100,7 +100,7 @@ static int cmd_interpret(void *data, const char *input)
 		fprintf(stderr, "TODO\n");
 		break;
 	case '(':
-		fprintf(stderr, "macro call (%s)\n", input+1);
+		//fprintf(stderr, "macro call (%s)\n", input+1);
 		r_macro_call(&core->macro, input+1);
 		break;
 	case '?':
@@ -344,6 +344,7 @@ static int cmd_print(void *data, const char *input)
 			char str[128];
 			struct r_asm_aop_t aop;
 			
+			r_asm_set_pc(&core->assembler, core->seek);
 			for(idx=ret=0; idx < len; idx+=ret) {
 				r_asm_set_pc(&core->assembler, core->assembler.pc + ret);
 				ret = r_asm_disassemble(&core->assembler, &aop, buf+idx, len-idx);
@@ -955,7 +956,7 @@ static int cmd_macro(void *data, const char *input)
 
 static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd, int *times)
 {
-	char *ptr, *ptr2, *str;
+	char *ptr, *ptr2, *str, *p;
 	int i, len = strlen(cmd);
 
 	len = atoi(cmd);
@@ -1023,7 +1024,7 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 	ptr = strchr(cmd, '>');
 	if (ptr) {
 		ptr[0] = '\0';
-		for(str=ptr+1;str[0]== ' ';str=str+1);
+		for(str=ptr+1; str[0]== ' '; str=str+1);
 		*rfd = r_cons_pipe_open(str, ptr[1]=='>');
 	}
 	ptr = strchr(cmd, '@');
@@ -1036,15 +1037,16 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 		}
 		*rs = 1;
 		if (ptr[1]=='@') {
-			fprintf(stderr, "TODO: foreach @ loop\n");
-		}
-		r_core_seek(core, r_num_math(&core->num, ptr+1));
+			//fprintf(stderr, "TODO: foreach @ loop\n");
+			// TODO: remove
+			u64 tmpoff = core->seek;
+			r_core_cmd_foreach(core, cmd, ptr+2);
+			//config.seek = tmpoff;
+			r_core_seek(core, tmpoff);
+			return 0;
+		} else r_core_seek(core, r_num_math(&core->num, ptr+1));
 	}
-	ptr = strchr(cmd, '~');
-	if (ptr) {
-		ptr[0]='\0';
-		r_cons_grep(ptr+1);
-	} else r_cons_grep(NULL);
+
 	while(((ptr = strchr(cmd, '`')))) {
 		ptr2 = strchr(ptr+1, '`');
 		if (ptr2==NULL) {
@@ -1052,12 +1054,184 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 			return 0;
 		}
 		ptr2[0]='\0';
+fprintf(stderr, "Piping (%s)\n", ptr+1);
 		str = r_core_cmd_str(core, ptr+1);
 		for(i=0;str[i];i++) if (str[i]=='\n') str[i]=' ';
-		r_str_inject(ptr, ptr2+1, str, 1024);
+		r_str_inject(ptr, ptr2+1, str, 1024); // XXX overflow here, fix maxlength
 		free(str);
 	}
+
+	ptr = strchr(cmd, '~');
+	if (ptr) {
+		ptr[0]='\0';
+		r_cons_grep(ptr+1);
+	} else r_cons_grep(NULL);
+
 	return 0;
+}
+
+int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
+{
+//void radare_cmd_foreach(const char *cmd, const char *each)
+	int i=0,j;
+	char ch;
+	char *word = NULL;
+	char *str;
+	struct list_head *pos;
+	u64 oseek, addr;
+
+	for(;*each==' ';each=each+1);
+	for(;*cmd==' ';cmd=cmd+1);
+
+	oseek = core->seek;
+	str = strdup(each);
+	//radare_controlc();
+
+	switch(each[0]) {
+	case '?':
+		eprintf("Foreach '@@' iterator command:\n");
+		eprintf(" This command is used to repeat a command over a list of offsets.\n");
+		eprintf(" x @@ sym.         ; run 'x' over all flags matching 'sym.'\n");
+		eprintf(" x @@.file         ; \"\" over the offsets specified in the file (one offset per line)\n");
+		eprintf(" x @@=off1 off2 .. ; manual list of offsets\n");
+		eprintf(" x @@=`pdf~call[0] ; run 'x' at every call offset of the current function\n");
+		break;
+	case '=':
+		/* foreach list of items */
+		each = each+1;
+		do {
+			while(each[0]==' ') each=each+1;
+			str = strchr(each, ' ');
+			if (str == NULL) {
+				addr = r_num_math(&core->num, each);
+			} else {
+				str[0]='\0';
+				addr = r_num_math(&core->num, each);
+				str[0]=' ';
+			}
+			each = str+1;
+			r_core_seek(core, addr);
+			eprintf("\n"); //eprintf("===(%s)at(0x%08llx)\n", cmd, addr);
+			r_core_cmd(core, cmd, 0);
+		} while(str != NULL);
+		break;
+	case '.':
+		if (each[1]=='(') {
+			char cmd2[1024];
+			// TODO: use controlc() here
+			for(core->macro.counter=0;i<999;core->macro.counter++) {
+				r_macro_call(&core->macro, each+2);
+				if (core->macro.brk_value == NULL) {
+					//eprintf("==>breaks(%s)\n", each);
+					break;
+				}
+
+				addr = core->macro._brk_value;
+				sprintf(cmd2, "%s @ 0x%08llx", cmd, addr);
+				eprintf("0x%08llx (%s)\n", addr, cmd2);
+				r_core_seek(core, addr);
+				r_core_cmd(core, cmd2, 0);
+				i++;
+			}
+		} else {
+			char buf[1024];
+			char cmd2[1024];
+			FILE *fd = fopen(each+1, "r");
+			if (fd == NULL) {
+				eprintf("Cannot open file '%s' for reading one offset per line.\n", each+1);
+			} else {
+				core->macro.counter=0;
+				while(!feof(fd)) {
+					buf[0]='\0';
+					fgets(buf, 1024, fd);
+					addr = r_num_math(&core->num, buf);
+					eprintf("0x%08llx\n", addr, cmd);
+					sprintf(cmd2, "%s @ 0x%08llx", cmd, addr);
+					r_core_seek(core, buf);
+					r_core_cmd(core, cmd2, 0);
+					core->macro.counter++;
+				}
+				fclose(fd);
+			}
+		}
+		break;
+	default:
+		core->macro.counter = 0;
+		//while(str[i])  && !core->interrupted) {
+		while(str[i]) {
+			j = i;
+			for(;str[j]&&str[j]==' ';j++); // skip spaces
+			for(i=j;str[i]&&str[i]!=' ';i++); // find EOS
+			ch = str[i];
+			str[i] = '\0';
+			word = strdup(str+j);
+			if (word == NULL)
+				break;
+			str[i] = ch;
+			if (strchr(word, '*')) {
+#if 0
+				/* for all flags in current flagspace */
+				list_for_each(pos, &flags) {
+					flag_t *flag = (flag_t *)list_entry(pos, flag_t, list);
+					//if (core->interrupted)
+					//	break;
+					/* filter per flag spaces */
+	//				if ((flag_space_idx != -1) && (flag->space != flag_space_idx))
+	//					continue;
+
+					config.seek = flag->offset;
+					radare_read(0);
+					cons_printf("; @@ 0x%08llx (%s)\n", config.seek, flag->name);
+					radare_cmd(cmd,0);
+				}
+#else
+printf("No flags foreach implemented\n");
+#endif
+			} else {
+				/* for all flags in current flagspace */
+				list_for_each(pos, &core->flags.flags) {
+					struct r_flag_item_t *flag =
+						(struct r_flag_item_t *)list_entry(pos, struct r_flag_item_t, list);
+
+//					if (config.interrupted)
+//						break;
+	#if 0
+					/* filter per flag spaces */
+					if ((flag_space_idx != -1) && (flag->space != flag_space_idx))
+						continue;
+	#endif
+	//eprintf("polla(%s)(%s)\n", flag->name, word);
+					if (word[0]=='\0' || strstr(flag->name, word) != NULL) {
+						r_core_seek(core, flag->offset);
+						r_cons_printf("; @@ 0x%08llx (%s)\n", core->seek, flag->name);
+						r_core_cmd(core, cmd, 0);
+					}
+				}
+	#if 0
+				/* ugly copypasta from tmpseek .. */
+				if (strstr(word, each)) {
+					if (word[i]=='+'||word[i]=='-')
+						config.seek = config.seek + get_math(word);
+					else	config.seek = get_math(word);
+					radare_read(0);
+					cons_printf("; @@ 0x%08llx\n", config.seek);
+					radare_cmd(cmd,0);
+				}
+	#endif
+			//radare_controlc();
+
+			core->macro.counter++ ;
+			free(word);
+			word = NULL;
+			}
+		}
+	}
+//	radare_controlc_end();
+	core->seek = oseek;
+
+	free(word);
+	word = NULL;
+	free(str);
 }
 
 int r_core_cmd(struct r_core_t *core, const char *command, int log)
@@ -1078,7 +1252,7 @@ int r_core_cmd(struct r_core_t *core, const char *command, int log)
 		command = command+1;
 
 	len = strlen(command)+1;
-	cmd = alloca(len)+1024;
+	cmd = alloca(len)+4096;
 	memcpy(cmd, command, len);
 
 	/* quoted / raw command */

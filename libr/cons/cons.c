@@ -240,7 +240,7 @@ void r_cons_grep(const char *str)
 	}
 }
 
-/* TODO: refactorize */
+/* TODO: refactorize and move grep stuff outside here */
 void r_cons_flush()
 {
 	FILE *fd;
