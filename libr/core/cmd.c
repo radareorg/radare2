@@ -788,7 +788,8 @@ static int cmd_eval(void *data, const char *input)
 		r_config_list(&core->config, NULL, 0);
 		break;
 	case '-':
-		r_config_init(&core->config, core);
+		r_core_config_init(core);
+		eprintf("BUG: 'e-' command locks the eval hashtable. patches are welcome :)\n");
 		break;
 	case '*':
 		r_config_list(&core->config, NULL, 1);
@@ -1027,23 +1028,6 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 		for(str=ptr+1; str[0]== ' '; str=str+1);
 		*rfd = r_cons_pipe_open(str, ptr[1]=='>');
 	}
-	ptr = strchr(cmd, '@');
-	if (ptr) {
-		char *pt = ptr;
-		ptr[0]='\0';
-		while(pt[0]==' '||pt[0]=='\t') {
-			pt[0]='\0';
-			pt = pt-1;
-		}
-		*rs = 1;
-		if (ptr[1]=='@') {
-			// TODO: remove temporally seek (should be done by cmd_foreach)
-			u64 tmpoff = core->seek;
-			r_core_cmd_foreach(core, cmd, ptr+2);
-			r_core_seek(core, tmpoff);
-			return 0;
-		} else r_core_seek(core, r_num_math(&core->num, ptr+1));
-	}
 
 	while(((ptr = strchr(cmd, '`')))) {
 		ptr2 = strchr(ptr+1, '`');
@@ -1058,6 +1042,30 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 		free(str);
 	}
 
+	ptr = strchr(cmd, '~');
+	if (ptr) {
+		ptr[0]='\0';
+		r_cons_grep(ptr+1);
+	} else r_cons_grep(NULL);
+
+	ptr = strchr(cmd, '@');
+	if (ptr) {
+		char *pt = ptr;
+		ptr[0]='\0';
+		while(pt[0]==' '||pt[0]=='\t') {
+			pt[0]='\0';
+			pt = pt-1;
+		}
+		*rs = 1;
+		if (ptr[1]=='@') {
+			// TODO: remove temporally seek (should be done by cmd_foreach)
+			u64 tmpoff = core->seek;
+			r_core_cmd_foreach(core, cmd, ptr+2);
+			r_core_seek(core, tmpoff);
+			return -1; /* do not run out-of-foreach cmd */
+		} else r_core_seek(core, r_num_math(&core->num, ptr+1));
+	}
+
 	return 0;
 }
 
@@ -1067,7 +1075,7 @@ int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
 	int i=0,j;
 	char ch;
 	char *word = NULL;
-	char *str;
+	char *str, *ostr;
 	struct list_head *pos;
 	u64 oseek, addr;
 
@@ -1075,7 +1083,7 @@ int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
 	for(;*cmd==' ';cmd=cmd+1);
 
 	oseek = core->seek;
-	str = strdup(each);
+	ostr = str = strdup(each);
 	//radare_controlc();
 
 	switch(each[0]) {
@@ -1089,19 +1097,21 @@ int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
 		break;
 	case '=':
 		/* foreach list of items */
-		each = each+1;
+		each = str+1;
 		do {
 			while(each[0]==' ') each=each+1;
+			if (!*each) break;
 			str = strchr(each, ' ');
 			if (str) {
 				str[0]='\0';
 				addr = r_num_math(&core->num, each);
 				str[0]=' ';
 			} else addr = r_num_math(&core->num, each);
+			eprintf("; 0x%08llx:\n", addr);
 			each = str+1;
 			r_core_seek(core, addr);
-			eprintf("\n"); //eprintf("===(%s)at(0x%08llx)\n", cmd, addr);
 			r_core_cmd(core, cmd, 0);
+			r_cons_flush();
 		} while(str != NULL);
 		break;
 	case '.':
@@ -1218,7 +1228,7 @@ printf("No flags foreach implemented\n");
 
 	free(word);
 	word = NULL;
-	free(str);
+	free(ostr);
 }
 
 int r_core_cmd(struct r_core_t *core, const char *command, int log)
@@ -1255,10 +1265,7 @@ int r_core_cmd(struct r_core_t *core, const char *command, int log)
 	}
 
 	ret = r_core_cmd_subst(core, cmd, &restoreseek, &newfd, &times);
-	if (ret == -1) {
-		fprintf(stderr, "Invalid conversion: '%s'\n", command);
-		ret = -1;
-	} else {
+	if (ret != -1) {
 		for(i=0;i<times;i++) {
 			if (quoted) {
 				ret = r_cmd_call(&core->cmd, cmd);
@@ -1286,9 +1293,10 @@ int r_core_cmd(struct r_core_t *core, const char *command, int log)
 			ret = 1;
 		} else
 		if (log) r_line_hist_add(command);
-		if (restoreseek)
-			r_core_seek(core, tmpseek);
 	}
+	if (log) r_line_hist_add(command);
+	if (restoreseek)
+		r_core_seek(core, tmpseek);
 
 	if (newfd != 1) {
 		r_cons_flush();
@@ -1299,7 +1307,7 @@ int r_core_cmd(struct r_core_t *core, const char *command, int log)
 	core->oobi = NULL;
 	core->oobi_len = 0;
 
-	return ret;
+	return 0;
 }
 
 int r_core_cmd_file(struct r_core_t *core, const char *file)

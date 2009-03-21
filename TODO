@@ -1,7 +1,3 @@
-* BUG: r_core_cmd_str doesnt works with grep strings because
-  uses the get_buffer method. we have to refactor r_cons to
-  filter strings at runtime instead of doing it at flush()
-
 * Add maxrows option for r_print (fix visual problem)
 * Drop #if conditionals to use #ifdef ones
   - fits better with plan9 compiler

@@ -34,6 +34,7 @@ FILE *r_cons_stdin_fd = NULL; // TODO use int fd here too!
 static int r_cons_buffer_sz = 0;
 static int r_cons_buffer_len = 0;
 static char *r_cons_buffer = NULL;
+static char *r_cons_lastline = NULL;
 char *r_cons_filterline = NULL;
 char *r_cons_teefile = NULL;
 int r_cons_is_html = 0;
@@ -171,6 +172,11 @@ void r_cons_reset()
 		r_cons_buffer[0] = '\0';
 	r_cons_buffer_len = 0;
 	r_cons_lines = 0;
+	r_cons_lastline = r_cons_buffer;
+	grepstrings_n = 0; // XXX
+	grepline = -1;
+	grepstr = NULL;
+	greptoken = -1;
 }
 
 const char *r_cons_get_buffer()
@@ -180,6 +186,7 @@ const char *r_cons_get_buffer()
 
 void r_cons_grep(const char *str)
 {
+	char *optr, *tptr;
 	char *ptr, *ptr2, *ptr3;
 	grepcounter=0;
 	/* set grep string */
@@ -214,10 +221,10 @@ void r_cons_grep(const char *str)
 			free(grepstr);
 			grepstr = (char *)strdup(ptr);
 		/* set the rest of words to grep */
-		grepstrings_n = 0;
-		{ // TODO: refactor this ugly loop
-			char *optr = grepstr;
-			char *tptr = strchr(optr, '!');
+			grepstrings_n = 0;
+			// TODO: refactor this ugly loop
+			optr = grepstr;
+			tptr = strchr(optr, '!');
 			while(tptr) {
 				tptr[0] = '\0';
 				// TODO: check if keyword > 64
@@ -230,13 +237,11 @@ void r_cons_grep(const char *str)
 			grepstrings_n++;
 			ptr = optr;
 		}
-
-		}
 	} else {
 		greptoken = -1;
 		grepline = -1;
-		//free(grepstr);
 		grepstr = NULL;
+		grepstrings_n = 0;
 	}
 }
 
@@ -247,6 +252,7 @@ void r_cons_flush()
 	char buf[1024];
 	int i,j;
 	int lines_counter = 0;
+	char *tee = r_cons_teefile;
 
 	if (r_cons_noflush)
 		return;
@@ -260,9 +266,19 @@ void r_cons_flush()
 		}
 	}
 
-	if (!STR_IS_NULL(r_cons_buffer)) {
+	if (tee&&tee[0]) {
+		FILE *d = fopen(tee, "a+");
+		if (d != NULL) {
+			fwrite(r_cons_buffer, strlen(r_cons_buffer), 1, d);
+			fclose(d);
+		}
+	} else write(1, r_cons_buffer, r_cons_buffer_len);
+	// TODO: make 'write' portable
+	r_cons_reset();
+	return;
+
+#if 0
 		char *file = r_cons_filterline;
-		char *tee = r_cons_teefile;
 		if (!STR_IS_NULL(file)) {
 			fd = fopen(file, "r");
 			if (fd) {
@@ -282,166 +298,12 @@ void r_cons_flush()
 				fclose(fd);
 			}
 		}
+#endif
 		
-		if (tee&&tee[0]) {
-			FILE *d = fopen(tee, "a+");
-			if (d != NULL) {
-				fwrite(r_cons_buffer, strlen(r_cons_buffer),1, d);
-				fclose(d);
-			}
-		}
-
-		// XXX merge grepstr with r_cons_lines loop //
-		r_cons_lines += r_str_nchr(buf, '\n');
-
-		// XXX buggy! this needs a major cleanup here!
-		if (grepstr != NULL) {
-			int line, len;
-			char *one = r_cons_buffer;
-			char *two;
-			char *ptr, *tok;
-			char delims[6][2] = {"|", "/", "\\", ",", ";", "\t"};
-
-			for(line=0;;) {
-				two = strchr(one, '\n');
-				if (two) {
-int grepstr_match = 0;
-					two[0] = '\0';
-					len = two-one;
-				//	len = strlen(one);
-//					if (strstr(one, grepstr)) {
-for(i=0;i<grepstrings_n;i++) {
-	grepstr=grepstrings[i];
-	if ( (!grepneg && strstr(one, grepstr))
-	|| (grepneg && !strstr(one, grepstr))) {
-		grepstr_match=1;
-		break;
-	}
-}
-					if (grepstr_match) {
-						if (grepline ==-1 || grepline==line) {
-							if (greptoken != -1) {
-								ptr = alloca(len+1);
-								strcpy(ptr, one);
-								for (i=0; i<len; i++)
-									for (j=0;j<6;j++)
-										if (ptr[i] == delims[j][0])
-											ptr[i] = ' ';
-								tok = ptr;
-								if (greptoken<0) {
-									int i, idx = greptoken+1;
-									for(i = 0;ptr[i]; i++) {
-										if (ptr[i]==' ')
-											idx++;
-										if (idx == 0) {
-											ptr = ptr +i;
-											r_cons_buffer_len = strlen(ptr);
-											break;
-										}
-									}
-								} else {
-									for (i=0;tok != NULL && i<=greptoken;i++) {
-										if (i==0)
-											tok = (char *)strtok(ptr, " ");
-										else tok = (char *)strtok(NULL, " ");
-									}
-								}
-
-								if (tok) {
-									ptr = tok;
-									r_cons_buffer_len=strlen(tok);
-								}
-							} else {
-								ptr = one;
-								r_cons_buffer_len=len;
-							}
-							if (grepcounter==0) {
-								r_cons_print_real(ptr);
-								r_cons_buffer_len=1;
-								r_cons_print_real("\n");
-							} else lines_counter++;
-						}
-						line++;
-					}
-					two[0] = '\n';
-					one = two + 1;
-				} else break;
-			}
-		} else {
-			if (grepline != -1 || grepcounter || greptoken != -1) {
-				int len, line;
-				char *one = r_cons_buffer;
-				char *two;
-				char *ptr, *tok;
-				char delims[6][2] = {"|", "/", "\\", ",", ";", "\t"};
-				for(line=0;;line++) {
-					two = strchr(one, '\n');
-					if (two) {
-						two[0] = '\0';
-						len=two-one;
-						if (grepline ==-1 || grepline==line) {
-							if (greptoken != -1) {
-								ptr = alloca(len+1);
-								strcpy(ptr, one);
-
-								for (i=0; i<len; i++)
-									for (j=0;j<6;j++)
-										if (ptr[i] == delims[j][0])
-											ptr[i] = ' ';
-
-								tok = ptr;
-								if (greptoken<0) {
-									int i, idx = greptoken+1;
-									for(i = 0;ptr[i]; i++) {
-										if (ptr[i]==' ')
-											idx++;
-										if (idx == 0) {
-											ptr = ptr +i;
-											r_cons_buffer_len = strlen(ptr);
-											break;
-										}
-									}
-								} else {
-									for (i=0;tok != NULL && i<=greptoken;i++) {
-										if (i==0)
-											tok = (char *)strtok(ptr, " ");
-										else tok = (char *)strtok(NULL," ");
-									}
-								}
-
-								if (tok) {
-									ptr = tok;
-									r_cons_buffer_len=strlen(tok);
-								}
-							} else {
-								ptr = one;
-								r_cons_buffer_len=len;
-							}
-							if (grepcounter==0) {
-								r_cons_print_real(ptr);
-								r_cons_buffer_len=1;
-								r_cons_print_real("\n");
-							} else lines_counter++;
-						}
-						two[0] = '\n';
-						one = two + 1;
-					} else break;
-				}
-			} else r_cons_print_real(r_cons_buffer);
-		}
-
-		r_cons_buffer[0] = '\0';
-	}
-
-	if (grepcounter) {
-		char buf[32];
-		sprintf(buf, "%d\n", lines_counter);
-		r_cons_buffer_len = strlen(buf);
-		r_cons_print_real(buf);
-	}
-	r_cons_buffer_len = 0;
 }
 
+#if 0
+// UNUSED
 /* stream is ignored */
 void r_cons_fprintf(FILE *stream, const char *format, ...)
 {
@@ -462,6 +324,7 @@ void r_cons_fprintf(FILE *stream, const char *format, ...)
 
 	va_end(ap);
 }
+#endif
 
 void r_cons_printf(const char *format, ...)
 {
@@ -477,21 +340,90 @@ void r_cons_printf(const char *format, ...)
 	va_start(ap, format);
 
 	len = vsnprintf(buf, CONS_BUFSZ-1, format, ap);
-	if (len>0) {
-		palloc(len);
-	//	r_cons_lines += r_cons_lines_count(buf);
-		memcpy(r_cons_buffer+r_cons_buffer_len, buf, len+1);
-		r_cons_buffer_len += len;
-	}
+	if (len>0)
+		r_cons_memcat(buf, len);
 
 	va_end(ap);
 }
 
+int r_cons_grepbuf(const char *buf, int len)
+{
+	int donotline = 0;
+	int i, j, hit = 0;
+	char delims[6][2] = {"|", "/", "\\", ",", ";", "\t"};
+	char *n = memchr(buf, '\n', len);
+
+	if (grepstrings_n==0) {
+		if (n) r_cons_lines++;
+		return len;
+	}
+
+	if (r_cons_lastline==NULL)
+		r_cons_lastline = r_cons_buffer;
+
+	if (!n) return len;
+
+	for(i=0;i<grepstrings_n;i++) {
+		grepstr = grepstrings[i];
+		if ( (!grepneg && strstr(buf, grepstr))
+		|| (grepneg && !strstr(buf, grepstr))) {
+			hit = 1;
+			break;
+		}
+	}
+
+	if (hit) {
+		if (grepline != -1) {
+			if (grepline==r_cons_lines) {
+				r_cons_lastline = buf+len;
+				//r_cons_lines++;
+			} else {
+				donotline = 1;
+				r_cons_lines++;
+			}
+		}
+	} else donotline = 1;
+
+	if (donotline) {
+		r_cons_buffer_len -= strlen(r_cons_lastline)-len;
+		r_cons_lastline[0]='\0';
+		len = 0;
+	} else {
+		if (greptoken != -1) {
+			//ptr = alloca(strlen(r_cons_lastline));
+			char *tok = NULL;
+			char *ptr = alloca(1024); // XXX
+			strcpy(ptr, r_cons_lastline);
+			for (i=0; i<len; i++) for (j=0;j<6;j++)
+				if (ptr[i] == delims[j][0])
+					ptr[i] = ' ';
+			tok = ptr;
+			for (i=0;tok != NULL && i<=greptoken;i++) {
+				if (i==0) tok = (char *)strtok(ptr, " ");
+				else tok = (char *)strtok(NULL, " ");
+			}
+			if (tok) {
+				// XXX remove strlen here!
+				r_cons_buffer_len -= strlen(r_cons_lastline)-len;
+				len = strlen(tok);
+				memcpy(r_cons_lastline, tok, len);
+				if (r_cons_lastline[len-1]!='\n')
+					memcpy(r_cons_lastline+len, "\n", 2);
+				len++;
+				r_cons_lastline +=len;
+			}
+		} else r_cons_lastline = buf+len;
+		r_cons_lines++;
+	}
+	return len;
+}
+
+/* final entrypoint for adding stuff in the buffer screen */
 void r_cons_memcat(const char *str, int len)
 {
 	palloc(len);
-	memcpy(r_cons_buffer+r_cons_buffer_len, str, len+1);
-	r_cons_buffer_len += len;
+	memcpy(r_cons_buffer+r_cons_buffer_len, str, len+1); // XXX +1??
+	r_cons_buffer_len += r_cons_grepbuf(r_cons_buffer+r_cons_buffer_len, len);
 }
 
 void r_cons_strcat(const char *str)
