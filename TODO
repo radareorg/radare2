@@ -1,3 +1,4 @@
+* Import the spp's getopt owns implementation in r_util
 * Add maxrows option for r_print (fix visual problem)
 * Drop #if conditionals to use #ifdef ones
   - fits better with plan9 compiler

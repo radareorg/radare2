@@ -1,3 +1,5 @@
+include ../../../config.mk
+
 OBJ_ARM=asm_arm.o
 OBJ_ARM+=../arch/arm/gnu/arm-dis.o
 

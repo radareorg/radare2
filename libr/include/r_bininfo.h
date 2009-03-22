@@ -4,6 +4,7 @@
 #define _INCLUDE_R_BININFO_H_
 
 #include <r_types.h>
+#include <r_util.h>
 #include <list.h>
 
 #define R_BININFO_DBG_STRIPPED(x) x & 0x01
@@ -20,6 +21,7 @@ struct r_bininfo_t {
 	int fd;
 	int rw;
 	void *bin_obj;
+	char *path;
 	void *user;
 	struct r_bininfo_handle_t *cur;
 	struct list_head bins;
@@ -30,6 +32,9 @@ struct r_bininfo_handle_t {
 	char *desc;
 	int (*init)(void *user);
 	int (*fini)(void *user);
+	char *(*get_path)(void *user);
+	int (*get_line)(void *user, u64 addr, char *file, int len, int *line);
+	char (*get_function_name)(struct r_bininfo_t *bi, u64 addr, char *file, int len);
 	int (*open)(struct r_bininfo_t *bin);
 	int (*close)(struct r_bininfo_t *bin);
 	struct list_head list;
@@ -48,6 +53,12 @@ int r_bininfo_autoset(struct r_bininfo_t *bin);
 int r_bininfo_set_file(struct r_bininfo_t *bin, const char *file, int rw);
 int r_bininfo_open(struct r_bininfo_t *bin);
 int r_bininfo_close(struct r_bininfo_t *bin);
+int r_bininfo_get_line(struct r_bininfo_t *bin, u64 addr, char *file, int len, int *line);
+char *r_bininfo_get_source_path(struct r_bininfo_t *bin);
+int r_bininfo_set_source_path(struct r_bininfo_t *bi, char *path);
+
+/* TODO : move this to r_util!! */
+char *r_bininfo_get_file_line(struct r_bininfo_t *bin, const char *file, int line);
 
 /* plugin pointers */
 extern struct r_bininfo_handle_t r_bininfo_plugin_elf;

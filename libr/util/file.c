@@ -110,6 +110,28 @@ char *r_file_slurp_random_line(const char *file)
 	return ptr;
 }
 
+char *r_file_slurp_line(const char *file, int line, int context)
+{
+	int i, lines = 0;
+	int sz;
+	char *ptr, *str = r_file_slurp(file, &sz);
+	// TODO: Implement context
+	if (str) {
+		for(i=0;str[i];i++)
+			if (str[i]=='\n')
+				lines++;
+		lines = line;
+		for(i=0;str[i]&&lines;i++)
+			if (str[i]=='\n')
+				lines--;
+		ptr = str+i;
+		for(i=0;ptr[i];i++) if (ptr[i]=='\n') { ptr[i]='\0'; break; }
+		ptr = strdup(ptr);
+		free(str);
+	}
+	return ptr;
+}
+
 int r_file_dump(const char *file, const u8 *buf, int len)
 {
 	FILE *fd = fopen(file, "wb");

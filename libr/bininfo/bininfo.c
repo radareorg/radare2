@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com>, pancake<@nopcode.org> */
 
 #include <stdio.h>
 #include <string.h>
@@ -28,6 +28,7 @@ int r_bininfo_init(struct r_bininfo_t *bin)
 	int i;
 	bin->cur = NULL;
 	bin->user = NULL;
+	bin->path = NULL;
 	INIT_LIST_HEAD(&bin->bins);
 	for(i=0;bininfo_static_plugins[i];i++)
 		r_bininfo_add(bin, bininfo_static_plugins[i]);
@@ -75,6 +76,39 @@ int r_bininfo_set(struct r_bininfo_t *bin, const char *name)
 		}
 	}
 	return R_FALSE;
+}
+
+int r_bininfo_get_line(struct r_bininfo_t *bin, u64 addr, char *file, int len, int *line)
+{
+	if (bin&&bin->cur&&bin->cur->get_line)
+		return bin->cur->get_line(bin, addr, file, len, line);
+	return R_FALSE;
+}
+
+char *r_bininfo_get_file_line(struct r_bininfo_t *bin, const char *file, int line)
+{
+	char *linestr;
+	char path[1024];
+	sprintf(path, "%s/%s", bin->path, file);
+	linestr = r_file_slurp_line(path, line, 1);
+	return linestr;
+}
+
+char *r_bininfo_get_source_path(struct r_bininfo_t *bin)
+{
+	if (bin->path == NULL) {
+		if (bin&&bin->cur&&bin->cur->get_path) {
+			bin->path = bin->cur->get_path(bin);
+		}
+	}
+	return bin->path;
+}
+
+int r_bininfo_set_source_path(struct r_bininfo_t *bi, char *path)
+{
+	free(bi->path);
+	bi->path = strdup(path);
+	return R_TRUE;
 }
 
 /*XXX*/

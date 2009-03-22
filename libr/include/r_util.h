@@ -83,5 +83,6 @@ char *r_file_slurp_random_line(const char *file);
 int r_file_dump(const char *file, const u8 *buf, int len);
 int r_file_rm(const char *file);
 int r_file_exist(const char *str);
+char *r_file_slurp_line(const char *file, int line, int context);
 
 #endif

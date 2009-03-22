@@ -9,11 +9,11 @@ BOO=-Wl,-R../../
 LDFLAGS+=$(subst r_,${BOO},$(BINDEPS))
 
 # Compiler
-CC?=gcc
-CFLAGS+=-fPIC
-CC_LIB=${CC} -shared -o ${LIBSO}
-CC_AR=ar -r ${LIBAR}
-LINK?=
+#CC?=gcc
+#CFLAGS+=-fPIC
+#CC_LIB=${CC} -shared -o ${LIBSO}
+#CC_AR=ar -r ${LIBAR}
+#LINK?=
 
 # Debug
 CFLAGS+=-g -Wall
@@ -43,6 +43,7 @@ LIBSO=${LIB}.${EXT_SO}
 ifeq (${BINDEPS},)
 ifneq ($(NAME),)
 include ../../config.mk
+include ../../mk/${COMPILER}.mk
 
 CFLAGS+=-I../include
 all: ${LIBSO}
@@ -70,6 +71,7 @@ endif
 else
 
 include ../../config.mk
+include ../../../mk/${COMPILER}.mk
 CFLAGS+=-I../../include
 
 all: ${BIN}
