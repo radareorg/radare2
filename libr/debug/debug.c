@@ -25,9 +25,10 @@ int r_debug_attach(struct r_debug_t *dbg, int pid)
 	int ret = R_FALSE;
 	if (dbg->h && dbg->h->attach) {
 		int ret = dbg->h->attach(pid);
-		if (ret)
+		if (ret) {
 			dbg->pid = pid;
-		else fprintf(stderr, "Cannot attach to this pid\n");
+			dbg->tid = pid;
+		} else fprintf(stderr, "Cannot attach to this pid\n");
 	} else fprintf(stderr, "dbg->attach = NULL\n");
 	return ret;
 }
@@ -53,6 +54,7 @@ int r_debug_select(struct r_debug_t *dbg, int pid, int tid)
 {
 	dbg->pid = pid;
 	dbg->tid = tid;
+	eprintf("PID: %d %d\n", pid, tid);
 	return R_TRUE;
 }
 
@@ -116,8 +118,13 @@ int r_debug_step_over(struct r_debug_t *dbg, int steps)
 int r_debug_continue(struct r_debug_t *dbg)
 {
 	int ret = R_FALSE;
-	if (dbg->h && dbg->h->cont)
-		ret = dbg->h->cont(dbg->pid);
+	if (dbg->h){
+		if (dbg->h->cont) {
+			ret = dbg->h->cont(dbg->pid);
+			if (dbg->h->wait)
+				ret = dbg->h->wait(dbg->pid);
+		}
+	}
 	return ret;
 }
 

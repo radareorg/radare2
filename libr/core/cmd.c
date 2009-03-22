@@ -1338,18 +1338,25 @@ static int cmd_debug(void *data, const char *input)
 		r_debug_step(&core->dbg, 1);
 		break;
 	case 'b':
-		fprintf(stderr, "breakpoint\n");
+		fprintf(stderr, "TODO: breakpoint\n");
 		break;
 	case 'c':
 		fprintf(stderr, "continue\n");
 		r_debug_continue(&core->dbg);
 		break;
+	case 'm':
+		{char pid[16]; sprintf(pid, "%d", core->dbg.pid);
+		setenv("PID", pid, 1);
+		system("cat /proc/$PID/maps"); }
+		break;
 	case 'r':
 		r_core_cmd(core, "|reg", 0); // XXX
 		break;
 	case 'p':
+		// TODO: Support PID and Thread
 		if (input[1]==' ')
-			r_debug_select(&core->dbg, core->dbg.pid, atoi(input+2));
+			//r_debug_select(&core->dbg, core->dbg.pid, atoi(input+2));
+			r_debug_select(&core->dbg, atoi(input+2), atoi(input+2));
 		else fprintf(stderr, "TODO: List processes..\n");
 		break;
 	case 'h':
@@ -1363,6 +1370,7 @@ static int cmd_debug(void *data, const char *input)
 		" ds           ; perform one step\n"
 		" ds 3         ; perform 3 steps\n"
 		" do 3         ; perform 3 steps overs\n"
+		" dp [pid]     ; list or set pid\n"
 		" dc           ; continue execution\n"
 		" dr           ; show registers\n"
 		" dr*          ; show registers in radare commands\n"

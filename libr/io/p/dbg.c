@@ -56,13 +56,20 @@ static int fork_and_ptraceme(const char *cmd)
 		// TODO: 
 		//debug_environment();
 {
-	char buf[128];
+	char *buf;
 	char *argv[2];
-		strcpy(buf, cmd);
-	argv[0]= buf;
+	char *ptr;
+
+	buf = strdup(cmd);
+	ptr = strchr(buf, ' ');
+	if (ptr) {
+		*ptr='\0';
+	}
+
+	argv[0] = r_file_path(cmd);
 	argv[1] = NULL;
 		//execv(cmd, argv); //ps.argv[0], ps.argv);
-execl("/bin/ls", "ls", NULL);
+	execvp(argv[0], argv);
 }
 		perror("fork_and_attach: execv");
 		//printf(stderr, "[%d] %s execv failed.\n", getpid(), ps.filename);
