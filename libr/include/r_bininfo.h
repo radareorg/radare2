@@ -32,9 +32,9 @@ struct r_bininfo_handle_t {
 	char *desc;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-	char *(*get_path)(void *user);
-	int (*get_line)(void *user, u64 addr, char *file, int len, int *line);
-	char (*get_function_name)(struct r_bininfo_t *bi, u64 addr, char *file, int len);
+	char *(*get_path)(struct r_bininfo_t *user);
+	int (*get_line)(struct r_bininfo_t *user, u64 addr, char *file, int len, int *line);
+	char *(*get_function_name)(struct r_bininfo_t *bi, u64 addr, char *file, int len);
 	int (*open)(struct r_bininfo_t *bin);
 	int (*close)(struct r_bininfo_t *bin);
 	struct list_head list;
@@ -66,5 +66,6 @@ extern struct r_bininfo_handle_t r_bininfo_plugin_elf64;
 extern struct r_bininfo_handle_t r_bininfo_plugin_pe;
 extern struct r_bininfo_handle_t r_bininfo_plugin_pe64;
 extern struct r_bininfo_handle_t r_bininfo_plugin_java;
+extern struct r_bininfo_handle_t r_bininfo_plugin_addr2line;
 
 #endif

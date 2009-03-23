@@ -15,6 +15,8 @@ struct r_bininfo_t *r_bininfo_new(char *file, int rw)
 {
 	struct r_bininfo_t *bin = MALLOC_STRUCT(struct r_bininfo_t);
 	r_bininfo_init(bin);
+	bin->file = strdup(file);
+	bin->rw = rw;
 	return bin;
 }
 

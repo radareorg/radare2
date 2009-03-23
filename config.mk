@@ -3,8 +3,8 @@ RELEASE=0
 DESTDIR=
 OSTYPE=gnulinux
 
-#COMPILER=gcc
-COMPILER=tcc
+COMPILER=gcc
+#COMPILER=tcc
 
 ifeq (${RELEASE},1)
 PREFIX=/usr/local

@@ -3,34 +3,60 @@
 #include <r_bininfo.h>
 #include <r_lib.h>
 
-static char *get_path(struct r_bininfo_t *bi)
+static char *a2l_get_path(struct r_bininfo_t *bi)
 {
 	return strdup("");
 }
 
-static char *get_function_name(struct r_bininfo_t *bi, u64 addr, char *file, int len)
+static int cmd_to_str(const char *cmd, char *out, int len)
 {
-	char buf[1024];
-	sprintf(buf, "addr2line -f -e %s 0x%08llx | head -n 1", file, addr);
-printf("==>%s\n", buf);
-	system(buf);
+	FILE *fd = popen(cmd, "r");
+	if (fd == NULL) {
+		fprintf(stderr, "Cannot find 'addr2line' program\n");
+		return R_FALSE;
+	}
+	fread(out, len, 1, fd);
+	if (out[strlen(out)-1]=='\n')
+		out[strlen(out)-1]='\0';
+	pclose(fd);
+	return R_TRUE;
 }
 
-static char *get_line(struct r_bininfo_t *bi, u64 addr, char *file, int line)
+/* XXX: Bad signature */
+static char *a2l_get_function_name(struct r_bininfo_t *bi, u64 addr, char *file, int len)
 {
 	char buf[1024];
-	sprintf(buf, "addr2line -e %s 0x%08llx", addr);
-printf("==>%s\n", buf);
-	system(buf);
-	// TODO: get output and dump it back to file buffer
+	sprintf(buf, "addr2line -f -e '%s' 0x%08llx | head -n 1", file, addr);
+	if (!cmd_to_str(buf, file, len))
+		return R_FALSE;
+	return buf;
+}
+
+static int a2l_get_line(struct r_bininfo_t *bi, u64 addr, char *file, int len, int *line)
+{
+	char *p, buf[1024];
+	// TODO: move to r_util
+	sprintf(buf, "addr2line -e '%s' 0x%08llx", bi->file, addr);
+
+	memset(file,'\0', len);
+	if (!cmd_to_str(buf, file, len))
+		return R_FALSE;
+
+	p = strchr(file, ':');
+	if (p) {
+		*p='\0';
+		*line = atoi(p+1);
+	}
+
+	return R_TRUE;
 }
 
 struct r_bininfo_handle_t r_bininfo_plugin_addr2line = {
-	.name = "addr2line",
+	.name = "bininfo_addr2line",
 	.desc = "addr2line based dwarf utility",
-	.get_path = get_path,
-	.get_line = get_line,
-	.get_function_name = get_function_name,
+	.get_path = a2l_get_path,
+	.get_line = a2l_get_line,
+	.get_function_name = a2l_get_function_name,
 	.init = NULL,
 	.fini = NULL,
 	.open = NULL,

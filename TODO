@@ -19,4 +19,3 @@
    scripting language, so we can for example prepare
    a .c stub interface for python/perl/ruby/..
  - Maybe having a preprocessor tool for this..
-
