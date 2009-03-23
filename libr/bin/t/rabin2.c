@@ -379,14 +379,7 @@ int main(int argc, char **argv)
 {
 	int c;
 	int action = ACTION_UNK, rw = 0;
-	const char *file = NULL, *format = NULL;
-	const char *op = NULL;
-
-	r_bin_init(&bin);
-	r_lib_init(&l, "radare_plugin");
-	r_lib_add_handler(&l, R_LIB_TYPE_BIN, "bin plugins",
-		&__lib_bin_cb, &__lib_bin_dt, NULL);
-	r_lib_opendir(&l, getenv("LIBR_PLUGINS"));
+	const char *file = NULL, *format = NULL, *op = NULL;
 
 	while ((c = getopt(argc, argv, "isSzIeo:f:rvh")) != -1)
 	{
@@ -428,13 +421,17 @@ int main(int argc, char **argv)
 			action |= ACTION_HELP;
 		}
 	}
-	
 	file = argv[optind];
 	
+	r_bin_init(&bin, file, rw);
+	r_lib_init(&l, "radare_plugin");
+	r_lib_add_handler(&l, R_LIB_TYPE_BIN, "bin plugins",
+		&__lib_bin_cb, &__lib_bin_dt, NULL);
+	r_lib_opendir(&l, getenv("LIBR_PLUGINS"));
+
 	if (action == ACTION_HELP || action == ACTION_UNK || file == NULL)
 		return rabin_show_help();
 
-	r_bin_set_file(&bin, file, rw);
 	if (format) {
 		char *str = malloc(strlen(format)+10);
 		sprintf(str, "bin_%s", format);

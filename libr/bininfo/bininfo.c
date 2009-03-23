@@ -11,12 +11,10 @@
 static struct r_bininfo_handle_t *bininfo_static_plugins[] = 
 	{ R_BININFO_STATIC_PLUGINS };
 
-struct r_bininfo_t *r_bininfo_new(char *file, int rw)
+struct r_bininfo_t *r_bininfo_new(const char *file, int rw)
 {
 	struct r_bininfo_t *bin = MALLOC_STRUCT(struct r_bininfo_t);
-	r_bininfo_init(bin);
-	bin->file = strdup(file);
-	bin->rw = rw;
+	r_bininfo_init(bin, file, rw);
 	return bin;
 }
 
@@ -25,12 +23,16 @@ void r_bininfo_free(struct r_bininfo_t *bin)
 	free(bin);
 }
 
-int r_bininfo_init(struct r_bininfo_t *bin)
+int r_bininfo_init(struct r_bininfo_t *bin, const char *file, int rw)
 {
 	int i;
 	bin->cur = NULL;
 	bin->user = NULL;
 	bin->path = NULL;
+	if (file != NULL)
+		bin->file = strdup(file);
+	else bin->file = NULL;
+	bin->rw = rw;
 	INIT_LIST_HEAD(&bin->bins);
 	for(i=0;bininfo_static_plugins[i];i++)
 		r_bininfo_add(bin, bininfo_static_plugins[i]);
@@ -140,14 +142,6 @@ int r_bininfo_autoset(struct r_bininfo_t *bin)
 		return r_bininfo_set(bin, "bininfo_java");
 
 	return R_FALSE;
-}
-
-int r_bininfo_set_file(struct r_bininfo_t *bin, const char *file, int rw)
-{
-	bin->file = file;
-	bin->rw = rw;
-
-	return R_TRUE;
 }
 
 int r_bininfo_open(struct r_bininfo_t *bin)

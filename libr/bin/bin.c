@@ -67,10 +67,10 @@ static struct r_bin_string_t *get_strings(struct r_bin_t *bin, int min)
 	return ret;
 }
 
-struct r_bin_t *r_bin_new(char *file, int rw)
+struct r_bin_t *r_bin_new(const char *file, int rw)
 {
 	struct r_bin_t *bin = MALLOC_STRUCT(struct r_bin_t);
-	r_bin_init(bin);
+	r_bin_init(bin, file, rw);
 	return bin;
 }
 
@@ -79,11 +79,15 @@ void r_bin_free(struct r_bin_t *bin)
 	free(bin);
 }
 
-int r_bin_init(struct r_bin_t *bin)
+int r_bin_init(struct r_bin_t *bin, const char *file, int rw)
 {
 	int i;
 	bin->cur = NULL;
 	bin->user = NULL;
+	if (file != NULL)
+		bin->file = strdup(file);
+	else bin->file = NULL;
+	bin->rw = rw;
 	INIT_LIST_HEAD(&bin->bins);
 	for(i=0;bin_static_plugins[i];i++)
 		r_bin_add(bin, bin_static_plugins[i]);
@@ -160,14 +164,6 @@ int r_bin_autoset(struct r_bin_t *bin)
 		return r_bin_set(bin, "bin_java");
 
 	return R_FALSE;
-}
-
-int r_bin_set_file(struct r_bin_t *bin, const char *file, int rw)
-{
-	bin->file = file;
-	bin->rw = rw;
-
-	return R_TRUE;
 }
 
 int r_bin_open(struct r_bin_t *bin)
