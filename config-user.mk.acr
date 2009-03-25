@@ -1,0 +1,2 @@
+# TODO: Not included from main build system yet
+PREFIX=@PREFIX@

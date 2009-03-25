@@ -1,0 +1,107 @@
+Do you want to perform more than one search at a time? '> /k0 keyword1', '> /k1 keyword2' and '> /r 0-1'
+Debugger commands are prefixed with '!' because they are accessed via the io plugin system() hook
+Isn't your disassembly pretty enought? Try changing values with 'eval asm.'
+Did you setup your ~/.radarerc today?
+You can mark an offset in visual mode with the cursor and the ',' key. Later press '.' to go back
+You can debug a program from the graph view (ag command) using standard radare commands
+Before entering a 'call' you can identify the arguments passed to it using the 'pm xxi' command
+Use the '[' and ']' keys in visual mode to adjust the screen width (scr.width)
+Choose your architecture by typing: 'eval asm.arch=ppc' (or arm, java, m68k, intel, intel16 or intel64)
+Move between your search hits in visual mode using the 'f' and 'F' keys
+Run python scripts with the python hack plugin. ('H python <filename>' command)
+Run LUA scripts with the lua hack plugin. ('H lua <filename>' command)
+Save your projects with 'Ps <project-filename>' and restore then with 'Po <project-filename>'
+Everytime you run radare. It removes a random file :)
+RADARE CUMS WITH ABSOLUTELY NO WARRANTY
+Enable asm.trace to see the tracing information inside the disassembly
+Change the registers of the child process in this way: '!set eax 0x333'
+Deltify your life with radare
+Manipulate the filedescriptors of the child with '!fd'
+Trace until system calls with !contsc
+Remotely open files or debug processes with radare listen://:9999/dbg:///bin/ls
+Check your IO plugins with radare -L
+Find cross-reference in raw binaries using external 'xrefs' tool.
+Change the size of the file with the 'r' (resize) command
+Calculate checksums for the current block with the commands starting with '#' (#md5, #crc32, #all, ..)
+Use +,-,*,/ to change the size of the block
+Change the block size with 'b <block-size>' In visual mode you can also enter radare command pressing the ':' key (like vi does)
+If you want to open the file in read-write mode use -w flag or -e cfg.write=true
+Print the contents of the current block with the 'p' command
+Command layout is: <repeat><command><bytes>@<offset>.\  For example: 3x20@0x33 will show 3 hexdumps of 20 bytes at 0x33
+Press 'c' in visual mode to toggle the cursor mode
+You can "copy/paste" bytes using the cursor in visual mode 'c' and using the 'y' and 'Y' keys
+Move around the bytes with hjkl! Arrow keys are not portable and are less productive to use
+Seek at relative offsets with 'seek +<offset>' or 'seek -<offset>'
+Invert the block bytes using the 'I' key in visual mode
+Switch between print modes using the 'p' and 'P' keys in visual mode
+In soviet russia radare debugs you!
+Add comments using the ';' key in visual mode or the 'C' command from the radare shell
+Assemble opcodes with the 'a' and 'A' keys in visual mode which are hooks for the wa and wA commands
+Find expanded AES keys in memory with /a command
+Find wide-char strings with /w <string> command
+Enable ascii-art jump lines in disassembly with asm.lines. asm.linesout and asm.linestyle may interest you too
+Control the signal handlers of the child process with the '!signal' command
+Get a free shell with 'rasc -i x86.linux.binsh -X'
+Interpret your own radare scripts with '. <path-to-your-script>'. Similar to the bash source alias command.
+Most of commands accept an '?' as suffix. Use it to understand how they work :)
+Find hexpairs with '/x a0 cc 33'
+Walk inside your seek history with the 'u' command (undo), and 'U' for redo
+Use hasher to calculate hashes of portion blocks of a file
+Use zoom.byte=entropy and press 'z' in visual mode to zoom out to see the entropy of the whole file
+Use zoom.byte=printable in zoom mode (z key in visual mode) to find strings
+Set colors to your screen with 'eval scr.color=true'
+Press 'C' in visual mode to toggle colors
+Trace the register changes when debugging with trace.cmtregs
+Move the comments to the right changing their margin with eval asm.cmtmargin
+Execute a command on the visual prompt with cmd.vprompt
+Reduce the delta where flag resolving by address is used with cfg.delta
+Disable these messages with eval cfg.fortunes=false in your ~/.radarerc
+Show offsets in graphs with 'eval graph.offset = true'
+Follow a flag in disassembly view (avoids to disasemble out of the visibility of the flag) with asm.follow
+Execute a command every time a breakpoint is hitted with 'eval cmd.bp = !my-program'
+Disassemble in intel syntax with eval asm.syntax = intel
+Change the UID of the debugged process with child.uid (requires root)
+Enable full backtrace with dbg.fullbt
+Manually modify the DRX registers of the child process with '!dr' command
+What do you want to debug today?
+Sniff your favorite libusb-based application with LD_PRELOAD=/usr/lib/libusbsniff.so ./your-program
+Use '!rsc spcc' to parse structures in memory using C programs
+Find cp850 strings with 'eval cfg.encoding=cp850' and '/s'
+Enhace your graphs by increasing the size of the block and graph.depth eval variable
+Control the height of the terminal on serial consoles with eval scr.height
+Use eval file.id=true and eval file.flag=true in your ~/.radarerc to get symbols, strings, .. when loading
+Disassemble unsupported architectures with external objdump defined in eval asm.objdump. Use 'pd' command.
+Emulate the base address of a file with eval file.baddr
+Dump the class header information with 'javasm -c <file.class>'. Handled by radare if file.id=true
+Use gradare if you prefer simple frontend for gui users
+Feedback, bug reports, patches, ideas are welcome to the mailing list at radare.nopcode.org
+Bindiff two files with '$ bdiff /bin/true /bin/false'
+Execute commands on a temporally offset appending '@ offset' to your command
+Temporally drop the verbosity prefixing the commands with ':'
+Change the graph block definition with graph.callblocks, graph.jmpblocks, graph.flagblocks
+Filter the output of radare in realtime with a tab separated file pointed by scr.filter containing key\tvalue
+Use the '<' and '>' keys in visual cursor mode (V->c) to folder selected bytes
+Use scr.accel to browse the file faster!
+I love the smell of bugs in the morning.
+Use the 'pR' command to see the source line related to the current seek
+Analyze socket connections with the socket plugin: $ radare socket://www.foo.com:80. Use 'w' to send data
+I like to suck nibbles and make hex
+I'm in your source securing your bits
+radare contributes to the One Byte Per Child fundation
+setup dbg.fpregs to true to visualize the fpu registers in the debugger view
+To debug a program you can do dbg://${path-to-program} or use -d ${path..}
+3nl4r9e y0\/r r4d4r3
+LUA is the default scripting language for radare. Read radare.lua fmi
+There's a discussion forum in http://radare.nopcode.org/forum/
+I did it for the pwnz
+If you send the program you are debugging to 15 friends before 143 minutes and then step three times on the same opcode you will get the name of the person who loves you
+To remove this message, put `dbxenv suppress_startup_message 7.5' in your .dbxrc
+Heisenbug: A bug that disappears or alters its behavior when one attempts to probe or isolate it.
+radare is for lulzhats
+Use 'e' and 't' in Visual mode to edit configuration and track flags
+Use rabin -rios to get the import/export/other symbols of any binary
+Remember to maintain your ~/.radare_history
+Microloft Visual Radare.NET 2008. Now OOXML Powered!
+Enjoy the 'two girls one backup' viral video
+A C program is like a fast dance on a newly waxed dance floor by people carrying razors - Waldi Ravens
+radare2 is like windows 7 but even better

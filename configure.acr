@@ -1,0 +1,7 @@
+PKGNAME radare2
+VERSION 0.2b
+CONTACT pancake ; pancake@nopcode.org
+
+LANG_C!
+
+SUBDIRS config-user.mk

@@ -8,6 +8,8 @@ clean:
 
 install:
 	mkdir -p ${DESTDIR}${PREFIX}
+	mkdir -p ${DESTDIR}${PREFIX}/share/doc
+	for a in doc/* ; do cp $a ${DESTDIR}/${PREFIX}/share/doc ; done
 	cd libr && make install PARENT=1 PREFIX=${DESTDIR}${PREFIX}
 
 uninstall:
