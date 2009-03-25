@@ -67,10 +67,10 @@ static struct r_bin_string_t *get_strings(struct r_bin_t *bin, int min)
 	return ret;
 }
 
-struct r_bin_t *r_bin_new(const char *file, int rw)
+struct r_bin_t *r_bin_new()
 {
 	struct r_bin_t *bin = MALLOC_STRUCT(struct r_bin_t);
-	r_bin_init(bin, file, rw);
+	r_bin_init(bin);
 	return bin;
 }
 
@@ -79,15 +79,13 @@ void r_bin_free(struct r_bin_t *bin)
 	free(bin);
 }
 
-int r_bin_init(struct r_bin_t *bin, const char *file, int rw)
+int r_bin_init(struct r_bin_t *bin)
 {
 	int i;
 	bin->cur = NULL;
 	bin->user = NULL;
-	if (file != NULL)
-		bin->file = strdup(file);
-	else bin->file = NULL;
-	bin->rw = rw;
+	bin->file = NULL;
+	bin->rw = 0;
 	INIT_LIST_HEAD(&bin->bins);
 	for(i=0;bin_static_plugins[i];i++)
 		r_bin_add(bin, bin_static_plugins[i]);
@@ -124,50 +122,48 @@ int r_bin_list(struct r_bin_t *bin)
 	return R_FALSE;
 }
 
-int r_bin_set(struct r_bin_t *bin, const char *name)
+int r_bin_open(struct r_bin_t *bin, const char *file, int rw, char *plugin_name)
 {
+	if (file != NULL)
+		bin->file = strdup(file);
+	else return R_FALSE;
+	bin->rw = rw;
+
+	if (plugin_name == NULL) {
+		u8 buf[1024];
+		plugin_name = malloc(32);
+
+		if ((bin->fd = open(bin->file, 0)) == -1) {
+			return -1;
+		}
+
+		lseek(bin->fd, 0, SEEK_SET);
+		read(bin->fd, buf, 1024);
+
+		close(bin->fd);
+
+		if (!memcmp(buf, "\x7F\x45\x4c\x46", 4)) {
+			if (buf[4] == 2)  /* buf[EI_CLASS] == ELFCLASS64 */
+				strcpy(plugin_name, "bin_elf64");
+			else strcpy(plugin_name, "bin_elf");
+		} else if (!memcmp(buf, "\x4d\x5a", 2) &&
+				!memcmp(buf+(buf[0x3c]|(buf[0x3d]<<8)), "\x50\x45", 2)) {
+			if (!memcmp(buf+(buf[0x3c]|buf[0x3d]<<8)+0x18, "\x0b\x02", 2))
+				strcpy(plugin_name, "bin_pe64");
+			else strcpy(plugin_name, "bin_pe");
+		} else if (!memcmp(buf, "\xca\xfe\xba\xbe", 4))
+			strcpy(plugin_name, "bin_java");
+		else return R_FALSE;
+	}
+
 	struct list_head *pos;
 	list_for_each_prev(pos, &bin->bins) {
 		struct r_bin_handle_t *h = list_entry(pos, struct r_bin_handle_t, list);
-		if (!strcmp(h->name, name)) {
+		if (!strcmp(h->name, plugin_name)) {
 			bin->cur = h;
-			return R_TRUE;
 		}
 	}
-	return R_FALSE;
-}
 
-/*XXX*/
-int r_bin_autoset(struct r_bin_t *bin)
-{
-	unsigned char buf[1024];
-
-	if ((bin->fd = open(bin->file, 0)) == -1) {
-		return -1;
-	}
-
-	lseek(bin->fd, 0, SEEK_SET);
-	read(bin->fd, buf, 1024);
-
-	close(bin->fd);
-
-	if (!memcmp(buf, "\x7F\x45\x4c\x46", 4)) {
-		if (buf[4] == 2)  /* buf[EI_CLASS] == ELFCLASS64 */
-			return r_bin_set(bin, "bin_elf64");
-		else return r_bin_set(bin, "bin_elf");
-	} else if (!memcmp(buf, "\x4d\x5a", 2) &&
-			!memcmp(buf+(buf[0x3c]|(buf[0x3d]<<8)), "\x50\x45", 2)) {
-		if (!memcmp(buf+(buf[0x3c]|buf[0x3d]<<8)+0x18, "\x0b\x02", 2))
-			return r_bin_set(bin, "bin_pe64");
-		else return r_bin_set(bin, "bin_pe");
-	} else if (!memcmp(buf, "\xca\xfe\xba\xbe", 4))
-		return r_bin_set(bin, "bin_java");
-
-	return R_FALSE;
-}
-
-int r_bin_open(struct r_bin_t *bin)
-{
 	if (bin->cur && bin->cur->open)
 		return bin->cur->open(bin);
 	

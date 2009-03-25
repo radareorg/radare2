@@ -42,15 +42,13 @@ struct r_bininfo_handle_t {
 
 
 /* bininfo.c */
-struct r_bininfo_t *r_bininfo_new(const char *file, int rw);
+struct r_bininfo_t *r_bininfo_new();
 void r_bininfo_free(struct r_bininfo_t *bin);
-int r_bininfo_init(struct r_bininfo_t *bin, const char *file, int rw);
+int r_bininfo_init(struct r_bininfo_t *bin);
 void r_bininfo_set_user_ptr(struct r_bininfo_t *bin, void *user);
 int r_bininfo_add(struct r_bininfo_t *bin, struct r_bininfo_handle_t *foo);
 int r_bininfo_list(struct r_bininfo_t *bin);
-int r_bininfo_set(struct r_bininfo_t *bin, const char *name);
-int r_bininfo_autoset(struct r_bininfo_t *bin);
-int r_bininfo_open(struct r_bininfo_t *bin);
+int r_bininfo_open(struct r_bininfo_t *bin, const char *file, int rw, char *plugin_name);
 int r_bininfo_close(struct r_bininfo_t *bin);
 int r_bininfo_get_line(struct r_bininfo_t *bin, u64 addr, char *file, int len, int *line);
 char *r_bininfo_get_source_path(struct r_bininfo_t *bin);

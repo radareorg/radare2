@@ -25,7 +25,7 @@ static int cmd_to_str(const char *cmd, char *out, int len)
 /* XXX: Bad signature */
 static char *a2l_get_function_name(struct r_bininfo_t *bi, u64 addr, char *file, int len)
 {
-	char buf[1024];
+	static char buf[1024];
 	sprintf(buf, "addr2line -f -e '%s' 0x%08llx | head -n 1", file, addr);
 	if (!cmd_to_str(buf, file, len))
 		return R_FALSE;
@@ -51,6 +51,11 @@ static int a2l_get_line(struct r_bininfo_t *bi, u64 addr, char *file, int len, i
 	return R_TRUE;
 }
 
+static int a2l_open(struct r_bininfo_t *bi)
+{
+	return R_TRUE;
+}
+
 struct r_bininfo_handle_t r_bininfo_plugin_addr2line = {
 	.name = "bininfo_addr2line",
 	.desc = "addr2line based dwarf utility",
@@ -59,7 +64,7 @@ struct r_bininfo_handle_t r_bininfo_plugin_addr2line = {
 	.get_function_name = a2l_get_function_name,
 	.init = NULL,
 	.fini = NULL,
-	.open = NULL,
+	.open = &a2l_open,
 	.close = NULL,
 };
 

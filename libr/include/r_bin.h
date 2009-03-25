@@ -108,15 +108,13 @@ struct r_bin_info_t {
 };
 
 /* bin.c */
-struct r_bin_t *r_bin_new(const char *file, int rw);
+struct r_bin_t *r_bin_new();
 void r_bin_free(struct r_bin_t *bin);
-int r_bin_init(struct r_bin_t *bin, const char *file, int rw);
+int r_bin_init(struct r_bin_t *bin);
 void r_bin_set_user_ptr(struct r_bin_t *bin, void *user);
 int r_bin_add(struct r_bin_t *bin, struct r_bin_handle_t *foo);
 int r_bin_list(struct r_bin_t *bin);
-int r_bin_set(struct r_bin_t *bin, const char *name);
-int r_bin_autoset(struct r_bin_t *bin);
-int r_bin_open(struct r_bin_t *bin);
+int r_bin_open(struct r_bin_t *bin, const char *file, int rw, char *plugin_name);
 int r_bin_close(struct r_bin_t *bin);
 u64 r_bin_get_baddr(struct r_bin_t *bin);
 struct r_bin_entry_t* r_bin_get_entry(struct r_bin_t *bin);

@@ -29,8 +29,8 @@
 
 static struct r_lib_t l;
 static struct r_bin_t bin;
-static int verbose = 0;
-static int rad = 0;
+static int verbose = 0, rad = 0, rw = 0;
+static char* file;
 
 static int rabin_show_help()
 {
@@ -57,11 +57,6 @@ static int rabin_show_entrypoint()
 	u64 baddr;
 	char *env;
 
-	if (r_bin_open(&bin) == R_FALSE) {
-		fprintf(stderr, "Cannot open file\n");
-		return R_FALSE;
-	}
-
 	baddr = r_bin_get_baddr(&bin);
 	if ((entry = r_bin_get_entry(&bin)) == NULL)
 		return R_FALSE;
@@ -79,7 +74,6 @@ static int rabin_show_entrypoint()
 				baddr+entry->rva, entry->offset, baddr);
 	}
 
-	r_bin_close(&bin);
 	free(entry);
 
 	return R_TRUE;
@@ -90,11 +84,6 @@ static int rabin_show_imports()
 	int ctr = 0;
 	u64 baddr;
 	struct r_bin_import_t *imports, *importsp;
-
-	if (r_bin_open(&bin) == R_FALSE) {
-		fprintf(stderr, "Cannot open file\n");
-		return R_FALSE;
-	}
 
 	baddr = r_bin_get_baddr(&bin);
 
@@ -121,7 +110,6 @@ static int rabin_show_imports()
 
 	if (!rad) printf("\n%i imports\n", ctr);
 
-	r_bin_close(&bin);
 	free(imports);
 
 	return R_TRUE;
@@ -132,11 +120,6 @@ static int rabin_show_symbols()
 	int ctr = 0;
 	u64 baddr;
 	struct r_bin_symbol_t *symbols, *symbolsp;
-
-	if (r_bin_open(&bin) == R_FALSE) {
-		fprintf(stderr, "Cannot open file\n");
-		return R_FALSE;
-	}
 
 	baddr = r_bin_get_baddr(&bin);
 
@@ -174,7 +157,6 @@ static int rabin_show_symbols()
 
 	if (!rad) printf("\n%i symbols\n", ctr);
 
-	r_bin_close(&bin);
 	free(symbols);
 
 	return R_TRUE;
@@ -185,11 +167,6 @@ static int rabin_show_strings()
 	int ctr = 0;
 	u64 baddr;
 	struct r_bin_string_t *strings, *stringsp;
-
-	if (r_bin_open(&bin) == R_FALSE) {
-		fprintf(stderr, "Cannot open file\n");
-		return R_FALSE;
-	}
 
 	baddr = r_bin_get_baddr(&bin);
 
@@ -217,7 +194,6 @@ static int rabin_show_strings()
 
 	if (!rad) printf("\n%i strings\n", ctr);
 
-	r_bin_close(&bin);
 	free(strings);
 
 	return R_TRUE;
@@ -228,11 +204,6 @@ static int rabin_show_sections()
 	int ctr = 0;
 	u64 baddr;
 	struct r_bin_section_t *sections, *sectionsp;
-
-	if (r_bin_open(&bin) == R_FALSE) {
-		fprintf(stderr, "Cannot open file\n");
-		return R_FALSE;
-	}
 
 	baddr = r_bin_get_baddr(&bin);
 
@@ -271,7 +242,6 @@ static int rabin_show_sections()
 
 	if (!rad) printf("\n%i sections\n", ctr);
 
-	r_bin_close(&bin);
 	free(sections);
 
 	return R_TRUE;
@@ -281,11 +251,6 @@ static int rabin_show_sections()
 static int rabin_show_info()
 {
 	struct r_bin_info_t *info;
-
-	if (r_bin_open(&bin) == R_FALSE) {
-		fprintf(stderr, "Cannot open file\n");
-		return R_FALSE;
-	}
 
 	if ((info = r_bin_get_info(&bin)) == NULL)
 		return R_FALSE;
@@ -319,7 +284,6 @@ static int rabin_show_info()
 			R_BIN_DBG_SYMS(info->dbg_info)?"True":"False",
 			R_BIN_DBG_RELOCS(info->dbg_info)?"True":"False");
 
-	r_bin_close(&bin);
 	free(info);
 
 	return R_TRUE;
@@ -343,11 +307,6 @@ static int rabin_do_operation(const char *op)
 		return R_FALSE;
 	}
 
-	if (r_bin_open(&bin) == R_FALSE) {
-		fprintf(stderr, "cannot open file\n");
-		return R_FALSE;
-	}
-
 	ptr = ptr+1;
 	switch(arg[0]) {
 	case 'r':
@@ -359,8 +318,6 @@ static int rabin_do_operation(const char *op)
 			return R_FALSE;
 		}
 	}
-
-	r_bin_close(&bin);
 
 	return R_TRUE;
 }
@@ -378,8 +335,15 @@ static int __lib_bin_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_
 int main(int argc, char **argv)
 {
 	int c;
-	int action = ACTION_UNK, rw = 0;
-	const char *file = NULL, *format = NULL, *op = NULL;
+	int action = ACTION_UNK;
+	const char *format = NULL, *op = NULL;
+	char *plugin_name = NULL;
+
+	r_bin_init(&bin);
+	r_lib_init(&l, "radare_plugin");
+	r_lib_add_handler(&l, R_LIB_TYPE_BIN, "bin plugins",
+		&__lib_bin_cb, &__lib_bin_dt, NULL);
+	r_lib_opendir(&l, getenv("LIBR_PLUGINS"));
 
 	while ((c = getopt(argc, argv, "isSzIeo:f:rvh")) != -1)
 	{
@@ -423,29 +387,20 @@ int main(int argc, char **argv)
 	}
 	file = argv[optind];
 	
-	r_bin_init(&bin, file, rw);
-	r_lib_init(&l, "radare_plugin");
-	r_lib_add_handler(&l, R_LIB_TYPE_BIN, "bin plugins",
-		&__lib_bin_cb, &__lib_bin_dt, NULL);
-	r_lib_opendir(&l, getenv("LIBR_PLUGINS"));
-
 	if (action == ACTION_HELP || action == ACTION_UNK || file == NULL)
 		return rabin_show_help();
 
 	if (format) {
-		char *str = malloc(strlen(format)+10);
-		sprintf(str, "bin_%s", format);
-		if (!r_bin_set(&bin, str)) {
-			fprintf(stderr, "Unknown format\n");
-			return R_TRUE;
-		}
-		free (str);
-	} else {
-		if (!r_bin_autoset(&bin)) {
-			fprintf(stderr, "Not supported format\n");
-			return R_TRUE;
-		}
+		plugin_name = malloc(strlen(format)+10);
+		sprintf(plugin_name, "bin_%s", format);
+	} 
+
+	if (r_bin_open(&bin, file, rw, plugin_name) == R_FALSE) {
+		fprintf(stderr, "Cannot open file\n");
+		return R_FALSE;
 	}
+
+	free (plugin_name);
 
 	if (action&ACTION_ENTRY)
 		rabin_show_entrypoint();
@@ -461,6 +416,8 @@ int main(int argc, char **argv)
 		rabin_show_info();
 	if (op != NULL && action&ACTION_OPERATION)
 		rabin_do_operation(op);
+
+	r_bin_close(&bin);
 
 	return R_FALSE;
 }
