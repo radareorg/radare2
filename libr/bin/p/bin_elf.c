@@ -178,6 +178,23 @@ static u64 resize_section(struct r_bin_t *bin, char *name, u64 size)
 }
 
 #if !R_BIN_ELF64
+static int check(struct r_bin_t *bin)
+{
+	u8 buf[1024];
+
+	if ((bin->fd = open(bin->file, 0)) == -1)
+		return R_FALSE;
+	lseek(bin->fd, 0, SEEK_SET);
+	read(bin->fd, buf, 1024);
+	close(bin->fd);
+
+	if (!memcmp(buf, "\x7F\x45\x4c\x46", 4) &&
+		buf[4] == 1)  /* buf[EI_CLASS] == ELFCLASS32 */
+		return R_TRUE;
+	
+	return R_FALSE;
+}
+
 struct r_bin_handle_t r_bin_plugin_elf = {
 	.name = "bin_elf",
 	.desc = "elf bin plugin",
@@ -185,6 +202,7 @@ struct r_bin_handle_t r_bin_plugin_elf = {
 	.fini = NULL,
 	.open = &bopen,
 	.close = &bclose,
+	.check = &check,
 	.baddr = &baddr,
 	.entry = &entry,
 	.sections = &sections,

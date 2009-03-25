@@ -400,7 +400,8 @@ int main(int argc, char **argv)
 		return R_FALSE;
 	}
 
-	free (plugin_name);
+	if (plugin_name != NULL)
+		free (plugin_name);
 
 	if (action&ACTION_ENTRY)
 		rabin_show_entrypoint();

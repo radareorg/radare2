@@ -37,6 +37,7 @@ struct r_bininfo_handle_t {
 	char *(*get_function_name)(struct r_bininfo_t *bi, u64 addr, char *file, int len);
 	int (*open)(struct r_bininfo_t *bin);
 	int (*close)(struct r_bininfo_t *bin);
+	int (*check)(struct r_bininfo_t *bin);
 	struct list_head list;
 };
 

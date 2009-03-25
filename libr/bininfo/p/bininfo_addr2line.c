@@ -66,11 +66,12 @@ struct r_bininfo_handle_t r_bininfo_plugin_addr2line = {
 	.fini = NULL,
 	.open = &a2l_open,
 	.close = NULL,
+	.check = NULL,
 };
 
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = R_LIB_TYPE_BININFO,
 	.data = &r_bininfo_plugin_addr2line
 };
 #endif

@@ -37,6 +37,7 @@ struct r_bin_handle_t {
 	int (*fini)(void *user);
 	int (*open)(struct r_bin_t *bin);
 	int (*close)(struct r_bin_t *bin);
+	int (*check)(struct r_bin_t *bin);
 	u64 (*baddr)(struct r_bin_t *bin);
 	struct r_bin_entry_t* (*entry)(struct r_bin_t *bin);
 	struct r_bin_section_t* (*sections)(struct r_bin_t *bin);
