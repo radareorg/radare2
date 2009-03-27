@@ -31,6 +31,10 @@ struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int
 	fh->size = r_io_size(&r->io, fd);
 	list_add(&(fh->list), &r->files);
 
+	// XXX: detect plugin automagically or set it in config.c
+	r_bin_open(&r->bin, fh->filename, 0, "bin_elf");
+	r_bininfo_open(&r->bininfo, fh->filename, 0, "bininfo_addr2line");
+
 	r_core_block_read(r, 0);
 
 	return fh;

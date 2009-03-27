@@ -63,6 +63,7 @@ int r_core_config_init(struct r_core_t *core)
 	r_config_set_cb(cfg, "scr.color",
 		(core->print.flags&R_PRINT_FLAGS_COLOR)?"true":"false",
 		&config_color_callback);
+	r_config_set (cfg, "scr.seek", "eip");
 #if 0
 	node = config_set("asm.profile", "default");
 //	node->callback = &config_asm_profile;
@@ -137,6 +138,7 @@ int r_core_config_init(struct r_core_t *core)
 	r_config_set(cfg, "cmd.vprompt2", "CFV");
 	r_config_set(cfg, "cmd.vprompt3", "");
 	r_config_set(cfg, "cmd.bp", "");
+	r_config_set(cfg, "cfg.fortunes", "true");
 
 #if 0
 	config_set_i("search.from", 0);
@@ -213,7 +215,6 @@ int r_core_config_init(struct r_core_t *core)
 	config_set("cfg.rdbdir", "TODO");
 	config_set("cfg.datefmt", "%d:%m:%Y %H:%M:%S %z");
 	config_set_i("cfg.count", 0);
-	config_set("cfg.fortunes", "true");
 	node = config_set_i("cfg.bsize", 512);
 	node->callback = &config_bsize_callback;
 	config_set_i("cfg.vbsize", 1024);
@@ -346,7 +347,6 @@ int r_core_config_init(struct r_core_t *core)
 		config_set_scr_pal("00","white")
 		config_set_scr_pal("7f","magenta")
 
-		config_set("scr.seek", "eip");
 	config_set("scr.grephigh", "");
 	node = config_set("scr.tee", "");
 	node->callback = &config_teefile_callback;

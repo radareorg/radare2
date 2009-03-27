@@ -448,6 +448,16 @@ static int cmd_flag(void *data, const char *input)
 			r_flag_space_set(&core->flags, input+2);
 		else r_flag_space_list(&core->flags);
 		break;
+	case 'o':
+		{
+// XXX
+#define PREFIX "/usr"
+			char *file = PREFIX"/share/doc/radare/fortunes";
+			char *line = r_file_slurp_random_line (file);
+			r_cons_printf("%s\n", line);
+			free(line);
+		}
+		break;
 	case '*':
 		r_flag_list(&core->flags, 1);
 		break;
@@ -899,16 +909,31 @@ static int cmd_system(void *data, const char *input)
 
 static int cmd_meta(void *data, const char *input)
 {
+	struct r_core_t *core = (struct r_core_t *)data;
+	int ret, line = 0;
+	char file[1024];
 	//struct r_core_t *core = (struct r_core_t *)data;
 	switch(input[0]) {
 	case '\0':
 		/* meta help */
+		break;
+	case 'D': // debug information of current offset
+		ret = r_bininfo_get_line(
+			&core->bininfo, core->seek, file, 1023, &line);
+		if (ret)
+			r_cons_printf("file %s\nline %d\n", file, line);
 		break;
 	case 'C': /* add comment */
 		// r_meta_add(&core->meta);
 		break;
 	case 'F': /* add function */
 		break;
+	case '?':
+		eprintf(
+		"Usage: C[CDF?] [arg]\n"
+		" CD    show debug information (bininfo)\n"
+		" CF    register function size here\n"
+		" CC    add comment\n");
 	}
 	return R_TRUE;
 }

@@ -38,35 +38,35 @@ int main(int argc, char **argv)
 	int bsize = 0;
 	int seek = 0; // XXX use 64
 
-	if (argc<2)
-		return main_help(1);
+	if (argc < 2)
+		return main_help (1);
 
-	r_core_init(&r);
+	r_core_init (&r);
 
-	while((c = getopt(argc, argv, "whendVs:b:"))!=-1) {
-		switch(c) {
+	while ((c = getopt (argc, argv, "whendVs:b:"))!=-1) {
+		switch (c) {
 		case 'd':
 			debug = 1;
 			break;
 		case 'e':
-			r_config_eval(&r.config, optarg);
+			r_config_eval (&r.config, optarg);
 			break;
 		case 'h':
-			return main_help(0);
+			return main_help (0);
 		case 'n':
 			run_rc = 0;
 			break;
 		case 'V':
-			return main_version();
+			return main_version ();
 			break;
 		case 'w':
 			perms = R_IO_RDWR;
 			break;
 		case 'b':
-			bsize = atoi(optarg); // XXX use r_num
+			bsize = atoi (optarg); // XXX use r_num
 			break;
 		case 's':
-			seek = atoi(optarg); // XXX use r_num
+			seek = atoi (optarg); // XXX use r_num
 			break;
 		default:
 			return 1;
@@ -75,68 +75,70 @@ int main(int argc, char **argv)
 
 	if (debug) {
 		char file[1024];
-
-		strcpy(file, "dbg://");
-		if (optind<argc) {
-			char *ptr = r_file_path(argv[optind]);
+		strcpy (file, "dbg://");
+		if (optind < argc) {
+			char *ptr = r_file_path (argv[optind]);
 			if (ptr) {
-				strcat(file, ptr);
-				free(ptr);
+				strcat (file, ptr);
+				free (ptr);
 				optind++;
 			}
 		}
-		while (optind<argc) {
-			strcat(file, argv[optind]);
-			strcat(file, " ");
-			optind++;
-			if (optind!=argc)
+		while (optind < argc) {
+			strcat (file, argv[optind]);
+			strcat (file, " ");
+			if (++optind != argc)
 				strcat(file, " ");
 		}
-		fh = r_core_file_open(&r, file, perms);
+		fh = r_core_file_open (&r, file, perms);
 		if (fh == NULL) {
-			fprintf(stderr,
+			fprintf (stderr,
 			"Cannot open file '%s'\n", file);
 			return 1;
 		}
-		
 	} else
-	while (optind<argc) {
+	while (optind < argc) {
 		const char *file = argv[optind++];
-		fh = r_core_file_open(&r, file, perms);
+		fh = r_core_file_open (&r, file, perms);
 		if (fh == NULL) {
-			fprintf(stderr, "Cannot open file '%s'\n", file);
+			fprintf (stderr, "Cannot open file '%s'\n", file);
 			return 1;
 		}
 	}
 
 	if (r.file == NULL) {
-		fprintf(stderr, "Cannot open file\n");
+		fprintf (stderr, "Cannot open file\n");
 		return 1;
 	}
 
 	if (run_rc) {
-		char *homerc = r_str_home(".radarerc");
+		char *homerc = r_str_home (".radarerc");
 		if (homerc) {
-			r_core_cmd_file(&r, homerc);
-			free(homerc);
+			r_core_cmd_file (&r, homerc);
+			free (homerc);
 		}
 	}
 	if (debug) {
-		r_core_cmd(&r, "dh ptrace", 0);
-		r_core_cmdf(&r, "dp %d", r.file->fd);
-		r_core_cmd(&r, ".dr*", 0);
-		r_core_cmd(&r, "s eip", 0);
-		r_core_cmd(&r, "e cmd.prompt=.dr",0);
-		r_core_cmd(&r, "\"e cmd.vprompt=.dr\"",0);
-		r_core_cmd(&r, "\"e cmd.visual=.dr&&s eip\"",0);
+		r_core_cmd (&r, "dh ptrace", 0);
+		r_core_cmdf (&r, "dp %d", r.file->fd);
+		r_core_cmd (&r, ".dr*", 0);
+		r_core_cmd (&r, "s eip", 0);
+		r_core_cmd (&r, "e cmd.prompt=.dr",0);
+		r_core_cmd (&r, "\"e cmd.vprompt=.dr\"",0);
+		r_core_cmd (&r, "\"e cmd.visual=.dr\"",0);
 	}
 
 	if (seek)
-		r_core_seek(&r, seek);
+		r_core_seek (&r, seek);
 	if (bsize)
-		r_core_block_size(&r, bsize);
+		r_core_block_size (&r, bsize);
 
-	while(r_core_prompt(&r) != -1);
+	if (r_config_get_i (&r.config, "cfg.fortunes")) {
+		r_core_cmd (&r, "fo", 0);
+		r_cons_flush();
+	}
 
-	return r_core_file_close(&r, fh);
+	while(r_core_prompt (&r) != -1);
+
+	return r_core_file_close (&r, fh);
 }

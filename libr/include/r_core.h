@@ -19,6 +19,7 @@
 #include "r_flags.h"
 #include "r_config.h"
 #include "r_bin.h"
+#include "r_bininfo.h"
 
 #define R_CORE_BLOCKSIZE 64
 #define R_CORE_BLOCKSIZE_MAX 0x40000 /* 4 MB */
@@ -56,6 +57,7 @@ struct r_core_t {
 	struct r_parse_t parser;
 	struct r_print_t print;
 	struct r_bin_t bin;
+	struct r_bininfo_t bininfo;
 	struct r_meta_t meta;
 	struct r_lang_t lang;
 	struct r_debug_t dbg;

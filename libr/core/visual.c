@@ -182,9 +182,12 @@ void r_core_visual_prompt(struct r_core_t *core)
 
 int r_core_visual(struct r_core_t *core, const char *input)
 {
+	const char *cmdprompt;
+	const char *vi;
+	u64 scrseek;
 	int ch;
 
-	const char *vi = r_config_get(&core->config, "cmd.visual");
+	vi = r_config_get(&core->config, "cmd.visual");
 	if (vi) r_core_cmd(core, vi, 0);
 
 	while(input[0]) {
@@ -200,7 +203,13 @@ int r_core_visual(struct r_core_t *core, const char *input)
 
 	color = r_config_get_i(&core->config, "scr.color");
 	do {
-		const char *cmdprompt = r_config_get(&core->config, "cmd.vprompt");
+		scrseek = r_num_math(&core->num, 
+			r_config_get(&core->config, "scr.seek"));
+		if (scrseek != 0LL) {
+			r_core_seek (core, scrseek);
+			// TODO: read?
+		}
+		cmdprompt = r_config_get (&core->config, "cmd.vprompt");
 		if (cmdprompt && cmdprompt[0])
 			r_core_cmd(core, cmdprompt, 0);
 		r_cons_clear00();

@@ -137,6 +137,7 @@ int r_core_init(struct r_core_t *core)
 	r_parse_init(&core->parser);
 	r_parse_set_user_ptr(&core->parser, core);
 	r_bin_init(&core->bin);
+	r_bininfo_init(&core->bininfo);
 	r_bin_set_user_ptr(&core->bin, core);
 	r_meta_init(&core->meta);
 	r_cons_init();
@@ -247,6 +248,7 @@ int r_core_seek_align(struct r_core_t *core, u64 align, int times)
 	return r_core_seek(core, seek+diff);
 }
 
+/* TODO: add a parameter to read or not the block? optimization? */
 int r_core_seek(struct r_core_t *core, u64 addr)
 {
 	u64 tmp = core->seek;

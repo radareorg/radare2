@@ -10,14 +10,17 @@ static char *a2l_get_path(struct r_bininfo_t *bi)
 
 static int cmd_to_str(const char *cmd, char *out, int len)
 {
+	int ret;
 	FILE *fd = popen(cmd, "r");
 	if (fd == NULL) {
 		fprintf(stderr, "Cannot find 'addr2line' program\n");
 		return R_FALSE;
 	}
-	fread(out, len, 1, fd);
-	if (out[strlen(out)-1]=='\n')
-		out[strlen(out)-1]='\0';
+	ret = fread(out, len, 1, fd);
+	if (ret >0) {
+		if (out[ret-1]=='\n')
+			out[ret-1]='\0';
+	} else out[0]='\0';
 	pclose(fd);
 	return R_TRUE;
 }
