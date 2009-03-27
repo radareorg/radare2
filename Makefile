@@ -8,8 +8,8 @@ clean:
 
 install:
 	mkdir -p ${DESTDIR}${PREFIX}
-	mkdir -p ${DESTDIR}${PREFIX}/share/doc/radare
-	for a in doc/* ; do cp $a ${DESTDIR}/${PREFIX}/share/doc/radare ; done
+	mkdir -p ${DESTDIR}${PREFIX}/share/doc/radare2
+	for a in doc/* ; do cp $a ${DESTDIR}/${PREFIX}/share/doc/radare2 ; done
 	cd libr && make install PARENT=1 PREFIX=${DESTDIR}${PREFIX}
 
 uninstall:

@@ -1,0 +1,45 @@
+r_sign: signature api for radare2
+=================================
+
+Plugins are used to implement data collectors for r_sign.
+
+A data collector is a piece of code that feeds the r_sign
+database with information about symbols.
+
+r_sign is configured to weight each attribute with some properties
+to be able to determine the semblance between a collector source
+information and the playground where r_sign tries to find valid
+duplicates of the information stored previously following the
+configured attributes and then we have output plugins to 
+
+Plugin types:
+=============
+collectors - collects initial signatures (libc, libm, ...)        [  INPUT ]
+playground - find collected info using the configured attributes  [  INPUT ]
+dumpers    - dump the resulting information in ascii              [ OUTPUT ]
+             - dump signature
+             - dump results of the signature analysis
+
+Schematics
+-----------
+                                             PLUGINS
++-----------+
+| collector | (signature file, elf binary, radare database, ida...)
++---.-------+
+    |
+    |     +------------+
+    |     | playground | (plugins to find information on target file)
+    |     +------------+
+. . | . . . . .| . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+    |          |      .
+    |     +--------+  .  +----------------+
+    `---->| r_sign |---->| signature file | output file (screen, disk)
+          +--------+  .  +----------------+
+                      .
+waka waka!            .
+----,----             .
+  _            LIB    .                       OUTPUT
+ (_<  . . . . . . . . .
+
+
+                                                      --pancake

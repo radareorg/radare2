@@ -2,6 +2,29 @@
 #define _INCLUDE_UTIL_R_
 
 #include "r_types.h"
+#include "list.h"
+
+/* r_cache */
+// TOTHINK: move into a separated library?
+struct r_cache_item_t {
+	u64 addr;
+	char *str;
+	struct list_head list;
+};
+
+struct r_cache_t {
+	u64 from;
+	u64 to;
+	struct list_head items;
+};
+
+void r_cache_init(struct r_cache_t *lang);
+struct r_cache_t *r_cache_new();
+void r_cache_free(struct r_cache_t *c);
+char *r_cache_get(struct r_cache_t *c, u64 addr);
+int r_cache_set(struct r_cache_t *c, u64 addr, char *str);
+int r_cache_validate(struct r_cache_t *c, u64 from, u64 to);
+int r_cache_invalidate(struct r_cache_t *c, u64 from, u64 to);
 
 /* profiling */
 #include <sys/time.h>

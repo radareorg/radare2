@@ -6,23 +6,6 @@
 
 ----------------------------------------[ todo 
 
-r_cache
- - register a hashtable of {int,char*}
-   r_cache_validate(&cache, 0x800000, 0x8004000);
-   char *str = r_cache_get(&cache, 0x8048000);
-   if (str) { printf("%s\n", str); }
-   ... construct line ...
-   r_cache_set(&cache, seek, constructedstring);
- - used by the disassebmler to not construct lines all the time
-
-r_flagtree
- - r_flags should have a tree construction to access to them faster
-   - btree? following pointers like bigger,smaller
-    { struct r_flag_t *bigger, *smaller; }
-   - hooks r_flag_add to recalculate in r_flag_optimize(), bigger/smaller pointers
-   - hooks r_flag_del to recalculate too.
- - the r_flag_get by string should have another construction with btree
-   for the string of the name
 
 || search ||
 ------------
@@ -31,9 +14,7 @@ r_flagtree
 
 || asm || 
 ---------
-  - Add support for more architectures
-  - Add lua disassembler
-  - Add java, dalvik, xtensa achiecture (mm cpu)
+  - Add lua disassembler, dalvik, xtensa achiecture (mm cpu)
   - http://git.linux-xtensa.org/cgi-bin/git.cgi?p=buildroot/buildroot-xtensa;a=blob;f=toolchain/binutils/binutils-xtensa_dc232b.tgz;h=214164399158c540a3033e52b3bb9f65c55289af;hb=HEAD
   - Check if there are endianess issues
 
@@ -43,7 +24,7 @@ r_flagtree
 
 || bin || 
 ---------
-  - Add support for PE64, mach0 and java class
+  - Add mach0
   - Add dex format support (android)
 
 || cmd ||
@@ -74,6 +55,14 @@ r_flagtree
   - We probably need more methods
   - support to define relations between flags
     (flag hirearchies)
+	r_flagtree
+	 - r_flags should have a tree construction to access to them faster
+	   - btree? following pointers like bigger,smaller
+	    { struct r_flag_t *bigger, *smaller; }
+	   - hooks r_flag_add to recalculate in r_flag_optimize(), bigger/smaller pointers
+	   - hooks r_flag_del to recalculate too.
+	 - the r_flag_get by string should have another construction with btree
+	   for the string of the name
 
 || hash ||
 ----------
@@ -82,7 +71,7 @@ r_flagtree
 || diff ||
 ----------
   - Need to fix the delta diffing algorithm
-  - Reimplement delta diffing in C
+  - Reimplement delta diffing in C (take the mercurial bdiff.c)
 
 || sign ||
 ----------
