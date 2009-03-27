@@ -917,7 +917,7 @@ static int cmd_meta(void *data, const char *input)
 	case '\0':
 		/* meta help */
 		break;
-	case 'D': // debug information of current offset
+	case 'L': // debug information of current offset
 		ret = r_bininfo_get_line(
 			&core->bininfo, core->seek, file, 1023, &line);
 		if (ret)
@@ -931,9 +931,9 @@ static int cmd_meta(void *data, const char *input)
 	case '?':
 		eprintf(
 		"Usage: C[CDF?] [arg]\n"
-		" CD    show debug information (bininfo)\n"
-		" CF    register function size here\n"
-		" CC    add comment\n");
+		" CL [addr]         ; show 'code line' information (bininfo)\n"
+		" CF [size] [addr]  ; register function size here (TODO)\n"
+		" CC [string]       ; add comment (TODO)\n");
 	}
 	return R_TRUE;
 }

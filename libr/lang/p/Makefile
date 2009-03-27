@@ -1,7 +1,7 @@
 CFLAGS=-I../../include -Wall
 BINDEPS=
 
-all: lua.so dummy.so ruby.so python.so perl.so
+all: lua.so dummy.so ruby.so python.so perl.so tcc.so
 	@true
 
 python.so:
@@ -14,6 +14,9 @@ python.so:
 		-fPIC -shared -o python.so python.c \
 		-I/usr/include/python2.6/ -lpython2.6 ; \
 		fi
+
+tcc.so: tcc.o
+	-${CC} ${CFLAGS} -fPIC -shared -o tcc.so tcc.c -Wl,-R.. -ldl -ltcc
 
 lua.so: lua.o
 	-${CC} ${CFLAGS} -fPIC -shared -o lua.so lua.c -Wl,-R..

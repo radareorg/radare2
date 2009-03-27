@@ -6,6 +6,24 @@
 
 ----------------------------------------[ todo 
 
+r_cache
+ - register a hashtable of {int,char*}
+   r_cache_validate(&cache, 0x800000, 0x8004000);
+   char *str = r_cache_get(&cache, 0x8048000);
+   if (str) { printf("%s\n", str); }
+   ... construct line ...
+   r_cache_set(&cache, seek, constructedstring);
+ - used by the disassebmler to not construct lines all the time
+
+r_flagtree
+ - r_flags should have a tree construction to access to them faster
+   - btree? following pointers like bigger,smaller
+    { struct r_flag_t *bigger, *smaller; }
+   - hooks r_flag_add to recalculate in r_flag_optimize(), bigger/smaller pointers
+   - hooks r_flag_del to recalculate too.
+ - the r_flag_get by string should have another construction with btree
+   for the string of the name
+
 || search ||
 ------------
   - implement r_search_xrefs
