@@ -9,6 +9,8 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
+#include "x86/dislen.h"
+
 /* code analysis functions */
 
 /* arch_aop for x86 */
@@ -27,11 +29,11 @@
 // XXX addr should be off_t for 64 love
 static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 {
-	struct r_asm_aop_t *asmdata = (struct r_asm_aop_t*)data;
-	u8 *buf = asmdata->buf;
+	if (anal == NULL || aop == NULL || data == NULL)
+		return -1;
 
+	u8 *buf = (u8*)data;
 	memset(aop, '\0', sizeof(struct r_anal_aop_t));
-	aop->length = asmdata->inst_len;
 	aop->type = R_ANAL_AOP_TYPE_UNK;
 
 	switch(buf[0]) {
@@ -80,15 +82,18 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 			break;
 		}
 		aop->type   = R_ANAL_AOP_TYPE_MOV;
+		aop->length = 2;
 		break;
 	case 0xf4: // hlt
 		aop->type   = R_ANAL_AOP_TYPE_RET;
+		aop->length = 1;
 		break;
 	case 0xc3: // ret
-	case 0xc2: // ret + 2 buf
+	case 0xc2: // ret + 2 bytes
 	case 0xcb: // lret
 	case 0xcf: // iret
 		aop->type   = R_ANAL_AOP_TYPE_RET;
+	//	aop->length = 1;
 		aop->eob = 1;
 		break;
 	//case 0xea: // far jmp
@@ -101,9 +106,11 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 	case 0x3d:
 	case 0x85:
 		aop->type   = R_ANAL_AOP_TYPE_CMP;
+		aop->length = 2;
 		break;
 	case 0x90:
 		aop->type   = R_ANAL_AOP_TYPE_NOP;
+		aop->length = 1;
 		break;
 	case 0x0f: // 3 byte nop
 		//0fbe55ff        movsx edx, byte [ebp-0x1]
@@ -117,32 +124,38 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 		} else
 		if (buf[1]>=0x18 && buf[1]<=0x1f) {
 			aop->type = R_ANAL_AOP_TYPE_NOP;
+			aop->length = 3;
 		} else
 		if (buf[1]>=0x80 && buf[1]<=0x8f) {
 			aop->type   = R_ANAL_AOP_TYPE_CJMP;
 			aop->jump   = anal->pc+6+buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24);//((unsigned long)((buf+2))+6);
 			aop->fail   = anal->pc+6;
+			aop->length = 6;
 			//aop->eob    = 1;
 		} 
 		break;
 	case 0xcc: // int3
 		aop->eob = 1;
 	case 0xf1: // int1
+		aop->length = 1;
 		aop->type   = R_ANAL_AOP_TYPE_SWI;
 		break;
 	case 0xcd:
+		aop->length = 2;
 		aop->type   = R_ANAL_AOP_TYPE_SWI;
 		break;
 	case 0xe8: // call
 		aop->type   = R_ANAL_AOP_TYPE_CALL;
+		aop->length = 5;
 		//aop->jump   = anal->pc+*ptr+5; //(unsigned long)((buf+1)+5);
 		aop->jump   = anal->pc+5+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);//((unsigned long)((buf+2))+6);
 		aop->fail   = anal->pc+5;
-//printf("anal->pc: %08llx\n call %08llx \n ret %08llx\n", anal->pc, aop->jump, aop->fail);
+//printf("addr: %08llx\n call %08llx \n ret %08llx\n", anal->pc, aop->jump, aop->fail);
 	//	aop->eob    = 1;
 		break;
 	case 0xe9: // jmp
 		aop->type   = R_ANAL_AOP_TYPE_JMP;
+		aop->length = 5;
 		//aop->jump   = (unsigned long)((buf+1)+5);
 		aop->jump   = anal->pc+5+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);//((unsigned long)((buf+2))+6);
 		aop->fail   = 0L;
@@ -150,6 +163,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 		break;
 	case 0xeb: // short jmp 
 		aop->type   = R_ANAL_AOP_TYPE_JMP;
+		aop->length = 2;
 		aop->jump   = anal->pc+((unsigned long)((char)buf[1])+2);
 		aop->fail   = 0L;
 		aop->eob    = 1;
@@ -157,6 +171,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 	case 0xf2: // repnz
 	case 0xf3: // repz
 		aop->type   = R_ANAL_AOP_TYPE_REP;
+		//aop->length = dislen((unsigned char *)&buf); //instLength(buf, 16, 0);
 		aop->jump   = 0L;
 		aop->fail   = 0L;
 		break;
@@ -178,12 +193,14 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 		} else
 		if (buf[1]>=0xd0 && buf[1]<=0xd7) {
 			aop->type = R_ANAL_AOP_TYPE_CALL;
+			aop->length = 2;
 			aop->eob    = 1;
 			//aop->jump   = vm_arch_x86_regs[VM_X86_EAX+buf[1]-0xd0];
 			aop->fail   = anal->pc+2;
 		} else
 		if (buf[1]>=0xe0 && buf[1]<=0xe7) {
 			aop->type = R_ANAL_AOP_TYPE_UJMP;
+			aop->length = 2;
 			//aop->jump   = vm_arch_x86_regs[VM_X86_EAX+buf[1]-0xd0];
 			aop->eob    = 1;
 		}
@@ -208,6 +225,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 	case 0x5e:
 	case 0x5f:
 		aop->type = R_ANAL_AOP_TYPE_POP;
+		aop->length = 1;
 		break;
 	case 0x68:
 		aop->type = R_ANAL_AOP_TYPE_PUSH;
@@ -271,7 +289,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 			aop->ref = (u64)(-((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24))));
 			aop->stackop = R_ANAL_STACK_LOCAL_GET;
 		}
-		aop->type = R_ANAL_AOP_TYPE_MOV;
+		aop->type =R_ANAL_AOP_TYPE_MOV;
 		break;
 	case 0xc7:
 
@@ -341,8 +359,9 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 		/* conditional jump */
 		if (buf[1]>=0x80&&buf[1]<=0x8F) {
 			aop->type   = R_ANAL_AOP_TYPE_CJMP;
+			aop->length = 6;
 			aop->jump   = (unsigned long)((buf+2)+6);
-			aop->fail   = addr+6;
+			aop->fail   = anal->pc+6;
 			aop->eob    = 1;
 			return 5;
 		}
@@ -368,6 +387,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 		/* conditional jump */
 		//if (buf[1]>=0x80&&buf[1]<=0x8F) {
 			aop->type   = R_ANAL_AOP_TYPE_CJMP;
+			aop->length = 2;
 		//	aop->jump   = (unsigned long)((buf+2)+6);
 			aop->jump   = anal->pc+bo+2; //(unsigned long)((buf+1)+5);
 			aop->fail   = anal->pc+2;
@@ -379,6 +399,9 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 		//aop->type = R_ANAL_AOP_TYPE_UNK;
 	}
 
+	//if (aop->length == 0)
+	aop->length = dislen((unsigned char *)buf, 64); //instLength(buf, 16, 0);
+		//aop->length = instLength(buf, 16, 0);
 	if (!(aop->jump>>33))
 		aop->jump &= 0xFFFFFFFF; // XXX may break on 64 bits here
 

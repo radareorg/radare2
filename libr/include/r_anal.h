@@ -68,13 +68,11 @@ enum {
 	R_ANAL_STACK_ARG_SET
 };
 
-struct r_anal_t {
-	int bits;
-	int big_endian;
-	u64 pc;
-	void *user;
-	struct r_anal_handle_t *cur;
-	struct list_head anals;
+struct r_anal_refline_t {
+	u64 from;
+	u64 to;
+	int index;
+	struct list_head list;
 };
 
 struct r_anal_aop_t {
@@ -88,6 +86,15 @@ struct r_anal_aop_t {
 	u64 value;               /* referente to value */
 	int r_dst,r_src1,r_src2; /* register arguments */
 	u64 i_dst,i_src1,i_src2; /* inmediate arguments */
+};
+
+struct r_anal_t {
+	int bits;
+	int big_endian;
+	u64 pc;
+	void *user;
+	struct r_anal_handle_t *cur;
+	struct list_head anals;
 };
 
 struct r_anal_handle_t {
@@ -107,9 +114,10 @@ void r_anal_set_user_ptr(struct r_anal_t *anal, void *user);
 int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo);
 int r_anal_list(struct r_anal_t *anal);
 int r_anal_set(struct r_anal_t *anal, const char *name);
-int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data);
 int r_anal_set_bits(struct r_anal_t *anal, int bits);
 int r_anal_set_big_endian(struct r_anal_t *anal, int boolean);
 int r_anal_set_pc(struct r_anal_t *a, u64 pc);
+int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data);
+struct r_anal_refline_t *r_anal_reflines(struct r_anal_t *anal, u8 *buf, u64 len, int nlines, int linesout);
 
 #endif

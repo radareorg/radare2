@@ -6,9 +6,6 @@
 #include "r_asm.h"
 #include "r_anal.h"
 
-/* Ugly */
-#include "../asm/arch/x86/bea/BeaEngine.h"
-
 #include <stdarg.h>
 
 int r_core_write_op(struct r_core_t *core, const char *arg, char op);
@@ -502,19 +499,12 @@ static int cmd_anal(void *data, const char *input)
 			/* XXX hardcoded */
 			int ret, idx; 
 			u8 *buf = core->block;
-			struct r_asm_aop_t aop;
-			struct r_anal_aop_t analop;
-			DISASM *disasm_obj;
-			r_asm_set(&core->assembler, "asm_x86_bea");
+			struct r_anal_aop_t aop;
 			r_anal_set(&core->anal, "anal_x86_bea");
-			r_asm_set_pc(&core->assembler, core->seek);
-			r_anal_set_pc(&core->anal, core->seek);
 			
 			for(idx=ret=0; idx < len; idx+=ret) {
-				r_asm_set_pc(&core->assembler, core->assembler.pc + ret);
-				ret = r_asm_disassemble(&core->assembler, &aop, buf+idx, len-idx);
-				disasm_obj = aop.disasm_obj;
-				r_anal_aop(&core->anal, &analop, disasm_obj);
+				r_anal_set_pc(&core->anal, core->seek + idx);
+				ret = r_anal_aop(&core->anal, &aop, buf + idx);
 			}
 		}
 		break;
