@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 
 	r_core_init (&r);
 
-	while ((c = getopt (argc, argv, "whendVs:b:Lu"))!=-1) {
+	while ((c = getopt (argc, argv, "wfhendVs:b:Lu"))!=-1) {
 		switch (c) {
 		case 'd':
 			debug = 1;
