@@ -17,7 +17,7 @@ public class BinExample
 		}
 
 		Bin bin = new Bin(args[1], 0);
-		stdout.printf("Info\n");
+
 		baddr = bin.get_baddr();
 		stdout.printf("Base addr: 0x%08llx\n", baddr);
 
@@ -25,10 +25,11 @@ public class BinExample
 		stdout.printf("Entry point: 0x%08llx\n", baddr+e->rva);
 
 		s = bin.get_sections();
+		if (s != null)
 		for (i=0;!s[i].last;i++) {
 			stdout.printf("idx=%02i address=0x%08llx offset=0x%08llx"+
-					" size=%08li name=%s\n",
-					i, baddr + s[i].rva, s[i].offset, s[i].size, s[i].name);
+				" size=%08li name=%s\n",
+				i, baddr + s[i].rva, s[i].offset, s[i].size, s[i].name);
 		}
 
 		bin.close();

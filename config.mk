@@ -7,7 +7,7 @@ COMPILER=gcc
 #COMPILER=tcc
 
 # verbose error messages everywhere
-STATIC_DEBUG=1
+STATIC_DEBUG=0
 # getenv("LIBR_RTDEBUG");
 RUNTIME_DEBUG=1
 

@@ -938,6 +938,13 @@ static int cmd_meta(void *data, const char *input)
 	return R_TRUE;
 }
 
+static int cmd_undowrite(void *data, const char *input)
+{
+	struct r_core_t *core = (struct r_core_t *)data;
+	// TODO:
+	return 0;
+}
+
 static int cmd_io_system(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
@@ -1479,6 +1486,7 @@ int r_core_cmd_init(struct r_core_t *core)
 	r_cmd_add(&core->cmd, "Code",     "code metadata", &cmd_meta);
 	r_cmd_add(&core->cmd, "yank",     "yank bytes", &cmd_yank);
 	r_cmd_add(&core->cmd, "Visual",   "enter visual mode", &cmd_visual);
+	r_cmd_add(&core->cmd, "undo",     "undo writes", &cmd_undowrite);
 	r_cmd_add(&core->cmd, "!",        "run system command", &cmd_system);
 	r_cmd_add(&core->cmd, "|",        "run io system command", &cmd_io_system);
 	r_cmd_add(&core->cmd, "#",        "calculate hash", &cmd_hash);

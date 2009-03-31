@@ -5,6 +5,7 @@ namespace Radare {
 	[Compact]
 	[CCode (cname="struct r_asm_t", free_function="r_asm_free", cprefix="r_asm_")]
 	public class Asm {
+/* DEPRECATED?
 		public enum Arch {
 			NULL  = 0,
 		  	X86   = 1,
@@ -19,6 +20,7 @@ namespace Radare {
 		  	OBJD  = 10,
 		  	BF    = 11
 		}
+*/
 
 		[CCode (cprefix="R_ASM_SYN_")]
 		public enum Syntax {
@@ -28,7 +30,6 @@ namespace Radare {
 			OLLY  = 3
 		}
 
-		
 		[CCode (cprefix="R_ASM_PAR_")]
 		public enum Parser {
 			NULL    = 0,
@@ -36,7 +37,8 @@ namespace Radare {
 			REALLOC = 2
 		}
 
-		[CCode (cname="struct r_asm_aop_t")]
+		[Compact]
+		[CCode (cname="struct r_asm_aop_t",destroy_function="" )]
 		public struct Aop {
 			public int inst_len;
 			public uint8 *buf;
@@ -62,15 +64,16 @@ namespace Radare {
 		public int init();
 		public int list();
 		public bool set(string name);
-		public bool set_arch(Asm.Arch arch);
+//		public bool set_arch(Asm.Arch arch);
 		public bool set_bits(int bits);
 		public bool set_syntax(Asm.Syntax syntax);
 		public bool set_pc(uint64 addr);
 		public bool set_big_endian(bool big);
 		public bool set_parser(Asm.Parser parser, parse_cb cb, void *aux);
-		public int disassemble(Aop aop, uint8 *buf, uint64 length);
-		public int assemble(Aop aop, string buf);
+		public int disassemble(out Aop aop, uint8 *buf, uint64 length);
+		public int assemble(out Aop aop, string buf);
 		public int parse();
+		public void free();
 	}
 
 	public static delegate int parse_cb(Asm a);

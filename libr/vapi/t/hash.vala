@@ -19,13 +19,13 @@ public class HashExample
 
 		/* directly calculate md5 */
 		Hash.State st = new Hash.State(true);
-		printChecksum("MD5: ", st.md5("helloworld", 10), Hash.Size.MD5);
+		printChecksum("Single MD5: ", (uint8*)st.md5("helloworld", 10), Hash.Size.MD5);
 
 		/* incrementally calculate md5 */
 		st = new Hash.State(false);
 		st.md5("hello", 5);
 		st.md5("world", 5);
-		printChecksum("MD5: ", st.md5(null,0), Hash.Size.MD5);
+		printChecksum("Incremental MD5: ", (uint8*)st.md5(null,0), Hash.Size.MD5);
 		st.init(Hash.Algorithm.ALL);
 	}
 }
