@@ -95,7 +95,9 @@ endif
 CFLAGS+=-DR_RTDEBUG
 #endif
 
+
+// TODO: Not working
 #if STATIC_DEBUG
-CFLAGS+=-DR_DEBUG
+#CFLAGS+=-DR_DEBUG
 #endif
 

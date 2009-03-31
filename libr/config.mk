@@ -7,6 +7,8 @@ OSX=0
 USE_RIO=1
 
 # static plugins
+STATIC_DEBUG=0
+RUNTIME_DEBUG=1
 STATIC_ASM_PLUGINS=p/x86olly.mk p/mips.mk p/java.mk
 STATIC_BIN_PLUGINS=p/elf.mk
 STATIC_BININFO_PLUGINS=p/addr2line.mk

@@ -1,7 +1,7 @@
 #ifndef _INCLUDE_CONFIG_H_
 #define _INCLUDE_CONFIG_H_
 
-#define R_DEBUG 1
+#define R_DEBUG 0
 #define R_RTDEBUG 1
 
 /* inlined APIs */
