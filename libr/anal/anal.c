@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -61,13 +61,6 @@ int r_anal_set(struct r_anal_t *anal, const char *name)
 	return R_FALSE;
 }
 
-int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
-{ 
-	if (anal->cur && anal->cur->aop)
-		return anal->cur->aop(anal, aop, data);
-	return R_FALSE;
-}
-
 int r_anal_set_bits(struct r_anal_t *anal, int bits)
 {
 	switch (bits) {
@@ -91,4 +84,11 @@ int r_anal_set_pc(struct r_anal_t *a, u64 pc)
 {
 	a->pc = pc;
 	return R_TRUE;
+}
+
+int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
+{ 
+	if (anal->cur && anal->cur->aop)
+		return anal->cur->aop(anal, aop, data);
+	return R_FALSE;
 }
