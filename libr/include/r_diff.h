@@ -32,5 +32,8 @@ int r_diff_buffers(struct r_diff_t *d, const u8 *a, u32 la, const u8 *b, u32 lb)
 int r_diff_set_callback(struct r_diff_t *d,
 	int (*callback)(struct r_diff_t *d, void *user, struct r_diff_op_t *op),
 	void *user);
+int r_diff_buffers_distance(struct r_diff_t *d,
+	const u8 *a, u32 la, const u8 *b, u32 lb, u32 *distance,
+	float *similarity);
 
 #endif

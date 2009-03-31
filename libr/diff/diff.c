@@ -203,3 +203,40 @@ int r_diff_buffers(struct r_diff_t *d, const u8 *a, u32 la, const u8 *b, u32 lb)
 
 	return ret;
 }
+
+int r_diff_buffers_distance(struct r_diff_t *d, const u8 *a, u32 la, const u8 *b, u32 lb, u32 *distance, float *similarity)
+{
+	int i, j, cost, tmin, **m;
+
+	if (la < 1 || lb < 1)
+		return R_FALSE;
+
+	if ((m = alloca(la * sizeof(int*))) == NULL)
+		return R_FALSE;
+	for(i = 0; i <= la; i++)
+		if ((m[i] = alloca(lb * sizeof(int))) == NULL)
+			return R_FALSE;
+
+	for (i = 0; i <= la; i++)
+		m[i][0] = i;
+	for (j = 0; j <= lb; j++)
+		m[0][j] = j;
+
+	for (i = 1; i <= la; i++) {
+		for (j = 1; j <= lb; j++) {
+			if (a[i-1] == b[j-1])
+				cost = 0;
+			else cost = 1;
+
+			tmin = R_MIN(m[i-1][j] + 1, m[i][j-1] + 1);
+			m[i][j] = R_MIN(tmin, m[i-1][j-1] + cost);
+		}
+	}
+	
+	if (distance != NULL)
+		*distance = m[la][lb];
+	if (similarity != NULL)
+		*similarity = 1.0/(1.0+m[la][lb]);
+
+	return R_TRUE;
+}

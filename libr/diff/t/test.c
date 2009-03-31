@@ -56,6 +56,22 @@ int test_delta()
 	return 1;
 }
 
+int test_distance()
+{
+	struct r_diff_t d;
+	char *bufa = "hello";
+	char *bufb = "heprpworld";
+	u32 distance = 0;
+	float similarity = 0;
+
+	printf("Similarity: '%s' vs '%s'\n", bufa, bufb);
+	r_diff_buffers_distance(NULL, bufa, strlen(bufa), bufb, strlen(bufb),
+		&distance, &similarity);
+	printf("Levenshtein distance = %i\nSimilarity = %f\n",
+			distance, similarity);
+	return 1;
+}
+
 int main()
 {
 	test_equal();
@@ -65,6 +81,8 @@ int main()
 	test_diff();
 	printf("--\n");
 	test_delta();
+	printf("--\n");
+	test_distance();
 
 
 	return 0;
