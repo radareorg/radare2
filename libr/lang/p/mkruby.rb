@@ -1,16 +1,16 @@
 # setup with ruby!
 
+rb_so = 'lang_ruby.so'
+rb_c = 'ruby.c'
+rb_o = 'ruby.o'
+inc = '../../include'
+
 require 'mkmf'
 INCDIR = Config::CONFIG['rubylibdir'] + "/"+Config::CONFIG['arch']
 LIBDIR = Config::CONFIG['LIBRUBY_ARG_SHARED']
 #LIBS   = Config::CONFIG['LIBS'] -lpthread...
 LIBNAM = Config::CONFIG['RUBY_INSTALL_NAME']
 #LDSHARED=compilername -shared..."
-
-rb_so = 'ruby.so'
-rb_c = 'ruby.c'
-rb_o = 'ruby.o'
-inc = '../../include'
 
 if ARGV[0] != nil; rb_c  = ARGV[0] end
 if ARGV[1] != nil; rb_so = ARGV[1] end

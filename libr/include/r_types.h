@@ -8,6 +8,12 @@
 #define IFDBG if (0)
 #endif
 
+#if R_RTDEBUG
+#define IFRTDBG if (getenv("LIBR_DEBUG"))
+#else
+#define IFRTDBG if (0)
+#endif
+
 #if R_INLINE
 #define R_API inline
 #else
@@ -105,7 +111,7 @@ static inline int ERR(char *str, ...)
 #define R_FALSE 0
 #define R_TRUE 1
 
-#define R_FREE(x) { free(x); x=NULL; }
+#define R_FREE(x) { free(x); x = NULL; }
 
 #if 0
 #define R_API_NEW(x) \

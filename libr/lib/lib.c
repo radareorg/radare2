@@ -25,10 +25,11 @@
 
 void *r_lib_dl_open(const char *libname)
 {
-	void *ret = DLOPEN(libname);
-	if (ret == NULL) {
+	void *ret;
+	IFRTDBG fprintf(stderr, "Opening '%s'\n", libname);
+	ret = DLOPEN(libname);
+	if (ret == NULL)
 		IFDBG fprintf(stderr, "dlerror: %s\n", dlerror());
-	}
 	return ret;
 }
 

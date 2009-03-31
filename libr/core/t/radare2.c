@@ -11,14 +11,17 @@ static struct r_core_t r;
 
 static int main_help(int line)
 {
-	printf("Usage: radare2 [-dwnV] [-s addr] [-b bsz] [-e k=v] [file] [...]\n");
+	printf("Usage: radare2 [-dwnLV] [-s addr] [-b bsz] [-e k=v] [file] [...]\n");
 	if (!line) printf(
 		" -d        use 'file' as a program to debug\n"
 		" -w        open file in write mode\n"
 		" -n        do not run ~/.radarerc\n"
+		" -f        block size = file size\n"
 		" -s [addr] initial seek\n"
 		" -b [size] initial block size\n"
 		" -V        show radare2 version\n"
+		" -L        list supported IO plugins\n"
+		" -u        unknown file size\n"
 		" -e k=v    evaluate config var\n");
 	return 0;
 }
@@ -35,6 +38,7 @@ int main(int argc, char **argv)
  	int c, perms = R_IO_READ;
 	int run_rc = 1;
 	int debug = 0;
+	int fullfile = 0;
 	int bsize = 0;
 	int seek = 0; // XXX use 64
 
@@ -43,7 +47,7 @@ int main(int argc, char **argv)
 
 	r_core_init (&r);
 
-	while ((c = getopt (argc, argv, "whendVs:b:"))!=-1) {
+	while ((c = getopt (argc, argv, "whendVs:b:Lu"))!=-1) {
 		switch (c) {
 		case 'd':
 			debug = 1;
@@ -53,6 +57,9 @@ int main(int argc, char **argv)
 			break;
 		case 'h':
 			return main_help (0);
+		case 'f':
+			fullfile = 1;
+			break;
 		case 'n':
 			run_rc = 0;
 			break;
@@ -67,6 +74,12 @@ int main(int argc, char **argv)
 			break;
 		case 's':
 			seek = atoi (optarg); // XXX use r_num
+			break;
+		case 'L':
+			r_io_handle_list (&r.io);
+			break;
+		case 'u':
+			fprintf(stderr, "TODO\n");
 			break;
 		default:
 			return 1;
@@ -107,7 +120,7 @@ int main(int argc, char **argv)
 	}
 
 	if (r.file == NULL) {
-		fprintf (stderr, "Cannot open file\n");
+		fprintf (stderr, "No file specified\n");
 		return 1;
 	}
 
@@ -130,6 +143,10 @@ int main(int argc, char **argv)
 
 	if (seek)
 		r_core_seek (&r, seek);
+
+	if (fullfile)
+		r_core_block_size (&r, r.file->size);
+	else
 	if (bsize)
 		r_core_block_size (&r, bsize);
 

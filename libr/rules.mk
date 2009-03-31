@@ -46,7 +46,7 @@ include ../../config.mk
 include ../../mk/${COMPILER}.mk
 
 CFLAGS+=-I../include
-all: ${LIBSO}
+real_all all: ${LIBSO} ${EXTRA_TARGETS}
 	@-if [ -e t/Makefile ]; then (cd t && ${MAKE} all) ; fi
 	@-if [ -e p/Makefile ]; then (cd p && ${MAKE} all) ; fi
 	@true
@@ -61,7 +61,7 @@ ${LIBAR}: ${OBJ}
 install:
 	cd .. && ${MAKE} install
 
-clean:
+clean: ${EXTRA_CLEAN}
 	-rm -f ${LIBSO} ${LIBAR} ${OBJ} ${BIN} *.so a.out *.a *.exe
 	@if [ -e t/Makefile ]; then (cd t && ${MAKE} clean) ; fi
 	@if [ -e p/Makefile ]; then (cd p && ${MAKE} clean) ; fi
@@ -90,3 +90,12 @@ clean: myclean
 endif
 
 #-------------------------------
+
+#if RUNTIME_DEBUG
+CFLAGS+=-DR_RTDEBUG
+#endif
+
+#if STATIC_DEBUG
+CFLAGS+=-DR_DEBUG
+#endif
+

@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
+
 #if __linux__ || __NetBSD__ || __FreeBSD__ || __OpenBSD__
 
 #include <r_io.h>

@@ -1,38 +1,39 @@
 CFLAGS=-I../../include -Wall
 BINDEPS=
 
-all: lua.so dummy.so ruby.so python.so perl.so tcc.so
+all: lang_lua.so lang_dummy.so lang_ruby.so lang_python.so lang_perl.so lang_tcc.so
 	@true
 
-python.so:
+lang_python.so:
 	-gcc -lpython >/dev/null 2>&1 ; \
 		if [ $$? = 0 ]; then \
 		${CC} ${CFLAGS} -I/usr/include/python2.5 \
-		-fPIC -shared -o python.so python.c -lpython ; \
+		-fPIC -shared -o lang_python.so python.c -lpython ; \
 		else \
 		${CC} ${CFLAGS} -I/usr/include/python2.5 \
-		-fPIC -shared -o python.so python.c \
+		-fPIC -shared -o lang_python.so python.c \
 		-I/usr/include/python2.6/ -lpython2.6 ; \
 		fi
 
-tcc.so: tcc.o
-	-${CC} ${CFLAGS} -fPIC -shared -o tcc.so tcc.c -Wl,-R.. -ldl -ltcc
+lang_tcc.so: tcc.o
+	-${CC} ${CFLAGS} -fPIC -shared -o lang_tcc.so tcc.c -Wl,-R.. -ldl -ltcc
 
-lua.so: lua.o
-	-${CC} ${CFLAGS} -fPIC -shared -o lua.so lua.c -Wl,-R..
+lang_lua.so: lua.o
+	-${CC} ${CFLAGS} -fPIC -shared -o lang_lua.so lua.c -Wl,-R..
 	@#strip -s lua.so
 
-ruby.so:
+lang_ruby.so:
 	-ruby mkruby.rb
 
-perl.so:
+lang_perl.so:
 	-${CC} ${CFLAGS} -I/usr/lib/perl/5.10/CORE/ \
-		-fPIC -shared -o perl.so perl.c -Wl,-R.. \
+		-fPIC -shared -o lang_perl.so perl.c -Wl,-R.. \
 		`perl -MExtUtils::Embed -e ccopts` \
 		`perl -MExtUtils::Embed -e ldopts` -lncurses
 
-dummy.so: dummy.o
-	${CC} ${CFLAGS} -fPIC -shared -o dummy.so dummy.c -Wl,-R..
+lang_dummy.so: dummy.o
+	${CC} ${CFLAGS} -fPIC -shared -o lang_dummy.so dummy.c -Wl,-R..
 	@#strip -s lua.so
+
 clean:
 	-rm -f *.so *.o

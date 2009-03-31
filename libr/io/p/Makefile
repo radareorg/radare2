@@ -1,20 +1,23 @@
 CFLAGS=-I../../include -Wall
 BINDEPS=
 
-all: ptrace.so dbg.so malloc.so
+all: io_ptrace.so io_dbg.so io_malloc.so io_shm.so
 	@true
 
-malloc.so: malloc.o
-	${CC} ${CFLAGS} -fPIC -shared -o malloc.so malloc.c
-	#strip -s ptrace.so
+io_malloc.so: malloc.o
+	${CC} ${CFLAGS} -fPIC -shared -o io_malloc.so malloc.c
 
-ptrace.so: ptrace.o
-	${CC} ${CFLAGS} -fPIC -shared -o ptrace.so ptrace.c
-	#strip -s ptrace.so
+io_ptrace.so: ptrace.o
+	${CC} ${CFLAGS} -fPIC -shared -o io_ptrace.so ptrace.c
 
-dbg.so: dbg.o
-	${CC} ${CFLAGS} -fPIC -shared -o dbg.so dbg.c -lr_io -L../../io -Wl,-R..
-	#strip -s ptrace.so
+io_dbg.so: dbg.o
+	${CC} ${CFLAGS} -fPIC -shared -o io_dbg.so dbg.c -lr_io -L../../io -Wl,-R..
+
+io_shm.so: shm.o
+	${CC} ${CFLAGS} -fPIC -shared -o io_shm.so shm.c -lr_io -L../../io -Wl,-R..
+
+io_ewf.so: ewf.o
+	${CC} ${CFLAGS} -fPIC -shared -o io_ewf.so ewf.c -lr_io -L../../io -Wl,-R..
 
 clean:
 	-rm -f *.so *.o

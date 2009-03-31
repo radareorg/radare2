@@ -1,4 +1,6 @@
-/*
+/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* Adapted code from:
+
  bdiff.c - efficient binary diff extension for Mercurial
 
  Copyright 2005, 2006 Matt Mackall <mpm@selenic.com>
@@ -9,7 +11,9 @@
  Based roughly on Python difflib
 */
 
-#include <Python.h>
+#include <r_util.h>
+
+//#include <Python.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
@@ -288,6 +292,8 @@ static struct hunklist diff(struct line *a, int an, struct line *b, int bn)
 	return l;
 }
 
+#if 0
+
 static PyObject *blocks(PyObject *self, PyObject *args)
 {
 	PyObject *sa, *sb, *rl = NULL, *m;
@@ -322,6 +328,7 @@ nomem:
 	return rl ? rl : PyErr_NoMemory();
 }
 
+/* THIS IS THE INTERESTING PART OF THE CODE */
 static PyObject *bdiff(PyObject *self, PyObject *args)
 {
 	char *sa, *sb;
@@ -395,3 +402,94 @@ PyMODINIT_FUNC initbdiff(void)
 	Py_InitModule3("bdiff", methods, mdiff_doc);
 }
 
+#endif
+
+int bindiff_buffers(const char *file1, const char *sa, int la, const char *file2, const char *sb, int lb)
+{
+	char encode[12], *rb;
+	struct line *al, *bl;
+	struct hunklist l = { NULL, NULL };
+	struct hunk *h;
+	char *s;
+	int an, bn, len = 0;
+	int i, hits = 0;
+
+	printf("diff: %s -> %s\n", file1, file2);
+	an = splitlines(sa, la, &al);
+	bn = splitlines(sb, lb, &bl);
+	if (!al || !bl) {
+		fprintf(stderr, "bindiff_buffers: Out of memory.\n");
+		return -1;
+	}
+
+	l = diff(al, an, bl, bn);
+	if (!l.head) {
+		fprintf(stderr, "bindiff_buffers: Out of memory.\n");
+		return -1;
+	}
+	
+	la = lb = 0;
+	for (h = l.base; h != l.head; h++) {
+		//printf("Change at: %d -> %d\n", h->a1, h->b1);
+		if (h->a1 != la || h->b1 != lb) {
+			//printf("Differential change size: %d\n", bl[h->b1].l-bl[lb].l);
+			len += 12 + bl[h->b1].l - bl[lb].l;
+			if (h->a2 == h->b1){
+		//		printf("-<{grepline %s %d %d}>\n", file1, h->a2, h->b1);
+				s = r_file_slurp_line(file1, h->b1-1, 0);
+				printf("-%s\n", s);
+				free(s);
+				hits++;
+			}
+//			printf("+<{grepline %s %d}>\n", file2, h->a1);
+			s = r_file_slurp_line(file2, h->a1-1, 0);
+			printf("+%s\n", s);
+			free(s);
+		//	memcpy(rb, encode, 12);
+		//	memcpy(rb+12,bl[lb].l, len);
+			rb+=12+len;
+		} else {
+//			printf("-<{grepline %s %d}>\n", file1, h->a1);
+			s = r_file_slurp_line(file1, h->a1, 0);
+			printf("-%s\n", s);
+			free(s);
+		}
+		la = h->a2;
+		lb = h->b2;
+#if 0
+		printf("old: (%d) ", h->b1);
+		//for(i=0;i<a[h->b1].l;i++)
+		//	printf("%02x ", b1[h->b1+i]);
+		printf("\nnew: (%d) ", h->b2);
+		//for(i=0;i<b[h->b2].l;i++)
+		//	printf("%02x ", b2[h->b2+i]);
+		printf("\n\n");
+#endif
+		hits++;
+	}
+	free(al);
+	free(bl);
+	free(l.base);
+
+	return hits;
+}
+
+int bindiff_files(char *file1, char *file2)
+{
+	int ret;
+	char *b1, *b2;
+	int s1, s2;
+
+	b1 = r_file_slurp(file1, &s1);
+	b2 = r_file_slurp(file2, &s2);
+	ret = bindiff_buffers(file1, b1, s1, file2, b2, s2);
+	printf("Differences: %d\n", ret);
+	return ret;
+}
+
+int main()
+{
+	bindiff_files("t/file1", "t/file2");
+	//bindiff_files("/bin/true", "bin/false");
+	return 0;
+}
