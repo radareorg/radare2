@@ -16,6 +16,8 @@ control_c() {
   exit 1
 }
 trap control_c 2
+HAVE_EWF=1
+VALA=1
 split_host() {
 S="$"
 while : ; do
@@ -135,6 +137,9 @@ System types:
   --target=TARGET        configure for building compilers for TARGET [HOST]
 EOF2
 
+printf "\nOptional Features:
+  --without-ewf          disable EWF dependency 
+  --without-vala         disables the build of all the vala-dependant parts \n"
 printf "\nSome influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
@@ -176,6 +181,9 @@ case $flag in
 echo "PKGNAME:   radare2"
 echo "VERSION:   0.2b"
 echo "LANGS:     c"
+echo "REQUIRED:  lib>=vala-1.0 libvala-1.0>=0.5.0"
+echo "OPTIONAL:  libewf"
+echo "FLAGS:     --without-ewf --without-vala"
 	exit 0
 	;;
 "--cache-file") 
@@ -217,6 +225,8 @@ echo "LANGS:     c"
 "--mandir")
 	MANDIR="$value"; ;;
 
+"--without-ewf") HAVE_EWF="0"; ;;
+"--without-vala") VALA="0"; ;;
 *) if [ "$value" ]; then eval "`echo $flag2=$value`" ; 
 else echo ; echo "WARNING: Unknown flag '$flag'." >&2 ; echo ; fi ;;
 esac
@@ -231,7 +241,7 @@ parse_options $1
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C HAVE_LIB_EWF HAVE_EWF VALA HAVE_VALAC VALAC HAVE_VALA_1_0_VERSION_0_5_0"
 
 create_environ
 
@@ -244,6 +254,8 @@ split_host BUILD HOST TARGET
 echo "checking for working directories... ${WODIS}"
 echo "using prefix '${PREFIX}'"
 ACR_RMFILES=" test.c a.out a.exe"
+
+
 : 
 COMPILER=CC
 printf "checking for c compiler... "
@@ -259,6 +271,52 @@ if [ $? = 0 ]; then echo ${CC}; else
 do_remove
 echo "ERROR: ${CC} cannot create executables" >&2 ;
 exit 1 ; fi
+check_library() {
+VAR=$1
+S="$"
+_REQUIRED=$3
+_CHKLIB_NAME=$2
+_CHKLIB_LIBS=$(echo "-l${_CHKLIB_NAME}" | sed 's,\+, -l,g')
+printf "checking for lib${_CHKLIB_NAME} ... "
+echo "main(){ }" > test.c
+eval ${S}${COMPILER} ${CFLAGS} ${LDFLAGS} ${_CHKLIB_LIBS} test.c >/dev/null 2>&1
+if [ $? = 0 ]; then
+	eval ${VAR}=1
+	echo yes
+else
+	eval ${VAR}=0
+	echo no  ; fi }
+check_library HAVE_LIB_EWF ewf 0 
+if [ "$HAVE_EWF" = "1" ]; then
+export HAVE_LIB_EWF="0"; fi
+printf "checking for valac... "
+if [ -x "${VALAC}" ]; then
+FIND=${VALAC}
+else
+FIND=""
+for A in `echo ${PATH} | sed -e 's,:, ,g'`; do
+if [ -x "${A}/valac" ]; then
+        FIND="${A}/valac"
+        break;
+fi
+done
+fi
+if [ -n "${FIND}" ]; then 
+ echo ${FIND}; 
+ HAVE_VALAC=1
+ VALAC=${FIND}
+else
+ HAVE_VALAC=0
+ VALAC=valac
+ echo no ; fi
+HAVE_VALA_1_0_VERSION_0_5_0=0
+printf "checking version of library vala-1.0 >= 0.5.0... "
+pkg-config --atleast-version=0.5.0 vala-1.0 >/dev/null 2>&1
+if [ $? = 0 ]; then HAVE_VALA_1_0_VERSION_0_5_0=1 ; echo ok; else
+echo "no" ; fi
+if [ "$HAVE_VALA_1_0_VERSION_0_5_0" = "0" ]; then
+echo "   Needs vala 0.5.0 at least" >&2 
+export HAVE_VALAC="0 VALAC = ''"; fi
 SEDFLAGS=" -e '"
 COUNT=0
 for A in ${ENVWORDS} ; do
@@ -270,7 +328,7 @@ for A in ${ENVWORDS} ; do
 	SEDFLAGS="${SEDFLAGS}s,@${A}@,${VAR},g;"
 done
 SEDFLAGS="${SEDFLAGS}'"
-for A in config-user.mk NOP  ; do # SUBDIRS
+for A in ./config-user.mk  ; do # SUBDIRS
  if [ -f "${VPATH}/${A}.acr" ]; then
   SD_TARGET=${A}
  else
@@ -300,3 +358,10 @@ done
 done
 
 do_remove
+echo
+echo "Final report:"
+for A in  PREFIX HAVE_LIB_EWF HAVE_VALAC ; do # REPORT
+eval VAL="\$${A}"
+[ -z "${VAL}" ] && VAL="(null)"
+echo " - ${A} = ${VAL}"
+done

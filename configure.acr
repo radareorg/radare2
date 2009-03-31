@@ -4,4 +4,20 @@ CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
 
-SUBDIRS config-user.mk
+CHKLIB ewf
+ARG_WITHOUT HAVE_EWF ewf disable EWF dependency ;
+IF HAVE_EWF { HAVE_LIB_EWF = 0 ; }
+
+ARG_WITHOUT VALA vala disables the build of all the vala-dependant parts ;
+CHKPRG VALAC valac
+CHKVER vala-1.0 0.5.0
+(( temporary fix to avoid vala ))
+IFNOT HAVE_VALA_1_0_VERSION_0_5_0 {
+	ECHO Needs vala 0.5.0 at least ;
+	HAVE_VALAC = 0
+	VALAC = '' ;
+}
+
+REPORT PREFIX HAVE_LIB_EWF HAVE_VALAC ;
+
+SUBDIRS ./config-user.mk ;

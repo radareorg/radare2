@@ -17,3 +17,5 @@ else
 PREFIX=${PWD}/prefix
 VERSION=`date '+%Y%m%d'`
 endif
+
+-include config-user.mk
