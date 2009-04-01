@@ -2,14 +2,14 @@
 
 #include <r_core.h>
 
-u64 r_core_file_resize(struct r_core_t *core, u64 newsize)
+R_API u64 r_core_file_resize(struct r_core_t *core, u64 newsize)
 {
 	if (newsize == 0 && core->file)
 		return core->file->size;
 	return 0LL;
 }
 
-struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int mode)
+R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int mode)
 {
 	struct r_core_file_t *fh;
 	int fd;
@@ -40,20 +40,20 @@ struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int
 	return fh;
 }
 
-int r_core_file_set(struct r_core_t *r, struct r_core_file_t *fh)
+R_API int r_core_file_set(struct r_core_t *r, struct r_core_file_t *fh)
 {
 	r->file = fh;
 	return R_TRUE;
 }
 
-int r_core_file_close(struct r_core_t *r, struct r_core_file_t *fh)
+R_API int r_core_file_close(struct r_core_t *r, struct r_core_file_t *fh)
 {
 	int ret = r_io_close(&r->io, fh->fd);
 	list_del(&(fh->list));
 	return ret;
 }
 
-struct r_core_file_t *r_core_file_get_fd(struct r_core_t *core, int fd)
+R_API struct r_core_file_t *r_core_file_get_fd(struct r_core_t *core, int fd)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &core->files) {
@@ -64,7 +64,7 @@ struct r_core_file_t *r_core_file_get_fd(struct r_core_t *core, int fd)
 	return NULL;
 }
 
-int r_core_file_close_fd(struct r_core_t *core, int fd)
+R_API int r_core_file_close_fd(struct r_core_t *core, int fd)
 {
 	int ret = r_io_close(&core->io, fd);
 	struct r_core_file_t *fh = r_core_file_get_fd(core, fd);

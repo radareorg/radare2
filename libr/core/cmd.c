@@ -469,8 +469,6 @@ static int cmd_flag(void *data, const char *input)
 		break;
 	case 'o':
 		{
-// XXX
-#define PREFIX "/usr"
 			char *file = PREFIX"/share/doc/radare/fortunes";
 			char *line = r_file_slurp_random_line (file);
 			r_cons_printf("%s\n", line);
@@ -1376,7 +1374,23 @@ int r_core_cmd_file(struct r_core_t *core, const char *file)
 static int cmd_debug(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
+	char *ptr;
 	switch(input[0]) {
+	case 'k':
+		{
+		/* XXX: not for threads? signal is for a whole process!! */
+		/* XXX: but we want fine-grained access to process resources */
+			int pid = 0;
+			int sig = 9;
+			pid = atoi(input);
+			ptr = strchr(input, ' ');
+			if (ptr) sig = atoi(ptr+1);
+			if (pid > 0) {
+				fprintf(stderr, "Sending signal '%d' to pid '%d'\n");
+				r_debug_kill(&core->dbg, pid, sig);
+			} else fprintf(stderr, "Invalid arguments\n");
+		}
+		break;
 	case 's':
 		fprintf(stderr, "step\n");
 		r_debug_step(&core->dbg, 1);
@@ -1415,6 +1429,7 @@ static int cmd_debug(void *data, const char *input)
 		" ds 3         ; perform 3 steps\n"
 		" do 3         ; perform 3 steps overs\n"
 		" dp [pid]     ; list or set pid\n"
+		" dt [tid]     ; select thread id\n"
 		" dc           ; continue execution\n"
 		" dr           ; show registers\n"
 		" dr*          ; show registers in radare commands\n"
@@ -1425,7 +1440,8 @@ static int cmd_debug(void *data, const char *input)
 		" db -sym.main ; drop breakpoint\n"
 		" dm           ; show memory maps\n"
 		" dm 4096      ; allocate 4KB in child process\n"
-		" dm rw- esp 9K; set 9KB of the stack as read+write (no exec)\n");
+		" dm rw- esp 9K; set 9KB of the stack as read+write (no exec)\n"
+		" dk pid sig   ; send signal to a process ID\n");
 		break;
 	}
 	return 0;

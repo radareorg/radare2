@@ -2,7 +2,7 @@
 
 #include <r_flags.h>
 
-const const char *r_flag_space_get(struct r_flag_t *f, int idx)
+R_API const char *r_flag_space_get(struct r_flag_t *f, int idx)
 {
 	if (idx==-1)
 		return "";
@@ -24,7 +24,7 @@ void flag_space_init(struct r_flag_t *f)
 }
 #endif
 
-void r_flag_space_set(struct r_flag_t *f, const char *name)
+R_API void r_flag_space_set(struct r_flag_t *f, const char *name)
 {
 	int i;
 	for(i=0;i<R_FLAG_SPACES_MAX;i++) {
@@ -44,7 +44,7 @@ void r_flag_space_set(struct r_flag_t *f, const char *name)
 	}
 }
 
-void r_flag_space_list(struct r_flag_t *f)
+R_API void r_flag_space_list(struct r_flag_t *f)
 {
 	int i,j = 0;
 	for(i=0;i<R_FLAG_SPACES_MAX;i++) {

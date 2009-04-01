@@ -5,9 +5,10 @@ The objective of this paper is to determine a set of rules to be done before
 each release and define the instructions for generating the distribution
 tarball together with a scheduler.
 
-
 * We try to release every 1/2 months
 * Version numbering (actually we dont follow any rules for this)
+* Codenames for releases MUST be funny (until we didnt get a name that can make
+  me laught, we should not release anything!)
 
 Before any release we have to:
 
@@ -28,3 +29,17 @@ Before any release we have to:
    If available, it would be good to have some unit tests to check nothing is
    broken. Maybe Vala is the way to go when writing tests, because this way
    we ensure that pkg-config, libr and vapis works in a shot.
+
+ - Test build on different platforms
+
+   The same codebase should be compilable on *nix and w32 systems without
+   modifications. It should be also possible to build it with make threads,
+   so using quadcore boxes with -j8 should be a good place for finding
+   race conditions in the build system.
+
+ - Remove commented code and review TODO/BUG/XXX comments
+
+   While developing a new release, it's pretty common to keep old versions of
+   the code for testing parts of libraries and be able to go back or find bugs
+   while refactoring code or re-doing-it from scratch. This code, should be
+   reviewed and removed if necessary.

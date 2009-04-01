@@ -39,7 +39,7 @@ int r_line_disable = 0; // TODO use fgets..no autocompletion
 // char **rad_autocompletion(const char *text, int start, int end)
 // return  matches = rl_completion_matches (text, rad_offset_matches);
 
-int r_line_readchar()
+static int r_line_readchar()
 {
 	char buf[2];
 #if __WINDOWS__
@@ -53,9 +53,8 @@ int r_line_readchar()
 	ret = ReadConsole(h, buf,1, &out, NULL);
 	if (!ret) {
 		// wine hack-around
-		if (read(0,buf,1) == 1)
-			return buf[0];
-		return -1;
+		if (read(0,buf,1) != 1)
+			return -1
 	}
 	SetConsoleMode(h, mode);
 #else
@@ -63,11 +62,13 @@ int r_line_readchar()
 	if (ret <1)
 		return -1;
 #endif
+	//printf("CHAR(%d)\n", buf[0]);
 	return buf[0];
 }
 
 /* scripting */
 
+/* TODO: remove label related stuff */
 #if 0
 #define BLOCK 4096
 static char *labels = NULL;
@@ -170,7 +171,7 @@ int r_line_hist_label(const char *label, void (*cb)(const char*))
 	return 1;
 }
 
-int r_line_hist_add(const char *line)
+R_API int r_line_hist_add(const char *line)
 {
 #if HAVE_LIB_READLINE
 	add_history(line);
@@ -185,7 +186,7 @@ int r_line_hist_add(const char *line)
 //#endif
 }
 
-int r_line_hist_up()
+static int r_line_hist_up()
 {
 	if (r_line_histidx>0) {
 		strncpy(r_line_buffer, r_line_history[--r_line_histidx], R_LINE_BUFSIZE-1);
@@ -196,7 +197,7 @@ int r_line_hist_up()
 	return 0;
 }
 
-int r_line_hist_down()
+static int r_line_hist_down()
 {
 	r_line_buffer_idx=0;
 	if (r_line_histidx<r_line_histsize) {
@@ -213,7 +214,7 @@ int r_line_hist_down()
 	return 0;
 }
 
-int r_line_hist_list()
+R_API int r_line_hist_list()
 {
 	int i = 0;
 
@@ -227,7 +228,7 @@ int r_line_hist_list()
 	return i;
 }
 
-int r_line_hist_free()
+R_API int r_line_hist_free()
 {
 	int i;
 	if (r_line_history != NULL)
@@ -238,7 +239,8 @@ int r_line_hist_free()
 	return r_line_histidx=0, r_line_histsize;
 }
 
-void r_line_free()
+/* TODO: we need an state..? */
+R_API void r_line_free()
 {
 	printf("Bye!\n");
 	r_line_hist_free();
@@ -247,7 +249,7 @@ void r_line_free()
 }
 
 /* load history from file. if file == NULL load from ~/.<prg>.history or so */
-int r_line_hist_load(const char *file)
+R_API int r_line_hist_load(const char *file)
 {
 #if HAVE_LIB_READLINE
 	rad_readline_init();
@@ -273,7 +275,7 @@ int r_line_hist_load(const char *file)
 #endif
 }
 
-int r_line_hist_save(const char *file)
+R_API int r_line_hist_save(const char *file)
 {
 #if HAVE_LIB_READLINE
 	rad_readline_finish();
@@ -296,14 +298,14 @@ int r_line_hist_save(const char *file)
 #endif
 }
 
-int r_line_hist_chop(const char *file, int limit)
+R_API int r_line_hist_chop(const char *file, int limit)
 {
 	/* TODO */
 	return 0;
 }
 
 /* initialize history stuff */
-int r_line_init()
+R_API int r_line_init()
 {
 #if HAVE_LIB_READLINE
 	rad_readline_init();
@@ -324,8 +326,8 @@ int r_line_init()
 	return 1;
 }
 
-/* test */
-int r_line_printchar()
+/* TODO: Remove this test case .. this is not R_API */
+static int r_line_printchar()
 {
 	unsigned char buf[10];
 
@@ -333,30 +335,30 @@ int r_line_printchar()
 	buf[0]=r_line_readchar();
 
 	switch(buf[0]) {
-		case 226:
-		case 197:
-		case 195:
-		case 194:
-			buf[0] = r_line_readchar();
-			printf("unicode-%02x-%02x\n", buf[0],buf[1]);
-			break;
-		case 8: // wtf is 127?
-		case 127: printf("backspace\n"); break;
-		case 32: printf("space\n"); break;
-		case 27:
-			read(0, buf, 5);
-			printf("esc-%02x-%02x-%02x-%02x\n",
-					buf[0],buf[1],buf[2],buf[3]);
-			break;
-		case 12: printf("^L\n"); break;
-		case 13: printf("intro\n"); break;
-		case 18: printf("^R\n"); break;
-		case 9: printf("tab\n"); break;
-		case 3: printf("control-c\n"); break;
-		case 0: printf("control-space\n"); break;
-		default:
-			printf("(code:%d)\n", buf[0]);
-			break;
+	case 226:
+	case 197:
+	case 195:
+	case 194:
+		buf[0] = r_line_readchar();
+		printf("unicode-%02x-%02x\n", buf[0],buf[1]);
+		break;
+	case 8: // wtf is 127?
+	case 127: printf("backspace\n"); break;
+	case 32: printf("space\n"); break;
+	case 27:
+		read(0, buf, 5);
+		printf("esc-%02x-%02x-%02x-%02x\n",
+				buf[0],buf[1],buf[2],buf[3]);
+		break;
+	case 12: printf("^L\n"); break;
+	case 13: printf("intro\n"); break;
+	case 18: printf("^R\n"); break;
+	case 9: printf("tab\n"); break;
+	case 3: printf("control-c\n"); break;
+	case 0: printf("control-space\n"); break;
+	default:
+		printf("(code:%d)\n", buf[0]);
+		break;
 	}
 
 	r_cons_set_raw(0);
@@ -365,7 +367,7 @@ int r_line_printchar()
 }
 
 /* main readline function */
-char *r_line_readline(int argc, const char **argv)
+R_API char *r_line_readline(int argc, const char **argv)
 {
 	int buf[10];
 	int i, len = 0;
@@ -509,7 +511,9 @@ char *r_line_readline(int argc, const char **argv)
 				switch(buf[1]) {
 				case 0x33: // supr
 					if (r_line_buffer_idx<r_line_buffer_len)
-						strcpy(r_line_buffer, r_line_buffer+1);
+						strcpy(r_line_buffer+r_line_buffer_idx,
+							r_line_buffer+r_line_buffer_idx+1);
+					buf[1] = r_line_readchar();
 					break;
 				/* arrows */
 				case 0x41:

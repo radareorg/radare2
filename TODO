@@ -2,12 +2,15 @@
 * Add maxrows option for r_print (fix visual problem)
 * Drop #if conditionals to use #ifdef ones
   - fits better with plan9 compiler
+  - use getopt() p9-like macros
+
 * Add test for config.c with _set_cb
 * Rename __UNIX__ as __POSIX__
 * Strip non input symbols in plugins (speed up loading)
 * Specify binmask in hexpairs
   - wx 1234:ff0f
   - /x 1234:ff0f
+
 * radare2 -e dbg.engine=vm -d ls
   - resolve path for ls
   - load the program using r_bin in virtual space

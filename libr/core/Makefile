@@ -4,5 +4,6 @@ DEPS=r_config r_cons r_line r_io r_cmd r_util r_print r_flags r_asm r_lib r_macr
 OBJ=core.o cmd.o file.o config.o visual.o io.o yank.o libs.o
 
 CFLAGS+=-DLIBDIR=\"${PREFIX}/lib\"
+CFLAGS+=-DPREFIX=\"${PREFIX}\"
 
 include ../rules.mk

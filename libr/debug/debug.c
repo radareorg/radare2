@@ -2,7 +2,7 @@
 
 #include <r_debug.h>
 
-int r_debug_init(struct r_debug_t *dbg)
+R_API int r_debug_init(struct r_debug_t *dbg)
 {
 	dbg->pid = -1;
 	dbg->tid = -1;
@@ -12,7 +12,7 @@ int r_debug_init(struct r_debug_t *dbg)
 	return R_TRUE;
 }
 
-struct r_debug_t *r_debug_new()
+R_API struct r_debug_t *r_debug_new()
 {
 	struct r_debug_t *dbg;
 	dbg = MALLOC_STRUCT(struct r_debug_t);
@@ -20,7 +20,7 @@ struct r_debug_t *r_debug_new()
 	return dbg;
 }
 
-int r_debug_attach(struct r_debug_t *dbg, int pid)
+R_API int r_debug_attach(struct r_debug_t *dbg, int pid)
 {
 	int ret = R_FALSE;
 	if (dbg->h && dbg->h->attach) {
@@ -33,24 +33,24 @@ int r_debug_attach(struct r_debug_t *dbg, int pid)
 	return ret;
 }
 
-int r_debug_startv(struct r_debug_t *dbg, int argc, char **argv)
+R_API int r_debug_startv(struct r_debug_t *dbg, int argc, char **argv)
 {
 	return R_FALSE;
 }
 
-int r_debug_start(struct r_debug_t *dbg, const char *cmd)
+R_API int r_debug_start(struct r_debug_t *dbg, const char *cmd)
 {
 	return R_FALSE;
 }
 
-int r_debug_detach(struct r_debug_t *dbg, int pid)
+R_API int r_debug_detach(struct r_debug_t *dbg, int pid)
 {
 	if (dbg->h && dbg->h->detach)
 		return dbg->h->detach(pid);
 	return R_FALSE;
 }
 
-int r_debug_select(struct r_debug_t *dbg, int pid, int tid)
+R_API int r_debug_select(struct r_debug_t *dbg, int pid, int tid)
 {
 	dbg->pid = pid;
 	dbg->tid = tid;
@@ -58,7 +58,7 @@ int r_debug_select(struct r_debug_t *dbg, int pid, int tid)
 	return R_TRUE;
 }
 
-int r_debug_set_arch(struct r_debug_t *dbg, int arch)
+R_API int r_debug_set_arch(struct r_debug_t *dbg, int arch)
 {
 	switch(arch) {
 	case R_DBG_ARCH_BF:
@@ -72,7 +72,7 @@ int r_debug_set_arch(struct r_debug_t *dbg, int arch)
 }
 
 /*--*/
-int r_debug_stop_reason(struct r_debug_t *dbg)
+R_API int r_debug_stop_reason(struct r_debug_t *dbg)
 {
 	// TODO: return reason to stop debugging
 	// - new process
@@ -83,7 +83,7 @@ int r_debug_stop_reason(struct r_debug_t *dbg)
 	return R_TRUE;
 }
 
-int r_debug_wait(struct r_debug_t *dbg)
+R_API int r_debug_wait(struct r_debug_t *dbg)
 {
 	int ret = R_FALSE;
 	if (dbg->h->wait)
@@ -92,7 +92,7 @@ int r_debug_wait(struct r_debug_t *dbg)
 }
 
 // TODO: count number of steps done to check if no error??
-int r_debug_step(struct r_debug_t *dbg, int steps)
+R_API int r_debug_step(struct r_debug_t *dbg, int steps)
 {
 	int i, ret = R_FALSE;
 	if (dbg->h && dbg->h->step) {
@@ -109,20 +109,20 @@ int r_debug_step(struct r_debug_t *dbg, int steps)
 	return ret;
 }
 
-int r_debug_syscall(struct r_debug_t *dbg, int num)
+R_API int r_debug_syscall(struct r_debug_t *dbg, int num)
 {
 	fprintf(stderr, "TODO\n");
 	return R_FALSE;
 }
 
-int r_debug_step_over(struct r_debug_t *dbg, int steps)
+R_API int r_debug_step_over(struct r_debug_t *dbg, int steps)
 {
 	// TODO: analyze opcode if it is stepoverable
 	fprintf(stderr, "TODO\n");
 	return r_debug_step(dbg, steps);
 }
 
-int r_debug_continue(struct r_debug_t *dbg)
+R_API int r_debug_continue(struct r_debug_t *dbg)
 {
 	int ret = R_FALSE;
 	if (dbg->h){
@@ -135,12 +135,12 @@ int r_debug_continue(struct r_debug_t *dbg)
 	return ret;
 }
 
-int r_debug_continue_until(struct r_debug_t *dbg, u64 addr)
+R_API int r_debug_continue_until(struct r_debug_t *dbg, u64 addr)
 {
 	return -1;
 }
 
-int r_debug_continue_syscall(struct r_debug_t *dbg, int sc)
+R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc)
 {
 	int ret = R_FALSE;
 	if (dbg->h && dbg->h->contsc)
@@ -149,7 +149,7 @@ int r_debug_continue_syscall(struct r_debug_t *dbg, int sc)
 }
 
 // XXX wrong function name
-int r_debug_use_software_steps(struct r_debug_t *dbg, int value)
+R_API int r_debug_use_software_steps(struct r_debug_t *dbg, int value)
 {
 	/* use software breakpoints and continues */
 	return -1;
@@ -157,18 +157,18 @@ int r_debug_use_software_steps(struct r_debug_t *dbg, int value)
 
 /* registers */
 
-int r_debug_register_get(struct r_debug_t *dbg, int reg, u64 *value)
+R_API int r_debug_register_get(struct r_debug_t *dbg, int reg, u64 *value)
 {
 	return R_TRUE;
 }
 
-int r_debug_register_set(struct r_debug_t *dbg, int reg, u64 value)
+R_API int r_debug_register_set(struct r_debug_t *dbg, int reg, u64 value)
 {
 	return R_TRUE;
 }
 
 /* for debugging purposes? */
-int r_debug_register_list(struct r_debug_t *dbg)
+R_API int r_debug_register_list(struct r_debug_t *dbg)
 {
 	int i =0;
 	for(i=0;i<dbg->reg.nregs;i++) {
@@ -179,14 +179,26 @@ int r_debug_register_list(struct r_debug_t *dbg)
 	return R_TRUE;
 }
 
-/* mmu */
+// TODO: Move to pid.c ?
+// TODO: Do we need an intermediate signal representation for portability?
+// TODO: STOP, CONTINUE, KILL, ...
+R_API int r_debug_kill(struct r_debug_t *dbg, int pid, int sig)
+{
+	// XXX: use debugger handler backend here
+#include <signal.h>
+	int ret = kill(pid, sig);
+	if (ret == -1)
+		return R_FALSE;
+	return R_TRUE;
+}
 
-int r_debug_mmu_alloc(struct r_debug_t *dbg, u64 size, u64 *addr)
+/* mmu */
+R_API int r_debug_mmu_alloc(struct r_debug_t *dbg, u64 size, u64 *addr)
 {
 	return R_TRUE;
 }
 
-int r_debug_mmu_free(struct r_debug_t *dbg, u64 addr)
+R_API int r_debug_mmu_free(struct r_debug_t *dbg, u64 addr)
 {
 	return R_TRUE;
 }
