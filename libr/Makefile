@@ -1,10 +1,12 @@
-PREFIX=${PWD}/../prefix
+include ../config-user.mk
+
+PREFIX?=${PWD}/../prefix
 DESTDIR?=../
 PFX=${DESTDIR}${PREFIX}
 #PREFIX=${PFX}
 
 # Libraries
-LIBLIST=io util lib meta lang flags bin bininfo macro hash line cons line print config syscall range socket cmd asm anal parse search diff debug reg core var sign trace
+LIBLIST=io util lib meta lang flags bin bininfo macro hash line cons line print config syscall range socket cmd asm anal parse search diff debug reg core var sign trace vm
 
 # Under development
 #LIBLIST+=print
@@ -16,6 +18,8 @@ LIBLIST=io util lib meta lang flags bin bininfo macro hash line cons line print 
 #LIBAR=libr.a
 
 all:
+	echo PREFIX=${PREFIX}
+	#exit 1
 	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} all ); done
 	@echo Build done for: ${LIBLIST}
 

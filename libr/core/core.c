@@ -24,99 +24,14 @@ static u64 num_callback(void *userptr, const char *str, int *ok)
 	return 0LL;
 }
 
-struct r_core_t *r_core_new()
+R_API struct r_core_t *r_core_new()
 {
 	struct r_core_t *c = MALLOC_STRUCT(struct r_core_t);
 	r_core_init(c);
 	return c;
 }
 
-/* TODO: move to a separated file */
-/* io callback */
-static int __lib_io_cb(struct r_lib_plugin_t *pl, void *user, void *data)
-{
-	struct r_io_handle_t *hand = (struct r_io_handle_t *)data;
-	struct r_core_t *core = (struct r_core_t *)user;
-	//printf(" * Added IO handler\n");
-	r_io_handle_add(&core->io, hand);
-	return R_TRUE;
-}
-
-static int __lib_io_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
-
-/* debug callback */
-static int __lib_dbg_cb(struct r_lib_plugin_t *pl, void *user, void *data)
-{
-	struct r_debug_handle_t *hand = (struct r_debug_handle_t *)data;
-	struct r_core_t *core = (struct r_core_t *)user;
-	//printf(" * Added debugger handler\n");
-	r_debug_handle_add(&core->dbg, hand);
-	return R_TRUE;
-}
-
-static int __lib_dbg_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
-
-/* lang callback */
-static int __lib_lng_cb(struct r_lib_plugin_t *pl, void *user, void *data)
-{
-	struct r_lang_handle_t *hand = (struct r_lang_handle_t *)data;
-	struct r_core_t *core = (struct r_core_t *)user;
-	//printf(" * Added language handler\n");
-	r_lang_add(&core->lang, hand);
-	return R_TRUE;
-}
-
-static int __lib_lng_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
-
-/* anal callback */
-static int __lib_anl_cb(struct r_lib_plugin_t *pl, void *user, void *data)
-{
-	struct r_anal_handle_t *hand = (struct r_anal_handle_t *)data;
-	struct r_core_t *core = (struct r_core_t *)user;
-	//printf(" * Added analysis handler\n");
-	r_anal_add(&core->anal, hand);
-	return R_TRUE;
-}
-
-static int __lib_anl_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
-
-/* asm callback */
-static int __lib_asm_cb(struct r_lib_plugin_t *pl, void *user, void *data)
-{
-	struct r_asm_handle_t *hand = (struct r_asm_handle_t *)data;
-	struct r_core_t *core = (struct r_core_t *)user;
-	//printf(" * Added (dis)assembly handler\n");
-	r_asm_add(&core->assembler, hand);
-	return R_TRUE;
-}
-
-static int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
-
-/* parse callback */
-static int __lib_parse_cb(struct r_lib_plugin_t *pl, void *user, void *data)
-{
-	struct r_parse_handle_t *hand = (struct r_parse_handle_t *)data;
-	struct r_core_t *core = (struct r_core_t *)user;
-	//printf(" * Added (dis)assembly handler\n");
-	r_parse_add(&core->parser, hand);
-	return R_TRUE;
-}
-
-static int __lib_parse_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
-
-/* bin callback */
-static int __lib_bin_cb(struct r_lib_plugin_t *pl, void *user, void *data)
-{
-	struct r_bin_handle_t *hand = (struct r_bin_handle_t *)data;
-	struct r_core_t *core = (struct r_core_t *)user;
-	//printf(" * Added (dis)assembly handler\n");
-	r_bin_add(&core->bin, hand);
-	return R_TRUE;
-}
-
-static int __lib_bin_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
-
-int r_core_init(struct r_core_t *core)
+R_API int r_core_init(struct r_core_t *core)
 {
 	core->oobi = NULL;
 	core->oobi_len = 0;
@@ -125,6 +40,8 @@ int r_core_init(struct r_core_t *core)
 	core->yank_off = 0LL;
 	core->num.callback = &num_callback;
 	core->num.userptr = core;
+
+	/* initialize libraries */
 	r_print_init(&core->print);
 	core->print.printf = r_cons_printf;
 	r_lang_init(&core->lang);
@@ -141,6 +58,7 @@ int r_core_init(struct r_core_t *core)
 	r_bin_set_user_ptr(&core->bin, core);
 	r_meta_init(&core->meta);
 	r_cons_init();
+
 	core->search = r_search_new(R_SEARCH_KEYWORD);
 	r_io_init(&core->io);
 	r_macro_init(&core->macro);
@@ -155,33 +73,16 @@ int r_core_init(struct r_core_t *core)
 	r_core_cmd_init(core);
 	r_flag_init(&core->flags);
 	r_debug_init(&core->dbg);
-	r_lib_init(&core->lib, "radare_plugin");
-	r_lib_add_handler(&core->lib, R_LIB_TYPE_IO, "io plugins",
-		&__lib_io_cb, &__lib_io_dt, core);
-	r_lib_add_handler(&core->lib, R_LIB_TYPE_DBG, "debug plugins",
-		&__lib_dbg_cb, &__lib_dbg_dt, core);
-	r_lib_add_handler(&core->lib, R_LIB_TYPE_LANG, "language plugins",
-		&__lib_lng_cb, &__lib_lng_dt, core);
-	r_lib_add_handler(&core->lib, R_LIB_TYPE_ANAL, "analysis plugins",
-		&__lib_anl_cb, &__lib_anl_dt, core);
-	r_lib_add_handler(&core->lib, R_LIB_TYPE_ASM, "(dis)assembly plugins",
-		&__lib_asm_cb, &__lib_asm_dt, core);
-	r_lib_add_handler(&core->lib, R_LIB_TYPE_PARSE, "parsing plugins",
-		&__lib_parse_cb, &__lib_parse_dt, core);
-	r_lib_add_handler(&core->lib, R_LIB_TYPE_BIN, "bin plugins",
-		&__lib_bin_cb, &__lib_bin_dt, core);
-	r_lib_opendir(&core->lib, getenv("LIBR_PLUGINS"));
-	{
-		char *homeplugindir = r_str_home(".radare/plugins");
-		r_lib_opendir(&core->lib, homeplugindir);
-		free(homeplugindir);
-	}
 	r_core_config_init(core);
 	// XXX fix path here
+
+	/* load plugins */
+	r_core_loadlibs(core);
+
 	return 0;
 }
 
-struct r_core_t *r_core_free(struct r_core_t *c)
+R_API struct r_core_t *r_core_free(struct r_core_t *c)
 {
 	free(c);
 	return NULL;

@@ -1,4 +1,4 @@
-include config.mk
+include config-user.mk
 
 all:
 	cd libr && make

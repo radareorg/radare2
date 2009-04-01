@@ -2,3 +2,14 @@
 
 PREFIX=@PREFIX@
 HAVE_LIB_EWF=@HAVE_LIB_EWF@
+
+# TODO: add configure flag to choose compiler
+COMPILER=gcc
+STATIC_DEBUG=0
+RUNTIME_DEBUG=1
+
+# TODO: add flag to choose ostype
+OSTYPE?=gnulinux
+
+-include ../config.mk
+-include ../../config.mk

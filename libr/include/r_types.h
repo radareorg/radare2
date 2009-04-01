@@ -13,6 +13,7 @@
 #else
 #define IFRTDBG if (0)
 #endif
+/* ------------------------------------------- */
 
 #if R_INLINE
 #define R_API inline

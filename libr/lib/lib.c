@@ -23,6 +23,10 @@
   #define DLCLOSE(x) NULL
 #endif
 
+const char *r_lib_types[] = {
+	"io", "dbg", "lang", "asm", "anal", "parse", "bin", "bininfo", NULL
+};
+
 void *r_lib_dl_open(const char *libname)
 {
 	void *ret;
@@ -108,7 +112,7 @@ struct r_lib_handler_t *r_lib_get_handler(struct r_lib_t *lib, int type)
 	return 0;
 }
 
-int r_lib_close(struct r_lib_t *lib, const char *file)
+R_API int r_lib_close(struct r_lib_t *lib, const char *file)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &lib->plugins) {
@@ -124,12 +128,37 @@ int r_lib_close(struct r_lib_t *lib, const char *file)
 	return -1;
 }
 
-int r_lib_open(struct r_lib_t *lib, const char *file)
+// XXX ugly hack ?
+static int samefile(const char *a, const char *b)
+{
+	char *sa = strdup(a);
+	char *sb = strdup(b);
+	char *ptr;
+	int ret;
+
+	do {
+		ptr = strstr(sa, "//");
+		if (ptr) strcpy(ptr, ptr+1);	
+	} while(ptr);
+
+	do {
+		ptr = strstr(sb, "//");
+		if (ptr) strcpy(ptr, ptr+1);	
+	} while(ptr);
+	ret = strcmp(sa,sb)?R_FALSE:R_TRUE;
+
+	free(sa);
+	free(sb);
+	return ret;
+}
+
+R_API int r_lib_open(struct r_lib_t *lib, const char *file)
 {
 	struct r_lib_struct_t *stru;
 	void * handler;
 	int ret;
 
+//printf("OPENLIB(%s)\n", file);
 	/* ignored by filename */
 	if (!r_lib_dl_check_filename(file)) {
 		IFDBG fprintf(stderr, "Invalid library extension: %s\n", file);
@@ -141,11 +170,23 @@ int r_lib_open(struct r_lib_t *lib, const char *file)
 		IFDBG fprintf(stderr, "Cannot open library: '%s'\n", file);
 		return -1;
 	}
+	
 	stru = (struct r_lib_struct_t *) r_lib_dl_sym(handler, lib->symname);
 	if (stru == NULL) {
 		IFDBG fprintf(stderr, "No root symbol '%s' found in library '%s'\n", lib->symname, file);
 		return -1;
 	}
+{
+	struct list_head *pos;
+	list_for_each_prev(pos, &lib->plugins) {
+		struct r_lib_plugin_t *p = list_entry(pos, struct r_lib_plugin_t, list);
+		if (samefile(file, p->file)) {
+//printf("SKIP---------------(%s)\n", file);
+			r_lib_dl_close(handler);
+			return 0;
+		}
+	}
+}
 	struct r_lib_plugin_t *p = MALLOC_STRUCT(struct r_lib_plugin_t);
 	p->type = stru->type;
 	p->data = stru->data;
@@ -153,6 +194,7 @@ int r_lib_open(struct r_lib_t *lib, const char *file)
 	p->dl_handler = handler;
 	p->handler = r_lib_get_handler(lib, p->type);
 	
+//printf("ADD---------------(%s)\n", file);
 	ret = r_lib_run_handler(lib, p, stru);
 	if (ret == -1) {
 		IFDBG fprintf(stderr, "Library handler returned -1 for '%s'\n", file);
@@ -178,6 +220,8 @@ int r_lib_opendir(struct r_lib_t *lib, const char *path)
 #endif
 	if (path == NULL)
 		return R_FALSE;
+
+//printf("OPENPATH(%s)\n", path);
 	dh = opendir(path);
 	if (dh == NULL) {
 		IFDBG fprintf(stderr, "Cannot open directory '%s'\n", path);
@@ -194,15 +238,17 @@ int r_lib_opendir(struct r_lib_t *lib, const char *path)
 int r_lib_list(struct r_lib_t *lib)
 {
 	struct list_head *pos;
+#if 0
 	printf("Plugin Handlers:\n");
 	list_for_each_prev(pos, &lib->handlers) {
 		struct r_lib_handler_t *h = list_entry(pos, struct r_lib_handler_t, list);
 		printf(" - %d: %s\n", h->type, h->desc);
 	}
-	printf("Loaded plugins:\n");
+#endif
+	//printf("Loaded plugins:\n");
 	list_for_each_prev(pos, &lib->plugins) {
 		struct r_lib_plugin_t *p = list_entry(pos, struct r_lib_plugin_t, list);
-		printf(" - %d : %s (%p)\n", p->type, p->file, p->handler->destructor);
+		printf(" %5s : %s (%p)\n", r_lib_types[p->type], p->file, p->handler->destructor);
 	}
 	return 0;
 }

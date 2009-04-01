@@ -35,6 +35,8 @@ struct r_lib_struct_t {
 	void *data; /* pointer to data handled by plugin handler */
 };
 
+extern const char *r_lib_types[];
+
 enum {
 	R_LIB_TYPE_IO,      /* io layer */
 	R_LIB_TYPE_DBG,     /* debugger */

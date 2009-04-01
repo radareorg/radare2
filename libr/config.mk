@@ -14,9 +14,11 @@ STATIC_BIN_PLUGINS=p/elf.mk
 STATIC_BININFO_PLUGINS=p/addr2line.mk
 
 ifneq (${BINDEPS},)
+include ../../../config-user.mk
 include ../../../config.mk
 include ../../../mk/${COMPILER}.mk
 else
+include ../../config-user.mk
 include ../../config.mk
 include ../../mk/${COMPILER}.mk
 endif

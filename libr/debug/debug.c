@@ -83,6 +83,14 @@ int r_debug_stop_reason(struct r_debug_t *dbg)
 	return R_TRUE;
 }
 
+int r_debug_wait(struct r_debug_t *dbg)
+{
+	int ret = R_FALSE;
+	if (dbg->h->wait)
+		ret = dbg->h->wait(dbg->pid);
+	return ret;
+}
+
 // TODO: count number of steps done to check if no error??
 int r_debug_step(struct r_debug_t *dbg, int steps)
 {
@@ -92,9 +100,8 @@ int r_debug_step(struct r_debug_t *dbg, int steps)
 			ret = dbg->h->step(dbg->pid);
 			if (ret == R_FALSE)
 				break;
+			r_debug_wait(dbg);
 			// TODO: create wrapper for dbg_wait
-			if (dbg->h->wait)
-				ret = dbg->h->wait(dbg->pid);
 			// TODO: check return value of wait and show error
 			dbg->steps++;
 		}
@@ -136,7 +143,7 @@ int r_debug_continue_until(struct r_debug_t *dbg, u64 addr)
 int r_debug_continue_syscall(struct r_debug_t *dbg, int sc)
 {
 	int ret = R_FALSE;
-	if (dbg->h && dbg->h->cont)
+	if (dbg->h && dbg->h->contsc)
 		ret = dbg->h->contsc(dbg->pid, sc);
 	return ret;
 }

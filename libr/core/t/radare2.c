@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 
 	r_core_init (&r);
 
-	while ((c = getopt (argc, argv, "wfhendVs:b:Lu"))!=-1) {
+	while ((c = getopt (argc, argv, "wfhe:ndVs:b:Lu"))!=-1) {
 		switch (c) {
 		case 'd':
 			debug = 1;
@@ -76,7 +76,10 @@ int main(int argc, char **argv)
 			seek = atoi (optarg); // XXX use r_num
 			break;
 		case 'L':
-			r_io_handle_list (&r.io);
+			r_lib_opendir(&r.lib, r_config_get(&r.config, "dir.plugins"));
+			r_core_loadlibs(&r);
+			r_lib_list (&r.lib);
+			//r_io_handle_list (&r.io);
 			break;
 		case 'u':
 			fprintf(stderr, "TODO\n");
@@ -103,15 +106,18 @@ int main(int argc, char **argv)
 			if (++optind != argc)
 				strcat(file, " ");
 		}
+		r_core_loadlibs(&r);
+
 		fh = r_core_file_open (&r, file, perms);
 		if (fh == NULL) {
-			fprintf (stderr,
-			"Cannot open file '%s'\n", file);
+			fprintf (stderr, "Cannot open file '%s'\n", file);
 			return 1;
 		}
 	} else
 	while (optind < argc) {
 		const char *file = argv[optind++];
+		// XXX dupped
+		r_core_loadlibs(&r);
 		fh = r_core_file_open (&r, file, perms);
 		if (fh == NULL) {
 			fprintf (stderr, "Cannot open file '%s'\n", file);
@@ -131,6 +137,7 @@ int main(int argc, char **argv)
 			free (homerc);
 		}
 	}
+
 	if (debug) {
 		r_core_cmd (&r, "dh ptrace", 0);
 		r_core_cmdf (&r, "dp %d", r.file->fd);

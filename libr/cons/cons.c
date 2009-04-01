@@ -245,13 +245,8 @@ void r_cons_grep(const char *str)
 	}
 }
 
-/* TODO: refactorize and move grep stuff outside here */
 void r_cons_flush()
 {
-	FILE *fd;
-	char buf[1024];
-	int i,j;
-	int lines_counter = 0;
 	char *tee = r_cons_teefile;
 
 	if (r_cons_noflush)
@@ -272,59 +267,10 @@ void r_cons_flush()
 			fwrite(r_cons_buffer, strlen(r_cons_buffer), 1, d);
 			fclose(d);
 		}
+	// TODO: make this 'write' portable
 	} else write(1, r_cons_buffer, r_cons_buffer_len);
-	// TODO: make 'write' portable
 	r_cons_reset();
-	return;
-
-#if 0
-		char *file = r_cons_filterline;
-		if (!STR_IS_NULL(file)) {
-			fd = fopen(file, "r");
-			if (fd) {
-				while(!feof(fd)) {
-					buf[0]='\0';
-					fgets(buf, 1020, fd);
-					if (buf[0]) {
-						buf[strlen(buf)-1]='\0';
-						char *ptr = strchr(buf, '\t');;
-						if (ptr) {
-							ptr[0]='\0'; ptr = ptr +1;
-							r_cons_buffer = (char *)r_str_sub(r_cons_buffer, buf, ptr, 1);
-							r_cons_buffer_len = strlen(r_cons_buffer);
-						}
-					}
-				}
-				fclose(fd);
-			}
-		}
-#endif
-		
 }
-
-#if 0
-// UNUSED
-/* stream is ignored */
-void r_cons_fprintf(FILE *stream, const char *format, ...)
-{
-	/* dupped */
-	int len;
-	char buf[CONS_BUFSZ];
-	va_list ap;
-
-	va_start(ap, format);
-
-	len = vsnprintf(buf, CONS_BUFSZ-1, format, ap);
-	if (len>0) {
-		len = strlen(buf);
-		palloc(len);
-		memcpy(r_cons_buffer+r_cons_buffer_len, buf, len+1);
-		r_cons_buffer_len += len;
-	}
-
-	va_end(ap);
-}
-#endif
 
 void r_cons_printf(const char *format, ...)
 {

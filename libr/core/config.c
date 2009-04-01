@@ -52,6 +52,7 @@ int r_core_config_init(struct r_core_t *core)
 	r_config_set_cb(cfg, "asm.parser", "x86_pseudo",
 		&config_asm_parser_callback);
 
+	r_config_set(cfg, "dir.plugins", LIBDIR"/radare/");
 	r_config_set(cfg, "asm.syntax", "intel");
 	r_config_set_i(cfg, "asm.bits", 32);
 	r_config_set(cfg, "asm.pseudo", "false");  // DEPRECATED ???
@@ -287,7 +288,6 @@ int r_core_config_init(struct r_core_t *core)
 	}
 	config_set("dir.spcc", ptr);
 
-	config_set("dir.plugins", LIBDIR"/radare/");
 	snprintf(buf, 1023, "%s/.radare/rdb/", getenv("HOME"));
 	config_set("dir.project", buf); // ~/.radare/rdb/
 	config_set("dir.tmp", get_tmp_dir());

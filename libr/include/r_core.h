@@ -67,33 +67,34 @@ struct r_core_t {
 	struct r_search_t *search;
 };
 
-int r_core_init(struct r_core_t *core);
-struct r_core_t *r_core_new();
-int r_core_config_init(struct r_core_t *core);
-int r_core_prompt(struct r_core_t *r);
-int r_core_cmd(struct r_core_t *r, const char *cmd, int log);
-int r_core_cmdf(void *user, const char *fmt, ...);
-int r_core_cmd0(void *user, const char *cmd);
-int r_core_cmd_init(struct r_core_t *core);
-char *r_core_cmd_str(struct r_core_t *core, const char *cmd);
-int r_core_cmd_file(struct r_core_t *core, const char *file);
-int r_core_seek(struct r_core_t *core, u64 addr);
-int r_core_seek_align(struct r_core_t *core, u64 align, int times);
-int r_core_block_read(struct r_core_t *core, int next);
-int r_core_block_size(struct r_core_t *core, u32 bsize);
-int r_core_read_at(struct r_core_t *core, u64 addr, u8 *buf, int size);
-int r_core_cmd_init(struct r_core_t *core);
-int r_core_visual(struct r_core_t *core, const char *input);
-int r_core_visual_cmd(struct r_core_t *core, int ch);
+R_API int r_core_init(struct r_core_t *core);
+R_API struct r_core_t *r_core_new();
+R_API int r_core_config_init(struct r_core_t *core);
+R_API int r_core_prompt(struct r_core_t *r);
+R_API int r_core_cmd(struct r_core_t *r, const char *cmd, int log);
+R_API int r_core_cmdf(void *user, const char *fmt, ...);
+R_API int r_core_cmd0(void *user, const char *cmd);
+R_API int r_core_cmd_init(struct r_core_t *core);
+R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd);
+R_API int r_core_cmd_file(struct r_core_t *core, const char *file);
+R_API int r_core_seek(struct r_core_t *core, u64 addr);
+R_API int r_core_seek_align(struct r_core_t *core, u64 align, int times);
+R_API int r_core_block_read(struct r_core_t *core, int next);
+R_API int r_core_block_size(struct r_core_t *core, u32 bsize);
+R_API int r_core_read_at(struct r_core_t *core, u64 addr, u8 *buf, int size);
+R_API int r_core_cmd_init(struct r_core_t *core);
+R_API int r_core_visual(struct r_core_t *core, const char *input);
+R_API int r_core_visual_cmd(struct r_core_t *core, int ch);
 
-struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int mode);
-int r_core_file_close(struct r_core_t *r, struct r_core_file_t *fh);
-int r_core_seek_delta(struct r_core_t *core, s64 addr);
-
-int r_core_write_at(struct r_core_t *core, u64 addr, const u8 *buf, int size);
+R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int mode);
+R_API int r_core_file_close(struct r_core_t *r, struct r_core_file_t *fh);
+R_API int r_core_seek_delta(struct r_core_t *core, s64 addr);
+R_API int r_core_write_at(struct r_core_t *core, u64 addr, const u8 *buf, int size);
 
 /* yank */
-int r_core_yank(struct r_core_t *core, u64 addr, int len);
-int r_core_yank_paste(struct r_core_t *core, u64 addr, int len);
+R_API int r_core_yank(struct r_core_t *core, u64 addr, int len);
+R_API int r_core_yank_paste(struct r_core_t *core, u64 addr, int len);
+
+R_API int r_core_loadlibs(struct r_core_t *core);
 
 #endif

@@ -1,7 +1,7 @@
 CC?=gcc
 LINK=
 CC_AR=ar -r ${LIBAR}
-CFLAGS+=-fPIC
+CFLAGS+=-fPIC -MD
 CC_LIB=${CC} -shared -o ${LIBSO}
 CFLAGS_INCLUDE=-I
 LDFLAGS_LINK=-l

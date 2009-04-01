@@ -39,10 +39,10 @@ LIBAR=${LIB}.${EXT_AR}
 LIBSO=${LIB}.${EXT_SO}
 
 #-------------------------------------#
-# Rules
+# Rules for libraries
 ifeq (${BINDEPS},)
 ifneq ($(NAME),)
-include ../../config.mk
+include ../../config-user.mk
 include ../../mk/${COMPILER}.mk
 
 CFLAGS+=-I../include
@@ -51,9 +51,17 @@ real_all all: ${LIBSO} ${EXTRA_TARGETS}
 	@-if [ -e p/Makefile ]; then (cd p && ${MAKE} all) ; fi
 	@true
 
+SRC=$(subst .o,.c,$(OBJ))
+
 ${LIBSO}: ${OBJ}
-	${CC_LIB} ${LDFLAGS} ${LINK} ${OBJ}
-	@if [ -f "../stripsyms.sh" ]; then sh ../stripsyms.sh ${LIBSO} ${NAME} ; fi
+	@for a in ${OBJ} ${SRC}; do \
+	  test $$a -nt ${LIBSO} ; \
+	  if [ $$? = 0 ]; then \
+	    echo "${CC_LIB} ${LDFLAGS} ${LINK} ${OBJ}" ; \
+	    ${CC_LIB} ${LDFLAGS} ${LINK} ${OBJ} ; \
+	    if [ -f "../stripsyms.sh" ]; then sh ../stripsyms.sh ${LIBSO} ${NAME} ; fi ; \
+	  break ; \
+	fi ; done
 
 ${LIBAR}: ${OBJ}
 	${CC_AR} ${OBJ}
@@ -70,14 +78,18 @@ clean: ${EXTRA_CLEAN}
 endif
 else
 
+#-------------------------------------#
+# Rules for test programs
+
 include ../../config.mk
 include ../../../mk/${COMPILER}.mk
+
 CFLAGS+=-I../../include
 
 all: ${BIN}
-	@true
 
 ${BIN}: ${OBJ}
+	# XXX Shouldnt run always
 	${CC} ${LDFLAGS} ${OBJ} -o ${BIN} ${LIBS}
 
 #Dummy myclean rule that can be overriden by the t/ Makefile
@@ -94,7 +106,6 @@ endif
 #if RUNTIME_DEBUG
 CFLAGS+=-DR_RTDEBUG
 #endif
-
 
 // TODO: Not working
 #if STATIC_DEBUG
