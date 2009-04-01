@@ -29,6 +29,7 @@
 // XXX addr should be off_t for 64 love
 static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 {
+	
 	if (anal == NULL || aop == NULL || data == NULL)
 		return -1;
 

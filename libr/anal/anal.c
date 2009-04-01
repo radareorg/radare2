@@ -95,15 +95,14 @@ int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 	return R_FALSE;
 }
 
-struct r_anal_refline_t *r_anal_reflines(struct r_anal_t *anal, u8 *buf, u64 len, int nlines, int linesout)
+int r_anal_reflines_get(struct r_anal_t *anal, struct r_anal_refline_t *reflines, u8 *buf, u64 len, int nlines, int linesout)
 {
 	struct r_anal_refline_t *list = MALLOC_STRUCT(struct r_anal_refline_t);
 	struct r_anal_refline_t *list2;
+	struct r_anal_aop_t aop;
 	u8 *ptr = buf;
 	u8 *end = buf + len;
-	struct r_anal_aop_t aop;
-	int sz, bsz = 0;
-	int index = 0;
+	int seek = anal->pc, sz, bsz = 0, index = 0;
 
 	INIT_LIST_HEAD(&(list->list));
 
@@ -124,7 +123,7 @@ struct r_anal_refline_t *r_anal_reflines(struct r_anal_t *anal, u8 *buf, u64 len
 			}
 		}
 #endif
-		anal->pc += bsz;
+		seek += bsz;
 		sz = r_anal_aop(anal, &aop, ptr);
 		if (sz < 1) {
 			sz = 1;
@@ -144,7 +143,7 @@ struct r_anal_refline_t *r_anal_reflines(struct r_anal_t *anal, u8 *buf, u64 len
 				}
 
 				list2 = MALLOC_STRUCT(struct r_anal_refline_t);
-				list2->from = anal->pc;
+				list2->from = seek;
 				list2->to = aop.jump;
 				list2->index = index++;
 				list_add_tail(&(list2->list), &(list->list));
@@ -155,6 +154,113 @@ struct r_anal_refline_t *r_anal_reflines(struct r_anal_t *anal, u8 *buf, u64 len
 		ptr = ptr + sz;
 		bsz += sz;
 	}
+
+	reflines = list;
+	return R_TRUE;
+}
+
+int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, u64 addr, char *str, int opts)
+{
+	struct list_head *pos;
+	char ch = ' ';
+	int dir = 0;  /* dir 1=in ; 2=out */
+
+	int linestyle = opts & R_ANAL_REFLINE_LINESTYLE;
+	int nlines = opts & R_ANAL_REFLINE_NLINES;
+	int lineswide = opts & R_ANAL_REFLINE_LINESWIDE;
+	int expand = opts & R_ANAL_REFLINE_EXPAND;
+
+	if (!list)
+		return R_FALSE;
+
+	str[0] = '\0';
+	strcat(str, " ");
+
+#define _h34d_ &(list->list)
 	
-	return list;
+	if (nlines) {
+		int count = 0;
+
+		for (pos = linestyle?(_h34d_)->next:(_h34d_)->prev; pos != (_h34d_); pos = linestyle?pos->next:pos->prev)
+			count++;
+		for (;count<nlines;count++)
+			strcat(str, " ");
+	}
+
+	for (pos = linestyle?(_h34d_)->next:(_h34d_)->prev; pos != (_h34d_); pos = linestyle?pos->next:pos->prev) {
+		struct r_anal_refline_t *ref = list_entry(pos, struct r_anal_refline_t, list);
+		
+		if (addr == ref->to)
+			dir = 1;
+		if (addr == ref->from)
+			dir = 2;
+
+		if (addr == ref->to) {
+			if (!expand) {
+				if (ref->from > ref->to)
+					strcat(str, ".");
+				else
+					strcat(str, "`");
+				ch = '-';
+			} else
+				ch = '.';
+		} else
+		if (addr == ref->from) {
+			if (!expand) {
+				if (ref->from > ref->to)
+					strcat(str, "`");
+				else
+					strcat(str, ".");
+				ch = '=';
+			}
+		} else {
+			if (ref->from < ref->to) {
+				/* down */
+				if (addr > ref->from && addr < ref->to) {
+					if (ch=='-'||ch=='=')
+						sprintf(str, "%s%c", str, ch);
+					else
+						strcat(str, "|");
+				} else
+				if (!expand)
+					sprintf(str, "%s%c", str, ch);
+			} else {
+				/* up */
+				if (addr < ref->from && addr > ref->to) {
+					if (ch=='-'||ch=='=')
+						sprintf(str, "%s%c", str, ch);
+					else // ^
+						strcat(str, "|");
+				} else {
+					sprintf(str, "%s%c", str, ch);
+				}
+			}
+		}
+
+		if (lineswide) {
+			switch(ch) {
+			case '=':
+			case '-':
+				sprintf(str, "%s%c", str, ch);
+				break;
+			default:
+				strcat(str, " ");
+				break;
+			}
+		}
+
+	}
+
+	if (expand) {
+		strcat(str, "   ");
+	} else
+	if (dir==1) { 
+		strcat(str, "-> ");
+	} else
+	if (dir==2) {
+		strcat(str, "=< ");
+	}
+	else strcat(str, "   ");
+
+	return R_TRUE;
 }
