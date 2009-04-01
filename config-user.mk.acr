@@ -11,5 +11,5 @@ RUNTIME_DEBUG=1
 # TODO: add flag to choose ostype
 OSTYPE?=gnulinux
 
--include ../config.mk
+#-include ../config.mk
 -include ../../config.mk
