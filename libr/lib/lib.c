@@ -27,6 +27,13 @@ const char *r_lib_types[] = {
 	"io", "dbg", "lang", "asm", "anal", "parse", "bin", "bininfo", NULL
 };
 
+const char *r_lib_types_get(int idx)
+{
+	if (idx<0||idx>R_LIB_TYPE_LAST)
+		return r_lib_types[idx];
+	return "unk";
+}
+
 void *r_lib_dl_open(const char *libname)
 {
 	void *ret;
@@ -248,7 +255,7 @@ int r_lib_list(struct r_lib_t *lib)
 	//printf("Loaded plugins:\n");
 	list_for_each_prev(pos, &lib->plugins) {
 		struct r_lib_plugin_t *p = list_entry(pos, struct r_lib_plugin_t, list);
-		printf(" %5s : %s (%p)\n", r_lib_types[p->type], p->file, p->handler->destructor);
+		printf(" %5s : %s (%p)\n", r_lib_types_get(p->type), p->file, p->handler->destructor);
 	}
 	return 0;
 }

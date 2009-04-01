@@ -12,4 +12,4 @@ RUNTIME_DEBUG=1
 OSTYPE?=gnulinux
 
 #-include ../config.mk
--include ../../config.mk
+#-include ../../config.mk

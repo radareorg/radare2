@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+
 #include <r_util.h>
 
 void r_cache_init(struct r_cache_t *c)
