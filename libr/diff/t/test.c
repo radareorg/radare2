@@ -72,6 +72,19 @@ int test_distance()
 	return 1;
 }
 
+int test_lines(char *file1, char *file2)
+{
+	int ret;
+	char *b1, *b2;
+	int s1, s2;
+
+	b1 = r_file_slurp(file1, &s1);
+	b2 = r_file_slurp(file2, &s2);
+	ret = r_diff_lines(file1, b1, s1, file2, b2, s2);
+	printf("Differences: %d\n", ret);
+	return ret;
+}
+
 int main()
 {
 	test_equal();
@@ -83,6 +96,8 @@ int main()
 	test_delta();
 	printf("--\n");
 	test_distance();
+	printf("--\n");
+	test_lines("file1", "file2");
 
 
 	return 0;

@@ -2,14 +2,14 @@
 
 #include <r_diff.h>
 
-struct r_diff_t *r_diff_new(u64 off_a, u64 off_b)
+R_API struct r_diff_t *r_diff_new(u64 off_a, u64 off_b)
 {
 	struct r_diff_t *d = MALLOC_STRUCT(struct r_diff_t);
 	r_diff_init(d, off_a, off_b);
 	return d;
 }
 
-int r_diff_init(struct r_diff_t *d, u64 off_a, u64 off_b)
+R_API int r_diff_init(struct r_diff_t *d, u64 off_a, u64 off_b)
 {
 	d->delta = 1;
 	d->user = NULL;
@@ -18,13 +18,13 @@ int r_diff_init(struct r_diff_t *d, u64 off_a, u64 off_b)
 	return 1;
 }
 
-struct r_diff_t *r_diff_free(struct r_diff_t *d)
+R_API struct r_diff_t *r_diff_free(struct r_diff_t *d)
 {
 	free(d);
 	return NULL;
 }
 
-int r_diff_set_callback(struct r_diff_t *d,
+R_API int r_diff_set_callback(struct r_diff_t *d,
 	int (*callback)(struct r_diff_t *d, void *user, struct r_diff_op_t *op),
 	void *user)
 {
@@ -33,13 +33,13 @@ int r_diff_set_callback(struct r_diff_t *d,
 	return 1;
 }
 
-int r_diff_set_delta(struct r_diff_t *d, int delta)
+R_API int r_diff_set_delta(struct r_diff_t *d, int delta)
 {
 	d->delta = delta;
 	return 1;
 }
 
-int r_diff_buffers_static(struct r_diff_t *d, const u8 *a, int la, const u8 *b, int lb)
+R_API int r_diff_buffers_static(struct r_diff_t *d, const u8 *a, int la, const u8 *b, int lb)
 {
 	int i, len;
 	int hit = 0;
@@ -76,7 +76,7 @@ int r_diff_buffers_static(struct r_diff_t *d, const u8 *a, int la, const u8 *b, 
 	return 0;
 }
 
-int r_diff_buffers_delta(struct r_diff_t *d, const u8 *a, int la, const u8 *b, int lb)
+R_API int r_diff_buffers_delta(struct r_diff_t *d, const u8 *a, int la, const u8 *b, int lb)
 {
 	char buf[64];
 	char *ptr;
@@ -192,7 +192,7 @@ int r_diff_buffers_delta(struct r_diff_t *d, const u8 *a, int la, const u8 *b, i
 	return 0;
 }
 
-int r_diff_buffers(struct r_diff_t *d, const u8 *a, u32 la, const u8 *b, u32 lb)
+R_API int r_diff_buffers(struct r_diff_t *d, const u8 *a, u32 la, const u8 *b, u32 lb)
 {
 	int ret;
 
@@ -204,7 +204,8 @@ int r_diff_buffers(struct r_diff_t *d, const u8 *a, u32 la, const u8 *b, u32 lb)
 	return ret;
 }
 
-int r_diff_buffers_distance(struct r_diff_t *d, const u8 *a, u32 la, const u8 *b, u32 lb, u32 *distance, float *similarity)
+/* TODO: Move into r_util maybe? */
+R_API int r_diff_buffers_distance(struct r_diff_t *d, const u8 *a, u32 la, const u8 *b, u32 lb, u32 *distance, double *similarity)
 {
 	int i, j, cost, tmin, **m;
 

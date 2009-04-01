@@ -14,6 +14,7 @@
 	0
 
 #define R_BIN_STATIC_PLUGINS \
+	&r_bin_plugin_elf , \
 	0
 
 #define R_BININFO_STATIC_PLUGINS \

@@ -23,12 +23,20 @@ static int cb(struct r_diff_t *d, void *user,
 
 static int show_help(int line)
 {
-	printf("Usage: radiff2 [-nd] [file] [file]\n");
+	printf("Usage: radiff2 [-nsdl] [file] [file]\n");
 	if (!line) printf(
+		"  -l   :  diff lines of text\n"
+		"  -s   :  calculate text distance\n"
 		"  -c   :  count of changes\n"
 		"  -d   :  use delta diffing\n");
 	return 1;
 }
+
+enum {
+	MODE_DIFF,
+	MODE_DIST,
+	MODE_LOCS,
+};
 
 int main(int argc, char **argv)
 {
@@ -37,17 +45,26 @@ int main(int argc, char **argv)
 	char *file, *file2;
 	u8 *bufa, *bufb;
 	u32 sza, szb;
+	int mode = MODE_DIFF;
+	int showcount = 0;
+	double sim;
 
 	if (argc<3)
 		return show_help(0);
 
-	while ((c = getopt(argc, argv, "cd")) != -1) {
+	while ((c = getopt(argc, argv, "cdls")) != -1) {
 		switch(c) {
 		case 'c':
-			count = 1;
+			showcount = 1;
 			break;
 		case 'd':
 			delta = 1;
+			break;
+		case 's':
+			mode = MODE_DIST;
+			break;
+		case 'l':
+			mode = MODE_LOCS;
 			break;
 		default:
 			return show_help(1);
@@ -67,13 +84,25 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	r_diff_init(&d, 0LL, 0LL);
-	r_diff_set_delta(&d, delta);
-	r_diff_set_callback(&d, &cb, NULL);
-	r_diff_buffers(&d, bufa, sza, bufb, szb);
+	switch(mode) {
+	case MODE_DIFF:
+		r_diff_init(&d, 0LL, 0LL);
+		r_diff_set_delta(&d, delta);
+		r_diff_set_callback(&d, &cb, NULL);
+		r_diff_buffers(&d, bufa, sza, bufb, szb);
+		break;
+	case MODE_DIST:
+		r_diff_buffers_distance(NULL, bufa, sza, bufb, szb, &count, &sim);
+		printf("similarity: %.2f\n", sim);
+		printf("distance: %d\n", count);
+		break;
+	case MODE_LOCS:
+		count = r_diff_lines(file, bufa, sza, file2, bufb, szb);
+		break;
+	}
 
-	if (count)
-		printf("%d\n", count-1);
+	if (showcount)
+		printf("%d\n", count);
 
 	return 0;
 }

@@ -404,15 +404,17 @@ PyMODINIT_FUNC initbdiff(void)
 
 #endif
 
-int bindiff_buffers(const char *file1, const char *sa, int la, const char *file2, const char *sb, int lb)
+R_API int r_diff_lines(const char *file1, const char *sa, int la, const char *file2, const char *sb, int lb)
 {
-	char encode[12], *rb;
+	//int i;
+	//char encode[12];
+	char *rb;
 	struct line *al, *bl;
 	struct hunklist l = { NULL, NULL };
 	struct hunk *h;
 	char *s;
 	int an, bn, len = 0;
-	int i, hits = 0;
+	int hits = 0;
 
 	printf("diff: %s -> %s\n", file1, file2);
 	an = splitlines(sa, la, &al);
@@ -474,22 +476,3 @@ int bindiff_buffers(const char *file1, const char *sa, int la, const char *file2
 	return hits;
 }
 
-int bindiff_files(char *file1, char *file2)
-{
-	int ret;
-	char *b1, *b2;
-	int s1, s2;
-
-	b1 = r_file_slurp(file1, &s1);
-	b2 = r_file_slurp(file2, &s2);
-	ret = bindiff_buffers(file1, b1, s1, file2, b2, s2);
-	printf("Differences: %d\n", ret);
-	return ret;
-}
-
-int main()
-{
-	bindiff_files("t/file1", "t/file2");
-	//bindiff_files("/bin/true", "bin/false");
-	return 0;
-}

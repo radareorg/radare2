@@ -25,15 +25,16 @@ struct r_diff_t {
 		struct r_diff_op_t *op);
 };
 
-struct r_diff_t *r_diff_new(u64 off_a, u64 off_b);
-int r_diff_init(struct r_diff_t *d, u64 off_a, u64 off_b);
-struct r_diff_t *r_diff_free(struct r_diff_t *d);
-int r_diff_buffers(struct r_diff_t *d, const u8 *a, u32 la, const u8 *b, u32 lb);
-int r_diff_set_callback(struct r_diff_t *d,
+R_API struct r_diff_t *r_diff_new(u64 off_a, u64 off_b);
+R_API int r_diff_init(struct r_diff_t *d, u64 off_a, u64 off_b);
+R_API struct r_diff_t *r_diff_free(struct r_diff_t *d);
+R_API int r_diff_buffers(struct r_diff_t *d, const u8 *a, u32 la, const u8 *b, u32 lb);
+R_API int r_diff_set_callback(struct r_diff_t *d,
 	int (*callback)(struct r_diff_t *d, void *user, struct r_diff_op_t *op),
 	void *user);
-int r_diff_buffers_distance(struct r_diff_t *d,
+R_API int r_diff_buffers_distance(struct r_diff_t *d,
 	const u8 *a, u32 la, const u8 *b, u32 lb, u32 *distance,
-	float *similarity);
+	double *similarity);
+R_API int r_diff_lines(const char *file1, const char *sa, int la, const char *file2, const char *sb, int lb);
 
 #endif

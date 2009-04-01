@@ -303,8 +303,29 @@ static int cmd_hexdump(void *data, const char *input)
 static int cmd_info(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
+	char buf[1024];
 	switch(input[0]) {
+	case 's':
+	case 'i':
+	case 'I':
+	case 'e':
+	case 'S':
+	case 'z':
+		snprintf(buf, 1023, "rabin2 -%c%s '%s'", input[0],
+			input[1]=='*'?"r":"", core->file->filename);
+		fprintf(stderr, "(%s)\n", buf);
+		system(buf);
+		break;
 	case '?':
+		r_cons_printf(
+		"Usage: i[eiIsSz]*      ; get info from opened file (rabin2)\n"
+		"; Append a '*' to get the output in radare commands\n"
+		" ii    ; imports\n"
+		" iI    ; binary info\n"
+		" ie    ; entrypoint\n"
+		" is    ; symbols\n"
+		" iS    ; sections\n"
+		" iz    ; strings\n");
 		break;
 	case '*':
 		break;

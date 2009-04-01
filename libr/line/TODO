@@ -1,3 +1,4 @@
+* 'Supr' key not handled properly
 * Optionally link against libreadline
 * Remove all label-related stuff
 * Make dietline fully compatible with readline

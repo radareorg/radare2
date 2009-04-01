@@ -343,7 +343,13 @@ int main(int argc, char **argv)
 	r_lib_init(&l, "radare_plugin");
 	r_lib_add_handler(&l, R_LIB_TYPE_BIN, "bin plugins",
 		&__lib_bin_cb, &__lib_bin_dt, NULL);
-	r_lib_opendir(&l, getenv("LIBR_PLUGINS"));
+
+	{ /* load plugins everywhere */
+		char *homeplugindir = r_str_home(".radare/plugins");
+		r_lib_opendir(&l, getenv("LIBR_PLUGINS"));
+		r_lib_opendir(&l, homeplugindir);
+		r_lib_opendir(&l, LIBDIR"/radare2/");
+	}
 
 	while ((c = getopt(argc, argv, "isSzIeo:f:rvh")) != -1)
 	{
@@ -396,7 +402,7 @@ int main(int argc, char **argv)
 	} 
 
 	if (r_bin_open(&bin, file, rw, plugin_name) == R_FALSE) {
-		fprintf(stderr, "Cannot open file\n");
+		fprintf(stderr, "r_bin: Cannot open '%s'\n", file);
 		return R_FALSE;
 	}
 
