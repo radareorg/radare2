@@ -126,7 +126,7 @@ int main(int argc, char **argv)
 	}
 
 	if (r.file == NULL) {
-		fprintf (stderr, "No file specified\n");
+		//fprintf (stderr, "No file specified\n");
 		return 1;
 	}
 

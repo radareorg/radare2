@@ -49,7 +49,6 @@ R_API int r_core_init(struct r_core_t *core)
 	r_anal_init(&core->anal);
 	r_anal_set_user_ptr(&core->anal, core);
 	r_asm_init(&core->assembler);
-	r_asm_set(&core->assembler, "asm_x86"); // XXX should be done by r_asm on init?
 	r_asm_set_user_ptr(&core->assembler, core);
 	r_parse_init(&core->parser);
 	r_parse_set_user_ptr(&core->parser, core);
@@ -58,6 +57,7 @@ R_API int r_core_init(struct r_core_t *core)
 	r_bin_set_user_ptr(&core->bin, core);
 	r_meta_init(&core->meta);
 	r_cons_init();
+	r_line_hist_load(".radare2_history");
 
 	core->search = r_search_new(R_SEARCH_KEYWORD);
 	r_io_init(&core->io);
@@ -78,6 +78,7 @@ R_API int r_core_init(struct r_core_t *core)
 
 	/* load plugins */
 	r_core_loadlibs(core);
+	r_asm_set(&core->assembler, "asm_x86"); // XXX should be done by r_asm on init?
 
 	return 0;
 }
