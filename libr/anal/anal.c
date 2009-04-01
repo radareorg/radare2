@@ -95,7 +95,7 @@ int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 	return R_FALSE;
 }
 
-int r_anal_reflines_get(struct r_anal_t *anal, struct r_anal_refline_t *reflines, u8 *buf, u64 len, int nlines, int linesout)
+struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, u8 *buf, u64 len, int nlines, int linesout)
 {
 	struct r_anal_refline_t *list = MALLOC_STRUCT(struct r_anal_refline_t);
 	struct r_anal_refline_t *list2;
@@ -155,8 +155,7 @@ int r_anal_reflines_get(struct r_anal_t *anal, struct r_anal_refline_t *reflines
 		bsz += sz;
 	}
 
-	reflines = list;
-	return R_TRUE;
+	return list;
 }
 
 int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, u64 addr, char *str, int opts)

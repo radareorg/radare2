@@ -363,16 +363,16 @@ static int cmd_print(void *data, const char *input)
 			char str[128];
 			char line[128];
 			struct r_asm_aop_t aop;
-			struct r_anal_refline_t reflines;
+			struct r_anal_refline_t *reflines;
 		
 			r_anal_set(&core->anal, "anal_x86");
 			r_anal_set_pc(&core->anal, core->seek);
-			r_anal_reflines_get(&core->anal, &reflines, buf, len, 64, 0);
+			reflines = r_anal_reflines_get(&core->anal, buf, len, 64, 0);
 
 			r_asm_set_pc(&core->assembler, core->seek);
 			for(idx=ret=0; idx < len; idx+=ret) {
 				r_asm_set_pc(&core->assembler, core->assembler.pc + ret);
-				r_anal_reflines_str(&core->anal, &reflines, core->anal.pc + idx, line, 0);
+				r_anal_reflines_str(&core->anal, reflines, core->anal.pc + idx, line, 0);
 				ret = r_asm_disassemble(&core->assembler, &aop, buf+idx, len-idx);
 				if (ret <1) {
 					ret = 1;
