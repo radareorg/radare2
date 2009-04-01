@@ -30,8 +30,8 @@ const char *r_lib_types[] = {
 const char *r_lib_types_get(int idx)
 {
 	if (idx<0||idx>R_LIB_TYPE_LAST)
-		return r_lib_types[idx];
-	return "unk";
+		return "unk";
+	return r_lib_types[idx];
 }
 
 void *r_lib_dl_open(const char *libname)
