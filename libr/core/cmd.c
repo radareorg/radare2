@@ -1379,7 +1379,7 @@ int r_core_cmd(struct r_core_t *core, const char *command, int log)
 			if (cmd[0])
 				fprintf(stderr, "Invalid command: '%s'\n", command);
 			ret = 1;
-		} else
+		}
 	}
 	if (log) r_line_hist_add(command);
 	if (restoreseek)
