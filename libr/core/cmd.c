@@ -343,6 +343,17 @@ static int cmd_print(void *data, const char *input)
 	u32 tbs = core->blocksize;
 	int show_offset  = r_config_get_i(&core->config, "asm.offset");
 	int show_bytes = r_config_get_i(&core->config, "asm.bytes");
+	int show_lines = r_config_get_i(&core->config, "asm.reflines");
+	int linesout = r_config_get_i(&core->config, "asm.reflinesout");
+	int linesopts = 0;
+	int pseudo = r_config_get_i(&core->config, "asm.pseudo");
+
+	if (r_config_get_i(&core->config, "asm.reflinesstyle"))
+		linesopts |= R_ANAL_REFLINE_STYLE;
+	if (r_config_get_i(&core->config, "asm.reflineswide"))
+		linesopts |= R_ANAL_REFLINE_WIDE;
+	if (r_config_get_i(&core->config, "asm.reflinesexpand"))
+		linesopts |= R_ANAL_REFLINE_EXPAND;
 
 	if (input[0] && input[1]) {
 		l = (int) r_num_get(&core->num, input+2);
@@ -359,7 +370,6 @@ static int cmd_print(void *data, const char *input)
 			/* XXX hardcoded */
 			int ret, idx; 
 			u8 *buf = core->block;
-			int pseudo = (int)r_config_get_i(&core->config, "asm.pseudo");
 			char str[128];
 			char line[128];
 			struct r_asm_aop_t aop;
@@ -367,18 +377,18 @@ static int cmd_print(void *data, const char *input)
 		
 			r_anal_set(&core->anal, "anal_x86");
 			r_anal_set_pc(&core->anal, core->seek);
-			reflines = r_anal_reflines_get(&core->anal, buf, len, 64, 0);
+			reflines = r_anal_reflines_get(&core->anal, buf, len, -1, linesout);
 
 			r_asm_set_pc(&core->assembler, core->seek);
 			for(idx=ret=0; idx < len; idx+=ret) {
 				r_asm_set_pc(&core->assembler, core->assembler.pc + ret);
-				r_anal_reflines_str(&core->anal, reflines, core->anal.pc + idx, line, 0);
+				r_anal_reflines_str(&core->anal, reflines, core->anal.pc + idx, line, linesopts);
 				ret = r_asm_disassemble(&core->assembler, &aop, buf+idx, len-idx);
 				if (ret <1) {
 					ret = 1;
 					fprintf(stderr, "** invalid opcode at 0x%08llx **\n", core->assembler.pc + ret);
 				}
-				r_cons_printf("%s", line);
+				if (show_lines) r_cons_printf("%s", line);
 				if (show_offset) r_cons_printf("0x%08llx ", core->seek + idx);
 				if (show_bytes) r_cons_printf("%14s ", aop.buf_hex);
 				if (pseudo) {
@@ -386,6 +396,9 @@ static int cmd_print(void *data, const char *input)
 					r_cons_printf("%s\n", str);
 				} else r_cons_printf("%s\n", aop.buf_asm);
 			}
+
+			if (reflines)
+				free(reflines);
 		}
 		break;
 	case 's':
