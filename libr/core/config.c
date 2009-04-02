@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-int config_asm_arch_callback(void *user, void *data)
+static int config_asm_arch_callback(void *user, void *data)
 {
 	struct r_core_t *core = (struct r_core_t *) user;
 	struct r_config_node_t *node = (struct r_config_node_t *) data;
@@ -13,7 +13,7 @@ int config_asm_arch_callback(void *user, void *data)
 	return R_TRUE;
 }
 
-int config_asm_parser_callback(void *user, void *data)
+static int config_asm_parser_callback(void *user, void *data)
 {
 	struct r_core_t *core = (struct r_core_t *) user;
 	struct r_config_node_t *node = (struct r_config_node_t *) data;
@@ -24,7 +24,7 @@ int config_asm_parser_callback(void *user, void *data)
 	return R_TRUE;
 }
 
-int config_color_callback(void *user, void *data)
+static int config_color_callback(void *user, void *data)
 {
 	struct r_core_t *core = (struct r_core_t *) user;
 	struct r_config_node_t *node =
@@ -40,7 +40,7 @@ int config_color_callback(void *user, void *data)
 	return R_TRUE;
 }
 
-int r_core_config_init(struct r_core_t *core)
+R_API int r_core_config_init(struct r_core_t *core)
 {
 	struct r_config_t *cfg = &core->config;
 	r_config_init(cfg, (void *)core);
@@ -61,6 +61,7 @@ int r_core_config_init(struct r_core_t *core)
 	r_config_set(cfg, "asm.os", "linux"); 
 	r_config_set(cfg, "cmd.prompt", ""); 
 	r_config_set(cfg, "cmd.vprompt", ""); 
+	r_config_set(cfg, "cmd.hit", ""); 
 	r_config_set_cb(cfg, "scr.color",
 		(core->print.flags&R_PRINT_FLAGS_COLOR)?"true":"false",
 		&config_color_callback);
@@ -129,12 +130,11 @@ int r_core_config_init(struct r_core_t *core)
 	config_set("cmd.user", "");
 	config_set("cmd.trace", "");
 	config_set("cmd.visual", "");
-	config_set("cmd.hit", "");
 	config_set("cmd.visualbind", "");
 	config_set("cmd.touchtrace", "");
 #endif
 	r_config_set(cfg, "cmd.prompt", "");
-	r_config_set(cfg, "cmd.visual", "? f && ?? s eip");
+	r_config_set(cfg, "cmd.visual", "? eip && ?? s eip");
 	r_config_set(cfg, "cmd.vprompt", "p%");
 	r_config_set(cfg, "cmd.vprompt2", "CFV");
 	r_config_set(cfg, "cmd.vprompt3", "");

@@ -89,7 +89,7 @@ R_API struct r_core_t *r_core_free(struct r_core_t *c)
 	return NULL;
 }
 
-int r_core_prompt(struct r_core_t *r)
+R_API int r_core_prompt(struct r_core_t *r)
 {
 	char prompt[32];
 	char line[1024];
@@ -109,7 +109,7 @@ int r_core_prompt(struct r_core_t *r)
 	return ret;
 }
 
-int r_core_block_size(struct r_core_t *core, u32 bsize)
+R_API int r_core_block_size(struct r_core_t *core, u32 bsize)
 {
 	int ret = 0;
 	if (bsize<1)
@@ -123,7 +123,7 @@ int r_core_block_size(struct r_core_t *core, u32 bsize)
 	return ret;
 }
 
-int r_core_block_read(struct r_core_t *core, int next)
+R_API int r_core_block_read(struct r_core_t *core, int next)
 {
 	if (core->file == NULL)
 		return -1;
@@ -131,7 +131,7 @@ int r_core_block_read(struct r_core_t *core, int next)
 	return r_io_read(&core->io, core->file->fd, core->block, core->blocksize);
 }
 
-int r_core_seek_align(struct r_core_t *core, u64 align, int times)
+R_API int r_core_seek_align(struct r_core_t *core, u64 align, int times)
 {
 	int inc = (times>=0)?1:-1;
 	int diff = core->seek%align;
@@ -151,7 +151,7 @@ int r_core_seek_align(struct r_core_t *core, u64 align, int times)
 }
 
 /* TODO: add a parameter to read or not the block? optimization? */
-int r_core_seek(struct r_core_t *core, u64 addr)
+R_API int r_core_seek(struct r_core_t *core, u64 addr)
 {
 	u64 tmp = core->seek;
 	int ret;
@@ -162,7 +162,7 @@ int r_core_seek(struct r_core_t *core, u64 addr)
 	return ret;
 }
 
-int r_core_seek_delta(struct r_core_t *core, s64 addr)
+R_API int r_core_seek_delta(struct r_core_t *core, s64 addr)
 {
 	u64 tmp = core->seek;
 	int ret;

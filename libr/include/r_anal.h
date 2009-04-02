@@ -9,6 +9,14 @@
 #include "list.h"
 
 enum {
+	R_ANAL_AOP_FAMILY_UNKNOWN = 0,
+	R_ANAL_AOP_FAMILY_CPU, /* normal cpu insturction */
+	R_ANAL_AOP_FAMILY_FPU, /* fpu (floating point) */
+	R_ANAL_AOP_FAMILY_MMX, /* multimedia instruction (packed data) */
+	R_ANAL_AOP_FAMILY_PRIV, /* priviledged instruction */
+};
+
+enum {
 	R_ANAL_AOP_TYPE_NULL = 0,
 	R_ANAL_AOP_TYPE_JMP,   /* mandatory jump */
 	R_ANAL_AOP_TYPE_UJMP,  /* unknown jump (register or so) */
@@ -86,11 +94,12 @@ struct r_anal_aop_t {
 	int type;                /* type of opcode */
 	int stackop;             /* operation on stack? */
 	int length;              /* length in bytes of opcode */
+	int family;              /* family of opcode */
 	int eob;                 /* end of block (boolean) */
 	u64 jump;                /* true jmp */
 	u64 fail;                /* false jmp */
-	u64 ref;                 /* referente to memory */
-	u64 value;               /* referente to value */
+	u64 ref;                 /* reference to memory */
+	u64 value;               /* reference to value */
 	int r_dst,r_src1,r_src2; /* register arguments */
 	u64 i_dst,i_src1,i_src2; /* inmediate arguments */
 };

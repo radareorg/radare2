@@ -56,9 +56,8 @@ void r_num_init(struct r_num_t *num);
 
 /* strings */
 
-/* TODO */
+/* TODO ..use as uppercase maybe? they are macros! */
 #define strnull(x) (!x||!*x)
-// XXX
 #define iswhitechar(x) (x==' '||x=='\t'||x=='\n'||x=='\r')
 #define iswhitespace(x) (x==' '||x=='\t')
 #define ishexchar(x) ((x>='0'&&x<='9') ||  (x>='a'&&x<='f') ||  (x>='A'&&x<='F')) {

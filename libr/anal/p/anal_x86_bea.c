@@ -24,6 +24,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 	disasm_obj.Archi = ((anal->bits == 64) ? 64 : 0);
 	disasm_obj.SecurityBlock = 128;
 
+	memset(aop, 0, sizeof(aop));
 	aop->length = Disasm(&disasm_obj);
 
 	IFDBG {
@@ -40,22 +41,38 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 		category[0] = '\0';
 		if (disasm_obj.Instruction.Category & GENERAL_PURPOSE_INSTRUCTION)
 			strcat(category, "GENERAL_PURPOSE_INSTRUCTION ");
-		if (disasm_obj.Instruction.Category & FPU_INSTRUCTION)
+		if (disasm_obj.Instruction.Category & FPU_INSTRUCTION) {
 			strcat(category, "FPU_INSTRUCTION ");
-		if (disasm_obj.Instruction.Category & MMX_INSTRUCTION)
+			aop->family = R_ANAL_AOP_FAMILY_FPU;
+		}
+		if (disasm_obj.Instruction.Category & MMX_INSTRUCTION) {
 			strcat(category, "MMX_INSTRUCTION ");
-		if (disasm_obj.Instruction.Category & SSE_INSTRUCTION)
+			aop->family = R_ANAL_AOP_FAMILY_MMX;
+		}
+		if (disasm_obj.Instruction.Category & SSE_INSTRUCTION) {
 			strcat(category, "SSE_INSTRUCTION ");
-		if (disasm_obj.Instruction.Category & SSE2_INSTRUCTION)
+			aop->family = R_ANAL_AOP_FAMILY_MMX;
+		}
+		if (disasm_obj.Instruction.Category & SSE2_INSTRUCTION) {
 			strcat(category, "SSE2_INSTRUCTION ");
-		if (disasm_obj.Instruction.Category & SSE3_INSTRUCTION)
+			aop->family = R_ANAL_AOP_FAMILY_MMX;
+		}
+		if (disasm_obj.Instruction.Category & SSE3_INSTRUCTION) {
 			strcat(category, "SSE3_INSTRUCTION ");
-		if (disasm_obj.Instruction.Category & SSSE3_INSTRUCTION)
+			aop->family = R_ANAL_AOP_FAMILY_MMX;
+		}
+		if (disasm_obj.Instruction.Category & SSSE3_INSTRUCTION) {
 			strcat(category, "SSSE3_INSTRUCTION ");
-		if (disasm_obj.Instruction.Category & SSE41_INSTRUCTION)
+			aop->family = R_ANAL_AOP_FAMILY_MMX;
+		}
+		if (disasm_obj.Instruction.Category & SSE41_INSTRUCTION) {
 			strcat(category, "SSE41_INSTRUCTION ");
-		if (disasm_obj.Instruction.Category & SSE42_INSTRUCTION)
+			aop->family = R_ANAL_AOP_FAMILY_MMX;
+		}
+		if (disasm_obj.Instruction.Category & SSE42_INSTRUCTION) {
 			strcat(category, "SSE42_INSTRUCTION ");
+			aop->family = R_ANAL_AOP_FAMILY_MMX;
+		}
 		if (disasm_obj.Instruction.Category & SYSTEM_INSTRUCTION)
 			strcat(category, "SYSTEM_INSTRUCTION ");
 		if (disasm_obj.Instruction.Category & VM_INSTRUCTION)
@@ -73,6 +90,11 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 		switch (disasm_obj.Instruction.Category) {
 		case DATA_TRANSFER:
 			strcat(category, "DATA_TRANSFER ");
+			if (argptr[1].ArgMnemonic[0] == '\0') {
+				// PUSH OR POP
+			} else {
+				// MOV
+			}
 			break;
 		case ARITHMETIC_INSTRUCTION:
 			strcat(category, "ARITHMETIC_INSTRUCTION ");
@@ -148,6 +170,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 			break;
 		case FP_INTEGER_CONVERSION:
 			strcat(category, "FP_INTEGER_CONVERSION ");
+			aop->family = R_ANAL_AOP_FAMILY_FPU;
 			break;
 		case SPECIALIZED_128bits:
 			strcat(category, "SPECIALIZED_128bits ");
@@ -207,70 +230,43 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 
 		switch (disasm_obj.Instruction.BranchType) {
 		case JO:
+		case JC:
+		case JE:
+		case JA:
+		case JS:
+		case JP:
+		case JL:
+		case JG:
+		case JB:
+		case JNO:
+		case JNC:
+		case JNE:
+		case JNA:
+		case JNS:
+		case JNP:
+		case JNL:
+		case JNG:
+		case JNB:
+		case JECXZ:
+			aop->type = R_ANAL_AOP_TYPE_CJMP;
+			aop->jump = disasm_obj.Instruction.AddrValue;
+			aop->fail = disasm_obj.Instruction.AddrValue + aop->length;
 			printf("  BranchType: JO\n");
 			break;
-		case JC:
-			printf("  BranchType: JC\n");
-			break;
-		case JE:
-			printf("  BranchType: JE\n");
-			break;
-		case JA:
-			printf("  BranchType: JA\n");
-			break;
-		case JS:
-			printf("  BranchType: JS\n");
-			break;
-		case JP:
-			printf("  BranchType: JP\n");
-			break;
-		case JL:
-			printf("  BranchType: JL\n");
-			break;
-		case JG:
-			printf("  BranchType: JG\n");
-			break;
-		case JB:
-			printf("  BranchType: JB\n");
-			break;
-		case JECXZ:
-			printf("  BranchType: JECXZ\n");
-			break;
 		case JmpType:
+			aop->type = R_ANAL_AOP_TYPE_JMP;
+			aop->jump = disasm_obj.Instruction.AddrValue;
 			printf("  BranchType: JmpType\n");
 			break;
 		case CallType:
+			aop->type = R_ANAL_AOP_TYPE_CALL;
+			aop->jump = disasm_obj.Instruction.AddrValue;
+			aop->fail = disasm_obj.Instruction.AddrValue + aop->length;
 			printf("  BranchType: CallType\n");
 			break;
 		case RetType:
+			aop->type = R_ANAL_AOP_TYPE_RET;
 			printf("  BranchType: RetType\n");
-			break;
-		case JNO:
-			printf("  BranchType: JNO\n");
-			break;
-		case JNC:
-			printf("  BranchType: JNC\n");
-			break;
-		case JNE:
-			printf("  BranchType: JNE\n");
-			break;
-		case JNA:
-			printf("  BranchType: JNA\n");
-			break;
-		case JNS:
-			printf("  BranchType: JNS\n");
-			break;
-		case JNP:
-			printf("  BranchType: JNP\n");
-			break;
-		case JNL:
-			printf("  BranchType: JNL\n");
-			break;
-		case JNG:
-			printf("  BranchType: JNG\n");
-			break;
-		case JNB:
-			printf("  BranchType: JNB\n");
 			break;
 		default:
 			printf("  BranchType: Unknown (0x%lx)\n", disasm_obj.Instruction.BranchType);
@@ -315,14 +311,20 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 				strcat(argtype, "MEMORY_TYPE ");
 			if (argptr[i].ArgType & CONSTANT_TYPE)
 				strcat(argtype, "CONSTANT_TYPE ");
-			if (argptr[i].ArgType & MMX_REG)
+			if (argptr[i].ArgType & MMX_REG) {
+				aop->family = R_ANAL_AOP_FAMILY_MMX;
 				strcat(argtype, "MMX_REG ");
+			}
 			if (argptr[i].ArgType & GENERAL_REG)
 				strcat(argtype, "GENERAL_REG ");
-			if (argptr[i].ArgType & FPU_REG)
+			if (argptr[i].ArgType & FPU_REG) {
+				aop->family = R_ANAL_AOP_FAMILY_FPU;
 				strcat(argtype, "FPU_REG ");
-			if (argptr[i].ArgType & SSE_REG)
+			}
+			if (argptr[i].ArgType & SSE_REG) {
+				aop->family = R_ANAL_AOP_FAMILY_MMX;
 				strcat(argtype, "SSE_REG ");
+			}
 			if (argptr[i].ArgType & CR_REG)
 				strcat(argtype, "CR_REG ");
 			if (argptr[i].ArgType & DR_REG)
@@ -374,6 +376,13 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 
 		printf("\n");
 	}
+	printf("InternalAOP:\n");
+	printf("Type: %d\n", aop->type);
+	printf("EOB: %d\n", aop->eob);
+	printf("Family: %d\n", aop->family);
+	printf("Stackop: %d\n", aop->stackop);
+	printf("True: 0x%08llx\n", aop->jump);
+	printf("Fail: 0x%08llx\n", aop->fail);
 
 	return aop->length;
 }

@@ -33,3 +33,4 @@ int r_cmd_del(struct r_cmd_t *cmd, const char *command);
 int r_cmd_call(struct r_cmd_t *cmd, const char *command);
 int r_cmd_call_long(struct r_cmd_t *cmd, const char *input);
 char **r_cmd_args(struct r_cmd_t *cmd, int *argc);
+R_API int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each);

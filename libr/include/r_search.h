@@ -27,6 +27,7 @@ struct r_search_kw_t {
 	u32 binmask_length;
 	u32 idx; // searching purposes
 	int count;
+	int kwidx;
 	struct list_head list;
 };
 

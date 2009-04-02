@@ -96,5 +96,9 @@ R_API int r_core_yank(struct r_core_t *core, u64 addr, int len);
 R_API int r_core_yank_paste(struct r_core_t *core, u64 addr, int len);
 
 R_API int r_core_loadlibs(struct r_core_t *core);
+R_API int r_core_cmd_buffer(void *user, const char *buf);
+R_API int r_core_cmdf(void *user, const char *fmt, ...);
+R_API int r_core_cmd0(void *user, const char *cmd);
+R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd);
 
 #endif

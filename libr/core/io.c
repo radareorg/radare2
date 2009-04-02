@@ -9,7 +9,7 @@ int r_core_shift()
 }
 #endif
 
-int r_core_write_op(struct r_core_t *core, const char *arg, char op) 
+R_API int r_core_write_op(struct r_core_t *core, const char *arg, char op) 
 {
 	char *str;
 	u8 *buf;
@@ -18,7 +18,7 @@ int r_core_write_op(struct r_core_t *core, const char *arg, char op)
 	int len;
 
 	// XXX we can work with config.block instead of dupping it
-	buf = (char *)malloc(core->blocksize);
+	buf = (u8 *)malloc(core->blocksize);
 	str = (char *)malloc(strlen(arg));
 	if (buf == NULL || str == NULL) {
 		free(buf);

@@ -416,7 +416,8 @@ static int cmd_print(void *data, const char *input)
 		r_print_bytes(&core->print, core->block, len, "%02x");
 		break;
 	default:
-		r_cons_printf("Usage: p[8] [len]\n"
+		//r_cons_printf("Unknown subcommand '%c'\n", input[0]);
+		r_cons_printf("Usage: p[8] [len]    ; '%c' is unknown\n"
 		" p8 [len]    8bit hexpair list of bytes\n"
 		" px [len]    hexdump of N bytes\n"
 		" po [len]    octal dump of N bytes\n"
@@ -426,7 +427,7 @@ static int cmd_print(void *data, const char *input)
 		" pd [len]    disassemble N bytes\n"
 		" pr [len]    print N raw bytes\n"
 		" pu [len]    print N url encoded bytes\n"
-		" pU [len]    print N wide url encoded bytes\n");
+		" pU [len]    print N wide url encoded bytes\n", input[0]);
 		break;
 	}
 	if (tbs != core->blocksize)
@@ -714,9 +715,21 @@ static int cmd_write(void *data, const char *input)
 	return 0;
 }
 
+static char *cmdhit = NULL;
 static int __cb_hit(struct r_search_kw_t *kw, void *user, u64 addr)
 {
-	r_cons_printf("f hit0_%d %d 0x%08llx\n", kw->count, kw->keyword_length, addr);
+	struct r_core_t *core = (struct r_core_t *)user;
+
+	r_cons_printf("f hit%d_%d %d 0x%08llx\n",
+		kw->kwidx, kw->count, kw->keyword_length, addr);
+
+	if (!strnull(cmdhit)) {
+		u64 here = core->seek;
+		r_core_seek(core, addr);
+		r_core_cmd(core, cmdhit, 0);
+		r_core_seek(core, here);
+	}
+
 	return R_TRUE;
 }
 
@@ -789,7 +802,8 @@ static int cmd_search(void *data, const char *input)
 		/* TODO: handle ^C */
 		/* TODO: launch search in background support */
 		buf = (u8 *)malloc(core->blocksize);
-		r_search_set_callback(core->search, &__cb_hit, &core);
+		r_search_set_callback(core->search, &__cb_hit, core);
+		cmdhit = r_config_get(&core->config, "cmd.hit");
 		r_cons_break(NULL, NULL);
 		for(at = core->seek; at < core->file->size; at += core->blocksize) {
 			if (r_cons_breaked)
@@ -859,7 +873,8 @@ static int cmd_hash(void *data, const char *input)
 		// TODO: set argv here
 		r_lang_set(&core->lang, input+1);
 		if (core->oobi)
-			r_lang_run(&core->lang, core->oobi, core->oobi_len);
+			r_lang_run(&core->lang,(const char *)
+				core->oobi, core->oobi_len);
 		else r_lang_prompt(&core->lang);
 		return R_TRUE;
 	}
@@ -958,7 +973,7 @@ static int cmd_meta(void *data, const char *input)
 
 static int cmd_undowrite(void *data, const char *input)
 {
-	struct r_core_t *core = (struct r_core_t *)data;
+	//struct r_core_t *core = (struct r_core_t *)data;
 	// TODO:
 	return 0;
 }
@@ -1119,7 +1134,7 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 	return 0;
 }
 
-int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
+R_API int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
 {
 //void radare_cmd_foreach(const char *cmd, const char *each)
 	int i=0,j;
@@ -1194,7 +1209,7 @@ int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
 					buf[0]='\0';
 					fgets(buf, 1024, fd);
 					addr = r_num_math(&core->num, buf);
-					eprintf("0x%08llx\n", addr, cmd);
+					eprintf("0x%08llx: %s\n", addr, cmd);
 					sprintf(cmd2, "%s @ 0x%08llx", cmd, addr);
 					r_core_seek(core, buf);
 					r_core_cmd(core, cmd2, 0);
@@ -1279,6 +1294,7 @@ printf("No flags foreach implemented\n");
 	free(word);
 	word = NULL;
 	free(ostr);
+	return R_TRUE;
 }
 
 int r_core_cmd(struct r_core_t *core, const char *command, int log)
@@ -1399,7 +1415,7 @@ static int cmd_debug(void *data, const char *input)
 			ptr = strchr(input, ' ');
 			if (ptr) sig = atoi(ptr+1);
 			if (pid > 0) {
-				fprintf(stderr, "Sending signal '%d' to pid '%d'\n");
+				fprintf(stderr, "Sending signal '%d' to pid '%d'\n", sig, pid);
 				r_debug_kill(&core->dbg, pid, sig);
 			} else fprintf(stderr, "Invalid arguments\n");
 		}
@@ -1460,7 +1476,7 @@ static int cmd_debug(void *data, const char *input)
 	return 0;
 }
 
-int r_core_cmd_buffer(void *user, const char *buf)
+R_API int r_core_cmd_buffer(void *user, const char *buf)
 {
 	char *str = strdup(buf);
 	char *ptr = strchr(str, '\n');
@@ -1476,7 +1492,7 @@ int r_core_cmd_buffer(void *user, const char *buf)
 	return R_TRUE;
 }
 
-int r_core_cmdf(void *user, const char *fmt, ...)
+R_API int r_core_cmdf(void *user, const char *fmt, ...)
 {
 	char string[1024];
 	int ret;
@@ -1488,12 +1504,12 @@ int r_core_cmdf(void *user, const char *fmt, ...)
 	return ret;
 }
 
-int r_core_cmd0(void *user, const char *cmd)
+R_API int r_core_cmd0(void *user, const char *cmd)
 {
 	return r_core_cmd((struct r_core_t *)user, cmd, 0);
 }
 
-char *r_core_cmd_str(struct r_core_t *core, const char *cmd)
+R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd)
 {
 	char *retstr;
 	r_cons_reset();

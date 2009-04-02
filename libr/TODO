@@ -13,6 +13,7 @@
 || anal ||  **MISSING**
 ----------
   - define api, write vapi, integrate in core, etc..
+  - integrate with r_var to make variable access analysis
 
 || bin || 
 ---------
@@ -27,12 +28,8 @@
 
 || line ||
 ----------
-  - make it work with state like teh rest
+  - make it work with state like teh rest ???
   - add support for readline callbacks
-
-|| config ||
-------------
-  - missing default callback for int assign
 
 || cons ||
 ----------
@@ -62,21 +59,8 @@
 
 || diff ||
 ----------
-  - Need to fix the delta diffing algorithm
-  - Reimplement delta diffing in C (take the mercurial bdiff.c)
-
-|| sign ||
-----------
-  - Define attributes and weights
-  - Decide collissions based on these patterns
-
-|| meta || **MISSING**
-----------
+  - Reimplement or fix the delta diffing in C
 
 || lib ||
 ---------
   - Cleanup and test w32/osx support
-
-|| debug ||
------------
-  - define plugin extensions (use vm from here)

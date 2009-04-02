@@ -94,7 +94,8 @@ void r_print_addr(struct r_print_t *p, u64 addr)
 R_API void r_print_byte(struct r_print_t *p, const char *fmt, int idx, u8 ch)
 {
 	u8 rch = ch;
-	if (fmt[0]=='%'&&fmt[1]=='c')
+
+	if (!IS_PRINTABLE(ch) && fmt[0]=='%'&&fmt[1]=='c')
 		rch = '.';
 
 	r_print_cursor(p, idx, 1);

@@ -58,7 +58,7 @@ R_API int r_core_visual_trackflags(struct r_core_t *core)
 		/* Execute visual prompt */
 		ptr = r_config_get(&core->config, "cmd.vprompt");
 		if (ptr&&ptr[0]) {
-			int tmp = 0; //last_print_format;
+			//int tmp = 0; //last_print_format;
 			r_core_cmd(core, ptr, 0);
 			//last_print_format = tmp;
 		}
@@ -176,7 +176,7 @@ R_API int r_core_visual_trackflags(struct r_core_t *core)
 			/* TODO: prompt for addr, size, name */
 			break;
 		case 'q':
-			if (menu<=0) return; menu--;
+			if (menu<=0) return R_TRUE; menu--;
 			break;
 		case '*':
 		case '+':
@@ -200,7 +200,7 @@ R_API int r_core_visual_trackflags(struct r_core_t *core)
 			if (menu == 1) {
 				sprintf(cmd, "s %s", fs2);
 				r_core_cmd(core, cmd, 0);
-				return;
+				return R_TRUE;
 			}
 			r_flag_space_set(&core->flags, fs);
 			menu = 1;
@@ -254,7 +254,7 @@ static void config_visual_hit_i(struct r_core_t *core, const char *name, int del
 {
 	struct r_config_node_t *node;
 	node = r_config_node_get(&core->config, name);
-	if (node && node->flags & CN_INT || node->flags & CN_OFFT)
+	if (node && ((node->flags & CN_INT) || (node->flags & CN_OFFT)))
 		r_config_set_i(&core->config, name, r_config_get_i(&core->config, name)+delta);
 }
 
@@ -604,12 +604,12 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 	return 1;
 }
 
-void r_core_visual_prompt(struct r_core_t *core)
+R_API void r_core_visual_prompt(struct r_core_t *core)
 {
 	r_cons_printf("[0x%08llx] %s\n", core->seek, printfmt[printidx%NPF]);
 }
 
-int r_core_visual(struct r_core_t *core, const char *input)
+R_API int r_core_visual(struct r_core_t *core, const char *input)
 {
 	const char *cmdprompt;
 	const char *vi;
