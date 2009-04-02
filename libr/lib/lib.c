@@ -143,16 +143,18 @@ static int samefile(const char *a, const char *b)
 	char *ptr;
 	int ret;
 
-	do {
-		ptr = strstr(sa, "//");
-		if (ptr) strcpy(ptr, ptr+1);	
-	} while(ptr);
+	if (sa != NULL && sb != NULL) {
+		do {
+			ptr = strstr(sa, "//");
+			if (ptr) strcpy(ptr, ptr+1);	
+		} while(ptr);
 
-	do {
-		ptr = strstr(sb, "//");
-		if (ptr) strcpy(ptr, ptr+1);	
-	} while(ptr);
-	ret = strcmp(sa,sb)?R_FALSE:R_TRUE;
+		do {
+			ptr = strstr(sb, "//");
+			if (ptr) strcpy(ptr, ptr+1);	
+		} while(ptr);
+		ret = strcmp(sa,sb)?R_FALSE:R_TRUE;
+	}
 
 	free(sa);
 	free(sb);

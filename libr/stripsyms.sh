@@ -12,7 +12,8 @@ nm --defined-only -B ${FILE} | grep -v ${PFX}_ | awk '{print $3}' > ${LIST}
 #if [ -n "`cat /tmp/list`" ]; then
 echo "=> Stripping unnecessary symbols for ${FILE}..."
 objcopy --strip-symbols ${LIST} ${FILE}
-strip -s ${FILE}
+#TODO: Uncomment on release
+#strip -s ${FILE}
 #fi
 
 rm -f ${LIST}

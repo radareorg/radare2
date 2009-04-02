@@ -26,7 +26,7 @@ char *r_str_home(const char *str)
 	char *dst;
 	if (home == NULL)
 		return NULL;
-	dst = (char *)malloc(strlen(home) + strlen(str)+1);
+	dst = (char *)malloc(strlen(home) + strlen(str)+2);
 	strcpy(dst, home);
 	strcat(dst, "/");
 	strcat(dst, str);

@@ -1,4 +1,15 @@
-* Import the spp's getopt owns implementation in r_util
+
+ ____  ___ ____  ___ ____  ___  ______   ____
+|  _ \/   \'   \/   \  _ \/ _ \ \__   | /    \
+|    <  V  . T  . V      <   _/ .--'_/ |  ()  |
+|_|\__|_|__|___/|_|_|_|\__\___/ |_____(_)____/
+
+----------------------------------------[ todo 
+
+<{include libr/TODO}>
+
+* Finish and import the spp's getopt owns implementation in r_util
+
 * Add maxrows option for r_print (fix visual problem)
 * Drop #if conditionals to use #ifdef ones
   - fits better with plan9 compiler
@@ -12,7 +23,6 @@
   - /x 1234:ff0f
 
 * radare2 -e dbg.engine=vm -d ls
-  - resolve path for ls
   - load the program using r_bin in virtual space
   - initialize vm and set regs
   - debug backend should use the vm
@@ -22,3 +32,5 @@
    scripting language, so we can for example prepare
    a .c stub interface for python/perl/ruby/..
  - Maybe having a preprocessor tool for this..
+
+Debugger:

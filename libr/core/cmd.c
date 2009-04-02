@@ -1276,7 +1276,7 @@ printf("No flags foreach implemented\n");
 int r_core_cmd(struct r_core_t *core, const char *command, int log)
 {
 	int i, len;
-	char *cmd;
+	char *cmd , *ocmd = NULL;
 	int ret = -1;
 	int times = 1;
 	int newfd = 1;
@@ -1291,19 +1291,23 @@ int r_core_cmd(struct r_core_t *core, const char *command, int log)
 		command = command+1;
 
 	len = strlen(command)+1;
-	cmd = alloca(len)+4096;
+	ocmd = cmd = malloc(len+8192);
 	memcpy(cmd, command, len);
 
 	/* quoted / raw command */
 	len = strlen(cmd);
 	if (cmd[0]=='"') {
 		if (cmd[len-1]!='"') {
-			fprintf(stderr, "parse: Missing ending '\"': '%s' (%c) len=%d\n", cmd, cmd[2], len);
+			fprintf(stderr, "parse: Missing ending "
+			"'\"': '%s' (%c) len=%d\n", cmd, cmd[2], len);
+			free(cmd);
 			return 0;
 		}
 		cmd[len-1]='\0';
 		strcpy(cmd, cmd+1);
-		return r_cmd_call(&core->cmd, cmd);
+		ret = r_cmd_call(&core->cmd, cmd);
+		free(cmd);
+		return ret;
 	}
 
 	ret = r_core_cmd_subst(core, cmd, &restoreseek, &newfd, &times);
@@ -1346,6 +1350,7 @@ int r_core_cmd(struct r_core_t *core, const char *command, int log)
 	}
 
 	free (core->oobi);
+	free (ocmd);
 	core->oobi = NULL;
 	core->oobi_len = 0;
 
