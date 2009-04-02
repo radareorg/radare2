@@ -36,8 +36,222 @@ static void r_core_visual_mark_seek(struct r_core_t *core, u8 ch)
 		r_core_seek(core, marks[ch]);
 }
 
+R_API int r_core_visual_trackflags(struct r_core_t *core)
+{
+	char cmd[1024];
+	struct list_head *pos;
+#define MAX_FORMAT 2
+	int format = 0;
+	const char *ptr;
+	const char *fs = NULL;
+	char *fs2 = NULL;
+	int option = 0;
+	int _option = 0;
+	int delta = 7;
+	int menu = 0;
+	int i,j, ch;
+	int hit;
+
+	while(1) {
+		r_cons_gotoxy(0,0);
+		r_cons_clear();
+		/* Execute visual prompt */
+		ptr = r_config_get(&core->config, "cmd.vprompt");
+		if (ptr&&ptr[0]) {
+			int tmp = 0; //last_print_format;
+			r_core_cmd(core, ptr, 0);
+			//last_print_format = tmp;
+		}
+
+		switch(menu) {
+		case 0: // flag space
+			r_cons_printf("\n Flag spaces:\n\n");
+			hit = 0;
+			for(j=i=0;i<R_FLAG_SPACES_MAX;i++) {
+				if (core->flags.space[i]) {
+					if (option==i) {
+						fs = core->flags.space[i];
+						hit = 1;
+					}
+					if( (i >=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+						r_cons_printf(" %c %02d %c %s\n",
+						(option==i)?'>':' ', j, 
+						(i==core->flags.space_idx)?'*':' ',
+						core->flags.space[i]);
+						j++;
+					}
+				}
+			}
+			if (!hit && j>0) {
+				option = j-1;
+				continue;
+			}
+			break;
+		case 1: // flag selection
+			r_cons_printf("\n Flags in flagspace '%s'. Press '?' for help.\n\n",
+				core->flags.space[core->flags.space_idx]);
+			hit = 0;
+			i = j = 0;
+			list_for_each(pos, &core->flags.flags) {
+				struct r_flag_item_t *flag = (struct r_flag_item_t *)
+					list_entry(pos, struct r_flag_item_t, list);
+				/* filter per flag spaces */
+				if ((core->flags.space_idx != -1) && 
+					(flag->space != core->flags.space_idx))
+					continue;
+				if (option==i) {
+					fs2 = flag->name;
+					hit = 1;
+				}
+				if( (i >=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+					r_cons_printf(" %c  %03d 0x%08llx %4lld %s\n",
+						(option==i)?'>':' ',
+						i, flag->offset, flag->size, flag->name);
+					j++;
+				}
+				i++;
+			}
+			if (!hit && i>0) {
+				option = i-1;
+				continue;
+			}
+			r_cons_printf("\n Selected: %s\n\n", fs2);
+
+			switch(format) {
+			case 0: sprintf(cmd, "px @ %s", fs2); break;
+			case 1: sprintf(cmd, "pd @ %s", fs2); break;
+			case 2: sprintf(cmd, "ps @ %s", fs2); break;
+			default: format = 0; continue;
+			}
+#if 0
+			/* TODO: auto seek + print + disasm + string ...analyze stuff and proper print */
+			cmd[0]='\0';
+			if (strstr(fs2, "str_")) {
+				sprintf(cmd, "pz @ %s", fs2);
+			} else
+			if (strstr(fs2, "sym_")) {
+				sprintf(cmd, "pd @ %s", fs2);
+			} else
+				sprintf(cmd, "px @ %s", fs2);
+#endif
+			if (cmd[0])
+				r_core_cmd(core, cmd, 0);
+		}
+		r_cons_flush();
+		ch = r_cons_readchar();
+		ch = r_cons_get_arrow(ch); // get ESC+char, return 'hjkl' char
+		switch(ch) {
+		case 'J':
+			option+=10;
+			break;
+		case 'j':
+			option++;
+			break;
+		case 'k':
+			if (--option<0)
+				option = 0;
+			break;
+		case 'K':
+			option-=10;
+			if (option<0)
+				option = 0;
+			break;
+		case 'h':
+		case 'b': // back
+			menu = 0;
+			option = _option;
+			break;
+		case 'a':
+			switch(menu) {
+			case 0: // new flag space
+				break;
+			case 1: // new flag
+				break;
+			}
+			break;
+		case 'd':
+			r_flag_unset(&core->flags, fs2);
+			break;
+		case 'e':
+			/* TODO: prompt for addr, size, name */
+			break;
+		case 'q':
+			if (menu<=0) return; menu--;
+			break;
+		case '*':
+		case '+':
+			r_core_block_size(core, core->blocksize+1);
+			break;
+		case '/':
+		case '-':
+			r_core_block_size(core, core->blocksize-1);
+			break;
+		case 'P':
+			if (--format<0)
+				format = MAX_FORMAT;
+			break;
+		case 'p':
+			format++;
+			break;
+		case 'l':
+		case ' ':
+		case '\r':
+		case '\n':
+			if (menu == 1) {
+				sprintf(cmd, "s %s", fs2);
+				r_core_cmd(core, cmd, 0);
+				return;
+			}
+			r_flag_space_set(&core->flags, fs);
+			menu = 1;
+			_option = option;
+			option = 0;
+			break;
+		case '?':
+			r_cons_clear00();
+			r_cons_printf("\nVt: Visual Track help:\n\n");
+			r_cons_printf(" q     - quit menu\n");
+			r_cons_printf(" j/k   - down/up keys\n");
+			r_cons_printf(" h/b   - go back\n");
+			r_cons_printf(" l/' ' - accept current selection\n");
+			r_cons_printf(" a/d/e - add/delete/edit flag\n");
+			r_cons_printf(" +/-   - increase/decrease block size\n");
+			r_cons_printf(" p/P   - rotate print format\n");
+			r_cons_printf(" :     - enter command\n");
+			r_cons_flush();
+			r_cons_any_key();
+			break;
+		case ':':
+			r_cons_set_raw(0);
+#if HAVE_LIB_READLINE
+			char *ptr = (char *)readline(VISUAL_PROMPT);
+			if (ptr) {
+				strncpy(cmd, ptr, sizeof(cmd));
+				r_core_cmd(core, cmd, 1);
+				//commands_parse(line);
+				free(ptr);
+			}
+#else
+			cmd[0]='\0';
+			//dl_prompt = ":> ";
+			if (r_cons_fgets(cmd, 1000, 0, NULL) <0)
+				cmd[0]='\0';
+			//line[strlen(line)-1]='\0';
+			r_core_cmd(core, cmd, 1);
+#endif
+			r_cons_set_raw(1);
+			if (cmd[0])
+				r_cons_any_key();
+			//cons_gotoxy(0,0);
+			r_cons_clear();
+			continue;
+		}
+	}
+	return R_TRUE;
+}
+
 /* TODO: use r_cmd here in core->vcmd..optimize over 255 table */ 
-int r_core_visual_cmd(struct r_core_t *core, int ch)
+R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 {
 	char buf[1024];
 
@@ -61,6 +275,9 @@ int r_core_visual_cmd(struct r_core_t *core, int ch)
 			cursor--;
 		} else
 		r_core_cmd(core, "s-2", 0);
+		break;
+	case 't':
+		r_core_visual_trackflags(core);
 		break;
 	case 'J':
 		if (curset) {

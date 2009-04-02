@@ -27,6 +27,9 @@ void flag_space_init(struct r_flag_t *f)
 R_API void r_flag_space_set(struct r_flag_t *f, const char *name)
 {
 	int i;
+	if (name == NULL)
+		name = "noname";
+
 	for(i=0;i<R_FLAG_SPACES_MAX;i++) {
 		if (f->space[i] != NULL)
 		if (!strcmp(name, f->space[i])) {

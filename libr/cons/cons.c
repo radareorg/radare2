@@ -163,6 +163,7 @@ void r_cons_clear()
 #else
 	r_cons_strcat("\x1b[2J");
 #endif
+r_cons_flush();
 	r_cons_lines = 0;
 }
 
@@ -480,9 +481,10 @@ void r_cons_set_raw(int b)
 	fflush(stdout);
 }
 
-#if 0
-// get_arrow
-int r_cons_0x1b_to_hjkl(int ch)
+#if 1
+// XXX: major refactorize : get_arrow
+//int r_cons_0x1b_to_hjkl(int ch)
+int r_cons_get_arrow(int ch)
 {
 	if (ch==0x1b) {
 		ch = r_cons_readchar();

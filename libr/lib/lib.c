@@ -257,7 +257,7 @@ int r_lib_list(struct r_lib_t *lib)
 	//printf("Loaded plugins:\n");
 	list_for_each_prev(pos, &lib->plugins) {
 		struct r_lib_plugin_t *p = list_entry(pos, struct r_lib_plugin_t, list);
-		printf(" %5s : %s (%p)\n", r_lib_types_get(p->type), p->file, p->handler->destructor);
+		printf(" %5s %p %s \n", r_lib_types_get(p->type), p->handler->destructor, p->file);
 	}
 	return 0;
 }
