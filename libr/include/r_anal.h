@@ -79,7 +79,6 @@ enum {
 enum {
 	R_ANAL_REFLINE_STYLE = 0x1,
 	R_ANAL_REFLINE_WIDE = 0x2,
-	R_ANAL_REFLINE_EXPAND = 0x4
 };
 
 struct r_anal_refline_t {

@@ -78,7 +78,8 @@ R_API int r_core_init(struct r_core_t *core)
 
 	/* load plugins */
 	r_core_loadlibs(core);
-	r_asm_set(&core->assembler, "asm_x86"); // XXX should be done by r_asm on init?
+	r_asm_set(&core->assembler, "asm_x86"); // XXX WHERE?
+	r_anal_set(&core->anal, "anal_x86");
 
 	return 0;
 }

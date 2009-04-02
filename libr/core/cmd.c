@@ -352,8 +352,6 @@ static int cmd_print(void *data, const char *input)
 		linesopts |= R_ANAL_REFLINE_STYLE;
 	if (r_config_get_i(&core->config, "asm.reflineswide"))
 		linesopts |= R_ANAL_REFLINE_WIDE;
-	if (r_config_get_i(&core->config, "asm.reflinesexpand"))
-		linesopts |= R_ANAL_REFLINE_EXPAND;
 
 	if (input[0] && input[1]) {
 		l = (int) r_num_get(&core->num, input+2);
@@ -367,34 +365,41 @@ static int cmd_print(void *data, const char *input)
 	switch(input[0]) {
 	case 'd':
 		{
-			/* XXX hardcoded */
 			int ret, idx; 
 			u8 *buf = core->block;
 			char str[128];
 			char line[128];
-			struct r_asm_aop_t aop;
+			struct r_asm_aop_t asmop;
+			struct r_anal_aop_t analop;
 			struct r_anal_refline_t *reflines;
 		
-			r_anal_set(&core->anal, "anal_x86");
 			r_anal_set_pc(&core->anal, core->seek);
-			reflines = r_anal_reflines_get(&core->anal, buf, len, -1, linesout);
-
 			r_asm_set_pc(&core->assembler, core->seek);
+
+			reflines = r_anal_reflines_get(&core->anal, buf, len, -1, linesout);
 			for(idx=ret=0; idx < len; idx+=ret) {
 				r_asm_set_pc(&core->assembler, core->assembler.pc + ret);
 				r_anal_reflines_str(&core->anal, reflines, core->anal.pc + idx, line, linesopts);
-				ret = r_asm_disassemble(&core->assembler, &aop, buf+idx, len-idx);
+				ret = r_asm_disassemble(&core->assembler, &asmop, buf+idx, len-idx);
 				if (ret <1) {
 					ret = 1;
 					fprintf(stderr, "** invalid opcode at 0x%08llx **\n", core->assembler.pc + ret);
 				}
+				r_anal_aop(&core->anal, &analop, buf+idx);
+
 				if (show_lines) r_cons_printf("%s", line);
 				if (show_offset) r_cons_printf("0x%08llx ", core->seek + idx);
-				if (show_bytes) r_cons_printf("%14s ", aop.buf_hex);
+				if (show_bytes) r_cons_printf("%14s ", asmop.buf_hex);
 				if (pseudo) {
-					r_parse_parse(&core->parser, aop.buf_asm, str);
+					r_parse_parse(&core->parser, asmop.buf_asm, str);
 					r_cons_printf("%s\n", str);
-				} else r_cons_printf("%s\n", aop.buf_asm);
+				} else r_cons_printf("%s\n", asmop.buf_asm);
+				if (show_lines && analop.type == R_ANAL_AOP_TYPE_RET) {
+					if (strchr(line, '>'))
+						memset(line, ' ', strlen(line));
+					r_cons_printf("%s", line);
+					r_cons_printf("\t\t; ------------------------------------\n");
+				}
 			}
 
 			if (reflines)
@@ -491,7 +496,7 @@ static int cmd_flag(void *data, const char *input)
 		break;
 	case 'o':
 		{
-			char *file = PREFIX"/share/doc/radare/fortunes";
+			char *file = PREFIX"/share/doc/radare2/fortunes";
 			char *line = r_file_slurp_random_line (file);
 			r_cons_printf("%s\n", line);
 			free(line);
@@ -1375,7 +1380,6 @@ int r_core_cmd(struct r_core_t *core, const char *command, int log)
 				fprintf(stderr, "Invalid command: '%s'\n", command);
 			ret = 1;
 		} else
-		if (log) r_line_hist_add(command);
 	}
 	if (log) r_line_hist_add(command);
 	if (restoreseek)

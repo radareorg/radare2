@@ -31,6 +31,7 @@ char **(*r_line_callback)(const char *text, int start, int end) = NULL;
 char **r_line_history = NULL;
 int r_line_histsize = R_LINE_HISTSIZE;
 int r_line_histidx = 0;
+int r_line_histtop = 0;
 int r_line_autosave = 0; // TODO
 int r_line_disable = 0; // TODO use fgets..no autocompletion
 
@@ -176,10 +177,11 @@ R_API int r_line_hist_add(const char *line)
 #if HAVE_LIB_READLINE
 	add_history(line);
 #endif
-	if (r_line_histidx>=r_line_histsize)
-		r_line_histidx = 0; // workaround
+	if (r_line_histtop>=r_line_histsize)
+		r_line_histtop = r_line_histidx = 0; // workaround
 	if (*line) { // && r_line_histidx < r_line_histsize) {
-		r_line_history[r_line_histidx++] = strdup(line);
+		r_line_history[r_line_histtop++] = strdup(line);
+		r_line_histidx = r_line_histtop;
 		return 1;
 	}
 	return 0;

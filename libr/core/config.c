@@ -63,7 +63,6 @@ R_API int r_core_config_init(struct r_core_t *core)
 	r_config_set(cfg, "asm.reflinesout", "false");
 	r_config_set(cfg, "asm.reflinesstyle", "false");
 	r_config_set(cfg, "asm.reflineswide", "true");
-	r_config_set(cfg, "asm.reflinesexpand", "false");
 	r_config_set(cfg, "cmd.prompt", ""); 
 	r_config_set(cfg, "cmd.vprompt", ""); 
 	r_config_set(cfg, "cmd.hit", ""); 

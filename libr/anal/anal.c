@@ -167,7 +167,6 @@ int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, u6
 
 	int linestyle = opts & R_ANAL_REFLINE_STYLE;
 	int wide = opts & R_ANAL_REFLINE_WIDE;
-	int expand = opts & R_ANAL_REFLINE_EXPAND;
 
 	if (!list)
 		return R_FALSE;
@@ -184,58 +183,51 @@ int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, u6
 			dir = 2;
 
 		if (addr == ref->to) {
-			if (!expand) {
-				if (ref->from > ref->to)
-					strcat(str, ".");
-				else
-					strcat(str, "`");
-				ch = '-';
-			} else
-				ch = '.';
+			if (ref->from > ref->to)
+				strcat(str, ".");
+			else
+				strcat(str, "`");
+			ch = '-';
 		} else
-		if (addr == ref->from) {
-			if (!expand) {
+			if (addr == ref->from) {
 				if (ref->from > ref->to)
 					strcat(str, "`");
 				else
 					strcat(str, ".");
 				ch = '=';
-			}
-		} else {
-			if (ref->from < ref->to) {
-				/* down */
-				//C strcat(str, C_YELLOW);
-				if (addr > ref->from && addr < ref->to) {
-					if (ch=='-'||ch=='=')
-						sprintf(str, "%s%c", str, ch);
-					else
-						strcat(str, "|");
-				} else
-				if (!expand) {
-#if 0 
-					C {
-						if (ch=='-')
-							cons_printf(C_WHITE"-");
-						else if (ch=='=')
-							cons_printf(C_YELLOW"=");
-						else sprintf(str, "%s%c", str, ch);
-					} else 
-#endif 
-						sprintf(str, "%s%c", str, ch);
-				}
 			} else {
-				//C strcat(str, C_WHITE);
-				/* up */
-				if (addr < ref->from && addr > ref->to) {
-					if (ch=='-'||ch=='=')
-						sprintf(str, "%s%c", str, ch);
-					else // ^
-						strcat(str, "|");
+				if (ref->from < ref->to) {
+					/* down */
+					//C strcat(str, C_YELLOW);
+					if (addr > ref->from && addr < ref->to) {
+						if (ch=='-'||ch=='=')
+							sprintf(str, "%s%c", str, ch);
+						else
+							strcat(str, "|");
+					} else
+#if 0 
+						C {
+							if (ch=='-')
+								cons_printf(C_WHITE"-");
+							else if (ch=='=')
+								cons_printf(C_YELLOW"=");
+							else sprintf(str, "%s%c", str, ch);
+						} else 
+#endif 
+							sprintf(str, "%s%c", str, ch);
 				} else {
-					sprintf(str, "%s%c", str, ch);
+					//C strcat(str, C_WHITE);
+					/* up */
+					if (addr < ref->from && addr > ref->to) {
+						if (ch=='-'||ch=='=')
+							sprintf(str, "%s%c", str, ch);
+						else // ^
+							strcat(str, "|");
+					} else {
+						sprintf(str, "%s%c", str, ch);
+					}
 				}
 			}
-		}
 		if (wide) {
 			switch(ch) {
 			case '=':
@@ -249,24 +241,21 @@ int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, u6
 		}
 	}
 
-	if (expand) {
-		strcat(str, "   ");
-	} else
 	if (dir==1) { 
 #if 0 
 		C strcat(str, C_RED"-> "C_RESET);
 		else 
 #endif 
-		strcat(str, "-> ");
+			strcat(str, "-> ");
 	} else
-	if (dir==2) {
+		if (dir==2) {
 #if 0 
-		C strcat(str, C_GREEN"=< "C_RESET);
-		else 
+			C strcat(str, C_GREEN"=< "C_RESET);
+			else 
 #endif 
-		strcat(str, "=< ");
-	}
-	else strcat(str, "   ");
+				strcat(str, "=< ");
+		}
+		else strcat(str, "   ");
 
 	return R_TRUE;
 }

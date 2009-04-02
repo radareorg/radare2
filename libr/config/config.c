@@ -24,14 +24,14 @@ void r_config_list(struct r_config_t *cfg, const char *str, int rad)
 	int len = 0;
 
 	if (!strnull(str)) {
-		//str = r_str_clean(str);
+		str = r_str_clean(str);
 		len = strlen(str);
 	}
 
 	list_for_each(i, &(cfg->nodes)) {
 		struct r_config_node_t *bt = list_entry(i, struct r_config_node_t, list);
 		if (str) {
-			if (strncmp(str, bt->name,len) == 0) {
+			if (strncmp(str, bt->name, len) == 0) {
 				if (rad) cfg->printf("f ");
 				cfg->printf("%s = %s\n", bt->name, bt->value);
 			}
