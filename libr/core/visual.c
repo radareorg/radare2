@@ -250,6 +250,215 @@ R_API int r_core_visual_trackflags(struct r_core_t *core)
 	return R_TRUE;
 }
 
+static void config_visual_hit_i(struct r_core_t *core, const char *name, int delta)
+{
+	struct r_config_node_t *node;
+	node = r_config_node_get(&core->config, name);
+	if (node && node->flags & CN_INT || node->flags & CN_OFFT)
+		r_config_set_i(&core->config, name, r_config_get_i(&core->config, name)+delta);
+}
+
+/* Visually activate the config variable */
+static void config_visual_hit(struct r_core_t *core, const char *name)
+{
+	char buf[1024];
+	struct r_config_node_t *node;
+
+	node = r_config_node_get(&core->config, name);
+	if (node) {
+		if (node->flags & CN_BOOL) {
+			/* TOGGLE */
+			node->i_value = !node->i_value;
+			node->value = r_str_dup(node->value, node->i_value?"true":"false");
+		} else {
+			// FGETS AND SO
+			r_cons_printf("New value (old=%s): ", node->value);
+			r_cons_flush();
+			r_cons_set_raw(0);
+			r_cons_fgets(buf, 1023, 0, 0);
+			r_cons_set_raw(1);
+			node->value = r_str_dup(node->value, buf);
+		}
+	}
+}
+
+R_API void r_core_visual_config(struct r_core_t *core)
+{
+	char cmd[1024];
+	struct list_head *pos;
+#define MAX_FORMAT 2
+	const char *ptr;
+	char *fs = NULL;
+	char *fs2 = NULL;
+	int option = 0;
+	int _option = 0;
+	int delta = 9;
+	int menu = 0;
+	int i,j, ch;
+	int hit;
+	int show;
+	char old[1024];
+	old[0]='\0';
+
+	while(1) {
+		r_cons_gotoxy(0,0);
+		r_cons_clear();
+
+		/* Execute visual prompt */
+		ptr = r_config_get(&core->config, "cmd.vprompt");
+		if (ptr&&ptr[0]) {
+//			int tmp = last_print_format;
+			r_core_cmd(core, ptr, 0);
+//			last_print_format = tmp;
+		}
+
+		if (fs&&!memcmp(fs, "asm.", 4))
+			r_core_cmd(core, "pd 5", 0);
+
+		switch(menu) {
+			case 0: // flag space
+				r_cons_printf("\n Eval spaces:\n\n");
+				hit = 0;
+				j = i = 0;
+				list_for_each(pos, &(core->config.nodes)) {
+					struct r_config_node_t *bt = list_entry(pos, struct r_config_node_t, list);
+					if (option==i) {
+						fs = bt->name;
+						hit = 1;
+					}
+					show = 0;
+					if (old[0]=='\0') {
+						r_str_ccpy(old, bt->name, '.');
+						show = 1;
+					} else if (r_str_ccmp(old, bt->name, '.')) {
+						r_str_ccpy(old, bt->name, '.');
+						show = 1;
+					}
+
+					if (show) {
+						if( (i >=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+							r_cons_printf(" %c  %s\n", (option==i)?'>':' ', old);
+							j++;
+						}
+						i++;
+					}
+				}
+				if (!hit && j>0) {
+					option = j-1;
+					continue;
+				}
+				r_cons_printf("\n Sel:%s \n\n", fs);
+				break;
+			case 1: // flag selection
+				r_cons_printf("\n Eval variables: (%s)\n\n", fs);
+				hit = 0;
+				j = i = 0;
+				// TODO: cut -d '.' -f 1 | sort | uniq !!!
+				list_for_each(pos, &(core->config.nodes)) {
+					struct r_config_node_t *bt = list_entry(pos, struct r_config_node_t, list);
+					if (option==i) {
+						fs2 = bt->name;
+						hit = 1;
+					}
+					if (!r_str_ccmp(bt->name, fs, '.')) {
+						if( (i >=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+							// TODO: Better align
+							r_cons_printf(" %c  %s = %s\n", (option==i)?'>':' ', bt->name, bt->value);
+							j++;
+						}
+						i++;
+					}
+				}
+				if (!hit && j>0) {
+					option = i-1;
+					continue;
+				}
+				if (fs2 != NULL)
+					r_cons_printf("\n Selected: %s\n\n", fs2);
+		}
+		r_cons_flush();
+		ch = r_cons_readchar();
+		ch = r_cons_get_arrow(ch); // get ESC+char, return 'hjkl' char
+		switch(ch) {
+			case 'j':
+				option++;
+				break;
+			case 'k':
+				if (--option<0)
+					option = 0;
+				break;
+			case 'h':
+			case 'b': // back
+				menu = 0;
+				option = _option;
+				break;
+			case 'q':
+				if (menu<=0) return; menu--;
+				break;
+			case '*':
+			case '+':
+				if (fs2 != NULL)
+					config_visual_hit_i(core, fs2, +1);
+				continue;
+			case '/':
+			case '-':
+				if (fs2 != NULL)
+					config_visual_hit_i(core, fs2, -1);
+				continue;
+			case 'l':
+			case 'e': // edit value
+			case ' ':
+			case '\r':
+			case '\n': // never happens
+				if (menu == 1) {
+					if (fs2 != NULL)
+						config_visual_hit(core, fs2);
+				} else {
+					r_flag_space_set(&core->flags, fs);
+					menu = 1;
+					_option = option;
+					option = 0;
+				}
+				break;
+			case '?':
+				r_cons_clear00();
+				r_cons_printf("\nVe: Visual Eval help:\n\n");
+				r_cons_printf(" q     - quit menu\n");
+				r_cons_printf(" j/k   - down/up keys\n");
+				r_cons_printf(" h/b   - go back\n");
+				r_cons_printf(" e/' ' - edit/toggle current variable\n");
+				r_cons_printf(" +/-   - increase/decrease numeric value\n");
+				r_cons_printf(" :     - enter command\n");
+				r_cons_flush();
+				r_cons_any_key();
+				break;
+			case ':':
+				r_cons_set_raw(0);
+#if HAVE_LIB_READLINE
+				char *ptr = readline(VISUAL_PROMPT);
+				if (ptr) {
+					strncpy(cmd, ptr, sizeof(cmd));
+					r_core_cmd(core, cmd, 1);
+					free(ptr);
+				}
+#else
+				cmd[0]='\0';
+				//dl_prompt = ":> ";
+				if (r_cons_fgets(cmd, 1000, 0, NULL) <0)
+					cmd[0]='\0';
+				//line[strlen(line)-1]='\0';
+				r_core_cmd(core, cmd, 1);
+#endif
+				r_cons_set_raw(1);
+				if (cmd[0])
+					r_cons_any_key();
+				//r_cons_gotoxy(0,0);
+				r_cons_clear00();
+				continue;
+		}
+	}
+}
+
 /* TODO: use r_cmd here in core->vcmd..optimize over 255 table */ 
 R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 {
@@ -275,6 +484,9 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 			cursor--;
 		} else
 		r_core_cmd(core, "s-2", 0);
+		break;
+	case 'e':
+		r_core_visual_config(core);
 		break;
 	case 't':
 		r_core_visual_trackflags(core);
