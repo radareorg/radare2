@@ -100,5 +100,6 @@ R_API int r_core_cmd_buffer(void *user, const char *buf);
 R_API int r_core_cmdf(void *user, const char *fmt, ...);
 R_API int r_core_cmd0(void *user, const char *cmd);
 R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd);
+R_API int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each);
 
 #endif

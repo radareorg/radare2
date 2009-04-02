@@ -37,7 +37,7 @@ int r_macro_add(struct r_macro_t *mac, const char *oname)
 	char *ptr;
 	int lidx;
 	int macro_update;
-	char *name, *args;
+	char *name, *args = NULL;
 
 	if (oname[0]=='\0')
 		return r_macro_list(mac);
@@ -82,6 +82,8 @@ int r_macro_add(struct r_macro_t *mac, const char *oname)
 	else macro->code = (char *)malloc(4096);
 	macro->code[0]='\0';
 	macro->nargs = 0;
+	if (args == NULL)
+		args = "";
 	macro->args = strdup(args);
 	ptr = strchr(macro->name, ' ');
 	if (ptr != NULL) {
