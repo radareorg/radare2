@@ -133,5 +133,5 @@ int r_anal_set_big_endian(struct r_anal_t *anal, int boolean);
 int r_anal_set_pc(struct r_anal_t *a, u64 pc);
 int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data);
 struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, u8 *buf, u64 len, int nlines, int linesout);
-int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, u64 addr, char *str, int opts);
+int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, char *str, int opts);
 #endif

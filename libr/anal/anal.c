@@ -133,14 +133,10 @@ struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, u8 *buf, u64
 			case R_ANAL_AOP_TYPE_CALL:
 			case R_ANAL_AOP_TYPE_CJMP:
 			case R_ANAL_AOP_TYPE_JMP:
-				if (!linesout) {
-					/* skip outside lines */
-					if (aop.jump > anal->pc+len)
-						goto __next;
-				} else {
-					if (aop.jump == 0)
-						goto __next;
-				}
+				if (!linesout && (aop.jump > opc+len || aop.jump < opc))
+					goto __next;
+				if (aop.jump == 0)
+					goto __next;
 
 				list2 = MALLOC_STRUCT(struct r_anal_refline_t);
 				list2->from = anal->pc;
@@ -159,7 +155,7 @@ struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, u8 *buf, u64
 	return list;
 }
 
-int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, u64 addr, char *str, int opts)
+int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, char *str, int opts)
 {
 	struct list_head *pos;
 	int dir = 0;
@@ -177,19 +173,19 @@ int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, u6
 	for (pos = linestyle?(&(list->list))->next:(&(list->list))->prev; pos != (&(list->list)); pos = linestyle?pos->next:pos->prev) {
 		struct r_anal_refline_t *ref = list_entry(pos, struct r_anal_refline_t, list);
 
-		if (addr == ref->to)
+		if (anal->pc == ref->to)
 			dir = 1;
-		if (addr == ref->from)
+		if (anal->pc == ref->from)
 			dir = 2;
 
-		if (addr == ref->to) {
+		if (anal->pc == ref->to) {
 			if (ref->from > ref->to)
 				strcat(str, ".");
 			else
 				strcat(str, "`");
 			ch = '-';
 		} else
-			if (addr == ref->from) {
+			if (anal->pc == ref->from) {
 				if (ref->from > ref->to)
 					strcat(str, "`");
 				else
@@ -199,7 +195,7 @@ int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, u6
 				if (ref->from < ref->to) {
 					/* down */
 					//C strcat(str, C_YELLOW);
-					if (addr > ref->from && addr < ref->to) {
+					if (anal->pc > ref->from && anal->pc < ref->to) {
 						if (ch=='-'||ch=='=')
 							sprintf(str, "%s%c", str, ch);
 						else
@@ -218,7 +214,7 @@ int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, u6
 				} else {
 					//C strcat(str, C_WHITE);
 					/* up */
-					if (addr < ref->from && addr > ref->to) {
+					if (anal->pc < ref->from && anal->pc > ref->to) {
 						if (ch=='-'||ch=='=')
 							sprintf(str, "%s%c", str, ch);
 						else // ^

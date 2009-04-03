@@ -379,7 +379,8 @@ static int cmd_print(void *data, const char *input)
 			reflines = r_anal_reflines_get(&core->anal, buf, len, -1, linesout);
 			for(idx=ret=0; idx < len; idx+=ret) {
 				r_asm_set_pc(&core->assembler, core->assembler.pc + ret);
-				r_anal_reflines_str(&core->anal, reflines, core->anal.pc + idx, line, linesopts);
+				r_anal_set_pc(&core->anal, core->anal.pc + ret);
+				r_anal_reflines_str(&core->anal, reflines, line, linesopts);
 				ret = r_asm_disassemble(&core->assembler, &asmop, buf+idx, len-idx);
 				if (ret <1) {
 					ret = 1;

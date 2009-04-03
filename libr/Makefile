@@ -1,7 +1,6 @@
 include ../config-user.mk
 
 PREFIX?=${PWD}/../prefix
-DESTDIR?=../
 PFX=${DESTDIR}${PREFIX}
 #PREFIX=${PFX}
 
