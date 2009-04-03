@@ -55,7 +55,7 @@ static int r_line_readchar()
 	if (!ret) {
 		// wine hack-around
 		if (read(0,buf,1) != 1)
-			return -1
+			return -1;
 	}
 	SetConsoleMode(h, mode);
 #else

@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2006-2009 pancake<nopcode.org> */
 
 #include "r_config.h"
-#include "r_util.h" // r_str_hash, r_str_clean, ...
+#include "r_util.h" // r_str_hash, r_str_chop, ...
 
 struct r_config_node_t* r_config_node_new(const char *name, const char *value)
 {
@@ -24,7 +24,7 @@ void r_config_list(struct r_config_t *cfg, const char *str, int rad)
 	int len = 0;
 
 	if (!strnull(str)) {
-		str = r_str_clean(str);
+		str = r_str_chop(str);
 		len = strlen(str);
 	}
 
@@ -207,7 +207,7 @@ int r_config_eval(struct r_config_t *cfg, const char *str)
 	len = strlen(str)+1;
 	name = alloca(len);
 	memcpy(name, str, len);
-	str = r_str_clean(name);
+	str = r_str_chop(name);
 
 	if (str == NULL)
 		return 0;
@@ -226,11 +226,11 @@ int r_config_eval(struct r_config_t *cfg, const char *str)
 	if (ptr) {
 		/* set */
 		ptr[0]='\0';
-		a = r_str_clean(name);
-		b = r_str_clean(ptr+1);
+		a = r_str_chop(name);
+		b = r_str_chop(ptr+1);
 		r_config_set(cfg, a, b);
 	} else {
-		char *foo = r_str_clean(name);
+		char *foo = r_str_chop(name);
 		if (foo[strlen(foo)-1]=='.') {
 			/* list */
 			r_config_list(cfg, name, 0);

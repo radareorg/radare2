@@ -389,7 +389,12 @@ static int cmd_print(void *data, const char *input)
 
 				if (show_lines) r_cons_printf("%s", line);
 				if (show_offset) r_cons_printf("0x%08llx ", core->seek + idx);
-				if (show_bytes) r_cons_printf("%14s ", asmop.buf_hex);
+				if (show_bytes) {
+					struct r_flag_item_t *flag = r_flag_get_i(&core->flags, core->seek+idx);
+					if (flag) {
+						r_cons_printf("=> %11s ", flag->name);
+					} else r_cons_printf("%14s ", asmop.buf_hex);
+				}
 				if (pseudo) {
 					r_parse_parse(&core->parser, asmop.buf_asm, str);
 					r_cons_printf("%s\n", str);
@@ -1450,7 +1455,7 @@ static int cmd_debug(void *data, const char *input)
 		break;
 	case 'm':
 		{char pid[16]; sprintf(pid, "%d", core->dbg.pid);
-		setenv("PID", pid, 1);
+		r_sys_setenv("PID", pid, 1);
 		system("cat /proc/$PID/maps"); }
 		break;
 	case 'r':

@@ -59,7 +59,7 @@ static void break_signal(int sig)
 		r_cons_break_cb(r_cons_break_user);
 }
 
-void r_cons_break(void (*cb)(void *u), void *user)
+R_API void r_cons_break(void (*cb)(void *u), void *user)
 {
 	r_cons_breaked = 0;
 	r_cons_break_user = user;
@@ -69,7 +69,7 @@ void r_cons_break(void (*cb)(void *u), void *user)
 #endif
 }
 
-void r_cons_break_end()
+R_API void r_cons_break_end()
 {
 	r_cons_breaked = 0;
 #if __UNIX__
@@ -77,7 +77,7 @@ void r_cons_break_end()
 #endif
 }
 
-int r_cons_init()
+R_API int r_cons_init()
 {
 	r_cons_stdin_fd = stdin;
 #if HAVE_DIETLINE
@@ -100,11 +100,13 @@ static void palloc(int moar)
 	}
 }
 
-int r_cons_eof()
+R_API int r_cons_eof()
 {
 	return feof(r_cons_stdin_fd);
 }
 
+/* XXX unused ? */
+#if 0
 static void r_cons_print_real(const char *buf)
 {
 #if __WINDOWS__
@@ -116,11 +118,11 @@ static void r_cons_print_real(const char *buf)
 		r_cons_html_print(buf);
 	else write(r_cons_stdout_fd, buf, r_cons_buffer_len);
 }
+#endif
 
-
-#if __WINDOWS__
-void r_cons_gotoxy(int x, int y)
+R_API void r_cons_gotoxy(int x, int y)
 {
+#if __WINDOWS__
         static HANDLE hStdout = NULL;
         COORD coord;
 
@@ -131,21 +133,18 @@ void r_cons_gotoxy(int x, int y)
                 hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
         SetConsoleCursorPosition(hStdout,coord);
-}
 #else
-void r_cons_gotoxy(int x, int y)
-{
 	r_cons_strcat("\x1b[0;0H");
-}
 #endif
+}
 
-void r_cons_clear00()
+R_API void r_cons_clear00()
 {
 	r_cons_clear();
 	r_cons_gotoxy(0, 0);
 }
 
-void r_cons_clear()
+R_API void r_cons_clear()
 {
 #if __WINDOWS__
         static HANDLE hStdout = NULL;
@@ -163,11 +162,11 @@ void r_cons_clear()
 #else
 	r_cons_strcat("\x1b[2J");
 #endif
-r_cons_flush();
+	r_cons_flush();
 	r_cons_lines = 0;
 }
 
-void r_cons_reset()
+R_API void r_cons_reset()
 {
 	if (r_cons_buffer)
 		r_cons_buffer[0] = '\0';
@@ -180,12 +179,12 @@ void r_cons_reset()
 	greptoken = -1;
 }
 
-const char *r_cons_get_buffer()
+R_API const char *r_cons_get_buffer()
 {
 	return r_cons_buffer;
 }
 
-void r_cons_grep(const char *str)
+R_API void r_cons_grep(const char *str)
 {
 	char *optr, *tptr;
 	char *ptr, *ptr2, *ptr3;
@@ -293,7 +292,8 @@ void r_cons_printf(const char *format, ...)
 	va_end(ap);
 }
 
-int r_cons_grepbuf(const char *buf, int len)
+/* TODO: use const char * instead ..strdup at the beggining? */
+R_API int r_cons_grepbuf(char *buf, int len)
 {
 	int donotline = 0;
 	int i, j, hit = 0;
@@ -366,28 +366,28 @@ int r_cons_grepbuf(const char *buf, int len)
 }
 
 /* final entrypoint for adding stuff in the buffer screen */
-void r_cons_memcat(const char *str, int len)
+R_API void r_cons_memcat(const char *str, int len)
 {
 	palloc(len);
 	memcpy(r_cons_buffer+r_cons_buffer_len, str, len+1); // XXX +1??
 	r_cons_buffer_len += r_cons_grepbuf(r_cons_buffer+r_cons_buffer_len, len);
 }
 
-void r_cons_strcat(const char *str)
+R_API void r_cons_strcat(const char *str)
 {
 	int len = strlen(str);
 	if (len>0)
 		r_cons_memcat(str, len);
 }
 
-void r_cons_newline()
+R_API void r_cons_newline()
 {
 	if (r_cons_is_html)
 		r_cons_strcat("<br />\n");
 	else r_cons_strcat("\n");
 }
 
-int r_cons_get_columns()
+R_API int r_cons_get_columns()
 {
 	int columns_i = r_cons_get_real_columns();
 	char buf[64];
@@ -396,7 +396,7 @@ int r_cons_get_columns()
 		columns_i = 78;
 
 	sprintf(buf, "%d", columns_i);
-	setenv("COLUMNS", buf, 0);
+	r_sys_setenv("COLUMNS", buf, 0);
 
 	return columns_i;
 }
@@ -486,6 +486,9 @@ void r_cons_set_raw(int b)
 //int r_cons_0x1b_to_hjkl(int ch)
 int r_cons_get_arrow(int ch)
 {
+printf("ARROW(0x%x)\n", ch);
+fflush(stdout);
+r_sys_sleep(3);
 	if (ch==0x1b) {
 		ch = r_cons_readchar();
 		if (ch==0x5b) {

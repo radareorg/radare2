@@ -19,7 +19,9 @@ static int main_help(int line)
 		" -f        block size = file size\n"
 		" -s [addr] initial seek\n"
 		" -b [size] initial block size\n"
+		" -i [file] run script file\n"
 		" -V        show radare2 version\n"
+		" -l [lib]  load plugin file\n"
 		" -L        list supported IO plugins\n"
 		" -u        unknown file size\n"
 		" -e k=v    evaluate config var\n");
@@ -47,8 +49,14 @@ int main(int argc, char **argv)
 
 	r_core_init (&r);
 
-	while ((c = getopt (argc, argv, "wfhe:ndVs:b:Lu"))!=-1) {
+	while ((c = getopt (argc, argv, "wfhe:ndVs:b:Lui:l:"))!=-1) {
 		switch (c) {
+		case 'i':
+			r_core_cmd_file(&r, optarg);
+			break;
+		case 'l':
+			r_lib_open(&r.lib, optarg);
+			break;
 		case 'd':
 			debug = 1;
 			break;

@@ -34,3 +34,6 @@
  - Maybe having a preprocessor tool for this..
 
 Debugger:
+* arrows not working in visual
+* add -i and -l to radare2
+* make ruby do not ping with 'Load' message

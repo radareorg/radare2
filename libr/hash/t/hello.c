@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 	printf("----\n%s\n----\n", buf);
 
 	printf("file size = %lld\n", size);
-	printf("CRC32: 0x%08lx\n", r_hash_crc32(buf, size));
+	printf("CRC32: 0x%08x\n", r_hash_crc32(buf, size));
 
 	{
 		struct r_hash_t ctx;

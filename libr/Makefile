@@ -24,37 +24,40 @@ all:
 	@echo Build done for: ${LIBLIST}
 
 install:
-	echo Using prefix: ${PREFIX}
+	echo Using prefix: ${PFX}
 	# libraries
-	@mkdir -p ${PREFIX}/lib
+	@mkdir -p ${PFX}/lib
 	@for a in `find * | grep -e '\.so$$' | grep lib` ; do \
-	echo " $$a "; cp $$a ${PREFIX}/lib ; done
+	echo " $$a "; cp $$a ${PFX}/lib ; done
 	# object archives
 	@for a in `find * | grep -e '\.a$$'` ; do \
-	echo " $$a"; cp $$a ${PREFIX}/lib ; done
+	echo " $$a"; cp $$a ${PFX}/lib ; done
 	# includes
-	@mkdir -p ${PREFIX}/include/libr
-	(cd include && cp -f * ${PREFIX}/include/libr)
+	@mkdir -p ${PFX}/include/libr
+	(cd include && cp -f * ${PFX}/include/libr)
 	# programs
-	@mkdir -p ${PREFIX}/bin
+	@mkdir -p ${PFX}/bin
 	@for a in `find */t -perm /u+x -type f | grep 2`; \
-	do echo " $$a"; cp $$a ${PREFIX}/bin ; done
+	do echo " $$a"; cp $$a ${PFX}/bin ; done
 	# plugins
-	@mkdir -p ${PREFIX}/lib/pkgconfig
-	cat libr.pc.acr | sed -e 's,@PREFIX@,${PREFIX},g' > libr.pc
-	cp libr.pc ${PREFIX}/lib/pkgconfig
-	@mkdir -p ${PREFIX}/share/vala/vapi
-	cp vapi/*.vapi vapi/*.deps ${PREFIX}/share/vala/vapi
-	@mkdir -p ${PREFIX}/lib/radare2
+	@mkdir -p ${PFX}/lib/pkgconfig
+	cat libr.pc.acr | sed -e 's,@PFX@,${PFX},g' > libr.pc
+	cp libr.pc ${PFX}/lib/pkgconfig
+	@mkdir -p ${PFX}/share/vala/vapi
+	cp vapi/*.vapi vapi/*.deps ${PFX}/share/vala/vapi
+	@mkdir -p ${PFX}/lib/radare2
 	@for a in `find */p -perm /u+x -type f`; \
-	do echo " $$a"; cp $$a ${PREFIX}/lib/radare2 ; done
+	do echo " $$a"; cp $$a ${PFX}/lib/radare2 ; done
 	# test programs
-	@mkdir -p ${PREFIX}/bin-test
+	@mkdir -p ${PFX}/bin-test
 	@for a in `find */t -perm /u+x -type f | grep -v 2`; \
-	do echo " $$a"; cp $$a ${PREFIX}/bin-test ; done
-	@echo libr aka radare2 has been installed in PREFIX=${PREFIX}
+	do echo " $$a"; cp $$a ${PFX}/bin-test ; done
+	@echo libr aka radare2 has been installed:
+	@echo PREFIX=${PREFIX}
+	@echo DESTDIR=${DESTDIR}
+	cp lang/p/radare.* ${PFX}/lib/radare2
 
-uninstall:
+deinstall uninstall:
 	# libraries
 	-@for a in `find * | grep -e '\.so$$' | grep lib` ; do \
 	a=`echo $$a|awk -F / '{ print $$NF; }'`; \

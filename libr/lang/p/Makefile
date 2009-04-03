@@ -1,4 +1,6 @@
-CFLAGS=-I../../include -Wall
+include ../../../config-user.mk
+
+CFLAGS=-I../../include -Wall -DPREFIX=\"${PREFIX}\"
 BINDEPS=
 
 all: lang_lua.so lang_dummy.so lang_ruby.so lang_python.so lang_perl.so lang_tcc.so
@@ -23,7 +25,7 @@ lang_lua.so: lua.o
 	@#strip -s lua.so
 
 lang_ruby.so:
-	-ruby mkruby.rb
+	-env CFLAGS="${CFLAGS}" ruby mkruby.rb
 
 lang_perl.so:
 	-${CC} ${CFLAGS} -I/usr/lib/perl/5.10/CORE/ \

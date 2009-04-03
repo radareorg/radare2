@@ -112,7 +112,7 @@ char *r_str_lchr(char *str, char chr)
         return NULL;
 }
 
-int r_str_nchr(const char *str, char chr)
+R_API int r_str_nchr(const char *str, char chr)
 {
 	int n = 0;
 	while(str[0]) {
@@ -123,7 +123,7 @@ int r_str_nchr(const char *str, char chr)
 	return n;
 }
 
-int r_str_nstr(char *from, char *to, int size)
+R_API int r_str_nstr(char *from, char *to, int size)
 {
         int i;
         for(i=0;i<size;i++)
@@ -132,7 +132,7 @@ int r_str_nstr(char *from, char *to, int size)
         return (size!=i);
 }
 
-char *r_str_clean(char *str)
+R_API char *r_str_chop(char *str)
 {
         int len;
         char *ptr;

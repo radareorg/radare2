@@ -8,6 +8,10 @@ CHKLIB ewf
 ARG_WITHOUT HAVE_EWF ewf disable EWF dependency ;
 IF HAVE_EWF { HAVE_LIB_EWF = 0 ; }
 
+(( rules for the compiler ))
+ARG_WITH USERCC=gcc compiler Define compiler to use (see mk/) ;
+ARG_WITH USEROSTYPE=gnulinux ostype Choose OS type ( gnulinux windows osx ) ;
+
 ARG_WITHOUT WANT_VALA vala disables the build of all the vala-dependant parts ;
 CHKPRG VALAC valac
 
@@ -23,7 +27,6 @@ IF WANT_VALA {
 	HAVE_VALAC = 0 ;
 }
 
-REPORT PREFIX HAVE_LIB_EWF HAVE_VALAC ;
+REPORT PREFIX HAVE_LIB_EWF HAVE_VALAC USERCC USEROSTYPE ;
 
 SUBDIRS ./config-user.mk ;
-

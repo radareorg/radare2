@@ -67,6 +67,7 @@ int r_str_word_count(const char *string);
 int r_str_word_set0(char *str);
 const char *r_str_word_get0(const char *str, int idx);
 
+char *r_str_chop(char *str);
 int r_str_hash(const char *str);
 char *r_str_clean(char *str);
 int r_str_nstr(char *from, char *to, int size);
@@ -106,5 +107,10 @@ int r_file_dump(const char *file, const u8 *buf, int len);
 int r_file_rm(const char *file);
 int r_file_exist(const char *str);
 char *r_file_slurp_line(const char *file, int line, int context);
+
+int r_sys_sleep(int secs);
+int r_sys_usleep(int usecs);
+R_API const char *r_sys_getenv(const char *key);
+R_API int r_sys_setenv(const char *key, const char *value, int ow);
 
 #endif

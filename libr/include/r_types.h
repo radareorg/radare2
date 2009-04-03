@@ -53,6 +53,7 @@ static inline int ERR(char *str, ...)
 //#define ERR(...) fprintf(stderr, ...)
 #define MALLOC_STRUCT(x) (x*)malloc(sizeof(x))
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')
+#define IS_WHITESPACE(x) (x==' '&&x=='\t')
 
 /* operating system */
 
@@ -120,6 +121,12 @@ static inline int ERR(char *str, ...)
   { struct x##_t *t = (struct x##_t)malloc(sizeof(struct x##_t)); \
    x##_init(t); return t; }
 R_API_NEW(r_trace);
+#endif
+
+#if __WINDOWS__
+#define HAVE_REGEXP 0
+#else
+#define HAVE_REGEXP 1
 #endif
 
 #endif

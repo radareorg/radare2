@@ -62,7 +62,7 @@ int test_distance()
 	char *bufa = "hello";
 	char *bufb = "heprpworld";
 	u32 distance = 0;
-	float similarity = 0;
+	double similarity = 0;
 
 	printf("Similarity: '%s' vs '%s'\n", bufa, bufb);
 	r_diff_buffers_distance(NULL, bufa, strlen(bufa), bufb, strlen(bufb),

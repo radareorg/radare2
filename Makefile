@@ -7,7 +7,6 @@ clean:
 	cd libr && make clean
 
 install:
-	mkdir -p ${DESTDIR}${PREFIX}
 	mkdir -p ${DESTDIR}${PREFIX}/share/doc/radare2
 	for a in doc/* ; do cp $$a ${DESTDIR}/${PREFIX}/share/doc/radare2 ; done
 	cd libr && make install PARENT=1 PREFIX=${DESTDIR}${PREFIX}
@@ -17,6 +16,7 @@ uninstall:
 
 deinstall: uninstall
 	cd libr && make uninstall PARENT=1 PREFIX=${DESTDIR}${PREFIX}
+	rm -rf ${DESTDIR}${PREFIX}/share/doc/radare2
 
 dist:
 	FILES=`hg st -mc .| cut -c 3-|sed -e s,^,radare2-${VERSION}/,` ; \

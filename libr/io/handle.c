@@ -54,7 +54,7 @@ struct r_io_handle_t *r_io_handle_resolve_fd(struct r_io_t *io, int fd)
 
 int r_io_handle_generate(struct r_io_t *io)
 {
-	return (random()%666)+1024;
+	return (rand()%666)+1024;
 }
 
 int r_io_handle_open(struct r_io_t *io, int fd, struct r_io_handle_t *plugin)

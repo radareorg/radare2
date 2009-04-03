@@ -1,3 +1,8 @@
+-include ../../config-user.mk
+-include ../../mk/${COMPILER}.mk
+-include ../../../config-user.mk
+-include ../../../mk/${COMPILER}.mk
+
 CFLAGS+=-DUSE_RIO=${USE_RIO}
 CFLAGS+=${CFLAGS_APPEND}
 LDFLAGS+=$(subst r_,-lr_,$(DEPS))
@@ -19,7 +24,7 @@ LDFLAGS+=$(subst r_,${BOO},$(BINDEPS))
 CFLAGS+=-g -Wall
 
 # XXX hardcoded XXX #
-OSTYPE=gnulinux
+OSTYPE?=gnulinux
 # Output
 ifeq (${OSTYPE},windows)
 EXT_AR=lib
@@ -41,9 +46,10 @@ LIBSO=${LIB}.${EXT_SO}
 #-------------------------------------#
 # Rules for libraries
 ifeq (${BINDEPS},)
+
 ifneq ($(NAME),)
-include ../../config-user.mk
-include ../../mk/${COMPILER}.mk
+#include ../../config-user.mk
+#include ../../mk/${COMPILER}.mk
 
 CFLAGS+=-I../include
 real_all all: ${LIBSO} ${EXTRA_TARGETS}
@@ -69,19 +75,30 @@ ${LIBAR}: ${OBJ}
 install:
 	cd .. && ${MAKE} install
 
+deinstall uninstall:
+	cd .. && ${MAKE} uninstall
+
 clean: ${EXTRA_CLEAN}
 	-rm -f ${LIBSO} ${LIBAR} ${OBJ} ${BIN} *.so a.out *.a *.exe
 	@if [ -e t/Makefile ]; then (cd t && ${MAKE} clean) ; fi
 	@if [ -e p/Makefile ]; then (cd p && ${MAKE} clean) ; fi
 	@true
-.PHONY: all clean ${LIBSO} ${LIBAR}
+
+.PHONY: all install clean ${LIBSO} ${LIBAR}
+
+else
+
+# somewhere else?
+
 endif
+
+
 else
 
 #-------------------------------------#
 # Rules for test programs
 
-include ../../config.mk
+include ../../../config-user.mk
 include ../../../mk/${COMPILER}.mk
 
 CFLAGS+=-I../../include
@@ -99,6 +116,7 @@ clean: myclean
 	-rm -f ${OBJ} ${BIN}
 
 .PHONY: all clean ${BIN}
+
 endif
 
 #-------------------------------

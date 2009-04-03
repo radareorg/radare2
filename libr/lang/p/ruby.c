@@ -5,9 +5,9 @@
 #include "r_lang.h"
 #include "ruby.h"
 
-/* XXX: fix path */
-#define LIBDIR "/usr/lib"
-#define RUBYAPI  LIBDIR"/ruby1.8/radare.rb"
+// XXX
+//#define RUBYAPI  LIBDIR"/ruby1.8/radare.rb"
+#define RUBYAPI  "/usr/lib/radare2/radare.rb"
 
 #include "r_core.h"
 static struct r_core_t *core = NULL;
@@ -35,9 +35,13 @@ static int run(void *user, const char *code, int len)
 
 static int slurp_ruby(const char *file)
 {
-	rb_load_file(file);
-	ruby_exec();
-	return R_TRUE;
+	if (r_file_exist(file)) {
+		rb_load_file(file);
+		ruby_exec();
+		return R_TRUE;
+	}
+	eprintf("lang_ruby: Cannot open '%s'\n", file);
+	return R_FALSE;
 }
 
 static int run_file(void *user, const char *file)
@@ -89,6 +93,7 @@ static struct r_lang_handle_t r_lang_plugin_ruby = {
 	.name = "ruby",
 	.desc = "Ruby language extension",
 	.init = &init,
+	.fini = &fini,
 	.help = &help,
 	.prompt = &prompt,
 	.run = &run,

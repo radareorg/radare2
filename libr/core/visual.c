@@ -379,82 +379,83 @@ R_API void r_core_visual_config(struct r_core_t *core)
 		r_cons_flush();
 		ch = r_cons_readchar();
 		ch = r_cons_get_arrow(ch); // get ESC+char, return 'hjkl' char
+
 		switch(ch) {
-			case 'j':
-				option++;
-				break;
-			case 'k':
-				if (--option<0)
-					option = 0;
-				break;
-			case 'h':
-			case 'b': // back
-				menu = 0;
-				option = _option;
-				break;
-			case 'q':
-				if (menu<=0) return; menu--;
-				break;
-			case '*':
-			case '+':
+		case 'j':
+			option++;
+			break;
+		case 'k':
+			if (--option<0)
+				option = 0;
+			break;
+		case 'h':
+		case 'b': // back
+			menu = 0;
+			option = _option;
+			break;
+		case 'q':
+			if (menu<=0) return; menu--;
+			break;
+		case '*':
+		case '+':
+			if (fs2 != NULL)
+				config_visual_hit_i(core, fs2, +1);
+			continue;
+		case '/':
+		case '-':
+			if (fs2 != NULL)
+				config_visual_hit_i(core, fs2, -1);
+			continue;
+		case 'l':
+		case 'e': // edit value
+		case ' ':
+		case '\r':
+		case '\n': // never happens
+			if (menu == 1) {
 				if (fs2 != NULL)
-					config_visual_hit_i(core, fs2, +1);
-				continue;
-			case '/':
-			case '-':
-				if (fs2 != NULL)
-					config_visual_hit_i(core, fs2, -1);
-				continue;
-			case 'l':
-			case 'e': // edit value
-			case ' ':
-			case '\r':
-			case '\n': // never happens
-				if (menu == 1) {
-					if (fs2 != NULL)
-						config_visual_hit(core, fs2);
-				} else {
-					r_flag_space_set(&core->flags, fs);
-					menu = 1;
-					_option = option;
-					option = 0;
-				}
-				break;
-			case '?':
-				r_cons_clear00();
-				r_cons_printf("\nVe: Visual Eval help:\n\n");
-				r_cons_printf(" q     - quit menu\n");
-				r_cons_printf(" j/k   - down/up keys\n");
-				r_cons_printf(" h/b   - go back\n");
-				r_cons_printf(" e/' ' - edit/toggle current variable\n");
-				r_cons_printf(" +/-   - increase/decrease numeric value\n");
-				r_cons_printf(" :     - enter command\n");
-				r_cons_flush();
-				r_cons_any_key();
-				break;
-			case ':':
-				r_cons_set_raw(0);
+					config_visual_hit(core, fs2);
+			} else {
+				r_flag_space_set(&core->flags, fs);
+				menu = 1;
+				_option = option;
+				option = 0;
+			}
+			break;
+		case '?':
+			r_cons_clear00();
+			r_cons_printf("\nVe: Visual Eval help:\n\n");
+			r_cons_printf(" q     - quit menu\n");
+			r_cons_printf(" j/k   - down/up keys\n");
+			r_cons_printf(" h/b   - go back\n");
+			r_cons_printf(" e/' ' - edit/toggle current variable\n");
+			r_cons_printf(" +/-   - increase/decrease numeric value\n");
+			r_cons_printf(" :     - enter command\n");
+			r_cons_flush();
+			r_cons_any_key();
+			break;
+		case ':':
+			r_cons_set_raw(0);
 #if HAVE_LIB_READLINE
-				char *ptr = readline(VISUAL_PROMPT);
-				if (ptr) {
-					strncpy(cmd, ptr, sizeof(cmd));
-					r_core_cmd(core, cmd, 1);
-					free(ptr);
-				}
-#else
-				cmd[0]='\0';
-				//dl_prompt = ":> ";
-				if (r_cons_fgets(cmd, 1000, 0, NULL) <0)
-					cmd[0]='\0';
-				//line[strlen(line)-1]='\0';
+			char *ptr = readline(VISUAL_PROMPT);
+			if (ptr) {
+				strncpy(cmd, ptr, sizeof(cmd));
 				r_core_cmd(core, cmd, 1);
+				free(ptr);
+			}
+#else
+			cmd[0]='\0';
+			//dl_prompt = ":> ";
+			if (r_cons_fgets(cmd, 1000, 0, NULL) <0)
+				cmd[0]='\0';
+			//line[strlen(line)-1]='\0';
+			r_core_cmd(core, cmd, 1);
 #endif
-				r_cons_set_raw(1);
-				if (cmd[0])
-					r_cons_any_key();
-				//r_cons_gotoxy(0,0);
-				r_cons_clear00();
-				continue;
+			r_cons_set_raw(1);
+			if (cmd[0])
+				r_cons_any_key();
+			//r_cons_gotoxy(0,0);
+			r_cons_clear00();
+			continue;
 		}
 	}
 }

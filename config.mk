@@ -4,7 +4,8 @@ DESTDIR=
 OSTYPE?=gnulinux
 
 COMPILER?=gcc
-#COMPILER=tcc
+#COMPILER=mingw32-gcc
+#tcc
 
 # verbose error messages everywhere
 STATIC_DEBUG=0

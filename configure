@@ -17,6 +17,8 @@ control_c() {
 }
 trap control_c 2
 HAVE_EWF=1
+[ -z "${USERCC}" ] && USERCC="gcc"
+[ -z "${USEROSTYPE}" ] && USEROSTYPE="gnulinux"
 WANT_VALA=1
 split_host() {
 S="$"
@@ -139,6 +141,8 @@ EOF2
 
 printf "\nOptional Features:
   --without-ewf          disable EWF dependency 
+  --with-compiler        Define compiler to use (see mk/)  (USERCC=gcc)
+  --with-ostype          Choose OS type ( gnulinux windows osx )  (USEROSTYPE=gnulinux)
   --without-vala         disables the build of all the vala-dependant parts \n"
 printf "\nSome influential environment variables:
   CC          C compiler command
@@ -183,7 +187,7 @@ echo "VERSION:   0.2b"
 echo "LANGS:     c"
 echo "REQUIRED:  lib>=vala-1.0 libvala-1.0>=0.5.0"
 echo "OPTIONAL:  libewf"
-echo "FLAGS:     --without-ewf --without-vala"
+echo "FLAGS:     --without-ewf --with-compiler=gcc --with-ostype=gnulinux --without-vala"
 	exit 0
 	;;
 "--cache-file") 
@@ -226,6 +230,8 @@ echo "FLAGS:     --without-ewf --without-vala"
 	MANDIR="$value"; ;;
 
 "--without-ewf") HAVE_EWF="0"; ;;
+--with-compiler) if [ -z "${value}" ]; then USERCC="gcc"; else USERCC="${value}" ; fi ;;
+--with-ostype) if [ -z "${value}" ]; then USEROSTYPE="gnulinux"; else USEROSTYPE="${value}" ; fi ;;
 "--without-vala") WANT_VALA="0"; ;;
 *) if [ "$value" ]; then eval "`echo $flag2=$value`" ; 
 else echo ; echo "WARNING: Unknown flag '$flag'." >&2 ; echo ; fi ;;
@@ -241,7 +247,7 @@ parse_options $1
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C HAVE_LIB_EWF HAVE_EWF WANT_VALA HAVE_VALAC VALAC HAVE_VALA_1_0_VERSION_0_5_0"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C HAVE_LIB_EWF HAVE_EWF USERCC USEROSTYPE WANT_VALA HAVE_VALAC VALAC HAVE_VALA_1_0_VERSION_0_5_0"
 
 create_environ
 
@@ -364,7 +370,7 @@ done
 do_remove
 echo
 echo "Final report:"
-for A in  PREFIX HAVE_LIB_EWF HAVE_VALAC ; do # REPORT
+for A in  PREFIX HAVE_LIB_EWF HAVE_VALAC USERCC USEROSTYPE ; do # REPORT
 eval VAL="\$${A}"
 [ -z "${VAL}" ] && VAL="(null)"
 echo " - ${A} = ${VAL}"
