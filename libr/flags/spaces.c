@@ -56,4 +56,3 @@ R_API void r_flag_space_list(struct r_flag_t *f)
 			(i==f->space_idx)?'*':' ', f->space[i]);
 	}
 }
-

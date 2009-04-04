@@ -4,6 +4,19 @@
 #include <r_cons.h> // TODO: drop dependency
 #include <r_util.h> // TODO: drop dependency
 #include <stdio.h>
+#include <btree.h>
+
+//static int cmp(static void *a, static void *b)
+static int cmp(const void *a, const void *b)
+{
+	struct r_flag_item_t *fa = (struct r_flag_item_t *)a;
+	struct r_flag_item_t *fb = (struct r_flag_item_t *)b;
+	int ret = 0;
+	/* we cannot use a simple substraction coz u64 > s32 :) */
+	if (fa->offset > fb->offset) ret = 1;
+	else if (fa->offset < fb->offset) ret = -1;
+	return ret;
+}
 
 R_API int r_flag_init(struct r_flag_t *f)
 {
@@ -12,6 +25,7 @@ R_API int r_flag_init(struct r_flag_t *f)
 	f->space_idx = -1;
 	f->space_idx2 = -1;
 	f->base = 0LL;
+	f->tree = NULL; // btree_init()
 	for(i=0;i<R_FLAG_SPACES_MAX;i++)
 		f->space[i] = NULL;
 	return 0;
@@ -28,8 +42,8 @@ R_API struct r_flag_item_t *r_flag_list(struct r_flag_t *f, int rad)
 	struct list_head *pos;
 	list_for_each_prev(pos, &f->flags) {
 		struct r_flag_item_t *flag = list_entry(pos, struct r_flag_item_t, list);
-		if (rad) printf("f %s %lld @ 0x%08llx\n", flag->name,
-			flag->size, flag->offset);
+		if (rad) printf("f %s %lld @ 0x%08llx\n",
+			flag->name, flag->size, flag->offset);
 		else printf("0x%08llx %lld %s\n",
 			flag->offset, flag->size, flag->name);
 	}
@@ -51,13 +65,8 @@ R_API struct r_flag_item_t *r_flag_get(struct r_flag_t *f, const char *name)
 
 R_API struct r_flag_item_t *r_flag_get_i(struct r_flag_t *f, u64 off)
 {
-	struct list_head *pos;
-	list_for_each_prev(pos, &f->flags) {
-		struct r_flag_item_t *flag = list_entry(pos, struct r_flag_item_t, list);
-		if (off == flag->offset)
-			return flag;
-	}
-	return NULL;
+	struct r_flag_item_t tmp = { .offset = off };
+	return btree_get(f->tree, &tmp, cmp);
 }
 
 R_API int r_flag_unset(struct r_flag_t *f, const char *name)
@@ -65,8 +74,10 @@ R_API int r_flag_unset(struct r_flag_t *f, const char *name)
 	struct r_flag_item_t *item;
 	item = r_flag_get(f, name);
 	/* MARK: entrypoint to remove flags */
-	if (item)
+	if (item) {
+		btree_del(f->tree, item, cmp, NULL);
 		list_del(&item->list);
+	}
 	return 0;
 }
 
@@ -113,9 +124,11 @@ R_API int r_flag_set(struct r_flag_t *fo, const char *name, u64 addr, u32 size, 
 		/* MARK: entrypoint for flag addition */
 		flag = malloc(sizeof(struct r_flag_item_t));
 		memset(flag,'\0', sizeof(struct r_flag_item_t));
+		flag->offset = addr + fo->base;
+		btree_add(&fo->tree, flag, cmp);
 		list_add_tail(&(flag->list), &fo->flags);
 		if (flag==NULL)
-			return 1;
+			return R_TRUE;
 	}
 
 	strncpy(flag->name, name, R_FLAG_NAME_SIZE);
@@ -127,5 +140,5 @@ R_API int r_flag_set(struct r_flag_t *fo, const char *name, u64 addr, u32 size, 
 	flag->format = 0; // XXX
 	flag->cmd = NULL;
 
-	return 0;
+	return R_FALSE;
 }

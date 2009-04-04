@@ -2,6 +2,7 @@
 #define _INCLUDE_UTIL_R_
 
 #include "r_types.h"
+#include <btree.h>
 #include "list.h"
 
 /* r_cache */
@@ -112,5 +113,6 @@ int r_sys_sleep(int secs);
 int r_sys_usleep(int usecs);
 R_API const char *r_sys_getenv(const char *key);
 R_API int r_sys_setenv(const char *key, const char *value, int ow);
+
 
 #endif

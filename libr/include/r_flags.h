@@ -24,6 +24,7 @@ struct r_flag_t {
 	int space_idx2;
 	u64 base;
 	const char *space[R_FLAG_SPACES_MAX];
+	struct btree_node *tree;
 	struct list_head flags;
 };
 

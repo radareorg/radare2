@@ -392,7 +392,7 @@ static int cmd_print(void *data, const char *input)
 				if (show_bytes) {
 					struct r_flag_item_t *flag = r_flag_get_i(&core->flags, core->seek+idx);
 					if (flag) {
-						r_cons_printf("=> %11s ", flag->name);
+						r_cons_printf("*[ %10s] ", flag->name);
 					} else r_cons_printf("%14s ", asmop.buf_hex);
 				}
 				if (pseudo) {
