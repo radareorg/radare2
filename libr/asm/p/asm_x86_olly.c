@@ -44,7 +44,7 @@ static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 	}
 
 	if (aop->inst_len > 0)
-		memcpy(aop->buf, buf, aop->inst_len);
+		memcpy(aop->buf, asm_obj.code, aop->inst_len);
 
 	return aop->inst_len;
 }

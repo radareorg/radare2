@@ -21,6 +21,8 @@ static int rasm_show_help()
 		" -a [arch]    Set architecture plugin\n"
 		" -b [bits]    Set architecture bits\n"
 		" -s [syntax]  Select syntax (intel, att)\n"
+		" -B           Binary input/output (-l is mandatory for input)\n"
+		" -l           Length of Binary input/output\n"
 		" -e           Use big endian\n"
 		" If the last argument is '-' reads from stdin\n\n"
 		"Available plugins:\n");
@@ -29,41 +31,49 @@ static int rasm_show_help()
 	return R_TRUE;
 }
 
-static int rasm_disasm(char *buf, u64 offset, int str)
+static int rasm_disasm(char *buf, u64 offset, u64 len, int ascii, int bin)
 {
 	struct r_asm_aop_t aop;
 	u8 *data;
 	char *ptr = buf;
 	int ret = 0;
-	u64 idx = 0, word = 0, len = 0; 
+	u64 idx, word = 0, clen = 0; 
 
-	if (!str) {
+	if (bin) {
+		clen = len; //XXX
+		data = (u8*)buf;
+	} else if (ascii) {
+		clen = strlen(buf);
+		data = (u8*)buf;
+	} else {
 		while(ptr[0]) {
 			if (ptr[0]!= ' ')
-				if (0==(++word%2))len++;
+				if (0==(++word%2))clen++;
 			ptr += 1;
 		}
-		data = alloca(len);
+		data = alloca(clen);
 		r_hex_str2bin(buf, data);
-	} else {
-		len = strlen(buf);
-		data = (u8*)buf;
 	}
 
-	while (idx < len) {
+	if (!len || clen <= len)
+		len = clen;
+
+
+	for(idx=ret=0; idx < len; idx+=ret) {
 		r_asm_set_pc(&a, offset + idx);
-		ret = r_asm_disassemble(&a, &aop, data+idx, len-idx);
-		idx += ret;
+		if (!(ret = r_asm_disassemble(&a, &aop, data+idx, len-idx)))
+			return 0;
 		printf("%s\n", aop.buf_asm);
 	}
 
 	return (int)idx;
 }
 
-static int rasm_asm(char *buf, u64 offset)
+static int rasm_asm(char *buf, u64 offset, u64 len, int bin)
 {
 	struct r_asm_aop_t aop;
-	int ret;
+	char *ptr = NULL, *tokens[1024];
+	int ret, idx, ctr, i, j;
 
 #if 0 
 	/* TODO: Arch, syntax... */
@@ -72,14 +82,27 @@ static int rasm_asm(char *buf, u64 offset)
 		return 1;
 	}
 #endif 
-	r_asm_set_pc(&a, offset);
 
-	ret = r_asm_assemble(&a, &aop, buf);
-	if (!ret)
-		printf("invalid\n");
-	else printf("%s\n", aop.buf_hex);
+	for (tokens[0] = buf, ctr = 0;
+		(ptr = strchr(tokens[ctr], ';'));
+		tokens[++ctr] = ptr+1)
+			*ptr = '\0';
 
-	return ret;
+	for (ret = idx = i = 0; i <= ctr; i++, idx+=ret) {
+		r_asm_set_pc(&a, offset + idx);
+		ret = r_asm_assemble(&a, &aop, tokens[i]);
+		if (ret) {
+			if (bin)
+				for (j = 0; j < ret; j++)
+					printf("%c", aop.buf[j]);
+			else printf("%s\n", aop.buf_hex);
+		} else {
+			fprintf(stderr, "invalid\n");
+			return 0;
+		}
+	}
+
+	return idx;
 }
 
 /* asm callback */
@@ -96,7 +119,8 @@ int main(int argc, char *argv[])
 {
 	char *arch = NULL;
 	u64 offset = 0x8048000;
-	int dis = 0, str = 0, c;
+	int dis = 0, ascii = 0, bin = 0, ret = 0, c;
+	u64 len = 0, idx = 0;
 
 	r_asm_init(&a);
 	r_lib_init(&l, "radare_plugin");
@@ -107,7 +131,7 @@ int main(int argc, char *argv[])
 	if (argc<2)
 		return rasm_show_help();
 
-	while ((c = getopt(argc, argv, "da:b:s:o:h")) != -1)
+	while ((c = getopt(argc, argv, "a:b:s:do:Bl:h")) != -1)
 	{
 		switch( c ) {
 		case 'a':
@@ -127,6 +151,12 @@ int main(int argc, char *argv[])
 		case 'o':
 			offset = r_num_math(NULL, optarg);
 			break;
+		case 'B':
+			bin = 1;
+			break;
+		case 'l':
+			len = r_num_math(NULL, optarg);
+			break;
 		case 'e':
 			r_asm_set_big_endian(&a, R_TRUE);
 			break;
@@ -143,9 +173,9 @@ int main(int argc, char *argv[])
 			free (str);
 			return 1;
 		}
-		if (!strcmp(str, "asm_bf"))
-			str = 1;
 		free (str);
+		if (!strcmp(arch, "bf"))
+			ascii = 1;
 	} else if (!dis) {
 		if (!r_asm_set(&a, "asm_x86_olly")) {
 			fprintf(stderr, "Error: Cannot find asm_x86_olly plugin\n");
@@ -162,16 +192,23 @@ int main(int argc, char *argv[])
 			char buf[1024];
 			for(;;) {
 				fgets(buf, 1024, stdin);
-				if (feof(stdin))
+				if ((!bin || !dis) && feof(stdin))
 					break;
-				buf[strlen(buf)-1]='\0';
-				if (dis) offset += rasm_disasm(buf, offset, str);
-				else offset += rasm_asm(buf, offset);
+				if (!bin || !dis) buf[strlen(buf)-1]='\0';
+				if (dis) {
+					ret = rasm_disasm(buf, offset, len, ascii, bin);
+				} else {
+					ret = rasm_asm(buf, offset, len, bin);
+				}
+				idx += ret;
+				offset += ret;
+				if (!ret || (len && idx >= len))
+					break;
 			}
-			return 0;
+			return idx;
 		}
-		if (dis) return rasm_disasm(argv[optind], offset, str);
-		else return rasm_asm(argv[optind], offset);
+		if (dis) return rasm_disasm(argv[optind], offset, len, ascii, bin);
+		else return rasm_asm(argv[optind], offset, len, bin);
 	}
 
 	return 0;
