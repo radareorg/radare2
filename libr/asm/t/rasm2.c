@@ -21,9 +21,10 @@ static int rasm_show_help()
 		" -a [arch]    Set architecture plugin\n"
 		" -b [bits]    Set architecture bits\n"
 		" -s [syntax]  Select syntax (intel, att)\n"
-		" -B           Binary input/output (-l is mandatory for input)\n"
-		" -l           Length of Binary input/output\n"
+		" -B           Binary input/output (-l is mandatory for binary input)\n"
+		" -l [int]     input/output length\n"
 		" -e           Use big endian\n"
+		" If '-l' value is greater than output length, output is padded with nops\n"
 		" If the last argument is '-' reads from stdin\n\n"
 		"Available plugins:\n");
 	r_asm_list(&a);
@@ -101,6 +102,20 @@ static int rasm_asm(char *buf, u64 offset, u64 len, int bin)
 			return 0;
 		}
 	}
+	
+	for (ret = 0; idx < len; idx+=ret) {
+		ret = r_asm_assemble(&a, &aop, "nop");
+		if (ret) {
+			if (bin)
+				for (j = 0; j < ret; j++)
+					printf("%c", aop.buf[j]);
+			else printf("%s", aop.buf_hex);
+		} else {
+			fprintf(stderr, "invalid\n");
+			return 0;
+		}
+	}
+	if (!bin && idx == len) printf("\n");
 
 	return idx;
 }
