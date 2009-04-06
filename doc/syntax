@@ -1,0 +1,34 @@
+Syntax coding style guidelines
+==============================
+
+I will try to not being a boring document like most of already available
+coding style guidelines ;) Here'r some rules:
+
+
+* Do not bypass 78 columns
+
+* Use tabs instead of space based indentation
+  - The code should be smart enought to do not bypass 78 columns
+    using 5 space indentation.
+
+* function opens brackets at next line
+* do/for/if/while open brackets at same line
+* Commas and keywords should be followed by a space. f.ex:
+  if (blabl)
+  foo(one, two);
+
+* Do not use C99 variable declaration
+  - This way we reduce the number of local variables per function
+    and it's easier to find which variables are used, where and so on.
+
+* Comments should be smart. Function names should be enought explicit
+  to not require a comment to explain what it does. If this is not
+  possible at all, we can still use a comment. But it is a bad idea
+  to relay on comment to make the code readable.
+
+* Use 'R_API' define to mark exportable methods
+
+
+VIM syntax configuration:
+-------------------------
+TODO:

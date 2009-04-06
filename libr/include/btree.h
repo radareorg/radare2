@@ -19,7 +19,7 @@ R_API struct btree_node *btree_remove(struct btree_node *p, BTREE_DEL(del));
 R_API void *btree_search(struct btree_node *proot, void *x, BTREE_CMP(cmp), int parent);
 R_API int btree_del(struct btree_node *proot, void *x, BTREE_CMP(cmp), BTREE_DEL(del));
 R_API void *btree_get(struct btree_node *proot, void *x, BTREE_CMP(cmp));
-R_API void btree_insert(struct btree_node *p,struct btree_node **T, BTREE_CMP(cmp));
+R_API void btree_insert(struct btree_node **T, struct btree_node *p, BTREE_CMP(cmp));
 R_API void btree_add(struct btree_node **T, void *e, BTREE_CMP(cmp));
 R_API void btree_cleartree(struct btree_node *proot, BTREE_DEL(del));
 
