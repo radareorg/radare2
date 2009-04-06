@@ -102,7 +102,8 @@ struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, u8 *buf, u64
 	struct r_anal_aop_t aop;
 	u8 *ptr = buf;
 	u8 *end = buf + len;
-	u64 opc = anal->pc, sz = 0, index = 0;
+	u64 opc = anal->pc;
+	int sz = 0, index = 0;
 
 	INIT_LIST_HEAD(&(list->list));
 
@@ -123,8 +124,10 @@ struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, u8 *buf, u64
 			}
 		}
 #endif
+
 		anal->pc += sz;
 		sz = r_anal_aop(anal, &aop, ptr);
+
 		if (sz < 1) {
 			sz = 1;
 		} else {
@@ -137,7 +140,6 @@ struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, u8 *buf, u64
 					goto __next;
 				if (aop.jump == 0)
 					goto __next;
-
 				list2 = MALLOC_STRUCT(struct r_anal_refline_t);
 				list2->from = anal->pc;
 				list2->to = aop.jump;
@@ -167,92 +169,51 @@ int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, ch
 	if (!list)
 		return R_FALSE;
 
-	str[0] = '\0';
-	strcat(str, " ");
+	strcpy(str, " ");
 
-	for (pos = linestyle?(&(list->list))->next:(&(list->list))->prev; pos != (&(list->list)); pos = linestyle?pos->next:pos->prev) {
+	for (pos = linestyle?(&(list->list))->next:(&(list->list))->prev;
+		pos != (&(list->list)); pos = linestyle?pos->next:pos->prev) {
+
 		struct r_anal_refline_t *ref = list_entry(pos, struct r_anal_refline_t, list);
 
-		if (anal->pc == ref->to)
-			dir = 1;
-		if (anal->pc == ref->from)
-			dir = 2;
+		if (anal->pc == ref->to) dir = 1;
+		if (anal->pc == ref->from) dir = 2;
 
 		if (anal->pc == ref->to) {
 			if (ref->from > ref->to)
 				strcat(str, ".");
-			else
-				strcat(str, "`");
+			else strcat(str, "`");
 			ch = '-';
-		} else
-			if (anal->pc == ref->from) {
-				if (ref->from > ref->to)
-					strcat(str, "`");
-				else
-					strcat(str, ".");
-				ch = '=';
-			} else {
-				if (ref->from < ref->to) {
-					/* down */
-					//C strcat(str, C_YELLOW);
-					if (anal->pc > ref->from && anal->pc < ref->to) {
-						if (ch=='-'||ch=='=')
-							r_str_concatch(str, ch);
-						else
-							strcat(str, "|");
-					} else
-#if 0 
-						C {
-							if (ch=='-')
-								cons_printf(C_WHITE"-");
-							else if (ch=='=')
-								cons_printf(C_YELLOW"=");
-							else {
-								r_str_concatch(str, ch);
-							}
-						} else 
-#endif 
-							r_str_concatch(str, ch);
-				} else {
-					//C strcat(str, C_WHITE);
-					/* up */
-					if (anal->pc < ref->from && anal->pc > ref->to) {
-						if (ch=='-'||ch=='=')
-							r_str_concatch(str, ch);
-						else // ^
-							strcat(str, "|");
-					} else
-						r_str_concatch(str, ch);
-				}
-			}
+		} else if (anal->pc == ref->from) {
+			if (ref->from > ref->to)
+				strcat(str, "`");
+			else strcat(str, ".");
+			ch = '=';
+		} else if (ref->from < ref->to) { /* down */
+			if (anal->pc > ref->from && anal->pc < ref->to) {
+				if (ch=='-'||ch=='=')
+					r_str_concatch(str, ch);
+				else strcat(str, "|");
+			} else r_str_concatch(str, ch);
+		} else { /* up */
+			if (anal->pc < ref->from && anal->pc > ref->to) {
+				if (ch=='-'||ch=='=')
+					r_str_concatch(str, ch);
+				else strcat(str, "|");
+			} else r_str_concatch(str, ch);
+		}
 		if (wide) {
-			switch(ch) {
-			case '=':
-			case '-':
+			if (ch == '=' || ch == '-')
 				r_str_concatch(str, ch);
-				break;
-			default:
-				strcat(str, " ");
-				break;
-			}
+			else strcat(str, " ");
 		}
 	}
 
-	if (dir==1) { 
-#if 0 
-		C strcat(str, C_RED"-> "C_RESET);
-		else 
-#endif 
-			strcat(str, "-> ");
-	} else
-		if (dir==2) {
-#if 0 
-			C strcat(str, C_GREEN"=< "C_RESET);
-			else 
-#endif 
-				strcat(str, "=< ");
-		}
-		else strcat(str, "   ");
+	switch(dir) {
+	case 1: strcat(str, "-> "); break;
+	case 2: strcat(str, "=< "); break;
+	default: strcat(str, "   "); break;
+	}
 
 	return R_TRUE;
 }

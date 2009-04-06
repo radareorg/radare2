@@ -384,7 +384,7 @@ static int cmd_print(void *data, const char *input)
 				ret = r_asm_disassemble(&core->assembler, &asmop, buf+idx, len-idx);
 				if (ret <1) {
 					ret = 1;
-					fprintf(stderr, "** invalid opcode at 0x%08llx **\n", core->assembler.pc + ret);
+					eprintf("** invalid opcode at 0x%08llx **\n", core->assembler.pc + ret);
 				}
 				r_anal_aop(&core->anal, &analop, buf+idx);
 
@@ -407,9 +407,7 @@ static int cmd_print(void *data, const char *input)
 					r_cons_printf("\t\t; ------------------------------------\n");
 				}
 			}
-
-			if (reflines)
-				free(reflines);
+			free(reflines);
 		}
 		break;
 	case 's':
