@@ -102,7 +102,7 @@ struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, u8 *buf, u64
 	struct r_anal_aop_t aop;
 	u8 *ptr = buf;
 	u8 *end = buf + len;
-	int opc = anal->pc, sz = 0, index = 0;
+	u64 opc = anal->pc, sz = 0, index = 0;
 
 	INIT_LIST_HEAD(&(list->list));
 
