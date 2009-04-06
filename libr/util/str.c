@@ -244,6 +244,8 @@ char *r_str_concatf(char *ptr, const char *fmt, ...)
         return ptr;
 }
 
+inline void r_str_concatch(char *x, char y){char b[2]={y,0};strcat(x,b);}
+
 void *r_str_free(void *ptr)
 {
         free (ptr);

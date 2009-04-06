@@ -197,7 +197,7 @@ int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, ch
 					//C strcat(str, C_YELLOW);
 					if (anal->pc > ref->from && anal->pc < ref->to) {
 						if (ch=='-'||ch=='=')
-							sprintf(str, "%s%c", str, ch);
+							r_str_concatch(str, ch);
 						else
 							strcat(str, "|");
 					} else
@@ -207,28 +207,29 @@ int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, ch
 								cons_printf(C_WHITE"-");
 							else if (ch=='=')
 								cons_printf(C_YELLOW"=");
-							else sprintf(str, "%s%c", str, ch);
+							else {
+								r_str_concatch(str, ch);
+							}
 						} else 
 #endif 
-							sprintf(str, "%s%c", str, ch);
+							r_str_concatch(str, ch);
 				} else {
 					//C strcat(str, C_WHITE);
 					/* up */
 					if (anal->pc < ref->from && anal->pc > ref->to) {
 						if (ch=='-'||ch=='=')
-							sprintf(str, "%s%c", str, ch);
+							r_str_concatch(str, ch);
 						else // ^
 							strcat(str, "|");
-					} else {
-						sprintf(str, "%s%c", str, ch);
-					}
+					} else
+						r_str_concatch(str, ch);
 				}
 			}
 		if (wide) {
 			switch(ch) {
 			case '=':
 			case '-':
-				sprintf(str, "%s%c", str, ch);
+				r_str_concatch(str, ch);
 				break;
 			default:
 				strcat(str, " ");
