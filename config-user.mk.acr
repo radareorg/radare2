@@ -11,5 +11,7 @@ RUNTIME_DEBUG=1
 # TODO: add flag to choose ostype
 OSTYPE?=@USEROSTYPE@
 
+HAVE_LIB_TCC=@HAVE_LIB_TCC@
+
 #-include ../config.mk
 #-include ../../config.mk

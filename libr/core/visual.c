@@ -548,7 +548,7 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 	case 's':
 		r_core_cmd(core, "ds", 0);
 		r_core_cmd(core, ".dr", 0);
-		r_core_cmd(core, "s eip", 0);
+		//r_core_cmd(core, "s eip", 0);
 		break;
 	case 'p':
 		printidx++;
@@ -584,17 +584,29 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 		r_cons_fgets(buf, 1023, 0, NULL);
 		r_core_cmd(core, buf, 0);
 		break;
+	case ';':
+		r_cons_printf("Enter a comment: (prefix it with '-' to remove)\n");
+		r_cons_flush();
+		r_cons_set_raw(0);
+		strcpy(buf, "CC ");
+		if (r_cons_fgets(buf+3, 1000, 0, NULL) <0)
+			buf[0]='\0';
+		if (buf[0])
+			r_core_cmd(core, buf, 1);
+		r_cons_set_raw(1);
+		break;
 	case '?':
 		r_cons_clear00();
 		r_cons_printf(
 		"\nVisual mode help:\n\n"
-		" >||<  -  seek aligned to block size\n"
-		" hjkl  -  move around\n"
-		" HJKL  -  move around faster\n"
-		" P||p  -  rotate print modes\n"
-		" /*+-  -  change block size\n"
-		" :cmd  -  run radare command\n"
-		" q     -  back to radare shell\n");
+		" >||<    -  seek aligned to block size\n"
+		" hjkl    -  move around\n"
+		" HJKL    -  move around faster\n"
+		" P||p    -  rotate print modes\n"
+		" /*+-    -  change block size\n"
+		" :cmd    -  run radare command\n"
+		" ;[-]cmt -  add/remove comment\n"
+		" q       -  back to radare shell\n");
 		r_cons_flush();
 		r_cons_any_key();
 		break;

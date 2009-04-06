@@ -345,6 +345,7 @@ static int cmd_print(void *data, const char *input)
 	int show_bytes = r_config_get_i(&core->config, "asm.bytes");
 	int show_lines = r_config_get_i(&core->config, "asm.reflines");
 	int linesout = r_config_get_i(&core->config, "asm.reflinesout");
+	int show_comments = r_config_get_i(&core->config, "asm.comments");
 	int linesopts = 0;
 	int pseudo = r_config_get_i(&core->config, "asm.pseudo");
 
@@ -369,6 +370,7 @@ static int cmd_print(void *data, const char *input)
 			u8 *buf = core->block;
 			char str[128];
 			char line[128];
+			char *comment;
 			struct r_asm_aop_t asmop;
 			struct r_anal_aop_t analop;
 			struct r_anal_refline_t *reflines;
@@ -380,6 +382,14 @@ static int cmd_print(void *data, const char *input)
 			for(idx=ret=0; idx < len; idx+=ret) {
 				r_asm_set_pc(&core->assembler, core->assembler.pc + ret);
 				r_anal_set_pc(&core->anal, core->anal.pc + ret);
+				// ONLY SHOW IF ASM.COMMENTS IS TRUE
+				if (show_comments) {
+					comment = r_meta_get_string(&core->meta, R_META_COMMENT, core->anal.pc+ret);
+					if (comment) {
+						r_cons_strcat(comment);
+						free(comment);
+					}
+				}
 				r_anal_reflines_str(&core->anal, reflines, line, linesopts);
 				ret = r_asm_disassemble(&core->assembler, &asmop, buf+idx, len-idx);
 				if (ret <1) {
@@ -851,6 +861,11 @@ static int cmd_eval(void *data, const char *input)
 	case '\0':
 		r_config_list(&core->config, NULL, 0);
 		break;
+	case '!':
+		input = r_str_chop_ro(input+1);
+		if (!r_config_swap(&core->config, input))
+			eprintf("r_config: '%s' is not a boolean variable.\n", input);
+		break;
 	case '-':
 		r_core_config_init(core);
 		eprintf("BUG: 'e-' command locks the eval hashtable. patches are welcome :)\n");
@@ -864,6 +879,7 @@ static int cmd_eval(void *data, const char *input)
 		"  e     ; list config vars\n"
 		"  e-    ; reset config vars\n"
 		"  e*    ; dump config vars in r commands\n"
+		"  e!a   ; invert the boolean value of 'a' var\n"
 		"  e a   ; get value of var 'a'\n"
 		"  e a=b ; set var 'a' the 'b' value\n");
 		//r_cmd_help(&core->cmd, "e");
@@ -969,8 +985,8 @@ static int cmd_meta(void *data, const char *input)
 	char file[1024];
 	//struct r_core_t *core = (struct r_core_t *)data;
 	switch(input[0]) {
-	case '\0':
-		/* meta help */
+	case '*':
+		r_meta_list(&core->meta, R_META_ANY);
 		break;
 	case 'L': // debug information of current offset
 		ret = r_bininfo_get_line(
@@ -979,16 +995,46 @@ static int cmd_meta(void *data, const char *input)
 			r_cons_printf("file %s\nline %d\n", file, line);
 		break;
 	case 'C': /* add comment */
-		// r_meta_add(&core->meta);
+		// TODO: do we need to get the size? or the offset?
+		// TODO: is this an exception compared to other C? commands?
+		if (input[1]==' ') input = input+1;
+		if (input[1]=='-') {
+			r_meta_del(&core->meta, R_META_COMMENT, core->seek, 1, input+2);
+		} else r_meta_add(&core->meta, R_META_COMMENT, core->seek, 1, input+1);
 		break;
+	case 'S':
+	case 's':
+	case 'm': /* struct */
+	case 'x': /* code xref */
+	case 'X': /* data xref */
 	case 'F': /* add function */
+		{
+		u64 addr = core->seek;
+		char fun_name[128];
+		int size = atoi(input);
+		int type = R_META_FUNCTION;
+		char *t, *p = strchr(input+1, ' ');
+		if (p) {
+			t = strdup(p+1);
+printf("T=(%s)\n", t);
+			p = strchr(t, ' ');
+			if (p) {
+				*p='\0';
+				strncpy(fun_name, p+1, sizeof(fun_name));
+			} else sprintf(fun_name, "sub_%08llx", addr);
+			addr = r_num_math(&core->num, t);
+			free(t);
+		}
+		r_meta_add(&core->meta, type, addr, size, fun_name);
+		}
 		break;
+	case '\0':
 	case '?':
 		eprintf(
 		"Usage: C[CDF?] [arg]\n"
-		" CL [addr]         ; show 'code line' information (bininfo)\n"
-		" CF [size] [addr]  ; register function size here (TODO)\n"
-		" CC [string]       ; add comment (TODO)\n");
+		" CL [addr]               ; show 'code line' information (bininfo)\n"
+		" CF [size] [name] [addr] [name] ; register function size here (TODO)\n"
+		" CC [string]             ; add comment (TODO)\n");
 	}
 	return R_TRUE;
 }

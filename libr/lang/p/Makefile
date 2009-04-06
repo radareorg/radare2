@@ -17,8 +17,10 @@ lang_python.so:
 		-I/usr/include/python2.6/ -lpython2.6 ; \
 		fi
 
+ifeq ($(HAVE_LIB_TCC),1)
 lang_tcc.so: tcc.o
 	-${CC} ${CFLAGS} -fPIC -shared -o lang_tcc.so tcc.c -Wl,-R.. -ldl -ltcc
+endif
 
 lang_lua.so: lua.o
 	-${CC} ${CFLAGS} -fPIC -shared -o lang_lua.so lua.c -Wl,-R..

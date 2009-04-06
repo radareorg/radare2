@@ -12,6 +12,15 @@ struct r_meta_count_t {
 	/* TODO: ... */
 };
 
+#if 0
+TODO:
+We need a way to determine sections for other architectures, so we will
+be able to read a mixed x86/ppc mach0 binary in a shot.
+We also need a way to determine if the folder is opened or closed (bool)
+We also need to specify which type of data is the contents of a data block
+  (hexdump, structure, ...) select print format command
+#endif
+
 /* old data_t */
 struct r_meta_item_t {
 	u64 from;

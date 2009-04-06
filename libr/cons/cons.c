@@ -486,9 +486,11 @@ void r_cons_set_raw(int b)
 //int r_cons_0x1b_to_hjkl(int ch)
 int r_cons_get_arrow(int ch)
 {
+#if 0
 printf("ARROW(0x%x)\n", ch);
 fflush(stdout);
 r_sys_sleep(3);
+#endif
 	if (ch==0x1b) {
 		ch = r_cons_readchar();
 		if (ch==0x5b) {

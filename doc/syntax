@@ -28,6 +28,12 @@ coding style guidelines ;) Here'r some rules:
 
 * Use 'R_API' define to mark exportable methods
 
+* Try not using oneline comments '//'. Use /* */ instead
+* To comment out some code use #if 0 (...) #endif
+
+* Do not write ultra-large functions, split them into multiple or simplify
+  the algorithm, only external-copy-pasted-not-going-to-be-maintained code
+  can be accepted in this way (gnu code, external disassemblers, etc..)
 
 VIM syntax configuration:
 -------------------------

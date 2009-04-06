@@ -33,7 +33,7 @@ char *r_str_home(const char *str)
 	return dst;
 }
 
-int r_str_hash(const char *str)
+R_API int r_str_hash(const char *str)
 {
 	int i = 1;
 	int a = 0x31;
@@ -46,7 +46,7 @@ int r_str_hash(const char *str)
 	return h&0x7ffffff;
 }
 
-int r_str_delta(char *p, char a, char b)
+R_API int r_str_delta(char *p, char a, char b)
 {
 	char *_a = strchr(p, a);
 	char *_b = strchr(p, b);
@@ -54,7 +54,7 @@ int r_str_delta(char *p, char a, char b)
 	return (_a-_b);
 }
 
-int r_str_word_set0(char *str)
+R_API int r_str_word_set0(char *str)
 {
         int i;
         char *p;
@@ -64,7 +64,7 @@ int r_str_word_set0(char *str)
         return i;
 }
 
-const char *r_str_word_get0(const char *str, int idx)
+R_API const char *r_str_word_get0(const char *str, int idx)
 {
         int i;
         const char *ptr = str;
@@ -75,7 +75,7 @@ const char *r_str_word_get0(const char *str, int idx)
         return ptr;
 }
 
-int r_str_word_count(const char *string)
+R_API int r_str_word_count(const char *string)
 {
         char *text = (char *)string;
         char *tmp  = (char *)string;
@@ -94,8 +94,7 @@ int r_str_word_count(const char *string)
         return word-1;
 }
 
-
-char *r_str_ichr(char *str, char chr)
+R_API char *r_str_ichr(char *str, char chr)
 {
 	while(*str==chr) {
 		str = str+1;
@@ -103,7 +102,7 @@ char *r_str_ichr(char *str, char chr)
 	return str;
 }
 
-char *r_str_lchr(char *str, char chr)
+R_API char *r_str_lchr(char *str, char chr)
 {
         int len = strlen(str)+1;
         for(;len>=0;len--)
@@ -130,6 +129,14 @@ R_API int r_str_nstr(char *from, char *to, int size)
                 if (from==NULL||to==NULL||from[i]!=to[i])
                         break;
         return (size!=i);
+}
+
+R_API const char *r_str_chop_ro(const char *str)
+{
+	if (str)
+        while(str[0]&&iswhitechar(str[0]))
+                str = str + 1;
+	return str;
 }
 
 R_API char *r_str_chop(char *str)

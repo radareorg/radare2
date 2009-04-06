@@ -3,7 +3,7 @@
 #include "r_config.h"
 #include "r_util.h" // r_str_hash, r_str_chop, ...
 
-struct r_config_node_t* r_config_node_new(const char *name, const char *value)
+R_API struct r_config_node_t* r_config_node_new(const char *name, const char *value)
 {
 	struct r_config_node_t *node = 
 		(struct r_config_node_t *)
@@ -18,13 +18,13 @@ struct r_config_node_t* r_config_node_new(const char *name, const char *value)
 	return node;
 }
 
-void r_config_list(struct r_config_t *cfg, const char *str, int rad)
+R_API void r_config_list(struct r_config_t *cfg, const char *str, int rad)
 {
 	struct list_head *i;
 	int len = 0;
 
 	if (!strnull(str)) {
-		str = r_str_chop(str);
+		str = r_str_chop_ro(str);
 		len = strlen(str);
 	}
 
@@ -42,7 +42,7 @@ void r_config_list(struct r_config_t *cfg, const char *str, int rad)
 	}
 }
 
-struct r_config_node_t *r_config_node_get(struct r_config_t *cfg, const char *name)
+R_API struct r_config_node_t *r_config_node_get(struct r_config_t *cfg, const char *name)
 {
 	struct list_head *i;
 	int hash;
@@ -57,7 +57,7 @@ struct r_config_node_t *r_config_node_get(struct r_config_t *cfg, const char *na
 	return NULL;
 }
 
-const char *r_config_get(struct r_config_t *cfg, const char *name)
+R_API const char *r_config_get(struct r_config_t *cfg, const char *name)
 {
 	struct r_config_node_t *node =
 		r_config_node_get(cfg, name);
@@ -66,14 +66,26 @@ const char *r_config_get(struct r_config_t *cfg, const char *name)
 		if (node->flags & CN_BOOL)
 			return (const char *)
 				(((!strcmp("true", node->value))
-				  || (!strcmp("1", node->value)))?(const char *)1:NULL);
+				  || (!strcmp("1", node->value)))?
+				  (const char *)1:NULL);
 		return node->value;
 	}
 	cfg->last_notfound = 1;
 	return NULL;
 }
 
-u64 r_config_get_i(struct r_config_t *cfg, const char *name)
+R_API int r_config_swap(struct r_config_t *cfg, const char *name)
+{
+	struct r_config_node_t *node =
+		r_config_node_get(cfg, name);
+	if (node && node->flags & CN_BOOL) {
+		r_config_set_i(cfg, name, !node->i_value);
+		return R_TRUE;
+	}
+	return R_FALSE;
+}
+
+R_API u64 r_config_get_i(struct r_config_t *cfg, const char *name)
 {
 	struct r_config_node_t *node =
 		r_config_node_get(cfg, name);
@@ -85,7 +97,7 @@ u64 r_config_get_i(struct r_config_t *cfg, const char *name)
 	return (u64)0LL;
 }
 
-struct r_config_node_t *r_config_set_cb(struct r_config_t *cfg, const char *name, const char *value, int (*callback)(void *user, void *data))
+R_API struct r_config_node_t *r_config_set_cb(struct r_config_t *cfg, const char *name, const char *value, int (*callback)(void *user, void *data))
 {
 	struct r_config_node_t *node;
 	node = r_config_set(cfg, name, value);
@@ -95,7 +107,7 @@ struct r_config_node_t *r_config_set_cb(struct r_config_t *cfg, const char *name
 	return node;
 }
 
-struct r_config_node_t *r_config_set(struct r_config_t *cfg, const char *name, const char *value)
+R_API struct r_config_node_t *r_config_set(struct r_config_t *cfg, const char *name, const char *value)
 {
 	struct r_config_node_t *node;
 
@@ -146,7 +158,7 @@ struct r_config_node_t *r_config_set(struct r_config_t *cfg, const char *name, c
 	return node;
 }
 
-int r_config_rm(struct r_config_t *cfg, const char *name)
+R_API int r_config_rm(struct r_config_t *cfg, const char *name)
 {
 	struct r_config_node_t *node =
 		r_config_node_get(cfg, name);
@@ -158,7 +170,7 @@ int r_config_rm(struct r_config_t *cfg, const char *name)
 	return 0;
 }
 
-struct r_config_node_t *r_config_set_i(struct r_config_t *cfg, const char *name, const u64 i)
+R_API struct r_config_node_t *r_config_set_i(struct r_config_t *cfg, const char *name, const u64 i)
 {
 	char buf[128];
 	struct r_config_node_t *node =
@@ -174,13 +186,13 @@ struct r_config_node_t *r_config_set_i(struct r_config_t *cfg, const char *name,
 			sprintf(buf, "%lld", i); //0x%08lx", i);
 			node->value = strdup(buf);
 		}
-		node->flags = CN_RW | CN_INT;
+		//node->flags = CN_RW | CN_INT;
 		node->i_value = i;
 	} else {
 		if (cfg->lock) {
 			eprintf("(locked: no new keys can be created)");
 		} else {
-			sprintf(buf, "%d", (unsigned int)i);//OFF_FMTd, (u64) i);
+			sprintf(buf, "0x%08llx", i);
 			node = r_config_node_new(name, buf);
 			node->flags = CN_RW | CN_OFFT;
 			node->i_value = i;
@@ -195,7 +207,7 @@ struct r_config_node_t *r_config_set_i(struct r_config_t *cfg, const char *name,
 	return node;
 }
 
-int r_config_eval(struct r_config_t *cfg, const char *str)
+R_API int r_config_eval(struct r_config_t *cfg, const char *str)
 {
 	char *ptr,*a,*b;
 	char *name;
@@ -246,12 +258,12 @@ int r_config_eval(struct r_config_t *cfg, const char *str)
 	return 1;
 }
 
-void r_config_lock(struct r_config_t *cfg, int l)
+R_API void r_config_lock(struct r_config_t *cfg, int l)
 {
 	cfg->lock = l;
 }
 
-int r_config_init(struct r_config_t *cfg, void *user)
+R_API int r_config_init(struct r_config_t *cfg, void *user)
 {
 	cfg->user = user;
 	cfg->n_nodes = 0;
@@ -261,7 +273,7 @@ int r_config_init(struct r_config_t *cfg, void *user)
 	return 0;
 }
 
-struct r_config_t *r_config_new(void *user)
+R_API struct r_config_t *r_config_new(void *user)
 {
 	struct r_config_t *cfg = (struct r_config_t *)
 		malloc(sizeof(struct r_config_t));
@@ -269,14 +281,14 @@ struct r_config_t *r_config_new(void *user)
 	return cfg;
 }
 
-int r_config_free(struct r_config_t *cfg)
+R_API int r_config_free(struct r_config_t *cfg)
 {
 	// TODO: Free node list
 	free(cfg);
 	return 0;
 }
 
-void r_config_visual_hit_i(struct r_config_t *cfg, const char *name, int delta)
+R_API void r_config_visual_hit_i(struct r_config_t *cfg, const char *name, int delta)
 {
 	struct r_config_node_t *node =
 		r_config_node_get(cfg, name);
