@@ -3,11 +3,10 @@
 #include <r_cons.h>
 
 #include "r_types.h"
-#include "r_line.h"
+#include "r_util.h"
 
 #if HAVE_DIETLINE
 #include "r_line.h"
-#include "r_util.h"
 #endif
 
 #include <stdio.h>
@@ -245,7 +244,7 @@ R_API void r_cons_grep(const char *str)
 	}
 }
 
-void r_cons_flush()
+R_API void r_cons_flush()
 {
 	char *tee = r_cons_teefile;
 
@@ -272,7 +271,7 @@ void r_cons_flush()
 	r_cons_reset();
 }
 
-void r_cons_printf(const char *format, ...)
+R_API void r_cons_printf(const char *format, ...)
 {
 	int len;
 	char buf[CONS_BUFSZ];
@@ -401,7 +400,7 @@ R_API int r_cons_get_columns()
 	return columns_i;
 }
 
-int r_cons_get_real_columns()
+R_API int r_cons_get_real_columns()
 {
 #if __UNIX__
         struct winsize win;
@@ -421,7 +420,7 @@ int r_cons_get_real_columns()
 #endif
 }
 
-int r_cons_yesno(int def, const char *fmt, ...)
+R_API int r_cons_yesno(int def, const char *fmt, ...)
 {
 	va_list ap;
 	int key = def;
@@ -458,7 +457,7 @@ static struct termios tio_old, tio_new;
 #endif
 static int termios_init = 0;
 
-void r_cons_set_raw(int b)
+R_API void r_cons_set_raw(int b)
 {
 #if __UNIX__
 	if (b) {
@@ -484,7 +483,7 @@ void r_cons_set_raw(int b)
 #if 1
 // XXX: major refactorize : get_arrow
 //int r_cons_0x1b_to_hjkl(int ch)
-int r_cons_get_arrow(int ch)
+R_API int r_cons_get_arrow(int ch)
 {
 #if 0
 printf("ARROW(0x%x)\n", ch);
@@ -513,16 +512,3 @@ r_sys_sleep(3);
 	return ch;
 }
 #endif
-
-/* TODO: handle screen width */
-void r_cons_progressbar(int pc)
-{
-        int tmp, cols = 78;
-        (pc<0)?pc=0:(pc>100)?pc=100:0;
-        fprintf(stderr, "\x1b[K  %3d%% [", pc);
-        cols-=15;
-        for(tmp=cols*pc/100;tmp;tmp--) fprintf(stderr,"#");
-        for(tmp=cols-(cols*pc/100);tmp;tmp--) fprintf(stderr,"-");
-        fprintf(stderr, "]\r");
-        fflush(stderr);
-}

@@ -1,0 +1,33 @@
+r_sysproxy
+==========
+
+This module implements a multiarch/os proxy syscalling library.
+
+ATM the contents of this directory are a mess.. See radare1 for a working
+implementation... Here we will specify a standard API and we will have to
+write sysproxy agents for other architectures and operating systems.
+
++-------------------+                    +-----------------+
+| sysproxy listener | <--.           .-- | sysproxy client |
++-------------------+    |  network  |   +-----------------+
+  arch/os/dependant      `-----------'    radare sysproxy://
+
+   - listener agent
+   - pwned service
+   - ...
+
+------------------------------------------------------
+sp = r_sysproxy_new ()
+if (fork()) {
+	r_sysproxy_listen (sp, 9999);
+} else {
+	r_sysproxy_connect (sp, "127.0.0.1", 9999);
+	ret = r_sysproxy_call (sp, R_SYSPROXY_SC_WRITE, buf, 128);
+}
+------------------------------------------------------
+
+The sysproxy r_io plugin implements a basic IO abstraction using
+sysproxy to remotely open/read/write files, but maybe also for remote
+debugging using ptrace() thru r_sysproxy.
+
+--pancake

@@ -157,7 +157,7 @@ int main(int argc, char **argv)
 	}
 
 	if (seek)
-		r_core_seek (&r, seek);
+		r_core_seek (&r, seek, 1);
 
 	if (fullfile)
 		r_core_block_size (&r, r.file->size);

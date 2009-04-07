@@ -140,7 +140,7 @@ static int cmd_seek(void *data, const char *input)
 			input = input+1;
 		switch(input[0]) {
 		case ' ':
-			r_core_seek(core, off);
+			r_core_seek(core, off, 1);
 			break;
 		case '+':
 			if (input[1]=='+') r_core_seek_delta(core, core->blocksize);
@@ -772,9 +772,9 @@ static int __cb_hit(struct r_search_kw_t *kw, void *user, u64 addr)
 
 	if (!strnull(cmdhit)) {
 		u64 here = core->seek;
-		r_core_seek(core, addr);
+		r_core_seek(core, addr, R_FALSE);
 		r_core_cmd(core, cmdhit, 0);
-		r_core_seek(core, here);
+		r_core_seek(core, here, R_TRUE);
 	}
 
 	return R_TRUE;
@@ -1209,9 +1209,9 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 			// TODO: remove temporally seek (should be done by cmd_foreach)
 			u64 tmpoff = core->seek;
 			r_core_cmd_foreach(core, cmd, ptr+2);
-			r_core_seek(core, tmpoff);
+			r_core_seek(core, tmpoff, 1);
 			return -1; /* do not run out-of-foreach cmd */
-		} else r_core_seek(core, r_num_math(&core->num, ptr+1));
+		} else r_core_seek(core, r_num_math(&core->num, ptr+1),1);
 	}
 
 	return 0;
@@ -1257,7 +1257,7 @@ R_API int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
 			} else addr = r_num_math(&core->num, each);
 			eprintf("; 0x%08llx:\n", addr);
 			each = str+1;
-			r_core_seek(core, addr);
+			r_core_seek(core, addr, 1);
 			r_core_cmd(core, cmd, 0);
 			r_cons_flush();
 		} while(str != NULL);
@@ -1276,7 +1276,7 @@ R_API int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
 				addr = core->macro._brk_value;
 				sprintf(cmd2, "%s @ 0x%08llx", cmd, addr);
 				eprintf("0x%08llx (%s)\n", addr, cmd2);
-				r_core_seek(core, addr);
+				r_core_seek(core, addr, 1);
 				r_core_cmd(core, cmd2, 0);
 				i++;
 			}
@@ -1294,7 +1294,7 @@ R_API int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
 					addr = r_num_math(&core->num, buf);
 					eprintf("0x%08llx: %s\n", addr, cmd);
 					sprintf(cmd2, "%s @ 0x%08llx", cmd, addr);
-					r_core_seek(core, buf);
+					r_core_seek(core, buf, 1);
 					r_core_cmd(core, cmd2, 0);
 					core->macro.counter++;
 				}
@@ -1346,7 +1346,7 @@ printf("No flags foreach implemented\n");
 					if ((core->flags.space_idx != -1) && (flag->space != core->flags.space_idx))
 						continue;
 					if (word[0]=='\0' || strstr(flag->name, word) != NULL) {
-						r_core_seek(core, flag->offset);
+						r_core_seek(core, flag->offset, 1);
 						r_cons_printf("; @@ 0x%08llx (%s)\n", core->seek, flag->name);
 						r_core_cmd(core, cmd, 0);
 					}
@@ -1448,7 +1448,7 @@ int r_core_cmd(struct r_core_t *core, const char *command, int log)
 	}
 	if (log) r_line_hist_add(command);
 	if (restoreseek)
-		r_core_seek(core, tmpseek);
+		r_core_seek(core, tmpseek, 1);
 
 	if (newfd != 1) {
 		r_cons_flush();

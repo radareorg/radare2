@@ -8,7 +8,7 @@ int r_core_yank(struct r_core_t *core, u64 addr, int len)
 	free(core->yank);
 	core->yank = (u8 *)malloc(len);
 	if (addr != core->seek)
-		r_core_seek(core, addr);
+		r_core_seek(core, addr, 1);
 	if (len == 0)
 		len = core->blocksize;
 	if (len > core->blocksize)
@@ -17,7 +17,7 @@ int r_core_yank(struct r_core_t *core, u64 addr, int len)
 	core->yank_off = addr;
 	core->yank_len = len;
 	if (curseek != addr)
-		r_core_seek(core, curseek);
+		r_core_seek(core, curseek, 1);
 	return R_TRUE;
 }
 

@@ -18,7 +18,7 @@ R_API int r_sys_sleep(int secs)
 #if __UNIX__
 	return sleep(secs);
 #else
-	Sleep(secs);
+	Sleep(secs * 1000); // W32
 	return 0;
 #endif
 }
@@ -28,8 +28,7 @@ R_API int r_sys_usleep(int usecs)
 #if __UNIX__
 	return usleep(usecs);
 #else
-	/* TODO */
-	return -1;
+	Sleep(secs); // W32
 #endif
 }
 

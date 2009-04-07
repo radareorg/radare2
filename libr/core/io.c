@@ -67,6 +67,18 @@ R_API int r_core_write_op(struct r_core_t *core, const char *arg, char op)
 	return ret;
 }
 
+R_API int r_core_seek(struct r_core_t *core, u64 addr, int rb)
+{
+	int ret;
+	ret = r_io_lseek(&core->io, core->file->fd, addr, R_IO_SEEK_SET);
+	if (ret) {
+		core->seek = addr;
+		if (rb) return r_core_block_read (core, 0);
+		return R_TRUE;
+	}
+	return R_FALSE;
+}
+
 int r_core_write_at(struct r_core_t *core, u64 addr, const u8 *buf, int size)
 {
 	int ret;
@@ -75,6 +87,14 @@ int r_core_write_at(struct r_core_t *core, u64 addr, const u8 *buf, int size)
 	if (addr >= core->seek && addr <= core->seek+core->blocksize)
 		r_core_block_read(core, 0);
 	return (ret==-1)?R_FALSE:R_TRUE;
+}
+
+R_API int r_core_block_read(struct r_core_t *core, int next)
+{
+	if (core->file == NULL)
+		return -1;
+	r_io_lseek(&core->io, core->file->fd, core->seek+((next)?core->blocksize:0), R_IO_SEEK_SET);
+	return r_io_read(&core->io, core->file->fd, core->block, core->blocksize);
 }
 
 int r_core_read_at(struct r_core_t *core, u64 addr, u8 *buf, int size)

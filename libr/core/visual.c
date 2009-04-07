@@ -33,7 +33,7 @@ static void r_core_visual_mark_seek(struct r_core_t *core, u8 ch)
 		marks_init = 1;
 	}
 	if (marks[ch])
-		r_core_seek(core, marks[ch]);
+		r_core_seek(core, marks[ch], 1);
 }
 
 R_API int r_core_visual_trackflags(struct r_core_t *core)
@@ -483,21 +483,25 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 		r_cons_flush();
 		r_cons_set_raw(0);
 		strcpy(buf, "wa ");
-		if (r_cons_fgets(buf+3, 1000, 0, NULL) <0)
-			buf[0]='\0';
-		if (buf[0])
+		if (r_cons_fgets(buf+3, 1000, 0, NULL) <0) buf[0]='\0';
+		if (buf[0]) {
+			if (curset) r_core_seek(core, core->seek + cursor, 0);
 			r_core_cmd(core, buf, 1);
+			if (curset) r_core_seek(core, core->seek - cursor, 1);
+		}
 		r_cons_set_raw(1);
 		break;
-	case 'x':
+	case 'w':
 		r_cons_printf("Enter hexpair string to write:\n");
 		r_cons_flush();
 		r_cons_set_raw(0);
 		strcpy(buf, "wx ");
-		if (r_cons_fgets(buf+3, 1000, 0, NULL) <0)
-			buf[0]='\0';
-		if (buf[0])
+		if (r_cons_fgets(buf+3, 1000, 0, NULL) <0) buf[0]='\0';
+		if (buf[0]) {
+			if (curset) r_core_seek(core, core->seek + cursor, 0);
 			r_core_cmd(core, buf, 1);
+			if (curset) r_core_seek(core, core->seek - cursor, 1);
+		}
 		r_cons_set_raw(1);
 		break;
 	/* select */
@@ -613,8 +617,11 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 		strcpy(buf, "CC ");
 		if (r_cons_fgets(buf+3, 1000, 0, NULL) <0)
 			buf[0]='\0';
-		if (buf[0])
+		if (buf[0]) {
+			if (curset) r_core_seek(core, core->seek + cursor, 0);
 			r_core_cmd(core, buf, 1);
+			if (curset) r_core_seek(core, core->seek - cursor, 1);
+		}
 		r_cons_set_raw(1);
 		break;
 	case '?':
@@ -670,7 +677,7 @@ R_API int r_core_visual(struct r_core_t *core, const char *input)
 		scrseek = r_num_math(&core->num, 
 			r_config_get(&core->config, "scr.seek"));
 		if (scrseek != 0LL) {
-			r_core_seek (core, scrseek);
+			r_core_seek (core, scrseek, 1);
 			// TODO: read?
 		}
 		cmdprompt = r_config_get (&core->config, "cmd.vprompt");

@@ -264,6 +264,18 @@ R_API void r_print_c(struct r_print_t *p, const char *str, int len)
 	p->printf(" };\n");
 }
 
+/* TODO: handle screen width */
+R_API void r_print_progressbar(struct r_print_t *pr, int pc)
+{
+        int tmp, cols = 78;
+        (pc<0)?pc=0:(pc>100)?pc=100:0;
+        fprintf(stderr, "\x1b[K  %3d%% [", pc);
+        cols-=15;
+        for(tmp=cols*pc/100;tmp;tmp--) fprintf(stderr,"#");
+        for(tmp=cols-(cols*pc/100);tmp;tmp--) fprintf(stderr,"-");
+        fprintf(stderr, "]\r");
+        fflush(stderr);
+}
 
 #if 0
 /* Process source file with given parameters. Output to stdout */

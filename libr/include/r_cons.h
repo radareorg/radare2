@@ -1,7 +1,7 @@
 #ifndef _INCLUDE_CONS_R_
 #define _INCLUDE_CONS_R_
 
-#define HAVE_DIETLINE 1
+#define HAVE_DIETLINE 0
 
 #include "r_types.h"
 #include <stdio.h>
@@ -140,5 +140,6 @@ extern int r_cons_is_html;
 extern int r_cons_noflush;
 extern char *r_cons_filterline;
 extern char *r_cons_teefile;
+extern char *(*r_cons_user_fgets)(char *buf, int len);
 
 #endif

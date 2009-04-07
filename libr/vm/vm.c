@@ -93,7 +93,7 @@ static u64 r_vm_get_math(struct r_vm_t *vm, const char *str)
 	return r_vm_get_value(vm, p);
 }
 
-void r_vm_print(struct r_vm_t *vm, int type)
+R_API void r_vm_print(struct r_vm_t *vm, int type)
 {
 	struct list_head *pos;
 
@@ -116,7 +116,7 @@ void r_vm_print(struct r_vm_t *vm, int type)
 		printf("fs *\n");
 }
 
-int r_vm_reg_add(struct r_vm_t *vm, const char *name, int type, u64 value)
+R_API int r_vm_reg_add(struct r_vm_t *vm, const char *name, int type, u64 value)
 {
 	struct r_vm_reg_t *r;
 
@@ -132,7 +132,7 @@ int r_vm_reg_add(struct r_vm_t *vm, const char *name, int type, u64 value)
 	return 1;
 }
 
-u64 r_vm_reg_get(struct r_vm_t *vm, const char *name)
+R_API u64 r_vm_reg_get(struct r_vm_t *vm, const char *name)
 {
 	struct list_head *pos;
 	int len = strlen(name);
@@ -155,7 +155,7 @@ u64 r_vm_reg_get(struct r_vm_t *vm, const char *name)
 	return -1LL;
 }
 
-int r_vm_import(struct r_vm_t *vm, int in_vm)
+R_API int r_vm_import(struct r_vm_t *vm, int in_vm)
 {
 	struct list_head *pos;
 
@@ -172,7 +172,7 @@ int r_vm_import(struct r_vm_t *vm, int in_vm)
 	return 0;
 }
 
-void r_vm_cpu_call(struct r_vm_t *vm, u64 addr)
+R_API void r_vm_cpu_call(struct r_vm_t *vm, u64 addr)
 {
 	/* x86 style */
 	r_vm_stack_push(vm, vm_reg_get(vm->cpu.pc));
@@ -180,7 +180,7 @@ void r_vm_cpu_call(struct r_vm_t *vm, u64 addr)
 	// XXX this should be the next instruction after pc (we need insn length here)
 }
 
-int r_vm_init(struct r_vm_t *vm, int init)
+R_API int r_vm_init(struct r_vm_t *vm, int init)
 {
 #if 0
 	if (config.arch != vm_arch)
@@ -267,7 +267,7 @@ int r_vm_init(struct r_vm_t *vm, int init)
 	return 0;
 }
 
-int r_vm_eval_cmp(struct r_vm_t *vm, const char *str)
+R_API int r_vm_eval_cmp(struct r_vm_t *vm, const char *str)
 {
 	int len;
 	char *p, *ptr;
@@ -285,7 +285,7 @@ int r_vm_eval_cmp(struct r_vm_t *vm, const char *str)
 	return 1;
 }
 
-int r_vm_eval_eq(struct r_vm_t *vm, const char *str, const char *val)
+R_API int r_vm_eval_eq(struct r_vm_t *vm, const char *str, const char *val)
 {
 	char *p;
 	u8 buf[64];
@@ -394,7 +394,7 @@ int r_vm_eval_eq(struct r_vm_t *vm, const char *str, const char *val)
 	return 0;
 }
 
-int r_vm_eval_single(struct r_vm_t *vm, const char *str)
+R_API int r_vm_eval_single(struct r_vm_t *vm, const char *str)
 {
 	char *ptr, *eq;
 	char buf[128];
@@ -480,7 +480,7 @@ int r_vm_eval_single(struct r_vm_t *vm, const char *str)
 	return 0;
 }
 
-int r_vm_eval(struct r_vm_t *vm, const char *str)
+R_API int r_vm_eval(struct r_vm_t *vm, const char *str)
 {
 	char *next, *ptr;
 	int ret, len = strlen(str)+1;
@@ -510,7 +510,7 @@ int r_vm_eval(struct r_vm_t *vm, const char *str)
 	return 1;
 }
 
-int r_vm_eval_file(struct r_vm_t *vm, const char *str)
+R_API int r_vm_eval_file(struct r_vm_t *vm, const char *str)
 {
 	char buf[1024];
 	FILE *fd = fopen(str, "r");
@@ -531,7 +531,7 @@ int r_vm_eval_file(struct r_vm_t *vm, const char *str)
 }
 
 /* emulate n opcodes */
-int r_vm_emulate(struct r_vm_t *vm, int n)
+R_API int r_vm_emulate(struct r_vm_t *vm, int n)
 {
 #if 0
 	u64 pc;

@@ -1,8 +1,10 @@
 /* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
 
 #include <r_cons.h>
-#include <r_line.h>
 #include <string.h>
+#if HAVE_DIETLINE
+#include <r_line.h>
+#endif
 
 #define CMDS 54
 static const char *radare_argv[CMDS] ={
@@ -15,9 +17,14 @@ static const char *radare_argv[CMDS] ={
 	"pX ", "po ", "pm ", "pz ", "pr > ", "p? "
 };
 
+char *(*r_cons_user_fgets)(char *buf, int len) = NULL;
+
 char *dl_readline(int argc, const char **argv);
+// XXX no control for max length here?!?!
 int r_cons_fgets(char *buf, int len, int argc, const char **argv)
 {
+	if (r_cons_user_fgets)
+		return r_cons_user_fgets(buf, 512);
 #if HAVE_DIETLINE
 	/* TODO: link against dietline if possible for autocompletion */
 	char *ptr;

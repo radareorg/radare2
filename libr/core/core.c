@@ -31,6 +31,32 @@ R_API struct r_core_t *r_core_new()
 	return c;
 }
 
+/*-----------------------------------*/
+#define CMDS 54
+static const char *radare_argv[CMDS] ={
+	NULL, // padding
+	"? ", "!step ", "!stepo ", "!cont ", "!signal ", "!fd ", "!maps ", ".!maps*",
+	"!bp ", "!!", "#md5", "#sha1", "#crc32", "#entropy", "Visual", "ad", "ac",
+	"ag", "emenu ", "eval ", "seek ", "info ", "help ", "move ", "quit ", "flag ",
+	"Po ", "Ps ", "Pi ", "H ", "H no ", "H nj ", "H fj ", "H lua ", "x ", "b ",
+	"y ", "yy ", "y? ", "wx ", "ww ", "wf ", "w?", "pD ", "pG ", "pb ", "px ",
+	"pX ", "po ", "pm ", "pz ", "pr > ", "p? "
+};
+
+static int myfgets(char *buf, int len)
+{
+	/* TODO: link against dietline if possible for autocompletion */
+	char *ptr;
+	buf[0]='\0';
+	ptr = r_line_readline(CMDS, radare_argv);
+	if (ptr == NULL)
+		return -1;
+	strncpy(buf, ptr, len);
+	//free(ptr);
+	return strlen(buf);
+}
+/*-----------------------------------*/
+
 R_API int r_core_init(struct r_core_t *core)
 {
 	core->oobi = NULL;
@@ -56,7 +82,9 @@ R_API int r_core_init(struct r_core_t *core)
 	r_bininfo_init(&core->bininfo);
 	r_bin_set_user_ptr(&core->bin, core);
 	r_meta_init(&core->meta);
+	r_line_init();
 	r_cons_init();
+	r_cons_user_fgets = myfgets;
 	r_line_hist_load(".radare2_history");
 
 	core->search = r_search_new(R_SEARCH_KEYWORD);
@@ -124,14 +152,6 @@ R_API int r_core_block_size(struct r_core_t *core, u32 bsize)
 	return ret;
 }
 
-R_API int r_core_block_read(struct r_core_t *core, int next)
-{
-	if (core->file == NULL)
-		return -1;
-	r_io_lseek(&core->io, core->file->fd, core->seek+((next)?core->blocksize:0), R_IO_SEEK_SET);
-	return r_io_read(&core->io, core->file->fd, core->block, core->blocksize);
-}
-
 R_API int r_core_seek_align(struct r_core_t *core, u64 align, int times)
 {
 	int inc = (times>=0)?1:-1;
@@ -148,19 +168,7 @@ R_API int r_core_seek_align(struct r_core_t *core, u64 align, int times)
 		times -= inc;
 		diff += align*inc;
 	}
-	return r_core_seek(core, seek+diff);
-}
-
-/* TODO: add a parameter to read or not the block? optimization? */
-R_API int r_core_seek(struct r_core_t *core, u64 addr)
-{
-	u64 tmp = core->seek;
-	int ret;
-	core->seek = addr;
-	ret = r_core_block_read(core, 0);
-	if (ret == -1)
-		core->seek = tmp;
-	return ret;
+	return r_core_seek(core, seek+diff, 1);
 }
 
 R_API int r_core_seek_delta(struct r_core_t *core, s64 addr)
