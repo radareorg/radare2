@@ -363,7 +363,49 @@ static u64 ELF_(get_import_addr)(ELF_(r_bin_elf_obj) *bin, int sym)
 
 	shdrp = shdr;
 	for (i = 0; i < ehdr->e_shnum; i++, shdrp++) {
-		if (!strcmp(&string[shdrp->sh_name], ".rela.plt")) {
+		if (!strcmp(&string[shdrp->sh_name], ".rel.plt")) {
+			ELF_(Rel) *rel, *relp;
+			rel = (ELF_(Rel) *)malloc(shdrp->sh_size);
+			if (rel == NULL) {
+				perror("malloc");
+				return 0;
+			}
+
+			if (lseek(bin->fd, shdrp->sh_offset, SEEK_SET) != shdrp->sh_offset) {
+				perror("lseek");
+				return 0;
+			}
+
+			if (read(bin->fd, rel, shdrp->sh_size) != shdrp->sh_size) {
+				perror("read");
+				return 0;
+			}
+
+			relp = rel;
+			for (j = 0; j < shdrp->sh_size; j += sizeof(ELF_(Rel)), relp++) {
+				ELF_(aux_swap_endian)((u8*)&(relp->r_offset), sizeof(ELF_(Addr)));
+				ELF_(aux_swap_endian)((u8*)&(relp->r_info), sizeof(ELF_(Word)));
+			}
+
+			got_offset = (rel->r_offset - bin->base_addr - got_addr) & ELF_GOTOFF_MASK;
+			relp = rel;
+			for (j = 0; j < shdrp->sh_size; j += sizeof(ELF_(Rel)), relp++) {
+				if (ELF_R_SYM(relp->r_info) == sym) {
+					if (lseek(bin->fd, relp->r_offset-bin->base_addr-got_offset, SEEK_SET)
+							!= relp->r_offset-bin->base_addr-got_offset) {
+						perror("lseek");
+						return 0;
+					}
+
+					if (read(bin->fd, &plt_sym_addr, sizeof(ELF_(Addr))) != sizeof(ELF_(Addr))) {
+						perror("read");
+						return 0;
+					}
+
+					return plt_sym_addr-6;
+				}
+			}
+		} else if (!strcmp(&string[shdrp->sh_name], ".rela.plt")) {
 			ELF_(Rela) *rel, *relp;
 			rel = (ELF_(Rela) *)malloc(shdrp->sh_size);
 			if (rel == NULL) {
@@ -392,49 +434,7 @@ static u64 ELF_(get_import_addr)(ELF_(r_bin_elf_obj) *bin, int sym)
 			for (j = 0; j < shdrp->sh_size; j += sizeof(ELF_(Rela)), relp++) {
 				if (ELF_R_SYM(relp->r_info) == sym) {
 					if (lseek(bin->fd, relp->r_offset-bin->base_addr-got_offset, SEEK_SET)
-					!= relp->r_offset-bin->base_addr-got_offset) {
-						perror("lseek");
-						return 0;
-					}
-
-					if (read(bin->fd, &plt_sym_addr, sizeof(ELF_(Addr))) != sizeof(ELF_(Addr))) {
-						perror("read");
-						return 0;
-					}
-
-					return plt_sym_addr-6;
-				}
-			}
-		} else if (!strcmp(&string[shdrp->sh_name], ".rel.plt")) {
-			ELF_(Rel) *rel, *relp;
-			rel = (ELF_(Rel) *)malloc(shdrp->sh_size);
-			if (rel == NULL) {
-				perror("malloc");
-				return -1;
-			}
-
-			if (lseek(bin->fd, shdrp->sh_offset, SEEK_SET) != shdrp->sh_offset) {
-				perror("lseek");
-				return -1;
-			}
-
-			if (read(bin->fd, rel, shdrp->sh_size) != shdrp->sh_size) {
-				perror("read");
-				return -1;
-			}
-
-			relp = rel;
-			for (j = 0; j < shdrp->sh_size; j += sizeof(ELF_(Rel)), relp++) {
-				ELF_(aux_swap_endian)((u8*)&(relp->r_offset), sizeof(ELF_(Addr)));
-				ELF_(aux_swap_endian)((u8*)&(relp->r_info), sizeof(ELF_(Word)));
-			}
-
-			got_offset = (rel->r_offset - bin->base_addr - got_addr) & ELF_GOTOFF_MASK;
-			relp = rel;
-			for (j = 0; j < shdrp->sh_size; j += sizeof(ELF_(Rel)), relp++) {
-				if (ELF_R_SYM(relp->r_info) == sym) {
-					if (lseek(bin->fd, relp->r_offset-bin->base_addr-got_offset, SEEK_SET)
-					!= relp->r_offset-bin->base_addr-got_offset) {
+							!= relp->r_offset-bin->base_addr-got_offset) {
 						perror("lseek");
 						return 0;
 					}
@@ -709,12 +709,12 @@ u64 ELF_(r_bin_elf_resize_section)(ELF_(r_bin_elf_obj) *bin, const char *name, u
 	ELF_(Phdr) *phdr = bin->phdr, *phdrp;
 	ELF_(Shdr) *shdr = bin->shdr, *shdrp;
 	const char *string = bin->string;
-	ELF_(Word) rsz_osize = 0, rsz_fsize;
-	ELF_(Word) rsz_size = (ELF_(Word)) size;
 	ELF_(Off) rsz_offset, new_offset;
-	ELF_(Addr) new_addr;
-	u64 off, delta = 0;
+	ELF_(Addr) new_addr, got_addr = 0;
+	u64 off, got_offset, delta = 0;
+	u64 rsz_osize = 0, rsz_fsize, rsz_size = size;
 	int i, j, done = 0;
+	int elf64 = (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64);
 
 	if (size == 0) {
 		printf("0 size section?\n");
@@ -739,6 +739,14 @@ u64 ELF_(r_bin_elf_resize_section)(ELF_(r_bin_elf_obj) *bin, const char *name, u
 	
 	/* rewrite rel's (imports) */
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
+		if (!strcmp(&string[shdrp->sh_name], ".got"))
+			got_addr = shdrp->sh_offset;
+	}
+	if (got_addr == 0) {
+		/* TODO: Unknown GOT address */
+	}
+
+	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
 		if (!strcmp(&string[shdrp->sh_name], ".rel.plt")) {
 			ELF_(Rel) *rel, *relp;
 			rel = (ELF_(Rel) *)malloc(shdrp->sh_size);
@@ -752,11 +760,11 @@ u64 ELF_(r_bin_elf_resize_section)(ELF_(r_bin_elf_obj) *bin, const char *name, u
 			if (read(bin->fd, rel, shdrp->sh_size) != shdrp->sh_size)
 				perror("read");
 
+			got_offset = (rel->r_offset - bin->base_addr - got_addr) & ELF_GOTOFF_MASK;
 			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof(ELF_(Rel)), relp++) {
 				ELF_(aux_swap_endian)((u8*)&(relp->r_offset), sizeof(ELF_(Addr)));
-				ELF_(aux_swap_endian)((u8*)&(relp->r_info), sizeof(ELF_(Word)));
 				/* rewrite relp->r_offset */
-				if (relp->r_offset - bin->base_addr >= rsz_offset + rsz_osize) {
+				if (relp->r_offset - bin->base_addr - got_offset >= rsz_offset + rsz_osize) {
 					new_addr = (ELF_(Addr)) (relp->r_offset + delta);
 					off = shdrp->sh_offset + j;
 
@@ -781,11 +789,11 @@ u64 ELF_(r_bin_elf_resize_section)(ELF_(r_bin_elf_obj) *bin, const char *name, u
 			if (read(bin->fd, rel, shdrp->sh_size) != shdrp->sh_size)
 				perror("read");
 
+			got_offset = (rel->r_offset - bin->base_addr - got_addr) & ELF_GOTOFF_MASK;
 			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof(ELF_(Rela)), relp++) {
 				ELF_(aux_swap_endian)((u8*)&(relp->r_offset), sizeof(ELF_(Addr)));
-				ELF_(aux_swap_endian)((u8*)&(relp->r_info), sizeof(ELF_(Word)));
 				/* rewrite relp->r_offset */
-				if (relp->r_offset - bin->base_addr >= rsz_offset + rsz_osize) {
+				if (relp->r_offset - bin->base_addr - got_offset >= rsz_offset + rsz_osize) {
 					new_addr = (ELF_(Addr)) (relp->r_offset + delta);
 					off = shdrp->sh_offset + j;
 
@@ -803,18 +811,24 @@ u64 ELF_(r_bin_elf_resize_section)(ELF_(r_bin_elf_obj) *bin, const char *name, u
 	/* rewrite section headers */
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++)
 		if (!done && !strncmp(name, &string[shdrp->sh_name], ELF_NAME_LENGTH)) {
-			off = ehdr->e_shoff + i * sizeof(ELF_(Shdr)) + 3 * sizeof(ELF_(Word)) + sizeof(ELF_(Addr)) + sizeof(ELF_(Off));
-
+			if (elf64)
+				off = ehdr->e_shoff + i * sizeof(ELF_(Shdr)) + 2 * sizeof(ELF_(Word)) + sizeof(ELF_(Xword)) + sizeof(ELF_(Addr)) + sizeof(ELF_(Off));
+			else off = ehdr->e_shoff + i * sizeof(ELF_(Shdr)) + 3 * sizeof(ELF_(Word)) + sizeof(ELF_(Addr)) + sizeof(ELF_(Off));
 			if (lseek(bin->fd, off, SEEK_SET) < 0)
 				perror("lseek");
 
-			if (write(bin->fd, &rsz_size, sizeof(ELF_(Word))) != sizeof(ELF_(Word)))
-				perror("write (size)");
+			if (elf64) {
+				if (write(bin->fd, (ELF_(Word)*)&rsz_size, sizeof(ELF_(Word))) != sizeof(ELF_(Word)))
+					perror("write (size)");
+			} else if (write(bin->fd, (ELF_(Xword)*)&rsz_size, sizeof(ELF_(Xword))) != sizeof(ELF_(Xword)))
+					perror("write (size)");
 			done = 1;
 		} else if (shdrp->sh_offset >= rsz_offset + rsz_osize) {
 			new_offset = (ELF_(Off)) (shdrp->sh_offset + delta);
 			new_addr = (ELF_(Addr)) (shdrp->sh_addr ? shdrp->sh_addr + delta : 0);
-			off = ehdr->e_shoff + i * sizeof(ELF_(Shdr)) + 3 * sizeof(ELF_(Word));
+			if (elf64)
+				off = ehdr->e_shoff + i * sizeof(ELF_(Shdr)) + 2 * sizeof(ELF_(Word)) + sizeof(ELF_(Xword));
+			else off = ehdr->e_shoff + i * sizeof(ELF_(Shdr)) + 3 * sizeof(ELF_(Word));
 
 			if (lseek(bin->fd, off, SEEK_SET) < 0)
 				perror("lseek");
