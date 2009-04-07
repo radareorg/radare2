@@ -382,7 +382,6 @@ static int cmd_print(void *data, const char *input)
 			for(idx=ret=0; idx < len; idx+=ret) {
 				r_asm_set_pc(&core->assembler, core->assembler.pc + ret);
 				r_anal_set_pc(&core->anal, core->anal.pc + ret);
-				// ONLY SHOW IF ASM.COMMENTS IS TRUE
 				if (show_comments) {
 					comment = r_meta_get_string(&core->meta, R_META_COMMENT, core->anal.pc+ret);
 					if (comment) {
@@ -392,7 +391,7 @@ static int cmd_print(void *data, const char *input)
 				}
 				r_anal_reflines_str(&core->anal, reflines, line, linesopts);
 				ret = r_asm_disassemble(&core->assembler, &asmop, buf+idx, len-idx);
-				if (ret <1) {
+				if (ret<1) {
 					ret = 1;
 					eprintf("** invalid opcode at 0x%08llx **\n", core->assembler.pc + ret);
 				}
@@ -619,11 +618,27 @@ static int cmd_write(void *data, const char *input)
 		int len = strlen(input);
 		char *buf = alloca(len);
 		len = r_hex_str2bin(input+1, buf);
-		r_io_lseek(&core->io, core->file->fd, core->seek, R_IO_SEEK_SET);
-		r_io_write(&core->io, core->file->fd, buf, len);
+		r_core_write_at(core, core->seek, buf, len);
 		r_core_block_read(core, 0);
 		}
 		// write hexpairs
+		break;
+	case 'a':
+		{
+		int ret = 0;
+		struct r_asm_aop_t aop;
+		char buf[128];
+		r_asm_set_pc(&core->assembler, core->seek);
+		r_asm_set_pc(&core->assembler, core->seek);
+		if (input[1]==' ')input=input+1;
+		if (strchr(input, ';')) {
+			eprintf("TODO: No support for ';' multiple opcodes yet\n");
+		}
+		ret = r_asm_assemble(&core->assembler, &aop, input+1);
+		eprintf("Written %d bytes (%s)=wx %s\n", ret, input+1, aop.buf_hex);
+		r_core_write_at(core, core->seek, aop.buf, ret);
+		r_core_block_read(core, 0);
+		}
 		break;
 	case 'b':
 		{
@@ -631,8 +646,7 @@ static int cmd_write(void *data, const char *input)
 		char *buf = alloca(len);
 		len = r_hex_str2bin(input+1, buf);
 		r_mem_copyloop(core->block, buf, core->blocksize, len);
-		r_io_lseek(&core->io, core->file->fd, core->seek, R_IO_SEEK_SET);
-		r_io_write(&core->io, core->file->fd, core->block, core->blocksize);
+		r_core_write_at(core, core->seek, core->block, core->blocksize);
 		r_core_block_read(core, 0);
 		}
 		break;
@@ -737,6 +751,7 @@ static int cmd_write(void *data, const char *input)
 			r_cons_printf("Usage: w[x] [str] [<file] [<<EOF] [@addr]\n"
 			" w foobar   ; write string 'foobar'\n"
 			" ww foobar  ; write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'\n"
+			" wa push ebp; write opcode, separated by ';' (use '\"' around the command)\n"
 			" wb 010203  ; fill current block with cyclic hexpairs\n"
 			" wx 9090    ; write two intel nops\n"
 			" wv eip+34  ; write 32-64 bit value\n"

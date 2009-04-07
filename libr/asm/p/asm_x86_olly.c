@@ -25,7 +25,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 	return aop->inst_len;
 }
 
-static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
+static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf)
 {
 	static t_asmmodel asm_obj;
 	int idx;

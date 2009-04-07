@@ -11,19 +11,19 @@
 static struct r_asm_handle_t *asm_static_plugins[] = 
 	{ R_ASM_STATIC_PLUGINS };
 
-struct r_asm_t *r_asm_new()
+R_API struct r_asm_t *r_asm_new()
 {
 	struct r_asm_t *a = MALLOC_STRUCT(struct r_asm_t);
 	r_asm_init(a);
 	return a;
 }
 
-void r_asm_free(struct r_asm_t *a)
+R_API void r_asm_free(struct r_asm_t *a)
 {
 	free(a);
 }
 
-int r_asm_init(struct r_asm_t *a)
+R_API int r_asm_init(struct r_asm_t *a)
 {
 	int i;
 	a->user = NULL;
@@ -38,12 +38,12 @@ int r_asm_init(struct r_asm_t *a)
 	return R_TRUE;
 }
 
-void r_asm_set_user_ptr(struct r_asm_t *a, void *user)
+R_API void r_asm_set_user_ptr(struct r_asm_t *a, void *user)
 {
 	a->user = user;
 }
 
-int r_asm_add(struct r_asm_t *a, struct r_asm_handle_t *foo)
+R_API int r_asm_add(struct r_asm_t *a, struct r_asm_handle_t *foo)
 {
 	struct list_head *pos;
 	if (foo->init)
@@ -59,7 +59,7 @@ int r_asm_add(struct r_asm_t *a, struct r_asm_handle_t *foo)
 	return R_TRUE;
 }
 
-int r_asm_list(struct r_asm_t *a)
+R_API int r_asm_list(struct r_asm_t *a)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &a->asms) {
@@ -69,7 +69,7 @@ int r_asm_list(struct r_asm_t *a)
 	return R_FALSE;
 }
 
-int r_asm_set(struct r_asm_t *a, const char *name)
+R_API int r_asm_set(struct r_asm_t *a, const char *name)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &a->asms) {
@@ -82,7 +82,7 @@ int r_asm_set(struct r_asm_t *a, const char *name)
 	return R_FALSE;
 }
 
-int r_asm_set_bits(struct r_asm_t *a, int bits)
+R_API int r_asm_set_bits(struct r_asm_t *a, int bits)
 {
 	switch (bits) {
 	case 16:
@@ -95,13 +95,13 @@ int r_asm_set_bits(struct r_asm_t *a, int bits)
 	}
 }
 
-int r_asm_set_big_endian(struct r_asm_t *a, int boolean)
+R_API int r_asm_set_big_endian(struct r_asm_t *a, int boolean)
 {
 	a->big_endian = boolean;
 	return R_TRUE;
 }
 
-int r_asm_set_syntax(struct r_asm_t *a, int syntax)
+R_API int r_asm_set_syntax(struct r_asm_t *a, int syntax)
 {
 	switch (syntax) {
 	case R_ASM_SYN_INTEL:
@@ -113,13 +113,13 @@ int r_asm_set_syntax(struct r_asm_t *a, int syntax)
 	}
 }
 
-int r_asm_set_pc(struct r_asm_t *a, u64 pc)
+R_API int r_asm_set_pc(struct r_asm_t *a, u64 pc)
 {
 	a->pc = pc;
 	return R_TRUE;
 }
 
-int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len)
+R_API int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len)
 {
 	if (a->cur && a->cur->disassemble)
 		return a->cur->disassemble(a, aop, buf, len);
@@ -127,7 +127,7 @@ int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 l
 	return R_FALSE;
 }
 
-int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
+R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf)
 {
 	if (a->cur && a->cur->assemble)
 		return a->cur->assemble(a, aop, buf);

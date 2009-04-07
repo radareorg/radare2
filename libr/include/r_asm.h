@@ -38,24 +38,24 @@ struct r_asm_handle_t {
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	int (*disassemble)(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len);
-	int (*assemble)(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf);
+	int (*assemble)(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf);
 	struct list_head list;
 };
 
 /* asm.c */
-struct r_asm_t *r_asm_new();
-void r_asm_free(struct r_asm_t *a);
-int r_asm_init(struct r_asm_t *a);
-void r_asm_set_user_ptr(struct r_asm_t *a, void *user);
-int r_asm_add(struct r_asm_t *a, struct r_asm_handle_t *foo);
-int r_asm_list(struct r_asm_t *a);
-int r_asm_set(struct r_asm_t *a, const char *name);
-int r_asm_set_bits(struct r_asm_t *a, int bits);
-int r_asm_set_big_endian(struct r_asm_t *a, int boolean);
-int r_asm_set_syntax(struct r_asm_t *a, int syntax);
-int r_asm_set_pc(struct r_asm_t *a, u64 pc);
-int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len);
-int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf);
+R_API struct r_asm_t *r_asm_new();
+R_API void r_asm_free(struct r_asm_t *a);
+R_API int r_asm_init(struct r_asm_t *a);
+R_API void r_asm_set_user_ptr(struct r_asm_t *a, void *user);
+R_API int r_asm_add(struct r_asm_t *a, struct r_asm_handle_t *foo);
+R_API int r_asm_list(struct r_asm_t *a);
+R_API int r_asm_set(struct r_asm_t *a, const char *name);
+R_API int r_asm_set_bits(struct r_asm_t *a, int bits);
+R_API int r_asm_set_big_endian(struct r_asm_t *a, int boolean);
+R_API int r_asm_set_syntax(struct r_asm_t *a, int syntax);
+R_API int r_asm_set_pc(struct r_asm_t *a, u64 pc);
+R_API int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len);
+R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf);
 
 /* plugin pointers */
 extern struct r_asm_handle_t r_asm_plugin_dummy;

@@ -478,6 +478,28 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 		else flags &= !(flags&R_PRINT_FLAGS_COLOR);
 		r_print_set_flags(&core->print, flags);
 		break;
+	case 'a':
+		r_cons_printf("Enter assembler opcodes separated with ';':\n");
+		r_cons_flush();
+		r_cons_set_raw(0);
+		strcpy(buf, "wa ");
+		if (r_cons_fgets(buf+3, 1000, 0, NULL) <0)
+			buf[0]='\0';
+		if (buf[0])
+			r_core_cmd(core, buf, 1);
+		r_cons_set_raw(1);
+		break;
+	case 'x':
+		r_cons_printf("Enter hexpair string to write:\n");
+		r_cons_flush();
+		r_cons_set_raw(0);
+		strcpy(buf, "wx ");
+		if (r_cons_fgets(buf+3, 1000, 0, NULL) <0)
+			buf[0]='\0';
+		if (buf[0])
+			r_core_cmd(core, buf, 1);
+		r_cons_set_raw(1);
+		break;
 	/* select */
 	case 'H':
 		if (curset) {

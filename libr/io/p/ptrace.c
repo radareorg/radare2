@@ -75,8 +75,59 @@ static int __read(struct r_io_t *io, int pid, u8 *buf, int len)
 	return len;
 }
 
+static int ptrace_write_at(int pid, const u8 *buff, int sz, u64 addr)
+{
+        long words = sz / sizeof(long) ;
+        long last = (sz % sizeof(long))*8;
+        long  lr ;
+	int x;
+
+/*
+	long *word=&buf;
+	char buf[4];
+        En los fuentes del kernel se encuentra un #ifdef para activar el soporte de escritura por procFS.
+        Por razones de seguridad se encuentra deshabilitado, pero nunca esta de mas intentar ;)
+*/
+#if 0
+	word = ptrace(PTRACE_PEEKDATA, pid, (void *)addr, (void *)buf);
+	if (word==-1)
+		word = ptrace(PTRACE_PEEKTEXT, pid, (void *)addr, (void *)buf);
+	buf[0]=buff[0];
+	ptrace(PTRACE_POKEDATA, (pid_t)pid, (void *)addr, (void *)buf);
+	ptrace(PTRACE_POKETEXT, pid, (void *)addr, (void *)buf);
+	return sz;
+#endif
+//eprintf("%d ->%d (0x%x)\n",pid, (int)sz, (long)addr);
+
+
+	for(x=0;x<words;x++)
+		if (ptrace(PTRACE_POKEDATA,pid,&((long *)(long)addr)[x],((long *)buff)[x]))
+			goto err ;
+
+	if (last) {
+		lr = ptrace(PTRACE_PEEKTEXT,pid,&((long *)(long)addr)[x], 0) ;
+
+		/* Y despues me quejo que lisp tiene muchos parentesis... */
+		if ((lr == -1 && errno) ||
+		    (
+			ptrace(PTRACE_POKEDATA,pid,&((long *)(long)addr)[x],((lr&(-1L<<last)) |
+			(((long *)buff)[x]&(~(-1L<<last)))))
+		    )
+		   )
+                goto err;
+	}
+
+	return sz ;
+
+        err:
+                return --x * sizeof(long) ;
+
+        //return ret ;
+}
+
 static int __write(struct r_io_t *io, int pid, const u8 *buf, int len)
 {
+	return ptrace_write_at(pid, buf, len, io->seek);
 	//int ret;
 	//u64 addr = r_io_seek;
 	//ret = debug_os_write_at(pid, buf, len, addr);

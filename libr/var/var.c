@@ -3,19 +3,19 @@
 #include "r_var.h"
 #include "r_cons.h"
 
-struct r_var_t *r_var_new()
+R_API struct r_var_t *r_var_new()
 {
 	struct r_var_t *var = MALLOC_STRUCT(struct r_var_t);
 	r_var_init(var);
 	return var;
 }
 
-void r_var_free(struct r_var_t *var)
+R_API void r_var_free(struct r_var_t *var)
 {
 	free(var);
 }
 
-int r_var_init(struct r_var_t *var)
+R_API int r_var_init(struct r_var_t *var)
 {
 	INIT_LIST_HEAD(&(var->vartypes));
 	INIT_LIST_HEAD(&(var->vars));
@@ -33,7 +33,7 @@ int r_var_init(struct r_var_t *var)
 
 /* data.c */
 
-int r_var_type_add(struct r_var_t *var, const char *typename, int size, const char *fmt)
+R_API int r_var_type_add(struct r_var_t *var, const char *typename, int size, const char *fmt)
 {
 	struct r_var_type_t *d = (struct r_var_type_t *)
 		malloc(sizeof(struct r_var_type_t));
@@ -45,7 +45,7 @@ int r_var_type_add(struct r_var_t *var, const char *typename, int size, const ch
 	return R_TRUE;
 }
 
-int r_var_type_del(struct r_var_t *var, const char *typename)
+R_API int r_var_type_del(struct r_var_t *var, const char *typename)
 {
 	struct list_head *pos;
 
@@ -62,7 +62,7 @@ int r_var_type_del(struct r_var_t *var, const char *typename)
 	return 0;
 }
 
-int r_var_type_list(struct r_var_t *var)
+R_API int r_var_type_list(struct r_var_t *var)
 {
 	struct list_head *pos;
 	u64 ret = 0;
@@ -75,7 +75,7 @@ int r_var_type_list(struct r_var_t *var)
 	return ret;
 }
 
-struct r_var_type_t *r_var_type_get(struct r_var_t *var, const char *datatype)
+R_API struct r_var_type_t *r_var_type_get(struct r_var_t *var, const char *datatype)
 {
 	struct list_head *pos;
 
@@ -91,7 +91,7 @@ struct r_var_type_t *r_var_type_get(struct r_var_t *var, const char *datatype)
 
 /* vars.c */
 
-int r_var_add(struct r_var_t *v, u64 addr, u64 eaddr, int delta, int type, const char *vartype, const char *name, int arraysize)
+R_API int r_var_add(struct r_var_t *v, u64 addr, u64 eaddr, int delta, int type, const char *vartype, const char *name, int arraysize)
 {
 	struct r_var_item_t *var = MALLOC_STRUCT(struct r_var_item_t);
 	/* TODO: check of delta inside funframe */
@@ -111,7 +111,7 @@ int r_var_add(struct r_var_t *v, u64 addr, u64 eaddr, int delta, int type, const
 	return 1;
 }
 
-int r_var_add_access(struct r_var_t *var, u64 addr, int delta, int type, int set)
+R_API int r_var_add_access(struct r_var_t *var, u64 addr, int delta, int type, int set)
 {
 	u64 from = 0LL, to = 0LL;
 	struct list_head *pos;
@@ -160,7 +160,7 @@ int r_var_add_access(struct r_var_t *var, u64 addr, int delta, int type, int set
 }
 
 /* XXX: this is a static method..no need for $self argument */
-const char *r_var_type_to_string(int type)
+R_API const char *r_var_type_to_string(int type)
 {
 	switch(type) {
 	case R_VAR_TYPE_GLOBAL: return "global";
@@ -184,7 +184,7 @@ u32 var_dbg_read(int delta)
 }
 #endif
 
-int r_var_item_print(struct r_var_t *var, struct r_var_item_t * v)
+R_API int r_var_item_print(struct r_var_t *var, struct r_var_item_t * v)
 {
 	struct r_var_type_t *t = r_var_type_get(var, v->vartype);
 	if (t == NULL) {
@@ -206,7 +206,7 @@ int r_var_item_print(struct r_var_t *var, struct r_var_item_t * v)
 }
 
 /* CFV */
-int r_var_list_show(struct r_var_t *var, u64 addr)
+R_API int r_var_list_show(struct r_var_t *var, u64 addr)
 {
 	struct list_head *pos;
 	struct r_var_item_t *v;
@@ -238,7 +238,7 @@ int r_var_list_show(struct r_var_t *var, u64 addr)
 }
 
 /* 0,0 to list all */
-int r_var_list(struct r_var_t *var, u64 addr, int delta)
+R_API int r_var_list(struct r_var_t *var, u64 addr, int delta)
 {
 	struct list_head *pos, *pos2;
 	struct r_var_item_t*v;
@@ -263,13 +263,13 @@ int r_var_list(struct r_var_t *var, u64 addr, int delta)
 /* analize.c */
 
 // XXX move to code.h
-void r_var_anal_reset(struct r_var_t *var)
+R_API void r_var_anal_reset(struct r_var_t *var)
 {
 	memset(&var->anal, '\0', sizeof(var->anal));
 	var->anal_size = 0;
 }
 
-int r_var_anal_add(struct r_var_t *var, int type, int delta)
+R_API int r_var_anal_add(struct r_var_t *var, int type, int delta)
 {
 	int i, hole = -1;
 	for(i=0;i<R_VAR_ANAL_MAX;i++) {
@@ -290,7 +290,7 @@ int r_var_anal_add(struct r_var_t *var, int type, int delta)
 	return 1;
 }
 
-int r_var_anal_get(struct r_var_t *var, int type)
+R_API int r_var_anal_get(struct r_var_t *var, int type)
 {
 	int i, ctr = 0;
 	for(i=0;i<R_VAR_ANAL_MAX;i++) {

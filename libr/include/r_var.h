@@ -53,23 +53,23 @@ struct r_var_item_t {
 };
 
 /* api */
-struct r_var_t *r_var_new();
-void r_var_free(struct r_var_t *var);
-int r_var_init(struct r_var_t *var);
-int r_var_type_add(struct r_var_t *var, const char *typename, int size, const char *fmt);
-int r_var_type_del(struct r_var_t *var, const char *typename);
-int r_var_type_list(struct r_var_t *var);
-struct r_var_type_t *r_var_type_get(struct r_var_t *var, const char *datatype);
-const char *r_var_type_to_string(int type);
+R_API struct r_var_t *r_var_new();
+R_API void r_var_free(struct r_var_t *var);
+R_API int r_var_init(struct r_var_t *var);
+R_API int r_var_type_add(struct r_var_t *var, const char *typename, int size, const char *fmt);
+R_API int r_var_type_del(struct r_var_t *var, const char *typename);
+R_API int r_var_type_list(struct r_var_t *var);
+R_API struct r_var_type_t *r_var_type_get(struct r_var_t *var, const char *datatype);
+R_API const char *r_var_type_to_string(int type);
 
 /* food */
-int r_var_item_print(struct r_var_t *var, struct r_var_item_t * v);
-int r_var_list_show(struct r_var_t *var, u64 addr);
-int r_var_list(struct r_var_t *var, u64 addr, int delta);
+R_API int r_var_item_print(struct r_var_t *var, struct r_var_item_t * v);
+R_API int r_var_list_show(struct r_var_t *var, u64 addr);
+R_API int r_var_list(struct r_var_t *var, u64 addr, int delta);
 
 /* analyze */
-int r_var_anal_get(struct r_var_t *var, int type);
-void r_var_anal_reset(struct r_var_t *var);
-int r_var_anal_add(struct r_var_t *var, int type, int delta);
+R_API int r_var_anal_get(struct r_var_t *var, int type);
+R_API void r_var_anal_reset(struct r_var_t *var);
+R_API int r_var_anal_add(struct r_var_t *var, int type, int delta);
 
 #endif
