@@ -15,10 +15,10 @@ enum {
 
 struct r_asm_aop_t {
 	int  inst_len;
-	u8   buf[256];
-	char buf_asm[256];
-	char buf_hex[256];
-	char buf_err[256];
+	u8   buf[1024];
+	char buf_asm[1024];
+	char buf_hex[1024];
+	char buf_err[1024];
 	void *disasm_obj;
 };
 
@@ -56,6 +56,7 @@ R_API int r_asm_set_syntax(struct r_asm_t *a, int syntax);
 R_API int r_asm_set_pc(struct r_asm_t *a, u64 pc);
 R_API int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len);
 R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf);
+R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf);
 
 /* plugin pointers */
 extern struct r_asm_handle_t r_asm_plugin_dummy;

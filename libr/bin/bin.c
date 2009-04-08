@@ -289,9 +289,4 @@ int r_bin_get_libs()
 {
 
 }
-
-int r_bin_get_strings()
-{
-
-}
 #endif

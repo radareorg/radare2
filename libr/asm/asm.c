@@ -134,3 +134,37 @@ R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char 
 	
 	return R_FALSE;
 }
+
+R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
+{
+	char *lbuf=NULL, *ptr = NULL, *tokens[1024], buf_hex[1024];
+	u8 buf_bin[1024];
+	int ret, idx, ctr, i, j;
+
+	if (buf == NULL)
+		return 0;
+	lbuf = strdup(buf);
+
+	for (tokens[0] = lbuf, ctr = 0;
+		(ptr = strchr(tokens[ctr], ';'));
+		tokens[++ctr] = ptr+1)
+			*ptr = '\0';
+
+	for (ret = idx = i = 0, *buf_hex='\0'; i <= ctr; i++, idx+=ret) {
+		r_asm_set_pc(a, a->pc + ret);
+		ret = r_asm_assemble(a, aop, tokens[i]);
+		if (ret) {
+			for (j = 0; j < ret; j++)
+				buf_bin[idx+j] = aop->buf[j];
+			strcat(buf_hex, aop->buf_hex);
+		} else {
+			fprintf(stderr, "invalid\n");
+			return 0;
+		}
+	}
+	
+	memcpy(aop->buf, buf_bin, 1024);
+	memcpy(aop->buf_hex, buf_hex, 1024);
+
+	return idx;
+}

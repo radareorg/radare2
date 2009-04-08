@@ -628,16 +628,15 @@ static int cmd_write(void *data, const char *input)
 		int ret = 0;
 		struct r_asm_aop_t aop;
 		char buf[128];
-		r_asm_set_pc(&core->assembler, core->seek);
+		/* XXX ULTRAUGLY , needs fallback support in rasm */
+		r_asm_set(&core->assembler, "asm_x86_olly");
 		r_asm_set_pc(&core->assembler, core->seek);
 		if (input[1]==' ')input=input+1;
-		if (strchr(input, ';')) {
-			eprintf("TODO: No support for ';' multiple opcodes yet\n");
-		}
-		ret = r_asm_assemble(&core->assembler, &aop, input+1);
+		ret = r_asm_massemble(&core->assembler, &aop, input+1);
 		eprintf("Written %d bytes (%s)=wx %s\n", ret, input+1, aop.buf_hex);
 		r_core_write_at(core, core->seek, aop.buf, ret);
 		r_core_block_read(core, 0);
+		r_asm_set(&core->assembler, "asm_x86"); /* XXX */
 		}
 		break;
 	case 'b':

@@ -204,7 +204,7 @@ static int ELF_(r_bin_elf_init)(ELF_(r_bin_elf_obj) *bin)
 	ELF_(Phdr) *phdr;
 	char **sectionp;
 	int i, slen;
-
+	
 	bin->base_addr = 0;
 	ehdr = &bin->ehdr;
 
@@ -319,12 +319,13 @@ static int ELF_(r_bin_elf_init)(ELF_(r_bin_elf_obj) *bin)
 
 	if (lseek(bin->fd, strtabhdr->sh_offset, SEEK_SET) != strtabhdr->sh_offset) {
 		perror("lseek");
-		return -1;
+		//return -1;
 	}
 
 	if (read(bin->fd, bin->string, strtabhdr->sh_size) != strtabhdr->sh_size) {
 		perror("read");
-		return -1;
+		ERR("Warning: Cannot read strtabhdr.\n");
+		//return -1;
 	}
 
 	bin->bss = -1;
@@ -701,8 +702,9 @@ int ELF_(r_bin_elf_is_big_endian)(ELF_(r_bin_elf_obj) *bin)
 	return (ehdr->e_ident[EI_DATA] == ELFDATA2MSB);
 }
 
-/* TODO: Take care of endianess*/
+/* TODO: Take care of endianess */
 /* TODO: Real error handling */
+/* TODO: Resize sections before .init */
 u64 ELF_(r_bin_elf_resize_section)(ELF_(r_bin_elf_obj) *bin, const char *name, u64 size)
 {
 	ELF_(Ehdr) *ehdr = &bin->ehdr;

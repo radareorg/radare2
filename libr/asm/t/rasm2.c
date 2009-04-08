@@ -73,8 +73,7 @@ static int rasm_disasm(char *buf, u64 offset, u64 len, int ascii, int bin)
 static int rasm_asm(char *buf, u64 offset, u64 len, int bin)
 {
 	struct r_asm_aop_t aop;
-	char *ptr = NULL, *tokens[1024];
-	int ret, idx, ctr, i, j;
+	int ret, idx, i;
 
 #if 0 
 	/* TODO: Arch, syntax... */
@@ -84,31 +83,19 @@ static int rasm_asm(char *buf, u64 offset, u64 len, int bin)
 	}
 #endif 
 
-	for (tokens[0] = buf, ctr = 0;
-		(ptr = strchr(tokens[ctr], ';'));
-		tokens[++ctr] = ptr+1)
-			*ptr = '\0';
-
-	for (ret = idx = i = 0; i <= ctr; i++, idx+=ret) {
-		r_asm_set_pc(&a, offset + idx);
-		ret = r_asm_assemble(&a, &aop, tokens[i]);
-		if (ret) {
-			if (bin)
-				for (j = 0; j < ret; j++)
-					printf("%c", aop.buf[j]);
-			else printf("%s\n", aop.buf_hex);
-		} else {
-			fprintf(stderr, "invalid\n");
-			return 0;
-		}
-	}
+	r_asm_set_pc(&a, offset);
+	idx = r_asm_massemble(&a, &aop, buf);
+	if (bin)
+		for (i = 0; i < idx; i++)
+			printf("%c", aop.buf[i]);
+	else printf("%s\n", aop.buf_hex);
 	
 	for (ret = 0; idx < len; idx+=ret) {
 		ret = r_asm_assemble(&a, &aop, "nop");
 		if (ret) {
 			if (bin)
-				for (j = 0; j < ret; j++)
-					printf("%c", aop.buf[j]);
+				for (i = 0; i < ret; i++)
+					printf("%c", aop.buf[i]);
 			else printf("%s", aop.buf_hex);
 		} else {
 			fprintf(stderr, "invalid\n");
