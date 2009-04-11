@@ -197,12 +197,18 @@ R_API int r_config_rm(struct r_config_t *cfg, const char *name)
 R_API struct r_config_node_t *r_config_set_i(struct r_config_t *cfg, const char *name, const u64 i)
 {
 	char buf[128];
+	char *ov = NULL;
+	u64 oi;
 	struct r_config_node_t *node =
 		r_config_node_get(cfg, name);
 
 	if (node) {
 		if (node->flags & CN_RO)
 			return NULL;
+		oi = node->i_value;
+		if (node->value)
+			ov = strdup(node->value);
+		else node->value = strdup("");
 		free(node->value);
 		if (node->flags & CN_BOOL) {
 			node->value = strdup(i?"true":"false");
@@ -230,9 +236,11 @@ R_API struct r_config_node_t *r_config_set_i(struct r_config_t *cfg, const char 
 		int ret = node->callback(cfg->user, node);
 		if (ret == R_FALSE) {
 			node->i_value = oi;
+			free(node->value);
+			node->value = strdup(ov);
 		}
 	}
-
+	free(ov);
 	return node;
 }
 

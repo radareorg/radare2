@@ -23,6 +23,7 @@ static int rasm_show_help()
 		" -s [syntax]  Select syntax (intel, att)\n"
 		" -B           Binary input/output (-l is mandatory for binary input)\n"
 		" -l [int]     input/output length\n"
+		" -L           list supported asm plugins\n"
 		" -e           Use big endian\n"
 		" If '-l' value is greater than output length, output is padded with nops\n"
 		" If the last argument is '-' reads from stdin\n\n"
@@ -133,7 +134,7 @@ int main(int argc, char *argv[])
 	if (argc<2)
 		return rasm_show_help();
 
-	while ((c = getopt(argc, argv, "a:b:s:do:Bl:h")) != -1)
+	while ((c = getopt(argc, argv, "a:b:s:do:Bl:hL")) != -1)
 	{
 		switch( c ) {
 		case 'a':
@@ -159,6 +160,9 @@ int main(int argc, char *argv[])
 		case 'l':
 			len = r_num_math(NULL, optarg);
 			break;
+		case 'L':
+			r_asm_list(&a);
+			exit(1);
 		case 'e':
 			r_asm_set_big_endian(&a, R_TRUE);
 			break;
