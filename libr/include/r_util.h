@@ -70,6 +70,7 @@ const char *r_str_word_get0(const char *str, int idx);
 
 char *r_str_chop(char *str);
 R_API const char *r_str_chop_ro(const char *str);
+R_API char *r_str_trim(char *str);
 int r_str_hash(const char *str);
 char *r_str_clean(char *str);
 int r_str_nstr(char *from, char *to, int size);

@@ -355,7 +355,7 @@ static u64 ELF_(get_import_addr)(ELF_(r_bin_elf_obj) *bin, int sym)
 	
 	shdrp = shdr;
 	for (i = 0; i < ehdr->e_shnum; i++, shdrp++) {
-		if (!strcmp(&string[shdrp->sh_name], ".got"))
+		if (!strcmp(&string[shdrp->sh_name], ".got.plt"))
 			got_addr = shdrp->sh_offset;
 	}
 	if (got_addr == 0) {
@@ -741,7 +741,7 @@ u64 ELF_(r_bin_elf_resize_section)(ELF_(r_bin_elf_obj) *bin, const char *name, u
 	
 	/* rewrite rel's (imports) */
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
-		if (!strcmp(&string[shdrp->sh_name], ".got"))
+		if (!strcmp(&string[shdrp->sh_name], ".got.plt"))
 			got_addr = shdrp->sh_offset;
 	}
 	if (got_addr == 0) {
@@ -1008,7 +1008,7 @@ int ELF_(r_bin_elf_get_imports)(ELF_(r_bin_elf_obj) *bin, r_bin_elf_import *impo
 			for (j = 0, k = 0; j < shdrp->sh_size; j += sizeof(ELF_(Sym)), k++, symp++) {
 				if (k == 0)
 					continue;
-				if (symp->st_shndx == STN_UNDEF && ELF_ST_BIND(symp->st_info) != STB_WEAK) {
+				if (symp->st_shndx == STN_UNDEF) {
 					memcpy(importp->name, &string[symp->st_name], ELF_NAME_LENGTH);
 					importp->name[ELF_NAME_LENGTH-1] = '\0';
 					if (symp->st_value)
@@ -1082,7 +1082,7 @@ int ELF_(r_bin_elf_get_imports_count)(ELF_(r_bin_elf_obj) *bin)
 			for (j = 0, k = 0; j < shdrp->sh_size; j += sizeof(ELF_(Sym)), k++, symp++) {
 				if (k == 0)
 					continue;
-				if (symp->st_shndx == STN_UNDEF && ELF_ST_BIND(symp->st_info) != STB_WEAK) {
+				if (symp->st_shndx == STN_UNDEF) {
 					ctr++;
 				}
 			}
@@ -1159,7 +1159,7 @@ int ELF_(r_bin_elf_get_symbols)(ELF_(r_bin_elf_obj) *bin, r_bin_elf_symbol *symb
 			for (j = 0, k = 0; j < shdrp->sh_size; j += sizeof(ELF_(Sym)), k++, symp++) {
 				if (k == 0)
 					continue;
-				if (symp->st_shndx != STN_UNDEF && ELF_ST_TYPE(symp->st_info) != STT_SECTION && ELF_ST_BIND(symp->st_info) != STB_WEAK) {
+				if (symp->st_shndx != STN_UNDEF && ELF_ST_TYPE(symp->st_info) != STT_SECTION && ELF_ST_TYPE(symp->st_info) != STT_FILE) {
 					symbolp->size = (u64)symp->st_size; 
 					memcpy(symbolp->name, &string[symp->st_name], ELF_NAME_LENGTH); 
 					symbolp->name[ELF_NAME_LENGTH-1] = '\0';
@@ -1231,7 +1231,7 @@ int ELF_(r_bin_elf_get_symbols_count)(ELF_(r_bin_elf_obj) *bin)
 			for (j = 0, k = 0; j < shdrp->sh_size; j += sizeof(ELF_(Sym)), k++, symp++) {
 				if (k == 0)
 					continue;
-				if (symp->st_shndx != STN_UNDEF && ELF_ST_TYPE(symp->st_info) != STT_SECTION && ELF_ST_BIND(symp->st_info) != STB_WEAK)
+				if (symp->st_shndx != STN_UNDEF && ELF_ST_TYPE(symp->st_info) != STT_SECTION && ELF_ST_TYPE(symp->st_info) != STT_FILE)
 					ctr++;
 			}
 		}

@@ -1,3 +1,6 @@
+#ifndef _INCLUDE_R_CMD_H_
+#define _INCLUDE_R_CMD_H_
+
 #include <r_types.h>
 #include "list.h"
 
@@ -33,3 +36,5 @@ int r_cmd_del(struct r_cmd_t *cmd, const char *command);
 int r_cmd_call(struct r_cmd_t *cmd, const char *command);
 int r_cmd_call_long(struct r_cmd_t *cmd, const char *input);
 char **r_cmd_args(struct r_cmd_t *cmd, int *argc);
+
+#endif

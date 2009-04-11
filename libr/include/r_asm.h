@@ -4,6 +4,7 @@
 #define _INCLUDE_R_ASM_H_
 
 #include <r_types.h>
+#include <r_cmd.h>
 #include <list.h>
 
 
@@ -28,6 +29,7 @@ struct r_asm_t {
 	int  syntax;
 	u64  pc;
 	void *user;
+	struct r_cmd_t cmd;
 	struct r_asm_handle_t *cur;
 	struct list_head asms;
 };

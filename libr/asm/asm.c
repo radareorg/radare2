@@ -4,12 +4,23 @@
 
 #include <r_types.h>
 #include <r_util.h>
+#include <r_cmd.h>
 #include <r_asm.h>
 #include <list.h>
 #include "../config.h"
 
 static struct r_asm_handle_t *asm_static_plugins[] = 
 	{ R_ASM_STATIC_PLUGINS };
+
+static int r_asm_byte(void *data, const char *input)
+{
+	int ret;
+	struct r_asm_aop_t **aop = (struct r_asm_aop_t**)data;
+	char *arg = strchr(input, ' ');
+	ret = r_hex_str2bin(arg, (*aop)->buf);
+	strncpy((*aop)->buf_hex, r_str_trim(arg), 1024);
+	return ret;
+}
 
 R_API struct r_asm_t *r_asm_new()
 {
@@ -35,6 +46,9 @@ R_API int r_asm_init(struct r_asm_t *a)
 	r_asm_set_pc(a, 0);
 	for(i=0;asm_static_plugins[i];i++)
 		r_asm_add(a, asm_static_plugins[i]);
+	r_cmd_init(&a->cmd);
+	r_cmd_add(&a->cmd, "b", ".byte", &r_asm_byte);
+	r_cmd_add_long(&a->cmd, "byte", "b", ".byte");
 	return R_TRUE;
 }
 
@@ -150,9 +164,13 @@ R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 		tokens[++ctr] = ptr+1)
 			*ptr = '\0';
 
+	r_cmd_set_data(&a->cmd, &aop);
 	for (ret = idx = i = 0, *buf_hex='\0'; i <= ctr; i++, idx+=ret) {
 		r_asm_set_pc(a, a->pc + ret);
-		ret = r_asm_assemble(a, aop, tokens[i]);
+		if ((ptr = strchr(tokens[i], '.'))) /* Pseudo */
+			ret = r_cmd_call(&a->cmd, ptr+1);
+		else /* Instruction */
+			ret = r_asm_assemble(a, aop, tokens[i]);
 		if (ret) {
 			for (j = 0; j < ret; j++)
 				buf_bin[idx+j] = aop->buf[j];

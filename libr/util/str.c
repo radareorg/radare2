@@ -161,6 +161,21 @@ R_API char *r_str_chop(char *str)
         return str;
 }
 
+R_API char *r_str_trim(char *str)
+{
+	int i;
+	char *ptr;
+
+	if (str == NULL)
+		return NULL;
+
+	for(ptr=str, i=0;str[i];i++)
+		if (!iswhitechar(str[i]))
+			*ptr++=str[i];
+	*ptr='\0';
+	return str;
+}
+
 /* memccmp("foo.bar", "foo.cow, '.') == 0 */
 int r_str_ccmp(const char *dst, const char *orig, int ch)
 {
