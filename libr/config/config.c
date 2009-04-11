@@ -107,9 +107,22 @@ R_API struct r_config_node_t *r_config_set_cb(struct r_config_t *cfg, const char
 	return node;
 }
 
+/* TODO: _cb can be a macro */
+R_API struct r_config_node_t *r_config_set_i_cb(struct r_config_t *cfg, const char *name, int ivalue, int (*callback)(void *user, void *data))
+{
+	struct r_config_node_t *node = r_config_set_i(cfg, name, ivalue);
+	node->callback = callback;
+	if (node->callback)
+		node->callback(cfg->user, node);
+	return node;
+}
+
+/* TODO: reduce number of strdups here */
 R_API struct r_config_node_t *r_config_set(struct r_config_t *cfg, const char *name, const char *value)
 {
 	struct r_config_node_t *node;
+	char *ov = NULL;
+	u64 oi;
 
 	if (name[0] == '\0')
 		return NULL;
@@ -122,6 +135,10 @@ R_API struct r_config_node_t *r_config_set(struct r_config_t *cfg, const char *n
 			eprintf("(read only)\n");
 			return node;
 		}
+		oi = node->i_value;
+		if (node->value)
+			ov = strdup(node->value);
+		else node->value = strdup("");
 		free(node->value);
 		if (node->flags & CN_BOOL) {
 			int b = (!strcmp(value,"true")||!strcmp(value,"1"));
@@ -153,8 +170,15 @@ R_API struct r_config_node_t *r_config_set(struct r_config_t *cfg, const char *n
 		}
 	}
 
-	if (node && node->callback)
-		node->callback(cfg->user, node);
+	if (node && node->callback) {
+		int ret = node->callback(cfg->user, node);
+		if (ret == R_FALSE) {
+			node->i_value = oi;
+			free(node->value);
+			node->value = strdup(ov);
+		}
+	}
+	free(ov);
 	return node;
 }
 
@@ -201,8 +225,13 @@ R_API struct r_config_node_t *r_config_set_i(struct r_config_t *cfg, const char 
 		}
 	}
 
-	if (node && node->callback)
-		node->callback(cfg->user, node);
+	if (node && node->callback) {
+		u64 oi = node->i_value;
+		int ret = node->callback(cfg->user, node);
+		if (ret == R_FALSE) {
+			node->i_value = oi;
+		}
+	}
 
 	return node;
 }

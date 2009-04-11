@@ -68,6 +68,8 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 
 struct r_asm_handle_t r_asm_plugin_bf = {
 	.name = "asm_bf",
+	.arch = "brainfuck",
+	.bits = (int[]){ 8, 0 },
 	.desc = "BF disassembly plugin",
 	.init = NULL,
 	.fini = NULL,

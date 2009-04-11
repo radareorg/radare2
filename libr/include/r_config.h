@@ -43,6 +43,7 @@ R_API void r_config_lock(O, int l);
 R_API int r_config_eval(O, const char *str);
 R_API struct r_config_node_t *r_config_set_i(O, const char *name, const u64 i);
 R_API struct r_config_node_t *r_config_set_cb(struct r_config_t *cfg, const char *name, const char *value, int (*callback)(void *user, void *data));
+R_API struct r_config_node_t *r_config_set_i_cb(struct r_config_t *cfg, const char *name, int ivalue, int (*callback)(void *user, void *data));
 R_API int r_config_rm(O, const char *name);
 R_API struct r_config_node_t *r_config_set(O, const char *name, const char *value);
 R_API u64 r_config_get_i(O, const char *name);

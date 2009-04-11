@@ -93,6 +93,8 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 
 struct r_asm_handle_t r_asm_plugin_arm = {
 	.name = "asm_arm",
+	.arch = "arm",
+	.bits = (int[]){ 16, 32, 0 },
 	.desc = "ARM disassembly plugin",
 	.init = NULL,
 	.fini = NULL,

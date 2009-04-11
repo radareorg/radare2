@@ -37,6 +37,8 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 
 struct r_asm_handle_t r_asm_plugin_m68k = {
 	.name = "asm_m68k",
+	.arch = "m68k",
+	.bits = (int[]){ 32, 0 },
 	.desc = "M68K disassembly plugin",
 	.init = NULL,
 	.fini = NULL,

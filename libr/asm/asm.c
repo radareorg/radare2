@@ -96,17 +96,26 @@ R_API int r_asm_set(struct r_asm_t *a, const char *name)
 	return R_FALSE;
 }
 
+static int has_bits(struct r_asm_handle_t *h, int bits)
+{
+	int i;
+	if (h && h->bits) {
+		for(i=0; h->bits[i]; i++) {
+			if (bits == h->bits[i])
+				return R_TRUE;
+		}
+	}
+	return R_FALSE;
+}
+
+
 R_API int r_asm_set_bits(struct r_asm_t *a, int bits)
 {
-	switch (bits) {
-	case 16:
-	case 32:
-	case 64:
+	if ( has_bits(a->cur, bits) ) {
 		a->bits = bits;
 		return R_TRUE;
-	default:
-		return R_FALSE;
 	}
+	return R_FALSE;
 }
 
 R_API int r_asm_set_big_endian(struct r_asm_t *a, int boolean)
@@ -137,15 +146,22 @@ R_API int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf,
 {
 	if (a->cur && a->cur->disassemble)
 		return a->cur->disassemble(a, aop, buf, len);
-	
 	return R_FALSE;
 }
 
 R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf)
 {
-	if (a->cur && a->cur->assemble)
-		return a->cur->assemble(a, aop, buf);
-	
+	struct list_head *pos;
+	if (a->cur) {
+		if (a->cur->assemble)
+			return a->cur->assemble(a, aop, buf);
+		/* find callback if no assembler support in current plugin */
+		list_for_each_prev(pos, &a->asms) {
+			struct r_asm_handle_t *h = list_entry(pos, struct r_asm_handle_t, list);
+			if (h->arch && h->assemble && has_bits(h, a->bits) && !strcmp(a->cur->arch, h->arch))
+				return h->assemble(a, aop, buf);
+		}
+	}
 	return R_FALSE;
 }
 

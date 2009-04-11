@@ -24,6 +24,24 @@ static int config_asm_parser_callback(void *user, void *data)
 	return R_TRUE;
 }
 
+static int config_asm_bits_callback(void *user, void *data)
+{
+	struct r_core_t *core = (struct r_core_t *) user;
+	struct r_config_node_t *node = (struct r_config_node_t *) data;
+	int ret = r_asm_set_bits(&core->assembler, node->i_value);
+	if (ret == R_FALSE) {
+		struct r_asm_handle_t *h = core->assembler.cur;
+		if (h) {
+			eprintf("Cannot set bits %d to '%s'\n",
+				node->i_value, h->name);
+		} else {
+			eprintf("No plugins defined yet\n");
+			ret = R_TRUE;
+		}
+	}
+	return ret;
+}
+
 static int config_color_callback(void *user, void *data)
 {
 	struct r_core_t *core = (struct r_core_t *) user;
@@ -48,14 +66,13 @@ R_API int r_core_config_init(struct r_core_t *core)
 
 	r_config_set_cb(cfg, "asm.arch", "x86",
 		&config_asm_arch_callback);
-
 	r_parse_set(&core->parser, "parse_x86_pseudo");
 	r_config_set_cb(cfg, "asm.parser", "x86_pseudo",
 		&config_asm_parser_callback);
-
 	r_config_set(cfg, "dir.plugins", LIBDIR"/radare/");
 	r_config_set(cfg, "asm.syntax", "intel");
-	r_config_set_i(cfg, "asm.bits", 32);
+	r_config_set_i_cb(cfg, "asm.bits", 32,
+		&config_asm_bits_callback);
 	r_config_set(cfg, "asm.pseudo", "false");  // DEPRECATED ???
 	r_config_set(cfg, "asm.bytes", "true"); 
 	r_config_set(cfg, "asm.offset", "true"); 

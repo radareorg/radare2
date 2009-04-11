@@ -41,6 +41,8 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 struct r_asm_handle_t r_asm_plugin_x86_bea = {
 	.name = "asm_x86_bea",
 	.desc = "X86 disassembly plugin (bea engine)",
+	.arch = "x86",
+	.bits = (int[]){ 32, 64, 0 }, /* also 16 ? */
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,

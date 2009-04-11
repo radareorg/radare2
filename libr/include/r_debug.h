@@ -4,6 +4,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_reg.h>
+#include <r_bp.h>
 #include <r_syscall.h>
 #include "list.h"
 
@@ -31,6 +32,8 @@ struct r_debug_handle_t {
 	int (*cont)(int pid);
 	int (*wait)(int pid);
 	int (*contsc)(int pid, int sc);
+	int (*bp_write)(int pid, u64 addr, int hw, int type);
+	// XXX bad signature int (*bp_read)(int pid, u64 addr, int hw, int type);
 	struct list_head list;
 };
 
@@ -40,6 +43,7 @@ struct r_debug_t {
 	int swstep; /* steps with software traps */
 	int steps;  /* counter of steps done */
 	struct r_reg_t reg;
+	struct r_bp_t bp;
 	/* io */
 	int (*read)(int pid, u64 addr, u8 *buf, int len);
 	int (*write)(int pid, u64 addr, u8 *buf, int len);

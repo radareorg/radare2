@@ -52,6 +52,8 @@ static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf)
 struct r_asm_handle_t r_asm_plugin_x86_olly = {
 	.name = "asm_x86_olly",
 	.desc = "X86 disassembly plugin (olly engine)",
+	.arch = "x86",
+	.bits = (int[]){ 32, 0 },
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,

@@ -7,6 +7,8 @@
 /* inlined APIs */
 #define R_INLINE 0
 
+#define DEFAULT_ARCH "x86"
+
 #define R_ASM_STATIC_PLUGINS \
 	&r_asm_plugin_java, \
 	&r_asm_plugin_x86_olly, \

@@ -43,3 +43,12 @@ Before any release we have to:
    the code for testing parts of libraries and be able to go back or find bugs
    while refactoring code or re-doing-it from scratch. This code, should be
    reviewed and removed if necessary.
+
+   $ grep -r -e TODO -e XXX -e FIX libr
+
+ - Graph per symbol-module dependency graph to identify unused/dupped/-
+   simplificable use cases of the API for every module.
+
+FUTURE
+
+ - Commands should be handled in a structural way, not by a bunch of switch/cases

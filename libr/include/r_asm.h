@@ -36,7 +36,9 @@ struct r_asm_t {
 
 struct r_asm_handle_t {
 	char *name;
+	char *arch;
 	char *desc;
+	int *bits;
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	int (*disassemble)(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len);

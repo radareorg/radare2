@@ -48,6 +48,16 @@ static int r_debug_ptrace_wait(int pid)
 	return status;
 }
 
+static int r_debug_ptrace_bp_write(int pid, u64 addr, int hw, int type)
+{
+	return R_TRUE;
+}
+
+static int r_debug_ptrace_bp_read(int pid, u64 addr, int hw, int type)
+{
+	return R_TRUE;
+}
+
 #if 0
 static int r_debug_ptrace_import(struct r_debug_handle_t *from)
 {
@@ -64,6 +74,8 @@ static struct r_debug_handle_t r_dbg_plugin_ptrace = {
 	.attach = &r_debug_ptrace_attach,
 	.detach = &r_debug_ptrace_detach,
 	.wait = &r_debug_ptrace_wait,
+	.bp_write = &r_debug_ptrace_bp_write,
+	//.bp_read = &r_debug_ptrace_bp_read,
 //	.import = &r_debug_ptrace_import,
 //	.export = &r_debug_ptrace_export,
 };

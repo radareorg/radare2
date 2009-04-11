@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
 
 #include "r_core.h"
+#include "../config.h"
 
 static u64 num_callback(void *userptr, const char *str, int *ok)
 {
@@ -106,8 +107,11 @@ R_API int r_core_init(struct r_core_t *core)
 
 	/* load plugins */
 	r_core_loadlibs(core);
-	r_asm_set(&core->assembler, "asm_x86"); // XXX WHERE?
-	r_anal_set(&core->anal, "anal_x86");
+	/* UH? */
+	r_asm_set(&core->assembler, "asm_"DEFAULT_ARCH);
+	r_anal_set(&core->anal, "anal_"DEFAULT_ARCH);
+	r_config_set(&core->config, "asm.arch", "x86");
+	r_config_set_i(&core->config, "asm.bits", 32);
 
 	return 0;
 }

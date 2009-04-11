@@ -1,3 +1,6 @@
+include ../../../config-user.mk
+include ../../../mk/${COMPILER}.mk
+
 all: test
 
 test:

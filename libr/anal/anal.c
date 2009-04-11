@@ -5,34 +5,35 @@
 #include <r_anal.h>
 #include <r_util.h>
 
-struct r_anal_t *r_anal_new()
+R_API struct r_anal_t *r_anal_new()
 {
 	struct r_anal_t *r = MALLOC_STRUCT(struct r_anal_t);
 	r_anal_init(r);
 	return r;
 }
 
-struct r_anal_t *r_anal_free(struct r_anal_t *r)
+R_API struct r_anal_t *r_anal_free(struct r_anal_t *r)
 {
 	free(r);
 	return NULL;
 }
 
-int r_anal_init(struct r_anal_t *anal)
+R_API int r_anal_init(struct r_anal_t *anal)
 {
 	anal->user = NULL;
+	anal->ctx = NULL;
 	r_anal_set_bits(anal, 32);
 	r_anal_set_big_endian(anal, R_FALSE);
 	INIT_LIST_HEAD(&anal->anals);
 	return R_TRUE;
 }
 
-void r_anal_set_user_ptr(struct r_anal_t *anal, void *user)
+R_API void r_anal_set_user_ptr(struct r_anal_t *anal, void *user)
 {
 	anal->user = user;
 }
 
-int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo)
+R_API int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo)
 {
 	if (foo->init)
 		foo->init(anal->user);
@@ -40,7 +41,7 @@ int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo)
 	return R_TRUE;
 }
 
-int r_anal_list(struct r_anal_t *anal)
+R_API int r_anal_list(struct r_anal_t *anal)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &anal->anals) {
@@ -50,7 +51,7 @@ int r_anal_list(struct r_anal_t *anal)
 	return R_FALSE;
 }
 
-int r_anal_set(struct r_anal_t *anal, const char *name)
+R_API int r_anal_set(struct r_anal_t *anal, const char *name)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &anal->anals) {
@@ -63,7 +64,7 @@ int r_anal_set(struct r_anal_t *anal, const char *name)
 	return R_FALSE;
 }
 
-int r_anal_set_bits(struct r_anal_t *anal, int bits)
+R_API int r_anal_set_bits(struct r_anal_t *anal, int bits)
 {
 	switch (bits) {
 	case 16:

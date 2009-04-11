@@ -10,10 +10,11 @@
 
 enum {
 	R_ANAL_AOP_FAMILY_UNKNOWN = 0,
-	R_ANAL_AOP_FAMILY_CPU, /* normal cpu insturction */
-	R_ANAL_AOP_FAMILY_FPU, /* fpu (floating point) */
-	R_ANAL_AOP_FAMILY_MMX, /* multimedia instruction (packed data) */
+	R_ANAL_AOP_FAMILY_CPU,  /* normal cpu insturction */
+	R_ANAL_AOP_FAMILY_FPU,  /* fpu (floating point) */
+	R_ANAL_AOP_FAMILY_MMX,  /* multimedia instruction (packed data) */
 	R_ANAL_AOP_FAMILY_PRIV, /* priviledged instruction */
+	R_ANAL_AOP_FAMILY_LAST
 };
 
 enum {
@@ -46,7 +47,8 @@ enum {
 	R_ANAL_AOP_TYPE_XOR,
 	R_ANAL_AOP_TYPE_NOT,
 	R_ANAL_AOP_TYPE_STORE, /* store from register to memory */
-	R_ANAL_AOP_TYPE_LOAD   /* load from memory to register */
+	R_ANAL_AOP_TYPE_LOAD,  /* load from memory to register */
+	R_ANAL_AOP_TYPE_LAST
 };
 
 enum {
@@ -55,7 +57,8 @@ enum {
 	R_ANAL_DATA_STR,      /* ascii string */
 	R_ANAL_DATA_CODE,     /* plain assembly code */
 	R_ANAL_DATA_FUN,      /* plain assembly code */
-	R_ANAL_DATA_STRUCT    /* memory */
+	R_ANAL_DATA_STRUCT,   /* memory */
+	R_ANAL_DATA_LAST
 };
 
 enum {
@@ -77,8 +80,8 @@ enum {
 };
 
 enum {
-	R_ANAL_REFLINE_STYLE = 0x1,
-	R_ANAL_REFLINE_WIDE = 0x2,
+	R_ANAL_REFLINE_STYLE = 1,
+	R_ANAL_REFLINE_WIDE = 2,
 };
 
 struct r_anal_refline_t {
@@ -102,11 +105,20 @@ struct r_anal_aop_t {
 	u64 i_dst,i_src1,i_src2; /* inmediate arguments */
 };
 
+struct r_anal_ctx_t {
+	/* TODO: add more info here */
+	/* per opcode deep level */
+	/* per opcode stack size */
+	/* basic blocks */
+	int stacksize;
+};
+
 struct r_anal_t {
 	int bits;
 	int big_endian;
 	u64 pc;
 	void *user;
+	struct r_anal_ctx_t *ctx;
 	struct r_anal_handle_t *cur;
 	struct list_head anals;
 };

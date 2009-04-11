@@ -23,6 +23,8 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 
 struct r_asm_handle_t r_asm_plugin_csr = {
 	.name = "asm_csr",
+	.arch = "csr",
+	.bits = (int[]){ 16, 0 },
 	.desc = "CSR disassembly plugin",
 	.init = NULL,
 	.fini = NULL,
