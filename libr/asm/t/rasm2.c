@@ -26,10 +26,8 @@ static int rasm_show_help()
 		" -L           list supported asm plugins\n"
 		" -e           Use big endian\n"
 		" If '-l' value is greater than output length, output is padded with nops\n"
-		" If the last argument is '-' reads from stdin\n\n"
-		"Available plugins:\n");
-	r_asm_list(&a);
-	
+		" If the last argument is '-' reads from stdin\n");
+	//r_asm_list(&a);
 	return R_TRUE;
 }
 

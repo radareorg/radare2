@@ -58,6 +58,20 @@ static int myfgets(char *buf, int len)
 }
 /*-----------------------------------*/
 
+static int __dbg_read(void *user, int pid, u64 addr, u8 *buf, int len)
+{
+	struct r_core_t *core = (struct r_core_t *)user;
+	// TODO: pid not used
+	return r_core_read_at(core, addr, buf, len);
+}
+
+static int __dbg_write(void *user, int pid, u64 addr, u8 *buf, int len)
+{
+	struct r_core_t *core = (struct r_core_t *)user;
+	// TODO: pid not used
+	return r_core_write_at(core, addr, buf, len);
+}
+
 R_API int r_core_init(struct r_core_t *core)
 {
 	core->oobi = NULL;
@@ -102,6 +116,7 @@ R_API int r_core_init(struct r_core_t *core)
 	r_core_cmd_init(core);
 	r_flag_init(&core->flags);
 	r_debug_init(&core->dbg);
+	r_debug_set_io(&core->dbg,__dbg_read, __dbg_write, core);
 	r_core_config_init(core);
 	// XXX fix path here
 
@@ -110,6 +125,7 @@ R_API int r_core_init(struct r_core_t *core)
 	/* UH? */
 	r_asm_set(&core->assembler, "asm_"DEFAULT_ARCH);
 	r_anal_set(&core->anal, "anal_"DEFAULT_ARCH);
+	r_bp_handle_set(&core->dbg.bp, "bp_"DEFAULT_ARCH);
 	r_config_set(&core->config, "asm.arch", "x86");
 	r_config_set_i(&core->config, "asm.bits", 32);
 

@@ -44,9 +44,10 @@ struct r_debug_t {
 	int steps;  /* counter of steps done */
 	struct r_reg_t reg;
 	struct r_bp_t bp;
+	void *user;
 	/* io */
-	int (*read)(int pid, u64 addr, u8 *buf, int len);
-	int (*write)(int pid, u64 addr, u8 *buf, int len);
+	int (*read)(void *user, int pid, u64 addr, u8 *buf, int len);
+	int (*write)(void *user, int pid, u64 addr, u8 *buf, int len);
 	struct r_debug_handle_t *h;
 	struct list_head handlers;
 	/* TODO
@@ -77,6 +78,12 @@ int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
 int r_debug_handle_set(struct r_debug_t *dbg, const char *str);
 int r_debug_handle_init(struct r_debug_t *dbg);
 int r_debug_init(struct r_debug_t *dbg);
+
+// TODO: 
+int r_debug_set_io(struct r_debug_t *dbg, 
+	int (*read)(void *user, int pid, u64 addr, u8 *buf, int len),
+	int (*write)(void *user, int pid, u64 addr, u8 *buf, int len),
+	void *user);
 
 /* send signals */
 int r_debug_kill(struct r_debug_t *dbg, int pid, int sig);

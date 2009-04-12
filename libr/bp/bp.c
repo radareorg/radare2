@@ -5,6 +5,7 @@
 R_API int r_bp_init(struct r_bp_t *bp)
 {
 	bp->nbps = 0;
+printf("INIT!!\n");
 	bp->cur = NULL;
 	INIT_LIST_HEAD(&bp->bps);
 	return R_TRUE;
@@ -62,7 +63,7 @@ R_API int r_bp_getbytes(struct r_bp_t *bp, u8 *buf, int len, int endian, int idx
 		/* XXX: can be buggy huh : infinite loop is possible */
 		for(i=0;1;i++) {
 			b = &bp->cur->bps[i%bp->cur->nbps];
-			if (b->endian == endian && idx%i==0) {
+			if (b->endian == endian && idx%(i+1)==0) {
 				for(i=0;i<len;) {
 					memcpy(buf+i, b->bytes, len);
 					i += b->length;
@@ -186,13 +187,14 @@ R_API int r_bp_list(struct r_bp_t *bp, int rad)
 	eprintf("Breakpoint list:\n");
 	list_for_each(pos, &bp->bps) {
 		b = list_entry(pos, struct r_bp_item_t, list);
-		printf("0x%08llx - 0x%08llx %d %c%c%c %s %s\n",
+		printf("0x%08llx - 0x%08llx %d %c%c%c %s %s %s\n",
 			b->addr, b->addr+b->size, b->size,
 			(b->rwx & R_BP_READ)?'r':'-',
 			(b->rwx & R_BP_WRITE)?'w':'-',
 			(b->rwx & R_BP_EXEC)?'x':'-',
 			b->hw?"hw":"sw",
-			b->trace?"trace":"break");
+			b->trace?"trace":"break",
+			b->enabled?"enabled":"disabled");
 		/* TODO: Show list of pids and trace points, conditionals */
 	}
 	return 0;
