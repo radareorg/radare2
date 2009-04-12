@@ -73,6 +73,12 @@ R_API int r_asm_add(struct r_asm_t *a, struct r_asm_handle_t *foo)
 	return R_TRUE;
 }
 
+R_API int r_asm_del(struct r_asm_t *a, const char *name)
+{
+#warning TODO: Implement r_asm_del
+	return R_FALSE;
+}
+
 R_API int r_asm_list(struct r_asm_t *a)
 {
 	struct list_head *pos;

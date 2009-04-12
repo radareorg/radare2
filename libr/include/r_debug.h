@@ -89,6 +89,12 @@ int r_debug_handle_set(struct r_debug_t *dbg, const char *str);
 int r_debug_handle_list(struct r_debug_t *dbg, const char *str);
 int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
 
+/* breakpoints */
+R_API int r_debug_bp_add(struct r_debug_t *dbg, u64 addr, int size);
+R_API int r_debug_bp_del(struct r_debug_t *dbg, u64 addr);
+R_API int r_debug_bp_enable(struct r_debug_t *dbg);
+R_API int r_debug_bp_disable(struct r_debug_t *dbg);
+R_API int r_debug_bp_list(struct r_debug_t *dbg, int rad);
 #if 0
 Missing callbacks
 =================

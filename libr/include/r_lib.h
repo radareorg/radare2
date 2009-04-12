@@ -46,6 +46,7 @@ enum {
 	R_LIB_TYPE_PARSE,   /* parsers */
 	R_LIB_TYPE_BIN,     /* bins */
 	R_LIB_TYPE_BININFO, /* bin info */
+	R_LIB_TYPE_BP,      /* breakpoint info */
 	R_LIB_TYPE_LAST
 };
 

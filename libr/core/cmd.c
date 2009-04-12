@@ -1506,7 +1506,31 @@ static int cmd_debug(void *data, const char *input)
 		r_debug_step(&core->dbg, 1);
 		break;
 	case 'b':
-		fprintf(stderr, "TODO: breakpoint\n");
+		if (input[1]==' ') input = input+1;
+		switch(input[1]) {
+		case '\0':
+			r_bp_list(&core->dbg.bp, input[1]=='*');
+			break;
+		case '-':
+			r_debug_bp_del(&core->dbg, r_num_math(&core->num, input+2));
+			break;
+		case '?':
+			r_cons_printf(
+			"Usage: db [[-]addr] [len] [rwx] [condstring]\n"
+			"db 0x804800     ; add breakpoint\n"
+			"db -0x804800    ; remove breakpoint\n"
+			"db              ; list breakpoint\n");
+			break;
+		default:
+			r_debug_bp_add(&core->dbg, r_num_math(&core->num, input+1), 1);
+			break;
+		}
+		break;
+	case 't':
+		fprintf(stderr, "TODO: list/select thread\n");
+		break;
+	case 'H':
+		fprintf(stderr, "TODO: transplant process\n");
 		break;
 	case 'c':
 		fprintf(stderr, "continue\n");
@@ -1535,7 +1559,9 @@ static int cmd_debug(void *data, const char *input)
 	default:
 		r_cons_printf("Usage: d[sbhcrbo] [arg]\n"
 		" dh [handler] ; list or set debugger handler\n"
+		" dH [handler] ; transplant process to a new handler\n"
 		" ds           ; perform one step\n"
+		" df           ; file descriptors\n"
 		" ds 3         ; perform 3 steps\n"
 		" do 3         ; perform 3 steps overs\n"
 		" dp [pid]     ; list or set pid\n"

@@ -9,6 +9,7 @@ R_API int r_debug_init(struct r_debug_t *dbg)
 	dbg->swstep = 0; // software step
 	dbg->h = NULL;
 	r_debug_handle_init(dbg);
+	r_bp_init(&dbg->bp);
 	return R_TRUE;
 }
 
@@ -24,7 +25,7 @@ R_API int r_debug_attach(struct r_debug_t *dbg, int pid)
 {
 	int ret = R_FALSE;
 	if (dbg->h && dbg->h->attach) {
-		int ret = dbg->h->attach(pid);
+		ret = dbg->h->attach(pid);
 		if (ret) {
 			dbg->pid = pid;
 			dbg->tid = pid;
