@@ -1,0 +1,10 @@
+OBJ_X86_NASM=asm_x86_nasm.o
+
+STATIC_OBJ+=${OBJ_X86_NASM}
+TARGET_X86_NASM=asm_x86_nasm.so
+
+ALL_TARGETS+=${TARGET_X86_NASM}
+
+${TARGET_X86_NASM}: ${OBJ_X86_NASM}
+	${CC} ${CFLAGS} -o ${TARGET_X86_NASM} ${OBJ_X86_NASM}
+	@#strip -s asm_x86.so

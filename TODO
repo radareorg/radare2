@@ -8,6 +8,8 @@
 
 <{include libr/TODO}>
 
+* Implement rahash2
+
 * Finish and import the spp's getopt owns implementation in r_util
 
 * Add maxrows option for r_print (fix visual problem)

@@ -1,13 +1,20 @@
 /* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
 
 #include <r_bp.h>
+#include "../config.h"
+
+static struct r_bp_handle_t *bp_static_plugins[] = 
+	{ R_BP_STATIC_PLUGINS };
 
 R_API int r_bp_init(struct r_bp_t *bp)
 {
+	int i;
 	bp->nbps = 0;
-printf("INIT!!\n");
+fprintf(stderr, "bp.init()\n");
 	bp->cur = NULL;
 	INIT_LIST_HEAD(&bp->bps);
+	for(i=0;bp_static_plugins[i];i++)
+		r_bp_handle_add(bp, bp_static_plugins[i]);
 	return R_TRUE;
 }
 

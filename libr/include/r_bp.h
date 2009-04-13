@@ -64,4 +64,11 @@ R_API int r_bp_getbytes(struct r_bp_t *bp, u8 *buf, int len, int endian, int idx
 R_API int r_bp_set_trace(struct r_bp_t *bp, u64 addr, int set);
 R_API int r_bp_set_trace_bp(struct r_bp_t *bp, u64 addr, int set);
 
+/* plugin pointers */
+extern struct r_bp_handle_t r_bp_plugin_x86;
+extern struct r_bp_handle_t r_bp_plugin_arm;
+extern struct r_bp_handle_t r_bp_plugin_powerpc;
+extern struct r_bp_handle_t r_bp_plugin_mips;
+extern struct r_bp_handle_t r_bp_plugin_sparc;
+
 #endif

@@ -116,6 +116,6 @@ int r_sys_sleep(int secs);
 int r_sys_usleep(int usecs);
 R_API const char *r_sys_getenv(const char *key);
 R_API int r_sys_setenv(const char *key, const char *value, int ow);
-
+R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len);
 
 #endif

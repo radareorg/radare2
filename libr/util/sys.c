@@ -3,11 +3,6 @@
 #include <r_types.h>
 /* TODO: import stuff fron bininfo/p/bininfo_addr2line */
 
-R_API char *r_sys_cmd_str(const char *cmd)
-{
-	return NULL;
-}
-
 R_API char *r_sys_cmd_strf(const char *cmd, ...)
 {
 	return NULL;
@@ -47,5 +42,24 @@ R_API const char *r_sys_getenv(const char *key)
 	return getenv(key);
 #else
 #warning TODO: r_sys_getenv
+#endif
+}
+
+R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len)
+{
+#if __UNIX__
+	char *b = malloc(1024);
+write(1, "((",2);
+	FILE *fd = popen(cmd, "r");
+write(1, "))",2);
+	*len = 0;
+	if (fd == NULL)
+		return NULL;
+	*len = fread(b, 1, 1024, fd);
+	pclose(fd);
+	return b;
+#else
+#warning NO r_sys_cmd_str support for this platform
+	return NULL;
 #endif
 }

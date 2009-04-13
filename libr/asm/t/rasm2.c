@@ -81,7 +81,6 @@ static int rasm_asm(char *buf, u64 offset, u64 len, int bin)
 		return 1;
 	}
 #endif 
-
 	r_asm_set_pc(&a, offset);
 	idx = r_asm_massemble(&a, &aop, buf);
 	if (bin)
@@ -132,6 +131,7 @@ int main(int argc, char *argv[])
 	if (argc<2)
 		return rasm_show_help();
 
+	r_asm_set(&a, "asm_x86");
 	while ((c = getopt(argc, argv, "a:b:s:do:Bl:hL")) != -1)
 	{
 		switch( c ) {
@@ -139,7 +139,8 @@ int main(int argc, char *argv[])
 			arch = optarg;
 			break;
 		case 'b':
-			r_asm_set_bits(&a, r_num_math(NULL, optarg));
+			ret = r_asm_set_bits(&a, r_num_math(NULL, optarg));
+			if (!ret) fprintf(stderr, "cannot set bits\n");
 			break;
 		case 's':
 			if (!strcmp(optarg, "att"))
@@ -189,7 +190,6 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Error: Cannot find asm_x86 plugin\n");
 		return 1;
 	}
-			
 
 	if (argv[optind]) {
 		if (!strcmp(argv[optind], "-")) {

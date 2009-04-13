@@ -164,8 +164,14 @@ R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char 
 		/* find callback if no assembler support in current plugin */
 		list_for_each_prev(pos, &a->asms) {
 			struct r_asm_handle_t *h = list_entry(pos, struct r_asm_handle_t, list);
-			if (h->arch && h->assemble && has_bits(h, a->bits) && !strcmp(a->cur->arch, h->arch))
-				return h->assemble(a, aop, buf);
+			if (h->arch && h->assemble && has_bits(h, a->bits) && !strcmp(a->cur->arch, h->arch)) {
+				int i, ret = h->assemble(a, aop, buf);
+				if (aop && ret > 0) {
+					aop->buf_hex[0] = '\0';
+					for (i=0; i<aop->inst_len; i++)
+						sprintf(aop->buf_hex, "%s%x", aop->buf_hex, aop->buf[i]);
+				}
+			}
 		}
 	}
 	return R_FALSE;

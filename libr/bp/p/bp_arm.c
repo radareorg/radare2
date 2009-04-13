@@ -16,7 +16,7 @@ static struct r_bp_arch_t r_bp_plugin_arm_bps[] = {
 	{ 2, 1, (const u8*)"\xdf\xfe" }          // arm-thumb-be
 };
 
-static struct r_bp_handle_t r_bp_plugin_arm = {
+struct r_bp_handle_t r_bp_plugin_arm = {
 	.name = "bp_arm",
 	.arch = "arm",
 	.nbps = 2,

@@ -23,4 +23,8 @@
 	&r_bininfo_plugin_addr2line, \
 	0
 
+#define R_BP_STATIC_PLUGINS \
+	&r_bp_plugin_x86, \
+	0
+
 #endif
