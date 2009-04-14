@@ -19,8 +19,6 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 
 	for(i=0;b[0] == b[1] && i<len; b=b+1,i++); b[1] = '\0';
 
-	strncpy(aop->buf_hex, buf_cp, 256);
-
 	switch(buf[0]) {
 	case '[':
 		strcpy(aop->buf_asm, "[ loop {");

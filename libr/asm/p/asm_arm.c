@@ -63,7 +63,6 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 	buf_global = aop->buf_asm;
 	Offset = a->pc;
 	memcpy(bytes, buf, 4); // TODO handle thumb
-	r_hex_bin2str(bytes, 4, aop->buf_hex);
 
 	/* prepare disassembler */
 	memset(&disasm_obj,'\0', sizeof(struct disassemble_info));
@@ -84,9 +83,6 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 
 	if (aop->inst_len == -1)
 		strcpy(aop->buf_asm, " (data)");
-
-	if (aop->inst_len > 0)
-		memcpy(aop->buf, buf, aop->inst_len);
 
 	return aop->inst_len;
 }

@@ -17,10 +17,6 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 	lowercase=1;
 	aop->inst_len = Disasm_olly(buf, len, a->pc, &disasm_obj, DISASM_FILE);
 	snprintf(aop->buf_asm, 256, "%s", disasm_obj.result);
-	snprintf(aop->buf_hex, 256, "%s", disasm_obj.dump);
-
-	if (aop->inst_len > 0)
-		memcpy(aop->buf, buf, aop->inst_len);
 
 	return aop->inst_len;
 }
@@ -31,16 +27,14 @@ static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf)
 	int idx;
 
 	aop->buf_err[0] = '\0';
-	/* constsize == 0: Address constants and inmediate data of 16/32b */
 	/* attempt == 0: First attempt */
-	aop->inst_len = Assemble(buf, a->pc, &asm_obj, 0, 0, aop->buf_err);
+	/* constsize == 0: Address constants and inmediate data of 16/32b */
+	aop->inst_len = Assemble((char*)buf, a->pc, &asm_obj, 0, 0, aop->buf_err);
 	aop->disasm_obj = &asm_obj;
 	if (aop->buf_err[0])
 		aop->inst_len = 0;
 	else {
-		snprintf(aop->buf_asm, 256, "%s", buf);
-		for (idx = 0; idx < aop->inst_len; idx++)
-			sprintf(aop->buf_hex+idx*2, "%02x", (u8)asm_obj.code[idx]);
+		snprintf(aop->buf_asm, 1024, "%s", buf);
 	}
 
 	if (aop->inst_len > 0)

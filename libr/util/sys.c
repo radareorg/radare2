@@ -49,9 +49,7 @@ R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len)
 {
 #if __UNIX__
 	char *b = malloc(1024);
-write(1, "((",2);
 	FILE *fd = popen(cmd, "r");
-write(1, "))",2);
 	*len = 0;
 	if (fd == NULL)
 		return NULL;

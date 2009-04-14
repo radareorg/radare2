@@ -22,12 +22,11 @@ static int rasm_show_help()
 		" -b [bits]    Set architecture bits\n"
 		" -s [syntax]  Select syntax (intel, att)\n"
 		" -B           Binary input/output (-l is mandatory for binary input)\n"
-		" -l [int]     input/output length\n"
-		" -L           list supported asm plugins\n"
+		" -l [int]     Input/Output length\n"
+		" -L           List supported asm plugins\n"
 		" -e           Use big endian\n"
 		" If '-l' value is greater than output length, output is padded with nops\n"
 		" If the last argument is '-' reads from stdin\n");
-	//r_asm_list(&a);
 	return R_TRUE;
 }
 
@@ -119,7 +118,7 @@ int main(int argc, char *argv[])
 {
 	char *arch = NULL;
 	u64 offset = 0x8048000;
-	int dis = 0, ascii = 0, bin = 0, ret = 0, c;
+	int dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c;
 	u64 len = 0, idx = 0;
 
 	r_asm_init(&a);
@@ -139,8 +138,7 @@ int main(int argc, char *argv[])
 			arch = optarg;
 			break;
 		case 'b':
-			ret = r_asm_set_bits(&a, r_num_math(NULL, optarg));
-			if (!ret) fprintf(stderr, "cannot set bits\n");
+			bits = r_num_math(NULL, optarg);
 			break;
 		case 's':
 			if (!strcmp(optarg, "att"))
@@ -181,15 +179,12 @@ int main(int argc, char *argv[])
 		free (str);
 		if (!strcmp(arch, "bf"))
 			ascii = 1;
-	} else if (!dis) {
-		if (!r_asm_set(&a, "asm_x86_olly")) {
-			fprintf(stderr, "Error: Cannot find asm_x86_olly plugin\n");
-			return 1;
-		}
 	} else if (!r_asm_set(&a, "asm_x86")) {
 		fprintf(stderr, "Error: Cannot find asm_x86 plugin\n");
 		return 1;
 	}
+	if (!r_asm_set_bits(&a, bits))
+		fprintf(stderr, "cannot set bits (triying with 32)\n");
 
 	if (argv[optind]) {
 		if (!strcmp(argv[optind], "-")) {

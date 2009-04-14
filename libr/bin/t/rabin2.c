@@ -44,9 +44,8 @@ static int rabin_show_help()
 			" -o [str]    Operation action (str=help for help)\n"
 			" -f [format] Override file format autodetection\n"
 			" -r          Radare output\n"
-			" -h          This help\n"
-			"Available plugins:\n");
-	r_bin_list(&bin);
+			" -L          List supported bin plugins\n"
+			" -h          This help\n");
 
 	return R_TRUE;
 }
@@ -351,7 +350,7 @@ int main(int argc, char **argv)
 		r_lib_opendir(&l, LIBDIR"/radare2/");
 	}
 
-	while ((c = getopt(argc, argv, "isSzIeo:f:rvh")) != -1)
+	while ((c = getopt(argc, argv, "isSzIeo:f:rvLh")) != -1)
 	{
 		switch( c ) {
 		case 'i':
@@ -386,6 +385,9 @@ int main(int argc, char **argv)
 		case 'v':
 			verbose++;
 			break;
+		case 'L':
+			r_bin_list(&bin);
+			exit(1);
 		case 'h':
 		default:
 			action |= ACTION_HELP;

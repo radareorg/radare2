@@ -40,10 +40,10 @@ R_API int r_asm_init(struct r_asm_t *a)
 	a->user = NULL;
 	a->cur = NULL;
 	INIT_LIST_HEAD(&a->asms);
-	r_asm_set_bits(a, 32);
-	r_asm_set_big_endian(a, 0);
-	r_asm_set_syntax(a, R_ASM_SYN_INTEL);
-	r_asm_set_pc(a, 0);
+	a->bits = 32;
+	a->big_endian = 0;
+	a->syntax = R_ASM_SYN_INTEL;
+	a->pc = 0;
 	for(i=0;asm_static_plugins[i];i++)
 		r_asm_add(a, asm_static_plugins[i]);
 	r_cmd_init(&a->cmd);
@@ -117,7 +117,7 @@ static int has_bits(struct r_asm_handle_t *h, int bits)
 
 R_API int r_asm_set_bits(struct r_asm_t *a, int bits)
 {
-	if ( has_bits(a->cur, bits) ) {
+	if (has_bits(a->cur, bits)) {
 		a->bits = bits;
 		return R_TRUE;
 	}
@@ -150,31 +150,36 @@ R_API int r_asm_set_pc(struct r_asm_t *a, u64 pc)
 
 R_API int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len)
 {
+	int ret = 0;
 	if (a->cur && a->cur->disassemble)
-		return a->cur->disassemble(a, aop, buf, len);
-	return R_FALSE;
+		ret = a->cur->disassemble(a, aop, buf, len);
+	if (ret > 0) {
+		memcpy(aop->buf, buf, ret);
+		r_hex_bin2str(buf, ret, aop->buf_hex);
+	}
+	return ret;
 }
 
 R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf)
 {
+	int ret = 0;
 	struct list_head *pos;
 	if (a->cur) {
 		if (a->cur->assemble)
-			return a->cur->assemble(a, aop, buf);
-		/* find callback if no assembler support in current plugin */
-		list_for_each_prev(pos, &a->asms) {
-			struct r_asm_handle_t *h = list_entry(pos, struct r_asm_handle_t, list);
-			if (h->arch && h->assemble && has_bits(h, a->bits) && !strcmp(a->cur->arch, h->arch)) {
-				int i, ret = h->assemble(a, aop, buf);
-				if (aop && ret > 0) {
-					aop->buf_hex[0] = '\0';
-					for (i=0; i<aop->inst_len; i++)
-						sprintf(aop->buf_hex, "%s%x", aop->buf_hex, aop->buf[i]);
+			ret = a->cur->assemble(a, aop, buf);
+		else /* find callback if no assembler support in current plugin */
+			list_for_each_prev(pos, &a->asms) {
+				struct r_asm_handle_t *h = list_entry(pos, struct r_asm_handle_t, list);
+				if (h->arch && h->assemble && has_bits(h, a->bits) && !strcmp(a->cur->arch, h->arch)) {
+					printf("NAME %s\n", h->name);
+					ret = h->assemble(a, aop, buf);
+					break;
 				}
 			}
-		}
 	}
-	return R_FALSE;
+	if (aop && ret > 0)
+		r_hex_bin2str(aop->buf, ret, aop->buf_hex);
+	return ret;
 }
 
 R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
