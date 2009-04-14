@@ -24,19 +24,25 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf)
 {
 	static t_asmmodel asm_obj;
-	int idx;
+	int attempt, constsize, oattempt = 0, oconstsize = 0, ret = 0, oret = 0xCAFE;
 
-	aop->buf_err[0] = '\0';
 	/* attempt == 0: First attempt */
 	/* constsize == 0: Address constants and inmediate data of 16/32b */
-	aop->inst_len = Assemble((char*)buf, a->pc, &asm_obj, 0, 0, aop->buf_err);
-	aop->disasm_obj = &asm_obj;
+	for (constsize = 0; constsize < 4; constsize++) {
+		for (attempt = 0, aop->buf_err[0] = '\0'; !aop->buf_err[0]; attempt++) {
+			ret = Assemble((char*)buf, a->pc, &asm_obj, attempt, constsize, aop->buf_err);
+			if (ret > 0 && ret < oret) {
+				oret = ret;
+				oattempt = attempt;
+				oconstsize = constsize;
+			}
+		}
+	}
+	aop->inst_len = Assemble((char*)buf, a->pc, &asm_obj, oattempt, oconstsize, aop->buf_err);
 	if (aop->buf_err[0])
 		aop->inst_len = 0;
-	else {
-		snprintf(aop->buf_asm, 1024, "%s", buf);
-	}
 
+	aop->disasm_obj = &asm_obj;
 	if (aop->inst_len > 0)
 		memcpy(aop->buf, asm_obj.code, aop->inst_len);
 

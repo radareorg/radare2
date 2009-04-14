@@ -12,14 +12,30 @@
 static struct r_asm_handle_t *asm_static_plugins[] = 
 	{ R_ASM_STATIC_PLUGINS };
 
-static int r_asm_byte(void *data, const char *input)
+static int r_asm_asciz(void *data, const char *input)
 {
-	int ret;
+	int len = 0;
 	struct r_asm_aop_t **aop = (struct r_asm_aop_t**)data;
 	char *arg = strchr(input, ' ');
-	ret = r_hex_str2bin(arg, (*aop)->buf);
-	strncpy((*aop)->buf_hex, r_str_trim(arg), 1024);
-	return ret;
+	if (arg && (len = strlen(arg+1)+1)) {
+		arg += 1;
+		r_hex_bin2str((u8*)arg, len, (*aop)->buf_hex);
+		strncpy((char*)(*aop)->buf, arg, 1024);
+	}
+	return len;
+}
+
+static int r_asm_byte(void *data, const char *input)
+{
+	int len = 0;
+	struct r_asm_aop_t **aop = (struct r_asm_aop_t**)data;
+	char *arg = strchr(input, ' ');
+	if (arg) {
+		arg += 1;
+		len = r_hex_str2bin(arg, (*aop)->buf);
+		strncpy((*aop)->buf_hex, r_str_trim(arg), 1024);
+	}
+	return len;
 }
 
 R_API struct r_asm_t *r_asm_new()
@@ -47,6 +63,8 @@ R_API int r_asm_init(struct r_asm_t *a)
 	for(i=0;asm_static_plugins[i];i++)
 		r_asm_add(a, asm_static_plugins[i]);
 	r_cmd_init(&a->cmd);
+	r_cmd_add(&a->cmd, "a", ".asciz", &r_asm_asciz);
+	r_cmd_add_long(&a->cmd, "asciz", "a", ".asciz");
 	r_cmd_add(&a->cmd, "b", ".byte", &r_asm_byte);
 	r_cmd_add_long(&a->cmd, "byte", "b", ".byte");
 	return R_TRUE;
@@ -75,7 +93,7 @@ R_API int r_asm_add(struct r_asm_t *a, struct r_asm_handle_t *foo)
 
 R_API int r_asm_del(struct r_asm_t *a, const char *name)
 {
-#warning TODO: Implement r_asm_del
+	/* TODO: Implement r_asm_del */
 	return R_FALSE;
 }
 
@@ -171,14 +189,15 @@ R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char 
 			list_for_each_prev(pos, &a->asms) {
 				struct r_asm_handle_t *h = list_entry(pos, struct r_asm_handle_t, list);
 				if (h->arch && h->assemble && has_bits(h, a->bits) && !strcmp(a->cur->arch, h->arch)) {
-					printf("NAME %s\n", h->name);
 					ret = h->assemble(a, aop, buf);
 					break;
 				}
 			}
 	}
-	if (aop && ret > 0)
+	if (aop && ret > 0) {
 		r_hex_bin2str(aop->buf, ret, aop->buf_hex);
+		strncpy(aop->buf_asm, buf, 1024);
+	}
 	return ret;
 }
 
@@ -201,7 +220,7 @@ R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 	for (ret = idx = i = 0, *buf_hex='\0'; i <= ctr; i++, idx+=ret) {
 		r_asm_set_pc(a, a->pc + ret);
 		if ((ptr = strchr(tokens[i], '.'))) /* Pseudo */
-			ret = r_cmd_call(&a->cmd, ptr+1);
+			ret = r_cmd_call_long(&a->cmd, ptr+1);
 		else /* Instruction */
 			ret = r_asm_assemble(a, aop, tokens[i]);
 		if (ret) {
@@ -209,7 +228,6 @@ R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 				buf_bin[idx+j] = aop->buf[j];
 			strcat(buf_hex, aop->buf_hex);
 		} else {
-			fprintf(stderr, "invalid\n");
 			return 0;
 		}
 	}

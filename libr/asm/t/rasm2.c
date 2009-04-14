@@ -27,7 +27,7 @@ static int rasm_show_help()
 		" -e           Use big endian\n"
 		" If '-l' value is greater than output length, output is padded with nops\n"
 		" If the last argument is '-' reads from stdin\n");
-	return R_TRUE;
+	return 0;
 }
 
 static int rasm_disasm(char *buf, u64 offset, u64 len, int ascii, int bin)
@@ -81,25 +81,21 @@ static int rasm_asm(char *buf, u64 offset, u64 len, int bin)
 	}
 #endif 
 	r_asm_set_pc(&a, offset);
-	idx = r_asm_massemble(&a, &aop, buf);
+	if (!(idx = r_asm_massemble(&a, &aop, buf)))
+		return 0;
 	if (bin)
 		for (i = 0; i < idx; i++)
 			printf("%c", aop.buf[i]);
 	else printf("%s\n", aop.buf_hex);
-	
 	for (ret = 0; idx < len; idx+=ret) {
-		ret = r_asm_assemble(&a, &aop, "nop");
-		if (ret) {
-			if (bin)
-				for (i = 0; i < ret; i++)
-					printf("%c", aop.buf[i]);
-			else printf("%s", aop.buf_hex);
-		} else {
-			fprintf(stderr, "invalid\n");
+		if (!(ret = r_asm_assemble(&a, &aop, "nop")))
 			return 0;
-		}
+		if (bin)
+			for (i = 0; i < ret; i++)
+				printf("%c", aop.buf[i]);
+		else printf("%s", aop.buf_hex);
 	}
-	if (!bin && idx == len) printf("\n");
+	if (!bin && len && idx == len) printf("\n");
 
 	return idx;
 }
@@ -174,14 +170,14 @@ int main(int argc, char *argv[])
 		if (!r_asm_set(&a, str)) {
 			fprintf(stderr, "Error: Unknown plugin\n");
 			free (str);
-			return 1;
+			return 0;
 		}
 		free (str);
 		if (!strcmp(arch, "bf"))
 			ascii = 1;
 	} else if (!r_asm_set(&a, "asm_x86")) {
 		fprintf(stderr, "Error: Cannot find asm_x86 plugin\n");
-		return 1;
+		return 0;
 	}
 	if (!r_asm_set_bits(&a, bits))
 		fprintf(stderr, "cannot set bits (triying with 32)\n");
@@ -201,13 +197,22 @@ int main(int argc, char *argv[])
 				}
 				idx += ret;
 				offset += ret;
-				if (!ret || (len && idx >= len))
+				if (!ret) {
+					fprintf(stderr, "invalid\n");
+					return 0;
+				}
+				if (len && idx >= len)
 					break;
 			}
 			return idx;
 		}
-		if (dis) return rasm_disasm(argv[optind], offset, len, ascii, bin);
-		else return rasm_asm(argv[optind], offset, len, bin);
+		if (dis) ret = rasm_disasm(argv[optind], offset, len, ascii, bin);
+		else ret = rasm_asm(argv[optind], offset, len, bin);
+		if (!ret) {
+			fprintf(stderr, "invalid\n");
+			return 0;
+		}
+		return ret;
 	}
 
 	return 0;
