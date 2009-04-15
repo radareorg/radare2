@@ -69,7 +69,7 @@ R_API int r_debug_select(struct r_debug_t *dbg, int pid, int tid)
 	return R_TRUE;
 }
 
-R_API int r_debug_set_arch(struct r_debug_t *dbg, int arch)
+R_API int r_debug_set_arch(struct r_debug_t *dbg, char *arch)
 {
 	switch(arch) {
 	case R_DBG_ARCH_BF:

@@ -12,7 +12,14 @@ static u64 num_callback(void *userptr, const char *str, int *ok)
 		switch(str[1]) {
 		case '$': return core->seek;
 		case 'b': return core->blocksize;
-		//case '?': return core->blocksize; // HELP
+		case 's': return core->file->size;
+		case '?': 
+			r_cons_printf(
+			"$variables:\n"
+			" $$  = here (current seek)\n"
+			" $s  = file size\n"
+			" $b  = block size\n");
+			return 0;
 		}
 	}
 

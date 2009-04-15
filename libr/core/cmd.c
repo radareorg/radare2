@@ -217,6 +217,8 @@ static int cmd_help(void *data, const char *input)
 				r_core_cmd(core, input+1, 0);
 		} else r_cons_printf("0x%llx\n", core->num.value);
 		break;
+	case '$':
+		return cmd_help(data, " $?");
 	case 'z':
 		for(input=input+1;input[0]==' ';input=input+1);
 		core->num.value = strlen(input);
@@ -274,6 +276,7 @@ static int cmd_help(void *data, const char *input)
 		" .[ file|!cmd|cmd|(macro)]  ; interpret as radare cmds\n"
 		" (macro arg0 arg1) ; define scripting macros\n"
 		" q [ret]           ; quit program with a return value\n"
+		"Use '?$' to get help for the variables\n"
 		"Append '?' to any char command to get detailed help\n");
 		break;
 	}

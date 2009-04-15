@@ -61,8 +61,9 @@ SRC=$(subst .o,.c,$(OBJ))
 
 ${LIBSO}: ${OBJ}
 	@for a in ${OBJ} ${SRC}; do \
-	  test $$a -nt ${LIBSO} ; \
-	  if [ $$? = 0 ]; then \
+	  do=0 ; [ ! -e ${LIBSO} ] && do=1 ; \
+	  test $$a -nt ${LIBSO} && do=1 ; \
+	  if [ $$do = 1 ]; then \
 	    echo "${CC_LIB} ${LDFLAGS} ${LINK} ${OBJ}" ; \
 	    ${CC_LIB} ${LDFLAGS} ${LINK} ${OBJ} ; \
 	    if [ -f "../stripsyms.sh" ]; then sh ../stripsyms.sh ${LIBSO} ${NAME} ; fi ; \

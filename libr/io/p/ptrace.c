@@ -200,15 +200,16 @@ static int __close(struct r_io_t *io, int pid)
 static int __system(struct r_io_t *io, int fd, const char *cmd)
 {
 	//printf("ptrace io command (%s)\n", cmd);
-#if 1
+#if __linux__
 #include <sys/user.h>
-	/* ugly hack for testing purposes */
+#include <limits.h>
+	/* XXX ugly hack for testing purposes */
 	if (!strcmp(cmd, "reg")) {
 		struct user_regs_struct regs;
 		memset(&regs,0, sizeof(regs));
 		// TODO: swap 3-4 args in powerpc
 		ptrace(PTRACE_GETREGS, fd, 0, &regs);
-#if WORDSIZE == 64
+#if __WORDSIZE == 64
 		r_cons_printf("f rax @ 0x%08lx\n", regs.rax);
 		r_cons_printf("f rbx @ 0x%08lx\n", regs.rbx);
 		r_cons_printf("f rcx @ 0x%08lx\n", regs.rcx);
