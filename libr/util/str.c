@@ -81,12 +81,12 @@ R_API int r_str_word_count(const char *string)
         char *tmp  = (char *)string;
         int word   = 0;
 
-        for(;(*text)&&(iswhitespace(*text));text=text+1);
+        for(;(*text)&&(isseparator(*text));text=text+1);
 
         for(word = 0; *text; word++) {
-                for(;*text && !iswhitespace(*text);text = text +1);
+                for(;*text && !isseparator(*text);text = text +1);
                 tmp = text;
-                for(;*text &&iswhitespace(*text);text = text +1);
+                for(;*text &&isseparator(*text);text = text +1);
                 if (tmp == text)
                         word-=1;
         }
@@ -213,9 +213,9 @@ char *r_str_word_get_first(const char *string)
         char *ret   = NULL;
         int len     = 0;
 
-        for(;*text &&iswhitespace(*text);text = text + 1);
+        for(;*text &&isseparator(*text);text = text + 1);
         start = text;
-        for(;*text &&!iswhitespace(*text);text = text + 1) len++;
+        for(;*text &&!isseparator(*text);text = text + 1) len++;
 
         /* strdup */
         ret = (char *)malloc(len+1);

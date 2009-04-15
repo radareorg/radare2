@@ -61,12 +61,15 @@ void r_num_init(struct r_num_t *num);
 #define strnull(x) (!x||!*x)
 #define iswhitechar(x) (x==' '||x=='\t'||x=='\n'||x=='\r')
 #define iswhitespace(x) (x==' '||x=='\t')
+#define isseparator(x) (x==' '||x=='\t'||x=='.'||x==','||x==';'||\
+		x==':'||x=='['||x==']'||x=='('||x==')'||x=='{'||x=='}')
 #define ishexchar(x) ((x>='0'&&x<='9') ||  (x>='a'&&x<='f') ||  (x>='A'&&x<='F')) {
 
 /* stabilized */
 int r_str_word_count(const char *string);
 int r_str_word_set0(char *str);
 const char *r_str_word_get0(const char *str, int idx);
+char *r_str_word_get_first(const char *string);
 
 char *r_str_chop(char *str);
 R_API const char *r_str_chop_ro(const char *str);

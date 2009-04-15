@@ -5,6 +5,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_cmd.h>
+#include <r_flags.h>
 #include <r_asm.h>
 #include <list.h>
 #include "../config.h"
@@ -203,7 +204,10 @@ R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char 
 
 R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 {
-	char *lbuf=NULL, *ptr = NULL, *tokens[1024], buf_hex[1024];
+	struct r_flag_t flags;
+	struct r_flag_item_t *fi;
+	char *lbuf = NULL, *ptr = NULL, *ptr2 = NULL, *tokens[1024],
+		 buf_hex[1024], buf_asm[1024], *symbol = NULL;
 	u8 buf_bin[1024];
 	int ret, idx, ctr, i, j;
 
@@ -216,9 +220,26 @@ R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 		tokens[++ctr] = ptr+1)
 			*ptr = '\0';
 
+	r_flag_init(&flags);
 	r_cmd_set_data(&a->cmd, &aop);
 	for (ret = idx = i = 0, *buf_hex='\0'; i <= ctr; i++, idx+=ret) {
 		r_asm_set_pc(a, a->pc + ret);
+		while ((ptr = strchr(tokens[i], '_'))) { /* Symbol */
+			if ((symbol = r_str_word_get_first(ptr))) {
+        		for (ptr2 = tokens[i];*ptr2&&isseparator(*ptr2);ptr2++);
+				if ((ptr == ptr2)) { /* set */
+					r_flag_set(&flags, symbol, a->pc, 0, 0);
+					tokens[i]+=strlen(symbol)+1;
+				} else { /* get */
+					*ptr = '\0';
+					fi = r_flag_get(&flags, symbol);
+					sprintf(buf_asm, "%s0x%llx%s",
+							ptr2, fi->offset, ptr+strlen(symbol));
+					tokens[i] = buf_asm;
+				}
+				free(symbol);
+			}
+		}
 		if ((ptr = strchr(tokens[i], '.'))) /* Pseudo */
 			ret = r_cmd_call_long(&a->cmd, ptr+1);
 		else /* Instruction */
