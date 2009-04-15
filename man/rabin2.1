@@ -1,0 +1,55 @@
+.Dd July 16, 2008
+.Dt RABIN 1
+.Os
+.Sh NAME
+.Nm rabin
+.Nd Binary program info extractor
+.Sh SYNOPSIS
+.Nm rabin
+.Op Fl eoicsSlrvz
+.Op Fl h
+.Op Fl L Ar library
+.Op file
+.Sh DESCRIPTION
+This program allows you to get information about ELF/PE/MZ and CLASS files in a simple way.
+.Bl -tag -width Fl
+.It Fl e
+Show entrypoints for disk and on-memory
+.It Fl i
+Show imports (symbols imported from libraries
+.It Fl c
+Show header checksum (if exist)
+.It Fl s
+Show exported symbols
+.It Fl o
+Show other symbols (not import/export)
+.It Fl S
+Show sections
+.It Fl l
+List linked libraries to the binary
+.It Fl L Ar library
+Show the base address of a library loaded in memory
+.It Fl r
+Show output in radare format
+.It Fl z
+Show strings inside .data section (like gnu strings does)
+.It Fl v
+Enable verbosity
+.It Fl h
+Show usage help message.
+.El
+.Sh SEE ALSO
+.Pp
+.Xr radiff(1) ,
+.Xr radare(1) ,
+.Xr hasher(1) ,
+.Xr rfile(1) ,
+.Xr rsc(1) ,
+.Xr rasc(1) ,
+.Xr xc(1) ,
+.Xr bug(1) ,
+.Xr xrefs(1)
+.Sh AUTHORS
+.Pp
+pancake <pancake@youterm.com>
+.Pp

@@ -7,6 +7,8 @@ R_API int r_debug_init(struct r_debug_t *dbg)
 	dbg->pid = -1;
 	dbg->tid = -1;
 	dbg->swstep = 0; // software step
+	dbg->newstate = 0;
+	dbg->regs = dbg->oregs = NULL;
 	dbg->h = NULL;
 	r_debug_handle_init(dbg);
 	r_bp_init(&dbg->bp);
@@ -98,8 +100,10 @@ R_API int r_debug_stop_reason(struct r_debug_t *dbg)
 R_API int r_debug_wait(struct r_debug_t *dbg)
 {
 	int ret = R_FALSE;
-	if (dbg->h->wait)
+	if (dbg->h->wait) {
 		ret = dbg->h->wait(dbg->pid);
+		dbg->newstate = 1;
+	}
 	return ret;
 }
 
@@ -167,29 +171,6 @@ R_API int r_debug_use_software_steps(struct r_debug_t *dbg, int value)
 	return -1;
 }
 
-/* registers */
-
-R_API int r_debug_register_get(struct r_debug_t *dbg, int reg, u64 *value)
-{
-	return R_TRUE;
-}
-
-R_API int r_debug_register_set(struct r_debug_t *dbg, int reg, u64 value)
-{
-	return R_TRUE;
-}
-
-/* for debugging purposes? */
-R_API int r_debug_register_list(struct r_debug_t *dbg)
-{
-	int i =0;
-	for(i=0;i<dbg->reg.nregs;i++) {
-		u64 value;
-		r_debug_register_get(dbg, i, &value);
-		printf("%d %s 0x%08llx\n", i, dbg->reg.regs[i], value);
-	}
-	return R_TRUE;
-}
 
 // TODO: Move to pid.c ?
 // TODO: Do we need an intermediate signal representation for portability?

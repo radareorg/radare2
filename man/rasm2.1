@@ -1,0 +1,79 @@
+.Dd May 30, 2008
+.Dt RASM 1
+.Os
+.Sh NAME
+.Nm rasm
+.Nd Radare patch assembler
+.Sh SYNOPSIS
+.Nm rasm
+.Op -elvV
+.Op -f file
+.Op -d bytes
+.Op -s offset
+.Op -a arch
+.Op opcode
+.Sh DESCRIPTION
+Instruction assembler for multiple architectures for easily and fast writing patch opcodes
+.Pp
+You can get the list of the supported opcodes with the '-l' flag.
+.Pp
+.Bl -tag -width Fl
+.It Fl v
+Enable debug output
+.It Fl f Ar file
+Compile assembly output from file
+.It Fl d Ar bytes
+Disasemble bytes
+.It Fl e
+Use big endian
+.It Fl s Ar offset
+Setup an offset to change the base address for the relative jumps
+.It Fl a Ar arch
+Set a different architecture (x86, ppc, arm, java)
+.It Fl h
+Show usage help message.
+.Sh OPCODES
+.Pp
+.Bl -tag -width Fl
+.It call [addr]
+call to address
+.It jmp [addr]
+perform a relative or absolute jump
+.It jz [addr]
+conditional jump (jump if result is zero)
+.It jnz [addr]
+conditional jump (jump if result is not zero)
+.It trap
+Trap instruction (breakpoint)
+.It nop
+Nop instruction
+.It push [arg]
+Push a number or register into the stack
+.It pop [arg]
+Pop a value from stack and store it in register arg
+.It int [num]
+Call the kernel using an interrupt or syscall
+.It ret
+return from subroutine
+.It ret0
+return 0 from subroutine
+.It hang
+perform an infinite loop (hang on)
+.It mov [dst], [src]
+moves an inmediate to a register
+.El
+.Sh SEE ALSO
+.Pp
+.Xr radiff(1) ,
+.Xr hasher(1) ,
+.Xr radare(1) ,
+.Xr rabin(1) ,
+.Xr rfile(1) ,
+.Xr xc(1) ,
+.Xr rsc(1) ,
+.Xr rasc(1) ,
+.Xr xrefs(1)
+.Sh AUTHORS
+.Pp
+pancake <@youterm.com>
+.Pp

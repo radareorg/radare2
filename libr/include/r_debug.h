@@ -23,9 +23,25 @@ enum {
 	R_DBG_ARCH_BF
 };
 
+#define R_DEBUG_REG_NAME_MAX 16
+struct r_debug_reg_t {
+	char name[R_DEBUG_REG_NAME_MAX];
+	union {
+		u64 value;
+		double fvalue;
+	};
+	int isfloat;
+};
+
+struct r_debug_regset_t {
+	int nregs;
+	struct r_debug_reg_t *regs;
+};
+
 /* TODO: pass dbg and user data pointer everywhere */
 struct r_debug_handle_t {
 	const char *name;
+	const char **archs;
 	int (*attach)(int pid);
 	int (*detach)(int pid);
 	int (*step)(int pid); // if step() is NULL; reimplement it with traps
@@ -33,6 +49,8 @@ struct r_debug_handle_t {
 	int (*wait)(int pid);
 	int (*contsc)(int pid, int sc);
 	int (*bp_write)(int pid, u64 addr, int hw, int type);
+	struct r_debug_regset_t * (*reg_read)(int pid);
+	int (*reg_write)(int pid, struct r_debug_regset_t *regs);
 	// XXX bad signature int (*bp_read)(int pid, u64 addr, int hw, int type);
 	struct list_head list;
 };
@@ -42,7 +60,9 @@ struct r_debug_t {
 	int tid;    /* selected thread id */
 	int swstep; /* steps with software traps */
 	int steps;  /* counter of steps done */
-	struct r_reg_t reg;
+	int newstate;
+	struct r_debug_regset_t *oregs;
+	struct r_debug_regset_t *regs;
 	struct r_bp_t bp;
 	void *user;
 	/* io */

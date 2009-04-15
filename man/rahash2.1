@@ -1,0 +1,74 @@
+.Dd July 14, 2008
+.Dt HASHER 1
+.Os
+.Sh NAME
+.Nm hasher
+.Nd Block based hashing utility
+.Sh SYNOPSIS
+.Nm hasher
+.Op Fl gco
+.Op Fl h
+.Op Fl a Ar algorithm
+.Op Fl s Ar str
+.Op Fl S Ar offset
+.Op Fl E Ar offset
+.Op Fl L Ar length
+.Op Fl b Ar size
+.Op Fl q
+.Op Fl V
+.Op Fl v
+.Op source
+.Op hash-file
+.Sh DESCRIPTION
+This program is part of the radare project.
+.Pp
+Hasher allows you to calculate, check and show the hash values of each block of a target file. The block size is 32768 bytes by default. It's allowed to hash from stdin using '-' as a target file.
+.Pp
+You can hash big files by hashing each block and later determine what part of it has been modified. Useful for filesystem analysis.
+.Pp
+This command can be used to calculate hashes of a certain part of a file or a command line passed string.
+.Pp
+This is the command used by the '#' command of radare.
+.Bl -tag -width Fl
+.It Fl g
+(action) Generate the hashing file from the source.
+.It Fl c
+(action) Checks and show block differences between the target file against the previous generated hashing file.
+.It Fl o
+(action) Outputs the contents of the hash file.
+.It Fl a Ar algo
+Select an algorithm for the hashing. Valid values are md5, crc32 and sha1
+.It Fl s Ar string
+Hash this string instead of using the 'source' and 'hash-file' arguments.
+.It Fl S Ar offset
+Define a starting offset for hashing.
+.It Fl E Ar offset
+Define the ending offset for hashing.
+.It Fl L Ar length
+Define the ending offset from the starting one plus length.
+.It Fl b Ar size
+Sets the block size to be used for the hashing.
+.It Fl q
+Quite mode. This flag can be combined with the '-v' flag too for a quite verbose output.
+.It Fl v
+Show version information.
+.It Fl v
+Verbose output.
+.It Fl h
+Show usage help message.
+.El
+.Sh SEE ALSO
+.Pp
+.Xr radiff(1) ,
+.Xr radare(1) ,
+.Xr rabin(1) ,
+.Xr rfile(1) ,
+.Xr rsc(1) ,
+.Xr rasc(1) ,
+.Xr rasm(1) ,
+.Xr xc(1) ,
+.Xr xrefs(1)
+.Sh AUTHORS
+.Pp
+pancake <pancake@youterm.com>
+.Pp
