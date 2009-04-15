@@ -28,14 +28,16 @@ typedef struct {
   unsigned int H[5];
   unsigned int W[80];
   int lenW;
-  unsigned int sizeHi,sizeLo;
+  unsigned int sizeHi, sizeLo;
 } SHA_CTX;
+
 #define SHA256_BLOCK_LENGTH		64
 typedef struct _SHA256_CTX {
 	u32 state[8];
 	u64 bitcount;
 	u8 buffer[SHA256_BLOCK_LENGTH];
 } SHA256_CTX;
+
 #define SHA384_BLOCK_LENGTH		128
 #define SHA512_BLOCK_LENGTH		128
 typedef struct _SHA512_CTX {
@@ -62,12 +64,23 @@ struct r_hash_t {
 #define R_HASH_SIZE_SHA384 64
 #define R_HASH_SIZE_SHA512 64
 
-#define R_HASH_ALL 0
+#define R_HASH_NONE 0
 #define R_HASH_MD5 1
 #define R_HASH_SHA1 2
 #define R_HASH_SHA256 4
 #define R_HASH_SHA384 8
 #define R_HASH_SHA512 16
+#define R_HASH_CRC16 32
+#define R_HASH_CRC32 64
+#define R_HASH_MD4 128
+#define R_HASH_XOR 256
+#define R_HASH_XORPAIR 512
+#define R_HASH_PARITY 1024
+#define R_HASH_ENTROPY 2048
+#define R_HASH_HAMDIST 4096
+#define R_HASH_PCPRINT 8192
+#define R_HASH_MOD255 16384
+#define R_HASH_ALL 0xFFFF
 
 const u8 *r_hash_state_md4(struct r_hash_t *ctx, const u8 *input, u32 len);
 const u8 *r_hash_state_md5(struct r_hash_t *ctx, const u8 *input, u32 len);

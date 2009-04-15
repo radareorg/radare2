@@ -54,3 +54,40 @@ u8 r_hash_mod255(const u8 *b, u64 len)
 		c += b[i];
 	return c%255;
 }
+
+/* TODO: ignore case.. we have to use strcasestr */
+u64 r_hash_name_to_bits(const char *name)
+{
+	u64 bits = R_HASH_NONE;
+	if (strstr(name, "md4"))
+		bits |= R_HASH_MD4;
+	if (strstr(name, "md5"))
+		bits |= R_HASH_MD5;
+	if (strstr(name, "sha1"))
+		bits |= R_HASH_SHA1;
+	if (strstr(name, "sha256"))
+		bits |= R_HASH_SHA256;
+	if (strstr(name, "sha384"))
+		bits |= R_HASH_SHA384;
+	if (strstr(name, "sha512"))
+		bits |= R_HASH_SHA512;
+	if (strstr(name, "crc16"))
+		bits |= R_HASH_CRC16;
+	if (strstr(name, "crc32"))
+		bits |= R_HASH_CRC32;
+	if (strstr(name, "xorpair"))
+		bits |= R_HASH_XORPAIR;
+	else if (strstr(name, "xor")) /* XXX: hacky solution */
+		bits |= R_HASH_XOR;
+	if (strstr(name, "parity"))
+		bits |= R_HASH_PARITY;
+	if (strstr(name, "entropy"))
+		bits |= R_HASH_ENTROPY;
+	if (strstr(name, "hamdist"))
+		bits |= R_HASH_HAMDIST;
+	if (strstr(name, "pcprint"))
+		bits |= R_HASH_PCPRINT;
+	if (strstr(name, "mod255"))
+		bits |= R_HASH_MOD255;
+	return bits;
+}

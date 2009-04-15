@@ -11,4 +11,6 @@ float get_px(u8 x, u8 const *data, u64 size);
 u16 crc16(u16 crc, const u8 *buffer, u64 len);
 void mdfour(u8 *out, const u8 *in, u64 n);
 u32 crc32(u8 *buf, u64 len);
+
+u64 r_hash_name_to_bits(const char *name);
 //extern u16 const crc16_table[256];
