@@ -110,6 +110,7 @@ char *r_file_path(const char *bin);
 char *r_file_slurp(const char *str, int *usz);
 char *r_file_slurp_range(const char *str, u64 off, u64 sz);
 char *r_file_slurp_random_line(const char *file);
+u8 *r_file_slurp_hexpairs(const char *str, int *usz);
 int r_file_dump(const char *file, const u8 *buf, int len);
 int r_file_rm(const char *file);
 int r_file_exist(const char *str);

@@ -90,6 +90,7 @@ R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *fil
 R_API int r_core_file_close(struct r_core_t *r, struct r_core_file_t *fh);
 R_API int r_core_seek_delta(struct r_core_t *core, s64 addr);
 R_API int r_core_write_at(struct r_core_t *core, u64 addr, const u8 *buf, int size);
+R_API int r_core_write_op(struct r_core_t *core, const char *arg, char op);
 
 /* yank */
 R_API int r_core_yank(struct r_core_t *core, u64 addr, int len);

@@ -8,10 +8,6 @@
 
 #include <stdarg.h>
 
-int r_core_write_op(struct r_core_t *core, const char *arg, char op);
-
-static int cmd_print(void *data, const char *input);
-
 static int cmd_iopipe(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
@@ -27,6 +23,45 @@ static int cmd_iopipe(void *data, const char *input)
 	return R_TRUE;
 }
 
+/* TODO: this should be moved to the core->yank api */
+static int cmd_yank_to(struct r_core_t *core, char *arg)
+{
+	u64 src = core->seek;
+	u64 len =  0;
+	u64 pos = -1;
+	char *str;
+	u8 *buf;
+
+	while(*arg==' ')arg=arg+1;
+	str = strchr(arg, ' ');
+	if (str) {
+		str[0]='\0';
+		len = r_num_math(&core->num, arg);
+		pos = r_num_math(&core->num, str+1);
+		str[0]=' ';
+	}
+	if ( (str == NULL) || (pos == -1) || (len == 0) ) {
+		eprintf("Usage: yt [len] [dst-addr]\n");
+		return 1;
+	}
+
+#if 0
+	if (!config_get("file.write")) {
+		eprintf("You are not in read-write mode.\n");
+		return 1;
+	}
+#endif
+
+	buf = (u8*)malloc( len );
+	r_core_read_at (core, src, buf, len);
+	r_core_write_at (core, pos, buf, len);
+	free(buf);
+
+	core->seek = src;
+	r_core_block_read(core, 0);
+	return 0;
+}
+
 static int cmd_yank(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
@@ -36,6 +71,13 @@ static int cmd_yank(void *data, const char *input)
 		break;
 	case 'y':
 		r_core_yank_paste(core, r_num_math(&core->num, input+2), 0);
+		break;
+	case 't':
+		{ /* hacky implementation */
+			char *arg = strdup(input+1);
+			cmd_yank_to(core, arg);
+			free(arg);
+		}
 		break;
 	case '\0':
 		if (core->yank == NULL) {
@@ -245,7 +287,18 @@ static int cmd_help(void *data, const char *input)
 			" ?! [cmd]        ; ? != 0\n"
 			" ?+ [cmd]        ; ? > 0\n"
 			" ?- [cmd]        ; ? < 0\n"
-			" ???             ; show this help\n");
+			" ???             ; show this help\n"
+			"$variables:\n"
+			" $$  = here (current seek)\n"
+			" $s  = file size\n"
+			" $b  = block size\n"
+			" $j  = jump address\n"
+			" $f  = address of next opcode\n"
+			" $r  = opcode reference pointer\n"
+			" $e  = 1 if end of block, else 0\n"
+			" ${eval} = get value of eval variable\n"
+			" $?  = last comparision value\n");
+			return 0;
 		} else
 		if (input[1]) {
 			if (core->num.value == U64_MIN)
@@ -277,6 +330,7 @@ static int cmd_help(void *data, const char *input)
 		" (macro arg0 arg1) ; define scripting macros\n"
 		" q [ret]           ; quit program with a return value\n"
 		"Use '?$' to get help for the variables\n"
+		"Use '?""??' for extra help about '?' subcommands.\n"
 		"Append '?' to any char command to get detailed help\n");
 		break;
 	}
@@ -296,11 +350,6 @@ static int cmd_bsize(void *data, const char *input)
 		break;
 	}
 	return 0;
-}
-
-static int cmd_hexdump(void *data, const char *input)
-{
-	return cmd_print(data, input-1);
 }
 
 static int cmd_info(void *data, const char *input)
@@ -333,7 +382,8 @@ static int cmd_info(void *data, const char *input)
 	case '*':
 		break;
 	default:
-		r_cons_printf("URI: %s\n", core->file->uri);
+		r_cons_printf("uri: %s\n", core->file->uri);
+		r_cons_printf("filesize: 0x%x\n", core->file->size);
 		r_cons_printf("blocksize: 0x%x\n", core->blocksize);
 	}
 	return 0;
@@ -469,6 +519,11 @@ static int cmd_print(void *data, const char *input)
 	return 0;
 }
 
+static int cmd_hexdump(void *data, const char *input)
+{
+	return cmd_print(data, input-1);
+}
+
 static int cmd_flag(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
@@ -590,15 +645,49 @@ static int cmd_write(void *data, const char *input)
 	memcpy(str, input+1, len);
 	switch(input[0]) {
 	case ' ':
-		// write strifng
+		/* write string */
 		len = r_str_escape(str);
 		r_io_lseek(&core->io, core->file->fd, core->seek, R_IO_SEEK_SET);
-		r_io_write(&core->io, core->file->fd, str, len);
+		r_io_write(&core->io, core->file->fd, (const u8*)str, len);
 		r_core_block_read(core, 0);
 		break;
 	case 't':
+		{
+			/* TODO: Support user defined size? */
+			int len = core->blocksize;
+			char *arg = input+(input[1]==' ')?2:1;
+			char *buf = core->block;
+			r_file_dump(arg, buf, len);
+		}
+		break;
+	case 'T':
+		fprintf(stderr, "TODO\n");
+		break;
 	case 'f':
-		fprintf(stderr, "TODO: wf, wt\n");
+		{
+			int size;
+			char *arg = input+(input[1]==' ')?2:1;
+			u8 *buf = r_file_slurp(arg, &size);
+			if (buf == NULL) {
+				eprintf("Cannot open file '%s'\n", arg);
+			} else {
+				r_io_write(&core->io, core->file->fd, buf, size);
+				free(buf);
+			}
+		}
+		break;
+	case 'F':
+		{
+			int size;
+			char *arg = input+(input[1]==' ')?2:1;
+			u8 *buf = r_file_slurp_hexpairs(arg, &size);
+			if (buf == NULL) {
+				eprintf("Cannot open file '%s'\n", arg);
+			} else {
+				r_io_write(&core->io, core->file->fd, buf, size);
+				free(buf);
+			}
+		}
 		break;
 	case 'w':
 		str = str+1;
@@ -751,14 +840,19 @@ static int cmd_write(void *data, const char *input)
 			r_io_write(&core->io, core->file->fd, core->oobi, core->oobi_len);
 		} else
 			r_cons_printf("Usage: w[x] [str] [<file] [<<EOF] [@addr]\n"
-			" w foobar   ; write string 'foobar'\n"
-			" ww foobar  ; write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'\n"
-			" wa push ebp; write opcode, separated by ';' (use '\"' around the command)\n"
-			" wb 010203  ; fill current block with cyclic hexpairs\n"
-			" wx 9090    ; write two intel nops\n"
-			" wv eip+34  ; write 32-64 bit value\n"
-			" wo[] hex   ; write in block with operation. 'wo?' fmi\n"
-			" wm f0ff    ; cyclic write mask\n");
+			" w foobar    ; write string 'foobar'\n"
+			" ww foobar   ; write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'\n"
+			" wa push ebp ; write opcode, separated by ';' (use '\"' around the command)\n"
+			" wb 010203   ; fill current block with cyclic hexpairs\n"
+			" wx 9090     ; write two intel nops\n"
+			" wv eip+34   ; write 32-64 bit value\n"
+			" wo[] hex    ; write in block with operation. 'wo?' fmi\n"
+			" wm f0ff     ; cyclic write mask\n"
+			" wf file     ; write contents of file at current offset\n"
+			" wF file     ; write contents of hexpairs file here\n"
+			" wt file     ; write current block to file\n");
+			//TODO: add support for offset+seek
+			// " wf file o s ; write contents of file from optional offset 'o' and size 's'.\n"
 		break;
 	}
 	return 0;
@@ -1107,7 +1201,7 @@ static int cmd_macro(void *data, const char *input)
 
 static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd, int *times)
 {
-	char *ptr, *ptr2, *str, *p;
+	char *ptr, *ptr2, *str;
 	int i, len = strlen(cmd);
 
 	len = atoi(cmd);
@@ -1158,7 +1252,7 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 				core->oobi = realloc(core->oobi, core->oobi_len+1);
 				if (!strcmp(buf, str))
 					break;
-				strcat(core->oobi, buf);
+				strcat((char *)core->oobi, buf);
 			}
 			r_line_prompt = oprompt;
 		} else {

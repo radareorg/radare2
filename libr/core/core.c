@@ -1,25 +1,53 @@
 /* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
 
-#include "r_core.h"
+#include <r_core.h>
 #include "../config.h"
 
 static u64 num_callback(void *userptr, const char *str, int *ok)
 {
 	struct r_core_t *core = userptr;
 	struct r_flag_item_t *flag;
+	struct r_anal_aop_t aop;
 	
 	if (str[0]=='$') {
+		/* analyze opcode */
 		switch(str[1]) {
-		case '$': return core->seek;
+		case '$': if (str[2]!='$') break;
+		case 'e':
+		case 'j':
+		case 'f':
+		case 'r':
+			r_anal_set_pc(&core->anal, core->seek);
+			r_anal_aop(&core->anal, &aop, core->block);
+			break;
+		}
+		
+		/* return value */
+		switch(str[1]) {
+		case '$':
+			if (str[2]=='$')
+				return aop.length;
+			return core->seek;
+		case '{':
+			{
+				char *ptr, *bptr = strdup(str+2);
+				ptr = strchr(bptr, '}');
+				if (ptr != NULL) {
+					u64 ret;
+					ptr[0]='\0';
+					ret = r_config_get_i(&core->config, bptr);
+					free(bptr);
+					return ret;
+				}
+			}
+			return 0;
+		case 'e': return aop.eob;
+		case 'j': return aop.jump;
+		case 'f': return aop.fail;
+		case 'r': return aop.ref;
 		case 'b': return core->blocksize;
 		case 's': return core->file->size;
-		case '?': 
-			r_cons_printf(
-			"$variables:\n"
-			" $$  = here (current seek)\n"
-			" $s  = file size\n"
-			" $b  = block size\n");
-			return 0;
+		case '?': return core->num.value;
 		}
 	}
 

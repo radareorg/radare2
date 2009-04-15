@@ -57,7 +57,7 @@ char *r_file_slurp(const char *str, int *usz)
 {
         char *ret;
         long sz;
-        FILE *fd = fopen(str, "r");
+        FILE *fd = fopen(str, "rb");
         if (fd == NULL)
                 return NULL;
         fseek(fd, 0,SEEK_END);
@@ -69,6 +69,32 @@ char *r_file_slurp(const char *str, int *usz)
         fclose(fd);
 	if (usz)
 		*usz = (u32)sz;
+        return ret;
+}
+
+u8 *r_file_slurp_hexpairs(const char *str, int *usz)
+{
+        u8 *ret;
+        long sz;
+	int bytes;
+        FILE *fd = fopen(str, "r");
+        if (fd == NULL)
+                return NULL;
+        fseek(fd, 0,SEEK_END);
+        sz = ftell(fd);
+        fseek(fd, 0, SEEK_SET);
+        ret = (u8*)malloc(sz+1); // XXX >>1 ???
+	/* TODO: add support for commented lines */
+	while (1) {
+		int n;
+		fscanf(fd, "%02x", &n);
+		if (feof(fd))
+			break;
+		ret[bytes++] = n;
+	}
+        fclose(fd);
+	if (usz)
+		*usz = bytes;
         return ret;
 }
 
