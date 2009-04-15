@@ -1517,12 +1517,28 @@ static int cmd_debug(void *data, const char *input)
 		case '-':
 			r_debug_bp_del(&core->dbg, r_num_math(&core->num, input+2));
 			break;
+		case 'e':
+			r_debug_bp_enable(&core->dbg, r_num_math(&core->num, input+2), 1);
+			break;
+		case 'd':
+			r_debug_bp_enable(&core->dbg, r_num_math(&core->num, input+2), 0);
+			break;
+		case 'h':
+			if (input[2]==' ') {
+				if (!r_bp_handle_set(&core->dbg.bp, input+3)) {
+					eprintf("Invalid name: '%s'.\n", input+3);
+				}
+			} else r_bp_handle_list(&core->dbg.bp);
+			break;
 		case '?':
 			r_cons_printf(
 			"Usage: db [[-]addr] [len] [rwx] [condstring]\n"
+			"db              ; list breakpoints\n"
 			"db 0x804800     ; add breakpoint\n"
 			"db -0x804800    ; remove breakpoint\n"
-			"db              ; list breakpoint\n");
+			"dbe 0x8048000   ; enable breakpoint\n"
+			"dbd 0x8048000   ; disable breakpoint\n"
+			"dbh x86         ; set/list breakpoint plugin handlers\n");
 			break;
 		default:
 			r_debug_bp_add(&core->dbg, r_num_math(&core->num, input+1), 1);

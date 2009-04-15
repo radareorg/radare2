@@ -10,9 +10,9 @@ R_API int r_bp_init(struct r_bp_t *bp)
 {
 	int i;
 	bp->nbps = 0;
-fprintf(stderr, "bp.init()\n");
 	bp->cur = NULL;
 	INIT_LIST_HEAD(&bp->bps);
+	INIT_LIST_HEAD(&bp->plugins);
 	for(i=0;bp_static_plugins[i];i++)
 		r_bp_handle_add(bp, bp_static_plugins[i]);
 	return R_TRUE;
@@ -45,14 +45,14 @@ R_API int r_bp_handle_add(struct r_bp_t *bp, struct r_bp_handle_t *foo)
 			return R_FALSE;
 	}
 	bp->nbps++;
-	list_add_tail(&(foo->list), &(bp->bps));
+	list_add_tail(&(foo->list), &(bp->plugins));
 	return R_TRUE;
 }
 
 R_API int r_bp_handle_set(struct r_bp_t *bp, const char *name)
 {
 	struct list_head *pos;
-	list_for_each_prev(pos, &bp->bps) {
+	list_for_each_prev(pos, &bp->plugins) {
 		struct r_bp_handle_t *h = list_entry(pos, struct r_bp_handle_t, list);
 		if (!strcmp(h->name, name)) {
 			bp->cur = h;
@@ -127,7 +127,7 @@ R_API int r_bp_in(struct r_bp_t *bp, u64 addr, int rwx)
 	return R_FALSE;
 }
 
-R_API int r_bp_enable(struct r_bp_t *bp, u64 addr, int set)
+R_API struct r_bp_item_t *r_bp_enable(struct r_bp_t *bp, u64 addr, int set)
 {
 	struct list_head *pos;
 	struct r_bp_item_t *b;
@@ -135,10 +135,10 @@ R_API int r_bp_enable(struct r_bp_t *bp, u64 addr, int set)
 		b = list_entry(pos, struct r_bp_item_t, list);
 		if (addr >= b->addr && addr <= b->addr+b->size) {
 			b->enabled = set;
-			return R_TRUE;
+			return b;
 		}
 	}
-	return R_FALSE;
+	return NULL;
 }
 
 /* TODO: detect overlapping of breakpoints */
@@ -185,6 +185,19 @@ R_API int r_bp_del(struct r_bp_t *bp, u64 addr)
 		}
 	}
 	return R_FALSE;
+}
+
+R_API void r_bp_handle_list(struct r_bp_t *bp)
+{
+	struct r_bp_handle_t *b;
+	struct list_head *pos;
+	list_for_each(pos, &bp->plugins) {
+		b = list_entry(pos, struct r_bp_handle_t, list);
+		if (bp->cur && !strcmp(bp->cur->name, b->name))
+			printf(" * %s\n", b->name);
+		else printf(" - %s\n", b->name);
+	
+	}
 }
 
 R_API int r_bp_list(struct r_bp_t *bp, int rad)

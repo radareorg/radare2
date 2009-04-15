@@ -38,6 +38,7 @@ struct r_bp_t {
 	u64 trace_bp;
 	int nbps;
 	struct r_bp_handle_t *cur;
+	struct list_head plugins;
 	struct list_head bps;
 };
 
@@ -57,12 +58,14 @@ R_API int r_bp_del(struct r_bp_t *bp, u64 addr);
 R_API int r_bp_handle_add(struct r_bp_t *bp, struct r_bp_handle_t *foo);
 R_API int r_bp_handle_set(struct r_bp_t *bp, const char *name);
 R_API int r_bp_handle_del(struct r_bp_t *bp, const char *name);
+R_API void r_bp_handle_list(struct r_bp_t *bp);
 
 R_API int r_bp_in(struct r_bp_t *bp, u64 addr, int rwx);
 R_API int r_bp_list(struct r_bp_t *bp, int rad);
 R_API int r_bp_getbytes(struct r_bp_t *bp, u8 *buf, int len, int endian, int idx);
 R_API int r_bp_set_trace(struct r_bp_t *bp, u64 addr, int set);
 R_API int r_bp_set_trace_bp(struct r_bp_t *bp, u64 addr, int set);
+R_API struct r_bp_item_t *r_bp_enable(struct r_bp_t *bp, u64 addr, int set);
 
 /* plugin pointers */
 extern struct r_bp_handle_t r_bp_plugin_x86;

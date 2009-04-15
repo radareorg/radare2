@@ -4,7 +4,7 @@
 
 R_API int r_debug_pid_list(struct r_debug_t *dbg)
 {
-	int count = 0;
+	//int count = 0;
 	return 0;
 }
 
