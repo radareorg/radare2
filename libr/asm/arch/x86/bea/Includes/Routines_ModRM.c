@@ -2183,7 +2183,7 @@ int __stdcall SIB_0(ARGTYPE* pMyArgument, int i)
     if ((BASE_ == 5) && (MOD_ == 0)) {
         DECALAGE_EIP += 4;
         if (!Security(7)) return i;
-        (void) sprintf((char*) (*pMyArgument).ArgMnemonic + i, "%.8X",*((DWORD*) (EIP_ + 3)));
+        (void) sprintf((char*) (*pMyArgument).ArgMnemonic + i, "%.8lX",*((DWORD*) (EIP_ + 3)));
         (*pMyArgument).Memory.Displacement = *((DWORD*) (EIP_ + 3));
         i += 4;
     }

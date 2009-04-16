@@ -5,7 +5,6 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_cmd.h>
-#include <r_flags.h>
 #include <r_asm.h>
 #include <list.h>
 #include "../config.h"
@@ -18,8 +17,8 @@ static int r_asm_asciz(void *data, const char *input)
 	int len = 0;
 	struct r_asm_aop_t **aop = (struct r_asm_aop_t**)data;
 	char *arg = strchr(input, ' ');
-	if (arg && (len = strlen(arg+1)+1)) {
-		arg += 1;
+	if (arg && (len = strlen(arg+1))) {
+		arg += 1; len += 1;
 		r_hex_bin2str((u8*)arg, len, (*aop)->buf_hex);
 		strncpy((char*)(*aop)->buf, arg, 1024);
 	}
@@ -204,52 +203,83 @@ R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char 
 
 R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 {
-	struct r_flag_t flags;
-	struct r_flag_item_t *fi;
-	char *lbuf = NULL, *ptr = NULL, *ptr2 = NULL, *tokens[1024],
-		 buf_hex[1024], buf_asm[1024], *symbol = NULL;
+	struct {
+		char name[256];
+		u64 offset;
+	} flags[1024];
+	char *lbuf = NULL, buf_hex[1024], *ptr = NULL, *ptr_start = NULL, *tokens[1024],
+		 *label_name = NULL, buf_token[1024], buf_token2[1024];
 	u8 buf_bin[1024];
-	int ret, idx, ctr, i, j;
+	int labels = 0, stage, ret, idx, ctr, i, j;
+	u64 label_offset;
 
 	if (buf == NULL)
 		return 0;
 	lbuf = strdup(buf);
+
+	if (strchr(lbuf, '_'))
+		labels = 1;
 
 	for (tokens[0] = lbuf, ctr = 0;
 		(ptr = strchr(tokens[ctr], ';'));
 		tokens[++ctr] = ptr+1)
 			*ptr = '\0';
 
-	r_flag_init(&flags);
 	r_cmd_set_data(&a->cmd, &aop);
-	for (ret = idx = i = 0, *buf_hex='\0'; i <= ctr; i++, idx+=ret) {
-		r_asm_set_pc(a, a->pc + ret);
-		while ((ptr = strchr(tokens[i], '_'))) { /* Symbol */
-			if ((symbol = r_str_word_get_first(ptr))) {
-        		for (ptr2 = tokens[i];*ptr2&&isseparator(*ptr2);ptr2++);
-				if ((ptr == ptr2)) { /* set */
-					r_flag_set(&flags, symbol, a->pc, 0, 0);
-					tokens[i]+=strlen(symbol)+1;
-				} else { /* get */
-					*ptr = '\0';
-					fi = r_flag_get(&flags, symbol);
-					sprintf(buf_asm, "%s0x%llx%s",
-							ptr2, fi->offset, ptr+strlen(symbol));
-					tokens[i] = buf_asm;
+
+	/* Stage 1: Parse labels*/
+	/* Stage 2: Assemble */
+	for (stage = 0; stage < 2; stage++) {
+		if (stage == 0 && !labels)
+			continue;
+		for (ret = i = j = 0, label_offset = a->pc; i <= ctr && j < 1024; i++, label_offset+=ret) {
+			strncpy(buf_token, tokens[i], 1024);
+			if (stage == 1)
+				r_asm_set_pc(a, a->pc + ret);
+			if (labels) { /* Labels */
+				for (ptr_start = buf_token;*ptr_start&&isseparator(*ptr_start);ptr_start++);
+				while ((ptr = strchr(ptr_start, '_'))) {
+					if ((label_name = r_str_word_get_first(ptr))) {
+						if ((ptr == ptr_start)) {
+							if (stage == 0) {
+								strncpy(flags[j].name, label_name, 256);
+								flags[j].offset = label_offset;
+								j++;
+							}
+							ptr_start += strlen(label_name)+1;
+						} else {
+							*ptr = '\0';
+							if (stage == 1) {
+								for (j = 0; j < 1024; j++)
+									if (!strcmp(label_name, flags[j].name)) {
+										label_offset = flags[j].offset;
+										break;
+									}
+								if (j == 1024)
+									return 0;
+							}
+							snprintf(buf_token2, 1024, "%s0x%llx%s",
+									ptr_start, label_offset, ptr+strlen(label_name));
+							strncpy(buf_token, buf_token2, 1024);
+							ptr_start = buf_token;
+						}
+						free(label_name);
+					}
 				}
-				free(symbol);
+			} else {
+				ptr_start = tokens[i];
 			}
-		}
-		if ((ptr = strchr(tokens[i], '.'))) /* Pseudo */
-			ret = r_cmd_call_long(&a->cmd, ptr+1);
-		else /* Instruction */
-			ret = r_asm_assemble(a, aop, tokens[i]);
-		if (ret) {
-			for (j = 0; j < ret; j++)
-				buf_bin[idx+j] = aop->buf[j];
-			strcat(buf_hex, aop->buf_hex);
-		} else {
-			return 0;
+			if ((ptr = strchr(ptr_start, '.'))) /* Pseudo */
+				ret = r_cmd_call_long(&a->cmd, ptr+1);
+			else /* Instruction */
+				ret = r_asm_assemble(a, aop, ptr_start);
+			if (!ret) {
+				return 0;
+			} else if (stage == 1) {
+				for (j = 0; j < ret && idx+j < 1024; j++)
+					buf_bin[idx+j] = aop->buf[j];
+				strcat(buf_hex, aop->buf_hex);
+			}
 		}
 	}
 	
