@@ -149,9 +149,9 @@ int main(int argc, char **argv)
 	if (debug) {
 		r_core_cmd (&r, "dh ptrace", 0);
 		r_core_cmdf (&r, "dp %d", r.file->fd);
-		//r_core_cmd (&r, ".dr*", 0);
+		r_core_cmd (&r, ".dr*", 0);
 		r_core_cmd (&r, "s eip", 0);
-		//r_core_cmd (&r, "e cmd.prompt=.dr",0);
+		r_core_cmd (&r, "e cmd.prompt=.dr",0);
 		r_core_cmd (&r, "\"e cmd.vprompt=.dr\"",0);
 		r_core_cmd (&r, "\"e cmd.visual=.dr\"",0);
 	}

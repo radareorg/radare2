@@ -6,7 +6,7 @@
 R_API struct r_debug_regset_t *r_debug_regset_new(int size)
 {
 	struct r_debug_regset_t *r = MALLOC_STRUCT(struct r_debug_regset_t);
-	r->regs = MALLOC_STRUCTS(struct r_debug_regset_t, size);
+	r->regs = MALLOC_STRUCTS(struct r_debug_reg_t, size);
 	r->nregs = size;
 	return r;
 }
@@ -23,6 +23,10 @@ R_API int r_debug_regset_set(struct r_debug_regset_t *r, int idx, const char *na
 {
 	if (idx<0 || idx>=r->nregs) {
 		eprintf("Out of range register index! More registers needs to be allocated in r_debug_regset_new()\n");
+		return R_FALSE;
+	}
+	if (r==NULL || r->regs==NULL) {
+		eprintf("No regset given in regset_set\n");
 		return R_FALSE;
 	}
 	strncpy(r->regs[idx].name, name, R_DEBUG_REG_NAME_MAX);

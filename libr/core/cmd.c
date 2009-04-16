@@ -1655,11 +1655,12 @@ static int cmd_debug(void *data, const char *input)
 		system("cat /proc/$PID/maps"); }
 		break;
 	case 'r':
-#if 0
+#if 1
 		r_debug_reg_sync(&core->dbg, 0);
 		r_debug_reg_list(&core->dbg, NULL, input[1]=='*');
-#endif
+#else
 		r_core_cmd(core, "|reg", 0);
+#endif
 		break;
 	case 'p':
 		// TODO: Support PID and Thread
