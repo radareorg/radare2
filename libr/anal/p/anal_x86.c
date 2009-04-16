@@ -141,6 +141,16 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 		aop->length = 1;
 		aop->type   = R_ANAL_AOP_TYPE_SWI;
 		break;
+	case 0xb8: // mov eax, <inmedate>
+	case 0xb9: // mov ecx, <inmedate>
+	case 0xba: // mov edx, <inmedate>
+	case 0xbb: // mov ebx, <inmedate>
+	case 0xbc: // mov esp, <inmedate>
+	case 0xbd: // mov esp, <inmedate>
+	case 0xbf:
+		aop->type = R_ANAL_AOP_TYPE_MOV; //  bfdc054000      mov edi, 0x4005dc
+		aop->ref = buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);//((unsigned long)((buf+2))+6);
+		break;
 	case 0xcd:
 		aop->length = 2;
 		aop->type   = R_ANAL_AOP_TYPE_SWI;
@@ -328,32 +338,6 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 		aop->type = R_ANAL_AOP_TYPE_MOV;
 		//vm_arch_x86_regs[VM_X86_EAX] = anal->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
 		//radare_read_at((u64)vm_arch_x86_regs[VM_X86_EAX], (unsigned char *)&(vm_arch_x86_regs[VM_X86_EAX]), 4);
-		break;
-		
-	// roll to a switch range case
-	case 0xb8: // mov eax, <inmedate>
-		aop->type = R_ANAL_AOP_TYPE_MOV;
-		//vm_arch_x86_regs[VM_X86_EAX] = anal->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
-		break;
-	case 0xb9: // mov ecx, <inmedate>
-		aop->type = R_ANAL_AOP_TYPE_MOV;
-		//vm_arch_x86_regs[VM_X86_ECX] = anal->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
-		break;
-	case 0xba: // mov edx, <inmedate>
-		aop->type = R_ANAL_AOP_TYPE_MOV;
-		//vm_arch_x86_regs[VM_X86_EDX] = anal->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
-		break;
-	case 0xbb: // mov ebx, <inmedate>
-		aop->type = R_ANAL_AOP_TYPE_MOV;
-		//vm_arch_x86_regs[VM_X86_EBX] = anal->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
-		break;
-	case 0xbc: // mov esp, <inmedate>
-		aop->type = R_ANAL_AOP_TYPE_MOV;
-		//vm_arch_x86_regs[VM_X86_ESP] = anal->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
-		break;
-	case 0xbd: // mov esp, <inmedate>
-		aop->type = R_ANAL_AOP_TYPE_MOV;
-		//vm_arch_x86_regs[VM_X86_EBP] = anal->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
 		break;
 #if 0
 	case0xF

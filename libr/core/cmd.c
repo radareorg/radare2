@@ -1509,7 +1509,7 @@ int r_core_cmd(struct r_core_t *core, const char *command, int log)
 		cmd[len-1]='\0';
 		strcpy(cmd, cmd+1);
 		ret = r_cmd_call(&core->cmd, cmd);
-		free(cmd);
+		free(ocmd);
 		return ret;
 	}
 
@@ -1655,7 +1655,11 @@ static int cmd_debug(void *data, const char *input)
 		system("cat /proc/$PID/maps"); }
 		break;
 	case 'r':
-		r_core_cmd(core, "|reg", 0); // XXX
+#if 0
+		r_debug_reg_sync(&core->dbg, 0);
+		r_debug_reg_list(&core->dbg, NULL, input[1]=='*');
+#endif
+		r_core_cmd(core, "|reg", 0);
 		break;
 	case 'p':
 		// TODO: Support PID and Thread

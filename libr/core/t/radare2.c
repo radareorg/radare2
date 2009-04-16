@@ -15,7 +15,7 @@ static int main_help(int line)
 	if (!line) printf(
 		" -d        use 'file' as a program to debug\n"
 		" -w        open file in write mode\n"
-		" -n        do not run ~/.radarerc\n"
+		" -n        do not run ~/.radare2rc\n"
 		" -f        block size = file size\n"
 		" -s [addr] initial seek\n"
 		" -b [size] initial block size\n"
@@ -139,7 +139,7 @@ int main(int argc, char **argv)
 	}
 
 	if (run_rc) {
-		char *homerc = r_str_home (".radarerc");
+		char *homerc = r_str_home (".radare2rc");
 		if (homerc) {
 			r_core_cmd_file (&r, homerc);
 			free (homerc);
@@ -149,9 +149,9 @@ int main(int argc, char **argv)
 	if (debug) {
 		r_core_cmd (&r, "dh ptrace", 0);
 		r_core_cmdf (&r, "dp %d", r.file->fd);
-		r_core_cmd (&r, ".dr*", 0);
+		//r_core_cmd (&r, ".dr*", 0);
 		r_core_cmd (&r, "s eip", 0);
-		r_core_cmd (&r, "e cmd.prompt=.dr",0);
+		//r_core_cmd (&r, "e cmd.prompt=.dr",0);
 		r_core_cmd (&r, "\"e cmd.vprompt=.dr\"",0);
 		r_core_cmd (&r, "\"e cmd.visual=.dr\"",0);
 	}

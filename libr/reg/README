@@ -1,3 +1,6 @@
+
+** TO BE REMOVED ** THIS MODULE IS PLANED TO DISSAPEAR **
+
 * Library to handle register values for multiple architectures
 * Architecture register sets are handled as plugins?
 * Designed to be used from radare libr within the modules:

@@ -37,6 +37,10 @@ R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *fil
 
 	r_core_block_read(r, 0);
 
+	p = r_config_get(&r->config, "cmd.open");
+	if (p && *p)
+		r_core_cmd(r, p, 0);
+
 	return fh;
 }
 

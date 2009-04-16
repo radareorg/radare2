@@ -7,15 +7,18 @@
 R_API int r_debug_reg_sync(struct r_debug_t *dbg, int write)
 {
 	if (write) {
-		dbg->h->reg_write(dbg->pid, dbg->regs);
+		if (dbg && dbg->h && dbg->h->reg_write) {
+			dbg->h->reg_write(dbg->pid, dbg->regs);
+		}
 	} else {
 		/* read registers from debugger backend to dbg->regs */
-		if (dbg->h && dbg->h->reg_read) {
+		if (dbg && dbg->h && dbg->h->reg_read) {
 			free(dbg->oregs);
 			dbg->oregs = dbg->regs;
-			dbg->h->reg_read(dbg->regs);
+			dbg->regs = dbg->h->reg_read(dbg->pid);
 		}
 	}
+	return (dbg->regs != NULL);
 }
 
 R_API struct r_debug_regset_t *r_debug_reg_diff(struct r_debug_t *dbg)
@@ -33,7 +36,7 @@ R_API u64 r_debug_reg_get(struct r_debug_t *dbg, const char *name)
 	if (dbg->regs)
 	for(i=0; i<dbg->regs->nregs; i++) {
 		if (!strcmp(name, dbg->regs->regs[i].name))
-			return &dbg->regs->regs[i].value;
+			return dbg->regs->regs[i].value;
 	}
 	return R_TRUE;
 }
@@ -50,7 +53,7 @@ R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, u64 value)
 	return R_FALSE;
 }
 
-R_API int r_debug_reg_list(struct r_debug_t *dbg, struct r_debug_regset_t *rs)
+R_API int r_debug_reg_list(struct r_debug_t *dbg, struct r_debug_regset_t *rs, int rad)
 {
 	int i =0;
 	if (rs == NULL)
@@ -58,8 +61,10 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, struct r_debug_regset_t *rs)
 	if (rs)
 	for(i=0;i<rs->nregs;i++) {
 		struct r_debug_reg_t *r = &rs->regs[i];
-		printf("%d %s 0x%08llx\n", i, r->name, r->value);
+		if (rad) dbg->printf("f %s @ 0x%08llx\n", r->name, r->value);
+		else dbg->printf("%d %s 0x%08llx\n", i, r->name, r->value);
 		/* TODO: add floating point support here */
+		/* TODO: add packed registers support here */
 	}
 	return R_TRUE;
 }

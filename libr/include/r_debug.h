@@ -66,6 +66,7 @@ struct r_debug_t {
 	struct r_bp_t bp;
 	void *user;
 	/* io */
+	void (*printf)(const char *str, ...);
 	int (*read)(void *user, int pid, u64 addr, u8 *buf, int len);
 	int (*write)(void *user, int pid, u64 addr, u8 *buf, int len);
 	struct r_debug_handle_t *h;
@@ -94,27 +95,27 @@ struct r_debug_pid_t {
 	struct list_head list;
 };
 
-int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
-int r_debug_handle_set(struct r_debug_t *dbg, const char *str);
-int r_debug_handle_init(struct r_debug_t *dbg);
-int r_debug_init(struct r_debug_t *dbg);
+R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
+R_API int r_debug_handle_set(struct r_debug_t *dbg, const char *str);
+R_API int r_debug_handle_init(struct r_debug_t *dbg);
+R_API int r_debug_init(struct r_debug_t *dbg);
 
 // TODO: 
-int r_debug_set_io(struct r_debug_t *dbg, 
+R_API void r_debug_set_io(struct r_debug_t *dbg, 
 	int (*read)(void *user, int pid, u64 addr, u8 *buf, int len),
 	int (*write)(void *user, int pid, u64 addr, u8 *buf, int len),
 	void *user);
 
 /* send signals */
-int r_debug_kill(struct r_debug_t *dbg, int pid, int sig);
-int r_debug_step(struct r_debug_t *dbg, int steps);
-int r_debug_continue(struct r_debug_t *dbg);
-int r_debug_select(struct r_debug_t *dbg, int pid, int tid);
+R_API int r_debug_kill(struct r_debug_t *dbg, int pid, int sig);
+R_API int r_debug_step(struct r_debug_t *dbg, int steps);
+R_API int r_debug_continue(struct r_debug_t *dbg);
+R_API int r_debug_select(struct r_debug_t *dbg, int pid, int tid);
 /* handle.c */
-int r_debug_handle_init(struct r_debug_t *dbg);
-int r_debug_handle_set(struct r_debug_t *dbg, const char *str);
-int r_debug_handle_list(struct r_debug_t *dbg, const char *str);
-int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
+R_API int r_debug_handle_init(struct r_debug_t *dbg);
+R_API int r_debug_handle_set(struct r_debug_t *dbg, const char *str);
+R_API int r_debug_handle_list(struct r_debug_t *dbg, const char *str);
+R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
 
 /* breakpoints */
 R_API int r_debug_bp_add(struct r_debug_t *dbg, u64 addr, int size);
@@ -122,6 +123,19 @@ R_API int r_debug_bp_del(struct r_debug_t *dbg, u64 addr);
 R_API int r_debug_bp_enable(struct r_debug_t *dbg, u64 addr, int set);
 R_API int r_debug_bp_disable(struct r_debug_t *dbg);
 R_API int r_debug_bp_list(struct r_debug_t *dbg, int rad);
+
+/* registers */
+R_API int r_debug_reg_sync(struct r_debug_t *dbg, int write);
+R_API u64 r_debug_reg_get(struct r_debug_t *dbg, const char *name);
+R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, u64 value);
+R_API struct r_debug_regset_t *r_debug_reg_diff(struct r_debug_t *dbg);
+R_API int r_debug_reg_list(struct r_debug_t *dbg, struct r_debug_regset_t *rs, int rad);
+
+/* regset */
+R_API struct r_debug_regset_t *r_debug_regset_diff(struct r_debug_regset_t *a, struct r_debug_regset_t *b);
+R_API int r_debug_regset_set(struct r_debug_regset_t *r, int idx, const char *name, u64 value);
+R_API struct r_debug_regset_t *r_debug_regset_new(int size);
+R_API void r_debug_regset_free(struct r_debug_regset_t *r);
 #if 0
 Missing callbacks
 =================

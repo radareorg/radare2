@@ -9,13 +9,14 @@ R_API int r_debug_init(struct r_debug_t *dbg)
 	dbg->swstep = 0; // software step
 	dbg->newstate = 0;
 	dbg->regs = dbg->oregs = NULL;
+	dbg->printf = printf;
 	dbg->h = NULL;
 	r_debug_handle_init(dbg);
 	r_bp_init(&dbg->bp);
 	return R_TRUE;
 }
 
-R_API int r_debug_set_io(struct r_debug_t *dbg, 
+R_API void r_debug_set_io(struct r_debug_t *dbg, 
 	int (*_read)(void *user, int pid, u64 addr, u8 *buf, int len),
 	int (*_write)(void *user, int pid, u64 addr, u8 *buf, int len),
 	void *user)
