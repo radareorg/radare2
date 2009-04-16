@@ -14,12 +14,12 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf)
 {
 	int len = 0;
-	char cmd[128];
+	char cmd[R_ASM_BUFSIZE];
 	u8 *out;
 	sprintf(cmd, "nasm /dev/stdin -o /dev/stdout <<__\nBITS %i\nORG 0x%llx\n%s\n__", a->bits, a->pc, buf);
 	out = (u8 *)r_sys_cmd_str(cmd, "", &len);
 	if (out) {
-		memcpy(aop->buf, out, len);
+		memcpy(aop->buf, out, len<=R_ASM_BUFSIZE?len:R_ASM_BUFSIZE);
 		free(out);
 	}
 	aop->inst_len = len;

@@ -72,6 +72,7 @@ namespace Radare {
 		public bool set_parser(Asm.Parser parser, parse_cb cb, void *aux);
 		public int disassemble(out Aop aop, uint8 *buf, uint64 length);
 		public int assemble(out Aop aop, string buf);
+		public int massemble(out Aop aop, string buf);
 		public int parse();
 		public void free();
 	}

@@ -20,7 +20,7 @@ static int r_asm_asciz(void *data, const char *input)
 	if (arg && (len = strlen(arg+1))) {
 		arg += 1; len += 1;
 		r_hex_bin2str((u8*)arg, len, (*aop)->buf_hex);
-		strncpy((char*)(*aop)->buf, arg, 1024);
+		strncpy((char*)(*aop)->buf, arg, R_ASM_BUFSIZE);
 	}
 	return len;
 }
@@ -33,7 +33,7 @@ static int r_asm_byte(void *data, const char *input)
 	if (arg) {
 		arg += 1;
 		len = r_hex_str2bin(arg, (*aop)->buf);
-		strncpy((*aop)->buf_hex, r_str_trim(arg), 1024);
+		strncpy((*aop)->buf_hex, r_str_trim(arg), R_ASM_BUFSIZE);
 	}
 	return len;
 }
@@ -196,7 +196,7 @@ R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char 
 	}
 	if (aop && ret > 0) {
 		r_hex_bin2str(aop->buf, ret, aop->buf_hex);
-		strncpy(aop->buf_asm, buf, 1024);
+		strncpy(aop->buf_asm, buf, R_ASM_BUFSIZE);
 	}
 	return ret;
 }
@@ -207,9 +207,10 @@ R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 		char name[256];
 		u64 offset;
 	} flags[1024];
-	char *lbuf = NULL, buf_hex[1024], *ptr = NULL, *ptr_start = NULL, *tokens[1024],
-		 *label_name = NULL, buf_token[1024], buf_token2[1024];
-	u8 buf_bin[1024];
+	char *lbuf = NULL, *ptr = NULL, *ptr_start = NULL, *label_name = NULL,
+		 *tokens[R_ASM_BUFSIZE], buf_hex[R_ASM_BUFSIZE],
+		 buf_token[R_ASM_BUFSIZE], buf_token2[R_ASM_BUFSIZE];
+	u8 buf_bin[R_ASM_BUFSIZE];
 	int labels = 0, stage, ret, idx, ctr, i, j;
 	u64 label_offset;
 
@@ -232,8 +233,9 @@ R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 	for (stage = 0; stage < 2; stage++) {
 		if (stage == 0 && !labels)
 			continue;
-		for (ret = i = j = 0, label_offset = a->pc; i <= ctr && j < 1024; i++, label_offset+=ret) {
-			strncpy(buf_token, tokens[i], 1024);
+		for (idx = ret = i = j = 0, label_offset = a->pc; i <= ctr;
+			i++, idx += ret, label_offset += ret) {
+			strncpy(buf_token, tokens[i], R_ASM_BUFSIZE);
 			if (stage == 1)
 				r_asm_set_pc(a, a->pc + ret);
 			if (labels) { /* Labels */
@@ -241,7 +243,7 @@ R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 				while ((ptr = strchr(ptr_start, '_'))) {
 					if ((label_name = r_str_word_get_first(ptr))) {
 						if ((ptr == ptr_start)) {
-							if (stage == 0) {
+							if (stage == 0 && j < 1024) {
 								strncpy(flags[j].name, label_name, 256);
 								flags[j].offset = label_offset;
 								j++;
@@ -258,9 +260,9 @@ R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 								if (j == 1024)
 									return 0;
 							}
-							snprintf(buf_token2, 1024, "%s0x%llx%s",
+							snprintf(buf_token2, R_ASM_BUFSIZE, "%s0x%llx%s",
 									ptr_start, label_offset, ptr+strlen(label_name));
-							strncpy(buf_token, buf_token2, 1024);
+							strncpy(buf_token, buf_token2, R_ASM_BUFSIZE);
 							ptr_start = buf_token;
 						}
 						free(label_name);
@@ -276,15 +278,15 @@ R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 			if (!ret) {
 				return 0;
 			} else if (stage == 1) {
-				for (j = 0; j < ret && idx+j < 1024; j++)
+				for (j = 0; j < ret && idx+j < R_ASM_BUFSIZE; j++)
 					buf_bin[idx+j] = aop->buf[j];
 				strcat(buf_hex, aop->buf_hex);
 			}
 		}
 	}
 	
-	memcpy(aop->buf, buf_bin, 1024);
-	memcpy(aop->buf_hex, buf_hex, 1024);
+	memcpy(aop->buf, buf_bin, R_ASM_BUFSIZE);
+	memcpy(aop->buf_hex, buf_hex, R_ASM_BUFSIZE);
 
 	return idx;
 }

@@ -22,10 +22,16 @@ public class AsmExample
 
 		Asm.Aop op;
 		uint8 *buf = "\x83\xe4\xf0";
+		string buf2 = "jmp _foo;nop;nop;nop;_foo:push eax";
 		if (st.disassemble(out op, buf, 3) <1) {
 			stderr.printf("internal error\n");
 		} else {
-			stdout.printf("asm: %s\n", op.buf_asm);
+			stdout.printf("disasm: %s\n", op.buf_asm);
+		}
+		if (st.massemble(out op, buf2) <1) {
+			stderr.printf("internal error\n");
+		} else {
+			stdout.printf("asm: %s\n", op.buf_hex);
 		}
 	}
 }

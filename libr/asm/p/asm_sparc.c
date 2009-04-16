@@ -81,7 +81,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 	aop->disasm_obj = &disasm_obj;
 
 	if (aop->inst_len == -1)
-		strcpy(aop->buf_asm, " (data)");
+		strncpy(aop->buf_asm, " (data)", R_ASM_BUFSIZE);
 
 	return aop->inst_len;
 }

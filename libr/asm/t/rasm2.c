@@ -184,9 +184,9 @@ int main(int argc, char *argv[])
 
 	if (argv[optind]) {
 		if (!strcmp(argv[optind], "-")) {
-			char buf[1024];
+			char buf[R_ASM_BUFSIZE];
 			for(;;) {
-				fgets(buf, 1024, stdin);
+				fgets(buf, R_ASM_BUFSIZE, stdin);
 				if ((!bin || !dis) && feof(stdin))
 					break;
 				if (!bin || !dis) buf[strlen(buf)-1]='\0';

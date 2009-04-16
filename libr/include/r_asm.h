@@ -7,6 +7,7 @@
 #include <r_cmd.h>
 #include <list.h>
 
+#define R_ASM_BUFSIZE 1024
 
 enum {
 	R_ASM_SYN_NULL = 0,
@@ -16,10 +17,10 @@ enum {
 
 struct r_asm_aop_t {
 	int  inst_len;
-	u8   buf[1024];
-	char buf_asm[1024];
-	char buf_hex[1024];
-	char buf_err[1024];
+	u8   buf[R_ASM_BUFSIZE];
+	char buf_asm[R_ASM_BUFSIZE];
+	char buf_hex[R_ASM_BUFSIZE];
+	char buf_err[R_ASM_BUFSIZE];
 	void *disasm_obj;
 };
 

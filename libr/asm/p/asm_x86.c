@@ -26,7 +26,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 
 	ud_disassemble(&disasm_obj);
 	aop->disasm_obj = &disasm_obj;
 	aop->inst_len = ud_insn_len(&disasm_obj);
-	snprintf(aop->buf_asm, 256, "%s", ud_insn_asm(&disasm_obj));
+	snprintf(aop->buf_asm, R_ASM_BUFSIZE, "%s", ud_insn_asm(&disasm_obj));
 
 	return aop->inst_len;
 }
