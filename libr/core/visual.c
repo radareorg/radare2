@@ -4,10 +4,12 @@
 
 #define NPF 6
 static int printidx = 0;
+//const char *printfmt[] = { "x", "pd", "p8", "pc", "ps", ".dr*&&s esp&&x 64&&dr&&s eip&&pd" };
 const char *printfmt[] = { "x", "pd", "p8", "pc", "ps", "s esp&&x 64&&dr&&s eip&&pd" };
 
 static int curset = 0, cursor = -1, ocursor=-1;
 static int color = 1;
+static int debug = 1;
 static int flags = R_PRINT_FLAGS_ADDRMOD;
 
 static int marks_init = 0;
@@ -673,12 +675,16 @@ R_API int r_core_visual(struct r_core_t *core, const char *input)
 	}
 
 	color = r_config_get_i(&core->config, "scr.color");
+	debug = r_config_get_i(&core->config, "cfg.debug");
 	do {
 		scrseek = r_num_math(&core->num, 
 			r_config_get(&core->config, "scr.seek"));
 		if (scrseek != 0LL) {
 			r_core_seek (core, scrseek, 1);
 			// TODO: read?
+		}
+		if (debug) {
+			r_core_cmd(core, ".dr*", 0);
 		}
 		cmdprompt = r_config_get (&core->config, "cmd.vprompt");
 		if (cmdprompt && cmdprompt[0])

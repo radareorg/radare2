@@ -79,31 +79,36 @@ struct r_debug_regset_t * r_debug_ptrace_reg_read(int pid)
 	/* TODO: use enum for 0, 1, 2... ? */
 	/* TODO: missing eflags here */
 	r = r_debug_regset_new(9);
-	r_debug_regset_set(r, 0, "eax", regs.eax);
-	r_debug_regset_set(r, 1, "ebx", regs.ebx);
-	r_debug_regset_set(r, 2, "ecx", regs.ecx);
-	r_debug_regset_set(r, 3, "edx", regs.edx);
-	r_debug_regset_set(r, 4, "esi", regs.esi);
-	r_debug_regset_set(r, 5, "edi", regs.edi);
-	r_debug_regset_set(r, 6, "esp", regs.esp);
-	r_debug_regset_set(r, 7, "ebp", regs.ebp);
-	r_debug_regset_set(r, 8, "eip", regs.eip);
+	r_debug_regset_set(r, 0, "eax", (u64)(u32)regs.eax);
+	r_debug_regset_set(r, 1, "ebx", (u64)(u32)regs.ebx);
+	r_debug_regset_set(r, 2, "ecx", (u64)(u32)regs.ecx);
+	r_debug_regset_set(r, 3, "edx", (u64)(u32)regs.edx);
+	r_debug_regset_set(r, 4, "esi", (u64)(u32)regs.esi);
+	r_debug_regset_set(r, 5, "edi", (u64)(u32)regs.edi);
+	r_debug_regset_set(r, 6, "esp", (u64)(u32)regs.esp);
+	r_debug_regset_set(r, 7, "ebp", (u64)(u32)regs.ebp);
+	r_debug_regset_set(r, 8, "eip", (u64)(u32)regs.eip);
 #endif
 #endif /* linux */
 	return r;
 }
 
-int r_debug_ptrace_reg_write(int pid, struct r_debug_regset_t *regs)
+static int r_debug_ptrace_reg_write(int pid, struct r_debug_regset_t *regs)
 {
 	/* TODO */
 }
 
-static int r_debug_ptrace_bp_write(int pid, u64 addr, int hw, int type)
+static int r_debug_ptrace_bp_write(int pid, u64 addr, int size, int hw, int rwx)
 {
-	return R_TRUE;
+	if (hw) {
+		/* implement DRx register handling here */
+		return R_TRUE;
+	}
+	return R_FALSE;
 }
 
-static int r_debug_ptrace_bp_read(int pid, u64 addr, int hw, int type)
+/* TODO: rethink */
+static int r_debug_ptrace_bp_read(int pid, u64 addr, int hw, int rwx)
 {
 	return R_TRUE;
 }

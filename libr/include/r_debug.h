@@ -48,7 +48,8 @@ struct r_debug_handle_t {
 	int (*cont)(int pid);
 	int (*wait)(int pid);
 	int (*contsc)(int pid, int sc);
-	int (*bp_write)(int pid, u64 addr, int hw, int type);
+	//int (*bp_write)(int pid, u64 addr, int hw, int type);
+	int (*bp_write)(int pid, u64 addr, int size, int hw, int rwx);
 	struct r_debug_regset_t * (*reg_read)(int pid);
 	int (*reg_write)(int pid, struct r_debug_regset_t *regs);
 	// XXX bad signature int (*bp_read)(int pid, u64 addr, int hw, int type);
@@ -118,7 +119,7 @@ R_API int r_debug_handle_list(struct r_debug_t *dbg, const char *str);
 R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
 
 /* breakpoints */
-R_API int r_debug_bp_add(struct r_debug_t *dbg, u64 addr, int size);
+R_API int r_debug_bp_add(struct r_debug_t *dbg, u64 addr, int size, int hw, int rwx);
 R_API int r_debug_bp_del(struct r_debug_t *dbg, u64 addr);
 R_API int r_debug_bp_enable(struct r_debug_t *dbg, u64 addr, int set);
 R_API int r_debug_bp_disable(struct r_debug_t *dbg);

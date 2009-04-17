@@ -121,6 +121,7 @@ int main(int argc, char **argv)
 			fprintf (stderr, "Cannot open file '%s'\n", file);
 			return 1;
 		}
+		r_config_set(&r.config, "cfg.debug", "true");
 	} else
 	while (optind < argc) {
 		const char *file = argv[optind++];
@@ -151,9 +152,9 @@ int main(int argc, char **argv)
 		r_core_cmdf (&r, "dp %d", r.file->fd);
 		r_core_cmd (&r, ".dr*", 0);
 		r_core_cmd (&r, "s eip", 0);
-		r_core_cmd (&r, "e cmd.prompt=.dr",0);
-		r_core_cmd (&r, "\"e cmd.vprompt=.dr\"",0);
-		r_core_cmd (&r, "\"e cmd.visual=.dr\"",0);
+		r_core_cmd (&r, "e cmd.prompt=.dr*",0);
+		r_core_cmd (&r, "\"e cmd.vprompt=.dr*\"",0);
+		r_core_cmd (&r, "\"e cmd.visual=.dr*\"",0);
 	}
 
 	if (seek)

@@ -8,7 +8,7 @@
 
 <{include libr/TODO}>
 
-* Implement rahash2
+* 'Vc' cursor mode makes color toggle
 
 * Finish and import the spp's getopt owns implementation in r_util
 
@@ -34,8 +34,3 @@
    scripting language, so we can for example prepare
    a .c stub interface for python/perl/ruby/..
  - Maybe having a preprocessor tool for this..
-
-Debugger:
-* arrows not working in visual
-* add -i and -l to radare2
-* make ruby do not ping with 'Load' message

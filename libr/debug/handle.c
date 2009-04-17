@@ -19,7 +19,6 @@ int r_debug_handle_set(struct r_debug_t *dbg, const char *str)
 			return R_TRUE;
 		}
 	}
-	
 	return R_FALSE;
 }
 
@@ -32,7 +31,6 @@ int r_debug_handle_list(struct r_debug_t *dbg, const char *str)
 		printf("%d %s %s\n", count, h->name, ((h==dbg->h)?"*":""));
 		count++;
 	}
-	
 	return R_FALSE;
 }
 

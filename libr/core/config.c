@@ -165,6 +165,8 @@ R_API int r_core_config_init(struct r_core_t *core)
 	r_config_set(cfg, "cmd.bp", "");
 	r_config_set(cfg, "cfg.fortunes", "true");
 
+	r_config_set(cfg, "cfg.debug", "false");
+
 #if 0
 	config_set_i("search.from", 0);
 	config_set_i("search.to", 0);

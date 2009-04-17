@@ -13,8 +13,9 @@ R_API int r_debug_bp_enable(struct r_debug_t *dbg, u64 addr, int set)
 	return bp!=NULL;
 }
 
-R_API int r_debug_bp_add(struct r_debug_t *dbg, u64 addr, int size)
+R_API int r_debug_bp_add(struct r_debug_t *dbg, u64 addr, int size, int hw, int rwx)
 {
+	int ret = R_FALSE;
 	struct r_bp_item_t *bp;
 	if (dbg->read == NULL) {
 		eprintf("No dbg->read callback defined\n");
@@ -25,11 +26,14 @@ R_API int r_debug_bp_add(struct r_debug_t *dbg, u64 addr, int size)
 	dbg->read(dbg->user, dbg->pid, addr, buf, size);
 	/* register breakpoint in r_bp */
 	bp = r_bp_add(&dbg->bp, buf, addr, size, 0, R_BP_EXEC);
-	memcpy(buf, bp->bbytes, size);
-	dbg->write(dbg->user, dbg->pid, addr, buf, size);
-	/* if already set, r_bp should return false */
-	free(buf);
-	return bp!=NULL;
+	if (bp) {
+		if (dbg->h && (!dbg->h->bp_write || !dbg->h->bp_write(dbg->pid, addr, size, hw, rwx )))
+			dbg->write(dbg->user, dbg->pid, addr, bp->bbytes, size);
+		/* if already set, r_bp should return false */
+		free(buf);
+		ret = R_TRUE;
+	}
+	return ret;
 }
 
 R_API int r_debug_bp_del(struct r_debug_t *dbg, u64 addr)
@@ -44,8 +48,10 @@ R_API int r_debug_bp_restore(struct r_debug_t *dbg, int set)
 {
 	if (set) {
 		/* write bbytes from every breakpoint in r_bp */
+	//	r_debug_bp_enable(dbg, addr, 1)
 	} else {
 		/* write obytes from every breakpoint */
+	//	r_debug_bp_enable(dbg, addr, 0)
 	}
 	return R_TRUE;
 }
