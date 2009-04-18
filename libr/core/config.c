@@ -89,7 +89,7 @@ R_API int r_core_config_init(struct r_core_t *core)
 	r_config_set_cb(cfg, "scr.color",
 		(core->print.flags&R_PRINT_FLAGS_COLOR)?"true":"false",
 		&config_color_callback);
-	r_config_set (cfg, "scr.seek", "eip");
+	r_config_set (cfg, "scr.seek", "");
 #if 0
 	node = config_set("asm.profile", "default");
 //	node->callback = &config_asm_profile;
@@ -158,7 +158,7 @@ R_API int r_core_config_init(struct r_core_t *core)
 	config_set("cmd.touchtrace", "");
 #endif
 	r_config_set(cfg, "cmd.prompt", "");
-	r_config_set(cfg, "cmd.visual", "? eip && ?? s eip");
+	r_config_set(cfg, "cmd.visual", ""); //? eip && ?? s eip");
 	r_config_set(cfg, "cmd.vprompt", "p%");
 	r_config_set(cfg, "cmd.vprompt2", "CFV");
 	r_config_set(cfg, "cmd.vprompt3", "");

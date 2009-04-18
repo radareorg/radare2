@@ -1635,7 +1635,7 @@ static int cmd_debug(void *data, const char *input)
 			"dbh x86         ; set/list breakpoint plugin handlers\n");
 			break;
 		default:
-			r_debug_bp_add(&core->dbg, r_num_math(&core->num, input+1), 1);
+			r_debug_bp_add(&core->dbg, r_num_math(&core->num, input+1), 1, 0, R_BP_EXEC);
 			break;
 		}
 		break;

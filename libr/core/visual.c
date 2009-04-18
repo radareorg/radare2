@@ -608,6 +608,9 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 	case '<':
 		r_core_seek_align(core, core->blocksize, -1);
 		break;
+	case '.':
+		r_core_cmd(core, ".dr* && s eip", 0); // XXX
+		break;
 	case ':':
 		r_cons_fgets(buf, 1023, 0, NULL);
 		r_core_cmd(core, buf, 0);
