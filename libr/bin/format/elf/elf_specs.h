@@ -22,7 +22,7 @@
 #undef ELF_ST_TYPE
 #undef ELF_ST_INFO
 #undef ELF_ST_VISIBILITY
-#undef ELF_ST_R_SYM
+#undef ELF_R_SYM
 #undef ELF_R_TYPE
 #undef ELF_R_INFO
 #undef ELF_M_SYM

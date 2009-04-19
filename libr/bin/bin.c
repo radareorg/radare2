@@ -49,7 +49,7 @@ static struct r_bin_string_t *get_strings(struct r_bin_t *bin, int min)
 			/* check if the length fits on our request */
 			if (matches >= min) {
 				str[matches] = '\0';
-				ret[ctr].offset = i-matches;
+				ret[ctr].rva = ret[ctr].offset = i-matches;
 				ret[ctr].size = matches;
 				memcpy(ret[ctr].string, str, R_BIN_SIZEOF_NAMES);
 				ret[ctr].string[R_BIN_SIZEOF_NAMES-1] = '\0';

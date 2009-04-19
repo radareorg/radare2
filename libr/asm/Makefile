@@ -1,5 +1,5 @@
 NAME=r_asm
-DEPS=r_lib r_util r_cmd
+DEPS=r_lib r_util
 
 foo: pre libr_asm.so plugins
 

@@ -4,7 +4,6 @@
 
 #include <r_types.h>
 #include <r_util.h>
-#include <r_cmd.h>
 #include <r_asm.h>
 #include <list.h>
 #include "../config.h"
@@ -12,28 +11,40 @@
 static struct r_asm_handle_t *asm_static_plugins[] = 
 	{ R_ASM_STATIC_PLUGINS };
 
-static int r_asm_asciz(void *data, const char *input)
+static int r_asm_asciz(struct r_asm_aop_t *aop, const char *input)
 {
 	int len = 0;
-	struct r_asm_aop_t **aop = (struct r_asm_aop_t**)data;
 	char *arg = strchr(input, ' ');
 	if (arg && (len = strlen(arg+1))) {
 		arg += 1; len += 1;
-		r_hex_bin2str((u8*)arg, len, (*aop)->buf_hex);
-		strncpy((char*)(*aop)->buf, arg, R_ASM_BUFSIZE);
+		r_hex_bin2str((u8*)arg, len, aop->buf_hex);
+		strncpy((char*)aop->buf, arg, R_ASM_BUFSIZE);
 	}
 	return len;
 }
 
-static int r_asm_byte(void *data, const char *input)
+static int r_asm_arch(struct r_asm_t *a, const char *input)
+{
+	char *arg = strchr(input, ' '), str[R_ASM_BUFSIZE];
+	if (arg) {
+		arg += 1;
+		sprintf(str, "asm_%s", arg);
+		if (!r_asm_set(a, str)) {
+			fprintf(stderr, "Error: Unknown plugin\n");
+			return -1;
+		}
+	}
+	return 0;
+}
+
+static int r_asm_byte(struct r_asm_aop_t *aop, const char *input)
 {
 	int len = 0;
-	struct r_asm_aop_t **aop = (struct r_asm_aop_t**)data;
 	char *arg = strchr(input, ' ');
 	if (arg) {
 		arg += 1;
-		len = r_hex_str2bin(arg, (*aop)->buf);
-		strncpy((*aop)->buf_hex, r_str_trim(arg), R_ASM_BUFSIZE);
+		len = r_hex_str2bin(arg, aop->buf);
+		strncpy(aop->buf_hex, r_str_trim(arg), R_ASM_BUFSIZE);
 	}
 	return len;
 }
@@ -62,11 +73,6 @@ R_API int r_asm_init(struct r_asm_t *a)
 	a->pc = 0;
 	for(i=0;asm_static_plugins[i];i++)
 		r_asm_add(a, asm_static_plugins[i]);
-	r_cmd_init(&a->cmd);
-	r_cmd_add(&a->cmd, "a", ".asciz", &r_asm_asciz);
-	r_cmd_add_long(&a->cmd, "asciz", "a", ".asciz");
-	r_cmd_add(&a->cmd, "b", ".byte", &r_asm_byte);
-	r_cmd_add_long(&a->cmd, "byte", "b", ".byte");
 	return R_TRUE;
 }
 
@@ -226,21 +232,19 @@ R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 		tokens[++ctr] = ptr+1)
 			*ptr = '\0';
 
-	r_cmd_set_data(&a->cmd, &aop);
-
 	/* Stage 1: Parse labels*/
 	/* Stage 2: Assemble */
 	for (stage = 0; stage < 2; stage++) {
 		if (stage == 0 && !labels)
 			continue;
-		for (idx = ret = i = j = 0, label_offset = a->pc; i <= ctr;
-			i++, idx += ret, label_offset += ret) {
+		for (idx = ret = i = j = 0, label_offset = a->pc, ptr_start = tokens[i];
+			i <= ctr; i++, idx += ret, label_offset += ret) {
 			strncpy(buf_token, tokens[i], R_ASM_BUFSIZE);
 			if (stage == 1)
 				r_asm_set_pc(a, a->pc + ret);
 			if (labels) { /* Labels */
 				for (ptr_start = buf_token;*ptr_start&&isseparator(*ptr_start);ptr_start++);
-				while ((ptr = strchr(ptr_start, '_'))) {
+				while (ptr_start[0] != '.' && (ptr = strchr(ptr_start, '_'))) {
 					if ((label_name = r_str_word_get_first(ptr))) {
 						if ((ptr == ptr_start)) {
 							if (stage == 0 && j < 1024) {
@@ -268,16 +272,25 @@ R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 						free(label_name);
 					}
 				}
-			} else {
-				ptr_start = tokens[i];
 			}
-			if ((ptr = strchr(ptr_start, '.'))) /* Pseudo */
-				ret = r_cmd_call_long(&a->cmd, ptr+1);
-			else /* Instruction */
+			if ((ptr = strchr(ptr_start, '.'))) { /* Pseudo */
+				if (!memcmp(ptr, ".asciz", 6))
+					ret = r_asm_asciz(aop, ptr);
+				else if (!memcmp(ptr, ".arch", 5)) {
+					ret = r_asm_arch(a, ptr);
+				} else if (!memcmp(ptr, ".byte", 5))
+					ret = r_asm_byte(aop, ptr);
+				else return 0;
+				if (!ret)
+					continue;
+				else if (ret < 0)
+					return 0;
+			} else { /* Instruction */
 				ret = r_asm_assemble(a, aop, ptr_start);
-			if (!ret) {
-				return 0;
-			} else if (stage == 1) {
+				if (!ret)
+					return 0;
+			}
+			if (stage == 1) {
 				for (j = 0; j < ret && idx+j < R_ASM_BUFSIZE; j++)
 					buf_bin[idx+j] = aop->buf[j];
 				strcat(buf_hex, aop->buf_hex);
