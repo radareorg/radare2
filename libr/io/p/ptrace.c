@@ -1,14 +1,16 @@
 /* radare - LGPL - Copyright 2008-2009 pancake<nopcode.org> */
+#include <sys/types.h>
 
-#if __linux__ || __NetBSD__ || __FreeBSD__ || __OpenBSD__
+#if DEBUGGER
 
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_cons.h>
 #include <errno.h>
 #include <sys/ptrace.h>
-#include <sys/types.h>
 #include <sys/wait.h>
+
+#if __linux__ || __NetBSD__ || __FreeBSD__ || __OpenBSD__
 
 #undef R_IO_NFDS
 #define R_IO_NFDS 2
@@ -274,5 +276,6 @@ struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_ptrace
 };
+#endif
 
 #endif

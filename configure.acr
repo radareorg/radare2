@@ -4,6 +4,8 @@ CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
 
+ARG_WITHOUT DEBUGGER debugger disable native debugger features ;
+
 CHKLIB ewf
 ARG_WITHOUT HAVE_EWF ewf disable EWF dependency ;
 IF HAVE_EWF { HAVE_LIB_EWF = 0 ; }
@@ -29,6 +31,6 @@ IF WANT_VALA {
 	HAVE_VALAC = 0 ;
 }
 
-REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_TCC HAVE_VALAC USERCC USEROSTYPE ;
+REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_TCC HAVE_VALAC DEBUGGER USERCC USEROSTYPE ;
 
-SUBDIRS ./config-user.mk ;
+SUBDIRS ./config-user.mk libr/include/r_userconf.h ;

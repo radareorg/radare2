@@ -16,6 +16,7 @@ control_c() {
   exit 1
 }
 trap control_c 2
+DEBUGGER=1
 HAVE_EWF=1
 [ -z "${USERCC}" ] && USERCC="gcc"
 [ -z "${USEROSTYPE}" ] && USEROSTYPE="gnulinux"
@@ -140,6 +141,7 @@ System types:
 EOF2
 
 printf "\nOptional Features:
+  --without-debugger     disable native debugger features 
   --without-ewf          disable EWF dependency 
   --with-compiler        Define compiler to use (see mk/)  (USERCC=gcc)
   --with-ostype          Choose OS type ( gnulinux windows osx )  (USEROSTYPE=gnulinux)
@@ -187,7 +189,7 @@ echo "VERSION:   0.2b"
 echo "LANGS:     c"
 echo "REQUIRED:  lib>=vala-1.0 libvala-1.0>=0.5.0"
 echo "OPTIONAL:  libewf"
-echo "FLAGS:     --without-ewf --with-compiler=gcc --with-ostype=gnulinux --without-vala"
+echo "FLAGS:     --without-debugger --without-ewf --with-compiler=gcc --with-ostype=gnulinux --without-vala"
 	exit 0
 	;;
 "--cache-file") 
@@ -229,6 +231,7 @@ echo "FLAGS:     --without-ewf --with-compiler=gcc --with-ostype=gnulinux --with
 "--mandir")
 	MANDIR="$value"; ;;
 
+"--without-debugger") DEBUGGER="0"; ;;
 "--without-ewf") HAVE_EWF="0"; ;;
 --with-compiler) if [ -z "${value}" ]; then USERCC="gcc"; else USERCC="${value}" ; fi ;;
 --with-ostype) if [ -z "${value}" ]; then USEROSTYPE="gnulinux"; else USEROSTYPE="${value}" ; fi ;;
@@ -247,7 +250,7 @@ parse_options $1
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C HAVE_LIB_EWF HAVE_EWF HAVE_LIB_TCC USERCC USEROSTYPE WANT_VALA HAVE_VALAC VALAC HAVE_VALA_1_0_VERSION_0_5_0"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_EWF HAVE_EWF HAVE_LIB_TCC USERCC USEROSTYPE WANT_VALA HAVE_VALAC VALAC HAVE_VALA_1_0_VERSION_0_5_0"
 
 create_environ
 
@@ -257,6 +260,7 @@ echo "checking target system type... ${TARGET}"
 [ "${CROSSBUILD}" = 1 ] && echo "using crosscompilation mode."
 
 split_host BUILD HOST TARGET
+[ -n "${prefix}" ] && PREFIX=${prefix}
 echo "checking for working directories... ${WODIS}"
 echo "using prefix '${PREFIX}'"
 ACR_RMFILES=" test.c a.out a.exe"
@@ -339,7 +343,7 @@ for A in ${ENVWORDS} ; do
 	SEDFLAGS="${SEDFLAGS}s,@${A}@,${VAR},g;"
 done
 SEDFLAGS="${SEDFLAGS}'"
-for A in ./config-user.mk  ; do # SUBDIRS
+for A in ./config-user.mk libr/include/r_userconf.h  ; do # SUBDIRS
  if [ -f "${VPATH}/${A}.acr" ]; then
   SD_TARGET=${A}
  else
@@ -371,7 +375,7 @@ done
 do_remove
 echo
 echo "Final report:"
-for A in  PREFIX HAVE_LIB_EWF HAVE_LIB_TCC HAVE_VALAC USERCC USEROSTYPE ; do # REPORT
+for A in  PREFIX HAVE_LIB_EWF HAVE_LIB_TCC HAVE_VALAC DEBUGGER USERCC USEROSTYPE ; do # REPORT
 eval VAL="\$${A}"
 [ -z "${VAL}" ] && VAL="(null)"
 echo " - ${A} = ${VAL}"

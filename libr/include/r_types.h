@@ -1,6 +1,8 @@
 #ifndef _INCLUDE_R_TYPES_H_
 #define _INCLUDE_R_TYPES_H_
 
+#include <r_userconf.h>
+
 /* provide a per-module debug-enabled feature */
 #if R_DEBUG
 #define IFDBG

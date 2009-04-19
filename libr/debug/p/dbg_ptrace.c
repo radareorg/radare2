@@ -1,10 +1,13 @@
 /* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
 
+
 #include <r_debug.h>
 #include <r_lib.h>
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+
+#if DEBUGGER
 
 static int r_debug_ptrace_step(int pid)
 {
@@ -144,3 +147,5 @@ struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_dbg_plugin_ptrace
 };
+
+#endif

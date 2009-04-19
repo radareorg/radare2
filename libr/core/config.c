@@ -35,7 +35,7 @@ static int config_asm_bits_callback(void *user, void *data)
 			eprintf("Cannot set bits %d to '%s'\n",
 				node->i_value, h->name);
 		} else {
-			eprintf("No plugins defined yet\n");
+			eprintf("e asm.bits: Cannot set value, no plugins defined yet\n");
 			ret = R_TRUE;
 		}
 	}

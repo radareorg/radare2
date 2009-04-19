@@ -1,0 +1,7 @@
+#ifndef _INCLUDE_R_CONFIGURE_H_
+#define _INCLUDE_R_CONFIGURE_H_
+
+#define DEBUGGER @DEBUGGER@
+#define PREFIX \"@PREFIX@\"
+
+#endif
