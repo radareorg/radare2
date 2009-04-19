@@ -27,17 +27,17 @@ install:
 	# libraries
 	@mkdir -p ${PFX}/lib
 	@for a in `find * | grep -e '\.so$$' | grep lib` ; do \
-	echo " $$a "; cp $$a ${PFX}/lib ; done
+	echo " $$a "; install -m 644 $$a ${PFX}/lib ; done
 	# object archives
 	@for a in `find * | grep -e '\.a$$'` ; do \
-	echo " $$a"; cp $$a ${PFX}/lib ; done
+	echo " $$a"; install -m 644 $$a ${PFX}/lib ; done
 	# includes
 	@mkdir -p ${PFX}/include/libr
 	(cd include && cp -f * ${PFX}/include/libr)
 	# programs
 	@mkdir -p ${PFX}/bin
 	@for a in `find */t -perm /u+x -type f | grep 2`; \
-	do echo " $$a"; cp $$a ${PFX}/bin ; done
+	do echo " $$a"; install -m 755 $$a ${PFX}/bin ; done
 	# plugins
 	@mkdir -p ${PFX}/lib/pkgconfig
 	cat libr.pc.acr | sed -e 's,@PFX@,${PFX},g' > libr.pc
