@@ -237,13 +237,13 @@ R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 	for (stage = 0; stage < 2; stage++) {
 		if (stage == 0 && !labels)
 			continue;
-		for (idx = ret = i = j = 0, label_offset = a->pc, ptr_start = tokens[i];
+		for (idx = ret = i = j = 0, label_offset = a->pc;
 			i <= ctr; i++, idx += ret, label_offset += ret) {
 			strncpy(buf_token, tokens[i], R_ASM_BUFSIZE);
 			if (stage == 1)
 				r_asm_set_pc(a, a->pc + ret);
+			for (ptr_start = buf_token;*ptr_start&&isseparator(*ptr_start);ptr_start++);
 			if (labels) { /* Labels */
-				for (ptr_start = buf_token;*ptr_start&&isseparator(*ptr_start);ptr_start++);
 				while (ptr_start[0] != '.' && (ptr = strchr(ptr_start, '_'))) {
 					if ((label_name = r_str_word_get_first(ptr))) {
 						if ((ptr == ptr_start)) {
