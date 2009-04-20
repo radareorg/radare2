@@ -27,34 +27,34 @@ install:
 	# libraries
 	@mkdir -p ${PFX}/lib
 	@for a in `find * | grep -e '\.so$$' | grep lib` ; do \
-	echo " $$a "; install -m 644 $$a ${PFX}/lib ; done
+	echo " $$a "; ${INSTALL_DATA} $$a ${PFX}/lib ; done
 	# object archives
 	@for a in `find * | grep -e '\.a$$'` ; do \
-	echo " $$a"; install -m 644 $$a ${PFX}/lib ; done
+	echo " $$a"; ${INSTALL_DATA} $$a ${PFX}/lib ; done
 	# includes
 	@mkdir -p ${PFX}/include/libr
-	(cd include && cp -f * ${PFX}/include/libr)
+	(cd include && ${INSTALL_DATA} * ${PFX}/include/libr)
 	# programs
 	@mkdir -p ${PFX}/bin
 	@for a in `find */t -perm /u+x -type f | grep 2`; \
-	do echo " $$a"; install -m 755 $$a ${PFX}/bin ; done
+	do echo " $$a"; ${INSTALL_PROGRAM} $$a ${PFX}/bin ; done
 	# plugins
 	@mkdir -p ${PFX}/lib/pkgconfig
 	cat libr.pc.acr | sed -e 's,@PFX@,${PFX},g' > libr.pc
-	cp libr.pc ${PFX}/lib/pkgconfig
+	${INSTALL_DATA} libr.pc ${PFX}/lib/pkgconfig
 	@mkdir -p ${PFX}/share/vala/vapi
-	cp vapi/*.vapi vapi/*.deps ${PFX}/share/vala/vapi
+	${INSTALL_DATA} vapi/*.vapi vapi/*.deps ${PFX}/share/vala/vapi
 	@mkdir -p ${PFX}/lib/radare2
 	@for a in `find */p -perm /u+x -type f`; \
-	do echo " $$a"; cp $$a ${PFX}/lib/radare2 ; done
+	do echo " $$a"; ${INSTALL_DATA} $$a ${PFX}/lib/radare2 ; done
 	# test programs
 	@mkdir -p ${PFX}/bin-test
 	@for a in `find */t -perm /u+x -type f | grep -v 2`; \
-	do echo " $$a"; cp $$a ${PFX}/bin-test ; done
+	do echo " $$a"; ${INSTALL_PROGRAM} $$a ${PFX}/bin-test ; done
 	@echo libr aka radare2 has been installed:
 	@echo PREFIX=${PREFIX}
 	@echo DESTDIR=${DESTDIR}
-	cp lang/p/radare.* ${PFX}/lib/radare2
+	${INSTALL_DATA} lang/p/radare.* ${PFX}/lib/radare2
 
 deinstall uninstall:
 	# libraries
