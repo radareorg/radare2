@@ -26,30 +26,30 @@ install:
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
 	echo Using prefix: ${PFX}
 	# libraries
-	@mkdir -p ${PFX}/lib
+	@${INSTALL_DIR} ${PFX}/lib
 	@for a in `find * | grep -e '\.so$$' | grep lib` ; do \
 	echo " $$a "; ${INSTALL_DATA} $$a ${PFX}/lib ; done
 	# object archives
 	@for a in `find * | grep -e '\.a$$'` ; do \
 	echo " $$a"; ${INSTALL_DATA} $$a ${PFX}/lib ; done
 	# includes
-	@mkdir -p ${PFX}/include/libr
+	@${INSTALL_DIR} ${PFX}/include/libr
 	(cd include && ${INSTALL_DATA} * ${PFX}/include/libr)
 	# programs
-	@mkdir -p ${PFX}/bin
+	@${INSTALL_DIR} ${PFX}/bin
 	@for a in `find */t -perm /u+x -type f | grep 2`; \
 	do echo " $$a"; ${INSTALL_PROGRAM} $$a ${PFX}/bin ; done
 	# plugins
-	@mkdir -p ${PFX}/lib/pkgconfig
+	@${INSTALL_DIR} ${PFX}/lib/pkgconfig
 	cat libr.pc.acr | sed -e 's,@PFX@,${PFX},g' > libr.pc
 	${INSTALL_DATA} libr.pc ${PFX}/lib/pkgconfig
-	@mkdir -p ${PFX}/share/vala/vapi
+	@${INSTALL_DIR} ${PFX}/share/vala/vapi
 	${INSTALL_DATA} vapi/*.vapi vapi/*.deps ${PFX}/share/vala/vapi
-	@mkdir -p ${PFX}/lib/radare2
+	@${INSTALL_DIR} ${PFX}/lib/radare2
 	@for a in `find */p -perm /u+x -type f`; \
 	do echo " $$a"; ${INSTALL_DATA} $$a ${PFX}/lib/radare2 ; done
 	# test programs
-	@mkdir -p ${PFX}/bin-test
+	@${INSTALL_DIR} ${PFX}/bin-test
 	@for a in `find */t -perm /u+x -type f | grep -v 2`; \
 	do echo " $$a"; ${INSTALL_PROGRAM} $$a ${PFX}/bin-test ; done
 	@echo libr aka radare2 has been installed:
