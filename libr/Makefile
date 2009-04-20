@@ -23,6 +23,7 @@ all:
 	@echo Build done for: ${LIBLIST}
 
 install:
+	# TODO :Use INSTALL_DATA_DIR instead of mkdir
 	echo Using prefix: ${PFX}
 	# libraries
 	@mkdir -p ${PFX}/lib

@@ -117,7 +117,8 @@ char *r_file_slurp_random_line(const char *file)
 	int i, lines = 0;
 	struct timeval tv;
 	int sz;
-	char *ptr, *str = r_file_slurp(file, &sz);
+	char *ptr = NULL;
+	char *str = r_file_slurp(file, &sz);
 	if (str) {
 		gettimeofday(&tv,NULL);
 		srand(getpid()+tv.tv_usec);
