@@ -8,7 +8,7 @@ clean:
 
 install:
 	${INSTALL_DIR} ${DESTDIR}${PREFIX}/share/doc/radare2
-	for a in doc/* ; do ${INSTALL_DATA}do $$a ${DESTDIR}/${PREFIX}/share/doc/radare2 ; done
+	for a in doc/* ; do ${INSTALL_DATA} $$a ${DESTDIR}/${PREFIX}/share/doc/radare2 ; done
 	cd libr && make install PARENT=1 PREFIX=${DESTDIR}${PREFIX}
 
 uninstall:
