@@ -41,7 +41,6 @@ install:
 	do echo " $$a"; ${INSTALL_PROGRAM} $$a ${PFX}/bin ; done
 	# plugins
 	@${INSTALL_DIR} ${PFX}/lib/pkgconfig
-	cat libr.pc.acr | sed -e 's,@PFX@,${PFX},g' > libr.pc
 	${INSTALL_DATA} libr.pc ${PFX}/lib/pkgconfig
 	@${INSTALL_DIR} ${PFX}/share/vala/vapi
 	${INSTALL_DATA} vapi/*.vapi vapi/*.deps ${PFX}/share/vala/vapi

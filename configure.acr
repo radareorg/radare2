@@ -33,4 +33,4 @@ IF WANT_VALA {
 
 REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_TCC HAVE_VALAC DEBUGGER USERCC USEROSTYPE ;
 
-SUBDIRS ./config-user.mk libr/include/r_userconf.h ;
+SUBDIRS ./config-user.mk libr/libr.pc libr/include/r_userconf.h ;
