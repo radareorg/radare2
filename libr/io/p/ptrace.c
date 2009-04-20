@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2008-2009 pancake<nopcode.org> */
-#include <sys/types.h>
+
+#include <r_userconf.h>
 
 #if DEBUGGER
 
@@ -8,6 +9,7 @@
 #include <r_cons.h>
 #include <errno.h>
 #include <sys/ptrace.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 
 #if __linux__ || __NetBSD__ || __FreeBSD__ || __OpenBSD__
