@@ -11,7 +11,7 @@
 static struct r_asm_handle_t *asm_static_plugins[] = 
 	{ R_ASM_STATIC_PLUGINS };
 
-static int r_asm_asciz(struct r_asm_aop_t *aop, const char *input)
+static int r_asm_string(struct r_asm_aop_t *aop, const char *input)
 {
 	int len = 0;
 	char *arg = strchr(input, ' ');
@@ -33,6 +33,16 @@ static int r_asm_arch(struct r_asm_t *a, const char *input)
 			fprintf(stderr, "Error: Unknown plugin\n");
 			return -1;
 		}
+	}
+	return 0;
+}
+
+static int r_asm_org(struct r_asm_t *a, const char *input)
+{
+	char *arg = strchr(input, ' ');
+	if (arg) {
+		arg += 1;
+		r_asm_set_pc(a, r_num_math(NULL, arg));
 	}
 	return 0;
 }
@@ -275,12 +285,14 @@ R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 				}
 			}
 			if ((ptr = strchr(ptr_start, '.'))) { /* Pseudo */
-				if (!memcmp(ptr, ".asciz", 6))
-					ret = r_asm_asciz(aop, ptr);
-				else if (!memcmp(ptr, ".arch", 5)) {
+				if (!memcmp(ptr, ".string", 7))
+					ret = r_asm_string(aop, ptr);
+				else if (!memcmp(ptr, ".arch", 5))
 					ret = r_asm_arch(a, ptr);
-				} else if (!memcmp(ptr, ".byte", 5))
+				else if (!memcmp(ptr, ".byte", 5))
 					ret = r_asm_byte(aop, ptr);
+				else if (!memcmp(ptr, ".org", 4))
+					ret = r_asm_org(a, ptr);
 				else return 0;
 				if (!ret)
 					continue;
