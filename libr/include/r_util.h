@@ -61,8 +61,8 @@ void r_num_init(struct r_num_t *num);
 #define strnull(x) (!x||!*x)
 #define iswhitechar(x) (x==' '||x=='\t'||x=='\n'||x=='\r')
 #define iswhitespace(x) (x==' '||x=='\t')
-#define isseparator(x) (x==' '||x=='\t'||x==','||x==';'||\
-		x==':'||x=='['||x==']'||x=='('||x==')'||x=='{'||x=='}')
+#define isseparator(x) (x==' '||x=='\t'||x=='\n'||x=='\r'||x==' '|| \
+		x==','||x==';'||x==':'||x=='['||x==']'||x=='('||x==')'||x=='{'||x=='}')
 #define ishexchar(x) ((x>='0'&&x<='9') ||  (x>='a'&&x<='f') ||  (x>='A'&&x<='F')) {
 
 /* stabilized */

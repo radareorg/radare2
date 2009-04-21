@@ -705,6 +705,7 @@ int ELF_(r_bin_elf_is_big_endian)(ELF_(r_bin_elf_obj) *bin)
 /* TODO: Take care of endianess */
 /* TODO: Real error handling */
 /* TODO: Resize sections before .init */
+/* TODO: HUGE REFACTORING, CAUTION: VERY UGLY CODE */
 u64 ELF_(r_bin_elf_resize_section)(ELF_(r_bin_elf_obj) *bin, const char *name, u64 size)
 {
 	ELF_(Ehdr) *ehdr = &bin->ehdr;
@@ -714,7 +715,7 @@ u64 ELF_(r_bin_elf_resize_section)(ELF_(r_bin_elf_obj) *bin, const char *name, u
 	ELF_(Off) rsz_offset, new_offset;
 	ELF_(Addr) new_addr, got_addr = 0;
 	u64 off, got_offset, delta = 0;
-	u64 rsz_osize = 0, rsz_fsize, rsz_size = size;
+	u64 rsz_osize = 0, rsz_fsize, rsz_size = size, phdr_size;
 	int i, j, done = 0;
 	int elf64 = (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64);
 
@@ -842,10 +843,41 @@ u64 ELF_(r_bin_elf_resize_section)(ELF_(r_bin_elf_obj) *bin, const char *name, u
 		}
 
 	/* rewrite program headers */
-	for (i = 0, phdrp = phdr; i < ehdr->e_phnum; i++, phdrp++)
+	for (i = 0, phdrp = phdr; i < ehdr->e_phnum; i++, phdrp++) {
+#if 0 
+		if (phdrp->p_offset < rsz_offset && phdrp->p_offset + phdrp->p_filesz > rsz_offset) {
+			if (elf64)
+				off = ehdr->e_phoff + i * sizeof(ELF_(Phdr)) + 2 * sizeof(ELF_(Word)) + sizeof(ELF_(Off)) + 2 * sizeof(ELF_(Addr));
+			else off = ehdr->e_phoff + i * sizeof(ELF_(Phdr)) + sizeof(ELF_(Word)) + sizeof(ELF_(Off)) + 2 * sizeof(ELF_(Addr));
+			
+			if (lseek(bin->fd, off, SEEK_SET) < 0)
+				perror("lseek");
+
+			if (elf64) {
+				phdr_size = phdrp->p_filesz + delta;
+				if (write(bin->fd, (ELF_(Xword)*)&phdr_size, sizeof(ELF_(Xword))) != sizeof(ELF_(Xword)))
+					perror("write (off)");
+				phdr_size = phdrp->p_memsz + delta;
+				if (write(bin->fd, (ELF_(Xword)*)&phdr_size, sizeof(ELF_(Xword))) != sizeof(ELF_(Xword)))
+					perror("write (off)");
+			} else {
+				phdr_size = phdrp->p_filesz + delta;
+				printf("FILESZ: %lli --> %lli\n", (u64)phdrp->p_filesz, (u64)phdr_size);
+				if (write(bin->fd, (ELF_(Word)*)&phdr_size, sizeof(ELF_(Word))) != sizeof(ELF_(Word)))
+					perror("write (off)");
+				phdr_size = phdrp->p_memsz + delta;
+				printf("MEMSZ: %lli --> %lli\n", (u64)phdrp->p_memsz, (u64)phdr_size);
+				if (write(bin->fd, (ELF_(Word)*)&phdr_size, sizeof(ELF_(Word))) != sizeof(ELF_(Word)))
+					perror("write (off)");
+			}
+		}
+#endif
+
 		if (phdrp->p_offset >= rsz_offset + rsz_osize) {
 			new_offset = (ELF_(Off)) (phdrp->p_offset + delta);
-			off = ehdr->e_phoff + i * sizeof(ELF_(Phdr)) + sizeof(ELF_(Word));
+			if (elf64)
+				off = ehdr->e_phoff + i * sizeof(ELF_(Phdr)) + 2 * sizeof(ELF_(Word));
+			else off = ehdr->e_phoff + i * sizeof(ELF_(Phdr)) + sizeof(ELF_(Word));
 
 			if (lseek(bin->fd, off, SEEK_SET) < 0)
 				perror("lseek");
@@ -862,6 +894,7 @@ u64 ELF_(r_bin_elf_resize_section)(ELF_(r_bin_elf_obj) *bin, const char *name, u
 
 			printf("-> program header (%08llx)\n", (u64) phdrp->p_offset);
 		}
+	}
 
 	/* rewrite other elf pointers (entrypoint, phoff, shoff) */
 	if (ehdr->e_entry - bin->base_addr >= rsz_offset + rsz_osize) {
@@ -902,7 +935,7 @@ u64 ELF_(r_bin_elf_resize_section)(ELF_(r_bin_elf_obj) *bin, const char *name, u
 	// XXX Check when delta is negative
 	/* rewrite section contents */
 	{
-		u64 rest_size = rsz_fsize - rsz_offset;
+		u64 rest_size = rsz_fsize - (rsz_offset + rsz_osize);
 		u8 *buf = (u8 *)malloc(rest_size);
 		printf("COPY FROM 0x%08llx\n", (u64) rsz_offset+rsz_osize);
 		lseek(bin->fd, rsz_offset+rsz_osize, SEEK_SET);

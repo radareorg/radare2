@@ -237,7 +237,7 @@ R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 	for (stage = 0; stage < 2; stage++) {
 		if (stage == 0 && !labels)
 			continue;
-		for (idx = ret = i = j = 0, label_offset = a->pc;
+		for (idx = ret = i = j = 0, label_offset = a->pc, buf_hex[0] = '\0';
 			i <= ctr; i++, idx += ret, label_offset += ret) {
 			strncpy(buf_token, tokens[i], R_ASM_BUFSIZE);
 			if (stage == 1)
