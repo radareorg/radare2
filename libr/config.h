@@ -12,11 +12,16 @@
 #define R_ASM_STATIC_PLUGINS \
 	&r_asm_plugin_java, \
 	&r_asm_plugin_x86_olly, \
+	&r_asm_plugin_x86_nasm, \
 	&r_asm_plugin_mips, \
 	0
 
 #define R_BIN_STATIC_PLUGINS \
 	&r_bin_plugin_elf , \
+	&r_bin_plugin_elf64 , \
+	&r_bin_plugin_pe , \
+	&r_bin_plugin_pe64 , \
+	&r_bin_plugin_java , \
 	0
 
 #define R_BININFO_STATIC_PLUGINS \

@@ -260,6 +260,7 @@ echo "checking target system type... ${TARGET}"
 [ "${CROSSBUILD}" = 1 ] && echo "using crosscompilation mode."
 
 split_host BUILD HOST TARGET
+[ -n "${prefix}" ] && PREFIX=${prefix}
 echo "checking for working directories... ${WODIS}"
 echo "using prefix '${PREFIX}'"
 ACR_RMFILES=" test.c a.out a.exe"

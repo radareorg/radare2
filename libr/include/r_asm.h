@@ -69,6 +69,7 @@ extern struct r_asm_handle_t r_asm_plugin_mips;
 extern struct r_asm_handle_t r_asm_plugin_x86;
 extern struct r_asm_handle_t r_asm_plugin_x86_bea;
 extern struct r_asm_handle_t r_asm_plugin_x86_olly;
+extern struct r_asm_handle_t r_asm_plugin_x86_nasm;
 extern struct r_asm_handle_t r_asm_plugin_arm;
 extern struct r_asm_handle_t r_asm_plugin_csr;
 extern struct r_asm_handle_t r_asm_plugin_m68k;
