@@ -11,7 +11,7 @@
 static struct r_asm_handle_t *asm_static_plugins[] = 
 	{ R_ASM_STATIC_PLUGINS };
 
-static int r_asm_pseudo_string(struct r_asm_aop_t *aop, const char *input)
+static int r_asm_pseudo_string(struct r_asm_aop_t *aop, char *input)
 {
 	int len = 0;
 	char *arg = strchr(input, ' ');
@@ -23,7 +23,7 @@ static int r_asm_pseudo_string(struct r_asm_aop_t *aop, const char *input)
 	return len;
 }
 
-static int r_asm_pseudo_arch(struct r_asm_t *a, const char *input)
+static int r_asm_pseudo_arch(struct r_asm_t *a, char *input)
 {
 	char *arg = strchr(input, ' '), str[R_ASM_BUFSIZE];
 	if (arg) {
@@ -36,7 +36,7 @@ static int r_asm_pseudo_arch(struct r_asm_t *a, const char *input)
 	return 0;
 }
 
-static int r_asm_pseudo_bits(struct r_asm_t *a, const char *input)
+static int r_asm_pseudo_bits(struct r_asm_t *a, char *input)
 {
 	char *arg = strchr(input, ' ');
 	if (arg)
@@ -47,7 +47,7 @@ static int r_asm_pseudo_bits(struct r_asm_t *a, const char *input)
 	return 0;
 }
 
-static int r_asm_pseudo_org(struct r_asm_t *a, const char *input)
+static int r_asm_pseudo_org(struct r_asm_t *a, char *input)
 {
 	char *arg = strchr(input, ' ');
 	if (arg)
@@ -55,7 +55,7 @@ static int r_asm_pseudo_org(struct r_asm_t *a, const char *input)
 	return 0;
 }
 
-static int r_asm_pseudo_byte(struct r_asm_aop_t *aop, const char *input)
+static int r_asm_pseudo_byte(struct r_asm_aop_t *aop, char *input)
 {
 	int len = 0;
 	char *arg = strchr(input, ' ');
@@ -202,7 +202,7 @@ R_API int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf,
 	return ret;
 }
 
-R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf)
+R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 {
 	int ret = 0;
 	struct list_head *pos;

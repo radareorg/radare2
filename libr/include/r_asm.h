@@ -41,7 +41,7 @@ struct r_asm_handle_t {
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	int (*disassemble)(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len);
-	int (*assemble)(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf);
+	int (*assemble)(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf);
 	struct list_head list;
 };
 
@@ -58,7 +58,7 @@ R_API int r_asm_set_big_endian(struct r_asm_t *a, int boolean);
 R_API int r_asm_set_syntax(struct r_asm_t *a, int syntax);
 R_API int r_asm_set_pc(struct r_asm_t *a, u64 pc);
 R_API int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len);
-R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf);
+R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf);
 R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf);
 
 /* plugin pointers */
@@ -75,5 +75,6 @@ extern struct r_asm_handle_t r_asm_plugin_csr;
 extern struct r_asm_handle_t r_asm_plugin_m68k;
 extern struct r_asm_handle_t r_asm_plugin_ppc;
 extern struct r_asm_handle_t r_asm_plugin_sparc;
+extern struct r_asm_handle_t r_asm_plugin_psosvm;
 
 #endif

@@ -26,9 +26,9 @@ static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 
 struct r_asm_handle_t r_asm_plugin_psosvm = {
 	.name = "asm_psosvm",
+	.desc = "PSOS-VM disassembly plugin",
 	.arch = "psosvm",
 	.bits = (int[]){ 8, 16, 0 },
-	.desc = "PSOS-VM disassembly plugin",
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
