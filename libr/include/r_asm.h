@@ -42,6 +42,7 @@ struct r_asm_handle_t {
 	int (*fini)(void *user);
 	int (*disassemble)(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len);
 	int (*assemble)(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf);
+	int (*set_subarch)(struct r_asm_t *a, char *buf);
 	struct list_head list;
 };
 

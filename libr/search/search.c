@@ -222,7 +222,6 @@ int r_search_kw_add_bin(struct r_search_t *s, const u8 *kw, int kw_len, const u8
 struct r_search_kw_t *r_search_kw_list(struct r_search_t *s)
 {
 	struct list_head *pos;
-
 	list_for_each_prev(pos, &s->kws) {
 		struct r_search_kw_t *kw = list_entry(pos, struct r_search_kw_t, list);
 		printf("%s %s\n", kw->keyword, kw->binmask);

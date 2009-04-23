@@ -144,6 +144,14 @@ R_API int r_asm_set(struct r_asm_t *a, const char *name)
 	return R_FALSE;
 }
 
+R_API int r_asm_set_subarch(struct r_asm_t *a, const char *name)
+{
+	int ret = R_FALSE;
+	if (a->cur && a->cur->set_subarch)
+		ret = a->cur->set_subarch(a, name);
+	return ret;
+}
+
 static int has_bits(struct r_asm_handle_t *h, int bits)
 {
 	int i;
