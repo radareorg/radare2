@@ -172,6 +172,35 @@ static struct r_bin_info_t* info(struct r_bin_t *bin)
 	return ret;
 }
 
+static struct r_bin_field_t* fields(struct r_bin_t *bin)
+{
+	struct r_bin_field_t *ret = NULL;
+	r_bin_elf_field *field = NULL;
+	int i, fields_count;
+	
+	fields_count = ELF_(r_bin_elf_get_fields_count)(bin->bin_obj);
+
+	if ((field = malloc(fields_count * sizeof(r_bin_elf_field))) == NULL)
+		return NULL;
+	if ((ret = malloc((fields_count + 1) * sizeof(struct r_bin_field_t))) == NULL)
+		return NULL;
+	memset(ret, '\0', (fields_count + 1) * sizeof(struct r_bin_field_t));
+
+	ELF_(r_bin_elf_get_fields)(bin->bin_obj,field);
+	
+	for (i = 0; i < fields_count; i++) {
+		strncpy(ret[i].name, field[i].name, R_BIN_SIZEOF_NAMES);
+		ret[i].rva = field[i].offset;
+		ret[i].offset = field[i].offset;
+		ret[i].last = 0;
+	}
+	ret[i].last = 1;
+
+	free(field);
+
+	return ret;
+}
+
 static u64 resize_section(struct r_bin_t *bin, char *name, u64 size)
 {
 	return ELF_(r_bin_elf_resize_section)(bin->bin_obj, name, size);
@@ -210,6 +239,7 @@ struct r_bin_handle_t r_bin_plugin_elf = {
 	.imports = &imports,
 	.strings = NULL,
 	.info = &info,
+	.fields = &fields,
 	.resize_section = &resize_section
 };
 

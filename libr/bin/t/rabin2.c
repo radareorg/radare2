@@ -26,6 +26,7 @@
 #define ACTION_OPERATION 0x0020
 #define ACTION_HELP      0x0040
 #define ACTION_STRINGS   0x0080 
+#define ACTION_FIELDS    0x0100 
 
 static struct r_lib_t l;
 static struct r_bin_t bin;
@@ -41,6 +42,7 @@ static int rabin_show_help()
 			" -S          Sections\n"
 			" -z          Strings\n"
 			" -I          Binary info\n"
+			" -H          Header fields\n"
 			" -o [str]    Operation action (str=help for help)\n"
 			" -f [format] Override file format autodetection\n"
 			" -r          Radare output\n"
@@ -288,6 +290,41 @@ static int rabin_show_info()
 	return R_TRUE;
 }
 
+static int rabin_show_fields()
+{
+	int ctr = 0;
+	u64 baddr;
+	struct r_bin_field_t *fields, *fieldsp;
+
+	baddr = r_bin_get_baddr(&bin);
+
+	if ((fields = r_bin_get_fields(&bin)) == NULL)
+		return R_FALSE;
+	
+	if (rad) printf("fs header\n");
+	else printf("[Header fields]\n");
+
+	fieldsp = fields;
+	while (!fieldsp->last) {
+		if (rad) {
+			r_flag_name_filter(fieldsp->name);
+			printf("f header.%s @ 0x%08llx\n",
+					fieldsp->name, baddr+fieldsp->rva);
+			printf("[%02i] address=0x%08llx offset=0x%08llx name=%s\n",
+					ctr, baddr+fieldsp->rva, fieldsp->offset, fieldsp->name);
+		} else printf("idx=%02i address=0x%08llx offset=0x%08llx name=%s\n",
+				ctr, baddr+fieldsp->rva, fieldsp->offset, fieldsp->name);
+		fieldsp++; ctr++;
+	}
+
+	if (!rad) printf("\n%i fields\n", ctr);
+
+	free(fields);
+
+	return R_TRUE;
+
+}
+
 static int rabin_do_operation(const char *op)
 {
 	char *arg, *ptr, *ptr2;
@@ -350,7 +387,7 @@ int main(int argc, char **argv)
 		r_lib_opendir(&l, LIBDIR"/radare2/");
 	}
 
-	while ((c = getopt(argc, argv, "isSzIeo:f:rvLh")) != -1)
+	while ((c = getopt(argc, argv, "isSzIHeo:f:rvLh")) != -1)
 	{
 		switch( c ) {
 		case 'i':
@@ -367,6 +404,9 @@ int main(int argc, char **argv)
 			break;
 		case 'I':
 			action |= ACTION_INFO;
+			break;
+		case 'H':
+			action |= ACTION_FIELDS;
 			break;
 		case 'e':
 			action |= ACTION_ENTRY;
@@ -423,6 +463,8 @@ int main(int argc, char **argv)
 		rabin_show_strings();
 	if (action&ACTION_INFO)
 		rabin_show_info();
+	if (action&ACTION_FIELDS)
+		rabin_show_fields();
 	if (op != NULL && action&ACTION_OPERATION)
 		rabin_do_operation(op);
 

@@ -36,6 +36,11 @@ typedef struct {
 
 typedef struct {
 	u64 offset;
+	char name[ELF_NAME_LENGTH];
+} r_bin_elf_field;
+
+typedef struct {
+	u64 offset;
 	u64 size;
 	char type;
 	char string[ELF_STRING_LENGTH];
@@ -75,6 +80,8 @@ int   ELF_(r_bin_elf_get_strings)(ELF_(r_bin_elf_obj)*, int, int, r_bin_elf_stri
 int   ELF_(r_bin_elf_get_stripped)(ELF_(r_bin_elf_obj)*);
 int   ELF_(r_bin_elf_get_symbols)(ELF_(r_bin_elf_obj)*, r_bin_elf_symbol*);
 int   ELF_(r_bin_elf_get_symbols_count)(ELF_(r_bin_elf_obj)*);
+int   ELF_(r_bin_elf_get_fields)(ELF_(r_bin_elf_obj)*, r_bin_elf_field*);
+int   ELF_(r_bin_elf_get_fields_count)(ELF_(r_bin_elf_obj)*);
 int   ELF_(r_bin_elf_is_big_endian)(ELF_(r_bin_elf_obj)*);
 int   ELF_(r_bin_elf_open)(ELF_(r_bin_elf_obj)*, const char*, int);
 u64   ELF_(r_bin_elf_resize_section)(ELF_(r_bin_elf_obj)*, const char*, u64);

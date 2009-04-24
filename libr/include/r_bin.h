@@ -45,6 +45,7 @@ struct r_bin_handle_t {
 	struct r_bin_import_t* (*imports)(struct r_bin_t *bin);
 	struct r_bin_string_t* (*strings)(struct r_bin_t *bin);
 	struct r_bin_info_t* (*info)(struct r_bin_t *bin);
+	struct r_bin_field_t* (*fields)(struct r_bin_t *bin);
 	u64 (*resize_section)(struct r_bin_t *bin, char *name, u64 size);
 	struct list_head list;
 };
@@ -108,6 +109,13 @@ struct r_bin_info_t {
 	u64 dbg_info;
 };
 
+struct r_bin_field_t {
+	char name[R_BIN_SIZEOF_NAMES];
+	u64 rva;
+	u64 offset;
+	int last;
+};
+
 /* bin.c */
 struct r_bin_t *r_bin_new();
 void r_bin_free(struct r_bin_t *bin);
@@ -124,6 +132,7 @@ struct r_bin_symbol_t* r_bin_get_symbols(struct r_bin_t *bin);
 struct r_bin_import_t* r_bin_get_imports(struct r_bin_t *bin);
 struct r_bin_string_t* r_bin_get_strings(struct r_bin_t *bin);
 struct r_bin_info_t* r_bin_get_info(struct r_bin_t *bin);
+struct r_bin_field_t* r_bin_get_fields(struct r_bin_t *bin);
 u64 r_bin_resize_section(struct r_bin_t *bin, char *name, u64 size);
 u64 r_bin_get_section_offset(struct r_bin_t *bin, char *name);
 u64 r_bin_get_section_rva(struct r_bin_t *bin, char *name);

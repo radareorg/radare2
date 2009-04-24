@@ -1273,6 +1273,40 @@ int ELF_(r_bin_elf_get_symbols_count)(ELF_(r_bin_elf_obj) *bin)
 	return ctr;
 }
 
+int ELF_(r_bin_elf_get_fields)(ELF_(r_bin_elf_obj) *bin, r_bin_elf_field *field)
+{
+	ELF_(Ehdr) *ehdr = &bin->ehdr;
+	ELF_(Phdr) *phdr = bin->phdr;
+	char string[ELF_NAME_LENGTH];
+	int i = 0, j = 0;
+
+	strncpy(field[i].name, "ehdr", ELF_NAME_LENGTH); 
+	field[i++].offset = 0;
+	strncpy(field[i].name, "shoff", ELF_NAME_LENGTH); 
+	field[i++].offset = ehdr->e_shoff;
+	strncpy(field[i].name, "phoff", ELF_NAME_LENGTH); 
+	field[i++].offset = ehdr->e_phoff;
+
+	for (j = 0; j < ehdr->e_phnum; i++, j++) {
+		snprintf(string, ELF_NAME_LENGTH, "phdr_%i", j);
+		strncpy(field[i].name, string, ELF_NAME_LENGTH); 
+		field[i].offset = phdr[i].p_offset;
+	}
+
+	return 0;
+}
+
+int ELF_(r_bin_elf_get_fields_count)(ELF_(r_bin_elf_obj) *bin)
+{
+	ELF_(Ehdr) *ehdr = &bin->ehdr;
+	int ctr=0;
+	
+	ctr = 3;
+	ctr += ehdr->e_phnum;
+
+	return ctr;
+}
+
 int ELF_(r_bin_elf_get_strings)(ELF_(r_bin_elf_obj) *bin, int verbose, int str_limit, r_bin_elf_string *strings)
 {
 	ELF_(Ehdr) *ehdr = &bin->ehdr;

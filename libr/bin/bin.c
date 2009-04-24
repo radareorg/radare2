@@ -208,6 +208,14 @@ struct r_bin_info_t* r_bin_get_info(struct r_bin_t *bin)
 	return NULL;
 }
 
+struct r_bin_field_t* r_bin_get_fields(struct r_bin_t *bin)
+{
+	if (bin->cur && bin->cur->fields)
+		return bin->cur->fields(bin);
+	
+	return NULL;
+}
+
 u64 r_bin_resize_section(struct r_bin_t *bin, char *name, u64 size)
 {
 	if (bin->cur && bin->cur->resize_section)
