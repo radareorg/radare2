@@ -1,3 +1,1565 @@
+===== RELEASE 0.2 =====
+
+changeset:   187:d1db102f267b
+tag:         tip
+user:        pancake@localhost.localdomain
+date:        Sat Apr 25 11:29:39 2009 +0000
+files:       Makefile
+description:
+* Fix make dist
+* Added make shot target
+
+
+changeset:   186:6c70a4d4b40e
+user:        nibble
+date:        Fri Apr 24 12:12:15 2009 +0200
+files:       libr/bin/bin.c libr/bin/format/elf/elf.c libr/bin/format/elf/elf.h libr/bin/p/bin_elf.c libr/bin/p/bin_elf64.c libr/bin/p/bin_java.c libr/bin/p/bin_pe.c libr/bin/p/bin_pe64.c libr/bin/t/rabin2.c libr/include/r_bin.h
+description:
+* r_bin
+  - Added r_bin_get_fields
+  - Added flag -H to rabin2 to list header fields
+
+
+changeset:   185:30e176797a0f
+user:        pancake@localhost.localdomain
+date:        Thu Apr 23 10:31:55 2009 +0000
+files:       libr/asm/arch/psosvm/vmas/vmas.c libr/asm/arch/psosvm/vmas/vmas.h libr/asm/asm.c libr/include/r_asm.h libr/search/search.c
+description:
+* Fix vmas assembler plugin license header
+* Added set_subarch() method for r_asm plugins
+  - Not yet used by any plugin
+
+
+changeset:   184:33052f341aeb
+user:        nibble
+date:        Thu Apr 23 00:09:55 2009 +0200
+files:       libr/asm/asm.c libr/asm/p/asm_java.c libr/asm/p/asm_psosvm.c libr/asm/p/asm_x86_nasm.c libr/asm/p/asm_x86_olly.c libr/include/r_asm.h
+description:
+r_asm
+  - Remove some warnings from r_asm
+  - Redefine parameters in several functions
+
+
+changeset:   183:7e8fb351dbde
+user:        pancake@flubox
+date:        Wed Apr 22 20:17:49 2009 +0200
+files:       libr/asm/arch/psosvm/vmas/vmas.c libr/asm/arch/psosvm/vmas/vmas.h libr/asm/p/Makefile libr/asm/p/asm_psosvm.c libr/asm/p/psosvm.mk
+description:
+* Apply skurz0's patch implementing psosvm architecture for r_asm
+
+
+changeset:   182:c7919d910a2c
+user:        nibble
+date:        Wed Apr 22 16:29:30 2009 +0200
+files:       configure libr/asm/asm.c libr/config.h libr/config.mk libr/include/r_asm.h
+description:
+* r_asm
+  - Added pseudo-instruction .bits
+  - Added asm_x86_nasm as static plugin
+* r_bin
+  - Added pe, pe64, elf64 and java as static plugins
+
+
+changeset:   181:e1a02b7f6547
+user:        nibble
+date:        Wed Apr 22 00:42:18 2009 +0200
+files:       libr/asm/asm.c libr/core/file.c
+description:
+* r_asm
+  - Added pseudo-instruction .org
+  - .asciz renamed to .string
+* r_core
+  - Fixed r_bin format detection at opening
+
+
+changeset:   180:c14d9357a5c5
+user:        nibble
+date:        Tue Apr 21 13:39:33 2009 +0200
+files:       libr/asm/asm.c
+description:
+* r_asm
+  - Now instructions are splitted by '\n' '\r' and ';'
+
+
+changeset:   179:de573ee72aa3
+user:        nibble
+date:        Tue Apr 21 12:11:07 2009 +0200
+files:       libr/asm/asm.c libr/bin/format/elf/elf.c libr/include/r_util.h
+description:
+* r_bin
+  - Minor fixups in r_bin_elf
+* r_asm
+  - Added multiline support to massemble
+  - Fixed buf_hex generation in massemble
+
+
+changeset:   178:3cdd3b1a6c6e
+user:        pancake@flubox
+date:        Mon Apr 20 17:54:18 2009 +0200
+files:       configure configure.acr libr/Makefile
+description:
+* Fix generation of libr.pc from ACR instead of the hacky makefile way
+
+
+changeset:   177:9e54aa9cc1e8
+user:        nibble
+date:        Mon Apr 20 13:26:29 2009 +0200
+files:       libr/asm/asm.c
+description:
+* Fixed labels bug in r_asm
+
+
+changeset:   176:a23ef008ca7e
+user:        nibble
+date:        Mon Apr 20 13:11:50 2009 +0200
+files:       Makefile
+description:
+* Fixed build
+
+
+changeset:   175:11281b1d48ee
+user:        pancake@flubox
+date:        Mon Apr 20 13:02:04 2009 +0200
+files:       Makefile config-user.mk.acr libr/Makefile
+description:
+* Apply elektranox patch for the makefiles
+  - replace mkdir with INSTALL_.. thanks!
+
+
+changeset:   174:11b1e2e270e6
+user:        pancake@flubox
+date:        Mon Apr 20 12:31:12 2009 +0200
+files:       libr/Makefile libr/util/file.c
+description:
+* Fix segfault in r_file_slurp_random()
+  - Thanks elektranox
+
+
+changeset:   173:c2377e0abfbe
+user:        pancake@flubox
+date:        Mon Apr 20 11:57:36 2009 +0200
+files:       libr/debug/p/dbg_ptrace.c libr/io/p/ptrace.c
+description:
+* Fix --without-debugger usage O:)
+
+
+changeset:   172:97abaa1584ff
+user:        pancake@flubox
+date:        Mon Apr 20 11:42:05 2009 +0200
+files:       config-user.mk.acr libr/Makefile
+description:
+* Apply elektranox patch using INSTALL instead of cp
+  - Fixes installation permissions
+
+
+changeset:   171:ec4a4f6b794d
+user:        nibble
+date:        Mon Apr 20 11:37:54 2009 +0200
+files:       libr/asm/p/asm_x86_olly.c
+description:
+* Fixed infinite loop in asm_x86_olly when str == ""
+
+
+changeset:   170:671643644519
+parent:      168:5a721649b38b
+parent:      169:a43c5271a1d6
+user:        pancake@localhost.localdomain
+date:        Sun Apr 19 23:30:15 2009 +0000
+description:
+* Oops merge
+
+
+changeset:   169:a43c5271a1d6
+parent:      167:5b2ab379e3c1
+user:        nibble
+date:        Sun Apr 19 23:43:43 2009 +0200
+files:       libr/core/config.c libr/include/r_userconf.h.acr
+description:
+* Fix build O:)
+
+
+changeset:   168:5a721649b38b
+user:        pancake@localhost.localdomain
+date:        Sun Apr 19 23:30:01 2009 +0000
+files:       libr/Makefile
+description:
+* Fix plugin perms (thanks elektranox)
+
+
+changeset:   167:5b2ab379e3c1
+user:        pancake@localhost.localdomain
+date:        Sun Apr 19 20:55:25 2009 +0000
+files:       configure configure.acr libr/core/config.c libr/debug/p/dbg_ptrace.c libr/include/r_types.h libr/include/r_userconf.h.acr libr/io/p/ptrace.c
+description:
+* Added --without-debugger configure flag to disable the build of
+  io/p/ptrace and debug/p/dbg_ptrace plugins
+* Added a global include/r_userconf.h generated by ./configure
+  to use options defined at cpp level
+
+
+changeset:   166:adf9fbbb9731
+user:        nibble
+date:        Sun Apr 19 20:09:07 2009 +0200
+files:       libr/asm/Makefile libr/asm/asm.c libr/asm/t/Makefile libr/bin/bin.c libr/bin/format/elf/elf_specs.h libr/include/r_asm.h libr/include/r_util.h
+description:
+* r_asm
+  - Added pseudo-instruction .arch
+  - Improve label parsing
+  - Dropped r_cmd dependency
+* r_bin
+  - Fixed string address issue
+  - Minor fixup in elf_specs.h
+* r_util
+  - Removed '.' from isseparator
+
+
+changeset:   165:b7a7e52e2ff8
+user:        pancake@localhost.localdomain
+date:        Sat Apr 18 21:49:17 2009 +0000
+files:       libr/core/cmd.c libr/core/config.c libr/core/visual.c libr/flags/flags.c
+description:
+* Do not force 's eip' in so many places
+  - '.' key makes
+* Use workaround in r_flag_get_i() using the slow foreach loop
+  - we need to fix the btree algo
+
+
+changeset:   164:b09401b925ef
+user:        pancake@localhost.localdomain
+date:        Fri Apr 17 11:42:45 2009 +0000
+files:       TODO libr/core/config.c libr/core/t/radare2.c libr/core/visual.c libr/debug/bp.c libr/debug/handle.c libr/debug/p/dbg_gdb.c libr/debug/p/dbg_ptrace.c libr/include/r_debug.h
+description:
+* cleanup the TODO file
+* Added cfg.debug config variable
+* Fix the basic stuff for r.dbg.reg api integrated with core
+* Failover into the plugin breakpoint implementation to support
+  non memory breakpoints like API ones or hardware ones
+* Added initial non-working version of the gdbwrap debug plugin
+  - We need to design an IO plugin for gdbwrap too (or a way to
+  change the IO based on the debug plugin)
+
+
+changeset:   163:f2e301cd80f3
+user:        pancake@localhost.localdomain
+date:        Thu Apr 16 23:42:31 2009 +0000
+files:       libr/core/cmd.c libr/core/t/radare2.c libr/debug/regset.c
+description:
+* Fix bugs in regset debug module
+  - Make radare2 core use the new register api
+  - Needs more work, but it is at least usable :)
+
+
+changeset:   162:6af3ad7eb90e
+user:        pancake@localhost.localdomain
+date:        Thu Apr 16 20:49:18 2009 +0000
+files:       libr/anal/p/anal_x86.c libr/core/cmd.c libr/core/config.c libr/core/core.c libr/core/file.c libr/core/t/radare2.c libr/debug/debug.c libr/debug/reg.c libr/include/r_debug.h libr/reg/README
+description:
+* Sync x86 code analysis fixups from r1
+* Fix some segfaults on the not-yet-used dbg.reg api
+* Now uses .radare2rc
+* Some R_APIzation in r_debug
+
+
+changeset:   161:a7917b877da3
+user:        nibble
+date:        Thu Apr 16 19:20:03 2009 +0200
+files:       libr/asm/asm.c libr/asm/p/asm_arm.c libr/asm/p/asm_m68k.c libr/asm/p/asm_mips.c libr/asm/p/asm_ppc.c libr/asm/p/asm_sparc.c libr/asm/p/asm_x86.c libr/asm/p/asm_x86_bea.c libr/asm/p/asm_x86_nasm.c libr/asm/p/asm_x86_olly.c libr/asm/t/rasm2.c libr/include/r_asm.h libr/vapi/r_asm.vapi libr/vapi/t/asm.vala
+description:
+* r_asm
+  - Fixed binary output of rasm2
+  - Added R_ASM_BUFSIZE
+  - vapi update
+  - Added assemble test into asm.vala
+
+
+changeset:   160:f29ee39a7af7
+user:        nibble
+date:        Thu Apr 16 18:03:51 2009 +0200
+files:       libr/asm/Makefile libr/asm/arch/x86/bea/Includes/Routines_ModRM.c libr/asm/asm.c libr/asm/t/Makefile
+description:
+* r_asm
+  - Added full label support (fixed bug with postdefined labels)
+  - Removed some warnings in bea
+  - Removed r_flags dependency
+
+
+changeset:   159:6246f2cda01d
+user:        pancake@localhost.localdomain
+date:        Wed Apr 15 21:19:42 2009 +0000
+files:       libr/hash/hash.c libr/hash/hash.h libr/hash/t/Makefile libr/hash/t/rahash2.c libr/include/r_hash.h libr/vapi/t/asm.vala
+description:
+* Added r_hash_name_to_bits
+* Initial implementation of rahash2 with md4 and md5 :)
+  - No block bases hashing support yet. Just a POC
+* Make asm.vala example work
+
+
+changeset:   158:d26b6a494e8e
+user:        pancake@flubox
+date:        Wed Apr 15 20:24:19 2009 +0200
+files:       libr/core/cmd.c libr/core/core.c libr/include/r_core.h libr/include/r_util.h libr/util/file.c
+description:
+* Added 'yt' command (yank to)
+* Fix help for ?$ -> ???
+  - New variables (sync with r1 are available)
+  - $$, $$$, $e, $j, $f, $r and ${..}
+* Implement wf, wF and wt (but not wtf :P)
+* Fix some minor warnings
+* Added new slurp_hexpairs helper
+
+
+changeset:   157:ca296e854e2c
+user:        nibble
+date:        Wed Apr 15 14:37:18 2009 +0200
+files:       libr/asm/Makefile libr/asm/asm.c libr/asm/t/Makefile libr/include/r_util.h libr/util/str.c
+description:
+* r_asm
+  - Added label support using r_flags
+* r_util_str
+  - Added macro isseparator
+  - r_str_word_* functions use isseparator now
+
+
+changeset:   156:3334f3f3ae84
+user:        pancake@localhost.localdomain
+date:        Wed Apr 15 11:09:36 2009 +0000
+files:       libr/debug/Makefile libr/debug/debug.c libr/debug/p/dbg_ptrace.c libr/debug/reg.c libr/debug/regset.c libr/include/r_debug.h libr/include/r_types.h man/rabin2.1 man/radare2.1 man/radiff2.1 man/rahash2.1 man/rasm2.1 man/rax2.1
+description:
+* Initial work on the register API for r_debug
+  - r_debug_reg and r_debug_regset
+  - Handles dbg->newstate to force register sync
+  - Only dbg.reg.read() for x86-32 and 64
+* Added dummy copy of manpages (from old radare1)
+
+
+changeset:   155:ee35c2bfc3cf
+user:        pancake@fluendo-build
+date:        Wed Apr 15 12:01:12 2009 +0200
+files:       libr/bp/bp.c libr/core/cmd.c libr/core/core.c libr/debug/bp.c libr/debug/pid.c libr/include/r_bp.h libr/include/r_debug.h
+description:
+* Fix breakpoint management issues in r_bp
+  - Make r_bp_enable return bp_item
+  - dbh: breakpoint handler plugins can now be listed and selected
+  - Added 'dbe' and 'dbd' commands to enable and disable breakpoints
+
+
+changeset:   154:e05233a45279
+user:        pancake@fluendo-build
+date:        Wed Apr 15 01:34:59 2009 +0200
+files:       libr/debug/debug.c
+description:
+* Oops fix build
+
+
+changeset:   153:891f442ff8aa
+user:        pancake@localhost.localdomain
+date:        Wed Apr 15 00:29:01 2009 +0000
+files:       libr/core/cmd.c libr/core/core.c libr/core/t/Makefile libr/debug/debug.c libr/io/p/ptrace.c libr/rules.mk
+description:
+* Added fixture for rules.mk library build
+* Added $s for filesize (like in r1)
+* Added ? $? for help and ?$ alias
+* Add r_bp as dependency for r_core in test programs (fix build)
+* Use limits.h in io-ptrace to determine x86-32 or 64
+* Fix a building bug in rules.mk
+
+
+changeset:   152:91d9fb6ac7f3
+user:        nibble
+date:        Wed Apr 15 01:19:42 2009 +0200
+files:       doc/fortunes libr/asm/asm.c libr/asm/p/asm_x86_olly.c libr/asm/t/rasm2.c
+description:
+* r_asm
+  - Added pseudoinstruction .asciz
+  - asm_x86_olly assembles the shorter opcode
+* rasm2
+  - Minor fixups and refactoring
+* Misc
+  - Added new quote into fortunes
+
+
+changeset:   151:ed4325e6e4ff
+user:        nibble
+date:        Tue Apr 14 15:21:19 2009 +0200
+files:       libr/asm/asm.c libr/asm/p/asm_arm.c libr/asm/p/asm_bf.c libr/asm/p/asm_csr.c libr/asm/p/asm_java.c libr/asm/p/asm_m68k.c libr/asm/p/asm_mips.c libr/asm/p/asm_ppc.c libr/asm/p/asm_sparc.c libr/asm/p/asm_x86.c libr/asm/p/asm_x86_bea.c libr/asm/p/asm_x86_nasm.c libr/asm/p/asm_x86_olly.c libr/asm/t/rasm2.c libr/bin/t/rabin2.c libr/util/sys.c
+description:
+* r_asm
+  - Fixed initialization
+  - Fixed assembly fallbacks
+  - Removed dupped memcpy's in disassembly functions
+  - Added the directive ORG to asm_x86_nasm
+  - Refactoring
+* rabin2
+  - Added -L to list supported plugins
+
+
+changeset:   150:e4d7b761b1b5
+user:        pancake@localhost.localdomain
+date:        Mon Apr 13 22:47:02 2009 +0000
+files:       TODO libr/asm/asm.c libr/asm/p/Makefile libr/asm/p/asm_java.c libr/asm/p/asm_x86_nasm.c libr/asm/p/x86nasm.mk libr/asm/t/rasm2.c libr/bp/Makefile libr/bp/bp.c libr/bp/p/bp_arm.c libr/bp/p/bp_x86.c libr/config.h libr/config.mk libr/hash/t/rahash2.c libr/include/r_bp.h libr/include/r_util.h libr/util/sys.c
+description:
+* Move buf_hex memcpy in r_asm instead of dupped code in every plugin
+  - Plugins needs to be synced
+* Added x86nasm assembler backend to handle x86-64
+  - Not yet working. Pretty buggy :)
+* Fix support of building static plugins for r_bp
+  - Statically link r_bp_x86 by default
+* Implement ugly r_sys_cmd_str() command in r_util
+
+
+changeset:   149:31d4fcd17d11
+user:        pancake@localhost.localdomain
+date:        Sun Apr 12 23:10:22 2009 +0000
+files:       libr/asm/t/rasm2.c libr/bp/bp.c libr/core/core.c libr/debug/bp.c libr/debug/debug.c libr/include/r_debug.h
+description:
+* rasm2 -h does not list plugins (use -L)
+* Fix div0 bug in r_bp_getbytes()
+* Show 'enabled' / 'disabled' attribute of breakpoints
+* Implement dbg_read and dbg_write callbacks for r_debug
+  - Added r_debug_set_io() to setup the IO for r_debug
+* 'db' command can now add and remove breakpoints
+  - Not yet written into memory. only managed
+
+
+changeset:   148:6694fe2a82db
+user:        pancake@localhost.localdomain
+date:        Sun Apr 12 22:46:44 2009 +0000
+files:       libr/asm/asm.c libr/bp/bp.c libr/bp/p/Makefile libr/bp/p/arm.mk libr/bp/p/bp_arm.c libr/bp/p/bp_x86.c libr/bp/p/x86.mk libr/core/cmd.c libr/core/libs.c libr/debug/Makefile libr/debug/bp.c libr/debug/debug.c libr/include/r_bp.h libr/include/r_debug.h libr/include/r_lib.h
+description:
+* Initial pseudo-working implementation of the r_bp library
+  - Integrated with r_debug module
+    - Hardware breakpoints will be handled by the debug backend
+  - Breakpoints support software/hardware, lil/big endian, trace, enable/disable
+  - Plugin infrastructure adding software breakpoint templates
+    - Added x86 and arm software breakpoint plugins
+* Some work on the 'db' command to manage debugger breakpoint
+* Added empty dH to transplant process between debugger backends
+
+
+changeset:   147:13f56e50301f
+user:        pancake@localhost.localdomain
+date:        Sat Apr 11 21:24:37 2009 +0000
+files:       libr/asm/t/rasm2.c libr/config/config.c
+description:
+* Add rasm2 -L flag to list loaded asm plugins
+* Make r_config_set_i restore old value if callback fails
+
+
+changeset:   146:b6023669a2ad
+user:        pancake@localhost.localdomain
+date:        Sat Apr 11 21:22:20 2009 +0000
+files:       doc/releases doc/syntax libr/Makefile libr/anal/Makefile libr/anal/anal.c libr/anal/ctx.c libr/asm/asm.c libr/asm/p/asm_arm.c libr/asm/p/asm_bf.c libr/asm/p/asm_csr.c libr/asm/p/asm_dummy.c libr/asm/p/asm_java.c libr/asm/p/asm_m68k.c libr/asm/p/asm_mips.c libr/asm/p/asm_ppc.c libr/asm/p/asm_sparc.c libr/asm/p/asm_x86.c libr/asm/p/asm_x86_bea.c libr/asm/p/asm_x86_olly.c libr/bp/bp.c libr/config.h libr/config/config.c libr/core/Makefile libr/core/config.c libr/core/core.c libr/debug/p/dbg_ptrace.c libr/flags/t/Makefile libr/include/r_anal.h libr/include/r_asm.h libr/include/r_bp.h libr/include/r_config.h libr/include/r_debug.h
+description:
+* Initial dummy implementation of r_bp
+  - Managing breakpoints for the core
+  - Initial work on the support for breakpoints
+    for the r_debug plugins
+* Adding some dummy work for context support in r_anal
+* Make asm_set_bits check per-plugin supported bit sizes
+  - Now asm plugins have 'arch' and 'bits' attributes
+  - Used to setup default callbacks for undefined 'assemble' callback
+  - Also used to avoid setting asm.bits eval variable to invalid values
+  - We need a way to display all this data
+* Added DEFAULT_ARCH in config.h to setup default arch to asm and anal
+* Added r_config_set_i_cb()
+  - Make r_config_set restore value when callback is called and fails
+  - asm.bits now has a config callback
+* Added _LAST in some r_anal enums
+
+
+changeset:   145:de6ccc04013a
+user:        nibble
+date:        Sat Apr 11 18:49:09 2009 +0200
+files:       libr/asm/Makefile libr/asm/asm.c libr/bin/format/elf/elf.c libr/include/r_asm.h libr/include/r_cmd.h libr/include/r_util.h libr/util/str.c
+description:
+* r_asm
+  - Added pseudo-instruction support using r_cmd
+  - Added .byte
+* r_util_str
+  - Added r_str_trim
+* r_cmd
+  - Fixed r_cmd.h
+
+
+changeset:   144:ac30bb05896a
+user:        nibble
+date:        Thu Apr 09 01:03:49 2009 +0200
+files:       libr/asm/asm.c libr/asm/t/rasm2.c libr/bin/bin.c libr/bin/format/elf/elf.c libr/core/cmd.c libr/include/r_asm.h
+description:
+* r_bin_elf
+  - Fixed error opening "sstripped" elfs
+* r_asm
+  - Added r_asm_massemble
+    Assemble several instructions separated by ';'
+* rasm2
+  - Updated assembly using r_asm_massemble
+* core
+  - Updated 'wa' cmd using r_asm_massemble
+
+
+changeset:   143:22b17d5e7d4e
+user:        nibble
+date:        Wed Apr 08 00:47:40 2009 +0200
+files:       libr/bin/format/elf/elf.c
+description:
+* Fixed resize_section for ELF64
+
+
+changeset:   142:6aec19b28e36
+user:        nibble
+date:        Tue Apr 07 22:46:36 2009 +0200
+files:       libr/bin/format/elf/elf.c libr/bin/format/elf/elf_specs.h
+description:
+* r_bin_elf
+  - Fixed "imports bug" in ELF64
+    (needs more love ;)
+  - More fixups in section_resize for ELF64
+
+
+changeset:   141:c60b576bb0a6
+user:        pancake@localhost.localdomain
+date:        Tue Apr 07 11:28:22 2009 +0000
+files:       libr/Makefile libr/cons/Makefile libr/cons/cons.c libr/cons/input.c libr/core/cmd.c libr/core/core.c libr/core/io.c libr/core/t/radare2.c libr/core/visual.c libr/core/yank.c libr/include/r_cons.h libr/include/r_core.h libr/print/print.c libr/sysproxy/README libr/sysproxy/listeners/getsock.S libr/sysproxy/listeners/lis_socket_tcp.S libr/sysproxy/listeners/lis_socket_udp.S libr/sysproxy/rpc.c libr/sysproxy/sp.h libr/sysproxy/syscall-linux.c libr/sysproxy/syscall.S libr/sysproxy/syscall.c libr/sysproxy/test_sp.c libr/sysproxy/test_srv.c libr/sysproxy/test_srv1.c libr/util/sys.c libr/vm/vm.c
+description:
+* Make r_cons independent from r_line
+  - r_cons_user_fgets() is a configurable function pointer
+  - Simplify build
+* Initial import of r_sysproxy
+  - Directly copied from r1 (no api or anything working yet)
+* R_APIze r_vm and r_print
+* Make r_core_seek more consistent
+* Move r_cons_progressbar() to r_print
+* Rename visual 'x' -> 'w' (oops)
+  - 'a' and 'w' are now compatible with cursor mode
+* Implement r_sys_usleep() on w32 and fix r_sys_sleep()
+
+
+changeset:   140:9d5ade1b62c4
+user:        pancake@localhost.localdomain
+date:        Tue Apr 07 00:26:41 2009 +0000
+files:       libr/asm/asm.c libr/asm/p/asm_x86_olly.c libr/core/cmd.c libr/core/visual.c libr/include/r_asm.h libr/include/r_var.h libr/io/p/ptrace.c libr/lang/p/Makefile libr/var/var.c
+description:
+* R_APIize r_asm and r_var
+* Implement write support to r_io plugin dbg_ptrace
+* Fix libtcc lang plugin compilation problem
+* Use r_core_write_at instead of r_io_seek+r_io_write
+* Implement 'wa' command.
+  - Integrated with visual mode (bind to 'a' key)
+  - Added 'x' key in visual to write hexpair strings
+* Fix signature of 'assemble' function in r_asm (const u8 *)
+
+
+changeset:   139:57f265321c90
+user:        pancake@localhost.localdomain
+date:        Mon Apr 06 22:53:25 2009 +0000
+files:       config-user.mk.acr configure configure.acr doc/syntax libr/config/config.c libr/cons/cons.c libr/core/cmd.c libr/core/config.c libr/core/visual.c libr/flags/t/Makefile libr/include/r_config.h libr/include/r_meta.h libr/include/r_util.h libr/lang/p/Makefile libr/util/str.c
+description:
+* Check for libtcc in acr to build or not r_lang_plugin_tcc
+* R_APIze r_config
+  - Added r_config_swap
+  - Fix a bug in r_config_set for bool types
+* Some more rules in doc/syntax
+* Some integration from r_core to r_meta
+  - CC command is now working to add and remove comments
+  - Make 'C' show help and 'C*' list metadata
+  - CF is semi working
+* Show comments in disassembly 'asm.comments'
+* Added 'e!' command to toggle a eval variable value
+  - e!asm.bytes    ; for example
+* Drop arrow-debugging in r_core_visual
+  - Added key ';' to add comments
+  - Do not 's eip' on debug
+* Fix build of flags test program (thanks graz!)
+* Added r_str_chop_ro (read-only string chopping)
+
+
+changeset:   138:a5530046db6a
+user:        nibble
+date:        Mon Apr 06 17:11:37 2009 +0200
+files:       libr/anal/anal.c libr/core/cmd.c
+description:
+* More r_anal_reflines fixups
+
+
+changeset:   137:71aefe508a93
+user:        nibble
+date:        Mon Apr 06 14:48:46 2009 +0200
+files:       libr/anal/anal.c
+description:
+* Oops, type error in anal O:-)
+
+
+changeset:   136:91ee71bb3d48
+user:        nibble
+date:        Mon Apr 06 14:01:56 2009 +0200
+files:       libr/anal/anal.c libr/include/r_util.h libr/util/str.c
+description:
+* Added r_str_concatch
+* Fixed reflines libc issue
+
+
+changeset:   135:a02a750c3036
+user:        pancake@localhost.localdomain
+date:        Mon Apr 06 10:57:37 2009 +0000
+files:       doc/syntax libr/include/btree.h libr/include/list.h libr/util/btree.c
+description:
+* Added few coding style rules
+* Added btree_optimize and btree_hittest() incomplete functions
+  - Just a PoC of the idea..with few test
+
+
+changeset:   134:a2b2483a63e5
+user:        nibble
+date:        Sun Apr 05 16:02:17 2009 +0200
+files:       libr/asm/t/rasm2.c
+description:
+* rasm2
+  - If '-l' value is greater than output length,
+    output is padded with nops
+
+
+changeset:   133:d931da8a7d69
+user:        nibble
+date:        Sun Apr 05 15:23:36 2009 +0200
+files:       libr/asm/p/asm_x86_olly.c libr/asm/t/rasm2.c
+description:
+* rasm2
+  - Added -B and -l flags for binary input/output
+  - Added support for assembling several instructions (separated by ;)
+    e.g.: $ rasm2 "push eax; push ebx"
+* r_asm
+  - Fixed bug in asm_x86_olly
+
+
+changeset:   132:188e66191e88
+parent:      130:95b1ea72d34b
+parent:      131:56b00cf1481c
+user:        pancake@localhost.localdomain
+date:        Sat Apr 04 19:39:29 2009 +0000
+files:       libr/core/cmd.c
+description:
+* Merge heads
+
+
+changeset:   131:56b00cf1481c
+parent:      129:76a703107d83
+user:        nibble
+date:        Fri Apr 03 13:01:58 2009 +0200
+files:       libr/Makefile libr/anal/anal.c libr/core/cmd.c libr/include/r_anal.h libr/line/Makefile
+description:
+* r_anal
+  - Dropped param addr in r_anal_reflines_str
+    Use r_anal_set_pc instead
+  - Fixed asm.reflinesout behavior
+* Fixed r_line build
+* Fixed 'make install'
+
+
+changeset:   130:95b1ea72d34b
+user:        pancake@localhost.localdomain
+date:        Sat Apr 04 19:38:59 2009 +0000
+files:       libr/core/cmd.c libr/flags/flags.c libr/flags/spaces.c libr/flags/t/Makefile libr/flags/t/test.c libr/include/btree.h libr/include/r_flags.h libr/include/r_util.h libr/util/Makefile libr/util/btree.c
+description:
+* Initial import of the binary tree search algorithm
+  - ATM lives in r_util, but should be moved to btree.h at some point
+    Like the kernel's list.h does.
+  - No node tree path find optimization yet
+* Integrate btree with r_flag API
+  - Accelerates the resolution of flags per offset
+  - At some point we will need to use paralel tree's to store all the
+    nodes optimized by different fields (name, offset, ...)
+* Added test program for flags and btree algorithm
+* Change the print format of flags in the disassembly
+
+
+changeset:   129:76a703107d83
+user:        pancake@localhost.localdomain
+date:        Fri Apr 03 11:11:17 2009 +0000
+files:       Makefile TODO autogen.sh config-user.mk.acr config.mk configure configure.acr libr/Makefile libr/config/config.c libr/cons/Makefile libr/cons/cons.c libr/cons/t/hello.c libr/core/cmd.c libr/core/t/radare2.c libr/core/visual.c libr/diff/bdiff.c libr/diff/t/test.c libr/flags/flags.c libr/hash/t/hello.c libr/include/r_cons.h libr/include/r_flags.h libr/include/r_types.h libr/include/r_util.h libr/io/handle.c libr/lang/p/Makefile libr/lang/p/radare.lua libr/lang/p/radare.py libr/lang/p/radare.rb libr/lang/p/ruby.c libr/line/dietline.c libr/rules.mk libr/stripsyms.sh libr/util/re.c libr/util/str.c libr/util/sys.c mk/gcc.mk mk/i486-mingw32-gcc.mk
+description:
+* Remove documentation in the uninstall target
+* Add 'autogen.sh' to ease the use of 'acr'
+  - Added USERCC and USEROSTYPE configuration flags
+    --with-compiler : select a compiler from mk/
+    --with-ostype   : select a target OS (not required for ming32 f.ex)
+* Add language bindings APIs from radare1
+  - Fix some issues from the ruby language binding
+  - Checks if file exists before slurping and causing a ruby segfault
+  - Added language destructor (.fini pointer)
+* Rename str_clean into r_str_chop
+* Initial work on the port for ming-w32
+* Show flags instead of bytes in disassembly (smart disasm)
+* New r_sys_{get|set}env (for portability issues
+* Added flags -i and -l to radare2
+* Fix warnings and random code cleanup
+* Added r_flag_get_i
+
+
+changeset:   128:f000dda8fabe
+user:        nibble
+date:        Thu Apr 02 15:15:16 2009 +0200
+files:       libr/core/cmd.c
+description:
+* Fixed bug in cmd.c O:-)
+
+
+changeset:   127:03a7c1547bfa
+user:        nibble
+date:        Thu Apr 02 15:07:26 2009 +0200
+files:       libr/anal/anal.c libr/config/config.c libr/core/cmd.c libr/core/config.c libr/core/core.c libr/include/r_anal.h libr/line/dietline.c
+description:
+* Removed expand option from reflines
+* Added function spacer
+* Fixed fortunes bug
+* Fixed history bug
+* Fixed r_line_hist_add
+* Fixed eval list bug
+
+
+changeset:   126:20f65d45384e
+user:        nibble
+date:        Thu Apr 02 11:36:34 2009 +0200
+files:       libr/anal/anal.c libr/core/cmd.c libr/core/config.c libr/include/r_anal.h
+description:
+* Fixed r_anal reflines
+* Added config vars for configuring it
+
+
+changeset:   125:f974142e88d2
+user:        pancake@flubox
+date:        Thu Apr 02 12:15:04 2009 +0200
+files:       libr/include/r_cmd.h libr/include/r_core.h libr/macro/macro.c
+description:
+* Fix build (fix r_core_cmd_foreach signature)
+* Fix use of uninitialized variable in r_macro
+
+
+changeset:   124:491c3d9e0a66
+user:        pancake@localhost.localdomain
+date:        Thu Apr 02 10:23:32 2009 +0000
+files:       libr/TODO libr/anal/p/anal_x86_bea.c libr/core/cmd.c libr/core/config.c libr/core/core.c libr/core/io.c libr/core/visual.c libr/include/r_anal.h libr/include/r_cmd.h libr/include/r_core.h libr/include/r_search.h libr/include/r_util.h libr/print/print.c libr/search/search.c
+description:
+* Another 700-LOC train-based commit
+* Initial work on integrating the anal_x86_bea plugin
+* Adds the concept of 'opcode families'
+* Added 'cmdhit' from e cmd.hit
+* Fix r_print_hexdump ascii column
+* More R_APIziation
+* Cleanup some warnings
+* Added keyword index attribute to the keyword structure
+
+
+changeset:   123:a64df275b92e
+user:        pancake@localhost.localdomain
+date:        Thu Apr 02 01:23:45 2009 +0000
+files:       libr/core/visual.c
+description:
+* Import Ve command (visual configuration, 'e')
+
+
+changeset:   122:c63828155157
+user:        nibble
+date:        Thu Apr 02 01:09:38 2009 +0200
+files:       libr/anal/anal.c libr/core/cmd.c libr/include/r_anal.h
+description:
+* reflines partial fix
+
+
+changeset:   121:6dd2409549c5
+user:        pancake@localhost.localdomain
+date:        Thu Apr 02 00:44:24 2009 +0000
+files:       libr/cons/cons.c libr/core/visual.c libr/flags/spaces.c libr/lib/lib.c
+description:
+* Implement r_core_visual_trackflags
+  - Directly ported from radare1 code
+  - Fixes a bug in r_cons
+  - Define 'noname' flagspace by default
+* Fix a segfault in r_flag_spaces
+* Change prop values order in radare2 -L
+
+
+changeset:   120:4c26ef595c69
+user:        nibble
+date:        Thu Apr 02 00:41:10 2009 +0200
+files:       libr/anal/anal.c libr/anal/p/anal_x86.c libr/bininfo/Makefile libr/core/cmd.c libr/include/r_anal.h
+description:
+* More work on r_anal_reflines
+* Fixed r_bininfo build
+
+
+changeset:   119:037fd8c99f10
+user:        pancake@localhost.localdomain
+date:        Thu Apr 02 00:07:58 2009 +0000
+files:       TODO libr/TODO libr/core/cmd.c libr/lib/lib.c libr/stripsyms.sh libr/util/str.c
+description:
+* Fix segfault when using '&&'. Lost allocated pointer
+* Fix some valgrind warnings
+  - The debugger+visual is now working more stable
+* Comment 'strip -s' command in stripsyms.sh
+  - We need a better way to configure all this stuff (spp?)
+
+
+changeset:   118:c9aab4bc0d2a
+user:        pancake@localhost.localdomain
+date:        Wed Apr 01 22:44:43 2009 +0000
+files:       TODO doc/releases libr/core/Makefile libr/core/cmd.c libr/core/file.c libr/core/libs.c libr/debug/Makefile libr/debug/debug.c libr/debug/pid.c libr/flags/spaces.c libr/include/r_debug.h libr/include/r_line.h libr/line/dietline.c
+description:
+* More R_API-zation
+* More stuff in doc/release
+* Added 'dk' for sending signals to processes in the debugger
+  - A bit hacky, but funny enought for testing
+* Initial draft of the process-related API
+  - For handling tree's of processes with threads
+* Fix a bug in dietline ('supr' key is working now
+
+
+changeset:   117:8f3595b89f23
+user:        pancake@localhost.localdomain
+date:        Wed Apr 01 10:41:42 2009 +0000
+files:       doc/releases libr/bin/Makefile libr/bin/t/Makefile libr/bin/t/rabin2.c libr/config.h libr/core/cmd.c libr/diff/Makefile libr/diff/bdiff.c libr/diff/diff.c libr/diff/t/radiff2.c libr/diff/t/test.c libr/include/r_diff.h libr/line/TODO
+description:
+* Fix LIBDIR path issue for r_bin
+  - Properly load all LIBR_PLUGINS from rabin2 too
+  - Maybe we will have to add a common stub for this
+* Add r_bin_plugin_elf in the STATIC_PLUGINS list
+* Add ii, iI, ie, is, iS, iz commands (accepts a * at the end)
+  - Wrappers to run rabin2 over the opened file
+* Add -l flag to radiff2 (line diffing)
+  - Added -s flag to radiff2 (string distance)
+  - Move linediff test program into the test.c
+  - Use R_API for r_diff
+  - Use double for buffers_distance
+  - Fix -c flag (now we have modes and 'showcount' toggles)
+
+
+changeset:   116:f9062076e0f8
+user:        pancake@localhost.localdomain
+date:        Wed Apr 01 01:46:37 2009 +0000
+files:       libr/lib/lib.c
+description:
+* Fix getter for r_lib_types strings
+  - zzZZzZ sleepy bug!
+
+
+changeset:   115:e4699455f61d
+user:        pancake@localhost.localdomain
+date:        Wed Apr 01 01:40:04 2009 +0000
+files:       config-user.mk.acr libr/include/r_lib.h libr/lib/lib.c libr/util/cache.c libr/util/sys.c
+description:
+* Fix build again O:)
+  - Remove config.mk includes from config-user.mk
+  - Fix sys.c missing include
+* Added R_LIB_TYPE_LAST and implement a getter
+* Add some missing license headers
+
+
+changeset:   114:50a6ca4f8a83
+user:        pancake@localhost.localdomain
+date:        Wed Apr 01 01:30:36 2009 +0000
+files:       config-user.mk.acr configure configure.acr libr/util/Makefile libr/util/sys.c
+description:
+* Fix recursive include issue in build
+  - Oops O:)
+* Some fixups at ACR level for allowing --without-vala flag properly
+* Added empty r_sys_cmd() APIs for r_util
+
+
+changeset:   113:c26f57fbdb5d
+user:        pancake@localhost.localdomain
+date:        Wed Apr 01 00:51:02 2009 +0000
+files:       libr/core/cmd.c libr/core/core.c libr/core/t/radare2.c
+description:
+* Applied minimalistic version of the Graz's patch adding history load/save
+  functionalities to radare2 command
+* Set 'asm_x86' disassembler after loading the plugins
+* Remove 'No file specified' message
+
+
+changeset:   112:fb7eb80a7c16
+user:        nibble
+date:        Wed Apr 01 00:32:26 2009 +0200
+files:       libr/anal/anal.c libr/anal/arch/x86/dislen.c libr/anal/arch/x86/dislen.h libr/anal/p/Makefile libr/anal/p/anal_x86.c libr/anal/p/anal_x86_bea.c libr/core/cmd.c libr/include/r_anal.h
+description:
+* r_anal
+  - Added reflines support
+  - Fixed anal_x86 code
+  - Refactoring (removed r_asm dependency)
+
+
+changeset:   111:42e8c0088a93
+user:        pancake@localhost.localdomain
+date:        Wed Apr 01 00:28:13 2009 +0000
+files:       Makefile config-user.mk.acr config.mk libr/Makefile libr/asm/p/arm.mk libr/bin/Makefile libr/bininfo/Makefile libr/config.mk libr/cons/cons.c libr/core/Makefile libr/core/config.c libr/core/core.c libr/core/libs.c libr/core/t/Makefile libr/core/t/radare2.c libr/debug/debug.c libr/debug/p/Makefile libr/debug/p/dbg-ptrace.c libr/debug/p/dbg_ptrace.c libr/include/r_core.h libr/include/r_lib.h libr/include/r_types.h libr/lib/lib.c libr/rules.mk mk/gcc.mk
+description:
+* Huge build system refactoring
+  - Make proper use of the config-user.mk
+  - Accelerate build by manually checking timestamps of bin/lib to objs/srcs
+  - Use '-MD' by default
+  - Lot of minor fixups done in multiple places
+  - Fix PREFIX/LIBDIR installation/loading problems for plugins
+  - Some segfaults has been fixed
+  - Use R_API in r_core and r_lib
+* Add 'vm' to be build by libr by default
+* Add 'libs.c' in core/ to manage plugins from core
+  - Added 'dir.plugins'
+  - Make '-e' and '-L' radare2 flags work
+  - Plugins are not loaded multiple times now
+* Added r_lib_types string array containing plugin types strings
+* Minor fixups in r_debug
+  - Properly check 'contsc' delegate
+  - Separate r_debug_wait()
+* Rename dbg-ptrace into dbg_ptrace
+
+
+changeset:   110:1f42132c6dd9
+user:        nibble
+date:        Tue Mar 31 22:05:18 2009 +0200
+files:       libr/Makefile libr/anal/anal.c libr/anal/p/anal_x86.c libr/anal/p/anal_x86_bea.c libr/include/r_anal.h
+description:
+* Some changes in r_anal
+* Fixed build
+
+
+changeset:   109:b42454435c93
+user:        pancake@flubox
+date:        Tue Mar 31 17:19:31 2009 +0200
+files:       libr/config.h libr/config.mk libr/rules.mk
+description:
+* Do not enable static debug by default
+
+
+changeset:   108:b28b709c482c
+user:        nibble
+date:        Tue Mar 31 16:52:58 2009 +0200
+files:       libr/diff/diff.c libr/diff/t/test.c libr/include/r_diff.h
+description:
+* Added Levenshtein distance algorithm in r_diff
+* Added corresponding test case
+
+
+changeset:   107:0787d3b6f875
+user:        pancake@localhost.localdomain
+date:        Tue Mar 31 10:55:26 2009 +0000
+files:       config.mk libr/config.mk libr/core/cmd.c libr/vapi/r_asm.vapi libr/vapi/r_bin.vapi libr/vapi/t/asm.vala libr/vapi/t/bin.vala libr/vapi/t/hash.vala libr/vapi/t/search.vala
+description:
+* set STATIC DEBUG to 0
+* Make p/elf.mk STATIC_BIN_PLUGIN
+* Add dummy 'undowrite' command
+* Some random unuseful work on vapi's for bin+asm
+  - Still not usable, but compiles at least
+
+
+changeset:   106:72621e5bdec9
+user:        pancake@localhost.localdomain
+date:        Tue Mar 31 00:57:39 2009 +0000
+files:       config-user.mk.acr config.mk configure configure.acr
+description:
+* Integrate acr configure script with the makefiles
+  - Check for libewf and valac
+* include config-user.mk from config.mk overriding config.mk options
+
+
+changeset:   105:a412c19cc08d
+user:        pancake@localhost.localdomain
+date:        Tue Mar 31 00:50:36 2009 +0000
+files:       libr/core/t/radare2.c
+description:
+* Oops in getopt
+
+
+changeset:   104:95fa8032dadb
+user:        pancake@localhost.localdomain
+date:        Tue Mar 31 00:50:02 2009 +0000
+files:       Makefile config.mk libr/config.h libr/core/t/radare2.c libr/crypto/crypto.c libr/crypto/p/aes.c libr/crypto/p/aes.h libr/diff/Makefile libr/diff/bdiff.c libr/diff/t/file1 libr/diff/t/file2 libr/hash/hash.c libr/include/r_types.h libr/io/p/Makefile libr/io/p/dbg.c libr/io/p/ewf.c libr/io/p/shm.c libr/lang/p/Makefile libr/lang/p/mkruby.rb libr/lib/lib.c libr/rules.mk
+description:
+* Fix 'install' target (missing double '$')
+* Add STATIC_DEBUG and RUNTIME_DEBUG config.mk variables
+  - Mirrored in C as R_DEBUG and R_RTDEBUG
+  - Defines IFDBG and IFRTDBG macros
+  - used in r_lib, checks for RLIB_RTDEBUG environment variable
+* Added -f and -L flags to radare2
+* Added initial dummy work on r_crypto module
+  - Added 'aes' algorithm
+* Added EXTRA_TARGETS and EXTRA_CLEAN targets in makefiles
+  to build extra programs or libraries in a single directory
+* Initial working stuff with hg's bdiff.c
+  - Working as a line based diffing tool. 'linediff'
+  - Added 2 files for testing linediff
+* Prefix io plugins with io_
+  - Added ewf and shm io plugins
+* Prefix lang plugins with lang_
+
+
+changeset:   103:4b4c32afb181
+user:        pancake@flubox
+date:        Fri Mar 27 13:55:59 2009 +0100
+files:       libr/diff/bdiff.c
+description:
+* Import 'dummy' mercurial's bdiff (needs to be plugged)
+
+
+changeset:   102:0c5286b122b7
+user:        pancake@localhost.localdomain
+date:        Fri Mar 27 11:28:25 2009 +0000
+files:       Makefile config.mk libr/TODO libr/include/r_util.h libr/sign/README libr/util/Makefile libr/util/cache.c
+description:
+* Fix doc installation path
+* Up config.mk version to 0.2b
+* Cleanup TODO
+* Initial implementation of r_cache (optimization for disassembler)
+* Add readme for r_sign (some randome notes and ideas)
+
+
+changeset:   101:39509b39332f
+user:        pancake@localhost.localdomain
+date:        Fri Mar 27 09:47:19 2009 +0000
+files:       libr/TODO libr/core/cmd.c libr/lang/p/Makefile libr/lang/p/lua.c libr/lang/p/tcc.c
+description:
+* Add 'tcc' lang plugin
+* Implement lua lang plugin
+* Rename 'CD' command to 'CL' (code lines takes more sense)
+
+
+changeset:   100:aa017dcd2712
+user:        pancake@localhost.localdomain
+date:        Fri Mar 27 00:16:27 2009 +0000
+files:       Makefile libr/bininfo/p/bininfo_addr2line.c libr/core/Makefile libr/core/cmd.c libr/core/config.c libr/core/core.c libr/core/file.c libr/core/t/Makefile libr/core/t/radare2.c libr/core/visual.c libr/include/r_core.h
+description:
+* Fix installation of documentation
+* Fix popen() fread-related bug in addr2line plugin for bininfo
+* Add 'fo' command.
+  - Installs the 'fortunes' file
+* Add 'CD' command (show debug information of file using bininfo)
+* Add scr.seek and cfg.fortunes config keys
+  - scr.seek works in visual mode (cleanup debug visual mode)
+  - cfg.fortunes runs 'fo' command at startup
+
+
+changeset:   99:c24937ca870f
+user:        pancake@flubox
+date:        Wed Mar 25 20:53:26 2009 +0100
+files:       Makefile config-user.mk.acr configure configure.acr doc/fortunes
+description:
+* Import fortunes from radare1
+  - Add dummy ACR configure script
+
+
+changeset:   98:67b9dacca08e
+user:        nibble
+date:        Wed Mar 25 20:51:26 2009 +0100
+files:       libr/bin/bin.c libr/bin/p/bin_elf.c libr/bin/p/bin_elf64.c libr/bin/p/bin_java.c libr/bin/p/bin_pe.c libr/bin/p/bin_pe64.c libr/bin/t/rabin2.c libr/bininfo/bininfo.c libr/bininfo/p/bininfo_addr2line.c libr/include/r_bin.h libr/include/r_bininfo.h
+description:
+* r_bin & r_bininfo
+  - Added "check" function to plugins
+    (used by _open for auto setting)
+  - Removed hardcoded format autodetection
+
+
+changeset:   97:7b390db25654
+user:        nibble
+date:        Wed Mar 25 15:52:17 2009 +0100
+files:       libr/bin/bin.c libr/bin/t/rabin2.c libr/bininfo/bininfo.c libr/bininfo/p/bininfo_addr2line.c libr/bininfo/t/Makefile libr/bininfo/t/rabini.c libr/include/r_bin.h libr/include/r_bininfo.h
+description:
+* r_bin & r_bininfo
+  - Removed _set and _autoset functions
+  - _open (auto)sets the plugin now
+  - Refactoring
+
+
+changeset:   96:6d50190ce76a
+user:        nibble
+date:        Mon Mar 23 23:07:31 2009 +0100
+files:       libr/bin/bin.c libr/bin/t/rabin2.c libr/bininfo/bininfo.c libr/include/r_bin.h libr/include/r_bininfo.h
+description:
+* r_bin & r_bininfo
+  - Minor refactoring
+
+
+changeset:   95:7628bc8a0aeb
+user:        pancake@localhost.localdomain
+date:        Mon Mar 23 13:22:23 2009 +0000
+files:       TODO config.mk libr/bininfo/bininfo.c libr/bininfo/p/bininfo_addr2line.c libr/bininfo/t/rabini.c libr/config.h libr/include/r_bininfo.h
+description:
+* Fix build (use gcc)
+  - Fix issues in r_bininfo (now the test program works)
+  - Properly add the static r_bininfo plugin
+
+
+changeset:   94:01c5e38841a1
+user:        pancake@localhost.localdomain
+date:        Sun Mar 22 04:37:46 2009 +0000
+files:       TODO config.mk libr/asm/p/arm.mk libr/bininfo/README libr/bininfo/bininfo.c libr/bininfo/p/Makefile libr/bininfo/p/addr2line.mk libr/bininfo/p/bininfo_addr2line.c libr/bininfo/t/Makefile libr/bininfo/t/rabini.c libr/config.mk libr/include/r_bininfo.h libr/include/r_util.h libr/rules.mk libr/util/file.c libr/util/re.c mk/gcc.mk mk/tcc.mk
+description:
+* Some work for r_bininfo library
+  - Extend API to get file and line numbers from a virtual address
+  - Added addr2line-like test program 'rabini'
+  - Added 'addr2line' plugin
+* Add r_file_slurp_line helper in r_util
+* Added initial work to support multiple compilers (gcc only atm)
+  - tcc support under development
+  - Make HAVE_REGEXP be optional
+
+
+changeset:   93:c7076bf8632a
+user:        pancake@localhost.localdomain
+date:        Sun Mar 22 02:36:00 2009 +0000
+files:       libr/core/cmd.c libr/debug/debug.c libr/io/p/dbg.c
+description:
+* Tricky implementation of 'dm' command
+* Fix 'dp' command
+* Use execvp to run the program
+  - Some changes in the parser for argv and so
+
+
+changeset:   92:bee12104944f
+user:        pancake@localhost.localdomain
+date:        Sat Mar 21 22:59:35 2009 +0000
+files:       TODO libr/cons/cons.c libr/core/cmd.c
+description:
+* Fix lot of bugs with cons+grep for @@=`` or stuff like that
+* The grepping algorithm in r_cons has been rewritten from scratch
+  - Grepped at memcat() which is the root entrypoint for console IO
+  - Faster than before (200 less LOC)
+  - Not yet working at all, but it is quite better than before
+* Fix history bug when using @@
+* Use return value of filtercmd function to not invoke children core_cmd
+* Fix some random segfaults
+
+
+changeset:   91:394ed53bdf91
+user:        pancake@localhost.localdomain
+date:        Sat Mar 21 02:17:43 2009 +0000
+files:       libr/core/cmd.c
+description:
+* Minor fixups
+
+
+changeset:   90:3b4333140bee
+user:        pancake@localhost.localdomain
+date:        Fri Mar 20 21:05:12 2009 +0000
+files:       TODO libr/Makefile libr/cons/cons.c libr/core/cmd.c libr/core/visual.c libr/include/r_core.h libr/include/r_macro.h libr/macro/macro.c libr/sign/sign.c
+description:
+* Bug identified in cons with r_core_cmd_str identified
+  - We have to grep stuff when inserting it, not when flushing
+* Fix 'pd' command (initialize base address
+* Initial import of the foreach @@ syntax sugar
+  - Basic flag support, allows @@= for lists and @@.() for macros
+* Add 'g' and 'G' keys in visual
+* Fix issues in the macro engine and usage
+  - Proper identification of dupped commands
+  - Split macro name and arguments in internal structures
+  - Chop last ')' to make () and (,) macros work happily
+* Fix build of r_sign and a segfault in _free() method
+
+
+changeset:   89:eceeaf629a7a
+user:        nibble
+date:        Thu Mar 19 23:58:57 2009 +0100
+files:       libr/Makefile libr/bininfo/Makefile libr/bininfo/bininfo.c libr/config.h libr/config.mk libr/include/r_bininfo.h libr/include/r_lib.h
+description:
+* Added bininfo code base
+
+
+changeset:   88:6f9f2fbaf994
+user:        nibble
+date:        Thu Mar 19 23:22:14 2009 +0100
+files:       libr/bin/format/pe/pe.c libr/bin/format/pe/pe.h libr/bin/format/pe/pe_specs.h
+description:
+* r_bin_pe
+  - Fixed exports bug
+  - Little refactoring
+
+
+changeset:   87:0b52eecde162
+user:        nibble
+date:        Thu Mar 19 22:04:50 2009 +0100
+files:       libr/bin/bin.c libr/bin/format/elf/elf.c libr/bin/format/java/java.c libr/bin/format/java/java.h libr/bin/format/pe/pe.c libr/bin/format/pe/pe.h libr/bin/format/pe/pe64.c libr/bin/format/pe/pe64.h libr/bin/format/pe/pe_specs.h libr/bin/p/Makefile libr/bin/p/bin_elf.c libr/bin/p/bin_elf64.c libr/bin/p/bin_java.c libr/bin/p/bin_pe.c libr/bin/p/bin_pe64.c libr/bin/p/pe64.mk libr/include/r_bin.h libr/include/r_types.h
+description:
+* r_bin_elf
+  - Huge refactoring
+* r_bin_pe
+  - Initial work on pe32+ plugin
+* r_bin_java
+  - Use macro instead of ntohs
+  - Minor fixups
+  - Added dummy show_info function
+* r_types
+  - Types fixup
+
+
+changeset:   86:106204796939
+user:        pancake@localhost.localdomain
+date:        Tue Mar 17 22:06:50 2009 +0000
+files:       libr/config/config.c libr/core/cmd.c libr/core/config.c libr/core/core.c
+description:
+* Run callback when defining keys in config
+  - Add asm_arch and asm_parser callbacks
+* Run config_init at the end of core init
+* Do not force disassembler to be x86-only
+  - Add the disassembler initialization in config
+  - Detect invalid disassembling
+  - Only parse when asm.pseudo is enabled
+
+
+changeset:   85:b7ed74e69c77
+user:        nibble
+date:        Tue Mar 17 00:34:45 2009 +0100
+files:       libr/bin/bin.c libr/bin/format/java/java.c libr/bin/format/java/java.h libr/bin/p/Makefile libr/bin/p/bin_java.c libr/bin/t/rabin2.c
+description:
+* r_bin
+  - Added generic string search support
+  - Added class format autodetection
+  - Minor fixup
+
+
+changeset:   84:04bdea1f0bda
+user:        nibble
+date:        Mon Mar 16 21:07:31 2009 +0100
+files:       libr/bin/bin.c libr/bin/format/elf/elf.c libr/bin/format/elf/elf_specs.h libr/bin/format/java/java.c libr/bin/format/java/java.h libr/bin/format/pe/pe.c libr/bin/format/pe/pe_specs.h libr/bin/p/Makefile libr/bin/p/bin_elf.c libr/bin/p/bin_elf64.c libr/bin/p/bin_java.c libr/bin/p/bin_pe.c libr/bin/p/elf/elf.c libr/bin/p/elf/elf.h libr/bin/p/elf/elf64.c libr/bin/p/elf/elf64.h libr/bin/p/elf/elf_specs.h libr/bin/p/mach0/mach0.c libr/bin/p/mach0/mach0.h libr/bin/p/pe/pe.c libr/bin/p/pe/pe.h libr/bin/p/pe/pe_specs.h libr/bin/t/rabin2.c libr/include/r_bin.h
+description:
+* r_bin
+  - Removed unnecessary files
+  - Added initial java support (baddr, entry, syms, strings)
+  - Minor fixups in r_bin_{elf, pe}
+  - Added rabin2 -z for strings (not working yet)
+
+
+changeset:   83:13739dfa55e9
+user:        nibble
+date:        Mon Mar 16 08:51:20 2009 +0100
+files:       libr/bin/format/java/java.c libr/bin/format/java/java.h
+description:
+* More work on r_bin_java
+
+
+changeset:   82:06e105df1c9b
+user:        pancake@localhost.localdomain
+date:        Sun Mar 15 13:14:09 2009 +0000
+files:       libr/cons/cons.c
+description:
+* Add support for multiple grep keywords
+  pd~call!jmp!jne ; (split with '!')
+
+
+changeset:   81:325cdf3041ba
+user:        pancake@localhost.localdomain
+date:        Sat Mar 14 11:39:37 2009 +0000
+files:       TODO libr/anal/anal.c libr/cons/color.c libr/cons/cons.c libr/cons/input.c libr/core/cmd.c libr/include/r_anal.h libr/reg/README libr/reg/reg.c libr/search/xrefs.c libr/sign/sign.c libr/sign/t/Makefile libr/sign/t/rasign.c
+description:
+* Add constructor/destructor for r_anal and r_sign
+  - Add rasign test program for r_sign
+* Minor code cleanup in cons
+* Cleanup and sort commands in help message
+* Make oobi input work as command interpreter
+  - Add r_core_cmd_buffer
+* Some basic design workup for xrefs search engine
+
+
+changeset:   80:6efe36530766
+user:        pancake@flubox
+date:        Fri Mar 13 12:28:36 2009 +0100
+files:       libr/core/cmd.c libr/include/r_util.h libr/macro/macro.c libr/print/print.c libr/util/Makefile libr/util/prof.c
+description:
+* Add ?z and ?t commands in r2
+  - ?z stands for strlen (zero length is true)
+  - ?t stands for 'time profiling' for commands
+    > ?t.(run-profiled-macro)
+    > ?tpd 20
+    > ?t33x 128
+    ...
+* Add r_prof stuff inside r_util
+* Fix hexdump when color is disabled
+
+
+changeset:   79:529f81f96be8
+user:        pancake@localhost.localdomain
+date:        Fri Mar 13 10:39:54 2009 +0000
+files:       libr/Makefile libr/include/r_trace.h libr/include/r_types.h libr/include/r_util.h libr/trace/Makefile libr/trace/trace.c
+description:
+* Major refactoring work done for r_trace
+  - Now build by default with the rest of libr
+  - drop read_at dependency for r_trace
+* Some stuff has been moved from r_util to r_types
+  - max/min int values and so on
+  - eprintf lives there now
+
+
+changeset:   78:c40889ff52cb
+user:        pancake@localhost.localdomain
+date:        Thu Mar 12 22:19:58 2009 +0000
+files:       TODO libr/core/cmd.c libr/core/config.c libr/core/core.c libr/include/r_lang.h
+description:
+* Initial implementation of 'sa' command
+  - Accepts a 2nd blocksize argument
+  - Fix algorithm used in r_core_seek_align to work with 'sa'
+* Fix issue with 's+' and 's +' expressions
+* Clean up some warnings + minor bugs
+
+
+changeset:   77:c9e1a57279d2
+user:        pancake@localhost.localdomain
+date:        Thu Mar 12 12:34:57 2009 +0000
+files:       libr/core/cmd.c
+description:
+* Remove '<' and '>' commands.
+  Just will use 'sa' in the future..must think, but atm keep it clean
+
+
+changeset:   76:70beafb30a7e
+user:        pancake@localhost.localdomain
+date:        Thu Mar 12 12:30:32 2009 +0000
+files:       TODO libr/core/cmd.c libr/core/core.c libr/core/visual.c libr/include/r_core.h libr/print/print.c libr/print/t/hex.c libr/util/Makefile libr/util/float.c libr/util/num.c
+description:
+* Added '>' and '<' keys in visual
+  - implemented core_seek_align function
+* Added '<' and '>' commands, but they are not yet working
+  - Should be renamed to 'sa' (seek aligned)
+* Fix hexdump ascii column color issue
+* Fix print/t/hex hexample
+* Add some dummy floating stuff for r_util
+* Use IFDBG instead of custom 'D' in util/num.c
+
+
+changeset:   75:278a8dbe6259
+user:        pancake@localhost.localdomain
+date:        Thu Mar 12 02:03:18 2009 +0000
+files:       env.sh libr/core/cmd.c libr/core/config.c libr/core/core.c libr/core/t/radare2.c libr/core/visual.c
+description:
+* Fix scrolling in visual (drop s eip in cmd.vprompt)
+* Add cmd.visual that runs when entering in visual mode
+
+
+changeset:   74:3bdcf4408842
+user:        pancake@localhost.localdomain
+date:        Thu Mar 12 01:42:35 2009 +0000
+files:       TODO libr/config/config.c libr/config/t/test.c libr/core/cmd.c libr/core/config.c libr/include/r_config.h libr/include/r_flags.h libr/include/r_print.h libr/print/print.c libr/print/t/fmt.c
+description:
+* Fix api for config_set_cb
+  - Now every callback gets a *user pointer
+  - Define full api in r_config.h with R_API
+  - Added scr.color in radare2
+  - Added po, pu, pU and pS print modes in r2
+* Add r_print_unset_flags helper
+* Fix urlencoding print mode
+* Add test program for r_print_format
+* Fix build O:)
+
+
+changeset:   73:3d2cf803ace9
+user:        pancake@localhost.localdomain
+date:        Thu Mar 12 00:42:32 2009 +0000
+files:       TODO libr/config.h libr/include/r_print.h libr/include/r_types.h libr/include/r_util.h libr/print/Makefile libr/print/date.c libr/print/format.c libr/print/print.c
+description:
+* Add R_INLINE in config.h
+* Add R_API directive in r_types
+* Huge refactoring for r_print
+  - C code format
+  - formatted memory structures also working (not finished)
+  - unix, dos and w32 timestamps
+  - Added p->interrupt to break loong loops (should we think in a limit?)
+  - print formats that need processing returns the number of bytes processed
+    - if they return 0 is because they failed
+  - Much more simplified code than the one in r1
+  - Use p->printf instead of r_cons_printf (aim to independize from r_cons)
+  - Some basic support for color output
+
+
+changeset:   72:ef8bfd19b7b5
+user:        pancake@localhost.localdomain
+date:        Wed Mar 11 11:42:11 2009 +0000
+files:       libr/core/cmd.c libr/core/core.c libr/core/visual.c libr/include/r_core.h libr/include/r_print.h libr/print/format.c libr/print/print.c libr/print/t/Makefile libr/print/t/hex.c
+description:
+* Refactoring of the r_print module
+  - State-aware now
+  - Sync examples and r_core
+
+
+changeset:   71:614116e4f481
+user:        nibble
+date:        Wed Mar 11 01:11:50 2009 +0100
+files:       libr/bin/Makefile libr/bin/format/elf/elf.c libr/bin/format/elf/elf.h libr/bin/format/elf/elf64.c libr/bin/format/elf/elf64.h libr/bin/format/elf/elf_specs.h libr/bin/format/java/java.c libr/bin/format/java/java.h libr/bin/format/mach0/mach0.c libr/bin/format/mach0/mach0.h libr/bin/format/pe/pe.c libr/bin/format/pe/pe.h libr/bin/format/pe/pe_specs.h libr/bin/p/Makefile libr/bin/p/bin_java.c libr/bin/p/elf.mk libr/bin/p/elf64.mk libr/bin/p/java.mk libr/bin/p/pe.mk libr/bin/t/rabin2.c libr/include/r_bin.h
+description:
+* r_bin
+  - rabin2 -p replaced by -f
+  - Changed folder structure
+  - Initial work in java plugin
+  - Minor fixups
+
+
+changeset:   70:b03ddb44e518
+user:        pancake@localhost.localdomain
+date:        Tue Mar 10 21:58:00 2009 +0000
+files:       Makefile config.mk libr/TODO libr/config.mk libr/lib/Makefile libr/lib/lib.c libr/rules.mk libr/util/file.c
+description:
+* Initial fixup for default LIBR_PLUGINS on installed r_lib
+* Initial work to simplify build porting for OSX and W32
+
+
+changeset:   69:15c6b63629df
+user:        nibble
+date:        Tue Mar 10 12:21:46 2009 +0100
+files:       libr/Makefile libr/asm/p/Makefile libr/asm/p/asm_bf.c libr/asm/p/asm_dummy.c libr/asm/p/asm_ppc.c libr/asm/p/asm_sparc.c libr/bin/bin.c libr/bin/p/Makefile libr/bin/p/bin_elf.c libr/bin/p/bin_elf64.c libr/bin/p/bin_pe.c libr/include/r_asm.h libr/search/t/Makefile
+description:
+* Several fixups
+
+
+changeset:   68:fffb8ebbbf2e
+user:        pancake@localhost.localdomain
+date:        Tue Mar 10 01:49:24 2009 +0000
+files:       doc/lang-plugins libr/Makefile libr/README libr/asm/asm.c libr/asm/p/asm_arm.c libr/asm/p/asm_csr.c libr/asm/p/asm_m68k.c libr/asm/p/asm_ppc.c libr/asm/p/asm_sparc.c libr/asm/p/asm_x86.c libr/asm/p/asm_x86_bea.c libr/asm/p/asm_x86_olly.c libr/config.h libr/config.mk libr/include/r_asm.h libr/lib/lib.c libr/libr.pc.acr libr/sign/sign.c libr/syscall/TODO libr/vapi/libr.deps libr/vapi/libr.vapi libr/vapi/r_asm.vapi libr/vapi/r_util.vapi
+description:
+* Add random documentation for dynamic language plugins
+* Properly installation of vapi files
+  - Lot of fixtures to build a external hello world in gtk+vala+r_asm
+  - default staticplugins for r_asm are:
+    mips, java and x86_olly by default
+  - Add r_util.vapi and make .pc file point to -lr_util
+  - Use .deps to generate dependencies between vapi files
+  - Fix r_asm.vapi (Added Asm.Aop struct)
+    - add set(string) method
+    - asm/disasm -> assemble/disassemble
+* Fix warning + build in sign.c
+  - Included in default build
+* Fix segfault in r_lib with NULL in opendir()
+* More fixtures for r_asm_plugin_*
+  - use #ifndef CORELIB
+  - drop 'static'
+* Update README
+
+
+changeset:   67:887b9eb2b8d6
+user:        pancake@flubox
+date:        Mon Mar 09 16:54:57 2009 +0100
+files:       libr/socket/socket.c
+description:
+* Add non-block socket support for Windows(R) platform
+
+
+changeset:   66:6e1f9ca028f2
+parent:      65:969dfa49be39
+parent:      64:19831e98c217
+user:        pancake@localhost.localdomain
+date:        Mon Mar 09 13:13:44 2009 +0000
+description:
+* Merge heads
+
+
+changeset:   65:969dfa49be39
+parent:      63:43c8fd060651
+user:        pancake@localhost.localdomain
+date:        Mon Mar 09 13:08:53 2009 +0000
+files:       libr/Makefile libr/core/cmd.c libr/flags/flags.c libr/libr.pc libr/libr.pc.acr
+description:
+* Fix generation and installation of the libr.pc pkg-config file
+* Fix parsing of 'f' command as help specifies (already done in r1)
+  - get size and offset as 2nd and 3rd args
+* Do not hardcode flag size to '1' (use argument given)
+
+
+changeset:   64:19831e98c217
+user:        nibble
+date:        Mon Mar 09 13:03:42 2009 +0100
+files:       libr/asm/asm.c libr/asm/p/Makefile libr/asm/p/x86bea.mk libr/bin/Makefile libr/bin/bin.c libr/bin/p/Makefile libr/bin/p/elf.mk libr/bin/p/elf64.mk libr/bin/p/pe.mk libr/config.h libr/config.mk libr/include/r_bin.h libr/lib/lib.c
+description:
+* Added 'static-plugin' feature to r_bin module
+* Minor fixups in r_asm build
+* Added missing IFDBG in lib.c
+
+
+changeset:   63:43c8fd060651
+user:        pancake@localhost.localdomain
+date:        Mon Mar 09 02:03:32 2009 +0000
+files:       README TODO libr/asm/arch/java/javasm/javasm.c libr/asm/p/Makefile libr/asm/p/x86bea.mk libr/config.h libr/core/cmd.c libr/core/config.c
+description:
+* Fix warn in javasm.c
+* Fix asm_x86 makefile rule dup
+* Fix build of x86_bea plugin
+* Add asm.offset and asm.bytes in r_core
+
+
+changeset:   62:c33fb5c337d3
+user:        pancake@localhost.localdomain
+date:        Mon Mar 09 01:14:50 2009 +0000
+files:       Makefile doc/rgraph libr/Makefile libr/bin/bin.c libr/search/t/Makefile libr/search/t/rafind2.c
+description:
+* Add rafind2 utility
+  - Commandline utility to perform searchs on multiple files
+* Fix build or r_bin
+* Add doc/rgraph
+* Show prefix in 'install'
+* Fix 'install' inside libr/
+
+
+changeset:   61:a246015b4954
+parent:      59:d06f7ca5587d
+parent:      60:33f5cad098fb
+user:        pancake@localhost.localdomain
+date:        Sun Mar 08 23:49:49 2009 +0000
+description:
+* Oops merge!
+
+
+changeset:   60:33f5cad098fb
+parent:      58:bde79be74874
+user:        nibble
+date:        Sun Mar 08 21:41:02 2009 +0100
+files:       libr/include/r_types.h libr/lib/lib.c
+description:
+* Fixed IFDBG Macro
+* r_lib debug messages enabled through -DR_DEBUG
+
+
+changeset:   59:d06f7ca5587d
+user:        pancake@localhost.localdomain
+date:        Sun Mar 08 23:49:15 2009 +0000
+files:       doc/static-plugins libr/asm/Makefile libr/asm/asm.c libr/asm/p/Makefile libr/asm/p/arm.mk libr/asm/p/asm_bf.c libr/asm/p/asm_java.c libr/asm/p/asm_mips.c libr/asm/p/bf.mk libr/asm/p/csr.mk libr/asm/p/dummy.mk libr/asm/p/java.mk libr/asm/p/m68k.mk libr/asm/p/mips.mk libr/asm/p/ppc.mk libr/asm/p/sparc.mk libr/asm/p/x86.mk libr/asm/p/x86bea.mk libr/asm/p/x86olly.mk libr/asm/t/rasm2.c libr/bin/bin.c libr/config.h libr/config.mk libr/include/r_asm.h
+description:
+* Add 'static-plugin' feature to r_asm module
+* Make rabin2 support 'arm' instead of 'asm_arm' for -a (autoprefix 'asm_')
+* Some build fixtures
+* Static plugins are configurable in libr/config.mk and libr/config.h
+
+
+changeset:   58:bde79be74874
+user:        nibble
+date:        Sun Mar 08 18:29:21 2009 +0100
+files:       libr/bin/bin.c libr/bin/t/rabin2.c libr/core/core.c libr/include/r_bin.h libr/include/r_core.h libr/lib/lib.c libr/parse/p/Makefile
+description:
+* r_bin
+  - r_bin_init splitted in r_bin_init and r_bin_set_file
+* r_core
+  - Fixed radare2
+* r_parse
+  - Fixed parse_mreplace build
+* r_lib
+  - Lazy dlopen by default
+
+
+changeset:   57:b0aebe30a3ea
+user:        nibble
+date:        Sun Mar 08 16:49:15 2009 +0100
+files:       libr/bin/Makefile libr/bin/bin.c libr/bin/elf.c libr/bin/elf64.c libr/bin/mach0.c libr/bin/p/Makefile libr/bin/p/bin_elf.c libr/bin/p/bin_elf64.c libr/bin/p/bin_pe.c libr/bin/p/elf/elf.c libr/bin/p/elf/elf.h libr/bin/p/elf/elf64.c libr/bin/p/elf/elf64.h libr/bin/p/elf/elf_specs.h libr/bin/p/mach0/mach0.c libr/bin/p/mach0/mach0.h libr/bin/p/pe/pe.c libr/bin/p/pe/pe.h libr/bin/p/pe/pe_specs.h libr/bin/pe.c libr/bin/t/Makefile libr/bin/t/baddr.c libr/bin/t/data_resize.c libr/bin/t/entry.c libr/bin/t/imports.c libr/bin/t/info.c libr/bin/t/rabin2.c libr/bin/t/rsz_test.sh libr/bin/t/sections.c libr/bin/t/symbols.c libr/include/r_bin.h libr/include/r_bin_elf.h libr/include/r_bin_elf64.h libr/include/r_bin_elf_specs.h libr/include/r_bin_mach0.h libr/include/r_bin_pe.h libr/include/r_bin_pe_specs.h libr/include/r_lib.h
+description:
+* r_bin
+  - Major refactoring (using r_lib infrastructure)
+  - Removed outdated test programs
+  - Updated rabin2
+
+
+changeset:   56:77692d484912
+user:        nibble
+date:        Sun Mar 08 10:37:28 2009 +0100
+files:       .hgtags
+description:
+Added tag 0.1 for changeset ae3b6b66b9de
+
+
+changeset:   55:63d804f8eba3
+user:        pancake@localhost.localdomain
+date:        Sat Mar 07 17:58:17 2009 +0000
+files:       ChangeLog Makefile
+description:
+* Sync changelog and drop RELEASE mark
 ===== RELEASE 0.1 =====
 
 changeset:   54:ae3b6b66b9de
