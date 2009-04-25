@@ -24,6 +24,15 @@ dist:
 	tar czvf radare2-${VERSION}.tar.gz $${FILES} ;\
 	mv radare2-${VERSION} radare2
 	if [ ${RELEASE} = 1 ]; then \
-	scp radare2-$${DATE}.tar.gz news.nopcode.org:/home/www/radarenopcode/get/shot ; fi
+	scp radare2-$${VERSION}.tar.gz news.nopcode.org:/home/www/radarenopcode/get/shot ; fi
+
+shot:
+	DATE=`date '+%Y%m%d'` ; \
+	FILES=`hg status -mc|cut -c 3-|sed -e s,^,radare2-$${DATE}/,`; \
+	cd .. && mv radare2 radare2-$${DATE} && \
+	tar czvf radare2-$${DATE}.tar.gz $${FILES} ;\
+	mv radare2-$${DATE} radare2 && \
+	scp radare2-$${DATE}.tar.gz news.nopcode.org:/home/www/radarenopcode/get/shot
+	
 
 .PHONY: all clean install uninstall deinstall dist
