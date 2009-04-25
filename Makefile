@@ -1,4 +1,5 @@
 include config-user.mk
+include config.mk
 
 all:
 	cd libr && make
@@ -35,4 +36,4 @@ shot:
 	scp radare2-$${DATE}.tar.gz news.nopcode.org:/home/www/radarenopcode/get/shot
 	
 
-.PHONY: all clean install uninstall deinstall dist
+.PHONY: all clean install uninstall deinstall dist shot
