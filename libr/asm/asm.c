@@ -233,6 +233,24 @@ R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 	return ret;
 }
 
+R_API u64 r_asm_mdisassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len)
+{
+	int ret;
+	u64 idx;
+	char buf_asm[R_ASM_BUFSIZE];
+	
+	for(idx = ret = 0, buf_asm[0] = '\0'; idx < len; idx+=ret) {
+		r_asm_set_pc(a, a->pc + idx);
+		if (!(ret = r_asm_disassemble(a, aop, buf+idx, len-idx)))
+			return 0;
+		strcat(buf_asm, aop->buf_asm);
+		if (idx + ret < len) strcat(buf_asm, "\n");
+	}
+	strncpy(aop->buf_asm, buf_asm, R_ASM_BUFSIZE);
+
+	return idx;
+}
+
 R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 {
 	struct {

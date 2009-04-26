@@ -42,7 +42,7 @@ struct r_asm_handle_t {
 	int (*fini)(void *user);
 	int (*disassemble)(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len);
 	int (*assemble)(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf);
-	int (*set_subarch)(struct r_asm_t *a, char *buf);
+	int (*set_subarch)(struct r_asm_t *a, const char *buf);
 	struct list_head list;
 };
 
@@ -60,6 +60,7 @@ R_API int r_asm_set_syntax(struct r_asm_t *a, int syntax);
 R_API int r_asm_set_pc(struct r_asm_t *a, u64 pc);
 R_API int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len);
 R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf);
+R_API u64 r_asm_mdisassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len);
 R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf);
 
 /* plugin pointers */

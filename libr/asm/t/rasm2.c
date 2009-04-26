@@ -36,7 +36,7 @@ static int rasm_disasm(char *buf, u64 offset, u64 len, int ascii, int bin)
 	u8 *data;
 	char *ptr = buf;
 	int ret = 0;
-	u64 idx, word = 0, clen = 0; 
+	u64 word = 0, clen = 0; 
 
 	if (bin) {
 		clen = len; //XXX
@@ -58,14 +58,11 @@ static int rasm_disasm(char *buf, u64 offset, u64 len, int ascii, int bin)
 		len = clen;
 
 
-	for(idx=ret=0; idx < len; idx+=ret) {
-		r_asm_set_pc(&a, offset + idx);
-		if (!(ret = r_asm_disassemble(&a, &aop, data+idx, len-idx)))
-			return 0;
-		printf("%s\n", aop.buf_asm);
-	}
+	if (!(ret = r_asm_mdisassemble(&a, &aop, data, len)))
+		return 0;
+	printf("%s\n", aop.buf_asm);
 
-	return (int)idx;
+	return ret;
 }
 
 static int rasm_asm(char *buf, u64 offset, u64 len, int bin)
