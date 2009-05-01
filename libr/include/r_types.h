@@ -48,7 +48,7 @@ static inline int ERR(char *str, ...)
 {
 	va_list ap;
 	va_start(ap, str);
-	fprintf(stderr, str, ap);
+	vfprintf(stderr, str, ap);
 	va_end(ap);
 	return R_FALSE;
 }

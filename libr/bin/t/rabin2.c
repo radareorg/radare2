@@ -3,7 +3,6 @@
 /* TODO:
  * -l        Linked libraries
  * -L [lib]  dlopen library and show address
- * -z        Strings
  * -x        XRefs (-s/-i/-z required)
  */
 
@@ -23,10 +22,11 @@
 #define ACTION_SYMBOLS   0x0004 
 #define ACTION_SECTIONS  0x0008 
 #define ACTION_INFO      0x0010
-#define ACTION_OPERATION 0x0020
-#define ACTION_HELP      0x0040
-#define ACTION_STRINGS   0x0080 
-#define ACTION_FIELDS    0x0100 
+#define ACTION_WRITE     0x0020
+#define ACTION_EXTRACT   0x0040 
+#define ACTION_HELP      0x0080
+#define ACTION_STRINGS   0x0100 
+#define ACTION_FIELDS    0x0200 
 
 static struct r_lib_t l;
 static struct r_bin_t bin;
@@ -43,7 +43,8 @@ static int rabin_show_help()
 			" -z          Strings\n"
 			" -I          Binary info\n"
 			" -H          Header fields\n"
-			" -o [str]    Operation action (str=help for help)\n"
+			" -w [str]    Write operation (str=help for help)\n"
+			" -x [str]    Extract operation (str=help for help)\n"
 			" -f [format] Override file format autodetection\n"
 			" -r          Radare output\n"
 			" -L          List supported bin plugins\n"
@@ -325,13 +326,85 @@ static int rabin_show_fields()
 
 }
 
-static int rabin_do_operation(const char *op)
+static int rabin_dump_symbols(int len)
+{
+	struct r_bin_symbol_t *symbols, *symbolsp;
+	int olen = len;
+	u8 *buf;
+	char *ret;
+
+	if ((symbols = r_bin_get_symbols(&bin)) == NULL)
+		return R_FALSE;
+
+	symbolsp = symbols;
+	while (!symbolsp->last) {
+		if (symbolsp->size != 0 && (olen > symbolsp->size || olen == 0))
+			len = symbolsp->size;
+		else if (symbolsp->size == 0 && olen == 0)
+			len = 32;
+		else len = olen;
+
+		if (!(buf = malloc(len)) ||
+			!(ret = malloc(len*2+1)))
+		return R_FALSE;
+		lseek(bin.fd, symbolsp->offset, SEEK_SET);
+		read(bin.fd, buf, len);
+		r_hex_bin2str(buf, len, ret);
+		printf("%s %s\n", symbolsp->name, ret);
+		free(buf);
+		free(ret);
+
+		symbolsp++;
+	}
+
+	free(symbols);
+
+	return R_TRUE;
+}
+
+static int rabin_dump_sections(char *name)
+{
+	struct r_bin_section_t *sections, *sectionsp;
+	u8 *buf;
+	char *ret;
+
+	if ((sections = r_bin_get_sections(&bin)) == NULL)
+		return R_FALSE;
+
+	sectionsp = sections;
+	while (!sectionsp->last) {
+		if (!strcmp(name, sectionsp->name)) {
+			if (!(buf = malloc(sectionsp->size)) ||
+				!(ret = malloc(sectionsp->size*2+1)))
+				return R_FALSE;
+			lseek(bin.fd, sectionsp->offset, SEEK_SET);
+			read(bin.fd, buf, sectionsp->size);
+			r_hex_bin2str(buf, sectionsp->size, ret);
+			printf("%s\n", ret);
+			free(buf);
+			free(ret);
+			break;
+		}
+		sectionsp++;
+	}
+
+	free(sections);
+
+	return R_TRUE;
+}
+
+static int rabin_do_operation(const char *op, int write)
 {
 	char *arg, *ptr, *ptr2;
 
 	if (!strcmp(op, "help")) {
-		printf("Operation string:\n"
-				"  Resize section: r/.data/1024 (ONLY ELF32)\n");
+		if (write)
+			printf( "Operation string:\n"
+					"  Resize section: r/.data/1024 (ONLY ELF)\n");
+		else
+			printf( "Operation string:\n"
+					"  Dump symbols: d/s/1024\n"
+					"  Dump section: d/S/.text\n");
 		return R_FALSE;
 	}
 	arg = alloca(strlen(op)+1);
@@ -339,19 +412,40 @@ static int rabin_do_operation(const char *op)
 
 	ptr = strchr(op, '/');
 	if (!ptr) {
-		printf("Unknown action. use -o help\n");
+		printf("Unknown operation. use -%c help\n", write?'w':'x');
 		return R_FALSE;
 	}
 
 	ptr = ptr+1;
-	switch(arg[0]) {
-	case 'r':
-		ptr2 = strchr(ptr, '/');
-		ptr2[0]='\0';
-
-		if (r_bin_resize_section(&bin, ptr, r_num_math(NULL,ptr2+1)) == 0) {
-			fprintf(stderr, "Delta = 0\n");
-			return R_FALSE;
+	if (write) {
+		switch(arg[0]) {
+		case 'r':
+			ptr2 = strchr(ptr, '/');
+			if (ptr2) {
+				ptr2[0]='\0';
+				if (r_bin_resize_section(&bin, ptr, r_num_math(NULL,ptr2+1)) == 0) {
+					fprintf(stderr, "Delta = 0\n");
+					return R_FALSE;
+				}
+			} else return R_FALSE;
+			break;
+		}
+	} else {
+		switch(arg[0]) {
+		case 'd':
+			ptr2 = strchr(ptr, '/');
+			if (ptr2) {
+				ptr2[0]='\0';
+				if (ptr[0]=='s')
+					if (!rabin_dump_symbols(r_num_math(NULL, ptr2+1)))
+						return R_FALSE;
+				if (ptr[0]=='S')
+					if (!rabin_dump_sections(ptr2+1))
+						return R_FALSE;
+			} else if (ptr[0]=='s') { 
+				if (!rabin_dump_symbols(0))
+					return R_FALSE;
+			} else return R_FALSE;
 		}
 	}
 
@@ -372,7 +466,7 @@ int main(int argc, char **argv)
 {
 	int c;
 	int action = ACTION_UNK;
-	const char *format = NULL, *op = NULL;
+	const char *format = NULL, *write_op = NULL, *extract_op = NULL;
 	char *plugin_name = NULL;
 
 	r_bin_init(&bin);
@@ -387,7 +481,7 @@ int main(int argc, char **argv)
 		r_lib_opendir(&l, LIBDIR"/radare2/");
 	}
 
-	while ((c = getopt(argc, argv, "isSzIHeo:f:rvLh")) != -1)
+	while ((c = getopt(argc, argv, "isSzIHew:x:f:rvLh")) != -1)
 	{
 		switch( c ) {
 		case 'i':
@@ -411,10 +505,14 @@ int main(int argc, char **argv)
 		case 'e':
 			action |= ACTION_ENTRY;
 			break;
-		case 'o':
-			op = optarg;
-			action |= ACTION_OPERATION;
+		case 'w':
+			write_op = optarg;
+			action |= ACTION_WRITE;
 			rw = 1;
+			break;
+		case 'x':
+			extract_op = optarg;
+			action |= ACTION_EXTRACT;
 			break;
 		case 'f':
 			format = optarg;
@@ -444,7 +542,7 @@ int main(int argc, char **argv)
 	} 
 
 	if (r_bin_open(&bin, file, rw, plugin_name) == R_FALSE) {
-		fprintf(stderr, "r_bin: Cannot open '%s'\n", file);
+		ERR("r_bin: Cannot open '%s'\n", file);
 		return R_FALSE;
 	}
 
@@ -465,8 +563,10 @@ int main(int argc, char **argv)
 		rabin_show_info();
 	if (action&ACTION_FIELDS)
 		rabin_show_fields();
-	if (op != NULL && action&ACTION_OPERATION)
-		rabin_do_operation(op);
+	if (write_op != NULL && action&ACTION_WRITE)
+		rabin_do_operation(write_op, 1);
+	if (extract_op != NULL && action&ACTION_EXTRACT)
+		rabin_do_operation(extract_op, 0);
 
 	r_bin_close(&bin);
 
