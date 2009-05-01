@@ -1,4 +1,4 @@
-CFLAGS=-I../../include -Wall
+CFLAGS=-I../../include -Wall -DWORDSIZE=64
 BINDEPS=
 
 all: io_ptrace.so io_dbg.so io_malloc.so io_shm.so

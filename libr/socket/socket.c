@@ -251,6 +251,12 @@ int r_socket_accept(int fd)
 	return accept(fd, NULL, NULL);
 }
 
+int r_socket_flush(int fd)
+{
+	/* TODO */
+}
+
+
 int r_socket_fgets(int fd, char *buf,  int size)
 {
 	int i = 0;
@@ -261,9 +267,8 @@ int r_socket_fgets(int fd, char *buf,  int size)
 
 	while(i<size-1) {
 		ret = r_socket_read(fd, (u8 *)buf+i, 1);
-		if (ret==0) {
+		if (ret==0)
 			return -1;
-		}
 		if (ret<0) {
 			r_socket_close(fd);
 			return -1;

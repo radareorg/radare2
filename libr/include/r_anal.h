@@ -8,6 +8,8 @@
 #include "r_types.h"
 #include "list.h"
 
+#define R_ANAL_MAXREG 16
+
 enum {
 	R_ANAL_AOP_FAMILY_UNKNOWN = 0,
 	R_ANAL_AOP_FAMILY_CPU,  /* normal cpu insturction */
@@ -92,18 +94,23 @@ struct r_anal_refline_t {
 };
 
 struct r_anal_aop_t {
-	int type;                /* type of opcode */
-	int stackop;             /* operation on stack? */
-	int length;              /* length in bytes of opcode */
-	int family;              /* family of opcode */
-	int eob;                 /* end of block (boolean) */
-	u64 jump;                /* true jmp */
-	u64 fail;                /* false jmp */
-	u64 ref;                 /* reference to memory */
-	u64 value;               /* reference to value */
-	int r_dst,r_src1,r_src2; /* register arguments */
-	u64 i_dst,i_src1,i_src2; /* inmediate arguments */
+	int type;                 /* type of opcode */
+	int stackop;              /* operation on stack? */
+	int length;               /* length in bytes of opcode */
+	int family;               /* family of opcode */
+	int eob;                  /* end of block (boolean) */
+	u64 jump;                 /* true jmp */
+	u64 fail;                 /* false jmp */
+	u64 ref;                  /* reference to memory */
+	u64 value;                /* reference to value */
+	int r_dst[R_ANAL_MAXREG]; /* register arguments */
+	u64 i_dst[R_ANAL_MAXREG]; /* inmediate arguments */
 };
+
+struct r_anal_fcn_t {
+	u64 from;
+	u64 to;
+}
 
 struct r_anal_ctx_t {
 	/* TODO: add more info here */

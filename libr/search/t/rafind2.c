@@ -28,16 +28,18 @@ static int nonstop = 0;
 static int mode = R_SEARCH_KEYWORD;
 static u64 cur = 0;
 static char *buffer = NULL;
+static char *curfile = NULL;
 static u64 bsize = 4096;
+static int hexstr = 0;
 
 static int hit(struct r_search_kw_t *kw, void *user, u64 addr)
 {
 	const u8 *buf = (u8*)user;
 	int delta = addr-cur;
 	if (rad) {
-		printf("f hit%d_%d 0x%08llx\n", 0, kw->count, addr);
+		printf("f hit%d_%d 0x%08llx ; %s\n", 0, kw->count, addr, curfile);
 	} else {
-		printf("==> HIT %d AT %lld\n", kw->count, addr);
+		printf("==> HIT %d AT 0x%llx ; %s\n", kw->count, addr, curfile);
 		if (hexdump) {
 			r_print_hexdump(addr, buffer+delta, 16, 78, R_TRUE);
 			r_cons_flush();
@@ -82,11 +84,14 @@ int radiff_open(char *file)
 		to = r_io_size(&io, fd);
 	}
 	if (mode == R_SEARCH_KEYWORD) {
-		r_search_kw_add(rs, str, mask);
+		if (hexstr)
+			r_search_kw_add_hex(rs, str, mask);
+		else r_search_kw_add(rs, str, mask);
 	}
+	curfile = file;
 	r_search_begin(rs);
 	r_io_lseek(&io, fd, from, R_IO_SEEK_SET);
-	printf("; %s 0x%08llx-0x%08llx\n", file, from, to);
+	//printf("; %s 0x%08llx-0x%08llx\n", file, from, to);
 	for(cur=from; !last && cur<to;cur+=bsize) {
 		if ((cur+bsize)>to) {
 			bsize = to-cur;
@@ -95,7 +100,7 @@ int radiff_open(char *file)
 		int ret = r_io_read(&io, fd, buffer, bsize);
 		if (ret == 0) {
 			if (nonstop) continue;
-			fprintf(stderr, "Error reading at 0x%08llx\n", cur);
+		//	fprintf(stderr, "Error reading at 0x%08llx\n", cur);
 			return 1;
 		}
 		if (ret != bsize)
@@ -120,6 +125,7 @@ int main(int argc, char **argv)
 		case 's':
 			mode = R_SEARCH_KEYWORD;
 			str = optarg;
+			hexstr = 0;
 			break;
 		case 'b':
 			bsize = r_num_math(NULL, optarg);
@@ -129,6 +135,7 @@ int main(int argc, char **argv)
 			break;
 		case 'x':
 			mode = R_SEARCH_KEYWORD;
+			hexstr = 1;
 			str = optarg;
 			break;
 		case 'm':
