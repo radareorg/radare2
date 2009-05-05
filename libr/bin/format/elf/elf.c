@@ -828,10 +828,12 @@ u64 ELF_(r_bin_elf_resize_section)(ELF_(r_bin_elf_obj) *bin, const char *name, u
 
 	/* rewrite program headers */
 	for (i = 0, phdrp = phdr; i < ehdr->e_phnum; i++, phdrp++) {
+#if 0 
 		if (phdrp->p_offset < rsz_offset && phdrp->p_offset + phdrp->p_filesz > rsz_offset) {
 			phdrp->p_filesz += delta;
 			phdrp->p_memsz += delta;
 		}
+#endif 
 		if (phdrp->p_offset >= rsz_offset + rsz_osize) {
 			phdrp->p_offset += delta;
 			if (phdrp->p_vaddr) phdrp->p_vaddr += delta;
