@@ -1,0 +1,10 @@
+OBJ_DUMMY=bin_dummy.o
+
+STATIC_OBJ+=${OBJ_DUMMY}
+TARGET_DUMMY=bin_dummy.so
+
+ALL_TARGETS+=${TARGET_DUMMY}
+
+${TARGET_DUMMY}: ${OBJ_DUMMY}
+	${CC} ${CFLAGS} -o ${TARGET_DUMMY} ${OBJ_DUMMY}
+	@#strip -s ${TARGET_DUMMY}

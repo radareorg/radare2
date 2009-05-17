@@ -51,6 +51,7 @@ static struct r_bin_string_t *get_strings(struct r_bin_t *bin, int min)
 				str[matches] = '\0';
 				ret[ctr].rva = ret[ctr].offset = i-matches;
 				ret[ctr].size = matches;
+				ret[ctr].ordinal = ctr;
 				memcpy(ret[ctr].string, str, R_BIN_SIZEOF_NAMES);
 				ret[ctr].string[R_BIN_SIZEOF_NAMES-1] = '\0';
 				ret[ctr].last = 0;
@@ -125,7 +126,7 @@ int r_bin_list(struct r_bin_t *bin)
 int r_bin_open(struct r_bin_t *bin, const char *file, int rw, char *plugin_name)
 {
 	if (file != NULL)
-		bin->file = strdup(file);
+		bin->file = file;
 	else return R_FALSE;
 	bin->rw = rw;
 
@@ -139,8 +140,9 @@ int r_bin_open(struct r_bin_t *bin, const char *file, int rw, char *plugin_name)
 
 	if (bin->cur && bin->cur->open)
 		return bin->cur->open(bin);
-	
-	return R_FALSE;
+	if (plugin_name && !strcmp(plugin_name, "bin_dummy"))
+		return R_FALSE;
+	return r_bin_open(bin, file, rw, "bin_dummy");
 }
 
 int r_bin_close(struct r_bin_t *bin)

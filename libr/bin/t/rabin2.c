@@ -22,11 +22,10 @@
 #define ACTION_SYMBOLS   0x0004 
 #define ACTION_SECTIONS  0x0008 
 #define ACTION_INFO      0x0010
-#define ACTION_WRITE     0x0020
-#define ACTION_EXTRACT   0x0040 
-#define ACTION_HELP      0x0080
-#define ACTION_STRINGS   0x0100 
-#define ACTION_FIELDS    0x0200 
+#define ACTION_OPERATION 0x0020
+#define ACTION_HELP      0x0040
+#define ACTION_STRINGS   0x0080 
+#define ACTION_FIELDS    0x0100 
 
 static struct r_lib_t l;
 static struct r_bin_t bin;
@@ -43,10 +42,10 @@ static int rabin_show_help()
 			" -z          Strings\n"
 			" -I          Binary info\n"
 			" -H          Header fields\n"
-			" -w [str]    Write operation (str=help for help)\n"
-			" -x [str]    Extract operation (str=help for help)\n"
+			" -o [str]    Write/Extract operations (str=help for help)\n"
 			" -f [format] Override file format autodetection\n"
 			" -r          Radare output\n"
+			" -w          Open file in rw mode\n"
 			" -L          List supported bin plugins\n"
 			" -h          This help\n");
 
@@ -393,60 +392,63 @@ static int rabin_dump_sections(char *name)
 	return R_TRUE;
 }
 
-static int rabin_do_operation(const char *op, int write)
+static int rabin_do_operation(const char *op)
 {
-	char *arg, *ptr, *ptr2;
+	char *arg = NULL, *ptr = NULL, *ptr2 = NULL;
 
 	if (!strcmp(op, "help")) {
-		if (write)
-			printf( "Operation string:\n"
-					"  Resize section: r/.data/1024 (ONLY ELF)\n");
-		else
-			printf( "Operation string:\n"
-					"  Dump symbols: d/s/1024\n"
-					"  Dump section: d/S/.text\n");
+		printf( "Operation string:\n"
+				"  Dump symbols: d/s/1024\n"
+				"  Dump section: d/S/.text\n"
+				"  Resize section: r/.data/1024\n");
 		return R_FALSE;
 	}
 	arg = alloca(strlen(op)+1);
 	strcpy(arg, op);
 
-	ptr = strchr(op, '/');
-	if (!ptr) {
-		printf("Unknown operation. use -%c help\n", write?'w':'x');
-		return R_FALSE;
+	if ((ptr = strchr(arg, '/'))) {
+		ptr[0] = '\0';
+		ptr = ptr + 1;
+		if ((ptr2 = strchr(ptr, '/'))) {
+			ptr2[0] = '\0';
+			ptr2 = ptr2 + 1;
+		}
 	}
 
-	ptr = ptr+1;
-	if (write) {
-		switch(arg[0]) {
-		case 'r':
-			ptr2 = strchr(ptr, '/');
-			if (ptr2) {
-				ptr2[0]='\0';
-				if (r_bin_resize_section(&bin, ptr, r_num_math(NULL,ptr2+1)) == 0) {
-					fprintf(stderr, "Delta = 0\n");
-					return R_FALSE;
-				}
-			} else return R_FALSE;
-			break;
+	switch(arg[0]) {
+	case 'r':
+		if (!rw) {
+			printf("File must be opened in rw mode\n");
+			return R_FALSE;
 		}
-	} else {
-		switch(arg[0]) {
-		case 'd':
-			ptr2 = strchr(ptr, '/');
+		if (!ptr || !ptr2)
+			goto _rabin_do_operation_error;
+		if (r_bin_resize_section(&bin, ptr, r_num_math(NULL,ptr2)) == 0) {
+			fprintf(stderr, "Delta = 0\n");
+			return R_FALSE;
+		}
+		break;
+	case 'd':
+		if (!ptr)
+			goto _rabin_do_operation_error;
+		if (ptr[0]=='s') {
 			if (ptr2) {
-				ptr2[0]='\0';
-				if (ptr[0]=='s')
-					if (!rabin_dump_symbols(r_num_math(NULL, ptr2+1)))
-						return R_FALSE;
-				if (ptr[0]=='S')
-					if (!rabin_dump_sections(ptr2+1))
-						return R_FALSE;
-			} else if (ptr[0]=='s') { 
+				if (!rabin_dump_symbols(r_num_math(NULL, ptr2)))
+					return R_FALSE;
+			} else 
 				if (!rabin_dump_symbols(0))
 					return R_FALSE;
-			} else return R_FALSE;
-		}
+		} else if (ptr[0]=='S') {
+			if (!ptr2)
+				goto _rabin_do_operation_error;
+			if (!rabin_dump_sections(ptr2))
+				return R_FALSE;
+		} else goto _rabin_do_operation_error;
+		break;
+	default:
+	_rabin_do_operation_error:
+		printf("Unknown operation. use -o help\n");
+		return R_FALSE;
 	}
 
 	return R_TRUE;
@@ -466,7 +468,7 @@ int main(int argc, char **argv)
 {
 	int c;
 	int action = ACTION_UNK;
-	const char *format = NULL, *write_op = NULL, *extract_op = NULL;
+	const char *format = NULL, *op = NULL;
 	char *plugin_name = NULL;
 
 	r_bin_init(&bin);
@@ -481,7 +483,7 @@ int main(int argc, char **argv)
 		r_lib_opendir(&l, LIBDIR"/radare2/");
 	}
 
-	while ((c = getopt(argc, argv, "isSzIHew:x:f:rvLh")) != -1)
+	while ((c = getopt(argc, argv, "isSzIHewo:f:rvLh")) != -1)
 	{
 		switch( c ) {
 		case 'i':
@@ -506,13 +508,11 @@ int main(int argc, char **argv)
 			action |= ACTION_ENTRY;
 			break;
 		case 'w':
-			write_op = optarg;
-			action |= ACTION_WRITE;
 			rw = 1;
 			break;
-		case 'x':
-			extract_op = optarg;
-			action |= ACTION_EXTRACT;
+		case 'o':
+			op = optarg;
+			action |= ACTION_OPERATION;
 			break;
 		case 'f':
 			format = optarg;
@@ -563,10 +563,8 @@ int main(int argc, char **argv)
 		rabin_show_info();
 	if (action&ACTION_FIELDS)
 		rabin_show_fields();
-	if (write_op != NULL && action&ACTION_WRITE)
-		rabin_do_operation(write_op, 1);
-	if (extract_op != NULL && action&ACTION_EXTRACT)
-		rabin_do_operation(extract_op, 0);
+	if (op != NULL && action&ACTION_OPERATION)
+		rabin_do_operation(op);
 
 	r_bin_close(&bin);
 

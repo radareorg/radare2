@@ -22,6 +22,7 @@
 	&r_bin_plugin_pe , \
 	&r_bin_plugin_pe64 , \
 	&r_bin_plugin_java , \
+	&r_bin_plugin_dummy , \
 	0
 
 #define R_BININFO_STATIC_PLUGINS \

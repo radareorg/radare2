@@ -5,7 +5,7 @@ CFLAGS+=-DLIL_ENDIAN=1 -D__UNIX__ -g -DR_DEBUG=0
 foo: all
 
 ALL_TARGETS=
-FORMATS=elf.mk elf64.mk pe.mk pe64.mk java.mk
+FORMATS=elf.mk elf64.mk pe.mk pe64.mk java.mk dummy.mk
 include $(FORMATS)
 
 all: ${ALL_TARGETS}

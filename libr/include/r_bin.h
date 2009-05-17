@@ -144,5 +144,6 @@ extern struct r_bin_handle_t r_bin_plugin_elf64;
 extern struct r_bin_handle_t r_bin_plugin_pe;
 extern struct r_bin_handle_t r_bin_plugin_pe64;
 extern struct r_bin_handle_t r_bin_plugin_java;
+extern struct r_bin_handle_t r_bin_plugin_dummy;
 
 #endif
