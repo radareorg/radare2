@@ -209,19 +209,18 @@ static u64 resize_section(struct r_bin_t *bin, char *name, u64 size)
 #if !R_BIN_ELF64
 static int check(struct r_bin_t *bin)
 {
-	u8 buf[1024];
+	int ret = R_FALSE;
+	u8 buf[8];
 
-	if ((bin->fd = open(bin->file, 0)) == -1)
-		return R_FALSE;
-	lseek(bin->fd, 0, SEEK_SET);
-	read(bin->fd, buf, 1024);
-	close(bin->fd);
-
-	if (!memcmp(buf, "\x7F\x45\x4c\x46", 4) &&
-		buf[4] == 1)  /* buf[EI_CLASS] == ELFCLASS32 */
-		return R_TRUE;
-	
-	return R_FALSE;
+	if ((bin->fd = open(bin->file, 0)) != -1) {
+		lseek(bin->fd, 0, SEEK_SET);
+		read(bin->fd, buf, 8);
+		close(bin->fd);
+		/* buf[EI_CLASS] == ELFCLASS32 */
+		if (!memcmp(buf, "\x7F\x45\x4c\x46\x01", 5))
+			ret = R_TRUE;
+	}
+	return ret;
 }
 
 struct r_bin_handle_t r_bin_plugin_elf = {

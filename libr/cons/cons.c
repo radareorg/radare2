@@ -424,18 +424,17 @@ R_API int r_cons_yesno(int def, const char *fmt, ...)
 {
 	va_list ap;
 	int key = def;
-
 	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	fflush(stderr);
 	r_cons_set_raw(1);
 	read(0, &key, 1); write(2, "\n", 1);
+	if (key == 'Y') key = 'y';
 	r_cons_set_raw(0);
 	if (key=='\n'||key=='\r')
 		key = def;
 	else key = 'y';
-
 	return key=='y';
 }
 

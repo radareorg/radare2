@@ -407,6 +407,7 @@ R_API int r_vm_eval_single(struct r_vm_t *vm, const char *str)
 	ptr = alloca(len);
 	memcpy(ptr, str, len);
 	
+/* TODO: sync with r1 */
 	eq = strchr(ptr, '=');
 	if (eq) {
 		eq[0]='\0';

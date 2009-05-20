@@ -254,9 +254,9 @@ R_API u64 r_asm_mdisassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf
 R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 {
 	struct {
-		char name[256];
+		char name[32];
 		u64 offset;
-	} flags[1024];
+	} flags[512]; /* XXX: dinamic length */
 	char *lbuf = NULL, *ptr = NULL, *ptr_start = NULL, *label_name = NULL,
 		 *tokens[R_ASM_BUFSIZE], buf_hex[R_ASM_BUFSIZE],
 		 buf_token[R_ASM_BUFSIZE], buf_token2[R_ASM_BUFSIZE];

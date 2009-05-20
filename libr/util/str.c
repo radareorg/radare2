@@ -19,7 +19,7 @@ static int hex2int (unsigned char *val, unsigned char c)
 	return 0;
 }
 
-/* TODO: port to w32 */
+/* TODO: port to w32 and move outside r_str namespace? */
 char *r_str_home(const char *str)
 {
 	const char *home = getenv("HOME");
@@ -60,6 +60,7 @@ R_API int r_str_word_set0(char *str)
         char *p;
         if (str[0]=='\0')
                 return 0;
+	/* TODO: sync with r1 code */
         for(i=1,p=str;p[0];p=p+1)if(*p==' '){i++;*p='\0';} // s/ /\0/g
         return i;
 }
@@ -380,6 +381,34 @@ int r_str_escape(char *buf)
 	}
 	return i;
 }
+
+/* ansi helpers */
+R_API int r_str_ansi_len(const char *str)
+{
+	int i=0, len = 0;
+	while(str[i]) {
+		if (str[i]==0x1b && str[i+1]=='[')
+			for(++i;str[i]&&str[i]!='J'&&str[i]!='m'&&str[i]!='H';i++);
+		else len++;
+		i++;
+	}
+	return len;
+}
+
+R_API const char *r_str_ansi_chrn(const char *str, int n)
+{
+	int i=0, len = 0;
+	while(str[i]) {
+		if (n == len)
+			break;
+		if (str[i]==0x1b && str[i+1]=='[')
+			for(++i;str[i]&&str[i]!='J'&&str[i]!='m'&&str[i]!='H';i++);
+		else len++;
+		i++;
+	}
+	return str+i;
+}
+
 
 #if 0
 int r_str_argv_parse(const char *str, int argc, char **argv)
