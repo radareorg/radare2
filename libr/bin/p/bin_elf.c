@@ -92,7 +92,7 @@ static struct r_bin_symbol_t* symbols(struct r_bin_t *bin)
 		return NULL;
 	memset(ret, '\0', (symbols_count + 1) * sizeof(struct r_bin_symbol_t));
 
-	ELF_(r_bin_elf_get_symbols)(bin->bin_obj,symbol);
+	ELF_(r_bin_elf_get_symbols)(bin->bin_obj, symbol);
 
 	for (i = 0; i < symbols_count; i++) {
 		strncpy(ret[i].name, symbol[i].name, R_BIN_SIZEOF_NAMES);

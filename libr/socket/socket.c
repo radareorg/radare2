@@ -254,6 +254,7 @@ int r_socket_accept(int fd)
 int r_socket_flush(int fd)
 {
 	/* TODO */
+	return 0;
 }
 
 

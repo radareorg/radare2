@@ -4,7 +4,12 @@
 #include <r_cons.h> // TODO: drop dependency
 #include <r_util.h> // TODO: drop dependency
 #include <stdio.h>
+
+#define USE_BTREE 0
+
+#if USE_BTREE
 #include <btree.h>
+#endif
 
 //static int cmp(static void *a, static void *b)
 static int cmp(const void *a, const void *b)
@@ -25,7 +30,11 @@ R_API int r_flag_init(struct r_flag_t *f)
 	f->space_idx = -1;
 	f->space_idx2 = -1;
 	f->base = 0LL;
-	f->tree = NULL; // btree_init()
+#if USE_BTREE
+	btree_init(&f->tree);
+#else
+	f->tree = NULL;
+#endif
 	for(i=0;i<R_FLAG_SPACES_MAX;i++)
 		f->space[i] = NULL;
 	return 0;
@@ -65,7 +74,11 @@ R_API struct r_flag_item_t *r_flag_get(struct r_flag_t *f, const char *name)
 
 R_API struct r_flag_item_t *r_flag_get_i(struct r_flag_t *f, u64 off)
 {
-#if 1
+#if USE_BTREE
+	struct r_flag_item_t tmp = { .offset = off };
+//eprintf("GET_I (0x%08llx)\n", off);
+	return btree_get(f->tree, &tmp, cmp);
+#else
 	/* slow workaround */
 	struct list_head *pos;
 	list_for_each_prev(pos, &f->flags) {
@@ -74,9 +87,6 @@ R_API struct r_flag_item_t *r_flag_get_i(struct r_flag_t *f, u64 off)
 			return flag;
 	}
 	return NULL;
-#else
-	struct r_flag_item_t tmp = { .offset = off };
-	return btree_get(f->tree, &tmp, cmp);
 #endif
 }
 
@@ -86,7 +96,9 @@ R_API int r_flag_unset(struct r_flag_t *f, const char *name)
 	item = r_flag_get(f, name);
 	/* MARK: entrypoint to remove flags */
 	if (item) {
+#if USE_BTREE
 		btree_del(f->tree, item, cmp, NULL);
+#endif
 		list_del(&item->list);
 	}
 	return 0;
@@ -126,7 +138,8 @@ R_API int r_flag_set(struct r_flag_t *fo, const char *name, u64 addr, u32 size, 
 				f->offset = addr + fo->base;
 				f->size = size; // XXX
 				f->format = 0; // XXX
-	//			return R_TRUE;
+//eprintf("update '%s'\n", f->name);
+				return R_TRUE;
 			}
 		}
 	}
@@ -136,7 +149,9 @@ R_API int r_flag_set(struct r_flag_t *fo, const char *name, u64 addr, u32 size, 
 		flag = malloc(sizeof(struct r_flag_item_t));
 		memset(flag,'\0', sizeof(struct r_flag_item_t));
 		flag->offset = addr + fo->base;
+#if USE_BTREE
 		btree_add(&fo->tree, flag, cmp);
+#endif
 		list_add_tail(&(flag->list), &fo->flags);
 		if (flag==NULL)
 			return R_TRUE;

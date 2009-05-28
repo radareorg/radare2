@@ -18,7 +18,7 @@ R_API int r_debug_init(struct r_debug_t *dbg)
 
 R_API void r_debug_set_io(struct r_debug_t *dbg, 
 	int (*_read)(void *user, int pid, u64 addr, u8 *buf, int len),
-	int (*_write)(void *user, int pid, u64 addr, u8 *buf, int len),
+	int (*_write)(void *user, int pid, u64 addr, const u8 *buf, int len),
 	void *user)
 {
 	dbg->read = _read;

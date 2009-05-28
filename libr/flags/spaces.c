@@ -4,9 +4,7 @@
 
 R_API const char *r_flag_space_get(struct r_flag_t *f, int idx)
 {
-	if (idx==-1)
-		return "";
-	if (idx>255||f->space[idx]=='\0')
+	if (idx==-1 || idx>255 || f->space[idx]=='\0')
 		return "";
 	return f->space[idx];
 }

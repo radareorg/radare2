@@ -1,6 +1,7 @@
 
 || search ||
 ------------
+  - bytepat and so should be buggy now, bugfix required
   - implement r_search_xrefs
   - configure before throw the search
 

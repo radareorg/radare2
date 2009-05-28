@@ -410,10 +410,7 @@ static int cmd_print(void *data, const char *input)
 	if (input[0] && input[1]) {
 		l = (int) r_num_get(&core->num, input+2);
 		if (l>0) len = l;
-		if (l>tbs) {
-			r_core_block_size(core, l);
-			len = l;
-		}
+		if (l>tbs) r_core_block_size(core, l);
 	}
 	
 	switch(input[0]) {

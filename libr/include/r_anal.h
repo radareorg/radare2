@@ -110,7 +110,7 @@ struct r_anal_aop_t {
 struct r_anal_fcn_t {
 	u64 from;
 	u64 to;
-}
+};
 
 struct r_anal_ctx_t {
 	/* TODO: add more info here */

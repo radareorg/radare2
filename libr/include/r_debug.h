@@ -104,7 +104,7 @@ R_API int r_debug_init(struct r_debug_t *dbg);
 // TODO: 
 R_API void r_debug_set_io(struct r_debug_t *dbg, 
 	int (*read)(void *user, int pid, u64 addr, u8 *buf, int len),
-	int (*write)(void *user, int pid, u64 addr, u8 *buf, int len),
+	int (*write)(void *user, int pid, u64 addr, const u8 *buf, int len),
 	void *user);
 
 /* send signals */

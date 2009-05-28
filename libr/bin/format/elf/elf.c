@@ -491,7 +491,7 @@ const char* ELF_(r_bin_elf_get_arch)(ELF_(r_bin_elf_obj) *bin)
 		return "sparc";
 	case EM_PPC:
 	case EM_PPC64:
-		return "ppc";
+		return "ppc"; // "powerpc" ?
 	case EM_68K:
 		return "m68k";
 	case EM_IA_64:
