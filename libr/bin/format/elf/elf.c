@@ -262,10 +262,10 @@ static int ELF_(r_bin_elf_init)(ELF_(r_bin_elf_obj) *bin)
 		ELF_(aux_swap_endian)((u8*)&(phdr[i].p_offset), sizeof(ELF_(Off)));
 		ELF_(aux_swap_endian)((u8*)&(phdr[i].p_vaddr), sizeof(ELF_(Addr)));
 		ELF_(aux_swap_endian)((u8*)&(phdr[i].p_paddr), sizeof(ELF_(Addr)));
-		ELF_(aux_swap_endian)((u8*)&(phdr[i].p_filesz), sizeof(ELF_(Word)));
-		ELF_(aux_swap_endian)((u8*)&(phdr[i].p_memsz), sizeof(ELF_(Word)));
+		ELF_(aux_swap_endian)((u8*)&(phdr[i].p_filesz), sizeof(ELF_Vword));
+		ELF_(aux_swap_endian)((u8*)&(phdr[i].p_memsz), sizeof(ELF_Vword));
 		ELF_(aux_swap_endian)((u8*)&(phdr[i].p_flags), sizeof(ELF_(Word)));
-		ELF_(aux_swap_endian)((u8*)&(phdr[i].p_align), sizeof(ELF_(Word)));
+		ELF_(aux_swap_endian)((u8*)&(phdr[i].p_align), sizeof(ELF_Vword));
 	}
 
 	bin->shdr = (ELF_(Shdr) *)malloc(slen = sizeof(ELF_(Shdr))*ehdr->e_shnum);
@@ -299,14 +299,14 @@ static int ELF_(r_bin_elf_init)(ELF_(r_bin_elf_obj) *bin)
 	for (i = 0, shdr = bin->shdr; i < ehdr->e_shnum; i++) {
 		ELF_(aux_swap_endian)((u8*)&(shdr[i].sh_name), sizeof(ELF_(Word)));
 		ELF_(aux_swap_endian)((u8*)&(shdr[i].sh_type), sizeof(ELF_(Word)));
-		ELF_(aux_swap_endian)((u8*)&(shdr[i].sh_flags), sizeof(ELF_(Word)));
+		ELF_(aux_swap_endian)((u8*)&(shdr[i].sh_flags), sizeof(ELF_Vword));
 		ELF_(aux_swap_endian)((u8*)&(shdr[i].sh_addr), sizeof(ELF_(Addr)));
 		ELF_(aux_swap_endian)((u8*)&(shdr[i].sh_offset), sizeof(ELF_(Off)));
-		ELF_(aux_swap_endian)((u8*)&(shdr[i].sh_size), sizeof(ELF_(Word)));
+		ELF_(aux_swap_endian)((u8*)&(shdr[i].sh_size), sizeof(ELF_Vword));
 		ELF_(aux_swap_endian)((u8*)&(shdr[i].sh_link), sizeof(ELF_(Word)));
 		ELF_(aux_swap_endian)((u8*)&(shdr[i].sh_info), sizeof(ELF_(Word)));
-		ELF_(aux_swap_endian)((u8*)&(shdr[i].sh_addralign), sizeof(ELF_(Word)));
-		ELF_(aux_swap_endian)((u8*)&(shdr[i].sh_entsize), sizeof(ELF_(Word)));
+		ELF_(aux_swap_endian)((u8*)&(shdr[i].sh_addralign), sizeof(ELF_Vword));
+		ELF_(aux_swap_endian)((u8*)&(shdr[i].sh_entsize), sizeof(ELF_Vword));
 	}
 
 	strtabhdr = &bin->shdr[ehdr->e_shstrndx];
@@ -385,7 +385,7 @@ static u64 ELF_(get_import_addr)(ELF_(r_bin_elf_obj) *bin, int sym)
 			relp = rel;
 			for (j = 0; j < shdrp->sh_size; j += sizeof(ELF_(Rel)), relp++) {
 				ELF_(aux_swap_endian)((u8*)&(relp->r_offset), sizeof(ELF_(Addr)));
-				ELF_(aux_swap_endian)((u8*)&(relp->r_info), sizeof(ELF_(Word)));
+				ELF_(aux_swap_endian)((u8*)&(relp->r_info), sizeof(ELF_Vword));
 			}
 
 			got_offset = (rel->r_offset - bin->base_addr - got_addr) & ELF_GOTOFF_MASK;
@@ -427,7 +427,7 @@ static u64 ELF_(get_import_addr)(ELF_(r_bin_elf_obj) *bin, int sym)
 			relp = rel;
 			for (j = 0; j < shdrp->sh_size; j += sizeof(ELF_(Rela)), relp++) {
 				ELF_(aux_swap_endian)((u8*)&(relp->r_offset), sizeof(ELF_(Addr)));
-				ELF_(aux_swap_endian)((u8*)&(relp->r_info), sizeof(ELF_(Word)));
+				ELF_(aux_swap_endian)((u8*)&(relp->r_info), sizeof(ELF_Vword));
 			}
 
 			got_offset = (rel->r_offset - bin->base_addr - got_addr) & ELF_GOTOFF_MASK;
@@ -957,7 +957,7 @@ int ELF_(r_bin_elf_get_imports)(ELF_(r_bin_elf_obj) *bin, r_bin_elf_import *impo
 			for (j = 0; j < shdrp->sh_size; j += sizeof(ELF_(Sym)), symp++) {
 				ELF_(aux_swap_endian)((u8*)&(symp->st_name), sizeof(ELF_(Word)));
 				ELF_(aux_swap_endian)((u8*)&(symp->st_value), sizeof(ELF_(Addr)));
-				ELF_(aux_swap_endian)((u8*)&(symp->st_size), sizeof(ELF_(Word)));
+				ELF_(aux_swap_endian)((u8*)&(symp->st_size), sizeof(ELF_Vword));
 				ELF_(aux_swap_endian)((u8*)&(symp->st_shndx), sizeof(ELF_(Section)));
 			}
 
@@ -1108,7 +1108,7 @@ int ELF_(r_bin_elf_get_symbols)(ELF_(r_bin_elf_obj) *bin, r_bin_elf_symbol *symb
 			for (j = 0; j < shdrp->sh_size; j += sizeof(ELF_(Sym)), symp++) {
 				ELF_(aux_swap_endian)((u8*)&(symp->st_name), sizeof(ELF_(Word)));
 				ELF_(aux_swap_endian)((u8*)&(symp->st_value), sizeof(ELF_(Addr)));
-				ELF_(aux_swap_endian)((u8*)&(symp->st_size), sizeof(ELF_(Word)));
+				ELF_(aux_swap_endian)((u8*)&(symp->st_size), sizeof(ELF_Vword));
 				ELF_(aux_swap_endian)((u8*)&(symp->st_shndx), sizeof(ELF_(Section)));
 			}
 
