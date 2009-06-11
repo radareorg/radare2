@@ -355,7 +355,7 @@ static u64 ELF_(get_import_addr)(ELF_(r_bin_elf_obj) *bin, int sym)
 	
 	shdrp = shdr;
 	for (i = 0; i < ehdr->e_shnum; i++, shdrp++) {
-		if (!strcmp(&string[shdrp->sh_name], ".got.plt"))
+		if (!strcmp(&string[shdrp->sh_name], ".got"))
 			got_addr = shdrp->sh_offset;
 	}
 	if (got_addr == 0) {
@@ -739,7 +739,7 @@ u64 ELF_(r_bin_elf_resize_section)(ELF_(r_bin_elf_obj) *bin, const char *name, u
 	
 	/* rewrite rel's (imports) */
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
-		if (!strcmp(&string[shdrp->sh_name], ".got.plt"))
+		if (!strcmp(&string[shdrp->sh_name], ".got"))
 			got_addr = (u64)shdrp->sh_offset;
 	}
 	if (got_addr == 0) {

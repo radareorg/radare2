@@ -57,7 +57,7 @@ static int rasm_disasm(char *buf, u64 offset, u64 len, int ascii, int bin)
 	if (!len || clen <= len)
 		len = clen;
 
-
+	r_asm_set_pc(&a, offset);
 	if (!(ret = r_asm_mdisassemble(&a, &aop, data, len)))
 		return 0;
 	printf("%s\n", aop.buf_asm);
