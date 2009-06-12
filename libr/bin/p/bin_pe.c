@@ -49,7 +49,8 @@ static struct r_bin_section_t* sections(struct r_bin_t *bin)
 	struct r_bin_section_t *ret = NULL;
 	PE_(r_bin_pe_section) *section = NULL;
 
-	sections_count = PE_(r_bin_pe_get_sections_count)(bin->bin_obj);
+	if (!(sections_count = PE_(r_bin_pe_get_sections_count)(bin->bin_obj)))
+		return NULL;
 
 	if ((section = malloc(sections_count * sizeof(PE_(r_bin_pe_section)))) == NULL)
 		return NULL;
@@ -88,7 +89,8 @@ static struct r_bin_symbol_t* symbols(struct r_bin_t *bin)
 	struct r_bin_symbol_t *ret = NULL;
 	PE_(r_bin_pe_export) *symbol = NULL;
 
-	symbols_count = PE_(r_bin_pe_get_exports_count)(bin->bin_obj);
+	if (!(symbols_count = PE_(r_bin_pe_get_exports_count)(bin->bin_obj)))
+		return NULL;
 
 	if ((symbol = malloc(symbols_count * sizeof(PE_(r_bin_pe_export)))) == NULL)
 		return NULL;
@@ -122,7 +124,8 @@ static struct r_bin_import_t* imports(struct r_bin_t *bin)
 	struct r_bin_import_t *ret = NULL;
 	PE_(r_bin_pe_import) *import = NULL;
 
-	imports_count = PE_(r_bin_pe_get_imports_count)(bin->bin_obj);
+	if (!(imports_count = PE_(r_bin_pe_get_imports_count)(bin->bin_obj)))
+		return NULL;
 
 	if ((import = malloc(imports_count * sizeof(PE_(r_bin_pe_import)))) == NULL)
 		return NULL;
