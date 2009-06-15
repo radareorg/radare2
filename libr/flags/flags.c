@@ -1,17 +1,23 @@
 /* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
 
 #include <r_flags.h>
-#include <r_cons.h> // TODO: drop dependency
-#include <r_util.h> // TODO: drop dependency
+#include <r_util.h>
 #include <stdio.h>
 
-#define USE_BTREE 0
-
 #if USE_BTREE
-#include <btree.h>
-#endif
+/* compare names */
+static int ncmp(const void *a, const void *b)
+{
+	struct r_flag_item_t *fa = (struct r_flag_item_t *)a;
+	struct r_flag_item_t *fb = (struct r_flag_item_t *)b;
+	int ret = 0;
+	/* we cannot use a simple substraction coz u64 > s32 :) */
+	if (fa->namehash > fb->namehash) ret = 1;
+	else if (fa->namehash < fb->namehash) ret = -1;
+	return ret;
+}
 
-//static int cmp(static void *a, static void *b)
+/* compare offsets */
 static int cmp(const void *a, const void *b)
 {
 	struct r_flag_item_t *fa = (struct r_flag_item_t *)a;
@@ -22,6 +28,7 @@ static int cmp(const void *a, const void *b)
 	else if (fa->offset < fb->offset) ret = -1;
 	return ret;
 }
+#endif
 
 R_API int r_flag_init(struct r_flag_t *f)
 {
@@ -32,8 +39,7 @@ R_API int r_flag_init(struct r_flag_t *f)
 	f->base = 0LL;
 #if USE_BTREE
 	btree_init(&f->tree);
-#else
-	f->tree = NULL;
+	btree_init(&f->ntree);
 #endif
 	for(i=0;i<R_FLAG_SPACES_MAX;i++)
 		f->space[i] = NULL;
@@ -64,20 +70,31 @@ R_API struct r_flag_item_t *r_flag_get(struct r_flag_t *f, const char *name)
 	struct list_head *pos;
 	if (name==NULL || name[0]=='\0' || (name[0]>='0'&& name[0]<='9'))
 		return NULL;
+#if USE_BTREE
+struct r_flag_item_t *i;
+	struct r_flag_item_t tmp;
+	tmp.namehash = r_str_hash(name);
+	i = btree_get(f->ntree, &tmp, ncmp);
+//eprintf("GET_I (0x%08llx) = %p\n", off, i);
+	return i;
+#else
 	list_for_each_prev(pos, &f->flags) {
 		struct r_flag_item_t *flag = list_entry(pos, struct r_flag_item_t, list);
 		if (!strcmp(name, flag->name))
 			return flag;
 	}
+#endif
 	return NULL;
 }
 
 R_API struct r_flag_item_t *r_flag_get_i(struct r_flag_t *f, u64 off)
 {
 #if USE_BTREE
+	struct r_flag_item_t *i;
 	struct r_flag_item_t tmp = { .offset = off };
-//eprintf("GET_I (0x%08llx)\n", off);
-	return btree_get(f->tree, &tmp, cmp);
+	i = btree_get(f->tree, &tmp, cmp);
+//eprintf("GET_N (0x%08llx) = %p\n", off, i);
+	return i;
 #else
 	/* slow workaround */
 	struct list_head *pos;
@@ -98,6 +115,7 @@ R_API int r_flag_unset(struct r_flag_t *f, const char *name)
 	if (item) {
 #if USE_BTREE
 		btree_del(f->tree, item, cmp, NULL);
+		btree_del(f->ntree, item, ncmp, NULL);
 #endif
 		list_del(&item->list);
 	}
@@ -108,23 +126,50 @@ R_API int r_flag_set(struct r_flag_t *fo, const char *name, u64 addr, u32 size, 
 {
 	const char *ptr;
 	struct r_flag_item_t *flag = NULL;
+#if !USE_BTREE
 	struct list_head *pos;
+#endif
 
 	if (!dup) {
 		/* show flags as radare commands */
 		if (!r_flag_name_check(name)) {
 			fprintf(stderr, "invalid flag name '%s'.\n", name);
-			return 2;
+			return R_FALSE;
 		}
 
 		for (ptr = name + 1; *ptr != '\0'; ptr = ptr +1) {
 			if (!IS_PRINTABLE(*ptr)) {
 				fprintf(stderr, "invalid flag name\n");
-				return 2;
+				return R_FALSE;
 			}
 		}
 	}
 
+#if USE_BTREE
+	{
+/* XXX : This is not working properly!! */
+		struct r_flag_item_t tmp;
+		tmp.namehash = r_str_hash(name);
+//eprintf("NAME(%s) HASH(%x)\n", name, tmp.namehash);
+		flag = btree_get(fo->ntree, &tmp, ncmp);
+		if (flag) {
+			if (dup) {
+				/* ignore dupped name+offset */
+				if (flag->offset == addr)
+					return 1;
+			} else {
+				flag->offset = addr + fo->base;
+				flag->size = size; // XXX
+				flag->format = 0; // XXX
+//eprintf("update '%s'\n", f->name);
+				return R_TRUE;
+			}
+		}
+//		if (flag)
+//			return R_TRUE;
+//		else eprintf("NOT REGISTERED(%s)\n", name);
+	}
+#else
 	list_for_each(pos, &fo->flags) {
 		struct r_flag_item_t *f = (struct r_flag_item_t *)
 			list_entry(pos, struct r_flag_item_t, list);
@@ -143,23 +188,27 @@ R_API int r_flag_set(struct r_flag_t *fo, const char *name, u64 addr, u32 size, 
 			}
 		}
 	}
+#endif
 
 	if (flag == NULL) {
 		/* MARK: entrypoint for flag addition */
 		flag = malloc(sizeof(struct r_flag_item_t));
 		memset(flag,'\0', sizeof(struct r_flag_item_t));
 		flag->offset = addr + fo->base;
+		strncpy(flag->name, name, R_FLAG_NAME_SIZE);
+		strncpy(flag->name, r_str_chop(flag->name), R_FLAG_NAME_SIZE);
+		flag->name[R_FLAG_NAME_SIZE-1]='\0';
+		flag->namehash = r_str_hash(flag->name);
 #if USE_BTREE
 		btree_add(&fo->tree, flag, cmp);
+		btree_add(&fo->ntree, flag, ncmp);
 #endif
 		list_add_tail(&(flag->list), &fo->flags);
 		if (flag==NULL)
 			return R_TRUE;
 	}
 
-	strncpy(flag->name, name, R_FLAG_NAME_SIZE);
-	strncpy(flag->name, r_str_chop(flag->name), R_FLAG_NAME_SIZE);
-	flag->name[R_FLAG_NAME_SIZE-1]='\0';
+//eprintf("NAME(%s) HASH(%x)\n", flag->name, flag->namehash);
 	flag->offset = addr + fo->base;
 	flag->space = fo->space_idx;
 	flag->size = size; // XXX

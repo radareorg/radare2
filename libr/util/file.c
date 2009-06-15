@@ -18,16 +18,13 @@ int r_file_mkdir(const char *path)
 #endif
 }
 
-int r_file_exist(const char *str)
+R_API int r_file_exist(const char *str)
 {
 	struct stat buf;
-	int ret = stat(str, &buf);
-	if (ret == -1)
-		return R_FALSE;
-	return R_TRUE;
+	return (stat(str, &buf)!=-1)?R_TRUE:R_FALSE;
 }
 
-char *r_file_path(const char *bin)
+R_API char *r_file_path(const char *bin)
 {
 	char file[1024];
 	char *path_env = getenv("PATH");

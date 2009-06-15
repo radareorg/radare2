@@ -8,6 +8,10 @@
 
 <{include libr/TODO}>
 
+* Add R_TRUFAE -> correct result, but with warnings (implement r_errno and r_errstr in r_util?)
+* r_cmd must provide a nesting char table indexing for commands
+  - every module can register their own commands
+  - commands can be listed like in a tree
 * 'Vc' cursor mode makes color toggle
 
 * Finish and import the spp's getopt owns implementation in r_util

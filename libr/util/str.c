@@ -20,7 +20,7 @@ static int hex2int (unsigned char *val, unsigned char c)
 }
 
 /* TODO: port to w32 and move outside r_str namespace? */
-char *r_str_home(const char *str)
+R_API char *r_str_home(const char *str)
 {
 	const char *home = getenv("HOME");
 	char *dst;

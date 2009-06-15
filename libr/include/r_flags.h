@@ -1,6 +1,12 @@
 #ifndef _INCLUDE_R_FLAGS_H_
 #define _INCLUDE_R_FLAGS_H_
 
+#define USE_BTREE 1
+
+#if USE_BTREE
+#include <btree.h>
+#endif
+
 #include <r_types.h>
 #include "list.h"
 
@@ -10,6 +16,7 @@
 
 struct r_flag_item_t {
 	char name[R_FLAG_NAME_SIZE];
+	int namehash;
 	u64 offset;
 	u64 size;
 	int format; // ??? 
@@ -24,7 +31,10 @@ struct r_flag_t {
 	int space_idx2;
 	u64 base;
 	const char *space[R_FLAG_SPACES_MAX];
-	struct btree_node *tree;
+#if USE_BTREE
+	struct btree_node *tree; /* index by offset */
+	struct btree_node *ntree; /* index by name */
+#endif
 	struct list_head flags;
 };
 

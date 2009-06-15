@@ -7,6 +7,9 @@ all:
 clean:
 	cd libr && make clean
 
+mrproper:
+	cd libr && make mrproper
+
 install:
 	${INSTALL_DIR} ${DESTDIR}${PREFIX}/share/doc/radare2
 	for a in doc/* ; do ${INSTALL_DATA} $$a ${DESTDIR}/${PREFIX}/share/doc/radare2 ; done
@@ -37,4 +40,4 @@ shot:
 	scp radare2-$${DATE}.tar.gz news.nopcode.org:/home/www/radarenopcode/get/shot
 	
 
-.PHONY: all clean install uninstall deinstall dist shot
+.PHONY: all clean mrproper install uninstall deinstall dist shot

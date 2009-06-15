@@ -1616,9 +1616,8 @@ static int cmd_debug(void *data, const char *input)
 			break;
 		case 'h':
 			if (input[2]==' ') {
-				if (!r_bp_handle_set(&core->dbg.bp, input+3)) {
+				if (!r_bp_handle_set(&core->dbg.bp, input+3))
 					eprintf("Invalid name: '%s'.\n", input+3);
-				}
 			} else r_bp_handle_list(&core->dbg.bp);
 			break;
 		case '?':

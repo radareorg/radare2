@@ -91,4 +91,6 @@ todo:
 clean:
 	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} clean ); done
 	cd vapi/t && ${MAKE} clean
+
+mrproper: clean
 	rm -f libr.pc
