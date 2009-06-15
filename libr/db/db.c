@@ -1,5 +1,6 @@
-#include "r_db.h"
+/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
 
+#include "r_db.h"
 
 R_API void r_db_init(struct r_db_t *db)
 {
@@ -24,23 +25,22 @@ R_API struct r_db_block_t *r_db_block_new()
 	return ptr;
 }
 
-R_API int r_db_add_id(struct r_db_t *db, int off, int size)
+R_API int r_db_add_id(struct r_db_t *db, int key, int size)
 {
-	off &= 0xff;
-	if (db->blocks[off])
+	key &= 0xff;
+	if (db->blocks[key])
 		return R_FALSE;
 	if (db->id_min==-1) {
-		db->id_min = off;
-		db->id_max = off;
-	} else if (db->id_max < off)
-		db->id_max = off;
-	if (off < db->id_min)
-		db->id_min = off;
-	db->blocks[off] = r_db_block_new();
-	db->blocks_sz[off] = size;
+		db->id_min = key;
+		db->id_max = key;
+	} else if (db->id_max < key)
+		db->id_max = key;
+	if (key < db->id_min)
+		db->id_min = key;
+	db->blocks[key] = r_db_block_new();
+	db->blocks_sz[key] = size;
 	return R_TRUE;
 }
-
 
 static int _r_db_add_internal(struct r_db_t *db, int key, void *b)
 {
@@ -75,13 +75,12 @@ static int _r_db_add_internal(struct r_db_t *db, int key, void *b)
 R_API int r_db_add(struct r_db_t *db, void *b)
 {
 	int i, ret=0;
-	for(i=db->id_min;i<db->id_max;i++) {
+	for(i=db->id_min;i<=db->id_max;i++) {
 		if (db->blocks[i])
 			ret += _r_db_add_internal(db, i, b);
 	}
 	return ret;
 }
-
 
 R_API void *r_db_get(struct r_db_t *db, int key, const u8 *b)
 {
@@ -144,16 +143,3 @@ R_API int r_db_free(struct r_db_t *db)
 #endif
 	return 0;
 }
-
-/* stack ops */
-#if 0
-R_API int r_db_push(struct r_db_t *db, const u8 *b)
-{
-	return 0;
-}
-
-R_API const u8 *r_db_pop(struct r_db_t *db)
-{
-	return NULL;
-}
-#endif

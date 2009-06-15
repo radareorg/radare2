@@ -1,0 +1,21 @@
+* Benchmarking
+  - Compilation support for profiling memory usage
+  - Compare performance against sqlite
+
+* Import/export from/to SQL
+
+* SQL support
+
+CREATE TABLE flags (
+  name char(25) PRIMARY KEY,
+  offset u64,
+);
+
+SELECT * FROM flags WHERE offset == 0x8048000;
+
+CREATE VIEW flagwindow AS SELECT * FROM flags WHERE offset>0 and offset<100
+
+DROP TABLE flags
+INSERT INTO flags (name, offset) VALUES ("patata", 33)
+
+UPDATE flags SET offset=33 WHERE offset==20
