@@ -2,6 +2,11 @@
 
 #include "r_db.h"
 
+#if 0
+ - allow dupped nodes? (two times the same pointer?)
+ - allow more than one node with the same key?
+#endif
+
 R_API void r_db_init(struct r_db_t *db)
 {
 	memset(&db->blocks, '\0', sizeof(db->blocks));
@@ -82,7 +87,7 @@ R_API int r_db_add(struct r_db_t *db, void *b)
 	return ret;
 }
 
-R_API void *r_db_get(struct r_db_t *db, int key, const u8 *b)
+R_API void **r_db_get(struct r_db_t *db, int key, const u8 *b)
 {
 	struct r_db_block_t *block;
 	int i, size;
@@ -98,25 +103,67 @@ R_API void *r_db_get(struct r_db_t *db, int key, const u8 *b)
 	}
 	size = db->blocks_sz[key];
 	block = db->blocks[key];
-	for(i=0;block && i<size;i++)
+	for(i=0;block&&i<size;i++)
 		block = block->childs[b[key+i]];
 	if (block)
 		return block->data;
 	return NULL;
 }
 
-R_API int r_db_delete(struct r_db_t *db, const u8 *b)
+/* TODO: MOVE AS DEFINE IN r_db.h */
+R_API void **r_db_get_next(void **ptr)
 {
-	void *ptr = r_db_get(db, -1, b);
+	return ptr+1;
+}
+
+/* TODO: MOVE AS DEFINE IN r_db.h */
+R_API void **r_db_get_cur(void **ptr)
+{
+	return ptr[0];
+}
+
+static int _r_db_delete_internal(struct r_db_t *db, int key, const u8 *b)
+{
+	struct r_db_block_t *block;
+	int i, j;
+	int size = db->blocks_sz[key];
+	block = db->blocks[key];
+
+	for(i=0;block&&i<size;i++)
+		block = block->childs[b[key+i]];
+
+	if (block && block->data) {
+		for(i=0;block->data[i]; i++) {
+			if (block->data[i] == b) {
+				for(j=i;block->data[j]; j++)
+					block->data[j] = block->data[j+1];
+			}
+		}
+		if (block->data[0] == NULL) {
+			free(block->data);
+			block->data = NULL;
+		}
+		return R_TRUE;
+	}
+	return R_FALSE;
+}
+
+R_API int r_db_delete(struct r_db_t *db, const void *ptr)
+{
+	int i, ret = 0;
+	//void *ptr = r_db_get(db, -1, ptr);
+	for(i=db->id_min;i<=db->id_max;i++) {
+		if (db->blocks[i])
+			ret += _r_db_delete_internal(db, i, ptr);
+	}
+	/* TODO */
 	if (db->cb_free && ptr)
 		return db->cb_free(db, ptr, db->cb_user);
 	return (ptr != NULL);
 }
 
-R_API void *r_db_get_next(void *ptr)
-{
-	return (void *)*((int*)ptr+1);
-}
+// delete with conditions
+// R_API int r_db_delete(struct r_db_t *db, void *ptr)
 
 R_API struct r_db_iter_t *r_db_iter(struct r_db_t *db, int key, const u8 *b)
 {

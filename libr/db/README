@@ -18,6 +18,17 @@ Items are directly sorted
      [0..255]    ...            |
          |                      |
      [0..255]              -----'
+
+OPERATIONS
+==========
+
+   ADD
+
+   DELETE
+
+     r_db_delete_by_key(db, K_ID, &tmp) # specify more than one key?
+
+   ITERATE
    
 
 +----------+
