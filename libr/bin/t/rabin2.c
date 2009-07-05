@@ -82,9 +82,9 @@ static int rabin_show_entrypoint()
 
 static int rabin_show_imports()
 {
-	int ctr = 0;
+	struct r_bin_import_t *imports;
 	u64 baddr;
-	struct r_bin_import_t *imports, *importsp;
+	int i;
 
 	baddr = r_bin_get_baddr(&bin);
 
@@ -95,21 +95,19 @@ static int rabin_show_imports()
 		printf("fs imports\n");
 	else printf("[Imports]\n");
 
-	importsp = imports;
-	while (!importsp->last) {
+	 for (i = 0; !imports[i].last; i++) {
 		if (rad) {
-			r_flag_name_filter(importsp->name);
+			r_flag_name_filter(imports[i].name);
 			printf("f imp.%s @ 0x%08llx\n",
-					importsp->name, baddr+importsp->rva);
+					imports[i].name, baddr+imports[i].rva);
 		} else printf("address=0x%08llx offset=0x%08llx ordinal=%03lli "
 				"hint=%03lli bind=%s type=%s name=%s\n",
-				baddr+importsp->rva, importsp->offset,
-				importsp->ordinal, importsp->hint,  importsp->bind,
-				importsp->type, importsp->name);
-		importsp++; ctr++;
+				baddr+imports[i].rva, imports[i].offset,
+				imports[i].ordinal, imports[i].hint,  imports[i].bind,
+				imports[i].type, imports[i].name);
 	}
 
-	if (!rad) printf("\n%i imports\n", ctr);
+	if (!rad) printf("\n%i imports\n", i);
 
 	free(imports);
 
@@ -118,9 +116,9 @@ static int rabin_show_imports()
 
 static int rabin_show_symbols()
 {
-	int ctr = 0;
+	struct r_bin_symbol_t *symbols;
 	u64 baddr;
-	struct r_bin_symbol_t *symbols, *symbolsp;
+	int i;
 
 	baddr = r_bin_get_baddr(&bin);
 
@@ -130,33 +128,31 @@ static int rabin_show_symbols()
 	if (rad) printf("fs symbols\n");
 	else printf("[Symbols]\n");
 
-	symbolsp = symbols;
-	while (!symbolsp->last) {
+	for (i = 0; !symbols[i].last; i++) {
 		if (rad) {
-			r_flag_name_filter(symbolsp->name);
-			if (symbolsp->size) {
-				if (!strncmp(symbolsp->type,"FUNC", 4))
+			r_flag_name_filter(symbols[i].name);
+			if (symbols[i].size) {
+				if (!strncmp(symbols[i].type,"FUNC", 4))
 					printf("CF %lli @ 0x%08llx\n",
-							symbolsp->size, baddr+symbolsp->rva);
+							symbols[i].size, baddr+symbols[i].rva);
 				else
-				if (!strncmp(symbolsp->type,"OBJECT", 6))
+				if (!strncmp(symbols[i].type,"OBJECT", 6))
 					printf("Cd %lli @ 0x%08llx\n",
-							symbolsp->size, baddr+symbolsp->rva);
+							symbols[i].size, baddr+symbols[i].rva);
 				printf("f sym.%s %lli @ 0x%08llx\n",
-						symbolsp->name, symbolsp->size,
-						baddr+symbolsp->rva);
+						symbols[i].name, symbols[i].size,
+						baddr+symbols[i].rva);
 			} else printf("f sym.%s @ 0x%08llx\n",
-						symbolsp->name, baddr+symbolsp->rva);
+						symbols[i].name, baddr+symbols[i].rva);
 		} else printf("address=0x%08llx offset=0x%08llx ordinal=%03lli "
 				"forwarder=%s size=%08lli bind=%s type=%s name=%s\n",
-				baddr+symbolsp->rva, symbolsp->offset,
-				symbolsp->ordinal, symbolsp->forwarder,
-				symbolsp->size, symbolsp->bind, symbolsp->type, 
-				symbolsp->name);
-		symbolsp++; ctr++;
+				baddr+symbols[i].rva, symbols[i].offset,
+				symbols[i].ordinal, symbols[i].forwarder,
+				symbols[i].size, symbols[i].bind, symbols[i].type, 
+				symbols[i].name);
 	}
 
-	if (!rad) printf("\n%i symbols\n", ctr);
+	if (!rad) printf("\n%i symbols\n", i);
 
 	free(symbols);
 
@@ -165,9 +161,9 @@ static int rabin_show_symbols()
 
 static int rabin_show_strings()
 {
-	int ctr = 0;
+	struct r_bin_string_t *strings;
 	u64 baddr;
-	struct r_bin_string_t *strings, *stringsp;
+	int i;
 
 	baddr = r_bin_get_baddr(&bin);
 
@@ -178,22 +174,20 @@ static int rabin_show_strings()
 		printf("fs strings\n");
 	else printf("[strings]\n");
 
-	stringsp = strings;
-	while (!stringsp->last) {
+	for (i = 0; !strings[i].last; i++) {
 		if (rad) {
-			r_flag_name_filter(stringsp->string);
+			r_flag_name_filter(strings[i].string);
 			printf( "f str.%s %lli @ 0x%08llx\n"
 					"Cs %lli @ 0x%08llx\n",
-					stringsp->string, stringsp->size, baddr+stringsp->rva,
-					stringsp->size, baddr+stringsp->rva);
+					strings[i].string, strings[i].size, baddr+strings[i].rva,
+					strings[i].size, baddr+strings[i].rva);
 		} else printf("address=0x%08llx offset=0x%08llx ordinal=%03lli "
 				"size=%08lli string=%s\n",
-				baddr+stringsp->rva, stringsp->offset,
-				stringsp->ordinal, stringsp->size, stringsp->string);
-		stringsp++; ctr++;
+				baddr+strings[i].rva, strings[i].offset,
+				strings[i].ordinal, strings[i].size, strings[i].string);
 	}
 
-	if (!rad) printf("\n%i strings\n", ctr);
+	if (!rad) printf("\n%i strings\n", i);
 
 	free(strings);
 
@@ -202,9 +196,9 @@ static int rabin_show_strings()
 
 static int rabin_show_sections()
 {
-	int ctr = 0;
+	struct r_bin_section_t *sections;
 	u64 baddr;
-	struct r_bin_section_t *sections, *sectionsp;
+	int i;
 
 	baddr = r_bin_get_baddr(&bin);
 
@@ -214,34 +208,32 @@ static int rabin_show_sections()
 	if (rad) printf("fs sections\n");
 	else printf("[Sections]\n");
 
-	sectionsp = sections;
-	while (!sectionsp->last) {
+	for (i = 0; !sections[i].last; i++) {
 		if (rad) {
-			r_flag_name_filter(sectionsp->name);
+			r_flag_name_filter(sections[i].name);
 			printf("f section.%s @ 0x%08llx\n",
-					sectionsp->name, baddr+sectionsp->rva);
+					sections[i].name, baddr+sections[i].rva);
 			printf("f section.%s_end @ 0x%08llx\n",
-					sectionsp->name, baddr+sectionsp->rva+sectionsp->size);
+					sections[i].name, baddr+sections[i].rva+sections[i].size);
 			printf("[%02i] address=0x%08llx offset=0x%08llx size=%08lli "
 					"privileges=%c%c%c%c name=%s\n",
-					ctr, baddr+sectionsp->rva, sectionsp->offset, sectionsp->size,
-					R_BIN_SCN_SHAREABLE(sectionsp->characteristics)?'s':'-',
-					R_BIN_SCN_READABLE(sectionsp->characteristics)?'r':'-',
-					R_BIN_SCN_WRITABLE(sectionsp->characteristics)?'w':'-',
-					R_BIN_SCN_EXECUTABLE(sectionsp->characteristics)?'x':'-',
-					sectionsp->name);
+					i, baddr+sections[i].rva, sections[i].offset, sections[i].size,
+					R_BIN_SCN_SHAREABLE(sections[i].characteristics)?'s':'-',
+					R_BIN_SCN_READABLE(sections[i].characteristics)?'r':'-',
+					R_BIN_SCN_WRITABLE(sections[i].characteristics)?'w':'-',
+					R_BIN_SCN_EXECUTABLE(sections[i].characteristics)?'x':'-',
+					sections[i].name);
 		} else printf("idx=%02i address=0x%08llx offset=0x%08llx size=%08lli "
 				"privileges=%c%c%c%c name=%s\n",
-				ctr, baddr+sectionsp->rva, sectionsp->offset, sectionsp->size,
-				R_BIN_SCN_SHAREABLE(sectionsp->characteristics)?'s':'-',
-				R_BIN_SCN_READABLE(sectionsp->characteristics)?'r':'-',
-				R_BIN_SCN_WRITABLE(sectionsp->characteristics)?'w':'-',
-				R_BIN_SCN_EXECUTABLE(sectionsp->characteristics)?'x':'-',
-				sectionsp->name);
-		sectionsp++; ctr++;
+				i, baddr+sections[i].rva, sections[i].offset, sections[i].size,
+				R_BIN_SCN_SHAREABLE(sections[i].characteristics)?'s':'-',
+				R_BIN_SCN_READABLE(sections[i].characteristics)?'r':'-',
+				R_BIN_SCN_WRITABLE(sections[i].characteristics)?'w':'-',
+				R_BIN_SCN_EXECUTABLE(sections[i].characteristics)?'x':'-',
+				sections[i].name);
 	}
 
-	if (!rad) printf("\n%i sections\n", ctr);
+	if (!rad) printf("\n%i sections\n", i);
 
 	free(sections);
 
@@ -292,9 +284,9 @@ static int rabin_show_info()
 
 static int rabin_show_fields()
 {
-	int ctr = 0;
+	struct r_bin_field_t *fields;
 	u64 baddr;
-	struct r_bin_field_t *fields, *fieldsp;
+	int i;
 
 	baddr = r_bin_get_baddr(&bin);
 
@@ -304,20 +296,18 @@ static int rabin_show_fields()
 	if (rad) printf("fs header\n");
 	else printf("[Header fields]\n");
 
-	fieldsp = fields;
-	while (!fieldsp->last) {
+	for (i = 0; !fields[i].last; i++) {
 		if (rad) {
-			r_flag_name_filter(fieldsp->name);
+			r_flag_name_filter(fields[i].name);
 			printf("f header.%s @ 0x%08llx\n",
-					fieldsp->name, baddr+fieldsp->rva);
+					fields[i].name, baddr+fields[i].rva);
 			printf("[%02i] address=0x%08llx offset=0x%08llx name=%s\n",
-					ctr, baddr+fieldsp->rva, fieldsp->offset, fieldsp->name);
+					i, baddr+fields[i].rva, fields[i].offset, fields[i].name);
 		} else printf("idx=%02i address=0x%08llx offset=0x%08llx name=%s\n",
-				ctr, baddr+fieldsp->rva, fieldsp->offset, fieldsp->name);
-		fieldsp++; ctr++;
+				i, baddr+fields[i].rva, fields[i].offset, fields[i].name);
 	}
 
-	if (!rad) printf("\n%i fields\n", ctr);
+	if (!rad) printf("\n%i fields\n", i);
 
 	free(fields);
 
@@ -327,33 +317,30 @@ static int rabin_show_fields()
 
 static int rabin_dump_symbols(int len)
 {
-	struct r_bin_symbol_t *symbols, *symbolsp;
-	int olen = len;
+	struct r_bin_symbol_t *symbols;
 	u8 *buf;
 	char *ret;
+	int olen = len, i;
 
 	if ((symbols = r_bin_get_symbols(&bin)) == NULL)
 		return R_FALSE;
 
-	symbolsp = symbols;
-	while (!symbolsp->last) {
-		if (symbolsp->size != 0 && (olen > symbolsp->size || olen == 0))
-			len = symbolsp->size;
-		else if (symbolsp->size == 0 && olen == 0)
+	for (i = 0; !symbols[i].last; i++) {
+		if (symbols[i].size != 0 && (olen > symbols[i].size || olen == 0))
+			len = symbols[i].size;
+		else if (symbols[i].size == 0 && olen == 0)
 			len = 32;
 		else len = olen;
 
 		if (!(buf = malloc(len)) ||
 			!(ret = malloc(len*2+1)))
 		return R_FALSE;
-		lseek(bin.fd, symbolsp->offset, SEEK_SET);
+		lseek(bin.fd, symbols[i].offset, SEEK_SET);
 		read(bin.fd, buf, len);
 		r_hex_bin2str(buf, len, ret);
-		printf("%s %s\n", symbolsp->name, ret);
+		printf("%s %s\n", symbols[i].name, ret);
 		free(buf);
 		free(ret);
-
-		symbolsp++;
 	}
 
 	free(symbols);
@@ -363,29 +350,27 @@ static int rabin_dump_symbols(int len)
 
 static int rabin_dump_sections(char *name)
 {
-	struct r_bin_section_t *sections, *sectionsp;
+	struct r_bin_section_t *sections;
 	u8 *buf;
 	char *ret;
+	int i;
 
 	if ((sections = r_bin_get_sections(&bin)) == NULL)
 		return R_FALSE;
 
-	sectionsp = sections;
-	while (!sectionsp->last) {
-		if (!strcmp(name, sectionsp->name)) {
-			if (!(buf = malloc(sectionsp->size)) ||
-				!(ret = malloc(sectionsp->size*2+1)))
+	for (i = 0; !sections[i].last; i++)
+		if (!strcmp(name, sections[i].name)) {
+			if (!(buf = malloc(sections[i].size)) ||
+				!(ret = malloc(sections[i].size*2+1)))
 				return R_FALSE;
-			lseek(bin.fd, sectionsp->offset, SEEK_SET);
-			read(bin.fd, buf, sectionsp->size);
-			r_hex_bin2str(buf, sectionsp->size, ret);
+			lseek(bin.fd, sections[i].offset, SEEK_SET);
+			read(bin.fd, buf, sections[i].size);
+			r_hex_bin2str(buf, sections[i].size, ret);
 			printf("%s\n", ret);
 			free(buf);
 			free(ret);
 			break;
 		}
-		sectionsp++;
-	}
 
 	free(sections);
 
@@ -399,8 +384,8 @@ static int rabin_do_operation(const char *op)
 	if (!strcmp(op, "help")) {
 		printf( "Operation string:\n"
 				"  Dump symbols: d/s/1024\n"
-				"  Dump section: d/S/.text\n"
-				"  Resize section: r/.data/1024\n");
+				"  Dump section: d/S/.text\n");
+				//"  Resize section: r/.data/1024\n");
 		return R_FALSE;
 	}
 	arg = alloca(strlen(op)+1);
@@ -416,6 +401,8 @@ static int rabin_do_operation(const char *op)
 	}
 
 	switch(arg[0]) {
+/*XXX*/
+#if 0
 	case 'r':
 		if (!rw) {
 			printf("File must be opened in rw mode\n");
@@ -428,6 +415,7 @@ static int rabin_do_operation(const char *op)
 			return R_FALSE;
 		}
 		break;
+#endif
 	case 'd':
 		if (!ptr)
 			goto _rabin_do_operation_error;

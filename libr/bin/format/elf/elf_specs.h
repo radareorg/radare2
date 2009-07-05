@@ -17,7 +17,8 @@
    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307 USA.  */
 
-#undef ELF_
+#undef Elf_
+#undef Elf_Vword
 #undef ELF_ST_BIND
 #undef ELF_ST_TYPE
 #undef ELF_ST_INFO
@@ -28,38 +29,41 @@
 #undef ELF_M_SYM
 #undef ELF_M_SIZE
 #undef ELF_M_INFO
-#undef ELF_Vword
 	
 #ifdef R_BIN_ELF64
-    #define ELF_(name)        Elf64_##name 
-	#define ELF_ST_BIND       ELF64_ST_BIND
-	#define ELF_ST_TYPE       ELF64_ST_TYPE
-	#define ELF_ST_INFO       ELF64_ST_INFO
-	#define ELF_ST_VISIBILITY ELF64_ST_VISIBILITY
-	#define ELF_R_SYM         ELF64_R_SYM
-	#define ELF_R_TYPE        ELF64_R_TYPE
-	#define ELF_R_INFO        ELF64_R_INFO
-	#define ELF_M_SYM         ELF64_M_SYM
-	#define ELF_M_SIZE        ELF64_M_SIZE
-	#define ELF_M_INFO        ELF64_M_INFO
-	#define ELF_Vword         Elf64_Xword
+# define Elf_(name) Elf64_##name 
+# define Elf_Vword  Elf64_Xword
+# define ELF_ST_BIND       ELF64_ST_BIND
+# define ELF_ST_TYPE       ELF64_ST_TYPE
+# define ELF_ST_INFO       ELF64_ST_INFO
+# define ELF_ST_VISIBILITY ELF64_ST_VISIBILITY
+# define ELF_R_SYM         ELF64_R_SYM
+# define ELF_R_TYPE        ELF64_R_TYPE
+# define ELF_R_INFO        ELF64_R_INFO
+# define ELF_M_SYM         ELF64_M_SYM
+# define ELF_M_SIZE        ELF64_M_SIZE
+# define ELF_M_INFO        ELF64_M_INFO
 #else       
-    #define ELF_(name) Elf32_##name 
-	#define ELF_ST_BIND       ELF32_ST_BIND
-	#define ELF_ST_TYPE       ELF32_ST_TYPE
-	#define ELF_ST_INFO       ELF32_ST_INFO
-	#define ELF_ST_VISIBILITY ELF32_ST_VISIBILITY
-	#define ELF_R_SYM         ELF32_R_SYM
-	#define ELF_R_TYPE        ELF32_R_TYPE
-	#define ELF_R_INFO        ELF32_R_INFO
-	#define ELF_M_SYM         ELF32_M_SYM
-	#define ELF_M_SIZE        ELF32_M_SIZE
-	#define ELF_M_INFO        ELF32_M_INFO
-	#define ELF_Vword         Elf32_Word
+# define Elf_(name) Elf32_##name 
+# define Elf_Vword  Elf32_Word
+# define ELF_ST_BIND       ELF32_ST_BIND
+# define ELF_ST_TYPE       ELF32_ST_TYPE
+# define ELF_ST_INFO       ELF32_ST_INFO
+# define ELF_ST_VISIBILITY ELF32_ST_VISIBILITY
+# define ELF_R_SYM         ELF32_R_SYM
+# define ELF_R_TYPE        ELF32_R_TYPE
+# define ELF_R_INFO        ELF32_R_INFO
+# define ELF_M_SYM         ELF32_M_SYM
+# define ELF_M_SIZE        ELF32_M_SIZE
+# define ELF_M_INFO        ELF32_M_INFO
 #endif      
 
 #ifndef _INCLUDE_ELF_SPECS_H
 #define	_INCLUDE_ELF_SPECS_H
+
+#define ELF_STRING_LENGTH 256
+#define ELF_ADDR_MASK   0xFFFFFFFFFFFF8000LL
+#define ELF_GOTOFF_MASK 0xFFFFFFFFFFFFF000LL
 
 /* Type for a 16-bit quantity.  */
 typedef unsigned short Elf32_Half;
@@ -92,12 +96,6 @@ typedef unsigned short Elf64_Section;
 /* Type for version symbol information.  */
 typedef Elf32_Half Elf32_Versym;
 typedef Elf64_Half Elf64_Versym;
-
-
-#define ELF_NAME_LENGTH 256
-#define ELF_STRING_LENGTH 256
-#define ELF_ADDR_MASK   0xffffffffffff8000LL
-#define ELF_GOTOFF_MASK 0xfffffffffffff000LL
 
 /* The ELF file header.  This appears at the start of every ELF file.  */
 

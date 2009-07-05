@@ -23,6 +23,7 @@ int r_mem_cmp_mask(const u8 *dest, const u8 *orig, const u8 *mask, int len)
 void r_mem_copyendian (u8 *dest, const u8 *orig, int size, int endian)
 {
         if (endian) {
+			if (dest != orig)
                 memcpy(dest, orig, size);
         } else {
                 unsigned char buffer[8];

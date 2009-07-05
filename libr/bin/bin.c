@@ -25,7 +25,7 @@ static struct r_bin_string_t *get_strings(struct r_bin_t *bin, int min)
 	u8 *buf = NULL;
 	u64 len, max_str = 0;
 	int i, matches = 0, ctr = 0;
-	char str[R_BIN_SIZEOF_NAMES];
+	char str[R_BIN_SIZEOF_STRINGS];
 
 	len = lseek(bin->fd, 0, SEEK_END);
 	max_str = (u64)(len/min);
@@ -52,8 +52,8 @@ static struct r_bin_string_t *get_strings(struct r_bin_t *bin, int min)
 				ret[ctr].rva = ret[ctr].offset = i-matches;
 				ret[ctr].size = matches;
 				ret[ctr].ordinal = ctr;
-				memcpy(ret[ctr].string, str, R_BIN_SIZEOF_NAMES);
-				ret[ctr].string[R_BIN_SIZEOF_NAMES-1] = '\0';
+				memcpy(ret[ctr].string, str, R_BIN_SIZEOF_STRINGS);
+				ret[ctr].string[R_BIN_SIZEOF_STRINGS-1] = '\0';
 				ret[ctr].last = 0;
 				ctr++;
 			}
@@ -127,7 +127,7 @@ int r_bin_open(struct r_bin_t *bin, const char *file, int rw, char *plugin_name)
 {
 	if (file != NULL)
 		bin->file = file;
-	else return R_FALSE;
+	else return -1;
 	bin->rw = rw;
 
 	struct list_head *pos;
@@ -141,7 +141,7 @@ int r_bin_open(struct r_bin_t *bin, const char *file, int rw, char *plugin_name)
 	if (bin->cur && bin->cur->open)
 		return bin->cur->open(bin);
 	if (plugin_name && !strcmp(plugin_name, "bin_dummy"))
-		return R_FALSE;
+		return -1;
 	return r_bin_open(bin, file, rw, "bin_dummy");
 }
 
@@ -150,7 +150,7 @@ int r_bin_close(struct r_bin_t *bin)
 	if (bin->cur && bin->cur->close)
 		return bin->cur->close(bin);
 	
-	return R_FALSE;
+	return -1;
 }
 
 u64 r_bin_get_baddr(struct r_bin_t *bin)
@@ -158,7 +158,7 @@ u64 r_bin_get_baddr(struct r_bin_t *bin)
 	if (bin->cur && bin->cur->baddr)
 		return bin->cur->baddr(bin);
 	
-	return R_FALSE;
+	return -1;
 }
 
 struct r_bin_entry_t* r_bin_get_entry(struct r_bin_t *bin)
@@ -218,31 +218,31 @@ struct r_bin_field_t* r_bin_get_fields(struct r_bin_t *bin)
 	return NULL;
 }
 
+/*XXX*/
+#if 0
 u64 r_bin_resize_section(struct r_bin_t *bin, char *name, u64 size)
 {
 	if (bin->cur && bin->cur->resize_section)
 		return bin->cur->resize_section(bin, name, size);
 
-	return 0;
+	return -1;
 }
+#endif
 
 u64 r_bin_get_section_offset(struct r_bin_t *bin, char *name)
 {
-	struct r_bin_section_t *sections, *sectionsp;
+	struct r_bin_section_t *sections;
 	u64 ret = -1;
+	int i;
 
 	if (!(sections = r_bin_get_sections(bin)))
 		return R_FALSE;
 
-	sectionsp = sections;
-	while (!sectionsp->last) {
-		if (!strcmp(sectionsp->name, name)) {
-			ret = sectionsp->offset;
+	for (i = 0; !sections[i].last; i++)
+		if (!strcmp(sections[i].name, name)) {
+			ret = sections[i].offset;
 			break;
 		}
-
-		sectionsp++;
-	}
 
 	free(sections);
 
@@ -251,20 +251,18 @@ u64 r_bin_get_section_offset(struct r_bin_t *bin, char *name)
 
 u64 r_bin_get_section_rva(struct r_bin_t *bin, char *name)
 {
-	struct r_bin_section_t *sections, *sectionsp;
+	struct r_bin_section_t *sections;
 	u64 ret = -1;
+	int i;
 
 	if (!(sections = r_bin_get_sections(bin)))
 		return R_FALSE;
 
-	sectionsp = sections;
-	while (!sectionsp->last) {
-		if (!strcmp(sectionsp->name, name)) {
-			ret = sectionsp->rva;
+	for (i = 0; !sections[i].last; i++) {
+		if (!strcmp(sections[i].name, name)) {
+			ret = sections[i].rva;
 			break;
 		}
-
-		sectionsp++;
 	}
 
 	free(sections);
@@ -274,19 +272,18 @@ u64 r_bin_get_section_rva(struct r_bin_t *bin, char *name)
 
 u64 r_bin_get_section_size(struct r_bin_t *bin, char *name)
 {
-	struct r_bin_section_t *sections, *sectionsp;
+	struct r_bin_section_t *sections;
 	u64 ret = -1;
+	int i;
 
 	if (!(sections = r_bin_get_sections(bin)))
 		return R_FALSE;
 
-	sectionsp = sections;
-	while (!sectionsp->last) {
-		if (!strcmp(sectionsp->name, name)) {
-			ret = sectionsp->size;
+	for (i = 0; !sections[i].last; i++) {
+		if (!strcmp(sections[i].name, name)) {
+			ret = sections[i].size;
 			break;
 		}
-		sectionsp++;
 	}
 
 	free(sections);

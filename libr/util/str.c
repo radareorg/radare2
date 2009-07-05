@@ -245,6 +245,18 @@ char *r_str_dup(char *ptr, const char *string)
         return ptr;
 }
 
+char *r_str_dup_printf(const char *fmt, ...)
+{
+	char *ret;
+	va_list ap;
+	va_start(ap, fmt);
+	if ((ret = malloc(1024)) == NULL)
+		return NULL;
+	vsnprintf(ret, 1023, fmt, ap);
+	va_end(ap);
+	return ret;
+}
+
 char *r_str_concat(char *ptr, const char *string)
 {
         if (!ptr)

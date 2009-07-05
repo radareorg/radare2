@@ -61,7 +61,7 @@ static struct r_bin_section_t* sections(struct r_bin_t *bin)
 	PE_(r_bin_pe_get_sections)(bin->bin_obj, section);
 
 	for (i = 0; i < sections_count; i++) {
-		strncpy(ret[i].name, (char*)section[i].name, R_BIN_SIZEOF_NAMES);
+		strncpy(ret[i].name, (char*)section[i].name, R_BIN_SIZEOF_STRINGS);
 		ret[i].size = section[i].size;
 		ret[i].vsize = section->vsize;
 		ret[i].offset = section[i].offset;
@@ -101,10 +101,10 @@ static struct r_bin_symbol_t* symbols(struct r_bin_t *bin)
 	PE_(r_bin_pe_get_exports)(bin->bin_obj, symbol);
 
 	for (i = 0; i < symbols_count; i++) {
-		strncpy(ret[i].name, (char*)symbol[i].name, R_BIN_SIZEOF_NAMES);
-		strncpy(ret[i].forwarder, (char*)symbol[i].forwarder, R_BIN_SIZEOF_NAMES);
-		strncpy(ret[i].bind, "NONE", R_BIN_SIZEOF_NAMES);
-		strncpy(ret[i].type, "NONE", R_BIN_SIZEOF_NAMES);
+		strncpy(ret[i].name, (char*)symbol[i].name, R_BIN_SIZEOF_STRINGS);
+		strncpy(ret[i].forwarder, (char*)symbol[i].forwarder, R_BIN_SIZEOF_STRINGS);
+		strncpy(ret[i].bind, "NONE", R_BIN_SIZEOF_STRINGS);
+		strncpy(ret[i].type, "NONE", R_BIN_SIZEOF_STRINGS);
 		ret[i].rva = symbol[i].rva;
 		ret[i].offset = symbol[i].offset;
 		ret[i].size = 0;
@@ -136,9 +136,9 @@ static struct r_bin_import_t* imports(struct r_bin_t *bin)
 	PE_(r_bin_pe_get_imports)(bin->bin_obj, import);
 
 	for (i = 0; i < imports_count; i++) {
-		strncpy(ret[i].name, (char*)import[i].name, R_BIN_SIZEOF_NAMES);
-		strncpy(ret[i].bind, "NONE", R_BIN_SIZEOF_NAMES);
-		strncpy(ret[i].type, "NONE", R_BIN_SIZEOF_NAMES);
+		strncpy(ret[i].name, (char*)import[i].name, R_BIN_SIZEOF_STRINGS);
+		strncpy(ret[i].bind, "NONE", R_BIN_SIZEOF_STRINGS);
+		strncpy(ret[i].type, "NONE", R_BIN_SIZEOF_STRINGS);
 		ret[i].rva = import[i].rva;
 		ret[i].offset = import[i].offset;
 		ret[i].ordinal = import[i].ordinal;
@@ -161,20 +161,20 @@ static struct r_bin_info_t* info(struct r_bin_t *bin)
 	memset(ret, '\0', sizeof(struct r_bin_info_t));
 
 		if (PE_(r_bin_pe_get_class)(bin->bin_obj, pe_class_str))
-			strncpy(ret->class, pe_class_str, R_BIN_SIZEOF_NAMES);
-		strncpy(ret->rclass, "pe", R_BIN_SIZEOF_NAMES);
+			strncpy(ret->class, pe_class_str, R_BIN_SIZEOF_STRINGS);
+		strncpy(ret->rclass, "pe", R_BIN_SIZEOF_STRINGS);
 		if (PE_(r_bin_pe_get_os)(bin->bin_obj, pe_os_str))
-			strncpy(ret->os, pe_os_str, R_BIN_SIZEOF_NAMES);
+			strncpy(ret->os, pe_os_str, R_BIN_SIZEOF_STRINGS);
 		if (PE_(r_bin_pe_get_arch)(bin->bin_obj, pe_arch_str))
-			strncpy(ret->arch, pe_arch_str, R_BIN_SIZEOF_NAMES);
+			strncpy(ret->arch, pe_arch_str, R_BIN_SIZEOF_STRINGS);
 		if (PE_(r_bin_pe_get_machine)(bin->bin_obj, pe_machine_str))
-			strncpy(ret->machine, pe_machine_str, R_BIN_SIZEOF_NAMES);
+			strncpy(ret->machine, pe_machine_str, R_BIN_SIZEOF_STRINGS);
 		if (PE_(r_bin_pe_get_subsystem)(bin->bin_obj, pe_subsystem_str))
-			strncpy(ret->subsystem, pe_subsystem_str, R_BIN_SIZEOF_NAMES);
+			strncpy(ret->subsystem, pe_subsystem_str, R_BIN_SIZEOF_STRINGS);
 		if (PE_(r_bin_pe_is_dll)(bin->bin_obj))
-			strncpy(ret->type, "DLL (Dynamic Link Library)", R_BIN_SIZEOF_NAMES);
+			strncpy(ret->type, "DLL (Dynamic Link Library)", R_BIN_SIZEOF_STRINGS);
 		else
-			strncpy(ret->type, "EXEC (Executable file)", R_BIN_SIZEOF_NAMES);
+			strncpy(ret->type, "EXEC (Executable file)", R_BIN_SIZEOF_STRINGS);
 		ret->big_endian = PE_(r_bin_pe_is_big_endian)(bin->bin_obj);
 
 		ret->dbg_info = 0;

@@ -17,7 +17,7 @@
 #define R_BIN_DBG_SYMS(x)     x & 0x08
 #define R_BIN_DBG_RELOCS(x)   x & 0x10
 
-#define R_BIN_SIZEOF_NAMES 256
+#define R_BIN_SIZEOF_STRINGS 256
 
 /* types */
 struct r_bin_t {
@@ -56,7 +56,7 @@ struct r_bin_entry_t {
 };
 
 struct r_bin_section_t {
-	char name[R_BIN_SIZEOF_NAMES];
+	char name[R_BIN_SIZEOF_STRINGS];
 	u64 size;
 	u64 vsize;
 	u64 rva;
@@ -66,10 +66,10 @@ struct r_bin_section_t {
 };
 
 struct r_bin_symbol_t {
-	char name[R_BIN_SIZEOF_NAMES];
-	char forwarder[R_BIN_SIZEOF_NAMES];
-	char bind[R_BIN_SIZEOF_NAMES];
-	char type[R_BIN_SIZEOF_NAMES];
+	char name[R_BIN_SIZEOF_STRINGS];
+	char forwarder[R_BIN_SIZEOF_STRINGS];
+	char bind[R_BIN_SIZEOF_STRINGS];
+	char type[R_BIN_SIZEOF_STRINGS];
 	u64 rva;
 	u64 offset;
 	u64 size;
@@ -78,9 +78,9 @@ struct r_bin_symbol_t {
 };
 
 struct r_bin_import_t {
-	char name[R_BIN_SIZEOF_NAMES];
-	char bind[R_BIN_SIZEOF_NAMES];
-	char type[R_BIN_SIZEOF_NAMES];
+	char name[R_BIN_SIZEOF_STRINGS];
+	char bind[R_BIN_SIZEOF_STRINGS];
+	char type[R_BIN_SIZEOF_STRINGS];
 	u64 rva;
 	u64 offset;
 	u64 ordinal;
@@ -89,7 +89,7 @@ struct r_bin_import_t {
 };
 
 struct r_bin_string_t {
-	char string[R_BIN_SIZEOF_NAMES];
+	char string[R_BIN_SIZEOF_STRINGS];
 	u64 rva;
 	u64 offset;
 	u64 ordinal;
@@ -98,19 +98,19 @@ struct r_bin_string_t {
 };
 
 struct r_bin_info_t {
-	char type[R_BIN_SIZEOF_NAMES];
-	char class[R_BIN_SIZEOF_NAMES];
-	char rclass[R_BIN_SIZEOF_NAMES];
-	char arch[R_BIN_SIZEOF_NAMES];
-	char machine[R_BIN_SIZEOF_NAMES];
-	char os[R_BIN_SIZEOF_NAMES];
-	char subsystem[R_BIN_SIZEOF_NAMES];
+	char type[R_BIN_SIZEOF_STRINGS];
+	char class[R_BIN_SIZEOF_STRINGS];
+	char rclass[R_BIN_SIZEOF_STRINGS];
+	char arch[R_BIN_SIZEOF_STRINGS];
+	char machine[R_BIN_SIZEOF_STRINGS];
+	char os[R_BIN_SIZEOF_STRINGS];
+	char subsystem[R_BIN_SIZEOF_STRINGS];
 	int big_endian;
 	u64 dbg_info;
 };
 
 struct r_bin_field_t {
-	char name[R_BIN_SIZEOF_NAMES];
+	char name[R_BIN_SIZEOF_STRINGS];
 	u64 rva;
 	u64 offset;
 	int last;
@@ -133,7 +133,7 @@ struct r_bin_import_t* r_bin_get_imports(struct r_bin_t *bin);
 struct r_bin_string_t* r_bin_get_strings(struct r_bin_t *bin);
 struct r_bin_info_t* r_bin_get_info(struct r_bin_t *bin);
 struct r_bin_field_t* r_bin_get_fields(struct r_bin_t *bin);
-u64 r_bin_resize_section(struct r_bin_t *bin, char *name, u64 size);
+/*XXX u64 r_bin_resize_section(struct r_bin_t *bin, char *name, u64 size); */
 u64 r_bin_get_section_offset(struct r_bin_t *bin, char *name);
 u64 r_bin_get_section_rva(struct r_bin_t *bin, char *name);
 u64 r_bin_get_section_size(struct r_bin_t *bin, char *name);
