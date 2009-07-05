@@ -12,7 +12,7 @@ static int bopen(struct r_bin_t *bin)
 
 	if ((bin->fd = r_bin_java_open(bin->bin_obj, bin->file)) == -1) {
 		free(bin->bin_obj);
-		return R_FALSE;
+		return -1;
 	}
 
 	return bin->fd;

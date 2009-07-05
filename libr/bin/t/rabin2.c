@@ -529,7 +529,7 @@ int main(int argc, char **argv)
 		sprintf(plugin_name, "bin_%s", format);
 	} 
 
-	if (r_bin_open(&bin, file, rw, plugin_name) == R_FALSE) {
+	if (r_bin_open(&bin, file, rw, plugin_name) == -1) {
 		ERR("r_bin: Cannot open '%s'\n", file);
 		return R_FALSE;
 	}
