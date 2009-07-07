@@ -46,9 +46,8 @@ static struct r_bin_section_t* sections(struct r_bin_t *bin)
 	struct r_bin_elf_section_t *section = NULL;
 	int i, sections_count;
 
-	if ((section = Elf_(r_bin_elf_get_sections)(bin->bin_obj)) == NULL)
-		return NULL;
-	for (sections_count = 0; !section[sections_count].last; sections_count++);
+	section = Elf_(r_bin_elf_get_sections)(bin->bin_obj);
+	for (sections_count = 0; section && !section[sections_count].last; sections_count++);
 	if ((ret = malloc((sections_count + 1) * sizeof(struct r_bin_section_t))) == NULL)
 		return NULL;
 
@@ -81,7 +80,7 @@ static struct r_bin_symbol_t* symbols(struct r_bin_t *bin)
 	struct r_bin_elf_symbol_t *symbol = NULL;
 
 	symbol = Elf_(r_bin_elf_get_symbols)(bin->bin_obj, R_BIN_ELF_SYMBOLS);
-	for (symbols_count = 0; !symbol[symbols_count].last; symbols_count++);
+	for (symbols_count = 0; symbol && !symbol[symbols_count].last; symbols_count++);
 	if ((ret = malloc((symbols_count + 1) * sizeof(struct r_bin_symbol_t))) == NULL)
 		return NULL;
 
@@ -110,7 +109,7 @@ static struct r_bin_import_t* imports(struct r_bin_t *bin)
 	struct r_bin_elf_symbol_t *import = NULL;
 
 	import = Elf_(r_bin_elf_get_symbols)(bin->bin_obj, R_BIN_ELF_IMPORTS);
-	for (imports_count = 0; !import[imports_count].last; imports_count++);
+	for (imports_count = 0; import && !import[imports_count].last; imports_count++);
 	if ((ret = malloc((imports_count + 1) * sizeof(struct r_bin_import_t))) == NULL)
 		return NULL;
 
@@ -193,7 +192,7 @@ static struct r_bin_field_t* fields(struct r_bin_t *bin)
 	int i, fields_count;
 	
 	field = Elf_(r_bin_elf_get_fields)(bin->bin_obj);
-	for (fields_count = 0; !field[fields_count].last; fields_count++);
+	for (fields_count = 0; field && !field[fields_count].last; fields_count++);
 	if ((ret = malloc((fields_count + 1) * sizeof(struct r_bin_field_t))) == NULL)
 		return NULL;
 	for (i = 0; i < fields_count; i++) {
