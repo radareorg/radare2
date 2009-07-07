@@ -385,7 +385,6 @@ static int rabin_do_operation(const char *op)
 		printf( "Operation string:\n"
 				"  Dump symbols: d/s/1024\n"
 				"  Dump section: d/S/.text\n");
-				//"  Resize section: r/.data/1024\n");
 		return R_FALSE;
 	}
 	arg = alloca(strlen(op)+1);
@@ -401,21 +400,6 @@ static int rabin_do_operation(const char *op)
 	}
 
 	switch(arg[0]) {
-/*XXX*/
-#if 0
-	case 'r':
-		if (!rw) {
-			printf("File must be opened in rw mode\n");
-			return R_FALSE;
-		}
-		if (!ptr || !ptr2)
-			goto _rabin_do_operation_error;
-		if (r_bin_resize_section(&bin, ptr, r_num_math(NULL,ptr2)) == 0) {
-			fprintf(stderr, "Delta = 0\n");
-			return R_FALSE;
-		}
-		break;
-#endif
 	case 'd':
 		if (!ptr)
 			goto _rabin_do_operation_error;

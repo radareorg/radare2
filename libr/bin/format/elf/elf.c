@@ -453,186 +453,6 @@ int Elf_(r_bin_elf_is_big_endian)(struct Elf_(r_bin_elf_obj_t) *bin)
 	return (bin->ehdr.e_ident[EI_DATA] == ELFDATA2MSB);
 }
 
-/* XXX Section resize here? */
-#if 0
-/* TODO: Take care of endianess */
-/* TODO: Real error handling */
-/* TODO: Resize sections before .init */
-u64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const char *name, u64 size)
-{
-	Elf_(Ehdr) *ehdr = &bin->ehdr;
-	Elf_(Phdr) *phdr = bin->phdr, *phdrp;
-	Elf_(Shdr) *shdr = bin->shdr, *shdrp;
-	const char *strtab = bin->strtab;
-	u8 *buf;
-	u64 off, got_offset, got_addr = 0, rsz_offset, delta = 0;
-	u64 rsz_osize = 0, rsz_fsize, rsz_size = size, rest_size = 0;
-	int i, j, done = 0;
-
-	if (size == 0) {
-		printf("0 size section?\n");
-		return 0;
-	}
-	rsz_fsize = lseek(bin->fd, 0, SEEK_END);
-
-	/* calculate delta */
-	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) 
-		if (!strncmp(name, &strtab[shdrp->sh_name], ELF_STRING_LENGTH)) {
-			delta =  rsz_size - shdrp->sh_size;
-			rsz_offset = (u64)shdrp->sh_offset;
-			rsz_osize = (u64)shdrp->sh_size;
-		}
-
-	if (delta == 0) {
-		printf("Cannot find section\n");
-		return 0;
-	}
- 
-	printf("delta: %lld\n", delta);
-	
-	/* rewrite rel's (imports) */
-	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
-		if (!strcmp(&strtab[shdrp->sh_name], ".got"))
-			got_addr = (u64)shdrp->sh_offset;
-	}
-	if (got_addr == 0) {
-		/* TODO: Unknown GOT address */
-	}
-
-	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
-		if (!strcmp(&strtab[shdrp->sh_name], ".rel.plt")) {
-			Elf_(Rel) *rel, *relp;
-			rel = (Elf_(Rel) *)malloc(shdrp->sh_size);
-			if (rel == NULL) {
-				perror("malloc");
-				return -1;
-			}
-
-			if (lseek(bin->fd, shdrp->sh_offset, SEEK_SET) < 0)
-				perror("lseek");
-			if (read(bin->fd, rel, shdrp->sh_size) != shdrp->sh_size)
-				perror("read");
-
-			got_offset = (rel->r_offset - bin->baddr - got_addr) & ELF_GOTOFF_MASK;
-			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof(Elf_(Rel)), relp++) {
-				r_mem_copyendian((u8*)&(relp->r_offset), sizeof(Elf_(Addr)), !bin->endian);
-				/* rewrite relp->r_offset */
-				if (relp->r_offset - bin->baddr - got_offset >= rsz_offset + rsz_osize) {
-					relp->r_offset+=delta;
-					off = shdrp->sh_offset + j;
-
-					if (lseek(bin->fd, off, SEEK_SET) < 0)
-						perror("lseek");
-					if (write(bin->fd, &relp, sizeof(Elf_(Rel))) != sizeof(Elf_(Rel)))
-						perror("write (imports)");
-				}
-			}
-			free(rel);
-			break;
-		} else if (!strcmp(&strtab[shdrp->sh_name], ".rela.plt")) {
-			Elf_(Rela) *rel, *relp;
-			rel = (Elf_(Rela) *)malloc(shdrp->sh_size);
-			if (rel == NULL) {
-				perror("malloc");
-				return -1;
-			}
-
-			if (lseek(bin->fd, shdrp->sh_offset, SEEK_SET) < 0)
-				perror("lseek");
-			if (read(bin->fd, rel, shdrp->sh_size) != shdrp->sh_size)
-				perror("read");
-
-			got_offset = (rel->r_offset - bin->baddr - got_addr) & ELF_GOTOFF_MASK;
-			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof(Elf_(Rela)), relp++) {
-				r_mem_copyendian((u8*)&(relp->r_offset), sizeof(Elf_(Addr)), !bin->endian);
-				/* rewrite relp->r_offset */
-				if (relp->r_offset - bin->baddr - got_offset >= rsz_offset + rsz_osize) {
-					relp->r_offset+=delta;
-					off = shdrp->sh_offset + j;
-
-					if (lseek(bin->fd, off, SEEK_SET) < 0)
-						perror("lseek");
-					if (write(bin->fd, &relp, sizeof(Elf_(Rela))) != sizeof(Elf_(Rela)))
-						perror("write (imports)");
-				}
-			}
-			free(rel);
-			break;
-		}
-	}
-
-	/* rewrite section headers */
-	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
-		if (!done && !strncmp(name, &strtab[shdrp->sh_name], ELF_STRING_LENGTH)) {
-			shdrp->sh_size = rsz_size;
-			done = 1;
-		} else if (shdrp->sh_offset >= rsz_offset + rsz_osize) {
-			shdrp->sh_offset += delta;
-			if (shdrp->sh_addr) shdrp->sh_addr += delta;
-
-		}
-		off = ehdr->e_shoff + i * sizeof(Elf_(Shdr));
-		if (lseek(bin->fd, off, SEEK_SET) < 0)
-			perror("lseek");
-		if (write(bin->fd, shdrp, sizeof(Elf_(Shdr))) != sizeof(Elf_(Shdr)))
-			perror("write (shdr)");
-		printf("-> elf section (%s)\n", &strtab[shdrp->sh_name]);
-	}
-
-	/* rewrite program headers */
-	for (i = 0, phdrp = phdr; i < ehdr->e_phnum; i++, phdrp++) {
-#if 0 
-		if (phdrp->p_offset < rsz_offset && phdrp->p_offset + phdrp->p_filesz > rsz_offset) {
-			phdrp->p_filesz += delta;
-			phdrp->p_memsz += delta;
-		}
-#endif 
-		if (phdrp->p_offset >= rsz_offset + rsz_osize) {
-			phdrp->p_offset += delta;
-			if (phdrp->p_vaddr) phdrp->p_vaddr += delta;
-			if (phdrp->p_paddr) phdrp->p_paddr += delta;
-		}
-		off = ehdr->e_phoff + i * sizeof(Elf_(Phdr));
-		if (lseek(bin->fd, off, SEEK_SET) < 0)
-			perror("lseek");
-		if (write(bin->fd, phdrp, sizeof(Elf_(Phdr))) != sizeof(Elf_(Phdr)))
-			perror("write (phdr)");
-		printf("-> program header (%08llx)\n", (u64) phdrp->p_offset);
-	}
-
-	/* rewrite other elf pointers (entrypoint, phoff, shoff) */
-	if (ehdr->e_entry - bin->baddr >= rsz_offset + rsz_osize)
-		ehdr->e_entry += delta;
-	if (ehdr->e_phoff >= rsz_offset + rsz_osize)
-		ehdr->e_phoff += delta;
-	if (ehdr->e_shoff >= rsz_offset + rsz_osize)
-		ehdr->e_shoff += delta;
-	if (lseek(bin->fd, 0, SEEK_SET) < 0)
-		perror("lseek");
-	if (write(bin->fd, ehdr, sizeof(Elf_(Ehdr))) != sizeof(Elf_(Ehdr)))
-		perror("write (ehdr)");
-
-	/* inverse order to write bodies .. avoid overlapping here */
-	/* XXX Check when delta is negative */
-	rest_size = rsz_fsize - (rsz_offset + rsz_osize);
-	buf = (u8 *)malloc(rest_size);
-	printf("COPY FROM 0x%08llx\n", (u64) rsz_offset+rsz_osize);
-	lseek(bin->fd, rsz_offset+rsz_osize, SEEK_SET);
-	read(bin->fd, buf, rest_size);
-
-	printf("COPY TO 0x%08llx\n", (u64) rsz_offset+rsz_size);
-	lseek(bin->fd, rsz_offset+rsz_size, SEEK_SET);
-	write(bin->fd, buf, rest_size);
-	printf("Shifted %d bytes\n", (int)delta);
-	free(buf);
-
-	/* Reinit structs*/
-	Elf_(r_bin_elf_init)(bin);
-
-	return delta;
-}
-#endif
-
 struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_obj_t) *bin)
 {
 	struct r_bin_elf_section_t *ret = NULL;
@@ -655,119 +475,14 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 	return ret;
 }
 
-/*XXX*/
-struct r_bin_elf_import_t* Elf_(r_bin_elf_get_imports)(struct Elf_(r_bin_elf_obj_t) *bin)
-{
-	Elf_(Shdr) *strtab_section;
-	Elf_(Sym) *sym;
-	struct r_bin_elf_import_t *ret = NULL;
-	char *strtab;
-	u64 sym_offset;
-	int ret_ctr, i, j, k;
-
-	sym_offset = (bin->ehdr.e_type == ET_REL ? Elf_(r_bin_elf_get_section_offset)(bin, ".text") : 0);
-
-	if (bin->ehdr.e_shnum == 0)
-		return NULL;
-
-	for (i = 0; i < bin->ehdr.e_shnum; i++)
-		if (bin->shdr[i].sh_type == (Elf_(r_bin_elf_get_stripped)(bin)?SHT_DYNSYM:SHT_SYMTAB)) {
-			strtab_section = &bin->shdr[bin->shdr[i].sh_link];
-			if ((strtab = (char *)malloc(strtab_section->sh_size)) == NULL) {
-				perror("malloc (syms strtab)");
-				return NULL;
-			}
-			if (lseek(bin->fd, strtab_section->sh_offset, SEEK_SET) != strtab_section->sh_offset) {
-				perror("lseek (syms strtab)");
-				return NULL;
-			}
-			if (read(bin->fd, strtab, strtab_section->sh_size) != strtab_section->sh_size) {
-				perror("read (syms strtab)");
-				return NULL;
-			}
-
-			if ((sym = (Elf_(Sym) *)malloc(bin->shdr[i].sh_size)) == NULL) {
-				perror("malloc (syms)");
-				return NULL;
-			}
-			if (lseek(bin->fd, bin->shdr[i].sh_offset, SEEK_SET) != bin->shdr[i].sh_offset) {
-				perror("lseek (syms)");
-				return NULL;
-			}
-			if (read(bin->fd, sym, bin->shdr[i].sh_size) != bin->shdr[i].sh_size) {
-				perror("read (syms)");
-				return NULL;
-			}
-
-			for (j = 0; j < bin->shdr[i].sh_size; j += sizeof(Elf_(Sym))) {
-				r_mem_copyendian((u8*)&(sym[i].st_name), (u8*)&(sym[i].st_name), sizeof(Elf_(Word)), !bin->endian);
-				r_mem_copyendian((u8*)&(sym[i].st_value), (u8*)&(sym[i].st_value), sizeof(Elf_(Addr)), !bin->endian);
-				r_mem_copyendian((u8*)&(sym[i].st_size), (u8*)&(sym[i].st_size), sizeof(Elf_Vword), !bin->endian);
-				r_mem_copyendian((u8*)&(sym[i].st_shndx), (u8*)&(sym[i].st_shndx), sizeof(Elf_(Section)), !bin->endian);
-			}
-
-			for (j = k = ret_ctr = 0; j < bin->shdr[i].sh_size; j += sizeof(Elf_(Sym)), k++) {
-				if (k == 0)
-					continue;
-				if (sym[k].st_shndx == STN_UNDEF) {
-					if ((ret = realloc(ret, (ret_ctr + 1) * sizeof(struct r_bin_elf_symbol_t))) == NULL) {
-						perror("realloc (imports)");
-						return NULL;
-					}
-					memcpy(ret[ret_ctr].name, &strtab[sym[k].st_name], ELF_STRING_LENGTH); 
-					if (sym[k].st_value)
-						ret[ret_ctr].offset = sym[k].st_value;
-					else if ((ret[ret_ctr].offset = Elf_(get_import_addr)(bin, k)) == -1)
-						ret[ret_ctr].offset = 0;
-					if (ret[ret_ctr].offset >= bin->baddr)
-						ret[ret_ctr].offset -= bin->baddr;
-					switch (ELF_ST_BIND(sym[k].st_info)) {
-					case STB_LOCAL:  snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "LOCAL"); break;
-					case STB_GLOBAL: snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "GLOBAL"); break;
-					case STB_NUM:    snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "NUM"); break;
-					case STB_LOOS:   snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "LOOS"); break;
-					case STB_HIOS:   snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "HIOS"); break;
-					case STB_LOPROC: snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "LOPROC"); break;
-					case STB_HIPROC: snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "HIPROC"); break;
-					default:         snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "UNKNOWN");
-					}
-					switch (ELF_ST_TYPE(sym[k].st_info)) {
-					case STT_NOTYPE:  snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "NOTYPE"); break;
-					case STT_OBJECT:  snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "OBJECT"); break;
-					case STT_FUNC:    snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "FUNC"); break;
-					case STT_SECTION: snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "SECTION"); break;
-					case STT_FILE:    snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "FILE"); break;
-					case STT_COMMON:  snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "COMMON"); break;
-					case STT_TLS:     snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "TLS"); break;
-					case STT_NUM:     snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "NUM"); break;
-					case STT_LOOS:    snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "LOOS"); break;
-					case STT_HIOS:    snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "HIOS"); break;
-					case STT_LOPROC:  snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "LOPROC"); break;
-					case STT_HIPROC:  snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "HIPROC"); break;
-					default:          snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "UNKNOWN");
-					}
-					ret[ret_ctr].last = 0;
-					ret_ctr++;
-				}
-			}
-			if ((sym = realloc(sym, (ret_ctr + 1) * sizeof(struct r_bin_elf_symbol_t))) == NULL)
-				return NULL;
-			ret[ret_ctr].last = 1;
-			break;
-		}
-
-	return ret;
-}
-
-/*XXX*/
-struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin)
+struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, int type)
 {
 	Elf_(Shdr) *strtab_section;
 	Elf_(Sym) *sym;
 	struct r_bin_elf_symbol_t *ret = NULL;
 	char *strtab;
-	u64 sym_offset;
-	int ret_ctr, i, j, k;
+	u64 sym_offset, toffset;
+	int tsize, ret_ctr, i, j, k;
 
 	sym_offset = (bin->ehdr.e_type == ET_REL ? Elf_(r_bin_elf_get_section_offset)(bin, ".text") : 0);
 
@@ -813,52 +528,58 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 			for (j = k = ret_ctr = 0; j < bin->shdr[i].sh_size; j += sizeof(Elf_(Sym)), k++) {
 				if (k == 0)
 					continue;
-				if (sym[k].st_shndx != STN_UNDEF && ELF_ST_TYPE(sym[k].st_info) != STT_SECTION && ELF_ST_TYPE(sym[k].st_info) != STT_FILE) {
-					if ((ret = realloc(ret, (ret_ctr + 1) * sizeof(struct r_bin_elf_symbol_t))) == NULL) {
-						perror("realloc (symbols)");
-						return NULL;
-					}
-					ret[ret_ctr].size = (u64)sym[k].st_size; 
-					memcpy(ret[ret_ctr].name, &strtab[sym[k].st_name], ELF_STRING_LENGTH); 
-					ret[ret_ctr].name[ELF_STRING_LENGTH-1] = '\0';
-					ret[ret_ctr].offset = (u64)sym[k].st_value + sym_offset;
-					if (ret[ret_ctr].offset >= bin->baddr)
-						ret[ret_ctr].offset -= bin->baddr;
-					switch (ELF_ST_BIND(sym[k].st_info)) {
-					case STB_LOCAL:  snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "LOCAL"); break;
-					case STB_GLOBAL: snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "GLOBAL"); break;
-					case STB_NUM:    snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "NUM"); break;
-					case STB_LOOS:   snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "LOOS"); break;
-					case STB_HIOS:   snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "HIOS"); break;
-					case STB_LOPROC: snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "LOPROC"); break;
-					case STB_HIPROC: snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "HIPROC"); break;
-					default:         snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "UNKNOWN");
-					}
-					switch (ELF_ST_TYPE(sym[k].st_info)) {
-					case STT_NOTYPE:  snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "NOTYPE"); break;
-					case STT_OBJECT:  snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "OBJECT"); break;
-					case STT_FUNC:    snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "FUNC"); break;
-					case STT_SECTION: snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "SECTION"); break;
-					case STT_FILE:    snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "FILE"); break;
-					case STT_COMMON:  snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "COMMON"); break;
-					case STT_TLS:     snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "TLS"); break;
-					case STT_NUM:     snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "NUM"); break;
-					case STT_LOOS:    snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "LOOS"); break;
-					case STT_HIOS:    snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "HIOS"); break;
-					case STT_LOPROC:  snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "LOPROC"); break;
-					case STT_HIPROC:  snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "HIPROC"); break;
-					default:          snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "UNKNOWN");
-					}
-					ret[ret_ctr].last = 0;
-					ret_ctr++;
+				if (type == R_BIN_ELF_IMPORTS && sym[k].st_shndx == STN_UNDEF) {
+					if (sym[k].st_value)
+						toffset = sym[k].st_value;
+					else if ((toffset = Elf_(get_import_addr)(bin, k)) == -1)
+						toffset = 0;
+					tsize = 0;
+				} else if (type == R_BIN_ELF_SYMBOLS && sym[k].st_shndx != STN_UNDEF &&
+						ELF_ST_TYPE(sym[k].st_info) != STT_SECTION && ELF_ST_TYPE(sym[k].st_info) != STT_FILE) {
+					toffset = (u64)sym[k].st_value + sym_offset;
+					tsize = sym[k].st_size;
+				} else continue;
+				if ((ret = realloc(ret, (ret_ctr + 1) * sizeof(struct r_bin_elf_symbol_t))) == NULL) {
+					perror("realloc (symbols|imports)");
+					return NULL;
 				}
+				ret[ret_ctr].offset = (toffset >= bin->baddr ? toffset -= bin->baddr : toffset);
+				ret[ret_ctr].size = tsize;
+				memcpy(ret[ret_ctr].name, &strtab[sym[k].st_name], ELF_STRING_LENGTH); 
+				ret[ret_ctr].name[ELF_STRING_LENGTH-1] = '\0';
+				switch (ELF_ST_BIND(sym[k].st_info)) {
+				case STB_LOCAL:  snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "LOCAL"); break;
+				case STB_GLOBAL: snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "GLOBAL"); break;
+				case STB_NUM:    snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "NUM"); break;
+				case STB_LOOS:   snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "LOOS"); break;
+				case STB_HIOS:   snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "HIOS"); break;
+				case STB_LOPROC: snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "LOPROC"); break;
+				case STB_HIPROC: snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "HIPROC"); break;
+				default:         snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "UNKNOWN");
+				}
+				switch (ELF_ST_TYPE(sym[k].st_info)) {
+				case STT_NOTYPE:  snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "NOTYPE"); break;
+				case STT_OBJECT:  snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "OBJECT"); break;
+				case STT_FUNC:    snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "FUNC"); break;
+				case STT_SECTION: snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "SECTION"); break;
+				case STT_FILE:    snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "FILE"); break;
+				case STT_COMMON:  snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "COMMON"); break;
+				case STT_TLS:     snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "TLS"); break;
+				case STT_NUM:     snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "NUM"); break;
+				case STT_LOOS:    snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "LOOS"); break;
+				case STT_HIOS:    snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "HIOS"); break;
+				case STT_LOPROC:  snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "LOPROC"); break;
+				case STT_HIPROC:  snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "HIPROC"); break;
+				default:          snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "UNKNOWN");
+				}
+				ret[ret_ctr].last = 0;
+				ret_ctr++;
 			}
 			if ((ret = realloc(ret, (ret_ctr + 1) * sizeof(struct r_bin_elf_symbol_t))) == NULL)
 				return NULL;
 			ret[ret_ctr].last = 1;
 			break;
 		}
-
 	return ret;
 }
 

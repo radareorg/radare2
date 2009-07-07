@@ -36,8 +36,6 @@ struct r_bin_handle_t r_bin_plugin_elf64 = {
 	.strings = NULL,
 	.info = &info,
 	.fields = &fields,
-	.resize_section = NULL
-	/*XXX .resize_section = &resize_section */
 };
 
 #ifndef CORELIB

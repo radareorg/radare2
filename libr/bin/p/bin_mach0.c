@@ -43,7 +43,6 @@ struct r_bin_handle_t r_bin_plugin_mach0 = {
 	.strings = NULL,
 	.info = &info,
 	.fields = &fields,
-	.resize_section = &resize_section
 };
 
 #ifndef CORELIB

@@ -80,7 +80,7 @@ static struct r_bin_symbol_t* symbols(struct r_bin_t *bin)
 	struct r_bin_symbol_t *ret = NULL;
 	struct r_bin_elf_symbol_t *symbol = NULL;
 
-	symbol = Elf_(r_bin_elf_get_symbols)(bin->bin_obj);
+	symbol = Elf_(r_bin_elf_get_symbols)(bin->bin_obj, R_BIN_ELF_SYMBOLS);
 	for (symbols_count = 0; !symbol[symbols_count].last; symbols_count++);
 	if ((ret = malloc((symbols_count + 1) * sizeof(struct r_bin_symbol_t))) == NULL)
 		return NULL;
@@ -107,9 +107,9 @@ static struct r_bin_import_t* imports(struct r_bin_t *bin)
 {
 	int imports_count, i;
 	struct r_bin_import_t *ret = NULL;
-	struct r_bin_elf_import_t *import = NULL;
+	struct r_bin_elf_symbol_t *import = NULL;
 
-	import = Elf_(r_bin_elf_get_imports)(bin->bin_obj);
+	import = Elf_(r_bin_elf_get_symbols)(bin->bin_obj, R_BIN_ELF_IMPORTS);
 	for (imports_count = 0; !import[imports_count].last; imports_count++);
 	if ((ret = malloc((imports_count + 1) * sizeof(struct r_bin_import_t))) == NULL)
 		return NULL;
@@ -209,14 +209,6 @@ static struct r_bin_field_t* fields(struct r_bin_t *bin)
 	return ret;
 }
 
-/*XXX*/
-#if 0
-static u64 resize_section(struct r_bin_t *bin, char *name, u64 size)
-{
-	return Elf_(r_bin_elf_resize_section)(bin->bin_obj, name, size);
-}
-#endif
-
 #if !R_BIN_ELF64
 static int check(struct r_bin_t *bin)
 {
@@ -250,8 +242,6 @@ struct r_bin_handle_t r_bin_plugin_elf = {
 	.strings = NULL,
 	.info = &info,
 	.fields = &fields,
-	.resize_section = NULL
-	/*XXX .resize_section = &resize_section */
 };
 
 #ifndef CORELIB

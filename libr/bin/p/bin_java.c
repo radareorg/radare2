@@ -160,7 +160,6 @@ struct r_bin_handle_t r_bin_plugin_java = {
 	.strings = &strings,
 	.info = &info,
 	.fields = NULL,
-	.resize_section = NULL
 };
 
 #ifndef CORELIB

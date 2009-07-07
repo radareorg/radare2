@@ -218,17 +218,6 @@ struct r_bin_field_t* r_bin_get_fields(struct r_bin_t *bin)
 	return NULL;
 }
 
-/*XXX*/
-#if 0
-u64 r_bin_resize_section(struct r_bin_t *bin, char *name, u64 size)
-{
-	if (bin->cur && bin->cur->resize_section)
-		return bin->cur->resize_section(bin, name, size);
-
-	return -1;
-}
-#endif
-
 u64 r_bin_get_section_offset(struct r_bin_t *bin, char *name)
 {
 	struct r_bin_section_t *sections;

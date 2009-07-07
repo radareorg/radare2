@@ -133,7 +133,6 @@ struct r_bin_import_t* r_bin_get_imports(struct r_bin_t *bin);
 struct r_bin_string_t* r_bin_get_strings(struct r_bin_t *bin);
 struct r_bin_info_t* r_bin_get_info(struct r_bin_t *bin);
 struct r_bin_field_t* r_bin_get_fields(struct r_bin_t *bin);
-/*XXX u64 r_bin_resize_section(struct r_bin_t *bin, char *name, u64 size); */
 u64 r_bin_get_section_offset(struct r_bin_t *bin, char *name);
 u64 r_bin_get_section_rva(struct r_bin_t *bin, char *name);
 u64 r_bin_get_section_size(struct r_bin_t *bin, char *name);
