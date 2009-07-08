@@ -162,96 +162,62 @@ static u64 Elf_(r_bin_elf_get_section_offset)(struct Elf_(r_bin_elf_obj_t) *bin,
 	return -1;
 }
 
-/*XXX*/
 static u64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym)
 {
-	u64 got_addr, got_offset;
+	Elf_(Rel) *rel;
 	Elf_(Addr) plt_sym_addr;
-	int i, j, k;
+	u64 got_addr, got_offset;
+	int i, j, k, tsize;
 	
 	if ((got_addr = Elf_(r_bin_elf_get_section_offset)(bin, ".got")) == -1)
 		return -1;
 
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
-		if (!strcmp(&bin->strtab[bin->shdr[i].sh_name], ".rel.plt")) {
-			Elf_(Rel) *rel;
-			if ((rel = (Elf_(Rel) *)malloc(bin->shdr[i].sh_size)) == NULL) {
-				perror("malloc (rel)");
-				return -1;
-			}
-			if (lseek(bin->fd, bin->shdr[i].sh_offset, SEEK_SET) != bin->shdr[i].sh_offset) {
-				perror("lseek (rel)");
-				return -1;
-			}
-			if (read(bin->fd, rel, bin->shdr[i].sh_size) != bin->shdr[i].sh_size) {
-				perror("read (rel)");
-				return -1;
-			}
+		if (!strcmp(&bin->strtab[bin->shdr[i].sh_name], ".rel.plt"))
+			tsize = sizeof(Elf_(Rel));
+		else if (!strcmp(&bin->strtab[bin->shdr[i].sh_name], ".rela.plt"))
+			tsize = sizeof(Elf_(Rela));
+		else continue;
 
-			for (j = 0; j < bin->shdr[i].sh_size; j += sizeof(Elf_(Rel))) {
-				r_mem_copyendian((u8*)&(rel[j].r_offset), (u8*)&(rel[j].r_offset), sizeof(Elf_(Addr)), !bin->endian);
-				r_mem_copyendian((u8*)&(rel[j].r_info), (u8*)&(rel[j].r_info), sizeof(Elf_Vword), !bin->endian);
-			}
-
-			got_offset = (rel->r_offset - bin->baddr - got_addr) & ELF_GOTOFF_MASK;
-
-			for (j = k = 0; j < bin->shdr[i].sh_size; j += sizeof(Elf_(Rel)), k++) {
-				if (ELF_R_SYM(rel[k].r_info) == sym) {
-					if (lseek(bin->fd, rel[k].r_offset-bin->baddr-got_offset, SEEK_SET)
-							!= rel[k].r_offset-bin->baddr-got_offset) {
-						perror("lseek (got)");
-						return -1;
-					}
-					if (read(bin->fd, &plt_sym_addr, sizeof(Elf_(Addr))) != sizeof(Elf_(Addr))) {
-						perror("read (got)");
-						return -1;
-					}
-
-					return (u64)(plt_sym_addr - 6);
-				}
-			}
-			break;
-		} else if (!strcmp(&bin->strtab[bin->shdr[i].sh_name], ".rela.plt")) {
-			Elf_(Rela) *rel;
-			if ((rel = (Elf_(Rela) *)malloc(bin->shdr[i].sh_size)) == NULL) {
-				perror("malloc (rel)");
-				return -1;
-			}
-			if (lseek(bin->fd, bin->shdr[i].sh_offset, SEEK_SET) != bin->shdr[i].sh_offset) {
-				perror("lseek (rel)");
-				return -1;
-			}
-			if (read(bin->fd, rel, bin->shdr[i].sh_size) != bin->shdr[i].sh_size) {
-				perror("read (rel)");
-				return -1;
-			}
-
-			for (j = 0; j < bin->shdr[i].sh_size; j += sizeof(Elf_(Rela))) {
-				r_mem_copyendian((u8*)&(rel[j].r_offset), (u8*)&(rel[j].r_offset), sizeof(Elf_(Addr)), !bin->endian);
-				r_mem_copyendian((u8*)&(rel[j].r_info), (u8*)&(rel[j].r_info), sizeof(Elf_Vword), !bin->endian);
-			}
-
-			got_offset = (rel->r_offset - bin->baddr - got_addr) & ELF_GOTOFF_MASK;
-
-			for (j = k = 0; j < bin->shdr[i].sh_size; j += sizeof(Elf_(Rela)), k++) {
-				if (ELF_R_SYM(rel[k].r_info) == sym) {
-					if (lseek(bin->fd, rel[k].r_offset-bin->baddr-got_offset, SEEK_SET)
-							!= rel[k].r_offset-bin->baddr-got_offset) {
-						perror("lseek (got)");
-						return -1;
-					}
-					if (read(bin->fd, &plt_sym_addr, sizeof(Elf_(Addr))) != sizeof(Elf_(Addr))) {
-						perror("read (got)");
-						return -1;
-					}
-
-					return (u64)(plt_sym_addr - 6);
-				}
-			}
-			break;
+		if ((rel = (Elf_(Rel) *)malloc((int)(bin->shdr[i].sh_size / tsize) * sizeof(Elf_(Rel)))) == NULL) {
+			perror("malloc (rel)");
+			return -1;
 		}
-	}
+		for (j = k = 0; j < bin->shdr[i].sh_size; j += tsize, k++) {
+			if (lseek(bin->fd, bin->shdr[i].sh_offset + j, SEEK_SET) != bin->shdr[i].sh_offset + j) {
+				perror("lseek (rel)");
+				return -1;
+			}
+			if (read(bin->fd, &rel[k], sizeof(Elf_(Rel))) != sizeof(Elf_(Rel))) {
+				perror("read (rel)");
+				return -1;
+			}
+		}
 
+		for (j = k = 0; j < bin->shdr[i].sh_size; j += tsize, k++) {
+			r_mem_copyendian((u8*)&(rel[k].r_offset), (u8*)&(rel[k].r_offset), sizeof(Elf_(Addr)), !bin->endian);
+			r_mem_copyendian((u8*)&(rel[k].r_info), (u8*)&(rel[k].r_info), sizeof(Elf_Vword), !bin->endian);
+		}
+
+		got_offset = (rel[0].r_offset - bin->baddr - got_addr) & ELF_GOTOFF_MASK;
+
+		for (j = k = 0; j < bin->shdr[i].sh_size; j += tsize, k++) {
+			if (ELF_R_SYM(rel[k].r_info) == sym) {
+				if (lseek(bin->fd, rel[k].r_offset-bin->baddr-got_offset, SEEK_SET)
+						!= rel[k].r_offset-bin->baddr-got_offset) {
+					perror("lseek (got)");
+					return -1;
+				}
+				if (read(bin->fd, &plt_sym_addr, sizeof(Elf_(Addr))) != sizeof(Elf_(Addr))) {
+					perror("read (got)");
+					return -1;
+				}
+
+				return (u64)(plt_sym_addr - 6);
+			}
+		}
+		break;
+	}
 	return -1;
 }
 
@@ -518,11 +484,11 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 				return NULL;
 			}
 
-			for (j = 0; j < bin->shdr[i].sh_size; j += sizeof(Elf_(Sym))) {
-				r_mem_copyendian((u8*)&(sym[i].st_name), (u8*)&(sym[i].st_name), sizeof(Elf_(Word)), !bin->endian);
-				r_mem_copyendian((u8*)&(sym[i].st_value), (u8*)&(sym[i].st_value), sizeof(Elf_(Addr)), !bin->endian);
-				r_mem_copyendian((u8*)&(sym[i].st_size), (u8*)&(sym[i].st_size), sizeof(Elf_Vword), !bin->endian);
-				r_mem_copyendian((u8*)&(sym[i].st_shndx), (u8*)&(sym[i].st_shndx), sizeof(Elf_(Section)), !bin->endian);
+			for (j = k = 0; j < bin->shdr[i].sh_size; j += sizeof(Elf_(Sym)), k++) {
+				r_mem_copyendian((u8*)&(sym[k].st_name), (u8*)&(sym[k].st_name), sizeof(Elf_(Word)), !bin->endian);
+				r_mem_copyendian((u8*)&(sym[k].st_value), (u8*)&(sym[k].st_value), sizeof(Elf_(Addr)), !bin->endian);
+				r_mem_copyendian((u8*)&(sym[k].st_size), (u8*)&(sym[k].st_size), sizeof(Elf_Vword), !bin->endian);
+				r_mem_copyendian((u8*)&(sym[k].st_shndx), (u8*)&(sym[k].st_shndx), sizeof(Elf_(Section)), !bin->endian);
 			}
 
 			for (j = k = ret_ctr = 0; j < bin->shdr[i].sh_size; j += sizeof(Elf_(Sym)), k++) {
