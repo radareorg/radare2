@@ -33,7 +33,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 	if (anal == NULL || aop == NULL || data == NULL)
 		return -1;
 
-	u8 *buf = (u8*)data;
+	ut8 *buf = (ut8*)data;
 	memset(aop, '\0', sizeof(struct r_anal_aop_t));
 	aop->type = R_ANAL_AOP_TYPE_UNK;
 
@@ -46,19 +46,19 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 		case 0x46:
 		case 0x55:
 			/* mov -0xc(%ebp, %eax */
-			aop->ref = (u64)(int)(-((char)buf[2]));
+			aop->ref = (ut64)(int)(-((char)buf[2]));
 			aop->stackop = R_ANAL_STACK_LOCAL_GET;
 			break;
 
 		case 0x95:
 			if (buf[2]==0xe0) { // ebp
-				aop->ref = (u64)(-((int)(buf[3]+(buf[4]<<8)+(buf[5]<<16)+(buf[6]<<24))));
+				aop->ref = (ut64)(-((int)(buf[3]+(buf[4]<<8)+(buf[5]<<16)+(buf[6]<<24))));
 				aop->stackop = R_ANAL_STACK_LOCAL_GET;
 			}
 			//aop->ref = -(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24));
 			break;
 		case 0xbd:
-			aop->ref = (u64)(-((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24))));
+			aop->ref = (ut64)(-((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24))));
 			//aop->ref = -(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24));
 			aop->stackop = R_ANAL_STACK_LOCAL_GET;
 			break;
@@ -71,15 +71,15 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 		case 0x4d: //  894de0          mov [ebp-0x20], ecx 
 		case 0x55:
 			aop->stackop = R_ANAL_STACK_LOCAL_SET;
-			aop->ref = (u64)-((char)buf[2]);
+			aop->ref = (ut64)-((char)buf[2]);
 			break;
 		case 0x85:
 			aop->stackop = R_ANAL_STACK_LOCAL_SET;
-			aop->ref = (u64)-((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24)));
+			aop->ref = (ut64)-((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24)));
 			break;
 		case 0x75:
 			aop->stackop = R_ANAL_STACK_LOCAL_GET;
-			aop->ref = (u64)(buf[2]); //+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24));
+			aop->ref = (ut64)(buf[2]); //+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24));
 			break;
 		}
 		aop->type   = R_ANAL_AOP_TYPE_MOV;
@@ -100,7 +100,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 	//case 0xea: // far jmp
 	// TODO moar
 	case 0x3b: //cmp
-		aop->ref = (u64)(-((char)buf[2]));
+		aop->ref = (ut64)(-((char)buf[2]));
 		aop->stackop = R_ANAL_STACK_LOCAL_GET;
 	case 0x39:
 	case 0x3c:
@@ -116,7 +116,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 	case 0x0f: // 3 byte nop
 		//0fbe55ff        movsx edx, byte [ebp-0x1]
 		if (buf[1]==0xbe) {
-			aop->ref = (u64)(int)(-((char)buf[3]));
+			aop->ref = (ut64)(int)(-((char)buf[3]));
 			aop->stackop = R_ANAL_STACK_LOCAL_GET;
 		} else
 		if (buf[1]==0x31) {
@@ -191,12 +191,12 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 			aop->type = R_ANAL_AOP_TYPE_PUSH;
 			aop->stackop = R_ANAL_STACK_ARG_GET;
 			aop->ref = 0LL;
-			aop->ref = (u64)(((char)(buf[2])));
+			aop->ref = (ut64)(((char)(buf[2])));
 		} else
 		if (buf[1]== 0x45) {
 			aop->type = R_ANAL_AOP_TYPE_ADD;
 			aop->stackop = R_ANAL_STACK_LOCAL_SET;
-			aop->ref = (u64)(-((char)buf[2]));
+			aop->ref = (ut64)(-((char)buf[2]));
 		} else
 		if (buf[1]>=0x50 && buf[1]<=0x6f) {
 			aop->type = R_ANAL_AOP_TYPE_UJMP;
@@ -255,17 +255,17 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 	case 0x83:
 		switch(buf[1]) {
 		case 0xe4: // and
-			aop->value = (u64)(unsigned char)buf[2];
+			aop->value = (ut64)(unsigned char)buf[2];
 			aop->type = R_ANAL_AOP_TYPE_AND;
 			break;
 		case 0xc4:
 			/* inc $0x????????, $esp*/
-			aop->value = -(u64)(unsigned char)buf[2];
+			aop->value = -(ut64)(unsigned char)buf[2];
 			aop->stackop = R_ANAL_STACK_INCSTACK;
 			break;
 		case 0xec:
 			/* sub $0x????????, $esp*/
-			aop->value = (u64)(unsigned char)buf[2];
+			aop->value = (ut64)(unsigned char)buf[2];
 			aop->stackop = R_ANAL_STACK_INCSTACK;
 			break;
 		case 0xbd: /* 837dfc02        cmp dword [ebp-0x4], 0x2 */
@@ -285,10 +285,10 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 		case 0x7d: /* 837dfc02        cmp dword [ebp-0x4], 0x2 */
 			if ((char)buf[2]>0) {
 				aop->stackop = R_ANAL_STACK_ARG_GET;
-				aop->value = (u64)(char)buf[2];
+				aop->value = (ut64)(char)buf[2];
 			} else {
 				aop->stackop = R_ANAL_STACK_LOCAL_GET;
-				aop->value = (u64)-(char)buf[2];
+				aop->value = (ut64)-(char)buf[2];
 			}
 			aop->type = R_ANAL_AOP_TYPE_CMP;
 			break;
@@ -297,7 +297,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 	case 0x8d:
 		/* LEA */
 		if (buf[1] == 0x85) {
-			aop->ref = (u64)(-((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24))));
+			aop->ref = (ut64)(-((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24))));
 			aop->stackop = R_ANAL_STACK_LOCAL_GET;
 		}
 		aop->type =R_ANAL_AOP_TYPE_MOV;
@@ -307,16 +307,16 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 		/* mov dword [ebp-0xc], 0x0  ||  c7 45 f4 00000000 */
 		switch(buf[1]) {
 		case 0x85:
-			aop->ref = (u64)(((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24))));
+			aop->ref = (ut64)(((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24))));
 			break;
  			//c785 e4fbffff 00. mov dword [ebp+0xfffffbe4], 0x0
 		case 0x45:
 			aop->stackop = R_ANAL_STACK_LOCAL_SET;
-			aop->ref = (u64)(-((char)buf[2]));
+			aop->ref = (ut64)(-((char)buf[2]));
 			break;
 		case 0x04:
 			// c7042496850408    dword [esp] = 0x8048596 ; LOL
-			aop->ref = (u64)(((int)(buf[3]+(buf[4]<<8)+(buf[5]<<16)+(buf[6]<<24))));
+			aop->ref = (ut64)(((int)(buf[3]+(buf[4]<<8)+(buf[5]<<16)+(buf[6]<<24))));
 			break;
 		}
 		aop->type = R_ANAL_AOP_TYPE_STORE;
@@ -337,7 +337,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 	case 0xa1: // mov eax, [addr]
 		aop->type = R_ANAL_AOP_TYPE_MOV;
 		//vm_arch_x86_regs[VM_X86_EAX] = anal->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
-		//radare_read_at((u64)vm_arch_x86_regs[VM_X86_EAX], (unsigned char *)&(vm_arch_x86_regs[VM_X86_EAX]), 4);
+		//radare_read_at((ut64)vm_arch_x86_regs[VM_X86_EAX], (unsigned char *)&(vm_arch_x86_regs[VM_X86_EAX]), 4);
 		break;
 #if 0
 	case0xF

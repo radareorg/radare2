@@ -12,18 +12,18 @@
         (((x) & 0x000000000000ff00LL) << 40)  | \
         (((x) & 0x00000000000000ffLL) << 56))
 
-u64 r_num_htonq(u64 value) {
-        u64 ret  = value;
+ut64 r_num_htonq(ut64 value) {
+        ut64 ret  = value;
 #if LIL_ENDIAN
-        endian_memcpy_e((u8*)&ret, (u8*)&value, 8, 0);
+        endian_memcpy_e((ut8*)&ret, (ut8*)&value, 8, 0);
 #endif
         return ret;
 }
 
-void r_num_minmax_swap(u64 *a, u64 *b)
+void r_num_minmax_swap(ut64 *a, ut64 *b)
 {
 	if (*a>*b) {
-		u64 tmp = *a;
+		ut64 tmp = *a;
 		*a = *b;
 		*b = tmp;
 	}
@@ -32,7 +32,7 @@ void r_num_minmax_swap(u64 *a, u64 *b)
 void r_num_minmax_swap_i(int *a, int *b)
 {
 	if (*a>*b) {
-		u64 tmp = *a;
+		ut64 tmp = *a;
 		*a = *b;
 		*b = tmp;
 	}
@@ -45,7 +45,7 @@ void r_num_init(struct r_num_t *num)
 	num->value = 0LL;
 }
 
-struct r_num_t *r_num_new(u64 (*cb)(void*,const char *,int*), void *ptr)
+struct r_num_t *r_num_new(ut64 (*cb)(void*,const char *,int*), void *ptr)
 {
 	struct r_num_t *num;
 	num = (struct r_num_t*) malloc(sizeof(struct r_num_t));
@@ -54,11 +54,11 @@ struct r_num_t *r_num_new(u64 (*cb)(void*,const char *,int*), void *ptr)
 }
 
 /* old get_offset */
-u64 r_num_get(struct r_num_t *num, const char *str)
+ut64 r_num_get(struct r_num_t *num, const char *str)
 {
 	int i, j;
 	char lch;
-	u64 ret = 0LL;
+	ut64 ret = 0LL;
 
 	for(;str[0]==' ';) str = str+1;
 
@@ -70,7 +70,7 @@ u64 r_num_get(struct r_num_t *num, const char *str)
 	}
 
 	if (str[0]=='\'' && str[2]=='\'')
-		return (u64)str[1];
+		return (ut64)str[1];
 
 	if (str[0]=='0' && str[1]=='x') {
 		sscanf(str, "0x%llx", &ret);
@@ -114,7 +114,7 @@ u64 r_num_get(struct r_num_t *num, const char *str)
 	return ret;
 }
 
-u64 r_num_op(char op, u64 a, u64 b)
+ut64 r_num_op(char op, ut64 a, ut64 b)
 {
 	IFDBG printf("r_num_op: %lld %c %lld\n", a,op,b);
 	switch(op) {
@@ -129,9 +129,9 @@ u64 r_num_op(char op, u64 a, u64 b)
 	return b;
 }
 
-static u64 r_num_math_internal(struct r_num_t *num, char *s)
+static ut64 r_num_math_internal(struct r_num_t *num, char *s)
 {
-	u64 ret = 0LL;
+	ut64 ret = 0LL;
 	char *p = s;
 	int i, nop, op='\0';
 
@@ -156,9 +156,9 @@ static u64 r_num_math_internal(struct r_num_t *num, char *s)
 	return r_num_op(op, ret, r_num_get(num, p));
 }
 
-u64 r_num_math(struct r_num_t *num, const char *str)
+ut64 r_num_math(struct r_num_t *num, const char *str)
 {
-	u64 ret = 0LL;
+	ut64 ret = 0LL;
 	char op = '+';
 	int len = strlen(str)+1;
 	char *p, *s = alloca(len);

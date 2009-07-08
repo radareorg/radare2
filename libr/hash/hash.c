@@ -3,9 +3,9 @@
 #include "r_hash.h"
 
 /* returns 0-100 */
-int r_hash_pcprint(u8 *buffer, u64 len)
+int r_hash_pcprint(ut8 *buffer, ut64 len)
 {
-	u8 *end = buffer + len;
+	ut8 *end = buffer + len;
 	int n;
 
 	for(n=0; buffer<end; buffer = buffer + 1)
@@ -15,12 +15,12 @@ int r_hash_pcprint(u8 *buffer, u64 len)
 	return ((100*n)/len);
 }
 
-int r_hash_par(u8 *buf, u64 len)
+int r_hash_par(ut8 *buf, ut64 len)
 {
-	u8 *end = buf+len;
-	u32 ones = 0;
+	ut8 *end = buf+len;
+	ut32 ones = 0;
 	for(;buf<end; buf = buf + 1) {
-		u8 x = buf[0];
+		ut8 x = buf[0];
 		ones += ((x&128)?1:0) + ((x&64)?1:0) + ((x&32)?1:0) + ((x&16)?1:0) +
 			((x&8)?1:0) + ((x&4)?1:0) + ((x&2)?1:0) + ((x&1)?1:0);
 	}
@@ -29,24 +29,24 @@ int r_hash_par(u8 *buf, u64 len)
 
 /* These functions comes from 0xFFFF */
 /* fmi: nopcode.org/0xFFFF */
-u16 r_hash_xorpair(const u8 *a, u64 len)
+ut16 r_hash_xorpair(const ut8 *a, ut64 len)
 {
-	u16 *b = (u16 *)a;
-	u16 result = 0;
+	ut16 *b = (ut16 *)a;
+	ut16 result = 0;
 	for(len>>=1;len--;b=b+1)
 		result^=b[0];
 	return result;
 }
 
-u8 r_hash_xor(const u8 *b, u64 len)
+ut8 r_hash_xor(const ut8 *b, ut64 len)
 {
-	u8 res = 0;
+	ut8 res = 0;
 	for(;len--;b=b+1)
 		res^=b[0];
 	return res;
 }
 
-u8 r_hash_mod255(const u8 *b, u64 len)
+ut8 r_hash_mod255(const ut8 *b, ut64 len)
 {
 	int i, c = 0;
 	/* from gdb */
@@ -56,9 +56,9 @@ u8 r_hash_mod255(const u8 *b, u64 len)
 }
 
 /* TODO: ignore case.. we have to use strcasestr */
-u64 r_hash_name_to_bits(const char *name)
+ut64 r_hash_name_to_bits(const char *name)
 {
-	u64 bits = R_HASH_NONE;
+	ut64 bits = R_HASH_NONE;
 	if (strstr(name, "md4"))
 		bits |= R_HASH_MD4;
 	if (strstr(name, "md5"))

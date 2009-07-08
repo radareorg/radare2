@@ -19,7 +19,7 @@ struct r_cons_frame_t {
 struct r_cons_buffer_t {
 	int alpha; /* ' ' chars in buffers are not written */
 	int w, h;
-	u8 *buf;
+	ut8 *buf;
 };
 
 struct r_cons_t {
@@ -80,7 +80,7 @@ struct r_cons_buffer *r_cons_buffer_new(int w, int h)
 	if (h<1) h=1;
 	buf->rw = buf->w = w;
 	buf->rh = buf->h = h;
-	buf->buf = (u8*)malloc(w*h);
+	buf->buf = (ut8*)malloc(w*h);
 	return buf;
 }
 
@@ -92,10 +92,10 @@ int r_cons_buffer_set_size(struct r_cons_buffer *buf, int w, int h)
 	if (w>buf->rw) {
 		/* must resize internal buffer */
 		buf->rw = w;
-		buf->buf = (u8*) realloc(buf->buf, w*h);
+		buf->buf = (ut8*) realloc(buf->buf, w*h);
 	}
 	buf->rw = buf->w = w;
 	buf->rh = buf->h = h;
-	buf->buf = (u8*)malloc(w*h);
+	buf->buf = (ut8*)malloc(w*h);
 	return buf;
 }

@@ -21,14 +21,14 @@
 #include "r_types.h"
 
 static char crc_table_is_init = 0;
-static u32 crc_table[256];
+static ut32 crc_table[256];
 
-u32 r_hash_crc32(const u8 *buf, u64 len)
+ut32 r_hash_crc32(const ut8 *buf, ut64 len)
 {
 	unsigned int crc = 0;
 
 	if (!crc_table_is_init) {
-		u32 i, j, h = 1;
+		ut32 i, j, h = 1;
 		crc_table_is_init = 1;
 		crc_table[0] = 0;
 		for (i = 128; i; i >>= 1) {

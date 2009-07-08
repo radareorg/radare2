@@ -10,9 +10,9 @@
 #include <math.h>
 #include "r_types.h"
 
-static double get_px(u8 x, const u8 *data, u64 size)
+static double get_px(ut8 x, const ut8 *data, ut64 size)
 {
-        u32 i, count;
+        ut32 i, count;
 
         count = 0;
         for (i = 0; i < size; i++)
@@ -22,7 +22,7 @@ static double get_px(u8 x, const u8 *data, u64 size)
         return (double)count/size;
 }
 
-double r_hash_entropy(const u8 *data, u64 size)
+double r_hash_entropy(const ut8 *data, ut64 size)
 {
         double h = 0, px, log2;
         unsigned char x;

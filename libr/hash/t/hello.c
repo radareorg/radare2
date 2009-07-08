@@ -6,8 +6,8 @@
 int main(int argc, char **argv)
 {
 	int fd;
-	u8 *buf;
-	u64 size;
+	ut8 *buf;
+	ut64 size;
 	struct r_io_t io;
 
 	if (argc<2) {
@@ -29,7 +29,7 @@ int main(int argc, char **argv)
 	r_io_lseek(&io, fd, 0, R_IO_SEEK_SET);
 
 	/* read bytes */
-	buf = (u8*) malloc(size);
+	buf = (ut8*) malloc(size);
 	if (buf == NULL) {
 		printf("Too big file\n");
 		return 1;
@@ -44,7 +44,7 @@ int main(int argc, char **argv)
 
 	{
 		struct r_hash_t ctx;
-		const u8 *c;
+		const ut8 *c;
 		int i;
 		r_hash_state_init(&ctx, R_HASH_ALL);
 		c = r_hash_state_md5(&ctx, buf, size);

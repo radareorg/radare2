@@ -8,7 +8,7 @@
 #include "r_types.h"
 
 /** CRC table for the CRC-16. The poly is 0x8005 (x^16 + x^15 + x^2 + 1) */
-static u16 const crc16_table[256] = {
+static ut16 const crc16_table[256] = {
 	0x0000, 0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241,
 	0xC601, 0x06C0, 0x0780, 0xC741, 0x0500, 0xC5C1, 0xC481, 0x0440,
 	0xCC01, 0x0CC0, 0x0D80, 0xCD41, 0x0F00, 0xCFC1, 0xCE81, 0x0E40,
@@ -43,7 +43,7 @@ static u16 const crc16_table[256] = {
 	0x8201, 0x42C0, 0x4380, 0x8341, 0x4100, 0x81C1, 0x8081, 0x4040
 };
 
-static inline u16 crc16_byte(u16 crc, const u8 data)
+static inline ut16 crc16_byte(ut16 crc, const ut8 data)
 {
 	return (crc >> 8) ^ crc16_table[(crc ^ data) & 0xff];
 }
@@ -56,7 +56,7 @@ static inline u16 crc16_byte(u16 crc, const u8 data)
  *
  * Returns the updated CRC value.
  */
-u16 r_hash_crc16(u16 crc, u8 const *buffer, u64 len)
+ut16 r_hash_crc16(ut16 crc, ut8 const *buffer, ut64 len)
 {
 	while (len--)
 		crc = crc16_byte(crc, *buffer++);

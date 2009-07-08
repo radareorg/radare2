@@ -8,7 +8,7 @@
 
 CREATE TABLE flags (
   name char(25) PRIMARY KEY,
-  offset u64,
+  offset ut64,
 );
 
 SELECT * FROM flags WHERE offset == 0x8048000;

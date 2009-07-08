@@ -85,16 +85,16 @@ R_API int r_config_swap(struct r_config_t *cfg, const char *name)
 	return R_FALSE;
 }
 
-R_API u64 r_config_get_i(struct r_config_t *cfg, const char *name)
+R_API ut64 r_config_get_i(struct r_config_t *cfg, const char *name)
 {
 	struct r_config_node_t *node =
 		r_config_node_get(cfg, name);
 	if (node) {
 		if (node->i_value != 0)
 			return node->i_value;
-		return (u64)r_num_math(NULL, node->value);
+		return (ut64)r_num_math(NULL, node->value);
 	}
-	return (u64)0LL;
+	return (ut64)0LL;
 }
 
 R_API struct r_config_node_t *r_config_set_cb(struct r_config_t *cfg, const char *name, const char *value, int (*callback)(void *user, void *data))
@@ -122,7 +122,7 @@ R_API struct r_config_node_t *r_config_set(struct r_config_t *cfg, const char *n
 {
 	struct r_config_node_t *node;
 	char *ov = NULL;
-	u64 oi;
+	ut64 oi;
 
 	if (name[0] == '\0')
 		return NULL;
@@ -142,7 +142,7 @@ R_API struct r_config_node_t *r_config_set(struct r_config_t *cfg, const char *n
 		free(node->value);
 		if (node->flags & CN_BOOL) {
 			int b = (!strcmp(value,"true")||!strcmp(value,"1"));
-			node->i_value = (u64)(b==0)?0:1;
+			node->i_value = (ut64)(b==0)?0:1;
 			node->value = strdup(b?"true":"false");
 		} else {
 			if (value == NULL) {
@@ -194,11 +194,11 @@ R_API int r_config_rm(struct r_config_t *cfg, const char *name)
 	return 0;
 }
 
-R_API struct r_config_node_t *r_config_set_i(struct r_config_t *cfg, const char *name, const u64 i)
+R_API struct r_config_node_t *r_config_set_i(struct r_config_t *cfg, const char *name, const ut64 i)
 {
 	char buf[128];
 	char *ov = NULL;
-	u64 oi;
+	ut64 oi;
 	struct r_config_node_t *node =
 		r_config_node_get(cfg, name);
 
@@ -232,7 +232,7 @@ R_API struct r_config_node_t *r_config_set_i(struct r_config_t *cfg, const char 
 	}
 
 	if (node && node->callback) {
-		u64 oi = node->i_value;
+		ut64 oi = node->i_value;
 		int ret = node->callback(cfg->user, node);
 		if (ret == R_FALSE) {
 			node->i_value = oi;

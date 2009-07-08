@@ -23,7 +23,7 @@ static int bclose(struct r_bin_t *bin)
 	return PE_(r_bin_pe_close)(bin->bin_obj);
 }
 
-static u64 baddr(struct r_bin_t *bin)
+static ut64 baddr(struct r_bin_t *bin)
 {
 	return PE_(r_bin_pe_get_image_base)(bin->bin_obj);
 }
@@ -192,7 +192,7 @@ static struct r_bin_info_t* info(struct r_bin_t *bin)
 #if !R_BIN_PE64
 static int check(struct r_bin_t *bin)
 {
-	u8 buf[1024];
+	ut8 buf[1024];
 
 	if ((bin->fd = open(bin->file, 0)) == -1)
 		return R_FALSE;

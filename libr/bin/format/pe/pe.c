@@ -330,9 +330,9 @@ int PE_(r_bin_pe_get_file_alignment)(PE_(r_bin_pe_obj) *bin)
 	return bin->nt_headers->optional_header.FileAlignment;
 }
 
-u64 PE_(r_bin_pe_get_image_base)(PE_(r_bin_pe_obj) *bin)
+ut64 PE_(r_bin_pe_get_image_base)(PE_(r_bin_pe_obj) *bin)
 {
-	return(u64)bin->nt_headers->optional_header.ImageBase;
+	return(ut64)bin->nt_headers->optional_header.ImageBase;
 }
 
 int PE_(r_bin_pe_get_imports)(PE_(r_bin_pe_obj) *bin, PE_(r_bin_pe_import) *import)

@@ -2,18 +2,18 @@
 
 #include "r_vm.h"
 
-int r_vm_mmu_cache_write(struct r_vm_t *vm, u64 addr, u8 *buf, int len)
+int r_vm_mmu_cache_write(struct r_vm_t *vm, ut64 addr, ut8 *buf, int len)
 {
 	struct r_vm_change_t *ch = MALLOC_STRUCT(struct r_vm_change_t);
 	ch->from = addr;
 	ch->to = addr + len;
-	ch->data = (u8*)malloc(len);
+	ch->data = (ut8*)malloc(len);
 	memcpy(ch->data, buf, len);
 	list_add_tail(&(ch->list), &vm->mmu_cache);
 	return 0;
 }
 
-int r_vm_mmu_cache_read(struct r_vm_t *vm, u64 addr, u8 *buf, int len)
+int r_vm_mmu_cache_read(struct r_vm_t *vm, ut64 addr, ut8 *buf, int len)
 {
 	struct r_vm_change_t *c;
 	struct list_head *pos;
@@ -29,14 +29,14 @@ int r_vm_mmu_cache_read(struct r_vm_t *vm, u64 addr, u8 *buf, int len)
 	return 0;
 }
 
-int r_vm_mmu_read(struct r_vm_t *vm, u64 off, u8 *data, int len)
+int r_vm_mmu_read(struct r_vm_t *vm, ut64 off, ut8 *data, int len)
 {
 	if (!vm->realio && r_vm_mmu_cache_read(vm, off, data, len))
 		return len;
 	return r_io_read_at(vm, off, data, len);
 }
 
-int r_vm_mmu_write(struct r_vm_t *vm, u64 off, u8 *data, int len)
+int r_vm_mmu_write(struct r_vm_t *vm, ut64 off, ut8 *data, int len)
 {
 	if (!vm->realio)
 		return r_vm_mmu_cache_write(vm, off, data, len);

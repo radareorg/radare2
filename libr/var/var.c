@@ -65,7 +65,7 @@ R_API int r_var_type_del(struct r_var_t *var, const char *typename)
 R_API int r_var_type_list(struct r_var_t *var)
 {
 	struct list_head *pos;
-	u64 ret = 0;
+	ut64 ret = 0;
 
 	list_for_each(pos, &var->vartypes) {
 		struct r_var_type_t *d = (struct r_var_type_t *)
@@ -91,7 +91,7 @@ R_API struct r_var_type_t *r_var_type_get(struct r_var_t *var, const char *datat
 
 /* vars.c */
 
-R_API int r_var_add(struct r_var_t *v, u64 addr, u64 eaddr, int delta, int type, const char *vartype, const char *name, int arraysize)
+R_API int r_var_add(struct r_var_t *v, ut64 addr, ut64 eaddr, int delta, int type, const char *vartype, const char *name, int arraysize)
 {
 	struct r_var_item_t *var = MALLOC_STRUCT(struct r_var_item_t);
 	/* TODO: check of delta inside funframe */
@@ -111,9 +111,9 @@ R_API int r_var_add(struct r_var_t *v, u64 addr, u64 eaddr, int delta, int type,
 	return 1;
 }
 
-R_API int r_var_add_access(struct r_var_t *var, u64 addr, int delta, int type, int set)
+R_API int r_var_add_access(struct r_var_t *var, ut64 addr, int delta, int type, int set)
 {
-	u64 from = 0LL, to = 0LL;
+	ut64 from = 0LL, to = 0LL;
 	struct list_head *pos;
 	struct r_var_item_t *v;
 	//int reloop = 0;
@@ -173,13 +173,13 @@ R_API const char *r_var_type_to_string(int type)
 
 #if 0
 /* This stuff belongs to the plugins realm */
-u32 var_dbg_read(int delta)
+ut32 var_dbg_read(int delta)
 {
 	/* XXX: EBP ONLY FOR X86 */
-	u32 ret;
-	u64 foo = get_offset("ebp");
+	ut32 ret;
+	ut64 foo = get_offset("ebp");
 	foo-=delta;
-	radare_read_at(foo, (u8*)&ret, 4);
+	radare_read_at(foo, (ut8*)&ret, 4);
 	return ret;
 }
 #endif
@@ -188,14 +188,14 @@ R_API int r_var_item_print(struct r_var_t *var, struct r_var_item_t * v)
 {
 	struct r_var_type_t *t = r_var_type_get(var, v->vartype);
 	if (t == NULL) {
-		u32 value = 0; //XXX var_dbg_read(v->delta);
+		ut32 value = 0; //XXX var_dbg_read(v->delta);
 		// TODO: use var type to 
 		r_cons_printf("%x", value);
 	} else {
 #if 0
-		u8 buf[1024];
+		ut8 buf[1024];
 		int size = v->arraysize * t->size;
-		u64 foo = get_offset("ebp");
+		ut64 foo = get_offset("ebp");
 		foo -= v->delta;
 		//XXX radare_read_at(foo, buf, size);
 		//eprintf("PRINT_MEM(%llx,%d,%s)\n", foo, size, t->fmt);
@@ -206,7 +206,7 @@ R_API int r_var_item_print(struct r_var_t *var, struct r_var_item_t * v)
 }
 
 /* CFV */
-R_API int r_var_list_show(struct r_var_t *var, u64 addr)
+R_API int r_var_list_show(struct r_var_t *var, ut64 addr)
 {
 	struct list_head *pos;
 	struct r_var_item_t *v;
@@ -214,7 +214,7 @@ R_API int r_var_list_show(struct r_var_t *var, u64 addr)
 	list_for_each(pos, &var->vars) {
 		v = (struct r_var_item_t*)list_entry(pos, struct r_var_item_t, list);
 		if (addr == 0 || (addr >= v->addr && addr <= v->eaddr)) {
-			//u32 value = var_dbg_read(v->delta);
+			//ut32 value = var_dbg_read(v->delta);
 			if (v->arraysize>1) {
 				r_cons_printf("%s %s %s[%d] = ",
 					r_var_type_to_string(v->type),
@@ -238,7 +238,7 @@ R_API int r_var_list_show(struct r_var_t *var, u64 addr)
 }
 
 /* 0,0 to list all */
-R_API int r_var_list(struct r_var_t *var, u64 addr, int delta)
+R_API int r_var_list(struct r_var_t *var, ut64 addr, int delta)
 {
 	struct list_head *pos, *pos2;
 	struct r_var_item_t*v;

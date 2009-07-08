@@ -35,15 +35,15 @@ struct r_var_t {
 };
 
 struct r_var_access_t {
-	u64 addr;
+	ut64 addr;
 	int set;
 	struct list_head list;
 };
 
 struct r_var_item_t {
 	int type;         /* global, local... */
-	u64 addr;         /* address where it is used */
-	u64 eaddr;        /* address where it is used */
+	ut64 addr;         /* address where it is used */
+	ut64 eaddr;        /* address where it is used */
 	int delta;        /* */
 	int arraysize;    /* size of array var in bytes , 0 is no-array */
 	char name[128];
@@ -64,8 +64,8 @@ R_API const char *r_var_type_to_string(int type);
 
 /* food */
 R_API int r_var_item_print(struct r_var_t *var, struct r_var_item_t * v);
-R_API int r_var_list_show(struct r_var_t *var, u64 addr);
-R_API int r_var_list(struct r_var_t *var, u64 addr, int delta);
+R_API int r_var_list_show(struct r_var_t *var, ut64 addr);
+R_API int r_var_list(struct r_var_t *var, ut64 addr, int delta);
 
 /* analyze */
 R_API int r_var_anal_get(struct r_var_t *var, int type);

@@ -63,7 +63,7 @@ int r_vm_reg_del(struct r_vm_t *vm, const char *name)
 	return 1;
 }
 
-int r_vm_reg_set(struct r_vm_t *vm, const char *name, u64 value)
+int r_vm_reg_set(struct r_vm_t *vm, const char *name, ut64 value)
 {
 	struct list_head *pos;
 

@@ -68,7 +68,7 @@ int r_trace_sort(struct r_trace_t *t)
 	return t->changed = ch;
 }
 
-struct r_trace_item_t *r_trace_get(struct r_trace_t *t, u64 addr, int tag)
+struct r_trace_item_t *r_trace_get(struct r_trace_t *t, ut64 addr, int tag)
 {
 	struct list_head *pos;
 	list_for_each(pos, &t->traces) {
@@ -82,19 +82,19 @@ struct r_trace_item_t *r_trace_get(struct r_trace_t *t, u64 addr, int tag)
 }
 
 // num of traces for an address
-int r_trace_times(struct r_trace_t *tr, u64 addr)
+int r_trace_times(struct r_trace_t *tr, ut64 addr)
 {
 	struct r_trace_item_t *t = r_trace_get(tr, addr, tr->tag);
 	return t?t->times:0;
 }
 
-int r_trace_count(struct r_trace_t *tr, u64 addr)
+int r_trace_count(struct r_trace_t *tr, ut64 addr)
 {
 	struct r_trace_item_t *t = r_trace_get(tr, addr, tr->tag);
 	return t?t->count:0;
 }
 
-int r_trace_index(struct r_trace_t *tr, u64 addr)
+int r_trace_index(struct r_trace_t *tr, ut64 addr)
 {
 	int idx = -1;
 	struct list_head *pos;
@@ -108,7 +108,7 @@ int r_trace_index(struct r_trace_t *tr, u64 addr)
 	return idx;
 }
 
-int r_trace_set_times(struct r_trace_t *tr, u64 addr, int times)
+int r_trace_set_times(struct r_trace_t *tr, ut64 addr, int times)
 {
 	struct r_trace_item_t *t;
 	struct list_head *pos;
@@ -124,7 +124,7 @@ int r_trace_set_times(struct r_trace_t *tr, u64 addr, int times)
 	return 0;
 }
 
-int r_trace_add(struct r_trace_t *tr, u64 addr, int opsize)
+int r_trace_add(struct r_trace_t *tr, ut64 addr, int opsize)
 {
 	struct r_trace_item_t *t;
 	struct list_head *pos;
@@ -163,11 +163,11 @@ int r_trace_add(struct r_trace_t *tr, u64 addr, int opsize)
 	return t->times;
 }
 
-u64 r_trace_range(struct r_trace_t *t, u64 from, int tag)
+ut64 r_trace_range(struct r_trace_t *t, ut64 from, int tag)
 {
 	struct r_trace_item_t *h;
-	u64 last = from;
-	u64 last2 = 0LL;
+	ut64 last = from;
+	ut64 last2 = 0LL;
 	
 	while(last != last2) {
 		last2 = last;
@@ -182,9 +182,9 @@ u64 r_trace_range(struct r_trace_t *t, u64 from, int tag)
 	return last;
 }
 
-u64 r_trace_next(struct r_trace_t *tr, u64 from, int tag)
+ut64 r_trace_next(struct r_trace_t *tr, ut64 from, int tag)
 {
-        u64 next = U64_MAX;
+        ut64 next = U64_MAX;
         struct list_head *pos;
         struct r_trace_item_t *h;
 
@@ -203,9 +203,9 @@ u64 r_trace_next(struct r_trace_t *tr, u64 from, int tag)
 
 #if 0
 /* buggy version */
-u64 trace_next(u64 from)
+ut64 trace_next(ut64 from)
 {
-	u64 next;
+	ut64 next;
 	int next_init = 0;
 	struct list_head *pos;
 	struct trace_t *h;
@@ -232,8 +232,8 @@ u64 trace_next(u64 from)
 
 void r_trace_show(struct r_trace_t *tr, int plain, int tag)
 {
-	u64 from = 0LL;
-	u64 last;
+	ut64 from = 0LL;
+	ut64 last;
 	char opcode[64];
 	struct list_head *pos;
 	struct r_trace_item_t *h;
@@ -295,7 +295,7 @@ void r_trace_reset(struct r_trace_t *tr)
 	INIT_LIST_HEAD(&tr->traces);
 }
 
-int r_trace_get_between(struct r_trace_t *tr, u64 from, u64 to)
+int r_trace_get_between(struct r_trace_t *tr, ut64 from, ut64 to)
 {
 	int ctr = 0;
 	struct list_head *pos;

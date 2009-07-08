@@ -37,7 +37,7 @@ static struct flags_spaces_t {
 	const char *name;
 } flag_spaces[FLAG_SPACES];
 
-static u64 flag_from_i = 0;
+static ut64 flag_from_i = 0;
 int flag_space_idx = -1;
 int flag_space_idx2 = -1;
 
@@ -74,7 +74,7 @@ void flag_help()
 int flag_interpolation(const char *from, const char *to)
 {
 	int ret = 0;
-	u64 tmp = 0;
+	ut64 tmp = 0;
 	const char *str = NULL;
 	struct list_head *pos, *pos2;
 
@@ -114,7 +114,7 @@ void flag_cmd(const char *text)
 	}
 }
 
-flag_t *flag_get_by_addr(u64 addr)
+flag_t *flag_get_by_addr(ut64 addr)
 {
 	struct list_head *pos;
 	list_for_each(pos, &flags) {
@@ -145,7 +145,7 @@ void flag_show(flag_t *flag, int cmd_flag)
 	cons_printf("0x%08llx\t %lld\t %s\n",
 		flag->offset, flag->length, flag->name);
 	if (cmd_flag && flag->cmd!=NULL && *flag->cmd) {
-		u64 seek = config.seek;
+		ut64 seek = config.seek;
 		radare_seek(flag->offset, SEEK_SET);
 		radare_cmd_raw(flag->cmd, 0);
 		radare_seek(seek, SEEK_SET);
@@ -161,11 +161,11 @@ void flag_grep_help()
 	eprintf("  fgn imp.\n");
 }
 
-void flag_grep_np(const char *str, u64 addr, int next)
+void flag_grep_np(const char *str, ut64 addr, int next)
 {
 	struct list_head *pos;
 	flag_t *fag = NULL;
-	u64 newaddr;
+	ut64 newaddr;
 
 	newaddr  = next?0:0xffffffffffffffffLL;
 
@@ -194,7 +194,7 @@ void flag_grep_np(const char *str, u64 addr, int next)
 }
 
 // TODO: USE GLOB OR SO...
-void flag_grep(const char *grepstr) // TODO: add u64 arg to grep only certain address
+void flag_grep(const char *grepstr) // TODO: add ut64 arg to grep only certain address
 {
 	int cmd_flag = config_get_i("cmd.flag"); /* boolean */
 	char *grep;
@@ -222,7 +222,7 @@ void flag_grep(const char *grepstr) // TODO: add u64 arg to grep only certain ad
 	}
 }
 
-u64 flag_get_addr(const char *name)
+ut64 flag_get_addr(const char *name)
 {
 	flag_t *foo = flag_get(name);
 	if (foo)
@@ -230,7 +230,7 @@ u64 flag_get_addr(const char *name)
 	return 0;
 }
 
-u64 flag_delta_between(u64 from, u64 to)
+ut64 flag_delta_between(ut64 from, ut64 to)
 {
 	struct list_head *pos;
 
@@ -283,7 +283,7 @@ flag_t *flag_get_reset()
 }
 
 // TODO : use flag size
-int flags_between(u64 from, u64 to)
+int flags_between(ut64 from, ut64 to)
 {
 	int n=0;
 	struct list_head *pos;
@@ -374,7 +374,7 @@ void flags_setenv()
 	}
 }
 
-flag_t *flag_by_offset(u64 offset)
+flag_t *flag_by_offset(ut64 offset)
 {
 	struct list_head *pos;
 
@@ -388,7 +388,7 @@ flag_t *flag_by_offset(u64 offset)
 	return NULL;
 }
 
-const char *flag_name_by_offset(u64 offset)
+const char *flag_name_by_offset(ut64 offset)
 {
 	struct list_head *pos;
 
@@ -409,7 +409,7 @@ const char *flag_name_by_offset(u64 offset)
  * idx =  0 : just return the first one found
  * idx =  1 : continue searching for flag after the first one
  */
-int string_flag_offset(char *buf, u64 seek, int idx)
+int string_flag_offset(char *buf, ut64 seek, int idx)
 {
 	int delta = (int)config_get_i("cfg.delta");
 	flag_t *ref = NULL;
@@ -451,7 +451,7 @@ int string_flag_offset(char *buf, u64 seek, int idx)
 	return 0;
 }
 
-void print_flag_offset(u64 seek)
+void print_flag_offset(ut64 seek)
 {
 	char buf[256];
 
@@ -496,7 +496,7 @@ void flag_list(char *arg)
 	}
 }
 
-void flag_clear_by_addr(u64 seek)
+void flag_clear_by_addr(ut64 seek)
 {
 	struct list_head *pos;
 
@@ -702,7 +702,7 @@ int flag_filter_name(char *name)
 }
 
 
-int flag_set(const char *name, u64 addr, int dup)
+int flag_set(const char *name, ut64 addr, int dup)
 {
 	const char *ptr;
 	flag_t *flag = NULL;
@@ -784,7 +784,7 @@ int flag_set(const char *name, u64 addr, int dup)
 	return 0;
 }
 
-int flag_set_undef(const char *name, u64 addr, int dup)
+int flag_set_undef(const char *name, ut64 addr, int dup)
 {
 	flag_t *flag = flag_get_by_addr(addr);
 	if (flag == NULL || (strlen(flag->name)<4))
@@ -793,13 +793,13 @@ int flag_set_undef(const char *name, u64 addr, int dup)
 }
 
 /* used to get section name for disasembly */
-const char *flag_get_here_filter(u64 at, const char *str)
+const char *flag_get_here_filter(ut64 at, const char *str)
 {
-	static u64 sec_start=0, sec_end=0;
+	static ut64 sec_start=0, sec_end=0;
 	static char sec_str[64];
 	struct list_head *pos;
-	u64 ret = 0;
-	u64 nextflag = 0xFFFFFFFFFFFFFFFFFFLL;
+	ut64 ret = 0;
+	ut64 nextflag = 0xFFFFFFFFFFFFFFFFFFLL;
 	flag_t *f = NULL;
 
 	if (at >=sec_start && at <sec_end) {
@@ -830,13 +830,13 @@ const char *flag_get_here_filter(u64 at, const char *str)
 }
 
 //XXX ugly hack
-const char *flag_get_here_filter2(u64 at, const char *str, const char *str2)
+const char *flag_get_here_filter2(ut64 at, const char *str, const char *str2)
 {
-	static u64 sec_start=0, sec_end=0;
+	static ut64 sec_start=0, sec_end=0;
 	static char sec_str[64];
 	struct list_head *pos;
-	u64 ret = 0;
-	u64 nextflag = 0xFFFFFFFFFFFFFFFFFFLL;
+	ut64 ret = 0;
+	ut64 nextflag = 0xFFFFFFFFFFFFFFFFFFLL;
 	flag_t *f = NULL;
 	char *s1,*s2,*s=NULL;
 

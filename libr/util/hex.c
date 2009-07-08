@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 /* int c; ret = hex_to_byet(&c, 'c'); */
-int r_hex_to_byte(u8 *val, u8 c)
+int r_hex_to_byte(ut8 *val, ut8 c)
 {
 	if ('0' <= c && c <= '9')      *val = (unsigned char)(*val) * 16 + ( c - '0');
 	else if (c >= 'A' && c <= 'F') *val = (unsigned char)(*val) * 16 + ( c - 'A' + 10);
@@ -37,7 +37,7 @@ int r_hex_pair2bin(const char *arg) // (0A) => 10 || -1 (on error)
 	return (int)c;
 }
 
-int r_hex_bin2str(const u8 *in, int len, char *out)
+int r_hex_bin2str(const ut8 *in, int len, char *out)
 {
 	int i;
 	char tmp[5];
@@ -50,7 +50,7 @@ int r_hex_bin2str(const u8 *in, int len, char *out)
 }
 /* char buf[1024]; int len = hexstr2binstr("0a 33 45", buf); */
 // XXX control out bytes
-int r_hex_str2bin(const char *in, u8 *out) // 0A 3B 4E A0
+int r_hex_str2bin(const char *in, ut8 *out) // 0A 3B 4E A0
 {
 	const char *ptr;
 	unsigned char  c = '\0';
@@ -77,13 +77,13 @@ int r_hex_str2bin(const char *in, u8 *out) // 0A 3B 4E A0
 
 		d = c;
 		if (ptr[0]=='0' && ptr[1]=='x' ){ //&& c==0) {
-			u64 addr   = r_num_get(NULL, ptr);
-			unsigned int addr32 = (u32) addr;
+			ut64 addr   = r_num_get(NULL, ptr);
+			unsigned int addr32 = (ut32) addr;
 			if (addr & ~0xFFFFFFFF) {
 				// 64 bit fun
 			} else {
 				// 32 bit fun
-				u8 *addrp = (u8*) &addr32;
+				ut8 *addrp = (ut8*) &addr32;
 				// XXX always copy in native endian?
 				out[len++] = addrp[0];
 				out[len++] = addrp[1];

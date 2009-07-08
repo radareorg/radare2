@@ -3,7 +3,7 @@
 #include <r_debug.h>
 #include <r_bp.h>
 
-R_API int r_debug_bp_enable(struct r_debug_t *dbg, u64 addr, int set)
+R_API int r_debug_bp_enable(struct r_debug_t *dbg, ut64 addr, int set)
 {
 	struct r_bp_item_t *bp = r_bp_enable(&dbg->bp, addr, set);
 	if (bp) {
@@ -13,7 +13,7 @@ R_API int r_debug_bp_enable(struct r_debug_t *dbg, u64 addr, int set)
 	return bp!=NULL;
 }
 
-R_API int r_debug_bp_add(struct r_debug_t *dbg, u64 addr, int size, int hw, int rwx)
+R_API int r_debug_bp_add(struct r_debug_t *dbg, ut64 addr, int size, int hw, int rwx)
 {
 	int ret = R_FALSE;
 	struct r_bp_item_t *bp;
@@ -22,7 +22,7 @@ R_API int r_debug_bp_add(struct r_debug_t *dbg, u64 addr, int size, int hw, int 
 		return -1;
 	}
 	/* read bytes affected */
-	u8 *buf = (u8 *)malloc(size);
+	ut8 *buf = (ut8 *)malloc(size);
 	dbg->read(dbg->user, dbg->pid, addr, buf, size);
 	/* register breakpoint in r_bp */
 	bp = r_bp_add(&dbg->bp, buf, addr, size, 0, R_BP_EXEC);
@@ -36,7 +36,7 @@ R_API int r_debug_bp_add(struct r_debug_t *dbg, u64 addr, int size, int hw, int 
 	return ret;
 }
 
-R_API int r_debug_bp_del(struct r_debug_t *dbg, u64 addr)
+R_API int r_debug_bp_del(struct r_debug_t *dbg, ut64 addr)
 {
 	return r_bp_del(&dbg->bp, addr);
 }

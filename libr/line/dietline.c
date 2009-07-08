@@ -73,8 +73,8 @@ static int r_line_readchar()
 #if 0
 #define BLOCK 4096
 static char *labels = NULL;
-static u32 size = 0;
-static u32 lsize = 0;
+static ut32 size = 0;
+static ut32 lsize = 0;
 
 static int label_get(char *name)
 {
@@ -90,8 +90,8 @@ static int label_get(char *name)
 }
 
 static void label_add (const char *str) {
-	u32 size = r_line_histidx;
-	u32 len = strlen(str)-1;
+	ut32 size = r_line_histidx;
+	ut32 len = strlen(str)-1;
 
 	fprintf(stderr, "New label(%s)\n",str); // XXX debug
 	memset(labels+lsize+4, '\0', BLOCK-((lsize+len+4)%BLOCK));
@@ -102,7 +102,7 @@ static void label_add (const char *str) {
 
 void r_line_label_show()
 {
-	u32 i, p, n = 0;
+	ut32 i, p, n = 0;
 	for(i=0;i<lsize;i++,n++) {
 		memcpy(&p, labels+i, 4);
 		printf(" %03d %03d  %s\n", i, p, labels+i+4);

@@ -39,7 +39,7 @@ struct r_range_t *r_range_free(struct r_range_t *r)
 }
 
 // TODO: optimize by just returning the pointers to the internal foo?
-int r_range_get_data(struct r_range_t *rgs, u64 addr, u8 *buf, int len)
+int r_range_get_data(struct r_range_t *rgs, ut64 addr, ut8 *buf, int len)
 {
 	struct r_range_item_t *r = r_range_item_get(rgs, addr);
 	if (r == NULL)
@@ -50,18 +50,18 @@ int r_range_get_data(struct r_range_t *rgs, u64 addr, u8 *buf, int len)
 	return len;
 }
 
-int r_range_set_data(struct r_range_t *rgs, u64 addr, const u8 *buf, int len)
+int r_range_set_data(struct r_range_t *rgs, ut64 addr, const ut8 *buf, int len)
 {
 	struct r_range_item_t *r = r_range_item_get(rgs, addr);
 	if (r == NULL)
 		return 0;
-	r->data = (u8*)malloc(len);
+	r->data = (ut8*)malloc(len);
 	r->datalen = len;
 	memcpy(r->data, buf, len);
 	return 1;
 }
 
-struct r_range_item_t *r_range_item_get(struct r_range_t *rgs, u64 addr)
+struct r_range_item_t *r_range_item_get(struct r_range_t *rgs, ut64 addr)
 {
 	struct r_range_item_t *r;
 	struct list_head *pos;
@@ -75,11 +75,11 @@ struct r_range_item_t *r_range_item_get(struct r_range_t *rgs, u64 addr)
 
 /* returns the sum of all the ranges contained */
 // XXX: can be catched while adding/removing elements
-u64 r_range_size(struct r_range_t *rgs)
+ut64 r_range_size(struct r_range_t *rgs)
 {
 	struct list_head *pos;
 	struct r_range_item_t *r;
-	u64 sum = 0;
+	ut64 sum = 0;
 
 	list_for_each(pos, &rgs->ranges) {
 		r = list_entry(pos, struct r_range_item_t, list);
@@ -97,7 +97,7 @@ struct r_range_t *r_range_new_from_string(const char *string)
 
 int r_range_add_from_string(struct r_range_t *rgs, const char *string)
 {
-	u64 addr, addr2;
+	ut64 addr, addr2;
 	int i, len = strlen(string)+1;
 	char *str = alloca(len);
 	char *p = str;
@@ -151,7 +151,7 @@ int r_range_add_from_string(struct r_range_t *rgs, const char *string)
 =  |_________|   = |___||__|   = |_______|  = |_________|   |_______|  result
 #endif
 
-struct r_range_item_t *r_range_add(struct r_range_t *rgs, u64 from, u64 to, int rw)
+struct r_range_item_t *r_range_add(struct r_range_t *rgs, ut64 from, ut64 to, int rw)
 {
 	struct list_head *pos;
 	struct r_range_item_t *r;
@@ -209,7 +209,7 @@ struct r_range_item_t *r_range_add(struct r_range_t *rgs, u64 from, u64 to, int 
 =  |__|          =             =     |___|  =                |__|  |__|   result
 #endif
 
-int r_range_sub(struct r_range_t *rgs, u64 from, u64 to)
+int r_range_sub(struct r_range_t *rgs, ut64 from, ut64 to)
 {
 	struct r_range_item_t *r;
 	struct list_head *pos;
@@ -258,8 +258,8 @@ int r_range_merge(struct r_range_t *rgs, struct r_range_t *r)
 	return 0;
 }
 
-//int ranges_is_used(u64 addr)
-int r_range_contains(struct r_range_t *rgs, u64 addr)
+//int ranges_is_used(ut64 addr)
+int r_range_contains(struct r_range_t *rgs, ut64 addr)
 {
 	struct list_head *pos;
 	list_for_each(pos, &rgs->ranges) {
@@ -296,8 +296,8 @@ int r_range_percent(struct r_range_t *rgs)
 {
 	struct list_head *pos;
 	int w, i;
-	u64 seek, step;
-	u64 dif, from = -1, to = -1;
+	ut64 seek, step;
+	ut64 dif, from = -1, to = -1;
 
 	list_for_each(pos, &rgs->ranges) {
 		struct r_range_item_t *r = list_entry(pos, struct r_range_item_t, list);
@@ -337,7 +337,7 @@ int r_range_percent(struct r_range_t *rgs)
 // TODO: total can be cached in rgs!!
 int r_range_list(struct r_range_t *rgs, int rad)
 {
-	u64 total = 0;
+	ut64 total = 0;
 	struct list_head *pos;
 	r_range_sort(rgs);
 	list_for_each(pos, &rgs->ranges) {
@@ -350,7 +350,7 @@ int r_range_list(struct r_range_t *rgs, int rad)
 	return 0;
 }
 
-int r_range_get_n(struct r_range_t *rgs, int n, u64 *from, u64 *to)
+int r_range_get_n(struct r_range_t *rgs, int n, ut64 *from, ut64 *to)
 {
 	int count = 0;
 	struct list_head *pos;
@@ -373,11 +373,11 @@ int r_range_get_n(struct r_range_t *rgs, int n, u64 *from, u64 *to)
     ---------------------------------
             |__|    |__|       |_|      
 #endif
-struct r_range_t *r_range_inverse(struct r_range_t *rgs, u64 from, u64 to, int flags)
+struct r_range_t *r_range_inverse(struct r_range_t *rgs, ut64 from, ut64 to, int flags)
 {
-	u64 total = 0;
-	//u64 min = to;
-	//u64 max = from;
+	ut64 total = 0;
+	//ut64 min = to;
+	//ut64 max = from;
 	struct list_head *pos;
 	struct r_range_item_t *r = NULL;
 	struct r_range_t *newrgs = r_range_new();

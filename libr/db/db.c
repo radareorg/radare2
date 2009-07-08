@@ -56,7 +56,7 @@ static int _r_db_add_internal(struct r_db_t *db, int key, void *b)
 		db->blocks[key] = block;
 	}
 	for(i=0;i<size;i++) {
-		idx = (((u8 *)b)[key+i]) & 0xff;
+		idx = (((ut8 *)b)[key+i]) & 0xff;
 		if (block->childs[idx] == NULL)
 			block->childs[idx] = r_db_block_new();
 		block = block->childs[idx];
@@ -87,7 +87,7 @@ R_API int r_db_add(struct r_db_t *db, void *b)
 	return ret;
 }
 
-R_API void **r_db_get(struct r_db_t *db, int key, const u8 *b)
+R_API void **r_db_get(struct r_db_t *db, int key, const ut8 *b)
 {
 	struct r_db_block_t *block;
 	int i, size;
@@ -122,7 +122,7 @@ R_API void **r_db_get_cur(void **ptr)
 	return ptr[0];
 }
 
-static int _r_db_delete_internal(struct r_db_t *db, int key, const u8 *b)
+static int _r_db_delete_internal(struct r_db_t *db, int key, const ut8 *b)
 {
 	struct r_db_block_t *block;
 	int i, j;
@@ -165,7 +165,7 @@ R_API int r_db_delete(struct r_db_t *db, const void *ptr)
 // delete with conditions
 // R_API int r_db_delete(struct r_db_t *db, void *ptr)
 
-R_API struct r_db_iter_t *r_db_iter(struct r_db_t *db, int key, const u8 *b)
+R_API struct r_db_iter_t *r_db_iter(struct r_db_t *db, int key, const ut8 *b)
 {
 	return NULL;
 }

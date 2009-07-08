@@ -51,7 +51,7 @@ int r_io_open(struct r_io_t *io, const char *file, int flags, int mode)
 	return open(file, flags, mode);
 }
 
-int r_io_read(struct r_io_t *io, int fd, u8 *buf, int len)
+int r_io_read(struct r_io_t *io, int fd, ut8 *buf, int len)
 {
 	if (r_io_map_read_at(io, io->seek, buf, len) != 0)
 		return len;
@@ -81,12 +81,12 @@ int r_io_resize(struct r_io_t *io, const char *file, int flags, int mode)
 	return -1;
 }
 
-int r_io_set_write_mask(struct r_io_t *io, int fd, const u8 *buf, int len)
+int r_io_set_write_mask(struct r_io_t *io, int fd, const ut8 *buf, int len)
 {
 	int ret;
 	if (len) {
 		io->write_mask_fd = fd;
-		io->write_mask_buf = (u8 *)malloc(len);
+		io->write_mask_buf = (ut8 *)malloc(len);
 		memcpy(io->write_mask_buf, buf, len);
 		io->write_mask_len = len;
 		ret = R_TRUE;
@@ -97,13 +97,13 @@ int r_io_set_write_mask(struct r_io_t *io, int fd, const u8 *buf, int len)
 	return ret;
 }
 
-int r_io_write(struct r_io_t *io, int fd, const u8 *buf, int len)
+int r_io_write(struct r_io_t *io, int fd, const ut8 *buf, int len)
 {
 	int i, ret = -1;
 
 	/* apply write binary mask */
 	if (io->write_mask_fd != -1) {
-		u8 *data = alloca(len);
+		ut8 *data = alloca(len);
 		r_io_lseek(io, fd, io->seek, R_IO_SEEK_SET);
 		r_io_read(io, fd, data, len);
 		r_io_lseek(io, fd, io->seek, R_IO_SEEK_SET);
@@ -128,7 +128,7 @@ int r_io_write(struct r_io_t *io, int fd, const u8 *buf, int len)
 	return ret;
 }
 
-u64 r_io_lseek(struct r_io_t *io, int fd, u64 offset, int whence)
+ut64 r_io_lseek(struct r_io_t *io, int fd, ut64 offset, int whence)
 {
 	int posix_whence = 0;
 	if (whence == SEEK_SET)
@@ -160,9 +160,9 @@ u64 r_io_lseek(struct r_io_t *io, int fd, u64 offset, int whence)
 	return lseek(fd, offset, posix_whence);
 }
 
-u64 r_io_size(struct r_io_t *io, int fd)
+ut64 r_io_size(struct r_io_t *io, int fd)
 {
-	u64 size, here = r_io_lseek(io, fd, 0, R_IO_SEEK_CUR);
+	ut64 size, here = r_io_lseek(io, fd, 0, R_IO_SEEK_CUR);
 	size = r_io_lseek(io, fd, 0, R_IO_SEEK_END);
 	r_io_lseek(io, fd, here, R_IO_SEEK_SET);
 	return size;

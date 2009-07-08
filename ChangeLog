@@ -546,7 +546,7 @@ description:
 * Implement 'wa' command.
   - Integrated with visual mode (bind to 'a' key)
   - Added 'x' key in visual to write hexpair strings
-* Fix signature of 'assemble' function in r_asm (const u8 *)
+* Fix signature of 'assemble' function in r_asm (const ut8 *)
 
 
 changeset:   139:57f265321c90
@@ -2494,7 +2494,7 @@ description:
 * Added 'radiff2' test program for r_diff API
 * Initial import of r_sign
 * #define R_TRUE and R_FALSE for boolean
-* r_file_slurp now returns file size as u32
+* r_file_slurp now returns file size as ut32
 
 
 changeset:   853:f427cbc96173

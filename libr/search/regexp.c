@@ -3,7 +3,7 @@
 #include "r_search.h"
 #include <regex.h>
 
-int r_search_regexp_update(struct r_search_t *s, u64 from, const u8 *buf, int len)
+int r_search_regexp_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len)
 {
 	struct list_head *pos;
 	char *buffer = malloc(len+1);
@@ -34,9 +34,9 @@ int r_search_regexp_update(struct r_search_t *s, u64 from, const u8 *buf, int le
 		} else
 		do {
 			if (s->callback)
-				s->callback(kw, s->user, (u64)from+matches[0].rm_so+delta);
+				s->callback(kw, s->user, (ut64)from+matches[0].rm_so+delta);
 			else printf("hit%d_%d 0x%08llx ; %s\n",
-				count, kw->count, (u64)(from+matches[0].rm_so),
+				count, kw->count, (ut64)(from+matches[0].rm_so),
 				buf+matches[0].rm_so+delta);
 			delta += matches[0].rm_so+1;
 			kw->count++;

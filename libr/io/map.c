@@ -49,7 +49,7 @@ int r_io_map_list(struct r_io_t *io)
 	return n;
 }
 
-int r_io_map(struct r_io_t *io, const char *file, u64 offset)
+int r_io_map(struct r_io_t *io, const char *file, ut64 offset)
 {
 	struct r_io_maps_t *im;
 	int fd = r_io_open(io, file, R_IO_READ, 0644);
@@ -69,7 +69,7 @@ int r_io_map(struct r_io_t *io, const char *file, u64 offset)
 	return fd;
 }
 
-int r_io_map_read_at(struct r_io_t *io, u64 off, u8 *buf, u64 len)
+int r_io_map_read_at(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len)
 {
 	struct list_head *pos;
 
@@ -89,7 +89,7 @@ int r_io_map_read_at(struct r_io_t *io, u64 off, u8 *buf, u64 len)
 	return 0;
 }
 
-int r_io_map_write_at(struct r_io_t *io, u64 off, const u8 *buf, u64 len)
+int r_io_map_write_at(struct r_io_t *io, ut64 off, const ut8 *buf, ut64 len)
 {
 	struct list_head *pos;
 
@@ -103,7 +103,7 @@ int r_io_map_write_at(struct r_io_t *io, u64 off, const u8 *buf, u64 len)
 	return 0;
 }
 
-int r_io_map_read_rest(struct r_io_t *io, u64 off, u8 *buf, u64 len)
+int r_io_map_read_rest(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len)
 {
 	struct list_head *pos;
 

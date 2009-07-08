@@ -21,7 +21,7 @@ int r_search_init(struct r_search_t *s, int mode)
 	return R_TRUE;
 }
 
-int r_search_set_string_limits(struct r_search_t *s, u32 min, u32 max)
+int r_search_set_string_limits(struct r_search_t *s, ut32 min, ut32 max)
 {
 	if (max < min)
 		return R_FALSE;
@@ -85,7 +85,7 @@ int r_search_begin(struct r_search_t *s)
 }
 
 // TODO: move into a plugin */
-int r_search_mybinparse_update(struct r_search_t *s, u64 from, const u8 *buf, int len)
+int r_search_mybinparse_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len)
 {
 	struct list_head *pos;
 	int i, count = 0;
@@ -93,8 +93,8 @@ int r_search_mybinparse_update(struct r_search_t *s, u64 from, const u8 *buf, in
 	for(i=0;i<len;i++) {
 		list_for_each_prev(pos, &s->kws) {
 			struct r_search_kw_t *kw = list_entry(pos, struct r_search_kw_t, list);
-			u8 ch = kw->bin_keyword[kw->idx];
-			u8 ch2 = buf[i];
+			ut8 ch = kw->bin_keyword[kw->idx];
+			ut8 ch2 = buf[i];
 			if (kw->binmask_length != 0 && kw->idx < kw->binmask_length) {
 				ch &= kw->bin_binmask[kw->idx];
 				ch2 &= kw->bin_binmask[kw->idx];
@@ -103,9 +103,9 @@ int r_search_mybinparse_update(struct r_search_t *s, u64 from, const u8 *buf, in
 				kw->idx++;
 				if (kw->idx == kw->keyword_length) {
 					if (s->callback)
-						s->callback(kw, s->user, (u64)from+i-kw->keyword_length+1);
+						s->callback(kw, s->user, (ut64)from+i-kw->keyword_length+1);
 					else printf("hit%d_%d 0x%08llx ; %s\n",
-						count, kw->count, (u64)from+i+1, buf+i-kw->keyword_length+1);
+						count, kw->count, (ut64)from+i+1, buf+i-kw->keyword_length+1);
 					kw->idx = 0;
 					kw->count++;
 				}
@@ -123,7 +123,7 @@ int r_search_set_pattern_size(struct r_search_t *s, int size)
 	return 0;
 }
 
-int r_search_set_callback(struct r_search_t *s, int (*callback)(struct r_search_kw_t *, void *, u64), void *user)
+int r_search_set_callback(struct r_search_t *s, int (*callback)(struct r_search_kw_t *, void *, ut64), void *user)
 {
 	s->callback = callback;
 	s->user = user;
@@ -131,7 +131,7 @@ int r_search_set_callback(struct r_search_t *s, int (*callback)(struct r_search_
 }
 
 /* TODO: initialize update callback in _init */
-int r_search_update(struct r_search_t *s, u64 *from, const u8 *buf, u32 len)
+int r_search_update(struct r_search_t *s, ut64 *from, const ut8 *buf, ut32 len)
 {
 	int i, ret = 0;
 	switch(s->mode) {
@@ -159,7 +159,7 @@ int r_search_update(struct r_search_t *s, u64 *from, const u8 *buf, u32 len)
 	return ret;
 }
 
-int r_search_update_i(struct r_search_t *s, u64 from, const u8 *buf, u32 len)
+int r_search_update_i(struct r_search_t *s, ut64 from, const ut8 *buf, ut32 len)
 {
 	return r_search_update(s, &from, buf, len);
 }
@@ -202,7 +202,7 @@ int r_search_kw_add_hex(struct r_search_t *s, const char *kw, const char *bm)
 }
 
 /* raw bin */
-int r_search_kw_add_bin(struct r_search_t *s, const u8 *kw, int kw_len, const u8 *bm, int bm_len)
+int r_search_kw_add_bin(struct r_search_t *s, const ut8 *kw, int kw_len, const ut8 *bm, int bm_len)
 {
 	struct r_search_kw_t *k = MALLOC_STRUCT(struct r_search_kw_t);
 	if (kw == NULL)

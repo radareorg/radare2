@@ -2,11 +2,11 @@
 
 #include "r_core.h"
 
-int r_core_yank(struct r_core_t *core, u64 addr, int len)
+int r_core_yank(struct r_core_t *core, ut64 addr, int len)
 {
-	u64 curseek = core->seek;
+	ut64 curseek = core->seek;
 	free(core->yank);
-	core->yank = (u8 *)malloc(len);
+	core->yank = (ut8 *)malloc(len);
 	if (addr != core->seek)
 		r_core_seek(core, addr, 1);
 	if (len == 0)
@@ -21,7 +21,7 @@ int r_core_yank(struct r_core_t *core, u64 addr, int len)
 	return R_TRUE;
 }
 
-int r_core_yank_paste(struct r_core_t *core, u64 addr, int len)
+int r_core_yank_paste(struct r_core_t *core, ut64 addr, int len)
 {
 	if (len == 0)
 		len = core->yank_len;

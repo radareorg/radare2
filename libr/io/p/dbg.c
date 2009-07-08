@@ -143,7 +143,7 @@ static struct r_io_handle_t r_io_plugin_dbg = {
         //void *widget;
 /*
         struct debug_t *debug;
-        u32 (*write)(int fd, const u8 *buf, u32 count);
+        ut32 (*write)(int fd, const ut8 *buf, ut32 count);
 	int fds[R_IO_NFDS];
 */
 };

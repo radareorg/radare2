@@ -6,8 +6,8 @@
 #include "r_core.h"
 
 #if 0
-static u64 _macro_break_value = 0;
-u64 *macro_break_value = NULL;
+static ut64 _macro_break_value = 0;
+ut64 *macro_break_value = NULL;
 static int macro_break;
 int macro_counter = 0;
 static struct list_head macros;
@@ -380,7 +380,7 @@ int r_macro_break(struct r_macro_t *mac, const char *value)
 {
 	mac->brk = 1;
 	mac->brk_value= NULL;
-	mac->_brk_value = (u64)r_num_math(mac->num, value);
+	mac->_brk_value = (ut64)r_num_math(mac->num, value);
 	if (value && *value)
 		mac->brk_value = &mac->_brk_value;
 	return 0;

@@ -83,7 +83,7 @@ int r_anal_set_big_endian(struct r_anal_t *anal, int boolean)
 	return R_TRUE;
 }
 
-int r_anal_set_pc(struct r_anal_t *a, u64 pc)
+int r_anal_set_pc(struct r_anal_t *a, ut64 pc)
 {
 	a->pc = pc;
 	return R_TRUE;
@@ -96,18 +96,18 @@ int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 	return R_FALSE;
 }
 
-struct r_anal_fcn_t *r_anal_funcions_get(struct r_anal_t *anal, u8 *buf, u64 len)
+struct r_anal_fcn_t *r_anal_funcions_get(struct r_anal_t *anal, ut8 *buf, ut64 len)
 {
 }
 
-struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, u8 *buf, u64 len, int nlines, int linesout)
+struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, ut8 *buf, ut64 len, int nlines, int linesout)
 {
 	struct r_anal_refline_t *list = MALLOC_STRUCT(struct r_anal_refline_t);
 	struct r_anal_refline_t *list2;
 	struct r_anal_aop_t aop;
-	u8 *ptr = buf;
-	u8 *end = buf + len;
-	u64 opc = anal->pc;
+	ut8 *ptr = buf;
+	ut8 *end = buf + len;
+	ut64 opc = anal->pc;
 	int sz = 0, index = 0;
 
 	INIT_LIST_HEAD(&(list->list));
@@ -121,7 +121,7 @@ struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, u8 *buf, u64
 			break;
 		int dt = data_type(config.seek+bsz);
 		if (dt != DATA_FUN && dt != DATA_CODE) {
-			u64 sz = data_size(config.seek+bsz);
+			ut64 sz = data_size(config.seek+bsz);
 			if (sz > 0) {
 				ptr= ptr +sz;
 				bsz=bsz+sz;

@@ -33,7 +33,7 @@ void r_search_binparse_apply_mask (char * maskout, int masklen , token* tlist , 
 		tlist[i].mask = maskout[masklen?i%masklen:0];
 }
 
-static u8 get_byte(char *str, int len)
+static ut8 get_byte(char *str, int len)
 {
 	int value;
 	char* strp = alloca(sizeof(char)*len);
@@ -42,13 +42,13 @@ static u8 get_byte(char *str, int len)
 		strp[0] = '0';
 		sscanf (strp,"%x",&value );
 	} else	sscanf (strp,"%c",(char *)&value );
-	return (u8)(value & 0xFF);
+	return (ut8)(value & 0xFF);
 }
 
 #if 0
 static unsigned char get_num(const char * str, int len)
 {
-        u8 * strp;
+        ut8 * strp;
         int value;
 
         strp = alloca(len+1);
@@ -68,7 +68,7 @@ static unsigned char get_num(const char * str, int len)
 static int get_range(char *str, int len, unsigned char *cbase)
 {
 	int g;
-	u8 min, max;
+	ut8 min, max;
 	
 	// busca guio
 	for ( g= 0; (g < len ) && ( str[g] != '-' ) ; g++ );
@@ -329,10 +329,10 @@ int r_search_binparse_add_named(struct r_search_binparse_t *t, const char *name,
 }
 
 /* -1 = error, 0 = skip, 1 = hit found */
-int r_search_binparse_update(struct r_search_binparse_t *t, u8 inchar, u64 where)
-//int update_tlist(tokenizer* t, u8 inchar, u64 where )
+int r_search_binparse_update(struct r_search_binparse_t *t, ut8 inchar, ut64 where)
+//int update_tlist(tokenizer* t, ut8 inchar, ut64 where )
 {
-	u8 cmin, cmax, cmask;
+	ut8 cmin, cmax, cmask;
 	int i;
 
 	if (t->nlists == 0) {
@@ -364,7 +364,7 @@ int r_search_binparse_update(struct r_search_binparse_t *t, u8 inchar, u64 where
 			t->tls[i]->actp[t->tls[i]->stat+1] = 0 ;
 			t->tls[i]->actp[0] = 0 ; //rststr
 			if (t->callback != NULL)  // t->tls[i] is the hit
-				if (!t->callback(t, i, (u64)(where-(t->tls[i]->numtok-1))))
+				if (!t->callback(t, i, (ut64)(where-(t->tls[i]->numtok-1))))
 					return 1;
 			t->tls[i]->stat = 0 ;
 		}

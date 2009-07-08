@@ -298,7 +298,7 @@ static int java_resolve(int idx, char *str)
 	return 0;
 }
 
-int java_print_opcode(int idx, const u8 *bytes, char *output)
+int java_print_opcode(int idx, const ut8 *bytes, char *output)
 {
 	char arg[1024];
 
@@ -334,7 +334,7 @@ int java_print_opcode(int idx, const u8 *bytes, char *output)
 	return java_ops[idx].size;
 }
 
-int java_disasm(const u8 *bytes, char *output)
+int java_disasm(const ut8 *bytes, char *output)
 {
 	int i;
 	for(i = 0;java_ops[i].name != NULL;i++)
@@ -419,7 +419,7 @@ static int attributes_walk(FILE *fd, int sz2, int fields)
 				printf("      Max Stack: %d\n", USHORT(buf, 0));
 				printf("      Max Locals: %d\n", USHORT(buf, 2));
 				printf("      Code Length: %d\n", UINT(buf, 4));
-				printf("      Code At Offset: 0x%08llx\n", (u64)ftell(fd));
+				printf("      Code At Offset: 0x%08llx\n", (ut64)ftell(fd));
 
 				fread(buf, UINT(buf, 4), 1, fd); // READ CODE
 				sz4 = read_short(fd);

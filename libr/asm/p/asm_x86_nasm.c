@@ -6,7 +6,7 @@
 #include <r_asm.h>
 
 #if 0
-static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len)
+static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len)
 {
 }
 #endif
@@ -15,9 +15,9 @@ static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 {
 	int len = 0;
 	char cmd[R_ASM_BUFSIZE];
-	u8 *out;
+	ut8 *out;
 	sprintf(cmd, "nasm /dev/stdin -o /dev/stdout <<__\nBITS %i\nORG 0x%llx\n%s\n__", a->bits, a->pc, buf);
-	out = (u8 *)r_sys_cmd_str(cmd, "", &len);
+	out = (ut8 *)r_sys_cmd_str(cmd, "", &len);
 	if (out) {
 		memcpy(aop->buf, out, len<=R_ASM_BUFSIZE?len:R_ASM_BUFSIZE);
 		free(out);

@@ -30,7 +30,7 @@ static void print_mem_help()
 }
 
 /* TODO: needs refactoring */
-void r_print_format(struct r_print_t *p, u64 seek, const u8* buf, int len, const char *fmt)
+void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int len, const char *fmt)
 {
 	unsigned char buffer[256];
 	int endian = 0;
@@ -41,7 +41,7 @@ void r_print_format(struct r_print_t *p, u64 seek, const u8* buf, int len, const
 	int nargs = 0;
 	const char *arg = fmt;
 	const char *argend = arg+strlen(fmt);
-	u64 addr = 0;
+	ut64 addr = 0;
 	char namefmt[8];
 	i = j = 0;
 
@@ -139,7 +139,7 @@ void r_print_format(struct r_print_t *p, u64 seek, const u8* buf, int len, const
 				{
 				/* dirty hack */
 				int oldfmt = last_print_format;
-				u64 old = config.seek;
+				ut64 old = config.seek;
 				radare_seek(config.seek+i, SEEK_SET);
 				radare_read(0);
 				print_data(config.seek+i, "8", buf+i, 4, FMT_TIME_UNIX);
@@ -170,7 +170,7 @@ void r_print_format(struct r_print_t *p, u64 seek, const u8* buf, int len, const
 			case 'B':
 				memset(buffer, '\0', 255);
 				if (p->read_at)
-					p->read_at((u64)addr, buffer, 248, p->user);
+					p->read_at((ut64)addr, buffer, 248, p->user);
 				else {
 					printf("(cannot read memory)\n");
 					break;
@@ -195,11 +195,11 @@ void r_print_format(struct r_print_t *p, u64 seek, const u8* buf, int len, const
 				i+=4;
 				break;
 			case 'X': {
-				u32 addr32 = (u32)addr;
+				ut32 addr32 = (ut32)addr;
 				//char buf[128];
 				p->printf("0x%08x = ", seek+i);
 				p->printf("0x%08llx ", addr32);
-				//if (string_flag_offset(buf, (u64)addr32, -1))
+				//if (string_flag_offset(buf, (ut64)addr32, -1))
 				//	p->printf("; %s", buf);
 				i+=4;
 				} break;
@@ -232,7 +232,7 @@ void r_print_format(struct r_print_t *p, u64 seek, const u8* buf, int len, const
 				p->printf("0x%08x = ", seek+i);
 				memset(buffer, '\0', 255);
 				if (p->read_at)
-					p->read_at((u64)addr, buffer, 248, p->user);
+					p->read_at((ut64)addr, buffer, 248, p->user);
 				else {
 					printf("(cannot read memory)\n");
 					break;

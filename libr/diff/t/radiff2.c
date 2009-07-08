@@ -43,8 +43,8 @@ int main(int argc, char **argv)
 	struct r_diff_t d;
 	int c, delta = 0;
 	char *file, *file2;
-	u8 *bufa, *bufb;
-	u32 sza, szb;
+	ut8 *bufa, *bufb;
+	ut32 sza, szb;
 	int mode = MODE_DIFF;
 	int showcount = 0;
 	double sim;
@@ -77,8 +77,8 @@ int main(int argc, char **argv)
 	file = argv[optind];
 	file2 = argv[optind+1];
 
-	bufa = (u8*)r_file_slurp(file, &sza);
-	bufb = (u8*)r_file_slurp(file2, &szb);
+	bufa = (ut8*)r_file_slurp(file, &sza);
+	bufb = (ut8*)r_file_slurp(file2, &szb);
 	if (bufa == NULL || bufb == NULL) {
 		fprintf(stderr, "Error slurping source files\n");
 		return 1;

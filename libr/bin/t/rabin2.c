@@ -55,7 +55,7 @@ static int rabin_show_help()
 static int rabin_show_entrypoint()
 {
 	struct r_bin_entry_t *entry;
-	u64 baddr;
+	ut64 baddr;
 	char *env;
 
 	baddr = r_bin_get_baddr(&bin);
@@ -83,7 +83,7 @@ static int rabin_show_entrypoint()
 static int rabin_show_imports()
 {
 	struct r_bin_import_t *imports;
-	u64 baddr;
+	ut64 baddr;
 	int i;
 
 	baddr = r_bin_get_baddr(&bin);
@@ -117,7 +117,7 @@ static int rabin_show_imports()
 static int rabin_show_symbols()
 {
 	struct r_bin_symbol_t *symbols;
-	u64 baddr;
+	ut64 baddr;
 	int i;
 
 	baddr = r_bin_get_baddr(&bin);
@@ -162,7 +162,7 @@ static int rabin_show_symbols()
 static int rabin_show_strings()
 {
 	struct r_bin_string_t *strings;
-	u64 baddr;
+	ut64 baddr;
 	int i;
 
 	baddr = r_bin_get_baddr(&bin);
@@ -197,7 +197,7 @@ static int rabin_show_strings()
 static int rabin_show_sections()
 {
 	struct r_bin_section_t *sections;
-	u64 baddr;
+	ut64 baddr;
 	int i;
 
 	baddr = r_bin_get_baddr(&bin);
@@ -285,7 +285,7 @@ static int rabin_show_info()
 static int rabin_show_fields()
 {
 	struct r_bin_field_t *fields;
-	u64 baddr;
+	ut64 baddr;
 	int i;
 
 	baddr = r_bin_get_baddr(&bin);
@@ -318,7 +318,7 @@ static int rabin_show_fields()
 static int rabin_dump_symbols(int len)
 {
 	struct r_bin_symbol_t *symbols;
-	u8 *buf;
+	ut8 *buf;
 	char *ret;
 	int olen = len, i;
 
@@ -351,7 +351,7 @@ static int rabin_dump_symbols(int len)
 static int rabin_dump_sections(char *name)
 {
 	struct r_bin_section_t *sections;
-	u8 *buf;
+	ut8 *buf;
 	char *ret;
 	int i;
 

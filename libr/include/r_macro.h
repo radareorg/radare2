@@ -23,8 +23,8 @@ struct r_macro_item_t {
 
 struct r_macro_t {
 	int counter;
-	u64 *brk_value;
-	u64 _brk_value;
+	ut64 *brk_value;
+	ut64 _brk_value;
 	int brk;
 	int (*cmd)(void *user, const char *cmd);
 	int (*printf)(const char str, ...);

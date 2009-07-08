@@ -19,7 +19,7 @@ R_API void r_debug_regset_free(struct r_debug_regset_t *r)
 	}
 }
 
-R_API int r_debug_regset_set(struct r_debug_regset_t *r, int idx, const char *name, u64 value)
+R_API int r_debug_regset_set(struct r_debug_regset_t *r, int idx, const char *name, ut64 value)
 {
 	if (idx<0 || idx>=r->nregs) {
 		eprintf("Out of range register index! More registers needs to be allocated in r_debug_regset_new()\n");

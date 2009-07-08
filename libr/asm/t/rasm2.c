@@ -30,20 +30,20 @@ static int rasm_show_help()
 	return 0;
 }
 
-static int rasm_disasm(char *buf, u64 offset, u64 len, int ascii, int bin)
+static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin)
 {
 	struct r_asm_aop_t aop;
-	u8 *data;
+	ut8 *data;
 	char *ptr = buf;
 	int ret = 0;
-	u64 word = 0, clen = 0; 
+	ut64 word = 0, clen = 0; 
 
 	if (bin) {
 		clen = len; //XXX
-		data = (u8*)buf;
+		data = (ut8*)buf;
 	} else if (ascii) {
 		clen = strlen(buf);
-		data = (u8*)buf;
+		data = (ut8*)buf;
 	} else {
 		while(ptr[0]) {
 			if (ptr[0]!= ' ')
@@ -65,7 +65,7 @@ static int rasm_disasm(char *buf, u64 offset, u64 len, int ascii, int bin)
 	return ret;
 }
 
-static int rasm_asm(char *buf, u64 offset, u64 len, int bin)
+static int rasm_asm(char *buf, ut64 offset, ut64 len, int bin)
 {
 	struct r_asm_aop_t aop;
 	int ret, idx, i;
@@ -110,9 +110,9 @@ static int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_
 int main(int argc, char *argv[])
 {
 	char *arch = NULL;
-	u64 offset = 0x8048000;
+	ut64 offset = 0x8048000;
 	int dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c;
-	u64 len = 0, idx = 0;
+	ut64 len = 0, idx = 0;
 
 	r_asm_init(&a);
 	r_lib_init(&l, "radare_plugin");

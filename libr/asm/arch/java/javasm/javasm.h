@@ -22,14 +22,14 @@ struct cp_item {
 	char name[255];
 	char *value;
 	unsigned char bytes[5];
-	u64 off;
+	ut64 off;
 };
 
 struct cp_item *cp_items;
 struct cp_item cp_null_item; // NOTE: must be initialized for safe use
 
-int java_print_opcode(int idx, const u8 *bytes, char *output);
-int java_disasm(const u8 *bytes, char *output);
+int java_print_opcode(int idx, const ut8 *bytes, char *output);
+int java_disasm(const ut8 *bytes, char *output);
 int java_assemble(unsigned char *bytes, char *string);
 unsigned short read_short(FILE *fd);
 int javasm_init();

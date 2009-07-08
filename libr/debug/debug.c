@@ -17,8 +17,8 @@ R_API int r_debug_init(struct r_debug_t *dbg)
 }
 
 R_API void r_debug_set_io(struct r_debug_t *dbg, 
-	int (*_read)(void *user, int pid, u64 addr, u8 *buf, int len),
-	int (*_write)(void *user, int pid, u64 addr, const u8 *buf, int len),
+	int (*_read)(void *user, int pid, ut64 addr, ut8 *buf, int len),
+	int (*_write)(void *user, int pid, ut64 addr, const ut8 *buf, int len),
 	void *user)
 {
 	dbg->read = _read;
@@ -152,7 +152,7 @@ R_API int r_debug_continue(struct r_debug_t *dbg)
 	return ret;
 }
 
-R_API int r_debug_continue_until(struct r_debug_t *dbg, u64 addr)
+R_API int r_debug_continue_until(struct r_debug_t *dbg, ut64 addr)
 {
 	return -1;
 }
@@ -187,12 +187,12 @@ R_API int r_debug_kill(struct r_debug_t *dbg, int pid, int sig)
 }
 
 /* mmu */
-R_API int r_debug_mmu_alloc(struct r_debug_t *dbg, u64 size, u64 *addr)
+R_API int r_debug_mmu_alloc(struct r_debug_t *dbg, ut64 size, ut64 *addr)
 {
 	return R_TRUE;
 }
 
-R_API int r_debug_mmu_free(struct r_debug_t *dbg, u64 addr)
+R_API int r_debug_mmu_free(struct r_debug_t *dbg, ut64 addr)
 {
 	return R_TRUE;
 }

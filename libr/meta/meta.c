@@ -21,7 +21,7 @@ void r_meta_free(struct r_meta_t *m)
 	free(m);
 }
 
-int r_meta_count(struct r_meta_t *m, int type, u64 from, u64 to, struct r_meta_count_t *c)
+int r_meta_count(struct r_meta_t *m, int type, ut64 from, ut64 to, struct r_meta_count_t *c)
 {
 	struct list_head *pos;
 	int count = 0;
@@ -41,7 +41,7 @@ int r_meta_count(struct r_meta_t *m, int type, u64 from, u64 to, struct r_meta_c
 	return count;
 }
 
-char *r_meta_get_string(struct r_meta_t *m, int type, u64 addr)
+char *r_meta_get_string(struct r_meta_t *m, int type, ut64 addr)
 {
 	char *str = NULL;
 	struct list_head *pos;
@@ -92,7 +92,7 @@ char *r_meta_get_string(struct r_meta_t *m, int type, u64 addr)
 	return str;
 }
 
-int r_meta_del(struct r_meta_t *m, int type, u64 from, u64 size, const char *str)
+int r_meta_del(struct r_meta_t *m, int type, ut64 from, ut64 size, const char *str)
 {
 	int ret = R_FALSE;
 	struct list_head *pos, *n;
@@ -113,7 +113,7 @@ int r_meta_del(struct r_meta_t *m, int type, u64 from, u64 size, const char *str
 	return ret;
 }
 
-int r_meta_cleanup(struct r_meta_t *m, u64 from, u64 to)
+int r_meta_cleanup(struct r_meta_t *m, ut64 from, ut64 to)
 {
 	struct list_head *pos, *n;
 	int ret = R_FALSE;
@@ -154,7 +154,7 @@ int r_meta_cleanup(struct r_meta_t *m, u64 from, u64 to)
 	return ret;
 }
 
-int r_meta_add(struct r_meta_t *m, int type, u64 from, u64 size, const char *str)
+int r_meta_add(struct r_meta_t *m, int type, ut64 from, ut64 size, const char *str)
 {
 	struct r_meta_item_t *mi;
 	switch(type) {
@@ -186,7 +186,7 @@ int r_meta_add(struct r_meta_t *m, int type, u64 from, u64 size, const char *str
 
 /* snippet from data.c */
 /* XXX: we should add a 4th arg to define next or prev */
-struct r_meta_item_t *r_meta_find(struct r_meta_t *m, u64 off, int type, int where)
+struct r_meta_item_t *r_meta_find(struct r_meta_t *m, ut64 off, int type, int where)
 {
 	struct r_meta_item_t *it = NULL;
 	struct list_head *pos;
@@ -224,15 +224,15 @@ struct r_meta_item_t *r_meta_find(struct r_meta_t *m, u64 off, int type, int whe
 
 #if 0
 	/* not necessary */
-//int data_get_fun_for(u64 addr, u64 *from, u64 *to)
-int r_meta_get_bounds(struct r_meta_t *m, u64 addr, int type, u64 *from, u64 *to)
+//int data_get_fun_for(ut64 addr, ut64 *from, ut64 *to)
+int r_meta_get_bounds(struct r_meta_t *m, ut64 addr, int type, ut64 *from, ut64 *to)
 {
 	struct list_head *pos;
 	int n_functions = 0;
 	int n_xrefs = 0;
 	int n_dxrefs = 0;
 	struct r_meta_item_t *rd = NULL;
-	u64 lastfrom = 0LL;
+	ut64 lastfrom = 0LL;
 
 	list_for_each(pos, &m->data) {
 		struct r_meta_item_t *d = (struct r_meta_item_t *)

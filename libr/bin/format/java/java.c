@@ -102,8 +102,8 @@ static int attributes_walk(struct r_bin_java_t *bin, struct r_bin_java_attr_t *a
 				IFDBG printf("      Max Locals: %d\n", attr->info.code.max_locals);
 				attr->info.code.code_length = R_BIN_JAVA_UINT(buf, 4);
 				IFDBG printf("      Code Length: %d\n", attr->info.code.code_length);
-				attr->info.code.code_offset = (u64)lseek(fd, 0, SEEK_CUR);
-				IFDBG printf("      Code At Offset: 0x%08llx\n", (u64)attr->info.code.code_offset);
+				attr->info.code.code_offset = (ut64)lseek(fd, 0, SEEK_CUR);
+				IFDBG printf("      Code At Offset: 0x%08llx\n", (ut64)attr->info.code.code_offset);
 
 				read(fd, buf, R_BIN_JAVA_UINT(buf, 4)); // READ CODE
 				sz4 = read_short(fd);
@@ -353,7 +353,7 @@ int r_bin_java_get_version(struct r_bin_java_t *bin, char *version)
 	return R_TRUE;
 }
 
-u64 r_bin_java_get_entrypoint(struct r_bin_java_t *bin)
+ut64 r_bin_java_get_entrypoint(struct r_bin_java_t *bin)
 {
 	int i, j;
 	
@@ -361,7 +361,7 @@ u64 r_bin_java_get_entrypoint(struct r_bin_java_t *bin)
 		if (!strcmp(bin->methods[i].name, "<init>"))
 			for (j=0; j < bin->methods[i].attr_count; j++)
 				if (bin->methods[i].attributes[j].type == R_BIN_JAVA_TYPE_CODE)
-					return (u64)bin->methods[i].attributes->info.code.code_offset;
+					return (ut64)bin->methods[i].attributes->info.code.code_offset;
 
 	return 0;
 }
@@ -375,7 +375,7 @@ int r_bin_java_get_symbols(struct r_bin_java_t *bin, struct r_bin_java_sym_t *sy
 			sym[ctr].name[R_BIN_JAVA_MAXSTR-1] = '\0';
 			for (j=0; j < bin->methods[i].attr_count; j++)
 				if (bin->methods[i].attributes[j].type == R_BIN_JAVA_TYPE_CODE) {
-					sym[ctr].offset = (u64)bin->methods[i].attributes->info.code.code_offset;
+					sym[ctr].offset = (ut64)bin->methods[i].attributes->info.code.code_offset;
 					sym[ctr].size = bin->methods[i].attributes->info.code.code_length;
 					ctr++;
 				}
@@ -402,9 +402,9 @@ int r_bin_java_get_strings(struct r_bin_java_t *bin, struct r_bin_java_str_t *st
 
 	for(i=0;i<bin->cf.cp_count;i++) 
 		if (bin->cp_items[i].tag == 1) {
-			str[ctr].offset = (u64)bin->cp_items[i].off;
-			str[ctr].ordinal = (u64)bin->cp_items[i].ord;
-			str[ctr].size = (u64)bin->cp_items[i].length;
+			str[ctr].offset = (ut64)bin->cp_items[i].off;
+			str[ctr].ordinal = (ut64)bin->cp_items[i].ord;
+			str[ctr].size = (ut64)bin->cp_items[i].length;
 			memcpy(str[ctr].str, bin->cp_items[i].value, R_BIN_JAVA_MAXSTR);
 			ctr++;
 		}

@@ -25,11 +25,11 @@
 
 /* basic types */
 
-#define u64 unsigned long long
+#define ut64 unsigned long long
 #define s64 long long
-#define u32 unsigned int
-#define u16 unsigned short
-#define u8  unsigned char
+#define ut32 unsigned int
+#define ut16 unsigned short
+#define ut8  unsigned char
 
 #define R_TRUE 1
 #define R_FALSE 0

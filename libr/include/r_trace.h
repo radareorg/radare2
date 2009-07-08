@@ -16,8 +16,8 @@ struct r_trace_t {
 };
 
 struct r_trace_item_t {
-	u64 addr;
-	u64 tags;
+	ut64 addr;
+	ut64 tags;
 	int opsize;
 	int times;
 	int count;
@@ -30,15 +30,15 @@ struct r_trace_t *r_trace_new();
 int r_trace_tag_get(struct r_trace_t *t);
 int r_trace_tag_set(struct r_trace_t *t, int id);
 int r_trace_sort(struct r_trace_t *t);
-struct r_trace_item_t *r_trace_get(struct r_trace_t *t, u64 addr, int tag);
-int r_trace_times(struct r_trace_t *tr, u64 addr);
-int r_trace_count(struct r_trace_t *tr, u64 addr);
-int r_trace_index(struct r_trace_t *tr, u64 addr);
-int r_trace_set_times(struct r_trace_t *tr, u64 addr, int times);
-int r_trace_add(struct r_trace_t *tr, u64 addr, int opsize);
-u64 r_trace_range(struct r_trace_t *t, u64 from, int tag);
-u64 r_trace_next(struct r_trace_t *tr, u64 from, int tag);
+struct r_trace_item_t *r_trace_get(struct r_trace_t *t, ut64 addr, int tag);
+int r_trace_times(struct r_trace_t *tr, ut64 addr);
+int r_trace_count(struct r_trace_t *tr, ut64 addr);
+int r_trace_index(struct r_trace_t *tr, ut64 addr);
+int r_trace_set_times(struct r_trace_t *tr, ut64 addr, int times);
+int r_trace_add(struct r_trace_t *tr, ut64 addr, int opsize);
+ut64 r_trace_range(struct r_trace_t *t, ut64 from, int tag);
+ut64 r_trace_next(struct r_trace_t *tr, ut64 from, int tag);
 void r_trace_show(struct r_trace_t *tr, int plain, int tag);
 void r_trace_reset(struct r_trace_t *tr);
-int r_trace_get_between(struct r_trace_t *tr, u64 from, u64 to);
+int r_trace_get_between(struct r_trace_t *tr, ut64 from, ut64 to);
 #endif

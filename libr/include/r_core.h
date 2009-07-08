@@ -27,8 +27,8 @@
 struct r_core_file_t {
 	char *uri;
 	char *filename;
-	u64 seek;
-	u64 size;
+	ut64 seek;
+	ut64 size;
 	int rwx;
 	int fd;
 	int dbg;
@@ -36,14 +36,14 @@ struct r_core_file_t {
 };
 
 struct r_core_t {
-	u64 seek;
-	u32 blocksize;
-	u8 *block;
-	u8 *oobi;
+	ut64 seek;
+	ut32 blocksize;
+	ut8 *block;
+	ut8 *oobi;
 	int oobi_len;
-	u8 *yank;
+	ut8 *yank;
 	int yank_len;
-	u64 yank_off;
+	ut64 yank_off;
 	int interrupted; // XXX IS THIS DUPPED SOMEWHERE?
 	/* files */
 	struct r_io_t io;
@@ -77,11 +77,11 @@ R_API int r_core_cmd0(void *user, const char *cmd);
 R_API int r_core_cmd_init(struct r_core_t *core);
 R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd);
 R_API int r_core_cmd_file(struct r_core_t *core, const char *file);
-R_API int r_core_seek(struct r_core_t *core, u64 addr, int rb);
-R_API int r_core_seek_align(struct r_core_t *core, u64 align, int times);
+R_API int r_core_seek(struct r_core_t *core, ut64 addr, int rb);
+R_API int r_core_seek_align(struct r_core_t *core, ut64 align, int times);
 R_API int r_core_block_read(struct r_core_t *core, int next);
-R_API int r_core_block_size(struct r_core_t *core, u32 bsize);
-R_API int r_core_read_at(struct r_core_t *core, u64 addr, u8 *buf, int size);
+R_API int r_core_block_size(struct r_core_t *core, ut32 bsize);
+R_API int r_core_read_at(struct r_core_t *core, ut64 addr, ut8 *buf, int size);
 R_API int r_core_cmd_init(struct r_core_t *core);
 R_API int r_core_visual(struct r_core_t *core, const char *input);
 R_API int r_core_visual_cmd(struct r_core_t *core, int ch);
@@ -89,12 +89,12 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch);
 R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int mode);
 R_API int r_core_file_close(struct r_core_t *r, struct r_core_file_t *fh);
 R_API int r_core_seek_delta(struct r_core_t *core, s64 addr);
-R_API int r_core_write_at(struct r_core_t *core, u64 addr, const u8 *buf, int size);
+R_API int r_core_write_at(struct r_core_t *core, ut64 addr, const ut8 *buf, int size);
 R_API int r_core_write_op(struct r_core_t *core, const char *arg, char op);
 
 /* yank */
-R_API int r_core_yank(struct r_core_t *core, u64 addr, int len);
-R_API int r_core_yank_paste(struct r_core_t *core, u64 addr, int len);
+R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len);
+R_API int r_core_yank_paste(struct r_core_t *core, ut64 addr, int len);
 
 R_API int r_core_loadlibs(struct r_core_t *core);
 R_API int r_core_cmd_buffer(void *user, const char *buf);

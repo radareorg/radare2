@@ -33,8 +33,8 @@ struct r_bininfo_handle_t {
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	char *(*get_path)(struct r_bininfo_t *user);
-	int (*get_line)(struct r_bininfo_t *user, u64 addr, char *file, int len, int *line);
-	char *(*get_function_name)(struct r_bininfo_t *bi, u64 addr, char *file, int len);
+	int (*get_line)(struct r_bininfo_t *user, ut64 addr, char *file, int len, int *line);
+	char *(*get_function_name)(struct r_bininfo_t *bi, ut64 addr, char *file, int len);
 	int (*open)(struct r_bininfo_t *bin);
 	int (*close)(struct r_bininfo_t *bin);
 	int (*check)(struct r_bininfo_t *bin);
@@ -51,7 +51,7 @@ int r_bininfo_add(struct r_bininfo_t *bin, struct r_bininfo_handle_t *foo);
 int r_bininfo_list(struct r_bininfo_t *bin);
 int r_bininfo_open(struct r_bininfo_t *bin, const char *file, int rw, char *plugin_name);
 int r_bininfo_close(struct r_bininfo_t *bin);
-int r_bininfo_get_line(struct r_bininfo_t *bin, u64 addr, char *file, int len, int *line);
+int r_bininfo_get_line(struct r_bininfo_t *bin, ut64 addr, char *file, int len, int *line);
 char *r_bininfo_get_source_path(struct r_bininfo_t *bin);
 int r_bininfo_set_source_path(struct r_bininfo_t *bi, char *path);
 

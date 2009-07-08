@@ -5,7 +5,7 @@
 
 static int check(struct r_bin_t *bin)
 {
-	u8 buf[1024];
+	ut8 buf[1024];
 
 	if ((bin->fd = open(bin->file, 0)) == -1)
 		return R_FALSE;

@@ -14,15 +14,15 @@
 #define ALLOC_SIZE 1024*30
 #define ALLOC_BLKS 256
 
-static u8 *buf = NULL;
-static u8 *bufptr[ALLOC_BLKS];
+static ut8 *buf = NULL;
+static ut8 *bufptr[ALLOC_BLKS];
 static int bufidx = 0;
-static u8 *bufnext = 0;
-static u8 *bufmax;
+static ut8 *bufnext = 0;
+static ut8 *bufmax;
 
 int r_alloca_init()
 {
-	buf = (u8 *)malloc(ALLOC_SIZE);
+	buf = (ut8 *)malloc(ALLOC_SIZE);
 	if (buf == NULL)
 		return R_FALSE;
 	bufptr[0] = buf;
@@ -31,10 +31,10 @@ int r_alloca_init()
 	return R_TRUE;
 }
 
-u8 *r_alloca_bytes(int len)
+ut8 *r_alloca_bytes(int len)
 {
-	u8 *next = bufnext;
-	u8 *tnext = bufnext + len;
+	ut8 *next = bufnext;
+	ut8 *tnext = bufnext + len;
 	if (tnext > bufmax)
 		return NULL;
 	bufnext = bufptr[++bufidx] = tnext;
@@ -44,7 +44,7 @@ u8 *r_alloca_bytes(int len)
 char *r_alloca_str(const char *str)
 {
 	int len;
-	u8 *p;
+	ut8 *p;
 	if (str == NULL) {
 		len = 1;
 		p = r_alloca_bytes(1);

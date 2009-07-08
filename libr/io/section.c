@@ -8,7 +8,7 @@
 
 //static struct list_head sections;
 
-void r_io_section_set(struct r_io_t *io, u64 from, u64 to, u64 vaddr, u64 paddr, int rwx, const char *comment)
+void r_io_section_set(struct r_io_t *io, ut64 from, ut64 to, ut64 vaddr, ut64 paddr, int rwx, const char *comment)
 {
 	struct list_head *pos;
 	list_for_each(pos, &io->sections) {
@@ -28,7 +28,7 @@ void r_io_section_set(struct r_io_t *io, u64 from, u64 to, u64 vaddr, u64 paddr,
 	}
 }
 
-void r_io_section_add(struct r_io_t *io, u64 from, u64 to, u64 vaddr, u64 paddr, int rwx, const char *comment)
+void r_io_section_add(struct r_io_t *io, ut64 from, ut64 to, ut64 vaddr, ut64 paddr, int rwx, const char *comment)
 {
 	struct r_io_section_t *s = (struct r_io_section_t *)malloc(sizeof(struct r_io_section_t));
 	s->from = from;
@@ -67,7 +67,7 @@ int r_io_section_rm(struct r_io_t *io, int idx)
 }
 
 // TODO: implement as callback
-void r_io_section_list(struct r_io_t *io, u64 addr, int rad)
+void r_io_section_list(struct r_io_t *io, ut64 addr, int rad)
 {
 	int i = 0;
 	//char buf[128];
@@ -81,7 +81,7 @@ void r_io_section_list(struct r_io_t *io, u64 addr, int rad)
 		} else {
 			cons_printf("%02d %c 0x%08llx - 0x%08llx bs=0x%08llx sz=0x%08llx phy=0x%08llx %s",
 				i, (addr>=s->from && addr <=s->to)?'*':'.',
-				s->from, s->to, s->vaddr, (u64)((s->to)-(s->from)), s->paddr, s->comment);
+				s->from, s->to, s->vaddr, (ut64)((s->to)-(s->from)), s->paddr, s->comment);
 			
 
 // TODO: IMPLEMENT AS CALLBACK
@@ -98,11 +98,11 @@ void r_io_section_list(struct r_io_t *io, u64 addr, int rad)
 	}
 }
 
-void r_io_section_list_visual(struct r_io_t *io, u64 seek, u64 len)
+void r_io_section_list_visual(struct r_io_t *io, ut64 seek, ut64 len)
 {
-	u64 min = -1;
-	u64 max = -1;
-	u64 mul;
+	ut64 min = -1;
+	ut64 max = -1;
+	ut64 mul;
 	int j, i;
 	struct list_head *pos;
 	int width = 78; //config.width-30;
@@ -144,7 +144,7 @@ void r_io_section_list_visual(struct r_io_t *io, u64 seek, u64 len)
 	}
 }
 
-struct r_io_section_t *r_io_section_get(struct r_io_t *io, u64 addr)
+struct r_io_section_t *r_io_section_get(struct r_io_t *io, ut64 addr)
 {
 	struct list_head *pos;
 	list_for_each(pos, &io->sections) {
@@ -155,7 +155,7 @@ struct r_io_section_t *r_io_section_get(struct r_io_t *io, u64 addr)
 	return NULL;
 }
 
-u64 r_io_section_get_paddr(struct r_io_t *io, u64 addr)
+ut64 r_io_section_get_paddr(struct r_io_t *io, ut64 addr)
 {
 	struct r_io_section_t *s = r_io_section_get(io, addr);
 	if (s != NULL)
@@ -163,7 +163,7 @@ u64 r_io_section_get_paddr(struct r_io_t *io, u64 addr)
 	return -1;
 }
 
-u64 r_io_section_get_vaddr(struct r_io_t *io, u64 addr)
+ut64 r_io_section_get_vaddr(struct r_io_t *io, ut64 addr)
 {
 	struct r_io_section_t *s = r_io_section_get(io, addr);
 	if (s != NULL)
@@ -191,7 +191,7 @@ int r_io_section_overlaps(struct r_io_t *io, struct r_io_section_t *s)
 	return -1;
 }
 
-u64 r_io_section_align(struct r_io_t *io, u64 addr, u64 vaddr, u64 paddr)
+ut64 r_io_section_align(struct r_io_t *io, ut64 addr, ut64 vaddr, ut64 paddr)
 {
 	struct list_head *pos;
 	if (addr == io->last_align)

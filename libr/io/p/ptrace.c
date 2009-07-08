@@ -29,7 +29,7 @@ static int __waitpid(int pid)
 
 #define debug_read_raw(x,y) ptrace(PTRACE_PEEKTEXT, x, y, 0)
 
-static int debug_os_read_at(int pid, void *buff, int sz, u64 addr)
+static int debug_os_read_at(int pid, void *buff, int sz, ut64 addr)
 {
         unsigned long words = sz / sizeof(long) ;
         unsigned long last = sz % sizeof(long) ;
@@ -66,10 +66,10 @@ err:
         return ret ;
 }
 
-static int __read(struct r_io_t *io, int pid, u8 *buf, int len)
+static int __read(struct r_io_t *io, int pid, ut8 *buf, int len)
 {
 	int ret;
-	u64 addr = io->seek;
+	ut64 addr = io->seek;
 	memset(buf, '\xff', len);
 	ret = debug_os_read_at(pid, buf, len, addr);
 //printf("READ(0x%08llx)\n", addr);
@@ -79,7 +79,7 @@ static int __read(struct r_io_t *io, int pid, u8 *buf, int len)
 	return len;
 }
 
-static int ptrace_write_at(int pid, const u8 *buff, int sz, u64 addr)
+static int ptrace_write_at(int pid, const ut8 *buff, int sz, ut64 addr)
 {
         long words = sz / sizeof(long) ;
         long last = (sz % sizeof(long))*8;
@@ -129,11 +129,11 @@ static int ptrace_write_at(int pid, const u8 *buff, int sz, u64 addr)
         //return ret ;
 }
 
-static int __write(struct r_io_t *io, int pid, const u8 *buf, int len)
+static int __write(struct r_io_t *io, int pid, const ut8 *buf, int len)
 {
 	return ptrace_write_at(pid, buf, len, io->seek);
 	//int ret;
-	//u64 addr = r_io_seek;
+	//ut64 addr = r_io_seek;
 	//ret = debug_os_write_at(pid, buf, len, addr);
 //printf("READ(0x%08llx)\n", addr);
 	//if (ret == -1)
@@ -191,7 +191,7 @@ static int __handle_fd(struct r_io_t *io, int fd)
 	return R_FALSE;
 }
 
-static u64 __lseek(struct r_io_t *io, int fildes, u64 offset, int whence)
+static ut64 __lseek(struct r_io_t *io, int fildes, ut64 offset, int whence)
 {
 	return -1;
 }
@@ -269,7 +269,7 @@ static struct r_io_handle_t r_io_plugin_ptrace = {
         //void *widget;
 /*
         struct debug_t *debug;
-        u32 (*write)(int fd, const u8 *buf, u32 count);
+        ut32 (*write)(int fd, const ut8 *buf, ut32 count);
 	int fds[R_IO_NFDS];
 */
 };

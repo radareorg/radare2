@@ -40,7 +40,7 @@ int aes_key_test(const unsigned char *buf) {
 	return 0;
 }
 
-int r_search_aes_update(struct r_search_t *s, u64 from, const u8 *buf, int len)
+int r_search_aes_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len)
 {
 	int i, last = len-31;
 	if (last < 0)

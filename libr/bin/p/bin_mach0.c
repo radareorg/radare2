@@ -7,7 +7,7 @@ static int bclose(struct r_bin_t *bin)
 	free(bin->bin_obj);
 }
 
-static u64 baddr(struct r_bin_t *bin)
+static ut64 baddr(struct r_bin_t *bin)
 {
 	return -0x1000; /* huh */
 }
@@ -15,7 +15,7 @@ static u64 baddr(struct r_bin_t *bin)
 static int check(struct r_bin_t *bin)
 {
 	int ret = R_FALSE;
-	u8 buf[4];
+	ut8 buf[4];
 
 	if ((bin->fd = open(bin->file, 0)) != -1) {
 		lseek(bin->fd, 0, SEEK_SET);

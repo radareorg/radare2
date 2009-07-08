@@ -148,7 +148,7 @@ int r_cons_w32_print(unsigned char *ptr)
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	int esc = 0;
 	int bg = 0;
-	u8 *str = ptr;
+	ut8 *str = ptr;
 	int len = 0;
 	int inv = 0;
 

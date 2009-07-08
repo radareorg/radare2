@@ -38,7 +38,7 @@ struct r_bin_handle_t {
 	int (*open)(struct r_bin_t *bin);
 	int (*close)(struct r_bin_t *bin);
 	int (*check)(struct r_bin_t *bin);
-	u64 (*baddr)(struct r_bin_t *bin);
+	ut64 (*baddr)(struct r_bin_t *bin);
 	struct r_bin_entry_t* (*entry)(struct r_bin_t *bin);
 	struct r_bin_section_t* (*sections)(struct r_bin_t *bin);
 	struct r_bin_symbol_t* (*symbols)(struct r_bin_t *bin);
@@ -46,22 +46,22 @@ struct r_bin_handle_t {
 	struct r_bin_string_t* (*strings)(struct r_bin_t *bin);
 	struct r_bin_info_t* (*info)(struct r_bin_t *bin);
 	struct r_bin_field_t* (*fields)(struct r_bin_t *bin);
-	u64 (*resize_section)(struct r_bin_t *bin, char *name, u64 size);
+	ut64 (*resize_section)(struct r_bin_t *bin, char *name, ut64 size);
 	struct list_head list;
 };
 
 struct r_bin_entry_t {
-	u64 rva;
-	u64 offset;
+	ut64 rva;
+	ut64 offset;
 };
 
 struct r_bin_section_t {
 	char name[R_BIN_SIZEOF_STRINGS];
-	u64 size;
-	u64 vsize;
-	u64 rva;
-	u64 offset;
-	u64 characteristics;
+	ut64 size;
+	ut64 vsize;
+	ut64 rva;
+	ut64 offset;
+	ut64 characteristics;
 	int last;
 };
 
@@ -70,10 +70,10 @@ struct r_bin_symbol_t {
 	char forwarder[R_BIN_SIZEOF_STRINGS];
 	char bind[R_BIN_SIZEOF_STRINGS];
 	char type[R_BIN_SIZEOF_STRINGS];
-	u64 rva;
-	u64 offset;
-	u64 size;
-	u64 ordinal;
+	ut64 rva;
+	ut64 offset;
+	ut64 size;
+	ut64 ordinal;
 	int last;
 };
 
@@ -81,19 +81,19 @@ struct r_bin_import_t {
 	char name[R_BIN_SIZEOF_STRINGS];
 	char bind[R_BIN_SIZEOF_STRINGS];
 	char type[R_BIN_SIZEOF_STRINGS];
-	u64 rva;
-	u64 offset;
-	u64 ordinal;
-	u64 hint;
+	ut64 rva;
+	ut64 offset;
+	ut64 ordinal;
+	ut64 hint;
 	int last;
 };
 
 struct r_bin_string_t {
 	char string[R_BIN_SIZEOF_STRINGS];
-	u64 rva;
-	u64 offset;
-	u64 ordinal;
-	u64 size;
+	ut64 rva;
+	ut64 offset;
+	ut64 ordinal;
+	ut64 size;
 	int last;
 };
 
@@ -106,13 +106,13 @@ struct r_bin_info_t {
 	char os[R_BIN_SIZEOF_STRINGS];
 	char subsystem[R_BIN_SIZEOF_STRINGS];
 	int big_endian;
-	u64 dbg_info;
+	ut64 dbg_info;
 };
 
 struct r_bin_field_t {
 	char name[R_BIN_SIZEOF_STRINGS];
-	u64 rva;
-	u64 offset;
+	ut64 rva;
+	ut64 offset;
 	int last;
 };
 
@@ -125,7 +125,7 @@ int r_bin_add(struct r_bin_t *bin, struct r_bin_handle_t *foo);
 int r_bin_list(struct r_bin_t *bin);
 int r_bin_open(struct r_bin_t *bin, const char *file, int rw, char *plugin_name);
 int r_bin_close(struct r_bin_t *bin);
-u64 r_bin_get_baddr(struct r_bin_t *bin);
+ut64 r_bin_get_baddr(struct r_bin_t *bin);
 struct r_bin_entry_t* r_bin_get_entry(struct r_bin_t *bin);
 struct r_bin_section_t* r_bin_get_sections(struct r_bin_t *bin);
 struct r_bin_symbol_t* r_bin_get_symbols(struct r_bin_t *bin);
@@ -133,9 +133,9 @@ struct r_bin_import_t* r_bin_get_imports(struct r_bin_t *bin);
 struct r_bin_string_t* r_bin_get_strings(struct r_bin_t *bin);
 struct r_bin_info_t* r_bin_get_info(struct r_bin_t *bin);
 struct r_bin_field_t* r_bin_get_fields(struct r_bin_t *bin);
-u64 r_bin_get_section_offset(struct r_bin_t *bin, char *name);
-u64 r_bin_get_section_rva(struct r_bin_t *bin, char *name);
-u64 r_bin_get_section_size(struct r_bin_t *bin, char *name);
+ut64 r_bin_get_section_offset(struct r_bin_t *bin, char *name);
+ut64 r_bin_get_section_rva(struct r_bin_t *bin, char *name);
+ut64 r_bin_get_section_size(struct r_bin_t *bin, char *name);
 
 /* plugin pointers */
 extern struct r_bin_handle_t r_bin_plugin_elf;

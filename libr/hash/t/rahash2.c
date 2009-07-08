@@ -4,12 +4,12 @@
 #include <r_hash.h>
 #include <r_util.h>
 
-static int do_hash(const char *algo, const u8 *buf, int len, int bsize)
+static int do_hash(const char *algo, const ut8 *buf, int len, int bsize)
 {
 	struct r_hash_t ctx;
-	const u8 *c;
+	const ut8 *c;
 	int i;
-	u64 algobit = r_hash_name_to_bits (algo);
+	ut64 algobit = r_hash_name_to_bits (algo);
 	if (algobit == R_HASH_NONE) {
 		fprintf(stderr, "Invalid hashing algorithm specified\n");
 		return 1;
@@ -48,7 +48,7 @@ static int do_help(int line)
 int main(int argc, char **argv)
 {
 	char *algo = "md5"; /* default hashing algorithm */
-	u8 *buf = NULL;
+	ut8 *buf = NULL;
 	int c, buf_len = 0;
 	int bsize = 0;
 

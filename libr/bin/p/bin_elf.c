@@ -23,7 +23,7 @@ static int bclose(struct r_bin_t *bin)
 	return Elf_(r_bin_elf_close)(bin->bin_obj);
 }
 
-static u64 baddr(struct r_bin_t *bin)
+static ut64 baddr(struct r_bin_t *bin)
 {
 	return Elf_(r_bin_elf_get_baddr)(bin->bin_obj);
 }
@@ -212,7 +212,7 @@ static struct r_bin_field_t* fields(struct r_bin_t *bin)
 static int check(struct r_bin_t *bin)
 {
 	int ret = R_FALSE;
-	u8 buf[8];
+	ut8 buf[8];
 
 	if ((bin->fd = open(bin->file, 0)) != -1) {
 		lseek(bin->fd, 0, SEEK_SET);

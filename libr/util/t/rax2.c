@@ -4,7 +4,7 @@
 
 int rax(const char *str)
 {
-	u64 n = r_num_math(NULL, str);
+	ut64 n = r_num_math(NULL, str);
 	switch(*str) {
 	case 'q':
 		return 0;

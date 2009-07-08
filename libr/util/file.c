@@ -65,13 +65,13 @@ char *r_file_slurp(const char *str, int *usz)
         ret[sz]='\0';
         fclose(fd);
 	if (usz)
-		*usz = (u32)sz;
+		*usz = (ut32)sz;
         return ret;
 }
 
-u8 *r_file_slurp_hexpairs(const char *str, int *usz)
+ut8 *r_file_slurp_hexpairs(const char *str, int *usz)
 {
-        u8 *ret;
+        ut8 *ret;
         long sz;
 	int bytes;
         FILE *fd = fopen(str, "r");
@@ -80,7 +80,7 @@ u8 *r_file_slurp_hexpairs(const char *str, int *usz)
         fseek(fd, 0,SEEK_END);
         sz = ftell(fd);
         fseek(fd, 0, SEEK_SET);
-        ret = (u8*)malloc(sz+1); // XXX >>1 ???
+        ret = (ut8*)malloc(sz+1); // XXX >>1 ???
 	/* TODO: add support for commented lines */
 	while (1) {
 		int n;
@@ -95,7 +95,7 @@ u8 *r_file_slurp_hexpairs(const char *str, int *usz)
         return ret;
 }
 
-char *r_file_slurp_range(const char *str, u64 off, u64 sz)
+char *r_file_slurp_range(const char *str, ut64 off, ut64 sz)
 {
         char *ret;
         FILE *fd = fopen(str, "r");
@@ -156,7 +156,7 @@ char *r_file_slurp_line(const char *file, int line, int context)
 	return ptr;
 }
 
-int r_file_dump(const char *file, const u8 *buf, int len)
+int r_file_dump(const char *file, const ut8 *buf, int len)
 {
 	FILE *fd = fopen(file, "wb");
 	if (fd == NULL) {

@@ -26,37 +26,37 @@
 #include "r_types.h"
 
 // TODO: rewrite with #define
-static u32 F(u32 X, u32 Y, u32 Z)
+static ut32 F(ut32 X, ut32 Y, ut32 Z)
 {
 	return (X & Y) | ((~X) & Z);
 }
 
-static u32 G(u32 X, u32 Y, u32 Z)
+static ut32 G(ut32 X, ut32 Y, ut32 Z)
 {
 	return (X & Y) | (X & Z) | (Y & Z);
 }
 
-static u32 H(u32 X, u32 Y, u32 Z)
+static ut32 H(ut32 X, ut32 Y, ut32 Z)
 {
 	return X ^ Y ^ Z;
 }
 
-static u32 lshift(u32 x, int s)
+static ut32 lshift(ut32 x, int s)
 {
 	x &= 0xFFFFFFFF;
 	return ((x << s) & 0xFFFFFFFF) | (x >> (32 - s));
 }
 
 #define ROUND1(a,b,c,d,k,s) (*a) = lshift((*a) + F(*b,*c,*d) + X[k], s)
-#define ROUND2(a,b,c,d,k,s) (*a) = lshift((*a) + G(*b,*c,*d) + X[k] + (u32)0x5A827999,s)
-#define ROUND3(a,b,c,d,k,s) (*a) = lshift((*a) + H(*b,*c,*d) + X[k] + (u32)0x6ED9EBA1,s)
+#define ROUND2(a,b,c,d,k,s) (*a) = lshift((*a) + G(*b,*c,*d) + X[k] + (ut32)0x5A827999,s)
+#define ROUND3(a,b,c,d,k,s) (*a) = lshift((*a) + H(*b,*c,*d) + X[k] + (ut32)0x6ED9EBA1,s)
 
 /* this applies md4 to 64 byte chunks */
-static void mdfour64(u32 * M, u32 * A, u32 *B, u32 * C, u32 *D)
+static void mdfour64(ut32 * M, ut32 * A, ut32 *B, ut32 * C, ut32 *D)
 {
 	int j;
-	u32 AA, BB, CC, DD;
-	u32 X[16];
+	ut32 AA, BB, CC, DD;
+	ut32 X[16];
 
 
 	for (j = 0; j < 16; j++)
@@ -133,7 +133,7 @@ static void mdfour64(u32 * M, u32 * A, u32 *B, u32 * C, u32 *D)
 }
 
 static void
-copy64(u32 * M, const u8 *in)
+copy64(ut32 * M, const ut8 *in)
 {
 	int i;
 
@@ -142,7 +142,7 @@ copy64(u32 * M, const u8 *in)
 		    (in[i * 4 + 1] << 8) | (in[i * 4 + 0] << 0);
 }
 
-static void copy4(u8 *out, u32 x)
+static void copy4(ut8 *out, ut32 x)
 {
 	out[0] = x & 0xFF;
 	out[1] = (x >> 8) & 0xFF;
@@ -151,16 +151,16 @@ static void copy4(u8 *out, u32 x)
 }
 
 /* produce a md4 message digest from data of length n bytes */
-void mdfour(u8 *out, const u8 *in, int n)
+void mdfour(ut8 *out, const ut8 *in, int n)
 {
 	unsigned char buf[128];
-	u32 M[16];
-	u32 b = n * 8;
+	ut32 M[16];
+	ut32 b = n * 8;
 	int i;
-	u32 A = 0x67452301;
-	u32 B = 0xefcdab89;
-	u32 C = 0x98badcfe;
-	u32 D = 0x10325476;
+	ut32 A = 0x67452301;
+	ut32 B = 0xefcdab89;
+	ut32 C = 0x98badcfe;
+	ut32 D = 0x10325476;
 
 	while (n > 64) {
 		copy64(M, in);

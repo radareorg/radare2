@@ -12,8 +12,8 @@
 
 static int r_debug_ptrace_step(int pid)
 {
-	//u32 addr = 0; /* should be eip */
-	//u32 data = 0;
+	//ut32 addr = 0; /* should be eip */
+	//ut32 data = 0;
 	printf("NATIVE STEP over PID=%d\n", pid);
 	ptrace(PTRACE_SINGLESTEP, pid, 0, 0); //addr, data);
 	perror("ptrace-singlestep");
@@ -22,23 +22,23 @@ static int r_debug_ptrace_step(int pid)
 
 static int r_debug_ptrace_attach(int pid)
 {
-	u32 addr;
-	u32 data;
+	ut32 addr;
+	ut32 data;
 	int ret = ptrace(PTRACE_ATTACH, pid, addr, data);
 	return (ret != -1)?R_TRUE:R_FALSE;
 }
 
 static int r_debug_ptrace_detach(int pid)
 {
-	u32 addr;
-	u32 data;
+	ut32 addr;
+	ut32 data;
 	return ptrace(PTRACE_DETACH, pid, addr, data);
 }
 
 static int r_debug_ptrace_continue(int pid)
 {
-	u32 addr;
-	u32 data;
+	ut32 addr;
+	ut32 data;
 	return ptrace(PTRACE_CONT, pid, addr, data);
 }
 
@@ -83,15 +83,15 @@ struct r_debug_regset_t * r_debug_ptrace_reg_read(int pid)
 	/* TODO: use enum for 0, 1, 2... ? */
 	/* TODO: missing eflags here */
 	r = r_debug_regset_new(9);
-	r_debug_regset_set(r, 0, "eax", (u64)(u32)regs.eax);
-	r_debug_regset_set(r, 1, "ebx", (u64)(u32)regs.ebx);
-	r_debug_regset_set(r, 2, "ecx", (u64)(u32)regs.ecx);
-	r_debug_regset_set(r, 3, "edx", (u64)(u32)regs.edx);
-	r_debug_regset_set(r, 4, "esi", (u64)(u32)regs.esi);
-	r_debug_regset_set(r, 5, "edi", (u64)(u32)regs.edi);
-	r_debug_regset_set(r, 6, "esp", (u64)(u32)regs.esp);
-	r_debug_regset_set(r, 7, "ebp", (u64)(u32)regs.ebp);
-	r_debug_regset_set(r, 8, "eip", (u64)(u32)regs.eip);
+	r_debug_regset_set(r, 0, "eax", (ut64)(ut32)regs.eax);
+	r_debug_regset_set(r, 1, "ebx", (ut64)(ut32)regs.ebx);
+	r_debug_regset_set(r, 2, "ecx", (ut64)(ut32)regs.ecx);
+	r_debug_regset_set(r, 3, "edx", (ut64)(ut32)regs.edx);
+	r_debug_regset_set(r, 4, "esi", (ut64)(ut32)regs.esi);
+	r_debug_regset_set(r, 5, "edi", (ut64)(ut32)regs.edi);
+	r_debug_regset_set(r, 6, "esp", (ut64)(ut32)regs.esp);
+	r_debug_regset_set(r, 7, "ebp", (ut64)(ut32)regs.ebp);
+	r_debug_regset_set(r, 8, "eip", (ut64)(ut32)regs.eip);
 #endif
 #endif /* linux */
 	return r;
@@ -102,7 +102,7 @@ static int r_debug_ptrace_reg_write(int pid, struct r_debug_regset_t *regs)
 	/* TODO */
 }
 
-static int r_debug_ptrace_bp_write(int pid, u64 addr, int size, int hw, int rwx)
+static int r_debug_ptrace_bp_write(int pid, ut64 addr, int size, int hw, int rwx)
 {
 	if (hw) {
 		/* implement DRx register handling here */
@@ -112,7 +112,7 @@ static int r_debug_ptrace_bp_write(int pid, u64 addr, int size, int hw, int rwx)
 }
 
 /* TODO: rethink */
-static int r_debug_ptrace_bp_read(int pid, u64 addr, int hw, int rwx)
+static int r_debug_ptrace_bp_read(int pid, ut64 addr, int hw, int rwx)
 {
 	return R_TRUE;
 }

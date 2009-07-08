@@ -12,14 +12,14 @@ static int shm_fd = -1;
 static unsigned char *shm_buf = NULL;
 static unsigned int shm_bufsz = 32*1024*1024; /* 32MB */
 
-static int shm__write(struct r_io_t *io, int fd, const u8 *buf, int count)
+static int shm__write(struct r_io_t *io, int fd, const ut8 *buf, int count)
 {
 	if (shm_buf != NULL)
         	return (ssize_t)memcpy(shm_buf+io->seek, buf, count);
 	return -1;
 }
 
-static int shm__read(struct r_io_t *io, int fd, u8 *buf, int count)
+static int shm__read(struct r_io_t *io, int fd, ut8 *buf, int count)
 {
 	if (shm_buf == NULL)
 		return -1;
@@ -36,7 +36,7 @@ static int shm__close(struct r_io_t *io, int fd)
 	return shmdt(shm_buf);
 }
 
-static u64 shm__lseek(struct r_io_t *io, int fildes, u64 offset, int whence)
+static ut64 shm__lseek(struct r_io_t *io, int fildes, ut64 offset, int whence)
 {
 	if (shm_buf == NULL)
 		return -1;

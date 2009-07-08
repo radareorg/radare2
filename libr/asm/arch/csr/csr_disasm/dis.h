@@ -57,7 +57,7 @@ struct state {
 	int			s_ff_quirk;
 } _state;
 
-int arch_csr_disasm(char *str, unsigned char *b, u64 seek);
+int arch_csr_disasm(char *str, unsigned char *b, ut64 seek);
 
 #define MODE_MASK	3
 #define REG_SHIFT	2

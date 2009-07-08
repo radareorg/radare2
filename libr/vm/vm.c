@@ -5,9 +5,9 @@
 /* TODO: move into r_vm_t */
 int vm_arch = -1;
 
-static u64 r_vm_get_value(struct r_vm_t *vm, const char *str)
+static ut64 r_vm_get_value(struct r_vm_t *vm, const char *str)
 {
-	u64 ret = 0LL;
+	ut64 ret = 0LL;
 	for(;*str&&*str==' ';str=str+1);
 
 	if (str[0]=='$' && str[1]=='$') {
@@ -32,7 +32,7 @@ static u64 r_vm_get_value(struct r_vm_t *vm, const char *str)
 	return ret;
 }
 
-static u64 r_vm_get_math(struct r_vm_t *vm, const char *str)
+static ut64 r_vm_get_math(struct r_vm_t *vm, const char *str)
 {
 	int len;
 	char *p,*a;
@@ -116,7 +116,7 @@ R_API void r_vm_print(struct r_vm_t *vm, int type)
 		printf("fs *\n");
 }
 
-R_API int r_vm_reg_add(struct r_vm_t *vm, const char *name, int type, u64 value)
+R_API int r_vm_reg_add(struct r_vm_t *vm, const char *name, int type, ut64 value)
 {
 	struct r_vm_reg_t *r;
 
@@ -132,7 +132,7 @@ R_API int r_vm_reg_add(struct r_vm_t *vm, const char *name, int type, u64 value)
 	return 1;
 }
 
-R_API u64 r_vm_reg_get(struct r_vm_t *vm, const char *name)
+R_API ut64 r_vm_reg_get(struct r_vm_t *vm, const char *name)
 {
 	struct list_head *pos;
 	int len = strlen(name);
@@ -172,7 +172,7 @@ R_API int r_vm_import(struct r_vm_t *vm, int in_vm)
 	return 0;
 }
 
-R_API void r_vm_cpu_call(struct r_vm_t *vm, u64 addr)
+R_API void r_vm_cpu_call(struct r_vm_t *vm, ut64 addr)
 {
 	/* x86 style */
 	r_vm_stack_push(vm, vm_reg_get(vm->cpu.pc));
@@ -288,11 +288,11 @@ R_API int r_vm_eval_cmp(struct r_vm_t *vm, const char *str)
 R_API int r_vm_eval_eq(struct r_vm_t *vm, const char *str, const char *val)
 {
 	char *p;
-	u8 buf[64];
-	u64 _int8  = 0;
-	u16 _int16 = 0;
-	u32 _int32 = 0;
-	u64 _int64 = 0;
+	ut8 buf[64];
+	ut64 _int8  = 0;
+	ut16 _int16 = 0;
+	ut32 _int32 = 0;
+	ut64 _int64 = 0;
 	for(;*str==' ';str=str+1);
 	for(;*val==' ';val=val+1);
 
@@ -301,7 +301,7 @@ R_API int r_vm_eval_eq(struct r_vm_t *vm, const char *str, const char *val)
 		// [foo] = 33, [reg] = 33
 		if (*val=='[') {
 			// [0x804800] = [0x30480]
-			u64 off = r_vm_get_math(vm, val+1);
+			ut64 off = r_vm_get_math(vm, val+1);
 			p = strchr(val+1,':');
 			if (p) {
 				int size = atoi(val+1);
@@ -324,16 +324,16 @@ R_API int r_vm_eval_eq(struct r_vm_t *vm, const char *str, const char *val)
 					r_vm_mmu_write(vm, off, buf, 4);
 				}
 			} else {
-				r_vm_mmu_read(vm, off, (u8*)&_int32, 4);
+				r_vm_mmu_read(vm, off, (ut8*)&_int32, 4);
 				//off = r_vm_get_math(val);
-				r_vm_mmu_write(vm, off, (const u8*)&_int32, 4);
+				r_vm_mmu_write(vm, off, (const ut8*)&_int32, 4);
 			}
 		} else {
 			// [0x804800] = eax
 			// use ssssskcvtgvmu
-			u64 off = r_vm_get_math(vm, str+1);
+			ut64 off = r_vm_get_math(vm, str+1);
 			// XXX support 64 bits here
-			u32 v = (u32)r_vm_get_math(vm, val); // TODO control endian
+			ut32 v = (ut32)r_vm_get_math(vm, val); // TODO control endian
 			p = strchr(str+1,':');
 			fprintf(stderr,"   ;==> [0x%08llx] = %x  ((%s))\n", off, v, str+1);
 
@@ -353,7 +353,7 @@ R_API int r_vm_eval_eq(struct r_vm_t *vm, const char *str, const char *val)
 				}
 			} else {
 				printf("   ; write %x @ 0x%08llx\n", v, off);
-				r_vm_mmu_write(vm, off, (u8*)&v, 4);
+				r_vm_mmu_write(vm, off, (ut8*)&v, 4);
 			}
 		}
 	} else {
@@ -361,33 +361,33 @@ R_API int r_vm_eval_eq(struct r_vm_t *vm, const char *str, const char *val)
 		// reg = [foo] , reg = 33
 		if (*val=='[') {
 			// use mmu
-			u64 off;
-			u32 _int32 = 0;
+			ut64 off;
+			ut32 _int32 = 0;
 			p = strchr(val+1,':');
 			if (p) {
 				int size = atoi(val+1);
 				off = r_vm_get_math(vm, p+1);
 				switch(size) {
 				case 8:
-					r_vm_mmu_read(vm, off, (u8*)&_int8, 1);
-					r_vm_reg_set(vm, str, (u64)_int8);
+					r_vm_mmu_read(vm, off, (ut8*)&_int8, 1);
+					r_vm_reg_set(vm, str, (ut64)_int8);
 					break;
 				case 16:
-					r_vm_mmu_read(vm, off, (u8*)&_int16, 2);
-					r_vm_reg_set(vm, str, (u64)_int16);
+					r_vm_mmu_read(vm, off, (ut8*)&_int16, 2);
+					r_vm_reg_set(vm, str, (ut64)_int16);
 					break;
 				case 64:
-					r_vm_mmu_read(vm, off, (u8*)&_int64, 8);
-					r_vm_reg_set(vm, str, (u64)_int64);
+					r_vm_mmu_read(vm, off, (ut8*)&_int64, 8);
+					r_vm_reg_set(vm, str, (ut64)_int64);
 					break;
 				default:
-					r_vm_mmu_read(vm, off, (u8*)&_int32, 4);
-					r_vm_reg_set(vm, str, (u64)_int32);
+					r_vm_mmu_read(vm, off, (ut8*)&_int32, 4);
+					r_vm_reg_set(vm, str, (ut64)_int32);
 				}
 			} else {
  				off = r_vm_get_math(vm, val+1);
-				r_vm_mmu_read(vm, off, (u8*)&_int32, 4);
-				r_vm_reg_set(vm, str, (u64)_int32);
+				r_vm_mmu_read(vm, off, (ut8*)&_int32, 4);
+				r_vm_reg_set(vm, str, (ut64)_int32);
 			}
 		} else r_vm_reg_set(vm, str, r_vm_get_math(vm, val));
 	}
@@ -474,7 +474,7 @@ R_API int r_vm_eval_single(struct r_vm_t *vm, const char *str)
 		} else
 		if (!memcmp(ptr, "ret", 3)) {
 			r_vm_stack_pop(vm, vm->cpu.pc);
-			printf("RET (%x)\n", (u32)vm->cpu.pc);
+			printf("RET (%x)\n", (ut32)vm->cpu.pc);
 		} else
 			fprintf(stderr, "r_vm: Unknown opcode\n");
 	}
@@ -535,9 +535,9 @@ R_API int r_vm_eval_file(struct r_vm_t *vm, const char *str)
 R_API int r_vm_emulate(struct r_vm_t *vm, int n)
 {
 #if 0
-	u64 pc;
+	ut64 pc;
 	char str[128];
-	u8 buf[128];
+	ut8 buf[128];
 	int opsize;
 	int op = config_get_i("asm.pseudo");
 	struct aop_t aop;

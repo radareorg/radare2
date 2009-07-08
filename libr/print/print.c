@@ -79,7 +79,7 @@ R_API void r_print_cursor(struct r_print_t *p, int cur, int set)
 	}
 }
 
-void r_print_addr(struct r_print_t *p, u64 addr)
+void r_print_addr(struct r_print_t *p, ut64 addr)
 {
 	//config_get_i("cfg.addrmod");
 	int mod = p->flags & R_PRINT_FLAGS_ADDRMOD;
@@ -91,9 +91,9 @@ void r_print_addr(struct r_print_t *p, u64 addr)
 	} else r_cons_printf("0x%08llx%c ", addr, ch);
 }
 
-R_API void r_print_byte(struct r_print_t *p, const char *fmt, int idx, u8 ch)
+R_API void r_print_byte(struct r_print_t *p, const char *fmt, int idx, ut8 ch)
 {
-	u8 rch = ch;
+	ut8 rch = ch;
 
 	if (!IS_PRINTABLE(ch) && fmt[0]=='%'&&fmt[1]=='c')
 		rch = '.';
@@ -119,7 +119,7 @@ R_API void r_print_byte(struct r_print_t *p, const char *fmt, int idx, u8 ch)
 	r_print_cursor(p, idx, 0);
 }
 
-void r_print_code(struct r_print_t *p, u64 addr, u8 *buf, int len)
+void r_print_code(struct r_print_t *p, ut64 addr, ut8 *buf, int len)
 {
 	int i, w = 0;
 	p->printf("#define _BUFFER_SIZE %d\n", len);
@@ -136,7 +136,7 @@ void r_print_code(struct r_print_t *p, u64 addr, u8 *buf, int len)
 	p->printf("};\n");
 }
 
-R_API int r_print_string(struct r_print_t *p, u64 seek, const u8 *buf, int len, int wide, int zeroend, int urlencode)
+R_API int r_print_string(struct r_print_t *p, ut64 seek, const ut8 *buf, int len, int wide, int zeroend, int urlencode)
 {
 	int i;
 
@@ -163,7 +163,7 @@ R_API int r_print_string(struct r_print_t *p, u64 seek, const u8 *buf, int len, 
 }
 
 static const char hex[16] = "0123456789ABCDEF";
-R_API void r_print_hexpairs(struct r_print_t *p, u64 addr, u8 *buf, int len)
+R_API void r_print_hexpairs(struct r_print_t *p, ut64 addr, ut8 *buf, int len)
 {
 	int i;
 	for(i=0;i<len;i++) {
@@ -172,7 +172,7 @@ R_API void r_print_hexpairs(struct r_print_t *p, u64 addr, u8 *buf, int len)
 }
 
 // XXX: step is borken
-R_API void r_print_hexdump(struct r_print_t *p, u64 addr, u8 *buf, int len, int base, int step)
+R_API void r_print_hexdump(struct r_print_t *p, ut64 addr, ut8 *buf, int len, int base, int step)
 {
 	int i,j,k,inc;
 	const char *fmt = "%02x";
@@ -232,7 +232,7 @@ R_API void r_print_hexdump(struct r_print_t *p, u64 addr, u8 *buf, int len, int 
 	}
 }
 
-R_API void r_print_bytes(struct r_print_t *p, const u8* buf, int len, const char *fmt)
+R_API void r_print_bytes(struct r_print_t *p, const ut8* buf, int len, const char *fmt)
 {
 	int i;
 	for(i=0;i<len;i++)
@@ -240,7 +240,7 @@ R_API void r_print_bytes(struct r_print_t *p, const u8* buf, int len, const char
 	p->printf("\n");
 }
 
-R_API void r_print_raw(struct r_print_t *p, const u8* buf, int len)
+R_API void r_print_raw(struct r_print_t *p, const ut8* buf, int len)
 {
 	// TODO independize from cons
 	r_cons_memcat((char *)buf, len);

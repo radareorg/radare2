@@ -26,7 +26,7 @@ static int r_config_callback_s(void *data)
 	return 1;
 }
 
-int r_config_set_callback_q(struct r_config_t *cfg, const char *name, u64 *ptr)
+int r_config_set_callback_q(struct r_config_t *cfg, const char *name, ut64 *ptr)
 {
 	struct r_config_node_t *node;
 	node = r_config_node_get(cfg, name);

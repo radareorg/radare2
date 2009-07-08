@@ -56,7 +56,7 @@ static int is_encoded(int encoding, unsigned char c)
 }
 
 // XXX last char is lost :(
-int r_search_strings_update_char(const u8 *buf, int min, int max, int enc, u64 offset, const char *match)
+int r_search_strings_update_char(const ut8 *buf, int min, int max, int enc, ut64 offset, const char *match)
 {
 	int i = 0;
 	static int widechar = 0;
@@ -125,11 +125,11 @@ int r_search_strings_update_char(const u8 *buf, int min, int max, int enc, u64 o
 				int len = strlen(str);
 				if (len>2) {
 					if (widechar) {
-						u64 off = offset-(len*2)+1;
+						ut64 off = offset-(len*2)+1;
 						printf("0x%08llx %3d W %s\n", off, len, str);
 					} else {
 						printf("0x%08llx %3d A %s\n",
-							(u64)offset-matches, len, str); //-matches, len, str);
+							(ut64)offset-matches, len, str); //-matches, len, str);
 					}
 				}
 				fflush(stdout);
@@ -142,12 +142,12 @@ int r_search_strings_update_char(const u8 *buf, int min, int max, int enc, u64 o
 }
 #if 0
 
-int stripstr_from_file(const char *filename, int min, int max, int encoding, u64 seek, u64 limit)
+int stripstr_from_file(const char *filename, int min, int max, int encoding, ut64 seek, ut64 limit)
 {
 	int fd = open(filename, O_RDONLY);
 	unsigned char *buf;
-	u64 i = seek;
-	u64 len;
+	ut64 i = seek;
+	ut64 len;
 
 	if (fd == -1) {
 		eprintf("Cannot open target file.\n");

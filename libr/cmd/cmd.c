@@ -26,7 +26,7 @@ int r_cmd_add_long(struct r_cmd_t *cmd, const char *longcmd, const char *shortcm
 int r_cmd_add(struct r_cmd_t *cmd, const char *command, const char *description, r_cmd_callback(callback))
 {
 	struct r_cmd_item_t *item;
-	int idx = (u8)command[0];
+	int idx = (ut8)command[0];
 
 	item = cmd->cmds[idx];
 	if (item == NULL) {
@@ -41,7 +41,7 @@ int r_cmd_add(struct r_cmd_t *cmd, const char *command, const char *description,
 
 int r_cmd_del(struct r_cmd_t *cmd, const char *command)
 {
-	int idx = (u8)command[0];
+	int idx = (ut8)command[0];
 	free(cmd->cmds[idx]);
 	cmd->cmds[idx] = NULL;
 	return 0;
@@ -55,7 +55,7 @@ int r_cmd_call(struct r_cmd_t *cmd, const char *input)
 		if (cmd->nullcallback != NULL)
 			cmd->nullcallback(cmd->data);
 	} else  {
-		c = cmd->cmds[(u8)input[0]];
+		c = cmd->cmds[(ut8)input[0]];
 		if (c != NULL && c->callback!=NULL)
 			ret = c->callback(cmd->data, input+1);
 	}

@@ -26,19 +26,19 @@ static int Elf_(r_bin_elf_init_ehdr)(struct Elf_(r_bin_elf_obj_t) *bin)
 		bin->endian = LIL_ENDIAN;
 	else bin->endian = !LIL_ENDIAN;
 
-	r_mem_copyendian((u8*)&(bin->ehdr.e_type), (u8*)&(bin->ehdr.e_type), sizeof(Elf_(Half)), !bin->endian);
-	r_mem_copyendian((u8*)&(bin->ehdr.e_machine), (u8*)&(bin->ehdr.e_machine), sizeof(Elf_(Half)), !bin->endian);
-	r_mem_copyendian((u8*)&(bin->ehdr.e_version), (u8*)&(bin->ehdr.e_version), sizeof(Elf_(Word)), !bin->endian);
-	r_mem_copyendian((u8*)&(bin->ehdr.e_entry), (u8*)&(bin->ehdr.e_entry), sizeof(Elf_(Addr)), !bin->endian);
-	r_mem_copyendian((u8*)&(bin->ehdr.e_phoff), (u8*)&(bin->ehdr.e_phoff), sizeof(Elf_(Off)), !bin->endian);
-	r_mem_copyendian((u8*)&(bin->ehdr.e_shoff), (u8*)&(bin->ehdr.e_shoff), sizeof(Elf_(Off)), !bin->endian);
-	r_mem_copyendian((u8*)&(bin->ehdr.e_flags), (u8*)&(bin->ehdr.e_flags), sizeof(Elf_(Word)), !bin->endian);
-	r_mem_copyendian((u8*)&(bin->ehdr.e_ehsize), (u8*)&(bin->ehdr.e_ehsize), sizeof(Elf_(Half)), !bin->endian);
-	r_mem_copyendian((u8*)&(bin->ehdr.e_phentsize), (u8*)&(bin->ehdr.e_phentsize), sizeof(Elf_(Half)), !bin->endian);
-	r_mem_copyendian((u8*)&(bin->ehdr.e_phnum), (u8*)&(bin->ehdr.e_phnum), sizeof(Elf_(Half)), !bin->endian);
-	r_mem_copyendian((u8*)&(bin->ehdr.e_shentsize), (u8*)&(bin->ehdr.e_shentsize), sizeof(Elf_(Half)), !bin->endian);
-	r_mem_copyendian((u8*)&(bin->ehdr.e_shnum), (u8*)&(bin->ehdr.e_shnum), sizeof(Elf_(Half)), !bin->endian);
-	r_mem_copyendian((u8*)&(bin->ehdr.e_shstrndx), (u8*)&(bin->ehdr.e_shstrndx), sizeof(Elf_(Half)), !bin->endian);
+	r_mem_copyendian((ut8*)&(bin->ehdr.e_type), (ut8*)&(bin->ehdr.e_type), sizeof(Elf_(Half)), !bin->endian);
+	r_mem_copyendian((ut8*)&(bin->ehdr.e_machine), (ut8*)&(bin->ehdr.e_machine), sizeof(Elf_(Half)), !bin->endian);
+	r_mem_copyendian((ut8*)&(bin->ehdr.e_version), (ut8*)&(bin->ehdr.e_version), sizeof(Elf_(Word)), !bin->endian);
+	r_mem_copyendian((ut8*)&(bin->ehdr.e_entry), (ut8*)&(bin->ehdr.e_entry), sizeof(Elf_(Addr)), !bin->endian);
+	r_mem_copyendian((ut8*)&(bin->ehdr.e_phoff), (ut8*)&(bin->ehdr.e_phoff), sizeof(Elf_(Off)), !bin->endian);
+	r_mem_copyendian((ut8*)&(bin->ehdr.e_shoff), (ut8*)&(bin->ehdr.e_shoff), sizeof(Elf_(Off)), !bin->endian);
+	r_mem_copyendian((ut8*)&(bin->ehdr.e_flags), (ut8*)&(bin->ehdr.e_flags), sizeof(Elf_(Word)), !bin->endian);
+	r_mem_copyendian((ut8*)&(bin->ehdr.e_ehsize), (ut8*)&(bin->ehdr.e_ehsize), sizeof(Elf_(Half)), !bin->endian);
+	r_mem_copyendian((ut8*)&(bin->ehdr.e_phentsize), (ut8*)&(bin->ehdr.e_phentsize), sizeof(Elf_(Half)), !bin->endian);
+	r_mem_copyendian((ut8*)&(bin->ehdr.e_phnum), (ut8*)&(bin->ehdr.e_phnum), sizeof(Elf_(Half)), !bin->endian);
+	r_mem_copyendian((ut8*)&(bin->ehdr.e_shentsize), (ut8*)&(bin->ehdr.e_shentsize), sizeof(Elf_(Half)), !bin->endian);
+	r_mem_copyendian((ut8*)&(bin->ehdr.e_shnum), (ut8*)&(bin->ehdr.e_shnum), sizeof(Elf_(Half)), !bin->endian);
+	r_mem_copyendian((ut8*)&(bin->ehdr.e_shstrndx), (ut8*)&(bin->ehdr.e_shstrndx), sizeof(Elf_(Half)), !bin->endian);
 
 	if (strncmp((char *)bin->ehdr.e_ident, ELFMAG, SELFMAG))
 		return R_FALSE;
@@ -65,14 +65,14 @@ static int Elf_(r_bin_elf_init_phdr)(struct Elf_(r_bin_elf_obj_t) *bin)
 	}
 
 	for (i = 0; i < bin->ehdr.e_phnum; i++) {
-		r_mem_copyendian((u8*)&(bin->phdr[i].p_type), (u8*)&(bin->phdr[i].p_type), sizeof(Elf_(Word)), !bin->endian);
-		r_mem_copyendian((u8*)&(bin->phdr[i].p_offset), (u8*)&(bin->phdr[i].p_offset), sizeof(Elf_(Off)), !bin->endian);
-		r_mem_copyendian((u8*)&(bin->phdr[i].p_vaddr), (u8*)&(bin->phdr[i].p_vaddr), sizeof(Elf_(Addr)), !bin->endian);
-		r_mem_copyendian((u8*)&(bin->phdr[i].p_paddr), (u8*)&(bin->phdr[i].p_paddr), sizeof(Elf_(Addr)), !bin->endian);
-		r_mem_copyendian((u8*)&(bin->phdr[i].p_filesz), (u8*)&(bin->phdr[i].p_filesz), sizeof(Elf_Vword), !bin->endian);
-		r_mem_copyendian((u8*)&(bin->phdr[i].p_memsz), (u8*)&(bin->phdr[i].p_memsz), sizeof(Elf_Vword), !bin->endian);
-		r_mem_copyendian((u8*)&(bin->phdr[i].p_flags), (u8*)&(bin->phdr[i].p_flags), sizeof(Elf_(Word)), !bin->endian);
-		r_mem_copyendian((u8*)&(bin->phdr[i].p_align), (u8*)&(bin->phdr[i].p_align), sizeof(Elf_Vword), !bin->endian);
+		r_mem_copyendian((ut8*)&(bin->phdr[i].p_type), (ut8*)&(bin->phdr[i].p_type), sizeof(Elf_(Word)), !bin->endian);
+		r_mem_copyendian((ut8*)&(bin->phdr[i].p_offset), (ut8*)&(bin->phdr[i].p_offset), sizeof(Elf_(Off)), !bin->endian);
+		r_mem_copyendian((ut8*)&(bin->phdr[i].p_vaddr), (ut8*)&(bin->phdr[i].p_vaddr), sizeof(Elf_(Addr)), !bin->endian);
+		r_mem_copyendian((ut8*)&(bin->phdr[i].p_paddr), (ut8*)&(bin->phdr[i].p_paddr), sizeof(Elf_(Addr)), !bin->endian);
+		r_mem_copyendian((ut8*)&(bin->phdr[i].p_filesz), (ut8*)&(bin->phdr[i].p_filesz), sizeof(Elf_Vword), !bin->endian);
+		r_mem_copyendian((ut8*)&(bin->phdr[i].p_memsz), (ut8*)&(bin->phdr[i].p_memsz), sizeof(Elf_Vword), !bin->endian);
+		r_mem_copyendian((ut8*)&(bin->phdr[i].p_flags), (ut8*)&(bin->phdr[i].p_flags), sizeof(Elf_(Word)), !bin->endian);
+		r_mem_copyendian((ut8*)&(bin->phdr[i].p_align), (ut8*)&(bin->phdr[i].p_align), sizeof(Elf_Vword), !bin->endian);
 	}
 
 	return R_TRUE;
@@ -97,16 +97,16 @@ static int Elf_(r_bin_elf_init_shdr)(struct Elf_(r_bin_elf_obj_t) *bin)
 	}
 
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
-		r_mem_copyendian((u8*)&(bin->shdr[i].sh_name), (u8*)&(bin->shdr[i].sh_name), sizeof(Elf_(Word)), !bin->endian);
-		r_mem_copyendian((u8*)&(bin->shdr[i].sh_type), (u8*)&(bin->shdr[i].sh_type), sizeof(Elf_(Word)), !bin->endian);
-		r_mem_copyendian((u8*)&(bin->shdr[i].sh_flags), (u8*)&(bin->shdr[i].sh_flags), sizeof(Elf_Vword), !bin->endian);
-		r_mem_copyendian((u8*)&(bin->shdr[i].sh_addr), (u8*)&(bin->shdr[i].sh_addr), sizeof(Elf_(Addr)), !bin->endian);
-		r_mem_copyendian((u8*)&(bin->shdr[i].sh_offset), (u8*)&(bin->shdr[i].sh_offset), sizeof(Elf_(Off)), !bin->endian);
-		r_mem_copyendian((u8*)&(bin->shdr[i].sh_size), (u8*)&(bin->shdr[i].sh_size), sizeof(Elf_Vword), !bin->endian);
-		r_mem_copyendian((u8*)&(bin->shdr[i].sh_link), (u8*)&(bin->shdr[i].sh_link), sizeof(Elf_(Word)), !bin->endian);
-		r_mem_copyendian((u8*)&(bin->shdr[i].sh_info), (u8*)&(bin->shdr[i].sh_info), sizeof(Elf_(Word)), !bin->endian);
-		r_mem_copyendian((u8*)&(bin->shdr[i].sh_addralign), (u8*)&(bin->shdr[i].sh_addralign), sizeof(Elf_Vword), !bin->endian);
-		r_mem_copyendian((u8*)&(bin->shdr[i].sh_entsize), (u8*)&(bin->shdr[i].sh_entsize), sizeof(Elf_Vword), !bin->endian);
+		r_mem_copyendian((ut8*)&(bin->shdr[i].sh_name), (ut8*)&(bin->shdr[i].sh_name), sizeof(Elf_(Word)), !bin->endian);
+		r_mem_copyendian((ut8*)&(bin->shdr[i].sh_type), (ut8*)&(bin->shdr[i].sh_type), sizeof(Elf_(Word)), !bin->endian);
+		r_mem_copyendian((ut8*)&(bin->shdr[i].sh_flags), (ut8*)&(bin->shdr[i].sh_flags), sizeof(Elf_Vword), !bin->endian);
+		r_mem_copyendian((ut8*)&(bin->shdr[i].sh_addr), (ut8*)&(bin->shdr[i].sh_addr), sizeof(Elf_(Addr)), !bin->endian);
+		r_mem_copyendian((ut8*)&(bin->shdr[i].sh_offset), (ut8*)&(bin->shdr[i].sh_offset), sizeof(Elf_(Off)), !bin->endian);
+		r_mem_copyendian((ut8*)&(bin->shdr[i].sh_size), (ut8*)&(bin->shdr[i].sh_size), sizeof(Elf_Vword), !bin->endian);
+		r_mem_copyendian((ut8*)&(bin->shdr[i].sh_link), (ut8*)&(bin->shdr[i].sh_link), sizeof(Elf_(Word)), !bin->endian);
+		r_mem_copyendian((ut8*)&(bin->shdr[i].sh_info), (ut8*)&(bin->shdr[i].sh_info), sizeof(Elf_(Word)), !bin->endian);
+		r_mem_copyendian((ut8*)&(bin->shdr[i].sh_addralign), (ut8*)&(bin->shdr[i].sh_addralign), sizeof(Elf_Vword), !bin->endian);
+		r_mem_copyendian((ut8*)&(bin->shdr[i].sh_entsize), (ut8*)&(bin->shdr[i].sh_entsize), sizeof(Elf_Vword), !bin->endian);
 	}
 
 	return R_TRUE;
@@ -150,23 +150,23 @@ static int Elf_(r_bin_elf_init)(struct Elf_(r_bin_elf_obj_t) *bin)
 	return R_TRUE;
 }
 
-static u64 Elf_(r_bin_elf_get_section_offset)(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name)
+static ut64 Elf_(r_bin_elf_get_section_offset)(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name)
 {
 	const char *strtab = bin->strtab;
 	int i;
 
 	for (i = 0; i < bin->ehdr.e_shnum; i++)
 		if (!strcmp(&strtab[bin->shdr[i].sh_name], section_name))
-			return (u64)bin->shdr[i].sh_offset;
+			return (ut64)bin->shdr[i].sh_offset;
 
 	return -1;
 }
 
-static u64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym)
+static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym)
 {
 	Elf_(Rel) *rel;
 	Elf_(Addr) plt_sym_addr;
-	u64 got_addr, got_offset;
+	ut64 got_addr, got_offset;
 	int i, j, k, tsize;
 	
 	if ((got_addr = Elf_(r_bin_elf_get_section_offset)(bin, ".got")) == -1)
@@ -195,8 +195,8 @@ static u64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym)
 		}
 
 		for (j = k = 0; j < bin->shdr[i].sh_size; j += tsize, k++) {
-			r_mem_copyendian((u8*)&(rel[k].r_offset), (u8*)&(rel[k].r_offset), sizeof(Elf_(Addr)), !bin->endian);
-			r_mem_copyendian((u8*)&(rel[k].r_info), (u8*)&(rel[k].r_info), sizeof(Elf_Vword), !bin->endian);
+			r_mem_copyendian((ut8*)&(rel[k].r_offset), (ut8*)&(rel[k].r_offset), sizeof(Elf_(Addr)), !bin->endian);
+			r_mem_copyendian((ut8*)&(rel[k].r_info), (ut8*)&(rel[k].r_info), sizeof(Elf_Vword), !bin->endian);
 		}
 
 		got_offset = (rel[0].r_offset - bin->baddr - got_addr) & ELF_GOTOFF_MASK;
@@ -213,7 +213,7 @@ static u64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym)
 					return -1;
 				}
 
-				return (u64)(plt_sym_addr - 6);
+				return (ut64)(plt_sym_addr - 6);
 			}
 		}
 		break;
@@ -221,12 +221,12 @@ static u64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym)
 	return -1;
 }
 
-u64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin)
+ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin)
 {
 	return bin->phdr->p_vaddr & ELF_ADDR_MASK;
 }
 
-u64 Elf_(r_bin_elf_get_entry_offset)(struct Elf_(r_bin_elf_obj_t) *bin)
+ut64 Elf_(r_bin_elf_get_entry_offset)(struct Elf_(r_bin_elf_obj_t) *bin)
 {
 	return bin->ehdr.e_entry - bin->baddr; 
 }
@@ -447,7 +447,7 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 	Elf_(Sym) *sym;
 	struct r_bin_elf_symbol_t *ret = NULL;
 	char *strtab;
-	u64 sym_offset, toffset;
+	ut64 sym_offset, toffset;
 	int tsize, ret_ctr, i, j, k;
 
 	sym_offset = (bin->ehdr.e_type == ET_REL ? Elf_(r_bin_elf_get_section_offset)(bin, ".text") : 0);
@@ -485,10 +485,10 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 			}
 
 			for (j = k = 0; j < bin->shdr[i].sh_size; j += sizeof(Elf_(Sym)), k++) {
-				r_mem_copyendian((u8*)&(sym[k].st_name), (u8*)&(sym[k].st_name), sizeof(Elf_(Word)), !bin->endian);
-				r_mem_copyendian((u8*)&(sym[k].st_value), (u8*)&(sym[k].st_value), sizeof(Elf_(Addr)), !bin->endian);
-				r_mem_copyendian((u8*)&(sym[k].st_size), (u8*)&(sym[k].st_size), sizeof(Elf_Vword), !bin->endian);
-				r_mem_copyendian((u8*)&(sym[k].st_shndx), (u8*)&(sym[k].st_shndx), sizeof(Elf_(Section)), !bin->endian);
+				r_mem_copyendian((ut8*)&(sym[k].st_name), (ut8*)&(sym[k].st_name), sizeof(Elf_(Word)), !bin->endian);
+				r_mem_copyendian((ut8*)&(sym[k].st_value), (ut8*)&(sym[k].st_value), sizeof(Elf_(Addr)), !bin->endian);
+				r_mem_copyendian((ut8*)&(sym[k].st_size), (ut8*)&(sym[k].st_size), sizeof(Elf_Vword), !bin->endian);
+				r_mem_copyendian((ut8*)&(sym[k].st_shndx), (ut8*)&(sym[k].st_shndx), sizeof(Elf_(Section)), !bin->endian);
 			}
 
 			for (j = k = ret_ctr = 0; j < bin->shdr[i].sh_size; j += sizeof(Elf_(Sym)), k++) {
@@ -502,7 +502,7 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 					tsize = 0;
 				} else if (type == R_BIN_ELF_SYMBOLS && sym[k].st_shndx != STN_UNDEF &&
 						ELF_ST_TYPE(sym[k].st_info) != STT_SECTION && ELF_ST_TYPE(sym[k].st_info) != STT_FILE) {
-					toffset = (u64)sym[k].st_value + sym_offset;
+					toffset = (ut64)sym[k].st_value + sym_offset;
 					tsize = sym[k].st_size;
 				} else continue;
 				if ((ret = realloc(ret, (ret_ctr + 1) * sizeof(struct r_bin_elf_symbol_t))) == NULL) {

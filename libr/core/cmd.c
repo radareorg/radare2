@@ -26,11 +26,11 @@ static int cmd_iopipe(void *data, const char *input)
 /* TODO: this should be moved to the core->yank api */
 static int cmd_yank_to(struct r_core_t *core, char *arg)
 {
-	u64 src = core->seek;
-	u64 len =  0;
-	u64 pos = -1;
+	ut64 src = core->seek;
+	ut64 len =  0;
+	ut64 pos = -1;
 	char *str;
-	u8 *buf;
+	ut8 *buf;
 
 	while(*arg==' ')arg=arg+1;
 	str = strchr(arg, ' ');
@@ -52,7 +52,7 @@ static int cmd_yank_to(struct r_core_t *core, char *arg)
 	}
 #endif
 
-	buf = (u8*)malloc( len );
+	buf = (ut8*)malloc( len );
 	r_core_read_at (core, src, buf, len);
 	r_core_write_at (core, pos, buf, len);
 	free(buf);
@@ -177,7 +177,7 @@ static int cmd_seek(void *data, const char *input)
 		r_cons_printf("0x%llx\n", core->seek);
 	} else {
 		int idelta = (input[1]==' ')?2:1;
-		u64 off = r_num_math(&core->num, input+idelta);
+		ut64 off = r_num_math(&core->num, input+idelta);
 		if (input[0]==' ' && (input[1]=='+'||input[1]=='-'))
 			input = input+1;
 		switch(input[0]) {
@@ -194,7 +194,7 @@ static int cmd_seek(void *data, const char *input)
 			break;
 		case 'a':
 			{
-				u64 alsz = core->blocksize;
+				ut64 alsz = core->blocksize;
 
 				if (input[1]&&input[2]) {
 					char *cmd, *p; 
@@ -231,7 +231,7 @@ static int cmd_seek(void *data, const char *input)
 static int cmd_help(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
-	u64 n;
+	ut64 n;
 
 	switch(input[0]) {
 	case ' ':
@@ -271,7 +271,7 @@ static int cmd_help(void *data, const char *input)
 			r_prof_start(&prof);
 			r_core_cmd(core, input+1, 0);
 			r_prof_end(&prof);
-			core->num.value = (u64)prof.result;
+			core->num.value = (ut64)prof.result;
 			eprintf("%lf\n", prof.result);
 		}
 		break;
@@ -393,7 +393,7 @@ static int cmd_print(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
 	int l, len = core->blocksize;
-	u32 tbs = core->blocksize;
+	ut32 tbs = core->blocksize;
 	int show_offset  = r_config_get_i(&core->config, "asm.offset");
 	int show_bytes = r_config_get_i(&core->config, "asm.bytes");
 	int show_lines = r_config_get_i(&core->config, "asm.reflines");
@@ -417,7 +417,7 @@ static int cmd_print(void *data, const char *input)
 	case 'd':
 		{
 			int ret, idx; 
-			u8 *buf = core->block;
+			ut8 *buf = core->block;
 			char str[128];
 			char line[128];
 			char *comment;
@@ -534,8 +534,8 @@ static int cmd_flag(void *data, const char *input)
 		break;
 	case ' ': {
 		char *s = NULL, *s2 = NULL;
-		u64 seek = core->seek;
-		u32 bsze = core->blocksize;
+		ut64 seek = core->seek;
+		ut32 bsze = core->blocksize;
 		s = strchr(str, ' ');
 		if (s) {
 			*s = '\0';
@@ -594,7 +594,7 @@ static int cmd_anal(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
 	int l, len = core->blocksize;
-	u32 tbs = core->blocksize;
+	ut32 tbs = core->blocksize;
 
 	if (input[0] && input[1]) {
 		l = (int) r_num_get(&core->num, input+2);
@@ -613,7 +613,7 @@ static int cmd_anal(void *data, const char *input)
 		{
 			/* XXX hardcoded */
 			int ret, idx; 
-			u8 *buf = core->block;
+			ut8 *buf = core->block;
 			struct r_anal_aop_t aop;
 			r_anal_set(&core->anal, "anal_x86_bea");
 			
@@ -645,7 +645,7 @@ static int cmd_write(void *data, const char *input)
 		/* write string */
 		len = r_str_escape(str);
 		r_io_lseek(&core->io, core->file->fd, core->seek, R_IO_SEEK_SET);
-		r_io_write(&core->io, core->file->fd, (const u8*)str, len);
+		r_io_write(&core->io, core->file->fd, (const ut8*)str, len);
 		r_core_block_read(core, 0);
 		break;
 	case 't':
@@ -664,7 +664,7 @@ static int cmd_write(void *data, const char *input)
 		{
 			int size;
 			char *arg = input+(input[1]==' ')?2:1;
-			u8 *buf = r_file_slurp(arg, &size);
+			ut8 *buf = r_file_slurp(arg, &size);
 			if (buf == NULL) {
 				eprintf("Cannot open file '%s'\n", arg);
 			} else {
@@ -677,7 +677,7 @@ static int cmd_write(void *data, const char *input)
 		{
 			int size;
 			char *arg = input+(input[1]==' ')?2:1;
-			u8 *buf = r_file_slurp_hexpairs(arg, &size);
+			ut8 *buf = r_file_slurp_hexpairs(arg, &size);
 			if (buf == NULL) {
 				eprintf("Cannot open file '%s'\n", arg);
 			} else {
@@ -769,21 +769,21 @@ static int cmd_write(void *data, const char *input)
 		break;
 	case 'v':
 		{
-		u64 off = r_num_math(&core->num, input+1);
+		ut64 off = r_num_math(&core->num, input+1);
 		r_io_lseek(&core->io, core->file->fd, core->seek, R_IO_SEEK_SET);
 		if (off&U64_32U) {
 			/* 8 byte addr */
-			u64 addr8;
-			memcpy((u8*)&addr8, (u8*)&off, 8); // XXX needs endian here
-		//	endian_memcpy((u8*)&addr8, (u8*)&off, 8);
-			r_io_write(&core->io, core->file->fd, (const u8 *)&addr8, 8);
+			ut64 addr8;
+			memcpy((ut8*)&addr8, (ut8*)&off, 8); // XXX needs endian here
+		//	endian_memcpy((ut8*)&addr8, (ut8*)&off, 8);
+			r_io_write(&core->io, core->file->fd, (const ut8 *)&addr8, 8);
 		} else {
 			/* 4 byte addr */
-			u32 addr4, addr4_ = (u32)off;
-			//drop_endian((u8*)&addr4_, (u8*)&addr4, 4); /* addr4_ = addr4 */
-			//endian_memcpy((u8*)&addr4, (u8*)&addr4_, 4); /* addr4 = addr4_ */
-			memcpy((u8*)&addr4, (u8*)&addr4_, 4); // XXX needs endian here too
-			r_io_write(&core->io, core->file->fd, (const u8 *)&addr4, 4);
+			ut32 addr4, addr4_ = (ut32)off;
+			//drop_endian((ut8*)&addr4_, (ut8*)&addr4, 4); /* addr4_ = addr4 */
+			//endian_memcpy((ut8*)&addr4, (ut8*)&addr4_, 4); /* addr4 = addr4_ */
+			memcpy((ut8*)&addr4, (ut8*)&addr4_, 4); // XXX needs endian here too
+			r_io_write(&core->io, core->file->fd, (const ut8 *)&addr4, 4);
 		}
 		r_core_block_read(core, 0);
 		}
@@ -856,7 +856,7 @@ static int cmd_write(void *data, const char *input)
 }
 
 static char *cmdhit = NULL;
-static int __cb_hit(struct r_search_kw_t *kw, void *user, u64 addr)
+static int __cb_hit(struct r_search_kw_t *kw, void *user, ut64 addr)
 {
 	struct r_core_t *core = (struct r_core_t *)user;
 
@@ -864,7 +864,7 @@ static int __cb_hit(struct r_search_kw_t *kw, void *user, u64 addr)
 		kw->kwidx, kw->count, kw->keyword_length, addr);
 
 	if (!strnull(cmdhit)) {
-		u64 here = core->seek;
+		ut64 here = core->seek;
 		r_core_seek(core, addr, R_FALSE);
 		r_core_cmd(core, cmdhit, 0);
 		r_core_seek(core, here, R_TRUE);
@@ -876,10 +876,10 @@ static int __cb_hit(struct r_search_kw_t *kw, void *user, u64 addr)
 static int cmd_search(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
-	u64 at;
-	u32 n32;
+	ut64 at;
+	ut32 n32;
 	int ret, dosearch = 0;
-	u8 *buf;
+	ut8 *buf;
 	switch (input[0]) {
 	case '/':
 		r_search_begin(core->search);
@@ -941,7 +941,7 @@ static int cmd_search(void *data, const char *input)
 		/* TODO: handle last block of data */
 		/* TODO: handle ^C */
 		/* TODO: launch search in background support */
-		buf = (u8 *)malloc(core->blocksize);
+		buf = (ut8 *)malloc(core->blocksize);
 		r_search_set_callback(core->search, &__cb_hit, core);
 		cmdhit = r_config_get(&core->config, "cmd.hit");
 		r_cons_break(NULL, NULL);
@@ -1002,7 +1002,7 @@ static int cmd_hash(void *data, const char *input)
 {
 	char algo[32];
 	struct r_core_t *core = (struct r_core_t *)data;
-	u32 len = core->blocksize;
+	ut32 len = core->blocksize;
 	const char *ptr;
 
 	if (input[0]=='!') {
@@ -1117,7 +1117,7 @@ static int cmd_meta(void *data, const char *input)
 	case 'X': /* data xref */
 	case 'F': /* add function */
 		{
-		u64 addr = core->seek;
+		ut64 addr = core->seek;
 		char fun_name[128];
 		int size = atoi(input);
 		int type = R_META_FUNCTION;
@@ -1300,7 +1300,7 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 		*rs = 1;
 		if (ptr[1]=='@') {
 			// TODO: remove temporally seek (should be done by cmd_foreach)
-			u64 tmpoff = core->seek;
+			ut64 tmpoff = core->seek;
 			r_core_cmd_foreach(core, cmd, ptr+2);
 			r_core_seek(core, tmpoff, 1);
 			return -1; /* do not run out-of-foreach cmd */
@@ -1318,7 +1318,7 @@ R_API int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
 	char *word = NULL;
 	char *str, *ostr;
 	struct list_head *pos;
-	u64 oseek, addr;
+	ut64 oseek, addr;
 
 	for(;*each==' ';each=each+1);
 	for(;*cmd==' ';cmd=cmd+1);
@@ -1482,7 +1482,7 @@ int r_core_cmd(struct r_core_t *core, const char *command, int log)
 	int newfd = 1;
 	int quoted = 0;
 	
-	u64 tmpseek = core->seek;
+	ut64 tmpseek = core->seek;
 	int restoreseek = 0;
 
 	if (command == NULL )

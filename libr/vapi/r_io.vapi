@@ -9,10 +9,10 @@ namespace Radare
 		public static int open(string uri, int flags, int mode);
 		public static int read(int fd, out uint8 *buf, int len);
 		public static int write(int fd, uint8 *buf, int len);
-		public static uint64 lseek(int fd, u64 addr, int whence);
+		public static uint64 lseek(int fd, ut64 addr, int whence);
 		public static int system(int fd, string cmd);
 		public static int close(int fd);
-		public static u64 size(int fd);
+		public static ut64 size(int fd);
 	}
 
 	[Compact]

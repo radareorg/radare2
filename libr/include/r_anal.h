@@ -87,8 +87,8 @@ enum {
 };
 
 struct r_anal_refline_t {
-	u64 from;
-	u64 to;
+	ut64 from;
+	ut64 to;
 	int index;
 	struct list_head list;
 };
@@ -99,17 +99,17 @@ struct r_anal_aop_t {
 	int length;               /* length in bytes of opcode */
 	int family;               /* family of opcode */
 	int eob;                  /* end of block (boolean) */
-	u64 jump;                 /* true jmp */
-	u64 fail;                 /* false jmp */
-	u64 ref;                  /* reference to memory */
-	u64 value;                /* reference to value */
+	ut64 jump;                 /* true jmp */
+	ut64 fail;                 /* false jmp */
+	ut64 ref;                  /* reference to memory */
+	ut64 value;                /* reference to value */
 	int r_dst[R_ANAL_MAXREG]; /* register arguments */
-	u64 i_dst[R_ANAL_MAXREG]; /* inmediate arguments */
+	ut64 i_dst[R_ANAL_MAXREG]; /* inmediate arguments */
 };
 
 struct r_anal_fcn_t {
-	u64 from;
-	u64 to;
+	ut64 from;
+	ut64 to;
 };
 
 struct r_anal_ctx_t {
@@ -123,7 +123,7 @@ struct r_anal_ctx_t {
 struct r_anal_t {
 	int bits;
 	int big_endian;
-	u64 pc;
+	ut64 pc;
 	void *user;
 	struct r_anal_ctx_t *ctx;
 	struct r_anal_handle_t *cur;
@@ -149,8 +149,8 @@ int r_anal_list(struct r_anal_t *anal);
 int r_anal_set(struct r_anal_t *anal, const char *name);
 int r_anal_set_bits(struct r_anal_t *anal, int bits);
 int r_anal_set_big_endian(struct r_anal_t *anal, int boolean);
-int r_anal_set_pc(struct r_anal_t *a, u64 pc);
+int r_anal_set_pc(struct r_anal_t *a, ut64 pc);
 int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data);
-struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, u8 *buf, u64 len, int nlines, int linesout);
+struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, ut8 *buf, ut64 len, int nlines, int linesout);
 int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, char *str, int opts);
 #endif

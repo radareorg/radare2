@@ -11,7 +11,7 @@
 #include "x86/udis86/extern.h"
 
 
-static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len)
+static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len)
 {
 	static ud_t disasm_obj;
 

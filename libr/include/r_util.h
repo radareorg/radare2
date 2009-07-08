@@ -8,24 +8,24 @@
 /* r_cache */
 // TOTHINK: move into a separated library?
 struct r_cache_item_t {
-	u64 addr;
+	ut64 addr;
 	char *str;
 	struct list_head list;
 };
 
 struct r_cache_t {
-	u64 from;
-	u64 to;
+	ut64 from;
+	ut64 to;
 	struct list_head items;
 };
 
 R_API void r_cache_init(struct r_cache_t *lang);
 R_API struct r_cache_t *r_cache_new();
 R_API void r_cache_free(struct r_cache_t *c);
-R_API char *r_cache_get(struct r_cache_t *c, u64 addr);
-R_API int r_cache_set(struct r_cache_t *c, u64 addr, char *str);
-R_API int r_cache_validate(struct r_cache_t *c, u64 from, u64 to);
-R_API int r_cache_invalidate(struct r_cache_t *c, u64 from, u64 to);
+R_API char *r_cache_get(struct r_cache_t *c, ut64 addr);
+R_API int r_cache_set(struct r_cache_t *c, ut64 addr, char *str);
+R_API int r_cache_validate(struct r_cache_t *c, ut64 from, ut64 to);
+R_API int r_cache_invalidate(struct r_cache_t *c, ut64 from, ut64 to);
 
 /* profiling */
 #include <sys/time.h>
@@ -37,22 +37,22 @@ void r_prof_start(struct r_prof_t *p);
 double r_prof_end(struct r_prof_t *p);
 
 /* memory */
-void r_mem_copyloop (u8 *dest, const u8 *orig, int dsize, int osize);
-void r_mem_copyendian (u8 *dest, const u8 *orig, int size, int endian);
-int r_mem_cmp_mask(const u8 *dest, const u8 *orig, const u8 *mask, int len);
+void r_mem_copyloop (ut8 *dest, const ut8 *orig, int dsize, int osize);
+void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian);
+int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len);
 
 /* numbers */
 struct r_num_t {
-	u64 (*callback)(void *userptr, const char *str, int *ok);
-	u64 value;
+	ut64 (*callback)(void *userptr, const char *str, int *ok);
+	ut64 value;
 	void *userptr;
 };
 
-R_API void r_num_minmax_swap(u64 *a, u64 *b);
+R_API void r_num_minmax_swap(ut64 *a, ut64 *b);
 R_API void r_num_minmax_swap_i(int *a, int *b);
-R_API u64 r_num_math(struct r_num_t *num, const char *str);
-R_API u64 r_num_get(struct r_num_t *num, const char *str);
-R_API struct r_num_t *r_num_new(u64 (*cb)(void*,const char *,int*), void *ptr);
+R_API ut64 r_num_math(struct r_num_t *num, const char *str);
+R_API ut64 r_num_get(struct r_num_t *num, const char *str);
+R_API struct r_num_t *r_num_new(ut64 (*cb)(void*,const char *,int*), void *ptr);
 R_API void r_num_init(struct r_num_t *num);
 
 /* strings */
@@ -102,17 +102,17 @@ R_API inline void r_str_concatch(char *x, char y);
 
 /* hex */
 R_API int r_hex_pair2bin(const char *arg);
-R_API int r_hex_str2bin(const char *in, u8 *out);
-R_API int r_hex_bin2str(const u8 *in, int len, char *out);
-R_API int r_hex_to_byte(u8 *val, u8 c);
+R_API int r_hex_str2bin(const char *in, ut8 *out);
+R_API int r_hex_bin2str(const ut8 *in, int len, char *out);
+R_API int r_hex_to_byte(ut8 *val, ut8 c);
 
 /* file */
 R_API char *r_file_path(const char *bin);
 R_API char *r_file_slurp(const char *str, int *usz);
-R_API char *r_file_slurp_range(const char *str, u64 off, u64 sz);
+R_API char *r_file_slurp_range(const char *str, ut64 off, ut64 sz);
 R_API char *r_file_slurp_random_line(const char *file);
-R_API u8 *r_file_slurp_hexpairs(const char *str, int *usz);
-R_API int r_file_dump(const char *file, const u8 *buf, int len);
+R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz);
+R_API int r_file_dump(const char *file, const ut8 *buf, int len);
 R_API int r_file_rm(const char *file);
 R_API int r_file_exist(const char *str);
 R_API char *r_file_slurp_line(const char *file, int line, int context);

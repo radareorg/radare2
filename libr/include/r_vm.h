@@ -22,7 +22,7 @@
 
 struct r_vm_reg_t {
 	char name[16];
-	u64 value;
+	ut64 value;
 	int type;
 	char *get;
 	char *set;
@@ -54,9 +54,9 @@ struct r_vm_cpu_t {
 };
 
 struct r_vm_change_t {
-	u64 from;
-	u64 to;
-	u8 *data;
+	ut64 from;
+	ut64 to;
+	ut8 *data;
 	struct list_head list;
 };
 
@@ -65,22 +65,22 @@ struct r_vm_t {
 	struct list_head regs;
 	struct r_vm_cpu_t cpu;
 	struct list_head ops;
-	u64 vm_stack_base;
-	u8 *vm_stack;
+	ut64 vm_stack_base;
+	ut8 *vm_stack;
 	struct list_head mmu_cache;
 	int realio;
 };
 
-u64 vm_reg_get(const char *name);
-void vm_stack_push(u64 _val);
+ut64 vm_reg_get(const char *name);
+void vm_stack_push(ut64 _val);
 
 #if 0
-static u64 r_vm_get_value(struct r_vm_t *vm, const char *str);
-static u64 r_vm_get_math(struct r_vm_t *vm, const char *str);
+static ut64 r_vm_get_value(struct r_vm_t *vm, const char *str);
+static ut64 r_vm_get_math(struct r_vm_t *vm, const char *str);
 #endif
 void r_vm_print(struct r_vm_t *vm, int type);
 int r_vm_import(struct r_vm_t *vm, int in_vm);
-void r_vm_cpu_call(struct r_vm_t *vm, u64 addr);
+void r_vm_cpu_call(struct r_vm_t *vm, ut64 addr);
 int r_vm_init(struct r_vm_t *vm, int init);
 int r_vm_eval_cmp(struct r_vm_t *vm, const char *str);
 int r_vm_eval_eq(struct r_vm_t *vm, const char *str, const char *val);
@@ -95,13 +95,13 @@ int r_vm_op_cmd(struct r_vm_t *vm, const char *op);
 
 /* reg */
 void r_vm_reg_type_list();
-int r_vm_reg_add(struct r_vm_t *vm, const char *name, int type, u64 value);
-u64 r_vm_reg_get(struct r_vm_t *vm, const char *name);
+int r_vm_reg_add(struct r_vm_t *vm, const char *name, int type, ut64 value);
+ut64 r_vm_reg_get(struct r_vm_t *vm, const char *name);
 int r_vm_reg_alias_list(struct r_vm_t *vm);
 const char *r_vm_reg_type(int type);
 const int r_vm_reg_type_i(const char *str);
 int r_vm_reg_del(struct r_vm_t *vm, const char *name);
-int r_vm_reg_set(struct r_vm_t *vm, const char *name, u64 value);
+int r_vm_reg_set(struct r_vm_t *vm, const char *name, ut64 value);
 int r_vm_reg_alias(struct r_vm_t *vm, const char *name, const char *get, const char *set);
 
 /* cfg */
@@ -112,14 +112,14 @@ void r_vm_setup_fastcall(struct r_vm_t *vm, const char *eax, const char *ebx, co
 void r_vm_setup_ret(struct r_vm_t *vm, const char *eax);
 
 /* stack */
-void r_vm_stack_push(struct r_vm_t *vm, u64 _val);
+void r_vm_stack_push(struct r_vm_t *vm, ut64 _val);
 void r_vm_stack_pop(struct r_vm_t *vm, const char *reg);
 
 /* mmu */
-int r_vm_mmu_cache_write(struct r_vm_t *vm, u64 addr, u8 *buf, int len);
-int r_vm_mmu_cache_read(struct r_vm_t *vm, u64 addr, u8 *buf, int len);
-int r_vm_mmu_read(struct r_vm_t *vm, u64 off, u8 *data, int len);
-int r_vm_mmu_write(struct r_vm_t *vm, u64 off, u8 *data, int len);
+int r_vm_mmu_cache_write(struct r_vm_t *vm, ut64 addr, ut8 *buf, int len);
+int r_vm_mmu_cache_read(struct r_vm_t *vm, ut64 addr, ut8 *buf, int len);
+int r_vm_mmu_read(struct r_vm_t *vm, ut64 off, ut8 *data, int len);
+int r_vm_mmu_write(struct r_vm_t *vm, ut64 off, ut8 *data, int len);
 int r_vm_mmu_real(struct r_vm_t *vm, int set);
 
 #endif

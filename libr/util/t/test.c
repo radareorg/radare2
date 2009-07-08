@@ -2,7 +2,7 @@
 
 #include <r_util.h>
 
-u64 num_callback(void *userptr, const char *str, int *ok)
+ut64 num_callback(void *userptr, const char *str, int *ok)
 {
 	if (!strcmp(str, "foo")) {
 		*ok=1;
@@ -12,9 +12,9 @@ u64 num_callback(void *userptr, const char *str, int *ok)
 	return 0;
 }
 
-int test_num(struct r_num_t *num, const char *str, u64 okvalue)
+int test_num(struct r_num_t *num, const char *str, ut64 okvalue)
 {
-	u64 ret;
+	ut64 ret;
 	printf("        %.2lld == ", okvalue);
  	ret = r_num_math(num, str);
 	printf("%.2lld  \t; %s", ret, str);

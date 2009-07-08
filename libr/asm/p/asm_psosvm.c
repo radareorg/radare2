@@ -8,7 +8,7 @@
 #include <psosvm/vmas/vmas.h>
 
 
-static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len)
+static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len)
 {
 	psosvmasm_init();
 	aop->inst_len = psosvm_disasm(buf, aop->buf_asm);

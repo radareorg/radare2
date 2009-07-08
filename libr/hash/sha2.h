@@ -84,7 +84,7 @@ typedef unsigned long long u_int64_t;	/* 8-bytes (64-bits) */
 #endif
 /*
  * Most BSD systems already define u_intXX_t types, as does Linux.
- * Some systems, however, like Compaq's Tru64 Unix instead can use
+ * Some systems, however, like Compaq's Trut64 Unix instead can use
  * uintXX_t types defined by very recent ANSI C standards and included
  * in the file:
  *

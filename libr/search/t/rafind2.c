@@ -21,20 +21,20 @@ static int hexdump = 0;
 static int fd = -1;
 static int rad = 0;
 struct r_search_t *rs;
-static u64 from = 0LL, to = -1;
+static ut64 from = 0LL, to = -1;
 static char *str;
 static char *mask = "";
 static int nonstop = 0;
 static int mode = R_SEARCH_KEYWORD;
-static u64 cur = 0;
+static ut64 cur = 0;
 static char *buffer = NULL;
 static char *curfile = NULL;
-static u64 bsize = 4096;
+static ut64 bsize = 4096;
 static int hexstr = 0;
 
-static int hit(struct r_search_kw_t *kw, void *user, u64 addr)
+static int hit(struct r_search_kw_t *kw, void *user, ut64 addr)
 {
-	const u8 *buf = (u8*)user;
+	const ut8 *buf = (ut8*)user;
 	int delta = addr-cur;
 	if (rad) {
 		printf("f hit%d_%d 0x%08llx ; %s\n", 0, kw->count, addr, curfile);

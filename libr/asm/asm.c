@@ -17,7 +17,7 @@ static int r_asm_pseudo_string(struct r_asm_aop_t *aop, char *input)
 	char *arg = strchr(input, ' ');
 	if (arg && (len = strlen(arg+1))) {
 		arg += 1; len += 1;
-		r_hex_bin2str((u8*)arg, len, aop->buf_hex);
+		r_hex_bin2str((ut8*)arg, len, aop->buf_hex);
 		strncpy((char*)aop->buf, arg, R_ASM_BUFSIZE);
 	}
 	return len;
@@ -192,13 +192,13 @@ R_API int r_asm_set_syntax(struct r_asm_t *a, int syntax)
 	}
 }
 
-R_API int r_asm_set_pc(struct r_asm_t *a, u64 pc)
+R_API int r_asm_set_pc(struct r_asm_t *a, ut64 pc)
 {
 	a->pc = pc;
 	return R_TRUE;
 }
 
-R_API int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len)
+R_API int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len)
 {
 	int ret = 0;
 	if (a->cur && a->cur->disassemble)
@@ -233,10 +233,10 @@ R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 	return ret;
 }
 
-R_API u64 r_asm_mdisassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len)
+R_API ut64 r_asm_mdisassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len)
 {
 	int ret;
-	u64 idx;
+	ut64 idx;
 	char buf_asm[R_ASM_BUFSIZE];
 	
 	for(idx = ret = 0, buf_asm[0] = '\0'; idx < len; idx+=ret) {
@@ -255,14 +255,14 @@ R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 {
 	struct {
 		char name[32];
-		u64 offset;
+		ut64 offset;
 	} flags[512]; /* XXX: dinamic length */
 	char *lbuf = NULL, *ptr = NULL, *ptr_start = NULL, *label_name = NULL,
 		 *tokens[R_ASM_BUFSIZE], buf_hex[R_ASM_BUFSIZE],
 		 buf_token[R_ASM_BUFSIZE], buf_token2[R_ASM_BUFSIZE];
-	u8 buf_bin[R_ASM_BUFSIZE];
+	ut8 buf_bin[R_ASM_BUFSIZE];
 	int labels = 0, stage, ret, idx, ctr, i, j;
-	u64 label_offset;
+	ut64 label_offset;
 
 	if (buf == NULL)
 		return 0;

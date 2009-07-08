@@ -99,12 +99,12 @@ match value ffffffad (ffffad) at offset 0x454
 #include <sys/ioctl.h>
 #endif
 
-u32 base    = 0;
-u32 delta   = 0;
-u32 range   = 0;
-u32 xylum   = 0;
-u32 gamme   = 0;
-u32 size    = 4;
+ut32 base    = 0;
+ut32 delta   = 0;
+ut32 range   = 0;
+ut32 xylum   = 0;
+ut32 gamme   = 0;
+ut32 size    = 4;
 int sysendian = 0;    // initialized in main
 int endian    = -1; // little endian by default
 int verbose   = 0;
@@ -134,28 +134,28 @@ static int show_usage()
 	return 1;
 }
 
-static u32 file_size_fd(int fd)
+static ut32 file_size_fd(int fd)
 {
-	u32 curr = lseek(fd, 0, SEEK_CUR);
-	u32 size = lseek(fd, 0, SEEK_END); // XXX: this is not size, is rest!
+	ut32 curr = lseek(fd, 0, SEEK_CUR);
+	ut32 size = lseek(fd, 0, SEEK_END); // XXX: this is not size, is rest!
 	lseek(fd, curr, SEEK_SET);
 
 	return size;
 }
 
 /* TODO: move+share in offset.c ? */
-static u32 get_value32(const char *arg)
+static ut32 get_value32(const char *arg)
 {
         int i;
-        u32 ret;
+        ut32 ret;
 
 	for(i=0;arg[i]==' ';i++);
 	for(;arg[i]=='\\';i++); i++;
 
         if (arg[i] == 'x')
-                sscanf(arg, "0x%08llx", (u64 *)&ret);
+                sscanf(arg, "0x%08llx", (ut64 *)&ret);
         else
-                sscanf(arg, "%lld", (u64 *)&ret);
+                sscanf(arg, "%lld", (ut64 *)&ret);
 
         return ret;
 }
@@ -254,11 +254,11 @@ int set_arch_settings()
 
 int main(int argc, char **argv)
 {
-	u64 i, c, src;
-	u64 offset = 0;
-	u64 from   = 1,
+	ut64 i, c, src;
+	ut64 offset = 0;
+	ut64 from   = 1,
 	      to   = INT_MAX;
-	u64 sa;
+	ut64 sa;
 
 	if (argc==2)
 	if (!strcmp(argv[1],"-V")) {
@@ -369,9 +369,9 @@ int main(int argc, char **argv)
 
 	/* loopize looking for xrefs */
 	for(i=from; i<sa && i<to; i++) {
-		u32 value = offset - i + delta;
-		u32 ovalue = value;
-		u32 tmpvalue = 0;
+		ut32 value = offset - i + delta;
+		ut32 ovalue = value;
+		ut32 tmpvalue = 0;
 		unsigned char *buf = (unsigned char *)&value;
 
 		if (range!=0) {
@@ -384,15 +384,15 @@ int main(int argc, char **argv)
 
 		if (verbose)
 			printf("0x%08llx  try %02x %02x %02x %02x (0x%08llx) - %lld\n",
-				(u64)i, buf[0], buf[1], buf[2], buf[3], (u64) base+value, (u64) (base+value));
+				(ut64)i, buf[0], buf[1], buf[2], buf[3], (ut64) base+value, (ut64) (base+value));
 
 		if (xylum && i == xylum) {
-			printf("# offset: 0x%08llx\n", (u64)i);
-			printf("# delta:  %lld\n", (u64)delta);
-			printf("# size:   %lld\n", (u64)size);
-			printf("# value:  %lld\n", (u64)value);
+			printf("# offset: 0x%08llx\n", (ut64)i);
+			printf("# delta:  %lld\n", (ut64)delta);
+			printf("# size:   %lld\n", (ut64)size);
+			printf("# value:  %lld\n", (ut64)value);
 			printf("# bytes:  %02x %02x %02x %02x (0x%08llx) - %lld\n",
-				buf[0], buf[1], buf[2], buf[3], (u64)value, (u64)value);
+				buf[0], buf[1], buf[2], buf[3], (ut64)value, (ut64)value);
 			tmpvalue = ma[i+gamme];
 			printf("# found:  %02x %02x %02x %02x\n",
 				ma[i+gamme+0], ma[i+gamme+1],
@@ -428,7 +428,7 @@ int main(int argc, char **argv)
 
 		if (xylum && ovalue == xylum) {
 			printf("# buf:  %02x %02x %02x %02x (+%lld)\n",
-				buf[0], buf[1], buf[2], buf[3], (u64)(4-size));
+				buf[0], buf[1], buf[2], buf[3], (ut64)(4-size));
 			printf("# map:  %02x %02x %02x \n",
 				ma[i+gamme], ma[i+1+gamme], ma[i+2+gamme]);
 			printf("# cmp:  %02x %02x %02x\n", ma[i], ma[i+1], ma[i+2]);
@@ -444,12 +444,12 @@ int main(int argc, char **argv)
 
 		if (memcmp((unsigned char *)ma+i+gamme, (unsigned char *)buf+(4-size), size) == 0) {
 			if (quite)
-				printf("0x%08llx\n", (u64)i);
+				printf("0x%08llx\n", (ut64)i);
 			else
 				printf("match value 0x%08llx (%02x%02x%02x) at offset 0x%08llx\n",
-					(u64)ovalue,
+					(ut64)ovalue,
 					buf[0+(4-size)], buf[1+(4-size)], buf[2+(4-size)],
-					(u64)((u32)i)+((gamme<0)?-1:0));
+					(ut64)((ut32)i)+((gamme<0)?-1:0));
 			found++;
 		}
 	}

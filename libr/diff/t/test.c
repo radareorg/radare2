@@ -61,7 +61,7 @@ int test_distance()
 	struct r_diff_t d;
 	char *bufa = "hello";
 	char *bufb = "heprpworld";
-	u32 distance = 0;
+	ut32 distance = 0;
 	double similarity = 0;
 
 	printf("Similarity: '%s' vs '%s'\n", bufa, bufb);

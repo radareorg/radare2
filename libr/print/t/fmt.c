@@ -4,7 +4,7 @@
 int main()
 {
 	struct r_print_t *p;
-	const u8 buf[] = "1234578901234567890";
+	const ut8 buf[] = "1234578901234567890";
 
 	p = r_print_new();
 	p->printf = r_cons_printf;

@@ -1,10 +1,10 @@
 #include <r_search.h>
 
-u8 *buffer = "ELF,e,e,e,ELF--fooo";
+ut8 *buffer = "ELF,e,e,e,ELF--fooo";
 
-int hit(struct r_search_kw_t *kw, void *user, u64 addr)
+int hit(struct r_search_kw_t *kw, void *user, ut64 addr)
 {
-	const u8 *buf = (u8*)user;
+	const ut8 *buf = (ut8*)user;
 	printf("HIT %d AT %lld (%s)\n", kw->count, addr, buffer+addr);
 	return 1;
 }

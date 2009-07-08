@@ -7,9 +7,9 @@
 /* signature struct */
 struct r_sign_item_t {
 	char name[32];
-	u32 size;
-	u8 *bytes;
-	u32 csum;
+	ut32 size;
+	ut8 *bytes;
+	ut32 csum;
 	struct list_head list;
 };
 

@@ -35,7 +35,7 @@ static struct r_bin_entry_t* entry(struct r_bin_t *bin)
 	return ret;
 }
 
-static u64 baddr(struct r_bin_t *bin)
+static ut64 baddr(struct r_bin_t *bin)
 {
 	return 0;
 }
@@ -130,7 +130,7 @@ static struct r_bin_info_t* info(struct r_bin_t *bin)
 
 static int check(struct r_bin_t *bin)
 {
-	u8 buf[1024];
+	ut8 buf[1024];
 
 	if ((bin->fd = open(bin->file, 0)) == -1)
 		return R_FALSE;

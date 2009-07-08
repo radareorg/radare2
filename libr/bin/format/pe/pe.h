@@ -26,39 +26,39 @@ typedef struct {
 } PE_(r_bin_pe_obj);
 
 typedef struct {
-	u64 rva;
-	u64 offset;
+	ut64 rva;
+	ut64 offset;
 } PE_(r_bin_pe_entrypoint);
 
 typedef struct {
-	u8  name[PE_IMAGE_SIZEOF_SHORT_NAME];
-	u64 size;
-	u64 vsize;
-	u64 rva;
-	u64 offset;
-	u64 characteristics;
+	ut8  name[PE_IMAGE_SIZEOF_SHORT_NAME];
+	ut64 size;
+	ut64 vsize;
+	ut64 rva;
+	ut64 offset;
+	ut64 characteristics;
 } PE_(r_bin_pe_section);
 
 typedef struct {
-	u8  name[PE_NAME_LENGTH];
-	u64 rva;
-	u64 offset;
-	u64 hint;
-	u64 ordinal;
+	ut8  name[PE_NAME_LENGTH];
+	ut64 rva;
+	ut64 offset;
+	ut64 hint;
+	ut64 ordinal;
 } PE_(r_bin_pe_import);
 
 typedef struct {
-	u8  name[PE_NAME_LENGTH];
-	u8  forwarder[PE_NAME_LENGTH];
-	u64 rva;
-	u64 offset;
-	u64 ordinal;
+	ut8  name[PE_NAME_LENGTH];
+	ut8  forwarder[PE_NAME_LENGTH];
+	ut64 rva;
+	ut64 offset;
+	ut64 ordinal;
 } PE_(r_bin_pe_export);
 
 typedef struct {
-	u64 rva;
-	u64 offset;
-	u64 size;
+	ut64 rva;
+	ut64 offset;
+	ut64 size;
 	char type;
 	char string[PE_STRING_LENGTH];
 } PE_(r_bin_pe_string);
@@ -70,7 +70,7 @@ int PE_(r_bin_pe_get_entrypoint)(PE_(r_bin_pe_obj)*, PE_(r_bin_pe_entrypoint)*);
 int PE_(r_bin_pe_get_exports)(PE_(r_bin_pe_obj)*, PE_(r_bin_pe_export)*);
 int PE_(r_bin_pe_get_exports_count)(PE_(r_bin_pe_obj)*);
 int PE_(r_bin_pe_get_file_alignment)(PE_(r_bin_pe_obj)*);
-u64 PE_(r_bin_pe_get_image_base)(PE_(r_bin_pe_obj)*);
+ut64 PE_(r_bin_pe_get_image_base)(PE_(r_bin_pe_obj)*);
 int PE_(r_bin_pe_get_image_size)(PE_(r_bin_pe_obj)*);
 int PE_(r_bin_pe_get_imports)(PE_(r_bin_pe_obj)*, PE_(r_bin_pe_import)*);
 int PE_(r_bin_pe_get_imports_count)(PE_(r_bin_pe_obj)*);

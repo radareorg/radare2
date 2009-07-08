@@ -3,9 +3,9 @@
 
 struct undow_t {
 	int set;
-	u64 off;
-	u8 *o;   /* old data */
-	u8 *n;   /* new data */
+	ut64 off;
+	ut8 *o;   /* old data */
+	ut8 *n;   /* new data */
 	int len; /* length */
 	struct list_head list;
 };
@@ -22,7 +22,7 @@ void undo_list();
 void undo_push();
 
 void undo_write_set_all(int set);
-void undo_write_new(u64 off, const u8 *data, int len);
+void undo_write_new(ut64 off, const ut8 *data, int len);
 int undo_write_set(int n, int set);
 void undo_write_list();
 int undo_write_size();

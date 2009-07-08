@@ -14,9 +14,9 @@ enum {
 };
 
 struct r_bin_java_classfile_t {
-	u8 cafebabe[4];
-	u8 minor[2];
-	u8 major[2];
+	ut8 cafebabe[4];
+	ut8 minor[2];
+	ut8 major[2];
 	unsigned short cp_count;
 };
 
@@ -30,7 +30,7 @@ struct r_bin_java_cp_item_t {
 	int tag;
 	char name[32];
 	char *value;
-	u8 bytes[5];
+	ut8 bytes[5];
 	unsigned short length;
 	unsigned short ord;
 	unsigned short off;
@@ -90,22 +90,22 @@ struct r_bin_java_t {
 };
 
 struct r_bin_java_sym_t {
-	u64 offset;
-	u64 size;
+	ut64 offset;
+	ut64 size;
 	char name[R_BIN_JAVA_MAXSTR];
 };
 
 struct r_bin_java_str_t {
-	u64 offset;
-	u64 ordinal;
-	u64 size;
+	ut64 offset;
+	ut64 ordinal;
+	ut64 size;
 	char str[R_BIN_JAVA_MAXSTR];
 };
 
 int r_bin_java_open(struct r_bin_java_t *bin, const char *file);
 int r_bin_java_close(struct r_bin_java_t *bin);
 int r_bin_java_get_version(struct r_bin_java_t *bin, char *version);
-u64 r_bin_java_get_entrypoint(struct r_bin_java_t *bin);
+ut64 r_bin_java_get_entrypoint(struct r_bin_java_t *bin);
 int r_bin_java_get_symbols(struct r_bin_java_t *bin, struct r_bin_java_sym_t *sym);
 int r_bin_java_get_symbols_count(struct r_bin_java_t *bin);
 int r_bin_java_get_strings(struct r_bin_java_t *bin, struct r_bin_java_str_t *str);

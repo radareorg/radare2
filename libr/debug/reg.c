@@ -26,7 +26,7 @@ R_API struct r_debug_regset_t *r_debug_reg_diff(struct r_debug_t *dbg)
 	return r_debug_regset_diff(dbg->oregs, dbg->regs);
 }
 
-R_API u64 r_debug_reg_get(struct r_debug_t *dbg, const char *name)
+R_API ut64 r_debug_reg_get(struct r_debug_t *dbg, const char *name)
 {
 	int i;
 	if (dbg->newstate) {
@@ -41,7 +41,7 @@ R_API u64 r_debug_reg_get(struct r_debug_t *dbg, const char *name)
 	return R_TRUE;
 }
 
-R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, u64 value)
+R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 value)
 {
 	int i;
 	struct r_debug_regset_t *rs = dbg->regs;

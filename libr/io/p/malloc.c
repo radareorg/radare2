@@ -11,16 +11,16 @@ static int malloc_fd = -1;
 static unsigned char *malloc_buf = NULL;
 static unsigned int malloc_bufsz = 0;
 // XXX shitty vars -- should be state
-static u64 malloc_seek = 0;
+static ut64 malloc_seek = 0;
 
-static int __write(struct r_io_t *io, int fd, const u8 *buf, int count)
+static int __write(struct r_io_t *io, int fd, const ut8 *buf, int count)
 {
 	if (malloc_buf == NULL)
 		return 0;
 	return (ssize_t)memcpy(malloc_buf+io->seek, buf, count);
 }
 
-static int __read(struct r_io_t *io, int fd, u8 *buf, int count)
+static int __read(struct r_io_t *io, int fd, ut8 *buf, int count)
 {
 	if (malloc_buf == NULL)
 		return 0;
@@ -45,8 +45,8 @@ static int __close(struct r_io_t *io, int fd)
 	return 0;
 }
 
-extern u64 posix_lseek(int fildes, u64 offset, int whence);
-static u64 __lseek(struct r_io_t *io, int fildes, u64 offset, int whence)
+extern ut64 posix_lseek(int fildes, ut64 offset, int whence);
+static ut64 __lseek(struct r_io_t *io, int fildes, ut64 offset, int whence)
 {
 	switch(whence) {
 	case SEEK_SET:
@@ -123,7 +123,7 @@ static struct r_io_handle_t r_io_plugin_malloc = {
         //void *widget;
 /*
         struct debug_t *debug;
-        u32 (*write)(int fd, const u8 *buf, u32 count);
+        ut32 (*write)(int fd, const ut8 *buf, ut32 count);
 	int fds[R_IO_NFDS];
 */
 };

@@ -67,7 +67,7 @@ int r_bininfo_list(struct r_bininfo_t *bin)
 	return R_FALSE;
 }
 
-int r_bininfo_get_line(struct r_bininfo_t *bin, u64 addr, char *file, int len, int *line)
+int r_bininfo_get_line(struct r_bininfo_t *bin, ut64 addr, char *file, int len, int *line)
 {
 	if (bin&&bin->cur&&bin->cur->get_line)
 		return bin->cur->get_line(bin, addr, file, len, line);

@@ -32,7 +32,7 @@ errors that transformed one string into the other.
 
 #include "r_types.h"
 
-static int hamdist(int x, u64 y)
+static int hamdist(int x, ut64 y)
 {
 	int dist = 0, val = x^y;
 
@@ -44,7 +44,7 @@ static int hamdist(int x, u64 y)
 	return dist;
 }
 
-u8 r_hash_hamdist(const u8 *buf, u64 len)
+ut8 r_hash_hamdist(const ut8 *buf, ut64 len)
 {
 	int x = 0;
 	int y = 0;

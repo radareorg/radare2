@@ -36,7 +36,7 @@ static int undo_w_lock = 0;
 
 /* History for the N last seeks, stack-like access */
 #define UNDOS 64
-static u64 undos[UNDOS];
+static ut64 undos[UNDOS];
 static int undos_idx = 0;
 static int undos_lim = 0;
 #endif
@@ -51,11 +51,11 @@ int r_io_undo_init(struct r_io_undo_t *undo)
 	return R_TRUE;
 }
 
-// u64 r_io_undo_get_last()
+// ut64 r_io_undo_get_last()
 {
 }
 
-u64 undo_get_last_seek()
+ut64 undo_get_last_seek()
 {
 	if (undos_idx==0)
 		return config.seek;
@@ -112,7 +112,7 @@ void undo_list()
 	}
 }
 
-void undo_write_new(u64 off, const u8 *data, int len)
+void undo_write_new(ut64 off, const ut8 *data, int len)
 {
 	struct undow_t *uw = (struct undow_t *)malloc(sizeof(struct undow_t));
 
@@ -131,9 +131,9 @@ void undo_write_new(u64 off, const u8 *data, int len)
 	uw->set = UNDO_WRITE_SET;
 	uw->off = off;
 	uw->len = len;
-	uw->n = (u8*) malloc(len);
+	uw->n = (ut8*) malloc(len);
 	memcpy(uw->n, data, len);
-	uw->o = (u8*) malloc(len);
+	uw->o = (ut8*) malloc(len);
 	radare_read_at(off, uw->o, len);
 	list_add_tail(&(uw->list), &(undo_w_list));
 }

@@ -22,13 +22,13 @@ static struct r_bin_handle_t *bin_static_plugins[] =
 static struct r_bin_string_t *get_strings(struct r_bin_t *bin, int min)
 {
 	struct r_bin_string_t *ret = NULL;
-	u8 *buf = NULL;
-	u64 len, max_str = 0;
+	ut8 *buf = NULL;
+	ut64 len, max_str = 0;
 	int i, matches = 0, ctr = 0;
 	char str[R_BIN_SIZEOF_STRINGS];
 
 	len = lseek(bin->fd, 0, SEEK_END);
-	max_str = (u64)(len/min);
+	max_str = (ut64)(len/min);
 
 	ret = malloc(max_str*sizeof(struct r_bin_string_t));
 
@@ -153,7 +153,7 @@ int r_bin_close(struct r_bin_t *bin)
 	return -1;
 }
 
-u64 r_bin_get_baddr(struct r_bin_t *bin)
+ut64 r_bin_get_baddr(struct r_bin_t *bin)
 {
 	if (bin->cur && bin->cur->baddr)
 		return bin->cur->baddr(bin);
@@ -218,10 +218,10 @@ struct r_bin_field_t* r_bin_get_fields(struct r_bin_t *bin)
 	return NULL;
 }
 
-u64 r_bin_get_section_offset(struct r_bin_t *bin, char *name)
+ut64 r_bin_get_section_offset(struct r_bin_t *bin, char *name)
 {
 	struct r_bin_section_t *sections;
-	u64 ret = -1;
+	ut64 ret = -1;
 	int i;
 
 	if (!(sections = r_bin_get_sections(bin)))
@@ -238,10 +238,10 @@ u64 r_bin_get_section_offset(struct r_bin_t *bin, char *name)
 	return ret;
 }
 
-u64 r_bin_get_section_rva(struct r_bin_t *bin, char *name)
+ut64 r_bin_get_section_rva(struct r_bin_t *bin, char *name)
 {
 	struct r_bin_section_t *sections;
-	u64 ret = -1;
+	ut64 ret = -1;
 	int i;
 
 	if (!(sections = r_bin_get_sections(bin)))
@@ -259,10 +259,10 @@ u64 r_bin_get_section_rva(struct r_bin_t *bin, char *name)
 	return ret;
 }
 
-u64 r_bin_get_section_size(struct r_bin_t *bin, char *name)
+ut64 r_bin_get_section_size(struct r_bin_t *bin, char *name)
 {
 	struct r_bin_section_t *sections;
-	u64 ret = -1;
+	ut64 ret = -1;
 	int i;
 
 	if (!(sections = r_bin_get_sections(bin)))

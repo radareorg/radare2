@@ -3,10 +3,10 @@
 #include "r_search.h"
 #include <regex.h>
 
-int r_search_xrefs_update(struct r_search_t *s, u64 from, const u8 *buf, int len)
+int r_search_xrefs_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len)
 {
-//	u8 code[1024];
-//	u8 mask[1024];
+//	ut8 code[1024];
+//	ut8 mask[1024];
 	int count = 0;
 	//get_delta_for(
 	//if (r_mem_cmp_mask(buf, code, mask, 4)) {
@@ -19,14 +19,14 @@ int r_search_xrefs_update(struct r_search_t *s, u64 from, const u8 *buf, int len
 struct r_xrefs_arch_t {
 	int align; // if arch requires align we can skip invalid addresses
 	int bigendian;
-	u64 baseaddr;
-	u64 targetaddr; // the addr we are looking for
+	ut64 baseaddr;
+	ut64 targetaddr; // the addr we are looking for
 };
 
 the xrefs plugin will have a callback:
 
  - size of opcode to skip in bytes (mips/arm=4 f.ex)
- int r_xrefs_x86(u64 addr, int bigendian, u64 baseaddr)
+ int r_xrefs_x86(ut64 addr, int bigendian, ut64 baseaddr)
  {
 	// check for calls, branches..and calculate target address
  }

@@ -26,7 +26,7 @@ static int cmd_to_str(const char *cmd, char *out, int len)
 }
 
 /* XXX: Bad signature */
-static char *a2l_get_function_name(struct r_bininfo_t *bi, u64 addr, char *file, int len)
+static char *a2l_get_function_name(struct r_bininfo_t *bi, ut64 addr, char *file, int len)
 {
 	static char buf[1024];
 	sprintf(buf, "addr2line -f -e '%s' 0x%08llx | head -n 1", file, addr);
@@ -35,7 +35,7 @@ static char *a2l_get_function_name(struct r_bininfo_t *bi, u64 addr, char *file,
 	return buf;
 }
 
-static int a2l_get_line(struct r_bininfo_t *bi, u64 addr, char *file, int len, int *line)
+static int a2l_get_line(struct r_bininfo_t *bi, ut64 addr, char *file, int len, int *line)
 {
 	char *p, buf[1024];
 	// TODO: move to r_util

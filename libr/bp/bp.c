@@ -62,7 +62,7 @@ R_API int r_bp_handle_set(struct r_bp_t *bp, const char *name)
 	return R_FALSE;
 }
 
-R_API int r_bp_getbytes(struct r_bp_t *bp, u8 *buf, int len, int endian, int idx)
+R_API int r_bp_getbytes(struct r_bp_t *bp, ut8 *buf, int len, int endian, int idx)
 {
 	int i;
 	struct r_bp_arch_t *b;
@@ -82,7 +82,7 @@ R_API int r_bp_getbytes(struct r_bp_t *bp, u8 *buf, int len, int endian, int idx
 	return R_FALSE;
 }
 
-R_API int r_bp_set_trace(struct r_bp_t *bp, u64 addr, int set)
+R_API int r_bp_set_trace(struct r_bp_t *bp, ut64 addr, int set)
 {
 	struct list_head *pos;
 	struct r_bp_item_t *b;
@@ -96,7 +96,7 @@ R_API int r_bp_set_trace(struct r_bp_t *bp, u64 addr, int set)
 	return R_TRUE;
 }
 
-R_API int r_bp_set_trace_bp(struct r_bp_t *bp, u64 addr, int set)
+R_API int r_bp_set_trace_bp(struct r_bp_t *bp, ut64 addr, int set)
 {
 	bp->trace_all = set;
 	bp->trace_bp = addr;
@@ -111,7 +111,7 @@ R_API struct r_bp_t *r_bp_free(struct r_bp_t *bp)
 }
 
 // TODO: rename this method!
-R_API int r_bp_in(struct r_bp_t *bp, u64 addr, int rwx)
+R_API int r_bp_in(struct r_bp_t *bp, ut64 addr, int rwx)
 {
 	struct list_head *pos;
 	struct r_bp_item_t *b;
@@ -127,7 +127,7 @@ R_API int r_bp_in(struct r_bp_t *bp, u64 addr, int rwx)
 	return R_FALSE;
 }
 
-R_API struct r_bp_item_t *r_bp_enable(struct r_bp_t *bp, u64 addr, int set)
+R_API struct r_bp_item_t *r_bp_enable(struct r_bp_t *bp, ut64 addr, int set)
 {
 	struct list_head *pos;
 	struct r_bp_item_t *b;
@@ -142,7 +142,7 @@ R_API struct r_bp_item_t *r_bp_enable(struct r_bp_t *bp, u64 addr, int set)
 }
 
 /* TODO: detect overlapping of breakpoints */
-R_API struct r_bp_item_t *r_bp_add(struct r_bp_t *bp, const u8 *obytes, u64 addr, int size, int hw, int rwx)
+R_API struct r_bp_item_t *r_bp_add(struct r_bp_t *bp, const ut8 *obytes, ut64 addr, int size, int hw, int rwx)
 {
 	int ret;
 	struct r_bp_item_t *b;
@@ -173,7 +173,7 @@ R_API struct r_bp_item_t *r_bp_add(struct r_bp_t *bp, const u8 *obytes, u64 addr
 	return b;
 }
 
-R_API int r_bp_del(struct r_bp_t *bp, u64 addr)
+R_API int r_bp_del(struct r_bp_t *bp, ut64 addr)
 {
 	struct list_head *pos;
 	struct r_bp_item_t *b;

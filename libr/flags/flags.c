@@ -11,7 +11,7 @@ static int ncmp(const void *a, const void *b)
 	struct r_flag_item_t *fa = (struct r_flag_item_t *)a;
 	struct r_flag_item_t *fb = (struct r_flag_item_t *)b;
 	int ret = 0;
-	/* we cannot use a simple substraction coz u64 > s32 :) */
+	/* we cannot use a simple substraction coz ut64 > s32 :) */
 	if (fa->namehash > fb->namehash) ret = 1;
 	else if (fa->namehash < fb->namehash) ret = -1;
 	return ret;
@@ -23,7 +23,7 @@ static int cmp(const void *a, const void *b)
 	struct r_flag_item_t *fa = (struct r_flag_item_t *)a;
 	struct r_flag_item_t *fb = (struct r_flag_item_t *)b;
 	int ret = 0;
-	/* we cannot use a simple substraction coz u64 > s32 :) */
+	/* we cannot use a simple substraction coz ut64 > s32 :) */
 	if (fa->offset > fb->offset) ret = 1;
 	else if (fa->offset < fb->offset) ret = -1;
 	return ret;
@@ -46,7 +46,7 @@ R_API int r_flag_init(struct r_flag_t *f)
 	return 0;
 }
 
-R_API int r_flag_set_base(struct r_flag_t *f, u64 new_base)
+R_API int r_flag_set_base(struct r_flag_t *f, ut64 new_base)
 {
 	f->base = new_base;
 	return 0;
@@ -87,7 +87,7 @@ struct r_flag_item_t *i;
 	return NULL;
 }
 
-R_API struct r_flag_item_t *r_flag_get_i(struct r_flag_t *f, u64 off)
+R_API struct r_flag_item_t *r_flag_get_i(struct r_flag_t *f, ut64 off)
 {
 #if USE_BTREE
 	struct r_flag_item_t *i;
@@ -122,7 +122,7 @@ R_API int r_flag_unset(struct r_flag_t *f, const char *name)
 	return 0;
 }
 
-R_API int r_flag_set(struct r_flag_t *fo, const char *name, u64 addr, u32 size, int dup)
+R_API int r_flag_set(struct r_flag_t *fo, const char *name, ut64 addr, ut32 size, int dup)
 {
 	const char *ptr;
 	struct r_flag_item_t *flag = NULL;

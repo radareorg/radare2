@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-R_API u64 r_core_file_resize(struct r_core_t *core, u64 newsize)
+R_API ut64 r_core_file_resize(struct r_core_t *core, ut64 newsize)
 {
 	if (newsize == 0 && core->file)
 		return core->file->size;

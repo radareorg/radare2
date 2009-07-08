@@ -13,9 +13,9 @@ static int debug = 1;
 static int flags = R_PRINT_FLAGS_ADDRMOD;
 
 static int marks_init = 0;
-static u64 marks[256];
+static ut64 marks[256];
 
-static void r_core_visual_mark(struct r_core_t *core, u8 ch)
+static void r_core_visual_mark(struct r_core_t *core, ut8 ch)
 {
 	if (marks_init==0) {
 		int i;
@@ -26,7 +26,7 @@ static void r_core_visual_mark(struct r_core_t *core, u8 ch)
 	marks[ch] = core->seek;
 }
 
-static void r_core_visual_mark_seek(struct r_core_t *core, u8 ch)
+static void r_core_visual_mark_seek(struct r_core_t *core, ut8 ch)
 {
 	if (marks_init==0) {
 		int i;
@@ -660,7 +660,7 @@ R_API int r_core_visual(struct r_core_t *core, const char *input)
 {
 	const char *cmdprompt;
 	const char *vi;
-	u64 scrseek;
+	ut64 scrseek;
 	int ch;
 
 	vi = r_config_get(&core->config, "cmd.visual");

@@ -12,13 +12,13 @@ int r_core_shift()
 R_API int r_core_write_op(struct r_core_t *core, const char *arg, char op) 
 {
 	char *str;
-	u8 *buf;
+	ut8 *buf;
 	int i,j;
 	int ret;
 	int len;
 
 	// XXX we can work with config.block instead of dupping it
-	buf = (u8 *)malloc(core->blocksize);
+	buf = (ut8 *)malloc(core->blocksize);
 	str = (char *)malloc(strlen(arg));
 	if (buf == NULL || str == NULL) {
 		free(buf);
@@ -26,7 +26,7 @@ R_API int r_core_write_op(struct r_core_t *core, const char *arg, char op)
 		return 0;
 	}
 	memcpy(buf, core->block, core->blocksize);
-	len = r_hex_str2bin(arg, (u8 *)str);
+	len = r_hex_str2bin(arg, (ut8 *)str);
 
 	switch(op) {
 		case '2':
@@ -34,7 +34,7 @@ R_API int r_core_write_op(struct r_core_t *core, const char *arg, char op)
 			op-='0';
 			for(i=0;i<core->blocksize;i+=op) {
 				/* endian swap */
-				u8 tmp = buf[i];
+				ut8 tmp = buf[i];
 				buf[i]=buf[i+3];
 				buf[i+3]=tmp;
 				if (op==4) {
@@ -67,7 +67,7 @@ R_API int r_core_write_op(struct r_core_t *core, const char *arg, char op)
 	return ret;
 }
 
-R_API int r_core_seek(struct r_core_t *core, u64 addr, int rb)
+R_API int r_core_seek(struct r_core_t *core, ut64 addr, int rb)
 {
 	int ret;
 	ret = r_io_lseek(&core->io, core->file->fd, addr, R_IO_SEEK_SET);
@@ -79,7 +79,7 @@ R_API int r_core_seek(struct r_core_t *core, u64 addr, int rb)
 	return R_FALSE;
 }
 
-int r_core_write_at(struct r_core_t *core, u64 addr, const u8 *buf, int size)
+int r_core_write_at(struct r_core_t *core, ut64 addr, const ut8 *buf, int size)
 {
 	int ret;
 	r_io_lseek(&core->io, core->file->fd, addr, R_IO_SEEK_SET);
@@ -97,7 +97,7 @@ R_API int r_core_block_read(struct r_core_t *core, int next)
 	return r_io_read(&core->io, core->file->fd, core->block, core->blocksize);
 }
 
-int r_core_read_at(struct r_core_t *core, u64 addr, u8 *buf, int size)
+int r_core_read_at(struct r_core_t *core, ut64 addr, ut8 *buf, int size)
 {
 	int ret;
 	r_io_lseek(&core->io, core->file->fd, addr, R_IO_SEEK_SET);

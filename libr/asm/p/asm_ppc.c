@@ -11,7 +11,7 @@
 #include "ppc/ppc_disasm/ppc_disasm.h"
 
 
-static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, u8 *buf, u64 len)
+static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len)
 {
 	ppc_word iaddr = (ppc_word)a->pc;
 	ppc_word bof[4];

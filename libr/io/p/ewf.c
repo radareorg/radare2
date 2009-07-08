@@ -13,12 +13,12 @@
 static int ewf_fd = -1;
 static LIBEWF_HANDLE *ewf_h = NULL;
 
-static int ewf__write(struct r_io_t *io, int fd, const u8 *buf, int count)
+static int ewf__write(struct r_io_t *io, int fd, const ut8 *buf, int count)
 {
 	return libewf_write_buffer(ewf_h, buf, count);
 }
 
-static int ewf__read(struct r_io_t *io, int fd, u8 *buf, int count)
+static int ewf__read(struct r_io_t *io, int fd, ut8 *buf, int count)
 {
 	return libewf_read_buffer(ewf_h, buf, count);
 }
@@ -32,7 +32,7 @@ static int ewf__close(struct r_io_t *io, int fd)
 	}
 }
 
-static u64 ewf__lseek(struct r_io_t *io, int fildes, u64 offset, int whence)
+static ut64 ewf__lseek(struct r_io_t *io, int fildes, ut64 offset, int whence)
 {
 	size64_t media_size;
 
@@ -90,7 +90,7 @@ static int ewf__open(struct r_io_t *io, const char *pathname, int flags, int mod
 
 	if (!memcmp(pathname, "els://", 6)) {
 		FILE *fd = fopen(pathname+6, "r");
-		u64 len;
+		ut64 len;
 		char *buf;
 
 		if (fd == NULL)

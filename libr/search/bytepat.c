@@ -59,19 +59,19 @@ int do_byte_pat(int patlen)
 	unsigned char block[BSIZE+MAX_PATLEN];
 	unsigned char sblk[MAX_PATLEN+1];
 	static fnditem* root;
-	u64 bproc = 0;
-	u64 rb;
+	ut64 bproc = 0;
+	ut64 rb;
 	//const char *str;
 	int nr,i, moar;
 	int pcnt, cnt=0, k=0;
-	u64 intaddr;
+	ut64 intaddr;
 	/* end addr */
-	//u64 bytes =  (config.limit!=0)?(config.limit-config.seek):config.block_size;
+	//ut64 bytes =  (config.limit!=0)?(config.limit-config.seek):config.block_size;
 //XXX bytes not defined
-	u64 bytes  = 0;
-	u64 bact = 0;
+	ut64 bytes  = 0;
+	ut64 bact = 0;
  	/* start addr */
-	//u64 bact = config.seek;
+	//ut64 bact = config.seek;
 //XXX bact = curseek not defined
 
 #if 0
@@ -142,7 +142,7 @@ int do_byte_pat(int patlen)
 		}
 
 		if (moar > 0) {
-			bact += (u64)patlen;
+			bact += (ut64)patlen;
 		} else bact++;
 	}
 	printf("\n");
@@ -158,19 +158,19 @@ int r_search_pattern_update(int patlen)
 	unsigned char block[BSIZE+MAX_PATLEN];
 	unsigned char sblk[MAX_PATLEN+1];
 	static fnditem* root;
-	u64 bproc = 0;
-	u64 rb;
+	ut64 bproc = 0;
+	ut64 rb;
 	//const char *str;
 	int nr,i, moar;
 	int pcnt, cnt=0, k=0;
-	u64 intaddr;
+	ut64 intaddr;
 	/* end addr */
-	//u64 bytes =  (config.limit!=0)?(config.limit-config.seek):config.block_size;
+	//ut64 bytes =  (config.limit!=0)?(config.limit-config.seek):config.block_size;
 //XXX bytes not defined
-	u64 bytes  = 0;
-	u64 bact = 0;
+	ut64 bytes  = 0;
+	ut64 bact = 0;
  	/* start addr */
-	//u64 bact = config.seek;
+	//ut64 bact = config.seek;
 //XXX bact = curseek not defined
 
 #if 0
@@ -241,7 +241,7 @@ int r_search_pattern_update(int patlen)
 		}
 
 		if (moar > 0) {
-			bact += (u64)patlen;
+			bact += (ut64)patlen;
 		} else bact++;
 	}
 	printf("\n");

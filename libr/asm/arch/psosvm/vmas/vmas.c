@@ -369,7 +369,7 @@ static const InstructionDescription ins_db[]=
 /**
  * @return length of the opcode
  */
-int psosvm_disasm(const u8 *bytes, char *output)
+int psosvm_disasm(const ut8 *bytes, char *output)
 {
 	int ret=-1;
 	int i;

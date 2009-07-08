@@ -4,11 +4,11 @@
 int main()
 {
 	struct r_print_t *p;
-	u8 *buf = (u8*)main;
+	ut8 *buf = (ut8*)main;
 
 	r_cons_init();
 	p = r_print_new();
-	r_print_hexdump(p, (u64)(u32)(main), buf, 128, 16, 1);
+	r_print_hexdump(p, (ut64)(ut32)(main), buf, 128, 16, 1);
 	r_cons_flush();
 
 	return 0;

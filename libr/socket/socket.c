@@ -267,7 +267,7 @@ int r_socket_fgets(int fd, char *buf,  int size)
 		return -1;
 
 	while(i<size-1) {
-		ret = r_socket_read(fd, (u8 *)buf+i, 1);
+		ret = r_socket_read(fd, (ut8 *)buf+i, 1);
 		if (ret==0)
 			return -1;
 		if (ret<0) {
