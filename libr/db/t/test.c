@@ -39,6 +39,7 @@ int main(int argc, char **argv)
 
 	/* delete */
 	r_db_delete(db, it);
+	printf("--> delete 1 item\n");
 
 	/* list */
 	tmp.id = 33;
@@ -49,6 +50,27 @@ int main(int argc, char **argv)
 		printf("city: %s, people: %d, id: %d\n",
 			foo->city, foo->people, foo->id);
 	}
+
+#if 0
+  |---| key
+|--.--.--.--.--|
+|--.--.--.--.--|
+#endif
+	printf("--> iterate over full list\n");
+	{
+		struct r_db_iter_t *iter;
+
+		iter = r_db_iter_new(db, K_ID); // iter = db.iterator(K_ID);
+		//while (r_db_iter_cur(iter)) {   // while(iter.exists()) {
+		while (iter->cur) {   // while(iter.exists()) {
+			struct item_t *foo = (struct item_t *)iter->cur; //r_db_iter_cur(siter);
+			printf("city: %s, people: %d, id: %d\n",
+				foo->city, foo->people, foo->id);
+			r_db_iter_next(iter);
+		}
+	}
+
+	printf("--> free db\n");
 	r_db_free(db);
 
 	return 0;

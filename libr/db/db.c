@@ -3,6 +3,7 @@
 #include "r_db.h"
 
 #if 0
+Configurable options:
  - allow dupped nodes? (two times the same pointer?)
  - allow more than one node with the same key?
 #endif
@@ -162,28 +163,86 @@ R_API int r_db_delete(struct r_db_t *db, const void *ptr)
 	return (ptr != NULL);
 }
 
-// delete with conditions
-// R_API int r_db_delete(struct r_db_t *db, void *ptr)
+// TODO delete with conditions
 
-R_API struct r_db_iter_t *r_db_iter(struct r_db_t *db, int key, const ut8 *b)
+R_API struct r_db_iter_t *r_db_iter_new(struct r_db_t *db, int key)
 {
+	struct r_db_iter_t *iter = (struct r_db_iter_t *)malloc(sizeof (struct r_db_iter_t));
+	/* TODO: detect when keys are not valid and return NULL */
+	iter->db = db;
+	iter->key = key;
+	iter->size = db->blocks_sz[key];
+	memset(&iter->path, 0, sizeof(iter->path));
+	/* TODO: detect when no keys are found and return NULL */
+	iter->ptr = 0;
+	iter->cur = NULL;
+	/* TODO: first iteration must be done here */
+
+	return iter;
+}
+
+R_API void *r_db_iter_cur(struct r_db_iter_t *iter)
+{
+	return iter->cur;
+#if 0
+	void *cur = NULL;
+	int i, depth = 0;
+	struct r_db_t *db = iter->db;
+	struct r_db_block_t *b = db->blocks[iter->key];
+	if (iter->ptr == 0) {
+		/* first iteration */
+	} else {
+		for(i=0;i<iter->size;i++) {
+			b = &b[iter->path[i]];
+			if (b == NULL) {
+				fprintf(stderr, "r_db: Internal data corruption\n");
+				return NULL;
+			}
+		}
+		/* TODO: check if null to find next node */
+		return b->data[iter->ptr];
+	}
+
+	for(i=0;i<255;i++) {
+		if (b->childs[i]) {
+			/* walk childs until reaching the leafs */
+			b = b->childs[i];
+			i=0;
+			depth++;
+			if (depth == iter->size) {
+				break;
+			}
+			continue;
+		}
+	}
+	//iter->db
+	return cur;
+#endif
+}
+
+R_API void *r_db_iter_next(struct r_db_iter_t *iter)
+{
+//	if (iter->db->
 	return NULL;
 }
 
-R_API void *r_db_iter_next(struct r_db_t *db, struct r_db_iter_t *iter)
+R_API void *r_db_iter_prev(struct r_db_iter_t *iter)
 {
+	/* TODO */
 	return NULL;
 }
 
-R_API void *r_db_iter_prev(struct r_db_t *db, struct r_db_iter_t *iter)
+R_API struct r_db_iter_t *r_db_iter_free(struct r_db_iter_t *iter)
 {
+	free(iter);
 	return NULL;
 }
 
 R_API int r_db_free(struct r_db_t *db)
 {
+	/* TODO : using the iterator logic */
 #if 0
-	r_db_iter_t *iter = r_db_iter(db,-1);
+	r_db_iter_t *iter = r_db_iter(db, -1);
 	if (db->cb_free) {
 		r_db_delete(db); // XXX
 	}
