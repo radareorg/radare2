@@ -227,7 +227,7 @@ R_API int r_core_seek_align(struct r_core_t *core, ut64 align, int times)
 	return r_core_seek(core, seek+diff, 1);
 }
 
-R_API int r_core_seek_delta(struct r_core_t *core, s64 addr)
+R_API int r_core_seek_delta(struct r_core_t *core, st64 addr)
 {
 	ut64 tmp = core->seek;
 	int ret;

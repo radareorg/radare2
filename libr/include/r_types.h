@@ -26,7 +26,7 @@
 /* basic types */
 
 #define ut64 unsigned long long
-#define s64 long long
+#define st64 long long
 #define ut32 unsigned int
 #define ut16 unsigned short
 #define ut8  unsigned char
