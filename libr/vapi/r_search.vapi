@@ -10,23 +10,23 @@ namespace Radare.Search {
 		STRING,
 		AES
 	}
+
 	[Compact]
 	[CCode (cname="struct r_search_t", free_function="r_search_free", cprefix="r_search_")]
-	public class State {
-		public State(Mode mode);
-		public bool set_mode(Mode mode);
-		public bool set_string_limits(uint32 min, uint32 max);
+	public class Searcher {
+		public Searcher (Mode mode);
+		public bool set_mode (Mode mode);
+		public bool set_string_limits (uint32 min, uint32 max);
 		public bool begin();
 		//public bool set_callback(delegate callback, pointer user);
-		public bool update(out uint64 from, uint8 *buf, uint32 len);
-		public bool update_i(uint64 from, uint8 *buf, uint32 len);
+		public bool update(out uint64 from, uint8 *buf, long len);
+		public bool update_i(uint64 from, uint8 *buf, long len);
 		public bool kw_add(string kw, string binmask);
 		public bool kw_add_hex(string kw, string binmask);
-		public bool kw_add_bin(string kw, uint32 kw_len, string binmask, uint32 bm_len);
+		public bool kw_add_bin(string kw, uint32 kw_len, string binmask, long bm_len);
 		public bool kw_list();
-		public int set_callback(Search.Callback cb, void *user);
+		public int set_callback(Radare.Search.Callback cb, void *user);
 	}
-
 
 	[Compact]
 	[CCode (cname="struct r_search_kw_t")]
@@ -41,5 +41,5 @@ namespace Radare.Search {
 		public uint32 count;
 	}
 
-	public static delegate int Callback(Search.Keyword s, void *user, uint64 addr);
+	public static delegate int Callback(Radare.Search.Keyword s, void *user, uint64 addr);
 }

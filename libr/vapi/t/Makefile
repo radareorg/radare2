@@ -1,6 +1,10 @@
 all: core hash sc socket asm search bin
 	@true
 
+genie:
+	valac --vapidir=.. --pkg r_asm --pkg libr asm.gs
+	valac --vapidir=.. --pkg r_search --pkg libr search.gs
+
 sc:
 	valac -C --vapidir=${PWD}/.. sc.vala --pkg r_syscall
 	gcc sc.c `pkg-config gobject-2.0 --libs --cflags` -I../../include/ -lr_syscall -Wl,-R../../syscall -L../../syscall -o sc

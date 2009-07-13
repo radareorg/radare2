@@ -1,13 +1,13 @@
 /* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
 
-using Radare;
+using Radare.Search;
 
 public class SearchExample
 {
 	public static void main(string[] args)
 	{
 		string buf = "liblubliuamlibfoo";
-		Search.State s = new Search.State(Search.Mode.KEYWORD);
+		var s = new Searcher(Mode.KEYWORD);
 		s.kw_add("lib", "");
 		s.set_callback(
 			(kw, user, addr) => {
