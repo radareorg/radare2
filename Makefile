@@ -2,13 +2,16 @@ include config-user.mk
 include config.mk
 
 all:
-	cd libr && make
+	cd libr && ${MAKE} all
 
 clean:
 	cd libr && make clean
 
 mrproper:
 	cd libr && make mrproper
+
+pkgcfg:
+	cd libr && make pkgcfg
 
 install:
 	${INSTALL_DIR} ${DESTDIR}${PREFIX}/share/doc/radare2
@@ -40,4 +43,4 @@ shot:
 	scp radare2-$${DATE}.tar.gz news.nopcode.org:/home/www/radarenopcode/get/shot
 	
 
-.PHONY: all clean mrproper install uninstall deinstall dist shot
+.PHONY: all clean mrproper install uninstall deinstall dist shot pkgcfg

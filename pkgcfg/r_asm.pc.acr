@@ -1,0 +1,11 @@
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${exec_prefix}/include
+
+Name: r_asm
+Description: radare foundation libraries
+Version: 0.2
+Requires:
+Libs: -L${libdir} -lr_asm -lr_lib -lr_util
+Cflags: -I${includedir}/libr

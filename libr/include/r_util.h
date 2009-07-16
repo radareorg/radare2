@@ -40,6 +40,7 @@ double r_prof_end(struct r_prof_t *p);
 void r_mem_copyloop (ut8 *dest, const ut8 *orig, int dsize, int osize);
 void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian);
 int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len);
+R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen);
 
 /* numbers */
 struct r_num_t {

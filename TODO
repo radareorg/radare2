@@ -9,7 +9,11 @@
 <{include libr/TODO}>
 
 * Add R_TRUFAE -> correct result, but with warnings (implement r_errno and r_errstr in r_util?)
+  - Quantic computation ftw \o/
+* Add r_th for threading help for w32/osx/linux/bsd/... .. use gthread? :P
+  - provide simple IPC comunication
 * r_cmd must provide a nesting char table indexing for commands
+  - this is pretty similar to r_db
   - every module can register their own commands
   - commands can be listed like in a tree
 * 'Vc' cursor mode makes color toggle

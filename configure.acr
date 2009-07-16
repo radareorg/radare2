@@ -18,6 +18,7 @@ ARG_WITH USEROSTYPE=gnulinux ostype Choose OS type ( gnulinux windows osx ) ;
 
 ARG_WITHOUT WANT_VALA vala disables the build of all the vala-dependant parts ;
 CHKPRG VALAC valac
+CHECK_ENDIAN
 
 (( temporary fix to avoid vala ))
 IF WANT_VALA { 
@@ -33,4 +34,11 @@ IF WANT_VALA {
 
 REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_TCC HAVE_VALAC DEBUGGER USERCC USEROSTYPE ;
 
-SUBDIRS ./config-user.mk libr/libr.pc libr/include/r_userconf.h ;
+(( TODO: Add the rest of .pc files here.. add a rule for acr? ))
+SUBDIRS ./config-user.mk libr/include/r_userconf.h
+ pkgcfg/libr.pc
+ pkgcfg/r_asm.pc
+ pkgcfg/r_bin.pc
+ pkgcfg/r_util.pc
+ pkgcfg/r_search.pc
+;

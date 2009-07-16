@@ -18,9 +18,12 @@ LIBLIST=io util lib meta lang flags bin bininfo macro hash line cons print confi
 
 all:
 	echo PREFIX=${PREFIX}
-	#exit 1
 	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} all ); done
 	@echo Build done for: ${LIBLIST}
+
+pkgcfg:
+	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} pkgcfg ); done
+	# TODO: Magically generate libr.pc.acr here using LIBLIST and so :)
 
 install:
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
@@ -41,7 +44,8 @@ install:
 	do echo " $$a"; ${INSTALL_PROGRAM} $$a ${PFX}/bin ; done
 	# plugins
 	@${INSTALL_DIR} ${PFX}/lib/pkgconfig
-	${INSTALL_DATA} libr.pc ${PFX}/lib/pkgconfig
+	for a in ../pkgcfg/*.pc ; do ${INSTALL_DATA} $$a ${PFX}/lib/pkgconfig ; done
+	#${INSTALL_DATA} libr.pc ${PFX}/lib/pkgconfig
 	@${INSTALL_DIR} ${PFX}/share/vala/vapi
 	${INSTALL_DATA} vapi/*.vapi vapi/*.deps ${PFX}/share/vala/vapi
 	@${INSTALL_DIR} ${PFX}/lib/radare2
@@ -78,6 +82,7 @@ deinstall uninstall:
 	echo $$a ; rm -f $$a ; done
 	rm -rf ${PREFIX}/lib/radare2
 	rm -f ${PREFIX}/lib/pkgconfig/libr.pc
+	rm -f ${PREFIX}/lib/pkgconfig/r_*.pc
 	# test programs
 	-@for a in `find */t -perm /u+x -type f | grep -v 2`; do \
 	a="${PREFIX}/bin-test/`echo $$a|awk -F / '{ print $$NF; }'`"; \

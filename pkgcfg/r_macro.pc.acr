@@ -1,0 +1,11 @@
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${exec_prefix}/include
+
+Name: r_macro
+Description: radare foundation libraries
+Version: 
+Requires:
+Libs: -L${libdir} -lr_macro
+Cflags: -I${includedir}/libr

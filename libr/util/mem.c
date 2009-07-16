@@ -3,7 +3,7 @@
 #include <r_util.h>
 #include <stdlib.h>
 
-void r_mem_copyloop (ut8 *dest, const ut8 *orig, int dsize, int osize)
+R_API void r_mem_copyloop (ut8 *dest, const ut8 *orig, int dsize, int osize)
 {
         int i=0,j;
         while(i<dsize)
@@ -11,7 +11,7 @@ void r_mem_copyloop (ut8 *dest, const ut8 *orig, int dsize, int osize)
                         dest[i++] = orig[j];
 }
 
-int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len)
+R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len)
 {
 	int i, ret = 0;
 	for(i=0;i<len;i++)
@@ -19,12 +19,12 @@ int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len)
 	return ret;
 }
 
-/* TODO check and use system endian */
-void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian)
+/* XXX TODO check and use system endian */
+R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian)
 {
         if (endian) {
-			if (dest != orig)
-                memcpy(dest, orig, size);
+		if (dest != orig)
+			memcpy(dest, orig, size);
         } else {
                 unsigned char buffer[8];
                 switch(size) {
@@ -55,4 +55,16 @@ void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian)
                         printf("Invalid size: %d\n", size);
                 }
         }
+}
+
+//R_DOC r_mem_mem: Finds the needle of nlen size into the haystack of hlen size
+//R_UNIT printf("%s\n", r_mem_mem("food is pure lame", 20, "is", 2));
+R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen)
+{
+	int i, until = hlen-nlen;
+	for(i=0;i<until;i++) {
+		if (!memcmp(haystack+i, needle, nlen))
+			return haystack+i;
+	}
+	return NULL;
 }

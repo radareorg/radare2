@@ -1,0 +1,11 @@
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${exec_prefix}/include
+
+Name: r_anal
+Description: radare foundation libraries
+Version: 
+Requires:
+Libs: -L${libdir} -lr_anal -lr_util -lr_lib
+Cflags: -I${includedir}/libr
