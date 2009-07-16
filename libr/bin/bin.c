@@ -31,6 +31,10 @@ static struct r_bin_string_t *get_strings(struct r_bin_t *bin, int min)
 	max_str = (ut64)(len/min);
 
 	ret = malloc(max_str*sizeof(struct r_bin_string_t));
+	if (ret == NULL) {
+		fprintf(stderr, "Error allocating file\n");
+		return NULL;
+	}
 
 	buf = malloc(len);
 	if (buf == NULL) {
@@ -60,9 +64,7 @@ static struct r_bin_string_t *get_strings(struct r_bin_t *bin, int min)
 			matches = 0;
 		}
 	}
-
 	ret[ctr].last = 1;
-
 	free(buf);
 
 	return ret;
@@ -75,18 +77,17 @@ struct r_bin_t *r_bin_new()
 	return bin;
 }
 
-void r_bin_free(struct r_bin_t *bin)
+void *r_bin_free(struct r_bin_t *bin)
 {
 	free(bin);
+	return NULL;
 }
 
 int r_bin_init(struct r_bin_t *bin)
 {
 	int i;
-	bin->cur = NULL;
-	bin->user = NULL;
-	bin->file = NULL;
 	bin->rw = 0;
+	bin->cur = bin->user = bin->file = NULL;
 	INIT_LIST_HEAD(&bin->bins);
 	for(i=0;bin_static_plugins[i];i++)
 		r_bin_add(bin, bin_static_plugins[i]);
@@ -125,9 +126,10 @@ int r_bin_list(struct r_bin_t *bin)
 
 int r_bin_open(struct r_bin_t *bin, const char *file, int rw, char *plugin_name)
 {
-	if (file != NULL)
-		bin->file = file;
-	else return -1;
+	if (file == NULL)
+		return -1;
+
+	bin->file = file;
 	bin->rw = rw;
 
 	struct list_head *pos;
@@ -137,7 +139,6 @@ int r_bin_open(struct r_bin_t *bin, const char *file, int rw, char *plugin_name)
 			(h->check && h->check(bin))) 
 			bin->cur = h;
 	}
-
 	if (bin->cur && bin->cur->open)
 		return bin->cur->open(bin);
 	if (plugin_name && !strcmp(plugin_name, "bin_dummy"))
@@ -149,134 +150,118 @@ int r_bin_close(struct r_bin_t *bin)
 {
 	if (bin->cur && bin->cur->close)
 		return bin->cur->close(bin);
-	
 	return -1;
 }
 
-ut64 r_bin_get_baddr(struct r_bin_t *bin)
+R_API ut64 r_bin_get_baddr(struct r_bin_t *bin)
 {
 	if (bin->cur && bin->cur->baddr)
 		return bin->cur->baddr(bin);
-	
-	return -1;
+	return UT64_MAX;
 }
 
-struct r_bin_entry_t* r_bin_get_entry(struct r_bin_t *bin)
+R_API struct r_bin_entry_t* r_bin_get_entry(struct r_bin_t *bin)
 {
 	if (bin->cur && bin->cur->entry)
 		return bin->cur->entry(bin);
-	
 	return NULL;
 }
 
-struct r_bin_section_t* r_bin_get_sections(struct r_bin_t *bin)
+R_API struct r_bin_section_t* r_bin_get_sections(struct r_bin_t *bin)
 {
 	if (bin->cur && bin->cur->sections)
 		return bin->cur->sections(bin);
-	
 	return NULL;
 }
 
-struct r_bin_symbol_t* r_bin_get_symbols(struct r_bin_t *bin)
+R_API struct r_bin_symbol_t* r_bin_get_symbols(struct r_bin_t *bin)
 {
 	if (bin->cur && bin->cur->symbols)
 		return bin->cur->symbols(bin);
-	
 	return NULL;
 }
 
-struct r_bin_import_t* r_bin_get_imports(struct r_bin_t *bin)
+R_API struct r_bin_import_t* r_bin_get_imports(struct r_bin_t *bin)
 {
 	if (bin->cur && bin->cur->imports)
 		return bin->cur->imports(bin);
-	
 	return NULL;
 }
 
-struct r_bin_string_t* r_bin_get_strings(struct r_bin_t *bin)
+R_API struct r_bin_string_t* r_bin_get_strings(struct r_bin_t *bin)
 {
 	if (bin->cur && bin->cur->strings)
 		return bin->cur->strings(bin);
-	else return get_strings(bin, 5);
-	
-	return NULL;
+	return get_strings(bin, 5);
 }
 
-struct r_bin_info_t* r_bin_get_info(struct r_bin_t *bin)
+R_API struct r_bin_info_t* r_bin_get_info(struct r_bin_t *bin)
 {
 	if (bin->cur && bin->cur->info)
 		return bin->cur->info(bin);
-	
 	return NULL;
 }
 
-struct r_bin_field_t* r_bin_get_fields(struct r_bin_t *bin)
+R_API struct r_bin_field_t* r_bin_get_fields(struct r_bin_t *bin)
 {
 	if (bin->cur && bin->cur->fields)
 		return bin->cur->fields(bin);
-	
 	return NULL;
 }
 
-ut64 r_bin_get_section_offset(struct r_bin_t *bin, char *name)
+R_API ut64 r_bin_get_section_offset(struct r_bin_t *bin, char *name)
 {
 	struct r_bin_section_t *sections;
-	ut64 ret = -1;
+	ut64 ret = UT64_MAX;
 	int i;
 
-	if (!(sections = r_bin_get_sections(bin)))
-		return R_FALSE;
-
-	for (i = 0; !sections[i].last; i++)
-		if (!strcmp(sections[i].name, name)) {
-			ret = sections[i].offset;
-			break;
-		}
-
-	free(sections);
-
+	sections = r_bin_get_sections(bin);
+	if (sections) {
+		for (i = 0; !sections[i].last; i++)
+			if (!strcmp(sections[i].name, name)) {
+				ret = sections[i].offset;
+				break;
+			}
+		free(sections);
+	}
 	return ret;
 }
 
-ut64 r_bin_get_section_rva(struct r_bin_t *bin, char *name)
+R_API ut64 r_bin_get_section_rva(struct r_bin_t *bin, char *name)
 {
 	struct r_bin_section_t *sections;
-	ut64 ret = -1;
+	ut64 ret = UT64_MAX;
 	int i;
 
-	if (!(sections = r_bin_get_sections(bin)))
-		return R_FALSE;
-
-	for (i = 0; !sections[i].last; i++) {
-		if (!strcmp(sections[i].name, name)) {
-			ret = sections[i].rva;
-			break;
+	sections = r_bin_get_sections(bin);
+	if (sections) {
+		for (i=0; !sections[i].last; i++) {
+			if (!strcmp(sections[i].name, name)) {
+				ret = sections[i].rva;
+				break;
+			}
 		}
+		free(sections);
 	}
-
-	free(sections);
-
 	return ret;
 }
 
-ut64 r_bin_get_section_size(struct r_bin_t *bin, char *name)
+R_API ut64 r_bin_get_section_size(struct r_bin_t *bin, char *name)
 {
 	struct r_bin_section_t *sections;
-	ut64 ret = -1;
+	ut64 ret = UT64_MAX;
 	int i;
 
-	if (!(sections = r_bin_get_sections(bin)))
-		return R_FALSE;
-
-	for (i = 0; !sections[i].last; i++) {
-		if (!strcmp(sections[i].name, name)) {
-			ret = sections[i].size;
-			break;
+	sections = r_bin_get_sections(bin);
+	if (sections) {
+		for (i=0; !sections[i].last; i++) {
+			if (!strcmp(sections[i].name, name)) {
+				ret = sections[i].size;
+				break;
+			}
 		}
+		free(sections);
 	}
-
-	free(sections);
-
 	return ret;
 }
 

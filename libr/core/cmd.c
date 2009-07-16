@@ -243,19 +243,19 @@ static int cmd_help(void *data, const char *input)
 		break;
 	case '+':
 		if (input[1]) {
-			if (core->num.value & U64_GT0)
+			if (core->num.value & UT64_GT0)
 				r_core_cmd(core, input+1, 0);
 		} else r_cons_printf("0x%llx\n", core->num.value);
 		break;
 	case '-':
 		if (input[1]) {
-			if (core->num.value & U64_LT0)
+			if (core->num.value & UT64_LT0)
 				r_core_cmd(core, input+1, 0);
 		} else r_cons_printf("0x%llx\n", core->num.value);
 		break;
 	case '!': // ??
 		if (input[1]) {
-			if (core->num.value != U64_MIN)
+			if (core->num.value != UT64_MIN)
 				r_core_cmd(core, input+1, 0);
 		} else r_cons_printf("0x%llx\n", core->num.value);
 		break;
@@ -301,7 +301,7 @@ static int cmd_help(void *data, const char *input)
 			return 0;
 		} else
 		if (input[1]) {
-			if (core->num.value == U64_MIN)
+			if (core->num.value == UT64_MIN)
 				r_core_cmd(core, input+1, 0);
 		} else r_cons_printf("0x%llx\n", core->num.value);
 		break;
@@ -771,7 +771,7 @@ static int cmd_write(void *data, const char *input)
 		{
 		ut64 off = r_num_math(&core->num, input+1);
 		r_io_lseek(&core->io, core->file->fd, core->seek, R_IO_SEEK_SET);
-		if (off&U64_32U) {
+		if (off&UT64_32U) {
 			/* 8 byte addr */
 			ut64 addr8;
 			memcpy((ut8*)&addr8, (ut8*)&off, 8); // XXX needs endian here

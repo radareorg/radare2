@@ -136,7 +136,7 @@ int r_trace_add(struct r_trace_t *tr, ut64 addr, int opsize)
 			if (tr->dup) {
 				if (tr->tag != -1)
 					t->tags |= tr->tag;
-				++(t->times);
+				t->times++;
 			} else {
 				t->count = ++tr->num;
 				gettimeofday(&(t->tm), NULL);
@@ -148,6 +148,10 @@ int r_trace_add(struct r_trace_t *tr, ut64 addr, int opsize)
 	}
 
 	t = MALLOC_STRUCT(struct r_trace_item_t);
+	if (t == NULL) {
+		printf("Cannot alloc\n");
+		return -1;
+	}
 	memset(t,'\0',sizeof(struct r_trace_item_t));
 	t->addr = addr;
 	t->times = 1;
@@ -184,7 +188,7 @@ ut64 r_trace_range(struct r_trace_t *t, ut64 from, int tag)
 
 ut64 r_trace_next(struct r_trace_t *tr, ut64 from, int tag)
 {
-        ut64 next = U64_MAX;
+        ut64 next = UT64_MAX;
         struct list_head *pos;
         struct r_trace_item_t *h;
 
@@ -195,9 +199,8 @@ ut64 r_trace_next(struct r_trace_t *tr, ut64 from, int tag)
                 if (h->addr > from && h->addr < next)
                         next = h->addr;
         }
-
-        if (next == U64_MAX)
-                return U64_MIN;
+        if (next == UT64_MAX)
+                return UT64_MIN;
         return next;
 }
 

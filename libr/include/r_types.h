@@ -99,15 +99,15 @@ static inline int ERR(char *str, ...)
 #define eprintf(x,y...) fprintf(stderr,x,##y)
 
 /* limits */
-#define U64_MAX 0xFFFFFFFFFFFFFFFFLL
-#define U64_GT0 0x8000000000000000LL
-#define U64_LT0 0x7FFFFFFFFFFFFFFFLL
-#define U64_MIN 0LL
-#define U64_32U 0xFFFFFFFF00000000LL
-#define U32_MIN 0
-#define U32_GT0 0x80000000
-#define U32_LT0 0x7FFFFFFF
-#define U32_MAX 0xFFFFFFFF
+#define UT64_MAX 0xFFFFFFFFFFFFFFFFLL
+#define UT64_GT0 0x8000000000000000LL
+#define UT64_LT0 0x7FFFFFFFFFFFFFFFLL
+#define UT64_MIN 0LL
+#define UT64_32U 0xFFFFFFFF00000000LL
+#define UT32_MIN 0
+#define UT32_GT0 0x80000000
+#define UT32_LT0 0x7FFFFFFF
+#define UT32_MAX 0xFFFFFFFF
 
 #define R_MAX(x,y) (x>y)?x:y
 #define R_MIN(x,y) (x>y)?y:x
@@ -115,6 +115,7 @@ static inline int ERR(char *str, ...)
 
 #define R_FALSE 0
 #define R_TRUE 1
+#define R_TRUFAE 2
 
 #define R_FREE(x) { free(x); x = NULL; }
 
