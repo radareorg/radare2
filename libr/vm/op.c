@@ -16,20 +16,18 @@ int r_vm_op_add(struct r_vm_t *vm, const char *op, const char *str)
 
 int r_vm_op_eval(struct r_vm_t *vm, const char *str)
 {
-	char *p,*s;
-	int j,k,len = strlen(str)+256;
+	struct list_head *pos;
+	char *p, *s, *arg0;
+	int j, k, len = strlen(str)+256;
 	int nargs = 0;
-	char *arg0;
 
-//	eprintf("vmopeval(%s)\n", str);
 	p = alloca(len);
 	s = alloca(len);
 	memcpy(p, str, len);
 	memcpy(s, str, len);
 
-	struct list_head *pos;
-	nargs = set0word(s);
-	arg0 = get0word(s,0);
+	nargs = r_str_word_set0(s);
+	arg0 = r_str_word_get0(s, 0);
 
 	list_for_each(pos, &vm->ops) {
 		struct r_vm_op_t *o = list_entry(pos, struct r_vm_op_t, list);
@@ -68,7 +66,7 @@ int r_vm_op_eval(struct r_vm_t *vm, const char *str)
 					}
 #endif
 					if (str[j]>='0' && str[j]<='9') {
-						const char *w = get0word(s,str[j]-'0');
+						const char *w = r_str_word_get0(s, str[j]-'0');
 						if (w != NULL) {
 							strcpy(p+k, w);
 							k += strlen(w)-1;
@@ -79,8 +77,7 @@ int r_vm_op_eval(struct r_vm_t *vm, const char *str)
 			p[k]='\0';
 		}
 	}
-
-	return vm_eval(p);
+	return r_vm_eval(vm, p);
 }
 
 /* TODO : Allow to remove and so on */
@@ -97,6 +94,6 @@ int r_vm_op_cmd(struct r_vm_t *vm, const char *op)
 		ptr[0]='\0';
 		eprintf("vm: opcode '%s' added\n", cmd);
 		r_vm_op_add(vm, cmd, ptr+1);
-	} else vm_cmd_op_help();
+	} else r_vm_cmd_op_help();
 	return 0;
 }

@@ -2,7 +2,7 @@
 
 #include "r_vm.h"
 
-int r_vm_mmu_cache_write(struct r_vm_t *vm, ut64 addr, ut8 *buf, int len)
+R_API int r_vm_mmu_cache_write(struct r_vm_t *vm, ut64 addr, ut8 *buf, int len)
 {
 	struct r_vm_change_t *ch = MALLOC_STRUCT(struct r_vm_change_t);
 	ch->from = addr;
@@ -13,7 +13,7 @@ int r_vm_mmu_cache_write(struct r_vm_t *vm, ut64 addr, ut8 *buf, int len)
 	return 0;
 }
 
-int r_vm_mmu_cache_read(struct r_vm_t *vm, ut64 addr, ut8 *buf, int len)
+R_API int r_vm_mmu_cache_read(struct r_vm_t *vm, ut64 addr, ut8 *buf, int len)
 {
 	struct r_vm_change_t *c;
 	struct list_head *pos;
@@ -29,20 +29,33 @@ int r_vm_mmu_cache_read(struct r_vm_t *vm, ut64 addr, ut8 *buf, int len)
 	return 0;
 }
 
-int r_vm_mmu_read(struct r_vm_t *vm, ut64 off, ut8 *data, int len)
+R_API void r_vm_mmu_set_io(struct r_vm_t *vm,
+	int (*read)(void *user, ut64 addr, ut8 *buf, int len),
+	int (*write)(void *user, ut64 addr, ut8 *buf, int len),
+	void *user)
+{
+	vm->read = read;
+	vm->write = write;
+	vm->user = user;
+}
+
+R_API int r_vm_mmu_read(struct r_vm_t *vm, ut64 off, ut8 *data, int len)
 {
 	if (!vm->realio && r_vm_mmu_cache_read(vm, off, data, len))
 		return len;
-	return r_io_read_at(vm, off, data, len);
+	if (vm->read)
+		return vm->read(vm->user, off, data, len);
+	return -1;
 }
 
-int r_vm_mmu_write(struct r_vm_t *vm, ut64 off, ut8 *data, int len)
+R_API int r_vm_mmu_write(struct r_vm_t *vm, ut64 off, ut8 *data, int len)
 {
 	if (!vm->realio)
 		return r_vm_mmu_cache_write(vm, off, data, len);
-	fprintf(stderr, "vm_mmu_write!\n");
 	// XXX: callback for write-at should be userdefined
-	return r_io_write_at(vm, off, data, len);
+	if (vm->write)
+		return vm->write(vm->user, off, data, len);
+	return -1;
 }
 
 int r_vm_mmu_real(struct r_vm_t *vm, int set)

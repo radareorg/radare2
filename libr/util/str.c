@@ -65,7 +65,7 @@ R_API int r_str_word_set0(char *str)
         return i;
 }
 
-R_API const char *r_str_word_get0(const char *str, int idx)
+R_API char *r_str_word_get0(char *str, int idx)
 {
         int i;
         const char *ptr = str;
@@ -78,11 +78,10 @@ R_API const char *r_str_word_get0(const char *str, int idx)
 
 R_API int r_str_word_count(const char *string)
 {
-        char *text = (char *)string;
-        char *tmp  = (char *)string;
-        int word   = 0;
+        char *text, *tmp;
+        int word = 0;
 
-        for(;(*text)&&(isseparator(*text));text=text+1);
+        for(text=tmp=string;(*text)&&(isseparator(*text));text=text+1);
 
         for(word = 0; *text; word++) {
                 for(;*text && !isseparator(*text);text = text +1);

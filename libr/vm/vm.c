@@ -175,7 +175,7 @@ R_API int r_vm_import(struct r_vm_t *vm, int in_vm)
 R_API void r_vm_cpu_call(struct r_vm_t *vm, ut64 addr)
 {
 	/* x86 style */
-	r_vm_stack_push(vm, vm_reg_get(vm->cpu.pc));
+	r_vm_stack_push(vm, r_vm_reg_get(vm, vm->cpu.pc));
 	r_vm_reg_set(vm, vm->cpu.pc, addr);
 	// XXX this should be the next instruction after pc (we need insn length here)
 }
@@ -192,6 +192,7 @@ R_API int r_vm_init(struct r_vm_t *vm, int init)
 		INIT_LIST_HEAD(&vm->regs);
 		INIT_LIST_HEAD(&vm->ops);
 		memset(&vm->cpu, '\0', sizeof(struct r_vm_cpu_t));
+		vm->user = vm->read = vm->write = NULL;
 	}
 
 	//vm_mmu_real(vm, config_get_i("vm.realio"));
@@ -247,8 +248,10 @@ R_API int r_vm_init(struct r_vm_t *vm, int init)
 		//vm_setup_copy("esi", "edi");
 		r_vm_setup_ret(vm, "eax");
 		// TODO: do the same for fpregs and mmregs
+#if 0
 		if (init) // XXX
 			r_vm_arch_x86_init(vm);
+#endif
 		break;
 #if 0
 	case ARCH_MIPS:
@@ -326,7 +329,7 @@ R_API int r_vm_eval_eq(struct r_vm_t *vm, const char *str, const char *val)
 			} else {
 				r_vm_mmu_read(vm, off, (ut8*)&_int32, 4);
 				//off = r_vm_get_math(val);
-				r_vm_mmu_write(vm, off, (const ut8*)&_int32, 4);
+				r_vm_mmu_write(vm, off, (void*)&_int32, 4);
 			}
 		} else {
 			// [0x804800] = eax
@@ -454,20 +457,20 @@ R_API int r_vm_eval_single(struct r_vm_t *vm, const char *str)
 		if((!memcmp(ptr, "call ", 4))
 		|| (!memcmp(ptr, "jmp ", 4))){
 			if (ptr[0]=='c')
-				r_vm_stack_push(vm, vm->cpu.pc);
+				r_vm_stack_push(vm, r_vm_get_value(vm, vm->cpu.pc));
 			printf("CALL(%s)\n", ptr+4);
 			r_vm_reg_set(vm, vm->cpu.pc, r_vm_get_value(vm, ptr+4));
 		} else
 		if (!memcmp(ptr, "jz ", 3)){
-			if (vm_reg_get(ptr+3)==0)
+			if (r_vm_reg_get(vm, ptr+3)==0)
 				r_vm_reg_set(vm, vm->cpu.pc, r_vm_get_value(vm, ptr+3));
 		} else
 		if (!memcmp(ptr, "jnz ", 4)){
-			if (vm_reg_get(ptr+4)==0)
+			if (r_vm_reg_get(vm, ptr+4)==0)
 				r_vm_reg_set(vm, vm->cpu.pc, r_vm_get_value(vm, ptr+4));
 		} else
 		if (!memcmp(ptr, "push ", 5)) {
-			r_vm_stack_push(vm, str+5);
+			r_vm_stack_push(vm, r_vm_get_value(vm, str+5));
 		} else
 		if (!memcmp(str, "pop ", 4)) {
 			r_vm_stack_pop(vm, str+5);

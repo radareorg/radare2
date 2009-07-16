@@ -196,7 +196,7 @@ int r_vm_cmd_reg(struct r_vm_t *vm, const char *_str)
 					r_vm_print(vm, r_vm_reg_type_i(str+1));
 				} else {
 					/* show single registers */
-					printf("%s = 0x%08llx\n", str, vm_reg_get(str));
+					printf("%s = 0x%08llx\n", str, r_vm_reg_get(vm, str));
 				}
 			}
 		}

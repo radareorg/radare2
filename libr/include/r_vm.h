@@ -30,8 +30,8 @@ struct r_vm_reg_t {
 };
 
 struct r_vm_op_t {
-	const char opcode[32];
-	const char code[1024];
+	char opcode[32];
+	char code[1024];
 	struct list_head list;
 };
 
@@ -69,57 +69,68 @@ struct r_vm_t {
 	ut8 *vm_stack;
 	struct list_head mmu_cache;
 	int realio;
+	/* io callbacks */
+	int (*read)(void *user, ut64 addr, ut8 *buf, int len);
+	int (*write)(void *user, ut64 addr, ut8 *buf, int len);
+	void *user;
 };
 
-ut64 vm_reg_get(const char *name);
-void vm_stack_push(ut64 _val);
+R_API ut64 vm_reg_get(const char *name);
+R_API void vm_stack_push(ut64 _val);
 
 #if 0
 static ut64 r_vm_get_value(struct r_vm_t *vm, const char *str);
 static ut64 r_vm_get_math(struct r_vm_t *vm, const char *str);
 #endif
-void r_vm_print(struct r_vm_t *vm, int type);
-int r_vm_import(struct r_vm_t *vm, int in_vm);
-void r_vm_cpu_call(struct r_vm_t *vm, ut64 addr);
-int r_vm_init(struct r_vm_t *vm, int init);
-int r_vm_eval_cmp(struct r_vm_t *vm, const char *str);
-int r_vm_eval_eq(struct r_vm_t *vm, const char *str, const char *val);
-int r_vm_eval_single(struct r_vm_t *vm, const char *str);
-int r_vm_eval(struct r_vm_t *vm, const char *str);
-int r_vm_eval_file(struct r_vm_t *vm, const char *str);
-int r_vm_emulate(struct r_vm_t *vm, int n);
-int r_vm_cmd_reg(struct r_vm_t *vm, const char *_str);
-int r_vm_op_add(struct r_vm_t *vm, const char *op, const char *str);
-int r_vm_op_eval(struct r_vm_t *vm, const char *str);
-int r_vm_op_cmd(struct r_vm_t *vm, const char *op);
+R_API void r_vm_print(struct r_vm_t *vm, int type);
+R_API int r_vm_import(struct r_vm_t *vm, int in_vm);
+R_API void r_vm_cpu_call(struct r_vm_t *vm, ut64 addr);
+R_API int r_vm_init(struct r_vm_t *vm, int init);
+R_API int r_vm_eval_cmp(struct r_vm_t *vm, const char *str);
+R_API int r_vm_eval_eq(struct r_vm_t *vm, const char *str, const char *val);
+R_API int r_vm_eval_single(struct r_vm_t *vm, const char *str);
+R_API int r_vm_eval(struct r_vm_t *vm, const char *str);
+R_API int r_vm_eval_file(struct r_vm_t *vm, const char *str);
+R_API int r_vm_emulate(struct r_vm_t *vm, int n);
+R_API int r_vm_cmd_reg(struct r_vm_t *vm, const char *_str);
+R_API int r_vm_op_add(struct r_vm_t *vm, const char *op, const char *str);
+R_API int r_vm_op_eval(struct r_vm_t *vm, const char *str);
+R_API int r_vm_op_cmd(struct r_vm_t *vm, const char *op);
 
 /* reg */
-void r_vm_reg_type_list();
-int r_vm_reg_add(struct r_vm_t *vm, const char *name, int type, ut64 value);
-ut64 r_vm_reg_get(struct r_vm_t *vm, const char *name);
-int r_vm_reg_alias_list(struct r_vm_t *vm);
-const char *r_vm_reg_type(int type);
-const int r_vm_reg_type_i(const char *str);
-int r_vm_reg_del(struct r_vm_t *vm, const char *name);
-int r_vm_reg_set(struct r_vm_t *vm, const char *name, ut64 value);
-int r_vm_reg_alias(struct r_vm_t *vm, const char *name, const char *get, const char *set);
+R_API void r_vm_reg_type_list();
+R_API int r_vm_reg_add(struct r_vm_t *vm, const char *name, int type, ut64 value);
+R_API ut64 r_vm_reg_get(struct r_vm_t *vm, const char *name);
+R_API int r_vm_reg_alias_list(struct r_vm_t *vm);
+R_API const char *r_vm_reg_type(int type);
+R_API const int r_vm_reg_type_i(const char *str);
+R_API int r_vm_reg_del(struct r_vm_t *vm, const char *name);
+R_API int r_vm_reg_set(struct r_vm_t *vm, const char *name, ut64 value);
+R_API int r_vm_reg_alias(struct r_vm_t *vm, const char *name, const char *get, const char *set);
 
 /* cfg */
-
-void r_vm_setup_flags(struct r_vm_t *vm, const char *zf);
-void r_vm_setup_cpu(struct r_vm_t *vm, const char *eip, const char *esp, const char *ebp);
-void r_vm_setup_fastcall(struct r_vm_t *vm, const char *eax, const char *ebx, const char *ecx, const char *edx);
-void r_vm_setup_ret(struct r_vm_t *vm, const char *eax);
+R_API void r_vm_setup_flags(struct r_vm_t *vm, const char *zf);
+R_API void r_vm_setup_cpu(struct r_vm_t *vm, const char *eip, const char *esp, const char *ebp);
+R_API void r_vm_setup_fastcall(struct r_vm_t *vm, const char *eax, const char *ebx, const char *ecx, const char *edx);
+R_API void r_vm_setup_ret(struct r_vm_t *vm, const char *eax);
 
 /* stack */
-void r_vm_stack_push(struct r_vm_t *vm, ut64 _val);
-void r_vm_stack_pop(struct r_vm_t *vm, const char *reg);
+R_API void r_vm_stack_push(struct r_vm_t *vm, ut64 _val);
+R_API void r_vm_stack_pop(struct r_vm_t *vm, const char *reg);
 
 /* mmu */
-int r_vm_mmu_cache_write(struct r_vm_t *vm, ut64 addr, ut8 *buf, int len);
-int r_vm_mmu_cache_read(struct r_vm_t *vm, ut64 addr, ut8 *buf, int len);
-int r_vm_mmu_read(struct r_vm_t *vm, ut64 off, ut8 *data, int len);
-int r_vm_mmu_write(struct r_vm_t *vm, ut64 off, ut8 *data, int len);
-int r_vm_mmu_real(struct r_vm_t *vm, int set);
+R_API int r_vm_mmu_cache_write(struct r_vm_t *vm, ut64 addr, ut8 *buf, int len);
+R_API int r_vm_mmu_cache_read(struct r_vm_t *vm, ut64 addr, ut8 *buf, int len);
+R_API int r_vm_mmu_read(struct r_vm_t *vm, ut64 off, ut8 *data, int len);
+R_API int r_vm_mmu_write(struct r_vm_t *vm, ut64 off, ut8 *data, int len);
+R_API int r_vm_mmu_real(struct r_vm_t *vm, int set);
+R_API void r_vm_mmu_set_io(struct r_vm_t *vm,
+	int (*read)(void *user, ut64 addr, ut8 *buf, int len),
+	int (*write)(void *user, ut64 addr, ut8 *buf, int len),
+	void *user);
+
+/* extra */
+int r_vm_cmd_op_help();
+int r_vm_op_list(struct r_vm_t *vm);
 
 #endif
