@@ -78,13 +78,14 @@ pkgcfg:
 	@echo 'prefix=@PREFIX@' > ../../pkgcfg/${NAME}.pc.acr
 	@echo 'exec_prefix=$${prefix}' >> ../../pkgcfg/${NAME}.pc.acr
 	@echo 'libdir=$${exec_prefix}/lib' >> ../../pkgcfg/${NAME}.pc.acr
-	@echo 'includedir=$${exec_prefix}/include' >> ../../pkgcfg/${NAME}.pc.acr
+	@echo 'includedir=$${prefix}/include' >> ../../pkgcfg/${NAME}.pc.acr
 	@echo >> ../../pkgcfg/${NAME}.pc.acr
 	@echo 'Name: ${NAME}' >> ../../pkgcfg/${NAME}.pc.acr
 	@echo 'Description: radare foundation libraries' >> ../../pkgcfg/${NAME}.pc.acr
 	@echo 'Version: ${VERSION}' >> ../../pkgcfg/${NAME}.pc.acr
 	@echo 'Requires:' >> ../../pkgcfg/${NAME}.pc.acr
-	@echo 'Libs: -L$${libdir} '`echo ${NAME} ${DEPS}|sed -e s,r_,-lr_,g` >> ../../pkgcfg/${NAME}.pc.acr
+	@if [ "${NAME}" = "libr" ]; then NAME=''; else NAME=${NAME}; fi ;\
+	echo 'Libs: -L$${libdir} '`echo $${NAME} ${DEPS}|sed -e s,r_,-lr_,g` >> ../../pkgcfg/${NAME}.pc.acr
 	@echo 'Cflags: -I$${includedir}/libr' >> ../../pkgcfg/${NAME}.pc.acr
 
 install:

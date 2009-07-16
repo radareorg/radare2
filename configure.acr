@@ -37,8 +37,17 @@ REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_TCC HAVE_VALAC DEBUGGER USERCC USEROSTYPE ;
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))
 SUBDIRS ./config-user.mk libr/include/r_userconf.h
  pkgcfg/libr.pc
+ pkgcfg/r_io.pc
  pkgcfg/r_asm.pc
  pkgcfg/r_bin.pc
+ pkgcfg/r_cons.pc
+ pkgcfg/r_diff.pc
+ pkgcfg/r_core.pc
+ pkgcfg/r_socket.pc
+ pkgcfg/r_line.pc
+ pkgcfg/r_syscall.pc
+ pkgcfg/r_macro.pc
  pkgcfg/r_util.pc
  pkgcfg/r_search.pc
+ pkgcfg/r_vm.pc
 ;

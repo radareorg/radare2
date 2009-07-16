@@ -1,7 +1,7 @@
 prefix=@PREFIX@
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
-includedir=${exec_prefix}/include
+includedir=${prefix}/include
 
 Name: r_line
 Description: radare foundation libraries

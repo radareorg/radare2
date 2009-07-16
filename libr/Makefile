@@ -23,6 +23,7 @@ all:
 
 pkgcfg:
 	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} pkgcfg ); done
+	cd asm && ${MAKE} pkgcfg NAME=libr DEPS="r_`echo ${LIBLIST}|sed -e 's, , r_,g'`"
 	# TODO: Magically generate libr.pc.acr here using LIBLIST and so :)
 
 install:
