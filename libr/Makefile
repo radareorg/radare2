@@ -91,7 +91,7 @@ deinstall uninstall:
 	@echo libr aka radare2 has been uninstalled from PREFIX=${PREFIX}
 
 todo:
-	grep -re TODO *
+	grep -re TODO -e XXX *
 
 clean:
 	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} clean ); done

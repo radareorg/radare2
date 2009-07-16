@@ -10,7 +10,7 @@ STATIC_OBJS=$(subst ..,p/..,$(subst asm_,p/asm_,$(STATIC_OBJ)))
 OBJ=asm.o ${STATIC_OBJS}
 
 pre:
-	if [ ! -e libr_asm.so ]; then rm -f ${STATIC_OBJS} ; fi
+	@if [ ! -e libr_asm.so ]; then rm -f ${STATIC_OBJS} ; fi
 
 plugins:
 	cd p && ${MAKE} all
