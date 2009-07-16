@@ -68,9 +68,9 @@ R_API int r_str_word_set0(char *str)
 R_API char *r_str_word_get0(char *str, int idx)
 {
         int i;
-        const char *ptr = str;
+        char *ptr = str;
         if (ptr == NULL)
-                return nullstr;
+                return (char *)nullstr;
         for (i=0;*ptr && i != idx;i++)
                 ptr = ptr + strlen(ptr) + 1;
         return ptr;
@@ -177,7 +177,7 @@ R_API char *r_str_trim(char *str)
 }
 
 /* memccmp("foo.bar", "foo.cow, '.') == 0 */
-int r_str_ccmp(const char *dst, const char *orig, int ch)
+R_API int r_str_ccmp(const char *dst, const char *orig, int ch)
 {
         int i;
         for(i=0;orig[i] && orig[i] != ch; i++)
@@ -186,7 +186,7 @@ int r_str_ccmp(const char *dst, const char *orig, int ch)
         return 0;
 }
 
-int r_str_cmp(const char *a, const char *b, int len)
+R_API int r_str_cmp(const char *a, const char *b, int len)
 {
 	for(;len--;) {
 		if (*a=='\0'||*b=='\0'||*a!=*b)
@@ -197,7 +197,7 @@ int r_str_cmp(const char *a, const char *b, int len)
 	return 0;
 }
 
-int r_str_ccpy(char *dst, char *orig, int ch)
+R_API int r_str_ccpy(char *dst, char *orig, int ch)
 {
         int i;
         for(i=0;orig[i] && orig[i] != ch; i++)
@@ -206,7 +206,7 @@ int r_str_ccpy(char *dst, char *orig, int ch)
         return i;
 }
 
-char *r_str_word_get_first(const char *string)
+R_API char *r_str_word_get_first(const char *string)
 {
         char *text  = (char *)string;
         char *start = NULL;
@@ -229,14 +229,14 @@ char *r_str_word_get_first(const char *string)
         return ret;
 }
 
-const char *r_str_get(const char *str)
+R_API const char *r_str_get(const char *str)
 {
         if (str == NULL)
                 return nullstr_c;
         return str;
 }
 
-char *r_str_dup(char *ptr, const char *string)
+R_API char *r_str_dup(char *ptr, const char *string)
 {
         if (ptr)
                 free(ptr);
@@ -244,7 +244,7 @@ char *r_str_dup(char *ptr, const char *string)
         return ptr;
 }
 
-char *r_str_dup_printf(const char *fmt, ...)
+R_API char *r_str_dup_printf(const char *fmt, ...)
 {
 	char *ret;
 	va_list ap;
@@ -256,7 +256,7 @@ char *r_str_dup_printf(const char *fmt, ...)
 	return ret;
 }
 
-char *r_str_concat(char *ptr, const char *string)
+R_API char *r_str_concat(char *ptr, const char *string)
 {
         if (!ptr)
 		return strdup(string);
@@ -267,7 +267,7 @@ char *r_str_concat(char *ptr, const char *string)
         return ptr;
 }
 
-char *r_str_concatf(char *ptr, const char *fmt, ...)
+R_API char *r_str_concatf(char *ptr, const char *fmt, ...)
 {
 	char string[1024];
 	va_list ap;
@@ -278,15 +278,19 @@ char *r_str_concatf(char *ptr, const char *fmt, ...)
         return ptr;
 }
 
-inline void r_str_concatch(char *x, char y){char b[2]={y,0};strcat(x,b);}
+R_API void r_str_concatch(char *x, char y)
+{
+	char b[2]={y,0};
+	strcat(x,b);
+}
 
-void *r_str_free(void *ptr)
+R_API void *r_str_free(void *ptr)
 {
         free (ptr);
 	return NULL;
 }
 
-int r_str_inject(char *begin, char *end, char *str, int maxlen)
+R_API int r_str_inject(char *begin, char *end, char *str, int maxlen)
 {
         int len = strlen(end)+1;
         char *tmp = alloca(len);
@@ -325,7 +329,7 @@ static int strsub_memcmp (char *string, char *pat, int len)
         return res;
 }
 
-char *r_str_sub(char *string, char *pat, char *rep, int global)
+R_API char *r_str_sub(char *string, char *pat, char *rep, int global)
 {
         int patlen, templen, tempsize, repl, i;
         char *temp, *r;
@@ -353,7 +357,7 @@ char *r_str_sub(char *string, char *pat, char *rep, int global)
         return (temp);
 }
 
-int r_str_escape(char *buf)
+R_API int r_str_escape(char *buf)
 {
 	unsigned char ch = 0, ch2 = 0;
 	int err = 0;

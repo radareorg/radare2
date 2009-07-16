@@ -54,7 +54,7 @@ struct r_num_t *r_num_new(ut64 (*cb)(void*,const char *,int*), void *ptr)
 }
 
 /* old get_offset */
-ut64 r_num_get(struct r_num_t *num, const char *str)
+R_API ut64 r_num_get(struct r_num_t *num, const char *str)
 {
 	int i, j;
 	char lch;
