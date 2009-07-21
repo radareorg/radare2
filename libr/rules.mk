@@ -23,7 +23,7 @@ LDFLAGS+=$(subst r_,${BOO},$(BINDEPS))
 # Debug
 CFLAGS+=-g -Wall
 
-# XXX hardcoded XXX #
+# XXX do it in configure stage
 OSTYPE?=gnulinux
 # Output
 ifeq (${OSTYPE},windows)
@@ -122,8 +122,8 @@ CFLAGS+=-I../../include
 all: ${BIN}
 
 ${BIN}: ${OBJ}
-	# XXX Shouldnt run always
-	${CC} ${LDFLAGS} ${OBJ} -o ${BIN} ${LIBS}
+	@# XXX Shouldnt run always
+	${CC} ${LDFLAGS} ${LIBS} ${OBJ} -o ${BIN}
 
 #Dummy myclean rule that can be overriden by the t/ Makefile
 myclean:
@@ -131,7 +131,7 @@ myclean:
 clean: myclean
 	-rm -f ${OBJ} ${BIN}
 
-.PHONY: all clean ${BIN}
+.PHONY: all clean myclean ${BIN}
 
 endif
 
@@ -145,4 +145,3 @@ CFLAGS+=-DR_RTDEBUG
 #if STATIC_DEBUG
 #CFLAGS+=-DR_DEBUG
 #endif
-
