@@ -7,5 +7,5 @@ Name: libr
 Description: radare foundation libraries
 Version: 0.2
 Requires:
-Libs: -L${libdir} -lr_io -lr_util -lr_lib -lr_meta -lr_lang -lr_flags -lr_bin -lr_bininfo -lr_macro -lr_hash -lr_line -lr_cons -lr_print -lr_config -lr_syscall -lr_range -lr_socket -lr_cmd -lr_asm -lr_anal -lr_parse -lr_search -lr_diff -lr_bp -lr_debug -lr_reg -lr_core -lr_var -lr_sign -lr_trace -lr_vm
+Libs: -L${libdir} -lr_io -lr_util -lr_lib -lr_meta -lr_lang -lr_flags -lr_bin -lr_bininfo -lr_macro -lr_hash -lr_line -lr_cons -lr_print -lr_config -lr_syscall -lr_range -lr_socket -lr_cmd -lr_asm -lr_anal -lr_parse -lr_search -lr_diff -lr_bp -lr_debug -lr_reg -lr_core -lr_var -lr_sign -lr_trace -lr_vm -lr_th -lr_db
 Cflags: -I${includedir}/libr

@@ -1,0 +1,11 @@
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: r_th
+Description: radare foundation libraries
+Version: 
+Requires:
+Libs: -L${libdir} -lr_th
+Cflags: -I${includedir}/libr

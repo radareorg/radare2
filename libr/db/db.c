@@ -50,8 +50,12 @@ R_API int r_db_add_id(struct r_db_t *db, int key, int size)
 
 static int _r_db_add_internal(struct r_db_t *db, int key, void *b)
 {
-	int i, idx, len, size = db->blocks_sz[key];
-	struct r_db_block_t *block = db->blocks[key];
+	int i, idx, len, size;
+	struct r_db_block_t *block;
+	if (key<0 || key>255)
+		return R_FALSE;
+	size = db->blocks_sz[key];
+	block = db->blocks[key];
 	if (block == NULL) {
 		block = r_db_block_new();
 		db->blocks[key] = block;
@@ -63,7 +67,7 @@ static int _r_db_add_internal(struct r_db_t *db, int key, void *b)
 		block = block->childs[idx];
 	}
 	if (block) {
-		if (block->data==NULL) {
+		if (block->data == NULL) {
 			block->data = malloc(sizeof(void *)*2);
 			block->data[0] = b;
 			block->data[1] = NULL;
@@ -75,12 +79,12 @@ static int _r_db_add_internal(struct r_db_t *db, int key, void *b)
 			block->data[len+1] = NULL;
 		}
 	}
-	return (block!=NULL);;
+	return (block!=NULL);
 }
 
 R_API int r_db_add(struct r_db_t *db, void *b)
 {
-	int i, ret=0;
+	int i, ret = R_FALSE;
 	for(i=db->id_min;i<=db->id_max;i++) {
 		if (db->blocks[i])
 			ret += _r_db_add_internal(db, i, b);

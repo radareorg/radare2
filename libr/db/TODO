@@ -1,3 +1,7 @@
+* Return FALSE when adding two elements with the same
+  attributes (get before add) if the db is unique
+  // not necessary, we can just do this by manually checkingc
+
 * Benchmarking
   - Compilation support for profiling memory usage
   - Compare performance against sqlite

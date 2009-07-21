@@ -75,6 +75,7 @@ namespace Radare {
 		public uint64 mdisassemble(out Aop aop, uint8 *buf, uint64 length);
 		public int massemble(out Aop aop, string buf);
 		public int parse();
+		// This is the destructor
 		public void free();
 	}
 
