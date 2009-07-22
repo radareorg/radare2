@@ -58,6 +58,8 @@ R_API void r_num_init(struct r_num_t *num);
 
 /* strings */
 
+#define offsetof(type, member) ((unsigned long) &((type*)0)->member)
+
 /* TODO ..use as uppercase maybe? they are macros! */
 #define strnull(x) (!x||!*x)
 #define iswhitechar(x) (x==' '||x=='\t'||x=='\n'||x=='\r')

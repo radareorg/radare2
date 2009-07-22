@@ -32,6 +32,7 @@ R_API struct r_db_t *r_db_new();
 R_API struct r_db_block_t *r_db_block_new();
 R_API int r_db_add_id(struct r_db_t *db, int off, int size);
 R_API int r_db_add(struct r_db_t *db, void *b);
+R_API int r_db_add_unique(struct r_db_t *db, void *b);
 R_API void **r_db_get(struct r_db_t *db, int key, const ut8 *b);
 R_API int r_db_delete(struct r_db_t *db, const void *b);
 R_API void **r_db_get_next(void **ptr);

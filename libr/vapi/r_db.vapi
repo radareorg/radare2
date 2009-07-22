@@ -13,6 +13,7 @@ namespace Radare {
 		/* storage */
 		public int add_id(int off, int size);
 		public bool @add(void *b);
+		public bool add_unique(void *b);
 		public bool delete(void *b);
 		public void* get(int key, uint8* buf);
 

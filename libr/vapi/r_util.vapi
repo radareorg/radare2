@@ -14,6 +14,7 @@ namespace Radare {
 		public static void mem_cmp_mask (uint8 *dest, uint8 *orig, uint8 *mask, int len);
 		/* num */
 		public static uint64 num_get(void *num, string str); // XXX void *
+		//public static int offsetof(void *type, void *member);
 	}
 }
 

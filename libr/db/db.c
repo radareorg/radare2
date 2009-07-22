@@ -92,6 +92,22 @@ R_API int r_db_add(struct r_db_t *db, void *b)
 	return ret;
 }
 
+R_API int r_db_add_unique(struct r_db_t *db, void *b)
+{
+	int i, ret = R_TRUE;
+	for(i=db->id_min;i<=db->id_max;i++) {
+		if (db->blocks[i]) {
+			if (!r_db_get(db, i, db)) {
+				ret = R_FALSE;
+				break;
+			}
+		}
+	}
+	if (ret)
+		ret = r_db_add(db, b);
+	return ret;
+}
+
 R_API void **r_db_get(struct r_db_t *db, int key, const ut8 *b)
 {
 	struct r_db_block_t *block;
