@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 /* int c; ret = hex_to_byet(&c, 'c'); */
-int r_hex_to_byte(ut8 *val, ut8 c)
+R_API int r_hex_to_byte(ut8 *val, ut8 c)
 {
 	if ('0' <= c && c <= '9')      *val = (unsigned char)(*val) * 16 + ( c - '0');
 	else if (c >= 'A' && c <= 'F') *val = (unsigned char)(*val) * 16 + ( c - 'A' + 10);
@@ -15,7 +15,7 @@ int r_hex_to_byte(ut8 *val, ut8 c)
 }
 
 /* int byte = hexpair2bin("A0"); */
-int r_hex_pair2bin(const char *arg) // (0A) => 10 || -1 (on error)
+R_API int r_hex_pair2bin(const char *arg) // (0A) => 10 || -1 (on error)
 {
 	unsigned char *ptr;
 	unsigned char c = '\0';
@@ -37,7 +37,7 @@ int r_hex_pair2bin(const char *arg) // (0A) => 10 || -1 (on error)
 	return (int)c;
 }
 
-int r_hex_bin2str(const ut8 *in, int len, char *out)
+R_API int r_hex_bin2str(const ut8 *in, int len, char *out)
 {
 	int i;
 	char tmp[5];
@@ -47,6 +47,19 @@ int r_hex_bin2str(const ut8 *in, int len, char *out)
 		strcat(out, tmp);
 	}
 	return len;
+}
+
+R_API char *r_hex_bin2strdup(const ut8 *in, int len)
+{
+	int i;
+	char tmp[5];
+	char *out = malloc((len+1)*2);
+	out[0]='\0';
+	for(i=0;i<len;i++)  {
+		sprintf(tmp, "%02x", in[i]);
+		strcat(out, tmp);
+	}
+	return out;
 }
 /* char buf[1024]; int len = hexstr2binstr("0a 33 45", buf); */
 // XXX control out bytes

@@ -14,4 +14,5 @@ namespace Radare.Socket {
 	public int fgets(int fd, string *buf, int len);
 	public int printf(int fd, string *str, ...);
 	public int accept(int fd);
+	public string to_string(int fd);
 }

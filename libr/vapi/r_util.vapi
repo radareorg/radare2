@@ -6,7 +6,8 @@ namespace Radare {
 	[CCode (cprefix="r_")]
 	public static class Util {
 		public static int hex_str2bin (string input, out uint8 *buf);
-		public static int hex_bin2str (uint8 *buf, int len, out string str);
+		//public static int hex_bin2str (uint8 *buf, int len, out string str);
+		public static string hex_bin2strdup (uint8 *buf, int len);
 		/* mem */
 		public static uint8 *mem_mem (uint8 *a, int al, uint8 *b, int bl);
 		public static void mem_copyendian (uint8 *dest, uint8 *orig, int size, int endian);

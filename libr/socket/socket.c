@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2006-2009 pancake<nopcode.org> */
 #define USE_SOCKETS
 
+#include <errno.h>
 #include "r_types.h"
 #include "r_socket.h"
 #include <sys/types.h>
@@ -24,7 +25,7 @@
 
 #define BUFFER_SIZE 4096
 
-int r_socket_write(int fd, unsigned char *buf, int len)
+R_API int r_socket_write(int fd, unsigned char *buf, int len)
 {
 	int delta = 0;
 	int ret;
@@ -48,7 +49,7 @@ int r_socket_write(int fd, unsigned char *buf, int len)
 // XXX: rewrite it to use select //
 /* waits secs until new data is received.     */
 /* returns -1 on error, 0 is false, 1 is true */
-int r_socket_ready(int fd, int secs,int usecs)
+R_API int r_socket_ready(int fd, int secs,int usecs)
 {
 	int ret;
 #if __UNIX__
@@ -79,7 +80,7 @@ int r_socket_ready(int fd, int secs,int usecs)
 #endif
 }
 
-void r_socket_block(int fd, int block)
+R_API void r_socket_block(int fd, int block)
 {
 #if _UNIX_
 	fcntl(fd, F_SETFL, O_NONBLOCK, !block);
@@ -88,7 +89,7 @@ void r_socket_block(int fd, int block)
 #endif
 }
 
-void r_socket_printf(int fd, const char *fmt, ...)
+R_API void r_socket_printf(int fd, const char *fmt, ...)
 {
 #if !__linux__
 	char buf[BUFFER_SIZE];
@@ -109,7 +110,7 @@ void r_socket_printf(int fd, const char *fmt, ...)
 }
 
 #if __UNIX__
-int r_socket_unix_connect(char *file)
+R_API int r_socket_unix_connect(char *file)
 {
 	struct sockaddr_un addr;
 	int sock;
@@ -129,7 +130,7 @@ int r_socket_unix_connect(char *file)
 	return sock;
 }
 
-int r_socket_unix_listen(const char *file)
+R_API int r_socket_unix_listen(const char *file)
 {
 	struct sockaddr_un unix_name;
 	int sock;
@@ -158,7 +159,7 @@ int r_socket_unix_listen(const char *file)
 }
 #endif
 
-int r_socket_connect(char *host, int port)
+R_API int r_socket_connect(char *host, int port)
 {
 	struct sockaddr_in sa;
 	struct hostent *he;
@@ -194,7 +195,7 @@ int r_socket_connect(char *host, int port)
 	return s;
 }
 
-int r_socket_listen(int port)
+R_API int r_socket_listen(int port)
 {
 	int s;
 	int ret;
@@ -226,7 +227,7 @@ int r_socket_listen(int port)
 	return s;
 }
 
-int r_socket_close(int fd)
+R_API int r_socket_close(int fd)
 {
 #if __UNIX__
 	shutdown(fd, SHUT_RDWR);
@@ -237,7 +238,7 @@ int r_socket_close(int fd)
 #endif
 }
 
-int r_socket_read(int fd, unsigned char *buf, int len)
+R_API int r_socket_read(int fd, unsigned char *buf, int len)
 {
 #if __UNIX__
 	return read(fd, buf, len);
@@ -246,19 +247,19 @@ int r_socket_read(int fd, unsigned char *buf, int len)
 #endif
 }
 
-int r_socket_accept(int fd)
+R_API int r_socket_accept(int fd)
 {
 	return accept(fd, NULL, NULL);
 }
 
-int r_socket_flush(int fd)
+R_API int r_socket_flush(int fd)
 {
 	/* TODO */
 	return 0;
 }
 
 
-int r_socket_fgets(int fd, char *buf,  int size)
+R_API int r_socket_fgets(int fd, char *buf,  int size)
 {
 	int i = 0;
 	int ret = 0;
@@ -281,4 +282,23 @@ int r_socket_fgets(int fd, char *buf,  int size)
 	buf[i]='\0';
 
 	return ret;
+}
+
+R_API char *r_socket_to_string(int fd)
+{
+	char *str = NULL;
+	struct sockaddr sa;
+	socklen_t sl = sizeof(sa);
+	memset(&sa, 0, sizeof(sa));
+	if (getpeername(fd, &sa, &sl) != 0) {
+		printf("ERRNO IS %d\n", errno);
+		perror("getpeername");
+	} else {
+		struct sockaddr_in *sain = (struct sockaddr_in*) &sa;
+		ut8 *a = (ut8*) &(sain->sin_addr);
+		if ((str = malloc(32)))
+			sprintf(str, "%d.%d.%d.%d:%d",
+				a[0],a[1],a[2],a[3], ntohs(sain->sin_port));
+	}
+	return str;
 }
