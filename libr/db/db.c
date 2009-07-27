@@ -97,7 +97,7 @@ R_API int r_db_add_unique(struct r_db_t *db, void *b)
 	int i, ret = R_TRUE;
 	for(i=db->id_min;i<=db->id_max;i++) {
 		if (db->blocks[i]) {
-			if (!r_db_get(db, i, db)) {
+			if (r_db_get(db, i, b) != NULL) {
 				ret = R_FALSE;
 				break;
 			}
