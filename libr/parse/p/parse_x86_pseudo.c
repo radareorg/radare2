@@ -125,7 +125,13 @@ static int parse(struct r_parse_t *p, void *data, char *str)
 
 static int assemble(struct r_parse_t *p, void *data, char *str)
 {
+	char *ptr;
 	printf("assembling '%s' to generate real asm code\n", str);
+	ptr = strchr(str, '=');
+	if (ptr) {
+		*ptr='\0';
+		sprintf(data, "mov %s, %s", str, ptr+1);
+	} else strcpy(data, str);
 	return R_TRUE;
 }
 

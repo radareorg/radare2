@@ -21,7 +21,7 @@ struct r_parse_handle_t {
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	int (*parse)(struct r_parse_t *p, void *data, char *str);
-	int (*assemble)(struct r_parse_t *p, void *data, char *str);
+	int (*assemble)(struct r_parse_t *p, char *data, char *str);
 	struct list_head list;
 };
 
@@ -34,6 +34,7 @@ int r_parse_add(struct r_parse_t *p, struct r_parse_handle_t *foo);
 int r_parse_list(struct r_parse_t *p);
 int r_parse_set(struct r_parse_t *p, const char *name);
 int r_parse_parse(struct r_parse_t *p, void *data, char *str);
+int r_parse_assemble(struct r_parse_t *p, char *data, char *str);
 
 /* plugin pointers */
 extern struct r_parse_handle_t r_parse_plugin_dummy;

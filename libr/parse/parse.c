@@ -68,6 +68,35 @@ int r_parse_set(struct r_parse_t *p, const char *name)
 	return R_FALSE;
 }
 
+int r_parse_assemble(struct r_parse_t *p, char *data, char *str)
+{
+	int ret = R_FALSE;
+	char *in = strdup(str);
+	char *s, *o, *t = in;
+
+	data[0]='\0';
+	if (p->cur && p->cur->assemble) {
+		o = data+strlen(data);
+		do {
+			s = strchr(str, ';');
+			if (s) {
+				*s='\0';
+			}
+			ret = p->cur->assemble(p, o, str);
+			if (!ret) break;
+			if (s) {
+				str = s + 1;
+				o = o+strlen(data);
+				o[0]='\n';
+				o[1]='\0';
+				o = o + 1;
+			}
+		} while(s);
+	}
+	free(in);
+	return ret;
+}
+
 int r_parse_parse(struct r_parse_t *p, void *data, char *str)
 {
 	if (p->cur && p->cur->parse)
