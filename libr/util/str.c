@@ -76,6 +76,15 @@ R_API char *r_str_word_get0(char *str, int idx)
         return ptr;
 }
 
+R_API int r_str_char_count(const char *string, char ch)
+{
+	int i, count=0;
+	for(i=0;string[i];i++)
+		if (string[i]==ch)
+			count++;
+	return count;
+}
+
 R_API int r_str_word_count(const char *string)
 {
         char *text, *tmp;

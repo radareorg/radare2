@@ -16,6 +16,12 @@
 	&r_asm_plugin_mips, \
 	0
 
+#define R_PARSE_STATIC_PLUGINS \
+	&r_parse_plugin_dummy, \
+	&r_parse_plugin_x86_pseudo, \
+	&r_parse_plugin_mreplace, \
+	0
+
 #define R_BIN_STATIC_PLUGINS \
 	&r_bin_plugin_elf , \
 	&r_bin_plugin_elf64 , \

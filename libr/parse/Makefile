@@ -1,4 +1,19 @@
 NAME=r_parse
-OBJ=parse.o
+DEPS=r_lib
+
+foo: pre libr_parse.so plugins
+
+CFLAGS+=-DCORELIB
+include ../config.mk
+include ${STATIC_PARSE_PLUGINS}
+STATIC_OBJS=$(subst ..,p/..,$(subst parse_,p/parse_,$(STATIC_OBJ)))
+OBJ=parse.o ${STATIC_OBJS}
+
+
+pre:
+	@if [ ! -e libr_parse.so ]; then rm -f ${STATIC_OBJS} ; fi
+
+plugins:
+	cd p && ${MAKE} all
 
 include ../rules.mk

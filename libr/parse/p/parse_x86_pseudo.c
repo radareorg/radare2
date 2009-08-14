@@ -123,15 +123,24 @@ static int parse(struct r_parse_t *p, void *data, char *str)
 	return R_TRUE;
 }
 
-static struct r_parse_handle_t r_parse_plugin_parse_x86_pseudo = {
+static int assemble(struct r_parse_t *p, void *data, char *str)
+{
+	printf("assembling '%s' to generate real asm code\n", str);
+	return R_TRUE;
+}
+
+struct r_parse_handle_t r_parse_plugin_x86_pseudo = {
 	.name = "parse_x86_pseudo",
 	.desc = "X86 pseudo syntax",
 	.init = NULL,
 	.fini = NULL,
 	.parse = &parse,
+	.assemble = &assemble,
 };
 
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_parse_x86_pseudo
+	.data = &r_parse_plugin_x86_pseudo
 };
+#endif

@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "mreplace/mreplace.h"
+#include "parse_mreplace/mreplace.h"
 
 #include <r_lib.h>
 #include <r_parse.h>
@@ -27,7 +27,7 @@ static int parse(struct r_parse_t *p, void *data, char *str)
 	return R_TRUE;
 }
 
-static struct r_parse_handle_t r_parse_plugin_parse_mreplace = {
+struct r_parse_handle_t r_parse_plugin_mreplace = {
 	.name = "parse_mreplace",
 	.desc = "mreplace parsing plugin",
 	.init = NULL,
@@ -35,7 +35,10 @@ static struct r_parse_handle_t r_parse_plugin_parse_mreplace = {
 	.parse = &parse,
 };
 
+
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_parse_mreplace
+	.data = &r_parse_plugin_mreplace
 };
+#endif

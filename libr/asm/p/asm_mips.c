@@ -12,6 +12,7 @@
 #include "dis-asm.h"
 #include "opcode/mips.h"
 
+#include "fastcall_mips.h"
 
 static int mips_mode = 0;
 static unsigned long Offset = 0;
@@ -99,7 +100,8 @@ struct r_asm_handle_t r_asm_plugin_mips = {
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = NULL
+	.assemble = NULL,
+	.fastcall = fastcall
 };
 
 #ifndef CORELIB

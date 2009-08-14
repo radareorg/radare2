@@ -42,7 +42,7 @@ struct r_asm_handle_t r_asm_plugin_x86 = {
 	.fini = NULL,
 	.disassemble = &disassemble,
 	.assemble = NULL,
-	.fastcall = &fastcall,
+	.fastcall = fastcall,
 };
 
 #ifndef CORELIB

@@ -5,6 +5,10 @@
 #include <r_types.h>
 #include <r_parse.h>
 #include <list.h>
+#include "../config.h"
+
+static struct r_parse_handle_t *parse_static_plugins[] = 
+	{ R_PARSE_STATIC_PLUGINS };
 
 struct r_parse_t *r_parse_new()
 {
@@ -20,8 +24,11 @@ void r_parse_free(struct r_parse_t *p)
 
 int r_parse_init(struct r_parse_t *p)
 {
+	int i;
 	p->user = NULL;
 	INIT_LIST_HEAD(&p->parsers);
+	for(i=0;parse_static_plugins[i];i++)
+		r_parse_add(p, parse_static_plugins[i]);
 	return R_TRUE;
 }
 

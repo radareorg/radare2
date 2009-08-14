@@ -3,8 +3,6 @@ BIN=rasm2
 BINDEPS=r_util r_lib r_asm r_print r_cons
 LIBS+=-ldl
 
-include ../../rules.mk
-
 all: ${BIN} fastcall
 
 fastcall: fastcall.o

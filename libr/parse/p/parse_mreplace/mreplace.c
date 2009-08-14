@@ -62,15 +62,15 @@ void sreplace(char *s,char *orig,char *rep,char multi,long dsize){
 
 char *mreplace(char *string, char *se,char *rep)
 {
-    	int    		status,m,i;
-	char		*s,noMatch=0;
+    	int    		status,i;
+	char		noMatch=0;
     	regex_t    	re;
 	size_t     	nmatch = 16;
 	regmatch_t 	pm[nmatch];
-	char		regError[64],*p;
+	char		*p;
 	ulong		offset = 0;
 	char		field[16];
-	char		*sData,*res;
+	char		*res;
 	memChunk	*search,*temp,*found,*ffound;
 
 	if(!string)        	return "";
@@ -92,7 +92,7 @@ char *mreplace(char *string, char *se,char *rep)
 
     	if(regcomp(&re, search->address, REG_EXTENDED) != 0) 
 		if(regcomp(&re, search->address, REG_EXTENDED<<1)) 	noMatch=1;
-    	if(status = regexec(&re, string, nmatch, pm, 0)) 		noMatch=1;
+    	if((status = regexec(&re, string, nmatch, pm, 0))) 		noMatch=1;
 
 	if(noMatch){
 		memFree(temp);
@@ -104,7 +104,7 @@ char *mreplace(char *string, char *se,char *rep)
 	ffound = memReserve(INPUTLINE_BUFFER_REPLACE_SIZE);
 	while(!status){
 		offset=strlen(temp->address)-strlen(string);
-		snprintf(found->address,INPUTLINE_BUFFER_REPLACE_SIZE,"%.*s",pm[0].rm_eo - pm[0].rm_so, &string[pm[0].rm_so],&string[pm[0].rm_so]);
+		snprintf(found->address,INPUTLINE_BUFFER_REPLACE_SIZE,"%.*s",pm[0].rm_eo - pm[0].rm_so, &string[pm[0].rm_so]);//,&string[pm[0].rm_so]);
 #if MDEBUG3
 		printf("------->> found \"%s\" length => %d offset[%d]\n",
 			found->address,
@@ -112,7 +112,7 @@ char *mreplace(char *string, char *se,char *rep)
 #endif
 		sreplace(temp->address+offset,found->address,rep,0,INPUTLINE_BUFFER_REPLACE_SIZE-offset);
 		for(i=1;i<nmatch;i++){
-			snprintf(ffound->address,INPUTLINE_BUFFER_REPLACE_SIZE,"%.*s",pm[i].rm_eo - pm[i].rm_so, &string[pm[i].rm_so],&string[pm[i].rm_so]);
+			snprintf(ffound->address,INPUTLINE_BUFFER_REPLACE_SIZE,"%.*s",pm[i].rm_eo - pm[i].rm_so, &string[pm[i].rm_so]);//,&string[pm[i].rm_so]);
 			snprintf(field,sizeof(field),"\\%d",i);
 			if(strlen(ffound->address)) {
 				sreplace(temp->address,field,ffound->address,1,INPUTLINE_BUFFER_REPLACE_SIZE);
@@ -147,11 +147,10 @@ char *mreplace(char *string, char *se,char *rep)
 }
 
 char *treplace(char *data,char *search,char *replace){
-	long offset=0,f;
 	char *newline,*p;
 
 	memChunk *result,*line;
-	ulong resultAllocSize;
+	//ulong resultAllocSize;
 
 	if(!strlen(search))  return data;
 

@@ -12,7 +12,7 @@ static int parse(struct r_parse_t *p, void *data, char *str)
 	return R_FALSE;
 }
 
-static struct r_parse_handle_t r_parse_plugin_parse_dummy = {
+struct r_parse_handle_t r_parse_plugin_dummy = {
 	.name = "parse_dummy",
 	.desc = "dummy parsing plugin",
 	.init = NULL,
@@ -20,7 +20,9 @@ static struct r_parse_handle_t r_parse_plugin_parse_dummy = {
 	.parse = &parse,
 };
 
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_parse_dummy
+	.data = &r_parse_plugin_dummy
 };
+#endif

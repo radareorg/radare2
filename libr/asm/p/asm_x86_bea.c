@@ -10,6 +10,8 @@
 
 #include "x86/bea/BeaEngine.h"
 
+#include "fastcall_x86.h"
+
 
 static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len)
 {
@@ -22,8 +24,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	disasm_obj.SecurityBlock = len;
 	if (a->syntax == R_ASM_SYN_ATT)
 		disasm_obj.Options = 0x400;
-	else
-		disasm_obj.Options = 0;
+	else disasm_obj.Options = 0;
 
 	aop->inst_len = Disasm(&disasm_obj);
 	aop->disasm_obj = &disasm_obj;
@@ -32,8 +33,6 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 
 	return aop->inst_len;
 }
-
-#include "fastcall_x86.h"
 
 struct r_asm_handle_t r_asm_plugin_x86_bea = {
 	.name = "asm_x86_bea",
@@ -44,7 +43,7 @@ struct r_asm_handle_t r_asm_plugin_x86_bea = {
 	.fini = NULL,
 	.disassemble = &disassemble,
 	.assemble = NULL,
-	.fastcall = &fastcall,
+	.fastcall = fastcall,
 };
 
 #ifndef CORELIB
