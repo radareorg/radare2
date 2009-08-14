@@ -33,5 +33,10 @@ public class AsmExample
 		} else {
 			stdout.printf("asm: %s\n", op.buf_hex);
 		}
+
+		stdout.printf("Enumerate fastcall arguments:\n");
+		for(int i=0;i<4;i++) {
+			stdout.printf(" - %s\n", st.fastcall(i, 4));
+		}
 	}
 }

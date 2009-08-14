@@ -12,6 +12,14 @@ OBJ=asm.o ${STATIC_OBJS}
 pre:
 	@if [ ! -e libr_asm.so ]; then rm -f ${STATIC_OBJS} ; fi
 
+re:
+	rm -f asm.o libr_asm.so
+	${MAKE}
+	rm -f t/fastcall.o
+	sudo ${MAKE} install
+	cd t && ${MAKE}
+	
+
 plugins:
 	cd p && ${MAKE} all
 

@@ -7,6 +7,8 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
+#include "fastcall_x86.h"
+
 #include "x86/udis86/types.h"
 #include "x86/udis86/extern.h"
 
@@ -39,7 +41,8 @@ struct r_asm_handle_t r_asm_plugin_x86 = {
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = NULL
+	.assemble = NULL,
+	.fastcall = &fastcall,
 };
 
 #ifndef CORELIB

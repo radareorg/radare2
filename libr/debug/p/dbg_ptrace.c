@@ -22,16 +22,14 @@ static int r_debug_ptrace_step(int pid)
 
 static int r_debug_ptrace_attach(int pid)
 {
-	ut32 addr;
-	ut32 data;
+	ut32 addr, data;
 	int ret = ptrace(PTRACE_ATTACH, pid, addr, data);
 	return (ret != -1)?R_TRUE:R_FALSE;
 }
 
 static int r_debug_ptrace_detach(int pid)
 {
-	ut32 addr;
-	ut32 data;
+	ut32 addr, data;
 	return ptrace(PTRACE_DETACH, pid, addr, data);
 }
 
@@ -131,7 +129,7 @@ static struct r_debug_handle_t r_dbg_plugin_ptrace = {
 #if __WORDSIZE == 64
 	.archs = { "x86-64", 0 },
 #else
-	.archs = { "x86", 0 },
+	.archs = { "x86", "x86-32", 0 },
 #endif
 	.step = &r_debug_ptrace_step,
 	.cont = &r_debug_ptrace_continue,

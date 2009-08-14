@@ -6,8 +6,6 @@
 
 R_API int r_print_init(struct r_print_t *p)
 {
-	if (p == NULL)
-		return R_FALSE;
 	/* read callback */
 	p->user = NULL;
 	p->read_at = NULL;
@@ -177,6 +175,7 @@ R_API void r_print_hexdump(struct r_print_t *p, ut64 addr, ut8 *buf, int len, in
 	int i,j,k,inc;
 	const char *fmt = "%02x";
 	const char *pre = "";
+
 	switch(base) {
 	case 8: fmt = "%03x"; pre = " "; break;
 	case 10: fmt = "%03d"; pre = " "; break;

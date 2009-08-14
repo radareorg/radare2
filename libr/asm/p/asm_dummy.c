@@ -20,7 +20,8 @@ struct r_asm_handle_t r_asm_plugin_dummy = {
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = NULL
+	.assemble = NULL,
+	.fastcall = NULL,
 };
 
 #ifndef CORELIB

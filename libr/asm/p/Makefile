@@ -11,6 +11,9 @@ include $(ARCHS)
 all: ${ALL_TARGETS}
 	@true
 
+a:
+	gcc -DTEST asm_x86_nasm.c `pkg-config --libs --cflags r_asm`
+
 clean:
 	-rm -f *.so *.o ${STATIC_OBJ}
 

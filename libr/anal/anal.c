@@ -12,9 +12,10 @@ R_API struct r_anal_t *r_anal_new()
 	return r;
 }
 
-R_API struct r_anal_t *r_anal_free(struct r_anal_t *r)
+R_API struct r_anal_t *r_anal_free(struct r_anal_t *a)
 {
-	free(r);
+	/* TODO: Free a->anals here */
+	free(a);
 	return NULL;
 }
 
@@ -67,6 +68,7 @@ R_API int r_anal_set(struct r_anal_t *anal, const char *name)
 R_API int r_anal_set_bits(struct r_anal_t *anal, int bits)
 {
 	switch (bits) {
+	case 8:
 	case 16:
 	case 32:
 	case 64:

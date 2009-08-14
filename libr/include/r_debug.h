@@ -28,7 +28,8 @@ struct r_debug_reg_t {
 	char name[R_DEBUG_REG_NAME_MAX];
 	union {
 		ut64 value;
-		double fvalue;
+		float fvalue;
+		double dvalue;
 	};
 	int isfloat;
 };
@@ -69,7 +70,7 @@ struct r_debug_t {
 	/* io */
 	void (*printf)(const char *str, ...);
 	int (*read)(void *user, int pid, ut64 addr, ut8 *buf, int len);
-	int (*write)(void *user, int pid, ut64 addr, ut8 *buf, int len);
+	int (*write)(void *user, int pid, ut64 addr, const ut8 *buf, int len);
 	struct r_debug_handle_t *h;
 	struct list_head handlers;
 	/* TODO
@@ -112,6 +113,7 @@ R_API int r_debug_kill(struct r_debug_t *dbg, int pid, int sig);
 R_API int r_debug_step(struct r_debug_t *dbg, int steps);
 R_API int r_debug_continue(struct r_debug_t *dbg);
 R_API int r_debug_select(struct r_debug_t *dbg, int pid, int tid);
+
 /* handle.c */
 R_API int r_debug_handle_init(struct r_debug_t *dbg);
 R_API int r_debug_handle_set(struct r_debug_t *dbg, const char *str);
@@ -133,10 +135,11 @@ R_API struct r_debug_regset_t *r_debug_reg_diff(struct r_debug_t *dbg);
 R_API int r_debug_reg_list(struct r_debug_t *dbg, struct r_debug_regset_t *rs, int rad);
 
 /* regset */
-R_API struct r_debug_regset_t *r_debug_regset_diff(struct r_debug_regset_t *a, struct r_debug_regset_t *b);
+R_API struct r_debug_regset_t* r_debug_regset_diff(struct r_debug_regset_t *a, struct r_debug_regset_t *b);
 R_API int r_debug_regset_set(struct r_debug_regset_t *r, int idx, const char *name, ut64 value);
 R_API struct r_debug_regset_t *r_debug_regset_new(int size);
 R_API void r_debug_regset_free(struct r_debug_regset_t *r);
+
 #if 0
 Missing callbacks
 =================

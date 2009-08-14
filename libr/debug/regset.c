@@ -38,5 +38,6 @@ R_API int r_debug_regset_set(struct r_debug_regset_t *r, int idx, const char *na
 R_API struct r_debug_regset_t *r_debug_regset_diff(struct r_debug_regset_t *a, struct r_debug_regset_t *b)
 {
 	if (a == NULL || b == NULL)
-		return 0;
+		return NULL;
+	return NULL;
 }

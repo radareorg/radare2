@@ -79,6 +79,24 @@ R_API void r_asm_free(struct r_asm_t *a)
 	free(a);
 }
 
+/* return fastcall register argument 'idx' for a syscall with 'num' args */
+R_API const char *r_asm_fastcall(struct r_asm_t *a, int idx, int num)
+{
+	struct r_asm_fastcall_t *fastcall;
+	const char *ret = NULL;
+	int i;
+	if (a && a->cur && a->cur->fastcall)
+		fastcall = *a->cur->fastcall;
+	if (fastcall && idx<=num)
+	for(i=0; 1; i++) {
+		if (i == num) {
+			ret = fastcall[i].arg[idx];
+			break;
+		}
+	}
+	return ret;
+}
+
 R_API int r_asm_init(struct r_asm_t *a)
 {
 	int i;

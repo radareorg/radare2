@@ -2,13 +2,16 @@
 #define _INCLUDE_R_SYSCALL_H_
 
 #include "r_types.h"
+#include "list.h"
 
 struct r_syscall_list_t {
 	const char *name;
 	int swi;
 	int num;
 	int args;
+	char *sargs;
 };
+
 
 // TODO: use this as arg to store state :)
 struct r_syscall_t {
@@ -36,17 +39,42 @@ enum {
 	R_SYSCALL_ARCH_SPARC
 };
 
-#define R_SYSCALL_CTX struct r_syscall_t 
-R_SYSCALL_CTX *r_syscall_new();
-void r_syscall_free(R_SYSCALL_CTX *ctx);
+//#define R_SYSCALL_CTX struct r_syscall_t 
+struct r_syscall_t *r_syscall_new();
+void r_syscall_free(struct r_syscall_t *ctx);
 void r_syscall_init(struct r_syscall_t *ctx);
 
-int r_syscall_setup(R_SYSCALL_CTX *ctx, int arch, int os);
-int r_syscall_setup_file(R_SYSCALL_CTX *ctx, const char *path);
-int r_syscall_get(R_SYSCALL_CTX *ctx, const char *str);
-struct r_syscall_list_t *r_syscall_get_n(R_SYSCALL_CTX *ctx, int n);
-const char *r_syscall_get_i(R_SYSCALL_CTX *ctx, int num, int swi);
-void r_syscall_list(R_SYSCALL_CTX *ctx);
+int r_syscall_setup(struct r_syscall_t *ctx, int arch, int os);
+int r_syscall_setup_file(struct r_syscall_t *ctx, const char *path);
+int r_syscall_get(struct r_syscall_t *ctx, const char *str);
+struct r_syscall_list_t *r_syscall_get_n(struct r_syscall_t *ctx, int n);
+const char *r_syscall_get_i(struct r_syscall_t *ctx, int num, int swi);
+void r_syscall_list(struct r_syscall_t *ctx);
+
+/* plugin struct */
+struct r_syscall_handle_t {
+	char *name;
+	char *arch;
+	char *os;
+	char *desc;
+	int bits;
+	int nargs;
+	struct r_syscall_args_t *args;
+	struct list_head list;
+};
+
+struct r_syscall_arch_handle_t {
+	char *name;
+	char *arch;
+	char *desc;
+	int *bits;
+	int nargs;
+	struct r_syscall_args_t **args;
+	struct list_head list;
+};
+
+/* plugin pointers */
+extern struct r_syscall_handle_t r_asm_plugin_dummy;
 
 #endif
 

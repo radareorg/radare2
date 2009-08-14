@@ -33,6 +33,8 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	return aop->inst_len;
 }
 
+#include "fastcall_x86.h"
+
 struct r_asm_handle_t r_asm_plugin_x86_bea = {
 	.name = "asm_x86_bea",
 	.desc = "X86 disassembly plugin (bea engine)",
@@ -41,7 +43,8 @@ struct r_asm_handle_t r_asm_plugin_x86_bea = {
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = NULL
+	.assemble = NULL,
+	.fastcall = &fastcall,
 };
 
 #ifndef CORELIB

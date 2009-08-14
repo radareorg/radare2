@@ -154,6 +154,10 @@ R_API int r_debug_continue(struct r_debug_t *dbg)
 
 R_API int r_debug_continue_until(struct r_debug_t *dbg, ut64 addr)
 {
+	//struct r_debug_bp_t *bp = r_debug_bp_add (dbg, addr);
+	//int ret = r_debug_continue(dbg);
+	/* TODO: check if the debugger stops at the right address */
+	//r_debug_bp_del(dbg, bp);
 	return -1;
 }
 

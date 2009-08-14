@@ -5,7 +5,6 @@
 #if 0
 Configurable options:
  - allow dupped nodes? (two times the same pointer?)
- - allow more than one node with the same key?
 #endif
 
 R_API void r_db_init(struct r_db_t *db)
@@ -79,7 +78,7 @@ static int _r_db_add_internal(struct r_db_t *db, int key, void *b)
 			block->data[len+1] = NULL;
 		}
 	}
-	return (block!=NULL);
+	return (block != NULL);
 }
 
 R_API int r_db_add(struct r_db_t *db, void *b)

@@ -8,7 +8,7 @@
 
 <{include libr/TODO}>
 
-* Add R_TRUFAE -> correct result, but with warnings (implement r_errno and r_errstr in r_util?)
+* correct result (R_TRUFAE), but with warnings (implement r_errno and r_errstr in r_util?)
   - Quantic computation ftw \o/
 * Add r_th for threading help for w32/osx/linux/bsd/... .. use gthread? :P
   - provide simple IPC comunication
@@ -18,7 +18,7 @@
   - commands can be listed like in a tree
 * 'Vc' cursor mode makes color toggle
 
-* Finish and import the spp's getopt owns implementation in r_util
+* Finish and import the spp's getopt owns implementation in r_util (like in p9)
 
 * Add maxrows option for r_print (fix visual problem)
 * Drop #if conditionals to use #ifdef ones

@@ -47,6 +47,8 @@ enum {
 	R_LIB_TYPE_BIN,     /* bins */
 	R_LIB_TYPE_BININFO, /* bin info */
 	R_LIB_TYPE_BP,      /* breakpoint info */
+	R_LIB_TYPE_SYSCALL, /* breakpoint info */
+	R_LIB_TYPE_FASTCALL, /* breakpoint info */
 	R_LIB_TYPE_LAST
 };
 
