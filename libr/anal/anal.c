@@ -100,6 +100,7 @@ int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 
 struct r_anal_fcn_t *r_anal_funcions_get(struct r_anal_t *anal, ut8 *buf, ut64 len)
 {
+	return NULL;
 }
 
 struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, ut8 *buf, ut64 len, int nlines, int linesout)
@@ -134,10 +135,7 @@ struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, ut8 *buf, ut
 
 		anal->pc += sz;
 		sz = r_anal_aop(anal, &aop, ptr);
-
-		if (sz < 1) {
-			sz = 1;
-		} else {
+		if (sz > 0) {
 			/* store data */
 			switch(aop.type) {
 			case R_ANAL_AOP_TYPE_CALL:
@@ -154,7 +152,7 @@ struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, ut8 *buf, ut
 				list_add_tail(&(list2->list), &(list->list));
 				break;
 			}
-		}
+		} else sz = 1;
 	__next:
 		ptr = ptr + sz;
 	}
@@ -164,7 +162,7 @@ struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, ut8 *buf, ut
 	return list;
 }
 
-int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, char *str, int opts)
+R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, char *str, int opts)
 {
 	struct list_head *pos;
 	int dir = 0;

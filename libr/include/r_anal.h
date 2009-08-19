@@ -53,6 +53,16 @@ enum {
 	R_ANAL_AOP_TYPE_LAST
 };
 
+/* TODO: what to do with signed/unsigned conditionals? */
+enum {
+	R_ANAL_AOP_COND_EQ,
+	R_ANAL_AOP_COND_NE,
+	R_ANAL_AOP_COND_GE,
+	R_ANAL_AOP_COND_GT,
+	R_ANAL_AOP_COND_LE,
+	R_ANAL_AOP_COND_LT,
+};
+
 enum {
 	R_ANAL_DATA_NULL = 0,
 	R_ANAL_DATA_HEX,      /* hex byte pairs */
@@ -96,6 +106,7 @@ struct r_anal_refline_t {
 struct r_anal_aop_t {
 	int type;                 /* type of opcode */
 	int stackop;              /* operation on stack? */
+	int cond;                 /* condition type */
 	int length;               /* length in bytes of opcode */
 	int family;               /* family of opcode */
 	int eob;                  /* end of block (boolean) */
