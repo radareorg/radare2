@@ -58,8 +58,8 @@ R_API void **r_iter_first(void **it)
 
 R_API void r_iter_foreach(void *it, int (*callback)(void *, void *), void *user)
 {
-	for(; r_iter_current(it); it = r_iter_next(it))
-		callback (r_iter_current(it), user);
+	for(; r_iter_get(it); it = r_iter_next(it))
+		callback (r_iter_get(it), user);
 }
 
 R_API void *r_iter_free(void *ptr)
