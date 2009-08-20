@@ -73,8 +73,4 @@ struct r_syscall_arch_handle_t {
 	struct list_head list;
 };
 
-/* plugin pointers */
-extern struct r_syscall_handle_t r_asm_plugin_dummy;
-
 #endif
-

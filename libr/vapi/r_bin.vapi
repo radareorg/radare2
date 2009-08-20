@@ -8,12 +8,13 @@ namespace Radare {
 		public const string file;
 		public int fd;
 
-		public Bin(string file, int rw);
+		public Bin();
+		public bool open(string file, bool rw, string? plugin_name = null);
 
 		public int init(string file, int rw);
 		public int close();
 		public uint64 get_baddr();
-		public Entry* get_entry();
+		public Entrypoint* get_entry();
 		public Section* get_sections();
 		public Symbol* get_symbols();
 		public Import* get_imports();
@@ -22,60 +23,60 @@ namespace Radare {
 		public uint64 get_section_rva(string name);
 		public uint32 get_section_size(string name);
 		public uint64 resize_section(string name, uint64 size);
-	}
 	
-	[CCode (cname="struct r_bin_entry_t")]
-	public struct Entry {
-		public uint64 rva;
-		public uint64 offset;
-	}
+		[CCode (cname="struct r_bin_entry_t")]
+		public struct Entrypoint {
+			public uint64 rva;
+			public uint64 offset;
+		}
 
-	[CCode (cname="struct r_bin_section_t")]
-	public struct Section {
-		public string name;
-		public int32 size;
-		public int32 vsize;
-		public int64 rva;
-		public int64 offset;
-		public int32 stringacteristics;
-		public bool last;
-	}
+		[CCode (cname="struct r_bin_section_t")]
+		public struct Section {
+			public string name;
+			public int32 size;
+			public int32 vsize;
+			public int64 rva;
+			public int64 offset;
+			public int32 stringacteristics;
+			public bool last;
+		}
 
-	[CCode (cname="struct r_bin_symbol_t")]
-	public struct Symbol {
-		public string name;
-		public string forwarder;
-		public string bind;
-		public string type;
-		public uint64 rva;
-		public uint64 offset;
-		public uint32 size;
-		public uint32 ordinal;
-		public bool last;
-	}
+		[CCode (cname="struct r_bin_symbol_t")]
+		public struct Symbol {
+			public string name;
+			public string forwarder;
+			public string bind;
+			public string type;
+			public uint64 rva;
+			public uint64 offset;
+			public uint32 size;
+			public uint32 ordinal;
+			public bool last;
+		}
 
-	[CCode (cname="r_bin_import")]
-	public struct Import {
-		public string name;
-		public string bind;
-		public string type;
-		public uint64 rva;
-		public uint64 offset;
-		public uint32 ordinal;
-		public uint32 hint;
-		public bool last;
-	}
+		[CCode (cname="struct r_bin_import_t")]
+		public struct Import {
+			public string name;
+			public string bind;
+			public string type;
+			public uint64 rva;
+			public uint64 offset;
+			public uint32 ordinal;
+			public uint32 hint;
+			public bool last;
+		}
 
-	[CCode (cname="r_bin_info")]
-	public struct Info {
-		public string type;
-		public string @class;
-		public string rclass;
-		public string arch;
-		public string machine;
-		public string os;
-		public string subsystem;
-		public int bigendian;
-		public uint32 dbg_info;
+		[CCode (cname="struct r_bin_info_t")]
+		public struct Info {
+			public string type;
+			public string @class;
+			public string rclass;
+			public string arch;
+			public string machine;
+			public string os;
+			public string subsystem;
+			public int bigendian;
+			public uint32 dbg_info;
+		}
 	}
 }
