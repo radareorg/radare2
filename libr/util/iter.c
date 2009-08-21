@@ -1,4 +1,5 @@
 /* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+
 #include "r_util.h"
 
 R_API void **r_iter_new(int n)
@@ -30,7 +31,7 @@ R_API void **r_iter_next_n(void **ptr, int idx)
 
 R_API void **r_iter_prev(void **it)
 {
-	return (--it==*it)?NULL:it;
+	return --it, (it==*it)?NULL:it;
 }
 
 R_API void r_iter_delete(void **it)
@@ -56,16 +57,17 @@ R_API void **r_iter_first(void **it)
 	return p;
 }
 
-R_API void r_iter_foreach(void *it, int (*callback)(void *, void *), void *user)
+R_API void r_iter_foreach(void **it, int (*callback)(void *, void *), void *user)
 {
 	for(; r_iter_get(it); it = r_iter_next(it))
 		callback (r_iter_get(it), user);
 }
 
-R_API void *r_iter_free(void *ptr)
+R_API void **r_iter_free(void *ptr)
 {
 	void **p = r_iter_first(ptr);
 	if (p) free (p-1);
+	return NULL;
 }
 
 #if TEST

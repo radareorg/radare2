@@ -4,6 +4,7 @@
 #include "r_types.h"
 #include <btree.h>
 #include "list.h"
+#include "iter.h"
 
 /* r_cache */
 // TOTHINK: move into a separated library?
@@ -58,7 +59,7 @@ R_API void r_num_init(struct r_num_t *num);
 
 /* strings */
 
-#define offsetof(type, member) ((unsigned long) &((type*)0)->member)
+#define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
 
 /* TODO ..use as uppercase maybe? they are macros! */
 #define strnull(x) (!x||!*x)

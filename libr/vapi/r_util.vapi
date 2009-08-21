@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009 pancake<@nopcode.org> */
 
 [CCode (cheader_filename="r_util.h", cprefix="r_util_", lower_case_cprefix="r_util_")]
 namespace Radare {
@@ -17,5 +17,21 @@ namespace Radare {
 		public static uint64 num_get(void *num, string str); // XXX void *
 		//public static int offsetof(void *type, void *member);
 	}
-}
 
+	/* Generic Iterator interfaced with r_iter */
+	//[Compact]
+	[CCode (cprefix="r_iter_")]
+	public class Iter<G> {
+		public Iter (int size);
+		public unowned G get ();
+		public unowned G next ();
+		public unowned G next_n (int idx);
+		public unowned G prev ();
+		public void delete ();
+		public G first ();
+		public bool last ();
+		// TODO: foreach()
+		public G free ();
+		public void set (int idx, G data);
+	}
+}
