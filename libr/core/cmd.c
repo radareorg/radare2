@@ -1741,7 +1741,7 @@ R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd)
 		retstr = strdup("");
 	} else {
 		const char *static_str = r_cons_get_buffer();
-		if (retstr==NULL)
+		if (retstr==NULL || static_str==NULL)
 			retstr = strdup("");
 		else retstr = strdup(static_str);
 		r_cons_reset();

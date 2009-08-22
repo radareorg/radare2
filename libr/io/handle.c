@@ -10,16 +10,8 @@
 static struct r_io_handle_t *io_static_plugins[] = 
 	{ R_IO_STATIC_PLUGINS };
 
-int r_io_handle_init(struct r_io_t *io)
-{
-	int i;
-	INIT_LIST_HEAD(&io->io_list);
-	for(i=0;io_static_plugins[i];i++)
-		r_io_handle_add (io, io_static_plugins[i]);
-	return R_TRUE;
-}
 
-int r_io_handle_add(struct r_io_t *io, struct r_io_handle_t *plugin)
+R_API int r_io_handle_add(struct r_io_t *io, struct r_io_handle_t *plugin)
 {
 	int i;
 	struct r_io_list_t *li;
@@ -35,7 +27,16 @@ int r_io_handle_add(struct r_io_t *io, struct r_io_handle_t *plugin)
 	return R_TRUE;
 }
 
-struct r_io_handle_t *r_io_handle_resolve(struct r_io_t *io, const char *filename)
+R_API int r_io_handle_init(struct r_io_t *io)
+{
+	int i;
+	INIT_LIST_HEAD(&io->io_list);
+	for(i=0;io_static_plugins[i];i++)
+		r_io_handle_add (io, io_static_plugins[i]);
+	return R_TRUE;
+}
+
+R_API struct r_io_handle_t *r_io_handle_resolve(struct r_io_t *io, const char *filename)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &io->io_list) {
@@ -50,7 +51,7 @@ struct r_io_handle_t *r_io_handle_resolve(struct r_io_t *io, const char *filenam
 	return NULL;
 }
 
-struct r_io_handle_t *r_io_handle_resolve_fd(struct r_io_t *io, int fd)
+R_API struct r_io_handle_t *r_io_handle_resolve_fd(struct r_io_t *io, int fd)
 {
 	int i;
 	struct list_head *pos;
@@ -64,13 +65,13 @@ struct r_io_handle_t *r_io_handle_resolve_fd(struct r_io_t *io, int fd)
 	return NULL;
 }
 
-int r_io_handle_generate(struct r_io_t *io)
+R_API int r_io_handle_generate(struct r_io_t *io)
 {
 	// TODO: ensure srand here (( implement in r_util a decent random helper
 	return (rand()%666)+1024;
 }
 
-int r_io_handle_open(struct r_io_t *io, int fd, struct r_io_handle_t *plugin)
+R_API int r_io_handle_open(struct r_io_t *io, int fd, struct r_io_handle_t *plugin)
 {
 	int i=0;
 	struct list_head *pos;
@@ -89,7 +90,7 @@ int r_io_handle_open(struct r_io_t *io, int fd, struct r_io_handle_t *plugin)
 	return -1;
 }
 
-int r_io_handle_close(struct r_io_t *io, int fd, struct r_io_handle_t *plugin)
+R_API int r_io_handle_close(struct r_io_t *io, int fd, struct r_io_handle_t *plugin)
 {
 	int i=0;
 	struct list_head *pos;
@@ -108,7 +109,7 @@ int r_io_handle_close(struct r_io_t *io, int fd, struct r_io_handle_t *plugin)
 	return -1;
 }
 
-int r_io_handle_list(struct r_io_t *io)
+R_API int r_io_handle_list(struct r_io_t *io)
 {
 	int n = 0;
 	struct list_head *pos;

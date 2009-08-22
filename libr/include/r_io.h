@@ -150,7 +150,7 @@ R_API ut64 r_io_section_align(struct r_io_t *io, ut64 addr, ut64 vaddr, ut64 pad
 R_API int r_io_hook(struct r_io_t *io, CB_IO);
 #endif
 /* plugins */
-struct r_io_handle_t r_io_plugin_dbg;
-struct r_io_handle_t r_io_plugin_ptrace;
+extern struct r_io_handle_t r_io_plugin_dbg;
+extern struct r_io_handle_t r_io_plugin_ptrace;
 
 #endif

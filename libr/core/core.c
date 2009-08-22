@@ -89,7 +89,7 @@ static int myfgets(char *buf, int len)
 		return -1;
 	strncpy(buf, ptr, len);
 	//free(ptr);
-	return strlen(buf);
+	return strlen(buf)+1;
 }
 /*-----------------------------------*/
 

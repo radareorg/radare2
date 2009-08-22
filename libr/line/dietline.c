@@ -384,7 +384,7 @@ R_API char *r_line_readline(int argc, const char **argv)
 		r_line_buffer[0]='\0';
 		fgets(r_line_buffer, R_LINE_BUFSIZE-1, stdin);
 		r_line_buffer[strlen(r_line_buffer)] = '\0';
-		return (*r_line_buffer)? r_line_buffer : NULL;
+		return (*r_line_buffer)? r_line_buffer : r_line_nullstr;
 	}
 
 	memset(&buf,0,sizeof buf);
@@ -426,10 +426,9 @@ R_API char *r_line_readline(int argc, const char **argv)
 		if (r_line_echo)
 		printf("\r%*c\r", columns, ' ');
 
-
 		switch(buf[0]) {
-		case -1:
-			return NULL;
+//		case -1:
+//			return NULL;
 		case 0: // control-space
 			/* ignore atm */
 			break;
@@ -654,5 +653,7 @@ _end:
 		r_line_hist_list();
 		return r_line_nullstr;
 	}
+	if (r_line_buffer == NULL)
+		return r_line_nullstr;
 	return r_line_buffer;
 }

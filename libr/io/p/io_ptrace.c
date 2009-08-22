@@ -268,4 +268,3 @@ struct r_lib_struct_t radare_plugin = {
 #endif
 
 #endif
-
