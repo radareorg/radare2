@@ -15,6 +15,13 @@ int r_io_init(struct r_io_t *io)
 	return 0;
 }
 
+struct r_io_t *r_io_new()
+{
+	struct r_io_t *io = MALLOC_STRUCT(struct r_io_t);
+	r_io_init(io);
+	return io;
+}
+
 int r_io_redirect(struct r_io_t *io, const char *file)
 {
 	free(io->redirect);
@@ -26,10 +33,7 @@ int r_io_open(struct r_io_t *io, const char *file, int flags, int mode)
 {
 	const char *uri = strdup(file);
 	struct r_io_handle_t *plugin;
-	if (io == NULL) {
-		fprintf(stderr,
-			"WARNING: Using uninitialized r_io\n");
-	} else {
+	if (io != NULL) {
 		do {
 			plugin = r_io_handle_resolve(io, uri);
 			if (plugin) {
@@ -47,7 +51,7 @@ int r_io_open(struct r_io_t *io, const char *file, int flags, int mode)
 			}
 			break;
 		} while(1);
-	}
+	} else fprintf(stderr, "WARNING: Using uninitialized r_io\n");
 	return open(file, flags, mode);
 }
 

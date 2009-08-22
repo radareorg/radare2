@@ -39,4 +39,8 @@
 	&r_bp_plugin_x86, \
 	0
 
+#define R_DEBUG_STATIC_PLUGINS \
+	&r_debug_plugin_ptrace, \
+	0
+
 #endif

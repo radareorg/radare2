@@ -22,21 +22,23 @@ static int r_debug_ptrace_step(int pid)
 
 static int r_debug_ptrace_attach(int pid)
 {
-	ut32 addr, data;
+	void *addr = 0;
+	void *data = 0;
 	int ret = ptrace(PTRACE_ATTACH, pid, addr, data);
 	return (ret != -1)?R_TRUE:R_FALSE;
 }
 
 static int r_debug_ptrace_detach(int pid)
 {
-	ut32 addr, data;
+	void *addr = 0;
+	void *data = 0;
 	return ptrace(PTRACE_DETACH, pid, addr, data);
 }
 
 static int r_debug_ptrace_continue(int pid)
 {
-	ut32 addr;
-	ut32 data;
+	void *addr = 0;
+	void *data = 0;
 	return ptrace(PTRACE_CONT, pid, addr, data);
 }
 
@@ -51,7 +53,7 @@ static int r_debug_ptrace_wait(int pid)
 
 struct r_debug_regset_t * r_debug_ptrace_reg_read(int pid)
 {
-	struct r_debug_regset *r = NULL;
+	struct r_debug_regset_t *r = NULL;
 #if __linux__
 #include <sys/user.h>
 #include <limits.h>
@@ -98,6 +100,7 @@ struct r_debug_regset_t * r_debug_ptrace_reg_read(int pid)
 static int r_debug_ptrace_reg_write(int pid, struct r_debug_regset_t *regs)
 {
 	/* TODO */
+	return 0;
 }
 
 static int r_debug_ptrace_bp_write(int pid, ut64 addr, int size, int hw, int rwx)
@@ -124,8 +127,8 @@ static int r_debug_ptrace_import(struct r_debug_handle_t *from)
 }
 #endif
 
-static struct r_debug_handle_t r_dbg_plugin_ptrace = {
-	.name = "ptrace",
+struct r_debug_handle_t r_debug_plugin_ptrace = {
+	.name = "dbg_ptrace",
 #if __WORDSIZE == 64
 	.archs = { "x86-64", 0 },
 #else
@@ -142,9 +145,11 @@ static struct r_debug_handle_t r_dbg_plugin_ptrace = {
 	//.bp_read = &r_debug_ptrace_bp_read,
 };
 
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
-	.data = &r_dbg_plugin_ptrace
+	.data = &r_debug_plugin_ptrace
 };
+#endif
 
 #endif

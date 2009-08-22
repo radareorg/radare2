@@ -14,6 +14,7 @@ STATIC_PARSE_PLUGINS=p/dummy.mk p/x86_pseudo.mk p/mreplace.mk
 STATIC_BIN_PLUGINS=p/elf.mk p/elf64.mk p/pe.mk p/pe64.mk p/java.mk p/dummy.mk
 STATIC_BP_PLUGINS=p/x86.mk
 STATIC_BININFO_PLUGINS=p/addr2line.mk
+STATIC_DEBUG_PLUGINS=p/ptrace.mk
 
 ifneq (${BINDEPS},)
 include ../../../config-user.mk

@@ -1,12 +1,18 @@
-CFLAGS=-I../../include -Wall
-BINDEPS=
+CFLAGS=-I../../include -Wall -fPIC -shared -Wl,-R..
 
-all: dbg_ptrace.so
+foo: all
+
+ALL_TARGETS=
+DEBUGS=ptrace.mk gdb.mk
+include $(DEBUGS)
+
+all: pre ${ALL_TARGETS}
 	@true
 
-dbg_ptrace.so: dbg_ptrace.o
-	${CC} ${CFLAGS} -fPIC -shared -o dbg_ptrace.so dbg_ptrace.c
-	#strip -s ptrace.so
+pre:
+	cd dbg_libgdbwrap && ${MAKE}
 
 clean:
-	-rm -f *.so *.o
+	-rm -f *.so *.o ${STATIC_OBJ}
+
+.PHONY: all clean

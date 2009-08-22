@@ -79,6 +79,7 @@ struct r_io_list_t {
 };
 
 /* io/handle.c */
+struct r_io_t *r_io_new();
 int r_io_handle_init(struct r_io_t *io);
 int r_io_handle_open(struct r_io_t *io, int fd, struct r_io_handle_t *plugin);
 int r_io_handle_close(struct r_io_t *io, int fd, struct r_io_handle_t *plugin);

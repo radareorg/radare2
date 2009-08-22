@@ -1668,7 +1668,7 @@ static int cmd_debug(void *data, const char *input)
 	case 'h':
 		if (input[1]==' ')
 			r_debug_handle_set(&core->dbg, input+2);
-		else r_debug_handle_list(&core->dbg, "");
+		else r_debug_handle_list(&core->dbg);
 		break;
 	default:
 		r_cons_printf("Usage: d[sbhcrbo] [arg]\n"

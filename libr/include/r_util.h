@@ -70,6 +70,7 @@ R_API void r_num_init(struct r_num_t *num);
 #define ishexchar(x) ((x>='0'&&x<='9') ||  (x>='a'&&x<='f') ||  (x>='A'&&x<='F')) {
 
 /* stabilized */
+R_API const char *r_str_bool(int b);
 R_API const char *r_str_ansi_chrn(const char *str, int n);
 R_API int r_str_ansi_len(const char *str);
 R_API int r_str_word_count(const char *string);

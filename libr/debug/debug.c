@@ -49,11 +49,14 @@ R_API int r_debug_attach(struct r_debug_t *dbg, int pid)
 
 R_API int r_debug_startv(struct r_debug_t *dbg, int argc, char **argv)
 {
+	if (dbg->h && dbg->h->startv)
+		return dbg->h->startv(pid);
 	return R_FALSE;
 }
 
 R_API int r_debug_start(struct r_debug_t *dbg, const char *cmd)
 {
+	// TODO: parse cmd and generate argc and argv
 	return R_FALSE;
 }
 

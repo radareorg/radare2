@@ -1,9 +1,9 @@
 NAME=r_asm
 DEPS=r_lib r_util
+CFLAGS+=-DCORELIB -Iarch/include -Iarch
 
 foo: pre libr_asm.so plugins
 
-CFLAGS+=-DCORELIB -Iarch/include -Iarch
 include ../config.mk
 include ${STATIC_ASM_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst asm_,p/asm_,$(STATIC_OBJ)))
@@ -18,7 +18,6 @@ re:
 	rm -f t/fastcall.o
 	sudo ${MAKE} install
 	cd t && ${MAKE}
-	
 
 plugins:
 	cd p && ${MAKE} all

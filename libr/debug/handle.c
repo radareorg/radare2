@@ -1,11 +1,17 @@
 /* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
 
 #include <r_debug.h>
+#include "../config.h"
 
-/* XXX move to debug_init() ?? */
+static struct r_debug_handle_t *debug_static_plugins[] = 
+	{ R_DEBUG_STATIC_PLUGINS };
+
 int r_debug_handle_init(struct r_debug_t *dbg)
 {
+	int i;
 	INIT_LIST_HEAD(&dbg->handlers);
+	for(i=0;debug_static_plugins[i];i++)
+		r_debug_handle_add (dbg, debug_static_plugins[i]);
 	return R_TRUE;
 }
 
@@ -22,7 +28,7 @@ int r_debug_handle_set(struct r_debug_t *dbg, const char *str)
 	return R_FALSE;
 }
 
-int r_debug_handle_list(struct r_debug_t *dbg, const char *str)
+int r_debug_handle_list(struct r_debug_t *dbg)
 {
 	int count = 0;
 	struct list_head *pos;

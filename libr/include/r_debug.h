@@ -43,6 +43,7 @@ struct r_debug_regset_t {
 struct r_debug_handle_t {
 	const char *name;
 	const char **archs;
+	int (*startv)(int argc, char **argv);
 	int (*attach)(int pid);
 	int (*detach)(int pid);
 	int (*step)(int pid); // if step() is NULL; reimplement it with traps
@@ -117,7 +118,7 @@ R_API int r_debug_select(struct r_debug_t *dbg, int pid, int tid);
 /* handle.c */
 R_API int r_debug_handle_init(struct r_debug_t *dbg);
 R_API int r_debug_handle_set(struct r_debug_t *dbg, const char *str);
-R_API int r_debug_handle_list(struct r_debug_t *dbg, const char *str);
+R_API int r_debug_handle_list(struct r_debug_t *dbg);
 R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
 
 /* breakpoints */
@@ -153,5 +154,9 @@ Missing callbacks
  - get regs, set regs
 
 #endif
+
+/* plugin pointers */
+extern struct r_debug_handle_t r_debug_plugin_ptrace;
+extern struct r_debug_handle_t r_debug_plugin_gdb;
 
 #endif

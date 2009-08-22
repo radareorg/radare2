@@ -19,6 +19,12 @@ static int hex2int (unsigned char *val, unsigned char c)
 	return 0;
 }
 
+R_API const char *r_str_bool(int b)
+{
+	if (b) return "true";
+	return "false";
+}
+
 /* TODO: port to w32 and move outside r_str namespace? */
 R_API char *r_str_home(const char *str)
 {

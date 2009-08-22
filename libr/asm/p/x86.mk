@@ -14,6 +14,5 @@ TARGET_X86=asm_x86.so
 
 ALL_TARGETS+=${TARGET_X86}
 
-asm_x86.so: ${OBJ_X86}
-	${CC} ${CFLAGS} -o asm_x86.so ${OBJ_X86}
-	@#strip -s asm_x86.so
+${TARGET_X86}: ${OBJ_X86}
+	${CC} ${CFLAGS} -o ${TARGET_X86} ${OBJ_X86}

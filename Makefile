@@ -41,6 +41,7 @@ shot:
 	tar czvf radare2-$${DATE}.tar.gz $${FILES} ;\
 	mv radare2-$${DATE} radare2 && \
 	scp radare2-$${DATE}.tar.gz news.nopcode.org:/home/www/radarenopcode/get/shot
-	
+
+include ${MKPLUGINS}
 
 .PHONY: all clean mrproper install uninstall deinstall dist shot pkgcfg

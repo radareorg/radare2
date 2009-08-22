@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
 
+#if DEBUGGER
+
 #include <r_debug.h>
 #include <r_lib.h>
 #include "libgdbwrap/include/gdbwrapper.h"
@@ -47,8 +49,8 @@ static int r_debug_ptrace_wait(int pid)
 	/* do nothing */
 }
 
-static struct r_debug_handle_t r_dbg_plugin_gdb = {
-	.name = "gdb",
+struct r_debug_handle_t r_dbg_plugin_gdb = {
+	.name = "dbg_gdb",
 	.archs = { "x86", 0 }, //"x86-64", "arm", "powerpc", 0 },
 	.step = &r_debug_gdb_step,
 	.cont = &r_debug_gdb_continue,
@@ -61,7 +63,11 @@ static struct r_debug_handle_t r_dbg_plugin_gdb = {
 	//.bp_read = &r_debug_gdb_bp_read,
 };
 
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
-	.data = &r_dbg_plugin_gdb
+	.data = &r_debug_plugin_gdb
 };
+#endif
+
+#endif

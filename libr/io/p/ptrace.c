@@ -16,8 +16,9 @@
 
 #undef R_IO_NFDS
 #define R_IO_NFDS 2
-int fds[3];
-int nfds = 0;
+extern int errno;
+static int fds[3];
+static int nfds = 0;
 
 static int __waitpid(int pid)
 {
@@ -29,41 +30,32 @@ static int __waitpid(int pid)
 
 #define debug_read_raw(x,y) ptrace(PTRACE_PEEKTEXT, x, y, 0)
 
+// FIX: the goto 'err' is buggy
 static int debug_os_read_at(int pid, void *buff, int sz, ut64 addr)
 {
         unsigned long words = sz / sizeof(long) ;
         unsigned long last = sz % sizeof(long) ;
-        long x, lr ;
-        int ret ;
+        long x, lr;
 
-        if (sz<0)
+        if (sz<0 || addr==-1)
                 return -1; 
-
-        if (addr==-1)
-                return 0;
 
         for(x=0;x<words;x++) {
                 ((long *)buff)[x] = debug_read_raw(pid, (void *)(&((long*)(long )addr)[x]));
-
                 if (((long *)buff)[x] == -1) // && errno)
                         goto err;
         }
 
         if (last) {
-                //lr = ptrace(PTRACE_PEEKTEXT,pid,&((long *)addr)[x],0) ;
                 lr = debug_read_raw(pid, &((long*)(long)addr)[x]);
-
                 if (lr == -1) // && errno)
                         goto err;
-
-                memcpy(&((long *)buff)[x],&lr,last) ;
+                memcpy(&((long *)buff)[x], &lr, last) ;
         }
 
         return sz; 
 err:
-        ret = --x * sizeof(long);
-
-        return ret ;
+        return --x * sizeof(long);
 }
 
 static int __read(struct r_io_t *io, int pid, ut8 *buf, int len)
@@ -121,25 +113,15 @@ static int ptrace_write_at(int pid, const ut8 *buff, int sz, ut64 addr)
                 goto err;
 	}
 
-	return sz ;
+	return sz;
 
         err:
-                return --x * sizeof(long) ;
-
-        //return ret ;
+	return --x * sizeof(long) ;
 }
 
 static int __write(struct r_io_t *io, int pid, const ut8 *buf, int len)
 {
 	return ptrace_write_at(pid, buf, len, io->seek);
-	//int ret;
-	//ut64 addr = r_io_seek;
-	//ret = debug_os_write_at(pid, buf, len, addr);
-//printf("READ(0x%08llx)\n", addr);
-	//if (ret == -1)
-	//	return -1;
-
-	return len;
 }
 
 static int __handle_open(struct r_io_t *io, const char *file)
@@ -150,8 +132,6 @@ static int __handle_open(struct r_io_t *io, const char *file)
 		return R_TRUE;
 	return R_FALSE;
 }
-
-//extern int errno;
 
 static int __open(struct r_io_t *io, const char *file, int rw, int mode)
 {
@@ -253,7 +233,8 @@ static int __init(struct r_io_t *io)
 	return R_TRUE;
 }
 
-static struct r_io_handle_t r_io_plugin_ptrace = {
+// TODO: rename ptrace to io_ptrace .. err io.ptrace ??
+struct r_io_handle_t r_io_plugin_ptrace = {
         //void *handle;
 	.name = "ptrace",
         .desc = "ptrace io",
@@ -274,10 +255,13 @@ static struct r_io_handle_t r_io_plugin_ptrace = {
 */
 };
 
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_ptrace
 };
 #endif
+#endif
 
 #endif
+
