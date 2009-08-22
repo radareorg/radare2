@@ -3,28 +3,36 @@
 /* TODO: write li->fds setter/getter helpers */
 
 #include "r_io.h"
+#include "../config.h"
 #include "list.h"
 #include <stdio.h>
 
+static struct r_io_handle_t *io_static_plugins[] = 
+	{ R_IO_STATIC_PLUGINS };
+
 int r_io_handle_init(struct r_io_t *io)
 {
+	int i;
 	INIT_LIST_HEAD(&io->io_list);
-	/* load default IO plugins here */
-	return 0;
+	for(i=0;io_static_plugins[i];i++)
+		r_io_handle_add (io, io_static_plugins[i]);
+	return R_TRUE;
 }
 
 int r_io_handle_add(struct r_io_t *io, struct r_io_handle_t *plugin)
 {
 	int i;
 	struct r_io_list_t *li;
+	if (plugin == NULL)
+		return R_FALSE;
 	li = MALLOC_STRUCT(struct r_io_list_t);
 	if (li == NULL)
-		return -1;
+		return R_FALSE;
 	li->plugin = plugin;
 	for(i=0;i<R_IO_NFDS;i++)
 		li->plugin->fds[i] = -1;
 	list_add_tail(&(li->list), &(io->io_list));
-	return 0;
+	return R_TRUE;
 }
 
 struct r_io_handle_t *r_io_handle_resolve(struct r_io_t *io, const char *filename)

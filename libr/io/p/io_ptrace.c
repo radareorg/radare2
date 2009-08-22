@@ -236,7 +236,7 @@ static int __init(struct r_io_t *io)
 // TODO: rename ptrace to io_ptrace .. err io.ptrace ??
 struct r_io_handle_t r_io_plugin_ptrace = {
         //void *handle;
-	.name = "ptrace",
+	.name = "io_ptrace",
         .desc = "ptrace io",
         .open = __open,
         .close = __close,

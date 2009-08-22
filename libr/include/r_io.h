@@ -80,6 +80,7 @@ struct r_io_list_t {
 
 /* io/handle.c */
 struct r_io_t *r_io_new();
+R_API struct r_io_t *r_io_free(struct r_io_t *io);
 int r_io_handle_init(struct r_io_t *io);
 int r_io_handle_open(struct r_io_t *io, int fd, struct r_io_handle_t *plugin);
 int r_io_handle_close(struct r_io_t *io, int fd, struct r_io_handle_t *plugin);
@@ -139,5 +140,15 @@ struct r_io_section_t * r_io_section_get_i(struct r_io_t *io, int idx);
 void r_io_section_init(struct r_io_t *io);
 int r_io_section_overlaps(struct r_io_t *io, struct r_io_section_t *s);
 ut64 r_io_section_align(struct r_io_t *io, ut64 addr, ut64 vaddr, ut64 paddr);
+
+#if 0
+#define CB_READ int (*cb_read)(struct r_io_t *user, int pid, ut64 addr, ut8 *buf, int len)
+#define CB_WRITE int (*cb_write)(struct r_io_t *user, int pid, ut64 addr, const ut8 *buf, int len)
+#define CB_IO int (*cb_io)(void *user, CB_READ, CB_WRITE)
+R_API int r_io_hook(struct r_io_t *io, CB_IO);
+#endif
+/* plugins */
+struct r_io_handle_t r_io_plugin_dbg;
+struct r_io_handle_t r_io_plugin_ptrace;
 
 #endif

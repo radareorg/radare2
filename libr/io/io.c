@@ -4,7 +4,7 @@
 #include "r_util.h"
 #include <stdio.h>
 
-int r_io_init(struct r_io_t *io)
+R_API int r_io_init(struct r_io_t *io)
 {
 	io->write_mask_fd = -1;
 	io->last_align = 0;
@@ -15,21 +15,27 @@ int r_io_init(struct r_io_t *io)
 	return 0;
 }
 
-struct r_io_t *r_io_new()
+R_API struct r_io_t *r_io_new()
 {
 	struct r_io_t *io = MALLOC_STRUCT(struct r_io_t);
 	r_io_init(io);
 	return io;
 }
 
-int r_io_redirect(struct r_io_t *io, const char *file)
+R_API struct r_io_t *r_io_free(struct r_io_t *io)
+{
+	free(io);
+	return NULL;
+}
+
+R_API int r_io_redirect(struct r_io_t *io, const char *file)
 {
 	free(io->redirect);
 	io->redirect = file?strdup(file):NULL;
 	return 0;
 }
 
-int r_io_open(struct r_io_t *io, const char *file, int flags, int mode)
+R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode)
 {
 	const char *uri = strdup(file);
 	struct r_io_handle_t *plugin;
@@ -196,3 +202,19 @@ int r_io_close(struct r_io_t *io, int fd)
 	}
 	return close(fd);
 }
+
+#if 0
+// define callback for other APIs to use with current io
+static int _cb_read(struct r_io_t *io, int pid, ut64 addr, ut8 *buf, int len)
+{
+}
+
+static int _cb_write(struct r_io_t *io, int pid, ut64 addr, const ut8 *buf, int len)
+{
+}
+
+R_API int r_io_hook(struct r_io_t *io, CB_IO)
+{
+	return cb_io(user, _cb_read, _cb_write
+}
+#endif

@@ -16,13 +16,10 @@ R_API int r_debug_init(struct r_debug_t *dbg)
 	return R_TRUE;
 }
 
-R_API void r_debug_set_io(struct r_debug_t *dbg, 
-	int (*_read)(void *user, int pid, ut64 addr, ut8 *buf, int len),
-	int (*_write)(void *user, int pid, ut64 addr, const ut8 *buf, int len),
-	void *user)
+R_API int r_debug_set_io(struct r_debug_t *dbg, CB_READ, CB_WRITE, void *user)
 {
-	dbg->read = _read;
-	dbg->write = _write;
+	dbg->read = _cb_read;
+	dbg->write = _cb_write;
 	dbg->user = user;
 }
 
@@ -32,6 +29,13 @@ R_API struct r_debug_t *r_debug_new()
 	dbg = MALLOC_STRUCT(struct r_debug_t);
 	r_debug_init(dbg);
 	return dbg;
+}
+
+R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg)
+{
+	// TODO: free it correctly
+	free(dbg);
+	return NULL;
 }
 
 R_API int r_debug_attach(struct r_debug_t *dbg, int pid)
@@ -49,8 +53,6 @@ R_API int r_debug_attach(struct r_debug_t *dbg, int pid)
 
 R_API int r_debug_startv(struct r_debug_t *dbg, int argc, char **argv)
 {
-	if (dbg->h && dbg->h->startv)
-		return dbg->h->startv(pid);
 	return R_FALSE;
 }
 

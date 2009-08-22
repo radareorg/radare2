@@ -4,6 +4,7 @@
 
 #include <r_io.h>
 #include <r_lib.h>
+#include <r_util.h>
 #include <signal.h>
 #include <sys/ptrace.h>
 #include <sys/types.h>
@@ -129,16 +130,16 @@ static int __init(struct r_io_t *io)
 	return R_TRUE;
 }
 
-static struct r_io_handle_t r_io_plugin_dbg = {
+struct r_io_handle_t r_io_plugin_dbg = {
         //void *handle;
-	.name = "dbg",
+	.name = "io_dbg",
         .desc = "Debug a program or pid. dbg:///bin/ls, dbg://1388",
         .open = __open,
         .handle_open = __handle_open,
         .handle_fd = __handle_fd,
 	.lseek = NULL,
 	.system = NULL,
-	.debug = 1,
+	.debug = (void *)1,
 	.init = __init,
         //void *widget;
 /*
@@ -148,9 +149,11 @@ static struct r_io_handle_t r_io_plugin_dbg = {
 */
 };
 
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_dbg
 };
+#endif
 
 #endif

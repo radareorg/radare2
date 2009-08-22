@@ -107,9 +107,9 @@ static int __system(struct r_io_t *io, int fd, const char *cmd)
 	return 0;
 }
 
-static struct r_io_handle_t r_io_plugin_malloc = {
+struct r_io_handle_t r_io_plugin_malloc = {
         //void *handle;
-	.name = "malloc",
+	.name = "io_malloc",
         .desc = "memory allocation ( malloc://size-in-bytes )",
         .open = __open,
         .close = __close,
@@ -128,7 +128,9 @@ static struct r_io_handle_t r_io_plugin_malloc = {
 */
 };
 
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_malloc
 };
+#endif

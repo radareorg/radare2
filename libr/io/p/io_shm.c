@@ -92,9 +92,9 @@ static int shm__init(struct r_io_t *io)
 	return R_TRUE;
 }
 
-static struct r_io_handle_t r_io_plugin_shm = {
+struct r_io_handle_t r_io_plugin_shm = {
         //void *handle;
-	.name = "shm",
+	.name = "io_shm",
         .desc = "shared memory resources (shm://key)",
         .open = shm__open,
         .close = shm__close,
@@ -107,9 +107,11 @@ static struct r_io_handle_t r_io_plugin_shm = {
 	.write = shm__write,
 };
 
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_shm
 };
+#endif
 
 #endif

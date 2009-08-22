@@ -1,23 +1,20 @@
-CFLAGS=-I../../include -Wall -DWORDSIZE=64
-BINDEPS=
+CFLAGS=-I../../include -Wall -DWORDSIZE=64 -fPIC -shared -Wl,-R..
 
-all: io_ptrace.so io_dbg.so io_malloc.so io_shm.so
+foo: all
+
+ALL_TARGETS=
+DEBUGS=ptrace.mk dbg.mk malloc.mk shm.mk
+include ${DEBUGS}
+
+#ALL_TARGETS+=io_ewf.so
+
+all: ${ALL_TARGETS}
 	@true
 
-io_malloc.so: malloc.o
-	${CC} ${CFLAGS} -fPIC -shared -o io_malloc.so malloc.c
+BINDEPS=
 
-io_ptrace.so: ptrace.o
-	${CC} ${CFLAGS} -fPIC -shared -o io_ptrace.so ptrace.c
-
-io_dbg.so: dbg.o
-	${CC} ${CFLAGS} -fPIC -shared -o io_dbg.so dbg.c -lr_io -L../../io -Wl,-R..
-
-io_shm.so: shm.o
-	${CC} ${CFLAGS} -fPIC -shared -o io_shm.so shm.c -lr_io -L../../io -Wl,-R..
-
-io_ewf.so: ewf.o
-	${CC} ${CFLAGS} -fPIC -shared -o io_ewf.so ewf.c -lr_io -L../../io -Wl,-R..
+io_ewf.so: io_ewf.o
+	${CC} ${CFLAGS} -fPIC -shared -o io_ewf.so ewf.c -lr_io -L../../io -Wl,-R.. -lewf
 
 clean:
 	-rm -f *.so *.o

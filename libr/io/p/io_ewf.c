@@ -170,7 +170,7 @@ static int ewf__init(struct r_io_t *io)
 	return R_TRUE;
 }
 
-static struct r_io_handle_t r_io_plugin_ewf = {
+struct r_io_handle_t r_io_plugin_ewf = {
         //void *handle;
 	.name = "ewf",
         .desc = "Forensic file formats (Encase, ..) (ewf://file, els://file)",
@@ -185,8 +185,10 @@ static struct r_io_handle_t r_io_plugin_ewf = {
 	.write = ewf__write,
 };
 
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_ewf
 };
+#endif
 #endif

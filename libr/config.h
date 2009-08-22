@@ -43,4 +43,9 @@
 	&r_debug_plugin_ptrace, \
 	0
 
+#define R_IO_STATIC_PLUGINS \
+	&r_io_plugin_dbg, \
+	&r_io_plugin_ptrace, \
+	0
+
 #endif

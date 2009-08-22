@@ -7,7 +7,7 @@ foo: pre libr_asm.so plugins
 include ../config.mk
 include ${STATIC_ASM_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst asm_,p/asm_,$(STATIC_OBJ)))
-OBJ=asm.o ${STATIC_OBJS}
+OBJ=${STATIC_OBJS} asm.o
 
 pre:
 	@if [ ! -e libr_asm.so ]; then rm -f ${STATIC_OBJS} ; fi

@@ -102,12 +102,13 @@ R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo
 R_API int r_debug_handle_set(struct r_debug_t *dbg, const char *str);
 R_API int r_debug_handle_init(struct r_debug_t *dbg);
 R_API int r_debug_init(struct r_debug_t *dbg);
+R_API struct r_debug_t *r_debug_new();
+R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg);
 
-// TODO: 
-R_API void r_debug_set_io(struct r_debug_t *dbg, 
-	int (*read)(void *user, int pid, ut64 addr, ut8 *buf, int len),
-	int (*write)(void *user, int pid, ut64 addr, const ut8 *buf, int len),
-	void *user);
+#define CB_READ int (*_cb_read)(void *user, int pid, ut64 addr, ut8 *buf, int len)
+#define CB_WRITE int (*_cb_write)(void *user, int pid, ut64 addr, const ut8 *buf, int len)
+
+R_API int r_debug_set_io(struct r_debug_t *dbg, CB_READ, CB_WRITE, void *user);
 
 /* send signals */
 R_API int r_debug_kill(struct r_debug_t *dbg, int pid, int sig);
