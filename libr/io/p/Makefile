@@ -1,4 +1,4 @@
-CFLAGS=-I../../include -Wall -DWORDSIZE=64 -fPIC -shared -Wl,-R..
+CFLAGS=-I../../include -Wall -DWORDSIZE=64 -fPIC -shared -Wl,-R.. -DCORELIB
 
 foo: all
 

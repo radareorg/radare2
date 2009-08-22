@@ -19,3 +19,7 @@ hg-help:
 	@echo "hg-miss    | list interesting missing files"
 	@echo "hg-locdiff | count the difference of LOCs for current commit or FILES"
 	@echo "           $$ hg-locdiff \"FILES=Makefile foo.c\""
+
+hg-ci:
+	@hg diff > /tmp/diff
+	@hg ci

@@ -40,6 +40,10 @@ struct r_io_handle_t *r_io_handle_resolve(struct r_io_t *io, const char *filenam
 	struct list_head *pos;
 	list_for_each_prev(pos, &io->io_list) {
 		struct r_io_list_t *il = list_entry(pos, struct r_io_list_t, list);
+		if (il->plugin == NULL)
+			continue;
+		if (il->plugin->handle_open == NULL)
+			continue;
 		if (il->plugin->handle_open(io, filename))
 			return il->plugin;
 	}
@@ -62,6 +66,7 @@ struct r_io_handle_t *r_io_handle_resolve_fd(struct r_io_t *io, int fd)
 
 int r_io_handle_generate(struct r_io_t *io)
 {
+	// TODO: ensure srand here (( implement in r_util a decent random helper
 	return (rand()%666)+1024;
 }
 
@@ -107,10 +112,10 @@ int r_io_handle_list(struct r_io_t *io)
 {
 	int n = 0;
 	struct list_head *pos;
-	printf("IO handlers:\n");
+	io->printf("IO handlers:\n");
 	list_for_each_prev(pos, &io->io_list) {
 		struct r_io_list_t *il = list_entry(pos, struct r_io_list_t, list);
-		printf(" - %s\n", il->plugin->name);
+		io->printf(" - %s\n", il->plugin->name);
 		n++;
 	}
 	return n;

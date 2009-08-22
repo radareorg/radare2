@@ -188,40 +188,44 @@ static int __system(struct r_io_t *io, int fd, const char *cmd)
 #include <sys/user.h>
 #include <limits.h>
 	/* XXX ugly hack for testing purposes */
+	if (!strcmp(cmd, "pid")) {
+		printf("PID=%d\n", io->fd);
+		return io->fd;
+	} else
 	if (!strcmp(cmd, "reg")) {
 		struct user_regs_struct regs;
 		memset(&regs,0, sizeof(regs));
 		// TODO: swap 3-4 args in powerpc
 		ptrace(PTRACE_GETREGS, fd, 0, &regs);
 #if __WORDSIZE == 64
-		r_cons_printf("f rax @ 0x%08lx\n", regs.rax);
-		r_cons_printf("f rbx @ 0x%08lx\n", regs.rbx);
-		r_cons_printf("f rcx @ 0x%08lx\n", regs.rcx);
-		r_cons_printf("f rdx @ 0x%08lx\n", regs.rdx);
-		r_cons_printf("f r8 @ 0x%08lx\n", regs.r8);
-		r_cons_printf("f r9 @ 0x%08lx\n", regs.r9);
-		r_cons_printf("f r10 @ 0x%08lx\n", regs.r10);
-		r_cons_printf("f r11 @ 0x%08lx\n", regs.r11);
-		r_cons_printf("f r12 @ 0x%08lx\n", regs.r12);
-		r_cons_printf("f r13 @ 0x%08lx\n", regs.r13);
-		r_cons_printf("f r14 @ 0x%08lx\n", regs.r14);
-		r_cons_printf("f r15 @ 0x%08lx\n", regs.r15);
-		r_cons_printf("f rsi @ 0x%08lx\n", regs.rsi);
-		r_cons_printf("f rdi @ 0x%08lx\n", regs.rdi);
-		r_cons_printf("f rsp @ 0x%08lx\n", regs.rsp);
-		r_cons_printf("f rbp @ 0x%08lx\n", regs.rbp);
-		r_cons_printf("f rip @ 0x%08lx\n", regs.rip);
+		io->printf("f rax @ 0x%08lx\n", regs.rax);
+		io->printf("f rbx @ 0x%08lx\n", regs.rbx);
+		io->printf("f rcx @ 0x%08lx\n", regs.rcx);
+		io->printf("f rdx @ 0x%08lx\n", regs.rdx);
+		io->printf("f r8 @ 0x%08lx\n", regs.r8);
+		io->printf("f r9 @ 0x%08lx\n", regs.r9);
+		io->printf("f r10 @ 0x%08lx\n", regs.r10);
+		io->printf("f r11 @ 0x%08lx\n", regs.r11);
+		io->printf("f r12 @ 0x%08lx\n", regs.r12);
+		io->printf("f r13 @ 0x%08lx\n", regs.r13);
+		io->printf("f r14 @ 0x%08lx\n", regs.r14);
+		io->printf("f r15 @ 0x%08lx\n", regs.r15);
+		io->printf("f rsi @ 0x%08lx\n", regs.rsi);
+		io->printf("f rdi @ 0x%08lx\n", regs.rdi);
+		io->printf("f rsp @ 0x%08lx\n", regs.rsp);
+		io->printf("f rbp @ 0x%08lx\n", regs.rbp);
+		io->printf("f rip @ 0x%08lx\n", regs.rip);
 #else
-		r_cons_printf("f eax @ 0x%08x\n", regs.eax);
-		r_cons_printf("f ebx @ 0x%08x\n", regs.ebx);
-		r_cons_printf("f ecx @ 0x%08x\n", regs.ecx);
-		r_cons_printf("f edx @ 0x%08x\n", regs.edx);
-		r_cons_printf("f eip @ 0x%08x\n", regs.eip);
-		r_cons_printf("f ebp @ 0x%08x\n", regs.ebp);
-		r_cons_printf("f esp @ 0x%08x\n", regs.esp);
+		io->printf("f eax @ 0x%08x\n", regs.eax);
+		io->printf("f ebx @ 0x%08x\n", regs.ebx);
+		io->printf("f ecx @ 0x%08x\n", regs.ecx);
+		io->printf("f edx @ 0x%08x\n", regs.edx);
+		io->printf("f eip @ 0x%08x\n", regs.eip);
+		io->printf("f ebp @ 0x%08x\n", regs.ebp);
+		io->printf("f esp @ 0x%08x\n", regs.esp);
 #endif
 	} else {
-		printf("Try: '|reg'\n");
+		printf("Try: '|reg' or '|pid'\n");
 	}
 #endif
 	return R_TRUE;

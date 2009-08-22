@@ -24,7 +24,8 @@
 #endif
 
 const char *r_lib_types[] = {
-	"io", "dbg", "lang", "asm", "anal", "parse", "bin", "bininfo", NULL
+	"io", "dbg", "lang", "asm", "anal", "parse", "bin", "bininfo", 
+	"bp", "syscall", "fastcall", NULL
 };
 
 const char *r_lib_types_get(int idx)

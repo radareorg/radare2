@@ -1,11 +1,11 @@
 include ../../../config-user.mk
 
-OBJ_DBG=io_dbg.o
+OBJ_IODBG=io_dbg.o
 
-STATIC_OBJ+=${OBJ_DBG}
-TARGET_DBG=io_dbg.so
+STATIC_OBJ+=${OBJ_IODBG}
+TARGET_IODBG=io_dbg.so
 
-ALL_TARGETS+=${TARGET_DBG}
+ALL_TARGETS+=${TARGET_IODBG}
 
-${TARGET_DBG}: ${OBJ_DBG}
-	${CC} ${CFLAGS} -o ${TARGET_DBG} ${OBJ_DBG}
+${TARGET_IODBG}: ${OBJ_IODBG}
+	${CC} ${CFLAGS} -o ${TARGET_IODBG} ${OBJ_IODBG}

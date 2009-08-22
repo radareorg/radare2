@@ -12,11 +12,13 @@
 
 static int r_debug_ptrace_step(int pid)
 {
-	//ut32 addr = 0; /* should be eip */
+	int ret;
+	ut32 addr = 0; /* should be eip */
 	//ut32 data = 0;
-	printf("NATIVE STEP over PID=%d\n", pid);
-	ptrace(PTRACE_SINGLESTEP, pid, 0, 0); //addr, data);
-	perror("ptrace-singlestep");
+	//printf("NATIVE STEP over PID=%d\n", pid);
+	ret = ptrace(PTRACE_SINGLESTEP, pid, addr, 0); //addr, data);
+	if (ret == -1)
+		perror("ptrace-singlestep");
 	return R_TRUE;
 }
 
@@ -45,9 +47,9 @@ static int r_debug_ptrace_continue(int pid)
 static int r_debug_ptrace_wait(int pid)
 {
 	int ret, status = -1;
-	printf("prewait\n");
+	//printf("prewait\n");
 	ret = waitpid(pid, &status, 0);
-	printf("status=%d (return=%d)\n", status, ret);
+	//printf("status=%d (return=%d)\n", status, ret);
 	return status;
 }
 

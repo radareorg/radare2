@@ -12,7 +12,7 @@
         (((x) & 0x000000000000ff00LL) << 40)  | \
         (((x) & 0x00000000000000ffLL) << 56))
 
-ut64 r_num_htonq(ut64 value) {
+R_API ut64 r_num_htonq(ut64 value) {
         ut64 ret  = value;
 #if LIL_ENDIAN
         endian_memcpy_e((ut8*)&ret, (ut8*)&value, 8, 0);
@@ -20,7 +20,13 @@ ut64 r_num_htonq(ut64 value) {
         return ret;
 }
 
-void r_num_minmax_swap(ut64 *a, ut64 *b)
+R_API int r_num_rand(int max)
+{
+	// TODO: add srand here for security and so on
+	return rand(max);
+}
+
+R_API void r_num_minmax_swap(ut64 *a, ut64 *b)
 {
 	if (*a>*b) {
 		ut64 tmp = *a;
@@ -29,7 +35,7 @@ void r_num_minmax_swap(ut64 *a, ut64 *b)
 	}
 }
 
-void r_num_minmax_swap_i(int *a, int *b)
+R_API void r_num_minmax_swap_i(int *a, int *b)
 {
 	if (*a>*b) {
 		ut64 tmp = *a;
@@ -38,14 +44,14 @@ void r_num_minmax_swap_i(int *a, int *b)
 	}
 }
 
-void r_num_init(struct r_num_t *num)
+R_API void r_num_init(struct r_num_t *num)
 {
 	num->callback = NULL;
 	num->userptr = NULL;
 	num->value = 0LL;
 }
 
-struct r_num_t *r_num_new(ut64 (*cb)(void*,const char *,int*), void *ptr)
+R_API struct r_num_t *r_num_new(ut64 (*cb)(void*,const char *,int*), void *ptr)
 {
 	struct r_num_t *num;
 	num = (struct r_num_t*) malloc(sizeof(struct r_num_t));
@@ -114,7 +120,7 @@ R_API ut64 r_num_get(struct r_num_t *num, const char *str)
 	return ret;
 }
 
-ut64 r_num_op(char op, ut64 a, ut64 b)
+R_API ut64 r_num_op(char op, ut64 a, ut64 b)
 {
 	IFDBG printf("r_num_op: %lld %c %lld\n", a,op,b);
 	switch(op) {
@@ -129,7 +135,7 @@ ut64 r_num_op(char op, ut64 a, ut64 b)
 	return b;
 }
 
-static ut64 r_num_math_internal(struct r_num_t *num, char *s)
+R_API static ut64 r_num_math_internal(struct r_num_t *num, char *s)
 {
 	ut64 ret = 0LL;
 	char *p = s;
@@ -156,7 +162,7 @@ static ut64 r_num_math_internal(struct r_num_t *num, char *s)
 	return r_num_op(op, ret, r_num_get(num, p));
 }
 
-ut64 r_num_math(struct r_num_t *num, const char *str)
+R_API ut64 r_num_math(struct r_num_t *num, const char *str)
 {
 	ut64 ret = 0LL;
 	char op = '+';

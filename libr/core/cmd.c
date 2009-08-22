@@ -1666,9 +1666,11 @@ static int cmd_debug(void *data, const char *input)
 		else fprintf(stderr, "TODO: List processes..\n");
 		break;
 	case 'h':
-		if (input[1]==' ')
-			r_debug_handle_set(&core->dbg, input+2);
-		else r_debug_handle_list(&core->dbg);
+		if (input[1]==' ') {
+			char buf[1024];
+			snprintf(buf, "dbg_%s", input+2);
+			r_debug_handle_set(&core->dbg, buf);
+		} else r_debug_handle_list(&core->dbg);
 		break;
 	default:
 		r_cons_printf("Usage: d[sbhcrbo] [arg]\n"

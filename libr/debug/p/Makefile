@@ -1,4 +1,4 @@
-CFLAGS=-I../../include -Wall -fPIC -shared -Wl,-R..
+CFLAGS=-I../../include -Wall -fPIC -shared -Wl,-R.. -DCORELIB
 
 foo: all
 
