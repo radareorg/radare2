@@ -93,10 +93,10 @@ R_API int r_str_char_count(const char *string, char ch)
 
 R_API int r_str_word_count(const char *string)
 {
-        char *text, *tmp;
+        const char *text, *tmp;
         int word = 0;
 
-        for(text=tmp=string;(*text)&&(isseparator(*text));text=text+1);
+        for(text=tmp=string;(*text)&&(isseparator(*text));text++);
 
         for(word = 0; *text; word++) {
                 for(;*text && !isseparator(*text);text = text +1);
@@ -439,6 +439,31 @@ R_API const char *r_str_ansi_chrn(const char *str, int n)
 	return str+i;
 }
 
+// TODO: make it dynamic
+static int bprintf_init = 0;
+static char bprintf_buf[4096];
+
+// XXX overflow
+R_API int r_bprintf(const char *fmt, ...)
+{
+	va_list ap;
+	if (bprintf_init==0)
+		*bprintf_buf = 0;
+	va_start(ap, fmt);
+	r_str_concatf(bprintf_buf, fmt, ap);
+	va_end(ap);
+	return strlen(bprintf_buf);
+}
+
+R_API char *r_bprintf_get()
+{
+	char *s;
+	if (bprintf_init==0)
+		*bprintf_buf = 0;
+	s = strdup(bprintf_buf);
+	bprintf_buf[0]='\0';
+	return s;
+}
 
 #if 0
 int r_str_argv_parse(const char *str, int argc, char **argv)

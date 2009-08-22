@@ -23,7 +23,7 @@ R_API ut64 r_num_htonq(ut64 value) {
 R_API int r_num_rand(int max)
 {
 	// TODO: add srand here for security and so on
-	return rand(max);
+	return rand()%max;
 }
 
 R_API void r_num_minmax_swap(ut64 *a, ut64 *b)
