@@ -19,6 +19,7 @@ namespace Radare {
 			X86 = 0, PPC, ARM, MIPS, SPARC
 		}
 
+		public Syscall();
 		public void setup(int os, int arch);
 		public void setup_file(string file);
 		public int get(string syscall);

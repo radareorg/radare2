@@ -42,7 +42,7 @@ R_API void r_iter_delete(void **it)
 
 R_API int r_iter_last(void **it)
 {
-	return (*it != NULL);
+	return (*it == NULL);
 }
 
 R_API void **r_iter_first(void **it)

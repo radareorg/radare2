@@ -1,4 +1,4 @@
-all: core hash sc socket asm search bin db
+all: core hash sc socket asm search iter bin db
 	@true
 
 genie:
@@ -7,6 +7,9 @@ genie:
 
 db:
 	valac --vapidir=${PWD}/.. --pkg r_db db.vala
+
+iter:
+	valac --vapidir=${PWD}/.. --pkg r_util iter.vala
 
 sc:
 	valac -C --vapidir=${PWD}/.. sc.vala --pkg r_syscall

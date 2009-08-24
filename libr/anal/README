@@ -1,0 +1,15 @@
+Code analysis module
+====================
+
+Analysis an = new Analysis ();
+an.set ("x86");
+an.set_bytes (buf, 1024);
+an.analyze ();
+var foo = an.get_function_preludes ();
+var calls = an.get_calls ();
+foreach var (calls) {
+  stdout.printf("0x%llx: call 0x%llx", var.from, var.to);
+  for(int i=0;i<var.args;i++) {
+    stdout.printf("arg%d: %s\n" i, var.arg[i]);
+  }
+}
