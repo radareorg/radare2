@@ -685,7 +685,6 @@ int PE_(r_bin_pe_get_subsystem)(PE_(r_bin_pe_obj) *bin, char *str)
 		snprintf(str, PE_NAME_LENGTH, "XBOX");
 		break;
 	}
-
 	return bin->nt_headers->optional_header.Subsystem;
 }
 
@@ -736,6 +735,5 @@ int PE_(r_bin_pe_open)(PE_(r_bin_pe_obj) *bin, const char *file)
 		close(bin->fd);
 		return -1;
 	}
-
 	return bin->fd;
 }

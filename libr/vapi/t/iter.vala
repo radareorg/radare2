@@ -1,7 +1,7 @@
 using Radare;
 
 //public class IterableObject<G> : Radare.Iter<G> : base(number) {
-[Compact]
+//[Compact]
 public class IterableObject {
 	public string name; // { get;set; }
 
@@ -10,18 +10,24 @@ public class IterableObject {
 	}
 }
 
+IterableObject a;
+IterableObject b;
+IterableObject c;
+
 Radare.Iter<IterableObject> get_iter_list ()
 {
-	Radare.Iter<unowned IterableObject> list = new Radare.Iter<unowned IterableObject>(3);
+	Radare.Iter<IterableObject> list = new Radare.Iter<IterableObject>(3);
+	b = new IterableObject("barata");
+	c = new IterableObject("allalt");
 	list.set(0, new IterableObject("patata"));
-	list.set(1, new IterableObject("barata"));
-	list.set(2, new IterableObject("lalata"));
+	list.set(1, b);
+	list.set(2, c);
 	return list;
 }
 
 void main()
 {
-	Radare.Iter<unowned IterableObject> foo = get_iter_list ();
+	Radare.Iter<IterableObject> foo = get_iter_list ();
 	//Radare.Iter<IterableObject> ptr = foo;
 	//for(Radare.Iter<IterableObject> ptr = foo; !ptr.last(); ptr = ptr.next()) {
 	while(!foo.last()) {

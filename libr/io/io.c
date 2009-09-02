@@ -38,15 +38,15 @@ R_API int r_io_redirect(struct r_io_t *io, const char *file)
 
 R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode)
 {
-	const char *uri = strdup(file);
+	int fd = -2;
+	char *uri = strdup(file);
 	struct r_io_handle_t *plugin;
 	if (io != NULL) {
-		do {
+		for(;;) {
 			plugin = r_io_handle_resolve(io, uri);
 			if (plugin) {
-				int fd = plugin->open(io, uri, flags, mode);
+				fd = plugin->open(io, uri, flags, mode);
 				if (io->redirect) {
-					printf("REDIRECT FOO => (%s)\n", io->redirect);
 					free((void *)uri);
 					uri = strdup(io->redirect);
 					r_io_redirect(io, NULL);
@@ -56,61 +56,62 @@ R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode)
 					r_io_handle_open(io, fd, plugin);
 				if (fd != io->fd)
 					io->plugin = plugin;
-				io->fd = fd;
-				return fd;
 			}
 			break;
-		} while(1);
-	} else fprintf(stderr, "WARNING: Using uninitialized r_io\n");
-	return open(file, flags, mode);
+		}
+	}
+	if (fd == -2)
+		fd = open(file, flags, mode);
+	if (fd > -1) r_io_set_fd(io, fd);
+	else fd = -1;
+	free((void *)uri);
+	return fd;
 }
 
 R_API int r_io_set_fd(struct r_io_t *io, int fd)
 {
-	if (fd == -1)
-		fd = io->fd;
-	else if (fd != io->fd) {
+	if (fd != -1 && fd != io->fd) {
 		io->plugin = r_io_handle_resolve_fd(io, fd);
 		io->fd = fd;
 	}
-	return fd;
+	return io->fd;
 }
 
-R_API int r_io_read(struct r_io_t *io, int fd, ut8 *buf, int len)
+R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len)
 {
-	fd = r_io_set_fd(io, fd);
+	// TODO: support read of partial pages
 	if (r_io_map_read_at(io, io->seek, buf, len) != 0)
 		return len;
 	if (io->plugin && io->plugin->read) {
-		io->fd = fd;
 		if (io->plugin->read != NULL)
-			return io->plugin->read(io, fd, buf, len);
-		else fprintf(stderr, "IO handler for fd=%d has no read()\n",fd);
+			return io->plugin->read(io, io->fd, buf, len);
+		else fprintf(stderr, "IO handler for fd=%d has no read()\n", io->fd);
 	}
-	return read(fd, buf, len);
+	return read(io->fd, buf, len);
 }
 
-R_API ut64 r_io_read_i(struct r_io_t *io, int fd, ut64 addr, int sz, int endian)
+R_API int r_io_read_at(struct r_io_t *io, ut64 addr, ut8 *buf, int len)
+{
+	if (r_io_lseek(io, addr, R_IO_SEEK_SET)<0)
+		return -1;
+	return r_io_read(io, buf, len);
+}
+
+R_API ut64 r_io_read_i(struct r_io_t *io, ut64 addr, int sz, int endian)
 {
 	ut64 ret = 0LL;
 	int err;
-	char buf[128], dst[128];
+	ut8 buf[8];
 	if (sz > 8) sz = 8;
 	if (sz < 0) sz = 1;
-	err = r_io_lseek(io, fd, addr, R_IO_SEEK_SET);
-	// XXX do something with err
-	err = r_io_read(io, fd, buf, sz);
-	if (err != sz) {
-		perror("Cannot read");
-	} else {
-		r_mem_copyendian(&ret, buf, sz, endian);
-	}
+	err = r_io_read_at(io, addr, buf, sz);
+	if (err == sz) r_mem_copyendian((ut8*)&ret, buf, sz, endian);
+	else perror("Cannot read");
 	return ret;
 }
 
-R_API int r_io_resize(struct r_io_t *io, int fd, const char *file, int flags, int mode)
+R_API int r_io_resize(struct r_io_t *io, const char *file, int flags, int mode)
 {
-	fd = r_io_set_fd(io, fd);
 #if 0
 	/* TODO */
 	struct r_io_handle_t *plugin = r_io_handle_resolve(file);
@@ -124,34 +125,29 @@ R_API int r_io_resize(struct r_io_t *io, int fd, const char *file, int flags, in
 	return -1;
 }
 
-R_API int r_io_set_write_mask(struct r_io_t *io, int fd, const ut8 *buf, int len)
+R_API int r_io_set_write_mask(struct r_io_t *io, const ut8 *buf, int len)
 {
-	int ret;
-	fd = r_io_set_fd(io, fd);
+	int ret = R_FALSE;
 	if (len) {
-		io->write_mask_fd = fd;
+		io->write_mask_fd = io->fd;
 		io->write_mask_buf = (ut8 *)malloc(len);
 		memcpy(io->write_mask_buf, buf, len);
 		io->write_mask_len = len;
 		ret = R_TRUE;
-	} else {
-		io->write_mask_fd = -1;
-		ret = R_FALSE;
-	}
+	} else io->write_mask_fd = -1;
 	return ret;
 }
 
-R_API int r_io_write(struct r_io_t *io, int fd, const ut8 *buf, int len)
+R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len)
 {
 	int i, ret = -1;
-	fd = r_io_set_fd(io, fd);
 
 	/* apply write binary mask */
 	if (io->write_mask_fd != -1) {
 		ut8 *data = alloca(len);
-		r_io_lseek(io, fd, io->seek, R_IO_SEEK_SET);
-		r_io_read(io, fd, data, len);
-		r_io_lseek(io, fd, io->seek, R_IO_SEEK_SET);
+		r_io_lseek(io, io->seek, R_IO_SEEK_SET);
+		r_io_read(io, data, len);
+		r_io_lseek(io, io->seek, R_IO_SEEK_SET);
 		for(i=0;i<len;i++) {
 			data[i] = buf[i] & \
 				io->write_mask_buf[i%io->write_mask_len];
@@ -162,26 +158,30 @@ R_API int r_io_write(struct r_io_t *io, int fd, const ut8 *buf, int len)
 	if (r_io_map_write_at(io, io->seek, buf, len) != 0)
 		return len;
 	if (io->plugin) {
-		io->fd = fd;
 		if (io->plugin->write)
-			ret = io->plugin->write(io, fd, buf, len);
-	} else ret = write(fd, buf, len);
+			ret = io->plugin->write(io, io->fd, buf, len);
+		else fprintf(stderr, "r_io_write: io handler with no write callback\n");
+	} else ret = write(io->fd, buf, len);
 	if (ret == -1)
 		fprintf(stderr, "r_io_write: cannot write\n");
 	return ret;
 }
 
-R_API ut64 r_io_lseek(struct r_io_t *io, int fd, ut64 offset, int whence)
+R_API int r_io_write_at(struct r_io_t *io, ut64 addr, const ut8 *buf, int len)
 {
-	int posix_whence = 0;
-	fd = r_io_set_fd(io, fd);
+	if (r_io_lseek(io, addr, R_IO_SEEK_SET)<0)
+		return -1;
+	return r_io_write(io, buf, len);
+}
 
-	if (whence == SEEK_SET)
-		offset = r_io_section_align(io, offset, 0, 0);
+R_API ut64 r_io_lseek(struct r_io_t *io, ut64 offset, int whence)
+{
+	int posix_whence = SEEK_SET;
 
 	/* pwn seek value */
 	switch(whence) {
 	case R_IO_SEEK_SET:
+		offset = r_io_section_align(io, offset, 0, 0);
 		io->seek = offset;
 		posix_whence = SEEK_SET;
 		break;
@@ -190,38 +190,37 @@ R_API ut64 r_io_lseek(struct r_io_t *io, int fd, ut64 offset, int whence)
 		posix_whence = SEEK_CUR;
 		break;
 	case R_IO_SEEK_END:
-		io->seek = 0xffffffff;
+		io->seek = 0xffffffff; // XXX
 		posix_whence = SEEK_END;
 		break;
 	}
 
-	if (io->plugin && io->plugin->lseek) {
-		io->fd = fd;
-		return io->plugin->lseek(io, fd, offset, whence);
-	}
+	if (io->plugin && io->plugin->lseek)
+		io->seek = io->plugin->lseek(io, io->fd, offset, whence);
 	// XXX can be problematic on w32..so no 64 bit offset?
-	return lseek(fd, offset, posix_whence);
+	else io->seek = lseek(io->fd, offset, posix_whence);
+
+	return io->seek;
 }
 
 R_API ut64 r_io_size(struct r_io_t *io, int fd)
 {
 	ut64 size, here;
 	fd = r_io_set_fd(io, fd);
-	here = r_io_lseek(io, fd, 0, R_IO_SEEK_CUR);
-	size = r_io_lseek(io, fd, 0, R_IO_SEEK_END);
-	r_io_lseek(io, fd, here, R_IO_SEEK_SET);
+	here = r_io_lseek(io, 0, R_IO_SEEK_CUR);
+	size = r_io_lseek(io, 0, R_IO_SEEK_END);
+	r_io_lseek(io, here, R_IO_SEEK_SET);
 	return size;
 }
 
-R_API int r_io_system(struct r_io_t *io, int fd, const char *cmd)
+R_API int r_io_system(struct r_io_t *io, const char *cmd)
 {
-	fd = r_io_set_fd(io, fd);
-	if (io->plugin && io->plugin->system) {
-		return io->plugin->system(io, fd, cmd);
-	}
+	if (io->plugin && io->plugin->system)
+		return io->plugin->system(io, io->fd, cmd);
 	return 0;
 }
 
+// TODO: remove int fd here???
 R_API int r_io_close(struct r_io_t *io, int fd)
 {
 	fd = r_io_set_fd(io, fd);

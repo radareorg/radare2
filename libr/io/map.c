@@ -73,17 +73,14 @@ int r_io_map_read_at(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len)
 {
 	struct list_head *pos;
 
-	return 0;
-	/* XXX This makes radare segfault ?? */
-	if (io == NULL) {
+	if (io == NULL)
 		return 0;
-	}
 	list_for_each_prev(pos, &io->maps) {
 		struct r_io_maps_t *im = list_entry(pos, struct r_io_maps_t, list);
-		/* segfaults here coz im is invalid */
+		if (im)
 		if (im->file && im->file[0] != '\0' && off >= im->from && off < im->to) {
-			r_io_lseek(io, im->fd, off-im->from, SEEK_SET);
-			return r_io_read(io, im->fd, buf, len);
+			r_io_set_fd(io, im->fd);
+			return r_io_read_at(io, off-im->from, buf, len);
 		}
 	}
 	return 0;
@@ -95,9 +92,10 @@ int r_io_map_write_at(struct r_io_t *io, ut64 off, const ut8 *buf, ut64 len)
 
 	list_for_each_prev(pos, &io->maps) {
 		struct r_io_maps_t *im = list_entry(pos, struct r_io_maps_t, list);
+		if (im)
 		if (im->file[0] != '\0' && off >= im->from && off < im->to) {
-			r_io_lseek(io, im->fd, off-im->from, SEEK_SET);
-			return r_io_write(io, im->fd, buf, len);
+			r_io_set_fd(io, im->fd);
+			return r_io_write_at(io, off-im->from, buf, len);
 		}
 	}
 	return 0;
@@ -111,6 +109,7 @@ int r_io_map_read_rest(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len)
 		struct r_io_maps_t *im = list_entry(pos, struct r_io_maps_t, list);
 		if (im->file[0] != '\0' && off+len >= im->from && off < im->to) {
 			lseek(im->fd, 0, SEEK_SET);
+// XXX VERY BROKEN
 			return read(im->fd, buf+(im->from-(off+len)), len);
 		}
 	}

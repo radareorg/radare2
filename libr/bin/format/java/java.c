@@ -18,7 +18,6 @@
  *
  */
 
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -212,44 +211,44 @@ static int javasm_init(struct r_bin_java_t *bin)
 
 		/* read bytes */
 		switch(c->tag) {
-			case 1: // utf 8 string
-				read(bin->fd, buf, 2);
-				sz = R_BIN_JAVA_USHORT(buf,0); //(buf[0]<<8)|buf[1];
-				bin->cp_items[i].length = sz;
-				bin->cp_items[i].off += 3;
-				read(bin->fd, buf, sz);
-				buf[sz] = '\0';
-				break;
-			default:
-				read(bin->fd, buf, c->len);
+		case 1: // utf 8 string
+			read(bin->fd, buf, 2);
+			sz = R_BIN_JAVA_USHORT(buf,0); //(buf[0]<<8)|buf[1];
+			bin->cp_items[i].length = sz;
+			bin->cp_items[i].off += 3;
+			read(bin->fd, buf, sz);
+			buf[sz] = '\0';
+			break;
+		default:
+			read(bin->fd, buf, c->len);
 		}
 
 		memcpy(bin->cp_items[i].bytes, buf, 5);
 
 		/* parse value */
 		switch(c->tag) {
-			case 1:
-				IFDBG printf("%s\n", buf);
-				bin->cp_items[i].value = strdup(buf);
-				break;
-			case 7:
-				IFDBG printf("%d\n", R_BIN_JAVA_USHORT(buf,0));
-				break;
-			case 8:
-				IFDBG printf("string ptr %d\n", R_BIN_JAVA_USHORT(buf, 0));
-				break;
-			case 9:
-			case 11:
-			case 10: // METHOD REF
-				IFDBG printf("class = %d, ", R_BIN_JAVA_USHORT(buf,0));
-				IFDBG printf("name_type = %d\n", R_BIN_JAVA_USHORT(buf,2));
-				break;
-			case 12:
-				IFDBG printf("name = %d, ", R_BIN_JAVA_USHORT(buf,0));
-				IFDBG printf("descriptor = %d\n", R_BIN_JAVA_USHORT(buf,2));
-				break;
-			default:
-				printf("%d\n", R_BIN_JAVA_UINT(buf, 40));
+		case 1:
+			IFDBG printf("%s\n", buf);
+			bin->cp_items[i].value = strdup(buf);
+			break;
+		case 7:
+			IFDBG printf("%d\n", R_BIN_JAVA_USHORT(buf,0));
+			break;
+		case 8:
+			IFDBG printf("string ptr %d\n", R_BIN_JAVA_USHORT(buf, 0));
+			break;
+		case 9:
+		case 11:
+		case 10: // METHOD REF
+			IFDBG printf("class = %d, ", R_BIN_JAVA_USHORT(buf,0));
+			IFDBG printf("name_type = %d\n", R_BIN_JAVA_USHORT(buf,2));
+			break;
+		case 12:
+			IFDBG printf("name = %d, ", R_BIN_JAVA_USHORT(buf,0));
+			IFDBG printf("descriptor = %d\n", R_BIN_JAVA_USHORT(buf,2));
+			break;
+		default:
+			printf("%d\n", R_BIN_JAVA_UINT(buf, 40));
 		}
 	}
 
@@ -356,20 +355,17 @@ int r_bin_java_get_version(struct r_bin_java_t *bin, char *version)
 ut64 r_bin_java_get_entrypoint(struct r_bin_java_t *bin)
 {
 	int i, j;
-	
 	for (i=0; i < bin->methods_count; i++)
 		if (!strcmp(bin->methods[i].name, "<init>"))
 			for (j=0; j < bin->methods[i].attr_count; j++)
 				if (bin->methods[i].attributes[j].type == R_BIN_JAVA_TYPE_CODE)
 					return (ut64)bin->methods[i].attributes->info.code.code_offset;
-
 	return 0;
 }
 
 int r_bin_java_get_symbols(struct r_bin_java_t *bin, struct r_bin_java_sym_t *sym)
 {
 	int i, j, ctr = 0;
-
 	for (i=0; i < bin->methods_count; i++) {
 			memcpy(sym[ctr].name, bin->methods[i].name, R_BIN_JAVA_MAXSTR);
 			sym[ctr].name[R_BIN_JAVA_MAXSTR-1] = '\0';
@@ -380,26 +376,22 @@ int r_bin_java_get_symbols(struct r_bin_java_t *bin, struct r_bin_java_sym_t *sy
 					ctr++;
 				}
 	}
-
 	return ctr;
 }
 
 int r_bin_java_get_symbols_count(struct r_bin_java_t *bin)
 {
 	int i, j, ctr = 0;
-
 	for (i=0; i < bin->methods_count; i++)
 		for (j=0; j < bin->methods[i].attr_count; j++)
 				if (bin->methods[i].attributes[j].type == R_BIN_JAVA_TYPE_CODE)
 					ctr++;
-
 	return ctr;
 }
 
 int r_bin_java_get_strings(struct r_bin_java_t *bin, struct r_bin_java_str_t *str)
 {
 	int i, ctr = 0;
-
 	for(i=0;i<bin->cf.cp_count;i++) 
 		if (bin->cp_items[i].tag == 1) {
 			str[ctr].offset = (ut64)bin->cp_items[i].off;
@@ -408,17 +400,14 @@ int r_bin_java_get_strings(struct r_bin_java_t *bin, struct r_bin_java_str_t *st
 			memcpy(str[ctr].str, bin->cp_items[i].value, R_BIN_JAVA_MAXSTR);
 			ctr++;
 		}
-
 	return ctr;
 }
 
 int r_bin_java_get_strings_count(struct r_bin_java_t *bin)
 {
 	int i, ctr = 0;
-
 	for(i=0;i<bin->cf.cp_count;i++) 
 		if (bin->cp_items[i].tag == 1)
 			ctr++;
-
 	return ctr;
 }

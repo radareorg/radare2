@@ -10,7 +10,6 @@
 static struct r_io_handle_t *io_static_plugins[] = 
 	{ R_IO_STATIC_PLUGINS };
 
-
 R_API int r_io_handle_add(struct r_io_t *io, struct r_io_handle_t *plugin)
 {
 	int i;
@@ -68,6 +67,7 @@ R_API struct r_io_handle_t *r_io_handle_resolve_fd(struct r_io_t *io, int fd)
 R_API int r_io_handle_generate(struct r_io_t *io)
 {
 	// TODO: ensure srand here (( implement in r_util a decent random helper
+	// TODO: register io plugin with new fd
 	return (rand()%666)+1024;
 }
 
@@ -109,6 +109,7 @@ R_API int r_io_handle_close(struct r_io_t *io, int fd, struct r_io_handle_t *plu
 	return -1;
 }
 
+// TODO: must return an r_iter ator
 R_API int r_io_handle_list(struct r_io_t *io)
 {
 	int n = 0;

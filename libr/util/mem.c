@@ -68,3 +68,14 @@ R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int
 	}
 	return NULL;
 }
+
+// TODO: implement pack/unpack helpers use vararg or wtf?
+R_API int r_mem_pack()
+{
+	// TODO
+}
+
+R_API int r_mem_unpack(const u8)
+{
+	// TODO
+}

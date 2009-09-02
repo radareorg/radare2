@@ -8,6 +8,8 @@
 
 #include <stdarg.h>
 
+static int cmd_io_system(void *data, const char *input);
+
 static int cmd_iopipe(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
@@ -17,7 +19,7 @@ static int cmd_iopipe(void *data, const char *input)
 		r_io_handle_list(&core->io);
 		break;
 	default:
-		r_io_system(&core->io, core->file->fd, input);
+		cmd_io_system(data, input);
 		break;
 	}
 	return R_TRUE;
@@ -644,8 +646,8 @@ static int cmd_write(void *data, const char *input)
 	case ' ':
 		/* write string */
 		len = r_str_escape(str);
-		r_io_lseek(&core->io, core->file->fd, core->seek, R_IO_SEEK_SET);
-		r_io_write(&core->io, core->file->fd, (const ut8*)str, len);
+		r_io_set_fd(&core->io, core->file->fd);
+		r_io_write_at(&core->io, core->seek, (const ut8*)str, len);
 		r_core_block_read(core, 0);
 		break;
 	case 't':
@@ -668,7 +670,8 @@ static int cmd_write(void *data, const char *input)
 			if (buf == NULL) {
 				eprintf("Cannot open file '%s'\n", arg);
 			} else {
-				r_io_write(&core->io, core->file->fd, buf, size);
+				r_io_set_fd(&core->io, core->file->fd);
+				r_io_write_at(&core->io, core->seek, buf, size);
 				free(buf);
 			}
 		}
@@ -681,7 +684,8 @@ static int cmd_write(void *data, const char *input)
 			if (buf == NULL) {
 				eprintf("Cannot open file '%s'\n", arg);
 			} else {
-				r_io_write(&core->io, core->file->fd, buf, size);
+				r_io_set_fd(&core->io, core->file->fd);
+				r_io_write_at(&core->io, core->seek, buf, size);
 				free(buf);
 			}
 		}
@@ -698,8 +702,8 @@ static int cmd_write(void *data, const char *input)
 		str = tmp;
 
 		// write strifng
-		r_io_lseek(&core->io, core->file->fd, core->seek, R_IO_SEEK_SET);
-		r_io_write(&core->io, core->file->fd, str, len);
+		r_io_set_fd(&core->io, core->file->fd);
+		r_io_write_at(&core->io, core->seek, str, len);
 		r_core_block_read(core, 0);
 		break;
 	case 'x':
@@ -750,14 +754,15 @@ static int cmd_write(void *data, const char *input)
 		case '?':
 			break;
 		case '-':
-			r_io_set_write_mask(&core->io, -1, 0, 0);
+			r_io_set_write_mask(&core->io, 0, 0);
 			fprintf(stderr, "Write mask disabled\n");
 			break;
 		case ' ':
 			if (len == 0) {
 				fprintf(stderr, "Invalid string\n");
 			} else {
-				r_io_set_write_mask(&core->io, core->file->fd, str, len);
+				r_io_set_fd(&core->io, core->file->fd);
+				r_io_set_write_mask(&core->io, str, len);
 				fprintf(stderr, "Write mask set to '");
 				for (i=0;i<len;i++)
 					fprintf(stderr, "%02x", str[i]);
@@ -770,20 +775,21 @@ static int cmd_write(void *data, const char *input)
 	case 'v':
 		{
 		ut64 off = r_num_math(&core->num, input+1);
-		r_io_lseek(&core->io, core->file->fd, core->seek, R_IO_SEEK_SET);
+		r_io_set_fd(&core->io, core->file->fd);
+		r_io_lseek(&core->io, core->seek, R_IO_SEEK_SET);
 		if (off&UT64_32U) {
 			/* 8 byte addr */
 			ut64 addr8;
 			memcpy((ut8*)&addr8, (ut8*)&off, 8); // XXX needs endian here
 		//	endian_memcpy((ut8*)&addr8, (ut8*)&off, 8);
-			r_io_write(&core->io, core->file->fd, (const ut8 *)&addr8, 8);
+			r_io_write(&core->io, (const ut8 *)&addr8, 8);
 		} else {
 			/* 4 byte addr */
 			ut32 addr4, addr4_ = (ut32)off;
 			//drop_endian((ut8*)&addr4_, (ut8*)&addr4, 4); /* addr4_ = addr4 */
 			//endian_memcpy((ut8*)&addr4, (ut8*)&addr4_, 4); /* addr4 = addr4_ */
 			memcpy((ut8*)&addr4, (ut8*)&addr4_, 4); // XXX needs endian here too
-			r_io_write(&core->io, core->file->fd, (const ut8 *)&addr4, 4);
+			r_io_write(&core->io, (const ut8 *)&addr4, 4);
 		}
 		r_core_block_read(core, 0);
 		}
@@ -834,7 +840,8 @@ static int cmd_write(void *data, const char *input)
 	case '?':
 		if (core->oobi) {
 			fprintf(stderr, "Writing oobi buffer!\n");
-			r_io_write(&core->io, core->file->fd, core->oobi, core->oobi_len);
+			r_io_set_fd(&core->io, core->file->fd);
+			r_io_write(&core->io, core->oobi, core->oobi_len);
 		} else
 			r_cons_printf("Usage: w[x] [str] [<file] [<<EOF] [@addr]\n"
 			" w foobar    ; write string 'foobar'\n"
@@ -948,8 +955,8 @@ static int cmd_search(void *data, const char *input)
 		for(at = core->seek; at < core->file->size; at += core->blocksize) {
 			if (r_cons_breaked)
 				break;
-			r_io_lseek(&core->io, core->file->fd, at, R_IO_SEEK_SET);
-			ret = r_io_read(&core->io, core->file->fd, buf, core->blocksize);
+			r_io_set_fd(&core->io, core->file->fd);
+			ret = r_io_read_at(&core->io, at, buf, core->blocksize);
 			if (ret != core->blocksize)
 				break;
 			if (r_search_update(core->search, &at, buf, ret) == -1) {
@@ -1157,7 +1164,8 @@ static int cmd_undowrite(void *data, const char *input)
 static int cmd_io_system(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
-	return r_io_system(&core->io, core->file->fd, input);
+	r_io_set_fd(&core->io, core->file->fd);
+	return r_io_system(&core->io, input);
 }
 
 static int cmd_macro(void *data, const char *input)

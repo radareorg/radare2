@@ -1,5 +1,3 @@
-include ../../../config-user.mk
-
 OBJ_SHM=io_shm.o
 
 STATIC_OBJ+=${OBJ_SHM}

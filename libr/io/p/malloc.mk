@@ -1,5 +1,3 @@
-include ../../../config-user.mk
-
 OBJ_MALLOC=io_malloc.o
 
 STATIC_OBJ+=${OBJ_MALLOC}

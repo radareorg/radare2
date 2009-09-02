@@ -1,5 +1,3 @@
-include ../../../config-user.mk
-
 OBJ_IODBG=io_dbg.o
 
 STATIC_OBJ+=${OBJ_IODBG}

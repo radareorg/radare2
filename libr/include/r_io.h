@@ -94,14 +94,17 @@ R_API struct r_io_handle_t *r_io_handle_resolve_fd(struct r_io_t *io, int fd);
 
 /* io/io.c */
 R_API int r_io_init(struct r_io_t *io);
-R_API int r_io_set_write_mask(struct r_io_t *io, int fd, const ut8 *buf, int len);
+R_API int r_io_set_write_mask(struct r_io_t *io, const ut8 *buf, int len);
 R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode);
 R_API int r_io_redirect(struct r_io_t *io, const char *file);
-R_API int r_io_read(struct r_io_t *io, int fd, ut8 *buf, int len);
-R_API ut64 r_io_read_i(struct r_io_t *io, int fd, ut64 addr, int sz, int endian);
-R_API int r_io_write(struct r_io_t *io, int fd, const ut8 *buf, int len);
-R_API ut64 r_io_lseek(struct r_io_t *io, int fd, ut64 offset, int whence);
-R_API int r_io_system(struct r_io_t *io, int fd, const char *cmd);
+R_API int r_io_set_fd(struct r_io_t *io, int fd);
+R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len);
+R_API int r_io_read_at(struct r_io_t *io, ut64 addr, ut8 *buf, int len);
+R_API ut64 r_io_read_i(struct r_io_t *io, ut64 addr, int sz, int endian);
+R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len);
+R_API int r_io_write_at(struct r_io_t *io, ut64 addr, const ut8 *buf, int len);
+R_API ut64 r_io_lseek(struct r_io_t *io, ut64 offset, int whence);
+R_API int r_io_system(struct r_io_t *io,  const char *cmd);
 R_API int r_io_close(struct r_io_t *io, int fd);
 R_API ut64 r_io_size(struct r_io_t *io, int fd);
 
@@ -125,6 +128,7 @@ struct r_io_section_t {
 	struct list_head list;
 };
 
+// TODO: rename SECTION to PERMISION or so
 enum {
 	R_IO_SECTION_R = 4,
 	R_IO_SECTION_W = 2,

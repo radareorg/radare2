@@ -7,6 +7,9 @@ namespace Radare {
 	public class Database {
 		/* lifecycle */
 		public Database();
+		/**
+		* Initializes a database object
+		*/
 		public void init();
 		public void free();
 

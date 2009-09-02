@@ -56,6 +56,7 @@ static int r_debug_ptrace_wait(int pid)
 struct r_debug_regset_t * r_debug_ptrace_reg_read(int pid)
 {
 	struct r_debug_regset_t *r = NULL;
+// XXX this must be defined somewhere else
 #if __linux__
 #include <sys/user.h>
 #include <limits.h>
