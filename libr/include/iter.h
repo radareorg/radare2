@@ -31,8 +31,4 @@ R_API void r_iter_foreach(void **it, int (*callback)(void *, void *), void *user
 R_API void **r_iter_free(void *ptr);
 #endif
 
-// for gobject
-#define r_util_Iter void
-#define r_util_IterClass void*
-
 #endif

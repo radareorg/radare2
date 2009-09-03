@@ -19,19 +19,39 @@ namespace Radare {
 	}
 
 	/* Generic Iterator interfaced with r_iter */
+/*
 	[Compact]
-	[CCode (cprefix="r_iter_")]
-	public class Iter<G> {
-		public Iter (int size);
-		public unowned G get ();
-		public Iter<G> next ();
-		public unowned Iter<G> next_n (int idx);
-		public unowned G prev ();
+	[CCode (cprefix="r_iter_", cname="void")]
+	public class Iter {
+		public Iter* (int size);
+		public Iter* get ();
+		public Iter* next ();
+		public Iter* next_n (int idx);
+		public Iter* prev ();
 		public void delete ();
-		public unowned G first ();
+		public Iter* first ();
 		public bool last ();
 		// TODO: foreach()
-		public unowned G free ();
-		public void set (int idx, G data);
+		public Iter* free ();
+		public void set (int idx, owned void *data);
 	}
+*/
+
+        [Compact]
+        [CCode (cprefix="r_iter_", cname="void")]
+        public class GenericIter<G> {
+                public GenericIter (int size);
+                public unowned G get ();
+                public unowned GenericIter<G> next ();
+                public unowned GenericIter<G> next_n (int idx);
+                public unowned G prev ();
+                public void delete ();
+                public unowned G first ();
+                public bool last ();
+                // TODO: foreach()
+                public unowned G free ();
+                public void set (int idx, owned G data);
+        }
+}
+
 }
