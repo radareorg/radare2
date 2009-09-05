@@ -8,9 +8,9 @@ public class IterableObject {
 	}
 }
 
-Radare.GenericIter<IterableObject>* get_iter_list ()
+Radare.Iter<IterableObject>* get_iter_list ()
 {
-	GenericIter<IterableObject> list = new GenericIter<IterableObject>(4);
+	Iter<IterableObject> list = new Iter<IterableObject>(5);
 
 	list.set(0, new IterableObject("patata"));
 	list.set(1, new IterableObject("cacatua"));
@@ -34,4 +34,5 @@ void main()
 		IterableObject io = foo->get ();
 		stdout.printf("name: %s\n", io.name);
 	}
+	foo->free();
 }

@@ -28,7 +28,7 @@ namespace Radare {
 		public static struct Item {
 			public uint64 from;
 			public uint64 to;
-			public uint8 *data
+			public uint8 *data;
 			public int datalen;
 		}
 	}

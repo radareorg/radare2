@@ -1,9 +1,16 @@
-all: core hash sc socket asm search iter bin db
+all: core hash sc socket asm search iter bin db io list
 	@true
+
+# XXX
+list:
+	valac -o list list_c.c list.vala --pkg r_util --vapidir=${PWD}/.. -X -I.
 
 genie:
 	valac --vapidir=.. --pkg r_asm --pkg libr asm.gs
 	valac --vapidir=.. --pkg r_search --pkg libr search.gs
+
+io:
+	valac --vapidir=${PWD}/.. --pkg r_io io.vala
 
 db:
 	valac --vapidir=${PWD}/.. --pkg r_db db.vala

@@ -134,10 +134,10 @@ void r_io_section_list_visual(struct r_io_t *io, ut64 seek, ut64 len)
 		if (i>0 && len != 0) {
 			cons_printf("=>  0x%08llx |", seek);
 			for(j=0;j<width;j++) {
-				if ((j*mul)+min >= seek && (j*mul)+min <= seek+len)
-					cons_printf("#");
-				else
-					cons_printf("-");
+				cons_printf(
+					((j*mul)+min >= seek &&
+					 (j*mul)+min <= seek+len)
+					?"#":"-");
 			}
 			cons_printf("| 0x%08llx\n", seek+len);
 		}

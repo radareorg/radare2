@@ -6,7 +6,7 @@
 
 #define R_IO_READ 0
 #define R_IO_WRITE 1
-#define R_IO_RDWR 2
+#define R_IO_RDWR 2 // ???
 
 #define R_IO_NFDS 32
 
@@ -14,10 +14,11 @@
 #define R_IO_SEEK_CUR 1
 #define R_IO_SEEK_END 2
 
-#define IO_MAP_N 32
-struct r_io_maps_t {
+#define IO_MAP_N 128
+struct r_io_map_t {
         int fd;
-        char file[128];
+	int flags;
+        ut64 delta;
         ut64 from;
         ut64 to;
         struct list_head list;
@@ -48,7 +49,9 @@ struct r_io_t {
 	struct list_head io_list;
 	ut64 last_align;
 	struct list_head sections;
+	/* maps */
 	struct list_head maps;
+        struct list_head desc;
 };
 
 //struct r_io_handle_fd_t {
@@ -70,7 +73,7 @@ struct r_io_handle_t {
         int (*write)(struct r_io_t *io, int fd, const ut8 *buf, int count);
         int (*close)(struct r_io_t *io, int fd);
         int (*handle_open)(struct r_io_t *io, const char *);
-        int (*handle_fd)(struct r_io_t *, int);
+        //int (*handle_fd)(struct r_io_t *, int);
 	int fds[R_IO_NFDS];
 };
 
@@ -93,7 +96,7 @@ R_API struct r_io_handle_t *r_io_handle_resolve(struct r_io_t *io, const char *f
 R_API struct r_io_handle_t *r_io_handle_resolve_fd(struct r_io_t *io, int fd);
 
 /* io/io.c */
-R_API int r_io_init(struct r_io_t *io);
+R_API struct r_io_t* r_io_init(struct r_io_t *io);
 R_API int r_io_set_write_mask(struct r_io_t *io, const ut8 *buf, int len);
 R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode);
 R_API int r_io_redirect(struct r_io_t *io, const char *file);
@@ -110,11 +113,11 @@ R_API ut64 r_io_size(struct r_io_t *io, int fd);
 
 /* io/map.c */
 R_API void r_io_map_init(struct r_io_t *io);
-R_API int r_io_map_rm(struct r_io_t *io, int fd);
+R_API int r_io_map_del(struct r_io_t *io, int fd);
 R_API int r_io_map_list(struct r_io_t *io);
 R_API int r_io_map(struct r_io_t *io, const char *file, ut64 offset);
 R_API int r_io_map_read_at(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len);
-R_API int r_io_map_read_rest(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len);
+//R_API int r_io_map_read_rest(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len);
 R_API int r_io_map_write_at(struct r_io_t *io, ut64 off, const ut8 *buf, ut64 len);
 
 /* sections */
@@ -147,6 +150,19 @@ R_API void r_io_section_init(struct r_io_t *io);
 R_API int r_io_section_overlaps(struct r_io_t *io, struct r_io_section_t *s);
 R_API ut64 r_io_section_align(struct r_io_t *io, ut64 addr, ut64 vaddr, ut64 paddr);
 
+struct r_io_desc_t {
+	int fd;
+	int flags;
+        char name[4096];
+	struct r_io_handle_t *handle;
+        struct list_head list;
+};
+
+R_API int r_io_desc_init(struct r_io_t *io);
+R_API int r_io_desc_add(struct r_io_t *io, int fd, const char *file, int flags, struct r_io_handle_t *handle);
+R_API int r_io_desc_del(struct r_io_t *io, int fd);
+R_API struct r_io_desc_t *r_io_desc_get(struct r_io_t *io, int fd);
+R_API int r_io_desc_generate(struct r_io_t *io);
 #if 0
 #define CB_READ int (*cb_read)(struct r_io_t *user, int pid, ut64 addr, ut8 *buf, int len)
 #define CB_WRITE int (*cb_write)(struct r_io_t *user, int pid, ut64 addr, const ut8 *buf, int len)

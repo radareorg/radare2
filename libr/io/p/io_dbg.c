@@ -119,11 +119,6 @@ static int __open(struct r_io_t *io, const char *file, int rw, int mode)
 	return -1;
 }
 
-static int __handle_fd(struct r_io_t *io, int fd)
-{
-	return R_FALSE;
-}
-
 static int __init(struct r_io_t *io)
 {
 	printf("dbg init\n");
@@ -136,7 +131,6 @@ struct r_io_handle_t r_io_plugin_dbg = {
         .desc = "Debug a program or pid. dbg:///bin/ls, dbg://1388",
         .open = __open,
         .handle_open = __handle_open,
-        .handle_fd = __handle_fd,
 	.lseek = NULL,
 	.system = NULL,
 	.debug = (void *)1,

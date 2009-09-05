@@ -19,7 +19,9 @@ CACHE    - caches write operations to emulate fake reads
 
 NOTES: each plugin handle must provide a 'optimal' read size.. or io must be configured to this
 
-var io = new Radare.IO();
+var io = new Radare.Io();
 int fd = io.open("/bin/ls");
 
-
+foreach (Io.Handle handle in io.handle_list()) {
+   stdout.printf(" %s\n", handle.name);
+}

@@ -6,81 +6,73 @@
 #include "r_io.h"
 #include "list.h"
 
-
-#if 0
-static int maps_n = 0;
-static int maps[10];
-#endif
-
-void r_io_map_init(struct r_io_t *io)
+R_API void r_io_map_init(struct r_io_t *io)
 {
 	INIT_LIST_HEAD(&io->maps);
 }
 
-int r_io_map_rm(struct r_io_t *io, int fd)
+R_API struct r_io_map_t *r_io_map_resolve(struct r_io_t *io, int fd)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &io->maps) {
-		struct r_io_maps_t *im = list_entry(pos, struct r_io_maps_t, list);
-		if (im->fd == fd) {
-			/* FREE THIS */
-			r_io_handle_close(io,
-				fd, r_io_handle_resolve_fd(io, fd));
-			fprintf(stderr, "r_io_map_rm: TODO\n");
-			return 0;
-		}
+		struct r_io_map_t *im = list_entry(pos, struct r_io_map_t, list);
+		if (im->fd == fd)
+			return im;
 	}
-	fprintf(stderr, "Not found\n");
-	return 0;
+	return NULL;
 }
 
+/* remove all maps of a fd */
+R_API int r_io_map_del(struct r_io_t *io, int fd)
+{
+	int ret = R_FALSE;
+	struct list_head *pos, *n;
+	list_for_each_safe(pos, n, &io->maps) {
+		struct r_io_map_t *im = list_entry(pos, struct r_io_map_t, list);
+		if (im->fd == fd) {
+			list_del(&im->list);
+			ret = R_TRUE;
+		}
+	}
+	return ret;
+}
+
+R_API int r_io_map_add(struct r_io_t *io, int fd, int flags, ut64 delta, ut64 offset, ut64 size)
+{
+	struct r_io_map_t *im = MALLOC_STRUCT(struct r_io_map_t);
+	if (im == NULL)
+		return R_FALSE;
+	list_add_tail(&(im->list), &(io->maps));
+	im->fd = fd;
+	im->flags = flags;
+	im->delta = delta;
+	im->from = offset;
+	im->to = offset + size;
+	return R_TRUE;
+}
+
+/* TODO: Use r_iter here ?? */
 int r_io_map_list(struct r_io_t *io)
 {
 	int n = 0;
 	struct list_head *pos;
 	list_for_each_prev(pos, &io->maps) {
-		struct r_io_maps_t *im = list_entry(pos, struct r_io_maps_t, list);
-		if (im->file[0] != '\0') {
-			printf("0x%08llx 0x%08llx %s\n",
-				im->from, im->to, im->file);
-			n++;
-		}
+		struct r_io_map_t *im = list_entry(pos, struct r_io_map_t, list);
+		printf("0x%08llx 0x%08llx delta=0x%08llx fd=%d flags=%x\n",
+			im->from, im->to, im->delta, im->fd, im->flags);
+		n++;
 	}
 	return n;
-}
-
-int r_io_map(struct r_io_t *io, const char *file, ut64 offset)
-{
-	struct r_io_maps_t *im;
-	int fd = r_io_open(io, file, R_IO_READ, 0644);
-	if (fd == -1)
-		return -1;
-	im = MALLOC_STRUCT(struct r_io_maps_t);
-//(struct r_io_maps_t*)malloc(sizeof(struct r_io_maps_t));
-	if (im == NULL) {
-		r_io_close(io, fd);
-		return -1;
-	}
-	im->fd = fd;
-	strncpy(im->file, file, 127);
-	im->from = offset;
-	im->to   = offset+lseek(fd, 0, SEEK_END);
-	list_add_tail(&(im->list), &(io->maps));
-	return fd;
 }
 
 int r_io_map_read_at(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len)
 {
 	struct list_head *pos;
-
-	if (io == NULL)
-		return 0;
 	list_for_each_prev(pos, &io->maps) {
-		struct r_io_maps_t *im = list_entry(pos, struct r_io_maps_t, list);
-		if (im)
-		if (im->file && im->file[0] != '\0' && off >= im->from && off < im->to) {
+		struct r_io_map_t *im = list_entry(pos, struct r_io_map_t, list);
+		if (im && off >= im->from && off < im->to) {
 			r_io_set_fd(io, im->fd);
-			return r_io_read_at(io, off-im->from, buf, len);
+			return r_io_read_at(io, off-im->from + im->delta, buf, len);
 		}
 	}
 	return 0;
@@ -89,24 +81,24 @@ int r_io_map_read_at(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len)
 int r_io_map_write_at(struct r_io_t *io, ut64 off, const ut8 *buf, ut64 len)
 {
 	struct list_head *pos;
-
 	list_for_each_prev(pos, &io->maps) {
-		struct r_io_maps_t *im = list_entry(pos, struct r_io_maps_t, list);
-		if (im)
-		if (im->file[0] != '\0' && off >= im->from && off < im->to) {
-			r_io_set_fd(io, im->fd);
-			return r_io_write_at(io, off-im->from, buf, len);
+		struct r_io_map_t *im = list_entry(pos, struct r_io_map_t, list);
+		if (im && off >= im->from && off < im->to) {
+			if (im->flags & R_IO_WRITE) {
+				r_io_set_fd(io, im->fd);
+				return r_io_write_at(io, off-im->from + im->delta, buf, len);
+			} else return -1;
 		}
 	}
 	return 0;
 }
 
+#if 0
 int r_io_map_read_rest(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len)
 {
 	struct list_head *pos;
-
 	list_for_each_prev(pos, &io->maps) {
-		struct r_io_maps_t *im = list_entry(pos, struct r_io_maps_t, list);
+		struct r_io_map_t *im = list_entry(pos, struct r_io_map_t, list);
 		if (im->file[0] != '\0' && off+len >= im->from && off < im->to) {
 			lseek(im->fd, 0, SEEK_SET);
 // XXX VERY BROKEN
@@ -115,3 +107,4 @@ int r_io_map_read_rest(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len)
 	}
 	return 0;
 }
+#endif

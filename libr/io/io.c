@@ -4,7 +4,7 @@
 #include "r_util.h"
 #include <stdio.h>
 
-R_API int r_io_init(struct r_io_t *io)
+R_API struct r_io_t *r_io_init(struct r_io_t *io)
 {
 	io->write_mask_fd = -1;
 	io->last_align = 0;
@@ -13,22 +13,24 @@ R_API int r_io_init(struct r_io_t *io)
 	r_io_map_init(io);
 	r_io_section_init(io);
 	r_io_handle_init(io);
-	return 0;
+	r_io_desc_init(io);
+	return io;
 }
 
 R_API struct r_io_t *r_io_new()
 {
 	struct r_io_t *io = MALLOC_STRUCT(struct r_io_t);
-	r_io_init(io);
-	return io;
+	return r_io_init(io);
 }
 
 R_API struct r_io_t *r_io_free(struct r_io_t *io)
 {
+	/* TODO: properly free inner nfo */
 	free(io);
 	return NULL;
 }
 
+/* used by uri handler plugins */
 R_API int r_io_redirect(struct r_io_t *io, const char *file)
 {
 	free(io->redirect);
@@ -62,8 +64,11 @@ R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode)
 	}
 	if (fd == -2)
 		fd = open(file, flags, mode);
-	if (fd > -1) r_io_set_fd(io, fd);
-	else fd = -1;
+	if (fd >= 0) {
+		r_io_set_fd(io, fd);
+		r_io_desc_add(io, fd, file, flags, io->plugin);
+	} else fd = -1;
+
 	free((void *)uri);
 	return fd;
 }
@@ -215,21 +220,24 @@ R_API ut64 r_io_size(struct r_io_t *io, int fd)
 
 R_API int r_io_system(struct r_io_t *io, const char *cmd)
 {
+	int ret = -1;
 	if (io->plugin && io->plugin->system)
-		return io->plugin->system(io, io->fd, cmd);
-	return 0;
+		ret = io->plugin->system(io, io->fd, cmd);
+	return ret;
 }
 
 // TODO: remove int fd here???
 R_API int r_io_close(struct r_io_t *io, int fd)
 {
 	fd = r_io_set_fd(io, fd);
-	if (io->plugin) {
-		io->fd = fd;
+	if (fd != -1 && io->plugin) {
+		r_io_desc_del(io, fd);
+		r_io_map_del(io, fd);
 		r_io_handle_close(io, fd, io->plugin);
 		if (io->plugin->close)
 			return io->plugin->close(io, fd);
 	}
+	io->fd = -1; // unset current fd
 	return close(fd);
 }
 

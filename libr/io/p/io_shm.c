@@ -53,11 +53,6 @@ static ut64 shm__lseek(struct r_io_t *io, int fildes, ut64 offset, int whence)
 	return io->seek;
 }
 
-static int shm__handle_fd(struct r_io_t *io, int fd)
-{
-	return (fd == shm_fd);
-}
-
 static int shm__handle_open(struct r_io_t *io, const char *pathname)
 {
 	return (!memcmp(pathname, "shm://", 6));
@@ -100,7 +95,6 @@ struct r_io_handle_t r_io_plugin_shm = {
         .close = shm__close,
 	.read = shm__read,
         .handle_open = shm__handle_open,
-        .handle_fd = shm__handle_fd,
 	.lseek = shm__lseek,
 	.system = NULL, // shm__system,
 	.init = shm__init,

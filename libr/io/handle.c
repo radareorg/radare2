@@ -64,13 +64,6 @@ R_API struct r_io_handle_t *r_io_handle_resolve_fd(struct r_io_t *io, int fd)
 	return NULL;
 }
 
-R_API int r_io_handle_generate(struct r_io_t *io)
-{
-	// TODO: ensure srand here (( implement in r_util a decent random helper
-	// TODO: register io plugin with new fd
-	return (rand()%666)+1024;
-}
-
 R_API int r_io_handle_open(struct r_io_t *io, int fd, struct r_io_handle_t *plugin)
 {
 	int i=0;

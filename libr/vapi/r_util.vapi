@@ -19,31 +19,13 @@ namespace Radare {
 	}
 
 	/* Generic Iterator interfaced with r_iter */
-/*
-	[Compact]
-	[CCode (cprefix="r_iter_", cname="void")]
-	public class Iter {
-		public Iter* (int size);
-		public Iter* get ();
-		public Iter* next ();
-		public Iter* next_n (int idx);
-		public Iter* prev ();
-		public void delete ();
-		public Iter* first ();
-		public bool last ();
-		// TODO: foreach()
-		public Iter* free ();
-		public void set (int idx, owned void *data);
-	}
-*/
-
         [Compact]
         [CCode (cprefix="r_iter_", cname="void")]
-        public class GenericIter<G> {
-                public GenericIter (int size);
+        public class Iter<G> {
+                public Iter (int size);
                 public unowned G get ();
-                public unowned GenericIter<G> next ();
-                public unowned GenericIter<G> next_n (int idx);
+                public unowned Iter<G> next ();
+                public unowned Iter<G> next_n (int idx);
                 public unowned G prev ();
                 public void delete ();
                 public unowned G first ();
@@ -52,6 +34,25 @@ namespace Radare {
                 public unowned G free ();
                 public void set (int idx, owned G data);
         }
+
+	[Compact]
+	[CCode (cprefix="ralist_", cheader_filename="list_c.h", cname="struct list_head")]
+	public static class List<G> { //: Iterator {
+		[CCode (cname="ralist_next")]
+		public bool next();
+		[CCode (cname="")]
+		public G @free(G arg);
+		//[CCode (cname="calist_entry")]
+		public G get();
+		public List<G> iterator();
+	}
 }
 
+// DEMO TEST DEMO TEST DEMO TEST DEMO TEST DEMO TEST //
+[Compact]
+[CCode (cname="foo", cheader_filename="list_c.h")]
+public class Foo {
+	public string name;
+	[CCode (cname="")]
+	public void free();
 }
