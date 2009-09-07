@@ -16,7 +16,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	printf("FD = %d\n", fd);
-	r_io_lseek(&io, 1, R_IO_SEEK_SET);
+	r_io_seek(&io, 1, R_IO_SEEK_SET);
 	memset(buf, '\0', sizeof(buf));
 	r_io_read(&io, buf, 4);
 	buf[4]='\0';

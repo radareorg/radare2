@@ -24,7 +24,16 @@ namespace Radare
 		public Io* free();
 		public bool init();
 		public bool set_write_mask(int fd, uint8 *buf, int len);
+
+		/**
+		 * Open a file using an uri specifying flags and mode
+		 *
+		 * uri: URI with path to file 
+		 * flags: See Radare.Io.Flags
+		 * mode: ...
+	 	 */
 		public int open(string uri, int flags, int mode);
+		public int open_as(string urihandler, string path, int flags, int mode);
 		public int read(int fd, out uint8 *buf, int len);
 		public int write(int fd, uint8 *buf, int len);
 		public uint64 lseek(int fd, uint64 addr, int whence);

@@ -51,21 +51,7 @@ R_API int r_io_map_add(struct r_io_t *io, int fd, int flags, ut64 delta, ut64 of
 	return R_TRUE;
 }
 
-/* TODO: Use r_iter here ?? */
-int r_io_map_list(struct r_io_t *io)
-{
-	int n = 0;
-	struct list_head *pos;
-	list_for_each_prev(pos, &io->maps) {
-		struct r_io_map_t *im = list_entry(pos, struct r_io_map_t, list);
-		printf("0x%08llx 0x%08llx delta=0x%08llx fd=%d flags=%x\n",
-			im->from, im->to, im->delta, im->fd, im->flags);
-		n++;
-	}
-	return n;
-}
-
-int r_io_map_read_at(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len)
+R_API int r_io_map_read_at(struct r_io_t *io, ut64 off, ut8 *buf, int len)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &io->maps) {
@@ -75,10 +61,10 @@ int r_io_map_read_at(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len)
 			return r_io_read_at(io, off-im->from + im->delta, buf, len);
 		}
 	}
-	return 0;
+	return -1;
 }
 
-int r_io_map_write_at(struct r_io_t *io, ut64 off, const ut8 *buf, ut64 len)
+R_API int r_io_map_write_at(struct r_io_t *io, ut64 off, const ut8 *buf, int len)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &io->maps) {
@@ -92,6 +78,8 @@ int r_io_map_write_at(struct r_io_t *io, ut64 off, const ut8 *buf, ut64 len)
 	}
 	return 0;
 }
+
+// DEPRECATE ??? DEPREACATE
 
 #if 0
 int r_io_map_read_rest(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len)
@@ -108,3 +96,18 @@ int r_io_map_read_rest(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len)
 	return 0;
 }
 #endif
+
+/* TODO: Use r_iter here ?? */
+int r_io_map_list(struct r_io_t *io)
+{
+	int n = 0;
+	struct list_head *pos;
+	list_for_each_prev(pos, &io->maps) {
+		struct r_io_map_t *im = list_entry(pos, struct r_io_map_t, list);
+		printf("0x%08llx 0x%08llx delta=0x%08llx fd=%d flags=%x\n",
+			im->from, im->to, im->delta, im->fd, im->flags);
+		n++;
+	}
+	return n;
+}
+

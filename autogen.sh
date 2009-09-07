@@ -1,4 +1,8 @@
 #!/bin/sh
+#
 # Look for the 'acr' tool here: http://www.nopcode.org/
-# -- pancake <nopcode><org>
+# Clone last version of ACR from here:
+#  hg clone http://youterm.com/hg/acr
+#
+# -- pancake
 acr -p

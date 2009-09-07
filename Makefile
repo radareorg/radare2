@@ -7,6 +7,10 @@ all:
 clean:
 	cd libr && make clean
 
+vdoc:
+	rm -rf vdoc
+	valadoc -o vdoc libr/vapi/*.vapi
+
 mrproper:
 	cd libr && make mrproper
 
@@ -44,4 +48,4 @@ shot:
 
 include ${MKPLUGINS}
 
-.PHONY: all clean mrproper install uninstall deinstall dist shot pkgcfg
+.PHONY: all clean mrproper install uninstall deinstall dist shot pkgcfg vdoc

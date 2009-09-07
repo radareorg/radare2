@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+
 #include <r_io.h>
 
 int main(int argc, char **argv)

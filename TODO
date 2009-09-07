@@ -8,11 +8,8 @@
 
 <{include libr/TODO}>
 
-* Rename io_lseek to io_seek ... l is for long..and radare uses ut64!
 * correct result (R_TRUFAE), but with warnings (implement r_errno and r_errstr in r_util?)
   - Quantic computation ftw \o/
-* Add r_th for threading help for w32/osx/linux/bsd/... .. use gthread? :P
-  - provide simple IPC comunication
 * r_cmd must provide a nesting char table indexing for commands
   - this is pretty similar to r_db
   - every module can register their own commands

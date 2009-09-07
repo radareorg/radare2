@@ -18,7 +18,7 @@
 #define R_IO_NFDS 2
 extern int errno;
 static int fds[3];
-static int nfds = 0;
+//static int nfds = 0;
 
 static int __waitpid(int pid)
 {
@@ -31,7 +31,7 @@ static int __waitpid(int pid)
 #define debug_read_raw(x,y) ptrace(PTRACE_PEEKTEXT, x, y, 0)
 
 // FIX: the goto 'err' is buggy
-static int debug_os_read_at(int pid, void *buff, int sz, ut64 addr)
+static int debug_os_read_at(int pid, void *buf, int sz, ut64 addr)
 {
         unsigned long words = sz / sizeof(long) ;
         unsigned long last = sz % sizeof(long) ;
@@ -41,8 +41,8 @@ static int debug_os_read_at(int pid, void *buff, int sz, ut64 addr)
                 return -1; 
 
         for(x=0;x<words;x++) {
-                ((long *)buff)[x] = debug_read_raw(pid, (void *)(&((long*)(long )addr)[x]));
-                if (((long *)buff)[x] == -1) // && errno)
+                ((long *)buf)[x] = debug_read_raw(pid, (void *)(&((long*)(long )addr)[x]));
+                if (((long *)buf)[x] == -1) // && errno)
                         goto err;
         }
 
@@ -50,7 +50,7 @@ static int debug_os_read_at(int pid, void *buff, int sz, ut64 addr)
                 lr = debug_read_raw(pid, &((long*)(long)addr)[x]);
                 if (lr == -1) // && errno)
                         goto err;
-                memcpy(&((long *)buff)[x], &lr, last) ;
+                memcpy(&((long *)buf)[x], &lr, last) ;
         }
 
         return sz; 
@@ -68,10 +68,10 @@ static int __read(struct r_io_t *io, int pid, ut8 *buf, int len)
 	//if (ret == -1)
 	//	return -1;
 
-	return len;
+	return ret;
 }
 
-static int ptrace_write_at(int pid, const ut8 *buff, int sz, ut64 addr)
+static int ptrace_write_at(int pid, const ut8 *buf, int sz, ut64 addr)
 {
         long words = sz / sizeof(long) ;
         long last = (sz % sizeof(long))*8;
@@ -88,7 +88,7 @@ static int ptrace_write_at(int pid, const ut8 *buff, int sz, ut64 addr)
 	word = ptrace(PTRACE_PEEKDATA, pid, (void *)addr, (void *)buf);
 	if (word==-1)
 		word = ptrace(PTRACE_PEEKTEXT, pid, (void *)addr, (void *)buf);
-	buf[0]=buff[0];
+	buf[0]=buf[0];
 	ptrace(PTRACE_POKEDATA, (pid_t)pid, (void *)addr, (void *)buf);
 	ptrace(PTRACE_POKETEXT, pid, (void *)addr, (void *)buf);
 	return sz;
@@ -97,7 +97,7 @@ static int ptrace_write_at(int pid, const ut8 *buff, int sz, ut64 addr)
 
 
 	for(x=0;x<words;x++)
-		if (ptrace(PTRACE_POKEDATA,pid,&((long *)(long)addr)[x],((long *)buff)[x]))
+		if (ptrace(PTRACE_POKEDATA,pid,&((long *)(long)addr)[x],((long *)buf)[x]))
 			goto err ;
 
 	if (last) {
@@ -107,7 +107,7 @@ static int ptrace_write_at(int pid, const ut8 *buff, int sz, ut64 addr)
 		if ((lr == -1 && errno) ||
 		    (
 			ptrace(PTRACE_POKEDATA,pid,&((long *)(long)addr)[x],((lr&(-1L<<last)) |
-			(((long *)buff)[x]&(~(-1L<<last)))))
+			(((long *)buf)[x]&(~(-1L<<last)))))
 		    )
 		   )
                 goto err;
@@ -163,7 +163,7 @@ static int __open(struct r_io_t *io, const char *file, int rw, int mode)
 
 static ut64 __lseek(struct r_io_t *io, int fildes, ut64 offset, int whence)
 {
-	return -1;
+	return offset;
 }
 
 static int __close(struct r_io_t *io, int pid)
@@ -179,7 +179,7 @@ static int __system(struct r_io_t *io, int fd, const char *cmd)
 #include <limits.h>
 	/* XXX ugly hack for testing purposes */
 	if (!strcmp(cmd, "pid")) {
-		printf("PID=%d\n", io->fd);
+		//printf("PID=%d\n", io->fd);
 		return io->fd;
 	} else
 	if (!strcmp(cmd, "reg")) {

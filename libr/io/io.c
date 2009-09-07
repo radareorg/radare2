@@ -38,6 +38,18 @@ R_API int r_io_redirect(struct r_io_t *io, const char *file)
 	return 0;
 }
 
+R_API int r_io_open_as(struct r_io_t *io, const char *urihandler, const char *file, int flags, int mode)
+{
+	int ret;
+	char *uri = malloc(strlen(urihandler)+strlen(file)+5);
+	strcpy(uri, urihandler);
+	strcpy(uri, "://");
+	strcpy(uri, file);
+	ret = r_io_open(io, uri, flags, mode);
+	free(uri);
+	return ret;
+}
+
 R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode)
 {
 	int fd = -2;
@@ -84,9 +96,14 @@ R_API int r_io_set_fd(struct r_io_t *io, int fd)
 
 R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len)
 {
-	// TODO: support read of partial pages
-	if (r_io_map_read_at(io, io->seek, buf, len) != 0)
+	int ret = r_io_map_read_at(io, io->seek, buf, len);
+	// partial readz
+	if (ret == len)
 		return len;
+	if (ret != -1) {
+		len -= ret;
+		buf += len;
+	}
 	if (io->plugin && io->plugin->read) {
 		if (io->plugin->read != NULL)
 			return io->plugin->read(io, io->fd, buf, len);
@@ -97,7 +114,7 @@ R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len)
 
 R_API int r_io_read_at(struct r_io_t *io, ut64 addr, ut8 *buf, int len)
 {
-	if (r_io_lseek(io, addr, R_IO_SEEK_SET)<0)
+	if (r_io_seek(io, addr, R_IO_SEEK_SET)==-1)
 		return -1;
 	return r_io_read(io, buf, len);
 }
@@ -150,9 +167,9 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len)
 	/* apply write binary mask */
 	if (io->write_mask_fd != -1) {
 		ut8 *data = alloca(len);
-		r_io_lseek(io, io->seek, R_IO_SEEK_SET);
+		r_io_seek(io, io->seek, R_IO_SEEK_SET);
 		r_io_read(io, data, len);
-		r_io_lseek(io, io->seek, R_IO_SEEK_SET);
+		r_io_seek(io, io->seek, R_IO_SEEK_SET);
 		for(i=0;i<len;i++) {
 			data[i] = buf[i] & \
 				io->write_mask_buf[i%io->write_mask_len];
@@ -174,12 +191,12 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len)
 
 R_API int r_io_write_at(struct r_io_t *io, ut64 addr, const ut8 *buf, int len)
 {
-	if (r_io_lseek(io, addr, R_IO_SEEK_SET)<0)
+	if (r_io_seek(io, addr, R_IO_SEEK_SET)<0)
 		return -1;
 	return r_io_write(io, buf, len);
 }
 
-R_API ut64 r_io_lseek(struct r_io_t *io, ut64 offset, int whence)
+R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence)
 {
 	int posix_whence = SEEK_SET;
 
@@ -195,7 +212,7 @@ R_API ut64 r_io_lseek(struct r_io_t *io, ut64 offset, int whence)
 		posix_whence = SEEK_CUR;
 		break;
 	case R_IO_SEEK_END:
-		io->seek = 0xffffffff; // XXX
+		io->seek = 0xffffffff; // XXX: depending on io bitz?
 		posix_whence = SEEK_END;
 		break;
 	}
@@ -212,9 +229,9 @@ R_API ut64 r_io_size(struct r_io_t *io, int fd)
 {
 	ut64 size, here;
 	fd = r_io_set_fd(io, fd);
-	here = r_io_lseek(io, 0, R_IO_SEEK_CUR);
-	size = r_io_lseek(io, 0, R_IO_SEEK_END);
-	r_io_lseek(io, here, R_IO_SEEK_SET);
+	here = r_io_seek(io, 0, R_IO_SEEK_CUR);
+	size = r_io_seek(io, 0, R_IO_SEEK_END);
+	r_io_seek(io, here, R_IO_SEEK_SET);
 	return size;
 }
 

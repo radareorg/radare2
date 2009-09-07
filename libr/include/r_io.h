@@ -99,6 +99,7 @@ R_API struct r_io_handle_t *r_io_handle_resolve_fd(struct r_io_t *io, int fd);
 R_API struct r_io_t* r_io_init(struct r_io_t *io);
 R_API int r_io_set_write_mask(struct r_io_t *io, const ut8 *buf, int len);
 R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode);
+R_API int r_io_open_as(struct r_io_t *io, const char *urihandler, const char *file, int flags, int mode);
 R_API int r_io_redirect(struct r_io_t *io, const char *file);
 R_API int r_io_set_fd(struct r_io_t *io, int fd);
 R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len);
@@ -106,19 +107,20 @@ R_API int r_io_read_at(struct r_io_t *io, ut64 addr, ut8 *buf, int len);
 R_API ut64 r_io_read_i(struct r_io_t *io, ut64 addr, int sz, int endian);
 R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len);
 R_API int r_io_write_at(struct r_io_t *io, ut64 addr, const ut8 *buf, int len);
-R_API ut64 r_io_lseek(struct r_io_t *io, ut64 offset, int whence);
+R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence);
 R_API int r_io_system(struct r_io_t *io,  const char *cmd);
 R_API int r_io_close(struct r_io_t *io, int fd);
 R_API ut64 r_io_size(struct r_io_t *io, int fd);
 
 /* io/map.c */
 R_API void r_io_map_init(struct r_io_t *io);
+R_API int r_io_map_add(struct r_io_t *io, int fd, int flags, ut64 delta, ut64 offset, ut64 size);
 R_API int r_io_map_del(struct r_io_t *io, int fd);
 R_API int r_io_map_list(struct r_io_t *io);
 R_API int r_io_map(struct r_io_t *io, const char *file, ut64 offset);
-R_API int r_io_map_read_at(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len);
+R_API int r_io_map_read_at(struct r_io_t *io, ut64 off, ut8 *buf, int len);
 //R_API int r_io_map_read_rest(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len);
-R_API int r_io_map_write_at(struct r_io_t *io, ut64 off, const ut8 *buf, ut64 len);
+R_API int r_io_map_write_at(struct r_io_t *io, ut64 off, const ut8 *buf, int len);
 
 /* sections */
 struct r_io_section_t {
