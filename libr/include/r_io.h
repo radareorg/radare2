@@ -4,18 +4,14 @@
 #include "r_types.h"
 #include "list.h"
 
-#define R_IO_READ 0
-#define R_IO_WRITE 1
-#define R_IO_EXEC 4
+#define R_IO_READ  4
+#define R_IO_WRITE 2
+#define R_IO_EXEC  1
 
-#if 0
-// TODO: rename SECTION to PERMISION or so
-enum {
-	R_IO_SECTION_R = 4,
-	R_IO_SECTION_W = 2,
-	R_IO_SECTION_X = 1,
-};
-#endif
+#define R_IO_SEEK_SET 0
+#define R_IO_SEEK_CUR 1
+#define R_IO_SEEK_END 2
+
 #if 0
 // DEPRECATE ??
 #define R_IO_RW R_IO_READ|R_IO_WRITE
@@ -26,9 +22,6 @@ enum {
 
 #define R_IO_NFDS 32
 
-#define R_IO_SEEK_SET 0
-#define R_IO_SEEK_CUR 1
-#define R_IO_SEEK_END 2
 
 #define IO_MAP_N 128
 struct r_io_map_t {
@@ -43,13 +36,25 @@ struct r_io_map_t {
 /* stores write and seek changes */
 #define R_IO_UNDOS 64
 struct r_io_undo_t {
-	struct list_head undo_w_list;
+	int enable;
+	/* write stuff */
+	struct list_head w_list;
 	int w_init;
 	int w_lock;
+	/* seek stuff */
 	ut64 seek[R_IO_UNDOS];
 	int fd[R_IO_UNDOS];
 	int idx;
-	int lim;
+	int limit;
+};
+
+struct r_io_undo_w_t {
+	int set;
+	ut64 off;
+	ut8 *o;   /* old data */
+	ut8 *n;   /* new data */
+	int len;  /* length */
+	struct list_head list;
 };
 
 struct r_io_t {
@@ -65,6 +70,7 @@ struct r_io_t {
 	ut8 *write_mask_buf;
 	int write_mask_len;
 	struct r_io_handle_t *plugin;
+	struct r_io_undo_t undo;
 	struct list_head io_list;
 	ut64 last_align;
 	struct list_head sections;
@@ -205,6 +211,26 @@ R_API int r_io_desc_add(struct r_io_t *io, int fd, const char *file, int flags, 
 R_API int r_io_desc_del(struct r_io_t *io, int fd);
 R_API struct r_io_desc_t *r_io_desc_get(struct r_io_t *io, int fd);
 R_API int r_io_desc_generate(struct r_io_t *io);
+
+/* undo api */
+// track seeks and writes
+// TODO: needs cleanup..kinda big?
+R_API int r_io_undo_init(struct r_io_t *io);
+R_API void r_io_undo_enable(struct r_io_t *io, int set);
+R_API ut64 r_io_undo_get_last_seek(struct r_io_t *io);
+R_API void r_io_undo_seek(struct r_io_t *io);
+R_API void r_io_undo_redo(struct r_io_t *io);
+R_API void r_io_undo_push(struct r_io_t *io);
+R_API void r_io_undo_reset(struct r_io_t *io);
+R_API void r_io_undo_list(struct r_io_t *io);
+R_API void r_io_undo_write_new(struct r_io_t *io, ut64 off, const ut8 *data, int len);
+R_API void r_io_undo_write_clear(struct r_io_t *io);
+R_API int r_io_undo_write_size(struct r_io_t *io);
+R_API void r_io_undo_write_list(struct r_io_t *io);
+R_API int r_io_undo_write_set_t(struct r_io_t *io, struct r_io_undo_w_t *u, int set) ;
+R_API void r_io_undo_write_set_all(struct r_io_t *io, int set);
+R_API int r_io_undo_write_set(struct r_io_t *io, int n, int set);
+
 #if 0
 #define CB_READ int (*cb_read)(struct r_io_t *user, int pid, ut64 addr, ut8 *buf, int len)
 #define CB_WRITE int (*cb_write)(struct r_io_t *user, int pid, ut64 addr, const ut8 *buf, int len)

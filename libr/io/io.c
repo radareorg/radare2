@@ -4,22 +4,21 @@
 #include "r_util.h"
 #include <stdio.h>
 
+// TODO: R_API int r_io_fetch(struct r_io_t *io, ut8 *buf, int len)
+//  --- check for EXEC perms in section (use cached read to accelerate)
+
 R_API struct r_io_t *r_io_init(struct r_io_t *io)
 {
 	io->write_mask_fd = -1;
 	io->last_align = 0;
 	io->redirect = NULL;
 	io->printf = printf;
-	io->enforce_rwx = 0; // do not enforce RWX section permissions by default
-	io->enforce_seek = 0; // do not limit seeks out of the file by default
-	io->enforce_rwx = 0;
-	io->enforce_seek = 0;
-	io->cached = 0; // IO cached
 	r_io_cache_init(io);
 	r_io_map_init(io);
 	r_io_section_init(io);
 	r_io_handle_init(io);
 	r_io_desc_init(io);
+	r_io_undo_init(&io->undo);
 	return io;
 }
 
@@ -97,7 +96,8 @@ R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode)
 		}
 	}
 	if (fd == -2)
-		fd = open(file, flags, mode);
+		// XXX RDONLY; READ; WRITE AND MORE SOO... 
+		fd = open(file, O_RDONLY, mode); // XXX drop posix depz here
 	if (fd >= 0) {
 		r_io_set_fd(io, fd);
 		r_io_desc_add(io, fd, file, flags, io->plugin);
@@ -115,6 +115,7 @@ R_API int r_io_set_fd(struct r_io_t *io, int fd)
 	}
 	return io->fd;
 }
+
 
 R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len)
 {
@@ -312,19 +313,3 @@ R_API int r_io_close(struct r_io_t *io, int fd)
 	io->fd = -1; // unset current fd
 	return close(fd);
 }
-
-#if 0
-// define callback for other APIs to use with current io
-static int _cb_read(struct r_io_t *io, int pid, ut64 addr, ut8 *buf, int len)
-{
-}
-
-static int _cb_write(struct r_io_t *io, int pid, ut64 addr, const ut8 *buf, int len)
-{
-}
-
-R_API int r_io_hook(struct r_io_t *io, CB_IO)
-{
-	return cb_io(user, _cb_read, _cb_write
-}
-#endif

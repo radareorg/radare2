@@ -7,6 +7,8 @@
 
 R_API void r_io_section_init(struct r_io_t *io)
 {
+	io->enforce_rwx = 0; // do not enforce RWX section permissions by default
+	io->enforce_seek = 0; // do not limit seeks out of the file by default
 	INIT_LIST_HEAD(&(io->sections));
 }
 

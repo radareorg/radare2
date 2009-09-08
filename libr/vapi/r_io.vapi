@@ -17,6 +17,7 @@ namespace Radare
 			CUR = 1,
 			END = 2,
 		}
+
 		/**
 		 * Do the io! :D
 	 	 */
@@ -40,6 +41,12 @@ namespace Radare
 		public int system(int fd, string cmd);
 		public int close(int fd);
 		public uint64 size(int fd);
+
+		/* undo */
+		public void undo_enable(int set);
+		public uint64 undo_seek();
+		public void undo_redo();
+		public void undo_push();
 
 		/* handle */
 		public struct Handle {

@@ -8,7 +8,28 @@
 
 R_API void r_io_cache_init(struct r_io_t *io)
 {
+	io->cached = 0; // IO cached
 	INIT_LIST_HEAD(&io->cache);
+}
+
+R_API void r_io_cache_enable(struct r_io_t *io, int set)
+{
+	io->cached = set;
+}
+
+R_API void r_io_cache_free(struct r_io_t *io, int set)
+{
+	io->cached = set;
+	struct r_io_cache_t *c;
+	struct list_head *pos, *n;
+
+	list_for_each_safe(pos, n, &io->cache) {
+		c = list_entry(pos, struct r_io_cache_t, list);
+		free(c->data);
+		free(c);
+	}
+	// is this necessary at all?
+	INIT_LIST_HEAD(&io->cache); 
 }
 
 R_API int r_io_cache_write(struct r_io_t *io, ut64 addr, const ut8 *buf, int len)
@@ -57,8 +78,3 @@ R_API int r_io_cache_write(struct r_io_t *io, ut64 off, ut8 *data, int len)
 	return r_io_write_at(io, off, data, len);
 }
 #endif
-
-R_API void r_io_cache_enable(struct r_io_t *io, int set)
-{
-	io->cached = set;
-}

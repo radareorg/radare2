@@ -1,170 +1,138 @@
-/*
- * Copyright (C) 2007, 2008, 2009
- *       pancake <@youterm.com>
- *
- * radare is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * radare is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with radare; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- *
- */
+/* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
 
-#include "main.h"
-#include "radare.h"
-#include "list.h"
-#include "undo.h"
+#include <r_io.h>
+
+#define cons_printf printf
+#define cons_newline() printf("\n");
 
 #if 0
-* Handle changes in write and seeks
-* Per-fd history log
+* TODO:
+* - make path of indirections shortr (io->undo.foo is slow) */
+* - Handle changes in write and seeks
+* - Per-fd history log
 #endif
 
-#if 0
-/* History for writes support indexing and undo/redo with state flags */
-static struct list_head undo_w_list;
-static int undo_w_init = 0;
-static int undo_w_lock = 0;
-
-/* History for the N last seeks, stack-like access */
-#define UNDOS 64
-static ut64 undos[UNDOS];
-static int undos_idx = 0;
-static int undos_lim = 0;
-#endif
-
-
-int r_io_undo_init(struct r_io_undo_t *undo)
+R_API int r_io_undo_init(struct r_io_t *io)
 {
-	u->undo_w_init = 0;
-	u->undo_w_lock = 0;
-	u->undos_idx = 0;
-	u->undos_lim = 0;
+	io->undo.w_init = 0;
+	io->undo.w_lock = 0;
+	io->undo.idx = 0;
+	io->undo.limit = 0;
+	io->undo.enable = 0;
 	return R_TRUE;
 }
 
-// ut64 r_io_undo_get_last()
+R_API void r_io_undo_enable(struct r_io_t *io, int set)
 {
+	io->undo.enable = set;
 }
 
-ut64 undo_get_last_seek()
+R_API ut64 r_io_undo_get_last_seek(struct r_io_t *io)
 {
-	if (undos_idx==0)
-		return config.seek;
-	return undos[undos_idx-2];
+	return (io->undo.idx)?
+		io->undo.seek[io->undo.idx-2] : io->seek;
 }
 
-void undo_seek()
+R_API void r_io_undo_seek(struct r_io_t *io)
 {
-	if (--undos_idx<0)
-		undos_idx = 0;
-	else config.seek = undos[undos_idx-1];
+	if (--io->undo.idx<0)
+		io->undo.idx = 0;
+	else io->seek = io->undo.seek[io->undo.idx-1];
 }
 
-void undo_redo()
+R_API void r_io_undo_redo(struct r_io_t *io)
 {
-	if (undos_idx<undos_lim) {
-		undos_idx+=2;
-		undo_seek();
+	if (io->undo.idx<io->undo.limit) {
+		io->undo.idx += 2;
+		r_io_undo_seek(io);
 	}
 }
 
-void undo_push()
+R_API void r_io_undo_push(struct r_io_t *io)
 {
 	int i;
 
-	if (undos[undos_idx-1] == config.seek)
+	if (io->undo.seek[io->undo.idx-1] == io->seek)
 		return;
 
-	undos[undos_idx] = config.seek;
-	if (undos_idx==UNDOS-1) {
-		for(i=1;i<UNDOS;i++)
-			undos[i-1] = undos[i];
-	} else
-		undos_idx++;
+	io->undo.seek[io->undo.idx] = io->seek;
+	if (io->undo.idx==R_IO_UNDOS-1) {
+		for(i=1;i<R_IO_UNDOS;i++)
+			io->undo.seek[i-1] = io->undo.seek[i];
+	} else io->undo.idx++;
 
-	if (undos_lim<undos_idx)
-		undos_lim = undos_idx;
+	if (io->undo.limit<io->undo.idx)
+		io->undo.limit = io->undo.idx;
 }
 
-void undo_reset()
+R_API void r_io_undo_reset(struct r_io_t *io)
 {
-	undos_idx = 0;
+	io->undo.idx = 0;
 }
 
-void undo_list()
+R_API void r_io_undo_list(struct r_io_t *io)
 {
 	int i;
-	if (undos_idx<1)
-		eprintf("-no seeks done-\n");
-	else {
-		cons_printf("f undo_idx @ %d\n", undos_idx);
-		for(i=undos_idx-1;i!=0;i--)
-			cons_printf("f undo_%d @ 0x%llx\n", undos_idx-1-i, undos[i-1]);
-	}
+	if (io->undo.idx>0) {
+		cons_printf("f undo_idx @ %d\n", io->undo.idx);
+		for(i=io->undo.idx-1;i!=0;i--)
+			cons_printf("f undo_%d @ 0x%llx\n",
+				io->undo.idx-1-i, io->undo.seek[i-1]);
+	} else eprintf("-no seeks done-\n");
 }
 
-void undo_write_new(ut64 off, const ut8 *data, int len)
+R_API void r_io_undo_write_new(struct r_io_t *io, ut64 off, const ut8 *data, int len)
 {
-	struct undow_t *uw = (struct undow_t *)malloc(sizeof(struct undow_t));
+	struct r_io_undo_w_t *uw = MALLOC_STRUCT(struct r_io_undo_w_t);
 
-	if (!config_get_i("file.undowrite"))
+	if (io->undo.w_lock)
 		return;
 
-	if (undo_w_lock)
-		return;
-
-	if (!undo_w_init) {
-		undo_w_init = 1;
-		INIT_LIST_HEAD(&(undo_w_list));
+	if (!io->undo.w_init) {
+		io->undo.w_init = 1;
+		INIT_LIST_HEAD(&(io->undo.w_list));
 	}
 
 	/* undo changes */
-	uw->set = UNDO_WRITE_SET;
+	uw->set = R_TRUE;
 	uw->off = off;
 	uw->len = len;
 	uw->n = (ut8*) malloc(len);
 	memcpy(uw->n, data, len);
 	uw->o = (ut8*) malloc(len);
-	radare_read_at(off, uw->o, len);
-	list_add_tail(&(uw->list), &(undo_w_list));
+	r_io_read_at(io, off, uw->o, len);
+	list_add_tail(&(uw->list), &(io->undo.w_list));
 }
 
-void undo_write_clear()
+R_API void r_io_undo_write_clear(struct r_io_t *io)
 {
 	// XXX memory leak
-	INIT_LIST_HEAD(&(undo_w_list));
+	INIT_LIST_HEAD(&(io->undo.w_list));
 }
 
-int undo_write_size()
+// rename to r_io_undo_length
+R_API int r_io_undo_write_size(struct r_io_t *io)
 {
 	struct list_head *p;
 	int i = 0;
 
-	if (undo_w_init)
-	list_for_each_prev(p, &(undo_w_list)) {
+	if (io->undo.w_init)
+	list_for_each_prev(p, &(io->undo.w_list)) {
 		i++;
 	}
 	return i;
 }
 
-void undo_write_list()
+// TODO: Deprecate or so? iterators must be language-wide, but helpers are useful
+R_API void r_io_undo_write_list(struct r_io_t *io)
 {
 #define BW 8 /* byte wrap */
 	struct list_head *p;
 	int i = 0, j, len;
 
-	if (undo_w_init)
-	list_for_each_prev(p, &(undo_w_list)) {
-		struct undow_t *u = list_entry(p, struct undow_t, list);
+	if (io->undo.w_init)
+	list_for_each_prev(p, &(io->undo.w_list)) {
+		struct r_io_undo_w_t *u = list_entry(p, struct r_io_undo_w_t, list);
 		cons_printf("%02d %c %d %08llx: ", i, u->set?'+':'-', u->len, u->off);
 		len = (u->len>BW)?BW:u->len;
 		for(j=0;j<len;j++) cons_printf("%02x ", u->o[j]);
@@ -177,52 +145,49 @@ void undo_write_list()
 	}
 }
 
-int undo_write_set_t(struct undow_t *u, int set) 
+R_API int r_io_undo_write_set_t(struct r_io_t *io, struct r_io_undo_w_t *u, int set) 
 {
-	undo_w_lock = 1;
+	io->undo.w_lock = 1;
 	if (set) {
-		radare_write_at(u->off, u->n, u->len);
-		u->set = UNDO_WRITE_SET;
+		r_io_write_at(io, u->off, u->n, u->len);
+		u->set = R_TRUE;
 	} else {
-		radare_write_at(u->off, u->o, u->len);
-		u->set = UNDO_WRITE_UNSET;
+		r_io_write_at(io, u->off, u->o, u->len);
+		u->set = R_FALSE;
 	}
-	undo_w_lock = 0;
+	io->undo.w_lock = 0;
 	return 0;
 }
 
-void undo_write_set_all(int set)
+R_API void r_io_undo_write_set_all(struct r_io_t *io, int set)
 {
 	struct list_head *p;
 
-	if (undo_w_init)
-	list_for_each_prev(p, &(undo_w_list)) {
-		struct undow_t *u = list_entry(p, struct undow_t, list);
-		undo_write_set_t(u, set); //UNDO_WRITE_UNSET);
+	if (io->undo.w_init)
+	list_for_each_prev(p, &(io->undo.w_list)) {
+		struct r_io_undo_w_t *u = list_entry(p, struct r_io_undo_w_t, list);
+		r_io_undo_write_set_t(io, u, set); //UNDO_WRITE_UNSET);
 		eprintf("%s 0x%08llx\n", set?"redo":"undo", u->off);
 	}
 }
 
 /* sets or unsets the writes done */
 /* if ( set == 0 ) unset(n) */
-int undo_write_set(int n, int set) 
+R_API int r_io_undo_write_set(struct r_io_t *io, int n, int set) 
 {
-	struct undow_t *u = NULL;
+	struct r_io_undo_w_t *u = NULL;
 	struct list_head *p;
 	int i = 0;
-
-	if (undo_w_init) {
-		list_for_each_prev(p, &(undo_w_list)) {
+	if (io->undo.w_init) {
+		list_for_each_prev(p, &(io->undo.w_list)) {
 			if (i++ == n) {
-				u = list_entry(p, struct undow_t, list);
+				u = list_entry(p, struct r_io_undo_w_t, list);
 				break;
 			}
 		}
 
-		if (u) undo_write_set_t(u, set);
+		if (u) r_io_undo_write_set_t(io, u, set);
 		else eprintf("invalid undo-write index\n");
-	} else
-		eprintf("no writes done\n");
-
+	} else eprintf("no writes done\n");
 	return 0;
 }

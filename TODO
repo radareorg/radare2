@@ -7,7 +7,7 @@
 ----------------------------------------[ todo 
 
 <{include libr/TODO}>
-
+ 
 * correct result (R_TRUFAE), but with warnings (implement r_errno and r_errstr in r_util?)
   - Quantic computation ftw \o/
 * r_cmd must provide a nesting char table indexing for commands
