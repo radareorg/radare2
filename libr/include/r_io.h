@@ -6,7 +6,23 @@
 
 #define R_IO_READ 0
 #define R_IO_WRITE 1
-#define R_IO_RDWR 2 // ???
+#define R_IO_EXEC 4
+
+#if 0
+// TODO: rename SECTION to PERMISION or so
+enum {
+	R_IO_SECTION_R = 4,
+	R_IO_SECTION_W = 2,
+	R_IO_SECTION_X = 1,
+};
+#endif
+#if 0
+// DEPRECATE ??
+#define R_IO_RW R_IO_READ|R_IO_WRITE
+#define R_IO_RWX R_IO_READ|R_IO_WRITE|R_IO_EXEC
+#define R_IO_RX R_IO_READ|R_IO_EXEC
+#define R_IO_WX R_IO_WRITE|R_IO_EXEC
+#endif
 
 #define R_IO_NFDS 32
 
@@ -38,6 +54,9 @@ struct r_io_undo_t {
 
 struct r_io_t {
 	int fd;
+	int enforce_rwx;
+	int enforce_seek;
+	int cached;
 	ut64 seek;
 	char *redirect;
 	/* write mask */
@@ -52,6 +71,7 @@ struct r_io_t {
 	/* maps */
 	struct list_head maps;
         struct list_head desc;
+	struct list_head cache;
 };
 
 struct r_io_bind_t {
@@ -78,6 +98,7 @@ struct r_io_handle_t {
         ut64 (*lseek)(struct r_io_t *io, int fildes, ut64 offset, int whence);
         int (*write)(struct r_io_t *io, int fd, const ut8 *buf, int count);
         int (*close)(struct r_io_t *io, int fd);
+        int (*resize)(struct r_io_t *io, int fd, ut64 size);
         int (*handle_open)(struct r_io_t *io, const char *);
         //int (*handle_fd)(struct r_io_t *, int);
 	int fds[R_IO_NFDS];
@@ -119,6 +140,12 @@ R_API int r_io_system(struct r_io_t *io,  const char *cmd);
 R_API int r_io_close(struct r_io_t *io, int fd);
 R_API ut64 r_io_size(struct r_io_t *io, int fd);
 
+/* io/cache.c */
+R_API void r_io_cache_enable(struct r_io_t *io, int set);
+R_API void r_io_cache_init(struct r_io_t *io);
+R_API int r_io_cache_write(struct r_io_t *io, ut64 addr, const ut8 *buf, int len);
+R_API int r_io_cache_read(struct r_io_t *io, ut64 addr, ut8 *buf, int len);
+
 /* io/bind.c */
 R_API int r_io_bind(struct r_io_t *io, struct r_io_bind_t *bnd);
 
@@ -134,7 +161,7 @@ R_API int r_io_map_write_at(struct r_io_t *io, ut64 off, const ut8 *buf, int len
 
 /* sections */
 struct r_io_section_t {
-	char comment[256];
+	char name[256];
 	ut64 from;
 	ut64 to;
 	ut64 vaddr;
@@ -143,11 +170,12 @@ struct r_io_section_t {
 	struct list_head list;
 };
 
-// TODO: rename SECTION to PERMISION or so
-enum {
-	R_IO_SECTION_R = 4,
-	R_IO_SECTION_W = 2,
-	R_IO_SECTION_X = 1,
+struct r_io_cache_t {
+	ut64 from;
+	ut64 to;
+	int size;
+	ut8 *data;
+	struct list_head list;
 };
 
 R_API int r_io_section_rm(struct r_io_t *io, int idx);
@@ -157,6 +185,8 @@ R_API void r_io_section_list(struct r_io_t *io, ut64 addr, int rad);
 R_API struct r_io_section_t * r_io_section_get(struct r_io_t *io, ut64 addr);
 R_API void r_io_section_list_visual(struct r_io_t *io, ut64 seek, ut64 len);
 R_API ut64 r_io_section_get_vaddr(struct r_io_t *io, ut64 addr);
+R_API ut64 r_io_section_get_paddr(struct r_io_t *io, ut64 addr);
+R_API int r_io_section_get_rwx(struct r_io_t *io, ut64 addr);
 R_API struct r_io_section_t * r_io_section_get_i(struct r_io_t *io, int idx);
 R_API void r_io_section_init(struct r_io_t *io);
 R_API int r_io_section_overlaps(struct r_io_t *io, struct r_io_section_t *s);

@@ -18,6 +18,20 @@ namespace Radare {
 		//public static int offsetof(void *type, void *member);
 	}
 
+	// ???
+	[CCode (cprefix="r_str")]
+	public static class Str {
+		public Str();
+		public int hash(str);
+	}
+
+	[CCode (cprefix="r_buf")]
+	public class Buffer {
+		public Buffer();
+		public int read(uint64 addr, uint8 *buf, int len);
+		/* ... */
+	}
+
 	/* Generic Iterator interfaced with r_iter */
         [Compact]
         [CCode (cprefix="r_iter_", cname="void")]

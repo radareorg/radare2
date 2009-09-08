@@ -10,6 +10,12 @@ R_API struct r_io_t *r_io_init(struct r_io_t *io)
 	io->last_align = 0;
 	io->redirect = NULL;
 	io->printf = printf;
+	io->enforce_rwx = 0; // do not enforce RWX section permissions by default
+	io->enforce_seek = 0; // do not limit seeks out of the file by default
+	io->enforce_rwx = 0;
+	io->enforce_seek = 0;
+	io->cached = 0; // IO cached
+	r_io_cache_init(io);
 	r_io_map_init(io);
 	r_io_section_init(io);
 	r_io_handle_init(io);
@@ -112,8 +118,22 @@ R_API int r_io_set_fd(struct r_io_t *io, int fd)
 
 R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len)
 {
-	int ret = r_io_map_read_at(io, io->seek, buf, len);
-	// partial readz
+	int ret;
+	/* check section permissions */
+	if (io->enforce_rwx && !(r_io_section_get_rwx(io, io->seek) & R_IO_READ))
+		return -1;
+
+	if (io->cached) {
+		ret = r_io_cache_read(io, io->seek, buf, len);
+		if (ret == len)
+			return len;
+		if (ret > 0) {
+			len -= ret;
+			buf += ret;
+		}
+	}
+	ret = r_io_map_read_at(io, io->seek, buf, len);
+	// partial reads
 	if (ret == len)
 		return len;
 	if (ret != -1) {
@@ -180,6 +200,22 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len)
 {
 	int i, ret = -1;
 
+	/* check section permissions */
+	if (io->enforce_rwx && !(r_io_section_get_rwx(io, io->seek) & R_IO_WRITE))
+		return -1;
+
+	if (io->cached) {
+		ret = r_io_cache_write(io, io->seek, buf, len);
+		if (ret == len)
+			return len;
+		if (ret > 0) {
+			len -= ret;
+			buf += ret;
+		}
+	}
+
+	/* TODO: implement IO cache here. to avoid dupping work on vm for example */
+
 	/* apply write binary mask */
 	if (io->write_mask_fd != -1) {
 		ut8 *data = alloca(len);
@@ -219,6 +255,7 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence)
 	/* pwn seek value */
 	switch(whence) {
 	case R_IO_SEEK_SET:
+		/* TODO: Deprecate remove section align ?? */
 		offset = r_io_section_align(io, offset, 0, 0);
 		io->seek = offset;
 		posix_whence = SEEK_SET;
@@ -232,6 +269,8 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence)
 		posix_whence = SEEK_END;
 		break;
 	}
+
+	// TODO: implement io->enforce_seek here!
 
 	if (io->plugin && io->plugin->lseek)
 		io->seek = io->plugin->lseek(io, io->fd, offset, whence);

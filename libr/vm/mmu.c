@@ -23,6 +23,7 @@ R_API int r_vm_mmu_cache_read(struct r_vm_t *vm, ut64 addr, ut8 *buf, int len)
 		c = list_entry(pos, struct r_vm_change_t, list);
 		if (addr >= c->from && addr+len <= c->to) {
 			memcpy(buf, c->data, len);
+	// XXX THIS IS BUGGY
 			return 1;
 		}
 	}
