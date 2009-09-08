@@ -776,7 +776,7 @@ static int cmd_write(void *data, const char *input)
 		{
 		ut64 off = r_num_math(&core->num, input+1);
 		r_io_set_fd(&core->io, core->file->fd);
-		r_io_lseek(&core->io, core->seek, R_IO_SEEK_SET);
+		r_io_seek(&core->io, core->seek, R_IO_SEEK_SET);
 		if (off&UT64_32U) {
 			/* 8 byte addr */
 			ut64 addr8;

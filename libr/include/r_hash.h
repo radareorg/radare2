@@ -5,30 +5,30 @@
 
 /* checksums */
 /* XXX : crc16 should use 0 as arg0 by default */
-ut16 r_hash_crc16(ut16 crc, const ut8 *buffer, ut64 len);
-ut32 r_hash_crc32(const ut8 *buf, ut64 len);
-ut8  r_hash_xor(const ut8 *b, ut64 len);
-ut16 r_hash_xorpair(const ut8 *a, ut64 len);
-ut8  r_hash_parity(ut8 *buf, ut64 len);
-ut8  r_hash_mod255(const ut8 *b, ut64 len);
+R_API ut16 r_hash_crc16(ut16 crc, const ut8 *buffer, ut64 len);
+R_API ut32 r_hash_crc32(const ut8 *buf, ut64 len);
+R_API ut8  r_hash_xor(const ut8 *b, ut64 len);
+R_API ut16 r_hash_xorpair(const ut8 *a, ut64 len);
+R_API ut8  r_hash_parity(ut8 *buf, ut64 len);
+R_API ut8  r_hash_mod255(const ut8 *b, ut64 len);
 
 /* analysis */
-ut8  r_hash_hamdist(const ut8 *buf, ut64 len);
-double r_hash_entropy(const ut8 *data, ut64 len);
-int r_hash_pcprint(ut8 *buffer, ut64 len);
+R_API ut8  r_hash_hamdist(const ut8 *buf, ut64 len);
+R_API double r_hash_entropy(const ut8 *data, ut64 len);
+R_API int r_hash_pcprint(ut8 *buffer, ut64 len);
 
 /* hashing */
 typedef struct {
-  ut32 state[4];
-  ut32 count[2];
-  ut8 buffer[64];
+	ut32 state[4];
+	ut32 count[2];
+	ut8 buffer[64];
 } MD5_CTX;
 
 typedef struct {
-  unsigned int H[5];
-  unsigned int W[80];
-  int lenW;
-  unsigned int sizeHi, sizeLo;
+	unsigned int H[5];
+	unsigned int W[80];
+	int lenW;
+	unsigned int sizeHi, sizeLo;
 } SHA_CTX;
 
 #define SHA256_BLOCK_LENGTH		64
@@ -82,17 +82,20 @@ struct r_hash_t {
 #define R_HASH_MOD255 16384
 #define R_HASH_ALL 0xFFFF
 
-const ut8 *r_hash_state_md4(struct r_hash_t *ctx, const ut8 *input, ut32 len);
-const ut8 *r_hash_state_md5(struct r_hash_t *ctx, const ut8 *input, ut32 len);
-const ut8 *r_hash_state_sha1(struct r_hash_t *ctx, const ut8 *input, ut32 len);
-const ut8 *r_hash_state_sha256(struct r_hash_t *ctx, const ut8 *input, ut32 len);
-const ut8 *r_hash_state_sha384(struct r_hash_t *ctx, const ut8 *input, ut32 len);
-const ut8 *r_hash_state_sha512(struct r_hash_t *ctx, const ut8 *input, ut32 len);
+R_API const ut8 *r_hash_state_md4(struct r_hash_t *ctx, const ut8 *input, ut32 len);
+R_API const ut8 *r_hash_state_md5(struct r_hash_t *ctx, const ut8 *input, ut32 len);
+R_API const ut8 *r_hash_state_sha1(struct r_hash_t *ctx, const ut8 *input, ut32 len);
+R_API const ut8 *r_hash_state_sha256(struct r_hash_t *ctx, const ut8 *input, ut32 len);
+R_API const ut8 *r_hash_state_sha384(struct r_hash_t *ctx, const ut8 *input, ut32 len);
+R_API const ut8 *r_hash_state_sha512(struct r_hash_t *ctx, const ut8 *input, ut32 len);
 
 /* OO */
-struct r_hash_t *r_hash_state_new(int init);
-void r_hash_init(struct r_hash_t *ptr, int flags);
-void r_hash_state_init(struct r_hash_t *ctx, int flags);
-void r_hash_state_free(struct r_hash_t *ctx);
+R_API struct r_hash_t *r_hash_state_new(int init);
+R_API void r_hash_init(struct r_hash_t *ptr, int flags);
+R_API void r_hash_state_init(struct r_hash_t *ctx, int flags);
+R_API void r_hash_state_free(struct r_hash_t *ctx);
+
+
+R_API ut64 r_hash_name_to_bits(const char *name);
 
 #endif

@@ -24,9 +24,7 @@ int main(int argc, char **argv)
 	}
 
 	/* get file size */
-	r_io_lseek(&io, fd, 0, R_IO_SEEK_END);
-	size = r_io_lseek(&io, fd, 0, R_IO_SEEK_END);
-	r_io_lseek(&io, fd, 0, R_IO_SEEK_SET);
+	size = r_io_size(&io, fd);
 
 	/* read bytes */
 	buf = (ut8*) malloc(size);
@@ -36,7 +34,8 @@ int main(int argc, char **argv)
 		r_io_close(&io, fd);
 	}
 
-	r_io_read(&io, fd, buf, size);
+	memset(buf, 0, size);
+	r_io_read(&io, buf, size);
 	printf("----\n%s\n----\n", buf);
 
 	printf("file size = %lld\n", size);

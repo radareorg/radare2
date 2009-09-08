@@ -186,13 +186,15 @@ int r_macro_cmd_args(struct r_macro_t *mac, const char *ptr, const char *args, i
 {
 	int i,j;
 	char *cmd = alloca(strlen(ptr)+1024);
+	char *arg = strdup(args);
 	cmd[0]='\0';
 
 //	eprintf("call(%s)\n", ptr);
 	for(i=j=0;ptr[j];i++,j++) {
 		if (ptr[j]=='$') {
 			if (ptr[j+1]>='0' && ptr[j+1]<='9') {
-				const char *word = r_str_word_get0(args, ptr[j+1]-'0');
+				char *word = r_str_word_get0(arg, ptr[j+1]-'0');
+// TODO: use r_str_concat ??
 				strcat(cmd, word);
 				j++;
 				i = strlen(cmd)-1;
@@ -214,9 +216,8 @@ int r_macro_cmd_args(struct r_macro_t *mac, const char *ptr, const char *args, i
 	}
 	while(*cmd==' '||*cmd=='\t')
 		cmd = cmd + 1;
-	if (*cmd==')')
-		return 0;
-	return mac->cmd(mac->user, cmd);
+	free(arg);
+	return (*cmd==')')?0:mac->cmd(mac->user, cmd);
 }
 
 char *r_macro_label_process(struct r_macro_t *mac, struct r_macro_label_t *labels, int *labels_n, char *ptr)

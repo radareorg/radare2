@@ -3,7 +3,7 @@
 #include "r_hash.h"
 
 /* returns 0-100 */
-int r_hash_pcprint(ut8 *buffer, ut64 len)
+R_API int r_hash_pcprint(ut8 *buffer, ut64 len)
 {
 	ut8 *end = buffer + len;
 	int n;
@@ -15,7 +15,7 @@ int r_hash_pcprint(ut8 *buffer, ut64 len)
 	return ((100*n)/len);
 }
 
-int r_hash_par(ut8 *buf, ut64 len)
+R_API int r_hash_par(ut8 *buf, ut64 len)
 {
 	ut8 *end = buf+len;
 	ut32 ones = 0;
@@ -29,7 +29,7 @@ int r_hash_par(ut8 *buf, ut64 len)
 
 /* These functions comes from 0xFFFF */
 /* fmi: nopcode.org/0xFFFF */
-ut16 r_hash_xorpair(const ut8 *a, ut64 len)
+R_API ut16 r_hash_xorpair(const ut8 *a, ut64 len)
 {
 	ut16 *b = (ut16 *)a;
 	ut16 result = 0;
@@ -38,7 +38,7 @@ ut16 r_hash_xorpair(const ut8 *a, ut64 len)
 	return result;
 }
 
-ut8 r_hash_xor(const ut8 *b, ut64 len)
+R_API ut8 r_hash_xor(const ut8 *b, ut64 len)
 {
 	ut8 res = 0;
 	for(;len--;b=b+1)
@@ -46,7 +46,7 @@ ut8 r_hash_xor(const ut8 *b, ut64 len)
 	return res;
 }
 
-ut8 r_hash_mod255(const ut8 *b, ut64 len)
+R_API ut8 r_hash_mod255(const ut8 *b, ut64 len)
 {
 	int i, c = 0;
 	/* from gdb */
@@ -56,7 +56,7 @@ ut8 r_hash_mod255(const ut8 *b, ut64 len)
 }
 
 /* TODO: ignore case.. we have to use strcasestr */
-ut64 r_hash_name_to_bits(const char *name)
+R_API ut64 r_hash_name_to_bits(const char *name)
 {
 	ut64 bits = R_HASH_NONE;
 	if (strstr(name, "md4"))

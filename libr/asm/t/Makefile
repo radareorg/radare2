@@ -6,7 +6,7 @@ LIBS+=-ldl
 all: ${BIN} fastcall
 
 fastcall: fastcall.o
-	${CC} -I../../include fastcall.o -Wl,-R.. -L.. -lr_asm -o fastcall
+	${CC} fastcall.o -Wl,-R.. -L.. -lr_asm -o fastcall
 
 myclean:
 	rm -f fastcall fastcall.o

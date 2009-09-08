@@ -6,6 +6,12 @@
 #include "list.h"
 #include "iter.h"
 
+struct r_buf_t {
+	ut8 *buf;
+	int length;
+	ut64 base;
+};
+
 /* r_cache */
 // TOTHINK: move into a separated library?
 struct r_cache_item_t {

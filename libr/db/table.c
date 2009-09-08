@@ -1,4 +1,5 @@
 #include "r_db.h"
+#include "r_util.h"
 /*
 struct r_db_table_t *table = \
   r_db_table_new("cities", "ziu", "name people postal");
@@ -13,7 +14,6 @@ sizes['i'] = 4;
 struct r_db_table_t *r_db_table_new(const char *name, const char *fmt, const char *fields)
 {
 	int i;
-	char *ptr;
 	int offset = 0;
 	struct r_db_table_t *table = MALLOC_STRUCT(struct r_db_table_t);
 	table->args = strdup(fields);

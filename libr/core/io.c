@@ -71,7 +71,7 @@ R_API int r_core_seek(struct r_core_t *core, ut64 addr, int rb)
 {
 	int ret;
 	r_io_set_fd(&core->io, core->file->fd);
-	ret = r_io_lseek(&core->io, addr, R_IO_SEEK_SET);
+	ret = r_io_seek(&core->io, addr, R_IO_SEEK_SET);
 	if (ret) {
 		core->seek = addr;
 		if (rb) return r_core_block_read (core, 0);
@@ -96,7 +96,7 @@ R_API int r_core_block_read(struct r_core_t *core, int next)
 	if (core->file == NULL)
 		return -1;
 	r_io_set_fd (&core->io, core->file->fd);
-	r_io_lseek(&core->io, core->seek+((next)?core->blocksize:0), R_IO_SEEK_SET);
+	r_io_seek(&core->io, core->seek+((next)?core->blocksize:0), R_IO_SEEK_SET);
 	return r_io_read(&core->io, core->block, core->blocksize);
 }
 

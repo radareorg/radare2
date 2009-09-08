@@ -18,6 +18,7 @@ static int do_hash(const char *algo, const ut8 *buf, int len, int bsize)
 		bsize = len;
 
 	r_hash_state_init(&ctx, R_HASH_ALL);
+	//r_hash_state_init(&ctx, algobit);
 	/* TODO: Loop here for blocks */
 	if (algobit & R_HASH_MD4) {
 		c = r_hash_state_md4(&ctx, buf, len);
@@ -48,7 +49,7 @@ static int do_help(int line)
 int main(int argc, char **argv)
 {
 	char *algo = "md5"; /* default hashing algorithm */
-	ut8 *buf = NULL;
+	const ut8 *buf = NULL;
 	int c, buf_len = 0;
 	int bsize = 0;
 
@@ -62,13 +63,15 @@ int main(int argc, char **argv)
 			bsize = (int)r_num_math(NULL, optarg);
 			break;
 		case 's':
-			buf = optarg;
+			buf = (ut8*) optarg;
 			buf_len = strlen(optarg);
 			break;
 		case 'h':
 			return do_help(1);
 		}
 	}
+	if (optind<argc)
+		buf = r_file_slurp(argv[optind], &buf_len);
 
 	if (buf == NULL) {
 		do_help(0);

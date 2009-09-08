@@ -23,6 +23,22 @@ R_API struct r_io_t *r_io_new()
 	return r_io_init(io);
 }
 
+R_API struct r_buf_t *r_io_read_buf(struct r_io_t *io, ut64 addr, int len)
+{
+	struct r_buf_t *b;
+	b = MALLOC_STRUCT(struct r_buf_t);
+	b->buf = malloc(len);
+	len = r_io_read_at(io, addr, b->buf, len);
+	if (len<0) len = 0;
+	b->length = len;
+	return b;
+}
+
+R_API int r_io_write_buf(struct r_io_t *io, struct r_buf_t *b)
+{
+	return r_io_write_at(io, b->base, b->buf, b->length);
+}
+
 R_API struct r_io_t *r_io_free(struct r_io_t *io)
 {
 	/* TODO: properly free inner nfo */

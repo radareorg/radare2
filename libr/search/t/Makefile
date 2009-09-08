@@ -4,8 +4,8 @@ include ../../rules.mk
 
 all: test test-str test-regexp rafind2
 
-rafind2:
-	${CC} -g -I ../../include rafind2.c ${LDFLAGS} -o rafind2
+rafind2: rafind2.o
+	${CC} -g -I ../../include rafind2.o ${LDFLAGS} -o rafind2
 
 test:
 	${CC} -g -I ../../include test.c ${LDFLAGS} -o test

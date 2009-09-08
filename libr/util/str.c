@@ -154,6 +154,11 @@ R_API const char *r_str_chop_ro(const char *str)
 	return str;
 }
 
+R_API char *r_str_new(char *str)
+{
+	return strdup(str);
+}
+
 R_API char *r_str_chop(char *str)
 {
         int len;
