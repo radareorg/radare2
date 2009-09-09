@@ -8,6 +8,8 @@
 #include "r_types.h"
 #include "list.h"
 
+#define R_ANAL_NAME(x) "anal" R_LIB_SEPARATOR x
+
 #define R_ANAL_MAXREG 16
 
 enum {

@@ -7,6 +7,9 @@
 #include "r_types.h"
 #include "list.h"
 
+// rename to '.' ??
+#define R_LIB_SEPARATOR "_"
+
 /* store list of loaded plugins */
 struct r_lib_plugin_t {
 	int type;

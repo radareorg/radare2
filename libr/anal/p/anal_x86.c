@@ -389,12 +389,11 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 		//aop->length = instLength(buf, 16, 0);
 	if (!(aop->jump>>33))
 		aop->jump &= 0xFFFFFFFF; // XXX may break on 64 bits here
-
 	return aop->length;
 }
 
 static struct r_anal_handle_t r_anal_plugin_x86 = {
-	.name = "anal_x86",
+	.name = R_ANAL_NAME("x86"),
 	.desc = "X86 analysis plugin",
 	.init = NULL,
 	.fini = NULL,

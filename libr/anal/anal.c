@@ -8,7 +8,7 @@
 R_API struct r_anal_t *r_anal_new()
 {
 	struct r_anal_t *r = MALLOC_STRUCT(struct r_anal_t);
-	r_anal_init(r);
+	if (r) r_anal_init(r);
 	return r;
 }
 
@@ -79,31 +79,31 @@ R_API int r_anal_set_bits(struct r_anal_t *anal, int bits)
 	}
 }
 
-int r_anal_set_big_endian(struct r_anal_t *anal, int boolean)
+R_API int r_anal_set_big_endian(struct r_anal_t *anal, int bigend)
 {
-	anal->big_endian = boolean;
+	anal->big_endian = bigend;
 	return R_TRUE;
 }
 
-int r_anal_set_pc(struct r_anal_t *a, ut64 pc)
+R_API int r_anal_set_pc(struct r_anal_t *a, ut64 pc)
 {
 	a->pc = pc;
 	return R_TRUE;
 }
 
-int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
+R_API int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 { 
 	if (anal->cur && anal->cur->aop)
 		return anal->cur->aop(anal, aop, data);
 	return R_FALSE;
 }
 
-struct r_anal_fcn_t *r_anal_funcions_get(struct r_anal_t *anal, ut8 *buf, ut64 len)
+R_API struct r_anal_fcn_t *r_anal_funcions_get(struct r_anal_t *anal, ut8 *buf, ut64 len)
 {
 	return NULL;
 }
 
-struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, ut8 *buf, ut64 len, int nlines, int linesout)
+R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, ut8 *buf, ut64 len, int nlines, int linesout)
 {
 	struct r_anal_refline_t *list = MALLOC_STRUCT(struct r_anal_refline_t);
 	struct r_anal_refline_t *list2;
@@ -116,7 +116,7 @@ struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, ut8 *buf, ut
 	INIT_LIST_HEAD(&(list->list));
 
 	/* analyze code block */
-	while( ptr < end ) {
+	while(ptr<end) {
 		if (nlines != -1 && --nlines == 0)
 			break;
 #if 0
@@ -162,6 +162,7 @@ struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, ut8 *buf, ut
 	return list;
 }
 
+/* umf..this should probably be outside this file*/
 R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, char *str, int opts)
 {
 	struct list_head *pos;
@@ -182,8 +183,10 @@ R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *li
 		struct r_anal_refline_t *ref = list_entry(pos, struct r_anal_refline_t, list);
 
 		if (anal->pc == ref->to) dir = 1;
+		// TODO: use else here
 		if (anal->pc == ref->from) dir = 2;
 
+		// TODO: if dir==1
 		if (anal->pc == ref->to) {
 			if (ref->from > ref->to)
 				strcat(str, ".");

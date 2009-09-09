@@ -6,7 +6,7 @@
 
 || asm || 
 ---------
-  - Add lua disassembler, dalvik, xtensa achiecture (mm cpu)
+  - Add lua disassembler, dalvik, xtensa architecture (mm cpu)
   - http://git.linux-xtensa.org/cgi-bin/git.cgi?p=buildroot/buildroot-xtensa;a=blob;f=toolchain/binutils/binutils-xtensa_dc232b.tgz;h=214164399158c540a3033e52b3bb9f65c55289af;hb=HEAD
   - Check if there are endianess issues
 

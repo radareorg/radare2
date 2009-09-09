@@ -26,7 +26,7 @@ int main(int argc, char **argv)
 	{
 		/* dump process memory */
 		char buf[128];
-		int ret = r_io_read_at(io, buf, 128);
+		int ret = r_io_read_at(io, 0x8048000, buf, 128);
 		printf("%02x\n", buf[0]);
 	}
 

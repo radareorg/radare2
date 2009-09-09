@@ -18,7 +18,7 @@ R_API struct r_io_t *r_io_init(struct r_io_t *io)
 	r_io_section_init(io);
 	r_io_handle_init(io);
 	r_io_desc_init(io);
-	r_io_undo_init(&io->undo);
+	r_io_undo_init(io);
 	return io;
 }
 
@@ -272,11 +272,12 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence)
 	}
 
 	// TODO: implement io->enforce_seek here!
-
 	if (io->plugin && io->plugin->lseek)
 		io->seek = io->plugin->lseek(io, io->fd, offset, whence);
 	// XXX can be problematic on w32..so no 64 bit offset?
 	else io->seek = lseek(io->fd, offset, posix_whence);
+
+	r_io_sundo_push(io);
 
 	return io->seek;
 }

@@ -14,7 +14,7 @@
 static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 {
 	DISASM disasm_obj;
-	ARGTYPE *argptr;
+	ARGTYPE *argptr = NULL;
 	char category[1024], argtype[1024];
 	int i;
 
@@ -90,7 +90,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 		switch (disasm_obj.Instruction.Category) {
 		case DATA_TRANSFER:
 			strcat(category, "DATA_TRANSFER ");
-			if (argptr[1].ArgMnemonic[0] == '\0') {
+			if (argptr && argptr[1].ArgMnemonic[0] == '\0') {
 				// PUSH OR POP
 			} else {
 				// MOV
@@ -388,7 +388,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 }
 
 static struct r_anal_handle_t r_anal_plugin_x86_bea = {
-	.name = "anal_x86_bea",
+	.name = R_ANAL_NAME("x86_bea"),
 	.desc = "X86 analysis plugin (Bea engine)",
 	.init = NULL,
 	.fini = NULL,

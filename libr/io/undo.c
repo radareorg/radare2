@@ -10,51 +10,55 @@
 * - make path of indirections shortr (io->undo.foo is slow) */
 * - Handle changes in write and seeks
 * - Per-fd history log
+* - rename undo_seek -> sundo , undo_write -> wundo
 #endif
 
 R_API int r_io_undo_init(struct r_io_t *io)
 {
 	io->undo.w_init = 0;
-	io->undo.w_lock = 0;
+	io->undo.w_enable = 0;
 	io->undo.idx = 0;
 	io->undo.limit = 0;
-	io->undo.enable = 0;
+	io->undo.s_enable = 0;
+	io->undo.w_enable = 0;
+	INIT_LIST_HEAD(&(io->undo.w_list));
 	return R_TRUE;
 }
 
-R_API void r_io_undo_enable(struct r_io_t *io, int set)
+R_API void r_io_undo_enable(struct r_io_t *io, int s, int w)
 {
-	io->undo.enable = set;
+	io->undo.s_enable = s;
+	io->undo.w_enable = w;
 }
 
-R_API ut64 r_io_undo_get_last_seek(struct r_io_t *io)
+R_API ut64 r_io_sundo_last(struct r_io_t *io)
 {
-	return (io->undo.idx)?
+	return (io->undo.idx>0)?
 		io->undo.seek[io->undo.idx-2] : io->seek;
 }
 
-R_API void r_io_undo_seek(struct r_io_t *io)
+R_API void r_io_sundo(struct r_io_t *io)
 {
 	if (--io->undo.idx<0)
 		io->undo.idx = 0;
 	else io->seek = io->undo.seek[io->undo.idx-1];
 }
 
-R_API void r_io_undo_redo(struct r_io_t *io)
+R_API void r_io_sundo_redo(struct r_io_t *io)
 {
 	if (io->undo.idx<io->undo.limit) {
 		io->undo.idx += 2;
-		r_io_undo_seek(io);
+		r_io_sundo(io);
 	}
 }
 
-R_API void r_io_undo_push(struct r_io_t *io)
+R_API void r_io_sundo_push(struct r_io_t *io)
 {
 	int i;
-
+	if (!io->undo.s_enable)
+		return;
 	if (io->undo.seek[io->undo.idx-1] == io->seek)
 		return;
-
 	io->undo.seek[io->undo.idx] = io->seek;
 	if (io->undo.idx==R_IO_UNDOS-1) {
 		for(i=1;i<R_IO_UNDOS;i++)
@@ -65,12 +69,12 @@ R_API void r_io_undo_push(struct r_io_t *io)
 		io->undo.limit = io->undo.idx;
 }
 
-R_API void r_io_undo_reset(struct r_io_t *io)
+R_API void r_io_sundo_reset(struct r_io_t *io)
 {
 	io->undo.idx = 0;
 }
 
-R_API void r_io_undo_list(struct r_io_t *io)
+R_API void r_io_sundo_list(struct r_io_t *io)
 {
 	int i;
 	if (io->undo.idx>0) {
@@ -81,19 +85,17 @@ R_API void r_io_undo_list(struct r_io_t *io)
 	} else eprintf("-no seeks done-\n");
 }
 
-R_API void r_io_undo_write_new(struct r_io_t *io, ut64 off, const ut8 *data, int len)
-{
-	struct r_io_undo_w_t *uw = MALLOC_STRUCT(struct r_io_undo_w_t);
+/* undo writez */
 
-	if (io->undo.w_lock)
+R_API void r_io_wundo_new(struct r_io_t *io, ut64 off, const ut8 *data, int len)
+{
+	struct r_io_undo_w_t *uw;
+
+	if (!io->undo.w_enable)
 		return;
 
-	if (!io->undo.w_init) {
-		io->undo.w_init = 1;
-		INIT_LIST_HEAD(&(io->undo.w_list));
-	}
-
-	/* undo changes */
+	/* undo write changes */
+	uw = MALLOC_STRUCT(struct r_io_undo_w_t);
 	uw->set = R_TRUE;
 	uw->off = off;
 	uw->len = len;
@@ -104,27 +106,25 @@ R_API void r_io_undo_write_new(struct r_io_t *io, ut64 off, const ut8 *data, int
 	list_add_tail(&(uw->list), &(io->undo.w_list));
 }
 
-R_API void r_io_undo_write_clear(struct r_io_t *io)
+R_API void r_io_wundo_clear(struct r_io_t *io)
 {
 	// XXX memory leak
 	INIT_LIST_HEAD(&(io->undo.w_list));
 }
 
-// rename to r_io_undo_length
-R_API int r_io_undo_write_size(struct r_io_t *io)
+// rename to r_io_undo_length ?
+R_API int r_io_wundo_size(struct r_io_t *io)
 {
 	struct list_head *p;
 	int i = 0;
-
 	if (io->undo.w_init)
-	list_for_each_prev(p, &(io->undo.w_list)) {
-		i++;
-	}
+		list_for_each_prev(p, &(io->undo.w_list))
+			i++;
 	return i;
 }
 
 // TODO: Deprecate or so? iterators must be language-wide, but helpers are useful
-R_API void r_io_undo_write_list(struct r_io_t *io)
+R_API void r_io_wundo_list(struct r_io_t *io)
 {
 #define BW 8 /* byte wrap */
 	struct list_head *p;
@@ -145,9 +145,10 @@ R_API void r_io_undo_write_list(struct r_io_t *io)
 	}
 }
 
-R_API int r_io_undo_write_set_t(struct r_io_t *io, struct r_io_undo_w_t *u, int set) 
+R_API int r_io_wundo_apply(struct r_io_t *io, struct r_io_undo_w_t *u, int set) 
 {
-	io->undo.w_lock = 1;
+	int orig = io->undo.w_enable;
+	io->undo.w_enable = 0;
 	if (set) {
 		r_io_write_at(io, u->off, u->n, u->len);
 		u->set = R_TRUE;
@@ -155,25 +156,24 @@ R_API int r_io_undo_write_set_t(struct r_io_t *io, struct r_io_undo_w_t *u, int 
 		r_io_write_at(io, u->off, u->o, u->len);
 		u->set = R_FALSE;
 	}
-	io->undo.w_lock = 0;
+	io->undo.w_enable = orig;
 	return 0;
 }
 
-R_API void r_io_undo_write_set_all(struct r_io_t *io, int set)
+R_API void r_io_wundo_apply_all(struct r_io_t *io, int set)
 {
 	struct list_head *p;
 
-	if (io->undo.w_init)
 	list_for_each_prev(p, &(io->undo.w_list)) {
 		struct r_io_undo_w_t *u = list_entry(p, struct r_io_undo_w_t, list);
-		r_io_undo_write_set_t(io, u, set); //UNDO_WRITE_UNSET);
+		r_io_wundo_apply(io, u, set); //UNDO_WRITE_UNSET);
 		eprintf("%s 0x%08llx\n", set?"redo":"undo", u->off);
 	}
 }
 
 /* sets or unsets the writes done */
 /* if ( set == 0 ) unset(n) */
-R_API int r_io_undo_write_set(struct r_io_t *io, int n, int set) 
+R_API int r_io_wundo_set(struct r_io_t *io, int n, int set) 
 {
 	struct r_io_undo_w_t *u = NULL;
 	struct list_head *p;
@@ -185,8 +185,7 @@ R_API int r_io_undo_write_set(struct r_io_t *io, int n, int set)
 				break;
 			}
 		}
-
-		if (u) r_io_undo_write_set_t(io, u, set);
+		if (u) r_io_wundo_apply(io, u, set);
 		else eprintf("invalid undo-write index\n");
 	} else eprintf("no writes done\n");
 	return 0;

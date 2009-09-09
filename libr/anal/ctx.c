@@ -17,6 +17,7 @@ R_API struct r_anal_ctx_t *r_anal_ctx_new()
 
 R_API int r_anal_ctx_set_bytes(struct r_anal_t *anal, const ut8 *buf, int len)
 {
+	return R_TRUE;
 }
 
 R_API void r_anal_ctx_reset(struct r_anal_t *anal)

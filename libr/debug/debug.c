@@ -25,15 +25,16 @@ R_API int r_debug_set_io(struct r_debug_t *dbg, CB_READ, CB_WRITE, void *user)
 
 R_API struct r_debug_t *r_debug_new()
 {
-	struct r_debug_t *dbg;
-	dbg = MALLOC_STRUCT(struct r_debug_t);
-	r_debug_init(dbg);
+	struct r_debug_t *dbg = MALLOC_STRUCT(struct r_debug_t);
+	if (dbg != NULL)
+		r_debug_init(dbg);
 	return dbg;
 }
 
 R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg)
 {
 	// TODO: free it correctly
+	//r_bp_free(&dbg->bp);
 	free(dbg);
 	return NULL;
 }

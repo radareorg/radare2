@@ -7,7 +7,6 @@ HANDLE   - determines io backend by io plugins
 SECTION  - allows virtual base addressing over the IO
 MAP      - allows virtual maps at random address
 
-
 // TODO:
   - Can share storage
 UNDO     - records all write ops allowing undo, redo, reset operations

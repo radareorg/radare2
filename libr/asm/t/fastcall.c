@@ -3,7 +3,7 @@
 int main(int argc, char **argv)
 {
 	struct r_asm_t *a;
-	char *arg;
+	const char *arg;
 	int num, i = 0;
 	if (argc<2) {
 		printf("Usage: fastcall [nargs]\n");

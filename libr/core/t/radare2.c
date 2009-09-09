@@ -75,7 +75,7 @@ int main(int argc, char **argv)
 			return main_version ();
 			break;
 		case 'w':
-			perms = R_IO_RDWR;
+			perms = R_IO_READ | R_IO_WRITE;
 			break;
 		case 'b':
 			bsize = atoi (optarg); // XXX use r_num

@@ -77,7 +77,7 @@ R_API ut64 r_hash_name_to_bits(const char *name)
 		bits |= R_HASH_CRC32;
 	if (strstr(name, "xorpair"))
 		bits |= R_HASH_XORPAIR;
-	else if (strstr(name, "xor")) /* XXX: hacky solution */
+	else if (strstr(name, "xor")) /* XXX: hacky elsif solution */
 		bits |= R_HASH_XOR;
 	if (strstr(name, "parity"))
 		bits |= R_HASH_PARITY;

@@ -36,11 +36,11 @@ struct r_io_map_t {
 /* stores write and seek changes */
 #define R_IO_UNDOS 64
 struct r_io_undo_t {
-	int enable;
+	int s_enable;
+	int w_enable;
 	/* write stuff */
 	struct list_head w_list;
 	int w_init;
-	int w_lock;
 	/* seek stuff */
 	ut64 seek[R_IO_UNDOS];
 	int fd[R_IO_UNDOS];
@@ -216,20 +216,22 @@ R_API int r_io_desc_generate(struct r_io_t *io);
 // track seeks and writes
 // TODO: needs cleanup..kinda big?
 R_API int r_io_undo_init(struct r_io_t *io);
-R_API void r_io_undo_enable(struct r_io_t *io, int set);
-R_API ut64 r_io_undo_get_last_seek(struct r_io_t *io);
-R_API void r_io_undo_seek(struct r_io_t *io);
-R_API void r_io_undo_redo(struct r_io_t *io);
-R_API void r_io_undo_push(struct r_io_t *io);
-R_API void r_io_undo_reset(struct r_io_t *io);
-R_API void r_io_undo_list(struct r_io_t *io);
-R_API void r_io_undo_write_new(struct r_io_t *io, ut64 off, const ut8 *data, int len);
-R_API void r_io_undo_write_clear(struct r_io_t *io);
-R_API int r_io_undo_write_size(struct r_io_t *io);
-R_API void r_io_undo_write_list(struct r_io_t *io);
-R_API int r_io_undo_write_set_t(struct r_io_t *io, struct r_io_undo_w_t *u, int set) ;
-R_API void r_io_undo_write_set_all(struct r_io_t *io, int set);
-R_API int r_io_undo_write_set(struct r_io_t *io, int n, int set);
+R_API void r_io_undo_enable(struct r_io_t *io, int seek, int write);
+/* seek undo */
+R_API void r_io_sundo(struct r_io_t *io);
+R_API ut64 r_io_sundo_last(struct r_io_t *io);
+R_API void r_io_sundo_redo(struct r_io_t *io);
+R_API void r_io_sundo_push(struct r_io_t *io);
+R_API void r_io_sundo_reset(struct r_io_t *io);
+R_API void r_io_sundo_list(struct r_io_t *io);
+/* write undo */
+R_API void r_io_wundo_new(struct r_io_t *io, ut64 off, const ut8 *data, int len);
+R_API void r_io_wundo_clear(struct r_io_t *io);
+R_API int r_io_wundo_size(struct r_io_t *io);
+R_API void r_io_wundo_list(struct r_io_t *io);
+R_API int r_io_wundo_set_t(struct r_io_t *io, struct r_io_undo_w_t *u, int set) ;
+R_API void r_io_wundo_set_all(struct r_io_t *io, int set);
+R_API int r_io_wundo_set(struct r_io_t *io, int n, int set);
 
 #if 0
 #define CB_READ int (*cb_read)(struct r_io_t *user, int pid, ut64 addr, ut8 *buf, int len)

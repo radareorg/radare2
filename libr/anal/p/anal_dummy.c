@@ -12,7 +12,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 }
 
 static struct r_anal_handle_t r_anal_plugin_dummy = {
-	.name = "anal_dummy",
+	.name = R_ANAL_NAME("anal_dummy"),
 	.desc = "Dummy analysis plugin",
 	.init = NULL,
 	.fini = NULL,
