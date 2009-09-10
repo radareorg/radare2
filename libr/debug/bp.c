@@ -7,8 +7,9 @@ R_API int r_debug_bp_enable(struct r_debug_t *dbg, ut64 addr, int set)
 {
 	struct r_bp_item_t *bp = r_bp_enable(&dbg->bp, addr, set);
 	if (bp) {
-		if (set) dbg->write(dbg->user, dbg->pid, addr, bp->bbytes, bp->size);
-		else dbg->write(dbg->user, dbg->pid, addr, bp->obytes, bp->size);
+		dbg->iob.set_fd(dbg->iob.io, dbg->pid); // HUH?
+		if (set) dbg->iob.write_at(dbg->iob.io, addr, bp->bbytes, bp->size);
+		else dbg->iob.write_at(dbg->iob.io, addr, bp->obytes, bp->size);
 	}
 	return bp!=NULL;
 }
@@ -17,18 +18,19 @@ R_API int r_debug_bp_add(struct r_debug_t *dbg, ut64 addr, int size, int hw, int
 {
 	int ret = R_FALSE;
 	struct r_bp_item_t *bp;
-	if (dbg->read == NULL) {
+	if (dbg->iob.init == R_FALSE) {
 		eprintf("No dbg->read callback defined\n");
 		return -1;
 	}
 	/* read bytes affected */
 	ut8 *buf = (ut8 *)malloc(size);
-	dbg->read(dbg->user, dbg->pid, addr, buf, size);
+	dbg->iob.set_fd(dbg->iob.io, dbg->pid);
+	dbg->iob.read_at(dbg->iob.io, addr, buf, size);
 	/* register breakpoint in r_bp */
 	bp = r_bp_add(&dbg->bp, buf, addr, size, 0, R_BP_EXEC);
 	if (bp) {
 		if (dbg->h && (!dbg->h->bp_write || !dbg->h->bp_write(dbg->pid, addr, size, hw, rwx )))
-			dbg->write(dbg->user, dbg->pid, addr, bp->bbytes, size);
+			dbg->iob.write_at(dbg->iob.io, addr, bp->bbytes, size);
 		/* if already set, r_bp should return false */
 		free(buf);
 		ret = R_TRUE;

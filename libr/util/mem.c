@@ -76,7 +76,7 @@ R_API int r_mem_pack()
 	return R_TRUE;
 }
 
-R_API int r_mem_unpack(const u8)
+R_API int r_mem_unpack(const ut8 *buf)
 {
 	// TODO
 	return R_TRUE;

@@ -13,14 +13,8 @@ R_API int r_debug_init(struct r_debug_t *dbg)
 	dbg->h = NULL;
 	r_debug_handle_init(dbg);
 	r_bp_init(&dbg->bp);
+	dbg->iob.init = R_FALSE;
 	return R_TRUE;
-}
-
-R_API int r_debug_set_io(struct r_debug_t *dbg, CB_READ, CB_WRITE, void *user)
-{
-	dbg->read = _cb_read;
-	dbg->write = _cb_write;
-	dbg->user = user;
 }
 
 R_API struct r_debug_t *r_debug_new()
@@ -132,12 +126,6 @@ R_API int r_debug_step(struct r_debug_t *dbg, int steps)
 	return ret;
 }
 
-R_API int r_debug_syscall(struct r_debug_t *dbg, int num)
-{
-	fprintf(stderr, "TODO\n");
-	return R_FALSE;
-}
-
 R_API int r_debug_step_over(struct r_debug_t *dbg, int steps)
 {
 	// TODO: analyze opcode if it is stepoverable
@@ -182,8 +170,15 @@ R_API int r_debug_use_software_steps(struct r_debug_t *dbg, int value)
 	return -1;
 }
 
+R_API int r_debug_syscall(struct r_debug_t *dbg, int num)
+{
+	fprintf(stderr, "TODO\n");
+	return R_FALSE;
+}
+
 
 // TODO: Move to pid.c ?
+// TODO: do we need tid/pid
 // TODO: Do we need an intermediate signal representation for portability?
 // TODO: STOP, CONTINUE, KILL, ...
 R_API int r_debug_kill(struct r_debug_t *dbg, int pid, int sig)

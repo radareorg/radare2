@@ -17,8 +17,8 @@ static int do_hash(const char *algo, const ut8 *buf, int len, int bsize)
 	if (bsize>len)
 		bsize = len;
 
-	r_hash_state_init(&ctx, R_HASH_ALL);
-	//r_hash_state_init(&ctx, algobit);
+	//r_hash_state_init(&ctx, R_HASH_ALL);
+	r_hash_state_init(&ctx, algobit);
 	/* TODO: Loop here for blocks */
 	if (algobit & R_HASH_MD4) {
 		c = r_hash_state_md4(&ctx, buf, len);
@@ -32,6 +32,12 @@ static int do_hash(const char *algo, const ut8 *buf, int len, int bsize)
 		for(i=0;i<R_HASH_SIZE_MD5;i++) { printf("%02x", c[i]); }
 		printf("\n");
 	}
+	if (algobit & R_HASH_SHA1) {
+		c = r_hash_state_sha1(&ctx, buf, len);
+		printf("SHA1: ");
+		for(i=0;i<R_HASH_SIZE_SHA1;i++) { printf("%02x", c[i]); }
+		printf("\n");
+	}
 	return 0;
 }
 
@@ -40,7 +46,7 @@ static int do_help(int line)
 	printf("Usage: rahash2 [-b bsize] [-a algo] [-s str] [file] ...\n");
 	if (line) return 0;
 	printf(
-	" -a algo     Hashing algorithm to use (md5, crc32, ...)\n"
+	" -a algo     Hashing algorithm to use (md4, md5, crc32, sha1, ...)\n"
 	" -b bsize    Specify the size of the block\n"
 	" -s string   Hash this string instead of files\n");
 	return 0;

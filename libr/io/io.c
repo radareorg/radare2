@@ -314,3 +314,13 @@ R_API int r_io_close(struct r_io_t *io, int fd)
 	io->fd = -1; // unset current fd
 	return close(fd);
 }
+
+R_API int r_io_bind(struct r_io_t *io, struct r_io_bind_t *bnd)
+{
+	bnd->io = io;
+	bnd->init = R_TRUE;
+	bnd->read_at = r_io_read_at;
+	bnd->write_at = r_io_write_at;
+	//bnd->fd = io->fd;// do we need to store ptr to fd??
+	return R_TRUE;
+}

@@ -12,16 +12,7 @@
 #define R_IO_SEEK_CUR 1
 #define R_IO_SEEK_END 2
 
-#if 0
-// DEPRECATE ??
-#define R_IO_RW R_IO_READ|R_IO_WRITE
-#define R_IO_RWX R_IO_READ|R_IO_WRITE|R_IO_EXEC
-#define R_IO_RX R_IO_READ|R_IO_EXEC
-#define R_IO_WX R_IO_WRITE|R_IO_EXEC
-#endif
-
 #define R_IO_NFDS 32
-
 
 #define IO_MAP_N 128
 struct r_io_map_t {
@@ -80,12 +71,6 @@ struct r_io_t {
 	struct list_head cache;
 };
 
-struct r_io_bind_t {
-	//int (*read_at)(void *user, );
-	int (*write_at)();
-	void *user;
-};
-
 //struct r_io_handle_fd_t {
 // ... store io changes here
 //};
@@ -114,6 +99,18 @@ struct r_io_list_t {
 	struct r_io_handle_t *plugin;
 	struct list_head list;
 };
+
+/* compile time dependency */
+struct r_io_bind_t {
+	int init;
+	//int fd;
+	struct r_io_t *io;
+	int (*set_fd)(struct r_io_t *io, int fd);
+	int (*read_at)(struct r_io_t *io, ut64 addr, ut8 *buf, int size);
+	int (*write_at)(struct r_io_t *io, ut64 addr, const ut8 *buf, int size);
+};
+
+#define r_io_bind_init(x) memset(&x,0,sizeof(x))
 
 /* io/handle.c */
 R_API struct r_io_t *r_io_new();

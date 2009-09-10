@@ -70,20 +70,38 @@ static struct r_bin_string_t *get_strings(struct r_bin_t *bin, int min)
 	return ret;
 }
 
-struct r_bin_t *r_bin_new()
+R_API struct r_bin_t *r_bin_new()
 {
 	struct r_bin_t *bin = MALLOC_STRUCT(struct r_bin_t);
-	r_bin_init(bin);
+	if (bin != NULL)
+		r_bin_init(bin);
 	return bin;
 }
 
-void *r_bin_free(struct r_bin_t *bin)
+R_API struct r_bin_t *r_bin_free(struct r_bin_t *bin)
 {
 	free(bin);
 	return NULL;
 }
 
-int r_bin_init(struct r_bin_t *bin)
+static int r_bin_io_read_at(struct r_io_t *io, ut64 addr, ut8 *buf, int size)
+{
+}
+
+static int r_bin_io_write_at(struct r_io_bind_t *io, ut64 addr, const ut8 *buf, int size)
+{
+//	lseek
+	//fuck todo
+}
+static r_bin_io_init(struct r_bin_t *bin)
+{
+	bin->iob.init = R_TRUE;
+	bin->iob.io = NULL;
+	bin->iob.read_at = r_bin_io_read_at;
+	bin->iob.write_at = r_bin_io_write_at;
+}
+
+R_API int r_bin_init(struct r_bin_t *bin)
 {
 	int i;
 	bin->rw = 0;
@@ -91,15 +109,17 @@ int r_bin_init(struct r_bin_t *bin)
 	INIT_LIST_HEAD(&bin->bins);
 	for(i=0;bin_static_plugins[i];i++)
 		r_bin_add(bin, bin_static_plugins[i]);
+	r_bin_io_init(bin);
 	return R_TRUE;
 }
 
-void r_bin_set_user_ptr(struct r_bin_t *bin, void *user)
+// TODO: why the hell do we need user ptr here??
+R_API void r_bin_set_user_ptr(struct r_bin_t *bin, void *user)
 {
 	bin->user = user;
 }
 
-int r_bin_add(struct r_bin_t *bin, struct r_bin_handle_t *foo)
+R_API int r_bin_add(struct r_bin_t *bin, struct r_bin_handle_t *foo)
 {
 	struct list_head *pos;
 	if (foo->init)

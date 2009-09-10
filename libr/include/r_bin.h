@@ -4,6 +4,7 @@
 #define _INCLUDE_R_BIN_H_
 
 #include <r_types.h>
+#include <r_io.h>
 #include <list.h>
 
 #define R_BIN_SCN_EXECUTABLE(x) x & 0x1
@@ -26,6 +27,7 @@ struct r_bin_t {
 	int rw;
 	void *bin_obj;
 	void *user;
+	struct r_io_bind_t iob;
 	struct r_bin_handle_t *cur;
 	struct list_head bins;
 };
@@ -117,25 +119,25 @@ struct r_bin_field_t {
 };
 
 /* bin.c */
-struct r_bin_t *r_bin_new();
-void *r_bin_free(struct r_bin_t *bin);
-int r_bin_init(struct r_bin_t *bin);
-void r_bin_set_user_ptr(struct r_bin_t *bin, void *user);
-int r_bin_add(struct r_bin_t *bin, struct r_bin_handle_t *foo);
-int r_bin_list(struct r_bin_t *bin);
-int r_bin_open(struct r_bin_t *bin, const char *file, int rw, char *plugin_name);
-int r_bin_close(struct r_bin_t *bin);
-ut64 r_bin_get_baddr(struct r_bin_t *bin);
-struct r_bin_entry_t* r_bin_get_entry(struct r_bin_t *bin);
-struct r_bin_section_t* r_bin_get_sections(struct r_bin_t *bin);
-struct r_bin_symbol_t* r_bin_get_symbols(struct r_bin_t *bin);
-struct r_bin_import_t* r_bin_get_imports(struct r_bin_t *bin);
-struct r_bin_string_t* r_bin_get_strings(struct r_bin_t *bin);
-struct r_bin_info_t* r_bin_get_info(struct r_bin_t *bin);
-struct r_bin_field_t* r_bin_get_fields(struct r_bin_t *bin);
-ut64 r_bin_get_section_offset(struct r_bin_t *bin, char *name);
-ut64 r_bin_get_section_rva(struct r_bin_t *bin, char *name);
-ut64 r_bin_get_section_size(struct r_bin_t *bin, char *name);
+R_API struct r_bin_t *r_bin_new();
+R_API struct r_bin_t *r_bin_free(struct r_bin_t *bin);
+R_API int r_bin_init(struct r_bin_t *bin);
+R_API void r_bin_set_user_ptr(struct r_bin_t *bin, void *user);
+R_API int r_bin_add(struct r_bin_t *bin, struct r_bin_handle_t *foo);
+R_API int r_bin_list(struct r_bin_t *bin);
+R_API int r_bin_open(struct r_bin_t *bin, const char *file, int rw, char *plugin_name);
+R_API int r_bin_close(struct r_bin_t *bin);
+R_API ut64 r_bin_get_baddr(struct r_bin_t *bin);
+R_API struct r_bin_entry_t* r_bin_get_entry(struct r_bin_t *bin);
+R_API struct r_bin_section_t* r_bin_get_sections(struct r_bin_t *bin);
+R_API struct r_bin_symbol_t* r_bin_get_symbols(struct r_bin_t *bin);
+R_API struct r_bin_import_t* r_bin_get_imports(struct r_bin_t *bin);
+R_API struct r_bin_string_t* r_bin_get_strings(struct r_bin_t *bin);
+R_API struct r_bin_info_t* r_bin_get_info(struct r_bin_t *bin);
+R_API struct r_bin_field_t* r_bin_get_fields(struct r_bin_t *bin);
+R_API ut64 r_bin_get_section_offset(struct r_bin_t *bin, char *name);
+R_API ut64 r_bin_get_section_rva(struct r_bin_t *bin, char *name);
+R_API ut64 r_bin_get_section_size(struct r_bin_t *bin, char *name);
 
 /* plugin pointers */
 extern struct r_bin_handle_t r_bin_plugin_elf;

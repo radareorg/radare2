@@ -93,6 +93,7 @@ static int myfgets(char *buf, int len)
 }
 /*-----------------------------------*/
 
+#if 0
 static int __dbg_read(void *user, int pid, ut64 addr, ut8 *buf, int len)
 {
 	struct r_core_t *core = (struct r_core_t *)user;
@@ -106,6 +107,7 @@ static int __dbg_write(void *user, int pid, ut64 addr, const ut8 *buf, int len)
 	// TODO: pid not used
 	return r_core_write_at(core, addr, buf, len);
 }
+#endif
 
 R_API int r_core_init(struct r_core_t *core)
 {
@@ -153,7 +155,8 @@ R_API int r_core_init(struct r_core_t *core)
 	r_debug_init(&core->dbg);
 	core->io.printf = r_cons_printf;
 	core->dbg.printf = r_cons_printf;
-	r_debug_set_io(&core->dbg, &__dbg_read, &__dbg_write, core);
+	//r_debug_set_io(&core->dbg, &__dbg_read, &__dbg_write, core);
+	r_io_bind(&core->io, &core->dbg.iob);
 	r_core_config_init(core);
 	// XXX fix path here
 

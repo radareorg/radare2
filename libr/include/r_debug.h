@@ -5,6 +5,7 @@
 #include <r_util.h>
 #include <r_reg.h>
 #include <r_bp.h>
+#include <r_io.h>
 #include <r_syscall.h>
 #include "list.h"
 
@@ -70,8 +71,7 @@ struct r_debug_t {
 	void *user;
 	/* io */
 	void (*printf)(const char *str, ...);
-	int (*read)(void *user, int pid, ut64 addr, ut8 *buf, int len);
-	int (*write)(void *user, int pid, ut64 addr, const ut8 *buf, int len);
+	struct r_io_bind_t iob; // compile time dependency
 	struct r_debug_handle_t *h;
 	struct list_head handlers;
 	/* TODO
@@ -105,10 +105,12 @@ R_API int r_debug_init(struct r_debug_t *dbg);
 R_API struct r_debug_t *r_debug_new();
 R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg);
 
+#if 0
 #define CB_READ int (*_cb_read)(void *user, int pid, ut64 addr, ut8 *buf, int len)
 #define CB_WRITE int (*_cb_write)(void *user, int pid, ut64 addr, const ut8 *buf, int len)
 
 R_API int r_debug_set_io(struct r_debug_t *dbg, CB_READ, CB_WRITE, void *user);
+#endif
 
 /* send signals */
 R_API int r_debug_kill(struct r_debug_t *dbg, int pid, int sig);

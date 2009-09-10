@@ -7,9 +7,8 @@
 R_API int r_debug_reg_sync(struct r_debug_t *dbg, int write)
 {
 	if (write) {
-		if (dbg && dbg->h && dbg->h->reg_write) {
+		if (dbg && dbg->h && dbg->h->reg_write)
 			dbg->h->reg_write(dbg->pid, dbg->regs);
-		}
 	} else {
 		/* read registers from debugger backend to dbg->regs */
 		if (dbg && dbg->h && dbg->h->reg_read) {

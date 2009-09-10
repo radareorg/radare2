@@ -9,7 +9,7 @@ STATIC_OBJS=
 include ../config.mk
 include ${STATIC_IO_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst io_,p/io_,$(STATIC_OBJ)))
-OBJ=${STATIC_OBJS} io.o handle.o map.o section.o desc.o bind.o cache.o undo.o
+OBJ=${STATIC_OBJS} io.o handle.o map.o section.o desc.o cache.o undo.o
 
 pre:
 	@echo STATICOBJS: ${STATIC_OBJS}
