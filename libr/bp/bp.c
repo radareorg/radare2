@@ -11,6 +11,7 @@ R_API int r_bp_init(struct r_bp_t *bp)
 	int i;
 	bp->nbps = 0;
 	bp->cur = NULL;
+	bp->stepcont = R_BP_CONT_NORMAL;
 	INIT_LIST_HEAD(&bp->bps);
 	INIT_LIST_HEAD(&bp->plugins);
 	for(i=0;bp_static_plugins[i];i++)
@@ -21,48 +22,18 @@ R_API int r_bp_init(struct r_bp_t *bp)
 R_API struct r_bp_t *r_bp_new()
 {
 	struct r_bp_t *bp = MALLOC_STRUCT(struct r_bp_t);
-	r_bp_init(bp);
+	if (bp) r_bp_init(bp);
 	return bp;
 }
 
-R_API int r_bp_handle_del(struct r_bp_t *bp, const char *name)
+R_API struct r_bp_t *r_bp_free(struct r_bp_t *bp)
 {
-#warning TODO: r_bp_handle_del
-	return R_FALSE;
+	/* XXX : properly destroy bp list */
+	free(bp);
+	return NULL;
 }
 
-R_API int r_bp_handle_add(struct r_bp_t *bp, struct r_bp_handle_t *foo)
-{
-	struct list_head *pos;
-	if (bp == NULL) {
-		eprintf("Cannot add plugin because dbg->bp is null and/or handle is null\n");
-		return R_FALSE;
-	}
-	/* avoid dupped plugins */
-	list_for_each_prev(pos, &bp->bps) {
-		struct r_bp_handle_t *h = list_entry(pos, struct r_bp_handle_t, list);
-		if (!strcmp(h->name, foo->name))
-			return R_FALSE;
-	}
-	bp->nbps++;
-	list_add_tail(&(foo->list), &(bp->plugins));
-	return R_TRUE;
-}
-
-R_API int r_bp_handle_set(struct r_bp_t *bp, const char *name)
-{
-	struct list_head *pos;
-	list_for_each_prev(pos, &bp->plugins) {
-		struct r_bp_handle_t *h = list_entry(pos, struct r_bp_handle_t, list);
-		if (!strcmp(h->name, name)) {
-			bp->cur = h;
-			return R_TRUE;
-		}
-	}
-	return R_FALSE;
-}
-
-R_API int r_bp_getbytes(struct r_bp_t *bp, ut8 *buf, int len, int endian, int idx)
+R_API int r_bp_get_bytes(struct r_bp_t *bp, ut8 *buf, int len, int endian, int idx)
 {
 	int i;
 	struct r_bp_arch_t *b;
@@ -82,36 +53,7 @@ R_API int r_bp_getbytes(struct r_bp_t *bp, ut8 *buf, int len, int endian, int id
 	return R_FALSE;
 }
 
-R_API int r_bp_set_trace(struct r_bp_t *bp, ut64 addr, int set)
-{
-	struct list_head *pos;
-	struct r_bp_item_t *b;
-	list_for_each(pos, &bp->bps) {
-		b = list_entry(pos, struct r_bp_item_t, list);
-		if (addr >= b->addr && addr <= b->addr+b->size) {
-			b->trace = set;
-			return R_TRUE;
-		}
-	}
-	return R_TRUE;
-}
-
-R_API int r_bp_set_trace_bp(struct r_bp_t *bp, ut64 addr, int set)
-{
-	bp->trace_all = set;
-	bp->trace_bp = addr;
-	return R_TRUE;
-}
-
-R_API struct r_bp_t *r_bp_free(struct r_bp_t *bp)
-{
-	/* XXX : properly destroy bp list */
-	free(bp);
-	return NULL;
-}
-
-// TODO: rename this method!
-R_API int r_bp_in(struct r_bp_t *bp, ut64 addr, int rwx)
+R_API int r_bp_at_addr(struct r_bp_t *bp, ut64 addr, int rwx)
 {
 	struct list_head *pos;
 	struct r_bp_item_t *b;
@@ -141,12 +83,32 @@ R_API struct r_bp_item_t *r_bp_enable(struct r_bp_t *bp, ut64 addr, int set)
 	return NULL;
 }
 
+R_API int r_bp_stepy_continuation(struct r_bp_t *bp)
+{
+	// TODO: implement
+	return bp->stepcont;
+}
+
+R_API int r_bp_add_cond(struct r_bp_t *bp, const char *cond)
+{
+	// TODO: implement contitional breakpoints
+	bp->stepcont = R_TRUE;
+	return 0;
+}
+
+R_API int r_bp_del_cond(struct r_bp_t *bp, int idx)
+{
+	// add contitional
+	bp->stepcont = R_FALSE;
+	return R_TRUE;
+}
+
 /* TODO: detect overlapping of breakpoints */
-R_API struct r_bp_item_t *r_bp_add(struct r_bp_t *bp, const ut8 *obytes, ut64 addr, int size, int hw, int rwx)
+static struct r_bp_item_t *r_bp_add(struct r_bp_t *bp, const ut8 *obytes, ut64 addr, int size, int hw, int rwx)
 {
 	int ret;
 	struct r_bp_item_t *b;
-	if (r_bp_in(bp, addr, rwx)) {
+	if (r_bp_at_addr(bp, addr, rwx)) {
 		eprintf("Breakpoint already set at this address.\n");
 		return NULL;
 	}
@@ -154,12 +116,14 @@ R_API struct r_bp_item_t *r_bp_add(struct r_bp_t *bp, const ut8 *obytes, ut64 ad
 	b->pids[0] = 0; /* for any pid */
 	b->addr = addr;
 	b->size = size;
-	b->enabled = 1;
-	b->obytes = malloc(size);
+	b->enabled = R_TRUE;
 	b->bbytes = malloc(size+16);
-	memcpy(b->obytes, obytes, size);
+	if (obytes) {
+		b->obytes = malloc(size);
+		memcpy(b->obytes, obytes, size);
+	} else b->obytes = NULL;
 	/* XXX: endian always in little ?!?!? */
-	ret = r_bp_getbytes(bp, b->bbytes, size, 0, 0);
+	ret = r_bp_get_bytes(bp, b->bbytes, size, 0, 0);
 	if (ret == R_FALSE) {
 		fprintf(stderr, "Cannot get breakpoint bytes. No r_bp_set()?\n");
 		free (b->bbytes);
@@ -171,6 +135,26 @@ R_API struct r_bp_item_t *r_bp_add(struct r_bp_t *bp, const ut8 *obytes, ut64 ad
 	bp->nbps++;
 	list_add_tail(&(b->list), &bp->bps);
 	return b;
+}
+
+R_API struct r_bp_item_t *r_bp_add_sw(struct r_bp_t *bp, ut64 addr, int size, int rwx)
+{
+	struct r_bp_item_t *item;
+	ut8 *bytes;
+	bytes = malloc(size);
+	if (bytes == NULL)
+		return NULL;
+	if (bp->iob.read_at) {
+		bp->iob.read_at(bp->iob.io, addr, bytes, size);
+	} else memset(bytes, 0, size);
+	item = r_bp_add(bp, bytes, addr, size, R_BP_TYPE_SW, rwx);
+	free(bytes);
+	return item;
+}
+
+R_API struct r_bp_item_t *r_bp_add_hw(struct r_bp_t *bp, ut64 addr, int size, int rwx)
+{
+	return r_bp_add(bp, NULL, addr, size, R_BP_TYPE_HW, rwx);
 }
 
 R_API int r_bp_del(struct r_bp_t *bp, ut64 addr)
@@ -187,21 +171,33 @@ R_API int r_bp_del(struct r_bp_t *bp, ut64 addr)
 	return R_FALSE;
 }
 
-R_API void r_bp_handle_list(struct r_bp_t *bp)
+// TODO: rename or drop?
+R_API int r_bp_set_trace(struct r_bp_t *bp, ut64 addr, int set)
 {
-	struct r_bp_handle_t *b;
 	struct list_head *pos;
-	list_for_each(pos, &bp->plugins) {
-		b = list_entry(pos, struct r_bp_handle_t, list);
-		if (bp->cur && !strcmp(bp->cur->name, b->name))
-			printf(" * %s\n", b->name);
-		else printf(" - %s\n", b->name);
-	
+	struct r_bp_item_t *b;
+	list_for_each(pos, &bp->bps) {
+		b = list_entry(pos, struct r_bp_item_t, list);
+		if (addr >= b->addr && addr <= b->addr+b->size) {
+			b->trace = set;
+			return R_TRUE;
+		}
 	}
+	return R_TRUE;
 }
 
+// TODO: rename or remove
+R_API int r_bp_set_trace_bp(struct r_bp_t *bp, ut64 addr, int set)
+{
+	bp->trace_all = set;
+	bp->trace_bp = addr;
+	return R_TRUE;
+}
+
+// TODO: deprecate
 R_API int r_bp_list(struct r_bp_t *bp, int rad)
 {
+	int n = 0;
 	struct r_bp_item_t *b;
 	struct list_head *pos;
 	eprintf("Breakpoint list:\n");
@@ -216,6 +212,7 @@ R_API int r_bp_list(struct r_bp_t *bp, int rad)
 			b->trace?"trace":"break",
 			b->enabled?"enabled":"disabled");
 		/* TODO: Show list of pids and trace points, conditionals */
+		n++;
 	}
-	return 0;
+	return n;
 }

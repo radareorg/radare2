@@ -5,6 +5,7 @@ namespace Radare {
 	[Compact]
 	[CCode (cname="struct r_debug_t", free_function="r_debug_free", cprefix="r_debug_")]
 	public class Debug {
+		public Breakpoint bp;
 		public Debug();
 
 		/* life cycle */

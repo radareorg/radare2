@@ -5,6 +5,7 @@
 #if DEBUGGER
 
 #include <r_debug.h>
+#include <r_asm.h>
 #include <r_lib.h>
 #include <sys/ptrace.h>
 #include <sys/types.h>
@@ -53,9 +54,9 @@ static int r_debug_ptrace_wait(int pid)
 	return status;
 }
 
-struct r_debug_regset_t * r_debug_ptrace_reg_read(int pid)
+struct r_regset_t* r_debug_ptrace_reg_read(int pid)
 {
-	struct r_debug_regset_t *r = NULL;
+	struct r_regset_t *r = NULL;
 // XXX this must be defined somewhere else
 #if __linux__
 #include <sys/user.h>
@@ -64,43 +65,43 @@ struct r_debug_regset_t * r_debug_ptrace_reg_read(int pid)
 	memset(&regs,0, sizeof(regs));
 	ptrace(PTRACE_GETREGS, pid, 0, &regs);
 #if __WORDSIZE == 64
-	r = r_debug_regset_new(17);
-	r_debug_regset_set(r, 0, "rax", regs.rax);
-	r_debug_regset_set(r, 1, "rbx", regs.rbx);
-	r_debug_regset_set(r, 2, "rcx", regs.rcx);
-	r_debug_regset_set(r, 3, "rdx", regs.rdx);
-	r_debug_regset_set(r, 4, "rsi", regs.rsi);
-	r_debug_regset_set(r, 5, "rdi", regs.rdi);
-	r_debug_regset_set(r, 6, "rsp", regs.rsp);
-	r_debug_regset_set(r, 7, "rbp", regs.rbp);
-	r_debug_regset_set(r, 8, "rip", regs.rip);
-	r_debug_regset_set(r, 9, "r8", regs.r8);
-	r_debug_regset_set(r, 10, "r9", regs.r9);
-	r_debug_regset_set(r, 11, "r10", regs.r10);
-	r_debug_regset_set(r, 12, "r11", regs.r11);
-	r_debug_regset_set(r, 13, "r12", regs.r12);
-	r_debug_regset_set(r, 14, "r13", regs.r13);
-	r_debug_regset_set(r, 15, "r14", regs.r14);
-	r_debug_regset_set(r, 16, "r15", regs.r15);
+	r = r_regset_new(17);
+	r_regset_set(r, 0, "rax", regs.rax);
+	r_regset_set(r, 1, "rbx", regs.rbx);
+	r_regset_set(r, 2, "rcx", regs.rcx);
+	r_regset_set(r, 3, "rdx", regs.rdx);
+	r_regset_set(r, 4, "rsi", regs.rsi);
+	r_regset_set(r, 5, "rdi", regs.rdi);
+	r_regset_set(r, 6, "rsp", regs.rsp);
+	r_regset_set(r, 7, "rbp", regs.rbp);
+	r_regset_set(r, 8, "rip", regs.rip);
+	r_regset_set(r, 9, "r8", regs.r8);
+	r_regset_set(r, 10, "r9", regs.r9);
+	r_regset_set(r, 11, "r10", regs.r10);
+	r_regset_set(r, 12, "r11", regs.r11);
+	r_regset_set(r, 13, "r12", regs.r12);
+	r_regset_set(r, 14, "r13", regs.r13);
+	r_regset_set(r, 15, "r14", regs.r14);
+	r_regset_set(r, 16, "r15", regs.r15);
 #else
 	/* TODO: use enum for 0, 1, 2... ? */
 	/* TODO: missing eflags here */
-	r = r_debug_regset_new(9);
-	r_debug_regset_set(r, 0, "eax", (ut64)(ut32)regs.eax);
-	r_debug_regset_set(r, 1, "ebx", (ut64)(ut32)regs.ebx);
-	r_debug_regset_set(r, 2, "ecx", (ut64)(ut32)regs.ecx);
-	r_debug_regset_set(r, 3, "edx", (ut64)(ut32)regs.edx);
-	r_debug_regset_set(r, 4, "esi", (ut64)(ut32)regs.esi);
-	r_debug_regset_set(r, 5, "edi", (ut64)(ut32)regs.edi);
-	r_debug_regset_set(r, 6, "esp", (ut64)(ut32)regs.esp);
-	r_debug_regset_set(r, 7, "ebp", (ut64)(ut32)regs.ebp);
-	r_debug_regset_set(r, 8, "eip", (ut64)(ut32)regs.eip);
+	r = r_regset_new(9);
+	r_regset_set(r, 0, "eax", (ut64)(ut32)regs.eax);
+	r_regset_set(r, 1, "ebx", (ut64)(ut32)regs.ebx);
+	r_regset_set(r, 2, "ecx", (ut64)(ut32)regs.ecx);
+	r_regset_set(r, 3, "edx", (ut64)(ut32)regs.edx);
+	r_regset_set(r, 4, "esi", (ut64)(ut32)regs.esi);
+	r_regset_set(r, 5, "edi", (ut64)(ut32)regs.edi);
+	r_regset_set(r, 6, "esp", (ut64)(ut32)regs.esp);
+	r_regset_set(r, 7, "ebp", (ut64)(ut32)regs.ebp);
+	r_regset_set(r, 8, "eip", (ut64)(ut32)regs.eip);
 #endif
 #endif /* linux */
 	return r;
 }
 
-static int r_debug_ptrace_reg_write(int pid, struct r_debug_regset_t *regs)
+static int r_debug_ptrace_reg_write(int pid, struct r_regset_t *regs)
 {
 	/* TODO */
 	return 0;
@@ -119,6 +120,15 @@ static int r_debug_ptrace_bp_write(int pid, ut64 addr, int size, int hw, int rwx
 static int r_debug_ptrace_bp_read(int pid, ut64 addr, int hw, int rwx)
 {
 	return R_TRUE;
+}
+
+static int r_debug_get_arch()
+{
+#if __WORDSIZE == 64
+	return R_ASM_ARCH_X86_64;
+#else
+	return R_ASM_ARCH_X86;
+#endif
 }
 
 #if 0
@@ -142,6 +152,7 @@ struct r_debug_handle_t r_debug_plugin_ptrace = {
 	.attach = &r_debug_ptrace_attach,
 	.detach = &r_debug_ptrace_detach,
 	.wait = &r_debug_ptrace_wait,
+	.get_arch = &r_debug_get_arch,
 	.bp_write = &r_debug_ptrace_bp_write,
 	.reg_read = &r_debug_ptrace_reg_read,
 	.reg_write = &r_debug_ptrace_reg_write,

@@ -179,6 +179,9 @@ static int __system(struct r_io_t *io, int fd, const char *cmd)
 #include <limits.h>
 	/* XXX ugly hack for testing purposes */
 	if (!strcmp(cmd, "pid")) {
+		int pid = atoi(cmd+4);
+		if (pid != 0)
+			io->fd = pid;
 		//printf("PID=%d\n", io->fd);
 		return io->fd;
 	} else

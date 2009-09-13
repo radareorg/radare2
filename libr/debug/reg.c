@@ -20,9 +20,9 @@ R_API int r_debug_reg_sync(struct r_debug_t *dbg, int write)
 	return (dbg->regs != NULL);
 }
 
-R_API struct r_debug_regset_t *r_debug_reg_diff(struct r_debug_t *dbg)
+R_API struct r_regset_t *r_debug_reg_diff(struct r_debug_t *dbg)
 {
-	return r_debug_regset_diff(dbg->oregs, dbg->regs);
+	return r_regset_diff(dbg->oregs, dbg->regs);
 }
 
 R_API ut64 r_debug_reg_get(struct r_debug_t *dbg, const char *name)
@@ -43,23 +43,23 @@ R_API ut64 r_debug_reg_get(struct r_debug_t *dbg, const char *name)
 R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 value)
 {
 	int i;
-	struct r_debug_regset_t *rs = dbg->regs;
+	struct r_regset_t *rs = dbg->regs;
 	if (rs)
 	for(i=0; i<rs->nregs; i++) {
 		if (!strcmp(name, rs->regs[i].name))
-			return r_debug_regset_set(dbg->regs, i, name, value);
+			return r_regset_set(dbg->regs, i, name, value);
 	}
 	return R_FALSE;
 }
 
-R_API int r_debug_reg_list(struct r_debug_t *dbg, struct r_debug_regset_t *rs, int rad)
+R_API int r_debug_reg_list(struct r_debug_t *dbg, struct r_regset_t *rs, int rad)
 {
 	int i =0;
 	if (rs == NULL)
 		rs = dbg->regs;
 	if (rs)
 	for(i=0;i<rs->nregs;i++) {
-		struct r_debug_reg_t *r = &rs->regs[i];
+		struct r_reg_item_t *r = &rs->regs[i];
 		if (rad) dbg->printf("f %s @ 0x%08llx\n", r->name, r->value);
 		else dbg->printf("%d %s 0x%08llx\n", i, r->name, r->value);
 		/* TODO: add floating point support here */

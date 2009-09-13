@@ -3,7 +3,8 @@ include ../../../config-user.mk
 CFLAGS=-I../../include -Wall -DPREFIX=\"${PREFIX}\"
 BINDEPS=
 
-LANGS=lang_lua.so lang_dummy.so lang_ruby.so lang_python.so lang_perl.so
+LANGS=lang_lua.so lang_dummy.so lang_python.so lang_perl.so
+#LANGS+=lang_ruby.so
 ifeq ($(HAVE_LIB_TCC),1)
 LANGS+=lang_tcc.so
 endif

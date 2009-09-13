@@ -1,74 +1,42 @@
 #include <r_reg.h>
-#include <r_debug.h>
+#include <r_asm.h>
 
-static int x86_nregs = 10;
-static char *x86_regs[] = {
-   "eax", "ebx", "ecx", "edx", "esi", "edi", "esp", "ebp", "eip", 
-   "ax", "bx", "cx", "dx", "si", "di", "sp", "bp", "ip", // 16 tits
-   "ah","al", "bh", "bl", "ch","cl", "dh","dl", // 8 tits
-   NULL };
 
-#if 0
-// XXX
-- we need size of register
-struct r_reg_item_t {
-	char name[16];
-	char get[128];
-	char set[128];
-	int size;
-	int delta;
-};
-
-struct r_reg_arch_t {
-	char *name;
-	int nregs;
-	struct r_reg_item_t regs[128];
-};
-
-/* TODO: autogenerate it from a file in C or perl */
-struct r_reg_arch_t x86 {
-	.name = "",
-	.nregs = 32,
-	.regs = { {
-		.name = "eax",
-		.size = 32,
-		.delta = offsetof(r_regs_t, eax)
-		},{
-		.name = "ebx",
-		.size = 32,
-		.delta = offsetof(r_regs_t, ebx)
-		}
+R_API struct r_reg_t *r_reg_init(struct r_reg_t *reg)
+{
+	if (reg) {
+		reg->h = NULL;
+		INIT_LIST_HEAD(&reg->handles);
 	}
+	return reg;
 }
-#endif
+
+R_API struct r_reg_t *r_reg_new()
+{
+	struct r_reg_t *r = MALLOC_STRUCT(struct r_reg_t);
+	return r_reg_init(r);
+}
+
+R_API struct r_reg_t *r_reg_free(struct r_reg_t *reg)
+{
+	if (reg) {
+		// TODO: free more things here
+		free(reg);
+	}
+	return NULL;
+}
 
 int r_reg_set_arch(struct r_reg_t *reg, int arch, int bits)
 {
-	int ret = R_TRUE;
-
-	switch(arch) {
-	case R_DBG_ARCH_X86:
-		switch(bits) {
-		case 64:
-			reg->nregs = x86_nregs;
-			reg->regs  = x86_regs;
-			break;
-		case 32:
-			reg->nregs = x86_nregs;
-			reg->regs  = x86_regs;
-			break;
-		case 16:
-			reg->nregs = x86_nregs;
-			reg->regs  = x86_regs;
+	int ret = R_FALSE;
+	struct list_head *pos;
+	list_for_each(pos, &reg->handles) {
+		struct r_reg_handle_t *h = list_entry(pos, struct r_reg_handle_t, list);
+		if (h->is_arch(arch, bits)) {
+			reg->h = h;
+			ret = R_TRUE;
 			break;
 		}
-		break;
-	/* TODO: add more architectures */
-	case R_DBG_ARCH_ARM:
-	case R_DBG_ARCH_MIPS:
-	default:
-		ret = R_FALSE;
-		break;
 	}
 	return ret;
 }

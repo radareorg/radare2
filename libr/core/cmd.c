@@ -1611,16 +1611,16 @@ static int cmd_debug(void *data, const char *input)
 		if (input[1]==' ') input = input+1;
 		switch(input[1]) {
 		case '\0':
-			r_bp_list(&core->dbg.bp, input[1]=='*');
+			r_bp_list(core->dbg.bp, input[1]=='*');
 			break;
 		case '-':
-			r_debug_bp_del(&core->dbg, r_num_math(&core->num, input+2));
+			r_bp_del(core->dbg.bp, r_num_math(&core->num, input+2));
 			break;
 		case 'e':
-			r_debug_bp_enable(&core->dbg, r_num_math(&core->num, input+2), 1);
+			r_bp_enable(core->dbg.bp, r_num_math(&core->num, input+2), 1);
 			break;
 		case 'd':
-			r_debug_bp_enable(&core->dbg, r_num_math(&core->num, input+2), 0);
+			r_bp_enable(core->dbg.bp, r_num_math(&core->num, input+2), 0);
 			break;
 		case 'h':
 			if (input[2]==' ') {
@@ -1639,7 +1639,7 @@ static int cmd_debug(void *data, const char *input)
 			"dbh x86         ; set/list breakpoint plugin handlers\n");
 			break;
 		default:
-			r_debug_bp_add(&core->dbg, r_num_math(&core->num, input+1), 1, 0, R_BP_EXEC);
+			r_bp_add_sw(core->dbg.bp, r_num_math(&core->num, input+1), 1, R_BP_EXEC);
 			break;
 		}
 		break;

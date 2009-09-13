@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 	int ret;
 	int tid, pid;
 	struct r_io_t *io;
-	struct r_dbg_t *dbg;
+	struct r_debug_t *dbg;
 
 	io = r_io_new();
 	printf("Supported IO pluggins:\n");

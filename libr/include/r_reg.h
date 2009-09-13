@@ -2,7 +2,9 @@
 #define _INCLUDE_R_REG_H_
 
 #include <r_types.h>
+#include <list.h>
 
+// XXX this must be in plugins
 enum {
 	R_REG_X86_EAX,
 	R_REG_X86_AX,
@@ -16,9 +18,33 @@ enum {
 	R_REG_X86_EIP,
 };
 
+struct r_reg_handle_t {
+	int (*is_arch)(int arch, int bits);
+	struct list_head list;
+};
+
 struct r_reg_t {
 	int nregs;
 	char **regs;
+	struct r_reg_handle_t *h;
+	struct list_head handles;
+};
+
+#define R_REG_NAME_MAX 16
+struct r_reg_item_t {
+	char name[R_REG_NAME_MAX];
+	union {
+		ut64 value;
+		float fvalue;
+		double dvalue;
+	};
+	int offset;
+	int isfloat;
+};
+
+struct r_regset_t {
+	int nregs;
+	struct r_reg_item_t *regs;
 };
 
 int r_reg_set_arch(struct r_reg_t *reg, int arch, int bits);

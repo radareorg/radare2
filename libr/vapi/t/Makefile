@@ -45,6 +45,8 @@ core:
 		-lr_search -Wl,-R../../search -L../../search \
 		-lr_cmd -Wl,-R../../cmd -L../../cmd \
 		-lr_hash -Wl,-R../../hash -L../../hash \
+		-lr_reg -Wl,-R../../reg -L../../reg \
+		-lr_bp -Wl,-R../../bp -L../../bp \
 		-g -o core
 
 search:

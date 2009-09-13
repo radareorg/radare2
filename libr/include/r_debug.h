@@ -9,37 +9,6 @@
 #include <r_syscall.h>
 #include "list.h"
 
-enum {
-	R_DBG_ARCH_NULL = 0,
-	R_DBG_ARCH_X86,
-	R_DBG_ARCH_ARM,
-	R_DBG_ARCH_PPC,
-	R_DBG_ARCH_M68K,
-	R_DBG_ARCH_JAVA,
-	R_DBG_ARCH_MIPS,
-	R_DBG_ARCH_SPARC,
-	R_DBG_ARCH_CSR,
-	R_DBG_ARCH_MSIL,
-	R_DBG_ARCH_OBJD,
-	R_DBG_ARCH_BF
-};
-
-#define R_DEBUG_REG_NAME_MAX 16
-struct r_debug_reg_t {
-	char name[R_DEBUG_REG_NAME_MAX];
-	union {
-		ut64 value;
-		float fvalue;
-		double dvalue;
-	};
-	int isfloat;
-};
-
-struct r_debug_regset_t {
-	int nregs;
-	struct r_debug_reg_t *regs;
-};
-
 /* TODO: pass dbg and user data pointer everywhere */
 struct r_debug_handle_t {
 	const char *name;
@@ -50,11 +19,12 @@ struct r_debug_handle_t {
 	int (*step)(int pid); // if step() is NULL; reimplement it with traps
 	int (*cont)(int pid);
 	int (*wait)(int pid);
+	int (*get_arch)();
 	int (*contsc)(int pid, int sc);
 	//int (*bp_write)(int pid, ut64 addr, int hw, int type);
 	int (*bp_write)(int pid, ut64 addr, int size, int hw, int rwx);
-	struct r_debug_regset_t * (*reg_read)(int pid);
-	int (*reg_write)(int pid, struct r_debug_regset_t *regs);
+	struct r_regset_t * (*reg_read)(int pid);
+	int (*reg_write)(int pid, struct r_regset_t *regs);
 	// XXX bad signature int (*bp_read)(int pid, ut64 addr, int hw, int type);
 	struct list_head list;
 };
@@ -65,13 +35,12 @@ struct r_debug_t {
 	int swstep; /* steps with software traps */
 	int steps;  /* counter of steps done */
 	int newstate;
-	struct r_debug_regset_t *oregs;
-	struct r_debug_regset_t *regs;
-	struct r_bp_t bp;
+	struct r_regset_t *oregs;
+	struct r_regset_t *regs;
+	struct r_bp_t *bp;
 	void *user;
 	/* io */
 	void (*printf)(const char *str, ...);
-	struct r_io_bind_t iob; // compile time dependency
 	struct r_debug_handle_t *h;
 	struct list_head handlers;
 	/* TODO
@@ -135,14 +104,14 @@ R_API int r_debug_bp_list(struct r_debug_t *dbg, int rad);
 R_API int r_debug_reg_sync(struct r_debug_t *dbg, int write);
 R_API ut64 r_debug_reg_get(struct r_debug_t *dbg, const char *name);
 R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 value);
-R_API struct r_debug_regset_t *r_debug_reg_diff(struct r_debug_t *dbg);
-R_API int r_debug_reg_list(struct r_debug_t *dbg, struct r_debug_regset_t *rs, int rad);
+R_API struct r_regset_t *r_debug_reg_diff(struct r_debug_t *dbg);
+R_API int r_debug_reg_list(struct r_debug_t *dbg, struct r_regset_t *rs, int rad);
 
 /* regset */
-R_API struct r_debug_regset_t* r_debug_regset_diff(struct r_debug_regset_t *a, struct r_debug_regset_t *b);
-R_API int r_debug_regset_set(struct r_debug_regset_t *r, int idx, const char *name, ut64 value);
-R_API struct r_debug_regset_t *r_debug_regset_new(int size);
-R_API void r_debug_regset_free(struct r_debug_regset_t *r);
+R_API struct r_regset_t* r_regset_diff(struct r_regset_t *a, struct r_regset_t *b);
+R_API int r_regset_set(struct r_regset_t *r, int idx, const char *name, ut64 value);
+R_API struct r_regset_t *r_regset_new(int size);
+R_API void r_regset_free(struct r_regset_t *r);
 
 #if 0
 Missing callbacks

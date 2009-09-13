@@ -11,9 +11,9 @@ R_API int r_debug_init(struct r_debug_t *dbg)
 	dbg->regs = dbg->oregs = NULL;
 	dbg->printf = printf;
 	dbg->h = NULL;
+	dbg->bp = r_bp_new();
 	r_debug_handle_init(dbg);
-	r_bp_init(&dbg->bp);
-	dbg->iob.init = R_FALSE;
+	dbg->bp->iob.init = R_FALSE;
 	return R_TRUE;
 }
 
@@ -39,6 +39,10 @@ R_API int r_debug_attach(struct r_debug_t *dbg, int pid)
 	if (dbg->h && dbg->h->attach) {
 		ret = dbg->h->attach(pid);
 		if (ret) {
+			// TODO: get arch and set io pid
+			//int arch = dbg->h->get_arch();
+			//r_reg_set(dbg->reg->nregs, arch); //R_DBG_ARCH_X86);
+			// dbg->bp->iob->system("pid %d", pid);
 			dbg->pid = pid;
 			dbg->tid = pid;
 		} else fprintf(stderr, "Cannot attach to this pid\n");
@@ -69,20 +73,6 @@ R_API int r_debug_select(struct r_debug_t *dbg, int pid, int tid)
 	dbg->pid = pid;
 	dbg->tid = tid;
 	eprintf("PID: %d %d\n", pid, tid);
-	return R_TRUE;
-}
-
-R_API int r_debug_set_arch(struct r_debug_t *dbg, int arch)
-{
-	/* XXX: use string identifiers here */
-	switch(arch) {
-	case R_DBG_ARCH_BF:
-		// TODO: set callbacks for brainfuck debugger here
-		break;
-	case R_DBG_ARCH_X86:
-		//r_reg_set(dbg->reg->nregs, R_DBG_ARCH_X86);
-		break;
-	}
 	return R_TRUE;
 }
 
@@ -163,19 +153,12 @@ R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc)
 	return ret;
 }
 
-// XXX wrong function name
-R_API int r_debug_use_software_steps(struct r_debug_t *dbg, int value)
-{
-	/* use software breakpoints and continues */
-	return -1;
-}
-
+// TODO: remove from here?
 R_API int r_debug_syscall(struct r_debug_t *dbg, int num)
 {
 	fprintf(stderr, "TODO\n");
 	return R_FALSE;
 }
-
 
 // TODO: Move to pid.c ?
 // TODO: do we need tid/pid
@@ -191,6 +174,7 @@ R_API int r_debug_kill(struct r_debug_t *dbg, int pid, int sig)
 	return R_TRUE;
 }
 
+// TODO move to mem.c
 /* mmu */
 R_API int r_debug_mmu_alloc(struct r_debug_t *dbg, ut64 size, ut64 *addr)
 {

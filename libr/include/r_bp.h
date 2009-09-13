@@ -2,9 +2,14 @@
 #define _INCLUDE_LIBR_BP_H_
 
 #include <r_types.h>
+#include <r_io.h>
 #include "list.h"
 
 #define R_BP_MAXPIDS 10
+
+
+#define R_BP_CONT_NORMAL 0
+#define R_BP_CONT_NORMAL 0
 
 struct r_bp_arch_t {
 	int length;
@@ -12,9 +17,17 @@ struct r_bp_arch_t {
 	const ut8 *bytes;
 };
 
+enum {
+	R_BP_TYPE_SW,
+	R_BP_TYPE_HW,
+	R_BP_TYPE_COND,
+	R_BP_TYPE_FAULT,
+};
+
 struct r_bp_handle_t {
 	char *name;
 	char *arch;
+	int type; // R_BP_TYPE_SW
 	int nbps;
 	struct r_bp_arch_t *bps;
 	struct list_head list;
@@ -27,6 +40,7 @@ struct r_bp_item_t {
 	int hw;
 	int trace;
 	int enabled;
+	int hits;
 	ut8 *obytes; /* original bytes */
 	ut8 *bbytes; /* breakpoint bytes */
 	int pids[R_BP_MAXPIDS];
@@ -37,6 +51,8 @@ struct r_bp_t {
 	int trace_all;
 	ut64 trace_bp;
 	int nbps;
+	int stepcont;
+	struct r_io_bind_t iob; // compile time dependency
 	struct r_bp_handle_t *cur;
 	struct list_head plugins;
 	struct list_head bps;
@@ -52,7 +68,6 @@ R_API int r_bp_init(struct r_bp_t *bp);
 R_API struct r_bp_t *r_bp_new();
 R_API struct r_bp_t *r_bp_free(struct r_bp_t *bp);
 
-R_API struct r_bp_item_t *r_bp_add(struct r_bp_t *bp, const ut8 *obytes, ut64 addr, int size, int hw, int rwx);
 R_API int r_bp_del(struct r_bp_t *bp, ut64 addr);
 
 R_API int r_bp_handle_add(struct r_bp_t *bp, struct r_bp_handle_t *foo);
@@ -62,10 +77,17 @@ R_API void r_bp_handle_list(struct r_bp_t *bp);
 
 R_API int r_bp_in(struct r_bp_t *bp, ut64 addr, int rwx);
 R_API int r_bp_list(struct r_bp_t *bp, int rad);
-R_API int r_bp_getbytes(struct r_bp_t *bp, ut8 *buf, int len, int endian, int idx);
+R_API int r_bp_get_bytes(struct r_bp_t *bp, ut8 *buf, int len, int endian, int idx);
 R_API int r_bp_set_trace(struct r_bp_t *bp, ut64 addr, int set);
 R_API int r_bp_set_trace_bp(struct r_bp_t *bp, ut64 addr, int set);
 R_API struct r_bp_item_t *r_bp_enable(struct r_bp_t *bp, ut64 addr, int set);
+
+R_API int r_bp_add_cond(struct r_bp_t *bp, const char *cond);
+R_API int r_bp_del_cond(struct r_bp_t *bp, int idx);
+R_API int r_bp_add_fault(struct r_bp_t *bp, ut64 addr, int size, int rwx);
+
+R_API struct r_bp_item_t *r_bp_add_sw(struct r_bp_t *bp, ut64 addr, int size, int rwx);
+R_API struct r_bp_item_t *r_bp_add_hw(struct r_bp_t *bp, ut64 addr, int size, int rwx);
 
 /* plugin pointers */
 extern struct r_bp_handle_t r_bp_plugin_x86;
