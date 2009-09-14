@@ -1,6 +1,4 @@
-/* This file is part of radare libr.
- * It is licensed under the LGPL license
- */
+/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
 
 #include "r_hash.h"
 #include "md5.h"
@@ -12,7 +10,7 @@ void mdfour(ut8 *out, const ut8 *in, int n);
 
 #define CHKFLAG(f,x) if (f==0||f&x)
 
-void r_hash_state_init(struct r_hash_t *ctx, int flags)
+R_API void r_hash_state_init(struct r_hash_t *ctx, int flags)
 {
 	CHKFLAG(flags,R_HASH_MD5)    MD5Init(&ctx->md5);
 	CHKFLAG(flags,R_HASH_SHA1)   SHA1_Init(&ctx->sha1);
@@ -21,7 +19,7 @@ void r_hash_state_init(struct r_hash_t *ctx, int flags)
 	CHKFLAG(flags,R_HASH_SHA512) SHA512_Init(&ctx->sha512);
 }
 
-struct r_hash_t *r_hash_state_new(int init)
+R_API struct r_hash_t *r_hash_state_new(int init)
 {
 	struct r_hash_t *ctx;
 	ctx = malloc(sizeof(struct r_hash_t));
@@ -30,12 +28,12 @@ struct r_hash_t *r_hash_state_new(int init)
 	return ctx;
 }
 
-void r_hash_state_free(struct r_hash_t *ctx)
+R_API void r_hash_state_free(struct r_hash_t *ctx)
 {
 	free(ctx);
 }
 
-const ut8 *r_hash_state_md5(struct r_hash_t *ctx, const ut8 *input, ut32 len)
+R_API const ut8 *r_hash_state_md5(struct r_hash_t *ctx, const ut8 *input, ut32 len)
 {
 	if (ctx->init)
 		MD5Init(&ctx->sha256);
@@ -45,7 +43,7 @@ const ut8 *r_hash_state_md5(struct r_hash_t *ctx, const ut8 *input, ut32 len)
 	return ctx->digest;
 }
 
-const ut8 *r_hash_state_sha1(struct r_hash_t *ctx, const ut8 *input, ut32 len)
+R_API const ut8 *r_hash_state_sha1(struct r_hash_t *ctx, const ut8 *input, ut32 len)
 {
 	if (ctx->init)
 		SHA1_Init(&ctx->sha1);
@@ -55,13 +53,13 @@ const ut8 *r_hash_state_sha1(struct r_hash_t *ctx, const ut8 *input, ut32 len)
 	return ctx->digest;
 }
 
-const ut8 *r_hash_state_md4(struct r_hash_t *ctx, const ut8 *input, ut32 len)
+R_API const ut8 *r_hash_state_md4(struct r_hash_t *ctx, const ut8 *input, ut32 len)
 {
 	mdfour(ctx->digest, input, len);
 	return ctx->digest;
 }
 
-const ut8 *r_hash_state_sha256(struct r_hash_t *ctx, const ut8 *input, ut32 len)
+R_API const ut8 *r_hash_state_sha256(struct r_hash_t *ctx, const ut8 *input, ut32 len)
 {
 	if (ctx->init)
 		SHA256_Init(&ctx->sha256);
@@ -71,7 +69,7 @@ const ut8 *r_hash_state_sha256(struct r_hash_t *ctx, const ut8 *input, ut32 len)
 	return ctx->digest;
 }
 
-const ut8 *r_hash_state_sha384(struct r_hash_t *ctx, const ut8 *input, ut32 len)
+R_API const ut8 *r_hash_state_sha384(struct r_hash_t *ctx, const ut8 *input, ut32 len)
 {
 	if (ctx->init)
 		SHA384_Init(&ctx->sha384);
@@ -81,7 +79,7 @@ const ut8 *r_hash_state_sha384(struct r_hash_t *ctx, const ut8 *input, ut32 len)
 	return ctx->digest;
 }
 
-const ut8 *r_hash_state_sha512(struct r_hash_t *ctx, const ut8 *input, ut32 len)
+R_API const ut8 *r_hash_state_sha512(struct r_hash_t *ctx, const ut8 *input, ut32 len)
 {
 	if (ctx->init)
 		SHA512_Init(&ctx->sha512);

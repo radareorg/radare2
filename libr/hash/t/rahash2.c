@@ -8,7 +8,8 @@ static int do_hash(const char *algo, const ut8 *buf, int len, int bsize)
 {
 	struct r_hash_t ctx;
 	const ut8 *c;
-	int i;
+	int i, j, dlen;
+	char *name;
 	ut64 algobit = r_hash_name_to_bits (algo);
 	if (algobit == R_HASH_NONE) {
 		fprintf(stderr, "Invalid hashing algorithm specified\n");
@@ -19,24 +20,19 @@ static int do_hash(const char *algo, const ut8 *buf, int len, int bsize)
 
 	//r_hash_state_init(&ctx, R_HASH_ALL);
 	r_hash_state_init(&ctx, algobit);
-	/* TODO: Loop here for blocks */
-	if (algobit & R_HASH_MD4) {
-		c = r_hash_state_md4(&ctx, buf, len);
-		printf("MD4: ");
-		for(i=0;i<R_HASH_SIZE_MD4;i++) { printf("%02x", c[i]); }
-		printf("\n");
-	}
-	if (algobit & R_HASH_MD5) {
-		c = r_hash_state_md5(&ctx, buf, len);
-		printf("MD5: ");
-		for(i=0;i<R_HASH_SIZE_MD5;i++) { printf("%02x", c[i]); }
-		printf("\n");
-	}
-	if (algobit & R_HASH_SHA1) {
-		c = r_hash_state_sha1(&ctx, buf, len);
-		printf("SHA1: ");
-		for(i=0;i<R_HASH_SIZE_SHA1;i++) { printf("%02x", c[i]); }
-		printf("\n");
+
+	/* iterate over all algorithm bits */
+	for(i=1;i<0xf00000;i<<=1) {
+		if (algobit & i) {
+			dlen = r_hash_state_calculate(&ctx, algobit&i, buf, len);
+			if (dlen) {
+				c = ctx.digest;
+				printf("%s: ", r_hash_name(i));
+				for(j=0;j<dlen;j++)
+					printf("%02x", c[j]);
+				printf("\n");
+			}
+		}
 	}
 	return 0;
 }

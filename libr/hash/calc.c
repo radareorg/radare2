@@ -1,0 +1,61 @@
+/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+
+#include "r_hash.h"
+
+static int bitnum(int bit) {
+	int bitnum;
+	for(bitnum=0;bit>>=1;bitnum++);
+	return bitnum;
+}
+
+/* TODO: do it more beautiful with structs and not spaguetis */
+R_API int r_hash_state_calculate(struct r_hash_t *ctx, int algobit, const ut8 *buf, ut32 len)
+{
+	if (algobit & R_HASH_MD4) {
+		r_hash_state_md4(ctx, buf, len);
+		return R_HASH_SIZE_MD4;
+	}
+	if (algobit & R_HASH_MD5) {
+		r_hash_state_md5(ctx, buf, len);
+		return R_HASH_SIZE_MD5;
+	}
+	if (algobit & R_HASH_SHA1) {
+		r_hash_state_sha1(ctx, buf, len);
+		return R_HASH_SIZE_SHA1;
+	}
+	if (algobit & R_HASH_SHA256) {
+		r_hash_state_sha256(ctx, buf, len);
+		return R_HASH_SIZE_SHA256;
+	}
+	if (algobit & R_HASH_SHA384) {
+		r_hash_state_sha384(ctx, buf, len);
+		return R_HASH_SIZE_SHA384;
+	}
+	if (algobit & R_HASH_SHA512) {
+		r_hash_state_sha512(ctx, buf, len);
+		return R_HASH_SIZE_SHA512;
+	}
+	if (algobit & R_HASH_PCPRINT) {
+		ctx->digest[0] = r_hash_pcprint(buf, len);
+		return 1;
+	}
+	if (algobit & R_HASH_PARITY) {
+		ctx->digest[0] = r_hash_par(buf, len);
+		return 1;
+	}
+	if (algobit & R_HASH_XOR) {
+		ctx->digest[0] = r_hash_xor(buf, len);
+		return 1;
+	}
+	if (algobit & R_HASH_XORPAIR) {
+		ut16 res = r_hash_xorpair(buf, len);
+		memcpy(ctx->digest, &res, 2);
+		return 2;
+	}
+	if (algobit & R_HASH_MOD255) {
+		ctx->digest[0] = r_hash_mod255(buf, len);
+		return 1;
+	}
+	/* error unknown stuff */
+	return 0;
+}

@@ -48,4 +48,7 @@
 	&r_io_plugin_ptrace, \
 	0
 
+#define R_REG_STATIC_PLUGINS \
+	0
+
 #endif

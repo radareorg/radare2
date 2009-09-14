@@ -136,68 +136,68 @@ int r_vm_cmd_reg(struct r_vm_t *vm, const char *_str)
 	str = alloca(len);
 	memcpy(str, _str, len);
 
-	if (str==NULL ||str[0]=='\0') {
+	if (str==NULL || str[0]=='\0') {
 		/* show all registers */
 		r_vm_print(vm, -1);
-	} else {
-		switch(str[0]) {
-		case 'a':
-			if (str[1]==' ') {
-				char *get,*set;
-				get = strchr(str+2, ' ');
-				if (get) {
-					get[0]='\0';
-					get = get+1;
-					set = strchr(get, ' ');
-					if (set) {
-						set[0]='\0';
-						set = set +1;
-						r_vm_reg_alias(vm, str+2, get, set);
-					}
+		return 0;
+	}
+	switch(str[0]) {
+	case 'a':
+		if (str[1]==' ') {
+			char *get,*set;
+			get = strchr(str+2, ' ');
+			if (get) {
+				get[0]='\0';
+				get = get+1;
+				set = strchr(get, ' ');
+				if (set) {
+					set[0]='\0';
+					set = set +1;
+					r_vm_reg_alias(vm, str+2, get, set);
 				}
-			} else r_vm_reg_alias_list(vm);
-			break;
-		case 't':
-			r_vm_reg_type_list(vm);
-			break;
-		case '+':
-			// add register
-			// avr+ eax int32
-			for(str=str+1;str&&*str==' ';str=str+1);
-			ptr = strchr(str, ' ');
-			if (ptr) {
-				ptr[0]='\0';
-				r_vm_reg_add(vm, str, r_vm_reg_type_i(ptr+1), 0);
-			} else r_vm_reg_add(vm, str, R_VMREG_INT32, 0);
-			break;
-		case '-':
-			// rm register
-			// avr- eax
-			// avr-*
-			for(str=str+1;str&&*str==' ';str=str+1);
-			if (str[0]=='*')
-				INIT_LIST_HEAD(&vm->regs); // XXX Memory leak
-			else r_vm_reg_del(vm, str);
-			break;
-		default:
-			for(;str&&*str==' ';str=str+1);
-			ptr = strchr(str, '=');
-			if (ptr) {
-				//vm_eval(str);
-				r_vm_op_eval(vm, str);
-	#if 0
-				/* set register value */
-				ptr[0]='\0';
-				vm_eval_eq(str, ptr+1);
-				ptr[0]='=';
-	#endif
+			}
+		} else r_vm_reg_alias_list(vm);
+		break;
+	case 't':
+		r_vm_reg_type_list(vm);
+		break;
+	case '+':
+		// add register
+		// avr+ eax int32
+		for(str=str+1;str&&*str==' ';str=str+1);
+		ptr = strchr(str, ' ');
+		if (ptr) {
+			ptr[0]='\0';
+			r_vm_reg_add(vm, str, r_vm_reg_type_i(ptr+1), 0);
+		} else r_vm_reg_add(vm, str, R_VMREG_INT32, 0);
+		break;
+	case '-':
+		// rm register
+		// avr- eax
+		// avr-*
+		for(str=str+1;str&&*str==' ';str=str+1);
+		if (str[0]=='*')
+			INIT_LIST_HEAD(&vm->regs); // XXX Memory leak
+		else r_vm_reg_del(vm, str);
+		break;
+	default:
+		for(;str&&*str==' ';str=str+1);
+		ptr = strchr(str, '=');
+		if (ptr) {
+			//vm_eval(str);
+			r_vm_op_eval(vm, str);
+#if 0
+			/* set register value */
+			ptr[0]='\0';
+			vm_eval_eq(str, ptr+1);
+			ptr[0]='=';
+#endif
+		} else {
+			if (*str=='.') {
+				r_vm_print(vm, r_vm_reg_type_i(str+1));
 			} else {
-				if (*str=='.') {
-					r_vm_print(vm, r_vm_reg_type_i(str+1));
-				} else {
-					/* show single registers */
-					printf("%s = 0x%08llx\n", str, r_vm_reg_get(vm, str));
-				}
+				/* show single registers */
+				printf("%s = 0x%08llx\n", str, r_vm_reg_get(vm, str));
 			}
 		}
 	}

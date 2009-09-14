@@ -19,7 +19,7 @@ R_API int r_hash_par(ut8 *buf, ut64 len)
 {
 	ut8 *end = buf+len;
 	ut32 ones = 0;
-	for(;buf<end; buf = buf + 1) {
+	for(;buf<end;buf++) {
 		ut8 x = buf[0];
 		ones += ((x&128)?1:0) + ((x&64)?1:0) + ((x&32)?1:0) + ((x&16)?1:0) +
 			((x&8)?1:0) + ((x&4)?1:0) + ((x&2)?1:0) + ((x&1)?1:0);
@@ -55,10 +55,29 @@ R_API ut8 r_hash_mod255(const ut8 *b, ut64 len)
 	return c%255;
 }
 
+/* TODO: rewrite in a non-spaguetty way */
+R_API const char *r_hash_name(int bit)
+{
+	if (bit & R_HASH_MD4) return "md4";
+	if (bit & R_HASH_MD5) return "md5";
+	if (bit & R_HASH_SHA1) return "sha1";
+	if (bit & R_HASH_SHA256) return "sha256";
+	if (bit & R_HASH_SHA384) return "sha384";
+	if (bit & R_HASH_SHA512) return "sha512";
+	if (bit & R_HASH_PARITY) return "parity";
+	if (bit & R_HASH_XOR) return "xor";
+	if (bit & R_HASH_XORPAIR) return "xorpair";
+	if (bit & R_HASH_MOD255) return "mod255";
+	if (bit & R_HASH_PCPRINT) return "pcprint";
+	return "";
+}
+
 /* TODO: ignore case.. we have to use strcasestr */
 R_API ut64 r_hash_name_to_bits(const char *name)
 {
 	ut64 bits = R_HASH_NONE;
+	if (strstr(name, "all"))
+		return 0xffffffff;
 	if (strstr(name, "md4"))
 		bits |= R_HASH_MD4;
 	if (strstr(name, "md5"))

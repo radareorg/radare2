@@ -225,3 +225,9 @@ R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *li
 
 	return R_TRUE;
 }
+
+// TODO: merge algorithms from r1 (do we need ebp?)
+// TODO: must return a linked list or r_iter
+int r_anal_backtrace(struct r_anal_t *anal, const ut8 *buf, ut64 esp)
+{
+}

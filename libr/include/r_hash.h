@@ -11,6 +11,7 @@ R_API ut8  r_hash_xor(const ut8 *b, ut64 len);
 R_API ut16 r_hash_xorpair(const ut8 *a, ut64 len);
 R_API ut8  r_hash_parity(ut8 *buf, ut64 len);
 R_API ut8  r_hash_mod255(const ut8 *b, ut64 len);
+R_API const char *r_hash_name(int bit);
 
 /* analysis */
 R_API ut8  r_hash_hamdist(const ut8 *buf, ut64 len);
@@ -89,13 +90,15 @@ R_API const ut8 *r_hash_state_sha256(struct r_hash_t *ctx, const ut8 *input, ut3
 R_API const ut8 *r_hash_state_sha384(struct r_hash_t *ctx, const ut8 *input, ut32 len);
 R_API const ut8 *r_hash_state_sha512(struct r_hash_t *ctx, const ut8 *input, ut32 len);
 
+R_API int r_hash_state_calculate(struct r_hash_t *ctx, int algobit, const ut8 *buf, ut32 len);
+
 /* OO */
 R_API struct r_hash_t *r_hash_state_new(int init);
 R_API void r_hash_init(struct r_hash_t *ptr, int flags);
 R_API void r_hash_state_init(struct r_hash_t *ctx, int flags);
 R_API void r_hash_state_free(struct r_hash_t *ctx);
 
-
 R_API ut64 r_hash_name_to_bits(const char *name);
+R_API int r_hash_state_calculate(struct r_hash_t *ctx, int algobit, const ut8 *input, ut32 len);
 
 #endif

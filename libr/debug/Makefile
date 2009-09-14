@@ -1,5 +1,5 @@
 NAME=r_debug
-DEPS=
+DEPS=r_reg r_bp
 CFLAGS+=-DCORELIB
 
 foo: pre libr_debug.so tests plugins

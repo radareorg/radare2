@@ -22,7 +22,7 @@ namespace Radare {
 	[CCode (cprefix="r_str")]
 	public static class Str {
 		public Str();
-		public int hash(str);
+		public int hash(string str);
 	}
 
 	[CCode (cprefix="r_buf")]
@@ -51,20 +51,21 @@ namespace Radare {
 
 	[Compact]
 	[CCode (cprefix="ralist_", cheader_filename="list_c.h", cname="struct list_head")]
-	public static class List<G> { //: Iterator {
+	public static class List<G> {
 		[CCode (cname="ralist_next")]
 		public bool next();
 		[CCode (cname="")]
 		public G @free(G arg);
-		//[CCode (cname="calist_entry")]
-		public G get();
-		public List<G> iterator();
+		[CCode (cname="ralist_get")]
+		public unowned G get();
+		[CCode (cname="\n#define FOO bar\nralist_iterator")]
+		public List<unowned G> iterator();
 	}
 }
 
 // DEMO TEST DEMO TEST DEMO TEST DEMO TEST DEMO TEST //
 [Compact]
-[CCode (cname="foo", cheader_filename="list_c.h")]
+[CCode (cname="struct foo", cheader_filename="list_c.h")]
 public class Foo {
 	public string name;
 	[CCode (cname="")]

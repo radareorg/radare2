@@ -27,7 +27,7 @@ struct r_reg_t {
 	int nregs;
 	char **regs;
 	struct r_reg_handle_t *h;
-	struct list_head handles;
+	struct list_head handlers;
 };
 
 #define R_REG_NAME_MAX 16

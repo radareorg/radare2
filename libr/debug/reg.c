@@ -1,8 +1,7 @@
 /* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
 
 #include <r_debug.h>
-
-/* registers */
+#include <r_reg.h>
 
 R_API int r_debug_reg_sync(struct r_debug_t *dbg, int write)
 {

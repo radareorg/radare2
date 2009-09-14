@@ -54,6 +54,7 @@ static int r_debug_ptrace_wait(int pid)
 	return status;
 }
 
+// TODO: what about float and hardware regs here ???
 struct r_regset_t* r_debug_ptrace_reg_read(int pid)
 {
 	struct r_regset_t *r = NULL;
@@ -107,6 +108,7 @@ static int r_debug_ptrace_reg_write(int pid, struct r_regset_t *regs)
 	return 0;
 }
 
+// TODO: deprecate???
 static int r_debug_ptrace_bp_write(int pid, ut64 addr, int size, int hw, int rwx)
 {
 	if (hw) {
@@ -141,7 +143,7 @@ static int r_debug_ptrace_import(struct r_debug_handle_t *from)
 #endif
 
 struct r_debug_handle_t r_debug_plugin_ptrace = {
-	.name = "dbg_ptrace",
+	.name = "dbg.ptrace",
 #if __WORDSIZE == 64
 	.archs = { "x86-64", 0 },
 #else
