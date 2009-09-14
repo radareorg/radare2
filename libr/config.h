@@ -51,4 +51,8 @@
 #define R_REG_STATIC_PLUGINS \
 	0
 
+#define R_CRYPTO_STATIC_PLUGINS \
+	&r_crypto_plugin_aes, \
+	0
+
 #endif

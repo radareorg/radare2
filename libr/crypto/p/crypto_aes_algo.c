@@ -18,7 +18,7 @@ typedef unsigned char uchar;
 #define AES_KEY (4 * Nk)
 #define ROUND_KEY_COUNT ((Nr + 1) * 4)
 
-#include "aes.h"
+#include "crypto_aes_algo.h"
 
 static const uchar Rcon[30] =
 {

@@ -16,6 +16,7 @@ STATIC_BP_PLUGINS=p/x86.mk
 STATIC_IO_PLUGINS=p/ptrace.mk p/dbg.mk p/shm.mk p/malloc.mk
 STATIC_BININFO_PLUGINS=p/addr2line.mk
 STATIC_DEBUG_PLUGINS=p/ptrace.mk
+STATIC_CRYPTO_PLUGINS=p/aes.mk
 
 ifneq (${BINDEPS},)
 include ../../../config-user.mk
