@@ -133,4 +133,11 @@ R_API_NEW(r_trace);
 #define HAVE_REGEXP 1
 #endif
 
+/* hacks for vala-list.h interaction */
+#define list_entry_vala(pos, type, member) ((type) ((char*)pos -(unsigned long)(&((type)0)->member)))
+#define ralist_iterator(x) x->next
+#define ralist_get(x,y) list_entry_vala(x, y, list); x=x->next
+#define ralist_next(x) (x=x->next, (x != head))
+#define ralist_free(x) (x)
+
 #endif

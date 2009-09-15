@@ -56,9 +56,9 @@ namespace Radare {
 		public bool next();
 		[CCode (cname="")]
 		public G @free(G arg);
-		[CCode (cname="ralist_get")]
+		[CCode (cname="ralist_get", generic_type_pos=2)]
 		public unowned G get();
-		[CCode (cname="\n#define FOO bar\nralist_iterator")]
+		[CCode (cname="ralist_iterator")]
 		public List<unowned G> iterator();
 	}
 }
