@@ -16,8 +16,12 @@ namespace Radare {
 		public uint64 get_baddr();
 		public Entrypoint* get_entry();
 		public Section* get_sections();
+
+		public Radare.List<Bin.Symbol*> symbols;
+
 		public Symbol* get_symbols();
 		public Import* get_imports();
+
 		public Info* get_info();
 		public uint64 get_section_offset(string name);
 		public uint64 get_section_rva(string name);

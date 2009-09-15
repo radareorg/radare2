@@ -36,10 +36,12 @@ struct r_crypto_handle_t {
 	int (*update)(struct r_crypto_t* cry, const ut8 *buf, int len);
 	int (*final)(struct r_crypto_t* cry, const ut8 *buf, int len);
 	int (*use)(const char *algo);
+	int (*fini)(struct r_crypto_t *cry);
 	struct list_head list;
 };
 
-R_API struct r_crypto_t *r_crypto_init(struct r_crypto_t *cry);
+R_API struct r_crypto_t *r_crypto_init(struct r_crypto_t *cry, int hard);
+R_API struct r_crypto_t *r_crypto_as_new(struct r_crypto_t *cry);
 R_API int r_crypto_add(struct r_crypto_t *cry, struct r_crypto_handle_t *h);
 R_API struct r_crypto_t *r_crypto_new();
 R_API struct r_crypto_t *r_crypto_free(struct r_crypto_t *cry);

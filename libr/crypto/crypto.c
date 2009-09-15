@@ -6,7 +6,7 @@
 static struct r_crypto_handle_t *crypto_static_plugins[] = 
 	{ R_CRYPTO_STATIC_PLUGINS };
 
-R_API struct r_crypto_t *r_crypto_init(struct r_crypto_t *cry)
+R_API struct r_crypto_t *r_crypto_init(struct r_crypto_t *cry, int hard)
 {
 	int i;
 	if (cry) {
@@ -14,27 +14,44 @@ R_API struct r_crypto_t *r_crypto_init(struct r_crypto_t *cry)
 		cry->iv = NULL;
 		cry->key_len = 0;
 		cry->user = NULL;
-		// first call initializes the output_* variables
-		r_crypto_get_output(cry);
-		INIT_LIST_HEAD(&cry->handlers);
-		for(i=0;crypto_static_plugins[i];i++)
-			r_crypto_add(cry, crypto_static_plugins[i]);
+		if (hard) {
+			// first call initializes the output_* variables
+			r_crypto_get_output(cry);
+			INIT_LIST_HEAD(&cry->handlers);
+			for(i=0;crypto_static_plugins[i];i++)
+				r_crypto_add(cry, crypto_static_plugins[i]);
+		}
 	}
 	return cry;
 }
 
 R_API int r_crypto_add(struct r_crypto_t *cry, struct r_crypto_handle_t *h)
 {
+	// add a check ?
 	list_add_tail(&(h->list), &(cry->handlers));
 	return R_TRUE;
 }
 
-// TODO: add _del
+R_API int r_crypto_del(struct r_crypto_t *cry, struct r_crypto_handle_t *h)
+{
+	list_del(&(h->list));
+	return R_TRUE;
+}
 
 R_API struct r_crypto_t *r_crypto_new()
 {
 	struct r_crypto_t *cry = MALLOC_STRUCT(struct r_crypto_t);
-	return r_crypto_init(cry);
+	return r_crypto_init(cry, R_TRUE);
+}
+
+R_API struct r_crypto_t *r_crypto_as_new(struct r_crypto_t *cry)
+{
+	struct r_crypto_t *c = MALLOC_STRUCT(struct r_crypto_t);
+	if (c != NULL) {
+		r_crypto_init(c, R_FALSE); // soft init
+		memcpy(&c->handlers, &cry->handlers, sizeof(cry->handlers));
+	}
+	return c;
 }
 
 R_API struct r_crypto_t *r_crypto_free(struct r_crypto_t *cry)

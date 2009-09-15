@@ -2,7 +2,7 @@
 
 #include <r_debug.h>
 
-R_API int r_debug_init(struct r_debug_t *dbg)
+R_API int r_debug_init(struct r_debug_t *dbg, int hard)
 {
 	dbg->pid = -1;
 	dbg->tid = -1;
@@ -11,9 +11,11 @@ R_API int r_debug_init(struct r_debug_t *dbg)
 	dbg->regs = dbg->oregs = NULL;
 	dbg->printf = printf;
 	dbg->h = NULL;
-	dbg->bp = r_bp_new();
-	r_debug_handle_init(dbg);
-	dbg->bp->iob.init = R_FALSE;
+	if (hard) {
+		dbg->bp = r_bp_new();
+		r_debug_handle_init(dbg);
+		dbg->bp->iob.init = R_FALSE;
+	}
 	return R_TRUE;
 }
 
@@ -176,12 +178,18 @@ R_API int r_debug_kill(struct r_debug_t *dbg, int pid, int sig)
 
 // TODO move to mem.c
 /* mmu */
-R_API int r_debug_mmu_alloc(struct r_debug_t *dbg, ut64 size, ut64 *addr)
+R_API ut64 r_debug_mmu_alloc(struct r_debug_t *dbg, ut64 size, ut64 *addr)
 {
-	return R_TRUE;
+	ut64 ret = 0LL;
+	if (dbg->h && dbg->h->mmu_alloc)
+		ret = dbg->h->mmu_alloc(dbg, size, addr);
+	return ret;
 }
 
 R_API int r_debug_mmu_free(struct r_debug_t *dbg, ut64 addr)
 {
-	return R_TRUE;
+	int ret = R_FALSE;
+	if (dbg->h && dbg->h->mmu_free)
+		ret = dbg->h->mmu_free(dbg, addr);
+	return ret;
 }

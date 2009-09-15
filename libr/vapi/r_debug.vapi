@@ -25,8 +25,8 @@ namespace Radare {
 		public bool continue_until(uint64 addr);
 		public bool continue_syscall(int syscall);
 
-		public bool mmu_alloc(uint64 size, out uint64 size);
-		public bool mmu_free(uint64 addr);
+		//public bool mmu_alloc(uint64 size, out uint64 size);
+		//public bool mmu_free(uint64 addr);
 
 		/* registers */
 		[Compact]
@@ -39,23 +39,24 @@ namespace Radare {
 		bool reg_set(string name, uint64 val);
 		bool reg_list(string name, uint64 val); // TODO must be deprecated
 		
-		/* breakpoints */
+		/* breakpoints 
 		public bool bp_enable(uint64 addr, bool set);
 		public bool bp_add(uint64 addr, int sz, bool hw, int rwx);
 		public bool bp_del(uint64 addr);
 		public bool bp_restore(bool set);
 		public bool bp_list(bool rad); // XXX to be deprecated
+		*/
 		/* processes */
-		struct Process {
-			int pid;
-			int status;
-			int runnable;
+		public struct Process {
+			public int pid;
+			public int status;
+			public int runnable;
 			// list for childs
 			// list for threads
-			struct Process parent;
+			//public struct Process *parent;
 		}
 
-		enum ProcessStatus {
+		public enum ProcessStatus {
 			STOP,
 			RUN,
 			SLEEP,

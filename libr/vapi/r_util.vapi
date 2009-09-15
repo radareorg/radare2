@@ -50,7 +50,7 @@ namespace Radare {
         }
 
 	[Compact]
-	[CCode (cprefix="ralist_", cheader_filename="list_c.h", cname="struct list_head")]
+	[CCode (cprefix="ralist_", cheader_filename="list.h", cname="struct list_head")]
 	public static class List<G> {
 		[CCode (cname="ralist_next")]
 		public bool next();
@@ -63,6 +63,7 @@ namespace Radare {
 	}
 }
 
+// XXX: only required for list.vala (must be removed)
 // DEMO TEST DEMO TEST DEMO TEST DEMO TEST DEMO TEST //
 [Compact]
 [CCode (cname="struct foo", cheader_filename="list_c.h")]

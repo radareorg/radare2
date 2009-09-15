@@ -13,20 +13,29 @@
 struct r_debug_handle_t {
 	const char *name;
 	const char **archs;
+	int (*get_arch)();
+	/* life */
 	int (*startv)(int argc, char **argv);
 	int (*attach)(int pid);
 	int (*detach)(int pid);
+	/* flow */
 	int (*step)(int pid); // if step() is NULL; reimplement it with traps
 	int (*cont)(int pid);
 	int (*wait)(int pid);
-	int (*get_arch)();
 	int (*contsc)(int pid, int sc);
-	//int (*bp_write)(int pid, ut64 addr, int hw, int type);
-	int (*bp_write)(int pid, ut64 addr, int size, int hw, int rwx);
+	/* registers */
 	struct r_regset_t * (*reg_read)(int pid);
 	int (*reg_write)(int pid, struct r_regset_t *regs);
-	// XXX bad signature int (*bp_read)(int pid, ut64 addr, int hw, int type);
+	/* memory */
+	ut64 (*mmu_alloc)(void *user, ut64 size, ut64 addr);
+	int (*mmu_free)(void *user, ut64 addr);
+
 	struct list_head list;
+
+	// DEPRECATED
+	// XXX bad signature int (*bp_read)(int pid, ut64 addr, int hw, int type);
+	//int (*bp_write)(int pid, ut64 addr, int hw, int type);
+	//int (*bp_write)(int pid, ut64 addr, int size, int hw, int rwx);
 };
 
 struct r_debug_t {
@@ -70,7 +79,7 @@ struct r_debug_pid_t {
 R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
 R_API int r_debug_handle_set(struct r_debug_t *dbg, const char *str);
 R_API int r_debug_handle_init(struct r_debug_t *dbg);
-R_API int r_debug_init(struct r_debug_t *dbg);
+R_API int r_debug_init(struct r_debug_t *dbg, int hard);
 R_API struct r_debug_t *r_debug_new();
 R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg);
 

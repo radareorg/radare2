@@ -43,7 +43,13 @@ public class BinExample
 			stdout.printf("idx=%02i name=%s\n", i, imp[i].name);
 		}
 
+		/* TODO: make it possible */ /*
 		stdout.printf("SYMBOLS\n");
+		foreach (unowned Bin.Symbol* sym in bin.symbols) {
+			stdout.printf("  => name=%s\n", sym->name);
+		}
+		*/
+
 		var sym = bin.get_symbols();
 		for (i=0; !sym[i].last; i++) {
 			stdout.printf("idx=%02i name=%s\n", i, sym[i].name);
