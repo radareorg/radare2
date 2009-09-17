@@ -40,13 +40,13 @@ struct r_prof_t {
 	struct timeval begin;
 	double result;
 };
-void r_prof_start(struct r_prof_t *p);
-double r_prof_end(struct r_prof_t *p);
+R_API void r_prof_start(struct r_prof_t *p);
+R_API double r_prof_end(struct r_prof_t *p);
 
 /* memory */
-void r_mem_copyloop (ut8 *dest, const ut8 *orig, int dsize, int osize);
-void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian);
-int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len);
+R_API void r_mem_copyloop (ut8 *dest, const ut8 *orig, int dsize, int osize);
+R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian);
+R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len);
 R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen);
 
 /* numbers */

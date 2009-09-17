@@ -9,7 +9,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-int r_file_mkdir(const char *path)
+R_API int r_file_mkdir(const char *path)
 {
 #if __WINDOWS__
 	return mkdir(path);
@@ -30,7 +30,6 @@ R_API char *r_file_path(const char *bin)
 	char *path_env = getenv("PATH");
 	char *path = NULL;
 	char *str, *ptr;
-
 	if (path_env) {
 		str = path = strdup(path_env);
 		do {
@@ -50,7 +49,7 @@ R_API char *r_file_path(const char *bin)
 	return strdup(bin);
 }
 
-char *r_file_slurp(const char *str, int *usz)
+R_API char *r_file_slurp(const char *str, int *usz)
 {
         char *ret;
         long sz;
@@ -69,33 +68,44 @@ char *r_file_slurp(const char *str, int *usz)
         return ret;
 }
 
-ut8 *r_file_slurp_hexpairs(const char *str, int *usz)
+R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz)
 {
-        ut8 *ret;
-        long sz;
-	int bytes;
-        FILE *fd = fopen(str, "r");
-        if (fd == NULL)
-                return NULL;
-        fseek(fd, 0,SEEK_END);
-        sz = ftell(fd);
-        fseek(fd, 0, SEEK_SET);
-        ret = (ut8*)malloc(sz+1); // XXX >>1 ???
-	/* TODO: add support for commented lines */
+	ut8 *ret;
+	long sz;
+	int c, bytes = 0;
+	FILE *fd = fopen(str, "r");
+	if (fd == NULL)
+		return NULL;
+
+	fseek(fd, 0, SEEK_END);
+	sz = ftell(fd);
+	fseek(fd, 0, SEEK_SET);
+	ret = (ut8*)malloc((sz>>1)+1);
+	if (!ret) 
+		return NULL;
+
 	while (1) {
-		int n;
-		fscanf(fd, "%02x", &n);
+		if (fscanf(fd, " #%*[^\n]") == 1)
+			continue;
+		if (fscanf(fd, "%02x", &c) == 1) {
+			ret[bytes++] = c;
+			continue;
+		} 
 		if (feof(fd))
 			break;
-		ret[bytes++] = n;
+		free(ret);
+		return NULL;
 	}
-        fclose(fd);
+
+	ret[bytes] = '\0';
+	fclose(fd);
+
 	if (usz)
 		*usz = bytes;
-        return ret;
+	return ret;
 }
 
-char *r_file_slurp_range(const char *str, ut64 off, ut64 sz)
+R_API char *r_file_slurp_range(const char *str, ut64 off, ut64 sz)
 {
         char *ret;
         FILE *fd = fopen(str, "r");
@@ -109,7 +119,7 @@ char *r_file_slurp_range(const char *str, ut64 off, ut64 sz)
         return ret;
 }
 
-char *r_file_slurp_random_line(const char *file)
+R_API char *r_file_slurp_random_line(const char *file)
 {
 	int i, lines = 0;
 	struct timeval tv;
@@ -134,7 +144,7 @@ char *r_file_slurp_random_line(const char *file)
 	return ptr;
 }
 
-char *r_file_slurp_line(const char *file, int line, int context)
+R_API char *r_file_slurp_line(const char *file, int line, int context)
 {
 	int i, lines = 0;
 	int sz;
@@ -156,7 +166,7 @@ char *r_file_slurp_line(const char *file, int line, int context)
 	return ptr;
 }
 
-int r_file_dump(const char *file, const ut8 *buf, int len)
+R_API int r_file_dump(const char *file, const ut8 *buf, int len)
 {
 	FILE *fd = fopen(file, "wb");
 	if (fd == NULL) {
@@ -168,7 +178,8 @@ int r_file_dump(const char *file, const ut8 *buf, int len)
 	return R_TRUE;
 }
 
-int r_file_rm(const char *file)
+R_API int r_file_rm(const char *file)
 {
+	// TODO: w32 unlink?
 	return unlink(file);
 }
