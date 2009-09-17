@@ -53,6 +53,7 @@ struct r_io_t {
 	int enforce_rwx;
 	int enforce_seek;
 	int cached;
+	int cached_read;
 	ut64 seek;
 	char *redirect;
 	/* write mask */
@@ -144,7 +145,7 @@ R_API int r_io_close(struct r_io_t *io, int fd);
 R_API ut64 r_io_size(struct r_io_t *io, int fd);
 
 /* io/cache.c */
-R_API void r_io_cache_enable(struct r_io_t *io, int set);
+R_API void r_io_cache_enable(struct r_io_t *io, int read, int write);
 R_API void r_io_cache_init(struct r_io_t *io);
 R_API int r_io_cache_write(struct r_io_t *io, ut64 addr, const ut8 *buf, int len);
 R_API int r_io_cache_read(struct r_io_t *io, ut64 addr, ut8 *buf, int len);

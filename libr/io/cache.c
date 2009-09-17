@@ -3,18 +3,22 @@
 // XXX This has been stolen from r_vm !!! we must adapt this
 // XXX to work with r_io correctly
 // r_io_cache_t has not been defined
+// TODO: implement a more inteligent way to store cached memory
+// TODO: define limit of max mem to cache
 
 #include "r_io.h"
 
 R_API void r_io_cache_init(struct r_io_t *io)
 {
-	io->cached = 0; // IO cached
+	io->cached = R_FALSE; // cache write ops
+	io->cached_read = R_FALSE; // cached read ops
 	INIT_LIST_HEAD(&io->cache);
 }
 
-R_API void r_io_cache_enable(struct r_io_t *io, int set)
+R_API void r_io_cache_enable(struct r_io_t *io, int read, int write)
 {
-	io->cached = set;
+	io->cached = read|write;
+	io->cached_read = read;
 }
 
 R_API void r_io_cache_free(struct r_io_t *io, int set)
@@ -30,6 +34,13 @@ R_API void r_io_cache_free(struct r_io_t *io, int set)
 	}
 	// is this necessary at all?
 	INIT_LIST_HEAD(&io->cache); 
+}
+
+R_API int r_io_cache_invalidate(struct r_io_t *io, ut64 from, ut64 to)
+{
+	int ret = R_FALSE;
+	/* TODO: Implement: invalidate ranged cached read ops between from/to */
+	return ret;
 }
 
 R_API int r_io_cache_write(struct r_io_t *io, ut64 addr, const ut8 *buf, int len)
@@ -59,22 +70,3 @@ R_API int r_io_cache_read(struct r_io_t *io, ut64 addr, ut8 *buf, int len)
 	}
 	return len;
 }
-
-/*
-R_API int r_io_cache_read(struct r_io_t *io, ut64 off, ut8 *data, int len)
-{
-	if (io->cached && r_io_cache_cache_read(io, off, data, len))
-		return len;
-	return r_io_read_at(io, off, data, len);
-}
-*/
-
-#if 0
-R_API int r_io_cache_write(struct r_io_t *io, ut64 off, ut8 *data, int len)
-{
-	if (io->cached)
-		return r_io_cache_write(io, off, data, len);
-	// XXX: callback for write-at should be userdefined
-	return r_io_write_at(io, off, data, len);
-}
-#endif

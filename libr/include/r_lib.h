@@ -8,7 +8,7 @@
 #include "list.h"
 
 // rename to '.' ??
-#define R_LIB_SEPARATOR "_"
+#define R_LIB_SEPARATOR "."
 
 /* store list of loaded plugins */
 struct r_lib_plugin_t {
@@ -29,7 +29,6 @@ struct r_lib_handler_t {
 	int (*destructor)(struct r_lib_plugin_t *, void *user, void *data);
 	struct list_head list;
 };
-
 
 /* this structure should be pointed by the 'radare_plugin' symbol 
    found in the loaded .so */
@@ -65,22 +64,24 @@ struct r_lib_t {
 	struct list_head handlers;
 };
 
-int r_lib_init(struct r_lib_t *lib, const char *symname);
+R_API int r_lib_init(struct r_lib_t *lib, const char *symname);
 
 /* low level api */
-void *r_lib_dl_open(const char *libname);
-void *r_lib_dl_sym(void *handle, const char *name);
-int r_lib_dl_close(void *handle);
-int r_lib_dl_check_filename(const char *file);
+R_API void *r_lib_dl_open(const char *libname);
+R_API void *r_lib_dl_sym(void *handle, const char *name);
+R_API int r_lib_dl_close(void *handle);
+R_API int r_lib_dl_check_filename(const char *file);
 
 /* high level api */
-struct r_lib_t *r_lib_new(const char *symname);
-int r_lib_free(struct r_lib_t *lib);
-int r_lib_run_handler(struct r_lib_t *lib, struct r_lib_plugin_t *plugin, struct r_lib_struct_t *symbol);
-int r_lib_open(struct r_lib_t *lib, const char *file);
-int r_lib_opendir(struct r_lib_t *lib, const char *path);
-int r_lib_list(struct r_lib_t *lib);
-int r_lib_add_handler(struct r_lib_t *lib, int type, const char *desc, int (*cb)(struct r_lib_plugin_t *,void *, void *), int (*dt)(struct r_lib_plugin_t *, void *, void *), void *user );
-int r_lib_close(struct r_lib_t *lib, const char *file);
+R_API struct r_lib_t *r_lib_new(const char *symname);
+R_API int r_lib_free(struct r_lib_t *lib);
+R_API int r_lib_run_handler(struct r_lib_t *lib, struct r_lib_plugin_t *plugin, struct r_lib_struct_t *symbol);
+R_API struct r_lib_handler_t *r_lib_get_handler(struct r_lib_t *lib, int type);
+R_API int r_lib_open(struct r_lib_t *lib, const char *file);
+R_API int r_lib_opendir(struct r_lib_t *lib, const char *path);
+R_API void r_lib_list(struct r_lib_t *lib);
+R_API int r_lib_add_handler(struct r_lib_t *lib, int type, const char *desc, int (*cb)(struct r_lib_plugin_t *,void *, void *), int (*dt)(struct r_lib_plugin_t *, void *, void *), void *user );
+R_API int r_lib_del_handler(struct r_lib_t *lib, struct r_lib_handler_t *hand);
+R_API int r_lib_close(struct r_lib_t *lib, const char *file);
 
 #endif

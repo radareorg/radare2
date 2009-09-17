@@ -102,12 +102,9 @@ R_API int r_debug_handle_set(struct r_debug_t *dbg, const char *str);
 R_API int r_debug_handle_list(struct r_debug_t *dbg);
 R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
 
-/* breakpoints */
-R_API int r_debug_bp_add(struct r_debug_t *dbg, ut64 addr, int size, int hw, int rwx);
-R_API int r_debug_bp_del(struct r_debug_t *dbg, ut64 addr);
-R_API int r_debug_bp_enable(struct r_debug_t *dbg, ut64 addr, int set);
-R_API int r_debug_bp_disable(struct r_debug_t *dbg);
-R_API int r_debug_bp_list(struct r_debug_t *dbg, int rad);
+/* memory */
+R_API ut64 r_debug_mmu_alloc(struct r_debug_t *dbg, ut64 size, ut64 addr);
+R_API int r_debug_mmu_free(struct r_debug_t *dbg, ut64 addr);
 
 /* registers */
 R_API int r_debug_reg_sync(struct r_debug_t *dbg, int write);

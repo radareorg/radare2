@@ -113,6 +113,7 @@ static inline int ERR(char *str, ...)
 #define R_MIN(x,y) (x>y)?y:x
 #define R_ABS(x) ((x<0)?-x:x)
 
+#define R_FAIL -1
 #define R_FALSE 0
 #define R_TRUE 1
 #define R_TRUFAE 2

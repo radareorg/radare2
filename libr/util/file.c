@@ -21,7 +21,7 @@ int r_file_mkdir(const char *path)
 R_API int r_file_exist(const char *str)
 {
 	struct stat buf;
-	return (stat(str, &buf)!=-1)?R_TRUE:R_FALSE;
+	return (stat(str, &buf)==-1)?R_FALSE:R_TRUE;
 }
 
 R_API char *r_file_path(const char *bin)

@@ -3,19 +3,27 @@
 #include <r_lang.h>
 #include <r_util.h>
 
-int r_lang_init(struct r_lang_t *lang)
+R_API int r_lang_init(struct r_lang_t *lang)
 {
 	lang->user = NULL;
 	INIT_LIST_HEAD(&lang->langs);
 	return R_TRUE;
 }
 
-void r_lang_set_user_ptr(struct r_lang_t *lang, void *user)
+// XXX: This is only used actually to pass 'core' structure
+// TODO: when language bindings are done we will need an api to
+// define symbols from C to the language namespace
+R_API void r_lang_set_user_ptr(struct r_lang_t *lang, void *user)
 {
 	lang->user = user;
 }
 
-int r_lang_add(struct r_lang_t *lang, struct r_lang_handle_t *foo)
+R_API int r_lang_define(struct r_lang_t *lang, const char *type, const char *name, void *value)
+{
+	// if (lang->cur && lang->cur->define)
+}
+
+R_API int r_lang_add(struct r_lang_t *lang, struct r_lang_handle_t *foo)
 {
 	if (foo->init)
 		foo->init(lang->user);
@@ -23,7 +31,7 @@ int r_lang_add(struct r_lang_t *lang, struct r_lang_handle_t *foo)
 	return R_TRUE;
 }
 
-int r_lang_list(struct r_lang_t *lang)
+R_API int r_lang_list(struct r_lang_t *lang)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &lang->langs) {
@@ -33,7 +41,7 @@ int r_lang_list(struct r_lang_t *lang)
 	return R_FALSE;
 }
 
-int r_lang_set(struct r_lang_t *lang, const char *name)
+R_API int r_lang_set(struct r_lang_t *lang, const char *name)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &lang->langs) {
@@ -46,21 +54,21 @@ int r_lang_set(struct r_lang_t *lang, const char *name)
 	return R_FALSE;
 }
 
-int r_lang_set_argv(struct r_lang_t *lang, int argc, char **argv)
+R_API int r_lang_set_argv(struct r_lang_t *lang, int argc, char **argv)
 {
 	if (lang->cur && lang->cur->set_argv)
 		return lang->cur->set_argv(lang->user, argc, argv);
 	return R_FALSE;
 }
 
-int r_lang_run(struct r_lang_t *lang, const char *code, int len)
+R_API int r_lang_run(struct r_lang_t *lang, const char *code, int len)
 { 
 	if (lang->cur && lang->cur->run)
 		return lang->cur->run(lang->user, code, len);
 	return R_FALSE;
 }
 
-int r_lang_run_file(struct r_lang_t *lang, const char *file)
+R_API int r_lang_run_file(struct r_lang_t *lang, const char *file)
 { 
 	int len, ret = R_FALSE;
 	if (lang->cur) {
@@ -75,7 +83,7 @@ int r_lang_run_file(struct r_lang_t *lang, const char *file)
 	return ret;
 }
 
-int r_lang_prompt(struct r_lang_t *lang)
+R_API int r_lang_prompt(struct r_lang_t *lang)
 {
 	char buf[1024];
 

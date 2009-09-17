@@ -132,21 +132,30 @@ R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len)
 			len -= ret;
 			buf += ret;
 		}
+		// partial reads
+		if (ret == len)
+			return len;
 	}
 	ret = r_io_map_read_at(io, io->seek, buf, len);
+
 	// partial reads
-	if (ret == len)
-		return len;
-	if (ret != -1) {
-		len -= ret;
-		buf += len;
+	if (ret != len) {
+		if (ret != -1) {
+			len -= ret;
+			buf += len;
+		}
+		if (io->plugin && io->plugin->read) {
+			if (io->plugin->read != NULL)
+				ret = io->plugin->read(io, io->fd, buf, len);
+			else fprintf(stderr, "IO handler for fd=%d has no read()\n", io->fd);
+		} else ret = read(io->fd, buf, len);
 	}
-	if (io->plugin && io->plugin->read) {
-		if (io->plugin->read != NULL)
-			return io->plugin->read(io, io->fd, buf, len);
-		else fprintf(stderr, "IO handler for fd=%d has no read()\n", io->fd);
+
+	if (ret == len && io->cached_read) {
+		/* if read is cached. cache it :) */
+		r_io_cache_write(io, io->seek, buf, len);
 	}
-	return read(io->fd, buf, len);
+	return ret;
 }
 
 R_API int r_io_read_at(struct r_io_t *io, ut64 addr, ut8 *buf, int len)

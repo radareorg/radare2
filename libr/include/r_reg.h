@@ -19,6 +19,7 @@ enum {
 };
 
 struct r_reg_handle_t {
+	char *name;
 	int (*is_arch)(int arch, int bits);
 	struct list_head list;
 };
@@ -47,6 +48,9 @@ struct r_regset_t {
 	struct r_reg_item_t *regs;
 };
 
-int r_reg_set_arch(struct r_reg_t *reg, int arch, int bits);
+R_API int r_reg_set_arch(struct r_reg_t *reg, int arch, int bits);
+R_API int r_reg_handle_set(struct r_reg_t *reg, const char *str);
+R_API int r_reg_handle_init(struct r_reg_t *reg);
+R_API int r_reg_handle_add(struct r_reg_t *reg, struct r_reg_handle_t *foo);
 
 #endif

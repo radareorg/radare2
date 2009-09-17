@@ -23,19 +23,21 @@
   #define DLCLOSE(x) NULL
 #endif
 
-const char *r_lib_types[] = {
+/* XXX : this must be registered in runtime */
+static const char *r_lib_types[] = {
 	"io", "dbg", "lang", "asm", "anal", "parse", "bin", "bininfo", 
 	"bp", "syscall", "fastcall", NULL
 };
 
-const char *r_lib_types_get(int idx)
+/* XXX: Rename this helper function */
+R_API const char *r_lib_types_get(int idx)
 {
 	if (idx<0||idx>R_LIB_TYPE_LAST)
 		return "unk";
 	return r_lib_types[idx];
 }
 
-void *r_lib_dl_open(const char *libname)
+R_API void *r_lib_dl_open(const char *libname)
 {
 	void *ret;
 	IFRTDBG fprintf(stderr, "Opening '%s'\n", libname);
@@ -45,44 +47,45 @@ void *r_lib_dl_open(const char *libname)
 	return ret;
 }
 
-void *r_lib_dl_sym(void *handle, const char *name)
+R_API void *r_lib_dl_sym(void *handle, const char *name)
 {
 	return DLSYM(handle, name);
 }
 
-int r_lib_dl_close(void *handle)
+R_API int r_lib_dl_close(void *handle)
 {
 	return DLCLOSE(handle);
 }
 
 /* ---- */
 
-int r_lib_init(struct r_lib_t *lib, const char *symname)
+R_API struct r_lib_t *r_lib_init(struct r_lib_t *lib, const char *symname)
 {
-	INIT_LIST_HEAD(&lib->handlers);
-	INIT_LIST_HEAD(&lib->plugins);
-	strncpy(lib->symname, symname, sizeof(lib->symname)-1);
-	return 0;
-}
-
-struct r_lib_t *r_lib_new(const char *symname)
-{
-	struct r_lib_t *lib = MALLOC_STRUCT(struct r_lib_t);
-	r_lib_init(lib, symname);
+	if (lib) {
+		INIT_LIST_HEAD(&lib->handlers);
+		INIT_LIST_HEAD(&lib->plugins);
+		strncpy(lib->symname, symname, sizeof(lib->symname)-1);
+	}
 	return lib;
 }
 
-int r_lib_free(struct r_lib_t *lib)
+R_API struct r_lib_t *r_lib_new(const char *symname)
+{
+	struct r_lib_t *lib = MALLOC_STRUCT(struct r_lib_t);
+	return r_lib_init(lib, symname);
+}
+
+R_API struct r_lib_t *r_lib_free(struct r_lib_t *lib)
 {
 	/* TODO: iterate over libraries and free them all */
 	/* TODO: iterate over handlers and free them all */
 	r_lib_close(lib, NULL);
 	free (lib);
-	return 0;
+	return NULL;
 }
 
 /* THIS IS WRONG */
-int r_lib_dl_check_filename(const char *file)
+R_API int r_lib_dl_check_filename(const char *file)
 {
 	/* skip hidden files */
 	if (file[0]=='.')
@@ -100,27 +103,26 @@ int r_lib_dl_check_filename(const char *file)
 
 /* high level api */
 
-int r_lib_run_handler(struct r_lib_t *lib, struct r_lib_plugin_t *plugin, struct r_lib_struct_t *symbol)
+R_API int r_lib_run_handler(struct r_lib_t *lib, struct r_lib_plugin_t *plugin, struct r_lib_struct_t *symbol)
 {
 	struct r_lib_handler_t *h = plugin->handler;
 	if (h && h->constructor != NULL)
 		return h->constructor(plugin, h->user, symbol->data);
-	return -1;
+	return R_FAIL;
 }
 
-struct r_lib_handler_t *r_lib_get_handler(struct r_lib_t *lib, int type)
+R_API struct r_lib_handler_t *r_lib_get_handler(struct r_lib_t *lib, int type)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &lib->handlers) {
 		struct r_lib_handler_t *h = list_entry(pos, struct r_lib_handler_t, list);
-		if (h->type == type) {
+		if (h->type == type)
 			return h;
-		}
 	}
-	return 0;
+	return NULL;
 }
 
-R_API int r_lib_close(struct r_lib_t *lib, const char *file)
+R_API R_API int r_lib_close(struct r_lib_t *lib, const char *file)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &lib->plugins) {
@@ -164,61 +166,57 @@ static int samefile(const char *a, const char *b)
 
 R_API int r_lib_open(struct r_lib_t *lib, const char *file)
 {
+	struct r_lib_plugin_t *p;
+	struct list_head *pos;
 	struct r_lib_struct_t *stru;
 	void * handler;
 	int ret;
 
-//printf("OPENLIB(%s)\n", file);
 	/* ignored by filename */
 	if (!r_lib_dl_check_filename(file)) {
 		IFDBG fprintf(stderr, "Invalid library extension: %s\n", file);
-		return -1;
+		return R_FAIL;
 	}
 
 	handler = r_lib_dl_open(file);
 	if (handler == NULL) {
 		IFDBG fprintf(stderr, "Cannot open library: '%s'\n", file);
-		return -1;
+		return R_FAIL;
 	}
 	
 	stru = (struct r_lib_struct_t *) r_lib_dl_sym(handler, lib->symname);
 	if (stru == NULL) {
 		IFDBG fprintf(stderr, "No root symbol '%s' found in library '%s'\n", lib->symname, file);
-		return -1;
+		return R_FAIL;
 	}
-{
-	struct list_head *pos;
+
 	list_for_each_prev(pos, &lib->plugins) {
 		struct r_lib_plugin_t *p = list_entry(pos, struct r_lib_plugin_t, list);
 		if (samefile(file, p->file)) {
-//printf("SKIP---------------(%s)\n", file);
 			r_lib_dl_close(handler);
-			return 0;
+			return R_FAIL;
 		}
 	}
-}
-	struct r_lib_plugin_t *p = MALLOC_STRUCT(struct r_lib_plugin_t);
+
+	p = MALLOC_STRUCT(struct r_lib_plugin_t);
 	p->type = stru->type;
 	p->data = stru->data;
 	p->file = strdup(file);
 	p->dl_handler = handler;
 	p->handler = r_lib_get_handler(lib, p->type);
 	
-//printf("ADD---------------(%s)\n", file);
 	ret = r_lib_run_handler(lib, p, stru);
-	if (ret == -1) {
-		IFDBG fprintf(stderr, "Library handler returned -1 for '%s'\n", file);
+	if (ret == R_FAIL) {
+		IFDBG fprintf(stderr, "Library handler has failed for '%s'\n", file);
 		free(p->file);
 		free(p);
 		r_lib_dl_close(handler);
-	} else {
-		/* append plugin */
-		list_add(&p->list, &lib->plugins);
-	}
+	} else list_add(&p->list, &lib->plugins);
+
 	return ret;
 }
 
-int r_lib_opendir(struct r_lib_t *lib, const char *path)
+R_API int r_lib_opendir(struct r_lib_t *lib, const char *path)
 {
 	char file[1024];
 	struct dirent *de;
@@ -231,7 +229,6 @@ int r_lib_opendir(struct r_lib_t *lib, const char *path)
 	if (path == NULL)
 		return R_FALSE;
 
-//printf("OPENPATH(%s)\n", path);
 	dh = opendir(path);
 	if (dh == NULL) {
 		IFDBG fprintf(stderr, "Cannot open directory '%s'\n", path);
@@ -245,25 +242,7 @@ int r_lib_opendir(struct r_lib_t *lib, const char *path)
 	return R_TRUE;
 }
 
-int r_lib_list(struct r_lib_t *lib)
-{
-	struct list_head *pos;
-#if 0
-	printf("Plugin Handlers:\n");
-	list_for_each_prev(pos, &lib->handlers) {
-		struct r_lib_handler_t *h = list_entry(pos, struct r_lib_handler_t, list);
-		printf(" - %d: %s\n", h->type, h->desc);
-	}
-#endif
-	//printf("Loaded plugins:\n");
-	list_for_each_prev(pos, &lib->plugins) {
-		struct r_lib_plugin_t *p = list_entry(pos, struct r_lib_plugin_t, list);
-		printf(" %5s %p %s \n", r_lib_types_get(p->type), p->handler->destructor, p->file);
-	}
-	return 0;
-}
-
-int r_lib_add_handler(struct r_lib_t *lib,
+R_API int r_lib_add_handler(struct r_lib_t *lib,
 	int type, const char *desc,
 	int (*cb)(struct r_lib_plugin_t *, void *, void *),  /* constructor */
 	int (*dt)(struct r_lib_plugin_t *, void *, void *),  /* destructor */
@@ -282,6 +261,8 @@ int r_lib_add_handler(struct r_lib_t *lib,
 	}
 	if (handler == NULL) {
 		handler = MALLOC_STRUCT(struct r_lib_handler_t);
+		if (handler == NULL)
+			return R_FALSE;
 		handler->type = type;
 		list_add(&handler->list, &lib->handlers);
 	}
@@ -290,18 +271,38 @@ int r_lib_add_handler(struct r_lib_t *lib,
 	handler->constructor = cb;
 	handler->destructor = dt;
 
-//printf("constructor: %p\n", dt);
-//printf("destructor : %p\n", dt);
-	return 0;
+	return R_TRUE;
 }
 
-#if 0
-// TODO
-
-int r_lib_del_handler(struct r_lib_t *lib)
+R_API int r_lib_del_handler(struct r_lib_t *lib, int type)
 {
-	return 0;
+	struct list_head *pos;
+	// TODO: remove all handlers for that type? or only one?
+	list_for_each_prev(pos, &lib->handlers) {
+		struct r_lib_handler_t *h = list_entry(pos, struct r_lib_handler_t, list);
+		if (type == h->type) {
+			list_del(&(h->list));
+			return R_TRUE;
+		}
+	}
+	return R_FALSE;
 }
 
-
+/* XXX _list methods must be deprecated before r2-1.0 */
+R_API void r_lib_list(struct r_lib_t *lib)
+{
+	struct list_head *pos;
+#if 0
+	printf("Plugin Handlers:\n");
+	list_for_each_prev(pos, &lib->handlers) {
+		struct r_lib_handler_t *h = list_entry(pos, struct r_lib_handler_t, list);
+		printf(" - %d: %s\n", h->type, h->desc);
+	}
 #endif
+	//printf("Loaded plugins:\n");
+	list_for_each_prev(pos, &lib->plugins) {
+		struct r_lib_plugin_t *p = list_entry(pos, struct r_lib_plugin_t, list);
+		printf(" %5s %p %s \n", r_lib_types_get(p->type), p->handler->destructor, p->file);
+	}
+}
+

@@ -9,7 +9,7 @@ R_API int r_debug_init(struct r_debug_t *dbg, int hard)
 	dbg->swstep = 0; // software step
 	dbg->newstate = 0;
 	dbg->regs = dbg->oregs = NULL;
-	dbg->printf = printf;
+	dbg->printf = (void *)printf;
 	dbg->h = NULL;
 	if (hard) {
 		dbg->bp = r_bp_new();
@@ -23,7 +23,7 @@ R_API struct r_debug_t *r_debug_new()
 {
 	struct r_debug_t *dbg = MALLOC_STRUCT(struct r_debug_t);
 	if (dbg != NULL)
-		r_debug_init(dbg);
+		r_debug_init(dbg, R_TRUE);
 	return dbg;
 }
 
@@ -178,7 +178,7 @@ R_API int r_debug_kill(struct r_debug_t *dbg, int pid, int sig)
 
 // TODO move to mem.c
 /* mmu */
-R_API ut64 r_debug_mmu_alloc(struct r_debug_t *dbg, ut64 size, ut64 *addr)
+R_API ut64 r_debug_mmu_alloc(struct r_debug_t *dbg, ut64 size, ut64 addr)
 {
 	ut64 ret = 0LL;
 	if (dbg->h && dbg->h->mmu_alloc)
@@ -193,3 +193,4 @@ R_API int r_debug_mmu_free(struct r_debug_t *dbg, ut64 addr)
 		ret = dbg->h->mmu_free(dbg, addr);
 	return ret;
 }
+// TODO: add support to iterate over all allocated memory chunks?

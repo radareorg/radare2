@@ -1,0 +1,15 @@
+Language bindings
+=================
+
+Bindings should be generated automatically from vala or C.
+
+The programs running in r_lang should need a better integration with the rest of libs.
+This is: We need an api in r_lang to export a C symbol into the language namespace.
+
+For example:
+
+ r_lang_define(lang, "Core", "core", core);
+ r_lang_define(lang, "Asm", "asm", asm)
+
+This way the module instances can be shared between the core C application and many
+r_lang supported language bindings (perk, python, ..)
