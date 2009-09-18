@@ -1,0 +1,6 @@
+# This file describes the register
+# endian ?? where is this defined?
+eax	32	6*4	0
+ebx	32	24	0
+ecx	32	
+ebx	8 ...

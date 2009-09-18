@@ -8,9 +8,10 @@
   - r_debug : to get/set register values
   - r_core : to display register values in 'd' (debug) command. dr
 
----------------------------------
+------------------------------------------------------------------
 We will have to split up every arch into a plugin
-- define an API to access to registers and get information about the type of regs.
+- define an API to access to registers and get info. about the type of regs.
 - we can base this stuff as in r_vm is done
 
-We must merge the r_vm reg stuff here too, its all about static, dynamic and virtual analysis
+We must merge the r_vm reg stuff here too, its all about static, dynamic
+and virtual analysis

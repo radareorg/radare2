@@ -126,10 +126,13 @@ static int r_debug_ptrace_bp_read(int pid, ut64 addr, int hw, int rwx)
 
 static int r_debug_get_arch()
 {
+	return R_ASM_ARCH_X86;
+#if 0
 #if __WORDSIZE == 64
 	return R_ASM_ARCH_X86_64;
 #else
 	return R_ASM_ARCH_X86;
+#endif
 #endif
 }
 

@@ -152,7 +152,7 @@ R_API int r_core_init(struct r_core_t *core)
 	core->block = (ut8*)malloc(R_CORE_BLOCKSIZE);
 	r_core_cmd_init(core);
 	r_flag_init(&core->flags);
-	r_debug_init(&core->dbg);
+	r_debug_init(&core->dbg, R_TRUE);
 	core->io.printf = r_cons_printf;
 	core->dbg.printf = r_cons_printf;
 	//r_debug_set_io(&core->dbg, &__dbg_read, &__dbg_write, core);

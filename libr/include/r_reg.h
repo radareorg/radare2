@@ -4,53 +4,39 @@
 #include <r_types.h>
 #include <list.h>
 
-// XXX this must be in plugins
 enum {
-	R_REG_X86_EAX,
-	R_REG_X86_AX,
-	R_REG_X86_AL,
-	R_REG_X86_AH,
-	R_REG_X86_EBX,
-	R_REG_X86_ECX,
-	R_REG_X86_EDX,
-	R_REG_X86_EBP,
-	R_REG_X86_ESP,
-	R_REG_X86_EIP,
+	R_REG_TYPE_GPR,
+	R_REG_TYPE_DRX,
+	R_REG_TYPE_FPU,
+	R_REG_TYPE_MMX,
+	R_REG_TYPE_XMM,
+	R_REG_TYPE_LAST,
 };
 
-struct r_reg_handle_t {
+struct r_reg_item_t {
 	char *name;
-	int (*is_arch)(int arch, int bits);
+	int type;
+	int size; /* 8,16,32,64 ... 128/256 ??? */
+	int offset; // offset in data structure
+	int packed_size; /* 0 means no packed register, 1byte pack, 2b pack... */
 	struct list_head list;
 };
 
+struct r_reg_arena_t {
+	ut8 *bytes;
+	int size;
+	struct list_head list;
+};
+
+struct r_reg_set_t {
+	struct r_reg_arena_t *arena;
+	struct list_head arenas; /* r_reg_arena_t */
+	struct list_head regs;   /* r_reg_item_t */
+};
+
 struct r_reg_t {
-	int nregs;
-	char **regs;
-	struct r_reg_handle_t *h;
-	struct list_head handlers;
+	char *profile;
+	struct r_reg_set_t regset[R_REG_TYPE_LAST];
 };
-
-#define R_REG_NAME_MAX 16
-struct r_reg_item_t {
-	char name[R_REG_NAME_MAX];
-	union {
-		ut64 value;
-		float fvalue;
-		double dvalue;
-	};
-	int offset;
-	int isfloat;
-};
-
-struct r_regset_t {
-	int nregs;
-	struct r_reg_item_t *regs;
-};
-
-R_API int r_reg_set_arch(struct r_reg_t *reg, int arch, int bits);
-R_API int r_reg_handle_set(struct r_reg_t *reg, const char *str);
-R_API int r_reg_handle_init(struct r_reg_t *reg);
-R_API int r_reg_handle_add(struct r_reg_t *reg, struct r_reg_handle_t *foo);
 
 #endif

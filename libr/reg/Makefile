@@ -1,4 +1,4 @@
 NAME=r_reg
-OBJ=reg.o regset.o handle.o
+OBJ=reg.o arena.o value.o
 
 include ../rules.mk
