@@ -2,11 +2,34 @@
 # if numeric value starts with '.' it is readed as in bits instead of bytes
 # TODO: implement endian ?? how can we define the arch endian here?
 #
-# Format file is:
+# Format file is: (sys/user.h)
 #----------------
 # type	name 	size 	offset 	packedsize
 
-gpr	eax	.32	0	0
-gpr	al	.8	0	0
-gpr	ebx	.32	4	0
-gpr	ecx	.32	8	0
+gpr	eip	.32	48	0
+gpr	oeax	.32	44	0
+gpr	eax	.32	24	0
+gpr	ebx	.32	0	0
+gpr	ecx	.32	4	0
+gpr	edx	.32	8	0
+gpr	esp	.32	60	0
+gpr	ebp	.32	20	0
+gpr	esi	.32	12	0
+gpr	edi	.32	16	0
+gpr	xfs	.32	36	0
+gpr	xgs	.32	40	0
+gpr	xcs	.32	52	0
+gpr	xss	.32	52	0
+gpr	eflags	.32	56	0
+
+# base address is 448bit
+flg	carry	.1	.448	0
+flg	flag_p	.1	.449	0
+flg	flag_a	.1	.450	0
+flg	zero	.1	.451	0
+flg	sign	.1	.452	0
+flg	flag_t	.1	.453	0
+flg	flag_i	.1	.454	0
+flg	flag_d	.1	.455	0
+flg	flag_o	.1	.456	0
+flg	flag_r	.1	.457	0

@@ -10,6 +10,7 @@ clean:
 vdoc:
 	rm -rf vdoc
 	valadoc -o vdoc libr/vapi/*.vapi
+	# rsync -avz vdoc/* pancake@radare.org:/srv/http/radareorg/vdoc/
 
 mrproper:
 	cd libr && make mrproper

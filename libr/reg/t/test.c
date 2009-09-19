@@ -25,5 +25,10 @@ int main() {
 	r_reg_set_value(reg, r_reg_get(reg, "al"), 0x22);
 	show_regs(reg, 32);
 
+	r_reg_set_value(reg, r_reg_get(reg, "zero"), 0);
+	show_regs(reg, 1);
+	r_reg_set_value(reg, r_reg_get(reg, "zero"), 1);
+	show_regs(reg, 1);
+
 	return 0;
 }

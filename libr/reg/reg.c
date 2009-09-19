@@ -30,7 +30,7 @@ R_API struct r_reg_t *r_reg_init(struct r_reg_t *reg)
 			reg->regset[i].arena = MALLOC_STRUCT(struct r_reg_arena_t);
 			reg->regset[i].arena->size = 0;
 			reg->regset[i].arena->bytes = malloc(1);
-			list_add(&reg->regset[i].arena->list, &reg->regset[i].arenas);
+			list_add_tail(&reg->regset[i].arena->list, &reg->regset[i].arenas);
 		}
 	}
 	return reg;
@@ -55,9 +55,24 @@ static int r_reg_set_word(struct r_reg_item_t *item, int idx, char *word)
 	int ret = R_TRUE;
 	switch(idx) {
 	case 0:
+		// XXX: do not spaguetti
 		if (!strcmp(word, "gpr"))
 			item->type = R_REG_TYPE_GPR;
-		// XXX: TODO . implement the rest here
+		else
+		if (!strcmp(word, "drx"))
+			item->type = R_REG_TYPE_DRX;
+		else
+		if (!strcmp(word, "mmx"))
+			item->type = R_REG_TYPE_MMX;
+		else
+		if (!strcmp(word, "xmm"))
+			item->type = R_REG_TYPE_XMM;
+		else
+		if (!strcmp(word, "fpu"))
+			item->type = R_REG_TYPE_FPU;
+		else
+		if (!strcmp(word, "fpu"))
+			item->type = R_REG_TYPE_FLG;
 		break;
 	case 1:
 		item->name = strdup(word);
@@ -127,7 +142,7 @@ R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *str)
 			// TODO: add check to ensure that all the fields are defined
 			// before adding it into the list
 			if (item->name != NULL) {
-				list_add(&item->list, &reg->regset[item->type].regs);
+				list_add_tail(&item->list, &reg->regset[item->type].regs);
 //printf("ADD REG(%s)\n", item->name);
 				item = r_reg_item_new();
 //				printf("-----------\n");
@@ -146,7 +161,7 @@ R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *str)
 	}
 	free(item->name);
 	free(item);
-	r_reg_arena_fit(reg);
+	r_reg_fit_arena(reg);
 	
 	/* do we reach the end ? */
 	if (!*str) ret = R_TRUE;

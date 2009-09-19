@@ -40,6 +40,47 @@ R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits)
 	}
 }
 
+// TODO: this method is ugly as shit.
+R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, int bits)
+{
+	int bdoff = (doff/8);
+	int bsoff = (soff/8);
+	int nbits = 0;
+	u8 mask;
+	int sdelta = soff-doff;
+	/* apply delta offsets */
+	src = src+bsoff;
+	dst = dst+bdoff;
+	dofb=doff%8;
+	sofb=soff%8;
+	if (sofb||dofb) {
+		int mask = (1<<sofb);
+		int nmask = ^mask;
+		int s = src[0]<<sofb;
+		int d = dst[0]<<dofb;
+		if (soff == doff && bits==1) {
+			mask = ^(1<<dofb);
+			src[0] = ((src[0]&mask) | (dst[0]&mask));
+		} else printf("TODO: Oops. not supported method of bitcopy\n");
+		// TODO : this algorithm is not implemented
+#if 0
+	1) shift algin src i dst
+	2) copy (8-dofb) bits from dst to src
+	3) dst[0] = dst[0]&^(0x1<<nbits) | (src&(1<<nbits))
+#endif
+		src++;
+		dst++;
+	}
+#if 0
+doff  v
+dst |__________|___________|
+soff     v
+src |__________|_________|
+#endif
+	
+	r_mem_copybits(dst, src, bsoff, nbits);
+}
+
 /* XXX TODO check and use system endian */
 R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian)
 {
