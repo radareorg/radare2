@@ -35,7 +35,8 @@ static int r_lua_file(void *user, const char *file)
 		return r_lang_lua_report(L,status);
 	return 0;
 }
-static int lua_cmd_str (lua_State *L) {
+
+static int lua_cmd_str(lua_State *L) {
 	char *str;
 	const char *s = lua_tostring(L, 1);  /* get argument */
 	str = r_core_cmd_str(core, s);
@@ -84,9 +85,9 @@ static int init(void *user)
 	return R_TRUE;
 }
 
-static int lua_run(void *user, const char *code, int len)
+static int lua_run(struct r_lang_t *lang, const char *code, int len)
 {
-	core = user; // XXX buggy?
+	core = lang->user; // XXX buggy?
 	luaL_loadbuffer(L, code, len, ""); // \n included
 	if ( lua_pcall(L,0,0,0) != 0 )
 		printf("Oops\n");

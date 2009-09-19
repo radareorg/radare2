@@ -38,10 +38,10 @@ static void xs_init(pTHX)
 	newXS("r", perl_radare_cmd, __FILE__);
 }
 
-static int init(void *user)
+static int init(struct r_lang_t *lang)
 {
 	char *perl_embed[] = { "", "-e", "0" };
-	core = user;
+	core = lang->user;
 	my_perl = perl_alloc();
 	if (my_perl == NULL) {
 		printf("Cannot init perl module\n");

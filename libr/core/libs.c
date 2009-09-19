@@ -131,7 +131,7 @@ R_API int r_core_loadlibs(struct r_core_t *core)
 		singleton = R_FALSE;
 	}
 	r_lib_opendir(&core->lib, r_config_get(&core->config, "dir.plugins"));
-	r_lib_opendir(&core->lib, getenv("LIBR_PLUGINS"));
+	r_lib_opendir(&core->lib, getenv(R_LIB_ENV));
 	r_lib_opendir(&core->lib, homeplugindir);
 	r_lib_opendir(&core->lib, LIBDIR"/radare2/");
 	free(homeplugindir);

@@ -4,6 +4,9 @@ all: core regs hash sc socket asm search iter bin db io list
 regs:
 	valac --pkg r_reg regs.vala --pkg r_util
 
+lang:
+	valac lang.vala --pkg r_lang --pkg r_util
+
 # XXX
 list:
 	valac -o list list_c.c list.vala --pkg r_util --vapidir=${PWD}/.. -X -I.

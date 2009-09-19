@@ -10,7 +10,7 @@
 #include "r_core.h"
 static struct r_core_t *core = NULL;
 
-static int run(void *user, const char *code, int len)
+static int run(struct r_lang_t *lang, const char *code, int len)
 {
 	PyRun_SimpleString(code);
 	return R_TRUE;
@@ -26,7 +26,7 @@ static int slurp_python(const char *file)
 	return R_TRUE;
 }
 
-static int run_file(void *user, const char *file)
+static int run_file(struct r_lang_t *lang, const char *file)
 {
 	return slurp_python(file);
 }
@@ -193,9 +193,9 @@ static int prompt(void *user)
 	return R_TRUE;
 }
 
-static int init(void *user)
+static int init(struct r_lang_t *lang)
 {
-	core = user;
+	core = lang->user;
 	Py_Initialize();
 	init_radare_module();
 	//Py_InitModule3("radare", Radare_methods, NULL);

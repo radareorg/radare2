@@ -4,34 +4,48 @@
 #include <r_types.h>
 #include <list.h>
 
+struct r_lang_t {
+	struct r_lang_handle_t *cur;
+	void *user;
+	struct list_head defs;
+	struct list_head langs;
+};
+
 struct r_lang_handle_t {
 	const char *name;
 	const char *desc;
 	const char **help;
-	int (*init)(void *user);
-	int (*fini)(void *user);
-	int (*prompt)(void *user);
-	int (*run)(void *user, const char *code, int len);
-	int (*run_file)(void *user, const char *file);
-	int (*set_argv)(void *user, int argc, char **argv);
+	int (*init)(struct r_lang_t* user);
+	int (*fini)(struct r_lang_t *user);
+	int (*prompt)(struct r_lang_t *user);
+	int (*run)(struct r_lang_t *user, const char *code, int len);
+	int (*run_file)(struct r_lang_t *user, const char *file);
+	int (*set_argv)(struct r_lang_t *user, int argc, char **argv);
 	struct list_head list;
 };
 
-struct r_lang_t {
-	struct r_lang_handle_t *cur;
-	void *user;
-	struct list_head langs;
+struct r_lang_def_t {
+	char *name;
+	char *type;
+	void *value;
+	struct list_head list;
 };
 
-R_API int r_lang_init(struct r_lang_t *lang);
+
+R_API struct r_lang_t *r_lang_new();
+R_API void *r_lang_free(struct r_lang_t *lang);
+R_API struct r_lang_t *r_lang_init(struct r_lang_t *lang);
 R_API int r_lang_add(struct r_lang_t *lang, struct r_lang_handle_t *foo);
 R_API int r_lang_list(struct r_lang_t *lang);
-R_API int r_lang_set(struct r_lang_t *lang, const char *name);
+R_API int r_lang_use(struct r_lang_t *lang, const char *name);
 R_API int r_lang_run(struct r_lang_t *lang, const char *code, int len);
+/* TODO: user_ptr must be deprecated */
 R_API void r_lang_set_user_ptr(struct r_lang_t *lang, void *user);
 R_API int r_lang_set_argv(struct r_lang_t *lang, int argc, char **argv);
 R_API int r_lang_run(struct r_lang_t *lang, const char *code, int len);
 R_API int r_lang_run_file(struct r_lang_t *lang, const char *file);
 R_API int r_lang_prompt(struct r_lang_t *lang);
 
+R_API int r_lang_define(struct r_lang_t *lang, const char *type, const char *name, void *value);
+R_API void r_lang_undef(struct r_lang_t *lang);
 #endif

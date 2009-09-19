@@ -5,9 +5,11 @@
 #include <libtcc.h>
 
 /* TODO: store the state globally or so.. */
-static int r_lang_tcc_run(void *user, const char *code, int len)
+static int r_lang_tcc_run(struct r_lang_t *lang, const char *code, int len)
 {
 	TCCState *ts = tcc_new ();
+	/* TODO: set defined vars as global */
+	//list_for_each(lang->defs) {
 	tcc_compile_string (ts, code);
 	tcc_run (ts, 0, 0);//argc, argv);
 	tcc_delete (ts);

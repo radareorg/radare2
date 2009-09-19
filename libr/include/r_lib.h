@@ -10,6 +10,8 @@
 // rename to '.' ??
 #define R_LIB_SEPARATOR "."
 
+#define R_LIB_ENV "LIBR_PLUGINS"
+
 /* store list of loaded plugins */
 struct r_lib_plugin_t {
 	int type;

@@ -13,3 +13,9 @@ For example:
 
 This way the module instances can be shared between the core C application and many
 r_lang supported language bindings (perk, python, ..)
+
+
+TODO
+====
+r_lang_define is implemented in lang.c, but requires the collaboration
+of the plugins to properly setup the environment for the script execution.
