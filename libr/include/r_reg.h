@@ -2,6 +2,7 @@
 #define _INCLUDE_R_REG_H_
 
 #include <r_types.h>
+#include <r_util.h>
 #include <list.h>
 
 enum {

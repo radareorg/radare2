@@ -1,5 +1,8 @@
-all: core hash sc socket asm search iter bin db io list
+all: core regs hash sc socket asm search iter bin db io list
 	@true
+
+regs:
+	valac --pkg r_reg regs.vala --pkg r_util
 
 # XXX
 list:

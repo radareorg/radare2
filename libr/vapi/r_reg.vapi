@@ -5,7 +5,7 @@ namespace Radare {
 	[Compact]
 	[CCode (cname="struct r_reg_t", free_function="r_reg_free", cprefix="r_reg_")]
 	public class Register {
-		[CCode (cprefix="R_REG_TYPE")]
+		[CCode (cprefix="R_REG_TYPE_")]
 		public enum Type {
 			GPR,
 			DRX,
@@ -17,8 +17,8 @@ namespace Radare {
 		}
 
 		[Compact]
-		[CCode (cname="struct r_reg_item_t", destroy_function="" )]
-		public struct Item {
+		[CCode (cname="struct r_reg_item_t", destroy_function="", free_function="" )]
+		public class Item {
 			public string name;
 			public int size;
 			public int offset;
@@ -27,25 +27,25 @@ namespace Radare {
 		}
 
 		[Compact]
-		[CCode (cname="struct r_reg_arena_t", destroy_function="" )]
-		public struct Arena {
+		[CCode (cname="struct r_reg_arena_t", destroy_function="", free_function="" )]
+		public class Arena {
 			public uint8* bytes;
 			public int size;
 		}
 		
 		[Compact]
-		[CCode (cname="struct r_reg_set_t", destroy_function="" )]
-		public struct Set {
+		[CCode (cname="struct r_reg_set_t", destroy_function="", free_function="" )]
+		public class Set {
 			public Register.Arena arena;
-			public Radare.List<Register.Arena> arenas;
-			public Radare.List<Register.Item> regs;
+			public Radare.List<Register.Arena*> arenas;
+			public Radare.List<Register.Item*> regs;
 		}
 
 		public Register();
 		public bool set_profile(string file);
 		public bool set_profile_string(string profile);
 		public Register.Item get(string name);
-		public Radare.List<Register.Item> get_list(string profile);
+		public Radare.List<Register.Item*> get_list(Register.Type type);
 
 		public uint64 get_value(Register.Item item);
 		public bool set_value(Register.Item item, uint64 val);

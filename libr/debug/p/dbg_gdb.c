@@ -18,6 +18,7 @@ static int r_debug_gdb_step(int pid)
 
 struct r_debug_regset_t * r_debug_gdb_reg_read(int pid)
 {
+#if 0
 	struct r_debug_regset *r = NULL;
 	/* only for x86-32 */
 	gdbwrap_gdbreg32 *reg = gdbwrap_readgenreg(desc);
@@ -32,6 +33,7 @@ struct r_debug_regset_t * r_debug_gdb_reg_read(int pid)
 	r_debug_regset_set(r, 7, "ebp", reg->ebp);
 	r_debug_regset_set(r, 8, "eip", reg->eip);
 	return r;
+#endif
 }
 
 static int r_debug_gdb_reg_write(int pid, struct r_debug_regset_t *regs)

@@ -7,5 +7,5 @@ Name: libr
 Description: radare framework libraries
 Version: 0.1
 Requires:
-Libs: -L${libdir} -lr_core -lr_lang -lr_search -lr_cmd -lr_meta -lr_asm -lr_util
+Libs: -L${libdir} -lr_core -lr_lang -lr_search -lr_cmd -lr_meta -lr_asm -lr_util -lr_reg
 Cflags: -I${includedir}/libr

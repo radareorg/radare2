@@ -8,6 +8,17 @@
 
 static void r_reg_free_internal(struct r_reg_t *reg)
 {
+	struct list_head *pos, *n;
+	struct r_reg_item_t *r;
+	int i;
+
+	for(i=0;i<R_REG_TYPE_LAST;i++) {
+		list_for_each_safe(pos, n, &reg->regset[i].regs) {
+			r = list_entry(pos, struct r_reg_item_t, list);
+			list_del(&r->list);
+			free(r);
+		}
+	}
 }
 
 R_API struct r_reg_t *r_reg_free(struct r_reg_t *reg)

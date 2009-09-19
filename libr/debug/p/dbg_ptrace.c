@@ -65,6 +65,7 @@ struct r_regset_t* r_debug_ptrace_reg_read(int pid)
 	struct user_regs_struct regs;
 	memset(&regs,0, sizeof(regs));
 	ptrace(PTRACE_GETREGS, pid, 0, &regs);
+#if 0
 #if __WORDSIZE == 64
 	r = r_regset_new(17);
 	r_regset_set(r, 0, "rax", regs.rax);
@@ -99,6 +100,7 @@ struct r_regset_t* r_debug_ptrace_reg_read(int pid)
 	r_regset_set(r, 8, "eip", (ut64)(ut32)regs.eip);
 #endif
 #endif /* linux */
+#endif
 	return r;
 }
 
@@ -158,7 +160,7 @@ struct r_debug_handle_t r_debug_plugin_ptrace = {
 	.detach = &r_debug_ptrace_detach,
 	.wait = &r_debug_ptrace_wait,
 	.get_arch = &r_debug_get_arch,
-	.bp_write = &r_debug_ptrace_bp_write,
+	//.bp_write = &r_debug_ptrace_bp_write,
 	.reg_read = &r_debug_ptrace_reg_read,
 	.reg_write = &r_debug_ptrace_reg_write,
 	//.bp_read = &r_debug_ptrace_bp_read,

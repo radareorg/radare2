@@ -18,6 +18,7 @@ R_API int r_debug_reg_sync(struct r_debug_t *dbg, int write)
 	}
 	return (dbg->regs != NULL);
 }
+#if  0
 
 R_API struct r_regset_t *r_debug_reg_diff(struct r_debug_t *dbg)
 {
@@ -66,3 +67,4 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, struct r_regset_t *rs, int rad
 	}
 	return R_TRUE;
 }
+#endif

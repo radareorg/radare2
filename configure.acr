@@ -44,6 +44,8 @@ SUBDIRS ./config-user.mk libr/include/r_userconf.h
  pkgcfg/r_diff.pc
  pkgcfg/r_core.pc
  pkgcfg/r_socket.pc
+ pkgcfg/r_debug.pc
+ pkgcfg/r_reg.pc
  pkgcfg/r_line.pc
  pkgcfg/r_syscall.pc
  pkgcfg/r_macro.pc
