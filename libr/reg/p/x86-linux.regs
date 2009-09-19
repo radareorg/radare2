@@ -1,6 +1,12 @@
-# This file describes the register
-# endian ?? where is this defined?
-eax	32	6*4	0
-ebx	32	24	0
-ecx	32	
-ebx	8 ...
+# This file describes the register layout for an OS/ARCH
+# if numeric value starts with '.' it is readed as in bits instead of bytes
+# TODO: implement endian ?? how can we define the arch endian here?
+#
+# Format file is:
+#----------------
+# type	name 	size 	offset 	packedsize
+
+gpr	eax	.32	0	0
+gpr	al	.8	0	0
+gpr	ebx	.32	4	0
+gpr	ecx	.32	8	0

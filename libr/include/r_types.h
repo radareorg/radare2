@@ -25,6 +25,8 @@
 
 /* basic types */
 
+#define BITS2BYTES(x) ((x/8)+((x%8)?1:0))
+
 #define ut64 unsigned long long
 #define st64 long long
 #define ut32 unsigned int

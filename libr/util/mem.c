@@ -19,6 +19,27 @@ R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int 
 	return ret;
 }
 
+R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits)
+{
+	int bytes = (int)(bits/8);
+	bits = bits%8;
+	
+	memcpy(dst, src, bytes);
+	if (bits) {
+		ut8 srcmask, dstmask;
+		switch(bits) {
+		case 1: srcmask = 0x80; dstmask = 0x7f; break;
+		case 2: srcmask = 0xc0; dstmask = 0x3f; break;
+		case 3: srcmask = 0xe0; dstmask = 0x1f; break;
+		case 4: srcmask = 0xf0; dstmask = 0x0f; break;
+		case 5: srcmask = 0xf8; dstmask = 0x07; break;
+		case 6: srcmask = 0xfc; dstmask = 0x03; break;
+		case 7: srcmask = 0xfe; dstmask = 0x01; break;
+		}
+		dst[bytes] = ((dst[bytes]&dstmask) | (src[bytes]&srcmask));
+	}
+}
+
 /* XXX TODO check and use system endian */
 R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian)
 {

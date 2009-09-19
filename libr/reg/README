@@ -15,3 +15,6 @@ We will have to split up every arch into a plugin
 
 We must merge the r_vm reg stuff here too, its all about static, dynamic
 and virtual analysis
+
+-- add methods to transplant all registers from one side to other
+ - allows to convert foo

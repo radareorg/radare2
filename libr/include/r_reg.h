@@ -39,4 +39,26 @@ struct r_reg_t {
 	struct r_reg_set_t regset[R_REG_TYPE_LAST];
 };
 
+/* lifecycle */
+R_API struct r_reg_t *r_reg_free(struct r_reg_t *reg);
+R_API struct r_reg_t *r_reg_init(struct r_reg_t *reg);
+R_API struct r_reg_t *r_reg_new();
+R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *profile);
+R_API int r_reg_set_profile(struct r_reg_t *reg, const char *profile);
+R_API struct r_reg_item_t *r_reg_get(struct r_reg_t *reg, const char *name);
+R_API struct list_head *r_reg_get_list(struct r_reg_t *reg, int type);
+
+/* value */
+R_API ut64 r_reg_get_value(struct r_reg_t *reg, struct r_reg_item_t *item);
+R_API int r_reg_set_value(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 value);
+R_API float r_reg_get_fvalue(struct r_reg_t *reg, struct r_reg_item_t *item);
+R_API int r_reg_set_fvalue(struct r_reg_t *reg, struct r_reg_item_t *item, float value);
+R_API ut64 r_reg_get_pvalue(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 value, int packidx);
+R_API int r_reg_set_pvalue(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 value, int packidx);
+
+/* byte arena */
+R_API ut8* r_reg_get_bytes(struct r_reg_t *reg, int type, int *size);
+R_API int r_reg_set_bytes(struct r_reg_t *reg, int type, const ut8* buf, int len);
+R_API void r_reg_arena_fit(struct r_reg_t *reg);
+
 #endif

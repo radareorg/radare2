@@ -2,6 +2,7 @@
 
 #include <r_reg.h>
 #include <r_util.h>
+#include <list.h>
 
 /* lifecycle */
 
@@ -18,10 +19,19 @@ R_API struct r_reg_t *r_reg_free(struct r_reg_t *reg)
 	return NULL;
 }
 
-
 R_API struct r_reg_t *r_reg_init(struct r_reg_t *reg)
 {
+	int i;
 	if (reg) {
+		reg->profile = NULL;
+		for(i=0;i<R_REG_TYPE_LAST;i++) {
+			INIT_LIST_HEAD(&reg->regset[i].arenas);
+			INIT_LIST_HEAD(&reg->regset[i].regs);
+			reg->regset[i].arena = MALLOC_STRUCT(struct r_reg_arena_t);
+			reg->regset[i].arena->size = 0;
+			reg->regset[i].arena->bytes = malloc(1);
+			list_add(&reg->regset[i].arena->list, &reg->regset[i].arenas);
+		}
 	}
 	return reg;
 }
@@ -32,12 +42,114 @@ R_API struct r_reg_t *r_reg_new()
 	return r_reg_init(r);
 }
 
-R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *profile)
+static struct r_reg_item_t *r_reg_item_new()
+{
+	struct r_reg_item_t *item = MALLOC_STRUCT(struct r_reg_item_t);
+	memset(item, 0, sizeof(struct r_reg_item_t));
+	return item;
+}
+
+/* TODO: make this parser better and cleaner */
+static int r_reg_set_word(struct r_reg_item_t *item, int idx, char *word)
+{
+	int ret = R_TRUE;
+	switch(idx) {
+	case 0:
+		if (!strcmp(word, "gpr"))
+			item->type = R_REG_TYPE_GPR;
+		// XXX: TODO . implement the rest here
+		break;
+	case 1:
+		item->name = strdup(word);
+		break;
+	/* spaguetti ftw!!1 */
+	case 2:
+		if (*word=='.') // XXX; this is kinda ugly
+			item->size = atoi(word+1);
+		else item->size = atoi(word)*8;
+		break;
+	case 3:
+		if (*word=='.') // XXX; this is kinda ugly
+			item->offset = atoi(word+1);
+		else item->offset = atoi(word)*8;
+		break;
+	case 4:
+		if (*word=='.') // XXX; this is kinda ugly
+			item->packed_size = atoi(word+1);
+		else item->packed_size = atoi(word)*8;
+		break;
+	default:
+		printf("WRf\n");
+		ret = R_FALSE;
+	}
+	return ret;
+}
+
+/* TODO: make this parser better and cleaner */
+R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *str)
 {
 	int ret = R_FALSE;
-	// ADD PARSING STUFF HERE
-	printf("LOADING(%s)\n", profile);
+	int lastchar = 0;
+	int word = 0;
+	int chidx = 0;
+	char buf[256];
+	struct r_reg_item_t *item;
+
+	if (!str)
+		return R_FALSE;
+
+	buf[0]=0;
+	/* format file is: 'type name size offset packedsize' */
+
 	r_reg_free_internal(reg);
+	item = r_reg_item_new();
+
+	while(*str) {
+		if (*str == '#') {
+			/* skip until newline */
+			while(*str && *str != '\n') str++;
+			continue;
+		}
+		switch(*str) {
+		case ' ':
+		case '\t':
+			if (lastchar != ' ' && lastchar != '\t') {
+				r_reg_set_word(item, word, buf);
+//				printf("WORD %d (%s)\n", word, buf);
+				chidx = 0;
+				word++;
+			}
+			break;
+		case '\n':
+			// commit new
+			//printf("WORD %d (%s)\n", word, buf);
+			r_reg_set_word(item, word, buf);
+			// TODO: add check to ensure that all the fields are defined
+			// before adding it into the list
+			if (item->name != NULL) {
+				list_add(&item->list, &reg->regset[item->type].regs);
+//printf("ADD REG(%s)\n", item->name);
+				item = r_reg_item_new();
+//				printf("-----------\n");
+			}
+			chidx = word = 0;
+			break;
+		default:
+			if (chidx > 128) // WTF!!
+				return R_FALSE;
+			buf[chidx++] = *str;
+			buf[chidx] = 0;
+			break;
+		}
+		lastchar = *str;
+		str++;
+	}
+	free(item->name);
+	free(item);
+	r_reg_arena_fit(reg);
+	
+	/* do we reach the end ? */
+	if (!*str) ret = R_TRUE;
 	return ret;
 }
 

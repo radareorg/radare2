@@ -44,6 +44,7 @@ R_API void r_prof_start(struct r_prof_t *p);
 R_API double r_prof_end(struct r_prof_t *p);
 
 /* memory */
+R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits);
 R_API void r_mem_copyloop (ut8 *dest, const ut8 *orig, int dsize, int osize);
 R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian);
 R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len);

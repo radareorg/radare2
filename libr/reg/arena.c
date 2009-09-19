@@ -36,3 +36,35 @@ R_API int r_reg_set_bytes(struct r_reg_t *reg, int type, const ut8* buf, int len
 	}
 	return ret;
 }
+
+R_API int r_reg_export_to(struct r_reg_t *reg, struct r_reg_t *dst)
+{
+	int ret = R_FALSE;
+	if (dst) {
+		// foreach reg of every time in reg, define it in dst
+	}
+	return ret;
+}
+
+R_API void r_reg_arena_fit(struct r_reg_t *reg)
+{
+	struct list_head *pos;
+	struct r_reg_item_t *r;
+	struct r_reg_arena_t *arena;
+	int size, i;
+
+	/* propagate arenas */
+	for(i=0;i<R_REG_TYPE_LAST;i++) {
+		arena = reg->regset[i].arena;
+		arena->size = 0;
+		list_for_each(pos, &reg->regset[i].regs) {
+			r = list_entry(pos, struct r_reg_item_t, list);
+			size = BITS2BYTES(r->offset+r->size);
+			if (size>arena->size) {
+				arena->size = size;
+				arena->bytes = realloc(arena->bytes, size);
+			}
+		}
+		memset(arena->bytes, 0, arena->size);
+	}
+}
