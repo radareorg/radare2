@@ -6,6 +6,7 @@
 
 #include <r_debug.h>
 #include <r_asm.h>
+#include <r_reg.h>
 #include <r_lib.h>
 #include <sys/ptrace.h>
 #include <sys/types.h>
@@ -54,54 +55,68 @@ static int r_debug_ptrace_wait(int pid)
 	return status;
 }
 
-// TODO: what about float and hardware regs here ???
-struct r_regset_t* r_debug_ptrace_reg_read(int pid)
+static const char *r_debug_ptrace_reg_profile()
 {
-	struct r_regset_t *r = NULL;
+	return strdup(
+	"gpr	eip	.32	48	0\n"
+	"gpr	oeax	.32	44	0\n"
+	"gpr	eax	.32	24	0\n"
+	"gpr	ebx	.32	0	0\n"
+	"gpr	ecx	.32	4	0\n"
+	"gpr	edx	.32	8	0\n"
+	"gpr	esp	.32	60	0\n"
+	"gpr	ebp	.32	20	0\n"
+	"gpr	esi	.32	12	0\n"
+	"gpr	edi	.32	16	0\n"
+	"gpr	xfs	.32	36	0\n"
+	"gpr	xgs	.32	40	0\n"
+	"gpr	xcs	.32	52	0\n"
+	"gpr	xss	.32	52	0\n"
+	"gpr	eflags	.32	56	0\n"
+	"\n"
+	"# base address is 448bit\n"
+	"flg	carry	.1	.448	0\n"
+	"flg	flag_p	.1	.449	0\n"
+	"flg	flag_a	.1	.450	0\n"
+	"flg	zero	.1	.451	0\n"
+	"flg	sign	.1	.452	0\n"
+	"flg	flag_t	.1	.453	0\n"
+	"flg	flag_i	.1	.454	0\n"
+	"flg	flag_d	.1	.455	0\n"
+	"flg	flag_o	.1	.456	0\n"
+	"flg	flag_r	.1	.457	0\n"
+	);
+}
+
+// TODO: what about float and hardware regs here ???
+// TODO: add flag for type
+static int r_debug_ptrace_reg_read(struct r_debug_t *dbg, int type, ut8 *buf, int size)
+{
+	int ret; 
+	int pid = dbg->pid;
+	if (type == R_REG_TYPE_GPR) {
 // XXX this must be defined somewhere else
 #if __linux__
 #include <sys/user.h>
 #include <limits.h>
 	struct user_regs_struct regs;
-	memset(&regs,0, sizeof(regs));
-	ptrace(PTRACE_GETREGS, pid, 0, &regs);
-#if 0
-#if __WORDSIZE == 64
-	r = r_regset_new(17);
-	r_regset_set(r, 0, "rax", regs.rax);
-	r_regset_set(r, 1, "rbx", regs.rbx);
-	r_regset_set(r, 2, "rcx", regs.rcx);
-	r_regset_set(r, 3, "rdx", regs.rdx);
-	r_regset_set(r, 4, "rsi", regs.rsi);
-	r_regset_set(r, 5, "rdi", regs.rdi);
-	r_regset_set(r, 6, "rsp", regs.rsp);
-	r_regset_set(r, 7, "rbp", regs.rbp);
-	r_regset_set(r, 8, "rip", regs.rip);
-	r_regset_set(r, 9, "r8", regs.r8);
-	r_regset_set(r, 10, "r9", regs.r9);
-	r_regset_set(r, 11, "r10", regs.r10);
-	r_regset_set(r, 12, "r11", regs.r11);
-	r_regset_set(r, 13, "r12", regs.r12);
-	r_regset_set(r, 14, "r13", regs.r13);
-	r_regset_set(r, 15, "r14", regs.r14);
-	r_regset_set(r, 16, "r15", regs.r15);
+	memset(&regs, 0, sizeof(regs));
+	memset(buf, 0, size);
+	ret = ptrace(PTRACE_GETREGS, pid, 0, &regs);
+	if (sizeof(regs) < size)
+		size = sizeof(regs);
+	if (ret != 0)
+		size = 0;
+	memcpy(buf, &regs, size);
+	return size;
+	//r_reg_set_bytes(reg, &regs, sizeof(struct user_regs));
 #else
-	/* TODO: use enum for 0, 1, 2... ? */
-	/* TODO: missing eflags here */
-	r = r_regset_new(9);
-	r_regset_set(r, 0, "eax", (ut64)(ut32)regs.eax);
-	r_regset_set(r, 1, "ebx", (ut64)(ut32)regs.ebx);
-	r_regset_set(r, 2, "ecx", (ut64)(ut32)regs.ecx);
-	r_regset_set(r, 3, "edx", (ut64)(ut32)regs.edx);
-	r_regset_set(r, 4, "esi", (ut64)(ut32)regs.esi);
-	r_regset_set(r, 5, "edi", (ut64)(ut32)regs.edi);
-	r_regset_set(r, 6, "esp", (ut64)(ut32)regs.esp);
-	r_regset_set(r, 7, "ebp", (ut64)(ut32)regs.ebp);
-	r_regset_set(r, 8, "eip", (ut64)(ut32)regs.eip);
+#warning dbg-ptrace not supported for this platform
+	return 0;
 #endif
-#endif /* linux */
-#endif
-	return r;
+	}
+
+	return 0;
 }
 
 static int r_debug_ptrace_reg_write(int pid, struct r_regset_t *regs)
@@ -161,6 +176,7 @@ struct r_debug_handle_t r_debug_plugin_ptrace = {
 	.wait = &r_debug_ptrace_wait,
 	.get_arch = &r_debug_get_arch,
 	//.bp_write = &r_debug_ptrace_bp_write,
+	.reg_profile = &r_debug_ptrace_reg_profile,
 	.reg_read = &r_debug_ptrace_reg_read,
 	.reg_write = &r_debug_ptrace_reg_write,
 	//.bp_read = &r_debug_ptrace_bp_read,

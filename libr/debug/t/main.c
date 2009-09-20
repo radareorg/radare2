@@ -25,15 +25,15 @@ int main(int argc, char **argv)
 
 	{
 		/* dump process memory */
-		char buf[128];
+		ut8 buf[128];
 		int ret = r_io_read_at(io, 0x8048000, buf, 128);
-		printf("%02x\n", buf[0]);
+		printf("%d : %02x\n", ret, buf[0]);
 	}
 
 	dbg = r_debug_new();
 	printf("Supported debugger backends:\n");
 
-	ret = r_debug_handle_set (dbg, "dbg_ptrace");
+	ret = r_debug_use(dbg, "dbg_ptrace");
 	printf("Using 'dbg_ptrace' = %s\n", r_str_bool(ret));
 	
 	tid = pid = r_io_system(io, "pid");

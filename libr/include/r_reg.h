@@ -13,6 +13,7 @@ enum {
 	R_REG_TYPE_XMM,
 	R_REG_TYPE_FLG,
 	R_REG_TYPE_LAST,
+	R_REG_TYPE_ALL = -1,
 };
 
 struct r_reg_item_t {

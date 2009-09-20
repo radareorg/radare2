@@ -8,6 +8,8 @@ namespace Radare {
 		public Breakpoint bp;
 		public Debug();
 
+		public bool use(string plugin);
+
 		/* life cycle */
 		public bool attach(int pid);
 		public bool detach(int pid);

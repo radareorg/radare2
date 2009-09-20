@@ -15,13 +15,18 @@ int r_debug_handle_init(struct r_debug_t *dbg)
 	return R_TRUE;
 }
 
-int r_debug_handle_set(struct r_debug_t *dbg, const char *str)
+int r_debug_use(struct r_debug_t *dbg, const char *str)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &dbg->handlers) {
 		struct r_debug_handle_t *h = list_entry(pos, struct r_debug_handle_t, list);
 		if (!strcmp(str, h->name)) {
 			dbg->h = h;
+			if (h->reg_profile) {
+				char *profile = dbg->h->reg_profile();
+				r_reg_set_profile_string(dbg->reg, profile);
+				free(profile);
+			}
 			return R_TRUE;
 		}
 	}

@@ -39,7 +39,7 @@ struct r_lib_struct_t {
 	void *data; /* pointer to data handled by plugin handler */
 };
 
-extern const char *r_lib_types[];
+//extern const char *r_lib_types[];
 
 enum {
 	R_LIB_TYPE_IO,      /* io layer */
@@ -66,7 +66,7 @@ struct r_lib_t {
 	struct list_head handlers;
 };
 
-R_API int r_lib_init(struct r_lib_t *lib, const char *symname);
+R_API struct r_lib_t *r_lib_init(struct r_lib_t *lib, const char *symname);
 
 /* low level api */
 R_API void *r_lib_dl_open(const char *libname);
@@ -76,14 +76,14 @@ R_API int r_lib_dl_check_filename(const char *file);
 
 /* high level api */
 R_API struct r_lib_t *r_lib_new(const char *symname);
-R_API int r_lib_free(struct r_lib_t *lib);
+R_API struct r_lib_t *r_lib_free(struct r_lib_t *lib);
 R_API int r_lib_run_handler(struct r_lib_t *lib, struct r_lib_plugin_t *plugin, struct r_lib_struct_t *symbol);
 R_API struct r_lib_handler_t *r_lib_get_handler(struct r_lib_t *lib, int type);
 R_API int r_lib_open(struct r_lib_t *lib, const char *file);
 R_API int r_lib_opendir(struct r_lib_t *lib, const char *path);
 R_API void r_lib_list(struct r_lib_t *lib);
 R_API int r_lib_add_handler(struct r_lib_t *lib, int type, const char *desc, int (*cb)(struct r_lib_plugin_t *,void *, void *), int (*dt)(struct r_lib_plugin_t *, void *, void *), void *user );
-R_API int r_lib_del_handler(struct r_lib_t *lib, struct r_lib_handler_t *hand);
+R_API int r_lib_del_handler(struct r_lib_t *lib, int type);
 R_API int r_lib_close(struct r_lib_t *lib, const char *file);
 
 #endif

@@ -9,6 +9,29 @@
 #include <r_syscall.h>
 #include "list.h"
 
+
+struct r_debug_t {
+	int pid;    /* selected process id */
+	int tid;    /* selected thread id */
+	int swstep; /* steps with software traps */
+	int steps;  /* counter of steps done */
+	int newstate;
+	struct r_reg_t *reg;
+	struct r_regset_t *oregs;
+	struct r_regset_t *regs;
+	struct r_bp_t *bp;
+	void *user;
+	/* io */
+	void (*printf)(const char *str, ...);
+	struct r_debug_handle_t *h;
+	struct list_head handlers;
+	/* TODO
+	- list of processes and their threads
+	- list of mapped memory (from /proc/XX/maps)
+	- list of managed memory (allocated in child...)
+	*/
+};
+
 /* TODO: pass dbg and user data pointer everywhere */
 struct r_debug_handle_t {
 	const char *name;
@@ -24,8 +47,9 @@ struct r_debug_handle_t {
 	int (*wait)(int pid);
 	int (*contsc)(int pid, int sc);
 	/* registers */
-	struct r_regset_t * (*reg_read)(int pid);
-	int (*reg_write)(int pid, struct r_regset_t *regs);
+	int (*reg_read)(struct r_debug_t *dbg, int type, ut8 *buf, int size);
+	char* (*reg_profile)();
+	int (*reg_write)(int pid, struct r_regset_t regs);
 	/* memory */
 	ut64 (*mmu_alloc)(void *user, ut64 size, ut64 addr);
 	int (*mmu_free)(void *user, ut64 addr);
@@ -36,27 +60,6 @@ struct r_debug_handle_t {
 	// XXX bad signature int (*bp_read)(int pid, ut64 addr, int hw, int type);
 	//int (*bp_write)(int pid, ut64 addr, int hw, int type);
 	//int (*bp_write)(int pid, ut64 addr, int size, int hw, int rwx);
-};
-
-struct r_debug_t {
-	int pid;    /* selected process id */
-	int tid;    /* selected thread id */
-	int swstep; /* steps with software traps */
-	int steps;  /* counter of steps done */
-	int newstate;
-	struct r_regset_t *oregs;
-	struct r_regset_t *regs;
-	struct r_bp_t *bp;
-	void *user;
-	/* io */
-	void (*printf)(const char *str, ...);
-	struct r_debug_handle_t *h;
-	struct list_head handlers;
-	/* TODO
-	- list of processes and their threads
-	- list of mapped memory (from /proc/XX/maps)
-	- list of managed memory (allocated in child...)
-	*/
 };
 
 enum {
@@ -76,9 +79,10 @@ struct r_debug_pid_t {
 	struct list_head list;
 };
 
+R_API int r_debug_use(struct r_debug_t *dbg, const char *str);
 R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
-R_API int r_debug_handle_set(struct r_debug_t *dbg, const char *str);
 R_API int r_debug_handle_init(struct r_debug_t *dbg);
+
 R_API int r_debug_init(struct r_debug_t *dbg, int hard);
 R_API struct r_debug_t *r_debug_new();
 R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg);
@@ -107,11 +111,11 @@ R_API ut64 r_debug_mmu_alloc(struct r_debug_t *dbg, ut64 size, ut64 addr);
 R_API int r_debug_mmu_free(struct r_debug_t *dbg, ut64 addr);
 
 /* registers */
-R_API int r_debug_reg_sync(struct r_debug_t *dbg, int write);
+R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write);
 R_API ut64 r_debug_reg_get(struct r_debug_t *dbg, const char *name);
 R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 value);
 R_API struct r_regset_t *r_debug_reg_diff(struct r_debug_t *dbg);
-R_API int r_debug_reg_list(struct r_debug_t *dbg, struct r_regset_t *rs, int rad);
+R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad);
 
 /* regset */
 R_API struct r_regset_t* r_regset_diff(struct r_regset_t *a, struct r_regset_t *b);

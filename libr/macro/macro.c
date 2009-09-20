@@ -18,7 +18,7 @@ void r_macro_init(struct r_macro_t *mac)
 	mac->counter = 0;
 	mac->_brk_value = 0;
 	mac->brk_value = &mac->_brk_value;
-	mac->printf = printf;
+	mac->printf = (void*)printf;
 	mac->num = NULL;
 	mac->user = NULL;
 	mac->cmd = NULL;

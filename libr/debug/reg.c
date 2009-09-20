@@ -3,68 +3,44 @@
 #include <r_debug.h>
 #include <r_reg.h>
 
-R_API int r_debug_reg_sync(struct r_debug_t *dbg, int write)
+R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write)
 {
+	int ret = R_FALSE;
 	if (write) {
-		if (dbg && dbg->h && dbg->h->reg_write)
-			dbg->h->reg_write(dbg->pid, dbg->regs);
+		// TODO must implement
+		//if (dbg && dbg->h && dbg->h->reg_write)
+		//	dbg->h->reg_write(dbg->pid, dbg->regs);
 	} else {
 		/* read registers from debugger backend to dbg->regs */
 		if (dbg && dbg->h && dbg->h->reg_read) {
-			free(dbg->oregs);
-			dbg->oregs = dbg->regs;
-			dbg->regs = dbg->h->reg_read(dbg->pid);
+			int size = 4096;
+			ut8 buf[4096]; // XXX hacky!
+			size = dbg->h->reg_read(dbg, type, buf, size);
+			r_reg_set_bytes(dbg->reg, type, buf, size);
+			ret = R_TRUE;
 		}
 	}
-	return (dbg->regs != NULL);
-}
-#if  0
-
-R_API struct r_regset_t *r_debug_reg_diff(struct r_debug_t *dbg)
-{
-	return r_regset_diff(dbg->oregs, dbg->regs);
+	return ret;
 }
 
-R_API ut64 r_debug_reg_get(struct r_debug_t *dbg, const char *name)
+R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad)
 {
-	int i;
-	if (dbg->newstate) {
-		r_debug_reg_sync(dbg, 0);
-		dbg->newstate = 0;
-	}
-	if (dbg->regs)
-	for(i=0; i<dbg->regs->nregs; i++) {
-		if (!strcmp(name, dbg->regs->regs[i].name))
-			return dbg->regs->regs[i].value;
-	}
-	return R_TRUE;
-}
+	int n = 0;
+	struct list_head *pos, *head =
+		r_reg_get_list(dbg->reg, R_REG_TYPE_GPR);	
 
-R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 value)
-{
-	int i;
-	struct r_regset_t *rs = dbg->regs;
-	if (rs)
-	for(i=0; i<rs->nregs; i++) {
-		if (!strcmp(name, rs->regs[i].name))
-			return r_regset_set(dbg->regs, i, name, value);
+	list_for_each(pos, head) {
+		struct r_reg_item_t *item = list_entry(pos, struct r_reg_item_t, list);
+		if (type != -1 && type != item->type)
+			continue;
+		if (size != 0 && size != item->size)
+			continue;
+		if (rad) {
+			dbg->printf("f %s @ 0x%08llx\n", item->name, r_reg_get_value(dbg->reg, item));
+		} else{
+			dbg->printf("%s = 0x%08llx\n", item->name, r_reg_get_value(dbg->reg, item));
+		}
+		n++;
 	}
-	return R_FALSE;
+	return n;
 }
-
-R_API int r_debug_reg_list(struct r_debug_t *dbg, struct r_regset_t *rs, int rad)
-{
-	int i =0;
-	if (rs == NULL)
-		rs = dbg->regs;
-	if (rs)
-	for(i=0;i<rs->nregs;i++) {
-		struct r_reg_item_t *r = &rs->regs[i];
-		if (rad) dbg->printf("f %s @ 0x%08llx\n", r->name, r->value);
-		else dbg->printf("%d %s 0x%08llx\n", i, r->name, r->value);
-		/* TODO: add floating point support here */
-		/* TODO: add packed registers support here */
-	}
-	return R_TRUE;
-}
-#endif

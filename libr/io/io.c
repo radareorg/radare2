@@ -12,7 +12,7 @@ R_API struct r_io_t *r_io_init(struct r_io_t *io)
 	io->write_mask_fd = -1;
 	io->last_align = 0;
 	io->redirect = NULL;
-	io->printf = printf;
+	io->printf = (void*) printf;
 	r_io_cache_init(io);
 	r_io_map_init(io);
 	r_io_section_init(io);

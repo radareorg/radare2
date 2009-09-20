@@ -71,7 +71,7 @@ R_API struct r_bp_t *r_bp_free(struct r_bp_t *bp);
 R_API int r_bp_del(struct r_bp_t *bp, ut64 addr);
 
 R_API int r_bp_handle_add(struct r_bp_t *bp, struct r_bp_handle_t *foo);
-R_API int r_bp_handle_set(struct r_bp_t *bp, const char *name);
+R_API int r_bp_use(struct r_bp_t *bp, const char *name);
 R_API int r_bp_handle_del(struct r_bp_t *bp, const char *name);
 R_API void r_bp_handle_list(struct r_bp_t *bp);
 

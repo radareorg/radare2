@@ -1024,7 +1024,7 @@ static int cmd_hash(void *data, const char *input)
 			return R_TRUE;
 		}
 		// TODO: set argv here
-		r_lang_set(&core->lang, input+1);
+		r_lang_use(&core->lang, input+1);
 		if (core->oobi)
 			r_lang_run(&core->lang,(const char *)
 				core->oobi, core->oobi_len);
@@ -1624,7 +1624,7 @@ static int cmd_debug(void *data, const char *input)
 			break;
 		case 'h':
 			if (input[2]==' ') {
-				if (!r_bp_handle_set(&core->dbg.bp, input+3))
+				if (!r_bp_use(&core->dbg.bp, input+3))
 					eprintf("Invalid name: '%s'.\n", input+3);
 			} else r_bp_handle_list(&core->dbg.bp);
 			break;
@@ -1660,8 +1660,9 @@ static int cmd_debug(void *data, const char *input)
 		break;
 	case 'r':
 #if 1
-		r_debug_reg_sync(&core->dbg, 0);
-		r_debug_reg_list(&core->dbg, NULL, input[1]=='*');
+		// TODO: REG_TYPE_ALL // aka -1
+		r_debug_reg_sync(&core->dbg, R_REG_TYPE_GPR, R_FALSE);
+		r_debug_reg_list(&core->dbg, R_REG_TYPE_GPR, 32, input[1]=='*');
 #else
 		r_core_cmd(core, "|reg", 0);
 #endif
@@ -1677,7 +1678,7 @@ static int cmd_debug(void *data, const char *input)
 		if (input[1]==' ') {
 			char buf[1024];
 			snprintf(buf, "dbg_%s", input+2);
-			r_debug_handle_set(&core->dbg, buf);
+			r_debug_use(&core->dbg, buf);
 		} else r_debug_handle_list(&core->dbg);
 		break;
 	default:
@@ -1742,7 +1743,7 @@ R_API int r_core_cmd0(void *user, const char *cmd)
 
 R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd)
 {
-	char *retstr;
+	char *retstr = NULL;
 	r_cons_reset();
 	if (r_core_cmd(core, cmd, 0) == -1) {
 		fprintf(stderr, "Invalid command: %s\n", cmd);

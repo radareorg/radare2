@@ -56,7 +56,8 @@ int main(int argc, char **argv)
 
 
 	r_lib_close(lib, "./plugin.so");
+	r_lib_free(lib);
 
-	return r_lib_free(lib);
+	return 0;
 }
 

@@ -93,7 +93,7 @@ static int r_bin_io_write_at(struct r_io_bind_t *io, ut64 addr, const ut8 *buf, 
 //	lseek
 	//fuck todo
 }
-static r_bin_io_init(struct r_bin_t *bin)
+static void r_bin_io_init(struct r_bin_t *bin)
 {
 	bin->iob.init = R_TRUE;
 	bin->iob.io = NULL;

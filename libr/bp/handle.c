@@ -26,7 +26,7 @@ R_API int r_bp_handle_add(struct r_bp_t *bp, struct r_bp_handle_t *foo)
 	return R_TRUE;
 }
 
-R_API int r_bp_handle_set(struct r_bp_t *bp, const char *name)
+R_API int r_bp_use(struct r_bp_t *bp, const char *name)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &bp->plugins) {

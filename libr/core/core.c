@@ -165,7 +165,7 @@ R_API int r_core_init(struct r_core_t *core)
 	/* UH? */
 	r_asm_set(&core->assembler, "asm_"DEFAULT_ARCH);
 	r_anal_set(&core->anal, "anal_"DEFAULT_ARCH);
-	r_bp_handle_set(&core->dbg.bp, "bp_"DEFAULT_ARCH);
+	r_bp_use(core->dbg.bp, "bp_"DEFAULT_ARCH);
 	r_config_set(&core->config, "asm.arch", "x86");
 	r_config_set_i(&core->config, "asm.bits", 32);
 

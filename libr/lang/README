@@ -17,5 +17,7 @@ r_lang supported language bindings (perk, python, ..)
 
 TODO
 ====
-r_lang_define is implemented in lang.c, but requires the collaboration
-of the plugins to properly setup the environment for the script execution.
+* r_lang_define is implemented in lang.c, but requires the collaboration
+  of the plugins to properly setup the environment for the script execution.
+
+* Add support for STATIC_PLUGINS for r-Lang too
