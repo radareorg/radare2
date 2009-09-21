@@ -37,17 +37,8 @@ namespace Radare {
 			
 		}
 		bool reg_sync(bool set);
-		uint64 reg_get(string name);
-		bool reg_set(string name, uint64 val);
-		bool reg_list(string name, uint64 val); // TODO must be deprecated
+		bool reg_list(int type, int size, bool rad); // TODO must be depreacted
 		
-		/* breakpoints 
-		public bool bp_enable(uint64 addr, bool set);
-		public bool bp_add(uint64 addr, int sz, bool hw, int rwx);
-		public bool bp_del(uint64 addr);
-		public bool bp_restore(bool set);
-		public bool bp_list(bool rad); // XXX to be deprecated
-		*/
 		/* processes */
 		public struct Process {
 			public int pid;

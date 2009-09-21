@@ -6,7 +6,7 @@
 static struct r_debug_handle_t *debug_static_plugins[] = 
 	{ R_DEBUG_STATIC_PLUGINS };
 
-int r_debug_handle_init(struct r_debug_t *dbg)
+R_API int r_debug_handle_init(struct r_debug_t *dbg)
 {
 	int i;
 	INIT_LIST_HEAD(&dbg->handlers);
@@ -15,7 +15,7 @@ int r_debug_handle_init(struct r_debug_t *dbg)
 	return R_TRUE;
 }
 
-int r_debug_use(struct r_debug_t *dbg, const char *str)
+R_API int r_debug_use(struct r_debug_t *dbg, const char *str)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &dbg->handlers) {
@@ -33,7 +33,7 @@ int r_debug_use(struct r_debug_t *dbg, const char *str)
 	return R_FALSE;
 }
 
-int r_debug_handle_list(struct r_debug_t *dbg)
+R_API int r_debug_handle_list(struct r_debug_t *dbg)
 {
 	int count = 0;
 	struct list_head *pos;
@@ -45,7 +45,7 @@ int r_debug_handle_list(struct r_debug_t *dbg)
 	return R_FALSE;
 }
 
-int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo)
+R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo)
 {
 	list_add_tail(&(foo->list), &(dbg->handlers));
 	return R_TRUE;

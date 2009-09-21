@@ -9,6 +9,12 @@ clean:
 
 vdoc:
 	rm -rf vdoc
+	cat libr/vapi/*.vapi > /tmp/libr.vapi
+	valadoc -o vdoc /tmp/libr.vapi
+	# rsync -avz vdoc/* pancake@radare.org:/srv/http/radareorg/vdoc/
+
+vdoc_pkg:
+	rm -rf vdoc
 	valadoc -o vdoc libr/vapi/*.vapi
 	# rsync -avz vdoc/* pancake@radare.org:/srv/http/radareorg/vdoc/
 

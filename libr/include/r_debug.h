@@ -55,11 +55,6 @@ struct r_debug_handle_t {
 	int (*mmu_free)(void *user, ut64 addr);
 
 	struct list_head list;
-
-	// DEPRECATED
-	// XXX bad signature int (*bp_read)(int pid, ut64 addr, int hw, int type);
-	//int (*bp_write)(int pid, ut64 addr, int hw, int type);
-	//int (*bp_write)(int pid, ut64 addr, int size, int hw, int rwx);
 };
 
 enum {
@@ -82,17 +77,11 @@ struct r_debug_pid_t {
 R_API int r_debug_use(struct r_debug_t *dbg, const char *str);
 R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
 R_API int r_debug_handle_init(struct r_debug_t *dbg);
+R_API int r_debug_handle_list(struct r_debug_t *dbg)
 
 R_API int r_debug_init(struct r_debug_t *dbg, int hard);
 R_API struct r_debug_t *r_debug_new();
 R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg);
-
-#if 0
-#define CB_READ int (*_cb_read)(void *user, int pid, ut64 addr, ut8 *buf, int len)
-#define CB_WRITE int (*_cb_write)(void *user, int pid, ut64 addr, const ut8 *buf, int len)
-
-R_API int r_debug_set_io(struct r_debug_t *dbg, CB_READ, CB_WRITE, void *user);
-#endif
 
 /* send signals */
 R_API int r_debug_kill(struct r_debug_t *dbg, int pid, int sig);

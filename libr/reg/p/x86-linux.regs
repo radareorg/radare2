@@ -16,10 +16,10 @@ gpr	esp	.32	60	0
 gpr	ebp	.32	20	0
 gpr	esi	.32	12	0
 gpr	edi	.32	16	0
-gpr	xfs	.32	36	0
-gpr	xgs	.32	40	0
-gpr	xcs	.32	52	0
-gpr	xss	.32	52	0
+seg	xfs	.32	36	0
+seg	xgs	.32	40	0
+seg	xcs	.32	52	0
+seg	xss	.32	52	0
 gpr	eflags	.32	56	0
 
 # base address is 448bit

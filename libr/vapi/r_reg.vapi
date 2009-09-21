@@ -13,7 +13,9 @@ namespace Radare {
 			MMX,
 			XMM,
 			FLG,
+			SEG,
 			LAST
+			ALL,
 		}
 
 		[Compact]

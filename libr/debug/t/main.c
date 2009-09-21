@@ -33,8 +33,8 @@ int main(int argc, char **argv)
 	dbg = r_debug_new();
 	printf("Supported debugger backends:\n");
 
-	ret = r_debug_use(dbg, "dbg_ptrace");
-	printf("Using 'dbg_ptrace' = %s\n", r_str_bool(ret));
+	ret = r_debug_use(dbg, "dbg.ptrace");
+	printf("Using 'dbg.ptrace' = %s\n", r_str_bool(ret));
 	
 	tid = pid = r_io_system(io, "pid");
 	r_debug_select(dbg, pid, tid);
@@ -44,6 +44,9 @@ int main(int argc, char **argv)
 
 	printf("--> perform 2 steps (only 1 probably?)\n");
 	r_debug_step(dbg, 2);
+	// TODO: this is not working :/
+	r_debug_reg_sync(dbg, R_REG_TYPE_GPR, 0);
+	r_debug_reg_list(dbg, R_REG_TYPE_GPR, 32, 0);
 
 	printf("--> regs post step\n");
 	r_io_system(io, "reg");

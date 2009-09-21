@@ -84,6 +84,10 @@ static int r_reg_set_word(struct r_reg_item_t *item, int idx, char *word)
 		else
 		if (!strcmp(word, "fpu"))
 			item->type = R_REG_TYPE_FLG;
+		else
+		if (!strcmp(word, "seg"))
+			item->type = R_REG_TYPE_SEG;
+		else	printf("Unknown register type: '%s'\n", word);
 		break;
 	case 1:
 		item->name = strdup(word);

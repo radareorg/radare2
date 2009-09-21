@@ -86,9 +86,8 @@ char *r_bininfo_get_file_line(struct r_bininfo_t *bin, const char *file, int lin
 char *r_bininfo_get_source_path(struct r_bininfo_t *bin)
 {
 	if (bin->path == NULL) {
-		if (bin&&bin->cur&&bin->cur->get_path) {
+		if (bin&&bin->cur&&bin->cur->get_path)
 			bin->path = bin->cur->get_path(bin);
-		}
 	}
 	return bin->path;
 }
