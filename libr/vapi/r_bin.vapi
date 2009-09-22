@@ -14,14 +14,14 @@ namespace Radare {
 		public int init(string file, int rw);
 		public int close();
 		public uint64 get_baddr();
-		public Entrypoint* get_entry();
+		public Entrypoint get_entry();
 
 		// TODO: deprecate
 		public Radare.List<Bin.Symbol*> symbols;
 
-		public Rarray<Section*> get_sections();
-		public Rarray<Bin.Symbol*> get_symbols();
-		public Rarray<Bin.Import*> get_imports();
+		public Rarray<Bin.Section> get_sections();
+		public Rarray<Bin.Symbol> get_symbols();
+		public Rarray<Bin.Import> get_imports();
 
 		public Info* get_info();
 		public uint64 get_section_offset(string name);
@@ -29,14 +29,14 @@ namespace Radare {
 		public uint32 get_section_size(string name);
 		public uint64 resize_section(string name, uint64 size);
 	
-		[CCode (cname="struct r_bin_entry_t")]
-		public struct Entrypoint {
+		[CCode (cname="struct r_bin_entry_t", free_function="", ref_function="", unref_function="")]
+		public class Entrypoint {
 			public uint64 rva;
 			public uint64 offset;
 		}
 
-		[CCode (cname="struct r_bin_section_t")]
-		public struct Section {
+		[CCode (cname="struct r_bin_section_t", free_function="", ref_function="", unref_function="")]
+		public class Section  {
 			public string name;
 			public int32 size;
 			public int32 vsize;
@@ -46,8 +46,8 @@ namespace Radare {
 			public bool last;
 		}
 
-		[CCode (cname="struct r_bin_symbol_t")]
-		public struct Symbol {
+		[CCode (cname="struct r_bin_symbol_t", free_function="", ref_function="", unref_function="")]
+		public class Symbol {
 			public string name;
 			public string forwarder;
 			public string bind;
@@ -59,8 +59,8 @@ namespace Radare {
 			public bool last;
 		}
 
-		[CCode (cname="struct r_bin_import_t")]
-		public struct Import {
+		[CCode (cname="struct r_bin_import_t", free_function="", ref_function="", unref_function="")]
+		public class Import {
 			public string name;
 			public string bind;
 			public string type;
@@ -71,8 +71,8 @@ namespace Radare {
 			public bool last;
 		}
 
-		[CCode (cname="struct r_bin_info_t")]
-		public struct Info {
+		[CCode (cname="struct r_bin_info_t", free_function="", ref_function="", unref_function="")]
+		public class Info {
 			public string type;
 			public string @class;
 			public string rclass;

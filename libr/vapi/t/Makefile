@@ -12,7 +12,7 @@ lang:
 
 # XXX
 list:
-	valac -o list list_c.c list.vala --pkg r_util --vapidir=${PWD}/.. -X -I.
+	valac -o list list_c.c list.vala --pkg r_util --vapidir=. --vapidir=${PWD}/.. -X -I. --pkg list
 
 genie:
 	valac --vapidir=.. --pkg r_asm --pkg libr asm.gs

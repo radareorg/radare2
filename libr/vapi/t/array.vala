@@ -11,11 +11,11 @@ void main(string[] args) {
 	if (bin.open(args[1], false)<0)
 		error("Cannot open file");
 
-	print("Entrypoint: 0x%08llx\n", bin.get_entry()->offset);
-	foreach (Bin.Symbol* f in bin.get_symbols())
+	print("Entrypoint: 0x%08llx\n", bin.get_entry().offset);
+	foreach (Bin.Symbol *f in bin.get_symbols())
 		print(" - 0x%08llx  %s\n", f->offset, f->name);
 
-	foreach (Bin.Section * f in bin.get_sections())
+	foreach (Bin.Section *f in bin.get_sections())
 		print(" - 0x%08llx  %s\n", f->offset, f->name);
 
 	bin.close();

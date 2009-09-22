@@ -19,23 +19,23 @@ public class BinExample
 		baddr = bin.get_baddr();
 		print("Base addr: 0x%08llx\n", baddr);
 
-		Bin.Entrypoint *e = bin.get_entry();
-		print("Entry point: 0x%08llx\n", baddr+e->rva);
+		Bin.Entrypoint e = bin.get_entry();
+		print("Entry point: 0x%08llx\n", baddr+e.rva);
 
 		i=0;
 		print("Sections:\n");
-		foreach (Bin.Section* s in bin.get_sections())
+		foreach (Bin.Section s in bin.get_sections())
 			print("idx=%02i address=0x%08llx offset=0x%08llx"+
-				" size=%08lli name=%s\n", i++, baddr + s->rva,
-				s->offset, s->size, s->name);
+				" size=%08lli name=%s\n", i++, baddr + s.rva,
+				s.offset, s.size, s.name);
 
 		i = 0;
 		print("Imports\n");
-		foreach(Bin.Import* imp in bin.get_imports())
-			print("idx=%02i name=%s\n", i++, imp->name);
+		foreach(Bin.Import imp in bin.get_imports())
+			print("idx=%02i name=%s\n", i++, imp.name);
 
-		foreach(Bin.Symbol* sym in bin.get_symbols())
-			print("idx=%02i name=%s\n", i, sym->name);
+		foreach(Bin.Symbol sym in bin.get_symbols())
+			print("idx=%02i name=%s\n", i, sym.name);
 
 		bin.close();
 		

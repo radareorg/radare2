@@ -146,9 +146,10 @@ static inline int ERR(char *str, ...)
 #define ralist_next(x) (x=x->next, (x != head))
 #define ralist_free(x) (x)
 
-#define rarray_get(x) (x)++
-#define rarray_next(x) !x->last
+#define rarray_get(x,y) x; x=((y)x)+1;
+#define rarray_next(x,y) !((y)x)->last
 #define rarray_iterator(x) x
-#define rarray_free(x) free(x)
+#define rarray_free(x) x
+//free(x)
 
 #endif
