@@ -35,19 +35,19 @@ static char* file;
 static int rabin_show_help()
 {
 	printf( "rabin2 [options] [file]\n"
-			" -e          Entrypoint\n"
-			" -i          Imports (symbols imported from libraries)\n"
-			" -s          Symbols (exports)\n"
-			" -S          Sections\n"
-			" -z          Strings\n"
-			" -I          Binary info\n"
-			" -H          Header fields\n"
-			" -o [str]    Write/Extract operations (str=help for help)\n"
-			" -f [format] Override file format autodetection\n"
-			" -r          Radare output\n"
-			" -w          Open file in rw mode\n"
-			" -L          List supported bin plugins\n"
-			" -h          This help\n");
+		" -e          Entrypoint\n"
+		" -i          Imports (symbols imported from libraries)\n"
+		" -s          Symbols (exports)\n"
+		" -S          Sections\n"
+		" -z          Strings\n"
+		" -I          Binary info\n"
+		" -H          Header fields\n"
+		" -o [str]    Write/Extract operations (str=help for help)\n"
+		" -f [format] Override file format autodetection\n"
+		" -r          Radare output\n"
+		" -w          Open file in rw mode\n"
+		" -L          List supported bin plugins\n"
+		" -h          This help\n");
 
 	return R_TRUE;
 }

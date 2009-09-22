@@ -41,29 +41,21 @@ struct r_bininfo_handle_t {
 	struct list_head list;
 };
 
-
 /* bininfo.c */
-struct r_bininfo_t *r_bininfo_new();
-void r_bininfo_free(struct r_bininfo_t *bin);
-int r_bininfo_init(struct r_bininfo_t *bin);
-void r_bininfo_set_user_ptr(struct r_bininfo_t *bin, void *user);
-int r_bininfo_add(struct r_bininfo_t *bin, struct r_bininfo_handle_t *foo);
-int r_bininfo_list(struct r_bininfo_t *bin);
-int r_bininfo_open(struct r_bininfo_t *bin, const char *file, int rw, char *plugin_name);
-int r_bininfo_close(struct r_bininfo_t *bin);
-int r_bininfo_get_line(struct r_bininfo_t *bin, ut64 addr, char *file, int len, int *line);
-char *r_bininfo_get_source_path(struct r_bininfo_t *bin);
-int r_bininfo_set_source_path(struct r_bininfo_t *bi, char *path);
+R_API struct r_bininfo_t *r_bininfo_new();
+R_API struct r_bininfo_t *r_bininfo_free(struct r_bininfo_t *bin);
+R_API struct r_bininfo_t *r_bininfo_init(struct r_bininfo_t *bin);
+R_API void r_bininfo_set_user_ptr(struct r_bininfo_t *bin, void *user);
+R_API int r_bininfo_add(struct r_bininfo_t *bin, struct r_bininfo_handle_t *foo);
+R_API int r_bininfo_list(struct r_bininfo_t *bin);
+R_API int r_bininfo_open(struct r_bininfo_t *bin, const char *file, int rw, char *plugin_name);
+R_API int r_bininfo_close(struct r_bininfo_t *bin);
+
+R_API int r_bininfo_get_line(struct r_bininfo_t *bin, ut64 addr, char *file, int len, int *line);
+R_API char *r_bininfo_get_source_path(struct r_bininfo_t *bin);
+R_API int r_bininfo_set_source_path(struct r_bininfo_t *bi, char *path);
 
 /* TODO : move this to r_util!! */
 char *r_bininfo_get_file_line(struct r_bininfo_t *bin, const char *file, int line);
-
-/* plugin pointers */
-extern struct r_bininfo_handle_t r_bininfo_plugin_elf;
-extern struct r_bininfo_handle_t r_bininfo_plugin_elf64;
-extern struct r_bininfo_handle_t r_bininfo_plugin_pe;
-extern struct r_bininfo_handle_t r_bininfo_plugin_pe64;
-extern struct r_bininfo_handle_t r_bininfo_plugin_java;
-extern struct r_bininfo_handle_t r_bininfo_plugin_addr2line;
 
 #endif

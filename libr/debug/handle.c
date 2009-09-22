@@ -3,6 +3,10 @@
 #include <r_debug.h>
 #include "../config.h"
 
+/* plugin pointers */
+extern struct r_debug_handle_t r_debug_plugin_ptrace;
+extern struct r_debug_handle_t r_debug_plugin_gdb;
+
 static struct r_debug_handle_t *debug_static_plugins[] = 
 	{ R_DEBUG_STATIC_PLUGINS };
 

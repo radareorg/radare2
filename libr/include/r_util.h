@@ -6,6 +6,24 @@
 #include "list.h"
 #include "iter.h"
 
+/* pool */
+struct r_mem_pool_t {
+	void **nodes;
+	int ncount;
+	int npool;
+	//
+	int nodesize;
+	int poolsize;
+	int poolcount;
+};
+
+R_API struct r_mem_pool_t* r_mem_pool_deinit(struct r_mem_pool_t *pool);
+R_API struct r_mem_pool_t* r_mem_pool_init(struct r_mem_pool_t *pool, int nodesize, int poolsize, int poolcount);
+R_API struct r_mem_pool_t *r_mem_pool_new(int nodesize, int poolsize, int poolcount);
+R_API struct r_mem_pool_t *r_mem_pool_free(struct r_mem_pool_t *pool);
+R_API void* r_mem_pool_alloc(struct r_mem_pool_t *pool);
+
+/* buf */
 struct r_buf_t {
 	ut8 *buf;
 	int length;

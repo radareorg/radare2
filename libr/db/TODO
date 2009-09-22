@@ -1,3 +1,5 @@
+* Use r_mem_pool
+
 * Return FALSE when adding two elements with the same
   attributes (get before add) if the db is unique
   // not necessary, we can just do this by manually checkingc

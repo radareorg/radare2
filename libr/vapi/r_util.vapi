@@ -61,6 +61,20 @@ namespace Radare {
 		[CCode (cname="ralist_iterator")]
 		public List<unowned G> iterator();
 	}
+
+	[Compact]
+	//[CCode (cprefix="rarray_", cheader_filename="r_types.h", cname="struct r_bin_symbol_t")]
+	[CCode (cprefix="rarray_", cheader_filename="r_types.h")]
+	public static class Rarray<G> {
+		[CCode (cname="rarray_next")]
+		public bool next();
+		[CCode (cname="")]
+		public G @free(G arg);
+		[CCode (cname="rarray_get")]
+		public unowned G get();
+		[CCode (cname="rarray_iterator")]
+		public Rarray<unowned G> iterator();
+	}
 }
 
 // XXX: only required for list.vala (must be removed)

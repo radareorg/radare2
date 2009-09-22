@@ -6,6 +6,11 @@
 
 ----------------------------------------[ todo 
 
+** Add R_ASM_PLUGIN_PREFIX... in short
+** in a vapi file you can define a different constructor class Foo { bar Bar(); }.. 
+   definition of Bar will override the previous Bar() class definition
+** .h is not included correctly for each vapi maybe its about order???
+
 <{include libr/TODO}>
  
 * correct result (R_TRUFAE), but with warnings (implement r_errno and r_errstr in r_util?)

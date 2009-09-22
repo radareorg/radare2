@@ -7,53 +7,35 @@ public class BinExample
 	public static int main(string[] args)
 	{ 
 		uint64 baddr;
-		Bin.Entrypoint *e;
-		Bin.Section *s;
 		int i;
 
-		if (args.length != 2) {
-			stdout.printf("Usage: %s <file>\n", args[0]);
-			return 1;
-		}
+		if (args.length != 2)
+			error("Usage: %s <file>\n", args[0]);
 
 		Bin bin = new Bin();
-		if (!bin.open(args[1], false)) {
-			stderr.printf("Cannot open binary file\n");
-			return 1;
-		}
+		if (bin.open(args[1], false)<2)
+			error("Cannot open binary file\n");
 
 		baddr = bin.get_baddr();
-		stdout.printf("Base addr: 0x%08llx\n", baddr);
+		print("Base addr: 0x%08llx\n", baddr);
 
-		e = bin.get_entry();
-		stdout.printf("Entry point: 0x%08llx\n", baddr+e->rva);
+		Bin.Entrypoint *e = bin.get_entry();
+		print("Entry point: 0x%08llx\n", baddr+e->rva);
 
-		stdout.printf("SECTIONS\n");
-		s = bin.get_sections();
-		if (s != null)
-		for (i=0; !s[i].last; i++) {
-			stdout.printf("idx=%02i address=0x%08llx offset=0x%08llx"+
-				" size=%08lli name=%s\n",
-				i, baddr + s[i].rva, s[i].offset, s[i].size, s[i].name);
-		}
+		i=0;
+		print("Sections:\n");
+		foreach (Bin.Section* s in bin.get_sections())
+			print("idx=%02i address=0x%08llx offset=0x%08llx"+
+				" size=%08lli name=%s\n", i++, baddr + s->rva,
+				s->offset, s->size, s->name);
 
-		stdout.printf("IMPORTS\n");
-		var imp = bin.get_imports();
-		for (i=0; !imp[i].last; i++) {
-			stdout.printf("idx=%02i name=%s\n", i, imp[i].name);
-		}
+		i = 0;
+		print("Imports\n");
+		foreach(Bin.Import* imp in bin.get_imports())
+			print("idx=%02i name=%s\n", i++, imp->name);
 
-		/* TODO: make it possible */ /*
-		stdout.printf("SYMBOLS\n");
-		foreach (unowned Bin.Symbol* sym in bin.symbols) {
-			stdout.printf("  => name=%s\n", sym->name);
-		}
-		*/
-
-		var sym = bin.get_symbols();
-		for (i=0; !sym[i].last; i++) {
-			stdout.printf("idx=%02i name=%s\n", i, sym[i].name);
-		}
+		foreach(Bin.Symbol* sym in bin.get_symbols())
+			print("idx=%02i name=%s\n", i, sym->name);
 
 		bin.close();
 		

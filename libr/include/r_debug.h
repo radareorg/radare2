@@ -9,7 +9,6 @@
 #include <r_syscall.h>
 #include "list.h"
 
-
 struct r_debug_t {
 	int pid;    /* selected process id */
 	int tid;    /* selected thread id */
@@ -17,8 +16,8 @@ struct r_debug_t {
 	int steps;  /* counter of steps done */
 	int newstate;
 	struct r_reg_t *reg;
-	struct r_regset_t *oregs;
-	struct r_regset_t *regs;
+	//struct r_regset_t *oregs;
+	//struct r_regset_t *regs;
 	struct r_bp_t *bp;
 	void *user;
 	/* io */
@@ -49,7 +48,7 @@ struct r_debug_handle_t {
 	/* registers */
 	int (*reg_read)(struct r_debug_t *dbg, int type, ut8 *buf, int size);
 	char* (*reg_profile)();
-	int (*reg_write)(int pid, struct r_regset_t regs);
+	int (*reg_write)(int pid, ut8 *buf); //XXX struct r_regset_t regs);
 	/* memory */
 	ut64 (*mmu_alloc)(void *user, ut64 size, ut64 addr);
 	int (*mmu_free)(void *user, ut64 addr);
@@ -77,7 +76,7 @@ struct r_debug_pid_t {
 R_API int r_debug_use(struct r_debug_t *dbg, const char *str);
 R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
 R_API int r_debug_handle_init(struct r_debug_t *dbg);
-R_API int r_debug_handle_list(struct r_debug_t *dbg)
+R_API int r_debug_handle_list(struct r_debug_t *dbg);
 
 R_API int r_debug_init(struct r_debug_t *dbg, int hard);
 R_API struct r_debug_t *r_debug_new();
@@ -101,16 +100,14 @@ R_API int r_debug_mmu_free(struct r_debug_t *dbg, ut64 addr);
 
 /* registers */
 R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write);
-R_API ut64 r_debug_reg_get(struct r_debug_t *dbg, const char *name);
-R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 value);
-R_API struct r_regset_t *r_debug_reg_diff(struct r_debug_t *dbg);
 R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad);
+#endif
 
 /* regset */
-R_API struct r_regset_t* r_regset_diff(struct r_regset_t *a, struct r_regset_t *b);
-R_API int r_regset_set(struct r_regset_t *r, int idx, const char *name, ut64 value);
-R_API struct r_regset_t *r_regset_new(int size);
-R_API void r_regset_free(struct r_regset_t *r);
+//R_API struct r_regset_t* r_regset_diff(struct r_regset_t *a, struct r_regset_t *b);
+//R_API int r_regset_set(struct r_regset_t *r, int idx, const char *name, ut64 value);
+//R_API struct r_regset_t *r_regset_new(int size);
+//R_API void r_regset_free(struct r_regset_t *r);
 
 #if 0
 Missing callbacks
@@ -123,11 +120,5 @@ Missing callbacks
  - filedescriptor set/get/mod..
  - get/set signals
  - get regs, set regs
-
-#endif
-
-/* plugin pointers */
-extern struct r_debug_handle_t r_debug_plugin_ptrace;
-extern struct r_debug_handle_t r_debug_plugin_gdb;
 
 #endif

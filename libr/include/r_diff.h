@@ -28,6 +28,7 @@ struct r_diff_t {
 R_API struct r_diff_t *r_diff_new(ut64 off_a, ut64 off_b);
 R_API int r_diff_init(struct r_diff_t *d, ut64 off_a, ut64 off_b);
 R_API struct r_diff_t *r_diff_free(struct r_diff_t *d);
+
 R_API int r_diff_buffers(struct r_diff_t *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb);
 R_API int r_diff_set_callback(struct r_diff_t *d,
 	int (*callback)(struct r_diff_t *d, void *user, struct r_diff_op_t *op),

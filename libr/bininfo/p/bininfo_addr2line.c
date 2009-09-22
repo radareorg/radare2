@@ -17,10 +17,10 @@ static int cmd_to_str(const char *cmd, char *out, int len)
 		return R_FALSE;
 	}
 	ret = fread(out, len, 1, fd);
-	if (ret >0) {
+	if (ret>0) {
 		if (out[ret-1]=='\n')
 			out[ret-1]='\0';
-	} else out[0]='\0';
+	} else *out = '\0';
 	pclose(fd);
 	return R_TRUE;
 }
@@ -29,7 +29,7 @@ static int cmd_to_str(const char *cmd, char *out, int len)
 static char *a2l_get_function_name(struct r_bininfo_t *bi, ut64 addr, char *file, int len)
 {
 	static char buf[1024];
-	sprintf(buf, "addr2line -f -e '%s' 0x%08llx | head -n 1", file, addr);
+	snprintf(buf, 1023, "addr2line -f -e '%s' 0x%08llx | head -n 1", file, addr);
 	if (!cmd_to_str(buf, file, len))
 		return R_FALSE;
 	return buf;
@@ -39,7 +39,7 @@ static int a2l_get_line(struct r_bininfo_t *bi, ut64 addr, char *file, int len, 
 {
 	char *p, buf[1024];
 	// TODO: move to r_util
-	sprintf(buf, "addr2line -e '%s' 0x%08llx", bi->file, addr);
+	snprintf(buf, 1023, "addr2line -e '%s' 0x%08llx", bi->file, addr);
 
 	memset(file,'\0', len);
 	if (!cmd_to_str(buf, file, len))

@@ -8,7 +8,7 @@ R_API int r_debug_init(struct r_debug_t *dbg, int hard)
 	dbg->tid = -1;
 	dbg->swstep = 0; // software step
 	dbg->newstate = 0;
-	dbg->regs = dbg->oregs = NULL;
+	//dbg->regs = dbg->oregs = NULL;
 	dbg->printf = (void *)printf;
 	dbg->reg = r_reg_new();
 	dbg->h = NULL;

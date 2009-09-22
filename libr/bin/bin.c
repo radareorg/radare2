@@ -86,26 +86,29 @@ R_API struct r_bin_t *r_bin_free(struct r_bin_t *bin)
 
 static int r_bin_io_read_at(struct r_io_t *io, ut64 addr, ut8 *buf, int size)
 {
+	// TODO: Implement this
+	return size;
 }
 
 static int r_bin_io_write_at(struct r_io_bind_t *io, ut64 addr, const ut8 *buf, int size)
 {
-//	lseek
-	//fuck todo
+	// TODO: Implement this
+	return size;
 }
 static void r_bin_io_init(struct r_bin_t *bin)
 {
 	bin->iob.init = R_TRUE;
 	bin->iob.io = NULL;
 	bin->iob.read_at = r_bin_io_read_at;
-	bin->iob.write_at = r_bin_io_write_at;
+	bin->iob.write_at = (void*)r_bin_io_write_at;
 }
 
 R_API int r_bin_init(struct r_bin_t *bin)
 {
 	int i;
 	bin->rw = 0;
-	bin->cur = bin->user = bin->file = NULL;
+	bin->cur = bin->user = NULL;
+	bin->file = NULL;
 	INIT_LIST_HEAD(&bin->bins);
 	for(i=0;bin_static_plugins[i];i++)
 		r_bin_add(bin, bin_static_plugins[i]);

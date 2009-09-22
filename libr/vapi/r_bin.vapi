@@ -9,18 +9,19 @@ namespace Radare {
 		public int fd;
 
 		public Bin();
-		public bool open(string file, bool rw, string? plugin_name = null);
+		public int open(string file, bool rw, string? plugin_name = null);
 
 		public int init(string file, int rw);
 		public int close();
 		public uint64 get_baddr();
 		public Entrypoint* get_entry();
-		public Section* get_sections();
 
+		// TODO: deprecate
 		public Radare.List<Bin.Symbol*> symbols;
 
-		public Symbol* get_symbols();
-		public Import* get_imports();
+		public Rarray<Section*> get_sections();
+		public Rarray<Bin.Symbol*> get_symbols();
+		public Rarray<Bin.Import*> get_imports();
 
 		public Info* get_info();
 		public uint64 get_section_offset(string name);

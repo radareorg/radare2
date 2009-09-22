@@ -23,6 +23,17 @@
 #define R_API
 #endif
 
+// Usage: R_DEFINE_OBJECT(r_asm);
+#if 0
+#define R_DEFINE_OBJECT(type) \
+ R_API struct type##_t* type##_new() { \
+    return type##_init(MALLOC_STRUCT(struct type##_t)); \
+ } \
+ R_API struct type##_t* type##_free(struct type##_t *foo) { \
+    return (type##_deinit(foo), free(foo), NULL); \
+ }
+#endif
+
 /* basic types */
 
 #define BITS2BYTES(x) ((x/8)+((x%8)?1:0))
@@ -122,14 +133,6 @@ static inline int ERR(char *str, ...)
 
 #define R_FREE(x) { free(x); x = NULL; }
 
-#if 0
-#define R_API_NEW(x) \
-  struct x##_t *##x##_new() \
-  { struct x##_t *t = (struct x##_t)malloc(sizeof(struct x##_t)); \
-   x##_init(t); return t; }
-R_API_NEW(r_trace);
-#endif
-
 #if __WINDOWS__
 #define HAVE_REGEXP 0
 #else
@@ -137,10 +140,15 @@ R_API_NEW(r_trace);
 #endif
 
 /* hacks for vala-list.h interaction */
-#define list_entry_vala(pos, type, member) ((type) ((char*)pos -(unsigned long)(&((type)0)->member)))
+#define list_entry_vala(pos, type, member) ((type)((char*)pos-(unsigned long)(&((type)0)->member)))
 #define ralist_iterator(x) x->next
 #define ralist_get(x,y) list_entry_vala(x, y, list); x=x->next
 #define ralist_next(x) (x=x->next, (x != head))
 #define ralist_free(x) (x)
+
+#define rarray_get(x) (x)++
+#define rarray_next(x) !x->last
+#define rarray_iterator(x) x
+#define rarray_free(x) free(x)
 
 #endif

@@ -67,6 +67,7 @@ struct r_bin_section_t {
 	int last;
 };
 
+#define r_bin_Rarray struct r_bin_symbol_t
 struct r_bin_symbol_t {
 	char name[R_BIN_SIZEOF_STRINGS];
 	char forwarder[R_BIN_SIZEOF_STRINGS];
