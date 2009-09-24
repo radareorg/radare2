@@ -16,7 +16,7 @@ int main(int argc, char **argv)
 	r_io_handle_list(io);
 
 	ret = r_io_open(io, "dbg:///bin/ls", 0, 0);
-	r_io_set_fd(io, ret);
+//	r_io_set_fd(io, ret);
 	printf("r_io_open dbg:///bin/ls' = %s\n", r_str_bool(ret));
 	if (!ret) {
 		printf("Cannot open dbg:///bin/ls\n");
@@ -33,8 +33,8 @@ int main(int argc, char **argv)
 	dbg = r_debug_new();
 	printf("Supported debugger backends:\n");
 
-	ret = r_debug_use(dbg, "dbg.ptrace");
-	printf("Using 'dbg.ptrace' = %s\n", r_str_bool(ret));
+	ret = r_debug_use(dbg, "ptrace");
+	printf("Using dbg ptrace = %s\n", r_str_bool(ret));
 	
 	tid = pid = r_io_system(io, "pid");
 	r_debug_select(dbg, pid, tid);

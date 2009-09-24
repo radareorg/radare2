@@ -43,6 +43,8 @@ R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits)
 // TODO: this method is ugly as shit.
 R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, int bits)
 {
+	int nbits = bits;
+#if 0
 	int dofb, sofb;
 	int bdoff = (doff/8);
 	int bsoff = (soff/8);
@@ -55,6 +57,7 @@ R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, in
 	dofb=doff%8;
 	sofb=soff%8;
 	if (sofb||dofb) {
+		// TODO : this algorithm is not implemented
 		int mask = (1<<sofb);
 		int nmask = 0xff^mask;
 		int s = src[0]<<sofb;
@@ -63,22 +66,21 @@ R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, in
 			mask = 0xff^(1<<dofb);
 			dst[0] = ((src[0]&mask) | (dst[0]&mask));
 		} else printf("TODO: Oops. not supported method of bitcopy\n");
-		// TODO : this algorithm is not implemented
-#if 0
+/*
 	1) shift algin src i dst
 	2) copy (8-dofb) bits from dst to src
 	3) dst[0] = dst[0]&^(0x1<<nbits) | (src&(1<<nbits))
-#endif
+*/
 		src++;
 		dst++;
 	}
-#if 0
+/*
 doff  v
 dst |__________|___________|
 soff     v
 src |__________|_________|
+*/
 #endif
-	
 	r_mem_copybits(dst, src, nbits);
 }
 

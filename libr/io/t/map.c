@@ -19,8 +19,8 @@ int main () {
 
 	memset(buf, 0, 1024);
 	//ret = r_io_read_at(io, 0xf00000, buf, 1024);
-	ret = r_io_seek(io, 0x8048000, R_IO_SEEK_SET);
-	printf("seek = 0x%llx\n", ret);
+//	ret = r_io_seek(io, 0x8048000, R_IO_SEEK_SET);
+//	printf("seek = 0x%llx\n", ret);
 	ret = r_io_read_at(io, 0, buf, 64);
 	//ret = r_io_read_at(io, 0x8048000, buf, 64);
 	printf("%d = %02x %02x %02x %02x\n", ret, buf[0], buf[1], buf[2], buf[3]);

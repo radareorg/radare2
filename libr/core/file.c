@@ -13,7 +13,7 @@ R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *fil
 {
 	struct r_core_file_t *fh;
 	int fd;
-	char *p;
+	const char *p;
 
 	fd = r_io_open(&r->io, file, mode, 0644);
 	if (fd == -1)

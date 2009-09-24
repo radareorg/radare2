@@ -46,6 +46,7 @@ core:
 		-lr_lang -Wl,-R../../lang -L../../lang \
 		-lr_line -Wl,-R../../line -L../../line \
 		-lr_lib -Wl,-R../../lib -L../../lib \
+		-lr_parse -Wl,-R../../parse -L../../parse \
 		-lr_flags -Wl,-R../../flags -L../../flags \
 		-lr_meta -Wl,-R../../meta -L../../meta \
 		-lr_macro -Wl,-R../../macro -L../../macro \

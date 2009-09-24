@@ -1262,11 +1262,11 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 		} else {
 			for(str=ptr+1;str[0]== ' ';str=str+1);
 			eprintf("SLURPING FILE '%s'\n", str);
-			core->oobi = r_file_slurp(str, &core->oobi_len);
+			core->oobi = (char *)r_file_slurp(str, &core->oobi_len);
 			if (core->oobi == NULL)
 				eprintf("Cannot open file\n");
 			else if (ptr == cmd)
-				return r_core_cmd_buffer(core, core->oobi);
+				return r_core_cmd_buffer(core, (const char *)core->oobi);
 		}
 	}
 	/* Pipe console to file */

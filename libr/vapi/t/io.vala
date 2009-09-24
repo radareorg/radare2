@@ -8,9 +8,9 @@ void main(string[] args)
 	if (fd != -1)
 		critical("Cannot open file\n");
 /*
-	Radare.Iter<IO.list> handle = io.handle_list();
+	Radare.List<IO.Handle> handle = io.handlers;
 	while (!handle->last()) {
-		stdout.printf(" Handle: %s\n", handle->name);
+		print(" Handle: %s\n", handle->name);
 		handle = handle->next();
 	}
 	handle->free();

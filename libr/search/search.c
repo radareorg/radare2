@@ -183,8 +183,10 @@ R_API int r_search_kw_add(struct r_search_t *s, const char *kw, const char *bm)
 	k->keyword_length = strlen(kw);
 	if (k->binmask_length == -1)
 		k->binmask_length = strlen(bm);
-	memcpy(k->binmask, bm, k->binmask_length);
-	k->binmask_length = r_hex_str2bin(bm, k->bin_binmask);
+	if (bm) {
+		memcpy(k->binmask, bm, k->binmask_length);
+		k->binmask_length = r_hex_str2bin(bm, k->bin_binmask);
+	} else k->binmask[0] = k->binmask_length = 0;
 	list_add(&(k->list), &(s->kws));
 	k->kwidx = s->n_kws++;
 	return R_TRUE;
@@ -215,10 +217,10 @@ R_API int r_search_kw_add_bin(struct r_search_t *s, const ut8 *kw, int kw_len, c
 		return R_FALSE;
 	memcpy(k->bin_keyword, kw, kw_len);
 	k->keyword_length = kw_len;
-	memcpy(k->bin_binmask, bm, bm_len);
-	k->keyword_length = kw_len;
 	r_hex_bin2str(kw, kw_len, k->keyword);
-	r_hex_bin2str(bm, bm_len, k->binmask);
+	if (bm) memcpy(k->bin_binmask, bm, bm_len);
+	if (bm) r_hex_bin2str(bm, bm_len, k->binmask);
+	else k->binmask_length = 0;
 	list_add(&(k->list), &(s->kws));
 	k->kwidx = s->n_kws++;
 	return R_TRUE;
@@ -233,4 +235,16 @@ R_API struct r_search_kw_t *r_search_kw_list(struct r_search_t *s)
 		printf("%s %s\n", kw->keyword, kw->binmask);
 	}
 	return NULL;
+}
+
+R_API int r_search_reset(struct r_search_t *s)
+{
+	// TODO
+	return R_TRUE;
+}
+
+R_API int r_search_kw_reset(struct r_search_t *s)
+{
+	// TODO
+	return R_TRUE;
 }

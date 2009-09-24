@@ -163,7 +163,7 @@ static int r_debug_ptrace_import(struct r_debug_handle_t *from)
 #endif
 
 struct r_debug_handle_t r_debug_plugin_ptrace = {
-	.name = "dbg.ptrace",
+	.name = "ptrace",
 #if __WORDSIZE == 64
 	.archs = { "x86-64", 0 },
 #else

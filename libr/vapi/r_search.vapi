@@ -8,6 +8,7 @@ namespace Radare.Search {
 		REGEXP,
 		PATTERN,
 		STRING,
+		XREFS,
 		AES
 	}
 
@@ -18,7 +19,8 @@ namespace Radare.Search {
 		public bool set_mode (Mode mode);
 		public bool set_string_limits (uint32 min, uint32 max);
 		public bool begin();
-		//public bool set_callback(delegate callback, pointer user);
+		public void kw_reset();
+		public void reset();
 		public bool update(out uint64 from, uint8 *buf, long len);
 		public bool update_i(uint64 from, uint8 *buf, long len);
 		public bool kw_add(string kw, string binmask);
@@ -26,6 +28,8 @@ namespace Radare.Search {
 		public bool kw_add_bin(string kw, uint32 kw_len, string binmask, long bm_len);
 		public bool kw_list();
 		public int set_callback(Radare.Search.Callback cb, void *user);
+		public int pattern(int size); // this is uint? long?
+		public int strings(int min, int max); // this is uint? long?
 	}
 
 	[Compact]

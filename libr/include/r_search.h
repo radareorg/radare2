@@ -57,7 +57,6 @@ R_API int r_search_init(struct r_search_t *s, int mode);
 R_API struct r_search_t *r_search_free(struct r_search_t *s);
 
 /* keyword management */
-R_API int r_search_start(struct r_search_t *s);
 R_API int r_search_update(struct r_search_t *s, ut64 *from, const ut8 *buf, long len);
 R_API int r_search_update_i(struct r_search_t *s, ut64 from, const ut8 *buf, long len);
 
@@ -67,12 +66,14 @@ R_API int r_search_kw_add_hex(struct r_search_t *s, const char *kw, const char *
 R_API int r_search_kw_add_bin(struct r_search_t *s, const ut8 *kw, int kw_len, const ut8 *bm, int bm_len);
 R_API struct r_search_kw_t *r_search_kw_list(struct r_search_t *s);
 R_API int r_search_reset(struct r_search_t *s);
+R_API int r_search_kw_reset(struct r_search_t *s);
 
 R_API int r_search_range_add(struct r_search_t *s, ut64 from, ut64 to);
 R_API int r_search_range_set(struct r_search_t *s, ut64 from, ut64 to);
 R_API int r_search_range_reset(struct r_search_t *s);
 R_API int r_search_set_blocksize(struct r_search_t *s, ut32 bsize);
 
+// TODO: this is internal API?
 R_API int r_search_mybinparse_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_aes_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_strings_update_char(const unsigned char *buf, int min, int max, int enc, ut64 offset, const char *match);

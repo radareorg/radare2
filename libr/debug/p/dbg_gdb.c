@@ -52,7 +52,7 @@ static int r_debug_ptrace_wait(int pid)
 }
 
 struct r_debug_handle_t r_dbg_plugin_gdb = {
-	.name = "dbg_gdb",
+	.name = "gdb",
 	.archs = { "x86", 0 }, //"x86-64", "arm", "powerpc", 0 },
 	.step = &r_debug_gdb_step,
 	.cont = &r_debug_gdb_continue,

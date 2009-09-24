@@ -122,7 +122,7 @@ int main(int argc, char **argv)
 			return 1;
 		}
 		r_config_set(&r.config, "cfg.debug", "true");
-		r_debug_use(&r.dbg, "dbg.ptrace");
+		r_debug_use(&r.dbg, "ptrace");
 	} else
 	while (optind < argc) {
 		const char *file = argv[optind++];

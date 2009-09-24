@@ -8,6 +8,7 @@
 
 * public delegate void RangeEachFunc(int i);
 * public void each(RangeEachFunc each_func) { ... }
+* r_io must need a reviewd undo API
 
 ** Add R_ASM_PLUGIN_PREFIX... in short
 ** in a vapi file you can define a different constructor class Foo { bar Bar(); }.. 
