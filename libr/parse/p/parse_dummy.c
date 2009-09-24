@@ -13,7 +13,7 @@ static int parse(struct r_parse_t *p, void *data, char *str)
 }
 
 struct r_parse_handle_t r_parse_plugin_dummy = {
-	.name = "parse_dummy",
+	.name = "dummy",
 	.desc = "dummy parsing plugin",
 	.init = NULL,
 	.fini = NULL,

@@ -121,7 +121,7 @@ R_API int r_core_init(struct r_core_t *core)
 
 	/* initialize libraries */
 	r_print_init(&core->print);
-	core->print.printf = r_cons_printf;
+	core->print.printf = (void *)r_cons_printf;
 	r_lang_init(&core->lang);
 	r_lang_set_user_ptr(&core->lang, core);
 	r_anal_init(&core->anal);
@@ -136,7 +136,7 @@ R_API int r_core_init(struct r_core_t *core)
 	r_meta_init(&core->meta);
 	r_line_init();
 	r_cons_init();
-	r_cons_user_fgets = myfgets;
+	r_cons_user_fgets = (void *)myfgets;
 	r_line_hist_load(".radare2_history");
 
 	core->search = r_search_new(R_SEARCH_KEYWORD);
@@ -163,9 +163,9 @@ R_API int r_core_init(struct r_core_t *core)
 	/* load plugins */
 	r_core_loadlibs(core);
 	/* UH? */
-	r_asm_set(&core->assembler, "asm_"DEFAULT_ARCH);
-	r_anal_set(&core->anal, "anal_"DEFAULT_ARCH);
-	r_bp_use(core->dbg.bp, "bp_"DEFAULT_ARCH);
+	r_asm_use(&core->assembler, DEFAULT_ARCH);
+	r_anal_set(&core->anal, DEFAULT_ARCH);
+	r_bp_use(core->dbg.bp, DEFAULT_ARCH);
 	r_config_set(&core->config, "asm.arch", "x86");
 	r_config_set_i(&core->config, "asm.bits", 32);
 

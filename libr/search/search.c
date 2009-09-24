@@ -2,9 +2,7 @@
 
 #include "r_search.h"
 
-/* object life cycle */
-
-int r_search_init(struct r_search_t *s, int mode)
+R_API int r_search_init(struct r_search_t *s, int mode)
 {
 	memset(s,'\0', sizeof(struct r_search_t));
 	if (!r_search_set_mode(s, mode))
@@ -21,7 +19,7 @@ int r_search_init(struct r_search_t *s, int mode)
 	return R_TRUE;
 }
 
-int r_search_set_string_limits(struct r_search_t *s, ut32 min, ut32 max)
+R_API int r_search_set_string_limits(struct r_search_t *s, ut32 min, ut32 max)
 {
 	if (max < min)
 		return R_FALSE;
@@ -30,7 +28,7 @@ int r_search_set_string_limits(struct r_search_t *s, ut32 min, ut32 max)
 	return R_TRUE;
 }
 
-int r_search_set_mode(struct r_search_t *s, int mode)
+R_API int r_search_set_mode(struct r_search_t *s, int mode)
 {
 	int ret = R_FALSE;
 	switch(mode) {
@@ -46,7 +44,7 @@ int r_search_set_mode(struct r_search_t *s, int mode)
 	return ret;
 }
 
-struct r_search_t *r_search_new(int mode)
+R_API struct r_search_t *r_search_new(int mode)
 {
 	struct r_search_t *s = MALLOC_STRUCT(struct r_search_t);
 	if (r_search_init(s, mode) == -1) {
@@ -56,14 +54,20 @@ struct r_search_t *r_search_new(int mode)
 	return s;
 }
 
-struct r_search_t *r_search_free(struct r_search_t *s)
+R_API void r_search_deinit(struct r_search_t *s)
 {
+	// TODO: free linked lists and so on
+}
+
+R_API struct r_search_t *r_search_free(struct r_search_t *s)
+{
+	r_search_deinit(s);
 	free(s);
 	return NULL;
 }
 
 /* control */
-int r_search_begin(struct r_search_t *s)
+R_API int r_search_begin(struct r_search_t *s)
 {
 	struct list_head *pos;
 
@@ -85,7 +89,7 @@ int r_search_begin(struct r_search_t *s)
 }
 
 // TODO: move into a plugin */
-int r_search_mybinparse_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len)
+R_API int r_search_mybinparse_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len)
 {
 	struct list_head *pos;
 	int i, count = 0;
@@ -117,13 +121,13 @@ int r_search_mybinparse_update(struct r_search_t *s, ut64 from, const ut8 *buf, 
 	return count;
 }
 
-int r_search_set_pattern_size(struct r_search_t *s, int size)
+R_API int r_search_set_pattern_size(struct r_search_t *s, int size)
 {
 	s->pattern_size = size;
 	return 0;
 }
 
-int r_search_set_callback(struct r_search_t *s, int (*callback)(struct r_search_kw_t *, void *, ut64), void *user)
+R_API int r_search_set_callback(struct r_search_t *s, int (*callback)(struct r_search_kw_t *, void *, ut64), void *user)
 {
 	s->callback = callback;
 	s->user = user;
@@ -131,7 +135,7 @@ int r_search_set_callback(struct r_search_t *s, int (*callback)(struct r_search_
 }
 
 /* TODO: initialize update callback in _init */
-int r_search_update(struct r_search_t *s, ut64 *from, const ut8 *buf, ut32 len)
+R_API int r_search_update(struct r_search_t *s, ut64 *from, const ut8 *buf, long len)
 {
 	int i, ret = 0;
 	switch(s->mode) {
@@ -159,7 +163,7 @@ int r_search_update(struct r_search_t *s, ut64 *from, const ut8 *buf, ut32 len)
 	return ret;
 }
 
-int r_search_update_i(struct r_search_t *s, ut64 from, const ut8 *buf, ut32 len)
+R_API int r_search_update_i(struct r_search_t *s, ut64 from, const ut8 *buf, long len)
 {
 	return r_search_update(s, &from, buf, len);
 }
@@ -167,7 +171,7 @@ int r_search_update_i(struct r_search_t *s, ut64 from, const ut8 *buf, ut32 len)
 /* --- keywords --- */
 
 /* string */
-int r_search_kw_add(struct r_search_t *s, const char *kw, const char *bm)
+R_API int r_search_kw_add(struct r_search_t *s, const char *kw, const char *bm)
 {
 	struct r_search_kw_t *k = MALLOC_STRUCT(struct r_search_kw_t);
 	int kwlen = strlen(kw)+1;
@@ -187,22 +191,24 @@ int r_search_kw_add(struct r_search_t *s, const char *kw, const char *bm)
 }
 
 /* hexpair string */
-int r_search_kw_add_hex(struct r_search_t *s, const char *kw, const char *bm)
+R_API int r_search_kw_add_hex(struct r_search_t *s, const char *kw, const char *bm)
 {
 	struct r_search_kw_t *k = MALLOC_STRUCT(struct r_search_kw_t);
-	if (k == NULL)
+	if (k == NULL) // is necessary to assert everywhere??
 		return R_FALSE;
 	strncpy(k->keyword, kw, sizeof(k->keyword));
 	k->keyword_length = r_hex_str2bin(kw, k->bin_keyword);
-	strncpy(k->binmask, bm, sizeof(k->binmask));
-	k->binmask_length = r_hex_str2bin(bm, k->bin_binmask);
+	if (bm) {
+		strncpy(k->binmask, bm, sizeof(k->binmask));
+		k->binmask_length = r_hex_str2bin(bm, k->bin_binmask);
+	} else k->binmask[0] = k->binmask_length = 0;
 	list_add(&(k->list), &(s->kws));
 	k->kwidx = s->n_kws++;
 	return R_TRUE;
 }
 
 /* raw bin */
-int r_search_kw_add_bin(struct r_search_t *s, const ut8 *kw, int kw_len, const ut8 *bm, int bm_len)
+R_API int r_search_kw_add_bin(struct r_search_t *s, const ut8 *kw, int kw_len, const ut8 *bm, int bm_len)
 {
 	struct r_search_kw_t *k = MALLOC_STRUCT(struct r_search_kw_t);
 	if (kw == NULL)
@@ -219,7 +225,7 @@ int r_search_kw_add_bin(struct r_search_t *s, const ut8 *kw, int kw_len, const u
 }
 
 /* show keywords */
-struct r_search_kw_t *r_search_kw_list(struct r_search_t *s)
+R_API struct r_search_kw_t *r_search_kw_list(struct r_search_t *s)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &s->kws) {

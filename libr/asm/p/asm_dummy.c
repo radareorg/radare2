@@ -13,7 +13,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 }
 
 struct r_asm_handle_t r_asm_plugin_dummy = {
-	.name = "asm_dummy",
+	.name = "dummy",
 	.arch = "none",
 	.bits = (int[]){ 0 },
 	.desc = "dummy disassembly plugin",

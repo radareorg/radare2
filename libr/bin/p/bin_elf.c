@@ -14,7 +14,6 @@ static int bopen(struct r_bin_t *bin)
 		free(bin->bin_obj);
 		return R_FALSE;
 	}
-
 	return bin->fd;
 }
 
@@ -30,13 +29,12 @@ static ut64 baddr(struct r_bin_t *bin)
 
 static struct r_bin_entry_t* entry(struct r_bin_t *bin)
 {
-	struct r_bin_entry_t *ret = NULL;
-
-	if((ret = MALLOC_STRUCT(struct r_bin_entry_t)) == NULL)
-		return NULL;
-	memset(ret, '\0', sizeof(struct r_bin_entry_t));
-
-	ret->offset = ret->rva = Elf_(r_bin_elf_get_entry_offset)(bin->bin_obj);
+	struct r_bin_entry_t *ret = MALLOC_STRUCT(struct r_bin_entry_t);
+	if (ret) {
+		memset(ret, '\0', sizeof(struct r_bin_entry_t));
+		ret->offset = ret->rva = \
+			Elf_(r_bin_elf_get_entry_offset)(bin->bin_obj);
+	}
 	return ret;
 }
 
@@ -44,14 +42,14 @@ static struct r_bin_section_t* sections(struct r_bin_t *bin)
 {
 	struct r_bin_section_t *ret = NULL;
 	struct r_bin_elf_section_t *section = NULL;
-	int i, sections_count;
+	int i, count;
 
 	section = Elf_(r_bin_elf_get_sections)(bin->bin_obj);
-	for (sections_count = 0; section && !section[sections_count].last; sections_count++);
-	if ((ret = malloc((sections_count + 1) * sizeof(struct r_bin_section_t))) == NULL)
+	for (count = 0; section && !section[count].last; count++);
+	if ((ret = MALLOC_STRUCTS(struct r_bin_section_t, count+1))==NULL)
 		return NULL;
 
-	for (i = 0; i < sections_count; i++) {
+	for (i = 0; i < count; i++) {
 		strncpy(ret[i].name, (char*)section[i].name, R_BIN_SIZEOF_STRINGS);
 		ret[i].size = section[i].size;
 		ret[i].vsize = section[i].size;
@@ -67,9 +65,7 @@ static struct r_bin_section_t* sections(struct r_bin_t *bin)
 		ret[i].last = 0;
 	}
 	ret[i].last = 1;
-
 	free(section);
-
 	return ret;
 }
 
@@ -133,53 +129,50 @@ static struct r_bin_import_t* imports(struct r_bin_t *bin)
 static struct r_bin_info_t* info(struct r_bin_t *bin)
 {
 	struct r_bin_info_t *ret = NULL;
-	char *string;
+	char *str;
 
 	if((ret = malloc(sizeof(struct r_bin_info_t))) == NULL)
 		return NULL;
 	memset(ret, '\0', sizeof(struct r_bin_info_t));
 
-
-	if ((string = Elf_(r_bin_elf_get_file_type)(bin->bin_obj)) == NULL)
+	if ((str = Elf_(r_bin_elf_get_file_type)(bin->bin_obj)) == NULL)
 		return NULL;
-	strncpy(ret->type, string, R_BIN_SIZEOF_STRINGS);
-	free(string);
+	strncpy(ret->type, str, R_BIN_SIZEOF_STRINGS);
+	free(str);
 
-	if ((string = Elf_(r_bin_elf_get_elf_class)(bin->bin_obj)) == NULL)
+	if ((str = Elf_(r_bin_elf_get_elf_class)(bin->bin_obj)) == NULL)
 		return NULL;
-	strncpy(ret->class, string, R_BIN_SIZEOF_STRINGS);
-	free(string);
+	strncpy(ret->class, str, R_BIN_SIZEOF_STRINGS);
+	free(str);
 
-	if ((string = Elf_(r_bin_elf_get_osabi_name)(bin->bin_obj)) == NULL)
+	if ((str = Elf_(r_bin_elf_get_osabi_name)(bin->bin_obj)) == NULL)
 		return NULL;
-	strncpy(ret->os, string, R_BIN_SIZEOF_STRINGS);
-	free(string);
+	strncpy(ret->os, str, R_BIN_SIZEOF_STRINGS);
+	free(str);
 
-	if ((string = Elf_(r_bin_elf_get_osabi_name)(bin->bin_obj)) == NULL)
+	if ((str = Elf_(r_bin_elf_get_osabi_name)(bin->bin_obj)) == NULL)
 		return NULL;
-	strncpy(ret->subsystem, string, R_BIN_SIZEOF_STRINGS);
-	free(string);
+	strncpy(ret->subsystem, str, R_BIN_SIZEOF_STRINGS);
+	free(str);
 
-	if ((string = Elf_(r_bin_elf_get_machine_name)(bin->bin_obj)) == NULL)
+	if ((str = Elf_(r_bin_elf_get_machine_name)(bin->bin_obj)) == NULL)
 		return NULL;
-	strncpy(ret->machine, string, R_BIN_SIZEOF_STRINGS);
-	free(string);
+	strncpy(ret->machine, str, R_BIN_SIZEOF_STRINGS);
+	free(str);
 
-	if ((string = Elf_(r_bin_elf_get_arch)(bin->bin_obj)) == NULL)
+	if ((str = Elf_(r_bin_elf_get_arch)(bin->bin_obj)) == NULL)
 		return NULL;
-	strncpy(ret->arch, string, R_BIN_SIZEOF_STRINGS);
-	free(string);
+	strncpy(ret->arch, str, R_BIN_SIZEOF_STRINGS);
+	free(str);
 
 	strncpy(ret->rclass, "elf", R_BIN_SIZEOF_STRINGS);
 	ret->big_endian=Elf_(r_bin_elf_is_big_endian)(bin->bin_obj);
 	ret->dbg_info = 0;
-	if (Elf_(r_bin_elf_get_stripped)(bin->bin_obj)) {
-		ret->dbg_info |= 0x01;
-	} else {
+	if (!Elf_(r_bin_elf_get_stripped)(bin->bin_obj)) {
 		ret->dbg_info |= 0x04;
 		ret->dbg_info |= 0x08;
 		ret->dbg_info |= 0x10;
-	}
+	} else  ret->dbg_info |= 0x01;
 	if (Elf_(r_bin_elf_get_static)(bin->bin_obj))
 		ret->dbg_info |= 0x02;
 	return ret;
@@ -189,22 +182,20 @@ static struct r_bin_field_t* fields(struct r_bin_t *bin)
 {
 	struct r_bin_field_t *ret = NULL;
 	struct r_bin_elf_field_t *field = NULL;
-	int i, fields_count;
+	int i, count;
 	
 	field = Elf_(r_bin_elf_get_fields)(bin->bin_obj);
-	for (fields_count = 0; field && !field[fields_count].last; fields_count++);
-	if ((ret = malloc((fields_count + 1) * sizeof(struct r_bin_field_t))) == NULL)
+	for (count = 0; field && !field[count].last; count++);
+	if ((ret = malloc((count + 1) * sizeof(struct r_bin_field_t))) == NULL)
 		return NULL;
-	for (i = 0; i < fields_count; i++) {
+	for (i = 0; i < count; i++) {
 		strncpy(ret[i].name, field[i].name, R_BIN_SIZEOF_STRINGS);
 		ret[i].rva = field[i].offset;
 		ret[i].offset = field[i].offset;
 		ret[i].last = 0;
 	}
 	ret[i].last = 1;
-
 	free(field);
-
 	return ret;
 }
 
@@ -226,8 +217,8 @@ static int check(struct r_bin_t *bin)
 }
 
 struct r_bin_handle_t r_bin_plugin_elf = {
-	.name = "bin_elf",
-	.desc = "elf bin plugin",
+	.name = "elf",
+	.desc = "ELF format r_bin plugin",
 	.init = NULL,
 	.fini = NULL,
 	.open = &bopen,

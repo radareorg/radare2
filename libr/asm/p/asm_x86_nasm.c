@@ -30,7 +30,7 @@ static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 }
 
 struct r_asm_handle_t r_asm_plugin_x86_nasm = {
-	.name = "asm_x86_nasm",
+	.name = "x86.nasm",
 	.desc = "X86 nasm assembler plugin",
 	.arch = "x86",
 	.bits = (int[]){ 16, 32, 64, 0 },

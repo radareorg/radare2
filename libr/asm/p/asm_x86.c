@@ -34,7 +34,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 }
 
 struct r_asm_handle_t r_asm_plugin_x86 = {
-	.name = "asm_x86",
+	.name = "x86",
 	.desc = "X86 disassembly plugin",
 	.arch = "x86",
 	.bits = (int[]){ 16, 32, 64, 0 },

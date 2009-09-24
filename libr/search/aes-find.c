@@ -30,17 +30,14 @@ unsigned char table_sbox[256] = {
 	0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16
 };
 
-int aes_key_test(const unsigned char *buf) {
-
-	if (buf[28]==table_sbox[buf[15]] \
-	&&  buf[29]==table_sbox[buf[12]] \
-	&&  buf[30]==table_sbox[buf[13]] \
-	&&  buf[31]==(table_sbox[buf[14]]^1))
-		return 1;
-	return 0;
+static int aes_key_test(const unsigned char *buf) {
+	return (buf[28]==table_sbox[buf[15]] \
+	    &&  buf[29]==table_sbox[buf[12]] \
+	    &&  buf[30]==table_sbox[buf[13]] \
+	    &&  buf[31]==(table_sbox[buf[14]]^1))?1:0;
 }
 
-int r_search_aes_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len)
+R_API int r_search_aes_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len)
 {
 	int i, last = len-31;
 	if (last < 0)

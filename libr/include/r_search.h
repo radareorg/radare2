@@ -51,72 +51,38 @@ struct r_search_t {
 	struct list_head hits; //r_search_hit_t hits;
 };
 
-struct r_search_t *r_search_new(int mode);
-int r_search_set_mode(struct r_search_t *s, int mode);
-int r_search_init(struct r_search_t *s, int mode);
-struct r_search_t *r_search_free(struct r_search_t *s);
+R_API struct r_search_t *r_search_new(int mode);
+R_API int r_search_set_mode(struct r_search_t *s, int mode);
+R_API int r_search_init(struct r_search_t *s, int mode);
+R_API struct r_search_t *r_search_free(struct r_search_t *s);
 
 /* keyword management */
-int r_search_start(struct r_search_t *s);
-int r_search_update(struct r_search_t *s, ut64 *from, const ut8 *buf, ut32 len);
-int r_search_update_i(struct r_search_t *s, ut64 from, const ut8 *buf, ut32 len);
+R_API int r_search_start(struct r_search_t *s);
+R_API int r_search_update(struct r_search_t *s, ut64 *from, const ut8 *buf, long len);
+R_API int r_search_update_i(struct r_search_t *s, ut64 from, const ut8 *buf, long len);
 
 /* */
-int r_search_kw_add(struct r_search_t *s, const char *kw, const char *bm);
-int r_search_kw_add_hex(struct r_search_t *s, const char *kw, const char *bm);
-int r_search_kw_add_bin(struct r_search_t *s, const ut8 *kw, int kw_len, const ut8 *bm, int bm_len);
-struct r_search_kw_t *r_search_kw_list(struct r_search_t *s);
-int r_search_reset(struct r_search_t *s);
+R_API int r_search_kw_add(struct r_search_t *s, const char *kw, const char *bm);
+R_API int r_search_kw_add_hex(struct r_search_t *s, const char *kw, const char *bm);
+R_API int r_search_kw_add_bin(struct r_search_t *s, const ut8 *kw, int kw_len, const ut8 *bm, int bm_len);
+R_API struct r_search_kw_t *r_search_kw_list(struct r_search_t *s);
+R_API int r_search_reset(struct r_search_t *s);
 
-int r_search_range_add(struct r_search_t *s, ut64 from, ut64 to);
-int r_search_range_set(struct r_search_t *s, ut64 from, ut64 to);
-int r_search_range_reset(struct r_search_t *s);
-int r_search_set_blocksize(struct r_search_t *s, ut32 bsize);
+R_API int r_search_range_add(struct r_search_t *s, ut64 from, ut64 to);
+R_API int r_search_range_set(struct r_search_t *s, ut64 from, ut64 to);
+R_API int r_search_range_reset(struct r_search_t *s);
+R_API int r_search_set_blocksize(struct r_search_t *s, ut32 bsize);
 
-int r_search_mybinparse_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len);
-int r_search_aes_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len);
-int r_search_strings_update_char(const unsigned char *buf, int min, int max, int enc, ut64 offset, const char *match);
-int r_search_regexp_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len);
-int r_search_xrefs_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_mybinparse_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_aes_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_strings_update_char(const unsigned char *buf, int min, int max, int enc, ut64 offset, const char *match);
+R_API int r_search_regexp_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_xrefs_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len);
 
 /* pattern search */
-int r_search_pattern(struct r_search_t *s, ut32 size);
-int r_search_strings(struct r_search_t *s, ut32 min, ut32 max);
-int r_search_set_callback(struct r_search_t *s, int (*callback)(struct r_search_kw_t *, void *, ut64), void *user);
-int r_search_begin(struct r_search_t *s);
+R_API int r_search_pattern(struct r_search_t *s, ut32 size);
+R_API int r_search_strings(struct r_search_t *s, ut32 min, ut32 max);
+R_API int r_search_set_callback(struct r_search_t *s, int (*callback)(struct r_search_kw_t *, void *, ut64), void *user);
+R_API int r_search_begin(struct r_search_t *s);
 
-#endif
-
-/* -- deprecated -- */
-#if 0
-/* binparse api */
-// TODO: Remove typedef!!
-typedef struct r_search_binparse_token {
-	ut8 mintok; // token
-	ut8 range;  // 0 only mintok, ( maxtoken - mintoken )
-	ut8 mask;   // binmask
-} token;
-
-typedef struct r_search_binparse_tokenlist_t {
-	token* tl;
-	int numtok;
-	char name [300];
-	char actp[300]; //aux pel parseig actual
-	int stat;
-	/* int lastpos; XXX unused */
-} tokenlist;
-
-struct r_search_binparse_t {
-	//tokenlist** tls;
-	struct r_search_binparse_tokenlist_t **tls;
-	int nlists;
-	int interrupted;
-	int (*callback)(struct r_search_binparse_tokenlist_t *t, int i, ut64 where);
-};
-
-struct r_search_binparse_t *binparse_new(int kws);
-int r_search_binparse_free(struct r_search_binparse_t *ptokenizer);
-int r_search_binparse_add(struct r_search_binparse_t *t, const char *string, const char *mask);
-int r_search_binparse_add_named(struct r_search_binparse_t *t, const char *name, const char *string, const char *mask);
-int r_search_binparse_update(struct r_search_binparse_t *t, ut8 inchar, ut64 where);
 #endif

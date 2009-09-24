@@ -73,11 +73,11 @@ R_API struct r_asm_t *r_asm_new();
 R_API const char *r_asm_fastcall(struct r_asm_t *a, int idx, int num);
 
 R_API void r_asm_free(struct r_asm_t *a);
-R_API int r_asm_init(struct r_asm_t *a);
+R_API struct r_asm_t *r_asm_init(struct r_asm_t *a);
 R_API void r_asm_set_user_ptr(struct r_asm_t *a, void *user);
 R_API int r_asm_add(struct r_asm_t *a, struct r_asm_handle_t *foo);
 R_API int r_asm_list(struct r_asm_t *a);
-R_API int r_asm_set(struct r_asm_t *a, const char *name);
+R_API int r_asm_use(struct r_asm_t *a, const char *name);
 R_API int r_asm_set_bits(struct r_asm_t *a, int bits);
 R_API int r_asm_set_big_endian(struct r_asm_t *a, int boolean);
 R_API int r_asm_set_syntax(struct r_asm_t *a, int syntax);

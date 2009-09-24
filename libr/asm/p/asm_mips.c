@@ -93,7 +93,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 }
 
 struct r_asm_handle_t r_asm_plugin_mips = {
-	.name = "asm_mips",
+	.name = "mips",
 	.arch = "mips",
 	.bits = (int[]){ 32, 0 },
 	.desc = "MIPS disassembly plugin",

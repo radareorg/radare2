@@ -7,7 +7,7 @@ public class AsmExample
 	public static void main(string[] args)
 	{
 		Asm st = new Asm();
-		st.set("asm_x86_olly");
+		st.use("x86.olly");
 		st.set_syntax(Asm.Syntax.INTEL);
 		st.set_bits(32);
 		st.set_big_endian(false);

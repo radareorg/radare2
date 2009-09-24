@@ -72,7 +72,7 @@ static int rasm_asm(char *buf, ut64 offset, ut64 len, int bin)
 
 #if 0 
 	/* TODO: Arch, syntax... */
-	if (!r_asm_set(&a, "asm_x86_olly")) {
+	if (!r_asm_use(&a, "x86.olly")) {
 		fprintf(stderr, "Error: Cannot find asm_x86 plugin\n");
 		return 1;
 	}
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 	if (argc<2)
 		return rasm_show_help();
 
-	r_asm_set(&a, "asm_x86");
+	r_asm_use(&a, "x86");
 	while ((c = getopt(argc, argv, "a:b:s:do:Bl:hL")) != -1)
 	{
 		switch( c ) {
@@ -162,18 +162,14 @@ int main(int argc, char *argv[])
 	}
 
 	if (arch) {
-		char *str = malloc(strlen(arch)+10);
-		sprintf(str, "asm_%s", arch);
-		if (!r_asm_set(&a, str)) {
+		if (!r_asm_use(&a, arch)) {
 			fprintf(stderr, "Error: Unknown plugin\n");
-			free (str);
 			return 0;
 		}
-		free (str);
 		if (!strcmp(arch, "bf"))
-			ascii = 1;
-	} else if (!r_asm_set(&a, "asm_x86")) {
-		fprintf(stderr, "Error: Cannot find asm_x86 plugin\n");
+			ascii = 1; // uh?
+	} else if (!r_asm_use(&a, "x86")) {
+		fprintf(stderr, "Error: Cannot find asm.x86 plugin\n");
 		return 0;
 	}
 	if (!r_asm_set_bits(&a, bits))

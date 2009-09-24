@@ -209,8 +209,8 @@ static int check(struct r_bin_t *bin)
 }
 
 struct r_bin_handle_t r_bin_plugin_pe = {
-	.name = "bin_pe",
-	.desc = "pe bin plugin",
+	.name = "pe",
+	.desc = "PE bin plugin",
 	.init = NULL,
 	.fini = NULL,
 	.open = &bopen,

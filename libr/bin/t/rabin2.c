@@ -29,7 +29,9 @@
 
 static struct r_lib_t l;
 static struct r_bin_t bin;
-static int verbose = 0, rad = 0, rw = 0;
+static int verbose = 0;
+static int rad = R_FALSE;
+static int rw = R_FALSE;
 static char* file;
 
 static int rabin_show_help()
@@ -48,7 +50,6 @@ static int rabin_show_help()
 		" -w          Open file in rw mode\n"
 		" -L          List supported bin plugins\n"
 		" -h          This help\n");
-
 	return R_TRUE;
 }
 
@@ -110,7 +111,6 @@ static int rabin_show_imports()
 	if (!rad) printf("\n%i imports\n", i);
 
 	free(imports);
-
 	return R_TRUE;
 }
 
@@ -170,8 +170,7 @@ static int rabin_show_strings()
 	if ((strings = r_bin_get_strings(&bin)) == NULL)
 		return R_FALSE;
 
-	if (rad)
-		printf("fs strings\n");
+	if (rad) printf("fs strings\n");
 	else printf("[strings]\n");
 
 	for (i = 0; !strings[i].last; i++) {
@@ -188,7 +187,6 @@ static int rabin_show_strings()
 	}
 
 	if (!rad) printf("\n%i strings\n", i);
-
 	free(strings);
 
 	return R_TRUE;
@@ -234,11 +232,8 @@ static int rabin_show_sections()
 	}
 
 	if (!rad) printf("\n%i sections\n", i);
-
 	free(sections);
-
 	return R_TRUE;
-
 }
 
 static int rabin_show_info()
@@ -276,9 +271,7 @@ static int rabin_show_info()
 			R_BIN_DBG_LINENUMS(info->dbg_info)?"True":"False",
 			R_BIN_DBG_SYMS(info->dbg_info)?"True":"False",
 			R_BIN_DBG_RELOCS(info->dbg_info)?"True":"False");
-
 	free(info);
-
 	return R_TRUE;
 }
 
@@ -308,11 +301,8 @@ static int rabin_show_fields()
 	}
 
 	if (!rad) printf("\n%i fields\n", i);
-
 	free(fields);
-
 	return R_TRUE;
-
 }
 
 static int rabin_dump_symbols(int len)
@@ -344,7 +334,6 @@ static int rabin_dump_symbols(int len)
 	}
 
 	free(symbols);
-
 	return R_TRUE;
 }
 
@@ -373,7 +362,6 @@ static int rabin_dump_sections(char *name)
 		}
 
 	free(sections);
-
 	return R_TRUE;
 }
 
@@ -383,8 +371,8 @@ static int rabin_do_operation(const char *op)
 
 	if (!strcmp(op, "help")) {
 		printf( "Operation string:\n"
-				"  Dump symbols: d/s/1024\n"
-				"  Dump section: d/S/.text\n");
+			"  Dump symbols: d/s/1024\n"
+			"  Dump section: d/S/.text\n");
 		return R_FALSE;
 	}
 	arg = alloca(strlen(op)+1);
@@ -480,7 +468,7 @@ int main(int argc, char **argv)
 			action |= ACTION_ENTRY;
 			break;
 		case 'w':
-			rw = 1;
+			rw = R_TRUE;
 			break;
 		case 'o':
 			op = optarg;
@@ -490,7 +478,7 @@ int main(int argc, char **argv)
 			format = optarg;
 			break;
 		case 'r':
-			rad = 1;
+			rad = R_TRUE;
 			break;
 		case 'v':
 			verbose++;
@@ -510,16 +498,14 @@ int main(int argc, char **argv)
 
 	if (format) {
 		plugin_name = malloc(strlen(format)+10);
-		sprintf(plugin_name, "bin_%s", format);
-	} 
-
+		if (plugin_name)
+			sprintf(plugin_name, R_BIN_PFX"%s", format);
+	}
 	if (r_bin_open(&bin, file, rw, plugin_name) == -1) {
 		ERR("r_bin: Cannot open '%s'\n", file);
 		return R_FALSE;
 	}
-
-	if (plugin_name != NULL)
-		free (plugin_name);
+	free (plugin_name);
 
 	if (action&ACTION_ENTRY)
 		rabin_show_entrypoint();
@@ -539,6 +525,5 @@ int main(int argc, char **argv)
 		rabin_do_operation(op);
 
 	r_bin_close(&bin);
-
 	return R_FALSE;
 }

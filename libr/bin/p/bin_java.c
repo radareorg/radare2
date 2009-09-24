@@ -145,7 +145,7 @@ static int check(struct r_bin_t *bin)
 }
 
 struct r_bin_handle_t r_bin_plugin_java = {
-	.name = "bin_java",
+	.name = "java",
 	.desc = "java bin plugin",
 	.init = NULL,
 	.fini = NULL,

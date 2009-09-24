@@ -332,7 +332,7 @@ static int cmd_help(void *data, const char *input)
 		" (macro arg0 arg1) ; define scripting macros\n"
 		" q [ret]           ; quit program with a return value\n"
 		"Use '?$' to get help for the variables\n"
-		"Use '?""??' for extra help about '?' subcommands.\n"
+		"Use '?""?""?' for extra help about '?' subcommands.\n"
 		"Append '?' to any char command to get detailed help\n");
 		break;
 	}
@@ -568,7 +568,7 @@ static int cmd_flag(void *data, const char *input)
 		{
 			char *file = PREFIX"/share/doc/radare2/fortunes";
 			char *line = r_file_slurp_random_line (file);
-			r_cons_printf("%s\n", line);
+			r_cons_printf(" -- %s\n", line);
 			free(line);
 		}
 		break;
@@ -654,8 +654,8 @@ static int cmd_write(void *data, const char *input)
 		{
 			/* TODO: Support user defined size? */
 			int len = core->blocksize;
-			char *arg = input+(input[1]==' ')?2:1;
-			char *buf = core->block;
+			const char *arg = input+(input[1]==' ')?2:1;
+			const ut8 *buf = core->block;
 			r_file_dump(arg, buf, len);
 		}
 		break;
@@ -720,16 +720,15 @@ static int cmd_write(void *data, const char *input)
 		{
 		int ret = 0;
 		struct r_asm_aop_t aop;
-		char buf[128];
 		/* XXX ULTRAUGLY , needs fallback support in rasm */
-		r_asm_set(&core->assembler, "asm_x86_olly");
+		r_asm_use(&core->assembler, "x86.olly");
 		r_asm_set_pc(&core->assembler, core->seek);
 		if (input[1]==' ')input=input+1;
 		ret = r_asm_massemble(&core->assembler, &aop, input+1);
 		eprintf("Written %d bytes (%s)=wx %s\n", ret, input+1, aop.buf_hex);
 		r_core_write_at(core, core->seek, aop.buf, ret);
 		r_core_block_read(core, 0);
-		r_asm_set(&core->assembler, "asm_x86"); /* XXX */
+		r_asm_use(&core->assembler, "x86"); /* XXX */
 		}
 		break;
 	case 'b':
@@ -896,7 +895,7 @@ static int cmd_search(void *data, const char *input)
 		r_search_free(core->search);
 		core->search = r_search_new(R_SEARCH_KEYWORD);
 		n32 = r_num_math(&core->num, input+1);
-		r_search_kw_add_bin(core->search, &n32, 4, "",0);
+		r_search_kw_add_bin(core->search, (const ut8*)&n32, 4, NULL, 0);
 		r_search_begin(core->search);
 		dosearch = 1;
 		break;
@@ -1236,7 +1235,7 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 		ptr[0] = '\0';
 		if (ptr[1]=='<') {
 			/* this is a bit mess */
-			char *oprompt = r_line_prompt;
+			const char *oprompt = r_line_prompt;
 			oprompt = ">";
 			for(str=ptr+2;str[0]== ' ';str=str+1);
 			eprintf("==> Reading from stdin until '%s'\n", str);
@@ -1337,12 +1336,12 @@ R_API int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
 
 	switch(each[0]) {
 	case '?':
-		eprintf("Foreach '@@' iterator command:\n");
-		eprintf(" This command is used to repeat a command over a list of offsets.\n");
-		eprintf(" x @@ sym.          ; run 'x' over all flags matching 'sym.'\n");
-		eprintf(" x @@.file          ; \"\" over the offsets specified in the file (one offset per line)\n");
-		eprintf(" x @@=off1 off2 ..  ; manual list of offsets\n");
-		eprintf(" x @@=`pdf~call[0]` ; run 'x' at every call offset of the current function\n");
+		eprintf("Foreach '@@' iterator command:\n"
+			" This command is used to repeat a command over a list of offsets.\n"
+			" x @@ sym.          ; run 'x' over all flags matching 'sym.'\n"
+			" x @@.file          ; \"\" over the offsets specified in the file (one offset per line)\n"
+			" x @@=off1 off2 ..  ; manual list of offsets\n"
+			" x @@=`pdf~call[0]` ; run 'x' at every call offset of the current function\n");
 		break;
 	case '=':
 		/* foreach list of items */
@@ -1369,10 +1368,8 @@ R_API int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
 			// TODO: use controlc() here
 			for(core->macro.counter=0;i<999;core->macro.counter++) {
 				r_macro_call(&core->macro, each+2);
-				if (core->macro.brk_value == NULL) {
-					//eprintf("==>breaks(%s)\n", each);
+				if (core->macro.brk_value == NULL)
 					break;
-				}
 
 				addr = core->macro._brk_value;
 				sprintf(cmd2, "%s @ 0x%08llx", cmd, addr);
@@ -1385,9 +1382,7 @@ R_API int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
 			char buf[1024];
 			char cmd2[1024];
 			FILE *fd = fopen(each+1, "r");
-			if (fd == NULL) {
-				eprintf("Cannot open file '%s' for reading one offset per line.\n", each+1);
-			} else {
+			if (fd) {
 				core->macro.counter=0;
 				while(!feof(fd)) {
 					buf[0]='\0';
@@ -1395,12 +1390,12 @@ R_API int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
 					addr = r_num_math(&core->num, buf);
 					eprintf("0x%08llx: %s\n", addr, cmd);
 					sprintf(cmd2, "%s @ 0x%08llx", cmd, addr);
-					r_core_seek(core, buf, 1);
+					r_core_seek(core, addr, 1); // XXX
 					r_core_cmd(core, cmd2, 0);
 					core->macro.counter++;
 				}
 				fclose(fd);
-			}
+			} else eprintf("Cannot open file '%s' to read offsets\n", each+1);
 		}
 		break;
 	default:
@@ -1561,7 +1556,7 @@ int r_core_cmd(struct r_core_t *core, const char *command, int log)
 	core->oobi = NULL;
 	core->oobi_len = 0;
 
-	return 0;
+	return ret;
 }
 
 int r_core_cmd_file(struct r_core_t *core, const char *file)
@@ -1624,9 +1619,9 @@ static int cmd_debug(void *data, const char *input)
 			break;
 		case 'h':
 			if (input[2]==' ') {
-				if (!r_bp_use(&core->dbg.bp, input+3))
+				if (!r_bp_use(core->dbg.bp, input+3))
 					eprintf("Invalid name: '%s'.\n", input+3);
-			} else r_bp_handle_list(&core->dbg.bp);
+			} else r_bp_handle_list(core->dbg.bp);
 			break;
 		case '?':
 			r_cons_printf(
@@ -1675,11 +1670,9 @@ static int cmd_debug(void *data, const char *input)
 		else fprintf(stderr, "TODO: List processes..\n");
 		break;
 	case 'h':
-		if (input[1]==' ') {
-			char buf[1024];
-			snprintf(buf, "dbg_%s", input+2);
-			r_debug_use(&core->dbg, buf);
-		} else r_debug_handle_list(&core->dbg);
+		if (input[1]==' ')
+			r_debug_use(&core->dbg, input+2);
+		else r_debug_handle_list(&core->dbg);
 		break;
 	default:
 		r_cons_printf("Usage: d[sbhcrbo] [arg]\n"

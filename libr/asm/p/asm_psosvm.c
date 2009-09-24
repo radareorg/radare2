@@ -4,9 +4,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_asm.h>
-
 #include <psosvm/vmas/vmas.h>
-
 
 static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len)
 {
@@ -25,7 +23,7 @@ static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 }
 
 struct r_asm_handle_t r_asm_plugin_psosvm = {
-	.name = "asm_psosvm",
+	.name = "psosvm",
 	.desc = "PSOS-VM disassembly plugin",
 	.arch = "psosvm",
 	.bits = (int[]){ 8, 16, 0 },

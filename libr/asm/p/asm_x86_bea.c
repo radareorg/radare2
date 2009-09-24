@@ -9,9 +9,7 @@
 #include <r_asm.h>
 
 #include "x86/bea/BeaEngine.h"
-
 #include "fastcall_x86.h"
-
 
 static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len)
 {
@@ -35,7 +33,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 }
 
 struct r_asm_handle_t r_asm_plugin_x86_bea = {
-	.name = "asm_x86_bea",
+	.name = "x86.bea",
 	.desc = "X86 disassembly plugin (bea engine)",
 	.arch = "x86",
 	.bits = (int[]){ 32, 64, 0 }, /* also 16 ? */

@@ -62,6 +62,21 @@ namespace Radare {
 		public List<unowned G> iterator();
 	}
 
+/*
+	[Compact]
+	[CCode (cprefix="rarray_", cheader_filename="r_types.h", cname="rarray_t")]
+	public static struct RarrayFoo<G> {
+		[CCode (cname="rarray_next", generic_type_pos=2)]
+		public bool next();
+		[CCode (cname="")]
+		public G @free(G arg);
+		[CCode (cname="rarray_get", generic_type_pos=2)]
+		public unowned G get();
+		[CCode (cname="rarray_iterator")] //, generic_type_pos=2)]
+		public RarrayFoo<G> iterator();
+	}
+*/
+
 	[Compact]
 	[CCode (cprefix="rarray_", cheader_filename="r_types.h", cname="void")]
 	public static class Rarray<G> {
@@ -71,7 +86,7 @@ namespace Radare {
 		public G @free(G arg);
 		[CCode (cname="rarray_get", generic_type_pos=2)]
 		public unowned G get();
-		[CCode (cname="rarray_iterator")]
-		public Rarray<unowned G> iterator();
+		[CCode (cname="rarray_iterator")] //, generic_type_pos=2)]
+		public Rarray<G> iterator();
 	}
 }

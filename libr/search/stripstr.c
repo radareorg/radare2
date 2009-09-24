@@ -2,6 +2,7 @@
 
 #include "r_search.h"
 
+// TODO: this file needs some love
 enum {
 	ENCODING_ASCII = 0,
 	ENCODING_CP850 = 1
@@ -11,15 +12,13 @@ static char *encodings[3] = { "ascii", "cp850", NULL };
 //static int encoding = ENCODING_ASCII; // default
 	//encoding = resolve_encoding(config_get("cfg.encoding"));
 
-int r_search_get_encoding(const char *name)
+R_API int r_search_get_encoding(const char *name)
 {
 	int i;
-
 	if (name != NULL)
 		for(i=0;encodings[i];i++)
 			if (!strcasecmp(name, encodings[i]))
 				return i;
-
 	return ENCODING_ASCII;
 }
 
@@ -56,7 +55,7 @@ static int is_encoded(int encoding, unsigned char c)
 }
 
 // XXX last char is lost :(
-int r_search_strings_update_char(const ut8 *buf, int min, int max, int enc, ut64 offset, const char *match)
+R_API int r_search_strings_update_char(const ut8 *buf, int min, int max, int enc, ut64 offset, const char *match)
 {
 	int i = 0;
 	static int widechar = 0;

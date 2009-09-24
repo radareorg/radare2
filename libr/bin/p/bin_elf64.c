@@ -21,7 +21,7 @@ static int check(struct r_bin_t *bin)
 }
 
 struct r_bin_handle_t r_bin_plugin_elf64 = {
-	.name = "bin_elf64",
+	.name = "elf64",
 	.desc = "elf64 bin plugin",
 	.init = NULL,
 	.fini = NULL,

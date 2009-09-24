@@ -35,10 +35,10 @@ namespace Radare.Search {
 		public unowned string binmask;
 		public uint8 *bin_keyword;
 		public uint8 *bin_binmask;
-		public uint32 keyword_length;
-		public uint32 binmask_length;
-		public uint32 idx;
-		public uint32 count;
+		public int keyword_length;
+		public int binmask_length;
+		public int idx;
+		public int count;
 	}
 
 	public static delegate int Callback(Radare.Search.Keyword s, void *user, uint64 addr);

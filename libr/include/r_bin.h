@@ -136,16 +136,8 @@ R_API struct r_bin_import_t* r_bin_get_imports(struct r_bin_t *bin);
 R_API struct r_bin_string_t* r_bin_get_strings(struct r_bin_t *bin);
 R_API struct r_bin_info_t* r_bin_get_info(struct r_bin_t *bin);
 R_API struct r_bin_field_t* r_bin_get_fields(struct r_bin_t *bin);
-R_API ut64 r_bin_get_section_offset(struct r_bin_t *bin, char *name);
-R_API ut64 r_bin_get_section_rva(struct r_bin_t *bin, char *name);
-R_API ut64 r_bin_get_section_size(struct r_bin_t *bin, char *name);
-
-/* plugin pointers */
-extern struct r_bin_handle_t r_bin_plugin_elf;
-extern struct r_bin_handle_t r_bin_plugin_elf64;
-extern struct r_bin_handle_t r_bin_plugin_pe;
-extern struct r_bin_handle_t r_bin_plugin_pe64;
-extern struct r_bin_handle_t r_bin_plugin_java;
-extern struct r_bin_handle_t r_bin_plugin_dummy;
+R_API ut64 r_bin_get_section_offset(struct r_bin_t *bin, const char *name);
+R_API ut64 r_bin_get_section_rva(struct r_bin_t *bin, const char *name);
+R_API ut64 r_bin_get_section_size(struct r_bin_t *bin, const char *name);
 
 #endif

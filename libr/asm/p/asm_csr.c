@@ -13,14 +13,12 @@
 static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len)
 {
 	arch_csr_disasm(aop->buf_asm, buf, a->pc);
-	aop->inst_len = 2;
 	aop->disasm_obj = NULL;
-
-	return aop->inst_len;
+	return (aop->inst_len=2);
 }
 
 struct r_asm_handle_t r_asm_plugin_csr = {
-	.name = "asm_csr",
+	.name = "csr",
 	.arch = "csr",
 	.bits = (int[]){ 16, 0 },
 	.desc = "CSR disassembly plugin",

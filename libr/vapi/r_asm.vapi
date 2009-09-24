@@ -63,7 +63,7 @@ namespace Radare {
 
 		public int init();
 		public int list();
-		public bool set(string name);
+		public bool use(string name);
 //		public bool set_arch(Asm.Arch arch);
 		public bool set_bits(int bits);
 		public bool set_syntax(Asm.Syntax syntax);

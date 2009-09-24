@@ -46,9 +46,8 @@ R_API void r_bp_handle_list(struct r_bp_t *bp)
 	struct list_head *pos;
 	list_for_each(pos, &bp->plugins) {
 		b = list_entry(pos, struct r_bp_handle_t, list);
-		printf(" %c %s\n", 
+		printf("bp %c %s\n", 
 			(bp->cur && !strcmp(bp->cur->name, b->name))?'*':'-',
 			b->name);
 	}
 }
-

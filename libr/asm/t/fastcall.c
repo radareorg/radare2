@@ -14,15 +14,14 @@ int main(int argc, char **argv)
 
 	printf("Supported plugins:\n");
 	r_asm_list(a);
-	r_asm_set(a, "asm_x86_nasm");
+	r_asm_use(a, "x86.nasm");
 
 	printf("Fastcall args for %d\n", atoi(argv[1]));
 
 	printf("Using plugin: %s\n", a->cur->name);
 	do {
 		arg = r_asm_fastcall(a, i++, num);
-		if (arg)
-			printf("%s\n", arg);
+		if (arg) printf("%s\n", arg);
 	} while(arg);
 	return 0;
 }

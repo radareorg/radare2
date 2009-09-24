@@ -6,7 +6,7 @@
 #include <r_types.h>
 #include <list.h>
 
-
+// XXX : remove this define???
 #define R_PARSE_STRLEN 256
 
 struct r_parse_t {
@@ -26,19 +26,14 @@ struct r_parse_handle_t {
 };
 
 /* parse.c */
-struct r_parse_t *r_parse_new();
-void r_parse_free(struct r_parse_t *p);
-int r_parse_init(struct r_parse_t *p);
-void r_parse_set_user_ptr(struct r_parse_t *p, void *user);
-int r_parse_add(struct r_parse_t *p, struct r_parse_handle_t *foo);
-int r_parse_list(struct r_parse_t *p);
-int r_parse_set(struct r_parse_t *p, const char *name);
-int r_parse_parse(struct r_parse_t *p, void *data, char *str);
-int r_parse_assemble(struct r_parse_t *p, char *data, char *str);
-
-/* plugin pointers */
-extern struct r_parse_handle_t r_parse_plugin_dummy;
-extern struct r_parse_handle_t r_parse_plugin_x86_pseudo;
-extern struct r_parse_handle_t r_parse_plugin_mreplace;
+R_API struct r_parse_t *r_parse_new();
+R_API void r_parse_free(struct r_parse_t *p);
+R_API struct r_parse_t *r_parse_init(struct r_parse_t *p);
+R_API void r_parse_set_user_ptr(struct r_parse_t *p, void *user);
+R_API int r_parse_add(struct r_parse_t *p, struct r_parse_handle_t *foo);
+R_API int r_parse_list(struct r_parse_t *p);
+R_API int r_parse_use(struct r_parse_t *p, const char *name);
+R_API int r_parse_parse(struct r_parse_t *p, void *data, char *str);
+R_API int r_parse_assemble(struct r_parse_t *p, char *data, char *str);
 
 #endif

@@ -25,8 +25,8 @@ static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 }
 
 struct r_asm_handle_t r_asm_plugin_java = {
-	.name = "asm_java",
-	.desc = "java disassembly plugin",
+	.name = "java",
+	.desc = "Java CLASS assembler/disassembler",
 	.arch = "java",
 	.bits = (int[]){ 8, 0 },
 	.init = NULL,

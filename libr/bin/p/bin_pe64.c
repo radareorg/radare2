@@ -22,8 +22,8 @@ static int check(struct r_bin_t *bin)
 	}
 
 struct r_bin_handle_t r_bin_plugin_pe64 = {
-	.name = "bin_pe64",
-	.desc = "pe64 (pe32+) bin plugin",
+	.name = "pe64",
+	.desc = "PE64 (PE32+) bin plugin",
 	.init = NULL,
 	.fini = NULL,
 	.open = &bopen,

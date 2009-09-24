@@ -6,9 +6,7 @@ static int config_asm_arch_callback(void *user, void *data)
 {
 	struct r_core_t *core = (struct r_core_t *) user;
 	struct r_config_node_t *node = (struct r_config_node_t *) data;
-	char buf[128];
-	snprintf(buf, 127, "asm_%s", node->value),
-	r_asm_set(&core->assembler, buf);
+	r_asm_use(&core->assembler, node->value);
 // TODO: control error and restore old value (return false?) show errormsg?
 	return R_TRUE;
 }
@@ -17,9 +15,8 @@ static int config_asm_parser_callback(void *user, void *data)
 {
 	struct r_core_t *core = (struct r_core_t *) user;
 	struct r_config_node_t *node = (struct r_config_node_t *) data;
-	char buf[128];
-	snprintf(buf, 127, "parse_%s", node->value),
-	r_asm_set(&core->assembler, buf);
+	// XXX this is wrong? snprintf(buf, 127, "parse_%s", node->value),
+	r_parse_use(&core->parser, node->value);
 // TODO: control error and restore old value (return false?) show errormsg?
 	return R_TRUE;
 }
@@ -32,7 +29,7 @@ static int config_asm_bits_callback(void *user, void *data)
 	if (ret == R_FALSE) {
 		struct r_asm_handle_t *h = core->assembler.cur;
 		if (h) {
-			eprintf("Cannot set bits %d to '%s'\n",
+			eprintf("Cannot set bits %lld to '%s'\n",
 				node->i_value, h->name);
 		} else {
 			IFDBG eprintf("e asm.bits: Cannot set value, no plugins defined yet\n");
@@ -66,8 +63,8 @@ R_API int r_core_config_init(struct r_core_t *core)
 
 	r_config_set_cb(cfg, "asm.arch", "x86",
 		&config_asm_arch_callback);
-	r_parse_set(&core->parser, "parse_x86_pseudo");
-	r_config_set_cb(cfg, "asm.parser", "x86_pseudo",
+	r_parse_use(&core->parser, "x86.pseudo");
+	r_config_set_cb(cfg, "asm.parser", "x86.pseudo",
 		&config_asm_parser_callback);
 	r_config_set(cfg, "dir.plugins", LIBDIR"/radare2/");
 	r_config_set(cfg, "asm.syntax", "intel");

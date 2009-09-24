@@ -87,7 +87,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 }
 
 struct r_asm_handle_t r_asm_plugin_sparc = {
-	.name = "asm_sparc",
+	.name = "sparc",
 	.arch = "sparc",
 	.bits = (int[]){ 32, 0 },
 	.desc = "SPARC disassembly plugin",

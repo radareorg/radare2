@@ -13,69 +13,55 @@ static struct r_asm_handle_t *asm_static_plugins[] =
 
 static int r_asm_pseudo_string(struct r_asm_aop_t *aop, char *input)
 {
-	int len = 0;
-	char *arg = strchr(input, ' ');
-	if (arg && (len = strlen(arg+1))) {
-		arg += 1; len += 1;
-		r_hex_bin2str((ut8*)arg, len, aop->buf_hex);
-		strncpy((char*)aop->buf, arg, R_ASM_BUFSIZE);
-	}
+	int len = strlen(input)+1;
+	r_hex_bin2str((ut8*)input, len, aop->buf_hex);
+	strncpy((char*)aop->buf, input, R_ASM_BUFSIZE);
 	return len;
 }
 
-static int r_asm_pseudo_arch(struct r_asm_t *a, char *input)
+// XXX WTF? THIS MUST BE INLINED
+// TODO: use R_TRUE/R_FALSE HERE!!1
+static inline int r_asm_pseudo_arch(struct r_asm_t *a, char *input)
 {
-	char *arg = strchr(input, ' '), str[R_ASM_BUFSIZE];
-	if (arg) {
-		sprintf(str, "asm_%s", arg+1);
-		if (!r_asm_set(a, str)) {
-			fprintf(stderr, "Error: Unknown plugin\n");
-			return -1;
-		}
+	// KINDA INNECESSARY ???
+	if (!r_asm_use(a, input)) {
+		fprintf(stderr, "Error: Unknown plugin\n");
+		return -1;
 	}
 	return 0;
 }
 
-static int r_asm_pseudo_bits(struct r_asm_t *a, char *input)
+static inline int r_asm_pseudo_bits(struct r_asm_t *a, char *input)
 {
-	char *arg = strchr(input, ' ');
-	if (arg)
-		if (!(r_asm_set_bits(a, r_num_math(NULL, arg+1)))) {
-			fprintf(stderr, "Error: Unsupported bits value\n");
-			return -1;
-		}
-	return 0;
-}
-
-static int r_asm_pseudo_org(struct r_asm_t *a, char *input)
-{
-	char *arg = strchr(input, ' ');
-	if (arg)
-		r_asm_set_pc(a, r_num_math(NULL, arg+1));
-	return 0;
-}
-
-static int r_asm_pseudo_byte(struct r_asm_aop_t *aop, char *input)
-{
-	int len = 0;
-	char *arg = strchr(input, ' ');
-	if (arg) {
-		arg += 1;
-		len = r_hex_str2bin(arg, aop->buf);
-		strncpy(aop->buf_hex, r_str_trim(arg), R_ASM_BUFSIZE);
+	if (!(r_asm_set_bits(a, r_num_math(NULL, input)))) {
+		fprintf(stderr, "Error: Unsupported bits value\n");
+		return -1;
 	}
+	return 0;
+}
+
+static inline int r_asm_pseudo_org(struct r_asm_t *a, char *input)
+{
+	r_asm_set_pc(a, r_num_math(NULL, input));
+	return 0;
+}
+
+static inline int r_asm_pseudo_byte(struct r_asm_aop_t *aop, char *input)
+{
+	int len = r_hex_str2bin(input, aop->buf);
+	strncpy(aop->buf_hex, r_str_trim(input), R_ASM_BUFSIZE);
 	return len;
 }
 
 R_API struct r_asm_t *r_asm_new()
 {
 	struct r_asm_t *a = MALLOC_STRUCT(struct r_asm_t);
-	r_asm_init(a);
-	return a;
+	return r_asm_init(a);
 }
 
 R_API void r_asm_free(struct r_asm_t *a)
 {
+	// TOOD: free plugins and so on
 	free(a);
 }
 
@@ -97,19 +83,21 @@ R_API const char *r_asm_fastcall(struct r_asm_t *a, int idx, int num)
 	return ret;
 }
 
-R_API int r_asm_init(struct r_asm_t *a)
+R_API struct r_asm_t *r_asm_init(struct r_asm_t *a)
 {
 	int i;
-	a->user = NULL;
-	a->cur = NULL;
-	a->bits = 32;
-	a->big_endian = 0;
-	a->syntax = R_ASM_SYN_INTEL;
-	a->pc = 0;
-	INIT_LIST_HEAD(&a->asms);
-	for(i=0;asm_static_plugins[i];i++)
-		r_asm_add(a, asm_static_plugins[i]);
-	return R_TRUE;
+	if (a) {
+		a->user = NULL;
+		a->cur = NULL;
+		a->bits = 32;
+		a->big_endian = 0;
+		a->syntax = R_ASM_SYN_INTEL;
+		a->pc = 0;
+		INIT_LIST_HEAD(&a->asms);
+		for(i=0;asm_static_plugins[i];i++)
+			r_asm_add(a, asm_static_plugins[i]);
+	}
+	return a;
 }
 
 R_API void r_asm_set_user_ptr(struct r_asm_t *a, void *user)
@@ -120,6 +108,7 @@ R_API void r_asm_set_user_ptr(struct r_asm_t *a, void *user)
 R_API int r_asm_add(struct r_asm_t *a, struct r_asm_handle_t *foo)
 {
 	struct list_head *pos;
+	// TODO: cache foo->name length and use memcmp instead of strcmp
 	if (foo->init)
 		foo->init(a->user);
 	/* avoid dupped plugins */
@@ -144,12 +133,13 @@ R_API int r_asm_list(struct r_asm_t *a)
 	struct list_head *pos;
 	list_for_each_prev(pos, &a->asms) {
 		struct r_asm_handle_t *h = list_entry(pos, struct r_asm_handle_t, list);
-		printf(" %s: %s\n", h->name, h->desc);
+		printf("asm %s\t %s\n", h->name, h->desc);
 	}
 	return R_FALSE;
 }
 
-R_API int r_asm_set(struct r_asm_t *a, const char *name)
+// TODO: this can be optimized using r_str_hash()
+R_API int r_asm_use(struct r_asm_t *a, const char *name)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &a->asms) {
@@ -181,7 +171,6 @@ static int has_bits(struct r_asm_handle_t *h, int bits)
 	}
 	return R_FALSE;
 }
-
 
 R_API int r_asm_set_bits(struct r_asm_t *a, int bits)
 {
@@ -328,7 +317,7 @@ R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 									return 0;
 							}
 							snprintf(buf_token2, R_ASM_BUFSIZE, "%s0x%llx%s",
-									ptr_start, label_offset, ptr+strlen(label_name));
+								ptr_start, label_offset, ptr+strlen(label_name));
 							strncpy(buf_token, buf_token2, R_ASM_BUFSIZE);
 							ptr_start = buf_token;
 						}
@@ -337,21 +326,19 @@ R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 				}
 			}
 			if ((ptr = strchr(ptr_start, '.'))) { /* Pseudo */
-				if (!memcmp(ptr, ".string", 7))
-					ret = r_asm_pseudo_string(aop, ptr);
-				else if (!memcmp(ptr, ".arch", 5))
-					ret = r_asm_pseudo_arch(a, ptr);
-				else if (!memcmp(ptr, ".bits", 5))
-					ret = r_asm_pseudo_bits(a, ptr);
-				else if (!memcmp(ptr, ".byte", 5))
-					ret = r_asm_pseudo_byte(aop, ptr);
-				else if (!memcmp(ptr, ".org", 4))
-					ret = r_asm_pseudo_org(a, ptr);
+				if (!memcmp(ptr, ".string ", 8))
+					ret = r_asm_pseudo_string(aop, ptr+8);
+				else if (!memcmp(ptr, ".arch ", 6))
+					ret = r_asm_pseudo_arch(a, ptr+6);
+				else if (!memcmp(ptr, ".bits ", 6))
+					ret = r_asm_pseudo_bits(a, ptr+6);
+				else if (!memcmp(ptr, ".byte ", 6))
+					ret = r_asm_pseudo_byte(aop, ptr+6);
+				else if (!memcmp(ptr, ".org ", 5))
+					ret = r_asm_pseudo_org(a, ptr+5);
 				else return 0;
-				if (!ret)
-					continue;
-				else if (ret < 0)
-					return 0;
+				if (!ret) continue;
+				else if (ret < 0) return 0;
 			} else { /* Instruction */
 				ret = r_asm_assemble(a, aop, ptr_start);
 				if (!ret)

@@ -136,7 +136,7 @@ static int assemble(struct r_parse_t *p, void *data, char *str)
 }
 
 struct r_parse_handle_t r_parse_plugin_x86_pseudo = {
-	.name = "parse_x86_pseudo",
+	.name = "x86.pseudo",
 	.desc = "X86 pseudo syntax",
 	.init = NULL,
 	.fini = NULL,

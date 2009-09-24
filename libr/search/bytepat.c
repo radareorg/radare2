@@ -117,6 +117,7 @@ int do_byte_pat(int patlen)
 			//rb = read ( fd, block, nr );
 			//rb = radare_read_at(bproc, block, nr);
 //XXX
+			rb = nr;
 			moar = 0;
 			for(i=0; i<nr; i++){
 				if (!memcmp(&block[i], sblk, patlen) && !is_fi_present(root, sblk, patlen)){
@@ -153,7 +154,7 @@ int do_byte_pat(int patlen)
 
 /* -- */
 
-int r_search_pattern_update(int patlen) 
+R_API int r_search_pattern_update(int patlen) 
 {
 	unsigned char block[BSIZE+MAX_PATLEN];
 	unsigned char sblk[MAX_PATLEN+1];
@@ -213,6 +214,9 @@ int r_search_pattern_update(int patlen)
 			//radare_controlc();
 			nr = ((bytes-bproc) < BSIZE)?(bytes-bproc):BSIZE;
 			nr = nr + ( patlen - (nr % patlen) ); // tamany de bloc llegit multiple superior de tamany busqueda
+
+			/* XXX: we need to read here!! */
+			rb = nr;
 			//rb = read ( fd, block, nr );
 			//rb = radare_read_at(bproc, block, nr);
 //XXX

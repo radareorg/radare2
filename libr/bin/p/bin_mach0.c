@@ -1,3 +1,9 @@
+/* radare - GPL3 - Copyright 2009 pancake<@nopcode.org> */
+
+#include <r_types.h>
+#include <r_lib.h>
+#include <r_bin.h>
+
 static int bopen(struct r_bin_t *bin)
 {
 }
@@ -28,7 +34,7 @@ static int check(struct r_bin_t *bin)
 }
 
 struct r_bin_handle_t r_bin_plugin_mach0 = {
-	.name = "bin_mach0",
+	.name = "mach0",
 	.desc = "mach0 bin plugin",
 	.init = NULL,
 	.fini = NULL,

@@ -26,7 +26,7 @@ token:  Fruit for the loom
 ------------------------------
 #endif
 
-void r_search_binparse_apply_mask (char * maskout, int masklen , token* tlist , int ntok)
+R_API void r_search_binparse_apply_mask (char * maskout, int masklen , token* tlist , int ntok)
 {	
 	int i;
 	for(i=0; i < ntok ; i ++ )
@@ -69,14 +69,10 @@ static int get_range(char *str, int len, unsigned char *cbase)
 {
 	int g;
 	ut8 min, max;
-	
-	// busca guio
 	for ( g= 0; (g < len ) && ( str[g] != '-' ) ; g++ );
 	min = get_byte ( str, g );
 	max = get_byte ( str+g+1, len-g-1 );
-
 	*cbase = min;
-
 	return (max-min);
 }
 
@@ -271,7 +267,7 @@ static const char *str_get_arg(const char *buf)
 /* public api */
 
 //tokenizer* binparse_new(int kws)
-struct r_search_binparse_t *binparse_new(int kws)
+R_API struct r_search_binparse_t *binparse_new(int kws)
 {
 	struct r_search_binparse_t *tll = MALLOC_STRUCT(struct r_search_binparse_t);
 	if (tll == NULL)
@@ -287,7 +283,7 @@ struct r_search_binparse_t *binparse_new(int kws)
 }
 
 //int binparser_free(tokenizer* ptokenizer)
-int r_search_binparse_free(struct r_search_binparse_t *ptokenizer)
+R_API int r_search_binparse_free(struct r_search_binparse_t *ptokenizer)
 {
 	int i;
 	if (ptokenizer == NULL)
@@ -303,7 +299,7 @@ int r_search_binparse_free(struct r_search_binparse_t *ptokenizer)
 }
 
 //int binparse_add(tokenizer *t, char *string, char *mask)
-int r_search_binparse_add(struct r_search_binparse_t *t, const char *string, const char *mask)
+R_API int r_search_binparse_add(struct r_search_binparse_t *t, const char *string, const char *mask)
 {
 	int n = t->nlists;
 	char name[32];
@@ -320,7 +316,7 @@ int r_search_binparse_add(struct r_search_binparse_t *t, const char *string, con
 }
 
 // XXX name needs to be changed in runtime?
-int r_search_binparse_add_named(struct r_search_binparse_t *t, const char *name, const char *string, const char *mask)
+R_API int r_search_binparse_add_named(struct r_search_binparse_t *t, const char *name, const char *string, const char *mask)
 {
 	int ret = r_search_binparse_add(t, string, mask);
 	if (ret != -1)
@@ -329,7 +325,7 @@ int r_search_binparse_add_named(struct r_search_binparse_t *t, const char *name,
 }
 
 /* -1 = error, 0 = skip, 1 = hit found */
-int r_search_binparse_update(struct r_search_binparse_t *t, ut8 inchar, ut64 where)
+R_API int r_search_binparse_update(struct r_search_binparse_t *t, ut8 inchar, ut64 where)
 //int update_tlist(tokenizer* t, ut8 inchar, ut64 where )
 {
 	ut8 cmin, cmax, cmask;
@@ -369,152 +365,5 @@ int r_search_binparse_update(struct r_search_binparse_t *t, ut8 inchar, ut64 whe
 			t->tls[i]->stat = 0 ;
 		}
 	}
-
 	return 0;
 }
-
-/* unused .. deprecate ? */
-
-#if 0
-void tokenize(int fd, tokenizer* t)
-{
-	char ch;
-	int ret;
-	int where = lseek(fd, (off_t)0, SEEK_CUR);
-
-	while(1) {
-		if ( read(fd, &ch, 1) <= 0 ) break;
-		ret = update_tlist(t, ch, where); 
-		if (ret == -1) break;
-		where++;
-	}
-}
-#if 0
-tokenizer* binparse_new_from_file(char *file)
-{
-	char buf[2049];
-	FILE *fd;
-	tokenizer *tok;
-	char *str  = NULL;
-	char *mask = NULL;
-	char *name = NULL;
-
-	tok = binparse_new(0);
-	fd = fopen(file, "r");
-	if (fd == NULL) {
-		eprintf("Cannot open file '%s'\n", file);
-		return NULL;
-	}
-	while(!feof(fd)) {
-		/* read line */
-		buf[0]='\0';
-		fgets(buf, 2048, fd);
-		if (buf[0]=='\0') continue;
-		buf[strlen(buf)-1]='\0';
-
-		/* find token: */
-		if (!memcmp(buf, "token:",6)) {
-			if (str != NULL) {
-				eprintf("new keyword(%s,%s,%s)\n", name, str, mask);
-				binparse_add_name(tok, name, str, mask);
-				free(name); name = NULL;
-				free(str);  str  = NULL;
-				free(mask); mask = NULL;
-			}
-			free(name);
-			name = (const char *)str_get_arg(buf);
-		} else
-		if (!memcmp(buf, "\tstring:", 8)) {
-			str = str_get_arg(buf);
-		} else
-		if (!memcmp(buf, "\tmask:", 6)) {
-			mask = str_get_arg(buf);
-		}
-	}
-
-	if (str != NULL) {
-		eprintf("new keyword(%s,%s,%s)\n", name, str, mask);
-		binparse_add_name(tok, name, str, mask);
-	}
-
-	free(name);
-	free(str);
-	free(mask);
-	printf("TOKEN ELEMENTS: %d\n", tok->nlists);
-
-	return tok;
-}
-#if 0
-/* not necessary */
-static void print_tok_list(tokenlist* toklist) 
-{
-	int i;
-
-	printf ("TOKLIST %s:\n",toklist->name);
-	for (i=0; i<toklist->numtok; i++)
-		printf ("TOK : %c , range : %d mask : %x\n",
-			toklist->tl[i].mintok,
-			toklist->tl[i].range,
-			toklist->tl[i].mask);
-	NEWLINE;
-	printf ("\n");
-}
-
-static void print_tokenizer ( tokenizer* ptokenizer )
-{
-	int i;
-	for (i=0 ; i < ptokenizer->nlists; i++ )
-		print_tok_list(ptokenizer->tls[i]);
-}
-
-static char* fd_readline ( int fd, char* line, int maxsize )
-{
-	int i,ret ;
-	memset(line, 0x00, maxsize); 
-	for (i=0; i<maxsize; i++) {
-		ret = read (fd, line + i, 1);
-		if (ret <1) return NULL;
-		if (line[i] =='\n') break;
-	}
-	line[i+1]=0;
-	return line;
-}
-
-static int indent_count( int fd )
-{
-	int ret=0;
-	char t;
-	read ( fd, &t, 1 );
-	while ( t=='\t') {
-		read ( fd, &t, 1 );
-		ret++;
-	}
-
-	// Posiciono a la primera diferent.
-	lseek ( fd, (off_t)-1, SEEK_CUR );
-
-	return ret;
-}
-#if 0
-// XXX should be deprecated ?
-int binparse_add_search(struct r_search_binparse_t *t, int id)
-{
-	char *token;
-	char *mask;
-	char tmp[128];
-	
-	snprintf(tmp, 127, "SEARCH[%d]", id);
-	token = getenv(tmp);
-	snprintf(tmp, 127, "MASK[%d]", id);
-	mask  = getenv(tmp);
-
-	return binparse_add(t, token, mask);
-}
-#endif
-
-
-
-#endif
-#endif
-#endif
-

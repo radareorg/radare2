@@ -18,8 +18,8 @@ public class SearchExample
 
 		stdout.printf("string: \"%s\"\n", buf);
 		stdout.printf("search: \"%s\"\n", "lib");
-		stdout.printf("length: %d\n", (int)buf.len());
-		s.update_i(0LL, (uint8*)buf, (uint32)buf.len());
+		stdout.printf("length: %ld\n", buf.len());
+		s.update_i(0LL, (uint8*)buf, buf.len());
 		s = null;
 	}
 }

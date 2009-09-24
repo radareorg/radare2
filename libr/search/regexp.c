@@ -3,7 +3,7 @@
 #include "r_search.h"
 #include <regex.h>
 
-int r_search_regexp_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len)
+R_API int r_search_regexp_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len)
 {
 	struct list_head *pos;
 	char *buffer = malloc(len+1);

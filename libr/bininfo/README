@@ -1,2 +1,4 @@
 LIBDWARF:
   http://reality.sgiweb.org/davea/dwarf.html
+
+* use r_db to cache line info

@@ -8,7 +8,6 @@
 #include <r_asm.h>
 
 #include "fastcall_x86.h"
-
 #include "x86/ollyasm/disasm.h"
 
 
@@ -54,7 +53,7 @@ static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 
 
 struct r_asm_handle_t r_asm_plugin_x86_olly = {
-	.name = "asm_x86_olly",
+	.name = "x86.olly",
 	.desc = "X86 disassembly plugin (olly engine)",
 	.arch = "x86",
 	.bits = (int[]){ 32, 0 },

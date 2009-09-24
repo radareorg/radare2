@@ -17,7 +17,7 @@ static struct r_bp_arch_t r_bp_plugin_arm_bps[] = {
 };
 
 struct r_bp_handle_t r_bp_plugin_arm = {
-	.name = "bp_arm",
+	.name = "arm",
 	.arch = "arm",
 	.nbps = 2,
 	.bps = r_bp_plugin_arm_bps,

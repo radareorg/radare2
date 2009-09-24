@@ -16,6 +16,14 @@
 #include <r_bin.h>
 #include "../config.h"
 
+/* plugin pointers */
+extern struct r_bin_handle_t r_bin_plugin_elf;
+extern struct r_bin_handle_t r_bin_plugin_elf64;
+extern struct r_bin_handle_t r_bin_plugin_pe;
+extern struct r_bin_handle_t r_bin_plugin_pe64;
+extern struct r_bin_handle_t r_bin_plugin_java;
+extern struct r_bin_handle_t r_bin_plugin_dummy;
+
 static struct r_bin_handle_t *bin_static_plugins[] = 
 	{ R_BIN_STATIC_PLUGINS };
 
@@ -137,25 +145,24 @@ R_API int r_bin_add(struct r_bin_t *bin, struct r_bin_handle_t *foo)
 	return R_TRUE;
 }
 
-int r_bin_list(struct r_bin_t *bin)
+R_API int r_bin_list(struct r_bin_t *bin)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &bin->bins) {
 		struct r_bin_handle_t *h = list_entry(pos, struct r_bin_handle_t, list);
-		printf(" %s: %s\n", h->name, h->desc);
+		printf("bin %s\t%s\n", h->name, h->desc);
 	}
 	return R_FALSE;
 }
 
-int r_bin_open(struct r_bin_t *bin, const char *file, int rw, char *plugin_name)
+R_API int r_bin_open(struct r_bin_t *bin, const char *file, int rw, char *plugin_name)
 {
-	if (file == NULL)
-		return -1;
+	struct list_head *pos;
 
+	if (bin == NULL || file == NULL)
+		return -1;
 	bin->file = file;
 	bin->rw = rw;
-
-	struct list_head *pos;
 	list_for_each_prev(pos, &bin->bins) {
 		struct r_bin_handle_t *h = list_entry(pos, struct r_bin_handle_t, list);
 		if ((plugin_name && !strcmp(h->name, plugin_name)) ||
@@ -164,12 +171,12 @@ int r_bin_open(struct r_bin_t *bin, const char *file, int rw, char *plugin_name)
 	}
 	if (bin->cur && bin->cur->open)
 		return bin->cur->open(bin);
-	if (plugin_name && !strcmp(plugin_name, "bin_dummy"))
+	if (plugin_name && !strcmp(plugin_name, "dummy"))
 		return -1;
-	return r_bin_open(bin, file, rw, "bin_dummy");
+	return r_bin_open(bin, file, rw, "dummy");
 }
 
-int r_bin_close(struct r_bin_t *bin)
+R_API int r_bin_close(struct r_bin_t *bin)
 {
 	if (bin->cur && bin->cur->close)
 		return bin->cur->close(bin);
@@ -232,7 +239,8 @@ R_API struct r_bin_field_t* r_bin_get_fields(struct r_bin_t *bin)
 	return NULL;
 }
 
-R_API ut64 r_bin_get_section_offset(struct r_bin_t *bin, char *name)
+// why not just return a single instance of the Section struct?
+R_API ut64 r_bin_get_section_offset(struct r_bin_t *bin, const char *name)
 {
 	struct r_bin_section_t *sections;
 	ut64 ret = UT64_MAX;
@@ -250,7 +258,7 @@ R_API ut64 r_bin_get_section_offset(struct r_bin_t *bin, char *name)
 	return ret;
 }
 
-R_API ut64 r_bin_get_section_rva(struct r_bin_t *bin, char *name)
+R_API ut64 r_bin_get_section_rva(struct r_bin_t *bin, const char *name)
 {
 	struct r_bin_section_t *sections;
 	ut64 ret = UT64_MAX;
@@ -269,7 +277,7 @@ R_API ut64 r_bin_get_section_rva(struct r_bin_t *bin, char *name)
 	return ret;
 }
 
-R_API ut64 r_bin_get_section_size(struct r_bin_t *bin, char *name)
+R_API ut64 r_bin_get_section_size(struct r_bin_t *bin, const char *name)
 {
 	struct r_bin_section_t *sections;
 	ut64 ret = UT64_MAX;

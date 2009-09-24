@@ -23,12 +23,11 @@ static int parse(struct r_parse_t *p, void *data, char *str)
 	memcpy(str, buf, R_PARSE_STRLEN);
 	if (buf != NULL)
 		free(buf);
-
 	return R_TRUE;
 }
 
 struct r_parse_handle_t r_parse_plugin_mreplace = {
-	.name = "parse_mreplace",
+	.name = "mreplace",
 	.desc = "mreplace parsing plugin",
 	.init = NULL,
 	.fini = NULL,

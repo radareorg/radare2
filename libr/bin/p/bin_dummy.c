@@ -19,7 +19,7 @@ static int bclose(struct r_bin_t *bin)
 }
 
 struct r_bin_handle_t r_bin_plugin_dummy = {
-	.name = "bin_dummy",
+	.name = "dummy",
 	.desc = "dummy bin plugin",
 	.init = NULL,
 	.fini = NULL,

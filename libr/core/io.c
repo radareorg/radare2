@@ -80,7 +80,7 @@ R_API int r_core_seek(struct r_core_t *core, ut64 addr, int rb)
 	return R_FALSE;
 }
 
-int r_core_write_at(struct r_core_t *core, ut64 addr, const ut8 *buf, int size)
+R_API int r_core_write_at(struct r_core_t *core, ut64 addr, const ut8 *buf, int size)
 {
 	int ret = r_io_set_fd(&core->io, core->file->fd);
 	if (ret != -1) {
@@ -100,7 +100,7 @@ R_API int r_core_block_read(struct r_core_t *core, int next)
 	return r_io_read(&core->io, core->block, core->blocksize);
 }
 
-int r_core_read_at(struct r_core_t *core, ut64 addr, ut8 *buf, int size)
+R_API int r_core_read_at(struct r_core_t *core, ut64 addr, ut8 *buf, int size)
 {
 	int ret = r_io_set_fd (&core->io, core->file->fd);
 	ret = r_io_read_at(&core->io, addr, buf, size);

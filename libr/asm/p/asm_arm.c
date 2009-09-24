@@ -11,7 +11,6 @@
 
 #include "dis-asm.h"
 
-
 static int arm_mode = 0;
 static unsigned long Offset = 0;
 static char *buf_global = NULL;
@@ -88,7 +87,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 }
 
 struct r_asm_handle_t r_asm_plugin_arm = {
-	.name = "asm_arm",
+	.name = "arm",
 	.arch = "arm",
 	.bits = (int[]){ 16, 32, 0 },
 	.desc = "ARM disassembly plugin",
