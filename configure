@@ -97,12 +97,12 @@ done
 : ${INSTALL_PROGRAM:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
 : ${INSTALL_LIB:=${INSTALL} -c}
- PKGNAME='radare2' ; VERSION='0.3' ; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
+ PKGNAME='radare2' ; VERSION='0.3b' ; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
 }
                 
 show_usage() {
 cat <<EOF2
-'configure' configures radare2-0.3 to adapt to many kinds of systems.
+'configure' configures radare2-0.3b to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -167,7 +167,7 @@ take_environ() {
 }
 
 show_version() {
-echo "radare2-0.3 configuration script done with acr v0.7.2.
+echo "radare2-0.3b configuration script done with acr v0.7.2.
 The 'Free Software Foundation' message is only for autodetection.
 Originally written by pancake <youterm.com>."
 exit 0
@@ -185,7 +185,7 @@ case $flag in
 	show_version ; ;;
 "-r"|"--r"|"--report")
 echo "PKGNAME:   radare2"
-echo "VERSION:   0.3"
+echo "VERSION:   0.3b"
 echo "LANGS:     c"
 echo "REQUIRED:  lib>=vala-1.0 libvala-1.0>=0.5.0"
 echo "OPTIONAL:  libewf"

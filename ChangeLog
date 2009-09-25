@@ -1,3 +1,985 @@
+===== RELEASE 0.3 =====
+
+changeset:   273:9f7119f4292b
+tag:         tip
+user:        pancake@localhost.localdomain
+date:        Fri Sep 25 04:04:51 2009 +0200
+files:       TODO config-user.mk.acr config.mk configure configure.acr libr/Makefile libr/anal/README libr/anal/anal.c libr/anal/p/anal_x86_bea.c libr/asm/arch/m68k/m68k_disasm/m68k_disasm.c libr/asm/asm.c libr/asm/p/asm_x86_olly.c libr/asm/t/Makefile libr/asm/t/rasm2.c libr/bin/bin.c libr/bin/t/rabin2.c libr/config/callback.c libr/config/config.c libr/core/cmd.c libr/core/t/Makefile libr/core/t/radare2.c libr/db/db.c libr/debug/p/dbg_ptrace.c libr/debug/reg.c libr/diff/t/Makefile libr/diff/t/radiff2.c libr/diff/t/test.c libr/flags/flags.c libr/flags/name.c libr/hash/calc.c libr/hash/hash.c libr/hash/t/rahash2.c libr/include/r_asm.h libr/include/r_bin.h libr/include/r_db.h libr/include/r_diff.h libr/include/r_hash.h libr/include/r_reg.h libr/include/r_types.h libr/lang/p/dummy.c libr/lang/p/lua.c libr/lang/p/perl.c libr/lang/p/python.c libr/line/dietline.c libr/parse/p/parse_x86_pseudo.c libr/print/date.c libr/print/format.c libr/reg/arena.c libr/reg/reg.c libr/rules.mk libr/search/t/Makefile libr/search/t/rafind2.c libr/sign/t/rasign2.c libr/util/str.c libr/util/t/Makefile libr/util/t/rax2.c
+description:
+* Release version to 0.3
+  - Propagate @VERSION@ from ACR
+  - All *2 apps are now supporting a -V flag to show the version
+* Fix .dr* command in r_core debugger
+  - dr now supports [regtype] [bitsize] arguments
+  - Check dr? for help
+* Added some 8, 16 bit registers to the dbg.ptrace backend
+  - Just for testing :)
+* Check build of the whole source tree
+  - test programs are now in ${prefix}/bin/libr-test
+* Fix lot of warnings and bugs
+* Simplify some code
+* Some rapification
+* Fix segfault in r_reg related to unallocated arenas
+  - New function r_reg_type_by_name() resolves string->id
+* Fix help of rax2
+
+
+changeset:   272:94d0adb95a58
+user:        pancake@localhost.localdomain
+date:        Thu Sep 24 19:46:32 2009 +0200
+files:       TODO libr/core/cmd.c libr/core/file.c libr/core/t/radare2.c libr/debug/handle.c libr/debug/p/dbg_gdb.c libr/debug/p/dbg_ptrace.c libr/debug/t/main.c libr/include/r_core.h libr/include/r_search.h libr/io/t/map.c libr/reg/README libr/search/search.c libr/util/mem.c libr/vapi/r_diff.vapi libr/vapi/r_parse.vapi libr/vapi/r_search.vapi libr/vapi/t/Makefile libr/vapi/t/io.vala
+description:
+* Drop PFX in debug plugin names
+* Minor cosmetic fixups
+* Handle binmask==NULL in all _add methods of r_search
+  - Added empty declarations of reset() and kw_reset()
+* Various random fixes in some vapis
+
+
+changeset:   271:3cfabe247f0c
+user:        pancake@localhost.localdomain
+date:        Thu Sep 24 12:29:05 2009 +0200
+files:       TODO libr/asm/asm.c libr/asm/p/asm_arm.c libr/asm/p/asm_bf.c libr/asm/p/asm_csr.c libr/asm/p/asm_dummy.c libr/asm/p/asm_java.c libr/asm/p/asm_m68k.c libr/asm/p/asm_mips.c libr/asm/p/asm_ppc.c libr/asm/p/asm_psosvm.c libr/asm/p/asm_sparc.c libr/asm/p/asm_x86.c libr/asm/p/asm_x86_bea.c libr/asm/p/asm_x86_nasm.c libr/asm/p/asm_x86_olly.c libr/asm/t/fastcall.c libr/asm/t/rasm2.c libr/bin/bin.c libr/bin/p/bin_dummy.c libr/bin/p/bin_elf.c libr/bin/p/bin_elf64.c libr/bin/p/bin_java.c libr/bin/p/bin_mach0.c libr/bin/p/bin_pe.c libr/bin/p/bin_pe64.c libr/bin/t/rabin2.c libr/bininfo/README libr/bp/handle.c libr/bp/p/bp_arm.c libr/bp/p/bp_x86.c libr/core/cmd.c libr/core/config.c libr/core/core.c libr/core/io.c libr/include/r_asm.h libr/include/r_bin.h libr/include/r_parse.h libr/include/r_search.h libr/include/r_types.h libr/parse/p/parse_dummy.c libr/parse/p/parse_mreplace.c libr/parse/p/parse_x86_pseudo.c libr/parse/parse.c libr/parse/t/parse.c libr/reg/reg.c libr/search/TODO libr/search/aes-find.c libr/search/binparse.c libr/search/bytepat.c libr/search/regexp.c libr/search/search.c libr/search/stripstr.c libr/search/xrefs.c libr/syscall/TODO libr/vapi/r_asm.vapi libr/vapi/r_search.vapi libr/vapi/r_util.vapi libr/vapi/t/asm.vala libr/vapi/t/search.vala
+description:
+* Major refactoring patch
+  - Remove plugin prefixes
+    - It was unnecessary complicated
+  - Remove unused code
+  - Some RAPIfication
+  - Rename _set( methods into _use(
+  - Simplify some string processing
+  - r_parse is working again
+  - Sync all those api changes in r_core
+  - External static plugin lists moved to .c
+  - Fix some cast-related segfaults in core
+* Review the r_search API
+  - RAPIfication
+  - Allow to pass NULL as binmask
+  - Added TODO with some more ideas
+
+
+changeset:   270:d8271dc3c288
+user:        pancake@flubox
+date:        Tue Sep 22 19:23:49 2009 +0200
+files:       libr/include/r_types.h libr/vapi/r_bin.vapi libr/vapi/r_util.vapi libr/vapi/t/Makefile libr/vapi/t/array.vala libr/vapi/t/bin.vala libr/vapi/t/list.vapi
+description:
+* Fixed ralist and rarray interfaces and macros
+  - No clean free or checks done yet, but they are
+    now both working
+* Use classes with no ref/unref to make vala code nicer
+* Fix build of some test programs (fixed -L)
+* Remove dummy Foo from r_util (moved to t/list.vapi)
+
+
+changeset:   269:cc95d506741f
+user:        pancake@localhost.localdomain
+date:        Tue Sep 22 15:02:50 2009 +0200
+files:       libr/Makefile libr/reg/t/Makefile libr/vapi/r_reg.vapi
+description:
+* Added 'reg' into the default module list
+  - Fixed a syntax error in r_reg
+* Fixes build
+
+
+changeset:   268:4095d9c3596d
+user:        pancake@localhost.localdomain
+date:        Tue Sep 22 13:27:33 2009 +0200
+files:       TODO libr/bin/bin.c libr/bin/t/rabin2.c libr/bininfo/bininfo.c libr/bininfo/p/bininfo_addr2line.c libr/db/TODO libr/debug/debug.c libr/debug/handle.c libr/include/r_bin.h libr/include/r_bininfo.h libr/include/r_debug.h libr/include/r_diff.h libr/include/r_types.h libr/include/r_util.h libr/util/Makefile libr/util/pool.c libr/util/t/Makefile libr/util/t/pool.c libr/vapi/r_bin.vapi libr/vapi/r_bininfo.vapi libr/vapi/r_diff.vapi libr/vapi/r_util.vapi libr/vapi/t/Makefile libr/vapi/t/array.vala libr/vapi/t/bin.vala
+description:
+* Fix build of r_debug
+* Some random warning fixups
+* extern plugins defined in handle.c for asm, bin, .. cleaner
+* RAPIfy the r_bininfo
+* Initial implementation of Rarray Iterator
+  - Needs some tuning in core Vala..but it is ok for demos
+  - r_bin API is now using the Rarray iterator
+  - Added Vala test program for it
+* Fix build of some test programs
+* Added r_diff and r_bininfo VAPI files
+  - The APIs are inconsistent and untested. Proposals welcome
+  - Fix possible overflow in r_bininfo
+* Initial implementation of pool.c
+  - Implements Memory.Pool class (Extracted from 'alt')
+  - Added test program
+
+
+changeset:   267:8d07c24fe30b
+user:        pancake@localhost.localdomain
+date:        Mon Sep 21 15:39:10 2009 +0200
+files:       Makefile libr/bininfo/bininfo.c libr/debug/handle.c libr/debug/p/dbg_ptrace.c libr/debug/reg.c libr/debug/t/main.c libr/depgraph.pl libr/include/r_debug.h libr/include/r_reg.h libr/reg/p/x86-linux.regs libr/reg/reg.c libr/vapi/r_debug.vapi libr/vapi/r_reg.vapi
+description:
+* Single valadoc by default
+* Added SEGment register types (r_reg+vapi)
+* depgraph.pl is now generating .gml output
+
+
+changeset:   266:da135026b257
+user:        pancake@localhost.localdomain
+date:        Sun Sep 20 02:16:14 2009 +0200
+files:       libr/bin/bin.c libr/bp/handle.c libr/core/cmd.c libr/core/core.c libr/core/t/radare2.c libr/debug/debug.c libr/debug/handle.c libr/debug/p/dbg_ptrace.c libr/debug/reg.c libr/debug/t/main.c libr/include/r_bp.h libr/include/r_debug.h libr/include/r_lib.h libr/include/r_reg.h libr/io/io.c libr/lang/README libr/lib/t/test-plugin.c libr/macro/macro.c libr/print/t/fmt.c libr/util/mem.c libr/vapi/r_debug.vapi
+description:
+* Rename some handle_set into _use() new syntax
+* Make radare2 debugger interact with r_reg
+  - Register profile is now provided by the r_debug plugin
+  - |reg and dr works fine now
+  - Fix reg_sync and reg_read for dbg_ptrace
+* Clean some warnings
+* Fix build
+
+
+changeset:   265:ffc1dc2c7e27
+user:        pancake@localhost.localdomain
+date:        Sun Sep 20 01:03:57 2009 +0200
+files:       configure configure.acr libr/core/libs.c libr/include/r_lang.h libr/include/r_lib.h libr/lang/README libr/lang/lang.c libr/lang/p/lua.c libr/lang/p/perl.c libr/lang/p/python.c libr/lang/p/tcc.c libr/vapi/r_lang.vapi libr/vapi/t/Makefile libr/vapi/t/lang.vala
+description:
+* Initial implementation of the r_lang VAPI
+  - Added test program in Vala
+* Added r_lang_define and r_lang_undef
+  - They are global on the module
+  - Each plugin should use lang_t
+  - *user must be deprecated
+
+
+changeset:   264:a73e016a8c8e
+user:        pancake@localhost.localdomain
+date:        Sun Sep 20 00:28:06 2009 +0200
+files:       configure configure.acr libr/debug/p/dbg_gdb.c libr/debug/p/dbg_ptrace.c libr/debug/reg.c libr/include/r_reg.h libr/libr.pc.acr libr/reg/reg.c libr/vapi/r_reg.vapi libr/vapi/t/Makefile libr/vapi/t/regs.vala pkgcfg/r_debug.pc.acr
+description:
+* Added r_reg pkgconfig file
+* Some fixes in the r_reg VAPI
+  - Added vala test program
+* r_debug is now broken because the new r_reg
+* Add r_free_internal to reduce leaks in r_reg
+
+
+changeset:   263:3c98f1a38c54
+user:        pancake@localhost.localdomain
+date:        Sat Sep 19 23:41:25 2009 +0200
+files:       Makefile libr/include/r_reg.h libr/reg/arena.c libr/reg/p/x86-linux.regs libr/reg/reg.c libr/reg/t/Makefile libr/reg/t/p.c libr/reg/t/test.c libr/reg/value.c libr/util/mem.c libr/vapi/r_reg.vapi
+description:
+* Implementate r_reg.vapi (register vala api)
+* Fix x86-linux using sys/user.h and getoffset() macro
+* Some more work on r_mem_copybits
+  - Bit level registers are now working (get/set)
+  - reg/t test example is now getting/settings bit flags
+* Added support for full serialization of all registers
+
+
+changeset:   262:c82c74966f47
+user:        pancake@localhost.localdomain
+date:        Sat Sep 19 21:54:22 2009 +0200
+files:       libr/include/r_reg.h libr/include/r_types.h libr/include/r_util.h libr/reg/README libr/reg/arena.c libr/reg/p/reg_x86.c libr/reg/p/x86-linux.regs libr/reg/reg.c libr/reg/t/Makefile libr/reg/t/test.c libr/reg/value.c libr/util/mem.c
+description:
+* Initial working version of r_reg
+  - Does not yet supports bitlevel registers
+  - Added test program modifying and showing regs
+  - Added dummy x86-linux.regs register layout
+* Added r_mem_copybits() in r_util
+  - Bitlevel precission for a memcpy
+
+
+changeset:   261:2cb7cbe5bb76
+user:        pancake@localhost.localdomain
+date:        Fri Sep 18 20:11:42 2009 +0200
+files:       libr/core/core.c libr/debug/p/dbg_ptrace.c libr/include/r_reg.h libr/reg/Makefile libr/reg/README libr/reg/arena.c libr/reg/handle.c libr/reg/p/x86-linux.regs libr/reg/reg.c libr/reg/regset.c libr/reg/value.c
+description:
+* Fix build of r_debug/r_core (little api changes)
+* Initial import of the new design or r_reg
+  - Needs to be implemented at all, but the big
+    picture is here :)
+
+
+changeset:   260:018a6e4cce27
+user:        pancake@localhost.localdomain
+date:        Thu Sep 17 14:02:44 2009 +0200
+files:       libr/include/r_util.h libr/util/file.c libr/util/t/Makefile libr/util/t/hexpairs.txt libr/util/t/test_file_slurp_hexpairs.c
+description:
+* Apply 'whats' fix for r_file_slurp_hexpairs()
+  - Fixes segfault
+  - Added test program
+* RAPIfy the r_util/file.c
+
+
+changeset:   259:99737da81583
+user:        pancake@localhost.localdomain
+date:        Thu Sep 17 11:48:36 2009 +0200
+files:       config-user.mk.acr libr/debug/debug.c libr/include/r_debug.h libr/include/r_io.h libr/include/r_lang.h libr/include/r_lib.h libr/include/r_reg.h libr/include/r_types.h libr/io/cache.c libr/io/io.c libr/lang/README libr/lang/lang.c libr/lib/lib.c libr/reg/Makefile libr/util/file.c libr/vapi/r_lib.vapi libr/var/README mk/stat-make.pl mk/stat.mk
+description:
+* Added 'mk/stat' tools
+  - Perform statistics about XXX and TODOs
+* Change signature of r_debug_mmu_
+* Added io->cached_reads
+* RAPIfy the r_lang
+* Reviewing of the r_lib API
+  - Write the vapi file
+  - Check for null mallocs
+* Fix build of r_reg
+
+
+changeset:   258:6c2aee379958
+user:        pancake@localhost.localdomain
+date:        Tue Sep 15 13:24:28 2009 +0200
+files:       doc/oo libr/crypto/crypto.c libr/crypto/t/racrypt.vala libr/debug/debug.c libr/include/r_crypto.h libr/include/r_debug.h libr/vapi/r_bin.vapi libr/vapi/r_debug.vapi libr/vapi/r_util.vapi libr/vapi/t/Makefile libr/vapi/t/bin.vala
+description:
+* Added doc/oo: describes the object dis-orientation of libr
+  - Plugins should be singletons across object instances
+* Added hard/soft initializer for r_crypto
+  - Needed for the as_new()
+  - Added stupid vala example for r_crypto vapi
+* Implement r_debug->mmu methods
+
+
+changeset:   257:76988936e7cc
+user:        pancake@localhost.localdomain
+date:        Tue Sep 15 02:18:19 2009 +0200
+files:       libr/include/r_types.h libr/vapi/r_crypto.vapi libr/vapi/r_hash.vapi libr/vapi/r_util.vapi libr/vapi/t/list_c.h
+description:
+* Added initial vapi file for r_crypto
+* Fix r_util List interface for list.h
+  - Test program is now working. Thanks juergbi!
+  - Needs vala>=20091115
+
+
+changeset:   256:ad5eda04f8b7
+user:        pancake@localhost.localdomain
+date:        Tue Sep 15 01:51:28 2009 +0200
+files:       libr/include/r_crypto.h
+description:
+* Add missing r_crypto.h
+
+
+changeset:   255:b3f63be304c2
+user:        pancake@localhost.localdomain
+date:        Tue Sep 15 01:45:58 2009 +0200
+files:       libr/config.h libr/config.mk libr/crypto/Makefile libr/crypto/crypto.c libr/crypto/p/Makefile libr/crypto/p/aes.c libr/crypto/p/aes.h libr/crypto/p/aes.mk libr/crypto/p/crypto_aes.c libr/crypto/p/crypto_aes_algo.c libr/crypto/p/crypto_aes_algo.h libr/include/r_lib.h
+description:
+* Initial implementation of the r_crypto API
+  - Thanks skurz0 for the design tips
+  - Needs to implement some plugins
+  - Not yet working/tested
+
+
+changeset:   254:e197cbfd72f5
+user:        pancake@localhost.localdomain
+date:        Tue Sep 15 00:06:37 2009 +0200
+files:       libr/anal/anal.c libr/config.h libr/debug/Makefile libr/debug/bp.c libr/debug/p/dbg_ptrace.c libr/debug/reg.c libr/debug/regset.c libr/hash/Makefile libr/hash/calc.c libr/hash/hash.c libr/hash/state.c libr/hash/t/rahash2.c libr/include/r_hash.h libr/include/r_reg.h libr/reg/README libr/reg/handle.c libr/reg/reg.c libr/vapi/r_util.vapi libr/vapi/t/list.vala libr/vapi/t/list_c.h libr/vm/reg.c
+description:
+* Some more random refactoring on r_debug and r_reg
+* Added support for bit level hash algorithm selection
+  - Integrate it with rahash2
+  - Needs some cleanup of spagheti mess
+  - All hash algorithms are now supported in a shot :)
+  - R_APIfy r_hash
+
+
+changeset:   253:0ea8b7c62138
+user:        pancake@localhost.localdomain
+date:        Mon Sep 14 00:37:28 2009 +0200
+files:       libr/bp/Makefile libr/bp/bp.c libr/bp/handle.c libr/bp/io.c libr/bp/parser.c libr/bp/parser.h libr/bp/traptrace.c libr/core/Makefile libr/core/cmd.c libr/core/core.c libr/core/libs.c libr/core/t/Makefile libr/debug/Makefile libr/debug/debug.c libr/debug/p/dbg_ptrace.c libr/debug/reg.c libr/debug/t/main.c libr/include/r_asm.h libr/include/r_bp.h libr/include/r_debug.h libr/include/r_reg.h libr/io/p/io_ptrace.c libr/lang/p/Makefile libr/reg/Makefile libr/reg/p/reg_x86.c libr/reg/reg.c libr/reg/regset.c libr/vapi/r_bp.vapi libr/vapi/r_debug.vapi libr/vapi/t/Makefile pkgcfg/r_core.pc.acr pkgcfg/r_debug.pc.acr pkgcfg/r_io.pc.acr pkgcfg/r_parse.pc.acr
+description:
+* Major unfinished refactoring for r_debug and r_bp
+  - radare2 debugger is now broken
+  - r_reg has grown a bit more
+  - Better separation of debugger elements
+* r_bp now has r_bp_add_hw and r_bp_add_sw() calls
+  - Added minimal support for breakpoint handlers
+  - Import th0rpe's watchpoint expression parser engine
+* iob moved from r_debug to r_bp
+* Arch types has been moved into r_asm
+  - Soft compile time dependency
+* Update pkg-config .pc files
+
+
+changeset:   252:59fc93fe33f5
+user:        pancake@localhost.localdomain
+date:        Thu Sep 10 20:51:34 2009 +0000
+files:       libr/bin/bin.c libr/core/core.c libr/debug/bp.c libr/debug/debug.c libr/debug/p/ptrace.mk libr/debug/pid.c libr/debug/reg.c libr/debug/regset.c libr/hash/t/rahash2.c libr/include/r_bin.h libr/include/r_debug.h libr/include/r_io.h libr/io/Makefile libr/io/bind.c libr/io/io.c libr/util/mem.c libr/vapi/r_debug.vapi
+description:
+* Initial r_io_bind'ization of r_bin .. not yet working
+  - Meld bind.c into io.c
+* Some review in many r_debug code
+* Added vapi for r_debug
+
+
+changeset:   251:be482834eec3
+user:        pancake@localhost.localdomain
+date:        Wed Sep 09 00:35:00 2009 +0000
+files:       libr/TODO libr/anal/anal.c libr/anal/ctx.c libr/anal/p/anal_dummy.c libr/anal/p/anal_x86.c libr/anal/p/anal_x86_bea.c libr/asm/t/fastcall.c libr/core/t/radare2.c libr/debug/debug.c libr/debug/t/main.c libr/hash/hash.c libr/include/r_anal.h libr/include/r_io.h libr/include/r_lib.h libr/io/README libr/io/io.c libr/io/undo.c libr/sign/t/Makefile libr/sign/t/rasign.c libr/sign/t/rasign2.c libr/util/mem.c
+description:
+* Some malloc checks in _new() class constructors
+  - Fix warnings in many places
+* R_APIfication of r_anal
+  - Fix probable segfault in x86_bea
+* Use macros to define plugin names
+* Fix build of radare2, rasign2 and debug/t/main
+* Call sundo_push() when io_seek
+* Added toggles for seek and write undo levels
+
+
+changeset:   250:ce952050145f
+user:        pancake@localhost.localdomain
+date:        Tue Sep 08 18:16:52 2009 +0000
+files:       TODO libr/include/r_io.h libr/io/Makefile libr/io/bind.c libr/io/cache.c libr/io/io.c libr/io/section.c libr/io/undo.c libr/vapi/r_io.vapi
+description:
+* Add 'r_io_undo'
+* Added deinitializators for r_io_cache
+
+
+changeset:   249:19d492cfc6e2
+user:        pancake@localhost.localdomain
+date:        Tue Sep 08 02:14:19 2009 +0000
+files:       libr/include/r_io.h libr/io/Makefile libr/io/bind.c libr/io/cache.c libr/io/io.c libr/io/section.c libr/vapi/r_util.vapi libr/vm/TODO libr/vm/mmu.c
+description:
+* Added R_IO_EXEC, Removed R_IO_RDWR.
+  - Promote the use of binary ORs
+* Make r_io support cached IO
+* Enforce rwx/seek by section information
+  - Optional by configuring io->enforce*
+  - Add cache.c
+* section->comment => name
+* Added resize callback on io pluings (not yet implemented)
+
+
+changeset:   248:468c1fc44ba9
+user:        pancake@localhost.localdomain
+date:        Tue Sep 08 01:08:46 2009 +0000
+files:       libr/asm/t/Makefile libr/core/cmd.c libr/core/io.c libr/db/table.c libr/hash/hash.c libr/hash/t/Makefile libr/hash/t/hello.c libr/hash/t/rahash2.c libr/include/r_hash.h libr/include/r_io.h libr/include/r_util.h libr/io/Makefile libr/io/bind.c libr/io/io.c libr/macro/macro.c libr/search/t/Makefile libr/search/t/rafind2.c libr/util/Makefile libr/util/buf.c libr/util/str.c
+description:
+* Do not pass CFLAGS when linking asm/t/fastcall
+* Populate r_io_lseek -> r_io_seek refactoring
+* R_APIfy a bit the r_hash
+* Also build hash/t/hello program
+* Fix some warnings and build blockers
+* Make rahash2 read from files (using slurp)
+* Added r_buf API in r_util (interacts with r_io)
+* Add initial template for r_io_bind
+  - Needs some more work
+
+
+changeset:   247:3347651ff799
+user:        pancake@localhost.localdomain
+date:        Mon Sep 07 20:01:34 2009 +0000
+files:       Makefile TODO autogen.sh libr/include/r_io.h libr/io/io.c libr/io/map.c libr/io/p/io_ptrace.c libr/io/t/Makefile libr/io/t/cat.c libr/io/t/map.c libr/io/t/read4.c libr/vapi/r_io.vapi libr/vapi/t/io.vala
+description:
+* Fixtures for the r_io API (breaking ABI and so :)
+  - Standalone test program is now able to debug a process and read mapped memory
+  - Fixes in the r_io and ptrace plugin sides
+* Added 'make vdoc' target
+
+
+changeset:   246:6ce2161f77d6
+user:        pancake@localhost.localdomain
+date:        Sat Sep 05 23:58:02 2009 +0000
+files:       libr/include/r_io.h libr/io/Makefile libr/io/README libr/io/desc.c libr/io/handle.c libr/io/io.c libr/io/map.c libr/io/p/io_dbg.c libr/io/p/io_malloc.c libr/io/p/io_ptrace.c libr/io/p/io_shm.c libr/io/section.c libr/io/t/Makefile libr/io/t/cat.c libr/io/t/map.c libr/io/t/read4.c libr/vapi/r_io.vapi libr/vapi/r_range.vapi libr/vapi/r_util.vapi libr/vapi/t/Makefile libr/vapi/t/io.vala libr/vapi/t/iter.vala libr/vapi/t/list.vala libr/vapi/t/list_c.c libr/vapi/t/list_c.h
+description:
+* Lot of work on refactoring r_io
+  - Added desc.c to handle file descriptors (avoid dupped, register handlers, ..)
+  - Fix some bugs and optimize io paths
+  - Added resolution methods
+  - Maps are incomplete but better interfaced. Needs more work
+  - Added io/t/map.c test program (not yet working)
+* Some fixups in many vapi files
+  - Fix broken ones (syntax parsing error)
+  - Complete them a bit more
+* Initial working version of a demo of list.h vala interface
+  - Implemented as a Generic class
+  - Designed as an Iterator, so 'foreach' can be used to iterate
+  - Added example program iterating from vala and generating a list in C
+
+
+changeset:   245:f704291c9d34
+user:        pancake@localhost.localdomain
+date:        Thu Sep 03 11:17:00 2009 +0000
+files:       libr/anal/ctx.c libr/include/iter.h libr/vapi/r_util.vapi libr/vapi/t/iter.vala
+description:
+* Initial working version of the r_iter for Vala
+  - pointers is the answer
+
+
+changeset:   244:aae397649709
+user:        pancake@localhost.localdomain
+date:        Wed Sep 02 00:10:51 2009 +0000
+files:       libr/TODO libr/bin/format/java/java.c libr/bin/format/pe/pe.c libr/config.mk libr/core/cmd.c libr/core/io.c libr/debug/p/dbg_ptrace.c libr/debug/t/main.c libr/include/r_io.h libr/io/README libr/io/handle.c libr/io/io.c libr/io/map.c libr/io/p/dbg.mk libr/io/p/malloc.mk libr/io/p/ptrace.mk libr/io/p/shm.mk libr/io/t/cat.c libr/io/t/read4.c libr/util/mem.c libr/vapi/r_db.vapi libr/vapi/t/iter.vala
+description:
+* Major refactoring of r_io (api has changed)
+  - filedescriptor is only defined by r_io_set()
+  - the rest of functions just take one argument less
+  - there are not enought filedescriptor changes to force fd resolution all the time
+* Fix memory leak in r_io_open
+  - Better error management
+  - Fix Makefile warnings in libr/io/p
+* Added read_at and write_at helper functions
+* Random indentation fixups
+* Added shm.mk and malloc.mk
+* More useless work for r_iter
+
+
+changeset:   243:dcf7ab25128b
+user:        pancake@localhost.localdomain
+date:        Mon Aug 24 12:03:37 2009 +0000
+files:       libr/anal/README libr/include/iter.h libr/util/iter.c libr/vapi/r_syscall.vapi libr/vapi/r_util.vapi libr/vapi/t/Makefile libr/vapi/t/iter.vala mk/hg-utils.mk
+description:
+* Some ideas for the code analysis module
+* Fix r_iter_last()
+  - Some more work on the Vala integration
+* Grep for README and TODO for hg-miss
+
+
+changeset:   242:0b8589548eba
+user:        pancake@localhost.localdomain
+date:        Sat Aug 22 05:29:58 2009 +0000
+files:       libr/core/cmd.c libr/core/config.c libr/core/core.c libr/include/r_io.h libr/io/handle.c libr/io/p/io_ptrace.c libr/io/t/Makefile libr/line/dietline.c
+description:
+* Return "" instead of NULL when possible in core input
+  - myfgets returns length(str)+1
+  - r_line fix for empty lines interpreted as EOF
+* RAPIfication in io.c
+* Fix the way to build the tests programs in io/t/{cat|read4}
+
+
+changeset:   241:907c1e61f55d
+user:        pancake@localhost.localdomain
+date:        Sat Aug 22 05:04:29 2009 +0000
+files:       libr/util/num.c libr/util/str.c
+description:
+* Fix build of r_util
+* Added r_bprintf helper for buffering printfs
+  - Can be used to capture the output of r_io_handle_list()
+    without having to use r_cons
+
+
+changeset:   240:e9cbeb2ca3cb
+user:        pancake@localhost.localdomain
+date:        Sat Aug 22 04:54:41 2009 +0000
+files:       TODO doc/rgraph libr/core/cmd.c libr/core/core.c libr/debug/p/Makefile libr/debug/p/dbg_ptrace.c libr/debug/t/main.c libr/include/r_io.h libr/io/Makefile libr/io/handle.c libr/io/io.c libr/io/p/Makefile libr/io/p/dbg.mk libr/io/p/io_ptrace.c libr/io/t/Makefile libr/io/t/read4.c libr/lib/lib.c libr/util/num.c libr/vapi/r_io.vapi mk/hg-utils.mk
+description:
+* Fix build of core
+* Fix non-static plugins build in r_debug and r_io
+* Fix debug_ptrace - working with example but not in r2
+* debug/t/main.c is now working correctly
+* Massive R_APIfication in r_io and r_util
+* Added r_io_read_i to read from memory as a ut64 in any endian
+  - read4.c example uses this new function
+* Fix build of r_io static plugins
+* Some more checks at random places in r_io (more stable)
+  - r_io_set_fd() simplifies fd and plugin setup
+* Added |pid command for ptrace io plugin
+* Added io->printf to avoid use of forced 'printf'
+* Add more lib_types names. fixes probable segfault
+* Added hg-ci hg-utils makefile target
+
+
+changeset:   239:6d8a55775068
+user:        pancake@localhost.localdomain
+date:        Sat Aug 22 03:11:33 2009 +0000
+files:       libr/asm/Makefile libr/config.h libr/config.mk libr/debug/debug.c libr/debug/t/main.c libr/include/r_debug.h libr/include/r_io.h libr/io/Makefile libr/io/handle.c libr/io/io.c libr/io/p/Makefile libr/io/p/dbg.c libr/io/p/dbg.mk libr/io/p/ewf.c libr/io/p/io_dbg.c libr/io/p/io_ewf.c libr/io/p/io_malloc.c libr/io/p/io_ptrace.c libr/io/p/io_shm.c libr/io/p/malloc.c libr/io/p/malloc.mk libr/io/p/ptrace.c libr/io/p/ptrace.mk libr/io/p/shm.c libr/io/p/shm.mk libr/vapi/r_debug.vapi mk/hg-utils.mk
+description:
+* Implement static plugins for r_io
+  - Prefix all plugins with 'io_' (like in the rest of libs)
+  - Statify io_dbg and io_ptrace IO plugins
+* Added _free methods for r_io and r_debug. Oops
+* Initial dummy version of r_debug.vapi
+* More stuff in the debug/t/main.c (not yet working)
+* Better hg-miss missing file detection checks
+
+
+changeset:   238:d5ccf639d6d5
+user:        pancake@localhost.localdomain
+date:        Sat Aug 22 02:03:58 2009 +0000
+files:       config-user.mk.acr libr/debug/p/dbg_libgdbwrap/client.c.orig libr/debug/p/dbg_libgdbwrap/gdbwrapper.c.orig mk/hg-utils.mk
+description:
+* Remove .orig files
+* Add MKPLUGINS=mk/hg-utils.mk in the default .acr template
+* Added hg-locdiff and hg-help, enhaced hg-miss
+
+
+changeset:   237:2cfa7355a473
+user:        pancake@localhost.localdomain
+date:        Sat Aug 22 01:54:24 2009 +0000
+files:       Makefile libr/asm/Makefile libr/asm/asm.c libr/asm/p/fastcall_mips.h libr/asm/p/x86.mk libr/config.h libr/config.mk libr/core/cmd.c libr/core/t/ragrep2.c libr/debug/Makefile libr/debug/debug.c libr/debug/handle.c libr/debug/p/Makefile libr/debug/p/dbg_gdb.c libr/debug/p/dbg_libgdbwrap/Makefile libr/debug/p/dbg_libgdbwrap/README libr/debug/p/dbg_libgdbwrap/client.c libr/debug/p/dbg_libgdbwrap/client.c.orig libr/debug/p/dbg_libgdbwrap/gdbwrapper.c libr/debug/p/dbg_libgdbwrap/gdbwrapper.c.orig libr/debug/p/dbg_libgdbwrap/include/gdbwrapper-internals.h libr/debug/p/dbg_libgdbwrap/include/gdbwrapper-stddef.h libr/debug/p/dbg_libgdbwrap/include/gdbwrapper.h libr/debug/p/dbg_libgdbwrap/include/libaspect.h libr/debug/p/dbg_libgdbwrap/include/libe2dbg.h libr/debug/p/dbg_libgdbwrap/include/revm.h libr/debug/p/dbg_libgdbwrap/interface.c libr/debug/p/dbg_ptrace.c libr/debug/p/gdb.mk libr/debug/p/ptrace.mk libr/debug/t/main.c libr/include/r_debug.h libr/include/r_io.h libr/include/r_util.h libr/io/io.c libr/io/p/ptrace.c libr/util/str.c mk/hg-utils.mk
+description:
+* Add support for static plugins to r_debug
+  - r_debug_ptrace is now static by default
+* Some code cleanup and warnings removal
+* Added hg-utils.mk and MKPLUGINS directive in user-config
+* Initial implementation of dbg_gdb r_debug plugin
+  - Import ERESI's libgdbwrap from r1
+* Add some missing files (asm/p/fastcall_mips.h, core/t/ragrep2.c)
+* Added r_str_bool helper to get "true"/"false" from int
+
+
+changeset:   236:8e9c1ea44114
+user:        pancake@localhost.localdomain
+date:        Fri Aug 21 19:09:48 2009 +0000
+files:       libr/include/iter.h libr/include/r_util.h libr/util/iter.c libr/util/t/Makefile libr/util/t/iter.c libr/vapi/r_util.vapi libr/vapi/t/iter.vala
+description:
+* Some more work for the r_iter API
+  - Fix some function signatures
+  - Disable CPP macros by default
+  - Added a separate iterate example in util/t/iter.c
+* Initial non-working integration with Vala generics in r_util.vapi
+  - Vala does not yet supports non-gobject generic classes/structs
+
+
+changeset:   235:64dd1cc915e4
+user:        pancake@localhost.localdomain
+date:        Thu Aug 20 12:23:12 2009 +0000
+files:       libr/util/iter.c
+description:
+* Oops. fix build
+
+
+changeset:   234:765ff7640b5d
+user:        pancake@localhost.localdomain
+date:        Thu Aug 20 12:20:14 2009 +0000
+files:       libr/include/iter.h libr/include/r_syscall.h libr/util/iter.c libr/vapi/r_bin.vapi libr/vapi/t/bin.vala
+description:
+* Fix Vala r_bin VAPI and example
+* Added iter.h with simplified r_iter in cpp macros
+* Some fixes and enhacements in r_iter
+
+
+changeset:   233:22944cd30784
+user:        pancake@flubox
+date:        Wed Aug 19 18:38:35 2009 +0200
+files:       libr/anal/anal.c libr/include/r_anal.h libr/util/Makefile libr/util/iter.c
+description:
+* Added basic iterator helper functions (help vala integration?)
+
+
+changeset:   232:4d95021c45ee
+user:        pancake@localhost.localdomain
+date:        Fri Aug 14 02:50:55 2009 +0000
+files:       libr/vapi/r_parse.vapi
+description:
+* Added r_parse vapi file
+
+
+changeset:   231:735bd5148099
+user:        pancake@localhost.localdomain
+date:        Fri Aug 14 02:19:54 2009 +0000
+files:       libr/README libr/include/r_parse.h libr/parse/Makefile libr/parse/p/parse_x86_pseudo.c libr/parse/parse.c libr/parse/t/parse.c
+description:
+* Initial working implementation of r_parse_assemble()
+  - Added test program as a demo
+
+
+changeset:   230:60bb13568d3c
+user:        pancake@localhost.localdomain
+date:        Fri Aug 14 01:44:12 2009 +0000
+files:       libr/asm/p/asm_mips.c libr/asm/p/asm_x86.c libr/asm/p/asm_x86_bea.c libr/asm/p/asm_x86_olly.c libr/asm/p/fastcall_x86.h libr/asm/t/Makefile libr/config.h libr/config.mk libr/include/r_parse.h libr/include/r_util.h libr/parse/Makefile libr/parse/p/Makefile libr/parse/p/dummy.mk libr/parse/p/mreplace.mk libr/parse/p/mreplace/mmemory.c libr/parse/p/mreplace/mmemory.h libr/parse/p/mreplace/mreplace.c libr/parse/p/mreplace/mreplace.h libr/parse/p/parse_dummy.c libr/parse/p/parse_mreplace.c libr/parse/p/parse_mreplace/mmemory.c libr/parse/p/parse_mreplace/mmemory.h libr/parse/p/parse_mreplace/mreplace.c libr/parse/p/parse_mreplace/mreplace.h libr/parse/p/parse_x86_pseudo.c libr/parse/p/x86_pseudo.mk libr/parse/parse.c libr/parse/t/Makefile libr/parse/t/parse.c libr/util/str.c
+description:
+* Implement STATIC PLUGIN support for r_parse
+  - Use the new 'asm-like' build system for r_parse plugins
+  - Added new callback to 'assemble' parseable expressions
+    into compilable asm code
+  - Refactorize and remove warnings in parse_mreplace
+* Added r_str_char_count() in r_util
+* Some fixups in the fastcall code in r_asm
+
+
+changeset:   229:31d81e3d14e0
+user:        pancake@localhost.localdomain
+date:        Fri Aug 14 00:37:18 2009 +0000
+files:       TODO libr/anal/anal.c libr/asm/Makefile libr/asm/asm.c libr/asm/p/Makefile libr/asm/p/asm_dummy.c libr/asm/p/asm_x86.c libr/asm/p/asm_x86_bea.c libr/asm/p/asm_x86_nasm.c libr/asm/p/asm_x86_olly.c libr/asm/p/fastcall_x86.h libr/asm/t/Makefile libr/asm/t/fastcall.c libr/db/db.c libr/debug/debug.c libr/debug/p/dbg_ptrace.c libr/debug/regset.c libr/debug/t/main.c libr/include/r_asm.h libr/include/r_debug.h libr/include/r_lib.h libr/include/r_syscall.h libr/print/print.c libr/syscall/freebsd.c libr/vapi/r_asm.vapi libr/vapi/t/asm.vala
+description:
+* Initial implementation of r_asm_fastcall()
+  - VAPI sync
+  - Used to get register N to call fastcalls (syscalls f.ex)
+* Code analysis marked as 8-bit compliant
+
+
+changeset:   228:7ce47ab49b30
+user:        pancake@localhost.localdomain
+date:        Mon Jul 27 12:22:08 2009 +0000
+files:       libr/db/db.c libr/vapi/r_util.vapi
+description:
+* Oops, fix add_unique method
+* Fix r_util vapi
+
+
+changeset:   227:78ce534defe4
+user:        pancake@localhost.localdomain
+date:        Fri Jul 24 13:38:53 2009 +0000
+files:       libr/include/r_socket.h libr/include/r_util.h libr/socket/socket.c libr/util/hex.c libr/vapi/r_socket.vapi libr/vapi/r_util.vapi
+description:
+* Add r_socket_to_string() function in r_socket API
+  - R_APIzation of r_socket
+* Added r_hex_bin2strdup()
+  - Bind it into the VAPI
+
+
+changeset:   226:406e2f5ff825
+user:        pancake@flubox
+date:        Wed Jul 22 17:30:21 2009 +0200
+files:       libr/db/db.c libr/include/r_db.h libr/include/r_util.h libr/vapi/r_db.vapi libr/vapi/r_util.vapi
+description:
+* Added r_db_add_unique method to the r_db api
+  - Reflect the change in the vapi file
+* Added offsetof() macro in r_util
+
+
+changeset:   225:e11446a0632b
+user:        pancake@localhost.localdomain
+date:        Tue Jul 21 22:59:34 2009 +0000
+files:       configure configure.acr libr/Makefile libr/db/Makefile libr/db/TODO libr/db/db.c libr/pkgconfig/libr.pc.acr libr/vapi/r_asm.vapi libr/vapi/r_db.vapi libr/vapi/t/Makefile libr/vapi/t/db.vala pkgcfg/libr.pc.acr pkgcfg/r_bp.pc.acr pkgcfg/r_db.pc.acr pkgcfg/r_th.pc.acr
+description:
+* Initial vapi for r_db
+  - Added vala example using r_db (db.vala)
+* Fix segmentation fault in db.c when adding nodes with
+  no keys defined. (-1)
+* Added vala example
+* Added r_db to the default build list
+* Added r_th, r_bp and r_db in pkgconfig
+
+
+changeset:   224:1bf1ce8d9363
+user:        pancake@localhost.localdomain
+date:        Tue Jul 21 11:13:24 2009 +0000
+files:       libr/Makefile libr/include/r_bin.h libr/include/r_th.h libr/rules.mk libr/th/Makefile libr/th/TODO libr/th/lock.c libr/th/t/Makefile libr/th/t/test.c libr/th/th.c libr/vapi/r_util.vapi
+description:
+* Initial import of r_th. The simplified and portable threading library
+
+
+changeset:   223:285bc76b9e21
+user:        pancake@flubox
+date:        Thu Jul 16 18:42:11 2009 +0200
+files:       pkgcfg/r_vm.pc.acr
+description:
+* r_vm.pc depends on r_util
+
+
+changeset:   222:2540ec20d19f
+user:        pancake@flubox
+date:        Thu Jul 16 14:17:32 2009 +0200
+files:       libr/bin/bin.c libr/core/cmd.c libr/include/r_types.h libr/trace/trace.c
+description:
+* Some code cleanup and add some more checks on r_bin  (-15LOC)
+* Added new type R_TRUFAE
+
+
+changeset:   221:a37b8b31c861
+user:        pancake@flubox
+date:        Thu Jul 16 13:08:23 2009 +0200
+files:       libr/util/num.c libr/util/str.c libr/vapi/r_util.vapi
+description:
+* Fix the r_util vapi file
+* Some R_APIization in r_util
+
+
+changeset:   220:e79979f6e2e9
+user:        pancake@flubox
+date:        Thu Jul 16 12:38:49 2009 +0200
+files:       libr/include/r_util.h libr/include/r_vm.h libr/util/str.c libr/vm/Makefile libr/vm/mmu.c libr/vm/op.c libr/vm/reg.c libr/vm/stack.c libr/vm/t/Makefile libr/vm/t/test.c libr/vm/vm.c
+description:
+* Fix build and linkage of r_vm
+  - Added dummy test program for r_vm
+
+
+changeset:   219:9f533925501a
+user:        pancake@localhost.localdomain
+date:        Thu Jul 16 09:44:56 2009 +0000
+files:       libr/cons/input.c
+description:
+* Fix warnings in cons/input
+
+
+changeset:   218:40eda2c9dfac
+user:        pancake@localhost.localdomain
+date:        Thu Jul 16 09:40:00 2009 +0000
+files:       configure configure.acr libr/Makefile libr/bin/format/elf/elf.h libr/rules.mk pkgcfg/libr.pc.acr pkgcfg/r_anal.pc.acr pkgcfg/r_asm.pc.acr pkgcfg/r_bin.pc.acr pkgcfg/r_bininfo.pc.acr pkgcfg/r_cmd.pc.acr pkgcfg/r_config.pc.acr pkgcfg/r_cons.pc.acr pkgcfg/r_core.pc.acr pkgcfg/r_debug.pc.acr pkgcfg/r_diff.pc.acr pkgcfg/r_flags.pc.acr pkgcfg/r_hash.pc.acr pkgcfg/r_io.pc.acr pkgcfg/r_lang.pc.acr pkgcfg/r_lib.pc.acr pkgcfg/r_line.pc.acr pkgcfg/r_macro.pc.acr pkgcfg/r_meta.pc.acr pkgcfg/r_parse.pc.acr pkgcfg/r_print.pc.acr pkgcfg/r_range.pc.acr pkgcfg/r_reg.pc.acr pkgcfg/r_search.pc.acr pkgcfg/r_sign.pc.acr pkgcfg/r_socket.pc.acr pkgcfg/r_syscall.pc.acr pkgcfg/r_trace.pc.acr pkgcfg/r_util.pc.acr pkgcfg/r_var.pc.acr pkgcfg/r_vm.pc.acr
+description:
+* Autogenerate libr.pc.acr with 'make pkgcfg'
+* Revert elf.h (was partially killed by zeroes)
+
+
+changeset:   217:b05e9c22d7fa
+user:        pancake@localhost.localdomain
+date:        Thu Jul 16 09:24:17 2009 +0000
+files:       libr/Makefile libr/asm/Makefile libr/asm/arch/csr/csr_disasm/dis.c
+description:
+* Fix memory leak and simplify the code of the CSR disassembler
+
+
+changeset:   216:20919062a006
+user:        pancake@localhost.localdomain
+date:        Thu Jul 16 00:30:20 2009 +0000
+files:       Makefile TODO config-user.mk.acr configure configure.acr env.sh libr/Makefile libr/bin/format/elf/elf.h libr/hash/crca.c libr/include/r_util.h libr/rules.mk libr/util/mem.c libr/vapi/r_util.vapi pkgcfg/Makefile pkgcfg/libr.pc.acr pkgcfg/r_anal.pc.acr pkgcfg/r_asm.pc.acr pkgcfg/r_bin.pc.acr pkgcfg/r_bininfo.pc.acr pkgcfg/r_cmd.pc.acr pkgcfg/r_config.pc.acr pkgcfg/r_cons.pc.acr pkgcfg/r_core.pc.acr pkgcfg/r_debug.pc.acr pkgcfg/r_diff.pc.acr pkgcfg/r_flags.pc.acr pkgcfg/r_hash.pc.acr pkgcfg/r_io.pc.acr pkgcfg/r_lang.pc.acr pkgcfg/r_lib.pc.acr pkgcfg/r_line.pc.acr pkgcfg/r_macro.pc.acr pkgcfg/r_meta.pc.acr pkgcfg/r_parse.pc.acr pkgcfg/r_print.pc.acr pkgcfg/r_range.pc.acr pkgcfg/r_reg.pc.acr pkgcfg/r_search.pc.acr pkgcfg/r_sign.pc.acr pkgcfg/r_socket.pc.acr pkgcfg/r_syscall.pc.acr pkgcfg/r_trace.pc.acr pkgcfg/r_util.pc.acr pkgcfg/r_var.pc.acr pkgcfg/r_vm.pc.acr
+description:
+* Added 'pkgcfg' directory with autogenerated .pc files
+  - 'make pkgcfg' does that automagically :)
+* Implement r_mem_mem function in r_util
+
+
+changeset:   215:62e7280a78c4
+user:        pancake@flubox
+date:        Mon Jul 13 19:56:46 2009 +0200
+files:       libr/vapi/r_search.vapi libr/vapi/t/Makefile libr/vapi/t/asm.gs libr/vapi/t/search.gs libr/vapi/t/search.vala
+description:
+* Added Genie examples in the vapi test directory
+
+
+changeset:   214:bf817406ea97
+user:        pancake@localhost.localdomain
+date:        Wed Jul 08 17:14:19 2009 +0000
+files:       libr/db/Makefile libr/db/db.c libr/db/t/test.c libr/db/table.c libr/include/r_db.h
+description:
+* Upload partial implementation of iterators and tables for r_db
+
+
+changeset:   213:47062240fe1b
+user:        nibble
+date:        Wed Jul 08 13:56:04 2009 +0200
+files:       libr/core/core.c libr/include/r_core.h libr/include/r_types.h
+description:
+* More type renaming
+  - s/s64/st64/
+
+
+changeset:   212:f802be2bcb43
+user:        nibble
+date:        Wed Jul 08 13:49:55 2009 +0200
+files:       ChangeLog doc/lang-plugins libr/anal/anal.c libr/anal/p/anal_x86.c libr/asm/arch/csr/csr_disasm/dis.c libr/asm/arch/csr/csr_disasm/dis.h libr/asm/arch/java/javasm/javasm.c libr/asm/arch/java/javasm/javasm.h libr/asm/arch/psosvm/vmas/vmas.c libr/asm/arch/psosvm/vmas/vmas.h libr/asm/asm.c libr/asm/p/asm_arm.c libr/asm/p/asm_bf.c libr/asm/p/asm_csr.c libr/asm/p/asm_dummy.c libr/asm/p/asm_java.c libr/asm/p/asm_m68k.c libr/asm/p/asm_mips.c libr/asm/p/asm_ppc.c libr/asm/p/asm_psosvm.c libr/asm/p/asm_sparc.c libr/asm/p/asm_x86.c libr/asm/p/asm_x86_bea.c libr/asm/p/asm_x86_nasm.c libr/asm/p/asm_x86_olly.c libr/asm/t/rasm2.c libr/bin/bin.c libr/bin/format/elf/elf.c libr/bin/format/elf/elf.h libr/bin/format/java/java.c libr/bin/format/java/java.h libr/bin/format/pe/pe.c libr/bin/format/pe/pe.h libr/bin/format/pe/pe_specs.h libr/bin/p/bin_elf.c libr/bin/p/bin_elf64.c libr/bin/p/bin_java.c libr/bin/p/bin_mach0.c libr/bin/p/bin_pe.c libr/bin/p/bin_pe64.c libr/bin/t/rabin2.c libr/bininfo/bininfo.c libr/bininfo/p/bininfo_addr2line.c libr/bp/bp.c libr/bp/p/bp_arm.c libr/bp/p/bp_x86.c libr/cmd/cmd.c libr/config/callback.c libr/config/config.c libr/cons/README libr/cons/print.c libr/core/cmd.c libr/core/core.c libr/core/file.c libr/core/io.c libr/core/visual.c libr/core/yank.c libr/db/TODO libr/db/db.c libr/debug/bp.c libr/debug/debug.c libr/debug/p/dbg_ptrace.c libr/debug/reg.c libr/debug/regset.c libr/diff/diff.c libr/diff/t/radiff2.c libr/diff/t/test.c libr/flags/flags.c libr/flags/old_flags.c libr/flags/old_flags.h libr/hash/crc16.c libr/hash/crc32.c libr/hash/entropy.c libr/hash/hamdist.c libr/hash/hash.c libr/hash/hash.h libr/hash/md4.c libr/hash/sha2.h libr/hash/state.c libr/hash/t/hello.c libr/hash/t/rahash2.c libr/include/r_anal.h libr/include/r_asm.h libr/include/r_bin.h libr/include/r_bininfo.h libr/include/r_bp.h libr/include/r_config.h libr/include/r_core.h libr/include/r_db.h libr/include/r_debug.h libr/include/r_diff.h libr/include/r_flags.h libr/include/r_hash.h libr/include/r_io.h libr/include/r_macro.h libr/include/r_meta.h libr/include/r_print.h libr/include/r_range.h libr/include/r_search.h libr/include/r_sign.h libr/include/r_trace.h libr/include/r_types.h libr/include/r_util.h libr/include/r_var.h libr/include/r_vm.h libr/io/io.c libr/io/map.c libr/io/p/dbg.c libr/io/p/ewf.c libr/io/p/malloc.c libr/io/p/ptrace.c libr/io/p/shm.c libr/io/section.c libr/io/undo.c libr/io/undo.h libr/line/dietline.c libr/macro/macro.c libr/meta/meta.c libr/meta/tmp/data.c libr/print/date.c libr/print/format.c libr/print/print.c libr/print/t/fmt.c libr/print/t/hex.c libr/range/range.c libr/search/aes-find.c libr/search/binparse.c libr/search/bytepat.c libr/search/old_xrefs.c libr/search/regexp.c libr/search/search.c libr/search/stripstr.c libr/search/t/rafind2.c libr/search/t/test-regexp.c libr/search/t/test-str.c libr/search/t/test.c libr/search/xrefs.c libr/socket/socket.c libr/trace/trace.c libr/util/alloca.c libr/util/cache.c libr/util/file.c libr/util/hex.c libr/util/mem.c libr/util/num.c libr/util/t/rax2.c libr/util/t/test.c libr/vapi/r_io.vapi libr/var/var.c libr/vm/mmu.c libr/vm/reg.c libr/vm/stack.c libr/vm/vm.c
+description:
+* Change the name of some types
+  - s/u64/ut64/
+  - s/u32/ut32/
+  - s/u16/ut16/
+  - s/u8/ut8/
+
+
+changeset:   211:85b2ec7b9f10
+user:        nibble
+date:        Wed Jul 08 02:06:27 2009 +0200
+files:       libr/bin/format/elf/elf.c
+description:
+* r_bin
+  - More refactoring
+  - Remove dupped code from Elf_(get_import_addr)
+
+
+changeset:   210:b1efa59dc3aa
+user:        nibble
+date:        Tue Jul 07 18:33:21 2009 +0200
+files:       libr/bin/p/bin_elf.c
+description:
+* r_bin
+  - minor fixup
+
+
+changeset:   209:8888c1995ee9
+user:        nibble
+date:        Tue Jul 07 18:01:49 2009 +0200
+files:       libr/bin/bin.c libr/bin/format/elf/elf.c libr/bin/format/elf/elf.h libr/bin/p/bin_dummy.c libr/bin/p/bin_elf.c libr/bin/p/bin_elf64.c libr/bin/p/bin_java.c libr/bin/p/bin_mach0.c libr/bin/p/bin_pe.c libr/bin/p/bin_pe64.c libr/bin/t/rabin2.c libr/include/r_bin.h
+description:
+* r_bin
+  - more refactoring
+  - r_bin_elf_imports and r_bin_elf_symbols unified into r_bin_elf_symbols
+  - removed section_resize (needs to be rewritten)
+
+
+changeset:   208:80080a3c9e16
+user:        nibble
+date:        Sun Jul 05 16:57:09 2009 +0200
+files:       libr/bin/p/bin_java.c libr/bin/p/bin_pe.c libr/bin/t/rabin2.c
+description:
+* r_bin
+  - *_open return -1 on fail
+
+
+changeset:   207:ff053aedbf65
+user:        nibble
+date:        Sun Jul 05 16:49:47 2009 +0200
+files:       libr/bin/bin.c libr/bin/format/elf/elf.c libr/bin/format/elf/elf.h libr/bin/format/elf/elf_specs.h libr/bin/p/bin_elf.c libr/bin/p/bin_elf64.c libr/bin/p/bin_java.c libr/bin/p/bin_pe.c libr/bin/t/rabin2.c libr/include/r_bin.h libr/include/r_util.h libr/util/mem.c libr/util/str.c
+description:
+* r_util
+  - Add r_str_dup_printf
+* r_bin_elf
+  - Huge refactoring
+    r_bin_elf_get_{imports, symbols} will be modified soon
+    r_buf|r_io will be used, so 'swap-endian' and 'malloc-lseek-read' calls will be removed
+    Need to rethink section resize (temporary disabled)
+* rabin2
+  - Refactoring
+
+
+changeset:   206:abdc8c442447
+user:        pancake@localhost.localdomain
+date:        Thu Jun 18 13:10:26 2009 +0000
+files:       libr/db/README libr/db/db.c libr/db/t/test.c libr/include/r_db.h
+description:
+* Added r_db_delete() method in r_db api
+
+
+changeset:   205:f13861629b56
+user:        pancake@flubox
+date:        Mon Jun 15 18:31:03 2009 +0200
+files:       libr/db/README libr/db/TODO libr/db/db.c libr/db/t/test.c
+description:
+* Initial working version (with test) of r.db
+  - Ow yeah! (missing r_db_delete and iterators)
+
+
+changeset:   204:b0c91d804a9b
+user:        pancake@localhost.localdomain
+date:        Mon Jun 15 02:44:05 2009 +0000
+files:       Makefile TODO libr/Makefile libr/core/cmd.c libr/db/Makefile libr/db/db.c libr/db/t/Makefile libr/db/t/test.c libr/flags/flags.c libr/include/r_db.h libr/include/r_flags.h libr/util/file.c libr/util/str.c
+description:
+* Initial import of r_db
+
+
+changeset:   203:4ecc3daa3b9d
+user:        nibble
+date:        Fri Jun 12 19:33:31 2009 +0200
+files:       libr/bin/p/bin_pe.c libr/syscall/win7.c
+description:
+* Fixed r_bin_pe segfault with .NET PE files
+* Added windows 7 syscalls table to r_syscall under win7.c
+
+
+changeset:   202:ea0f5cce4672
+user:        nibble
+date:        Thu Jun 11 14:28:35 2009 +0200
+files:       libr/asm/p/asm_x86_olly.c libr/asm/t/rasm2.c libr/bin/format/elf/elf.c
+description:
+* Fixed bug in r_bin_elf resolving imports
+* Fixed 'rasm2 -o'
+
+
+changeset:   201:262e2784901d
+user:        nibble
+date:        Wed Jun 03 12:58:18 2009 +0200
+files:       libr/bin/format/elf/elf.c libr/bin/format/elf/elf_specs.h
+description:
+* Fixed Elf64_Xword/Elf32_word bug in r_bin_elf
+
+
+changeset:   200:94ef1998aaff
+user:        pancake@localhost.localdomain
+date:        Thu May 28 10:57:30 2009 +0000
+files:       libr/TODO libr/bin/format/elf/elf.c libr/bin/p/bin_elf.c libr/core/cmd.c libr/debug/debug.c libr/flags/flags.c libr/flags/spaces.c libr/flags/t/test.c libr/include/r_anal.h libr/include/r_debug.h libr/socket/socket.c
+description:
+* Minor syntax changes
+* USE_BTREE is now optional in r_flags
+  - better test case (but im still unable to reproduce the bug)
+* Fix build (r_anal.h)
+
+
+changeset:   199:8c1a1e3eacaf
+user:        pancake@localhost.localdomain
+date:        Wed May 20 12:41:04 2009 +0000
+files:       libr/asm/asm.c libr/bin/p/bin_elf.c libr/bin/p/bin_mach0.c libr/cons/cons.c libr/include/r_util.h libr/util/str.c libr/vm/vm.c
+description:
+* Sync local random changes with public repo
+* Forwport of the 'Y' yesno issue of r1
+* R_APIize r_util a bit more
+* Added r_str_ansi_* helper functions
+
+
+changeset:   198:6a582129be2e
+user:        nibble
+date:        Sun May 17 12:01:02 2009 +0200
+files:       libr/bin/bin.c libr/bin/p/Makefile libr/bin/p/bin_dummy.c libr/bin/p/dummy.mk libr/bin/t/rabin2.c libr/config.h libr/config.mk libr/include/r_bin.h
+description:
+* rabin2
+  - Flags '-x' and '-w' unified into '-o'
+  - '-w' is used to open file in rw mode
+  - More refactoring
+* r_bin
+  - Added bin_dummy plugin
+  - get_strings works now with unknown formats
+
+
+changeset:   197:fc627822e206
+user:        nibble
+date:        Tue May 05 23:49:40 2009 +0200
+files:       libr/bin/format/elf/elf.c
+description:
+* Fixed resize_section in r_bin
+
+
+changeset:   196:e9f612772da4
+parent:      195:242aca513fc7
+parent:      194:d00ba5d2e17c
+user:        nibble
+date:        Sat May 02 01:08:57 2009 +0200
+files:       libr/anal/anal.c libr/include/r_anal.h libr/io/p/Makefile
+description:
+* Merge
+
+
+changeset:   195:242aca513fc7
+parent:      193:77d0ca6e6db5
+user:        nibble
+date:        Sat May 02 01:04:32 2009 +0200
+files:       libr/bin/t/rabin2.c libr/include/r_types.h
+description:
+* Fixed ERR()
+* Added flags -x (extract) and -w (write) to rabin
+  -w r/<section_name>/<size> resizes a section
+  -x d/s[/<length>] dumps symbols
+  -x d/S/<section_name> dumps the specified section
+
+
+changeset:   194:d00ba5d2e17c
+user:        pancake@localhost.localdomain
+date:        Fri May 01 01:25:28 2009 +0000
+files:       libr/cons/README libr/search/t/rafind2.c libr/socket/socket.c
+description:
+* Fix rafind2 -x and make it less verbose
+
+
+changeset:   193:77d0ca6e6db5
+user:        nibble
+date:        Thu Apr 30 13:46:29 2009 +0200
+files:       libr/bin/format/pe/pe.c
+description:
+* Fixed bug in r_bin_pe resolving imports
+
+
+changeset:   192:edc19e4ead40
+user:        nibble
+date:        Wed Apr 29 18:56:30 2009 +0200
+files:       libr/bin/format/elf/elf.c
+description:
+* Huge refactoring of r_bin_elf_resize_section
+
+
+changeset:   191:4fafa57fba8d
+user:        nibble
+date:        Mon Apr 27 00:34:54 2009 +0200
+files:       libr/asm/asm.c libr/asm/t/rasm2.c libr/include/r_asm.h libr/vapi/r_asm.vapi
+description:
+* Added mdisassemble into r_asm
+* Update r_asm vapi
+
+
+changeset:   190:82a70d755b5e
+user:        nibble
+date:        Sat Apr 25 20:44:27 2009 +0200
+files:       .hgtags
+description:
+Added tag 0.2 for changeset b8a299e8cb05
+
+
+changeset:   189:b8a299e8cb05
+tag:         0.2
+user:        pancake@localhost.localdomain
+date:        Sat Apr 25 19:43:47 2009 +0000
+files:       ChangeLog Makefile config.mk
+description:
+* Sync changelog for 0.2
+* RELEASE=1
+
+
+changeset:   188:3bb39cbae540
+user:        pancake@localhost.localdomain
+date:        Sat Apr 25 17:59:52 2009 +0000
+files:       Makefile config.mk
+description:
+* Release 0.2
+
+
 ===== RELEASE 0.2 =====
 
 changeset:   187:d1db102f267b
