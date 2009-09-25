@@ -88,7 +88,6 @@ int r_print_date_w32(struct r_print_t *p, const ut8 *buf, int len)
 	time_t t;
 	int ret = 0;
 	char datestr[256];
-	const char *datefmt;
 
 	if (p && p->datefmt && len >= sizeof(ut64)) {
 		r_mem_copyendian ((ut8*)&l, buf, sizeof(ut64), p->bigendian);
@@ -97,7 +96,7 @@ int r_print_date_w32(struct r_print_t *p, const ut8 *buf, int len)
 		t = (time_t) l; // TODO limit above!
 		// "%d:%m:%Y %H:%M:%S %z",
 		if (p->datefmt && p->datefmt[0]) {
-			ret = strftime(datestr, 256, datefmt,
+			ret = strftime(datestr, 256, p->datefmt,
 				(const struct tm*) gmtime((const time_t*)&t));
 			if (ret) {
 				p->printf("%s\n", datestr);

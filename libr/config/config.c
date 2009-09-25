@@ -305,7 +305,7 @@ R_API int r_config_init(struct r_config_t *cfg, void *user)
 	cfg->user = user;
 	cfg->n_nodes = 0;
 	cfg->lock = 0;
-	cfg->printf = printf;
+	cfg->printf = (void *)printf;
 	INIT_LIST_HEAD(&(cfg->nodes));
 	return 0;
 }

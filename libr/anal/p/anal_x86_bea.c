@@ -15,11 +15,12 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 {
 	DISASM disasm_obj;
 	ARGTYPE *argptr = NULL;
+	//unsigned long long addr = (ut64)data;
 	char category[1024], argtype[1024];
 	int i;
 
 	memset(&disasm_obj, '\0', sizeof(DISASM));
-	disasm_obj.EIP = (long long)data;
+	disasm_obj.EIP = (long long)(data);
 	disasm_obj.VirtualAddr = anal->pc;
 	disasm_obj.Archi = ((anal->bits == 64) ? 64 : 0);
 	disasm_obj.SecurityBlock = 128;
@@ -29,14 +30,14 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 
 	IFDBG {
 		printf( "[Instruction]\n"
-				"  Opcode: %lx\n"
-				"  Mnemonic: %s\n"
-				"  AddrValue: 0x%llx\n"
-				"  Immediate: 0x%llx\n",
-				disasm_obj.Instruction.Opcode,
-				disasm_obj.Instruction.Mnemonic,
-				disasm_obj.Instruction.AddrValue,
-				disasm_obj.Instruction.Immediat);
+			"  Opcode: %lx\n"
+			"  Mnemonic: %s\n"
+			"  AddrValue: 0x%llx\n"
+			"  Immediate: 0x%llx\n",
+			disasm_obj.Instruction.Opcode,
+			disasm_obj.Instruction.Mnemonic,
+			disasm_obj.Instruction.AddrValue,
+			disasm_obj.Instruction.Immediat);
 		
 		category[0] = '\0';
 		if (disasm_obj.Instruction.Category & GENERAL_PURPOSE_INSTRUCTION)
@@ -387,7 +388,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 	return aop->length;
 }
 
-static struct r_anal_handle_t r_anal_plugin_x86_bea = {
+struct r_anal_handle_t r_anal_plugin_x86_bea = {
 	.name = R_ANAL_NAME("x86_bea"),
 	.desc = "X86 analysis plugin (Bea engine)",
 	.init = NULL,
@@ -395,7 +396,9 @@ static struct r_anal_handle_t r_anal_plugin_x86_bea = {
 	.aop = &aop
 };
 
+#if !CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_x86_bea
 };
+#endif

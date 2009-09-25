@@ -101,8 +101,8 @@ static struct r_lang_handle_t r_lang_plugin_lua = {
 	.desc = "LUA language extension",
 	.help = NULL,
 	.run = lua_run,
-	.init = init,
-	.run_file = r_lua_file,
+	.init = (void*)init,
+	.run_file = (void*)r_lua_file,
 	.set_argv = NULL,
 };
 

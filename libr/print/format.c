@@ -69,15 +69,15 @@ void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int len, con
 	/* get args */
 	args = strchr(arg, ' ');
 	if (args) {
-		int l, maxl = 0;
+		int l=0, maxl = 0;
 		argend = args;
 		args = strdup(args+1);
 		nargs = r_str_word_set0(args+1);
 		if (nargs == 0)
 			R_FREE(args);
 		for(i=0;i<nargs;i++) {
-			int l = strlen(r_str_word_get0(args+1, i));
-			if (l>maxl) maxl = l;
+			int len = strlen(r_str_word_get0(args+1, i));
+			if (len>maxl) maxl = len;
 		}
 		l++;
 		sprintf(namefmt, "%%%ds : ", maxl);

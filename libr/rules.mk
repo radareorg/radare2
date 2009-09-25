@@ -117,7 +117,7 @@ else
 include ../../../config-user.mk
 include ../../../mk/${COMPILER}.mk
 
-CFLAGS+=-I../../include
+CFLAGS+=-I../../include -DVERSION=\"${VERSION}\"
 
 all: ${BIN}
 

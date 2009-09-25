@@ -5,9 +5,7 @@
 #include <list.h>
 
 /* lifecycle */
-
-static void r_reg_free_internal(struct r_reg_t *reg)
-{
+static void r_reg_free_internal(struct r_reg_t *reg) {
 	struct list_head *pos, *n;
 	struct r_reg_item_t *r;
 	int i;
@@ -53,44 +51,34 @@ R_API struct r_reg_t *r_reg_new()
 	return r_reg_init(r);
 }
 
-static struct r_reg_item_t *r_reg_item_new()
-{
+static struct r_reg_item_t *r_reg_item_new() {
 	struct r_reg_item_t *item = MALLOC_STRUCT(struct r_reg_item_t);
 	memset(item, 0, sizeof(struct r_reg_item_t));
 	return item;
 }
 
-/* TODO: make this parser better and cleaner */
-static int r_reg_set_word(struct r_reg_item_t *item, int idx, char *word)
+R_API int r_reg_type_by_name(const char *str)
 {
+	int type = -1; //R_REG_TYPE_ALL;
+	// XXX: do not spaguetti
+	if	(!strcmp(str, "gpr")) type = R_REG_TYPE_GPR;
+	else if (!strcmp(str, "drx")) type = R_REG_TYPE_DRX;
+	else if (!strcmp(str, "mmx")) type = R_REG_TYPE_MMX;
+	else if (!strcmp(str, "xmm")) type = R_REG_TYPE_XMM;
+	else if (!strcmp(str, "fpu")) type = R_REG_TYPE_FPU;
+	else if (!strcmp(str, "fpu")) type = R_REG_TYPE_FLG;
+	else if (!strcmp(str, "seg")) type = R_REG_TYPE_SEG;
+	else if (!strcmp(str, "flg")) type = R_REG_TYPE_FLG;
+	else	printf("Unknown register type: '%s'\n", str);
+	return type;
+}
+
+/* TODO: make this parser better and cleaner */
+static int r_reg_set_word(struct r_reg_item_t *item, int idx, char *word) {
 	int ret = R_TRUE;
 	switch(idx) {
 	case 0:
-		// XXX: do not spaguetti
-		if (!strcmp(word, "gpr"))
-			item->type = R_REG_TYPE_GPR;
-		else
-		if (!strcmp(word, "drx"))
-			item->type = R_REG_TYPE_DRX;
-		else
-		if (!strcmp(word, "mmx"))
-			item->type = R_REG_TYPE_MMX;
-		else
-		if (!strcmp(word, "xmm"))
-			item->type = R_REG_TYPE_XMM;
-		else
-		if (!strcmp(word, "fpu"))
-			item->type = R_REG_TYPE_FPU;
-		else
-		if (!strcmp(word, "fpu"))
-			item->type = R_REG_TYPE_FLG;
-		else
-		if (!strcmp(word, "seg"))
-			item->type = R_REG_TYPE_SEG;
-		else
-		if (!strcmp(word, "flg"))
-			item->type = R_REG_TYPE_FLG;
-		else	printf("Unknown register type: '%s'\n", word);
+		item->type = r_reg_type_by_name(word);
 		break;
 	case 1:
 		item->name = strdup(word);
@@ -130,10 +118,8 @@ R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *str)
 
 	if (!str)
 		return R_FALSE;
-
 	buf[0]=0;
 	/* format file is: 'type name size offset packedsize' */
-
 	r_reg_free_internal(reg);
 	item = r_reg_item_new();
 
@@ -156,14 +142,16 @@ R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *str)
 		case '\n':
 			// commit new
 			//printf("WORD %d (%s)\n", word, buf);
-			r_reg_set_word(item, word, buf);
-			// TODO: add check to ensure that all the fields are defined
-			// before adding it into the list
-			if (item->name != NULL) {
-				list_add_tail(&item->list, &reg->regset[item->type].regs);
-//printf("ADD REG(%s)\n", item->name);
-				item = r_reg_item_new();
-//				printf("-----------\n");
+			if (word>3) {
+				r_reg_set_word(item, word, buf);
+				// TODO: add check to ensure that all the fields are defined
+				// before adding it into the list
+				if (item->name != NULL) {
+					list_add_tail(&item->list, &reg->regset[item->type].regs);
+	//printf("ADD REG(%s) type=%d\n", item->name, item->type);
+					item = r_reg_item_new();
+	//				printf("-----------\n");
+				}
 			}
 			chidx = word = 0;
 			break;

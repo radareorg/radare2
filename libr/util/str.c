@@ -264,6 +264,7 @@ R_API char *r_str_dup(char *ptr, const char *string)
         return ptr;
 }
 
+// TODO: rename to r_str_dupfmt
 R_API char *r_str_dup_printf(const char *fmt, ...)
 {
 	char *ret;

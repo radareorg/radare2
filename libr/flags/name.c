@@ -4,8 +4,7 @@
 
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')
 
-static int r_flag_name_validate_char(const char ch)
-{
+static int r_flag_name_validate_char(const char ch) {
 	switch(ch) {
 	case '*':
 	case '/':
@@ -26,7 +25,7 @@ static int r_flag_name_validate_char(const char ch)
 	return 1;
 }
 
-int r_flag_name_check(const char *name)
+R_API int r_flag_name_check(const char *name)
 {
 	if (name[0]=='\0')
 		return 0;
@@ -37,7 +36,7 @@ int r_flag_name_check(const char *name)
 	return 1;
 }
 
-int r_flag_name_filter(char *name)
+R_API int r_flag_name_filter(char *name)
 {
 	int i;
 	char *oname;

@@ -51,6 +51,7 @@ R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *profile);
 R_API int r_reg_set_profile(struct r_reg_t *reg, const char *profile);
 R_API struct r_reg_item_t *r_reg_get(struct r_reg_t *reg, const char *name);
 R_API struct list_head *r_reg_get_list(struct r_reg_t *reg, int type);
+R_API int r_reg_type_by_name(const char *str);
 
 /* value */
 R_API ut64 r_reg_get_value(struct r_reg_t *reg, struct r_reg_item_t *item);

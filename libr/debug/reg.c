@@ -26,11 +26,11 @@ R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write)
 R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad)
 {
 	int n = 0;
-	struct list_head *pos, *head =
-		r_reg_get_list(dbg->reg, R_REG_TYPE_GPR);	
-
+	struct list_head *pos, *head = r_reg_get_list(dbg->reg, type);
+//printf("list type=%d size=%d\n", type, size);
 	list_for_each(pos, head) {
 		struct r_reg_item_t *item = list_entry(pos, struct r_reg_item_t, list);
+//printf("--> t=%d\n", item->type);
 		if (type != -1 && type != item->type)
 			continue;
 		if (size != 0 && size != item->size)

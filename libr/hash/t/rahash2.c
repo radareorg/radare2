@@ -9,7 +9,6 @@ static int do_hash(const char *algo, const ut8 *buf, int len, int bsize)
 	struct r_hash_t ctx;
 	const ut8 *c;
 	int i, j, dlen;
-	char *name;
 	ut64 algobit = r_hash_name_to_bits (algo);
 	if (algobit == R_HASH_NONE) {
 		fprintf(stderr, "Invalid hashing algorithm specified\n");
@@ -42,9 +41,10 @@ static int do_help(int line)
 	printf("Usage: rahash2 [-b bsize] [-a algo] [-s str] [file] ...\n");
 	if (line) return 0;
 	printf(
-	" -a algo     Hashing algorithm to use (md4, md5, crc32, sha1, ...)\n"
-	" -b bsize    Specify the size of the block\n"
-	" -s string   Hash this string instead of files\n");
+	" -a algo     hashing algorithm to use (md4, md5, crc32, sha1, ...)\n"
+	" -b bsize    specify the size of the block\n"
+	" -s string   hash this string instead of files\n"
+	" -V          show version information\n");
 	return 0;
 }
 
@@ -55,8 +55,7 @@ int main(int argc, char **argv)
 	int c, buf_len = 0;
 	int bsize = 0;
 
-	while ((c = getopt(argc, argv, "a:s:b:h")) != -1)
-	{
+	while ((c = getopt(argc, argv, "Va:s:b:h")) != -1) {
 		switch( c ) {
 		case 'a':
 			algo = optarg;
@@ -68,12 +67,15 @@ int main(int argc, char **argv)
 			buf = (ut8*) optarg;
 			buf_len = strlen(optarg);
 			break;
+		case 'V':
+			printf("rahash2 v"VERSION"\n");
+			return 0;
 		case 'h':
 			return do_help(1);
 		}
 	}
 	if (optind<argc)
-		buf = r_file_slurp(argv[optind], &buf_len);
+		buf = (const ut8*)r_file_slurp(argv[optind], &buf_len);
 
 	if (buf == NULL) {
 		do_help(0);

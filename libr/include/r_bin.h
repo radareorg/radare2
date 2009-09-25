@@ -126,7 +126,7 @@ R_API int r_bin_init(struct r_bin_t *bin);
 R_API void r_bin_set_user_ptr(struct r_bin_t *bin, void *user);
 R_API int r_bin_add(struct r_bin_t *bin, struct r_bin_handle_t *foo);
 R_API int r_bin_list(struct r_bin_t *bin);
-R_API int r_bin_open(struct r_bin_t *bin, const char *file, int rw, char *plugin_name);
+R_API int r_bin_open(struct r_bin_t *bin, const char *file, int rw, const char *plugin_name);
 R_API int r_bin_close(struct r_bin_t *bin);
 R_API ut64 r_bin_get_baddr(struct r_bin_t *bin);
 R_API struct r_bin_entry_t* r_bin_get_entry(struct r_bin_t *bin);

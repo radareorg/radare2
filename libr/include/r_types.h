@@ -53,6 +53,10 @@
 #define _FILE_OFFSET_BITS 64
 #undef _GNU_SOURCE
 #define _GNU_SOURCE
+#undef _XOPEN_SOURCE
+#define _XOPEN_SOURCE
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE
 
 /* allocating */
 #include <stdio.h>
@@ -160,6 +164,5 @@ typedef struct { void* head; void *cur; } rarray_t;
 //{.cur=(void*)x,.head=(void*)x}
 #define rarray_free(x) (free((x)->head))
 #endif
-
 
 #endif

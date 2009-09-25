@@ -258,7 +258,7 @@ R_API ut64 r_asm_mdisassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *b
 	return idx;
 }
 
-R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
+R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf)
 {
 	struct {
 		char name[32];

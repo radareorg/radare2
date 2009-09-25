@@ -3,21 +3,21 @@
 
 #include "r_lib.h"
 #include "r_lang.h"
+#include "r_core.h"
 #undef _GNU_SOURCE
+#undef _XOPEN_SOURCE
+#undef _POSIX_C_SOURCE
 #include <Python.h>
 #include <structmember.h>
 
-#include "r_core.h"
 static struct r_core_t *core = NULL;
 
-static int run(struct r_lang_t *lang, const char *code, int len)
-{
+static int run(struct r_lang_t *lang, const char *code, int len) {
 	PyRun_SimpleString(code);
 	return R_TRUE;
 }
 
-static int slurp_python(const char *file)
-{
+static int slurp_python(const char *file) {
 	FILE *fd = fopen(file, "r");
 	if (fd == NULL)
 		return R_FALSE;
@@ -26,8 +26,7 @@ static int slurp_python(const char *file)
 	return R_TRUE;
 }
 
-static int run_file(struct r_lang_t *lang, const char *file)
-{
+static int run_file(struct r_lang_t *lang, const char *file) {
 	return slurp_python(file);
 }
 
@@ -40,15 +39,13 @@ typedef struct {
 	int number;
 } Radare;
 
-static void Radare_dealloc(Radare* self)
-{
+static void Radare_dealloc(Radare* self) {
 	Py_XDECREF(self->first);
 	Py_XDECREF(self->last);
 	self->ob_type->tp_free((PyObject*)self);
 }
 
-static PyObject * Radare_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
+static PyObject * Radare_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
 	Radare *self;
 
 	self = (Radare *)type->tp_alloc(type, 0);
@@ -71,8 +68,7 @@ static PyObject * Radare_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	return (PyObject *)self;
 }
 
-static PyObject * Radare_cmd(Radare* self, PyObject *args)
-{
+static PyObject * Radare_cmd(Radare* self, PyObject *args) {
 	PyObject *result;
 	char *str, *cmd = NULL;
 
@@ -88,8 +84,7 @@ static PyObject * Radare_cmd(Radare* self, PyObject *args)
 	return result;
 }
 
-static int Radare_init(Radare *self, PyObject *args, PyObject *kwds)
-{
+static int Radare_init(Radare *self, PyObject *args, PyObject *kwds) {
 	PyObject *first=NULL, *last=NULL, *tmp;
 
 	static char *kwlist[] = {"first", "last", "number", NULL};
@@ -174,8 +169,7 @@ static PyTypeObject RadareType = {
 	Radare_new,                /* tp_new */
 };
 
-static void init_radare_module(void)
-{
+static void init_radare_module(void) {
 	PyObject* m;
 	if (PyType_Ready(&RadareType) < 0)
 		return;
@@ -184,8 +178,7 @@ static void init_radare_module(void)
 }
 /* -init- */
 
-static int prompt(void *user)
-{
+static int prompt(void *user) {
 	int err = 1;
 	// PyRun_SimpleString("import IPython");
 	if (err != 0)
@@ -193,8 +186,7 @@ static int prompt(void *user)
 	return R_TRUE;
 }
 
-static int init(struct r_lang_t *lang)
-{
+static int init(struct r_lang_t *lang) {
 	core = lang->user;
 	Py_Initialize();
 	init_radare_module();
@@ -205,8 +197,7 @@ static int init(struct r_lang_t *lang)
 	return R_TRUE;
 }
 
-static int fini(void *user)
-{
+static int fini(void *user) {
 	return R_TRUE;
 }
 
@@ -215,19 +206,21 @@ static const char *help =
 	//" r = new RadareInternal()\n"
 	" bytes = r.cmd(\"p8 10\");\n";
 
-static struct r_lang_handle_t r_lang_plugin_python = {
+struct r_lang_handle_t r_lang_plugin_python = {
 	.name = "python",
 	.desc = "Python language extension",
 	.init = &init,
-	.fini = &fini,
+	.fini = (void *)&fini,
 	.help = &help,
-	.prompt = &prompt,
+	.prompt = (void *)&prompt,
 	.run = &run,
 	.run_file = &run_file,
 	.set_argv = NULL,
 };
 
+#if !CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_LANG,
 	.data = &r_lang_plugin_python,
 };
+#endif

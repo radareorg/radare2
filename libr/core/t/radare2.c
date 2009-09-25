@@ -5,8 +5,6 @@
 #include <stdio.h>
 #include <getopt.h>
 
-#define VERSION "0.1"
-
 static struct r_core_t r;
 
 static int main_help(int line)

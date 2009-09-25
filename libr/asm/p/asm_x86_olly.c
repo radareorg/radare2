@@ -10,9 +10,7 @@
 #include "fastcall_x86.h"
 #include "x86/ollyasm/disasm.h"
 
-
-static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len)
-{
+static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len) {
 	t_disasm disasm_obj;
 
 	lowercase=1;
@@ -23,8 +21,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	return aop->inst_len;
 }
 
-static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
-{
+static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf) {
 	static t_asmmodel asm_obj;
 	int attempt, constsize, oattempt = 0, oconstsize = 0, ret = 0, oret = 0xCAFE;
 
@@ -51,7 +48,6 @@ static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 	return aop->inst_len;
 }
 
-
 struct r_asm_handle_t r_asm_plugin_x86_olly = {
 	.name = "x86.olly",
 	.desc = "X86 disassembly plugin (olly engine)",
@@ -61,7 +57,7 @@ struct r_asm_handle_t r_asm_plugin_x86_olly = {
 	.fini = NULL,
 	.disassemble = &disassemble,
 	.assemble = &assemble,
-	.fastcall = fastcall,
+	.fastcall = (void *)fastcall,
 };
 
 #ifndef CORELIB

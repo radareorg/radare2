@@ -1,5 +1,5 @@
 # TODO: append EXECEXT to BINS
-FLAGS=-I../../include -Wl,-R.. -L.. -lr_util -g
+FLAGS=-I../../include -Wl,-R.. -L.. -lr_util -g -DVERSION=\"${VERSION}\"
 
 all: test rax2 ralloc iter file_slurp_hexpairs pool
 
@@ -24,3 +24,5 @@ file_slurp_hexpairs:
 
 clean:
 	rm -f calc rax2 ralloc test
+
+include ../../rules.mk

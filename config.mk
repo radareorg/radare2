@@ -1,4 +1,3 @@
-VERSION=0.2
 RELEASE=1
 DESTDIR=
 OSTYPE?=gnulinux
@@ -22,3 +21,4 @@ endif
 LIBDIR=${PREFIX}/lib
 
 -include config-user.mk
+-include ../config-user.mk

@@ -10,8 +10,7 @@
 
 static int cmd_io_system(void *data, const char *input);
 
-static int cmd_iopipe(void *data, const char *input)
-{
+static int cmd_iopipe(void *data, const char *input) {
 	struct r_core_t *core = (struct r_core_t *)data;
 	switch(input[0]) {
 	case '\0':
@@ -26,8 +25,7 @@ static int cmd_iopipe(void *data, const char *input)
 }
 
 /* TODO: this should be moved to the core->yank api */
-static int cmd_yank_to(struct r_core_t *core, char *arg)
-{
+static int cmd_yank_to(struct r_core_t *core, char *arg) {
 	ut64 src = core->seek;
 	ut64 len =  0;
 	ut64 pos = -1;
@@ -46,14 +44,12 @@ static int cmd_yank_to(struct r_core_t *core, char *arg)
 		eprintf("Usage: yt [len] [dst-addr]\n");
 		return 1;
 	}
-
 #if 0
 	if (!config_get("file.write")) {
 		eprintf("You are not in read-write mode.\n");
 		return 1;
 	}
 #endif
-
 	buf = (ut8*)malloc( len );
 	r_core_read_at (core, src, buf, len);
 	r_core_write_at (core, pos, buf, len);
@@ -64,8 +60,7 @@ static int cmd_yank_to(struct r_core_t *core, char *arg)
 	return 0;
 }
 
-static int cmd_yank(void *data, const char *input)
-{
+static int cmd_yank(void *data, const char *input) {
 	struct r_core_t *core = (struct r_core_t *)data;
 	switch(input[0]) {
 	case ' ':
@@ -82,16 +77,14 @@ static int cmd_yank(void *data, const char *input)
 		}
 		break;
 	case '\0':
-		if (core->yank == NULL) {
-			fprintf(stderr, "No buffer yanked already\n");
-		} else {
+		if (core->yank) {
 			int i;
 			r_cons_printf("0x%08llx %d ",
 				core->yank_off, core->yank_len);
 			for(i=0;i<core->yank_len;i++)
 				r_cons_printf("%02x", core->yank[i]);
 			r_cons_newline();
-		}
+		} else fprintf(stderr, "No buffer yanked already\n");
 		break;
 	default:
 		r_cons_printf(
@@ -129,8 +122,8 @@ static int cmd_quit(void *data, const char *input)
 	return 0;
 }
 
-static int cmd_interpret(void *data, const char *input)
-{
+static int cmd_interpret(void *data, const char *input) {
+	char *str, *ptr, *eol;
 	struct r_core_t *core = (struct r_core_t *)data;
 	switch(input[0]) {
 	case ' ':
@@ -154,32 +147,27 @@ static int cmd_interpret(void *data, const char *input)
 		" ./m ELF           ; interpret output of command /m ELF as r. commands\n");
 		break;
 	default:
-		{
-		char *str = r_core_cmd_str(core, input);
-		char *ptr = str;
+		ptr = str = r_core_cmd_str(core, input);
 		while(1) {
-			char *eol = strchr(ptr, '\n');
+			eol = strchr(ptr, '\n');
 			if (eol) eol[0]='\0';
 			r_core_cmd(core, ptr, 0);
 			if (!eol) break;
 			ptr = eol+1;
 		}
 		free(str);
-		}
 		break;
 	}
 	return 0;
 }
 
-static int cmd_seek(void *data, const char *input)
-{
+static int cmd_seek(void *data, const char *input) {
+	ut64 off;
+	char *cmd, *p; 
 	struct r_core_t *core = (struct r_core_t *)data;
-
-	if (input[0]=='\0') {
-		r_cons_printf("0x%llx\n", core->seek);
-	} else {
-		int idelta = (input[1]==' ')?2:1;
-		ut64 off = r_num_math(&core->num, input+idelta);
+	if (input[0]&&input[1]) {
+		int delta = (input[1]==' ')?2:1;
+		off = r_num_math(&core->num, input + delta); 
 		if (input[0]==' ' && (input[1]=='+'||input[1]=='-'))
 			input = input+1;
 		switch(input[0]) {
@@ -195,25 +183,20 @@ static int cmd_seek(void *data, const char *input)
 			else r_core_seek_delta(core, -off);
 			break;
 		case 'a':
-			{
-				ut64 alsz = core->blocksize;
-
-				if (input[1]&&input[2]) {
-					char *cmd, *p; 
-					cmd = strdup(input);
-					p = strchr(cmd+2, ' ');
-					if (p) {
-						alsz = r_num_math(&core->num, p+1);;
-						*p='\0';
-					}
-					cmd[0]='s';
-					// perform real seek if provided
-					r_cmd_call(&core->cmd, cmd);
-					free(cmd);
+			off = core->blocksize;
+			if (input[1]&&input[2]) {
+				cmd = strdup(input);
+				p = strchr(cmd+2, ' ');
+				if (p) {
+					off = r_num_math(&core->num, p+1);;
+					*p='\0';
 				}
-
-				r_core_seek_align(core, alsz, 0);
+				cmd[0]='s';
+				// perform real seek if provided
+				r_cmd_call(&core->cmd, cmd);
+				free(cmd);
 			}
+			r_core_seek_align(core, off, 0);
 			break;
 		case '?':
 			fprintf(stderr,
@@ -226,7 +209,7 @@ static int cmd_seek(void *data, const char *input)
 			" sa [[+-]a] [asz] ; seek asz (or bsize) aligned to addr\n");
 			break;
 		}
-	}
+	} else r_cons_printf("0x%llx\n", core->seek);
 	return 0;
 }
 
@@ -518,13 +501,11 @@ static int cmd_print(void *data, const char *input)
 	return 0;
 }
 
-static int cmd_hexdump(void *data, const char *input)
-{
+static int cmd_hexdump(void *data, const char *input) {
 	return cmd_print(data, input-1);
 }
 
-static int cmd_flag(void *data, const char *input)
-{
+static int cmd_flag(void *data, const char *input) {
 	struct r_core_t *core = (struct r_core_t *)data;
 	int len = strlen(input)+1;
 	char *str = alloca(len);
@@ -654,7 +635,7 @@ static int cmd_write(void *data, const char *input)
 		{
 			/* TODO: Support user defined size? */
 			int len = core->blocksize;
-			const char *arg = input+(input[1]==' ')?2:1;
+			const char *arg = (const char *)(input+(input[1]==' ')?2:1);
 			const ut8 *buf = core->block;
 			r_file_dump(arg, buf, len);
 		}
@@ -665,29 +646,25 @@ static int cmd_write(void *data, const char *input)
 	case 'f':
 		{
 			int size;
-			char *arg = input+(input[1]==' ')?2:1;
-			ut8 *buf = r_file_slurp(arg, &size);
-			if (buf == NULL) {
-				eprintf("Cannot open file '%s'\n", arg);
-			} else {
+			const char *arg = (const char *)(input+(input[1]==' ')?2:1);
+			ut8 *buf = (ut8*) r_file_slurp(arg, &size);
+			if (buf) {
 				r_io_set_fd(&core->io, core->file->fd);
 				r_io_write_at(&core->io, core->seek, buf, size);
 				free(buf);
-			}
+			} else eprintf("Cannot open file '%s'\n", arg);
 		}
 		break;
 	case 'F':
 		{
 			int size;
-			char *arg = input+(input[1]==' ')?2:1;
+			const char *arg = (const char *)(input+(input[1]==' ')?2:1);
 			ut8 *buf = r_file_slurp_hexpairs(arg, &size);
 			if (buf == NULL) {
-				eprintf("Cannot open file '%s'\n", arg);
-			} else {
 				r_io_set_fd(&core->io, core->file->fd);
 				r_io_write_at(&core->io, core->seek, buf, size);
 				free(buf);
-			}
+			} else eprintf("Cannot open file '%s'\n", arg);
 		}
 		break;
 	case 'w':
@@ -703,13 +680,13 @@ static int cmd_write(void *data, const char *input)
 
 		// write strifng
 		r_io_set_fd(&core->io, core->file->fd);
-		r_io_write_at(&core->io, core->seek, str, len);
+		r_io_write_at(&core->io, core->seek, (const ut8*)str, len);
 		r_core_block_read(core, 0);
 		break;
 	case 'x':
 		{
 		int len = strlen(input);
-		char *buf = alloca(len);
+		ut8 *buf = alloca(len);
 		len = r_hex_str2bin(input+1, buf);
 		r_core_write_at(core, core->seek, buf, len);
 		r_core_block_read(core, 0);
@@ -734,7 +711,7 @@ static int cmd_write(void *data, const char *input)
 	case 'b':
 		{
 		int len = strlen(input);
-		char *buf = alloca(len);
+		ut8 *buf = alloca(len);
 		len = r_hex_str2bin(input+1, buf);
 		r_mem_copyloop(core->block, buf, core->blocksize, len);
 		r_core_write_at(core, core->seek, core->block, core->blocksize);
@@ -743,8 +720,7 @@ static int cmd_write(void *data, const char *input)
 		break;
 	case 'm':
 		{
-		int len = strlen(input+1);
-		len = r_hex_str2bin(input+1, str);
+		int len = r_hex_str2bin(input+1, (ut8*)str);
 		switch(input[1]) {
 		case '\0':
 			fprintf(stderr, "Current write mask: TODO\n");
@@ -761,7 +737,7 @@ static int cmd_write(void *data, const char *input)
 				fprintf(stderr, "Invalid string\n");
 			} else {
 				r_io_set_fd(&core->io, core->file->fd);
-				r_io_set_write_mask(&core->io, str, len);
+				r_io_set_write_mask(&core->io, (const ut8*)str, len);
 				fprintf(stderr, "Write mask set to '");
 				for (i=0;i<len;i++)
 					fprintf(stderr, "%02x", str[i]);
@@ -861,7 +837,7 @@ static int cmd_write(void *data, const char *input)
 	return 0;
 }
 
-static char *cmdhit = NULL;
+static const char *cmdhit = NULL;
 static int __cb_hit(struct r_search_kw_t *kw, void *user, ut64 addr)
 {
 	struct r_core_t *core = (struct r_core_t *)user;
@@ -1262,7 +1238,7 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 		} else {
 			for(str=ptr+1;str[0]== ' ';str=str+1);
 			eprintf("SLURPING FILE '%s'\n", str);
-			core->oobi = (char *)r_file_slurp(str, &core->oobi_len);
+			core->oobi = (ut8*)r_file_slurp(str, &core->oobi_len);
 			if (core->oobi == NULL)
 				eprintf("Cannot open file\n");
 			else if (ptr == cmd)
@@ -1476,7 +1452,7 @@ printf("No flags foreach implemented\n");
 	return R_TRUE;
 }
 
-int r_core_cmd(struct r_core_t *core, const char *command, int log)
+R_API int r_core_cmd(struct r_core_t *core, const char *command, int log)
 {
 	int i, len;
 	char *cmd , *ocmd = NULL;
@@ -1559,7 +1535,7 @@ int r_core_cmd(struct r_core_t *core, const char *command, int log)
 	return ret;
 }
 
-int r_core_cmd_file(struct r_core_t *core, const char *file)
+R_API int r_core_cmd_file(struct r_core_t *core, const char *file)
 {
 	char buf[1024];
 	FILE *fd = fopen(file, "r");
@@ -1578,8 +1554,7 @@ int r_core_cmd_file(struct r_core_t *core, const char *file)
 	return 0;
 }
 
-static int cmd_debug(void *data, const char *input)
-{
+static int cmd_debug(void *data, const char *input) {
 	struct r_core_t *core = (struct r_core_t *)data;
 	char *ptr;
 	switch(input[0]) {
@@ -1655,9 +1630,35 @@ static int cmd_debug(void *data, const char *input)
 		break;
 	case 'r':
 #if 1
-		// TODO: REG_TYPE_ALL // aka -1
-		r_debug_reg_sync(&core->dbg, R_REG_TYPE_GPR, R_FALSE);
-		r_debug_reg_list(&core->dbg, R_REG_TYPE_GPR, 32, input[1]=='*');
+{
+		char *arg;
+		int type = R_REG_TYPE_GPR;
+		int size = atoi(input+1);
+		if (input[1]=='?') {
+			fprintf(stderr, "Usage: dr[*] [type] [size] - get/set registers\n"
+				" .dr*       include common register values in flags\n"
+				" dr flg 1   show flag registers \n"
+				" dr 16      show 16 bit GPR registers\n");
+			break;
+		}
+		if (size==0) {
+			if (input[1]==' ') {
+				arg = strchr(input+2, ' ');
+				if (arg && size==0) {
+					*arg='\0';
+					size = atoi(arg+1);
+				} else size = 32;
+				printf("ARG(%s)\n", input+2);
+				type = r_reg_type_by_name(input+2);
+			} else size = 32;
+		}
+		//printf("type = %d\nsize = %d\n", type, size);
+		if (type != -1) {
+			// TODO: REG_TYPE_ALL // aka -1
+			r_debug_reg_sync(&core->dbg, type, R_FALSE);
+			r_debug_reg_list(&core->dbg, type, size, input[1]=='*');
+		} else fprintf(stderr, "Unknown type\n");
+}
 #else
 		r_core_cmd(core, "|reg", 0);
 #endif
@@ -1743,7 +1744,7 @@ R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd)
 		retstr = strdup("");
 	} else {
 		const char *static_str = r_cons_get_buffer();
-		if (retstr==NULL || static_str==NULL)
+		if (static_str==NULL)
 			retstr = strdup("");
 		else retstr = strdup(static_str);
 		r_cons_reset();

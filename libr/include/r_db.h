@@ -40,6 +40,7 @@ R_API struct r_db_iter_t *r_db_iter(struct r_db_t *db, int key, const ut8 *b);
 R_API void *r_db_iter_cur(struct r_db_iter_t *iter);
 R_API void *r_db_iter_next(struct r_db_iter_t *iter);
 R_API void *r_db_iter_prev(struct r_db_iter_t *iter);
+R_API struct r_db_iter_t *r_db_iter_new(struct r_db_t *db, int key);
 R_API struct r_db_iter_t *r_db_iter_free(struct r_db_iter_t *iter);
 R_API int r_db_free(struct r_db_t *db);
 R_API int r_db_push(struct r_db_t *db, const ut8 *b);

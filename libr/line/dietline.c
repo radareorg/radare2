@@ -329,8 +329,8 @@ R_API int r_line_init()
 }
 
 /* TODO: Remove this test case .. this is not R_API */
-static int r_line_printchar()
-{
+#if 0
+static int r_line_printchar() {
 	unsigned char buf[10];
 
 	r_cons_set_raw(1);
@@ -367,6 +367,7 @@ static int r_line_printchar()
 
 	return buf[0];
 }
+#endif
 
 /* main readline function */
 R_API char *r_line_readline(int argc, const char **argv)

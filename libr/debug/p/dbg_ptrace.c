@@ -59,20 +59,39 @@ static const char *r_debug_ptrace_reg_profile()
 {
 	return strdup(
 	"gpr	eip	.32	48	0\n"
+	"gpr	ip	.16	48	0\n"
 	"gpr	oeax	.32	44	0\n"
 	"gpr	eax	.32	24	0\n"
+	"gpr	ax	.16	24	0\n"
+	"gpr	ah	.8	24	0\n"
+	"gpr	al	.8	25	0\n"
 	"gpr	ebx	.32	0	0\n"
+	"gpr	bx	.16	0	0\n"
+	"gpr	bh	.8	0	0\n"
+	"gpr	bl	.8	1	0\n"
 	"gpr	ecx	.32	4	0\n"
+	"gpr	cx	.16	4	0\n"
+	"gpr	ch	.8	4	0\n"
+	"gpr	cl	.8	5	0\n"
 	"gpr	edx	.32	8	0\n"
+	"gpr	dx	.16	8	0\n"
+	"gpr	dh	.8	8	0\n"
+	"gpr	dl	.8	9	0\n"
 	"gpr	esp	.32	60	0\n"
+	"gpr	sp	.16	60	0\n"
 	"gpr	ebp	.32	20	0\n"
+	"gpr	bp	.16	20	0\n"
 	"gpr	esi	.32	12	0\n"
+	"gpr	si	.16	12	0\n"
 	"gpr	edi	.32	16	0\n"
+	"gpr	di	.16	16	0\n"
 	"seg	xfs	.32	36	0\n"
 	"seg	xgs	.32	40	0\n"
 	"seg	xcs	.32	52	0\n"
+	"seg	cs	.16	52	0\n"
 	"seg	xss	.32	52	0\n"
 	"gpr	eflags	.32	56	0\n"
+	"gpr	flags	.16	56	0\n"
 	"\n"
 	"# base address is 448bit\n"
 	"flg	carry	.1	.448	0\n"
@@ -119,15 +138,14 @@ static int r_debug_ptrace_reg_read(struct r_debug_t *dbg, int type, ut8 *buf, in
 	return 0;
 }
 
-static int r_debug_ptrace_reg_write(int pid, struct r_regset_t *regs)
-{
+static int r_debug_ptrace_reg_write(int pid, int type, const ut8* buf, int len) {
 	/* TODO */
 	return 0;
 }
 
 // TODO: deprecate???
-static int r_debug_ptrace_bp_write(int pid, ut64 addr, int size, int hw, int rwx)
-{
+#if 0
+static int r_debug_ptrace_bp_write(int pid, ut64 addr, int size, int hw, int rwx) {
 	if (hw) {
 		/* implement DRx register handling here */
 		return R_TRUE;
@@ -140,6 +158,7 @@ static int r_debug_ptrace_bp_read(int pid, ut64 addr, int hw, int rwx)
 {
 	return R_TRUE;
 }
+#endif
 
 static int r_debug_get_arch()
 {
@@ -161,14 +180,15 @@ static int r_debug_ptrace_import(struct r_debug_handle_t *from)
 	return R_FALSE;
 }
 #endif
+#if __WORDSIZE == 64
+const char *archlist[3] = { "x86", "x86-32", "x86-64", 0 };
+#else
+const char *archlist[3] = { "x86", "x86-32", 0 };
+#endif
 
 struct r_debug_handle_t r_debug_plugin_ptrace = {
 	.name = "ptrace",
-#if __WORDSIZE == 64
-	.archs = { "x86-64", 0 },
-#else
-	.archs = { "x86", "x86-32", 0 },
-#endif
+	.archs = (const char **)archlist,
 	.step = &r_debug_ptrace_step,
 	.cont = &r_debug_ptrace_continue,
 	.attach = &r_debug_ptrace_attach,
@@ -176,9 +196,9 @@ struct r_debug_handle_t r_debug_plugin_ptrace = {
 	.wait = &r_debug_ptrace_wait,
 	.get_arch = &r_debug_get_arch,
 	//.bp_write = &r_debug_ptrace_bp_write,
-	.reg_profile = &r_debug_ptrace_reg_profile,
+	.reg_profile = (void *)&r_debug_ptrace_reg_profile,
 	.reg_read = &r_debug_ptrace_reg_read,
-	.reg_write = &r_debug_ptrace_reg_write,
+	.reg_write = (void *)&r_debug_ptrace_reg_write,
 	//.bp_read = &r_debug_ptrace_bp_read,
 };
 

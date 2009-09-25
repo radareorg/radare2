@@ -5,7 +5,7 @@ PFX=${DESTDIR}${PREFIX}
 #PREFIX=${PFX}
 
 # Libraries
-LIBLIST=io util lib meta lang flags bin bininfo macro hash line cons print config syscall range socket cmd asm anal parse search diff bp debug reg core var sign trace vm th db reg
+LIBLIST=io util lib meta lang flags bin bininfo macro hash line cons print config syscall range socket cmd asm anal parse search diff bp reg debug core var sign trace vm th db
 
 # Under development
 #LIBLIST+=print
@@ -53,9 +53,9 @@ install:
 	@for a in `find */p -perm /u+x -type f`; \
 	do echo " $$a"; ${INSTALL_DATA} $$a ${PFX}/lib/radare2 ; done
 	# test programs
-	@${INSTALL_DIR} ${PFX}/bin-test
+	@${INSTALL_DIR} ${PFX}/bin/libr-test
 	@for a in `find */t -perm /u+x -type f | grep -v 2`; \
-	do echo " $$a"; ${INSTALL_PROGRAM} $$a ${PFX}/bin-test ; done
+	do echo " $$a"; ${INSTALL_PROGRAM} $$a ${PFX}/bin/libr-test ; done
 	@echo libr aka radare2 has been installed:
 	@echo PREFIX=${PREFIX}
 	@echo DESTDIR=${DESTDIR}
@@ -86,9 +86,9 @@ deinstall uninstall:
 	rm -f ${PREFIX}/lib/pkgconfig/r_*.pc
 	# test programs
 	-@for a in `find */t -perm /u+x -type f | grep -v 2`; do \
-	a="${PREFIX}/bin-test/`echo $$a|awk -F / '{ print $$NF; }'`"; \
+	a="${PREFIX}/bin/libr-test/`echo $$a|awk -F / '{ print $$NF; }'`"; \
 	echo $$a ; rm -f $$a ; done
-	rm -rf ${PREFIX}/bin-test
+	rm -rf ${PREFIX}/bin/libr-test
 	@echo libr aka radare2 has been uninstalled from PREFIX=${PREFIX}
 
 todo:

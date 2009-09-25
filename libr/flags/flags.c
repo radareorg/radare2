@@ -67,12 +67,15 @@ R_API struct r_flag_item_t *r_flag_list(struct r_flag_t *f, int rad)
 
 R_API struct r_flag_item_t *r_flag_get(struct r_flag_t *f, const char *name)
 {
+#if USE_BTREE
+	struct r_flag_item_t *i;
+	struct r_flag_item_t tmp;
+#else
 	struct list_head *pos;
+#endif
 	if (name==NULL || name[0]=='\0' || (name[0]>='0'&& name[0]<='9'))
 		return NULL;
 #if USE_BTREE
-struct r_flag_item_t *i;
-	struct r_flag_item_t tmp;
 	tmp.namehash = r_str_hash(name);
 	i = btree_get(f->ntree, &tmp, ncmp);
 //eprintf("GET_I (0x%08llx) = %p\n", off, i);

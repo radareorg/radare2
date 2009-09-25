@@ -5,7 +5,6 @@ TODO:
   support for multiple keywords
 #endif
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
@@ -34,8 +33,7 @@ static ut64 bsize = 4096;
 static int hexstr = 0;
 static struct r_print_t *pr = NULL;
 
-static int hit(struct r_search_kw_t *kw, void *user, ut64 addr)
-{
+static int hit(struct r_search_kw_t *kw, void *user, ut64 addr) {
 	//const ut8 *buf = (ut8*)user;
 	int delta = addr-cur;
 	if (rad) {
@@ -50,8 +48,7 @@ static int hit(struct r_search_kw_t *kw, void *user, ut64 addr)
 	return 1;
 }
 
-static int show_help(char *argv0, int line)
-{
+static int show_help(char *argv0, int line) {
 	printf("Usage: %s [-Xnzh] [-f from] [-t to] [-s str] [-z] [-x hex] file ...\n", argv0);
 	if (line) return 0;
 	printf(
@@ -118,7 +115,7 @@ int main(int argc, char **argv)
 {
 	int c;
 
-	while ((c = getopt(argc, argv, "s:x:Xzf:t:rnh")) != -1) {
+	while ((c = getopt(argc, argv, "s:x:Xzf:t:rnhV")) != -1) {
 		switch(c) {
 		case 'r':
 			rad = 1;
@@ -155,6 +152,9 @@ int main(int argc, char **argv)
 		case 'X':
 			pr = r_print_new();
 			break;
+		case 'V':
+			printf("rafind2 v"VERSION"\n");
+			return 0;
 		case 'h':
 			return show_help(argv[0], 0);
 		}

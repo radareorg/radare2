@@ -260,6 +260,7 @@ R_API struct r_db_iter_t *r_db_iter_free(struct r_db_iter_t *iter)
 R_API int r_db_free(struct r_db_t *db)
 {
 	/* TODO : using the iterator logic */
+	// TODO: use r_pool_mem here!
 #if 0
 	r_db_iter_t *iter = r_db_iter(db, -1);
 	if (db->cb_free) {

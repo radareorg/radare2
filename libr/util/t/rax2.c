@@ -1,14 +1,12 @@
 /* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
 
-#include "r_util.h"
+#include <r_util.h>
 
-int rax(const char *str)
-{
-	ut64 n = r_num_math(NULL, str);
-	switch(*str) {
-	case 'q':
+static int rax(const char *str) {
+	ut64 n;
+	if (*str=='q')
 		return 0;
-	}
+ 	n = r_num_math(NULL, str);
 	if (str[0]=='0'&&str[1]=='x')
 		printf("%lld\n", n);
 	else printf("0x%llx\n", n);
@@ -29,13 +27,17 @@ int main(int argc, char **argv)
 		}
 		return 0;
 	}
-
-	if (!strcmp(argv[1], "-h"))
-		printf("Usage: rax [-] | [-s] [-e] [int|0x|Fx|.f|.o] [...]\n");
-
+	if (argv[1][0]=='-') {
+		switch(argv[1][1]) {
+		case 'h':
+			printf("Usage: rax2 [-hV] [expression]\n");
+			return 0;
+		case 'V':
+			printf("rax2 v"VERSION"\n");
+			return 0;
+		}
+	}
 	for(i=1; i<argc; i++)
 		rax( argv[i] );
-
 	return 0;
-
 }

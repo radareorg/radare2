@@ -45,6 +45,11 @@ R_API int r_reg_set_bytes(struct r_reg_t *reg, int type, const ut8* buf, int len
 		/* deserialize ALL register types in a single buffer */
 		for(i=0;i<R_REG_TYPE_LAST;i++) {
 			arena = reg->regset[type].arena;
+			if (arena == NULL) {
+				arena = reg->regset[i].arena = MALLOC_STRUCT(struct r_reg_arena_t);
+				arena->size = len;
+				arena->bytes = malloc(len);
+			}
 			memcpy(arena->bytes, buf+off, arena->size);
 			off += arena->size;
 			if (off>len) {

@@ -4,8 +4,7 @@
 #include <getopt.h>
 #include "r_sign.h"
 
-int rasign_show_help()
-{
+static int rasign_show_help() {
 	printf("Usage: rasign [options] [file]\n"
 	" -r           : show output in radare commands\n"
 	" -s [sigfile] : specify one or more signature files\n"
@@ -14,7 +13,6 @@ int rasign_show_help()
 	"  rasign -s libc.sig ls.static\n");
 	return 0;
 }
-
 
 int main(int argc, char **argv)
 {
@@ -25,7 +23,7 @@ int main(int argc, char **argv)
 
 	r_sign_init(&sig);
 
-	while((c=getopt(argc, argv, "o:hrs:i")) !=-1) {
+	while((c=getopt(argc, argv, "o:hrs:iV")) !=-1) {
 		switch(c) {
 		case 'o':
 			r_sign_option(&sig, optarg);
@@ -37,6 +35,9 @@ int main(int argc, char **argv)
 		case 'r':
 			rad = 1;
 			break;
+		case 'V':
+			printf("rasign2 v"VERSION"\n");
+			return 0;
 		default:
 			return rasign_show_help();
 		}

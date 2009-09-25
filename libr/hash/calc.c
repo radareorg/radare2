@@ -2,11 +2,14 @@
 
 #include "r_hash.h"
 
+#if 0
+// TODO: move to r_util
 static int bitnum(int bit) {
-	int bitnum;
-	for(bitnum=0;bit>>=1;bitnum++);
-	return bitnum;
+	int b;
+	for(b=0;bit>>=1;b++);
+	return b;
 }
+#endif
 
 /* TODO: do it more beautiful with structs and not spaguetis */
 R_API int r_hash_state_calculate(struct r_hash_t *ctx, int algobit, const ut8 *buf, ut32 len)

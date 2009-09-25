@@ -3053,11 +3053,10 @@ void print_disp(dis_buffer_t *dbuf, int disp, int sz, int rel, int dd)
   }
 }
 
-
 static void print_addr(dis_buffer_t *dbuf, u_long addr)
 {
-  u_long diff;
-  char *symname;
+  u_long diff = INT_MAX;
+  char *symname = NULL;
         
 #if 0
   diff = INT_MAX;

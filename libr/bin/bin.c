@@ -155,7 +155,7 @@ R_API int r_bin_list(struct r_bin_t *bin)
 	return R_FALSE;
 }
 
-R_API int r_bin_open(struct r_bin_t *bin, const char *file, int rw, char *plugin_name)
+R_API int r_bin_open(struct r_bin_t *bin, const char *file, int rw, const char *plugin_name)
 {
 	struct list_head *pos;
 

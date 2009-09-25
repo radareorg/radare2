@@ -6,6 +6,7 @@
 
 ----------------------------------------[ todo 
 
+* store version information in libraries ?
 * public delegate void RangeEachFunc(int i);
 * public void each(RangeEachFunc each_func) { ... }
 * r_io must need a reviewd undo API

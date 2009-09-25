@@ -74,9 +74,8 @@ R_API int r_anal_set_bits(struct r_anal_t *anal, int bits)
 	case 64:
 		anal->bits = bits;
 		return R_TRUE;
-	default:
-		return R_FALSE;
 	}
+	return R_FALSE;
 }
 
 R_API int r_anal_set_big_endian(struct r_anal_t *anal, int bigend)
@@ -228,6 +227,7 @@ R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *li
 
 // TODO: merge algorithms from r1 (do we need ebp?)
 // TODO: must return a linked list or r_iter
-int r_anal_backtrace(struct r_anal_t *anal, const ut8 *buf, ut64 esp)
+R_API int r_anal_backtrace(struct r_anal_t *anal, const ut8 *buf, ut64 esp)
 {
+	return R_FALSE;
 }

@@ -1,12 +1,11 @@
 #include <r_diff.h>
 
-static int count = 0;
+static ut32 count = 0;
 
 static int cb(struct r_diff_t *d, void *user,
 	struct r_diff_op_t *op)
 {
 	int i;
-
 	if (count) {
 		count++;
 		return 1;
@@ -25,10 +24,11 @@ static int show_help(int line)
 {
 	printf("Usage: radiff2 [-nsdl] [file] [file]\n");
 	if (!line) printf(
-		"  -l   :  diff lines of text\n"
-		"  -s   :  calculate text distance\n"
-		"  -c   :  count of changes\n"
-		"  -d   :  use delta diffing\n");
+		"  -l     diff lines of text\n"
+		"  -s     calculate text distance\n"
+		"  -c     count of changes\n"
+		"  -d     use delta diffing\n"
+		"  -V     show version information\n");
 	return 1;
 }
 
@@ -44,15 +44,12 @@ int main(int argc, char **argv)
 	int c, delta = 0;
 	char *file, *file2;
 	ut8 *bufa, *bufb;
-	ut32 sza, szb;
+	int sza, szb;
 	int mode = MODE_DIFF;
 	int showcount = 0;
 	double sim;
 
-	if (argc<3)
-		return show_help(0);
-
-	while ((c = getopt(argc, argv, "cdls")) != -1) {
+	while ((c = getopt(argc, argv, "cdlsV")) != -1) {
 		switch(c) {
 		case 'c':
 			showcount = 1;
@@ -66,11 +63,17 @@ int main(int argc, char **argv)
 		case 'l':
 			mode = MODE_LOCS;
 			break;
+		case 'V':
+			printf("radiff2 v"VERSION"\n");
+			return 0;
 		default:
 			return show_help(1);
 		}
 	}
 	
+	if (argc<3)
+		return show_help(0);
+
 	if (optind+2<argc)
 		return show_help(0);
 
@@ -97,7 +100,7 @@ int main(int argc, char **argv)
 		printf("distance: %d\n", count);
 		break;
 	case MODE_LOCS:
-		count = r_diff_lines(file, bufa, sza, file2, bufb, szb);
+		count = r_diff_lines(file, (char*)bufa, sza, file2, (char*)bufb, szb);
 		break;
 	}
 

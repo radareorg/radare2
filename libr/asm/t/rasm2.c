@@ -9,12 +9,10 @@
 #include <r_util.h>
 #include <r_lib.h>
 
-
 static struct r_lib_t l;
 static struct r_asm_t a;
 
-static int rasm_show_help()
-{
+static int rasm_show_help() {
 	printf ("rasm2 [-e] [-o offset] [-a arch] [-s syntax] -d \"opcode\"|\"hexpairs\"|-\n"
 		" -d           Disassemble from hexpair bytes\n"
 		" -o [offset]  Offset where this opcode is suposed to be\n"
@@ -25,6 +23,7 @@ static int rasm_show_help()
 		" -l [int]     Input/Output length\n"
 		" -L           List supported asm plugins\n"
 		" -e           Use big endian\n"
+		" -V           Show version information\n"
 		" If '-l' value is greater than output length, output is padded with nops\n"
 		" If the last argument is '-' reads from stdin\n");
 	return 0;
@@ -124,9 +123,8 @@ int main(int argc, char *argv[])
 		return rasm_show_help();
 
 	r_asm_use(&a, "x86");
-	while ((c = getopt(argc, argv, "a:b:s:do:Bl:hL")) != -1)
-	{
-		switch( c ) {
+	while ((c = getopt(argc, argv, "Va:b:s:do:Bl:hL")) != -1) {
+		switch (c) {
 		case 'a':
 			arch = optarg;
 			break;
@@ -156,6 +154,9 @@ int main(int argc, char *argv[])
 		case 'e':
 			r_asm_set_big_endian(&a, R_TRUE);
 			break;
+		case 'V':
+			printf("rasm2 v"VERSION"\n");
+			return 0;
 		case 'h':
 			return rasm_show_help();
 		}
@@ -183,11 +184,8 @@ int main(int argc, char *argv[])
 				if ((!bin || !dis) && feof(stdin))
 					break;
 				if (!bin || !dis) buf[strlen(buf)-1]='\0';
-				if (dis) {
-					ret = rasm_disasm(buf, offset, len, ascii, bin);
-				} else {
-					ret = rasm_asm(buf, offset, len, bin);
-				}
+				if (dis) ret = rasm_disasm(buf, offset, len, ascii, bin);
+				else ret = rasm_asm(buf, offset, len, bin);
 				idx += ret;
 				offset += ret;
 				if (!ret) {

@@ -83,12 +83,12 @@ static struct r_lang_handle_t r_lang_plugin_perl = {
 	.name = "perl",
 	.desc = "Perl language extension",
 	.init = &init,
-	.fini = &fini,
-	.help = &help,
+	.fini = (void *)&fini,
+	.help = (void *)&help,
 	.prompt = NULL,
-	.run = &run,
+	.run = (void *)&run,
 	.run_file = NULL,
-	.set_argv = setargv,
+	.set_argv = (void *)setargv,
 };
 
 struct r_lib_struct_t radare_plugin = {

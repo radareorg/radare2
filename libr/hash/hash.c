@@ -3,9 +3,9 @@
 #include "r_hash.h"
 
 /* returns 0-100 */
-R_API int r_hash_pcprint(ut8 *buffer, ut64 len)
+R_API int r_hash_pcprint(const ut8 *buffer, ut64 len)
 {
-	ut8 *end = buffer + len;
+	const ut8 *end = buffer + len;
 	int n;
 
 	for(n=0; buffer<end; buffer = buffer + 1)
@@ -15,9 +15,9 @@ R_API int r_hash_pcprint(ut8 *buffer, ut64 len)
 	return ((100*n)/len);
 }
 
-R_API int r_hash_par(ut8 *buf, ut64 len)
+R_API int r_hash_par(const ut8 *buf, ut64 len)
 {
-	ut8 *end = buf+len;
+	const ut8 *end = buf+len;
 	ut32 ones = 0;
 	for(;buf<end;buf++) {
 		ut8 x = buf[0];

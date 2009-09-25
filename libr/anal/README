@@ -1,6 +1,8 @@
 Code analysis module
 ====================
 
+* TODO: Add static plugin support here
+
 Analysis an = new Analysis ();
 an.set ("x86");
 an.set_bytes (buf, 1024);

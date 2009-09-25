@@ -24,7 +24,7 @@ int test_equal()
 	r_diff_init(&d, 0, 0);
 	r_diff_set_delta(&d, 0);
 	r_diff_set_callback(&d, &cb, NULL);
-	r_diff_buffers(&d, bufa, strlen(bufa), bufb, strlen(bufb));
+	r_diff_buffers(&d, (ut8*)bufa, strlen(bufa), (ut8*)bufb, strlen((char*)bufb));
 	return 1;
 }
 
@@ -38,7 +38,7 @@ int test_diff()
 	r_diff_init(&d, 0, 0);
 	r_diff_set_delta(&d, 0);
 	r_diff_set_callback(&d, &cb, NULL);
-	r_diff_buffers(&d, bufa, strlen(bufa), bufb, strlen(bufb));
+	r_diff_buffers(&d, (ut8*)bufa, strlen(bufa), (ut8*)bufb, strlen(bufb));
 	return 1;
 }
 
@@ -52,20 +52,19 @@ int test_delta()
 	r_diff_init(&d, 0, 0);
 	r_diff_set_delta(&d, 1);
 	r_diff_set_callback(&d, &cb, NULL);
-	r_diff_buffers(&d, bufa, strlen(bufa), bufb, strlen(bufb));
+	r_diff_buffers(&d, (ut8*)bufa, strlen(bufa), (ut8*)bufb, strlen(bufb));
 	return 1;
 }
 
 int test_distance()
 {
-	struct r_diff_t d;
 	char *bufa = "hello";
 	char *bufb = "heprpworld";
 	ut32 distance = 0;
 	double similarity = 0;
 
 	printf("Similarity: '%s' vs '%s'\n", bufa, bufb);
-	r_diff_buffers_distance(NULL, bufa, strlen(bufa), bufb, strlen(bufb),
+	r_diff_buffers_distance(NULL, (ut8*)bufa, strlen(bufa), (ut8*)bufb, strlen(bufb),
 		&distance, &similarity);
 	printf("Levenshtein distance = %i\nSimilarity = %f\n",
 			distance, similarity);

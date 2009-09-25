@@ -3,6 +3,8 @@ BIN=rasm2
 BINDEPS=r_util r_lib r_asm r_print r_cons
 LIBS+=-ldl
 
+CFLAGS+=-DVERSION=\"${VERSION}\"
+
 all: ${BIN} fastcall
 
 fastcall: fastcall.o

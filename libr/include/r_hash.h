@@ -9,14 +9,15 @@ R_API ut16 r_hash_crc16(ut16 crc, const ut8 *buffer, ut64 len);
 R_API ut32 r_hash_crc32(const ut8 *buf, ut64 len);
 R_API ut8  r_hash_xor(const ut8 *b, ut64 len);
 R_API ut16 r_hash_xorpair(const ut8 *a, ut64 len);
-R_API ut8  r_hash_parity(ut8 *buf, ut64 len);
+R_API ut8  r_hash_parity(const ut8 *buf, ut64 len);
 R_API ut8  r_hash_mod255(const ut8 *b, ut64 len);
+R_API int r_hash_par(const ut8 *buf, ut64 len);
 R_API const char *r_hash_name(int bit);
 
 /* analysis */
 R_API ut8  r_hash_hamdist(const ut8 *buf, ut64 len);
 R_API double r_hash_entropy(const ut8 *data, ut64 len);
-R_API int r_hash_pcprint(ut8 *buffer, ut64 len);
+R_API int r_hash_pcprint(const ut8 *buffer, ut64 len);
 
 /* hashing */
 typedef struct {
