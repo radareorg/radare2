@@ -13,7 +13,6 @@
 #define CONS_MAX_USER 102400
 #define CONS_BUFSZ 0x4f00
 #define STR_IS_NULL(x) (!x || !x[0])
-#define IS_PRINTABLE(x) (x>=' '&&x<='~')
 
 R_API void r_cons_break(void (*cb)(void *u), void *user);
 R_API void r_cons_break_end();

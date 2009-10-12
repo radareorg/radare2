@@ -137,7 +137,7 @@ R_API int r_search_set_callback(struct r_search_t *s, int (*callback)(struct r_s
 /* TODO: initialize update callback in _init */
 R_API int r_search_update(struct r_search_t *s, ut64 *from, const ut8 *buf, long len)
 {
-	int i, ret = 0;
+	int ret = 0;
 	switch(s->mode) {
 	case R_SEARCH_KEYWORD:
 		ret += r_search_mybinparse_update(s, *from, buf, len);
@@ -153,8 +153,7 @@ R_API int r_search_update(struct r_search_t *s, ut64 *from, const ut8 *buf, long
 		*from -= R_SEARCH_AES_BOX_SIZE;
 		break;
 	case R_SEARCH_STRING:
-		for(i=0;i<len;i++)
-		ret += r_search_strings_update_char(buf+i, s->string_min, s->string_max, 0, *(from) +i/*enc*/, "");
+		ret += r_search_strings_update(s, *from, buf, len, 0);
 		break;
 	case R_SEARCH_PATTERN:
 		//ret += r_search_pattern_update(buf, s->pattern_size

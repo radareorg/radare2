@@ -22,6 +22,7 @@ R_API struct r_mem_pool_t* r_mem_pool_init(struct r_mem_pool_t *pool, int nodesi
 R_API struct r_mem_pool_t *r_mem_pool_new(int nodesize, int poolsize, int poolcount);
 R_API struct r_mem_pool_t *r_mem_pool_free(struct r_mem_pool_t *pool);
 R_API void* r_mem_pool_alloc(struct r_mem_pool_t *pool);
+R_API int r_mem_count(ut8 **addr);
 
 /* buf */
 struct r_buf_t {
@@ -29,6 +30,14 @@ struct r_buf_t {
 	int length;
 	ut64 base;
 };
+
+R_API struct r_buf_t *r_buf_init(struct r_buf_t *b);
+R_API struct r_buf_t *r_buf_new();
+R_API int r_buf_set_bits(struct r_buf_t *b, int bitoff, int bitsize, ut64 value);
+R_API int r_buf_set_bytes(struct r_buf_t *b, ut8 *buf, int length);
+R_API int r_buf_read_at(struct r_buf_t *b, ut64 addr, ut8 *buf, int len);
+R_API int r_buf_write_at(struct r_buf_t *b, ut64 addr, const ut8 *buf, int len);
+R_API void r_buf_free(struct r_buf_t *b);
 
 /* r_cache */
 // TOTHINK: move into a separated library?
@@ -154,5 +163,6 @@ R_API int r_sys_usleep(int usecs);
 R_API const char *r_sys_getenv(const char *key);
 R_API int r_sys_setenv(const char *key, const char *value, int ow);
 R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len);
+
 
 #endif

@@ -4,9 +4,11 @@ Code analysis module
 * TODO: Add static plugin support here
 
 Analysis an = new Analysis ();
+io.bind (an);
 an.set ("x86");
-an.set_bytes (buf, 1024);
-an.analyze ();
+var ctx = new Analysis.Context(an);
+//ctx.set_bytes (0x8048000, buf, 1024); // this must be a callback
+ctx.analyze (0x8048300);
 var foo = an.get_function_preludes ();
 var calls = an.get_calls ();
 foreach var (calls) {
@@ -15,3 +17,307 @@ foreach var (calls) {
     stdout.printf("arg%d: %s\n" i, var.arg[i]);
   }
 }
+an.accept(ctx);
+
+////////////////////////////////////////
+
+Global picture
+
+(anal) -> can keep track of results of different context (functions ...)
+  |
+  `---> we get a context.. so we work there with
+       (anal context owns stack, regs, ...)
+     - able to detect function arguments
+     - we can configure the context in a way or other
+     - it is able to get info from global anal
+     - feeded with bytes
+
+r_anal_get_bb(an, 0x804800);
+r_anal_op_t * op = r_anal_get_op(an, 0x804800);
+r_anal_get_fun(an, 0x804800);
+
+void analyze_graph(Analysis an, uint64 addr)
+{
+  var? op = an.get_op(addr);
+  while (op != null) {
+    if (op.type == Analysis.OpcodeType.BRANCH) {
+      foreach (var jmp in op.refs) {
+        if (jmp.type | Analysis.AccessType.EXEC)
+          print("0x%08llx : branch 0x%08llx\n", op.addr, jmp.addr);
+          analyze_graph(an, jmp.addr);
+      }
+    }
+    op = op.next();
+  }
+}
+
+void analyze_function(Analysis an, uint64 addr)
+{
+  Analysis.Function? fun = an.get_fun(addr);
+  if (fun == null)
+    Log.err("No function found at address 0x%08llx".printf());
+    return;
+  }
+}
+
+----------------------------------------
+
+// Must use r_alloc_pool for every type of structure (per function level)
+// Must store all this info using r_db
+// Only index when requested (tempral analysis are temporal)
+// Do we have to enable jump/call toggles for breaking basicblocks?
+// Memory selectors are just modifiers .. how?
+// How to handle with self-modifying code?
+  - if its a conditional branch, refs are true , false
+    - if not and there is more than one branch is all the possibilities
+  - if an address is accessed in read|write and exec mode we should warn!
+  xrefs[] = {
+    addr = 0x8048480
+    type = R|W|X  - executable xrefs are control flow branches,
+                  - read/write are for data
+  }
+  refs[] = {
+    op   = eq,add,mul ??
+    reg  = regidx
+    addr = 0x8048580
+    type = R|W|X
+  }
+
+// we need an api in r_buf to modify bits with endian and values..
+struct bin {
+  int offset;
+  int size;
+  int endian;
+};
+
+enum type {
+  IMM
+  REG
+  MEM
+};
+
+struct r_anal_value_t {
+  int op; // NOP, ADD, SEL, ...
+  int type; // opcode, reg, imm, addr
+  ut64 num; // idxofreg, immvalue, addrnum
+  struct bin bin;
+  int size;
+  int nextop; // ADD, MUL, ...
+  struct r_anal_value_t *next;
+};
+
+struct arg {
+  int rw; // READ | WRITE direction
+  int nv; // number of values
+  struct r_anal_value_t *v;
+};
+
+mov eax, [0x8048+eax*4]
+
+  mov -> args = { "eax", {0x8048 {+eax*4}} }
+
+struct r_anal_ref_t {
+  int type; // READ, WRITE, EXEC
+  struct r_anal_value_t value;
+};
+
+struct r_anal_op_t {
+  ut64 addr;
+  int frame;
+  int type;
+  int cond;
+  int nestlevel;
+  int length;
+  int crc;
+  struct r_anal_value_t rep;
+  int nargs;
+  struct arg args[];
+
+  struct r_anal_op_t *next;
+  int nrefs;
+  struct r_anal_ref_t refs[];
+  int nxrefs;
+  struct r_anal_ref_t xrefs[];
+};
+
+/* basic block */
+struct r_anal_bb_t {
+  ut64 addr;
+  int type;
+  int size;
+  ut8 *bytes;
+  struct r_anal_op_t *head; // opcode heading this basic block
+  struct r_anal_ref_t refs[];
+  struct r_anal_ref_t xrefs[];
+};
+
+/* function */
+struct r_anal_fun_t {
+  char *name;
+  ut64 addr;
+  int size;
+  // XXX: use r_ranges instead of addr+size?
+  struct r_anal_ref_t refs[];
+  struct r_anal_ref_t xrefs[];
+};
+
+/* used to emulate */
+struct r_anal_arch_t {
+  struct r_reg_t reg;
+  char **regs;
+  int pc; // program counter
+  int sp; // stack pointer
+  int bp; // base pointer
+  int gp; // global pointer
+  int sr; // src
+  int dr; // dst
+};
+
+const char **regs = { "eax", "ebx", "ecx", "...", NULL };
+
+  if (opcode.xrefs[i].type & R_ANAL_XS_EXEC)
+
+// compilation process defines a mapping between the binary representation
+// of an opcode into an AST of structs describing the opcode itself or
+// we can just serialize it into a evaluable string
+// - evaluable strings are cheaper in memory consumption
+// - strstr(es, "%eax") easy way to check if a register is used
+// - the eval string should be converted into an AST at some point
+
+Analysis levels:
+================
+- opcode level
+  - frame size
+  - conditional (used by branches(jumps) and arm opcodes)
+  - weight (importance) (if <0, it is a nop) trash detection
+  - XXX file/line (dwarf nfo??? here) i think no
+  - lifetime of register value (detect if
+  - nesting level (branch analysis)
+  - sign
+  - type
+  -- operand level:
+     - bitsize
+     - mem | reg | imm
+       - value
+     - direction (read|write)
+     - operand index
+- basic block level
+  - bytes + length + (checksum?)
+  - type (head, tail, body, last)
+  - xrefs (branches to here)
+  - refs (must be an array)
+    - true branch
+    - false branch
+    - destinations[] // for call eax and so
+- function level
+  - name
+  - offset range (r_range here, functions do not need to be linear)
+  - variables (use r_var) (( merge r_var here? ))
+  - arguments ("")
+  - xrefs
+  - calls (outrefs)
+  == graph simplification (serialize blocks with direct branches (jmp))
+- program
+  - comprends data + code trees
+  - all references must be stored twice
+  - r_range of functions, data and other shit
+
+Context analysis:
+=================
+- Merge r_vm here -- multiarchitecture code emulation
+- Allows to track register lifetime,
+- Detect possible values for 'call eax' f.ex
+- Identify fake conditional branches
+
+TEH RIR
+=======
+The radare intermediate representation.
+ - ascii representation of opcode level analysis
+
+-- epilog/prolog bytez for extra function detection
+
+Architecture language
+=====================
+Allows to describe an architecture (byte parsing, read/write)
+ - opcode reassembling
+ - automatic code analysis
+ r_anal_opcode_set(op, R_OPTYPE_ADD);
+ - opcode level analysis can be manually modified in runtime
+   - basic blocks can change
+
+Decompilation
+=============
+Use ALT .. in a inverse way OMG thats freaking
+
+/////////////////////////////////////////////////////////////
+
+opcode_analyze ()
+  - parse bytes and fill an structure
+  - opcode type and arguments
+  - underlying vm code
+opcode_modify ()
+  - modify the bytes based on the structure changes
+  - the structure should expose the bit level info to make this possible
+   // this is //
+   * modify reg, immediate or memory values
+
++--------------+
+| AnalArchLang | **
++--------------+
+if [arg0 == 0xff] {
+	reg = { eax, ecx, edx, ebx, esp, ebp, esi, edi }
+	jmp [0xe0+reg]
+	jmp [0xe8+reg]
+
+	reg = { eax, ecx, edx, ebx, esp, ebp, esi, edi }
+	push [0xf0+reg]
+
+	reg = { eax, ecx, edx, ebx, esp, ebp, esi, edi }
+	call [0xd0+reg]
+	call [0xd8+reg]
+}
+
+[0:7]=e8 {
+  type = "call"
+  addr = [8:31]
+  len = 5
+}
+[0:7]=50 && [0:7]<60 {
+  type = "push"
+  len = 1
+}
+[0:7]=c3 {
+  type = "ret"
+  len = 1
+}
+
+BASIC OPS we need for the IR
+============================ -- this is RISC! :D
+
+Each opcode must support a size value. The format is:
+We need some intermediate temporal registers
+
+
+lispy assembly:
+  (addi eax 3)
+  (addi *(+ eax 8) 3)
+
+  lea edi, [ecx*4-0x4]
+  (set edi (- (* ecx 4) 4)
+  (set edi (* ecx 4 - 4)) ; iterative format
+
+     1 byte       1           N       N
+  [ opcode ] [ type|size ] [ arg ] [ arg ]
+
+type = [ op | reg | mem | imm ]  ; 2 bits is enought
+size = 1, 2, 4, 8           ; byte level
+
+ADD reg, reg
+SUB reg, 
+JMP reg
+JMP imm
+JMP mem
+SET reg, imm
+STO mem, reg   ; store register value into memory
+LOA reg, mem   ; load memory value into register
+ ...

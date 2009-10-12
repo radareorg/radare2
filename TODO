@@ -6,6 +6,9 @@
 
 ----------------------------------------[ todo 
 
+* if we use objcopy --stripsymbols on a library..the stripped symbols are not
+  listed by nm or rabin..but objcopy is able to see them O_O
+
 * store version information in libraries ?
 * public delegate void RangeEachFunc(int i);
 * public void each(RangeEachFunc each_func) { ... }

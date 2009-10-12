@@ -6,6 +6,10 @@
 #define ALLOC_POOL_SIZE 1024
 #define ALLOC_POOL_COUNT 128
 
+// TODO: add api to serialize/deserialize memory pools from/to disk
+// This can be useful when the application is swapping (userland swapping?)
+// Do user-swapping takes sense?
+
 R_API struct r_mem_pool_t* r_mem_pool_deinit(struct r_mem_pool_t *pool)
 {
 	int i;
@@ -51,6 +55,8 @@ R_API void* r_mem_pool_alloc(struct r_mem_pool_t *pool)
 			return NULL;
 		}
 		pool->nodes[pool->npool] = malloc (pool->nodesize*pool->poolsize);
+		if (pool->nodes[pool->npool] == NULL)
+			return NULL;
 		pool->ncount = 0;
 	}
 	// TODO: fix warning

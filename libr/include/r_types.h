@@ -73,7 +73,7 @@ static inline int ERR(char *str, ...)
 #define MALLOC_STRUCTS(x,y) (x*)malloc(sizeof(x)*y)
 #define MALLOC_STRUCT(x) (x*)malloc(sizeof(x))
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')
-#define IS_WHITESPACE(x) (x==' '&&x=='\t')
+#define IS_WHITESPACE(x) (x==' '||x=='\t')
 
 /* operating system */
 

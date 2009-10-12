@@ -25,10 +25,19 @@ namespace Radare {
 		public int hash(string str);
 	}
 
+	[CCode (cprefix="r_log")]
+	public static class Log {
+		public bool msg(string str);
+		public bool err(string str);
+	}
+
 	[CCode (cprefix="r_buf")]
 	public class Buffer {
 		public Buffer();
-		public int read(uint64 addr, uint8 *buf, int len);
+		public int read_at(uint64 addr, uint8 *buf, int len);
+		public int write_at(uint64 addr, uint8 *buf, int len);
+		public bool set_bytes(uint8 *buf, int len);
+		public bool memcpy(uint64 addr, uint8 *dst, uint8 *src, int len);
 		/* ... */
 	}
 
@@ -89,4 +98,6 @@ namespace Radare {
 		[CCode (cname="rarray_iterator")] //, generic_type_pos=2)]
 		public Rarray<G> iterator();
 	}
+
+	
 }

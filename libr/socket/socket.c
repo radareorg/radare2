@@ -1,4 +1,5 @@
 /* radare - LGPL - Copyright 2006-2009 pancake<nopcode.org> */
+
 #define USE_SOCKETS
 
 #include <errno.h>
@@ -49,7 +50,7 @@ R_API int r_socket_write(int fd, unsigned char *buf, int len)
 // XXX: rewrite it to use select //
 /* waits secs until new data is received.     */
 /* returns -1 on error, 0 is false, 1 is true */
-R_API int r_socket_ready(int fd, int secs,int usecs)
+R_API int r_socket_ready(int fd, int secs, int usecs)
 {
 	int ret;
 #if __UNIX__
@@ -110,7 +111,7 @@ R_API void r_socket_printf(int fd, const char *fmt, ...)
 }
 
 #if __UNIX__
-R_API int r_socket_unix_connect(char *file)
+R_API int r_socket_unix_connect(const char *file)
 {
 	struct sockaddr_un addr;
 	int sock;
@@ -191,14 +192,12 @@ R_API int r_socket_connect(char *host, int port)
 
 	if (connect(s, (const struct sockaddr*)&sa, sizeof(struct sockaddr)))
 		return -1;
-
 	return s;
 }
 
 R_API int r_socket_listen(int port)
 {
-	int s;
-	int ret;
+	int ret, s;
 	struct sockaddr_in sa;
 	struct linger linger = { 0 };
 	linger.l_onoff = 1;
@@ -223,7 +222,6 @@ R_API int r_socket_listen(int port)
 	ret = listen(s, 1);
 	if (ret < 0)
 		return -1;
-	
 	return s;
 }
 
@@ -258,7 +256,6 @@ R_API int r_socket_flush(int fd)
 	return 0;
 }
 
-
 R_API int r_socket_fgets(int fd, char *buf,  int size)
 {
 	int i = 0;
@@ -267,21 +264,23 @@ R_API int r_socket_fgets(int fd, char *buf,  int size)
 	if (fd == -1)
 		return -1;
 
-	while(i<size-1) {
+	while(i<size) {
 		ret = r_socket_read(fd, (ut8 *)buf+i, 1);
 		if (ret==0)
-			return -1;
+			break;
 		if (ret<0) {
 			r_socket_close(fd);
 			return -1;
 		}
-		if (buf[i]=='\r'||buf[i]=='\n')
+		if (buf[i]=='\r'||buf[i]=='\n') {
+			buf[i]='\0';
 			break;
-		i+=ret;
+		}
+		i += ret;
 	}
 	buf[i]='\0';
 
-	return ret;
+	return i;
 }
 
 R_API char *r_socket_to_string(int fd)

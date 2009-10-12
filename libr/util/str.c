@@ -197,11 +197,11 @@ R_API char *r_str_trim(char *str)
 }
 
 /* memccmp("foo.bar", "foo.cow, '.') == 0 */
-R_API int r_str_ccmp(const char *dst, const char *orig, int ch)
+R_API int r_str_ccmp(const char *dst, const char *src, int ch)
 {
         int i;
-        for(i=0;orig[i] && orig[i] != ch; i++)
-                if (dst[i] != orig[i])
+        for(i=0;src[i] && src[i] != ch; i++)
+                if (dst[i] != src[i])
                         return 1;
         return 0;
 }
@@ -217,11 +217,11 @@ R_API int r_str_cmp(const char *a, const char *b, int len)
 	return 0;
 }
 
-R_API int r_str_ccpy(char *dst, char *orig, int ch)
+R_API int r_str_ccpy(char *dst, char *src, int ch)
 {
         int i;
-        for(i=0;orig[i] && orig[i] != ch; i++)
-                dst[i] = orig[i];
+        for(i=0;src[i] && src[i] != ch; i++)
+                dst[i] = src[i];
         dst[i] = '\0';
         return i;
 }

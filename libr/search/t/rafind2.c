@@ -1,10 +1,5 @@
 /* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
 
-#if 0
-TODO: 
-  support for multiple keywords
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
@@ -22,16 +17,21 @@ static int fd = -1;
 static int rad = 0;
 struct r_search_t *rs;
 static ut64 from = 0LL, to = -1;
-static char *str;
 static char *mask = "";
 static int nonstop = 0;
-static int mode = R_SEARCH_KEYWORD;
+static int mode = R_SEARCH_STRING;
 static ut64 cur = 0;
 static ut8 *buffer = NULL;
 static char *curfile = NULL;
 static ut64 bsize = 4096;
 static int hexstr = 0;
 static struct r_print_t *pr = NULL;
+LIST_HEAD(kws_head);
+
+struct str_t {
+	char *str;
+	struct list_head list;
+};
 
 static int hit(struct r_search_kw_t *kw, void *user, ut64 addr) {
 	//const ut8 *buf = (ut8*)user;
@@ -39,6 +39,7 @@ static int hit(struct r_search_kw_t *kw, void *user, ut64 addr) {
 	if (rad) {
 		printf("f hit%d_%d 0x%08llx ; %s\n", 0, kw->count, addr, curfile);
 	} else {
+		if (!kw->count) printf("; %s\n", kw->keyword);
 		printf("%s: %03d @ 0x%llx\n", curfile, kw->count, addr);
 		if (pr) {
 			r_print_hexdump(pr, addr, (ut8*)buffer+delta, 78, 16, R_TRUE);
@@ -49,27 +50,31 @@ static int hit(struct r_search_kw_t *kw, void *user, ut64 addr) {
 }
 
 static int show_help(char *argv0, int line) {
-	printf("Usage: %s [-Xnzh] [-f from] [-t to] [-s str] [-z] [-x hex] file ...\n", argv0);
+	printf("Usage: %s [-Xnzh] [-f from] [-t to] [-z] [-s str] [-x hex] file ...\n", argv0);
 	if (line) return 0;
 	printf(
 	" -z        search for zero-terminated strings\n"
-	" -s [str]  search for zero-terminated strings\n"
-	" -x [hex]  search for hexpair string (909090)\n"
+	" -s [str]  search for zero-terminated strings (can be used multiple times)\n"
+	" -m [str]  set a mask\n"
+	" -x [hex]  search for hexpair string (909090) (can be used multiple times)\n"
 	" -f [from] start searching from address 'from'\n"
 	" -f [to]   stop search at address 'to'\n"
 	" -X        show hexdump of search results\n"
 	" -n        do not stop on read errors\n"
+	" -r        print using radare commands\n"
+	" -b        set block size\n"
 	" -h        show this help\n"
+	" -V        print version and exit\n"
 	);
 	return 0;
 }
 
-int radiff_open(char *file)
+int rafind_open(char *file)
 {
 	int ret, last = 0;
-
+	struct list_head *pos;
 	r_io_init(&io);
-	// TODO: add support for multiple files
+	
 	fd = r_io_open(&io, file, R_IO_READ, 0);
 	if (fd == -1) {
 		fprintf(stderr, "Cannot open file '%s'\n", file);
@@ -84,9 +89,13 @@ int radiff_open(char *file)
 		to = r_io_size(&io, fd);
 	}
 	if (mode == R_SEARCH_KEYWORD) {
-		if (hexstr)
-			r_search_kw_add_hex(rs, str, mask);
-		else r_search_kw_add(rs, str, mask);
+		list_for_each(pos, &(kws_head)) {
+			struct str_t *kw = list_entry(pos, struct str_t, list);
+			if (hexstr)
+				r_search_kw_add_hex(rs, kw->str, mask);
+			else r_search_kw_add(rs, kw->str, mask);
+			free(kw);
+		}
 	}
 	curfile = file;
 	r_search_begin(rs);
@@ -115,7 +124,10 @@ int main(int argc, char **argv)
 {
 	int c;
 
-	while ((c = getopt(argc, argv, "s:x:Xzf:t:rnhV")) != -1) {
+	while ((c = getopt(argc, argv, "b:m:s:x:Xzf:t:rnhV")) != -1) {
+		struct str_t *kw = MALLOC_STRUCT(struct str_t);
+		INIT_LIST_HEAD(&(kw->list));
+
 		switch(c) {
 		case 'r':
 			rad = 1;
@@ -125,8 +137,9 @@ int main(int argc, char **argv)
 			break;
 		case 's':
 			mode = R_SEARCH_KEYWORD;
-			str = optarg;
 			hexstr = 0;
+			kw->str = optarg;
+			list_add(&(kw->list), &(kws_head));
 			break;
 		case 'b':
 			bsize = r_num_math(NULL, optarg);
@@ -137,7 +150,8 @@ int main(int argc, char **argv)
 		case 'x':
 			mode = R_SEARCH_KEYWORD;
 			hexstr = 1;
-			str = optarg;
+			kw->str = optarg;
+			list_add(&(kw->list), &(kws_head));
 			break;
 		case 'm':
 			// XXX should be from hexbin
@@ -164,7 +178,7 @@ int main(int argc, char **argv)
 		return show_help(argv[0], 1);
 
 	for (;optind < argc;optind++)
-		radiff_open(argv[optind]);
+		rafind_open(argv[optind]);
 
 	return 0;
 }

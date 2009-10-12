@@ -195,13 +195,21 @@ R_API int r_reg_set_profile(struct r_reg_t *reg, const char *profile)
 	return ret;
 }
 
-R_API struct r_reg_item_t *r_reg_get(struct r_reg_t *reg, const char *name)
+R_API struct r_reg_item_t *r_reg_get(struct r_reg_t *reg, const char *name, int type)
 {
 	struct list_head *pos;
 	struct r_reg_item_t *r;
-	int i;
+	int i, e;
 
-	for(i=0;i<R_REG_TYPE_LAST;i++) {
+	if (type == -1) {
+		i = 0;
+		e = R_REG_TYPE_LAST;
+	} else {
+		i = type;
+		e = type+1;
+	}
+
+	for(;i<e;i++) {
 		list_for_each(pos, &reg->regset[i].regs) {
 			r = list_entry(pos, struct r_reg_item_t, list);
 			if (!strcmp(r->name, name))

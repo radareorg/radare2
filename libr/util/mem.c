@@ -3,7 +3,16 @@
 #include <r_util.h>
 #include <stdlib.h>
 
-R_API void r_mem_copyloop (ut8 *dest, const ut8 *orig, int dsize, int osize)
+// TODO: find better name
+R_API int r_mem_count(ut8 **addr)
+{
+	int i = 0;
+	while(*addr++)
+		i++;
+	return i;
+}
+
+R_API void r_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize)
 {
         int i=0,j;
         while(i<dsize)

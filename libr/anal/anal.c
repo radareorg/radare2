@@ -42,6 +42,7 @@ R_API int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo)
 	return R_TRUE;
 }
 
+// TODO: Must be deprecated
 R_API int r_anal_list(struct r_anal_t *anal)
 {
 	struct list_head *pos;
@@ -52,7 +53,7 @@ R_API int r_anal_list(struct r_anal_t *anal)
 	return R_FALSE;
 }
 
-R_API int r_anal_set(struct r_anal_t *anal, const char *name)
+R_API int r_anal_use(struct r_anal_t *anal, const char *name)
 {
 	struct list_head *pos;
 	list_for_each_prev(pos, &anal->anals) {
@@ -164,6 +165,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, ut8 *b
 /* umf..this should probably be outside this file*/
 R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, char *str, int opts)
 {
+	struct r_anal_refline_t *ref;
 	struct list_head *pos;
 	int dir = 0;
 	char ch = ' ';
@@ -178,8 +180,7 @@ R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *li
 
 	for (pos = linestyle?(&(list->list))->next:(&(list->list))->prev;
 		pos != (&(list->list)); pos = linestyle?pos->next:pos->prev) {
-
-		struct r_anal_refline_t *ref = list_entry(pos, struct r_anal_refline_t, list);
+		ref = list_entry(pos, struct r_anal_refline_t, list);
 
 		if (anal->pc == ref->to) dir = 1;
 		// TODO: use else here

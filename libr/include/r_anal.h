@@ -13,56 +13,56 @@
 #define R_ANAL_MAXREG 16
 
 enum {
-	R_ANAL_AOP_FAMILY_UNKNOWN = 0,
-	R_ANAL_AOP_FAMILY_CPU,  /* normal cpu insturction */
-	R_ANAL_AOP_FAMILY_FPU,  /* fpu (floating point) */
-	R_ANAL_AOP_FAMILY_MMX,  /* multimedia instruction (packed data) */
-	R_ANAL_AOP_FAMILY_PRIV, /* priviledged instruction */
-	R_ANAL_AOP_FAMILY_LAST
+	R_ANAL_OP_FAMILY_UNKNOWN = 0,
+	R_ANAL_OP_FAMILY_CPU,  /* normal cpu insturction */
+	R_ANAL_OP_FAMILY_FPU,  /* fpu (floating point) */
+	R_ANAL_OP_FAMILY_MMX,  /* multimedia instruction (packed data) */
+	R_ANAL_OP_FAMILY_PRIV, /* priviledged instruction */
+	R_ANAL_OP_FAMILY_LAST
 };
 
 enum {
-	R_ANAL_AOP_TYPE_NULL = 0,
-	R_ANAL_AOP_TYPE_JMP,   /* mandatory jump */
-	R_ANAL_AOP_TYPE_UJMP,  /* unknown jump (register or so) */
-	R_ANAL_AOP_TYPE_CJMP,  /* conditional jump */
-	R_ANAL_AOP_TYPE_CALL,  /* call to subroutine (branch+link) */
-	R_ANAL_AOP_TYPE_RCALL, /* call to register */
-	R_ANAL_AOP_TYPE_REP,   /* repeats next instruction N times */
-	R_ANAL_AOP_TYPE_RET,   /* returns from subrutine */
-	R_ANAL_AOP_TYPE_ILL,   /* illegal instruction // trap */
-	R_ANAL_AOP_TYPE_UNK,   /* unknown opcode type */
-	R_ANAL_AOP_TYPE_NOP,   /* does nothing */
-	R_ANAL_AOP_TYPE_MOV,   /* register move */
-	R_ANAL_AOP_TYPE_TRAP,  /* it's a trap! */
-	R_ANAL_AOP_TYPE_SWI,   /* syscall, software interrupt */
-	R_ANAL_AOP_TYPE_UPUSH, /* unknown push of data into stack */
-	R_ANAL_AOP_TYPE_PUSH,  /* push value into stack */
-	R_ANAL_AOP_TYPE_POP,   /* pop value from stack to register */
-	R_ANAL_AOP_TYPE_CMP,   /* copmpare something */
-	R_ANAL_AOP_TYPE_ADD,
-	R_ANAL_AOP_TYPE_SUB,
-	R_ANAL_AOP_TYPE_MUL,
-	R_ANAL_AOP_TYPE_DIV,
-	R_ANAL_AOP_TYPE_SHR,
-	R_ANAL_AOP_TYPE_SHL,
-	R_ANAL_AOP_TYPE_OR,
-	R_ANAL_AOP_TYPE_AND,
-	R_ANAL_AOP_TYPE_XOR,
-	R_ANAL_AOP_TYPE_NOT,
-	R_ANAL_AOP_TYPE_STORE, /* store from register to memory */
-	R_ANAL_AOP_TYPE_LOAD,  /* load from memory to register */
-	R_ANAL_AOP_TYPE_LAST
+	R_ANAL_OP_TYPE_NULL = 0,
+	R_ANAL_OP_TYPE_JMP,   /* mandatory jump */
+	R_ANAL_OP_TYPE_UJMP,  /* unknown jump (register or so) */
+	R_ANAL_OP_TYPE_CJMP,  /* conditional jump */
+	R_ANAL_OP_TYPE_CALL,  /* call to subroutine (branch+link) */
+	R_ANAL_OP_TYPE_RCALL, /* call to register */
+	R_ANAL_OP_TYPE_REP,   /* repeats next instruction N times */
+	R_ANAL_OP_TYPE_RET,   /* returns from subrutine */
+	R_ANAL_OP_TYPE_ILL,   /* illegal instruction // trap */
+	R_ANAL_OP_TYPE_UNK,   /* unknown opcode type */
+	R_ANAL_OP_TYPE_NOP,   /* does nothing */
+	R_ANAL_OP_TYPE_MOV,   /* register move */
+	R_ANAL_OP_TYPE_TRAP,  /* it's a trap! */
+	R_ANAL_OP_TYPE_SWI,   /* syscall, software interrupt */
+	R_ANAL_OP_TYPE_UPUSH, /* unknown push of data into stack */
+	R_ANAL_OP_TYPE_PUSH,  /* push value into stack */
+	R_ANAL_OP_TYPE_POP,   /* pop value from stack to register */
+	R_ANAL_OP_TYPE_CMP,   /* copmpare something */
+	R_ANAL_OP_TYPE_ADD,
+	R_ANAL_OP_TYPE_SUB,
+	R_ANAL_OP_TYPE_MUL,
+	R_ANAL_OP_TYPE_DIV,
+	R_ANAL_OP_TYPE_SHR,
+	R_ANAL_OP_TYPE_SHL,
+	R_ANAL_OP_TYPE_OR,
+	R_ANAL_OP_TYPE_AND,
+	R_ANAL_OP_TYPE_XOR,
+	R_ANAL_OP_TYPE_NOT,
+	R_ANAL_OP_TYPE_STORE, /* store from register to memory */
+	R_ANAL_OP_TYPE_LOAD,  /* load from memory to register */
+	R_ANAL_OP_TYPE_LAST
 };
 
 /* TODO: what to do with signed/unsigned conditionals? */
 enum {
-	R_ANAL_AOP_COND_EQ,
-	R_ANAL_AOP_COND_NE,
-	R_ANAL_AOP_COND_GE,
-	R_ANAL_AOP_COND_GT,
-	R_ANAL_AOP_COND_LE,
-	R_ANAL_AOP_COND_LT,
+	R_ANAL_OP_COND_EQ,
+	R_ANAL_OP_COND_NE,
+	R_ANAL_OP_COND_GE,
+	R_ANAL_OP_COND_GT,
+	R_ANAL_OP_COND_LE,
+	R_ANAL_OP_COND_LT,
 };
 
 enum {
@@ -125,22 +125,22 @@ struct r_anal_fcn_t {
 	ut64 to;
 };
 
+struct r_anal_t {
+	int bits;
+	int big_endian;
+	ut64 pc;
+	void *user;
+	struct r_anal_handle_t *cur;
+	struct list_head anals;
+};
+
 struct r_anal_ctx_t {
 	/* TODO: add more info here */
 	/* per opcode deep level */
 	/* per opcode stack size */
 	/* basic blocks */
 	int stacksize;
-};
-
-struct r_anal_t {
-	int bits;
-	int big_endian;
-	ut64 pc;
-	void *user;
-	struct r_anal_ctx_t *ctx;
-	struct r_anal_handle_t *cur;
-	struct list_head anals;
+	struct r_anal_t *anal;
 };
 
 struct r_anal_handle_t {
@@ -159,7 +159,7 @@ struct r_anal_t *r_anal_new();
 void r_anal_set_user_ptr(struct r_anal_t *anal, void *user);
 int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo);
 int r_anal_list(struct r_anal_t *anal);
-int r_anal_set(struct r_anal_t *anal, const char *name);
+int r_anal_use(struct r_anal_t *anal, const char *name);
 int r_anal_set_bits(struct r_anal_t *anal, int bits);
 int r_anal_set_big_endian(struct r_anal_t *anal, int boolean);
 int r_anal_set_pc(struct r_anal_t *a, ut64 pc);

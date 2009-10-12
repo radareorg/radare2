@@ -54,27 +54,60 @@ static int is_encoded(int encoding, unsigned char c)
 	return 0;
 }
 
-// XXX last char is lost :(
-R_API int r_search_strings_update_char(const ut8 *buf, int min, int max, int enc, ut64 offset, const char *match)
+R_API int r_search_strings_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len, int enc)
 {
 	int i = 0;
-	static int widechar = 0;
-	static int matches = 0;
+	int widechar = 0;
+	int matches = 0;
 	char str[4096];
 
-#define IS_PRINTABLE(x) (x>=' '&&x<='~')
-
-	if (IS_PRINTABLE(buf[i]) || (is_encoded(enc, buf[i]))) {
+	for (i=0; i<len; i++) {
+		char ch = buf[i];
+		if (IS_PRINTABLE(ch) || IS_WHITESPACE(ch) || is_encoded(enc, ch)) {
+			str[matches] = ch;
+			if (matches < sizeof(str))
+				matches++;
+		} else {
+			/* wide char check \x??\x00\x??\x00 */
+			if (matches && buf[i+2]=='\0' && buf[i]=='\0' && buf[i+1]!='\0') {
+				widechar = 1;
+				return 1; // widechar
+			}
+			/* check if the length fits on our request */
+			if (matches >= s->string_min && (s->string_max == 0 || matches <= s->string_max)) {
+				str[matches] = '\0';
+				int len = strlen(str);
+				if (len>2) {
+					if (widechar) {
+						ut64 off = (ut64)from+i-(len*2)+1;
+						printf("0x%08llx %3d W %s\n", off, len, str);
+					} else {
+						ut64 off = (ut64)from+i-matches;
+						printf("0x%08llx %3d A %s\n", off, len, str);
+					}
+				}
+				fflush(stdout);
+			}
+			matches = 0;
+			widechar = 0;
+		}
+	}
+	return 0;
+}
 #if 0
-		if (matches == 0)
-			offset += i;
-#endif
-		str[matches] = buf[i];
+R_API int r_search_strings_update_char(const ut8 *buf, int min, int max, int enc, ut64 offset, const char *match)
+{
+	static int widechar = 0;
+	static int matches = 0;
+	static char str[4096];
+
+	if (IS_PRINTABLE(buf[0]) || is_encoded(enc, buf[0])) {
+		str[matches] = buf[0];
 		if (matches < sizeof(str))
 			matches++;
 	} else {
 		/* wide char check \x??\x00\x??\x00 */
-		if (matches && buf[i+2]=='\0' && buf[i]=='\0' && buf[i+1]!='\0') {
+		if (matches && buf[2]=='\0' && buf[0]=='\0' && buf[1]!='\0') {
 			widechar = 1;
 			return 1; // widechar
 		}
@@ -108,30 +141,21 @@ R_API int r_search_strings_update_char(const ut8 *buf, int min, int max, int enc
 					}
 				}
 
-#if 0
-				// XXX THIS IS UGLY AS SHIT
-				do {
-					flag = flag_get(msg);
-					if (flag && flag->offset != (offset-matches))
-						strcat(msg, "0");
-					else break;
-				} while(1);
-#endif
-
 				printf("f %s @ 0x%08x\n", msg, (unsigned int)offset-matches);
-			} else
-			if ((!match) || (match && strstr(str, match)) ){
-				int len = strlen(str);
-				if (len>2) {
-					if (widechar) {
-						ut64 off = offset-(len*2)+1;
-						printf("0x%08llx %3d W %s\n", off, len, str);
-					} else {
-						printf("0x%08llx %3d A %s\n",
-							(ut64)offset-matches, len, str); //-matches, len, str);
+			} else {
+				if ((!match) || (match && strstr(str, match)) ){
+					int len = strlen(str);
+					if (len>2) {
+						if (widechar) {
+							ut64 off = offset-(len*2)+1;
+							printf("0x%08llx %3d W %s\n", off, len, str);
+						} else {
+							printf("0x%08llx %3d A %s\n",
+								(ut64)offset-matches, len, str);
+						}
 					}
+					fflush(stdout);
 				}
-				fflush(stdout);
 			}
 		}
 		matches = 0;
@@ -139,6 +163,7 @@ R_API int r_search_strings_update_char(const ut8 *buf, int min, int max, int enc
 	}
 	return 0;
 }
+#endif
 #if 0
 
 int stripstr_from_file(const char *filename, int min, int max, int encoding, ut64 seek, ut64 limit)

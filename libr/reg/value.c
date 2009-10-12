@@ -4,6 +4,7 @@
 #include <r_util.h>
 
 /* XXX: reg get can be accessed using the print_format stuff */
+// This is the same as r_buf_set_bits, arenas can be r_buf
 R_API ut64 r_reg_get_value(struct r_reg_t *reg, struct r_reg_item_t *item)
 {
 	struct r_reg_set_t *regset;

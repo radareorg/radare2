@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009 pancake<@nopcode.org> */
 
 [CCode (cheader_filename="r_reg.h", cprefix="r_reg_", lower_case_cprefix="r_reg_")]
 namespace Radare {
@@ -46,7 +46,7 @@ namespace Radare {
 		public Register();
 		public bool set_profile(string file);
 		public bool set_profile_string(string profile);
-		public Register.Item get(string name);
+		public Register.Item get(string name, int type = -1);
 		public Radare.List<Register.Item*> get_list(Register.Type type);
 
 		public uint64 get_value(Register.Item item);

@@ -5,10 +5,12 @@ PFX=$2
 LIST=$1.list
 
 if [ "${PFX}" = "r_util" ]; then
+	echo "=> No stripping any symbol in libr_util O:)"
+	exit 0
 	PFX="r_"
 fi
 
-nm --defined-only -B ${FILE} 2>/dev/null | grep -v ${PFX}_ | awk '{print $3}' > ${LIST}
+nm --defined-only -B ${FILE} 2>/dev/null | grep -v ^${PFX}_ | awk '{print $3}' > ${LIST}
 #if [ -n "`cat /tmp/list`" ]; then
 echo "=> Stripping unnecessary symbols for ${FILE}..."
 objcopy --strip-symbols ${LIST} ${FILE} 2>/dev/null
