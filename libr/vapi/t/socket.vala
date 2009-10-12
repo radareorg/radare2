@@ -1,21 +1,26 @@
+/* valac --profile=posix --pkg r_socket socket.vala */
+
 using Radare;
 
-public class SocketExample
+public static void main()
 {
-	public static void main(string[] args)
-	{
-		unowned string str = new StringBuilder.sized(4096).str;
-		//int fd = Socket.connect("www.google.com", 80);
-		int fd = Socket.connect("localhost", 9999);
+	string str = (string) new char[4096];
 
-		Socket.printf(fd, "GET /\r\n\r\n");
-
-		while(!Socket.ready(fd,0,0));
-		stdout.printf("ready for data\n");
-
-		while(Socket.fgets(fd, str, 1024)>0) {
-			stdout.printf(str+"\n");
-		}
-		Socket.close(fd);
+	//var fd = Socket.connect("www.google.com", 80);
+	var fd = Socket.connect("localhost", 9999);
+	if (fd == -1) {
+		printf("Cannot connect\n");
+		return;
 	}
+
+	fd.printf("GET /\r\n\r\n");
+
+	printf("[-] waiting for output\n");
+	while(!fd.ready(0,0));
+
+	printf("[-] reading data\n");
+	while(fd.fgets(str, 1024)>0) {
+		printf(str+"\n");
+	}
+	fd.close();
 }

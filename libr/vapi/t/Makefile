@@ -85,7 +85,7 @@ hash:
 	gcc hash.c `pkg-config gobject-2.0 --libs --cflags` -I../../include/ -lr_hash -Wl,-R../../hash -L../../hash -o hash
 
 socket:
-	valac -C --vapidir=${PWD}/.. socket.vala --pkg r_socket
+	valac -C --profile=posix --vapidir=${PWD}/.. socket.vala --pkg r_socket
 	gcc socket.c `pkg-config gobject-2.0 --libs --cflags` -I../../include/ -lr_socket -Wl,-R../../socket -L../../socket -o socket
 
 clean:
