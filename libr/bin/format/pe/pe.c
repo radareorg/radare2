@@ -398,7 +398,7 @@ int PE_(r_bin_pe_get_imports_count)(PE_(r_bin_pe_obj) *bin)
 			read(bin->fd, name, PE_NAME_LENGTH);
 			if (IS_PRINTABLE(name[0]))
 				off = PE_(r_bin_pe_aux_rva_to_offset)(bin, import_dirp->FirstThunk);
-			else return 0;
+			else continue;
 		}
 
 		j = 0;
