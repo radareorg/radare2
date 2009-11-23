@@ -130,6 +130,7 @@ struct r_anal_t {
 	int big_endian;
 	ut64 pc;
 	void *user;
+	struct r_anal_ctx_t *ctx;
 	struct r_anal_handle_t *cur;
 	struct list_head anals;
 };

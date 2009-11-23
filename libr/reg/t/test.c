@@ -19,15 +19,15 @@ int main() {
 	r_reg_set_profile(reg, "../p/x86-linux.regs");
 
 	show_regs(reg, 32);
-	r_reg_set_value(reg, r_reg_get(reg, "eax"), 0x414141);
-	r_reg_set_value(reg, r_reg_get(reg, "ecx"), 666);
+	r_reg_set_value(reg, r_reg_get(reg, "eax", -1), 0x414141);
+	r_reg_set_value(reg, r_reg_get(reg, "ecx", -1), 666);
 	show_regs(reg, 32);
-	r_reg_set_value(reg, r_reg_get(reg, "al"), 0x22);
+	r_reg_set_value(reg, r_reg_get(reg, "al", -1), 0x22);
 	show_regs(reg, 32);
 
-	r_reg_set_value(reg, r_reg_get(reg, "zero"), 0);
+	r_reg_set_value(reg, r_reg_get(reg, "zero", -1), 0);
 	show_regs(reg, 1);
-	r_reg_set_value(reg, r_reg_get(reg, "zero"), 1);
+	r_reg_set_value(reg, r_reg_get(reg, "zero", -1), 1);
 	show_regs(reg, 1);
 
 	return 0;

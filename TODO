@@ -5,10 +5,10 @@
 |_|\__|_|__|___/|_|_|_|\__\___/ |_____(_)____/
 
 ----------------------------------------[ todo 
-
 * if we use objcopy --stripsymbols on a library..the stripped symbols are not
   listed by nm or rabin..but objcopy is able to see them O_O
 
+* rasm2 should be configurable at startup time to choose default arch (use environment?)
 * store version information in libraries ?
 * public delegate void RangeEachFunc(int i);
 * public void each(RangeEachFunc each_func) { ... }

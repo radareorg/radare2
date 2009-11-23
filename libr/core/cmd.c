@@ -444,7 +444,7 @@ static int cmd_print(void *data, const char *input)
 					r_parse_parse(&core->parser, asmop.buf_asm, str);
 					r_cons_printf("%s\n", str);
 				} else r_cons_printf("%s\n", asmop.buf_asm);
-				if (show_lines && analop.type == R_ANAL_AOP_TYPE_RET) {
+				if (show_lines && analop.type == R_ANAL_OP_TYPE_RET) {
 					if (strchr(line, '>'))
 						memset(line, ' ', strlen(line));
 					r_cons_printf("%s", line);
@@ -598,10 +598,10 @@ static int cmd_anal(void *data, const char *input)
 			int ret, idx; 
 			ut8 *buf = core->block;
 			struct r_anal_aop_t aop;
-			r_anal_set(&core->anal, "anal_x86_bea");
+			r_anal_use (&core->anal, "anal_x86_bea");
 			
 			for(idx=ret=0; idx < len; idx+=ret) {
-				r_anal_set_pc(&core->anal, core->seek + idx);
+				r_anal_set_pc (&core->anal, core->seek + idx);
 				ret = r_anal_aop(&core->anal, &aop, buf + idx);
 			}
 		}
