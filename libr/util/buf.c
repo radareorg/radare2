@@ -34,6 +34,7 @@ R_API int r_buf_set_bits(struct r_buf_t *b, int bitoff, int bitsize, ut64 value)
 {
 	// TODO: implement r_buf_set_bits
 	// TODO: get the implementation from reg/value.c ?
+	return R_FALSE;
 }
 
 R_API int r_buf_set_bytes(struct r_buf_t *b, ut8 *buf, int length)
