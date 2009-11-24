@@ -14,16 +14,14 @@
 
 static PE_DWord PE_(r_bin_pe_aux_rva_to_offset)(PE_(r_bin_pe_obj) *bin, PE_DWord rva)
 {
-	PE_(image_section_header) *shdrp;
 	PE_DWord section_base;
 	int i, section_size;
 
-	shdrp = bin->section_header;
-	for (i = 0; i < bin->nt_headers->file_header.NumberOfSections; i++, shdrp++) {
-		section_base = shdrp->VirtualAddress;
-		section_size = shdrp->Misc.VirtualSize;
+	for (i = 0; i < bin->nt_headers->file_header.NumberOfSections; i++) {
+		section_base = bin->section_header[i].VirtualAddress;
+		section_size = bin->section_header[i].Misc.VirtualSize;
 		if (rva >= section_base && rva < section_base + section_size)
-			return shdrp->PointerToRawData + (rva - section_base);
+			return bin->section_header[i].PointerToRawData + (rva - section_base);
 	}
 		
 	return 0;
@@ -48,8 +46,25 @@ static PE_DWord PE_(r_bin_pe_aux_offset_to_rva)(PE_(r_bin_pe_obj) *bin, PE_DWord
 }
 #endif
 
-static int PE_(r_bin_pe_do_checks)(PE_(r_bin_pe_obj) *bin)
+static int PE_(r_bin_pe_init)(PE_(r_bin_pe_obj) *bin)
 {
+	int sections_size, len;
+
+	len = lseek(bin->fd, 0, SEEK_END);
+
+	lseek(bin->fd, 0, SEEK_SET);
+	bin->dos_header = malloc(sizeof(PE_(image_dos_header)));
+	read(bin->fd, bin->dos_header, sizeof(PE_(image_dos_header)));
+
+	if (bin->dos_header->e_lfanew > len) {
+		ERR("Invalid e_lfanew field\n");
+		return -1;
+	}
+
+	lseek(bin->fd, bin->dos_header->e_lfanew, SEEK_SET);
+	bin->nt_headers = malloc(sizeof(PE_(image_nt_headers)));
+	read(bin->fd, bin->nt_headers, sizeof(PE_(image_nt_headers)));
+
 	if (strncmp((char*)&bin->dos_header->e_magic, "MZ", 2)) {
 		ERR("File not PE\n");
 		return -1;
@@ -60,25 +75,13 @@ static int PE_(r_bin_pe_do_checks)(PE_(r_bin_pe_obj) *bin)
 		return -1;
 	}
 
-	return 0;
-}
-
-static int PE_(r_bin_pe_init)(PE_(r_bin_pe_obj) *bin)
-{
-	int sections_size;
-
-	lseek(bin->fd, 0, SEEK_SET);
-	bin->dos_header = malloc(sizeof(PE_(image_dos_header)));
-	read(bin->fd, bin->dos_header, sizeof(PE_(image_dos_header)));
-
-	lseek(bin->fd, bin->dos_header->e_lfanew, SEEK_SET);
-	bin->nt_headers = malloc(sizeof(PE_(image_nt_headers)));
-	read(bin->fd, bin->nt_headers, sizeof(PE_(image_nt_headers)));
-
-	if (PE_(r_bin_pe_do_checks)(bin) == -1)
-		return -1;
-
 	sections_size = sizeof(PE_(image_section_header)) * bin->nt_headers->file_header.NumberOfSections;
+
+	if (sections_size > len) {
+		ERR("Invalid NumberOfSections value\n");
+		return -1;
+	}
+
 	lseek(bin->fd, bin->dos_header->e_lfanew + sizeof(PE_(image_nt_headers)), SEEK_SET);
 	bin->section_header = malloc(sections_size);
 	read(bin->fd, bin->section_header, sections_size);
