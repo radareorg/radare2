@@ -17,10 +17,14 @@
 #endif
 /* ------------------------------------------- */
 
+#if R_SWIG
+#define R_API export
+#else
 #if R_INLINE
 #define R_API inline
 #else
 #define R_API
+#endif
 #endif
 
 // Usage: R_DEFINE_OBJECT(r_asm);

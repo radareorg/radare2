@@ -39,14 +39,14 @@ R_API int r_cache_set(struct r_cache_t *c, ut64 addr, char *str)
 	return R_TRUE;
 }
 
-R_API int r_cache_validate(struct r_cache_t *c, ut64 from, ut64 to)
+R_API int r_cache_validate(struct r_cache_t *c, ut64 start, ut64 end)
 {
 	int ret = R_FALSE;
 	struct list_head *pos, *n;
 
 	list_for_each_safe(pos, n, &c->items) {
 		struct r_cache_item_t *h = list_entry(pos, struct r_cache_item_t, list);
-		if (h->addr <from || h->addr > to) {
+		if (h->addr <start || h->addr > end) {
 			free(h->str);
 			list_del(&h->list);
 			ret = R_TRUE;
@@ -55,13 +55,13 @@ R_API int r_cache_validate(struct r_cache_t *c, ut64 from, ut64 to)
 	return ret;
 }
 
-R_API int r_cache_invalidate(struct r_cache_t *c, ut64 from, ut64 to)
+R_API int r_cache_invalidate(struct r_cache_t *c, ut64 start, ut64 end)
 {
 	int ret = R_FALSE;
 	struct list_head *pos, *n;
 	list_for_each_safe(pos, n, &c->items) {
 		struct r_cache_item_t *h = list_entry(pos, struct r_cache_item_t, list);
-		if (h->addr >=from && h->addr <= to) {
+		if (h->addr >=start && h->addr <= end) {
 			free(h->str);
 			list_del(&h->list);
 			ret = R_TRUE;

@@ -6,6 +6,11 @@
 #include "list.h"
 #include "iter.h"
 
+#if R_SWIG
+#undef R_API
+#define R_API
+#endif
+
 /* pool */
 struct r_mem_pool_t {
 	void **nodes;
@@ -48,8 +53,8 @@ struct r_cache_item_t {
 };
 
 struct r_cache_t {
-	ut64 from;
-	ut64 to;
+	ut64 start;
+	ut64 end;
 	struct list_head items;
 };
 
