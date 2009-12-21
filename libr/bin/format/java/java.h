@@ -2,7 +2,7 @@
 
 #define R_BIN_JAVA_MAXSTR 256
 
-#define R_BIN_JAVA_USHORT(x,y) (unsigned short)(x[y+1]|(x[y]<<8))
+#define R_BIN_JAVA_USHORT(x,y) (unsigned short)((x[y+1]|(x[y]<<8)) & 0xffff)
 #define R_BIN_JAVA_UINT(x,y) (unsigned int)((x[y]<<24)|(x[y+1]<<16)|(x[y+2]<<8)|x[y+3])
 #define R_BIN_JAVA_SWAPUSHORT(x) (unsigned short)((x<<8)|((x>>8)&0x00FF))
 

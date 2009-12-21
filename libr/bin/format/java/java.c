@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007, 2008
+ * Copyright (C) 2007, 2008, 2009
  *       pancake <youterm.com>
  *
  * radare is free software; you can redistribute it and/or modify
@@ -68,13 +68,16 @@ static struct r_bin_java_cp_item_t* get_cp(struct r_bin_java_t *bin, unsigned sh
 
 static int attributes_walk(struct r_bin_java_t *bin, struct r_bin_java_attr_t *attr, int fd, int sz2, int fields)
 {
-	char buf[99999];
+	char buf[0xffff+1];
 	int sz3, sz4;
 	int j=0,k;
 	char *name;
 
 	for(j=0;j<sz2;j++) {
-		read(fd, buf, 6);
+		if (read(fd, buf, 6) != 6) {
+			eprintf ("Cannot read 6 bytes in class file\n");
+			return R_FALSE;
+		}
 		attr->name_idx = R_BIN_JAVA_USHORT(buf,0);
 		attr->name = strdup((get_cp(bin, attr->name_idx-1))->value);
 		name = (get_cp(bin, attr->name_idx-1))->value;//cp_items[R_BIN_JAVA_USHORT(buf,0)-1].value;
@@ -197,7 +200,8 @@ static int javasm_init(struct r_bin_java_t *bin)
 			}
 		}
 		if (c == NULL) {
-			fprintf(stderr, "Invalid tag '%d'\n", buf[0]);
+			fprintf(stderr, "Invalid tag '%d' at offset 0x%08llx\n",
+				buf[0], (ut64)ftell (bin->fd));
 			return R_FALSE;
 		}
 		IFDBG printf(" %3d %s: ", i+1, c->name);
@@ -211,12 +215,13 @@ static int javasm_init(struct r_bin_java_t *bin)
 
 		/* read bytes */
 		switch(c->tag) {
-		case 1: // utf 8 string
+		case 1: // Utf8 string
 			read(bin->fd, buf, 2);
-			sz = R_BIN_JAVA_USHORT(buf,0); //(buf[0]<<8)|buf[1];
+			sz = R_BIN_JAVA_USHORT (buf, 0);
 			bin->cp_items[i].length = sz;
 			bin->cp_items[i].off += 3;
-			read(bin->fd, buf, sz);
+			if (sz > 0)
+				read (bin->fd, buf, sz);
 			buf[sz] = '\0';
 			break;
 		default:
@@ -226,10 +231,14 @@ static int javasm_init(struct r_bin_java_t *bin)
 		memcpy(bin->cp_items[i].bytes, buf, 5);
 
 		/* parse value */
-		switch(c->tag) {
+		switch (c->tag) {
 		case 1:
 			IFDBG printf("%s\n", buf);
 			bin->cp_items[i].value = strdup(buf);
+			break;
+		case 5:
+		case 6:
+			i += 2;
 			break;
 		case 7:
 			IFDBG printf("%d\n", R_BIN_JAVA_USHORT(buf,0));
