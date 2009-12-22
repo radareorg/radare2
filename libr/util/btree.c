@@ -26,7 +26,7 @@ R_API struct btree_node *btree_remove(struct btree_node *p, BTREE_DEL(del))
 			} else rp->left = p->left;
 		} else rp = p->right;
 	} else rp = p->left;
-	if (del) del(p->data);
+	if (del) del (p->data);
 	free(p);
 	return(rp);
 }
@@ -55,9 +55,9 @@ R_API int btree_del(struct btree_node *proot, void *x, BTREE_CMP(cmp), BTREE_DEL
 	struct btree_node *p = btree_search (proot, x, cmp, 1);
 	if (p) {
 		p->right = btree_remove (p->left, del);
-		return 1;
+		return R_TRUE;
 	}
-	return 0;
+	return R_FALSE;
 }
 
 R_API void *btree_get(struct btree_node *proot, void *x, BTREE_CMP(cmp))
@@ -88,7 +88,9 @@ R_API void btree_insert(struct btree_node **T, struct btree_node *p, BTREE_CMP(c
 		else (*T)->left = p;
 	} else if (ret>0) {
 		if ((*T)->right) btree_insert (&(*T)->right, p, cmp);
-		else (*T)->right = p; } }
+		else (*T)->right = p;
+	}
+}
 
 R_API void btree_add(struct btree_node **T, void *e, BTREE_CMP(cmp))
 {
@@ -145,8 +147,8 @@ struct mydata {
 int shownode(char *str, struct mydata *m)
 {
 	if (m == NULL)
-		printf("==> not found\n");
-	else printf("==> %s: %s, %lld\n", str, m->str, m->addr);
+		printf ("==> not found\n");
+	else printf ("==> %s: %s, %lld\n", str, m->str, m->addr);
 	return 0;
 }
 int mycmp(const void *a, const void *b)
@@ -169,11 +171,11 @@ int main()
 	printf("EMPTY TREE: %d\n", btree_empty(&bt));
 	btree_add(&bt, &foo, mycmp);
 	btree_add(&bt, &bar, mycmp);
-	printf("EMPTY TREE: %d\n", btree_empty(&bt));
+	printf ("EMPTY TREE: %d\n", btree_empty(&bt));
 
 printf("==== go search ====\n");
 	/* find existent data */
-	struct mydata *p = btree_get(bt, &bar, mycmp);
+	struct mydata *p = btree_get (bt, &bar, mycmp);
 	shownode("result for 20: ", p);
 
 printf("==== go search ====\n");

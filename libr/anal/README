@@ -1,5 +1,23 @@
 Code analysis module
 ====================
+* Direction of the stack? increase? decrease?
+* Register value source type
+  - This is static entropy level for a register at some point
+  - Constant value
+    mov eax, 33
+    mov eax, [const] ; from ro memory
+      static_entropy = 0;
+  - Variable
+    mov eax, [rwmem] ; from rw memory (variable)
+      static_entropy = 1;
+  - Modification
+    add eax, ebx ; from rw memory (variable)
+      static_entropy ++;
+
+  * At any point of the program we can determine if a register
+    has a static fixed value or the level of possible polimorfism
+
+  -- allow to load register values from traces
 
 * TODO: Add static plugin support here
 
@@ -18,6 +36,7 @@ foreach var (calls) {
   }
 }
 an.accept(ctx);
+
 
 ////////////////////////////////////////
 

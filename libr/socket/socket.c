@@ -3,8 +3,8 @@
 #define USE_SOCKETS
 
 #include <errno.h>
-#include "r_types.h"
-#include "r_socket.h"
+#include <r_types.h>
+#include <r_socket.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <signal.h>
@@ -26,7 +26,7 @@
 
 #define BUFFER_SIZE 4096
 
-R_API int r_socket_write(int fd, unsigned char *buf, int len)
+R_API int r_socket_write(int fd, void *buf, int len)
 {
 	int delta = 0;
 	int ret;
@@ -45,6 +45,12 @@ R_API int r_socket_write(int fd, unsigned char *buf, int len)
 	if (ret == -1)
 		return -1;
 	return delta;
+}
+
+R_API int r_socket_puts(int fd, char *buf)
+{
+	int len = strlen(buf);
+	return r_socket_write(fd, buf, len);
 }
 
 // XXX: rewrite it to use select //
@@ -92,21 +98,16 @@ R_API void r_socket_block(int fd, int block)
 
 R_API void r_socket_printf(int fd, const char *fmt, ...)
 {
-#if !__linux__
 	char buf[BUFFER_SIZE];
-#endif
 	va_list ap;
-	va_start(ap, fmt);
 
-	if (fd <= 0)
+	if (fd < 0)
 		return;
-#if __linux__
-	dprintf(fd, fmt, ap); 
-#else
-	snprintf(buf,BUFFER_SIZE,fmt,ap); 
-	socket_write(fd, buf, strlen(buf));
-#endif
-	
+
+	va_start(ap, fmt);
+	vsnprintf(buf, BUFFER_SIZE, fmt, ap); 
+	r_socket_write(fd, buf, strlen(buf));
+
 	va_end(ap);
 }
 
@@ -256,7 +257,7 @@ R_API int r_socket_flush(int fd)
 	return 0;
 }
 
-R_API int r_socket_fgets(int fd, char *buf,  int size)
+R_API int r_socket_gets(int fd, char *buf,  int size)
 {
 	int i = 0;
 	int ret = 0;

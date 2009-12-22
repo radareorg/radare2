@@ -20,25 +20,27 @@ R_API struct r_mem_pool_t* r_mem_pool_deinit(struct r_mem_pool_t *pool)
 	return pool;
 }
 
-R_API struct r_mem_pool_t* r_mem_pool_init(struct r_mem_pool_t *pool, int nodesize, int poolsize, int poolcount)
+R_API struct r_mem_pool_t* r_mem_pool_init(struct r_mem_pool_t *pool, int nsize, int psize, int pcount)
 {
 	if (pool) {
-		if (poolsize < 1) poolsize = ALLOC_POOL_SIZE;
-		if (poolcount < 1) poolcount = ALLOC_POOL_COUNT;
+		if (psize < 1)
+			psize = ALLOC_POOL_SIZE;
+		if (pcount < 1)
+			pcount = ALLOC_POOL_COUNT;
 		// TODO: assert nodesize?;
-		pool->poolsize = poolsize;
-		pool->poolcount = poolcount;
-		pool->nodesize = nodesize;
+		pool->poolsize = psize;
+		pool->poolcount = pcount;
+		pool->nodesize = nsize;
 		pool->npool = -1;
 		pool->ncount = pool->poolsize; // force init
-		pool->nodes = (void**) malloc(sizeof(void*)*pool->poolcount);
+		pool->nodes = (void**) malloc (sizeof (void*) * pool->poolcount);
 	}
 	return pool;
 }
 
 R_API struct r_mem_pool_t *r_mem_pool_new(int nodesize, int poolsize, int poolcount)
 {
-	return r_mem_pool_init(MALLOC_STRUCT(struct r_mem_pool_t),
+	return r_mem_pool_init (MALLOC_STRUCT (struct r_mem_pool_t),
 		nodesize, poolsize, poolcount);
 }
 
@@ -62,5 +64,3 @@ R_API void* r_mem_pool_alloc(struct r_mem_pool_t *pool)
 	// TODO: fix warning
 	return (void *)(&(pool->nodes[pool->npool][pool->ncount++]));
 }
-
-//does not yet supports arguments R_DEFINE_OBJECT(r_mem_pool);

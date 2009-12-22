@@ -31,7 +31,7 @@ namespace Radare {
 		public bool err(string str);
 	}
 
-	[CCode (cprefix="r_buf")]
+	[CCode (cprefix="r_buf_")]
 	public class Buffer {
 		public Buffer();
 		public int read_at(uint64 addr, uint8 *buf, int len);
@@ -98,6 +98,4 @@ namespace Radare {
 		[CCode (cname="rarray_iterator")] //, generic_type_pos=2)]
 		public Rarray<G> iterator();
 	}
-
-	
 }

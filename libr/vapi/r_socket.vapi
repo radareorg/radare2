@@ -16,8 +16,8 @@ public struct Radare.Socket : int
 	public Socket.listen(int port);
 	public int close();
 	[NoArrayLength]
-	public int fgets(string buf, int len);
-	public int printf(string *str, ...);
+	public int gets(string buf, int len);
+	public int printf(string str, ...);
 	public int accept();
 	public void block(bool blocking);
 	public bool flush();

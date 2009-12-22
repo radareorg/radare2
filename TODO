@@ -14,11 +14,6 @@
 * public void each(RangeEachFunc each_func) { ... }
 * r_io must need a reviewd undo API
 
-** Add R_ASM_PLUGIN_PREFIX... in short
-** in a vapi file you can define a different constructor class Foo { bar Bar(); }.. 
-   definition of Bar will override the previous Bar() class definition
-** .h is not included correctly for each vapi maybe its about order???
-
 <{include libr/TODO}>
  
 * correct result (R_TRUFAE), but with warnings (implement r_errno and r_errstr in r_util?)
@@ -53,3 +48,10 @@
    scripting language, so we can for example prepare
    a .c stub interface for python/perl/ruby/..
  - Maybe having a preprocessor tool for this..
+
+Vala issues
+===========
+** in a vapi file you can define a different constructor class Foo { bar Bar(); }.. 
+   definition of Bar will override the previous Bar() class definition
+** .h is not included correctly for each vapi maybe its about order???
+

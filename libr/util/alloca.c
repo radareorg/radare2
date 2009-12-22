@@ -20,7 +20,7 @@ static int bufidx = 0;
 static ut8 *bufnext = 0;
 static ut8 *bufmax;
 
-int r_alloca_init()
+R_API int r_alloca_init()
 {
 	buf = (ut8 *)malloc(ALLOC_SIZE);
 	if (buf == NULL)
@@ -31,7 +31,7 @@ int r_alloca_init()
 	return R_TRUE;
 }
 
-ut8 *r_alloca_bytes(int len)
+R_API ut8 *r_alloca_bytes(int len)
 {
 	ut8 *next = bufnext;
 	ut8 *tnext = bufnext + len;
@@ -41,7 +41,7 @@ ut8 *r_alloca_bytes(int len)
 	return next;
 }
 
-char *r_alloca_str(const char *str)
+R_API char *r_alloca_str(const char *str)
 {
 	int len;
 	ut8 *p;
@@ -59,7 +59,7 @@ char *r_alloca_str(const char *str)
 }
 
 /* free last allocated buffer */
-int r_alloca_ret_i(int n)
+R_API int r_alloca_ret_i(int n)
 {
 	/* check for underflows */
 	if (bufidx==0) return n;

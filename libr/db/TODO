@@ -1,5 +1,7 @@
 * Use r_mem_pool
 
+* Serialize/Deserialize from disk
+
 * Return FALSE when adding two elements with the same
   attributes (get before add) if the db is unique
   // not necessary, we can just do this by manually checkingc

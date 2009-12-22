@@ -12,7 +12,7 @@
 #endif
 
 /* pool */
-struct r_mem_pool_t {
+typedef struct r_mem_pool_t {
 	void **nodes;
 	int ncount;
 	int npool;
@@ -20,7 +20,7 @@ struct r_mem_pool_t {
 	int nodesize;
 	int poolsize;
 	int poolcount;
-};
+} rMemPool;
 
 R_API struct r_mem_pool_t* r_mem_pool_deinit(struct r_mem_pool_t *pool);
 R_API struct r_mem_pool_t* r_mem_pool_init(struct r_mem_pool_t *pool, int nodesize, int poolsize, int poolcount);
@@ -30,11 +30,11 @@ R_API void* r_mem_pool_alloc(struct r_mem_pool_t *pool);
 R_API int r_mem_count(ut8 **addr);
 
 /* buf */
-struct r_buf_t {
+typedef struct r_buf_t {
 	ut8 *buf;
 	int length;
 	ut64 base;
-};
+} rBuf;
 
 R_API struct r_buf_t *r_buf_init(struct r_buf_t *b);
 R_API struct r_buf_t *r_buf_new();
@@ -46,20 +46,20 @@ R_API void r_buf_free(struct r_buf_t *b);
 
 /* r_cache */
 // TOTHINK: move into a separated library?
-struct r_cache_item_t {
+typedef struct r_cache_item_t {
 	ut64 addr;
 	char *str;
 	struct list_head list;
-};
+} rCacheItem;
 
-struct r_cache_t {
+typedef struct r_cache_t {
 	ut64 start;
 	ut64 end;
 	struct list_head items;
-};
+} rCache;
 
 R_API void r_cache_init(struct r_cache_t *lang);
-R_API struct r_cache_t *r_cache_new();
+R_API rCache* r_cache_new();
 R_API void r_cache_free(struct r_cache_t *c);
 R_API char *r_cache_get(struct r_cache_t *c, ut64 addr);
 R_API int r_cache_set(struct r_cache_t *c, ut64 addr, char *str);
@@ -83,14 +83,14 @@ R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int 
 R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen);
 
 /* numbers */
-struct r_num_t {
+typedef struct r_num_t {
 	ut64 (*callback)(void *userptr, const char *str, int *ok);
 	ut64 value;
 	void *userptr;
-};
+} Num;
 
 R_API void r_num_minmax_swap(ut64 *a, ut64 *b);
-R_API void r_num_minmax_swap_i(int *a, int *b);
+R_API void r_num_minmax_swap_i(int *a, int *b); // XXX this can be a cpp macro :??
 R_API ut64 r_num_math(struct r_num_t *num, const char *str);
 R_API ut64 r_num_get(struct r_num_t *num, const char *str);
 R_API struct r_num_t *r_num_new(ut64 (*cb)(void*,const char *,int*), void *ptr);
@@ -169,5 +169,9 @@ R_API const char *r_sys_getenv(const char *key);
 R_API int r_sys_setenv(const char *key, const char *value, int ow);
 R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len);
 
+R_API int r_alloca_init();
+R_API ut8 *r_alloca_bytes(int len);
+R_API char *r_alloca_str(const char *str);
+R_API int r_alloca_ret_i(int n);
 
 #endif
