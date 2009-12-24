@@ -21,7 +21,7 @@
 #define R_BIN_SIZEOF_STRINGS 256
 
 /* types */
-struct r_bin_t {
+typedef struct r_bin_t {
 	const char *file;
 	int fd;
 	int rw;
@@ -30,9 +30,9 @@ struct r_bin_t {
 	struct r_io_bind_t iob;
 	struct r_bin_handle_t *cur;
 	struct list_head bins;
-};
+} rBin;
 
-struct r_bin_handle_t {
+typedef struct r_bin_handle_t {
 	char *name;
 	char *desc;
 	int (*init)(void *user);
@@ -50,14 +50,14 @@ struct r_bin_handle_t {
 	struct r_bin_field_t* (*fields)(struct r_bin_t *bin);
 	ut64 (*resize_section)(struct r_bin_t *bin, char *name, ut64 size);
 	struct list_head list;
-};
+} rBinHandle;
 
-struct r_bin_entry_t {
+typedef struct r_bin_entry_t {
 	ut64 rva;
 	ut64 offset;
-};
+} rBinEntry;
 
-struct r_bin_section_t {
+typedef struct r_bin_section_t {
 	char name[R_BIN_SIZEOF_STRINGS];
 	ut64 size;
 	ut64 vsize;
@@ -65,10 +65,10 @@ struct r_bin_section_t {
 	ut64 offset;
 	ut64 characteristics;
 	int last;
-};
+} rBinSection;
 
 #define r_bin_Rarray struct r_bin_symbol_t
-struct r_bin_symbol_t {
+typedef struct r_bin_symbol_t {
 	char name[R_BIN_SIZEOF_STRINGS];
 	char forwarder[R_BIN_SIZEOF_STRINGS];
 	char bind[R_BIN_SIZEOF_STRINGS];
@@ -78,9 +78,9 @@ struct r_bin_symbol_t {
 	ut64 size;
 	ut64 ordinal;
 	int last;
-};
+} rBinSymbol;
 
-struct r_bin_import_t {
+typedef struct r_bin_import_t {
 	char name[R_BIN_SIZEOF_STRINGS];
 	char bind[R_BIN_SIZEOF_STRINGS];
 	char type[R_BIN_SIZEOF_STRINGS];
@@ -89,18 +89,18 @@ struct r_bin_import_t {
 	ut64 ordinal;
 	ut64 hint;
 	int last;
-};
+} rBinImport;
 
-struct r_bin_string_t {
+typedef struct r_bin_string_t {
 	char string[R_BIN_SIZEOF_STRINGS];
 	ut64 rva;
 	ut64 offset;
 	ut64 ordinal;
 	ut64 size;
 	int last;
-};
+} rBinString;
 
-struct r_bin_info_t {
+typedef struct r_bin_info_t {
 	char type[R_BIN_SIZEOF_STRINGS];
 	char class[R_BIN_SIZEOF_STRINGS];
 	char rclass[R_BIN_SIZEOF_STRINGS];
@@ -110,15 +110,16 @@ struct r_bin_info_t {
 	char subsystem[R_BIN_SIZEOF_STRINGS];
 	int big_endian;
 	ut64 dbg_info;
-};
+} rBinInfo;
 
-struct r_bin_field_t {
+typedef struct r_bin_field_t {
 	char name[R_BIN_SIZEOF_STRINGS];
 	ut64 rva;
 	ut64 offset;
 	int last;
-};
+} rBinField;
 
+#ifdef R_API
 /* bin.c */
 R_API struct r_bin_t *r_bin_new();
 R_API struct r_bin_t *r_bin_free(struct r_bin_t *bin);
@@ -139,5 +140,6 @@ R_API struct r_bin_field_t* r_bin_get_fields(struct r_bin_t *bin);
 R_API ut64 r_bin_get_section_offset(struct r_bin_t *bin, const char *name);
 R_API ut64 r_bin_get_section_rva(struct r_bin_t *bin, const char *name);
 R_API ut64 r_bin_get_section_size(struct r_bin_t *bin, const char *name);
+#endif
 
 #endif

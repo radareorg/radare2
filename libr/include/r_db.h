@@ -27,6 +27,16 @@ struct r_db_iter_t {
 	void *cur;
 };
 
+/* table */
+struct r_db_table_t {
+	char *name;
+	int nelems;
+	char *fmt;
+	char *args;
+	int *offset;
+};
+
+#ifdef R_API
 R_API void r_db_init(struct r_db_t *db);
 R_API struct r_db_t *r_db_new();
 R_API struct r_db_block_t *r_db_block_new();
@@ -45,12 +55,4 @@ R_API struct r_db_iter_t *r_db_iter_free(struct r_db_iter_t *iter);
 R_API int r_db_free(struct r_db_t *db);
 R_API int r_db_push(struct r_db_t *db, const ut8 *b);
 R_API const ut8 *r_db_pop(struct r_db_t *db);
-
-/* table */
-struct r_db_table_t {
-	char *name;
-	int nelems;
-	char *fmt;
-	char *args;
-	int *offset;
-};
+#endif

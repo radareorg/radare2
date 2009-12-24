@@ -4,9 +4,9 @@
 namespace Radare {
 	[Compact]
 	[CCode (cname="struct r_db_t", free_function="r_db_free", cprefix="r_db_")]
-	public class Database {
+	public class rDatabase {
 		/* lifecycle */
-		public Database();
+		public rDatabase();
 		/**
 		* Initializes a database object
 		*/

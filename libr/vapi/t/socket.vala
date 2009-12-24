@@ -12,16 +12,16 @@ public static void main(string[] args)
 	unowned GLib.FILE stdout = &Posix.stdout;
 #else
 	// XXX: not yet supported by vala
-	unowned GLib.FileStream stdin = ref GLib.stdin;
-	unowned GLib.FileStream stdout = ref GLib.stdout;
+	unowned GLib.FileStream stdin = GLib.stdin;
+	unowned GLib.FileStream stdout = GLib.stdout;
 #endif
 
-	Socket fd;
+	rSocket fd;
 	if (args.length>2)
-		fd = Socket.connect(args[1], args[2].to_int());
-	else fd = Socket.connect("radare.org", 80);
+		fd = rSocket.connect(args[1], args[2].to_int());
+	else fd = rSocket.connect("radare.org", 80);
 
-	//var fd = Socket.connect("localhost", 9999);
+	//var fd = rSocket.connect("localhost", 9999);
 	if (fd == -1) {
 		printf("Cannot connect\n");
 		return;

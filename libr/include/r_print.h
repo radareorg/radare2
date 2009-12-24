@@ -9,7 +9,7 @@
 #define R_PRINT_FLAGS_CURSOR  0x00000004
 #define R_PRINT_FLAGS_HEADER  0x00000008
 
-struct r_print_t {
+typedef struct r_print_t {
 	void *user;
 	int (*read_at)(ut64 addr, ut8 *buf, int len, void *user);
 	char datefmt[32];
@@ -24,8 +24,9 @@ struct r_print_t {
 	int ocur;
 	int flags;
 	int addrmod;
-};
+} rPrint;
 
+#ifdef R_API
 R_API struct r_print_t *r_print_new();
 R_API int r_print_init(struct r_print_t *p);
 R_API struct r_print_t *r_print_free(struct r_print_t *p);
@@ -45,5 +46,6 @@ R_API void r_print_code(struct r_print_t *p, ut64 addr, ut8 *buf, int len);
 R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int len, const char *fmt);
 // XXX . change wide, zeroend, urlencode for option flags
 R_API int r_print_string(struct r_print_t *p, ut64 seek, const ut8 *str, int len, int wide, int zeroend, int urlencode);
+#endif
 
 #endif

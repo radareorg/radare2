@@ -4,7 +4,7 @@
 namespace Radare {
 	[Compact]
 	[CCode (cname="struct r_asm_t", free_function="r_asm_free", cprefix="r_asm_")]
-	public class Asm {
+	public class rAsm {
 /* DEPRECATED?
 		public enum Arch {
 			NULL  = 0,
@@ -59,17 +59,17 @@ namespace Radare {
 		public string buf_err;
 		public void *aux;
 
-		public Asm();
+		public rAsm();
 
 		public int init();
 		public int list();
 		public bool use(string name);
 //		public bool set_arch(Asm.Arch arch);
 		public bool set_bits(int bits);
-		public bool set_syntax(Asm.Syntax syntax);
+		public bool set_syntax(rAsm.Syntax syntax);
 		public bool set_pc(uint64 addr);
 		public bool set_big_endian(bool big);
-		public bool set_parser(Asm.Parser parser, parse_cb cb, void *aux);
+		public bool set_parser(rAsm.Parser parser, parse_cb cb, void *aux);
 		public int disassemble(out Aop aop, uint8 *buf, uint64 length);
 		public int assemble(out Aop aop, string buf);
 		public uint64 mdisassemble(out Aop aop, uint8 *buf, uint64 length);
@@ -80,5 +80,5 @@ namespace Radare {
 		public void free();
 	}
 
-	public static delegate int parse_cb(Asm a);
+	public static delegate int parse_cb(rAsm a);
 }

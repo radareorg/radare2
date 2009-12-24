@@ -12,7 +12,7 @@
 #define CN_RO    0x000010
 #define CN_RW    0x000020
 
-struct r_config_node_t {
+typedef struct r_config_node_t {
 	char *name;
 	int hash;
 	int flags;
@@ -23,19 +23,20 @@ struct r_config_node_t {
 	char **cb_ptr_s;
 	int (*callback)(void *user, void *data);
 	struct list_head list;
-};
+} rConfigNode;
 
-struct r_config_t {
+typedef struct r_config_t {
 	int lock;
 	int last_notfound;
 	int n_nodes;
 	void *user;
 	void (*printf)(const char *str, ...);
 	struct list_head nodes;
-};
+} rConfig;
 
 #define O struct r_config_t *obj
 
+#ifdef R_API
 R_API struct r_config_t *r_config_new(void *user);
 R_API int r_config_free(struct r_config_t *cfg);
 R_API int r_config_init(struct r_config_t *core, void *user);
@@ -52,5 +53,6 @@ R_API void r_config_list(O, const char *str, int rad);
 R_API struct r_config_node_t *r_config_node_get(O, const char *name);
 R_API struct r_config_node_t *r_config_node_new(const char *name, const char *value);
 R_API int r_config_swap(struct r_config_t *cfg, const char *name);
+#endif
 
 #endif

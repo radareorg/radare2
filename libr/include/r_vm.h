@@ -20,27 +20,27 @@
 #define R_VMREG_FLOAT32 6
 #define R_VMREG_FLOAT64 7
 
-struct r_vm_reg_t {
+typedef struct r_vm_reg_t {
 	char name[16];
 	ut64 value;
 	int type;
 	char *get;
 	char *set;
 	struct list_head list;
-};
+} rVmReg;
 
-struct r_vm_op_t {
+typedef struct r_vm_op_t {
 	char opcode[32];
 	char code[1024];
 	struct list_head list;
-};
+} rVmOp;
 
-struct r_vm_reg_type {
+typedef struct r_vm_reg_type {
 	int type;
 	char *str;
-};
+} rVmRegType;
 
-struct r_vm_cpu_t {
+typedef struct r_vm_cpu_t {
 	const char *pc;
 	const char *sp;
 	const char *bp;
@@ -51,16 +51,16 @@ struct r_vm_cpu_t {
 	const char *a3;
 	const char *ret;
 	const char *zf;
-};
+} rVmCpu;
 
-struct r_vm_change_t {
+typedef struct r_vm_change_t {
 	ut64 from;
 	ut64 to;
 	ut8 *data;
 	struct list_head list;
-};
+} rVmChange;
 
-struct r_vm_t {
+typedef struct r_vm_t {
 	struct r_vm_reg_t *rec;
 	struct list_head regs;
 	struct r_vm_cpu_t cpu;
@@ -73,8 +73,9 @@ struct r_vm_t {
 	int (*read)(void *user, ut64 addr, ut8 *buf, int len);
 	int (*write)(void *user, ut64 addr, ut8 *buf, int len);
 	void *user;
-};
+} rVm;
 
+#ifdef R_API
 R_API ut64 vm_reg_get(const char *name);
 R_API void vm_stack_push(ut64 _val);
 
@@ -130,7 +131,8 @@ R_API void r_vm_mmu_set_io(struct r_vm_t *vm,
 	void *user);
 
 /* extra */
-int r_vm_cmd_op_help();
-int r_vm_op_list(struct r_vm_t *vm);
+R_API int r_vm_cmd_op_help();
+R_API int r_vm_op_list(struct r_vm_t *vm);
+#endif
 
 #endif

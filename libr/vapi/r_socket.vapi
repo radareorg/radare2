@@ -3,7 +3,7 @@
 /* TODO: Add simpletype instead of int so, we can use it as an object */
 
 [CCode (cname="int", cheader_filename="r_socket.h", cprefix="r_socket_")]
-public struct Radare.Socket : int
+public struct Radare.rSocket : int
 {
 	public bool ready(int secs, int usecs);
 	[NoArrayLength]
@@ -11,9 +11,9 @@ public struct Radare.Socket : int
 	[NoArrayLength]
 	public int write(int fd, void *buf, int len);
 	[CCode (cname="r_socket_connect")]
-	public Socket.connect(string host, int port);
+	public rSocket.connect(string host, int port);
 	[CCode (cname="r_socket_listen")]
-	public Socket.listen(int port);
+	public rSocket.listen(int port);
 	public int close();
 	[NoArrayLength]
 	public int gets(string buf, int len);

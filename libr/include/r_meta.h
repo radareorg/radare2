@@ -5,12 +5,12 @@
 #include <r_util.h>
 #include <list.h>
 
-struct r_meta_count_t {
+typedef struct r_meta_count_t {
 	int functions;
 	int xref_code;
 	int xref_data;
 	/* TODO: ... */
-};
+} rMetaCount;
 
 #if 0
 TODO:
@@ -22,7 +22,7 @@ We also need to specify which type of data is the contents of a data block
 #endif
 
 /* old data_t */
-struct r_meta_item_t {
+typedef struct r_meta_item_t {
 	ut64 from;
 	ut64 to;
 	ut64 size;
@@ -30,14 +30,14 @@ struct r_meta_item_t {
 //	int times;
 	char *str;
 	struct list_head list;
-};
+} rMetaItem;
 
-struct r_meta_t {
+typedef struct r_meta_t {
 	struct list_head data;
 //	struct reflines_t *reflines = NULL;
 //	struct list_head comments;
 //	struct list_head xrefs;
-};
+} rMeta;
 
 enum {
 	R_META_WHERE_PREV = -1,
@@ -60,15 +60,17 @@ enum {
 	R_META_XREF_DATA,
 };
 
-int r_meta_init(struct r_meta_t *m);
-struct r_meta_t *r_meta_new();
-void r_meta_free(struct r_meta_t *m);
-int r_meta_count(struct r_meta_t *m, int type, ut64 from, ut64 to, struct r_meta_count_t *c);
-char *r_meta_get_string(struct r_meta_t *m, int type, ut64 addr);
-int r_meta_del(struct r_meta_t *m, int type, ut64 from, ut64 size, const char *str);
-int r_meta_add(struct r_meta_t *m, int type, ut64 from, ut64 size, const char *str);
-struct r_meta_item_t *r_meta_find(struct r_meta_t *m, ut64 off, int type, int where);
-const char *r_meta_type_to_string(int type);
-int r_meta_list(struct r_meta_t *m, int type);
+#ifdef R_API
+R_API int r_meta_init(struct r_meta_t *m);
+R_API struct r_meta_t *r_meta_new();
+R_API void r_meta_free(struct r_meta_t *m);
+R_API int r_meta_count(struct r_meta_t *m, int type, ut64 from, ut64 to, struct r_meta_count_t *c);
+R_API char *r_meta_get_string(struct r_meta_t *m, int type, ut64 addr);
+R_API int r_meta_del(struct r_meta_t *m, int type, ut64 from, ut64 size, const char *str);
+R_API int r_meta_add(struct r_meta_t *m, int type, ut64 from, ut64 size, const char *str);
+R_API struct r_meta_item_t *r_meta_find(struct r_meta_t *m, ut64 off, int type, int where);
+R_API const char *r_meta_type_to_string(int type);
+R_API int r_meta_list(struct r_meta_t *m, int type);
+#endif
 
 #endif

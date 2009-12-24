@@ -40,6 +40,7 @@ struct r_crypto_handle_t {
 	struct list_head list;
 };
 
+#ifdef R_API
 R_API struct r_crypto_t *r_crypto_init(struct r_crypto_t *cry, int hard);
 R_API struct r_crypto_t *r_crypto_as_new(struct r_crypto_t *cry);
 R_API int r_crypto_add(struct r_crypto_t *cry, struct r_crypto_handle_t *h);
@@ -53,7 +54,9 @@ R_API int r_crypto_update(struct r_crypto_t *cry, ut8 *buf, int len);
 R_API int r_crypto_final(struct r_crypto_t *cry, ut8 *buf, int len);
 R_API int r_crypto_append(struct r_crypto_t *cry, const ut8 *buf, int len);
 R_API ut8 *r_crypto_get_output(struct r_crypto_t *cry);
+#endif
 
 /* plugin pointers */
 extern struct r_crypto_handle_t r_crypto_plugin_aes;
+
 #endif

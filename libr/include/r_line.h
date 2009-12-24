@@ -27,14 +27,16 @@ extern int r_line_histidx;
 extern int r_line_autosave;
 extern int r_line_disable;
 
-int r_line_init();
-int r_line_hist_load(const char *file);
-char *r_line_readline(int argc, const char **argv);
-//extern int r_line_readchar();
+#ifdef R_API
+R_API int r_line_init();
+R_API int r_line_hist_load(const char *file);
+R_API char *r_line_readline(int argc, const char **argv);
+R_API //extern int r_line_readchar();
 R_API int r_line_hist_add(const char *line);
-int r_line_hist_save(const char *file);
-int r_line_hist_label(const char *label, void (*cb)(const char*));
-void r_line_label_show();
+R_API int r_line_hist_save(const char *file);
+R_API int r_line_hist_label(const char *label, void (*cb)(const char*));
+R_API void r_line_label_show();
+#endif
 
 extern char **(*r_line_callback)(const char *text, int start, int end);
 

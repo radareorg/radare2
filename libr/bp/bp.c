@@ -137,6 +137,12 @@ static struct r_bp_item_t *r_bp_add(struct r_bp_t *bp, const ut8 *obytes, ut64 a
 	return b;
 }
 
+R_API int r_bp_add_fault(struct r_bp_t *bp, ut64 addr, int size, int rwx)
+{
+	// TODO
+	return NULL;
+}
+
 R_API struct r_bp_item_t *r_bp_add_sw(struct r_bp_t *bp, ut64 addr, int size, int rwx)
 {
 	struct r_bp_item_t *item;

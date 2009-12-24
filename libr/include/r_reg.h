@@ -17,32 +17,33 @@ enum {
 	R_REG_TYPE_ALL = -1,
 };
 
-struct r_reg_item_t {
+typedef struct r_reg_item_t {
 	char *name;
 	int type;
 	int size; /* 8,16,32,64 ... 128/256 ??? */
 	int offset; // offset in data structure
 	int packed_size; /* 0 means no packed register, 1byte pack, 2b pack... */
 	struct list_head list;
-};
+} rRegItem;
 
-struct r_reg_arena_t {
+typedef struct r_reg_arena_t {
 	ut8 *bytes;
 	int size;
 	struct list_head list;
-};
+} rRegArena;
 
-struct r_reg_set_t {
+typedef struct r_reg_set_t {
 	struct r_reg_arena_t *arena;
 	struct list_head arenas; /* r_reg_arena_t */
 	struct list_head regs;   /* r_reg_item_t */
-};
+} rRegSet;
 
-struct r_reg_t {
+typedef struct r_reg_t {
 	char *profile;
 	struct r_reg_set_t regset[R_REG_TYPE_LAST];
-};
+} rReg;
 
+#ifdef R_API
 /* lifecycle */
 R_API struct r_reg_t *r_reg_free(struct r_reg_t *reg);
 R_API struct r_reg_t *r_reg_init(struct r_reg_t *reg);
@@ -65,5 +66,6 @@ R_API int r_reg_set_pvalue(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 
 R_API ut8* r_reg_get_bytes(struct r_reg_t *reg, int type, int *size);
 R_API int r_reg_set_bytes(struct r_reg_t *reg, int type, const ut8* buf, int len);
 R_API void r_reg_fit_arena(struct r_reg_t *reg);
+#endif
 
 #endif

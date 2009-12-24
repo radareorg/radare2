@@ -41,6 +41,7 @@ struct r_bininfo_handle_t {
 	struct list_head list;
 };
 
+#ifdef R_API
 /* bininfo.c */
 R_API struct r_bininfo_t *r_bininfo_new();
 R_API struct r_bininfo_t *r_bininfo_free(struct r_bininfo_t *bin);
@@ -54,6 +55,7 @@ R_API int r_bininfo_close(struct r_bininfo_t *bin);
 R_API int r_bininfo_get_line(struct r_bininfo_t *bin, ut64 addr, char *file, int len, int *line);
 R_API char *r_bininfo_get_source_path(struct r_bininfo_t *bin);
 R_API int r_bininfo_set_source_path(struct r_bininfo_t *bi, char *path);
+#endif
 
 /* TODO : move this to r_util!! */
 char *r_bininfo_get_file_line(struct r_bininfo_t *bin, const char *file, int line);

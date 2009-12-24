@@ -6,16 +6,16 @@
 #include <r_types.h>
 #include <list.h>
 
-struct r_trace_t {
+typedef struct r_trace_t {
 	struct list_head traces;
 	int num;
 	int changed;
 	int tag;
 	int dup;
 	int (*printf)(const char *str,...);
-};
+} rTrace;
 
-struct r_trace_item_t {
+typedef struct r_trace_item_t {
 	ut64 addr;
 	ut64 tags;
 	int opsize;
@@ -23,22 +23,24 @@ struct r_trace_item_t {
 	int count;
 	struct timeval tm;
 	struct list_head list;
-};
+} rTraceItem;
 
-int r_trace_init(struct r_trace_t *t);
-struct r_trace_t *r_trace_new();
-int r_trace_tag_get(struct r_trace_t *t);
-int r_trace_tag_set(struct r_trace_t *t, int id);
-int r_trace_sort(struct r_trace_t *t);
-struct r_trace_item_t *r_trace_get(struct r_trace_t *t, ut64 addr, int tag);
-int r_trace_times(struct r_trace_t *tr, ut64 addr);
-int r_trace_count(struct r_trace_t *tr, ut64 addr);
-int r_trace_index(struct r_trace_t *tr, ut64 addr);
-int r_trace_set_times(struct r_trace_t *tr, ut64 addr, int times);
-int r_trace_add(struct r_trace_t *tr, ut64 addr, int opsize);
-ut64 r_trace_range(struct r_trace_t *t, ut64 from, int tag);
-ut64 r_trace_next(struct r_trace_t *tr, ut64 from, int tag);
-void r_trace_show(struct r_trace_t *tr, int plain, int tag);
-void r_trace_reset(struct r_trace_t *tr);
-int r_trace_get_between(struct r_trace_t *tr, ut64 from, ut64 to);
+#ifdef R_API
+R_API int r_trace_init(struct r_trace_t *t);
+R_API struct r_trace_t *r_trace_new();
+R_API int r_trace_tag_get(struct r_trace_t *t);
+R_API int r_trace_tag_set(struct r_trace_t *t, int id);
+R_API int r_trace_sort(struct r_trace_t *t);
+R_API struct r_trace_item_t *r_trace_get(struct r_trace_t *t, ut64 addr, int tag);
+R_API int r_trace_times(struct r_trace_t *tr, ut64 addr);
+R_API int r_trace_count(struct r_trace_t *tr, ut64 addr);
+R_API int r_trace_index(struct r_trace_t *tr, ut64 addr);
+R_API int r_trace_set_times(struct r_trace_t *tr, ut64 addr, int times);
+R_API int r_trace_add(struct r_trace_t *tr, ut64 addr, int opsize);
+R_API ut64 r_trace_range(struct r_trace_t *t, ut64 from, int tag);
+R_API ut64 r_trace_next(struct r_trace_t *tr, ut64 from, int tag);
+R_API void r_trace_show(struct r_trace_t *tr, int plain, int tag);
+R_API void r_trace_reset(struct r_trace_t *tr);
+R_API int r_trace_get_between(struct r_trace_t *tr, ut64 from, ut64 to);
+#endif
 #endif

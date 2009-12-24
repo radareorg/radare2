@@ -9,7 +9,14 @@
 #include <r_syscall.h>
 #include "list.h"
 
-struct r_debug_t {
+enum {
+	R_DBG_PROC_STOP,
+	R_DBG_PROC_RUN,
+	R_DBG_PROC_SLEEP,
+	R_DBG_PROC_ZOMBIE,
+};
+
+typedef struct r_debug_t {
 	int pid;    /* selected process id */
 	int tid;    /* selected thread id */
 	int swstep; /* steps with software traps */
@@ -29,10 +36,10 @@ struct r_debug_t {
 	- list of mapped memory (from /proc/XX/maps)
 	- list of managed memory (allocated in child...)
 	*/
-};
+} rDebug;
 
 /* TODO: pass dbg and user data pointer everywhere */
-struct r_debug_handle_t {
+typedef struct r_debug_handle_t {
 	const char *name;
 	const char **archs;
 	int (*get_arch)();
@@ -54,16 +61,10 @@ struct r_debug_handle_t {
 	int (*mmu_free)(void *user, ut64 addr);
 
 	struct list_head list;
-};
+} rDebugHandle;
 
-enum {
-	R_DBG_PROC_STOP,
-	R_DBG_PROC_RUN,
-	R_DBG_PROC_SLEEP,
-	R_DBG_PROC_ZOMBIE,
-};
-
-struct r_debug_pid_t {
+// TODO: rename to r_debug_process_t ? maybe a thread too ?
+typedef struct r_debug_pid_t {
 	int pid;
 	int status; /* stopped, running, zombie, sleeping ,... */
 	int runnable; /* when using 'run', 'continue', .. this proc will be runnable */
@@ -71,8 +72,9 @@ struct r_debug_pid_t {
 	struct list_head childs;
 	struct r_debug_pid_t *parent;
 	struct list_head list;
-};
+} rDebugPid;
 
+#ifdef R_API
 R_API int r_debug_use(struct r_debug_t *dbg, const char *str);
 R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
 R_API int r_debug_handle_init(struct r_debug_t *dbg);
@@ -101,6 +103,7 @@ R_API int r_debug_mmu_free(struct r_debug_t *dbg, ut64 addr);
 /* registers */
 R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write);
 R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad);
+#endif
 #endif
 
 /* regset */

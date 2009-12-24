@@ -15,18 +15,18 @@
 #define R_IO_NFDS 32
 
 #define IO_MAP_N 128
-struct r_io_map_t {
+typedef struct r_io_map_t {
         int fd;
 	int flags;
         ut64 delta;
         ut64 from;
         ut64 to;
         struct list_head list;
-};
+} rIoMap;
 
 /* stores write and seek changes */
 #define R_IO_UNDOS 64
-struct r_io_undo_t {
+typedef struct r_io_undo_t {
 	int s_enable;
 	int w_enable;
 	/* write stuff */
@@ -37,18 +37,18 @@ struct r_io_undo_t {
 	int fd[R_IO_UNDOS];
 	int idx;
 	int limit;
-};
+} rIoUndo;
 
-struct r_io_undo_w_t {
+typedef struct r_io_undo_w_t {
 	int set;
 	ut64 off;
 	ut8 *o;   /* old data */
 	ut8 *n;   /* new data */
 	int len;  /* length */
 	struct list_head list;
-};
+} rIoUndoWrite;
 
-struct r_io_t {
+typedef struct r_io_t {
 	int fd;
 	int enforce_rwx;
 	int enforce_seek;
@@ -70,13 +70,13 @@ struct r_io_t {
 	struct list_head maps;
         struct list_head desc;
 	struct list_head cache;
-};
+} rIo;
 
 //struct r_io_handle_fd_t {
 // ... store io changes here
 //};
 
-struct r_io_handle_t {
+typedef struct r_io_handle_t {
         void *handle;
         char *name;
         char *desc;
@@ -94,25 +94,52 @@ struct r_io_handle_t {
         int (*handle_open)(struct r_io_t *io, const char *);
         //int (*handle_fd)(struct r_io_t *, int);
 	int fds[R_IO_NFDS];
-};
+} rIoHandle;
 
-struct r_io_list_t {
+typedef struct r_io_list_t {
 	struct r_io_handle_t *plugin;
 	struct list_head list;
-};
+} rIoList;
 
 /* compile time dependency */
-struct r_io_bind_t {
+typedef struct r_io_bind_t {
 	int init;
 	//int fd;
 	struct r_io_t *io;
 	int (*set_fd)(struct r_io_t *io, int fd);
 	int (*read_at)(struct r_io_t *io, ut64 addr, ut8 *buf, int size);
 	int (*write_at)(struct r_io_t *io, ut64 addr, const ut8 *buf, int size);
+} rIoBind;
+
+/* sections */
+struct r_io_section_t {
+	char name[256];
+	ut64 from;
+	ut64 to;
+	ut64 vaddr;
+	ut64 paddr; // offset on disk
+	int rwx;
+	struct list_head list;
 };
 
-#define r_io_bind_init(x) memset(&x,0,sizeof(x))
+struct r_io_cache_t {
+	ut64 from;
+	ut64 to;
+	int size;
+	ut8 *data;
+	struct list_head list;
+};
 
+typedef struct r_io_desc_t {
+	int fd;
+	int flags;
+        char name[4096];
+	struct r_io_handle_t *handle;
+        struct list_head list;
+} rIoDesc;
+
+#ifdef R_API
+#define r_io_bind_init(x) memset(&x,0,sizeof(x))
 /* io/handle.c */
 R_API struct r_io_t *r_io_new();
 R_API struct r_io_t *r_io_free(struct r_io_t *io);
@@ -163,25 +190,6 @@ R_API int r_io_map_read_at(struct r_io_t *io, ut64 off, ut8 *buf, int len);
 //R_API int r_io_map_read_rest(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len);
 R_API int r_io_map_write_at(struct r_io_t *io, ut64 off, const ut8 *buf, int len);
 
-/* sections */
-struct r_io_section_t {
-	char name[256];
-	ut64 from;
-	ut64 to;
-	ut64 vaddr;
-	ut64 paddr; // offset on disk
-	int rwx;
-	struct list_head list;
-};
-
-struct r_io_cache_t {
-	ut64 from;
-	ut64 to;
-	int size;
-	ut8 *data;
-	struct list_head list;
-};
-
 R_API int r_io_section_rm(struct r_io_t *io, int idx);
 R_API void r_io_section_add(struct r_io_t *io, ut64 from, ut64 to, ut64 vaddr, ut64 physical, int rwx, const char *comment);
 R_API void r_io_section_set(struct r_io_t *io, ut64 from, ut64 to, ut64 vaddr, ut64 physical, int rwx, const char *comment);
@@ -195,14 +203,6 @@ R_API struct r_io_section_t * r_io_section_get_i(struct r_io_t *io, int idx);
 R_API void r_io_section_init(struct r_io_t *io);
 R_API int r_io_section_overlaps(struct r_io_t *io, struct r_io_section_t *s);
 R_API ut64 r_io_section_align(struct r_io_t *io, ut64 addr, ut64 vaddr, ut64 paddr);
-
-struct r_io_desc_t {
-	int fd;
-	int flags;
-        char name[4096];
-	struct r_io_handle_t *handle;
-        struct list_head list;
-};
 
 R_API int r_io_desc_init(struct r_io_t *io);
 R_API int r_io_desc_add(struct r_io_t *io, int fd, const char *file, int flags, struct r_io_handle_t *handle);
@@ -230,6 +230,7 @@ R_API void r_io_wundo_list(struct r_io_t *io);
 R_API int r_io_wundo_set_t(struct r_io_t *io, struct r_io_undo_w_t *u, int set) ;
 R_API void r_io_wundo_set_all(struct r_io_t *io, int set);
 R_API int r_io_wundo_set(struct r_io_t *io, int n, int set);
+#endif
 
 #if 0
 #define CB_READ int (*cb_read)(struct r_io_t *user, int pid, ut64 addr, ut8 *buf, int len)

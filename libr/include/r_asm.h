@@ -30,16 +30,16 @@ enum {
 	R_ASM_SYN_ATT
 };
 
-struct r_asm_aop_t {
+typedef struct r_asm_aop_t {
 	int  inst_len;
 	ut8   buf[R_ASM_BUFSIZE];
 	char buf_asm[R_ASM_BUFSIZE];
 	char buf_hex[R_ASM_BUFSIZE];
 	char buf_err[R_ASM_BUFSIZE];
 	void *disasm_obj;
-};
+} rAsmAop;
 
-struct r_asm_t {
+typedef struct r_asm_t {
 	int  bits;
 	int  big_endian;
 	int  syntax;
@@ -48,13 +48,14 @@ struct r_asm_t {
 	struct r_asm_handle_t *cur;
 	struct r_asm_fastcall_t *fastcall;
 	struct list_head asms;
-};
+} rAsm;
 
-struct r_asm_fastcall_t {
+typedef struct r_asm_fastcall_t {
 	const char *arg[16];
-};
+} rAsmFastcall;
 
-struct r_asm_handle_t {
+// TODO: rename to handler?
+typedef struct r_asm_handle_t {
 	char *name;
 	char *arch;
 	char *desc;
@@ -66,8 +67,9 @@ struct r_asm_handle_t {
 	int (*set_subarch)(struct r_asm_t *a, const char *buf);
 	struct r_asm_fastcall_t *fastcall[R_ASM_FASTCALL_ARGS];
 	struct list_head list;
-};
+} rAsmHandle;
 
+#ifdef R_API
 /* asm.c */
 R_API struct r_asm_t *r_asm_new();
 R_API const char *r_asm_fastcall(struct r_asm_t *a, int idx, int num);
@@ -86,6 +88,7 @@ R_API int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf
 R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf);
 R_API ut64 r_asm_mdisassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len);
 R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf);
+#endif
 
 /* plugin pointers */
 extern struct r_asm_handle_t r_asm_plugin_dummy;

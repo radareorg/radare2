@@ -4,17 +4,17 @@
 namespace Radare {
 	[Compact]
 	[CCode (cname="struct r_bp_t", free_function="r_bp_free", cprefix="r_bp_")]
-	public class Breakpoint {
-		public Breakpoint();
+	public class rBreakpoint {
+		public rBreakpoint();
 		public void enable(uint64 addr, bool enabled);
 		public bool at_addr(uint64 addr, int rwx);
-		public bool add_sw(uint8* obytes, uint64 addr, int len, int rwx);
-		public bool add_hw(uint8* obytes, uint64 addr, int len, int rwx);
+		public Item add_sw(uint64 addr, int len, int rwx);
+		public Item add_hw(uint64 addr, int len, int rwx);
 		public bool add_fault(uint64 addr, int len, int rwx);
 		public int add_cond(string cond);
 		public bool del(uint64 addr);
 		public bool del_cond(int idx);
-		public int list(bool rfmt);
+		public int list(int rad);
 
 		[CCode (cprefic="R_BP")]
 		public enum Protection {

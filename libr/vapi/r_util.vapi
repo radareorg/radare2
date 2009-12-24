@@ -4,7 +4,7 @@
 namespace Radare {
 	[Compact]
 	[CCode (cprefix="r_")]
-	public static class Util {
+	public static class rUtil {
 		public static int hex_str2bin (string input, uint8 *buf);
 		//public static int hex_bin2str (uint8 *buf, int len, out string str);
 		public static string hex_bin2strdup (uint8 *buf, int len);
@@ -20,20 +20,20 @@ namespace Radare {
 
 	// ???
 	[CCode (cprefix="r_str")]
-	public static class Str {
-		public Str();
+	public static class rStr {
+		public rStr();
 		public int hash(string str);
 	}
 
 	[CCode (cprefix="r_log")]
-	public static class Log {
+	public static class rLog {
 		public bool msg(string str);
 		public bool err(string str);
 	}
 
 	[CCode (cprefix="r_buf_")]
-	public class Buffer {
-		public Buffer();
+	public class rBuffer {
+		public rBuffer();
 		public int read_at(uint64 addr, uint8 *buf, int len);
 		public int write_at(uint64 addr, uint8 *buf, int len);
 		public bool set_bytes(uint8 *buf, int len);
@@ -44,11 +44,11 @@ namespace Radare {
 	/* Generic Iterator interfaced with r_iter */
         [Compact]
         [CCode (cprefix="r_iter_", cname="void")]
-        public class Iter<G> {
-                public Iter (int size);
+        public class rIter<G> {
+                public rIter (int size);
                 public unowned G get ();
-                public unowned Iter<G> next ();
-                public unowned Iter<G> next_n (int idx);
+                public unowned rIter<G> next ();
+                public unowned rIter<G> next_n (int idx);
                 public unowned G prev ();
                 public void delete ();
                 public unowned G first ();
@@ -60,7 +60,7 @@ namespace Radare {
 
 	[Compact]
 	[CCode (cprefix="ralist_", cheader_filename="list.h", cname="struct list_head")]
-	public static class List<G> {
+	public static class rList<G> {
 		[CCode (cname="ralist_next")]
 		public bool next();
 		[CCode (cname="")]
@@ -68,7 +68,7 @@ namespace Radare {
 		[CCode (cname="ralist_get", generic_type_pos=2)]
 		public unowned G get();
 		[CCode (cname="ralist_iterator")]
-		public List<unowned G> iterator();
+		public rList<unowned G> iterator();
 	}
 
 /*
@@ -88,7 +88,7 @@ namespace Radare {
 
 	[Compact]
 	[CCode (cprefix="rarray_", cheader_filename="r_types.h", cname="void")]
-	public static class Rarray<G> {
+	public static class rArray<G> {
 		[CCode (cname="rarray_next", generic_type_pos=2)]
 		public bool next();
 		[CCode (cname="")]
@@ -96,6 +96,6 @@ namespace Radare {
 		[CCode (cname="rarray_get", generic_type_pos=2)]
 		public unowned G get();
 		[CCode (cname="rarray_iterator")] //, generic_type_pos=2)]
-		public Rarray<G> iterator();
+		public rArray<G> iterator();
 	}
 }

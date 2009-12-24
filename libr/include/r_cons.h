@@ -46,46 +46,6 @@ R_API void r_cons_pipe_close(int fd);
 #define C_BBLUE     "\x1b[1;34m"
 #define C_BGRAY     "\x1b[1;38m"
 
-/* constructor */
-R_API int  r_cons_init();
-
-/* control */
-R_API void r_cons_reset();
-R_API void r_cons_clear();
-R_API void r_cons_clear00();
-R_API void r_cons_stdout_open(const char *file, int append);
-R_API int  r_cons_stdout_set_fd(int fd);
-R_API void r_cons_gotoxy(int x, int y);
-R_API void r_cons_set_raw(int b);
-
-/* output */
-R_API void r_cons_printf(const char *format, ...);
-R_API void r_cons_strcat(const char *str);
-R_API void r_cons_memcat(const char *str, int len);
-R_API void r_cons_newline();
-R_API void r_cons_flush();
-
-/* input */
-R_API int  r_cons_fgets(char *buf, int len, int argc, const char **argv);
-R_API int  r_cons_readchar();
-R_API void r_cons_any_key();
-R_API int  r_cons_eof();
-
-/* colors */
-R_API int r_cons_palette_init(const unsigned char *pal);
-
-R_API int r_cons_get_real_columns();
-R_API int r_cons_get_columns();
-R_API int r_cons_get_arrow(int ch);
-R_API int r_cons_html_print(const char *ptr);
-
-R_API const char *r_cons_get_buffer();
-R_API void r_cons_grep(const char *str);
-R_API int r_cons_grepbuf(char *buf, int len);
-
-R_API void r_cons_invert(int set, int color);
-R_API int r_cons_yesno(int def, const char *fmt, ...);
-
 /* palette */
 
 #define CONS_PALETTE_SIZE 22
@@ -140,5 +100,47 @@ extern int r_cons_noflush;
 extern char *r_cons_filterline;
 extern char *r_cons_teefile;
 extern char *(*r_cons_user_fgets)(char *buf, int len);
+
+#ifdef R_API
+/* constructor */
+R_API int  r_cons_init();
+
+/* control */
+R_API void r_cons_reset();
+R_API void r_cons_clear();
+R_API void r_cons_clear00();
+R_API void r_cons_stdout_open(const char *file, int append);
+R_API int  r_cons_stdout_set_fd(int fd);
+R_API void r_cons_gotoxy(int x, int y);
+R_API void r_cons_set_raw(int b);
+
+/* output */
+R_API void r_cons_printf(const char *format, ...);
+R_API void r_cons_strcat(const char *str);
+R_API void r_cons_memcat(const char *str, int len);
+R_API void r_cons_newline();
+R_API void r_cons_flush();
+
+/* input */
+R_API int  r_cons_fgets(char *buf, int len, int argc, const char **argv);
+R_API int  r_cons_readchar();
+R_API void r_cons_any_key();
+R_API int  r_cons_eof();
+
+/* colors */
+R_API int r_cons_palette_init(const unsigned char *pal);
+
+R_API int r_cons_get_real_columns();
+R_API int r_cons_get_columns();
+R_API int r_cons_get_arrow(int ch);
+R_API int r_cons_html_print(const char *ptr);
+
+R_API const char *r_cons_get_buffer();
+R_API void r_cons_grep(const char *str);
+R_API int r_cons_grepbuf(char *buf, int len);
+
+R_API void r_cons_invert(int set, int color);
+R_API int r_cons_yesno(int def, const char *fmt, ...);
+#endif
 
 #endif

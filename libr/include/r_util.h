@@ -5,11 +5,8 @@
 #include <btree.h>
 #include "list.h"
 #include "iter.h"
-
-#if R_SWIG
-#undef R_API
-#define R_API
-#endif
+/* profiling */
+#include <sys/time.h>
 
 /* pool */
 typedef struct r_mem_pool_t {
@@ -22,27 +19,12 @@ typedef struct r_mem_pool_t {
 	int poolcount;
 } rMemPool;
 
-R_API struct r_mem_pool_t* r_mem_pool_deinit(struct r_mem_pool_t *pool);
-R_API struct r_mem_pool_t* r_mem_pool_init(struct r_mem_pool_t *pool, int nodesize, int poolsize, int poolcount);
-R_API struct r_mem_pool_t *r_mem_pool_new(int nodesize, int poolsize, int poolcount);
-R_API struct r_mem_pool_t *r_mem_pool_free(struct r_mem_pool_t *pool);
-R_API void* r_mem_pool_alloc(struct r_mem_pool_t *pool);
-R_API int r_mem_count(ut8 **addr);
-
 /* buf */
 typedef struct r_buf_t {
 	ut8 *buf;
 	int length;
 	ut64 base;
 } rBuf;
-
-R_API struct r_buf_t *r_buf_init(struct r_buf_t *b);
-R_API struct r_buf_t *r_buf_new();
-R_API int r_buf_set_bits(struct r_buf_t *b, int bitoff, int bitsize, ut64 value);
-R_API int r_buf_set_bytes(struct r_buf_t *b, ut8 *buf, int length);
-R_API int r_buf_read_at(struct r_buf_t *b, ut64 addr, ut8 *buf, int len);
-R_API int r_buf_write_at(struct r_buf_t *b, ut64 addr, const ut8 *buf, int len);
-R_API void r_buf_free(struct r_buf_t *b);
 
 /* r_cache */
 // TOTHINK: move into a separated library?
@@ -58,6 +40,34 @@ typedef struct r_cache_t {
 	struct list_head items;
 } rCache;
 
+typedef struct r_prof_t {
+	struct timeval begin;
+	double result;
+} rProf;
+
+/* numbers */
+typedef struct r_num_t {
+	ut64 (*callback)(void *userptr, const char *str, int *ok);
+	ut64 value;
+	void *userptr;
+} rNum;
+
+#ifdef R_API
+
+R_API struct r_buf_t *r_buf_init(struct r_buf_t *b);
+R_API struct r_buf_t *r_buf_new();
+R_API int r_buf_set_bits(struct r_buf_t *b, int bitoff, int bitsize, ut64 value);
+R_API int r_buf_set_bytes(struct r_buf_t *b, ut8 *buf, int length);
+R_API int r_buf_read_at(struct r_buf_t *b, ut64 addr, ut8 *buf, int len);
+R_API int r_buf_write_at(struct r_buf_t *b, ut64 addr, const ut8 *buf, int len);
+R_API void r_buf_free(struct r_buf_t *b);
+
+R_API struct r_mem_pool_t* r_mem_pool_deinit(struct r_mem_pool_t *pool);
+R_API struct r_mem_pool_t* r_mem_pool_init(struct r_mem_pool_t *pool, int nodesize, int poolsize, int poolcount);
+R_API struct r_mem_pool_t *r_mem_pool_new(int nodesize, int poolsize, int poolcount);
+R_API struct r_mem_pool_t *r_mem_pool_free(struct r_mem_pool_t *pool);
+R_API void* r_mem_pool_alloc(struct r_mem_pool_t *pool);
+R_API int r_mem_count(ut8 **addr);
 R_API void r_cache_init(struct r_cache_t *lang);
 R_API rCache* r_cache_new();
 R_API void r_cache_free(struct r_cache_t *c);
@@ -66,12 +76,6 @@ R_API int r_cache_set(struct r_cache_t *c, ut64 addr, char *str);
 R_API int r_cache_validate(struct r_cache_t *c, ut64 from, ut64 to);
 R_API int r_cache_invalidate(struct r_cache_t *c, ut64 from, ut64 to);
 
-/* profiling */
-#include <sys/time.h>
-struct r_prof_t {
-	struct timeval begin;
-	double result;
-};
 R_API void r_prof_start(struct r_prof_t *p);
 R_API double r_prof_end(struct r_prof_t *p);
 
@@ -81,13 +85,6 @@ R_API void r_mem_copyloop (ut8 *dest, const ut8 *orig, int dsize, int osize);
 R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian);
 R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len);
 R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen);
-
-/* numbers */
-typedef struct r_num_t {
-	ut64 (*callback)(void *userptr, const char *str, int *ok);
-	ut64 value;
-	void *userptr;
-} Num;
 
 R_API void r_num_minmax_swap(ut64 *a, ut64 *b);
 R_API void r_num_minmax_swap_i(int *a, int *b); // XXX this can be a cpp macro :??
@@ -173,5 +170,6 @@ R_API int r_alloca_init();
 R_API ut8 *r_alloca_bytes(int len);
 R_API char *r_alloca_str(const char *str);
 R_API int r_alloca_ret_i(int n);
+#endif
 
 #endif

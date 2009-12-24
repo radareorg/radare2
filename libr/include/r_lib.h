@@ -13,31 +13,31 @@
 #define R_LIB_ENV "LIBR_PLUGINS"
 
 /* store list of loaded plugins */
-struct r_lib_plugin_t {
+typedef struct r_lib_plugin_t {
 	int type;
 	char *file;
 	void *data; /* user pointer */
 	struct r_lib_handler_t *handler;
 	void *dl_handler; // DL HANDLER
 	struct list_head list;
-};
+} LibPlugin;
 
 /* store list of initialized plugin handlers */
-struct r_lib_handler_t {
+typedef struct r_lib_handler_t {
 	int type;
 	char desc[128];
 	void *user; /* user pointer */
 	int (*constructor)(struct r_lib_plugin_t *, void *user, void *data);
 	int (*destructor)(struct r_lib_plugin_t *, void *user, void *data);
 	struct list_head list;
-};
+} rLibHandler;
 
 /* this structure should be pointed by the 'radare_plugin' symbol 
    found in the loaded .so */
-struct r_lib_struct_t {
+typedef struct r_lib_struct_t {
 	int type;
 	void *data; /* pointer to data handled by plugin handler */
-};
+} LibStruct;
 
 //extern const char *r_lib_types[];
 
@@ -57,15 +57,16 @@ enum {
 	R_LIB_TYPE_LAST
 };
 
-struct r_lib_t {
+typedef struct r_lib_t {
 	/* linked list with all the plugin handler */
 	/* only one handler per handler-id allowed */
 	/* this is checked in add_handler function */
 	char symname[32];
 	struct list_head plugins;
 	struct list_head handlers;
-};
+} rLib;
 
+#ifdef R_API
 R_API struct r_lib_t *r_lib_init(struct r_lib_t *lib, const char *symname);
 
 /* low level api */
@@ -85,5 +86,6 @@ R_API void r_lib_list(struct r_lib_t *lib);
 R_API int r_lib_add_handler(struct r_lib_t *lib, int type, const char *desc, int (*cb)(struct r_lib_plugin_t *,void *, void *), int (*dt)(struct r_lib_plugin_t *, void *, void *), void *user );
 R_API int r_lib_del_handler(struct r_lib_t *lib, int type);
 R_API int r_lib_close(struct r_lib_t *lib, const char *file);
+#endif
 
 #endif

@@ -14,7 +14,7 @@
 #define R_FLAG_BUF_SIZE 128
 #define R_FLAG_SPACES_MAX 128 
 
-struct r_flag_item_t {
+typedef struct r_flag_item_t {
 	char name[R_FLAG_NAME_SIZE];
 	int namehash;
 	ut64 offset;
@@ -24,9 +24,9 @@ struct r_flag_item_t {
 	const char *cmd;
 	unsigned char data[R_FLAG_BUF_SIZE]; // only take a minor part of the data
 	struct list_head list;
-};
+} rFlagItem;
 
-struct r_flag_t {
+typedef struct r_flag_t {
 	int space_idx;
 	int space_idx2;
 	ut64 base;
@@ -36,8 +36,9 @@ struct r_flag_t {
 	struct btree_node *ntree; /* index by name */
 #endif
 	struct list_head flags;
-};
+} rFlag;
 
+#ifdef R_API
 R_API int r_flag_init(struct r_flag_t *f);
 R_API int r_flag_set_base(struct r_flag_t *f, ut64 base);
 R_API struct r_flag_item_t *r_flag_list(struct r_flag_t *f, int rad);
@@ -52,5 +53,6 @@ R_API int r_flag_name_filter(char *name);
 R_API const const char *r_flag_space_get(struct r_flag_t *f, int idx);
 R_API void r_flag_space_set(struct r_flag_t *f, const char *name);
 R_API void r_flag_space_list(struct r_flag_t *f);
+#endif
 
 #endif

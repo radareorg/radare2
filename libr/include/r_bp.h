@@ -11,11 +11,11 @@
 #define R_BP_CONT_NORMAL 0
 #define R_BP_CONT_NORMAL 0
 
-struct r_bp_arch_t {
+typedef struct r_bp_arch_t {
 	int length;
 	int endian;
 	const ut8 *bytes;
-};
+} rBreakpointArch;
 
 enum {
 	R_BP_TYPE_SW,
@@ -24,16 +24,16 @@ enum {
 	R_BP_TYPE_FAULT,
 };
 
-struct r_bp_handle_t {
+typedef struct r_bp_handle_t {
 	char *name;
 	char *arch;
 	int type; // R_BP_TYPE_SW
 	int nbps;
 	struct r_bp_arch_t *bps;
 	struct list_head list;
-};
+} rBreakpointHandler;
 
-struct r_bp_item_t {
+typedef struct r_bp_item_t {
 	ut64 addr;
 	int size;
 	int rwx;
@@ -45,9 +45,9 @@ struct r_bp_item_t {
 	ut8 *bbytes; /* breakpoint bytes */
 	int pids[R_BP_MAXPIDS];
 	struct list_head list;
-};
+} rBreakpointItem;
 
-struct r_bp_t {
+typedef struct r_bp_t {
 	int trace_all;
 	ut64 trace_bp;
 	int nbps;
@@ -56,7 +56,7 @@ struct r_bp_t {
 	struct r_bp_handle_t *cur;
 	struct list_head plugins;
 	struct list_head bps;
-};
+} rBreakpoint;
 
 enum {
 	R_BP_READ = 1,
@@ -64,6 +64,7 @@ enum {
 	R_BP_EXEC = 4,
 };
 
+#ifdef R_API
 R_API int r_bp_init(struct r_bp_t *bp);
 R_API struct r_bp_t *r_bp_new();
 R_API struct r_bp_t *r_bp_free(struct r_bp_t *bp);
@@ -88,12 +89,16 @@ R_API int r_bp_add_fault(struct r_bp_t *bp, ut64 addr, int size, int rwx);
 
 R_API struct r_bp_item_t *r_bp_add_sw(struct r_bp_t *bp, ut64 addr, int size, int rwx);
 R_API struct r_bp_item_t *r_bp_add_hw(struct r_bp_t *bp, ut64 addr, int size, int rwx);
+R_API int r_bp_at_addr(struct r_bp_t *bp, ut64 addr, int rwx);
+#endif
 
 /* plugin pointers */
 extern struct r_bp_handle_t r_bp_plugin_x86;
 extern struct r_bp_handle_t r_bp_plugin_arm;
+#if 0
 extern struct r_bp_handle_t r_bp_plugin_powerpc;
 extern struct r_bp_handle_t r_bp_plugin_mips;
 extern struct r_bp_handle_t r_bp_plugin_sparc;
+#endif
 
 #endif

@@ -4,6 +4,7 @@
 #define R_ITER_CPP 0
 #define r_iter_t void**
 
+#ifdef R_API
 #if R_ITER_CPP
 // TODO: Fully test/implement r_iter in CPP macros if possible
 #define r_iter_set(x,y,z) x[y]=z
@@ -29,6 +30,7 @@ R_API int r_iter_last(void **it);
 R_API void **r_iter_first(void **it);
 R_API void r_iter_foreach(void **it, int (*callback)(void *, void *), void *user);
 R_API void **r_iter_free(void *ptr);
+#endif
 #endif
 
 #endif
