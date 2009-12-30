@@ -165,6 +165,11 @@ int main(int argc, char **argv)
 	if (bsize)
 		r_core_block_size (&r, bsize);
 
+	// Load the binary information from rabin2
+	char *command = r_str_concat(strdup(".!rabin2 -reisS "), r.file->filename);
+	r_core_cmd(&r, command, 0);
+	r_str_free(command);
+
 	if (r_config_get_i (&r.config, "cfg.fortunes")) {
 		r_core_cmd (&r, "fo", 0);
 		r_cons_flush();

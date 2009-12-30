@@ -133,7 +133,7 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	case '!':
 		/* from command */
-		fprintf(stderr, "TODO\n");
+		r_core_cmd_command(core, input+1);
 		break;
 	case '(':
 		//fprintf(stderr, "macro call (%s)\n", input+1);
@@ -1552,6 +1552,25 @@ R_API int r_core_cmd_file(struct r_core_t *core, const char *file)
 		}
 	}
 	fclose(fd);
+	return 0;
+}
+
+R_API int r_core_cmd_command(struct r_core_t *core, const char *command)
+{
+	int len;
+	char *buf = r_sys_cmd_str(command, 0, &len);
+	char *rcmd = buf;
+	char *ptr = buf;
+	if (buf == NULL)
+		return -1;
+	while ((ptr = strstr(rcmd, "\n"))) {
+		*ptr = '\0';
+		if (r_core_cmd(core, rcmd, 0) == -1) {
+			fprintf(stderr, "Error running command '%s'\n", rcmd);
+		}
+		rcmd += strlen(rcmd)+1;
+	}
+	r_str_free(buf);
 	return 0;
 }
 
