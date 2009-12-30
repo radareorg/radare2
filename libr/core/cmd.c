@@ -114,9 +114,10 @@ static int cmd_quit(void *data, const char *input)
 	case '\0':
 	case ' ':
 	case '!':
+		// TODO
 	default:
 		r_line_hist_save(".radare2_history");
-		exit(r_num_math(&core->num, input+1));
+		exit(*input?r_num_math(&core->num, input+1):0);
 		break;
 	}
 	return 0;

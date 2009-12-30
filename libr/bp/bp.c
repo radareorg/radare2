@@ -125,7 +125,7 @@ static struct r_bp_item_t *r_bp_add(struct r_bp_t *bp, const ut8 *obytes, ut64 a
 	/* XXX: endian always in little ?!?!? */
 	ret = r_bp_get_bytes(bp, b->bbytes, size, 0, 0);
 	if (ret == R_FALSE) {
-		fprintf(stderr, "Cannot get breakpoint bytes. No r_bp_set()?\n");
+		fprintf(stderr, "Cannot get breakpoint bytes. No r_bp_use()?\n");
 		free (b->bbytes);
 		free (b);
 		return NULL;
