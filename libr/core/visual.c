@@ -466,6 +466,7 @@ R_API void r_core_visual_config(struct r_core_t *core)
 R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 {
 	char buf[1024];
+	ch = r_cons_get_arrow(ch);
 
 	switch(ch) {
 	case 'c':
