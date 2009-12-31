@@ -1,6 +1,6 @@
 #include <r_util.h>
 
-char *buf[] = { "eax", "ebx", "ecx", NULL };
+ut8 *buf[] = { "eax", "ebx", "ecx", NULL };
 
 int main()
 {
@@ -8,7 +8,7 @@ int main()
 	void *foo = r_mem_pool_alloc(pool);
 	foo = r_mem_pool_alloc(pool);
 
-	printf("%d\n", r_mem_count(buf));
+	printf ("%d\n", r_mem_count(buf));
 
 	r_mem_pool_free(pool);
 }

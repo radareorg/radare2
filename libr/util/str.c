@@ -181,6 +181,37 @@ R_API char *r_str_chop(char *str)
 	return str;
 }
 
+R_API char *r_str_trim_head(char *str)
+{
+	if (str == NULL)
+			return NULL;
+
+	while (*str && iswhitechar(*str)) 
+		str++;
+	return str;
+}
+
+R_API char *r_str_trim_tail(char *str)
+{
+	char *ptr = str;
+
+	if (str == NULL)
+			return NULL;
+
+	ptr += strlen(str)-1;
+
+	while ((ptr > str) && iswhitechar(*ptr)) {
+		*ptr = '\0';
+		ptr--;
+	}
+	return str;
+}
+
+R_API char *r_str_trim_head_tail(char *str)
+{
+	return r_str_trim_tail(r_str_trim_head(str));
+}
+
 R_API char *r_str_trim(char *str)
 {
 	int i;
