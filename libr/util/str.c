@@ -277,6 +277,9 @@ R_API char *r_str_dup_printf(const char *fmt, ...)
 	return ret;
 }
 
+/*
+ * return: the pointer ptr resized to string size.
+ */
 R_API char *r_str_concat(char *ptr, const char *string)
 {
 	if (!ptr)

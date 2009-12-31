@@ -9,7 +9,7 @@ static int backup_fd=999;
 
 int r_cons_pipe_open(const char *file, int append)
 {
-	int fd = open(file, O_RDWR | O_CREAT | (append?O_CREAT:0), 0644);
+	int fd = open(file, O_RDWR | O_CREAT | (append?O_APPEND:O_TRUNC), 0644);
 	if (fd==-1) {
 		fprintf(stderr, "Cannot open file '%s'\n", file);
 		return -1;
@@ -49,7 +49,7 @@ void r_cons_stdout_open(const char *file, int append)
 	if (r_cons_stdout_fd != 1) // XXX nested stdout dupping not supported
 		return;
 
-	fd = open(file, O_RDWR | O_CREAT | (append?O_CREAT:0), 0644);
+	fd = open(file, O_RDWR | O_CREAT | (append?O_APPEND:O_TRUNC), 0644);
 	if (fd==-1)
 		return;
 	r_cons_stdout_fd = fd;

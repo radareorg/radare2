@@ -58,6 +58,7 @@ int r_cmd_call(struct r_cmd_t *cmd, const char *input)
 		c = cmd->cmds[(ut8)input[0]];
 		if (c != NULL && c->callback!=NULL)
 			ret = c->callback(cmd->data, input+1);
+		else ret = -1;
 	}
 	return ret;
 }

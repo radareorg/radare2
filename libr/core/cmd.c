@@ -5,7 +5,10 @@
 #include "r_hash.h"
 #include "r_asm.h"
 #include "r_anal.h"
+#include "r_util.h"
 
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <stdarg.h>
 
 static int cmd_io_system(void *data, const char *input);
@@ -1180,28 +1183,83 @@ static int cmd_macro(void *data, const char *input)
 	return 0;
 }
 
-static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd, int *times)
+static int r_core_cmd_pipe(struct r_core_t *core, char *radare_cmd, char *shell_cmd) {
+	int fds[2];
+	pipe(fds);
+	int stdout_fd = dup(1);
+	int status;
+	radare_cmd = r_str_trim_head(radare_cmd);
+	shell_cmd = r_str_trim_head(shell_cmd);
+	if (fork()) {
+		dup2(fds[1], 1);
+		close(fds[1]);
+		close(fds[0]);
+		r_core_cmd(core, radare_cmd, 0);
+		r_cons_flush();
+		close(1);
+		wait(&status);
+		dup2(stdout_fd, 1);
+		close(stdout_fd);
+	} else {
+		close(fds[1]);
+		dup2(fds[0], 0);
+		dup2(2, 1);
+		execl("/bin/sh", "sh", "-c", shell_cmd, NULL);
+	}
+	return status;
+}
+
+static int r_core_cmd_subst(struct r_core_t *core, char *cmd)
 {
 	char *ptr, *ptr2, *str;
-	int i, len = strlen(cmd);
+	int i, len = strlen(cmd), pipefd, ret;
 
-	len = atoi(cmd);
-	if (len>0) {
-		for(i=0;cmd[i]>='0'&&cmd[i]<='9'; i++);
-		if (i>0) strcpy(cmd, cmd+i);
-		*times = len;
-	}
-	if (cmd[0]=='\0')
+	if (!*cmd || cmd[0]=='\0')
 		return 0;
 
-	ptr = strchr(cmd, ';');
-	if (ptr)
-		ptr[0]='\0';
+	cmd = r_str_trim_head_tail(cmd);
 
-	ptr = strchr(cmd+1, '|');
+	/* quoted / raw command */
+	if (cmd[0] =='"') {
+		if (cmd[len-1] != '"') {
+			fprintf(stderr, "parse: Missing ending '\"'\n");
+			return -1;
+		} else {
+			cmd[len-1]='\0';
+			ret = r_cmd_call(&core->cmd, cmd+1);
+			return ret;
+		}
+	}
+
+	/* multiple commands */
+	ptr = strrchr(cmd, ';');
+	if (ptr) {
+		ptr[0]='\0';
+		if (r_core_cmd_subst(core, cmd) == -1) 
+			return -1;
+		cmd = ptr+1;
+		r_cons_flush();
+	}
+
+	/* pipe console to shell process */
+	ptr = strchr(cmd, '|');
 	if (ptr) {
 		ptr[0] = '\0';
-		eprintf("System pipes not yet supported.\n");
+		r_core_cmd_pipe(core, cmd, ptr+1);
+		return 0;
+	}
+
+	/* bool conditions */
+	ptr = strchr(cmd, '&');
+	while (ptr&&ptr[1]=='&') {
+		ptr[0]='\0';
+		ret = r_cmd_call(&core->cmd, cmd);
+		if (ret == -1){
+			fprintf(stderr, "command error(%s)\n", cmd);
+			return ret;
+		}
+		for(cmd=ptr+2;cmd&&cmd[0]==' ';cmd=cmd+1);
+		ptr = strchr(cmd, '&');
 	}
 
 	/* Out Of Band Input */
@@ -1246,50 +1304,64 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd, int *rs, int *rfd,
 				return r_core_cmd_buffer(core, (const char *)core->oobi);
 		}
 	}
-	/* Pipe console to file */
+
+	/* pipe console to file */
 	ptr = strchr(cmd, '>');
 	if (ptr) {
 		ptr[0] = '\0';
-		for(str=ptr+1; str[0]== ' '; str=str+1);
-		*rfd = r_cons_pipe_open(str, ptr[1]=='>');
+		str = r_str_trim_head_tail(ptr+1+(ptr[1]=='>'));
+		pipefd = r_cons_pipe_open(str, ptr[1]=='>');
+		ret = r_core_cmd_subst(core, cmd);
+        r_cons_flush();
+        r_cons_pipe_close(pipefd);
+		return ret;
 	}
 
-	while(((ptr = strchr(cmd, '`')))) {
+	/* sub commands */
+	ptr = strchr(cmd, '`');
+	if (ptr) {
 		ptr2 = strchr(ptr+1, '`');
-		if (ptr2==NULL) {
-			fprintf(stderr, "parse: Missing '`' in expression (%s).\n", ptr+1);
-			return 0;
+		if (!ptr2) {
+			fprintf(stderr, "parse: Missing '´' in expression.\n");
+			return -1;
+		} else {
+			ptr[0] = '\0';
+			ptr2[0] = '\0';
+			str = r_core_cmd_str(core, ptr+1);
+			for(i=0;str[i];i++) if (str[i]=='\n') str[i]=' ';
+			cmd = r_str_concat(strdup(cmd), r_str_concat(str, ptr2+1));
+			ret = r_core_cmd_subst(core, cmd);
+			free(cmd);
+			free(str);
+			return ret;
 		}
-		ptr2[0]='\0';
-		str = r_core_cmd_str(core, ptr+1);
-		for(i=0;str[i];i++) if (str[i]=='\n') str[i]=' ';
-		r_str_inject(ptr, ptr2+1, str, 1024); // XXX overflow here, fix maxlength
-		free(str);
 	}
 
+	/* grep the content */
 	ptr = strchr(cmd, '~');
 	if (ptr) {
 		ptr[0]='\0';
 		r_cons_grep(ptr+1);
 	} else r_cons_grep(NULL);
 
+	/* seek commands */
 	ptr = strchr(cmd, '@');
 	if (ptr) {
-		char *pt = ptr;
 		ptr[0]='\0';
-		while(pt[0]==' '||pt[0]=='\t') {
-			pt[0]='\0';
-			pt = pt-1;
-		}
-		*rs = 1;
+		ut64 tmpoff = core->seek;
 		if (ptr[1]=='@') {
 			// TODO: remove temporally seek (should be done by cmd_foreach)
-			ut64 tmpoff = core->seek;
 			r_core_cmd_foreach(core, cmd, ptr+2);
-			r_core_seek(core, tmpoff, 1);
-			return -1; /* do not run out-of-foreach cmd */
-		} else r_core_seek(core, r_num_math(&core->num, ptr+1),1);
+			ret = -1; /* do not run out-of-foreach cmd */
+		} else {
+			r_core_seek(core, r_num_math(&core->num, ptr+1),1);
+			ret = r_cmd_call(&core->cmd, r_str_trim_head(cmd));
+		}
+		r_core_seek(core, tmpoff, 1);
+		return ret;
 	}
+
+	r_cmd_call(&core->cmd, r_str_trim_head(cmd));
 
 	return 0;
 }
@@ -1455,81 +1527,29 @@ printf("No flags foreach implemented\n");
 
 R_API int r_core_cmd(struct r_core_t *core, const char *command, int log)
 {
-	int i, len;
-	char *cmd , *ocmd = NULL;
+	int len;
+	char *cmd = NULL;
 	int ret = -1;
-	int times = 1;
-	int newfd = 1;
-	int quoted = 0;
 	
-	ut64 tmpseek = core->seek;
-	int restoreseek = 0;
-
 	if (command == NULL )
 		return 0;
-	while(command[0]==' ') // TODO: handle tabs to with iswhitespace()
-		command = command+1;
 
 	len = strlen(command)+1;
-	ocmd = cmd = malloc(len+8192);
+	cmd = malloc(len+8192);
 	memcpy(cmd, command, len);
+	cmd = r_str_trim_head_tail(cmd);
 
-	/* quoted / raw command */
-	len = strlen(cmd);
-	if (cmd[0]=='"') {
-		if (cmd[len-1]!='"') {
-			fprintf(stderr, "parse: Missing ending "
-			"'\"': '%s' (%c) len=%d\n", cmd, cmd[2], len);
-			free(cmd);
-			return 0;
-		}
-		cmd[len-1]='\0';
-		strcpy(cmd, cmd+1);
-		ret = r_cmd_call(&core->cmd, cmd);
-		free(ocmd);
-		return ret;
-	}
+	ret = r_core_cmd_subst(core, cmd);
 
-	ret = r_core_cmd_subst(core, cmd, &restoreseek, &newfd, &times);
-	if (ret != -1) {
-		for(i=0;i<times;i++) {
-			if (quoted) {
-				ret = r_cmd_call(&core->cmd, cmd);
-				if (ret == -1) // stop on error?
-					break;
-			} else {
-				char *ptr;
-				ptr = strchr(cmd, '&');
-				while (ptr&&ptr[1]=='&') {
-					ptr[0]='\0';
-					ret = r_cmd_call(&core->cmd, cmd);
-					if (ret == -1){
-						fprintf(stderr, "command error(%s)\n", cmd);
-						break;
-					}
-					for(cmd=ptr+2;cmd&&cmd[0]==' ';cmd=cmd+1);
-					ptr = strchr(cmd, '&');
-				}
-				r_cmd_call(&core->cmd, cmd);
-			}
-		}
-		if (ret == -1){
-			if (cmd[0])
-				fprintf(stderr, "Invalid command: '%s'\n", command);
-			ret = 1;
-		}
+	if (ret == -1){
+		fprintf(stderr, "Invalid command\n");
+		ret = 1;
 	}
+	
 	if (log) r_line_hist_add(command);
-	if (restoreseek)
-		r_core_seek(core, tmpseek, 1);
-
-	if (newfd != 1) {
-		r_cons_flush();
-		r_cons_pipe_close(newfd);
-	}
 
 	free (core->oobi);
-	free (ocmd);
+	free (cmd);
 	core->oobi = NULL;
 	core->oobi_len = 0;
 
@@ -1755,6 +1775,9 @@ R_API int r_core_cmd0(void *user, const char *cmd)
 	return r_core_cmd((struct r_core_t *)user, cmd, 0);
 }
 
+/*
+ * return: pointer to a buffer with the output of the command.
+ */
 R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd)
 {
 	char *retstr = NULL;
