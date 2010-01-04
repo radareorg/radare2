@@ -12,17 +12,14 @@
 
 static double get_px(ut8 x, const ut8 *data, ut64 size)
 {
-        ut32 i, count;
-
-        count = 0;
+        ut32 i, count = 0;
         for (i = 0; i < size; i++)
                 if (data[i] == x)
                         count++;
-
         return (double)count/size;
 }
 
-double r_hash_entropy(const ut8 *data, ut64 size)
+R_API double r_hash_entropy(const ut8 *data, ut64 size)
 {
         double h = 0, px, log2;
         unsigned char x;

@@ -151,6 +151,7 @@ static void copy4(ut8 *out, ut32 x)
 }
 
 /* produce a md4 message digest from data of length n bytes */
+// XXX : rename as a static method
 void mdfour(ut8 *out, const ut8 *in, int n)
 {
 	unsigned char buf[128];

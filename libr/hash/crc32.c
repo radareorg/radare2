@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007, 2008
+ * Copyright (C) 2007-2010
  *       pancake <youterm.com>
  *
  * radare is free software; you can redistribute it and/or modify
@@ -23,7 +23,7 @@
 static char crc_table_is_init = 0;
 static ut32 crc_table[256];
 
-ut32 r_hash_crc32(const ut8 *buf, ut64 len)
+R_API ut32 r_hash_crc32(const ut8 *buf, ut64 len)
 {
 	unsigned int crc = 0;
 

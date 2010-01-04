@@ -1312,8 +1312,8 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd)
 		str = r_str_trim_head_tail(ptr+1+(ptr[1]=='>'));
 		pipefd = r_cons_pipe_open(str, ptr[1]=='>');
 		ret = r_core_cmd_subst(core, cmd);
-        r_cons_flush();
-        r_cons_pipe_close(pipefd);
+		r_cons_flush();
+		r_cons_pipe_close(pipefd);
 		return ret;
 	}
 

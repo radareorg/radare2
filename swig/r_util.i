@@ -1,66 +1,43 @@
 %module r_util
 %{
+#define bool int
+#include <r_types.h>
+#include <list.h>
 #include <r_util.h>
 %}
-
+%include <r_types.h>
+%include <list.h>
 %include <r_util.h>
 
-extern int r_hex_str2bin (rUtil*, const char* input, unsigned char* buf);
-extern string r_hex_bin2strdup (rUtil*, unsigned char* buf, int len);
-extern uint8* r_mem_mem (rUtil*, unsigned char* a, int al, unsigned char* b, int bl);
-extern void r_mem_copyendian (rUtil*, unsigned char* dest, unsigned char* orig, int size, int endian);
-extern void r_mem_copyloop (rUtil*, unsigned char* dest, unsigned char* orig, int dsize, int osize);
-extern void r_mem_cmp_mask (rUtil*, unsigned char* dest, unsigned char* orig, unsigned char* mask, int len);
-extern uint64 r_num_get (rUtil*, void* num, const char* str);
-extern rStr* r_strnew ();
-extern int r_strhash (rStr*, const char* str);
-extern int r_logmsg (rLog*, const char* str);
-extern int r_logerr (rLog*, const char* str);
-extern rBuffer* r_buf_new ();
-extern int r_buf_read_at (rBuffer*, unsigned long long addr, unsigned char* buf, int len);
-extern int r_buf_write_at (rBuffer*, unsigned long long addr, unsigned char* buf, int len);
-extern int r_buf_set_bytes (rBuffer*, unsigned char* buf, int len);
-extern int r_buf_memcpy (rBuffer*, unsigned long long addr, unsigned char* dst, unsigned char* src, int len);
-extern rIter* r_iter_new (int size);
-extern G r_iter_get (rIter*, );
-extern rIter<G>* r_iter_next (rIter*, );
-extern rIter<G>* r_iter_next_n (rIter*, int idx);
-extern G r_iter_prev (rIter*, );
-extern void r_iter_delete (rIter*, );
-extern G r_iter_first (rIter*, );
-extern int r_iter_last (rIter*, );
-extern G r_iter_free (rIter*, );
-extern void r_iter_set (rIter*, int idx, gpointer data);
-extern int ralist_next (rList*, );
-extern G  (rList*, gconstpointer arg);
-extern G ralist_get (rList*, );
-extern rList<weak G>* ralist_iterator (rList*, );
-extern int rarray_next (rArray*, );
-extern G  (rArray*, gconstpointer arg);
-extern G rarray_get (rArray*, );
-extern rArray<G>* rarray_iterator (rArray*, );
+extern int r_hex_str2bin (const char* input, unsigned char* buf);
+extern char * r_hex_bin2strdup (unsigned char* buf, int len);
+extern unsigned char * r_mem_mem (unsigned char* a, int al, unsigned char* b, int bl);
+extern void r_mem_copyendian (unsigned char* dest, unsigned char* orig, int size, int endian);
+extern void r_mem_copyloop (unsigned char* dest, unsigned char* orig, int dsize, int osize);
+extern void r_mem_cmp_mask (unsigned char* dest, unsigned char* orig, unsigned char* mask, int len);
+extern unsigned long long r_num_get (void* num, const char* str);
 
 %extend rUtil {
   int hex_str2bin (const char* input, unsigned char* buf) {
-    return r_hex_str2bin (self, input, buf);
+    return r_hex_str2bin (input, buf);
   }
-  string hex_bin2strdup (unsigned char* buf, int len) {
-    return r_hex_bin2strdup (self, buf, len);
+  char * hex_bin2strdup (unsigned char* buf, int len) {
+    return r_hex_bin2strdup (buf, len);
   }
-  uint8* mem_mem (unsigned char* a, int al, unsigned char* b, int bl) {
-    return r_mem_mem (self, a, al, b, bl);
+  unsigned char * mem_mem (unsigned char* a, int al, unsigned char* b, int bl) {
+    return r_mem_mem (a, al, b, bl);
   }
   void mem_copyendian (unsigned char* dest, unsigned char* orig, int size, int endian) {
-     r_mem_copyendian (self, dest, orig, size, endian);
+     r_mem_copyendian (dest, orig, size, endian);
   }
   void mem_copyloop (unsigned char* dest, unsigned char* orig, int dsize, int osize) {
-     r_mem_copyloop (self, dest, orig, dsize, osize);
+     r_mem_copyloop (dest, orig, dsize, osize);
   }
   void mem_cmp_mask (unsigned char* dest, unsigned char* orig, unsigned char* mask, int len) {
-     r_mem_cmp_mask (self, dest, orig, mask, len);
+     r_mem_cmp_mask (dest, orig, mask, len);
   }
-  uint64 num_get (void* num, const char* str) {
-    return r_num_get (self, num, str);
+  unsigned long long num_get (void* num, const char* str) {
+    return r_num_get (num, str);
   }
 };
 %extend rStr {
@@ -72,10 +49,10 @@ extern rArray<G>* rarray_iterator (rArray*, );
   }
 };
 %extend rLog {
-  int msg (const char* str) {
+  bool msg (const char* str) {
     return r_logmsg (self, str);
   }
-  int err (const char* str) {
+  bool err (const char* str) {
     return r_logerr (self, str);
   }
 };
@@ -89,10 +66,10 @@ extern rArray<G>* rarray_iterator (rArray*, );
   int write_at (unsigned long long addr, unsigned char* buf, int len) {
     return r_buf_write_at (self, addr, buf, len);
   }
-  int set_bytes (unsigned char* buf, int len) {
+  bool set_bytes (unsigned char* buf, int len) {
     return r_buf_set_bytes (self, buf, len);
   }
-  int memcpy (unsigned long long addr, unsigned char* dst, unsigned char* src, int len) {
+  bool memcpy (unsigned long long addr, unsigned char* dst, unsigned char* src, int len) {
     return r_buf_memcpy (self, addr, dst, src, len);
   }
 };
@@ -118,7 +95,7 @@ extern rArray<G>* rarray_iterator (rArray*, );
   G first () {
     return r_iter_first (self);
   }
-  int last () {
+  bool last () {
     return r_iter_last (self);
   }
   G free () {
@@ -129,28 +106,28 @@ extern rArray<G>* rarray_iterator (rArray*, );
   }
 };
 %extend rList {
-  int next () {
+  bool next () {
     return ralist_next (self);
   }
   G free (gconstpointer arg) {
     return  (self, arg);
   }
-  G get () {
-    return ralist_get (self);
+  G get (int type) {
+    return ralist_get (self, type);
   }
   rList<weak G>* iterator () {
     return ralist_iterator (self);
   }
 };
 %extend rArray {
-  int next () {
-    return rarray_next (self);
+  bool next (int type) {
+    return rarray_next (self, type);
   }
   G free (gconstpointer arg) {
     return  (self, arg);
   }
-  G get () {
-    return rarray_get (self);
+  G get (int type) {
+    return rarray_get (self, type);
   }
   rArray<G>* iterator () {
     return rarray_iterator (self);

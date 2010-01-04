@@ -9,32 +9,32 @@ struct r_db_block_t {
 #define R_DB_INDEXOF(type, member) \
   (int)((type *)((unsigned long)(&((type *)0)->member)))
 
-struct r_db_t {
+typedef struct r_db_t {
 	int id_min;
 	int id_max;
 	struct r_db_block_t *blocks[R_DB_KEYS];
 	int blocks_sz[R_DB_KEYS];
 	void *cb_user;
 	int (*cb_free)(void *db, const void *item, void *user);
-};
+} rDatabase;
 
-struct r_db_iter_t {
+typedef struct r_db_iter_t {
 	struct r_db_t *db;
 	int key;       /* key to be used */
 	int size;      /* key size */
 	int path[256]; /* for each depth level */
 	int ptr;       /* pointer in block nodes (repeated childs) */
 	void *cur;
-};
+} rDatabaseIter;
 
 /* table */
-struct r_db_table_t {
+typedef struct r_db_table_t {
 	char *name;
 	int nelems;
 	char *fmt;
 	char *args;
 	int *offset;
-};
+} rDatabaseTable;
 
 #ifdef R_API
 R_API void r_db_init(struct r_db_t *db);

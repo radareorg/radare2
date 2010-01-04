@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2007
- *       pancake <pancake@youterm.com>
+ * Copyright (C) 2007-2010
+ *       pancake <youterm.com>
  *
  * radare is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,17 +44,14 @@ static int hamdist(int x, ut64 y)
 	return dist;
 }
 
-ut8 r_hash_hamdist(const ut8 *buf, ut64 len)
+R_API ut8 r_hash_hamdist(const ut8 *buf, ut64 len)
 {
-	int x = 0;
-	int y = 0;
-	int i;
-
+	int i, x, y;
+	x = y = i = 0;
 	for(i=0;i<len;i++) {
 		y = buf[i];
 		x = hamdist(x, y);
 	}
-
 	return x;
 }
 

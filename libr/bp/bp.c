@@ -140,7 +140,7 @@ static struct r_bp_item_t *r_bp_add(struct r_bp_t *bp, const ut8 *obytes, ut64 a
 R_API int r_bp_add_fault(struct r_bp_t *bp, ut64 addr, int size, int rwx)
 {
 	// TODO
-	return NULL;
+	return R_FALSE;
 }
 
 R_API struct r_bp_item_t *r_bp_add_sw(struct r_bp_t *bp, ut64 addr, int size, int rwx)
@@ -211,9 +211,9 @@ R_API int r_bp_list(struct r_bp_t *bp, int rad)
 		b = list_entry(pos, struct r_bp_item_t, list);
 		printf("0x%08llx - 0x%08llx %d %c%c%c %s %s %s\n",
 			b->addr, b->addr+b->size, b->size,
-			(b->rwx & R_BP_READ)?'r':'-',
-			(b->rwx & R_BP_WRITE)?'w':'-',
-			(b->rwx & R_BP_EXEC)?'x':'-',
+			(b->rwx & R_BP_PROT_READ)?'r':'-',
+			(b->rwx & R_BP_PROT_WRITE)?'w':'-',
+			(b->rwx & R_BP_PROT_EXEC)?'x':'-',
 			b->hw?"hw":"sw",
 			b->trace?"trace":"break",
 			b->enabled?"enabled":"disabled");

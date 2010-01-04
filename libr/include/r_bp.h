@@ -59,9 +59,9 @@ typedef struct r_bp_t {
 } rBreakpoint;
 
 enum {
-	R_BP_READ = 1,
-	R_BP_WRITE = 2,
-	R_BP_EXEC = 4,
+	R_BP_PROT_READ = 1,
+	R_BP_PROT_WRITE = 2,
+	R_BP_PROT_EXEC = 4,
 };
 
 #ifdef R_API

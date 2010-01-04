@@ -1,10 +1,10 @@
 [CCode (cheader_filename="r_config.h", cprefix="r_", lower_case_cprefix="r_")]
 namespace Radare {
 	[Compact]
-	[CCode (cname="struct r_config_t", free_function="r_config_free")]
-	public class Config {
-		public void setup(int os, int arch);
-		public void setup_file(string file);
+	[CCode (cprefix="r_config_", cname="struct r_config_t", free_function="r_config_free")]
+	public class rConfig {
+		public void init (void *user);
+		//TODO: public void setup_file(string file);
 
 		public int eval(string str);
 
@@ -14,6 +14,6 @@ namespace Radare {
 		public string set(string name, string val);
 		public string set_i(string name, string val);
 
-		public void list();
+		public void list(string? foo, int bar);
 	}
 }

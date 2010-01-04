@@ -18,12 +18,12 @@ static int do_hash(const char *algo, const ut8 *buf, int len, int bsize)
 		bsize = len;
 
 	//r_hash_state_init(&ctx, R_HASH_ALL);
-	r_hash_state_init(&ctx, algobit);
+	r_hash_init(&ctx, algobit);
 
 	/* iterate over all algorithm bits */
 	for(i=1;i<0xf00000;i<<=1) {
 		if (algobit & i) {
-			dlen = r_hash_state_calculate(&ctx, algobit&i, buf, len);
+			dlen = r_hash_calculate(&ctx, algobit&i, buf, len);
 			if (dlen) {
 				c = ctx.digest;
 				printf("%s: ", r_hash_name(i));

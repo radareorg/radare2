@@ -4,7 +4,7 @@
 namespace Radare {
 	[Compact]
 	[CCode (cname="struct r_reg_t", free_function="r_reg_free", cprefix="r_reg_")]
-	public class Register {
+	public class rRegister {
 		[CCode (cprefix="R_REG_TYPE_")]
 		public enum Type {
 			GPR,

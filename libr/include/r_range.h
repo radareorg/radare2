@@ -6,7 +6,7 @@
 #include "list.h"
 
 struct r_range_item_t {
-	ut64 from;
+	ut64 fr;
 	ut64 to;
 	ut8 *data;
 	int datalen;

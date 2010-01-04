@@ -16,7 +16,7 @@ enum {
 	R_CRYPTO_DIR_DECIPHER,
 };
 
-struct r_crypto_t {
+typedef struct r_crypto_t {
 	struct r_crypto_handle_t* h;
 	ut8 *key;
 	ut8 *iv;
@@ -26,9 +26,9 @@ struct r_crypto_t {
 	int output_size;
 	void *user;
 	struct list_head handlers;
-};
+} rCrypto;
 
-struct r_crypto_handle_t {
+typedef struct r_crypto_handle_t {
 	const char *name;
 	int (*get_key_size)(struct r_crypto_t* cry);
 	int (*set_iv)(struct r_crypto_t* cry, const ut8 *iv);
@@ -38,7 +38,7 @@ struct r_crypto_handle_t {
 	int (*use)(const char *algo);
 	int (*fini)(struct r_crypto_t *cry);
 	struct list_head list;
-};
+} rCryptoHandle;
 
 #ifdef R_API
 R_API struct r_crypto_t *r_crypto_init(struct r_crypto_t *cry, int hard);
