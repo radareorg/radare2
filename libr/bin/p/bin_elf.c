@@ -40,16 +40,16 @@ static struct r_bin_entry_t* entry(struct r_bin_t *bin)
 
 static struct r_bin_section_t* sections(struct r_bin_t *bin)
 {
+	int sections_count, i;
 	struct r_bin_section_t *ret = NULL;
 	struct r_bin_elf_section_t *section = NULL;
-	int i, count;
 
 	section = Elf_(r_bin_elf_get_sections)(bin->bin_obj);
-	for (count = 0; section && !section[count].last; count++);
-	if ((ret = MALLOC_STRUCTS(struct r_bin_section_t, count+1))==NULL)
+	for (sections_count = 0; section && !section[sections_count].last; sections_count++);
+	if ((ret = malloc((sections_count + 1) * sizeof(struct r_bin_section_t))) == NULL)
 		return NULL;
 
-	for (i = 0; i < count; i++) {
+	for (i = 0; i < sections_count; i++) {
 		strncpy(ret[i].name, (char*)section[i].name, R_BIN_SIZEOF_STRINGS);
 		ret[i].size = section[i].size;
 		ret[i].vsize = section[i].size;

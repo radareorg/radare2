@@ -558,11 +558,14 @@ struct r_bin_elf_field_t* Elf_(r_bin_elf_get_fields)(struct Elf_(r_bin_elf_obj_t
 		return NULL;
 
 	strncpy(ret[i].name, "ehdr", ELF_STRING_LENGTH); 
-	ret[i++].offset = 0;
+	ret[i].offset = 0;
+	ret[i++].last = 0;
 	strncpy(ret[i].name, "shoff", ELF_STRING_LENGTH); 
-	ret[i++].offset = bin->ehdr.e_shoff;
+	ret[i].offset = bin->ehdr.e_shoff;
+	ret[i++].last = 0;
 	strncpy(ret[i].name, "phoff", ELF_STRING_LENGTH); 
-	ret[i++].offset = bin->ehdr.e_phoff;
+	ret[i].offset = bin->ehdr.e_phoff;
+	ret[i++].last = 0;
 	for (j = 0; j < bin->ehdr.e_phnum; i++, j++) {
 		snprintf(ret[i].name, ELF_STRING_LENGTH, "phdr_%i", j);
 		ret[i].offset = bin->phdr[j].p_offset;
