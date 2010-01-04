@@ -24,7 +24,7 @@ typedef struct r_buf_t {
 	ut8 *buf;
 	int length;
 	ut64 base;
-} rBuf;
+} rBuffer;
 
 /* r_cache */
 // TOTHINK: move into a separated library?

@@ -54,5 +54,5 @@ R_API struct r_db_iter_t *r_db_iter_new(struct r_db_t *db, int key);
 R_API struct r_db_iter_t *r_db_iter_free(struct r_db_iter_t *iter);
 R_API int r_db_free(struct r_db_t *db);
 R_API int r_db_push(struct r_db_t *db, const ut8 *b);
-R_API const ut8 *r_db_pop(struct r_db_t *db);
+R_API ut8 *r_db_pop(struct r_db_t *db);
 #endif

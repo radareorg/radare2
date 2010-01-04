@@ -1,7 +1,10 @@
 #!/bin/sh
-MOD=r_util
-CFLAGS="-I ../libr/include -I /usr/include/python2.6"
-export CFLAGS
-swig -python ${MOD}.i 
-#swig -python -shadow ${MOD}.i 
-gcc -shared ${MOD}_wrap.c ${CFLAGS} -o _${MOD}.so ../libr/util/*.o
+LNG=$1
+MOD=$2
+if [ -z "${MOD}" ]; then
+	echo "Usage: ./libr-swig.sh [python] [r_foo]"
+	exit 1
+fi
+mkdir -p ${LNG}
+cd ${LNG}
+valaswig-cc ${LNG} ${MOD} -I../../libr/include ../../libr/vapi/${MOD}.vapi -l${MOD}

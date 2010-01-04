@@ -25,6 +25,13 @@ namespace Radare {
 		public int hash(string str);
 	}
 
+	[CCode (cprefix="r_num")]
+	public static class rNum {
+		public rNum();
+		public uint64 get(string str);
+		public uint64 math(string str);
+	}
+
 	[CCode (cprefix="r_log")]
 	public static class rLog {
 		public bool msg(string str);

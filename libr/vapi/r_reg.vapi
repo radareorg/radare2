@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<@nopcode.org> */
 
 [CCode (cheader_filename="r_reg.h", cprefix="r_reg_", lower_case_cprefix="r_reg_")]
 namespace Radare {
@@ -38,28 +38,28 @@ namespace Radare {
 		[Compact]
 		[CCode (cname="struct r_reg_set_t", destroy_function="", free_function="" )]
 		public class Set {
-			public Register.Arena arena;
-			public Radare.List<Register.Arena*> arenas;
-			public Radare.List<Register.Item*> regs;
+			public rRegister.Arena arena;
+			public Radare.List<rRegister.Arena*> arenas;
+			public Radare.List<rRegister.Item*> regs;
 		}
 
-		public Register();
+		public rRegister();
 		public bool set_profile(string file);
 		public bool set_profile_string(string profile);
-		public Register.Item get(string name, int type = -1);
-		public Radare.List<Register.Item*> get_list(Register.Type type);
+		public rRegister.Item get(string name, int type = -1);
+		public Radare.List<rRegister.Item*> get_list(rRegister.Type type);
 
-		public uint64 get_value(Register.Item item);
-		public bool set_value(Register.Item item, uint64 val);
+		public uint64 get_value(rRegister.Item item);
+		public bool set_value(rRegister.Item item, uint64 val);
 
-		public float get_fvalue(Register.Item item);
-		public bool set_fvalue(Register.Item item, float val);
+		public float get_fvalue(rRegister.Item item);
+		public bool set_fvalue(rRegister.Item item, float val);
 
-		public uint64 get_pvalue(Register.Item item, int pidx);
-		public bool set_pvalue(Register.Item item, uint64 val, int pidx);
+		public uint64 get_pvalue(rRegister.Item item, int pidx);
+		public bool set_pvalue(rRegister.Item item, uint64 val, int pidx);
 
-		public uint8* get_bytes(Register.Type type, out int size = null);
-		public int set_bytes(Register.Type type, uint8* buf, int len);
+		public uint8* get_bytes(rRegister.Type type, out int size = null);
+		public int set_bytes(rRegister.Type type, uint8* buf, int len);
 
 		public void fit_arena();
 	}
