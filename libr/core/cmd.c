@@ -6,6 +6,7 @@
 #include "r_asm.h"
 #include "r_anal.h"
 #include "r_util.h"
+#include "r_bp.h"
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -1649,7 +1650,7 @@ static int cmd_debug(void *data, const char *input) {
 			"dbh x86         ; set/list breakpoint plugin handlers\n");
 			break;
 		default:
-			r_bp_add_sw(core->dbg.bp, r_num_math(&core->num, input+1), 1, R_BP_EXEC);
+			r_bp_add_sw(core->dbg.bp, r_num_math(&core->num, input+1), 1, R_BP_PROT_EXEC);
 			break;
 		}
 		break;
