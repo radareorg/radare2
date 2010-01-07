@@ -21,7 +21,7 @@ Code analysis module
 
 * TODO: Add static plugin support here
 
-Analysis an = new Analysis ();
+var an = new rAnalysis ();
 io.bind (an);
 an.set ("x86");
 var ctx = new Analysis.Context(an);

@@ -4,7 +4,7 @@
 using Radare;
 
 void main(string[] args) {
-	var bin = new Bin();
+	var bin = new rBin();
 
 	if (args.length==1)
 		error("No file given");
@@ -12,10 +12,10 @@ void main(string[] args) {
 		error("Cannot open file");
 
 	print("Entrypoint: 0x%08llx\n", bin.get_entry().offset);
-	foreach (Bin.Symbol *f in bin.get_symbols())
+	foreach (rBin.Symbol *f in bin.get_symbols())
 		print(" - 0x%08llx  %s\n", f->offset, f->name);
 
-	foreach (Bin.Section *f in bin.get_sections())
+	foreach (rBin.Section *f in bin.get_sections())
 		print(" - 0x%08llx  %s\n", f->offset, f->name);
 
 	bin.close();

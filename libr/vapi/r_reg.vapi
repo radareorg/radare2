@@ -25,7 +25,7 @@ namespace Radare {
 			public int size;
 			public int offset;
 			public int packed_size;
-			public Register.Type type;
+			public rRegister.Type type;
 		}
 
 		[Compact]
@@ -39,15 +39,15 @@ namespace Radare {
 		[CCode (cname="struct r_reg_set_t", destroy_function="", free_function="" )]
 		public class Set {
 			public rRegister.Arena arena;
-			public Radare.List<rRegister.Arena*> arenas;
-			public Radare.List<rRegister.Item*> regs;
+			public rList<rRegister.Arena*> arenas;
+			public rList<rRegister.Item*> regs;
 		}
 
 		public rRegister();
 		public bool set_profile(string file);
 		public bool set_profile_string(string profile);
 		public rRegister.Item get(string name, int type = -1);
-		public Radare.List<rRegister.Item*> get_list(rRegister.Type type);
+		public rList<rRegister.Item*> get_list(rRegister.Type type);
 
 		public uint64 get_value(rRegister.Item item);
 		public bool set_value(rRegister.Item item, uint64 val);

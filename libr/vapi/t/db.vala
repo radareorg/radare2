@@ -2,7 +2,6 @@ using Radare;
 
 void main()
 {
-	int ret;
 	var db = new rDatabase();
 	db.add_id(0, 4);
 

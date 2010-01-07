@@ -8,9 +8,9 @@ public class IterableObject {
 	}
 }
 
-Radare.Iter<IterableObject>* get_iter_list ()
+rIter<IterableObject>* get_iter_list ()
 {
-	Iter<IterableObject> list = new Iter<IterableObject>(5);
+	rIter<IterableObject> list = new rIter<IterableObject>(5);
 
 	list.set(0, new IterableObject("patata"));
 	list.set(1, new IterableObject("cacatua"));

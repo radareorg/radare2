@@ -72,6 +72,11 @@ int splitlines(const char *a, int len, struct line **lr)
 	const char * const plast = a + len - 1;
 	struct line *l;
 
+	if (a == NULL) {
+		eprintf ("null pointer received\n");
+		return 0;
+	}
+
 	/* count the lines */
 	i = 1; /* extra line for sentinel */
 	for (p = a; p < a + len; p++)

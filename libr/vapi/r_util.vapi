@@ -73,7 +73,7 @@ namespace Radare {
 		[CCode (cname="")]
 		public G @free(G arg);
 		[CCode (cname="ralist_get", generic_type_pos=2)]
-		public unowned G get(int type=0);
+		public unowned G get(); //int type=0);
 		[CCode (cname="ralist_iterator")]
 		public rList<unowned G> iterator();
 	}
@@ -97,11 +97,11 @@ namespace Radare {
 	[CCode (cprefix="rarray_", cheader_filename="r_types.h", cname="void")]
 	public static class rArray<G> {
 		[CCode (cname="rarray_next", generic_type_pos=2)]
-		public bool next(int type=0);
+		public bool next(); //int type=0);
 		[CCode (cname="")]
 		public G @free(G arg);
 		[CCode (cname="rarray_get", generic_type_pos=2)]
-		public unowned G get(int type=0);
+		public unowned G get(); //int type=0);
 		[CCode (cname="rarray_iterator")] //, generic_type_pos=2)]
 		public rArray<G> iterator();
 	}

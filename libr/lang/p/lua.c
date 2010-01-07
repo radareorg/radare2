@@ -7,8 +7,7 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
-// XXX
-#define LIBDIR "/usr/lib"
+#define LIBDIR PREFIX"/lib"
 
 static lua_State *L;
 

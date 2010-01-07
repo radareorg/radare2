@@ -1,22 +1,20 @@
 using Radare;
 
 void main() {
+	var reg = new rRegister();
+	reg.set_profile_string (
+		"gpr	eip	.32	0	0\n" +
+		"gpr	eax	.32	4	0\n"
+	);
 
-	Register reg = new Register();
+	reg.set_value (reg.get ("eax"), 666);
 
-	reg.set_profile_string("""
-gpr	eip	.32	0	0
-gpr	eax	.32	4	0
-"""
-);
-	reg.set_value(reg.get("eax"), 666);
+	rList<rRegister.Item*> head =
+		reg.get_list (rRegister.Type.GPR);
 
-	Radare.List<Register.Item*> head =
-		reg.get_list(Register.Type.GPR);
-
-	foreach(Register.Item* item in head) {
-		stdout.printf(" - %s (%d) = 0x%08llx\n",
+	foreach (rRegister.Item* item in head) {
+		print (" - %s (%d) = 0x%08llx\n",
 			item->name, item->size,
-			reg.get_value(item));
+			reg.get_value (item));
 	}
 }

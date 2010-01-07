@@ -2,10 +2,9 @@
 
 [CCode (cheader_filename="r_syscall.h", cprefix="r_", lower_case_cprefix="r_")]
 namespace Radare {
-
 	[Compact]
-	[CCode (cname="struct r_syscall_t", free_function="r_syscall_free")]
-	public class Syscall {
+	[CCode (cname="struct r_syscall_t", free_function="r_syscall_free", cprefix="r_syscall_")]
+	public class rSyscall {
 
 		[CCode (cprefix="R_SYSCALL_OS_")]
 		public enum OS {
@@ -19,7 +18,7 @@ namespace Radare {
 			X86 = 0, PPC, ARM, MIPS, SPARC
 		}
 
-		public Syscall();
+		public rSyscall();
 		public void setup(int os, int arch);
 		public void setup_file(string file);
 		public int get(string syscall);

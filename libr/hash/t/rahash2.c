@@ -17,8 +17,7 @@ static int do_hash(const char *algo, const ut8 *buf, int len, int bsize)
 	if (bsize>len)
 		bsize = len;
 
-	//r_hash_state_init(&ctx, R_HASH_ALL);
-	r_hash_init(&ctx, algobit);
+	r_hash_init(&ctx, R_TRUE, algobit);
 
 	/* iterate over all algorithm bits */
 	for(i=1;i<0xf00000;i<<=1) {
@@ -54,6 +53,7 @@ int main(int argc, char **argv)
 	const ut8 *buf = NULL;
 	int c, buf_len = 0;
 	int bsize = 0;
+	int ret = 0;
 
 	while ((c = getopt(argc, argv, "Va:s:b:h")) != -1) {
 		switch( c ) {
@@ -77,10 +77,9 @@ int main(int argc, char **argv)
 	if (optind<argc)
 		buf = (const ut8*)r_file_slurp(argv[optind], &buf_len);
 
-	if (buf == NULL) {
+	if (buf == NULL)
 		do_help(0);
-		return 1;
-	}
+	else ret = do_hash(algo, buf, buf_len, bsize);
 
-	return do_hash(algo, buf, buf_len, bsize);
+	return ret;
 }

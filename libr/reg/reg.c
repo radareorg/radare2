@@ -100,7 +100,7 @@ static int r_reg_set_word(struct r_reg_item_t *item, int idx, char *word) {
 		else item->packed_size = atoi(word)*8;
 		break;
 	default:
-		printf("WRf\n");
+		eprintf ("register set fail\n");
 		ret = R_FALSE;
 	}
 	return ret;

@@ -1,18 +1,18 @@
-all: core regs hash sc socket asm search iter bin db io list array
+all: core regs hash sc socket asm search iter bin db io array
 	@true
 
 array:
 	valac --vapidir=.. array.vala --pkg r_bin --pkg r_util 
 
 regs:
-	valac --pkg r_reg regs.vala --pkg r_util
+	valac --vapidir=.. --pkg r_reg regs.vala --pkg r_util
 
 lang:
 	valac lang.vala --pkg r_lang --pkg r_util
 
 # XXX
-list:
-	valac -o list list_c.c list.vala --pkg r_util --vapidir=. --vapidir=${PWD}/.. -X -I. --pkg list
+#list:
+#	valac -o list list_c.c list.vala --pkg r_util --vapidir=. --vapidir=${PWD}/.. -X -I. --pkg list
 
 genie:
 	valac --vapidir=.. --pkg r_asm --pkg libr asm.gs
