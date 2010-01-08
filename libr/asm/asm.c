@@ -272,8 +272,8 @@ R_API struct r_asm_code_t *r_asm_mdisassemble(struct r_asm_t *a, ut8 *buf, ut64 
 		r_asm_set_pc(a, a->pc + idx);
 		if (!(ret = r_asm_disassemble(a, &aop, buf+idx, len-idx)))
 			return r_asm_code_free(acode);
-		slen += strlen(aop.buf_asm);
-		if(!(acode->buf_asm = realloc(acode->buf_asm, slen+2)))
+		slen += strlen(aop.buf_asm) + 2;
+		if(!(acode->buf_asm = realloc(acode->buf_asm, slen)))
 				return r_asm_code_free(acode);
 		strcat(acode->buf_asm, aop.buf_asm);
 		if (idx + ret < len) strcat(acode->buf_asm, "\n");
