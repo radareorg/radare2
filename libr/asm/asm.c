@@ -56,7 +56,7 @@ R_API struct r_asm_t *r_asm_new()
 	return r_asm_init(a);
 }
 
-R_API void r_asm_code_free(struct r_asm_code_t *acode)
+R_API void* r_asm_code_free(struct r_asm_code_t *acode)
 {
 	if (!acode)
 		return;
@@ -67,6 +67,7 @@ R_API void r_asm_code_free(struct r_asm_code_t *acode)
 	if (acode->buf_asm)
 		free(acode->buf_asm);
 	free(acode);
+	return NULL;
 }
 
 R_API void r_asm_free(struct r_asm_t *a)
@@ -258,22 +259,27 @@ R_API struct r_asm_code_t *r_asm_mdisassemble(struct r_asm_t *a, ut8 *buf, ut64 
 	if (!(acode = MALLOC_STRUCT(struct r_asm_code_t)))
 		return NULL;
 
-	acode->len = len;
-	acode->buf = malloc(len);
+	if (!(acode->buf = malloc(len)))
+		return r_asm_code_free(acode);
 	memcpy(acode->buf, buf, len);
-	acode->buf_hex = malloc(2*len+1);
+	if (!(acode->buf_hex = malloc(2*len+1)))
+		return r_asm_code_free(acode);
 	r_hex_bin2str(buf, len, acode->buf_hex);
-	acode->buf_asm = malloc(2);
+	if (!(acode->buf_asm = malloc(2)))
+		return r_asm_code_free(acode);
 	
 	for(idx = ret = slen = 0, acode->buf_asm[0] = '\0'; idx < len; idx+=ret) {
 		r_asm_set_pc(a, a->pc + idx);
 		if (!(ret = r_asm_disassemble(a, &aop, buf+idx, len-idx)))
-			return NULL;
+			return r_asm_code_free(acode);
 		slen += strlen(aop.buf_asm);
-		acode->buf_asm = realloc(acode->buf_asm, slen+2);
+		if(!(acode->buf_asm = realloc(acode->buf_asm, slen+2)))
+				return r_asm_code_free(acode);
 		strcat(acode->buf_asm, aop.buf_asm);
 		if (idx + ret < len) strcat(acode->buf_asm, "\n");
 	}
+
+	acode->len = idx;
 
 	return acode;
 }
@@ -283,24 +289,27 @@ R_API struct r_asm_code_t *r_asm_massemble(struct r_asm_t *a, const char *buf)
 	struct r_asm_aop_t aop;
 	struct r_asm_code_t *acode;
 	struct {
-		char name[32];
+		char name[256];
 		ut64 offset;
-	} flags[512]; /* XXX: dinamic length */
+	} flags[1024]; /* XXX: dinamic length */
 	char *lbuf = NULL, *ptr = NULL, *ptr_start = NULL, *label_name = NULL,
 		 *tokens[R_ASM_BUFSIZE], buf_token[R_ASM_BUFSIZE], buf_token2[R_ASM_BUFSIZE];
 	int labels = 0, stage, ret, idx, ctr, i, j;
 	ut64 label_offset;
 
 	if (!(acode = MALLOC_STRUCT(struct r_asm_code_t)))
-		return NULL;
+		return r_asm_code_free(acode);
 
-	acode->buf_asm = malloc(strlen(buf)+1);
+	if(!(acode->buf_asm = malloc(strlen(buf)+1)))
+		return r_asm_code_free(acode);
 	memcpy(acode->buf_asm, buf, strlen(buf)+1);
-	acode->buf_hex = malloc(2);
-	acode->buf = malloc(2);
+	if(!(acode->buf_hex = malloc(2)))
+		return r_asm_code_free(acode);
+	if(!(acode->buf = malloc(2)))
+		return r_asm_code_free(acode);
 
 	if (buf == NULL)
-		return NULL;
+		return r_asm_code_free(acode);
 	lbuf = strdup(buf);
 
 	if (strchr(lbuf, '_'))
@@ -342,7 +351,7 @@ R_API struct r_asm_code_t *r_asm_massemble(struct r_asm_t *a, const char *buf)
 										break;
 									}
 								if (j == 1024)
-									return NULL;
+									return r_asm_code_free(acode);
 							}
 							snprintf(buf_token2, R_ASM_BUFSIZE, "%s0x%llx%s",
 								ptr_start, label_offset, ptr+strlen(label_name));
@@ -364,18 +373,20 @@ R_API struct r_asm_code_t *r_asm_massemble(struct r_asm_t *a, const char *buf)
 					ret = r_asm_pseudo_byte(&aop, ptr+6);
 				else if (!memcmp(ptr, ".org ", 5))
 					ret = r_asm_pseudo_org(a, ptr+5);
-				else return NULL;
+				else return r_asm_code_free(acode);
 				if (!ret) continue;
-				else if (ret < 0) return NULL;
+				else if (ret < 0) return r_asm_code_free(acode);
 			} else { /* Instruction */
 				ret = r_asm_assemble(a, &aop, ptr_start);
 				if (!ret)
-					return NULL;
+					return r_asm_code_free(acode);
 			}
 			if (stage == 1) {
 				acode->len = idx + ret;
-				acode->buf = realloc(acode->buf, idx+ret);
-				acode->buf_hex = realloc(acode->buf_hex, idx+ret);
+				if(!(acode->buf = realloc(acode->buf, idx+ret)))
+					return r_asm_code_free(acode);
+				if(!(acode->buf_hex = realloc(acode->buf_hex, idx+ret)))
+					return r_asm_code_free(acode);
 				for (j = 0; j < ret; j++)
 					acode->buf[idx+j] = aop.buf[j];
 				strcat(acode->buf_hex, aop.buf_hex);
