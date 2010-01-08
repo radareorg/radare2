@@ -59,7 +59,7 @@ R_API struct r_asm_t *r_asm_new()
 R_API void* r_asm_code_free(struct r_asm_code_t *acode)
 {
 	if (!acode)
-		return;
+		return NULL;
 	if (acode->buf)
 		free(acode->buf);
 	if (acode->buf_hex)
@@ -385,7 +385,7 @@ R_API struct r_asm_code_t *r_asm_massemble(struct r_asm_t *a, const char *buf)
 				acode->len = idx + ret;
 				if(!(acode->buf = realloc(acode->buf, idx+ret)))
 					return r_asm_code_free(acode);
-				if(!(acode->buf_hex = realloc(acode->buf_hex, idx+ret)))
+				if(!(acode->buf_hex = realloc(acode->buf_hex, (idx+ret)*2+1)))
 					return r_asm_code_free(acode);
 				for (j = 0; j < ret; j++)
 					acode->buf[idx+j] = aop.buf[j];
