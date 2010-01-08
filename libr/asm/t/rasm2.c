@@ -31,7 +31,7 @@ static int rasm_show_help() {
 
 static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin)
 {
-	struct r_asm_aop_t aop;
+	struct r_asm_code_t *acode;
 	ut8 *data;
 	char *ptr = buf;
 	int ret = 0;
@@ -57,15 +57,18 @@ static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin)
 		len = clen;
 
 	r_asm_set_pc(&a, offset);
-	if (!(ret = r_asm_mdisassemble(&a, &aop, data, len)))
+	if (!(acode = r_asm_mdisassemble(&a, data, len)))
 		return 0;
-	printf("%s\n", aop.buf_asm);
+	printf("%s\n", acode->buf_asm);
+	ret = acode->len;
+	r_asm_code_free(acode);
 
 	return ret;
 }
 
 static int rasm_asm(char *buf, ut64 offset, ut64 len, int bin)
 {
+	struct r_asm_code_t *acode;
 	struct r_asm_aop_t aop;
 	int ret, idx, i;
 
@@ -77,13 +80,13 @@ static int rasm_asm(char *buf, ut64 offset, ut64 len, int bin)
 	}
 #endif 
 	r_asm_set_pc(&a, offset);
-	if (!(idx = r_asm_massemble(&a, &aop, buf)))
+	if (!(acode = r_asm_massemble(&a, buf)))
 		return 0;
 	if (bin)
-		for (i = 0; i < idx; i++)
-			printf("%c", aop.buf[i]);
-	else printf("%s\n", aop.buf_hex);
-	for (ret = 0; idx < len; idx+=ret) {
+		for (i = 0; i < acode->len; i++)
+			printf("%c", acode->buf[i]);
+	else printf("%s\n", acode->buf_hex);
+	for (ret = 0, idx = acode->len; idx < len; idx+=ret) {
 		if (!(ret = r_asm_assemble(&a, &aop, "nop")))
 			return 0;
 		if (bin)
@@ -92,6 +95,7 @@ static int rasm_asm(char *buf, ut64 offset, ut64 len, int bin)
 		else printf("%s", aop.buf_hex);
 	}
 	if (!bin && len && idx == len) printf("\n");
+	r_asm_code_free(acode);
 
 	return idx;
 }
@@ -168,7 +172,7 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 		if (!strcmp(arch, "bf"))
-			ascii = 1; // uh?
+			ascii = 1;
 	} else if (!r_asm_use(&a, "x86")) {
 		fprintf(stderr, "Error: Cannot find asm.x86 plugin\n");
 		return 0;

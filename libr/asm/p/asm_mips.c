@@ -84,7 +84,6 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	if (a->big_endian)
 		aop->inst_len = print_insn_big_mips((bfd_vma)Offset, &disasm_obj);
 	else aop->inst_len = print_insn_little_mips((bfd_vma)Offset, &disasm_obj);
-	aop->disasm_obj = &disasm_obj;
 			
 	if (aop->inst_len == -1)
 		strncpy(aop->buf_asm, " (data)", R_ASM_BUFSIZE);

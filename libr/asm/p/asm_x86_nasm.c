@@ -25,7 +25,6 @@ static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 		free(out);
 	}
 	aop->inst_len = len;
-	aop->disasm_obj = NULL;
 	return len;
 }
 

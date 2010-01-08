@@ -26,7 +26,6 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	dp.iaddr = &iaddr;
 	dp.instr = bof;
 	PPC_Disassemble(&dp, a->big_endian);
-	aop->disasm_obj = &dp;
 	snprintf(aop->buf_asm, R_ASM_BUFSIZE, "%s %s", opcode, operands);
 	aop->inst_len = 4;
 

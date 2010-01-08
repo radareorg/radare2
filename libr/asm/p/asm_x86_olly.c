@@ -14,7 +14,6 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	t_disasm disasm_obj;
 
 	lowercase=1;
-	aop->disasm_obj = &disasm_obj;
 	aop->inst_len = Disasm_olly(buf, len, a->pc, &disasm_obj, DISASM_FILE);
 	snprintf(aop->buf_asm, R_ASM_BUFSIZE, "%s", disasm_obj.result);
 
@@ -41,7 +40,6 @@ static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf) {
 	if (aop->inst_len < 0)
 		aop->inst_len = 0;
 
-	aop->disasm_obj = &asm_obj;
 	if (aop->inst_len > 0)
 		memcpy(aop->buf, asm_obj.code, aop->inst_len<=R_ASM_BUFSIZE?aop->inst_len:R_ASM_BUFSIZE);
 

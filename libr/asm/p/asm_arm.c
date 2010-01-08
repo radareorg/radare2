@@ -78,7 +78,6 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 
 	aop->buf_asm[0]='\0';
 	aop->inst_len = print_insn_arm((bfd_vma)Offset, &disasm_obj);
-	aop->disasm_obj = &disasm_obj;
 
 	if (aop->inst_len == -1)
 		strncpy(aop->buf_asm, " (data)", R_ASM_BUFSIZE);

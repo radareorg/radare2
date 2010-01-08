@@ -12,7 +12,6 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 {
 	javasm_init();
 	aop->inst_len = java_disasm(buf, aop->buf_asm);
-	aop->disasm_obj = NULL;
 
 	return aop->inst_len;
 }
@@ -20,7 +19,6 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 {
 	aop->inst_len = java_assemble(aop->buf, buf);
-	aop->disasm_obj = NULL;
 	return aop->inst_len;
 }
 

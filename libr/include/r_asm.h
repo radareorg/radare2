@@ -32,18 +32,24 @@ enum {
 
 typedef struct r_asm_aop_t {
 	int  inst_len;
-	ut8   buf[R_ASM_BUFSIZE];
+	ut8  buf[R_ASM_BUFSIZE];
 	char buf_asm[R_ASM_BUFSIZE];
 	char buf_hex[R_ASM_BUFSIZE];
 	char buf_err[R_ASM_BUFSIZE];
-	void *disasm_obj;
 } rAsmAop;
+
+typedef struct r_asm_code_t {
+	int  len;
+	ut8  *buf;
+	char *buf_hex;
+	char *buf_asm;
+} rAsmCode;
 
 typedef struct r_asm_t {
 	int  bits;
 	int  big_endian;
 	int  syntax;
-	ut64  pc;
+	ut64 pc;
 	void *user;
 	struct r_asm_handle_t *cur;
 	struct r_asm_fastcall_t *fastcall;
@@ -75,6 +81,7 @@ R_API struct r_asm_t *r_asm_new();
 R_API const char *r_asm_fastcall(struct r_asm_t *a, int idx, int num);
 
 R_API void r_asm_free(struct r_asm_t *a);
+R_API void r_asm_code_free(struct r_asm_code_t *acode);
 R_API struct r_asm_t *r_asm_init(struct r_asm_t *a);
 R_API void r_asm_set_user_ptr(struct r_asm_t *a, void *user);
 R_API int r_asm_add(struct r_asm_t *a, struct r_asm_handle_t *foo);
@@ -86,8 +93,8 @@ R_API int r_asm_set_syntax(struct r_asm_t *a, int syntax);
 R_API int r_asm_set_pc(struct r_asm_t *a, ut64 pc);
 R_API int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len);
 R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf);
-R_API ut64 r_asm_mdisassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len);
-R_API int r_asm_massemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf);
+R_API struct r_asm_code_t *r_asm_mdisassemble(struct r_asm_t *a, ut8 *buf, ut64 len);
+R_API struct r_asm_code_t *r_asm_massemble(struct r_asm_t *a, const char *buf);
 #endif
 
 /* plugin pointers */

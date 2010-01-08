@@ -59,8 +59,6 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	if (i>0) sprintf(aop->buf_asm, "%s, %d", aop->buf_asm, i+1);
 	if (i<1) i=1; else i++;
 
-	aop->disasm_obj = NULL;
-
 	return i;
 }
 
