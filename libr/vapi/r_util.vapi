@@ -50,20 +50,29 @@ namespace Radare {
 
 	/* Generic Iterator interfaced with r_iter */
         [Compact]
-        [CCode (cprefix="r_iter_", cname="void")]
+        [CCode (cprefix="r_iter_", cname="void*")]
         public class rIter<G> {
                 public rIter (int size);
-                public unowned G get ();
-                public unowned rIter<G> next ();
-                public unowned rIter<G> next_n (int idx);
+                public unowned G cur ();
+                public bool next ();
+                public void rewind ();
+		public unowned G get ();
+                public unowned rIter<G> get_n (int idx);
                 public unowned G prev ();
                 public void delete ();
                 public unowned G first ();
-                public bool last ();
-                // TODO: foreach()
+		public void @foreach (rIterCallback cb);
                 public unowned G free ();
                 public void set (int idx, owned G data);
+		public rIter<G> iterator ();
+		/* defining the callback here results in signature of:
+			static gint __lambda1__void*r_iter_callback (IterableObject* foo, gpointer self) {
+			                           ^---- wtf!
+			iter.vala:55.23-55.28: error: The name `name' does not exist in the context of `G'
+			public delegate int rIterCallback (G foo);
+		*/
         }
+	public delegate int rIterCallback (void * foo);
 
 	[Compact]
 	[CCode (cprefix="ralist_", cheader_filename="list.h", cname="struct list_head")]

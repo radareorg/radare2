@@ -155,6 +155,16 @@ R_API int r_bin_list(struct r_bin_t *bin)
 	return R_FALSE;
 }
 
+R_API struct r_bin_object_t *r_bin_load(struct r_bin_t *bin, const char *file, const char *plugin_name)
+{
+	int fd = r_bin_open (bin, file, R_FALSE, plugin_name);
+	if (fd == -1)
+		return NULL;
+	/* TODO: allocate and fill r_bin_object */
+	r_bin_close (bin);
+	return NULL;
+}
+
 R_API int r_bin_open(struct r_bin_t *bin, const char *file, int rw, const char *plugin_name)
 {
 	struct list_head *pos;
@@ -190,6 +200,7 @@ R_API ut64 r_bin_get_baddr(struct r_bin_t *bin)
 	return UT64_MAX;
 }
 
+/* XXX : a binary can contain more than one entrypoint */
 R_API struct r_bin_entry_t* r_bin_get_entry(struct r_bin_t *bin)
 {
 	if (bin->cur && bin->cur->entry)

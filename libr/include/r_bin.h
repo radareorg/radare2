@@ -5,6 +5,7 @@
 
 #include <r_types.h>
 #include <r_io.h>
+#include <iter.h>
 #include <list.h>
 
 #define R_BIN_SCN_EXECUTABLE(x) x & 0x1
@@ -119,7 +120,18 @@ typedef struct r_bin_field_t {
 	int last;
 } rBinField;
 
+typedef struct r_bin_object_t {
+	r_iter_t entrys;
+	r_iter_t sections;
+	r_iter_t symbols;
+	r_iter_t imports;
+	r_iter_t strings;
+	r_iter_t fields;
+	rBinInfo info;
+} rBinObject;
+
 #ifdef R_API
+R_API struct r_bin_object_t *r_bin_load (rBin *bin, const char *path, const char *plugin_name);
 /* bin.c */
 R_API struct r_bin_t *r_bin_new();
 R_API struct r_bin_t *r_bin_free(struct r_bin_t *bin);
