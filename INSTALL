@@ -1,0 +1,27 @@
+INSTALL
+=======
+
+To build and install radare2 and libr:
+
+  $ ./configure --prefix=/usr
+
+Then build:
+
+  $ make -s
+
+And install
+
+  $ sup make install
+
+If you regret about it, just 'make deinstall' :)
+
+
+CONFIGURATION
+=============
+
+Plugins can be compiled as static or dynamic:
+
+  $ $EDITOR 'libr/config.{mk,h}'
+
+
+--pancake

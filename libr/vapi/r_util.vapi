@@ -72,36 +72,27 @@ namespace Radare {
 			public delegate int rIterCallback (G foo);
 		*/
         }
+	/* TODO: move this declaration inside rIter to have access to the Generic type */
 	public delegate int rIterCallback (void * foo);
 
+	/* TODO: Rename to r_list */
 	[Compact]
-	[CCode (cprefix="ralist_", cheader_filename="list.h", cname="struct list_head")]
-	public static class rList<G> {
+	[CCode (cprefix="ralist_", cheader_filename="r_types.h,list.h", cname="struct list_head")]
+	public class rList<G> {
+		public rList ();
 		[CCode (cname="ralist_next")]
 		public bool next();
+		[CCode (cname="ralist_append")]
+		public void append(owned G foo);
 		[CCode (cname="")]
 		public G @free(G arg);
 		[CCode (cname="ralist_get", generic_type_pos=2)]
-		public unowned G get(); //int type=0);
-		[CCode (cname="ralist_iterator")]
-		public rList<unowned G> iterator();
-	}
-
-/*
-	[Compact]
-	[CCode (cprefix="rarray_", cheader_filename="r_types.h", cname="rarray_t")]
-	public static struct RarrayFoo<G> {
-		[CCode (cname="rarray_next", generic_type_pos=2)]
-		public bool next();
-		[CCode (cname="")]
-		public G @free(G arg);
-		[CCode (cname="rarray_get", generic_type_pos=2)]
 		public unowned G get();
-		[CCode (cname="rarray_iterator")] //, generic_type_pos=2)]
-		public RarrayFoo<G> iterator();
+		[CCode (cname="ralist_iterator")]
+		public rList<G> iterator();
 	}
-*/
 
+	/* TODO: deprecated by r_iter ??? */
 	[Compact]
 	[CCode (cprefix="rarray_", cheader_filename="r_types.h", cname="void")]
 	public static class rArray<G> {

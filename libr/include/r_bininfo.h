@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2008-2010 nibble, pancake */
 
 #ifndef _INCLUDE_R_BININFO_H_
 #define _INCLUDE_R_BININFO_H_
@@ -15,8 +15,9 @@
 
 #define R_BININFO_SIZEOF_NAMES 256
 
+// XXX: rename to rBinMeta...rBinDwarf..rBinFoo ??? rBininfo can be confusing with rBinInfo
 /* types */
-struct r_bininfo_t {
+typedef struct r_bininfo_t {
 	const char *file;
 	int fd;
 	int rw;
@@ -25,9 +26,9 @@ struct r_bininfo_t {
 	void *user;
 	struct r_bininfo_handle_t *cur;
 	struct list_head bins;
-};
+} rBininfo;
 
-struct r_bininfo_handle_t {
+typedef struct r_bininfo_handle_t {
 	char *name;
 	char *desc;
 	int (*init)(void *user);
@@ -39,7 +40,7 @@ struct r_bininfo_handle_t {
 	int (*close)(struct r_bininfo_t *bin);
 	int (*check)(struct r_bininfo_t *bin);
 	struct list_head list;
-};
+} rBininfoHandle;
 
 #ifdef R_API
 /* bininfo.c */

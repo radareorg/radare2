@@ -1,14 +1,29 @@
-/* radare - LGPL - Copyright 2009 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2010 pancake<@nopcode.org> */
 
 using Radare;
 
-[Import]
-[CCode (cname="get_list")]
-public static extern Radare.List<Foo> get_list();
+public class IterableObject {
+	public string name { get; set; }
+
+	public IterableObject(string name) {
+		this.name = name;
+	}
+}
+
+rList<IterableObject> get_list () {
+	var list = new rList<IterableObject>();
+
+	list.append (new IterableObject ("patata"));
+	list.append (new IterableObject ("cacatua"));
+	list.append (new IterableObject ("tutu"));
+	list.append (new IterableObject ("baba"));
+
+	return list;
+}
 
 void main() {
-	Radare.List<Foo> head = get_list();
-	foreach (unowned Foo f in head) {
+	var head = get_list ();
+	foreach (var f in head) {
 		stdout.printf(" - %p  %s\n", f, f.name);
 	}
 }

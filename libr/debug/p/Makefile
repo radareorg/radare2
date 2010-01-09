@@ -10,7 +10,7 @@ all: pre ${ALL_TARGETS}
 	@true
 
 pre:
-	cd dbg_libgdbwrap && ${MAKE}
+	@cd dbg_libgdbwrap && ${MAKE}
 
 clean:
 	-rm -f *.so *.o ${STATIC_OBJ}

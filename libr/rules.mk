@@ -100,7 +100,7 @@ clean: ${EXTRA_CLEAN}
 	@if [ -e p/Makefile ]; then (cd p && ${MAKE} clean) ; fi
 	@true
 
-.PHONY: all install clean ${LIBSO} ${LIBAR}
+.PHONY: all install pkgcfg clean deinstall uninstall
 
 else
 
@@ -122,7 +122,6 @@ CFLAGS+=-I../../include -DVERSION=\"${VERSION}\"
 all: ${BIN}
 
 ${BIN}: ${OBJ}
-	@# XXX Shouldnt run always
 	${CC} ${LDFLAGS} ${LIBS} ${OBJ} -o ${BIN}
 
 #Dummy myclean rule that can be overriden by the t/ Makefile
@@ -131,7 +130,7 @@ myclean:
 clean: myclean
 	-rm -f ${OBJ} ${BIN}
 
-.PHONY: all clean myclean ${BIN}
+.PHONY: all clean myclean
 
 endif
 

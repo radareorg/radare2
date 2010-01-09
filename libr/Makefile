@@ -17,8 +17,8 @@ LIBLIST=util lib io meta lang flags bin bininfo macro hash line cons print confi
 #LIBAR=libr.a
 
 all:
-	echo PREFIX=${PREFIX}
-	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} all ); done
+	@echo PREFIX=${PREFIX}
+	@for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} all ); done
 	@echo Build done for: ${LIBLIST}
 
 pkgcfg:

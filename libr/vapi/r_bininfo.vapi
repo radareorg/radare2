@@ -4,12 +4,11 @@
 namespace Radare {
 	[Compact]
 	[CCode (cname="struct r_bininfo_t", free_function="r_bininfo_free", cprefix="r_bininfo_")]
-	public class BinInfo {
-		public BinInfo();
+	public class rBininfo {
+		public rBininfo ();
 		// XXX bad signature?
-		public int get_line(uint64 addr, out string file, int len, int *line);
-
-		public bool set_source_path(string path);
-		public string get_source_path();
+		public int get_line (uint64 addr, out string file, int len, int *line);
+		public bool set_source_path (string path);
+		public string get_source_path ();
 	}
 }
