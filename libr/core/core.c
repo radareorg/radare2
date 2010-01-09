@@ -84,12 +84,12 @@ static int myfgets(char *buf, int len)
 	/* TODO: link against dietline if possible for autocompletion */
 	char *ptr;
 	buf[0]='\0';
-	ptr = r_line_readline(CMDS, radare_argv);
+	ptr = r_line_readline (CMDS, radare_argv);
 	if (ptr == NULL)
 		return -1;
-	strncpy(buf, ptr, len);
-	//free(ptr);
-	return strlen(buf)+1;
+	strncpy (buf, ptr, len);
+	//free(ptr); // XXX leak
+	return strlen (buf)+1;
 }
 /*-----------------------------------*/
 
@@ -180,21 +180,21 @@ R_API struct r_core_t *r_core_free(struct r_core_t *c)
 
 R_API int r_core_prompt(struct r_core_t *r)
 {
-	char prompt[32];
-	char line[1024];
 	int ret;
+	char line[1024];
+	char prompt[32];
+	const char *cmdprompt = r_config_get (&r->config, "cmd.prompt");
 
-	const char *cmdprompt = r_config_get(&r->config, "cmd.prompt");
 	if (cmdprompt && cmdprompt[0])
-		r_core_cmd(r, cmdprompt, 0);
+		r_core_cmd (r, cmdprompt, 0);
 
-	sprintf(prompt, "[0x%08llx]> ", r->seek);
+	sprintf (prompt, "[0x%08llx]> ", r->seek);
 	r_line_prompt = prompt;
-	ret = r_cons_fgets(line, sizeof(line), 0 , NULL);
+	ret = r_cons_fgets (line, sizeof (line), 0, NULL);
 	if (ret<0)
 		return -1;
-	ret = r_core_cmd(r, line, R_TRUE);
-	r_cons_flush();
+	ret = r_core_cmd (r, line, R_TRUE);
+	r_cons_flush ();
 	return ret;
 }
 
@@ -206,9 +206,9 @@ R_API int r_core_block_size(struct r_core_t *core, ut32 bsize)
 	else if (bsize> R_CORE_BLOCKSIZE_MAX)
 		bsize = R_CORE_BLOCKSIZE_MAX;
 	else ret = 1;
-	core->block = realloc(core->block, bsize);
+	core->block = realloc (core->block, bsize);
 	core->blocksize = bsize;
-	r_core_block_read(core, 0);
+	r_core_block_read (core, 0);
 	return ret;
 }
 
@@ -218,17 +218,18 @@ R_API int r_core_seek_align(struct r_core_t *core, ut64 align, int times)
 	int diff = core->seek%align;
 	ut64 seek = core->seek;
 	
-	if (times == 0) diff = -diff;
+	if (times == 0)
+		diff = -diff;
 	else if (diff) {
 		if (inc>0) diff += align-diff;
 		else diff = -diff;
 		if (times) times -= inc;
 	}
-	while((times*inc)>0) {
+	while ((times*inc)>0) {
 		times -= inc;
 		diff += align*inc;
 	}
-	return r_core_seek(core, seek+diff, 1);
+	return r_core_seek (core, seek+diff, 1);
 }
 
 R_API int r_core_seek_delta(struct r_core_t *core, st64 addr)
@@ -239,9 +240,8 @@ R_API int r_core_seek_delta(struct r_core_t *core, st64 addr)
 		return R_TRUE;
 	if (addr>0) {
 		/* check end of file */
-		if (0) { // tmp+addr>) {
-			addr = 0;
-		} else addr += tmp;
+		if (0) addr = 0; // tmp+addr>) {
+		else addr += tmp;
 	} else {
 		/* check < 0 */
 		if (tmp+addr<0) {
@@ -249,7 +249,7 @@ R_API int r_core_seek_delta(struct r_core_t *core, st64 addr)
 		} else addr += tmp;
 	}
 	core->seek = addr;
-	ret = r_core_block_read(core, 0);
+	ret = r_core_block_read (core, 0);
 	if (ret == -1)
 		core->seek = tmp;
 	return ret;

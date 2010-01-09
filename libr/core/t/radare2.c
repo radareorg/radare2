@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include "r_core.h"
 #include "r_io.h"
@@ -9,8 +9,8 @@ static struct r_core_t r;
 
 static int main_help(int line)
 {
-	printf("Usage: radare2 [-dwnLV] [-s addr] [-b bsz] [-e k=v] [file] [...]\n");
-	if (!line) printf(
+	printf ("Usage: radare2 [-dwnLV] [-s addr] [-b bsz] [-e k=v] [file] [...]\n");
+	if (!line) printf (
 		" -d        use 'file' as a program to debug\n"
 		" -w        open file in write mode\n"
 		" -n        do not run ~/.radare2rc\n"
@@ -28,7 +28,7 @@ static int main_help(int line)
 
 static int main_version()
 {
-	printf("radare2 "VERSION"\n");
+	printf ("radare2 "VERSION"\n");
 	return 0;
 }
 
@@ -50,10 +50,10 @@ int main(int argc, char **argv)
 	while ((c = getopt (argc, argv, "wfhe:ndVs:b:Lui:l:"))!=-1) {
 		switch (c) {
 		case 'i':
-			r_core_cmd_file(&r, optarg);
+			r_core_cmd_file (&r, optarg);
 			break;
 		case 'l':
-			r_lib_open(&r.lib, optarg);
+			r_lib_open (&r.lib, optarg);
 			break;
 		case 'd':
 			debug = 1;
@@ -82,13 +82,14 @@ int main(int argc, char **argv)
 			seek = atoi (optarg); // XXX use r_num
 			break;
 		case 'L':
-			r_lib_opendir(&r.lib, r_config_get(&r.config, "dir.plugins"));
-			r_core_loadlibs(&r);
+			r_lib_opendir (&r.lib, r_config_get (
+				&r.config, "dir.plugins"));
+			r_core_loadlibs (&r);
 			r_lib_list (&r.lib);
 			//r_io_handle_list (&r.io);
 			break;
 		case 'u':
-			fprintf(stderr, "TODO\n");
+			fprintf (stderr, "TODO\n");
 			break;
 		default:
 			return 1;
@@ -110,22 +111,22 @@ int main(int argc, char **argv)
 			strcat (file, argv[optind]);
 			strcat (file, " ");
 			if (++optind != argc)
-				strcat(file, " ");
+				strcat (file, " ");
 		}
-		r_core_loadlibs(&r);
+		r_core_loadlibs (&r);
 
 		fh = r_core_file_open (&r, file, perms);
 		if (fh == NULL) {
 			fprintf (stderr, "Cannot open file '%s'\n", file);
 			return 1;
 		}
-		r_config_set(&r.config, "cfg.debug", "true");
-		r_debug_use(&r.dbg, "ptrace");
+		r_config_set (&r.config, "cfg.debug", "true");
+		r_debug_use (&r.dbg, "ptrace");
 	} else
 	while (optind < argc) {
 		const char *file = argv[optind++];
 		// XXX dupped
-		r_core_loadlibs(&r);
+		r_core_loadlibs (&r);
 		fh = r_core_file_open (&r, file, perms);
 		if (fh == NULL) {
 			fprintf (stderr, "Cannot open file '%s'\n", file);
@@ -167,18 +168,19 @@ int main(int argc, char **argv)
 
 	// Load the binary information from rabin2
 	{
-		char *cmd = r_str_concat(strdup(".!rabin2 -reisS "),
-			r.file->filename);
-		r_core_cmd(&r, cmd, 0);
-		r_str_free(cmd);
+		char *cmd = r_str_concat (
+			strdup(".!rabin2 -reisS "), r.file->filename);
+		r_core_cmd (&r, cmd, 0);
+		r_str_free (cmd);
 	}
 
+	if (run_rc)
 	if (r_config_get_i (&r.config, "cfg.fortunes")) {
 		r_core_cmd (&r, "fo", 0);
-		r_cons_flush();
+		r_cons_flush ();
 	}
 
-	while(r_core_prompt (&r) != -1);
+	while (r_core_prompt (&r) != -1);
 
 	return r_core_file_close (&r, fh);
 }

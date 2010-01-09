@@ -1,0 +1,90 @@
+TODO for the 2009-10-18 hackaton
+================================
+
+Inconcrete things to do
+=======================
+
+* Write Vala applications
+  - Test the current .vapi files
+  - Add missing methods/classes in vapi files
+  - Examples can be found in libr/vapi/t
+  - Propose new APIs and usage
+    - Vala is a good way to express code
+
+* Cleanup warnings
+  - asm/p/bea? :) -- make it 32-64bit agnostic
+  - Find missing function signatures in libr/include/.h
+  - R_APIfy those APIs (sync with vapi)
+
+
+Concrete TODO points
+====================
+
+* r_anal
+  - Discuse and close the main design ideas for the library
+
+* r_io
+  - Design and implement a undo/redo subsystem that can be
+    enabled and disabled. It is actually mostly done, but
+    lacks coherence and can be done better.
+
+  - We need a way to get the underlying file which responds
+    to the read call (this way we can know which library
+    lives at a specified offset.
+
+  - Implement 'S' command in radare2 (libr/core/cmd)
+    - It must use the r_io_section API
+    - Implement the rest of io-related commands in r2
+      - 'o' open - We need to manage more than one file
+  - do e io.vaddr and io.baddr get sense in r2? (discuss)
+
+  - radare2 must be able to know the real/virtual offset
+    - We need a function like r_io_get_real_offset();
+    - We also need to know if there are overlapped sections
+      and where those sections are. (like in hiew)
+
+* r_bin
+  - Make it IO agnostic (use r_io_bind) (HIGH PRIORITY)
+  - Add mach0 file format support
+  - Find why objdump can find stripped symbols with objcopy (see /TODO)
+
+* radare2
+  - Fix visual cursor in ANSI (raw ascii is inneficient)
+  - Use r_bin with r_io to get symbols
+    - The offset to read will define the module to analyze and retrieve syms
+
+* r_db
+  - Implement iterators r_db_next() and r_db_prev()
+  - Write test programs to ensure the data is stored correctly
+
+* r_search
+  - The pattern finding functions are not following the design
+    of the rest of the library, it needs a redesign and code cleanup
+    (see bytepat.c)
+  - implement radare/src/xrefs.c into r_search
+  - Add support to change the case sensitive of searchs (ignore case)
+    - This must be keyword-based. Not globally
+  - Update vapi (r_search_regexp not implemented)
+  - Enable/disable nested hits? (discuss+ implement in parent app?)
+    - Just skip bytes until end of keyword
+
+./libr/TODO
+./libr/line/TODO
+./libr/syscall/TODO
+./libr/search/TODO
+
+
+Portability
+===========
+
+* Compile radare2 on many OS and platforms as possible
+  - Windows? 32/64 bits (mingw32, cygwin)
+  - OSX?
+  - Solaris?
+
+  - We should take care about the library extensions (plugin loading)
+  - Missing libraries (-lsocket for solaris..)
+
+* r_th
+  - Test the w32 port (LOW PRIORITY)
+  - Do the same with r_lib (does it works on osx or w32?)

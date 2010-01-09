@@ -19,14 +19,16 @@ static const char *radare_argv[CMDS] ={
 };
 #endif
 
-char *(*r_cons_user_fgets)(char *buf, int len) = NULL;
+int (*r_cons_user_fgets)(char *buf, int len) = NULL;
 
 char *dl_readline(int argc, const char **argv);
+
 // XXX no control for max length here?!?!
-int r_cons_fgets(char *buf, int len, int argc, const char **argv)
+R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv)
 {
 	if (r_cons_user_fgets)
-		return r_cons_user_fgets(buf, 512)?strlen(buf):-1;
+		return r_cons_user_fgets (buf, 512);
+
 #if HAVE_DIETLINE
 	/* TODO: link against dietline if possible for autocompletion */
 	char *ptr;
@@ -39,13 +41,15 @@ int r_cons_fgets(char *buf, int len, int argc, const char **argv)
 	buf[0]='\0';
 	if (fgets(buf, len, r_cons_stdin_fd) == NULL)
 		return -1;
+	if (feof (r_cons_stdin_fd))
+		return -1;
 	buf[strlen(buf)-1]='\0';
 #endif
 	return strlen(buf);
 }
 
 
-void r_cons_any_key()
+R_API void r_cons_any_key()
 {
 	r_cons_strcat("\n--press any key--\n");
 	r_cons_flush();
@@ -53,7 +57,7 @@ void r_cons_any_key()
 	r_cons_strcat("\x1b[2J\x1b[0;0H");
 }
 
-int r_cons_readchar()
+R_API int r_cons_readchar()
 {
 	char buf[2];
 #if __WINDOWS__

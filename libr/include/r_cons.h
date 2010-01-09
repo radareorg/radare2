@@ -99,7 +99,7 @@ extern int r_cons_is_html;
 extern int r_cons_noflush;
 extern char *r_cons_filterline;
 extern char *r_cons_teefile;
-extern char *(*r_cons_user_fgets)(char *buf, int len);
+extern int (*r_cons_user_fgets)(char *buf, int len);
 
 #ifdef R_API
 /* constructor */

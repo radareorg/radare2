@@ -44,23 +44,22 @@ static int r_line_readchar()
 {
 	char buf[2];
 #if __WINDOWS__
-	LPDWORD out;
 	BOOL ret;
-	LPDWORD mode;
-	HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
+	LPDWORD mode, out;
+	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);
 
-	GetConsoleMode(h, &mode);
-	SetConsoleMode(h, 0); // RAW
-	ret = ReadConsole(h, buf,1, &out, NULL);
+	GetConsoleMode (h, &mode);
+	SetConsoleMode (h, 0); // RAW
+	ret = ReadConsole (h, buf,1, &out, NULL);
 	if (!ret) {
 		// wine hack-around
-		if (read(0,buf,1) != 1)
+		if (read (0, buf, 1) != 1)
 			return -1;
 	}
 	SetConsoleMode(h, mode);
 #else
-	int ret = read(0,buf,1);
-	if (ret <1)
+	int ret = read (0, buf, 1);
+	if (ret < 1)
 		return -1;
 #endif
 	//printf("CHAR(%d)\n", buf[0]);
@@ -383,21 +382,22 @@ R_API char *r_line_readline(int argc, const char **argv)
 	// r_line_echo = config.verbose;
 	if (r_line_disable) {
 		r_line_buffer[0]='\0';
-		fgets(r_line_buffer, R_LINE_BUFSIZE-1, stdin);
+		if (!fgets(r_line_buffer, R_LINE_BUFSIZE-1, stdin))
+			return NULL;
 		r_line_buffer[strlen(r_line_buffer)] = '\0';
 		return (*r_line_buffer)? r_line_buffer : r_line_nullstr;
 	}
 
-	memset(&buf,0,sizeof buf);
-	r_cons_set_raw(1);
+	memset (&buf, 0, sizeof buf);
+	r_cons_set_raw (1);
 
 	if (r_line_echo) {
-		printf("%s", r_line_prompt);
-		fflush(stdout);
+		printf ("%s", r_line_prompt);
+		fflush (stdout);
 	}
 
 #if __UNIX__
-	if (feof(stdin))
+	if (feof (stdin))
 		return NULL;
 #endif
 
@@ -418,18 +418,18 @@ R_API char *r_line_readline(int argc, const char **argv)
 #endif
 
 		r_line_buffer[r_line_buffer_len]='\0';
-		buf[0] = r_line_readchar();
+		buf[0] = r_line_readchar ();
 		
 //		printf("\x1b[K\r");
-		columns = r_cons_get_real_columns()-2;
+		columns = r_cons_get_real_columns ()-2;
 		if (columns <1)
 			columns = 40;
 		if (r_line_echo)
-		printf("\r%*c\r", columns, ' ');
+			printf ("\r%*c\r", columns, ' ');
 
-		switch(buf[0]) {
-//		case -1:
-//			return NULL;
+		switch (buf[0]) {
+		//case -1: // ^D
+		//	return NULL;
 		case 0: // control-space
 			/* ignore atm */
 			break;
@@ -609,9 +609,8 @@ R_API char *r_line_readline(int argc, const char **argv)
 			}
 #endif
 		default:
-			if (gcomp) {
+			if (gcomp)
 				gcomp++;
-			}
 			/* XXX use ^A & ^E */
 			if (r_line_buffer_idx<r_line_buffer_len) {
 				for(i = ++r_line_buffer_len;i>r_line_buffer_idx;i--)
@@ -644,14 +643,14 @@ R_API char *r_line_readline(int argc, const char **argv)
 	}
 
 _end:
-	r_cons_set_raw(0);
+	r_cons_set_raw (0);
 	if (r_line_echo) {
-		printf("\r%s%s\n", r_line_prompt, r_line_buffer);
-		fflush(stdout);
+		printf ("\r%s%s\n", r_line_prompt, r_line_buffer);
+		fflush (stdout);
 	}
 
 	if (r_line_buffer[0]=='!' && r_line_buffer[1]=='\0') {
-		r_line_hist_list();
+		r_line_hist_list ();
 		return r_line_nullstr;
 	}
 	if (r_line_buffer == NULL)
