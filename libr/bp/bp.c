@@ -16,6 +16,7 @@ R_API int r_bp_init(struct r_bp_t *bp)
 	INIT_LIST_HEAD(&bp->plugins);
 	for(i=0;bp_static_plugins[i];i++)
 		r_bp_handle_add(bp, bp_static_plugins[i]);
+	memset (&bp->iob, 0, sizeof(bp->iob));
 	return R_TRUE;
 }
 

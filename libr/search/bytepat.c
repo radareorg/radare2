@@ -14,8 +14,7 @@
 
 /* XXX memory leak!!! malloc-ed data not free'd */
 
-typedef struct _fnditem
-{
+typedef struct _fnditem {
 	unsigned char str[MAX_PATLEN];
 	void* next;
 } fnditem;
@@ -30,7 +29,7 @@ static fnditem* init_fi()
 }
 #endif
 
-static void add_fi ( fnditem* n, unsigned char* blk, int patlen )
+static void add_fi (fnditem* n, unsigned char* blk, int patlen)
 {
 	fnditem* p;
 
