@@ -10,10 +10,10 @@ test:
 	${CC} ${FLAGS} test.c -o test
 
 test_sys: test_sys.c
-	${CC} ${FLAGS} test_sys.c -o test_sys -lr_util
+	${CC} ${FLAGS} test_sys.c -o test_sys
 
 test_str: test_str.c
-	${CC} ${FLAGS} test_str.c -o test_str -lr_util
+	${CC} ${FLAGS} test_str.c -o test_str
 
 pool:
 	${CC} ${FLAGS} pool.c -o pool
@@ -25,7 +25,7 @@ iter:
 	${CC} ${FLAGS} iter.c -o iter
 
 file_slurp_hexpairs:
-	${CC} -I../../include test_file_slurp_hexpairs.c -lr_util -o file_slurp_hexpairs
+	${CC} ${FLAGS} test_file_slurp_hexpairs.c -o file_slurp_hexpairs
 
 clean:
 	rm -f a.out calc rax2 ralloc test test_sys pool iter test_str pool file_slurp_hexpairs

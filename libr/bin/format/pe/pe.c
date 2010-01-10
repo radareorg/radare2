@@ -172,20 +172,18 @@ static int PE_(r_bin_pe_parse_imports)(PE_(r_bin_pe_obj) *bin, PE_(r_bin_pe_impo
 	do {
 		lseek(bin->fd, off + i * sizeof(PE_DWord), SEEK_SET);
 		read(bin->fd, &import_table, sizeof(PE_DWord));
-
-		if (import_table & ILT_MASK1) {
-			import_ordinal = import_table & ILT_MASK2;
-			import_hint = 0;
-			snprintf(import_name, PE_NAME_LENGTH, "%s_Ordinal_%i", dll_name, import_ordinal);
-		} else if (import_table) {
-			import_ordinal = 0;
-			lseek(bin->fd, PE_(r_bin_pe_aux_rva_to_offset)(bin, import_table), SEEK_SET);
-			read(bin->fd, &import_hint, sizeof(PE_Word));
-			read(bin->fd, name, PE_NAME_LENGTH);
-			snprintf(import_name, PE_NAME_LENGTH, "%s_%s", dll_name, name);
-		}
-		
 		if (import_table) {
+			if (import_table & ILT_MASK1) {
+				import_ordinal = import_table & ILT_MASK2;
+				import_hint = 0;
+				snprintf(import_name, PE_NAME_LENGTH, "%s_Ordinal_%i", dll_name, import_ordinal);
+			} else {
+				import_ordinal = 0;
+				lseek(bin->fd, PE_(r_bin_pe_aux_rva_to_offset)(bin, import_table), SEEK_SET);
+				read(bin->fd, &import_hint, sizeof(PE_Word));
+				read(bin->fd, name, PE_NAME_LENGTH);
+				snprintf(import_name, PE_NAME_LENGTH, "%s_%s", dll_name, name);
+			}
 			memcpy((*importp)->name, import_name, PE_NAME_LENGTH);
 			(*importp)->name[PE_NAME_LENGTH-1] = '\0';
 			(*importp)->rva = FirstThunk + i * sizeof(PE_DWord);

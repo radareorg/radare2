@@ -249,7 +249,7 @@ R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
 	return ret;
 }
 
-R_API struct r_asm_code_t *r_asm_mdisassemble(struct r_asm_t *a, ut8 *buf, ut64 len)
+R_API struct r_asm_code_t* r_asm_mdisassemble(struct r_asm_t *a, ut8 *buf, ut64 len)
 {
 	struct r_asm_aop_t aop;
 	struct r_asm_code_t *acode;
@@ -284,7 +284,7 @@ R_API struct r_asm_code_t *r_asm_mdisassemble(struct r_asm_t *a, ut8 *buf, ut64 
 	return acode;
 }
 
-R_API struct r_asm_code_t *r_asm_massemble(struct r_asm_t *a, const char *buf)
+R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf)
 {
 	struct r_asm_aop_t aop;
 	struct r_asm_code_t *acode;
