@@ -19,26 +19,26 @@ struct r_bin_mach0_section_t {
 	ut64 offset;
 	ut64 addr;
 	ut64 size;
-	ut64 align;
+	ut32 align;
 	ut32 flags;
 	char name[MACH0_STRING_LENGTH];
-	int last;
 };
 
 struct r_bin_mach0_obj_t {
-	struct mach_header mhdr;
-	struct load_command* lcmd;
-	struct segment_command* scmd;
-	struct section* scn;
-
+	struct mach_header hdr;
+	struct segment_command* segs;
+	int nsegs;
+	struct section* scns;
+	int nscns;
+	ut32		size;
     ut64        baddr;
 	int	        endian;
     const char* file;
 	int			fd;
 };
 
-int r_bin_mach0_open(struct r_bin_mach0_obj_t* bin, const char* file);
-int r_bin_mach0_close(struct r_bin_mach0_obj_t* bin);
+struct r_bin_mach0_obj_t* r_bin_mach0_new(const char* file);
+void* r_bin_mach0_free(struct r_bin_mach0_obj_t* bin);
 struct r_bin_mach0_section_t* r_bin_mach0_get_sections(struct r_bin_mach0_obj_t* bin);
 
 #if 0
