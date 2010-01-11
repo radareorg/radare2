@@ -15,7 +15,9 @@ namespace Radare {
 		public int add_cond (string cond);
 		public bool del (uint64 addr);
 		public bool del_cond (int idx);
-		public int list (int rad);
+
+		/* TODO: deprecate the list() method.. language iterators should be enought */
+		public int list (bool rad);
 
 		[CCode (cprefix="R_BP_PROT_")]
 		public enum Protection {

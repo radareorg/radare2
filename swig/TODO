@@ -1,0 +1,36 @@
+The valaswig integration forces us to do some changes in the r2 API.
+
+These api changes are for:
+
+  - Avoid keywords in function names
+
+    Every language has its own keywords, r2api should try to workaround
+    all those keywords to avoid collisions for bindings.
+
+    Example: use, del, from, continue, etc..
+
+    TODO: we need to review APIs, find better names for functions using
+    those keywords, etc..
+
+  - Review basic data structures
+
+    Linked lists, hash tables, r_db, arrays, ... must be reviewed to
+    fit with vala and swig basics to be able to use them with simple
+    APIs or integrate them with the syntax sugar of the target language.
+
+    Example:
+      foreach (var foo in binls.get_symbols ()) {
+        print ("%s 0x%08llx\n", foo.name, foo.offset);
+      }
+
+  - Unit testing
+
+    Having bindings for python, perl, ruby, .. is good for unit testing
+    because it hardly simplifies the way to test APIs, find bugs, ...
+
+    TODO: write unit testing frameworks for perl, ruby, python, etc..
+
+  - API unification for all languages
+
+    All the previous development points are meant to reduce code in r2,
+    avoid syntax exceptions, simplify api usage, and much moar ;)
