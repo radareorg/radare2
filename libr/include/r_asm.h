@@ -30,6 +30,12 @@ enum {
 	R_ASM_SYN_ATT
 };
 
+enum {
+	R_ASM_PAR_NULL = 0,
+	R_ASM_PAR_PSEUDO,
+	R_ASM_PAR_REALLOC
+};
+
 typedef struct r_asm_aop_t {
 	int  inst_len;
 	ut8  buf[R_ASM_BUFSIZE];
@@ -95,7 +101,6 @@ R_API int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf
 R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf);
 R_API struct r_asm_code_t* r_asm_mdisassemble(struct r_asm_t *a, ut8 *buf, ut64 len);
 R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf);
-#endif
 
 /* plugin pointers */
 extern struct r_asm_handle_t r_asm_plugin_dummy;
@@ -112,5 +117,6 @@ extern struct r_asm_handle_t r_asm_plugin_m68k;
 extern struct r_asm_handle_t r_asm_plugin_ppc;
 extern struct r_asm_handle_t r_asm_plugin_sparc;
 extern struct r_asm_handle_t r_asm_plugin_psosvm;
+#endif
 
 #endif

@@ -23,7 +23,7 @@ static void r_core_visual_mark(struct r_core_t *core, ut8 ch)
 			marks[i] = 0;
 		marks_init = 1;
 	}
-	marks[ch] = core->seek;
+	marks[ch] = core->offset;
 }
 
 static void r_core_visual_mark_seek(struct r_core_t *core, ut8 ch)
@@ -488,9 +488,9 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 		strcpy(buf, "wa ");
 		if (r_cons_fgets(buf+3, 1000, 0, NULL) <0) buf[0]='\0';
 		if (buf[0]) {
-			if (curset) r_core_seek(core, core->seek + cursor, 0);
+			if (curset) r_core_seek(core, core->offset + cursor, 0);
 			r_core_cmd(core, buf, 1);
-			if (curset) r_core_seek(core, core->seek - cursor, 1);
+			if (curset) r_core_seek(core, core->offset - cursor, 1);
 		}
 		r_cons_set_raw(1);
 		break;
@@ -501,9 +501,9 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 		strcpy(buf, "wx ");
 		if (r_cons_fgets(buf+3, 1000, 0, NULL) <0) buf[0]='\0';
 		if (buf[0]) {
-			if (curset) r_core_seek(core, core->seek + cursor, 0);
+			if (curset) r_core_seek(core, core->offset + cursor, 0);
 			r_core_cmd(core, buf, 1);
-			if (curset) r_core_seek(core, core->seek - cursor, 1);
+			if (curset) r_core_seek(core, core->offset - cursor, 1);
 		}
 		r_cons_set_raw(1);
 		break;
@@ -624,9 +624,9 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 		if (r_cons_fgets(buf+3, 1000, 0, NULL) <0)
 			buf[0]='\0';
 		if (buf[0]) {
-			if (curset) r_core_seek(core, core->seek + cursor, 0);
+			if (curset) r_core_seek(core, core->offset + cursor, 0);
 			r_core_cmd(core, buf, 1);
-			if (curset) r_core_seek(core, core->seek - cursor, 1);
+			if (curset) r_core_seek(core, core->offset - cursor, 1);
 		}
 		r_cons_set_raw(1);
 		break;
@@ -654,7 +654,7 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 
 R_API void r_core_visual_prompt(struct r_core_t *core)
 {
-	r_cons_printf("[0x%08llx] %s\n", core->seek, printfmt[printidx%NPF]);
+	r_cons_printf("[0x%08llx] %s\n", core->offset, printfmt[printidx%NPF]);
 }
 
 R_API int r_core_visual(struct r_core_t *core, const char *input)

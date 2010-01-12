@@ -61,9 +61,9 @@ void main() {
 */
 
 	// r_iter_for_each (foo, iterable_object_unref);
-	foo.foreach ((x) => {
-		delete x;
-	});
+//	foo.foreach ((x) => {
+//		delete x;
+//	});
 /*
 	foo.foreach ((x) => {
 		IterableObject *io = x;

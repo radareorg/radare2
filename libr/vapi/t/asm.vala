@@ -28,10 +28,11 @@ public class rAsmExample
 		} else {
 			stdout.printf("disasm: %s\n", op.buf_asm);
 		}
-		if (st.massemble(out op, buf2) <1) {
+		rAsm.Code? code = st.massemble(buf2);
+		if (code == null) {
 			stderr.printf("internal error\n");
 		} else {
-			stdout.printf("asm: %s\n", op.buf_hex);
+			stdout.printf("asm: %s\n", code.buf_hex);
 		}
 
 		stdout.printf("Enumerate fastcall arguments:\n");

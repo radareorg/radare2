@@ -14,13 +14,6 @@
 #define CONS_BUFSZ 0x4f00
 #define STR_IS_NULL(x) (!x || !x[0])
 
-R_API void r_cons_break(void (*cb)(void *u), void *user);
-R_API void r_cons_break_end();
-
-/* pipe */
-R_API int r_cons_pipe_open(const char *file, int append);
-R_API void r_cons_pipe_close(int fd);
-
 /* plain colors */
 #define C_BLACK    "\x1b[30m"
 #define C_BGBLACK  "\x1b[40m"
@@ -102,6 +95,14 @@ extern char *r_cons_teefile;
 extern int (*r_cons_user_fgets)(char *buf, int len);
 
 #ifdef R_API
+
+R_API void r_cons_break(void (*cb)(void *u), void *user);
+R_API void r_cons_break_end();
+
+/* pipe */
+R_API int r_cons_pipe_open(const char *file, int append);
+R_API void r_cons_pipe_close(int fd);
+
 /* constructor */
 R_API int  r_cons_init();
 

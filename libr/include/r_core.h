@@ -24,19 +24,19 @@
 #define R_CORE_BLOCKSIZE 64
 #define R_CORE_BLOCKSIZE_MAX 0x40000 /* 4 MB */
 
-struct r_core_file_t {
-	const char *uri;
-	const char *filename;
+typedef struct r_core_file_t {
+	char *uri;
+	char *filename;
 	ut64 seek;
 	ut64 size;
 	int rwx;
 	int fd;
 	int dbg;
 	struct list_head list;
-};
+} rCoreFile;
 
-struct r_core_t {
-	ut64 seek;
+typedef struct r_core_t {
+	ut64 offset;
 	ut32 blocksize;
 	ut8 *block;
 	ut8 *oobi;
@@ -65,7 +65,7 @@ struct r_core_t {
 	struct r_macro_t macro;
 	struct r_config_t config;
 	struct r_search_t *search;
-};
+} rCore;
 
 #ifdef R_API
 R_API int r_core_init(struct r_core_t *core);

@@ -30,7 +30,7 @@ static int cmd_iopipe(void *data, const char *input) {
 
 /* TODO: this should be moved to the core->yank api */
 static int cmd_yank_to(struct r_core_t *core, char *arg) {
-	ut64 src = core->seek;
+	ut64 src = core->offset;
 	ut64 len =  0;
 	ut64 pos = -1;
 	char *str;
@@ -59,7 +59,7 @@ static int cmd_yank_to(struct r_core_t *core, char *arg) {
 	r_core_write_at (core, pos, buf, len);
 	free(buf);
 
-	core->seek = src;
+	core->offset = src;
 	r_core_block_read(core, 0);
 	return 0;
 }
@@ -68,7 +68,7 @@ static int cmd_yank(void *data, const char *input) {
 	struct r_core_t *core = (struct r_core_t *)data;
 	switch(input[0]) {
 	case ' ':
-		r_core_yank(core, core->seek, atoi(input+1));
+		r_core_yank(core, core->offset, atoi(input+1));
 		break;
 	case 'y':
 		r_core_yank_paste(core, r_num_math(&core->num, input+2), 0);
@@ -214,7 +214,7 @@ static int cmd_seek(void *data, const char *input) {
 			" sa [[+-]a] [asz] ; seek asz (or bsize) aligned to addr\n");
 			break;
 		}
-	} else r_cons_printf("0x%llx\n", core->seek);
+	} else r_cons_printf("0x%llx\n", core->offset);
 	return 0;
 }
 
@@ -415,8 +415,8 @@ static int cmd_print(void *data, const char *input)
 			struct r_anal_aop_t analop;
 			struct r_anal_refline_t *reflines;
 		
-			r_anal_set_pc(&core->anal, core->seek);
-			r_asm_set_pc(&core->assembler, core->seek);
+			r_anal_set_pc(&core->anal, core->offset);
+			r_asm_set_pc(&core->assembler, core->offset);
 
 			reflines = r_anal_reflines_get(&core->anal, buf, len, -1, linesout);
 			for(idx=ret=0; idx < len; idx+=ret) {
@@ -438,9 +438,9 @@ static int cmd_print(void *data, const char *input)
 				r_anal_aop(&core->anal, &analop, buf+idx);
 
 				if (show_lines) r_cons_printf("%s", line);
-				if (show_offset) r_cons_printf("0x%08llx ", core->seek + idx);
+				if (show_offset) r_cons_printf("0x%08llx ", core->offset + idx);
 				if (show_bytes) {
-					struct r_flag_item_t *flag = r_flag_get_i(&core->flags, core->seek+idx);
+					struct r_flag_item_t *flag = r_flag_get_i(&core->flags, core->offset+idx);
 					if (flag) {
 						r_cons_printf("*[ %10s] ", flag->name);
 					} else r_cons_printf("%14s ", asmop.buf_hex);
@@ -460,28 +460,28 @@ static int cmd_print(void *data, const char *input)
 		}
 		break;
 	case 's':
-		r_print_string(&core->print, core->seek, core->block, len, 0, 1, 0); //, 78, 1);
+		r_print_string(&core->print, core->offset, core->block, len, 0, 1, 0); //, 78, 1);
 		break;
 	case 'S':
-		r_print_string(&core->print, core->seek, core->block, len, 1, 1, 0); //, 78, 1);
+		r_print_string(&core->print, core->offset, core->block, len, 1, 1, 0); //, 78, 1);
 		break;
 	case 'u':
-		r_print_string(&core->print, core->seek, core->block, len, 0, 1, 1); //, 78, 1);
+		r_print_string(&core->print, core->offset, core->block, len, 0, 1, 1); //, 78, 1);
 		break;
 	case 'U':
-		r_print_string(&core->print, core->seek, core->block, len, 1, 1, 1); //, 78, 1);
+		r_print_string(&core->print, core->offset, core->block, len, 1, 1, 1); //, 78, 1);
 		break;
 	case 'c':
-		r_print_code(&core->print, core->seek, core->block, len); //, 78, 1);
+		r_print_code(&core->print, core->offset, core->block, len); //, 78, 1);
 		break;
 	case 'r':
 		r_print_raw(&core->print, core->block, len);
 		break;
 	case 'o':
-        	r_print_hexdump(&core->print, core->seek, core->block, len, 8, 1); //, 78, !(input[1]=='-'));
+        	r_print_hexdump(&core->print, core->offset, core->block, len, 8, 1); //, 78, !(input[1]=='-'));
 		break;
 	case 'x':
-        	r_print_hexdump(&core->print, core->seek, core->block, len, 16, 1); //, 78, !(input[1]=='-'));
+        	r_print_hexdump(&core->print, core->offset, core->block, len, 16, 1); //, 78, !(input[1]=='-'));
 		break;
 	case '8':
 		r_print_bytes(&core->print, core->block, len, "%02x");
@@ -518,11 +518,11 @@ static int cmd_flag(void *data, const char *input) {
 
 	switch(input[0]) {
 	case '+':
-		r_flag_set(&core->flags, str, core->seek, core->blocksize, 1);
+		r_flag_set(&core->flags, str, core->offset, core->blocksize, 1);
 		break;
 	case ' ': {
 		char *s = NULL, *s2 = NULL;
-		ut64 seek = core->seek;
+		ut64 seek = core->offset;
 		ut32 bsze = core->blocksize;
 		s = strchr(str, ' ');
 		if (s) {
@@ -606,7 +606,7 @@ static int cmd_anal(void *data, const char *input)
 			r_anal_use (&core->anal, "anal_x86_bea");
 			
 			for(idx=ret=0; idx < len; idx+=ret) {
-				r_anal_set_pc (&core->anal, core->seek + idx);
+				r_anal_set_pc (&core->anal, core->offset + idx);
 				ret = r_anal_aop(&core->anal, &aop, buf + idx);
 			}
 		}
@@ -633,7 +633,7 @@ static int cmd_write(void *data, const char *input)
 		/* write string */
 		len = r_str_escape(str);
 		r_io_set_fd(&core->io, core->file->fd);
-		r_io_write_at(&core->io, core->seek, (const ut8*)str, len);
+		r_io_write_at(&core->io, core->offset, (const ut8*)str, len);
 		r_core_block_read(core, 0);
 		break;
 	case 't':
@@ -655,7 +655,7 @@ static int cmd_write(void *data, const char *input)
 			ut8 *buf = (ut8*) r_file_slurp(arg, &size);
 			if (buf) {
 				r_io_set_fd(&core->io, core->file->fd);
-				r_io_write_at(&core->io, core->seek, buf, size);
+				r_io_write_at(&core->io, core->offset, buf, size);
 				free(buf);
 			} else eprintf("Cannot open file '%s'\n", arg);
 		}
@@ -667,7 +667,7 @@ static int cmd_write(void *data, const char *input)
 			ut8 *buf = r_file_slurp_hexpairs(arg, &size);
 			if (buf == NULL) {
 				r_io_set_fd(&core->io, core->file->fd);
-				r_io_write_at(&core->io, core->seek, buf, size);
+				r_io_write_at(&core->io, core->offset, buf, size);
 				free(buf);
 			} else eprintf("Cannot open file '%s'\n", arg);
 		}
@@ -685,7 +685,7 @@ static int cmd_write(void *data, const char *input)
 
 		// write strifng
 		r_io_set_fd(&core->io, core->file->fd);
-		r_io_write_at(&core->io, core->seek, (const ut8*)str, len);
+		r_io_write_at(&core->io, core->offset, (const ut8*)str, len);
 		r_core_block_read(core, 0);
 		break;
 	case 'x':
@@ -693,7 +693,7 @@ static int cmd_write(void *data, const char *input)
 		int len = strlen(input);
 		ut8 *buf = alloca(len);
 		len = r_hex_str2bin(input+1, buf);
-		r_core_write_at(core, core->seek, buf, len);
+		r_core_write_at(core, core->offset, buf, len);
 		r_core_block_read(core, 0);
 		}
 		// write hexpairs
@@ -703,11 +703,11 @@ static int cmd_write(void *data, const char *input)
 		struct r_asm_code_t *acode;
 		/* XXX ULTRAUGLY , needs fallback support in rasm */
 		r_asm_use(&core->assembler, "x86.olly");
-		r_asm_set_pc(&core->assembler, core->seek);
+		r_asm_set_pc(&core->assembler, core->offset);
 		if (input[1]==' ')input=input+1;
 		acode = r_asm_massemble(&core->assembler, input+1);
 		eprintf("Written %d bytes (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
-		r_core_write_at(core, core->seek, acode->buf, acode->len);
+		r_core_write_at(core, core->offset, acode->buf, acode->len);
 		r_asm_code_free(acode);
 		r_core_block_read(core, 0);
 		r_asm_use(&core->assembler, "x86"); /* XXX */
@@ -719,7 +719,7 @@ static int cmd_write(void *data, const char *input)
 		ut8 *buf = alloca(len);
 		len = r_hex_str2bin(input+1, buf);
 		r_mem_copyloop(core->block, buf, core->blocksize, len);
-		r_core_write_at(core, core->seek, core->block, core->blocksize);
+		r_core_write_at(core, core->offset, core->block, core->blocksize);
 		r_core_block_read(core, 0);
 		}
 		break;
@@ -756,7 +756,7 @@ static int cmd_write(void *data, const char *input)
 		{
 		ut64 off = r_num_math(&core->num, input+1);
 		r_io_set_fd(&core->io, core->file->fd);
-		r_io_seek(&core->io, core->seek, R_IO_SEEK_SET);
+		r_io_seek(&core->io, core->offset, R_IO_SEEK_SET);
 		if (off&UT64_32U) {
 			/* 8 byte addr */
 			ut64 addr8;
@@ -851,7 +851,7 @@ static int __cb_hit(struct r_search_kw_t *kw, void *user, ut64 addr)
 		kw->kwidx, kw->count, kw->keyword_length, addr);
 
 	if (!strnull(cmdhit)) {
-		ut64 here = core->seek;
+		ut64 here = core->offset;
 		r_core_seek(core, addr, R_FALSE);
 		r_core_cmd(core, cmdhit, 0);
 		r_core_seek(core, here, R_TRUE);
@@ -932,7 +932,7 @@ static int cmd_search(void *data, const char *input)
 		r_search_set_callback(core->search, &__cb_hit, core);
 		cmdhit = r_config_get(&core->config, "cmd.hit");
 		r_cons_break(NULL, NULL);
-		for(at = core->seek; at < core->file->size; at += core->blocksize) {
+		for(at = core->offset; at < core->file->size; at += core->blocksize) {
 			if (r_cons_breaked)
 				break;
 			r_io_set_fd(&core->io, core->file->fd);
@@ -1085,7 +1085,7 @@ static int cmd_meta(void *data, const char *input)
 		break;
 	case 'L': // debug information of current offset
 		ret = r_bininfo_get_line(
-			&core->bininfo, core->seek, file, 1023, &line);
+			&core->bininfo, core->offset, file, 1023, &line);
 		if (ret)
 			r_cons_printf("file %s\nline %d\n", file, line);
 		break;
@@ -1094,8 +1094,8 @@ static int cmd_meta(void *data, const char *input)
 		// TODO: is this an exception compared to other C? commands?
 		if (input[1]==' ') input = input+1;
 		if (input[1]=='-') {
-			r_meta_del(&core->meta, R_META_COMMENT, core->seek, 1, input+2);
-		} else r_meta_add(&core->meta, R_META_COMMENT, core->seek, 1, input+1);
+			r_meta_del(&core->meta, R_META_COMMENT, core->offset, 1, input+2);
+		} else r_meta_add(&core->meta, R_META_COMMENT, core->offset, 1, input+1);
 		break;
 	case 'S':
 	case 's':
@@ -1104,7 +1104,7 @@ static int cmd_meta(void *data, const char *input)
 	case 'X': /* data xref */
 	case 'F': /* add function */
 		{
-		ut64 addr = core->seek;
+		ut64 addr = core->offset;
 		char fun_name[128];
 		int size = atoi(input);
 		int type = R_META_FUNCTION;
@@ -1349,7 +1349,7 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd)
 	ptr = strchr(cmd, '@');
 	if (ptr) {
 		ptr[0]='\0';
-		ut64 tmpoff = core->seek;
+		ut64 tmpoff = core->offset;
 		if (ptr[1]=='@') {
 			// TODO: remove temporally seek (should be done by cmd_foreach)
 			r_core_cmd_foreach(core, cmd, ptr+2);
@@ -1380,7 +1380,7 @@ R_API int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
 	for(;*each==' ';each=each+1);
 	for(;*cmd==' ';cmd=cmd+1);
 
-	oseek = core->seek;
+	oseek = core->offset;
 	ostr = str = strdup(each);
 	//radare_controlc();
 
@@ -1493,7 +1493,7 @@ printf("No flags foreach implemented\n");
 						continue;
 					if (word[0]=='\0' || strstr(flag->name, word) != NULL) {
 						r_core_seek(core, flag->offset, 1);
-						r_cons_printf("; @@ 0x%08llx (%s)\n", core->seek, flag->name);
+						r_cons_printf("; @@ 0x%08llx (%s)\n", core->offset, flag->name);
 						r_core_cmd(core, cmd, 0);
 					}
 				}
@@ -1518,7 +1518,7 @@ printf("No flags foreach implemented\n");
 	}
 	r_cons_break_end();
 	// XXX: use r_core_seek here
-	core->seek = oseek;
+	core->offset = oseek;
 
 	free(word);
 	word = NULL;

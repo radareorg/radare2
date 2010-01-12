@@ -17,7 +17,7 @@ static ut64 num_callback(void *userptr, const char *str, int *ok)
 		case 'j':
 		case 'f':
 		case 'r':
-			r_anal_set_pc(&core->anal, core->seek);
+			r_anal_set_pc(&core->anal, core->offset);
 			r_anal_aop(&core->anal, &aop, core->block);
 			break;
 		}
@@ -27,7 +27,7 @@ static ut64 num_callback(void *userptr, const char *str, int *ok)
 		case '$':
 			if (str[2]=='$')
 				return aop.length;
-			return core->seek;
+			return core->offset;
 		case '{':
 			{
 				char *ptr, *bptr = strdup(str+2);
@@ -147,7 +147,7 @@ R_API int r_core_init(struct r_core_t *core)
 	core->macro.cmd = r_core_cmd0;
 	core->file = NULL;
 	INIT_LIST_HEAD(&core->files);
-	core->seek = 0LL;
+	core->offset = 0LL;
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8*)malloc(R_CORE_BLOCKSIZE);
 	r_core_cmd_init(core);
@@ -188,7 +188,7 @@ R_API int r_core_prompt(struct r_core_t *r)
 	if (cmdprompt && cmdprompt[0])
 		r_core_cmd (r, cmdprompt, 0);
 
-	sprintf (prompt, "[0x%08llx]> ", r->seek);
+	sprintf (prompt, "[0x%08llx]> ", r->offset);
 	r_line_prompt = prompt;
 	ret = r_cons_fgets (line, sizeof (line), 0, NULL);
 	if (ret<0)
@@ -215,8 +215,8 @@ R_API int r_core_block_size(struct r_core_t *core, ut32 bsize)
 R_API int r_core_seek_align(struct r_core_t *core, ut64 align, int times)
 {
 	int inc = (times>=0)?1:-1;
-	int diff = core->seek%align;
-	ut64 seek = core->seek;
+	int diff = core->offset%align;
+	ut64 seek = core->offset;
 	
 	if (times == 0)
 		diff = -diff;
@@ -234,7 +234,7 @@ R_API int r_core_seek_align(struct r_core_t *core, ut64 align, int times)
 
 R_API int r_core_seek_delta(struct r_core_t *core, st64 addr)
 {
-	ut64 tmp = core->seek;
+	ut64 tmp = core->offset;
 	int ret;
 	if (addr == 0)
 		return R_TRUE;
@@ -248,9 +248,9 @@ R_API int r_core_seek_delta(struct r_core_t *core, st64 addr)
 			addr = 0;
 		} else addr += tmp;
 	}
-	core->seek = addr;
+	core->offset = addr;
 	ret = r_core_block_read (core, 0);
 	if (ret == -1)
-		core->seek = tmp;
+		core->offset = tmp;
 	return ret;
 }

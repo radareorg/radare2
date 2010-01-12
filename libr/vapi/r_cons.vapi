@@ -4,7 +4,7 @@
 namespace Radare {
 	[Compact]
 	[CCode (cname="struct r_cons_t", free_function="r_cons_free", cprefix="r_cons_")]
-	public class Cons {
+	public class rCons {
 		public static void printf(string fmt, ...);
 		public static void strcat(string str);
 		public static void memcat(string str, int len);

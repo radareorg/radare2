@@ -18,7 +18,7 @@ enum {
 
 /* search api */
 
-struct r_search_kw_t {
+typedef struct r_search_kw_t {
 	char keyword[128];
 	char binmask[128];
 	ut8 bin_keyword[128];
@@ -29,28 +29,33 @@ struct r_search_kw_t {
 	int count;
 	int kwidx;
 	struct list_head list;
-};
+} rSearchKeyword;
 
-struct r_search_hit_t {
+typedef struct r_search_hit_t {
 	ut64 addr;
 	struct r_search_kw_t *kw;
 	int len;
 	struct list_head list;
-};
+} rSearchHit;
 
-struct r_search_t {
+
+typedef int (*rSearchCallback)(struct r_search_kw_t *kw, void *user, ut64 where);
+
+typedef struct r_search_t {
 	int n_kws;
 	int mode;
 	ut32 pattern_size;
 	ut32 string_min; /* min number of matches */
 	ut32 string_max; /* max number of matches */
 	void *user; /* user data */
-	int (*callback)(struct r_search_kw_t *kw, void *user, ut64 where);
+	//int (*callback)(struct r_search_kw_t *kw, void *user, ut64 where);
+	rSearchCallback(callback);
 	//struct r_search_binparse_t *bp;
 	struct list_head kws; //r_search_hw_t kws;
 	struct list_head hits; //r_search_hit_t hits;
-};
+} rSearch;
 
+#ifdef R_API
 R_API struct r_search_t *r_search_new(int mode);
 R_API int r_search_set_mode(struct r_search_t *s, int mode);
 R_API int r_search_init(struct r_search_t *s, int mode);
@@ -83,7 +88,9 @@ R_API int r_search_xrefs_update(struct r_search_t *s, ut64 from, const ut8 *buf,
 /* pattern search */
 R_API int r_search_pattern(struct r_search_t *s, ut32 size);
 R_API int r_search_strings(struct r_search_t *s, ut32 min, ut32 max);
-R_API int r_search_set_callback(struct r_search_t *s, int (*callback)(struct r_search_kw_t *, void *, ut64), void *user);
+//R_API int r_search_set_callback(struct r_search_t *s, int (*callback)(struct r_search_kw_t *, void *, ut64), void *user);
+R_API int r_search_set_callback(struct r_search_t *s, rSearchCallback(callback), void *user);
 R_API int r_search_begin(struct r_search_t *s);
+#endif
 
 #endif

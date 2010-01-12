@@ -1,9 +1,8 @@
 /* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
 
-[CCode (cheader_filename="r_asm.h", cprefix="r_asm_", lower_case_cprefix="r_asm_")]
 namespace Radare {
 	[Compact]
-	[CCode (cname="struct r_asm_t", free_function="r_asm_free", cprefix="r_asm_")]
+	[CCode (cheader_filename="r_asm.h", cname="struct r_asm_t", free_function="r_asm_free", cprefix="r_asm_")]
 	public class rAsm {
 /* DEPRECATED?
 		public enum Arch {
@@ -22,15 +21,14 @@ namespace Radare {
 		}
 */
 
-		[CCode (cprefix="R_ASM_SYN_")]
+		[CCode (cprefix="R_ASM_SYN_", cname="int")]
 		public enum Syntax {
 			NULL  = 0,
 			INTEL = 1,
-			ATT   = 2,
-			OLLY  = 3
+			ATT = 2,
 		}
 
-		[CCode (cprefix="R_ASM_PAR_")]
+		[CCode (cprefix="R_ASM_PAR_", cname="int")]
 		public enum Parser {
 			NULL    = 0,
 			PSEUDO  = 1,
@@ -38,7 +36,7 @@ namespace Radare {
 		}
 
 		[Compact]
-		[CCode (cname="struct r_asm_aop_t",destroy_function="" )]
+		[CCode (cname="struct r_asm_aop_t", destroy_function="" )]
 		public struct Aop {
 			public int inst_len;
 			public uint8 *buf;
@@ -46,6 +44,14 @@ namespace Radare {
 			public string buf_hex;
 			public string buf_err;
 			//pointer 
+		}
+
+		[CCode (cname="struct r_asm_code_t", destroy_function="" )]
+		public struct Code {
+			public int len;
+			public uint8* buf;
+			public string buf_hex;
+			public string buf_asm;
 		}
 
 		public int arch;
@@ -66,16 +72,16 @@ namespace Radare {
 		public bool use(string name);
 //		public bool set_arch(Asm.Arch arch);
 		public bool set_bits(int bits);
-		public bool set_syntax(rAsm.Syntax syntax);
+		public bool set_syntax(Syntax syntax);
 		public bool set_pc(uint64 addr);
 		public bool set_big_endian(bool big);
-		public bool set_parser(rAsm.Parser parser, parse_cb cb, void *aux);
+		//public bool set_parser(rAsm.Parser parser, parse_cb cb, void *aux);
 		public int disassemble(out Aop aop, uint8 *buf, uint64 length);
 		public int assemble(out Aop aop, string buf);
-		public uint64 mdisassemble(out Aop aop, uint8 *buf, uint64 length);
-		public int massemble(out Aop aop, string buf);
+		public Code? mdisassemble(uint8 *buf, uint64 length);
+		public Code? massemble(string buf);
 		public weak string fastcall(int idx, int num);
-		public int parse();
+		//public int parse();
 		// This is the destructor
 		public void free();
 	}

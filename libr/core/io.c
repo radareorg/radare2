@@ -61,7 +61,7 @@ R_API int r_core_write_op(struct r_core_t *core, const char *arg, char op)
 			}
 	}
 
-	ret = r_core_write_at(core, core->seek, buf, core->blocksize);
+	ret = r_core_write_at(core, core->offset, buf, core->blocksize);
 
 	free(buf);
 	return ret;
@@ -73,7 +73,7 @@ R_API int r_core_seek(struct r_core_t *core, ut64 addr, int rb)
 	r_io_set_fd(&core->io, core->file->fd);
 	ret = r_io_seek(&core->io, addr, R_IO_SEEK_SET);
 	if (ret) {
-		core->seek = addr;
+		core->offset = addr;
 		if (rb) return r_core_block_read (core, 0);
 		return R_TRUE;
 	}
@@ -85,7 +85,7 @@ R_API int r_core_write_at(struct r_core_t *core, ut64 addr, const ut8 *buf, int 
 	int ret = r_io_set_fd(&core->io, core->file->fd);
 	if (ret != -1) {
 		ret = r_io_write_at(&core->io, addr, buf, size);
-		if (addr >= core->seek && addr <= core->seek+core->blocksize)
+		if (addr >= core->offset && addr <= core->offset+core->blocksize)
 			r_core_block_read(core, 0);
 	}
 	return (ret==-1)?R_FALSE:R_TRUE;
@@ -96,7 +96,7 @@ R_API int r_core_block_read(struct r_core_t *core, int next)
 	if (core->file == NULL)
 		return -1;
 	r_io_set_fd (&core->io, core->file->fd);
-	r_io_seek(&core->io, core->seek+((next)?core->blocksize:0), R_IO_SEEK_SET);
+	r_io_seek(&core->io, core->offset+((next)?core->blocksize:0), R_IO_SEEK_SET);
 	return r_io_read(&core->io, core->block, core->blocksize);
 }
 
@@ -104,7 +104,7 @@ R_API int r_core_read_at(struct r_core_t *core, ut64 addr, ut8 *buf, int size)
 {
 	int ret = r_io_set_fd (&core->io, core->file->fd);
 	ret = r_io_read_at(&core->io, addr, buf, size);
-	if (addr >= core->seek && addr <= core->seek+core->blocksize)
+	if (addr >= core->offset && addr <= core->offset+core->blocksize)
 		r_core_block_read(core, 0);
 	return (ret==-1)?R_FALSE:R_TRUE;
 }

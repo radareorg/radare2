@@ -1,9 +1,12 @@
 MODS=r_bp r_util r_diff r_hash r_socket r_reg
 
-all: python
+all: python ruby perl
 
 test:
-	sh do-test.sh
+	cd perl && make test
+	cd python && make test
+	cd ruby && make test
+	#sh do-test.sh
 
 oldtest:
 	sh do-swig.sh r_bp
@@ -19,4 +22,7 @@ python:
 perl:
 	for a in ${MODS} ; do sh do-swig.sh perl $$a ; done
 
-.PHONY: python perl clean oldtest test all
+ruby:
+	for a in ${MODS} ; do sh do-swig.sh ruby $$a ; done
+
+.PHONY: ruby python perl clean oldtest test all

@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
 
-[CCode (cheader_filename="r_search.h", cprefix="r_search", lower_case_cprefix="r_search_")]
+[CCode (cheader_filename="r_search.h")]
 namespace Radare {
 
 	[Compact]
@@ -17,12 +17,12 @@ namespace Radare {
 		public bool kw_add(string kw, string binmask);
 		public bool kw_add_hex(string kw, string binmask);
 		public bool kw_add_bin(string kw, uint32 kw_len, string binmask, long bm_len);
-		public bool kw_list();
+		public Keyword kw_list();
 		public int set_callback(Callback cb, void *user);
 		public int pattern(int size); // this is uint? long?
 		public int strings(int min, int max); // this is uint? long?
 
-		[CCode (cname="R_SEARCH_", cprefix="R_SEARCH_")]
+		[CCode (cprefix="R_SEARCH_", cname="int")]
 		public enum Mode {
 			KEYWORD,
 			REGEXP,
@@ -46,5 +46,6 @@ namespace Radare {
 		}
 	}
 
+	[CCode (cname="rSearchCallback")]
 	public static delegate int Callback(rSearch.Keyword s, void *user, uint64 addr);
 }
