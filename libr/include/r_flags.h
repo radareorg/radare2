@@ -39,6 +39,7 @@ typedef struct r_flag_t {
 } rFlag;
 
 #ifdef R_API
+R_API struct r_flag_t * r_flag_new();
 R_API int r_flag_init(struct r_flag_t *f);
 R_API int r_flag_set_base(struct r_flag_t *f, ut64 base);
 R_API struct r_flag_item_t *r_flag_list(struct r_flag_t *f, int rad);

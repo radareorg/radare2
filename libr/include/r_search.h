@@ -38,7 +38,6 @@ typedef struct r_search_hit_t {
 	struct list_head list;
 } rSearchHit;
 
-
 typedef int (*rSearchCallback)(struct r_search_kw_t *kw, void *user, ut64 where);
 
 typedef struct r_search_t {
@@ -49,7 +48,7 @@ typedef struct r_search_t {
 	ut32 string_max; /* max number of matches */
 	void *user; /* user data */
 	//int (*callback)(struct r_search_kw_t *kw, void *user, ut64 where);
-	rSearchCallback(callback);
+	rSearchCallback callback;
 	//struct r_search_binparse_t *bp;
 	struct list_head kws; //r_search_hw_t kws;
 	struct list_head hits; //r_search_hit_t hits;

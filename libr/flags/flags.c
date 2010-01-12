@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2010 pancake<nopcode.org> */
 
 #include <r_flags.h>
 #include <r_util.h>
@@ -44,6 +44,13 @@ R_API int r_flag_init(struct r_flag_t *f)
 	for(i=0;i<R_FLAG_SPACES_MAX;i++)
 		f->space[i] = NULL;
 	return 0;
+}
+
+R_API struct r_flag_t * r_flag_new()
+{
+	struct r_flag_t *f = MALLOC_STRUCT (struct r_flag_t);
+	r_flag_init (f);
+	return f;
 }
 
 R_API int r_flag_set_base(struct r_flag_t *f, ut64 new_base)
