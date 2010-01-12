@@ -30,12 +30,6 @@ enum {
 	R_ASM_SYN_ATT
 };
 
-enum {
-	R_ASM_PAR_NULL = 0,
-	R_ASM_PAR_PSEUDO,
-	R_ASM_PAR_REALLOC
-};
-
 typedef struct r_asm_aop_t {
 	int  inst_len;
 	ut8  buf[R_ASM_BUFSIZE];

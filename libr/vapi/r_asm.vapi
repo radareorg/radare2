@@ -28,13 +28,6 @@ namespace Radare {
 			ATT = 2,
 		}
 
-		[CCode (cprefix="R_ASM_PAR_", cname="int")]
-		public enum Parser {
-			NULL    = 0,
-			PSEUDO  = 1,
-			REALLOC = 2
-		}
-
 		[Compact]
 		[CCode (cname="struct r_asm_aop_t", destroy_function="" )]
 		public struct Aop {
@@ -67,7 +60,7 @@ namespace Radare {
 
 		public rAsm();
 
-		public int init();
+		public weak rAsm init();
 		public int list();
 		public bool use(string name);
 //		public bool set_arch(Asm.Arch arch);
