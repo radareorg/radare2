@@ -1,12 +1,18 @@
-MODS=r_bp r_util r_diff r_hash r_socket r_reg
+all: ruby perl python
 
-all: python ruby perl
+perl:
+	cd perl && make
+
+python:
+	cd python && make
+
+ruby:
+	cd ruby && make
 
 test:
 	cd perl && make test
 	cd python && make test
 	cd ruby && make test
-	#sh do-test.sh
 
 oldtest:
 	sh do-swig.sh r_bp
@@ -15,14 +21,5 @@ oldtest:
 clean:
 	rm -rf python/*
 	rm -rf perl/*
-
-python:
-	for a in ${MODS} ; do sh do-swig.sh python $$a ; done
-
-perl:
-	for a in ${MODS} ; do sh do-swig.sh perl $$a ; done
-
-ruby:
-	for a in ${MODS} ; do sh do-swig.sh ruby $$a ; done
 
 .PHONY: ruby python perl clean oldtest test all

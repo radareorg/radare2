@@ -1,8 +1,15 @@
 include config-user.mk
 include config.mk
 
-all:
+all: libr swig
+
+libr:
 	cd libr && ${MAKE} all
+
+swig:
+ifeq (${HAVE_VALASWIG},1)
+	cd swig && ${MAKE} all
+endif
 
 clean:
 	cd libr && make clean
@@ -55,4 +62,4 @@ shot:
 
 include ${MKPLUGINS}
 
-.PHONY: all clean mrproper install uninstall deinstall dist shot pkgcfg vdoc
+.PHONY: all clean mrproper install uninstall deinstall dist shot pkgcfg vdoc swig libr

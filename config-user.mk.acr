@@ -20,6 +20,7 @@ VERSION=@VERSION@
 OSTYPE?=@USEROSTYPE@
 
 HAVE_LIB_TCC=@HAVE_LIB_TCC@
+HAVE_VALASWIG=@HAVE_VALASWIG@
 
 #-include ../config.mk
 #-include ../../config.mk

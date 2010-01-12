@@ -2,12 +2,11 @@
 
 [CCode (cheader_filename="r_lib.h", cprefix="r_", lower_case_cprefix="r_")]
 namespace Radare {
-
 	[Compact]
 	[CCode (cname="struct r_lib_t", free_function="r_lib_free")]
-	public class Library {
-		public Library(string symname);
-		public Library init(string symname);
+	public class rLibrary {
+		public rLibrary(string symname);
+		public rLibrary init(string symname);
 		public bool close(void *ptr);
 		public void* opendir(string path);
 		public string types_get(int idx);
@@ -21,7 +20,7 @@ namespace Radare {
 	// we need delegates here (function pointerz)
 	//	public bool add_handler(int type, string desc, /* */, void* user);
 		public bool del_handler(int type);
-		public Library.Handler get_handler(int type);
+		public Handler get_handler(int type);
 		//public struct Struct { }
 		[Compact]
 		public struct Handler {

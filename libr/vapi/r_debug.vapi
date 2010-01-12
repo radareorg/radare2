@@ -4,9 +4,9 @@
 namespace Radare {
 	[Compact]
 	[CCode (cname="struct r_debug_t", free_function="r_debug_free", cprefix="r_debug_")]
-	public class Debug {
+	public class rDebug {
 		public rBreakpoint bp;
-		public Debug();
+		public rDebug();
 
 		public bool use(string plugin);
 
@@ -49,6 +49,8 @@ namespace Radare {
 			//public struct Process *parent;
 		}
 
+// XXX cname=int must be deprecated by valaswig
+		[CCode (cprefix="R_DBG_PROC_", cname="int")]
 		public enum ProcessStatus {
 			STOP,
 			RUN,
@@ -59,8 +61,8 @@ namespace Radare {
 		public int pid_del();
 		public int pid_add_thread();
 		public int pid_del_thread();
-		public Debug.Process pid_get(int pid);
-		public bool pid_set_status(Debug.ProcessStatus status);
+		//public Process pid_get(int pid); // XXX wrong api syntax 'get' is keyword
+		public bool pid_set_status(ProcessStatus status);
 
 	}
 }

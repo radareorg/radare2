@@ -6,6 +6,7 @@ LANG_C!
 
 ARG_WITHOUT DEBUGGER debugger disable native debugger features ;
 
+CHECK_ENDIAN
 CHKLIB ewf
 ARG_WITHOUT HAVE_EWF ewf disable EWF dependency ;
 IF HAVE_EWF { HAVE_LIB_EWF = 0 ; }
@@ -16,9 +17,21 @@ CHKLIB tcc
 ARG_WITH USERCC=gcc compiler Define compiler to use (see mk/) ;
 ARG_WITH USEROSTYPE=gnulinux ostype Choose OS type ( gnulinux windows osx ) ;
 
+ARG_WITHOUT WANT_VALASWIG valaswig disables the build of the valaswig bindings for python, perl, ruby ;
+CHKPRG VALASWIG valaswig
+CHKPRG SWIG swig
+
+IF WANT_VALASWIG {
+	IFNOT HAVE_SWIG {
+		ECHO valaswig depends on swig ;
+		HAVE_VALASWIG = 0 ;
+	}
+}{
+	HAVE_VALASWIG = 0 ;
+}
+
 ARG_WITHOUT WANT_VALA vala disables the build of all the vala-dependant parts ;
 CHKPRG VALAC valac
-CHECK_ENDIAN
 
 (( temporary fix to avoid vala ))
 IF WANT_VALA { 
@@ -32,7 +45,7 @@ IF WANT_VALA {
 	HAVE_VALAC = 0 ;
 }
 
-REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_TCC HAVE_VALAC DEBUGGER USERCC USEROSTYPE ;
+REPORT PREFIX HAVE_VALASWIG HAVE_LIB_EWF HAVE_LIB_TCC HAVE_VALAC DEBUGGER USERCC USEROSTYPE ;
 
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))
 SUBDIRS ./config-user.mk libr/include/r_userconf.h

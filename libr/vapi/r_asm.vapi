@@ -47,6 +47,11 @@ namespace Radare {
 			public string buf_asm;
 		}
 
+		[CCode (cname="struct r_asm_fastcall_t", destroy_function="" )]
+		public class Fastcall {
+			public string arg[16];
+		}
+
 		public int arch;
 		public int bits;
 		public bool big_endian;
@@ -73,7 +78,7 @@ namespace Radare {
 		public int assemble(out Aop aop, string buf);
 		public Code? mdisassemble(uint8 *buf, uint64 length);
 		public Code? massemble(string buf);
-		public weak string fastcall(int idx, int num);
+		public Fastcall fastcall(int idx, int num);
 		//public int parse();
 		// This is the destructor
 		public void free();
