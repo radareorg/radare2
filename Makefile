@@ -30,6 +30,7 @@ clean:
 
 mrproper:
 	cd libr && make mrproper
+	rm -f plugins.cfg
 
 pkgcfg:
 	cd libr && make pkgcfg

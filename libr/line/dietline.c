@@ -371,8 +371,8 @@ static int r_line_printchar() {
 /* main readline function */
 R_API char *r_line_readline(int argc, const char **argv)
 {
-	int buf[10];
-	int i, len = 0;
+	char buf[10];
+	int ch, i, len = 0;
 	int opt = 0;
 	int gcomp = 0; /* grep completion */
 	int columns = r_cons_get_real_columns()-2;
@@ -418,7 +418,10 @@ R_API char *r_line_readline(int argc, const char **argv)
 #endif
 
 		r_line_buffer[r_line_buffer_len]='\0';
-		buf[0] = r_line_readchar ();
+		ch = r_line_readchar ();
+		if (ch == -1)
+			return NULL;
+		buf[0] = ch;
 		
 //		printf("\x1b[K\r");
 		columns = r_cons_get_real_columns ()-2;

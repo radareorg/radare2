@@ -5,7 +5,7 @@ PREFIX=@PREFIX@
 HAVE_LIB_EWF=@HAVE_LIB_EWF@
 LIL_ENDIAN=@LIL_ENDIAN@
 
-MKPLUGINS=mk/hg-utils.mk mk/stat.mk
+MKPLUGINS=mk/hg-utils.mk mk/stat.mk mk/sloc.mk
 
 COMPILER=@USERCC@
 STATIC_DEBUG=0
