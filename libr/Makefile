@@ -100,3 +100,8 @@ clean:
 
 mrproper: clean
 	rm -f libr.pc
+
+sloc:
+	${MAKE} -C .. sloc SLOCDIR=libr
+
+.PHONY: mrproper clean todo all pkgcfg install deinstall uninstall

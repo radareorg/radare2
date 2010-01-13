@@ -100,7 +100,10 @@ clean: ${EXTRA_CLEAN}
 	@if [ -e p/Makefile ]; then (cd p && ${MAKE} clean) ; fi
 	@true
 
-.PHONY: all install pkgcfg clean deinstall uninstall
+sloc:
+	${MAKE} -C ../.. sloc SLOCDIR=libr/$$(echo ${NAME} | sed -e s,r_,,)
+
+.PHONY: all sloc install pkgcfg clean deinstall uninstall
 
 else
 

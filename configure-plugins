@@ -1,0 +1,146 @@
+#!/bin/sh
+#
+# Script to configure "staticability" of plugins
+# author: pancake // nopcode
+#
+
+# default configuration
+
+STATIC_ASM="asm.x86_olly asm.x86_nasm asm.mips asm.java"
+STATIC_PAR="parse.dummy parse.x86_pseudo parse.mreplace"
+STATIC_BIN="bin.elf bin.elf64 bin.pe bin.pe64 bin.java bin.dummy"
+STATIC_BP="bp.x86 bp.arm"
+STATIC_IO="io.ptrace io.dbg io.shm io.malloc"
+STATIC_BININFO="bininfo.addr2line"
+STATIC_DEBUG="debug.ptrace"
+STATIC_CRYPTO="crypto.aes"
+STATIC="${STATIC_ASM} ${STATIC_PAR} ${STATIC_BIN} ${STATIC_BP} ${STATIC_IO}"
+STATIC="${STATIC} ${STATIC_BININFO} ${STATIC_DEBUG} ${STATIC_CRYPTO}"
+
+# TODO: fill it with love
+SHARED=""
+
+function list {
+  for a in $STATIC ; do echo "static  $a" ; done
+  for a in $SHARED ; do echo "shared  $a" ; done
+  exit 0
+}
+
+function help {
+  echo "Usage: ./configure-plugins [options]"
+  echo "  -n                   do nothing.. do not generate any file"
+  echo "  --list               list all static and shared plugins"
+  echo "  --static [name ..]   define named plugin as static"
+  echo "  --shared [name ..]   define named plugin as shared"
+  echo "  --help, -h           display this helpful message"
+  echo "NOTE: static plugins are compiled inside the owner library"
+  exit 0
+}
+
+cfg=./plugins.cfg
+
+function load {
+  [ -e $cfg ] && . $cfg
+}
+
+function save {
+  echo "STATIC=\"$STATIC\"" > $cfg
+  echo "SHARED=\"$SHARED\"" >>$cfg
+}
+
+function generate_configh {
+  oldlib=""
+  for a in ${STATIC} ; do
+    lib=$(echo $a | cut -d . -f 1) # library
+    plg=$(echo $a | cut -d . -f 2) # plugin name
+    if [ ! "$oldlib" = "$lib" ]; then
+      [ -n "$oldlib" ] && echo "     0"
+      oldlib=$lib
+      uclib=$(echo $lib | tr '[:lower:]' '[:upper:]')
+      echo
+      echo "#define R_${uclib}_STATIC_PLUGINS \\"
+    fi
+    echo "     &r_${lib}_plugin_${plg}, \\"
+  done
+  echo "     0"
+}
+
+function generate_configmk {
+  oldlib=""
+  for a in ${STATIC} ; do
+    lib=$(echo $a | cut -d . -f 1) # library
+    plg=$(echo $a | cut -d . -f 2) # plugin name
+    if [ ! "$oldlib" = "$lib" ]; then
+      [ -n "$oldlib" ] && printf "\n"
+      oldlib=$lib
+      uclib=$(echo $lib | tr '[:lower:]' '[:upper:]')
+      printf "STATIC_${uclib}_PLUGINS= "
+    fi
+    printf "p/${plg}.mk "
+  done
+}
+
+function generate {
+  echo "configure-plugins: Generating libr/config.h .."
+  cat libr/config.h.head > libr/config.h
+  generate_configh >> libr/config.h
+  cat libr/config.h.tail >> libr/config.h
+
+  echo "configure-plugins: Generating libr/config.mk .."
+  cat libr/config.mk.head > libr/config.mk
+  generate_configmk >> libr/config.mk
+  cat libr/config.mk.tail >> libr/config.mk
+  return
+}
+
+function add {
+  for a in $1 ; do [ $a = $2 ] && return ; done ; echo $1 $2
+}
+
+function sub {
+  n="" ; for a in $1 ; do [ $a = $2 ] && continue ; n="$n $a" ; done ; echo $n
+}
+
+function dosort {
+  ( for a in $1 ; do echo $a ; done ) | sort
+}
+
+function sort_vars {
+  STATIC=$(dosort "$STATIC")
+  SHARED=$(dosort "$SHARED")
+}
+
+function make_static {
+  STATIC=$(add "$STATIC" $1)
+  SHARED=$(sub "$SHARED" $1)
+}
+
+function make_shared {
+  SHARED=$(add "$SHARED" $1)
+  STATIC=$(sub "$STATIC" $1)
+}
+
+function make_ { : ; }
+
+load
+
+MODE=""
+DONOTHING=0
+while : ; do
+  [ -z "$1" ] && break
+  case "$1" in
+  "--static") MODE=static ; ;;
+  "--shared") MODE=shared ; ;;
+  "--list") sort_vars ; list ; ;;
+  "-n") DONOTHING=1 ; ;;
+  "-h"|"--help") help ; ;;
+  *) eval make_$MODE $1 ; ;;
+  esac
+  shift
+done
+
+sort_vars
+
+[ ${DONOTHING} = 0 ] && generate
+
+save

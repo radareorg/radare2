@@ -15,12 +15,9 @@ INSTALL_DIR=@INSTALL_DIR@
 INSTALL_DATA=@INSTALL_DATA@
 INSTALL_PROGRAM=@INSTALL_PROGRAM@
 
-# TODO: add flag to choose ostype
 VERSION=@VERSION@
+# ./configure --with-ostype=[linux,osx,w32]
 OSTYPE?=@USEROSTYPE@
 
 HAVE_LIB_TCC=@HAVE_LIB_TCC@
 HAVE_VALASWIG=@HAVE_VALASWIG@
-
-#-include ../config.mk
-#-include ../../config.mk

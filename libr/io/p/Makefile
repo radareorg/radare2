@@ -3,7 +3,7 @@ CFLAGS=-I../../include -Wall -DWORDSIZE=64 -fPIC -shared -Wl,-R.. -DCORELIB
 foo: all
 
 ALL_TARGETS=
-DEBUGS=ptrace.mk dbg.mk malloc.mk shm.mk
+DEBUGS=ptrace.mk debug.mk malloc.mk shm.mk
 include ${DEBUGS}
 
 #ALL_TARGETS+=io_ewf.so

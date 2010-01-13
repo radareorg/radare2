@@ -17,7 +17,7 @@
 <{include libr/TODO}>
  
 * correct result (R_TRUFAE), but with warnings (implement r_errno and r_errstr in r_util?)
-  - Quantic computation ftw \o/
+  - Quantic errors ftw \o/
 * r_cmd must provide a nesting char table indexing for commands
   - this is pretty similar to r_db
   - every module can register their own commands

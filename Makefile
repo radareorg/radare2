@@ -1,7 +1,10 @@
 include config-user.mk
 include config.mk
 
-all: libr swig
+all: plugins.cfg libr swig
+
+plugins.cfg:
+	./configure-plugins
 
 libr:
 	cd libr && ${MAKE} all
@@ -10,9 +13,6 @@ swig:
 ifeq (${HAVE_VALASWIG},1)
 	cd swig && ${MAKE} all
 endif
-
-clean:
-	cd libr && make clean
 
 vdoc:
 	rm -rf vdoc
@@ -24,6 +24,9 @@ vdoc_pkg:
 	rm -rf vdoc
 	valadoc -o vdoc libr/vapi/*.vapi
 	# rsync -avz vdoc/* pancake@radare.org:/srv/http/radareorg/vdoc/
+
+clean:
+	cd libr && make clean
 
 mrproper:
 	cd libr && make mrproper
