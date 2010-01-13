@@ -25,6 +25,7 @@
 
 typedef unsigned long long uint64_t;
 typedef unsigned int uint32_t;
+typedef unsigned short uint16_t;
 typedef unsigned char uint8_t; 
 
 typedef int	cpu_type_t;
@@ -1110,5 +1111,265 @@ struct fvmfile_command {
 	union lc_str	name;		/* files pathname */
 	uint32_t	header_addr;	/* files virtual address */
 };
+
+/*
+ * Format of a symbol table entry of a Mach-O file for 32-bit architectures.
+ * Modified from the BSD format.  The modifications from the original format
+ * were changing n_other (an unused field) to n_sect and the addition of the
+ * N_SECT type.  These modifications are required to support symbols in a larger
+ * number of sections not just the three sections (text, data and bss) in a BSD
+ * file.
+ */
+struct nlist {
+	union {
+#ifndef __LP64__
+		char *n_name;	/* for use when in-core */
+#endif
+		int32_t n_strx;	/* index into the string table */
+	} n_un;
+	uint8_t n_type;		/* type flag, see below */
+	uint8_t n_sect;		/* section number or NO_SECT */
+	int16_t n_desc;		/* see <mach-o/stab.h> */
+	uint32_t n_value;	/* value of this symbol (or stab offset) */
+};
+
+/*
+ * This is the symbol table entry structure for 64-bit architectures.
+ */
+struct nlist_64 {
+    union {
+        uint32_t  n_strx; /* index into the string table */
+    } n_un;
+    uint8_t n_type;        /* type flag, see below */
+    uint8_t n_sect;        /* section number or NO_SECT */
+    uint16_t n_desc;       /* see <mach-o/stab.h> */
+    uint64_t n_value;      /* value of this symbol (or stab offset) */
+};
+
+/*
+ * Symbols with a index into the string table of zero (n_un.n_strx == 0) are
+ * defined to have a null, "", name.  Therefore all string indexes to non null
+ * names must not have a zero string index.  This is bit historical information
+ * that has never been well documented.
+ */
+
+/*
+ * The n_type field really contains four fields:
+ *	unsigned char N_STAB:3,
+ *		      N_PEXT:1,
+ *		      N_TYPE:3,
+ *		      N_EXT:1;
+ * which are used via the following masks.
+ */
+#define	N_STAB	0xe0  /* if any of these bits set, a symbolic debugging entry */
+#define	N_PEXT	0x10  /* private external symbol bit */
+#define	N_TYPE	0x0e  /* mask for the type bits */
+#define	N_EXT	0x01  /* external symbol bit, set for external symbols */
+
+/*
+ * Only symbolic debugging entries have some of the N_STAB bits set and if any
+ * of these bits are set then it is a symbolic debugging entry (a stab).  In
+ * which case then the values of the n_type field (the entire field) are given
+ * in <mach-o/stab.h>
+ */
+
+/*
+ * Values for N_TYPE bits of the n_type field.
+ */
+#define	N_UNDF	0x0		/* undefined, n_sect == NO_SECT */
+#define	N_ABS	0x2		/* absolute, n_sect == NO_SECT */
+#define	N_SECT	0xe		/* defined in section number n_sect */
+#define	N_PBUD	0xc		/* prebound undefined (defined in a dylib) */
+#define N_INDR	0xa		/* indirect */
+
+/* 
+ * If the type is N_INDR then the symbol is defined to be the same as another
+ * symbol.  In this case the n_value field is an index into the string table
+ * of the other symbol's name.  When the other symbol is defined then they both
+ * take on the defined type and value.
+ */
+
+/*
+ * If the type is N_SECT then the n_sect field contains an ordinal of the
+ * section the symbol is defined in.  The sections are numbered from 1 and 
+ * refer to sections in order they appear in the load commands for the file
+ * they are in.  This means the same ordinal may very well refer to different
+ * sections in different files.
+ *
+ * The n_value field for all symbol table entries (including N_STAB's) gets
+ * updated by the link editor based on the value of it's n_sect field and where
+ * the section n_sect references gets relocated.  If the value of the n_sect 
+ * field is NO_SECT then it's n_value field is not changed by the link editor.
+ */
+#define	NO_SECT		0	/* symbol is not in any section */
+#define MAX_SECT	255	/* 1 thru 255 inclusive */
+
+/*
+ * Common symbols are represented by undefined (N_UNDF) external (N_EXT) types
+ * who's values (n_value) are non-zero.  In which case the value of the n_value
+ * field is the size (in bytes) of the common symbol.  The n_sect field is set
+ * to NO_SECT.
+ */
+
+/*
+ * To support the lazy binding of undefined symbols in the dynamic link-editor,
+ * the undefined symbols in the symbol table (the nlist structures) are marked
+ * with the indication if the undefined reference is a lazy reference or
+ * non-lazy reference.  If both a non-lazy reference and a lazy reference is
+ * made to the same symbol the non-lazy reference takes precedence.  A reference
+ * is lazy only when all references to that symbol are made through a symbol
+ * pointer in a lazy symbol pointer section.
+ *
+ * The implementation of marking nlist structures in the symbol table for
+ * undefined symbols will be to use some of the bits of the n_desc field as a
+ * reference type.  The mask REFERENCE_TYPE will be applied to the n_desc field
+ * of an nlist structure for an undefined symbol to determine the type of
+ * undefined reference (lazy or non-lazy).
+ *
+ * The constants for the REFERENCE FLAGS are propagated to the reference table
+ * in a shared library file.  In that case the constant for a defined symbol,
+ * REFERENCE_FLAG_DEFINED, is also used.
+ */
+/* Reference type bits of the n_desc field of undefined symbols */
+#define REFERENCE_TYPE				0xf
+/* types of references */
+#define REFERENCE_FLAG_UNDEFINED_NON_LAZY		0
+#define REFERENCE_FLAG_UNDEFINED_LAZY			1
+#define REFERENCE_FLAG_DEFINED				2
+#define REFERENCE_FLAG_PRIVATE_DEFINED			3
+#define REFERENCE_FLAG_PRIVATE_UNDEFINED_NON_LAZY	4
+#define REFERENCE_FLAG_PRIVATE_UNDEFINED_LAZY		5
+
+/*
+ * To simplify stripping of objects that use are used with the dynamic link
+ * editor, the static link editor marks the symbols defined an object that are
+ * referenced by a dynamicly bound object (dynamic shared libraries, bundles).
+ * With this marking strip knows not to strip these symbols.
+ */
+#define REFERENCED_DYNAMICALLY	0x0010
+
+/*
+ * For images created by the static link editor with the -twolevel_namespace
+ * option in effect the flags field of the mach header is marked with
+ * MH_TWOLEVEL.  And the binding of the undefined references of the image are
+ * determined by the static link editor.  Which library an undefined symbol is
+ * bound to is recorded by the static linker in the high 8 bits of the n_desc
+ * field using the SET_LIBRARY_ORDINAL macro below.  The ordinal recorded
+ * references the libraries listed in the Mach-O's LC_LOAD_DYLIB load commands
+ * in the order they appear in the headers.   The library ordinals start from 1.
+ * For a dynamic library that is built as a two-level namespace image the
+ * undefined references from module defined in another use the same nlist struct
+ * an in that case SELF_LIBRARY_ORDINAL is used as the library ordinal.  For
+ * defined symbols in all images they also must have the library ordinal set to
+ * SELF_LIBRARY_ORDINAL.  The EXECUTABLE_ORDINAL refers to the executable
+ * image for references from plugins that refer to the executable that loads
+ * them.
+ * 
+ * The DYNAMIC_LOOKUP_ORDINAL is for undefined symbols in a two-level namespace
+ * image that are looked up by the dynamic linker with flat namespace semantics.
+ * This ordinal was added as a feature in Mac OS X 10.3 by reducing the
+ * value of MAX_LIBRARY_ORDINAL by one.  So it is legal for existing binaries
+ * or binaries built with older tools to have 0xfe (254) dynamic libraries.  In
+ * this case the ordinal value 0xfe (254) must be treated as a library ordinal
+ * for compatibility. 
+ */
+#define GET_LIBRARY_ORDINAL(n_desc) (((n_desc) >> 8) & 0xff)
+#define SET_LIBRARY_ORDINAL(n_desc,ordinal) \
+	(n_desc) = (((n_desc) & 0x00ff) | (((ordinal) & 0xff) << 8))
+#define SELF_LIBRARY_ORDINAL 0x0
+#define MAX_LIBRARY_ORDINAL 0xfd
+#define DYNAMIC_LOOKUP_ORDINAL 0xfe
+#define EXECUTABLE_ORDINAL 0xff
+
+/*
+ * The bit 0x0020 of the n_desc field is used for two non-overlapping purposes
+ * and has two different symbolic names, N_NO_DEAD_STRIP and N_DESC_DISCARDED.
+ */
+
+/*
+ * The N_NO_DEAD_STRIP bit of the n_desc field only ever appears in a 
+ * relocatable .o file (MH_OBJECT filetype). And is used to indicate to the
+ * static link editor it is never to dead strip the symbol.
+ */
+#define N_NO_DEAD_STRIP 0x0020 /* symbol is not to be dead stripped */
+
+/*
+ * The N_DESC_DISCARDED bit of the n_desc field never appears in linked image.
+ * But is used in very rare cases by the dynamic link editor to mark an in
+ * memory symbol as discared and longer used for linking.
+ */
+#define N_DESC_DISCARDED 0x0020	/* symbol is discarded */
+
+/*
+ * The N_WEAK_REF bit of the n_desc field indicates to the dynamic linker that
+ * the undefined symbol is allowed to be missing and is to have the address of
+ * zero when missing.
+ */
+#define N_WEAK_REF	0x0040 /* symbol is weak referenced */
+
+/*
+ * The N_WEAK_DEF bit of the n_desc field indicates to the static and dynamic
+ * linkers that the symbol definition is weak, allowing a non-weak symbol to
+ * also be used which causes the weak definition to be discared.  Currently this
+ * is only supported for symbols in coalesed sections.
+ */
+#define N_WEAK_DEF	0x0080 /* coalesed symbol is a weak definition */
+
+/*
+ * The N_REF_TO_WEAK bit of the n_desc field indicates to the dynamic linker
+ * that the undefined symbol should be resolved using flat namespace searching.
+ */
+#define	N_REF_TO_WEAK	0x0080 /* reference to a weak symbol */
+
+#ifndef __STRICT_BSD__
+/*
+ * The function nlist(3) from the C library.
+ */
+extern int nlist (const char *filename, struct nlist *list);
+#endif /* __STRICT_BSD__ */
+
+/*
+ * Symbolic debugger symbols.  The comments give the conventional use for
+ * 
+ * 	.stabs "n_name", n_type, n_sect, n_desc, n_value
+ *
+ * where n_type is the defined constant and not listed in the comment.  Other
+ * fields not listed are zero. n_sect is the section ordinal the entry is
+ * refering to.
+ */
+#define	N_GSYM	0x20	/* global symbol: name,,NO_SECT,type,0 */
+#define	N_FNAME	0x22	/* procedure name (f77 kludge): name,,NO_SECT,0,0 */
+#define	N_FUN	0x24	/* procedure: name,,n_sect,linenumber,address */
+#define	N_STSYM	0x26	/* static symbol: name,,n_sect,type,address */
+#define	N_LCSYM	0x28	/* .lcomm symbol: name,,n_sect,type,address */
+#define N_BNSYM 0x2e	/* begin nsect sym: 0,,n_sect,0,address */
+#define N_OPT	0x3c	/* emitted with gcc2_compiled and in gcc source */
+#define	N_RSYM	0x40	/* register sym: name,,NO_SECT,type,register */
+#define	N_SLINE	0x44	/* src line: 0,,n_sect,linenumber,address */
+#define N_ENSYM 0x4e	/* end nsect sym: 0,,n_sect,0,address */
+#define	N_SSYM	0x60	/* structure elt: name,,NO_SECT,type,struct_offset */
+#define	N_SO	0x64	/* source file name: name,,n_sect,0,address */
+#define	N_OSO	0x66	/* object file name: name,,0,0,st_mtime */
+#define	N_LSYM	0x80	/* local sym: name,,NO_SECT,type,offset */
+#define N_BINCL	0x82	/* include file beginning: name,,NO_SECT,0,sum */
+#define	N_SOL	0x84	/* #included file name: name,,n_sect,0,address */
+#define	N_PARAMS  0x86	/* compiler parameters: name,,NO_SECT,0,0 */
+#define	N_VERSION 0x88	/* compiler version: name,,NO_SECT,0,0 */
+#define	N_OLEVEL  0x8A	/* compiler -O level: name,,NO_SECT,0,0 */
+#define	N_PSYM	0xa0	/* parameter: name,,NO_SECT,type,offset */
+#define N_EINCL	0xa2	/* include file end: name,,NO_SECT,0,0 */
+#define	N_ENTRY	0xa4	/* alternate entry: name,,n_sect,linenumber,address */
+#define	N_LBRAC	0xc0	/* left bracket: 0,,NO_SECT,nesting level,address */
+#define N_EXCL	0xc2	/* deleted include file: name,,NO_SECT,0,sum */
+#define	N_RBRAC	0xe0	/* right bracket: 0,,NO_SECT,nesting level,address */
+#define	N_BCOMM	0xe2	/* begin common: name,,NO_SECT,0,0 */
+#define	N_ECOMM	0xe4	/* end common: name,,n_sect,0,0 */
+#define	N_ECOML	0xe8	/* end common (local name): 0,,n_sect,0,address */
+#define	N_LENG	0xfe	/* second stab entry with length information */
+
+/*
+ * for the berkeley pascal compiler, pc(1):
+ */
+#define	N_PC	0x30	/* global pascal symbol: name,,NO_SECT,subtype,line */
 
 #endif /* _MACHO_LOADER_H_ */
