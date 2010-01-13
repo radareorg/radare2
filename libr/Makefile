@@ -21,6 +21,9 @@ all:
 	@for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} all ); done
 	@echo Build done for: ${LIBLIST}
 
+libr.so:
+	${CC} -shared util/libr_util.so asm/libr_asm.so -o libr.so
+
 pkgcfg:
 	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} pkgcfg ); done
 	cd asm && ${MAKE} pkgcfg NAME=libr DEPS="r_`echo ${LIBLIST}|sed -e 's, , r_,g'`"

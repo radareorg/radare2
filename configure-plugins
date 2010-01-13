@@ -2,23 +2,8 @@
 #
 # Script to configure "staticability" of plugins
 # author: pancake // nopcode
+# date: 2010-01-14
 #
-
-# default configuration
-
-STATIC_ASM="asm.x86_olly asm.x86_nasm asm.mips asm.java"
-STATIC_PAR="parse.dummy parse.x86_pseudo parse.mreplace"
-STATIC_BIN="bin.elf bin.elf64 bin.pe bin.pe64 bin.java bin.dummy"
-STATIC_BP="bp.x86 bp.arm"
-STATIC_IO="io.ptrace io.dbg io.shm io.malloc"
-STATIC_BININFO="bininfo.addr2line"
-STATIC_DEBUG="debug.ptrace"
-STATIC_CRYPTO="crypto.aes"
-STATIC="${STATIC_ASM} ${STATIC_PAR} ${STATIC_BIN} ${STATIC_BP} ${STATIC_IO}"
-STATIC="${STATIC} ${STATIC_BININFO} ${STATIC_DEBUG} ${STATIC_CRYPTO}"
-
-# TODO: fill it with love
-SHARED=""
 
 function list {
   for a in $STATIC ; do echo "static  $a" ; done
@@ -40,7 +25,13 @@ function help {
 cfg=./plugins.cfg
 
 function load {
-  [ -e $cfg ] && . $cfg
+  if [ -e $cfg ]; then 
+    echo "configure-plugins: Loading $cfg .."
+    . $cfg
+  else
+    echo "configure-plugins: Loading plugins.def.cfg .."
+    . ./plugins.def.cfg
+  fi
 }
 
 function save {
@@ -144,3 +135,5 @@ sort_vars
 [ ${DONOTHING} = 0 ] && generate
 
 save
+
+exit 0
