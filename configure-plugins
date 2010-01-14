@@ -5,13 +5,13 @@
 # date: 2010-01-14
 #
 
-function list {
+list () {
   for a in $STATIC ; do echo "static  $a" ; done
   for a in $SHARED ; do echo "shared  $a" ; done
   exit 0
 }
 
-function help {
+help () {
   echo "Usage: ./configure-plugins [options]"
   echo "  -n                   do nothing.. do not generate any file"
   echo "  --list               list all static and shared plugins"
@@ -24,7 +24,7 @@ function help {
 
 cfg=./plugins.cfg
 
-function load {
+load () {
   if [ -e $cfg ]; then 
     echo "configure-plugins: Loading $cfg .."
     . $cfg
@@ -34,12 +34,12 @@ function load {
   fi
 }
 
-function save {
+save () {
   echo "STATIC=\"$STATIC\"" > $cfg
   echo "SHARED=\"$SHARED\"" >>$cfg
 }
 
-function generate_configh {
+generate_configh () {
   oldlib=""
   for a in ${STATIC} ; do
     lib=$(echo $a | cut -d . -f 1) # library
@@ -56,7 +56,7 @@ function generate_configh {
   echo "     0"
 }
 
-function generate_configmk {
+generate_configmk () {
   oldlib=""
   for a in ${STATIC} ; do
     lib=$(echo $a | cut -d . -f 1) # library
@@ -71,7 +71,7 @@ function generate_configmk {
   done
 }
 
-function generate {
+generate () {
   echo "configure-plugins: Generating libr/config.h .."
   cat libr/config.h.head > libr/config.h
   generate_configh >> libr/config.h
@@ -84,34 +84,34 @@ function generate {
   return
 }
 
-function add {
+add () {
   for a in $1 ; do [ $a = $2 ] && return ; done ; echo $1 $2
 }
 
-function sub {
+sub () {
   n="" ; for a in $1 ; do [ $a = $2 ] && continue ; n="$n $a" ; done ; echo $n
 }
 
-function dosort {
+dosort () {
   ( for a in $1 ; do echo $a ; done ) | sort
 }
 
-function sort_vars {
+sort_vars () {
   STATIC=$(dosort "$STATIC")
   SHARED=$(dosort "$SHARED")
 }
 
-function make_static {
+make_static () {
   STATIC=$(add "$STATIC" $1)
   SHARED=$(sub "$SHARED" $1)
 }
 
-function make_shared {
+make_shared () {
   SHARED=$(add "$SHARED" $1)
   STATIC=$(sub "$STATIC" $1)
 }
 
-function make_ { : ; }
+make_ () { : ; }
 
 load
 

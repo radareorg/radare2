@@ -7,4 +7,4 @@ if [ -z "${MOD}" ]; then
 fi
 mkdir -p ${LNG}
 cd ${LNG}
-valaswig-cc ${LNG} ${MOD} -I../../libr/include ../../libr/vapi/${MOD}.vapi -l${MOD}
+valaswig-cc ${LNG} ${MOD} -I../../libr/include ../../libr/vapi/${MOD}.vapi -l${MOD} -L../../libr/$(echo ${MOD} | sed -e s,r_,,)

@@ -1,12 +1,13 @@
 LIBS=r_bp.so r_asm.so r_diff.so r_debug.so r_hash.so r_cons.so
 LIBS+=r_core.so r_search.so r_db.so r_lib.so
 
+.SUFFIXES: .so
+
 all: ${LIBS}
 
-.SUFFIXES: .i .so
-.i.so:
-	@if test $< -nt ${LIBS_PFX}$@ ; then \
-	cd .. && sh do-swig.sh ${LANG} `echo $@ | sed -e s,.so,,` ; \
+%.so:
+	@if test ../../libr/vapi/`echo $@|sed -e s,.so,.vapi,` -nt ${LIBS_PFX}$@ ; then \
+	(cd .. && sh do-swig.sh ${LANG} `echo $@ | sed -e s,.so,,`) ; \
 	fi
 
 test:

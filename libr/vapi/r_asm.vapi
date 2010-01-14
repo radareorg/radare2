@@ -78,7 +78,7 @@ namespace Radare {
 		public int assemble(out Aop aop, string buf);
 		public Code? mdisassemble(uint8 *buf, uint64 length);
 		public Code? massemble(string buf);
-		public static Fastcall fastcall(int idx, int num);
+		public Fastcall fastcall(int idx, int num);
 		//public int parse();
 		// This is the destructor
 		public void free();
