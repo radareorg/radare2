@@ -34,3 +34,8 @@ These api changes are for:
 
     All the previous development points are meant to reduce code in r2,
     avoid syntax exceptions, simplify api usage, and much moar ;)
+
+SWIG is not complete, there are still so many bugs to fix and so many
+unimplemented stuff. Here's a list of the most anoying things of it:
+
+  - unsigned char * : not implemented
