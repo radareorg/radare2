@@ -2,7 +2,7 @@ NAME=r_asm
 DEPS=r_lib r_util
 CFLAGS+=-DCORELIB -Iarch/include -Iarch
 
-foo: pre libr_asm.so plugins
+foo: pre ${LIBSO} ${LIBAR} plugins
 
 include ../config.mk
 include ${STATIC_ASM_PLUGINS}

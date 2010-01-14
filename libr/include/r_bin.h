@@ -5,7 +5,8 @@
 
 #include <r_types.h>
 #include <r_io.h>
-#include <iter.h>
+#include <r_iter.h>
+#include <r_list.h>
 #include <list.h>
 
 #define R_BIN_SCN_EXECUTABLE(x) x & 0x1

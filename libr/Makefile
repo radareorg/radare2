@@ -16,13 +16,27 @@ LIBLIST=util lib io meta lang flags bin bininfo macro hash line cons print confi
 #LIBSO=libr.so
 #LIBAR=libr.a
 
-all:
+all: libs libr
+
+libs:
 	@echo PREFIX=${PREFIX}
 	@for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} all ); done
 	@echo Build done for: ${LIBLIST}
 
+libr: .objs libr.a libr.so
+
+libr.a:
+	ar -r libr.a .objs/*.o
+
 libr.so:
-	${CC} -shared util/libr_util.so asm/libr_asm.so -o libr.so
+	${CC} -shared -fPIC .objs/*.o -o libr.so
+
+# XXX needs autodetection of deps to remake and so..
+.objs:
+	mkdir -p .objs
+	for a in ${LIBLIST} ; do \
+		(cd .objs && ar x ../$$a/libr_$$a.a) ; \
+	done
 
 pkgcfg:
 	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} pkgcfg ); done
@@ -100,6 +114,7 @@ todo:
 clean:
 	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} clean ); done
 	cd vapi/t && ${MAKE} clean
+	rm -rf .objs
 
 mrproper: clean
 	rm -f libr.pc
@@ -107,4 +122,4 @@ mrproper: clean
 sloc:
 	${MAKE} -C .. sloc SLOCDIR=libr
 
-.PHONY: mrproper clean todo all pkgcfg install deinstall uninstall
+.PHONY: mrproper clean todo all pkgcfg install deinstall uninstall libr

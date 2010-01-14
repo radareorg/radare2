@@ -13,12 +13,8 @@ LDFLAGS+=$(subst r_,-L../../,$(BINDEPS))
 BOO=-Wl,-R../../
 LDFLAGS+=$(subst r_,${BOO},$(BINDEPS))
 
-# Compiler
-#CC?=gcc
-#CFLAGS+=-fPIC
-#CC_LIB=${CC} -shared -o ${LIBSO}
-#CC_AR=ar -r ${LIBAR}
-#LINK?=
+# Compiler: see mk/gcc.mk
+# CC CFLAGS CC_LIB CC_AR LINK
 
 # Debug
 CFLAGS+=-g -Wall
@@ -52,7 +48,7 @@ ifneq ($(NAME),)
 #include ../../mk/${COMPILER}.mk
 
 CFLAGS+=-I../include
-real_all all: ${LIBSO} ${EXTRA_TARGETS}
+real_all all: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
 	@-if [ -e t/Makefile ]; then (cd t && ${MAKE} all) ; fi
 	@-if [ -e p/Makefile ]; then (cd p && ${MAKE} all) ; fi
 	@true
