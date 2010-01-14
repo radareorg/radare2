@@ -6,7 +6,7 @@
 #include <r_types.h>
 #include "mach0_specs.h"
 
-#define MACH0_STRING_LENGTH 256
+#define R_BIN_MACH0_STRING_LENGTH 256
 
 #if 0
 #define R_BIN_MACH0_SECT_IS_SHAREABLE(x)   x
@@ -21,14 +21,23 @@ struct r_bin_mach0_section_t {
 	ut64 size;
 	ut32 align;
 	ut32 flags;
-	char name[MACH0_STRING_LENGTH];
+	char name[R_BIN_MACH0_STRING_LENGTH];
+	int last;
 };
 
 struct r_bin_mach0_symbol_t {
 	ut64 offset;
 	ut64 addr;
 	ut64 size;
-	char name[MACH0_STRING_LENGTH];
+	char name[R_BIN_MACH0_STRING_LENGTH];
+	int last;
+};
+
+struct r_bin_mach0_import_t {
+	ut64 offset;
+	ut64 addr;
+	char name[R_BIN_MACH0_STRING_LENGTH];
+	int last;
 };
 
 struct r_bin_mach0_obj_t {
@@ -39,7 +48,12 @@ struct r_bin_mach0_obj_t {
 	int nsects;
 	struct nlist* symtab;
 	ut8* symstr;
-	int nsyms;
+	int nsymtab;
+	struct dysymtab_command dysymtab;
+	struct dylib_table_of_contents* toc;
+	int ntoc;
+	struct dylib_module* modtab;
+	int nmodtab;
 	ut32		size;
     ut64        baddr;
 	int	        endian;
