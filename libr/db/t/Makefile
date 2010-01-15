@@ -1,10 +1,10 @@
-include ../../../config-user.mk
+include ../../config.mk
 include ../../../mk/${COMPILER}.mk
 
-all: test
+all: test${EXT_EXE}
 
-test:
-	${CC} -g -I ../../include test.c ../*.o -lr_util -L../../util -o test
+test${EXT_EXE}:
+	${CC} -g -I ../../include test.c ../*.o -lr_util -L../../util -o tes${EXT_EXE}
 
 clean:
 	rm -f test

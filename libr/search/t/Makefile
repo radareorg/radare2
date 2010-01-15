@@ -1,20 +1,22 @@
 BINDEPS=r_util r_search r_print r_io r_cons r_line
 
+include ../../config.mk
+
+all: test${EXT_EXE} test-str${EXT_EXE} test-regexp${EXT_EXE} rafind2${EXT_EXE}
+
 include ../../rules.mk
 
-all: test test-str test-regexp rafind2
+rafind2${EXT_EXE}: rafind2.o
+	${CC} -g -I ../../include rafind2.o ${LDFLAGS} -o rafind2${EXT_EXE}
 
-rafind2: rafind2.o
-	${CC} -g -I ../../include rafind2.o ${LDFLAGS} -o rafind2
+test${EXT_EXE}:
+	${CC} -g -I ../../include test.c ${LDFLAGS} -o test${EXT_EXE}
 
-test:
-	${CC} -g -I ../../include test.c ${LDFLAGS} -o test
+test-regexp${EXT_EXE}:
+	${CC} -g -I ../../include test-regexp.c ${LDFLAGS} -o test-regexp${EXT_EXE}
 
-test-regexp:
-	${CC} -g -I ../../include test-regexp.c ${LDFLAGS} -o test-regexp
-
-test-str:
-	${CC} -g -I ../../include test-str.c ${LDFLAGS} -o test-str
+test-str${EXT_EXE}:
+	${CC} -g -I ../../include test-str.c ${LDFLAGS} -o test-str${EXT_EXE}
 
 myclean:
 	rm -f test test.o test-str test-str.o test-regexp rafind2 *.o

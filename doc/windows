@@ -1,0 +1,5 @@
+WINDOWS
+=======
+
+./configure --with-compiler=i486-mingw32-gcc --with-ostype=windows
+make

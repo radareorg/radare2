@@ -1,43 +1,10 @@
--include ../../config-user.mk
--include ../../mk/${COMPILER}.mk
--include ../../../config-user.mk
--include ../../../mk/${COMPILER}.mk
-
-CFLAGS+=-DUSE_RIO=${USE_RIO}
-CFLAGS+=${CFLAGS_APPEND}
-LDFLAGS+=$(subst r_,-lr_,$(DEPS))
-LDFLAGS+=$(subst r_,-L../,$(DEPS))
-
-LDFLAGS+=$(subst r_,-lr_,$(BINDEPS))
-LDFLAGS+=$(subst r_,-L../../,$(BINDEPS))
-BOO=-Wl,-R../../
-LDFLAGS+=$(subst r_,${BOO},$(BINDEPS))
-
-# Compiler: see mk/gcc.mk
-# CC CFLAGS CC_LIB CC_AR LINK
-
-# Debug
-CFLAGS+=-g -Wall
-
-# XXX do it in configure stage
-OSTYPE?=gnulinux
-# Output
-ifeq (${OSTYPE},windows)
-EXT_AR=lib
-EXT_SO=dll
-endif
-ifeq (${OSTYPE},gnulinux)
-EXT_AR=a
-EXT_SO=so
-endif
-ifeq (${OSTYPE},osx)
-EXT_AR=a
-EXT_SO=dylib
-endif
-
-LIB=lib${NAME}
-LIBAR=${LIB}.${EXT_AR}
-LIBSO=${LIB}.${EXT_SO}
+-include config.mk
+-include ../config.mk
+-include ../../config.mk
+-include global.mk
+-include ../global.mk
+-include ../../global.mk
+#-include ../../../config.mk
 
 #-------------------------------------#
 # Rules for libraries
@@ -91,7 +58,8 @@ deinstall uninstall:
 	cd .. && ${MAKE} uninstall
 
 clean: ${EXTRA_CLEAN}
-	-rm -f ${LIBSO} ${LIBAR} ${OBJ} ${BIN} *.so a.out *.a *.exe
+	-rm -f *.${EXT_EXE} *.${EXT_SO} *.${EXT_AR}
+	-rm -f ${LIBSO} ${LIBAR} ${OBJ} ${BIN} *.exe a.out
 	@if [ -e t/Makefile ]; then (cd t && ${MAKE} clean) ; fi
 	@if [ -e p/Makefile ]; then (cd p && ${MAKE} clean) ; fi
 	@true
@@ -118,10 +86,11 @@ include ../../../mk/${COMPILER}.mk
 
 CFLAGS+=-I../../include -DVERSION=\"${VERSION}\"
 
-all: ${BIN}
+all: ${BIN}${EXT_EXE}
 
-${BIN}: ${OBJ}
-	${CC} ${LDFLAGS} ${LIBS} ${OBJ} -o ${BIN}
+${BIN}${EXT_EXE}: ${OBJ}
+	@echo BIN=${BIN}
+	${CC} ${LDFLAGS} ${LIBS} ${OBJ} -o ${BIN}${EXT_EXE}
 
 #Dummy myclean rule that can be overriden by the t/ Makefile
 myclean:

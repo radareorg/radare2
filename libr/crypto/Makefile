@@ -2,15 +2,16 @@ NAME=r_crypto
 DEPS=r_lib
 CFLAGS+=-DCORELIB
 
-foo: pre libr_crypto.so plugins
-
 include ../config.mk
+
+foo: pre libr_crypto.${EXT_SO} libr_crypto.${EXT_AR} plugins
+
 include ${STATIC_CRYPTO_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst crypto_,p/crypto_,$(STATIC_OBJ)))
 OBJ=${STATIC_OBJS} crypto.o
 
 pre:
-	@if [ ! -e libr_crypto.so ]; then rm -f ${STATIC_OBJS} ; fi
+	@if [ ! -e libr_crypto.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi
 
 re:
 	rm -f crypto.o libr_crypto.so

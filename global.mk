@@ -22,3 +22,4 @@ LIBDIR=${PREFIX}/lib
 
 -include config-user.mk
 -include ../config-user.mk
+-include ../../config-user.mk

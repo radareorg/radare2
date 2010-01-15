@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
 
 #include "r_search.h"
-#include <regex.h>
+//#include <regex.h>
 
 R_API int r_search_xrefs_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len)
 {

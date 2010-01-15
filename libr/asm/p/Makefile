@@ -5,7 +5,8 @@ CFLAGS+=-DLIL_ENDIAN=1 -D__UNIX__
 foo: all
 
 ALL_TARGETS=
-ARCHS=dummy.mk mips.mk sparc.mk java.mk bf.mk arm.mk m68k.mk ppc.mk x86bea.mk x86olly.mk x86.mk csr.mk x86nasm.mk psosvm.mk
+# TODO: rename to enabled plugins
+ARCHS=dummy.mk mips.mk sparc.mk java.mk bf.mk arm.mk m68k.mk ppc.mk x86_bea.mk x86_olly.mk x86.mk csr.mk x86_nasm.mk psosvm.mk
 include $(ARCHS)
 
 all: ${ALL_TARGETS}

@@ -1,9 +1,11 @@
 /* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <r_types.h>
 #include <r_util.h>
+#if __UNIX__
+#include <sys/wait.h>
+#include <signal.h>
+#endif
+#include <sys/types.h>
 /* TODO: import stuff fron bininfo/p/bininfo_addr2line */
 
 R_API char *r_sys_cmd_strf(const char *cmd, ...)
@@ -26,7 +28,7 @@ R_API int r_sys_usleep(int usecs)
 #if __UNIX__
 	return usleep(usecs);
 #else
-	Sleep(secs); // W32
+	Sleep(usecs); // W32
 #endif
 }
 

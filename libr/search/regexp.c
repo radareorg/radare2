@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2008-2009 pancake<nopcode.org> */
 
 #include "r_search.h"
+#if __UNIX__
 #include <regex.h>
 
 R_API int r_search_regexp_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len)
@@ -57,3 +58,12 @@ R_API int r_search_regexp_update(struct r_search_t *s, ut64 from, const ut8 *buf
 	}
 	return count;
 }
+#else
+
+R_API int r_search_regexp_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len)
+{
+	eprintf ("r_search_regexp_update: unimplemented for this platform\n");
+	return -1;
+}
+
+#endif

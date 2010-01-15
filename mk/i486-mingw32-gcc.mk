@@ -1,7 +1,7 @@
 CC=i486-mingw32-gcc
 OSTYPE=windows
 LINK=
-CC_AR=ar -r ${LIBAR}
+CC_AR=echo ar -r ${LIBAR}
 PICFLAGS=
 CFLAGS+=${PICFLAGS} -MD
 CC_LIB=${CC} -shared -o ${LIBSO}

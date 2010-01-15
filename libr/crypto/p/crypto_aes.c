@@ -1,3 +1,4 @@
+#include <r_lib.h>
 #include <r_crypto.h>
 
 struct r_crypto_handle_t raes_crypto_plugin_aes = { 

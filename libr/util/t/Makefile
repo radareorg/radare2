@@ -1,33 +1,45 @@
 # TODO: append EXECEXT to BINS
 FLAGS=-I../../include -Wl,-R.. -L.. -lr_util -g -DVERSION=\"${VERSION}\"
 
-all: test rax2 ralloc iter file_slurp_hexpairs pool test_sys test_str
+BINS=test${EXT_EXE}
+BINS+=rax2${EXT_EXE}
+BINS+=ralloc${EXT_EXE}
+BINS+=iter${EXT_EXE}
+BINS+=file_slurp_hexpairs${EXT_EXE}
+BINS+=pool${EXT_EXE}
+BINS+=test_sys${EXT_EXE}
+BINS+=test_str${EXT_EXE}
 
-ralloc:
-	${CC} ${FLAGS} ralloc.c -o ralloc
+all: test${EXT_EXE}
+#all: ${BINS}
 
-test:
-	${CC} ${FLAGS} test.c -o test
+ralloc${EXT_EXE}:
+	${CC} ${FLAGS} ralloc.c -o ralloc${EXT_EXE}
 
-test_sys: test_sys.c
-	${CC} ${FLAGS} test_sys.c -o test_sys
+test${EXT_EXE}: test.c
+	${CC} ${FLAGS} test.c -o test${EXT_EXE}
 
-test_str: test_str.c
-	${CC} ${FLAGS} test_str.c -o test_str
+test_sys${EXT_EXE}: test_sys.c
+	${CC} ${FLAGS} test_sys.c -o test_sys${EXT_EXE}
 
-pool:
-	${CC} ${FLAGS} pool.c -o pool
+test_str${EXT_EXE}: test_str.c
+	${CC} ${FLAGS} test_str.c -o test_str${EXT_EXE}
 
-rax2:
-	${CC} ${FLAGS} rax2.c -o rax2
+pool${EXT_EXE}:
+	${CC} ${FLAGS} pool.c -o pool${EXT_EXE}
 
-iter:
-	${CC} ${FLAGS} iter.c -o iter
+rax2${EXT_EXE}:
+	${CC} ${FLAGS} rax2.c -o rax2${EXT_EXE}
 
-file_slurp_hexpairs:
-	${CC} ${FLAGS} test_file_slurp_hexpairs.c -o file_slurp_hexpairs
+iter${EXT_EXE}:
+	${CC} ${FLAGS} iter.c -o iter${EXT_EXE}
+
+file_slurp_hexpairs${EXT_EXE}:
+	${CC} ${FLAGS} test_file_slurp_hexpairs.c -o file_slurp_hexpairs${EXT_EXE}
 
 clean:
-	rm -f a.out calc rax2 ralloc test test_sys pool iter test_str pool file_slurp_hexpairs
+	rm -f ${BINS}
+
+.PHONY: ${BINS} clean all
 
 include ../../rules.mk

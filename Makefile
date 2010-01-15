@@ -1,5 +1,5 @@
 include config-user.mk
-include config.mk
+include global.mk
 
 all: plugins.cfg libr swig
 

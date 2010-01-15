@@ -1,10 +1,53 @@
+-include ../../config-user.mk
+-include ../../mk/${COMPILER}.mk
+-include ../../../config-user.mk
+-include ../../../mk/${COMPILER}.mk
+
+CFLAGS+=-DUSE_RIO=${USE_RIO}
+CFLAGS+=${CFLAGS_APPEND}
+LDFLAGS+=$(subst r_,-lr_,$(DEPS))
+LDFLAGS+=$(subst r_,-L../,$(DEPS))
+
+LDFLAGS+=$(subst r_,-lr_,$(BINDEPS))
+LDFLAGS+=$(subst r_,-L../../,$(BINDEPS))
+BOO=-Wl,-R../../
+LDFLAGS+=$(subst r_,${BOO},$(BINDEPS))
+
+# Compiler: see mk/gcc.mk
+# CC CFLAGS CC_LIB CC_AR LINK
+
+# Debug
+CFLAGS+=-g -Wall
+
+# XXX do it in configure stage
+OSTYPE?=gnulinux
+# Output
+ifeq (${OSTYPE},windows)
+EXT_AR=lib
+EXT_SO=dll
+EXT_EXE=.exe
+endif
+ifeq (${OSTYPE},gnulinux)
+EXT_AR=a
+EXT_SO=so
+EXT_EXE=
+endif
+ifeq (${OSTYPE},osx)
+EXT_AR=a
+EXT_SO=dylib
+EXT_EXE=
+endif
+
+LIB=lib${NAME}
+LIBAR=${LIB}.${EXT_AR}
+LIBSO=${LIB}.${EXT_SO}
 
 ifneq (${BINDEPS},)
 include ../../../config-user.mk
-include ../../../config.mk
+include ../../../global.mk
 include ../../../mk/${COMPILER}.mk
 else
 include ../../config-user.mk
-include ../../config.mk
+include ../../global.mk
 include ../../mk/${COMPILER}.mk
 endif

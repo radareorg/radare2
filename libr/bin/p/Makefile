@@ -1,3 +1,5 @@
+#include ../../config.mk
+#include ../../../config-user.mk
 CFLAGS=-I../../include -I../format/ -Wall -fPIC -shared -Wl,-R..
 # XXX
 CFLAGS+=-DLIL_ENDIAN=1 -D__UNIX__ -g -DR_DEBUG=0
