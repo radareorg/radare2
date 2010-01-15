@@ -1,3 +1,4 @@
+BINDEPS=foo
 include ../../config.mk
 
 CFLAGS=-I../../include -I../../asm/arch/ -I../arch/ -Wall -fPIC -shared -Wl,-R.. -L..

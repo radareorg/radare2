@@ -1,11 +1,11 @@
 NAME=r_parse
 DEPS=r_lib
 
-foo: pre libr_parse.so plugins bins
+-include ../config.mk
+foo: pre libr_parse.${EXT_SO} libr_parse.${EXT_AR} plugins bins
 
 CFLAGS+=-DCORELIB
-include ../config.mk
-include ${STATIC_PARSE_PLUGINS}
+-include ${STATIC_PARSE_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst parse_,p/parse_,$(STATIC_OBJ)))
 OBJ=parse.o ${STATIC_OBJS}
 

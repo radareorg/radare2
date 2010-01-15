@@ -1,7 +1,7 @@
 OBJ_SHM=io_shm.o
 
 STATIC_OBJ+=${OBJ_SHM}
-TARGET_SHM=io_shm.so
+TARGET_SHM=io_shm.${EXT_SO}
 ALL_TARGETS+=${TARGET_SHM}
 
 ${TARGET_SHM}: ${OBJ_SHM}

@@ -3,10 +3,12 @@ DEPS=r_lib r_util
 #DEPS=r_util
 CFLAGS+=-Wall -DCORELIB
 
-foo: pre libr_io.so tests plugins
 
 STATIC_OBJS=
 include ../config.mk
+
+foo: pre libr_io.${EXT_SO} libr_io.${EXT_AR} tests plugins
+
 include ${STATIC_IO_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst io_,p/io_,$(STATIC_OBJ)))
 OBJ=${STATIC_OBJS} io.o handle.o map.o section.o desc.o cache.o undo.o

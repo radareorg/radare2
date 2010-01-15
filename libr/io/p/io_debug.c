@@ -125,7 +125,7 @@ static int __init(struct r_io_t *io)
 	return R_TRUE;
 }
 
-struct r_io_handle_t r_io_plugin_dbg = {
+struct r_io_handle_t r_io_plugin_debug = {
         //void *handle;
 	.name = "io_dbg",
         .desc = "Debug a program or pid. dbg:///bin/ls, dbg://1388",
@@ -146,7 +146,7 @@ struct r_io_handle_t r_io_plugin_dbg = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_dbg
+	.data = &r_io_plugin_debug
 };
 #endif
 

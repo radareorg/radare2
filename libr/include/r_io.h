@@ -239,7 +239,9 @@ R_API int r_io_wundo_set(struct r_io_t *io, int n, int set);
 R_API int r_io_hook(struct r_io_t *io, CB_IO);
 #endif
 /* plugins */
-extern struct r_io_handle_t r_io_plugin_dbg;
+extern struct r_io_handle_t r_io_plugin_malloc;
 extern struct r_io_handle_t r_io_plugin_ptrace;
+extern struct r_io_handle_t r_io_plugin_debug;
+extern struct r_io_handle_t r_io_plugin_shm;
 
 #endif

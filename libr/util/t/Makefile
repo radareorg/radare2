@@ -1,4 +1,5 @@
-# TODO: append EXECEXT to BINS
+BINDEPS=foo
+include ../../config.mk
 FLAGS=-I../../include -Wl,-R.. -L.. -lr_util -g -DVERSION=\"${VERSION}\"
 
 BINS=test${EXT_EXE}
@@ -10,13 +11,12 @@ BINS+=pool${EXT_EXE}
 BINS+=test_sys${EXT_EXE}
 BINS+=test_str${EXT_EXE}
 
-all: test${EXT_EXE}
-#all: ${BINS}
+all: ${BINS}
 
 ralloc${EXT_EXE}:
 	${CC} ${FLAGS} ralloc.c -o ralloc${EXT_EXE}
 
-test${EXT_EXE}: test.c
+test${EXT_EXE}:
 	${CC} ${FLAGS} test.c -o test${EXT_EXE}
 
 test_sys${EXT_EXE}: test_sys.c
@@ -37,9 +37,9 @@ iter${EXT_EXE}:
 file_slurp_hexpairs${EXT_EXE}:
 	${CC} ${FLAGS} test_file_slurp_hexpairs.c -o file_slurp_hexpairs${EXT_EXE}
 
-clean:
+myclean:
 	rm -f ${BINS}
 
-.PHONY: ${BINS} clean all
+.PHONY: myclean clean all
 
 include ../../rules.mk
