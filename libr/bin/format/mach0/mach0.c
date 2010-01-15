@@ -133,6 +133,8 @@ static int r_bin_mach0_parse_symtab(struct r_bin_mach0_obj_t* bin, ut64 off)
 
 static int r_bin_mach0_parse_dysymtab(struct r_bin_mach0_obj_t* bin, ut64 off)
 {
+	int i;
+
 	lseek(bin->fd, off, SEEK_SET);
 	if (read(bin->fd, &bin->dysymtab, sizeof(struct dysymtab_command)) != sizeof(struct dysymtab_command)) {
 		perror("read (dysymtab)");
@@ -158,24 +160,47 @@ static int r_bin_mach0_parse_dysymtab(struct r_bin_mach0_obj_t* bin, ut64 off)
 	r_mem_copyendian((ut8*)&bin->dysymtab.locreloff, (ut8*)&bin->dysymtab.locreloff, sizeof(uint32_t), !bin->endian);
 	r_mem_copyendian((ut8*)&bin->dysymtab.nlocrel, (ut8*)&bin->dysymtab.nlocrel, sizeof(uint32_t), !bin->endian);
 	bin->ntoc = bin->dysymtab.ntoc;
-	if (!(bin->toc = malloc(bin->dysymtab.ntoc * sizeof(struct dylib_table_of_contents)))) {
-		perror("malloc (toc)");
-		return R_FALSE;
-	}
-	lseek(bin->fd, bin->dysymtab.tocoff, SEEK_SET);
-	if (read(bin->fd, bin->toc, bin->dysymtab.ntoc * sizeof(struct dylib_table_of_contents)) != bin->dysymtab.ntoc * sizeof(struct dylib_table_of_contents)) {
-		perror("read (toc)");
-		return R_FALSE;
+	if (bin->ntoc > 0) {
+		if (!(bin->toc = malloc(bin->dysymtab.ntoc * sizeof(struct dylib_table_of_contents)))) {
+			perror("malloc (toc)");
+			return R_FALSE;
+		}
+		lseek(bin->fd, bin->dysymtab.tocoff, SEEK_SET);
+		if (read(bin->fd, bin->toc, bin->dysymtab.ntoc * sizeof(struct dylib_table_of_contents)) != bin->dysymtab.ntoc * sizeof(struct dylib_table_of_contents)) {
+			perror("read (toc)");
+			return R_FALSE;
+		}
+		for (i = 0; i < bin->ntoc; i++) {
+			r_mem_copyendian((ut8*)&bin->toc[i].symbol_index, (ut8*)&bin->toc[i].symbol_index, sizeof(uint32_t), !bin->endian);
+			r_mem_copyendian((ut8*)&bin->toc[i].module_index, (ut8*)&bin->toc[i].module_index, sizeof(uint32_t), !bin->endian);
+		}
 	}
 	bin->nmodtab = bin->dysymtab.nmodtab;
-	if (!(bin->modtab = malloc(bin->dysymtab.nmodtab * sizeof(struct dylib_module)))) {
-		perror("malloc (toc)");
-		return R_FALSE;
-	}
-	lseek(bin->fd, bin->dysymtab.modtaboff, SEEK_SET);
-	if (read(bin->fd, bin->modtab, bin->dysymtab.nmodtab * sizeof(struct dylib_module)) != bin->dysymtab.nmodtab * sizeof(struct dylib_module)) {
-		perror("read (toc)");
-		return R_FALSE;
+	if (bin->nmodtab > 0) {
+		if (!(bin->modtab = malloc(bin->dysymtab.nmodtab * sizeof(struct dylib_module)))) {
+			perror("malloc (toc)");
+			return R_FALSE;
+		}
+		lseek(bin->fd, bin->dysymtab.modtaboff, SEEK_SET);
+		if (read(bin->fd, bin->modtab, bin->dysymtab.nmodtab * sizeof(struct dylib_module)) != bin->dysymtab.nmodtab * sizeof(struct dylib_module)) {
+			perror("read (toc)");
+			return R_FALSE;
+		}
+		for (i = 0; i < bin->nmodtab; i++) {
+			r_mem_copyendian((ut8*)&bin->modtab[i].module_name, (ut8*)&bin->modtab[i].module_name, sizeof(uint32_t), !bin->endian);
+			r_mem_copyendian((ut8*)&bin->modtab[i].iextdefsym, (ut8*)&bin->modtab[i].module_name, sizeof(uint32_t), !bin->endian);
+			r_mem_copyendian((ut8*)&bin->modtab[i].nextdefsym, (ut8*)&bin->modtab[i].module_name, sizeof(uint32_t), !bin->endian);
+			r_mem_copyendian((ut8*)&bin->modtab[i].irefsym, (ut8*)&bin->modtab[i].irefsym, sizeof(uint32_t), !bin->endian);
+			r_mem_copyendian((ut8*)&bin->modtab[i].nrefsym, (ut8*)&bin->modtab[i].nrefsym, sizeof(uint32_t), !bin->endian);
+			r_mem_copyendian((ut8*)&bin->modtab[i].ilocalsym, (ut8*)&bin->modtab[i].ilocalsym, sizeof(uint32_t), !bin->endian);
+			r_mem_copyendian((ut8*)&bin->modtab[i].nlocalsym, (ut8*)&bin->modtab[i].nlocalsym, sizeof(uint32_t), !bin->endian);
+			r_mem_copyendian((ut8*)&bin->modtab[i].iextrel, (ut8*)&bin->modtab[i].iextrel, sizeof(uint32_t), !bin->endian);
+			r_mem_copyendian((ut8*)&bin->modtab[i].nextrel, (ut8*)&bin->modtab[i].nextrel, sizeof(uint32_t), !bin->endian);
+			r_mem_copyendian((ut8*)&bin->modtab[i].iinit_iterm, (ut8*)&bin->modtab[i].iinit_iterm, sizeof(uint32_t), !bin->endian);
+			r_mem_copyendian((ut8*)&bin->modtab[i].ninit_nterm, (ut8*)&bin->modtab[i].ninit_nterm, sizeof(uint32_t), !bin->endian);
+			r_mem_copyendian((ut8*)&bin->modtab[i].objc_module_info_addr, (ut8*)&bin->modtab[i].objc_module_info_addr, sizeof(uint32_t), !bin->endian);
+			r_mem_copyendian((ut8*)&bin->modtab[i].objc_module_info_size, (ut8*)&bin->modtab[i].objc_module_info_size, sizeof(uint32_t), !bin->endian);
+		}
 	}
 	return R_TRUE;
 }
@@ -194,7 +219,7 @@ static int r_bin_mach0_init_items(struct r_bin_mach0_obj_t* bin)
 		}
 		r_mem_copyendian((ut8*)&lc.cmd, (ut8*)&lc.cmd, sizeof(uint32_t), !bin->endian);
 		r_mem_copyendian((ut8*)&lc.cmdsize, (ut8*)&lc.cmdsize, sizeof(uint32_t), !bin->endian);
-		//IFDBG eprintf("cmd: 0x%02x  cmdsize= %i\n", lc.cmd, lc.cmdsize);
+		IFDBG printf("cmd: 0x%02x  cmdsize= %i\n", lc.cmd, lc.cmdsize);
 		switch (lc.cmd) {
 		case LC_SEGMENT:
 			bin->nsegs++;
@@ -300,10 +325,11 @@ struct r_bin_mach0_symbol_t* r_bin_mach0_get_symbols(struct r_bin_mach0_obj_t* b
 	int i, j;
 	if (!(symbols = malloc((bin->dysymtab.nextdefsym + 1) * sizeof(struct r_bin_mach0_symbol_t))))
 		return NULL;
+	/* XXX: only extdefsym? */
 	for (i = bin->dysymtab.iextdefsym, j = 0; j < bin->dysymtab.nextdefsym; i++, j++) {
 		symbols[j].offset = bin->symtab[i].n_value;
-		symbols[j].addr = bin->symtab[i].n_value;
-		symbols[j].size = 0;
+		symbols[j].addr = bin->symtab[i].n_value; /* TODO: baddr? */
+		symbols[j].size = 0; /* TODO: Is it anywhere? */
 		memcpy(symbols[j].name, bin->symstr+bin->symtab[i].n_un.n_strx, R_BIN_MACH0_STRING_LENGTH);
 		symbols[j].last = 0;
 	}
@@ -317,6 +343,7 @@ struct r_bin_mach0_import_t* r_bin_mach0_get_imports(struct r_bin_mach0_obj_t* b
 	int i, j;
 	if (!(imports = malloc((bin->dysymtab.nundefsym + 1) * sizeof(struct r_bin_mach0_import_t))))
 		return NULL;
+	/* XXX: only iundefsym?  */
 	for (i = bin->dysymtab.iundefsym, j = 0; j < bin->dysymtab.nundefsym; i++, j++) {
 		imports[j].offset = bin->symtab[i].n_value;
 		imports[j].addr = bin->symtab[i].n_value;
@@ -327,6 +354,11 @@ struct r_bin_mach0_import_t* r_bin_mach0_get_imports(struct r_bin_mach0_obj_t* b
 	return imports;
 }
 
+struct r_bin_mach0_entrypoint_t* r_bin_mach0_get_entrypoints(struct r_bin_mach0_obj_t* bin)
+{
+	return NULL;
+}
+
 #ifdef MAIN
 int main(int argc, char *argv[])
 {
@@ -334,6 +366,7 @@ int main(int argc, char *argv[])
 	struct r_bin_mach0_section_t *sections;
 	struct r_bin_mach0_symbol_t *symbols;
 	struct r_bin_mach0_import_t *imports;
+	struct r_bin_mach0_entrypoint_t *entrypoints;
 	int i;
 
 	if (argc != 2) {
@@ -344,6 +377,12 @@ int main(int argc, char *argv[])
 		ERR("Cannot open '%s'\n", argv[1]);
 		return 1;
 	}
+	entrypoints = r_bin_mach0_get_entrypoints(bin);
+	printf("-> ENTRYPOINTS\n");
+	for (i = 0; entrypoints && !entrypoints[i].last; i++)
+		printf( "offset=0x%08llx address=0x%08llx\n",
+				entrypoints[i].offset, entrypoints[i].addr);
+	if (entrypoints) free(entrypoints);
 	sections = r_bin_mach0_get_sections(bin);
 	printf("-> SECTIONS\n");
 	for (i = 0; sections && !sections[i].last; i++)

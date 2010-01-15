@@ -40,6 +40,12 @@ struct r_bin_mach0_import_t {
 	int last;
 };
 
+struct r_bin_mach0_entrypoint_t {
+	ut64 offset;
+	ut64 addr;
+	int last;
+};
+
 struct r_bin_mach0_obj_t {
 	struct mach_header hdr;
 	struct segment_command* segs;
@@ -65,14 +71,14 @@ struct r_bin_mach0_obj_t* r_bin_mach0_new(const char* file);
 void* r_bin_mach0_free(struct r_bin_mach0_obj_t* bin);
 struct r_bin_mach0_section_t* r_bin_mach0_get_sections(struct r_bin_mach0_obj_t* bin);
 struct r_bin_mach0_symbol_t* r_bin_mach0_get_symbols(struct r_bin_mach0_obj_t* bin);
+struct r_bin_mach0_import_t* r_bin_mach0_get_imports(struct r_bin_mach0_obj_t* bin);
+struct r_bin_mach0_entrypoint_t* r_bin_mach0_get_entrypoints(struct r_bin_mach0_obj_t* bin);
 
 #if 0
 int r_bin_mach0_get_arch(r_bin_mach0_obj*, char*);
 int r_bin_mach0_get_class(r_bin_mach0_obj*, char*);
-int r_bin_mach0_get_entrypoint(r_bin_mach0_obj*, r_bin_mach0_entrypoint*);
 int r_bin_mach0_get_file_alignment(r_bin_mach0_obj*);
 int r_bin_mach0_get_image_size(r_bin_mach0_obj*);
-int r_bin_mach0_get_imports(r_bin_mach0_obj*, r_bin_mach0_import*);
 int r_bin_mach0_get_libs(r_bin_mach0_obj*, int, r_bin_mach0_string*);
 int r_bin_mach0_get_machine(r_bin_mach0_obj*, char*);
 int r_bin_mach0_get_os(r_bin_mach0_obj*, char*);
