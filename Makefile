@@ -25,13 +25,19 @@ vdoc_pkg:
 	valadoc -o vdoc libr/vapi/*.vapi
 	# rsync -avz vdoc/* pancake@radare.org:/srv/http/radareorg/vdoc/
 
+w32dist:
+	mkdir w32dist
+	for a in `find * | grep -e exe$$ -e dll$$`; do cp $$a w32dist ; done
+	mv w32dist radare2-w32-${VERSION}
+	zip -r radare2-w32-${VERSION}.zip radare2-w32-${VERSION}
+
 clean:
 	cd libr && make clean
 	cd swig && make clean
 
 mrproper:
 	cd libr && make mrproper
-	rm -f plugins.cfg
+	rm -f plugins.cfg libr/config.h libr/config.mk
 
 pkgcfg:
 	cd libr && make pkgcfg

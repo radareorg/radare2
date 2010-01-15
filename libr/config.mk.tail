@@ -38,16 +38,19 @@ CFLAGS+=-g -Wall
 OSTYPE?=gnulinux
 # Output
 ifeq (${OSTYPE},windows)
+CFLAGS+=-D__WINDOWS__=1
 EXT_AR=lib
 EXT_SO=dll
 EXT_EXE=.exe
 endif
 ifeq (${OSTYPE},gnulinux)
+CFLAGS+=-D__UNIX__=1
 EXT_AR=a
 EXT_SO=so
 EXT_EXE=
 endif
 ifeq (${OSTYPE},osx)
+CFLAGS+=-D__UNIX__=1
 EXT_AR=a
 EXT_SO=dylib
 EXT_EXE=

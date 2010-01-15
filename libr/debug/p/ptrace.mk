@@ -1,7 +1,7 @@
 OBJ_PTRACE=debug_ptrace.o
 
 STATIC_OBJ+=${OBJ_PTRACE}
-TARGET_PTRACE=debug_ptrace.so
+TARGET_PTRACE=debug_ptrace.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_PTRACE}
 

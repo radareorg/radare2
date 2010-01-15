@@ -365,6 +365,17 @@ static const InstructionDescription ins_db[]=
 };
 #define INSDB_SIZE (sizeof(ins_db)/sizeof(InstructionDescription))
 
+static ut16 r_ntohs (ut16 foo) {
+/* XXX BIGENDIAN NOT DEFINED HERE !!!1 */
+#if BIGENDIAN
+        /* do nothing */
+#else
+        ut8 *p = &foo;
+        foo = p[1] | p[0]<<8;
+#endif
+        return foo;
+}
+
 
 /**
  * @return length of the opcode
@@ -388,7 +399,8 @@ int psosvm_disasm(const ut8 *bytes, char *output)
 			case P_U16:
 			case P_CODESEGMENT:
 			case P_LABEL:
-				sprintf(output,"%s%s %d",((bytes[0]&0x80)!=0)?"C_":"",ins_db[i].name,ntohs(*(uint16_t*)(bytes+1)));
+				sprintf(output,"%s%s %d",((bytes[0]&0x80)!=0)?"C_":"",ins_db[i].name,
+					r_ntohs(*(uint16_t*)(bytes+1)));
 				ret=3;
 				break;
 			default:
@@ -462,7 +474,7 @@ int psosvm_assemble(unsigned char *bytes, char *string)
 			case P_CODESEGMENT:
 				if(getInt(parameter,&p)!=0)
 					return 0;
-				*(uint16_t*)(bytes+1)=ntohs(p);
+				*(uint16_t*)(bytes+1)=r_ntohs(p);
 				ret=3;
 				break;
 		}

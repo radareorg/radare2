@@ -170,11 +170,16 @@ R_API int r_debug_syscall(struct r_debug_t *dbg, int num)
 R_API int r_debug_kill(struct r_debug_t *dbg, int pid, int sig)
 {
 	// XXX: use debugger handler backend here
+#if __WINDOWS__
+	eprintf("r_debug_kill: not implemented\n");
+	return R_FALSE;
+#else
 #include <signal.h>
 	int ret = kill(pid, sig);
 	if (ret == -1)
 		return R_FALSE;
 	return R_TRUE;
+#endif
 }
 
 // TODO move to mem.c

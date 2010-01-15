@@ -9,6 +9,7 @@
 #define u_short unsigned short
 #define u_char unsigned char
 #define u_int unsigned int
+#define uint8_t unsigned char
 
 #define la32 unsigned int
 #define ptrdiff_t int

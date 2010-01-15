@@ -1,5 +1,6 @@
+include ../../../config.mk
 OBJ=interface.o gdbwrapper.o client.o
-CFLAGS=-Iinclude -D__UNIX__=1
+CFLAGS=-Iinclude
 ERESIPATH=${HOME}/prg/eresi
 BIN=client
 

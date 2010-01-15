@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007, 2008
+ * Copyright (C) 2007-2010
  *       pancake <youterm.com>
  *
  * radare is free software; you can redistribute it and/or modify
@@ -264,6 +264,17 @@ static struct java_op {
 
 static struct classfile cf;
 
+static ut16 r_ntohs (ut16 foo) {
+/* XXX BIGENDIAN NOT DEFINED HERE !!!1 */
+#if BIGENDIAN
+	/* do nothing */
+#else
+	ut8 *p = &foo;
+	foo = p[1] | p[0]<<8;
+#endif
+	return foo;
+}
+
 static struct cp_item * get_cp(int i)
 {
 	if (i<0||i>cf.cp_count)
@@ -387,9 +398,8 @@ int java_assemble(unsigned char *bytes, char *string)
 unsigned short read_short(FILE *fd)
 {
 	unsigned short sh=0;
-
 	fread(&sh, 2,1,fd);//sizeof(unsigned short), 1, fd);
-	return ntohs(sh);
+	return r_ntohs(sh);
 }
 
 static int attributes_walk(FILE *fd, int sz2, int fields)
@@ -497,7 +507,7 @@ int java_classdump(const char *file)
 	/* show class version information */
 	printf("Version: 0x%02x%02x 0x%02x%02x\n", cf.major[1],cf.major[0], cf.minor[1],cf.minor[0]);
 
-	cf.cp_count = ntohs(cf.cp_count);
+	cf.cp_count = r_ntohs(cf.cp_count);
 	if (cf.major[0]==cf.major[1] && cf.major[0]==0) {
 		fprintf(stderr, "Oops. this is a Mach-O\n");
 		return 0;
@@ -575,7 +585,7 @@ int java_classdump(const char *file)
 	fread(&cf2, sizeof(struct classfile2), 1, fd);
 	check_eof(fd);
 	printf("Access flags: 0x%04x\n", cf2.access_flags);
-	this_class = ntohs(cf2.this_class);
+	this_class = r_ntohs(cf2.this_class);
 	printf("This class: %d\n", cf2.this_class);
 	check_eof(fd);
 	//printf("This class: %d (%s)\n", ntohs(cf2.this_class), cp_items[ntohs(cf2.this_class)-1].value); // XXX this is a double pointer !!1

@@ -1,12 +1,19 @@
-include ../../../config-user.mk
+include ../../config.mk
 
-CFLAGS+=-D__UNIX__=1
-OBJ_GDB=debug_gdb.o libgdbwrap/gdbwrapper.o
+CFLAGS+=-Ilibgdbwrap/include
+ifeq (${OSTYPE},windows)
+LDFLAGS+=-lwsock32
+endif
+ifeq (${OSTYPE},solaris)
+LDFLAGS+=-lsocket
+endif
+
+OBJ_GDB=debug_gdb.o libgdbwrap/gdbwrapper.c
 
 STATIC_OBJ+=${OBJ_GDB}
-TARGET_GDB=debug_gdb.so
+TARGET_GDB=debug_gdb.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_GDB}
 
 ${TARGET_GDB}: ${OBJ_GDB}
-	${CC} ${CFLAGS} -o ${TARGET_GDB} ${OBJ_GDB}
+	${CC} ${OBJ_GDB} ${CFLAGS} ${LDFLAGS} -o ${TARGET_GDB}

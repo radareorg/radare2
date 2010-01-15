@@ -1,13 +1,20 @@
 /* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
 
 #include <r_userconf.h>
-
-#if DEBUGGER
-
 #include <r_debug.h>
 #include <r_asm.h>
 #include <r_reg.h>
 #include <r_lib.h>
+
+#if __WINDOWS__
+
+struct r_debug_handle_t r_debug_plugin_ptrace = {
+	.name = "ptrace",
+};
+#else
+
+#if DEBUGGER
+
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -202,11 +209,12 @@ struct r_debug_handle_t r_debug_plugin_ptrace = {
 	//.bp_read = &r_debug_ptrace_bp_read,
 };
 
+#endif
+#endif
+
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_ptrace
 };
-#endif
-
 #endif

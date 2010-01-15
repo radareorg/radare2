@@ -1,6 +1,9 @@
+include ../../config.mk
+
 CFLAGS=-I../../include -I../arch/ -I../arch/include -Wall -fPIC -shared -Wl,-R..
 # XXX
-CFLAGS+=-DLIL_ENDIAN=1 -D__UNIX__
+CFLAGS+=-DLIL_ENDIAN=1
+CFLAGS+=-L../../util -lr_util
 
 foo: all
 
@@ -13,9 +16,9 @@ all: ${ALL_TARGETS}
 	@true
 
 a:
-	gcc -DTEST asm_x86_nasm.c `pkg-config --libs --cflags r_asm`
+	${CC} -DTEST asm_x86_nasm.c `pkg-config --libs --cflags r_asm` -o a${EXT_EXE}
 
 clean:
-	-rm -f *.so *.o ${STATIC_OBJ}
+	-rm -f *.${LIB_SO} *.o ${STATIC_OBJ}
 
 .PHONY: all clean foo

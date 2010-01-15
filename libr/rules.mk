@@ -11,8 +11,6 @@
 ifeq (${BINDEPS},)
 
 ifneq ($(NAME),)
-#include ../../config-user.mk
-#include ../../mk/${COMPILER}.mk
 
 CFLAGS+=-I../include
 real_all all: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
@@ -27,8 +25,8 @@ ${LIBSO}: ${OBJ}
 	  do=0 ; [ ! -e ${LIBSO} ] && do=1 ; \
 	  test $$a -nt ${LIBSO} && do=1 ; \
 	  if [ $$do = 1 ]; then \
-	    echo "${CC_LIB} ${LDFLAGS} ${LINK} ${OBJ}" ; \
-	    ${CC_LIB} ${LDFLAGS} ${LINK} ${OBJ} ; \
+	    echo "${CC_LIB} ${OBJ} ${LDFLAGS} ${LINK}" ; \
+	    ${CC_LIB} ${OBJ} ${LDFLAGS} ${LINK} ; \
 	    if [ -f "../stripsyms.sh" ]; then sh ../stripsyms.sh ${LIBSO} ${NAME} ; fi ; \
 	  break ; \
 	fi ; done
@@ -81,6 +79,7 @@ else
 #-------------------------------------#
 # Rules for test programs
 
+# XXX can be removed?
 include ../../../config-user.mk
 include ../../../mk/${COMPILER}.mk
 

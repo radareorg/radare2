@@ -2,9 +2,10 @@ NAME=r_asm
 DEPS=r_lib r_util
 CFLAGS+=-DCORELIB -Iarch/include -Iarch
 
+include ../config.mk
+
 foo: pre ${LIBSO} ${LIBAR} plugins
 
-include ../config.mk
 include ${STATIC_ASM_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst asm_,p/asm_,$(STATIC_OBJ)))
 OBJ=${STATIC_OBJS} asm.o

@@ -15,8 +15,8 @@ all: ${ALL_TARGETS}
 
 BINDEPS=
 
-io_ewf.so: io_ewf.o
-	${CC} ${CFLAGS} -fPIC -shared -o io_ewf.so ewf.c -lr_io -L../../io -Wl,-R.. -lewf
+io_ewf.${LIB_SO}: io_ewf.o
+	${CC} ${CFLAGS} -fPIC -shared -o io_ewf.${LIB_SO} ewf.c -lr_io -L../../io -Wl,-R.. -lewf
 
 clean:
 	-rm -f *.so *.o

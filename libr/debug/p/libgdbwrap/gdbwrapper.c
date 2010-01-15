@@ -9,14 +9,16 @@
  */
 
 #if __UNIX__
-#include             <netdb.h>
+#include <netdb.h>
 #endif
+
 #if __WINDOWS__
 #include <windows.h>
 #endif
-#include             "libaspect.h"
-#include             "gdbwrapper-internals.h"
-#include             "gdbwrapper.h"
+
+#include "libaspect.h"
+#include "gdbwrapper-internals.h"
+#include "gdbwrapper.h"
 
 gdbwrapworld_t       gdbwrapworld;
 

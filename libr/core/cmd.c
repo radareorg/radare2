@@ -1187,10 +1187,12 @@ static int cmd_macro(void *data, const char *input)
 }
 
 static int r_core_cmd_pipe(struct r_core_t *core, char *radare_cmd, char *shell_cmd) {
+#if __UNIX__
 	int fds[2];
+	int stdout_fd, status;
+
+	stdout_fd = dup(1);
 	pipe(fds);
-	int stdout_fd = dup(1);
-	int status;
 	radare_cmd = r_str_trim_head(radare_cmd);
 	shell_cmd = r_str_trim_head(shell_cmd);
 	if (fork()) {
@@ -1210,6 +1212,10 @@ static int r_core_cmd_pipe(struct r_core_t *core, char *radare_cmd, char *shell_
 		execl("/bin/sh", "sh", "-c", shell_cmd, NULL);
 	}
 	return status;
+#else
+#warning r_core_cmd_pipe UNIMPLEMENTED FOR THIS PLATFORM
+	return -1;
+#endif
 }
 
 static int r_core_cmd_subst(struct r_core_t *core, char *cmd)
