@@ -73,6 +73,7 @@ struct r_bin_mach0_section_t* r_bin_mach0_get_sections(struct r_bin_mach0_obj_t*
 struct r_bin_mach0_symbol_t* r_bin_mach0_get_symbols(struct r_bin_mach0_obj_t* bin);
 struct r_bin_mach0_import_t* r_bin_mach0_get_imports(struct r_bin_mach0_obj_t* bin);
 struct r_bin_mach0_entrypoint_t* r_bin_mach0_get_entrypoints(struct r_bin_mach0_obj_t* bin);
+ut64 r_bin_mach0_get_baddr(struct r_bin_mach0_obj_t* bin);
 
 #if 0
 int r_bin_mach0_get_arch(r_bin_mach0_obj*, char*);

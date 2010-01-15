@@ -63,7 +63,7 @@ static struct r_bin_section_t* sections(struct r_bin_t *bin)
 	for (i = 0; i < sections_count; i++) {
 		strncpy(ret[i].name, (char*)section[i].name, R_BIN_SIZEOF_STRINGS);
 		ret[i].size = section[i].size;
-		ret[i].vsize = section->vsize;
+		ret[i].vsize = section[i].vsize;
 		ret[i].offset = section[i].offset;
 		ret[i].rva = section[i].rva;
 		ret[i].characteristics = 0;

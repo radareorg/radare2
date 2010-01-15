@@ -252,6 +252,7 @@ static int r_bin_mach0_init(struct r_bin_mach0_obj_t* bin)
 	bin->ntoc = 0;
 	bin->modtab = NULL;
 	bin->nmodtab = 0;
+	bin->baddr = 0;
 	bin->size = lseek(bin->fd, 0, SEEK_END);
 	if (!r_bin_mach0_init_hdr(bin)) {
 		ERR("Warning: File is not MACH0\n");
@@ -357,6 +358,11 @@ struct r_bin_mach0_import_t* r_bin_mach0_get_imports(struct r_bin_mach0_obj_t* b
 struct r_bin_mach0_entrypoint_t* r_bin_mach0_get_entrypoints(struct r_bin_mach0_obj_t* bin)
 {
 	return NULL;
+}
+
+ut64 r_bin_mach0_get_baddr(struct r_bin_mach0_obj_t* bin)
+{
+	return UT64_MIN;
 }
 
 #ifdef MAIN
