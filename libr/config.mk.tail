@@ -1,7 +1,22 @@
+#-include ../../config-user.mk
+#-include ../../mk/${COMPILER}.mk
+#-include ../../../config-user.mk
+#-include ../../../mk/${COMPILER}.mk
+
+ifneq (${BINDEPS},)
+include ../../../config-user.mk
+include ../../../global.mk
+include ../../../mk/${COMPILER}.mk
+else
 -include ../../config-user.mk
+-include ../../global.mk
 -include ../../mk/${COMPILER}.mk
+
 -include ../../../config-user.mk
+-include ../../../global.mk
 -include ../../../mk/${COMPILER}.mk
+endif
+
 
 CFLAGS+=-DUSE_RIO=${USE_RIO}
 CFLAGS+=${CFLAGS_APPEND}
@@ -41,13 +56,3 @@ endif
 LIB=lib${NAME}
 LIBAR=${LIB}.${EXT_AR}
 LIBSO=${LIB}.${EXT_SO}
-
-ifneq (${BINDEPS},)
-include ../../../config-user.mk
-include ../../../global.mk
-include ../../../mk/${COMPILER}.mk
-else
-include ../../config-user.mk
-include ../../global.mk
-include ../../mk/${COMPILER}.mk
-endif

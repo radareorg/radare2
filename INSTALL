@@ -15,6 +15,11 @@ And install
 
 If you regret about it, just 'make deinstall' :)
 
+WINDOWS
+=======
+
+  $ ./configure --with-compiler=i486-mingw32-gcc --with-ostype=windows
+  $ make
 
 CONFIGURATION
 =============

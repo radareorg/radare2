@@ -1,10 +1,11 @@
 /* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
 
-#if __linux__ || __NetBSD__ || __FreeBSD__ || __OpenBSD__
-
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_util.h>
+
+#if __linux__ || __NetBSD__ || __FreeBSD__ || __OpenBSD__
+
 #include <signal.h>
 #include <sys/ptrace.h>
 #include <sys/types.h>
@@ -127,7 +128,7 @@ static int __init(struct r_io_t *io)
 
 struct r_io_handle_t r_io_plugin_debug = {
         //void *handle;
-	.name = "io_dbg",
+	.name = "io.debug",
         .desc = "Debug a program or pid. dbg:///bin/ls, dbg://1388",
         .open = __open,
         .handle_open = __handle_open,
@@ -143,11 +144,22 @@ struct r_io_handle_t r_io_plugin_debug = {
 */
 };
 
+
+#else
+
+struct r_io_handle_t r_io_plugin_debug = {
+        //void *handle;
+	.name = "io.debug",
+        .desc = "Debug a program or pid. (NOT SUPPORTED FOR THIS PLATFORM)",
+	.debug = (void *)1,
+};
+
+#endif
+
+
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_debug
 };
-#endif
-
 #endif

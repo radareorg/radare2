@@ -86,11 +86,13 @@ include ../../../mk/${COMPILER}.mk
 
 CFLAGS+=-I../../include -DVERSION=\"${VERSION}\"
 
+ifneq ($(BIN),)
 all: ${BIN}${EXT_EXE}
 
 ${BIN}${EXT_EXE}: ${OBJ}
 	@echo BIN=${BIN}
 	${CC} ${LDFLAGS} ${LIBS} ${OBJ} -o ${BIN}${EXT_EXE}
+endif
 
 #Dummy myclean rule that can be overriden by the t/ Makefile
 myclean:

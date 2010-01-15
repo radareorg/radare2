@@ -9,8 +9,10 @@
 #include "r_bp.h"
 
 #include <sys/types.h>
-#include <sys/wait.h>
 #include <stdarg.h>
+#if __UNIX__
+#include <sys/wait.h>
+#endif
 
 static int cmd_io_system(void *data, const char *input);
 

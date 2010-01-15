@@ -1,5 +1,7 @@
 CFLAGS=-I../../include -Wall -DWORDSIZE=64 -fPIC -shared -Wl,-R.. -DCORELIB
 
+include ../../config.mk
+
 foo: all
 
 ALL_TARGETS=

@@ -1,0 +1,6 @@
+TODO refactoring
+================
+
+* Remove some unnecesary libraries for the core
+  - r_th is fun.. but not useful anymore.. we should use glib or any other threading library
+  - move the source of r_th oustide r2

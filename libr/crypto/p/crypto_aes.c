@@ -1,7 +1,7 @@
 #include <r_lib.h>
 #include <r_crypto.h>
 
-struct r_crypto_handle_t raes_crypto_plugin_aes = { 
+struct r_crypto_handle_t r_crypto_plugin_aes = { 
         .name = "crypto_aes",
 	/* TODO */
 };

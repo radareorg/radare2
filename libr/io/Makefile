@@ -15,7 +15,7 @@ OBJ=${STATIC_OBJS} io.o handle.o map.o section.o desc.o cache.o undo.o
 
 pre:
 	@echo STATICOBJS: ${STATIC_OBJS}
-	@if [ ! -e libr_io.so ]; then rm -f ${STATIC_OBJS} ; fi
+	@if [ ! -e libr_io.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi
 
 tests:
 	cd t && ${MAKE} all

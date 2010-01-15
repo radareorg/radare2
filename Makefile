@@ -27,6 +27,7 @@ vdoc_pkg:
 
 clean:
 	cd libr && make clean
+	cd swig && make clean
 
 mrproper:
 	cd libr && make mrproper

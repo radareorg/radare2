@@ -1,8 +1,11 @@
 NAME=r_lib
 OBJ=lib.o
 
+include ../config.mk
+
 # XXX only for linux
 CFLAGS+=-Wall -DLIBR_PLUGINS=\"${PREFIX}/lib/radare2\"
-LDFLAGS+=-ldl
+
+LDFLAGS+=${DL_LIBS}
 
 include ../rules.mk

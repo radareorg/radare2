@@ -12,6 +12,15 @@
 
 #define R_LIB_ENV "LIBR_PLUGINS"
 
+/* XXX : This must depend on HOST_OS */
+#if __WINDOWS__
+#define R_LIB_EXT "dll"
+#elif __APPLE__
+#define R_LIB_EXT "dylib"
+#else
+#define R_LIB_EXT "so"
+#endif
+
 /* store list of loaded plugins */
 typedef struct r_lib_plugin_t {
 	int type;

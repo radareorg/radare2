@@ -2,17 +2,18 @@
 
 #include <r_userconf.h>
 
-#if DEBUGGER
-
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_cons.h>
-#include <errno.h>
+
+//#if DEBUGGER
+
+#if __linux__ || __NetBSD__ || __FreeBSD__ || __OpenBSD__
+
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-
-#if __linux__ || __NetBSD__ || __FreeBSD__ || __OpenBSD__
+#include <errno.h>
 
 #undef R_IO_NFDS
 #define R_IO_NFDS 2
@@ -251,12 +252,18 @@ struct r_io_handle_t r_io_plugin_ptrace = {
 */
 };
 
+#else
+
+struct r_io_handle_t r_io_plugin_ptrace = {
+	.name = "io.ptrace",
+        .desc = "ptrace io (NOT SUPPORTED FOR THIS PLATFORM)",
+};
+
+#endif
+
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_ptrace
 };
-#endif
-#endif
-
 #endif

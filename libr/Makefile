@@ -25,8 +25,8 @@ libs:
 
 libr: .objs libr.a libr.so
 
-libr.a:
-	ar -r libr.a .objs/*.o
+libr.${LIBAR}:
+	ar -r libr.${LIBAR} .objs/*.o
 
 libr.so:
 	${CC} -shared -fPIC .objs/*.o -o libr.so

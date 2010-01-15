@@ -189,7 +189,7 @@ case $flag in
 echo "PKGNAME:   radare2"
 echo "VERSION:   0.3b"
 echo "LANGS:     c"
-echo "REQUIRED:  lib>=vala-1.0 libvala-1.0>=0.5.0"
+echo "REQUIRED:  libdl lib>=vala-1.0 libvala-1.0>=0.5.0"
 echo "OPTIONAL:  libewf"
 echo "FLAGS:     --without-debugger --without-ewf --with-compiler=gcc --with-ostype=gnulinux --without-valaswig --without-vala"
 	exit 0
@@ -198,12 +198,12 @@ echo "FLAGS:     --without-debugger --without-ewf --with-compiler=gcc --with-ost
 	# ignored: acr have no cache
 	;;
 "--build")
-	BUILD="$value"; ;;
+	BUILD="$value"; split_host BUILD ; ;;
 "--host")
-	CROSSBUILD=1
-	HOST="$value"; ;;
+	CROSSBUILD=1 # XXX
+	HOST="$value"; split_host HOST ; ;;
 "--target")
-	TARGET="$value"; ;;
+	TARGET="$value"; split_host TARGET ; ;;
 "--prefix")
 	PREFIX="$value"; ;;
 "--exec-prefix")
@@ -256,7 +256,7 @@ parse_options $1
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C DEBUGGER LIL_ENDIAN BIG_ENDIAN BYTEORDER HAVE_LIB_EWF HAVE_EWF HAVE_LIB_TCC USERCC USEROSTYPE WANT_VALASWIG HAVE_VALASWIG VALASWIG HAVE_SWIG SWIG WANT_VALA HAVE_VALAC VALAC HAVE_VALA_1_0_VERSION_0_5_0"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS LIL_ENDIAN BIG_ENDIAN BYTEORDER HAVE_LIB_EWF HAVE_EWF HAVE_LIB_TCC USERCC USEROSTYPE WANT_VALASWIG HAVE_VALASWIG VALASWIG HAVE_SWIG SWIG WANT_VALA HAVE_VALAC VALAC HAVE_VALA_1_0_VERSION_0_5_0"
 
 create_environ
 
@@ -289,6 +289,21 @@ if [ $? = 0 ]; then echo ${CC}; else
 do_remove
 echo "ERROR: ${CC} cannot create executables" >&2 ;
 exit 1 ; fi
+printf "checking for dynamic library... "
+HAVE_LIB_DL=0
+for OS in linux syllable sunos darwin beos solaris ; do
+if [ "${HOST_OS}" = "${OS}" ]; then
+	HAVE_LIB_DL=1
+	break;
+fi
+done
+if [ "${HAVE_LIB_DL}" = 1 ]; then
+	DL_LIBS="-ldl"
+	echo "required"
+else
+	DL_LIBS=""
+	echo "libc"
+fi
 printf "checking host endianness... "
 echo 'main(){int a=1;char *b=(char*)&a;printf("%d",b[0]);}' > test.c
 ${CC} ${CFLAGS} ${LDFLAGS} -o a.out test.c >/dev/null 2>&1

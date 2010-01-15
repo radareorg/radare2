@@ -1,10 +1,9 @@
 OBJ_X86PSEUDO+=parse_x86_pseudo.o
 
-TARGET_X86PSEUDO=parse_x86_pseudo.so
+TARGET_X86PSEUDO=parse_x86_pseudo.${EXT_SO}
 ALL_TARGETS+=${TARGET_X86PSEUDO}
 STATIC_OBJ+=${OBJ_X86PSEUDO}
 
 ${TARGET_X86PSEUDO}: ${OBJ_X86PSEUDO}
 	${CC} ${CFLAGS} -o ${TARGET_X86PSEUDO} ${OBJ_X86PSEUDO}
-	@#strip -s asm_dummy.so
-
+	@#strip -s asm_dummy.${EXT_SO}

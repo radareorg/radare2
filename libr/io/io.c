@@ -95,9 +95,14 @@ R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode)
 			break;
 		}
 	}
-	if (fd == -2)
+	if (fd == -2) {
+#if __WINDOWS__
+		fd = open (file, 0);
+#else
 		// XXX RDONLY; READ; WRITE AND MORE SOO... 
-		fd = open(file, O_RDONLY, mode); // XXX drop posix depz here
+		fd = open (file, O_RDONLY, mode); // XXX drop posix depz here
+#endif
+	}
 	if (fd >= 0) {
 		r_io_set_fd(io, fd);
 		r_io_desc_add(io, fd, file, flags, io->plugin);

@@ -16,7 +16,8 @@
 #include <windows.h>
   #define DLOPEN(x)  LoadLibrary(x)
   #define DLSYM(x,y) GetProcAddress(x,y)
-  #define DLCLOSE(x) CloseLibrary(x)
+  #define DLCLOSE(x) 0//(x)
+//CloseLibrary(x)
 #else
   #define DLOPEN(x)  NULL
   #define DLSYM(x,y) NULL
@@ -43,7 +44,11 @@ R_API void *r_lib_dl_open(const char *libname)
 	IFRTDBG fprintf(stderr, "Opening '%s'\n", libname);
 	ret = DLOPEN(libname);
 	if (ret == NULL)
-		IFDBG fprintf(stderr, "dlerror: %s\n", dlerror());
+#if __UNIX__
+		IFDBG eprintf("dlerror: %s\n", dlerror());
+#else
+		eprintf ("r_lib_dl_open: Cannot open '%s'\n", libname);
+#endif
 	return ret;
 }
 

@@ -5,16 +5,18 @@
 
 #define HAVE_PTHREAD 1
 
-#if HAVE_PTHREAD
+#if __WINDOWS__
+
+#include <windows.h>
+
+#define R_TH_TID HANDLE
+#define R_TH_LOCK_T CRITICAL_SECTION
+
+#elif HAVE_PTHREAD
 #define __GNU
 #include <pthread.h>
 #define R_TH_TID pthread_t
 #define R_TH_LOCK_T pthread_mutex_t
-
-#elif __WIN32__
-#include <windows.h>
-#define R_TH_TID HANDLE
-#define R_TH_LOCK_T CRITICAL_SECTION
 
 #else
 #error Threading library only supported for ptrace and w32
@@ -28,7 +30,7 @@ typedef struct r_th_lock_t {
 } rThreadLock;
 
 typedef struct r_th_t {
-	pthread_t tid;
+	R_TH_TID tid;
 	struct r_th_lock_t lock;
 	R_TH_FUNCTION(fun);
 	void *user;    // user pointer

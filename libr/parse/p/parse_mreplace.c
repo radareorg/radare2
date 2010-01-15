@@ -8,6 +8,7 @@
 #include <r_lib.h>
 #include <r_parse.h>
 
+#if __UNIX__
 
 struct mreplace_t {
 	char *data;
@@ -33,6 +34,13 @@ struct r_parse_handle_t r_parse_plugin_mreplace = {
 	.fini = NULL,
 	.parse = &parse,
 };
+
+#else
+struct r_parse_handle_t r_parse_plugin_mreplace = {
+	.name = "mreplace",
+	.desc = "mreplace parsing plugin (NOT SUPPORTED FOR THIS PLATFORM)",
+};
+#endif
 
 
 #ifndef CORELIB

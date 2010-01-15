@@ -3,6 +3,8 @@
                  functions by Mandingo, Copyleft, 2009-02-20
 */
 
+#if __UNIX__
+
 #include <regex.h>
 #include <stdio.h>
 #include <string.h>
@@ -259,4 +261,7 @@ int main(char argc,char **argv){
 
 	return 1;
 }
+#endif
+#else
+#warning NOT SUPPPORTED FOR THIS PLATFORM
 #endif

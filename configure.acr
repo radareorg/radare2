@@ -6,6 +6,9 @@ LANG_C!
 
 ARG_WITHOUT DEBUGGER debugger disable native debugger features ;
 
+(( -ldl -dynamic ... ))
+USE_DL
+
 CHECK_ENDIAN
 CHKLIB ewf
 ARG_WITHOUT HAVE_EWF ewf disable EWF dependency ;

@@ -8,6 +8,7 @@
  * ./mach0 <mach0 file> */
 
 #include <stdio.h>
+#include <fcntl.h>
 #include <r_types.h>
 #include <r_util.h>
 #include "mach0.h"

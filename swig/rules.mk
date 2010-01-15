@@ -13,8 +13,9 @@ all: ${LIBS}
 test:
 	-${LANG} test-r_bp.${LANG_EXT}
 	-${LANG} test-r_asm.${LANG_EXT}
+	-${LANG} test-r_hash.${LANG_EXT}
 
 clean:
-	rm -f *.so
+	rm -f *.so r_*
 
 .PHONY: all test clean

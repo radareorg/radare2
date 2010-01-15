@@ -1,11 +1,13 @@
-all: plugin.so test-plugin
+include ../../config.mk
+
+all: plugin.${EXT_SO} test-plugin${EXT_EXE}
 	@true
 
-plugin.so:
-	gcc -Wall -o plugin.so -shared plugin.c -I../../include
+plugin.${EXT_SO}:
+	${CC} -Wall -o plugin.${EXT_SO} -shared plugin.c -I../../include
 
-test-plugin:
-	gcc -Wall -o test-plugin test-plugin.c -I ../../include ../../lib/*.o -ldl
+test-plugin${EXT_EXE}:
+	${CC} -Wall -o test-plugin${EXT_EXE} test-plugin.c -I ../../include ../../lib/*.o ${DL_LIBS}
 
 clean:
-	-rm -f plugin.so test-plugin
+	-rm -f plugin.${EXT_SO} test-plugin${EXT_EXE}

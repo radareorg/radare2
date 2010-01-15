@@ -1,7 +1,7 @@
 OBJ_IODBG=io_debug.o
 
 STATIC_OBJ+=${OBJ_IODBG}
-TARGET_IODBG=io_debug.so
+TARGET_IODBG=io_debug.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_IODBG}
 

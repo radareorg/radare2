@@ -44,7 +44,7 @@ int main(int argc, char **argv)
 	r_lib_add_handler(lib, 1, "example plugin handler", &cb_1, &cb_1_end, &ptr);
 	r_lib_add_handler(lib, 2, "disassembler plugin handler", &cb_2, &cb_2_end, &ptr);
 	r_lib_add_handler(lib, 3, "file headers parser plugin handler", &cb_2, &cb_2_end, &ptr);
-	ret = r_lib_open(lib, "./plugin.so");
+	ret = r_lib_open(lib, "./plugin."R_LIB_EXT);
 	if (ret == -1) printf("Cannot open plugin\n");
 	else printf("Plugin opened correctly\n");
 	r_lib_list(lib);

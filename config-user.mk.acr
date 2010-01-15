@@ -16,8 +16,10 @@ INSTALL_DATA=@INSTALL_DATA@
 INSTALL_PROGRAM=@INSTALL_PROGRAM@
 
 VERSION=@VERSION@
-# ./configure --with-ostype=[linux,osx,w32]
+# ./configure --with-ostype=[linux,osx,solaris,windows] # TODO: rename to w32, w64?
 OSTYPE?=@USEROSTYPE@
+HOST_OS=@HOST_OS@
+DL_LIBS=@DL_LIBS@
 
 HAVE_LIB_TCC=@HAVE_LIB_TCC@
 HAVE_VALASWIG=@HAVE_VALASWIG@

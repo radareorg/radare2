@@ -1,4 +1,4 @@
-#include ../../config.mk
+include ../../config.mk
 #include ../../../config-user.mk
 CFLAGS=-I../../include -I../format/ -Wall -fPIC -shared -Wl,-R..
 # XXX

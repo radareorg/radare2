@@ -31,7 +31,7 @@ void memFree(memChunk *chunk){
 }
 void memInit(){
 	mInfo=(memInfo*)malloc(sizeof(memInfo));
-	bzero(mInfo,sizeof(memInfo));
+	memset(mInfo,0,sizeof(memInfo));
 	mInfo->state=MEM_STATE_OK;
 	mInfo->allocated+=sizeof(memInfo);
 }
@@ -60,7 +60,7 @@ memChunk *memReserve(long size){
   	}
 	//printf("- reservando %d bytes\n",size);
 	buffer->size=size;
-	bzero(buffer->address,buffer->size);
+	memset(buffer->address,0,buffer->size);
 	mInfo->allocated+=buffer->size;
 	return buffer;
 }
@@ -74,11 +74,7 @@ memChunk *memString(char *string){
 	static memChunk *buffer;
 	memCheckState();
 	buffer=memReserve(strlen(string)+1);
-	#if USE_BCOPY
-		bcopy(string,buffer->address,strlen(string));
-	#else
-		memcpy(buffer->address,string,strlen(string));
-	#endif
+	memcpy(buffer->address,string,strlen(string));
 	return buffer;
 }
 
@@ -93,11 +89,7 @@ void memCopy(memChunk *dest,memChunk *source){
 		#if DEBUG3
 		printf("Copying %d bytes to dest (size %d)\n",nbytes,dest->address,dest->size);
 		#endif
-		#if USE_BCOPY
-			bcopy(source->address,dest->address,nbytes);
-		#else
-			memcpy(dest->address,source->address,nbytes);
-		#endif
+		memcpy(dest->address,source->address,nbytes);
 	}
 }
 
