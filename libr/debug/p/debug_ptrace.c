@@ -115,7 +115,7 @@ static int r_debug_ptrace_reg_read(struct r_debug_t *dbg, int type, ut8 *buf, in
 	int pid = dbg->pid;
 	if (type == R_REG_TYPE_GPR) {
 // XXX this must be defined somewhere else
-#if __linux__
+#if __linux__ && (__i386__ || __x86_64__)
 #include <sys/user.h>
 #include <limits.h>
 	struct user_regs_struct regs;

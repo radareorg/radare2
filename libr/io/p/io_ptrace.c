@@ -175,7 +175,7 @@ static int __close(struct r_io_t *io, int pid)
 static int __system(struct r_io_t *io, int fd, const char *cmd)
 {
 	//printf("ptrace io command (%s)\n", cmd);
-#if __linux__
+#if __linux__ && ( __i386__  || __x86_64__ )
 #include <sys/user.h>
 #include <limits.h>
 	/* XXX ugly hack for testing purposes */

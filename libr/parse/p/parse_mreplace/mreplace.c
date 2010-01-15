@@ -3,6 +3,7 @@
                  functions by Mandingo, Copyleft, 2009-02-20
 */
 
+#include <r_types.h>
 #if __UNIX__
 
 #include <regex.h>

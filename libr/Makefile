@@ -23,13 +23,13 @@ libs:
 	@for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} all ); done
 	@echo Build done for: ${LIBLIST}
 
-libr: .objs libr.a libr.so
+libr: .objs libr.${LIB_AR} libr.${LIB_SO}
 
-libr.${LIBAR}:
-	ar -r libr.${LIBAR} .objs/*.o
+libr.${LIB_AR}:
+	ar -r libr.${LIB_AR} .objs/*.o
 
-libr.so:
-	${CC} -shared -fPIC .objs/*.o -o libr.so
+libr.${LIB_SO}:
+	${CC} -shared -fPIC .objs/*.o -o libr.${LIB_SO}
 
 # XXX needs autodetection of deps to remake and so..
 .objs:
