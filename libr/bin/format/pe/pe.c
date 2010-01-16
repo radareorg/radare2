@@ -152,22 +152,12 @@ static int PE_(r_bin_pe_parse_imports)(PE_(r_bin_pe_obj) *bin, PE_(r_bin_pe_impo
 	PE_Word import_hint, import_ordinal;
 	PE_DWord import_table = 0, off = 0;
 	int i = 0;
-		
-	lseek(bin->fd, PE_(r_bin_pe_aux_rva_to_offset)(bin, OriginalFirstThunk), SEEK_SET);
-	read(bin->fd, &import_table, sizeof(PE_DWord));
-	lseek(bin->fd, PE_(r_bin_pe_aux_rva_to_offset)(bin, import_table) + sizeof(PE_Word), SEEK_SET);
-	read(bin->fd, name, PE_NAME_LENGTH);
-	if (IS_PRINTABLE(name[0]))
+
+	if (OriginalFirstThunk)
 		off = PE_(r_bin_pe_aux_rva_to_offset)(bin, OriginalFirstThunk);
-	else {
-		lseek(bin->fd, PE_(r_bin_pe_aux_rva_to_offset)(bin, FirstThunk), SEEK_SET);
-		read(bin->fd, &import_table, sizeof(PE_DWord));
-		lseek(bin->fd, PE_(r_bin_pe_aux_rva_to_offset)(bin, import_table) + sizeof(PE_Word), SEEK_SET);
-		read(bin->fd, name, PE_NAME_LENGTH);
-		if (IS_PRINTABLE(name[0]))
-			off = PE_(r_bin_pe_aux_rva_to_offset)(bin, FirstThunk);
-		else return 0;
-	}
+	else if (FirstThunk) 
+		off = PE_(r_bin_pe_aux_rva_to_offset)(bin, FirstThunk);
+	else return 0;
 
 	do {
 		lseek(bin->fd, off + i * sizeof(PE_DWord), SEEK_SET);
@@ -194,7 +184,7 @@ static int PE_(r_bin_pe_parse_imports)(PE_(r_bin_pe_obj) *bin, PE_(r_bin_pe_impo
 		}
 	} while (import_table);
 
-	return 0;
+	return i;
 }
 
 int PE_(r_bin_pe_close)(PE_(r_bin_pe_obj) *bin)
@@ -355,16 +345,17 @@ int PE_(r_bin_pe_get_imports)(PE_(r_bin_pe_obj) *bin, PE_(r_bin_pe_import) *impo
 	for (i = 0; i < import_dirs_count; i++, import_dirp++) {
 		lseek(bin->fd, PE_(r_bin_pe_aux_rva_to_offset)(bin, import_dirp->Name), SEEK_SET);
 		read(bin->fd, dll_name, PE_NAME_LENGTH);
-		PE_(r_bin_pe_parse_imports)(bin, &importp, dll_name,
-			import_dirp->Characteristics, import_dirp->FirstThunk);
+		if (!PE_(r_bin_pe_parse_imports)(bin, &importp, dll_name,
+			import_dirp->Characteristics, import_dirp->FirstThunk))
+			break;
 	}
 
 	delay_import_dirp = bin->delay_import_directory;
 	for (i = 0; i < delay_import_dirs_count; i++, delay_import_dirp++) {
 		lseek(bin->fd, PE_(r_bin_pe_aux_rva_to_offset)(bin, delay_import_dirp->Name), SEEK_SET);
 		read(bin->fd, dll_name, PE_NAME_LENGTH);
-		PE_(r_bin_pe_parse_imports)(bin, &importp, dll_name, delay_import_dirp->DelayImportNameTable,
-			delay_import_dirp->DelayImportAddressTable);
+		if(!PE_(r_bin_pe_parse_imports)(bin, &importp, dll_name, delay_import_dirp->DelayImportNameTable, delay_import_dirp->DelayImportAddressTable))
+			break;
 	}
 
 	return 0;
@@ -375,7 +366,6 @@ int PE_(r_bin_pe_get_imports_count)(PE_(r_bin_pe_obj) *bin)
 	PE_(image_import_directory) *import_dirp;
 	PE_(image_delay_import_directory) *delay_import_dirp;
 	PE_DWord import_table, off = 0;
-	char name[PE_NAME_LENGTH];
 	int import_dirs_count = PE_(r_bin_pe_get_import_dirs_count)(bin);
 	int delay_import_dirs_count = PE_(r_bin_pe_get_delay_import_dirs_count)(bin);
 	int imports_count = 0, i, j;
@@ -386,21 +376,11 @@ int PE_(r_bin_pe_get_imports_count)(PE_(r_bin_pe_obj) *bin)
 	import_dirp = bin->import_directory;
 	import_table = 0;
 	for (i = 0; i < import_dirs_count; i++, import_dirp++) {
-		lseek(bin->fd, PE_(r_bin_pe_aux_rva_to_offset)(bin, import_dirp->Characteristics), SEEK_SET);
-		read(bin->fd, &import_table, sizeof(PE_DWord));
-		lseek(bin->fd, PE_(r_bin_pe_aux_rva_to_offset)(bin, import_table) + sizeof(PE_Word), SEEK_SET);
-		read(bin->fd, name, PE_NAME_LENGTH);
-		if (IS_PRINTABLE(name[0]))
+		if (import_dirp->Characteristics)
 			off = PE_(r_bin_pe_aux_rva_to_offset)(bin, import_dirp->Characteristics);
-		else {
-			lseek(bin->fd, PE_(r_bin_pe_aux_rva_to_offset)(bin, import_dirp->FirstThunk), SEEK_SET);
-			read(bin->fd, &import_table, sizeof(PE_DWord));
-			lseek(bin->fd, PE_(r_bin_pe_aux_rva_to_offset)(bin, import_table)+ sizeof(PE_Word), SEEK_SET);
-			read(bin->fd, name, PE_NAME_LENGTH);
-			if (IS_PRINTABLE(name[0]))
-				off = PE_(r_bin_pe_aux_rva_to_offset)(bin, import_dirp->FirstThunk);
-			else continue;
-		}
+		else if (import_dirp->FirstThunk) 
+			off = PE_(r_bin_pe_aux_rva_to_offset)(bin, import_dirp->FirstThunk);
+		else break;;
 
 		j = 0;
 		do {
@@ -417,9 +397,15 @@ int PE_(r_bin_pe_get_imports_count)(PE_(r_bin_pe_obj) *bin)
 	delay_import_dirp = bin->delay_import_directory;
 	import_table = 0;
 	for (i = 0; i < delay_import_dirs_count; i++, delay_import_dirp++) {
+		if (delay_import_dirp->DelayImportNameTable)
+			off = PE_(r_bin_pe_aux_rva_to_offset)(bin, delay_import_dirp->DelayImportNameTable);
+		else if (delay_import_dirp->DelayImportAddressTable) 
+			off = PE_(r_bin_pe_aux_rva_to_offset)(bin, delay_import_dirp->DelayImportNameTable);
+		else break;
+
 		j = 0;
 		do {
-			lseek(bin->fd, PE_(r_bin_pe_aux_rva_to_offset)(bin, delay_import_dirp->DelayImportNameTable) + j * sizeof(PE_DWord), SEEK_SET);
+			lseek(bin->fd, off + j * sizeof(PE_DWord), SEEK_SET);
     		read(bin->fd, &import_table, sizeof(PE_DWord));
 			
 			if (import_table) {
