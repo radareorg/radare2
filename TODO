@@ -1,38 +1,21 @@
-
  ____  ___ ____  ___ ____  ___  ______   ____
 |  _ \/   \'   \/   \  _ \/ _ \ \__   | /    \
 |    <  V  . T  . V      <   _/ .--'_/ |  ()  |
 |_|\__|_|__|___/|_|_|_|\__\___/ |_____(_)____/
 
 ----------------------------------------[ todo 
-* if we use objcopy --stripsymbols on a library..the stripped symbols are not
-  listed by nm or rabin..but objcopy is able to see them O_O
-
-* rasm2 should be configurable at startup time to choose default arch (use environment?)
-* store version information in libraries ?
-* public delegate void RangeEachFunc(int i);
-* public void each(RangeEachFunc each_func) { ... }
-* r_io must need a reviewd undo API
 
 <{include libr/TODO}>
  
-* correct result (R_TRUFAE), but with warnings (implement r_errno and r_errstr in r_util?)
-  - Quantic errors ftw \o/
 * r_cmd must provide a nesting char table indexing for commands
   - this is pretty similar to r_db
   - every module can register their own commands
   - commands can be listed like in a tree
 * 'Vc' cursor mode makes color toggle
 
-* Finish and import the spp's getopt owns implementation in r_util (like in p9)
-
 * Add maxrows option for r_print (fix visual problem)
-* Drop #if conditionals to use #ifdef ones
-  - fits better with plan9 compiler
-  - use getopt() p9-like macros
 
 * Add test for config.c with _set_cb
-* Rename __UNIX__ as __POSIX__
 * Strip non input symbols in plugins (speed up loading)
 * Specify binmask in hexpairs
   - wx 1234:ff0f
@@ -47,11 +30,3 @@
  - We should enable r_lib to implement plugins in any
    scripting language, so we can for example prepare
    a .c stub interface for python/perl/ruby/..
- - Maybe having a preprocessor tool for this..
-
-Vala issues
-===========
-** in a vapi file you can define a different constructor class Foo { bar Bar(); }.. 
-   definition of Bar will override the previous Bar() class definition
-** .h is not included correctly for each vapi maybe its about order???
-

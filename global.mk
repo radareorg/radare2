@@ -23,3 +23,7 @@ LIBDIR=${PREFIX}/lib
 -include config-user.mk
 -include ../config-user.mk
 -include ../../config-user.mk
+
+-include mk/${COMPILER}.mk
+-include ../mk/${COMPILER}.mk
+-include ../../mk/${COMPILER}.mk

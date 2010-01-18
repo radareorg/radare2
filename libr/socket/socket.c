@@ -288,9 +288,9 @@ R_API char *r_socket_to_string(int fd)
 {
 	char *str = NULL;
 	struct sockaddr sa;
-	int sl = sizeof(sa);
-	memset(&sa, 0, sizeof(sa));
-	if (getpeername(fd, &sa, &sl) != 0) {
+	unsigned int sl = sizeof(sa);
+	memset (&sa, 0, sizeof(sa));
+	if (getpeername (fd, &sa, &sl) != 0) {
 		printf("ERRNO IS %d\n", errno);
 		perror("getpeername");
 	} else {

@@ -14,8 +14,8 @@ int main()
 	for(;;){
 		if (!r_socket_proc_ready(sp, 0,0))
 			break;
-		ret = r_socket_proc_fgets(sp, buf, 128);
-printf("RET=%d\n", ret);
+		ret = r_socket_proc_gets(sp, buf, 128);
+		printf("RET=%d\n", ret);
 		if (ret<0) break;
 		else if (ret>0)
 			printf("%d=\"%s\"\n", ret, buf);

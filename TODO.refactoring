@@ -1,6 +1,25 @@
 TODO refactoring
 ================
 
+These refactoring bugs should be discussed and reviewed. Feedback is welcome
+
+* Review r_io API
+
 * Remove some unnecesary libraries for the core
   - r_th is fun.. but not useful anymore.. we should use glib or any other threading library
   - move the source of r_th oustide r2
+
+* Drop #if conditionals to use #ifdef ones
+  - fits better with plan9 compiler
+  - use getopt() p9-like macros
+
+* Store version information in libraries ?
+
+* rasm2 should be configurable at startup time to choose default arch (use environment?)
+
+* correct result (R_TRUFAE), but with warnings (implement r_errno and r_errstr in r_util?)
+  - Quantic errors ftw \o/
+
+* Finish and import the spp's getopt owns implementation in r_util (like in p9)
+
+* Rename __UNIX__ as __POSIX__
