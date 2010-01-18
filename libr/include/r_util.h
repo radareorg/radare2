@@ -4,7 +4,7 @@
 #include "r_types.h"
 #include <btree.h>
 #include "r_list.h" // radare linked list
-#include "r_iter.h" // radare fixed pointer array iterators
+#include "r_array.h" // radare fixed pointer array iterators
 #include "list.h" // kernel linked list
 /* profiling */
 #include <sys/time.h>

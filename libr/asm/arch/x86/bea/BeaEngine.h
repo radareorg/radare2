@@ -1,12 +1,11 @@
 #ifndef _BEA_ENGINE_
 #define _BEA_ENGINE_
 
-#ifdef __UNIX__
+/* w32 foo */
 #define BYTE unsigned char
 #define WORD unsigned short
 #define DWORD unsigned long
 #define __stdcall 
-#endif
 
 #define INSTRUCT_LENGTH 64
 

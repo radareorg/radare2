@@ -5,7 +5,7 @@
 
 #include <r_types.h>
 #include <r_io.h>
-#include <r_iter.h>
+#include <r_array.h>
 #include <r_list.h>
 #include <list.h>
 
@@ -122,12 +122,12 @@ typedef struct r_bin_field_t {
 } rBinField;
 
 typedef struct r_bin_object_t {
-	r_iter_t entrys;
-	r_iter_t sections;
-	r_iter_t symbols;
-	r_iter_t imports;
-	r_iter_t strings;
-	r_iter_t fields;
+	rArray entrys;
+	rArray sections;
+	rArray symbols;
+	rArray imports;
+	rArray strings;
+	rArray fields;
 	rBinInfo info;
 } rBinObject;
 

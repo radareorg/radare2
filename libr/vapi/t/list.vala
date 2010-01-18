@@ -24,6 +24,6 @@ rList<IterableObject> get_list () {
 void main() {
 	var head = get_list ();
 	foreach (var f in head) {
-		stdout.printf(" - %p  %s\n", f, f.name);
+		print (" - %p  %s\n", f, f.name);
 	}
 }

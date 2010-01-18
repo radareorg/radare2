@@ -1,10 +1,8 @@
-# list
-
-all: core regs hash sc socket asm search iter bin db io array
+all: core regs hash sc socket asm search bin db io array list
 	@true
 
-array:
-	valac --vapidir=.. array.vala --pkg r_bin --pkg r_util 
+bintest:
+	valac --vapidir=.. bintest.vala --pkg r_bin --pkg r_util 
 
 regs:
 	valac --vapidir=.. --pkg r_reg regs.vala --pkg r_util
@@ -12,11 +10,17 @@ regs:
 lang:
 	valac lang.vala --pkg r_lang --pkg r_util
 
-# XXX
-#list:
-#	valac -o list list_c.c list.vala --pkg r_util --vapidir=. --vapidir=${PWD}/.. -X -I. --pkg list
+array:
+	valac --vapidir=.. --pkg r_util array.vala
+
+arrayc:
+	valac -C --vapidir=.. --pkg r_util array.vala
+
 list:
 	valac -o list list.vala --pkg r_util --vapidir=..
+
+listc:
+	valac -C -o list list.vala --pkg r_util --vapidir=..
 
 genie:
 	valac --vapidir=.. --pkg r_asm --pkg libr asm.gs
@@ -27,9 +31,6 @@ io:
 
 db:
 	valac --vapidir=${PWD}/.. --pkg r_db db.vala
-
-iter:
-	valac --vapidir=.. --pkg r_util iter.vala
 
 sc:
 	valac -C --vapidir=${PWD}/.. sc.vala --pkg r_syscall

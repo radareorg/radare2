@@ -37,7 +37,7 @@ public class rAsmExample
 
 		stdout.printf("Enumerate fastcall arguments:\n");
 		for(int i=0;i<4;i++) {
-			stdout.printf(" - %s\n", st.fastcall(i, 4).arg[0]);
+			stdout.printf(" - %s\n", st.fastcall(i, 4));
 		}
 	}
 }

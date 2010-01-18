@@ -6,7 +6,7 @@ R_API void r_list_init(rList *list) {
 	list->free = NULL;
 }
 
-R_API void r_list_delete (rList *list, rListItem *item) {
+R_API void r_list_delete (rList *list, rListIter *item) {
 	if (list->head == item)
 		list->head = item->next;
 	if (list->tail == item)
@@ -28,48 +28,28 @@ R_API rList *r_list_new() {
 	return list;
 }
 
-R_API void r_list_iter_init (rListIter *iter, rList *list) {
-	iter->cur = list->head;
-}
-
-R_API rListIter *r_list_iter_new(rList *list) {
-	rListIter *iter = MALLOC_STRUCT (rListIter);
-	r_list_iter_init (iter, list);
-	return iter;
-}
-
-R_API int r_list_empty(rList *list) {
-	return (list->head == NULL && list->tail == NULL);
-}
-
-R_API void *r_list_iter_get(rListIter *iter) {
-	void *data = iter->cur->data;
-	iter->cur = iter->cur->next;
-	return data;
-}
-
 R_API void r_list_destroy (rList *list) {
 	/* TODO: free elements */
 	if (list->free) {
-		rListIter i = { list->head };
-		while (i.cur) {
-			rListItem *next = i.cur->next;
-			r_list_delete (list, i.cur);
-			i.cur = next;
+		rListIter *it = list->head;
+		while (it) {
+			rListIter *next = it->next;
+			r_list_delete (list, it);
+			it = next;
 		}
 	}
 	list->head = list->tail = NULL;
 	//free (list);
 }
 
-R_API rListItem *r_list_item_new (void *data) {
-	rListItem *new = MALLOC_STRUCT (rListItem);
+R_API rListIter *r_list_item_new (void *data) {
+	rListIter *new = MALLOC_STRUCT (rListIter);
 	new->data = data;
 	return new;
 }
 
-R_API rListItem *r_list_append(rList *list, void *data) {
-	rListItem *new = MALLOC_STRUCT (rListItem);
+R_API rListIter *r_list_append(rList *list, void *data) {
+	rListIter *new = MALLOC_STRUCT (rListIter);
 	if (list->tail)
 		list->tail->next = new;
 	new->data = data;
@@ -81,16 +61,8 @@ R_API rListItem *r_list_append(rList *list, void *data) {
 	return new;
 }
 
-R_API rListItem *r_list_head(rList *list) {
-	return list->head;
-}
-
-R_API rListItem *r_list_tail(rList *list) {
-	return list->tail;
-}
-
-R_API rListItem *r_list_prepend(rList *list, void *data) {
-	rListItem *new = MALLOC_STRUCT (rListItem);
+R_API rListIter *r_list_prepend(rList *list, void *data) {
+	rListIter *new = MALLOC_STRUCT (rListIter);
 	if (list->head)
 		list->head->prev = new;
 	new->data = data;
@@ -102,15 +74,10 @@ R_API rListItem *r_list_prepend(rList *list, void *data) {
 	return new;
 }
 
-R_API int r_list_iter_next(rListIter *iter) {
-	return (iter->cur)?1:0;
-}
-
 #if TEST
 int main () {
-	struct r_list_item_t *it;
-	struct r_list_iter_t *iter;
-	struct r_list_t *l = r_list_new ();
+	rListIter *iter, *it;
+	rList *l = r_list_new ();
 
 	r_list_append (l, "foo");
 	r_list_append (l, "bar");
@@ -123,7 +90,7 @@ int main () {
 
 	iter = r_list_iterator (l);
 	while (r_list_iter_next (iter)) {
-		rListItem *cur = iter->cur;
+		rListIter *cur = iter;
 		char *str = r_list_iter_get (iter);
 		if (!strcmp (str, "bar"))
 			r_list_delete (l, cur);
@@ -132,7 +99,7 @@ int main () {
 	iter = r_list_iterator (l);
 	while (r_list_iter_next (iter)) {
 		char *str = r_list_iter_get (iter);
-r_list_delete (list, iter);
+		//XXX r_list_delete (l, iter);
 		printf (" - %s\n", str);
 	}
 
@@ -150,10 +117,9 @@ r_list_delete (list, iter);
 	r_list_delete (l, it);
 
 	{
-		rListIter i = { l->head };
-		r_list_iter_init (&i, l);
-		for (; i.cur; i.cur = i.cur->next) {
-			char *str = i.cur->data;
+		rListIter* i = r_list_iterator (l);
+		for (; i; i = i->next) {
+			char *str = i->data;
 			printf (" * %s\n", str);
 		}
 	}

@@ -1,22 +1,73 @@
-/* radare - LGPL - Copyright 2009 pancake<@nopcode.org> */
-// gcc array.c `pkg-config --libs --cflags r_util r_bin gobject-2.0` -I ../../include/
+/* radare - LGPL - Copyright 2009-2010 pancake<@nopcode.org> */
 
 using Radare;
 
-void main(string[] args) {
-	var bin = new rBin();
+public class TestObject {
+	public string name { get; set; }
 
-	if (args.length==1)
-		error("No file given");
-	if (bin.open(args[1], false)<0)
-		error("Cannot open file");
+	public TestObject(string name) {
+		this.name = name;
+	}
+}
 
-	print("Entrypoint: 0x%08llx\n", bin.get_entry().offset);
-	foreach (rBin.Symbol *f in bin.get_symbols())
-		print(" - 0x%08llx  %s\n", f->offset, f->name);
+rArray<TestObject> get_iter_list () {
+	rArray<TestObject> list = new rArray<TestObject>(5);
 
-	foreach (rBin.Section *f in bin.get_sections())
-		print(" - 0x%08llx  %s\n", f->offset, f->name);
+	list.set (0, new TestObject ("patata"));
+	list.set (1, new TestObject ("cacatua"));
+	list.set (2, new TestObject ("tutu"));
+	list.set (3, new TestObject ("baba"));
 
-	bin.close();
+	return list;
+}
+
+void main() {
+	var foo = get_iter_list ();
+
+	/* sugar iterator */
+	foreach (var obj in foo) {
+		print ("- %s\n", obj.name);
+	}
+
+	/* manual iteration using API */
+	var fit = foo.iterator ();
+	while (fit.next ()) {
+		TestObject io = fit.get ();
+		print ("= %s\n", io.name);
+	}
+
+	/* sugar iterator again */
+	foreach (var obj in foo) {
+		print ("- %s\n", obj.name);
+	}
+
+	/* callback iterator */
+/*
+	foo.iterator ().for_each ( (x) => {
+		// vala does not yet supports generic delegates
+		TestObject *io = x;
+		print (" *** %s\n", io->name);
+	});
+
+	foo.for_each ( (x) => {
+		TestObject *io = x;
+		print (" --- %s\n", io->name);
+	});
+
+	foo.for_each ( (x) => {
+		TestObject *io = x;
+		print (" yyy %s\n", io->name);
+	});
+*/
+
+	// r_iter_for_each (foo, iterable_object_unref);
+//	foo.foreach ((x) => {
+//		delete x;
+//	});
+/*
+	foo.foreach ((x) => {
+		TestObject *io = x;
+		print ("+++ %s\n", io->name);
+	});
+*/
 }

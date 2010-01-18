@@ -19,9 +19,9 @@
 //    You should have received a copy of the GNU Lesser General Public License
 //    along with BeaEngine.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef __UNIX__
-#include <windows.h>
-#endif
+//#ifndef __UNIX__
+//#include <windows.h>
+//#endif
 #include <stdio.h>
 #include <string.h>
 #include "BeaEngine.h"
