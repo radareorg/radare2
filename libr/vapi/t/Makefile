@@ -1,4 +1,5 @@
-all: core regs hash sc socket asm search bin db io array list
+# bin is broken..waiting for the new api
+all: core regs hash sc socket asm search db io array list
 	@true
 
 bintest:

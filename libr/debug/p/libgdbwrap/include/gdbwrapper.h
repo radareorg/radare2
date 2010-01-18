@@ -1,5 +1,6 @@
 /* File to include to use the wrapper. */
 
+#include "r_types.h"
 #if __UNIX__
 #include <netinet/in.h>
 #include <sys/socket.h>

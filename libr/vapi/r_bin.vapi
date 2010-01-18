@@ -19,9 +19,9 @@ namespace Radare {
 		// TODO: deprecate
 		public rList<rBin.Symbol*> symbols;
 
-		public rArray<rBin.Section> get_sections();
-		public rArray<rBin.Symbol> get_symbols();
-		public rArray<rBin.Import> get_imports();
+		//public rArray<rBin.Section> get_sections();
+		//public rArray<rBin.Symbol> get_symbols();
+		//public rArray<rBin.Import> get_imports();
 
 		public Info* get_info();
 		public uint64 get_section_offset(string name);

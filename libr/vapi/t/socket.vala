@@ -7,14 +7,8 @@ using Radare;
 public static void main(string[] args)
 {
 	string str = (string) new char[4096];
-#if POSIX
-	unowned GLib.FILE stdin = &Posix.stdin;
-	unowned GLib.FILE stdout = &Posix.stdout;
-#else
-	// XXX: not yet supported by vala
 	unowned GLib.FileStream stdin = GLib.stdin;
 	unowned GLib.FileStream stdout = GLib.stdout;
-#endif
 
 	rSocket fd;
 	if (args.length>2)
@@ -26,26 +20,28 @@ public static void main(string[] args)
 		printf("Cannot connect\n");
 		return;
 	}
-	print("Connected\n");
+	print ("Connected\n");
 
-	stdout.printf("[-] waiting for output\n");
-	//while(!fd.ready(0,0));
+	print ("[-] waiting for output\n");
+///	while (!fd.ready(0,0));
 
-	print("[-] reading data\n");
-	//fd.printf("GET /\r\n\r\n");
+	print ("[-] reading data\n");
+	fd.printf ("GET /\r\n\r\n");
+/*
 	do {
 		string s = (string) new char[1024];
-		stdin.scanf("%s", s);
-		stdout.printf("==> (%s)\n", s);
-		print("length is = %d\n", (int)s.size());
-		fd.printf("GET %s HTTP/1.1\r\nHost: radare.org\r\n\r\n", s);
-		if (fd.gets(str, 1024)>0)
-			printf(str+"\n");
+		//stdin.scanf("%s", s);
+		//stdout.printf("==> (%s)\n", s);
+		print ("length is = %d\n", (int)s.size());
+		fd.printf ("GET %s HTTP/1.1\r\nHost: radare.org\r\n\r\n", s);
+		if (fd.gets (str, 1024)>0)
+			printf (str+"\n");
 		else break;
-	} while(true);
+	} while (true);
+*/
 	
-	//while(fd.gets(str, 1024)>0) {
-	//	printf(str+"\n");
-	//}
+	while (fd.gets (str, 1024)>0) {
+		printf (str+"\n");
+	}
 	fd.close();
 }

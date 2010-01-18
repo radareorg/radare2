@@ -2,6 +2,10 @@
 #define _INCLUDE_R_CONFIGURE_H_
 
 #define DEBUGGER @DEBUGGER@
+
+#ifdef PREFIX
+#undef PREFIX
+#endif
 #define PREFIX "@PREFIX@"
 
 #endif

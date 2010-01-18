@@ -5,7 +5,7 @@ FLAGS=-I../../include -Wl,-R.. -L.. -lr_util -g -DVERSION=\"${VERSION}\"
 BINS=test${EXT_EXE}
 BINS+=rax2${EXT_EXE}
 BINS+=ralloc${EXT_EXE}
-BINS+=iter${EXT_EXE}
+BINS+=array${EXT_EXE}
 BINS+=file_slurp_hexpairs${EXT_EXE}
 BINS+=pool${EXT_EXE}
 BINS+=test_sys${EXT_EXE}
@@ -31,8 +31,8 @@ pool${EXT_EXE}:
 rax2${EXT_EXE}:
 	${CC} ${FLAGS} rax2.c -o rax2${EXT_EXE}
 
-iter${EXT_EXE}:
-	${CC} ${FLAGS} iter.c -o iter${EXT_EXE}
+array${EXT_EXE}:
+	${CC} ${FLAGS} array.c -o array${EXT_EXE}
 
 file_slurp_hexpairs${EXT_EXE}:
 	${CC} ${FLAGS} test_file_slurp_hexpairs.c -o file_slurp_hexpairs${EXT_EXE}
