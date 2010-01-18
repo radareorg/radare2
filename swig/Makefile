@@ -1,13 +1,17 @@
-all: ruby perl python
+all: supported.langs ruby perl python
 
+supported.langs:
+	sh check-langs.sh
+
+# TODO: make it less spaguetti
 perl:
-	cd perl && make
+	@-[ "`grep perl supported.langs`" ] && cd perl && make
 
 python:
-	cd python && make
+	@-[ "`grep python supported.langs`" ] && cd python && make
 
 ruby:
-	cd ruby && make
+	@-[ "`grep python supported.langs`" ] && cd python && make
 
 test:
 	cd perl && make test
@@ -21,5 +25,6 @@ oldtest:
 clean:
 	rm -rf python/*
 	rm -rf perl/*
+	rm -rf ruby/*
 
 .PHONY: ruby python perl clean oldtest test all
