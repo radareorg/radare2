@@ -61,7 +61,7 @@ R_API int r_reg_set_bytes(struct r_reg_t *reg, int type, const ut8* buf, int len
 		if (type >= 0 && type <= R_REG_TYPE_LAST) {
 			regset = &reg->regset[type];
 			if (len <= regset->arena->size) {
-				memcpy(regset->arena->bytes, buf, len);
+				memcpy (regset->arena->bytes, buf, len);
 				ret = R_TRUE;
 			}
 		}

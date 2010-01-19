@@ -7,8 +7,8 @@
 // TODO: R_API int r_io_fetch(struct r_io_t *io, ut8 *buf, int len)
 //  --- check for EXEC perms in section (use cached read to accelerate)
 
-R_API struct r_io_t *r_io_init(struct r_io_t *io)
-{
+R_API struct r_io_t *r_io_init(struct r_io_t *io) {
+	if (!io) return NULL;
 	io->write_mask_fd = -1;
 	io->last_align = 0;
 	io->redirect = NULL;
@@ -22,10 +22,8 @@ R_API struct r_io_t *r_io_init(struct r_io_t *io)
 	return io;
 }
 
-R_API struct r_io_t *r_io_new()
-{
-	struct r_io_t *io = MALLOC_STRUCT(struct r_io_t);
-	return r_io_init(io);
+R_API struct r_io_t *r_io_new() {
+	return r_io_init (MALLOC_STRUCT (struct r_io_t));
 }
 
 R_API struct r_buf_t *r_io_read_buf(struct r_io_t *io, ut64 addr, int len)
@@ -39,8 +37,7 @@ R_API struct r_buf_t *r_io_read_buf(struct r_io_t *io, ut64 addr, int len)
 	return b;
 }
 
-R_API int r_io_write_buf(struct r_io_t *io, struct r_buf_t *b)
-{
+R_API int r_io_write_buf(struct r_io_t *io, struct r_buf_t *b) {
 	return r_io_write_at(io, b->base, b->buf, b->length);
 }
 
@@ -112,6 +109,7 @@ R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode)
 	return fd;
 }
 
+// TODO: Rename to use_fd ?
 R_API int r_io_set_fd(struct r_io_t *io, int fd)
 {
 	if (fd != -1 && fd != io->fd) {
@@ -120,7 +118,6 @@ R_API int r_io_set_fd(struct r_io_t *io, int fd)
 	}
 	return io->fd;
 }
-
 
 R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len)
 {

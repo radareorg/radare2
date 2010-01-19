@@ -1,6 +1,5 @@
 /* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
-[CCode (cheader_filename="r_debug.h", cprefix="r_debug", lower_case_cprefix="r_debug_")]
 namespace Radare {
 	[Compact]
 	[CCode (cname="struct r_debug_t", free_function="r_debug_free", cprefix="r_debug_")]
@@ -63,6 +62,5 @@ namespace Radare {
 		public int pid_del_thread();
 		//public Process pid_get(int pid); // XXX wrong api syntax 'get' is keyword
 		public bool pid_set_status(ProcessStatus status);
-
 	}
 }

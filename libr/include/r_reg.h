@@ -43,11 +43,13 @@ typedef struct r_reg_t {
 	struct r_reg_set_t regset[R_REG_TYPE_LAST];
 } rRegister;
 
+#define r_reg_new() r_reg_init (MALLOC_STRUCT (rRegister))
+
 #ifdef R_API
-/* lifecycle */
+R_API const char *r_reg_types[R_REG_TYPE_LAST+1];
 R_API struct r_reg_t *r_reg_free(struct r_reg_t *reg);
 R_API struct r_reg_t *r_reg_init(struct r_reg_t *reg);
-R_API struct r_reg_t *r_reg_new();
+//R_API struct r_reg_t *r_reg_new();
 R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *profile);
 R_API int r_reg_set_profile(struct r_reg_t *reg, const char *profile);
 R_API struct r_reg_item_t *r_reg_get(struct r_reg_t *reg, const char *name, int type);

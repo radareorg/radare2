@@ -24,10 +24,136 @@ static int cmd_iopipe(void *data, const char *input) {
 		r_io_handle_list(&core->io);
 		break;
 	default:
-		cmd_io_system(data, input);
+		cmd_io_system (data, input);
 		break;
 	}
 	return R_TRUE;
+}
+
+static void r_core_cmd_reg (struct r_core_t *core, const char *str) {
+	struct r_reg_item_t *r;
+	char *arg;
+	int size, i, type = R_REG_TYPE_GPR;
+	switch (str[0]) {
+	case '?':
+		eprintf("Usage: dr[*] [type] [size] - get/set registers\n"
+			" dr?        display this help message\n"
+			" .dr*       include common register values in flags\n"
+			" .dr-       unflag all registers\n"
+			" drp [file] load register metadata file\n"
+			" drp        display current register profile\n"
+			" dr         show 'gpr' registers\n"
+			" drt        show all register types\n"
+			" dr all     show all registers\n"
+			" dr flg 1   show flag registers ('flg' is type, see drt)\n"
+			" dr 16      show 16 bit registers\n"
+			" dr 32      show 32 bit registers\n"
+			" dr:eax     show value of eax register\n"
+			" dr eax=33  set register value. eax = 33\n");
+	case 'p':
+		if (str[1]) {
+			eprintf ("profile: \n");
+			if (core->dbg.reg_profile)
+				r_cons_printf ("%s\n", core->dbg.reg_profile);
+			else eprintf ("r_debug_reg: no register profile defined. Try 'dr.'\n");
+		} else r_reg_set_profile (core->dbg.reg, str+2);
+		break;
+	case 't':
+		for (i=0;r_reg_types[i];i++)
+			r_cons_printf ("%s\n", r_reg_types[i]);
+		break;
+	case ':':
+		r_debug_reg_sync (&core->dbg, R_REG_TYPE_GPR, R_FALSE);
+		r = r_reg_get (core->dbg.reg, str+1, R_REG_TYPE_GPR);
+		if (r == NULL)
+			eprintf ("Unknown register (%s)\n", str+1);
+		else r_cons_printf ("0x%08llx\n",
+			r_reg_get_value (core->dbg.reg, r));
+		break;
+	case '*':
+		r_debug_reg_sync (&core->dbg, R_REG_TYPE_GPR, R_FALSE);
+		r_debug_reg_list (&core->dbg, R_REG_TYPE_GPR, 32, 1);
+		break;
+	case '\0':
+		r_debug_reg_sync (&core->dbg, R_REG_TYPE_GPR, R_FALSE);
+		r_debug_reg_list (&core->dbg, R_REG_TYPE_GPR, 32, 0);
+		break;
+	case ' ':
+		arg = strchr(str+1, '=');
+		if (arg) {
+			*arg = 0;
+			r = r_reg_get (core->dbg.reg, str+1, R_REG_TYPE_GPR);
+			if (r == NULL) {
+				eprintf ("Unknown register '%s'\n", str+1);
+			} else {
+				// TODO: does not works well :/
+				eprintf ("SET(%s)(%s)\n", str, arg+1);
+				r_cons_printf ("0x%08llx ->", str,
+					r_reg_get_value (core->dbg.reg, r));
+				r_reg_set_value (core->dbg.reg, r,
+					r_num_math (&core->num, arg+1));
+				r_debug_reg_sync (&core->dbg, R_REG_TYPE_GPR, R_TRUE);
+				r_cons_printf ("0x%08llx\n",
+					r_reg_get_value (core->dbg.reg, r));
+			}
+			return;
+		}
+		size = atoi (str+1);
+		if (size==0) {
+			arg = strchr (str+1, ' ');
+			if (arg && size==0) {
+				*arg='\0';
+				size = atoi (arg);
+			} else size = 32;
+			eprintf ("ARG(%s)\n", str+1);
+			type = r_reg_type_by_name (str+1);
+		}
+		//printf("type = %d\nsize = %d\n", type, size);
+		if (type != R_REG_TYPE_LAST) {
+			r_debug_reg_sync (&core->dbg, type, R_FALSE);
+			r_debug_reg_list (&core->dbg, type, size, str[0]=='*');
+		} else eprintf("Unknown type\n");
+	}
+}
+
+static void r_core_cmd_bp (struct r_core_t *core, const char *input) {
+	if (input[1]==' ')
+		input++;
+	switch (input[1]) {
+	case '\0':
+		r_bp_list (core->dbg.bp, input[1]=='*');
+		break;
+	case '-':
+		r_bp_del(core->dbg.bp, r_num_math(&core->num, input+2));
+		break;
+	case 'e':
+		r_bp_enable(core->dbg.bp, r_num_math(&core->num, input+2), 1);
+		break;
+	case 'd':
+		r_bp_enable(core->dbg.bp, r_num_math(&core->num, input+2), 0);
+		break;
+	case 'h':
+		if (input[2]==' ') {
+			if (!r_bp_use(core->dbg.bp, input+3))
+				eprintf("Invalid name: '%s'.\n", input+3);
+		} else r_bp_handle_list(core->dbg.bp);
+		break;
+	case '?':
+		r_cons_printf(
+		"Usage: db [[-]addr] [len] [rwx] [condstring]\n"
+		"db              ; list breakpoints\n"
+		"db sym.main     ; add breakpoint into sym.main\n"
+		"db 0x804800     ; add breakpoint\n"
+		"db -0x804800    ; remove breakpoint\n"
+		"dbe 0x8048000   ; enable breakpoint\n"
+		"dbd 0x8048000   ; disable breakpoint\n"
+		"dbh x86         ; set/list breakpoint plugin handlers\n");
+		break;
+	default:
+		r_bp_add_sw(core->dbg.bp, r_num_math(&core->num, input+1),
+			1, R_BP_PROT_EXEC);
+		break;
+	}
 }
 
 /* TODO: this should be moved to the core->yank api */
@@ -257,16 +383,14 @@ static int cmd_help(void *data, const char *input)
 		for(input=input+1;input[0]==' ';input=input+1);
 		core->num.value = strlen(input);
 		break;
-	case 't':
-		{
-			struct r_prof_t prof;
-			r_prof_start(&prof);
-			r_core_cmd(core, input+1, 0);
-			r_prof_end(&prof);
-			core->num.value = (ut64)prof.result;
-			eprintf("%lf\n", prof.result);
-		}
-		break;
+	case 't': {
+		struct r_prof_t prof;
+		r_prof_start(&prof);
+		r_core_cmd(core, input+1, 0);
+		r_prof_end(&prof);
+		core->num.value = (ut64)prof.result;
+		eprintf("%lf\n", prof.result);
+		} break;
 	case '?': // ???
 		if (input[1]=='?') {
 			fprintf(stderr,
@@ -638,20 +762,17 @@ static int cmd_write(void *data, const char *input)
 		r_io_write_at(&core->io, core->offset, (const ut8*)str, len);
 		r_core_block_read(core, 0);
 		break;
-	case 't':
-		{
+	case 't': {
 			/* TODO: Support user defined size? */
 			int len = core->blocksize;
 			const char *arg = (const char *)(input+(input[1]==' ')?2:1);
 			const ut8 *buf = core->block;
 			r_file_dump(arg, buf, len);
-		}
-		break;
+		} break;
 	case 'T':
 		fprintf(stderr, "TODO\n");
 		break;
-	case 'f':
-		{
+	case 'f': {
 			int size;
 			const char *arg = (const char *)(input+(input[1]==' ')?2:1);
 			ut8 *buf = (ut8*) r_file_slurp(arg, &size);
@@ -660,10 +781,8 @@ static int cmd_write(void *data, const char *input)
 				r_io_write_at(&core->io, core->offset, buf, size);
 				free(buf);
 			} else eprintf("Cannot open file '%s'\n", arg);
-		}
-		break;
-	case 'F':
-		{
+		} break;
+	case 'F': {
 			int size;
 			const char *arg = (const char *)(input+(input[1]==' ')?2:1);
 			ut8 *buf = r_file_slurp_hexpairs(arg, &size);
@@ -672,8 +791,7 @@ static int cmd_write(void *data, const char *input)
 				r_io_write_at(&core->io, core->offset, buf, size);
 				free(buf);
 			} else eprintf("Cannot open file '%s'\n", arg);
-		}
-		break;
+		} break;
 	case 'w':
 		str = str+1;
 		len = len-1;
@@ -1604,63 +1722,28 @@ R_API int r_core_cmd_command(struct r_core_t *core, const char *command)
 }
 
 static int cmd_debug(void *data, const char *input) {
+	int pid, sig;
 	struct r_core_t *core = (struct r_core_t *)data;
 	char *ptr;
-	switch(input[0]) {
+	switch (input[0]) {
 	case 'k':
-		{
 		/* XXX: not for threads? signal is for a whole process!! */
 		/* XXX: but we want fine-grained access to process resources */
-			int pid = 0;
-			int sig = 9;
-			pid = atoi(input);
-			ptr = strchr(input, ' ');
-			if (ptr) sig = atoi(ptr+1);
-			if (pid > 0) {
-				fprintf(stderr, "Sending signal '%d' to pid '%d'\n", sig, pid);
-				r_debug_kill(&core->dbg, pid, sig);
-			} else fprintf(stderr, "Invalid arguments\n");
-		}
+		pid = atoi(input);
+		ptr = strchr(input, ' ');
+		if (ptr) sig = atoi(ptr+1);
+		if (pid > 0) {
+			eprintf ("Sending signal '%d' to pid '%d'\n",
+				sig, pid);
+			r_debug_kill (&core->dbg, pid, sig);
+		} else eprintf ("Invalid arguments\n");
 		break;
 	case 's':
-		fprintf(stderr, "step\n");
-		r_debug_step(&core->dbg, 1);
+		eprintf ("step\n");
+		r_debug_step (&core->dbg, 1);
 		break;
 	case 'b':
-		if (input[1]==' ') input = input+1;
-		switch(input[1]) {
-		case '\0':
-			r_bp_list(core->dbg.bp, input[1]=='*');
-			break;
-		case '-':
-			r_bp_del(core->dbg.bp, r_num_math(&core->num, input+2));
-			break;
-		case 'e':
-			r_bp_enable(core->dbg.bp, r_num_math(&core->num, input+2), 1);
-			break;
-		case 'd':
-			r_bp_enable(core->dbg.bp, r_num_math(&core->num, input+2), 0);
-			break;
-		case 'h':
-			if (input[2]==' ') {
-				if (!r_bp_use(core->dbg.bp, input+3))
-					eprintf("Invalid name: '%s'.\n", input+3);
-			} else r_bp_handle_list(core->dbg.bp);
-			break;
-		case '?':
-			r_cons_printf(
-			"Usage: db [[-]addr] [len] [rwx] [condstring]\n"
-			"db              ; list breakpoints\n"
-			"db 0x804800     ; add breakpoint\n"
-			"db -0x804800    ; remove breakpoint\n"
-			"dbe 0x8048000   ; enable breakpoint\n"
-			"dbd 0x8048000   ; disable breakpoint\n"
-			"dbh x86         ; set/list breakpoint plugin handlers\n");
-			break;
-		default:
-			r_bp_add_sw(core->dbg.bp, r_num_math(&core->num, input+1), 1, R_BP_PROT_EXEC);
-			break;
-		}
+		r_core_cmd_bp (core, input);
 		break;
 	case 't':
 		fprintf(stderr, "TODO: list/select thread\n");
@@ -1669,48 +1752,51 @@ static int cmd_debug(void *data, const char *input) {
 		fprintf(stderr, "TODO: transplant process\n");
 		break;
 	case 'c':
-		fprintf(stderr, "continue\n");
-		r_debug_continue(&core->dbg);
+		switch (input[1]) {
+		case '?':
+			eprintf("Usage: dc[?]  -- continue execution\n"
+				" dc?               show this help\n"
+				" dc                continue execution of all childs\n"
+				" dck [sig] [pid]   continue sending kill 9 to process\n"
+				" dc [pid]          continue execution of pid\n"
+				" dc[-pid]          stop execution of pid\n"
+				"TODO: support for threads?\n");
+			break;
+		case 'k':
+			// select pid and r_debug_continue_kill (&core->dbg, 
+			ptr = strchr (input+3, ' ');
+			if (ptr) {
+				int old_pid = core->dbg.pid;
+				int pid = atoi (ptr+1);
+				*ptr = 0;
+				r_debug_select (&core->dbg, pid, pid);
+				r_debug_continue_kill (&core->dbg, atoi (input+2));
+				r_debug_select (&core->dbg, old_pid, old_pid);
+			} else r_debug_continue_kill (&core->dbg, atoi (input+2));
+			break;
+		case ' ':
+			do {
+				int old_pid = core->dbg.pid;
+				int pid = atoi (input+2);
+				r_debug_select (&core->dbg, pid, pid);
+				r_debug_continue (&core->dbg);
+				r_debug_select (&core->dbg, old_pid, old_pid);
+			} while (0);
+			break;
+		default:
+			eprintf ("continue\n");
+			r_debug_continue (&core->dbg);
+		}
 		break;
 	case 'm':
+		// XXX: allow to allocate memory, show memory maps, ...
 		{char pid[16]; sprintf(pid, "%d", core->dbg.pid);
 		r_sys_setenv("PID", pid, 1);
 		system("cat /proc/$PID/maps"); }
 		break;
 	case 'r':
-#if 1
-{
-		char *arg;
-		int type = R_REG_TYPE_GPR;
-		int size = atoi(input+1);
-		if (input[1]=='?') {
-			fprintf(stderr, "Usage: dr[*] [type] [size] - get/set registers\n"
-				" .dr*       include common register values in flags\n"
-				" dr flg 1   show flag registers \n"
-				" dr 16      show 16 bit GPR registers\n");
-			break;
-		}
-		if (size==0) {
-			if (input[1]==' ') {
-				arg = strchr(input+2, ' ');
-				if (arg && size==0) {
-					*arg='\0';
-					size = atoi(arg+1);
-				} else size = 32;
-				printf("ARG(%s)\n", input+2);
-				type = r_reg_type_by_name(input+2);
-			} else size = 32;
-		}
-		//printf("type = %d\nsize = %d\n", type, size);
-		if (type != -1) {
-			// TODO: REG_TYPE_ALL // aka -1
-			r_debug_reg_sync(&core->dbg, type, R_FALSE);
-			r_debug_reg_list(&core->dbg, type, size, input[1]=='*');
-		} else fprintf(stderr, "Unknown type\n");
-}
-#else
-		r_core_cmd(core, "|reg", 0);
-#endif
+		r_core_cmd_reg (core, input+1);
+		//r_core_cmd(core, "|reg", 0);
 		break;
 	case 'p':
 		// TODO: Support PID and Thread
@@ -1735,13 +1821,8 @@ static int cmd_debug(void *data, const char *input) {
 		" dp [pid]     ; list or set pid\n"
 		" dt [tid]     ; select thread id\n"
 		" dc           ; continue execution\n"
-		" dr           ; show registers\n"
-		" dr*          ; show registers in radare commands\n"
-		" dr eax       ; show value of eax register\n"
-		" dr eax = 33  ; set register value. eax = 33\n"
-		" db           ; list breakpoints\n"
-		" db sym.main  ; set breakpoint\n"
-		" db -sym.main ; drop breakpoint\n"
+		" dr[?]        ; cpu registers, dr? for extended help\n"
+		" db[?]        ; breakpoints\n"
 		" dm           ; show memory maps\n"
 		" dm 4096      ; allocate 4KB in child process\n"
 		" dm rw- esp 9K; set 9KB of the stack as read+write (no exec)\n"

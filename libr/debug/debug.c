@@ -1,31 +1,30 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_debug.h>
 
-R_API int r_debug_init(struct r_debug_t *dbg, int hard)
+R_API struct r_debug_t *r_debug_init(struct r_debug_t *dbg, int hard)
 {
-	dbg->pid = -1;
-	dbg->tid = -1;
-	dbg->swstep = 0; // software step
-	dbg->newstate = 0;
-	//dbg->regs = dbg->oregs = NULL;
-	dbg->printf = (void *)printf;
-	dbg->reg = r_reg_new();
-	dbg->h = NULL;
-	if (hard) {
-		dbg->bp = r_bp_new();
-		r_debug_handle_init(dbg);
-		dbg->bp->iob.init = R_FALSE;
+	if (dbg) {
+		dbg->pid = -1;
+		dbg->tid = -1;
+		dbg->swstep = 0; // software step
+		dbg->newstate = 0;
+		//dbg->regs = dbg->oregs = NULL;
+		dbg->printf = (void *)printf;
+		dbg->reg = r_reg_new();
+		dbg->h = NULL;
+		if (hard) {
+			dbg->bp = r_bp_new();
+			r_debug_handle_init(dbg);
+			dbg->bp->iob.init = R_FALSE;
+		}
 	}
-	return R_TRUE;
+	return dbg;
 }
 
 R_API struct r_debug_t *r_debug_new()
 {
-	struct r_debug_t *dbg = MALLOC_STRUCT(struct r_debug_t);
-	if (dbg != NULL)
-		r_debug_init(dbg, R_TRUE);
-	return dbg;
+	return r_debug_init (MALLOC_STRUCT (struct r_debug_t), R_TRUE);
 }
 
 R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg)
@@ -126,17 +125,22 @@ R_API int r_debug_step_over(struct r_debug_t *dbg, int steps)
 	return r_debug_step(dbg, steps);
 }
 
-R_API int r_debug_continue(struct r_debug_t *dbg)
+R_API int r_debug_continue_kill(struct r_debug_t *dbg, int sig)
 {
 	int ret = R_FALSE;
-	if (dbg->h){
+	if (dbg->h) {
 		if (dbg->h->cont) {
-			ret = dbg->h->cont(dbg->pid);
+			ret = dbg->h->cont(dbg->pid, sig);
 			if (dbg->h->wait)
 				ret = dbg->h->wait(dbg->pid);
 		}
 	}
 	return ret;
+}
+
+R_API int r_debug_continue(struct r_debug_t *dbg)
+{
+	return r_debug_continue_kill (dbg, -1);
 }
 
 R_API int r_debug_continue_until(struct r_debug_t *dbg, ut64 addr)

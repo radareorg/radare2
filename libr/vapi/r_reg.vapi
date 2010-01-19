@@ -43,11 +43,16 @@ namespace Radare {
 			public rList<rRegister.Item*> regs;
 		}
 
+		[NoArrayLength]
+		[CCode (cname="r_reg_types")]
+		public static weak string types[]; //Type.LAST];
+
 		public rRegister();
 		public bool set_profile(string file);
 		public bool set_profile_string(string profile);
 		public rRegister.Item get(string name, int type = -1);
-		public rList<rRegister.Item*> get_list(rRegister.Type type);
+		/* TODO: use r_array or r_list here */
+		public KernelList<rRegister.Item*> get_list(rRegister.Type type);
 
 		public uint64 get_value(rRegister.Item item);
 		public bool set_value(rRegister.Item item, uint64 val);

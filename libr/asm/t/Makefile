@@ -1,5 +1,7 @@
+include ../../config.mk
+
 OBJ=rasm2.o
-BIN=rasm2
+BIN=rasm2${EXT_EXE}
 BINDEPS=r_util r_lib r_asm r_print r_cons
 LIBS+=-ldl
 

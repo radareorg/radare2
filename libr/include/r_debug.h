@@ -22,6 +22,7 @@ typedef struct r_debug_t {
 	int swstep; /* steps with software traps */
 	int steps;  /* counter of steps done */
 	int newstate;
+	char *reg_profile;
 	struct r_reg_t *reg;
 	//struct r_regset_t *oregs;
 	//struct r_regset_t *regs;
@@ -49,13 +50,13 @@ typedef struct r_debug_handle_t {
 	int (*detach)(int pid);
 	/* flow */
 	int (*step)(int pid); // if step() is NULL; reimplement it with traps
-	int (*cont)(int pid);
+	int (*cont)(int pid, int sig);
 	int (*wait)(int pid);
 	int (*contsc)(int pid, int sc);
 	/* registers */
 	int (*reg_read)(struct r_debug_t *dbg, int type, ut8 *buf, int size);
 	char* (*reg_profile)();
-	int (*reg_write)(int pid, ut8 *buf); //XXX struct r_regset_t regs);
+	int (*reg_write)(int pid, int type, const ut8 *buf, int size); //XXX struct r_regset_t regs);
 	/* memory */
 	ut64 (*mmu_alloc)(void *user, ut64 size, ut64 addr);
 	int (*mmu_free)(void *user, ut64 addr);
@@ -80,7 +81,7 @@ R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo
 R_API int r_debug_handle_init(struct r_debug_t *dbg);
 R_API int r_debug_handle_list(struct r_debug_t *dbg);
 
-R_API int r_debug_init(struct r_debug_t *dbg, int hard);
+R_API struct r_debug_t *r_debug_init(struct r_debug_t *dbg, int hard);
 R_API struct r_debug_t *r_debug_new();
 R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg);
 
@@ -88,6 +89,7 @@ R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg);
 R_API int r_debug_kill(struct r_debug_t *dbg, int pid, int sig);
 R_API int r_debug_step(struct r_debug_t *dbg, int steps);
 R_API int r_debug_continue(struct r_debug_t *dbg);
+R_API int r_debug_continue_kill(struct r_debug_t *dbg, int signal);
 R_API int r_debug_select(struct r_debug_t *dbg, int pid, int tid);
 
 /* handle.c */

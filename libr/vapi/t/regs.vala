@@ -9,7 +9,7 @@ void main() {
 
 	reg.set_value (reg.get ("eax"), 666);
 
-	rList<rRegister.Item*> head =
+	KernelList<rRegister.Item*> head =
 		reg.get_list (rRegister.Type.GPR);
 
 	foreach (rRegister.Item* item in head) {
@@ -17,4 +17,9 @@ void main() {
 			item->name, item->size,
 			reg.get_value (item));
 	}
+
+// XXX noarraylength vala bug
+//	print ("%d\n", reg.types.length);
+	for (int i=0;reg.types[i] != null; i++)
+		print ("  Type %d is %s\n", i, reg.types[i]);
 }

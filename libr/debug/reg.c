@@ -1,24 +1,26 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_debug.h>
 #include <r_reg.h>
 
 R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write)
 {
-	int ret = R_FALSE;
+	int size, ret = R_FALSE;
 	if (write) {
-		// TODO must implement
-		//if (dbg && dbg->h && dbg->h->reg_write)
-		//	dbg->h->reg_write(dbg->pid, dbg->regs);
+		if (dbg && dbg->h && dbg->h->reg_write) {
+			ut8 *buf = r_reg_get_bytes (dbg->reg, type, &size);
+			if (!dbg->h->reg_write (dbg->pid, type, buf, sizeof (buf)))
+				eprintf ("r_debug_reg: error reading registers\n");
+		} else eprintf ("r_debug_reg: cannot set registers\n");
 	} else {
 		/* read registers from debugger backend to dbg->regs */
 		if (dbg && dbg->h && dbg->h->reg_read) {
-			int size = 4096;
 			ut8 buf[4096]; // XXX hacky!
-			size = dbg->h->reg_read(dbg, type, buf, size);
-			r_reg_set_bytes(dbg->reg, type, buf, size);
-			ret = R_TRUE;
-		}
+			size = dbg->h->reg_read (dbg, type, buf, sizeof (buf));
+			if (size == R_FALSE)
+				eprintf ("r_debug_reg: error reading registers\n");
+			ret = r_reg_set_bytes (dbg->reg, type, buf, size);
+		} else eprintf ("r_debug_reg: cannot read registers\n");
 	}
 	return ret;
 }
@@ -35,8 +37,10 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad)
 			continue;
 		if (size != 0 && size != item->size)
 			continue;
-		if (rad) dbg->printf("f %s @ 0x%08llx\n", item->name, r_reg_get_value(dbg->reg, item));
-		else dbg->printf("%s = 0x%08llx\n", item->name, r_reg_get_value(dbg->reg, item));
+		if (rad) dbg->printf("f %s @ 0x%08llx\n",
+			item->name, r_reg_get_value(dbg->reg, item));
+		else dbg->printf("%s = 0x%08llx\n",
+			item->name, r_reg_get_value(dbg->reg, item));
 		n++;
 	}
 	return n;

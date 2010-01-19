@@ -6,8 +6,12 @@
 #include <r_reg.h>
 #include <r_lib.h>
 
-#if __WINDOWS__
+#if __linux__
+#include <sys/user.h>
+#include <limits.h>
+#endif
 
+#if __WINDOWS__
 struct r_debug_handle_t r_debug_plugin_ptrace = {
 	.name = "ptrace",
 };
@@ -25,7 +29,7 @@ static int r_debug_ptrace_step(int pid)
 	ut32 addr = 0; /* should be eip */
 	//ut32 data = 0;
 	//printf("NATIVE STEP over PID=%d\n", pid);
-	ret = ptrace(PTRACE_SINGLESTEP, pid, addr, 0); //addr, data);
+	ret = ptrace (PTRACE_SINGLESTEP, pid, addr, 0); //addr, data);
 	if (ret == -1)
 		perror("ptrace-singlestep");
 	return R_TRUE;
@@ -35,7 +39,7 @@ static int r_debug_ptrace_attach(int pid)
 {
 	void *addr = 0;
 	void *data = 0;
-	int ret = ptrace(PTRACE_ATTACH, pid, addr, data);
+	int ret = ptrace (PTRACE_ATTACH, pid, addr, data);
 	return (ret != -1)?R_TRUE:R_FALSE;
 }
 
@@ -43,14 +47,16 @@ static int r_debug_ptrace_detach(int pid)
 {
 	void *addr = 0;
 	void *data = 0;
-	return ptrace(PTRACE_DETACH, pid, addr, data);
+	return ptrace (PTRACE_DETACH, pid, addr, data);
 }
 
-static int r_debug_ptrace_continue(int pid)
+static int r_debug_ptrace_continue(int pid, int sig)
 {
-	void *addr = 0;
-	void *data = 0;
-	return ptrace(PTRACE_CONT, pid, addr, data);
+	void *addr = NULL; // eip for BSD
+	void *data = NULL;
+	if (sig != -1)
+		data = (void*)(size_t)sig;
+	return ptrace (PTRACE_CONT, pid, addr, data);
 }
 
 static int r_debug_ptrace_wait(int pid)
@@ -62,6 +68,7 @@ static int r_debug_ptrace_wait(int pid)
 	return status;
 }
 
+// TODO: why strdup here?
 static const char *r_debug_ptrace_reg_profile()
 {
 	return strdup(
@@ -123,19 +130,17 @@ static int r_debug_ptrace_reg_read(struct r_debug_t *dbg, int type, ut8 *buf, in
 	if (type == R_REG_TYPE_GPR) {
 // XXX this must be defined somewhere else
 #if __linux__ && (__i386__ || __x86_64__)
-#include <sys/user.h>
-#include <limits.h>
-	struct user_regs_struct regs;
-	memset(&regs, 0, sizeof(regs));
-	memset(buf, 0, size);
-	ret = ptrace(PTRACE_GETREGS, pid, 0, &regs);
-	if (sizeof(regs) < size)
-		size = sizeof(regs);
-	if (ret != 0)
-		size = 0;
-	memcpy(buf, &regs, size);
-	return size;
-	//r_reg_set_bytes(reg, &regs, sizeof(struct user_regs));
+		struct user_regs_struct regs;
+		memset(&regs, 0, sizeof(regs));
+		memset(buf, 0, size);
+		ret = ptrace(PTRACE_GETREGS, pid, 0, &regs);
+		if (sizeof(regs) < size)
+			size = sizeof(regs);
+		if (ret != 0)
+			return R_FALSE;
+		memcpy(buf, &regs, size);
+		return sizeof(regs);
+		//r_reg_set_bytes(reg, &regs, sizeof(struct user_regs));
 #else
 #warning dbg-ptrace not supported for this platform
 	return 0;
@@ -145,9 +150,25 @@ static int r_debug_ptrace_reg_read(struct r_debug_t *dbg, int type, ut8 *buf, in
 	return 0;
 }
 
-static int r_debug_ptrace_reg_write(int pid, int type, const ut8* buf, int len) {
-	/* TODO */
-	return 0;
+static int r_debug_ptrace_reg_write(int pid, int type, const ut8* buf, int size) {
+	int ret;
+	// XXX use switch or so
+printf("reg_write\n");
+	if (type == R_REG_TYPE_GPR) {
+#if __linux__ && (__i386__ || __x86_64__)
+printf("reg_write_real\n");
+		ret = ptrace(PTRACE_SETREGS, pid, 0, buf);
+		if (sizeof(struct user_regs_struct) < size)
+			size = sizeof(struct user_regs_struct);
+		if (ret != 0)
+			return R_FALSE;
+		return R_TRUE;
+#else
+		#warning r_debug_ptrace_reg_write not implemented
+#endif
+	} else
+printf("reg_write_non-gpr (%d)\n", type);
+	return R_FALSE;
 }
 
 // TODO: deprecate???

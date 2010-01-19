@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_debug.h>
 #include "../config.h"
@@ -13,6 +13,7 @@ static struct r_debug_handle_t *debug_static_plugins[] =
 R_API int r_debug_handle_init(struct r_debug_t *dbg)
 {
 	int i;
+	dbg->reg_profile = NULL;
 	INIT_LIST_HEAD(&dbg->handlers);
 	for(i=0;debug_static_plugins[i];i++)
 		r_debug_handle_add (dbg, debug_static_plugins[i]);
@@ -27,9 +28,9 @@ R_API int r_debug_use(struct r_debug_t *dbg, const char *str)
 		if (!strcmp(str, h->name)) {
 			dbg->h = h;
 			if (h->reg_profile) {
-				char *profile = dbg->h->reg_profile();
-				r_reg_set_profile_string(dbg->reg, profile);
-				free(profile);
+				free (dbg->reg_profile);
+				dbg->reg_profile = dbg->h->reg_profile();
+				r_reg_set_profile_string(dbg->reg, dbg->reg_profile);
 			}
 			return R_TRUE;
 		}

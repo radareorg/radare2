@@ -1,8 +1,5 @@
-r_debug
-=======
-
-  Debugger API for radare2
-
+Debugger API for radare2
+========================
 
 We need to connect multiple pieces...
 
@@ -33,6 +30,6 @@ provide a way for all this operations between them.
     |--- r_reg give us a list of registers
     |    - dr (show bitsize debug registers) // 32 by default
     |    - dr 32 (show 32 bit debug registers) // depends on size
-    |    - dr eax (show 'eax' register value)
-    |    - dr al  (show 8bit register 'al')
+    |    - dr:eax (show 'eax' register value)
+    |    - dr:al  (show 8bit register 'al')
     |    - dr eax=33 (set 'eax' register value)

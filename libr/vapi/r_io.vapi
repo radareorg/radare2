@@ -1,11 +1,9 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
-[CCode (cheader_filename="r_io.h", cprefix="r_io", lower_case_cprefix="r_io_")]
-namespace Radare
-{
+namespace Radare {
 	[Compact]
-	[CCode (cname="struct r_io_t", free_function="r_io_free", cprefix="r_io_")]
-	public class Io {
+	[CCode (cheader_filaneme="r_io.h", cname="struct r_io_t", free_function="r_io_free", cprefix="r_io_")]
+	public class rIo {
 		public enum Flags {
 			READ = 0,
 			WRITE = 1,
@@ -18,11 +16,8 @@ namespace Radare
 			END = 2,
 		}
 
-		/**
-		 * Do the io! :D
-	 	 */
-		public Io();
-		public Io* free();
+		public rIo();
+		public rIo* free();
 		public bool init();
 		public bool set_write_mask(int fd, uint8 *buf, int len);
 
@@ -36,8 +31,10 @@ namespace Radare
 		public int open(string uri, int flags, int mode);
 		public int open_as(string urihandler, string path, int flags, int mode);
 		public int read(int fd, out uint8 *buf, int len);
+		public int read_at(uint64 addr, uint8 *buf, int len);
+		//public rBuf read_buf(uint64 addr, int len);
 		public int write(int fd, uint8 *buf, int len);
-		public uint64 lseek(int fd, uint64 addr, int whence);
+		public uint64 seek(int fd, uint64 addr, int whence);
 		public int system(int fd, string cmd);
 		public int close(int fd);
 		public uint64 size(int fd);
@@ -54,8 +51,9 @@ namespace Radare
 			string desc;
 			// TODO: lot of missing stuff here :)
 		}
-		public bool handle_open(int fd, Io.Handle plugin);
-		public bool handle_add(Io.Handle plugin);
+
+		public bool handle_open(int fd, Handle plugin);
+		public bool handle_add(Handle plugin);
 		public int handle_generate();
 		public void handle_list();
 
@@ -65,7 +63,7 @@ namespace Radare
 			uint64 from;
 			uint64 to;
 		}
-		public Io.Map map_resolve(int fd);
+		public Map map_resolve(int fd);
 		public bool map_add(int fd, uint64 addr, uint64 size);
 		public bool map_del(int fd);
 		public void map_list(); // DEPRECATE
@@ -81,6 +79,7 @@ namespace Radare
 			uint64 paddr;
 			int rwx; // TODO: use perms
 		}
+
 		/* desc */
 		[CCode (cname="struct r_io_desc_t")]
 		public struct Desc {
@@ -88,6 +87,6 @@ namespace Radare
 			int flags;
 			const string name;
 		}
-		public bool desc_add(int fd, string file, Io.Flags flags);
+		public bool desc_add(int fd, string file, Flags flags);
 	}
 }

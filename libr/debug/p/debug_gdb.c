@@ -36,12 +36,12 @@ struct r_debug_regset_t * r_debug_gdb_reg_read(int pid)
 #endif
 }
 
-static int r_debug_gdb_reg_write(int pid, struct r_debug_regset_t *regs)
+static int (*reg_write)(int pid, int type, const ut8 *buf, int size)
 {
 	/* TODO */
 }
 
-static int r_debug_ptrace_continue(int pid)
+static int r_debug_ptrace_continue(int pid, int sig)
 {
 	gdbwrap_continue(desc);
 }

@@ -1,10 +1,20 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_reg.h>
 #include <r_util.h>
 #include <list.h>
 
-/* lifecycle */
+R_API const char *r_reg_types[R_REG_TYPE_LAST+1] = {
+	"gpr",
+	"drx",
+	"fpu",
+	"mmx",
+	"xmm",
+	"flg",
+	"seg",
+	NULL
+};
+
 static void r_reg_free_internal(struct r_reg_t *reg) {
 	struct list_head *pos, *n;
 	struct r_reg_item_t *r;
@@ -45,12 +55,6 @@ R_API struct r_reg_t *r_reg_init(struct r_reg_t *reg)
 	return reg;
 }
 
-R_API struct r_reg_t *r_reg_new()
-{
-	struct r_reg_t *r = MALLOC_STRUCT(struct r_reg_t);
-	return r_reg_init(r);
-}
-
 static struct r_reg_item_t *r_reg_item_new() {
 	struct r_reg_item_t *item = MALLOC_STRUCT(struct r_reg_item_t);
 	memset(item, 0, sizeof(struct r_reg_item_t));
@@ -59,18 +63,15 @@ static struct r_reg_item_t *r_reg_item_new() {
 
 R_API int r_reg_type_by_name(const char *str)
 {
-	int type = -1; //R_REG_TYPE_ALL;
-	// XXX: do not spaguetti
-	if	(!strcmp(str, "gpr")) type = R_REG_TYPE_GPR;
-	else if (!strcmp(str, "drx")) type = R_REG_TYPE_DRX;
-	else if (!strcmp(str, "mmx")) type = R_REG_TYPE_MMX;
-	else if (!strcmp(str, "xmm")) type = R_REG_TYPE_XMM;
-	else if (!strcmp(str, "fpu")) type = R_REG_TYPE_FPU;
-	else if (!strcmp(str, "fpu")) type = R_REG_TYPE_FLG;
-	else if (!strcmp(str, "seg")) type = R_REG_TYPE_SEG;
-	else if (!strcmp(str, "flg")) type = R_REG_TYPE_FLG;
-	else	printf("Unknown register type: '%s'\n", str);
-	return type;
+	int i;
+	for (i = 0; i<R_REG_TYPE_LAST; i++) {
+		if (!strcmp (r_reg_types[i], str))
+			return i;
+	}
+	if (!strcmp (str, "all"))
+		return R_REG_TYPE_ALL;
+	eprintf ("Unknown register type: '%s'\n", str);
+	return R_REG_TYPE_LAST;
 }
 
 /* TODO: make this parser better and cleaner */
@@ -177,21 +178,22 @@ R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *str)
 R_API int r_reg_set_profile(struct r_reg_t *reg, const char *profile)
 {
 	int ret = R_FALSE;
-	char *str, *file;
 	const char *base;
+	char *str, *file;
 	/* TODO: append .regs extension to filename */
 	str = r_file_slurp(profile, NULL);
 	if (str == NULL) {
  		// XXX we must define this varname in r_lib.h /compiletime/
-		base = r_sys_getenv("LIBR_PLUGINS");
+		base = r_sys_getenv ("LIBR_PLUGINS");
 		if (base) {
-			file = r_str_concat(strdup(base), profile);
-			str = r_file_slurp(profile, NULL);
+			file = r_str_concat (strdup(base), profile);
+			str = r_file_slurp (file, NULL);
 			free(file);
 		}
 	}
 	if (str)
 		ret = r_reg_set_profile_string(reg, str);
+	else eprintf ("r_reg_set_profile: Cannot find '%s'\n", profile);
 	return ret;
 }
 
@@ -228,10 +230,10 @@ R_API struct list_head *r_reg_get_list(struct r_reg_t *reg, int type)
 
 /* vala example */
 /*
-	Debug dbg = new Debug();
-	dbg.reg = new Register();
+	rDebug dbg = new rDebug();
+	dbg.reg = new rRegister();
 
-	foreach (unowned var foo in dbg.reg.get_list(Register.Type.GPR)) {
+	foreach (var foo in dbg.reg.get_list(rRegister.Type.GPR)) {
 		if (foo.size == 32)
 		stdout.printf("Register %s: 0x%08llx\n",
 			foo.name, foo.size, dbg.reg.get_value(foo));

@@ -1,6 +1,6 @@
 #include <r_reg.h>
 
-int show_regs(struct r_reg_t *reg, int bitsize)
+void show_regs(struct r_reg_t *reg, int bitsize)
 {
 	struct list_head *pos, *reglist;
 	printf("%d bit registers:\n", bitsize);
@@ -13,6 +13,7 @@ int show_regs(struct r_reg_t *reg, int bitsize)
 }
 
 int main() {
+	int i;
 	struct r_reg_t *reg;
 
 	reg = r_reg_new();
@@ -29,6 +30,9 @@ int main() {
 	show_regs(reg, 1);
 	r_reg_set_value(reg, r_reg_get(reg, "zero", -1), 1);
 	show_regs(reg, 1);
+
+	for (i=0;r_reg_types[i];i++)
+		printf (" - %s\n", r_reg_types[i]);
 
 	return 0;
 }
