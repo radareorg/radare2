@@ -147,7 +147,6 @@ static int r_bin_mach0_parse_dysymtab(struct r_bin_mach0_obj_t* bin, ut64 off)
 			perror("malloc (modtab)");
 			return R_FALSE;
 		}
-		printf("AAAAAAAAA: %i\n", bin->nmodtab);
 		if (bin->endian)
 			len = r_buf_fread_at(bin->b, bin->dysymtab.modtaboff, (ut8*)bin->modtab, "13I", bin->nmodtab);
 		else
@@ -175,7 +174,6 @@ static int r_bin_mach0_init_items(struct r_bin_mach0_obj_t* bin)
 			ERR("Error: read (lc)\n");
 			return R_FALSE;
 		}
-		IFDBG printf("cmd: 0x%02x  cmdsize= %i\n", lc.cmd, lc.cmdsize);
 		switch (lc.cmd) {
 		case LC_SEGMENT:
 			bin->nsegs++;
