@@ -60,6 +60,7 @@ R_API struct r_buf_t *r_buf_new();
 R_API int r_buf_set_bits(struct r_buf_t *b, int bitoff, int bitsize, ut64 value);
 R_API int r_buf_set_bytes(struct r_buf_t *b, ut8 *buf, int length);
 R_API int r_buf_read_at(struct r_buf_t *b, ut64 addr, ut8 *buf, int len);
+R_API int r_buf_fread_at(struct r_buf_t *b, ut64 addr, ut8 *buf, const char *fmt, int n);
 R_API int r_buf_write_at(struct r_buf_t *b, ut64 addr, const ut8 *buf, int len);
 R_API void r_buf_free(struct r_buf_t *b);
 

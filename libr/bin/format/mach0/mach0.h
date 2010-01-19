@@ -60,11 +60,11 @@ struct r_bin_mach0_obj_t {
 	int ntoc;
 	struct dylib_module* modtab;
 	int nmodtab;
-	ut32		size;
-    ut64        baddr;
-	int	        endian;
+	int size;
+    ut64 baddr;
+	int	endian;
     const char* file;
-	int			fd;
+	struct r_buf_t* b;
 };
 
 struct r_bin_mach0_obj_t* r_bin_mach0_new(const char* file);

@@ -97,11 +97,14 @@ src |__________|_________|
 R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian)
 {
         if (endian) {
-		if (dest != orig)
-			memcpy(dest, orig, size);
+			if (dest != orig)
+				memcpy(dest, orig, size);
         } else {
                 unsigned char buffer[8];
                 switch(size) {
+				case 1:
+						dest[0] = orig[0];
+						break;
                 case 2:
                         buffer[0] = orig[0];
                         dest[0]   = orig[1];

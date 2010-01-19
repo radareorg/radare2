@@ -23,3 +23,5 @@ These refactoring bugs should be discussed and reviewed. Feedback is welcome
 * Finish and import the spp's getopt owns implementation in r_util (like in p9)
 
 * Rename __UNIX__ as __POSIX__
+
+* Find a better name for r_buf_fread

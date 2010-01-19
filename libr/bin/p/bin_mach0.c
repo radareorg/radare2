@@ -11,7 +11,7 @@ static int bopen(struct r_bin_t *bin)
 	if(!(bin->bin_obj = r_bin_mach0_new(bin->file)))
 		return -1;
 	mach0_obj = (struct r_bin_mach0_obj_t*)bin->bin_obj; 
-	bin->fd = mach0_obj->fd;
+	bin->fd = 1;
 	return bin->fd;
 }
 

@@ -39,16 +39,17 @@ R_API int r_buf_set_bits(struct r_buf_t *b, int bitoff, int bitsize, ut64 value)
 
 R_API int r_buf_set_bytes(struct r_buf_t *b, ut8 *buf, int length)
 {
-	free(b->buf);
-	b->buf = malloc(length);
-	if (b->buf == NULL)
+	if (b->buf)
+		free(b->buf);
+	if (!(b->buf = malloc(length)))
 		return R_FALSE;
 	memcpy(b->buf, buf, length);
 	b->length = length;
 	return R_TRUE;
 }
 
-static int r_buf_memcpy(struct r_buf_t *b, ut64 addr, ut8 *dst, ut8 *src, int len) {
+static int r_buf_memcpy(struct r_buf_t *b, ut64 addr, ut8 *dst, const ut8 *src, int len)
+{
 	int end;
 	addr -= b->base;
 	if (addr > b->length)
@@ -56,13 +57,45 @@ static int r_buf_memcpy(struct r_buf_t *b, ut64 addr, ut8 *dst, ut8 *src, int le
  	end = (int)(addr+len);
 	if (end > b->length)
 		len -= end-b->length;
-	memcpy(dst, src, len);
+	memcpy(dst, src+addr, len);
 	return len;
 }
 
 R_API int r_buf_read_at(struct r_buf_t *b, ut64 addr, ut8 *buf, int len)
 {
 	return r_buf_memcpy(b, addr, buf, b->buf, len);
+}
+
+R_API int r_buf_fread_at(struct r_buf_t *b, ut64 addr, ut8 *buf, const char *fmt, int n)
+{
+	int i, j, k, len, tsize, endian, m = 1;
+
+	addr -= b->base;
+	if (addr < 0 || addr > b->length)
+		return -1;
+	for (i = len = 0; i < n; i++)
+	for (j = 0; fmt[j]; j++) {
+		if (len > b->length)
+			return -1;
+		switch (fmt[j]) {
+		case '0'...'9':
+			if (m == 1)
+				m = r_num_get(NULL, &fmt[j]);
+			continue;
+		case 's': tsize = 2; endian = 1; break;
+		case 'S': tsize = 2; endian = 0; break;
+		case 'i': tsize = 4; endian = 1; break;
+		case 'I': tsize = 4; endian = 0; break;
+		case 'l': tsize = 8; endian = 1; break;
+		case 'L': tsize = 8; endian = 0; break;
+		case 'c': tsize = 1; endian = 1; break;
+		default: return -1;
+		}
+		for (k = 0; k < m; k++)
+			r_mem_copyendian((ut8*)&buf[len+k*tsize], (ut8*)&b->buf[addr+len+k*tsize], tsize, endian);
+		len += m*tsize; m = 1;
+	}
+	return len;
 }
 
 R_API int r_buf_write_at(struct r_buf_t *b, ut64 addr, const ut8 *buf, int len)
