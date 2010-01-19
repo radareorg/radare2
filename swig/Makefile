@@ -11,7 +11,7 @@ python:
 	@-[ "`grep python supported.langs`" ] && cd python && make
 
 ruby:
-	@-[ "`grep python supported.langs`" ] && cd python && make
+	@-[ "`grep ruby supported.langs`" ] && cd ruby && make
 
 test:
 	cd perl && make test
@@ -23,8 +23,8 @@ oldtest:
 	python test.py
 
 clean:
-	rm -rf python/*
-	rm -rf perl/*
-	rm -rf ruby/*
+	rm -rf python/*.so python/*.c python/*.i
+	rm -rf perl/*.so perl/*.pm perl/*.c perl/*.i
+	rm -rf ruby/*.so ruby/*.c ruby/*.i
 
 .PHONY: ruby python perl clean oldtest test all
