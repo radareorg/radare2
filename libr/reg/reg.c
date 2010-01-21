@@ -5,14 +5,7 @@
 #include <list.h>
 
 R_API const char *r_reg_types[R_REG_TYPE_LAST+1] = {
-	"gpr",
-	"drx",
-	"fpu",
-	"mmx",
-	"xmm",
-	"flg",
-	"seg",
-	NULL
+	"gpr", "drx", "fpu", "mmx", "xmm", "flg", "seg", NULL
 };
 
 static void r_reg_free_internal(struct r_reg_t *reg) {
@@ -33,7 +26,7 @@ R_API struct r_reg_t *r_reg_free(struct r_reg_t *reg)
 {
 	if (reg) {
 		// TODO: free more things here
-		free(reg);
+		free (reg);
 	}
 	return NULL;
 }
@@ -56,6 +49,7 @@ R_API struct r_reg_t *r_reg_init(struct r_reg_t *reg)
 }
 
 static struct r_reg_item_t *r_reg_item_new() {
+	//return MALLOC_STRUCT (rRegisterItem);
 	struct r_reg_item_t *item = MALLOC_STRUCT(struct r_reg_item_t);
 	memset(item, 0, sizeof(struct r_reg_item_t));
 	return item;
@@ -64,7 +58,7 @@ static struct r_reg_item_t *r_reg_item_new() {
 R_API int r_reg_type_by_name(const char *str)
 {
 	int i;
-	for (i = 0; i<R_REG_TYPE_LAST; i++) {
+	for (i=0; r_reg_types[i] && i<R_REG_TYPE_LAST; i++) {
 		if (!strcmp (r_reg_types[i], str))
 			return i;
 	}
@@ -110,12 +104,12 @@ static int r_reg_set_word(struct r_reg_item_t *item, int idx, char *word) {
 /* TODO: make this parser better and cleaner */
 R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *str)
 {
+	rRegisterItem *item;
 	int ret = R_FALSE;
 	int lastchar = 0;
-	int word = 0;
 	int chidx = 0;
+	int word = 0;
 	char buf[256];
-	struct r_reg_item_t *item;
 
 	if (!str)
 		return R_FALSE;
@@ -166,9 +160,9 @@ R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *str)
 		lastchar = *str;
 		str++;
 	}
-	free(item->name);
-	free(item);
-	r_reg_fit_arena(reg);
+	free (item->name);
+	free (item);
+	r_reg_fit_arena (reg);
 	
 	/* do we reach the end ? */
 	if (!*str) ret = R_TRUE;

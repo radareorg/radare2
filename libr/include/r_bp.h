@@ -6,8 +6,6 @@
 #include "list.h"
 
 #define R_BP_MAXPIDS 10
-
-
 #define R_BP_CONT_NORMAL 0
 #define R_BP_CONT_NORMAL 0
 
@@ -22,6 +20,7 @@ enum {
 	R_BP_TYPE_HW,
 	R_BP_TYPE_COND,
 	R_BP_TYPE_FAULT,
+	R_BP_TYPE_DELETE,
 };
 
 typedef struct r_bp_handle_t {
@@ -35,7 +34,8 @@ typedef struct r_bp_handle_t {
 
 typedef struct r_bp_item_t {
 	ut64 addr;
-	int size;
+	int size; /* size of breakpoint area */
+	int recoil; /* recoil */
 	int rwx;
 	int hw;
 	int trace;
@@ -47,11 +47,14 @@ typedef struct r_bp_item_t {
 	struct list_head list;
 } rBreakpointItem;
 
+typedef int (*rBreakpointCallback)(void *user, int type, ut64 addr, int hw, int rwx);
+
 typedef struct r_bp_t {
 	int trace_all;
 	ut64 trace_bp;
 	int nbps;
 	int stepcont;
+	rBreakpointCallback breakpoint;
 	struct r_io_bind_t iob; // compile time dependency
 	struct r_bp_handle_t *cur;
 	struct list_head plugins;
@@ -65,7 +68,7 @@ enum {
 };
 
 #ifdef R_API
-R_API int r_bp_init(struct r_bp_t *bp);
+R_API struct r_bp_t *r_bp_init(struct r_bp_t *bp);
 R_API struct r_bp_t *r_bp_new();
 R_API struct r_bp_t *r_bp_free(struct r_bp_t *bp);
 
@@ -80,7 +83,7 @@ R_API int r_bp_in(struct r_bp_t *bp, ut64 addr, int rwx);
 R_API int r_bp_list(struct r_bp_t *bp, int rad);
 R_API int r_bp_get_bytes(struct r_bp_t *bp, ut8 *buf, int len, int endian, int idx);
 R_API int r_bp_set_trace(struct r_bp_t *bp, ut64 addr, int set);
-R_API int r_bp_set_trace_bp(struct r_bp_t *bp, ut64 addr, int set);
+//R_API int r_bp_set_trace_bp(struct r_bp_t *bp, ut64 addr, int set);
 R_API struct r_bp_item_t *r_bp_enable(struct r_bp_t *bp, ut64 addr, int set);
 
 R_API int r_bp_add_cond(struct r_bp_t *bp, const char *cond);
@@ -89,7 +92,9 @@ R_API int r_bp_add_fault(struct r_bp_t *bp, ut64 addr, int size, int rwx);
 
 R_API struct r_bp_item_t *r_bp_add_sw(struct r_bp_t *bp, ut64 addr, int size, int rwx);
 R_API struct r_bp_item_t *r_bp_add_hw(struct r_bp_t *bp, ut64 addr, int size, int rwx);
-R_API int r_bp_at_addr(struct r_bp_t *bp, ut64 addr, int rwx);
+R_API rBreakpointItem *r_bp_at_addr(rBreakpoint *bp, ut64 addr, int rwx);
+R_API int r_bp_restore(struct r_bp_t *bp, int set);
+R_API int r_bp_recoil(struct r_bp_t *bp, ut64 addr);
 #endif
 
 /* plugin pointers */

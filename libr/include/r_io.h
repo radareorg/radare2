@@ -101,14 +101,19 @@ typedef struct r_io_list_t {
 	struct list_head list;
 } rIoList;
 
+
+/* TODO: find better name... rIoSetFd_Callback? ..Func? .. too camels here */
+typedef int (*rIoSetFd)(rIo *io, int fd);
+typedef int (*rIoReadAt)(rIo *io, ut64 addr, ut8 *buf, int size);
+typedef int (*rIoWriteAt)(rIo *io, ut64 addr, const ut8 *buf, int size);
+
 /* compile time dependency */
 typedef struct r_io_bind_t {
 	int init;
-	//int fd;
 	struct r_io_t *io;
-	int (*set_fd)(struct r_io_t *io, int fd);
-	int (*read_at)(struct r_io_t *io, ut64 addr, ut8 *buf, int size);
-	int (*write_at)(struct r_io_t *io, ut64 addr, const ut8 *buf, int size);
+	rIoSetFd set_fd;
+	rIoReadAt read_at;
+	rIoWriteAt write_at;
 } rIoBind;
 
 /* sections */

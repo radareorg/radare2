@@ -54,12 +54,13 @@ typedef struct r_debug_handle_t {
 	int (*wait)(int pid);
 	int (*contsc)(int pid, int sc);
 	/* registers */
+	rBreakpointCallback breakpoint;
 	int (*reg_read)(struct r_debug_t *dbg, int type, ut8 *buf, int size);
 	char* (*reg_profile)();
 	int (*reg_write)(int pid, int type, const ut8 *buf, int size); //XXX struct r_regset_t regs);
 	/* memory */
-	ut64 (*mmu_alloc)(void *user, ut64 size, ut64 addr);
-	int (*mmu_free)(void *user, ut64 addr);
+	ut64 (*mem_alloc)(void *user, ut64 size, ut64 addr);
+	int (*mem_free)(void *user, ut64 addr);
 
 	struct list_head list;
 } rDebugHandle;
@@ -99,8 +100,8 @@ R_API int r_debug_handle_list(struct r_debug_t *dbg);
 R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
 
 /* memory */
-R_API ut64 r_debug_mmu_alloc(struct r_debug_t *dbg, ut64 size, ut64 addr);
-R_API int r_debug_mmu_free(struct r_debug_t *dbg, ut64 addr);
+R_API ut64 r_debug_mem_alloc(struct r_debug_t *dbg, ut64 size, ut64 addr);
+R_API int r_debug_mem_free(struct r_debug_t *dbg, ut64 addr);
 
 /* registers */
 R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write);

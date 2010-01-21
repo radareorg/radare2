@@ -6,7 +6,7 @@ static int config_asm_arch_callback(void *user, void *data)
 {
 	struct r_core_t *core = (struct r_core_t *) user;
 	struct r_config_node_t *node = (struct r_config_node_t *) data;
-	r_asm_use(&core->assembler, node->value);
+	r_asm_use (&core->assembler, node->value);
 // TODO: control error and restore old value (return false?) show errormsg?
 	return R_TRUE;
 }

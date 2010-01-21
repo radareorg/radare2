@@ -89,7 +89,6 @@ ifneq ($(BIN),)
 all: ${BIN}${EXT_EXE}
 
 ${BIN}${EXT_EXE}: ${OBJ}
-	@echo BIN=${BIN}
 	${CC} ${LDFLAGS} ${LIBS} ${OBJ} -o ${BIN}${EXT_EXE}
 endif
 

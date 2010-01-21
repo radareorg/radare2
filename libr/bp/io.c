@@ -1,6 +1,7 @@
 #include <r_bp.h>
 
 // TODO: rename from r_debug_ ... 
+#if 0
 R_API int r_debug_bp_enable(struct r_debug_t *dbg, ut64 addr, int set)
 {
 	struct r_bp_item_t *bp = r_bp_enable(dbg->bp, addr, set);
@@ -11,7 +12,7 @@ R_API int r_debug_bp_enable(struct r_debug_t *dbg, ut64 addr, int set)
 		if (set) iob->write_at(iob->io, addr, bp->bbytes, bp->size);
 		else iob->write_at(iob->io, addr, bp->obytes, bp->size);
 	}
-	return bp!=NULL;
+	return (bp!=NULL)?R_TRUE:R_FALSE;
 }
 
 // XXX this must be implemented in r_bp.. not here!!1
@@ -33,6 +34,7 @@ R_API int r_debug_bp_add(struct r_debug_t *dbg, ut64 addr, int size, int hw, int
 	iob->set_fd(iob->io, dbg->pid);
 	iob->read_at(iob->io, addr, buf, size);
 	/* register breakpoint in r_bp */
+	// XXX. bpadd here?!?
 	if (hw) bp = r_bp_add_sw(&dbg->bp, buf, addr, size, 0, R_BP_EXEC);
 	else bp = r_bp_add_sw(&dbg->bp, buf, addr, size, 0, R_BP_EXEC);
 	if (bp) {
@@ -44,17 +46,47 @@ R_API int r_debug_bp_add(struct r_debug_t *dbg, ut64 addr, int size, int hw, int
 	free(buf);
 	return ret;
 }
+#endif
+
 /**
  * reflect all r_bp stuff in the process using dbg->bp_write
  */
-R_API int r_debug_bp_restore(struct r_debug_t *dbg, int set)
+// XXX remove 
+R_API int r_bp_restore(struct r_bp_t *bp, int set)
 {
+	struct list_head *pos;
+	struct r_bp_item_t *b;
+
+	/* write obytes from every breakpoint in r_bp */
 	if (set) {
-		/* write bbytes from every breakpoint in r_bp */
-	//	r_debug_bp_enable(dbg, addr, 1)
+		list_for_each(pos, &bp->bps) {
+			b = list_entry(pos, struct r_bp_item_t, list);
+			if (b->hw || !b->obytes)
+				eprintf ("hw breakpoints not supported yet\n");
+			else bp->iob.write_at (bp->iob.io, b->addr, b->obytes, b->size);
+// TODO: CALL TO bp->breakpoint()
+		}
 	} else {
-		/* write obytes from every breakpoint */
-	//	r_debug_bp_enable(dbg, addr, 0)
+		list_for_each(pos, &bp->bps) {
+			b = list_entry(pos, struct r_bp_item_t, list);
+			if (b->hw || !b->bbytes)
+				eprintf ("hw breakpoints not supported yet\n");
+			else bp->iob.write_at (bp->iob.io, b->addr, b->bbytes, b->size);
+// TODO: CALL TO bp->breakpoint()
+		}
 	}
 	return R_TRUE;
+}
+
+R_API int r_bp_recoil(rBreakpoint *bp, ut64 addr)
+{
+	rBreakpointItem *b = r_bp_at_addr (bp, addr, 0xFFFFFF);
+if (b) {
+	eprintf("HIT AT ADDR 0x%llx\n", addr);
+	eprintf("  recoil = %d\n", b->recoil);
+	eprintf("  size = %d\n", b->size);
+}
+	if (b) if (!b->hw && ((b->addr + b->size) == addr))
+		return b->recoil;
+	return 0;
 }

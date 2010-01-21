@@ -46,7 +46,7 @@ typedef struct r_reg_t {
 #define r_reg_new() r_reg_init (MALLOC_STRUCT (rRegister))
 
 #ifdef R_API
-R_API const char *r_reg_types[R_REG_TYPE_LAST+1];
+extern const char *r_reg_types[R_REG_TYPE_LAST+1];
 R_API struct r_reg_t *r_reg_free(struct r_reg_t *reg);
 R_API struct r_reg_t *r_reg_init(struct r_reg_t *reg);
 //R_API struct r_reg_t *r_reg_new();

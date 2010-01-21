@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
 
 #ifndef _INCLUDE_R_ASM_H_
 #define _INCLUDE_R_ASM_H_
@@ -30,6 +30,10 @@ enum {
 	R_ASM_SYN_ATT
 };
 
+typedef struct r_asm_fastcall_t {
+	const char *arg[16];
+} rAsmFastcall;
+
 typedef struct r_asm_aop_t {
 	int  inst_len;
 	ut8  buf[R_ASM_BUFSIZE];
@@ -56,15 +60,13 @@ typedef struct r_asm_t {
 	struct list_head asms;
 } rAsm;
 
-typedef struct r_asm_fastcall_t {
-	const char *arg[16];
-} rAsmFastcall;
-
 // TODO: rename to handler?
 typedef struct r_asm_handle_t {
 	char *name;
 	char *arch;
 	char *desc;
+// TODO: bits -> renamed to bitmask
+// use each bit to identify 4,8,16,32,64 bitsize it can be a mask, no need for pointers here
 	int *bits;
 	int (*init)(void *user);
 	int (*fini)(void *user);

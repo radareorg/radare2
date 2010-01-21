@@ -82,7 +82,7 @@ R_API ut64 r_num_get(struct r_num_t *num, const char *str)
 		sscanf(str, "0x%llx", &ret);
 	} else {
 		lch = str[strlen(str)-1];
-		switch(lch) {
+		switch (lch) {
 		case 'h': // hexa
 			sscanf(str, "%llx", &ret);
 			break;

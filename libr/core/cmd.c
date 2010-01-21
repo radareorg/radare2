@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include "r_core.h"
 #include "r_flags.h"
@@ -36,7 +36,7 @@ static void r_core_cmd_reg (struct r_core_t *core, const char *str) {
 	int size, i, type = R_REG_TYPE_GPR;
 	switch (str[0]) {
 	case '?':
-		eprintf("Usage: dr[*] [type] [size] - get/set registers\n"
+		eprintf ("Usage: dr[*] [type] [size] - get/set registers\n"
 			" dr?        display this help message\n"
 			" .dr*       include common register values in flags\n"
 			" .dr-       unflag all registers\n"
@@ -55,7 +55,7 @@ static void r_core_cmd_reg (struct r_core_t *core, const char *str) {
 			eprintf ("profile: \n");
 			if (core->dbg.reg_profile)
 				r_cons_printf ("%s\n", core->dbg.reg_profile);
-			else eprintf ("r_debug_reg: no register profile defined. Try 'dr.'\n");
+			else eprintf ("No register profile defined. Try 'dr.'\n");
 		} else r_reg_set_profile (core->dbg.reg, str+2);
 		break;
 	case 't':
@@ -65,10 +65,8 @@ static void r_core_cmd_reg (struct r_core_t *core, const char *str) {
 	case ':':
 		r_debug_reg_sync (&core->dbg, R_REG_TYPE_GPR, R_FALSE);
 		r = r_reg_get (core->dbg.reg, str+1, R_REG_TYPE_GPR);
-		if (r == NULL)
-			eprintf ("Unknown register (%s)\n", str+1);
-		else r_cons_printf ("0x%08llx\n",
-			r_reg_get_value (core->dbg.reg, r));
+		if (r == NULL) eprintf ("Unknown register (%s)\n", str+1);
+		else r_cons_printf ("0x%08llx\n", r_reg_get_value (core->dbg.reg, r));
 		break;
 	case '*':
 		r_debug_reg_sync (&core->dbg, R_REG_TYPE_GPR, R_FALSE);
@@ -124,13 +122,13 @@ static void r_core_cmd_bp (struct r_core_t *core, const char *input) {
 		r_bp_list (core->dbg.bp, input[1]=='*');
 		break;
 	case '-':
-		r_bp_del(core->dbg.bp, r_num_math(&core->num, input+2));
+		r_bp_del (core->dbg.bp, r_num_math(&core->num, input+2));
 		break;
 	case 'e':
-		r_bp_enable(core->dbg.bp, r_num_math(&core->num, input+2), 1);
+		r_bp_enable (core->dbg.bp, r_num_math(&core->num, input+2), 1);
 		break;
 	case 'd':
-		r_bp_enable(core->dbg.bp, r_num_math(&core->num, input+2), 0);
+		r_bp_enable (core->dbg.bp, r_num_math(&core->num, input+2), 0);
 		break;
 	case 'h':
 		if (input[2]==' ') {
@@ -150,7 +148,7 @@ static void r_core_cmd_bp (struct r_core_t *core, const char *input) {
 		"dbh x86         ; set/list breakpoint plugin handlers\n");
 		break;
 	default:
-		r_bp_add_sw(core->dbg.bp, r_num_math(&core->num, input+1),
+		r_bp_add_sw (core->dbg.bp, r_num_math (&core->num, input+1),
 			1, R_BP_PROT_EXEC);
 		break;
 	}
@@ -1654,29 +1652,37 @@ printf("No flags foreach implemented\n");
 
 R_API int r_core_cmd(struct r_core_t *core, const char *command, int log)
 {
-	int len;
-	char *cmd = NULL;
+	int len, rep;
+	char *cmd, *ocmd;
 	int ret = -1;
 	
 	if (command == NULL )
-		return 0;
+		return R_FALSE;
 
 	len = strlen(command)+1;
-	cmd = malloc(len+8192);
-	memcpy(cmd, command, len);
+	ocmd = cmd = malloc(len+8192);
+	memcpy (cmd, command, len);
 	cmd = r_str_trim_head_tail(cmd);
 
-	ret = r_core_cmd_subst(core, cmd);
-
-	if (ret == -1){
-		fprintf(stderr, "Invalid command\n");
-		ret = 1;
+	rep = atoi (cmd);
+	if (rep<1) rep = 1;
+	if (rep>0) {
+		ret = R_TRUE;
+		while (*cmd>='0'&&*cmd<='9') cmd++;
+		while (rep--) {
+			ret = r_core_cmd_subst (core, cmd);
+			if (ret == -1) {
+				eprintf ("r_core_cmd: Invalid command\n");
+				ret = R_FALSE;
+				break;
+			}
+		}
 	}
-	
+
 	if (log) r_line_hist_add(command);
 
 	free (core->oobi);
-	free (cmd);
+	free (ocmd);
 	core->oobi = NULL;
 	core->oobi_len = 0;
 
@@ -1687,13 +1693,15 @@ R_API int r_core_cmd_file(struct r_core_t *core, const char *file)
 {
 	char buf[1024];
 	FILE *fd = fopen(file, "r");
-	if (fd == NULL)
+	if (fd == NULL) {
+		eprintf ("r_core_cmd_file: Cannot open '%s'\n", file);
 		return -1;
+	}
 	while (!feof(fd)) {
-		if (fgets(buf, 1023, fd) != NULL) {
-			buf[strlen(buf)-1]='\0';
-			if (r_core_cmd(core, buf, 0) == -1) {
-				fprintf(stderr, "Error running command '%s'\n", buf);
+		if (fgets (buf, 1023, fd) != NULL) {
+			buf[strlen (buf)-1]='\0';
+			if (r_core_cmd (core, buf, 0) == -1) {
+				eprintf ("Error running command '%s'\n", buf);
 				break;
 			}
 		}
@@ -1705,17 +1713,17 @@ R_API int r_core_cmd_file(struct r_core_t *core, const char *file)
 R_API int r_core_cmd_command(struct r_core_t *core, const char *command)
 {
 	int len;
-	char *buf = r_sys_cmd_str(command, 0, &len);
+	char *buf = r_sys_cmd_str (command, 0, &len);
 	char *rcmd = buf;
 	char *ptr = buf;
 	if (buf == NULL)
 		return -1;
-	while ((ptr = strstr(rcmd, "\n"))) {
+	while ((ptr = strstr (rcmd, "\n"))) {
 		*ptr = '\0';
-		if (r_core_cmd(core, rcmd, 0) == -1) {
-			fprintf(stderr, "Error running command '%s'\n", rcmd);
+		if (r_core_cmd (core, rcmd, 0) == -1) {
+			eprintf ("Error running command '%s'\n", rcmd);
 		}
-		rcmd += strlen(rcmd)+1;
+		rcmd += strlen (rcmd)+1;
 	}
 	r_str_free(buf);
 	return 0;

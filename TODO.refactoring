@@ -3,6 +3,8 @@ TODO refactoring
 
 These refactoring bugs should be discussed and reviewed. Feedback is welcome
 
+* typedef all function pointers, like in r_bp
+
 * Review r_io API
 
 * Remove some unnecesary libraries for the core

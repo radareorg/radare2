@@ -22,8 +22,7 @@ R_API struct r_debug_t *r_debug_init(struct r_debug_t *dbg, int hard)
 	return dbg;
 }
 
-R_API struct r_debug_t *r_debug_new()
-{
+R_API struct r_debug_t *r_debug_new() {
 	return r_debug_init (MALLOC_STRUCT (struct r_debug_t), R_TRUE);
 }
 
@@ -31,14 +30,16 @@ R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg)
 {
 	// TODO: free it correctly
 	//r_bp_free(&dbg->bp);
-	free(dbg);
+	//r_reg_free(&dbg->reg);
+	//r_debug_handle_free();
+	free (dbg);
 	return NULL;
 }
 
 R_API int r_debug_attach(struct r_debug_t *dbg, int pid)
 {
 	int ret = R_FALSE;
-	if (dbg->h && dbg->h->attach) {
+	if (dbg && dbg->h && dbg->h->attach) {
 		ret = dbg->h->attach(pid);
 		if (ret) {
 			// TODO: get arch and set io pid
@@ -47,8 +48,8 @@ R_API int r_debug_attach(struct r_debug_t *dbg, int pid)
 			// dbg->bp->iob->system("pid %d", pid);
 			dbg->pid = pid;
 			dbg->tid = pid;
-		} else fprintf(stderr, "Cannot attach to this pid\n");
-	} else fprintf(stderr, "dbg->attach = NULL\n");
+		} else eprintf ("Cannot attach to this pid\n");
+	} else eprintf ("dbg->attach = NULL\n");
 	return ret;
 }
 
@@ -78,7 +79,6 @@ R_API int r_debug_select(struct r_debug_t *dbg, int pid, int tid)
 	return R_TRUE;
 }
 
-/*--*/
 R_API int r_debug_stop_reason(struct r_debug_t *dbg)
 {
 	// TODO: return reason to stop debugging
@@ -93,7 +93,7 @@ R_API int r_debug_stop_reason(struct r_debug_t *dbg)
 R_API int r_debug_wait(struct r_debug_t *dbg)
 {
 	int ret = R_FALSE;
-	if (dbg->h->wait) {
+	if (dbg && dbg->h && dbg->h->wait) {
 		ret = dbg->h->wait(dbg->pid);
 		dbg->newstate = 1;
 	}
@@ -104,7 +104,7 @@ R_API int r_debug_wait(struct r_debug_t *dbg)
 R_API int r_debug_step(struct r_debug_t *dbg, int steps)
 {
 	int i, ret = R_FALSE;
-	if (dbg->h && dbg->h->step) {
+	if (dbg && dbg->h && dbg->h->step) {
 		for(i=0;i<steps;i++) {
 			ret = dbg->h->step(dbg->pid);
 			if (ret == R_FALSE)
@@ -121,19 +121,41 @@ R_API int r_debug_step(struct r_debug_t *dbg, int steps)
 R_API int r_debug_step_over(struct r_debug_t *dbg, int steps)
 {
 	// TODO: analyze opcode if it is stepoverable
-	fprintf(stderr, "TODO\n");
+	eprintf ("r_debug_step_over: TODO\n");
 	return r_debug_step(dbg, steps);
+}
+
+/* restore program counter after breakpoint hit */
+static int r_debug_recoil(struct r_debug_t *dbg) {
+	int recoil, ret = R_FALSE;
+	rRegisterItem *ri;
+eprintf("sync regs\n");
+	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+	ri = r_reg_get (dbg->reg, "eip", -1);
+eprintf("eip is 0x%08llx\n", r_reg_get_value (dbg->reg, ri));
+	if (ri) {
+		ut64 addr = r_reg_get_value (dbg->reg, ri);
+		recoil = r_bp_recoil (dbg->bp, addr);
+eprintf("RECOIL %d\n", recoil);
+		if (recoil) {
+			r_reg_set_value (dbg->reg, ri, addr-recoil);
+			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_TRUE);
+			ret = R_TRUE;
+		}
+	} else eprintf ("r_debug_recoil: Cannot get program counter\n");
+	return ret;
 }
 
 R_API int r_debug_continue_kill(struct r_debug_t *dbg, int sig)
 {
 	int ret = R_FALSE;
-	if (dbg->h) {
-		if (dbg->h->cont) {
-			ret = dbg->h->cont(dbg->pid, sig);
-			if (dbg->h->wait)
-				ret = dbg->h->wait(dbg->pid);
-		}
+	if (dbg && dbg->h && dbg->h->cont) {
+		r_bp_restore (dbg->bp, R_FALSE); // set sw breakpoints
+		ret = dbg->h->cont(dbg->pid, sig);
+		if (dbg->h->wait)
+			ret = dbg->h->wait(dbg->pid);
+		r_bp_restore (dbg->bp, R_TRUE); // unset sw breakpoints
+		r_debug_recoil (dbg);
 	}
 	return ret;
 }
@@ -155,15 +177,15 @@ R_API int r_debug_continue_until(struct r_debug_t *dbg, ut64 addr)
 R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc)
 {
 	int ret = R_FALSE;
-	if (dbg->h && dbg->h->contsc)
+	if (dbg && dbg->h && dbg->h->contsc)
 		ret = dbg->h->contsc(dbg->pid, sc);
 	return ret;
 }
 
-// TODO: remove from here?
+// TODO: remove from here? this is code injection!
 R_API int r_debug_syscall(struct r_debug_t *dbg, int num)
 {
-	fprintf(stderr, "TODO\n");
+	eprintf ("TODO\n");
 	return R_FALSE;
 }
 
@@ -175,7 +197,7 @@ R_API int r_debug_kill(struct r_debug_t *dbg, int pid, int sig)
 {
 	// XXX: use debugger handler backend here
 #if __WINDOWS__
-	eprintf("r_debug_kill: not implemented\n");
+	eprintf ("r_debug_kill: not implemented\n");
 	return R_FALSE;
 #else
 #include <signal.h>
@@ -185,22 +207,3 @@ R_API int r_debug_kill(struct r_debug_t *dbg, int pid, int sig)
 	return R_TRUE;
 #endif
 }
-
-// TODO move to mem.c
-/* mmu */
-R_API ut64 r_debug_mmu_alloc(struct r_debug_t *dbg, ut64 size, ut64 addr)
-{
-	ut64 ret = 0LL;
-	if (dbg->h && dbg->h->mmu_alloc)
-		ret = dbg->h->mmu_alloc(dbg, size, addr);
-	return ret;
-}
-
-R_API int r_debug_mmu_free(struct r_debug_t *dbg, ut64 addr)
-{
-	int ret = R_FALSE;
-	if (dbg->h && dbg->h->mmu_free)
-		ret = dbg->h->mmu_free(dbg, addr);
-	return ret;
-}
-// TODO: add support to iterate over all allocated memory chunks?

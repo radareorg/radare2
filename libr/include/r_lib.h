@@ -29,7 +29,7 @@ typedef struct r_lib_plugin_t {
 	struct r_lib_handler_t *handler;
 	void *dl_handler; // DL HANDLER
 	struct list_head list;
-} LibPlugin;
+} rLibraryPlugin;
 
 /* store list of initialized plugin handlers */
 typedef struct r_lib_handler_t {
@@ -39,14 +39,14 @@ typedef struct r_lib_handler_t {
 	int (*constructor)(struct r_lib_plugin_t *, void *user, void *data);
 	int (*destructor)(struct r_lib_plugin_t *, void *user, void *data);
 	struct list_head list;
-} rLibHandler;
+} rLibraryHandler;
 
 /* this structure should be pointed by the 'radare_plugin' symbol 
    found in the loaded .so */
 typedef struct r_lib_struct_t {
 	int type;
 	void *data; /* pointer to data handled by plugin handler */
-} LibStruct;
+} rLibraryStruct;
 
 //extern const char *r_lib_types[];
 
@@ -73,7 +73,7 @@ typedef struct r_lib_t {
 	char symname[32];
 	struct list_head plugins;
 	struct list_head handlers;
-} rLib;
+} rLibrary;
 
 #ifdef R_API
 R_API struct r_lib_t *r_lib_init(struct r_lib_t *lib, const char *symname);

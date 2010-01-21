@@ -19,7 +19,14 @@ Breakpoint API
   by other modules. Like changing register values and so on
   - Do we should place some callbacks for this kind of ops?
 - We need to make this work also remotely
-* Watchpoints and its exception should be handled here
+  - r_debug can handle the remoteness of the debugger backend.
+  - r_io can do it also
+- Watchpoints and its exception should be handled here
   - watchpoint expressions should be handled by using the r_num stuff
+- Hardware breakpoints require access to registers, or pid/tid
+  this is... the debugger backend. For those, the debugger backend
+  should fill a callback to manage them.
+  - if the debugger breakpoint handler does not manages the breakpoint
+    type, r_bp must do it with r_io storing and loading bp bytes.
 
 * Do we need the plugin API to define new breakpoints and so on?
