@@ -16,7 +16,8 @@
 
 static int r_bin_mach0_init_hdr(struct r_bin_mach0_obj_t* bin)
 {
-	int len, magic;
+	int magic, len;
+
 	if (r_buf_read_at(bin->b, 0, (ut8*)&magic, 4) == -1) {
 		ERR("Error: read (magic)\n");
 		return R_FALSE;
@@ -26,10 +27,7 @@ static int r_bin_mach0_init_hdr(struct r_bin_mach0_obj_t* bin)
 	else if (magic == MH_CIGAM)
 		bin->endian = LIL_ENDIAN;
 	else return R_FALSE;
-	if (bin->endian)
-		len = r_buf_fread_at(bin->b, 0, (ut8*)&bin->hdr, "7I", 1);
-	else
-		len = r_buf_fread_at(bin->b, 0, (ut8*)&bin->hdr, "7i", 1);
+	len = r_buf_fread_at(bin->b, 0, (ut8*)&bin->hdr, bin->endian?"7I":"7i", 1);
 	if (len == -1) {
 		ERR("Error: read (hdr)\n");
 		return R_FALSE;
@@ -46,10 +44,7 @@ static int r_bin_mach0_parse_seg(struct r_bin_mach0_obj_t* bin, ut64 off)
 		perror("realloc (seg)");
 		return R_FALSE;
 	}
-	if (bin->endian)
-		len = r_buf_fread_at(bin->b, off, (ut8*)&bin->segs[seg], "2I16c8I", 1);
-	else
-		len = r_buf_fread_at(bin->b, off, (ut8*)&bin->segs[seg], "2i16c8i", 1);
+	len = r_buf_fread_at(bin->b, off, (ut8*)&bin->segs[seg], bin->endian?"2I16c8I":"2i16c8i", 1);
 	if (len == -1) {
 		ERR("Error: read (seg)\n");
 		return R_FALSE;
@@ -61,12 +56,8 @@ static int r_bin_mach0_parse_seg(struct r_bin_mach0_obj_t* bin, ut64 off)
 			perror("realloc (sects)");
 			return R_FALSE;
 		}
-		if (bin->endian)
-			len = r_buf_fread_at(bin->b, off + sizeof(struct segment_command),
-					(ut8*)&bin->sects[sect], "16c16c9I", bin->nsects - sect);
-		else
-			len = r_buf_fread_at(bin->b, off + sizeof(struct segment_command),
-					(ut8*)&bin->sects[sect], "16c16c9i", bin->nsects - sect);
+		len = r_buf_fread_at(bin->b, off + sizeof(struct segment_command),
+				(ut8*)&bin->sects[sect], bin->endian?"16c16c9I":"16c16c9i", bin->nsects - sect);
 		if (len == -1) {
 			ERR("Error: read (sects)\n");
 			return R_FALSE;
@@ -80,10 +71,7 @@ static int r_bin_mach0_parse_symtab(struct r_bin_mach0_obj_t* bin, ut64 off)
 	struct symtab_command st;
 	int len;
 
-	if (bin->endian)
-		len = r_buf_fread_at(bin->b, off, (ut8*)&st, "6I", 1);
-	else
-		len = r_buf_fread_at(bin->b, off, (ut8*)&st, "6i", 1);
+	len = r_buf_fread_at(bin->b, off, (ut8*)&st, bin->endian?"6I":"6i", 1);
 	if (len == -1) {
 		ERR("Error: read (symtab)\n");
 		return R_FALSE;
@@ -102,10 +90,7 @@ static int r_bin_mach0_parse_symtab(struct r_bin_mach0_obj_t* bin, ut64 off)
 			perror("malloc (symtab)");
 			return R_FALSE;
 		}
-		if (bin->endian)
-			len = r_buf_fread_at(bin->b, st.symoff, (ut8*)bin->symtab, "I2cSI", bin->nsymtab);
-		else
-			len = r_buf_fread_at(bin->b, st.symoff, (ut8*)bin->symtab, "i2csi", bin->nsymtab);
+		len = r_buf_fread_at(bin->b, st.symoff, (ut8*)bin->symtab, bin->endian?"I2cSI":"i2csi", bin->nsymtab);
 		if (len == -1) {
 			ERR("Error: read (nlist)\n");
 			return R_FALSE;
@@ -118,10 +103,7 @@ static int r_bin_mach0_parse_dysymtab(struct r_bin_mach0_obj_t* bin, ut64 off)
 {
 	int len;
 
-	if (bin->endian)
-		len = r_buf_fread_at(bin->b, off, (ut8*)&bin->dysymtab, "20I", 1);
-	else
-		len = r_buf_fread_at(bin->b, off, (ut8*)&bin->dysymtab, "20i", 1);
+	len = r_buf_fread_at(bin->b, off, (ut8*)&bin->dysymtab, bin->endian?"20I":"20i", 1);
 	if (len == -1) {
 		ERR("Error: read (dysymtab)\n");
 		return R_FALSE;
@@ -132,10 +114,7 @@ static int r_bin_mach0_parse_dysymtab(struct r_bin_mach0_obj_t* bin, ut64 off)
 			perror("malloc (toc)");
 			return R_FALSE;
 		}
-		if (bin->endian)
-			len = r_buf_fread_at(bin->b, bin->dysymtab.tocoff, (ut8*)bin->toc, "2I", bin->ntoc);
-		else
-			len = r_buf_fread_at(bin->b, bin->dysymtab.tocoff, (ut8*)bin->toc, "2i", bin->ntoc);
+		len = r_buf_fread_at(bin->b, bin->dysymtab.tocoff, (ut8*)bin->toc, bin->endian?"2I":"2i", bin->ntoc);
 		if (len == -1) {
 			ERR("Error: read (toc)\n");
 			return R_FALSE;
@@ -147,10 +126,7 @@ static int r_bin_mach0_parse_dysymtab(struct r_bin_mach0_obj_t* bin, ut64 off)
 			perror("malloc (modtab)");
 			return R_FALSE;
 		}
-		if (bin->endian)
-			len = r_buf_fread_at(bin->b, bin->dysymtab.modtaboff, (ut8*)bin->modtab, "13I", bin->nmodtab);
-		else
-			len = r_buf_fread_at(bin->b, bin->dysymtab.modtaboff, (ut8*)bin->modtab, "13i", bin->nmodtab);
+		len = r_buf_fread_at(bin->b, bin->dysymtab.modtaboff, (ut8*)bin->modtab, bin->endian?"13I":"13i", bin->nmodtab);
 		if (len == -1) {
 			ERR("Error: read (modtab)\n");
 			return R_FALSE;
@@ -166,10 +142,7 @@ static int r_bin_mach0_init_items(struct r_bin_mach0_obj_t* bin)
 	int i, len;
 
 	for (i = 0, off = sizeof(struct mach_header); i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
-		if (bin->endian)
-			len = r_buf_fread_at(bin->b, off, (ut8*)&lc, "2I", 1);
-		else
-			len = r_buf_fread_at(bin->b, off, (ut8*)&lc, "2i", 1);
+		len = r_buf_fread_at(bin->b, off, (ut8*)&lc, bin->endian?"2I":"2i", 1);
 		if (len == -1) {
 			ERR("Error: read (lc)\n");
 			return R_FALSE;
@@ -242,6 +215,7 @@ struct r_bin_mach0_obj_t* r_bin_mach0_new(const char* file)
 {
 	struct r_bin_mach0_obj_t *bin;
 	ut8 *buf;
+
 	if (!(bin = malloc(sizeof(struct r_bin_mach0_obj_t))))
 		return NULL;
 	bin->file = file;
@@ -314,7 +288,7 @@ struct r_bin_mach0_import_t* r_bin_mach0_get_imports(struct r_bin_mach0_obj_t* b
 		return NULL;
 	/* XXX: only iundefsym?  */
 	for (i = bin->dysymtab.iundefsym, j = 0; j < bin->dysymtab.nundefsym; i++, j++) {
-		imports[j].offset = bin->symtab[i].n_value;
+		imports[j].offset = bin->symtab[i].n_value; /* TODO */
 		imports[j].addr = bin->symtab[i].n_value;
 		strncpy(imports[j].name, (char*)bin->symstr+bin->symtab[i].n_un.n_strx, R_BIN_MACH0_STRING_LENGTH);
 		imports[j].last = 0;
@@ -325,10 +299,12 @@ struct r_bin_mach0_import_t* r_bin_mach0_get_imports(struct r_bin_mach0_obj_t* b
 
 struct r_bin_mach0_entrypoint_t* r_bin_mach0_get_entrypoints(struct r_bin_mach0_obj_t* bin)
 {
+	/* TODO */
 	return NULL;
 }
 
 ut64 r_bin_mach0_get_baddr(struct r_bin_mach0_obj_t* bin)
 {
+	/* TODO */
 	return UT64_MIN;
 }

@@ -54,10 +54,11 @@ struct Elf_(r_bin_elf_obj_t) {
     Elf_(Shdr)* shdr;
     char*       strtab;
     int         bss;
-    ut64         baddr;
-	int	        endian;
+	int size;
+    ut64 baddr;
+	int	endian;
     const char* file;
-	int			fd;
+	struct r_buf_t* b;
 };
 
 ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin);
@@ -74,5 +75,5 @@ int Elf_(r_bin_elf_is_big_endian)(struct Elf_(r_bin_elf_obj_t) *bin);
 struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_obj_t) *bin);
 struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, int type);
 struct r_bin_elf_field_t* Elf_(r_bin_elf_get_fields)(struct Elf_(r_bin_elf_obj_t) *bin);
-int Elf_(r_bin_elf_open)(struct Elf_(r_bin_elf_obj_t) *bin, const char *file, int rw);
-int Elf_(r_bin_elf_close)(struct Elf_(r_bin_elf_obj_t) *bin);
+void* Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin);
+struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file);

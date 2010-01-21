@@ -32,7 +32,6 @@
 	
 #ifdef R_BIN_ELF64
 # define Elf_(name) Elf64_##name 
-# define Elf_Vword  Elf64_Xword
 # define ELF_ST_BIND       ELF64_ST_BIND
 # define ELF_ST_TYPE       ELF64_ST_TYPE
 # define ELF_ST_INFO       ELF64_ST_INFO
@@ -45,7 +44,6 @@
 # define ELF_M_INFO        ELF64_M_INFO
 #else       
 # define Elf_(name) Elf32_##name 
-# define Elf_Vword  Elf32_Word
 # define ELF_ST_BIND       ELF32_ST_BIND
 # define ELF_ST_TYPE       ELF32_ST_TYPE
 # define ELF_ST_INFO       ELF32_ST_INFO

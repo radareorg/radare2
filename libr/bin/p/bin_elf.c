@@ -7,19 +7,18 @@
 
 static int bopen(struct r_bin_t *bin)
 {
-	if((bin->bin_obj = MALLOC_STRUCT(struct Elf_(r_bin_elf_obj_t))) == NULL)
-		return R_FALSE;
-
-	if ((bin->fd = Elf_(r_bin_elf_open)(bin->bin_obj,bin->file,bin->rw)) == -1) {
-		free(bin->bin_obj);
-		return R_FALSE;
-	}
+	struct Elf_(r_bin_elf_obj_t)* elf_obj;
+	if(!(bin->bin_obj = Elf_(r_bin_elf_new)(bin->file)))
+		return -1;
+	elf_obj = (struct Elf_(r_bin_elf_obj_t)*)bin->bin_obj; 
+	bin->fd = 1;
 	return bin->fd;
 }
 
 static int bclose(struct r_bin_t *bin)
 {
-	return Elf_(r_bin_elf_close)(bin->bin_obj);
+	Elf_(r_bin_elf_free)((struct Elf_(r_bin_elf_obj_t)*)bin->bin_obj);
+	return R_TRUE;
 }
 
 static ut64 baddr(struct r_bin_t *bin)
