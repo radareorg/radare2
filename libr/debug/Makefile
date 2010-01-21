@@ -1,12 +1,14 @@
 NAME=r_debug
-DEPS=r_reg r_bp
+DEPS=r_reg r_bp r_util
 CFLAGS+=-DCORELIB
 
 foo: pre libs tests plugins
 
 include ../config.mk
 include ${STATIC_DEBUG_PLUGINS}
+
 STATIC_OBJS=$(subst ..,p/..,$(subst debug_,p/debug_,$(STATIC_OBJ)))
+
 OBJ=mem.o debug.o handle.o pid.o reg.o ${STATIC_OBJS}
 
 pre:

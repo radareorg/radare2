@@ -129,14 +129,12 @@ R_API int r_debug_step_over(struct r_debug_t *dbg, int steps)
 static int r_debug_recoil(struct r_debug_t *dbg) {
 	int recoil, ret = R_FALSE;
 	rRegisterItem *ri;
-eprintf("sync regs\n");
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
 	ri = r_reg_get (dbg->reg, "eip", -1);
-eprintf("eip is 0x%08llx\n", r_reg_get_value (dbg->reg, ri));
 	if (ri) {
 		ut64 addr = r_reg_get_value (dbg->reg, ri);
 		recoil = r_bp_recoil (dbg->bp, addr);
-eprintf("RECOIL %d\n", recoil);
+		eprintf("Breakpoint recoil = %d\n", recoil);
 		if (recoil) {
 			r_reg_set_value (dbg->reg, ri, addr-recoil);
 			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_TRUE);

@@ -1,8 +1,7 @@
 NAME=r_th
 DEPS=
 
-## XXX only for linux
-LDFLAGS=-lpthread
+LDFLAGS=${TH_LIBS}
 
 OBJ=th.o lock.o
 

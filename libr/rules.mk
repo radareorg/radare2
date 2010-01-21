@@ -1,10 +1,10 @@
+# TODO: use $VPATH here?
 -include config.mk
 -include ../config.mk
 -include ../../config.mk
 -include global.mk
 -include ../global.mk
 -include ../../global.mk
-#-include ../../../config.mk
 
 #-------------------------------------#
 # Rules for libraries
@@ -20,6 +20,7 @@ real_all all: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
 
 SRC=$(subst .o,.c,$(OBJ))
 
+ifeq ($(WITHPIC),1)
 ${LIBSO}: ${OBJ}
 	@for a in ${OBJ} ${SRC}; do \
 	  do=0 ; [ ! -e ${LIBSO} ] && do=1 ; \
@@ -30,6 +31,9 @@ ${LIBSO}: ${OBJ}
 	    if [ -f "../stripsyms.sh" ]; then sh ../stripsyms.sh ${LIBSO} ${NAME} ; fi ; \
 	  break ; \
 	fi ; done
+else
+${LIBSO}:
+endif
 
 ${LIBAR}: ${OBJ}
 	${CC_AR} ${OBJ}
@@ -73,13 +77,12 @@ else
 
 endif
 
-
 else
 
 #-------------------------------------#
 # Rules for test programs
 
-# XXX can be removed?
+# XXX can this be removed?
 include ../../../config-user.mk
 include ../../../mk/${COMPILER}.mk
 
@@ -89,10 +92,11 @@ ifneq ($(BIN),)
 all: ${BIN}${EXT_EXE}
 
 ${BIN}${EXT_EXE}: ${OBJ}
-	${CC} ${LDFLAGS} ${LIBS} ${OBJ} -o ${BIN}${EXT_EXE}
+	${CC} ${OBJ} ${LDFLAGS} ${LIBS} -o ${BIN}${EXT_EXE}
 endif
 
-#Dummy myclean rule that can be overriden by the t/ Makefile
+# Dummy myclean rule that can be overriden by the t/ Makefile
+# TODO: move to config.mk ? it must be a precondition
 myclean:
 
 clean: myclean

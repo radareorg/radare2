@@ -1,14 +1,17 @@
+include ../../config.mk
+
 OBJ=rahash2.o
-BIN=rahash2
+BIN=rahash2${EXT_EXE}
 BINDEPS=r_io r_hash r_util
 LIBS=-lm
 
-all: ${BIN} hello
+all: ${BIN} hello${EXT_EXE}
 
-hello: hello.o
-	${CC} -I../../include hello.o -Wl,-R.. -L.. -L../../io -L../../util -L../../lib -lr_util -lr_lib -lr_hash -lr_io -o hello
+hello${EXT_EXE}: hello.o
+	@#${CC} -I../../include hello.o -Wl,-R.. -L.. -L../../io -L../../util -L../../lib -lr_util -lr_lib -lr_hash -lr_io -o hello
+	${CC} hello.o ${CFLAGS} ${LDFLAGS} -o hello${EXT_EXE}
 
 myclean:
-	rm -f hello hello.o
+	rm -f hello${EXT_EXE} hello.o
 
 include ../../rules.mk

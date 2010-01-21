@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 0.3b
+VERSION 0.4a
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
@@ -20,6 +20,7 @@ CHKLIB tcc
 ARG_WITH USERCC=gcc compiler Define compiler to use (see mk/) ;
 ARG_WITH USEROSTYPE=gnulinux ostype Choose OS type ( gnulinux windows osx ) ;
 
+ARG_WITHOUT WITHPIC pic do not build libr as a program independent location ;
 ARG_WITHOUT WANT_VALASWIG valaswig disables the build of the valaswig bindings for python, perl, ruby ;
 CHKPRG VALASWIG valaswig
 CHKPRG SWIG swig

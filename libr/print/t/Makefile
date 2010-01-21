@@ -1,11 +1,13 @@
+include ../../config.mk
+
 all: hex fmt
 
 BIN=hex
 OBJ=hex.o
-BINDEPS=r_cons r_util r_line r_print
+BINDEPS=r_cons r_line r_print r_util
 
-ftm: fmt.o
-	${CC} -I../../include fmt.o -L../../util -lr_util ../*.o -o fmt
+fmt${EXT_EXE}: fmt.o
+	${CC} -I../../include fmt.o -L../../util -lr_util ${LDFLAGS} -o fmt${EXT_EXE}
 
 myclean:
 	rm -f fmt fmt.o

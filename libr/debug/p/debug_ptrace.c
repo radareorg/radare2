@@ -6,9 +6,19 @@
 #include <r_reg.h>
 #include <r_lib.h>
 
-#if __linux__
+#if __WINDOWS__
+#include <windows.h>
+#define R_DEBUG_REG_T CONTEXT
+#elif __OpenBSD__ || __NetBSD__ || __FreeBSD__
+#define R_DEBUG_REG_T struct reg
+#elif __sun
+#define R_DEBUG_REG_T gregset_t
+#elif __linux__
 #include <sys/user.h>
 #include <limits.h>
+#define R_DEBUG_REG_T struct user_regs_struct
+#else
+#warning Unsupported debugging platform
 #endif
 
 #if __WINDOWS__
@@ -71,6 +81,7 @@ static int r_debug_ptrace_wait(int pid)
 // TODO: why strdup here?
 static const char *r_debug_ptrace_reg_profile()
 {
+#if __i386__
 	return strdup(
 	"gpr	eip	.32	48	0\n"
 	"gpr	ip	.16	48	0\n"
@@ -119,6 +130,18 @@ static const char *r_debug_ptrace_reg_profile()
 	"flg	flag_o	.1	.456	0\n"
 	"flg	flag_r	.1	.457	0\n"
 	);
+#elif __x86_64__
+#warning linux-x86-64 register profile is really incomplete
+	return strdup (
+	"# no profile defined for x86-64\n"
+	"gpr	rbx	.32	0	0\n"
+	"gpr	rcx	.32	0	8\n"
+	"gpr	rdx	.32	0	16\n"
+	"gpr	rsi	.32	0	24\n"
+	"gpr	rdi	.32	0	32\n"
+	"gpr	rip	.32	0	32\n"
+	);
+#endif
 }
 
 // TODO: what about float and hardware regs here ???
@@ -129,11 +152,17 @@ static int r_debug_ptrace_reg_read(struct r_debug_t *dbg, int type, ut8 *buf, in
 	int pid = dbg->pid;
 	if (type == R_REG_TYPE_GPR) {
 // XXX this must be defined somewhere else
-#if __linux__ && (__i386__ || __x86_64__)
-		struct user_regs_struct regs;
+#if __linux__ || __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
+		R_DEBUG_REG_T regs;
 		memset(&regs, 0, sizeof(regs));
 		memset(buf, 0, size);
-		ret = ptrace(PTRACE_GETREGS, pid, 0, &regs);
+#if __NetBSD__ || __FreeBSD__ || __OpenBSD__
+		ret = ptrace (PTRACE_GETREGS, pid, &regs, sizeof (regs));
+#elif __linux__ && __powerpc__
+		ret = ptrace (PTRACE_GETREGS, pid, &regs, NULL);
+#else __sun
+		ret = ptrace (PTRACE_GETREGS, pid, NULL, &regs);
+#endif
 		if (sizeof(regs) < size)
 			size = sizeof(regs);
 		if (ret != 0)
@@ -153,10 +182,8 @@ static int r_debug_ptrace_reg_read(struct r_debug_t *dbg, int type, ut8 *buf, in
 static int r_debug_ptrace_reg_write(int pid, int type, const ut8* buf, int size) {
 	int ret;
 	// XXX use switch or so
-printf("reg_write\n");
 	if (type == R_REG_TYPE_GPR) {
-#if __linux__ && (__i386__ || __x86_64__)
-printf("reg_write_real\n");
+#if __linux__ || __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
 		ret = ptrace(PTRACE_SETREGS, pid, 0, buf);
 		if (sizeof(struct user_regs_struct) < size)
 			size = sizeof(struct user_regs_struct);
@@ -166,8 +193,7 @@ printf("reg_write_real\n");
 #else
 		#warning r_debug_ptrace_reg_write not implemented
 #endif
-	} else
-printf("reg_write_non-gpr (%d)\n", type);
+	} else eprintf("TODO: reg_write_non-gpr (%d)\n", type);
 	return R_FALSE;
 }
 
@@ -190,13 +216,16 @@ static int r_debug_ptrace_bp_read(int pid, ut64 addr, int hw, int rwx)
 
 static int r_debug_get_arch()
 {
+#if __i386__
 	return R_ASM_ARCH_X86;
-#if 0
-#if __WORDSIZE == 64
+#elif __x86_64__
 	return R_ASM_ARCH_X86_64;
-#else
-	return R_ASM_ARCH_X86;
-#endif
+#elif __powerpc__
+	return R_ASM_ARCH_POWERPC;
+#elif __mips__
+	return R_ASM_ARCH_MIPS;
+#elif __arm__
+	return R_ASM_ARCH_ARM;
 #endif
 }
 
@@ -208,12 +237,19 @@ static int r_debug_ptrace_import(struct r_debug_handle_t *from)
 	return R_FALSE;
 }
 #endif
-#if __WORDSIZE == 64
-const char *archlist[3] = { "x86", "x86-32", "x86-64", 0 };
-#else
+#if __i386__
 const char *archlist[3] = { "x86", "x86-32", 0 };
+#elif __x86_64__
+const char *archlist[4] = { "x86", "x86-32", "x86-64", 0 };
+#elif __powerpc__
+const char *archlist[3] = { "powerpc", 0 };
+#elif __mips__
+const char *archlist[3] = { "mips", 0 };
+#elif __arm__
+const char *archlist[3] = { "arm", 0 };
 #endif
 
+// TODO: think on a way to define the program counter register name
 struct r_debug_handle_t r_debug_plugin_ptrace = {
 	.name = "ptrace",
 	.archs = (const char **)archlist,
@@ -223,11 +259,11 @@ struct r_debug_handle_t r_debug_plugin_ptrace = {
 	.detach = &r_debug_ptrace_detach,
 	.wait = &r_debug_ptrace_wait,
 	.get_arch = &r_debug_get_arch,
-	//.bp_write = &r_debug_ptrace_bp_write,
 	.reg_profile = (void *)&r_debug_ptrace_reg_profile,
 	.reg_read = &r_debug_ptrace_reg_read,
 	.reg_write = (void *)&r_debug_ptrace_reg_write,
 	//.bp_read = &r_debug_ptrace_bp_read,
+	//.bp_write = &r_debug_ptrace_bp_write,
 };
 
 #endif

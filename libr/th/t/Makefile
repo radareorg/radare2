@@ -1,7 +1,6 @@
 OBJ=test.o
 BIN=test
 BINDEPS=r_th
-#LIBS+=-lpthread
-
+LIBS+=${TH_LIBS}
 
 include ../../rules.mk

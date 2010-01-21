@@ -1,6 +1,14 @@
+include ../../config.mk
 CFLAGS=-I ../../include -g
+
+ifeq ($(WITHPIC),1)
 LDPATH=-L.. -Wl,-R.. -L../../util -L../../lib
 LDPATH+=-lr_io -lr_util -lr_lib
+else
+LDPATH=../../io/libr_io.a
+LDPATH+=../../util/libr_util.a
+LDPATH+=../../lib/libr_lib.a
+endif
 
 all: map cat${EXT_EXE} read4${EXT_EXE}
 

@@ -5,5 +5,6 @@ OBJ=core.o cmd.o file.o config.o visual.o io.o yank.o libs.o
 
 CFLAGS+=-DLIBDIR=\"${PREFIX}/lib\"
 CFLAGS+=-DPREFIX=\"${PREFIX}\"
+LDFLAGS+=${DL_LIBS}
 
 include ../rules.mk

@@ -1,7 +1,4 @@
-#-include ../../config-user.mk
-#-include ../../mk/${COMPILER}.mk
-#-include ../../../config-user.mk
-#-include ../../../mk/${COMPILER}.mk
+# config.mk.tail
 
 ifneq (${BINDEPS},)
 include ../../../config-user.mk
@@ -20,13 +17,25 @@ endif
 
 CFLAGS+=-DUSE_RIO=${USE_RIO}
 CFLAGS+=${CFLAGS_APPEND}
+
+ifeq ($(WITHPIC),1)
 LDFLAGS+=$(subst r_,-lr_,$(DEPS))
 LDFLAGS+=$(subst r_,-L../,$(DEPS))
-
 LDFLAGS+=$(subst r_,-lr_,$(BINDEPS))
 LDFLAGS+=$(subst r_,-L../../,$(BINDEPS))
 BOO=-Wl,-R../../
 LDFLAGS+=$(subst r_,${BOO},$(BINDEPS))
+CFLAGS+=${PIC_CFLAGS}
+LDFLAGS+=${PIC_CFLAGS}
+else
+# TODO: is there somebody brave enought to replace this perl oneliner?
+ifneq ($(DEPS), )
+LDFLAGS+=`echo "${DEPS} " | perl -ne 's,r_([^ ]*),../$$1/libr_$$1.a,g; print'`
+endif
+ifneq ($(BINDEPS), )
+LDFLAGS+=`echo "${BINDEPS} " | perl -ne 's,r_([^ ]*),../../$$1/libr_$$1.a,g; print'`
+endif
+endif
 
 # Compiler: see mk/gcc.mk
 # CC CFLAGS CC_LIB CC_AR LINK
@@ -42,18 +51,21 @@ CFLAGS+=-D__WINDOWS__=1
 EXT_AR=lib
 EXT_SO=dll
 EXT_EXE=.exe
+TH_LIBS=
 endif
 ifeq (${OSTYPE},gnulinux)
 CFLAGS+=-D__UNIX__=1
 EXT_AR=a
 EXT_SO=so
 EXT_EXE=
+TH_LIBS=-lpthread
 endif
 ifeq (${OSTYPE},osx)
 CFLAGS+=-D__UNIX__=1
 EXT_AR=a
 EXT_SO=dylib
 EXT_EXE=
+TH_LIBS=-lpthread
 endif
 
 LIB=lib${NAME}
