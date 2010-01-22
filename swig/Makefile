@@ -18,6 +18,17 @@ test:
 	cd python && make test
 	cd ruby && make test
 
+install:
+	# python install
+	@if [ "`grep python supported.langs`" ]; then \
+	for a in python2.5 python2.6; do \
+	mkdir -p /usr/lib/$$a/r2 ; \
+	touch /usr/lib/$$a/r2/__init__.py ; \
+	echo "Installing $$a r2 modules..." ; \
+	cp -rf python/* /usr/lib/$$a/r2 ; \
+	done ; \
+	fi
+
 oldtest:
 	sh do-swig.sh r_bp
 	python test.py

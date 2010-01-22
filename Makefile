@@ -32,26 +32,27 @@ w32dist:
 	zip -r radare2-w32-${VERSION}.zip radare2-w32-${VERSION}
 
 clean:
-	cd libr && make clean
-	cd swig && make clean
+	cd libr && ${MAKE} clean
+	cd swig && ${MAKE} clean
 
 mrproper:
-	cd libr && make mrproper
+	cd libr && ${MAKE} mrproper
 	rm -f plugins.cfg libr/config.h libr/config.mk
 
 pkgcfg:
-	cd libr && make pkgcfg
+	cd libr && ${MAKE} pkgcfg
 
 install:
 	${INSTALL_DIR} ${DESTDIR}${PREFIX}/share/doc/radare2
 	for a in doc/* ; do ${INSTALL_DATA} $$a ${DESTDIR}/${PREFIX}/share/doc/radare2 ; done
-	cd libr && make install PARENT=1 PREFIX=${DESTDIR}${PREFIX}
+	cd libr && ${MAKE} install PARENT=1 PREFIX=${DESTDIR}${PREFIX}
+	cd swig && ${MAKE} install
 
 uninstall:
 	rm -rf prefix
 
 deinstall: uninstall
-	cd libr && make uninstall PARENT=1 PREFIX=${DESTDIR}${PREFIX}
+	cd libr && ${MAKE} uninstall PARENT=1 PREFIX=${DESTDIR}${PREFIX}
 	rm -rf ${DESTDIR}${PREFIX}/share/doc/radare2
 
 dist:

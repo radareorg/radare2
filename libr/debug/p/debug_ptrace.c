@@ -216,10 +216,8 @@ static int r_debug_ptrace_bp_read(int pid, ut64 addr, int hw, int rwx)
 
 static int r_debug_get_arch()
 {
-#if __i386__
+#if __i386__ || __x86_64__
 	return R_ASM_ARCH_X86;
-#elif __x86_64__
-	return R_ASM_ARCH_X86_64;
 #elif __powerpc__
 	return R_ASM_ARCH_POWERPC;
 #elif __mips__

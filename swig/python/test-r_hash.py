@@ -1,4 +1,4 @@
-from r_hash import rHash, Size_MD4
+from r2.r_hash import rHash, Size_MD4
 
 hash = rHash(False)
 ret = hash.do_md4 ("food", 4)
