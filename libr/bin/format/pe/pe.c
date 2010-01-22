@@ -9,10 +9,11 @@
 #include <unistd.h>
 
 #include <r_types.h>
+#include <r_util.h>
 
 #include "pe.h"
 
-static PE_DWord PE_(r_bin_pe_aux_rva_to_offset)(PE_(r_bin_pe_obj) *bin, PE_DWord rva)
+static PE_DWord PE_(r_bin_pe_rva_to_offset)(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord rva)
 {
 	PE_DWord section_base;
 	int i, section_size;
@@ -23,143 +24,56 @@ static PE_DWord PE_(r_bin_pe_aux_rva_to_offset)(PE_(r_bin_pe_obj) *bin, PE_DWord
 		if (rva >= section_base && rva < section_base + section_size)
 			return bin->section_header[i].PointerToRawData + (rva - section_base);
 	}
-		
 	return 0;
 }
 
 #if 0
-static PE_DWord PE_(r_bin_pe_aux_offset_to_rva)(PE_(r_bin_pe_obj) *bin, PE_DWord offset)
+static PE_DWord PE_(r_bin_pe_offset_to_rva)(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord offset)
 {
-	PE_(image_section_header) *shdrp;
 	PE_DWord section_base;
 	int i, section_size;
 
-	shdrp = bin->section_header;
-	for (i = 0; i < bin->nt_headers->file_header.NumberOfSections; i++, shdrp++) {
-		section_base = shdrp->PointerToRawData;
-		section_size = shdrp->SizeOfRawData;
+	for (i = 0; i < bin->nt_headers->file_header.NumberOfSections; i++) {
+		section_base = bin->section_header[i].PointerToRawData;
+		section_size = bin->section_header[i].SizeOfRawData;
 		if (offset >= section_base && offset < section_base + section_size)
-			return shdrp->VirtualAddress + (offset - section_base);
+			return bin->section_header[i].VirtualAddress + (offset - section_base);
 	}
-		
 	return 0;
 }
 #endif
 
-static int PE_(r_bin_pe_init)(PE_(r_bin_pe_obj) *bin)
-{
-	int sections_size, len;
-
-	len = lseek(bin->fd, 0, SEEK_END);
-
-	lseek(bin->fd, 0, SEEK_SET);
-	bin->dos_header = malloc(sizeof(PE_(image_dos_header)));
-	read(bin->fd, bin->dos_header, sizeof(PE_(image_dos_header)));
-
-	if (bin->dos_header->e_lfanew > len) {
-		ERR("Invalid e_lfanew field\n");
-		return -1;
-	}
-
-	lseek(bin->fd, bin->dos_header->e_lfanew, SEEK_SET);
-	bin->nt_headers = malloc(sizeof(PE_(image_nt_headers)));
-	read(bin->fd, bin->nt_headers, sizeof(PE_(image_nt_headers)));
-
-	if (strncmp((char*)&bin->dos_header->e_magic, "MZ", 2)) {
-		ERR("File not PE\n");
-		return -1;
-	}
-
-	if (strncmp((char*)&bin->nt_headers->Signature, "PE", 2)) {
-		ERR("File not PE\n");
-		return -1;
-	}
-
-	sections_size = sizeof(PE_(image_section_header)) * bin->nt_headers->file_header.NumberOfSections;
-
-	if (sections_size > len) {
-		ERR("Invalid NumberOfSections value\n");
-		return -1;
-	}
-
-	lseek(bin->fd, bin->dos_header->e_lfanew + sizeof(PE_(image_nt_headers)), SEEK_SET);
-	bin->section_header = malloc(sections_size);
-	read(bin->fd, bin->section_header, sections_size);
-
-	return 0;
-}
-
-static int PE_(r_bin_pe_init_exports)(PE_(r_bin_pe_obj) *bin)
-{
-	PE_(image_data_directory) *data_dir_export = &bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
-	PE_DWord export_dir_offset = PE_(r_bin_pe_aux_rva_to_offset)(bin, data_dir_export->VirtualAddress);
-
-	if (export_dir_offset == 0)
-		return -1;
-
-	lseek(bin->fd, export_dir_offset, SEEK_SET);
-	bin->export_directory = malloc(sizeof(PE_(image_export_directory)));
-	read(bin->fd, bin->export_directory, sizeof(PE_(image_export_directory)));
-
-	return 0;
-}
-
-static int PE_(r_bin_pe_init_imports)(PE_(r_bin_pe_obj) *bin)
-{
-	PE_(image_data_directory) *data_dir_import = &bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_IMPORT];
-	PE_(image_data_directory) *data_dir_delay_import = &bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT];
-	PE_DWord import_dir_offset = PE_(r_bin_pe_aux_rva_to_offset)(bin, data_dir_import->VirtualAddress);
-	PE_DWord delay_import_dir_offset = PE_(r_bin_pe_aux_rva_to_offset)(bin, data_dir_delay_import->VirtualAddress);
-	int import_dir_size = data_dir_import->Size;
-	int delay_import_dir_size = data_dir_delay_import->Size;
-	
-	if (import_dir_offset == 0 && delay_import_dir_offset == 0)
-		return -1;
-
-	if (import_dir_offset != 0) {
-		lseek(bin->fd, import_dir_offset, SEEK_SET);
-		bin->import_directory = malloc(import_dir_size);
-		read(bin->fd, bin->import_directory, import_dir_size);
-	}
-
-	if (delay_import_dir_offset != 0) {
-		lseek(bin->fd, delay_import_dir_offset, SEEK_SET);
-		bin->delay_import_directory = malloc(delay_import_dir_size);
-		read(bin->fd, bin->delay_import_directory, delay_import_dir_size);
-	}
-
-	return 0;
-}
-
-static int PE_(r_bin_pe_get_import_dirs_count)(PE_(r_bin_pe_obj) *bin)
+static int PE_(r_bin_pe_get_import_dirs_count)(struct PE_(r_bin_pe_obj_t) *bin)
 {
 	PE_(image_data_directory) *data_dir_import = &bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_IMPORT];
 
-	return (int) (data_dir_import->Size / sizeof(PE_(image_import_directory)) - 1);
+	return (int)(data_dir_import->Size / sizeof(PE_(image_import_directory)) - 1);
 }
 
-static int PE_(r_bin_pe_get_delay_import_dirs_count)(PE_(r_bin_pe_obj) *bin)
+static int PE_(r_bin_pe_get_delay_import_dirs_count)(struct PE_(r_bin_pe_obj_t) *bin)
 {
 	PE_(image_data_directory) *data_dir_delay_import = \
 		&bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT];
 
-	return (int) (data_dir_delay_import->Size / sizeof(PE_(image_delay_import_directory)) - 1);
+	return (int)(data_dir_delay_import->Size / sizeof(PE_(image_delay_import_directory)) - 1);
 }
 
-static int PE_(r_bin_pe_parse_imports)(PE_(r_bin_pe_obj) *bin, PE_(r_bin_pe_import) **importp, char *dll_name, PE_DWord OriginalFirstThunk, PE_DWord FirstThunk)
+static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_import_t** importp, char* dll_name, PE_DWord OriginalFirstThunk, PE_DWord FirstThunk)
 {
 	char import_name[PE_NAME_LENGTH], name[PE_NAME_LENGTH];
 	PE_Word import_hint, import_ordinal;
 	PE_DWord import_table = 0, off = 0;
 	int i = 0;
 
-	if ((off = PE_(r_bin_pe_aux_rva_to_offset)(bin, OriginalFirstThunk)) == 0 &&
-		(off = PE_(r_bin_pe_aux_rva_to_offset)(bin, FirstThunk)) == 0)
+	if ((off = PE_(r_bin_pe_rva_to_offset)(bin, OriginalFirstThunk)) == 0 &&
+		(off = PE_(r_bin_pe_rva_to_offset)(bin, FirstThunk)) == 0)
 		return 0;
 
 	do {
-		lseek(bin->fd, off + i * sizeof(PE_DWord), SEEK_SET);
-		read(bin->fd, &import_table, sizeof(PE_DWord));
+		if (r_buf_read_at(bin->b, off + i * sizeof(PE_DWord), (ut8*)&import_table, sizeof(PE_DWord)) == -1) {
+			ERR("Error: read (import table)\n");
+			return 0;
+		}
 		if (import_table) {
 			if (import_table & ILT_MASK1) {
 				import_ordinal = import_table & ILT_MASK2;
@@ -167,15 +81,22 @@ static int PE_(r_bin_pe_parse_imports)(PE_(r_bin_pe_obj) *bin, PE_(r_bin_pe_impo
 				snprintf(import_name, PE_NAME_LENGTH, "%s_Ordinal_%i", dll_name, import_ordinal);
 			} else {
 				import_ordinal = 0;
-				lseek(bin->fd, PE_(r_bin_pe_aux_rva_to_offset)(bin, import_table), SEEK_SET);
-				read(bin->fd, &import_hint, sizeof(PE_Word));
-				read(bin->fd, name, PE_NAME_LENGTH);
+				if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, import_table),
+							(ut8*)&import_hint, sizeof(PE_Word)) == -1) {
+					ERR("Error: read (import hint)\n");
+					return 0;
+				}
+				if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, import_table) + sizeof(PE_Word),
+							(ut8*)name, sizeof(PE_NAME_LENGTH)) == -1) {
+					ERR("Error: read (import name)\n");
+					return 0;
+				}
 				snprintf(import_name, PE_NAME_LENGTH, "%s_%s", dll_name, name);
 			}
 			memcpy((*importp)->name, import_name, PE_NAME_LENGTH);
 			(*importp)->name[PE_NAME_LENGTH-1] = '\0';
 			(*importp)->rva = FirstThunk + i * sizeof(PE_DWord);
-			(*importp)->offset = PE_(r_bin_pe_aux_rva_to_offset)(bin, FirstThunk) + i * sizeof(PE_DWord);
+			(*importp)->offset = PE_(r_bin_pe_rva_to_offset)(bin, FirstThunk) + i * sizeof(PE_DWord);
 			(*importp)->hint = import_hint;
 			(*importp)->ordinal = import_ordinal;
 			(*importp)++; i++;
@@ -185,522 +106,108 @@ static int PE_(r_bin_pe_parse_imports)(PE_(r_bin_pe_obj) *bin, PE_(r_bin_pe_impo
 	return i;
 }
 
-int PE_(r_bin_pe_close)(PE_(r_bin_pe_obj) *bin)
+static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin)
 {
-	if (bin->dos_header != NULL)
-		free(bin->dos_header);
-	if (bin->nt_headers != NULL)
-		free(bin->nt_headers);
-	if (bin->section_header != NULL)
-		free(bin->section_header);
-	if (bin->export_directory != NULL)
-		free(bin->export_directory);
-	if (bin->import_directory != NULL)
-		free(bin->import_directory);
-	if (bin->delay_import_directory != NULL)
-		free(bin->delay_import_directory);
-
-	return close(bin->fd);
-}
-
-int PE_(r_bin_pe_get_arch)(PE_(r_bin_pe_obj) *bin, char *str)
-{
-	if (str)
-	switch (bin->nt_headers->file_header.Machine) {
-	case PE_IMAGE_FILE_MACHINE_ALPHA:
-	case PE_IMAGE_FILE_MACHINE_ALPHA64:
-		snprintf(str, PE_NAME_LENGTH, "alpha");
-		break;
-	case PE_IMAGE_FILE_MACHINE_ARM:
-	case PE_IMAGE_FILE_MACHINE_THUMB:
-		snprintf(str, PE_NAME_LENGTH, "arm");
-		break;
-	case PE_IMAGE_FILE_MACHINE_M68K:
-		snprintf(str, PE_NAME_LENGTH, "m68k");
-		break;
-	case PE_IMAGE_FILE_MACHINE_MIPS16:
-	case PE_IMAGE_FILE_MACHINE_MIPSFPU:
-	case PE_IMAGE_FILE_MACHINE_MIPSFPU16:
-	case PE_IMAGE_FILE_MACHINE_WCEMIPSV2:
-		snprintf(str, PE_NAME_LENGTH, "mips");
-		break;
-	case PE_IMAGE_FILE_MACHINE_POWERPC:
-	case PE_IMAGE_FILE_MACHINE_POWERPCFP:
-		snprintf(str, PE_NAME_LENGTH, "ppc");
-		break;
-	case PE_IMAGE_FILE_MACHINE_AMD64:
-	case PE_IMAGE_FILE_MACHINE_IA64:
-		snprintf(str, PE_NAME_LENGTH, "intel64");
-		break;
-	default:
-		snprintf(str, PE_NAME_LENGTH, "intel");
+	if (!(bin->dos_header = malloc(sizeof(PE_(image_dos_header))))) {
+		perror("malloc (dos header)");
+		return R_FALSE;
 	}
-	return bin->nt_headers->file_header.Machine;
+	if (r_buf_read_at(bin->b, 0, (ut8*)bin->dos_header, sizeof(PE_(image_dos_header))) == -1) {
+		ERR("Error: read (dos header)\n");
+		return R_FALSE;
+	}
+	if (bin->dos_header->e_lfanew > bin->size) {
+		ERR("Invalid e_lfanew field\n");
+		return R_FALSE;
+	}
+	if (!(bin->nt_headers = malloc(sizeof(PE_(image_nt_headers))))) {
+		perror("malloc (nt header)");
+		return R_FALSE;
+	}
+	if (r_buf_read_at(bin->b, bin->dos_header->e_lfanew,
+				(ut8*)bin->nt_headers, sizeof(PE_(image_nt_headers))) == -1) {
+		ERR("Error: read (dos header)\n");
+		return R_FALSE;
+	}
+	if (strncmp((char*)&bin->dos_header->e_magic, "MZ", 2) ||
+		strncmp((char*)&bin->nt_headers->Signature, "PE", 2))
+		return R_FALSE;
+	return R_TRUE;
 }
 
-int PE_(r_bin_pe_get_entrypoint)(PE_(r_bin_pe_obj) *bin, PE_(r_bin_pe_entrypoint) *entrypoint)
+static int PE_(r_bin_pe_init_sections)(struct PE_(r_bin_pe_obj_t)* bin)
 {
-	entrypoint->rva = bin->nt_headers->optional_header.AddressOfEntryPoint;
-	entrypoint->offset = PE_(r_bin_pe_aux_rva_to_offset)(bin, bin->nt_headers->optional_header.AddressOfEntryPoint);
-	return 0;
+	int sections_size = sizeof(PE_(image_section_header)) * bin->nt_headers->file_header.NumberOfSections;
+	if (sections_size > bin->size) {
+		ERR("Invalid NumberOfSections value\n");
+		return R_FALSE;
+	}
+	if (!(bin->section_header = malloc(sections_size))) {
+		perror("malloc (section header)");
+		return R_FALSE;
+	}
+	if (r_buf_read_at(bin->b, bin->dos_header->e_lfanew + sizeof(PE_(image_nt_headers)),
+				(ut8*)bin->section_header, sections_size) == -1) {
+		ERR("Error: read (import directory)\n");
+		return R_FALSE;
+	}
+	return R_TRUE;
 }
 
-int PE_(r_bin_pe_get_exports)(PE_(r_bin_pe_obj) *bin, PE_(r_bin_pe_export) *export)
+static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin)
 {
-	PE_CWord functions_offset, names_offset, ordinals_offset, function_rva, name_rva, name_offset;
-	PE_Word function_ordinal;
-	PE_(r_bin_pe_export) *exportp;
-	char function_name[PE_NAME_LENGTH], forwarder_name[PE_NAME_LENGTH];
-	char dll_name[PE_NAME_LENGTH], export_name[PE_NAME_LENGTH];
-	int i;
-	PE_(image_data_directory) *data_dir_export =
-		&bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
-	PE_CWord export_dir_rva = data_dir_export->VirtualAddress;
-	int export_dir_size = data_dir_export->Size;
+	PE_(image_data_directory) *data_dir_import = &bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_IMPORT];
+	PE_(image_data_directory) *data_dir_delay_import = &bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT];
+	PE_DWord import_dir_offset = PE_(r_bin_pe_rva_to_offset)(bin, data_dir_import->VirtualAddress);
+	PE_DWord delay_import_dir_offset = PE_(r_bin_pe_rva_to_offset)(bin, data_dir_delay_import->VirtualAddress);
+	int import_dir_size = data_dir_import->Size;
+	int delay_import_dir_size = data_dir_delay_import->Size;
 	
-	if (PE_(r_bin_pe_init_exports)(bin) == -1)
-		return -1;
-	
-	lseek(bin->fd, PE_(r_bin_pe_aux_rva_to_offset)(bin, bin->export_directory->Name), SEEK_SET);
-    	read(bin->fd, dll_name, PE_NAME_LENGTH);
-
-	functions_offset = PE_(r_bin_pe_aux_rva_to_offset)(bin, bin->export_directory->AddressOfFunctions);
-	names_offset = PE_(r_bin_pe_aux_rva_to_offset)(bin, bin->export_directory->AddressOfNames);
-	ordinals_offset = PE_(r_bin_pe_aux_rva_to_offset)(bin, bin->export_directory->AddressOfOrdinals);
-
-	exportp = export;
-	for (i = 0; i < bin->export_directory->NumberOfNames; i++, exportp++) {
-		lseek(bin->fd, functions_offset + i * sizeof(PE_CWord), SEEK_SET);
-		read(bin->fd, &function_rva, sizeof(PE_CWord));
-		lseek(bin->fd, ordinals_offset + i * sizeof(PE_Word), SEEK_SET);
-		read(bin->fd, &function_ordinal, sizeof(PE_Word));
-		lseek(bin->fd, names_offset + i * sizeof(PE_CWord), SEEK_SET);
-		read(bin->fd, &name_rva, sizeof(PE_CWord));
-		name_offset = PE_(r_bin_pe_aux_rva_to_offset)(bin, name_rva);
-
-		if (name_offset) {
-			lseek(bin->fd, name_offset, SEEK_SET);
-			read(bin->fd, function_name, PE_NAME_LENGTH);
-		} else {
-			snprintf(function_name, PE_NAME_LENGTH, "Ordinal_%i", function_ordinal);
+	if (import_dir_offset == 0 && delay_import_dir_offset == 0)
+		return R_FALSE;
+	if (import_dir_offset != 0) {
+		if (!(bin->import_directory = malloc(import_dir_size))) {
+			perror("malloc (import directory)");
+			return R_FALSE;
 		}
-		
-		snprintf(export_name, PE_NAME_LENGTH, "%s_%s", dll_name, function_name);
-
-		if (function_rva >= export_dir_rva && function_rva < (export_dir_rva + export_dir_size)) {
-			lseek(bin->fd, PE_(r_bin_pe_aux_rva_to_offset)(bin, function_rva), SEEK_SET);
-			read(bin->fd, forwarder_name, PE_NAME_LENGTH);
-		} else {
-			snprintf(forwarder_name, PE_NAME_LENGTH, "NONE");
+		if (r_buf_read_at(bin->b, import_dir_offset, (ut8*)bin->import_directory, import_dir_size) == -1) {
+			ERR("Error: read (import directory)\n");
+			return R_FALSE;
 		}
-
-		exportp->rva = function_rva;
-		exportp->offset = PE_(r_bin_pe_aux_rva_to_offset)(bin, function_rva);
-		exportp->ordinal = function_ordinal;
-		memcpy(exportp->forwarder, forwarder_name, PE_NAME_LENGTH);
-		exportp->forwarder[PE_NAME_LENGTH-1] = '\0';
-		memcpy(exportp->name, export_name, PE_NAME_LENGTH);
-		exportp->name[PE_NAME_LENGTH-1] = '\0';
 	}
-
-	return 0;
-}
-
-int PE_(r_bin_pe_get_exports_count)(PE_(r_bin_pe_obj) *bin)
-{
-	if (PE_(r_bin_pe_init_exports)(bin) == -1)
-		return 0;
-	
-	return bin->export_directory->NumberOfNames;
-}
-
-int PE_(r_bin_pe_get_file_alignment)(PE_(r_bin_pe_obj) *bin)
-{
-	return bin->nt_headers->optional_header.FileAlignment;
-}
-
-ut64 PE_(r_bin_pe_get_image_base)(PE_(r_bin_pe_obj) *bin)
-{
-	return(ut64)bin->nt_headers->optional_header.ImageBase;
-}
-
-int PE_(r_bin_pe_get_imports)(PE_(r_bin_pe_obj) *bin, PE_(r_bin_pe_import) *import)
-{
-	PE_(image_import_directory) *import_dirp;
-	PE_(image_delay_import_directory) *delay_import_dirp;
-	PE_(r_bin_pe_import) *importp;
-	char dll_name[PE_NAME_LENGTH];
-	int import_dirs_count = PE_(r_bin_pe_get_import_dirs_count)(bin);
-	int delay_import_dirs_count = PE_(r_bin_pe_get_delay_import_dirs_count)(bin);
-	int i;
-	
-	if (PE_(r_bin_pe_init_imports)(bin) == -1)
-		return -1;
-
-	importp = import;
-
-	import_dirp = bin->import_directory;
-	for (i = 0; i < import_dirs_count; i++, import_dirp++) {
-		lseek(bin->fd, PE_(r_bin_pe_aux_rva_to_offset)(bin, import_dirp->Name), SEEK_SET);
-		read(bin->fd, dll_name, PE_NAME_LENGTH);
-		if (!PE_(r_bin_pe_parse_imports)(bin, &importp, dll_name,
-			import_dirp->Characteristics, import_dirp->FirstThunk))
-			break;
+	if (delay_import_dir_offset != 0) {
+		if (!(bin->delay_import_directory = malloc(delay_import_dir_size))) {
+			perror("malloc (delay import directory)");
+			return R_FALSE;
+		}
+		if (r_buf_read_at(bin->b, delay_import_dir_offset, (ut8*)bin->delay_import_directory, delay_import_dir_size) == -1) {
+			ERR("Error: read (delay import directory)\n");
+			return R_FALSE;
+		}
 	}
+	return R_TRUE;
+}
 
-	delay_import_dirp = bin->delay_import_directory;
-	for (i = 0; i < delay_import_dirs_count; i++, delay_import_dirp++) {
-		lseek(bin->fd, PE_(r_bin_pe_aux_rva_to_offset)(bin, delay_import_dirp->Name), SEEK_SET);
-		read(bin->fd, dll_name, PE_NAME_LENGTH);
-		if(!PE_(r_bin_pe_parse_imports)(bin, &importp, dll_name, delay_import_dirp->DelayImportNameTable, delay_import_dirp->DelayImportAddressTable))
-			break;
+static int PE_(r_bin_pe_init_exports)(struct PE_(r_bin_pe_obj_t) *bin)
+{
+	PE_(image_data_directory) *data_dir_export = &bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
+	PE_DWord export_dir_offset = PE_(r_bin_pe_rva_to_offset)(bin, data_dir_export->VirtualAddress);
+
+	if (export_dir_offset == 0)
+		return R_FALSE;
+	if (!(bin->export_directory = malloc(sizeof(PE_(image_export_directory))))) {
+		perror("malloc (export directory)");
+		return R_FALSE;
 	}
-
-	return 0;
-}
-
-int PE_(r_bin_pe_get_imports_count)(PE_(r_bin_pe_obj) *bin)
-{
-	PE_(image_import_directory) *import_dirp;
-	PE_(image_delay_import_directory) *delay_import_dirp;
-	PE_DWord import_table, off = 0;
-	int import_dirs_count = PE_(r_bin_pe_get_import_dirs_count)(bin);
-	int delay_import_dirs_count = PE_(r_bin_pe_get_delay_import_dirs_count)(bin);
-	int imports_count = 0, i, j;
-
-	if (PE_(r_bin_pe_init_imports)(bin) == -1)
-		return 0;
-
-	import_dirp = bin->import_directory;
-	import_table = 0;
-	for (i = 0; i < import_dirs_count; i++, import_dirp++) {
-		if ((off = PE_(r_bin_pe_aux_rva_to_offset)(bin, import_dirp->Characteristics)) == 0 &&
-			(off = PE_(r_bin_pe_aux_rva_to_offset)(bin, import_dirp->FirstThunk)) == 0)
-			break;
-
-		j = 0;
-		do {
-			lseek(bin->fd, off + j * sizeof(PE_DWord), SEEK_SET);
-			read(bin->fd, &import_table, sizeof(PE_DWord));
-
-			if (import_table) {
-				imports_count++;
-				j++;
-			}
-		} while (import_table);
+	if (r_buf_read_at(bin->b, export_dir_offset, (ut8*)bin->export_directory,
+				sizeof(PE_(image_export_directory))) == -1) {
+		ERR("Error: read (export directory)\n");
+		return R_FALSE;
 	}
-
-	delay_import_dirp = bin->delay_import_directory;
-	import_table = 0;
-	for (i = 0; i < delay_import_dirs_count; i++, delay_import_dirp++) {
-		if (delay_import_dirp->DelayImportNameTable)
-			off = PE_(r_bin_pe_aux_rva_to_offset)(bin, delay_import_dirp->DelayImportNameTable);
-		else if (delay_import_dirp->DelayImportAddressTable) 
-			off = PE_(r_bin_pe_aux_rva_to_offset)(bin, delay_import_dirp->DelayImportNameTable);
-		else break;
-
-		j = 0;
-		do {
-			lseek(bin->fd, off + j * sizeof(PE_DWord), SEEK_SET);
-    		read(bin->fd, &import_table, sizeof(PE_DWord));
-			
-			if (import_table) {
-				imports_count++;
-				j++;
-			}
-		} while (import_table);
-	}
-
-	return imports_count;
+	return R_TRUE;
 }
 
-int PE_(r_bin_pe_get_libs)(PE_(r_bin_pe_obj) *bin, int limit, PE_(r_bin_pe_string) *strings)
-{
-	PE_(image_import_directory) *import_dirp;
-	PE_(image_delay_import_directory) *delay_import_dirp;
-	PE_(r_bin_pe_string) *stringsp;
-	char dll_name[PE_STRING_LENGTH];
-	int import_dirs_count = PE_(r_bin_pe_get_import_dirs_count)(bin), delay_import_dirs_count = PE_(r_bin_pe_get_delay_import_dirs_count)(bin);
-	int i, ctr=0;
-	
-	if (PE_(r_bin_pe_init_imports)(bin) == -1)
-		return -1;
-
-	import_dirp = bin->import_directory;
-	stringsp = strings;
-	for (i = 0; i < import_dirs_count && ctr < limit; i++, import_dirp++, stringsp++) {
-		lseek(bin->fd, PE_(r_bin_pe_aux_rva_to_offset)(bin, import_dirp->Name), SEEK_SET);
-		read(bin->fd, dll_name, PE_STRING_LENGTH);
-		memcpy(stringsp->string, dll_name, PE_STRING_LENGTH);
-		stringsp->string[PE_STRING_LENGTH-1] = '\0';
-		stringsp->type = 'A';
-		stringsp->offset = 0;
-		stringsp->size = 0;
-		ctr++;
-	}
-	
-	delay_import_dirp = bin->delay_import_directory;
-	for (i = 0; i < delay_import_dirs_count && ctr < limit; i++, delay_import_dirp++, stringsp++) {
-		lseek(bin->fd, PE_(r_bin_pe_aux_rva_to_offset)(bin, delay_import_dirp->Name), SEEK_SET);
-		read(bin->fd, dll_name, PE_STRING_LENGTH);
-		memcpy(stringsp->string, dll_name, PE_STRING_LENGTH);
-		stringsp->string[PE_STRING_LENGTH-1] = '\0';
-		stringsp->type = 'A';
-		stringsp->offset = 0;
-		stringsp->size = 0;
-		ctr++;
-	}
-	
-	return ctr;
-}
-
-int PE_(r_bin_pe_get_image_size)(PE_(r_bin_pe_obj) *bin)
-{
-	return bin->nt_headers->optional_header.SizeOfImage;
-}
-
-int PE_(r_bin_pe_get_machine)(PE_(r_bin_pe_obj) *bin, char *str)
-{
-	if (str)
-	switch (bin->nt_headers->file_header.Machine) {
-	case PE_IMAGE_FILE_MACHINE_ALPHA:
-		snprintf(str, PE_NAME_LENGTH, "Alpha");
-		break;
-	case PE_IMAGE_FILE_MACHINE_ALPHA64:
-		snprintf(str, PE_NAME_LENGTH, "Alpha 64");
-		break;
-	case PE_IMAGE_FILE_MACHINE_AM33:
-		snprintf(str, PE_NAME_LENGTH, "AM33");
-		break;
-	case PE_IMAGE_FILE_MACHINE_AMD64:
-		snprintf(str, PE_NAME_LENGTH, "AMD 64");
-		break;
-	case PE_IMAGE_FILE_MACHINE_ARM:
-		snprintf(str, PE_NAME_LENGTH, "ARM");
-		break;
-	case PE_IMAGE_FILE_MACHINE_CEE:
-		snprintf(str, PE_NAME_LENGTH, "CEE");
-		break;
-	case PE_IMAGE_FILE_MACHINE_CEF:
-		snprintf(str, PE_NAME_LENGTH, "CEF");
-		break;
-	case PE_IMAGE_FILE_MACHINE_EBC:
-		snprintf(str, PE_NAME_LENGTH, "EBC");
-		break;
-	case PE_IMAGE_FILE_MACHINE_I386:
-		snprintf(str, PE_NAME_LENGTH, "i386");
-		break;
-	case PE_IMAGE_FILE_MACHINE_IA64:
-		snprintf(str, PE_NAME_LENGTH, "ia64");
-		break;
-	case PE_IMAGE_FILE_MACHINE_M32R:
-		snprintf(str, PE_NAME_LENGTH, "M32R");
-		break;
-	case PE_IMAGE_FILE_MACHINE_M68K:
-		snprintf(str, PE_NAME_LENGTH, "M68K");
-		break;
-	case PE_IMAGE_FILE_MACHINE_MIPS16:
-		snprintf(str, PE_NAME_LENGTH, "Mips 16");
-		break;
-	case PE_IMAGE_FILE_MACHINE_MIPSFPU:
-		snprintf(str, PE_NAME_LENGTH, "Mips FPU");
-		break;
-	case PE_IMAGE_FILE_MACHINE_MIPSFPU16:
-		snprintf(str, PE_NAME_LENGTH, "Mips FPU 16");
-		break;
-	case PE_IMAGE_FILE_MACHINE_POWERPC:
-		snprintf(str, PE_NAME_LENGTH, "PowerPC");
-		break;
-	case PE_IMAGE_FILE_MACHINE_POWERPCFP:
-		snprintf(str, PE_NAME_LENGTH, "PowerPC FP");
-		break;
-	case PE_IMAGE_FILE_MACHINE_R10000:
-		snprintf(str, PE_NAME_LENGTH, "R10000");
-		break;
-	case PE_IMAGE_FILE_MACHINE_R3000:
-		snprintf(str, PE_NAME_LENGTH, "R3000");
-		break;
-	case PE_IMAGE_FILE_MACHINE_R4000:
-		snprintf(str, PE_NAME_LENGTH, "R4000");
-		break;
-	case PE_IMAGE_FILE_MACHINE_SH3:
-		snprintf(str, PE_NAME_LENGTH, "SH3");
-		break;
-	case PE_IMAGE_FILE_MACHINE_SH3DSP:
-		snprintf(str, PE_NAME_LENGTH, "SH3DSP");
-		break;
-	case PE_IMAGE_FILE_MACHINE_SH3E:
-		snprintf(str, PE_NAME_LENGTH, "SH3E");
-		break;
-	case PE_IMAGE_FILE_MACHINE_SH4:
-		snprintf(str, PE_NAME_LENGTH, "SH4");
-		break;
-	case PE_IMAGE_FILE_MACHINE_SH5:
-		snprintf(str, PE_NAME_LENGTH, "SH5");
-		break;
-	case PE_IMAGE_FILE_MACHINE_THUMB:
-		snprintf(str, PE_NAME_LENGTH, "Thumb");
-		break;
-	case PE_IMAGE_FILE_MACHINE_TRICORE:
-		snprintf(str, PE_NAME_LENGTH, "Tricore");
-		break;
-	case PE_IMAGE_FILE_MACHINE_WCEMIPSV2:
-		snprintf(str, PE_NAME_LENGTH, "WCE Mips V2");
-		break;
-	default:
-		snprintf(str, PE_NAME_LENGTH, "unknown");
-	}
-
-	return bin->nt_headers->file_header.Machine;
-}
-
-int PE_(r_bin_pe_get_os)(PE_(r_bin_pe_obj) *bin, char *str)
-{
-	if (str)
-	switch (bin->nt_headers->optional_header.Subsystem) {
-	case PE_IMAGE_SUBSYSTEM_NATIVE:
-		snprintf(str, PE_NAME_LENGTH, "native");
-		break;
-	case PE_IMAGE_SUBSYSTEM_WINDOWS_GUI:
-	case PE_IMAGE_SUBSYSTEM_WINDOWS_CUI:
-	case PE_IMAGE_SUBSYSTEM_WINDOWS_CE_GUI:
-		snprintf(str, PE_NAME_LENGTH, "windows");
-		break;
-	case PE_IMAGE_SUBSYSTEM_POSIX_CUI:
-		snprintf(str, PE_NAME_LENGTH, "posix");
-		break;
-	case PE_IMAGE_SUBSYSTEM_EFI_APPLICATION:
-	case PE_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER:
-	case PE_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER:
-	case PE_IMAGE_SUBSYSTEM_EFI_ROM:
-		snprintf(str, PE_NAME_LENGTH, "efi");
-		break;
-	case PE_IMAGE_SUBSYSTEM_XBOX:
-		snprintf(str, PE_NAME_LENGTH, "xbox");
-		break;
-	default:
-		snprintf(str, PE_NAME_LENGTH, "unknown");
-	}
-
-	return bin->nt_headers->optional_header.Subsystem;
-}
-
-int PE_(r_bin_pe_get_class)(PE_(r_bin_pe_obj) *bin, char *str)
-{
-	if (str)
-	switch (bin->nt_headers->optional_header.Magic) {
-	case PE_IMAGE_FILE_TYPE_PE32:
-		snprintf(str, PE_NAME_LENGTH, "PE32");
-		break;
-	case PE_IMAGE_FILE_TYPE_PE32PLUS:
-		snprintf(str, PE_NAME_LENGTH, "PE32+");
-		break;
-	}
-	return bin->nt_headers->optional_header.Magic;
-}
-
-int PE_(r_bin_pe_get_section_alignment)(PE_(r_bin_pe_obj) *bin)
-{
-	return bin->nt_headers->optional_header.SectionAlignment;
-}
-
-int PE_(r_bin_pe_get_sections)(PE_(r_bin_pe_obj) *bin, PE_(r_bin_pe_section) *section)
-{
-	PE_(image_section_header) *shdrp;
-	PE_(r_bin_pe_section) *sectionp;
-	int i, sections_count = PE_(r_bin_pe_get_sections_count)(bin);
-
-	shdrp = bin->section_header;
-	sectionp = section;
-	for (i = 0; i < sections_count; i++, shdrp++, sectionp++) {
-		memcpy(sectionp->name, shdrp->Name, PE_IMAGE_SIZEOF_SHORT_NAME);
-		sectionp->name[PE_IMAGE_SIZEOF_SHORT_NAME-1] = '\0';
-		sectionp->rva = shdrp->VirtualAddress;
-		sectionp->size = shdrp->SizeOfRawData;
-		sectionp->vsize = shdrp->Misc.VirtualSize;
-		sectionp->offset = shdrp->PointerToRawData;
-		sectionp->characteristics = shdrp->Characteristics;
-	}
-
-	return 0;
-}
-
-int PE_(r_bin_pe_get_sections_count)(PE_(r_bin_pe_obj) *bin)
-{
-	return bin->nt_headers->file_header.NumberOfSections;
-}
-
-int PE_(r_bin_pe_get_subsystem)(PE_(r_bin_pe_obj) *bin, char *str)
-{
-	if (str)
-	switch (bin->nt_headers->optional_header.Subsystem) {
-	case PE_IMAGE_SUBSYSTEM_UNKNOWN:
-		snprintf(str, PE_NAME_LENGTH, "Unknown");
-		break;
-	case PE_IMAGE_SUBSYSTEM_NATIVE:
-		snprintf(str, PE_NAME_LENGTH, "Native");
-		break;
-	case PE_IMAGE_SUBSYSTEM_WINDOWS_GUI:
-		snprintf(str, PE_NAME_LENGTH, "Windows GUI");
-		break;
-	case PE_IMAGE_SUBSYSTEM_WINDOWS_CUI:
-		snprintf(str, PE_NAME_LENGTH, "Windows CUI");
-		break;
-	case PE_IMAGE_SUBSYSTEM_POSIX_CUI:
-		snprintf(str, PE_NAME_LENGTH, "POSIX CUI");
-		break;
-	case PE_IMAGE_SUBSYSTEM_WINDOWS_CE_GUI:
-		snprintf(str, PE_NAME_LENGTH, "Windows CE GUI");
-		break;
-	case PE_IMAGE_SUBSYSTEM_EFI_APPLICATION:
-		snprintf(str, PE_NAME_LENGTH, "EFI Application");
-		break;
-	case PE_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER:
-		snprintf(str, PE_NAME_LENGTH, "EFI Boot Service Driver");
-		break;
-	case PE_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER:
-		snprintf(str, PE_NAME_LENGTH, "EFI Runtime Driver");
-		break;
-	case PE_IMAGE_SUBSYSTEM_EFI_ROM:
-		snprintf(str, PE_NAME_LENGTH, "EFI ROM");
-		break;
-	case PE_IMAGE_SUBSYSTEM_XBOX:
-		snprintf(str, PE_NAME_LENGTH, "XBOX");
-		break;
-	}
-	return bin->nt_headers->optional_header.Subsystem;
-}
-
-int PE_(r_bin_pe_is_dll)(PE_(r_bin_pe_obj) *bin)
-{
-	return bin->nt_headers->file_header.Characteristics & PE_IMAGE_FILE_DLL;
-}
-
-int PE_(r_bin_pe_is_big_endian)(PE_(r_bin_pe_obj) *bin)
-{
-	return bin->nt_headers->file_header.Characteristics & PE_IMAGE_FILE_BYTES_REVERSED_HI;
-}
-
-int PE_(r_bin_pe_is_stripped_relocs)(PE_(r_bin_pe_obj) *bin)
-{
-	return bin->nt_headers->file_header.Characteristics & PE_IMAGE_FILE_RELOCS_STRIPPED;
-}
-
-int PE_(r_bin_pe_is_stripped_line_nums)(PE_(r_bin_pe_obj) *bin)
-{
-	return bin->nt_headers->file_header.Characteristics & PE_IMAGE_FILE_LINE_NUMS_STRIPPED;
-}
-
-int PE_(r_bin_pe_is_stripped_local_syms)(PE_(r_bin_pe_obj) *bin) {
-	return bin->nt_headers->file_header.Characteristics & PE_IMAGE_FILE_LOCAL_SYMS_STRIPPED;
-}
-
-int PE_(r_bin_pe_is_stripped_debug)(PE_(r_bin_pe_obj) *bin)
-{
-	return bin->nt_headers->file_header.Characteristics & PE_IMAGE_FILE_DEBUG_STRIPPED;
-}
-
-int PE_(r_bin_pe_open)(PE_(r_bin_pe_obj) *bin, const char *file)
+static int PE_(r_bin_pe_init)(struct PE_(r_bin_pe_obj_t)* bin)
 {
 	bin->dos_header = NULL;
 	bin->nt_headers = NULL;
@@ -708,15 +215,498 @@ int PE_(r_bin_pe_open)(PE_(r_bin_pe_obj) *bin, const char *file)
 	bin->export_directory = NULL;
 	bin->import_directory = NULL;
 	bin->delay_import_directory = NULL;
+	bin->endian = 0; /* TODO: get endian */
 
-	if ((bin->fd = open(file, O_RDONLY)) == -1)
-		return -1;
-
-	bin->file = file;
-
-	if (PE_(r_bin_pe_init)(bin) == -1) {
-		close(bin->fd);
-		return -1;
+	if (!PE_(r_bin_pe_init_hdr)(bin)) {
+		ERR("Warning: File is not PE\n");
+		return R_FALSE;
 	}
-	return bin->fd;
+	if (!PE_(r_bin_pe_init_sections)(bin))
+		ERR("Warning: Cannot initalize sections\n");
+	if (!PE_(r_bin_pe_init_imports)(bin))
+		ERR("Warning: Cannot initalize imports\n");
+	if (!PE_(r_bin_pe_init_exports)(bin))
+		ERR("Warning: Cannot initalize exports\n");
+	return R_TRUE;
+}
+
+char* PE_(r_bin_pe_get_arch)(struct PE_(r_bin_pe_obj_t)* bin)
+{
+	char *arch;
+
+	switch (bin->nt_headers->file_header.Machine) {
+	case PE_IMAGE_FILE_MACHINE_ALPHA:
+	case PE_IMAGE_FILE_MACHINE_ALPHA64:
+		arch = strdup("alpha");
+		break;
+	case PE_IMAGE_FILE_MACHINE_ARM:
+	case PE_IMAGE_FILE_MACHINE_THUMB:
+		arch = strdup("arm");
+		break;
+	case PE_IMAGE_FILE_MACHINE_M68K:
+		arch = strdup("m68k");
+		break;
+	case PE_IMAGE_FILE_MACHINE_MIPS16:
+	case PE_IMAGE_FILE_MACHINE_MIPSFPU:
+	case PE_IMAGE_FILE_MACHINE_MIPSFPU16:
+	case PE_IMAGE_FILE_MACHINE_WCEMIPSV2:
+		arch = strdup("mips");
+		break;
+	case PE_IMAGE_FILE_MACHINE_POWERPC:
+	case PE_IMAGE_FILE_MACHINE_POWERPCFP:
+		arch = strdup("ppc");
+		break;
+	case PE_IMAGE_FILE_MACHINE_AMD64:
+	case PE_IMAGE_FILE_MACHINE_IA64:
+		arch = strdup("intel64");
+		break;
+	default:
+		arch = strdup("intel");
+	}
+	return arch;
+}
+
+struct r_bin_pe_entrypoint_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)* bin)
+{
+	struct r_bin_pe_entrypoint_t *entry;
+
+	if ((entry = malloc(sizeof(struct r_bin_pe_entrypoint_t))) == NULL) {
+		perror("malloc (entrypoint)");
+		return NULL;
+	}
+	entry->rva = bin->nt_headers->optional_header.AddressOfEntryPoint;
+	entry->offset = PE_(r_bin_pe_rva_to_offset)(bin, bin->nt_headers->optional_header.AddressOfEntryPoint);
+	return entry;
+}
+
+struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* bin)
+{
+	struct r_bin_pe_export_t *exports;
+	PE_VWord functions_offset, names_offset, ordinals_offset, function_rva, name_rva, name_offset;
+	PE_Word function_ordinal;
+	char function_name[PE_NAME_LENGTH], forwarder_name[PE_NAME_LENGTH];
+	char dll_name[PE_NAME_LENGTH], export_name[PE_NAME_LENGTH];
+	int i;
+	PE_(image_data_directory) *data_dir_export = &bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
+	PE_VWord export_dir_rva = data_dir_export->VirtualAddress;
+	int export_dir_size = data_dir_export->Size;
+	
+	if (!(exports = malloc((bin->export_directory->NumberOfNames + 1) * sizeof(struct r_bin_pe_export_t))))
+		return NULL;
+	if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->export_directory->Name),
+				(ut8*)dll_name, PE_NAME_LENGTH) == -1) {
+		ERR("Error: read (dll name)\n");
+		return NULL;
+	}
+	functions_offset = PE_(r_bin_pe_rva_to_offset)(bin, bin->export_directory->AddressOfFunctions);
+	names_offset = PE_(r_bin_pe_rva_to_offset)(bin, bin->export_directory->AddressOfNames);
+	ordinals_offset = PE_(r_bin_pe_rva_to_offset)(bin, bin->export_directory->AddressOfOrdinals);
+	for (i = 0; i < bin->export_directory->NumberOfNames; i++) {
+		if (r_buf_read_at(bin->b, functions_offset + i * sizeof(PE_VWord), (ut8*)&function_rva, sizeof(PE_VWord)) == -1) {
+			ERR("Error: read (function rva)\n");
+			return NULL;
+		}
+		if (r_buf_read_at(bin->b, ordinals_offset + i * sizeof(PE_Word), (ut8*)&function_ordinal, sizeof(PE_Word)) == -1) {
+			ERR("Error: read (function ordinal)\n");
+			return NULL;
+		}
+		if (r_buf_read_at(bin->b, names_offset + i * sizeof(PE_VWord), (ut8*)&name_rva, sizeof(PE_VWord)) == -1) {
+			ERR("Error: read (name rva)\n");
+			return NULL;
+		}
+		name_offset = PE_(r_bin_pe_rva_to_offset)(bin, name_rva);
+		if (name_offset) {
+			if (r_buf_read_at(bin->b, name_offset, (ut8*)function_name, PE_NAME_LENGTH) == -1) {
+				ERR("Error: read (function name)\n");
+				return NULL;
+			}
+		} else {
+			snprintf(function_name, PE_NAME_LENGTH, "Ordinal_%i", function_ordinal);
+		}
+		snprintf(export_name, PE_NAME_LENGTH, "%s_%s", dll_name, function_name);
+		if (function_rva >= export_dir_rva && function_rva < (export_dir_rva + export_dir_size)) {
+			if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, function_rva), (ut8*)forwarder_name, PE_NAME_LENGTH) == -1) {
+				ERR("Error: read (magic)\n");
+				return NULL;
+			}
+		} else {
+			snprintf(forwarder_name, PE_NAME_LENGTH, "NONE");
+		}
+		exports[i].rva = function_rva;
+		exports[i].offset = PE_(r_bin_pe_rva_to_offset)(bin, function_rva);
+		exports[i].ordinal = function_ordinal;
+		memcpy(exports[i].forwarder, forwarder_name, PE_NAME_LENGTH);
+		exports[i].forwarder[PE_NAME_LENGTH-1] = '\0';
+		memcpy(exports[i].name, export_name, PE_NAME_LENGTH);
+		exports[i].name[PE_NAME_LENGTH-1] = '\0';
+		exports[i].last = 0;
+	}
+	exports[i].last = 1;
+	return exports;
+}
+
+int PE_(r_bin_pe_get_file_alignment)(struct PE_(r_bin_pe_obj_t)* bin)
+{
+	return bin->nt_headers->optional_header.FileAlignment;
+}
+
+ut64 PE_(r_bin_pe_get_image_base)(struct PE_(r_bin_pe_obj_t)* bin)
+{
+	return(ut64)bin->nt_headers->optional_header.ImageBase;
+}
+
+struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *bin)
+{
+	struct r_bin_pe_import *imports;
+	char dll_name[PE_NAME_LENGTH];
+	int import_dirs_count = PE_(r_bin_pe_get_import_dirs_count)(bin);
+	int delay_import_dirs_count = PE_(r_bin_pe_get_delay_import_dirs_count)(bin);
+	int i;
+	
+	for (i = 0; i < import_dirs_count; i++) {
+		if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->import_directory[i].Name),
+					(ut8*)dll_name, PE_NAME_LENGTH) == -1) {
+			ERR("Error: read (magic)\n");
+			return NULL;
+		}
+		if (!PE_(r_bin_pe_parse_imports)(bin, &imports, dll_name,
+					bin->import_directory[i].Characteristics, bin->import_directory[i].FirstThunk))
+			break;
+	}
+	for (i = 0; i < delay_import_dirs_count; i++) {
+		if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->delay_import_directory[i].Name),
+					(ut8*)dll_name, PE_NAME_LENGTH) == -1) {
+			ERR("Error: read (magic)\n");
+			return NULL;
+		}
+		if(!PE_(r_bin_pe_parse_imports)(bin, &imports, dll_name,
+					bin->delay_import_directory[i].DelayImportNameTable, bin->delay_import_directory[i].DelayImportAddressTable))
+			break;
+	}
+	return 0;
+}
+
+struct r_bin_pe_string_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin)
+{
+	struct r_bin_pe_string_t *libs;
+	int import_dirs_count = PE_(r_bin_pe_get_import_dirs_count)(bin);
+	int delay_import_dirs_count = PE_(r_bin_pe_get_delay_import_dirs_count)(bin);
+	int i, j;
+	
+	if ((libs = malloc((import_dirs_count + delay_import_dirs_count + 1) * sizeof(struct r_bin_pe_string_t))) == NULL) {
+		perror("malloc (libs)");
+		return NULL;
+	}
+	for (i = j = 0; i < import_dirs_count; i++, j++)
+		if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->import_directory[i].Name),
+					(ut8*)libs[j].string, PE_STRING_LENGTH) == -1) {
+			ERR("Error: read (libs - import dirs)\n");
+			return NULL;
+		}
+	for (i = 0; i < delay_import_dirs_count; i++, j++)
+		if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->delay_import_directory[i].Name),
+					(ut8*)libs[j].string, PE_STRING_LENGTH) == -1) {
+			ERR("Error: read (libs - delay import dirs)\n");
+			return NULL;
+		}
+	for (i = 0; i < j; i++) {
+		libs[i].string[PE_STRING_LENGTH-1] = '\0';
+		libs[i].type = 'A';
+		libs[i].offset = 0;
+		libs[i].size = 0;
+		libs[i].last = 0;
+	}
+	libs[i].last = 1;
+	return libs;
+}
+
+int PE_(r_bin_pe_get_image_size)(struct PE_(r_bin_pe_obj_t)* bin)
+{
+	return bin->nt_headers->optional_header.SizeOfImage;
+}
+
+char* PE_(r_bin_pe_get_machine)(struct PE_(r_bin_pe_obj_t)* bin)
+{
+	char *machine;
+
+	switch (bin->nt_headers->file_header.Machine) {
+	case PE_IMAGE_FILE_MACHINE_ALPHA:
+		machine = strdup("Alpha");
+		break;
+	case PE_IMAGE_FILE_MACHINE_ALPHA64:
+		machine = strdup("Alpha 64");
+		break;
+	case PE_IMAGE_FILE_MACHINE_AM33:
+		machine = strdup("AM33");
+		break;
+	case PE_IMAGE_FILE_MACHINE_AMD64:
+		machine = strdup("AMD 64");
+		break;
+	case PE_IMAGE_FILE_MACHINE_ARM:
+		machine = strdup("ARM");
+		break;
+	case PE_IMAGE_FILE_MACHINE_CEE:
+		machine = strdup("CEE");
+		break;
+	case PE_IMAGE_FILE_MACHINE_CEF:
+		machine = strdup("CEF");
+		break;
+	case PE_IMAGE_FILE_MACHINE_EBC:
+		machine = strdup("EBC");
+		break;
+	case PE_IMAGE_FILE_MACHINE_I386:
+		machine = strdup("i386");
+		break;
+	case PE_IMAGE_FILE_MACHINE_IA64:
+		machine = strdup("ia64");
+		break;
+	case PE_IMAGE_FILE_MACHINE_M32R:
+		machine = strdup("M32R");
+		break;
+	case PE_IMAGE_FILE_MACHINE_M68K:
+		machine = strdup("M68K");
+		break;
+	case PE_IMAGE_FILE_MACHINE_MIPS16:
+		machine = strdup("Mips 16");
+		break;
+	case PE_IMAGE_FILE_MACHINE_MIPSFPU:
+		machine = strdup("Mips FPU");
+		break;
+	case PE_IMAGE_FILE_MACHINE_MIPSFPU16:
+		machine = strdup("Mips FPU 16");
+		break;
+	case PE_IMAGE_FILE_MACHINE_POWERPC:
+		machine = strdup("PowerPC");
+		break;
+	case PE_IMAGE_FILE_MACHINE_POWERPCFP:
+		machine = strdup("PowerPC FP");
+		break;
+	case PE_IMAGE_FILE_MACHINE_R10000:
+		machine = strdup("R10000");
+		break;
+	case PE_IMAGE_FILE_MACHINE_R3000:
+		machine = strdup("R3000");
+		break;
+	case PE_IMAGE_FILE_MACHINE_R4000:
+		machine = strdup("R4000");
+		break;
+	case PE_IMAGE_FILE_MACHINE_SH3:
+		machine = strdup("SH3");
+		break;
+	case PE_IMAGE_FILE_MACHINE_SH3DSP:
+		machine = strdup("SH3DSP");
+		break;
+	case PE_IMAGE_FILE_MACHINE_SH3E:
+		machine = strdup("SH3E");
+		break;
+	case PE_IMAGE_FILE_MACHINE_SH4:
+		machine = strdup("SH4");
+		break;
+	case PE_IMAGE_FILE_MACHINE_SH5:
+		machine = strdup("SH5");
+		break;
+	case PE_IMAGE_FILE_MACHINE_THUMB:
+		machine = strdup("Thumb");
+		break;
+	case PE_IMAGE_FILE_MACHINE_TRICORE:
+		machine = strdup("Tricore");
+		break;
+	case PE_IMAGE_FILE_MACHINE_WCEMIPSV2:
+		machine = strdup("WCE Mips V2");
+		break;
+	default:
+		machine = strdup("unknown");
+	}
+
+	return machine;
+}
+
+char* PE_(r_bin_pe_get_os)(struct PE_(r_bin_pe_obj_t)* bin)
+{
+	char *os;
+
+	switch (bin->nt_headers->optional_header.Subsystem) {
+	case PE_IMAGE_SUBSYSTEM_NATIVE:
+		os = strdup("native");
+		break;
+	case PE_IMAGE_SUBSYSTEM_WINDOWS_GUI:
+	case PE_IMAGE_SUBSYSTEM_WINDOWS_CUI:
+	case PE_IMAGE_SUBSYSTEM_WINDOWS_CE_GUI:
+		os = strdup("windows");
+		break;
+	case PE_IMAGE_SUBSYSTEM_POSIX_CUI:
+		os = strdup("posix");
+		break;
+	case PE_IMAGE_SUBSYSTEM_EFI_APPLICATION:
+	case PE_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER:
+	case PE_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER:
+	case PE_IMAGE_SUBSYSTEM_EFI_ROM:
+		os = strdup("efi");
+		break;
+	case PE_IMAGE_SUBSYSTEM_XBOX:
+		os = strdup("xbox");
+		break;
+	default:
+		os = strdup("unknown");
+	}
+
+	return os;
+}
+
+char* PE_(r_bin_pe_get_class)(struct PE_(r_bin_pe_obj_t)* bin)
+{
+	char *class;
+
+	switch (bin->nt_headers->optional_header.Magic) {
+	case PE_IMAGE_FILE_TYPE_PE32:
+		class = strdup("PE32");
+		break;
+	case PE_IMAGE_FILE_TYPE_PE32PLUS:
+		class = strdup("PE32+");
+		break;
+	default:
+		class = strdup("Unknown");
+	}
+	return class;
+}
+
+int PE_(r_bin_pe_get_section_alignment)(struct PE_(r_bin_pe_obj_t)* bin)
+{
+	return bin->nt_headers->optional_header.SectionAlignment;
+}
+
+struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)* bin)
+{
+	PE_(image_section_header) *shdr = bin->section_header;
+	struct r_bin_pe_section_t *sections;
+	int i, sections_count = bin->nt_headers->file_header.NumberOfSections;
+
+	if ((sections = malloc((sections_count + 1) * sizeof(struct r_bin_pe_section_t))) == NULL) {
+		perror("malloc (sections)");
+		return NULL;
+	}
+	for (i = 0; i < sections_count; i++) {
+		memcpy(sections[i].name, shdr[i].Name, PE_IMAGE_SIZEOF_SHORT_NAME);
+		sections[i].name[PE_IMAGE_SIZEOF_SHORT_NAME-1] = '\0';
+		sections[i].rva = shdr[i].VirtualAddress;
+		sections[i].size = shdr[i].SizeOfRawData;
+		sections[i].vsize = shdr[i].Misc.VirtualSize;
+		sections[i].offset = shdr[i].PointerToRawData;
+		sections[i].characteristics = shdr[i].Characteristics;
+		sections[i].last = 0;
+	}
+	sections[i].last = 1;
+	return sections;
+}
+
+char* PE_(r_bin_pe_get_subsystem)(struct PE_(r_bin_pe_obj_t)* bin)
+{
+	char *subsystem;
+
+	switch (bin->nt_headers->optional_header.Subsystem) {
+	case PE_IMAGE_SUBSYSTEM_NATIVE:
+		subsystem = strdup("Native");
+		break;
+	case PE_IMAGE_SUBSYSTEM_WINDOWS_GUI:
+		subsystem = strdup("Windows GUI");
+		break;
+	case PE_IMAGE_SUBSYSTEM_WINDOWS_CUI:
+		subsystem = strdup("Windows CUI");
+		break;
+	case PE_IMAGE_SUBSYSTEM_POSIX_CUI:
+		subsystem = strdup("POSIX CUI");
+		break;
+	case PE_IMAGE_SUBSYSTEM_WINDOWS_CE_GUI:
+		subsystem = strdup("Windows CE GUI");
+		break;
+	case PE_IMAGE_SUBSYSTEM_EFI_APPLICATION:
+		subsystem = strdup("EFI Application");
+		break;
+	case PE_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER:
+		subsystem = strdup("EFI Boot Service Driver");
+		break;
+	case PE_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER:
+		subsystem = strdup("EFI Runtime Driver");
+		break;
+	case PE_IMAGE_SUBSYSTEM_EFI_ROM:
+		subsystem = strdup("EFI ROM");
+		break;
+	case PE_IMAGE_SUBSYSTEM_XBOX:
+		subsystem = strdup("XBOX");
+		break;
+	default:
+		subsystem = strdup("Unknown");
+	}
+	return subsystem;
+}
+
+int PE_(r_bin_pe_is_dll)(struct PE_(r_bin_pe_obj_t)* bin)
+{
+	return bin->nt_headers->file_header.Characteristics & PE_IMAGE_FILE_DLL;
+}
+
+int PE_(r_bin_pe_is_big_endian)(struct PE_(r_bin_pe_obj_t)* bin)
+{
+	return bin->nt_headers->file_header.Characteristics & PE_IMAGE_FILE_BYTES_REVERSED_HI;
+}
+
+int PE_(r_bin_pe_is_stripped_relocs)(struct PE_(r_bin_pe_obj_t)* bin)
+{
+	return bin->nt_headers->file_header.Characteristics & PE_IMAGE_FILE_RELOCS_STRIPPED;
+}
+
+int PE_(r_bin_pe_is_stripped_line_nums)(struct PE_(r_bin_pe_obj_t)* bin)
+{
+	return bin->nt_headers->file_header.Characteristics & PE_IMAGE_FILE_LINE_NUMS_STRIPPED;
+}
+
+int PE_(r_bin_pe_is_stripped_local_syms)(struct PE_(r_bin_pe_obj_t)* bin)
+{
+	return bin->nt_headers->file_header.Characteristics & PE_IMAGE_FILE_LOCAL_SYMS_STRIPPED;
+}
+
+int PE_(r_bin_pe_is_stripped_debug)(struct PE_(r_bin_pe_obj_t)* bin)
+{
+	return bin->nt_headers->file_header.Characteristics & PE_IMAGE_FILE_DEBUG_STRIPPED;
+}
+
+void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin)
+{
+	if (!bin)
+		return NULL;
+	if (bin->dos_header)
+		free(bin->dos_header);
+	if (bin->nt_headers)
+		free(bin->nt_headers);
+	if (bin->section_header)
+		free(bin->section_header);
+	if (bin->export_directory)
+		free(bin->export_directory);
+	if (bin->import_directory)
+		free(bin->import_directory);
+	if (bin->delay_import_directory)
+		free(bin->delay_import_directory);
+	if (bin->b)
+		r_buf_free(bin->b);
+	free(bin);
+	return NULL;
+}
+
+struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new)(const char* file)
+{
+	struct PE_(r_bin_pe_obj_t) *bin;
+	ut8 *buf;
+
+	if (!(bin = malloc(sizeof(struct PE_(r_bin_pe_obj_t)))))
+		return NULL;
+	bin->file = file;
+	if (!(buf = (ut8*)r_file_slurp(file, &bin->size))) 
+		return PE_(r_bin_pe_free)(bin);
+	bin->b = r_buf_new();
+	if (!r_buf_set_bytes(bin->b, buf, bin->size))
+		return PE_(r_bin_pe_free)(bin);
+	free (buf);
+	if (!PE_(r_bin_pe_init)(bin))
+		return PE_(r_bin_pe_free)(bin);
+	return bin;
 }

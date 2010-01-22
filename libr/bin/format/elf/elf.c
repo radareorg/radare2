@@ -97,6 +97,9 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin)
 
 static int Elf_(r_bin_elf_init)(struct Elf_(r_bin_elf_obj_t) *bin)
 {
+    bin->phdr = NULL;
+    bin->shdr = NULL;
+    bin->strtab = NULL;
 	if (!Elf_(r_bin_elf_init_ehdr)(bin)) {
 		ERR("Warning: File is not ELF\n");
 		return R_FALSE;
@@ -540,6 +543,7 @@ struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file)
 {
 	struct Elf_(r_bin_elf_obj_t) *bin;
 	ut8 *buf;
+
 	if (!(bin = malloc(sizeof(struct Elf_(r_bin_elf_obj_t)))))
 		return NULL;
 	bin->file = file;

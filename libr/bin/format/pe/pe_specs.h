@@ -5,7 +5,7 @@
 #undef ILT_MASK2
 #undef PE_Word
 #undef PE_DWord
-#undef PE_CWord
+#undef PE_VWord
 
 #ifdef R_BIN_PE64
 #define PE_(name) Pe64_##name 
@@ -13,14 +13,14 @@
 #define ILT_MASK2 0x7fffffffffffffffLL
 #define PE_Word ut16
 #define PE_DWord ut64
-#define PE_CWord ut32
+#define PE_VWord ut32
 #else
 #define PE_(name) Pe32_##name 
 #define ILT_MASK1 0x80000000
 #define ILT_MASK2 0x7fffffff
 #define PE_Word ut16
 #define PE_DWord ut32
-#define PE_CWord ut32
+#define PE_VWord ut32
 #endif
 
 #ifndef _INCLUDE_R_BIN_PE_SPECS_H_

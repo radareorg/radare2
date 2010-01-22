@@ -1,11 +1,6 @@
 /* radare - LGPL - Copyright 2010 nibble at develsec.org */
 /* TODO:
- * - 64 bits support
- * - fcopyendian
- * Test:
- * gcc -Wall -I../../../include -L ../../../util -lr_util -DMAIN -DLIL_ENDIAN=1
- *     -DR_DEBUG=1 mach0.c -o mach0
- * ./mach0 <mach0 file> */
+ * - 64 bits support */
 
 #include <stdio.h>
 #include <fcntl.h>
