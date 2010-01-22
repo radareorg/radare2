@@ -58,7 +58,7 @@ static int PE_(r_bin_pe_get_delay_import_dirs_count)(struct PE_(r_bin_pe_obj_t) 
 	return (int)(data_dir_delay_import->Size / sizeof(PE_(image_delay_import_directory)) - 1);
 }
 
-static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_import_t** importp, char* dll_name, PE_DWord OriginalFirstThunk, PE_DWord FirstThunk)
+static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_import_t** importp, int* nimp, char* dll_name, PE_DWord OriginalFirstThunk, PE_DWord FirstThunk)
 {
 	char import_name[PE_NAME_LENGTH], name[PE_NAME_LENGTH];
 	PE_Word import_hint, import_ordinal;
@@ -87,19 +87,24 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 					return 0;
 				}
 				if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, import_table) + sizeof(PE_Word),
-							(ut8*)name, sizeof(PE_NAME_LENGTH)) == -1) {
+							(ut8*)name, PE_NAME_LENGTH) == -1) {
 					ERR("Error: read (import name)\n");
 					return 0;
 				}
 				snprintf(import_name, PE_NAME_LENGTH, "%s_%s", dll_name, name);
 			}
-			memcpy((*importp)->name, import_name, PE_NAME_LENGTH);
-			(*importp)->name[PE_NAME_LENGTH-1] = '\0';
-			(*importp)->rva = FirstThunk + i * sizeof(PE_DWord);
-			(*importp)->offset = PE_(r_bin_pe_rva_to_offset)(bin, FirstThunk) + i * sizeof(PE_DWord);
-			(*importp)->hint = import_hint;
-			(*importp)->ordinal = import_ordinal;
-			(*importp)++; i++;
+			if (!(*importp = realloc(*importp, (*nimp+1) * sizeof(struct r_bin_pe_import_t)))) {
+				perror("realloc (import)");
+				return R_FALSE;
+			}
+			memcpy((*importp)[*nimp].name, import_name, PE_NAME_LENGTH);
+			(*importp)[*nimp].name[PE_NAME_LENGTH-1] = '\0';
+			(*importp)[*nimp].rva = FirstThunk + i * sizeof(PE_DWord);
+			(*importp)[*nimp].offset = PE_(r_bin_pe_rva_to_offset)(bin, FirstThunk) + i * sizeof(PE_DWord);
+			(*importp)[*nimp].hint = import_hint;
+			(*importp)[*nimp].ordinal = import_ordinal;
+			(*importp)[*nimp].last = 0;
+			(*nimp)++; i++;
 		}
 	} while (import_table);
 
@@ -162,7 +167,7 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin)
 	PE_DWord delay_import_dir_offset = PE_(r_bin_pe_rva_to_offset)(bin, data_dir_delay_import->VirtualAddress);
 	int import_dir_size = data_dir_import->Size;
 	int delay_import_dir_size = data_dir_delay_import->Size;
-	
+
 	if (import_dir_offset == 0 && delay_import_dir_offset == 0)
 		return R_FALSE;
 	if (import_dir_offset != 0) {
@@ -221,12 +226,12 @@ static int PE_(r_bin_pe_init)(struct PE_(r_bin_pe_obj_t)* bin)
 		ERR("Warning: File is not PE\n");
 		return R_FALSE;
 	}
-	if (!PE_(r_bin_pe_init_sections)(bin))
+	if (!PE_(r_bin_pe_init_sections)(bin)) {
 		ERR("Warning: Cannot initalize sections\n");
-	if (!PE_(r_bin_pe_init_imports)(bin))
-		ERR("Warning: Cannot initalize imports\n");
-	if (!PE_(r_bin_pe_init_exports)(bin))
-		ERR("Warning: Cannot initalize exports\n");
+		return R_FALSE;
+	}
+	PE_(r_bin_pe_init_imports)(bin);
+	PE_(r_bin_pe_init_exports)(bin);
 	return R_TRUE;
 }
 
@@ -268,7 +273,7 @@ char* PE_(r_bin_pe_get_arch)(struct PE_(r_bin_pe_obj_t)* bin)
 
 struct r_bin_pe_entrypoint_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)* bin)
 {
-	struct r_bin_pe_entrypoint_t *entry;
+	struct r_bin_pe_entrypoint_t *entry = NULL;
 
 	if ((entry = malloc(sizeof(struct r_bin_pe_entrypoint_t))) == NULL) {
 		perror("malloc (entrypoint)");
@@ -281,7 +286,7 @@ struct r_bin_pe_entrypoint_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_o
 
 struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* bin)
 {
-	struct r_bin_pe_export_t *exports;
+	struct r_bin_pe_export_t *exports = NULL;
 	PE_VWord functions_offset, names_offset, ordinals_offset, function_rva, name_rva, name_offset;
 	PE_Word function_ordinal;
 	char function_name[PE_NAME_LENGTH], forwarder_name[PE_NAME_LENGTH];
@@ -290,7 +295,9 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	PE_(image_data_directory) *data_dir_export = &bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
 	PE_VWord export_dir_rva = data_dir_export->VirtualAddress;
 	int export_dir_size = data_dir_export->Size;
-	
+
+	if (!bin->export_directory)
+		return NULL;
 	if (!(exports = malloc((bin->export_directory->NumberOfNames + 1) * sizeof(struct r_bin_pe_export_t))))
 		return NULL;
 	if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->export_directory->Name),
@@ -357,38 +364,47 @@ ut64 PE_(r_bin_pe_get_image_base)(struct PE_(r_bin_pe_obj_t)* bin)
 
 struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *bin)
 {
-	struct r_bin_pe_import *imports;
+	struct r_bin_pe_import_t *imports = NULL;
 	char dll_name[PE_NAME_LENGTH];
 	int import_dirs_count = PE_(r_bin_pe_get_import_dirs_count)(bin);
 	int delay_import_dirs_count = PE_(r_bin_pe_get_delay_import_dirs_count)(bin);
-	int i;
+	int i, nimp = 0;
 	
+	if (bin->import_directory)
 	for (i = 0; i < import_dirs_count; i++) {
 		if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->import_directory[i].Name),
 					(ut8*)dll_name, PE_NAME_LENGTH) == -1) {
 			ERR("Error: read (magic)\n");
 			return NULL;
 		}
-		if (!PE_(r_bin_pe_parse_imports)(bin, &imports, dll_name,
+		if (!PE_(r_bin_pe_parse_imports)(bin, &imports, &nimp, dll_name,
 					bin->import_directory[i].Characteristics, bin->import_directory[i].FirstThunk))
 			break;
 	}
+	if (bin->delay_import_directory)
 	for (i = 0; i < delay_import_dirs_count; i++) {
 		if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->delay_import_directory[i].Name),
 					(ut8*)dll_name, PE_NAME_LENGTH) == -1) {
 			ERR("Error: read (magic)\n");
 			return NULL;
 		}
-		if(!PE_(r_bin_pe_parse_imports)(bin, &imports, dll_name,
+		if(!PE_(r_bin_pe_parse_imports)(bin, &imports, &nimp, dll_name,
 					bin->delay_import_directory[i].DelayImportNameTable, bin->delay_import_directory[i].DelayImportAddressTable))
 			break;
 	}
-	return 0;
+	if (nimp) {
+		if (!(imports = realloc(imports, (nimp+1) * sizeof(struct r_bin_pe_import_t)))) {
+			perror("realloc (import)");
+			return NULL;
+		}
+		imports[nimp].last = 1;
+	}
+	return imports;
 }
 
 struct r_bin_pe_string_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin)
 {
-	struct r_bin_pe_string_t *libs;
+	struct r_bin_pe_string_t *libs = NULL;
 	int import_dirs_count = PE_(r_bin_pe_get_import_dirs_count)(bin);
 	int delay_import_dirs_count = PE_(r_bin_pe_get_delay_import_dirs_count)(bin);
 	int i, j;
@@ -577,8 +593,8 @@ int PE_(r_bin_pe_get_section_alignment)(struct PE_(r_bin_pe_obj_t)* bin)
 
 struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)* bin)
 {
+	struct r_bin_pe_section_t *sections = NULL;
 	PE_(image_section_header) *shdr = bin->section_header;
-	struct r_bin_pe_section_t *sections;
 	int i, sections_count = bin->nt_headers->file_header.NumberOfSections;
 
 	if ((sections = malloc((sections_count + 1) * sizeof(struct r_bin_pe_section_t))) == NULL) {

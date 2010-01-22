@@ -9,7 +9,7 @@ static int bopen(struct r_bin_t *bin)
 {
 	if(!(bin->bin_obj = PE_(r_bin_pe_new)(bin->file)))
 		return -1;
-	bin->fd = -1;
+	bin->fd = 1;
 	return bin->fd;
 }
 
@@ -48,7 +48,7 @@ static struct r_bin_section_t* sections(struct r_bin_t *bin)
 	
 	if (!(sections = PE_(r_bin_pe_get_sections)(bin->bin_obj)))
 		return NULL;
-	for (count = 0; sections && !sections[i].last; count++);
+	for (count = 0; sections && !sections[count].last; count++);
 	if ((ret = malloc((count + 1) * sizeof(struct r_bin_section_t))) == NULL)
 		return NULL;
 	memset(ret, '\0', (count + 1) * sizeof(struct r_bin_section_t));
@@ -82,7 +82,7 @@ static struct r_bin_symbol_t* symbols(struct r_bin_t *bin)
 
 	if (!(symbols = PE_(r_bin_pe_get_exports)(bin->bin_obj)))
 		return NULL;
-	for (count = 0; symbols && !symbols[i].last; count++);
+	for (count = 0; symbols && !symbols[count].last; count++);
 	if ((ret = malloc((count + 1) * sizeof(struct r_bin_symbol_t))) == NULL)
 		return NULL;
 	memset(ret, '\0', (count + 1) * sizeof(struct r_bin_symbol_t));
@@ -110,7 +110,7 @@ static struct r_bin_import_t* imports(struct r_bin_t *bin)
 
 	if (!(imports = PE_(r_bin_pe_get_imports)(bin->bin_obj)))
 		return NULL;
-	for (count = 0; imports && !imports[i].last; count++);
+	for (count = 0; imports && !imports[count].last; count++);
 	if ((ret = malloc((count + 1) * sizeof(struct r_bin_import_t))) == NULL)
 		return NULL;
 	memset(ret, '\0', (count + 1) * sizeof(struct r_bin_import_t));

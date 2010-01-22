@@ -9,7 +9,7 @@ static int bopen(struct r_bin_t *bin)
 {
 	if(!(bin->bin_obj = Elf_(r_bin_elf_new)(bin->file)))
 		return -1;
-	bin->fd = -1;
+	bin->fd = 1;
 	return bin->fd;
 }
 
