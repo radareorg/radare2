@@ -17,9 +17,10 @@ struct r_class_t {
 R_API struct r_buf_t *r_buf_init(struct r_buf_t *b)
 {
 	if (b) {
-		b->length = 0;
-		b->base = 0LL;
 		b->buf = NULL;
+		b->length = 0;
+		b->cur = 0;
+		b->base = 0LL;
 	}
 	return b;
 }
@@ -51,13 +52,16 @@ R_API int r_buf_set_bytes(struct r_buf_t *b, ut8 *buf, int length)
 static int r_buf_memcpy(struct r_buf_t *b, ut64 addr, ut8 *dst, const ut8 *src, int len)
 {
 	int end;
-	addr -= b->base;
+	if (addr == R_BUF_CUR)
+		addr = b->cur;
+	else addr -= b->base;
 	if (addr > b->length)
 		return -1;
  	end = (int)(addr+len);
 	if (end > b->length)
 		len -= end-b->length;
 	memcpy(dst, src+addr, len);
+	b->cur = addr + len;
 	return len;
 }
 
@@ -70,7 +74,9 @@ R_API int r_buf_fread_at(struct r_buf_t *b, ut64 addr, ut8 *buf, const char *fmt
 {
 	int i, j, k, len, tsize, endian, m = 1;
 
-	addr -= b->base;
+	if (addr == R_BUF_CUR)
+		addr = b->cur;
+	else addr -= b->base;
 	if (addr < 0 || addr > b->length)
 		return -1;
 	for (i = len = 0; i < n; i++)
@@ -95,6 +101,7 @@ R_API int r_buf_fread_at(struct r_buf_t *b, ut64 addr, ut8 *buf, const char *fmt
 			r_mem_copyendian((ut8*)&buf[len+k*tsize], (ut8*)&b->buf[addr+len+k*tsize], tsize, endian);
 		len += m*tsize; m = 1;
 	}
+	b->cur = addr + len;
 	return len;
 }
 

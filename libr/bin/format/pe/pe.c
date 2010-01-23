@@ -1,16 +1,10 @@
 /* radare - LGPL - Copyright 2008 nibble<.ds@gmail.com> */
 
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-
 #include <r_types.h>
 #include <r_util.h>
-
 #include "pe.h"
 
 static PE_DWord PE_(r_bin_pe_rva_to_offset)(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord rva)

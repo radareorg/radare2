@@ -3,12 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-
 #include <r_types.h>
 #include <r_util.h>
-
 #include "elf.h"
 
 static int Elf_(r_bin_elf_init_ehdr)(struct Elf_(r_bin_elf_obj_t) *bin)
@@ -488,9 +484,11 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 				ret[ret_ctr].last = 0;
 				ret_ctr++;
 			}
-			if ((ret = realloc(ret, (ret_ctr + 1) * sizeof(struct r_bin_elf_symbol_t))) == NULL)
-				return NULL;
-			ret[ret_ctr].last = 1;
+			if (ret_ctr) {
+				if ((ret = realloc(ret, (ret_ctr + 1) * sizeof(struct r_bin_elf_symbol_t))) == NULL)
+					return NULL;
+				ret[ret_ctr].last = 1;
+			}
 			break;
 		}
 	return ret;

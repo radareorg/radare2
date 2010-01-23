@@ -24,6 +24,7 @@ typedef struct r_mem_pool_t {
 typedef struct r_buf_t {
 	ut8 *buf;
 	int length;
+	int cur;
 	ut64 base;
 } rBuffer;
 
@@ -55,6 +56,7 @@ typedef struct r_num_t {
 
 #ifdef R_API
 
+#define R_BUF_CUR -1
 R_API struct r_buf_t *r_buf_init(struct r_buf_t *b);
 R_API struct r_buf_t *r_buf_new();
 R_API int r_buf_set_bits(struct r_buf_t *b, int bitoff, int bitsize, ut64 value);

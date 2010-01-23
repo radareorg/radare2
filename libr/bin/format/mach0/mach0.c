@@ -3,11 +3,9 @@
  * - 64 bits support */
 
 #include <stdio.h>
-#include <fcntl.h>
 #include <r_types.h>
 #include <r_util.h>
 #include "mach0.h"
-#include "mach0_specs.h"
 
 static int r_bin_mach0_init_hdr(struct r_bin_mach0_obj_t* bin)
 {

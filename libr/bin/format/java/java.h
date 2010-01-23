@@ -77,9 +77,7 @@ struct r_bin_java_fm_t {
 	struct r_bin_java_attr_t *attributes;
 };
 
-struct r_bin_java_t {
-    const char* file;
-	int fd;
+struct r_bin_java_obj_t {
 	struct r_bin_java_classfile_t cf;
 	struct r_bin_java_classfile2_t cf2;
 	struct r_bin_java_cp_item_t *cp_items;
@@ -87,26 +85,29 @@ struct r_bin_java_t {
 	struct r_bin_java_fm_t *fields;
 	unsigned int methods_count;
 	struct r_bin_java_fm_t *methods;
+	int size;
+    const char* file;
+	struct r_buf_t* b;
 };
 
 struct r_bin_java_sym_t {
+	char name[R_BIN_JAVA_MAXSTR];
 	ut64 offset;
 	ut64 size;
-	char name[R_BIN_JAVA_MAXSTR];
+	int last;
 };
 
 struct r_bin_java_str_t {
+	char str[R_BIN_JAVA_MAXSTR];
 	ut64 offset;
 	ut64 ordinal;
 	ut64 size;
-	char str[R_BIN_JAVA_MAXSTR];
+	int last;
 };
 
-int r_bin_java_open(struct r_bin_java_t *bin, const char *file);
-int r_bin_java_close(struct r_bin_java_t *bin);
-int r_bin_java_get_version(struct r_bin_java_t *bin, char *version);
-ut64 r_bin_java_get_entrypoint(struct r_bin_java_t *bin);
-int r_bin_java_get_symbols(struct r_bin_java_t *bin, struct r_bin_java_sym_t *sym);
-int r_bin_java_get_symbols_count(struct r_bin_java_t *bin);
-int r_bin_java_get_strings(struct r_bin_java_t *bin, struct r_bin_java_str_t *str);
-int r_bin_java_get_strings_count(struct r_bin_java_t *bin);
+char* r_bin_java_get_version(struct r_bin_java_obj_t* bin);
+ut64 r_bin_java_get_entrypoint(struct r_bin_java_obj_t* bin);
+struct r_bin_java_sym_t* r_bin_java_get_symbols(struct r_bin_java_obj_t* bin);
+struct r_bin_java_str_t* r_bin_java_get_strings(struct r_bin_java_obj_t* bin);
+void* r_bin_java_free(struct r_bin_java_obj_t* bin);
+struct r_bin_java_obj_t* r_bin_java_new(const char* file);

@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2008 nibble<.ds@gmail.com> */
 
 #include "r_types.h"
-
 #include "pe_specs.h"
 
 #ifndef _INCLUDE_R_BIN_PE_H_
