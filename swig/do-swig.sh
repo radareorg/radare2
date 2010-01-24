@@ -7,4 +7,7 @@ if [ -z "${MOD}" ]; then
 fi
 mkdir -p ${LNG}
 cd ${LNG}
-valaswig-cc ${LNG} ${MOD} -I../../libr/include ../../libr/vapi/${MOD}.vapi -l${MOD} -L../../libr/$(echo ${MOD} | sed -e s,r_,,)
+
+#valaswig-cc ${LNG} ${MOD} -I../../libr/include ../../libr/vapi/${MOD}.vapi -l${MOD} -L../../libr/$(echo ${MOD} | sed -e s,r_,,)
+
+valaswig-cc ${LNG} ${MOD} -I../../libr/include ../../libr/vapi/${MOD} `pkg-config --libs ${MOD}`

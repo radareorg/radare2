@@ -53,8 +53,10 @@ typedef struct r_num_t {
 	ut64 value;
 	void *userptr;
 } rNum;
+typedef ut64 (*rNumCallback)(rNum *self, const char *str, int *ok);
 
 #ifdef R_API
+R_API struct r_num_t *r_num_new(rNumCallback *cb, void *ptr);
 
 #define R_BUF_CUR -1
 R_API struct r_buf_t *r_buf_init(struct r_buf_t *b);
@@ -94,7 +96,6 @@ R_API void r_num_minmax_swap(ut64 *a, ut64 *b);
 R_API void r_num_minmax_swap_i(int *a, int *b); // XXX this can be a cpp macro :??
 R_API ut64 r_num_math(struct r_num_t *num, const char *str);
 R_API ut64 r_num_get(struct r_num_t *num, const char *str);
-R_API struct r_num_t *r_num_new(ut64 (*cb)(void*,const char *,int*), void *ptr);
 R_API void r_num_init(struct r_num_t *num);
 
 /* strings */

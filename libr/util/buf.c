@@ -49,7 +49,7 @@ R_API int r_buf_set_bytes(struct r_buf_t *b, ut8 *buf, int length)
 	return R_TRUE;
 }
 
-static int r_buf_memcpy(struct r_buf_t *b, ut64 addr, ut8 *dst, const ut8 *src, int len)
+static int r_buf_cpy(struct r_buf_t *b, ut64 addr, ut8 *dst, const ut8 *src, int len)
 {
 	int end;
 	if (addr == R_BUF_CUR)
@@ -67,7 +67,7 @@ static int r_buf_memcpy(struct r_buf_t *b, ut64 addr, ut8 *dst, const ut8 *src, 
 
 R_API int r_buf_read_at(struct r_buf_t *b, ut64 addr, ut8 *buf, int len)
 {
-	return r_buf_memcpy(b, addr, buf, b->buf, len);
+	return r_buf_cpy(b, addr, buf, b->buf, len);
 }
 
 R_API int r_buf_fread_at(struct r_buf_t *b, ut64 addr, ut8 *buf, const char *fmt, int n)
@@ -107,7 +107,7 @@ R_API int r_buf_fread_at(struct r_buf_t *b, ut64 addr, ut8 *buf, const char *fmt
 
 R_API int r_buf_write_at(struct r_buf_t *b, ut64 addr, const ut8 *buf, int len)
 {
-	return r_buf_memcpy(b, addr, b->buf, buf, len);
+	return r_buf_cpy(b, addr, b->buf, buf, len);
 }
 
 R_API void r_buf_deinit(struct r_buf_t *b)

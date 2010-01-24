@@ -61,7 +61,7 @@ R_API ut64 r_reg_get_value(struct r_reg_t *reg, struct r_reg_item_t *item);
 R_API int r_reg_set_value(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 value);
 R_API float r_reg_get_fvalue(struct r_reg_t *reg, struct r_reg_item_t *item);
 R_API int r_reg_set_fvalue(struct r_reg_t *reg, struct r_reg_item_t *item, float value);
-R_API ut64 r_reg_get_pvalue(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 value, int packidx);
+R_API ut64 r_reg_get_pvalue(struct r_reg_t *reg, struct r_reg_item_t *item, int packidx);
 R_API int r_reg_set_pvalue(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 value, int packidx);
 
 /* byte arena */

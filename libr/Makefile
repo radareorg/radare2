@@ -48,7 +48,11 @@ pkgcfg:
 	cd asm && ${MAKE} pkgcfg NAME=libr DEPS="r_`echo ${LIBLIST}|sed -e 's, , r_,g'`"
 	# TODO: Magically generate libr.pc.acr here using LIBLIST and so :)
 
-install:
+install-vapi:
+	@${INSTALL_DIR} ${PFX}/share/vala/vapi
+	${INSTALL_DATA} vapi/*.vapi vapi/*.deps ${PFX}/share/vala/vapi
+
+install: install-vapi
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
 	# libraries
 	@${INSTALL_DIR} ${PFX}/lib
@@ -68,8 +72,6 @@ install:
 	@${INSTALL_DIR} ${PFX}/lib/pkgconfig
 	for a in ../pkgcfg/*.pc ; do ${INSTALL_DATA} $$a ${PFX}/lib/pkgconfig ; done
 	#${INSTALL_DATA} libr.pc ${PFX}/lib/pkgconfig
-	@${INSTALL_DIR} ${PFX}/share/vala/vapi
-	${INSTALL_DATA} vapi/*.vapi vapi/*.deps ${PFX}/share/vala/vapi
 	@${INSTALL_DIR} ${PFX}/lib/radare2
 	@for a in `find */p -perm /u+x -type f`; \
 	do echo "$$a ${PFX}/lib/radare2"; \

@@ -117,7 +117,7 @@ typedef struct r_io_bind_t {
 } rIoBind;
 
 /* sections */
-struct r_io_section_t {
+typedef struct r_io_section_t {
 	char name[256];
 	ut64 from;
 	ut64 to;
@@ -125,15 +125,15 @@ struct r_io_section_t {
 	ut64 paddr; // offset on disk
 	int rwx;
 	struct list_head list;
-};
+} rIoSection;
 
-struct r_io_cache_t {
+typedef struct r_io_cache_t {
 	ut64 from;
 	ut64 to;
 	int size;
 	ut8 *data;
 	struct list_head list;
-};
+} rIoCache;
 
 typedef struct r_io_desc_t {
 	int fd;
@@ -235,6 +235,12 @@ R_API void r_io_wundo_list(struct r_io_t *io);
 R_API int r_io_wundo_set_t(struct r_io_t *io, struct r_io_undo_w_t *u, int set) ;
 R_API void r_io_wundo_set_all(struct r_io_t *io, int set);
 R_API int r_io_wundo_set(struct r_io_t *io, int n, int set);
+
+/* plugins */
+extern struct r_io_handle_t r_io_plugin_malloc;
+extern struct r_io_handle_t r_io_plugin_ptrace;
+extern struct r_io_handle_t r_io_plugin_debug;
+extern struct r_io_handle_t r_io_plugin_shm;
 #endif
 
 #if 0
@@ -243,10 +249,5 @@ R_API int r_io_wundo_set(struct r_io_t *io, int n, int set);
 #define CB_IO int (*cb_io)(void *user, CB_READ, CB_WRITE)
 R_API int r_io_hook(struct r_io_t *io, CB_IO);
 #endif
-/* plugins */
-extern struct r_io_handle_t r_io_plugin_malloc;
-extern struct r_io_handle_t r_io_plugin_ptrace;
-extern struct r_io_handle_t r_io_plugin_debug;
-extern struct r_io_handle_t r_io_plugin_shm;
 
 #endif

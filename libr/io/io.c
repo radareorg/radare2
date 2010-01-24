@@ -182,6 +182,7 @@ R_API ut64 r_io_read_i(struct r_io_t *io, ut64 addr, int sz, int endian)
 
 R_API int r_io_resize(struct r_io_t *io, const char *file, int flags, int mode)
 {
+	// XXX not implemented
 #if 0
 	/* TODO */
 	struct r_io_handle_t *plugin = r_io_handle_resolve(file);

@@ -94,7 +94,7 @@ R_API int r_reg_set_fvalue(struct r_reg_t *reg, struct r_reg_item_t *item, float
 }
 
 /* packed registers */
-R_API ut64 r_reg_get_pvalue(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 value, int packidx)
+R_API ut64 r_reg_get_pvalue(struct r_reg_t *reg, struct r_reg_item_t *item, int packidx)
 {
 	return 0LL;
 }

@@ -9,7 +9,7 @@ namespace Radare {
 		public int fd;
 
 		public rBin();
-		public int open(string file, bool rw, string? plugin_name = null);
+		//public int open(string file, bool rw, string? plugin_name = null);
 
 		public int init(string file, int rw);
 		public int close();

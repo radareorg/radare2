@@ -1,9 +1,8 @@
 /* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
 
-[CCode (cheader_filename="r_lib.h", cprefix="r_", lower_case_cprefix="r_")]
 namespace Radare {
 	[Compact]
-	[CCode (cname="struct r_lib_t", free_function="r_lib_free")]
+	[CCode (cheader_filename="r_lib.h", cprefix="r_lib_", cname="struct r_lib_t", free_function="r_lib_free")]
 	public class rLibrary {
 		public rLibrary(string symname);
 		public rLibrary init(string symname);
@@ -12,10 +11,10 @@ namespace Radare {
 		public string types_get(int idx);
 
 		/* lowlevel api */
-		public void* dl_open(string libname);
+		public static void* dl_open(string libname);
 		public void* dl_sym(string symname);
-		public bool dl_close(void *lh);
-		public bool dl_check_filename(string file);
+		public static bool dl_close(void *lh);
+		public static bool dl_check_filename(string file);
 		/* handlers */
 	// we need delegates here (function pointerz)
 	//	public bool add_handler(int type, string desc, /* */, void* user);

@@ -1,56 +1,58 @@
 /* radare - LGPL - Copyright 2009 pancake<@nopcode.org> */
 
-[CCode (cheader_filename="r_util.h", cprefix="r_util_", lower_case_cprefix="r_util_")]
 namespace Radare {
 	[Compact]
-	[CCode (cprefix="r_")]
+	[CCode (cheader_filename="r_util.h", cprefix="r_util_")]
 	public static class rUtil {
-		public static int hex_str2bin (string input, uint8 *buf);
+		//public static int hex_str2bin (string input, uint8 *buf);
 		//public static int hex_bin2str (uint8 *buf, int len, out string str);
-		public static string hex_bin2strdup (uint8 *buf, int len);
+		//public static string hex_bin2strdup (uint8 *buf, int len);
 		/* mem */
-		public static uint8 *mem_mem (uint8 *a, int al, uint8 *b, int bl);
-		public static void mem_copyendian (uint8 *dest, uint8 *orig, int size, int endian);
-		public static void mem_copyloop (uint8 *dest, uint8 *orig, int dsize, int osize);
-		public static void mem_cmp_mask (uint8 *dest, uint8 *orig, uint8 *mask, int len);
+		//public static uint8 *mem_mem (uint8 *a, int al, uint8 *b, int bl);
+		//public static void mem_copyendian (uint8 *dest, uint8 *orig, int size, int endian);
+		//public static void mem_copyloop (uint8 *dest, uint8 *orig, int dsize, int osize);
+		//public static void mem_cmp_mask (uint8 *dest, uint8 *orig, uint8 *mask, int len);
 		/* num */
-		public static uint64 num_get(void *num, string str); // XXX void *
+		//public static uint64 num_get(void *num, string str); // XXX void *
 		//public static int offsetof(void *type, void *member);
 	}
 
 	// ???
-	[CCode (cprefix="r_str")]
+	[CCode (cheader_filename="r_util.h", cprefix="r_str_")]
 	public static class rStr {
 		public rStr();
 		public int hash(string str);
 	}
 
-	[CCode (cprefix="r_num")]
+	[CCode (cheader_filename="r_util.h", cprefix="r_num_")]
 	public static class rNum {
-		public rNum();
+		public rNum(rNumCallback cb, void *user);
 		public uint64 get(string str);
 		public uint64 math(string str);
 	}
+	public delegate uint64 rNumCallback (rNum num, string str, int *ok);
 
-	[CCode (cprefix="r_log")]
+	[CCode (cheader_filename="r_util.h", cprefix="r_log_")]
 	public static class rLog {
 		public bool msg(string str);
 		public bool err(string str);
 	}
 
-	[CCode (cprefix="r_buf_")]
+	[CCode (cheader_filename="r_util.h", cprefix="r_buf_")]
 	public class rBuffer {
 		public rBuffer();
 		public int read_at(uint64 addr, uint8 *buf, int len);
 		public int write_at(uint64 addr, uint8 *buf, int len);
 		public bool set_bytes(uint8 *buf, int len);
-		public bool memcpy(uint64 addr, uint8 *dst, uint8 *src, int len);
+		//public bool memcpy(uint64 addr, uint8 *dst, uint8 *src, int len);
 		/* ... */
 	}
 
 	/* Generic Iterator interfaced with r_iter */
+#if 0
+// XXX not yet supported by valaswig ://
         [Compact]
-        [CCode (cprefix="r_array_", cname="void*")]
+	[CCode (cheader_filename="r_array.h", cprefix="r_array_", cname="void*")]
         public class rArray<G> {
                 public rArray (int size);
                 public unowned G cur ();
@@ -74,7 +76,9 @@ namespace Radare {
         }
 	/* TODO: move this declaration inside rIter to have access to the Generic type */
 	public delegate int rArrayCallback (void *foo);
+#endif
 
+#if 0
 	/* TODO: to be removed. not fully compliant */
 	[Compact]
 	[CCode (cprefix="ralist_", cheader_filename="r_types.h,list.h", cname="struct list_head")]
@@ -91,6 +95,7 @@ namespace Radare {
 		[CCode (cname="ralist_iterator")]
 		public KernelList<G> iterator();
 	}
+#endif
 
 	[Compact]
 	[CCode (cprefix="r_list_", cheader_filename="r_util.h", cname="struct r_list_t")]
@@ -98,15 +103,15 @@ namespace Radare {
 		public rList ();
 		public void append(owned G foo);
 		public void prepend(owned G foo);
-		public unowned G get();
-		[CCode (cname="r_list_iterator")]
-		public rListIter<G> iterator();
+		//public unowned G get();
+		//public rListIter<G> iterator();
 	}
+
 	[Compact]
 	[CCode (cprefix="r_list_iter_", cheader_filename="r_list.h", cname="struct r_list_iter_t")]
 	public class rListIter<G> {
 		public bool next();
-		public G @free(G arg);
+	//	public G @free(G arg);
 		public unowned G get();
 	}
 

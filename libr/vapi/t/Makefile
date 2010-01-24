@@ -1,5 +1,5 @@
 # bin is broken..waiting for the new api
-all: core regs hash sc socket asm search db io array list
+all: lang core regs hash sc socket asm search db io array list
 	@true
 
 bintest:

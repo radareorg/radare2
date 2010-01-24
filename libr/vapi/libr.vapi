@@ -1,1 +1,3 @@
 /* empty */
+namespace Radare {
+}

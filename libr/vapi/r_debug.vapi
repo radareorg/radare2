@@ -2,7 +2,7 @@
 
 namespace Radare {
 	[Compact]
-	[CCode (cname="struct r_debug_t", free_function="r_debug_free", cprefix="r_debug_")]
+	[CCode (cheader_filename="r_debug.h", cname="struct r_debug_t", free_function="r_debug_free", cprefix="r_debug_")]
 	public class rDebug {
 		public rBreakpoint bp;
 		public rDebug();
@@ -61,6 +61,6 @@ namespace Radare {
 		public int pid_add_thread();
 		public int pid_del_thread();
 		//public Process pid_get(int pid); // XXX wrong api syntax 'get' is keyword
-		public bool pid_set_status(ProcessStatus status);
+		//public bool pid_set_status(ProcessStatus status);
 	}
 }

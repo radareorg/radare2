@@ -31,7 +31,7 @@ R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *fil
 	fh->size = r_io_size(&r->io, fd);
 	list_add(&(fh->list), &r->files);
 
-	r_bin_open(&r->bin, fh->filename, 0, NULL);
+	//r_bin_open(&r->bin, fh->filename, 0, NULL);
 	// XXX: detect plugin automagically or set it in config.c
 	r_bininfo_open(&r->bininfo, fh->filename, 0, "bininfo_addr2line");
 

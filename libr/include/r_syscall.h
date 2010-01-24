@@ -4,24 +4,24 @@
 #include "r_types.h"
 #include "list.h"
 
-struct r_syscall_list_t {
+typedef struct r_syscall_list_t {
 	const char *name;
 	int swi;
 	int num;
 	int args;
 	char *sargs;
-};
+} rSyscallList;
 
 
 // TODO: use this as arg to store state :)
-struct r_syscall_t {
+typedef struct r_syscall_t {
 #if 0
 	int arch; // XXX char *??
 	int os;
 #endif
 	FILE *fd;
 	struct r_syscall_list_t *sysptr;
-};
+} rSyscall;
 
 enum {
 	R_SYSCALL_OS_LINUX = 0,

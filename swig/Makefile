@@ -26,6 +26,7 @@ install:
 	touch /usr/lib/$$a/r2/__init__.py ; \
 	echo "Installing $$a r2 modules..." ; \
 	cp -rf python/* /usr/lib/$$a/r2 ; \
+	cp -rf python/*libr* /usr/lib/$$a/ ; \
 	done ; \
 	fi
 
