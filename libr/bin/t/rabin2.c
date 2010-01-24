@@ -29,6 +29,7 @@
 
 static struct r_lib_t l;
 static struct r_bin_t *bin;
+static struct r_bin_obj_t *binobj;
 static int verbose = 0;
 static int rad = R_FALSE;
 static int rw = R_FALSE;
@@ -416,6 +417,7 @@ int main(int argc, char **argv)
 	const char *format = NULL, *op = NULL;
 	const char *plugin_name = NULL;
 
+	bin = r_bin_new();
 	r_lib_init(&l, "radare_plugin");
 	r_lib_add_handler(&l, R_LIB_TYPE_BIN, "bin plugins",
 		&__lib_bin_cb, &__lib_bin_dt, NULL);
@@ -486,8 +488,8 @@ int main(int argc, char **argv)
 	if (format)
 		plugin_name = format;
 
-	if (!(bin = r_bin_new(file, plugin_name)) &&
-		!(bin = r_bin_new(file, "dummy"))) {
+	if (!(binobj = r_bin_load(bin, file, plugin_name)) &&
+		!(binobj = r_bin_load(bin, file, "dummy"))) {
 		ERR("r_bin: Cannot open '%s'\n", file);
 		return R_FALSE;
 	}
@@ -509,6 +511,7 @@ int main(int argc, char **argv)
 	if (op != NULL && action&ACTION_OPERATION)
 		rabin_do_operation(op);
 
+	r_bin_free_obj(binobj);
 	r_bin_free(bin);
 	return R_FALSE;
 }

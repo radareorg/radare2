@@ -3,7 +3,6 @@
 /* TODO:
  * Linked libraries
  * dlopen library and show address
- * Strings
  * XRefs
  * Generic resize
  */
@@ -103,29 +102,47 @@ R_API void* r_bin_free(struct r_bin_t *bin)
 	return NULL;
 }
 
+R_API void* r_bin_free_obj(struct r_bin_obj_t *binobj)
+{
+	if (!binobj)
+		return NULL;
+	/* TODO: free r_bin_obj_t structures */
+	free(binobj);
+	return NULL;
+}
+
 R_API int r_bin_list(struct r_bin_t *bin)
 {
 	struct list_head *pos;
-	int init = bin?0:1;
 
-	if (init) {
-		if (!(bin = MALLOC_STRUCT(struct r_bin_t)))
-			return 0;
-		r_bin_init(bin);
-	}
 	list_for_each_prev(pos, &bin->bins) {
 		struct r_bin_handle_t *h = list_entry(pos, struct r_bin_handle_t, list);
 		printf("bin %-10s %s\n", h->name, h->desc);
 	}
-	if (init)
-		r_bin_free(bin);
 	return R_FALSE;
 }
 
-R_API struct r_bin_object_t *r_bin_load(struct r_bin_t *bin, const char *file, const char *plugin_name)
+R_API struct r_bin_obj_t *r_bin_load(struct r_bin_t *bin, const char *file, const char *plugin_name)
 {
-	/* TODO: allocate and fill r_bin_object */
-	return NULL;
+	struct r_bin_obj_t *binobj = NULL;
+	struct list_head *pos;
+
+	if (!bin || !file)
+		return NULL;
+	if (!(binobj = MALLOC_STRUCT(struct r_bin_obj_t)))
+		return NULL;
+	bin->file = file;
+	list_for_each_prev(pos, &bin->bins) {
+		struct r_bin_handle_t *h = list_entry(pos, struct r_bin_handle_t, list);
+		if ((plugin_name && !strcmp(h->name, plugin_name)) ||
+			(h->check && h->check(bin))) 
+			bin->cur = h;
+	}
+	if (bin->cur && bin->cur->new)
+		bin->cur->new(bin);
+	else return NULL;
+	/* TODO: allocate and fill r_bin_obj */
+	return binobj;
 }
 
 
@@ -192,26 +209,13 @@ int r_bin_get_libs()
 }
 #endif
 
-R_API struct r_bin_t* r_bin_new(const char *file, const char *plugin_name)
+R_API struct r_bin_t* r_bin_new()
 {
 	struct r_bin_t *bin; 
-	struct list_head *pos;
 
-	if (!file)
-		return NULL;
 	if (!(bin = MALLOC_STRUCT(struct r_bin_t)))
 		return NULL;
 	r_bin_init(bin);
-	bin->file = file;
-	list_for_each_prev(pos, &bin->bins) {
-		struct r_bin_handle_t *h = list_entry(pos, struct r_bin_handle_t, list);
-		if ((plugin_name && !strcmp(h->name, plugin_name)) ||
-			(h->check && h->check(bin))) 
-			bin->cur = h;
-	}
-	if (bin->cur && bin->cur->new)
-		bin->cur->new(bin);
-	else return r_bin_free(bin);
 	return bin;
 }
 

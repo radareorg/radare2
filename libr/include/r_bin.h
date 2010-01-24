@@ -131,8 +131,9 @@ typedef struct r_bin_obj_t {
 #ifdef R_API
 R_API int r_bin_add(struct r_bin_t *bin, struct r_bin_handle_t *foo);
 R_API void* r_bin_free(struct r_bin_t *bin);
+R_API void* r_bin_free_obj(struct r_bin_obj_t *binobj);
 R_API int r_bin_list(struct r_bin_t *bin);
-R_API struct r_bin_object_t* r_bin_load(struct r_bin_t *bin, const char *file, const char *plugin_name);
+R_API struct r_bin_obj_t *r_bin_load(struct r_bin_t *bin, const char *file, const char *plugin_name);
 R_API ut64 r_bin_get_baddr(struct r_bin_t *bin);
 R_API struct r_bin_entry_t* r_bin_get_entry(struct r_bin_t *bin);
 R_API struct r_bin_field_t* r_bin_get_fields(struct r_bin_t *bin);
@@ -141,7 +142,7 @@ R_API struct r_bin_info_t* r_bin_get_info(struct r_bin_t *bin);
 R_API struct r_bin_section_t* r_bin_get_sections(struct r_bin_t *bin);
 R_API struct r_bin_string_t* r_bin_get_strings(struct r_bin_t *bin);
 R_API struct r_bin_symbol_t* r_bin_get_symbols(struct r_bin_t *bin);
-R_API struct r_bin_t* r_bin_new(const char *file, const char *plugin_name);
+R_API struct r_bin_t* r_bin_new();
 R_API void r_bin_set_user_ptr(struct r_bin_t *bin, void *user);
 #endif
 
