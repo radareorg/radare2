@@ -1,19 +1,21 @@
 /* radare - GPL3 - Copyright 2009 nibble<.ds@gmail.com> */
 
 #include <r_types.h>
+#include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
 #include "elf/elf.h"
 
-static int bopen(struct r_bin_t *bin)
+static int pnew(struct r_bin_t *bin)
 {
 	if(!(bin->bin_obj = Elf_(r_bin_elf_new)(bin->file)))
-		return -1;
-	bin->fd = 1;
-	return bin->fd;
+		return R_FALSE;
+	bin->size = ((struct Elf_(r_bin_elf_obj_t)*)(bin->bin_obj))->size;
+	bin->buf = ((struct Elf_(r_bin_elf_obj_t)*)(bin->bin_obj))->b;
+	return R_TRUE;
 }
 
-static int bclose(struct r_bin_t *bin)
+static int pfree(struct r_bin_t *bin)
 {
 	Elf_(r_bin_elf_free)((struct Elf_(r_bin_elf_obj_t)*)bin->bin_obj);
 	return R_TRUE;
@@ -199,17 +201,15 @@ static struct r_bin_field_t* fields(struct r_bin_t *bin)
 #if !R_BIN_ELF64
 static int check(struct r_bin_t *bin)
 {
+	ut8 *buf;
 	int ret = R_FALSE;
-	ut8 buf[8];
 
-	if ((bin->fd = open(bin->file, 0)) != -1) {
-		lseek(bin->fd, 0, SEEK_SET);
-		read(bin->fd, buf, 8);
-		close(bin->fd);
-		/* buf[EI_CLASS] == ELFCLASS32 */
-		if (!memcmp(buf, "\x7F\x45\x4c\x46\x01", 5))
-			ret = R_TRUE;
-	}
+	if (!(buf = (ut8*)r_file_slurp_range(bin->file, 0, 5)))
+		return R_FALSE;
+	/* buf[EI_CLASS] == ELFCLASS32 */
+	if (!memcmp(buf, "\x7F\x45\x4c\x46\x01", 5))
+		ret = R_TRUE;
+	free(buf);
 	return ret;
 }
 
@@ -218,8 +218,8 @@ struct r_bin_handle_t r_bin_plugin_elf = {
 	.desc = "ELF format r_bin plugin",
 	.init = NULL,
 	.fini = NULL,
-	.open = &bopen,
-	.close = &bclose,
+	.new = &pnew,
+	.free = &pfree,
 	.check = &check,
 	.baddr = &baddr,
 	.entry = &entry,

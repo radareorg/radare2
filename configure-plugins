@@ -93,7 +93,7 @@ sub () {
 }
 
 dosort () {
-  ( for a in $1 ; do echo $a ; done ) | sort
+  ( for a in $1 ; do echo $a ; done ) | sort -t. --key=1,1d
 }
 
 sort_vars () {

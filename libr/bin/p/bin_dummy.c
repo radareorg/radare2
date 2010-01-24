@@ -1,21 +1,33 @@
 /* radare - GPL3 - Copyright 2009 nibble<.ds@gmail.com> */
 
 #include <r_types.h>
+#include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
 #include "java/java.h"
 
-static int bopen(struct r_bin_t *bin)
+static int pnew(struct r_bin_t *bin)
 {
-	if ((bin->fd = open(bin->file, 0)) == -1) {
-		fprintf(stderr, "Cannot open file\n");
+	ut8* buf;
+
+	if (!(buf = (ut8*)r_file_slurp(bin->file, &bin->size))) 
 		return R_FALSE;
-	} else return bin->fd;
+	bin->buf = r_buf_new();
+	if (!r_buf_set_bytes(bin->buf, buf, bin->size))
+		return R_FALSE;
+	free (buf);
+	return R_TRUE;
 }
 
-static int bclose(struct r_bin_t *bin)
+static int pfree(struct r_bin_t *bin)
 {
-	return close(bin->fd);
+	r_buf_free(bin->buf);
+	return R_TRUE;
+}
+
+static ut64 baddr(struct r_bin_t *bin)
+{
+	return 0LL;
 }
 
 struct r_bin_handle_t r_bin_plugin_dummy = {
@@ -23,10 +35,10 @@ struct r_bin_handle_t r_bin_plugin_dummy = {
 	.desc = "dummy bin plugin",
 	.init = NULL,
 	.fini = NULL,
-	.open = &bopen,
-	.close = &bclose,
+	.new = &pnew,
+	.free = &pfree,
 	.check = NULL,
-	.baddr = NULL,
+	.baddr = &baddr,
 	.entry = NULL,
 	.sections = NULL,
 	.symbols = NULL,

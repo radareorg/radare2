@@ -1,19 +1,21 @@
 /* radare - GPL3 - Copyright 2009 pancake<@nopcode.org> */
 
 #include <r_types.h>
+#include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
 #include "mach0/mach0.h"
 
-static int bopen(struct r_bin_t *bin)
+static int pnew(struct r_bin_t *bin)
 {
 	if(!(bin->bin_obj = r_bin_mach0_new(bin->file)))
-		return -1;
-	bin->fd = 1;
-	return bin->fd;
+		return R_FALSE;
+	bin->size = ((struct r_bin_mach0_obj_t*)(bin->bin_obj))->size;
+	bin->buf = ((struct r_bin_mach0_obj_t*)(bin->bin_obj))->b;
+	return R_TRUE;
 }
 
-static int bclose(struct r_bin_t *bin)
+static int pfree(struct r_bin_t *bin)
 {
 	r_bin_mach0_free((struct r_bin_mach0_obj_t*)bin->bin_obj);
 	return R_TRUE;
@@ -26,17 +28,15 @@ static ut64 baddr(struct r_bin_t *bin)
 
 static int check(struct r_bin_t *bin)
 {
+	ut8 *buf;
 	int ret = R_FALSE;
-	ut8 buf[4];
 
-	if ((bin->fd = open(bin->file, 0)) != -1) {
-		lseek(bin->fd, 0, SEEK_SET);
-		read(bin->fd, buf, 4);
-		close(bin->fd);
-		if (!memcmp(buf, "\xce\xfa\xed\xfa", 4) ||
-			!memcmp(buf, "\xfe\xed\xfa\xce", 4))
-			ret = R_TRUE;
-	}
+	if (!(buf = (ut8*)r_file_slurp_range(bin->file, 0, 4)))
+		return R_FALSE;
+	if (!memcmp(buf, "\xce\xfa\xed\xfa", 4) ||
+		!memcmp(buf, "\xfe\xed\xfa\xce", 4))
+		ret = R_TRUE;
+	free(buf);
 	return ret;
 }
 
@@ -135,8 +135,8 @@ struct r_bin_handle_t r_bin_plugin_mach0 = {
 	.desc = "mach0 bin plugin",
 	.init = NULL,
 	.fini = NULL,
-	.open = &bopen,
-	.close = &bclose,
+	.new = &pnew,
+	.free = &pfree,
 	.check = &check,
 	.baddr = &baddr,
 	.sections = &sections,

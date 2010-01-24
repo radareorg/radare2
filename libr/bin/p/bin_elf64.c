@@ -5,19 +5,16 @@
 
 static int check(struct r_bin_t *bin)
 {
-	ut8 buf[1024];
+	ut8 *buf;
+	int ret = R_FALSE;
 
-	if ((bin->fd = open(bin->file, 0)) == -1)
+	if (!(buf = (ut8*)r_file_slurp_range(bin->file, 0, 5)))
 		return R_FALSE;
-	lseek(bin->fd, 0, SEEK_SET);
-	read(bin->fd, buf, 1024);
-	close(bin->fd);
-
-	if (!memcmp(buf, "\x7F\x45\x4c\x46", 4) &&
-		buf[4] == 2)  /* buf[EI_CLASS] == ELFCLASS64 */
-		return R_TRUE;
-	
-	return R_FALSE;
+	/* buf[EI_CLASS] == ELFCLASS64 */
+	if (!memcmp(buf, "\x7F\x45\x4c\x46\x02", 4))
+		ret = R_TRUE;
+	free(buf);
+	return ret;
 }
 
 struct r_bin_handle_t r_bin_plugin_elf64 = {
@@ -25,8 +22,8 @@ struct r_bin_handle_t r_bin_plugin_elf64 = {
 	.desc = "elf64 bin plugin",
 	.init = NULL,
 	.fini = NULL,
-	.open = &bopen,
-	.close = &bclose,
+	.new = &pnew,
+	.free = &pfree,
 	.check = &check,
 	.baddr = &baddr,
 	.entry = &entry,

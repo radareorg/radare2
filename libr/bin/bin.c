@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include <r_types.h>
+#include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
 #include "../config.h"
@@ -28,34 +29,34 @@ extern struct r_bin_handle_t r_bin_plugin_dummy;
 static struct r_bin_handle_t *bin_static_plugins[] = 
 	{ R_BIN_STATIC_PLUGINS };
 
+static int r_bin_init(struct r_bin_t *bin)
+{
+	int i;
+
+	bin->cur = bin->user = NULL;
+	bin->file = NULL;
+	bin->size = 0;
+	INIT_LIST_HEAD(&bin->bins);
+	for(i=0;bin_static_plugins[i];i++)
+		r_bin_add(bin, bin_static_plugins[i]);
+	return R_TRUE;
+}
+
 static struct r_bin_string_t *get_strings(struct r_bin_t *bin, int min)
 {
 	struct r_bin_string_t *ret = NULL;
-	ut8 *buf = NULL;
-	ut64 len, max_str = 0;
-	int i, matches = 0, ctr = 0;
 	char str[R_BIN_SIZEOF_STRINGS];
+	int i, matches = 0, ctr = 0, max_str = 0;
 
-	len = lseek(bin->fd, 0, SEEK_END);
-	max_str = (ut64)(len/min);
-
+	max_str = (int)(bin->size/min);
 	ret = malloc(max_str*sizeof(struct r_bin_string_t));
 	if (ret == NULL) {
 		fprintf(stderr, "Error allocating file\n");
 		return NULL;
 	}
-
-	buf = malloc(len);
-	if (buf == NULL) {
-		fprintf(stderr, "Error allocating file\n");
-		return NULL;
-	}
-	lseek(bin->fd, 0, SEEK_SET);
-	read(bin->fd, buf, len);
-
-	for(i = 0; i < len && ctr < max_str; i++) { 
-		if ((IS_PRINTABLE(buf[i]))) {
-			str[matches] = buf[i];
+	for(i = 0; i < bin->size && ctr < max_str; i++) { 
+		if ((IS_PRINTABLE(bin->buf->buf[i]))) {
+			str[matches] = bin->buf->buf[i];
 			if (matches < sizeof(str))
 				matches++;
 		} else {
@@ -74,61 +75,7 @@ static struct r_bin_string_t *get_strings(struct r_bin_t *bin, int min)
 		}
 	}
 	ret[ctr].last = 1;
-	free(buf);
-
 	return ret;
-}
-
-R_API struct r_bin_t *r_bin_new()
-{
-	struct r_bin_t *bin = MALLOC_STRUCT(struct r_bin_t);
-	if (bin != NULL)
-		r_bin_init(bin);
-	return bin;
-}
-
-R_API struct r_bin_t *r_bin_free(struct r_bin_t *bin)
-{
-	free(bin);
-	return NULL;
-}
-
-static int r_bin_io_read_at(struct r_io_t *io, ut64 addr, ut8 *buf, int size)
-{
-	// TODO: Implement this
-	return size;
-}
-
-static int r_bin_io_write_at(struct r_io_bind_t *io, ut64 addr, const ut8 *buf, int size)
-{
-	// TODO: Implement this
-	return size;
-}
-static void r_bin_io_init(struct r_bin_t *bin)
-{
-	bin->iob.init = R_TRUE;
-	bin->iob.io = NULL;
-	bin->iob.read_at = r_bin_io_read_at;
-	bin->iob.write_at = (void*)r_bin_io_write_at;
-}
-
-R_API int r_bin_init(struct r_bin_t *bin)
-{
-	int i;
-	bin->rw = 0;
-	bin->cur = bin->user = NULL;
-	bin->file = NULL;
-	INIT_LIST_HEAD(&bin->bins);
-	for(i=0;bin_static_plugins[i];i++)
-		r_bin_add(bin, bin_static_plugins[i]);
-	r_bin_io_init(bin);
-	return R_TRUE;
-}
-
-// TODO: why the hell do we need user ptr here??
-R_API void r_bin_set_user_ptr(struct r_bin_t *bin, void *user)
-{
-	bin->user = user;
 }
 
 R_API int r_bin_add(struct r_bin_t *bin, struct r_bin_handle_t *foo)
@@ -146,53 +93,41 @@ R_API int r_bin_add(struct r_bin_t *bin, struct r_bin_handle_t *foo)
 	return R_TRUE;
 }
 
+R_API void* r_bin_free(struct r_bin_t *bin)
+{
+	if (!bin)
+		return NULL;
+	if (bin->cur && bin->cur->free)
+		bin->cur->free(bin);
+	free(bin);
+	return NULL;
+}
+
 R_API int r_bin_list(struct r_bin_t *bin)
 {
 	struct list_head *pos;
+	int init = bin?0:1;
+
+	if (init) {
+		if (!(bin = MALLOC_STRUCT(struct r_bin_t)))
+			return 0;
+		r_bin_init(bin);
+	}
 	list_for_each_prev(pos, &bin->bins) {
 		struct r_bin_handle_t *h = list_entry(pos, struct r_bin_handle_t, list);
-		printf("bin %s\t%s\n", h->name, h->desc);
+		printf("bin %-10s %s\n", h->name, h->desc);
 	}
+	if (init)
+		r_bin_free(bin);
 	return R_FALSE;
 }
 
 R_API struct r_bin_object_t *r_bin_load(struct r_bin_t *bin, const char *file, const char *plugin_name)
 {
-	int fd = r_bin_open (bin, file, R_FALSE, plugin_name);
-	if (fd == -1)
-		return NULL;
 	/* TODO: allocate and fill r_bin_object */
-	r_bin_close (bin);
 	return NULL;
 }
 
-R_API int r_bin_open(struct r_bin_t *bin, const char *file, int rw, const char *plugin_name)
-{
-	struct list_head *pos;
-
-	if (bin == NULL || file == NULL)
-		return -1;
-	bin->file = file;
-	bin->rw = rw;
-	list_for_each_prev(pos, &bin->bins) {
-		struct r_bin_handle_t *h = list_entry(pos, struct r_bin_handle_t, list);
-		if ((plugin_name && !strcmp(h->name, plugin_name)) ||
-			(h->check && h->check(bin))) 
-			bin->cur = h;
-	}
-	if (bin->cur && bin->cur->open)
-		return bin->cur->open(bin);
-	if (plugin_name && !strcmp(plugin_name, "dummy"))
-		return -1;
-	return r_bin_open(bin, file, rw, "dummy");
-}
-
-R_API int r_bin_close(struct r_bin_t *bin)
-{
-	if (bin->cur && bin->cur->close)
-		return bin->cur->close(bin);
-	return -1;
-}
 
 R_API ut64 r_bin_get_baddr(struct r_bin_t *bin)
 {
@@ -201,46 +136,10 @@ R_API ut64 r_bin_get_baddr(struct r_bin_t *bin)
 	return UT64_MAX;
 }
 
-/* XXX : a binary can contain more than one entrypoint */
 R_API struct r_bin_entry_t* r_bin_get_entry(struct r_bin_t *bin)
 {
 	if (bin->cur && bin->cur->entry)
 		return bin->cur->entry(bin);
-	return NULL;
-}
-
-R_API struct r_bin_section_t* r_bin_get_sections(struct r_bin_t *bin)
-{
-	if (bin->cur && bin->cur->sections)
-		return bin->cur->sections(bin);
-	return NULL;
-}
-
-R_API struct r_bin_symbol_t* r_bin_get_symbols(struct r_bin_t *bin)
-{
-	if (bin->cur && bin->cur->symbols)
-		return bin->cur->symbols(bin);
-	return NULL;
-}
-
-R_API struct r_bin_import_t* r_bin_get_imports(struct r_bin_t *bin)
-{
-	if (bin->cur && bin->cur->imports)
-		return bin->cur->imports(bin);
-	return NULL;
-}
-
-R_API struct r_bin_string_t* r_bin_get_strings(struct r_bin_t *bin)
-{
-	if (bin->cur && bin->cur->strings)
-		return bin->cur->strings(bin);
-	return get_strings(bin, 5);
-}
-
-R_API struct r_bin_info_t* r_bin_get_info(struct r_bin_t *bin)
-{
-	if (bin->cur && bin->cur->info)
-		return bin->cur->info(bin);
 	return NULL;
 }
 
@@ -251,61 +150,39 @@ R_API struct r_bin_field_t* r_bin_get_fields(struct r_bin_t *bin)
 	return NULL;
 }
 
-// why not just return a single instance of the Section struct?
-R_API ut64 r_bin_get_section_offset(struct r_bin_t *bin, const char *name)
+R_API struct r_bin_import_t* r_bin_get_imports(struct r_bin_t *bin)
 {
-	struct r_bin_section_t *sections;
-	ut64 ret = UT64_MAX;
-	int i;
-
-	sections = r_bin_get_sections(bin);
-	if (sections) {
-		for (i = 0; !sections[i].last; i++)
-			if (!strcmp(sections[i].name, name)) {
-				ret = sections[i].offset;
-				break;
-			}
-		free(sections);
-	}
-	return ret;
+	if (bin->cur && bin->cur->imports)
+		return bin->cur->imports(bin);
+	return NULL;
 }
 
-R_API ut64 r_bin_get_section_rva(struct r_bin_t *bin, const char *name)
+R_API struct r_bin_info_t* r_bin_get_info(struct r_bin_t *bin)
 {
-	struct r_bin_section_t *sections;
-	ut64 ret = UT64_MAX;
-	int i;
-
-	sections = r_bin_get_sections(bin);
-	if (sections) {
-		for (i=0; !sections[i].last; i++) {
-			if (!strcmp(sections[i].name, name)) {
-				ret = sections[i].rva;
-				break;
-			}
-		}
-		free(sections);
-	}
-	return ret;
+	if (bin->cur && bin->cur->info)
+		return bin->cur->info(bin);
+	return NULL;
 }
 
-R_API ut64 r_bin_get_section_size(struct r_bin_t *bin, const char *name)
+R_API struct r_bin_section_t* r_bin_get_sections(struct r_bin_t *bin)
 {
-	struct r_bin_section_t *sections;
-	ut64 ret = UT64_MAX;
-	int i;
+	if (bin->cur && bin->cur->sections)
+		return bin->cur->sections(bin);
+	return NULL;
+}
 
-	sections = r_bin_get_sections(bin);
-	if (sections) {
-		for (i=0; !sections[i].last; i++) {
-			if (!strcmp(sections[i].name, name)) {
-				ret = sections[i].size;
-				break;
-			}
-		}
-		free(sections);
-	}
-	return ret;
+R_API struct r_bin_string_t* r_bin_get_strings(struct r_bin_t *bin)
+{
+	if (bin->cur && bin->cur->strings)
+		return bin->cur->strings(bin);
+	return get_strings(bin, 5);
+}
+
+R_API struct r_bin_symbol_t* r_bin_get_symbols(struct r_bin_t *bin)
+{
+	if (bin->cur && bin->cur->symbols)
+		return bin->cur->symbols(bin);
+	return NULL;
 }
 
 #if 0
@@ -314,3 +191,31 @@ int r_bin_get_libs()
 
 }
 #endif
+
+R_API struct r_bin_t* r_bin_new(const char *file, const char *plugin_name)
+{
+	struct r_bin_t *bin; 
+	struct list_head *pos;
+
+	if (!file)
+		return NULL;
+	if (!(bin = MALLOC_STRUCT(struct r_bin_t)))
+		return NULL;
+	r_bin_init(bin);
+	bin->file = file;
+	list_for_each_prev(pos, &bin->bins) {
+		struct r_bin_handle_t *h = list_entry(pos, struct r_bin_handle_t, list);
+		if ((plugin_name && !strcmp(h->name, plugin_name)) ||
+			(h->check && h->check(bin))) 
+			bin->cur = h;
+	}
+	if (bin->cur && bin->cur->new)
+		bin->cur->new(bin);
+	else return r_bin_free(bin);
+	return bin;
+}
+
+R_API void r_bin_set_user_ptr(struct r_bin_t *bin, void *user)
+{
+	bin->user = user;
+}

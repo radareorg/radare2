@@ -28,7 +28,7 @@
 #define ACTION_FIELDS    0x0100 
 
 static struct r_lib_t l;
-static struct r_bin_t bin;
+static struct r_bin_t *bin;
 static int verbose = 0;
 static int rad = R_FALSE;
 static int rw = R_FALSE;
@@ -56,8 +56,8 @@ static int rabin_show_help() {
 static int rabin_show_entrypoint() {
 	struct r_bin_entry_t *entry;
 	char *env;
-	ut64 baddr = r_bin_get_baddr(&bin);
-	if ((entry = r_bin_get_entry(&bin)) == NULL)
+	ut64 baddr = r_bin_get_baddr(bin);
+	if ((entry = r_bin_get_entry(bin)) == NULL)
 		return R_FALSE;
 	if (rad) {
 		env = getenv("DEBUG");
@@ -80,9 +80,9 @@ static int rabin_show_imports() {
 	ut64 baddr;
 	int i;
 
-	baddr = r_bin_get_baddr(&bin);
+	baddr = r_bin_get_baddr(bin);
 
-	if ((imports = r_bin_get_imports(&bin)) == NULL)
+	if ((imports = r_bin_get_imports(bin)) == NULL)
 		return R_FALSE;
 
 	if (rad)
@@ -112,9 +112,9 @@ static int rabin_show_symbols() {
 	ut64 baddr;
 	int i;
 
-	baddr = r_bin_get_baddr(&bin);
+	baddr = r_bin_get_baddr(bin);
 
-	if ((symbols = r_bin_get_symbols(&bin)) == NULL)
+	if ((symbols = r_bin_get_symbols(bin)) == NULL)
 		return R_FALSE;
 
 	if (rad) printf("fs symbols\n");
@@ -156,9 +156,9 @@ static int rabin_show_strings() {
 	ut64 baddr;
 	int i;
 
-	baddr = r_bin_get_baddr(&bin);
+	baddr = r_bin_get_baddr(bin);
 
-	if ((strings = r_bin_get_strings(&bin)) == NULL)
+	if ((strings = r_bin_get_strings(bin)) == NULL)
 		return R_FALSE;
 
 	if (rad) printf("fs strings\n");
@@ -188,9 +188,9 @@ static int rabin_show_sections() {
 	ut64 baddr;
 	int i;
 
-	baddr = r_bin_get_baddr(&bin);
+	baddr = r_bin_get_baddr(bin);
 
-	if ((sections = r_bin_get_sections(&bin)) == NULL)
+	if ((sections = r_bin_get_sections(bin)) == NULL)
 		return R_FALSE;
 	
 	if (rad) printf("fs sections\n");
@@ -229,7 +229,7 @@ static int rabin_show_sections() {
 static int rabin_show_info() {
 	struct r_bin_info_t *info;
 
-	if ((info = r_bin_get_info(&bin)) == NULL)
+	if ((info = r_bin_get_info(bin)) == NULL)
 		return R_FALSE;
 
 	if (rad) {
@@ -269,9 +269,9 @@ static int rabin_show_fields() {
 	ut64 baddr;
 	int i;
 
-	baddr = r_bin_get_baddr(&bin);
+	baddr = r_bin_get_baddr(bin);
 
-	if ((fields = r_bin_get_fields(&bin)) == NULL)
+	if ((fields = r_bin_get_fields(bin)) == NULL)
 		return R_FALSE;
 	
 	if (rad) printf("fs header\n");
@@ -299,7 +299,7 @@ static int rabin_dump_symbols(int len) {
 	char *ret;
 	int olen = len, i;
 
-	if ((symbols = r_bin_get_symbols(&bin)) == NULL)
+	if ((symbols = r_bin_get_symbols(bin)) == NULL)
 		return R_FALSE;
 
 	for (i = 0; !symbols[i].last; i++) {
@@ -312,8 +312,7 @@ static int rabin_dump_symbols(int len) {
 		if (!(buf = malloc(len)) ||
 			!(ret = malloc(len*2+1)))
 		return R_FALSE;
-		lseek(bin.fd, symbols[i].offset, SEEK_SET);
-		read(bin.fd, buf, len);
+		r_buf_read_at(bin->buf, symbols[i].offset, buf, len);
 		r_hex_bin2str(buf, len, ret);
 		printf("%s %s\n", symbols[i].name, ret);
 		free(buf);
@@ -330,7 +329,7 @@ static int rabin_dump_sections(char *name) {
 	char *ret;
 	int i;
 
-	if ((sections = r_bin_get_sections(&bin)) == NULL)
+	if ((sections = r_bin_get_sections(bin)) == NULL)
 		return R_FALSE;
 
 	for (i = 0; !sections[i].last; i++)
@@ -338,8 +337,7 @@ static int rabin_dump_sections(char *name) {
 			if (!(buf = malloc(sections[i].size)) ||
 				!(ret = malloc(sections[i].size*2+1)))
 				return R_FALSE;
-			lseek(bin.fd, sections[i].offset, SEEK_SET);
-			read(bin.fd, buf, sections[i].size);
+			r_buf_read_at(bin->buf, sections[i].offset, buf, sections[i].size);
 			r_hex_bin2str(buf, sections[i].size, ret);
 			printf("%s\n", ret);
 			free(buf);
@@ -403,7 +401,7 @@ static int rabin_do_operation(const char *op) {
 static int __lib_bin_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 	struct r_bin_handle_t *hand = (struct r_bin_handle_t *)data;
 	//printf(" * Added (dis)assembly handler\n");
-	r_bin_add(&bin, hand);
+	r_bin_add(bin, hand);
 	return R_TRUE;
 }
 
@@ -418,7 +416,6 @@ int main(int argc, char **argv)
 	const char *format = NULL, *op = NULL;
 	const char *plugin_name = NULL;
 
-	r_bin_init(&bin);
 	r_lib_init(&l, "radare_plugin");
 	r_lib_add_handler(&l, R_LIB_TYPE_BIN, "bin plugins",
 		&__lib_bin_cb, &__lib_bin_dt, NULL);
@@ -471,7 +468,7 @@ int main(int argc, char **argv)
 			verbose++;
 			break;
 		case 'L':
-			r_bin_list(&bin);
+			r_bin_list(bin);
 			exit(1);
 		case 'V':
 			printf("rabin2 v"VERSION"\n");
@@ -489,7 +486,8 @@ int main(int argc, char **argv)
 	if (format)
 		plugin_name = format;
 
-	if (r_bin_open(&bin, file, rw, plugin_name) == -1) {
+	if (!(bin = r_bin_new(file, plugin_name)) &&
+		!(bin = r_bin_new(file, "dummy"))) {
 		ERR("r_bin: Cannot open '%s'\n", file);
 		return R_FALSE;
 	}
@@ -511,6 +509,6 @@ int main(int argc, char **argv)
 	if (op != NULL && action&ACTION_OPERATION)
 		rabin_do_operation(op);
 
-	r_bin_close(&bin);
+	r_bin_free(bin);
 	return R_FALSE;
 }

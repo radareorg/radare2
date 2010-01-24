@@ -5,29 +5,26 @@
 
 static int check(struct r_bin_t *bin)
 {
-	ut8 buf[1024];
+	ut8 *buf;
+	int ret = R_FALSE;
 
-	if ((bin->fd = open(bin->file, 0)) == -1)
+	if (!(buf = (ut8*)r_file_slurp_range(bin->file, 0, 1024)))
 		return R_FALSE;
-	lseek(bin->fd, 0, SEEK_SET);
-	read(bin->fd, buf, 1024);
-	close(bin->fd);
-
 	if (!memcmp(buf, "\x4d\x5a", 2) &&
 		!memcmp(buf+(buf[0x3c]|(buf[0x3d]<<8)), "\x50\x45", 2) && 
 		!memcmp(buf+(buf[0x3c]|buf[0x3d]<<8)+0x18, "\x0b\x02", 2))
-		return R_TRUE;
-
-		return R_FALSE;
-	}
+		ret = R_TRUE;
+	free(buf);
+	return ret;
+}
 
 struct r_bin_handle_t r_bin_plugin_pe64 = {
 	.name = "pe64",
 	.desc = "PE64 (PE32+) bin plugin",
 	.init = NULL,
 	.fini = NULL,
-	.open = &bopen,
-	.close = &bclose,
+	.new = &pnew,
+	.free = &pfree,
 	.check = &check,
 	.baddr = &baddr,
 	.entry = &entry,
