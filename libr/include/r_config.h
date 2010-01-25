@@ -34,25 +34,23 @@ typedef struct r_config_t {
 	struct list_head nodes;
 } rConfig;
 
-#define O struct r_config_t *obj
-
 #ifdef R_API
 R_API struct r_config_t *r_config_new(void *user);
 R_API int r_config_free(struct r_config_t *cfg);
 R_API int r_config_init(struct r_config_t *core, void *user);
-R_API void r_config_lock(O, int l);
-R_API int r_config_eval(O, const char *str);
-R_API struct r_config_node_t *r_config_set_i(O, const char *name, const ut64 i);
-R_API struct r_config_node_t *r_config_set_cb(struct r_config_t *cfg, const char *name, const char *value, int (*callback)(void *user, void *data));
-R_API struct r_config_node_t *r_config_set_i_cb(struct r_config_t *cfg, const char *name, int ivalue, int (*callback)(void *user, void *data));
-R_API int r_config_rm(O, const char *name);
-R_API struct r_config_node_t *r_config_set(O, const char *name, const char *value);
-R_API ut64 r_config_get_i(O, const char *name);
-R_API const char *r_config_get(O, const char *name);
-R_API void r_config_list(O, const char *str, int rad);
-R_API struct r_config_node_t *r_config_node_get(O, const char *name);
+R_API void r_config_lock(rConfig *cfg, int l);
+R_API int r_config_eval(rConfig *cfg, const char *str);
+R_API struct r_config_node_t *r_config_set_i(rConfig *cfg, const char *name, const ut64 i);
+R_API struct r_config_node_t *r_config_set_cb(rConfig *cfg, const char *name, const char *value, int (*callback)(void *user, void *data));
+R_API struct r_config_node_t *r_config_set_i_cb(rConfig *cfg, const char *name, int ivalue, int (*callback)(void *user, void *data));
+R_API int r_config_rm(rConfig *cfg, const char *name);
+R_API struct r_config_node_t *r_config_set(rConfig *cfg, const char *name, const char *value);
+R_API ut64 r_config_get_i(rConfig *cfg, const char *name);
+R_API const char *r_config_get(rConfig *cfg, const char *name);
+R_API void r_config_list(rConfig *cfg, const char *str, int rad);
+R_API struct r_config_node_t *r_config_node_get(rConfig *cfg, const char *name);
 R_API struct r_config_node_t *r_config_node_new(const char *name, const char *value);
-R_API int r_config_swap(struct r_config_t *cfg, const char *name);
+R_API int r_config_swap(rConfig *cfg, const char *name);
 #endif
 
 #endif

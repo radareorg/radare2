@@ -1,9 +1,8 @@
 /* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
 
-[CCode (cheader_filename="r_core.h", cprefix="r_core", lower_case_cprefix="r_core_")]
 namespace Radare {
 	[Compact]
-	[CCode (cname="struct r_core_t", free_function="r_core_free", cprefix="r_core_")]
+	[CCode (cheader_filename="r_core.h", cname="struct r_core_t", free_function="r_core_free", cprefix="r_core_")]
 	public class rCore {
 		/* lifecycle */
 		public rCore();

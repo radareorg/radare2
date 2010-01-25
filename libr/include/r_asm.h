@@ -10,7 +10,7 @@
 #define R_ASM_FASTCALL_ARGS 6
 
 enum {
-	R_ASM_ARCH_NULL = 0,
+	R_ASM_ARCH_NONE = 0,
 	R_ASM_ARCH_X86,
 	R_ASM_ARCH_ARM,
 	R_ASM_ARCH_PPC,
@@ -25,9 +25,9 @@ enum {
 };
 
 enum {
-	R_ASM_SYN_NULL = 0,
-	R_ASM_SYN_INTEL,
-	R_ASM_SYN_ATT
+	R_ASM_SYNTAX_NONE = 0,
+	R_ASM_SYNTAX_INTEL,
+	R_ASM_SYNTAX_ATT
 };
 
 typedef struct r_asm_fastcall_t {

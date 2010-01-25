@@ -71,7 +71,6 @@ int main(int argc, char **argv)
 			break;
 		case 'V':
 			return main_version ();
-			break;
 		case 'w':
 			perms = R_IO_READ | R_IO_WRITE;
 			break;

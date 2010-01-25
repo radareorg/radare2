@@ -52,7 +52,11 @@ install-vapi:
 	@${INSTALL_DIR} ${PFX}/share/vala/vapi
 	${INSTALL_DATA} vapi/*.vapi vapi/*.deps ${PFX}/share/vala/vapi
 
-install: install-vapi
+install-pkgconfig:
+	@${INSTALL_DIR} ${PFX}/lib/pkgconfig
+	for a in ../pkgcfg/*.pc ; do ${INSTALL_DATA} $$a ${PFX}/lib/pkgconfig ; done
+
+install: install-vapi install-pkgconfig
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
 	# libraries
 	@${INSTALL_DIR} ${PFX}/lib
@@ -69,8 +73,6 @@ install: install-vapi
 	@for a in `find */t -perm /u+x -type f | grep 2`; \
 	do echo "$$a ${PFX}/bin"; ${INSTALL_PROGRAM} $$a ${PFX}/bin ; done
 	# plugins
-	@${INSTALL_DIR} ${PFX}/lib/pkgconfig
-	for a in ../pkgcfg/*.pc ; do ${INSTALL_DATA} $$a ${PFX}/lib/pkgconfig ; done
 	#${INSTALL_DATA} libr.pc ${PFX}/lib/pkgconfig
 	@${INSTALL_DIR} ${PFX}/lib/radare2
 	@for a in `find */p -perm /u+x -type f`; \

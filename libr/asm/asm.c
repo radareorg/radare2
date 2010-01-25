@@ -102,7 +102,7 @@ R_API struct r_asm_t *r_asm_init(struct r_asm_t *a)
 		a->cur = NULL;
 		a->bits = 32;
 		a->big_endian = 0;
-		a->syntax = R_ASM_SYN_INTEL;
+		a->syntax = R_ASM_SYNTAX_INTEL;
 		a->pc = 0;
 		INIT_LIST_HEAD(&a->asms);
 		for(i=0;asm_static_plugins[i];i++)
@@ -199,8 +199,8 @@ R_API int r_asm_set_big_endian(struct r_asm_t *a, int boolean)
 R_API int r_asm_set_syntax(struct r_asm_t *a, int syntax)
 {
 	switch (syntax) {
-	case R_ASM_SYN_INTEL:
-	case R_ASM_SYN_ATT:
+	case R_ASM_SYNTAX_INTEL:
+	case R_ASM_SYNTAX_ATT:
 		a->syntax = syntax;
 		return R_TRUE;
 	default:

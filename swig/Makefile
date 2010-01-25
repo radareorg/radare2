@@ -18,8 +18,7 @@ test:
 	cd python && make test
 	cd ruby && make test
 
-install:
-	# python install
+install-python:
 	@if [ "`grep python supported.langs`" ]; then \
 	for a in python2.5 python2.6; do \
 	mkdir -p /usr/lib/$$a/r2 ; \
@@ -29,6 +28,26 @@ install:
 	cp -rf python/*libr* /usr/lib/$$a/ ; \
 	done ; \
 	fi
+
+install-ruby:
+	@if [ "`grep ruby supported.langs`" ]; then \
+	target=/usr/lib/ruby/1.9.1/ ; \
+	mkdir -p $$target/r2 ; \
+	echo "Installing ruby r2 modules..." ; \
+	cp -rf ruby/* $$target/r2 ; \
+	cp -rf ruby/*libr* $$target ; \
+	fi
+
+install-perl:
+	@echo "Installing perl r2 modules... NOT YET IMPLEMENTED"
+	@#if [ "`grep perl supported.langs`" ]; then \
+	#target=/usr/lib/ruby/1.9.1/ ; \
+	#mkdir -p $$target/r2 ; \
+	#cp -rf ruby/* $$target/r2 ; \
+	#cp -rf ruby/*libr* $$target ; \
+	#fi
+
+install: install-python install-ruby install-perl
 
 oldtest:
 	sh do-swig.sh r_bp

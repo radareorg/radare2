@@ -20,7 +20,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	disasm_obj.VirtualAddr = a->pc;
 	disasm_obj.Archi = ((a->bits == 64) ? 64 : 0);
 	disasm_obj.SecurityBlock = len;
-	if (a->syntax == R_ASM_SYN_ATT)
+	if (a->syntax == R_ASM_SYNTAX_ATT)
 		disasm_obj.Options = 0x400;
 	else disasm_obj.Options = 0;
 

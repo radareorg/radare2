@@ -18,7 +18,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	static ud_t disasm_obj;
 
 	ud_init(&disasm_obj);
-	if (a->syntax == R_ASM_SYN_ATT)
+	if (a->syntax == R_ASM_SYNTAX_ATT)
 		ud_set_syntax(&disasm_obj, UD_SYN_ATT);
 	else
 		ud_set_syntax(&disasm_obj, UD_SYN_INTEL);

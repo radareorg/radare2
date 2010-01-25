@@ -23,6 +23,7 @@ R_API int r_anal_init(struct r_anal_t *anal)
 {
 	anal->user = NULL;
 	anal->ctx = NULL;
+	anal->cur = NULL;
 	r_anal_set_bits(anal, 32);
 	r_anal_set_big_endian(anal, R_FALSE);
 	INIT_LIST_HEAD(&anal->anals);
@@ -93,7 +94,7 @@ R_API int r_anal_set_pc(struct r_anal_t *a, ut64 pc)
 
 R_API int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 { 
-	if (anal->cur && anal->cur->aop)
+	if (anal && anal->cur && anal->cur->aop)
 		return anal->cur->aop(anal, aop, data);
 	return R_FALSE;
 }

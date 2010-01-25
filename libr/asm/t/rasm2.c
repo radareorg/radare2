@@ -137,8 +137,8 @@ int main(int argc, char *argv[])
 			break;
 		case 's':
 			if (!strcmp(optarg, "att"))
-				r_asm_set_syntax(&a, R_ASM_SYN_ATT);
-			else r_asm_set_syntax(&a, R_ASM_SYN_INTEL);
+				r_asm_set_syntax(&a, R_ASM_SYNTAX_ATT);
+			else r_asm_set_syntax(&a, R_ASM_SYNTAX_INTEL);
 			break;
 		case 'd':
 			dis = 1;

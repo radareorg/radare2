@@ -1,31 +1,30 @@
-/* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009, 2010 nibble<.ds@gmail.com> */
 
 namespace Radare {
 	[Compact]
 	[CCode (cheader_filename="r_asm.h", cname="struct r_asm_t", free_function="r_asm_free", cprefix="r_asm_")]
 	public class rAsm {
-/* DEPRECATED?
+		[CCode (cprefix="R_ASM_ARCH_", cname="int")]
 		public enum Arch {
-			NULL  = 0,
-		  	X86   = 1,
-		  	ARM   = 2,
-		  	PPC   = 3,
-		  	M68K  = 4,
-		  	JAVA  = 5,
-		  	MIPS  = 6,
-		  	SPARC = 7,
-		  	CSR   = 8,
-		  	MSIL  = 9,
-		  	OBJD  = 10,
-		  	BF    = 11
+			NONE,
+		  	X86,
+		  	ARM,
+		  	PPC,
+		  	M68K,
+		  	JAVA,
+		  	MIPS,
+		  	SPARC,
+		  	CSR,
+		  	MSIL,
+		  	OBJD,
+		  	BF
 		}
-*/
 
-		[CCode (cprefix="R_ASM_SYN_", cname="int")]
+		[CCode (cprefix="R_ASM_SYNTAX_", cname="int")]
 		public enum Syntax {
-			NULL  = 0,
-			INTEL = 1,
-			ATT = 2,
+			NONE,
+			INTEL,
+			ATT
 		}
 
 		[Compact]

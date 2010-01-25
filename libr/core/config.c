@@ -1,9 +1,15 @@
 /* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
 
 #include <r_core.h>
+static int config_scrhtml_callback(void *user, void *data) {
+	struct r_core_t *core = (struct r_core_t *) user;
+	struct r_config_node_t *node = (struct r_config_node_t *) data;
+	r_cons_is_html = node->i_value;
+// TODO: control error and restore old value (return false?) show errormsg?
+	return R_TRUE;
+}
 
-static int config_asm_arch_callback(void *user, void *data)
-{
+static int config_asm_arch_callback(void *user, void *data) {
 	struct r_core_t *core = (struct r_core_t *) user;
 	struct r_config_node_t *node = (struct r_config_node_t *) data;
 	r_asm_use (&core->assembler, node->value);
@@ -83,10 +89,12 @@ R_API int r_core_config_init(struct r_core_t *core)
 	r_config_set(cfg, "cmd.prompt", ""); 
 	r_config_set(cfg, "cmd.vprompt", ""); 
 	r_config_set(cfg, "cmd.hit", ""); 
-	r_config_set_cb(cfg, "scr.color",
+	r_config_set_cb (cfg, "scr.color",
 		(core->print.flags&R_PRINT_FLAGS_COLOR)?"true":"false",
 		&config_color_callback);
 	r_config_set (cfg, "scr.seek", "");
+	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
+	r_config_set(cfg, "cfg.debug", "false");
 #if 0
 	node = config_set("asm.profile", "default");
 //	node->callback = &config_asm_profile;
@@ -153,7 +161,7 @@ R_API int r_core_config_init(struct r_core_t *core)
 	config_set("cmd.visual", "");
 	config_set("cmd.visualbind", "");
 	config_set("cmd.touchtrace", "");
-#endif
+
 	r_config_set(cfg, "cmd.prompt", "");
 	r_config_set(cfg, "cmd.visual", ""); //? eip && ?? s eip");
 	r_config_set(cfg, "cmd.vprompt", "p%");
@@ -162,12 +170,10 @@ R_API int r_core_config_init(struct r_core_t *core)
 	r_config_set(cfg, "cmd.bp", "");
 	r_config_set(cfg, "cfg.fortunes", "true");
 
-	r_config_set(cfg, "cfg.debug", "false");
 
-#if 0
-	config_set_i("search.from", 0);
-	config_set_i("search.to", 0);
-	config_set_i("search.align", 0);
+	r_config_set_i("search.from", 0);
+	r_config_set_i("search.to", 0);
+	r_config_set_i("search.align", 0);
 	config_set("search.flag", "true");
 	config_set("search.verbose", "true");
 
@@ -337,8 +343,6 @@ R_API int r_core_config_init(struct r_core_t *core)
 	node = config_set("zoom.byte", "head");
 	node->callback = &config_zoombyte_callback;
 
-	node = config_set("scr.html", "false");
-	node->callback = &config_scrhtml_callback;
 	config_set_i("scr.accel", 0);
 
 	node = config_set("scr.palette", cons_palette_default);
@@ -348,7 +352,6 @@ R_API int r_core_config_init(struct r_core_t *core)
 	node = config_set("scr.pal."x"", y); \
 	node->callback = &config_palette_callback; \
 	node->callback(node);
-
 	config_set_scr_pal("prompt","yellow")
 		config_set_scr_pal("default","white")
 		config_set_scr_pal("changed","green")

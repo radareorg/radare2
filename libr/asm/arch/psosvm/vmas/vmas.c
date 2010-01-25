@@ -370,7 +370,7 @@ static ut16 r_ntohs (ut16 foo) {
 #if BIGENDIAN
         /* do nothing */
 #else
-        ut8 *p = &foo;
+        ut8 *p = (ut8 *)&foo;
         foo = p[1] | p[0]<<8;
 #endif
         return foo;

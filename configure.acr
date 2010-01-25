@@ -57,6 +57,9 @@ SUBDIRS ./config-user.mk libr/include/r_userconf.h
  pkgcfg/r_io.pc
  pkgcfg/r_asm.pc
  pkgcfg/r_bin.pc
+ pkgcfg/r_bininfo.pc
+ pkgcfg/r_anal.pc
+ pkgcfg/r_hash.pc
  pkgcfg/r_cons.pc
  pkgcfg/r_diff.pc
  pkgcfg/r_core.pc
@@ -64,12 +67,19 @@ SUBDIRS ./config-user.mk libr/include/r_userconf.h
  pkgcfg/r_socket.pc
  pkgcfg/r_debug.pc
  pkgcfg/r_reg.pc
+ pkgcfg/r_cmd.pc
+ pkgcfg/r_config.pc
+ pkgcfg/r_flags.pc
+ pkgcfg/r_meta.pc
  pkgcfg/r_line.pc
  pkgcfg/r_syscall.pc
  pkgcfg/r_macro.pc
+ pkgcfg/r_sign.pc
  pkgcfg/r_util.pc
+ pkgcfg/r_trace.pc
  pkgcfg/r_search.pc
  pkgcfg/r_vm.pc
+ pkgcfg/r_var.pc
  pkgcfg/r_th.pc
  pkgcfg/r_bp.pc
  pkgcfg/r_db.pc

@@ -186,7 +186,7 @@ int r_macro_cmd_args(struct r_macro_t *mac, const char *ptr, const char *args, i
 {
 	int i,j;
 	char *cmd = alloca(strlen(ptr)+1024);
-	char *arg = strdup(args);
+	char *arg = args?strdup(args):strdup("");
 	cmd[0]='\0';
 
 //	eprintf("call(%s)\n", ptr);
@@ -351,9 +351,8 @@ int r_macro_call(struct r_macro_t *mac, const char *name)
 				}
 
 				/* Command execution */
-				if (*ptr) {
+				if (*ptr)
 					r_macro_cmd_args(mac, ptr, args, nargs);
-				}
 				if (end) {
 					*end='\n';
 					ptr = end + 1;
