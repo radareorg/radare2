@@ -132,6 +132,7 @@ typedef struct r_bin_obj_t {
 R_API int r_bin_add(struct r_bin_t *bin, struct r_bin_handle_t *foo);
 R_API void* r_bin_free(struct r_bin_t *bin);
 R_API void* r_bin_free_obj(struct r_bin_obj_t *binobj);
+R_API int r_bin_init(struct r_bin_t *bin);
 R_API int r_bin_list(struct r_bin_t *bin);
 R_API struct r_bin_obj_t *r_bin_load(struct r_bin_t *bin, const char *file, const char *plugin_name);
 R_API ut64 r_bin_get_baddr(struct r_bin_t *bin);

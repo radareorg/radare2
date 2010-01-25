@@ -28,19 +28,6 @@ extern struct r_bin_handle_t r_bin_plugin_dummy;
 static struct r_bin_handle_t *bin_static_plugins[] = 
 	{ R_BIN_STATIC_PLUGINS };
 
-static int r_bin_init(struct r_bin_t *bin)
-{
-	int i;
-
-	bin->cur = bin->user = NULL;
-	bin->file = NULL;
-	bin->size = 0;
-	INIT_LIST_HEAD(&bin->bins);
-	for(i=0;bin_static_plugins[i];i++)
-		r_bin_add(bin, bin_static_plugins[i]);
-	return R_TRUE;
-}
-
 static struct r_bin_string_t *get_strings(struct r_bin_t *bin, int min)
 {
 	struct r_bin_string_t *ret = NULL;
@@ -109,6 +96,19 @@ R_API void* r_bin_free_obj(struct r_bin_obj_t *binobj)
 	/* TODO: free r_bin_obj_t structures */
 	free(binobj);
 	return NULL;
+}
+
+R_API int r_bin_init(struct r_bin_t *bin)
+{
+	int i;
+
+	bin->cur = bin->user = NULL;
+	bin->file = NULL;
+	bin->size = 0;
+	INIT_LIST_HEAD(&bin->bins);
+	for(i=0;bin_static_plugins[i];i++)
+		r_bin_add(bin, bin_static_plugins[i]);
+	return R_TRUE;
 }
 
 R_API int r_bin_list(struct r_bin_t *bin)
