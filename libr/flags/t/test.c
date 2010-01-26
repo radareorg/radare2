@@ -24,5 +24,7 @@ int main()
 		printf("FLAG FOUND '%s'\n", fi->name);
 	} else printf("FLAG NOT FOUND\n");
 
+	r_flag_list (&flags, 0);
+
 	return 0;
 }

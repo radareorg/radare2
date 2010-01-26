@@ -64,9 +64,9 @@ R_API struct r_flag_item_t *r_flag_list(struct r_flag_t *f, int rad)
 	struct list_head *pos;
 	list_for_each_prev(pos, &f->flags) {
 		struct r_flag_item_t *flag = list_entry(pos, struct r_flag_item_t, list);
-		if (rad) printf("f %s %lld @ 0x%08llx\n",
+		if (rad) r_cons_printf("f %s %lld @ 0x%08llx\n",
 			flag->name, flag->size, flag->offset);
-		else printf("0x%08llx %lld %s\n",
+		else r_cons_printf("0x%08llx %lld %s\n",
 			flag->offset, flag->size, flag->name);
 	}
 	return NULL;

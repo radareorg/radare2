@@ -10,6 +10,15 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+typedef struct r_cons_t {
+	int r_cons_is_interactive;
+	int r_cons_is_html;
+	int r_cons_rows;
+	int r_cons_columns;
+	int r_cons_lines;
+	int r_cons_noflush;
+} RCons;
+
 #define CONS_MAX_USER 102400
 #define CONS_BUFSZ 0x4f00
 #define STR_IS_NULL(x) (!x || !x[0])
@@ -77,15 +86,15 @@ enum {
 #endif
 
 /* XXX : global variables? or a struct with a singleton? */
-extern FILE *stdin_fd;
+//extern FILE *stdin_fd;
 extern FILE *r_cons_stdin_fd;
 extern int r_cons_stdout_fd;
-extern int r_cons_stdout_file;
+//extern int r_cons_stdout_file;
 extern int r_cons_breaked;
 extern const char *r_cons_palette_default;
 const char *r_cons_colors[CONS_COLORS_SIZE+1];
 extern char r_cons_palette[CONS_PALETTE_SIZE][8];
-extern const char *dl_prompt;
+//extern const char *dl_prompt;
 extern int r_cons_columns;
 extern int r_cons_rows;
 extern int r_cons_lines; // private or public?

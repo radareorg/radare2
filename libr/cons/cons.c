@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
 
 #include <r_cons.h>
 
@@ -25,8 +25,8 @@
 
 #define MOAR_VALUE 4096*4
 
-// WTF //
-char *strsub (char *string, char *pat, char *rep, int global);
+RCons r_cons;
+
 int r_cons_stdout_fd = 1;
 FILE *r_cons_stdin_fd = NULL; // TODO use int fd here too!
 

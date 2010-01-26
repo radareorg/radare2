@@ -12,7 +12,6 @@
 extern int r_line_echo;
 extern const char *r_line_prompt;
 extern const char *r_line_clipboard;
-extern void r_line_label_show();
 
 extern char **r_line_history;
 extern int r_line_histsize;
@@ -32,6 +31,7 @@ R_API int r_line_init();
 R_API int r_line_hist_load(const char *file);
 R_API char *r_line_readline(int argc, const char **argv);
 R_API //extern int r_line_readchar();
+/* label ?! */
 R_API int r_line_hist_add(const char *line);
 R_API int r_line_hist_save(const char *file);
 R_API int r_line_hist_label(const char *label, void (*cb)(const char*));

@@ -6,9 +6,9 @@ public class Radare.RBreakpoint {
 	public RBreakpoint ();
 	public bool use (string arch);
 	public void enable (uint64 addr, bool enabled);
-	public bool at_addr (uint64 addr, int rwx);
-	public Item add_sw (uint64 addr, int len, int rwx);
-	public Item add_hw (uint64 addr, int len, int rwx);
+	public unowned Item? at_addr (uint64 addr, int rwx);
+	public unowned Item add_sw (uint64 addr, int len, int rwx);
+	public unowned Item add_hw (uint64 addr, int len, int rwx);
 	public bool add_fault (uint64 addr, int len, int rwx);
 	public int add_cond (string cond);
 	public bool del (uint64 addr);

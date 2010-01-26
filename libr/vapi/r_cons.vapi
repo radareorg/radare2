@@ -23,7 +23,8 @@ namespace Radare {
 		//public static int fgets(out string buf, int len, int argc, string argv[]);
 		public static int readchar();
 		public static void any_key();
-		public static int get_columns();
-		public static int get_real_columns();
+		public static int get_size(out int rows);
+		//public static int get_columns();
+		//public static int get_real_columns();
 	}
 }

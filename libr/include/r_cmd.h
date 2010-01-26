@@ -29,7 +29,8 @@ typedef struct r_cmd_t {
 } RCommand;
 
 #ifdef R_API
-R_API int r_cmd_init(struct r_cmd_t *cmd);
+R_API RCommand *r_cmd_new();
+R_API RCommand * r_cmd_init(struct r_cmd_t *cmd);
 R_API int r_cmd_set_data(struct r_cmd_t *cmd, void *data);
 R_API int r_cmd_add(struct r_cmd_t *cmd, const char *command, const char *desc, r_cmd_callback(callback));
 R_API int r_cmd_add_long(struct r_cmd_t *cmd, const char *longcmd, const char *shortcmd, const char *desc);

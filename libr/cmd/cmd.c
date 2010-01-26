@@ -3,13 +3,29 @@
 #include <r_cmd.h>
 #include <r_util.h>
 
-int r_cmd_set_data(struct r_cmd_t *cmd, void *data)
+R_API RCommand *r_cmd_init(struct r_cmd_t *cmd)
+{
+	int i;
+	if (cmd) {
+		INIT_LIST_HEAD(&cmd->lcmds);
+		for(i=0;i<255;i++)
+			cmd->cmds[i] = NULL;
+		cmd->data = NULL;
+	}
+	return cmd;
+}
+
+R_API RCommand *r_cmd_new () {
+	return r_cmd_init (MALLOC_STRUCT (RCommand));
+}
+
+R_API int r_cmd_set_data(struct r_cmd_t *cmd, void *data)
 {
 	cmd->data = data;
 	return 1;
 }
 
-int r_cmd_add_long(struct r_cmd_t *cmd, const char *longcmd, const char *shortcmd, const char *desc)
+R_API int r_cmd_add_long(struct r_cmd_t *cmd, const char *longcmd, const char *shortcmd, const char *desc)
 {
 	struct r_cmd_long_item_t *item;
 	item = MALLOC_STRUCT(struct r_cmd_long_item_t);
@@ -23,7 +39,7 @@ int r_cmd_add_long(struct r_cmd_t *cmd, const char *longcmd, const char *shortcm
 	return 1;
 }
 
-int r_cmd_add(struct r_cmd_t *cmd, const char *command, const char *description, r_cmd_callback(callback))
+R_API int r_cmd_add(struct r_cmd_t *cmd, const char *command, const char *description, r_cmd_callback(callback))
 {
 	struct r_cmd_item_t *item;
 	int idx = (ut8)command[0];
@@ -39,7 +55,7 @@ int r_cmd_add(struct r_cmd_t *cmd, const char *command, const char *description,
 	return 1;
 }
 
-int r_cmd_del(struct r_cmd_t *cmd, const char *command)
+R_API int r_cmd_del(struct r_cmd_t *cmd, const char *command)
 {
 	int idx = (ut8)command[0];
 	free(cmd->cmds[idx]);
@@ -47,7 +63,7 @@ int r_cmd_del(struct r_cmd_t *cmd, const char *command)
 	return 0;
 }
 
-int r_cmd_call(struct r_cmd_t *cmd, const char *input)
+R_API int r_cmd_call(struct r_cmd_t *cmd, const char *input)
 {
 	struct r_cmd_item_t *c;
 	int ret = -1;
@@ -63,7 +79,7 @@ int r_cmd_call(struct r_cmd_t *cmd, const char *input)
 	return ret;
 }
 
-int r_cmd_call_long(struct r_cmd_t *cmd, const char *input)
+R_API int r_cmd_call_long(struct r_cmd_t *cmd, const char *input)
 {
 	char *inp;
 	struct list_head *pos;
@@ -81,16 +97,7 @@ int r_cmd_call_long(struct r_cmd_t *cmd, const char *input)
 	return -1;
 }
 
-int r_cmd_init(struct r_cmd_t *cmd)
-{
-	int i;
-	INIT_LIST_HEAD(&cmd->lcmds);
-	for(i=0;i<255;i++)
-		cmd->cmds[i] = NULL;
-	cmd->data = NULL;
-	return 0;
-}
-
+#if 0
 // XXX: make it work :P
 static char *argv[]= { "foo", "bar", "cow", "muu" };
 char **r_cmd_args(struct r_cmd_t *cmd, int *argc)
@@ -99,3 +106,4 @@ char **r_cmd_args(struct r_cmd_t *cmd, int *argc)
 	//argv = argv_test;
 	return argv;
 }
+#endif
