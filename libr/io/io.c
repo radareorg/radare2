@@ -26,10 +26,9 @@ R_API struct r_io_t *r_io_new() {
 	return r_io_init (MALLOC_STRUCT (struct r_io_t));
 }
 
-R_API struct r_buf_t *r_io_read_buf(struct r_io_t *io, ut64 addr, int len)
+R_API RBuffer *r_io_read_buf(struct r_io_t *io, ut64 addr, int len)
 {
-	struct r_buf_t *b;
-	b = MALLOC_STRUCT(struct r_buf_t);
+	RBuffer *b = MALLOC_STRUCT(RBuffer);
 	b->buf = malloc(len);
 	len = r_io_read_at(io, addr, b->buf, len);
 	if (len<0) len = 0;

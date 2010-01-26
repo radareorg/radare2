@@ -4,8 +4,8 @@
 namespace Radare {
 	[Compact]
 	[CCode (cname="struct r_lang_t", free_function="r_lang_free", cprefix="r_lang_")]
-	public class Language {
-		public Language();
+	public class RLanguage {
+		public RLanguage();
 		public bool define(string type, string name, void* ptr);
 		public bool @add(Language.Handler handler);
 		public bool use(string name);
@@ -24,7 +24,7 @@ namespace Radare {
 			public string help;
 		}
 
-		public Language.Handler cur;
+		public Handler cur;
 	}
 }
 

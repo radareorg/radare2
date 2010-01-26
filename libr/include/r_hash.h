@@ -41,7 +41,7 @@ typedef struct r_hash_t {
 	SHA512_CTX sha512;
 	int rst;
 	ut8 digest[128];
-} rHash;
+} RHash;
 
 #define R_HASH_SIZE_MD4 16
 #define R_HASH_SIZE_MD5 16

@@ -1,10 +1,9 @@
 /* radare - LGPL - Copyright 2009-2010 pancake<@nopcode.org> */
 
-[CCode (cheader_filename="r_reg.h", cprefix="r_reg_", lower_case_cprefix="r_reg_")]
 [Compact]
-[CCode (cname="struct r_reg_t", free_function="r_reg_free", cprefix="r_reg_")]
-public class Radare.rRegister {
-	[CCode (cprefix="R_REG_TYPE_")]
+[CCode (cheader_filename="r_reg.h", cname="struct r_reg_t", free_function="r_reg_free", cprefix="r_reg_")]
+public class Radare.RRegister {
+	[CCode (cprefix="R_REG_TYPE_", cname="int")]
 	public enum Type {
 		GPR,
 		DRX,
@@ -37,24 +36,24 @@ public class Radare.rRegister {
 	[Compact]
 	[CCode (cname="struct r_reg_set_t", destroy_function="", free_function="" )]
 	public class Set {
-		public rRegister.Arena arena;
-		public rList<rRegister.Arena*> arenas;
-		public rList<rRegister.Item*> regs;
+		public RRegister.Arena arena;
+		public RList<Arena*> arenas;
+		public RList<Item*> regs;
 	}
 
 	[NoArrayLength]
 	[CCode (cname="r_reg_types")]
 	public static weak string types[]; //Type.LAST];
 
-	public rRegister();
+	public RRegister();
 	public bool set_profile(string file);
 	public bool set_profile_string(string profile);
-	public rRegister.Item get(string name, int type = -1);
+	public Item get(string name, int type = -1);
 	/* TODO: use r_array or r_list here */
-	//public KernelList<rRegister.Item*> get_list(rRegister.Type type);
+	//public KernelList<RRegister.Item*> get_list(RRegister.Type type);
 
-	public uint64 get_value(rRegister.Item item);
-	public bool set_value(rRegister.Item item, uint64 val);
+	public uint64 get_value(Item item);
+	public bool set_value(Item item, uint64 val);
 
 	public float get_fvalue(Item item);
 	public bool set_fvalue(Item item, float val);

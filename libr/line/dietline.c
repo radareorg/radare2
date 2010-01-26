@@ -375,7 +375,7 @@ R_API char *r_line_readline(int argc, const char **argv)
 	int ch, i, len = 0;
 	int opt = 0;
 	int gcomp = 0; /* grep completion */
-	int columns = r_cons_get_real_columns()-2;
+	int columns = r_cons_get_size (NULL)-2;
 
 	r_line_buffer_idx = r_line_buffer_len = 0;
 	r_line_buffer[0]='\0';
@@ -424,7 +424,7 @@ R_API char *r_line_readline(int argc, const char **argv)
 		buf[0] = ch;
 		
 //		printf("\x1b[K\r");
-		columns = r_cons_get_real_columns ()-2;
+		columns = r_cons_get_size (NULL)-2;
 		if (columns <1)
 			columns = 40;
 		if (r_line_echo)

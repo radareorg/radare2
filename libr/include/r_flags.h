@@ -24,7 +24,7 @@ typedef struct r_flag_item_t {
 	const char *cmd;
 	unsigned char data[R_FLAG_BUF_SIZE]; // only take a minor part of the data
 	struct list_head list;
-} rFlagItem;
+} RFlagItem;
 
 typedef struct r_flag_t {
 	int space_idx;
@@ -36,7 +36,7 @@ typedef struct r_flag_t {
 	struct btree_node *ntree; /* index by name */
 #endif
 	struct list_head flags;
-} rFlag;
+} RFlag;
 
 #ifdef R_API
 R_API struct r_flag_t * r_flag_new();

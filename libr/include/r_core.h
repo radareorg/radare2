@@ -33,7 +33,7 @@ typedef struct r_core_file_t {
 	int fd;
 	int dbg;
 	struct list_head list;
-} rCoreFile;
+} RCoreFile;
 
 typedef struct r_core_t {
 	ut64 offset;
@@ -65,7 +65,7 @@ typedef struct r_core_t {
 	struct r_macro_t macro;
 	struct r_config_t config;
 	struct r_search_t *search;
-} rCore;
+} RCore;
 
 #ifdef R_API
 R_API int r_core_init(struct r_core_t *core);

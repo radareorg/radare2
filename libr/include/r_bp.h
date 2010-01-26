@@ -13,7 +13,7 @@ typedef struct r_bp_arch_t {
 	int length;
 	int endian;
 	const ut8 *bytes;
-} rBreakpointArch;
+} RBreakpointArch;
 
 enum {
 	R_BP_TYPE_SW,
@@ -30,7 +30,7 @@ typedef struct r_bp_handle_t {
 	int nbps;
 	struct r_bp_arch_t *bps;
 	struct list_head list;
-} rBreakpointHandler;
+} RBreakpointHandler;
 
 typedef struct r_bp_item_t {
 	ut64 addr;
@@ -45,21 +45,21 @@ typedef struct r_bp_item_t {
 	ut8 *bbytes; /* breakpoint bytes */
 	int pids[R_BP_MAXPIDS];
 	struct list_head list;
-} rBreakpointItem;
+} RBreakpointItem;
 
-typedef int (*rBreakpointCallback)(void *user, int type, ut64 addr, int hw, int rwx);
+typedef int (*RBreakpointCallback)(void *user, int type, ut64 addr, int hw, int rwx);
 
 typedef struct r_bp_t {
 	int trace_all;
 	ut64 trace_bp;
 	int nbps;
 	int stepcont;
-	rBreakpointCallback breakpoint;
+	RBreakpointCallback breakpoint;
 	struct r_io_bind_t iob; // compile time dependency
 	struct r_bp_handle_t *cur;
 	struct list_head plugins;
 	struct list_head bps;
-} rBreakpoint;
+} RBreakpoint;
 
 enum {
 	R_BP_PROT_READ = 1,
@@ -92,7 +92,7 @@ R_API int r_bp_add_fault(struct r_bp_t *bp, ut64 addr, int size, int rwx);
 
 R_API struct r_bp_item_t *r_bp_add_sw(struct r_bp_t *bp, ut64 addr, int size, int rwx);
 R_API struct r_bp_item_t *r_bp_add_hw(struct r_bp_t *bp, ut64 addr, int size, int rwx);
-R_API rBreakpointItem *r_bp_at_addr(rBreakpoint *bp, ut64 addr, int rwx);
+R_API RBreakpointItem *r_bp_at_addr(RBreakpoint *bp, ut64 addr, int rwx);
 R_API int r_bp_restore(struct r_bp_t *bp, int set);
 R_API int r_bp_recoil(struct r_bp_t *bp, ut64 addr);
 #endif

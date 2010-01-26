@@ -11,12 +11,12 @@ typedef struct r_sign_item_t {
 	ut8 *bytes;
 	ut32 csum;
 	struct list_head list;
-} rSignItem;
+} RSignItem;
 
 typedef struct r_sign_t {
 	int count;
 	struct list_head items;
-} rSign;
+} RSign;
 
 #ifdef R_API
 R_API int r_sign_generate(struct r_sign_t *sig, const char *file, FILE *fd);

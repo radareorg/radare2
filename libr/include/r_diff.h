@@ -14,7 +14,7 @@ typedef struct r_diff_op_t {
 	ut64 b_off;
 	const ut8 *b_buf;
 	int b_len;
-} rDiffOp;
+} RDiffOp;
 
 typedef struct r_diff_t {
 	ut64 off_a;
@@ -23,7 +23,7 @@ typedef struct r_diff_t {
 	void *user;
 	int (*callback)(struct r_diff_t *d, void *user,
 		struct r_diff_op_t *op);
-} rDiff;
+} RDiff;
 
 /* XXX: this api needs to be reviewed , constructor with offa+offb?? */
 #ifdef R_API

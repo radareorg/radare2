@@ -10,7 +10,7 @@ typedef struct r_meta_count_t {
 	int xref_code;
 	int xref_data;
 	/* TODO: ... */
-} rMetaCount;
+} RMetaCount;
 
 #if 0
 TODO:
@@ -30,14 +30,14 @@ typedef struct r_meta_item_t {
 //	int times;
 	char *str;
 	struct list_head list;
-} rMetaItem;
+} RMetaItem;
 
 typedef struct r_meta_t {
 	struct list_head data;
 //	struct reflines_t *reflines = NULL;
 //	struct list_head comments;
 //	struct list_head xrefs;
-} rMeta;
+} RMeta;
 
 enum {
 	R_META_WHERE_PREV = -1,

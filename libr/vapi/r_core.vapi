@@ -3,9 +3,9 @@
 namespace Radare {
 	[Compact]
 	[CCode (cheader_filename="r_core.h", cname="struct r_core_t", free_function="r_core_free", cprefix="r_core_")]
-	public class rCore {
+	public class RCore {
 		/* lifecycle */
-		public rCore();
+		public RCore();
 
 		/* commands */
 		public int prompt();
@@ -21,7 +21,7 @@ namespace Radare {
 		public int seek(uint64 addr, bool rb);
 
 		/* files */
-		public rCore.File file_open(string file, int mode);
+		public RCore.File file_open(string file, int mode);
 
 		// XXX mode = Radare.Io.Mode
 		[Compact]

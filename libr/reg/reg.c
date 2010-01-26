@@ -104,7 +104,7 @@ static int r_reg_set_word(struct r_reg_item_t *item, int idx, char *word) {
 /* TODO: make this parser better and cleaner */
 R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *str)
 {
-	rRegisterItem *item;
+	RRegisterItem *item;
 	int ret = R_FALSE;
 	int lastchar = 0;
 	int chidx = 0;

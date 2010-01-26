@@ -27,18 +27,18 @@ typedef struct r_vm_reg_t {
 	char *get;
 	char *set;
 	struct list_head list;
-} rVmReg;
+} RVmReg;
 
 typedef struct r_vm_op_t {
 	char opcode[32];
 	char code[1024];
 	struct list_head list;
-} rVmOp;
+} RVmOp;
 
 typedef struct r_vm_reg_type {
 	int type;
 	char *str;
-} rVmRegType;
+} RVmRegType;
 
 typedef struct r_vm_cpu_t {
 	const char *pc;
@@ -51,14 +51,14 @@ typedef struct r_vm_cpu_t {
 	const char *a3;
 	const char *ret;
 	const char *zf;
-} rVmCpu;
+} RVmCpu;
 
 typedef struct r_vm_change_t {
 	ut64 from;
 	ut64 to;
 	ut8 *data;
 	struct list_head list;
-} rVmChange;
+} RVmChange;
 
 typedef struct r_vm_t {
 	struct r_vm_reg_t *rec;
@@ -73,12 +73,11 @@ typedef struct r_vm_t {
 	int (*read)(void *user, ut64 addr, ut8 *buf, int len);
 	int (*write)(void *user, ut64 addr, ut8 *buf, int len);
 	void *user;
-} rVm;
+} RVm;
 
 #ifdef R_API
 R_API ut64 vm_reg_get(const char *name);
 R_API void vm_stack_push(ut64 _val);
-
 #if 0
 static ut64 r_vm_get_value(struct r_vm_t *vm, const char *str);
 static ut64 r_vm_get_math(struct r_vm_t *vm, const char *str);

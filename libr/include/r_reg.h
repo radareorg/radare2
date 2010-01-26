@@ -24,26 +24,26 @@ typedef struct r_reg_item_t {
 	int offset; // offset in data structure
 	int packed_size; /* 0 means no packed register, 1byte pack, 2b pack... */
 	struct list_head list;
-} rRegisterItem;
+} RRegisterItem;
 
 typedef struct r_reg_arena_t {
 	ut8 *bytes;
 	int size;
 	struct list_head list;
-} rRegisterArena;
+} RRegisterArena;
 
 typedef struct r_reg_set_t {
 	struct r_reg_arena_t *arena;
 	struct list_head arenas; /* r_reg_arena_t */
 	struct list_head regs;   /* r_reg_item_t */
-} rRegisterSet;
+} RRegisterSet;
 
 typedef struct r_reg_t {
 	char *profile;
 	struct r_reg_set_t regset[R_REG_TYPE_LAST];
-} rRegister;
+} RRegister;
 
-#define r_reg_new() r_reg_init (MALLOC_STRUCT (rRegister))
+#define r_reg_new() r_reg_init (MALLOC_STRUCT (RRegister))
 
 #ifdef R_API
 extern const char *r_reg_types[R_REG_TYPE_LAST+1];

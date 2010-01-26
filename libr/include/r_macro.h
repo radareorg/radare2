@@ -11,7 +11,7 @@
 typedef struct r_macro_label_t {
 	char name[80];
 	char *ptr;
-} rMacrolabel;
+} RMacrolabel;
 
 typedef struct r_macro_item_t {
 	char *name;
@@ -19,7 +19,7 @@ typedef struct r_macro_item_t {
 	char *code;
 	int nargs;
 	struct list_head list;
-} rMacroItem;
+} RMacroItem;
 
 typedef struct r_macro_t {
 	int counter;
@@ -33,7 +33,7 @@ typedef struct r_macro_t {
 	int labels_n;
 	struct r_macro_label_t labels[MACRO_LABELS];
 	struct list_head macros;
-} rMacro;
+} RMacro;
 
 #ifdef R_API
 R_API void r_macro_init(struct r_macro_t *mac);

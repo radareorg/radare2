@@ -36,8 +36,10 @@ static char *r_cons_buffer = NULL;
 static char *r_cons_lastline = NULL;
 char *r_cons_filterline = NULL;
 char *r_cons_teefile = NULL;
-int r_cons_is_html = 0;
-int r_cons_interactive = 1;
+int r_cons_is_interactive = R_TRUE;
+int r_cons_is_html = R_FALSE;
+int r_cons_rows = 0;
+int r_cons_columns = 0;
 int r_cons_lines = 0;
 int r_cons_noflush = 0;
 
@@ -79,8 +81,13 @@ R_API void r_cons_break_end()
 R_API int r_cons_init()
 {
 	r_cons_stdin_fd = stdin;
+	r_cons_breaked = R_FALSE;
+	r_cons_is_interactive = R_TRUE;
+	r_cons_is_html = R_FALSE;
+	r_cons_noflush = R_FALSE;
+	r_cons_get_size (NULL);
 #if HAVE_DIETLINE
-	r_line_init();
+	r_line_init ();
 #endif
 	//r_cons_palette_init(NULL);
 	return 0;
@@ -101,36 +108,19 @@ static void palloc(int moar)
 
 R_API int r_cons_eof()
 {
-	return feof(r_cons_stdin_fd);
+	return feof (r_cons_stdin_fd);
 }
-
-/* XXX unused ? */
-#if 0
-static void r_cons_print_real(const char *buf)
-{
-#if __WINDOWS__
-	if (r_cons_stdout_fd == 1)
-		r_cons_w32_print(buf);
-	else
-#endif
-	if (r_cons_is_html)
-		r_cons_html_print(buf);
-	else write(r_cons_stdout_fd, buf, r_cons_buffer_len);
-}
-#endif
 
 R_API void r_cons_gotoxy(int x, int y)
 {
 #if __WINDOWS__
         static HANDLE hStdout = NULL;
         COORD coord;
-
         coord.X = x;
         coord.Y = y;
 
         if(!hStdout)
                 hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-
         SetConsoleCursorPosition(hStdout,coord);
 #else
 	r_cons_strcat("\x1b[0;0H");
@@ -219,7 +209,7 @@ R_API void r_cons_grep(const char *str)
 		if (*ptr) {
 			free(grepstr);
 			grepstr = (char *)strdup(ptr);
-		/* set the rest of words to grep */
+			/* set the rest of words to grep */
 			grepstrings_n = 0;
 			// TODO: refactor this ugly loop
 			optr = grepstr;
@@ -251,9 +241,10 @@ R_API void r_cons_flush()
 	if (r_cons_noflush)
 		return;
 
-	if (r_cons_interactive) {
+	if (r_cons_is_interactive) {
 		if (r_cons_buffer_len > CONS_MAX_USER) {
-			if (r_cons_yesno('n', "Do you want to print %d bytes? (y/N)", r_cons_buffer_len)== 0) {
+			if (r_cons_yesno('n', "Do you want to print %d bytes? (y/N)",
+				r_cons_buffer_len)== 0) {
 				r_cons_reset();
 				return;
 			}
@@ -263,11 +254,18 @@ R_API void r_cons_flush()
 	if (tee&&tee[0]) {
 		FILE *d = fopen(tee, "a+");
 		if (d != NULL) {
-			fwrite(r_cons_buffer, strlen(r_cons_buffer), 1, d);
+			fwrite (r_cons_buffer, strlen(r_cons_buffer), 1, d);
 			fclose(d);
 		}
-	// TODO: make this 'write' portable
-	} else write(1, r_cons_buffer, r_cons_buffer_len);
+	} else {
+		// is_html must be a filter, not a write endpoint
+		if (r_cons_is_html) r_cons_html_print (r_cons_buffer); else
+#if __WINDOWS__
+		r_cons_w32_print (r_cons_buffer);
+#else
+		write (1, r_cons_buffer, r_cons_buffer_len);
+#endif
+	}
 	r_cons_reset();
 }
 
@@ -277,18 +275,13 @@ R_API void r_cons_printf(const char *format, ...)
 	char buf[CONS_BUFSZ];
 	va_list ap;
 
-	if (strchr(format,'%')==NULL) {
-		r_cons_strcat(format);
-		return;
-	}
-
-	va_start(ap, format);
-
-	len = vsnprintf(buf, CONS_BUFSZ-1, format, ap);
-	if (len>0)
-		r_cons_memcat(buf, len);
-
-	va_end(ap);
+	if (strchr (format, '%')) {
+		va_start (ap, format);
+		len = vsnprintf (buf, CONS_BUFSZ-1, format, ap);
+		if (len>0)
+			r_cons_memcat (buf, len);
+		va_end (ap);
+	} else r_cons_strcat (format);
 }
 
 /* TODO: use const char * instead ..strdup at the beggining? */
@@ -386,6 +379,8 @@ R_API void r_cons_newline()
 	else r_cons_strcat("\n");
 }
 
+#if 0
+/* TODO: deprecated */
 R_API int r_cons_get_columns()
 {
 	int columns_i = r_cons_get_real_columns();
@@ -399,29 +394,28 @@ R_API int r_cons_get_columns()
 
 	return columns_i;
 }
+#endif
 
-R_API int r_cons_get_real_columns()
-{
+R_API int r_cons_get_size (int *rows) {
+	r_cons_columns = 80;
+	r_cons_rows = 23;
 #if __UNIX__
         struct winsize win;
-
-        if (ioctl(1, TIOCGWINSZ, &win)) {
-		/* default values */
-		win.ws_col = 80;
-		win.ws_row = 23;
+        if (ioctl (1, TIOCGWINSZ, &win) == 0) {
+		r_cons_columns = win.ws_col;
+		r_cons_rows = win.ws_row;
 	}
-#ifdef RADARE_CORE
-	config.width = win.ws_col;
-	config.height = win.ws_row;
-#endif
-        return win.ws_col;
 #else
-	return 80;
+	const char *str = r_sys_getenv ("COLUMNS");
+	if (str != NULL)
+		r_cons_columns = atoi (str);
 #endif
+	if (rows)
+		*rows = r_cons_rows;
+	return r_cons_columns;
 }
 
-R_API int r_cons_yesno(int def, const char *fmt, ...)
-{
+R_API int r_cons_yesno(int def, const char *fmt, ...) {
 	va_list ap;
 	int key = def;
 	va_start(ap, fmt);
@@ -439,7 +433,6 @@ R_API int r_cons_yesno(int def, const char *fmt, ...)
 }
 
 /**
- *
  * void r_cons_set_raw( [0,1] )
  *
  *   Change canonicality of the terminal
@@ -471,8 +464,7 @@ R_API void r_cons_set_raw(int b)
 			termios_init = 1;
 		}
 		tcsetattr(0, TCSANOW, &tio_new);
-	} else
-		tcsetattr(0, TCSANOW, &tio_old);
+	} else tcsetattr(0, TCSANOW, &tio_old);
 #else
 	/* TODO : W32 */
 #endif
@@ -485,9 +477,9 @@ R_API void r_cons_set_raw(int b)
 R_API int r_cons_get_arrow(int ch)
 {
 #if 0
-printf("ARROW(0x%x)\n", ch);
-fflush(stdout);
-r_sys_sleep(3);
+	printf("ARROW(0x%x)\n", ch);
+	fflush(stdout);
+	r_sys_sleep(3);
 #endif
 	if (ch==0x1b) {
 		ch = r_cons_readchar();
@@ -501,10 +493,8 @@ r_sys_sleep(3);
 			case 0x42: ch='j'; break; // down
 			case 0x43: ch='l'; break; // right
 			case 0x44: ch='h'; break; // left
-			case 0x3b:
-				   break;
-			default:
-				   ch = 0;
+			case 0x3b: break;
+			default: ch = 0;
 			}
 		}
 	}

@@ -11,7 +11,7 @@ def disasm(a, arch, op):
 	else:
 		print "HEX: %s"%code.buf_hex
 	
-a = rAsm()
+a = RAsm()
 print "---[ name ]-----[ description ]----------"
 a.list()
 

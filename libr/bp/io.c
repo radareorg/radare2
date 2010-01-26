@@ -1,4 +1,7 @@
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+
 #include <r_bp.h>
+#include "../config.h"
 
 // TODO: rename from r_debug_ ... 
 #if 0
@@ -78,14 +81,14 @@ R_API int r_bp_restore(struct r_bp_t *bp, int set)
 	return R_TRUE;
 }
 
-R_API int r_bp_recoil(rBreakpoint *bp, ut64 addr)
+R_API int r_bp_recoil(RBreakpoint *bp, ut64 addr)
 {
-	rBreakpointItem *b = r_bp_at_addr (bp, addr, 0xFFFFFF);
-if (b) {
-	eprintf("HIT AT ADDR 0x%llx\n", addr);
-	eprintf("  recoil = %d\n", b->recoil);
-	eprintf("  size = %d\n", b->size);
-}
+	RBreakpointItem *b = r_bp_at_addr (bp, addr, 0xFFFFFF);
+	if (b) {
+		eprintf("HIT AT ADDR 0x%llx\n", addr);
+		eprintf("  recoil = %d\n", b->recoil);
+		eprintf("  size = %d\n", b->size);
+	}
 	if (b) if (!b->hw && ((b->addr + b->size) == addr))
 		return b->recoil;
 	return 0;

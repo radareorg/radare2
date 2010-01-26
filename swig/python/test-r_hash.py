@@ -1,7 +1,7 @@
 #from r2.r_hash import rHash, Size_MD4
-from libr import rHash, Size_MD4
+from libr import RHash, Size_MD4
 
-hash = rHash(False)
+hash = RHash(False)
 ret = hash.do_md4 ("food", 4)
 str = "md4: "
 for i in range(0, Size_MD4):

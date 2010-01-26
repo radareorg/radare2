@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_core.h>
 #include "../config.h"
@@ -161,8 +161,9 @@ R_API int r_core_init(struct r_core_t *core)
 	// XXX fix path here
 
 	/* load plugins */
-	r_core_loadlibs(core);
-	/* UH? */
+	r_core_loadlibs (core);
+
+	// TODO: get arch from r_bin or from native arch
 	r_asm_use(&core->assembler, DEFAULT_ARCH);
 	r_anal_use(&core->anal, DEFAULT_ARCH);
 	r_bp_use(core->dbg.bp, DEFAULT_ARCH);
@@ -174,6 +175,7 @@ R_API int r_core_init(struct r_core_t *core)
 
 R_API struct r_core_t *r_core_free(struct r_core_t *c)
 {
+	/* TODO: it leaks as shit */
 	free(c);
 	return NULL;
 }

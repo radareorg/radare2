@@ -1,8 +1,9 @@
 #ifndef _LIB_R_IO_H_
 #define _LIB_R_IO_H_
 
-#include "r_types.h"
-#include "list.h"
+#include <r_types.h>
+#include <r_util.h>
+#include <list.h>
 
 #define R_IO_READ  4
 #define R_IO_WRITE 2
@@ -22,7 +23,7 @@ typedef struct r_io_map_t {
         ut64 from;
         ut64 to;
         struct list_head list;
-} rIoMap;
+} RIoMap;
 
 /* stores write and seek changes */
 #define R_IO_UNDOS 64
@@ -37,7 +38,7 @@ typedef struct r_io_undo_t {
 	int fd[R_IO_UNDOS];
 	int idx;
 	int limit;
-} rIoUndo;
+} RIoUndo;
 
 typedef struct r_io_undo_w_t {
 	int set;
@@ -46,7 +47,7 @@ typedef struct r_io_undo_w_t {
 	ut8 *n;   /* new data */
 	int len;  /* length */
 	struct list_head list;
-} rIoUndoWrite;
+} RIoUndoWrite;
 
 typedef struct r_io_t {
 	int fd;
@@ -70,7 +71,7 @@ typedef struct r_io_t {
 	struct list_head maps;
         struct list_head desc;
 	struct list_head cache;
-} rIo;
+} RIo;
 
 //struct r_io_handle_fd_t {
 // ... store io changes here
@@ -94,27 +95,27 @@ typedef struct r_io_handle_t {
         int (*handle_open)(struct r_io_t *io, const char *);
         //int (*handle_fd)(struct r_io_t *, int);
 	int fds[R_IO_NFDS];
-} rIoHandle;
+} RIoHandle;
 
 typedef struct r_io_list_t {
 	struct r_io_handle_t *plugin;
 	struct list_head list;
-} rIoList;
+} RIoList;
 
 
-/* TODO: find better name... rIoSetFd_Callback? ..Func? .. too camels here */
-typedef int (*rIoSetFd)(rIo *io, int fd);
-typedef int (*rIoReadAt)(rIo *io, ut64 addr, ut8 *buf, int size);
-typedef int (*rIoWriteAt)(rIo *io, ut64 addr, const ut8 *buf, int size);
+/* TODO: find better name... RIoSetFd_Callback? ..Func? .. too camels here */
+typedef int (*RIoSetFd)(RIo *io, int fd);
+typedef int (*RIoReadAt)(RIo *io, ut64 addr, ut8 *buf, int size);
+typedef int (*RIoWriteAt)(RIo *io, ut64 addr, const ut8 *buf, int size);
 
 /* compile time dependency */
 typedef struct r_io_bind_t {
 	int init;
 	struct r_io_t *io;
-	rIoSetFd set_fd;
-	rIoReadAt read_at;
-	rIoWriteAt write_at;
-} rIoBind;
+	RIoSetFd set_fd;
+	RIoReadAt read_at;
+	RIoWriteAt write_at;
+} RIoBind;
 
 /* sections */
 typedef struct r_io_section_t {
@@ -125,7 +126,7 @@ typedef struct r_io_section_t {
 	ut64 paddr; // offset on disk
 	int rwx;
 	struct list_head list;
-} rIoSection;
+} RIoSection;
 
 typedef struct r_io_cache_t {
 	ut64 from;
@@ -133,7 +134,7 @@ typedef struct r_io_cache_t {
 	int size;
 	ut8 *data;
 	struct list_head list;
-} rIoCache;
+} RIoCache;
 
 typedef struct r_io_desc_t {
 	int fd;
@@ -141,7 +142,7 @@ typedef struct r_io_desc_t {
         char name[4096];
 	struct r_io_handle_t *handle;
         struct list_head list;
-} rIoDesc;
+} RIoDesc;
 
 #ifdef R_API
 #define r_io_bind_init(x) memset(&x,0,sizeof(x))
@@ -165,7 +166,7 @@ R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode);
 R_API int r_io_open_as(struct r_io_t *io, const char *urihandler, const char *file, int flags, int mode);
 R_API int r_io_redirect(struct r_io_t *io, const char *file);
 R_API int r_io_set_fd(struct r_io_t *io, int fd);
-R_API struct r_buf_t *r_io_read_buf(struct r_io_t *io, ut64 addr, int len);
+R_API RBuffer *r_io_read_buf(struct r_io_t *io, ut64 addr, int len);
 R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len);
 R_API int r_io_read_at(struct r_io_t *io, ut64 addr, ut8 *buf, int len);
 R_API ut64 r_io_read_i(struct r_io_t *io, ut64 addr, int sz, int endian);

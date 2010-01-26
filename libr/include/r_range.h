@@ -5,20 +5,21 @@
 #include "r_util.h"
 #include "list.h"
 
-struct r_range_item_t {
+typedef struct r_range_item_t {
 	ut64 fr;
 	ut64 to;
 	ut8 *data;
 	int datalen;
 	struct list_head list;
-};
+} RRangeItem;
 
-struct r_range_t {
+typedef struct r_range_t {
 	int count;
 	int changed;
 	struct list_head ranges;
-};
+} RRange;
 
+#ifdef R_API
 int r_range_init(struct r_range_t *r);
 struct r_range_t *r_range_new();
 struct r_range_t *r_range_new_from_string(const char *string);
@@ -36,5 +37,5 @@ int r_range_percent(struct r_range_t *rgs);
 int r_range_list(struct r_range_t *rgs, int rad);
 int r_range_get_n(struct r_range_t *rgs, int n, ut64 *from, ut64 *to);
 struct r_range_t *r_range_inverse(struct r_range_t *rgs, ut64 from, ut64 to, int flags);
-
+#endif
 #endif

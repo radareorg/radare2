@@ -27,7 +27,7 @@
 typedef struct r_th_lock_t {
 	int refs;
 	R_TH_LOCK_T lock;
-} rThreadLock;
+} RThreadLock;
 
 typedef struct r_th_t {
 	R_TH_TID tid;
@@ -38,12 +38,12 @@ typedef struct r_th_t {
 	int breaked;   // thread aims to be interruped
 	int delay;     // delay the startup of the thread N seconds
 	int ready;     // thread is properly setup
-} rThread;
+} RThread;
 
 typedef struct r_th_pool_t {
 	int size;
 	struct r_th_t **threads;
-} rThreadPool;
+} RThreadPool;
 
 #ifdef R_API
 R_API struct r_th_t *r_th_new(R_TH_FUNCTION(fun), void *user, int delay);

@@ -9,7 +9,6 @@
 #include "list.h"
 
 #define R_ANAL_NAME(x) "anal" R_LIB_SEPARATOR x
-
 #define R_ANAL_MAXREG 16
 
 enum {
@@ -103,9 +102,9 @@ struct r_anal_refline_t {
 	ut64 to;
 	int index;
 	struct list_head list;
-};
+} RAnalysisRefline;
 
-struct r_anal_aop_t {
+typedef struct r_anal_aop_t {
 	int type;                 /* type of opcode */
 	int stackop;              /* operation on stack? */
 	int cond;                 /* condition type */
@@ -118,14 +117,14 @@ struct r_anal_aop_t {
 	ut64 value;                /* reference to value */
 	int r_dst[R_ANAL_MAXREG]; /* register arguments */
 	ut64 i_dst[R_ANAL_MAXREG]; /* inmediate arguments */
-};
+} RAnalysisAop;
 
-struct r_anal_fcn_t {
+typedef struct r_anal_function_t {
 	ut64 from;
 	ut64 to;
-};
+} RAnalysisFunction;
 
-struct r_anal_t {
+typedef struct r_anal_t {
 	int bits;
 	int big_endian;
 	ut64 pc;
@@ -133,25 +132,25 @@ struct r_anal_t {
 	struct r_anal_ctx_t *ctx;
 	struct r_anal_handle_t *cur;
 	struct list_head anals;
-};
+} RAnalysis;
 
-struct r_anal_ctx_t {
+typedef struct r_anal_ctx_t {
 	/* TODO: add more info here */
 	/* per opcode deep level */
 	/* per opcode stack size */
 	/* basic blocks */
 	int stacksize;
 	struct r_anal_t *anal;
-};
+} RAnalysisContext;
 
-struct r_anal_handle_t {
+typedef struct r_anal_handle_t {
 	char *name;
 	char *desc;
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	int (*aop)(struct r_anal_t *a, struct r_anal_aop_t *aop, void *data);
 	struct list_head list;
-};
+} RAnalysisHandle;
 
 /* anal.c */
 #ifdef R_API

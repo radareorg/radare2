@@ -9,13 +9,13 @@
 // XXX : remove this define???
 #define R_PARSE_STRLEN 256
 
-struct r_parse_t {
+typedef struct r_parse_t {
 	void *user;
 	struct r_parse_handle_t *cur;
 	struct list_head parsers;
-};
+} RParse;
 
-struct r_parse_handle_t {
+typedef struct r_parse_handle_t {
 	char *name;
 	char *desc;
 	int (*init)(void *user);
@@ -23,7 +23,7 @@ struct r_parse_handle_t {
 	int (*parse)(struct r_parse_t *p, void *data, char *str);
 	int (*assemble)(struct r_parse_t *p, char *data, char *str);
 	struct list_head list;
-};
+} RParseHandle;
 
 /* parse.c */
 R_API struct r_parse_t *r_parse_new();

@@ -4,8 +4,8 @@
 namespace Radare {
 	[Compact]
 	[CCode (cname="struct r_parse_t", free_function="r_parse_free", cprefix="r_parse_")]
-	public class Parse {
-		public Parse();
+	public class RParse {
+		public RParse();
 
 		public int init();
 		public int list();

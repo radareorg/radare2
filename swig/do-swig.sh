@@ -1,4 +1,6 @@
 #!/bin/sh
+#
+
 LNG=$1
 MOD=$2
 if [ -z "${MOD}" ]; then
@@ -10,4 +12,8 @@ cd ${LNG}
 
 #valaswig-cc ${LNG} ${MOD} -I../../libr/include ../../libr/vapi/${MOD}.vapi -l${MOD} -L../../libr/$(echo ${MOD} | sed -e s,r_,,)
 
-valaswig-cc ${LNG} ${MOD} -I../../libr/include ../../libr/vapi/${MOD} `pkg-config --libs ${MOD}`
+echo LIBS = `pkg-config --libs ${MOD}`
+
+valaswig-cc ${LNG} ${MOD} \
+	--vapidir=../../libr/vapi -I../../libr/include \
+	../../libr/vapi/${MOD} `pkg-config --libs ${MOD}`

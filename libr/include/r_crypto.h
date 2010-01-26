@@ -26,7 +26,7 @@ typedef struct r_crypto_t {
 	int output_size;
 	void *user;
 	struct list_head handlers;
-} rCrypto;
+} RCrypto;
 
 typedef struct r_crypto_handle_t {
 	const char *name;
@@ -38,7 +38,7 @@ typedef struct r_crypto_handle_t {
 	int (*use)(const char *algo);
 	int (*fini)(struct r_crypto_t *cry);
 	struct list_head list;
-} rCryptoHandle;
+} RCryptoHandle;
 
 #ifdef R_API
 R_API struct r_crypto_t *r_crypto_init(struct r_crypto_t *cry, int hard);

@@ -2,21 +2,20 @@
 
 /* TODO: Add simpletype instead of int so, we can use it as an object */
 
+[SimpleType]
 [CCode (cname="int", cheader_filename="r_socket.h", cprefix="r_socket_")]
-public struct Radare.rSocket : int
+public struct Radare.RSocket : int
 {
-	public bool ready(int secs, int usecs);
-	[NoArrayLength]
-	public int read(string *buf, int len);
-	[NoArrayLength]
-	public int write(int fd, void *buf, int len);
 	[CCode (cname="r_socket_connect")]
-	public rSocket.connect(string host, int port);
+	public RSocket.connect(string host, int port);
 	[CCode (cname="r_socket_listen")]
-	public rSocket.listen(int port);
+	public RSocket.listen(int port);
+
+	public bool ready(int secs, int usecs);
+	public int read(ref string buf, int len);
+	public int write(int fd, void *buf, int len);
 	public int close();
-	[NoArrayLength]
-	public int gets(string buf, int len);
+	public int gets(ref string buf, int len);
 	public int printf(string str, ...);
 	public int accept();
 	public void block(bool blocking);

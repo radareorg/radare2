@@ -32,7 +32,7 @@ enum {
 
 typedef struct r_asm_fastcall_t {
 	const char *arg[16];
-} rAsmFastcall;
+} RAsmFastcall;
 
 typedef struct r_asm_aop_t {
 	int  inst_len;
@@ -40,14 +40,14 @@ typedef struct r_asm_aop_t {
 	char buf_asm[R_ASM_BUFSIZE];
 	char buf_hex[R_ASM_BUFSIZE];
 	char buf_err[R_ASM_BUFSIZE];
-} rAsmAop;
+} RAsmAop;
 
 typedef struct r_asm_code_t {
 	int  len;
 	ut8  *buf;
 	char *buf_hex;
 	char *buf_asm;
-} rAsmCode;
+} RAsmCode;
 
 typedef struct r_asm_t {
 	int  bits;
@@ -58,7 +58,7 @@ typedef struct r_asm_t {
 	struct r_asm_handle_t *cur;
 	struct r_asm_fastcall_t *fastcall;
 	struct list_head asms;
-} rAsm;
+} RAsm;
 
 // TODO: rename to handler?
 typedef struct r_asm_handle_t {
@@ -75,7 +75,7 @@ typedef struct r_asm_handle_t {
 	int (*set_subarch)(struct r_asm_t *a, const char *buf);
 	struct r_asm_fastcall_t *fastcall[R_ASM_FASTCALL_ARGS];
 	struct list_head list;
-} rAsmHandle;
+} RAsmHandle;
 
 #ifdef R_API
 /* asm.c */

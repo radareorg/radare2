@@ -4,7 +4,7 @@
 namespace Radare {
 	[Compact]
 	[CCode (cname="struct r_crypto_t", free_function="r_crypto_free", cprefix="r_crypto_")]
-	public class rCrypto {
+	public class RCrypto {
 		
 		[CCode (cprefix="R_CRYPTO_DIR")]
 		public enum Direction {
@@ -20,7 +20,7 @@ namespace Radare {
 			CFB
 		}
 
-		public rCrypto();
+		public RCrypto();
 		public bool use(string algorithm);
 //		public bool set_key(uint8 *key, Crypto.Mode mode, Crypto.Direction direction);
 		public bool set_iv(uint8 *iv);

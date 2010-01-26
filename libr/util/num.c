@@ -51,7 +51,7 @@ R_API void r_num_init(struct r_num_t *num)
 	num->value = 0LL;
 }
 
-R_API struct r_num_t *r_num_new(rNumCallback *cb, void *ptr)
+R_API struct r_num_t *r_num_new(RNumCallback *cb, void *ptr)
 {
 	struct r_num_t *num;
 	num = (struct r_num_t*) malloc(sizeof(struct r_num_t));

@@ -16,7 +16,7 @@ typedef struct r_db_t {
 	int blocks_sz[R_DB_KEYS];
 	void *cb_user;
 	int (*cb_free)(void *db, const void *item, void *user);
-} rDatabase;
+} RDatabase;
 
 typedef struct r_db_iter_t {
 	struct r_db_t *db;
@@ -25,7 +25,7 @@ typedef struct r_db_iter_t {
 	int path[256]; /* for each depth level */
 	int ptr;       /* pointer in block nodes (repeated childs) */
 	void *cur;
-} rDatabaseIter;
+} RDatabaseIter;
 
 /* table */
 typedef struct r_db_table_t {
@@ -34,7 +34,7 @@ typedef struct r_db_table_t {
 	char *fmt;
 	char *args;
 	int *offset;
-} rDatabaseTable;
+} RDatabaseTable;
 
 #ifdef R_API
 R_API void r_db_init(struct r_db_t *db);

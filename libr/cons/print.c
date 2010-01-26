@@ -1,14 +1,15 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_cons.h>
 
-int r_cons_html_print(const char *ptr)
+// XXX: rename char *r_cons_filter_html(const char *ptr)
+R_API int r_cons_html_print(const char *ptr)
 {
+	const char *str = ptr;
+	int color = 0;
 	int esc = 0;
-	const char *str = (char *)ptr;
 	int len = 0;
 	int inv = 0;
-	int color = 0;
 
 	for (;ptr[0]; ptr = ptr + 1) {
 		if (ptr[0] == '\n') {
@@ -143,7 +144,7 @@ int r_cons_html_print(const char *ptr)
 }
 
 #if __WINDOWS__
-int r_cons_w32_print(unsigned char *ptr)
+int r_cons_w32_print(ut8 *ptr)
 {
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	int esc = 0;
@@ -278,8 +279,7 @@ int r_cons_w32_print(unsigned char *ptr)
 		} 
 		len++;
 	}
-	write(1, str, ptr-str);
+	write (1, str, ptr-str);
 	return len;
 }
 #endif
-

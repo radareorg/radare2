@@ -18,7 +18,7 @@ typedef struct r_mem_pool_t {
 	int nodesize;
 	int poolsize;
 	int poolcount;
-} rMemPool;
+} RMemoryPool;
 
 /* buf */
 typedef struct r_buf_t {
@@ -26,7 +26,7 @@ typedef struct r_buf_t {
 	int length;
 	int cur;
 	ut64 base;
-} rBuffer;
+} RBuffer;
 
 /* r_cache */
 // TOTHINK: move into a separated library?
@@ -34,29 +34,29 @@ typedef struct r_cache_item_t {
 	ut64 addr;
 	char *str;
 	struct list_head list;
-} rCacheItem;
+} RCacheItem;
 
 typedef struct r_cache_t {
 	ut64 start;
 	ut64 end;
 	struct list_head items;
-} rCache;
+} RCache;
 
 typedef struct r_prof_t {
 	struct timeval begin;
 	double result;
-} rProf;
+} RProfile;
 
 /* numbers */
 typedef struct r_num_t {
 	ut64 (*callback)(void *userptr, const char *str, int *ok);
 	ut64 value;
 	void *userptr;
-} rNum;
-typedef ut64 (*rNumCallback)(rNum *self, const char *str, int *ok);
+} RNum;
+typedef ut64 (*RNumCallback)(RNum *self, const char *str, int *ok);
 
 #ifdef R_API
-R_API struct r_num_t *r_num_new(rNumCallback *cb, void *ptr);
+R_API struct r_num_t *r_num_new(RNumCallback *cb, void *ptr);
 
 #define R_BUF_CUR -1
 R_API struct r_buf_t *r_buf_init(struct r_buf_t *b);
@@ -75,7 +75,7 @@ R_API struct r_mem_pool_t *r_mem_pool_free(struct r_mem_pool_t *pool);
 R_API void* r_mem_pool_alloc(struct r_mem_pool_t *pool);
 R_API int r_mem_count(ut8 **addr);
 R_API void r_cache_init(struct r_cache_t *lang);
-R_API rCache* r_cache_new();
+R_API RCache* r_cache_new();
 R_API void r_cache_free(struct r_cache_t *c);
 R_API char *r_cache_get(struct r_cache_t *c, ut64 addr);
 R_API int r_cache_set(struct r_cache_t *c, ut64 addr, char *str);
@@ -107,7 +107,7 @@ R_API void r_num_init(struct r_num_t *num);
 #define iswhitechar(x) (x==' '||x=='\t'||x=='\n'||x=='\r')
 #define iswhitespace(x) (x==' '||x=='\t')
 #define isseparator(x) (x==' '||x=='\t'||x=='\n'||x=='\r'||x==' '|| \
-		x==','||x==';'||x==':'||x=='['||x==']'||x=='('||x==')'||x=='{'||x=='}')
+	x==','||x==';'||x==':'||x=='['||x==']'||x=='('||x==')'||x=='{'||x=='}')
 #define ishexchar(x) ((x>='0'&&x<='9') ||  (x>='a'&&x<='f') ||  (x>='A'&&x<='F')) {
 
 /* stabilized */

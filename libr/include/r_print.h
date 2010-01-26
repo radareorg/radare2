@@ -24,7 +24,7 @@ typedef struct r_print_t {
 	int ocur;
 	int flags;
 	int addrmod;
-} rPrint;
+} RPrint;
 
 #ifdef R_API
 R_API struct r_print_t *r_print_new();

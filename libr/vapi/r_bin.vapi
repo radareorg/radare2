@@ -4,11 +4,11 @@
 namespace Radare {
 	[Compact]
 	[CCode (cname="struct r_bin_t", free_function="r_bin_free", cprefix="r_bin_")]
-	public class rBin {
+	public class RBin {
 		public const string file;
 		public int fd;
 
-		public rBin();
+		public RBin();
 		//public int open(string file, bool rw, string? plugin_name = null);
 
 		public int init(string file, int rw);
@@ -17,11 +17,11 @@ namespace Radare {
 		public Entrypoint get_entry();
 
 		// TODO: deprecate
-		public rList<rBin.Symbol*> symbols;
+		public rList<Symbol*> symbols;
 
-		//public rArray<rBin.Section> get_sections();
-		//public rArray<rBin.Symbol> get_symbols();
-		//public rArray<rBin.Import> get_imports();
+		//public rArray<RBin.Section> get_sections();
+		//public rArray<RBin.Symbol> get_symbols();
+		//public rArray<RBin.Import> get_imports();
 
 		public Info* get_info();
 		public uint64 get_section_offset(string name);

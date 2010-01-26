@@ -14,33 +14,33 @@ enum {
 	R_VAR_TYPE_ARGREG
 };
 
-struct r_var_anal_t {
+typedef struct r_var_anal_t {
 	int type;
 	int delta;
 	int count;
-}; 
+} RVariableAnalysis;
 
-struct r_var_type_t {
+typedef struct r_var_type_t {
         char name[128];
         char fmt[128];
         unsigned int size;
         struct list_head list;
-};
+} RVariableType;
 
-struct r_var_t {
+typedef struct r_var_t {
 	int anal_size;
 	struct r_var_anal_t anal[R_VAR_ANAL_MAX];
 	struct list_head vartypes;
 	struct list_head vars;
-};
+} RVariable;
 
-struct r_var_access_t {
+typedef struct r_var_access_t {
 	ut64 addr;
 	int set;
 	struct list_head list;
-};
+} RVariableAccess;
 
-struct r_var_item_t {
+typedef struct r_var_item_t {
 	int type;         /* global, local... */
 	ut64 addr;         /* address where it is used */
 	ut64 eaddr;        /* address where it is used */
@@ -50,8 +50,9 @@ struct r_var_item_t {
 	char vartype[128];
 	struct list_head access; /* list of accesses for this var */
 	struct list_head list;
-};
+} RVariableItem;
 
+#ifdef R_API
 /* api */
 R_API struct r_var_t *r_var_new();
 R_API void r_var_free(struct r_var_t *var);
@@ -71,5 +72,6 @@ R_API int r_var_list(struct r_var_t *var, ut64 addr, int delta);
 R_API int r_var_anal_get(struct r_var_t *var, int type);
 R_API void r_var_anal_reset(struct r_var_t *var);
 R_API int r_var_anal_add(struct r_var_t *var, int type, int delta);
+#endif
 
 #endif

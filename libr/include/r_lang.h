@@ -9,7 +9,7 @@ typedef struct r_lang_t {
 	void *user;
 	struct list_head defs;
 	struct list_head langs;
-} rLang;
+} RLang;
 
 typedef struct r_lang_handle_t {
 	const char *name;
@@ -22,14 +22,14 @@ typedef struct r_lang_handle_t {
 	int (*run_file)(struct r_lang_t *user, const char *file);
 	int (*set_argv)(struct r_lang_t *user, int argc, char **argv);
 	struct list_head list;
-} rLangHandle;
+} RLangHandle;
 
 typedef struct r_lang_def_t {
 	char *name;
 	char *type;
 	void *value;
 	struct list_head list;
-} rLangDef;
+} RLangDef;
 
 #ifdef R_API
 R_API struct r_lang_t *r_lang_new();
@@ -49,5 +49,4 @@ R_API int r_lang_prompt(struct r_lang_t *lang);
 R_API int r_lang_define(struct r_lang_t *lang, const char *type, const char *name, void *value);
 R_API void r_lang_undef(struct r_lang_t *lang);
 #endif
-
 #endif

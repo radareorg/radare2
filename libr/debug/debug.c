@@ -128,7 +128,7 @@ R_API int r_debug_step_over(struct r_debug_t *dbg, int steps)
 /* restore program counter after breakpoint hit */
 static int r_debug_recoil(struct r_debug_t *dbg) {
 	int recoil, ret = R_FALSE;
-	rRegisterItem *ri;
+	RRegisterItem *ri;
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
 	ri = r_reg_get (dbg->reg, "eip", -1);
 	if (ri) {

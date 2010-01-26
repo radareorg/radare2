@@ -55,10 +55,10 @@ R_API int r_bp_get_bytes(struct r_bp_t *bp, ut8 *buf, int len, int endian, int i
 	return 0;
 }
 
-R_API rBreakpointItem *r_bp_at_addr(rBreakpoint *bp, ut64 addr, int rwx)
+R_API RBreakpointItem *r_bp_at_addr(RBreakpoint *bp, ut64 addr, int rwx)
 {
 	struct list_head *pos;
-	rBreakpointItem *b;
+	RBreakpointItem *b;
 
 	eprintf ("===ataddr=== 0x%08llx\n", addr);
 	list_for_each(pos, &bp->bps) {

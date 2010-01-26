@@ -54,8 +54,8 @@ oldtest:
 	python test.py
 
 clean:
-	rm -rf python/*.so python/*.c python/*.i
-	rm -rf perl/*.so perl/*.pm perl/*.c perl/*.i
-	rm -rf ruby/*.so ruby/*.c ruby/*.i
+	rm -rf python/*.so python/*.c python/*.i python/libr*
+	rm -rf perl/*.so perl/*.pm perl/*.c perl/*.i perl/libr*
+	rm -rf ruby/*.so ruby/*.c ruby/*.i ruby/libr*
 
 .PHONY: ruby python perl clean oldtest test all

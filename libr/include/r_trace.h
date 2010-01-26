@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009 pancake<@nopcode.org> */
 
-#ifndef _INCLUDE_R_ASM_H_
-#define _INCLUDE_R_ASM_H_
+#ifndef _INCLUDE_R_TRACE_H_
+#define _INCLUDE_R_TRACE_H_
 
 #include <r_types.h>
 #include <list.h>
@@ -13,7 +13,7 @@ typedef struct r_trace_t {
 	int tag;
 	int dup;
 	int (*printf)(const char *str,...);
-} rTrace;
+} RTrace;
 
 typedef struct r_trace_item_t {
 	ut64 addr;
@@ -23,7 +23,7 @@ typedef struct r_trace_item_t {
 	int count;
 	struct timeval tm;
 	struct list_head list;
-} rTraceItem;
+} RTraceItem;
 
 #ifdef R_API
 R_API int r_trace_init(struct r_trace_t *t);

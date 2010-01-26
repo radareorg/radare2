@@ -15,7 +15,7 @@
 
 #define R_BININFO_SIZEOF_NAMES 256
 
-// XXX: rename to rBinMeta...rBinDwarf..rBinFoo ??? rBininfo can be confusing with rBinInfo
+// XXX: rename to rBinMeta...rBinDwarf..rBinFoo ??? RBininfo can be confusing with rBinInfo
 /* types */
 typedef struct r_bininfo_t {
 	const char *file;
@@ -26,7 +26,7 @@ typedef struct r_bininfo_t {
 	void *user;
 	struct r_bininfo_handle_t *cur;
 	struct list_head bins;
-} rBininfo;
+} RBininfo;
 
 typedef struct r_bininfo_handle_t {
 	char *name;
@@ -40,7 +40,7 @@ typedef struct r_bininfo_handle_t {
 	int (*close)(struct r_bininfo_t *bin);
 	int (*check)(struct r_bininfo_t *bin);
 	struct list_head list;
-} rBininfoHandle;
+} RBininfoHandle;
 
 #ifdef R_API
 /* bininfo.c */

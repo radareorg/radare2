@@ -37,7 +37,7 @@ typedef struct r_debug_t {
 	- list of mapped memory (from /proc/XX/maps)
 	- list of managed memory (allocated in child...)
 	*/
-} rDebug;
+} RDebug;
 
 /* TODO: pass dbg and user data pointer everywhere */
 typedef struct r_debug_handle_t {
@@ -54,7 +54,7 @@ typedef struct r_debug_handle_t {
 	int (*wait)(int pid);
 	int (*contsc)(int pid, int sc);
 	/* registers */
-	rBreakpointCallback breakpoint;
+	RBreakpointCallback breakpoint;
 	int (*reg_read)(struct r_debug_t *dbg, int type, ut8 *buf, int size);
 	char* (*reg_profile)();
 	int (*reg_write)(int pid, int type, const ut8 *buf, int size); //XXX struct r_regset_t regs);
@@ -63,7 +63,7 @@ typedef struct r_debug_handle_t {
 	int (*mem_free)(void *user, ut64 addr);
 
 	struct list_head list;
-} rDebugHandle;
+} RDebugHandle;
 
 // TODO: rename to r_debug_process_t ? maybe a thread too ?
 typedef struct r_debug_pid_t {
@@ -74,7 +74,7 @@ typedef struct r_debug_pid_t {
 	struct list_head childs;
 	struct r_debug_pid_t *parent;
 	struct list_head list;
-} rDebugPid;
+} RDebugPid;
 
 #ifdef R_API
 R_API int r_debug_use(struct r_debug_t *dbg, const char *str);

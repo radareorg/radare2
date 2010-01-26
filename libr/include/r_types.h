@@ -52,7 +52,6 @@
 #define R_FALSE 0
 
 /* types */
-
 #undef _FILE_OFFSET_BITS
 #define _FILE_OFFSET_BITS 64
 #undef _GNU_SOURCE

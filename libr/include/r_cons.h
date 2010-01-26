@@ -40,7 +40,6 @@
 #define C_BGRAY     "\x1b[1;38m"
 
 /* palette */
-
 #define CONS_PALETTE_SIZE 22
 #define CONS_COLORS_SIZE 21
 enum {
@@ -77,7 +76,7 @@ enum {
 #define COLOR_AD C_GREEN
 #endif
 
-/* XXX */
+/* XXX : global variables? or a struct with a singleton? */
 extern FILE *stdin_fd;
 extern FILE *r_cons_stdin_fd;
 extern int r_cons_stdout_fd;
@@ -87,7 +86,9 @@ extern const char *r_cons_palette_default;
 const char *r_cons_colors[CONS_COLORS_SIZE+1];
 extern char r_cons_palette[CONS_PALETTE_SIZE][8];
 extern const char *dl_prompt;
-extern int r_cons_lines;
+extern int r_cons_columns;
+extern int r_cons_rows;
+extern int r_cons_lines; // private or public?
 extern int r_cons_is_html;
 extern int r_cons_noflush;
 extern char *r_cons_filterline;
@@ -128,11 +129,8 @@ R_API int  r_cons_readchar();
 R_API void r_cons_any_key();
 R_API int  r_cons_eof();
 
-/* colors */
 R_API int r_cons_palette_init(const unsigned char *pal);
-
-R_API int r_cons_get_real_columns();
-R_API int r_cons_get_columns();
+R_API int r_cons_get_size(int *rows);
 R_API int r_cons_get_arrow(int ch);
 R_API int r_cons_html_print(const char *ptr);
 
