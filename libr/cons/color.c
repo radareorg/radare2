@@ -51,29 +51,29 @@ void r_cons_invert(int set, int color)
 }
 
 const char *r_cons_colors[CONS_COLORS_SIZE+1] = {
-	C_BLACK,      // 0
-	C_GRAY,       // 1
-	C_WHITE,      // 2
-	C_RED,        // 3
-	C_MAGENTA,    // 4
-	C_BLUE,       // 5
-	C_GREEN,      // 6
-	C_YELLOW,     // 7
-	C_TURQOISE,   // 8
+	Color_BLACK,      // 0
+	Color_GRAY,       // 1
+	Color_WHITE,      // 2
+	Color_RED,        // 3
+	Color_MAGENTA,    // 4
+	Color_BLUE,       // 5
+	Color_GREEN,      // 6
+	Color_YELLOW,     // 7
+	Color_TURQOISE,   // 8
 	/* BOLD */
-	C_BBLACK,     // a
-	C_BGRAY,      // b
-	C_BWHITE,     // c
-	C_BRED,       // d
-	C_BMAGENTA,   // e
-	C_BBLUE,      // f
-	C_BGREEN,     // g
-	C_BYELLOW,    // h
-	C_BTURQOISE,  // i
+	Color_BBLACK,     // a
+	Color_BGRAY,      // b
+	Color_BWHITE,     // c
+	Color_BRED,       // d
+	Color_BMAGENTA,   // e
+	Color_BBLUE,      // f
+	Color_BGREEN,     // g
+	Color_BYELLOW,    // h
+	Color_BTURQOISE,  // i
 	/* SPECIAL */
-	C_RESET,      // r
-	C_BGBLACK,    //
-	C_BGRED,
+	Color_RESET,      // r
+	Color_BGBLACK,    //
+	Color_BGRED,
 	NULL
 };
 
@@ -150,7 +150,7 @@ int r_cons_palette_init(const unsigned char *pal)
 			}
 		} else {
 			j = 0;
-			strcpy(r_cons_palette[i], C_RESET);
+			strcpy(r_cons_palette[i], Color_RESET);
 		}
 	return 1;
 }

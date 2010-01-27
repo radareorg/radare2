@@ -59,7 +59,11 @@ install-pkgconfig:
 	@${INSTALL_DIR} ${PFX}/lib/pkgconfig
 	for a in ../pkgcfg/*.pc ; do ${INSTALL_DATA} $$a ${PFX}/lib/pkgconfig ; done
 
-install: install-vapi install-pkgconfig
+install-includes:
+	@${INSTALL_DIR} ${PFX}/include/libr
+	(cd include && ${INSTALL_DATA} * ${PFX}/include/libr)
+
+install: install-includes install-vapi install-pkgconfig
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
 	# libraries
 	@${INSTALL_DIR} ${PFX}/lib
@@ -68,9 +72,6 @@ install: install-vapi install-pkgconfig
 	# object archives
 	@for a in `find * | grep -e '\.a$$'` ; do \
 	echo "$$a ${PFX}/lib"; ${INSTALL_DATA} $$a ${PFX}/lib ; done
-	# includes
-	@${INSTALL_DIR} ${PFX}/include/libr
-	(cd include && ${INSTALL_DATA} * ${PFX}/include/libr)
 	# programs
 	@${INSTALL_DIR} ${PFX}/bin
 	@for a in `find */t -perm /u+x -type f | grep 2`; \

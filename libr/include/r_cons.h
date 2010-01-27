@@ -10,43 +10,43 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-typedef struct r_cons_t {
-	int r_cons_is_interactive;
-	int r_cons_is_html;
-	int r_cons_rows;
-	int r_cons_columns;
-	int r_cons_lines;
-	int r_cons_noflush;
-} RCons;
-
 #define CONS_MAX_USER 102400
 #define CONS_BUFSZ 0x4f00
 #define STR_IS_NULL(x) (!x || !x[0])
 
+typedef struct r_cons_t {
+	int is_html;
+	int rows;
+	int columns;
+	/* TODO: moar */
+} RCons;
+
+extern RCons r_cons_instance;
+
 /* plain colors */
-#define C_BLACK    "\x1b[30m"
-#define C_BGBLACK  "\x1b[40m"
-#define C_RED      "\x1b[31m"
-#define C_BGRED    "\x1b[41m"
-#define C_WHITE    "\x1b[37m"
-#define C_RESET    "\x1b[0m"
-#define C_GREEN    "\x1b[32m"
-#define C_MAGENTA  "\x1b[35m"
-#define C_YELLOW   "\x1b[33m"
-#define C_TURQOISE "\x1b[36m"
-#define C_BLUE     "\x1b[34m"
-#define C_GRAY     "\x1b[38m"
+#define Color_BLACK    "\x1b[30m"
+#define Color_BGBLACK  "\x1b[40m"
+#define Color_RED      "\x1b[31m"
+#define Color_BGRED    "\x1b[41m"
+#define Color_WHITE    "\x1b[37m"
+#define Color_RESET    "\x1b[0m"
+#define Color_GREEN    "\x1b[32m"
+#define Color_MAGENTA  "\x1b[35m"
+#define Color_YELLOW   "\x1b[33m"
+#define Color_TURQOISE "\x1b[36m"
+#define Color_BLUE     "\x1b[34m"
+#define Color_GRAY     "\x1b[38m"
 /* bold colors */
-#define C_BBLACK    "\x1b[1;30m"
-#define C_BRED      "\x1b[1;31m"
-#define C_BBGRED    "\x1b[1;41m"
-#define C_BWHITE    "\x1b[1;37m"
-#define C_BGREEN    "\x1b[1;32m"
-#define C_BMAGENTA  "\x1b[1;35m"
-#define C_BYELLOW   "\x1b[1;33m"
-#define C_BTURQOISE "\x1b[1;36m"
-#define C_BBLUE     "\x1b[1;34m"
-#define C_BGRAY     "\x1b[1;38m"
+#define Color_BBLACK    "\x1b[1;30m"
+#define Color_BRED      "\x1b[1;31m"
+#define Color_BBGRED    "\x1b[1;41m"
+#define Color_BWHITE    "\x1b[1;37m"
+#define Color_BGREEN    "\x1b[1;32m"
+#define Color_BMAGENTA  "\x1b[1;35m"
+#define Color_BYELLOW   "\x1b[1;33m"
+#define Color_BTURQOISE "\x1b[1;36m"
+#define Color_BBLUE     "\x1b[1;34m"
+#define Color_BGRAY     "\x1b[1;38m"
 
 /* palette */
 #define CONS_PALETTE_SIZE 22
@@ -85,10 +85,11 @@ enum {
 #define COLOR_AD C_GREEN
 #endif
 
+// XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
 /* XXX : global variables? or a struct with a singleton? */
 //extern FILE *stdin_fd;
 extern FILE *r_cons_stdin_fd;
-extern int r_cons_stdout_fd;
+//extern int r_cons_stdout_fd;
 //extern int r_cons_stdout_file;
 extern int r_cons_breaked;
 extern const char *r_cons_palette_default;

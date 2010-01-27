@@ -1,0 +1,93 @@
+%module r_cons
+%{
+#define bool int
+#define true 1
+#define false 0
+#include <r_cons.h>
+%}
+%include <r_cons.h>
+
+extern bool r_cons_init ();
+extern bool r_cons_eof ();
+extern void r_cons_clear ();
+extern void r_cons_clear00 ();
+extern void r_cons_reset ();
+extern void r_cons_gotoxy (int x, int y);
+extern void r_cons_set_raw (bool b);
+extern void r_cons_printf (const char* fmt);
+extern void r_cons_strcat (const char* str);
+extern void r_cons_memcat (const char* str, int len);
+extern void r_cons_newline ();
+extern void r_cons_flush ();
+extern int r_cons_readchar ();
+extern void r_cons_any_key ();
+extern int r_cons_get_size (int* rows);
+extern bool r_cons_yesno (bool def, const char* fmt);
+
+//%rename(r_cons_is_html) jeje;
+%inline %{
+//#define RCons_is_html r_cons_is_html
+extern int r_cons_is_html;
+%}
+
+%extend RCons {
+  RCons () {
+    return r_cons_new ();
+  }
+
+  ~RCons () {
+    r_cons_free (self);
+  }
+
+  bool init () {
+    return r_cons_init ();
+  }
+  bool eof () {
+    return r_cons_eof ();
+  }
+  void clear () {
+     r_cons_clear ();
+  }
+  void clear00 () {
+     r_cons_clear00 ();
+  }
+  void reset () {
+     r_cons_reset ();
+  }
+  void gotoxy (int x, int y) {
+     r_cons_gotoxy (x, y);
+  }
+  void set_raw (bool b) {
+     r_cons_set_raw (b);
+  }
+  void printf (const char* fmt) {
+     r_cons_printf (fmt);
+  }
+  void strcat (const char* str) {
+     r_cons_strcat (str);
+  }
+  void memcat (const char* str, int len) {
+     r_cons_memcat (str, len);
+  }
+  void newline () {
+     r_cons_newline ();
+  }
+  void flush () {
+     r_cons_flush ();
+  }
+  int readchar () {
+    return r_cons_readchar ();
+  }
+  void any_key () {
+     r_cons_any_key ();
+  }
+  %apply int* OUTPUT { int* rows };
+  int get_size (int* rows) {
+    return r_cons_get_size (rows);
+  }
+  bool yesno (bool def, const char* fmt) {
+    return r_cons_yesno (def, fmt);
+  }
+};
+//} RCons;
+

@@ -25,7 +25,7 @@
 
 #define MOAR_VALUE 4096*4
 
-RCons r_cons;
+RCons r_cons_instance;
 
 int r_cons_stdout_fd = 1;
 FILE *r_cons_stdin_fd = NULL; // TODO use int fd here too!
@@ -76,6 +76,17 @@ R_API void r_cons_break_end()
 #if __UNIX__
 	signal(SIGINT, SIG_IGN);
 #endif
+}
+
+R_API RCons *r_cons_new ()
+{
+	return &r_cons_instance;
+}
+
+R_API RCons *r_cons_free ()
+{
+	/* do nothing */
+	return NULL;
 }
 
 R_API int r_cons_init()
