@@ -12,22 +12,21 @@ static ut64 num_callback(void *userptr, const char *str, int *ok)
 	if (str[0]=='$') {
 		/* analyze opcode */
 		switch(str[1]) {
-		case '$': if (str[2]!='$') break;
+		case '$': 
+			if (str[2]=='$')
+				return aop.length;
+			return core->offset;
 		case 'e':
 		case 'j':
 		case 'f':
 		case 'r':
-			r_anal_set_pc(&core->anal, core->offset);
-			r_anal_aop(&core->anal, &aop, core->block);
+			r_anal_set_pc (&core->anal, core->offset);
+			r_anal_aop (&core->anal, &aop, core->block);
 			break;
 		}
 		
 		/* return value */
 		switch(str[1]) {
-		case '$':
-			if (str[2]=='$')
-				return aop.length;
-			return core->offset;
 		case '{':
 			{
 				char *ptr, *bptr = strdup(str+2);
@@ -35,7 +34,7 @@ static ut64 num_callback(void *userptr, const char *str, int *ok)
 				if (ptr != NULL) {
 					ut64 ret;
 					ptr[0]='\0';
-					ret = r_config_get_i(&core->config, bptr);
+					ret = r_config_get_i (&core->config, bptr);
 					free(bptr);
 					return ret;
 				}
@@ -62,21 +61,20 @@ static ut64 num_callback(void *userptr, const char *str, int *ok)
 
 R_API struct r_core_t *r_core_new()
 {
-	struct r_core_t *c = MALLOC_STRUCT(struct r_core_t);
-	r_core_init(c);
+	struct r_core_t *c = MALLOC_STRUCT (struct r_core_t);
+	r_core_init (c);
 	return c;
 }
 
 /*-----------------------------------*/
 #define CMDS 54
 static const char *radare_argv[CMDS] ={
-	NULL, // padding
-	"? ", "!step ", "!stepo ", "!cont ", "!signal ", "!fd ", "!maps ", ".!maps*",
-	"!bp ", "!!", "#md5", "#sha1", "#crc32", "#entropy", "Visual", "ad", "ac",
-	"ag", "emenu ", "eval ", "seek ", "info ", "help ", "move ", "quit ", "flag ",
-	"Po ", "Ps ", "Pi ", "H ", "H no ", "H nj ", "H fj ", "H lua ", "x ", "b ",
-	"y ", "yy ", "y? ", "wx ", "ww ", "wf ", "w?", "pD ", "pG ", "pb ", "px ",
-	"pX ", "po ", "pm ", "pz ", "pr > ", "p? "
+	"?", "!step", "!stepo", "!cont", "!signal", "!fd", "!maps", ".!maps*",
+	"!bp", "!!", "#md5", "#sha1", "#crc32", "#entropy", "Visual", "ad", "ac",
+	"ag", "emenu", "eval", "seek", "info", "help", "move", "quit", "flag",
+	"Po", "Ps", "Pi", "H", "H no", "H nj", "H fj", "H lua", "x", "b",
+	"y", "yy", "y?", "wx", "ww", "wf", "w?", "pD", "pG", "pb", "px",
+	"pX", "po", "pm", "pz", "pr >", "p?", NULL
 };
 
 static int myfgets(char *buf, int len)
@@ -84,7 +82,9 @@ static int myfgets(char *buf, int len)
 	/* TODO: link against dietline if possible for autocompletion */
 	char *ptr;
 	buf[0]='\0';
-	ptr = r_line_readline (CMDS, radare_argv);
+	r_line_instance.completion.argc = CMDS;
+	r_line_instance.completion.argv = radare_argv;
+	ptr = r_line_readline (); //CMDS, radare_argv);
 	if (ptr == NULL)
 		return -1;
 	strncpy (buf, ptr, len);
@@ -120,55 +120,55 @@ R_API int r_core_init(struct r_core_t *core)
 	core->num.userptr = core;
 
 	/* initialize libraries */
-	r_print_init(&core->print);
+	r_print_init (&core->print);
 	core->print.printf = (void *)r_cons_printf;
-	r_lang_init(&core->lang);
-	r_lang_set_user_ptr(&core->lang, core);
-	r_anal_init(&core->anal);
-	r_anal_set_user_ptr(&core->anal, core);
-	r_asm_init(&core->assembler);
-	r_asm_set_user_ptr(&core->assembler, core);
-	r_parse_init(&core->parser);
-	r_parse_set_user_ptr(&core->parser, core);
-	r_bin_init(&core->bin);
-	r_bininfo_init(&core->bininfo);
-	r_bin_set_user_ptr(&core->bin, core);
-	r_meta_init(&core->meta);
-	r_line_init();
-	r_cons_init();
-	r_cons_user_fgets = (void *)myfgets;
-	r_line_hist_load(".radare2_history");
+	r_lang_init (&core->lang);
+	r_lang_set_user_ptr (&core->lang, core);
+	r_anal_init (&core->anal);
+	r_anal_set_user_ptr (&core->anal, core);
+	r_asm_init (&core->assembler);
+	r_asm_set_user_ptr (&core->assembler, core);
+	r_parse_init (&core->parser);
+	r_parse_set_user_ptr (&core->parser, core);
+	r_bin_init (&core->bin);
+	r_bininfo_init (&core->bininfo);
+	r_bin_set_user_ptr (&core->bin, core);
+	r_meta_init (&core->meta);
+	r_cons_init ();
+	r_line_init ();
+	r_cons_instance.user_fgets = (void *)myfgets;
+	r_line_hist_load (".radare2_history");
 
 	core->search = r_search_new(R_SEARCH_KEYWORD);
-	r_io_init(&core->io);
-	r_macro_init(&core->macro);
+	r_io_init (&core->io);
+	r_macro_init (&core->macro);
 	core->macro.num = &core->num;
 	core->macro.user = core;
 	core->macro.cmd = r_core_cmd0;
 	core->file = NULL;
-	INIT_LIST_HEAD(&core->files);
+	INIT_LIST_HEAD (&core->files);
 	core->offset = 0LL;
 	core->blocksize = R_CORE_BLOCKSIZE;
-	core->block = (ut8*)malloc(R_CORE_BLOCKSIZE);
-	r_core_cmd_init(core);
-	r_flag_init(&core->flags);
-	r_debug_init(&core->dbg, R_TRUE);
+	core->block = (ut8*)malloc (R_CORE_BLOCKSIZE);
+	r_core_cmd_init (core);
+	r_flag_init (&core->flags);
+	r_debug_init (&core->dbg, R_TRUE);
 	core->io.printf = r_cons_printf;
 	core->dbg.printf = r_cons_printf;
 	//r_debug_set_io(&core->dbg, &__dbg_read, &__dbg_write, core);
-	r_io_bind(&core->io, &(core->dbg.bp->iob));
-	r_core_config_init(core);
+	r_io_bind (&core->io, &(core->dbg.bp->iob));
+	r_core_config_init (core);
 	// XXX fix path here
 
 	/* load plugins */
 	r_core_loadlibs (core);
 
 	// TODO: get arch from r_bin or from native arch
-	r_asm_use(&core->assembler, DEFAULT_ARCH);
-	r_anal_use(&core->anal, DEFAULT_ARCH);
-	r_bp_use(core->dbg.bp, DEFAULT_ARCH);
-	r_config_set(&core->config, "asm.arch", "x86");
-	r_config_set_i(&core->config, "asm.bits", 32);
+	r_asm_use (&core->assembler, DEFAULT_ARCH);
+	r_anal_use (&core->anal, DEFAULT_ARCH);
+	r_bp_use (core->dbg.bp, DEFAULT_ARCH);
+	r_config_set (&core->config, "asm.arch", "x86");
+	r_config_set_i (&core->config, "asm.bits", 32);
 
 	return 0;
 }
@@ -176,7 +176,7 @@ R_API int r_core_init(struct r_core_t *core)
 R_API struct r_core_t *r_core_free(struct r_core_t *c)
 {
 	/* TODO: it leaks as shit */
-	free(c);
+	free (c);
 	return NULL;
 }
 
@@ -191,7 +191,7 @@ R_API int r_core_prompt(struct r_core_t *r)
 		r_core_cmd (r, cmdprompt, 0);
 
 	sprintf (prompt, "[0x%08llx]> ", r->offset);
-	r_line_prompt = prompt;
+	r_line_instance.prompt = prompt;
 	ret = r_cons_fgets (line, sizeof (line), 0, NULL);
 	if (ret<0)
 		return -1;
@@ -242,13 +242,12 @@ R_API int r_core_seek_delta(struct r_core_t *core, st64 addr)
 		return R_TRUE;
 	if (addr>0) {
 		/* check end of file */
-		if (0) addr = 0; // tmp+addr>) {
+		if (0) addr = 0; // XXX tmp+addr>) {
 		else addr += tmp;
 	} else {
 		/* check < 0 */
-		if (tmp+addr<0) {
-			addr = 0;
-		} else addr += tmp;
+		if (tmp+addr<0) addr = 0;
+		else addr += tmp;
 	}
 	core->offset = addr;
 	ret = r_core_block_read (core, 0);

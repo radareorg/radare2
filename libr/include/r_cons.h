@@ -9,19 +9,82 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#if __UNIX__
+#include <termios.h>
+#include <sys/ioctl.h>
+#include <sys/wait.h>
+#include <sys/socket.h>
+#endif
+#if __WINDOWS__
+#include <windows.h>
+#endif
 
+/* constants */
 #define CONS_MAX_USER 102400
 #define CONS_BUFSZ 0x4f00
 #define STR_IS_NULL(x) (!x || !x[0])
 
+/* palette */
+#define CONS_PALETTE_SIZE 22
+#define CONS_COLORS_SIZE 21
+
+typedef struct r_cons_grep_t {
+	char strings[10][64];
+	int nstrings;
+	char *str;
+	int counter;
+	int line;
+	int token;
+	int neg;
+} RConsGrep;
+
 typedef struct r_cons_t {
+	RConsGrep grep;
+	char *buffer;
+	int buffer_len;
+	int buffer_sz;
+	char *lastline;
 	int is_html;
+	int is_interactive;
+	int lines;
 	int rows;
 	int columns;
-	/* TODO: moar */
+	int breaked;
+	int noflush;
+	FILE *fdin; // FILE? and then int ??
+	int fdout; // only used in pipe.c :?? remove?
+	char *teefile;
+	void (*break_cb)(void *user); // TODO: use RConsBreakCallback here
+	void *break_user;
+	/* TODO: rewrite as in typedef */
+	int (*user_fgets)(char *buf, int len);
+#if __UNIX__
+	struct termios term_raw, term_buf;
+#elif __WINDOWS__
+	LPDWORD term_raw, term_buf;
+#endif
 } RCons;
-
 extern RCons r_cons_instance;
+
+// TODO: pass instance ?
+typedef void (*RConsBreakCallback)(void *user);
+//--
+
+// XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
+/* XXX : global variables? or a struct with a singleton? */
+//extern FILE *stdin_fd;
+//extern FILE *r_cons_stdin_fd;
+//extern int r_cons_stdout_fd;
+//extern int r_cons_stdout_file;
+extern const char *r_cons_palette_default;
+const char *r_cons_colors[CONS_COLORS_SIZE+1];
+extern char r_cons_palette[CONS_PALETTE_SIZE][8];
+//extern const char *dl_prompt;
+//extern char *r_cons_filterline;
+//extern char *r_cons_teefile;
+// not needed anymoar
+extern int (*r_cons_user_fgets)(char *buf, int len);
+
 
 /* plain colors */
 #define Color_BLACK    "\x1b[30m"
@@ -48,9 +111,6 @@ extern RCons r_cons_instance;
 #define Color_BBLUE     "\x1b[1;34m"
 #define Color_BGRAY     "\x1b[1;38m"
 
-/* palette */
-#define CONS_PALETTE_SIZE 22
-#define CONS_COLORS_SIZE 21
 enum {
 	PAL_PROMPT = 0,
 	PAL_ADDRESS,
@@ -84,26 +144,6 @@ enum {
 // addresses
 #define COLOR_AD C_GREEN
 #endif
-
-// XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
-/* XXX : global variables? or a struct with a singleton? */
-//extern FILE *stdin_fd;
-extern FILE *r_cons_stdin_fd;
-//extern int r_cons_stdout_fd;
-//extern int r_cons_stdout_file;
-extern int r_cons_breaked;
-extern const char *r_cons_palette_default;
-const char *r_cons_colors[CONS_COLORS_SIZE+1];
-extern char r_cons_palette[CONS_PALETTE_SIZE][8];
-//extern const char *dl_prompt;
-extern int r_cons_columns;
-extern int r_cons_rows;
-extern int r_cons_lines; // private or public?
-extern int r_cons_is_html;
-extern int r_cons_noflush;
-extern char *r_cons_filterline;
-extern char *r_cons_teefile;
-extern int (*r_cons_user_fgets)(char *buf, int len);
 
 #ifdef R_API
 
@@ -141,7 +181,7 @@ R_API int  r_cons_eof();
 
 R_API int r_cons_palette_init(const unsigned char *pal);
 R_API int r_cons_get_size(int *rows);
-R_API int r_cons_get_arrow(int ch);
+R_API int r_cons_arrow_to_hjkl(int ch);
 R_API int r_cons_html_print(const char *ptr);
 
 R_API const char *r_cons_get_buffer();

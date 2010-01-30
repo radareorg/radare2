@@ -40,29 +40,29 @@ void r_cons_stdout_close(int fd)
 
 void r_cons_stdout_close_file()
 {
-	close(r_cons_stdout_fd);
-	dup2(r_cons_stdout_fd, 1);
+	close(r_cons_instance.fdout);
+	dup2(r_cons_instance.fdout, 1);
 }
 
 void r_cons_stdout_open(const char *file, int append)
 {
 	int fd;
-	if (r_cons_stdout_fd != 1) // XXX nested stdout dupping not supported
+	if (r_cons_instance.fdout != 1) // XXX nested stdout dupping not supported
 		return;
 
 	fd = open(file, O_RDWR | O_CREAT | (append?O_APPEND:O_TRUNC), 0644);
 	if (fd==-1)
 		return;
-	r_cons_stdout_fd = fd;
-	dup2(1, r_cons_stdout_fd);
+	r_cons_instance.fdout = fd;
+	dup2(1, r_cons_instance.fdout);
 	//close(1);
 	dup2(fd, 1);
 }
 
 int r_cons_stdout_set_fd(int fd)
 {
-	if (r_cons_stdout_fd == 0)
+	if (r_cons_instance.fdout == 0)
 		return fd;
-	return r_cons_stdout_fd = fd;
+	return r_cons_instance.fdout = fd;
 }
 #endif

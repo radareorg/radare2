@@ -13,74 +13,46 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#if __UNIX__
-#include <termios.h>
-#include <sys/ioctl.h>
-#include <sys/wait.h>
-#include <sys/socket.h>
-#endif
-#if __WINDOWS__
-#include <windows.h>
-#endif
 
 #define MOAR_VALUE 4096*4
 
+// TODO: remove this flag
+static int r_cons_instance_initialized = R_FALSE;
+
 RCons r_cons_instance;
-
-int r_cons_stdout_fd = 1;
-FILE *r_cons_stdin_fd = NULL; // TODO use int fd here too!
-
-static int r_cons_buffer_sz = 0;
-static int r_cons_buffer_len = 0;
-static char *r_cons_buffer = NULL;
-static char *r_cons_lastline = NULL;
-char *r_cons_filterline = NULL;
-char *r_cons_teefile = NULL;
-int r_cons_is_interactive = R_TRUE;
-int r_cons_is_html = R_FALSE;
-int r_cons_rows = 0;
-int r_cons_columns = 0;
-int r_cons_lines = 0;
-int r_cons_noflush = 0;
-
-static int grepline = -1, greptoken = -1, grepcounter = 0, grepneg = 0;
-static char *grepstr = NULL;
-static char grepstrings[10][64] = { "", };
-static int grepstrings_n = 0;
-
-int r_cons_breaked = 0;
-
-static void (*r_cons_break_cb)(void *user);
-static void *r_cons_break_user;
+#define I r_cons_instance
 
 static void break_signal(int sig)
 {
-	r_cons_breaked = 1;
-	if (r_cons_break_cb)
-		r_cons_break_cb(r_cons_break_user);
+	I.breaked = 1;
+	if (I.break_cb)
+		I.break_cb (I.break_user);
 }
 
 R_API void r_cons_break(void (*cb)(void *u), void *user)
 {
-	r_cons_breaked = 0;
-	r_cons_break_user = user;
-	r_cons_break_cb = cb;
+	I.breaked = R_FALSE;
+	I.break_cb = cb;
+	I.break_user = user;
 #if __UNIX__
-	signal(SIGINT, break_signal);
+	signal (SIGINT, break_signal);
 #endif
 }
 
 R_API void r_cons_break_end()
 {
-	r_cons_breaked = 0;
+	I.breaked = 0;
 #if __UNIX__
-	signal(SIGINT, SIG_IGN);
+	signal (SIGINT, SIG_IGN);
 #endif
 }
 
 R_API RCons *r_cons_new ()
 {
-	return &r_cons_instance;
+	if (!r_cons_instance_initialized)
+		r_cons_init ();
+	r_cons_instance_initialized = R_TRUE;
+	return &I;
 }
 
 R_API RCons *r_cons_free ()
@@ -91,35 +63,54 @@ R_API RCons *r_cons_free ()
 
 R_API int r_cons_init()
 {
-	r_cons_stdin_fd = stdin;
-	r_cons_breaked = R_FALSE;
-	r_cons_is_interactive = R_TRUE;
-	r_cons_is_html = R_FALSE;
-	r_cons_noflush = R_FALSE;
+	I.is_interactive = R_TRUE;
+	I.breaked = R_FALSE;
+	I.noflush = R_FALSE;
+	I.fdin = stdin;
+	I.fdout = 1;
+	I.breaked = 0;
+	I.lines = 0;
+	I.buffer = NULL;
+	I.buffer_sz = 0;
+	I.buffer_len = 0;
 	r_cons_get_size (NULL);
+#if __UNIX__
+	tcgetattr (0, &I.term_buf);
+	memcpy (&I.term_raw, &I.term_buf,
+		sizeof (struct termios));
+	I.term_raw.c_iflag &= ~(BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
+	I.term_raw.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
+	I.term_raw.c_cflag &= ~(CSIZE|PARENB);
+	I.term_raw.c_cflag |= CS8;
+	I.term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
+#elif __WINDOWS__
+	GetConsoleMode (h, &I.term_buf);
+	I.term_raw = 0;
+#endif
 #if HAVE_DIETLINE
 	r_line_init ();
 #endif
 	//r_cons_palette_init(NULL);
-	return 0;
+	r_cons_reset ();
+	return R_TRUE;
 }
 
 static void palloc(int moar)
 {
-	if (r_cons_buffer == NULL) {
-		r_cons_buffer_sz = moar+MOAR_VALUE;
-		r_cons_buffer = (char *)malloc(r_cons_buffer_sz);
-		r_cons_buffer[0]='\0';
+	if (I.buffer == NULL) {
+		I.buffer_sz = moar+MOAR_VALUE;
+		I.buffer = (char *)malloc (I.buffer_sz);
+		I.buffer[0] = '\0';
 	} else
-	if (moar + r_cons_buffer_len > r_cons_buffer_sz) {
-		r_cons_buffer_sz += moar+MOAR_VALUE;
-		r_cons_buffer = (char *)realloc(r_cons_buffer, r_cons_buffer_sz);
+	if (moar + I.buffer_len > I.buffer_sz) {
+		I.buffer_sz += moar+MOAR_VALUE;
+		I.buffer = (char *)realloc (I.buffer, I.buffer_sz);
 	}
 }
 
 R_API int r_cons_eof()
 {
-	return feof (r_cons_stdin_fd);
+	return feof (I.fdin);
 }
 
 R_API void r_cons_gotoxy(int x, int y)
@@ -131,17 +122,17 @@ R_API void r_cons_gotoxy(int x, int y)
         coord.Y = y;
 
         if(!hStdout)
-                hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-        SetConsoleCursorPosition(hStdout,coord);
+                hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
+        SetConsoleCursorPosition (hStdout,coord);
 #else
-	r_cons_strcat("\x1b[0;0H");
+	r_cons_printf ("\x1b[%d;%dH", y, x);
 #endif
 }
 
 R_API void r_cons_clear00()
 {
-	r_cons_clear();
-	r_cons_gotoxy(0, 0);
+	r_cons_clear ();
+	r_cons_gotoxy (0, 0);
 }
 
 R_API void r_cons_clear()
@@ -149,135 +140,78 @@ R_API void r_cons_clear()
 #if __WINDOWS__
         static HANDLE hStdout = NULL;
         static CONSOLE_SCREEN_BUFFER_INFO csbi;
-        const COORD startCoords = {0,0};
+        const COORD startCoords = { 0, 0 };
         DWORD dummy;
 
-        if(!hStdout) {
-                hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-                GetConsoleScreenBufferInfo(hStdout,&csbi);
+        if (!hStdout) {
+                hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
+                GetConsoleScreenBufferInfo (hStdout,&csbi);
         }
 
-        FillConsoleOutputCharacter(hStdout, ' ', csbi.dwSize.X * csbi.dwSize.Y, startCoords, &dummy);
-        r_cons_gotoxy(0,0);
+        FillConsoleOutputCharacter (hStdout, ' ',
+		csbi.dwSize.X * csbi.dwSize.Y, startCoords, &dummy);
 #else
-	r_cons_strcat("\x1b[2J");
+	r_cons_strcat ("\x1b[2J");
 #endif
-	r_cons_flush();
-	r_cons_lines = 0;
+        r_cons_gotoxy (0, 0);
+	r_cons_flush ();
+	I.lines = 0;
 }
 
 R_API void r_cons_reset()
 {
-	if (r_cons_buffer)
-		r_cons_buffer[0] = '\0';
-	r_cons_buffer_len = 0;
-	r_cons_lines = 0;
-	r_cons_lastline = r_cons_buffer;
-	grepstrings_n = 0; // XXX
-	grepline = -1;
-	grepstr = NULL;
-	greptoken = -1;
+	if (I.buffer)
+		I.buffer[0] = '\0';
+	I.buffer_len = 0;
+	I.lines = 0;
+	I.lastline = I.buffer;
+	I.grep.strings[0][0] = '\0';
+	I.grep.nstrings = 0; // XXX
+	I.grep.line = -1;
+	I.grep.str = NULL;
+	I.grep.token = -1;
 }
 
 R_API const char *r_cons_get_buffer()
 {
-	return r_cons_buffer;
-}
-
-R_API void r_cons_grep(const char *str)
-{
-	char *optr, *tptr;
-	char *ptr, *ptr2, *ptr3;
-	grepcounter=0;
-	/* set grep string */
-	if (str != NULL && *str) {
-		if (*str == '!') {
-			grepneg = 1;
-			str = str + 1;
-		} else grepneg = 0;
-		if (*str == '?') {
-			grepcounter = 1;
-			str = str + 1;
-		}
-		ptr = alloca(strlen(str)+2);
-		strcpy(ptr, str);
-
-		ptr3 = strchr(ptr, '[');
-		ptr2 = strchr(ptr, '#');
-
-		if (ptr3) {
-			ptr3[0]='\0';
-			greptoken = atoi(ptr3+1);
-			if (greptoken<0)
-				greptoken--;
-		}
-		if (ptr2) {
-			ptr2[0]='\0';
-			grepline = atoi(ptr2+1);
-		}
-
-		grepstrings_n = 0;
-		if (*ptr) {
-			free(grepstr);
-			grepstr = (char *)strdup(ptr);
-			/* set the rest of words to grep */
-			grepstrings_n = 0;
-			// TODO: refactor this ugly loop
-			optr = grepstr;
-			tptr = strchr(optr, '!');
-			while(tptr) {
-				tptr[0] = '\0';
-				// TODO: check if keyword > 64
-				strncpy(grepstrings[grepstrings_n], optr, 63);
-				grepstrings_n++;
-				optr = tptr+1;
-				tptr = strchr(optr, '!');
-			}
-			strncpy(grepstrings[grepstrings_n], optr, 63);
-			grepstrings_n++;
-			ptr = optr;
-		}
-	} else {
-		greptoken = -1;
-		grepline = -1;
-		grepstr = NULL;
-		grepstrings_n = 0;
-	}
+	return I.buffer;
 }
 
 R_API void r_cons_flush()
 {
-	char *tee = r_cons_teefile;
+	char *tee = I.teefile;
 
-	if (r_cons_noflush)
+	if (I.noflush)
 		return;
 
-	if (r_cons_is_interactive) {
-		if (r_cons_buffer_len > CONS_MAX_USER) {
-			if (r_cons_yesno('n', "Do you want to print %d bytes? (y/N)",
-				r_cons_buffer_len)== 0) {
-				r_cons_reset();
+	if (I.is_interactive) {
+		if (I.buffer_len > CONS_MAX_USER) {
+			if (r_cons_yesno ('n',"Do you want to print %d bytes? (y/N)",
+				I.buffer_len)==0) {
+				r_cons_reset ();
 				return;
 			}
 		}
 	}
 
 	if (tee&&tee[0]) {
-		FILE *d = fopen(tee, "a+");
+		FILE *d = fopen (tee, "a+");
 		if (d != NULL) {
-			fwrite (r_cons_buffer, strlen(r_cons_buffer), 1, d);
-			fclose(d);
+			fwrite (I.buffer, I.buffer_len, 1, d);
+			fclose (d);
 		}
 	} else {
 		// is_html must be a filter, not a write endpoint
-		if (r_cons_is_html) r_cons_html_print (r_cons_buffer); else
+		if (I.is_html)
+			r_cons_html_print (I.buffer);
+		else
 #if __WINDOWS__
-		r_cons_w32_print (r_cons_buffer);
+		r_cons_w32_print (I.buffer);
 #else
-		write (1, r_cons_buffer, r_cons_buffer_len);
+		write (1, I.buffer, I.buffer_len);
 #endif
 	}
-	r_cons_reset();
+	r_cons_reset ();
 }
 
 R_API void r_cons_printf(const char *format, ...)
@@ -295,148 +229,64 @@ R_API void r_cons_printf(const char *format, ...)
 	} else r_cons_strcat (format);
 }
 
-/* TODO: use const char * instead ..strdup at the beggining? */
-R_API int r_cons_grepbuf(char *buf, int len)
-{
-	int donotline = 0;
-	int i, j, hit = 0;
-	char delims[6][2] = {"|", "/", "\\", ",", ";", "\t"};
-	char *n = memchr(buf, '\n', len);
-
-	if (grepstrings_n==0) {
-		if (n) r_cons_lines++;
-		return len;
-	}
-
-	if (r_cons_lastline==NULL)
-		r_cons_lastline = r_cons_buffer;
-
-	if (!n) return len;
-
-	for(i=0;i<grepstrings_n;i++) {
-		grepstr = grepstrings[i];
-		if ( (!grepneg && strstr(buf, grepstr))
-		|| (grepneg && !strstr(buf, grepstr))) {
-			hit = 1;
-			break;
-		}
-	}
-
-	if (hit) {
-		if (grepline != -1) {
-			if (grepline==r_cons_lines) {
-				r_cons_lastline = buf+len;
-				//r_cons_lines++;
-			} else {
-				donotline = 1;
-				r_cons_lines++;
-			}
-		}
-	} else donotline = 1;
-
-	if (donotline) {
-		r_cons_buffer_len -= strlen(r_cons_lastline)-len;
-		r_cons_lastline[0]='\0';
-		len = 0;
-	} else {
-		if (greptoken != -1) {
-			//ptr = alloca(strlen(r_cons_lastline));
-			char *tok = NULL;
-			char *ptr = alloca(1024); // XXX
-			strcpy(ptr, r_cons_lastline);
-			for (i=0; i<len; i++) for (j=0;j<6;j++)
-				if (ptr[i] == delims[j][0])
-					ptr[i] = ' ';
-			tok = ptr;
-			for (i=0;tok != NULL && i<=greptoken;i++) {
-				if (i==0) tok = (char *)strtok(ptr, " ");
-				else tok = (char *)strtok(NULL, " ");
-			}
-			if (tok) {
-				// XXX remove strlen here!
-				r_cons_buffer_len -= strlen(r_cons_lastline)-len;
-				len = strlen(tok);
-				memcpy(r_cons_lastline, tok, len);
-				if (r_cons_lastline[len-1]!='\n')
-					memcpy(r_cons_lastline+len, "\n", 2);
-				len++;
-				r_cons_lastline +=len;
-			}
-		} else r_cons_lastline = buf+len;
-		r_cons_lines++;
-	}
-	return len;
-}
-
 /* final entrypoint for adding stuff in the buffer screen */
 R_API void r_cons_memcat(const char *str, int len)
 {
-	palloc(len);
-	memcpy(r_cons_buffer+r_cons_buffer_len, str, len+1); // XXX +1??
-	r_cons_buffer_len += r_cons_grepbuf(r_cons_buffer+r_cons_buffer_len, len);
+	palloc (len);
+	memcpy (I.buffer+I.buffer_len, str, len+1); // XXX +1??
+	I.buffer_len += r_cons_grepbuf (I.buffer+I.buffer_len, len);
 }
 
 R_API void r_cons_strcat(const char *str)
 {
-	int len = strlen(str);
+	int len = strlen (str);
 	if (len>0)
-		r_cons_memcat(str, len);
+		r_cons_memcat (str, len);
 }
 
 R_API void r_cons_newline()
 {
-	if (r_cons_is_html)
-		r_cons_strcat("<br />\n");
-	else r_cons_strcat("\n");
+	if (I.is_html)
+		r_cons_strcat ("<br />\n");
+	else r_cons_strcat ("\n");
 }
 
-#if 0
-/* TODO: deprecated */
-R_API int r_cons_get_columns()
-{
-	int columns_i = r_cons_get_real_columns();
-	char buf[64];
-
-	if (columns_i<2)
-		columns_i = 78;
-
-	sprintf(buf, "%d", columns_i);
-	r_sys_setenv("COLUMNS", buf, 0);
-
-	return columns_i;
-}
-#endif
-
-R_API int r_cons_get_size (int *rows) {
-	r_cons_columns = 80;
-	r_cons_rows = 23;
+R_API int r_cons_get_size(int *rows) {
 #if __UNIX__
         struct winsize win;
-        if (ioctl (1, TIOCGWINSZ, &win) == 0) {
-		r_cons_columns = win.ws_col;
-		r_cons_rows = win.ws_row;
-	}
 #else
 	const char *str = r_sys_getenv ("COLUMNS");
+#endif
+	I.columns = 80;
+	I.rows = 23;
+#if __UNIX__
+        if (ioctl (1, TIOCGWINSZ, &win) == 0) {
+		I.columns = win.ws_col;
+		I.rows = win.ws_row;
+	}
+#else
 	if (str != NULL)
-		r_cons_columns = atoi (str);
+		I.columns = atoi (str);
 #endif
 	if (rows)
-		*rows = r_cons_rows;
-	return r_cons_columns;
+		*rows = I.rows;
+	return I.columns;
 }
 
+// Move to input ?
 R_API int r_cons_yesno(int def, const char *fmt, ...) {
 	va_list ap;
 	int key = def;
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	fflush(stderr);
-	r_cons_set_raw(1);
-	read(0, &key, 1); write(2, "\n", 1);
-	if (key == 'Y') key = 'y';
-	r_cons_set_raw(0);
+	va_start (ap, fmt);
+	vfprintf (stderr, fmt, ap);
+	va_end (ap);
+	fflush (stderr);
+	r_cons_set_raw (1);
+	read (0, &key, 1);
+	write (2, "\n", 1);
+	if (key == 'Y')
+		key = 'y';
+	r_cons_set_raw (0);
 	if (key=='\n'||key=='\r')
 		key = def;
 	else key = 'y';
@@ -455,60 +305,14 @@ R_API int r_cons_yesno(int def, const char *fmt, ...) {
  * If you doesn't use this order you'll probably loss your terminal properties.
  *
  */
-#if __UNIX__
-static struct termios tio_old, tio_new;
-#endif
-static int termios_init = 0;
-
-R_API void r_cons_set_raw(int b)
+R_API void r_cons_set_raw(int is_raw)
 {
 #if __UNIX__
-	if (b) {
-		if (termios_init == 0) {
-			tcgetattr(0, &tio_old);
-			memcpy (&tio_new,&tio_old,sizeof(struct termios));
-			tio_new.c_iflag &= ~(BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
-			tio_new.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
-			tio_new.c_cflag &= ~(CSIZE|PARENB);
-			tio_new.c_cflag |= CS8;
-			tio_new.c_cc[VMIN]=1; // Solaris stuff hehe
-			termios_init = 1;
-		}
-		tcsetattr(0, TCSANOW, &tio_new);
-	} else tcsetattr(0, TCSANOW, &tio_old);
-#else
-	/* TODO : W32 */
+	if (is_raw) tcsetattr (0, TCSANOW, &I.term_raw);
+	else tcsetattr (0, TCSANOW, &I.term_buf);
+#elif __WINDOWS__
+	if (is_raw) SetConsoleMode (h, I.term_raw);
+	else SetConsoleMode (h, I.term_buf);
 #endif
-	fflush(stdout);
+	fflush (stdout);
 }
-
-#if 1
-// XXX: major refactorize : get_arrow
-//int r_cons_0x1b_to_hjkl(int ch)
-R_API int r_cons_get_arrow(int ch)
-{
-#if 0
-	printf("ARROW(0x%x)\n", ch);
-	fflush(stdout);
-	r_sys_sleep(3);
-#endif
-	if (ch==0x1b) {
-		ch = r_cons_readchar();
-		if (ch==0x5b) {
-			// TODO: must also work in interactive visual write ascii mode
-			ch = r_cons_readchar();
-			switch(ch) {
-			case 0x35: ch='K'; break; // re.pag
-			case 0x36: ch='J'; break; // av.pag
-			case 0x41: ch='k'; break; // up
-			case 0x42: ch='j'; break; // down
-			case 0x43: ch='l'; break; // right
-			case 0x44: ch='h'; break; // left
-			case 0x3b: break;
-			default: ch = 0;
-			}
-		}
-	}
-	return ch;
-}
-#endif

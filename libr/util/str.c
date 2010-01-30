@@ -28,14 +28,13 @@ R_API const char *r_str_bool(int b)
 /* TODO: port to w32 and move outside r_str namespace? */
 R_API char *r_str_home(const char *str)
 {
-	const char *home = getenv("HOME");
-	char *dst;
+	const char *dst, *home = r_sys_getenv ("HOME");
 	if (home == NULL)
 		return NULL;
-	dst = (char *)malloc(strlen(home) + strlen(str)+2);
-	strcpy(dst, home);
-	strcat(dst, "/");
-	strcat(dst, str);
+	dst = (char *)malloc (strlen (home) + strlen (str)+2);
+	strcpy (dst, home);
+	strcat (dst, "/");
+	strcat (dst, str);
 	return dst;
 }
 
@@ -49,7 +48,7 @@ R_API int r_str_hash(const char *str)
 		h+=str[i]*i*a;
 		a*=b;
 	}
-	return h&0x7ffffff;
+	return h&0x7fffffff;
 }
 
 R_API int r_str_delta(char *p, char a, char b)
@@ -184,8 +183,7 @@ R_API char *r_str_chop(char *str)
 R_API char *r_str_trim_head(char *str)
 {
 	if (str == NULL)
-			return NULL;
-
+		return NULL;
 	while (*str && iswhitechar(*str)) 
 		str++;
 	return str;
@@ -194,12 +192,9 @@ R_API char *r_str_trim_head(char *str)
 R_API char *r_str_trim_tail(char *str)
 {
 	char *ptr = str;
-
 	if (str == NULL)
-			return NULL;
-
+		return NULL;
 	ptr += strlen(str)-1;
-
 	while ((ptr > str) && iswhitechar(*ptr)) {
 		*ptr = '\0';
 		ptr--;
@@ -216,10 +211,8 @@ R_API char *r_str_trim(char *str)
 {
 	int i;
 	char *ptr;
-
 	if (str == NULL)
 		return NULL;
-
 	for(ptr=str, i=0;str[i];i++)
 		if (!iswhitechar(str[i]))
 			*ptr++=str[i];
@@ -357,7 +350,7 @@ R_API int r_str_inject(char *begin, char *end, char *str, int maxlen)
 	return 1;
 }
 
-/* unstable code */
+/* unstable code (taken from GNU) */
 /*------------------------------------------------*/
 
 // FROM bash::stringlib
@@ -429,8 +422,7 @@ R_API char *r_str_clean(char *str)
 	for(ptr = str+len-1;ptr!=str;ptr = ptr - 1) {
 		if (iswhitechar(ptr[0]))
 			ptr[0]='\0';
-		else
-			break;
+		else break;
 	}
 	return str;
 }
@@ -479,9 +471,9 @@ R_API int r_str_escape(char *buf)
 R_API int r_str_ansi_len(const char *str)
 {
 	int i=0, len = 0;
-	while(str[i]) {
+	while (str[i]) {
 		if (str[i]==0x1b && str[i+1]=='[')
-			for(++i;str[i]&&str[i]!='J'&&str[i]!='m'&&str[i]!='H';i++);
+			for (++i;str[i]&&str[i]!='J'&&str[i]!='m'&&str[i]!='H';i++);
 		else len++;
 		i++;
 	}
@@ -502,6 +494,8 @@ R_API const char *r_str_ansi_chrn(const char *str, int n)
 	return str+i;
 }
 
+#if 0
+/* XXX this is necessary ??? */
 // TODO: make it dynamic
 static int bprintf_init = 0;
 static char bprintf_buf[4096];
@@ -527,6 +521,7 @@ R_API char *r_bprintf_get()
 	bprintf_buf[0]='\0';
 	return s;
 }
+#endif
 
 #if 0
 int r_str_argv_parse(const char *str, int argc, char **argv)

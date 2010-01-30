@@ -137,11 +137,11 @@ R_API int r_core_visual_trackflags(struct r_core_t *core)
 				sprintf(cmd, "px @ %s", fs2);
 #endif
 			if (cmd[0])
-				r_core_cmd(core, cmd, 0);
+				r_core_cmd (core, cmd, 0);
 		}
-		r_cons_flush();
-		ch = r_cons_readchar();
-		ch = r_cons_get_arrow(ch); // get ESC+char, return 'hjkl' char
+		r_cons_flush ();
+		ch = r_cons_readchar ();
+		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch(ch) {
 		case 'J':
 			option+=10;
@@ -380,7 +380,7 @@ R_API void r_core_visual_config(struct r_core_t *core)
 		}
 		r_cons_flush();
 		ch = r_cons_readchar();
-		ch = r_cons_get_arrow(ch); // get ESC+char, return 'hjkl' char
+		ch = r_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
 
 		switch(ch) {
 		case 'j':
@@ -466,7 +466,7 @@ R_API void r_core_visual_config(struct r_core_t *core)
 R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 {
 	char buf[1024];
-	ch = r_cons_get_arrow(ch);
+	ch = r_cons_arrow_to_hjkl(ch);
 
 	switch(ch) {
 	case 'c':

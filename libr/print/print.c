@@ -84,7 +84,7 @@ void r_print_addr(struct r_print_t *p, ut64 addr)
 	char ch = (0==(addr%(mod?mod:1)))?',':' ';
 
 	if (p->flags & R_PRINT_FLAGS_COLOR) {
-		p->printf("%s0x%08llx"C_RESET"%c ",
+		p->printf("%s0x%08llx"Color_RESET"%c ",
 			r_cons_palette[PAL_ADDRESS], addr, ch);
 	} else r_cons_printf("0x%08llx%c ", addr, ch);
 }

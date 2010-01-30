@@ -42,7 +42,7 @@ endif
 # XXX needs autodetection of deps to remake and so..
 .objs:
 	mkdir -p .objs
-	for a in ${LIBLIST} ; do \
+	-for a in ${LIBLIST} ; do \
 		(cd .objs && ar x ../$$a/libr_$$a.a) ; \
 	done
 

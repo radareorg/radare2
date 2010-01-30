@@ -73,6 +73,7 @@ static inline int ERR(char *str, ...)
 	return R_FALSE;
 }
 //#define ERR(...) fprintf(stderr, ...)
+#define ZERO_FILL(x) memset (x, 0, sizeof (x))
 #define MALLOC_STRUCTS(x,y) (x*)malloc(sizeof(x)*y)
 #define MALLOC_STRUCT(x) (x*)malloc(sizeof(x))
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')

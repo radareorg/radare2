@@ -1051,7 +1051,7 @@ static int cmd_search(void *data, const char *input)
 		cmdhit = r_config_get(&core->config, "cmd.hit");
 		r_cons_break(NULL, NULL);
 		for(at = core->offset; at < core->file->size; at += core->blocksize) {
-			if (r_cons_breaked)
+			if (r_cons_instance.breaked)
 				break;
 			r_io_set_fd(&core->io, core->file->fd);
 			ret = r_io_read_at(&core->io, at, buf, core->blocksize);
@@ -1395,7 +1395,7 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd)
 		ptr[0] = '\0';
 		if (ptr[1]=='<') {
 			/* this is a bit mess */
-			const char *oprompt = r_line_prompt;
+			const char *oprompt = r_line_instance.prompt;
 			oprompt = ">";
 			for(str=ptr+2;str[0]== ' ';str=str+1);
 			eprintf("==> Reading from stdin until '%s'\n", str);
@@ -1418,7 +1418,7 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd)
 					break;
 				strcat((char *)core->oobi, buf);
 			}
-			r_line_prompt = oprompt;
+			r_line_instance.prompt = oprompt;
 		} else {
 			for(str=ptr+1;str[0]== ' ';str=str+1);
 			eprintf("SLURPING FILE '%s'\n", str);
@@ -1610,7 +1610,7 @@ printf("No flags foreach implemented\n");
 					struct r_flag_item_t *flag =
 						(struct r_flag_item_t *)list_entry(pos, struct r_flag_item_t, list);
 
-					if (r_cons_breaked)
+					if (r_cons_instance.breaked)
 						break;
 					/* filter per flag spaces */
 					if ((core->flags.space_idx != -1) && (flag->space != core->flags.space_idx))
