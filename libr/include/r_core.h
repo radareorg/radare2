@@ -39,7 +39,8 @@ typedef struct r_core_t {
 	ut64 offset;
 	ut32 blocksize;
 	ut8 *block;
-	ut8 *oobi;
+	ut8 *oobi; /* out of band input ; used to get input from file or multiline */
+	int ffio;
 	int oobi_len;
 	ut8 *yank;
 	int yank_len;

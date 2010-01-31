@@ -62,12 +62,13 @@ R_API int r_core_write_op(struct r_core_t *core, const char *arg, char op)
 	}
 
 	ret = r_core_write_at (core, core->offset, buf, core->blocksize);
-	free(buf);
+	free (buf);
 	return ret;
 }
 
 R_API int r_core_seek(struct r_core_t *core, ut64 addr, int rb)
 {
+	int ret = R_TRUE;
 	ut64 old = core->offset;
 	/* XXX unnecesary call */
 	r_io_set_fd (&core->io, core->file->fd);
@@ -75,11 +76,17 @@ R_API int r_core_seek(struct r_core_t *core, ut64 addr, int rb)
 	if (rb) {
 		int ret = r_core_block_read (core, 0);
 		if (ret != core->blocksize) {
-			core->offset = old;
-			eprintf ("Cannot read block at 0x%08llx\n", addr);
+			if (core->ffio) {
+				memset (core->block, 0xff, core->blocksize);
+				core->offset = addr;
+			} else {
+				core->offset = old;
+				ret = R_FALSE;
+				eprintf ("Cannot read block at 0x%08llx\n", addr);
+			}
 		}
 	}
-	return R_TRUE;
+	return ret;
 }
 
 R_API int r_core_write_at(struct r_core_t *core, ut64 addr, const ut8 *buf, int size)

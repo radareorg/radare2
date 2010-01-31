@@ -1,10 +1,18 @@
 /* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
 
 #include <r_core.h>
+
 static int config_scrhtml_callback(void *user, void *data) {
 	struct r_config_node_t *node = (struct r_config_node_t *) data;
 	r_cons_instance.is_html = node->i_value;
 // TODO: control error and restore old value (return false?) show errormsg?
+	return R_TRUE;
+}
+
+static int config_cfgffio_callback(void *user, void *data) {
+	struct r_core_t *core = (struct r_core_t *) user;
+	struct r_config_node_t *node = (struct r_config_node_t *) data;
+	core->ffio = node->i_value;
 	return R_TRUE;
 }
 
@@ -93,7 +101,8 @@ R_API int r_core_config_init(struct r_core_t *core)
 		&config_color_callback);
 	r_config_set (cfg, "scr.seek", "");
 	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
-	r_config_set(cfg, "cfg.debug", "false");
+	r_config_set (cfg, "cfg.debug", "false");
+	r_config_set_cb (cfg, "cfg.ffio", "false", &config_cfgffio_callback);
 #if 0
 	node = config_set("asm.profile", "default");
 //	node->callback = &config_asm_profile;

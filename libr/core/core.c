@@ -111,6 +111,7 @@ static int __dbg_write(void *user, int pid, ut64 addr, const ut8 *buf, int len)
 
 R_API int r_core_init(struct r_core_t *core)
 {
+	core->ffio = 0;
 	core->oobi = NULL;
 	core->oobi_len = 0;
 	core->yank = NULL;

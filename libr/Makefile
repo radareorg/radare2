@@ -63,7 +63,22 @@ install-includes:
 	@${INSTALL_DIR} ${PFX}/include/libr
 	(cd include && ${INSTALL_DATA} * ${PFX}/include/libr)
 
-install: install-includes install-vapi install-pkgconfig
+install-bins:
+	# programs
+	@${INSTALL_DIR} ${PFX}/bin
+	@for a in `find */t -perm /u+x -type f | grep 2`; \
+	do echo "$$a ${PFX}/bin"; ${INSTALL_PROGRAM} $$a ${PFX}/bin ; done
+	# shortcut
+	cp -f ${PFX}/bin/radare2 ${PFX}/bin/r2
+
+install-test-bins:
+	# test programs
+	@${INSTALL_DIR} ${PFX}/bin/libr-test
+	@for a in `find */t -perm /u+x -type f | grep -v 2`; \
+	  do echo "$$a ${PFX}/bin/libr-test"; \
+	  ${INSTALL_PROGRAM} $$a ${PFX}/bin/libr-test ; done
+
+install: install-includes install-vapi install-pkgconfig install-bins install-test-bins
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
 	# libraries
 	@${INSTALL_DIR} ${PFX}/lib
@@ -72,32 +87,23 @@ install: install-includes install-vapi install-pkgconfig
 	# object archives
 	@for a in `find * | grep -e '\.a$$'` ; do \
 	echo "$$a ${PFX}/lib"; ${INSTALL_DATA} $$a ${PFX}/lib ; done
-	# programs
-	@${INSTALL_DIR} ${PFX}/bin
-	@for a in `find */t -perm /u+x -type f | grep 2`; \
-	do echo "$$a ${PFX}/bin"; ${INSTALL_PROGRAM} $$a ${PFX}/bin ; done
 	# plugins
 	#${INSTALL_DATA} libr.pc ${PFX}/lib/pkgconfig
 	@${INSTALL_DIR} ${PFX}/lib/radare2
 	@for a in `find */p -perm /u+x -type f`; \
 	do echo "$$a ${PFX}/lib/radare2"; \
 	${INSTALL_DATA} $$a ${PFX}/lib/radare2 ; done
-	# test programs
-	@${INSTALL_DIR} ${PFX}/bin/libr-test
-	@for a in `find */t -perm /u+x -type f | grep -v 2`; \
-	  do echo "$$a ${PFX}/bin/libr-test"; \
-	  ${INSTALL_PROGRAM} $$a ${PFX}/bin/libr-test ; done
 	${INSTALL_DATA} lang/p/radare.* ${PFX}/lib/radare2
 	echo "lang/p/radare.* ${PFX}/lib/radare2"
 
 deinstall uninstall:
 	# libraries
 	-@for a in `find * | grep -e '\.so$$' | grep lib` ; do \
-	a=`echo $$a|awk -F / '{ print $$NF; }'`; \
+	a=`echo $$a | awk -F / '{ print $$NF; }'`; \
 	echo ${PREFIX}/lib/$$a ; rm -f ${PREFIX}/lib/$$a ; done
 	### object archives
 	-@for a in `find * | grep -e '\.a$$'` ; do \
-	a=`echo $$a|awk -F / '{ print $$NF; }'`; \
+	a=`echo $$a | awk -F / '{ print $$NF; }'`; \
 	echo ${PREFIX}/lib/$$a ; rm -f ${PREFIX}/lib/$$a ; done
 	### includes
 	-(cd include && for a in * ; do rm -f ${PREFIX}/libr/$$a ; done)

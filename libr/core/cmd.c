@@ -293,6 +293,89 @@ static int cmd_interpret(void *data, const char *input) {
 	return 0;
 }
 
+static int cmd_section(void *data, const char *input) {
+	struct r_core_t *core = (struct r_core_t *)data;
+	switch(input[0]) {
+	case '?':
+		eprintf("Usage: S[cbtf=*] len [base [comment]] @ address\n");
+		eprintf(" S                ; list sections\n");
+		eprintf(" S*               ; list sections (in radare commands\n");
+		eprintf(" S=               ; list sections (in nice ascii-art bars)\n");
+		eprintf(" S 4096 0x80000 rwx section_text @ 0x8048000 ; adds new section\n");
+		eprintf(" S 4096 0x80000   ; 4KB of section at current seek with base 0x.\n");
+		eprintf(" S 10K @ 0x300    ; create 10K section at 0x300\n");
+		eprintf(" S -0x300         ; remove this section definition\n");
+		eprintf(" Sd 0x400 @ here  ; set ondisk start address for current section\n");
+		eprintf(" Sc rwx _text     ; add comment to the current section\n");
+		eprintf(" Sb 0x100000      ; change base address\n");
+		eprintf(" St 0x500         ; set end of section at this address\n");
+		eprintf(" Sf 0x100         ; set from address of the current section\n");
+		eprintf(" Sp 7             ; set rwx (r=4 + w=2 + x=1)\n");
+		break;
+	case ' ':
+		switch(input[1]) {
+		case '-': // remove
+			if (input[2]=='?' || input[2]=='\0')
+				eprintf ("Usage: S -#   ; where # is the section index\n");
+			else r_io_section_rm (&core->io, atoi (input+1));
+			break;
+		default:
+			{
+			int i;
+			char *ptr = strdup(input+1);
+			const char *comment = NULL;
+			ut64 from = core->offset;
+			ut64 to   = core->offset + core->blocksize;
+			ut64 base = 0; // XXX config.vaddr; //config_get_i("io.vaddr");
+			ut64 ondisk = 0LL;
+			
+			i = r_str_word_set0(ptr);
+			switch(i) {
+			case 3: // get comment
+				comment = r_str_word_get0(ptr, 2);
+			case 2: // get base address
+				ondisk = r_num_math (&core->num, r_str_word_get0 (ptr, 1));
+			case 1: // get length
+				to = from + r_num_math (&core->num, r_str_word_get0 (ptr, 0));
+			}
+			r_io_section_add (&core->io, from, to, base, ondisk, 7, comment);
+			free (ptr);
+			}
+			break;
+		}
+		break;
+	case '=':
+		r_io_section_list_visual (&core->io, core->offset, core->blocksize);
+		break;
+	case '\0':
+		r_io_section_list (&core->io, core->offset, 0);
+		break;
+	case '*':
+		r_io_section_list (&core->io, core->offset, 1);
+		break;
+	case 'd':
+		r_io_section_set (&core->io, core->offset, -1, -1, r_num_math (
+			&core->num, input+1), -1, NULL);
+		break;
+	case 'c':
+		r_io_section_set (&core->io, core->offset, -1, -1, -1, -1, input+(input[1]==' '?2:1));
+		break;
+	case 'b':
+		r_io_section_set (&core->io, core->offset, -1, r_num_math (&core->num, input+1), -1, -1, NULL);
+		break;
+	case 't':
+		r_io_section_set (&core->io, core->offset, r_num_math (&core->num, input+1), -1, -1,-1, NULL);
+		break;
+	case 'p':
+		r_io_section_set (&core->io, core->offset, -1, -1, -1, atoi(input+1), NULL);
+		break;
+	case 'f':
+		eprintf("TODO\n");
+		break;
+	}
+	return 0;
+}
+
 static int cmd_seek(void *data, const char *input) {
 	ut64 off;
 	char *cmd, *p; 
@@ -361,7 +444,7 @@ static int cmd_help(void *data, const char *input)
 	case '+':
 		if (input[1]) {
 			if (core->num.value & UT64_GT0)
-				r_core_cmd(core, input+1, 0);
+				r_core_cmd (core, input+1, 0);
 		} else r_cons_printf("0x%llx\n", core->num.value);
 		break;
 	case '-':
@@ -372,7 +455,7 @@ static int cmd_help(void *data, const char *input)
 		break;
 	case '!': // ??
 		if (input[1]) {
-			if (core->num.value != UT64_MIN)
+			if (&core->num.value != UT64_MIN)
 				r_core_cmd(core, input+1, 0);
 		} else r_cons_printf("0x%llx\n", core->num.value);
 		break;
@@ -416,7 +499,7 @@ static int cmd_help(void *data, const char *input)
 			return 0;
 		} else
 		if (input[1]) {
-			if (core->num.value == UT64_MIN)
+			if (&core->num.value == UT64_MIN)
 				r_core_cmd(core, input+1, 0);
 		} else r_cons_printf("0x%llx\n", core->num.value);
 		break;
@@ -431,6 +514,7 @@ static int cmd_help(void *data, const char *input)
 		" e [a[=b]]         ; list/get/set config evaluable vars\n"
 		" f [name][sz][at]  ; set flag at current address\n"
 		" s [addr]          ; seek to address\n"
+		" S?[size] [vaddr]  ; IO section manipulation information\n"
 		" i [file]          ; get info about opened file\n"
 		" p?[len]           ; print current block with format and length\n"
 		" V[vcmds]          ; enter visual mode (vcmds=visualvisual  keystrokes)\n"
@@ -1602,9 +1686,9 @@ R_API int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
 	//				if ((flag_space_idx != -1) && (flag->space != flag_space_idx))
 	//					continue;
 
-					config.seek = flag->offset;
+					core->offset = flag->offset;
 					radare_read(0);
-					cons_printf("; @@ 0x%08llx (%s)\n", config.seek, flag->name);
+					cons_printf("; @@ 0x%08llx (%s)\n", core->offset, flag->name);
 					radare_cmd(cmd,0);
 				}
 #else
@@ -1631,10 +1715,10 @@ printf("No flags foreach implemented\n");
 				/* ugly copypasta from tmpseek .. */
 				if (strstr(word, each)) {
 					if (word[i]=='+'||word[i]=='-')
-						config.seek = config.seek + get_math(word);
-					else	config.seek = get_math(word);
+						core->offset = core->offset + r_num_math (get_math(&core->num, word);
+					else	core->offset = r_num_math (get_math(&core->num, word);
 					radare_read(0);
-					cons_printf("; @@ 0x%08llx\n", config.seek);
+					cons_printf("; @@ 0x%08llx\n", core->offset);
 					radare_cmd(cmd,0);
 				}
 	#endif
@@ -1901,31 +1985,32 @@ R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd)
 
 int r_core_cmd_init(struct r_core_t *core)
 {
-	r_cmd_init(&core->cmd);
-	r_cmd_set_data(&core->cmd, core);
-	r_cmd_add(&core->cmd, "x",        "alias for px", &cmd_hexdump);
-	r_cmd_add(&core->cmd, "analysis", "analysis", &cmd_anal);
-	r_cmd_add(&core->cmd, "flag",     "get/set flags", &cmd_flag);
-	r_cmd_add(&core->cmd, "debug",    "debugger operations", &cmd_debug);
-	r_cmd_add(&core->cmd, "info",     "get file info", &cmd_info);
-	r_cmd_add(&core->cmd, "seek",     "seek to an offset", &cmd_seek);
-	r_cmd_add(&core->cmd, "bsize",    "change block size", &cmd_bsize);
-	r_cmd_add(&core->cmd, "eval",     "evaluate configuration variable", &cmd_eval);
-	r_cmd_add(&core->cmd, "print",    "print current block", &cmd_print);
-	r_cmd_add(&core->cmd, "write",    "write bytes", &cmd_write);
-	r_cmd_add(&core->cmd, "Code",     "code metadata", &cmd_meta);
-	r_cmd_add(&core->cmd, "yank",     "yank bytes", &cmd_yank);
-	r_cmd_add(&core->cmd, "Visual",   "enter visual mode", &cmd_visual);
-	r_cmd_add(&core->cmd, "undo",     "undo writes", &cmd_undowrite);
-	r_cmd_add(&core->cmd, "!",        "run system command", &cmd_system);
-	r_cmd_add(&core->cmd, "|",        "run io system command", &cmd_io_system);
-	r_cmd_add(&core->cmd, "#",        "calculate hash", &cmd_hash);
-	r_cmd_add(&core->cmd, "?",        "help message", &cmd_help);
-	r_cmd_add(&core->cmd, ".",        "interpret", &cmd_interpret);
-	r_cmd_add(&core->cmd, "/",        "search kw, pattern aes", &cmd_search);
-	r_cmd_add(&core->cmd, "(",        "macro", &cmd_macro);
-	r_cmd_add(&core->cmd, "|",        "io pipe", &cmd_iopipe);
-	r_cmd_add(&core->cmd, "quit",     "exit program session", &cmd_quit);
+	r_cmd_init (&core->cmd);
+	r_cmd_set_data (&core->cmd, core);
+	r_cmd_add (&core->cmd, "x",        "alias for px", &cmd_hexdump);
+	r_cmd_add (&core->cmd, "analysis", "analysis", &cmd_anal);
+	r_cmd_add (&core->cmd, "flag",     "get/set flags", &cmd_flag);
+	r_cmd_add (&core->cmd, "debug",    "debugger operations", &cmd_debug);
+	r_cmd_add (&core->cmd, "info",     "get file info", &cmd_info);
+	r_cmd_add (&core->cmd, "seek",     "seek to an offset", &cmd_seek);
+	r_cmd_add (&core->cmd, "Section",  "setup section io information", &cmd_section);
+	r_cmd_add (&core->cmd, "bsize",    "change block size", &cmd_bsize);
+	r_cmd_add (&core->cmd, "eval",     "evaluate configuration variable", &cmd_eval);
+	r_cmd_add (&core->cmd, "print",    "print current block", &cmd_print);
+	r_cmd_add (&core->cmd, "write",    "write bytes", &cmd_write);
+	r_cmd_add (&core->cmd, "Code",     "code metadata", &cmd_meta);
+	r_cmd_add (&core->cmd, "yank",     "yank bytes", &cmd_yank);
+	r_cmd_add (&core->cmd, "Visual",   "enter visual mode", &cmd_visual);
+	r_cmd_add (&core->cmd, "undo",     "undo writes", &cmd_undowrite);
+	r_cmd_add (&core->cmd, "!",        "run system command", &cmd_system);
+	r_cmd_add (&core->cmd, "|",        "run io system command", &cmd_io_system);
+	r_cmd_add (&core->cmd, "#",        "calculate hash", &cmd_hash);
+	r_cmd_add (&core->cmd, "?",        "help message", &cmd_help);
+	r_cmd_add (&core->cmd, ".",        "interpret", &cmd_interpret);
+	r_cmd_add (&core->cmd, "/",        "search kw, pattern aes", &cmd_search);
+	r_cmd_add (&core->cmd, "(",        "macro", &cmd_macro);
+	r_cmd_add (&core->cmd, "|",        "io pipe", &cmd_iopipe);
+	r_cmd_add (&core->cmd, "quit",     "exit program session", &cmd_quit);
 
 	return 0;
 }
