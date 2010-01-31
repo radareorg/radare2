@@ -4,7 +4,6 @@
 
 #define NPF 6
 static int printidx = 0;
-//const char *printfmt[] = { "x", "pd", "p8", "pc", "ps", ".dr*&&s esp&&x 64&&dr&&s eip&&pd" };
 const char *printfmt[] = { "x", "pd", "p8", "pc", "ps", "s esp&&x 64&&dr&&s eip&&pd" };
 
 static int curset = 0, cursor = -1, ocursor=-1;
@@ -17,7 +16,7 @@ static ut64 marks[256];
 
 static void r_core_visual_mark(struct r_core_t *core, ut8 ch)
 {
-	if (marks_init==0) {
+	if (!marks_init) {
 		int i;
 		for(i=0;i<255;i++)
 			marks[i] = 0;
@@ -28,7 +27,7 @@ static void r_core_visual_mark(struct r_core_t *core, ut8 ch)
 
 static void r_core_visual_mark_seek(struct r_core_t *core, ut8 ch)
 {
-	if (marks_init==0) {
+	if (!marks_init) {
 		int i;
 		for(i=0;i<255;i++)
 			marks[i] = 0;

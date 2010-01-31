@@ -80,7 +80,7 @@ R_API int r_core_config_init(struct r_core_t *core)
 	r_config_set(cfg, "asm.offset", "true"); 
 	r_config_set(cfg, "asm.os", "linux"); 
 	r_config_set(cfg, "asm.reflines", "true");
-	r_config_set(cfg, "asm.reflinesout", "false");
+	r_config_set(cfg, "asm.reflinesout", "true");
 	r_config_set(cfg, "asm.reflinesstyle", "false");
 	r_config_set(cfg, "asm.reflineswide", "true");
 	r_config_set(cfg, "asm.comments", "true");

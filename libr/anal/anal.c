@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 */
+/* radare - LGPL - Copyright 2009-2010 */
 /*   nibble<.ds@gmail.com> */
 /*   pancake<nopcode.org> */
 
@@ -7,9 +7,7 @@
 
 R_API struct r_anal_t *r_anal_new()
 {
-	struct r_anal_t *r = MALLOC_STRUCT(struct r_anal_t);
-	if (r) r_anal_init(r);
-	return r;
+	return r_anal_init (MALLOC_STRUCT (struct r_anal_t));
 }
 
 R_API struct r_anal_t *r_anal_free(struct r_anal_t *a)
@@ -19,15 +17,17 @@ R_API struct r_anal_t *r_anal_free(struct r_anal_t *a)
 	return NULL;
 }
 
-R_API int r_anal_init(struct r_anal_t *anal)
+R_API struct r_anal_t *r_anal_init(struct r_anal_t *anal)
 {
-	anal->user = NULL;
-	anal->ctx = NULL;
-	anal->cur = NULL;
-	r_anal_set_bits(anal, 32);
-	r_anal_set_big_endian(anal, R_FALSE);
-	INIT_LIST_HEAD(&anal->anals);
-	return R_TRUE;
+	if (anal) {
+		anal->user = NULL;
+		anal->ctx = NULL;
+		anal->cur = NULL;
+		r_anal_set_bits (anal, 32);
+		r_anal_set_big_endian (anal, R_FALSE);
+		INIT_LIST_HEAD (&anal->anals);
+	}
+	return anal;
 }
 
 R_API void r_anal_set_user_ptr(struct r_anal_t *anal, void *user)
@@ -135,7 +135,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, ut8 *b
 #endif
 
 		anal->pc += sz;
-		sz = r_anal_aop(anal, &aop, ptr);
+		sz = r_anal_aop (anal, &aop, ptr);
 		if (sz > 0) {
 			/* store data */
 			switch(aop.type) {
@@ -163,7 +163,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, ut8 *b
 	return list;
 }
 
-/* umf..this should probably be outside this file*/
+/* umf..this should probably be outside this file */
 R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, char *str, int opts)
 {
 	struct r_anal_refline_t *ref;
@@ -177,7 +177,7 @@ R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *li
 	if (!list)
 		return R_FALSE;
 
-	strcpy(str, " ");
+	strcpy (str, " ");
 
 	for (pos = linestyle?(&(list->list))->next:(&(list->list))->prev;
 		pos != (&(list->list)); pos = linestyle?pos->next:pos->prev) {

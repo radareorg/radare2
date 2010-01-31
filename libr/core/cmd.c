@@ -50,6 +50,7 @@ static void r_core_cmd_reg (struct r_core_t *core, const char *str) {
 			" dr 32      show 32 bit registers\n"
 			" dr:eax     show value of eax register\n"
 			" dr eax=33  set register value. eax = 33\n");
+		break;
 	case 'p':
 		if (str[1]) {
 			eprintf ("profile: \n");
@@ -513,8 +514,8 @@ static int cmd_print(void *data, const char *input)
 	int show_lines = r_config_get_i(&core->config, "asm.reflines");
 	int linesout = r_config_get_i(&core->config, "asm.reflinesout");
 	int show_comments = r_config_get_i(&core->config, "asm.comments");
-	int linesopts = 0;
 	int pseudo = r_config_get_i(&core->config, "asm.pseudo");
+	int linesopts = 0;
 
 	if (r_config_get_i(&core->config, "asm.reflinesstyle"))
 		linesopts |= R_ANAL_REFLINE_STYLE;
@@ -522,13 +523,14 @@ static int cmd_print(void *data, const char *input)
 		linesopts |= R_ANAL_REFLINE_WIDE;
 
 	if (input[0] && input[1]) {
-		l = (int) r_num_get(&core->num, input+2);
+		l = (int) r_num_get (&core->num, input+2);
 		if (l>0) len = l;
-		if (l>tbs) r_core_block_size(core, l);
+		if (l>tbs) r_core_block_size (core, l);
 	}
 	
 	switch(input[0]) {
 	case 'd':
+		// TODO: move to a function
 		{
 			int ret, idx; 
 			ut8 *buf = core->block;
@@ -561,13 +563,12 @@ static int cmd_print(void *data, const char *input)
 				}
 				r_anal_aop(&core->anal, &analop, buf+idx);
 
-				if (show_lines) r_cons_printf("%s", line);
+				if (show_lines) r_cons_strcat(line);
 				if (show_offset) r_cons_printf("0x%08llx ", core->offset + idx);
 				if (show_bytes) {
 					struct r_flag_item_t *flag = r_flag_get_i(&core->flags, core->offset+idx);
-					if (flag) {
-						r_cons_printf("*[ %10s] ", flag->name);
-					} else r_cons_printf("%14s ", asmop.buf_hex);
+					if (flag) r_cons_printf("*[ %10s] ", flag->name);
+					else r_cons_printf("%14s ", asmop.buf_hex);
 				}
 				if (pseudo) {
 					r_parse_parse(&core->parser, asmop.buf_asm, str);
@@ -719,7 +720,11 @@ static int cmd_anal(void *data, const char *input)
 	
 	switch(input[0]) {
 	case '\0':
-		r_anal_list(&core->anal);
+		r_anal_list (&core->anal);
+		break;
+	case 'h':
+		if (input[1] && !r_anal_use (&core->anal, input+2))
+			eprintf("Cannot use '%s' anal plugin.\n", input+2);
 		break;
 	case 'o':
 		{
@@ -737,6 +742,7 @@ static int cmd_anal(void *data, const char *input)
 		break;
 	default:
 		fprintf(stderr, "Usage: a[o] [len]\n"
+		" ah [handle] use this analysis plugin\n"
 		" ao [len]    Analyze raw bytes\n");
 		break;
 	}

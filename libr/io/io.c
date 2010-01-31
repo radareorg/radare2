@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
 
 #include "r_io.h"
 #include "r_util.h"
@@ -43,14 +43,14 @@ R_API int r_io_write_buf(struct r_io_t *io, struct r_buf_t *b) {
 R_API struct r_io_t *r_io_free(struct r_io_t *io)
 {
 	/* TODO: properly free inner nfo */
-	free(io);
+	free (io);
 	return NULL;
 }
 
 /* used by uri handler plugins */
 R_API int r_io_redirect(struct r_io_t *io, const char *file)
 {
-	free(io->redirect);
+	free (io->redirect);
 	io->redirect = file?strdup(file):NULL;
 	return 0;
 }
@@ -58,12 +58,17 @@ R_API int r_io_redirect(struct r_io_t *io, const char *file)
 R_API int r_io_open_as(struct r_io_t *io, const char *urihandler, const char *file, int flags, int mode)
 {
 	int ret;
-	char *uri = malloc(strlen(urihandler)+strlen(file)+5);
-	strcpy(uri, urihandler);
-	strcpy(uri, "://");
-	strcpy(uri, file);
-	ret = r_io_open(io, uri, flags, mode);
-	free(uri);
+	char *uri;
+	int urilen = strlen (urihandler);
+	uri = malloc (strlen (urihandler)+strlen (file)+5);
+	if (uri == NULL)
+		return -1;
+	if (urilen>0)
+		sprintf (uri, "%s://", urihandler);
+	else *uri = '\0';
+	strcpy (uri+urilen, file);
+	ret = r_io_open (io, uri, flags, mode);
+	free (uri);
 	return ret;
 }
 
@@ -149,10 +154,10 @@ R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len)
 			if (io->plugin->read != NULL)
 				ret = io->plugin->read(io, io->fd, buf, len);
 			else fprintf(stderr, "IO handler for fd=%d has no read()\n", io->fd);
-		} else ret = read(io->fd, buf, len);
+		} else ret = read (io->fd, buf, len);
 	}
 
-	if (ret == len && io->cached_read) {
+	if (ret != -1 && ret == len && io->cached_read) {
 		/* if read is cached. cache it :) */
 		r_io_cache_write(io, io->seek, buf, len);
 	}
@@ -161,9 +166,9 @@ R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len)
 
 R_API int r_io_read_at(struct r_io_t *io, ut64 addr, ut8 *buf, int len)
 {
-	if (r_io_seek(io, addr, R_IO_SEEK_SET)==-1)
+	if (r_io_seek (io, addr, R_IO_SEEK_SET)==-1)
 		return -1;
-	return r_io_read(io, buf, len);
+	return r_io_read (io, buf, len);
 }
 
 R_API ut64 r_io_read_i(struct r_io_t *io, ut64 addr, int sz, int endian)
@@ -264,11 +269,10 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence)
 {
 	int posix_whence = SEEK_SET;
 
-	/* pwn seek value */
 	switch(whence) {
 	case R_IO_SEEK_SET:
 		/* TODO: Deprecate remove section align ?? */
-		offset = r_io_section_align(io, offset, 0, 0);
+		offset = r_io_section_align (io, offset, 0, 0);
 		io->seek = offset;
 		posix_whence = SEEK_SET;
 		break;
@@ -277,18 +281,18 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence)
 		posix_whence = SEEK_CUR;
 		break;
 	case R_IO_SEEK_END:
-		io->seek = 0xffffffff; // XXX: depending on io bitz?
+		io->seek = UT64_MAX; // XXX: depending on io bitz?
 		posix_whence = SEEK_END;
 		break;
 	}
 
 	// TODO: implement io->enforce_seek here!
 	if (io->plugin && io->plugin->lseek)
-		io->seek = io->plugin->lseek(io, io->fd, offset, whence);
+		io->seek = io->plugin->lseek (io, io->fd, offset, whence);
 	// XXX can be problematic on w32..so no 64 bit offset?
-	else io->seek = lseek(io->fd, offset, posix_whence);
+	else io->seek = lseek (io->fd, offset, posix_whence);
 
-	r_io_sundo_push(io);
+	r_io_sundo_push (io);
 
 	return io->seek;
 }
@@ -319,7 +323,7 @@ R_API int r_io_close(struct r_io_t *io, int fd)
 		r_io_desc_del(io, fd);
 		r_io_map_del(io, fd);
 		r_io_handle_close(io, fd, io->plugin);
-		if (io->plugin->close)
+		if (io->plugin && io->plugin->close)
 			return io->plugin->close(io, fd);
 	}
 	io->fd = -1; // unset current fd

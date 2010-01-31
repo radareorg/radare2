@@ -393,7 +393,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 }
 
 static struct r_anal_handle_t r_anal_plugin_x86 = {
-	.name = R_ANAL_NAME("x86"),
+	.name = "x86",
 	.desc = "X86 analysis plugin",
 	.init = NULL,
 	.fini = NULL,

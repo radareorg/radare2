@@ -389,7 +389,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 }
 
 struct r_anal_handle_t r_anal_plugin_x86_bea = {
-	.name = R_ANAL_NAME("x86_bea"),
+	.name = "x86_bea",
 	.desc = "X86 analysis plugin (Bea engine)",
 	.init = NULL,
 	.fini = NULL,

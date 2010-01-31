@@ -8,7 +8,7 @@
 #include "r_types.h"
 #include "list.h"
 
-#define R_ANAL_NAME(x) "anal" R_LIB_SEPARATOR x
+// deprecate this macro?
 #define R_ANAL_MAXREG 16
 
 enum {
@@ -105,17 +105,17 @@ struct r_anal_refline_t {
 } RAnalysisRefline;
 
 typedef struct r_anal_aop_t {
-	int type;                 /* type of opcode */
-	int stackop;              /* operation on stack? */
-	int cond;                 /* condition type */
-	int length;               /* length in bytes of opcode */
-	int family;               /* family of opcode */
-	int eob;                  /* end of block (boolean) */
+	int type;                  /* type of opcode */
+	int stackop;               /* operation on stack? */
+	int cond;                  /* condition type */
+	int length;                /* length in bytes of opcode */
+	int family;                /* family of opcode */
+	int eob;                   /* end of block (boolean) */
 	ut64 jump;                 /* true jmp */
 	ut64 fail;                 /* false jmp */
 	ut64 ref;                  /* reference to memory */
 	ut64 value;                /* reference to value */
-	int r_dst[R_ANAL_MAXREG]; /* register arguments */
+	int r_dst[R_ANAL_MAXREG];  /* register arguments */
 	ut64 i_dst[R_ANAL_MAXREG]; /* inmediate arguments */
 } RAnalysisAop;
 
@@ -154,7 +154,7 @@ typedef struct r_anal_handle_t {
 
 /* anal.c */
 #ifdef R_API
-R_API int r_anal_init(struct r_anal_t *anal);
+R_API struct r_anal_t *r_anal_init(struct r_anal_t *anal);
 R_API struct r_anal_t *r_anal_free(struct r_anal_t *r);
 R_API struct r_anal_t *r_anal_new();
 R_API void r_anal_set_user_ptr(struct r_anal_t *anal, void *user);
