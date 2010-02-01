@@ -133,9 +133,9 @@ static void r_core_cmd_bp (struct r_core_t *core, const char *input) {
 		break;
 	case 'h':
 		if (input[2]==' ') {
-			if (!r_bp_use(core->dbg.bp, input+3))
-				eprintf("Invalid name: '%s'.\n", input+3);
-		} else r_bp_handle_list(core->dbg.bp);
+			if (!r_bp_use (core->dbg.bp, input+3))
+				eprintf ("Invalid name: '%s'.\n", input+3);
+		} else r_bp_handle_list (core->dbg.bp);
 		break;
 	case '?':
 		r_cons_printf(
@@ -210,12 +210,12 @@ static int cmd_yank(void *data, const char *input) {
 	case '\0':
 		if (core->yank) {
 			int i;
-			r_cons_printf("0x%08llx %d ",
+			r_cons_printf ("0x%08llx %d ",
 				core->yank_off, core->yank_len);
 			for(i=0;i<core->yank_len;i++)
-				r_cons_printf("%02x", core->yank[i]);
-			r_cons_newline();
-		} else fprintf(stderr, "No buffer yanked already\n");
+				r_cons_printf ("%02x", core->yank[i]);
+			r_cons_newline ();
+		} else eprintf ("No buffer yanked already\n");
 		break;
 	default:
 		r_cons_printf(
@@ -233,9 +233,9 @@ static int cmd_yank(void *data, const char *input) {
 static int cmd_quit(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
-	switch(input[0]) {
+	switch (input[0]) {
 	case '?':
-		fprintf(stderr,
+		r_cons_printf (
 		"Usage: q[!] [retvalue]\n"
 		" q     ; quit program\n"
 		" q!    ; force quit (no questions)\n"
@@ -247,7 +247,7 @@ static int cmd_quit(void *data, const char *input)
 	case '!':
 		// TODO
 	default:
-		r_line_hist_save(".radare2_history");
+		r_line_hist_save (".radare2_history");
 		exit(*input?r_num_math(&core->num, input+1):0);
 		break;
 	}
@@ -271,7 +271,7 @@ static int cmd_interpret(void *data, const char *input) {
 		r_macro_call(&core->macro, input+1);
 		break;
 	case '?':
-		fprintf(stderr,
+		r_cons_printf (
 		"Usage: . [file] | [!command] | [(macro)]\n"
 		" . foo.rs          ; interpret r script\n"
 		" .!rabin -ri $FILE ; interpret output of command\n"
@@ -280,7 +280,7 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	default:
 		ptr = str = r_core_cmd_str(core, input);
-		while(1) {
+		for (;;) {
 			eol = strchr(ptr, '\n');
 			if (eol) eol[0]='\0';
 			r_core_cmd(core, ptr, 0);
@@ -295,25 +295,26 @@ static int cmd_interpret(void *data, const char *input) {
 
 static int cmd_section(void *data, const char *input) {
 	struct r_core_t *core = (struct r_core_t *)data;
-	switch(input[0]) {
+	switch (input[0]) {
 	case '?':
-		eprintf("Usage: S[cbtf=*] len [base [comment]] @ address\n");
-		eprintf(" S                ; list sections\n");
-		eprintf(" S*               ; list sections (in radare commands\n");
-		eprintf(" S=               ; list sections (in nice ascii-art bars)\n");
-		eprintf(" S 4096 0x80000 rwx section_text @ 0x8048000 ; adds new section\n");
-		eprintf(" S 4096 0x80000   ; 4KB of section at current seek with base 0x.\n");
-		eprintf(" S 10K @ 0x300    ; create 10K section at 0x300\n");
-		eprintf(" S -0x300         ; remove this section definition\n");
-		eprintf(" Sd 0x400 @ here  ; set ondisk start address for current section\n");
-		eprintf(" Sc rwx _text     ; add comment to the current section\n");
-		eprintf(" Sb 0x100000      ; change base address\n");
-		eprintf(" St 0x500         ; set end of section at this address\n");
-		eprintf(" Sf 0x100         ; set from address of the current section\n");
-		eprintf(" Sp 7             ; set rwx (r=4 + w=2 + x=1)\n");
+		r_cons_printf (
+		"Usage: S[cbtf=*] len [base [comment]] @ address\n"
+		" S                ; list sections\n"
+		" S*               ; list sections (in radare commands\n"
+		" S=               ; list sections (in nice ascii-art bars)\n"
+		" S 4096 0x80000 rwx section_text @ 0x8048000 ; adds new section\n"
+		" S 4096 0x80000   ; 4KB of section at current seek with base 0x.\n"
+		" S 10K @ 0x300    ; create 10K section at 0x300\n"
+		" S -0x300         ; remove this section definition\n"
+		" Sd 0x400 @ here  ; set ondisk start address for current section\n"
+		" Sc rwx _text     ; add comment to the current section\n"
+		" Sb 0x100000      ; change base address\n"
+		" St 0x500         ; set end of section at this address\n"
+		" Sf 0x100         ; set from address of the current section\n"
+		" Sp 7             ; set rwx (r=4 + w=2 + x=1)\n");
 		break;
 	case ' ':
-		switch(input[1]) {
+		switch (input[1]) {
 		case '-': // remove
 			if (input[2]=='?' || input[2]=='\0')
 				eprintf ("Usage: S -#   ; where # is the section index\n");
@@ -390,20 +391,20 @@ static int cmd_seek(void *data, const char *input) {
 			r_core_seek(core, off, 1);
 			break;
 		case '+':
-			if (input[1]=='+') r_core_seek_delta(core, core->blocksize);
-			else r_core_seek_delta(core, off);
+			if (input[1]=='+') r_core_seek_delta (core, core->blocksize);
+			else r_core_seek_delta (core, off);
 			break;
 		case '-':
-			if (input[1]=='-') r_core_seek_delta(core, -core->blocksize);
-			else r_core_seek_delta(core, -off);
+			if (input[1]=='-') r_core_seek_delta (core, -core->blocksize);
+			else r_core_seek_delta (core, -off);
 			break;
 		case 'a':
 			off = core->blocksize;
 			if (input[1]&&input[2]) {
-				cmd = strdup(input);
-				p = strchr(cmd+2, ' ');
+				cmd = strdup (input);
+				p = strchr (cmd+2, ' ');
 				if (p) {
-					off = r_num_math(&core->num, p+1);;
+					off = r_num_math (&core->num, p+1);;
 					*p='\0';
 				}
 				cmd[0]='s';
@@ -414,7 +415,7 @@ static int cmd_seek(void *data, const char *input) {
 			r_core_seek_align(core, off, 0);
 			break;
 		case '?':
-			fprintf(stderr,
+			r_cons_printf (
 			"Usage: s[+-] [addr]\n"
 			" s 0x320    ; seek to this address\n"
 			" s++        ; seek blocksize bytes forward\n"
@@ -475,7 +476,7 @@ static int cmd_help(void *data, const char *input)
 		} break;
 	case '?': // ???
 		if (input[1]=='?') {
-			fprintf(stderr,
+			r_cons_printf (
 			"Usage: ?[?[?]] expression\n"
 			" ? eip-0x804800  ; calculate result for this math expr\n"
 			" ?= eip-0x804800 ; same as above without user feedback\n"
@@ -516,6 +517,7 @@ static int cmd_help(void *data, const char *input)
 		" s [addr]          ; seek to address\n"
 		" S?[size] [vaddr]  ; IO section manipulation information\n"
 		" i [file]          ; get info about opened file\n"
+		" o [file] (addr)   ; open file at optional address\n"
 		" p?[len]           ; print current block with format and length\n"
 		" V[vcmds]          ; enter visual mode (vcmds=visualvisual  keystrokes)\n"
 		" w[mode] [arg]     ; multiple write operations\n"
@@ -562,9 +564,9 @@ static int cmd_info(void *data, const char *input)
 	case 'e':
 	case 'S':
 	case 'z':
-		snprintf(buf, 1023, "rabin2 -%c%s '%s'", input[0],
+		snprintf (buf, sizeof (buf), "rabin2 -%c%s '%s'", input[0],
 			input[1]=='*'?"r":"", core->file->filename);
-		fprintf(stderr, "(%s)\n", buf);
+		eprintf ("(%s)\n", buf);
 		system(buf);
 		break;
 	case '?':
@@ -581,9 +583,9 @@ static int cmd_info(void *data, const char *input)
 	case '*':
 		break;
 	default:
-		r_cons_printf("uri: %s\n", core->file->uri);
-		r_cons_printf("filesize: 0x%x\n", core->file->size);
-		r_cons_printf("blocksize: 0x%x\n", core->blocksize);
+		r_cons_printf ("uri: %s\n", core->file->uri);
+		r_cons_printf ("filesize: 0x%x\n", core->file->size);
+		r_cons_printf ("blocksize: 0x%x\n", core->blocksize);
 	}
 	return 0;
 }
@@ -593,17 +595,17 @@ static int cmd_print(void *data, const char *input)
 	struct r_core_t *core = (struct r_core_t *)data;
 	int l, len = core->blocksize;
 	ut32 tbs = core->blocksize;
-	int show_offset  = r_config_get_i(&core->config, "asm.offset");
-	int show_bytes = r_config_get_i(&core->config, "asm.bytes");
-	int show_lines = r_config_get_i(&core->config, "asm.reflines");
-	int linesout = r_config_get_i(&core->config, "asm.reflinesout");
-	int show_comments = r_config_get_i(&core->config, "asm.comments");
-	int pseudo = r_config_get_i(&core->config, "asm.pseudo");
+	int show_offset  = r_config_get_i (&core->config, "asm.offset");
+	int show_bytes = r_config_get_i (&core->config, "asm.bytes");
+	int show_lines = r_config_get_i (&core->config, "asm.reflines");
+	int linesout = r_config_get_i (&core->config, "asm.reflinesout");
+	int show_comments = r_config_get_i (&core->config, "asm.comments");
+	int pseudo = r_config_get_i (&core->config, "asm.pseudo");
 	int linesopts = 0;
 
-	if (r_config_get_i(&core->config, "asm.reflinesstyle"))
+	if (r_config_get_i (&core->config, "asm.reflinesstyle"))
 		linesopts |= R_ANAL_REFLINE_STYLE;
-	if (r_config_get_i(&core->config, "asm.reflineswide"))
+	if (r_config_get_i (&core->config, "asm.reflineswide"))
 		linesopts |= R_ANAL_REFLINE_WIDE;
 
 	if (input[0] && input[1]) {
@@ -614,7 +616,7 @@ static int cmd_print(void *data, const char *input)
 	
 	switch(input[0]) {
 	case 'd':
-		// TODO: move to a function
+		// TODO: move to a function...we need a flag instead of thousand config_foo's
 		{
 			int ret, idx; 
 			ut8 *buf = core->block;
@@ -629,14 +631,14 @@ static int cmd_print(void *data, const char *input)
 			r_asm_set_pc(&core->assembler, core->offset);
 
 			reflines = r_anal_reflines_get(&core->anal, buf, len, -1, linesout);
-			for(idx=ret=0; idx < len; idx+=ret) {
+			for (idx=ret=0; idx < len; idx+=ret) {
 				r_asm_set_pc(&core->assembler, core->assembler.pc + ret);
 				r_anal_set_pc(&core->anal, core->anal.pc + ret);
 				if (show_comments) {
 					comment = r_meta_get_string(&core->meta, R_META_COMMENT, core->anal.pc+ret);
 					if (comment) {
-						r_cons_strcat(comment);
-						free(comment);
+						r_cons_strcat (comment);
+						free (comment);
 					}
 				}
 				r_anal_reflines_str(&core->anal, reflines, line, linesopts);
@@ -665,7 +667,7 @@ static int cmd_print(void *data, const char *input)
 					r_cons_printf("\t\t; ------------------------------------\n");
 				}
 			}
-			free(reflines);
+			free (reflines);
 		}
 		break;
 	case 's':
@@ -697,7 +699,8 @@ static int cmd_print(void *data, const char *input)
 		break;
 	default:
 		//r_cons_printf("Unknown subcommand '%c'\n", input[0]);
-		r_cons_printf("Usage: p[8] [len]    ; '%c' is unknown\n"
+		r_cons_printf(
+		"Usage: p[8] [len]    ; '%c' is unknown\n"
 		" p8 [len]    8bit hexpair list of bytes\n"
 		" px [len]    hexdump of N bytes\n"
 		" po [len]    octal dump of N bytes\n"
@@ -707,7 +710,8 @@ static int cmd_print(void *data, const char *input)
 		" pd [len]    disassemble N bytes\n"
 		" pr [len]    print N raw bytes\n"
 		" pu [len]    print N url encoded bytes\n"
-		" pU [len]    print N wide url encoded bytes\n", input[0]);
+		" pU [len]    print N wide url encoded bytes\n",
+		input[0]);
 		break;
 	}
 	if (tbs != core->blocksize)
@@ -739,17 +743,17 @@ static int cmd_flag(void *data, const char *input) {
 			s2 = strchr(s+1, ' ');
 			if (s2) {
 				*s2 = '\0';
-				seek = r_num_math(&core->num, s2+1);
+				seek = r_num_math (&core->num, s2+1);
 			}
-			bsze = r_num_math(&core->num, s+1);
+			bsze = r_num_math (&core->num, s+1);
 		}
-		r_flag_set(&core->flags, str, seek, bsze, 0);
+		r_flag_set (&core->flags, str, seek, bsze, 0);
 		if (s) *s=' ';
 		if (s2) *s2=' ';
 		}
 		break;
 	case '-':
-		r_flag_unset(&core->flags, input+1);
+		r_flag_unset (&core->flags, input+1);
 		break;
 	case 'b':
 		r_flag_set_base(&core->flags, r_num_math(&core->num, input+1));
@@ -774,7 +778,8 @@ static int cmd_flag(void *data, const char *input) {
 		r_flag_list(&core->flags, 0);
 		break;
 	case '?':
-		fprintf(stderr, "Usage: f[ ] [flagname]\n"
+		r_cons_printf (
+		"Usage: f[ ] [flagname]\n"
 		" fb 0x8048000     ; set base address for flagging\n"
 		" f name 12 @ 33   ; set flag 'name' with size 12 at 33\n"
 		" f name 12 33     ; same as above\n"
@@ -825,9 +830,10 @@ static int cmd_anal(void *data, const char *input)
 		}
 		break;
 	default:
-		fprintf(stderr, "Usage: a[o] [len]\n"
-		" ah [handle] use this analysis plugin\n"
-		" ao [len]    Analyze raw bytes\n");
+		r_cons_printf (
+		"Usage: a[o] [len]\n"
+		" ah [handle]     ; Use this analysis plugin\n"
+		" ao [len]        ; Analyze raw bytes\n");
 		break;
 	}
 	if (tbs != core->blocksize)
@@ -885,7 +891,7 @@ static int cmd_write(void *data, const char *input)
 		len = len-1;
 		len *= 2;
 		tmp = alloca(len);
-		for(i=0;i<len;i++) {
+		for (i=0;i<len;i++) {
 			if (i%2) tmp[i] = 0;
 			else tmp[i] = str[i>>1];
 		}
@@ -947,14 +953,14 @@ static int cmd_write(void *data, const char *input)
 			break;
 		case ' ':
 			if (len == 0) {
-				fprintf(stderr, "Invalid string\n");
+				eprintf ("Invalid string\n");
 			} else {
 				r_io_set_fd(&core->io, core->file->fd);
 				r_io_set_write_mask(&core->io, (const ut8*)str, len);
-				fprintf(stderr, "Write mask set to '");
+				eprintf ("Write mask set to '");
 				for (i=0;i<len;i++)
-					fprintf(stderr, "%02x", str[i]);
-				fprintf(stderr, "'\n");
+					eprintf ("%02x", str[i]);
+				eprintf ("'\n");
 			}
 			break;
 		}
@@ -1004,7 +1010,7 @@ static int cmd_write(void *data, const char *input)
                 case '\0':
                 case '?':
                 default:
-                        fprintf(stderr, 
+                        r_cons_printf (
                         "Usage: wo[xrlasmd] [hexpairs]\n"
                         "Example: wox 90    ; xor cur block with 90\n"
                         "Example: woa 02 03 ; add 2, 3 to all bytes of cur block\n"
@@ -1031,7 +1037,8 @@ static int cmd_write(void *data, const char *input)
 			r_io_set_fd(&core->io, core->file->fd);
 			r_io_write(&core->io, core->oobi, core->oobi_len);
 		} else
-			r_cons_printf("Usage: w[x] [str] [<file] [<<EOF] [@addr]\n"
+			r_cons_printf(
+			"Usage: w[x] [str] [<file] [<<EOF] [@addr]\n"
 			" w foobar    ; write string 'foobar'\n"
 			" ww foobar   ; write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'\n"
 			" wa push ebp ; write opcode, separated by ';' (use '\"' around the command)\n"
@@ -1058,7 +1065,7 @@ static int __cb_hit(struct r_search_kw_t *kw, void *user, ut64 addr)
 	r_cons_printf("f hit%d_%d %d 0x%08llx\n",
 		kw->kwidx, kw->count, kw->keyword_length, addr);
 
-	if (!strnull(cmdhit)) {
+	if (!strnull (cmdhit)) {
 		ut64 here = core->offset;
 		r_core_seek(core, addr, R_FALSE);
 		r_core_cmd(core, cmdhit, 0);
@@ -1077,13 +1084,13 @@ static int cmd_search(void *data, const char *input)
 	ut8 *buf;
 	switch (input[0]) {
 	case '/':
-		r_search_begin(core->search);
+		r_search_begin (core->search);
 		dosearch = 1;
 		break;
 	case 'v':
-		r_search_free(core->search);
-		core->search = r_search_new(R_SEARCH_KEYWORD);
-		n32 = r_num_math(&core->num, input+1);
+		r_search_free (core->search);
+		core->search = r_search_new (R_SEARCH_KEYWORD);
+		n32 = r_num_math (&core->num, input+1);
 		r_search_kw_add_bin(core->search, (const ut8*)&n32, 4, NULL, 0);
 		r_search_begin(core->search);
 		dosearch = 1;
@@ -1121,7 +1128,8 @@ static int cmd_search(void *data, const char *input)
 		dosearch = 1;
 		break;
 	default:
-		r_cons_printf("Usage: /[xm/] [arg]\n"
+		r_cons_printf (
+		"Usage: /[xm/] [arg]\n"
 		" / foo     ; search for string 'foo'\n"
 		" /m /E.F/i ; match regular expression\n"
 		" /x ff0033 ; search for hex string\n"
@@ -1129,7 +1137,7 @@ static int cmd_search(void *data, const char *input)
 		break;
 	}
 	if (core->search->n_kws==0) {
-		printf("No keywords defined\n");
+		eprintf ("No keywords defined\n");
 	} else
 	if (dosearch) {
 		/* set callback */
@@ -1160,14 +1168,14 @@ static int cmd_search(void *data, const char *input)
 static int cmd_eval(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
-	switch(input[0]) {
+	switch (input[0]) {
 	case '\0':
-		r_config_list(&core->config, NULL, 0);
+		r_config_list (&core->config, NULL, 0);
 		break;
 	case '!':
 		input = r_str_chop_ro(input+1);
-		if (!r_config_swap(&core->config, input))
-			eprintf("r_config: '%s' is not a boolean variable.\n", input);
+		if (!r_config_swap (&core->config, input))
+			eprintf ("r_config: '%s' is not a boolean variable.\n", input);
 		break;
 	case '-':
 		r_core_config_init(core);
@@ -1208,15 +1216,15 @@ static int cmd_hash(void *data, const char *input)
 		#!lua foo bar
 #endif
 		if (input[1]=='\0') {
-			r_lang_list(&core->lang);
+			r_lang_list (&core->lang);
 			return R_TRUE;
 		}
 		// TODO: set argv here
-		r_lang_use(&core->lang, input+1);
+		r_lang_use (&core->lang, input+1);
 		if (core->oobi)
-			r_lang_run(&core->lang,(const char *)
+			r_lang_run (&core->lang,(const char *)
 				core->oobi, core->oobi_len);
-		else r_lang_prompt(&core->lang);
+		else r_lang_prompt (&core->lang);
 		return R_TRUE;
 	}
 
@@ -1249,9 +1257,7 @@ static int cmd_hash(void *data, const char *input)
 
 static int cmd_visual(void *data, const char *input)
 {
-	struct r_core_t *core = (struct r_core_t *)data;
-	r_core_visual(core, input);
-	return 0;
+	return r_core_visual ((RCore *)data, input);
 }
 
 static int cmd_system(void *data, const char *input)
@@ -1281,6 +1287,50 @@ static int cmd_system(void *data, const char *input)
 #endif
 }
 
+static int cmd_open(void *data, const char *input)
+{
+	RCore *core = (RCore*)data;
+	RCoreFile *file;
+	ut64 addr, size;
+	char *ptr;
+
+	switch (*input) {
+	case '\0':
+		r_core_file_list (core);
+		break;
+	default:
+	case '?':
+		eprintf("Usage: o [file] ([offset])\n"
+			" o                   ; list opened files\n"
+			" o /bin/ls           ; open /bin/ls file\n"
+			" o /bin/ls 0x8048000 ; map file\n"
+			" o-1                 ; close file index 1\n");
+		break;
+	case ' ':
+		ptr = strchr (input+1, ' ');
+		if (ptr)
+			*ptr = '\0';
+		file = r_core_file_open (core, input+1, R_IO_READ);
+		if (file) {
+			if (ptr) {
+				addr = r_num_math (&core->num, ptr+1);
+				size = r_io_size (&core->io, file->fd);
+				r_io_map_add (&core->io, file->fd, R_IO_READ, 0, addr, size);
+				eprintf ("Map '%s' in 0x%08llx with size 0x%llx\n",
+					input+1, addr, size);
+			}
+		} else eprintf ("Cannot open file '%s'\n", input+1);
+		break;
+	case '-':
+		file = r_core_file_get_fd (core, atoi (input+1));
+		if (file)
+			r_core_file_close (core, file);
+		else eprintf ("Unable to find filedescriptor %d\n", atoi (input+1));
+		break;
+	}
+	return 0;
+}
+
 static int cmd_meta(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
@@ -1301,9 +1351,9 @@ static int cmd_meta(void *data, const char *input)
 		// TODO: do we need to get the size? or the offset?
 		// TODO: is this an exception compared to other C? commands?
 		if (input[1]==' ') input = input+1;
-		if (input[1]=='-') {
+		if (input[1]=='-')
 			r_meta_del(&core->meta, R_META_COMMENT, core->offset, 1, input+2);
-		} else r_meta_add(&core->meta, R_META_COMMENT, core->offset, 1, input+1);
+		else r_meta_add(&core->meta, R_META_COMMENT, core->offset, 1, input+1);
 		break;
 	case 'S':
 	case 's':
@@ -1951,16 +2001,16 @@ R_API int r_core_cmdf(void *user, const char *fmt, ...)
 	char string[1024];
 	int ret;
 	va_list ap;
-	va_start(ap, fmt);
-	vsnprintf(string, 1023, fmt, ap);
-	ret = r_core_cmd((struct r_core_t *)user, string, 0);
+	va_start (ap, fmt);
+	vsnprintf (string, 1023, fmt, ap);
+	ret = r_core_cmd ((struct r_core_t *)user, string, 0);
 	va_end(ap);
 	return ret;
 }
 
 R_API int r_core_cmd0(void *user, const char *cmd)
 {
-	return r_core_cmd((struct r_core_t *)user, cmd, 0);
+	return r_core_cmd ((struct r_core_t *)user, cmd, 0);
 }
 
 /*
@@ -1969,10 +2019,10 @@ R_API int r_core_cmd0(void *user, const char *cmd)
 R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd)
 {
 	char *retstr = NULL;
-	r_cons_reset();
-	if (r_core_cmd(core, cmd, 0) == -1) {
-		fprintf(stderr, "Invalid command: %s\n", cmd);
-		retstr = strdup("");
+	r_cons_reset ();
+	if (r_core_cmd (core, cmd, 0) == -1) {
+		eprintf ("Invalid command: %s\n", cmd);
+		retstr = strdup ("");
 	} else {
 		const char *static_str = r_cons_get_buffer();
 		if (static_str==NULL)
@@ -1999,6 +2049,7 @@ int r_core_cmd_init(struct r_core_t *core)
 	r_cmd_add (&core->cmd, "print",    "print current block", &cmd_print);
 	r_cmd_add (&core->cmd, "write",    "write bytes", &cmd_write);
 	r_cmd_add (&core->cmd, "Code",     "code metadata", &cmd_meta);
+	r_cmd_add (&core->cmd, "open",     "open or map file", &cmd_open);
 	r_cmd_add (&core->cmd, "yank",     "yank bytes", &cmd_yank);
 	r_cmd_add (&core->cmd, "Visual",   "enter visual mode", &cmd_visual);
 	r_cmd_add (&core->cmd, "undo",     "undo writes", &cmd_undowrite);

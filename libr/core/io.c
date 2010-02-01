@@ -18,47 +18,48 @@ R_API int r_core_write_op(struct r_core_t *core, const char *arg, char op)
 	int len;
 
 	// XXX we can work with config.block instead of dupping it
-	buf = (ut8 *)malloc(core->blocksize);
-	str = (char *)malloc(strlen(arg));
+	buf = (ut8 *)malloc (core->blocksize);
+	str = (char *)malloc (strlen(arg));
 	if (buf == NULL || str == NULL) {
 		free(buf);
 		free(str);
 		return 0;
 	}
-	memcpy(buf, core->block, core->blocksize);
-	len = r_hex_str2bin(arg, (ut8 *)str);
+	memcpy (buf, core->block, core->blocksize);
+	len = r_hex_str2bin (arg, (ut8 *)str);
 
-	switch(op) {
-		case '2':
-		case '4':
-			op-='0';
-			for (i=0;i<core->blocksize;i+=op) {
-				/* endian swap */
-				ut8 tmp = buf[i];
-				buf[i]=buf[i+3];
-				buf[i+3]=tmp;
-				if (op==4) {
-					tmp = buf[i+1];
-					buf[i+1]=buf[i+2];
-					buf[i+2]=tmp;
-				}
+	switch (op) {
+	case '2':
+	case '4':
+		op -= '0';
+		for (i=0;i<core->blocksize;i+=op) {
+			/* endian swap */
+			ut8 tmp = buf[i];
+			buf[i] = buf[i+3];
+			buf[i+3] = tmp;
+			if (op==4) {
+				tmp = buf[i+1];
+				buf[i+1]=buf[i+2];
+				buf[i+2]=tmp;
 			}
-			break;
-		default:
-			for (i=j=0;i<core->blocksize;i++) {
-				switch(op) {
-					case 'x': buf[i] ^= str[j]; break;
-					case 'a': buf[i] += str[j]; break;
-					case 's': buf[i] -= str[j]; break;
-					case 'm': buf[i] *= str[j]; break;
-					case 'd': buf[i] /= str[j]; break;
-					case 'r': buf[i] >>= str[j]; break;
-					case 'l': buf[i] <<= str[j]; break;
-					case 'o': buf[i] |= str[j]; break;
-					case 'A': buf[i] &= str[j]; break;
-				}
-				j++; if (j>=len) j=0; /* cyclic key */
+		}
+		break;
+	default:
+		for (i=j=0;i<core->blocksize;i++) {
+			switch (op) {
+				case 'x': buf[i] ^= str[j]; break;
+				case 'a': buf[i] += str[j]; break;
+				case 's': buf[i] -= str[j]; break;
+				case 'm': buf[i] *= str[j]; break;
+				case 'd': buf[i] /= str[j]; break;
+				case 'r': buf[i] >>= str[j]; break;
+				case 'l': buf[i] <<= str[j]; break;
+				case 'o': buf[i] |= str[j]; break;
+				case 'A': buf[i] &= str[j]; break;
 			}
+			j++; if (j>=len) j=0; /* cyclic key */
+		}
+		break;
 	}
 
 	ret = r_core_write_at (core, core->offset, buf, core->blocksize);
@@ -68,7 +69,6 @@ R_API int r_core_write_op(struct r_core_t *core, const char *arg, char op)
 
 R_API int r_core_seek(struct r_core_t *core, ut64 addr, int rb)
 {
-	int ret = R_TRUE;
 	ut64 old = core->offset;
 	/* XXX unnecesary call */
 	r_io_set_fd (&core->io, core->file->fd);
@@ -81,12 +81,11 @@ R_API int r_core_seek(struct r_core_t *core, ut64 addr, int rb)
 				core->offset = addr;
 			} else {
 				core->offset = old;
-				ret = R_FALSE;
 				eprintf ("Cannot read block at 0x%08llx\n", addr);
 			}
 		}
 	}
-	return ret;
+	return core->offset;
 }
 
 R_API int r_core_write_at(struct r_core_t *core, ut64 addr, const ut8 *buf, int size)
@@ -105,15 +104,15 @@ R_API int r_core_block_read(struct r_core_t *core, int next)
 	if (core->file == NULL)
 		return -1;
 	r_io_set_fd (&core->io, core->file->fd);
-	r_io_seek(&core->io, core->offset+((next)?core->blocksize:0), R_IO_SEEK_SET);
-	return r_io_read(&core->io, core->block, core->blocksize);
+	r_io_seek (&core->io, core->offset+((next)?core->blocksize:0), R_IO_SEEK_SET);
+	return r_io_read (&core->io, core->block, core->blocksize);
 }
 
 R_API int r_core_read_at(struct r_core_t *core, ut64 addr, ut8 *buf, int size)
 {
 	int ret = r_io_set_fd (&core->io, core->file->fd);
 	ret = r_io_read_at (&core->io, addr, buf, size);
-	if (addr >= core->offset && addr <= core->offset+core->blocksize)
-		r_core_block_read(core, 0);
+	if (addr>=core->offset && addr<=core->offset+core->blocksize)
+		r_core_block_read (core, 0);
 	return (ret==-1)?R_FALSE:R_TRUE;
 }

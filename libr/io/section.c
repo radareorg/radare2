@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
 
 #include "r_io.h"
 
@@ -139,7 +139,7 @@ R_API void r_io_section_list_visual(struct r_io_t *io, ut64 seek, ut64 len)
 		if (i>0 && len != 0) {
 			r_cons_printf("=>  0x%08llx |", seek);
 			for(j=0;j<width;j++) {
-				r_cons_printf(
+				r_cons_printf (
 					((j*mul)+min >= seek &&
 					 (j*mul)+min <= seek+len)
 					?"#":"-");
@@ -152,8 +152,8 @@ R_API void r_io_section_list_visual(struct r_io_t *io, ut64 seek, ut64 len)
 R_API struct r_io_section_t *r_io_section_get(struct r_io_t *io, ut64 addr)
 {
 	struct list_head *pos;
-	list_for_each(pos, &io->sections) {
-		struct r_io_section_t *s = (struct r_io_section_t *)list_entry(pos, struct r_io_section_t, list);
+	list_for_each (pos, &io->sections) {
+		RIoSection *s = (struct r_io_section_t *)list_entry(pos, struct r_io_section_t, list);
 		if (addr >= s->from && addr <= s->to)
 			return s;
 	}
@@ -162,7 +162,7 @@ R_API struct r_io_section_t *r_io_section_get(struct r_io_t *io, ut64 addr)
 
 R_API ut64 r_io_section_get_paddr(struct r_io_t *io, ut64 addr)
 {
-	struct r_io_section_t *s = r_io_section_get(io, addr);
+	RIoSection *s = r_io_section_get(io, addr);
 	return s?s->paddr:-1;
 }
 
