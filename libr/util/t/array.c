@@ -26,10 +26,10 @@ void test_array_new () {
 void test_array_static () {
 	int i = 0;
 	void *data[10];
-	rArray iter;
-	rArray it = (rArray) &data;
+	RArray iter;
+	RArray it = (RArray) &data;
 
-	it = (rArray) r_array_init (it, 9);
+	it = (RArray) r_array_init (it, 9);
 
 	r_array_set (it, 0, "foo");
 	r_array_set (it, 1, "bar");

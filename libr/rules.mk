@@ -102,6 +102,9 @@ myclean:
 clean: myclean
 	-rm -f ${OBJ} ${BIN}
 
+install:
+	cd ../.. && ${MAKE} install
+
 .PHONY: all clean myclean
 
 endif

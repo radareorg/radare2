@@ -191,7 +191,7 @@ R_API int r_debug_syscall(struct r_debug_t *dbg, int num)
 // TODO: do we need tid/pid
 // TODO: Do we need an intermediate signal representation for portability?
 // TODO: STOP, CONTINUE, KILL, ...
-R_API int r_debug_kill(struct r_debug_t *dbg, int pid, int sig)
+R_API int r_debug_kill(struct r_debug_t *dbg, int sig)
 {
 	// XXX: use debugger handler backend here
 #if __WINDOWS__
@@ -199,9 +199,18 @@ R_API int r_debug_kill(struct r_debug_t *dbg, int pid, int sig)
 	return R_FALSE;
 #else
 #include <signal.h>
-	int ret = kill(pid, sig);
+	int ret = kill(dbg->pid, sig);
 	if (ret == -1)
 		return R_FALSE;
 	return R_TRUE;
 #endif
+}
+
+// TODO: move into r_debug
+// TODO: we need to know the arch backend, frame size, 
+// TODO: merge algorithms from r1 (do we need ebp?)
+// TODO: must return a linked list or r_iter
+R_API int r_anal_backtrace(struct r_anal_t *anal, const ut8 *buf, ut64 esp)
+{
+	return R_FALSE;
 }

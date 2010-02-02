@@ -11,11 +11,9 @@ static ut64 num_callback(void *userptr, const char *str, int *ok)
 	
 	if (str[0]=='$') {
 		/* analyze opcode */
-		switch(str[1]) {
+		switch (str[1]) {
 		case '$': 
-			if (str[2]=='$')
-				return aop.length;
-			return core->offset;
+			return (str[2]=='$')? aop.length:core->offset;
 		case 'e':
 		case 'j':
 		case 'f':
@@ -26,7 +24,7 @@ static ut64 num_callback(void *userptr, const char *str, int *ok)
 		}
 		
 		/* return value */
-		switch(str[1]) {
+		switch (str[1]) {
 		case '{':
 			{
 				char *ptr, *bptr = strdup(str+2);
@@ -50,13 +48,10 @@ static ut64 num_callback(void *userptr, const char *str, int *ok)
 		}
 	}
 
-	flag = r_flag_get(&(core->flags), str);
-	if (flag != NULL) {
-		*ok = 1;
-		return flag->offset;
-	}
-	*ok = 0;
-	return 0LL;
+	flag = r_flag_get (&(core->flags), str);
+	if (flag) *ok = R_TRUE;
+	else *ok = R_FALSE;
+	return (flag)?flag->offset:0LL;
 }
 
 R_API struct r_core_t *r_core_new()
@@ -232,6 +227,8 @@ R_API int r_core_seek_align(struct r_core_t *core, ut64 align, int times)
 		times -= inc;
 		diff += align*inc;
 	}
+	if (diff<0 && -diff>seek)
+		seek = diff = 0;
 	return r_core_seek (core, seek+diff, 1);
 }
 
@@ -247,7 +244,7 @@ R_API int r_core_seek_delta(struct r_core_t *core, st64 addr)
 		else addr += tmp;
 	} else {
 		/* check < 0 */
-		if (tmp+addr<0) addr = 0;
+		if (-addr > tmp) addr = 0;
 		else addr += tmp;
 	}
 	core->offset = addr;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 */
+/* radare - LGPL - Copyright 2009-2010 */
 /*   nibble<.ds@gmail.com> */
 /*   pancake<nopcode.org> */
 

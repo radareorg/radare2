@@ -27,7 +27,7 @@ typedef int (*RLineCallback)(struct r_line_t *line);
 
 typedef struct r_line_comp_t {
 	int argc;
-	char **argv;
+	const char **argv;
 	RLineCallback run;
 } RLineCompletion;
 

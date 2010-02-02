@@ -7,13 +7,12 @@
 R_API ut8* r_reg_get_bytes(struct r_reg_t *reg, int type, int *size)
 {
 	struct r_reg_arena_t *arena;
-	int sz, osize = 0;
-	int i;
+	int i, sz, osize = 0;
 	if (type == -1) {
 		/* serialize ALL register types in a single buffer */
 		// owned buffer is returned
 		ut8 * buf = malloc(1);
-		for(i=0;i<R_REG_TYPE_LAST;i++) {
+		for (i=0;i<R_REG_TYPE_LAST;i++) {
 			arena = reg->regset[type].arena;
 			sz += arena->size;
 			buf = realloc(buf, sz);
@@ -25,7 +24,7 @@ R_API ut8* r_reg_get_bytes(struct r_reg_t *reg, int type, int *size)
 		return buf;
 	}
 
-	if (type < 0 || type > R_REG_TYPE_LAST)
+	if (type<0 || type>R_REG_TYPE_LAST)
 		return NULL;
 	if (size)
 		*size = reg->regset[type].arena->size;
@@ -58,9 +57,9 @@ R_API int r_reg_set_bytes(struct r_reg_t *reg, int type, const ut8* buf, int len
 			}
 		}
 	} else {
-		if (type >= 0 && type <= R_REG_TYPE_LAST) {
+		if (type>=0 && type<=R_REG_TYPE_LAST) {
 			regset = &reg->regset[type];
-			if (len <= regset->arena->size) {
+			if (len<=regset->arena->size) {
 				memcpy (regset->arena->bytes, buf, len);
 				ret = R_TRUE;
 			}

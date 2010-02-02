@@ -483,9 +483,9 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 	case 'a':
 		r_cons_printf("Enter assembler opcodes separated with ';':\n");
 		r_cons_flush();
-		r_cons_set_raw(0);
-		strcpy(buf, "wa ");
-		if (r_cons_fgets(buf+3, 1000, 0, NULL) <0) buf[0]='\0';
+		r_cons_set_raw (0);
+		strcpy (buf, "wa ");
+		if (r_cons_fgets (buf+3, 1000, 0, NULL) <0) buf[0]='\0';
 		if (buf[0]) {
 			if (curset) r_core_seek(core, core->offset + cursor, 0);
 			r_core_cmd(core, buf, 1);
@@ -494,11 +494,11 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 		r_cons_set_raw(1);
 		break;
 	case 'w':
-		r_cons_printf("Enter hexpair string to write:\n");
-		r_cons_flush();
-		r_cons_set_raw(0);
-		strcpy(buf, "wx ");
-		if (r_cons_fgets(buf+3, 1000, 0, NULL) <0) buf[0]='\0';
+		r_cons_printf ("Enter hexpair string to write:\n");
+		r_cons_flush ();
+		r_cons_set_raw (0);
+		strcpy (buf, "wx ");
+		if (r_cons_fgets (buf+3, 1000, 0, NULL) <0) buf[0]='\0';
 		if (buf[0]) {
 			if (curset) r_core_seek(core, core->offset + cursor, 0);
 			r_core_cmd(core, buf, 1);
@@ -509,10 +509,9 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 	/* select */
 	case 'H':
 		if (curset) {
-			if (ocursor ==-1) ocursor=cursor;
+			if (ocursor==-1) ocursor=cursor;
 			cursor--;
-		} else
-		r_core_cmd(core, "s-2", 0);
+		} else r_core_cmd (core, "s-2", 0);
 		break;
 	case 'e':
 		r_core_visual_config(core);
@@ -522,60 +521,57 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 		break;
 	case 'J':
 		if (curset) {
-			if (ocursor ==-1) ocursor=cursor;
+			if (ocursor==-1) ocursor = cursor;
 			cursor+=16;
-		} else
-		r_core_cmd(core, "s++", 0);
+		} else r_core_cmd (core, "s++", 0);
 		break;
 	case 'g':
-		r_core_cmd(core, "s 0", 0);
+		r_core_cmd (core, "s 0", 0);
 		break;
 	case 'G':
-		// TODO: seek to file size
+		r_core_seek (core, core->file->size-core->blocksize, 1);
 		//r_core_cmd(core, "s 0", 0);
 		break;
 	case 'K':
 		if (curset) {
-			if (ocursor ==-1) ocursor=cursor;
-			cursor-=16;
-		} else
-		r_core_cmd(core, "s--", 0);
+			if (ocursor==-1) ocursor=cursor;
+			cursor -= 16;
+		} else r_core_cmd (core, "s--", 0);
 		break;
 	case 'L':
 		if (curset) {
-			if (ocursor ==-1) ocursor=cursor;
+			if (ocursor==-1) ocursor=cursor;
 			cursor++;
-		} else
-		r_core_cmd(core, "s+2", 0);
+		} else r_core_cmd (core, "s+2", 0);
 		break;
 	/* move */
 	case 'h':
 		if (curset) {
 			cursor--;
 			ocursor=-1;
-		} else r_core_cmd(core, "s-1", 0);
+		} else r_core_cmd (core, "s-1", 0);
 		break;
 	case 'l':
 		if (curset) {
 			cursor++;
 			ocursor=-1;
-		} else r_core_cmd(core, "s+1", 0);
+		} else r_core_cmd (core, "s+1", 0);
 		break;
 	case 'j':
 		if (curset) {
 			cursor+=16;
 			ocursor=-1;
-		} else r_core_cmd(core, "s+16", 0);
+		} else r_core_cmd (core, "s+16", 0);
 		break;
 	case 'k':
 		if (curset) {
 			cursor-=16;
 			ocursor=-1;
-		} else r_core_cmd(core, "s- 16", 0);
+		} else r_core_cmd (core, "s- 16", 0);
 		break;
 	case 's':
-		r_core_cmd(core, "ds", 0);
-		r_core_cmd(core, ".dr", 0);
+		r_core_cmd (core, "ds", 0);
+		r_core_cmd (core, ".dr", 0);
 		//r_core_cmd(core, "s eip", 0);
 		break;
 	case 'p':
@@ -585,64 +581,65 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 		printidx--;
 		break;
 	case '-':
-		r_core_block_size( core, core->blocksize-1);
+		r_core_block_size (core, core->blocksize-1);
 		break;
 	case 'm':
-		r_core_visual_mark(core, r_cons_readchar());
+		r_core_visual_mark (core, r_cons_readchar());
 		break;
 	case '\'':
-		r_core_visual_mark_seek(core, r_cons_readchar());
+		r_core_visual_mark_seek (core, r_cons_readchar());
 		break;
 	case '+':
-		r_core_block_size(core, core->blocksize+1);
+		r_core_block_size (core, core->blocksize+1);
 		break;
 	case '/':
-		r_core_block_size(core, core->blocksize-=16);
+		r_core_block_size (core, core->blocksize-=16);
 		break;
 	case '*':
-		r_core_block_size(core, core->blocksize+=16);
+		r_core_block_size (core, core->blocksize+=16);
 		break;
 	case '>':
-		r_core_seek_align(core, core->blocksize, 1);
+		r_core_seek_align (core, core->blocksize, 1);
 		break;
 	case '<':
-		r_core_seek_align(core, core->blocksize, -1);
+		r_core_seek_align (core, core->blocksize, -1);
 		break;
 	case '.':
-		r_core_cmd(core, ".dr* && s eip", 0); // XXX
+		r_core_cmd (core, ".dr* && s eip", 0); // XXX
 		break;
 	case ':':
-		r_cons_fgets(buf, 1023, 0, NULL);
-		r_core_cmd(core, buf, 0);
+		r_cons_fgets (buf, 1023, 0, NULL);
+		r_core_cmd (core, buf, 0);
 		break;
 	case ';':
-		r_cons_printf("Enter a comment: (prefix it with '-' to remove)\n");
-		r_cons_flush();
-		r_cons_set_raw(0);
-		strcpy(buf, "CC ");
-		if (r_cons_fgets(buf+3, 1000, 0, NULL) <0)
+		r_cons_printf ("Enter a comment: (prefix it with '-' to remove)\n");
+		r_cons_flush ();
+		r_cons_set_raw (0);
+		strcpy (buf, "CC ");
+		if (r_cons_fgets (buf+3, 1000, 0, NULL) <0)
 			buf[0]='\0';
 		if (buf[0]) {
-			if (curset) r_core_seek(core, core->offset + cursor, 0);
-			r_core_cmd(core, buf, 1);
-			if (curset) r_core_seek(core, core->offset - cursor, 1);
+			if (curset) r_core_seek (core, core->offset + cursor, 0);
+			r_core_cmd (core, buf, 1);
+			if (curset) r_core_seek (core, core->offset - cursor, 1);
 		}
-		r_cons_set_raw(1);
+		r_cons_set_raw (1);
 		break;
 	case '?':
-		r_cons_clear00();
-		r_cons_printf(
+		r_cons_clear00 ();
+		r_cons_printf (
 		"\nVisual mode help:\n\n"
 		" >||<    -  seek aligned to block size\n"
 		" hjkl    -  move around\n"
 		" HJKL    -  move around faster\n"
 		" P||p    -  rotate print modes\n"
 		" /*+-    -  change block size\n"
+		" cC      -  toggle cursor and colors\n"
 		" :cmd    -  run radare command\n"
 		" ;[-]cmt -  add/remove comment\n"
 		" q       -  back to radare shell\n");
-		r_cons_flush();
-		r_cons_any_key();
+		r_cons_flush ();
+		r_cons_any_key ();
 		break;
 	case 'q':
 	case 'Q':
@@ -666,22 +663,22 @@ R_API int r_core_visual(struct r_core_t *core, const char *input)
 	vi = r_config_get(&core->config, "cmd.visual");
 	if (vi) r_core_cmd(core, vi, 0);
 
-	while(input[0]) {
-		if (!r_core_visual_cmd(core, input[0])) {
-			r_cons_clear00();
-			r_core_cmd(core, printfmt[printidx%NPF], 0);
-			r_cons_flush();
-			r_cons_any_key();
+	while (input[0]) {
+		if (!r_core_visual_cmd (core, input[0])) {
+			r_cons_clear00 ();
+			r_core_cmd (core, printfmt[printidx%NPF], 0);
+			r_cons_flush ();
+			r_cons_any_key ();
 			return 0;
 		}
 		input = input + 1;
 	}
 
-	color = r_config_get_i(&core->config, "scr.color");
-	debug = r_config_get_i(&core->config, "cfg.debug");
+	color = r_config_get_i (&core->config, "scr.color");
+	debug = r_config_get_i (&core->config, "cfg.debug");
 	do {
-		scrseek = r_num_math(&core->num, 
-			r_config_get(&core->config, "scr.seek"));
+		scrseek = r_num_math (&core->num, 
+			r_config_get (&core->config, "scr.seek"));
 		if (scrseek != 0LL) {
 			r_core_seek (core, scrseek, 1);
 			// TODO: read?

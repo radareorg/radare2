@@ -82,11 +82,8 @@ static void r_core_cmd_reg (struct r_core_t *core, const char *str) {
 		if (arg) {
 			*arg = 0;
 			r = r_reg_get (core->dbg.reg, str+1, R_REG_TYPE_GPR);
-			if (r == NULL) {
-				eprintf ("Unknown register '%s'\n", str+1);
-			} else {
-				// TODO: does not works well :/
-				eprintf ("SET(%s)(%s)\n", str, arg+1);
+			if (r) {
+				//eprintf ("SET(%s)(%s)\n", str, arg+1);
 				r_cons_printf ("0x%08llx ->", str,
 					r_reg_get_value (core->dbg.reg, r));
 				r_reg_set_value (core->dbg.reg, r,
@@ -94,7 +91,7 @@ static void r_core_cmd_reg (struct r_core_t *core, const char *str) {
 				r_debug_reg_sync (&core->dbg, R_REG_TYPE_GPR, R_TRUE);
 				r_cons_printf ("0x%08llx\n",
 					r_reg_get_value (core->dbg.reg, r));
-			}
+			} else eprintf ("Unknown register '%s'\n", str+1);
 			return;
 		}
 		size = atoi (str+1);
@@ -111,7 +108,7 @@ static void r_core_cmd_reg (struct r_core_t *core, const char *str) {
 		if (type != R_REG_TYPE_LAST) {
 			r_debug_reg_sync (&core->dbg, type, R_FALSE);
 			r_debug_reg_list (&core->dbg, type, size, str[0]=='*');
-		} else eprintf("Unknown type\n");
+		} else eprintf ("r_core_cmd_reg: Unknown type\n");
 	}
 }
 
@@ -138,7 +135,7 @@ static void r_core_cmd_bp (struct r_core_t *core, const char *input) {
 		} else r_bp_handle_list (core->dbg.bp);
 		break;
 	case '?':
-		r_cons_printf(
+		r_cons_printf (
 		"Usage: db [[-]addr] [len] [rwx] [condstring]\n"
 		"db              ; list breakpoints\n"
 		"db sym.main     ; add breakpoint into sym.main\n"
@@ -381,22 +378,22 @@ static int cmd_seek(void *data, const char *input) {
 	ut64 off;
 	char *cmd, *p; 
 	struct r_core_t *core = (struct r_core_t *)data;
-	if (input[0]&&input[1]) {
-		int delta = (input[1]==' ')?2:1;
-		off = r_num_math(&core->num, input + delta); 
+	if (input[0] && input[1]) {
+		st32 delta = (input[1]==' ')?2:1;
+		off = r_num_math (&core->num, input + delta); 
 		if (input[0]==' ' && (input[1]=='+'||input[1]=='-'))
 			input = input+1;
-		switch(input[0]) {
+		switch (input[0]) {
 		case ' ':
-			r_core_seek(core, off, 1);
+			r_core_seek (core, off, 1);
 			break;
 		case '+':
-			if (input[1]=='+') r_core_seek_delta (core, core->blocksize);
-			else r_core_seek_delta (core, off);
+			if (input[1]=='+') delta = core->blocksize; else delta = off;
+			r_core_seek_delta (core, delta);
 			break;
 		case '-':
-			if (input[1]=='-') r_core_seek_delta (core, -core->blocksize);
-			else r_core_seek_delta (core, -off);
+			if (input[1]=='-') delta = -core->blocksize; else delta = -off;
+			r_core_seek_delta (core, delta);
 			break;
 		case 'a':
 			off = core->blocksize;
@@ -409,7 +406,7 @@ static int cmd_seek(void *data, const char *input) {
 				}
 				cmd[0]='s';
 				// perform real seek if provided
-				r_cmd_call(&core->cmd, cmd);
+				r_cmd_call (&core->cmd, cmd);
 				free(cmd);
 			}
 			r_core_seek_align(core, off, 0);
@@ -425,7 +422,7 @@ static int cmd_seek(void *data, const char *input) {
 			" sa [[+-]a] [asz] ; seek asz (or bsize) aligned to addr\n");
 			break;
 		}
-	} else r_cons_printf("0x%llx\n", core->offset);
+	} else r_cons_printf ("0x%llx\n", core->offset);
 	return 0;
 }
 
@@ -434,45 +431,45 @@ static int cmd_help(void *data, const char *input)
 	struct r_core_t *core = (struct r_core_t *)data;
 	ut64 n;
 
-	switch(input[0]) {
+	switch (input[0]) {
 	case ' ':
-		n = r_num_math(&core->num, input+1);
-		r_cons_printf("%lld 0x%llx\n", n,n);
+		n = r_num_math (&core->num, input+1);
+		r_cons_printf ("%lld 0x%llx\n", n,n);
 		break;
 	case '=':
-		r_num_math(&core->num, input+1);
+		r_num_math (&core->num, input+1);
 		break;
 	case '+':
 		if (input[1]) {
 			if (core->num.value & UT64_GT0)
 				r_core_cmd (core, input+1, 0);
-		} else r_cons_printf("0x%llx\n", core->num.value);
+		} else r_cons_printf ("0x%llx\n", core->num.value);
 		break;
 	case '-':
 		if (input[1]) {
 			if (core->num.value & UT64_LT0)
-				r_core_cmd(core, input+1, 0);
-		} else r_cons_printf("0x%llx\n", core->num.value);
+				r_core_cmd (core, input+1, 0);
+		} else r_cons_printf ("0x%llx\n", core->num.value);
 		break;
 	case '!': // ??
 		if (input[1]) {
 			if (&core->num.value != UT64_MIN)
-				r_core_cmd(core, input+1, 0);
-		} else r_cons_printf("0x%llx\n", core->num.value);
+				r_core_cmd (core, input+1, 0);
+		} else r_cons_printf ("0x%llx\n", core->num.value);
 		break;
 	case '$':
-		return cmd_help(data, " $?");
+		return cmd_help (data, " $?");
 	case 'z':
-		for(input=input+1;input[0]==' ';input=input+1);
+		for (input=input+1;input[0]==' ';input=input+1);
 		core->num.value = strlen(input);
 		break;
 	case 't': {
 		struct r_prof_t prof;
-		r_prof_start(&prof);
-		r_core_cmd(core, input+1, 0);
-		r_prof_end(&prof);
+		r_prof_start (&prof);
+		r_core_cmd (core, input+1, 0);
+		r_prof_end (&prof);
 		core->num.value = (ut64)prof.result;
-		eprintf("%lf\n", prof.result);
+		eprintf ("%lf\n", prof.result);
 		} break;
 	case '?': // ???
 		if (input[1]=='?') {
@@ -501,12 +498,12 @@ static int cmd_help(void *data, const char *input)
 		} else
 		if (input[1]) {
 			if (&core->num.value == UT64_MIN)
-				r_core_cmd(core, input+1, 0);
-		} else r_cons_printf("0x%llx\n", core->num.value);
+				r_core_cmd (core, input+1, 0);
+		} else r_cons_printf ("0x%llx\n", core->num.value);
 		break;
 	case '\0':
 	default:
-		r_cons_printf(
+		r_cons_printf (
 		"Usage:\n"
 		" a                 ; perform analysis of code\n"
 		" b [bsz]           ; get or change block size\n"
@@ -541,13 +538,13 @@ static int cmd_help(void *data, const char *input)
 static int cmd_bsize(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
-	switch(input[0]) {
+	switch (input[0]) {
 	case '\0':
-		r_cons_printf("0x%x\n", core->blocksize);
+		r_cons_printf ("0x%x\n", core->blocksize);
 		break;
 	default:
 		//input = r_str_clean(input);
-		r_core_block_size(core, r_num_math(NULL, input));
+		r_core_block_size (core, r_num_math (NULL, input));
 		break;
 	}
 	return 0;
@@ -557,7 +554,7 @@ static int cmd_info(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
 	char buf[1024];
-	switch(input[0]) {
+	switch (input[0]) {
 	case 's':
 	case 'i':
 	case 'I':
@@ -567,10 +564,10 @@ static int cmd_info(void *data, const char *input)
 		snprintf (buf, sizeof (buf), "rabin2 -%c%s '%s'", input[0],
 			input[1]=='*'?"r":"", core->file->filename);
 		eprintf ("(%s)\n", buf);
-		system(buf);
+		r_sys_cmd (buf);
 		break;
 	case '?':
-		r_cons_printf(
+		r_cons_printf (
 		"Usage: i[eiIsSz]*      ; get info from opened file (rabin2)\n"
 		"; Append a '*' to get the output in radare commands\n"
 		" ii    ; imports\n"
@@ -1160,7 +1157,7 @@ static int cmd_search(void *data, const char *input)
 				break;
 			}
 		}
-		r_cons_break_end();
+		r_cons_break_end ();
 	}
 	return R_TRUE;
 }
@@ -1178,14 +1175,14 @@ static int cmd_eval(void *data, const char *input)
 			eprintf ("r_config: '%s' is not a boolean variable.\n", input);
 		break;
 	case '-':
-		r_core_config_init(core);
-		eprintf("BUG: 'e-' command locks the eval hashtable. patches are welcome :)\n");
+		r_core_config_init (core);
+		eprintf ("BUG: 'e-' command locks the eval hashtable. patches are welcome :)\n");
 		break;
 	case '*':
-		r_config_list(&core->config, NULL, 1);
+		r_config_list (&core->config, NULL, 1);
 		break;
 	case '?':
-		r_cons_printf(
+		r_cons_printf (
 		"Usage: e[?] [var[=value]]\n"
 		"  e     ; list config vars\n"
 		"  e-    ; reset config vars\n"
@@ -1196,7 +1193,7 @@ static int cmd_eval(void *data, const char *input)
 		//r_cmd_help(&core->cmd, "e");
 		break;
 	default:
-		r_config_eval(&core->config, input);
+		r_config_eval (&core->config, input);
 	}
 	return 0;
 }
@@ -1228,11 +1225,12 @@ static int cmd_hash(void *data, const char *input)
 		return R_TRUE;
 	}
 
-	ptr = strchr(input, ' ');
-	sscanf(input, "%31s", algo);
+	ptr = strchr (input, ' ');
+	sscanf (input, "%31s", algo);
 	if (ptr != NULL)
 		len = r_num_math(&core->num, ptr+1);
 
+	/* TODO: support all hash algorithms and so */
 	if (!r_str_ccmp(input, "crc32", ' ')) {
 		r_cons_printf("%04x\n", r_hash_crc32(core->block, len));
 	} else
@@ -1249,7 +1247,9 @@ static int cmd_hash(void *data, const char *input)
 		" #!python             ; run python commandline\n"
 		" #!python < foo.py    ; run foo.py python script\n"
 		" #!python <<EOF       ; get python code until 'EOF' mark\n"
-		" #!python arg0 a1 <<q ; set arg0 and arg1 and read until 'q'\n");
+		" #!python arg0 a1 <<q ; set arg0 and arg1 and read until 'q'\n"
+		"Comments:\n"
+		" # this is a comment  ; note the space after the sharp sign\n");
 	}
 
 	return 0;
@@ -1283,7 +1283,7 @@ static int cmd_system(void *data, const char *input)
 	}
 	return WEXITSTATUS(st);
 #else
-	return system(input);
+	return r_sys_cmd (input);
 #endif
 }
 
@@ -1883,7 +1883,7 @@ static int cmd_debug(void *data, const char *input) {
 		if (pid > 0) {
 			eprintf ("Sending signal '%d' to pid '%d'\n",
 				sig, pid);
-			r_debug_kill (&core->dbg, pid, sig);
+			r_debug_kill (&core->dbg, sig);
 		} else eprintf ("Invalid arguments\n");
 		break;
 	case 's':
@@ -1940,7 +1940,7 @@ static int cmd_debug(void *data, const char *input) {
 		// XXX: allow to allocate memory, show memory maps, ...
 		{char pid[16]; sprintf(pid, "%d", core->dbg.pid);
 		r_sys_setenv("PID", pid, 1);
-		system("cat /proc/$PID/maps"); }
+		r_sys_cmd ("cat /proc/$PID/maps"); }
 		break;
 	case 'r':
 		r_core_cmd_reg (core, input+1);

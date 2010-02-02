@@ -119,12 +119,12 @@ typedef struct r_bin_field_t {
 } RBinField;
 
 typedef struct r_bin_obj_t {
-	rArray entrys;
-	rArray sections;
-	rArray symbols;
-	rArray imports;
-	rArray strings;
-	rArray fields;
+	RArray entrys;
+	RArray sections;
+	RArray symbols;
+	RArray imports;
+	RArray strings;
+	RArray fields;
 	RBinInfo info;
 } RBinObject;
 

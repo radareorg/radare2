@@ -153,14 +153,15 @@ R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len)
 		if (io->plugin && io->plugin->read) {
 			if (io->plugin->read != NULL)
 				ret = io->plugin->read(io, io->fd, buf, len);
-			else fprintf(stderr, "IO handler for fd=%d has no read()\n", io->fd);
+			else eprintf ("IO handler for fd=%d has no read()\n", io->fd);
 		} else ret = read (io->fd, buf, len);
+		if (ret != -1 && ret != len)
+			memset (buf+ret, 0xff, len-ret);
 	}
 
-	if (ret != -1 && ret == len && io->cached_read) {
-		/* if read is cached. cache it :) */
-		r_io_cache_write(io, io->seek, buf, len);
-	}
+	/* if read is cached. cache it :) */
+	if (ret != -1 && ret == len && io->cached_read)
+		r_io_cache_write (io, io->seek, buf, len);
 	return ret;
 }
 

@@ -22,7 +22,7 @@ R_API RLine *r_line_new () {
 
 R_API void r_line_free () {
 	// XXX: prompt out of the heap?
-	free (I.prompt);
+	free ((void*)I.prompt);
 	I.prompt = NULL;
 	r_line_hist_free ();
 }

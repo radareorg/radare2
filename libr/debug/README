@@ -23,7 +23,7 @@ program from one engine to another (ptrace -> qemu).. we should
 provide a way for all this operations between them.
 
 [continue]
-    |--- check if bp api allows us to continue or we should step into..
+    |--- check if bp api allow us to continue or we should step into..
     |--- check if debug plugin supports continue
 
 [getregs]

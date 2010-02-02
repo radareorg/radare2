@@ -16,6 +16,15 @@ enum {
 	R_DBG_PROC_ZOMBIE,
 };
 
+// signal handling must support application and debugger level options
+enum {
+	R_DBG_SIGNAL_IGNORE, // ignore signal handler
+	R_DBG_SIGNAL_BYPASS,
+	R_DBG_SIGNAL_HANDLE, //
+	R_DBG_SIGNAL_SETUP,
+	//..
+};
+
 typedef struct r_debug_t {
 	int pid;    /* selected process id */
 	int tid;    /* selected thread id */
@@ -39,6 +48,13 @@ typedef struct r_debug_t {
 	*/
 } RDebug;
 
+typedef struct r_debug_memregion_t {
+	ut64 addr_start;
+	ut64 addr_end;
+	int perms;
+	char name[64];
+} RDebugMemoryRegion;
+
 /* TODO: pass dbg and user data pointer everywhere */
 typedef struct r_debug_handle_t {
 	const char *name;
@@ -48,6 +64,8 @@ typedef struct r_debug_handle_t {
 	int (*startv)(int argc, char **argv);
 	int (*attach)(int pid);
 	int (*detach)(int pid);
+	int (*select)(int pid, int tid);
+	RArray (*backtrace)(int count);
 	/* flow */
 	int (*step)(int pid); // if step() is NULL; reimplement it with traps
 	int (*cont)(int pid, int sig);
@@ -87,7 +105,8 @@ R_API struct r_debug_t *r_debug_new();
 R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg);
 
 /* send signals */
-R_API int r_debug_kill(struct r_debug_t *dbg, int pid, int sig);
+R_API int r_debug_kill(struct r_debug_t *dbg, int sig);
+R_API int r_debug_kill_setup(struct r_debug_t *dbg, int sig, int action);
 R_API int r_debug_step(struct r_debug_t *dbg, int steps);
 R_API int r_debug_continue(struct r_debug_t *dbg);
 R_API int r_debug_continue_kill(struct r_debug_t *dbg, int signal);
@@ -120,7 +139,7 @@ Missing callbacks
 =================
  - alloc
  - dealloc
- - list maps
+ - list maps (memory regions)
  - change memory protections
  - touchtrace
  - filedescriptor set/get/mod..

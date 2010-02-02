@@ -120,3 +120,9 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 	return NULL;
 #endif
 }
+
+R_API int r_sys_cmd (const char *str)
+{
+/* TODO: implement for other systems */
+	return system (str);
+}

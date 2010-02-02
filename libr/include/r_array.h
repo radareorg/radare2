@@ -3,7 +3,7 @@
 
 #define R_ITER_CPP 0
 #define r_array_t void**
-#define rArray void**
+#define RArray void**
 
 #define r_array_iterator(x) x
 #define r_array_get(x) *(x++)
@@ -21,7 +21,7 @@
 #define r_array_prev(x) (--it==*it)?0:it
 #define r_array_delete(x) for(;*x;x++)*x=*(x+1)
 R_API void **r_array_new(int n);
-R_API rArray r_array_init(rArray ptr, int n);
+R_API RArray r_array_init(RArray ptr, int n);
 R_API void **r_array_first(void **it);
 R_API void r_array_foreach(void **it, int (*callback)(void *, void *), void *user);
 R_API void **r_array_free(void **ptr);

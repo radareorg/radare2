@@ -13,7 +13,7 @@ R_API struct r_anal_t *r_anal_new()
 R_API struct r_anal_t *r_anal_free(struct r_anal_t *a)
 {
 	/* TODO: Free a->anals here */
-	free(a);
+	free (a);
 	return NULL;
 }
 
@@ -49,7 +49,7 @@ R_API int r_anal_list(struct r_anal_t *anal)
 	struct list_head *pos;
 	list_for_each_prev(pos, &anal->anals) {
 		struct r_anal_handle_t *h = list_entry(pos, struct r_anal_handle_t, list);
-		printf(" %s: %s\n", h->name, h->desc);
+		printf (" %s: %s\n", h->name, h->desc);
 	}
 	return R_FALSE;
 }
@@ -57,9 +57,9 @@ R_API int r_anal_list(struct r_anal_t *anal)
 R_API int r_anal_use(struct r_anal_t *anal, const char *name)
 {
 	struct list_head *pos;
-	list_for_each_prev(pos, &anal->anals) {
+	list_for_each_prev (pos, &anal->anals) {
 		struct r_anal_handle_t *h = list_entry(pos, struct r_anal_handle_t, list);
-		if (!strcmp(h->name, name)) {
+		if (!strcmp (h->name, name)) {
 			anal->cur = h;
 			return R_TRUE;
 		}
@@ -106,7 +106,7 @@ R_API struct r_anal_fcn_t *r_anal_funcions_get(struct r_anal_t *anal, ut8 *buf, 
 
 R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, ut8 *buf, ut64 len, int nlines, int linesout)
 {
-	struct r_anal_refline_t *list = MALLOC_STRUCT(struct r_anal_refline_t);
+	struct r_anal_refline_t *list = MALLOC_STRUCT (struct r_anal_refline_t);
 	struct r_anal_refline_t *list2;
 	struct r_anal_aop_t aop;
 	ut8 *ptr = buf;
@@ -117,7 +117,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, ut8 *b
 	INIT_LIST_HEAD(&(list->list));
 
 	/* analyze code block */
-	while(ptr<end) {
+	while (ptr<end) {
 		if (nlines != -1 && --nlines == 0)
 			break;
 #if 0
@@ -218,7 +218,7 @@ R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *li
 		}
 	}
 
-	switch(dir) {
+	switch (dir) {
 	case 1: strcat(str, "-> "); break;
 	case 2: strcat(str, "=< "); break;
 	default: strcat(str, "   "); break;
@@ -227,9 +227,3 @@ R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *li
 	return R_TRUE;
 }
 
-// TODO: merge algorithms from r1 (do we need ebp?)
-// TODO: must return a linked list or r_iter
-R_API int r_anal_backtrace(struct r_anal_t *anal, const ut8 *buf, ut64 esp)
-{
-	return R_FALSE;
-}

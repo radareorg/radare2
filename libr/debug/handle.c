@@ -44,7 +44,7 @@ R_API int r_debug_handle_list(struct r_debug_t *dbg)
 	struct list_head *pos;
 	list_for_each_prev(pos, &dbg->handlers) {
 		struct r_debug_handle_t *h = list_entry(pos, struct r_debug_handle_t, list);
-		printf("dbg %d %s %s\n", count, h->name, ((h==dbg->h)?"*":""));
+		eprintf ("dbg %d %s %s\n", count, h->name, ((h==dbg->h)?"*":""));
 		count++;
 	}
 	return R_FALSE;

@@ -24,7 +24,7 @@ RCons r_cons_instance;
 
 static void break_signal(int sig)
 {
-	I.breaked = 1;
+	I.breaked = R_TRUE;
 	if (I.break_cb)
 		I.break_cb (I.break_user);
 }
@@ -41,7 +41,7 @@ R_API void r_cons_break(void (*cb)(void *u), void *user)
 
 R_API void r_cons_break_end()
 {
-	I.breaked = 0;
+	I.breaked = R_FALSE;
 #if __UNIX__
 	signal (SIGINT, SIG_IGN);
 #endif
@@ -68,7 +68,7 @@ R_API int r_cons_init()
 	I.noflush = R_FALSE;
 	I.fdin = stdin;
 	I.fdout = 1;
-	I.breaked = 0;
+	I.breaked = R_FALSE;
 	I.lines = 0;
 	I.buffer = NULL;
 	I.buffer_sz = 0;

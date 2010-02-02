@@ -171,7 +171,7 @@ R_API int r_line_hist_chop(const char *file, int limit)
 R_API void r_line_autocomplete()
 {
 	int argc;
-	char **argv;
+	const char **argv;
 	int i, opt, len = 0;
 
 	/* prepare argc and argv */

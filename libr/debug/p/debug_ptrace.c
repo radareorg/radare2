@@ -117,8 +117,6 @@ static const char *r_debug_ptrace_reg_profile()
 	"seg	xss	.32	52	0\n"
 	"gpr	eflags	.32	56	0\n"
 	"gpr	flags	.16	56	0\n"
-	"\n"
-	"# base address is 448bit\n"
 	"flg	carry	.1	.448	0\n"
 	"flg	flag_p	.1	.449	0\n"
 	"flg	flag_a	.1	.450	0\n"
@@ -150,9 +148,13 @@ static int r_debug_ptrace_reg_read(struct r_debug_t *dbg, int type, ut8 *buf, in
 {
 	int ret; 
 	int pid = dbg->pid;
-	if (type == R_REG_TYPE_GPR) {
 // XXX this must be defined somewhere else
 #if __linux__ || __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
+	switch (type) {
+	case R_REG_TYPE_SEG:
+	case R_REG_TYPE_FLG:
+	case R_REG_TYPE_GPR:
+		{
 		R_DEBUG_REG_T regs;
 		memset(&regs, 0, sizeof(regs));
 		memset(buf, 0, size);
@@ -169,13 +171,13 @@ static int r_debug_ptrace_reg_read(struct r_debug_t *dbg, int type, ut8 *buf, in
 			return R_FALSE;
 		memcpy(buf, &regs, size);
 		return sizeof(regs);
+		}
+		break;
 		//r_reg_set_bytes(reg, &regs, sizeof(struct user_regs));
+	}
 #else
 #warning dbg-ptrace not supported for this platform
-	return 0;
 #endif
-	}
-
 	return 0;
 }
 

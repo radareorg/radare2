@@ -45,8 +45,10 @@
 #define ut64 unsigned long long
 #define st64 long long
 #define ut32 unsigned int
+#define st32 int
 #define ut16 unsigned short
 #define ut8  unsigned char
+#define st8  char
 
 #define R_TRUE 1
 #define R_FALSE 0
