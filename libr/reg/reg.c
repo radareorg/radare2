@@ -13,7 +13,7 @@ static void r_reg_free_internal(struct r_reg_t *reg) {
 	struct r_reg_item_t *r;
 	int i;
 
-	for (i=0;i<R_REG_TYPE_LAST;i++) {
+	for (i=0; i<R_REG_TYPE_LAST; i++) {
 		list_for_each_safe (pos, n, &reg->regset[i].regs) {
 			r = list_entry (pos, struct r_reg_item_t, list);
 			list_del (&r->list);
@@ -22,14 +22,7 @@ static void r_reg_free_internal(struct r_reg_t *reg) {
 	}
 }
 
-R_API const char *r_reg_get_name(struct r_reg_t *reg, int role) {
-	if (role>=0 && role<R_REG_NAME_LAST)
-		return reg->name[role];
-	return "";
-}
-
-R_API int r_reg_set_name(struct r_reg_t *reg, const char *type, const char *name) {
-	int ret = R_TRUE;
+R_API int r_reg_get_name_idx(const char *type) {
 	int role = type[0] + (type[1]<<8);
 	switch (role) {
 	case 'p'+('c'<<8):
@@ -54,12 +47,24 @@ R_API int r_reg_set_name(struct r_reg_t *reg, const char *type, const char *name
 		role = R_REG_NAME_A3;
 		break;
 	default:
-		ret = R_FALSE;
-		break;
+		role = -1;
 	}
-	if (ret)
+	return role;
+}
+
+R_API int r_reg_set_name(struct r_reg_t *reg, int role, const char *name) {
+	int ret = R_TRUE;
+	// TODO: ensure this range check in a define.. somewhere
+	if (role>=0 && role<R_REG_NAME_LAST) {
 		reg->name[role] = r_str_dup (reg->name[role], name);
+	} else ret = R_FALSE;
 	return ret;
+}
+
+R_API const char *r_reg_get_name(struct r_reg_t *reg, int role) {
+	if (role>=0 && role<R_REG_NAME_LAST)
+		return reg->name[role];
+	return "";
 }
 
 R_API struct r_reg_t *r_reg_free(struct r_reg_t *reg)
@@ -136,7 +141,7 @@ static int r_reg_set_word(struct r_reg_item_t *item, int idx, char *word) {
 		else item->packed_size = atoi (word)*8;
 		break;
 	default:
-		eprintf ("register set fail\n");
+		eprintf ("register set fail (%s)\n", word);
 		ret = R_FALSE;
 	}
 	return ret;
@@ -146,8 +151,7 @@ static int r_reg_set_word(struct r_reg_item_t *item, int idx, char *word) {
 R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *str)
 {
 	RRegisterItem *item;
-	int setname = R_FALSE;
-	char *name = NULL;
+	int setname = -1;
 	int ret = R_FALSE;
 	int lastchar = 0;
 	int chidx = 0;
@@ -172,19 +176,20 @@ R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *str)
 		case '\t':
 			// UGLY PASTAFARIAN TO PARSE 
 			if (word==0 && *buf=='=') {
-				setname = R_TRUE;
-				name = r_str_dup (name, buf+1);
+				setname = r_reg_get_name_idx (buf+1);
+				if (setname == -1)
+					eprintf ("Invalid register type: '%s'\n", buf+1);
 			} else
 			if (lastchar != ' ' && lastchar != '\t') {
 				r_reg_set_word (item, word, buf);
-			}
+			} 
 			chidx = 0;
 			word++;
 			break;
 		case '\n':
-			if (setname)
-				r_reg_set_name (reg, name, buf);
-			else
+			if (setname != -1) {
+				r_reg_set_name (reg, setname, buf);
+			} else
 			if (word>3) {
 				r_reg_set_word (item, word, buf);
 				if (item->name != NULL) {
@@ -193,7 +198,7 @@ R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *str)
 				}
 			}
 			chidx = word = 0;
-			setname = R_FALSE;
+			setname = -1;
 			break;
 		default:
 			if (chidx > 128) // WTF!!
@@ -207,7 +212,6 @@ R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *str)
 	}
 	free (item->name);
 	free (item);
-	free (name);
 	r_reg_fit_arena (reg);
 	
 	/* do we reach the end ? */

@@ -44,6 +44,7 @@ static void r_core_cmd_reg (struct r_core_t *core, const char *str) {
 			" drp        display current register profile\n"
 			" dr         show 'gpr' registers\n"
 			" drt        show all register types\n"
+			" drn [pc]   get register name for pc,sp,bp,a0-3\n"
 			" dr all     show all registers\n"
 			" dr flg 1   show flag registers ('flg' is type, see drt)\n"
 			" dr 16      show 16 bit registers\n"
@@ -68,6 +69,14 @@ static void r_core_cmd_reg (struct r_core_t *core, const char *str) {
 		r = r_reg_get (core->dbg.reg, str+1, R_REG_TYPE_GPR);
 		if (r == NULL) eprintf ("Unknown register (%s)\n", str+1);
 		else r_cons_printf ("0x%08llx\n", r_reg_get_value (core->dbg.reg, r));
+		break;
+	case 'n':
+		{
+			char *reg = r_reg_get_name (core->dbg.reg, r_reg_get_name_idx (str+2));
+			if (reg && *reg)
+				r_cons_printf ("%s\n", reg);
+			else eprintf ("Oops. try dn [pc|sp|bp|a0|a1|a2|a3]\n");
+		}
 		break;
 	case '*':
 		r_debug_reg_sync (&core->dbg, R_REG_TYPE_GPR, R_FALSE);
@@ -712,7 +721,7 @@ static int cmd_print(void *data, const char *input)
 		break;
 	}
 	if (tbs != core->blocksize)
-		r_core_block_size(core, tbs);
+		r_core_block_size (core, tbs);
 	return 0;
 }
 
@@ -1938,6 +1947,7 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 	case 'm':
 		// XXX: allow to allocate memory, show memory maps, ...
+		// TODO: do not export any variable here.. this is a task of r_debug
 		{char pid[16]; sprintf(pid, "%d", core->dbg.pid);
 		r_sys_setenv("PID", pid, 1);
 		r_sys_cmd ("cat /proc/$PID/maps"); }
@@ -1960,21 +1970,21 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 	default:
 		r_cons_printf("Usage: d[sbhcrbo] [arg]\n"
-		" dh [handler] ; list or set debugger handler\n"
-		" dH [handler] ; transplant process to a new handler\n"
-		" ds           ; perform one step\n"
-		" df           ; file descriptors\n"
-		" ds 3         ; perform 3 steps\n"
-		" do 3         ; perform 3 steps overs\n"
-		" dp [pid]     ; list or set pid\n"
-		" dt [tid]     ; select thread id\n"
-		" dc           ; continue execution\n"
-		" dr[?]        ; cpu registers, dr? for extended help\n"
-		" db[?]        ; breakpoints\n"
-		" dm           ; show memory maps\n"
-		" dm 4096      ; allocate 4KB in child process\n"
-		" dm rw- esp 9K; set 9KB of the stack as read+write (no exec)\n"
-		" dk pid sig   ; send signal to a process ID\n");
+		" dh [handler]   list or set debugger handler\n"
+		" dH [handler]   transplant process to a new handler\n"
+		" ds             perform one step\n"
+		" df             file descriptors\n"
+		" ds 3           perform 3 steps\n"
+		" do 3           perform 3 steps overs\n"
+		" dp [pid]       list or set pid\n"
+		" dt [tid]       select thread id\n"
+		" dc             continue execution\n"
+		" dr[?]          cpu registers, dr? for extended help\n"
+		" db[?]          breakpoints\n"
+		" dm             show memory maps\n"
+		" dm 4096        allocate 4KB in child process\n"
+		" dm rw- esp 9K  set 9KB of the stack as read+write (no exec)\n"
+		" dk pid sig     send signal to a process ID\n");
 		break;
 	}
 	return 0;

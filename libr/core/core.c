@@ -146,6 +146,11 @@ R_API int r_core_init(struct r_core_t *core)
 	core->offset = 0LL;
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8*)malloc (R_CORE_BLOCKSIZE);
+	if (core->block == NULL) {
+		eprintf ("Cannot allocate %d bytes\n", R_CORE_BLOCKSIZE);
+		/* XXX memory leak */
+		return R_FALSE;
+	}
 	r_core_cmd_init (core);
 	r_flag_init (&core->flags);
 	r_debug_init (&core->dbg, R_TRUE);

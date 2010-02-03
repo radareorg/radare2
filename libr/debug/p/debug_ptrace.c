@@ -159,12 +159,12 @@ static const char *r_debug_ptrace_reg_profile()
 	);
 #elif __arm__
 	return strdup(
-	"=pc	r15"
-	"=sp	r14" // XXX
-	"=a0	r0"
-	"=a1	r1"
-	"=a2	r2"
-	"=a3	r3"
+	"=pc	r15\n"
+	"=sp	r14\n" // XXX
+	"=a0	r0\n"
+	"=a1	r1\n"
+	"=a2	r2\n"
+	"=a3	r3\n"
 	"gpr	lr	.32	56	0\n" // r14
 	"gpr	pc	.32	60	0\n" // r15
 

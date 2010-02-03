@@ -21,8 +21,8 @@ R_API int r_core_write_op(struct r_core_t *core, const char *arg, char op)
 	buf = (ut8 *)malloc (core->blocksize);
 	str = (char *)malloc (strlen(arg));
 	if (buf == NULL || str == NULL) {
-		free(buf);
-		free(str);
+		free (buf);
+		free (str);
 		return 0;
 	}
 	memcpy (buf, core->block, core->blocksize);
@@ -45,7 +45,7 @@ R_API int r_core_write_op(struct r_core_t *core, const char *arg, char op)
 		}
 		break;
 	default:
-		for (i=j=0;i<core->blocksize;i++) {
+		for (i=j=0; i<core->blocksize; i++) {
 			switch (op) {
 				case 'x': buf[i] ^= str[j]; break;
 				case 'a': buf[i] += str[j]; break;

@@ -1,4 +1,5 @@
 include ../../config.mk
+BINDEPS=r_reg r_bp r_util
 
 CFLAGS+=-Ilibgdbwrap/include
 ifeq (${OSTYPE},windows)
