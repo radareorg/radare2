@@ -28,7 +28,8 @@ R_API const char *r_str_bool(int b)
 /* TODO: port to w32 and move outside r_str namespace? */
 R_API char *r_str_home(const char *str)
 {
-	const char *dst, *home = r_sys_getenv ("HOME");
+	char *dst;
+	const char *home = r_sys_getenv ("HOME");
 	if (home == NULL)
 		return NULL;
 	dst = (char *)malloc (strlen (home) + strlen (str)+2);

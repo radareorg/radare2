@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
 
 #include <stdio.h>
 
@@ -13,16 +13,16 @@ static struct r_asm_handle_t *asm_static_plugins[] =
 
 static int r_asm_pseudo_string(struct r_asm_aop_t *aop, char *input)
 {
-	int len = strlen(input)+1;
-	r_hex_bin2str((ut8*)input, len, aop->buf_hex);
-	strncpy((char*)aop->buf, input, R_ASM_BUFSIZE);
+	int len = strlen (input)+1;
+	r_hex_bin2str ((ut8*)input, len, aop->buf_hex);
+	strncpy ((char*)aop->buf, input, R_ASM_BUFSIZE);
 	return len;
 }
 
 static inline int r_asm_pseudo_arch(struct r_asm_t *a, char *input)
 {
-	if (!r_asm_use(a, input)) {
-		fprintf(stderr, "Error: Unknown plugin\n");
+	if (!r_asm_use (a, input)) {
+		eprintf ("Error: Unknown plugin\n");
 		return -1;
 	}
 	return 0;
@@ -30,8 +30,8 @@ static inline int r_asm_pseudo_arch(struct r_asm_t *a, char *input)
 
 static inline int r_asm_pseudo_bits(struct r_asm_t *a, char *input)
 {
-	if (!(r_asm_set_bits(a, r_num_math(NULL, input)))) {
-		fprintf(stderr, "Error: Unsupported bits value\n");
+	if (!(r_asm_set_bits (a, r_num_math (NULL, input)))) {
+		eprintf ("Error: Unsupported bits value\n");
 		return -1;
 	}
 	return 0;
@@ -39,8 +39,7 @@ static inline int r_asm_pseudo_bits(struct r_asm_t *a, char *input)
 
 static inline int r_asm_pseudo_org(struct r_asm_t *a, char *input)
 {
-	r_asm_set_pc(a, r_num_math(NULL, input));
-	return 0;
+	return r_asm_set_pc (a, r_num_math (NULL, input));
 }
 
 static inline int r_asm_pseudo_byte(struct r_asm_aop_t *aop, char *input)
@@ -52,8 +51,7 @@ static inline int r_asm_pseudo_byte(struct r_asm_aop_t *aop, char *input)
 
 R_API struct r_asm_t *r_asm_new()
 {
-	struct r_asm_t *a = MALLOC_STRUCT(struct r_asm_t);
-	return r_asm_init(a);
+	return r_asm_init(MALLOC_STRUCT(struct r_asm_t));
 }
 
 R_API void* r_asm_code_free(struct r_asm_code_t *acode)
@@ -61,12 +59,12 @@ R_API void* r_asm_code_free(struct r_asm_code_t *acode)
 	if (!acode)
 		return NULL;
 	if (acode->buf)
-		free(acode->buf);
+		free (acode->buf);
 	if (acode->buf_hex)
-		free(acode->buf_hex);
+		free (acode->buf_hex);
 	if (acode->buf_asm)
-		free(acode->buf_asm);
-	free(acode);
+		free (acode->buf_asm);
+	free (acode);
 	return NULL;
 }
 
@@ -85,7 +83,7 @@ R_API const char *r_asm_fastcall(struct r_asm_t *a, int idx, int num)
 	if (a && a->cur && a->cur->fastcall)
 		fastcall = *a->cur->fastcall;
 	if (fastcall && idx<=num)
-	for(i=0; 1; i++) {
+	for (i=0; 1; i++) {
 		if (i == num) {
 			ret = fastcall[i].arg[idx];
 			break;
@@ -104,9 +102,9 @@ R_API struct r_asm_t *r_asm_init(struct r_asm_t *a)
 		a->big_endian = 0;
 		a->syntax = R_ASM_SYNTAX_INTEL;
 		a->pc = 0;
-		INIT_LIST_HEAD(&a->asms);
-		for(i=0;asm_static_plugins[i];i++)
-			r_asm_add(a, asm_static_plugins[i]);
+		INIT_LIST_HEAD (&a->asms);
+		for (i=0; asm_static_plugins[i]; i++)
+			r_asm_add (a, asm_static_plugins[i]);
 	}
 	return a;
 }

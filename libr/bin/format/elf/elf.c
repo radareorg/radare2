@@ -180,6 +180,8 @@ ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin)
 
 ut64 Elf_(r_bin_elf_get_entry_offset)(struct Elf_(r_bin_elf_obj_t) *bin)
 {
+	if (bin->ehdr.e_entry < bin->baddr)
+		return bin->ehdr.e_entry;
 	return bin->ehdr.e_entry - bin->baddr; 
 }
 

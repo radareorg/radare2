@@ -17,6 +17,17 @@ enum {
 	R_REG_TYPE_ALL = -1,
 };
 
+enum {
+	R_REG_NAME_PC,
+	R_REG_NAME_SP,
+	R_REG_NAME_BP,
+	R_REG_NAME_A0,
+	R_REG_NAME_A1,
+	R_REG_NAME_A2,
+	R_REG_NAME_A3,
+	R_REG_NAME_LAST,
+};
+
 typedef struct r_reg_item_t {
 	char *name;
 	int type;
@@ -40,6 +51,7 @@ typedef struct r_reg_set_t {
 
 typedef struct r_reg_t {
 	char *profile;
+	char *name[R_REG_NAME_LAST];
 	struct r_reg_set_t regset[R_REG_TYPE_LAST];
 } RRegister;
 
@@ -52,6 +64,7 @@ R_API struct r_reg_t *r_reg_init(struct r_reg_t *reg);
 //R_API struct r_reg_t *r_reg_new();
 R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *profile);
 R_API int r_reg_set_profile(struct r_reg_t *reg, const char *profile);
+R_API const char *r_reg_get_name(struct r_reg_t *reg, int kind);
 R_API struct r_reg_item_t *r_reg_get(struct r_reg_t *reg, const char *name, int type);
 R_API struct list_head *r_reg_get_list(struct r_reg_t *reg, int type);
 R_API int r_reg_type_by_name(const char *str);

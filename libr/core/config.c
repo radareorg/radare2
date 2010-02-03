@@ -19,8 +19,11 @@ static int config_cfgffio_callback(void *user, void *data) {
 static int config_asm_arch_callback(void *user, void *data) {
 	struct r_core_t *core = (struct r_core_t *) user;
 	struct r_config_node_t *node = (struct r_config_node_t *) data;
-	r_asm_use (&core->assembler, node->value);
-// TODO: control error and restore old value (return false?) show errormsg?
+	int ret = r_asm_use (&core->assembler, node->value);
+	if (!ret) {
+		// TODO: control error and restore old value (return false?) show errormsg?
+		eprintf ("Cannot set this arch (%s)\n", node->value);
+	}
 	return R_TRUE;
 }
 

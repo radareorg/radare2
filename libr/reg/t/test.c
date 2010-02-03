@@ -19,6 +19,8 @@ int main() {
 	reg = r_reg_new();
 	r_reg_set_profile(reg, "../p/x86-linux.regs");
 
+	printf ("Program counter is named: %s\n", r_reg_get_name (reg, R_REG_NAME_PC));
+
 	show_regs(reg, 32);
 	r_reg_set_value(reg, r_reg_get(reg, "eax", -1), 0x414141);
 	r_reg_set_value(reg, r_reg_get(reg, "ecx", -1), 666);

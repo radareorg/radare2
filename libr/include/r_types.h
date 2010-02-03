@@ -10,6 +10,12 @@
 #define IFDBG if (0)
 #endif
 
+#if __arm__
+#define DEFAULT_ARCH "arm"
+#else
+#define DEFAULT_ARCH "x86"
+#endif
+
 #if R_RTDEBUG
 #define IFRTDBG if (getenv("LIBR_DEBUG"))
 #else

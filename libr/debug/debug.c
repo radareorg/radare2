@@ -130,7 +130,7 @@ static int r_debug_recoil(struct r_debug_t *dbg) {
 	int recoil, ret = R_FALSE;
 	RRegisterItem *ri;
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
-	ri = r_reg_get (dbg->reg, "eip", -1);
+	ri = r_reg_get (dbg->reg, "eip", -1); // XXX eip is hardcoded here oops
 	if (ri) {
 		ut64 addr = r_reg_get_value (dbg->reg, ri);
 		recoil = r_bp_recoil (dbg->bp, addr);

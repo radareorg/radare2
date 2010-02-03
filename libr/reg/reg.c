@@ -13,13 +13,53 @@ static void r_reg_free_internal(struct r_reg_t *reg) {
 	struct r_reg_item_t *r;
 	int i;
 
-	for(i=0;i<R_REG_TYPE_LAST;i++) {
-		list_for_each_safe(pos, n, &reg->regset[i].regs) {
-			r = list_entry(pos, struct r_reg_item_t, list);
-			list_del(&r->list);
-			free(r);
+	for (i=0;i<R_REG_TYPE_LAST;i++) {
+		list_for_each_safe (pos, n, &reg->regset[i].regs) {
+			r = list_entry (pos, struct r_reg_item_t, list);
+			list_del (&r->list);
+			free (r);
 		}
 	}
+}
+
+R_API const char *r_reg_get_name(struct r_reg_t *reg, int role) {
+	if (role>=0 && role<R_REG_NAME_LAST)
+		return reg->name[role];
+	return "";
+}
+
+R_API int r_reg_set_name(struct r_reg_t *reg, const char *type, const char *name) {
+	int ret = R_TRUE;
+	int role = type[0] + (type[1]<<8);
+	switch (role) {
+	case 'p'+('c'<<8):
+		role = R_REG_NAME_PC;
+		break;
+	case 's'+('p'<<8):
+		role = R_REG_NAME_SP;
+		break;
+	case 'b'+('p'<<8):
+		role = R_REG_NAME_BP;
+		break;
+	case 'a'+('0'<<8):
+		role = R_REG_NAME_A0;
+		break;
+	case 'a'+('1'<<8):
+		role = R_REG_NAME_A1;
+		break;
+	case 'a'+('2'<<8):
+		role = R_REG_NAME_A2;
+		break;
+	case 'a'+('3'<<8):
+		role = R_REG_NAME_A3;
+		break;
+	default:
+		ret = R_FALSE;
+		break;
+	}
+	if (ret)
+		reg->name[role] = r_str_dup (reg->name[role], name);
+	return ret;
 }
 
 R_API struct r_reg_t *r_reg_free(struct r_reg_t *reg)
@@ -36,7 +76,9 @@ R_API struct r_reg_t *r_reg_init(struct r_reg_t *reg)
 	int i;
 	if (reg) {
 		reg->profile = NULL;
-		for(i=0;i<R_REG_TYPE_LAST;i++) {
+		for (i=0; i<R_REG_NAME_LAST; i++)
+			reg->name[i] = NULL;
+		for (i=0;i<R_REG_TYPE_LAST;i++) {
 			INIT_LIST_HEAD(&reg->regset[i].arenas);
 			INIT_LIST_HEAD(&reg->regset[i].regs);
 			reg->regset[i].arena = MALLOC_STRUCT(struct r_reg_arena_t);
@@ -49,9 +91,8 @@ R_API struct r_reg_t *r_reg_init(struct r_reg_t *reg)
 }
 
 static struct r_reg_item_t *r_reg_item_new() {
-	//return MALLOC_STRUCT (rRegisterItem);
 	struct r_reg_item_t *item = MALLOC_STRUCT(struct r_reg_item_t);
-	memset(item, 0, sizeof(struct r_reg_item_t));
+	memset (item, 0, sizeof(struct r_reg_item_t));
 	return item;
 }
 
@@ -73,26 +114,26 @@ static int r_reg_set_word(struct r_reg_item_t *item, int idx, char *word) {
 	int ret = R_TRUE;
 	switch(idx) {
 	case 0:
-		item->type = r_reg_type_by_name(word);
+		item->type = r_reg_type_by_name (word);
 		break;
 	case 1:
-		item->name = strdup(word);
+		item->name = strdup (word);
 		break;
 	/* spaguetti ftw!!1 */
 	case 2:
 		if (*word=='.') // XXX; this is kinda ugly
-			item->size = atoi(word+1);
-		else item->size = atoi(word)*8;
+			item->size = atoi (word+1);
+		else item->size = atoi (word)*8;
 		break;
 	case 3:
 		if (*word=='.') // XXX; this is kinda ugly
-			item->offset = atoi(word+1);
-		else item->offset = atoi(word)*8;
+			item->offset = atoi (word+1);
+		else item->offset = atoi (word)*8;
 		break;
 	case 4:
 		if (*word=='.') // XXX; this is kinda ugly
-			item->packed_size = atoi(word+1);
-		else item->packed_size = atoi(word)*8;
+			item->packed_size = atoi (word+1);
+		else item->packed_size = atoi (word)*8;
 		break;
 	default:
 		eprintf ("register set fail\n");
@@ -105,6 +146,8 @@ static int r_reg_set_word(struct r_reg_item_t *item, int idx, char *word) {
 R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *str)
 {
 	RRegisterItem *item;
+	int setname = R_FALSE;
+	char *name = NULL;
 	int ret = R_FALSE;
 	int lastchar = 0;
 	int chidx = 0;
@@ -113,42 +156,44 @@ R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *str)
 
 	if (!str)
 		return R_FALSE;
-	buf[0]=0;
+	buf[0] = '\0';
 	/* format file is: 'type name size offset packedsize' */
-	r_reg_free_internal(reg);
-	item = r_reg_item_new();
+	r_reg_free_internal (reg);
+	item = r_reg_item_new ();
 
-	while(*str) {
+	while (*str) {
 		if (*str == '#') {
 			/* skip until newline */
-			while(*str && *str != '\n') str++;
+			while (*str && *str != '\n') str++;
 			continue;
 		}
-		switch(*str) {
+		switch (*str) {
 		case ' ':
 		case '\t':
+			// UGLY PASTAFARIAN TO PARSE 
+			if (word==0 && *buf=='=') {
+				setname = R_TRUE;
+				name = r_str_dup (name, buf+1);
+			} else
 			if (lastchar != ' ' && lastchar != '\t') {
-				r_reg_set_word(item, word, buf);
-//				printf("WORD %d (%s)\n", word, buf);
-				chidx = 0;
-				word++;
+				r_reg_set_word (item, word, buf);
 			}
+			chidx = 0;
+			word++;
 			break;
 		case '\n':
-			// commit new
-			//printf("WORD %d (%s)\n", word, buf);
+			if (setname)
+				r_reg_set_name (reg, name, buf);
+			else
 			if (word>3) {
-				r_reg_set_word(item, word, buf);
-				// TODO: add check to ensure that all the fields are defined
-				// before adding it into the list
+				r_reg_set_word (item, word, buf);
 				if (item->name != NULL) {
 					list_add_tail(&item->list, &reg->regset[item->type].regs);
-	//printf("ADD REG(%s) type=%d\n", item->name, item->type);
 					item = r_reg_item_new();
-	//				printf("-----------\n");
 				}
 			}
 			chidx = word = 0;
+			setname = R_FALSE;
 			break;
 		default:
 			if (chidx > 128) // WTF!!
@@ -162,6 +207,7 @@ R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *str)
 	}
 	free (item->name);
 	free (item);
+	free (name);
 	r_reg_fit_arena (reg);
 	
 	/* do we reach the end ? */
@@ -175,7 +221,7 @@ R_API int r_reg_set_profile(struct r_reg_t *reg, const char *profile)
 	const char *base;
 	char *str, *file;
 	/* TODO: append .regs extension to filename */
-	str = r_file_slurp(profile, NULL);
+	str = r_file_slurp (profile, NULL);
 	if (str == NULL) {
  		// XXX we must define this varname in r_lib.h /compiletime/
 		base = r_sys_getenv ("LIBR_PLUGINS");
@@ -205,7 +251,7 @@ R_API struct r_reg_item_t *r_reg_get(struct r_reg_t *reg, const char *name, int 
 		e = type+1;
 	}
 
-	for(;i<e;i++) {
+	for (; i<e; i++) {
 		list_for_each(pos, &reg->regset[i].regs) {
 			r = list_entry(pos, struct r_reg_item_t, list);
 			if (!strcmp(r->name, name))
@@ -221,15 +267,3 @@ R_API struct list_head *r_reg_get_list(struct r_reg_t *reg, int type)
 		return NULL;
 	return &reg->regset[type].regs;
 }
-
-/* vala example */
-/*
-	rDebug dbg = new rDebug();
-	dbg.reg = new rRegister();
-
-	foreach (var foo in dbg.reg.get_list(rRegister.Type.GPR)) {
-		if (foo.size == 32)
-		stdout.printf("Register %s: 0x%08llx\n",
-			foo.name, foo.size, dbg.reg.get_value(foo));
-	}
-*/

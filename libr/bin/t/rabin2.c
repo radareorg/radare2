@@ -57,22 +57,22 @@ static int rabin_show_help() {
 static int rabin_show_entrypoint() {
 	struct r_bin_entry_t *entry;
 	char *env;
-	ut64 baddr = r_bin_get_baddr(bin);
-	if ((entry = r_bin_get_entry(bin)) == NULL)
+	ut64 baddr = r_bin_get_baddr (bin);
+	if ((entry = r_bin_get_entry (bin)) == NULL)
 		return R_FALSE;
 	if (rad) {
-		env = getenv("DEBUG");
-		if (env == NULL || (env && strncmp(env, "1", 1)))
-			printf("e io.vaddr=0x%08llx\n", baddr);
-		printf("fs symbols\n");
-		printf("f entry @ 0x%08llx\n", baddr+entry->rva);
-		printf("s entry\n");
+		env = r_sys_getenv ("DEBUG");
+		if (env == NULL || (env && strncmp (env, "1", 1)))
+			printf ("e io.vaddr=0x%08llx\n", baddr);
+		printf ("fs symbols\n");
+		printf ("f entry @ 0x%08llx\n", baddr+entry->rva);
+		printf ("s entry\n");
 	} else {
-		printf("[Entrypoint]\n");
-		printf("address=0x%08llx offset=0x%08llx baddr=0x%08llx\n",
-				baddr+entry->rva, entry->offset, baddr);
+		printf ("[Entrypoint]\n");
+		printf ("address=0x%08llx offset=0x%08llx baddr=0x%08llx\n",
+			baddr+entry->rva, entry->offset, baddr);
 	}
-	free(entry);
+	free (entry);
 	return R_TRUE;
 }
 

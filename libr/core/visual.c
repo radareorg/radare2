@@ -4,7 +4,13 @@
 
 #define NPF 6
 static int printidx = 0;
+#if __arm__
+const char *printfmt[] = { "x", "pd", "p8", "pc", "ps", "s sp&&x 64&&dr&&s pc&&pd" };
+#elif __x86_64__
+const char *printfmt[] = { "x", "pd", "p8", "pc", "ps", "s rsp&&x 64&&dr&&s rip&&pd" };
+#else
 const char *printfmt[] = { "x", "pd", "p8", "pc", "ps", "s esp&&x 64&&dr&&s eip&&pd" };
+#endif
 
 static int curset = 0, cursor = -1, ocursor=-1;
 static int color = 1;
@@ -593,10 +599,10 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 		r_core_block_size (core, core->blocksize+1);
 		break;
 	case '/':
-		r_core_block_size (core, core->blocksize-=16);
+		r_core_block_size (core, core->blocksize-16);
 		break;
 	case '*':
-		r_core_block_size (core, core->blocksize+=16);
+		r_core_block_size (core, core->blocksize+16);
 		break;
 	case '>':
 		r_core_seek_align (core, core->blocksize, 1);

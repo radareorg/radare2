@@ -6,6 +6,3 @@
 
 /* inlined APIs */
 #define R_INLINE 0
-
-#define DEFAULT_ARCH "x86"
-

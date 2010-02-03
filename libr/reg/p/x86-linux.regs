@@ -6,6 +6,10 @@
 #----------------
 # type	name 	size 	offset 	packedsize
 
+=pc	eip
+=sp	esp
+=bp	ebp
+
 gpr	eip	.32	48	0
 gpr	oeax	.32	44	0
 gpr	eax	.32	24	0

@@ -30,9 +30,10 @@ lang_tcc.${EXT_SO}: tcc.o
 	-${CC} ${CFLAGS} -fPIC -shared -o lang_tcc.${EXT_SO} tcc.c -Wl,-R.. -ldl -ltcc
 endif
 
+ifeq ($(HAVE_LIB_LUA5_1),1)
 lang_lua.${EXT_SO}: lua.o
-	-${CC} ${CFLAGS} -fPIC -shared -o lang_lua.${EXT_SO} lua.c -Wl,-R..
-	@#strip -s lua.so
+	-${CC} ${CFLAGS} -fPIC -shared -o lang_lua.${EXT_SO} lua.c -Wl,-R.. -llua5.1
+endif
 
 lang_ruby.${EXT_SO}:
 	-env CFLAGS="${CFLAGS}" ruby mkruby.rb

@@ -175,9 +175,6 @@ static int __close(struct r_io_t *io, int pid)
 static int __system(struct r_io_t *io, int fd, const char *cmd)
 {
 	//printf("ptrace io command (%s)\n", cmd);
-#if __linux__ && ( __i386__  || __x86_64__ )
-#include <sys/user.h>
-#include <limits.h>
 	/* XXX ugly hack for testing purposes */
 	if (!strcmp(cmd, "pid")) {
 		int pid = atoi(cmd+4);
@@ -185,8 +182,12 @@ static int __system(struct r_io_t *io, int fd, const char *cmd)
 			io->fd = pid;
 		//printf("PID=%d\n", io->fd);
 		return io->fd;
+#if __linux__ && ( __i386__  || __x86_64__ )
+#include <sys/user.h>
+#include <limits.h>
 	} else
 	if (!strcmp(cmd, "reg")) {
+		/* this is more deprecated than VAX */
 		struct user_regs_struct regs;
 		memset(&regs,0, sizeof(regs));
 		// TODO: swap 3-4 args in powerpc
@@ -218,10 +219,10 @@ static int __system(struct r_io_t *io, int fd, const char *cmd)
 		io->printf("f ebp @ 0x%08x\n", regs.ebp);
 		io->printf("f esp @ 0x%08x\n", regs.esp);
 #endif
+#endif
 	} else {
 		printf("Try: '|reg' or '|pid'\n");
 	}
-#endif
 	return R_TRUE;
 }
 

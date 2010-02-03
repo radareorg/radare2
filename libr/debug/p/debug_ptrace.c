@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_userconf.h>
 #include <r_debug.h>
@@ -16,7 +16,11 @@
 #elif __linux__
 #include <sys/user.h>
 #include <limits.h>
-#define R_DEBUG_REG_T struct user_regs_struct
+# if __i386__ || __x86_64__
+# define R_DEBUG_REG_T struct user_regs_struct
+# elif __arm__
+# define R_DEBUG_REG_T struct user_regs
+# endif
 #else
 #warning Unsupported debugging platform
 #endif
@@ -83,6 +87,13 @@ static const char *r_debug_ptrace_reg_profile()
 {
 #if __i386__
 	return strdup(
+	"=pc	eip\n"
+	"=sp	esp\n"
+	"=bp	ebp\n"
+	"=a0	eax\n"
+	"=a1	ebx\n"
+	"=a2	ecx\n"
+	"=a3	edx\n"
 	"gpr	eip	.32	48	0\n"
 	"gpr	ip	.16	48	0\n"
 	"gpr	oeax	.32	44	0\n"
@@ -129,17 +140,55 @@ static const char *r_debug_ptrace_reg_profile()
 	"flg	flag_r	.1	.457	0\n"
 	);
 #elif __x86_64__
-#warning linux-x86-64 register profile is really incomplete
+#warning linux-x64 reg profile is incomplete
 	return strdup (
+	"=pc	rip\n"
+	"=sp	rsp\n"
+	"=bp	rbp\n"
+	"=a0	rax\n"
+	"=a1	rbx\n"
+	"=a2	rcx\n"
+	"=a3	rdx\n"
 	"# no profile defined for x86-64\n"
 	"gpr	rbx	.32	0	0\n"
-	"gpr	rcx	.32	0	8\n"
-	"gpr	rdx	.32	0	16\n"
-	"gpr	rsi	.32	0	24\n"
-	"gpr	rdi	.32	0	32\n"
-	"gpr	rip	.32	0	32\n"
+	"gpr	rcx	.32	8	0\n"
+	"gpr	rdx	.32	16	0\n"
+	"gpr	rsi	.32	24	0\n"
+	"gpr	rdi	.32	32	0\n"
+	"gpr	rip	.32	40	0\n"
+	);
+#elif __arm__
+	return strdup(
+	"=pc	r15"
+	"=sp	r14" // XXX
+	"=a0	r0"
+	"=a1	r1"
+	"=a2	r2"
+	"=a3	r3"
+	"gpr	lr	.32	56	0\n" // r14
+	"gpr	pc	.32	60	0\n" // r15
+
+	"gpr	r0	.32	0	0\n"
+	"gpr	r1	.32	4	0\n"
+	"gpr	r2	.32	8	0\n"
+	"gpr	r3	.32	12	0\n"
+	"gpr	r4	.32	16	0\n"
+	"gpr	r5	.32	20	0\n"
+	"gpr	r6	.32	24	0\n"
+	"gpr	r7	.32	28	0\n"
+	"gpr	r8	.32	32	0\n"
+	"gpr	r9	.32	36	0\n"
+	"gpr	r10	.32	40	0\n"
+	"gpr	r11	.32	44	0\n"
+	"gpr	r12	.32	48	0\n"
+	"gpr	r13	.32	52	0\n"
+	"gpr	r14	.32	56	0\n"
+	"gpr	r15	.32	60	0\n"
+	"gpr	r16	.32	64	0\n"
+	"gpr	r17	.32	68	0\n"
 	);
 #endif
+	return NULL;
 }
 
 // TODO: what about float and hardware regs here ???
@@ -156,21 +205,22 @@ static int r_debug_ptrace_reg_read(struct r_debug_t *dbg, int type, ut8 *buf, in
 	case R_REG_TYPE_GPR:
 		{
 		R_DEBUG_REG_T regs;
-		memset(&regs, 0, sizeof(regs));
-		memset(buf, 0, size);
+		memset (&regs, 0, sizeof (regs));
+		memset (buf, 0, size);
 #if __NetBSD__ || __FreeBSD__ || __OpenBSD__
 		ret = ptrace (PTRACE_GETREGS, pid, &regs, sizeof (regs));
 #elif __linux__ && __powerpc__
 		ret = ptrace (PTRACE_GETREGS, pid, &regs, NULL);
-#else __sun
+#else
+		/* linux/arm/x86/x64 */
 		ret = ptrace (PTRACE_GETREGS, pid, NULL, &regs);
 #endif
-		if (sizeof(regs) < size)
-			size = sizeof(regs);
 		if (ret != 0)
 			return R_FALSE;
-		memcpy(buf, &regs, size);
-		return sizeof(regs);
+		if (sizeof (regs) < size)
+			size = sizeof(regs);
+		memcpy (buf, &regs, size);
+		return sizeof (regs);
 		}
 		break;
 		//r_reg_set_bytes(reg, &regs, sizeof(struct user_regs));
@@ -186,12 +236,10 @@ static int r_debug_ptrace_reg_write(int pid, int type, const ut8* buf, int size)
 	// XXX use switch or so
 	if (type == R_REG_TYPE_GPR) {
 #if __linux__ || __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
-		ret = ptrace(PTRACE_SETREGS, pid, 0, buf);
-		if (sizeof(struct user_regs_struct) < size)
-			size = sizeof(struct user_regs_struct);
-		if (ret != 0)
-			return R_FALSE;
-		return R_TRUE;
+		ret = ptrace (PTRACE_SETREGS, pid, 0, buf);
+		if (sizeof (R_DEBUG_REG_T) < size)
+			size = sizeof (R_DEBUG_REG_T);
+		return (ret != 0) ? R_FALSE: R_TRUE;
 #else
 		#warning r_debug_ptrace_reg_write not implemented
 #endif

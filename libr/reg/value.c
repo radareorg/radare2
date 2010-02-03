@@ -50,34 +50,35 @@ R_API int r_reg_set_value(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 v
 	ut16 v16;
 	ut8 v8;
 	ut8 *src;
-	int ret = R_FALSE;
-	if (item) {
-		ret = R_TRUE;
-		switch(item->size) {
-		case 64: v64 = (ut64)value; src = (ut8*)&v64; break;
-		case 32: v32 = (ut32)value; src = (ut8*)&v32; break;
-		case 16: v16 = (ut16)value; src = (ut8*)&v16; break;
-		case 8:  v8 = (ut8)value; src = (ut8*)&v8; break;
-		case 1: 
-			if (value) {
-				ut8 * buf = reg->regset[item->type].arena->bytes + (item->offset/8);
-				int bit = (item->offset%8);
-				ut8 mask = (1<<bit);
-				buf[0] = (buf[0] &(0xff^mask)) | mask;
-			} else {
-				ut8 * buf = reg->regset[item->type].arena->bytes + (item->offset/8);
-				int bit = (item->offset%8);
-				ut8 mask = 0xff^(1<<bit);
-				buf[0] = (buf[0] & mask) | 0;
-			}
-			break;
-		default: 
-			printf("set_value : TODO: implement bit level\n");
-			break;
+
+	if (!item)
+		return R_FALSE;
+
+	switch (item->size) {
+	case 64: v64 = (ut64)value; src = (ut8*)&v64; break;
+	case 32: v32 = (ut32)value; src = (ut8*)&v32; break;
+	case 16: v16 = (ut16)value; src = (ut8*)&v16; break;
+	case 8:  v8 = (ut8)value; src = (ut8*)&v8; break;
+	case 1: 
+		if (value) {
+			ut8 * buf = reg->regset[item->type].arena->bytes + (item->offset/8);
+			int bit = (item->offset%8);
+			ut8 mask = (1<<bit);
+			buf[0] = (buf[0] &(0xff^mask)) | mask;
+		} else {
+			ut8 * buf = reg->regset[item->type].arena->bytes + (item->offset/8);
+			int bit = (item->offset%8);
+			ut8 mask = 0xff^(1<<bit);
+			buf[0] = (buf[0] & mask) | 0;
 		}
-		r_mem_copybits(reg->regset[item->type].arena->bytes+BITS2BYTES(item->offset), src, item->size);
+		break;
+	default: 
+		eprintf ("set_value : TODO: implement bit level\n");
+		break;
 	}
-	return ret;
+	r_mem_copybits(reg->regset[item->type].arena->bytes+
+		BITS2BYTES(item->offset), src, item->size);
+	return R_TRUE;
 }
 
 /* floating point */
