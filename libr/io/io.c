@@ -142,7 +142,7 @@ R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len)
 		if (ret == len)
 			return len;
 	}
-	ret = r_io_map_read_at(io, io->seek, buf, len);
+	ret = r_io_map_read_at (io, io->seek, buf, len);
 
 	// partial reads
 	if (ret != len) {
@@ -155,7 +155,8 @@ R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len)
 				ret = io->plugin->read(io, io->fd, buf, len);
 			else eprintf ("IO handler for fd=%d has no read()\n", io->fd);
 		} else ret = read (io->fd, buf, len);
-		if (ret != -1 && ret != len)
+
+		if (ret > 0 && ret<len) //ret != len)
 			memset (buf+ret, 0xff, len-ret);
 	}
 

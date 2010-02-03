@@ -5,10 +5,14 @@ include ../../config.mk
 CFLAGS=-I../../include -Wall -DPREFIX=\"${PREFIX}\"
 BINDEPS=
 
-LANGS=lang_lua.${EXT_SO} lang_dummy.${EXT_SO} lang_python.${EXT_SO} lang_perl.${EXT_SO}
+LANGS=lang_dummy.${EXT_SO} lang_python.${EXT_SO} lang_perl.${EXT_SO}
 #LANGS+=lang_ruby.so
 ifeq ($(HAVE_LIB_TCC),1)
 LANGS+=lang_tcc.${EXT_SO}
+endif
+
+ifeq ($(HAVE_LIB_LUA5_1),1)
+LANGS+=lang_lua.${EXT_SO}
 endif
 
 all: ${LANGS}

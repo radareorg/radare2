@@ -56,7 +56,7 @@ static int rabin_show_help() {
 
 static int rabin_show_entrypoint() {
 	struct r_bin_entry_t *entry;
-	char *env;
+	const char *env;
 	ut64 baddr = r_bin_get_baddr (bin);
 	if ((entry = r_bin_get_entry (bin)) == NULL)
 		return R_FALSE;

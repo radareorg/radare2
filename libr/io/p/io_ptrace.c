@@ -41,17 +41,17 @@ static int debug_os_read_at(int pid, void *buf, int sz, ut64 addr)
         if (sz<0 || addr==-1)
                 return -1; 
 
-        for(x=0;x<words;x++) {
-                ((long *)buf)[x] = debug_read_raw(pid, (void *)(&((long*)(long )addr)[x]));
+        for (x=0; x<words; x++) {
+                ((long *)buf)[x] = debug_read_raw (pid, (void *)(&((long*)(long )addr)[x]));
                 if (((long *)buf)[x] == -1) // && errno)
                         goto err;
         }
 
         if (last) {
-                lr = debug_read_raw(pid, &((long*)(long)addr)[x]);
+                lr = debug_read_raw (pid, &((long*)(long)addr)[x]);
                 if (lr == -1) // && errno)
                         goto err;
-                memcpy(&((long *)buf)[x], &lr, last) ;
+                memcpy (&((long *)buf)[x], &lr, last) ;
         }
 
         return sz; 
@@ -177,51 +177,13 @@ static int __system(struct r_io_t *io, int fd, const char *cmd)
 	//printf("ptrace io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
 	if (!strcmp(cmd, "pid")) {
-		int pid = atoi(cmd+4);
+		int pid = atoi (cmd+4);
 		if (pid != 0)
 			io->fd = pid;
 		//printf("PID=%d\n", io->fd);
 		return io->fd;
-#if __linux__ && ( __i386__  || __x86_64__ )
-#include <sys/user.h>
-#include <limits.h>
-	} else
-	if (!strcmp(cmd, "reg")) {
-		/* this is more deprecated than VAX */
-		struct user_regs_struct regs;
-		memset(&regs,0, sizeof(regs));
-		// TODO: swap 3-4 args in powerpc
-		ptrace(PTRACE_GETREGS, fd, 0, &regs);
-#if __WORDSIZE == 64
-		io->printf("f rax @ 0x%08lx\n", regs.rax);
-		io->printf("f rbx @ 0x%08lx\n", regs.rbx);
-		io->printf("f rcx @ 0x%08lx\n", regs.rcx);
-		io->printf("f rdx @ 0x%08lx\n", regs.rdx);
-		io->printf("f r8 @ 0x%08lx\n", regs.r8);
-		io->printf("f r9 @ 0x%08lx\n", regs.r9);
-		io->printf("f r10 @ 0x%08lx\n", regs.r10);
-		io->printf("f r11 @ 0x%08lx\n", regs.r11);
-		io->printf("f r12 @ 0x%08lx\n", regs.r12);
-		io->printf("f r13 @ 0x%08lx\n", regs.r13);
-		io->printf("f r14 @ 0x%08lx\n", regs.r14);
-		io->printf("f r15 @ 0x%08lx\n", regs.r15);
-		io->printf("f rsi @ 0x%08lx\n", regs.rsi);
-		io->printf("f rdi @ 0x%08lx\n", regs.rdi);
-		io->printf("f rsp @ 0x%08lx\n", regs.rsp);
-		io->printf("f rbp @ 0x%08lx\n", regs.rbp);
-		io->printf("f rip @ 0x%08lx\n", regs.rip);
-#else
-		io->printf("f eax @ 0x%08x\n", regs.eax);
-		io->printf("f ebx @ 0x%08x\n", regs.ebx);
-		io->printf("f ecx @ 0x%08x\n", regs.ecx);
-		io->printf("f edx @ 0x%08x\n", regs.edx);
-		io->printf("f eip @ 0x%08x\n", regs.eip);
-		io->printf("f ebp @ 0x%08x\n", regs.ebp);
-		io->printf("f esp @ 0x%08x\n", regs.esp);
-#endif
-#endif
 	} else {
-		printf("Try: '|reg' or '|pid'\n");
+		eprintf ("Try: '|pid'\n");
 	}
 	return R_TRUE;
 }
