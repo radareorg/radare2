@@ -31,6 +31,9 @@ int main(int argc, char **argv)
 #else
 		int ret = r_io_read_at(io, 0x8048000, buf, 128);
 #endif
+		if (ret != 128)
+			eprintf ("OOps cannot read 128 bytes\n");
+		else
 		for (i=0;i<128;i++) {
 			printf ("%02x ", buf[i]);
 			if (!((i+1)%16)) printf ("\n");

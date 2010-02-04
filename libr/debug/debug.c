@@ -13,6 +13,9 @@ R_API struct r_debug_t *r_debug_init(struct r_debug_t *dbg, int hard)
 		dbg->printf = (void *)printf;
 		dbg->reg = r_reg_new();
 		dbg->h = NULL;
+		/* TODO: this is not well designed */
+		dbg->maps = r_debug_map_list_new ();
+		dbg->maps_user = r_debug_map_list_new ();
 		if (hard) {
 			dbg->bp = r_bp_new();
 			r_debug_handle_init(dbg);
@@ -23,7 +26,7 @@ R_API struct r_debug_t *r_debug_init(struct r_debug_t *dbg, int hard)
 }
 
 R_API struct r_debug_t *r_debug_new() {
-	return r_debug_init (MALLOC_STRUCT (struct r_debug_t), R_TRUE);
+	return r_debug_init (R_NEW (RDebug), R_TRUE);
 }
 
 R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg)

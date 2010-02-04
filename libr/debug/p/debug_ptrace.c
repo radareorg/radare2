@@ -158,7 +158,7 @@ static const char *r_debug_ptrace_reg_profile()
 	"gpr	rip	.32	40	0\n"
 	);
 #elif __arm__
-	return strdup(
+	return strdup (
 	"=pc	r15\n"
 	"=sp	r14\n" // XXX
 	"=a0	r0\n"
@@ -247,6 +247,111 @@ static int r_debug_ptrace_reg_write(int pid, int type, const ut8* buf, int size)
 	return R_FALSE;
 }
 
+static RList *r_debug_ptrace_map_get(struct r_debug_t *dbg)
+{
+	char path[1024];
+	RList *list = NULL;
+#if __sun
+	/* TODO: On solaris parse /proc/%d/map */
+	sprintf (path, "pmap %d > /dev/stderr", ps.tid);
+	system (path);
+#else
+	RDebugMap *map;
+	int i, perm, unk = 0;
+	char *pos_c;
+	char region[100], region2[100], perms[5], null[16];
+	char line[1024];
+	FILE *fd;
+#if __FreeBSD__
+	sprintf (path, "/proc/%d/map", dbg->pid);
+#else
+	sprintf (path, "/proc/%d/maps", dbg->pid);
+#endif
+	fd = fopen (path, "r");
+	if(!fd) {
+		perror ("debug_init_maps");
+		return NULL;
+	}
+
+	list = r_list_new ();
+
+	while (!feof (fd)) {
+		line[0]='\0';
+		fgets (line, 1023, fd);
+		if (line[0]=='\0')
+			break;
+		path[0]='\0';
+		line[strlen (line)-1]='\0';
+#if __FreeBSD__
+	// 0x8070000 0x8072000 2 0 0xc1fde948 rw- 1 0 0x2180 COW NC vnode /usr/bin/gcc
+		sscanf (line, "%s %s %d %d 0x%s %3s %d %d",
+			&region[2], &region2[2], &ign, &ign, unkstr, perms, &ign, &ign);
+		pos_c = strchr (line, '/');
+		if (pos_c) strcpy (path, pos_c);
+		else path[0]='\0';
+#else
+		sscanf (line, "%s %s %s %s %s %s",
+			&region[2], perms,  null, null, null, path);
+
+		pos_c = strchr (&region[2], '-');
+		if (!pos_c)
+			continue;
+
+		pos_c[-1] = (char)'0';
+		pos_c[ 0] = (char)'x';
+		strcpy (region2, pos_c-1);
+#endif // __FreeBSD__
+		region[0] = region2[0] = '0';
+		region[1] = region2[1] = 'x';
+
+		if (!*path)
+			sprintf (path, "unk%d", unk++);
+
+		perm = 0;
+		for(i = 0; perms[i] && i < 4; i++)
+			switch (perms[i]) {
+			case 'r': perm |= R_IO_READ; break;
+			case 'w': perm |= R_IO_WRITE; break;
+			case 'x': perm |= R_IO_EXEC; break;
+			}
+
+		map = r_debug_map_new (path,
+			r_num_get (NULL, region),
+			r_num_get (NULL, region2),
+			perm, 0);
+		if (map == NULL)
+			break;
+#if 0
+		mr->ini = get_offset(region);
+		mr->end = get_offset(region2);
+		mr->size = mr->end - mr->ini;
+		mr->bin = strdup(path);
+		mr->perms = 0;
+		if(!strcmp(path, "[stack]") || !strcmp(path, "[vdso]"))
+			mr->flags = FLAG_NOPERM;
+		else 
+			mr->flags = 0;
+
+		for(i = 0; perms[i] && i < 4; i++) {
+			switch(perms[i]) {
+				case 'r':
+					mr->perms |= REGION_READ;
+					break;
+				case 'w':
+					mr->perms |= REGION_WRITE;
+					break;
+				case 'x':
+					mr->perms |= REGION_EXEC;
+			}
+		}
+#endif
+		r_list_append (list, map);
+	}
+	fclose(fd);
+#endif // __sun
+	return list;
+}
+
 // TODO: deprecate???
 #if 0
 static int r_debug_ptrace_bp_write(int pid, ut64 addr, int size, int hw, int rwx) {
@@ -310,6 +415,7 @@ struct r_debug_handle_t r_debug_plugin_ptrace = {
 	.reg_profile = (void *)&r_debug_ptrace_reg_profile,
 	.reg_read = &r_debug_ptrace_reg_read,
 	.reg_write = (void *)&r_debug_ptrace_reg_write,
+	.map_get = (void *)&r_debug_ptrace_map_get,
 	//.bp_read = &r_debug_ptrace_bp_read,
 	//.bp_write = &r_debug_ptrace_bp_write,
 };

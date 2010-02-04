@@ -1946,11 +1946,15 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		break;
 	case 'm':
+		r_debug_map_sync (&core->dbg); // update process memory maps
+		r_debug_map_list (&core->dbg);
+#if 0
 		// XXX: allow to allocate memory, show memory maps, ...
 		// TODO: do not export any variable here.. this is a task of r_debug
 		{char pid[16]; sprintf(pid, "%d", core->dbg.pid);
 		r_sys_setenv("PID", pid, 1);
 		r_sys_cmd ("cat /proc/$PID/maps"); }
+#endif
 		break;
 	case 'r':
 		r_core_cmd_reg (core, input+1);

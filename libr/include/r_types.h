@@ -84,6 +84,8 @@ static inline int ERR(char *str, ...)
 #define ZERO_FILL(x) memset (x, 0, sizeof (x))
 #define MALLOC_STRUCTS(x,y) (x*)malloc(sizeof(x)*y)
 #define MALLOC_STRUCT(x) (x*)malloc(sizeof(x))
+// TODO: deprecate MALLOC_STRUCT... RNEW is cooler
+#define R_NEW(x) (x*)malloc(sizeof(x))
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')
 #define IS_WHITESPACE(x) (x==' '||x=='\t')
 

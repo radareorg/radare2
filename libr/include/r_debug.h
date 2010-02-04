@@ -2,6 +2,7 @@
 #define _INCLUDE_R_DEBUG_H_
 
 #include <r_types.h>
+#include <r_anal.h>
 #include <r_util.h>
 #include <r_reg.h>
 #include <r_bp.h>
@@ -25,6 +26,16 @@ enum {
 	//..
 };
 
+typedef struct r_debug_map_t {
+	char *name;
+	ut64 addr;
+	ut64 addr_end;
+	ut64 size;
+	char *file;
+	int perm;
+	int user;
+} RDebugMap;
+
 typedef struct r_debug_t {
 	int pid;    /* selected process id */
 	int tid;    /* selected thread id */
@@ -33,27 +44,20 @@ typedef struct r_debug_t {
 	int newstate;
 	char *reg_profile;
 	struct r_reg_t *reg;
-	//struct r_regset_t *oregs;
-	//struct r_regset_t *regs;
 	struct r_bp_t *bp;
 	void *user;
 	/* io */
 	void (*printf)(const char *str, ...);
 	struct r_debug_handle_t *h;
 	struct list_head handlers;
+	RList *maps; // <RDebugMap>
+	RList *maps_user; // <RDebugMap>
 	/* TODO
 	- list of processes and their threads
 	- list of mapped memory (from /proc/XX/maps)
 	- list of managed memory (allocated in child...)
 	*/
 } RDebug;
-
-typedef struct r_debug_memregion_t {
-	ut64 addr_start;
-	ut64 addr_end;
-	int perms;
-	char name[64];
-} RDebugMemoryRegion;
 
 /* TODO: pass dbg and user data pointer everywhere */
 typedef struct r_debug_handle_t {
@@ -77,9 +81,9 @@ typedef struct r_debug_handle_t {
 	char* (*reg_profile)();
 	int (*reg_write)(int pid, int type, const ut8 *buf, int size); //XXX struct r_regset_t regs);
 	/* memory */
-	ut64 (*mem_alloc)(void *user, ut64 size, ut64 addr);
-	int (*mem_free)(void *user, ut64 addr);
-
+	RList *(*map_get)(RDebug *dbg);
+	ut64 (*map_alloc)(RDebug *dbg, RDebugMap *map);
+	int (*map_dealloc)(RDebug *dbg, ut64 addr);
 	struct list_head list;
 } RDebugHandle;
 
@@ -119,8 +123,15 @@ R_API int r_debug_handle_list(struct r_debug_t *dbg);
 R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
 
 /* memory */
-R_API ut64 r_debug_mem_alloc(struct r_debug_t *dbg, ut64 size, ut64 addr);
-R_API int r_debug_mem_free(struct r_debug_t *dbg, ut64 addr);
+R_API int r_debug_map_alloc(RDebug *dbg, RDebugMap *map);
+R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map);
+R_API RList *r_debug_map_list_new();
+R_API void r_debug_map_list_free(RList *maps);
+R_API RDebugMap *r_debug_map_get(RDebug *dbg, ut64 addr);
+R_API RDebugMap *r_debug_map_new (char *name, ut64 addr, ut64 addr_end, int perm, int user);
+R_API void r_debug_map_free(RDebugMap *map);
+R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map);
+R_API void r_debug_map_list(RDebug *dbg);
 
 /* registers */
 R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write);
