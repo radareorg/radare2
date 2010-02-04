@@ -49,6 +49,7 @@ static int rabin_show_help() {
 		" -r          Radare output\n"
 		" -w          Open file in rw mode\n"
 		" -L          List supported bin plugins\n"
+		" -@ [addr]   Show section, symbol or import at addr\n"
 		" -V          Show version information\n"
 		" -h          This help\n");
 	return R_TRUE;
@@ -76,7 +77,7 @@ static int rabin_show_entrypoint() {
 	return R_TRUE;
 }
 
-static int rabin_show_imports() {
+static int rabin_show_imports(ut64 at) {
 	struct r_bin_import_t *imports;
 	ut64 baddr;
 	int i;
@@ -86,29 +87,35 @@ static int rabin_show_imports() {
 	if ((imports = r_bin_get_imports(bin)) == NULL)
 		return R_FALSE;
 
-	if (rad)
-		printf("fs imports\n");
-	else printf("[Imports]\n");
-
-	 for (i = 0; !imports[i].last; i++) {
-		if (rad) {
-			r_flag_name_filter(imports[i].name);
-			printf("f imp.%s @ 0x%08llx\n",
-					imports[i].name, baddr+imports[i].rva);
-		} else printf("address=0x%08llx offset=0x%08llx ordinal=%03lli "
-				"hint=%03lli bind=%s type=%s name=%s\n",
-				baddr+imports[i].rva, imports[i].offset,
-				imports[i].ordinal, imports[i].hint,  imports[i].bind,
-				imports[i].type, imports[i].name);
+	if (!at) {
+		if (rad) printf("fs imports\n");
+		else printf("[Imports]\n");
 	}
 
-	if (!rad) printf("\n%i imports\n", i);
+	 for (i = 0; !imports[i].last; i++) {
+		 if (at) {
+			 if (baddr+imports[i].rva == at || imports[i].offset == at)
+				 printf("%s\n", imports[i].name);
+		 } else {
+			 if (rad) {
+				 r_flag_name_filter(imports[i].name);
+				 printf("f imp.%s @ 0x%08llx\n",
+						 imports[i].name, baddr+imports[i].rva);
+			 } else printf("address=0x%08llx offset=0x%08llx ordinal=%03lli "
+					 "hint=%03lli bind=%s type=%s name=%s\n",
+					 baddr+imports[i].rva, imports[i].offset,
+					 imports[i].ordinal, imports[i].hint,  imports[i].bind,
+					 imports[i].type, imports[i].name);
+		 }
+	 }
+
+	if (!at && !rad) printf("\n%i imports\n", i);
 
 	free(imports);
 	return R_TRUE;
 }
 
-static int rabin_show_symbols() {
+static int rabin_show_symbols(ut64 at) {
 	struct r_bin_symbol_t *symbols;
 	ut64 baddr;
 	int i;
@@ -118,34 +125,44 @@ static int rabin_show_symbols() {
 	if ((symbols = r_bin_get_symbols(bin)) == NULL)
 		return R_FALSE;
 
-	if (rad) printf("fs symbols\n");
-	else printf("[Symbols]\n");
-
-	for (i = 0; !symbols[i].last; i++) {
-		if (rad) {
-			r_flag_name_filter(symbols[i].name);
-			if (symbols[i].size) {
-				if (!strncmp(symbols[i].type,"FUNC", 4))
-					printf("CF %lli @ 0x%08llx\n",
-							symbols[i].size, baddr+symbols[i].rva);
-				else
-				if (!strncmp(symbols[i].type,"OBJECT", 6))
-					printf("Cd %lli @ 0x%08llx\n",
-							symbols[i].size, baddr+symbols[i].rva);
-				printf("f sym.%s %lli @ 0x%08llx\n",
-						symbols[i].name, symbols[i].size,
-						baddr+symbols[i].rva);
-			} else printf("f sym.%s @ 0x%08llx\n",
-						symbols[i].name, baddr+symbols[i].rva);
-		} else printf("address=0x%08llx offset=0x%08llx ordinal=%03lli "
-				"forwarder=%s size=%08lli bind=%s type=%s name=%s\n",
-				baddr+symbols[i].rva, symbols[i].offset,
-				symbols[i].ordinal, symbols[i].forwarder,
-				symbols[i].size, symbols[i].bind, symbols[i].type, 
-				symbols[i].name);
+	if (!at) {
+		if (rad) printf("fs symbols\n");
+		else printf("[Symbols]\n");
 	}
 
-	if (!rad) printf("\n%i symbols\n", i);
+	for (i = 0; !symbols[i].last; i++) {
+		if (at) {
+			if ((symbols[i].size != 0 &&
+				((baddr+symbols[i].rva <= at && baddr+symbols[i].rva+symbols[i].size > at) ||
+				(symbols[i].offset <= at && symbols[i].offset+symbols[i].size > at))) ||
+			 	baddr+symbols[i].rva == at || symbols[i].offset == at)
+				printf("%s\n", symbols[i].name);
+		} else {
+			if (rad) {
+				r_flag_name_filter(symbols[i].name);
+				if (symbols[i].size) {
+					if (!strncmp(symbols[i].type,"FUNC", 4))
+						printf("CF %lli @ 0x%08llx\n",
+								symbols[i].size, baddr+symbols[i].rva);
+					else
+						if (!strncmp(symbols[i].type,"OBJECT", 6))
+							printf("Cd %lli @ 0x%08llx\n",
+									symbols[i].size, baddr+symbols[i].rva);
+					printf("f sym.%s %lli @ 0x%08llx\n",
+							symbols[i].name, symbols[i].size,
+							baddr+symbols[i].rva);
+				} else printf("f sym.%s @ 0x%08llx\n",
+						symbols[i].name, baddr+symbols[i].rva);
+			} else printf("address=0x%08llx offset=0x%08llx ordinal=%03lli "
+					"korwarder=%s size=%08lli bind=%s type=%s name=%s\n",
+					baddr+symbols[i].rva, symbols[i].offset,
+					symbols[i].ordinal, symbols[i].forwarder,
+					symbols[i].size, symbols[i].bind, symbols[i].type, 
+					symbols[i].name);
+		}
+	}
+
+	if (!at && !rad) printf("\n%i symbols\n", i);
 
 	free(symbols);
 
@@ -184,7 +201,7 @@ static int rabin_show_strings() {
 	return R_TRUE;
 }
 
-static int rabin_show_sections() {
+static int rabin_show_sections(ut64 at) {
 	struct r_bin_section_t *sections;
 	ut64 baddr;
 	int i;
@@ -194,35 +211,45 @@ static int rabin_show_sections() {
 	if ((sections = r_bin_get_sections(bin)) == NULL)
 		return R_FALSE;
 	
-	if (rad) printf("fs sections\n");
-	else printf("[Sections]\n");
-
-	for (i = 0; !sections[i].last; i++) {
-		if (rad) {
-			r_flag_name_filter(sections[i].name);
-			printf("f section.%s @ 0x%08llx\n",
-				sections[i].name, baddr+sections[i].rva);
-			printf("f section.%s_end @ 0x%08llx\n",
-				sections[i].name, baddr+sections[i].rva+sections[i].size);
-			printf("[%02i] address=0x%08llx offset=0x%08llx size=%08lli "
-				"privileges=%c%c%c%c name=%s\n",
-				i, baddr+sections[i].rva, sections[i].offset, sections[i].size,
-				R_BIN_SCN_SHAREABLE(sections[i].characteristics)?'s':'-',
-				R_BIN_SCN_READABLE(sections[i].characteristics)?'r':'-',
-				R_BIN_SCN_WRITABLE(sections[i].characteristics)?'w':'-',
-				R_BIN_SCN_EXECUTABLE(sections[i].characteristics)?'x':'-',
-				sections[i].name);
-		} else printf("idx=%02i address=0x%08llx offset=0x%08llx size=%08lli "
-				"privileges=%c%c%c%c name=%s\n",
-				i, baddr+sections[i].rva, sections[i].offset, sections[i].size,
-				R_BIN_SCN_SHAREABLE(sections[i].characteristics)?'s':'-',
-				R_BIN_SCN_READABLE(sections[i].characteristics)?'r':'-',
-				R_BIN_SCN_WRITABLE(sections[i].characteristics)?'w':'-',
-				R_BIN_SCN_EXECUTABLE(sections[i].characteristics)?'x':'-',
-				sections[i].name);
+	if (!at) {
+		if (rad) printf("fs sections\n");
+		else printf("[Sections]\n");
 	}
 
-	if (!rad) printf("\n%i sections\n", i);
+	for (i = 0; !sections[i].last; i++) {
+		if (at) {
+			if ((sections[i].size != 0 &&
+				((baddr+sections[i].rva <= at && baddr+sections[i].rva+sections[i].size > at) ||
+				(sections[i].offset <= at && sections[i].offset+sections[i].size > at))) ||
+			 	baddr+sections[i].rva == at || sections[i].offset == at)
+				printf("%s\n", sections[i].name);
+		} else {
+			if (rad) {
+				r_flag_name_filter(sections[i].name);
+				printf("f section.%s @ 0x%08llx\n",
+						sections[i].name, baddr+sections[i].rva);
+				printf("f section.%s_end @ 0x%08llx\n",
+						sections[i].name, baddr+sections[i].rva+sections[i].size);
+				printf("[%02i] address=0x%08llx offset=0x%08llx size=%08lli "
+						"privileges=%c%c%c%c name=%s\n",
+						i, baddr+sections[i].rva, sections[i].offset, sections[i].size,
+						R_BIN_SCN_SHAREABLE(sections[i].characteristics)?'s':'-',
+						R_BIN_SCN_READABLE(sections[i].characteristics)?'r':'-',
+						R_BIN_SCN_WRITABLE(sections[i].characteristics)?'w':'-',
+						R_BIN_SCN_EXECUTABLE(sections[i].characteristics)?'x':'-',
+						sections[i].name);
+			} else printf("idx=%02i address=0x%08llx offset=0x%08llx size=%08lli "
+					"privileges=%c%c%c%c name=%s\n",
+					i, baddr+sections[i].rva, sections[i].offset, sections[i].size,
+					R_BIN_SCN_SHAREABLE(sections[i].characteristics)?'s':'-',
+					R_BIN_SCN_READABLE(sections[i].characteristics)?'r':'-',
+					R_BIN_SCN_WRITABLE(sections[i].characteristics)?'w':'-',
+					R_BIN_SCN_EXECUTABLE(sections[i].characteristics)?'x':'-',
+					sections[i].name);
+		}
+	}
+
+	if (!at && !rad) printf("\n%i sections\n", i);
 	free(sections);
 	return R_TRUE;
 }
@@ -412,6 +439,7 @@ static int __lib_bin_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
 
 int main(int argc, char **argv)
 {
+	ut64 at = 0LL;
 	int c;
 	int action = ACTION_UNK;
 	const char *format = NULL, *op = NULL;
@@ -429,7 +457,7 @@ int main(int argc, char **argv)
 		r_lib_opendir(&l, LIBDIR"/radare2/");
 	}
 
-	while ((c = getopt(argc, argv, "VisSzIHewo:f:rvLh")) != -1)
+	while ((c = getopt(argc, argv, "@:VisSzIHewo:f:rvLh")) != -1)
 	{
 		switch( c ) {
 		case 'i':
@@ -472,6 +500,9 @@ int main(int argc, char **argv)
 		case 'L':
 			r_bin_list(bin);
 			exit(1);
+		case '@':
+			at = r_num_math(NULL, optarg);
+			break;
 		case 'V':
 			printf("rabin2 v"VERSION"\n");
 			return 0;
@@ -497,11 +528,11 @@ int main(int argc, char **argv)
 	if (action&ACTION_ENTRY)
 		rabin_show_entrypoint();
 	if (action&ACTION_IMPORTS)
-		rabin_show_imports();
+		rabin_show_imports(at);
 	if (action&ACTION_SYMBOLS)
-		rabin_show_symbols();
+		rabin_show_symbols(at);
 	if (action&ACTION_SECTIONS)
-		rabin_show_sections();
+		rabin_show_sections(at);
 	if (action&ACTION_STRINGS)
 		rabin_show_strings();
 	if (action&ACTION_INFO)
