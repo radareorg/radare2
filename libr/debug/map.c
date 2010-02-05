@@ -3,22 +3,24 @@
 #include <r_debug.h>
 #include <r_list.h>
 
-R_API void r_debug_map_list(struct r_debug_t *dbg) {
+R_API void r_debug_map_list(struct r_debug_t *dbg, ut64 addr) {
+	char here;
 	RListIter *iter = r_list_iterator (dbg->maps);
-	printf ("Process maps:\n");
 	while (r_list_iter_next (iter)) {
 		RDebugMap *map = r_list_iter_get (iter);
-		eprintf ("0x%08llx - 0x%08llx %c %x %s\n",
-			map->addr, map->addr_end,
+		if (addr>=map->addr && addr<=map->addr_end)
+			here = '*';
+		else	here = '-';
+		eprintf ("sys 0x%08llx %c 0x%08llx %c %x %s\n",
+			map->addr, here, map->addr_end,
 			map->user?'u':'s',
 			map->perm, map->name);
 	}
 
 	iter = r_list_iterator (dbg->maps_user);
-	printf ("User maps:\n");
 	while (r_list_iter_next (iter)) {
 		RDebugMap *map = r_list_iter_get (iter);
-		eprintf ("0x%08llx - 0x%08llx %c %x %s\n",
+		eprintf ("usr 0x%08llx - 0x%08llx %c %x %s\n",
 			map->addr, map->addr_end,
 			map->user?'u':'s',
 			map->perm, map->name);

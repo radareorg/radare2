@@ -50,6 +50,7 @@ typedef struct r_debug_t {
 	void (*printf)(const char *str, ...);
 	struct r_debug_handle_t *h;
 	struct list_head handlers;
+	RIOBind iob;
 	RList *maps; // <RDebugMap>
 	RList *maps_user; // <RDebugMap>
 	/* TODO
@@ -131,11 +132,15 @@ R_API RDebugMap *r_debug_map_get(RDebug *dbg, ut64 addr);
 R_API RDebugMap *r_debug_map_new (char *name, ut64 addr, ut64 addr_end, int perm, int user);
 R_API void r_debug_map_free(RDebugMap *map);
 R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map);
-R_API void r_debug_map_list(RDebug *dbg);
+R_API void r_debug_map_list(RDebug *dbg, ut64 addr);
 
 /* registers */
 R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write);
 R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad);
+
+R_API void r_debug_io_bind(RDebug *dbg, RIO *io);
+R_API ut64 r_debug_execute(struct r_debug_t *dbg, ut8 *buf, int len);
+R_API int r_debug_map_sync(RDebug *dbg);
 #endif
 #endif
 

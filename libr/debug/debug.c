@@ -2,8 +2,7 @@
 
 #include <r_debug.h>
 
-R_API struct r_debug_t *r_debug_init(struct r_debug_t *dbg, int hard)
-{
+R_API struct r_debug_t *r_debug_init(struct r_debug_t *dbg, int hard) {
 	if (dbg) {
 		dbg->pid = -1;
 		dbg->tid = -1;
@@ -56,8 +55,80 @@ R_API int r_debug_attach(struct r_debug_t *dbg, int pid)
 	return ret;
 }
 
+#if TODO
+// TODO MOove to r_reg
+R_API ut64 r_debug_reg_get(struct r_debug_t *dbg, char *name)
+{
+	RRegisterItem *ri;
+	ut64 ret = 0LL;
+	char *foo = r_reg_get_name (dbg->reg, name);
+	if (foo) {
+		
+	} else {
+		//r_reg_get (dbg->reg, dbg->reg->name[
+	}
+	if (ri)
+		ret = r_reg_get_value (dbg->reg, ri);
+	return ret;
+}
+#endif
+
+/* 
+ * Save 4096 bytes from %esp
+ * TODO: Add support for reverse stack architectures
+ */
+R_API ut64 r_debug_execute(struct r_debug_t *dbg, ut8 *buf, int len)
+{
+	int orig_sz;
+	ut8 stackbackup[4096];
+	ut8 *backup, *orig = NULL;
+	RRegisterItem *ri, *risp, *ripc;
+	ut64 rsp, rpc, ra0 = 0LL;
+	ripc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
+	risp = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
+	if (ripc) {
+		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+		orig = r_reg_get_bytes (dbg->reg, -1, &orig_sz);
+		if (orig == NULL) {
+			eprintf ("Cannot get register arena bytes\n");
+			return 0LL;
+		}
+		rpc = r_reg_get_value (dbg->reg, ripc);
+		rsp = r_reg_get_value (dbg->reg, risp);
+
+		backup = malloc (len);
+		if (backup == NULL)
+			return 0LL;
+		dbg->iob.read_at (dbg->iob.io, rpc, backup, len);
+		dbg->iob.read_at (dbg->iob.io, rsp, stackbackup, len);
+
+		r_bp_add_sw (dbg->bp, rpc+len, 1, R_BP_PROT_EXEC);
+
+		/* execute code here */
+		dbg->iob.write_at (dbg->iob.io, rpc, buf, len);
+		r_debug_continue (dbg);
+		/* TODO: check if stopped in breakpoint or not */
+
+		r_bp_del (dbg->bp, rpc+len);
+		dbg->iob.write_at (dbg->iob.io, rpc, backup, len);
+		dbg->iob.write_at (dbg->iob.io, rsp, stackbackup, len);
+
+		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+		ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_A0], R_REG_TYPE_GPR);
+		ra0 = r_reg_get_value (dbg->reg, ri);
+		r_reg_set_bytes (dbg->reg, -1, orig, orig_sz);
+		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_TRUE);
+
+		free (backup);
+		free (orig);
+		eprintf ("ra0=0x%08llx\n", ra0);
+	} else eprintf ("r_debug_execute: Cannot get program counter\n");
+	return (ra0);
+}
+
 R_API int r_debug_startv(struct r_debug_t *dbg, int argc, char **argv)
 {
+	/* TODO : r_debug_startv unimplemented */
 	return R_FALSE;
 }
 
@@ -121,6 +192,11 @@ R_API int r_debug_step(struct r_debug_t *dbg, int steps)
 	return ret;
 }
 
+R_API void r_debug_io_bind(RDebug *dbg, RIO *io) {
+	r_io_bind (io, &dbg->bp->iob);
+	r_io_bind (io, &dbg->iob);
+}
+
 R_API int r_debug_step_over(struct r_debug_t *dbg, int steps)
 {
 	// TODO: analyze opcode if it is stepoverable
@@ -133,7 +209,7 @@ static int r_debug_recoil(struct r_debug_t *dbg) {
 	int recoil, ret = R_FALSE;
 	RRegisterItem *ri;
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
-	ri = r_reg_get (dbg->reg, "eip", -1); // XXX eip is hardcoded here oops
+	ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], -1);
 	if (ri) {
 		ut64 addr = r_reg_get_value (dbg->reg, ri);
 		recoil = r_bp_recoil (dbg->bp, addr);

@@ -1,18 +1,19 @@
-BINDEPS=r_diff r_util
+include ../../config.mk
 
-include ../../rules.mk
+BINDEPS=r_diff r_util
 
 CFLAGS+=-DVERSION=\"${VERSION}\"
 CFLAGS+=-g -I../../include
 
-all: test radiff2
+all: test${EXT_EXE} radiff2${EXT_EXE}
 
-test: test.o
-	${CC} ${CFLAGS} test.o ${LDFLAGS} -o test
+test${EXT_EXE}: test.o
+	${CC} ${CFLAGS} test.o ${LDFLAGS} -o test${EXT_EXE}
 
-radiff2: radiff2.o
-	${CC} ${CFLAGS} radiff2.c ${LDFLAGS} -o radiff2
+radiff2${EXT_EXE}: radiff2.o
+	${CC} ${CFLAGS} radiff2.c ${LDFLAGS} -o radiff2${EXT_EXE}
 
 myclean:
-	rm -f test test.o radiff2 radiff2.o
+	rm -f test${EXT_EXE} test.o radiff2${EXT_EXE} radiff2.o
 
+include ../../rules.mk

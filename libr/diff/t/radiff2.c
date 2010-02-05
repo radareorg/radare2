@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+
 #include <r_diff.h>
 
 static ut32 count = 0;
@@ -10,21 +12,21 @@ static int cb(struct r_diff_t *d, void *user,
 		count++;
 		return 1;
 	}
-	printf("0x%08llx ", op->a_off);
-	for(i = 0;i<op->a_len;i++)
-		printf("%02x", op->a_buf[i]);
-	printf(" => ");
-	for(i = 0;i<op->b_len;i++)
-		printf("%02x", op->b_buf[i]);
-	printf(" 0x%08llx\n", op->b_off);
+	printf ("0x%08llx ", op->a_off);
+	for (i = 0;i<op->a_len;i++)
+		printf ("%02x", op->a_buf[i]);
+	printf (" => ");
+	for (i = 0;i<op->b_len;i++)
+		printf ("%02x", op->b_buf[i]);
+	printf (" 0x%08llx\n", op->b_off);
 	return 1;
 }
 
 static int show_help(int line)
 {
-	printf("Usage: radiff2 [-nsdl] [file] [file]\n");
-	if (!line) printf(
-		"  -l     diff lines of text\n"
+	printf ("Usage: radiff2 [-nsdl] [file] [file]\n");
+	if (!line) printf (
+//		"  -l     diff lines of text\n"
 		"  -s     calculate text distance\n"
 		"  -c     count of changes\n"
 		"  -d     use delta diffing\n"
@@ -49,7 +51,7 @@ int main(int argc, char **argv)
 	int showcount = 0;
 	double sim;
 
-	while ((c = getopt(argc, argv, "cdlsV")) != -1) {
+	while ((c = getopt (argc, argv, "hcdlsV")) != -1) {
 		switch(c) {
 		case 'c':
 			showcount = 1;
@@ -57,55 +59,56 @@ int main(int argc, char **argv)
 		case 'd':
 			delta = 1;
 			break;
+		case 'h':
+			argc = 0;
+			mode = MODE_DIST;
+			break;
 		case 's':
 			mode = MODE_DIST;
 			break;
-		case 'l':
-			mode = MODE_LOCS;
-			break;
+//		case 'l':
+//			mode = MODE_LOCS;
+//			break;
 		case 'V':
-			printf("radiff2 v"VERSION"\n");
+			printf ("radiff2 v"VERSION"\n");
 			return 0;
 		default:
-			return show_help(1);
+			return show_help (R_TRUE);
 		}
 	}
 	
-	if (argc<3)
-		return show_help(0);
-
-	if (optind+2<argc)
-		return show_help(0);
+	if (argc<3 || optind+2<argc)
+		return show_help (R_FALSE);
 
 	file = argv[optind];
 	file2 = argv[optind+1];
 
-	bufa = (ut8*)r_file_slurp(file, &sza);
-	bufb = (ut8*)r_file_slurp(file2, &szb);
+	bufa = (ut8*)r_file_slurp (file, &sza);
+	bufb = (ut8*)r_file_slurp (file2, &szb);
 	if (bufa == NULL || bufb == NULL) {
-		fprintf(stderr, "Error slurping source files\n");
+		eprintf ("Error slurping source files\n");
 		return 1;
 	}
 
 	switch(mode) {
 	case MODE_DIFF:
-		r_diff_init(&d, 0LL, 0LL);
-		r_diff_set_delta(&d, delta);
-		r_diff_set_callback(&d, &cb, NULL);
-		r_diff_buffers(&d, bufa, sza, bufb, szb);
+		r_diff_init (&d, 0LL, 0LL);
+		r_diff_set_delta (&d, delta);
+		r_diff_set_callback (&d, &cb, NULL);
+		r_diff_buffers (&d, bufa, sza, bufb, szb);
 		break;
 	case MODE_DIST:
-		r_diff_buffers_distance(NULL, bufa, sza, bufb, szb, &count, &sim);
-		printf("similarity: %.2f\n", sim);
-		printf("distance: %d\n", count);
+		r_diff_buffers_distance (NULL, bufa, sza, bufb, szb, &count, &sim);
+		printf ("similarity: %.2f\n", sim);
+		printf ("distance: %d\n", count);
 		break;
-	case MODE_LOCS:
-		count = r_diff_lines(file, (char*)bufa, sza, file2, (char*)bufb, szb);
-		break;
+//	case MODE_LOCS:
+//		count = r_diff_lines(file, (char*)bufa, sza, file2, (char*)bufb, szb);
+//		break;
 	}
 
 	if (showcount)
-		printf("%d\n", count);
+		printf ("%d\n", count);
 
 	return 0;
 }

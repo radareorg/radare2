@@ -119,8 +119,9 @@ int main(int argc, char **argv)
 			fprintf (stderr, "Cannot open file '%s'\n", file);
 			return 1;
 		}
+		// TODO: move into if (debug) ..
 		r_config_set (&r.config, "cfg.debug", "true");
-		r_debug_use (&r.dbg, "ptrace");
+		r_debug_use (&r.dbg, "native");
 	} else
 	while (optind < argc) {
 		const char *file = argv[optind++];
@@ -148,7 +149,7 @@ int main(int argc, char **argv)
 
 	if (debug) {
 		r_core_cmd (&r, "e cfg.ffio=true", 0);
-		r_core_cmd (&r, "dh ptrace", 0);
+		r_core_cmd (&r, "dh native", 0);
 		r_core_cmdf (&r, "dp %d", r.file->fd);
 		r_core_cmd (&r, ".dr*", 0);
 		r_core_cmd (&r, "s eip", 0);

@@ -1,7 +1,7 @@
 OBJ_DUMMY=bin_dummy.o
 
 STATIC_OBJ+=${OBJ_DUMMY}
-TARGET_DUMMY=bin_dummy.so
+TARGET_DUMMY=bin_dummy.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_DUMMY}
 

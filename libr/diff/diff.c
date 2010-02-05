@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_diff.h>
 
@@ -60,7 +60,7 @@ R_API int r_diff_buffers_static(struct r_diff_t *d, const ut8 *a, int la, const 
 					.a_off = d->off_a+i-hit, .a_buf = a+i-hit, .a_len = hit,
 					.b_off = d->off_b+i-hit, .b_buf = b+i-hit, .b_len = hit 
 				};
-				d->callback(d, d->user, &o);
+				d->callback (d, d->user, &o);
 				hit = 0;
 			}
 		}
@@ -70,40 +70,37 @@ R_API int r_diff_buffers_static(struct r_diff_t *d, const ut8 *a, int la, const 
 			.a_off = d->off_a+i-hit, .a_buf = a+i-hit, .a_len = hit,
 			.b_off = d->off_b+i-hit, .b_buf = b+i-hit, .b_len = hit 
 		};
-		d->callback(d, d->user, &o);
+		d->callback (d, d->user, &o);
 		hit = 0;
 	}
 	return 0;
 }
 
-R_API int r_diff_buffers_delta(struct r_diff_t *d, const ut8 *a, int la, const ut8 *b, int lb)
+R_API int r_diff_buffers_radiff(struct r_diff_t *d, const ut8 *a, int la, const ut8 *b, int lb)
 {
-	char buf[64];
-	char *ptr;
-	char *str;
+	char *ptr, *str, buf[64];
 	FILE *fd;
 	char oop = 0;
-	int atl, btl, hit;
-	ut8 at[128];
-	ut8 bt[128];
+	int ret, atl, btl, hit;
+	ut8 at[128], bt[128];
 	ut64 ooa, oob;
 
 	hit = atl = btl = 0;
 	ooa = oob = 0LL;
 	oop = -1;
 
-	r_file_dump(".a", a, la);
-	r_file_dump(".b", b, lb);
-	system("radiff -d .a .b | rsc uncolor > .d");
-	fd = fopen(".d", "r");
+	r_file_dump (".a", a, la);
+	r_file_dump (".b", b, lb);
+	r_sys_cmd ("radiff -d .a .b | rsc uncolor > .d");
+	fd = fopen (".d", "r");
 
-	while(!feof(fd)) {
+	while (!feof (fd)) {
 		ut64 oa, ob; // offset
 		int ba, bb; // byte
 		char op; // operation
 
 		oa = ob = 0LL;
-		fgets(buf, 63, fd);
+		fgets (buf, 63, fd);
 		if (feof(fd))
 			break;
 		str = buf;
@@ -111,35 +108,35 @@ R_API int r_diff_buffers_delta(struct r_diff_t *d, const ut8 *a, int la, const u
 		ptr = strchr(buf, ' ');
 		if (!ptr) continue;
 		*ptr='\0';
-		sscanf(str, "0x%08llx", &oa);
+		sscanf (str, "0x%08llx", &oa);
 
-		str = r_str_ichr(ptr+1, ' ');
+		str = r_str_ichr (ptr+1, ' ');
 		if (*str!='|'&&*str!='>'&&*str!='<') {
-			ptr = strchr(str, ' ');
+			ptr = strchr (str, ' ');
 			if (!ptr) continue;
 			*ptr='\0';
-			sscanf(str, "%02x", &ba);
+			sscanf (str, "%02x", &ba);
 		} else ba = 0;
 
-		str = r_str_ichr(ptr+1, ' ');
-		ptr = strchr(str, ' ');
+		str = r_str_ichr (ptr+1, ' ');
+		ptr = strchr (str, ' ');
 		if (!ptr) continue;
 		*ptr='\0';
-		sscanf(str, "%c", &op);
+		sscanf (str, "%c", &op);
 
-		str = r_str_ichr(ptr+1, ' ');
+		str = r_str_ichr (ptr+1, ' ');
 		if (str[0]!='0'||str[1]!='x') {
 			ptr = strchr(str, ' ');
 			if (!ptr) continue;
 			*ptr='\0';
-			sscanf(str, "%02x", &bb);
+			sscanf (str, "%02x", &bb);
 		}
 
 		str = ptr+1;
-		ptr = strchr(str, '\n');
+		ptr = strchr (str, '\n');
 		if (!ptr) continue;
 		*ptr='\0';
-		sscanf(str, "0x%08llx", &ob);
+		sscanf (str, "0x%08llx", &ob);
 
 		if (oop == op || oop==-1) {
 			if (hit == 0) {
@@ -148,7 +145,7 @@ R_API int r_diff_buffers_delta(struct r_diff_t *d, const ut8 *a, int la, const u
 			}
 			at[atl]=ba;
 			bt[btl]=bb;
-			switch(op) {
+			switch (op) {
 			case '|':
 				atl++;
 				btl++;
@@ -167,10 +164,12 @@ R_API int r_diff_buffers_delta(struct r_diff_t *d, const ut8 *a, int la, const u
 					.a_off = ooa, .a_buf = at, .a_len = atl,
 					.b_off = oob, .b_buf = bt, .b_len = btl
 				};
-				/* run callback */
-				d->callback(d, d->user, &o);
+				ret = d->callback(d, d->user, &o);
+					break;
 				atl = btl = 0;
 				hit = 0;
+				if (!ret)
+					break;
 			}
 		}
 		oop = op;
@@ -180,8 +179,8 @@ R_API int r_diff_buffers_delta(struct r_diff_t *d, const ut8 *a, int la, const u
 			.a_off = ooa, .a_buf = at, .a_len = atl,
 			.b_off = oob, .b_buf = bt, .b_len = btl
 		};
-		/* run callback */
-		d->callback(d, d->user, &o);
+		if (!d->callback (d, d->user, &o))
+			return NULL;
 		atl = btl = 0;
 		hit = 0;
 	}
@@ -192,16 +191,10 @@ R_API int r_diff_buffers_delta(struct r_diff_t *d, const ut8 *a, int la, const u
 	return 0;
 }
 
-R_API int r_diff_buffers(struct r_diff_t *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb)
-{
-	int ret;
-
-	if (d->delta) {
-		fprintf(stderr, "Cannot diff different size buffers yet\n");
-		ret = r_diff_buffers_delta(d, a, la, b, lb);
-	} else ret = r_diff_buffers_static(d, a, la, b, lb);
-
-	return ret;
+R_API int r_diff_buffers(struct r_diff_t *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb) {
+	if (d->delta)
+		return r_diff_buffers_delta (d, a, la, b, lb);
+	return r_diff_buffers_static (d, a, la, b, lb);
 }
 
 /* TODO: Move into r_util maybe? */
@@ -212,10 +205,10 @@ R_API int r_diff_buffers_distance(struct r_diff_t *d, const ut8 *a, ut32 la, con
 	if (la < 1 || lb < 1)
 		return R_FALSE;
 
-	if ((m = alloca(la * sizeof(int*))) == NULL)
+	if ((m = malloc(la * sizeof(int*))) == NULL)
 		return R_FALSE;
 	for(i = 0; i <= la; i++)
-		if ((m[i] = alloca(lb * sizeof(int))) == NULL)
+		if ((m[i] = malloc(lb * sizeof(int))) == NULL)
 			return R_FALSE;
 
 	for (i = 0; i <= la; i++)
@@ -238,6 +231,10 @@ R_API int r_diff_buffers_distance(struct r_diff_t *d, const ut8 *a, ut32 la, con
 		*distance = m[la][lb];
 	if (similarity != NULL)
 		*similarity = 1.0/(1.0+m[la][lb]);
+
+	for(i = 0; i <= la; i++)
+		free (m[i]);
+	free (m);
 
 	return R_TRUE;
 }

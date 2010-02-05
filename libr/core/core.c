@@ -156,8 +156,7 @@ R_API int r_core_init(struct r_core_t *core)
 	r_debug_init (&core->dbg, R_TRUE);
 	core->io.printf = r_cons_printf;
 	core->dbg.printf = r_cons_printf;
-	//r_debug_set_io(&core->dbg, &__dbg_read, &__dbg_write, core);
-	r_io_bind (&core->io, &(core->dbg.bp->iob));
+	r_debug_io_bind (&core->dbg, &core->io);
 	r_core_config_init (core);
 	// XXX fix path here
 

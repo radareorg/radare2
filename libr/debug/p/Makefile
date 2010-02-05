@@ -5,7 +5,7 @@ CFLAGS=-I../../include -Wall -fPIC -shared -Wl,-R.. -DCORELIB
 foo: all
 
 ALL_TARGETS=
-DEBUGS=ptrace.mk gdb.mk
+DEBUGS=native.mk gdb.mk
 include $(DEBUGS)
 
 #all: pre ${ALL_TARGETS}

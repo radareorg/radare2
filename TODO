@@ -6,6 +6,8 @@
 ----------------------------------------[ todo 
 
 <{include libr/TODO}>
+
+* is RCore->block and blocksize a RBuf ? refactor!11
  
 * r_cmd must provide a nesting char table indexing for commands
   - this is pretty similar to r_db

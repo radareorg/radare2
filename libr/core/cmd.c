@@ -17,11 +17,11 @@
 static int cmd_io_system(void *data, const char *input);
 
 static int cmd_iopipe(void *data, const char *input) {
-	struct r_core_t *core = (struct r_core_t *)data;
-	switch(input[0]) {
+	RCore *core = (RCore *)data;
+	switch (input[0]) {
 	case '\0':
-		r_lib_list(&core->lib);
-		r_io_handle_list(&core->io);
+		r_lib_list (&core->lib);
+		r_io_handle_list (&core->io);
 		break;
 	default:
 		cmd_io_system (data, input);
@@ -30,7 +30,7 @@ static int cmd_iopipe(void *data, const char *input) {
 	return R_TRUE;
 }
 
-static void r_core_cmd_reg (struct r_core_t *core, const char *str) {
+static void cmd_reg (struct r_core_t *core, const char *str) {
 	struct r_reg_item_t *r;
 	char *arg;
 	int size, i, type = R_REG_TYPE_GPR;
@@ -72,7 +72,8 @@ static void r_core_cmd_reg (struct r_core_t *core, const char *str) {
 		break;
 	case 'n':
 		{
-			char *reg = r_reg_get_name (core->dbg.reg, r_reg_get_name_idx (str+2));
+			const char *reg = r_reg_get_name (
+				core->dbg.reg, r_reg_get_name_idx (str+2));
 			if (reg && *reg)
 				r_cons_printf ("%s\n", reg);
 			else eprintf ("Oops. try dn [pc|sp|bp|a0|a1|a2|a3]\n");
@@ -117,7 +118,7 @@ static void r_core_cmd_reg (struct r_core_t *core, const char *str) {
 		if (type != R_REG_TYPE_LAST) {
 			r_debug_reg_sync (&core->dbg, type, R_FALSE);
 			r_debug_reg_list (&core->dbg, type, size, str[0]=='*');
-		} else eprintf ("r_core_cmd_reg: Unknown type\n");
+		} else eprintf ("cmd_reg: Unknown type\n");
 	}
 }
 
@@ -129,7 +130,7 @@ static void r_core_cmd_bp (struct r_core_t *core, const char *input) {
 		r_bp_list (core->dbg.bp, input[1]=='*');
 		break;
 	case '-':
-		r_bp_del (core->dbg.bp, r_num_math(&core->num, input+2));
+		r_bp_del (core->dbg.bp, r_num_math (&core->num, input+2));
 		break;
 	case 'e':
 		r_bp_enable (core->dbg.bp, r_num_math(&core->num, input+2), 1);
@@ -559,11 +560,93 @@ static int cmd_bsize(void *data, const char *input)
 	return 0;
 }
 
-static int cmd_info(void *data, const char *input)
-{
+static int cmd_cmp(void *data, const char *input) {
+	int ret;
+	FILE *fd;
+	unsigned int off;
+	unsigned char *buf;
+	RCore *core = data;
+
+	switch (*input) {
+#if 0
+	case 'c':
+		radare_compare_code (
+			r_num_math (&core->num, input+1),
+			core->block, core->blocksize);
+		break;
+	case 'd':
+		off = (unsigned int) get_offset(input+1);
+		radare_compare((u8*)&off, config.block, 4);
+		break;
+	case 'f':
+		if (input[1]!=' ') {
+			eprintf("Please. use 'cf [file]'\n");
+			return 0;
+		}
+		fd = fopen(input+2, "r");
+		if (fd == NULL) {
+			eprintf("Cannot open file '%s'\n",input+2);
+			return 0;
+		}
+		buf = (unsigned char *)malloc(config.block_size);
+		fread(buf, 1, config.block_size, fd);
+		fclose(fd);
+		radare_compare(buf, config.block, config.block_size);
+		free(buf);
+		break;
+	case 'x':
+		if (input[1]!=' ') {
+			eprintf("Please. use 'wx 00 11 22'\n");
+			return 0;
+		}
+		buf = (unsigned char *)malloc(strlen(input+2));
+		ret = hexstr2binstr(input+2, buf);
+		radare_compare(buf, config.block, ret);
+		free(buf);
+		break;
+	case 'X':
+		{
+		u8 *buf = malloc(config.block_size);
+		radare_read_at(get_math(input+1), buf, config.block_size);
+		radare_compare_hex(config.seek+config.vaddr, buf, config.block, config.block_size);
+		free(buf);
+		}
+		break;
+	case ' ':
+		radare_compare((unsigned char*)input+1,config.block, strlen(input+1)+1);
+		break;
+	case 'D':
+		{
+		char cmd[1024];
+		sprintf(cmd, "radiff -b %s %s", ".curblock", input+2);
+		file_dump(".curblock", config.block, config.block_size);
+		radare_system(cmd);
+		unlink(".curblock");
+		}
+		break;
+#endif
+	case '?':
+		r_cons_strcat (
+		"Usage: c[?cdfx] [argument]\n"
+		" c  [string]   Compares a plain with escaped chars string\n"
+		" cc [offset]   Code bindiff current block against offset\n"
+		" cd [value]    Compare a doubleword from a math expression\n"
+		" cx [hexpair]  Compare hexpair string\n"
+		" cX [addr]     Like 'cc' but using hexdiff output\n"
+		" cf [file]     Compare contents of file at current seek\n"
+		" cD [file]     Like above, but using radiff -b\n");
+		break;
+	default:
+		eprintf("Usage: c[?Ddxf] [argument]\n");
+	}
+
+	return 0;
+}
+
+static int cmd_info(void *data, const char *input) {
 	struct r_core_t *core = (struct r_core_t *)data;
 	char buf[1024];
-	switch (input[0]) {
+	switch (*input) {
 	case 's':
 	case 'i':
 	case 'I':
@@ -1556,26 +1639,26 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd)
 				char buf[1024];
 				int ret;
 				printf("> "); fflush(stdout);
-				fgets(buf, 1023, stdin);
+				fgets(buf, 1023, stdin); // XXX use r_line ??
 				if (feof(stdin))
 					break;
 				buf[strlen(buf)-1]='\0';
 				ret = strlen(buf);
 				core->oobi_len+=ret;
-				core->oobi = realloc(core->oobi, core->oobi_len+1);
-				if (!strcmp(buf, str))
+				core->oobi = realloc (core->oobi, core->oobi_len+1);
+				if (!strcmp (buf, str))
 					break;
-				strcat((char *)core->oobi, buf);
+				strcat ((char *)core->oobi, buf);
 			}
 			r_line_instance.prompt = oprompt;
 		} else {
-			for(str=ptr+1;str[0]== ' ';str=str+1);
-			eprintf("SLURPING FILE '%s'\n", str);
-			core->oobi = (ut8*)r_file_slurp(str, &core->oobi_len);
+			for (str=ptr+1;str[0]== ' ';str=str+1);
+			eprintf ("SLURPING FILE '%s'\n", str);
+			core->oobi = (ut8*)r_file_slurp (str, &core->oobi_len);
 			if (core->oobi == NULL)
-				eprintf("Cannot open file\n");
+				eprintf ("Cannot open file\n");
 			else if (ptr == cmd)
-				return r_core_cmd_buffer(core, (const char *)core->oobi);
+				return r_core_cmd_buffer (core, (const char *)core->oobi);
 		}
 	}
 
@@ -1592,57 +1675,57 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd)
 	}
 
 	/* sub commands */
-	ptr = strchr(cmd, '`');
+	ptr = strchr (cmd, '`');
 	if (ptr) {
-		ptr2 = strchr(ptr+1, '`');
+		ptr2 = strchr (ptr+1, '`');
 		if (!ptr2) {
-			fprintf(stderr, "parse: Missing '´' in expression.\n");
+			eprintf ("parse: Missing '´' in expression.\n");
 			return -1;
 		} else {
 			ptr[0] = '\0';
 			ptr2[0] = '\0';
-			str = r_core_cmd_str(core, ptr+1);
-			for(i=0;str[i];i++) if (str[i]=='\n') str[i]=' ';
-			cmd = r_str_concat(strdup(cmd), r_str_concat(str, ptr2+1));
-			ret = r_core_cmd_subst(core, cmd);
-			free(cmd);
-			free(str);
+			str = r_core_cmd_str (core, ptr+1);
+			for(i=0;str[i];i++)
+				if (str[i]=='\n') str[i]=' ';
+			cmd = r_str_concat (strdup (cmd), r_str_concat (str, ptr2+1));
+			ret = r_core_cmd_subst (core, cmd);
+			free (cmd);
+			free (str);
 			return ret;
 		}
 	}
 
 	/* grep the content */
-	ptr = strchr(cmd, '~');
+	ptr = strchr (cmd, '~');
 	if (ptr) {
 		ptr[0]='\0';
-		r_cons_grep(ptr+1);
-	} else r_cons_grep(NULL);
+		r_cons_grep (ptr+1);
+	} else r_cons_grep (NULL);
 
 	/* seek commands */
-	ptr = strchr(cmd, '@');
+	ptr = strchr (cmd, '@');
 	if (ptr) {
 		ptr[0]='\0';
 		ut64 tmpoff = core->offset;
 		if (ptr[1]=='@') {
 			// TODO: remove temporally seek (should be done by cmd_foreach)
-			r_core_cmd_foreach(core, cmd, ptr+2);
+			r_core_cmd_foreach (core, cmd, ptr+2);
 			ret = -1; /* do not run out-of-foreach cmd */
 		} else {
-			r_core_seek(core, r_num_math(&core->num, ptr+1),1);
-			ret = r_cmd_call(&core->cmd, r_str_trim_head(cmd));
+			r_core_seek (core, r_num_math (&core->num, ptr+1), 1);
+			ret = r_cmd_call (&core->cmd, r_str_trim_head (cmd));
 		}
-		r_core_seek(core, tmpoff, 1);
+		r_core_seek (core, tmpoff, 1);
 		return ret;
 	}
 
-	r_cmd_call(&core->cmd, r_str_trim_head(cmd));
+	r_cmd_call (&core->cmd, r_str_trim_head(cmd));
 
 	return 0;
 }
 
 R_API int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
 {
-//void radare_cmd_foreach(const char *cmd, const char *each)
 	int i=0,j;
 	char ch;
 	char *word = NULL;
@@ -1659,82 +1742,86 @@ R_API int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
 
 	switch(each[0]) {
 	case '?':
-		eprintf("Foreach '@@' iterator command:\n"
-			" This command is used to repeat a command over a list of offsets.\n"
-			" x @@ sym.          ; run 'x' over all flags matching 'sym.'\n"
-			" x @@.file          ; \"\" over the offsets specified in the file (one offset per line)\n"
-			" x @@=off1 off2 ..  ; manual list of offsets\n"
-			" x @@=`pdf~call[0]` ; run 'x' at every call offset of the current function\n");
+		r_cons_printf (
+		"Foreach '@@' iterator command:\n"
+		" This command is used to repeat a command over a list of offsets.\n"
+		" x @@ sym.           Run 'x' over all flags matching 'sym.'\n"
+		" x @@.file           \"\" over the offsets specified in the file (one offset per line)\n"
+		" x @@=off1 off2 ..   Manual list of offsets\n"
+		" x @@=`pdf~call[0]`  Run 'x' at every call offset of the current function\n");
 		break;
 	case '=':
 		/* foreach list of items */
 		each = str+1;
 		do {
-			while(each[0]==' ') each=each+1;
+			while (each[0]==' ')
+				each = each+1;
 			if (!*each) break;
-			str = strchr(each, ' ');
+			str = strchr (each, ' ');
 			if (str) {
 				str[0]='\0';
-				addr = r_num_math(&core->num, each);
+				addr = r_num_math (&core->num, each);
 				str[0]=' ';
-			} else addr = r_num_math(&core->num, each);
-			eprintf("; 0x%08llx:\n", addr);
+			} else addr = r_num_math (&core->num, each);
+			eprintf ("; 0x%08llx:\n", addr);
 			each = str+1;
-			r_core_seek(core, addr, 1);
-			r_core_cmd(core, cmd, 0);
-			r_cons_flush();
-		} while(str != NULL);
+			r_core_seek (core, addr, 1);
+			r_core_cmd (core, cmd, 0);
+			r_cons_flush ();
+		} while (str != NULL);
 		break;
 	case '.':
 		if (each[1]=='(') {
 			char cmd2[1024];
 			// TODO: use controlc() here
+			// XXX whats this 999 ?
 			for(core->macro.counter=0;i<999;core->macro.counter++) {
-				r_macro_call(&core->macro, each+2);
+				r_macro_call (&core->macro, each+2);
 				if (core->macro.brk_value == NULL)
 					break;
 
 				addr = core->macro._brk_value;
-				sprintf(cmd2, "%s @ 0x%08llx", cmd, addr);
-				eprintf("0x%08llx (%s)\n", addr, cmd2);
-				r_core_seek(core, addr, 1);
-				r_core_cmd(core, cmd2, 0);
+				sprintf (cmd2, "%s @ 0x%08llx", cmd, addr);
+				eprintf ("0x%08llx (%s)\n", addr, cmd2);
+				r_core_seek (core, addr, 1);
+				r_core_cmd (core, cmd2, 0);
 				i++;
 			}
 		} else {
 			char buf[1024];
 			char cmd2[1024];
-			FILE *fd = fopen(each+1, "r");
+			FILE *fd = fopen (each+1, "r");
 			if (fd) {
 				core->macro.counter=0;
-				while(!feof(fd)) {
-					buf[0]='\0';
-					fgets(buf, 1024, fd);
-					addr = r_num_math(&core->num, buf);
-					eprintf("0x%08llx: %s\n", addr, cmd);
-					sprintf(cmd2, "%s @ 0x%08llx", cmd, addr);
-					r_core_seek(core, addr, 1); // XXX
-					r_core_cmd(core, cmd2, 0);
+				while (!feof (fd)) {
+					buf[0] = '\0';
+					if (fgets (buf, 1024, fd) == NULL)
+						break;
+					addr = r_num_math (&core->num, buf);
+					eprintf ("0x%08llx: %s\n", addr, cmd);
+					sprintf (cmd2, "%s @ 0x%08llx", cmd, addr);
+					r_core_seek (core, addr, 1); // XXX
+					r_core_cmd (core, cmd2, 0);
 					core->macro.counter++;
 				}
-				fclose(fd);
-			} else eprintf("Cannot open file '%s' to read offsets\n", each+1);
+				fclose (fd);
+			} else eprintf ("Cannot open file '%s' to read offsets\n", each+1);
 		}
 		break;
 	default:
 		core->macro.counter = 0;
 		//while(str[i])  && !core->interrupted) {
-		while(str[i]) {
+		while (str[i]) {
 			j = i;
-			for(;str[j]&&str[j]==' ';j++); // skip spaces
-			for(i=j;str[i]&&str[i]!=' ';i++); // find EOS
+			for (;str[j]&&str[j]==' ';j++); // skip spaces
+			for (i=j;str[i]&&str[i]!=' ';i++); // find EOS
 			ch = str[i];
 			str[i] = '\0';
-			word = strdup(str+j);
+			word = strdup (str+j);
 			if (word == NULL)
 				break;
 			str[i] = ch;
-			if (strchr(word, '*')) {
+			if (strchr (word, '*')) {
 #if 0
 				/* for all flags in current flagspace */
 				list_for_each(pos, &flags) {
@@ -1755,9 +1842,8 @@ printf("No flags foreach implemented\n");
 #endif
 			} else {
 				/* for all flags in current flagspace */
-				list_for_each(pos, &core->flags.flags) {
-					struct r_flag_item_t *flag =
-						(struct r_flag_item_t *)list_entry(pos, struct r_flag_item_t, list);
+				list_for_each (pos, &core->flags.flags) {
+					RFlagItem *flag = (RFlagItem *)list_entry(pos, RFlagItem, list);
 
 					if (r_cons_instance.breaked)
 						break;
@@ -1765,9 +1851,9 @@ printf("No flags foreach implemented\n");
 					if ((core->flags.space_idx != -1) && (flag->space != core->flags.space_idx))
 						continue;
 					if (word[0]=='\0' || strstr(flag->name, word) != NULL) {
-						r_core_seek(core, flag->offset, 1);
-						r_cons_printf("; @@ 0x%08llx (%s)\n", core->offset, flag->name);
-						r_core_cmd(core, cmd, 0);
+						r_core_seek (core, flag->offset, 1);
+						r_cons_printf ("; @@ 0x%08llx (%s)\n", core->offset, flag->name);
+						r_core_cmd (core, cmd, 0);
 					}
 				}
 	#if 0
@@ -1781,60 +1867,58 @@ printf("No flags foreach implemented\n");
 					radare_cmd(cmd,0);
 				}
 	#endif
-			r_cons_break(NULL, NULL);
+				r_cons_break (NULL, NULL);
 
-			core->macro.counter++ ;
-			free(word);
-			word = NULL;
+				core->macro.counter++ ;
+				free (word);
+				word = NULL;
 			}
 		}
 	}
-	r_cons_break_end();
+	r_cons_break_end ();
 	// XXX: use r_core_seek here
 	core->offset = oseek;
 
-	free(word);
-	word = NULL;
-	free(ostr);
+	free (word);
+	free (ostr);
 	return R_TRUE;
 }
 
 R_API int r_core_cmd(struct r_core_t *core, const char *command, int log)
 {
-	int len, rep;
+	int len, rep, ret = R_FALSE;
 	char *cmd, *ocmd;
-	int ret = -1;
-	
-	if (command == NULL )
-		return R_FALSE;
+	if (command != NULL) {
+		len = strlen (command)+1;
+		ocmd = cmd = malloc (len+8192);
+		if (ocmd == NULL)
+			return R_FALSE;
+		memcpy (cmd, command, len);
+		cmd = r_str_trim_head_tail (cmd);
 
-	len = strlen(command)+1;
-	ocmd = cmd = malloc(len+8192);
-	memcpy (cmd, command, len);
-	cmd = r_str_trim_head_tail(cmd);
-
-	rep = atoi (cmd);
-	if (rep<1) rep = 1;
-	if (rep>0) {
-		ret = R_TRUE;
-		while (*cmd>='0'&&*cmd<='9') cmd++;
-		while (rep--) {
-			ret = r_core_cmd_subst (core, cmd);
-			if (ret == -1) {
-				eprintf ("r_core_cmd: Invalid command\n");
-				ret = R_FALSE;
-				break;
+		rep = atoi (cmd);
+		if (rep<1) rep = 1;
+		if (rep>0) {
+			ret = R_TRUE;
+			while (*cmd>='0'&&*cmd<='9')
+				cmd++;
+			while (rep--) {
+				ret = r_core_cmd_subst (core, cmd);
+				if (ret == -1) {
+					eprintf ("r_core_cmd: Invalid command\n");
+					ret = R_FALSE;
+					break;
+				}
 			}
 		}
+
+		if (log) r_line_hist_add (command);
+
+		free (core->oobi);
+		free (ocmd);
+		core->oobi = NULL;
+		core->oobi_len = 0;
 	}
-
-	if (log) r_line_hist_add(command);
-
-	free (core->oobi);
-	free (ocmd);
-	core->oobi = NULL;
-	core->oobi_len = 0;
-
 	return ret;
 }
 
@@ -1878,11 +1962,37 @@ R_API int r_core_cmd_command(struct r_core_t *core, const char *command)
 	return 0;
 }
 
+static void cmd_dm(RCore *core, const char *input) {
+	switch (input[0]) {
+	case '?':
+		r_cons_printf (
+		"Usage: dm [size]\n"
+		" dm         List memory maps of target process\n"
+		" dm*        Same as above but in radare commands\n"
+		" dm 4096    Allocate 4096 bytes in child process\n"
+		" dm-0x8048  Deallocate memory map of address 0x8048\n"
+		"TODO: map files in process memory.\n");
+		break;
+	case '*':
+	case '-':
+	case ' ':
+		eprintf ("TODO\n");
+		break;
+	default:
+		r_debug_map_sync (&core->dbg); // update process memory maps
+		r_debug_map_list (&core->dbg, core->offset);
+		break;
+	}
+}
+
 static int cmd_debug(void *data, const char *input) {
 	int pid, sig;
 	struct r_core_t *core = (struct r_core_t *)data;
 	char *ptr;
 	switch (input[0]) {
+	case 'x':
+		r_debug_execute (&core->dbg, "\xc7\xc0\x03\x00\x00\x00\x33\xdb\x33\xcc\xc7\xc2\x10\x00\x00\x00\xcd\x80", 18);
+		break;
 	case 'k':
 		/* XXX: not for threads? signal is for a whole process!! */
 		/* XXX: but we want fine-grained access to process resources */
@@ -1946,18 +2056,10 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		break;
 	case 'm':
-		r_debug_map_sync (&core->dbg); // update process memory maps
-		r_debug_map_list (&core->dbg);
-#if 0
-		// XXX: allow to allocate memory, show memory maps, ...
-		// TODO: do not export any variable here.. this is a task of r_debug
-		{char pid[16]; sprintf(pid, "%d", core->dbg.pid);
-		r_sys_setenv("PID", pid, 1);
-		r_sys_cmd ("cat /proc/$PID/maps"); }
-#endif
+		cmd_dm (core, input+1);
 		break;
 	case 'r':
-		r_core_cmd_reg (core, input+1);
+		cmd_reg (core, input+1);
 		//r_core_cmd(core, "|reg", 0);
 		break;
 	case 'p':
@@ -2056,6 +2158,7 @@ int r_core_cmd_init(struct r_core_t *core)
 	r_cmd_add (&core->cmd, "flag",     "get/set flags", &cmd_flag);
 	r_cmd_add (&core->cmd, "debug",    "debugger operations", &cmd_debug);
 	r_cmd_add (&core->cmd, "info",     "get file info", &cmd_info);
+	r_cmd_add (&core->cmd, "cmp",      "compare memory", &cmd_cmp);
 	r_cmd_add (&core->cmd, "seek",     "seek to an offset", &cmd_seek);
 	r_cmd_add (&core->cmd, "Section",  "setup section io information", &cmd_section);
 	r_cmd_add (&core->cmd, "bsize",    "change block size", &cmd_bsize);

@@ -10,7 +10,7 @@ OBJ_X86+=../arch/x86/udis86/syn-intel.o
 OBJ_X86+=../arch/x86/udis86/syn-att.o
 
 STATIC_OBJ+=${OBJ_X86}
-TARGET_X86=asm_x86.so
+TARGET_X86=asm_x86.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_X86}
 

@@ -1,0 +1,25 @@
+LIBR PLUGINS
+============
+
+Plugins must be configured using the root ./configure-plugins script.
+
+Libraries can be compiled:
+  - as shared libraries (so, dylib, dll)    (DEFAULT)
+  - as static libraries (a, lib, ..)
+
+  ./configure-plugins --enable-shared --enable-dynamic
+
+Plugins can be:
+  - not compiled
+  - compiled as shared
+  - compiled as static (inside the related library)
+
+libr/plugins/shared
+libr/plugins/static
+
+the configure-plugins script will regenerate the required Makefiles
+to build this stuff as defined.
+
+PD: This is not implemented :)
+
+--pancake

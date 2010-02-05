@@ -1,7 +1,7 @@
 OBJ_PE=bin_pe.o ../format/pe/pe.o
 
 STATIC_OBJ+=${OBJ_PE}
-TARGET_PE=bin_pe.so
+TARGET_PE=bin_pe.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_PE}
 

@@ -79,25 +79,25 @@ R_API struct r_reg_t *r_reg_free(struct r_reg_t *reg)
 R_API struct r_reg_t *r_reg_init(struct r_reg_t *reg)
 {
 	int i;
-	if (reg) {
-		reg->profile = NULL;
-		for (i=0; i<R_REG_NAME_LAST; i++)
-			reg->name[i] = NULL;
-		for (i=0;i<R_REG_TYPE_LAST;i++) {
-			INIT_LIST_HEAD(&reg->regset[i].arenas);
-			INIT_LIST_HEAD(&reg->regset[i].regs);
-			reg->regset[i].arena = MALLOC_STRUCT(struct r_reg_arena_t);
-			reg->regset[i].arena->size = 0;
-			reg->regset[i].arena->bytes = malloc(1);
-			list_add_tail(&reg->regset[i].arena->list, &reg->regset[i].arenas);
-		}
+	if (!reg)
+		return NULL;
+	reg->profile = NULL;
+	for (i=0; i<R_REG_NAME_LAST; i++)
+		reg->name[i] = NULL;
+	for (i=0; i<R_REG_TYPE_LAST; i++) {
+		INIT_LIST_HEAD (&reg->regset[i].arenas);
+		INIT_LIST_HEAD (&reg->regset[i].regs);
+		if ((reg->regset[i].arena = r_reg_arena_new (0)) == NULL)
+			return NULL;
+		list_add_tail (&reg->regset[i].arena->list,
+			&reg->regset[i].arenas);
 	}
 	return reg;
 }
 
 static struct r_reg_item_t *r_reg_item_new() {
-	struct r_reg_item_t *item = MALLOC_STRUCT(struct r_reg_item_t);
-	memset (item, 0, sizeof(struct r_reg_item_t));
+	struct r_reg_item_t *item = R_NEW (struct r_reg_item_t);
+	memset (item, 0, sizeof(RRegisterItem));
 	return item;
 }
 

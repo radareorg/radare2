@@ -153,7 +153,7 @@ R_API struct r_io_section_t *r_io_section_get(struct r_io_t *io, ut64 addr)
 {
 	struct list_head *pos;
 	list_for_each (pos, &io->sections) {
-		RIoSection *s = (struct r_io_section_t *)list_entry(pos, struct r_io_section_t, list);
+		RIOSection *s = (struct r_io_section_t *)list_entry(pos, struct r_io_section_t, list);
 		if (addr >= s->from && addr <= s->to)
 			return s;
 	}
@@ -162,7 +162,7 @@ R_API struct r_io_section_t *r_io_section_get(struct r_io_t *io, ut64 addr)
 
 R_API ut64 r_io_section_get_paddr(struct r_io_t *io, ut64 addr)
 {
-	RIoSection *s = r_io_section_get(io, addr);
+	RIOSection *s = r_io_section_get(io, addr);
 	return s?s->paddr:-1;
 }
 

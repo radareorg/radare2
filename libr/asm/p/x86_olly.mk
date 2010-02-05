@@ -4,10 +4,9 @@ OBJ_X86_OLLY+=../arch/x86/ollyasm/asmserv.o
 OBJ_X86_OLLY+=../arch/x86/ollyasm/assembl.o
 
 STATIC_OBJ+=${OBJ_X86_OLLY}
-TARGET_X86_OLLY=asm_x86_olly.so
+TARGET_X86_OLLY=asm_x86_olly.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_X86_OLLY}
 
 ${TARGET_X86_OLLY}: ${OBJ_X86_OLLY}
 	${CC} ${CFLAGS} -o ${TARGET_X86_OLLY} ${OBJ_X86_OLLY}
-	@#strip -s asm_x86.so

@@ -55,7 +55,7 @@ typedef struct r_reg_t {
 	struct r_reg_set_t regset[R_REG_TYPE_LAST];
 } RRegister;
 
-#define r_reg_new() r_reg_init (MALLOC_STRUCT (RRegister))
+#define r_reg_new() r_reg_init (R_NEW (RRegister))
 
 #ifdef R_API
 extern const char *r_reg_types[R_REG_TYPE_LAST+1];
@@ -84,7 +84,8 @@ R_API int r_reg_set_pvalue(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 
 /* byte arena */
 R_API ut8* r_reg_get_bytes(struct r_reg_t *reg, int type, int *size);
 R_API int r_reg_set_bytes(struct r_reg_t *reg, int type, const ut8* buf, int len);
-R_API void r_reg_fit_arena(struct r_reg_t *reg);
+R_API RRegisterArena *r_reg_arena_new (int size);
+R_API int r_reg_fit_arena(struct r_reg_t *reg);
 #endif
 
 #endif

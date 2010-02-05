@@ -71,6 +71,7 @@ int test_distance()
 	return 1;
 }
 
+#if 0
 int test_lines(char *file1, char *file2)
 {
 	int ret;
@@ -79,10 +80,15 @@ int test_lines(char *file1, char *file2)
 
 	b1 = r_file_slurp(file1, &s1);
 	b2 = r_file_slurp(file2, &s2);
+	if (b1==NULL || b2 == NULL) {
+		eprintf ("Cannot open %s or %s\n", file1, file2);
+		return 0;
+	}
 	ret = r_diff_lines(file1, b1, s1, file2, b2, s2);
 	printf("Differences: %d\n", ret);
 	return ret;
 }
+#endif
 
 int main()
 {
@@ -96,7 +102,7 @@ int main()
 	printf("--\n");
 	test_distance();
 	printf("--\n");
-	test_lines("file1", "file2");
+//	test_lines("file1", "file2");
 
 
 	return 0;

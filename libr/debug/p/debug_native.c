@@ -26,8 +26,8 @@
 #endif
 
 #if __WINDOWS__
-struct r_debug_handle_t r_debug_plugin_ptrace = {
-	.name = "ptrace",
+struct r_debug_handle_t r_debug_plugin_native = {
+	.name = "native",
 };
 #else
 
@@ -37,7 +37,7 @@ struct r_debug_handle_t r_debug_plugin_ptrace = {
 #include <sys/types.h>
 #include <sys/wait.h>
 
-static int r_debug_ptrace_step(int pid)
+static int r_debug_native_step(int pid)
 {
 	int ret;
 	ut32 addr = 0; /* should be eip */
@@ -45,11 +45,11 @@ static int r_debug_ptrace_step(int pid)
 	//printf("NATIVE STEP over PID=%d\n", pid);
 	ret = ptrace (PTRACE_SINGLESTEP, pid, addr, 0); //addr, data);
 	if (ret == -1)
-		perror("ptrace-singlestep");
+		perror("native-singlestep");
 	return R_TRUE;
 }
 
-static int r_debug_ptrace_attach(int pid)
+static int r_debug_native_attach(int pid)
 {
 	void *addr = 0;
 	void *data = 0;
@@ -57,14 +57,14 @@ static int r_debug_ptrace_attach(int pid)
 	return (ret != -1)?R_TRUE:R_FALSE;
 }
 
-static int r_debug_ptrace_detach(int pid)
+static int r_debug_native_detach(int pid)
 {
 	void *addr = 0;
 	void *data = 0;
 	return ptrace (PTRACE_DETACH, pid, addr, data);
 }
 
-static int r_debug_ptrace_continue(int pid, int sig)
+static int r_debug_native_continue(int pid, int sig)
 {
 	void *addr = NULL; // eip for BSD
 	void *data = NULL;
@@ -73,7 +73,7 @@ static int r_debug_ptrace_continue(int pid, int sig)
 	return ptrace (PTRACE_CONT, pid, addr, data);
 }
 
-static int r_debug_ptrace_wait(int pid)
+static int r_debug_native_wait(int pid)
 {
 	int ret, status = -1;
 	//printf("prewait\n");
@@ -83,7 +83,7 @@ static int r_debug_ptrace_wait(int pid)
 }
 
 // TODO: why strdup here?
-static const char *r_debug_ptrace_reg_profile()
+static const char *r_debug_native_reg_profile()
 {
 #if __i386__
 	return strdup(
@@ -193,7 +193,7 @@ static const char *r_debug_ptrace_reg_profile()
 
 // TODO: what about float and hardware regs here ???
 // TODO: add flag for type
-static int r_debug_ptrace_reg_read(struct r_debug_t *dbg, int type, ut8 *buf, int size)
+static int r_debug_native_reg_read(struct r_debug_t *dbg, int type, ut8 *buf, int size)
 {
 	int ret; 
 	int pid = dbg->pid;
@@ -226,12 +226,12 @@ static int r_debug_ptrace_reg_read(struct r_debug_t *dbg, int type, ut8 *buf, in
 		//r_reg_set_bytes(reg, &regs, sizeof(struct user_regs));
 	}
 #else
-#warning dbg-ptrace not supported for this platform
+#warning dbg-native not supported for this platform
 #endif
 	return 0;
 }
 
-static int r_debug_ptrace_reg_write(int pid, int type, const ut8* buf, int size) {
+static int r_debug_native_reg_write(int pid, int type, const ut8* buf, int size) {
 	int ret;
 	// XXX use switch or so
 	if (type == R_REG_TYPE_GPR) {
@@ -241,13 +241,13 @@ static int r_debug_ptrace_reg_write(int pid, int type, const ut8* buf, int size)
 			size = sizeof (R_DEBUG_REG_T);
 		return (ret != 0) ? R_FALSE: R_TRUE;
 #else
-		#warning r_debug_ptrace_reg_write not implemented
+		#warning r_debug_native_reg_write not implemented
 #endif
 	} else eprintf("TODO: reg_write_non-gpr (%d)\n", type);
 	return R_FALSE;
 }
 
-static RList *r_debug_ptrace_map_get(struct r_debug_t *dbg)
+static RList *r_debug_native_map_get(struct r_debug_t *dbg)
 {
 	char path[1024];
 	RList *list = NULL;
@@ -354,7 +354,7 @@ static RList *r_debug_ptrace_map_get(struct r_debug_t *dbg)
 
 // TODO: deprecate???
 #if 0
-static int r_debug_ptrace_bp_write(int pid, ut64 addr, int size, int hw, int rwx) {
+static int r_debug_native_bp_write(int pid, ut64 addr, int size, int hw, int rwx) {
 	if (hw) {
 		/* implement DRx register handling here */
 		return R_TRUE;
@@ -363,7 +363,7 @@ static int r_debug_ptrace_bp_write(int pid, ut64 addr, int size, int hw, int rwx
 }
 
 /* TODO: rethink */
-static int r_debug_ptrace_bp_read(int pid, ut64 addr, int hw, int rwx)
+static int r_debug_native_bp_read(int pid, ut64 addr, int hw, int rwx)
 {
 	return R_TRUE;
 }
@@ -383,7 +383,7 @@ static int r_debug_get_arch()
 }
 
 #if 0
-static int r_debug_ptrace_import(struct r_debug_handle_t *from)
+static int r_debug_native_import(struct r_debug_handle_t *from)
 {
 	//int pid = from->export(R_DEBUG_GET_PID);
 	//int maps = from->export(R_DEBUG_GET_MAPS);
@@ -403,21 +403,21 @@ const char *archlist[3] = { "arm", 0 };
 #endif
 
 // TODO: think on a way to define the program counter register name
-struct r_debug_handle_t r_debug_plugin_ptrace = {
-	.name = "ptrace",
+struct r_debug_handle_t r_debug_plugin_native = {
+	.name = "native",
 	.archs = (const char **)archlist,
-	.step = &r_debug_ptrace_step,
-	.cont = &r_debug_ptrace_continue,
-	.attach = &r_debug_ptrace_attach,
-	.detach = &r_debug_ptrace_detach,
-	.wait = &r_debug_ptrace_wait,
+	.step = &r_debug_native_step,
+	.cont = &r_debug_native_continue,
+	.attach = &r_debug_native_attach,
+	.detach = &r_debug_native_detach,
+	.wait = &r_debug_native_wait,
 	.get_arch = &r_debug_get_arch,
-	.reg_profile = (void *)&r_debug_ptrace_reg_profile,
-	.reg_read = &r_debug_ptrace_reg_read,
-	.reg_write = (void *)&r_debug_ptrace_reg_write,
-	.map_get = (void *)&r_debug_ptrace_map_get,
-	//.bp_read = &r_debug_ptrace_bp_read,
-	//.bp_write = &r_debug_ptrace_bp_write,
+	.reg_profile = (void *)&r_debug_native_reg_profile,
+	.reg_read = &r_debug_native_reg_read,
+	.reg_write = (void *)&r_debug_native_reg_write,
+	.map_get = (void *)&r_debug_native_map_get,
+	//.bp_read = &r_debug_native_bp_read,
+	//.bp_write = &r_debug_native_bp_write,
 };
 
 #endif
@@ -426,6 +426,6 @@ struct r_debug_handle_t r_debug_plugin_ptrace = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
-	.data = &r_debug_plugin_ptrace
+	.data = &r_debug_plugin_native
 };
 #endif

@@ -2,8 +2,8 @@
 
 namespace Radare {
 	[Compact]
-	[CCode (cheader_filename="r_io.h,r_util.h", cname="RIo", free_function="r_io_free", cprefix="r_io_")]
-	public class RIo {
+	[CCode (cheader_filename="r_io.h,r_util.h", cname="RIO", free_function="r_io_free", cprefix="r_io_")]
+	public class RIO {
 		[CCode (cprefix="R_IO_")]
 		public enum Perm {
 			READ = 0,
@@ -18,9 +18,9 @@ namespace Radare {
 			END = 2,
 		}
 
-		public RIo();
-		public RIo free();
-		public unowned RIo init();
+		public RIO();
+		public RIO free();
+		public unowned RIO init();
 		public bool set_write_mask(uint8 *buf, int len);
 
 		/**
@@ -49,7 +49,7 @@ namespace Radare {
 
 		/* handle */
 		[Compact]
-		[CCode (cname="RIoHandle", cprefix="r_io_handle_")]
+		[CCode (cname="RIOHandle", cprefix="r_io_handle_")]
 		public class Handle {
 			string name;
 			string desc;
@@ -63,7 +63,7 @@ namespace Radare {
 		public void handle_list();
 
 		/* maps */
-		[CCode (cname="RIoMap", cprefix="r_io_map_")]
+		[CCode (cname="RIOMap", cprefix="r_io_map_")]
 		public struct Map {
 			int fd;
 			uint64 from;
@@ -77,7 +77,7 @@ namespace Radare {
 		public int map_write_at(uint64 addr, uint8 *buf, uint64 len);
 
 		/* sections */
-		[CCode (cname="RIoSection")]
+		[CCode (cname="RIOSection")]
 		public struct Section {
 			string comment;
 			uint64 from;
@@ -88,7 +88,7 @@ namespace Radare {
 		}
 
 		/* desc */
-		[CCode (cname="RIoDesc")]
+		[CCode (cname="RIODesc")]
 		public struct Desc {
 			int fd;
 			int flags;

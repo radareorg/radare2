@@ -11,6 +11,7 @@
 
 static struct r_lib_t l;
 static struct r_asm_t a;
+static int coutput = R_FALSE;
 
 static int rasm_show_help() {
 	printf ("rasm2 [-e] [-o offset] [-a arch] [-s syntax] -d \"opcode\"|\"hexpairs\"|-\n"
@@ -21,6 +22,7 @@ static int rasm_show_help() {
 		" -s [syntax]  Select syntax (intel, att)\n"
 		" -B           Binary input/output (-l is mandatory for binary input)\n"
 		" -l [int]     Input/Output length\n"
+		" -C           Output in C format\n"
 		" -L           List supported asm plugins\n"
 		" -e           Use big endian\n"
 		" -V           Show version information\n"
@@ -66,6 +68,21 @@ static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin)
 	return ret;
 }
 
+static void print_buf(char *str) {
+	int i;
+	if (coutput) {
+		printf ("\"");
+		for (i=1; *str; str+=2, i+=2) {
+			if (!(i%41)) {
+				printf ("\" \\\n\"");
+				i=1;
+			}
+			printf ("\\x%c%c", *str, str[1]);
+		}
+		printf ("\"\n");
+	} else printf ("%s\n", str);
+}
+
 static int rasm_asm(char *buf, ut64 offset, ut64 len, int bin)
 {
 	struct r_asm_code_t *acode;
@@ -84,15 +101,15 @@ static int rasm_asm(char *buf, ut64 offset, ut64 len, int bin)
 		return 0;
 	if (bin)
 		for (i = 0; i < acode->len; i++)
-			printf("%c", acode->buf[i]);
-	else printf("%s\n", acode->buf_hex);
+			printf ("%c", acode->buf[i]);
+	else print_buf (acode->buf_hex);
 	for (ret = 0, idx = acode->len; idx < len; idx+=ret) {
 		if (!(ret = r_asm_assemble(&a, &aop, "nop")))
 			return 0;
 		if (bin)
 			for (i = 0; i < ret; i++)
 				printf("%c", aop.buf[i]);
-		else printf("%s", aop.buf_hex);
+		else print_buf (aop.buf_hex);
 	}
 	if (!bin && len && idx == len) printf("\n");
 	r_asm_code_free(acode);
@@ -121,24 +138,27 @@ int main(int argc, char *argv[])
 	r_lib_init(&l, "radare_plugin");
 	r_lib_add_handler(&l, R_LIB_TYPE_ASM, "(dis)assembly plugins",
 		&__lib_asm_cb, &__lib_asm_dt, NULL);
-	r_lib_opendir(&l, getenv("LIBR_PLUGINS"));
+	r_lib_opendir(&l, r_sys_getenv ("LIBR_PLUGINS"));
 
 	if (argc<2)
-		return rasm_show_help();
+		return rasm_show_help ();
 
-	r_asm_use(&a, "x86");
-	while ((c = getopt(argc, argv, "Va:b:s:do:Bl:hL")) != -1) {
+	r_asm_use (&a, "x86"); // XXX: do not harcode default arch
+	while ((c = getopt(argc, argv, "CVa:b:s:do:Bl:hL")) != -1) {
 		switch (c) {
+		case 'C':
+			coutput = R_TRUE;
+			break;
 		case 'a':
 			arch = optarg;
 			break;
 		case 'b':
-			bits = r_num_math(NULL, optarg);
+			bits = r_num_math (NULL, optarg);
 			break;
 		case 's':
-			if (!strcmp(optarg, "att"))
-				r_asm_set_syntax(&a, R_ASM_SYNTAX_ATT);
-			else r_asm_set_syntax(&a, R_ASM_SYNTAX_INTEL);
+			if (!strcmp (optarg, "att"))
+				r_asm_set_syntax (&a, R_ASM_SYNTAX_ATT);
+			else r_asm_set_syntax (&a, R_ASM_SYNTAX_INTEL);
 			break;
 		case 'd':
 			dis = 1;
@@ -150,7 +170,7 @@ int main(int argc, char *argv[])
 			bin = 1;
 			break;
 		case 'l':
-			len = r_num_math(NULL, optarg);
+			len = r_num_math (NULL, optarg);
 			break;
 		case 'L':
 			r_asm_list(&a);
@@ -159,26 +179,26 @@ int main(int argc, char *argv[])
 			r_asm_set_big_endian(&a, R_TRUE);
 			break;
 		case 'V':
-			printf("rasm2 v"VERSION"\n");
+			printf ("rasm2 v"VERSION"\n");
 			return 0;
 		case 'h':
-			return rasm_show_help();
+			return rasm_show_help ();
 		}
 	}
 
 	if (arch) {
 		if (!r_asm_use(&a, arch)) {
-			fprintf(stderr, "Error: Unknown plugin\n");
+			eprintf ("Error: Unknown plugin\n");
 			return 0;
 		}
 		if (!strcmp(arch, "bf"))
 			ascii = 1;
 	} else if (!r_asm_use(&a, "x86")) {
-		fprintf(stderr, "Error: Cannot find asm.x86 plugin\n");
+		eprintf ("Error: Cannot find asm.x86 plugin\n");
 		return 0;
 	}
 	if (!r_asm_set_bits(&a, bits))
-		fprintf(stderr, "cannot set bits (triying with 32)\n");
+		eprintf ("cannot set bits (triying with 32)\n");
 
 	if (argv[optind]) {
 		if (!strcmp(argv[optind], "-")) {
@@ -193,7 +213,7 @@ int main(int argc, char *argv[])
 				idx += ret;
 				offset += ret;
 				if (!ret) {
-					fprintf(stderr, "invalid\n");
+					eprintf ("invalid\n");
 					return 0;
 				}
 				if (len && idx >= len)
@@ -203,10 +223,8 @@ int main(int argc, char *argv[])
 		}
 		if (dis) ret = rasm_disasm(argv[optind], offset, len, ascii, bin);
 		else ret = rasm_asm(argv[optind], offset, len, bin);
-		if (!ret) {
-			fprintf(stderr, "invalid\n");
-			return 0;
-		}
+		if (!ret)
+			eprintf ("invalid\n");
 		return ret;
 	}
 

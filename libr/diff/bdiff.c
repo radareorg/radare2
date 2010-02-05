@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 /* Adapted code from:
 
  bdiff.c - efficient binary diff extension for Mercurial
@@ -12,41 +12,11 @@
 */
 
 #include <r_util.h>
+#include <r_diff.h>
 
-//#include <Python.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-
-#if defined __hpux || defined __SUNPRO_C || defined _AIX
-# define inline
-#endif
-
-#ifdef _WIN32
-#ifdef _MSC_VER
-#define inline __inline
-typedef unsigned long uint32_t;
-#else
-#include <stdint.h>
-#endif
-#if 0
-static uint32_t bdiff_htonl(uint32_t x)
-{
-	return ((x & 0x000000ffUL) << 24) |
-		((x & 0x0000ff00UL) <<  8) |
-		((x & 0x00ff0000UL) >>  8) |
-		((x & 0xff000000UL) >> 24);
-}
-#endif
-#else
-#include <sys/types.h>
-#if defined __BEOS__ && !defined __HAIKU__
-#include <ByteOrder.h>
-#else
-#include <arpa/inet.h>
-#endif
-#include <inttypes.h>
-#endif
 
 struct line {
 	int h, len, n, e;
@@ -65,7 +35,7 @@ struct hunklist {
 	struct hunk *base, *head;
 };
 
-int splitlines(const char *a, int len, struct line **lr)
+static int splitlines(const char *a, int len, struct line **lr)
 {
 	int h, i;
 	const char *p, *b = a;
@@ -110,7 +80,7 @@ int splitlines(const char *a, int len, struct line **lr)
 	return i - 1;
 }
 
-int inline cmp(struct line *a, struct line *b)
+static int inline cmp(struct line *a, struct line *b)
 {
 	return a->h != b->h || a->len != b->len || memcmp(a->l, b->l, a->len);
 }
@@ -299,182 +269,66 @@ static struct hunklist diff(struct line *a, int an, struct line *b, int bn)
 	return l;
 }
 
-#if 0
-
-static PyObject *blocks(PyObject *self, PyObject *args)
+//--
+// TODO: implement the r_diff_lines // we need to implement r_file_line_at (file, off);
+R_API int r_diff_buffers_delta(RDiff *d, const char *sa, int la, const char *sb, int lb)
 {
-	PyObject *sa, *sb, *rl = NULL, *m;
-	struct line *a, *b;
-	struct hunklist l = {NULL, NULL};
-	struct hunk *h;
-	int an, bn, pos = 0;
-
-	if (!PyArg_ParseTuple(args, "SS:bdiff", &sa, &sb))
-		return NULL;
-
-	an = splitlines(PyString_AsString(sa), PyString_Size(sa), &a);
-	bn = splitlines(PyString_AsString(sb), PyString_Size(sb), &b);
-	if (!a || !b)
-		goto nomem;
-
-	l = diff(a, an, b, bn);
-	rl = PyList_New(l.head - l.base);
-	if (!l.head || !rl)
-		goto nomem;
-
-	for (h = l.base; h != l.head; h++) {
-		m = Py_BuildValue("iiii", h->a1, h->a2, h->b1, h->b2);
-		PyList_SetItem(rl, pos, m);
-		pos++;
-	}
-
-nomem:
-	free(a);
-	free(b);
-	free(l.base);
-	return rl ? rl : PyErr_NoMemory();
-}
-
-/* THIS IS THE INTERESTING PART OF THE CODE */
-static PyObject *bdiff(PyObject *self, PyObject *args)
-{
-	char *sa, *sb;
-	PyObject *result = NULL;
-	struct line *al, *bl;
-	struct hunklist l = {NULL, NULL};
-	struct hunk *h;
-	char encode[12], *rb;
-	int an, bn, len = 0, la, lb;
-
-	if (!PyArg_ParseTuple(args, "s#s#:bdiff", &sa, &la, &sb, &lb))
-		return NULL;
-
-	an = splitlines(sa, la, &al);
-	bn = splitlines(sb, lb, &bl);
-	if (!al || !bl)
-		goto nomem;
-
-	l = diff(al, an, bl, bn);
-	if (!l.head)
-		goto nomem;
-
-	/* calculate length of output */
-	la = lb = 0;
-	for (h = l.base; h != l.head; h++) {
-		if (h->a1 != la || h->b1 != lb)
-			len += 12 + bl[h->b1].l - bl[lb].l;
-		la = h->a2;
-		lb = h->b2;
-	}
-
-	result = PyString_FromStringAndSize(NULL, len);
-	if (!result)
-		goto nomem;
-
-	/* build binary patch */
-	rb = PyString_AsString(result);
-	la = lb = 0;
-
-	for (h = l.base; h != l.head; h++) {
-		if (h->a1 != la || h->b1 != lb) {
-			len = bl[h->b1].l - bl[lb].l;
-			*(uint32_t *)(encode)     = htonl(al[la].l - al->l);
-			*(uint32_t *)(encode + 4) = htonl(al[h->a1].l - al->l);
-			*(uint32_t *)(encode + 8) = htonl(len);
-			memcpy(rb, encode, 12);
-			memcpy(rb + 12, bl[lb].l, len);
-			rb += 12 + len;
-		}
-		la = h->a2;
-		lb = h->b2;
-	}
-
-nomem:
-	free(al);
-	free(bl);
-	free(l.base);
-	return result ? result : PyErr_NoMemory();
-}
-
-static char mdiff_doc[] = "Efficient binary diff.";
-
-static PyMethodDef methods[] = {
-	{"bdiff", bdiff, METH_VARARGS, "calculate a binary diff\n"},
-	{"blocks", blocks, METH_VARARGS, "find a list of matching lines\n"},
-	{NULL, NULL}
-};
-
-PyMODINIT_FUNC initbdiff(void)
-{
-	Py_InitModule3("bdiff", methods, mdiff_doc);
-}
-
-#endif
-
-R_API int r_diff_lines(const char *file1, const char *sa, int la, const char *file2, const char *sb, int lb)
-{
-	//int i;
-	//char encode[12];
+	RDiffOp dop;
 	char *rb;
 	struct line *al, *bl;
 	struct hunklist l = { NULL, NULL };
 	struct hunk *h;
-	char *s;
-	int an, bn, len = 0;
+	int an, bn, offa, rlen, offb, len = 0;
 	int hits = 0;
 
-	printf("diff: %s -> %s\n", file1, file2);
 	an = splitlines(sa, la, &al);
 	bn = splitlines(sb, lb, &bl);
 	if (!al || !bl) {
-		fprintf(stderr, "bindiff_buffers: Out of memory.\n");
+		eprintf ("bindiff_buffers: Out of memory.\n");
 		return -1;
 	}
 
-	l = diff(al, an, bl, bn);
+	l = diff (al, an, bl, bn);
 	if (!l.head) {
-		fprintf(stderr, "bindiff_buffers: Out of memory.\n");
+		eprintf ("bindiff_buffers: Out of memory.\n");
 		return -1;
 	}
-	
+
 	la = lb = 0;
 	for (h = l.base; h != l.head; h++) {
-		//printf("Change at: %d -> %d\n", h->a1, h->b1);
 		if (h->a1 != la || h->b1 != lb) {
-			//printf("Differential change size: %d\n", bl[h->b1].l-bl[lb].l);
-			len += 12 + bl[h->b1].l - bl[lb].l;
-			if (h->a2 == h->b1){
-		//		printf("-<{grepline %s %d %d}>\n", file1, h->a2, h->b1);
-				s = r_file_slurp_line(file1, h->b1-1, 0);
-				printf("-%s\n", s);
-				free(s);
-				hits++;
+			len = bl[h->b1].l - bl[lb].l;
+			offa = al[la].l - al->l;
+			offb = al[h->a1].l - al->l;
+			rlen = offb-offa;
+
+			if (d->callback) {
+				/* source file */
+				dop.a_off = offa;
+				dop.a_buf = (ut8 *)al[la].l;
+				dop.a_len = rlen;
+
+				/* destination file */
+				dop.b_off = offa; // XXX offb not used??
+				dop.b_buf = (ut8 *)bl[lb].l;
+				dop.b_len = len;
+				d->callback (d, d->user, &dop);
 			}
-//			printf("+<{grepline %s %d}>\n", file2, h->a1);
-			s = r_file_slurp_line(file2, h->a1-1, 0);
-			printf("+%s\n", s);
-			free(s);
-		//	memcpy(rb, encode, 12);
-		//	memcpy(rb+12,bl[lb].l, len);
-			rb+=12+len;
-		} else {
-//			printf("-<{grepline %s %d}>\n", file1, h->a1);
-			s = r_file_slurp_line(file1, h->a1, 0);
-			printf("-%s\n", s);
-			free(s);
+#if 0	
+			if (rlen > 0) {
+				//printf ("Remove %d bytes at %d\n", rlen, offa);
+				printf ("r-%d @ 0x%llx\n", rlen, (ut64)offa);
+			}
+			printf ("e file.write=true\n"); // XXX
+			printf ("wx ");
+			for(i=0;i<len;i++)
+				printf ("%02x", bl[lb].l[i]);
+			printf (" @ 0x%llx\n", (ut64)offa);
+#endif
+			rb += 12 + len;
 		}
 		la = h->a2;
 		lb = h->b2;
-#if 0
-		printf("old: (%d) ", h->b1);
-		//for(i=0;i<a[h->b1].l;i++)
-		//	printf("%02x ", b1[h->b1+i]);
-		printf("\nnew: (%d) ", h->b2);
-		//for(i=0;i<b[h->b2].l;i++)
-		//	printf("%02x ", b2[h->b2+i]);
-		printf("\n\n");
-#endif
-		hits++;
 	}
 	free(al);
 	free(bl);
