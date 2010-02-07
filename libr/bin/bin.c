@@ -41,12 +41,12 @@ static RArray get_strings(RBin *bin, int min) {
 	for(i = 0; i < bin->size && ctr < max_str; i++) { 
 		if ((IS_PRINTABLE (bin->buf->buf[i]))) {
 			str[matches] = bin->buf->buf[i];
-			if (matches < sizeof (str))
+			if (matches < R_BIN_SIZEOF_STRINGS)
 				matches++;
 		} else {
 			/* check if the length fits on our request */
 			if (matches >= min) {
-				if ((tmp = MALLOC_STRUCT (RBinString)) == NULL) {
+				if (!(tmp = MALLOC_STRUCT (RBinString))) {
 					fprintf(stderr, "Error allocating string\n");
 					break;
 				}
@@ -54,7 +54,7 @@ static RArray get_strings(RBin *bin, int min) {
 				tmp->rva = tmp->offset = i-matches;
 				tmp->size = matches;
 				tmp->ordinal = ctr;
-				memcpy(tmp->string, str, R_BIN_SIZEOF_STRINGS);
+				memcpy (tmp->string, str, R_BIN_SIZEOF_STRINGS);
 				tmp->string[R_BIN_SIZEOF_STRINGS-1] = '\0';
 				r_array_set (ret, ctr, tmp);
 				ctr++;
@@ -88,8 +88,6 @@ static void r_bin_init_items(RBin *bin) {
 }
 
 static void r_bin_free_items(RBin *bin) {
-	if (bin->baddr)
-		r_array_free (bin->baddr);
 	if (bin->entries)
 		r_array_free (bin->entries);
 	if (bin->fields)
@@ -97,7 +95,7 @@ static void r_bin_free_items(RBin *bin) {
 	if (bin->imports)
 		r_array_free (bin->imports);
 	if (bin->info)
-		r_array_free (bin->info);
+		free (bin->info);
 	if (bin->sections)
 		r_array_free (bin->sections);
 	if (bin->strings)
@@ -132,7 +130,7 @@ R_API void* r_bin_free(RBin *bin) {
 R_API int r_bin_init(RBin *bin) {
 	int i;
 
-	memset (bin, 0, sizeof(RBIN));
+	memset (bin, 0, sizeof(RBin));
 	INIT_LIST_HEAD (&bin->bins);
 	for(i=0;bin_static_plugins[i];i++)
 		r_bin_add (bin, bin_static_plugins[i]);
@@ -161,8 +159,8 @@ R_API int r_bin_load(RBin *bin, const char *file, const char *plugin_name) {
 			(h->check && h->check (bin))) 
 			bin->cur = h;
 	}
-	if (bin->cur && bin->cur->new)
-		bin->cur->new (bin);
+	if (bin->cur && bin->cur->load)
+		bin->cur->load (bin);
 	else return R_FALSE;
 	r_bin_init_items (bin);
 	return R_TRUE;
@@ -197,9 +195,11 @@ R_API RArray r_bin_get_sections(RBin *bin) {
 	return bin->sections;
 }
 
-R_API RBinSection r_bin_get_section_at(RBin *bin, ut64 off) {
+#if 0
+R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off) {
 	/* TODO */
 }
+#endif
 
 R_API RArray r_bin_get_strings(RBin *bin) {
 	return bin->strings;

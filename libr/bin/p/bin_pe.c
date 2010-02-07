@@ -26,7 +26,7 @@ static ut64 baddr(RBin *bin)
 	return PE_(r_bin_pe_get_image_base) (bin->bin_obj);
 }
 
-static struct r_bin_entry_t* entry(RBin *bin)
+static RArray entries(RBin *bin)
 {
 	RArray ret;
 	RBinEntry *tmp = NULL;
@@ -34,7 +34,7 @@ static struct r_bin_entry_t* entry(RBin *bin)
 
 	if (!(entry = PE_(r_bin_pe_get_entrypoint) (bin->bin_obj)))
 		return NULL;
-	if ((ret = !r_array_new (1)))
+	if (!(ret = r_array_new (1)))
 		return NULL;
 	if (!(tmp = MALLOC_STRUCT (RBinEntry)))
 		return ret;
@@ -124,7 +124,7 @@ static RArray imports(RBin *bin)
 		return NULL;
 	for (count = 0; !imports[count].last; count++);
 	if (!(ret = r_array_new (count))) {
-		free (import);
+		free (imports);
 		return NULL;
 	}
 	for (i = 0; i < count; i++) {

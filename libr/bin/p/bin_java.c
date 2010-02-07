@@ -26,7 +26,7 @@ static RArray entries(RBin *bin)
 	RArray ret;
 	RBinEntry *tmp = NULL;
 
-	if ((ret = !r_array_new (1)))
+	if (!(ret = r_array_new (1)))
 		return NULL;
 	if (!(tmp = MALLOC_STRUCT (RBinEntry)))
 		return ret;
@@ -102,7 +102,7 @@ static RBinInfo* info(RBin *bin)
 	RBinInfo *ret = NULL;
 	char *version;
 
-	if(!(ret = MALLOC_STRUCT (RBin_Info)))
+	if(!(ret = MALLOC_STRUCT (RBinInfo)))
 		return NULL;
 	strncpy (ret->type, "JAVA CLASS", R_BIN_SIZEOF_STRINGS);
 	version = r_bin_java_get_version (bin->bin_obj);

@@ -31,7 +31,7 @@ static RArray entries(RBin *bin)
 	RArray ret;
 	RBinEntry *tmp = NULL;
 
-	if ((ret = !r_array_new (1)))
+	if (!(ret = r_array_new (1)))
 		return NULL;
 	if (!(tmp = MALLOC_STRUCT (RBinEntry)))
 		return ret;
@@ -115,7 +115,7 @@ static RArray imports(RBin *bin)
 	struct r_bin_elf_symbol_t *import = NULL;
 
 	if (!(import = Elf_(r_bin_elf_get_symbols) (bin->bin_obj, R_BIN_ELF_IMPORTS)))
-		return NULL
+		return NULL;
 	for (imports_count = 0; !import[imports_count].last; imports_count++);
 	if (!(ret = r_array_new (imports_count))) {
 		free (import);
@@ -137,7 +137,7 @@ static RArray imports(RBin *bin)
 	return ret;
 }
 
-static RInfo* info(RBin *bin)
+static RBinInfo* info(RBin *bin)
 {
 	struct r_bin_info_t *ret = NULL;
 	char *str;
@@ -193,7 +193,7 @@ static RArray fields(RBin *bin)
 		return NULL;
 	for (fields_count = 0; !field[fields_count].last; fields_count++);
 	if (!(ret = r_array_new (fields_count))) {
-		free (symbol);
+		free (field);
 		return NULL;
 	}
 	for (i = 0; i < fields_count; i++) {
@@ -228,11 +228,11 @@ struct r_bin_handle_t r_bin_plugin_elf = {
 	.desc = "ELF format r_bin plugin",
 	.init = NULL,
 	.fini = NULL,
-	.new = &pnew,
-	.free = &pfree,
+	.load = &load,
+	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
-	.entry = &entry,
+	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,

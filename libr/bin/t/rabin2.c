@@ -55,38 +55,36 @@ static int rabin_show_help() {
 }
 
 static int rabin_show_entrypoints() {
-	Rarray entries;
-	RBinEntry entry;
+	RArray entries;
+	RBinEntry *entry;
 	const char *env;
 	int i = 0;
 
 	ut64 baddr = r_bin_get_baddr (bin);
 
-	if ((entries = r_bin_get_entry (bin)) == NULL)
+	if ((entries = r_bin_get_entries (bin)) == NULL)
 		return R_FALSE;
 
-	if (!at) {
+	if (rad) {
+		env = r_sys_getenv ("DEBUG");
+		if (env == NULL || (env && strncmp (env, "1", 1)))
+			printf ("e io.vaddr=0x%08llx\n", baddr);
+		printf ("fs symbols\n");
+	} else printf ("[Entrypoints]\n");
+
+	r_array_foreach (entries, entry) {
 		if (rad) {
-			env = r_sys_getenv ("DEBUG");
-			if (env == NULL || (env && strncmp (env, "1", 1)))
-				printf ("e io.vaddr=0x%08llx\n", baddr);
-			printf ("fs symbols\n");
-		} else printf ("[Entrypoints]\n");
+			printf ("f entry%i @ 0x%08llx\n", i, baddr+entry->rva);
+			printf ("s entry%i\n", i);
+		} else {
 
-		r_array_foreach (it, pos) {
-			if (rad) {
-				printf ("f entry%i @ 0x%08llx\n", i, baddr+entry->rva);
-				printf ("s entry%i\n", i);
-			} else {
-
-				printf ("address=0x%08llx offset=0x%08llx baddr=0x%08llx\n",
-						baddr+entry->rva, entry->offset, baddr);
-			}
-			i++;
+			printf ("address=0x%08llx offset=0x%08llx baddr=0x%08llx\n",
+					baddr+entry->rva, entry->offset, baddr);
 		}
+		i++;
 	}
-	
-	if (!at && !rad) printf("\n%i imports\n", i);
+
+	if (!rad) printf("\n%i entrypoints\n", i);
 
 	return R_TRUE;
 }
@@ -169,7 +167,7 @@ static int rabin_show_symbols(ut64 at) {
 				} else printf ("f sym.%s @ 0x%08llx\n",
 							   symbol->name, baddr+symbol->rva);
 			} else printf ("address=0x%08llx offset=0x%08llx ordinal=%03lli "
-						   "korwarder=%s size=%08lli bind=%s type=%s name=%s\n",
+						   "forwarder=%s size=%08lli bind=%s type=%s name=%s\n",
 						   baddr+symbol->rva, symbol->offset,
 						   symbol->ordinal, symbol->forwarder,
 						   symbol->size, symbol->bind, symbol->type, 
@@ -185,8 +183,9 @@ static int rabin_show_symbols(ut64 at) {
 
 static int rabin_show_strings() {
 	RArray strings;
-	RBinString string;
+	RBinString *string;
 	ut64 baddr;
+	int i = 0;
 
 	baddr = r_bin_get_baddr (bin);
 
@@ -217,7 +216,7 @@ static int rabin_show_strings() {
 
 static int rabin_show_sections(ut64 at) {
 	RArray sections;
-	RSection *section;
+	RBinSection *section;
 	ut64 baddr;
 	int i = 0;
 
@@ -341,7 +340,7 @@ static int rabin_show_fields() {
 
 static int rabin_dump_symbols(int len) {
 	RArray symbols;
-	RBinSymBol *symbol;
+	RBinSymbol *symbol;
 	ut8 *buf;
 	char *ret;
 	int olen = len;
@@ -370,7 +369,7 @@ static int rabin_dump_symbols(int len) {
 
 static int rabin_dump_sections(char *name) {
 	RArray sections;
-	RbinSection *section;
+	RBinSection *section;
 	ut8 *buf;
 	char *ret;
 
@@ -380,7 +379,7 @@ static int rabin_dump_sections(char *name) {
 	r_array_foreach (sections, section) {
 		if (!strcmp (name, section->name)) {
 			if (!(buf = malloc (section->size)) ||
-				!(ret = malloc (section->size*2+1)))
+					!(ret = malloc (section->size*2+1)))
 				return R_FALSE;
 			r_buf_read_at (bin->buf, section->offset, buf, section->size);
 			r_hex_bin2str (buf, section->size, ret);
@@ -389,176 +388,177 @@ static int rabin_dump_sections(char *name) {
 			free (ret);
 			break;
 		}
-
-		return R_TRUE;
 	}
 
-	static int rabin_do_operation(const char *op) {
-		char *arg = NULL, *ptr = NULL, *ptr2 = NULL;
+	return R_TRUE;
+}
 
-		if (!strcmp (op, "help")) {
-			printf ("Operation string:\n"
-					"  Dump symbols: d/s/1024\n"
-					"  Dump section: d/S/.text\n");
-			return R_FALSE;
-		}
-		arg = alloca (strlen(op)+1);
-		strcpy (arg, op);
+static int rabin_do_operation(const char *op) {
+	char *arg = NULL, *ptr = NULL, *ptr2 = NULL;
 
-		if ((ptr = strchr (arg, '/'))) {
-			ptr[0] = '\0';
-			ptr = ptr + 1;
-			if ((ptr2 = strchr (ptr, '/'))) {
-				ptr2[0] = '\0';
-				ptr2 = ptr2 + 1;
-			}
-		}
-
-		switch (arg[0]) {
-		case 'd':
-			if (!ptr)
-				goto _rabin_do_operation_error;
-			if (ptr[0]=='s') {
-				if (ptr2) {
-					if (!rabin_dump_symbols (r_num_math(NULL, ptr2)))
-						return R_FALSE;
-				} else 
-					if (!rabin_dump_symbols (0))
-						return R_FALSE;
-			} else if (ptr[0]=='S') {
-				if (!ptr2)
-					goto _rabin_do_operation_error;
-				if (!rabin_dump_sections (ptr2))
-					return R_FALSE;
-			} else goto _rabin_do_operation_error;
-			break;
-		default:
-_rabin_do_operation_error:
-			printf ("Unknown operation. use -o help\n");
-			return R_FALSE;
-		}
-
-		return R_TRUE;
-	}
-
-	/* bin callback */
-	static int __lib_bin_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
-		struct r_bin_handle_t *hand = (struct r_bin_handle_t *)data;
-		//printf(" * Added (dis)assembly handler\n");
-		r_bin_add (bin, hand);
-		return R_TRUE;
-	}
-
-	static int __lib_bin_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
-		return R_TRUE;
-	}
-
-	int main(int argc, char **argv)
-	{
-		ut64 at = 0LL;
-		int c;
-		int action = ACTION_UNK;
-		const char *format = NULL, *op = NULL;
-		const char *plugin_name = NULL;
-
-		bin = r_bin_new ();
-		r_lib_init (&l, "radare_plugin");
-		r_lib_add_handler (&l, R_LIB_TYPE_BIN, "bin plugins",
-						   &__lib_bin_cb, &__lib_bin_dt, NULL);
-
-		{ /* load plugins everywhere */
-			char *homeplugindir = r_str_home (".radare/plugins");
-			r_lib_opendir (&l, getenv ("LIBR_PLUGINS"));
-			r_lib_opendir (&l, homeplugindir);
-			r_lib_opendir (&l, LIBDIR"/radare2/");
-		}
-
-		while ((c = getopt (argc, argv, "@:VisSzIHewo:f:rvLh")) != -1)
-		{
-			switch(c) {
-			case 'i':
-				action |= ACTION_IMPORTS;
-				break;
-			case 's':
-				action |= ACTION_SYMBOLS;
-				break;
-			case 'S':
-				action |= ACTION_SECTIONS;
-				break;
-			case 'z':
-				action |= ACTION_STRINGS;
-				break;
-			case 'I':
-				action |= ACTION_INFO;
-				break;
-			case 'H':
-				action |= ACTION_FIELDS;
-				break;
-			case 'e':
-				action |= ACTION_ENTRY;
-				break;
-			case 'w':
-				rw = R_TRUE;
-				break;
-			case 'o':
-				op = optarg;
-				action |= ACTION_OPERATION;
-				break;
-			case 'f':
-				format = optarg;
-				break;
-			case 'r':
-				rad = R_TRUE;
-				break;
-			case 'v':
-				verbose++;
-				break;
-			case 'L':
-				r_bin_list (bin);
-				exit(1);
-			case '@':
-				at = r_num_math (NULL, optarg);
-				break;
-			case 'V':
-				printf ("rabin2 v"VERSION"\n");
-				return 0;
-			case 'h':
-			default:
-				action |= ACTION_HELP;
-			}
-		}
-
-		file = argv[optind];
-		if (action == ACTION_HELP || action == ACTION_UNK || file == NULL)
-			return rabin_show_help ();
-
-		if (format)
-			plugin_name = format;
-
-		if (!r_bin_load (bin, file, plugin_name) &&
-			!r_bin_load (bin, file, "dummy")) {
-			ERR ("r_bin: Cannot open '%s'\n", file);
-			return R_FALSE;
-		}
-
-		if (action&ACTION_ENTRIES)
-			rabin_show_entrypoints ();
-		if (action&ACTION_IMPORTS)
-			rabin_show_imports (at);
-		if (action&ACTION_SYMBOLS)
-			rabin_show_symbols (at);
-		if (action&ACTION_SECTIONS)
-			rabin_show_sections (at);
-		if (action&ACTION_STRINGS)
-			rabin_show_strings ();
-		if (action&ACTION_INFO)
-			rabin_show_info ();
-		if (action&ACTION_FIELDS)
-			rabin_show_fields();
-		if (op != NULL && action&ACTION_OPERATION)
-			rabin_do_operation (op);
-
-		r_bin_free (bin);
-
+	if (!strcmp (op, "help")) {
+		printf ("Operation string:\n"
+				"  Dump symbols: d/s/1024\n"
+				"  Dump section: d/S/.text\n");
 		return R_FALSE;
 	}
+	arg = alloca (strlen(op)+1);
+	strcpy (arg, op);
+
+	if ((ptr = strchr (arg, '/'))) {
+		ptr[0] = '\0';
+		ptr = ptr + 1;
+		if ((ptr2 = strchr (ptr, '/'))) {
+			ptr2[0] = '\0';
+			ptr2 = ptr2 + 1;
+		}
+	}
+
+	switch (arg[0]) {
+	case 'd':
+		if (!ptr)
+			goto _rabin_do_operation_error;
+		if (ptr[0]=='s') {
+			if (ptr2) {
+				if (!rabin_dump_symbols (r_num_math(NULL, ptr2)))
+					return R_FALSE;
+			} else 
+				if (!rabin_dump_symbols (0))
+					return R_FALSE;
+		} else if (ptr[0]=='S') {
+			if (!ptr2)
+				goto _rabin_do_operation_error;
+			if (!rabin_dump_sections (ptr2))
+				return R_FALSE;
+		} else goto _rabin_do_operation_error;
+		break;
+	default:
+_rabin_do_operation_error:
+		printf ("Unknown operation. use -o help\n");
+		return R_FALSE;
+	}
+
+	return R_TRUE;
+}
+
+/* bin callback */
+static int __lib_bin_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
+	struct r_bin_handle_t *hand = (struct r_bin_handle_t *)data;
+	//printf(" * Added (dis)assembly handler\n");
+	r_bin_add (bin, hand);
+	return R_TRUE;
+}
+
+static int __lib_bin_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
+	return R_TRUE;
+}
+
+int main(int argc, char **argv)
+{
+	ut64 at = 0LL;
+	int c;
+	int action = ACTION_UNK;
+	const char *format = NULL, *op = NULL;
+	const char *plugin_name = NULL;
+
+	bin = r_bin_new ();
+	r_lib_init (&l, "radare_plugin");
+	r_lib_add_handler (&l, R_LIB_TYPE_BIN, "bin plugins",
+					   &__lib_bin_cb, &__lib_bin_dt, NULL);
+
+	{ /* load plugins everywhere */
+		char *homeplugindir = r_str_home (".radare/plugins");
+		r_lib_opendir (&l, getenv ("LIBR_PLUGINS"));
+		r_lib_opendir (&l, homeplugindir);
+		r_lib_opendir (&l, LIBDIR"/radare2/");
+	}
+
+	while ((c = getopt (argc, argv, "@:VisSzIHewo:f:rvLh")) != -1)
+	{
+		switch(c) {
+		case 'i':
+			action |= ACTION_IMPORTS;
+			break;
+		case 's':
+			action |= ACTION_SYMBOLS;
+			break;
+		case 'S':
+			action |= ACTION_SECTIONS;
+			break;
+		case 'z':
+			action |= ACTION_STRINGS;
+			break;
+		case 'I':
+			action |= ACTION_INFO;
+			break;
+		case 'H':
+			action |= ACTION_FIELDS;
+			break;
+		case 'e':
+			action |= ACTION_ENTRIES;
+			break;
+		case 'w':
+			rw = R_TRUE;
+			break;
+		case 'o':
+			op = optarg;
+			action |= ACTION_OPERATION;
+			break;
+		case 'f':
+			format = optarg;
+			break;
+		case 'r':
+			rad = R_TRUE;
+			break;
+		case 'v':
+			verbose++;
+			break;
+		case 'L':
+			r_bin_list (bin);
+			exit(1);
+		case '@':
+			at = r_num_math (NULL, optarg);
+			break;
+		case 'V':
+			printf ("rabin2 v"VERSION"\n");
+			return 0;
+		case 'h':
+		default:
+			action |= ACTION_HELP;
+		}
+	}
+
+	file = argv[optind];
+	if (action == ACTION_HELP || action == ACTION_UNK || file == NULL)
+		return rabin_show_help ();
+
+	if (format)
+		plugin_name = format;
+
+	if (!r_bin_load (bin, file, plugin_name) &&
+		!r_bin_load (bin, file, "dummy")) {
+		ERR ("r_bin: Cannot open '%s'\n", file);
+		return R_FALSE;
+	}
+
+	if (action&ACTION_ENTRIES)
+		rabin_show_entrypoints ();
+	if (action&ACTION_IMPORTS)
+		rabin_show_imports (at);
+	if (action&ACTION_SYMBOLS)
+		rabin_show_symbols (at);
+	if (action&ACTION_SECTIONS)
+		rabin_show_sections (at);
+	if (action&ACTION_STRINGS)
+		rabin_show_strings ();
+	if (action&ACTION_INFO)
+		rabin_show_info ();
+	if (action&ACTION_FIELDS)
+		rabin_show_fields();
+	if (op != NULL && action&ACTION_OPERATION)
+		rabin_do_operation (op);
+
+	r_bin_free (bin);
+
+	return R_FALSE;
+}
