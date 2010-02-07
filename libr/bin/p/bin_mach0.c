@@ -6,127 +6,127 @@
 #include <r_bin.h>
 #include "mach0/mach0.h"
 
-static int pnew(struct r_bin_t *bin)
+static int load(RBin *bin)
 {
-	if(!(bin->bin_obj = r_bin_mach0_new(bin->file)))
+	if(!(bin->bin_obj = r_bin_mach0_new (bin->file)))
 		return R_FALSE;
-	bin->size = ((struct r_bin_mach0_obj_t*)(bin->bin_obj))->size;
-	bin->buf = ((struct r_bin_mach0_obj_t*)(bin->bin_obj))->b;
+	bin->size = ((struct r_bin_mach0_obj_t*) (bin->bin_obj))->size;
+	bin->buf = ((struct r_bin_mach0_obj_t*) (bin->bin_obj))->b;
 	return R_TRUE;
 }
 
-static int pfree(struct r_bin_t *bin)
+static int destroy(RBin *bin)
 {
-	r_bin_mach0_free((struct r_bin_mach0_obj_t*)bin->bin_obj);
+	r_bin_mach0_free ((struct r_bin_mach0_obj_t*)bin->bin_obj);
 	return R_TRUE;
 }
 
-static ut64 baddr(struct r_bin_t *bin)
+static ut64 baddr(RBin *bin)
 {
-	return r_bin_mach0_get_baddr((struct r_bin_mach0_obj_t*)bin->bin_obj);
+	return r_bin_mach0_get_baddr ((struct r_bin_mach0_obj_t*)bin->bin_obj);
 }
 
-static int check(struct r_bin_t *bin)
+static int check(RBin *bin)
 {
 	ut8 *buf;
 	int ret = R_FALSE;
 
-	if (!(buf = (ut8*)r_file_slurp_range(bin->file, 0, 4)))
+	if (!(buf = (ut8*)r_file_slurp_range (bin->file, 0, 4)))
 		return R_FALSE;
-	if (!memcmp(buf, "\xce\xfa\xed\xfa", 4) ||
-		!memcmp(buf, "\xfe\xed\xfa\xce", 4))
+	if (!memcmp (buf, "\xce\xfa\xed\xfa", 4) ||
+		!memcmp (buf, "\xfe\xed\xfa\xce", 4))
 		ret = R_TRUE;
-	free(buf);
+	free (buf);
 	return ret;
 }
 
-static struct r_bin_section_t* sections(struct r_bin_t *bin)
+static RArray sections(RBin *bin)
 {
 	int count, i;
-	struct r_bin_section_t *ret = NULL;
+	RArray ret = NULL;
+	RBinSection *tmp = NULL;
 	struct r_bin_mach0_section_t *sections = NULL;
 
-	if (!(sections = r_bin_mach0_get_sections((struct r_bin_mach0_obj_t*)bin->bin_obj)))
+	if (!(sections = r_bin_mach0_get_sections ((struct r_bin_mach0_obj_t*)bin->bin_obj)))
 		return NULL;
-	for (count = 0; sections && !sections[count].last; count++);
-	if (count == 0)
+	for (count = 0; !sections[count].last; count++);
+	if (!(ret = r_array_new (count))) {
+		free (sections);
 		return NULL;
-	if ((ret = malloc((count + 1) * sizeof(struct r_bin_section_t))) == NULL)
-		return NULL;
-	memset(ret, '\0', (count + 1) * sizeof(struct r_bin_section_t));
-
-	for (i = 0; sections && !sections[i].last; i++) {
-		strncpy(ret[i].name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
-		ret[i].size = sections[i].size;
-		ret[i].vsize = sections[i].size;
-		ret[i].offset = sections[i].offset;
-		ret[i].rva = sections[i].addr;
-		ret[i].characteristics = 0;
-		ret[i].last = 0;
 	}
-	ret[i].last = 1;
-	free(sections);
+	for (i = 0; i < count; i++) {
+		if (!(tmp = MALLOC_STRUCT (RBinSection)))
+			break;
+		strncpy (tmp->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
+		tmp->size = sections[i].size;
+		tmp->vsize = sections[i].size;
+		tmp->offset = sections[i].offset;
+		tmp->rva = sections[i].addr;
+		tmp->characteristics = 0;
+		r_array_set (ret, i, tmp);
+	}
+	free (sections);
 	return ret;
 }
 
-static struct r_bin_symbol_t* symbols(struct r_bin_t *bin)
+static RArray symbols(RBin *bin)
 {
 	int count, i;
-	struct r_bin_symbol_t *ret = NULL;
+	RArray ret = NULL;
+	RBinSymbol *tmp = NULL;
 	struct r_bin_mach0_symbol_t *symbols = NULL;
 
-	if (!(symbols = r_bin_mach0_get_symbols((struct r_bin_mach0_obj_t*)bin->bin_obj)))
+	if (!(symbols = r_bin_mach0_get_symbols ((struct r_bin_mach0_obj_t*)bin->bin_obj)))
 		return NULL;
-	for (count = 0; symbols && !symbols[count].last; count++);
-	if (count == 0)
+	for (count = 0; !symbols[count].last; count++);
+	if (!(ret = r_array_new (count))) {
+		free (symbols);
 		return NULL;
-	if ((ret = malloc((count + 1) * sizeof(struct r_bin_symbol_t))) == NULL)
-		return NULL;
-	memset(ret, '\0', (count + 1) * sizeof(struct r_bin_symbol_t));
-
-	for (i = 0; symbols && !symbols[i].last; i++) {
-		strncpy(ret[i].name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
-		strncpy(ret[i].forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy(ret[i].bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy(ret[i].type, "NONE", R_BIN_SIZEOF_STRINGS);
-		ret[i].rva = symbols[i].addr;
-		ret[i].offset = symbols[i].offset;
-		ret[i].size = symbols[i].size;
-		ret[i].ordinal = 0;
-		ret[i].last = 0;
 	}
-	ret[i].last = 1;
-	free(symbols);
+	for (i = 0; i < count; i++) {
+		if (!(tmp = MALLOC_STRUCT (RBinSymbol)))
+			break;
+		strncpy (tmp->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
+		strncpy (tmp->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
+		strncpy (tmp->bind, "NONE", R_BIN_SIZEOF_STRINGS);
+		strncpy (tmp->type, "NONE", R_BIN_SIZEOF_STRINGS);
+		tmp->rva = symbols[i].addr;
+		tmp->offset = symbols[i].offset;
+		tmp->size = symbols[i].size;
+		tmp->ordinal = 0;
+		r_array_set (ret, i, tmp);
+	}
+	free (symbols);
 	return ret;
 }
 
-static struct r_bin_import_t* imports(struct r_bin_t *bin)
+static RArray imports(RBin *bin)
 {
 	int count, i;
-	struct r_bin_import_t *ret = NULL;
+	RArray ret = NULL;
+	RBinImport *tmp = NULL;
 	struct r_bin_mach0_import_t *imports = NULL;
 
 	if (!(imports = r_bin_mach0_get_imports((struct r_bin_mach0_obj_t*)bin->bin_obj)))
 		return NULL;
-	for (count = 0; imports && !imports[count].last; count++);
-	if (count == 0)
+	for (count = 0; !imports[count].last; count++);
+	if (!(ret = r_array_new (count))) {
+		free (imports);
 		return NULL;
-	if ((ret = malloc((count + 1) * sizeof(struct r_bin_import_t))) == NULL)
-		return NULL;
-	memset(ret, '\0', (count + 1) * sizeof(struct r_bin_import_t));
-
-	for (i = 0; imports && !imports[i].last; i++) {
-		strncpy(ret[i].name, (char*)imports[i].name, R_BIN_SIZEOF_STRINGS);
-		strncpy(ret[i].bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy(ret[i].type, "NONE", R_BIN_SIZEOF_STRINGS);
-		ret[i].rva = imports[i].addr;
-		ret[i].offset = imports[i].offset;
-		ret[i].ordinal = 0;
-		ret[i].hint = 0;
-		ret[i].last = 0;
 	}
-	ret[i].last = 1;
-	free(imports);
+	for (i = 0; i < count; i++) {
+		if (!(tmp = MALLOC_STRUCT (RBinImport)))
+			break;
+		strncpy (tmp->name, (char*)imports[i].name, R_BIN_SIZEOF_STRINGS);
+		strncpy (tmp->bind, "NONE", R_BIN_SIZEOF_STRINGS);
+		strncpy (tmp->type, "NONE", R_BIN_SIZEOF_STRINGS);
+		tmp->rva = imports[i].addr;
+		tmp->offset = imports[i].offset;
+		tmp->ordinal = 0;
+		tmp->hint = 0;
+		r_array_set (ret, i, tmp);
+	}
+	free (imports);
 	return ret;
 }
 
@@ -135,10 +135,11 @@ struct r_bin_handle_t r_bin_plugin_mach0 = {
 	.desc = "mach0 bin plugin",
 	.init = NULL,
 	.fini = NULL,
-	.new = &pnew,
-	.free = &pfree,
+	.load = &load,
+	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.entries = NULL,
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,

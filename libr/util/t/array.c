@@ -1,53 +1,21 @@
 /* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
 #include "r_util.h"
 
-void test_array_new () {
-	int i = 0;
-	void **iter, **it = r_array_new (3);
+int main() {
+	void **it = r_array_new (3);
+	void *pos = NULL;
 
-	r_array_set (it, 0, "foo");
-	r_array_set (it, 1, "bar");
-	r_array_set (it, 2, "cow");
+	r_array_set(it, 0, strdup ("foo"));
+	r_array_set(it, 1, strdup ("bar"));
+	r_array_set(it, 2, strdup ("cow"));
 
-	r_array_delete (r_array_get_n (it, 1));
-	/* NOOP test */
-	//it = r_array_first (r_array_get (it));
-	//iter = r_array_iterator (it);
-	r_array_rewind (it);
+	r_array_delete (it, 1);
 
-	for(iter = it; r_array_next (iter); ) {
-		char *str = r_array_get (iter);
-		printf ("%d %s\n", i++, str);
+	r_array_foreach(it, pos) {
+		printf("%s\n", (char *)pos);
 	}
 
 	r_array_free(it);
-}
-
-void test_array_static () {
-	int i = 0;
-	void *data[10];
-	RArray iter;
-	RArray it = (RArray) &data;
-
-	it = (RArray) r_array_init (it, 9);
-
-	r_array_set (it, 0, "foo");
-	r_array_set (it, 1, "bar");
-	r_array_set (it, 2, "cow");
-
-	r_array_delete (r_array_get_n (it, 1));
-	r_array_rewind (it);
-
-	for(iter = it; r_array_next (iter); ) {
-		char *str = r_array_get (iter);
-		printf ("%d %s\n", i++, str);
-	}
-}
-
-int main()
-{
-	test_array_new ();
-	test_array_static ();
 
 	return 0;
 }

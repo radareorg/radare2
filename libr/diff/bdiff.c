@@ -312,7 +312,8 @@ R_API int r_diff_buffers_delta(RDiff *d, const char *sa, int la, const char *sb,
 				dop.b_off = offa; // XXX offb not used??
 				dop.b_buf = (ut8 *)bl[lb].l;
 				dop.b_len = len;
-				d->callback (d, d->user, &dop);
+				if (!d->callback (d, d->user, &dop))
+					break;
 			}
 #if 0	
 			if (rlen > 0) {
