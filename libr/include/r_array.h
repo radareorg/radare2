@@ -6,6 +6,8 @@
 #define r_array_rewind(it) for (; it!=*it; it--); it++
 #define r_array_next(it) *it!=0
 #define r_array_get(it) *(it++)
+#define r_array_iterator(x) x
+#define r_array_unref(x) x
 
 R_API void **r_array_init(void **it, int n);
 R_API void **r_array_new(int n);

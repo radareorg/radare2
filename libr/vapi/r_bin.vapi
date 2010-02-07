@@ -3,39 +3,32 @@
 [CCode (cheader_filename="r_bin.h", cprefix="r_bin_", lower_case_cprefix="r_bin_")]
 namespace Radare {
 	[Compact]
-	[CCode (cname="struct r_bin_t", free_function="r_bin_free", cprefix="r_bin_")]
+	[CCode (cname="RBin", free_function="r_bin_free", cprefix="r_bin_")]
 	public class RBin {
 		public const string file;
-		public int fd;
+		public int size;
 
 		public RBin();
-		//public int open(string file, bool rw, string? plugin_name = null);
 
-		public int init(string file, int rw);
-		public int close();
+		public int init();
+		public int load(string file, string? plugin_name = null);
+		public int list();
 		public uint64 get_baddr();
-		public Entrypoint get_entry();
-
-		// TODO: deprecate
-		public rList<Symbol*> symbols;
-
-		//public rArray<RBin.Section> get_sections();
-		//public rArray<RBin.Symbol> get_symbols();
-		//public rArray<RBin.Import> get_imports();
-
-		public Info* get_info();
-		public uint64 get_section_offset(string name);
-		public uint64 get_section_rva(string name);
-		public uint32 get_section_size(string name);
-		public uint64 resize_section(string name, uint64 size);
+		public RArray<RBin.Entry> get_entries();
+		public RArray<RBin.Field*> get_fields();
+		public RArray<RBin.Import*> get_imports();
+		public RArray<RBin.Section*> get_sections();
+		public RArray<RBin.String*> get_strings();
+		public RArray<RBin.Symbol*> get_symbols();
+		public RBin.Info* get_info();
 	
-		[CCode (cname="struct r_bin_entry_t", free_function="", ref_function="", unref_function="")]
-		public class Entrypoint {
+		[CCode (cname="RBinEntry", free_function="", ref_function="", unref_function="")]
+		public class Entry {
 			public uint64 rva;
 			public uint64 offset;
 		}
 
-		[CCode (cname="struct r_bin_section_t", free_function="", ref_function="", unref_function="")]
+		[CCode (cname="RBinSection", free_function="", ref_function="", unref_function="")]
 		public class Section  {
 			public string name;
 			public int32 size;
@@ -43,10 +36,9 @@ namespace Radare {
 			public int64 rva;
 			public int64 offset;
 			public int32 stringacteristics;
-			public bool last;
 		}
 
-		[CCode (cname="struct r_bin_symbol_t", free_function="", ref_function="", unref_function="")]
+		[CCode (cname="RBinSymbol", free_function="", ref_function="", unref_function="")]
 		public class Symbol {
 			public string name;
 			public string forwarder;
@@ -56,10 +48,9 @@ namespace Radare {
 			public uint64 offset;
 			public uint32 size;
 			public uint32 ordinal;
-			public bool last;
 		}
 
-		[CCode (cname="struct r_bin_import_t", free_function="", ref_function="", unref_function="")]
+		[CCode (cname="RBinImport", free_function="", ref_function="", unref_function="")]
 		public class Import {
 			public string name;
 			public string bind;
@@ -68,10 +59,9 @@ namespace Radare {
 			public uint64 offset;
 			public uint32 ordinal;
 			public uint32 hint;
-			public bool last;
 		}
 
-		[CCode (cname="struct r_bin_info_t", free_function="", ref_function="", unref_function="")]
+		[CCode (cname="RBinInfo", free_function="", ref_function="", unref_function="")]
 		public class Info {
 			public string type;
 			public string @class;
@@ -82,6 +72,22 @@ namespace Radare {
 			public string subsystem;
 			public int bigendian;
 			public uint32 dbg_info;
+		}
+
+		[CCode (cname="RBinString", free_function="", ref_function="", unref_function="")]
+		public class String {
+			public string @string;
+			public uint64 rva;
+			public uint64 offset;
+			public uint64 ordinal;
+			public uint64 size;
+		}
+
+		[CCode (cname="RBinField", free_function="", ref_function="", unref_function="")]
+		public class Field {
+			public string name;
+			public uint64 rva;
+			public uint64 offset;
 		}
 	}
 }

@@ -78,6 +78,18 @@ public class RArray<G> {
 public delegate int rArrayCallback (void *foo);
 #endif
 
+[CCode (cprefix="r_array_", cheader_filename="r_array.h", cname="void*")]
+public static class RArray<G> {
+	[CCode (cname="r_array_iterator")]
+	public RArray<G> iterator();
+	[CCode (cname="r_array_unref")]
+	public void unref(G *arg);
+	[CCode (cname="r_array_next")]
+	public bool next();
+	[CCode (cname="r_array_get")]
+	public unowned G @get();
+}
+
 #if 0
 /* TODO: to be removed. not fully compliant */
 [Compact]
