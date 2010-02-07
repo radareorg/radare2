@@ -158,10 +158,9 @@ R_API int r_bin_load(RBin *bin, const char *file, const char *plugin_name) {
 			(h->check && h->check (bin))) 
 			bin->cur = h;
 	}
-	if (bin->cur && bin->cur->load)
-		bin->cur->load (bin);
+	if (bin->cur && bin->cur->load && bin->cur->load (bin))
+		r_bin_init_items (bin);
 	else return R_FALSE;
-	r_bin_init_items (bin);
 	return R_TRUE;
 }
 
