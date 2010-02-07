@@ -29,34 +29,33 @@ static RBinHandle *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS };
 
 static RArray get_strings(RBin *bin, int min) {
 	RArray ret;
-	RBinString *tmp = NULL;
+	RBinString *ptr = NULL;
 	char str[R_BIN_SIZEOF_STRINGS];
 	int i, matches = 0, ctr = 0, max_str = 0;
 
 	max_str = (int)(bin->size/min);
-	if (!(ret = r_array_new (max_str))) {
+	if (!(ret = r_array_new (max_str*100))) {
 		ERR ("Error allocating array\n");
 		return NULL;
 	}
 	for(i = 0; i < bin->size && ctr < max_str; i++) { 
-		if ((IS_PRINTABLE (bin->buf->buf[i]))) {
-			str[matches] = bin->buf->buf[i];
-			if (matches < R_BIN_SIZEOF_STRINGS)
+		if ((IS_PRINTABLE (bin->buf->buf[i])) && matches < R_BIN_SIZEOF_STRINGS-1) {
+				str[matches] = bin->buf->buf[i];
 				matches++;
 		} else {
 			/* check if the length fits on our request */
 			if (matches >= min) {
-				if (!(tmp = MALLOC_STRUCT (RBinString))) {
+				if (!(ptr = MALLOC_STRUCT (RBinString))) {
 					fprintf(stderr, "Error allocating string\n");
 					break;
 				}
 				str[matches] = '\0';
-				tmp->rva = tmp->offset = i-matches;
-				tmp->size = matches;
-				tmp->ordinal = ctr;
-				memcpy (tmp->string, str, R_BIN_SIZEOF_STRINGS);
-				tmp->string[R_BIN_SIZEOF_STRINGS-1] = '\0';
-				r_array_set (ret, ctr, tmp);
+				ptr->rva = ptr->offset = i-matches;
+				ptr->size = matches;
+				ptr->ordinal = ctr;
+				memcpy (ptr->string, str, R_BIN_SIZEOF_STRINGS);
+				ptr->string[R_BIN_SIZEOF_STRINGS-1] = '\0';
+				r_array_set (ret, ctr, ptr);
 				ctr++;
 			}
 			matches = 0;

@@ -29,18 +29,18 @@ static ut64 baddr(RBin *bin)
 static RArray entries(RBin *bin)
 {
 	RArray ret;
-	RBinEntry *tmp = NULL;
+	RBinEntry *ptr = NULL;
 	struct r_bin_pe_entrypoint_t *entry = NULL;
 
 	if (!(entry = PE_(r_bin_pe_get_entrypoint) (bin->bin_obj)))
 		return NULL;
 	if (!(ret = r_array_new (1)))
 		return NULL;
-	if (!(tmp = MALLOC_STRUCT (RBinEntry)))
+	if (!(ptr = MALLOC_STRUCT (RBinEntry)))
 		return ret;
-	tmp->offset = entry->offset;
-	tmp->rva = entry->rva;
-	r_array_set (ret, 0, tmp);
+	ptr->offset = entry->offset;
+	ptr->rva = entry->rva;
+	r_array_set (ret, 0, ptr);
 	free (entry);
 	return ret;
 }
@@ -48,7 +48,7 @@ static RArray entries(RBin *bin)
 static RArray sections(RBin *bin)
 {
 	RArray ret = NULL;
-	RBinSection *tmp = NULL;
+	RBinSection *ptr = NULL;
 	struct r_bin_pe_section_t *sections = NULL;
 	int i, count;
 	
@@ -60,23 +60,23 @@ static RArray sections(RBin *bin)
 		return NULL;
 	}
 	for (i = 0; i < count; i++) {
-		if (!(tmp = MALLOC_STRUCT (RBinSection)))
+		if (!(ptr = MALLOC_STRUCT (RBinSection)))
 			break;
-		strncpy (tmp->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
-		tmp->size = sections[i].size;
-		tmp->vsize = sections[i].vsize;
-		tmp->offset = sections[i].offset;
-		tmp->rva = sections[i].rva;
-		tmp->characteristics = 0;
+		strncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
+		ptr->size = sections[i].size;
+		ptr->vsize = sections[i].vsize;
+		ptr->offset = sections[i].offset;
+		ptr->rva = sections[i].rva;
+		ptr->characteristics = 0;
 		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].characteristics))
-			tmp->characteristics |= 0x1;
+			ptr->characteristics |= 0x1;
 		if (R_BIN_PE_SCN_IS_WRITABLE (sections[i].characteristics))
-			tmp->characteristics |= 0x2;
+			ptr->characteristics |= 0x2;
 		if (R_BIN_PE_SCN_IS_READABLE (sections[i].characteristics))
-			tmp->characteristics |= 0x4;
+			ptr->characteristics |= 0x4;
 		if (R_BIN_PE_SCN_IS_SHAREABLE (sections[i].characteristics))
-			tmp->characteristics |= 0x8;
-		r_array_set (ret, i, tmp);
+			ptr->characteristics |= 0x8;
+		r_array_set (ret, i, ptr);
 	}
 	free (sections);
 	return ret;
@@ -85,7 +85,7 @@ static RArray sections(RBin *bin)
 static RArray symbols(RBin *bin)
 {
 	RArray ret = NULL;
-	RBinSymbol *tmp = NULL;
+	RBinSymbol *ptr = NULL;
 	struct r_bin_pe_export_t *symbols = NULL;
 	int i, count;
 
@@ -97,17 +97,17 @@ static RArray symbols(RBin *bin)
 		return NULL;
 	}
 	for (i = 0; i < count; i++) {
-		if (!(tmp = MALLOC_STRUCT (RBinSymbol)))
+		if (!(ptr = MALLOC_STRUCT (RBinSymbol)))
 			break;
-		strncpy (tmp->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
-		strncpy (tmp->forwarder, (char*)symbols[i].forwarder, R_BIN_SIZEOF_STRINGS);
-		strncpy (tmp->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (tmp->type, "NONE", R_BIN_SIZEOF_STRINGS);
-		tmp->rva = symbols[i].rva;
-		tmp->offset = symbols[i].offset;
-		tmp->size = 0;
-		tmp->ordinal = symbols[i].ordinal;
-		r_array_set (ret, i, tmp);
+		strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->forwarder, (char*)symbols[i].forwarder, R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->type, "NONE", R_BIN_SIZEOF_STRINGS);
+		ptr->rva = symbols[i].rva;
+		ptr->offset = symbols[i].offset;
+		ptr->size = 0;
+		ptr->ordinal = symbols[i].ordinal;
+		r_array_set (ret, i, ptr);
 	}
 	free (symbols);
 	return ret;
@@ -116,7 +116,7 @@ static RArray symbols(RBin *bin)
 static RArray imports(RBin *bin)
 {
 	RArray ret = NULL;
-	RBinImport *tmp = NULL;
+	RBinImport *ptr = NULL;
 	struct r_bin_pe_import_t *imports = NULL;
 	int i, count;
 
@@ -128,16 +128,16 @@ static RArray imports(RBin *bin)
 		return NULL;
 	}
 	for (i = 0; i < count; i++) {
-		if (!(tmp = MALLOC_STRUCT (RBinImport)))
+		if (!(ptr = MALLOC_STRUCT (RBinImport)))
 			break;
-		strncpy (tmp->name, (char*)imports[i].name, R_BIN_SIZEOF_STRINGS);
-		strncpy (tmp->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (tmp->type, "NONE", R_BIN_SIZEOF_STRINGS);
-		tmp->rva = imports[i].rva;
-		tmp->offset = imports[i].offset;
-		tmp->ordinal = imports[i].ordinal;
-		tmp->hint = imports[i].hint;
-		r_array_set (ret, i, tmp);
+		strncpy (ptr->name, (char*)imports[i].name, R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->type, "NONE", R_BIN_SIZEOF_STRINGS);
+		ptr->rva = imports[i].rva;
+		ptr->offset = imports[i].offset;
+		ptr->ordinal = imports[i].ordinal;
+		ptr->hint = imports[i].hint;
+		r_array_set (ret, i, ptr);
 	}
 	free (imports);
 	return ret;

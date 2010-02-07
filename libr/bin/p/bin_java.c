@@ -24,15 +24,15 @@ static int destroy(RBin *bin)
 static RArray entries(RBin *bin)
 {
 	RArray ret;
-	RBinEntry *tmp = NULL;
+	RBinEntry *ptr = NULL;
 
 	if (!(ret = r_array_new (1)))
 		return NULL;
-	if (!(tmp = MALLOC_STRUCT (RBinEntry)))
+	if (!(ptr = MALLOC_STRUCT (RBinEntry)))
 		return ret;
-	memset (tmp, '\0', sizeof (RBinEntry));
-	tmp->offset = tmp->rva = r_bin_java_get_entrypoint (bin->bin_obj);
-	r_array_set (ret, 0, tmp);
+	memset (ptr, '\0', sizeof (RBinEntry));
+	ptr->offset = ptr->rva = r_bin_java_get_entrypoint (bin->bin_obj);
+	r_array_set (ret, 0, ptr);
 	return ret;
 }
 
@@ -44,7 +44,7 @@ static ut64 baddr(RBin *bin)
 static RArray symbols(RBin *bin)
 {
 	RArray ret = NULL;
-	RBinSymbol *tmp = NULL;
+	RBinSymbol *ptr = NULL;
 	struct r_bin_java_sym_t *symbols = NULL;
 	int count, i;
 
@@ -56,16 +56,16 @@ static RArray symbols(RBin *bin)
 		return NULL;
 	}
 	for (i = 0; i < count; i++) {
-		if (!(tmp = MALLOC_STRUCT (RBinSymbol)))
+		if (!(ptr = MALLOC_STRUCT (RBinSymbol)))
 			break;
-		strncpy (tmp->name, symbols[i].name, R_BIN_SIZEOF_STRINGS);
-		strncpy (tmp->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (tmp->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (tmp->type, "FUNC", R_BIN_SIZEOF_STRINGS);
-		tmp->rva = tmp->offset = symbols[i].offset;
-		tmp->size = symbols[i].size;
-		tmp->ordinal = 0;
-		r_array_set (ret, i, tmp);
+		strncpy (ptr->name, symbols[i].name, R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
+		ptr->rva = ptr->offset = symbols[i].offset;
+		ptr->size = symbols[i].size;
+		ptr->ordinal = 0;
+		r_array_set (ret, i, ptr);
 	}
 	free (symbols);
 	return ret;
@@ -74,7 +74,7 @@ static RArray symbols(RBin *bin)
 static RArray strings(RBin *bin)
 {
 	RArray ret = NULL;
-	RBinString *tmp = NULL;
+	RBinString *ptr = NULL;
 	struct r_bin_java_str_t *strings = NULL;
 	int count, i;
 
@@ -86,12 +86,12 @@ static RArray strings(RBin *bin)
 		return NULL;
 	}
 	for (i = 0; i < count; i++) {
-		if (!(tmp = MALLOC_STRUCT (RBinString)))
+		if (!(ptr = MALLOC_STRUCT (RBinString)))
 			break;
-		strncpy (tmp->string, strings[i].str, R_BIN_SIZEOF_STRINGS);
-		tmp->rva = tmp->offset = strings[i].offset;
-		tmp->size = strings[i].size;
-		tmp->ordinal = strings[i].ordinal;
+		strncpy (ptr->string, strings[i].str, R_BIN_SIZEOF_STRINGS);
+		ptr->rva = ptr->offset = strings[i].offset;
+		ptr->size = strings[i].size;
+		ptr->ordinal = strings[i].ordinal;
 	}
 	free (strings);
 	return ret;
