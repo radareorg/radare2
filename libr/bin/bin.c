@@ -34,7 +34,7 @@ static RArray get_strings(RBin *bin, int min) {
 	int i, matches = 0, ctr = 0, max_str = 0;
 
 	max_str = (int)(bin->size/min);
-	if (!(ret = r_array_new (max_str*100))) {
+	if (!(ret = r_array_new (max_str))) {
 		ERR ("Error allocating array\n");
 		return NULL;
 	}

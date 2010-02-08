@@ -48,36 +48,7 @@ public class RBuffer {
 	/* ... */
 }
 
-/* Generic Iterator interfaced with r_iter */
-#if 0
-// XXX not yet supported by valaswig ://
-[Compact]
-[CCode (cheader_filename="r_array.h", cprefix="r_array_", cname="void*")]
-public class RArray<G> {
-	public RArray (int size);
-	public unowned G cur ();
-	public bool next ();
-	public void rewind ();
-	public unowned G get ();
-	public unowned rArray<G> get_n (int idx);
-	public unowned G prev ();
-	public void delete ();
-	public unowned G first ();
-	public void @foreach (rArrayCallback cb);
-	public unowned G free ();
-	public void set (int idx, owned G data);
-	public rArray<G> iterator ();
-	/* defining the callback here results in signature of:
-		static gint __lambda1__void*r_iter_callback (IterableObject* foo, gpointer self) {
-					   ^---- wtf!
-		iter.vala:55.23-55.28: error: The name `name' does not exist in the context of `G'
-		public delegate int rIterCallback (G foo);
-	*/
-}
-/* TODO: move this declaration inside rIter to have access to the Generic type */
-public delegate int rArrayCallback (void *foo);
-#endif
-
+/* Generic Iterator interfaced with r_array */
 [CCode (cprefix="r_array_", cheader_filename="r_array.h", cname="void*")]
 public static class RArray<G> {
 	[CCode (cname="r_array_iterator")]

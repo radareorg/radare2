@@ -14,7 +14,7 @@ namespace Radare {
 		public int load(string file, string? plugin_name = null);
 		public int list();
 		public uint64 get_baddr();
-		public RArray<RBin.Entry> get_entries();
+		public RArray<RBin.Entry*> get_entries();
 		public RArray<RBin.Field*> get_fields();
 		public RArray<RBin.Import*> get_imports();
 		public RArray<RBin.Section*> get_sections();
