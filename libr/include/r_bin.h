@@ -22,22 +22,12 @@
 
 #define R_BIN_SIZEOF_STRINGS 256
 
-typedef struct r_bin_t RBin;
-typedef struct r_bin_handle_t RBinHandle;
-typedef struct r_bin_entry_t RBinEntry;
-typedef struct r_bin_section_t RBinSection;
-typedef struct r_bin_symbol_t RBinSymbol;
-typedef struct r_bin_import_t RBinImport;
-typedef struct r_bin_string_t RBinString;
-typedef struct r_bin_info_t RBinInfo;
-typedef struct r_bin_field_t RBinField;
-
-struct r_bin_t {
+typedef struct r_bin_t {
 	const char *file;
 	int size;
 	void *bin_obj;
 	ut64 baddr;
-	RBinInfo *info;
+	struct r_bin_info_t *info;
 	RArray entries;
 	RArray sections;
 	RArray symbols;
@@ -47,11 +37,11 @@ struct r_bin_t {
 	RArray libs;
 	RBuffer *buf;
 	void *user;
-	RBinHandle *cur;
+	struct r_bin_handle_t *cur;
 	struct list_head bins;
-};
+} RBin;
 
-struct r_bin_handle_t {
+typedef struct r_bin_handle_t {
 	char *name;
 	char *desc;
 	int (*init)(void *user);
@@ -65,27 +55,27 @@ struct r_bin_handle_t {
 	RArray (*symbols)(RBin *bin);
 	RArray (*imports)(RBin *bin);
 	RArray (*strings)(RBin *bin);
-	RBinInfo* (*info)(RBin *bin);
+	struct r_bin_info_t* (*info)(RBin *bin);
 	RArray (*fields)(RBin *bin);
 	RArray (*libs)(RBin *bin);
 	struct list_head list;
-};
+} RBinHandle;
 
-struct r_bin_entry_t {
+typedef struct r_bin_entry_t {
 	ut64 rva;
 	ut64 offset;
-};
+} RBinEntry;
 
-struct r_bin_section_t {
+typedef struct r_bin_section_t {
 	char name[R_BIN_SIZEOF_STRINGS];
 	ut64 size;
 	ut64 vsize;
 	ut64 rva;
 	ut64 offset;
 	ut64 characteristics;
-};
+} RBinSection;
 
-struct r_bin_symbol_t {
+typedef struct r_bin_symbol_t {
 	char name[R_BIN_SIZEOF_STRINGS];
 	char forwarder[R_BIN_SIZEOF_STRINGS];
 	char bind[R_BIN_SIZEOF_STRINGS];
@@ -94,9 +84,9 @@ struct r_bin_symbol_t {
 	ut64 offset;
 	ut64 size;
 	ut64 ordinal;
-};
+} RBinSymbol;
 
-struct r_bin_import_t {
+typedef struct r_bin_import_t {
 	char name[R_BIN_SIZEOF_STRINGS];
 	char bind[R_BIN_SIZEOF_STRINGS];
 	char type[R_BIN_SIZEOF_STRINGS];
@@ -104,19 +94,19 @@ struct r_bin_import_t {
 	ut64 offset;
 	ut64 ordinal;
 	ut64 hint;
-};
+} RBinImport;
 
-struct r_bin_string_t {
+typedef struct r_bin_string_t {
 	char string[R_BIN_SIZEOF_STRINGS];
 	ut64 rva;
 	ut64 offset;
 	ut64 ordinal;
 	ut64 size;
-};
+} RBinString;
 
-struct r_bin_info_t {
+typedef struct r_bin_info_t {
 	char type[R_BIN_SIZEOF_STRINGS];
-	char class[R_BIN_SIZEOF_STRINGS];
+	char bclass[R_BIN_SIZEOF_STRINGS];
 	char rclass[R_BIN_SIZEOF_STRINGS];
 	char arch[R_BIN_SIZEOF_STRINGS];
 	char machine[R_BIN_SIZEOF_STRINGS];
@@ -124,13 +114,13 @@ struct r_bin_info_t {
 	char subsystem[R_BIN_SIZEOF_STRINGS];
 	int big_endian;
 	ut64 dbg_info;
-};
+} RBinInfo;
 
-struct r_bin_field_t {
+typedef struct r_bin_field_t {
 	char name[R_BIN_SIZEOF_STRINGS];
 	ut64 rva;
 	ut64 offset;
-};
+} RBinField;
 
 #ifdef R_API
 R_API int r_bin_add(RBin *bin, RBinHandle *foo);

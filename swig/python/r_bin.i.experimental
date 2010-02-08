@@ -1,0 +1,54 @@
+%module r_bin
+%{
+extern "C" {
+#include <r_bin.h>
+#include <r_util.h>
+}
+#include <vector>
+%}
+%include <r_bin.h>
+%include "std_vector.i"
+
+typedef void** RArray;
+typedef unsigned long long ut64;
+typedef long long st64;
+typedef unsigned int ut32;
+typedef unsigned short ut16;
+typedef unsigned char ut8;
+
+namespace std {
+    %template(SectionVector) std::vector<RBinSection>;
+    %template(SymbolVector) std::vector<RBinSymbol>;
+    %template(ImportVector) std::vector<RBinImport>;
+    %template(StringVector) std::vector<RBinString>;
+    %template(FieldVector) std::vector<RBinField>;
+    %template(EntryVector) std::vector<RBinEntry>;
+};
+
+%extend RBin {
+    RBin() {
+        return r_bin_new();
+    }
+    ~RBin() {
+        r_bin_free(self);
+    }
+    int load(const char *file, const char* plugin_name) {
+        return r_bin_load(self, file, plugin_name);
+    }
+    ut64 get_baddr() {
+        return r_bin_get_baddr(self);
+    }
+    std::vector<RBinSection> get_sections() {
+        std::vector<RBinSection> ret;
+        RArray sections;
+        RBinSection *section;
+        sections = r_bin_get_sections(self);
+		r_array_rewind(sections);
+		while (*sections != 0 && (section = (RBinSection*)(*sections++)))
+            ret.push_back(*section);
+        return ret;
+    }
+    RBinInfo* get_info() {
+        return r_bin_get_info(self);
+    }
+}

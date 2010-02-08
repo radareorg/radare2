@@ -151,7 +151,7 @@ static RBinInfo* info(RBin *bin)
 	if((ret = MALLOC_STRUCT (RBinInfo)) == NULL)
 		return NULL;
 	if ((str = PE_(r_bin_pe_get_class) (bin->bin_obj))) {
-		strncpy (ret->class, str, R_BIN_SIZEOF_STRINGS);
+		strncpy (ret->bclass, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
 	strncpy(ret->rclass, "pe", R_BIN_SIZEOF_STRINGS);

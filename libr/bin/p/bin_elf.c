@@ -151,7 +151,7 @@ static RBinInfo* info(RBin *bin)
 	free (str);
 	if ((str = Elf_(r_bin_elf_get_elf_class) (bin->bin_obj)) == NULL)
 		return NULL;
-	strncpy (ret->class, str, R_BIN_SIZEOF_STRINGS);
+	strncpy (ret->bclass, str, R_BIN_SIZEOF_STRINGS);
 	free (str);
 	if ((str = Elf_(r_bin_elf_get_osabi_name) (bin->bin_obj)) == NULL)
 		return NULL;

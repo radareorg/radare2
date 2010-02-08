@@ -106,7 +106,7 @@ static RBinInfo* info(RBin *bin)
 		return NULL;
 	strncpy (ret->type, "JAVA CLASS", R_BIN_SIZEOF_STRINGS);
 	version = r_bin_java_get_version (bin->bin_obj);
-	strncpy (ret->class, version, R_BIN_SIZEOF_STRINGS);
+	strncpy (ret->bclass, version, R_BIN_SIZEOF_STRINGS);
 	free (version);
 	strncpy (ret->rclass, "class", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->os, "any", R_BIN_SIZEOF_STRINGS);
