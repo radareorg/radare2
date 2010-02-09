@@ -10,12 +10,12 @@ public static void main(string[] args)
 	unowned GLib.FileStream stdin = GLib.stdin;
 	unowned GLib.FileStream stdout = GLib.stdout;
 
-	rSocket fd;
+	RSocket fd;
 	if (args.length>2)
-		fd = rSocket.connect(args[1], args[2].to_int());
-	else fd = rSocket.connect("radare.org", 80);
+		fd = RSocket.connect(args[1], args[2].to_int());
+	else fd = RSocket.connect("radare.org", 80);
 
-	//var fd = rSocket.connect("localhost", 9999);
+	//var fd = RSocket.connect("localhost", 9999);
 	if (fd == -1) {
 		printf("Cannot connect\n");
 		return;
@@ -40,7 +40,7 @@ public static void main(string[] args)
 	} while (true);
 */
 	
-	while (fd.gets (str, 1024)>0) {
+	while (fd.gets (ref str, 1024)>0) {
 		printf (str+"\n");
 	}
 	fd.close();

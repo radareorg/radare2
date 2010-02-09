@@ -15,19 +15,19 @@ public class HashExample
 	public static void main(string[] args)
 	{
 		/* calculate crc32 */
-		print ("CRC32: %x\n", rHash.crc32("hello", 5));
+		print ("CRC32: %x\n", RHash.crc32("hello", 5));
 
 		/* directly calculate md5 */
-		var st = new rHash (true);
+		var st = new RHash (true);
 		printChecksum ("Single MD5: ",
-			(uint8*)st.do_md5 ("helloworld", 10), rHash.Size.MD5);
+			(uint8*)st.do_md5 ("helloworld", 10), RHash.Size.MD5);
 
 		/* incrementally calculate md5 */
-		st = new rHash (false);
+		st = new RHash (false);
 		st.do_md5 ("hello", 5);
 		st.do_md5 ("world", 5);
 		printChecksum ("Incremental MD5: ",
-			(uint8*)st.do_md5 (null,0), rHash.Size.MD5);
-		st.init (true, rHash.Algorithm.ALL);
+			(uint8*)st.do_md5 (null,0), RHash.Size.MD5);
+		st.init (true, RHash.Algorithm.ALL);
 	}
 }

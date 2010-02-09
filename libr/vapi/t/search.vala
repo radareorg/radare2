@@ -7,7 +7,7 @@ public class SearchExample
 	public static void main(string[] args)
 	{
 		string buf = "liblubliuamlibfoo";
-		var s = new rSearch (rSearch.Mode.KEYWORD);
+		var s = new RSearch (RSearch.Mode.KEYWORD);
 		s.kw_add ("lib", "");
 		s.set_callback (
 			(kw, user, addr) => {

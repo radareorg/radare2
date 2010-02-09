@@ -7,18 +7,22 @@ static ut32 count = 0;
 static int cb(struct r_diff_t *d, void *user,
 	struct r_diff_op_t *op)
 {
-	int i;
+	int i, rad = (int)user;
 	if (count) {
 		count++;
 		return 1;
 	}
-	printf ("0x%08llx ", op->a_off);
-	for (i = 0;i<op->a_len;i++)
-		printf ("%02x", op->a_buf[i]);
-	printf (" => ");
-	for (i = 0;i<op->b_len;i++)
-		printf ("%02x", op->b_buf[i]);
-	printf (" 0x%08llx\n", op->b_off);
+	if (rad) {
+		// TODO
+	} else {
+		printf ("0x%08llx ", op->a_off);
+		for (i = 0;i<op->a_len;i++)
+			printf ("%02x", op->a_buf[i]);
+		printf (" => ");
+		for (i = 0;i<op->b_len;i++)
+			printf ("%02x", op->b_buf[i]);
+		printf (" 0x%08llx\n", op->b_off);
+	}
 	return 1;
 }
 
@@ -29,6 +33,7 @@ static int show_help(int line)
 //		"  -l     diff lines of text\n"
 		"  -s     calculate text distance\n"
 		"  -c     count of changes\n"
+		"  -r     radare commands\n"
 		"  -d     use delta diffing\n"
 		"  -V     show version information\n");
 	return 1;
@@ -46,13 +51,16 @@ int main(int argc, char **argv)
 	int c, delta = 0;
 	char *file, *file2;
 	ut8 *bufa, *bufb;
-	int sza, szb;
+	int sza, szb, rad;
 	int mode = MODE_DIFF;
 	int showcount = 0;
 	double sim;
 
-	while ((c = getopt (argc, argv, "hcdlsV")) != -1) {
+	while ((c = getopt (argc, argv, "rhcdlsV")) != -1) {
 		switch(c) {
+		case 'r':
+			rad = 1;
+			break;
 		case 'c':
 			showcount = 1;
 			break;
@@ -94,7 +102,7 @@ int main(int argc, char **argv)
 	case MODE_DIFF:
 		r_diff_init (&d, 0LL, 0LL);
 		r_diff_set_delta (&d, delta);
-		r_diff_set_callback (&d, &cb, NULL);
+		r_diff_set_callback (&d, &cb, (void *)rad);
 		r_diff_buffers (&d, bufa, sza, bufb, szb);
 		break;
 	case MODE_DIST:

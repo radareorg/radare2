@@ -5,8 +5,8 @@ public class SyscallExample
 {
 	public static void main(string[] args)
 	{
-		var sc = new rSyscall();
-		sc.setup (rSyscall.ARCH.X86, rSyscall.OS.LINUX);
+		var sc = new RSyscall();
+		sc.setup (RSyscall.ARCH.X86, RSyscall.OS.LINUX);
 		print ("write = %d\n", sc.get("write"));
 	}
 }
