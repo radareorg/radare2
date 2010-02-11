@@ -28,8 +28,8 @@ static inline void **r_array_new(int n) {
 }
 
 static inline void **r_array_prev(void **it) {
-	void **p = it;
-	return (--it==*it)?p:it;
+	void **p = it--;
+	return (it==*it)?p:it;
 }
 
 static inline void r_array_set(void **it, int idx, void *data) {

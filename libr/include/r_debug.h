@@ -100,6 +100,20 @@ typedef struct r_debug_pid_t {
 } RDebugPid;
 
 #ifdef R_API
+R_API int r_debug_attach(struct r_debug_t *dbg, int pid);
+R_API int r_debug_detach(struct r_debug_t *dbg, int pid);
+R_API int r_debug_startv(struct r_debug_t *dbg, int argc, char **argv);
+R_API int r_debug_start(struct r_debug_t *dbg, const char *cmd);
+R_API int r_debug_stop_reason(struct r_debug_t *dbg);
+R_API int r_debug_wait(struct r_debug_t *dbg);
+R_API int r_debug_step_over(struct r_debug_t *dbg, int steps);
+R_API int r_debug_continue_until(struct r_debug_t *dbg, ut64 addr);
+R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc);
+R_API int r_debug_pid_add(struct r_debug_t *dbg);
+R_API int r_debug_pid_add_thread(struct r_debug_t *dbg);
+R_API int r_debug_pid_del(struct r_debug_t *dbg);
+R_API int r_debug_pid_del_thread(struct r_debug_t *dbg);
+
 R_API int r_debug_use(struct r_debug_t *dbg, const char *str);
 R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
 R_API int r_debug_handle_init(struct r_debug_t *dbg);

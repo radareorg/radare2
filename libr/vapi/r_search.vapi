@@ -5,7 +5,7 @@
 public class Radare.RSearch {
 	public RSearch (Mode mode);
 	public bool set_mode (Mode mode);
-	public bool set_string_limits (uint32 min, uint32 max);
+//	public bool set_string_limits (uint32 min, uint32 max);
 	public bool begin();
 	public void kw_reset();
 	public void reset();
@@ -13,12 +13,12 @@ public class Radare.RSearch {
 	public bool update_i(uint64 from, uint8 *buf, long len);
 	public bool kw_add(string kw, string binmask);
 	public bool kw_add_hex(string kw, string binmask);
-	public bool kw_add_bin(string kw, uint32 kw_len, string binmask, long bm_len);
+	public bool kw_add_bin(uint8 *kw, uint32 kw_len, uint8 *binmask, long bm_len);
 	public Keyword kw_list();
 	public int set_callback(Callback cb, void *user);
-	public int pattern_update(int size); // this is uint? long?
-	public int set_pattern_size(int size); // this is uint? long?
-	public int strings_update(uint64 addr, char *buf, int len, int enc);
+	//public int pattern_update(int size); // this is uint? long?
+	//public int set_pattern_size(int size); // this is uint? long?
+	public int strings_update(uint64 addr, string *buf, int len, int enc);
 
 	[CCode (cprefix="R_SEARCH_", cname="int")]
 	public enum Mode {
@@ -32,7 +32,7 @@ public class Radare.RSearch {
 
 	[Compact]
 	[CCode (cname="struct r_search_kw_t")]
-	public struct Keyword {
+	public class Keyword {
 		public unowned string keyword;
 		public unowned string binmask;
 		public uint8 *bin_keyword;

@@ -12,7 +12,7 @@ public class Radare.RDebug {
 	public bool attach(int pid);
 	public bool detach(int pid);
 	// TODO: add attribute to invert arraylen
-	public bool startv(string[] argv); // XXX
+	//public bool startv(string[] argv); // XXX
 	public bool start(string cmd);
 	public int stop_reason();
 

@@ -83,7 +83,7 @@ extern char r_cons_palette[CONS_PALETTE_SIZE][8];
 //extern char *r_cons_filterline;
 //extern char *r_cons_teefile;
 // not needed anymoar
-extern int (*r_cons_user_fgets)(char *buf, int len);
+//extern int (*r_cons_user_fgets)(char *buf, int len);
 
 
 /* plain colors */
@@ -147,6 +147,9 @@ enum {
 
 #ifdef R_API
 
+R_API RCons *r_cons_new ();
+R_API RCons *r_cons_free (RCons *foo);
+
 R_API void r_cons_break(void (*cb)(void *u), void *user);
 R_API void r_cons_break_end();
 
@@ -174,7 +177,7 @@ R_API void r_cons_newline();
 R_API void r_cons_flush();
 
 /* input */
-R_API int  r_cons_fgets(char *buf, int len, int argc, const char **argv);
+//R_API int  r_cons_fgets(char *buf, int len, int argc, const char **argv);
 R_API int  r_cons_readchar();
 R_API void r_cons_any_key();
 R_API int  r_cons_eof();

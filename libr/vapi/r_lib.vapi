@@ -6,14 +6,14 @@ namespace Radare {
 	public class RLibrary {
 		public RLibrary(string symname);
 		public RLibrary init(string symname);
-		public bool close(void *ptr);
-		public void* opendir(string path);
-		public string types_get(int idx);
+		public bool close(string file);
+		public int opendir(string path);
+		//public string types_get(int idx);
 
 		/* lowlevel api */
 		public static void* dl_open(string libname);
 		public void* dl_sym(string symname);
-		public static bool dl_close(void *lh);
+		public static bool dl_close(void *handle);
 		public static bool dl_check_filename(string file);
 		/* handlers */
 	// we need delegates here (function pointerz)
@@ -22,6 +22,7 @@ namespace Radare {
 		public Handler get_handler(int type);
 		//public struct Struct { }
 		[Compact]
+		[CCode (cname="struct r_lib_handler_t*")]
 		public struct Handler {
 			int type;
 			string desc;

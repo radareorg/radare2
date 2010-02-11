@@ -35,9 +35,9 @@ typedef struct r_config_t {
 } RConfig;
 
 #ifdef R_API
-R_API struct r_config_t *r_config_new(void *user);
-R_API int r_config_free(struct r_config_t *cfg);
-R_API int r_config_init(struct r_config_t *core, void *user);
+R_API RConfig *r_config_new(void *user);
+R_API int r_config_free(RConfig *cfg);
+R_API int r_config_init(RConfig *core, void *user);
 R_API void r_config_lock(RConfig *cfg, int l);
 R_API int r_config_eval(RConfig *cfg, const char *str);
 R_API struct r_config_node_t *r_config_set_i(RConfig *cfg, const char *name, const ut64 i);
@@ -46,10 +46,10 @@ R_API struct r_config_node_t *r_config_set_i_cb(RConfig *cfg, const char *name, 
 R_API int r_config_rm(RConfig *cfg, const char *name);
 R_API struct r_config_node_t *r_config_set(RConfig *cfg, const char *name, const char *value);
 R_API ut64 r_config_get_i(RConfig *cfg, const char *name);
-R_API const char *r_config_get(RConfig *cfg, const char *name);
+R_API char *r_config_get(RConfig *cfg, const char *name);
 R_API void r_config_list(RConfig *cfg, const char *str, int rad);
-R_API struct r_config_node_t *r_config_node_get(RConfig *cfg, const char *name);
-R_API struct r_config_node_t *r_config_node_new(const char *name, const char *value);
+R_API RConfigNode *r_config_node_get(RConfig *cfg, const char *name);
+R_API RConfigNode *r_config_node_new(const char *name, const char *value);
 R_API int r_config_swap(RConfig *cfg, const char *name);
 #endif
 

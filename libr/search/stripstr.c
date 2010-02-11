@@ -54,7 +54,7 @@ static int is_encoded(int encoding, unsigned char c)
 	return 0;
 }
 
-R_API int r_search_strings_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len, int enc)
+R_API int r_search_strings_update(struct r_search_t *s, ut64 from, const char *buf, int len, int enc)
 {
 	int i = 0;
 	int widechar = 0;

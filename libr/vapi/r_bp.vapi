@@ -33,7 +33,7 @@ public class Radare.RBreakpoint {
 
 	[Compact]
 	[CCode (cname="RBreakpointItem")]
-	public struct Item {
+	public class Item {
 		uint64 addr;
 		int size;
 		int rwx;

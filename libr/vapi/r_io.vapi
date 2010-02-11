@@ -64,7 +64,7 @@ namespace Radare {
 
 		/* maps */
 		[CCode (cname="RIOMap", cprefix="r_io_map_")]
-		public struct Map {
+		public class Map {
 			int fd;
 			uint64 from;
 			uint64 to;
@@ -94,6 +94,7 @@ namespace Radare {
 			int flags;
 			const string name;
 		}
-		public bool desc_add(int fd, string file, Perm perms, Handle handle);
+		// int perms -> RIOPerm ?
+		public bool desc_add(int fd, string file, int perms, Handle handle);
 	}
 }

@@ -62,16 +62,16 @@ typedef struct r_syscall_arch_handle_t {
 } RSyscallArchHandle;
 
 #ifdef R_API
-struct r_syscall_t *r_syscall_new();
-void r_syscall_free(struct r_syscall_t *ctx);
-void r_syscall_init(struct r_syscall_t *ctx);
+R_API struct r_syscall_t *r_syscall_new();
+R_API void r_syscall_free(struct r_syscall_t *ctx);
+R_API void r_syscall_init(struct r_syscall_t *ctx);
 
-int r_syscall_setup(struct r_syscall_t *ctx, int arch, int os);
-int r_syscall_setup_file(struct r_syscall_t *ctx, const char *path);
-int r_syscall_get(struct r_syscall_t *ctx, const char *str);
-struct r_syscall_list_t *r_syscall_get_n(struct r_syscall_t *ctx, int n);
-const char *r_syscall_get_i(struct r_syscall_t *ctx, int num, int swi);
-void r_syscall_list(struct r_syscall_t *ctx);
+R_API int r_syscall_setup(struct r_syscall_t *ctx, int arch, int os);
+R_API int r_syscall_setup_file(struct r_syscall_t *ctx, const char *path);
+R_API int r_syscall_get(struct r_syscall_t *ctx, const char *str);
+R_API RSyscallList *r_syscall_get_n(struct r_syscall_t *ctx, int n);
+R_API const char *r_syscall_get_i(struct r_syscall_t *ctx, int num, int swi); // XXX const char *
+R_API void r_syscall_list(struct r_syscall_t *ctx);
 #endif
 
 #endif

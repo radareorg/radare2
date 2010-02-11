@@ -195,6 +195,7 @@ R_API int r_io_map(struct r_io_t *io, const char *file, ut64 offset);
 R_API int r_io_map_read_at(struct r_io_t *io, ut64 off, ut8 *buf, int len);
 //R_API int r_io_map_read_rest(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len);
 R_API int r_io_map_write_at(struct r_io_t *io, ut64 off, const ut8 *buf, int len);
+R_API RIOMap *r_io_map_resolve(struct r_io_t *io, int fd);
 
 R_API int r_io_section_rm(struct r_io_t *io, int idx);
 R_API void r_io_section_add(struct r_io_t *io, ut64 from, ut64 to, ut64 vaddr, ut64 physical, int rwx, const char *comment);

@@ -8,7 +8,7 @@ namespace Radare {
 		public int buffers (uint8* a, int la, uint8* b, int lb);
 		//public int set_callback(...);
 		public int buffers_distance (uint8 *a, int la, uint8 *b, int lb, out uint32 distance, out double similarity);
-		public static int lines (string file, string sa, int la, string file2, string sb, int lb);
+		//public static int lines (string file, string sa, int la, string file2, string sb, int lb);
 
 		[Compact]
 		[CCode (cname="struct r_diff_handle_t", destroy_function="", free_function="" )]

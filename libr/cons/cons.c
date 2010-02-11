@@ -55,7 +55,7 @@ R_API RCons *r_cons_new ()
 	return &I;
 }
 
-R_API RCons *r_cons_free ()
+R_API RCons *r_cons_free (RCons *foo)
 {
 	/* do nothing */
 	return NULL;

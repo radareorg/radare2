@@ -8,12 +8,22 @@ namespace Radare {
 
 		public int eval(string str);
 
-		public int get(string name);
-		public string get_i(string name);
+		public string get(string name);
+		public uint64 get_i(string name);
 
-		public string set(string name, string val);
-		public string set_i(string name, string val);
+		public RConfigNode set(string name, string val);
+		public RConfigNode set_i(string name, uint64 val);
 
 		public void list(string? foo, int bar);
+	}
+
+	[CCode (cname="RConfigNode", free_function="")]
+	public class RConfigNode {
+		string name;
+		int hash;
+		int flags;
+		string @value;
+		uint64 i_value;
+		/* TODO: moar */
 	}
 }

@@ -68,33 +68,33 @@ enum {
 };
 
 #ifdef R_API
-R_API struct r_bp_t *r_bp_init(struct r_bp_t *bp);
-R_API struct r_bp_t *r_bp_new();
-R_API struct r_bp_t *r_bp_free(struct r_bp_t *bp);
+R_API RBreakpoint *r_bp_init(RBreakpoint *bp);
+R_API RBreakpoint *r_bp_new();
+R_API RBreakpoint *r_bp_free(RBreakpoint *bp);
 
-R_API int r_bp_del(struct r_bp_t *bp, ut64 addr);
+R_API int r_bp_del(RBreakpoint *bp, ut64 addr);
 
-R_API int r_bp_handle_add(struct r_bp_t *bp, struct r_bp_handle_t *foo);
-R_API int r_bp_use(struct r_bp_t *bp, const char *name);
-R_API int r_bp_handle_del(struct r_bp_t *bp, const char *name);
-R_API void r_bp_handle_list(struct r_bp_t *bp);
+R_API int r_bp_handle_add(RBreakpoint *bp, struct r_bp_handle_t *foo);
+R_API int r_bp_use(RBreakpoint *bp, const char *name);
+R_API int r_bp_handle_del(RBreakpoint *bp, const char *name);
+R_API void r_bp_handle_list(RBreakpoint *bp);
 
-R_API int r_bp_in(struct r_bp_t *bp, ut64 addr, int rwx);
-R_API int r_bp_list(struct r_bp_t *bp, int rad);
-R_API int r_bp_get_bytes(struct r_bp_t *bp, ut8 *buf, int len, int endian, int idx);
-R_API int r_bp_set_trace(struct r_bp_t *bp, ut64 addr, int set);
-//R_API int r_bp_set_trace_bp(struct r_bp_t *bp, ut64 addr, int set);
-R_API struct r_bp_item_t *r_bp_enable(struct r_bp_t *bp, ut64 addr, int set);
+R_API int r_bp_in(RBreakpoint *bp, ut64 addr, int rwx);
+R_API int r_bp_list(RBreakpoint *bp, int rad);
+R_API int r_bp_get_bytes(RBreakpoint *bp, ut8 *buf, int len, int endian, int idx);
+R_API int r_bp_set_trace(RBreakpoint *bp, ut64 addr, int set);
+//R_API int r_bp_set_trace_bp(RBreakpoint *bp, ut64 addr, int set);
+R_API RBreakpointItem *r_bp_enable(RBreakpoint *bp, ut64 addr, int set);
 
-R_API int r_bp_add_cond(struct r_bp_t *bp, const char *cond);
-R_API int r_bp_del_cond(struct r_bp_t *bp, int idx);
-R_API int r_bp_add_fault(struct r_bp_t *bp, ut64 addr, int size, int rwx);
+R_API int r_bp_add_cond(RBreakpoint *bp, const char *cond);
+R_API int r_bp_del_cond(RBreakpoint *bp, int idx);
+R_API int r_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int rwx);
 
-R_API struct r_bp_item_t *r_bp_add_sw(struct r_bp_t *bp, ut64 addr, int size, int rwx);
-R_API struct r_bp_item_t *r_bp_add_hw(struct r_bp_t *bp, ut64 addr, int size, int rwx);
+R_API RBreakpointItem *r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int rwx);
+R_API RBreakpointItem *r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int rwx);
 R_API RBreakpointItem *r_bp_at_addr(RBreakpoint *bp, ut64 addr, int rwx);
-R_API int r_bp_restore(struct r_bp_t *bp, int set);
-R_API int r_bp_recoil(struct r_bp_t *bp, ut64 addr);
+R_API int r_bp_restore(RBreakpoint *bp, int set);
+R_API int r_bp_recoil(RBreakpoint *bp, ut64 addr);
 #endif
 
 /* plugin pointers */

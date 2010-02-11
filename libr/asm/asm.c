@@ -231,14 +231,15 @@ R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char 
 	if (a->cur) {
 		if (a->cur->assemble)
 			ret = a->cur->assemble(a, aop, buf);
-		else /* find callback if no assembler support in current plugin */
-			list_for_each_prev(pos, &a->asms) {
-				struct r_asm_handle_t *h = list_entry(pos, struct r_asm_handle_t, list);
-				if (h->arch && h->assemble && has_bits(h, a->bits) && !strcmp(a->cur->arch, h->arch)) {
-					ret = h->assemble(a, aop, buf);
-					break;
-				}
+		/* find callback if no assembler support in current plugin */
+		else list_for_each_prev(pos, &a->asms) {
+			RAsmHandle *h = list_entry(pos, RAsmHandle, list);
+			if (h->arch && h->assemble && has_bits(h, a->bits)
+			&& !strcmp(a->cur->arch, h->arch)) {
+				ret = h->assemble(a, aop, buf);
+				break;
 			}
+		}
 	}
 	if (aop && ret > 0) {
 		r_hex_bin2str(aop->buf, ret, aop->buf_hex);

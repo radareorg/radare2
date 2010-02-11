@@ -80,7 +80,7 @@ R_API int r_search_set_blocksize(struct r_search_t *s, ut32 bsize);
 // TODO: this is internal API?
 R_API int r_search_mybinparse_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_aes_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_strings_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len, int enc);
+R_API int r_search_strings_update(struct r_search_t *s, ut64 from, const char *buf, int len, int enc);
 R_API int r_search_regexp_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_xrefs_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len);
 

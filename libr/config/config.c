@@ -57,7 +57,7 @@ R_API struct r_config_node_t *r_config_node_get(struct r_config_t *cfg, const ch
 	return NULL;
 }
 
-R_API const char *r_config_get(struct r_config_t *cfg, const char *name)
+R_API char *r_config_get(struct r_config_t *cfg, const char *name)
 {
 	struct r_config_node_t *node =
 		r_config_node_get(cfg, name);
@@ -67,7 +67,7 @@ R_API const char *r_config_get(struct r_config_t *cfg, const char *name)
 			return (const char *)
 				(((!strcmp("true", node->value))
 				  || (!strcmp("1", node->value)))?
-				  (const char *)1:NULL);
+				  (char *)1:NULL); // XXX (char*)1 is ugly
 		return node->value;
 	}
 	cfg->last_notfound = 1;
