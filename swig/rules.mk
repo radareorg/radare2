@@ -1,5 +1,4 @@
-LIBS=r_util.so r_bp.so r_asm.so r_diff.so r_debug.so r_hash.so r_cons.so
-LIBS+=r_core.so r_search.so r_db.so r_lib.so r_io.so libr.so
+LIBS=r_util.so r_bp.so r_asm.so r_diff.so r_core.so r_bin.so
 
 .SUFFIXES: .so
 

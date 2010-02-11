@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
 
-[CCode (cheader_filename="r_bin.h", cprefix="r_bin_", lower_case_cprefix="r_bin_")]
+[CCode (cheader_filename="r_bin.h,r_array.h,r_types.h", cprefix="r_bin_", lower_case_cprefix="r_bin_")]
 namespace Radare {
 	[Compact]
 	[CCode (cname="RBin", free_function="r_bin_free", cprefix="r_bin_")]
@@ -14,13 +14,13 @@ namespace Radare {
 		public int load(string file, string? plugin_name = null);
 		public int list();
 		public uint64 get_baddr();
-		public RArray<RBin.Entry*> get_entries();
-		public RArray<RBin.Field*> get_fields();
-		public RArray<RBin.Import*> get_imports();
-		public RArray<RBin.Section*> get_sections();
-		public RArray<RBin.String*> get_strings();
-		public RArray<RBin.Symbol*> get_symbols();
-		public RBin.Info* get_info();
+		public RArray<RBin.Entry> get_entries();
+		public RArray<RBin.Field> get_fields();
+		public RArray<RBin.Import> get_imports();
+		public RArray<RBin.Section> get_sections();
+		public RArray<RBin.String> get_strings();
+		public RArray<RBin.Symbol> get_symbols();
+		public RBin.Info get_info();
 	
 		[CCode (cname="RBinEntry", free_function="", ref_function="", unref_function="")]
 		public class Entry {

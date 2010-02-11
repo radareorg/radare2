@@ -224,7 +224,7 @@ R_API int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf
 	return ret;
 }
 
-R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
+R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf)
 {
 	int ret = 0;
 	struct list_head *pos;

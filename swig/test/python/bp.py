@@ -1,4 +1,4 @@
-from r_bp import *
+from r2.r_bp import *
 
-a = rBreakpoint ()
+a = RBreakpoint ()
 print dir(a)
