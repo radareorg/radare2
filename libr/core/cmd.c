@@ -561,11 +561,13 @@ static int cmd_bsize(void *data, const char *input)
 }
 
 static int cmd_cmp(void *data, const char *input) {
+#if 0
 	int ret;
 	FILE *fd;
 	unsigned int off;
 	unsigned char *buf;
 	RCore *core = data;
+#endif
 
 	switch (*input) {
 #if 0
@@ -699,15 +701,19 @@ static int cmd_print(void *data, const char *input)
 
 	if (input[0] && input[1]) {
 		l = (int) r_num_get (&core->num, input+2);
-		if (l>0) len = l;
-		if (l>tbs) r_core_block_size (core, l);
+		if (input[0] != 'd') {
+			if (l>0) len = l;
+			if (l>tbs) r_core_block_size (core, l);
+		}
 	}
 	
 	switch(input[0]) {
+	case 'D':
 	case 'd':
 		// TODO: move to a function...we need a flag instead of thousand config_foo's
 		{
 			int ret, idx; 
+			int i;
 			ut8 *buf = core->block;
 			char str[128];
 			char line[128];
@@ -720,7 +726,7 @@ static int cmd_print(void *data, const char *input)
 			r_asm_set_pc(&core->assembler, core->offset);
 
 			reflines = r_anal_reflines_get(&core->anal, buf, len, -1, linesout);
-			for (idx=ret=0; idx < len; idx+=ret) {
+			for (i=idx=ret=0; idx < len && i<l; idx+=ret,i++) {
 				r_asm_set_pc(&core->assembler, core->assembler.pc + ret);
 				r_anal_set_pc(&core->anal, core->anal.pc + ret);
 				if (show_comments) {
@@ -796,7 +802,8 @@ static int cmd_print(void *data, const char *input)
 		" pc [len]    output C format\n"
 		" ps [len]    print string\n"
 		" pS [len]    print wide string\n"
-		" pd [len]    disassemble N bytes\n"
+		" pd [len]    disassemble N opcodes\n"
+		" pD [len]    disassemble N bytes\n"
 		" pr [len]    print N raw bytes\n"
 		" pu [len]    print N url encoded bytes\n"
 		" pU [len]    print N wide url encoded bytes\n",
