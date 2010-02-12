@@ -31,11 +31,12 @@ install-python:
 
 install-ruby:
 	@if [ "`grep ruby supported.langs`" ]; then \
-	target=/usr/lib/ruby/1.9.1/ ; \
-	mkdir -p $$target/r2 ; \
-	echo "Installing ruby r2 modules..." ; \
-	cp -rf ruby/* $$target/r2 ; \
-	cp -rf ruby/*libr* $$target ; \
+	for a in 1.9.0 1.9.1; do \
+	mkdir -p /usr/lib/ruby/$$a/r2 ; \
+	echo "Installing ruby$$a r2 modules..." ; \
+	cp -rf ruby/* /usr/lib/ruby/$$a/r2 ; \
+	cp -rf ruby/*libr* /usr/lib/ruby/$$a ; \
+	done ; \
 	fi
 
 install-perl:
@@ -55,8 +56,8 @@ oldtest:
 	python test.py
 
 clean:
-	rm -rf python/*.so python/*.c python/*.i python/libr*
-	rm -rf perl/*.so perl/*.pm perl/*.c perl/*.i perl/libr*
-	rm -rf ruby/*.so ruby/*.c ruby/*.i ruby/libr*
+	cd python && make clean
+	cd perl && make clean
+	cd ruby && make clean
 
 .PHONY: ruby python perl clean oldtest test all
