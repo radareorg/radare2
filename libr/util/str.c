@@ -345,8 +345,8 @@ R_API int r_str_inject(char *begin, char *end, char *str, int maxlen)
 	char *tmp = alloca(len);
 	if (maxlen > 0 && ((strlen(begin)-(end-begin)+strlen(str)) > maxlen))
 		return 0;
-	memcpy(tmp, end, len);
-	strcpy(begin, str);
+	memcpy (tmp, end, len);
+	strcpy  (begin, str);
 	strcat(begin, tmp);
 	return 1;
 }
@@ -378,31 +378,29 @@ static int strsub_memcmp (char *string, char *pat, int len)
 	return res;
 }
 
+// TODO: rename r_str_replace
 R_API char *r_str_sub(char *string, char *pat, char *rep, int global)
 {
 	int patlen, templen, tempsize, repl, i;
 	char *temp, *r;
 
 	patlen = strlen (pat);
-	for (temp = (char *)NULL, i = templen = tempsize = 0, repl = 1; string[i]; )
-	{
-//	      if (repl && !memcmp(string + i, pat, patlen)) {
-		if (repl && !strsub_memcmp(string + i, pat, patlen)) {
+	for (temp = (char *)NULL, i = templen = tempsize = 0, repl = 1; string[i]; ) {
+		if (repl && !strsub_memcmp (string + i, pat, patlen)) {
 			RESIZE_MALLOCED_BUFFER (temp, templen, patlen, tempsize, 4096); //UGLY HACK (patlen * 2));
 			if (temp == NULL)
-				return NULL;
+				break;
 			for (r = rep; *r; )
 				temp[templen++] = *r++;
-
 			i += patlen;
-			repl = global != 0;
+			repl = (global != 0);
 		} else {
 			RESIZE_MALLOCED_BUFFER (temp, templen, 1, tempsize, 4096); // UGLY HACK 16);
 			temp[templen++] = string[i++];
 		}
 	}
-	if (temp != NULL)
-		temp[templen] = 0;
+	if (temp)
+		temp[templen] = '\0';
 	return (temp);
 }
 
@@ -414,14 +412,14 @@ R_API char *r_str_clean(char *str)
 	if (str == NULL)
 		return NULL;
 
-	while(str[0]&&iswhitechar(str[0]))
+	while (str[0] && iswhitechar (str[0]))
 		str = str + 1;
 
 	len = strlen(str);
 
 	if (len>0)
-	for(ptr = str+len-1;ptr!=str;ptr = ptr - 1) {
-		if (iswhitechar(ptr[0]))
+	for (ptr = str+len-1;ptr!=str;ptr = ptr - 1) {
+		if (iswhitechar (ptr[0]))
 			ptr[0]='\0';
 		else break;
 	}

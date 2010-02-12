@@ -14,8 +14,9 @@ static struct r_asm_t a;
 static int coutput = R_FALSE;
 
 static int rasm_show_help() {
-	printf ("rasm2 [-e] [-o offset] [-a arch] [-s syntax] -d \"opcode\"|\"hexpairs\"|-\n"
+	printf ("rasm2 [-e] [-o offset] [-a arch] [-s syntax] -d \"opcode\"|\"hexpairs\"|- [-f file ..]\n"
 		" -d           Disassemble from hexpair bytes\n"
+		" -f           Read data from file\n"
 		" -o [offset]  Offset where this opcode is suposed to be\n"
 		" -a [arch]    Set architecture plugin\n"
 		" -b [bits]    Set architecture bits\n"
@@ -31,8 +32,7 @@ static int rasm_show_help() {
 	return 0;
 }
 
-static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin)
-{
+static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin) {
 	struct r_asm_code_t *acode;
 	ut8 *data;
 	char *ptr = buf;
@@ -43,27 +43,27 @@ static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin)
 		clen = len; //XXX
 		data = (ut8*)buf;
 	} else if (ascii) {
-		clen = strlen(buf);
+		clen = strlen (buf);
 		data = (ut8*)buf;
 	} else {
-		while(ptr[0]) {
+		while (ptr[0]) {
 			if (ptr[0]!= ' ')
 				if (0==(++word%2))clen++;
 			ptr += 1;
 		}
-		data = alloca(clen);
-		r_hex_str2bin(buf, data);
+		data = alloca (clen);
+		r_hex_str2bin (buf, data);
 	}
 
 	if (!len || clen <= len)
 		len = clen;
 
-	r_asm_set_pc(&a, offset);
-	if (!(acode = r_asm_mdisassemble(&a, data, len)))
+	r_asm_set_pc (&a, offset);
+	if (!(acode = r_asm_mdisassemble (&a, data, len)))
 		return 0;
-	printf("%s\n", acode->buf_asm);
+	printf ("%s\n", acode->buf_asm);
 	ret = acode->len;
-	r_asm_code_free(acode);
+	r_asm_code_free (acode);
 
 	return ret;
 }
@@ -83,8 +83,7 @@ static void print_buf(char *str) {
 	} else printf ("%s\n", str);
 }
 
-static int rasm_asm(char *buf, ut64 offset, ut64 len, int bin)
-{
+static int rasm_asm(char *buf, ut64 offset, ut64 len, int bin) {
 	struct r_asm_code_t *acode;
 	struct r_asm_aop_t aop;
 	int ret, idx, i;
@@ -96,33 +95,31 @@ static int rasm_asm(char *buf, ut64 offset, ut64 len, int bin)
 		return 1;
 	}
 #endif 
-	r_asm_set_pc(&a, offset);
-	if (!(acode = r_asm_massemble(&a, buf)))
+	r_asm_set_pc (&a, offset);
+	if (!(acode = r_asm_massemble (&a, buf)))
 		return 0;
 	if (bin)
 		for (i = 0; i < acode->len; i++)
 			printf ("%c", acode->buf[i]);
 	else print_buf (acode->buf_hex);
 	for (ret = 0, idx = acode->len; idx < len; idx+=ret) {
-		if (!(ret = r_asm_assemble(&a, &aop, "nop")))
+		if (!(ret = r_asm_assemble (&a, &aop, "nop")))
 			return 0;
 		if (bin)
 			for (i = 0; i < ret; i++)
-				printf("%c", aop.buf[i]);
+				printf ("%c", aop.buf[i]);
 		else print_buf (aop.buf_hex);
 	}
-	if (!bin && len && idx == len) printf("\n");
-	r_asm_code_free(acode);
-
+	if (!bin && len && idx == len) printf ("\n");
+	r_asm_code_free (acode);
 	return idx;
 }
 
 /* asm callback */
 static int __lib_asm_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 {
-	struct r_asm_handle_t *hand = (struct r_asm_handle_t *)data;
-	//printf(" * Added (dis)assembly handler\n");
-	r_asm_add(&a, hand);
+	RAsmHandle *hand = (struct r_asm_handle_t *)data;
+	r_asm_add (&a, hand);
 	return R_TRUE;
 }
 static int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
@@ -132,20 +129,23 @@ int main(int argc, char *argv[])
 	char *arch = NULL;
 	ut64 offset = 0x8048000;
 	int dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c;
-	ut64 len = 0, idx = 0;
+	ut64 len = 0, idx = 0, fromfile = R_FALSE;
 
-	r_asm_init(&a);
-	r_lib_init(&l, "radare_plugin");
-	r_lib_add_handler(&l, R_LIB_TYPE_ASM, "(dis)assembly plugins",
+	r_asm_init (&a);
+	r_lib_init (&l, "radare_plugin");
+	r_lib_add_handler (&l, R_LIB_TYPE_ASM, "(dis)assembly plugins",
 		&__lib_asm_cb, &__lib_asm_dt, NULL);
-	r_lib_opendir(&l, r_sys_getenv ("LIBR_PLUGINS"));
+	r_lib_opendir (&l, r_sys_getenv ("LIBR_PLUGINS"));
 
 	if (argc<2)
 		return rasm_show_help ();
 
 	r_asm_use (&a, "x86"); // XXX: do not harcode default arch
-	while ((c = getopt(argc, argv, "CVa:b:s:do:Bl:hL")) != -1) {
+	while ((c = getopt (argc, argv, "CVa:b:s:do:Bl:hLf")) != -1) {
 		switch (c) {
+		case 'f':
+			fromfile = R_TRUE;
+			break;
 		case 'C':
 			coutput = R_TRUE;
 			break;
@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
 			dis = 1;
 			break;
 		case 'o':
-			offset = r_num_math(NULL, optarg);
+			offset = r_num_math (NULL, optarg);
 			break;
 		case 'B':
 			bin = 1;
@@ -173,10 +173,10 @@ int main(int argc, char *argv[])
 			len = r_num_math (NULL, optarg);
 			break;
 		case 'L':
-			r_asm_list(&a);
-			exit(1);
+			r_asm_list (&a);
+			exit (1);
 		case 'e':
-			r_asm_set_big_endian(&a, R_TRUE);
+			r_asm_set_big_endian (&a, R_TRUE);
 			break;
 		case 'V':
 			printf ("rasm2 v"VERSION"\n");
@@ -187,46 +187,56 @@ int main(int argc, char *argv[])
 	}
 
 	if (arch) {
-		if (!r_asm_use(&a, arch)) {
-			eprintf ("Error: Unknown plugin\n");
+		if (!r_asm_use (&a, arch)) {
+			eprintf ("Error: Unknown asm plugin '%s'\n", arch);
 			return 0;
 		}
-		if (!strcmp(arch, "bf"))
+		if (!strcmp (arch, "bf"))
 			ascii = 1;
-	} else if (!r_asm_use(&a, "x86")) {
+	} else if (!r_asm_use (&a, "x86")) {
 		eprintf ("Error: Cannot find asm.x86 plugin\n");
 		return 0;
 	}
-	if (!r_asm_set_bits(&a, bits))
+	if (!r_asm_set_bits (&a, bits))
 		eprintf ("cannot set bits (triying with 32)\n");
 
 	if (argv[optind]) {
-		if (!strcmp(argv[optind], "-")) {
-			char buf[R_ASM_BUFSIZE];
-			for(;;) {
-				fgets(buf, R_ASM_BUFSIZE, stdin);
-				if ((!bin || !dis) && feof(stdin))
-					break;
-				if (!bin || !dis) buf[strlen(buf)-1]='\0';
-				if (dis) ret = rasm_disasm(buf, offset, len, ascii, bin);
-				else ret = rasm_asm(buf, offset, len, bin);
-				idx += ret;
-				offset += ret;
-				if (!ret) {
-					eprintf ("invalid\n");
-					return 0;
+		if (fromfile) {
+			char *content;
+			int length;
+			content = r_file_slurp (argv[optind], &length);
+			if (content) {
+				content[length] = '\0';
+				if (dis) ret = rasm_disasm (content, offset, (ut64)length, ascii, bin);
+				else ret = rasm_asm (content, offset, (ut64)length, bin);
+			} else eprintf ("Cannot open file %s\n", argv[optind]);
+		} else {
+			if (!strcmp (argv[optind], "-")) {
+				char buf[R_ASM_BUFSIZE];
+				for (;;) {
+					fgets (buf, R_ASM_BUFSIZE, stdin);
+					if ((!bin || !dis) && feof (stdin))
+						break;
+					if (!bin || !dis) buf[strlen(buf)-1]='\0';
+					if (dis) ret = rasm_disasm (buf, offset, len, ascii, bin);
+					else ret = rasm_asm (buf, offset, len, bin);
+					idx += ret;
+					offset += ret;
+					if (!ret) {
+						eprintf ("invalid\n");
+						return 0;
+					}
+					if (len && idx >= len)
+						break;
 				}
-				if (len && idx >= len)
-					break;
+				return idx;
 			}
-			return idx;
+			if (dis) ret = rasm_disasm (argv[optind], offset, len, ascii, bin);
+			else ret = rasm_asm (argv[optind], offset, len, bin);
 		}
-		if (dis) ret = rasm_disasm(argv[optind], offset, len, ascii, bin);
-		else ret = rasm_asm(argv[optind], offset, len, bin);
 		if (!ret)
 			eprintf ("invalid\n");
 		return ret;
 	}
-
 	return 0;
 }

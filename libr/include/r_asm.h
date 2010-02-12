@@ -5,6 +5,7 @@
 
 #include <r_types.h>
 #include <list.h>
+#include <r_util.h>
 
 #define R_ASM_BUFSIZE 1024
 #define R_ASM_FASTCALL_ARGS 6
@@ -47,7 +48,14 @@ typedef struct r_asm_code_t {
 	ut8  *buf;
 	char *buf_hex;
 	char *buf_asm;
+	RList *equs; // TODO: must be a hash
 } RAsmCode;
+
+// TODO: Must use Hashtable instead of this hack
+typedef struct {
+	char *key;
+	char *value;
+} RAsmEqu;
 
 typedef struct r_asm_t {
 	int  bits;
