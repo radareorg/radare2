@@ -26,32 +26,32 @@ static ut64 baddr(RBin *bin)
 	return Elf_(r_bin_elf_get_baddr) (bin->bin_obj);
 }
 
-static RArray entries(RBin *bin)
+static RFList entries(RBin *bin)
 {
-	RArray ret;
+	RFList ret;
 	RBinEntry *ptr = NULL;
 
-	if (!(ret = r_array_new (1)))
+	if (!(ret = r_flist_new (1)))
 		return NULL;
 	if (!(ptr = MALLOC_STRUCT (RBinEntry)))
 		return ret;
 	memset (ptr, '\0', sizeof (RBinEntry));
 	ptr->offset = ptr->rva = Elf_(r_bin_elf_get_entry_offset) (bin->bin_obj);
-	r_array_set (ret, 0, ptr);
+	r_flist_set (ret, 0, ptr);
 	return ret;
 }
 
-static RArray sections(RBin *bin)
+static RFList sections(RBin *bin)
 {
 	int sections_count, i;
-	RArray ret = NULL;
+	RFList ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_elf_section_t *section = NULL;
 
 	if (!(section = Elf_(r_bin_elf_get_sections) (bin->bin_obj)))
 		return NULL;
 	for (sections_count = 0; !section[sections_count].last; sections_count++);
-	if (!(ret = r_array_new (sections_count))) {
+	if (!(ret = r_flist_new (sections_count))) {
 		free (section);
 		return NULL;
 	}
@@ -70,23 +70,23 @@ static RArray sections(RBin *bin)
 			ptr->characteristics |= 0x2;
 		if (R_BIN_ELF_SCN_IS_READABLE (section[i].flags))
 			ptr->characteristics |= 0x4;
-		r_array_set (ret, i, ptr);
+		r_flist_set (ret, i, ptr);
 	}
 	free (section);
 	return ret;
 }
 
-static RArray symbols(RBin *bin)
+static RFList symbols(RBin *bin)
 {
 	int symbols_count, i;
-	RArray ret = NULL;
+	RFList ret = NULL;
 	RBinSymbol *ptr = NULL;
 	struct r_bin_elf_symbol_t *symbol = NULL;
 
 	if (!(symbol = Elf_(r_bin_elf_get_symbols) (bin->bin_obj, R_BIN_ELF_SYMBOLS)))
 		return NULL;
 	for (symbols_count = 0; !symbol[symbols_count].last; symbols_count++);
-	if (!(ret = r_array_new (symbols_count))) {
+	if (!(ret = r_flist_new (symbols_count))) {
 		free (symbol);
 		return NULL;
 	}
@@ -101,23 +101,23 @@ static RArray symbols(RBin *bin)
 		ptr->offset = symbol[i].offset;
 		ptr->size = symbol[i].size;
 		ptr->ordinal = 0;
-		r_array_set (ret, i, ptr);
+		r_flist_set (ret, i, ptr);
 	}
 	free (symbol);
 	return ret;
 }
 
-static RArray imports(RBin *bin)
+static RFList imports(RBin *bin)
 {
 	int imports_count, i;
-	RArray ret = NULL;
+	RFList ret = NULL;
 	RBinImport *ptr = NULL;
 	struct r_bin_elf_symbol_t *import = NULL;
 
 	if (!(import = Elf_(r_bin_elf_get_symbols) (bin->bin_obj, R_BIN_ELF_IMPORTS)))
 		return NULL;
 	for (imports_count = 0; !import[imports_count].last; imports_count++);
-	if (!(ret = r_array_new (imports_count))) {
+	if (!(ret = r_flist_new (imports_count))) {
 		free (import);
 		return NULL;
 	}
@@ -131,7 +131,7 @@ static RArray imports(RBin *bin)
 		ptr->offset = import[i].offset;
 		ptr->ordinal = 0;
 		ptr->hint = 0;
-		r_array_set (ret, i, ptr);
+		r_flist_set (ret, i, ptr);
 	}
 	free (import);
 	return ret;
@@ -182,9 +182,9 @@ static RBinInfo* info(RBin *bin)
 	return ret;
 }
 
-static RArray fields(RBin *bin)
+static RFList fields(RBin *bin)
 {
-	RArray ret = NULL;
+	RFList ret = NULL;
 	RBinField *ptr = NULL;
 	struct r_bin_elf_field_t *field = NULL;
 	int i, fields_count;
@@ -192,7 +192,7 @@ static RArray fields(RBin *bin)
 	if (!(field = Elf_(r_bin_elf_get_fields) (bin->bin_obj)))
 		return NULL;
 	for (fields_count = 0; !field[fields_count].last; fields_count++);
-	if (!(ret = r_array_new (fields_count))) {
+	if (!(ret = r_flist_new (fields_count))) {
 		free (field);
 		return NULL;
 	}
@@ -202,7 +202,7 @@ static RArray fields(RBin *bin)
 		strncpy (ptr->name, field[i].name, R_BIN_SIZEOF_STRINGS);
 		ptr->rva = field[i].offset;
 		ptr->offset = field[i].offset;
-		r_array_set (ret, i, ptr);
+		r_flist_set (ret, i, ptr);
 	}
 	free (field);
 	return ret;

@@ -21,18 +21,18 @@ static int destroy(RBin *bin)
 	return R_TRUE;
 }
 
-static RArray entries(RBin *bin)
+static RFList entries(RBin *bin)
 {
-	RArray ret;
+	RFList ret;
 	RBinEntry *ptr = NULL;
 
-	if (!(ret = r_array_new (1)))
+	if (!(ret = r_flist_new (1)))
 		return NULL;
 	if (!(ptr = MALLOC_STRUCT (RBinEntry)))
 		return ret;
 	memset (ptr, '\0', sizeof (RBinEntry));
 	ptr->offset = ptr->rva = r_bin_java_get_entrypoint (bin->bin_obj);
-	r_array_set (ret, 0, ptr);
+	r_flist_set (ret, 0, ptr);
 	return ret;
 }
 
@@ -41,9 +41,9 @@ static ut64 baddr(RBin *bin)
 	return 0;
 }
 
-static RArray symbols(RBin *bin)
+static RFList symbols(RBin *bin)
 {
-	RArray ret = NULL;
+	RFList ret = NULL;
 	RBinSymbol *ptr = NULL;
 	struct r_bin_java_sym_t *symbols = NULL;
 	int count, i;
@@ -51,7 +51,7 @@ static RArray symbols(RBin *bin)
 	if (!(symbols = r_bin_java_get_symbols ((struct r_bin_java_obj_t*)bin->bin_obj)))
 		return NULL;
 	for (count = 0; !symbols[count].last; count++);
-	if (!(ret = r_array_new (count))) {
+	if (!(ret = r_flist_new (count))) {
 		free (symbols);
 		return NULL;
 	}
@@ -65,15 +65,15 @@ static RArray symbols(RBin *bin)
 		ptr->rva = ptr->offset = symbols[i].offset;
 		ptr->size = symbols[i].size;
 		ptr->ordinal = 0;
-		r_array_set (ret, i, ptr);
+		r_flist_set (ret, i, ptr);
 	}
 	free (symbols);
 	return ret;
 }
 
-static RArray strings(RBin *bin)
+static RFList strings(RBin *bin)
 {
-	RArray ret = NULL;
+	RFList ret = NULL;
 	RBinString *ptr = NULL;
 	struct r_bin_java_str_t *strings = NULL;
 	int count, i;
@@ -81,7 +81,7 @@ static RArray strings(RBin *bin)
 	if (!(strings = r_bin_java_get_strings((struct r_bin_java_obj_t*)bin->bin_obj)))
 		return NULL;
 	for (count = 0; !strings[count].last; count++);
-	if (!(ret = r_array_new (count))) {
+	if (!(ret = r_flist_new (count))) {
 		free (strings);
 		return NULL;
 	}

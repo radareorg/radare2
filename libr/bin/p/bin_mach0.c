@@ -40,17 +40,17 @@ static int check(RBin *bin)
 	return ret;
 }
 
-static RArray sections(RBin *bin)
+static RFList sections(RBin *bin)
 {
 	int count, i;
-	RArray ret = NULL;
+	RFList ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_mach0_section_t *sections = NULL;
 
 	if (!(sections = r_bin_mach0_get_sections ((struct r_bin_mach0_obj_t*)bin->bin_obj)))
 		return NULL;
 	for (count = 0; !sections[count].last; count++);
-	if (!(ret = r_array_new (count))) {
+	if (!(ret = r_flist_new (count))) {
 		free (sections);
 		return NULL;
 	}
@@ -63,23 +63,23 @@ static RArray sections(RBin *bin)
 		ptr->offset = sections[i].offset;
 		ptr->rva = sections[i].addr;
 		ptr->characteristics = 0;
-		r_array_set (ret, i, ptr);
+		r_flist_set (ret, i, ptr);
 	}
 	free (sections);
 	return ret;
 }
 
-static RArray symbols(RBin *bin)
+static RFList symbols(RBin *bin)
 {
 	int count, i;
-	RArray ret = NULL;
+	RFList ret = NULL;
 	RBinSymbol *ptr = NULL;
 	struct r_bin_mach0_symbol_t *symbols = NULL;
 
 	if (!(symbols = r_bin_mach0_get_symbols ((struct r_bin_mach0_obj_t*)bin->bin_obj)))
 		return NULL;
 	for (count = 0; !symbols[count].last; count++);
-	if (!(ret = r_array_new (count))) {
+	if (!(ret = r_flist_new (count))) {
 		free (symbols);
 		return NULL;
 	}
@@ -94,23 +94,23 @@ static RArray symbols(RBin *bin)
 		ptr->offset = symbols[i].offset;
 		ptr->size = symbols[i].size;
 		ptr->ordinal = 0;
-		r_array_set (ret, i, ptr);
+		r_flist_set (ret, i, ptr);
 	}
 	free (symbols);
 	return ret;
 }
 
-static RArray imports(RBin *bin)
+static RFList imports(RBin *bin)
 {
 	int count, i;
-	RArray ret = NULL;
+	RFList ret = NULL;
 	RBinImport *ptr = NULL;
 	struct r_bin_mach0_import_t *imports = NULL;
 
 	if (!(imports = r_bin_mach0_get_imports((struct r_bin_mach0_obj_t*)bin->bin_obj)))
 		return NULL;
 	for (count = 0; !imports[count].last; count++);
-	if (!(ret = r_array_new (count))) {
+	if (!(ret = r_flist_new (count))) {
 		free (imports);
 		return NULL;
 	}
@@ -124,7 +124,7 @@ static RArray imports(RBin *bin)
 		ptr->offset = imports[i].offset;
 		ptr->ordinal = 0;
 		ptr->hint = 0;
-		r_array_set (ret, i, ptr);
+		r_flist_set (ret, i, ptr);
 	}
 	free (imports);
 	return ret;

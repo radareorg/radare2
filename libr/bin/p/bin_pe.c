@@ -26,28 +26,28 @@ static ut64 baddr(RBin *bin)
 	return PE_(r_bin_pe_get_image_base) (bin->bin_obj);
 }
 
-static RArray entries(RBin *bin)
+static RFList entries(RBin *bin)
 {
-	RArray ret;
+	RFList ret;
 	RBinEntry *ptr = NULL;
 	struct r_bin_pe_entrypoint_t *entry = NULL;
 
 	if (!(entry = PE_(r_bin_pe_get_entrypoint) (bin->bin_obj)))
 		return NULL;
-	if (!(ret = r_array_new (1)))
+	if (!(ret = r_flist_new (1)))
 		return NULL;
 	if (!(ptr = MALLOC_STRUCT (RBinEntry)))
 		return ret;
 	ptr->offset = entry->offset;
 	ptr->rva = entry->rva;
-	r_array_set (ret, 0, ptr);
+	r_flist_set (ret, 0, ptr);
 	free (entry);
 	return ret;
 }
 
-static RArray sections(RBin *bin)
+static RFList sections(RBin *bin)
 {
-	RArray ret = NULL;
+	RFList ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_pe_section_t *sections = NULL;
 	int i, count;
@@ -55,7 +55,7 @@ static RArray sections(RBin *bin)
 	if (!(sections = PE_(r_bin_pe_get_sections)(bin->bin_obj)))
 		return NULL;
 	for (count = 0; !sections[count].last; count++);
-	if (!(ret = r_array_new (count))) {
+	if (!(ret = r_flist_new (count))) {
 		free (sections);
 		return NULL;
 	}
@@ -76,15 +76,15 @@ static RArray sections(RBin *bin)
 			ptr->characteristics |= 0x4;
 		if (R_BIN_PE_SCN_IS_SHAREABLE (sections[i].characteristics))
 			ptr->characteristics |= 0x8;
-		r_array_set (ret, i, ptr);
+		r_flist_set (ret, i, ptr);
 	}
 	free (sections);
 	return ret;
 }
 
-static RArray symbols(RBin *bin)
+static RFList symbols(RBin *bin)
 {
-	RArray ret = NULL;
+	RFList ret = NULL;
 	RBinSymbol *ptr = NULL;
 	struct r_bin_pe_export_t *symbols = NULL;
 	int i, count;
@@ -92,7 +92,7 @@ static RArray symbols(RBin *bin)
 	if (!(symbols = PE_(r_bin_pe_get_exports)(bin->bin_obj)))
 		return NULL;
 	for (count = 0; !symbols[count].last; count++);
-	if (!(ret = r_array_new (count))) {
+	if (!(ret = r_flist_new (count))) {
 		free (symbols);
 		return NULL;
 	}
@@ -107,15 +107,15 @@ static RArray symbols(RBin *bin)
 		ptr->offset = symbols[i].offset;
 		ptr->size = 0;
 		ptr->ordinal = symbols[i].ordinal;
-		r_array_set (ret, i, ptr);
+		r_flist_set (ret, i, ptr);
 	}
 	free (symbols);
 	return ret;
 }
 
-static RArray imports(RBin *bin)
+static RFList imports(RBin *bin)
 {
-	RArray ret = NULL;
+	RFList ret = NULL;
 	RBinImport *ptr = NULL;
 	struct r_bin_pe_import_t *imports = NULL;
 	int i, count;
@@ -123,7 +123,7 @@ static RArray imports(RBin *bin)
 	if (!(imports = PE_(r_bin_pe_get_imports)(bin->bin_obj)))
 		return NULL;
 	for (count = 0; !imports[count].last; count++);
-	if (!(ret = r_array_new (count))) {
+	if (!(ret = r_flist_new (count))) {
 		free (imports);
 		return NULL;
 	}
@@ -137,7 +137,7 @@ static RArray imports(RBin *bin)
 		ptr->offset = imports[i].offset;
 		ptr->ordinal = imports[i].ordinal;
 		ptr->hint = imports[i].hint;
-		r_array_set (ret, i, ptr);
+		r_flist_set (ret, i, ptr);
 	}
 	free (imports);
 	return ret;

@@ -55,7 +55,7 @@ static int rabin_show_help() {
 }
 
 static int rabin_show_entrypoints() {
-	RArray entries;
+	RFList entries;
 	RBinEntry *entry;
 	const char *env;
 	int i = 0;
@@ -72,7 +72,7 @@ static int rabin_show_entrypoints() {
 		printf ("fs symbols\n");
 	} else printf ("[Entrypoints]\n");
 
-	r_array_foreach (entries, entry) {
+	r_flist_foreach (entries, entry) {
 		if (rad) {
 			printf ("f entry%i @ 0x%08llx\n", i, baddr+entry->rva);
 			printf ("s entry%i\n", i);
@@ -90,7 +90,7 @@ static int rabin_show_entrypoints() {
 }
 
 static int rabin_show_imports(ut64 at) {
-	RArray imports;
+	RFList imports;
 	RBinImport *import;
 	ut64 baddr;
 	int i = 0;
@@ -105,7 +105,7 @@ static int rabin_show_imports(ut64 at) {
 		else printf ("[Imports]\n");
 	}
 
-	r_array_foreach (imports, import) {
+	r_flist_foreach (imports, import) {
 		if (at) {
 			if (baddr+import->rva == at || import->offset == at)
 				printf ("%s\n", import->name);
@@ -129,7 +129,7 @@ static int rabin_show_imports(ut64 at) {
 }
 
 static int rabin_show_symbols(ut64 at) {
-	RArray symbols;
+	RFList symbols;
 	RBinSymbol *symbol;
 	ut64 baddr;
 	int i = 0;
@@ -144,7 +144,7 @@ static int rabin_show_symbols(ut64 at) {
 		else printf ("[Symbols]\n");
 	}
 
-	r_array_foreach (symbols, symbol) {
+	r_flist_foreach (symbols, symbol) {
 		if (at) {
 			if ((symbol->size != 0 &&
 				((baddr+symbol->rva <= at && baddr+symbol->rva+symbol->size > at) ||
@@ -182,7 +182,7 @@ static int rabin_show_symbols(ut64 at) {
 }
 
 static int rabin_show_strings() {
-	RArray strings;
+	RFList strings;
 	RBinString *string;
 	ut64 baddr;
 	int i = 0;
@@ -195,7 +195,7 @@ static int rabin_show_strings() {
 	if (rad) printf ("fs strings\n");
 	else printf ("[strings]\n");
 
-	r_array_foreach (strings, string) {
+	r_flist_foreach (strings, string) {
 		if (rad) {
 			r_flag_name_filter (string->string);
 			printf ("f str.%s %lli @ 0x%08llx\n"
@@ -215,7 +215,7 @@ static int rabin_show_strings() {
 }
 
 static int rabin_show_sections(ut64 at) {
-	RArray sections;
+	RFList sections;
 	RBinSection *section;
 	ut64 baddr;
 	int i = 0;
@@ -230,7 +230,7 @@ static int rabin_show_sections(ut64 at) {
 		else printf ("[Sections]\n");
 	}
 
-	r_array_foreach (sections, section) {
+	r_flist_foreach (sections, section) {
 		if (at) {
 			if ((section->size != 0 &&
 				((baddr+section->rva <= at && baddr+section->rva+section->size > at) ||
@@ -308,7 +308,7 @@ static int rabin_show_info() {
 }
 
 static int rabin_show_fields() {
-	RArray fields;
+	RFList fields;
 	RBinField *field;
 	ut64 baddr;
 	int i = 0;
@@ -321,7 +321,7 @@ static int rabin_show_fields() {
 	if (rad) printf ("fs header\n");
 	else printf ("[Header fields]\n");
 
-	r_array_foreach (fields, field) {
+	r_flist_foreach (fields, field) {
 		if (rad) {
 			r_flag_name_filter (field->name);
 			printf ("f header.%s @ 0x%08llx\n",
@@ -339,7 +339,7 @@ static int rabin_show_fields() {
 }
 
 static int rabin_dump_symbols(int len) {
-	RArray symbols;
+	RFList symbols;
 	RBinSymbol *symbol;
 	ut8 *buf;
 	char *ret;
@@ -348,7 +348,7 @@ static int rabin_dump_symbols(int len) {
 	if ((symbols = r_bin_get_symbols (bin)) == NULL)
 		return R_FALSE;
 
-	r_array_foreach (symbols, symbol) {
+	r_flist_foreach (symbols, symbol) {
 		if (symbol->size != 0 && (olen > symbol->size || olen == 0))
 			len = symbol->size;
 		else if (symbol->size == 0 && olen == 0)
@@ -368,7 +368,7 @@ static int rabin_dump_symbols(int len) {
 }
 
 static int rabin_dump_sections(char *name) {
-	RArray sections;
+	RFList sections;
 	RBinSection *section;
 	ut8 *buf;
 	char *ret;
@@ -376,7 +376,7 @@ static int rabin_dump_sections(char *name) {
 	if ((sections = r_bin_get_sections (bin)) == NULL)
 		return R_FALSE;
 
-	r_array_foreach (sections, section) {
+	r_flist_foreach (sections, section) {
 		if (!strcmp (name, section->name)) {
 			if (!(buf = malloc (section->size)) ||
 					!(ret = malloc (section->size*2+1)))

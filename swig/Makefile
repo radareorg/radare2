@@ -31,7 +31,7 @@ install-python:
 
 install-ruby:
 	@if [ "`grep ruby supported.langs`" ]; then \
-	for a in 1.9.0 1.9.1; do \
+	for a in 1.8 1.9.1; do \
 	mkdir -p /usr/lib/ruby/$$a/r2 ; \
 	echo "Installing ruby$$a r2 modules..." ; \
 	cp -rf ruby/* /usr/lib/ruby/$$a/r2 ; \

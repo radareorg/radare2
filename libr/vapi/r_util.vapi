@@ -48,16 +48,16 @@ public class RBuffer {
 	/* ... */
 }
 
-/* Generic Iterator interfaced with r_array */
-[CCode (cprefix="r_array_", cheader_filename="r_array.h", cname="void*")]
-public static class RArray<G> {
-	[CCode (cname="r_array_iterator")]
-	public RArray<G> iterator();
-	[CCode (cname="r_array_unref")]
+/* Generic Iterator interfaced with r_flist */
+[CCode (cprefix="r_flist_", cheader_filename="r_flist.h", cname="void*")]
+public static class RFList<G> {
+	[CCode (cname="r_flist_iterator")]
+	public RFList<G> iterator();
+	[CCode (cname="r_flist_unref")]
 	public void unref(G *arg);
-	[CCode (cname="r_array_next")]
+	[CCode (cname="r_flist_next")]
 	public bool next();
-	[CCode (cname="r_array_get")]
+	[CCode (cname="r_flist_get")]
 	public unowned G @get();
 }
 

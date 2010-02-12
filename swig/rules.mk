@@ -16,6 +16,6 @@ test:
 	-${LANG} test-r_hash.${LANG_EXT}
 
 clean:
-	rm -f *.so r_*
+	rm -f *.so r_* libr*
 
 .PHONY: all test clean

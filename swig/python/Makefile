@@ -11,7 +11,3 @@ tri:
 
 bis:
 	valaswig-cc python r_io -I../../libr/include r_io `pkg-config --libs r_io`
-
-bin:
-	swig -python -c++ -o r_bin.cpp -Wall -DR_API -I../../libr/include r_bin.i.experimental
-	g++ -shared -fPIC -I../../libr/include -I/usr/include/python2.5 -lr_bin -lr_util -o _r_bin.so r_bin.cpp

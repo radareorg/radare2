@@ -70,7 +70,7 @@ typedef struct r_debug_handle_t {
 	int (*attach)(int pid);
 	int (*detach)(int pid);
 	int (*select)(int pid, int tid);
-	RArray (*backtrace)(int count);
+	RFList (*backtrace)(int count);
 	/* flow */
 	int (*step)(int pid); // if step() is NULL; reimplement it with traps
 	int (*cont)(int pid, int sig);
