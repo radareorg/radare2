@@ -706,6 +706,7 @@ static int cmd_print(void *data, const char *input)
 	}
 	
 	switch(input[0]) {
+	case 'D':
 	case 'd':
 		// TODO: move to a function...we need a flag instead of thousand config_foo's
 		{
@@ -799,7 +800,8 @@ static int cmd_print(void *data, const char *input)
 		" pc [len]    output C format\n"
 		" ps [len]    print string\n"
 		" pS [len]    print wide string\n"
-		" pd [len]    disassemble N bytes\n"
+		" pd [len]    disassemble N opcodes\n"
+		" pD [len]    disassemble N bytes\n"
 		" pr [len]    print N raw bytes\n"
 		" pu [len]    print N url encoded bytes\n"
 		" pU [len]    print N wide url encoded bytes\n",
