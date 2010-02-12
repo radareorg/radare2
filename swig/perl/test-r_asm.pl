@@ -1,5 +1,6 @@
 #!/usr/bin/perl
-require "r_asm.pm";
+#require "r_asm.pm";
+require "r2/r_asm.pm";
 
 sub disasm {
 	my ($a, $arch, $op) = @_;
@@ -9,14 +10,14 @@ sub disasm {
 	print("ARCH: $arch\n");
 	my $code = $a->massemble ($op);
 	if (defined($code)) {
-		my $buf = r_asmc::rAsmCode_buf_hex_get ($code);
+		my $buf = r_asmc::RAsmCode_buf_hex_get ($code);
 		print "HEX: $buf\n";
 	} else {
 		print("HEX: Cannot assemble opcode\n");
 	}
 }
 
-my $a = new r_asm::rAsm();
+my $a = new r_asm::RAsm();
 $a->list();
 
 disasm ($a, 'x86.olly', 'mov eax, 33');

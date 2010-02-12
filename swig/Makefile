@@ -40,12 +40,13 @@ install-ruby:
 
 install-perl:
 	@echo "Installing perl r2 modules... NOT YET IMPLEMENTED"
-	@#if [ "`grep perl supported.langs`" ]; then \
-	#target=/usr/lib/ruby/1.9.1/ ; \
-	#mkdir -p $$target/r2 ; \
-	#cp -rf ruby/* $$target/r2 ; \
-	#cp -rf ruby/*libr* $$target ; \
-	#fi
+	@if [ "`grep perl supported.langs`" ]; then \
+	target=`perl -e 'print $$INC[0]'` ; \
+	mkdir -p $$target/r2 ; \
+	cp -rf perl/*.so $$target/ ; \
+	cp -rf perl/*.pm $$target/r2 ; \
+	cp -rf perl/*libr* $$target/r2 ; \
+	fi
 
 install: install-python install-ruby install-perl
 
