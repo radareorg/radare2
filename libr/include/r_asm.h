@@ -79,7 +79,7 @@ typedef struct r_asm_handle_t {
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	int (*disassemble)(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len);
-	int (*assemble)(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf);
+	int (*assemble)(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf);
 	int (*set_subarch)(struct r_asm_t *a, const char *buf);
 	struct r_asm_fastcall_t *fastcall[R_ASM_FASTCALL_ARGS];
 	struct list_head list;
@@ -105,6 +105,13 @@ R_API int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf
 R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf);
 R_API struct r_asm_code_t* r_asm_mdisassemble(struct r_asm_t *a, ut8 *buf, ut64 len);
 R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf);
+
+/* code.c */
+R_API RAsmCode *r_asm_code_new();
+R_API int r_asm_code_init(struct r_asm_code_t *acode);
+R_API void* r_asm_code_free(struct r_asm_code_t *acode);
+R_API int r_asm_code_set_equ (RAsmCode *code, const char *key, const char *value);
+R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str);
 
 /* plugin pointers */
 extern struct r_asm_handle_t r_asm_plugin_dummy;

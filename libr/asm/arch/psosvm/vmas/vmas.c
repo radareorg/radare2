@@ -447,7 +447,7 @@ static int getInt(char* s, unsigned *number)
 	return 0;
 }
 
-int psosvm_assemble(unsigned char *bytes, char *string)
+int psosvm_assemble(unsigned char *bytes, const char *string)
 {
 	int ret=0;
 	int i;

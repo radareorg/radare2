@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 
-require 'r_bin'
+require 'r2/r_bin'
 
 bin = R_bin::RBin.new
 bin.load("/bin/ls", nil)

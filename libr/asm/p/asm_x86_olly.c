@@ -20,7 +20,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	return aop->inst_len;
 }
 
-static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf) {
+static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf) {
 	static t_asmmodel asm_obj;
 	int attempt, constsize, oattempt = 0, oconstsize = 0, ret = 0, oret = 0xCAFE;
 

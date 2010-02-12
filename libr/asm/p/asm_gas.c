@@ -14,7 +14,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 #endif
 
 // XXX: TODO Implement
-static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, char *buf)
+static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf)
 {
 	int len = 0;
 	char cmd[R_ASM_BUFSIZE];

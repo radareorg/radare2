@@ -3,35 +3,33 @@
 #include <stdio.h>
 #include <r_asm.h>
 
-R_API RAsmCode *r_asm_code_new(const char *buf) {
-	RAsmCode *code = R_NEW (RAsmCode);
-	if (!code)
+R_API RAsmCode *r_asm_code_new() {
+	RAsmCode *acode = R_NEW (RAsmCode);
+	if (!acode)
 		return NULL;
-	code->equs = r_list_new ();
-	if (!(code->buf_asm = malloc (strlen (buf)+1)))
-		return r_asm_code_free (code);
-	memcpy (code->buf_asm, buf, strlen (buf)+1);
-	if (!(code->buf_hex = malloc (2)))
-		return r_asm_code_free (code);
-	if (!(code->buf = malloc (2)))
-		return r_asm_code_free (code);
-	return code;
+	r_asm_code_init(acode);
+	return acode;
+}
+
+R_API int r_asm_code_init(struct r_asm_code_t *acode) {
+	acode->len = 0;
+	acode->equs = NULL;
+	acode->buf_asm = NULL;
+	acode->buf_hex = NULL;
+	acode->buf = NULL;
+	return R_TRUE;
 }
 
 R_API void* r_asm_code_free(struct r_asm_code_t *acode) {
-	if (acode) {
-		if (acode->equs) {
-			r_list_destroy (acode->equs);
-			r_list_free (acode->equs);
-		}
-		if (acode->buf)
-			free (acode->buf);
-		if (acode->buf_hex)
-			free (acode->buf_hex);
-		if (acode->buf_asm)
-			free (acode->buf_asm);
-		free (acode);
-	}
+	if (!acode)
+		return NULL;
+	if (acode->buf)
+		free (acode->buf);
+	if (acode->buf_hex)
+		free (acode->buf_hex);
+	if (acode->buf_asm)
+		free (acode->buf_asm);
+	free (acode);
 	return NULL;
 }
 

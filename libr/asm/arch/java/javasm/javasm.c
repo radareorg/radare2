@@ -361,7 +361,7 @@ static void check_eof(FILE *fd)
 	}
 }
 
-int java_assemble(unsigned char *bytes, char *string)
+int java_assemble(unsigned char *bytes, const char *string)
 {
 	int i;
 	char name[128];

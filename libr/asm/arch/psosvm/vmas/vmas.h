@@ -3,6 +3,6 @@
 
 int psosvm_disasm(const ut8 *bytes, char *output);
 int psosvmasm_init();
-int psosvm_assemble(unsigned char *bytes, char *string);
+int psosvm_assemble(unsigned char *bytes, const char *string);
 
 #endif

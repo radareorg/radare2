@@ -213,12 +213,12 @@ R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char 
 R_API struct r_asm_code_t* r_asm_mdisassemble(struct r_asm_t *a, ut8 *buf, ut64 len) {
 	struct r_asm_aop_t aop;
 	struct r_asm_code_t *acode;
+	char *ptr = NULL;
 	int ret, slen;
 	ut64 idx;
 
-	if (!(acode = MALLOC_STRUCT(struct r_asm_code_t)))
+	if (!(acode = r_asm_code_new()))
 		return NULL;
-
 	if (!(acode->buf = malloc(len)))
 		return r_asm_code_free(acode);
 	memcpy(acode->buf, buf, len);
@@ -256,7 +256,15 @@ R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
 	int labels = 0, stage, ret, idx, ctr, i, j;
 	ut64 label_offset;
 
-	acode = r_asm_code_new (buf);
+	if (!(acode = r_asm_code_new()))
+		return NULL;
+	if(!(acode->buf_asm = malloc(strlen(buf)+1)))
+		return r_asm_code_free(acode);
+	memcpy(acode->buf_asm, buf, strlen(buf)+1);
+	if(!(acode->buf_hex = malloc(2)))
+		return r_asm_code_free(acode);
+	if(!(acode->buf = malloc(2)))
+		return r_asm_code_free(acode);
 
 	if (buf == NULL)
 		return r_asm_code_free (acode);
@@ -279,6 +287,10 @@ R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
 			continue;
 		for (idx = ret = i = j = 0, label_offset = a->pc, acode->buf_hex[0] = '\0';
 			i <= ctr; i++, idx += ret, label_offset += ret) {
+			if (!tokens[i][0]) {
+				ret = 0;
+				continue;
+			}
 			strncpy (buf_token, tokens[i], R_ASM_BUFSIZE);
 			if (stage == 1)
 				r_asm_set_pc (a, a->pc + ret);

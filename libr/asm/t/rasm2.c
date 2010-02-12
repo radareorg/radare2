@@ -47,7 +47,7 @@ static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin) {
 		data = (ut8*)buf;
 	} else {
 		while (ptr[0]) {
-			if (ptr[0]!= ' ')
+			if (ptr[0]!= ' ' && ptr[0]!= '\n' && ptr[0]!= '\r')
 				if (0==(++word%2))clen++;
 			ptr += 1;
 		}
@@ -126,10 +126,10 @@ static int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_
 
 int main(int argc, char *argv[])
 {
-	char *arch = NULL;
+	char *arch = NULL, *file = NULL;
 	ut64 offset = 0x8048000;
 	int dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c;
-	ut64 len = 0, idx = 0, fromfile = R_FALSE;
+	ut64 len = 0, idx = 0;
 
 	r_asm_init (&a);
 	r_lib_init (&l, "radare_plugin");
@@ -141,10 +141,10 @@ int main(int argc, char *argv[])
 		return rasm_show_help ();
 
 	r_asm_use (&a, "x86"); // XXX: do not harcode default arch
-	while ((c = getopt (argc, argv, "CVa:b:s:do:Bl:hLf")) != -1) {
+	while ((c = getopt (argc, argv, "CVa:b:s:do:Bl:hLf:")) != -1) {
 		switch (c) {
 		case 'f':
-			fromfile = R_TRUE;
+			file = optarg;
 			break;
 		case 'C':
 			coutput = R_TRUE;
@@ -200,40 +200,39 @@ int main(int argc, char *argv[])
 	if (!r_asm_set_bits (&a, bits))
 		eprintf ("cannot set bits (triying with 32)\n");
 
-	if (argv[optind]) {
-		if (fromfile) {
-			char *content;
-			int length;
-			content = r_file_slurp (argv[optind], &length);
-			if (content) {
-				content[length] = '\0';
-				if (dis) ret = rasm_disasm (content, offset, (ut64)length, ascii, bin);
-				else ret = rasm_asm (content, offset, (ut64)length, bin);
-			} else eprintf ("Cannot open file %s\n", argv[optind]);
-		} else {
-			if (!strcmp (argv[optind], "-")) {
-				char buf[R_ASM_BUFSIZE];
-				for (;;) {
-					fgets (buf, R_ASM_BUFSIZE, stdin);
-					if ((!bin || !dis) && feof (stdin))
-						break;
-					if (!bin || !dis) buf[strlen(buf)-1]='\0';
-					if (dis) ret = rasm_disasm (buf, offset, len, ascii, bin);
-					else ret = rasm_asm (buf, offset, len, bin);
-					idx += ret;
-					offset += ret;
-					if (!ret) {
-						eprintf ("invalid\n");
-						return 0;
-					}
-					if (len && idx >= len)
-						break;
+	if (file) {
+		char *content;
+		int length;
+		content = r_file_slurp (file, &length);
+		if (content) {
+			content[length] = '\0';
+			if (dis) ret = rasm_disasm (content, offset, len, ascii, bin);
+			else ret = rasm_asm (content, offset, len, bin);
+			free (content);
+		} else eprintf ("Cannot open file %s\n", file);
+	} else if (argv[optind]) {
+		if (!strcmp (argv[optind], "-")) {
+			char buf[R_ASM_BUFSIZE];
+			for (;;) {
+				fgets (buf, R_ASM_BUFSIZE, stdin);
+				if ((!bin || !dis) && feof (stdin))
+					break;
+				if (!bin || !dis) buf[strlen(buf)-1]='\0';
+				if (dis) ret = rasm_disasm (buf, offset, len, ascii, bin);
+				else ret = rasm_asm (buf, offset, len, bin);
+				idx += ret;
+				offset += ret;
+				if (!ret) {
+					eprintf ("invalid\n");
+					return 0;
 				}
-				return idx;
+				if (len && idx >= len)
+					break;
 			}
-			if (dis) ret = rasm_disasm (argv[optind], offset, len, ascii, bin);
-			else ret = rasm_asm (argv[optind], offset, len, bin);
+			return idx;
 		}
+		if (dis) ret = rasm_disasm (argv[optind], offset, len, ascii, bin);
+		else ret = rasm_asm (argv[optind], offset, len, bin);
 		if (!ret)
 			eprintf ("invalid\n");
 		return ret;
