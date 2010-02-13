@@ -15,6 +15,9 @@ fastcall${EXT_EXE}: fastcall.o
 	${CC} fastcall.o ${LDPATH} ${LDFLAGS} -o fastcall${EXT_EXE} 
 	@#-Wl,-R.. -L.. -lr_asm -o fastcall
 
+test:
+	./rasm2 -f test.asm
+
 myclean:
 	rm -f fastcall fastcall.o
 
