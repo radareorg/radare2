@@ -227,7 +227,7 @@ R_API struct r_asm_code_t* r_asm_mdisassemble(struct r_asm_t *a, ut8 *buf, ut64 
 		return r_asm_code_free(acode);
 	
 	for (idx = ret = slen = 0, acode->buf_asm[0] = '\0'; idx < len; idx+=ret) {
-		r_asm_set_pc(a, a->pc + idx);
+		r_asm_set_pc(a, a->pc + ret);
 		ret = r_asm_disassemble (a, &aop, buf+idx, len-idx);
 		if (ret<1) {
 			eprintf ("error disassemble at offset %lld\n", idx);
@@ -287,7 +287,6 @@ R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
 		if (stage == 0 && !labels)
 			continue;
 		ret = 0;
-off=a->pc;
 		for (idx = ret = i = j = 0, acode->buf_hex[0] = '\0';
 			i <= ctr; i++, idx += ret) {
 			if (!tokens[i][0]) {
