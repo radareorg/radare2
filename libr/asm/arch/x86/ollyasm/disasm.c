@@ -150,7 +150,7 @@ static void DecodeNR(int index) {
 // offset - constant part of address, dsize - data size in bytes. If global
 // flag 'symbolic' is set, function also tries to decode offset as name of
 // some label.
-static void Memadr(int defseg,const char *descr,long offset,int dsize) {
+static void Memadr(int defseg,const char *descr,slong offset,int dsize) {
   int i,n,seg;
   char *pr;
   char s[TEXTLEN];
@@ -188,10 +188,10 @@ static void Memadr(int defseg,const char *descr,long offset,int dsize) {
       if (*descr!='\0') pr[n++]='+';
       strcpy(pr+n,s); n+=i; }
     else if (offset<0 && offset>-16384 && *descr!='\0')
-      n+=sprintf(pr+n,"-%lX",-offset);
+      n+=sprintf(pr+n,"-"LFMT,-offset);
     else {
       if (*descr!='\0') pr[n++]='+';
-      n+=sprintf(pr+n,"%lX",offset);
+      n+=sprintf(pr+n,LFMT,offset);
     };
   };
   pr[n++]=']'; pr[n]='\0';
@@ -500,7 +500,7 @@ static void DecodeXL(void) {
 // Note that in most cases immediate operands are not shown in comment window.
 static void DecodeIM(int constsize,int sxt,int type) {
   int i;
-  signed long data;
+  slong data;
   ulong l;
   char name[TEXTLEN],comment[TEXTLEN];
   immsize+=constsize;                    // Allows several immediate operands
@@ -538,9 +538,9 @@ static void DecodeIM(int constsize,int sxt,int type) {
     if (i!=0 && symbolic!=0) {
       strcpy(da->result+nresult,name); nresult+=i; }
     else if (type==IMU || type==IMS || type==IM2 || data>=0 || data<NEGLIMIT)
-      nresult+=sprintf(da->result+nresult,"0x%lX",data);
+      nresult+=sprintf(da->result+nresult,"0x"LFMT,data);
     else
-      nresult+=sprintf(da->result+nresult,"-0x%lX",-data);
+      nresult+=sprintf(da->result+nresult,"-0x"LFMT,-data);
     if (addcomment && comment[0]!='\0') strcpy(da->comment,comment);
   };
 };
@@ -561,7 +561,7 @@ static void DecodeVX(void) {
   if (mode>=DISASM_FILE && da->error==DAE_NOERR) {
     if ((data & 0x00008000)!=0 && memicmp("VxDCall",da->result,7)==0)
       memcpy(da->result,lowercase?"vxdjump":"VxDJump",7);
-    nresult+=sprintf(da->result+nresult,"0x%lX",data);
+    nresult+=sprintf(da->result+nresult,"0x"LFMT,data);
   };
 };
 
@@ -625,7 +625,7 @@ static void DecodeRJ(ulong offsize,ulong nextip) {
     else
       i=0;
     if (symbolic==0 || i==0)
-      nresult+=sprintf(da->result+nresult,"0x%08lX",addr);
+      nresult+=sprintf(da->result+nresult,"0x"LFMT08,addr);
     else
       nresult+=sprintf(da->result+nresult,"%.*s",TEXTLEN-nresult-25,s);
     if (symbolic==0 && i!=0 && da->comment[0]=='\0')

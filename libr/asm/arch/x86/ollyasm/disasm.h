@@ -152,10 +152,15 @@
 #ifndef uint
 #define uint unsigned int
 #endif
+//XXX Fix 64b issues
+#define ulong unsigned int
+#define slong int
+#define LFMT "%X"
+#define LFMT08 "%08X"
 //typedef unsigned char  uchar;          // Unsigned character (byte)
 typedef unsigned short ushort;         // Unsigned short
 //typedef unsigned int   uint;           // Unsigned integer
-typedef unsigned long  ulong;          // Unsigned long
+//typedef unsigned long  ulong;          // Unsigned long
 
 typedef struct t_addrdec {
   int            defseg;

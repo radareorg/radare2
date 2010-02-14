@@ -711,9 +711,9 @@ int Printfloat4(char *s,float f) {
   else if (*(ulong *)&f==0xFF800000L)
     k=sprintf(s,"-INF FF800000");
   else if ((*(ulong *)&f & 0xFF800000L)==0x7F800000L)
-    k=sprintf(s,"+NAN %08lX",*(ulong *)&f);
+    k=sprintf(s,"+NAN "LFMT08,*(ulong *)&f);
   else if ((*(ulong *)&f & 0xFF800000L)==0xFF800000L)
-    k=sprintf(s,"-NAN %08lX",*(ulong *)&f);
+    k=sprintf(s,"-NAN "LFMT08,*(ulong *)&f);
   else if (f==0.0)                     // By default, 0 is printed without
     k=sprintf(s,"0.0");                // decimal point, which I don't want.
   else
@@ -733,9 +733,9 @@ int Printfloat8(char *s,double d) {
   else if (lod==0 && hid==0xFF800000L)
     k=sprintf(s,"-INF FF800000 00000000");
   else if ((hid & 0xFFF00000L)==0x7FF00000)
-    k=sprintf(s,"+NAN %08lX %08lX",hid,lod);
+    k=sprintf(s,"+NAN "LFMT08" "LFMT08,hid,lod);
   else if ((hid & 0xFFF00000L)==0xFFF00000)
-    k=sprintf(s,"-NAN %08lX %08lX",hid,lod);
+    k=sprintf(s,"-NAN "LFMT08" "LFMT08,hid,lod);
   else if (d==0.0)                     // Print 0 with decimal point
     k=sprintf(s,"0.0");
   else
@@ -755,14 +755,14 @@ int Printfloat10(char *s,long double ext) {
     *(ulong *)(e+6)==0xFFFF8000L)
     k=sprintf(s,"-INF FFFF 80000000 00000000");
   else if ((*(ulong *)(e+6) & 0x7FFF8000L)==0x7FFF8000L)
-    k=sprintf(s,"%cNAN %04X %08lX %08lX",(e[9] & 0x80)==0?'+':'-',
+    k=sprintf(s,"%cNAN %04X "LFMT08" "LFMT08,(e[9] & 0x80)==0?'+':'-',
     (int)(*(ushort *)(e+8)),*(ulong *)(e+4),*(ulong *)e);
   else if ((*(ulong *)(e+6) & 0x7FFF0000L)==0x7FFF0000L)
-    k=sprintf(s,"%c??? %04X %08lX %08lX",(e[9] & 0x80)==0?'+':'-',
+    k=sprintf(s,"%c??? %04X "LFMT08" "LFMT08,(e[9] & 0x80)==0?'+':'-',
     (int)(*(ushort *)(e+8)),*(ulong *)(e+4),*(ulong *)e);
   else if ((*(ulong *)(e+6) & 0x7FFF0000L)!=0 &&
     (*(ulong *)(e+6) & 0x00008000)==0)
-    k=sprintf(s,"%cUNORM %04X %08lX %08lX",(e[9] & 0x80)==0?'+':'-',
+    k=sprintf(s,"%cUNORM %04X "LFMT08" "LFMT08,(e[9] & 0x80)==0?'+':'-',
     (int)(*(ushort *)(e+8)),*(ulong *)(e+4),*(ulong *)e);
   else if (*(ulong *)e==0 && *(ushort *)(e+4)==0 &&
     *(ulong *)(e+6)==0x80000000L)
