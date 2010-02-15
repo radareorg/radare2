@@ -23,6 +23,7 @@ namespace Radare {
 		public unowned RIO init();
 		public bool set_write_mask(uint8 *buf, int len);
 
+		//public uint64 off;
 		/**
 		 * Open a file using an uri specifying flags and mode
 		 *
@@ -36,10 +37,11 @@ namespace Radare {
 		public int read_at(uint64 addr, uint8 *buf, int len);
 		public RBuffer *read_buf(uint64 addr, int len);
 		public int write(uint8 *buf, int len);
-		public uint64 seek(int fd, uint64 addr, int whence);
+		public uint64 seek(uint64 addr, int whence);
 		public int system(string cmd);
 		public int close(int fd);
 		public uint64 size(int fd);
+
 
 		/* undo */
 		public void undo_enable(bool set, bool write);

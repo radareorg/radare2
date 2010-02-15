@@ -19,13 +19,13 @@ R_API void r_list_unlink (RList *list, void *ptr) {
 
 R_API void r_list_delete (RList *list, RListIter *item) {
 	if (list->head == item)
-		list->head = item->next;
+		list->head = item->n;
 	if (list->tail == item)
-		list->tail = item->prev;
-	if (item->prev)
-		item->prev->next = item->next;
-	if (item->next)
-		item->next->prev = item->prev;
+		list->tail = item->p;
+	if (item->p)
+		item->p->n = item->n;
+	if (item->n)
+		item->n->p = item->p;
 	if (list->free && item->data) {
 		list->free (item->data);
 		item->data = NULL;
@@ -44,7 +44,7 @@ R_API void r_list_destroy (RList *list) {
 	if (list->free) {
 		RListIter *it = list->head;
 		while (it) {
-			RListIter *next = it->next;
+			RListIter *next = it->n;
 			r_list_delete (list, it);
 			it = next;
 		}
@@ -64,10 +64,10 @@ R_API RListIter *r_list_append(RList *list, void *data) {
 	if (data) {
 		new = R_NEW (RListIter);
 		if (list->tail)
-			list->tail->next = new;
+			list->tail->n = new;
 		new->data = data;
-		new->prev = list->tail;
-		new->next = NULL;
+		new->p = list->tail;
+		new->n = NULL;
 		list->tail = new;
 		if (list->head == NULL)
 			list->head = new;
@@ -78,10 +78,10 @@ R_API RListIter *r_list_append(RList *list, void *data) {
 R_API RListIter *r_list_prepend(RList *list, void *data) {
 	RListIter *new = MALLOC_STRUCT (RListIter);
 	if (list->head)
-		list->head->prev = new;
+		list->head->p = new;
 	new->data = data;
-	new->next = list->head;
-	new->prev = NULL;
+	new->n = list->head;
+	new->p = NULL;
 	list->head = new;
 	if (list->tail == NULL)
 		list->tail = new;
@@ -132,7 +132,7 @@ int main () {
 
 	{
 		RListIter* i = r_list_iterator (l);
-		for (; i; i = i->next) {
+		for (; i; i = i->n) {
 			char *str = i->data;
 			printf (" * %s\n", str);
 		}

@@ -20,14 +20,12 @@ R_API ut64 r_num_htonq(ut64 value) {
         return ret;
 }
 
-R_API int r_num_rand(int max)
-{
+R_API int r_num_rand(int max) {
 	// TODO: add srand here for security and so on
 	return rand()%max;
 }
 
-R_API void r_num_minmax_swap(ut64 *a, ut64 *b)
-{
+R_API void r_num_minmax_swap(ut64 *a, ut64 *b) {
 	if (*a>*b) {
 		ut64 tmp = *a;
 		*a = *b;
@@ -35,8 +33,7 @@ R_API void r_num_minmax_swap(ut64 *a, ut64 *b)
 	}
 }
 
-R_API void r_num_minmax_swap_i(int *a, int *b)
-{
+R_API void r_num_minmax_swap_i(int *a, int *b) {
 	if (*a>*b) {
 		ut64 tmp = *a;
 		*a = *b;
@@ -44,24 +41,21 @@ R_API void r_num_minmax_swap_i(int *a, int *b)
 	}
 }
 
-R_API void r_num_init(struct r_num_t *num)
-{
+R_API void r_num_init(struct r_num_t *num) {
 	num->callback = NULL;
 	num->userptr = NULL;
 	num->value = 0LL;
 }
 
-R_API struct r_num_t *r_num_new(RNumCallback *cb, void *ptr)
-{
-	struct r_num_t *num;
-	num = (struct r_num_t*) malloc(sizeof(struct r_num_t));
-	r_num_init(num);
+R_API RNum *r_num_new(RNumCallback cb, void *ptr) {
+	RNum *num = (RNum *) malloc (sizeof (RNum));
+	r_num_init (num);
+	num->callback = cb;
 	return num;
 }
 
 /* old get_offset */
-R_API ut64 r_num_get(struct r_num_t *num, const char *str)
-{
+R_API ut64 r_num_get(struct r_num_t *num, const char *str) {
 	int i, j;
 	char lch;
 	ut64 ret = 0LL;
@@ -120,8 +114,7 @@ R_API ut64 r_num_get(struct r_num_t *num, const char *str)
 	return ret;
 }
 
-R_API ut64 r_num_op(char op, ut64 a, ut64 b)
-{
+R_API ut64 r_num_op(char op, ut64 a, ut64 b) {
 	IFDBG printf("r_num_op: %lld %c %lld\n", a,op,b);
 	switch(op) {
 	case '+': return a+b;
@@ -135,16 +128,15 @@ R_API ut64 r_num_op(char op, ut64 a, ut64 b)
 	return b;
 }
 
-R_API static ut64 r_num_math_internal(struct r_num_t *num, char *s)
-{
+R_API static ut64 r_num_math_internal(struct r_num_t *num, char *s) {
 	ut64 ret = 0LL;
 	char *p = s;
 	int i, nop, op='\0';
 
-	IFDBG printf("r_num_math_internal: %s\n", s);
+	IFDBG printf ("r_num_math_internal: %s\n", s);
 
-	for(i=0;s[i];i++) {
-		switch(s[i]) {
+	for (i=0; s[i]; i++) {
+		switch (s[i]) {
 		case '+':
 		case '-':
 		case '*':
@@ -153,31 +145,31 @@ R_API static ut64 r_num_math_internal(struct r_num_t *num, char *s)
 		case '^':
 		case '|':
 			nop = s[i]; s[i] = '\0';
-			ret = r_num_op(op, ret, r_num_get(num, p));
+			ret = r_num_op (op, ret, r_num_get (num, p));
 			op = s[i] = nop; p = s + i + 1;
 			break;
 		}
 	}
 
-	return r_num_op(op, ret, r_num_get(num, p));
+	return r_num_op (op, ret, r_num_get (num, p));
 }
 
 R_API ut64 r_num_math(struct r_num_t *num, const char *str)
 {
 	ut64 ret = 0LL;
 	char op = '+';
-	int len = strlen(str)+1;
-	char *p, *s = alloca(len);
+	int len = strlen (str)+1;
+	char *p, *s = alloca (len);
 	char *group;
 
-	IFDBG printf("r_num_math: %s\n", str);
+	IFDBG printf ("r_num_math: %s\n", str);
 
-	memcpy(s, str, len);
-	for(;*s==' ';s+=1);
+	memcpy (s, str, len);
+	for (; *s==' '; s++);
 	p = s;
 	
 	do {
-		group = strchr(p, '(');
+		group = strchr (p, '(');
 		if (group) {
 			group[0]='\0';
 			ret = r_num_op(op, ret, r_num_math_internal(num, p));

@@ -127,11 +127,11 @@ R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len)
 {
 	int ret;
 	/* check section permissions */
-	if (io->enforce_rwx && !(r_io_section_get_rwx(io, io->seek) & R_IO_READ))
+	if (io->enforce_rwx && !(r_io_section_get_rwx(io, io->off) & R_IO_READ))
 		return -1;
 
 	if (io->cached) {
-		ret = r_io_cache_read(io, io->seek, buf, len);
+		ret = r_io_cache_read(io, io->off, buf, len);
 		if (ret == len)
 			return len;
 		if (ret > 0) {
@@ -142,7 +142,7 @@ R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len)
 		if (ret == len)
 			return len;
 	}
-	ret = r_io_map_read_at (io, io->seek, buf, len);
+	ret = r_io_map_read_at (io, io->off, buf, len);
 
 	// partial reads
 	if (ret != len) {
@@ -162,7 +162,7 @@ R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len)
 
 	/* if read is cached. cache it :) */
 	if (ret != -1 && ret == len && io->cached_read)
-		r_io_cache_write (io, io->seek, buf, len);
+		r_io_cache_write (io, io->off, buf, len);
 	return ret;
 }
 
@@ -220,11 +220,11 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len)
 	int i, ret = -1;
 
 	/* check section permissions */
-	if (io->enforce_rwx && !(r_io_section_get_rwx(io, io->seek) & R_IO_WRITE))
+	if (io->enforce_rwx && !(r_io_section_get_rwx(io, io->off) & R_IO_WRITE))
 		return -1;
 
 	if (io->cached) {
-		ret = r_io_cache_write(io, io->seek, buf, len);
+		ret = r_io_cache_write(io, io->off, buf, len);
 		if (ret == len)
 			return len;
 		if (ret > 0) {
@@ -238,9 +238,9 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len)
 	/* apply write binary mask */
 	if (io->write_mask_fd != -1) {
 		ut8 *data = alloca(len);
-		r_io_seek(io, io->seek, R_IO_SEEK_SET);
+		r_io_seek(io, io->off, R_IO_SEEK_SET);
 		r_io_read(io, data, len);
-		r_io_seek(io, io->seek, R_IO_SEEK_SET);
+		r_io_seek(io, io->off, R_IO_SEEK_SET);
 		for(i=0;i<len;i++) {
 			data[i] = buf[i] & \
 				io->write_mask_buf[i%io->write_mask_len];
@@ -248,7 +248,7 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len)
 		buf = data;
 	}
 
-	if (r_io_map_write_at(io, io->seek, buf, len) != 0)
+	if (r_io_map_write_at(io, io->off, buf, len) != 0)
 		return len;
 	if (io->plugin) {
 		if (io->plugin->write)
@@ -275,28 +275,28 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence)
 	case R_IO_SEEK_SET:
 		/* TODO: Deprecate remove section align ?? */
 		offset = r_io_section_align (io, offset, 0, 0);
-		io->seek = offset;
+		io->off = offset;
 		posix_whence = SEEK_SET;
 		break;
 	case R_IO_SEEK_CUR:
-		io->seek += offset;
+		io->off += offset;
 		posix_whence = SEEK_CUR;
 		break;
 	case R_IO_SEEK_END:
-		io->seek = UT64_MAX; // XXX: depending on io bitz?
+		io->off = UT64_MAX; // XXX: depending on io bitz?
 		posix_whence = SEEK_END;
 		break;
 	}
 
 	// TODO: implement io->enforce_seek here!
 	if (io->plugin && io->plugin->lseek)
-		io->seek = io->plugin->lseek (io, io->fd, offset, whence);
+		io->off = io->plugin->lseek (io, io->fd, offset, whence);
 	// XXX can be problematic on w32..so no 64 bit offset?
-	else io->seek = lseek (io->fd, offset, posix_whence);
+	else io->off = lseek (io->fd, offset, posix_whence);
 
 	r_io_sundo_push (io);
 
-	return io->seek;
+	return io->off;
 }
 
 R_API ut64 r_io_size(struct r_io_t *io, int fd)

@@ -1953,15 +1953,15 @@ R_API int r_core_cmd_file(struct r_core_t *core, const char *file)
 R_API int r_core_cmd_command(struct r_core_t *core, const char *command)
 {
 	int len;
-	char *buf = r_sys_cmd_str (command, 0, &len);
-	char *rcmd = buf;
-	char *ptr = buf;
+	char *buf, *rcmd, *ptr;
+	rcmd = ptr = buf = r_sys_cmd_str (command, 0, &len);
 	if (buf == NULL)
 		return -1;
 	while ((ptr = strstr (rcmd, "\n"))) {
 		*ptr = '\0';
 		if (r_core_cmd (core, rcmd, 0) == -1) {
 			eprintf ("Error running command '%s'\n", rcmd);
+			break;
 		}
 		rcmd += strlen (rcmd)+1;
 	}
@@ -1998,7 +1998,9 @@ static int cmd_debug(void *data, const char *input) {
 	char *ptr;
 	switch (input[0]) {
 	case 'x':
-		r_debug_execute (&core->dbg, "\xc7\xc0\x03\x00\x00\x00\x33\xdb\x33\xcc\xc7\xc2\x10\x00\x00\x00\xcd\x80", 18);
+		r_debug_execute (&core->dbg, (ut8*)
+			"\xc7\xc0\x03\x00\x00\x00\x33\xdb\x33"
+			"\xcc\xc7\xc2\x10\x00\x00\x00\xcd\x80", 18);
 		break;
 	case 'k':
 		/* XXX: not for threads? signal is for a whole process!! */

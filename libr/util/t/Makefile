@@ -16,6 +16,8 @@ BINS+=file_slurp_hexpairs${EXT_EXE}
 BINS+=pool${EXT_EXE}
 BINS+=test_sys${EXT_EXE}
 BINS+=test_str${EXT_EXE}
+BINS+=test_file_slurp_hexpairs${EXT_EXE}
+BINS+=test_cmd_str${EXT_EXE}
 
 all: ${BINS}
 
@@ -40,8 +42,11 @@ rax2${EXT_EXE}:
 array${EXT_EXE}:
 	${CC} ${FLAGS} array.c ${EFLAGS} -o array${EXT_EXE}
 
-file_slurp_hexpairs${EXT_EXE}:
-	${CC} ${FLAGS} test_file_slurp_hexpairs.c ${EFLAGS} -o file_slurp_hexpairs${EXT_EXE}
+test_file_slurp_hexpairs${EXT_EXE}:
+	${CC} ${FLAGS} test_file_slurp_hexpairs.c ${EFLAGS} -o test_file_slurp_hexpairs${EXT_EXE}
+
+test_cmd_str${EXT_EXE}:
+	${CC} ${FLAGS} test_cmd_str.c ${EFLAGS} -o test_cmd_str${EXT_EXE}
 
 myclean:
 	rm -f ${BINS}

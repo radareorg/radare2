@@ -10,6 +10,7 @@
 
 R_API char *r_sys_cmd_strf(const char *cmd, ...)
 {
+	// FIXME Implement r_sys_cmd_strf
 	return NULL;
 }
 
@@ -65,10 +66,11 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 
 	int pid = fork();
 	if (!pid) {
-		dup2(sh_in[0], 0);
-		dup2(sh_out[1], 1);
+		dup2(sh_in[0], 0); close(sh_in[0]); close(sh_in[1]);
+		dup2(sh_out[1], 1); close(sh_out[0]); close(sh_out[1]);
 		if (sterr) dup2(sh_err[1], 2);
 		else close(2);
+		close(sh_err[0]); close(sh_err[1]); 
 		execl("/bin/sh", "sh", "-c", cmd, NULL);
 	} else {
 		char buffer[1024];
@@ -76,41 +78,47 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 		if (sterr)
 			*sterr = calloc(1, 1024);
 
+		close(sh_out[1]);
+		close(sh_err[1]);
+		close(sh_in[0]);
+		if (!inputptr || !*inputptr)
+			close(sh_in[1]);
+
 		while (1) {
 			fd_set rfds, wfds;
 			int nfd;
-			struct timeval tv;
-			tv.tv_sec=0;
-			tv.tv_usec=100000;
 
 			FD_ZERO(&rfds);
 			FD_ZERO(&wfds);
 			FD_SET(sh_out[0], &rfds);
-			FD_SET(sh_err[0], &rfds);
+			if (sterr) 
+				FD_SET(sh_err[0], &rfds);
 			if (inputptr && *inputptr)
 				FD_SET(sh_in[1], &wfds);
 
 			memset(buffer, 0, sizeof(buffer));
-			nfd = select(sh_err[0] + 1, &rfds, &wfds, NULL, &tv);
-	        if (nfd <= 0) {
-				if (waitpid(pid, NULL, WNOHANG)) break;
-				else if (nfd < 0) {
-					kill(pid, 15);
-					break;
-				} 
+			nfd = select(sh_err[0] + 1, &rfds, &wfds, NULL, NULL);
+	        if (nfd < 0) {
+				break;
 			} else {
 				if (FD_ISSET(sh_out[0], &rfds)) {
-					*len += read(sh_out[0], buffer, sizeof(buffer)-1);
+					if ((bytes = read(sh_out[0], buffer, sizeof(buffer)-1)) == 0) break;
+					*len += bytes;
 					output = r_str_concat(output, buffer);
 				} else if (FD_ISSET(sh_err[0], &rfds) && sterr) {
-					read(sh_err[0], buffer, sizeof(buffer)-1);
+					if (read(sh_err[0], buffer, sizeof(buffer)-1) == 0) break;
 					*sterr = r_str_concat(*sterr, buffer);
 				} else if (FD_ISSET(sh_in[1], &wfds) && inputptr && *inputptr) {
 					bytes = write(sh_in[1], inputptr, strlen(inputptr));
 					inputptr += bytes;
+					if (!*inputptr) close(sh_in[1]);
 				}  
 			}
 		}
+		close(sh_out[0]);
+		close(sh_err[0]);
+		close(sh_in[1]);
+
 		if (strlen(output))
 			return output;
 	}
@@ -125,4 +133,8 @@ R_API int r_sys_cmd (const char *str)
 {
 /* TODO: implement for other systems */
 	return system (str);
+}
+
+R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
+	return r_sys_cmd_str_full (cmd, input, len, NULL);
 }

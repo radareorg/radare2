@@ -249,7 +249,7 @@ R_API struct r_asm_code_t* r_asm_mdisassemble(struct r_asm_t *a, ut8 *buf, ut64 
 }
 
 R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
-	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL, *label_name = NULL,
+	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL,
 		 *tokens[R_ASM_BUFSIZE], buf_token[R_ASM_BUFSIZE];
 	int labels = 0, stage, ret, idx, ctr, i, j;
 	struct r_asm_aop_t aop;
@@ -316,7 +316,7 @@ R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
 				continue;
 			//eprintf ("LINE %d %s\n", stage, ptr_start);
 			if (labels) /* Labels */
-			if (ptr = strchr (ptr_start, ':')) {
+			if ((ptr = strchr (ptr_start, ':'))) {
 				char food[64];
 				if (stage != 0)
 					continue;
@@ -338,9 +338,11 @@ R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
 					ret = r_asm_pseudo_bits (a, ptr+6);
 				else if (!memcmp (ptr, ".byte ", 6))
 					ret = r_asm_pseudo_byte (&aop, ptr+6);
-				else if (!memcmp (ptr, ".global ", 8))
-					eprintf (".global directive not yet implemented\n");
-				else if (!memcmp (ptr, ".equ ", 5)) {
+				else if (!memcmp (ptr, ".global ", 8)) {
+				//	eprintf (".global directive not yet implemented\n");
+					ret = 0;
+					continue;
+				} else if (!memcmp (ptr, ".equ ", 5)) {
 					ptr2 = strchr (ptr+5, ',');
 					if (ptr2) {
 						*ptr2 = '\0';

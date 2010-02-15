@@ -2,8 +2,8 @@
 all: bin lang core regs hash sc socket asm search db io array list
 	@true
 
-bin:
-	valac --vapidir=.. bin.vala --pkg r_bin --pkg r_util 
+#bin:
+#	valac --vapidir=.. bin.vala --pkg r_bin --pkg r_util 
 
 bintest:
 	valac --vapidir=.. bintest.vala --pkg r_bin --pkg r_util 

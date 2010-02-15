@@ -36,21 +36,21 @@ static char* file;
 
 static int rabin_show_help() {
 	printf ("rabin2 [options] [file]\n"
-			" -e          Entrypoint\n"
-			" -i          Imports (symbols imported from libraries)\n"
-			" -s          Symbols (exports)\n"
-			" -S          Sections\n"
-			" -z          Strings\n"
-			" -I          Binary info\n"
-			" -H          Header fields\n"
-			" -o [str]    Write/Extract operations (str=help for help)\n"
-			" -f [format] Override file format autodetection\n"
-			" -r          Radare output\n"
-			" -w          Open file in rw mode\n"
-			" -L          List supported bin plugins\n"
-			" -@ [addr]   Show section, symbol or import at addr\n"
-			" -V          Show version information\n"
-			" -h          This help\n");
+		" -e          Entrypoint\n"
+		" -i          Imports (symbols imported from libraries)\n"
+		" -s          Symbols (exports)\n"
+		" -S          Sections\n"
+		" -z          Strings\n"
+		" -I          Binary info\n"
+		" -H          Header fields\n"
+		" -o [str]    Write/Extract operations (str=help for help)\n"
+		" -f [format] Override file format autodetection\n"
+		" -r          Radare output\n"
+		" -w          Open file in rw mode\n"
+		" -L          List supported bin plugins\n"
+		" -@ [addr]   Show section, symbol or import at addr\n"
+		" -V          Show version information\n"
+		" -h          This help\n");
 	return R_TRUE;
 }
 
@@ -76,11 +76,8 @@ static int rabin_show_entrypoints() {
 		if (rad) {
 			printf ("f entry%i @ 0x%08llx\n", i, baddr+entry->rva);
 			printf ("s entry%i\n", i);
-		} else {
-
-			printf ("address=0x%08llx offset=0x%08llx baddr=0x%08llx\n",
-					baddr+entry->rva, entry->offset, baddr);
-		}
+		} else printf ("address=0x%08llx offset=0x%08llx baddr=0x%08llx\n",
+				baddr+entry->rva, entry->offset, baddr);
 		i++;
 	}
 

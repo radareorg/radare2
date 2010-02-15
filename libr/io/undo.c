@@ -34,14 +34,14 @@ R_API void r_io_undo_enable(struct r_io_t *io, int s, int w)
 R_API ut64 r_io_sundo_last(struct r_io_t *io)
 {
 	return (io->undo.idx>0)?
-		io->undo.seek[io->undo.idx-2] : io->seek;
+		io->undo.seek[io->undo.idx-2] : io->off;
 }
 
 R_API void r_io_sundo(struct r_io_t *io)
 {
 	if (--io->undo.idx<0)
 		io->undo.idx = 0;
-	else io->seek = io->undo.seek[io->undo.idx-1];
+	else io->off = io->undo.seek[io->undo.idx-1];
 }
 
 R_API void r_io_sundo_redo(struct r_io_t *io)
@@ -57,9 +57,9 @@ R_API void r_io_sundo_push(struct r_io_t *io)
 	int i;
 	if (!io->undo.s_enable)
 		return;
-	if (io->undo.seek[io->undo.idx-1] == io->seek)
+	if (io->undo.seek[io->undo.idx-1] == io->off)
 		return;
-	io->undo.seek[io->undo.idx] = io->seek;
+	io->undo.seek[io->undo.idx] = io->off;
 	if (io->undo.idx==R_IO_UNDOS-1) {
 		for(i=1;i<R_IO_UNDOS;i++)
 			io->undo.seek[i-1] = io->undo.seek[i];

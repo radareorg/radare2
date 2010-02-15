@@ -57,11 +57,9 @@ public class Radare.RAsm {
 	public void *aux;
 
 	public RAsm();
-
 	public weak RAsm init();
 	public int list();
 	public bool use(string name);
-//		public bool set_arch(Asm.Arch arch);
 	public bool set_bits(int bits);
 	public bool set_syntax(Syntax syntax);
 	public bool set_pc(uint64 addr);
@@ -76,5 +74,5 @@ public class Radare.RAsm {
 	// This is the destructor
 	public void free();
 
-	public static delegate int parse_cb(RAsm a);
+	public delegate int parse_cb();
 }

@@ -203,13 +203,24 @@ int main(int argc, char *argv[])
 	if (file) {
 		char *content;
 		int length;
-		content = r_file_slurp (file, &length);
-		if (content) {
-			content[length] = '\0';
-			if (dis) ret = rasm_disasm (content, offset, len, ascii, bin);
-			else ret = rasm_asm (content, offset, len, bin);
-			free (content);
-		} else eprintf ("Cannot open file %s\n", file);
+		if (!strcmp (file, "-")) {
+			char buf[R_ASM_BUFSIZE]; // TODO: Fix this limitation
+			ret = fread (buf, 1, R_ASM_BUFSIZE, stdin);
+			if (ret == R_ASM_BUFSIZE)
+				eprintf ("WARNING: Cannot slurp more from stdin\n");
+			if (ret>=0)
+				buf[ret] = '\0';
+			if (dis) ret = rasm_disasm (buf, offset, len, ascii, bin);
+			else ret = rasm_asm (buf, offset, len, bin);
+		} else {
+			content = r_file_slurp (file, &length);
+			if (content) {
+				content[length] = '\0';
+				if (dis) ret = rasm_disasm (content, offset, len, ascii, bin);
+				else ret = rasm_asm (content, offset, len, bin);
+				free (content);
+			} else eprintf ("Cannot open file %s\n", file);
+		}
 	} else if (argv[optind]) {
 		if (!strcmp (argv[optind], "-")) {
 			char buf[R_ASM_BUFSIZE];

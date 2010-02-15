@@ -1,13 +1,18 @@
 #ifndef _INCLUDE_UTIL_R_
 #define _INCLUDE_UTIL_R_
 
-#include "r_types.h"
+#include <r_types.h>
 #include <btree.h>
-#include "r_list.h" // radare linked list
-#include "r_flist.h" // radare fixed pointer array iterators
-#include "list.h" // kernel linked list
+#include <r_list.h> // radare linked list
+#include <r_flist.h> // radare fixed pointer array iterators
+#include <list.h> // kernel linked list
 /* profiling */
 #include <sys/time.h>
+
+/* empty classes */
+typedef struct { } RSystem;
+typedef struct { } RString;
+typedef struct { } RLog;
 
 /* pool */
 typedef struct r_mem_pool_t {
@@ -56,17 +61,18 @@ typedef struct r_num_t {
 typedef ut64 (*RNumCallback)(RNum *self, const char *str, int *ok);
 
 #ifdef R_API
-R_API struct r_num_t *r_num_new(RNumCallback *cb, void *ptr);
+//R_API RBuffer *r_num_new(RNumCallback *cb, void *ptr);
+R_API RNum *r_num_new(RNumCallback cb, void *ptr);
 
 #define R_BUF_CUR -1
-R_API struct r_buf_t *r_buf_init(struct r_buf_t *b);
-R_API struct r_buf_t *r_buf_new();
-R_API int r_buf_set_bits(struct r_buf_t *b, int bitoff, int bitsize, ut64 value);
-R_API int r_buf_set_bytes(struct r_buf_t *b, ut8 *buf, int length);
-R_API int r_buf_read_at(struct r_buf_t *b, ut64 addr, ut8 *buf, int len);
-R_API int r_buf_fread_at(struct r_buf_t *b, ut64 addr, ut8 *buf, const char *fmt, int n);
-R_API int r_buf_write_at(struct r_buf_t *b, ut64 addr, const ut8 *buf, int len);
-R_API void r_buf_free(struct r_buf_t *b);
+R_API RBuffer *r_buf_init(RBuffer *b);
+R_API RBuffer *r_buf_new();
+R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value);
+R_API int r_buf_set_bytes(RBuffer *b, ut8 *buf, int length);
+R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len);
+R_API int r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n);
+R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len);
+R_API void r_buf_free(RBuffer *b);
 
 R_API struct r_mem_pool_t* r_mem_pool_deinit(struct r_mem_pool_t *pool);
 R_API struct r_mem_pool_t* r_mem_pool_init(struct r_mem_pool_t *pool, int nodesize, int poolsize, int poolcount);
@@ -111,6 +117,7 @@ R_API void r_num_init(struct r_num_t *num);
 #define ishexchar(x) ((x>='0'&&x<='9') ||  (x>='a'&&x<='f') ||  (x>='A'&&x<='F')) {
 
 /* stabilized */
+R_API char *r_str_new(char *str);
 R_API const char *r_str_bool(int b);
 R_API const char *r_str_ansi_chrn(const char *str, int n);
 R_API int r_str_ansi_len(const char *str);
@@ -148,7 +155,7 @@ R_API int r_str_escape(char *buf);
 R_API char *r_str_home(const char *str);
 R_API char *r_str_concat(char *ptr, const char *string);
 R_API char *r_str_concatf(char *ptr, const char *fmt, ...);
-R_API inline void r_str_concatch(char *x, char y);
+R_API void r_str_concatch(char *x, char y);
 
 /* hex */
 R_API int r_hex_pair2bin(const char *arg);
@@ -174,11 +181,17 @@ R_API const char *r_sys_getenv(const char *key);
 R_API int r_sys_setenv(const char *key, const char *value, int ow);
 R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, char **sterr);
 R_API int r_sys_cmd(const char *cmd);
-#define r_sys_cmd_str(cmd, input, len) r_sys_cmd_str_full(cmd, input, len, 0)
+R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len);
+//#define r_sys_cmd_str(cmd, input, len) r_sys_cmd_str_full(cmd, input, len, 0)
 R_API int r_alloca_init();
 R_API ut8 *r_alloca_bytes(int len);
 R_API char *r_alloca_str(const char *str);
 R_API int r_alloca_ret_i(int n);
+
+/* LOG */
+R_API int r_log_msg(const char *str);
+R_API int r_log_error(const char *str);
+R_API int r_log_progress(const char *str, int percent);
 #endif
 
 #endif

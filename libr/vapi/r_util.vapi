@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2009 pancake<@nopcode.org> */
 
+namespace Radare {
 //[Compact]
 //[CCode (cheader_filename="r_util.h", cprefix="r_util_")]
 //public static class Radare.RUtil {
@@ -16,48 +17,57 @@
 	//public static int offsetof(void *type, void *member);
 //}
 
-// ??? wtf
-[CCode (cheader_filename="r_util.h", cprefix="r_str_")]
-public static class RString {
-	public RString();
-	public int hash(string str);
-}
+#if FAILFAIL
+	[CCode (cheader_filename="r_util.h", cprefix="r_str_")]
+	public static class RString {
+		public RString(string arg);
+		public static int hash(string str);
+	}
 
-[CCode (cheader_filename="r_util.h", cprefix="r_num_")]
-public static class RNum {
-	public RNum(RNumCallback cb, void *user);
-	public uint64 get(string str);
-	public uint64 math(string str);
-}
-public delegate uint64 RNumCallback (RNum num, string str, int *ok);
+	[CCode (cheader_filename="r_util.h", cname="", cprefix="r_log_", free_function="")]
+	public static class RLog {
+		public static bool msg(string str);
+		public static bool err(string str);
+	}
+#endif
 
-[CCode (cheader_filename="r_util.h", cprefix="r_log_")]
-public static class RLog {
-	public bool msg(string str);
-	public bool err(string str);
-}
+	[CCode (cheader_filename="r_util.h", cprefix="r_sys_", free_function="")]
+	public static class RSystem {
+		public static int sleep (int secs);
+		public static int usleep (int usecs);
+		public static weak string getenv (string key);
+		//public static string cmd_str_full(string str, string input = "", out int len = null, out string sterr = null);
+		public static int cmd (string command);
+		public static string cmd_str (string command, string? input, out int len=null);
+	}
 
-[Compact]
-[CCode (cname="RBuffer", cheader_filename="r_util.h", cprefix="r_buf_")]
-public class RBuffer {
-	public RBuffer();
-	public int read_at(uint64 addr, uint8 *buf, int len);
-	public int write_at(uint64 addr, uint8 *buf, int len);
-	public bool set_bytes(uint8 *buf, int len);
-	//public bool memcpy(uint64 addr, uint8 *dst, uint8 *src, int len);
-	/* ... */
+	[CCode (cheader_filename="r_util.h", cprefix="r_num_", free_function="")]
+	public static class RNum {
+		public RNum(RNumCallback cb, void *user);
+		public uint64 get(string str);
+		public uint64 math(string str);
+	}
+	[CCode (cname="RNumCallback")]
+	public static delegate uint64 RNumCallback (string str, int *ok);
+
+	[Compact]
+	[CCode (cname="RBuffer", cheader_filename="r_util.h", cprefix="r_buf_", free_function="r_buf_free")]
+	public static class RBuffer {
+		public RBuffer();
+		public int read_at(uint64 addr, uint8 *buf, int len);
+		public int write_at(uint64 addr, uint8 *buf, int len);
+		public bool set_bytes(uint8 *buf, int len);
+		//public bool memcpy(uint64 addr, uint8 *dst, uint8 *src, int len);
+		// ..
+	}
 }
 
 /* Generic Iterator interfaced with r_flist */
+//[Compact] // XXX: Do not uncomment this...or generated vala code sucks and segfaults
 [CCode (cprefix="r_flist_", cheader_filename="r_flist.h", cname="void*")]
-public static class RFList<G> {
-	[CCode (cname="r_flist_iterator")]
+public class RFList<G> {
 	public RFList<G> iterator();
-	[CCode (cname="r_flist_unref")]
-	public void unref(G *arg);
-	[CCode (cname="r_flist_next")]
 	public bool next();
-	[CCode (cname="r_flist_get")]
 	public unowned G @get();
 }
 
@@ -113,3 +123,4 @@ public static class rArray<G> {
 	public rArray<G> iterator();
 }
 */
+//}

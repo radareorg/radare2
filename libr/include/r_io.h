@@ -55,7 +55,7 @@ typedef struct r_io_t {
 	int enforce_seek;
 	int cached;
 	int cached_read;
-	ut64 seek;
+	ut64 off;
 	char *redirect;
 	/* write mask */
 	void (*printf)(const char *str, ...);

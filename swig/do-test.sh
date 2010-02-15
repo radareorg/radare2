@@ -1,6 +1,11 @@
 #!/bin/sh
 LNG=$1
 
+if [ -z "$LNG" ]; then
+  echo "Usage: do-test.sh [lang] [files]"
+  exit 1
+fi
+
 if [ ! -d "test/${LNG}" ]; then
   echo "Cannot find ${LNG} test suite"
   exit 1
