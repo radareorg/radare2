@@ -29,9 +29,9 @@
 
 static struct r_lib_t l;
 static struct r_bin_t *bin;
-static int verbose = 0;
 static int rad = R_FALSE;
 static int rw = R_FALSE;
+static int va = R_FALSE;
 static char* file;
 
 static int rabin_show_help() {
@@ -45,7 +45,8 @@ static int rabin_show_help() {
 		" -H          Header fields\n"
 		" -o [str]    Write/Extract operations (str=help for help)\n"
 		" -f [format] Override file format autodetection\n"
-		" -r          Radare output\n"
+		" -r          radare output\n"
+		" -v          Use vaddr in radare output\n"
 		" -w          Open file in rw mode\n"
 		" -L          List supported bin plugins\n"
 		" -@ [addr]   Show section, symbol or import at addr\n"
@@ -70,7 +71,7 @@ static int rabin_show_entrypoints() {
 
 	r_flist_foreach (entries, entry) {
 		if (rad) {
-			printf ("f entry%i @ 0x%08llx\n", i, baddr+entry->rva);
+			printf ("f entry%i @ 0x%08llx\n", i, va?baddr+entry->rva:entry->offset);
 			printf ("s entry%i\n", i);
 		} else printf ("address=0x%08llx offset=0x%08llx baddr=0x%08llx\n",
 				baddr+entry->rva, entry->offset, baddr);
@@ -106,7 +107,7 @@ static int rabin_show_imports(ut64 at) {
 			if (rad) {
 				r_flag_name_filter (import->name);
 				printf ("f imp.%s @ 0x%08llx\n",
-						import->name, baddr+import->rva);
+						import->name, va?baddr+import->rva:import->offset);
 			} else printf ("address=0x%08llx offset=0x%08llx ordinal=%03lli "
 						   "hint=%03lli bind=%s type=%s name=%s\n",
 						   baddr+import->rva, import->offset,
@@ -150,15 +151,15 @@ static int rabin_show_symbols(ut64 at) {
 				if (symbol->size) {
 					if (!strncmp (symbol->type,"FUNC", 4))
 						printf ("CF %lli @ 0x%08llx\n",
-								symbol->size, baddr+symbol->rva);
+								symbol->size, va?baddr+symbol->rva:symbol->offset);
 					else if (!strncmp (symbol->type,"OBJECT", 6))
 							printf ("Cd %lli @ 0x%08llx\n",
-									symbol->size, baddr+symbol->rva);
+									symbol->size, va?baddr+symbol->rva:symbol->offset);
 					printf ("f sym.%s %lli @ 0x%08llx\n",
 							symbol->name, symbol->size,
-							baddr+symbol->rva);
+							va?baddr+symbol->rva:symbol->offset);
 				} else printf ("f sym.%s @ 0x%08llx\n",
-							   symbol->name, baddr+symbol->rva);
+							   symbol->name, va?baddr+symbol->rva:symbol->offset);
 			} else printf ("address=0x%08llx offset=0x%08llx ordinal=%03lli "
 						   "forwarder=%s size=%08lli bind=%s type=%s name=%s\n",
 						   baddr+symbol->rva, symbol->offset,
@@ -193,8 +194,8 @@ static int rabin_show_strings() {
 			r_flag_name_filter (string->string);
 			printf ("f str.%s %lli @ 0x%08llx\n"
 					"Cs %lli @ 0x%08llx\n",
-					string->string, string->size, baddr+string->rva,
-					string->size, baddr+string->rva);
+					string->string, string->size, va?baddr+string->rva:string->offset,
+					string->size, va?baddr+string->rva:string->offset);
 		} else printf ("address=0x%08llx offset=0x%08llx ordinal=%03lli "
 					   "size=%08lli string=%s\n",
 					   baddr+string->rva, string->offset,
@@ -234,12 +235,13 @@ static int rabin_show_sections(ut64 at) {
 			if (rad) {
 				r_flag_name_filter (section->name);
 				printf ("f section.%s @ 0x%08llx\n",
-						section->name, baddr+section->rva);
+						section->name, va?baddr+section->rva:section->offset);
 				printf ("f section.%s_end @ 0x%08llx\n",
-						section->name, baddr+section->rva+section->size);
-				printf ("CC [%02i] address=0x%08llx offset=0x%08llx size=%08lli "
+						section->name,
+						va?baddr+section->rva+section->vsize:section->offset+section->size);
+				printf ("CC [%02i] address=0x%08llx offset=0x%08llx size=%08lli vsize=%08lli"
 						"privileges=%c%c%c%c name=%s\n",
-						i, baddr+section->rva, section->offset, section->size,
+						i, baddr+section->rva, section->offset, section->size, section->vsize,
 						R_BIN_SCN_SHAREABLE (section->characteristics)?'s':'-',
 						R_BIN_SCN_READABLE (section->characteristics)?'r':'-',
 						R_BIN_SCN_WRITABLE (section->characteristics)?'w':'-',
@@ -248,9 +250,9 @@ static int rabin_show_sections(ut64 at) {
 				printf ("S 0x%08llx 0x%08llx 0x%08llx 0x%08llx %s\n",
 						section->offset, baddr+section->rva,
 						section->size, section->vsize, section->name);
-			} else printf ("idx=%02i address=0x%08llx offset=0x%08llx size=%08lli "
+			} else printf ("idx=%02i address=0x%08llx offset=0x%08llx size=%08lli vsize=%08lli"
 						   "privileges=%c%c%c%c name=%s\n",
-						   i, baddr+section->rva, section->offset, section->size,
+						   i, baddr+section->rva, section->offset, section->size, section->vsize,
 						   R_BIN_SCN_SHAREABLE (section->characteristics)?'s':'-',
 						   R_BIN_SCN_READABLE (section->characteristics)?'r':'-',
 						   R_BIN_SCN_WRITABLE (section->characteristics)?'w':'-',
@@ -321,7 +323,7 @@ static int rabin_show_fields() {
 		if (rad) {
 			r_flag_name_filter (field->name);
 			printf ("f header.%s @ 0x%08llx\n",
-					field->name, baddr+field->rva);
+					field->name, va?baddr+field->rva:field->offset);
 			printf ("[%02i] address=0x%08llx offset=0x%08llx name=%s\n",
 					i, baddr+field->rva, field->offset, field->name);
 		} else printf ("idx=%02i address=0x%08llx offset=0x%08llx name=%s\n",
@@ -507,7 +509,7 @@ int main(int argc, char **argv)
 			rad = R_TRUE;
 			break;
 		case 'v':
-			verbose++;
+			va = R_TRUE;
 			break;
 		case 'L':
 			r_bin_list (bin);
