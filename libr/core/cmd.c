@@ -308,20 +308,12 @@ static int cmd_section(void *data, const char *input) {
 	switch (input[0]) {
 	case '?':
 		r_cons_printf (
-		"Usage: S[cbtf=*] len [base [comment]] @ address\n"
+		"Usage:\n"
 		" S                ; list sections\n"
 		" S*               ; list sections (in radare commands\n"
 		" S=               ; list sections (in nice ascii-art bars)\n"
-		" S 4096 0x80000 rwx section_text @ 0x8048000 ; adds new section\n"
-		" S 4096 0x80000   ; 4KB of section at current seek with base 0x.\n"
-		" S 10K @ 0x300    ; create 10K section at 0x300\n"
-		" S -0x300         ; remove this section definition\n"
-		" Sd 0x400 @ here  ; set ondisk start address for current section\n"
-		" Sc rwx _text     ; add comment to the current section\n"
-		" Sb 0x100000      ; change base address\n"
-		" St 0x500         ; set end of section at this address\n"
-		" Sf 0x100         ; set from address of the current section\n"
-		" Sp 7             ; set rwx (r=4 + w=2 + x=1)\n");
+		" S [offset] [vaddr] [size] [vsize] [name] ; adds new section\n"
+		" S -[offset]      ; remove this section definition\n");
 		break;
 	case ' ':
 		switch (input[1]) {
@@ -334,22 +326,26 @@ static int cmd_section(void *data, const char *input) {
 			{
 			int i;
 			char *ptr = strdup(input+1);
-			const char *comment = NULL;
-			ut64 from = core->offset;
-			ut64 to   = core->offset + core->blocksize;
-			ut64 base = 0; // XXX config.vaddr; //config_get_i("io.vaddr");
-			ut64 ondisk = 0LL;
+			const char *name = NULL;
+			ut64 vaddr = 0LL;
+			ut64 offset = 0LL;
+			ut64 size = 0LL;
+			ut64 vsize = 0LL;
 			
 			i = r_str_word_set0(ptr);
 			switch(i) {
-			case 3: // get comment
-				comment = r_str_word_get0(ptr, 2);
-			case 2: // get base address
-				ondisk = r_num_math (&core->num, r_str_word_get0 (ptr, 1));
-			case 1: // get length
-				to = from + r_num_math (&core->num, r_str_word_get0 (ptr, 0));
+			case 5: // get name
+				name = r_str_word_get0(ptr, 4);
+			case 4: // get vsize
+				vsize = r_num_math (&core->num, r_str_word_get0 (ptr, 3));
+			case 3: // get size
+				size = r_num_math (&core->num, r_str_word_get0 (ptr, 2));
+			case 2: // get vaddr
+				vaddr = r_num_math (&core->num, r_str_word_get0 (ptr, 1));
+			case 1: // get offset
+				offset = r_num_math (&core->num, r_str_word_get0 (ptr, 0));
 			}
-			r_io_section_add (&core->io, from, to, base, ondisk, 7, comment);
+			r_io_section_add (&core->io, offset, vaddr, size, vsize, 7, name);
 			free (ptr);
 			}
 			break;
@@ -363,25 +359,6 @@ static int cmd_section(void *data, const char *input) {
 		break;
 	case '*':
 		r_io_section_list (&core->io, core->offset, 1);
-		break;
-	case 'd':
-		r_io_section_set (&core->io, core->offset, -1, -1, r_num_math (
-			&core->num, input+1), -1, NULL);
-		break;
-	case 'c':
-		r_io_section_set (&core->io, core->offset, -1, -1, -1, -1, input+(input[1]==' '?2:1));
-		break;
-	case 'b':
-		r_io_section_set (&core->io, core->offset, -1, r_num_math (&core->num, input+1), -1, -1, NULL);
-		break;
-	case 't':
-		r_io_section_set (&core->io, core->offset, r_num_math (&core->num, input+1), -1, -1,-1, NULL);
-		break;
-	case 'p':
-		r_io_section_set (&core->io, core->offset, -1, -1, -1, atoi(input+1), NULL);
-		break;
-	case 'f':
-		eprintf("TODO\n");
 		break;
 	}
 	return 0;

@@ -10,7 +10,6 @@
 R_API struct r_io_t *r_io_init(struct r_io_t *io) {
 	if (!io) return NULL;
 	io->write_mask_fd = -1;
-	io->last_align = 0;
 	io->redirect = NULL;
 	io->printf = (void*) printf;
 	r_io_cache_init(io);
@@ -273,8 +272,7 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence)
 
 	switch(whence) {
 	case R_IO_SEEK_SET:
-		/* TODO: Deprecate remove section align ?? */
-		offset = r_io_section_align (io, offset, 0, 0);
+		offset = io->va ? r_io_section_vaddr_to_offset (io, offset) : offset;
 		io->off = offset;
 		posix_whence = SEEK_SET;
 		break;
@@ -296,7 +294,7 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence)
 
 	r_io_sundo_push (io);
 
-	return io->off;
+	return (io->va ? r_io_section_offset_to_vaddr (io, io->off) : io->off);
 }
 
 R_API ut64 r_io_size(struct r_io_t *io, int fd)

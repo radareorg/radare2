@@ -11,7 +11,7 @@
 
 /* empty classes */
 typedef struct { } RSystem;
-typedef struct { } RString;
+typedef struct { } RStr;
 typedef struct { } RLog;
 
 /* pool */

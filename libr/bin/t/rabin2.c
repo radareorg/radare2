@@ -57,7 +57,6 @@ static int rabin_show_help() {
 static int rabin_show_entrypoints() {
 	RFList entries;
 	RBinEntry *entry;
-	const char *env;
 	int i = 0;
 
 	ut64 baddr = r_bin_get_baddr (bin);
@@ -66,9 +65,6 @@ static int rabin_show_entrypoints() {
 		return R_FALSE;
 
 	if (rad) {
-		env = r_sys_getenv ("DEBUG");
-		if (env == NULL || (env && strncmp (env, "1", 1)))
-			printf ("e io.vaddr=0x%08llx\n", baddr);
 		printf ("fs symbols\n");
 	} else printf ("[Entrypoints]\n");
 
@@ -241,7 +237,7 @@ static int rabin_show_sections(ut64 at) {
 						section->name, baddr+section->rva);
 				printf ("f section.%s_end @ 0x%08llx\n",
 						section->name, baddr+section->rva+section->size);
-				printf ("[%02i] address=0x%08llx offset=0x%08llx size=%08lli "
+				printf ("CC [%02i] address=0x%08llx offset=0x%08llx size=%08lli "
 						"privileges=%c%c%c%c name=%s\n",
 						i, baddr+section->rva, section->offset, section->size,
 						R_BIN_SCN_SHAREABLE (section->characteristics)?'s':'-',
@@ -249,6 +245,9 @@ static int rabin_show_sections(ut64 at) {
 						R_BIN_SCN_WRITABLE (section->characteristics)?'w':'-',
 						R_BIN_SCN_EXECUTABLE (section->characteristics)?'x':'-',
 						section->name);
+				printf ("S 0x%08llx 0x%08llx 0x%08llx 0x%08llx %s\n",
+						section->offset, baddr+section->rva,
+						section->size, section->vsize, section->name);
 			} else printf ("idx=%02i address=0x%08llx offset=0x%08llx size=%08lli "
 						   "privileges=%c%c%c%c name=%s\n",
 						   i, baddr+section->rva, section->offset, section->size,

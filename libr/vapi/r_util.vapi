@@ -19,8 +19,8 @@ namespace Radare {
 
 #if FAILFAIL
 	[CCode (cheader_filename="r_util.h", cprefix="r_str_")]
-	public static class RString {
-		public RString(string arg);
+	public static class RStr {
+		public RStr(string arg);
 		public static int hash(string str);
 	}
 

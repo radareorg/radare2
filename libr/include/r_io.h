@@ -56,6 +56,7 @@ typedef struct r_io_t {
 	int cached;
 	int cached_read;
 	ut64 off;
+	int va;
 	char *redirect;
 	/* write mask */
 	void (*printf)(const char *str, ...);
@@ -65,11 +66,10 @@ typedef struct r_io_t {
 	struct r_io_handle_t *plugin;
 	struct r_io_undo_t undo;
 	struct list_head io_list;
-	ut64 last_align;
 	struct list_head sections;
 	/* maps */
 	struct list_head maps;
-        struct list_head desc;
+	struct list_head desc;
 	struct list_head cache;
 } RIO;
 
@@ -120,10 +120,10 @@ typedef struct r_io_bind_t {
 /* sections */
 typedef struct r_io_section_t {
 	char name[256];
-	ut64 from;
-	ut64 to;
+	ut64 offset;
 	ut64 vaddr;
-	ut64 paddr; // offset on disk
+	ut64 size;
+	ut64 vsize;
 	int rwx;
 	struct list_head list;
 } RIOSection;
@@ -139,9 +139,9 @@ typedef struct r_io_cache_t {
 typedef struct r_io_desc_t {
 	int fd;
 	int flags;
-        char name[4096];
+	char name[4096];
 	struct r_io_handle_t *handle;
-        struct list_head list;
+	struct list_head list;
 } RIODesc;
 
 #ifdef R_API
@@ -197,25 +197,20 @@ R_API int r_io_map_read_at(struct r_io_t *io, ut64 off, ut8 *buf, int len);
 R_API int r_io_map_write_at(struct r_io_t *io, ut64 off, const ut8 *buf, int len);
 R_API RIOMap *r_io_map_resolve(struct r_io_t *io, int fd);
 
-R_API int r_io_section_rm(struct r_io_t *io, int idx);
-R_API void r_io_section_add(struct r_io_t *io, ut64 from, ut64 to, ut64 vaddr, ut64 physical, int rwx, const char *comment);
-R_API void r_io_section_set(struct r_io_t *io, ut64 from, ut64 to, ut64 vaddr, ut64 physical, int rwx, const char *comment);
-R_API void r_io_section_list(struct r_io_t *io, ut64 addr, int rad);
-R_API struct r_io_section_t * r_io_section_get(struct r_io_t *io, ut64 addr);
-R_API void r_io_section_list_visual(struct r_io_t *io, ut64 seek, ut64 len);
-R_API ut64 r_io_section_get_vaddr(struct r_io_t *io, ut64 addr);
-R_API ut64 r_io_section_get_paddr(struct r_io_t *io, ut64 addr);
-R_API int r_io_section_get_rwx(struct r_io_t *io, ut64 addr);
-R_API struct r_io_section_t * r_io_section_get_i(struct r_io_t *io, int idx);
+/* io/section.c */
 R_API void r_io_section_init(struct r_io_t *io);
+R_API void r_io_section_add(struct r_io_t *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name);
+R_API struct r_io_section_t *r_io_section_get_i(struct r_io_t *io, int idx);
+R_API int r_io_section_rm(struct r_io_t *io, int idx);
+R_API void r_io_section_list(struct r_io_t *io, ut64 offset, int rad);
+R_API void r_io_section_list_visual(struct r_io_t *io, ut64 seek, ut64 len);
+R_API struct r_io_section_t *r_io_section_get(struct r_io_t *io, ut64 offset);
+R_API ut64 r_io_section_get_offset(struct r_io_t *io, ut64 offset);
+R_API ut64 r_io_section_get_vaddr(struct r_io_t *io, ut64 offset);
+R_API int r_io_section_get_rwx(struct r_io_t *io, ut64 offset);
 R_API int r_io_section_overlaps(struct r_io_t *io, struct r_io_section_t *s);
-R_API ut64 r_io_section_align(struct r_io_t *io, ut64 addr, ut64 vaddr, ut64 paddr);
-
-R_API int r_io_desc_init(struct r_io_t *io);
-R_API int r_io_desc_add(struct r_io_t *io, int fd, const char *file, int flags, struct r_io_handle_t *handle);
-R_API int r_io_desc_del(struct r_io_t *io, int fd);
-R_API struct r_io_desc_t *r_io_desc_get(struct r_io_t *io, int fd);
-R_API int r_io_desc_generate(struct r_io_t *io);
+R_API ut64 r_io_section_vaddr_to_offset(struct r_io_t *io, ut64 vaddr);
+R_API ut64 r_io_section_offset_to_vaddr(struct r_io_t *io, ut64 offset);
 
 /* undo api */
 // track seeks and writes
@@ -237,6 +232,14 @@ R_API void r_io_wundo_list(struct r_io_t *io);
 R_API int r_io_wundo_set_t(struct r_io_t *io, struct r_io_undo_w_t *u, int set) ;
 R_API void r_io_wundo_set_all(struct r_io_t *io, int set);
 R_API int r_io_wundo_set(struct r_io_t *io, int n, int set);
+
+/* io/desc.c */
+R_API int r_io_desc_init(struct r_io_t *io);
+R_API int r_io_desc_add(struct r_io_t *io, int fd, const char *file, int flags, struct r_io_handle_t *handle);
+R_API int r_io_desc_del(struct r_io_t *io, int fd);
+R_API struct r_io_desc_t *r_io_desc_get(struct r_io_t *io, int fd);
+R_API int r_io_desc_generate(struct r_io_t *io);
+
 
 /* plugins */
 extern struct r_io_handle_t r_io_plugin_malloc;

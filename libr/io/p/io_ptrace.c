@@ -62,7 +62,7 @@ err:
 static int __read(struct r_io_t *io, int pid, ut8 *buf, int len)
 {
 	int ret;
-	ut64 addr = io->seek;
+	ut64 addr = io->off;
 	memset(buf, '\xff', len);
 	ret = debug_os_read_at(pid, buf, len, addr);
 //printf("READ(0x%08llx)\n", addr);
@@ -122,7 +122,7 @@ static int ptrace_write_at(int pid, const ut8 *buf, int sz, ut64 addr)
 
 static int __write(struct r_io_t *io, int pid, const ut8 *buf, int len)
 {
-	return ptrace_write_at(pid, buf, len, io->seek);
+	return ptrace_write_at(pid, buf, len, io->off);
 }
 
 static int __handle_open(struct r_io_t *io, const char *file)
