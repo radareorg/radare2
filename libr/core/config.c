@@ -113,7 +113,7 @@ R_API int r_core_config_init(struct r_core_t *core)
 	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
 	r_config_set (cfg, "cfg.debug", "false");
 	r_config_set_cb (cfg, "cfg.ffio", "false", &config_cfgffio_callback);
-	r_config_set_cb (cfg, "cfg.va", "true", &config_cfgva_callback);
+	r_config_set_cb (cfg, "cfg.va", "false", &config_cfgva_callback);
 #if 0
 	node = config_set("asm.profile", "default");
 //	node->callback = &config_asm_profile;

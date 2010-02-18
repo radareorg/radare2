@@ -721,6 +721,7 @@ static int cmd_print(void *data, const char *input)
 				if (ret<1) {
 					ret = 1;
 					eprintf("** invalid opcode at 0x%08llx **\n", core->assembler.pc + ret);
+					continue;
 				}
 				r_anal_aop(&core->anal, &analop, buf+idx);
 
