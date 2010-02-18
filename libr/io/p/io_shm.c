@@ -15,7 +15,7 @@ static unsigned int shm_bufsz = 32*1024*1024; /* 32MB */
 static int shm__write(struct r_io_t *io, int fd, const ut8 *buf, int count)
 {
 	if (shm_buf != NULL)
-        	return (ssize_t)memcpy(shm_buf+io->seek, buf, count);
+        	return (ssize_t)memcpy(shm_buf+io->off, buf, count);
 	return -1;
 }
 
@@ -23,9 +23,9 @@ static int shm__read(struct r_io_t *io, int fd, ut8 *buf, int count)
 {
 	if (shm_buf == NULL)
 		return -1;
-	if (io->seek > shm_bufsz)
-		io->seek = shm_bufsz;
-	memcpy(buf, shm_buf+io->seek, count);
+	if (io->off > shm_bufsz)
+		io->off = shm_bufsz;
+	memcpy(buf, shm_buf+io->off , count);
         return 0;
 }
 
@@ -44,13 +44,13 @@ static ut64 shm__lseek(struct r_io_t *io, int fildes, ut64 offset, int whence)
 	case SEEK_SET:
 		return offset;
 	case SEEK_CUR:
-		if (io->seek+offset>shm_bufsz)
+		if (io->off+offset>shm_bufsz)
 			return shm_bufsz;
-		return io->seek + offset;
+		return io->off + offset;
 	case SEEK_END:
 		return 0xffffffff;
 	}
-	return io->seek;
+	return io->off;
 }
 
 static int shm__handle_open(struct r_io_t *io, const char *pathname)

@@ -77,8 +77,8 @@ typedef void (*RConsBreakCallback)(void *user);
 //extern int r_cons_stdout_fd;
 //extern int r_cons_stdout_file;
 extern const char *r_cons_palette_default;
-const char *r_cons_colors[CONS_COLORS_SIZE+1];
-extern char r_cons_palette[CONS_PALETTE_SIZE][8];
+extern const char *r_cons_colors[CONS_COLORS_SIZE+1];
+//extern char r_cons_palette[CONS_PALETTE_SIZE][8];
 //extern const char *dl_prompt;
 //extern char *r_cons_filterline;
 //extern char *r_cons_teefile;
@@ -148,6 +148,7 @@ enum {
 #ifdef R_API
 
 R_API RCons *r_cons_new ();
+R_API RCons *r_cons_singleton ();
 R_API RCons *r_cons_free (RCons *foo);
 
 R_API void r_cons_break(void (*cb)(void *u), void *user);

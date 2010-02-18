@@ -17,7 +17,7 @@ static int __write(struct r_io_t *io, int fd, const ut8 *buf, int count)
 {
 	if (malloc_buf == NULL)
 		return 0;
-	return (ssize_t)memcpy(malloc_buf+io->seek, buf, count);
+	return (ssize_t)memcpy(malloc_buf+io->off, buf, count);
 }
 
 static int __read(struct r_io_t *io, int fd, ut8 *buf, int count)

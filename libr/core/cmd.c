@@ -61,8 +61,11 @@ static void cmd_reg (struct r_core_t *core, const char *str) {
 		} else r_reg_set_profile (core->dbg.reg, str+2);
 		break;
 	case 't':
-		for (i=0;r_reg_types[i];i++)
-			r_cons_printf ("%s\n", r_reg_types[i]);
+		{
+			const char *type;
+			for (i=0;(type=r_reg_get_type(i));i++)
+				r_cons_printf ("%s\n", type);
+		}
 		break;
 	case ':':
 		r_debug_reg_sync (&core->dbg, R_REG_TYPE_GPR, R_FALSE);
@@ -1245,7 +1248,7 @@ static int cmd_search(void *data, const char *input)
 		cmdhit = r_config_get(&core->config, "cmd.hit");
 		r_cons_break(NULL, NULL);
 		for(at = core->offset; at < core->file->size; at += core->blocksize) {
-			if (r_cons_instance.breaked)
+			if (r_cons_singleton()->breaked)
 				break;
 			r_io_set_fd(&core->io, core->file->fd);
 			ret = r_io_read_at(&core->io, at, buf, core->blocksize);
@@ -1634,7 +1637,7 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd)
 		ptr[0] = '\0';
 		if (ptr[1]=='<') {
 			/* this is a bit mess */
-			const char *oprompt = r_line_instance.prompt;
+			const char *oprompt = r_line_singleton()->prompt;
 			oprompt = ">";
 			for(str=ptr+2;str[0]== ' ';str=str+1);
 			eprintf("==> Reading from stdin until '%s'\n", str);
@@ -1657,7 +1660,7 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd)
 					break;
 				strcat ((char *)core->oobi, buf);
 			}
-			r_line_instance.prompt = oprompt;
+			r_line_singleton ()->prompt = oprompt;
 		} else {
 			for (str=ptr+1;str[0]== ' ';str=str+1);
 			eprintf ("SLURPING FILE '%s'\n", str);
@@ -1852,7 +1855,7 @@ printf("No flags foreach implemented\n");
 				list_for_each (pos, &core->flags.flags) {
 					RFlagItem *flag = (RFlagItem *)list_entry(pos, RFlagItem, list);
 
-					if (r_cons_instance.breaked)
+					if (r_cons_singleton()->breaked)
 						break;
 					/* filter per flag spaces */
 					if ((core->flags.space_idx != -1) && (flag->space != core->flags.space_idx))

@@ -4,9 +4,15 @@
 #include <r_util.h>
 #include <list.h>
 
-R_API const char *r_reg_types[R_REG_TYPE_LAST+1] = {
+static const char *types[R_REG_TYPE_LAST+1] = {
 	"gpr", "drx", "fpu", "mmx", "xmm", "flg", "seg", NULL
 };
+
+R_API const char *r_reg_get_type(int idx) {
+	if (idx>=0 && idx<R_REG_TYPE_LAST)
+		return types[idx];
+	return NULL;
+}
 
 static void r_reg_free_internal(struct r_reg_t *reg) {
 	struct list_head *pos, *n;
@@ -104,8 +110,8 @@ static struct r_reg_item_t *r_reg_item_new() {
 R_API int r_reg_type_by_name(const char *str)
 {
 	int i;
-	for (i=0; r_reg_types[i] && i<R_REG_TYPE_LAST; i++) {
-		if (!strcmp (r_reg_types[i], str))
+	for (i=0; types[i] && i<R_REG_TYPE_LAST; i++) {
+		if (!strcmp (types[i], str))
 			return i;
 	}
 	if (!strcmp (str, "all"))

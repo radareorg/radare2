@@ -13,6 +13,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#if __UNIX__
+#include <signal.h>
+#endif
 
 #define MOAR_VALUE 4096*4
 
@@ -27,6 +30,10 @@ static void break_signal(int sig)
 	I.breaked = R_TRUE;
 	if (I.break_cb)
 		I.break_cb (I.break_user);
+}
+
+R_API RCons *r_cons_singleton () {
+	return &I;
 }
 
 R_API void r_cons_break(void (*cb)(void *u), void *user)

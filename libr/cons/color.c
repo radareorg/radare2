@@ -6,6 +6,7 @@
 static const char *nullstr="";
 const char *r_cons_palette_default = "7624 6646 2378 6824 3623";
 
+// XXX -- deprecate -- do not use global/extern stuff
 char r_cons_palette[CONS_PALETTE_SIZE][8] = {
 	/* PROMPT */
 	/* ADDRESS */

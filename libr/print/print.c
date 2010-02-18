@@ -84,9 +84,12 @@ void r_print_addr(struct r_print_t *p, ut64 addr)
 	char ch = (0==(addr%(mod?mod:1)))?',':' ';
 
 	if (p->flags & R_PRINT_FLAGS_COLOR) {
+#if 0
 		p->printf("%s0x%08llx"Color_RESET"%c ",
-			r_cons_palette[PAL_ADDRESS], addr, ch);
-	} else r_cons_printf("0x%08llx%c ", addr, ch);
+			r_cons_singleton ()->palette[PAL_ADDRESS], addr, ch);
+#endif
+		p->printf("0x%08llx%c ", addr, ch);
+	} else r_cons_printf ("0x%08llx%c ", addr, ch);
 }
 
 R_API void r_print_byte(struct r_print_t *p, const char *fmt, int idx, ut8 ch)
@@ -194,7 +197,7 @@ R_API void r_print_hexdump(struct r_print_t *p, ut64 addr, ut8 *buf, int len, in
 
 	if (p->flags & R_PRINT_FLAGS_HEADER) {
 		// only for color..too many options .. brbr
-		p->printf(r_cons_palette[PAL_HEADER]);
+		//p->printf(r_cons_palette[PAL_HEADER]);
 		p->printf("   offset   ");
 		k = 0; // TODO: ??? SURE??? config.seek & 0xF;
 		for (i=0; i<inc; i++) {

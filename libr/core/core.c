@@ -76,9 +76,10 @@ static int myfgets(char *buf, int len)
 {
 	/* TODO: link against dietline if possible for autocompletion */
 	char *ptr;
+	RLine *rli = r_line_singleton (); 
 	buf[0]='\0';
-	r_line_instance.completion.argc = CMDS;
-	r_line_instance.completion.argv = radare_argv;
+	rli->completion.argc = CMDS;
+	rli->completion.argv = radare_argv;
 	ptr = r_line_readline (); //CMDS, radare_argv);
 	if (ptr == NULL)
 		return -1;
@@ -132,7 +133,7 @@ R_API int r_core_init(struct r_core_t *core)
 	r_meta_init (&core->meta);
 	r_cons_init ();
 	r_line_init ();
-	r_cons_instance.user_fgets = (void *)myfgets;
+	r_cons_singleton()->user_fgets = (void *)myfgets;
 	r_line_hist_load (".radare2_history");
 
 	core->search = r_search_new(R_SEARCH_KEYWORD);
@@ -191,7 +192,7 @@ R_API int r_core_prompt(struct r_core_t *r)
 		r_core_cmd (r, cmdprompt, 0);
 
 	sprintf (prompt, "[0x%08llx]> ", r->offset);
-	r_line_instance.prompt = prompt;
+	r_line_singleton()->prompt = prompt;
 	ret = r_cons_fgets (line, sizeof (line), 0, NULL);
 	if (ret<0)
 		return -1;

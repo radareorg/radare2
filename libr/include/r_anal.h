@@ -97,7 +97,7 @@ enum {
 	R_ANAL_REFLINE_WIDE = 2,
 };
 
-struct r_anal_refline_t {
+typedef struct r_anal_refline_t {
 	ut64 from;
 	ut64 to;
 	int index;

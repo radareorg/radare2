@@ -4,7 +4,7 @@
 
 static int config_scrhtml_callback(void *user, void *data) {
 	struct r_config_node_t *node = (struct r_config_node_t *) data;
-	r_cons_instance.is_html = node->i_value;
+	r_cons_singleton()->is_html = node->i_value;
 // TODO: control error and restore old value (return false?) show errormsg?
 	return R_TRUE;
 }

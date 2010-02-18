@@ -9,6 +9,10 @@ RLine r_line_instance;
 int r_line_dietline_init();
 void r_line_hist_free();
 
+R_API RLine *r_line_singleton () {
+	return &r_line_instance;
+}
+
 R_API RLine *r_line_init () {
 	I.prompt = strdup ("> ");
 	if (!r_line_dietline_init ())

@@ -13,6 +13,8 @@
 #define R_DEBUG_REG_T struct reg
 #elif __sun
 #define R_DEBUG_REG_T gregset_t
+#define DEBUGGER 0
+#warning No debugger support for SunOS yet
 #elif __linux__
 #include <sys/user.h>
 #include <limits.h>
@@ -25,7 +27,7 @@
 #warning Unsupported debugging platform
 #endif
 
-#if __WINDOWS__
+#if __WINDOWS__ || __sun
 struct r_debug_handle_t r_debug_plugin_native = {
 	.name = "native",
 };

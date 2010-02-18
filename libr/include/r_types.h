@@ -64,10 +64,11 @@
 #define _FILE_OFFSET_BITS 64
 #undef _GNU_SOURCE
 #define _GNU_SOURCE
-#undef _XOPEN_SOURCE
-#define _XOPEN_SOURCE
-#undef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE
+// do we really need those undefs?
+//#undef _XOPEN_SOURCE
+//#define _XOPEN_SOURCE
+//#undef _POSIX_C_SOURCE
+//#define _POSIX_C_SOURCE
 
 /* allocating */
 #include <stdio.h>
@@ -115,6 +116,7 @@ static inline int ERR(char *str, ...)
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #if __UNIX__
 #include <sys/types.h>
 #include <sys/stat.h>

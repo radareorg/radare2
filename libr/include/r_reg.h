@@ -58,7 +58,7 @@ typedef struct r_reg_t {
 #define r_reg_new() r_reg_init (R_NEW (RRegister))
 
 #ifdef R_API
-extern const char *r_reg_types[R_REG_TYPE_LAST+1];
+R_API const char *r_reg_get_type(int idx);
 R_API struct r_reg_t *r_reg_free(struct r_reg_t *reg);
 R_API struct r_reg_t *r_reg_init(struct r_reg_t *reg);
 //R_API struct r_reg_t *r_reg_new();

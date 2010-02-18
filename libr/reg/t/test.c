@@ -14,6 +14,7 @@ void show_regs(struct r_reg_t *reg, int bitsize)
 
 int main() {
 	int i;
+	const char *type;
 	struct r_reg_t *reg;
 
 	reg = r_reg_new();
@@ -33,8 +34,8 @@ int main() {
 	r_reg_set_value(reg, r_reg_get(reg, "zero", -1), 1);
 	show_regs(reg, 1);
 
-	for (i=0;r_reg_types[i];i++)
-		printf (" - %s\n", r_reg_types[i]);
+	for (i=0;(type=r_reg_get_type(i));i++)
+		printf (" - %s\n", type);
 
 	return 0;
 }
