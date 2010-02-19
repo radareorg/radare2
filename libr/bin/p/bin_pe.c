@@ -146,10 +146,13 @@ static RFList imports(RBin *bin)
 static RBinInfo* info(RBin *bin)
 {
 	char *str;
+	struct PE_(r_bin_pe_obj_t) *bin_obj = bin->bin_obj;
 	RBinInfo *ret = NULL;
 
 	if((ret = MALLOC_STRUCT (RBinInfo)) == NULL)
 		return NULL;
+	memset(ret, '\0', sizeof (RBinInfo));
+	strncpy (ret->file, bin_obj->file, R_BIN_SIZEOF_STRINGS);
 	if ((str = PE_(r_bin_pe_get_class) (bin->bin_obj))) {
 		strncpy (ret->bclass, str, R_BIN_SIZEOF_STRINGS);
 		free (str);

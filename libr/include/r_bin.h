@@ -105,6 +105,7 @@ typedef struct r_bin_string_t {
 } RBinString;
 
 typedef struct r_bin_info_t {
+	char file[R_BIN_SIZEOF_STRINGS];
 	char type[R_BIN_SIZEOF_STRINGS];
 	char bclass[R_BIN_SIZEOF_STRINGS];
 	char rclass[R_BIN_SIZEOF_STRINGS];

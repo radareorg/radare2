@@ -70,7 +70,7 @@ namespace Radare {
 			public string machine;
 			public string os;
 			public string subsystem;
-			public int bigendian;
+			public int big_endian;
 			public uint32 dbg_info;
 		}
 

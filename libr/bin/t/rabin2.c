@@ -282,6 +282,7 @@ static int rabin_show_info() {
 				info->rclass, info->big_endian?"True":"False", info->os, info->arch,
 				R_BIN_DBG_STRIPPED (info->dbg_info)?"False":"True");
 	} else printf ("[File info]\n"
+				   "File=%s\n"
 				   "Type=%s\n"
 				   "Class=%s\n"
 				   "Arch=%s\n"
@@ -294,7 +295,8 @@ static int rabin_show_info() {
 				   "Line_nums=%s\n"
 				   "Local_syms=%s\n"
 				   "Relocs=%s\n",
-				   info->type, info->bclass, info->arch, info->machine, info->os, 
+				   info->file, info->type, info->bclass,
+				   info->arch, info->machine, info->os, 
 				   info->subsystem, info->big_endian?"True":"False",
 				   R_BIN_DBG_STRIPPED (info->dbg_info)?"True":"False",
 				   R_BIN_DBG_STATIC (info->dbg_info)?"True":"False",

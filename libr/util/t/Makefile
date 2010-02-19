@@ -12,7 +12,6 @@ BINS=test${EXT_EXE}
 BINS+=rax2${EXT_EXE}
 BINS+=ralloc${EXT_EXE}
 BINS+=array${EXT_EXE}
-BINS+=file_slurp_hexpairs${EXT_EXE}
 BINS+=pool${EXT_EXE}
 BINS+=test_sys${EXT_EXE}
 BINS+=test_str${EXT_EXE}

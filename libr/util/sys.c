@@ -4,6 +4,8 @@
 #if __UNIX__
 #include <sys/wait.h>
 #include <signal.h>
+#elif __WINDOWS__
+#include <io.h>
 #endif
 #include <sys/types.h>
 /* TODO: import stuff fron bininfo/p/bininfo_addr2line */
@@ -48,6 +50,17 @@ R_API const char *r_sys_getenv(const char *key)
 	return getenv(key);
 #else
 #warning TODO: r_sys_getenv
+#endif
+}
+
+R_API char *r_sys_getcwd()
+{
+#if __UNIX__
+	return getcwd(NULL, 0);
+#elif __WINDOWS__
+	return _getcwd(NULL, 0);
+#else
+#warning TODO: r_sys_getcwd
 #endif
 }
 

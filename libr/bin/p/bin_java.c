@@ -100,10 +100,13 @@ static RFList strings(RBin *bin)
 static RBinInfo* info(RBin *bin)
 {
 	RBinInfo *ret = NULL;
+	struct r_bin_java_obj_t *bin_obj = bin->bin_obj;
 	char *version;
 
 	if(!(ret = MALLOC_STRUCT (RBinInfo)))
 		return NULL;
+	memset(ret, '\0', sizeof (RBinInfo));
+	strncpy (ret->file, bin_obj->file, R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->type, "JAVA CLASS", R_BIN_SIZEOF_STRINGS);
 	version = r_bin_java_get_version (bin->bin_obj);
 	strncpy (ret->bclass, version, R_BIN_SIZEOF_STRINGS);
