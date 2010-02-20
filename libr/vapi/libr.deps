@@ -1,4 +1,5 @@
 r_asm
+r_bin
 r_config
 r_core
 r_line
@@ -12,4 +13,3 @@ r_diff
 r_lib
 r_search
 r_syscall
-r_bin
