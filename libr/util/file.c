@@ -24,6 +24,18 @@ R_API int r_file_exist(const char *str)
 	return (stat(str, &buf)==-1)?R_FALSE:R_TRUE;
 }
 
+R_API const char *r_file_abspath(const char *file)
+{
+#if __UNIX__
+	if (file[0] != '/')
+		return r_str_dup_printf ("%s/%s", r_sys_getcwd (), file);
+#elif __WINDOWS__
+	if (!strchr (file, ':'))
+		return r_str_dup_printf ("%s/%s", r_sys_getcwd (), file);
+#endif
+	return file;
+}
+
 R_API char *r_file_path(const char *bin)
 {
 	char file[1024];

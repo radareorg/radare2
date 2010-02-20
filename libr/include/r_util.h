@@ -166,6 +166,7 @@ R_API int r_hex_to_byte(ut8 *val, ut8 c);
 
 /* file */
 R_API char *r_file_path(const char *bin);
+R_API const char *r_file_abspath(const char *file);
 R_API char *r_file_slurp(const char *str, int *usz);
 R_API char *r_file_slurp_range(const char *str, ut64 off, ut64 sz);
 R_API char *r_file_slurp_random_line(const char *file);

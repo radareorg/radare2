@@ -151,9 +151,7 @@ R_API int r_bin_load(RBin *bin, const char *file, const char *plugin_name) {
 
 	if (!bin || !file)
 		return R_FALSE;
-	if (file[0] == '/')
-		bin->file = file;
-	else bin->file = r_str_dup_printf ("%s/%s", r_sys_getcwd(), file);
+	bin->file = r_file_abspath (file);
 	list_for_each_prev (pos, &bin->bins) {
 		RBinHandle *h = list_entry (pos, RBinHandle, list);
 		if ((plugin_name && !strcmp (h->name, plugin_name)) ||
