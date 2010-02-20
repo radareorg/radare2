@@ -99,4 +99,4 @@ socket:
 	gcc socket.c `pkg-config gobject-2.0 --libs --cflags` -I../../include/ -lr_socket -Wl,-R../../socket -L../../socket -o socket
 
 clean:
-	-rm -f *.c hash sc *.o *.h core socket asm search bin
+	-rm -f *.c hash sc *.o *.h core socket asm search bin io

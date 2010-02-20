@@ -2,7 +2,7 @@
 
 namespace Radare {
 	[Compact]
-	[CCode (cheader_filename="r_io.h,r_util.h", cname="RIO", free_function="r_io_free", cprefix="r_io_")]
+	[CCode (cheader_filename="r_io.h", cname="RIO", free_function="r_io_free", cprefix="r_io_")]
 	public class RIO {
 		[CCode (cprefix="R_IO_")]
 		public enum Perm {

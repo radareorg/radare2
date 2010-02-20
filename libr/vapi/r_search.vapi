@@ -43,6 +43,6 @@ public class Radare.RSearch {
 		public int count;
 	}
 
-	[CCode (cname="RSearchCallback")]
-	public static delegate int Callback(Keyword s, void *user, uint64 addr);
+	[CCode (cname="RSearchCallback", has_target="false")]
+	public delegate int Callback(Keyword s, void *user, uint64 addr);
 }

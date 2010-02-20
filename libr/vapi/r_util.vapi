@@ -47,8 +47,8 @@ namespace Radare {
 		public uint64 get(string str);
 		public uint64 math(string str);
 	}
-	[CCode (cname="RNumCallback")]
-	public static delegate uint64 RNumCallback (string str, int *ok);
+	[CCode (cname="RNumCallback", has_target="false")]
+	public delegate uint64 RNumCallback (string str, int *ok);
 
 	[Compact]
 	[CCode (cname="RBuffer", cheader_filename="r_util.h", cprefix="r_buf_", free_function="r_buf_free")]
