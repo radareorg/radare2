@@ -165,6 +165,11 @@ static int javasm_init(struct r_bin_java_obj_t *bin)
 	char buf[0x9999];
 	int i,j;
 
+	/* Initialize structs */
+	bin->cp_items = NULL;
+	bin->fields = NULL;
+	bin->methods = NULL;
+
 	/* Initialize cp_null_item */
 	cp_null_item.tag = -1;
 	strcpy(cp_null_item.name, "(null)");

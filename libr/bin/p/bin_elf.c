@@ -171,6 +171,7 @@ static RBinInfo* info(RBin *bin)
 	strncpy (ret->arch, str, R_BIN_SIZEOF_STRINGS);
 	free (str);
 	strncpy (ret->rclass, "elf", R_BIN_SIZEOF_STRINGS);
+	ret->bits = Elf_(r_bin_elf_get_bits) (bin->bin_obj);
 	ret->big_endian=Elf_(r_bin_elf_is_big_endian) (bin->bin_obj);
 	ret->dbg_info = 0;
 	if (!Elf_(r_bin_elf_get_stripped) (bin->bin_obj)) {

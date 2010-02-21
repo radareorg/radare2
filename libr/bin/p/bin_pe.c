@@ -176,6 +176,7 @@ static RBinInfo* info(RBin *bin)
 	if (PE_(r_bin_pe_is_dll) (bin->bin_obj))
 		strncpy (ret->type, "DLL (Dynamic Link Library)", R_BIN_SIZEOF_STRINGS);
 	else strncpy (ret->type, "EXEC (Executable file)", R_BIN_SIZEOF_STRINGS);
+	ret->bits = PE_(r_bin_pe_get_bits) (bin->bin_obj);
 	ret->big_endian = PE_(r_bin_pe_is_big_endian) (bin->bin_obj);
 	ret->dbg_info = 0;
 	if (!PE_(r_bin_pe_is_stripped_debug) (bin->bin_obj))

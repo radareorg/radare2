@@ -2,6 +2,7 @@
 
 #include <r_flags.h>
 #include <r_util.h>
+#include <r_cons.h>
 #include <stdio.h>
 
 #if USE_BTREE
@@ -36,7 +37,6 @@ R_API int r_flag_init(struct r_flag_t *f)
 	INIT_LIST_HEAD(&f->flags);
 	f->space_idx = -1;
 	f->space_idx2 = -1;
-	f->base = 0LL;
 #if USE_BTREE
 	btree_init(&f->tree);
 	btree_init(&f->ntree);
@@ -51,12 +51,6 @@ R_API struct r_flag_t * r_flag_new()
 	struct r_flag_t *f = MALLOC_STRUCT (struct r_flag_t);
 	r_flag_init (f);
 	return f;
-}
-
-R_API int r_flag_set_base(struct r_flag_t *f, ut64 new_base)
-{
-	f->base = new_base;
-	return 0;
 }
 
 R_API struct r_flag_item_t *r_flag_list(struct r_flag_t *f, int rad)
@@ -168,7 +162,7 @@ R_API int r_flag_set(struct r_flag_t *fo, const char *name, ut64 addr, ut32 size
 				if (flag->offset == addr)
 					return 1;
 			} else {
-				flag->offset = addr + fo->base;
+				flag->offset = addr;
 				flag->size = size; // XXX
 				flag->format = 0; // XXX
 //eprintf("update '%s'\n", f->name);
@@ -190,7 +184,7 @@ R_API int r_flag_set(struct r_flag_t *fo, const char *name, ut64 addr, ut32 size
 					return 1;
 			} else {
 				flag = f;
-				f->offset = addr + fo->base;
+				f->offset = addr;
 				f->size = size; // XXX
 				f->format = 0; // XXX
 //eprintf("update '%s'\n", f->name);
@@ -204,7 +198,7 @@ R_API int r_flag_set(struct r_flag_t *fo, const char *name, ut64 addr, ut32 size
 		/* MARK: entrypoint for flag addition */
 		flag = malloc(sizeof(struct r_flag_item_t));
 		memset(flag,'\0', sizeof(struct r_flag_item_t));
-		flag->offset = addr + fo->base;
+		flag->offset = addr;
 		strncpy(flag->name, name, R_FLAG_NAME_SIZE);
 		strncpy(flag->name, r_str_chop(flag->name), R_FLAG_NAME_SIZE);
 		flag->name[R_FLAG_NAME_SIZE-1]='\0';
@@ -219,7 +213,7 @@ R_API int r_flag_set(struct r_flag_t *fo, const char *name, ut64 addr, ut32 size
 	}
 
 //eprintf("NAME(%s) HASH(%x)\n", flag->name, flag->namehash);
-	flag->offset = addr + fo->base;
+	flag->offset = addr;
 	flag->space = fo->space_idx;
 	flag->size = size; // XXX
 	flag->format = 0; // XXX

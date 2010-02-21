@@ -113,6 +113,7 @@ typedef struct r_bin_info_t {
 	char machine[R_BIN_SIZEOF_STRINGS];
 	char os[R_BIN_SIZEOF_STRINGS];
 	char subsystem[R_BIN_SIZEOF_STRINGS];
+	int bits;
 	int big_endian;
 	ut64 dbg_info;
 } RBinInfo;

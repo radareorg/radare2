@@ -79,6 +79,7 @@ int PE_(r_bin_pe_get_image_size)(struct PE_(r_bin_pe_obj_t)* bin);
 char* PE_(r_bin_pe_get_machine)(struct PE_(r_bin_pe_obj_t)* bin);
 char* PE_(r_bin_pe_get_os)(struct PE_(r_bin_pe_obj_t)* bin);
 char* PE_(r_bin_pe_get_class)(struct PE_(r_bin_pe_obj_t)* bin);
+int PE_(r_bin_pe_get_bits)(struct PE_(r_bin_pe_obj_t)* bin);
 int PE_(r_bin_pe_get_section_alignment)(struct PE_(r_bin_pe_obj_t)* bin);
 struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)* bin);
 char* PE_(r_bin_pe_get_subsystem)(struct PE_(r_bin_pe_obj_t)* bin);

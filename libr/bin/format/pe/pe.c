@@ -255,12 +255,8 @@ char* PE_(r_bin_pe_get_arch)(struct PE_(r_bin_pe_obj_t)* bin)
 	case PE_IMAGE_FILE_MACHINE_POWERPCFP:
 		arch = strdup("ppc");
 		break;
-	case PE_IMAGE_FILE_MACHINE_AMD64:
-	case PE_IMAGE_FILE_MACHINE_IA64:
-		arch = strdup("intel64");
-		break;
 	default:
-		arch = strdup("intel");
+		arch = strdup("x86");
 	}
 	return arch;
 }
@@ -578,6 +574,23 @@ char* PE_(r_bin_pe_get_class)(struct PE_(r_bin_pe_obj_t)* bin)
 		class = strdup("Unknown");
 	}
 	return class;
+}
+
+int PE_(r_bin_pe_get_bits)(struct PE_(r_bin_pe_obj_t)* bin)
+{
+	int bits;
+
+	switch (bin->nt_headers->optional_header.Magic) {
+	case PE_IMAGE_FILE_TYPE_PE32:
+		bits = 32;
+		break;
+	case PE_IMAGE_FILE_TYPE_PE32PLUS:
+		bits = 64;
+		break;
+	default:
+		bits = -1;
+	}
+	return bits;
 }
 
 int PE_(r_bin_pe_get_section_alignment)(struct PE_(r_bin_pe_obj_t)* bin)

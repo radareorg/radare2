@@ -114,7 +114,8 @@ static RBinInfo* info(RBin *bin)
 	strncpy (ret->os, "any", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->subsystem, "any", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->machine, "Java VM", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->arch, "javavm", R_BIN_SIZEOF_STRINGS);
+	strncpy (ret->arch, "java", R_BIN_SIZEOF_STRINGS);
+	ret->bits = 32;
 	ret->big_endian= 0;
 	ret->dbg_info = 0x04 | 0x08; /* LineNums | Syms */
 	return ret;

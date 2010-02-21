@@ -635,8 +635,8 @@ static int cmd_info(void *data, const char *input) {
 	case 'e':
 	case 'S':
 	case 'z':
-		snprintf (buf, sizeof (buf), "rabin2 -%c%s '%s'", input[0],
-			input[1]=='*'?"r":"", core->file->filename);
+		snprintf (buf, sizeof (buf), "rabin2 -%c%s%s '%s'", input[0],
+			input[1]=='*'?"r":"", core->io.va?"v":"", core->file->filename);
 		eprintf ("(%s)\n", buf);
 		r_sys_cmd (buf);
 		break;
@@ -832,9 +832,6 @@ static int cmd_flag(void *data, const char *input) {
 	case '-':
 		r_flag_unset (&core->flags, input+1);
 		break;
-	case 'b':
-		r_flag_set_base(&core->flags, r_num_math(&core->num, input+1));
-		break;
 	case 's':
 		if (input[1]==' ')
 			r_flag_space_set(&core->flags, input+2);
@@ -857,7 +854,6 @@ static int cmd_flag(void *data, const char *input) {
 	case '?':
 		r_cons_printf (
 		"Usage: f[ ] [flagname]\n"
-		" fb 0x8048000     ; set base address for flagging\n"
 		" f name 12 @ 33   ; set flag 'name' with size 12 at 33\n"
 		" f name 12 33     ; same as above\n"
 		" f+name 12 @ 33   ; like above but creates new one if doesnt exist\n"
@@ -1139,14 +1135,14 @@ static int __cb_hit(struct r_search_kw_t *kw, void *user, ut64 addr)
 {
 	struct r_core_t *core = (struct r_core_t *)user;
 
-	r_cons_printf("f hit%d_%d %d 0x%08llx\n",
+	r_cons_printf ("f hit%d_%d %d 0x%08llx\n",
 		kw->kwidx, kw->count, kw->keyword_length, addr);
 
 	if (!strnull (cmdhit)) {
 		ut64 here = core->offset;
-		r_core_seek(core, addr, R_FALSE);
+		r_core_seek (core, addr, R_FALSE);
 		r_core_cmd(core, cmdhit, 0);
-		r_core_seek(core, here, R_TRUE);
+		r_core_seek (core, here, R_TRUE);
 	}
 
 	return R_TRUE;
@@ -1168,8 +1164,8 @@ static int cmd_search(void *data, const char *input)
 		r_search_free (core->search);
 		core->search = r_search_new (R_SEARCH_KEYWORD);
 		n32 = r_num_math (&core->num, input+1);
-		r_search_kw_add_bin(core->search, (const ut8*)&n32, 4, NULL, 0);
-		r_search_begin(core->search);
+		r_search_kw_add_bin (core->search, (const ut8*)&n32, 4, NULL, 0);
+		r_search_begin (core->search);
 		dosearch = 1;
 		break;
 	case ' ': /* search string */

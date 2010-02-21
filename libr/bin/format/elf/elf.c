@@ -233,11 +233,8 @@ char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin)
 		return r_str_dup_printf("powerpc");
 	case EM_68K:
 		return r_str_dup_printf("m68k");
-	case EM_IA_64:
-	case EM_X86_64:
-		return r_str_dup_printf("intel64");
 	default:
-		return r_str_dup_printf("intel");
+		return r_str_dup_printf("x86");
 	}
 }
 char* Elf_(r_bin_elf_get_machine_name)(struct Elf_(r_bin_elf_obj_t) *bin)
@@ -345,6 +342,16 @@ char* Elf_(r_bin_elf_get_elf_class)(struct Elf_(r_bin_elf_obj_t) *bin)
 	case ELFCLASS32:   return r_str_dup_printf("ELF32");
 	case ELFCLASS64:   return r_str_dup_printf("ELF64");
 	default:           return r_str_dup_printf("<unknown: %x>", bin->ehdr.e_ident[EI_CLASS]);
+	}
+}
+
+int Elf_(r_bin_elf_get_bits)(struct Elf_(r_bin_elf_obj_t) *bin)
+{
+	switch (bin->ehdr.e_ident[EI_CLASS]) {
+	case ELFCLASSNONE: return 0;
+	case ELFCLASS32:   return 32;
+	case ELFCLASS64:   return 64;
+	default:           return -1;
 	}
 }
 

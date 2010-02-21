@@ -70,6 +70,7 @@ R_API int r_core_write_op(struct r_core_t *core, const char *arg, char op)
 R_API int r_core_seek(struct r_core_t *core, ut64 addr, int rb)
 {
 	ut64 old = core->offset;
+
 	/* XXX unnecesary call */
 	r_io_set_fd (&core->io, core->file->fd);
 	core->offset = r_io_seek (&core->io, addr, R_IO_SEEK_SET);

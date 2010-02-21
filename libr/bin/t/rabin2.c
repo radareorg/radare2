@@ -234,22 +234,19 @@ static int rabin_show_sections(ut64 at) {
 		} else {
 			if (rad) {
 				r_flag_name_filter (section->name);
-				printf ("f section.%s @ 0x%08llx\n",
-						section->name, va?baddr+section->rva:section->offset);
-				printf ("f section.%s_end @ 0x%08llx\n",
-						section->name,
-						va?baddr+section->rva+section->vsize:section->offset+section->size);
+				printf ("S 0x%08llx 0x%08llx 0x%08llx 0x%08llx %s\n",
+						section->offset, baddr+section->rva,
+						section->size, section->vsize, section->name);
+				printf ("f section.%s %lli 0x%08llx\n",
+						section->name, section->size, va?baddr+section->rva:section->offset);
 				printf ("CC [%02i] address=0x%08llx offset=0x%08llx size=%08lli vsize=%08lli"
-						"privileges=%c%c%c%c name=%s\n",
+						"privileges=%c%c%c%c name=%s @ 0x%08llx\n",
 						i, baddr+section->rva, section->offset, section->size, section->vsize,
 						R_BIN_SCN_SHAREABLE (section->characteristics)?'s':'-',
 						R_BIN_SCN_READABLE (section->characteristics)?'r':'-',
 						R_BIN_SCN_WRITABLE (section->characteristics)?'w':'-',
 						R_BIN_SCN_EXECUTABLE (section->characteristics)?'x':'-',
-						section->name);
-				printf ("S 0x%08llx 0x%08llx 0x%08llx 0x%08llx %s\n",
-						section->offset, baddr+section->rva,
-						section->size, section->vsize, section->name);
+						section->name,va?baddr+section->rva:section->offset);
 			} else printf ("idx=%02i address=0x%08llx offset=0x%08llx size=%08lli vsize=%08lli"
 						   "privileges=%c%c%c%c name=%s\n",
 						   i, baddr+section->rva, section->offset, section->size, section->vsize,
@@ -278,14 +275,15 @@ static int rabin_show_info() {
 				"e cfg.bigendian=%s\n"
 				"e asm.os=%s\n"
 				"e asm.arch=%s\n"
+				"e asm.bits=%i\n"
 				"e dbg.dwarf=%s\n",
-				info->rclass, info->big_endian?"True":"False", info->os, info->arch,
-				R_BIN_DBG_STRIPPED (info->dbg_info)?"False":"True");
+				info->rclass, info->big_endian?"true":"false", info->os, info->arch,
+				info->bits, R_BIN_DBG_STRIPPED (info->dbg_info)?"false":"true");
 	} else printf ("[File info]\n"
 				   "File=%s\n"
 				   "Type=%s\n"
 				   "Class=%s\n"
-				   "Arch=%s\n"
+				   "Arch=%s %i\n"
 				   "Machine=%s\n"
 				   "OS=%s\n"
 				   "Subsystem=%s\n"
@@ -296,7 +294,7 @@ static int rabin_show_info() {
 				   "Local_syms=%s\n"
 				   "Relocs=%s\n",
 				   info->file, info->type, info->bclass,
-				   info->arch, info->machine, info->os, 
+				   info->arch, info->bits, info->machine, info->os, 
 				   info->subsystem, info->big_endian?"True":"False",
 				   R_BIN_DBG_STRIPPED (info->dbg_info)?"True":"False",
 				   R_BIN_DBG_STATIC (info->dbg_info)?"True":"False",
@@ -541,14 +539,14 @@ int main(int argc, char **argv)
 		return R_FALSE;
 	}
 
+	if (action&ACTION_SECTIONS)
+		rabin_show_sections (at);
 	if (action&ACTION_ENTRIES)
 		rabin_show_entrypoints ();
 	if (action&ACTION_IMPORTS)
 		rabin_show_imports (at);
 	if (action&ACTION_SYMBOLS)
 		rabin_show_symbols (at);
-	if (action&ACTION_SECTIONS)
-		rabin_show_sections (at);
 	if (action&ACTION_STRINGS)
 		rabin_show_strings ();
 	if (action&ACTION_INFO)

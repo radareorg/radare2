@@ -272,19 +272,18 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence)
 
 	switch(whence) {
 	case R_IO_SEEK_SET:
-		offset = io->va ? r_io_section_vaddr_to_offset (io, offset) : offset;
-		io->off = offset;
 		posix_whence = SEEK_SET;
 		break;
 	case R_IO_SEEK_CUR:
-		io->off += offset;
+		offset += io->off;
 		posix_whence = SEEK_CUR;
 		break;
 	case R_IO_SEEK_END:
-		io->off = UT64_MAX; // XXX: depending on io bitz?
+		offset = UT64_MAX; // XXX: depending on io bits?
 		posix_whence = SEEK_END;
 		break;
 	}
+	offset = io->va ? r_io_section_vaddr_to_offset (io, offset) : offset;
 
 	// TODO: implement io->enforce_seek here!
 	if (io->plugin && io->plugin->lseek)
@@ -294,7 +293,7 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence)
 
 	r_io_sundo_push (io);
 
-	return (io->va ? r_io_section_offset_to_vaddr (io, io->off) : io->off);
+	return io->va ? r_io_section_offset_to_vaddr(io, io->off) : io->off;
 }
 
 R_API ut64 r_io_size(struct r_io_t *io, int fd)

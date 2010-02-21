@@ -55,6 +55,8 @@ R_API void r_io_section_list(struct r_io_t *io, ut64 offset, int rad)
 {
 	int i = 0;
 	struct list_head *pos;
+
+	offset = io->va ? r_io_section_vaddr_to_offset (io, offset) : offset;
 	list_for_each_prev(pos, &io->sections) {
 		struct r_io_section_t *s = (struct r_io_section_t *)list_entry(pos, struct r_io_section_t, list);
 		if (rad) {
@@ -62,7 +64,7 @@ R_API void r_io_section_list(struct r_io_t *io, ut64 offset, int rad)
 				s->offset, s->vaddr, s->size, s->vsize, s->name);
 		} else {
 			r_cons_printf("[%02d] %c offset=0x%08llx vaddr=0x%08llx size=0x%08llx vsize=%08llx %s",
-				i, (offset>=s->offset && offset<=s->offset+s->size)?'*':'.',
+				i, (offset>=s->offset && offset<s->offset+s->size)?'*':'.',
 				s->offset, s->vaddr, s->size, s->vsize, s->name);
 			r_cons_printf("\n");
 		}
@@ -80,6 +82,7 @@ R_API void r_io_section_list_visual(struct r_io_t *io, ut64 seek, ut64 len)
 	struct list_head *pos;
 	int width = 78; //config.width-30;
 
+	seek = io->va ? r_io_section_vaddr_to_offset (io, seek) : seek;
 	list_for_each(pos, &io->sections) {
 		struct r_io_section_t *s = (struct r_io_section_t *)list_entry(pos, struct r_io_section_t, list);
 		if (min == -1 || s->offset < min)
@@ -100,7 +103,7 @@ R_API void r_io_section_list_visual(struct r_io_t *io, ut64 seek, ut64 len)
 				else
 					r_cons_printf("-");
 			}
-			r_cons_printf("| 0x%08llx\n", s->offset+s->size);
+			r_cons_printf("| 0x%08llx %s\n", s->offset+s->size, s->name);
 			i++;
 		}
 		/* current seek */
@@ -172,10 +175,10 @@ R_API ut64 r_io_section_vaddr_to_offset(struct r_io_t *io, ut64 vaddr)
 
 	list_for_each_prev(pos, &io->sections) {
 		struct r_io_section_t *s = (struct r_io_section_t *)list_entry(pos, struct r_io_section_t, list);
-		if (vaddr >= s->vaddr && vaddr <= s->vaddr + s->vsize)
+		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize)
 			return (vaddr - s->vaddr + s->offset); 
 	}
-	return -1;
+	return vaddr;
 }
 
 R_API ut64 r_io_section_offset_to_vaddr(struct r_io_t *io, ut64 offset)
@@ -184,8 +187,8 @@ R_API ut64 r_io_section_offset_to_vaddr(struct r_io_t *io, ut64 offset)
 
 	list_for_each_prev(pos, &io->sections) {
 		struct r_io_section_t *s = (struct r_io_section_t *)list_entry(pos, struct r_io_section_t, list);
-		if (offset >= s->offset && offset <= s->offset + s->size)
+		if (offset >= s->offset && offset < s->offset + s->size)
 			return (s->vaddr + offset - s->offset); 
 	}
-	return -1;
+	return offset;
 }

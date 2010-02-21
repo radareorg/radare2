@@ -169,8 +169,8 @@ int main(int argc, char **argv)
 
 	// Load the binary information from rabin2
 	{
-		char *cmd = r_str_concat (
-			strdup(".!rabin2 -reisS "), r.file->filename);
+		char *cmd = r_str_dup_printf (".!rabin2 -rSIeis%s %s",
+				r.io.va?"v":"", r.file->filename);
 		r_core_cmd (&r, cmd, 0);
 		r_str_free (cmd);
 	}
