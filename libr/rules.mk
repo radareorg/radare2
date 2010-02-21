@@ -2,11 +2,9 @@
 -include config.mk
 -include ../config.mk
 -include ../../config.mk
--include global.mk
--include ../global.mk
--include ../../global.mk
--include ../../mk/${COMPILER}.mk
--include ../../../mk/${COMPILER}.mk
+
+#-include ../global.mk
+#-include ../../global.mk
 
 #-------------------------------------#
 # Rules for libraries
@@ -85,8 +83,8 @@ else
 # Rules for test programs
 
 # XXX can this be removed?
-include ../../../config-user.mk
-include ../../../mk/${COMPILER}.mk
+#include ../../../config-user.mk
+#include ../../../mk/${COMPILER}.mk
 
 CFLAGS+=-I../../include -DVERSION=\"${VERSION}\"
 

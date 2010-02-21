@@ -1,6 +1,5 @@
 RELEASE=1
 DESTDIR=
-OSTYPE?= # woot
 
 COMPILER?=gcc
 #COMPILER=mingw32-gcc
@@ -23,7 +22,9 @@ LIBDIR=${PREFIX}/lib
 -include config-user.mk
 -include ../config-user.mk
 -include ../../config-user.mk
+-include ../../../config-user.mk
 
 -include mk/${COMPILER}.mk
 -include ../mk/${COMPILER}.mk
 -include ../../mk/${COMPILER}.mk
+-include ../../../mk/${COMPILER}.mk
