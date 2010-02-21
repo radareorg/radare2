@@ -60,7 +60,7 @@ EXT_SO=so
 EXT_EXE=
 TH_LIBS=-lpthread
 endif
-ifeq (${OSTYPE},osx)
+ifeq (${OSTYPE},darwin)
 CFLAGS+=-D__UNIX__=1
 EXT_AR=a
 EXT_SO=dylib

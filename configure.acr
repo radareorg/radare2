@@ -19,10 +19,10 @@ CHKLIB tcc
 
 (( rules for the compiler ))
 ARG_WITH USERCC=gcc compiler Define compiler to use (see mk/) ;
-ARG_WITH USEROSTYPE=none ostype Choose OS type ( gnulinux windows osx ) ;
+ARG_WITH USEROSTYPE=auto ostype Choose OS type ( gnulinux windows darwin ) ;
 
 (( TODO: throw error if unknown ostype ))
-IFEQ USEROSTYPE none ; {
+IFEQ USEROSTYPE auto ; {
 	IFEQ HOST_OS linux ; {
 		USEROSTYPE = gnulinux ;
 	}{

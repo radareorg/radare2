@@ -11,7 +11,7 @@ CFLAGS_OPT2=-O2
 CFLAGS_OPT3=-O3
 CFLAGS_DEBUG=-g
 
-ifeq ($(OSTYPE),osx)
+ifeq ($(OSTYPE),darwin)
 LDFLAGS_LIB=-dynamiclib
 LDFLAGS_LINKPATH=-L
 else

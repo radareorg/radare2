@@ -1,6 +1,6 @@
 RELEASE=1
 DESTDIR=
-OSTYPE?=gnulinux
+OSTYPE?= # woot
 
 COMPILER?=gcc
 #COMPILER=mingw32-gcc
