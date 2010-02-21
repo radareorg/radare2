@@ -29,7 +29,7 @@ static int config_asm_arch_callback(void *user, void *data) {
 	int ret = r_asm_use (&core->assembler, node->value);
 	if (!ret) {
 		// TODO: control error and restore old value (return false?) show errormsg?
-		eprintf ("Cannot set this arch (%s)\n", node->value);
+		eprintf ("asm.arch: Cannot set this arch (%s)\n", node->value);
 	}
 	return R_TRUE;
 }
@@ -403,6 +403,5 @@ R_API int r_core_config_init(struct r_core_t *core)
 	node->callback = &config_scrheight;
 	r_config_set("vm.realio", "false");
 #endif
-
 	return 0;
 }

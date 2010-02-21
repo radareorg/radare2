@@ -63,8 +63,7 @@
 /* allocating */
 #include <stdio.h>
 #include <stdarg.h>
-static inline int ERR(char *str, ...)
-{
+static inline int ERR(char *str, ...) {
 	va_list ap;
 	va_start(ap, str);
 	vfprintf(stderr, str, ap);

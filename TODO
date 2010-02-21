@@ -7,6 +7,9 @@
 
 <{include libr/TODO}>
 
+* BUG:
+ rasm2 -s att -a x86.nasm 'push 0x1e(%esp)'
+
 * is RCore->block and blocksize a RBuf ? refactor!11
  
 * r_cmd must provide a nesting char table indexing for commands

@@ -13,8 +13,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 }
 #endif
 
-static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf)
-{
+static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf) {
 	int len = 0;
 	char cmd[R_ASM_BUFSIZE];
 	ut8 *out;
@@ -48,8 +47,7 @@ struct r_lib_struct_t radare_plugin = {
 #endif
 
 #if TEST
-main()
-{
+main() {
 	struct r_asm_fastcall_t *f;
 	//f = r_asm_plugin_x86_nasm.fastcall;
 	printf("fastcall=%p\n", *r_asm_plugin_x86_nasm.fastcall);

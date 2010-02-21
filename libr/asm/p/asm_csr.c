@@ -6,12 +6,9 @@
 #include <r_lib.h>
 #include <r_util.h>
 #include <r_asm.h>
-
 #include "csr/csr_disasm/dis.h"
 
-
-static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len)
-{
+static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len) {
 	arch_csr_disasm(aop->buf_asm, buf, a->pc);
 	return (aop->inst_len=2);
 }

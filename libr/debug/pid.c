@@ -9,7 +9,7 @@ R_API int r_debug_pid_list(struct r_debug_t *dbg)
 }
 
 /* processes */
-R_API int r_debug_pid_add(struct r_debug_t *dbg)
+R_API int r_debug_pid_parent(RDebugPid *pid)
 {
 	// fork in child
 	return 0;

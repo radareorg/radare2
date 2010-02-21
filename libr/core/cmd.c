@@ -881,12 +881,10 @@ static int cmd_anal(void *data, const char *input)
 	}
 	
 	switch(input[0]) {
-	case '\0':
-		r_anal_list (&core->anal);
-		break;
 	case 'h':
 		if (input[1] && !r_anal_use (&core->anal, input+2))
 			eprintf("Cannot use '%s' anal plugin.\n", input+2);
+		else r_anal_list (&core->anal);
 		break;
 	case 'o':
 		{

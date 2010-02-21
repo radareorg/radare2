@@ -2,19 +2,14 @@
 
 #include <stdio.h>
 #include <string.h>
-
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
-
 #include "fastcall_x86.h"
-
 #include "x86/udis86/types.h"
 #include "x86/udis86/extern.h"
 
-
-static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len)
-{
+static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len) {
 	static ud_t disasm_obj;
 
 	ud_init(&disasm_obj);
@@ -34,7 +29,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 
 struct r_asm_handle_t r_asm_plugin_x86 = {
 	.name = "x86",
-	.desc = "X86 disassembly plugin",
+	.desc = "udis86 disassembly plugin",
 	.arch = "x86",
 	.bits = (int[]){ 16, 32, 64, 0 },
 	.init = NULL,

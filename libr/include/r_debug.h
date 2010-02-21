@@ -93,10 +93,11 @@ typedef struct r_debug_pid_t {
 	int pid;
 	int status; /* stopped, running, zombie, sleeping ,... */
 	int runnable; /* when using 'run', 'continue', .. this proc will be runnable */
-	struct list_head threads;
-	struct list_head childs;
-	struct r_debug_pid_t *parent;
-	struct list_head list;
+	const char *path;
+	//struct list_head threads;
+	//struct list_head childs;
+	//struct r_debug_pid_t *parent;
+	//struct list_head list;
 } RDebugPid;
 
 #ifdef R_API

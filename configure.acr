@@ -19,7 +19,18 @@ CHKLIB tcc
 
 (( rules for the compiler ))
 ARG_WITH USERCC=gcc compiler Define compiler to use (see mk/) ;
-ARG_WITH USEROSTYPE=gnulinux ostype Choose OS type ( gnulinux windows osx ) ;
+ARG_WITH USEROSTYPE=none ostype Choose OS type ( gnulinux windows osx ) ;
+
+(( TODO: throw error if unknown ostype ))
+IFEQ USEROSTYPE none ; {
+	IFEQ HOST_OS linux ; {
+		USEROSTYPE = gnulinux ;
+	}{
+		IFEQ HOST_OS darwin ; {
+			USEROSTYPE = darwin ;
+		}
+	}
+}
 
 ARG_WITHOUT WITHPIC pic do not build libr as a program independent location ;
 ARG_WITHOUT WANT_VALASWIG valaswig disables the build of the valaswig bindings for python, perl, ruby ;
