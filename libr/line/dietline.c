@@ -14,8 +14,6 @@
 #include <signal.h>
 #endif
 
-#define I r_line_instance
-
 static char *r_line_nullstr = "";
 
 /* initialize history stuff */

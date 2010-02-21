@@ -4,6 +4,7 @@ new_env='
 LIBR_PLUGINS=$PWD/prefix/lib/radare2
 PATH=$PATH:$PWD/prefix/bin
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/prefix/lib
+DYLD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/prefix/lib
 PKG_CONFIG_PATH=$PWD/libr/
 '
 

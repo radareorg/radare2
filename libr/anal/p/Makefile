@@ -1,7 +1,7 @@
 BINDEPS=foo
 include ../../config.mk
 
-CFLAGS=-I../../include -I../../asm/arch/ -I../arch/ -Wall -fPIC -shared -Wl,-R.. -L..
+CFLAGS=-I../../include -I../../asm/arch/ -I../arch/ -Wall -fPIC ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}.. -L..
 CFLAGS+=-DR_DEBUG=1
 
 ANAL_X86_OBJ=../arch/x86/dislen.o
@@ -18,7 +18,7 @@ anal_x86.${EXT_SO}: anal_x86.o ${ANAL_X86_OBJ}
 	@#strip -s anal_x86.so
 
 anal_x86_bea.${EXT_SO}: anal_x86_bea.o
-	${CC} ${CFLAGS} -o anal_x86_bea.${EXT_SO} anal_x86_bea.o
+	${CC} ${CFLAGS} -o anal_x86_bea.${EXT_SO} anal_x86_bea.o ../../asm/arch/x86/bea/BeaEngine.o
 	@#strip -s anal_x86_bea.so
 
 clean:

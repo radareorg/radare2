@@ -331,6 +331,7 @@ typedef struct t_asmmodel {            // Model to search for assembler command
   int            jmppos;               // Position of jump offset in command
 } t_asmmodel;
 
+#if 0
 unique int       ideal;                // Force IDEAL decoding mode
 unique int       lowercase;            // Force lowercase display
 unique int       tabarguments;         // Tab between mnemonic and arguments
@@ -350,6 +351,7 @@ unique int       extraprefix;          // Accept superfluous prefixes
 unique int       lockedbus;            // Accept LOCK prefixes
 unique int       stackalign;           // Accept unaligned stack operations
 unique int       iswindowsnt;          // When checking for dangers, assume NT
+#endif
 
 int    Assemble(char *cmd,ulong ip,t_asmmodel *model,int attempt,
          int constsize,char *errtext);

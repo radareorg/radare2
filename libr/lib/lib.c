@@ -26,7 +26,7 @@
 
 /* XXX : this must be registered in runtime */
 static const char *r_lib_types[] = {
-	"io", "dbg", "lang", "asm", "anal", "parse", "bin", "bininfo", 
+	"io", "dbg", "lang", "asm", "anal", "parse", "bin", //"bininfo", 
 	"bp", "syscall", "fastcall", NULL
 };
 

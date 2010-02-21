@@ -53,7 +53,7 @@ generate_configh () {
     fi
     echo "     &r_${lib}_plugin_${plg}, \\"
   done
-  echo "     0"
+  [ -n "$oldlib" ] && echo "     0"
 }
 
 generate_configmk () {
@@ -93,7 +93,8 @@ sub () {
 }
 
 dosort () {
-  ( for a in $1 ; do echo $a ; done ) | sort -t. --key=1,1d
+  ( for a in $1 ; do echo $a ; done ) | sort -t.
+  #( for a in $1 ; do echo $a ; done ) | sort -t. --key=1,1d
 }
 
 sort_vars () {

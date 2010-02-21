@@ -16,10 +16,9 @@ static struct r_vm_reg_type r_vm_reg_types[] = {
 	{ 0, NULL }
 };
 
-void r_vm_reg_type_list()
-{
+R_API void r_vm_reg_type_list() {
 	struct r_vm_reg_type *p = r_vm_reg_types;
-	while(p) {
+	while (p) {
 		if (p->str==NULL)
 			break;
 		printf(" .%s\n", p->str);
@@ -27,10 +26,9 @@ void r_vm_reg_type_list()
 	}
 }
 
-const char *r_vm_reg_type(int type)
-{
+R_API const char *r_vm_reg_type(int type) {
 	struct r_vm_reg_type *p = r_vm_reg_types;
-	while(p) {
+	while (p) {
 		if (p->type == type)
 			return p->str;
 		p++;
@@ -38,8 +36,7 @@ const char *r_vm_reg_type(int type)
 	return unkreg;
 }
 
-const int r_vm_reg_type_i(const char *str)
-{
+R_API int r_vm_reg_type_i(const char *str) {
 	struct r_vm_reg_type *p = r_vm_reg_types;
 	while(p) {
 		if (!strcmp(str, p->str))

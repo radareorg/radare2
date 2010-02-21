@@ -27,7 +27,28 @@
 #include <float.h>
 //#pragma hdrstop
 
+static int lowercase = 1; // Force lowercase display XXX remove it
 #include "disasm.h"
+#if 1
+static int       ideal;                // Force IDEAL decoding mode
+static int       tabarguments;         // Tab between mnemonic and arguments
+static int       extraspace;           // Extra space between arguments
+static int       putdefseg;            // Display default segments in listing
+static int       showmemsize;          // Always show memory size
+static int       shownear;             // Show NEAR modifiers
+static int       shortstringcmds;      // Use short form of string commands
+static int       sizesens;             // How to decode size-sensitive mnemonics
+static int       symbolic;             // Show symbolic addresses in disasm
+static int       farcalls;             // Accept far calls, returns & addresses
+static int       decodevxd;            // Decode VxD calls (Win95/98)
+static int       privileged;           // Accept privileged commands
+static int       iocommand;            // Accept I/O commands
+static int       badshift;             // Accept shift out of range 1..31
+static int       extraprefix;          // Accept superfluous prefixes
+static int       lockedbus;            // Accept LOCK prefixes
+static int       stackalign;           // Accept unaligned stack operations
+static int       iswindowsnt;          // When checking for dangers, assume NT
+#endif
 
 /* Helpers for non-w32 */
 char *

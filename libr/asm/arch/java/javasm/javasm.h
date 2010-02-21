@@ -25,8 +25,8 @@ struct cp_item {
 	ut64 off;
 };
 
-struct cp_item *cp_items;
-struct cp_item cp_null_item; // NOTE: must be initialized for safe use
+//extern struct cp_item *cp_items;
+//extern struct cp_item cp_null_item; // NOTE: must be initialized for safe use
 
 int java_print_opcode(int idx, const ut8 *bytes, char *output);
 int java_disasm(const ut8 *bytes, char *output);

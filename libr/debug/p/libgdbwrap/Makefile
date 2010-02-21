@@ -1,10 +1,10 @@
 include ../../../config.mk
 OBJ=interface.o gdbwrapper.o client.o
-CFLAGS=-Iinclude
+CFLAGS=-Iinclude -I../../../include
 ERESIPATH=${HOME}/prg/eresi
 BIN=client
 
-all: ${BIN} ${LIB}
+all: ${BIN}
 
 ${BIN}: ${OBJ}
 	 ${CC} ${OBJ} -o ${BIN}

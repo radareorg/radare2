@@ -31,6 +31,8 @@
 #include <arpa/inet.h>
 #endif
 
+static  struct cp_item *cp_items;
+static struct cp_item cp_null_item; // NOTE: must be initialized for safe use
 
 static struct constant_t {
 	char *name;
@@ -269,7 +271,7 @@ static ut16 r_ntohs (ut16 foo) {
 #if BIGENDIAN
 	/* do nothing */
 #else
-	ut8 *p = &foo;
+	ut8 *p = (ut8 *)&foo;
 	foo = p[1] | p[0]<<8;
 #endif
 	return foo;

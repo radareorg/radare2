@@ -82,7 +82,7 @@ R_API RSyscallList *r_syscall_get_n(struct r_syscall_t *ctx, int n)
 	return NULL;
 }
 
-R_API char *r_syscall_get_i(struct r_syscall_t *ctx, int num, int swi)
+R_API const char *r_syscall_get_i(struct r_syscall_t *ctx, int num, int swi)
 {
 	int i;
 	for (i=0;ctx->sysptr[i].num;i++)

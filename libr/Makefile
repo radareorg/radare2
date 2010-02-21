@@ -6,7 +6,7 @@ PFX=${DESTDIR}${PREFIX}
 #PREFIX=${PFX}
 
 # Libraries
-LIBLIST=util lib io meta lang flags bin bininfo macro hash line cons print config syscall range socket cmd asm anal parse search diff bp reg debug core var sign trace vm th db
+LIBLIST=util lib io meta lang flags bin macro hash line cons print config syscall range socket cmd asm anal parse search diff bp reg debug core var sign trace vm th db
 
 # Under development
 #LIBLIST+=print
@@ -27,11 +27,10 @@ libr: .objs libr2.${EXT_SO} libr2.${EXT_AR}
 
 ifeq ($(WITHPIC),1)
 libr2.${EXT_SO}:
-	${CC} -shared ${PIC_CFLAGS} .objs/*.o -o libr2.${EXT_SO}
+	${CC} ${LDFLAGS_LIB} ${PIC_CFLAGS} .objs/*.o -o libr2.${EXT_SO}
 
 libr2.${EXT_AR}:
 	@echo No archive libr.a. Try --without-pic in configure
-
 else
 libr2.${EXT_SO}:
 
@@ -66,15 +65,15 @@ install-includes:
 install-bins:
 	# programs
 	@${INSTALL_DIR} ${PFX}/bin
-	@for a in `find */t -perm /u+x -type f | grep 2`; \
+	@for a in `find */t -perm -u+x -type f | grep 2`; \
 	do echo "$$a ${PFX}/bin"; ${INSTALL_PROGRAM} $$a ${PFX}/bin ; done
 	# shortcut
-	cp -f ${PFX}/bin/radare2 ${PFX}/bin/r2
+	-cp -f ${PFX}/bin/radare2 ${PFX}/bin/r2
 
 install-test-bins:
 	# test programs
 	@${INSTALL_DIR} ${PFX}/bin/libr-test
-	@for a in `find */t -perm /u+x -type f | grep -v 2`; \
+	@for a in `find */t -perm -u+x -type f | grep -v 2`; \
 	  do echo "$$a ${PFX}/bin/libr-test"; \
 	  ${INSTALL_PROGRAM} $$a ${PFX}/bin/libr-test ; done
 
@@ -82,7 +81,7 @@ install: install-includes install-vapi install-pkgconfig install-bins install-te
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
 	# libraries
 	@${INSTALL_DIR} ${PFX}/lib
-	@for a in `find * | grep -e '\.so$$' | grep lib` ; do \
+	@for a in `find * | grep -e '\.${EXT_SO}$$' | grep lib` ; do \
 	echo "$$a ${PFX}/lib"; ${INSTALL_DATA} $$a ${PFX}/lib ; done
 	# object archives
 	@for a in `find * | grep -e '\.a$$'` ; do \
@@ -90,7 +89,7 @@ install: install-includes install-vapi install-pkgconfig install-bins install-te
 	# plugins
 	#${INSTALL_DATA} libr.pc ${PFX}/lib/pkgconfig
 	@${INSTALL_DIR} ${PFX}/lib/radare2
-	@for a in `find */p -perm /u+x -type f`; \
+	@for a in `find */p -perm -u+x -type f`; \
 	do echo "$$a ${PFX}/lib/radare2"; \
 	${INSTALL_DATA} $$a ${PFX}/lib/radare2 ; done
 	${INSTALL_DATA} lang/p/radare.* ${PFX}/lib/radare2
@@ -98,7 +97,7 @@ install: install-includes install-vapi install-pkgconfig install-bins install-te
 
 deinstall uninstall:
 	# libraries
-	-@for a in `find * | grep -e '\.so$$' | grep lib` ; do \
+	-@for a in `find * | grep -e '\.${EXT_SO}$$' | grep lib` ; do \
 	a=`echo $$a | awk -F / '{ print $$NF; }'`; \
 	echo ${PREFIX}/lib/$$a ; rm -f ${PREFIX}/lib/$$a ; done
 	### object archives
@@ -109,18 +108,18 @@ deinstall uninstall:
 	-(cd include && for a in * ; do rm -f ${PREFIX}/libr/$$a ; done)
 	cd vapi/ ; for a in *.vapi *.deps ; do rm -f ${PREFIX}/share/vala/vapi/$$a ; done
 	### programs
-	-@for a in `find */t -perm /u+x -type f | grep 2`; do \
+	-@for a in `find */t -perm -u+x -type f | grep 2`; do \
 	a=`echo $$a|awk -F / '{ print $$NF; }'`; \
 	echo ${PREFIX}/bin/$$a ; rm -f ${PREFIX}/bin/$$a ; done
 	# plugins
-	-@for a in `find */p -perm /u+x -type f`; do \
+	-@for a in `find */p -perm -u+x -type f`; do \
 	a="${PREFIX}/lib/radare2/`echo $$a|awk -F / '{ print $$NF; }'`"; \
 	echo $$a ; rm -f $$a ; done
 	rm -rf ${PREFIX}/lib/radare2
 	rm -f ${PREFIX}/lib/pkgconfig/libr.pc
 	rm -f ${PREFIX}/lib/pkgconfig/r_*.pc
 	# test programs
-	-@for a in `find */t -perm /u+x -type f | grep -v 2`; do \
+	-@for a in `find */t -perm -u+x -type f | grep -v 2`; do \
 	a="${PREFIX}/bin/libr-test/`echo $$a|awk -F / '{ print $$NF; }'`"; \
 	echo $$a ; rm -f $$a ; done
 	rm -rf ${PREFIX}/bin/libr-test

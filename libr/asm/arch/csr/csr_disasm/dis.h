@@ -55,7 +55,7 @@ struct state {
 	int			s_nop;
 	struct directive	*s_nopd;
 	int			s_ff_quirk;
-} _state;
+};
 
 int arch_csr_disasm(char *str, unsigned char *b, ut64 seek);
 

@@ -3,6 +3,7 @@
 #include "r_types.h"
 #include "r_util.h"
 #include <stdio.h>
+#include <ctype.h>
 #include <stdarg.h>
 
 /* stable code */
@@ -19,10 +20,19 @@ static int hex2int (unsigned char *val, unsigned char c)
 	return 0;
 }
 
-R_API const char *r_str_bool(int b)
-{
+R_API const char *r_str_bool(int b) {
 	if (b) return "true";
 	return "false";
+}
+
+R_API void r_str_case(char *str, int up) {
+	if (up) {
+		while(*str)
+			*str = tolower (*str);
+	} else {
+		while(*str)
+			*str = toupper (*str);
+	}
 }
 
 /* TODO: port to w32 and move outside r_str namespace? */

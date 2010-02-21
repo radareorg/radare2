@@ -12,6 +12,8 @@
 #include <stdint.h>
 #include "dis.h"
 
+static struct state _state;
+
 #include <r_types.h>
 
 static inline struct state *get_state(void)

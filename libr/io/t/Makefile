@@ -2,7 +2,7 @@ include ../../config.mk
 CFLAGS=-I ../../include -g
 
 ifeq ($(WITHPIC),1)
-LDPATH=-L.. -Wl,-R.. -L../../util -L../../lib
+LDPATH=-L.. ${LDFLAGS_LINKPATH}.. -L../../util -L../../lib
 LDPATH+=-lr_io -lr_util -lr_lib
 else
 LDPATH=../../io/libr_io.a
@@ -13,7 +13,7 @@ endif
 all: map cat${EXT_EXE} read4${EXT_EXE}
 
 cat${EXT_EXE}: cat.o
-	${CC} cat.o ${LDPATH} -Wl,-R.. -g -o cat${EXT_EXE}
+	${CC} cat.o ${LDPATH} -g -o cat${EXT_EXE}
 
 map${EXT_EXE}: map.o
 	${CC} map.o ${LDPATH} -g -o map${EXT_EXE}

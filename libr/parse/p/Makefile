@@ -1,6 +1,6 @@
 include ../../config.mk
 
-CFLAGS=-I../../include -Wall -fPIC -shared -Wl,-R..
+CFLAGS=-I../../include -Wall -fPIC ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
 # XXX
 CFLAGS+=-DLIL_ENDIAN=1
 # -D__UNIX__

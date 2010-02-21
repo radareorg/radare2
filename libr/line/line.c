@@ -2,7 +2,7 @@
 
 #include <r_line.h>
 
-RLine r_line_instance;
+static RLine r_line_instance;
 #define I r_line_instance
 
 /* definitions to be removed */
@@ -30,3 +30,5 @@ R_API void r_line_free () {
 	I.prompt = NULL;
 	r_line_hist_free ();
 }
+
+#include "dietline.c"

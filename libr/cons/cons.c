@@ -22,7 +22,7 @@
 // TODO: remove this flag
 static int r_cons_instance_initialized = R_FALSE;
 
-RCons r_cons_instance;
+static RCons r_cons_instance;
 #define I r_cons_instance
 
 static void break_signal(int sig)

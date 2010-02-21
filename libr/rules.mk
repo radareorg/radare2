@@ -5,6 +5,8 @@
 -include global.mk
 -include ../global.mk
 -include ../../global.mk
+-include ../../mk/${COMPILER}.mk
+-include ../../../mk/${COMPILER}.mk
 
 #-------------------------------------#
 # Rules for libraries

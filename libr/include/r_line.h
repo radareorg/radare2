@@ -45,7 +45,7 @@ typedef struct r_line_t {
 
 #ifdef R_API
 // XXX : Kill extern variables
-extern RLine r_line_instance;
+//extern RLine r_line_instance;
 R_API RLine *r_line_new ();
 R_API RLine *r_line_singleton ();
 R_API RLine *r_line_init();

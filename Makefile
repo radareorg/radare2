@@ -45,14 +45,14 @@ pkgcfg:
 install:
 	${INSTALL_DIR} ${DESTDIR}${PREFIX}/share/doc/radare2
 	for a in doc/* ; do ${INSTALL_DATA} $$a ${DESTDIR}/${PREFIX}/share/doc/radare2 ; done
-	cd libr && ${MAKE} install PARENT=1 PREFIX=${DESTDIR}${PREFIX}
-	cd swig && ${MAKE} install
+	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd swig && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
 uninstall:
 	rm -rf prefix
 
 deinstall: uninstall
-	cd libr && ${MAKE} uninstall PARENT=1 PREFIX=${DESTDIR}${PREFIX}
+	cd libr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	rm -rf ${DESTDIR}${PREFIX}/share/doc/radare2
 
 dist:

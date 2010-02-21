@@ -32,6 +32,9 @@
 
 #include "disasm.h"
 
+static int       ideal=0;                // Force IDEAL decoding mode
+static int       sizesens=0;             // How to decode size-sensitive mnemonics
+
 ////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////// ASSEMBLER FUNCTIONS //////////////////////////////
 

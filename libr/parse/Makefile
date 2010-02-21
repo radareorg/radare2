@@ -13,7 +13,7 @@ bins:
 	cd t && ${MAKE} all
 
 pre:
-	@if [ ! -e libr_parse.so ]; then rm -f ${STATIC_OBJS} ; fi
+	@if [ ! -e libr_parse.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi
 
 plugins:
 	cd p && ${MAKE} all

@@ -1410,18 +1410,21 @@ static int cmd_open(void *data, const char *input)
 static int cmd_meta(void *data, const char *input)
 {
 	struct r_core_t *core = (struct r_core_t *)data;
-	int ret, line = 0;
-	char file[1024];
+	//int ret, line = 0;
+	//char file[1024];
 	//struct r_core_t *core = (struct r_core_t *)data;
 	switch(input[0]) {
 	case '*':
 		r_meta_list(&core->meta, R_META_ANY);
 		break;
 	case 'L': // debug information of current offset
+#warning TODO: Implement new bininfo interface here
+#if 0
 		ret = r_bininfo_get_line(
 			&core->bininfo, core->offset, file, 1023, &line);
 		if (ret)
 			r_cons_printf("file %s\nline %d\n", file, line);
+#endif
 		break;
 	case 'C': /* add comment */
 		// TODO: do we need to get the size? or the offset?

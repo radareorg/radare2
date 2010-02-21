@@ -1,5 +1,6 @@
-CFLAGS=-I../../include -I../arch/ -I../arch/include -Wall -fPIC -shared -Wl,-R..
-# XXX
+include ../../config.mk
+
+CFLAGS=-I../../include -I../arch/ -I../arch/include -Wall -fPIC ${LDFLAGS_LIB}
 CFLAGS+=-DLIL_ENDIAN=1 -D__UNIX__
 
 foo: all

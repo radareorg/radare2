@@ -20,7 +20,7 @@
 #include "gdbwrapper-internals.h"
 #include "gdbwrapper.h"
 
-gdbwrapworld_t       gdbwrapworld;
+static gdbwrapworld_t       gdbwrapworld;
 
 /******************** Internal functions ********************/
 

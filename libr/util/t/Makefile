@@ -1,7 +1,9 @@
 BINDEPS=foo
 include ../../config.mk
 ifeq ($(WITHPIC),1)
-FLAGS=-I../../include -Wl,-R.. -L.. -lr_util -g -DVERSION=\"${VERSION}\"
+# OSX
+FLAGS=-I../../include -L.. -lr_util -g -DVERSION=\"${VERSION}\"
+#FLAGS=-I../../include -Wl,-R.. -L.. -lr_util -g -DVERSION=\"${VERSION}\"
 EFLAGS=
 else
 FLAGS=-I../../include -g -DVERSION=\"${VERSION}\"

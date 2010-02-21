@@ -9,7 +9,6 @@
 #include <regex.h>
 #include <stdio.h>
 #include <string.h>
-#include <malloc.h>
 #include <stdlib.h>
 
 #include "mmemory.h"
@@ -71,7 +70,7 @@ char *mreplace(char *string, char *se,char *rep)
 	size_t     	nmatch = 16;
 	regmatch_t 	pm[nmatch];
 	char		*p;
-	ulong		offset = 0;
+	unsigned long	offset = 0;
 	char		field[16];
 	char		*res;
 	memChunk	*search,*temp,*found,*ffound;

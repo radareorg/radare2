@@ -79,7 +79,7 @@ extern int arm_mode;
 #define FPU_VFP_EXT_V3	 1
 #define FPU_NEON_EXT_V1	 1
 
-int floatformat_ieee_single_little;
+static int floatformat_ieee_single_little;
 /* Assume host uses ieee float.  */
 static void floatformat_to_double (int *ignored, unsigned char *data,
                                    double *dest)
@@ -1569,7 +1569,7 @@ enum map_type {
   MAP_DATA
 };
 
-enum map_type last_type;
+static enum map_type last_type;
 int last_mapping_sym = -1;
 bfd_vma last_mapping_addr = 0;
 

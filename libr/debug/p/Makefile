@@ -1,6 +1,6 @@
 include ../../config.mk
 
-CFLAGS=-I../../include -Wall -fPIC -shared -Wl,-R.. -DCORELIB
+CFLAGS=-I../../include -Wall -fPIC ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}.. -DCORELIB
 
 foo: all
 

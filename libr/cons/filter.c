@@ -2,21 +2,20 @@
 
 #include <r_cons.h>
 
-#define I r_cons_instance
-
-R_API void r_cons_grep(const char *str)
-{
+R_API void r_cons_grep(const char *str) {
+	RCons *cons;
 	char *optr, *tptr;
 	char *ptr, *ptr2, *ptr3;
-	I.grep.counter = 0;
+	cons = r_cons_singleton ();
+	cons->grep.counter = 0;
 	/* set grep string */
 	if (str != NULL && *str) {
 		if (*str == '!') {
-			I.grep.neg = 1;
+			cons->grep.neg = 1;
 			str = str + 1;
-		} else I.grep.neg = 0;
+		} else cons->grep.neg = 0;
 		if (*str == '?') {
-			I.grep.counter = 1;
+			cons->grep.counter = 1;
 			str = str + 1;
 		}
 		ptr = alloca (strlen (str)+2);
@@ -27,41 +26,41 @@ R_API void r_cons_grep(const char *str)
 
 		if (ptr3) {
 			ptr3[0]='\0';
-			I.grep.token = atoi (ptr3+1);
-			if (I.grep.token<0)
-				I.grep.token--;
+			cons->grep.token = atoi (ptr3+1);
+			if (cons->grep.token<0)
+				cons->grep.token--;
 		}
 		if (ptr2) {
 			ptr2[0]='\0';
-			I.grep.line = atoi (ptr2+1);
+			cons->grep.line = atoi (ptr2+1);
 		}
 
-		I.grep.nstrings = 0;
+		cons->grep.nstrings = 0;
 		if (*ptr) {
-			free (I.grep.str);
-			I.grep.str = (char *)strdup (ptr);
+			free (cons->grep.str);
+			cons->grep.str = (char *)strdup (ptr);
 			/* set the rest of words to grep */
-			I.grep.nstrings = 0;
+			cons->grep.nstrings = 0;
 			// TODO: refactor this ugly loop
-			optr = I.grep.str;
+			optr = cons->grep.str;
 			tptr = strchr (optr, '!');
 			while (tptr) {
 				tptr[0] = '\0';
 				// TODO: check if keyword > 64
-				strncpy (I.grep.strings[I.grep.nstrings], optr, 63);
-				I.grep.nstrings++;
+				strncpy (cons->grep.strings[cons->grep.nstrings], optr, 63);
+				cons->grep.nstrings++;
 				optr = tptr+1;
 				tptr = strchr(optr, '!');
 			}
-			strncpy (I.grep.strings[I.grep.nstrings], optr, 63);
-			I.grep.nstrings++;
+			strncpy (cons->grep.strings[cons->grep.nstrings], optr, 63);
+			cons->grep.nstrings++;
 			ptr = optr;
 		}
 	} else {
-		I.grep.token = -1;
-		I.grep.line = -1;
-		I.grep.str = NULL;
-		I.grep.nstrings = 0;
+		cons->grep.token = -1;
+		cons->grep.line = -1;
+		cons->grep.str = NULL;
+		cons->grep.nstrings = 0;
 	}
 }
 
@@ -69,72 +68,73 @@ R_API void r_cons_grep(const char *str)
 // TODO: this must be a filter like the html one
 R_API int r_cons_grepbuf(char *buf, int len)
 {
+	RCons *cons = r_cons_singleton ();
 	const char delims[6][2] = {"|", "/", "\\", ",", ";", "\t"};
 	int donotline = 0;
 	int i, j, hit = 0;
 	char *n = memchr (buf, '\n', len);
 
-	if (I.grep.nstrings==0) {
-		if (n) I.lines++;
+	if (cons->grep.nstrings==0) {
+		if (n) cons->lines++;
 		return len;
 	}
 
-	if (I.lastline==NULL)
-		I.lastline = I.buffer;
+	if (cons->lastline==NULL)
+		cons->lastline = cons->buffer;
 
 	if (!n) return len;
 
-	for(i=0;i<I.grep.nstrings;i++) {
-		I.grep.str = I.grep.strings[i];
-		if ( (!I.grep.neg && strstr(buf, I.grep.str))
-		  || (I.grep.neg && !strstr(buf, I.grep.str))) {
+	for(i=0;i<cons->grep.nstrings;i++) {
+		cons->grep.str = cons->grep.strings[i];
+		if ( (!cons->grep.neg && strstr(buf, cons->grep.str))
+		  || (cons->grep.neg && !strstr(buf, cons->grep.str))) {
 			hit = 1;
 			break;
 		}
 	}
 
 	if (hit) {
-		if (I.grep.line != -1) {
-			if (I.grep.line==I.lines) {
-				I.lastline = buf+len;
+		if (cons->grep.line != -1) {
+			if (cons->grep.line==cons->lines) {
+				cons->lastline = buf+len;
 				//r_cons_lines++;
 			} else {
 				donotline = 1;
-				I.lines++;
+				cons->lines++;
 			}
 		}
 	} else donotline = 1;
 
 	if (donotline) {
-		I.buffer_len -= strlen (I.lastline)-len;
-		I.lastline[0]='\0';
+		cons->buffer_len -= strlen (cons->lastline)-len;
+		cons->lastline[0]='\0';
 		len = 0;
 	} else {
-		if (I.grep.token != -1) {
-			//ptr = alloca(strlen(I.lastline));
+		if (cons->grep.token != -1) {
+			//ptr = alloca(strlen(cons->lastline));
 			char *tok = NULL;
 			char *ptr = alloca(1024); // XXX
-			strcpy (ptr, I.lastline);
+			strcpy (ptr, cons->lastline);
 			for (i=0; i<len; i++) for (j=0;j<6;j++)
 				if (ptr[i] == delims[j][0])
 					ptr[i] = ' ';
 			tok = ptr;
-			for (i=0;tok != NULL && i<=I.grep.token;i++) {
+			for (i=0;tok != NULL && i<=cons->grep.token;i++) {
 				if (i==0) tok = (char *)strtok(ptr, " ");
 				else tok = (char *)strtok(NULL, " ");
 			}
 			if (tok) {
 				// XXX remove strlen here!
-				I.buffer_len -= strlen (I.lastline)-len;
+				cons->buffer_len -= strlen (cons->lastline)-len;
 				len = strlen(tok);
-				memcpy (I.lastline, tok, len);
-				if (I.lastline[len-1]!='\n')
-					memcpy (I.lastline+len, "\n", 2);
+				memcpy (cons->lastline, tok, len);
+				if (cons->lastline[len-1]!='\n')
+					memcpy (cons->lastline+len, "\n", 2);
 				len++;
-				I.lastline +=len;
+				cons->lastline +=len;
 			}
-		} else I.lastline = buf+len;
-		I.lines++;
+		} else cons->lastline = buf+len;
+		cons->lines++;
 	}
 	return len;
 }

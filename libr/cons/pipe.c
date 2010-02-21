@@ -38,15 +38,16 @@ void r_cons_stdout_close(int fd)
 	dup2(fd, 1);
 }
 
-void r_cons_stdout_close_file()
-{
-	close(r_cons_instance.fdout);
-	dup2(r_cons_instance.fdout, 1);
+void r_cons_stdout_close_file() {
+	RCons *cons = r_cons_instance ();
+	close(cons->fdout);
+	dup2(cons->fdout, 1);
 }
 
 void r_cons_stdout_open(const char *file, int append)
 {
 	int fd;
+	RCons *cons = r_cons_instance ();
 	if (r_cons_instance.fdout != 1) // XXX nested stdout dupping not supported
 		return;
 

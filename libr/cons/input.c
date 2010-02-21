@@ -8,8 +8,7 @@
 extern char *dl_readline(int argc, const char **argv);
 #endif
 
-R_API int r_cons_arrow_to_hjkl(int ch)
-{
+R_API int r_cons_arrow_to_hjkl(int ch) {
 	if (ch==0x1b) {
 		ch = r_cons_readchar();
 		if (ch==0x5b) {
@@ -31,10 +30,10 @@ R_API int r_cons_arrow_to_hjkl(int ch)
 }
 
 // XXX no control for max length here?!?!
-R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv)
-{
-	if (r_cons_instance.user_fgets)
-		return r_cons_instance.user_fgets (buf, 512);
+R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
+	RCons *cons = r_cons_singleton ();
+	if (cons->user_fgets)
+		return cons->user_fgets (buf, 512);
 	else {
 #if HAVE_DIETLINE
 		char *ptr;
@@ -45,9 +44,9 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv)
 		strncpy (buf, ptr, len);
 #else
 		buf[0]='\0';
-		if (fgets (buf, len, r_cons_instance.fdin) == NULL)
+		if (fgets (buf, len, cons->fdin) == NULL)
 			return -1;
-		if (feof (r_cons_instance.fdin))
+		if (feof (cons->fdin))
 			return -1;
 		buf[strlen(buf)-1]='\0';
 #endif

@@ -3,21 +3,21 @@
 
 #include "dislen.h"
 
-DWORD disasm_len;                       // 0 if error
-DWORD disasm_flag;                      // C_xxx
-DWORD disasm_memsize;                   // value = disasm_mem
-DWORD disasm_datasize;                  // value = disasm_data
-DWORD disasm_defdata;                   // == C_66 ? 2 : 4
-DWORD disasm_defmem;                    // == C_67 ? 2 : 4
+static DWORD disasm_len;                       // 0 if error
+static DWORD disasm_flag;                      // C_xxx
+static DWORD disasm_memsize;                   // value = disasm_mem
+static DWORD disasm_datasize;                  // value = disasm_data
+static DWORD disasm_defdata;                   // == C_66 ? 2 : 4
+static DWORD disasm_defmem;                    // == C_67 ? 2 : 4
 
-BYTE  disasm_seg;                       // CS DS ES SS FS GS
-BYTE  disasm_rep;                       // REPZ/REPNZ
-BYTE  disasm_opcode;                    // opcode
-BYTE  disasm_opcode2;                   // used when opcode==0F
-BYTE  disasm_modrm;                     // modxxxrm
-BYTE  disasm_sib;                       // scale-index-base
-BYTE  disasm_mem[8];                    // mem addr value
-BYTE  disasm_data[8];                   // data value
+static BYTE  disasm_seg;                       // CS DS ES SS FS GS
+static BYTE  disasm_rep;                       // REPZ/REPNZ
+static BYTE  disasm_opcode;                    // opcode
+static BYTE  disasm_opcode2;                   // used when opcode==0F
+static BYTE  disasm_modrm;                     // modxxxrm
+static BYTE  disasm_sib;                       // scale-index-base
+static BYTE  disasm_mem[8];                    // mem addr value
+static BYTE  disasm_data[8];                   // data value
 
 // returns: 1 if success
 //          0 if error

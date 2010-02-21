@@ -64,7 +64,7 @@ typedef struct r_cons_t {
 	LPDWORD term_raw, term_buf;
 #endif
 } RCons;
-extern RCons r_cons_instance;
+//extern RCons r_cons_instance;
 
 // TODO: pass instance ?
 typedef void (*RConsBreakCallback)(void *user);

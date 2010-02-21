@@ -103,7 +103,7 @@ R_API int r_vm_reg_add(struct r_vm_t *vm, const char *name, int type, ut64 value
 R_API ut64 r_vm_reg_get(struct r_vm_t *vm, const char *name);
 R_API int r_vm_reg_alias_list(struct r_vm_t *vm);
 R_API const char *r_vm_reg_type(int type);
-R_API const int r_vm_reg_type_i(const char *str);
+R_API int r_vm_reg_type_i(const char *str);
 R_API int r_vm_reg_del(struct r_vm_t *vm, const char *name);
 R_API int r_vm_reg_set(struct r_vm_t *vm, const char *name, ut64 value);
 R_API int r_vm_reg_alias(struct r_vm_t *vm, const char *name, const char *get, const char *set);
