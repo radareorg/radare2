@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <stdarg.h>
 #if __UNIX__
+// TODO: move this outside
 #include <sys/wait.h>
 #endif
 
@@ -173,12 +174,12 @@ static int cmd_yank_to(struct r_core_t *core, char *arg) {
 	char *str;
 	ut8 *buf;
 
-	while(*arg==' ')arg=arg+1;
+	while (*arg==' ')arg=arg+1;
 	str = strchr(arg, ' ');
 	if (str) {
 		str[0]='\0';
-		len = r_num_math(&core->num, arg);
-		pos = r_num_math(&core->num, str+1);
+		len = r_num_math (&core->num, arg);
+		pos = r_num_math (&core->num, str+1);
 		str[0]=' ';
 	}
 	if ( (str == NULL) || (pos == -1) || (len == 0) ) {
@@ -191,13 +192,13 @@ static int cmd_yank_to(struct r_core_t *core, char *arg) {
 		return 1;
 	}
 #endif
-	buf = (ut8*)malloc( len );
+	buf = (ut8*)malloc (len);
 	r_core_read_at (core, src, buf, len);
 	r_core_write_at (core, pos, buf, len);
 	free(buf);
 
 	core->offset = src;
-	r_core_block_read(core, 0);
+	r_core_block_read (core, 0);
 	return 0;
 }
 
@@ -240,8 +241,7 @@ static int cmd_yank(void *data, const char *input) {
 	return R_TRUE;
 }
 
-static int cmd_quit(void *data, const char *input)
-{
+static int cmd_quit(void *data, const char *input) {
 	struct r_core_t *core = (struct r_core_t *)data;
 	switch (input[0]) {
 	case '?':
@@ -258,7 +258,7 @@ static int cmd_quit(void *data, const char *input)
 		// TODO
 	default:
 		r_line_hist_save (".radare2_history");
-		exit(*input?r_num_math(&core->num, input+1):0);
+		exit (*input?r_num_math (&core->num, input+1):0);
 		break;
 	}
 	return 0;
@@ -266,19 +266,19 @@ static int cmd_quit(void *data, const char *input)
 
 static int cmd_interpret(void *data, const char *input) {
 	char *str, *ptr, *eol;
-	struct r_core_t *core = (struct r_core_t *)data;
-	switch(input[0]) {
+	RCore *core = (RCore *)data;
+	switch (input[0]) {
 	case ' ':
 		/* interpret file */
-		r_core_cmd_file(core, input+1);
+		r_core_cmd_file (core, input+1);
 		break;
 	case '!':
 		/* from command */
-		r_core_cmd_command(core, input+1);
+		r_core_cmd_command (core, input+1);
 		break;
 	case '(':
 		//fprintf(stderr, "macro call (%s)\n", input+1);
-		r_macro_call(&core->macro, input+1);
+		r_macro_call (&core->macro, input+1);
 		break;
 	case '?':
 		r_cons_printf (
@@ -289,15 +289,15 @@ static int cmd_interpret(void *data, const char *input) {
 		" ./m ELF           ; interpret output of command /m ELF as r. commands\n");
 		break;
 	default:
-		ptr = str = r_core_cmd_str(core, input);
+		ptr = str = r_core_cmd_str (core, input);
 		for (;;) {
-			eol = strchr(ptr, '\n');
+			eol = strchr (ptr, '\n');
 			if (eol) eol[0]='\0';
-			r_core_cmd(core, ptr, 0);
+			r_core_cmd (core, ptr, 0);
 			if (!eol) break;
 			ptr = eol+1;
 		}
-		free(str);
+		free (str);
 		break;
 	}
 	return 0;
@@ -416,11 +416,9 @@ static int cmd_seek(void *data, const char *input) {
 	return 0;
 }
 
-static int cmd_help(void *data, const char *input)
-{
-	struct r_core_t *core = (struct r_core_t *)data;
+static int cmd_help(void *data, const char *input) {
+	RCore *core = (RCore *)data;
 	ut64 n;
-
 	switch (input[0]) {
 	case ' ':
 		n = r_num_math (&core->num, input+1);
@@ -525,8 +523,7 @@ static int cmd_help(void *data, const char *input)
 	return 0;
 }
 
-static int cmd_bsize(void *data, const char *input)
-{
+static int cmd_bsize(void *data, const char *input) {
 	struct r_core_t *core = (struct r_core_t *)data;
 	switch (input[0]) {
 	case '\0':
@@ -534,7 +531,7 @@ static int cmd_bsize(void *data, const char *input)
 		break;
 	default:
 		//input = r_str_clean(input);
-		r_core_block_size (core, r_num_math (NULL, input));
+		r_core_block_size (core, r_num_math (&core->num, input));
 		break;
 	}
 	return 0;
@@ -661,9 +658,8 @@ static int cmd_info(void *data, const char *input) {
 	return 0;
 }
 
-static int cmd_print(void *data, const char *input)
-{
-	struct r_core_t *core = (struct r_core_t *)data;
+static int cmd_print(void *data, const char *input) {
+	RCore *core = (RCore *)data;
 	int l, len = core->blocksize;
 	ut32 tbs = core->blocksize;
 	int show_offset  = r_config_get_i (&core->config, "asm.offset");
@@ -679,13 +675,15 @@ static int cmd_print(void *data, const char *input)
 	if (r_config_get_i (&core->config, "asm.reflineswide"))
 		linesopts |= R_ANAL_REFLINE_WIDE;
 
+	/* XXX: This is only for pd/pD ??? */
 	if (input[0] && input[1]) {
-		l = (int) r_num_get (&core->num, input+2);
+		l = (int) r_num_math (&core->num, input+2);
 		if (input[0] != 'd') {
 			if (l>0) len = l;
 			if (l>tbs) r_core_block_size (core, l);
+			l = 9999;
 		}
-	}
+	} else l = 9999;
 	
 	switch(input[0]) {
 	case 'D':
@@ -704,7 +702,6 @@ static int cmd_print(void *data, const char *input)
 		
 			//r_anal_set_pc(&core->anal, core->offset);
 			r_asm_set_pc (&core->assembler, core->offset);
-			l = 9999; // number of lines
 
 			reflines = r_anal_reflines_get (&core->anal, core->offset,
 				buf, len, -1, linesout);
@@ -868,8 +865,7 @@ static int cmd_flag(void *data, const char *input) {
 	return 0;
 }
 
-static int cmd_anal(void *data, const char *input)
-{
+static int cmd_anal(void *data, const char *input) {
 	struct r_core_t *core = (struct r_core_t *)data;
 	int l, len = core->blocksize;
 	ut32 tbs = core->blocksize;
@@ -915,8 +911,7 @@ static int cmd_anal(void *data, const char *input)
 }
 
 /* TODO: simplify using r_write */
-static int cmd_write(void *data, const char *input)
-{
+static int cmd_write(void *data, const char *input) {
 	int i, len = strlen(input);
 	char *tmp, *str = alloca(len)+1;
 	struct r_core_t *core = (struct r_core_t *)data;
@@ -1148,8 +1143,7 @@ static int __cb_hit(struct r_search_kw_t *kw, void *user, ut64 addr)
 	return R_TRUE;
 }
 
-static int cmd_search(void *data, const char *input)
-{
+static int cmd_search(void *data, const char *input) {
 	struct r_core_t *core = (struct r_core_t *)data;
 	ut64 at;
 	ut32 n32;
@@ -1238,8 +1232,7 @@ static int cmd_search(void *data, const char *input)
 	return R_TRUE;
 }
 
-static int cmd_eval(void *data, const char *input)
-{
+static int cmd_eval(void *data, const char *input) {
 	struct r_core_t *core = (struct r_core_t *)data;
 	switch (input[0]) {
 	case '\0':
@@ -1274,8 +1267,7 @@ static int cmd_eval(void *data, const char *input)
 	return 0;
 }
 
-static int cmd_hash(void *data, const char *input)
-{
+static int cmd_hash(void *data, const char *input) {
 	char algo[32];
 	struct r_core_t *core = (struct r_core_t *)data;
 	ut32 len = core->blocksize;
@@ -1331,13 +1323,11 @@ static int cmd_hash(void *data, const char *input)
 	return 0;
 }
 
-static int cmd_visual(void *data, const char *input)
-{
+static int cmd_visual(void *data, const char *input) {
 	return r_core_visual ((RCore *)data, input);
 }
 
-static int cmd_system(void *data, const char *input)
-{
+static int cmd_system(void *data, const char *input) {
 	//struct r_core_t *core = (struct r_core_t *)data;
 	// slurped from teh old radare_system
 #if __FreeBSD__
@@ -1363,8 +1353,7 @@ static int cmd_system(void *data, const char *input)
 #endif
 }
 
-static int cmd_open(void *data, const char *input)
-{
+static int cmd_open(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	RCoreFile *file;
 	ut64 addr, size;
@@ -1407,9 +1396,8 @@ static int cmd_open(void *data, const char *input)
 	return 0;
 }
 
-static int cmd_meta(void *data, const char *input)
-{
-	struct r_core_t *core = (struct r_core_t *)data;
+static int cmd_meta(void *data, const char *input) {
+	RCore *core = (RCore*)data;
 	int ret, line = 0;
 	char file[1024];
 	switch(input[0]) {
@@ -1441,19 +1429,19 @@ static int cmd_meta(void *data, const char *input)
 		char fun_name[128];
 		int size = atoi(input);
 		int type = R_META_FUNCTION;
-		char *t, *p = strchr(input+1, ' ');
+		char *t, *p = strchr (input+1, ' ');
 		if (p) {
-			t = strdup(p+1);
-printf("T=(%s)\n", t);
+			t = strdup (p+1);
+			eprintf ("T=(%s)\n", t);
 			p = strchr(t, ' ');
 			if (p) {
 				*p='\0';
-				strncpy(fun_name, p+1, sizeof(fun_name));
-			} else sprintf(fun_name, "sub_%08llx", addr);
-			addr = r_num_math(&core->num, t);
+				strncpy (fun_name, p+1, sizeof (fun_name));
+			} else sprintf (fun_name, "sub_%08llx", addr);
+			addr = r_num_math (&core->num, t);
 			free(t);
 		}
-		r_meta_add(&core->meta, type, addr, size, fun_name);
+		r_meta_add (&core->meta, type, addr, size, fun_name);
 		}
 		break;
 	case '\0':
@@ -1467,35 +1455,32 @@ printf("T=(%s)\n", t);
 	return R_TRUE;
 }
 
-static int cmd_undowrite(void *data, const char *input)
-{
+static int cmd_undowrite(void *data, const char *input) {
 	//struct r_core_t *core = (struct r_core_t *)data;
 	// TODO:
 	return 0;
 }
 
-static int cmd_io_system(void *data, const char *input)
-{
+static int cmd_io_system(void *data, const char *input) {
 	struct r_core_t *core = (struct r_core_t *)data;
 	r_io_set_fd(&core->io, core->file->fd);
 	return r_io_system(&core->io, input);
 }
 
-static int cmd_macro(void *data, const char *input)
-{
-	struct r_core_t *core = (struct r_core_t *)data;
+static int cmd_macro(void *data, const char *input) {
+	RCore *core = (RCore*)data;
 	switch(input[0]) {
 	case ')':
-		r_macro_break(&core->macro, input+1);
+		r_macro_break (&core->macro, input+1);
 		break;
 	case '-':
-		r_macro_rm(&core->macro, input+1);
+		r_macro_rm (&core->macro, input+1);
 		break;
 	case '\0':
-		r_macro_list(&core->macro);
+		r_macro_list (&core->macro);
 		break;
 	case '?':
-		eprintf(
+		eprintf (
 		"Usage: (foo\\n..cmds..\\n)\n"
 		" Record macros grouping commands\n"
 		" (foo args\\n ..)  ; define a macro\n"
@@ -1511,7 +1496,7 @@ static int cmd_macro(void *data, const char *input)
 		);
 		break;
 	default:
-		r_macro_add(&core->macro, input);
+		r_macro_add (&core->macro, input);
 		break;
 	}
 	return 0;
@@ -1557,35 +1542,34 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd)
 	if (!*cmd || cmd[0]=='\0')
 		return 0;
 
-	cmd = r_str_trim_head_tail(cmd);
+	cmd = r_str_trim_head_tail (cmd);
 
 	/* quoted / raw command */
 	if (cmd[0] =='"') {
 		if (cmd[len-1] != '"') {
-			fprintf(stderr, "parse: Missing ending '\"'\n");
+			eprintf ("parse: Missing ending '\"'\n");
 			return -1;
-		} else {
-			cmd[len-1]='\0';
-			ret = r_cmd_call(&core->cmd, cmd+1);
-			return ret;
 		}
+		cmd[len-1]='\0';
+		ret = r_cmd_call (&core->cmd, cmd+1);
+		return ret;
 	}
 
 	/* multiple commands */
-	ptr = strrchr(cmd, ';');
+	ptr = strrchr (cmd, ';');
 	if (ptr) {
 		ptr[0]='\0';
-		if (r_core_cmd_subst(core, cmd) == -1) 
+		if (r_core_cmd_subst (core, cmd) == -1) 
 			return -1;
 		cmd = ptr+1;
-		r_cons_flush();
+		r_cons_flush ();
 	}
 
 	/* pipe console to shell process */
-	ptr = strchr(cmd, '|');
+	ptr = strchr (cmd, '|');
 	if (ptr) {
 		ptr[0] = '\0';
-		r_core_cmd_pipe(core, cmd, ptr+1);
+		r_core_cmd_pipe (core, cmd, ptr+1);
 		return 0;
 	}
 
@@ -1593,19 +1577,19 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd)
 	ptr = strchr(cmd, '&');
 	while (ptr&&ptr[1]=='&') {
 		ptr[0]='\0';
-		ret = r_cmd_call(&core->cmd, cmd);
+		ret = r_cmd_call (&core->cmd, cmd);
 		if (ret == -1){
-			fprintf(stderr, "command error(%s)\n", cmd);
+			eprintf ("command error(%s)\n", cmd);
 			return ret;
 		}
-		for(cmd=ptr+2;cmd&&cmd[0]==' ';cmd=cmd+1);
-		ptr = strchr(cmd, '&');
+		for (cmd=ptr+2;cmd&&cmd[0]==' ';cmd=cmd+1);
+		ptr = strchr (cmd, '&');
 	}
 
 	/* Out Of Band Input */
-	free(core->oobi);
+	free (core->oobi);
 	core->oobi = NULL;
-	ptr = strchr(cmd, '<');
+	ptr = strchr (cmd, '<');
 	if (ptr) {
 		ptr[0] = '\0';
 		if (ptr[1]=='<') {
@@ -1707,8 +1691,7 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd)
 	return 0;
 }
 
-R_API int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
-{
+R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	int i=0,j;
 	char ch;
 	char *word = NULL;
@@ -1821,7 +1804,7 @@ R_API int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each)
 					radare_cmd(cmd,0);
 				}
 #else
-printf("No flags foreach implemented\n");
+				eprintf ("No flags foreach implemented\n");
 #endif
 			} else {
 				/* for all flags in current flagspace */
@@ -1867,8 +1850,7 @@ printf("No flags foreach implemented\n");
 	return R_TRUE;
 }
 
-R_API int r_core_cmd(struct r_core_t *core, const char *command, int log)
-{
+R_API int r_core_cmd(struct r_core_t *core, const char *command, int log) {
 	int len, rep, ret = R_FALSE;
 	char *cmd, *ocmd;
 	if (command != NULL) {
@@ -1905,8 +1887,7 @@ R_API int r_core_cmd(struct r_core_t *core, const char *command, int log)
 	return ret;
 }
 
-R_API int r_core_cmd_file(struct r_core_t *core, const char *file)
-{
+R_API int r_core_cmd_file(struct r_core_t *core, const char *file) {
 	char buf[1024];
 	FILE *fd = fopen(file, "r");
 	if (fd == NULL) {
@@ -1926,8 +1907,7 @@ R_API int r_core_cmd_file(struct r_core_t *core, const char *file)
 	return 0;
 }
 
-R_API int r_core_cmd_command(struct r_core_t *core, const char *command)
-{
+R_API int r_core_cmd_command(struct r_core_t *core, const char *command) {
 	int len;
 	char *buf, *rcmd, *ptr;
 	rcmd = ptr = buf = r_sys_cmd_str (command, 0, &len);
@@ -2081,8 +2061,7 @@ static int cmd_debug(void *data, const char *input) {
 	return 0;
 }
 
-R_API int r_core_cmd_buffer(void *user, const char *buf)
-{
+R_API int r_core_cmd_buffer(void *user, const char *buf) {
 	char *str = strdup(buf);
 	char *ptr = strchr(str, '\n');
 	char *optr = str;
@@ -2097,8 +2076,7 @@ R_API int r_core_cmd_buffer(void *user, const char *buf)
 	return R_TRUE;
 }
 
-R_API int r_core_cmdf(void *user, const char *fmt, ...)
-{
+R_API int r_core_cmdf(void *user, const char *fmt, ...) {
 	char string[1024];
 	int ret;
 	va_list ap;
@@ -2109,8 +2087,7 @@ R_API int r_core_cmdf(void *user, const char *fmt, ...)
 	return ret;
 }
 
-R_API int r_core_cmd0(void *user, const char *cmd)
-{
+R_API int r_core_cmd0(void *user, const char *cmd) {
 	return r_core_cmd ((struct r_core_t *)user, cmd, 0);
 }
 
@@ -2134,8 +2111,7 @@ R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd)
 	return retstr;
 }
 
-int r_core_cmd_init(struct r_core_t *core)
-{
+int r_core_cmd_init(struct r_core_t *core) {
 	r_cmd_init (&core->cmd);
 	r_cmd_set_data (&core->cmd, core);
 	r_cmd_add (&core->cmd, "x",        "alias for px", &cmd_hexdump);

@@ -32,39 +32,6 @@ static void inferior_abort_handler(int pid) {
 #include <mach-o/loader.h>
 #include <mach-o/nlist.h>
 
-// XXX this is OSX
-static pid_t start_inferior(int argc, char **argv) {
-        char **child_args;
-        int status;
-        pid_t kid;
-
-        eprintf ("Starting process...\n");
-
-        if ((kid = fork ())) {
-                //waitpid (kid, &status, 0);
-                wait (&status);
-                if (WIFSTOPPED (status)) {
-                        eprintf ("Process with PID %d started...\n", (int)kid);
-                        return kid;
-                }
-                return -1;
-        }
-
-        child_args = (char **)malloc (sizeof (char *) * (argc + 1));
-        memcpy (child_args, argv, sizeof(char *) * argc);
-        child_args[argc] = NULL;
-
-        ptrace (PT_TRACE_ME, 0, 0, 0);
-        /* why altering these signals? */
-        /* XXX this can be monitorized by the child */
-        signal (SIGTRAP, SIG_IGN); // SINO NO FUNCIONA EL STEP
-        signal (SIGABRT, inferior_abort_handler);
-
-        execvp (argv[0], child_args);
-
-        eprintf ("Failed to start inferior.\n");
-	exit (0);
-}
 #endif
 
 static int __waitpid(int pid) {
@@ -80,25 +47,20 @@ static int __waitpid(int pid) {
 	return R_TRUE;
 }
 
-// TODO: move to common os/ directory
-
 /* 
  * Creates a new process and returns the result:
  * -1 : error
  *  0 : ok 
- * TODO: should be pid number?
- * TODO: should accept argv and so as arguments
  */
-//#include <linux/user.h>
 #define MAGIC_EXIT 31337
-static int fork_and_ptraceme(const char *cmd)
-{
+static int fork_and_ptraceme(const char *cmd) {
+	char **argv;
 	int status, pid = -1;
 
-	pid = vfork();
+	pid = vfork ();
 	switch (pid) {
 	case -1:
-		fprintf(stderr, "Cannot fork.\n");
+		perror ("fork_and_ptraceme");
 		break;
 	case 0:
 #if __APPLE__
@@ -111,46 +73,24 @@ static int fork_and_ptraceme(const char *cmd)
 			eprintf ("ptrace-traceme failed\n");
 			exit (MAGIC_EXIT);
 		}
-#if 0
-		eprintf ("argv = [ ");
-		for (i=0;ps.argv[i];i++)
-			eprintf ("'%s', ", ps.argv[i]);
-		eprintf ("]\n");
-#endif
+		// TODO: Add support to redirect filedescriptors
+		// TODO: Configure process environment
+		argv = r_str_argv (cmd, NULL);
+		execvp (argv[0], argv);
+		r_str_argv_free (argv);
 
-		// TODO: USE TM IF POSSIBLE TO ATTACH IT FROM ANOTHER CONSOLE!!!
-		// TODO: 
-		//debug_environment();
-{
-	char *buf;
-	char *argv[2];
-	char *ptr;
-
-// TODO: use: argv = r_str_argv ("hello \"world is bar\"", &argc);
-	buf = strdup (cmd);
-	ptr = strchr (buf, ' ');
-	if (ptr)
-		*ptr='\0';
-
-	argv[0] = r_file_path (cmd);
-	argv[1] = NULL;
-		//execv(cmd, argv); //ps.argv[0], ps.argv);
-	execvp (argv[0], argv);
-}
 		perror ("fork_and_attach: execv");
 		//printf(stderr, "[%d] %s execv failed.\n", getpid(), ps.filename);
 		exit (MAGIC_EXIT); /* error */
+		return 0; // invalid pid // if exit is overriden.. :)
 		break;
 	default:
 		/* XXX: clean this dirty code */
-#if __APPLE__
                 wait (&status);
                 if (WIFSTOPPED (status))
                         eprintf ("Process with PID %d started...\n", (int)pid);
-#else
-		__waitpid (pid);
-		kill (pid, SIGSTOP);
-#endif
+		// XXX
+		//kill (pid, SIGSTOP);
 		break;
 	}
 	printf ("PID = %d\n", pid);

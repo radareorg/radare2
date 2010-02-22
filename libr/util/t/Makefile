@@ -4,7 +4,7 @@ ifeq ($(WITHPIC),1)
 # OSX
 FLAGS=-I../../include -L.. -lr_util -g -DVERSION=\"${VERSION}\"
 #FLAGS=-I../../include -Wl,-R.. -L.. -lr_util -g -DVERSION=\"${VERSION}\"
-EFLAGS=
+EFLAGS=-L.. -lr_util
 else
 FLAGS=-I../../include -g -DVERSION=\"${VERSION}\"
 EFLAGS=../libr_util.a
@@ -15,6 +15,7 @@ BINS+=rax2${EXT_EXE}
 BINS+=ralloc${EXT_EXE}
 BINS+=array${EXT_EXE}
 BINS+=pool${EXT_EXE}
+BINS+=argv${EXT_EXE}
 BINS+=test_sys${EXT_EXE}
 BINS+=test_str${EXT_EXE}
 BINS+=test_file_slurp_hexpairs${EXT_EXE}
@@ -27,6 +28,9 @@ ralloc${EXT_EXE}:
 
 test${EXT_EXE}:
 	${CC} ${FLAGS} test.c ${EFLAGS} -o test${EXT_EXE}
+
+argv${EXT_EXE}:
+	${CC} ${FLAGS} argv.c ${EFLAGS} -o argv${EXT_EXE}
 
 test_sys${EXT_EXE}: test_sys.c
 	${CC} ${FLAGS} test_sys.c ${EFLAGS} -o test_sys${EXT_EXE}

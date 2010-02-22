@@ -156,6 +156,8 @@ R_API void r_num_init(struct r_num_t *num);
 #define ishexchar(x) ((x>='0'&&x<='9') ||  (x>='a'&&x<='f') ||  (x>='A'&&x<='F')) {
 
 /* strings */
+R_API char **r_str_argv(const char *str, int *_argc);
+R_API void r_str_argv_free(char **argv);
 R_API char *r_str_new(char *str);
 R_API const char *r_str_bool(int b);
 R_API const char *r_str_ansi_chrn(const char *str, int n);

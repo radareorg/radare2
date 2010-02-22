@@ -20,7 +20,7 @@ while(<STDIN>) {
 		s/:/\n\t/;
 		/(.*):/;
 		$file = $1;
-		print "$path/$_" if ($file ne $ofile)
+		print "$path/$_" if ($file ne $ofile);
 		$ofile = $file;
 	}
  #{ print "$path/".$line; }

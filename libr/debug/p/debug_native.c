@@ -77,7 +77,6 @@
 #define DEBUGGER 0
 #endif // ARCH
 
-
 #if DEBUGGER
 #include <sys/ptrace.h>
 #include <sys/types.h>
@@ -120,21 +119,16 @@ static void debug_arch_x86_trap_set(int pid, int foo) {
         if (foo) regs.__eflags |= EFLAGS_TRAP_FLAG;
         else regs.__eflags &= ~EFLAGS_TRAP_FLAG;
         debug_setregs (pid_to_task (pid), &regs);
-#else
-	/* void */
-#endif // __i386__ || __x86_64__
+#endif
 }
 #endif // __APPLE__
 
 static int r_debug_native_step(int pid) {
 	int ret = R_FALSE;
-#if __APPLE__
 	//R_DEBUG_REG_T regs;
 
+#if __APPLE__
 	debug_arch_x86_trap_set (pid, 1);
-
-#define OLD_PANCAKE_CODE 1
-#if OLD_PANCAKE_CODE
 	//eprintf ("stepping from pc = %08x\n", (ut32)get_offset("eip"));
 	//ret = ptrace (PT_STEP, ps.tid, (caddr_t)get_offset("eip"), SIGSTOP);
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, SIGTRAP); //SIGINT);
@@ -154,7 +148,7 @@ static int r_debug_native_step(int pid) {
 		perror ("native-singlestep");
 		ret = R_FALSE;
 	} else ret = R_TRUE;
-#endif // __APPLE__
+#endif // __APPLE_
 	return ret;
 }
 
@@ -186,6 +180,7 @@ static int r_debug_native_continue(int pid, int sig) {
 #if __APPLE__
         eprintf ("debug_contp: program is now running...\n");
  
+	/* XXX */
 	/* only stopped with ptrace the first time */
 	//ptrace(PT_CONTINUE, pid, 0, 0);
 	ptrace (PT_DETACH, pid, 0, 0);
@@ -374,7 +369,7 @@ static const char *r_debug_native_reg_profile() {
 
 // TODO: what about float and hardware regs here ???
 // TODO: add flag for type
-static int r_debug_native_reg_read(struct r_debug_t *dbg, int type, ut8 *buf, int size)
+static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size)
 {
 	int ret; 
 	int pid = dbg->pid;
@@ -396,7 +391,7 @@ static int r_debug_native_reg_read(struct r_debug_t *dbg, int type, ut8 *buf, in
 
         if (inferior_thread_count>0) {
                 /* TODO: allow to choose the thread */
-                if ((ret  = thread_get_state (inferior_threads[0], R_DEBUG_STATE_T,
+                if ((ret = thread_get_state (inferior_threads[0], R_DEBUG_STATE_T,
 				(thread_state_t) regs, &gp_count)) != KERN_SUCCESS) {
                         eprintf ("debug_getregs: Failed to get thread %d %d.error (%x). (%s)\n",
 				(int)pid, pid_to_task (pid), (int)ret, MACH_ERROR_STRING (ret));
@@ -415,8 +410,10 @@ static int r_debug_native_reg_read(struct r_debug_t *dbg, int type, ut8 *buf, in
 		R_DEBUG_REG_T regs;
 		memset (&regs, 0, sizeof (regs));
 		memset (buf, 0, size);
+
 #if __NetBSD__ || __FreeBSD__ || __OpenBSD__
 		ret = ptrace (PTRACE_GETREGS, pid, &regs, sizeof (regs));
+
 #elif __linux__ && __powerpc__
 		ret = ptrace (PTRACE_GETREGS, pid, &regs, NULL);
 #else
@@ -431,7 +428,6 @@ static int r_debug_native_reg_read(struct r_debug_t *dbg, int type, ut8 *buf, in
 		return sizeof (regs);
 		}
 		break;
-		//r_reg_set_bytes(reg, &regs, sizeof(struct user_regs));
 	}
 	return R_TRUE;
 #else
@@ -476,7 +472,7 @@ static RList *r_debug_native_map_get(struct r_debug_t *dbg)
 	sprintf (path, "/proc/%d/maps", dbg->pid);
 #endif
 	fd = fopen (path, "r");
-	if(!fd) {
+	if (!fd) {
 		perror ("debug_init_maps");
 		return NULL;
 	}
@@ -491,9 +487,10 @@ static RList *r_debug_native_map_get(struct r_debug_t *dbg)
 		path[0]='\0';
 		line[strlen (line)-1]='\0';
 #if __FreeBSD__
-	// 0x8070000 0x8072000 2 0 0xc1fde948 rw- 1 0 0x2180 COW NC vnode /usr/bin/gcc
+		// 0x8070000 0x8072000 2 0 0xc1fde948 rw- 1 0 0x2180 COW NC vnode /usr/bin/gcc
 		sscanf (line, "%s %s %d %d 0x%s %3s %d %d",
-			&region[2], &region2[2], &ign, &ign, unkstr, perms, &ign, &ign);
+			&region[2], &region2[2], &ign, &ign,
+			unkstr, perms, &ign, &ign);
 		pos_c = strchr (line, '/');
 		if (pos_c) strcpy (path, pos_c);
 		else path[0]='\0';
@@ -555,7 +552,7 @@ static RList *r_debug_native_map_get(struct r_debug_t *dbg)
 #endif
 		r_list_append (list, map);
 	}
-	fclose(fd);
+	fclose (fd);
 #endif // __sun
 	return list;
 }
@@ -589,14 +586,6 @@ static int r_debug_get_arch()
 #endif
 }
 
-#if 0
-static int r_debug_native_import(struct r_debug_handle_t *from)
-{
-	//int pid = from->export(R_DEBUG_GET_PID);
-	//int maps = from->export(R_DEBUG_GET_MAPS);
-	return R_FALSE;
-}
-#endif
 #if __i386__
 const char *archlist[3] = { "x86", "x86-32", 0 };
 #elif __x86_64__
@@ -634,8 +623,8 @@ struct r_lib_struct_t radare_plugin = {
 };
 #endif // CORELIB
 
-#endif
-#else
+//#endif
+#else // DEBUGGER
 struct r_debug_handle_t r_debug_plugin_native = {
 	.name = "native",
 };
