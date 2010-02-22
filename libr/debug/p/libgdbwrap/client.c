@@ -154,7 +154,6 @@ int main( int argc, char **argv )
       
     } while (strncmp("bye", buffer, 3));
   
-  
   close(sd);
   return (0);
 }

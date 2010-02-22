@@ -33,6 +33,8 @@ namespace Radare {
 
 	[CCode (cheader_filename="r_util.h", cprefix="r_sys_", free_function="")]
 	public static class RSystem {
+		//public static const weak string OS;
+		//public static const weak string ARCH;
 		public static int sleep (int secs);
 		public static int usleep (int usecs);
 		public static weak string getenv (string key);

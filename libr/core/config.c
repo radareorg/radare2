@@ -86,9 +86,11 @@ R_API int r_core_config_init(struct r_core_t *core)
 
 	r_config_set_cb(cfg, "asm.arch", "x86",
 		&config_asm_arch_callback);
+	// XXX: not portable
 	r_parse_use(&core->parser, "x86.pseudo");
 	r_config_set_cb(cfg, "asm.parser", "x86.pseudo",
 		&config_asm_parser_callback);
+
 	r_config_set(cfg, "dir.plugins", LIBDIR"/radare2/");
 	r_config_set(cfg, "asm.syntax", "intel");
 	r_config_set_i_cb(cfg, "asm.bits", 32,

@@ -6,6 +6,8 @@
 #include <r_reg.h>
 #include <r_lib.h>
 
+#define DEBUGGER 1
+
 #if __WINDOWS__
 #include <windows.h>
 #define R_DEBUG_REG_T CONTEXT
@@ -13,11 +15,46 @@
 #elif __OpenBSD__ || __NetBSD__ || __FreeBSD__
 #define R_DEBUG_REG_T struct reg
 
-#elif __sun
-#define R_DEBUG_REG_T gregset_t
-#undef DEBUGGER
-#define DEBUGGER 0
-#warning No debugger support for OSX yet
+#elif __APPLE__
+
+#define MACH_ERROR_STRING(ret) \
+	(mach_error_string (ret) ? mach_error_string (ret) : "(unknown)")
+
+#include <sys/ptrace.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <mach/exception_types.h>
+#include <mach/mach_init.h>
+#include <mach/mach_port.h>
+#include <mach/mach_traps.h>
+#include <mach/task.h>
+#include <mach/task_info.h>
+#include <mach/thread_act.h>
+#include <mach/thread_info.h>
+#include <mach/vm_map.h>
+#include <mach-o/loader.h>
+#include <mach-o/nlist.h>
+#include <sys/ptrace.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <errno.h>
+
+#if __POWERPC__
+#include <mach/ppc/_types.h>
+#include <mach/ppc/thread_status.h>
+#define R_DEBUG_REG_T ppc_thread_state_t
+#define R_DEBUG_STATE_T PPC_THREAD_STATE
+#elif __arm
+#include <mach/arm/thread_status.h>
+#define R_DEBUG_REG_T arm_thread_state_t
+#define R_DEBUG_STATE_T ARM_THREAD_STATE
+#else
+#include <mach/i386/thread_status.h>
+#include <sys/ucontext.h>
+#define R_DEBUG_REG_T _STRUCT_X86_THREAD_STATE32
+#include <mach/i386/_structs.h>
+#define R_DEBUG_STATE_T i386_THREAD_STATE
+#endif
 
 #elif __sun
 #define R_DEBUG_REG_T gregset_t
@@ -33,71 +70,206 @@
 # elif __arm__
 # define R_DEBUG_REG_T struct user_regs
 # endif
-#else
-#warning Unsupported debugging platform
-#endif
+#else // OS
 
-#if __WINDOWS__ || __sun || __APPLE__
-struct r_debug_handle_t r_debug_plugin_native = {
-	.name = "native",
-};
-#else
+#warning Unsupported debugging platform
+#undef DEBUGGER
+#define DEBUGGER 0
+#endif // ARCH
+
 
 #if DEBUGGER
-
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
-static int r_debug_native_step(int pid)
-{
-	int ret;
+#if __APPLE__
+// TODO: move into native/
+task_t pid_to_task(int pid) {
+	static task_t old_pid  = -1;
+	static task_t old_task = -1;
+	task_t task = 0;
+	int err;
+
+	/* xlr8! */
+	if (old_task!= -1) //old_pid != -1 && old_pid == pid)
+		return old_task;
+
+	err = task_for_pid(mach_task_self(), (pid_t)pid, &task);
+	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID(task)) {
+		eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
+		eprintf ("Reason: 0x%x: %s\n", err, MACH_ERROR_STRING(err));
+		eprintf ("You probably need to add user to procmod group.\n"
+			" Or chmod g+s radare && chown root:procmod radare\n");
+		eprintf ("FMI: http://developer.apple.com/documentation/Darwin/Reference/ManPages/man8/taskgated.8.html\n");
+		return -1;
+	}
+	old_pid = pid;
+	old_task = task;
+
+	return task;
+}
+
+// XXX intel specific -- generalize in r_reg..ease access
+#define EFLAGS_TRAP_FLAG 0x100
+static void debug_arch_x86_trap_set(int pid, int foo) {
+#if __i386__ || __x86_64__
+        R_DEBUG_REG_T regs;
+        debug_getregs (pid_to_task (pid), &regs);
+        printf("trap flag: %d\n", (regs.__eflags&0x100));
+        if (foo) regs.__eflags |= EFLAGS_TRAP_FLAG;
+        else regs.__eflags &= ~EFLAGS_TRAP_FLAG;
+        debug_setregs (pid_to_task (pid), &regs);
+#else
+	/* void */
+#endif // __i386__ || __x86_64__
+}
+#endif // __APPLE__
+
+static int r_debug_native_step(int pid) {
+	int ret = R_FALSE;
+#if __APPLE__
+	//R_DEBUG_REG_T regs;
+
+	debug_arch_x86_trap_set (pid, 1);
+
+#define OLD_PANCAKE_CODE 1
+#if OLD_PANCAKE_CODE
+	//eprintf ("stepping from pc = %08x\n", (ut32)get_offset("eip"));
+	//ret = ptrace (PT_STEP, ps.tid, (caddr_t)get_offset("eip"), SIGSTOP);
+	ret = ptrace (PT_STEP, pid, (caddr_t)1, SIGTRAP); //SIGINT);
+	if (ret != 0) {
+		perror ("ptrace-step");
+		eprintf ("FUCK: %s\n", MACH_ERROR_STRING(ret));
+		eprintf ("debug_os_steps: %d\n", ret);
+		/* DO NOT WAIT FOR EVENTS !!! */
+		ret = R_FALSE;
+	} else ret = R_TRUE;
+#else // __APPLE__
 	ut32 addr = 0; /* should be eip */
 	//ut32 data = 0;
 	//printf("NATIVE STEP over PID=%d\n", pid);
 	ret = ptrace (PTRACE_SINGLESTEP, pid, addr, 0); //addr, data);
-	if (ret == -1)
-		perror("native-singlestep");
-	return R_TRUE;
+	if (ret == -1) {
+		perror ("native-singlestep");
+		ret = R_FALSE;
+	} else ret = R_TRUE;
+#endif // __APPLE__
+	return ret;
 }
 
-static int r_debug_native_attach(int pid)
-{
+static int r_debug_native_attach(int pid) {
 	void *addr = 0;
 	void *data = 0;
+#if __APPLE__
+	int ret = ptrace (PT_ATTACH, pid, addr, data);
+#else
 	int ret = ptrace (PTRACE_ATTACH, pid, addr, data);
+#endif
 	return (ret != -1)?R_TRUE:R_FALSE;
 }
 
-static int r_debug_native_detach(int pid)
-{
+static int r_debug_native_detach(int pid) {
 	void *addr = 0;
 	void *data = 0;
+#if __APPLE__
+	return ptrace (PT_DETACH, pid, addr, data);
+#else
 	return ptrace (PTRACE_DETACH, pid, addr, data);
+#endif
 }
 
-static int r_debug_native_continue(int pid, int sig)
-{
-	void *addr = NULL; // eip for BSD
+static int r_debug_native_continue(int pid, int sig) {
 	void *data = NULL;
 	if (sig != -1)
 		data = (void*)(size_t)sig;
+#if __APPLE__
+        eprintf ("debug_contp: program is now running...\n");
+ 
+	/* only stopped with ptrace the first time */
+	//ptrace(PT_CONTINUE, pid, 0, 0);
+	ptrace (PT_DETACH, pid, 0, 0);
+	#if 0
+	 task_resume(inferior_task); // ???
+	 thread_resume(inferior_threads[0]);
+	#endif
+        return 0;
+#else
+	void *addr = NULL; // eip for BSD
 	return ptrace (PTRACE_CONT, pid, addr, data);
+#endif
 }
 
-static int r_debug_native_wait(int pid)
-{
+static int r_debug_native_wait(int pid) {
 	int ret, status = -1;
-	//printf("prewait\n");
-	ret = waitpid(pid, &status, 0);
-	//printf("status=%d (return=%d)\n", status, ret);
+	//printf ("prewait\n");
+	ret = waitpid (pid, &status, 0);
+	//printf ("status=%d (return=%d)\n", status, ret);
 	return status;
 }
 
 // TODO: why strdup here?
-static const char *r_debug_native_reg_profile()
-{
-#if __i386__
+static const char *r_debug_native_reg_profile() {
+#if __POWERPC__
+#if __APPLE__
+	return strdup(
+	"=pc	srr0\n"
+	"=sr	srr1\n" // status register
+	"=a0	r0\n"
+	"=a1	r1\n"
+	"=a2	r2\n"
+	"=a3	r3\n"
+	"=a4	r4\n"
+	"=a5	r5\n"
+	"=a6	r6\n"
+	"=a7	r7\n"
+	"gpr	srr0	.32	0	0\n"
+	"gpr	srr1	.32	4	0\n"
+	"gpr	r0	.32	8	0\n"
+	"gpr	r1	.32	12	0\n"
+	"gpr	r2	.32	16	0\n"
+	"gpr	r3	.32	20	0\n"
+	"gpr	r4	.32	24	0\n"
+	"gpr	r5	.32	28	0\n"
+	"gpr	r6	.32	32	0\n"
+	"gpr	r7	.32	36	0\n"
+	"gpr	r8	.32	40	0\n"
+	"gpr	r9	.32	44	0\n"
+	"gpr	r10	.32	48	0\n"
+	"gpr	r11	.32	52	0\n"
+	"gpr	r12	.32	56	0\n"
+	"gpr	r13	.32	60	0\n"
+	"gpr	r14	.32	64	0\n"
+	"gpr	r15	.32	68	0\n"
+	"gpr	r16	.32	72	0\n"
+	"gpr	r17	.32	76	0\n"
+	"gpr	r18	.32	80	0\n"
+	"gpr	r19	.32	84	0\n"
+	"gpr	r20	.32	88	0\n"
+	"gpr	r21	.32	92	0\n"
+	"gpr	r22	.32	96	0\n"
+
+	"gpr	r23	.32	100	0\n"
+	"gpr	r24	.32	104	0\n"
+	"gpr	r25	.32	108	0\n"
+	"gpr	r26	.32	112	0\n"
+	"gpr	r27	.32	116	0\n"
+	"gpr	r28	.32	120	0\n"
+	"gpr	r29	.32	124	0\n"
+	"gpr	r30	.32	128	0\n"
+	"gpr	r31	.32	132	0\n"
+	"gpr	cr	.32	136	0\n"
+	"gpr	xer	.32	140	0\n"
+	"gpr	lr	.32	144	0\n"
+	"gpr	ctr	.32	148	0\n"
+	"gpr	mq	.32	152	0\n"
+	"gpr	vrsave	.32	156	0\n"
+	);
+#else // __APPLE__
+	#warning powerpc registers only supported in osx-darwin-powerpc
+	return NULL;
+#endif // __POWERPC__
+#elif __i386__
 	return strdup(
 	"=pc	eip\n"
 	"=sp	esp\n"
@@ -210,7 +382,34 @@ static int r_debug_native_reg_read(struct r_debug_t *dbg, int type, ut8 *buf, in
 	int ret; 
 	int pid = dbg->pid;
 // XXX this must be defined somewhere else
-#if __linux__ || __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
+#if __APPLE__
+	thread_array_t inferior_threads = NULL;
+	unsigned int inferior_thread_count = 0;
+	R_DEBUG_REG_T *regs = (R_DEBUG_REG_T *)buf;
+        unsigned int gp_count = sizeof (R_DEBUG_REG_T);
+
+        //thread_act_port_array_t thread_list;
+        //mach_msg_type_number_t thread_count;
+
+        ret = task_threads (pid_to_task (pid), &inferior_threads, &inferior_thread_count);
+        if (ret != KERN_SUCCESS) {
+                eprintf ("debug_getregs\n");
+                return R_FALSE;
+        }
+
+        if (inferior_thread_count>0) {
+                /* TODO: allow to choose the thread */
+                if ((ret  = thread_get_state (inferior_threads[0], R_DEBUG_STATE_T,
+				(thread_state_t) regs, &gp_count)) != KERN_SUCCESS) {
+                        eprintf ("debug_getregs: Failed to get thread %d %d.error (%x). (%s)\n",
+				(int)pid, pid_to_task (pid), (int)ret, MACH_ERROR_STRING (ret));
+                        perror ("thread_get_state");
+                        return R_FALSE;
+                }
+        } else eprintf ("There are no threads!\n");
+        return R_TRUE; //gp_count;
+
+#elif __linux__ || __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
 	switch (type) {
 	case R_REG_TYPE_SEG:
 	case R_REG_TYPE_FLG:
@@ -237,18 +436,18 @@ static int r_debug_native_reg_read(struct r_debug_t *dbg, int type, ut8 *buf, in
 		break;
 		//r_reg_set_bytes(reg, &regs, sizeof(struct user_regs));
 	}
+	return R_TRUE;
 #else
 #warning dbg-native not supported for this platform
+	return R_FALSE;
 #endif
-	return 0;
 }
 
 static int r_debug_native_reg_write(int pid, int type, const ut8* buf, int size) {
-	int ret;
 	// XXX use switch or so
 	if (type == R_REG_TYPE_GPR) {
 #if __linux__ || __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
-		ret = ptrace (PTRACE_SETREGS, pid, 0, buf);
+		int ret = ptrace (PTRACE_SETREGS, pid, 0, buf);
 		if (sizeof (R_DEBUG_REG_T) < size)
 			size = sizeof (R_DEBUG_REG_T);
 		return (ret != 0) ? R_FALSE: R_TRUE;
@@ -375,8 +574,7 @@ static int r_debug_native_bp_write(int pid, ut64 addr, int size, int hw, int rwx
 }
 
 /* TODO: rethink */
-static int r_debug_native_bp_read(int pid, ut64 addr, int hw, int rwx)
-{
+static int r_debug_native_bp_read(int pid, ut64 addr, int hw, int rwx) {
 	return R_TRUE;
 }
 #endif
@@ -385,8 +583,8 @@ static int r_debug_get_arch()
 {
 #if __i386__ || __x86_64__
 	return R_ASM_ARCH_X86;
-#elif __powerpc__
-	return R_ASM_ARCH_POWERPC;
+#elif __powerpc__ || __POWERPC__
+	return R_ASM_ARCH_PPC;
 #elif __mips__
 	return R_ASM_ARCH_MIPS;
 #elif __arm__
@@ -406,7 +604,7 @@ static int r_debug_native_import(struct r_debug_handle_t *from)
 const char *archlist[3] = { "x86", "x86-32", 0 };
 #elif __x86_64__
 const char *archlist[4] = { "x86", "x86-32", "x86-64", 0 };
-#elif __powerpc__
+#elif __powerpc__ || __POWERPC__
 const char *archlist[3] = { "powerpc", 0 };
 #elif __mips__
 const char *archlist[3] = { "mips", 0 };
@@ -432,12 +630,17 @@ struct r_debug_handle_t r_debug_plugin_native = {
 	//.bp_write = &r_debug_native_bp_write,
 };
 
-#endif
-#endif
-
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_native
 };
+#endif // CORELIB
+
 #endif
+#else
+struct r_debug_handle_t r_debug_plugin_native = {
+	.name = "native",
+};
+
+#endif // DEBUGGER

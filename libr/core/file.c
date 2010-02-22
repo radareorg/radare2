@@ -2,15 +2,13 @@
 
 #include <r_core.h>
 
-R_API ut64 r_core_file_resize(struct r_core_t *core, ut64 newsize)
-{
+R_API ut64 r_core_file_resize(struct r_core_t *core, ut64 newsize) {
 	if (newsize==0 && core->file)
 		return core->file->size;
 	return 0LL;
 }
 
-R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int mode)
-{
+R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int mode) {
 	struct r_core_file_t *fh;
 	const char *cp;
 	char *p;
@@ -44,22 +42,19 @@ R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *fil
 	return fh;
 }
 
-R_API int r_core_file_set(struct r_core_t *r, struct r_core_file_t *fh)
-{
+R_API int r_core_file_set(struct r_core_t *r, struct r_core_file_t *fh) {
 	r->file = fh;
 	return R_TRUE;
 }
 
-R_API int r_core_file_close(struct r_core_t *r, struct r_core_file_t *fh)
-{
+R_API int r_core_file_close(struct r_core_t *r, struct r_core_file_t *fh) {
 	int ret = r_io_close (&r->io, fh->fd);
 	list_del (&(fh->list));
 	// TODO: set previous opened file as current one
 	return ret;
 }
 
-R_API struct r_core_file_t *r_core_file_get_fd(struct r_core_t *core, int fd)
-{
+R_API struct r_core_file_t *r_core_file_get_fd(struct r_core_t *core, int fd) {
 	struct list_head *pos;
 	list_for_each_prev (pos, &core->files) {
 		RCoreFile *file = list_entry (pos, RCoreFile, list);
@@ -69,8 +64,7 @@ R_API struct r_core_file_t *r_core_file_get_fd(struct r_core_t *core, int fd)
 	return NULL;
 }
 
-R_API int r_core_file_list(struct r_core_t *core)
-{
+R_API int r_core_file_list(struct r_core_t *core) {
 	int count = 0;
 	struct list_head *pos;
 	list_for_each_prev (pos, &core->files) {
@@ -81,11 +75,10 @@ R_API int r_core_file_list(struct r_core_t *core)
 	return count;
 }
 
-R_API int r_core_file_close_fd(struct r_core_t *core, int fd)
-{
-	int ret = r_io_close(&core->io, fd);
-	struct r_core_file_t *fh = r_core_file_get_fd(core, fd);
+R_API int r_core_file_close_fd(struct r_core_t *core, int fd) {
+	int ret = r_io_close (&core->io, fd);
+	struct r_core_file_t *fh = r_core_file_get_fd (core, fd);
 	if (fh != NULL)
-		list_del(&(fh->list));
+		list_del (&(fh->list));
 	return ret;
 }

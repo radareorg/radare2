@@ -6,8 +6,6 @@
 #include <r_lib.h>
 #include <r_cons.h>
 
-//#if DEBUGGER
-
 #if __linux__ || __NetBSD__ || __FreeBSD__ || __OpenBSD__
 
 #include <sys/ptrace.h>

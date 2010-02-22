@@ -146,6 +146,7 @@ typedef struct r_io_desc_t {
 
 #ifdef R_API
 #define r_io_bind_init(x) memset(&x,0,sizeof(x))
+
 /* io/handle.c */
 R_API struct r_io_t *r_io_new();
 R_API struct r_io_t *r_io_free(struct r_io_t *io);
@@ -244,6 +245,7 @@ R_API int r_io_desc_generate(struct r_io_t *io);
 /* plugins */
 extern struct r_io_handle_t r_io_plugin_malloc;
 extern struct r_io_handle_t r_io_plugin_ptrace;
+extern struct r_io_handle_t r_io_plugin_mach;
 extern struct r_io_handle_t r_io_plugin_debug;
 extern struct r_io_handle_t r_io_plugin_shm;
 #endif

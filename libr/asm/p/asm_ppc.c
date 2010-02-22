@@ -1,4 +1,4 @@
-/* radare - GPL3 - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare - GPL3 - Copyright 2009-2010 nibble<.ds@gmail.com> */
 
 #include <stdio.h>
 #include <string.h>
@@ -10,9 +10,7 @@
 
 #include "ppc/ppc_disasm/ppc_disasm.h"
 
-
-static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len)
-{
+static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len) {
 	ppc_word iaddr = (ppc_word)a->pc;
 	ppc_word bof[4];
 	char opcode[128];
@@ -34,7 +32,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 
 struct r_asm_handle_t r_asm_plugin_ppc = {
 	.name = "ppc",
-	.arch = "powepc",
+	.arch = "ppc",
 	.bits = (int[]){ 32, 0 },
 	.desc = "PPC disassembly plugin",
 	.init = NULL,

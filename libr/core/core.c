@@ -168,9 +168,20 @@ R_API int r_core_init(struct r_core_t *core)
 	r_asm_use (&core->assembler, DEFAULT_ARCH);
 	r_anal_use (&core->anal, DEFAULT_ARCH);
 	r_bp_use (core->dbg.bp, DEFAULT_ARCH);
-	r_config_set (&core->config, "asm.arch", "x86");
+#if __x86_64__
+	r_config_set_i (&core->config, "asm.bits", 64);
+#else
 	r_config_set_i (&core->config, "asm.bits", 32);
-
+#endif
+#if __POWERPC__
+	r_config_set (&core->config, "asm.arch", "ppc");
+#elif __arm__
+	r_config_set (&core->config, "asm.arch", "arm");
+#elif __mips__
+	r_config_set (&core->config, "asm.arch", "mips");
+#else
+	r_config_set (&core->config, "asm.arch", "x86");
+#endif
 	return 0;
 }
 

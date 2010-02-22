@@ -60,6 +60,47 @@ typedef struct r_num_t {
 } RNum;
 typedef ut64 (*RNumCallback)(RNum *self, const char *str, int *ok);
 
+/* arch */
+#if __i386__
+#define R_SYS_ARCH "i386"
+#elif __x86_64__
+#define R_SYS_ARCH "x86-64"
+#elif __POWERPC__
+#define R_SYS_ARCH "powerpc"
+#elif __arm__
+#define R_SYS_ARCH "arm"
+#elif __sparc__
+#define R_SYS_ARCH "sparc"
+#elif __mips__
+#define R_SYS_ARCH "mips"
+#else
+#define R_SYS_ARCH "unknown"
+#endif
+
+/* os */
+#if __APPLE__
+#define R_SYS_OS "darwin"
+#elif __linux__
+#define R_SYS_OS "windows"
+#elif __linux__
+#define R_SYS_OS "linux"
+#elif __NetBSD__ 
+#define R_SYS_OS "netbsd"
+#elif __OpenBSD__
+#define R_SYS_OS "openbsd"
+#elif __FreeBSD__
+#define R_SYS_OS "freebsd"
+#else
+#define R_SYS_OS "unknown"
+#endif
+
+/* endian */
+#if LIL_ENDIAN
+#define R_SYS_ENDIAN "little"
+#else
+#define R_SYS_ENDIAN "big"
+#endif
+
 #ifdef R_API
 //R_API RBuffer *r_num_new(RNumCallback *cb, void *ptr);
 R_API RNum *r_num_new(RNumCallback cb, void *ptr);

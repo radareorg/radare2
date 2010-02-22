@@ -7,8 +7,7 @@
 
 static struct r_core_t r;
 
-static int main_help(int line)
-{
+static int main_help(int line) {
 	printf ("Usage: radare2 [-dwnLV] [-s addr] [-b bsz] [-e k=v] [file] [...]\n");
 	if (!line) printf (
 		" -d        use 'file' as a program to debug\n"
@@ -26,14 +25,12 @@ static int main_help(int line)
 	return 0;
 }
 
-static int main_version()
-{
-	printf ("radare2 "VERSION"\n");
+static int main_version() {
+	printf ("radare2 "VERSION" @ "R_SYS_OS"-"R_SYS_ENDIAN"-"R_SYS_ARCH"\n");
 	return 0;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
 	struct r_core_file_t *fh;
  	int c, perms = R_IO_READ;
 	int run_rc = 1;
