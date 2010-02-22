@@ -5,6 +5,22 @@
 #include <r_util.h>
 #include "mach0.h"
 
+static int MACH0_(r_bin_mach0_addr_to_offset)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 addr)
+{
+	ut64 section_base, section_size;
+	int i;
+
+	if (!bin->sects)
+		return 0;
+	for (i = 0; i < bin->nsects; i++) {
+		section_base = (ut64)bin->sects[i].addr;
+		section_size = (ut64)bin->sects[i].size;
+		if (addr >= section_base && addr < section_base + section_size)
+			return bin->sects[i].offset + (addr - section_base);
+	}
+	return 0;
+}
+
 static int MACH0_(r_bin_mach0_init_hdr)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 {
 	int magic, len;
@@ -149,18 +165,51 @@ static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* 
 
 static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off)
 {
-	int len;
+	int len = -1;
 
-	len = r_buf_fread_at(bin->b, off, (ut8*)&bin->thread, bin->endian?"2I":"2i", 1);
+	len = r_buf_fread_at(bin->b, off, (ut8*)&bin->thread, bin->endian?"4I":"4i", 1);
 	if (len == -1) {
 		eprintf("Error: read (thread)\n");
 		return R_FALSE;
 	}
-#if 0
-	eprintf ("%llx\n", off);
-	eprintf ("cmd: %x\n", bin->thread.cmd);
-	eprintf ("cmdsize: %x\n", bin->thread.cmdsize);
-#endif
+	if (bin->hdr.cputype == CPU_TYPE_I386 || bin->hdr.cputype == CPU_TYPE_X86_64) { 
+		if (bin->thread.flavor == X86_THREAD_STATE32) {
+			if ((len = r_buf_fread_at(bin->b, off + sizeof(struct thread_command),
+				(ut8*)&bin->thread_state.x86_32, bin->endian?"16I":"16i", 1)) == -1) {
+				eprintf("Error: read (thread state x86_32)\n");
+				return R_FALSE;
+			}
+			bin->entry = bin->thread_state.x86_32.eip;
+
+		} else if (bin->thread.flavor == X86_THREAD_STATE64) {
+			if ((len = r_buf_fread_at(bin->b, off + sizeof(struct thread_command),
+				(ut8*)&bin->thread_state.x86_64, bin->endian?"21L":"21l", 1)) == -1) {
+				eprintf("Error: read (thread state x86_32)\n");
+				return R_FALSE;
+			}
+			bin->entry = bin->thread_state.x86_64.rip;
+		}
+	} else if (bin->hdr.cputype == CPU_TYPE_POWERPC || bin->hdr.cputype == CPU_TYPE_POWERPC64) { 
+		if (bin->thread.flavor == X86_THREAD_STATE32) {
+			if ((len = r_buf_fread_at(bin->b, off + sizeof(struct thread_command),
+				(ut8*)&bin->thread_state.ppc_32, bin->endian?"40I":"40i", 1)) == -1) {
+				eprintf("Error: read (thread state x86_32)\n");
+				return R_FALSE;
+			}
+			bin->entry = bin->thread_state.ppc_32.srr0;
+
+		} else if (bin->thread.flavor == X86_THREAD_STATE64) {
+			if ((len = r_buf_fread_at(bin->b, off + sizeof(struct thread_command),
+				(ut8*)&bin->thread_state.ppc_64, bin->endian?"34LI3LI":"34li3li", 1)) == -1) {
+				eprintf("Error: read (thread state x86_32)\n");
+				return R_FALSE;
+			}
+			bin->entry =  bin->thread_state.ppc_64.srr0;
+		}
+	} else {
+		eprintf("Error: read (unknown thread state structure)\n");
+		return R_FALSE;
+	}
 	return R_TRUE;
 }
 
@@ -294,8 +343,8 @@ struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin
 		return NULL;
 	/* XXX: only extdefsym? */
 	for (i = bin->dysymtab.iextdefsym, j = 0; j < bin->dysymtab.nextdefsym; i++, j++) {
-		symbols[j].offset = bin->symtab[i].n_value;
-		symbols[j].addr = bin->symtab[i].n_value; /* TODO: baddr? */
+		symbols[j].offset = MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->symtab[i].n_value);
+		symbols[j].addr = bin->symtab[i].n_value;
 		symbols[j].size = 0; /* TODO: Is it anywhere? */
 		strncpy(symbols[j].name, (char*)bin->symstr+bin->symtab[i].n_un.n_strx, R_BIN_MACH0_STRING_LENGTH);
 		symbols[j].last = 0;
@@ -314,8 +363,9 @@ struct r_bin_mach0_import_t* MACH0_(r_bin_mach0_get_imports)(struct MACH0_(r_bin
 	if (!(imports = malloc((bin->dysymtab.nundefsym + 1) * sizeof(struct r_bin_mach0_import_t))))
 		return NULL;
 	/* XXX: only iundefsym?  */
+	/* TODO: get address */
 	for (i = bin->dysymtab.iundefsym, j = 0; j < bin->dysymtab.nundefsym; i++, j++) {
-		imports[j].offset = bin->symtab[i].n_value; /* TODO */
+		imports[j].offset = MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->symtab[i].n_value);
 		imports[j].addr = bin->symtab[i].n_value;
 		strncpy(imports[j].name, (char*)bin->symstr+bin->symtab[i].n_un.n_strx, R_BIN_MACH0_STRING_LENGTH);
 		imports[j].last = 0;
@@ -324,14 +374,29 @@ struct r_bin_mach0_import_t* MACH0_(r_bin_mach0_get_imports)(struct MACH0_(r_bin
 	return imports;
 }
 
-struct r_bin_mach0_entrypoint_t* MACH0_(r_bin_mach0_get_entrypoints)(struct MACH0_(r_bin_mach0_obj_t)* bin)
+struct r_bin_mach0_entrypoint_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 {
-	/* TODO */
-	return NULL;
+	struct r_bin_mach0_entrypoint_t *entry;
+	int i;
+
+	if (!bin->entry && !bin->sects)
+		return NULL;
+	if (!(entry = malloc(sizeof(struct r_bin_mach0_entrypoint_t))))
+		return NULL;
+	if (bin->entry) {
+		entry->offset = MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry);
+		entry->addr = bin->entry;
+	} else
+		for (i = 0; i < bin->nsects; i++)
+			if (!memcmp (bin->sects[i].sectname, "__text", 6)) {
+				entry->offset = (ut64)bin->sects[i].offset;
+				entry->addr = (ut64)bin->sects[i].addr;
+				break;
+			}
+	return entry;
 }
 
 ut64 MACH0_(r_bin_mach0_get_baddr)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 {
-	/* TODO */
 	return UT64_MIN;
 }

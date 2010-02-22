@@ -1,25 +1,4 @@
-/*
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- *
- * @APPLE_LICENSE_HEADER_START@
- * 
- * This file contains Original Code and/or Modifications of Original Code
- * as defined in and that are subject to the Apple Public Source License
- * Version 2.0 (the 'License'). You may not use this file except in
- * compliance with the License. Please obtain a copy of the License at
- * http://www.opensource.apple.com/apsl/ and read it before using this
- * file.
- * 
- * The Original Code and all software distributed under the License are
- * distributed on an 'AS IS' basis, WITHOUT WARRANTY OF ANY KIND, EITHER
- * EXPRESS OR IMPLIED, AND APPLE HEREBY DISCLAIMS ALL SUCH WARRANTIES,
- * INCLUDING WITHOUT LIMITATION, ANY WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE, QUIET ENJOYMENT OR NON-INFRINGEMENT.
- * Please see the License for the specific language governing rights and
- * limitations under the License.
- * 
- * @APPLE_LICENSE_HEADER_END@
- */
+/* radare - LGPL - Copyright 2010 nibble at develsec.org */
 
 #undef MACH0_
 #undef MH_MAGIC
@@ -189,6 +168,30 @@ struct mach_header_64 {
 					   in the task will be given stack
 					   execution privilege.  Only used in
 					   MH_EXECUTE filetypes. */
+
+/*
+ * Capability bits used in the definition of cpu_type.
+ */
+#define	CPU_ARCH_MASK	0xff000000		/* mask for architecture bits */
+#define CPU_ARCH_ABI64	0x01000000		/* 64 bit ABI */
+
+/*
+ * Machine types known by all.
+ */
+
+#define CPU_TYPE_ANY		((cpu_type_t) -1)
+#define CPU_TYPE_VAX		((cpu_type_t) 1)
+#define	CPU_TYPE_MC680x0	((cpu_type_t) 6)
+#define CPU_TYPE_X86		((cpu_type_t) 7)
+#define CPU_TYPE_I386		CPU_TYPE_X86		/* compatibility */
+#define	CPU_TYPE_X86_64		(CPU_TYPE_X86 | CPU_ARCH_ABI64)
+#define CPU_TYPE_MC98000	((cpu_type_t) 10)
+#define CPU_TYPE_HPPA       ((cpu_type_t) 11)
+#define CPU_TYPE_MC88000	((cpu_type_t) 13)
+#define CPU_TYPE_SPARC		((cpu_type_t) 14)
+#define CPU_TYPE_I860		((cpu_type_t) 15)
+#define CPU_TYPE_POWERPC	((cpu_type_t) 18)
+#define CPU_TYPE_POWERPC64	(CPU_TYPE_POWERPC | CPU_ARCH_ABI64)
 
 /*
  * The load commands directly follow the mach_header.  The total size of all
@@ -719,11 +722,149 @@ struct dylinker_command {
 struct thread_command {
 	uint32_t	cmd;		/* LC_THREAD or  LC_UNIXTHREAD */
 	uint32_t	cmdsize;	/* total size of this command */
+	uint32_t	flavor;
+	uint32_t	count;
 	/* uint32_t flavor		   flavor of thread state */
 	/* uint32_t count		   count of longs in thread state */
 	/* struct XXX_thread_state state   thread state for this flavor */
 	/* ... */
 };
+
+struct x86_thread_state32 {
+	uint32_t	eax;
+	uint32_t	ebx;
+	uint32_t	ecx;
+	uint32_t	edx;
+	uint32_t	edi;
+	uint32_t	esi;
+	uint32_t	ebp;
+	uint32_t	esp;
+	uint32_t	ss;
+	uint32_t	eflags;
+	uint32_t	eip;
+	uint32_t	cs;
+	uint32_t	ds;
+	uint32_t	es;
+	uint32_t	fs;
+	uint32_t	gs;
+} ;
+
+struct x86_thread_state64 {
+	uint64_t	rax;
+	uint64_t	rbx;
+	uint64_t	rcx;
+	uint64_t	rdx;
+	uint64_t	rdi;
+	uint64_t	rsi;
+	uint64_t	rbp;
+	uint64_t	rsp;
+	uint64_t	r8;
+	uint64_t	r9;
+	uint64_t	r10;
+	uint64_t	r11;
+	uint64_t	r12;
+	uint64_t	r13;
+	uint64_t	r14;
+	uint64_t	r15;
+	uint64_t	rip;
+	uint64_t	rflags;
+	uint64_t	cs;
+	uint64_t	fs;
+	uint64_t	gs;
+};
+
+struct ppc_thread_state32 {
+	uint32_t srr0;  /* Instruction address register (PC) */
+	uint32_t srr1;	/* Machine state register (supervisor) */
+	uint32_t r0;
+	uint32_t r1;
+	uint32_t r2;
+	uint32_t r3;
+	uint32_t r4;
+	uint32_t r5;
+	uint32_t r6;
+	uint32_t r7;
+	uint32_t r8;
+	uint32_t r9;
+	uint32_t r10;
+	uint32_t r11;
+	uint32_t r12;
+	uint32_t r13;
+	uint32_t r14;
+	uint32_t r15;
+	uint32_t r16;
+	uint32_t r17;
+	uint32_t r18;
+	uint32_t r19;
+	uint32_t r20;
+	uint32_t r21;
+	uint32_t r22;
+	uint32_t r23;
+	uint32_t r24;
+	uint32_t r25;
+	uint32_t r26;
+	uint32_t r27;
+	uint32_t r28;
+	uint32_t r29;
+	uint32_t r30;
+	uint32_t r31;
+
+	uint32_t cr;    /* Condition register */
+	uint32_t xer;	/* User's integer exception register */
+	uint32_t lr;	/* Link register */
+	uint32_t ctr;	/* Count register */
+	uint32_t mq;	/* MQ register (601 only) */
+
+	uint32_t vrsave;	/* Vector Save Register */
+};
+
+struct ppc_thread_state64 {
+	uint64_t srr0;  /* Instruction address register (PC) */
+	uint64_t srr1;  /* Machine state register (supervisor) */
+	uint64_t r0;
+	uint64_t r1;
+	uint64_t r2;
+	uint64_t r3;
+	uint64_t r4;
+	uint64_t r5;
+	uint64_t r6;
+	uint64_t r7;
+	uint64_t r8;
+	uint64_t r9;
+	uint64_t r10;
+	uint64_t r11;
+	uint64_t r12;
+	uint64_t r13;
+	uint64_t r14;
+	uint64_t r15;
+	uint64_t r16;
+	uint64_t r17;
+	uint64_t r18;
+	uint64_t r19;
+	uint64_t r20;
+	uint64_t r21;
+	uint64_t r22;
+	uint64_t r23;
+	uint64_t r24;
+	uint64_t r25;
+	uint64_t r26;
+	uint64_t r27;
+	uint64_t r28;
+	uint64_t r29;
+	uint64_t r30;
+	uint64_t r31;
+
+	uint32_t cr;			/* Condition register */
+	uint64_t xer;		/* User's integer exception register */
+	uint64_t lr;		/* Link register */
+	uint64_t ctr;		/* Count register */
+
+	uint32_t vrsave;		/* Vector Save Register */
+};
+
+
+#define X86_THREAD_STATE32	1
+#define X86_THREAD_STATE64	4
 
 /*
  * The routines command contains the address of the dynamic shared library 

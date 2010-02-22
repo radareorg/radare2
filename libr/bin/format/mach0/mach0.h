@@ -63,8 +63,15 @@ struct MACH0_(r_bin_mach0_obj_t) {
 	struct MACH0_(dylib_module)* modtab;
 	int nmodtab;
 	struct thread_command thread;
+	union {
+		struct x86_thread_state32 x86_32;
+		struct x86_thread_state64 x86_64;
+		struct ppc_thread_state32 ppc_32;
+		struct ppc_thread_state64 ppc_64;
+	} thread_state;
 	int size;
     ut64 baddr;
+    ut64 entry;
 	int	endian;
     const char* file;
 	struct r_buf_t* b;
@@ -75,7 +82,7 @@ void* MACH0_(r_bin_mach0_free)(struct MACH0_(r_bin_mach0_obj_t)* bin);
 struct r_bin_mach0_section_t* MACH0_(r_bin_mach0_get_sections)(struct MACH0_(r_bin_mach0_obj_t)* bin);
 struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin_mach0_obj_t)* bin);
 struct r_bin_mach0_import_t* MACH0_(r_bin_mach0_get_imports)(struct MACH0_(r_bin_mach0_obj_t)* bin);
-struct r_bin_mach0_entrypoint_t* MACH0_(r_bin_mach0_get_entrypoints)(struct MACH0_(r_bin_mach0_obj_t)* bin);
+struct r_bin_mach0_entrypoint_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bin_mach0_obj_t)* bin);
 ut64 MACH0_(r_bin_mach0_get_baddr)(struct MACH0_(r_bin_mach0_obj_t)* bin);
 
 #if 0

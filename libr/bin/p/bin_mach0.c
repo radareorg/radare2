@@ -26,6 +26,26 @@ static ut64 baddr(RBin *bin)
 	return MACH0_(r_bin_mach0_get_baddr) ((struct MACH0_(r_bin_mach0_obj_t)*)bin->bin_obj);
 }
 
+static RFList entries(RBin *bin)
+{
+	RFList ret;
+	RBinEntry *ptr = NULL;
+	struct r_bin_mach0_entrypoint_t *entry = NULL;
+
+	if (!(entry = MACH0_(r_bin_mach0_get_entrypoint) ((struct MACH0_(r_bin_mach0_obj_t)*)bin->bin_obj)))
+		return NULL;
+	if (!(ret = r_flist_new (1)))
+		return NULL;
+	if (!(ptr = MALLOC_STRUCT (RBinEntry)))
+		return ret;
+	memset (ptr, '\0', sizeof (RBinEntry));
+	ptr->offset = entry->offset;
+	ptr->rva = entry->addr;
+	r_flist_set (ret, 0, ptr);
+	free (entry);
+	return ret;
+}
+
 static RFList sections(RBin *bin)
 {
 	int count, i;
@@ -140,7 +160,7 @@ struct r_bin_handle_t r_bin_plugin_mach0 = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
-	.entries = NULL,
+	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,
