@@ -116,6 +116,15 @@ R_API int r_core_config_init(struct r_core_t *core)
 	r_config_set (cfg, "cfg.debug", "false");
 	r_config_set_cb (cfg, "io.ffio", "false", &config_ioffio_callback);
 	r_config_set_cb (cfg, "io.va", "false", &config_iova_callback);
+	r_config_set (cfg, "cfg.fortunes", "true");
+
+	/* TODO cmd */
+	r_config_set(cfg, "cmd.prompt", "");
+	r_config_set(cfg, "cmd.visual", ""); //? eip && ?? s eip");
+	r_config_set(cfg, "cmd.vprompt", "p%");
+	r_config_set(cfg, "cmd.vprompt2", "CFV");
+	r_config_set(cfg, "cmd.vprompt3", "");
+	r_config_set(cfg, "cmd.bp", "");
 #if 0
 	node = config_set("asm.profile", "default");
 //	node->callback = &config_asm_profile;
@@ -182,14 +191,6 @@ R_API int r_core_config_init(struct r_core_t *core)
 	config_set("cmd.visual", "");
 	config_set("cmd.visualbind", "");
 	config_set("cmd.touchtrace", "");
-
-	r_config_set(cfg, "cmd.prompt", "");
-	r_config_set(cfg, "cmd.visual", ""); //? eip && ?? s eip");
-	r_config_set(cfg, "cmd.vprompt", "p%");
-	r_config_set(cfg, "cmd.vprompt2", "CFV");
-	r_config_set(cfg, "cmd.vprompt3", "");
-	r_config_set(cfg, "cmd.bp", "");
-	r_config_set(cfg, "cfg.fortunes", "true");
 
 
 	r_config_set_i("search.from", 0);
@@ -405,5 +406,6 @@ R_API int r_core_config_init(struct r_core_t *core)
 	node->callback = &config_scrheight;
 	r_config_set("vm.realio", "false");
 #endif
-	return 0;
+	r_config_lock (cfg, R_TRUE);
+	return R_TRUE;
 }

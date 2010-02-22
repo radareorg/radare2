@@ -210,8 +210,7 @@ static int r_debug_native_wait(int pid) {
 
 // TODO: why strdup here?
 static const char *r_debug_native_reg_profile() {
-#if __POWERPC__
-#if __APPLE__
+#if __POWERPC__ && __APPLE__
 	return strdup(
 	"=pc	srr0\n"
 	"=sr	srr1\n" // status register
@@ -267,10 +266,6 @@ static const char *r_debug_native_reg_profile() {
 	"gpr	mq	.32	152	0\n"
 	"gpr	vrsave	.32	156	0\n"
 	);
-#else // __APPLE__
-	#warning powerpc registers only supported in osx-darwin-powerpc
-	return NULL;
-#endif // __POWERPC__
 #elif __i386__
 	return strdup(
 	"=pc	eip\n"

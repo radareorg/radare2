@@ -704,6 +704,7 @@ static int cmd_print(void *data, const char *input)
 		
 			//r_anal_set_pc(&core->anal, core->offset);
 			r_asm_set_pc (&core->assembler, core->offset);
+			l = 9999; // number of lines
 
 			reflines = r_anal_reflines_get (&core->anal, core->offset,
 				buf, len, -1, linesout);
@@ -1021,7 +1022,7 @@ static int cmd_write(void *data, const char *input)
 			break;
 		case '-':
 			r_io_set_write_mask(&core->io, 0, 0);
-			fprintf(stderr, "Write mask disabled\n");
+			eprintf ("Write mask disabled\n");
 			break;
 		case ' ':
 			if (len == 0) {
