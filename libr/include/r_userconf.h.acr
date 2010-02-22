@@ -9,6 +9,6 @@
 #endif
 #define PREFIX "@PREFIX@"
 
-#define CPU_ENDIAN @LIL_ENDIAN@
+#define CPU_ENDIAN @BIG_ENDIAN@
 
 #endif

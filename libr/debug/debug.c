@@ -10,14 +10,14 @@ R_API struct r_debug_t *r_debug_init(struct r_debug_t *dbg, int hard) {
 		dbg->newstate = 0;
 		//dbg->regs = dbg->oregs = NULL;
 		dbg->printf = (void *)printf;
-		dbg->reg = r_reg_new();
+		dbg->reg = r_reg_new ();
 		dbg->h = NULL;
 		/* TODO: this is not well designed */
 		dbg->maps = r_debug_map_list_new ();
 		dbg->maps_user = r_debug_map_list_new ();
 		if (hard) {
-			dbg->bp = r_bp_new();
-			r_debug_handle_init(dbg);
+			dbg->bp = r_bp_new ();
+			r_debug_handle_init (dbg);
 			dbg->bp->iob.init = R_FALSE;
 		}
 	}
@@ -28,8 +28,7 @@ R_API struct r_debug_t *r_debug_new() {
 	return r_debug_init (R_NEW (RDebug), R_TRUE);
 }
 
-R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg)
-{
+R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg) {
 	// TODO: free it correctly
 	//r_bp_free(&dbg->bp);
 	//r_reg_free(&dbg->reg);
@@ -38,8 +37,7 @@ R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg)
 	return NULL;
 }
 
-R_API int r_debug_attach(struct r_debug_t *dbg, int pid)
-{
+R_API int r_debug_attach(struct r_debug_t *dbg, int pid) {
 	int ret = R_FALSE;
 	if (dbg && dbg->h && dbg->h->attach) {
 		ret = dbg->h->attach(pid);
@@ -57,8 +55,7 @@ R_API int r_debug_attach(struct r_debug_t *dbg, int pid)
 
 #if TODO
 // TODO MOove to r_reg
-R_API ut64 r_debug_reg_get(struct r_debug_t *dbg, char *name)
-{
+R_API ut64 r_debug_reg_get(struct r_debug_t *dbg, char *name) {
 	RRegisterItem *ri;
 	ut64 ret = 0LL;
 	char *foo = r_reg_get_name (dbg->reg, name);
@@ -77,8 +74,7 @@ R_API ut64 r_debug_reg_get(struct r_debug_t *dbg, char *name)
  * Save 4096 bytes from %esp
  * TODO: Add support for reverse stack architectures
  */
-R_API ut64 r_debug_execute(struct r_debug_t *dbg, ut8 *buf, int len)
-{
+R_API ut64 r_debug_execute(struct r_debug_t *dbg, ut8 *buf, int len) {
 	int orig_sz;
 	ut8 stackbackup[4096];
 	ut8 *backup, *orig = NULL;
@@ -126,20 +122,18 @@ R_API ut64 r_debug_execute(struct r_debug_t *dbg, ut8 *buf, int len)
 	return (ra0);
 }
 
-R_API int r_debug_startv(struct r_debug_t *dbg, int argc, char **argv)
-{
+R_API int r_debug_startv(struct r_debug_t *dbg, int argc, char **argv) {
 	/* TODO : r_debug_startv unimplemented */
 	return R_FALSE;
 }
 
-R_API int r_debug_start(struct r_debug_t *dbg, const char *cmd)
-{
+R_API int r_debug_start(struct r_debug_t *dbg, const char *cmd) {
+	/* TODO: this argc/argv parser is done in r_io */
 	// TODO: parse cmd and generate argc and argv
 	return R_FALSE;
 }
 
-R_API int r_debug_detach(struct r_debug_t *dbg, int pid)
-{
+R_API int r_debug_detach(struct r_debug_t *dbg, int pid) {
 	if (dbg->h && dbg->h->detach)
 		return dbg->h->detach(pid);
 	return R_FALSE;

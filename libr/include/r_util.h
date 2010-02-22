@@ -61,8 +61,9 @@ typedef struct r_num_t {
 typedef ut64 (*RNumCallback)(RNum *self, const char *str, int *ok);
 
 /* arch */
+// TODO: This must deprecate DEFAULT_ARCH??
 #if __i386__
-#define R_SYS_ARCH "i386"
+#define R_SYS_ARCH "x86"
 #elif __x86_64__
 #define R_SYS_ARCH "x86-64"
 #elif __POWERPC__
@@ -82,7 +83,7 @@ typedef ut64 (*RNumCallback)(RNum *self, const char *str, int *ok);
 #define R_SYS_OS "darwin"
 #elif __linux__
 #define R_SYS_OS "windows"
-#elif __linux__
+#elif __WINDOWS__
 #define R_SYS_OS "linux"
 #elif __NetBSD__ 
 #define R_SYS_OS "netbsd"
@@ -145,11 +146,8 @@ R_API ut64 r_num_math(struct r_num_t *num, const char *str);
 R_API ut64 r_num_get(struct r_num_t *num, const char *str);
 R_API void r_num_init(struct r_num_t *num);
 
-/* strings */
-
-#define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
-
 /* TODO ..use as uppercase maybe? they are macros! */
+#define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
 #define strnull(x) (!x||!*x)
 #define iswhitechar(x) (x==' '||x=='\t'||x=='\n'||x=='\r')
 #define iswhitespace(x) (x==' '||x=='\t')
@@ -157,7 +155,7 @@ R_API void r_num_init(struct r_num_t *num);
 	x==','||x==';'||x==':'||x=='['||x==']'||x=='('||x==')'||x=='{'||x=='}')
 #define ishexchar(x) ((x>='0'&&x<='9') ||  (x>='a'&&x<='f') ||  (x>='A'&&x<='F')) {
 
-/* stabilized */
+/* strings */
 R_API char *r_str_new(char *str);
 R_API const char *r_str_bool(int b);
 R_API const char *r_str_ansi_chrn(const char *str, int n);

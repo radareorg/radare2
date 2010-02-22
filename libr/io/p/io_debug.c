@@ -104,7 +104,7 @@ static int fork_and_ptraceme(const char *cmd)
 #if __APPLE__
 		signal (SIGTRAP, SIG_IGN); // SINO NO FUNCIONA EL STEP
 		signal (SIGABRT, inferior_abort_handler);
-		if (ptrace(PT_TRACE_ME, 0, 0, 0) != 0) {
+		if (ptrace (PT_TRACE_ME, 0, 0, 0) != 0) {
 #else
 		if (ptrace (PTRACE_TRACEME, 0, NULL, NULL) != 0) {
 #endif
@@ -126,6 +126,7 @@ static int fork_and_ptraceme(const char *cmd)
 	char *argv[2];
 	char *ptr;
 
+// TODO: use: argv = r_str_argv ("hello \"world is bar\"", &argc);
 	buf = strdup (cmd);
 	ptr = strchr (buf, ' ');
 	if (ptr)
@@ -148,7 +149,7 @@ static int fork_and_ptraceme(const char *cmd)
                         eprintf ("Process with PID %d started...\n", (int)pid);
 #else
 		__waitpid (pid);
-		kill(pid, SIGSTOP);
+		kill (pid, SIGSTOP);
 #endif
 		break;
 	}
@@ -158,33 +159,29 @@ static int fork_and_ptraceme(const char *cmd)
 }
 
 static int __handle_open(struct r_io_t *io, const char *file) {
-	if (!memcmp(file, "dbg://", 6))
+	if (!memcmp (file, "dbg://", 6))
 		return R_TRUE;
 	return R_FALSE;
 }
 
 static int __open(struct r_io_t *io, const char *file, int rw, int mode) {
 	char uri[1024];
-	if (__handle_open(io, file)) {
-		int pid = atoi(file+6);
+	if (__handle_open (io, file)) {
+		int pid = atoi (file+6);
 		if (pid == 0) {
 			pid = fork_and_ptraceme(file+6);
 			if (pid==-1)
 				return -1;
 #if __APPLE__
 			sprintf (uri, "mach://%d", pid);
-#elif __linux__
-			sprintf (uri, "ptrace://%d", pid);
 #else
-			// XXX
 			sprintf (uri, "ptrace://%d", pid);
 #endif
 			r_io_redirect (io, uri);
 			return -1;
 		} else {
-			char foo[1024];
 			sprintf (uri, "attach://%d", pid);
-			r_io_redirect (io, foo);
+			r_io_redirect (io, uri);
 			return -1;
 		}
 	}
@@ -199,7 +196,7 @@ static int __init(struct r_io_t *io) {
 
 struct r_io_handle_t r_io_plugin_debug = {
         //void *handle;
-	.name = "io.debug",
+	.name = "debug",
         .desc = "Debug a program or pid. dbg:///bin/ls, dbg://1388",
         .open = __open,
         .handle_open = __handle_open,
@@ -214,18 +211,13 @@ struct r_io_handle_t r_io_plugin_debug = {
 	int fds[R_IO_NFDS];
 */
 };
-
 #else // DEBUGGER
-
 struct r_io_handle_t r_io_plugin_debug = {
-        //void *handle;
-	.name = "io.debug",
+	.name = "debug",
         .desc = "Debug a program or pid. (NOT SUPPORTED FOR THIS PLATFORM)",
 	.debug = (void *)1,
 };
-
 #endif // DEBUGGER
-
 
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {

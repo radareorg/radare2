@@ -4,13 +4,27 @@
 #include <r_userconf.h>
 #include <r_types_base.h>
 
+#undef _FILE_OFFSET_BITS
+#define _FILE_OFFSET_BITS 64
+#undef _GNU_SOURCE
+#define _GNU_SOURCE
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <sys/time.h>
+
 /* provide a per-module debug-enabled feature */
+/* TODO: Deprecate */
 #if R_DEBUG
 #define IFDBG
 #else
 #define IFDBG if (0)
 #endif
 
+/* arch */
+// XXX: deprecated.. in r_util we have R_SYS_ARCH
 #if __arm__
 #define DEFAULT_ARCH "arm"
 #elif __mips__
@@ -26,55 +40,16 @@
 #else
 #define IFRTDBG if (0)
 #endif
-/* ------------------------------------------- */
 
 #if R_SWIG
-#define R_API export
+  #define R_API export
+#elif R_INLINE
+  #define R_API inline
 #else
-#if R_INLINE
-#define R_API inline
-#else
-#define R_API
+  #define R_API
 #endif
-#endif
-
-// Usage: R_DEFINE_OBJECT(r_asm);
-#if 0
-#define R_DEFINE_OBJECT(type) \
- R_API struct type##_t* type##_new() { \
-    return type##_init(MALLOC_STRUCT(struct type##_t)); \
- } \
- R_API struct type##_t* type##_free(struct type##_t *foo) { \
-    return (type##_deinit(foo), free(foo), NULL); \
- }
-#endif
-
-/* basic types */
 
 #define BITS2BYTES(x) ((x/8)+((x%8)?1:0))
-
-/* types */
-#undef _FILE_OFFSET_BITS
-#define _FILE_OFFSET_BITS 64
-#undef _GNU_SOURCE
-#define _GNU_SOURCE
-// do we really need those undefs?
-//#undef _XOPEN_SOURCE
-//#define _XOPEN_SOURCE
-//#undef _POSIX_C_SOURCE
-//#define _POSIX_C_SOURCE
-
-/* allocating */
-#include <stdio.h>
-#include <stdarg.h>
-static inline int ERR(char *str, ...) {
-	va_list ap;
-	va_start(ap, str);
-	vfprintf(stderr, str, ap);
-	va_end(ap);
-	return R_FALSE;
-}
-//#define ERR(...) fprintf(stderr, ...)
 #define ZERO_FILL(x) memset (x, 0, sizeof (x))
 #define MALLOC_STRUCTS(x,y) (x*)malloc(sizeof(x)*y)
 #define MALLOC_STRUCT(x) (x*)malloc(sizeof(x))
@@ -83,33 +58,27 @@ static inline int ERR(char *str, ...) {
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')
 #define IS_WHITESPACE(x) (x==' '||x=='\t')
 
-/* operating system */
 
+/* operating system */
 #undef __BSD__
 #undef __UNIX__
 #undef __WINDOWS__
 
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
   #define __BSD__ 1
+  #define __UNIX__ 1
 #endif
-
+#if defined(__linux__) || defined(__APPLE__)
+  #define __UNIX__ 1
+#endif
 #if __WIN32__ || __CYGWIN__ || MINGW32
   #define __addr_t_defined
   #include <windows.h>
-  #ifdef USE_SOCKETS
   #include <winsock.h>
   #undef USE_SOCKETS
-#endif
-
   #define __WINDOWS__ 1
-#else
-  #define __UNIX__ 1
 #endif
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/time.h>
 #if __UNIX__
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -117,7 +86,7 @@ static inline int ERR(char *str, ...) {
 #endif
 #include <unistd.h>
 
-/* Move outside */
+/* TODO: Move outside */
 #define _perror(str,file,line) \
   { char buf[128];sprintf(buf, "%s:%d %s", file,line,str);perror(buf); }
 #define perror(x) _perror(x,__FILE__,__LINE__)
@@ -136,13 +105,15 @@ static inline int ERR(char *str, ...) {
 #define HAVE_REGEXP 1
 #endif
 
-#if 0
-/* hacks for vala-list.h interaction */
-#define list_entry_vala(pos, type, member) ((type)((char*)pos-(unsigned long)(&((type)0)->member)))
-#define ralist_iterator(x) x->next
-#define ralist_get(x,y) list_entry_vala(x, y, list); x=x->next
-#define ralist_next(x) (x=x->next, (x != head))
-#define ralist_free(x) (x)
 #endif
 
+// Usage: R_DEFINE_OBJECT(r_asm);
+#if 0
+#define R_DEFINE_OBJECT(type) \
+ R_API struct type##_t* type##_new() { \
+    return type##_init(MALLOC_STRUCT(struct type##_t)); \
+ } \
+ R_API struct type##_t* type##_free(struct type##_t *foo) { \
+    return (type##_deinit(foo), free(foo), NULL); \
+ }
 #endif

@@ -17,10 +17,8 @@
 #define R_IO_NFDS 2
 extern int errno;
 static int fds[3];
-//static int nfds = 0;
 
-static int __waitpid(int pid)
-{
+static int __waitpid(int pid) {
 	int st = 0;
 	if (waitpid(pid, &st, 0) == -1)
 		return R_FALSE;
@@ -30,8 +28,7 @@ static int __waitpid(int pid)
 #define debug_read_raw(x,y) ptrace(PTRACE_PEEKTEXT, x, y, 0)
 
 // FIX: the goto 'err' is buggy
-static int debug_os_read_at(int pid, void *buf, int sz, ut64 addr)
-{
+static int debug_os_read_at(int pid, void *buf, int sz, ut64 addr) {
         unsigned long words = sz / sizeof(long) ;
         unsigned long last = sz % sizeof(long) ;
         long x, lr;
@@ -40,7 +37,8 @@ static int debug_os_read_at(int pid, void *buf, int sz, ut64 addr)
                 return -1; 
 
         for (x=0; x<words; x++) {
-                ((long *)buf)[x] = debug_read_raw (pid, (void *)(&((long*)(long )addr)[x]));
+                ((long *)buf)[x] = debug_read_raw (pid,
+			(void *)(&((long*)(long )addr)[x]));
                 if (((long *)buf)[x] == -1) // && errno)
                         goto err;
         }
@@ -54,141 +52,100 @@ static int debug_os_read_at(int pid, void *buf, int sz, ut64 addr)
 
         return sz; 
 err:
-        return --x * sizeof(long);
+        return --x * sizeof (long);
 }
 
-static int __read(struct r_io_t *io, int pid, ut8 *buf, int len)
-{
-	int ret;
+static int __read(struct r_io_t *io, int pid, ut8 *buf, int len) {
 	ut64 addr = io->off;
-	memset(buf, '\xff', len);
-	ret = debug_os_read_at(pid, buf, len, addr);
-//printf("READ(0x%08llx)\n", addr);
-	//if (ret == -1)
-	//	return -1;
-
-	return ret;
+	memset (buf, '\xff', len); // TODO: only memset the non-readed bytes
+	return debug_os_read_at (pid, buf, len, addr);
 }
 
-static int ptrace_write_at(int pid, const ut8 *buf, int sz, ut64 addr)
-{
-        long words = sz / sizeof(long) ;
+static int ptrace_write_at(int pid, const ut8 *buf, int sz, ut64 addr) {
+        long words = sz / sizeof(long);
         long last = (sz % sizeof(long))*8;
-        long  lr ;
-	int x;
-
-/*
-	long *word=&buf;
-	char buf[4];
-        En los fuentes del kernel se encuentra un #ifdef para activar el soporte de escritura por procFS.
-        Por razones de seguridad se encuentra deshabilitado, pero nunca esta de mas intentar ;)
-*/
-#if 0
-	word = ptrace(PTRACE_PEEKDATA, pid, (void *)addr, (void *)buf);
-	if (word==-1)
-		word = ptrace(PTRACE_PEEKTEXT, pid, (void *)addr, (void *)buf);
-	buf[0]=buf[0];
-	ptrace(PTRACE_POKEDATA, (pid_t)pid, (void *)addr, (void *)buf);
-	ptrace(PTRACE_POKETEXT, pid, (void *)addr, (void *)buf);
-	return sz;
-#endif
-//eprintf("%d ->%d (0x%x)\n",pid, (int)sz, (long)addr);
-
+        int lr, x;
 
 	for(x=0;x<words;x++)
-		if (ptrace(PTRACE_POKEDATA,pid,&((long *)(long)addr)[x],((long *)buf)[x]))
-			goto err ;
-
+		if (ptrace (PTRACE_POKEDATA, pid, &((long *)(long)addr)[x], ((long *)buf)[x]))
+			goto err;
 	if (last) {
-		lr = ptrace(PTRACE_PEEKTEXT,pid,&((long *)(long)addr)[x], 0) ;
+		lr = ptrace (PTRACE_PEEKTEXT, pid, &((long *)(long)addr)[x], 0);
 
 		/* Y despues me quejo que lisp tiene muchos parentesis... */
-		if ((lr == -1 && errno) ||
-		    (
-			ptrace(PTRACE_POKEDATA,pid,&((long *)(long)addr)[x],((lr&(-1L<<last)) |
-			(((long *)buf)[x]&(~(-1L<<last)))))
-		    )
-		   )
+		if ((lr == -1 && errno) || (ptrace (PTRACE_POKEDATA, pid,
+			&((long *)(long)addr)[x], // WTF IS THIS LISPY-C?
+			((lr&(-1L<<last))|(((long *)buf)[x]&(~(-1L<<last)))))))
                 goto err;
 	}
 
 	return sz;
-
-        err:
+err:
 	return --x * sizeof(long) ;
 }
 
-static int __write(struct r_io_t *io, int pid, const ut8 *buf, int len)
-{
+static int __write(struct r_io_t *io, int pid, const ut8 *buf, int len) {
 	return ptrace_write_at(pid, buf, len, io->off);
 }
 
-static int __handle_open(struct r_io_t *io, const char *file)
-{
-	if (!memcmp(file, "ptrace://", 9))
+static int __handle_open(struct r_io_t *io, const char *file) {
+	if (!memcmp (file, "ptrace://", 9))
 		return R_TRUE;
-	if (!memcmp(file, "attach://", 9))
+	if (!memcmp (file, "attach://", 9))
 		return R_TRUE;
 	return R_FALSE;
 }
 
-static int __open(struct r_io_t *io, const char *file, int rw, int mode)
-{
+static int __open(struct r_io_t *io, const char *file, int rw, int mode) {
 	int ret = -1;
-	if (__handle_open(io, file)) {
-		int pid = atoi(file+9);
+	if (__handle_open (io, file)) {
+		int pid = atoi (file+9);
 		if (file[0]=='a') {
 			ret = ptrace(PTRACE_ATTACH, pid, 0, 0);
 			if (ret == -1) {
-				switch(errno) {
+				switch (errno) {
 				case EPERM:
 					ret = pid;
-					fprintf(stderr, "Operation not permitted\n");
+					eprintf ("Operation not permitted\n");
 					break;
 				case EINVAL:
 					perror("ptrace: Cannot attach");
-					fprintf(stderr, "ERRNO: %d (EINVAL)\n", errno);
+					eprintf ("ERRNO: %d (EINVAL)\n", errno);
 					break;
 				}
 			} else
-			if (__waitpid(pid)) {
+			if (__waitpid(pid))
 				ret = pid;
-			} else fprintf(stderr, "Error in waitpid\n");
+			else eprintf ("Error in waitpid\n");
 		} else ret = pid;
 	}
 	fds[0] = ret;
 	return ret;
 }
 
-static ut64 __lseek(struct r_io_t *io, int fildes, ut64 offset, int whence)
-{
+static ut64 __lseek(struct r_io_t *io, int fildes, ut64 offset, int whence) {
 	return offset;
 }
 
-static int __close(struct r_io_t *io, int pid)
-{
-	return ptrace(PTRACE_DETACH, pid, 0, 0);
+static int __close(struct r_io_t *io, int pid) {
+	return ptrace (PTRACE_DETACH, pid, 0, 0);
 }
 
-static int __system(struct r_io_t *io, int fd, const char *cmd)
-{
+static int __system(struct r_io_t *io, int fd, const char *cmd) {
 	//printf("ptrace io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
-	if (!strcmp(cmd, "pid")) {
+	if (!strcmp (cmd, "pid")) {
 		int pid = atoi (cmd+4);
 		if (pid != 0)
 			io->fd = pid;
 		//printf("PID=%d\n", io->fd);
 		return io->fd;
-	} else {
-		eprintf ("Try: '|pid'\n");
-	}
+	} else eprintf ("Try: '|pid'\n");
 	return R_TRUE;
 }
 
-static int __init(struct r_io_t *io)
-{
-	printf("ptrace init\n");
+static int __init(struct r_io_t *io) {
+	eprintf ("ptrace init\n");
 	return R_TRUE;
 }
 
@@ -212,14 +169,11 @@ struct r_io_handle_t r_io_plugin_ptrace = {
 	int fds[R_IO_NFDS];
 */
 };
-
 #else
-
 struct r_io_handle_t r_io_plugin_ptrace = {
-	.name = "io.ptrace",
+	.name = "ptrace",
         .desc = "ptrace io (NOT SUPPORTED FOR THIS PLATFORM)",
 };
-
 #endif
 
 #ifndef CORELIB
