@@ -177,7 +177,11 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 			return R_FALSE;
 		}
 		switch (lc.cmd) {
+#if R_BIN_MACH064
+		case LC_SEGMENT_64:
+#else
 		case LC_SEGMENT:
+#endif
 			bin->nsegs++;
 			if (!MACH0_(r_bin_mach0_parse_seg)(bin, off))
 				return R_FALSE;
