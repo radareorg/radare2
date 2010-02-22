@@ -18,10 +18,11 @@ enum {
 };
 
 enum {
-	R_REG_NAME_PC,
-	R_REG_NAME_SP,
-	R_REG_NAME_BP,
-	R_REG_NAME_A0,
+	R_REG_NAME_PC, // program counter
+	R_REG_NAME_SP, // stack pointer
+	R_REG_NAME_SR, // status register
+	R_REG_NAME_BP, // base pointer
+	R_REG_NAME_A0, // arguments
 	R_REG_NAME_A1,
 	R_REG_NAME_A2,
 	R_REG_NAME_A3,

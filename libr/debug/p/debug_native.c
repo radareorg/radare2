@@ -219,10 +219,12 @@ static const char *r_debug_native_reg_profile() {
 	"=a1	r1\n"
 	"=a2	r2\n"
 	"=a3	r3\n"
+#if 0
 	"=a4	r4\n"
 	"=a5	r5\n"
 	"=a6	r6\n"
 	"=a7	r7\n"
+#endif
 	"gpr	srr0	.32	0	0\n"
 	"gpr	srr1	.32	4	0\n"
 	"gpr	r0	.32	8	0\n"

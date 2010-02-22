@@ -13,6 +13,10 @@
 
 #if __arm__
 #define DEFAULT_ARCH "arm"
+#elif __mips__
+#define DEFAULT_ARCH "mips"
+#elif __POWERPC__
+#define DEFAULT_ARCH "ppc"
 #else
 #define DEFAULT_ARCH "x86"
 #endif

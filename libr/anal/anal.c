@@ -5,20 +5,17 @@
 #include <r_anal.h>
 #include <r_util.h>
 
-R_API struct r_anal_t *r_anal_new()
-{
+R_API RAnalysis *r_anal_new() {
 	return r_anal_init (MALLOC_STRUCT (struct r_anal_t));
 }
 
-R_API struct r_anal_t *r_anal_free(struct r_anal_t *a)
-{
+R_API RAnalysis *r_anal_free(struct r_anal_t *a) {
 	/* TODO: Free a->anals here */
 	free (a);
 	return NULL;
 }
 
-R_API struct r_anal_t *r_anal_init(struct r_anal_t *anal)
-{
+R_API struct r_anal_t *r_anal_init(struct r_anal_t *anal) {
 	if (anal) {
 		anal->user = NULL;
 		anal->ctx = NULL;
@@ -30,13 +27,11 @@ R_API struct r_anal_t *r_anal_init(struct r_anal_t *anal)
 	return anal;
 }
 
-R_API void r_anal_set_user_ptr(struct r_anal_t *anal, void *user)
-{
+R_API void r_anal_set_user_ptr(struct r_anal_t *anal, void *user) {
 	anal->user = user;
 }
 
-R_API int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo)
-{
+R_API int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo) {
 	if (foo->init)
 		foo->init(anal->user);
 	list_add_tail(&(foo->list), &(anal->anals));
@@ -44,8 +39,7 @@ R_API int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo)
 }
 
 // TODO: Must be deprecated
-R_API int r_anal_list(struct r_anal_t *anal)
-{
+R_API int r_anal_list(struct r_anal_t *anal) {
 	struct list_head *pos;
 	list_for_each_prev(pos, &anal->anals) {
 		struct r_anal_handle_t *h = list_entry(pos, struct r_anal_handle_t, list);
@@ -54,8 +48,7 @@ R_API int r_anal_list(struct r_anal_t *anal)
 	return R_FALSE;
 }
 
-R_API int r_anal_use(struct r_anal_t *anal, const char *name)
-{
+R_API int r_anal_use(struct r_anal_t *anal, const char *name) {
 	struct list_head *pos;
 	list_for_each_prev (pos, &anal->anals) {
 		struct r_anal_handle_t *h = list_entry(pos, struct r_anal_handle_t, list);
@@ -67,8 +60,7 @@ R_API int r_anal_use(struct r_anal_t *anal, const char *name)
 	return R_FALSE;
 }
 
-R_API int r_anal_set_bits(struct r_anal_t *anal, int bits)
-{
+R_API int r_anal_set_bits(struct r_anal_t *anal, int bits) {
 	switch (bits) {
 	case 8:
 	case 16:
@@ -80,38 +72,30 @@ R_API int r_anal_set_bits(struct r_anal_t *anal, int bits)
 	return R_FALSE;
 }
 
-R_API int r_anal_set_big_endian(struct r_anal_t *anal, int bigend)
-{
+R_API int r_anal_set_big_endian(struct r_anal_t *anal, int bigend) {
 	anal->big_endian = bigend;
 	return R_TRUE;
 }
 
-R_API int r_anal_set_pc(struct r_anal_t *a, ut64 pc)
-{
-	a->pc = pc;
-	return R_TRUE;
-}
-
-R_API int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
-{ 
+R_API int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, void *data, int len) { 
 	if (anal && anal->cur && anal->cur->aop)
-		return anal->cur->aop(anal, aop, data);
+		return anal->cur->aop(anal, aop, addr, data, len);
 	return R_FALSE;
 }
 
-R_API struct r_anal_fcn_t *r_anal_funcions_get(struct r_anal_t *anal, ut8 *buf, ut64 len)
-{
+R_API struct r_anal_fcn_t *r_anal_funcions_get(struct r_anal_t *anal, ut8 *buf, ut64 len) {
 	return NULL;
 }
 
-R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, ut8 *buf, ut64 len, int nlines, int linesout)
+R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
+	ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout)
 {
 	struct r_anal_refline_t *list = MALLOC_STRUCT (struct r_anal_refline_t);
 	struct r_anal_refline_t *list2;
 	struct r_anal_aop_t aop;
 	ut8 *ptr = buf;
 	ut8 *end = buf + len;
-	ut64 opc = anal->pc;
+	ut64 opc = addr;
 	int sz = 0, index = 0;
 
 	INIT_LIST_HEAD(&(list->list));
@@ -134,8 +118,8 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, ut8 *b
 		}
 #endif
 
-		anal->pc += sz;
-		sz = r_anal_aop (anal, &aop, ptr);
+		addr += sz;
+		sz = r_anal_aop (anal, &aop, addr, ptr, (int)(end-ptr));
 		if (sz > 0) {
 			/* store data */
 			switch(aop.type) {
@@ -147,7 +131,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, ut8 *b
 				if (aop.jump == 0)
 					goto __next;
 				list2 = MALLOC_STRUCT(struct r_anal_refline_t);
-				list2->from = anal->pc;
+				list2->from = addr;
 				list2->to = aop.jump;
 				list2->index = index++;
 				list_add_tail(&(list2->list), &(list->list));
@@ -158,13 +142,12 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, ut8 *b
 		ptr = ptr + sz;
 	}
 
-	anal->pc = opc;
-
 	return list;
 }
 
 /* umf..this should probably be outside this file */
-R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list, char *str, int opts)
+R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list,
+	ut64 addr, char *str, int opts)
 {
 	struct r_anal_refline_t *ref;
 	struct list_head *pos;
@@ -183,29 +166,29 @@ R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *li
 		pos != (&(list->list)); pos = linestyle?pos->next:pos->prev) {
 		ref = list_entry(pos, struct r_anal_refline_t, list);
 
-		if (anal->pc == ref->to) dir = 1;
+		if (addr == ref->to) dir = 1;
 		// TODO: use else here
-		if (anal->pc == ref->from) dir = 2;
+		if (addr == ref->from) dir = 2;
 
 		// TODO: if dir==1
-		if (anal->pc == ref->to) {
+		if (addr == ref->to) {
 			if (ref->from > ref->to)
 				strcat(str, ".");
 			else strcat(str, "`");
 			ch = '-';
-		} else if (anal->pc == ref->from) {
+		} else if (addr == ref->from) {
 			if (ref->from > ref->to)
 				strcat(str, "`");
 			else strcat(str, ".");
 			ch = '=';
 		} else if (ref->from < ref->to) { /* down */
-			if (anal->pc > ref->from && anal->pc < ref->to) {
+			if (addr > ref->from && addr < ref->to) {
 				if (ch=='-'||ch=='=')
 					r_str_concatch(str, ch);
 				else strcat(str, "|");
 			} else r_str_concatch(str, ch);
 		} else { /* up */
-			if (anal->pc < ref->from && anal->pc > ref->to) {
+			if (addr < ref->from && addr > ref->to) {
 				if (ch=='-'||ch=='=')
 					r_str_concatch(str, ch);
 				else strcat(str, "|");

@@ -64,7 +64,7 @@ R_API struct r_var_type_t *r_var_type_get(struct r_var_t *var, const char *datat
 R_API const char *r_var_type_to_string(int type);
 
 /* food */
-R_API int r_var_item_print(struct r_var_t *var, struct r_var_item_t * v);
+R_API void r_var_item_print(struct r_var_t *var, struct r_var_item_t * v);
 R_API int r_var_list_show(struct r_var_t *var, ut64 addr);
 R_API int r_var_list(struct r_var_t *var, ut64 addr, int delta);
 

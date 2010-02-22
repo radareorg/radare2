@@ -24,12 +24,9 @@
 // 8d85e8fbffff    lea eax,[ebp-418]
 // c68405e7fbffff. mov byte ptr [ebp+eax-419],0x0
 
-
 // NOTE: buf should be at least 16 bytes!
 // XXX addr should be off_t for 64 love
-static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
-{
-	
+static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, void *data, int len) {
 	if (anal == NULL || aop == NULL || data == NULL)
 		return -1;
 
@@ -129,8 +126,8 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 		} else
 		if (buf[1]>=0x80 && buf[1]<=0x8f) {
 			aop->type   = R_ANAL_OP_TYPE_CJMP;
-			aop->jump   = anal->pc+6+buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24);//((unsigned long)((buf+2))+6);
-			aop->fail   = anal->pc+6;
+			aop->jump   = addr+6+buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24);//((unsigned long)((buf+2))+6);
+			aop->fail   = addr+6;
 			aop->length = 6;
 			//aop->eob    = 1;
 		} 
@@ -158,24 +155,24 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 	case 0xe8: // call
 		aop->type   = R_ANAL_OP_TYPE_CALL;
 		aop->length = 5;
-		//aop->jump   = anal->pc+*ptr+5; //(unsigned long)((buf+1)+5);
-		aop->jump   = anal->pc+5+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);//((unsigned long)((buf+2))+6);
-		aop->fail   = anal->pc+5;
-//printf("addr: %08llx\n call %08llx \n ret %08llx\n", anal->pc, aop->jump, aop->fail);
+		//aop->jump   = addr+*ptr+5; //(unsigned long)((buf+1)+5);
+		aop->jump   = addr+5+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);//((unsigned long)((buf+2))+6);
+		aop->fail   = addr+5;
+//printf("addr: %08llx\n call %08llx \n ret %08llx\n", addr, aop->jump, aop->fail);
 	//	aop->eob    = 1;
 		break;
 	case 0xe9: // jmp
 		aop->type   = R_ANAL_OP_TYPE_JMP;
 		aop->length = 5;
 		//aop->jump   = (unsigned long)((buf+1)+5);
-		aop->jump   = anal->pc+5+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);//((unsigned long)((buf+2))+6);
+		aop->jump   = addr+5+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);//((unsigned long)((buf+2))+6);
 		aop->fail   = 0L;
 		aop->eob    = 1;
 		break;
 	case 0xeb: // short jmp 
 		aop->type   = R_ANAL_OP_TYPE_JMP;
 		aop->length = 2;
-		aop->jump   = anal->pc+((unsigned long)((char)buf[1])+2);
+		aop->jump   = addr+((unsigned long)((char)buf[1])+2);
 		aop->fail   = 0L;
 		aop->eob    = 1;
 		break;
@@ -207,7 +204,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 			aop->length = 2;
 			aop->eob    = 1;
 			//aop->jump   = vm_arch_x86_regs[VM_X86_EAX+buf[1]-0xd0];
-			aop->fail   = anal->pc+2;
+			aop->fail   = addr+2;
 		} else
 		if (buf[1]>=0xe0 && buf[1]<=0xe7) {
 			aop->type = R_ANAL_OP_TYPE_UJMP;
@@ -336,7 +333,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 
 	case 0xa1: // mov eax, [addr]
 		aop->type = R_ANAL_OP_TYPE_MOV;
-		//vm_arch_x86_regs[VM_X86_EAX] = anal->pc+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
+		//vm_arch_x86_regs[VM_X86_EAX] = addr+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
 		//radare_read_at((ut64)vm_arch_x86_regs[VM_X86_EAX], (unsigned char *)&(vm_arch_x86_regs[VM_X86_EAX]), 4);
 		break;
 #if 0
@@ -346,7 +343,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 			aop->type   = R_ANAL_OP_TYPE_CJMP;
 			aop->length = 6;
 			aop->jump   = (unsigned long)((buf+2)+6);
-			aop->fail   = anal->pc+6;
+			aop->fail   = addr+6;
 			aop->eob    = 1;
 			return 5;
 		}
@@ -374,8 +371,8 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 			aop->type   = R_ANAL_OP_TYPE_CJMP;
 			aop->length = 2;
 		//	aop->jump   = (unsigned long)((buf+2)+6);
-			aop->jump   = anal->pc+bo+2; //(unsigned long)((buf+1)+5);
-			aop->fail   = anal->pc+2;
+			aop->jump   = addr+bo+2; //(unsigned long)((buf+1)+5);
+			aop->fail   = addr+2;
 			aop->eob    = 1;
 			return 2;
 		}

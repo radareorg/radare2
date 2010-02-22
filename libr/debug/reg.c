@@ -17,7 +17,7 @@ R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write)
 		/* read registers from debugger backend to dbg->regs */
 		if (dbg && dbg->h && dbg->h->reg_read) {
 			size = dbg->h->reg_read (dbg, type, buf, sizeof (buf));
-			if (size == R_FALSE)
+			if (size == 0)
 				eprintf ("r_debug_reg: error reading registers\n");
 			ret = r_reg_set_bytes (dbg->reg, type, buf, size);
 		} else eprintf ("r_debug_reg: cannot read registers\n");

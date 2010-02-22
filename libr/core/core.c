@@ -18,8 +18,8 @@ static ut64 num_callback(void *userptr, const char *str, int *ok)
 		case 'j':
 		case 'f':
 		case 'r':
-			r_anal_set_pc (&core->anal, core->offset);
-			r_anal_aop (&core->anal, &aop, core->block);
+			r_anal_aop (&core->anal, &aop, core->offset,
+				core->block, core->blocksize);
 			break;
 		}
 		

@@ -10,9 +10,7 @@
 
 #include "x86/bea/BeaEngine.h"
 
-
-static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
-{
+static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, void *data, int len) {
 	DISASM disasm_obj;
 	ARGTYPE *argptr = NULL;
 	//unsigned long long addr = (ut64)data;
@@ -21,7 +19,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
 
 	memset(&disasm_obj, '\0', sizeof(DISASM));
 	disasm_obj.EIP = (long long)(data);
-	disasm_obj.VirtualAddr = anal->pc;
+	disasm_obj.VirtualAddr = addr;
 	disasm_obj.Archi = ((anal->bits == 64) ? 64 : 0);
 	disasm_obj.SecurityBlock = 128;
 

@@ -184,8 +184,7 @@ ut32 var_dbg_read(int delta)
 }
 #endif
 
-R_API int r_var_item_print(struct r_var_t *var, struct r_var_item_t * v)
-{
+R_API void r_var_item_print(struct r_var_t *var, struct r_var_item_t * v) {
 	struct r_var_type_t *t = r_var_type_get(var, v->vartype);
 	if (t == NULL) {
 		ut32 value = 0; //XXX var_dbg_read(v->delta);
@@ -202,7 +201,6 @@ R_API int r_var_item_print(struct r_var_t *var, struct r_var_item_t * v)
 		//XXX print_mem(foo, buf, size, t->fmt, config.endian);
 #endif
 	}
-	return 0;
 }
 
 /* CFV */

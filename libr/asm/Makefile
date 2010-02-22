@@ -11,7 +11,7 @@ STATIC_OBJS=$(subst ..,p/..,$(subst asm_,p/asm_,$(STATIC_OBJ)))
 OBJ=${STATIC_OBJS} asm.o code.o
 
 pre:
-	@if [ ! -e libr_asm.so ]; then rm -f ${STATIC_OBJS} ; fi
+	@if [ ! -e libr_asm.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi
 
 re:
 	rm -f asm.o libr_asm.so

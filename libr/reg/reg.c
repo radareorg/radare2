@@ -34,6 +34,9 @@ R_API int r_reg_get_name_idx(const char *type) {
 	case 'p'+('c'<<8):
 		role = R_REG_NAME_PC;
 		break;
+	case 's'+('r'<<8):
+		role = R_REG_NAME_SR;
+		break;
 	case 's'+('p'<<8):
 		role = R_REG_NAME_SP;
 		break;

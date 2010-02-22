@@ -48,8 +48,6 @@ typedef struct r_lib_struct_t {
 	void *data; /* pointer to data handled by plugin handler */
 } RLibraryStruct;
 
-//extern const char *r_lib_types[];
-
 enum {
 	R_LIB_TYPE_IO,      /* io layer */
 	R_LIB_TYPE_DBG,     /* debugger */
@@ -59,10 +57,11 @@ enum {
 	R_LIB_TYPE_PARSE,   /* parsers */
 	R_LIB_TYPE_BIN,     /* bins */
 	R_LIB_TYPE_BININFO, /* bin info */
-	R_LIB_TYPE_BP,      /* breakpoint info */
-	R_LIB_TYPE_SYSCALL, /* breakpoint info */
-	R_LIB_TYPE_FASTCALL,/* breakpoint info */
-	R_LIB_TYPE_CRYPTO,  /* breakpoint info */
+	R_LIB_TYPE_BP,      /* breakpoint */
+	R_LIB_TYPE_SYSCALL, /* syscall */
+	R_LIB_TYPE_FASTCALL,/* fastcall */
+	R_LIB_TYPE_CRYPTO,  /* cryptography */
+	R_LIB_TYPE_CMD,     /* commands */
 	R_LIB_TYPE_LAST
 };
 
@@ -76,7 +75,6 @@ typedef struct r_lib_t {
 } RLibrary;
 
 #ifdef R_API
-R_API struct r_lib_t *r_lib_init(struct r_lib_t *lib, const char *symname);
 
 /* low level api */
 R_API void *r_lib_dl_open(const char *libname);
@@ -86,6 +84,7 @@ R_API int r_lib_dl_check_filename(const char *file);
 
 /* high level api */
 R_API struct r_lib_t *r_lib_new(const char *symname);
+R_API struct r_lib_t *r_lib_init(struct r_lib_t *lib, const char *symname);
 R_API struct r_lib_t *r_lib_free(struct r_lib_t *lib);
 R_API int r_lib_run_handler(struct r_lib_t *lib, struct r_lib_plugin_t *plugin, struct r_lib_struct_t *symbol);
 R_API struct r_lib_handler_t *r_lib_get_handler(struct r_lib_t *lib, int type);

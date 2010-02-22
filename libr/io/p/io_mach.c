@@ -181,7 +181,7 @@ static int __open(struct r_io_t *io, const char *file, int rw, int mode) {
 }
 
 static ut64 __lseek(struct r_io_t *io, int fildes, ut64 offset, int whence) {
-	return io->off; // ???
+	return offset;
 }
 
 static int __close(struct r_io_t *io, int pid) {
@@ -191,7 +191,7 @@ static int __close(struct r_io_t *io, int pid) {
 static int __system(struct r_io_t *io, int fd, const char *cmd) {
 	//printf("ptrace io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
-	if (!strcmp(cmd, "pid")) {
+	if (!strcmp (cmd, "pid")) {
 		int pid = atoi (cmd+4);
 		if (pid != 0)
 			io->fd = pid;

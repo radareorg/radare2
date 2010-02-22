@@ -702,28 +702,30 @@ static int cmd_print(void *data, const char *input)
 			struct r_anal_aop_t analop;
 			struct r_anal_refline_t *reflines;
 		
-			r_anal_set_pc(&core->anal, core->offset);
-			r_asm_set_pc(&core->assembler, core->offset);
+			//r_anal_set_pc(&core->anal, core->offset);
+			r_asm_set_pc (&core->assembler, core->offset);
 
-			reflines = r_anal_reflines_get(&core->anal, buf, len, -1, linesout);
+			reflines = r_anal_reflines_get (&core->anal, core->offset,
+				buf, len, -1, linesout);
 			for (i=idx=ret=0; idx < len && i<l; idx+=ret,i++) {
-				r_asm_set_pc(&core->assembler, core->assembler.pc + ret);
-				r_anal_set_pc(&core->anal, core->anal.pc + ret);
+				ut64 addr = core->offset + idx;
+				r_asm_set_pc (&core->assembler, addr);
+				//r_anal_set_pc (&core->anal, core->anal.pc + ret);
 				if (show_comments) {
-					comment = r_meta_get_string(&core->meta, R_META_COMMENT, core->anal.pc+ret);
+					comment = r_meta_get_string (&core->meta, R_META_COMMENT, addr);
 					if (comment) {
 						r_cons_strcat (comment);
 						free (comment);
 					}
 				}
-				r_anal_reflines_str(&core->anal, reflines, line, linesopts);
-				ret = r_asm_disassemble(&core->assembler, &asmop, buf+idx, len-idx);
+				r_anal_reflines_str (&core->anal, reflines, addr, line, linesopts);
+				ret = r_asm_disassemble (&core->assembler, &asmop, buf+idx, len-idx);
 				if (ret<1) {
 					ret = 1;
 					eprintf("** invalid opcode at 0x%08llx **\n", core->assembler.pc + ret);
 					continue;
 				}
-				r_anal_aop(&core->anal, &analop, buf+idx);
+				r_anal_aop (&core->anal, &analop, addr, buf+idx, (int)(len-idx));
 
 				if (show_lines) r_cons_strcat(line);
 				if (show_offset) r_cons_printf("0x%08llx ", core->offset + idx);
@@ -894,10 +896,9 @@ static int cmd_anal(void *data, const char *input)
 			struct r_anal_aop_t aop;
 			r_anal_use (&core->anal, "anal_x86_bea");
 			
-			for(idx=ret=0; idx < len; idx+=ret) {
-				r_anal_set_pc (&core->anal, core->offset + idx);
-				ret = r_anal_aop(&core->anal, &aop, buf + idx);
-			}
+			for(idx=ret=0; idx < len; idx+=ret)
+				ret = r_anal_aop(&core->anal, &aop,
+					core->offset+idx, buf + idx, (len-idx));
 		}
 		break;
 	default:

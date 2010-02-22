@@ -10,6 +10,9 @@
 * BUG:
  rasm2 -s att -a x86.nasm 'push 0x1e(%esp)'
 
+* Added lib_handle stub in r_lib, so we can add plugin support to
+  any library by using just a macro
+
 * is RCore->block and blocksize a RBuf ? refactor!11
  
 * r_cmd must provide a nesting char table indexing for commands

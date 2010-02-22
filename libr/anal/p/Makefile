@@ -6,7 +6,8 @@ CFLAGS+=-DR_DEBUG=1
 
 ANAL_X86_OBJ=../arch/x86/dislen.o
 
-all: anal_dummy.${EXT_SO} anal_x86.${EXT_SO} anal_x86_bea.${EXT_SO}
+# TODO: use .mk files
+all: anal_dummy.${EXT_SO} anal_x86.${EXT_SO} anal_x86_bea.${EXT_SO} anal_ppc.${EXT_SO}
 	@true
 
 anal_dummy.${EXT_SO}: anal_dummy.o
@@ -16,6 +17,10 @@ anal_dummy.${EXT_SO}: anal_dummy.o
 anal_x86.${EXT_SO}: anal_x86.o ${ANAL_X86_OBJ}
 	${CC} ${CFLAGS} -o anal_x86.${EXT_SO} anal_x86.o ${ANAL_X86_OBJ}
 	@#strip -s anal_x86.so
+
+anal_ppc.${EXT_SO}: anal_ppc.o
+	${CC} ${CFLAGS} -o anal_ppc.${EXT_SO} anal_ppc.o
+	@#strip -s anal_ppc.so
 
 anal_x86_bea.${EXT_SO}: anal_x86_bea.o
 	${CC} ${CFLAGS} -o anal_x86_bea.${EXT_SO} anal_x86_bea.o ../../asm/arch/x86/bea/BeaEngine.o
