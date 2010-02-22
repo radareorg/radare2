@@ -20,6 +20,7 @@ extern RBinHandle r_bin_plugin_elf64;
 extern RBinHandle r_bin_plugin_pe;
 extern RBinHandle r_bin_plugin_pe64;
 extern RBinHandle r_bin_plugin_mach0;
+extern RBinHandle r_bin_plugin_mach064;
 extern RBinHandle r_bin_plugin_java;
 extern RBinHandle r_bin_plugin_dummy;
 

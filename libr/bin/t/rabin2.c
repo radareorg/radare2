@@ -239,7 +239,7 @@ static int rabin_show_sections(ut64 at) {
 						section->size, section->vsize, section->name);
 				printf ("f section.%s %lli 0x%08llx\n",
 						section->name, section->size, va?baddr+section->rva:section->offset);
-				printf ("CC [%02i] address=0x%08llx offset=0x%08llx size=%08lli vsize=%08lli"
+				printf ("CC [%02i] address=0x%08llx offset=0x%08llx size=%08lli vsize=%08lli "
 						"privileges=%c%c%c%c name=%s @ 0x%08llx\n",
 						i, baddr+section->rva, section->offset, section->size, section->vsize,
 						R_BIN_SCN_SHAREABLE (section->characteristics)?'s':'-',
@@ -247,7 +247,7 @@ static int rabin_show_sections(ut64 at) {
 						R_BIN_SCN_WRITABLE (section->characteristics)?'w':'-',
 						R_BIN_SCN_EXECUTABLE (section->characteristics)?'x':'-',
 						section->name,va?baddr+section->rva:section->offset);
-			} else printf ("idx=%02i address=0x%08llx offset=0x%08llx size=%08lli vsize=%08lli"
+			} else printf ("idx=%02i address=0x%08llx offset=0x%08llx size=%08lli vsize=%08lli "
 						   "privileges=%c%c%c%c name=%s\n",
 						   i, baddr+section->rva, section->offset, section->size, section->vsize,
 						   R_BIN_SCN_SHAREABLE (section->characteristics)?'s':'-',
