@@ -65,7 +65,7 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 
 	do {
 		if (r_buf_read_at(bin->b, off + i * sizeof(PE_DWord), (ut8*)&import_table, sizeof(PE_DWord)) == -1) {
-			ERR("Error: read (import table)\n");
+			eprintf("Error: read (import table)\n");
 			return 0;
 		}
 		if (import_table) {
@@ -77,12 +77,12 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 				import_ordinal = 0;
 				if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, import_table),
 							(ut8*)&import_hint, sizeof(PE_Word)) == -1) {
-					ERR("Error: read (import hint)\n");
+					eprintf("Error: read (import hint)\n");
 					return 0;
 				}
 				if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, import_table) + sizeof(PE_Word),
 							(ut8*)name, PE_NAME_LENGTH) == -1) {
-					ERR("Error: read (import name)\n");
+					eprintf("Error: read (import name)\n");
 					return 0;
 				}
 				snprintf(import_name, PE_NAME_LENGTH, "%s_%s", dll_name, name);
@@ -112,11 +112,11 @@ static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin)
 		return R_FALSE;
 	}
 	if (r_buf_read_at(bin->b, 0, (ut8*)bin->dos_header, sizeof(PE_(image_dos_header))) == -1) {
-		ERR("Error: read (dos header)\n");
+		eprintf("Error: read (dos header)\n");
 		return R_FALSE;
 	}
 	if (bin->dos_header->e_lfanew > bin->size) {
-		ERR("Invalid e_lfanew field\n");
+		eprintf("Invalid e_lfanew field\n");
 		return R_FALSE;
 	}
 	if (!(bin->nt_headers = malloc(sizeof(PE_(image_nt_headers))))) {
@@ -125,7 +125,7 @@ static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin)
 	}
 	if (r_buf_read_at(bin->b, bin->dos_header->e_lfanew,
 				(ut8*)bin->nt_headers, sizeof(PE_(image_nt_headers))) == -1) {
-		ERR("Error: read (dos header)\n");
+		eprintf("Error: read (dos header)\n");
 		return R_FALSE;
 	}
 	if (strncmp((char*)&bin->dos_header->e_magic, "MZ", 2) ||
@@ -138,7 +138,7 @@ static int PE_(r_bin_pe_init_sections)(struct PE_(r_bin_pe_obj_t)* bin)
 {
 	int sections_size = sizeof(PE_(image_section_header)) * bin->nt_headers->file_header.NumberOfSections;
 	if (sections_size > bin->size) {
-		ERR("Invalid NumberOfSections value\n");
+		eprintf("Invalid NumberOfSections value\n");
 		return R_FALSE;
 	}
 	if (!(bin->section_header = malloc(sections_size))) {
@@ -147,7 +147,7 @@ static int PE_(r_bin_pe_init_sections)(struct PE_(r_bin_pe_obj_t)* bin)
 	}
 	if (r_buf_read_at(bin->b, bin->dos_header->e_lfanew + sizeof(PE_(image_nt_headers)),
 				(ut8*)bin->section_header, sections_size) == -1) {
-		ERR("Error: read (import directory)\n");
+		eprintf("Error: read (import directory)\n");
 		return R_FALSE;
 	}
 	return R_TRUE;
@@ -170,7 +170,7 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin)
 			return R_FALSE;
 		}
 		if (r_buf_read_at(bin->b, import_dir_offset, (ut8*)bin->import_directory, import_dir_size) == -1) {
-			ERR("Error: read (import directory)\n");
+			eprintf("Error: read (import directory)\n");
 			return R_FALSE;
 		}
 	}
@@ -180,7 +180,7 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin)
 			return R_FALSE;
 		}
 		if (r_buf_read_at(bin->b, delay_import_dir_offset, (ut8*)bin->delay_import_directory, delay_import_dir_size) == -1) {
-			ERR("Error: read (delay import directory)\n");
+			eprintf("Error: read (delay import directory)\n");
 			return R_FALSE;
 		}
 	}
@@ -200,7 +200,7 @@ static int PE_(r_bin_pe_init_exports)(struct PE_(r_bin_pe_obj_t) *bin)
 	}
 	if (r_buf_read_at(bin->b, export_dir_offset, (ut8*)bin->export_directory,
 				sizeof(PE_(image_export_directory))) == -1) {
-		ERR("Error: read (export directory)\n");
+		eprintf("Error: read (export directory)\n");
 		return R_FALSE;
 	}
 	return R_TRUE;
@@ -217,11 +217,11 @@ static int PE_(r_bin_pe_init)(struct PE_(r_bin_pe_obj_t)* bin)
 	bin->endian = 0; /* TODO: get endian */
 
 	if (!PE_(r_bin_pe_init_hdr)(bin)) {
-		ERR("Warning: File is not PE\n");
+		eprintf("Warning: File is not PE\n");
 		return R_FALSE;
 	}
 	if (!PE_(r_bin_pe_init_sections)(bin)) {
-		ERR("Warning: Cannot initalize sections\n");
+		eprintf("Warning: Cannot initalize sections\n");
 		return R_FALSE;
 	}
 	PE_(r_bin_pe_init_imports)(bin);
@@ -292,7 +292,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 		return NULL;
 	if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->export_directory->Name),
 				(ut8*)dll_name, PE_NAME_LENGTH) == -1) {
-		ERR("Error: read (dll name)\n");
+		eprintf("Error: read (dll name)\n");
 		return NULL;
 	}
 	functions_offset = PE_(r_bin_pe_rva_to_offset)(bin, bin->export_directory->AddressOfFunctions);
@@ -300,21 +300,21 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	ordinals_offset = PE_(r_bin_pe_rva_to_offset)(bin, bin->export_directory->AddressOfOrdinals);
 	for (i = 0; i < bin->export_directory->NumberOfNames; i++) {
 		if (r_buf_read_at(bin->b, functions_offset + i * sizeof(PE_VWord), (ut8*)&function_rva, sizeof(PE_VWord)) == -1) {
-			ERR("Error: read (function rva)\n");
+			eprintf("Error: read (function rva)\n");
 			return NULL;
 		}
 		if (r_buf_read_at(bin->b, ordinals_offset + i * sizeof(PE_Word), (ut8*)&function_ordinal, sizeof(PE_Word)) == -1) {
-			ERR("Error: read (function ordinal)\n");
+			eprintf("Error: read (function ordinal)\n");
 			return NULL;
 		}
 		if (r_buf_read_at(bin->b, names_offset + i * sizeof(PE_VWord), (ut8*)&name_rva, sizeof(PE_VWord)) == -1) {
-			ERR("Error: read (name rva)\n");
+			eprintf("Error: read (name rva)\n");
 			return NULL;
 		}
 		name_offset = PE_(r_bin_pe_rva_to_offset)(bin, name_rva);
 		if (name_offset) {
 			if (r_buf_read_at(bin->b, name_offset, (ut8*)function_name, PE_NAME_LENGTH) == -1) {
-				ERR("Error: read (function name)\n");
+				eprintf("Error: read (function name)\n");
 				return NULL;
 			}
 		} else {
@@ -323,7 +323,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 		snprintf(export_name, PE_NAME_LENGTH, "%s_%s", dll_name, function_name);
 		if (function_rva >= export_dir_rva && function_rva < (export_dir_rva + export_dir_size)) {
 			if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, function_rva), (ut8*)forwarder_name, PE_NAME_LENGTH) == -1) {
-				ERR("Error: read (magic)\n");
+				eprintf("Error: read (magic)\n");
 				return NULL;
 			}
 		} else {
@@ -364,7 +364,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 	for (i = 0; i < import_dirs_count; i++) {
 		if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->import_directory[i].Name),
 					(ut8*)dll_name, PE_NAME_LENGTH) == -1) {
-			ERR("Error: read (magic)\n");
+			eprintf("Error: read (magic)\n");
 			return NULL;
 		}
 		if (!PE_(r_bin_pe_parse_imports)(bin, &imports, &nimp, dll_name,
@@ -375,7 +375,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 	for (i = 0; i < delay_import_dirs_count; i++) {
 		if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->delay_import_directory[i].Name),
 					(ut8*)dll_name, PE_NAME_LENGTH) == -1) {
-			ERR("Error: read (magic)\n");
+			eprintf("Error: read (magic)\n");
 			return NULL;
 		}
 		if(!PE_(r_bin_pe_parse_imports)(bin, &imports, &nimp, dll_name,
@@ -406,13 +406,13 @@ struct r_bin_pe_string_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin
 	for (i = j = 0; i < import_dirs_count; i++, j++)
 		if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->import_directory[i].Name),
 					(ut8*)libs[j].string, PE_STRING_LENGTH) == -1) {
-			ERR("Error: read (libs - import dirs)\n");
+			eprintf("Error: read (libs - import dirs)\n");
 			return NULL;
 		}
 	for (i = 0; i < delay_import_dirs_count; i++, j++)
 		if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->delay_import_directory[i].Name),
 					(ut8*)libs[j].string, PE_STRING_LENGTH) == -1) {
-			ERR("Error: read (libs - delay import dirs)\n");
+			eprintf("Error: read (libs - delay import dirs)\n");
 			return NULL;
 		}
 	for (i = 0; i < j; i++) {

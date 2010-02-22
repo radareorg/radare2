@@ -13,7 +13,7 @@ static int Elf_(r_bin_elf_init_ehdr)(struct Elf_(r_bin_elf_obj_t) *bin)
 	int len;
 
 	if (r_buf_read_at(bin->b, 0, e_ident, 16) == -1) {
-		ERR("Error: read (magic)\n");
+		eprintf("Error: read (magic)\n");
 		return R_FALSE;
 	}
 	if (bin->ehdr.e_ident[EI_DATA] == ELFDATA2MSB)
@@ -25,7 +25,7 @@ static int Elf_(r_bin_elf_init_ehdr)(struct Elf_(r_bin_elf_obj_t) *bin)
 	len = r_buf_fread_at(bin->b, 0, (ut8*)&bin->ehdr, bin->endian?"16c2S5I6S":"16c2s5i6s", 1);
 #endif
 	if (len == -1) {
-		ERR("Error: read (ehdr)\n");
+		eprintf("Error: read (ehdr)\n");
 		return R_FALSE;
 	}
 	if (strncmp((char *)bin->ehdr.e_ident, ELFMAG, SELFMAG))
@@ -48,7 +48,7 @@ static int Elf_(r_bin_elf_init_phdr)(struct Elf_(r_bin_elf_obj_t) *bin)
 	len = r_buf_fread_at(bin->b, bin->ehdr.e_phoff, (ut8*)bin->phdr, bin->endian?"8I":"8i", bin->ehdr.e_phnum);
 #endif
 	if (len == -1) {
-		ERR("Error: read (phdr)\n");
+		eprintf("Error: read (phdr)\n");
 		return R_FALSE;
 	}
 	return R_TRUE;
@@ -69,7 +69,7 @@ static int Elf_(r_bin_elf_init_shdr)(struct Elf_(r_bin_elf_obj_t) *bin)
 	len = r_buf_fread_at(bin->b, bin->ehdr.e_shoff, (ut8*)bin->shdr, bin->endian?"10I":"10i", bin->ehdr.e_shnum);
 #endif
 	if (len == -1) {
-		ERR("Error: read (shdr)\n");
+		eprintf("Error: read (shdr)\n");
 		return R_FALSE;
 	}
 	return R_TRUE;
@@ -85,7 +85,7 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin)
 		return R_FALSE;
 	}
 	if (r_buf_read_at(bin->b, strtab_section->sh_offset, (ut8*)bin->strtab, strtab_section->sh_size) == -1) {
-		ERR("Error: read (strtab)\n");
+		eprintf("Error: read (strtab)\n");
 		return R_FALSE;
 	}
 	return R_TRUE;
@@ -97,15 +97,15 @@ static int Elf_(r_bin_elf_init)(struct Elf_(r_bin_elf_obj_t) *bin)
     bin->shdr = NULL;
     bin->strtab = NULL;
 	if (!Elf_(r_bin_elf_init_ehdr)(bin)) {
-		ERR("Warning: File is not ELF\n");
+		eprintf("Warning: File is not ELF\n");
 		return R_FALSE;
 	}
 	if (!Elf_(r_bin_elf_init_phdr)(bin))
-		ERR("Warning: Cannot initialize program headers\n");
+		eprintf("Warning: Cannot initialize program headers\n");
 	if (!Elf_(r_bin_elf_init_shdr)(bin))
-		ERR("Warning: Cannot initialize section headers\n");
+		eprintf("Warning: Cannot initialize section headers\n");
 	if (!Elf_(r_bin_elf_init_strtab)(bin))
-		ERR("Warning: Cannot initialize strings table\n");
+		eprintf("Warning: Cannot initialize strings table\n");
 	bin->baddr = Elf_(r_bin_elf_get_baddr)(bin);
 
 	return R_TRUE;
@@ -151,7 +151,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym)
 			len = r_buf_fread_at(bin->b, bin->shdr[i].sh_offset + j, (ut8*)&rel[k], bin->endian?"2I":"2i", 1);
 #endif
 			if (len == -1) {
-				ERR("Error: read (rel)\n");
+				eprintf("Error: read (rel)\n");
 				return -1;
 			}
 		}
@@ -162,7 +162,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym)
 			if (ELF_R_SYM(rel[k].r_info) == sym) {
 				if (r_buf_read_at(bin->b, rel[k].r_offset-bin->baddr-got_offset,
 							(ut8*)&plt_sym_addr, sizeof(Elf_(Addr))) == -1) {
-					ERR("Error: read (got)\n");
+					eprintf("Error: read (got)\n");
 					return -1;
 				}
 				return (ut64)(plt_sym_addr - 6);
@@ -424,7 +424,7 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 				return NULL;
 			}
 			if (r_buf_read_at(bin->b, strtab_section->sh_offset, (ut8*)strtab, strtab_section->sh_size) == -1) {
-				ERR("Error: read (magic)\n");
+				eprintf("Error: read (magic)\n");
 				return NULL;
 			}
 
@@ -439,7 +439,7 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 			len = r_buf_fread_at(bin->b, bin->shdr[i].sh_offset, (ut8*)sym, bin->endian?"3I2cS":"3i2cs", nsym);
 #endif
 			if (len == -1) {
-				ERR("Error: read (ehdr)\n");
+				eprintf("Error: read (ehdr)\n");
 				return NULL;
 			}
 

@@ -1,10 +1,10 @@
 /* radare - LGPL - Copyright 2010 nibble at develsec.org */
 
-#ifndef _INCLUDE_R_BIN_MACH0_H_
-#define _INCLUDE_R_BIN_MACH0_H_
-
 #include <r_types.h>
 #include "mach0_specs.h"
+
+#ifndef _INCLUDE_R_BIN_MACH0_H_
+#define _INCLUDE_R_BIN_MACH0_H_
 
 #define R_BIN_MACH0_STRING_LENGTH 256
 
@@ -46,19 +46,21 @@ struct r_bin_mach0_entrypoint_t {
 	int last;
 };
 
-struct r_bin_mach0_obj_t {
-	struct mach_header hdr;
-	struct segment_command* segs;
+#endif
+
+struct MACH0_(r_bin_mach0_obj_t) {
+	struct MACH0_(mach_header) hdr;
+	struct MACH0_(segment_command)* segs;
 	int nsegs;
-	struct section* sects;
+	struct MACH0_(section)* sects;
 	int nsects;
-	struct nlist* symtab;
+	struct MACH0_(nlist)* symtab;
 	ut8* symstr;
 	int nsymtab;
 	struct dysymtab_command dysymtab;
 	struct dylib_table_of_contents* toc;
 	int ntoc;
-	struct dylib_module* modtab;
+	struct MACH0_(dylib_module)* modtab;
 	int nmodtab;
 	struct thread_command thread;
 	int size;
@@ -68,13 +70,13 @@ struct r_bin_mach0_obj_t {
 	struct r_buf_t* b;
 };
 
-struct r_bin_mach0_obj_t* r_bin_mach0_new(const char* file);
-void* r_bin_mach0_free(struct r_bin_mach0_obj_t* bin);
-struct r_bin_mach0_section_t* r_bin_mach0_get_sections(struct r_bin_mach0_obj_t* bin);
-struct r_bin_mach0_symbol_t* r_bin_mach0_get_symbols(struct r_bin_mach0_obj_t* bin);
-struct r_bin_mach0_import_t* r_bin_mach0_get_imports(struct r_bin_mach0_obj_t* bin);
-struct r_bin_mach0_entrypoint_t* r_bin_mach0_get_entrypoints(struct r_bin_mach0_obj_t* bin);
-ut64 r_bin_mach0_get_baddr(struct r_bin_mach0_obj_t* bin);
+struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new)(const char* file);
+void* MACH0_(r_bin_mach0_free)(struct MACH0_(r_bin_mach0_obj_t)* bin);
+struct r_bin_mach0_section_t* MACH0_(r_bin_mach0_get_sections)(struct MACH0_(r_bin_mach0_obj_t)* bin);
+struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin_mach0_obj_t)* bin);
+struct r_bin_mach0_import_t* MACH0_(r_bin_mach0_get_imports)(struct MACH0_(r_bin_mach0_obj_t)* bin);
+struct r_bin_mach0_entrypoint_t* MACH0_(r_bin_mach0_get_entrypoints)(struct MACH0_(r_bin_mach0_obj_t)* bin);
+ut64 MACH0_(r_bin_mach0_get_baddr)(struct MACH0_(r_bin_mach0_obj_t)* bin);
 
 #if 0
 int r_bin_mach0_get_arch(r_bin_mach0_obj*, char*);
@@ -92,6 +94,4 @@ int r_bin_mach0_is_stripped_relocs(r_bin_mach0_obj*);
 int r_bin_mach0_is_stripped_line_nums(r_bin_mach0_obj*);
 int r_bin_mach0_is_stripped_local_syms(r_bin_mach0_obj*);
 int r_bin_mach0_is_stripped_debug(r_bin_mach0_obj*);
-#endif
-
 #endif

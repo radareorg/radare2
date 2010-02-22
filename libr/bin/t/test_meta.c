@@ -18,16 +18,16 @@ int main(int argc, char **argv)
 
 	bin = r_bin_new ();
 	if (!r_bin_load (bin, argv[1], NULL)) {
-		ERR ("r_bin: Cannot open '%s'\n", argv[1]);
+		eprintf ("r_bin: Cannot open '%s'\n", argv[1]);
 		return 1;
 	}
 	file[0]='\0';
 	if (!r_bin_meta_get_line(bin, r_num_get(NULL, argv[2]), file, 1023, &line)) {
-		ERR ("Cannot get metadata\n");
+		eprintf ("Cannot get metadata\n");
 		return 1;
 	}
 	if (!(fileline = r_bin_meta_get_file_line(bin, file, line))) {
-		ERR ("Cannot get file line\n");
+		eprintf ("Cannot get file line\n");
 		return 1;
 	}
 	printf("FILE: %s\n", file);

@@ -8,36 +8,22 @@
 
 static int load(RBin *bin)
 {
-	if(!(bin->bin_obj = r_bin_mach0_new (bin->file)))
+	if(!(bin->bin_obj = MACH0_(r_bin_mach0_new) (bin->file)))
 		return R_FALSE;
-	bin->size = ((struct r_bin_mach0_obj_t*) (bin->bin_obj))->size;
-	bin->buf = ((struct r_bin_mach0_obj_t*) (bin->bin_obj))->b;
+	bin->size = ((struct MACH0_(r_bin_mach0_obj_t)*) (bin->bin_obj))->size;
+	bin->buf = ((struct MACH0_(r_bin_mach0_obj_t)*) (bin->bin_obj))->b;
 	return R_TRUE;
 }
 
 static int destroy(RBin *bin)
 {
-	r_bin_mach0_free ((struct r_bin_mach0_obj_t*)bin->bin_obj);
+	MACH0_(r_bin_mach0_free) ((struct MACH0_(r_bin_mach0_obj_t)*)bin->bin_obj);
 	return R_TRUE;
 }
 
 static ut64 baddr(RBin *bin)
 {
-	return r_bin_mach0_get_baddr ((struct r_bin_mach0_obj_t*)bin->bin_obj);
-}
-
-static int check(RBin *bin)
-{
-	ut8 *buf;
-	int ret = R_FALSE;
-
-	if (!(buf = (ut8*)r_file_slurp_range (bin->file, 0, 4)))
-		return R_FALSE;
-	if (!memcmp (buf, "\xce\xfa\xed\xfa", 4) ||
-		!memcmp (buf, "\xfe\xed\xfa\xce", 4))
-		ret = R_TRUE;
-	free (buf);
-	return ret;
+	return MACH0_(r_bin_mach0_get_baddr) ((struct MACH0_(r_bin_mach0_obj_t)*)bin->bin_obj);
 }
 
 static RFList sections(RBin *bin)
@@ -47,7 +33,7 @@ static RFList sections(RBin *bin)
 	RBinSection *ptr = NULL;
 	struct r_bin_mach0_section_t *sections = NULL;
 
-	if (!(sections = r_bin_mach0_get_sections ((struct r_bin_mach0_obj_t*)bin->bin_obj)))
+	if (!(sections = MACH0_(r_bin_mach0_get_sections) ((struct MACH0_(r_bin_mach0_obj_t)*)bin->bin_obj)))
 		return NULL;
 	for (count = 0; !sections[count].last; count++);
 	if (!(ret = r_flist_new (count))) {
@@ -76,7 +62,7 @@ static RFList symbols(RBin *bin)
 	RBinSymbol *ptr = NULL;
 	struct r_bin_mach0_symbol_t *symbols = NULL;
 
-	if (!(symbols = r_bin_mach0_get_symbols ((struct r_bin_mach0_obj_t*)bin->bin_obj)))
+	if (!(symbols = MACH0_(r_bin_mach0_get_symbols) ((struct MACH0_(r_bin_mach0_obj_t)*)bin->bin_obj)))
 		return NULL;
 	for (count = 0; !symbols[count].last; count++);
 	if (!(ret = r_flist_new (count))) {
@@ -107,7 +93,7 @@ static RFList imports(RBin *bin)
 	RBinImport *ptr = NULL;
 	struct r_bin_mach0_import_t *imports = NULL;
 
-	if (!(imports = r_bin_mach0_get_imports((struct r_bin_mach0_obj_t*)bin->bin_obj)))
+	if (!(imports = MACH0_(r_bin_mach0_get_imports)((struct MACH0_(r_bin_mach0_obj_t)*)bin->bin_obj)))
 		return NULL;
 	for (count = 0; !imports[count].last; count++);
 	if (!(ret = r_flist_new (count))) {
@@ -127,6 +113,21 @@ static RFList imports(RBin *bin)
 		r_flist_set (ret, i, ptr);
 	}
 	free (imports);
+	return ret;
+}
+
+#if !R_BIN_MACH064
+static int check(RBin *bin)
+{
+	ut8 *buf;
+	int ret = R_FALSE;
+
+	if (!(buf = (ut8*)r_file_slurp_range (bin->file, 0, 4)))
+		return R_FALSE;
+	if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
+		!memcmp (buf, "\xfe\xed\xfa\xce", 4))
+		ret = R_TRUE;
+	free (buf);
 	return ret;
 }
 
@@ -154,4 +155,5 @@ struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_mach0
 };
+#endif
 #endif

@@ -1,18 +1,16 @@
 /* radare - LGPL - Copyright 2010 nibble at develsec.org */
-/* TODO:
- * - 64 bits support */
 
 #include <stdio.h>
 #include <r_types.h>
 #include <r_util.h>
 #include "mach0.h"
 
-static int r_bin_mach0_init_hdr(struct r_bin_mach0_obj_t* bin)
+static int MACH0_(r_bin_mach0_init_hdr)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 {
 	int magic, len;
 
 	if (r_buf_read_at(bin->b, 0, (ut8*)&magic, 4) == -1) {
-		ERR("Error: read (magic)\n");
+		eprintf("Error: read (magic)\n");
 		return R_FALSE;
 	}
 	if (magic == MH_MAGIC)
@@ -20,53 +18,66 @@ static int r_bin_mach0_init_hdr(struct r_bin_mach0_obj_t* bin)
 	else if (magic == MH_CIGAM)
 		bin->endian = LIL_ENDIAN;
 	else return R_FALSE;
+#if R_BIN_MACH064
+	len = r_buf_fread_at(bin->b, 0, (ut8*)&bin->hdr, bin->endian?"8I":"8i", 1);
+#else
 	len = r_buf_fread_at(bin->b, 0, (ut8*)&bin->hdr, bin->endian?"7I":"7i", 1);
+#endif
 	if (len == -1) {
-		ERR("Error: read (hdr)\n");
+		eprintf("Error: read (hdr)\n");
 		return R_FALSE;
 	}
 	return R_TRUE;
 }
 
-static int r_bin_mach0_parse_seg(struct r_bin_mach0_obj_t* bin, ut64 off)
+static int MACH0_(r_bin_mach0_parse_seg)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off)
 {
 	int seg, sect, len;
 
 	seg = bin->nsegs - 1;
-	if (!(bin->segs = realloc(bin->segs, bin->nsegs * sizeof(struct segment_command)))) {
+	if (!(bin->segs = realloc(bin->segs, bin->nsegs * sizeof(struct MACH0_(segment_command))))) {
 		perror("realloc (seg)");
 		return R_FALSE;
 	}
+#if R_BIN_MACH064
+	len = r_buf_fread_at(bin->b, off, (ut8*)&bin->segs[seg], bin->endian?"2I16c4L4I":"2i16c4l4i", 1);
+#else
 	len = r_buf_fread_at(bin->b, off, (ut8*)&bin->segs[seg], bin->endian?"2I16c8I":"2i16c8i", 1);
+#endif
 	if (len == -1) {
-		ERR("Error: read (seg)\n");
+		eprintf("Error: read (seg)\n");
 		return R_FALSE;
 	}
 	if (bin->segs[seg].nsects > 0) {
 		sect = bin->nsects;
 		bin->nsects += bin->segs[seg].nsects;
-		if (!(bin->sects = realloc(bin->sects, bin->nsects * sizeof(struct section)))) {
+		if (!(bin->sects = realloc(bin->sects, bin->nsects * sizeof(struct MACH0_(section))))) {
 			perror("realloc (sects)");
 			return R_FALSE;
 		}
-		len = r_buf_fread_at(bin->b, off + sizeof(struct segment_command),
+#if R_BIN_MACH064
+		len = r_buf_fread_at(bin->b, off + sizeof(struct MACH0_(segment_command)),
+				(ut8*)&bin->sects[sect], bin->endian?"16c16c2L8I":"16c16c2l8i", bin->nsects - sect);
+#else
+		len = r_buf_fread_at(bin->b, off + sizeof(struct MACH0_(segment_command)),
 				(ut8*)&bin->sects[sect], bin->endian?"16c16c9I":"16c16c9i", bin->nsects - sect);
+#endif
 		if (len == -1) {
-			ERR("Error: read (sects)\n");
+			eprintf("Error: read (sects)\n");
 			return R_FALSE;
 		}
 	}
 	return R_TRUE;
 }
 
-static int r_bin_mach0_parse_symtab(struct r_bin_mach0_obj_t* bin, ut64 off)
+static int MACH0_(r_bin_mach0_parse_symtab)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off)
 {
 	struct symtab_command st;
 	int len;
 
 	len = r_buf_fread_at(bin->b, off, (ut8*)&st, bin->endian?"6I":"6i", 1);
 	if (len == -1) {
-		ERR("Error: read (symtab)\n");
+		eprintf("Error: read (symtab)\n");
 		return R_FALSE;
 	}
 	if (st.strsize > 0 && st.strsize < bin->size && st.nsyms > 0) {
@@ -76,29 +87,33 @@ static int r_bin_mach0_parse_symtab(struct r_bin_mach0_obj_t* bin, ut64 off)
 			return R_FALSE;
 		}
 		if (r_buf_read_at(bin->b, st.stroff, (ut8*)bin->symstr, st.strsize) == -1) {
-			ERR("Error: read (symstr)\n");
+			eprintf("Error: read (symstr)\n");
 			return R_FALSE;
 		}
-		if (!(bin->symtab = malloc(bin->nsymtab * sizeof(struct nlist)))) {
+		if (!(bin->symtab = malloc(bin->nsymtab * sizeof(struct MACH0_(nlist))))) {
 			perror("malloc (symtab)");
 			return R_FALSE;
 		}
+#if R_BIN_MACH064
+		len = r_buf_fread_at(bin->b, st.symoff, (ut8*)bin->symtab, bin->endian?"I2cSL":"i2csl", bin->nsymtab);
+#else
 		len = r_buf_fread_at(bin->b, st.symoff, (ut8*)bin->symtab, bin->endian?"I2cSI":"i2csi", bin->nsymtab);
+#endif
 		if (len == -1) {
-			ERR("Error: read (nlist)\n");
+			eprintf("Error: read (nlist)\n");
 			return R_FALSE;
 		}
 	}
 	return R_TRUE;
 }
 
-static int r_bin_mach0_parse_dysymtab(struct r_bin_mach0_obj_t* bin, ut64 off)
+static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off)
 {
 	int len;
 
 	len = r_buf_fread_at(bin->b, off, (ut8*)&bin->dysymtab, bin->endian?"20I":"20i", 1);
 	if (len == -1) {
-		ERR("Error: read (dysymtab)\n");
+		eprintf("Error: read (dysymtab)\n");
 		return R_FALSE;
 	}
 	bin->ntoc = bin->dysymtab.ntoc;
@@ -109,69 +124,75 @@ static int r_bin_mach0_parse_dysymtab(struct r_bin_mach0_obj_t* bin, ut64 off)
 		}
 		len = r_buf_fread_at(bin->b, bin->dysymtab.tocoff, (ut8*)bin->toc, bin->endian?"2I":"2i", bin->ntoc);
 		if (len == -1) {
-			ERR("Error: read (toc)\n");
+			eprintf("Error: read (toc)\n");
 			return R_FALSE;
 		}
 	}
 	bin->nmodtab = bin->dysymtab.nmodtab;
 	if (bin->nmodtab > 0) {
-		if (!(bin->modtab = malloc(bin->nmodtab * sizeof(struct dylib_module)))) {
+		if (!(bin->modtab = malloc(bin->nmodtab * sizeof(struct MACH0_(dylib_module))))) {
 			perror("malloc (modtab)");
 			return R_FALSE;
 		}
+#if R_BIN_MACH064
+		len = r_buf_fread_at(bin->b, bin->dysymtab.modtaboff, (ut8*)bin->modtab, bin->endian?"12IL":"12il", bin->nmodtab);
+#else
 		len = r_buf_fread_at(bin->b, bin->dysymtab.modtaboff, (ut8*)bin->modtab, bin->endian?"13I":"13i", bin->nmodtab);
+#endif
 		if (len == -1) {
-			ERR("Error: read (modtab)\n");
+			eprintf("Error: read (modtab)\n");
 			return R_FALSE;
 		}
 	}
 	return R_TRUE;
 }
 
-static int r_bin_mach0_parse_thread(struct r_bin_mach0_obj_t* bin, ut64 off)
+static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off)
 {
 	int len;
 
 	len = r_buf_fread_at(bin->b, off, (ut8*)&bin->thread, bin->endian?"2I":"2i", 1);
 	if (len == -1) {
-		ERR("Error: read (dysymtab)\n");
+		eprintf("Error: read (thread)\n");
 		return R_FALSE;
 	}
-	ERR ("%x\n", off);
-	ERR ("cmd: %x\n", bin->thread.cmd);
-	ERR ("cmdsize: %x\n", bin->thread.cmdsize);
+#if 0
+	eprintf ("%llx\n", off);
+	eprintf ("cmd: %x\n", bin->thread.cmd);
+	eprintf ("cmdsize: %x\n", bin->thread.cmdsize);
+#endif
 	return R_TRUE;
 }
 
-static int r_bin_mach0_init_items(struct r_bin_mach0_obj_t* bin)
+static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 {
 	struct load_command lc = {0, 0};
 	ut64 off;
 	int i, len;
 
-	for (i = 0, off = sizeof(struct mach_header); i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
+	for (i = 0, off = sizeof(struct MACH0_(mach_header)); i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
 		len = r_buf_fread_at(bin->b, off, (ut8*)&lc, bin->endian?"2I":"2i", 1);
 		if (len == -1) {
-			ERR("Error: read (lc)\n");
+			eprintf("Error: read (lc)\n");
 			return R_FALSE;
 		}
 		switch (lc.cmd) {
 		case LC_SEGMENT:
 			bin->nsegs++;
-			if (!r_bin_mach0_parse_seg(bin, off))
+			if (!MACH0_(r_bin_mach0_parse_seg)(bin, off))
 				return R_FALSE;
 			break;
 		case LC_SYMTAB:
-			if (!r_bin_mach0_parse_symtab(bin, off))
+			if (!MACH0_(r_bin_mach0_parse_symtab)(bin, off))
 				return R_FALSE;
 			break;
 		case LC_DYSYMTAB:
-			if (!r_bin_mach0_parse_dysymtab(bin, off))
+			if (!MACH0_(r_bin_mach0_parse_dysymtab)(bin, off))
 				return R_FALSE;
 			break;
 		case LC_UNIXTHREAD:
 		case LC_THREAD:
-			if (!r_bin_mach0_parse_thread(bin, off))
+			if (!MACH0_(r_bin_mach0_parse_thread)(bin, off))
 				return R_FALSE;
 			break;
 		}
@@ -179,18 +200,18 @@ static int r_bin_mach0_init_items(struct r_bin_mach0_obj_t* bin)
 	return R_TRUE;
 }
 
-static int r_bin_mach0_init(struct r_bin_mach0_obj_t* bin)
+static int MACH0_(r_bin_mach0_init)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 {
-	if (!r_bin_mach0_init_hdr(bin)) {
-		ERR("Warning: File is not MACH0\n");
+	if (!MACH0_(r_bin_mach0_init_hdr)(bin)) {
+		eprintf("Warning: File is not MACH0\n");
 		return R_FALSE;
 	}
-	if (!r_bin_mach0_init_items(bin))
-		ERR("Warning: Cannot initalize items\n");
+	if (!MACH0_(r_bin_mach0_init_items)(bin))
+		eprintf("Warning: Cannot initalize items\n");
 	return R_TRUE;
 }
 
-void* r_bin_mach0_free(struct r_bin_mach0_obj_t* bin)
+void* MACH0_(r_bin_mach0_free)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 {
 	if (!bin)
 		return NULL;
@@ -212,27 +233,27 @@ void* r_bin_mach0_free(struct r_bin_mach0_obj_t* bin)
 	return NULL;
 }
 
-struct r_bin_mach0_obj_t* r_bin_mach0_new(const char* file)
+struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new)(const char* file)
 {
-	struct r_bin_mach0_obj_t *bin;
+	struct MACH0_(r_bin_mach0_obj_t) *bin;
 	ut8 *buf;
 
-	if (!(bin = malloc(sizeof(struct r_bin_mach0_obj_t))))
+	if (!(bin = malloc(sizeof(struct MACH0_(r_bin_mach0_obj_t)))))
 		return NULL;
-	memset (bin, 0, sizeof (struct r_bin_mach0_obj_t));
+	memset (bin, 0, sizeof (struct MACH0_(r_bin_mach0_obj_t)));
 	bin->file = file;
 	if (!(buf = (ut8*)r_file_slurp(file, &bin->size))) 
-		return r_bin_mach0_free(bin);
+		return MACH0_(r_bin_mach0_free)(bin);
 	bin->b = r_buf_new();
 	if (!r_buf_set_bytes(bin->b, buf, bin->size))
-		return r_bin_mach0_free(bin);
+		return MACH0_(r_bin_mach0_free)(bin);
 	free (buf);
-	if (!r_bin_mach0_init(bin))
-		return r_bin_mach0_free(bin);
+	if (!MACH0_(r_bin_mach0_init)(bin))
+		return MACH0_(r_bin_mach0_free)(bin);
 	return bin;
 }
 
-struct r_bin_mach0_section_t* r_bin_mach0_get_sections(struct r_bin_mach0_obj_t* bin)
+struct r_bin_mach0_section_t* MACH0_(r_bin_mach0_get_sections)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 {
 	struct r_bin_mach0_section_t *sections;
 	char segname[17], sectname[17];
@@ -258,7 +279,7 @@ struct r_bin_mach0_section_t* r_bin_mach0_get_sections(struct r_bin_mach0_obj_t*
 	return sections;
 }
 
-struct r_bin_mach0_symbol_t* r_bin_mach0_get_symbols(struct r_bin_mach0_obj_t* bin)
+struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 {
 	struct r_bin_mach0_symbol_t *symbols;
 	int i, j;
@@ -279,7 +300,7 @@ struct r_bin_mach0_symbol_t* r_bin_mach0_get_symbols(struct r_bin_mach0_obj_t* b
 	return symbols;
 }
 
-struct r_bin_mach0_import_t* r_bin_mach0_get_imports(struct r_bin_mach0_obj_t* bin)
+struct r_bin_mach0_import_t* MACH0_(r_bin_mach0_get_imports)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 {
 	struct r_bin_mach0_import_t *imports;
 	int i, j;
@@ -299,13 +320,13 @@ struct r_bin_mach0_import_t* r_bin_mach0_get_imports(struct r_bin_mach0_obj_t* b
 	return imports;
 }
 
-struct r_bin_mach0_entrypoint_t* r_bin_mach0_get_entrypoints(struct r_bin_mach0_obj_t* bin)
+struct r_bin_mach0_entrypoint_t* MACH0_(r_bin_mach0_get_entrypoints)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 {
 	/* TODO */
 	return NULL;
 }
 
-ut64 r_bin_mach0_get_baddr(struct r_bin_mach0_obj_t* bin)
+ut64 MACH0_(r_bin_mach0_get_baddr)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 {
 	/* TODO */
 	return UT64_MIN;

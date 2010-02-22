@@ -535,7 +535,7 @@ int main(int argc, char **argv)
 
 	if (!r_bin_load (bin, file, plugin_name) &&
 		!r_bin_load (bin, file, "dummy")) {
-		ERR ("r_bin: Cannot open '%s'\n", file);
+		eprintf ("r_bin: Cannot open '%s'\n", file);
 		return R_FALSE;
 	}
 

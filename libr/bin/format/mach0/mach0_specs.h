@@ -20,6 +20,21 @@
  * 
  * @APPLE_LICENSE_HEADER_END@
  */
+
+#undef MACH0_
+#undef MH_MAGIC
+#undef MH_CIGAM
+
+#if R_BIN_MACH064
+#define MACH0_(name) name##_64
+#define MH_MAGIC 0xfeedfacf
+#define MH_CIGAM 0xcffaedfe
+#else
+#define MACH0_(name) name
+#define	MH_MAGIC 0xfeedface
+#define MH_CIGAM 0xcefaedfe
+#endif
+
 #ifndef _INCLUDE_MACHO_SPECS_H_
 #define _INCLUDE_MACHO_SPECS_H_
 
@@ -70,10 +85,6 @@ struct mach_header {
 	uint32_t	flags;		/* flags */
 };
 
-/* Constant for the magic field of the mach_header (32-bit architectures) */
-#define	MH_MAGIC	0xfeedface	/* the mach magic number */
-#define MH_CIGAM	0xcefaedfe	/* NXSwapInt(MH_MAGIC) */
-
 /*
  * The 64-bit mach header appears at the very beginning of object files for
  * 64-bit architectures.
@@ -88,10 +99,6 @@ struct mach_header_64 {
 	uint32_t	flags;		/* flags */
 	uint32_t	reserved;	/* reserved */
 };
-
-/* Constant for the magic field of the mach_header_64 (64-bit architectures) */
-#define MH_MAGIC_64 0xfeedfacf /* the 64-bit mach magic number */
-#define MH_CIGAM_64 0xcffaedfe /* NXSwapInt(MH_MAGIC_64) */
 
 /*
  * The layout of the file depends on the filetype.  For all but the MH_OBJECT
