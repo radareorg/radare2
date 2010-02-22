@@ -128,6 +128,21 @@ static int r_bin_mach0_parse_dysymtab(struct r_bin_mach0_obj_t* bin, ut64 off)
 	return R_TRUE;
 }
 
+static int r_bin_mach0_parse_thread(struct r_bin_mach0_obj_t* bin, ut64 off)
+{
+	int len;
+
+	len = r_buf_fread_at(bin->b, off, (ut8*)&bin->thread, bin->endian?"2I":"2i", 1);
+	if (len == -1) {
+		ERR("Error: read (dysymtab)\n");
+		return R_FALSE;
+	}
+	ERR ("%x\n", off);
+	ERR ("cmd: %x\n", bin->thread.cmd);
+	ERR ("cmdsize: %x\n", bin->thread.cmdsize);
+	return R_TRUE;
+}
+
 static int r_bin_mach0_init_items(struct r_bin_mach0_obj_t* bin)
 {
 	struct load_command lc = {0, 0};
@@ -154,6 +169,11 @@ static int r_bin_mach0_init_items(struct r_bin_mach0_obj_t* bin)
 			if (!r_bin_mach0_parse_dysymtab(bin, off))
 				return R_FALSE;
 			break;
+		case LC_UNIXTHREAD:
+		case LC_THREAD:
+			if (!r_bin_mach0_parse_thread(bin, off))
+				return R_FALSE;
+			break;
 		}
 	}
 	return R_TRUE;
@@ -161,18 +181,6 @@ static int r_bin_mach0_init_items(struct r_bin_mach0_obj_t* bin)
 
 static int r_bin_mach0_init(struct r_bin_mach0_obj_t* bin)
 {
-	bin->segs = NULL;
-	bin->nsegs = 0;
-	bin->sects = NULL;
-	bin->nsects = 0;
-	bin->symtab = NULL;
-	bin->symstr = NULL;
-	bin->nsymtab = 0;
-	bin->toc = NULL;
-	bin->ntoc = 0;
-	bin->modtab = NULL;
-	bin->nmodtab = 0;
-	bin->baddr = 0;
 	if (!r_bin_mach0_init_hdr(bin)) {
 		ERR("Warning: File is not MACH0\n");
 		return R_FALSE;
@@ -211,6 +219,7 @@ struct r_bin_mach0_obj_t* r_bin_mach0_new(const char* file)
 
 	if (!(bin = malloc(sizeof(struct r_bin_mach0_obj_t))))
 		return NULL;
+	memset (bin, 0, sizeof (struct r_bin_mach0_obj_t));
 	bin->file = file;
 	if (!(buf = (ut8*)r_file_slurp(file, &bin->size))) 
 		return r_bin_mach0_free(bin);

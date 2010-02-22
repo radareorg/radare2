@@ -11,7 +11,7 @@ CFLAGS+=-D__UNIX__=1 -DLIL_ENDIAN=1
 include ../config.mk
 include ${STATIC_BIN_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst bin_,p/bin_,$(STATIC_OBJ)))
-OBJ=bin.o ${STATIC_OBJS}
+OBJ=bin.o bin_meta.o ${STATIC_OBJS}
 
 pre:
 	if [ ! -e libr_bin.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi

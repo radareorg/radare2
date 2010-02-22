@@ -225,6 +225,8 @@ static int check(RBin *bin)
 	return ret;
 }
 
+extern struct r_bin_meta_t r_bin_meta_elf;
+
 struct r_bin_handle_t r_bin_plugin_elf = {
 	.name = "elf",
 	.desc = "ELF format r_bin plugin",
@@ -241,6 +243,7 @@ struct r_bin_handle_t r_bin_plugin_elf = {
 	.strings = NULL,
 	.info = &info,
 	.fields = &fields,
+	.meta = &r_bin_meta_elf,
 };
 
 #ifndef CORELIB

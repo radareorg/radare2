@@ -46,6 +46,7 @@ struct r_bin_handle_t r_bin_plugin_dummy = {
 	.strings = NULL,
 	.info = NULL,
 	.fields = NULL,
+	.meta = NULL,
 };
 
 #ifndef CORELIB

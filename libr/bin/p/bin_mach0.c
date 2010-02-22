@@ -146,6 +146,7 @@ struct r_bin_handle_t r_bin_plugin_mach0 = {
 	.strings = NULL,
 	.info = NULL,
 	.fields = NULL,
+	.meta = NULL,
 };
 
 #ifndef CORELIB

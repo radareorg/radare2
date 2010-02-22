@@ -17,6 +17,8 @@ static int check(RBin *bin)
 	return ret;
 }
 
+extern struct r_bin_meta_t r_bin_meta_elf64;
+
 struct r_bin_handle_t r_bin_plugin_elf64 = {
 	.name = "elf64",
 	.desc = "elf64 bin plugin",
@@ -33,6 +35,7 @@ struct r_bin_handle_t r_bin_plugin_elf64 = {
 	.strings = NULL,
 	.info = &info,
 	.fields = &fields,
+	.meta = &r_bin_meta_elf64,
 };
 
 #ifndef CORELIB

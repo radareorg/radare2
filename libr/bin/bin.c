@@ -3,8 +3,6 @@
 /* TODO:
  * Linked libraries
  * dlopen library and show address
- * XRefs
- * Generic resize
  */
 
 #include <stdio.h>

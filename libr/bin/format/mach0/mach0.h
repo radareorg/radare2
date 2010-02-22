@@ -60,6 +60,7 @@ struct r_bin_mach0_obj_t {
 	int ntoc;
 	struct dylib_module* modtab;
 	int nmodtab;
+	struct thread_command thread;
 	int size;
     ut64 baddr;
 	int	endian;

@@ -58,8 +58,13 @@ typedef struct r_bin_handle_t {
 	struct r_bin_info_t* (*info)(RBin *bin);
 	RFList (*fields)(RBin *bin);
 	RFList (*libs)(RBin *bin);
+	struct r_bin_meta_t *meta;
 	struct list_head list;
 } RBinHandle;
+
+typedef struct r_bin_meta_t {
+	int (*get_line)(RBin *bin, ut64 addr, char *file, int len, int *line);
+} RBinMeta;
 
 typedef struct r_bin_entry_t {
 	ut64 rva;
@@ -125,6 +130,8 @@ typedef struct r_bin_field_t {
 } RBinField;
 
 #ifdef R_API
+
+/* bin.c */
 R_API int r_bin_add(RBin *bin, RBinHandle *foo);
 R_API void* r_bin_free(RBin *bin);
 R_API int r_bin_init(RBin *bin);
@@ -144,6 +151,11 @@ R_API RFList r_bin_get_strings(RBin *bin);
 R_API RFList r_bin_get_symbols(RBin *bin);
 R_API RBin* r_bin_new();
 R_API void r_bin_set_user_ptr(RBin *bin, void *user);
+
+/* bin_dbg.c */
+R_API int r_bin_meta_get_line(RBin *bin, ut64 addr, char *file, int len, int *line);
+R_API char *r_bin_meta_get_file_line(RBin *bin, const char *file, int line);
+
 #endif
 
 #endif
