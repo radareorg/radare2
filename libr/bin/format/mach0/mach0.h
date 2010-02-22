@@ -68,6 +68,7 @@ struct MACH0_(r_bin_mach0_obj_t) {
 		struct x86_thread_state64 x86_64;
 		struct ppc_thread_state32 ppc_32;
 		struct ppc_thread_state64 ppc_64;
+		struct arm_thread_state arm;
 	} thread_state;
 	int size;
     ut64 baddr;

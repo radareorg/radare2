@@ -187,6 +187,7 @@ struct mach_header_64 {
 #define	CPU_TYPE_X86_64		(CPU_TYPE_X86 | CPU_ARCH_ABI64)
 #define CPU_TYPE_MC98000	((cpu_type_t) 10)
 #define CPU_TYPE_HPPA       ((cpu_type_t) 11)
+#define CPU_TYPE_ARM        ((cpu_type_t) 12)
 #define CPU_TYPE_MC88000	((cpu_type_t) 13)
 #define CPU_TYPE_SPARC		((cpu_type_t) 14)
 #define CPU_TYPE_I860		((cpu_type_t) 15)
@@ -773,6 +774,9 @@ struct x86_thread_state64 {
 	uint64_t	gs;
 };
 
+#define X86_THREAD_STATE32	1
+#define X86_THREAD_STATE64	4
+
 struct ppc_thread_state32 {
 	uint32_t srr0;  /* Instruction address register (PC) */
 	uint32_t srr1;	/* Machine state register (supervisor) */
@@ -862,9 +866,25 @@ struct ppc_thread_state64 {
 	uint32_t vrsave;		/* Vector Save Register */
 };
 
-
-#define X86_THREAD_STATE32	1
-#define X86_THREAD_STATE64	4
+struct arm_thread_state {
+	uint32_t r0;
+	uint32_t r1;
+	uint32_t r2;
+	uint32_t r3;
+	uint32_t r4;
+	uint32_t r5;
+	uint32_t r6;
+	uint32_t r7;
+	uint32_t r8;
+	uint32_t r9;
+	uint32_t r10;
+	uint32_t r11;
+	uint32_t r12;
+	uint32_t r13;
+	uint32_t r14;
+	uint32_t r15;
+	uint32_t r16;   /* Apple's thread_state has this 17th reg, bug?? */
+};
 
 /*
  * The routines command contains the address of the dynamic shared library 

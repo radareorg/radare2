@@ -172,7 +172,9 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 		eprintf("Error: read (thread)\n");
 		return R_FALSE;
 	}
-	if (bin->hdr.cputype == CPU_TYPE_I386 || bin->hdr.cputype == CPU_TYPE_X86_64) { 
+	switch (bin->hdr.cputype) {
+	case CPU_TYPE_I386:
+	case CPU_TYPE_X86_64:
 		if (bin->thread.flavor == X86_THREAD_STATE32) {
 			if ((len = r_buf_fread_at(bin->b, off + sizeof(struct thread_command),
 				(ut8*)&bin->thread_state.x86_32, bin->endian?"16I":"16i", 1)) == -1) {
@@ -184,29 +186,39 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 		} else if (bin->thread.flavor == X86_THREAD_STATE64) {
 			if ((len = r_buf_fread_at(bin->b, off + sizeof(struct thread_command),
 				(ut8*)&bin->thread_state.x86_64, bin->endian?"21L":"21l", 1)) == -1) {
-				eprintf("Error: read (thread state x86_32)\n");
+				eprintf("Error: read (thread state x86_64)\n");
 				return R_FALSE;
 			}
 			bin->entry = bin->thread_state.x86_64.rip;
 		}
-	} else if (bin->hdr.cputype == CPU_TYPE_POWERPC || bin->hdr.cputype == CPU_TYPE_POWERPC64) { 
+		break;
+	case CPU_TYPE_POWERPC:
+	case CPU_TYPE_POWERPC64:
 		if (bin->thread.flavor == X86_THREAD_STATE32) {
 			if ((len = r_buf_fread_at(bin->b, off + sizeof(struct thread_command),
 				(ut8*)&bin->thread_state.ppc_32, bin->endian?"40I":"40i", 1)) == -1) {
-				eprintf("Error: read (thread state x86_32)\n");
+				eprintf("Error: read (thread state ppc_32)\n");
 				return R_FALSE;
 			}
 			bin->entry = bin->thread_state.ppc_32.srr0;
-
 		} else if (bin->thread.flavor == X86_THREAD_STATE64) {
 			if ((len = r_buf_fread_at(bin->b, off + sizeof(struct thread_command),
 				(ut8*)&bin->thread_state.ppc_64, bin->endian?"34LI3LI":"34li3li", 1)) == -1) {
-				eprintf("Error: read (thread state x86_32)\n");
+				eprintf("Error: read (thread state ppc_64)\n");
 				return R_FALSE;
 			}
 			bin->entry =  bin->thread_state.ppc_64.srr0;
 		}
-	} else {
+		break;
+	case CPU_TYPE_ARM:
+		if ((len = r_buf_fread_at(bin->b, off + sizeof(struct thread_command),
+						(ut8*)&bin->thread_state.arm, bin->endian?"17I":"17i", 1)) == -1) {
+			eprintf("Error: read (thread state arm)\n");
+			return R_FALSE;
+		}
+		bin->entry =  bin->thread_state.arm.r15;
+		break;
+	default:
 		eprintf("Error: read (unknown thread state structure)\n");
 		return R_FALSE;
 	}

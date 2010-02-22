@@ -155,7 +155,7 @@ static int rabin_show_symbols(ut64 at) {
 					else if (!strncmp (symbol->type,"OBJECT", 6))
 							printf ("Cd %lli @ 0x%08llx\n",
 									symbol->size, va?baddr+symbol->rva:symbol->offset);
-					printf ("f sym.%s %lli @ 0x%08llx\n",
+					printf ("f sym.%s %lli 0x%08llx\n",
 							symbol->name, symbol->size,
 							va?baddr+symbol->rva:symbol->offset);
 				} else printf ("f sym.%s @ 0x%08llx\n",

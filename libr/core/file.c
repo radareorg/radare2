@@ -31,8 +31,6 @@ R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *fil
 	list_add (&(fh->list), &r->files);
 
 	r_bin_load (&r->bin, fh->filename, NULL);
-	// DEPRECATED XXX: detect plugin automagically or set it in config.c
-	//r_bininfo_open (&r->bininfo, fh->filename, 0, "addr2line");
 
 	r_core_block_read (r, 0);
 
