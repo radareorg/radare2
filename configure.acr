@@ -69,7 +69,6 @@ SUBDIRS ./config-user.mk libr/include/r_userconf.h
  pkgcfg/r_io.pc
  pkgcfg/r_asm.pc
  pkgcfg/r_bin.pc
- pkgcfg/r_bininfo.pc
  pkgcfg/r_anal.pc
  pkgcfg/r_hash.pc
  pkgcfg/r_cons.pc
