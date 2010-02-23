@@ -10,6 +10,3 @@ R_API int r_bin_meta_get_line(RBin *bin, ut64 addr, char *file, int len, int *li
 	return R_FALSE;
 }
 
-R_API char *r_bin_meta_get_file_line(RBin *bin, const char *file, int line) {
-	return r_file_slurp_line(file, line, 1);
-}

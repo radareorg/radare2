@@ -154,7 +154,6 @@ R_API void r_bin_set_user_ptr(RBin *bin, void *user);
 
 /* bin_meta.c */
 R_API int r_bin_meta_get_line(RBin *bin, ut64 addr, char *file, int len, int *line);
-R_API char *r_bin_meta_get_file_line(RBin *bin, const char *file, int line);
 
 #endif
 

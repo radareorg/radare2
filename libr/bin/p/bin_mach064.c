@@ -32,7 +32,7 @@ struct r_bin_handle_t r_bin_plugin_mach064 = {
 	.symbols = &symbols,
 	.imports = &imports,
 	.strings = NULL,
-	.info = NULL,
+	.info = &info,
 	.fields = NULL,
 	.meta = NULL,
 };

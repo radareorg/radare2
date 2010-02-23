@@ -7,7 +7,6 @@
 int main(int argc, char **argv)
 {
 	char file[1024];
-	char *fileline;
 	int line = 0;
 	RBin *bin;
 
@@ -26,14 +25,8 @@ int main(int argc, char **argv)
 		eprintf ("Cannot get metadata\n");
 		return 1;
 	}
-	if (!(fileline = r_bin_meta_get_file_line(bin, file, line))) {
-		eprintf ("Cannot get file line\n");
-		return 1;
-	}
 	printf("FILE: %s\n", file);
 	printf("LINE: %d\n", line);
-	printf ("FILE LINE: %s\n", fileline);
-	free (fileline);
 	r_bin_free(bin);
 
 	return 0;
