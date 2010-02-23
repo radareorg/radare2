@@ -144,9 +144,7 @@ R_API RFList r_bin_get_imports(RBin *bin);
 R_API RBinInfo* r_bin_get_info(RBin *bin);
 R_API RFList r_bin_get_libs(RBin *bin);
 R_API RFList r_bin_get_sections(RBin *bin);
-#if 0
-R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off);
-#endif
+R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va);
 R_API RFList r_bin_get_strings(RBin *bin);
 R_API RFList r_bin_get_symbols(RBin *bin);
 R_API RBin* r_bin_new();

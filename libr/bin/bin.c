@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
 
 /* TODO:
- * Linked libraries
  * dlopen library and show address
  */
 
@@ -196,11 +195,19 @@ R_API RFList r_bin_get_sections(RBin *bin) {
 	return bin->sections;
 }
 
-#if 0
-R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off) {
-	/* TODO */
+R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va) {
+	RBinSection *section;
+	ut64 from, to;
+
+	r_flist_foreach (bin->sections, section) {
+		from = va ? bin->baddr+section->rva : section->offset;
+		to = va ? bin->baddr+section->rva+section->vsize :
+				  section->offset + section->size;
+		if (off >= from && off < to)
+			return section;
+	}
+	return NULL;
 }
-#endif
 
 R_API RFList r_bin_get_strings(RBin *bin) {
 	return bin->strings;

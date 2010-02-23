@@ -1,9 +1,7 @@
 /* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
 
 /* TODO:
- * -l        Linked libraries
  * -L [lib]  dlopen library and show address
- * -x        XRefs (-s/-i/-z required)
  */
 
 #include <stdio.h>
@@ -200,6 +198,7 @@ static int rabin_show_symbols(ut64 at) {
 static int rabin_show_strings() {
 	RFList strings;
 	RBinString *string;
+	RBinSection *section;
 	ut64 baddr;
 	int i = 0;
 
@@ -212,6 +211,7 @@ static int rabin_show_strings() {
 	else printf ("[strings]\n");
 
 	r_flist_foreach (strings, string) {
+		section = r_bin_get_section_at (bin, string->offset, 0);
 		if (rad) {
 			r_flag_name_filter (string->string);
 			printf ("f str.%s %lli @ 0x%08llx\n"
@@ -219,9 +219,10 @@ static int rabin_show_strings() {
 					string->string, string->size, va?baddr+string->rva:string->offset,
 					string->size, va?baddr+string->rva:string->offset);
 		} else printf ("address=0x%08llx offset=0x%08llx ordinal=%03lli "
-					   "size=%08lli string=%s\n",
+					   "size=%08lli section=%s string=%s\n",
 					   baddr+string->rva, string->offset,
-					   string->ordinal, string->size, string->string);
+					   string->ordinal, string->size,
+					   section?section->name:"unknown", string->string);
 		i++;
 	}
 
