@@ -26,6 +26,7 @@
 #define ACTION_HELP      0x0040
 #define ACTION_STRINGS   0x0080 
 #define ACTION_FIELDS    0x0100 
+#define ACTION_LIBS      0x0200 
 
 static struct r_lib_t l;
 static struct r_bin_t *bin;
@@ -43,6 +44,7 @@ static int rabin_show_help() {
 		" -z          Strings\n"
 		" -I          Binary info\n"
 		" -H          Header fields\n"
+		" -l          Linked libraries\n"
 		" -o [str]    Write/Extract operations (str=help for help)\n"
 		" -f [format] Override file format autodetection\n"
 		" -r          radare output\n"
@@ -80,6 +82,26 @@ static int rabin_show_entrypoints() {
 
 	if (!rad) printf("\n%i entrypoints\n", i);
 
+	return R_TRUE;
+}
+
+static int rabin_show_libs() {
+	RFList libs;
+	char* lib;
+	int i = 0;
+
+	if ((libs = r_bin_get_libs (bin)) == NULL)
+		return R_FALSE;
+
+	printf ("[Linked libraries]\n");
+
+	r_flist_foreach (libs, lib) {
+		printf ("%s\n", lib);
+		i++;
+	}
+
+	if (!rad) printf ("\n%i libraries\n", i);
+	
 	return R_TRUE;
 }
 
@@ -471,7 +493,7 @@ int main(int argc, char **argv)
 		r_lib_opendir (&l, LIBDIR"/radare2/");
 	}
 
-	while ((c = getopt (argc, argv, "@:VisSzIHewo:f:rvLh")) != -1)
+	while ((c = getopt (argc, argv, "@:VisSzIHelwo:f:rvLh")) != -1)
 	{
 		switch(c) {
 		case 'i':
@@ -494,6 +516,9 @@ int main(int argc, char **argv)
 			break;
 		case 'e':
 			action |= ACTION_ENTRIES;
+			break;
+		case 'l':
+			action |= ACTION_LIBS;
 			break;
 		case 'w':
 			rw = R_TRUE;
@@ -553,6 +578,8 @@ int main(int argc, char **argv)
 		rabin_show_info ();
 	if (action&ACTION_FIELDS)
 		rabin_show_fields();
+	if (action&ACTION_LIBS)
+		rabin_show_libs();
 	if (op != NULL && action&ACTION_OPERATION)
 		rabin_do_operation (op);
 

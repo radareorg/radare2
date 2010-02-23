@@ -53,6 +53,11 @@ struct r_bin_pe_string_t {
 	int last;
 };
 
+struct r_bin_pe_lib_t {
+	char name[PE_STRING_LENGTH];
+	int last;
+};
+
 #endif
 
 struct PE_(r_bin_pe_obj_t) {
@@ -74,7 +79,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 int PE_(r_bin_pe_get_file_alignment)(struct PE_(r_bin_pe_obj_t)* bin);
 ut64 PE_(r_bin_pe_get_image_base)(struct PE_(r_bin_pe_obj_t)* bin);
 struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *bin); // TODO
-struct r_bin_pe_string_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin);
+struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin);
 int PE_(r_bin_pe_get_image_size)(struct PE_(r_bin_pe_obj_t)* bin);
 char* PE_(r_bin_pe_get_machine)(struct PE_(r_bin_pe_obj_t)* bin);
 char* PE_(r_bin_pe_get_os)(struct PE_(r_bin_pe_obj_t)* bin);

@@ -34,6 +34,7 @@ struct r_bin_handle_t r_bin_plugin_mach064 = {
 	.strings = NULL,
 	.info = &info,
 	.fields = NULL,
+	.libs = &libs,
 	.meta = NULL,
 };
 

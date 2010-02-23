@@ -243,6 +243,7 @@ struct r_bin_handle_t r_bin_plugin_elf = {
 	.strings = NULL,
 	.info = &info,
 	.fields = &fields,
+	.libs = NULL,
 	.meta = &r_bin_meta_elf,
 };
 

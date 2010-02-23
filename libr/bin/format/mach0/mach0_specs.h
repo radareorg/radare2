@@ -324,6 +324,7 @@ struct mach_header_64 {
 /*
  * MC98000 (PowerPC) subtypes
  */
+
 #define	CPU_SUBTYPE_MC98000_ALL	((cpu_subtype_t) 0)
 #define CPU_SUBTYPE_MC98601	((cpu_subtype_t) 1)
 
@@ -339,6 +340,7 @@ struct mach_header_64 {
 /*
  * MC88000 subtypes.
  */
+
 #define	CPU_SUBTYPE_MC88000_ALL	((cpu_subtype_t) 0)
 #define CPU_SUBTYPE_MC88100	((cpu_subtype_t) 1)
 #define CPU_SUBTYPE_MC88110	((cpu_subtype_t) 2)
@@ -346,17 +348,20 @@ struct mach_header_64 {
 /*
  * SPARC subtypes
  */
+
 #define	CPU_SUBTYPE_SPARC_ALL		((cpu_subtype_t) 0)
 
 /*
  * I860 subtypes
  */
+
 #define CPU_SUBTYPE_I860_ALL	((cpu_subtype_t) 0)
 #define CPU_SUBTYPE_I860_860	((cpu_subtype_t) 1)
 
 /*
  * PowerPC subtypes
  */
+
 #define CPU_SUBTYPE_POWERPC_ALL		((cpu_subtype_t) 0)
 #define CPU_SUBTYPE_POWERPC_601		((cpu_subtype_t) 1)
 #define CPU_SUBTYPE_POWERPC_602		((cpu_subtype_t) 2)

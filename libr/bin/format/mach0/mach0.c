@@ -225,6 +225,28 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 	return R_TRUE;
 }
 
+static int MACH0_(r_bin_mach0_parse_dylib)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off)
+{
+	struct dylib_command dl;
+	int lib, len;
+
+	lib = bin->nlibs - 1;
+	if (!(bin->libs = realloc (bin->libs, bin->nlibs * R_BIN_MACH0_STRING_LENGTH))) {
+		perror ("realloc (libs)");
+		return R_FALSE;
+	}
+	len = r_buf_fread_at (bin->b, off, (ut8*)&dl, bin->endian?"6I":"6i", 1);
+	if (len == -1) {
+		eprintf("Error: read (dylib)\n");
+		return R_FALSE;
+	}
+	if (r_buf_read_at (bin->b, off+dl.dylib.name.offset, (ut8*)bin->libs[lib], R_BIN_MACH0_STRING_LENGTH) == -1) {
+		eprintf ("Error: read (dylib str)");
+		return R_FALSE;
+	}
+	return R_TRUE;
+}
+
 static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 {
 	struct load_command lc = {0, 0};
@@ -258,6 +280,11 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 		case LC_UNIXTHREAD:
 		case LC_THREAD:
 			if (!MACH0_(r_bin_mach0_parse_thread)(bin, off))
+				return R_FALSE;
+			break;
+		case LC_LOAD_DYLIB:
+			bin->nlibs++;
+			if (!MACH0_(r_bin_mach0_parse_dylib)(bin, off))
 				return R_FALSE;
 			break;
 		}
@@ -406,6 +433,24 @@ struct r_bin_mach0_entrypoint_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0
 				break;
 			}
 	return entry;
+}
+
+struct r_bin_mach0_lib_t* MACH0_(r_bin_mach0_get_libs)(struct MACH0_(r_bin_mach0_obj_t)* bin)
+{
+	struct r_bin_mach0_lib_t *libs;
+	int i;
+
+	if (!bin->nlibs)
+		return NULL;
+	if (!(libs = malloc((bin->nlibs + 1) * sizeof(struct r_bin_mach0_lib_t))))
+		return NULL;
+	for (i = 0; i < bin->nlibs; i++) {
+		strncpy (libs[i].name, bin->libs[i], R_BIN_MACH0_STRING_LENGTH);
+		libs[i].name[R_BIN_MACH0_STRING_LENGTH-1] = '\0';
+		libs[i].last = 0;
+	}
+	libs[i].last = 1;
+	return libs;
 }
 
 ut64 MACH0_(r_bin_mach0_get_baddr)(struct MACH0_(r_bin_mach0_obj_t)* bin)

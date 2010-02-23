@@ -76,6 +76,8 @@ static void r_bin_init_items(RBin *bin) {
 		bin->imports = bin->cur->imports (bin);
 	if (bin->cur->info)
 		bin->info = bin->cur->info (bin);
+	if (bin->cur->libs)
+		bin->libs = bin->cur->libs (bin);
 	if (bin->cur->sections)
 		bin->sections = bin->cur->sections (bin);
 	if (bin->cur->strings)
@@ -94,6 +96,8 @@ static void r_bin_free_items(RBin *bin) {
 		r_flist_free (bin->imports);
 	if (bin->info)
 		free (bin->info);
+	if (bin->libs)
+		r_flist_free (bin->libs);
 	if (bin->sections)
 		r_flist_free (bin->sections);
 	if (bin->strings)

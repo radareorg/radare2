@@ -143,6 +143,28 @@ static RFList imports(RBin *bin)
 	return ret;
 }
 
+static RFList libs(RBin *bin)
+{
+	RFList ret = NULL;
+	char *ptr = NULL;
+	struct r_bin_pe_lib_t *libs = NULL;
+	int i, count;
+
+	if (!(libs = PE_(r_bin_pe_get_libs)(bin->bin_obj)))
+		return NULL;
+	for (count = 0; !libs[count].last; count++);
+	if (!(ret = r_flist_new (count))) {
+		free (libs);
+		return NULL;
+	}
+	for (i = 0; i < count; i++) {
+		ptr = strdup (libs[i].name);
+		r_flist_set (ret, i, ptr);
+	}
+	free (libs);
+	return ret;
+}
+
 static RBinInfo* info(RBin *bin)
 {
 	char *str;
@@ -222,6 +244,7 @@ struct r_bin_handle_t r_bin_plugin_pe = {
 	.strings = NULL,
 	.info = &info,
 	.fields = NULL,
+	.libs = &libs,
 	.meta = NULL,
 };
 

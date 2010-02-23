@@ -46,6 +46,11 @@ struct r_bin_mach0_entrypoint_t {
 	int last;
 };
 
+struct r_bin_mach0_lib_t {
+	char name[R_BIN_MACH0_STRING_LENGTH];
+	int last;
+};
+
 #endif
 
 struct MACH0_(r_bin_mach0_obj_t) {
@@ -70,6 +75,8 @@ struct MACH0_(r_bin_mach0_obj_t) {
 		struct ppc_thread_state64 ppc_64;
 		struct arm_thread_state arm;
 	} thread_state;
+	char (*libs)[R_BIN_MACH0_STRING_LENGTH];
+	int nlibs;
 	int size;
     ut64 baddr;
     ut64 entry;
@@ -84,6 +91,7 @@ struct r_bin_mach0_section_t* MACH0_(r_bin_mach0_get_sections)(struct MACH0_(r_b
 struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin_mach0_obj_t)* bin);
 struct r_bin_mach0_import_t* MACH0_(r_bin_mach0_get_imports)(struct MACH0_(r_bin_mach0_obj_t)* bin);
 struct r_bin_mach0_entrypoint_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bin_mach0_obj_t)* bin);
+struct r_bin_mach0_lib_t* MACH0_(r_bin_mach0_get_libs)(struct MACH0_(r_bin_mach0_obj_t)* bin);
 ut64 MACH0_(r_bin_mach0_get_baddr)(struct MACH0_(r_bin_mach0_obj_t)* bin);
 char* MACH0_(r_bin_mach0_get_class)(struct MACH0_(r_bin_mach0_obj_t)* bin);
 int MACH0_(r_bin_mach0_get_bits)(struct MACH0_(r_bin_mach0_obj_t)* bin);
@@ -95,7 +103,6 @@ char* MACH0_(r_bin_mach0_get_filetype)(struct MACH0_(r_bin_mach0_obj_t)* bin);
 #if 0
 int r_bin_mach0_get_file_alignment(r_bin_mach0_obj*);
 int r_bin_mach0_get_image_size(r_bin_mach0_obj*);
-int r_bin_mach0_get_libs(r_bin_mach0_obj*, int, r_bin_mach0_string*);
 int r_bin_mach0_get_os(r_bin_mach0_obj*, char*);
 int r_bin_mach0_get_subsystem(r_bin_mach0_obj*, char*);
 int r_bin_mach0_get_section_alignment(r_bin_mach0_obj*);
