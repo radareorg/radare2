@@ -62,6 +62,8 @@ struct MACH0_(r_bin_mach0_obj_t) {
 	struct MACH0_(nlist)* symtab;
 	ut8* symstr;
 	int nsymtab;
+	ut32* indirectsyms;
+	int nindirectsyms;
 	struct dysymtab_command dysymtab;
 	struct dylib_table_of_contents* toc;
 	int ntoc;

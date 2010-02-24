@@ -160,6 +160,20 @@ static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* 
 			return R_FALSE;
 		}
 	}
+	bin->nindirectsyms = bin->dysymtab.nindirectsyms;
+	if (bin->nindirectsyms > 0) {
+		if (!(bin->indirectsyms = malloc(bin->nindirectsyms * sizeof(ut32)))) {
+			perror("malloc (indirectsyms)");
+			return R_FALSE;
+		}
+		len = r_buf_fread_at(bin->b, bin->dysymtab.indirectsymoff,
+				(ut8*)bin->indirectsyms, bin->endian?"I":"i", bin->nindirectsyms);
+		if (len == -1) {
+			eprintf("Error: read (indirect syms)\n");
+			return R_FALSE;
+		}
+	}
+	/* TODO extrefsyms, extrel, locrel */
 	return R_TRUE;
 }
 
@@ -395,21 +409,40 @@ struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin
 struct r_bin_mach0_import_t* MACH0_(r_bin_mach0_get_imports)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 {
 	struct r_bin_mach0_import_t *imports;
-	int i, j;
+	char sectname[17];
+	int i, j, k, nsyms, sym;
 
 	if (!bin->symtab || !bin->symstr)
 		return NULL;
 	if (!(imports = malloc((bin->dysymtab.nundefsym + 1) * sizeof(struct r_bin_mach0_import_t))))
 		return NULL;
-	/* XXX: only iundefsym?  */
-	/* TODO: get address */
+#if 0
+	/* XXX: only iundefsym? addr? */
 	for (i = bin->dysymtab.iundefsym, j = 0; j < bin->dysymtab.nundefsym; i++, j++) {
 		imports[j].offset = MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->symtab[i].n_value);
-		imports[j].addr = bin->symtab[i].n_value;
+		imports[j].addr = GET_LIBRARY_ORDINAL(bin->symtab[i].n_desc);
 		strncpy(imports[j].name, (char*)bin->symstr+bin->symtab[i].n_un.n_strx, R_BIN_MACH0_STRING_LENGTH);
 		imports[j].last = 0;
 	}
-	imports[j].last = 1;
+#else
+	for (i = 0, k = 0; i < bin->nsects; i++) {
+		// printf ("r1 %x r2 %x f %x\n", bin->sects[i].reserved1, bin->sects[i].reserved2, bin->sects[i].flags);
+		sectname[16] = '\0';
+		memcpy(sectname, bin->sects[i].sectname, 16);
+		if ((bin->sects[i].flags & S_SYMBOL_STUBS) && bin->sects[i].reserved2 != 0) {
+			nsyms = (int)(bin->sects[i].size / bin->sects[i].reserved2);
+			for (j = 0; j < nsyms; j++, k++) {
+				sym = bin->indirectsyms[bin->sects[i].reserved1 + j];
+				imports[k].offset = bin->sects[i].offset + j * bin->sects[i].reserved2;
+				imports[k].addr = bin->sects[i].addr + j * bin->sects[i].reserved2;
+				snprintf (imports[k].name, R_BIN_MACH0_STRING_LENGTH, "%s:%s",
+						  sectname, (char*)bin->symstr+bin->symtab[sym].n_un.n_strx);
+				imports[k].last = 0;
+			}
+		}
+	}
+	imports[k].last = 1;
+#endif
 	return imports;
 }
 
