@@ -137,6 +137,28 @@ static RFList imports(RBin *bin)
 	return ret;
 }
 
+static RFList libs(RBin *bin)
+{
+	RFList ret = NULL;
+	char *ptr = NULL;
+	struct r_bin_elf_lib_t *libs = NULL;
+	int i, count;
+
+	if (!(libs = Elf_(r_bin_elf_get_libs) (bin->bin_obj)))
+		return NULL;
+	for (count = 0; !libs[count].last; count++);
+	if (!(ret = r_flist_new (count))) {
+		free (libs);
+		return NULL;
+	}
+	for (i = 0; i < count; i++) {
+		ptr = strdup (libs[i].name);
+		r_flist_set (ret, i, ptr);
+	}
+	free (libs);
+	return ret;
+}
+
 static RBinInfo* info(RBin *bin)
 {
 	struct r_bin_info_t *ret = NULL;
@@ -243,7 +265,7 @@ struct r_bin_handle_t r_bin_plugin_elf = {
 	.strings = NULL,
 	.info = &info,
 	.fields = &fields,
-	.libs = NULL,
+	.libs = &libs,
 	.meta = &r_bin_meta_elf,
 };
 

@@ -35,7 +35,7 @@ struct r_bin_handle_t r_bin_plugin_elf64 = {
 	.strings = NULL,
 	.info = &info,
 	.fields = &fields,
-	.libs = NULL,
+	.libs = &libs,
 	.meta = &r_bin_meta_elf64,
 };
 
