@@ -1,13 +1,16 @@
 include config-user.mk
 include global.mk
 
-all: plugins.cfg libr swig
+all: plugins.cfg libr swig r2rc
 
 plugins.cfg:
 	./configure-plugins
 
 libr:
 	cd libr && ${MAKE} all
+
+r2rc:
+	cd r2rc && ${MAKE} all
 
 swig:
 ifeq (${HAVE_VALASWIG},1)
@@ -47,6 +50,7 @@ install:
 	for a in doc/* ; do ${INSTALL_DATA} $$a ${DESTDIR}/${PREFIX}/share/doc/radare2 ; done
 	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd swig && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd r2rc && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
 uninstall:
 	rm -rf prefix
@@ -74,4 +78,4 @@ shot:
 
 include ${MKPLUGINS}
 
-.PHONY: all clean mrproper install uninstall deinstall dist shot pkgcfg vdoc swig libr
+.PHONY: all clean mrproper install uninstall deinstall dist shot pkgcfg vdoc swig libr r2rc
