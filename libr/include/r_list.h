@@ -14,8 +14,11 @@ typedef struct r_list_t {
 	RListFree free;
 } RList;
 
+
 #ifdef R_API
 
+// XXX THIS IS BROKEN
+//#define r_list_foreach(it, pos) while (r_list_iter_next (it) && (pos = r_list_iter_get (it)))
 #define r_list_iterator(x) x->head
 #define r_list_iter_free(x) free(x)
 #define r_list_item_free(x) free(x)

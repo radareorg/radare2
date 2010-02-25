@@ -11,6 +11,7 @@ R_API RCommand *r_cmd_init(struct r_cmd_t *cmd) {
 			cmd->cmds[i] = NULL;
 		cmd->data = NULL;
 	}
+	r_cmd_handle_init(cmd);
 	return cmd;
 }
 
@@ -44,8 +45,8 @@ R_API int r_cmd_add(RCommand *c, const char *cmd, const char *desc, r_cmd_callba
 		item = MALLOC_STRUCT (RCommandItem);
 		c->cmds[idx] = item;
 	}
-	strncpy (item->cmd, cmd, 63);
-	strncpy (item->desc, desc, 127);
+	strncpy (item->cmd, cmd, sizeof (item->cmd));
+	strncpy (item->desc, desc, sizeof (item->desc));
 	item->callback = cb;
 	return R_TRUE;
 }
@@ -60,6 +61,16 @@ R_API int r_cmd_del(struct r_cmd_t *cmd, const char *command) {
 R_API int r_cmd_call(struct r_cmd_t *cmd, const char *input) {
 	struct r_cmd_item_t *c;
 	int ret = -1;
+	RListIter *iter;
+	RCommandHandle *cp;
+	
+	iter = r_list_iterator (cmd->plist);
+	while (r_list_iter_next (iter)) {
+		cp = (RCommandHandle*) r_list_iter_get (iter);
+		if (cp->call (NULL, input))
+			return R_TRUE;
+	}
+	
 	if (input == NULL || input[0] == '\0') {
 		if (cmd->nullcallback != NULL)
 			cmd->nullcallback(cmd->data);

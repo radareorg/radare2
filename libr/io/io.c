@@ -77,7 +77,7 @@ R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode)
 	char *uri = strdup(file);
 	struct r_io_handle_t *plugin;
 	if (io != NULL) {
-		for(;;) {
+		for (;;) {
 			plugin = r_io_handle_resolve(io, uri);
 			if (plugin) {
 				fd = plugin->open(io, uri, flags, mode);

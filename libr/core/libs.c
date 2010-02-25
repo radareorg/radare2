@@ -14,6 +14,18 @@ static int __lib_io_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 
 static int __lib_io_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
 
+/* cmd callback */
+static int __lib_cmd_cb(struct r_lib_plugin_t *pl, void *user, void *data)
+{
+	struct r_cmd_handle_t *hand = (struct r_cmd_handle_t *)data;
+	struct r_core_t *core = (struct r_core_t *)user;
+	//printf(" * Added CMD handler\n");
+	r_cmd_handle_add(&core->cmd, hand);
+	return R_TRUE;
+}
+
+static int __lib_cmd_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
+
 /* debug callback */
 static int __lib_dbg_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 {
@@ -104,6 +116,8 @@ R_API int r_core_loadlibs_init(struct r_core_t *core)
 	r_lib_init(&core->lib, "radare_plugin");
 	r_lib_add_handler(&core->lib, R_LIB_TYPE_IO, "io plugins",
 		&__lib_io_cb, &__lib_io_dt, core);
+	r_lib_add_handler(&core->lib, R_LIB_TYPE_CMD, "cmd plugins",
+		&__lib_cmd_cb, &__lib_cmd_dt, core);
 	r_lib_add_handler(&core->lib, R_LIB_TYPE_DBG, "debug plugins",
 		&__lib_dbg_cb, &__lib_dbg_dt, core);
 	r_lib_add_handler(&core->lib, R_LIB_TYPE_BP, "breakpoint plugins",

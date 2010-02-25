@@ -40,6 +40,7 @@ save () {
 }
 
 generate_configh () {
+  plugins=""
   oldlib=""
   for a in ${STATIC} ; do
     lib=$(echo $a | cut -d . -f 1) # library
@@ -50,13 +51,30 @@ generate_configh () {
       uclib=$(echo $lib | tr '[:lower:]' '[:upper:]')
       echo
       echo "#define R_${uclib}_STATIC_PLUGINS \\"
+      plugins="${plugins} __${uclib}"
     fi
     echo "     &r_${lib}_plugin_${plg}, \\"
   done
   [ -n "$oldlib" ] && echo "     0"
+
+  # FILL EMPTY PLUGIN ARRAYS WITH LOVE
+  for a in ${SHARED} ; do
+    lib=$(echo $a | cut -d . -f 1) # library
+    plg=$(echo $a | cut -d . -f 2) # plugin name
+    if [ ! "$oldlib" = "$lib" ]; then
+      oldlib=$lib
+      uclib=$(echo $lib | tr '[:lower:]' '[:upper:]')
+      if [ -z "`echo ${plugins} | grep __${uclib}`" ]; then
+        plugins="${plugins} __${uclib}"
+        echo
+        echo "#define R_${uclib}_STATIC_PLUGINS 0"
+      fi
+    fi
+  done
 }
 
 generate_configmk () {
+  plugins=""
   oldlib=""
   for a in ${STATIC} ; do
     lib=$(echo $a | cut -d . -f 1) # library
@@ -66,8 +84,21 @@ generate_configmk () {
       oldlib=$lib
       uclib=$(echo $lib | tr '[:lower:]' '[:upper:]')
       printf "STATIC_${uclib}_PLUGINS= "
+      plugins="${plugins} __${uclib}"
     fi
     printf "p/${plg}.mk "
+  done
+
+  echo
+
+  # fill the holes with love
+  for a in ${SHARED} ; do
+    lib=$(echo $a | cut -d . -f 1) # library
+    uclib=$(echo $lib | tr '[:lower:]' '[:upper:]')
+    if [ -z "`echo ${plugins} | grep __${uclib}`" ]; then
+      plugins="${plugins} __${uclib}"
+      echo "STATIC_${uclib}_PLUGINS="
+    fi
   done
 }
 

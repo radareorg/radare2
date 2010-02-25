@@ -2,15 +2,13 @@
 #include <string.h>
 #include <r_cmd.h>
 
-int cmd_quit(void *data, const char *input)
-{
+int cmd_quit(void *data, const char *input) {
 	printf("quit\n");
-	exit(1);
+//	exit(1);
 	return 0;
 }
 
-int cmd_echo(void *data, const char *input)
-{
+int cmd_echo(void *data, const char *input) {
 	const char *arg = strchr(input, ' ');
 	if (arg == NULL)
 		arg = input;
@@ -33,6 +31,9 @@ int main()
 	r_cmd_call(&cmd, "e hello world short");
 	r_cmd_call_long(&cmd, "echo hello world long");
 	r_cmd_call_long(&cmd, "exit");
+	if (!r_cmd_call(&cmd, "**dummy**"))
+		eprintf ("==> Cannot call **dummy**\n");
+	else eprintf ("==> **dummy** called\n");
 	r_cmd_call(&cmd, "quit");
 
 	return 0;
