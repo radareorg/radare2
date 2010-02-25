@@ -1,0 +1,56 @@
+RCC : Ralang/Relocatable Code Compiler
+======================================
+
+Compiler pipeline: the picture
+------------------------------
+
+ spp     : Simple preprocessor
+  |        - includes and conditional compilation
+  |
+ralang   : The language
+  |        - imperative and simple
+  |
+macros   : architecture independent assembly-like macro-based
+  |        - provides calling conventions and syscall definitions
+  |
+assembly : macros are then converted into assembly
+  |        - specific for an OS/arch
+  V
+ gas
+  |
+  V
+binary   : the executable, relocatable code
+           - inject it for fun and profit
+
+
+The language
+------------
+
+The ralang language aims to be an imperative high-level language providing
+limited flexibility with some basic rules for parsing to simplify the
+interpretation of the code.
+
+Check t/ for examples
+
+The compiler is a state machine where every character can modify the
+internal state of itself while directly producing assembly code.
+
+A gramatical parser is nothing more or nothing less than that. The language
+must only permit constructions that can be directly mapped to machine code.
+
+  write($1, .var0, .var4);  
+
+Strings are encoded in the stack at runtime, variable access is done
+explicitly by giving the delta offset against the base register.
+
+   .var0 = "Hello";
+
+Access modifiers:
+
+   $1024   = numeric value 
+   .var0   = get contents of variable
+   &.var0  = get address of variable
+   *.var0  = get contents of place where the var points to
+
+
+							         --pancake

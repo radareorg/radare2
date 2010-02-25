@@ -1,0 +1,54 @@
+#!/bin/sh
+# pancake / nopcode.org
+
+[ -z "${ARCH}" ] && ARCH=`rcc -a`
+
+compile() {
+	spp -h 2>&1 >/dev/null
+	if [ $? = 0 ]; then
+		spp -Darch=${ARCH} $@ | rcc -${ARCH} > .a.S || exit $?
+	else
+		rcc -${ARCH} $@ > .a.S || exit $?
+	fi
+}
+
+flg=$1
+shift
+case "$flg" in
+"-b")
+	compile $@
+	gcc -nostdlib .a.S -o .a.out
+	if [ -e .a.out ]; then
+		rabin2 -o d/S/.text .a.out
+		rm -f .a.S .a.out
+	fi
+	;;
+"-S")
+	compile $@
+	;;
+"-c")
+	compile $@
+	gcc .a.S -o .a.out
+	if [ -e .a.out ]; then
+		cp .a.out $1.out
+	fi
+	rm -f .a.S .a.out
+	;;
+"-x")
+	compile $@
+	gcc -nostdlib .a.S -o .a.out
+	if [ -e .a.out ]; then
+		bytes=`rabin -o d/S/.text .a.out`
+		rasc -s $bytes -X
+	fi
+	rm -f .a.S .a.out
+	;;
+*)
+	echo "Usage: rcc-tool [-flag] [file]"
+	echo "   -b  dump bytes"
+	echo "   -x  execute"
+	echo "   -c  compile against libc"
+	echo "   -S  only generate .S file"
+	echo "ARCH: environ to set architecture: x86, x64"
+	;;
+esac
