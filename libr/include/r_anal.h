@@ -161,13 +161,17 @@ typedef struct r_anal_handle_t {
 
 /* anal.c */
 #ifdef R_API
-R_API struct r_anal_t *r_anal_new();
+R_API RAnalysis *r_anal_new();
+R_API RAnalysisBB *r_anal_bb_new();
+R_API RAnalysisAop *r_anal_aop_new();
 R_API RList *r_anal_bb_list_new();
 R_API RList *r_anal_aop_list_new();
-R_API struct r_anal_t *r_anal_free(struct r_anal_t *r);
-R_API void r_anal_bb_list_free(void *bbs);
-R_API void r_anal_aop_list_free(void *aops);
-R_API struct r_anal_t *r_anal_init(struct r_anal_t *anal);
+R_API RAnalysis *r_anal_free(struct r_anal_t *r);
+R_API void r_anal_bb_free(void *bb);
+R_API void r_anal_aop_free(void *aop);
+R_API RAnalysis *r_anal_init(struct r_anal_t *anal);
+R_API RAnalysisBB *r_anal_bb_init(struct r_anal_bb_t *bb);
+R_API RAnalysisAop *r_anal_aop_init(struct r_anal_aop_t *aop);
 R_API void r_anal_set_user_ptr(struct r_anal_t *anal, void *user);
 R_API int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo);
 R_API int r_anal_list(struct r_anal_t *anal);
@@ -177,6 +181,8 @@ R_API int r_anal_set_big_endian(struct r_anal_t *anal, int boolean);
 R_API int r_anal_set_pc(struct r_anal_t *a, ut64 pc);
 R_API int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop,
 		ut64 addr, void *data, int len);
+R_API int r_anal_bb(struct r_anal_t *anal, struct r_anal_bb_t *bb,
+		ut64 addr, ut8 *buf, ut64 len);
 
 /* reflines.c */
 R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, 

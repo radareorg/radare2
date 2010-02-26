@@ -10,44 +10,75 @@ R_API RAnalysis *r_anal_new() {
 	return r_anal_init (MALLOC_STRUCT (struct r_anal_t));
 }
 
+R_API RAnalysisBB *r_anal_bb_new() {
+	return r_anal_bb_init (MALLOC_STRUCT (struct r_anal_bb_t));
+}
+
+R_API RAnalysisAop *r_anal_aop_new() {
+	return r_anal_aop_init (MALLOC_STRUCT (struct r_anal_aop_t));
+}
+
 R_API RList *r_anal_bb_list_new() {
 	RList *list = r_list_new ();
-	list->free = &r_anal_bb_list_free;
+	list->free = &r_anal_bb_free;
 	return list;
 }
 
 R_API RList *r_anal_aop_list_new() {
 	RList *list = r_list_new ();
-	list->free = &r_anal_aop_list_free;
+	list->free = &r_anal_aop_free;
 	return list;
 }
 
 R_API RAnalysis *r_anal_free(struct r_anal_t *a) {
 	/* TODO: Free a->anals here */
-	/* TODO: Free a->bbs here */
+	r_list_destroy (a->bbs);
 	free (a);
 	return NULL;
 }
 
-R_API void r_anal_bb_list_free(void *bbs) {
-	/* TODO */
+R_API void r_anal_bb_free(void *bb) {
+	/*TODO*/
+	if (bb) {
+		r_list_destroy (((RAnalysisBB*)bb)->aops);
+		free (bb);
+	}
 }
 
-R_API void r_anal_aop_list_free(void *aops) {
-	/* TODO */
+R_API void r_anal_aop_free(void *aop) {
+	if (aop)
+		free (aop);
 }
 
-R_API struct r_anal_t *r_anal_init(struct r_anal_t *anal) {
+R_API RAnalysis *r_anal_init(struct r_anal_t *anal) {
 	if (anal) {
-		anal->user = NULL;
-		anal->ctx = NULL;
-		anal->cur = NULL;
+		memset (anal, 0, sizeof (RAnalysis));
 		anal->bbs = r_anal_bb_list_new();
 		r_anal_set_bits (anal, 32);
 		r_anal_set_big_endian (anal, R_FALSE);
 		INIT_LIST_HEAD (&anal->anals);
 	}
 	return anal;
+}
+
+R_API RAnalysisBB *r_anal_bb_init(struct r_anal_bb_t *bb) {
+	if (bb) {
+		memset (bb, 0, sizeof (RAnalysisBB));
+		bb->addr = -1;
+		bb->jump = -1;
+		bb->fail = -1;
+		bb->aops = r_anal_aop_list_new();
+	}
+	return bb;
+}
+
+R_API RAnalysisAop *r_anal_aop_init(struct r_anal_aop_t *aop) {
+	if (aop) {
+		memset (aop, 0, sizeof (RAnalysisAop));
+		aop->jump = -1;
+		aop->fail = -1;
+	}
+	return aop;
 }
 
 R_API void r_anal_set_user_ptr(struct r_anal_t *anal, void *user) {
@@ -106,37 +137,34 @@ R_API int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr,
 	return R_FALSE;
 }
 
-R_API int r_anal_bbs(struct r_anal_t *anal, ut64 addr, ut8 *buf, ut64 len) {
-	/* XXX No working*/
-	struct r_anal_bb_t *bb;
+R_API int r_anal_bb(struct r_anal_t *anal, struct r_anal_bb_t *bb, ut64 addr, ut8 *buf, ut64 len) {
 	struct r_anal_aop_t *aop;
-	ut64 oplen;
+	int oplen, idx = 0;
 
-	if (!(bb = MALLOC_STRUCT(struct r_anal_bb_t))) {
-		eprintf ("Error: malloc (bb)\n");
-		return R_FALSE;
-	}
-	r_list_append (anal->bbs, bb);
 	bb->addr = addr;
-	for (;;) {
-		if (!(aop = MALLOC_STRUCT(struct r_anal_aop_t))) {
-			eprintf ("Error: malloc (aop)\n");
-			return R_FALSE;
+	while (idx < len) {
+		if (!(aop = r_anal_aop_new())) {
+			eprintf ("Error: new (aop)\n");
+			return 0;
 		}
-		if (!(oplen = r_anal_aop (anal, aop, addr, buf, len)))
+		if (!(oplen = r_anal_aop (anal, aop, addr+idx, buf+idx, len-idx))) {
+			free (aop);
 			break;
+		}
+		idx += oplen;
 		r_list_append (bb->aops, aop);
 		switch (aop->type) {
 		case R_ANAL_OP_TYPE_CJMP:
 			bb->fail = aop->fail;
-			r_anal_bbs (anal, bb->fail, buf, len);
+			eprintf ("FAIL: %08llx\n", bb->fail);
 		case R_ANAL_OP_TYPE_JMP:
 			bb->jump = aop->jump;
-			r_anal_bbs (anal, bb->jump, buf, len);	
-			bb->size = addr + oplen - bb->addr;
+			eprintf ("JUMP: %08llx\n", bb->jump);
+			bb->size = idx;
+			break;
+		case R_ANAL_OP_TYPE_CALL:
 			break;
 		}
-		addr += oplen;
 	}
-	return R_TRUE;
+	return idx;
 }

@@ -1,4 +1,6 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 */
+/*   nibble<.ds@gmail.com> */
+/*   pancake<nopcode.org> */
 
 #include "r_core.h"
 #include "r_flags.h"
@@ -887,6 +889,8 @@ static int cmd_anal(void *data, const char *input) {
 		} else r_anal_list (&core->anal);
 		break;
 	case 'o':
+		r_cons_printf ("TODO\n");
+#if 0
 		{
 			/* XXX hardcoded */
 			int ret, idx; 
@@ -898,9 +902,10 @@ static int cmd_anal(void *data, const char *input) {
 				ret = r_anal_aop(&core->anal, &aop,
 					core->offset+idx, buf + idx, (len-idx));
 		}
+#endif
 		break;
 	case 'c':
-		r_cons_printf ("TODO\n");
+		r_core_anal_bb (core, core->offset);
 		break;
 	default:
 		r_cons_printf (

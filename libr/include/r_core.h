@@ -106,6 +106,9 @@ R_API int r_core_cmdf(void *user, const char *fmt, ...);
 R_API int r_core_cmd0(void *user, const char *cmd);
 R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd);
 R_API int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each);
+
+/* anal.c */
+R_API int r_core_anal_bb (struct r_core_t *core, ut64 at);
 #endif
 
 #endif

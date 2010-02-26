@@ -28,7 +28,7 @@
 // XXX addr should be off_t for 64 love
 static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, void *data, int len) {
 	if (anal == NULL || aop == NULL || data == NULL)
-		return -1;
+		return 0;
 
 	ut8 *buf = (ut8*)data;
 	memset(aop, '\0', sizeof(struct r_anal_aop_t));
