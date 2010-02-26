@@ -9,7 +9,7 @@ from r_bin import *
 try:
 	program = sys.argv[1]
 except:
-	print "Usage: test-rcc [path-to-program]"
+	print "Usage: test-r2rc [path-to-program]"
 	sys.exit (1)
 
 a = RAsm ()
@@ -28,7 +28,7 @@ if off_printf == 0:
 	print "Program %s does not imports 'printf'"%program
 	sys.exit(1)
 
-rcc_code="""
+r2rc_code="""
 printf@alias(0x%08lx);
 
 main@global(32,32) {
@@ -36,8 +36,8 @@ main@global(32,32) {
 }
 """%(off_printf)
 
-rcc_asm = RSystem.cmd_str ("rcc", rcc_code)[0]
-code = a.massemble (rcc_asm)
+r2rc_asm = RSystem.cmd_str ("r2rc", r2rc_code)[0]
+code = a.massemble (r2rc_asm)
 if code is None:
 	print "Cannot assemble"
 else:
