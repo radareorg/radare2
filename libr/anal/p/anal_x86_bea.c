@@ -27,7 +27,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, void 
 	aop->length = Disasm(&disasm_obj);
 
 	IFDBG {
-		printf( "[Instruction]\n"
+		eprintf( "[Instruction]\n"
 			"  Opcode: %lx\n"
 			"  Mnemonic: %s\n"
 			"  AddrValue: 0x%llx\n"
@@ -225,7 +225,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, void 
 		default:
 			strcat(category, "UNKNOWN_INSTRUCTION ");
 		}
-		printf("  Category: %s\n", category);
+		eprintf("  Category: %s\n", category);
 
 		switch (disasm_obj.Instruction.BranchType) {
 		case JO:
@@ -250,25 +250,25 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, void 
 			aop->type = R_ANAL_OP_TYPE_CJMP;
 			aop->jump = disasm_obj.Instruction.AddrValue;
 			aop->fail = disasm_obj.Instruction.AddrValue + aop->length;
-			printf("  BranchType: JO\n");
+			eprintf("  BranchType: JO\n");
 			break;
 		case JmpType:
 			aop->type = R_ANAL_OP_TYPE_JMP;
 			aop->jump = disasm_obj.Instruction.AddrValue;
-			printf("  BranchType: JmpType\n");
+			eprintf("  BranchType: JmpType\n");
 			break;
 		case CallType:
 			aop->type = R_ANAL_OP_TYPE_CALL;
 			aop->jump = disasm_obj.Instruction.AddrValue;
 			aop->fail = disasm_obj.Instruction.AddrValue + aop->length;
-			printf("  BranchType: CallType\n");
+			eprintf("  BranchType: CallType\n");
 			break;
 		case RetType:
 			aop->type = R_ANAL_OP_TYPE_RET;
-			printf("  BranchType: RetType\n");
+			eprintf("  BranchType: RetType\n");
 			break;
 		default:
-			printf("  BranchType: Unknown (0x%lx)\n", disasm_obj.Instruction.BranchType);
+			eprintf("  BranchType: Unknown (0x%lx)\n", disasm_obj.Instruction.BranchType);
 		}
 
 
@@ -276,7 +276,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, void 
 			if (argptr[i].ArgMnemonic[0] == '\0')
 				continue;
 
-			printf( "[ARG%i]\n"
+			eprintf( "[ARG%i]\n"
 					"  Mnemonic: %s\n"
 					"  ArgSize: 0x%lx\n"
 					"  BaseRegister: 0x%lx\n"
@@ -294,12 +294,12 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, void 
 					argptr[i].SegmentReg
 				  );
 
-			printf("  AccesMode: ");
+			eprintf("  AccesMode: ");
 			if (argptr[i].AccessMode == 0x1)
-				printf("READ\n");
+				eprintf("READ\n");
 			else if (argptr[i].AccessMode == 0x2)
-				printf("WRITE\n");
-			else printf("UNKNOWN\n");
+				eprintf("WRITE\n");
+			else eprintf("UNKNOWN\n");
 
 			argtype[0] = '\0';
 			if (argptr[i].ArgType & NO_ARGUMENT)
@@ -370,18 +370,18 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, void 
 				strcat(argtype, "REG14 ");
 			if (argptr[i].ArgType & REG15)
 				strcat(argtype, "REG15 ");
-			printf("  ArgType: %s\n", argtype);
+			eprintf("  ArgType: %s\n", argtype);
 		}
 
-		printf("\n");
+		eprintf("\n");
 	}
-	printf("InternalOP:\n");
-	printf("Type: %d\n", aop->type);
-	printf("EOB: %d\n", aop->eob);
-	printf("Family: %d\n", aop->family);
-	printf("Stackop: %d\n", aop->stackop);
-	printf("True: 0x%08llx\n", aop->jump);
-	printf("Fail: 0x%08llx\n", aop->fail);
+	eprintf("InternalOP:\n");
+	eprintf("Type: %d\n", aop->type);
+	eprintf("EOB: %d\n", aop->eob);
+	eprintf("Family: %d\n", aop->family);
+	eprintf("Stackop: %d\n", aop->stackop);
+	eprintf("True: 0x%08llx\n", aop->jump);
+	eprintf("Fail: 0x%08llx\n", aop->fail);
 
 	return aop->length;
 }

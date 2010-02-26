@@ -4,6 +4,8 @@ DEPS=r_util
 
 include ../config.mk
 
+CFLAGS+=-DCORELIB
+
 foo: ${LIBSO} ${LIBAR} plugins
 
 include ${STATIC_CMD_PLUGINS}

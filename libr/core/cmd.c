@@ -881,9 +881,10 @@ static int cmd_anal(void *data, const char *input) {
 	
 	switch(input[0]) {
 	case 'h':
-		if (input[1] && !r_anal_use (&core->anal, input+2))
-			eprintf("Cannot use '%s' anal plugin.\n", input+2);
-		else r_anal_list (&core->anal);
+		if (input[1]) {
+			if (!r_anal_use (&core->anal, input+2))
+				eprintf("Cannot use '%s' anal plugin.\n", input+2);
+		} else r_anal_list (&core->anal);
 		break;
 	case 'o':
 		{
@@ -898,11 +899,15 @@ static int cmd_anal(void *data, const char *input) {
 					core->offset+idx, buf + idx, (len-idx));
 		}
 		break;
+	case 'c':
+		r_cons_printf ("TODO\n");
+		break;
 	default:
 		r_cons_printf (
 		"Usage: a[o] [len]\n"
 		" ah [handle]     ; Use this analysis plugin\n"
-		" ao [len]        ; Analyze raw bytes\n");
+		" ao [len]        ; Analyze raw bytes\n"
+		" ac @ [addr]     ; Analyze code (start at addr)\n");
 		break;
 	}
 	if (tbs != core->blocksize)

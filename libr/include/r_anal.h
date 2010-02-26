@@ -5,8 +5,9 @@
 #ifndef _INCLUDE_R_ANAL_H_
 #define _INCLUDE_R_ANAL_H_
 
-#include "r_types.h"
-#include "list.h"
+#include <r_types.h>
+#include <list.h>
+#include <r_list.h>
 
 // deprecate this macro?
 #define R_ANAL_MAXREG 16
@@ -75,11 +76,11 @@ enum {
 };
 
 enum {
-	R_ANAL_BLK_TYPE_NULL = 0,
-	R_ANAL_BLK_TYPE_HEAD,     /* first block */
-	R_ANAL_BLK_TYPE_BODY,     /* conditional jump */
-	R_ANAL_BLK_TYPE_LAST,     /* ret */
-	R_ANAL_BLK_TYPE_FOOT      /* unknown jump */
+	R_ANAL_BB_TYPE_NULL = 0,
+	R_ANAL_BB_TYPE_HEAD,     /* first block */
+	R_ANAL_BB_TYPE_BODY,     /* conditional jump */
+	R_ANAL_BB_TYPE_LAST,     /* ret */
+	R_ANAL_BB_TYPE_FOOT      /* unknown jump */
 };
 
 enum {
@@ -97,12 +98,15 @@ enum {
 	R_ANAL_REFLINE_WIDE = 2,
 };
 
-typedef struct r_anal_refline_t {
-	ut64 from;
-	ut64 to;
-	int index;
-	struct list_head list;
-} RAnalysisRefline;
+typedef struct r_anal_t {
+	int bits;
+	int big_endian;
+	void *user;
+	RList *bbs;
+	struct r_anal_ctx_t *ctx;
+	struct r_anal_handle_t *cur;
+	struct list_head anals;
+} RAnalysis;
 
 typedef struct r_anal_aop_t {
 	int type;                  /* type of opcode */
@@ -119,19 +123,13 @@ typedef struct r_anal_aop_t {
 	ut64 i_dst[R_ANAL_MAXREG]; /* inmediate arguments */
 } RAnalysisAop;
 
-typedef struct r_anal_function_t {
-	ut64 from;
-	ut64 to;
-} RAnalysisFunction;
-
-typedef struct r_anal_t {
-	int bits;
-	int big_endian;
-	void *user;
-	struct r_anal_ctx_t *ctx;
-	struct r_anal_handle_t *cur;
-	struct list_head anals;
-} RAnalysis;
+typedef struct r_anal_bb_t {
+	ut64 addr;
+	ut64 size;
+	ut64 jump;
+	ut64 fail;
+	RList *aops;
+} RAnalysisBB;
 
 typedef struct r_anal_ctx_t {
 	/* TODO: add more info here */
@@ -142,6 +140,12 @@ typedef struct r_anal_ctx_t {
 	struct r_anal_t *anal;
 } RAnalysisContext;
 
+typedef struct r_anal_refline_t {
+	ut64 from;
+	ut64 to;
+	int index;
+	struct list_head list;
+} RAnalysisRefline;
 
 //TODO: typedef RAnalysisAopCallback
 typedef struct r_anal_handle_t {
@@ -150,15 +154,20 @@ typedef struct r_anal_handle_t {
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	// TODO: typedef
-	int (*aop)(struct r_anal_t *a, struct r_anal_aop_t *aop, ut64 addr, const ut8 *data, int len);
+	int (*aop)(struct r_anal_t *a, struct r_anal_aop_t *aop,
+			ut64 addr, const ut8 *data, int len);
 	struct list_head list;
 } RAnalysisHandle;
 
 /* anal.c */
 #ifdef R_API
-R_API struct r_anal_t *r_anal_init(struct r_anal_t *anal);
-R_API struct r_anal_t *r_anal_free(struct r_anal_t *r);
 R_API struct r_anal_t *r_anal_new();
+R_API RList *r_anal_bb_list_new();
+R_API RList *r_anal_aop_list_new();
+R_API struct r_anal_t *r_anal_free(struct r_anal_t *r);
+R_API void r_anal_bb_list_free(void *bbs);
+R_API void r_anal_aop_list_free(void *aops);
+R_API struct r_anal_t *r_anal_init(struct r_anal_t *anal);
 R_API void r_anal_set_user_ptr(struct r_anal_t *anal, void *user);
 R_API int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo);
 R_API int r_anal_list(struct r_anal_t *anal);
@@ -167,10 +176,12 @@ R_API int r_anal_set_bits(struct r_anal_t *anal, int bits);
 R_API int r_anal_set_big_endian(struct r_anal_t *anal, int boolean);
 R_API int r_anal_set_pc(struct r_anal_t *a, ut64 pc);
 R_API int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop,
-	ut64 addr, void *data, int len);
+		ut64 addr, void *data, int len);
+
+/* reflines.c */
 R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, 
-	ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout);
+		ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout);
 R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list,
-	ut64 addr, char *str, int opts);
+		ut64 addr, char *str, int opts);
 #endif
 #endif
