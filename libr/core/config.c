@@ -117,7 +117,8 @@ R_API int r_core_config_init(struct r_core_t *core)
 	r_config_set_cb (cfg, "io.ffio", "false", &config_ioffio_callback);
 	r_config_set_cb (cfg, "io.va", "false", &config_iova_callback);
 	r_config_set (cfg, "cfg.fortunes", "true");
-
+	/* anal */
+	r_config_set_i (cfg, "anal.depth", 10);
 	/* TODO cmd */
 	r_config_set(cfg, "cmd.prompt", "");
 	r_config_set(cfg, "cmd.visual", ""); //? eip && ?? s eip");

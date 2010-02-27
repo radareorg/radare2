@@ -905,7 +905,8 @@ static int cmd_anal(void *data, const char *input) {
 #endif
 		break;
 	case 'c':
-		r_core_anal_bb (core, core->offset);
+		r_core_anal_bb (core, core->offset,
+				r_config_get_i(&core->config, "anal.depth"));
 		break;
 	case 'g':
 		r_core_anal_graph (core);

@@ -108,7 +108,7 @@ R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd);
 R_API int r_core_cmd_foreach(struct r_core_t *core, const char *cmd, char *each);
 
 /* anal.c */
-R_API int r_core_anal_bb (struct r_core_t *core, ut64 at);
+R_API int r_core_anal_bb (struct r_core_t *core, ut64 at, int depth);
 R_API int r_core_anal_graph (struct r_core_t *core);
 #endif
 

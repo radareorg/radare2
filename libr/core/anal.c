@@ -34,13 +34,16 @@ static char *r_core_anal_graph_label (struct r_core_t *core, ut64 addr, ut64 siz
 	return str;
 }
 
-R_API int r_core_anal_bb (struct r_core_t *core, ut64 at) {
+R_API int r_core_anal_bb (struct r_core_t *core, ut64 at, int depth) {
 	struct r_anal_bb_t *bb, *bbi;
 	struct r_anal_aop_t *aopi;
 	RListIter *iter;
+	ut64 jump, fail;
 	ut8 *buf;
 	int len, split = 0;
 
+	if (depth < 0)
+		return R_FALSE;
 	iter = r_list_iterator (core->anal.bbs);
 	while (r_list_iter_next (iter)) {
 		bbi = r_list_iter_get (iter);
@@ -77,10 +80,12 @@ R_API int r_core_anal_bb (struct r_core_t *core, ut64 at) {
 			return R_FALSE;
 		if (r_anal_bb (&core->anal, bb, at, buf, len) > 0) {
 			r_list_append (core->anal.bbs, bb);
-			if (bb->fail != -1)
-				r_core_anal_bb (core, bb->fail);
-			if (bb->jump != -1)
-				r_core_anal_bb (core, bb->jump);
+			fail = bb->fail;
+			jump = bb->jump;
+			if (fail != -1)
+				r_core_anal_bb (core, fail, depth-1);
+			if (jump != -1)
+				r_core_anal_bb (core, jump, depth-1);
 		} else r_anal_bb_free (bb);
 		free (buf);
 	}
@@ -91,7 +96,7 @@ R_API int r_core_anal_graph (struct r_core_t *core) {
 	struct r_anal_bb_t *bbi;
 	RListIter *iter;
 	char *str;
-	int reflines = r_config_get_i(&core->config, "asm.reflines");;
+	int reflines = r_config_get_i(&core->config, "asm.reflines");
 
 	r_config_set_i(&core->config, "asm.reflines", 0);
 	r_cons_printf ("digraph code {\n");
