@@ -69,6 +69,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, const
 		aop->eob = 1;
 		break;
 	}
+	aop->addr = addr;
 	return 4;
 }
 

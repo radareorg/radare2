@@ -8,29 +8,47 @@ R_API void r_list_init(RList *list) {
 
 R_API void r_list_unlink (RList *list, void *ptr) {
 	RListIter *iter = r_list_iterator (list);
-	while (r_list_iter_next (iter)) {
-		void *item = r_list_iter_get (iter);
+	while (iter) {
+		void *item = iter->data;
 		if (ptr == item) {
-			r_list_delete (list, item);
+			r_list_delete (list, iter);
 			break;
 		}
+		iter = iter->n;
 	}
 }
 
-R_API void r_list_delete (RList *list, RListIter *item) {
-	if (list->head == item)
-		list->head = item->n;
-	if (list->tail == item)
-		list->tail = item->p;
-	if (item->p)
-		item->p->n = item->n;
-	if (item->n)
-		item->n->p = item->p;
-	if (list->free && item->data) {
-		list->free (item->data);
-		item->data = NULL;
+R_API void r_list_split (RList *list, void *ptr) {
+	RListIter *iter = r_list_iterator (list);
+	while (iter) {
+		void *item = iter->data;
+		if (ptr == item) {
+			r_list_split_iter (list, iter);
+			free (iter);
+			break;
+		}
+		iter = iter->n;
 	}
-	free (item);
+}
+
+R_API void r_list_split_iter (RList *list, RListIter *iter) {
+	if (list->head == iter)
+		list->head = iter->n;
+	if (list->tail == iter)
+		list->tail = iter->p;
+	if (iter->p)
+		iter->p->n = iter->n;
+	if (iter->n)
+		iter->n->p = iter->p;
+}
+
+R_API void r_list_delete (RList *list, RListIter *iter) {
+	r_list_split_iter (list, iter);
+	if (list->free && iter->data) {
+		list->free (iter->data);
+		iter->data = NULL;
+	}
+	free (iter);
 }
 
 R_API RList *r_list_new() {

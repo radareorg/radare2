@@ -163,5 +163,5 @@ R_API int r_anal_bb(struct r_anal_t *anal, struct r_anal_bb_t *bb, ut64 addr, ut
 			return bb->size;
 		}
 	}
-	return idx;
+	return 0;
 }

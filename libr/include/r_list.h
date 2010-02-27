@@ -33,11 +33,13 @@ RListIter *r_list_append(RList *list, void *data);
 RListIter *r_list_prepend(RList *list, void *data);
 
 R_API void r_list_init(RList *list);
-R_API void r_list_delete (RList *list, RListIter *item);
+R_API void r_list_delete (RList *list, RListIter *iter);
 R_API void r_list_iter_init (RListIter *iter, RList *list);
 R_API void r_list_destroy (RList *list);
 R_API RListIter *r_list_item_new (void *data);
 R_API void r_list_unlink (RList *list, void *ptr);
+R_API void r_list_split (RList *list, void *ptr);
+R_API void r_list_split_iter (RList *list, RListIter *iter);
 #endif
 
 #endif

@@ -374,6 +374,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, void 
 			aop->jump   = addr+bo+2; //(unsigned long)((buf+1)+5);
 			aop->fail   = addr+2;
 			aop->eob    = 1;
+			aop->addr = addr;
 			return 2;
 		}
 		break;
@@ -383,6 +384,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, void 
 
 	//if (aop->length == 0)
 	aop->length = dislen((unsigned char *)buf, 64); //instLength(buf, 16, 0);
+	aop->addr = addr;
 		//aop->length = instLength(buf, 16, 0);
 	if (!(aop->jump>>33))
 		aop->jump &= 0xFFFFFFFF; // XXX may break on 64 bits here

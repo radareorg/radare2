@@ -109,6 +109,7 @@ typedef struct r_anal_t {
 } RAnalysis;
 
 typedef struct r_anal_aop_t {
+	ut64 addr;
 	int type;                  /* type of opcode */
 	int stackop;               /* operation on stack? */
 	int cond;                  /* condition type */
