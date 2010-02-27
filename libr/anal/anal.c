@@ -38,7 +38,6 @@ R_API RAnalysis *r_anal_free(struct r_anal_t *a) {
 }
 
 R_API void r_anal_bb_free(void *bb) {
-	/*TODO*/
 	if (bb) {
 		r_list_destroy (((RAnalysisBB*)bb)->aops);
 		free (bb);
@@ -46,8 +45,7 @@ R_API void r_anal_bb_free(void *bb) {
 }
 
 R_API void r_anal_aop_free(void *aop) {
-	if (aop)
-		free (aop);
+	free (aop);
 }
 
 R_API RAnalysis *r_anal_init(struct r_anal_t *anal) {
@@ -156,14 +154,13 @@ R_API int r_anal_bb(struct r_anal_t *anal, struct r_anal_bb_t *bb, ut64 addr, ut
 		switch (aop->type) {
 		case R_ANAL_OP_TYPE_CJMP:
 			bb->fail = aop->fail;
-			eprintf ("FAIL: %08llx\n", bb->fail);
 		case R_ANAL_OP_TYPE_JMP:
 			bb->jump = aop->jump;
-			eprintf ("JUMP: %08llx\n", bb->jump);
 			bb->size = idx;
-			break;
-		case R_ANAL_OP_TYPE_CALL:
-			break;
+			return bb->size;
+		case R_ANAL_OP_TYPE_RET:
+			bb->size = idx;
+			return bb->size;
 		}
 	}
 	return idx;

@@ -907,12 +907,16 @@ static int cmd_anal(void *data, const char *input) {
 	case 'c':
 		r_core_anal_bb (core, core->offset);
 		break;
+	case 'g':
+		r_core_anal_graph (core);
+		break;
 	default:
 		r_cons_printf (
 		"Usage: a[o] [len]\n"
 		" ah [handle]     ; Use this analysis plugin\n"
 		" ao [len]        ; Analyze raw bytes\n"
-		" ac @ [addr]     ; Analyze code (start at addr)\n");
+		" ac @ [addr]     ; Analyze code (start at addr)\n"
+		" ag              ; Output graphviz code\n");
 		break;
 	}
 	if (tbs != core->blocksize)
