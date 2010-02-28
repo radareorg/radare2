@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2010 pancake<nopcode.org> */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -9,8 +9,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-R_API int r_file_mkdir(const char *path)
-{
+R_API int r_file_mkdir(const char *path) {
 #if __WINDOWS__
 	return mkdir(path);
 #else
@@ -131,8 +130,7 @@ R_API char *r_file_slurp_range(const char *str, ut64 off, ut64 sz)
         return ret;
 }
 
-R_API char *r_file_slurp_random_line(const char *file)
-{
+R_API char *r_file_slurp_random_line(const char *file) {
 	int i, lines = 0;
 	struct timeval tv;
 	int sz;
@@ -156,24 +154,31 @@ R_API char *r_file_slurp_random_line(const char *file)
 	return ptr;
 }
 
-R_API char *r_file_slurp_line(const char *file, int line, int context)
-{
+R_API char *r_file_slurp_line(const char *file, int line, int context) {
 	int i, lines = 0;
 	int sz;
-	char *ptr, *str = r_file_slurp(file, &sz);
+	char *ptr, *str = r_file_slurp (file, &sz);
 	// TODO: Implement context
 	if (str) {
-		for(i=0;str[i];i++)
+		for (i=0;str[i];i++)
 			if (str[i]=='\n')
 				lines++;
+		if (line > lines) {
+			free (str);
+			return NULL;
+		}
 		lines = line;
-		for(i=0;str[i]&&lines;i++)
+		for (i=0;str[i]&&lines;i++)
 			if (str[i]=='\n')
 				lines--;
 		ptr = str+i;
-		for(i=0;ptr[i];i++) if (ptr[i]=='\n') { ptr[i]='\0'; break; }
-		ptr = strdup(ptr);
-		free(str);
+		for (i=0; ptr[i]; i++)
+			if (ptr[i]=='\n') {
+				ptr[i]='\0';
+				break;
+			}
+		ptr = strdup (ptr);
+		free (str);
 	}
 	return ptr;
 }

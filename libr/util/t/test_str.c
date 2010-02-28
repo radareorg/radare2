@@ -9,5 +9,7 @@ int main(int argc, char *argv[]) {
 	printf("r_str_trim_head('%s',): '%s'\n", " a", r_str_trim_head(head));fflush(stdout);	
 	printf("r_str_trim_tail('%s',): '%s'\n", "a ", r_str_trim_tail(tail));fflush(stdout);
 	printf("r_str_trim_head_tail('%s',): '%s'\n", " a ", r_str_trim_head_tail(both));fflush(stdout);	
+
+	printf ("%s\n", r_file_slurp_line ("/etc/fstab", 4, 0));
 	return 0;
 }

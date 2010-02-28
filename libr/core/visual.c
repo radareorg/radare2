@@ -666,7 +666,7 @@ R_API int r_core_visual(struct r_core_t *core, const char *input)
 	ut64 scrseek;
 	int ch;
 
-	vi = r_config_get(&core->config, "cmd.visual");
+	vi = r_config_get(&core->config, "cmd.vprompt");
 	if (vi) r_core_cmd(core, vi, 0);
 
 	while (input[0]) {

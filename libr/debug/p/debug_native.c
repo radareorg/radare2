@@ -5,6 +5,7 @@
 #include <r_asm.h>
 #include <r_reg.h>
 #include <r_lib.h>
+#include <signal.h>
 
 #define DEBUGGER 1
 
@@ -134,8 +135,7 @@ static int r_debug_native_step(int pid) {
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, SIGTRAP); //SIGINT);
 	if (ret != 0) {
 		perror ("ptrace-step");
-		eprintf ("FUCK: %s\n", MACH_ERROR_STRING(ret));
-		eprintf ("debug_os_steps: %d\n", ret);
+		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING(ret));
 		/* DO NOT WAIT FOR EVENTS !!! */
 		ret = R_FALSE;
 	} else ret = R_TRUE;
@@ -451,8 +451,7 @@ static int r_debug_native_reg_write(int pid, int type, const ut8* buf, int size)
 	return R_FALSE;
 }
 
-static RList *r_debug_native_map_get(struct r_debug_t *dbg)
-{
+static RList *r_debug_native_map_get(struct r_debug_t *dbg) {
 	char path[1024];
 	RList *list = NULL;
 #if __sun
@@ -598,6 +597,18 @@ const char *archlist[3] = { "mips", 0 };
 const char *archlist[3] = { "arm", 0 };
 #endif
 
+static int r_debug_native_kill(struct r_debug_t *dbg, int sig) {
+#if __WINDOWS__
+	TerminateProcess (WIN32_PI(hProcess), 1);
+	return R_FALSE;
+#else
+	int ret = kill (dbg->pid, sig);
+	if (ret == -1)
+		return R_FALSE;
+	return R_TRUE;
+#endif
+}
+
 // TODO: think on a way to define the program counter register name
 struct r_debug_handle_t r_debug_plugin_native = {
 	.name = "native",
@@ -607,6 +618,7 @@ struct r_debug_handle_t r_debug_plugin_native = {
 	.attach = &r_debug_native_attach,
 	.detach = &r_debug_native_detach,
 	.wait = &r_debug_native_wait,
+	.kill = &r_debug_native_kill,
 	.get_arch = &r_debug_get_arch,
 	.reg_profile = (void *)&r_debug_native_reg_profile,
 	.reg_read = &r_debug_native_reg_read,

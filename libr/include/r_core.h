@@ -20,6 +20,7 @@
 #include "r_config.h"
 #include "r_bin.h"
 
+#define R_CORE_CMD_EXIT -2
 #define R_CORE_BLOCKSIZE 64
 #define R_CORE_BLOCKSIZE_MAX 0x40000 /* 4 MB */
 

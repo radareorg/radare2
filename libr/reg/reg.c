@@ -73,11 +73,10 @@ R_API int r_reg_set_name(struct r_reg_t *reg, int role, const char *name) {
 R_API const char *r_reg_get_name(struct r_reg_t *reg, int role) {
 	if (role>=0 && role<R_REG_NAME_LAST)
 		return reg->name[role];
-	return "";
+	return NULL;
 }
 
-R_API struct r_reg_t *r_reg_free(struct r_reg_t *reg)
-{
+R_API struct r_reg_t *r_reg_free(struct r_reg_t *reg) {
 	if (reg) {
 		// TODO: free more things here
 		free (reg);
@@ -85,8 +84,7 @@ R_API struct r_reg_t *r_reg_free(struct r_reg_t *reg)
 	return NULL;
 }
 
-R_API struct r_reg_t *r_reg_init(struct r_reg_t *reg)
-{
+R_API struct r_reg_t *r_reg_init(struct r_reg_t *reg) {
 	int i;
 	if (!reg)
 		return NULL;
@@ -110,8 +108,7 @@ static struct r_reg_item_t *r_reg_item_new() {
 	return item;
 }
 
-R_API int r_reg_type_by_name(const char *str)
-{
+R_API int r_reg_type_by_name(const char *str) {
 	int i;
 	for (i=0; types[i] && i<R_REG_TYPE_LAST; i++) {
 		if (!strcmp (types[i], str))
@@ -157,8 +154,7 @@ static int r_reg_set_word(struct r_reg_item_t *item, int idx, char *word) {
 }
 
 /* TODO: make this parser better and cleaner */
-R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *str)
-{
+R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *str) {
 	RRegisterItem *item;
 	int setname = -1;
 	int ret = R_FALSE;
@@ -228,8 +224,7 @@ R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *str)
 	return ret;
 }
 
-R_API int r_reg_set_profile(struct r_reg_t *reg, const char *profile)
-{
+R_API int r_reg_set_profile(struct r_reg_t *reg, const char *profile) {
 	int ret = R_FALSE;
 	const char *base;
 	char *str, *file;
@@ -250,8 +245,7 @@ R_API int r_reg_set_profile(struct r_reg_t *reg, const char *profile)
 	return ret;
 }
 
-R_API struct r_reg_item_t *r_reg_get(struct r_reg_t *reg, const char *name, int type)
-{
+R_API struct r_reg_item_t *r_reg_get(struct r_reg_t *reg, const char *name, int type) {
 	struct list_head *pos;
 	struct r_reg_item_t *r;
 	int i, e;
@@ -265,17 +259,16 @@ R_API struct r_reg_item_t *r_reg_get(struct r_reg_t *reg, const char *name, int 
 	}
 
 	for (; i<e; i++) {
-		list_for_each(pos, &reg->regset[i].regs) {
-			r = list_entry(pos, struct r_reg_item_t, list);
-			if (!strcmp(r->name, name))
+		list_for_each (pos, &reg->regset[i].regs) {
+			r = list_entry (pos, struct r_reg_item_t, list);
+			if (!strcmp (r->name, name))
 				return r;
 		}
 	}
 	return NULL;
 }
 
-R_API struct list_head *r_reg_get_list(struct r_reg_t *reg, int type)
-{
+R_API struct list_head *r_reg_get_list(struct r_reg_t *reg, int type) {
 	if (type < 0 || type > R_REG_TYPE_LAST)
 		return NULL;
 	return &reg->regset[type].regs;

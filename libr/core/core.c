@@ -3,8 +3,7 @@
 #include <r_core.h>
 #include "../config.h"
 
-static ut64 num_callback(void *userptr, const char *str, int *ok)
-{
+static ut64 num_callback(void *userptr, const char *str, int *ok) {
 	struct r_core_t *core = userptr;
 	struct r_flag_item_t *flag;
 	struct r_anal_aop_t aop;
@@ -54,8 +53,7 @@ static ut64 num_callback(void *userptr, const char *str, int *ok)
 	return (flag)?flag->offset:0LL;
 }
 
-R_API struct r_core_t *r_core_new()
-{
+R_API struct r_core_t *r_core_new() {
 	struct r_core_t *c = MALLOC_STRUCT (struct r_core_t);
 	r_core_init (c);
 	return c;
@@ -72,8 +70,7 @@ static const char *radare_argv[CMDS] ={
 	"pX", "po", "pm", "pz", "pr >", "p?", NULL
 };
 
-static int myfgets(char *buf, int len)
-{
+static int myfgets(char *buf, int len) {
 	/* TODO: link against dietline if possible for autocompletion */
 	char *ptr;
 	RLine *rli = r_line_singleton (); 
@@ -105,8 +102,7 @@ static int __dbg_write(void *user, int pid, ut64 addr, const ut8 *buf, int len)
 }
 #endif
 
-R_API int r_core_init(struct r_core_t *core)
-{
+R_API int r_core_init(struct r_core_t *core) {
 	core->ffio = 0;
 	core->oobi = NULL;
 	core->oobi_len = 0;
@@ -184,22 +180,20 @@ R_API int r_core_init(struct r_core_t *core)
 	return 0;
 }
 
-R_API struct r_core_t *r_core_free(struct r_core_t *c)
-{
+R_API struct r_core_t *r_core_free(struct r_core_t *c) {
 	/* TODO: it leaks as shit */
 	free (c);
 	return NULL;
 }
 
-R_API int r_core_prompt(struct r_core_t *r)
-{
+R_API int r_core_prompt(struct r_core_t *r) {
 	int ret;
 	char line[1024];
 	char prompt[32];
 	const char *cmdprompt = r_config_get (&r->config, "cmd.prompt");
 
 	if (cmdprompt && cmdprompt[0])
-		r_core_cmd (r, cmdprompt, 0);
+		ret = r_core_cmd (r, cmdprompt, 0);
 
 	sprintf (prompt, "[0x%08llx]> ", r->offset);
 	r_line_singleton()->prompt = prompt;

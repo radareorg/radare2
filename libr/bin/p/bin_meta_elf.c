@@ -23,17 +23,19 @@ static int cmd_to_str(const char *cmd, char *out, int len)
 static int get_line(RBin *bin, ut64 addr, char *file, int len, int *line) {
 	char *p, buf[1024];
 
-	snprintf(buf, 1023, "addr2line -e '%s' 0x%08llx", bin->file, addr);
+	snprintf (buf, 1023, "addr2line -e '%s' 0x%08llx", bin->file, addr);
 
-	memset(file,'\0', len);
-	if (!cmd_to_str(buf, file, len))
+	memset (file,'\0', len);
+	if (!cmd_to_str (buf, file, len))
 		return R_FALSE;
 
-	p = strchr(file, ':');
+	p = strchr (file, ':');
 	if (p) {
 		*p='\0';
 		*line = atoi(p+1);
-	}
+	} else return R_FALSE;
+	if (*file=='?')
+		return R_FALSE;
 
 	return R_TRUE;
 }

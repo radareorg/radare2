@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -9,4 +9,3 @@ R_API int r_bin_meta_get_line(RBin *bin, ut64 addr, char *file, int len, int *li
 		return bin->cur->meta->get_line (bin, addr, file, len, line);
 	return R_FALSE;
 }
-

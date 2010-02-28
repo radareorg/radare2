@@ -40,7 +40,7 @@ R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg) {
 R_API int r_debug_attach(struct r_debug_t *dbg, int pid) {
 	int ret = R_FALSE;
 	if (dbg && dbg->h && dbg->h->attach) {
-		ret = dbg->h->attach(pid);
+		ret = dbg->h->attach (pid);
 		if (ret) {
 			// TODO: get arch and set io pid
 			//int arch = dbg->h->get_arch();
@@ -52,23 +52,6 @@ R_API int r_debug_attach(struct r_debug_t *dbg, int pid) {
 	} else eprintf ("dbg->attach = NULL\n");
 	return ret;
 }
-
-#if TODO
-// TODO MOove to r_reg
-R_API ut64 r_debug_reg_get(struct r_debug_t *dbg, char *name) {
-	RRegisterItem *ri;
-	ut64 ret = 0LL;
-	char *foo = r_reg_get_name (dbg->reg, name);
-	if (foo) {
-		
-	} else {
-		//r_reg_get (dbg->reg, dbg->reg->name[
-	}
-	if (ri)
-		ret = r_reg_get_value (dbg->reg, ri);
-	return ret;
-}
-#endif
 
 /* 
  * Save 4096 bytes from %esp
@@ -139,16 +122,14 @@ R_API int r_debug_detach(struct r_debug_t *dbg, int pid) {
 	return R_FALSE;
 }
 
-R_API int r_debug_select(struct r_debug_t *dbg, int pid, int tid)
-{
+R_API int r_debug_select(struct r_debug_t *dbg, int pid, int tid) {
 	dbg->pid = pid;
 	dbg->tid = tid;
 	eprintf("PID: %d %d\n", pid, tid);
 	return R_TRUE;
 }
 
-R_API int r_debug_stop_reason(struct r_debug_t *dbg)
-{
+R_API int r_debug_stop_reason(struct r_debug_t *dbg) {
 	// TODO: return reason to stop debugging
 	// - new process
 	// - trap instruction
@@ -158,8 +139,7 @@ R_API int r_debug_stop_reason(struct r_debug_t *dbg)
 	return R_TRUE;
 }
 
-R_API int r_debug_wait(struct r_debug_t *dbg)
-{
+R_API int r_debug_wait(struct r_debug_t *dbg) {
 	int ret = R_FALSE;
 	if (dbg && dbg->h && dbg->h->wait) {
 		ret = dbg->h->wait(dbg->pid);
@@ -169,8 +149,7 @@ R_API int r_debug_wait(struct r_debug_t *dbg)
 }
 
 // TODO: count number of steps done to check if no error??
-R_API int r_debug_step(struct r_debug_t *dbg, int steps)
-{
+R_API int r_debug_step(struct r_debug_t *dbg, int steps) {
 	int i, ret = R_FALSE;
 	if (dbg && dbg->h && dbg->h->step) {
 		for(i=0;i<steps;i++) {
@@ -191,8 +170,7 @@ R_API void r_debug_io_bind(RDebug *dbg, RIO *io) {
 	r_io_bind (io, &dbg->iob);
 }
 
-R_API int r_debug_step_over(struct r_debug_t *dbg, int steps)
-{
+R_API int r_debug_step_over(struct r_debug_t *dbg, int steps) {
 	// TODO: analyze opcode if it is stepoverable
 	eprintf ("r_debug_step_over: TODO\n");
 	return r_debug_step(dbg, steps);
@@ -217,8 +195,7 @@ static int r_debug_recoil(struct r_debug_t *dbg) {
 	return ret;
 }
 
-R_API int r_debug_continue_kill(struct r_debug_t *dbg, int sig)
-{
+R_API int r_debug_continue_kill(struct r_debug_t *dbg, int sig) {
 	int ret = R_FALSE;
 	if (dbg && dbg->h && dbg->h->cont) {
 		r_bp_restore (dbg->bp, R_FALSE); // set sw breakpoints
@@ -231,13 +208,11 @@ R_API int r_debug_continue_kill(struct r_debug_t *dbg, int sig)
 	return ret;
 }
 
-R_API int r_debug_continue(struct r_debug_t *dbg)
-{
+R_API int r_debug_continue(struct r_debug_t *dbg) {
 	return r_debug_continue_kill (dbg, -1);
 }
 
-R_API int r_debug_continue_until(struct r_debug_t *dbg, ut64 addr)
-{
+R_API int r_debug_continue_until(struct r_debug_t *dbg, ut64 addr) {
 	//struct r_debug_bp_t *bp = r_debug_bp_add (dbg, addr);
 	//int ret = r_debug_continue(dbg);
 	/* TODO: check if the debugger stops at the right address */
@@ -245,8 +220,7 @@ R_API int r_debug_continue_until(struct r_debug_t *dbg, ut64 addr)
 	return -1;
 }
 
-R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc)
-{
+R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc) {
 	int ret = R_FALSE;
 	if (dbg && dbg->h && dbg->h->contsc)
 		ret = dbg->h->contsc(dbg->pid, sc);
@@ -254,36 +228,23 @@ R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc)
 }
 
 // TODO: remove from here? this is code injection!
-R_API int r_debug_syscall(struct r_debug_t *dbg, int num)
-{
+R_API int r_debug_syscall(struct r_debug_t *dbg, int num) {
 	eprintf ("TODO\n");
 	return R_FALSE;
 }
 
-// TODO: Move to pid.c ?
-// TODO: do we need tid/pid
-// TODO: Do we need an intermediate signal representation for portability?
-// TODO: STOP, CONTINUE, KILL, ...
-R_API int r_debug_kill(struct r_debug_t *dbg, int sig)
-{
-	// XXX: use debugger handler backend here
-#if __WINDOWS__
-	eprintf ("r_debug_kill: not implemented\n");
-	return R_FALSE;
-#else
-#include <signal.h>
-	int ret = kill(dbg->pid, sig);
-	if (ret == -1)
-		return R_FALSE;
-	return R_TRUE;
-#endif
+R_API int r_debug_kill(struct r_debug_t *dbg, int sig) {
+	int ret = R_FALSE;
+	if (dbg->h && dbg->h->kill)
+		ret = dbg->h->kill (dbg, sig);
+	else eprintf ("Backend does not implements kill()\n");
+	return ret;
 }
 
 // TODO: move into r_debug
 // TODO: we need to know the arch backend, frame size, 
 // TODO: merge algorithms from r1 (do we need ebp?)
 // TODO: must return a linked list or r_iter
-R_API int r_anal_backtrace(struct r_anal_t *anal, const ut8 *buf, ut64 esp)
-{
+R_API int r_anal_backtrace(struct r_anal_t *anal, const ut8 *buf, ut64 esp) {
 	return R_FALSE;
 }

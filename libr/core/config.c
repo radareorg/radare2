@@ -23,6 +23,13 @@ static int config_iova_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_swstep_callback(void *user, void *data) {
+	struct r_core_t *core = (struct r_core_t *) user;
+	struct r_config_node_t *node = (struct r_config_node_t *) data;
+	core->dbg.swstep = node->i_value;
+	return R_TRUE;
+}
+
 static int config_asm_arch_callback(void *user, void *data) {
 	struct r_core_t *core = (struct r_core_t *) user;
 	struct r_config_node_t *node = (struct r_config_node_t *) data;
@@ -44,42 +51,34 @@ static int config_asm_parser_callback(void *user, void *data)
 	return R_TRUE;
 }
 
-static int config_asm_bits_callback(void *user, void *data)
-{
-	struct r_core_t *core = (struct r_core_t *) user;
-	struct r_config_node_t *node = (struct r_config_node_t *) data;
-	int ret = r_asm_set_bits(&core->assembler, node->i_value);
+static int config_asm_bits_callback(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	int ret = r_asm_set_bits (&core->assembler, node->i_value);
 	if (ret == R_FALSE) {
 		struct r_asm_handle_t *h = core->assembler.cur;
 		if (h) {
-			eprintf("Cannot set bits %lld to '%s'\n",
+			eprintf ("Cannot set bits %lld to '%s'\n",
 				node->i_value, h->name);
 		} else {
-			IFDBG eprintf("e asm.bits: Cannot set value, no plugins defined yet\n");
+			eprintf ("e asm.bits: Cannot set value, no plugins defined yet\n");
 			ret = R_TRUE;
 		}
 	}
 	return ret;
 }
 
-static int config_color_callback(void *user, void *data)
-{
-	struct r_core_t *core = (struct r_core_t *) user;
-	struct r_config_node_t *node =
-		(struct r_config_node_t *) data;
-		
+static int config_color_callback(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
-		core->print.flags|=R_PRINT_FLAGS_COLOR;
-	} else {
-		// XXX ??? sure
-		if (core->print.flags&R_PRINT_FLAGS_COLOR)
-			core->print.flags^=R_PRINT_FLAGS_COLOR;
-	}
+		core->print.flags |= R_PRINT_FLAGS_COLOR;
+	} else if (core->print.flags&R_PRINT_FLAGS_COLOR)
+		core->print.flags ^= R_PRINT_FLAGS_COLOR;
 	return R_TRUE;
 }
 
-R_API int r_core_config_init(struct r_core_t *core)
-{
+R_API int r_core_config_init(struct r_core_t *core) {
 	struct r_config_t *cfg = &core->config;
 	r_config_init(cfg, (void *)core);
 	cfg->printf = r_cons_printf;
@@ -92,6 +91,8 @@ R_API int r_core_config_init(struct r_core_t *core)
 		&config_asm_parser_callback);
 
 	r_config_set(cfg, "dir.plugins", LIBDIR"/radare2/");
+	/* anal */
+	r_config_set_i (cfg, "anal.depth", 10);
 	r_config_set(cfg, "asm.syntax", "intel");
 	r_config_set_i_cb(cfg, "asm.bits", 32,
 		&config_asm_bits_callback);
@@ -117,15 +118,14 @@ R_API int r_core_config_init(struct r_core_t *core)
 	r_config_set_cb (cfg, "io.ffio", "false", &config_ioffio_callback);
 	r_config_set_cb (cfg, "io.va", "false", &config_iova_callback);
 	r_config_set (cfg, "cfg.fortunes", "true");
-	/* anal */
-	r_config_set_i (cfg, "anal.depth", 10);
+	r_config_set (cfg, "file.type", "");
 	/* TODO cmd */
 	r_config_set(cfg, "cmd.prompt", "");
-	r_config_set(cfg, "cmd.visual", ""); //? eip && ?? s eip");
-//	r_config_set(cfg, "cmd.vprompt", "p%");
-	r_config_set(cfg, "cmd.vprompt2", "CFV");
-	r_config_set(cfg, "cmd.vprompt3", "");
+	r_config_set(cfg, "cmd.vprompt", ""); //? eip && ?? s eip");
+	//r_config_set(cfg, "cmd.vprompt2", "CFV");
+	//r_config_set(cfg, "cmd.vprompt3", "");
 	r_config_set(cfg, "cmd.bp", "");
+	r_config_set_cb(cfg, "dbg.swstep", "false", &config_swstep_callback);
 #if 0
 	node = config_set("asm.profile", "default");
 //	node->callback = &config_asm_profile;
@@ -145,7 +145,6 @@ R_API int r_core_config_init(struct r_core_t *core)
 	config_set("asm.comments", "true"); // show comments in disassembly
 	config_set_i("asm.cmtmargin", 10); // show comments in disassembly
 	config_set_i("asm.cmtlines", 0); // show comments in disassembly
-	config_set("asm.syntax", "intel");
 	config_set("asm.case", "false"); // uppercase = true
 	config_set("asm.objdump", "objdump -m i386 --target=binary -D");
 	config_set("asm.offset", "true"); // show offset
@@ -202,7 +201,6 @@ R_API int r_core_config_init(struct r_core_t *core)
 
 	config_set("file.id", "false");
 	config_set("file.analyze", "false");
-	config_set("file.type", "");
 	config_set("file.flag", "false");
 	config_set("file.trace", "trace.log");
 	config_set("file.project", "");
@@ -366,8 +364,6 @@ R_API int r_core_config_init(struct r_core_t *core)
 	node = config_set("zoom.byte", "head");
 	node->callback = &config_zoombyte_callback;
 
-	config_set_i("scr.accel", 0);
-
 	node = config_set("scr.palette", cons_palette_default);
 	node->callback = &config_palette_callback;
 	cons_palette_init(config_get("scr.palette"));
@@ -405,7 +401,6 @@ R_API int r_core_config_init(struct r_core_t *core)
 	node->callback = &config_scrwidth;
 	node = config_set_i("scr.height", config.height);
 	node->callback = &config_scrheight;
-	r_config_set("vm.realio", "false");
 #endif
 	r_config_lock (cfg, R_TRUE);
 	return R_TRUE;

@@ -75,6 +75,7 @@ typedef struct r_debug_handle_t {
 	int (*step)(int pid); // if step() is NULL; reimplement it with traps
 	int (*cont)(int pid, int sig);
 	int (*wait)(int pid);
+	int (*kill)(RDebug *dbg, int sig);
 	int (*contsc)(int pid, int sc);
 	/* registers */
 	RBreakpointCallback breakpoint;
@@ -152,6 +153,8 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr);
 /* registers */
 R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write);
 R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad);
+R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 num);
+R_API ut64 r_debug_reg_get(struct r_debug_t *dbg, const char *name);
 
 R_API void r_debug_io_bind(RDebug *dbg, RIO *io);
 R_API ut64 r_debug_execute(struct r_debug_t *dbg, ut8 *buf, int len);

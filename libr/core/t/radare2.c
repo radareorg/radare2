@@ -32,7 +32,7 @@ static int main_version() {
 
 int main(int argc, char **argv) {
 	struct r_core_file_t *fh;
- 	int c, perms = R_IO_READ;
+ 	int ret, c, perms = R_IO_READ;
 	int run_rc = 1;
 	int debug = 0;
 	int fullfile = 0;
@@ -150,9 +150,8 @@ int main(int argc, char **argv) {
 		r_core_cmdf (&r, "dp %d", r.file->fd);
 		r_core_cmd (&r, ".dr*", 0);
 		r_core_cmd (&r, "s eip", 0);
-		r_core_cmd (&r, "e cmd.prompt=.dr*",0);
-		r_core_cmd (&r, "\"e cmd.vprompt=.dr*\"",0);
-		r_core_cmd (&r, "\"e cmd.visual=.dr*\"",0);
+		r_config_set (&r.config, "cmd.prompt", ".dr*");
+		r_config_set (&r.config, "cmd.vprompt", ".dr*");
 	}
 
 	if (seek)
@@ -167,7 +166,7 @@ int main(int argc, char **argv) {
 	// Load the binary information from rabin2
 	{
 		char *cmd = r_str_dup_printf (".!rabin2 -rSIeis%s %s",
-				r.io.va?"v":"", r.file->filename);
+				(debug||r.io.va)?"v":"", r.file->filename);
 		r_core_cmd (&r, cmd, 0);
 		r_str_free (cmd);
 	}
@@ -178,7 +177,18 @@ int main(int argc, char **argv) {
 		r_cons_flush ();
 	}
 
-	while (r_core_prompt (&r) != -1);
+	do {
+		ret = r_core_prompt (&r);
+		if (ret == -1)
+			eprintf ("Invalid command\n");
+	} while (ret != R_CORE_CMD_EXIT);
 
-	return r_core_file_close (&r, fh);
+	if (debug)
+	if (r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
+		r_debug_kill (&r.dbg, 9); // KILL
+
+	/* capture return value */
+	ret = r.num.value;
+	r_core_file_close (&r, fh);
+	return ret;
 }

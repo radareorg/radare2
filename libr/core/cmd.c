@@ -35,12 +35,20 @@ static int cmd_iopipe(void *data, const char *input) {
 
 static void cmd_reg (struct r_core_t *core, const char *str) {
 	struct r_reg_item_t *r;
+	const char *name;
 	char *arg;
 	int size, i, type = R_REG_TYPE_GPR;
 	switch (str[0]) {
 	case '?':
+		if (str[1]) {
+			r_debug_reg_sync (&core->dbg, R_REG_TYPE_GPR, R_FALSE);
+			r = r_reg_get (core->dbg.reg, str+1, R_REG_TYPE_GPR);
+			if (r == NULL) eprintf ("Unknown register (%s)\n", str+1);
+			else r_cons_printf ("0x%08llx\n", r_reg_get_value (core->dbg.reg, r));
+		} else
 		eprintf ("Usage: dr[*] [type] [size] - get/set registers\n"
 			" dr?        display this help message\n"
+			" dr?eax     show value of eax register\n"
 			" .dr*       include common register values in flags\n"
 			" .dr-       unflag all registers\n"
 			" drp [file] load register metadata file\n"
@@ -52,7 +60,6 @@ static void cmd_reg (struct r_core_t *core, const char *str) {
 			" dr flg 1   show flag registers ('flg' is type, see drt)\n"
 			" dr 16      show 16 bit registers\n"
 			" dr 32      show 32 bit registers\n"
-			" dr:eax     show value of eax register\n"
 			" dr eax=33  set register value. eax = 33\n");
 		break;
 	case 'p':
@@ -64,26 +71,14 @@ static void cmd_reg (struct r_core_t *core, const char *str) {
 		} else r_reg_set_profile (core->dbg.reg, str+2);
 		break;
 	case 't':
-		{
-			const char *type;
-			for (i=0;(type=r_reg_get_type(i));i++)
-				r_cons_printf ("%s\n", type);
-		}
-		break;
-	case ':':
-		r_debug_reg_sync (&core->dbg, R_REG_TYPE_GPR, R_FALSE);
-		r = r_reg_get (core->dbg.reg, str+1, R_REG_TYPE_GPR);
-		if (r == NULL) eprintf ("Unknown register (%s)\n", str+1);
-		else r_cons_printf ("0x%08llx\n", r_reg_get_value (core->dbg.reg, r));
+		for (i=0; (name=r_reg_get_type (i));i++)
+			r_cons_printf ("%s\n", name);
 		break;
 	case 'n':
-		{
-			const char *reg = r_reg_get_name (
-				core->dbg.reg, r_reg_get_name_idx (str+2));
-			if (reg && *reg)
-				r_cons_printf ("%s\n", reg);
-			else eprintf ("Oops. try dn [pc|sp|bp|a0|a1|a2|a3]\n");
-		}
+		name = r_reg_get_name (core->dbg.reg, r_reg_get_name_idx (str+2));
+		if (name && *name)
+			r_cons_printf ("%s\n", name);
+		else eprintf ("Oops. try dn [pc|sp|bp|a0|a1|a2|a3]\n");
 		break;
 	case '*':
 		r_debug_reg_sync (&core->dbg, R_REG_TYPE_GPR, R_FALSE);
@@ -171,20 +166,21 @@ static void r_core_cmd_bp (struct r_core_t *core, const char *input) {
 /* TODO: this should be moved to the core->yank api */
 static int cmd_yank_to(struct r_core_t *core, char *arg) {
 	ut64 src = core->offset;
-	ut64 len =  0;
+	ut64 len = 0;
 	ut64 pos = -1;
 	char *str;
 	ut8 *buf;
 
-	while (*arg==' ')arg=arg+1;
-	str = strchr(arg, ' ');
+	while (*arg==' ')
+		arg = arg+1;
+	str = strchr (arg, ' ');
 	if (str) {
 		str[0]='\0';
 		len = r_num_math (&core->num, arg);
 		pos = r_num_math (&core->num, str+1);
 		str[0]=' ';
 	}
-	if ( (str == NULL) || (pos == -1) || (len == 0) ) {
+	if ((str == NULL) || (pos == -1) || (len == 0)) {
 		eprintf("Usage: yt [len] [dst-addr]\n");
 		return 1;
 	}
@@ -206,7 +202,7 @@ static int cmd_yank_to(struct r_core_t *core, char *arg) {
 
 static int cmd_yank(void *data, const char *input) {
 	struct r_core_t *core = (struct r_core_t *)data;
-	switch(input[0]) {
+	switch (input[0]) {
 	case ' ':
 		r_core_yank(core, core->offset, atoi(input+1));
 		break;
@@ -231,7 +227,7 @@ static int cmd_yank(void *data, const char *input) {
 		} else eprintf ("No buffer yanked already\n");
 		break;
 	default:
-		r_cons_printf(
+		r_cons_printf (
 		"Usage: y[y] [len] [[@]addr]\n"
 		" y            ; show yank buffer information (srcoff len bytes)\n"
 		" y 16         ; copy 16 bytes into clipboard\n"
@@ -260,10 +256,13 @@ static int cmd_quit(void *data, const char *input) {
 		// TODO
 	default:
 		r_line_hist_save (".radare2_history");
-		exit (*input?r_num_math (&core->num, input+1):0);
-		break;
+		if (input[1])
+			r_num_math (&core->num, input+1);
+		else core->num.value = 0LL;
+		//exit (*input?r_num_math (&core->num, input+1):0);
+		return -2;
 	}
-	return 0;
+	return R_FALSE;
 }
 
 static int cmd_interpret(void *data, const char *input) {
@@ -279,7 +278,7 @@ static int cmd_interpret(void *data, const char *input) {
 		r_core_cmd_command (core, input+1);
 		break;
 	case '(':
-		//fprintf(stderr, "macro call (%s)\n", input+1);
+		//eprintf ("macro call (%s)\n", input+1);
 		r_macro_call (&core->macro, input+1);
 		break;
 	case '?':
@@ -334,10 +333,10 @@ static int cmd_section(void *data, const char *input) {
 			ut64 size = 0LL;
 			ut64 vsize = 0LL;
 			
-			i = r_str_word_set0(ptr);
+			i = r_str_word_set0 (ptr);
 			switch(i) {
 			case 5: // get name
-				name = r_str_word_get0(ptr, 4);
+				name = r_str_word_get0 (ptr, 4);
 			case 4: // get vsize
 				vsize = r_num_math (&core->num, r_str_word_get0 (ptr, 3));
 			case 3: // get size
@@ -394,14 +393,14 @@ static int cmd_seek(void *data, const char *input) {
 				p = strchr (cmd+2, ' ');
 				if (p) {
 					off = r_num_math (&core->num, p+1);;
-					*p='\0';
+					*p = '\0';
 				}
-				cmd[0]='s';
+				cmd[0] = 's';
 				// perform real seek if provided
 				r_cmd_call (&core->cmd, cmd);
-				free(cmd);
+				free (cmd);
 			}
-			r_core_seek_align(core, off, 0);
+			r_core_seek_align (core, off, 0);
 			break;
 		case '?':
 			r_cons_printf (
@@ -625,7 +624,7 @@ static int cmd_cmp(void *data, const char *input) {
 }
 
 static int cmd_info(void *data, const char *input) {
-	struct r_core_t *core = (struct r_core_t *)data;
+	RCore *core = (RCore *)data;
 	char buf[1024];
 	switch (*input) {
 	case 's':
@@ -664,7 +663,7 @@ static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int l, len = core->blocksize;
 	ut32 tbs = core->blocksize;
-	int show_offset  = r_config_get_i (&core->config, "asm.offset");
+	int show_offset = r_config_get_i (&core->config, "asm.offset");
 	int show_bytes = r_config_get_i (&core->config, "asm.bytes");
 	int show_lines = r_config_get_i (&core->config, "asm.reflines");
 	int linesout = r_config_get_i (&core->config, "asm.reflinesout");
@@ -728,7 +727,7 @@ static int cmd_print(void *data, const char *input) {
 				r_anal_aop (&core->anal, &analop, addr, buf+idx, (int)(len-idx));
 
 				if (show_lines) r_cons_strcat(line);
-				if (show_offset) r_cons_printf("0x%08llx ", core->offset + idx);
+				if (show_offset) r_cons_printf("0x%08llx  ", core->offset + idx);
 				if (show_bytes) {
 					struct r_flag_item_t *flag = r_flag_get_i(&core->flags, core->offset+idx);
 					if (flag) r_cons_printf("*[ %10s] ", flag->name);
@@ -749,36 +748,35 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case 's':
-		r_print_string(&core->print, core->offset, core->block, len, 0, 1, 0); //, 78, 1);
+		r_print_string (&core->print, core->offset, core->block, len, 0, 1, 0); //, 78, 1);
 		break;
 	case 'S':
-		r_print_string(&core->print, core->offset, core->block, len, 1, 1, 0); //, 78, 1);
+		r_print_string (&core->print, core->offset, core->block, len, 1, 1, 0); //, 78, 1);
 		break;
 	case 'u':
-		r_print_string(&core->print, core->offset, core->block, len, 0, 1, 1); //, 78, 1);
+		r_print_string (&core->print, core->offset, core->block, len, 0, 1, 1); //, 78, 1);
 		break;
 	case 'U':
-		r_print_string(&core->print, core->offset, core->block, len, 1, 1, 1); //, 78, 1);
+		r_print_string (&core->print, core->offset, core->block, len, 1, 1, 1); //, 78, 1);
 		break;
 	case 'c':
-		r_print_code(&core->print, core->offset, core->block, len); //, 78, 1);
+		r_print_code (&core->print, core->offset, core->block, len); //, 78, 1);
 		break;
 	case 'r':
-		r_print_raw(&core->print, core->block, len);
+		r_print_raw (&core->print, core->block, len);
 		break;
 	case 'o':
-        	r_print_hexdump(&core->print, core->offset, core->block, len, 8, 1); //, 78, !(input[1]=='-'));
+        	r_print_hexdump (&core->print, core->offset, core->block, len, 8, 1); //, 78, !(input[1]=='-'));
 		break;
 	case 'x':
-        	r_print_hexdump(&core->print, core->offset, core->block, len, 16, 1); //, 78, !(input[1]=='-'));
+        	r_print_hexdump (&core->print, core->offset, core->block, len, 16, 1); //, 78, !(input[1]=='-'));
 		break;
 	case '8':
-		r_print_bytes(&core->print, core->block, len, "%02x");
+		r_print_bytes (&core->print, core->block, len, "%02x");
 		break;
 	default:
-		//r_cons_printf("Unknown subcommand '%c'\n", input[0]);
-		r_cons_printf(
-		"Usage: p[8] [len]    ; '%c' is unknown\n"
+		r_cons_printf (
+		"Usage: p[fmt] [len]\n"
 		" p8 [len]    8bit hexpair list of bytes\n"
 		" px [len]    hexdump of N bytes\n"
 		" po [len]    octal dump of N bytes\n"
@@ -789,8 +787,7 @@ static int cmd_print(void *data, const char *input) {
 		" pD [len]    disassemble N bytes\n"
 		" pr [len]    print N raw bytes\n"
 		" pu [len]    print N url encoded bytes\n"
-		" pU [len]    print N wide url encoded bytes\n",
-		input[0]);
+		" pU [len]    print N wide url encoded bytes\n");
 		break;
 	}
 	if (tbs != core->blocksize)
@@ -799,24 +796,24 @@ static int cmd_print(void *data, const char *input) {
 }
 
 static int cmd_hexdump(void *data, const char *input) {
-	return cmd_print(data, input-1);
+	return cmd_print (data, input-1);
 }
 
 static int cmd_flag(void *data, const char *input) {
-	struct r_core_t *core = (struct r_core_t *)data;
-	int len = strlen(input)+1;
-	char *str = alloca(len);
-	memcpy(str, input+1, len);
+	RCore *core = (RCore *)data;
+	int len = strlen (input)+1;
+	char *str = alloca (len);
+	memcpy (str, input+1, len);
 
-	switch(input[0]) {
+	switch (input[0]) {
 	case '+':
-		r_flag_set(&core->flags, str, core->offset, core->blocksize, 1);
+		r_flag_set (&core->flags, str, core->offset, core->blocksize, 1);
 		break;
 	case ' ': {
 		char *s = NULL, *s2 = NULL;
 		ut64 seek = core->offset;
 		ut32 bsze = core->blocksize;
-		s = strchr(str, ' ');
+		s = strchr (str, ' ');
 		if (s) {
 			*s = '\0';
 			s2 = strchr(s+1, ' ');
@@ -835,27 +832,26 @@ static int cmd_flag(void *data, const char *input) {
 		r_flag_unset (&core->flags, input+1);
 		break;
 	case 's':
-		if (input[1]==' ')
-			r_flag_space_set(&core->flags, input+2);
-		else r_flag_space_list(&core->flags);
+		if (input[1]==' ') r_flag_space_set (&core->flags, input+2);
+		else r_flag_space_list (&core->flags);
 		break;
 	case 'o':
 		{
 			char *file = PREFIX"/share/doc/radare2/fortunes";
 			char *line = r_file_slurp_random_line (file);
-			r_cons_printf(" -- %s\n", line);
-			free(line);
+			r_cons_printf (" -- %s\n", line);
+			free (line);
 		}
 		break;
 	case '*':
-		r_flag_list(&core->flags, 1);
+		r_flag_list (&core->flags, 1);
 		break;
 	case '\0':
-		r_flag_list(&core->flags, 0);
+		r_flag_list (&core->flags, 0);
 		break;
 	case '?':
 		r_cons_printf (
-		"Usage: f[ ] [flagname]\n"
+		"Usage: f[?] [flagname]\n"
 		" f name 12 @ 33   ; set flag 'name' with size 12 at 33\n"
 		" f name 12 33     ; same as above\n"
 		" f+name 12 @ 33   ; like above but creates new one if doesnt exist\n"
@@ -885,7 +881,7 @@ static int cmd_anal(void *data, const char *input) {
 	case 'h':
 		if (input[1]) {
 			if (!r_anal_use (&core->anal, input+2))
-				eprintf("Cannot use '%s' anal plugin.\n", input+2);
+				eprintf ("Cannot use '%s' anal plugin.\n", input+2);
 		} else r_anal_list (&core->anal);
 		break;
 	case 'o':
@@ -906,7 +902,7 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'c':
 		r_core_anal_bb (core, core->offset,
-				r_config_get_i(&core->config, "anal.depth"));
+				r_config_get_i (&core->config, "anal.depth"));
 		break;
 	case 'g':
 		r_core_anal_graph (core);
@@ -921,7 +917,7 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	}
 	if (tbs != core->blocksize)
-		r_core_block_size(core, tbs);
+		r_core_block_size (core, tbs);
 	return 0;
 }
 
@@ -934,40 +930,40 @@ static int cmd_write(void *data, const char *input) {
 	switch(input[0]) {
 	case ' ':
 		/* write string */
-		len = r_str_escape(str);
-		r_io_set_fd(&core->io, core->file->fd);
-		r_io_write_at(&core->io, core->offset, (const ut8*)str, len);
-		r_core_block_read(core, 0);
+		len = r_str_escape (str);
+		r_io_set_fd (&core->io, core->file->fd);
+		r_io_write_at (&core->io, core->offset, (const ut8*)str, len);
+		r_core_block_read (core, 0);
 		break;
 	case 't': {
 			/* TODO: Support user defined size? */
 			int len = core->blocksize;
 			const char *arg = (const char *)(input+(input[1]==' ')?2:1);
 			const ut8 *buf = core->block;
-			r_file_dump(arg, buf, len);
+			r_file_dump (arg, buf, len);
 		} break;
 	case 'T':
-		fprintf(stderr, "TODO\n");
+		eprintf ("TODO\n");
 		break;
 	case 'f': {
 			int size;
 			const char *arg = (const char *)(input+(input[1]==' ')?2:1);
-			ut8 *buf = (ut8*) r_file_slurp(arg, &size);
+			ut8 *buf = (ut8*) r_file_slurp (arg, &size);
 			if (buf) {
-				r_io_set_fd(&core->io, core->file->fd);
-				r_io_write_at(&core->io, core->offset, buf, size);
+				r_io_set_fd (&core->io, core->file->fd);
+				r_io_write_at (&core->io, core->offset, buf, size);
 				free(buf);
-			} else eprintf("Cannot open file '%s'\n", arg);
+			} else eprintf ("Cannot open file '%s'\n", arg);
 		} break;
 	case 'F': {
 			int size;
 			const char *arg = (const char *)(input+(input[1]==' ')?2:1);
-			ut8 *buf = r_file_slurp_hexpairs(arg, &size);
+			ut8 *buf = r_file_slurp_hexpairs (arg, &size);
 			if (buf == NULL) {
-				r_io_set_fd(&core->io, core->file->fd);
-				r_io_write_at(&core->io, core->offset, buf, size);
-				free(buf);
-			} else eprintf("Cannot open file '%s'\n", arg);
+				r_io_set_fd (&core->io, core->file->fd);
+				r_io_write_at (&core->io, core->offset, buf, size);
+				free (buf);
+			} else eprintf ("Cannot open file '%s'\n", arg);
 		} break;
 	case 'w':
 		str = str+1;
@@ -981,17 +977,17 @@ static int cmd_write(void *data, const char *input) {
 		str = tmp;
 
 		// write strifng
-		r_io_set_fd(&core->io, core->file->fd);
-		r_io_write_at(&core->io, core->offset, (const ut8*)str, len);
-		r_core_block_read(core, 0);
+		r_io_set_fd (&core->io, core->file->fd);
+		r_io_write_at (&core->io, core->offset, (const ut8*)str, len);
+		r_core_block_read (core, 0);
 		break;
 	case 'x':
 		{
-		int len = strlen(input);
-		ut8 *buf = alloca(len);
-		len = r_hex_str2bin(input+1, buf);
-		r_core_write_at(core, core->offset, buf, len);
-		r_core_block_read(core, 0);
+		int len = strlen (input);
+		ut8 *buf = alloca (len);
+		len = r_hex_str2bin (input+1, buf);
+		r_core_write_at (core, core->offset, buf, len);
+		r_core_block_read (core, 0);
 		}
 		// write hexpairs
 		break;
@@ -999,33 +995,33 @@ static int cmd_write(void *data, const char *input) {
 		{
 		struct r_asm_code_t *acode;
 		/* XXX ULTRAUGLY , needs fallback support in rasm */
-		r_asm_use(&core->assembler, "x86.olly");
-		r_asm_set_pc(&core->assembler, core->offset);
-		if (input[1]==' ')input=input+1;
-		acode = r_asm_massemble(&core->assembler, input+1);
-		eprintf("Written %d bytes (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
-		r_core_write_at(core, core->offset, acode->buf, acode->len);
-		r_asm_code_free(acode);
-		r_core_block_read(core, 0);
-		r_asm_use(&core->assembler, "x86"); /* XXX */
+		r_asm_use (&core->assembler, "x86.olly");
+		r_asm_set_pc (&core->assembler, core->offset);
+		if (input[1]==' ') input=input+1;
+		acode = r_asm_massemble (&core->assembler, input+1);
+		eprintf ("Written %d bytes (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
+		r_core_write_at (core, core->offset, acode->buf, acode->len);
+		r_asm_code_free (acode);
+		r_core_block_read (core, 0);
+		r_asm_use (&core->assembler, "x86"); /* XXX */
 		}
 		break;
 	case 'b':
 		{
-		int len = strlen(input);
-		ut8 *buf = alloca(len);
-		len = r_hex_str2bin(input+1, buf);
-		r_mem_copyloop(core->block, buf, core->blocksize, len);
-		r_core_write_at(core, core->offset, core->block, core->blocksize);
-		r_core_block_read(core, 0);
+		int len = strlen (input);
+		ut8 *buf = alloca (len);
+		len = r_hex_str2bin (input+1, buf);
+		r_mem_copyloop (core->block, buf, core->blocksize, len);
+		r_core_write_at (core, core->offset, core->block, core->blocksize);
+		r_core_block_read (core, 0);
 		}
 		break;
 	case 'm':
 		{
-		int len = r_hex_str2bin(input+1, (ut8*)str);
-		switch(input[1]) {
+		int len = r_hex_str2bin (input+1, (ut8*)str);
+		switch (input[1]) {
 		case '\0':
-			fprintf(stderr, "Current write mask: TODO\n");
+			eprintf ("Current write mask: TODO\n");
 			// TODO
 			break;
 		case '?':
@@ -1052,8 +1048,8 @@ static int cmd_write(void *data, const char *input) {
 	case 'v':
 		{
 		ut64 off = r_num_math(&core->num, input+1);
-		r_io_set_fd(&core->io, core->file->fd);
-		r_io_seek(&core->io, core->offset, R_IO_SEEK_SET);
+		r_io_set_fd (&core->io, core->file->fd);
+		r_io_seek (&core->io, core->offset, R_IO_SEEK_SET);
 		if (off&UT64_32U) {
 			/* 8 byte addr */
 			ut64 addr8;
@@ -1065,14 +1061,14 @@ static int cmd_write(void *data, const char *input) {
 			ut32 addr4, addr4_ = (ut32)off;
 			//drop_endian((ut8*)&addr4_, (ut8*)&addr4, 4); /* addr4_ = addr4 */
 			//endian_memcpy((ut8*)&addr4, (ut8*)&addr4_, 4); /* addr4 = addr4_ */
-			memcpy((ut8*)&addr4, (ut8*)&addr4_, 4); // XXX needs endian here too
-			r_io_write(&core->io, (const ut8 *)&addr4, 4);
+			memcpy ((ut8*)&addr4, (ut8*)&addr4_, 4); // XXX needs endian here too
+			r_io_write (&core->io, (const ut8 *)&addr4, 4);
 		}
-		r_core_block_read(core, 0);
+		r_core_block_read (core, 0);
 		}
 		break;
 	case 'o':
-                switch(input[1]) {
+                switch (input[1]) {
                 case 'a':
                 case 's':
                 case 'A':
@@ -1083,7 +1079,7 @@ static int cmd_write(void *data, const char *input) {
                 case 'd':
                 case 'o':
                         if (input[2]!=' ') {
-                                fprintf(stderr, "Usage: 'wo%c 00 11 22'\n", input[1]);
+                                eprintf ("Usage: 'wo%c 00 11 22'\n", input[1]);
                                 return 0;
                         }
                 case '2':
@@ -1116,9 +1112,9 @@ static int cmd_write(void *data, const char *input) {
 	default:
 	case '?':
 		if (core->oobi) {
-			fprintf(stderr, "Writing oobi buffer!\n");
-			r_io_set_fd(&core->io, core->file->fd);
-			r_io_write(&core->io, core->oobi, core->oobi_len);
+			eprintf ("Writing oobi buffer!\n");
+			r_io_set_fd (&core->io, core->file->fd);
+			r_io_write (&core->io, core->oobi, core->oobi_len);
 		} else
 			r_cons_printf(
 			"Usage: w[x] [str] [<file] [<<EOF] [@addr]\n"
@@ -1141,8 +1137,7 @@ static int cmd_write(void *data, const char *input) {
 }
 
 static const char *cmdhit = NULL;
-static int __cb_hit(struct r_search_kw_t *kw, void *user, ut64 addr)
-{
+static int __cb_hit(struct r_search_kw_t *kw, void *user, ut64 addr) {
 	struct r_core_t *core = (struct r_core_t *)user;
 
 	r_cons_printf ("f hit%d_%d %d 0x%08llx\n",
@@ -1413,17 +1408,23 @@ static int cmd_open(void *data, const char *input) {
 
 static int cmd_meta(void *data, const char *input) {
 	RCore *core = (RCore*)data;
-	int ret, line = 0;
+	int i, ret, line = 0;
 	char file[1024];
-	switch(input[0]) {
+	switch (input[0]) {
 	case '*':
-		r_meta_list(&core->meta, R_META_ANY);
+		r_meta_list (&core->meta, R_META_ANY);
 		break;
 	case 'L': // debug information of current offset
-		ret = r_bin_meta_get_line(
-			&core->bin, core->offset, file, 1023, &line);
-		if (ret)
-			r_cons_printf("file %s\nline %d\n", file, line);
+		ret = r_bin_meta_get_line (&core->bin, core->offset, file, 1023, &line);
+		if (ret) {
+			r_cons_printf ("file %s\nline %d\n", file, line);
+			ret = (line<5)? 5-line: 5;
+			line -= 2;
+			for (i = 0; i<ret; i++) {
+				char *row = r_file_slurp_line (file, line+i, 0);
+				r_cons_printf ("%c %.3x  %s\n", (i==2)?'>':' ', line+i, row);
+			}
+		} else eprintf ("Cannot find meta information at 0x%08llx\n", core->offset);
 		break;
 	case 'C': /* add comment */
 		// TODO: do we need to get the size? or the offset?
@@ -1447,7 +1448,7 @@ static int cmd_meta(void *data, const char *input) {
 		char *t, *p = strchr (input+1, ' ');
 		if (p) {
 			t = strdup (p+1);
-			eprintf ("T=(%s)\n", t);
+			//eprintf ("T=(%s)\n", t);
 			p = strchr(t, ' ');
 			if (p) {
 				*p='\0';
@@ -1549,8 +1550,7 @@ static int r_core_cmd_pipe(struct r_core_t *core, char *radare_cmd, char *shell_
 #endif
 }
 
-static int r_core_cmd_subst(struct r_core_t *core, char *cmd)
-{
+static int r_core_cmd_subst(struct r_core_t *core, char *cmd) {
 	char *ptr, *ptr2, *str;
 	int i, len = strlen(cmd), pipefd, ret;
 
@@ -1609,12 +1609,12 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd)
 		ptr[0] = '\0';
 		if (ptr[1]=='<') {
 			/* this is a bit mess */
-			const char *oprompt = r_line_singleton()->prompt;
+			const char *oprompt = r_line_singleton ()->prompt;
 			oprompt = ">";
-			for(str=ptr+2;str[0]== ' ';str=str+1);
-			eprintf("==> Reading from stdin until '%s'\n", str);
-			free(core->oobi);
-			core->oobi = malloc(1);
+			for (str=ptr+2; str[0]==' '; str=str+1);
+			eprintf ("==> Reading from stdin until '%s'\n", str);
+			free (core->oobi);
+			core->oobi = malloc (1);
 			core->oobi[0] = '\0';
 			core->oobi_len = 0;
 			for (;;) {
@@ -1645,14 +1645,14 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd)
 	}
 
 	/* pipe console to file */
-	ptr = strchr(cmd, '>');
+	ptr = strchr (cmd, '>');
 	if (ptr) {
 		ptr[0] = '\0';
-		str = r_str_trim_head_tail(ptr+1+(ptr[1]=='>'));
-		pipefd = r_cons_pipe_open(str, ptr[1]=='>');
-		ret = r_core_cmd_subst(core, cmd);
-		r_cons_flush();
-		r_cons_pipe_close(pipefd);
+		str = r_str_trim_head_tail (ptr+1+(ptr[1]=='>'));
+		pipefd = r_cons_pipe_open (str, ptr[1]=='>');
+		ret = r_core_cmd_subst (core, cmd);
+		r_cons_flush ();
+		r_cons_pipe_close (pipefd);
 		return ret;
 	}
 
@@ -1701,9 +1701,7 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd)
 		return ret;
 	}
 
-	r_cmd_call (&core->cmd, r_str_trim_head(cmd));
-
-	return 0;
+	return r_cmd_call (&core->cmd, r_str_trim_head (cmd));
 }
 
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
@@ -1714,14 +1712,14 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	struct list_head *pos;
 	ut64 oseek, addr;
 
-	for(;*each==' ';each=each+1);
-	for(;*cmd==' ';cmd=cmd+1);
+	for (; *each==' '; each++);
+	for (; *cmd==' '; cmd++);
 
 	oseek = core->offset;
 	ostr = str = strdup(each);
 	//radare_controlc();
 
-	switch(each[0]) {
+	switch (each[0]) {
 	case '?':
 		r_cons_printf (
 		"Foreach '@@' iterator command:\n"
@@ -1791,7 +1789,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		break;
 	default:
 		core->macro.counter = 0;
-		//while(str[i])  && !core->interrupted) {
+		//while(str[i]) && !core->interrupted) {
 		while (str[i]) {
 			j = i;
 			for (;str[j]&&str[j]==' ';j++); // skip spaces
@@ -1884,11 +1882,8 @@ R_API int r_core_cmd(struct r_core_t *core, const char *command, int log) {
 				cmd++;
 			while (rep--) {
 				ret = r_core_cmd_subst (core, cmd);
-				if (ret == -1) {
-					eprintf ("r_core_cmd: Invalid command\n");
-					ret = R_FALSE;
+				if (ret<0)
 					break;
-				}
 			}
 		}
 
@@ -1904,12 +1899,12 @@ R_API int r_core_cmd(struct r_core_t *core, const char *command, int log) {
 
 R_API int r_core_cmd_file(struct r_core_t *core, const char *file) {
 	char buf[1024];
-	FILE *fd = fopen(file, "r");
+	FILE *fd = fopen (file, "r");
 	if (fd == NULL) {
 		eprintf ("r_core_cmd_file: Cannot open '%s'\n", file);
 		return -1;
 	}
-	while (!feof(fd)) {
+	while (!feof (fd)) {
 		if (fgets (buf, 1023, fd) != NULL) {
 			buf[strlen (buf)-1]='\0';
 			if (r_core_cmd (core, buf, 0) == -1) {
@@ -1918,7 +1913,7 @@ R_API int r_core_cmd_file(struct r_core_t *core, const char *file) {
 			}
 		}
 	}
-	fclose(fd);
+	fclose (fd);
 	return 0;
 }
 
@@ -1963,10 +1958,45 @@ static void cmd_dm(RCore *core, const char *input) {
 	}
 }
 
+static int step_line(RCore *core, int times) {
+	char file[512], file2[512];
+	int find_meta, line, line2;
+	ut64 off;
+
+	off = r_debug_reg_get (&core->dbg, "pc");
+	if (off == 0LL) {
+		eprintf ("Cannot 'drn pc'\n");
+		return R_FALSE;
+	}
+	if (r_bin_meta_get_line (&core->bin, off, file, sizeof (file), &line)) {
+		eprintf ("--> 0x%08llx %s : %d\n", off, file, line);
+		eprintf ("--> %s\n", r_file_slurp_line (file, line, 0));
+		find_meta = R_FALSE;
+	} else {
+		eprintf ("--> Stepping until dwarf line\n");
+		find_meta = R_TRUE;
+	}
+	do {
+		r_debug_step (&core->dbg, 1);
+		off = r_debug_reg_get (&core->dbg, "pc");
+		if (!r_bin_meta_get_line (&core->bin, off, file2, sizeof (file2), &line2)) {
+			if (find_meta)
+				continue;
+			eprintf ("Cannot retrieve dwarf info at 0x%08llx\n", off);
+			return R_FALSE;
+		}
+	} while (!strcmp (file, file2) && line == line2);
+	eprintf ("--> 0x%08llx %s : %d\n", off, file2, line2);
+	eprintf ("--> %s\n", r_file_slurp_line (file2, line2, 0));
+	return R_TRUE;
+}
+
 static int cmd_debug(void *data, const char *input) {
-	int pid, sig;
-	struct r_core_t *core = (struct r_core_t *)data;
+	RCore *core = (RCore *)data;
+	int times, pid, sig;
+	ut64 addr;
 	char *ptr;
+
 	switch (input[0]) {
 	case 'x':
 		r_debug_execute (&core->dbg, (ut8*)
@@ -1976,9 +2006,9 @@ static int cmd_debug(void *data, const char *input) {
 	case 'k':
 		/* XXX: not for threads? signal is for a whole process!! */
 		/* XXX: but we want fine-grained access to process resources */
-		pid = atoi(input);
-		ptr = strchr(input, ' ');
-		if (ptr) sig = atoi(ptr+1);
+		pid = atoi (input);
+		ptr = strchr (input, ' ');
+		if (ptr) sig = atoi (ptr+1);
 		if (pid > 0) {
 			eprintf ("Sending signal '%d' to pid '%d'\n",
 				sig, pid);
@@ -1986,17 +2016,19 @@ static int cmd_debug(void *data, const char *input) {
 		} else eprintf ("Invalid arguments\n");
 		break;
 	case 's':
-		eprintf ("step\n");
-		r_debug_step (&core->dbg, 1);
+		times = atoi (input+2);
+		if (times<1) times = 1;
+		if (input[1]=='l') step_line (core, times);
+		else r_debug_step (&core->dbg, times);
 		break;
 	case 'b':
 		r_core_cmd_bp (core, input);
 		break;
 	case 't':
-		fprintf(stderr, "TODO: list/select thread\n");
+		eprintf ("TODO: list/select thread\n");
 		break;
 	case 'H':
-		fprintf(stderr, "TODO: transplant process\n");
+		eprintf ("TODO: transplant process\n");
 		break;
 	case 'c':
 		switch (input[1]) {
@@ -2004,6 +2036,7 @@ static int cmd_debug(void *data, const char *input) {
 			eprintf("Usage: dc[?]  -- continue execution\n"
 				" dc?               show this help\n"
 				" dc                continue execution of all childs\n"
+				" dcu [addr]        continue until address\n"
 				" dck [sig] [pid]   continue sending kill 9 to process\n"
 				" dc [pid]          continue execution of pid\n"
 				" dc[-pid]          stop execution of pid\n"
@@ -2020,6 +2053,13 @@ static int cmd_debug(void *data, const char *input) {
 				r_debug_continue_kill (&core->dbg, atoi (input+2));
 				r_debug_select (&core->dbg, old_pid, old_pid);
 			} else r_debug_continue_kill (&core->dbg, atoi (input+2));
+			break;
+		case 'u':
+			addr = r_num_math (&core->num, input+2);
+			eprintf ("Continue until 0x%08llx\n", addr);
+			r_bp_add_sw (core->dbg.bp, addr, 1, R_BP_PROT_EXEC);
+			r_debug_continue (&core->dbg);
+			r_bp_del (core->dbg.bp, addr);
 			break;
 		case ' ':
 			do {
@@ -2046,25 +2086,27 @@ static int cmd_debug(void *data, const char *input) {
 		// TODO: Support PID and Thread
 		if (input[1]==' ')
 			//r_debug_select(&core->dbg, core->dbg.pid, atoi(input+2));
-			r_debug_select(&core->dbg, atoi(input+2), atoi(input+2));
-		else fprintf(stderr, "TODO: List processes..\n");
+			r_debug_select (&core->dbg, atoi(input+2), atoi(input+2));
+		else eprintf ("TODO: List processes..\n");
 		break;
 	case 'h':
 		if (input[1]==' ')
-			r_debug_use(&core->dbg, input+2);
-		else r_debug_handle_list(&core->dbg);
+			r_debug_use (&core->dbg, input+2);
+		else r_debug_handle_list (&core->dbg);
 		break;
 	default:
-		r_cons_printf("Usage: d[sbhcrbo] [arg]\n"
+		r_cons_printf ("Usage: d[sbhcrbo] [arg]\n"
 		" dh [handler]   list or set debugger handler\n"
 		" dH [handler]   transplant process to a new handler\n"
 		" ds             perform one step\n"
 		" df             file descriptors\n"
 		" ds 3           perform 3 steps\n"
 		" do 3           perform 3 steps overs\n"
+		" dsl            step to next source line\n"
+		" df             show frames (backtrace)\n"
 		" dp [pid]       list or set pid\n"
 		" dt [tid]       select thread id\n"
-		" dc             continue execution\n"
+		" dc[?]          continue execution. dc? for more\n"
 		" dr[?]          cpu registers, dr? for extended help\n"
 		" db[?]          breakpoints\n"
 		" dm             show memory maps\n"
@@ -2077,17 +2119,17 @@ static int cmd_debug(void *data, const char *input) {
 }
 
 R_API int r_core_cmd_buffer(void *user, const char *buf) {
-	char *str = strdup(buf);
-	char *ptr = strchr(str, '\n');
+	char *str = strdup (buf);
+	char *ptr = strchr (str, '\n');
 	char *optr = str;
-	while(ptr) {
+	while (ptr) {
 		ptr[0]='\0';
-		r_core_cmd(user, optr, 0);
+		r_core_cmd (user, optr, 0);
 		optr = ptr+1;
-		ptr = strchr(str,'\n');
+		ptr = strchr (str,'\n');
 	}
-	r_core_cmd(user, optr, 0);
-	free(str);
+	r_core_cmd (user, optr, 0);
+	free (str);
 	return R_TRUE;
 }
 
@@ -2109,8 +2151,7 @@ R_API int r_core_cmd0(void *user, const char *cmd) {
 /*
  * return: pointer to a buffer with the output of the command.
  */
-R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd)
-{
+R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd) {
 	char *retstr = NULL;
 	r_cons_reset ();
 	if (r_core_cmd (core, cmd, 0) == -1) {
