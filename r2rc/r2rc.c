@@ -688,7 +688,7 @@ static int parsechar(char c) {
 
 static void showhelp() {
 	fprintf (stderr,
-		"Usage: rcc [-alh] [files] > file.S\n"
+		"Usage: r2rc [-alh] [files] > file.S\n"
 		"  -a     Show current architecture\n"
 		"  -l     List all supported architectures\n"
 		"  -h     Display this help\n"

@@ -250,14 +250,15 @@ static int cmd_quit(void *data, const char *input) {
 		" q 1   ; quit with return value 1\n"
 		" q a-b ; quit with return value a-b\n");
 		break;
-	case '\0':
 	case ' ':
 	case '!':
+		input++;
+	case '\0':
 		// TODO
 	default:
 		r_line_hist_save (".radare2_history");
-		if (input[1])
-			r_num_math (&core->num, input+1);
+		if (*input)
+			r_num_math (&core->num, input);
 		else core->num.value = 0LL;
 		//exit (*input?r_num_math (&core->num, input+1):0);
 		return -2;
@@ -366,9 +367,16 @@ static int cmd_section(void *data, const char *input) {
 }
 
 static int cmd_seek(void *data, const char *input) {
-	ut64 off;
+	RCore *core = (RCore *)data;
 	char *cmd, *p; 
-	struct r_core_t *core = (struct r_core_t *)data;
+	ut64 off;
+
+	if (input[0]=='r') {
+		if (input[1] && input[2]) {
+			off = r_debug_reg_get (&core->dbg, input+2);
+			r_core_seek (core, off, 1);
+		} else eprintf ("Usage: 'sr pc' ; seek to register\n");
+	} else
 	if (input[0] && input[1]) {
 		st32 delta = (input[1]==' ')?2:1;
 		off = r_num_math (&core->num, input + delta); 
@@ -665,6 +673,7 @@ static int cmd_print(void *data, const char *input) {
 	ut32 tbs = core->blocksize;
 	int show_offset = r_config_get_i (&core->config, "asm.offset");
 	int show_bytes = r_config_get_i (&core->config, "asm.bytes");
+	int show_color = r_config_get_i (&core->config, "scr.color");
 	int show_lines = r_config_get_i (&core->config, "asm.reflines");
 	int linesout = r_config_get_i (&core->config, "asm.reflinesout");
 	int show_comments = r_config_get_i (&core->config, "asm.comments");
@@ -730,13 +739,45 @@ static int cmd_print(void *data, const char *input) {
 				if (show_offset) r_cons_printf("0x%08llx  ", core->offset + idx);
 				if (show_bytes) {
 					struct r_flag_item_t *flag = r_flag_get_i(&core->flags, core->offset+idx);
-					if (flag) r_cons_printf("*[ %10s] ", flag->name);
-					else r_cons_printf("%14s ", asmop.buf_hex);
+					if (flag) {
+						if (show_color)
+							r_cons_printf(Color_BWHITE"*[ %10s] "Color_RESET, flag->name);
+						else r_cons_printf("*[ %10s] ", flag->name);
+					} else r_cons_printf("%14s ", asmop.buf_hex);
+				}
+				if (show_color) {
+					switch (analop.type) {
+					case R_ANAL_OP_TYPE_NOP:
+						r_cons_printf (Color_GRAY);
+						break;
+					case R_ANAL_OP_TYPE_JMP:
+					case R_ANAL_OP_TYPE_UJMP:
+					case R_ANAL_OP_TYPE_CJMP:
+						r_cons_printf (Color_GREEN);
+						break;
+					case R_ANAL_OP_TYPE_CALL:
+						r_cons_printf (Color_BGREEN);
+						break;
+					case R_ANAL_OP_TYPE_SWI:
+						r_cons_printf (Color_MAGENTA);
+						break;
+					case R_ANAL_OP_TYPE_RET:
+						r_cons_printf (Color_RED);
+						break;
+					case R_ANAL_OP_TYPE_LOAD:
+						r_cons_printf (Color_YELLOW);
+						break;
+					case R_ANAL_OP_TYPE_STORE:
+						r_cons_printf (Color_BYELLOW);
+						break;
+					}
 				}
 				if (pseudo) {
 					r_parse_parse(&core->parser, asmop.buf_asm, str);
 					r_cons_printf("%s\n", str);
 				} else r_cons_printf("%s\n", asmop.buf_asm);
+				if (show_color)
+					r_cons_printf (Color_RESET);
 				if (show_lines && analop.type == R_ANAL_OP_TYPE_RET) {
 					if (strchr(line, '>'))
 						memset(line, ' ', strlen(line));

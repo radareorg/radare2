@@ -129,7 +129,7 @@ R_API void r_cons_clear() {
 	FillConsoleOutputCharacter (hStdout, ' ',
 		csbi.dwSize.X * csbi.dwSize.Y, startCoords, &dummy);
 #else
-	r_cons_strcat ("\x1b[2J");
+	r_cons_strcat (Color_RESET"\x1b[2J");
 #endif
 	r_cons_gotoxy (0, 0);
 	r_cons_flush ();

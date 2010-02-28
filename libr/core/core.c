@@ -195,7 +195,10 @@ R_API int r_core_prompt(struct r_core_t *r) {
 	if (cmdprompt && cmdprompt[0])
 		ret = r_core_cmd (r, cmdprompt, 0);
 
-	sprintf (prompt, "[0x%08llx]> ", r->offset);
+	/* XXX */
+	if (r_config_get_i (&r->config, "scr.color"))
+		sprintf (prompt, Color_YELLOW"[0x%08llx]> "Color_RESET, r->offset);
+	else sprintf (prompt, "[0x%08llx]> ", r->offset);
 	r_line_singleton()->prompt = prompt;
 	ret = r_cons_fgets (line, sizeof (line), 0, NULL);
 	if (ret<0)

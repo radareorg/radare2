@@ -369,8 +369,7 @@ static const char *r_debug_native_reg_profile() {
 
 // TODO: what about float and hardware regs here ???
 // TODO: add flag for type
-static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size)
-{
+static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int ret; 
 	int pid = dbg->pid;
 // XXX this must be defined somewhere else

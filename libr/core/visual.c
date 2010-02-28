@@ -1,16 +1,10 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include "r_core.h"
 
 #define NPF 6
 static int printidx = 0;
-#if __arm__
-const char *printfmt[] = { "x", "pd", "p8", "pc", "ps", "s sp&&x 64&&dr&&s pc&&pd" };
-#elif __x86_64__
-const char *printfmt[] = { "x", "pd", "p8", "pc", "ps", "s rsp&&x 64&&dr&&s rip&&pd" };
-#else
-const char *printfmt[] = { "x", "pd", "p8", "pc", "ps", "s esp&&x 64&&dr&&s eip&&pd" };
-#endif
+const char *printfmt[] = { "x", "pd", "sr sp&&x 64&&dr&&sr pc&&pd", "p8", "pc", "ps" };
 
 static int curset = 0, cursor = -1, ocursor=-1;
 static int color = 1;
@@ -20,8 +14,7 @@ static int flags = R_PRINT_FLAGS_ADDRMOD;
 static int marks_init = 0;
 static ut64 marks[256];
 
-static void r_core_visual_mark(struct r_core_t *core, ut8 ch)
-{
+static void r_core_visual_mark(struct r_core_t *core, ut8 ch) {
 	if (!marks_init) {
 		int i;
 		for(i=0;i<255;i++)
@@ -31,8 +24,7 @@ static void r_core_visual_mark(struct r_core_t *core, ut8 ch)
 	marks[ch] = core->offset;
 }
 
-static void r_core_visual_mark_seek(struct r_core_t *core, ut8 ch)
-{
+static void r_core_visual_mark_seek(struct r_core_t *core, ut8 ch) {
 	if (!marks_init) {
 		int i;
 		for(i=0;i<255;i++)
@@ -43,8 +35,7 @@ static void r_core_visual_mark_seek(struct r_core_t *core, ut8 ch)
 		r_core_seek(core, marks[ch], 1);
 }
 
-R_API int r_core_visual_trackflags(struct r_core_t *core)
-{
+R_API int r_core_visual_trackflags(struct r_core_t *core) {
 	char cmd[1024];
 	struct list_head *pos;
 #define MAX_FORMAT 2
@@ -59,22 +50,19 @@ R_API int r_core_visual_trackflags(struct r_core_t *core)
 	int i,j, ch;
 	int hit;
 
-	while(1) {
-		r_cons_gotoxy(0,0);
-		r_cons_clear();
+	for (;;) {
+		r_cons_gotoxy (0,0);
+		r_cons_clear ();
 		/* Execute visual prompt */
 		ptr = r_config_get(&core->config, "cmd.vprompt");
-		if (ptr&&ptr[0]) {
-			//int tmp = 0; //last_print_format;
-			r_core_cmd(core, ptr, 0);
-			//last_print_format = tmp;
-		}
+		if (ptr&&ptr[0])
+			r_core_cmd (core, ptr, 0);
 
-		switch(menu) {
+		switch (menu) {
 		case 0: // flag space
-			r_cons_printf("\n Flag spaces:\n\n");
+			r_cons_printf ("\n Flag spaces:\n\n");
 			hit = 0;
-			for(j=i=0;i<R_FLAG_SPACES_MAX;i++) {
+			for (j=i=0;i<R_FLAG_SPACES_MAX;i++) {
 				if (core->flags.space[i]) {
 					if (option==i) {
 						fs = core->flags.space[i];
@@ -95,7 +83,7 @@ R_API int r_core_visual_trackflags(struct r_core_t *core)
 			}
 			break;
 		case 1: // flag selection
-			r_cons_printf("\n Flags in flagspace '%s'. Press '?' for help.\n\n",
+			r_cons_printf ("\n Flags in flagspace '%s'. Press '?' for help.\n\n",
 				core->flags.space[core->flags.space_idx]);
 			hit = 0;
 			i = j = 0;
@@ -122,9 +110,9 @@ R_API int r_core_visual_trackflags(struct r_core_t *core)
 				option = i-1;
 				continue;
 			}
-			r_cons_printf("\n Selected: %s\n\n", fs2);
+			r_cons_printf ("\n Selected: %s\n\n", fs2);
 
-			switch(format) {
+			switch (format) {
 			case 0: sprintf(cmd, "px @ %s", fs2); break;
 			case 1: sprintf(cmd, "pd @ %s", fs2); break;
 			case 2: sprintf(cmd, "ps @ %s", fs2); break;
@@ -169,7 +157,7 @@ R_API int r_core_visual_trackflags(struct r_core_t *core)
 			option = _option;
 			break;
 		case 'a':
-			switch(menu) {
+			switch (menu) {
 			case 0: // new flag space
 				break;
 			case 1: // new flag
@@ -177,7 +165,7 @@ R_API int r_core_visual_trackflags(struct r_core_t *core)
 			}
 			break;
 		case 'd':
-			r_flag_unset(&core->flags, fs2);
+			r_flag_unset (&core->flags, fs2);
 			break;
 		case 'e':
 			/* TODO: prompt for addr, size, name */
@@ -187,11 +175,11 @@ R_API int r_core_visual_trackflags(struct r_core_t *core)
 			break;
 		case '*':
 		case '+':
-			r_core_block_size(core, core->blocksize+1);
+			r_core_block_size (core, core->blocksize+1);
 			break;
 		case '/':
 		case '-':
-			r_core_block_size(core, core->blocksize-1);
+			r_core_block_size (core, core->blocksize-1);
 			break;
 		case 'P':
 			if (--format<0)
@@ -209,56 +197,45 @@ R_API int r_core_visual_trackflags(struct r_core_t *core)
 				r_core_cmd(core, cmd, 0);
 				return R_TRUE;
 			}
-			r_flag_space_set(&core->flags, fs);
+			r_flag_space_set (&core->flags, fs);
 			menu = 1;
 			_option = option;
 			option = 0;
 			break;
 		case '?':
-			r_cons_clear00();
-			r_cons_printf("\nVt: Visual Track help:\n\n");
-			r_cons_printf(" q     - quit menu\n");
-			r_cons_printf(" j/k   - down/up keys\n");
-			r_cons_printf(" h/b   - go back\n");
-			r_cons_printf(" l/' ' - accept current selection\n");
-			r_cons_printf(" a/d/e - add/delete/edit flag\n");
-			r_cons_printf(" +/-   - increase/decrease block size\n");
-			r_cons_printf(" p/P   - rotate print format\n");
-			r_cons_printf(" :     - enter command\n");
-			r_cons_flush();
-			r_cons_any_key();
+			r_cons_clear00 ();
+			r_cons_printf (
+			"\nVt: Visual Track help:\n\n"
+			" q     - quit menu\n"
+			" j/k   - down/up keys\n"
+			" h/b   - go back\n"
+			" l/' ' - accept current selection\n"
+			" a/d/e - add/delete/edit flag\n"
+			" +/-   - increase/decrease block size\n"
+			" p/P   - rotate print format\n"
+			" :     - enter command\n");
+			r_cons_flush ();
+			r_cons_any_key ();
 			break;
 		case ':':
-			r_cons_set_raw(0);
-#if HAVE_LIB_READLINE
-			char *ptr = (char *)readline(VISUAL_PROMPT);
-			if (ptr) {
-				strncpy(cmd, ptr, sizeof(cmd));
-				r_core_cmd(core, cmd, 1);
-				//commands_parse(line);
-				free(ptr);
-			}
-#else
+			r_cons_set_raw (0);
 			cmd[0]='\0';
-			//dl_prompt = ":> ";
-			if (r_cons_fgets(cmd, 1000, 0, NULL) <0)
+			if (r_cons_fgets (cmd, 1000, 0, NULL) <0)
 				cmd[0]='\0';
 			//line[strlen(line)-1]='\0';
-			r_core_cmd(core, cmd, 1);
-#endif
-			r_cons_set_raw(1);
+			r_core_cmd (core, cmd, 1);
+			r_cons_set_raw (1);
 			if (cmd[0])
-				r_cons_any_key();
+				r_cons_any_key ();
 			//cons_gotoxy(0,0);
-			r_cons_clear();
+			r_cons_clear ();
 			continue;
 		}
 	}
 	return R_TRUE;
 }
 
-static void config_visual_hit_i(struct r_core_t *core, const char *name, int delta)
-{
+static void config_visual_hit_i(struct r_core_t *core, const char *name, int delta) {
 	struct r_config_node_t *node;
 	node = r_config_node_get(&core->config, name);
 	if (node && ((node->flags & CN_INT) || (node->flags & CN_OFFT)))
@@ -266,8 +243,7 @@ static void config_visual_hit_i(struct r_core_t *core, const char *name, int del
 }
 
 /* Visually activate the config variable */
-static void config_visual_hit(struct r_core_t *core, const char *name)
-{
+static void config_visual_hit(struct r_core_t *core, const char *name) {
 	char buf[1024];
 	struct r_config_node_t *node;
 
@@ -289,8 +265,7 @@ static void config_visual_hit(struct r_core_t *core, const char *name)
 	}
 }
 
-R_API void r_core_visual_config(struct r_core_t *core)
-{
+R_API void r_core_visual_config(struct r_core_t *core) {
 	char cmd[1024];
 	struct list_head *pos;
 #define MAX_FORMAT 2
@@ -307,7 +282,7 @@ R_API void r_core_visual_config(struct r_core_t *core)
 	char old[1024];
 	old[0]='\0';
 
-	while(1) {
+	for (;;) {
 		r_cons_gotoxy(0,0);
 		r_cons_clear();
 
@@ -468,8 +443,7 @@ R_API void r_core_visual_config(struct r_core_t *core)
 }
 
 /* TODO: use r_cmd here in core->vcmd..optimize over 255 table */ 
-R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
-{
+R_API int r_core_visual_cmd(struct r_core_t *core, int ch) {
 	char buf[1024];
 	ch = r_cons_arrow_to_hjkl(ch);
 
@@ -484,7 +458,8 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 		color ^= 1;
 		if (color) flags|=R_PRINT_FLAGS_COLOR;
 		else flags &= !(flags&R_PRINT_FLAGS_COLOR);
-		r_print_set_flags(&core->print, flags);
+		r_config_set_i (&core->config, "scr.color", color);
+		r_print_set_flags (&core->print, flags);
 		break;
 	case 'a':
 		r_cons_printf("Enter assembler opcodes separated with ';':\n");
@@ -654,9 +629,11 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch)
 	return 1;
 }
 
-R_API void r_core_visual_prompt(struct r_core_t *core)
-{
-	r_cons_printf("[0x%08llx] %s\n", core->offset, printfmt[printidx%NPF]);
+R_API void r_core_visual_prompt(struct r_core_t *core, int color) {
+	if (color)
+		r_cons_printf(Color_YELLOW"[0x%08llx] %s\n"Color_RESET,
+			core->offset, printfmt[printidx%NPF]);
+	else r_cons_printf("[0x%08llx] %s\n", core->offset, printfmt[printidx%NPF]);
 }
 
 R_API int r_core_visual(struct r_core_t *core, const char *input)
@@ -689,19 +666,21 @@ R_API int r_core_visual(struct r_core_t *core, const char *input)
 			r_core_seek (core, scrseek, 1);
 			// TODO: read?
 		}
-		if (debug) {
+		if (debug)
 			r_core_cmd(core, ".dr*", 0);
-		}
 		cmdprompt = r_config_get (&core->config, "cmd.vprompt");
-		if (cmdprompt && cmdprompt[0])
-			r_core_cmd(core, cmdprompt, 0);
-		r_cons_clear00();
-		r_print_set_cursor(&core->print, curset, ocursor, cursor);
-		r_core_visual_prompt(core);
-		r_core_cmd(core, printfmt[printidx%NPF], 0);
-		r_cons_visual_flush();
-		ch = r_cons_readchar();
-	} while (r_core_visual_cmd(core, ch));
+		if (cmdprompt && *cmdprompt)
+			r_core_cmd (core, cmdprompt, 0);
+		r_cons_clear00 ();
+		r_print_set_cursor (&core->print, curset, ocursor, cursor);
+		r_core_visual_prompt (core, color);
+		r_core_cmd (core, printfmt[printidx%NPF], 0);
+		r_cons_visual_flush ();
+		ch = r_cons_readchar ();
+	} while (r_core_visual_cmd (core, ch));
+
+	if (color)
+		r_cons_printf (Color_RESET);
 
 	return 0;
 }
