@@ -122,7 +122,7 @@ R_API int r_core_config_init(struct r_core_t *core)
 	/* TODO cmd */
 	r_config_set(cfg, "cmd.prompt", "");
 	r_config_set(cfg, "cmd.visual", ""); //? eip && ?? s eip");
-	r_config_set(cfg, "cmd.vprompt", "p%");
+//	r_config_set(cfg, "cmd.vprompt", "p%");
 	r_config_set(cfg, "cmd.vprompt2", "CFV");
 	r_config_set(cfg, "cmd.vprompt3", "");
 	r_config_set(cfg, "cmd.bp", "");

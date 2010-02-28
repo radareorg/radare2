@@ -13,7 +13,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		ch = r_cons_readchar();
 		if (ch==0x5b) {
 			// TODO: must also work in interactive visual write ascii mode
-			ch = r_cons_readchar();
+			ch = r_cons_readchar ();
 			switch(ch) {
 			case 0x35: ch='K'; break; // re.pag
 			case 0x36: ch='J'; break; // av.pag
@@ -84,3 +84,23 @@ R_API int r_cons_readchar()
 #endif
 	return buf[0];
 }
+
+
+R_API int r_cons_yesno(int def, const char *fmt, ...) {
+	va_list ap;
+	int key = def;
+	va_start (ap, fmt);
+	vfprintf (stderr, fmt, ap);
+	va_end (ap);
+	fflush (stderr);
+	r_cons_set_raw (1);
+	read (0, &key, 1);
+	write (2, "\n", 1);
+	if (key == 'Y')
+		key = 'y';
+	r_cons_set_raw (0);
+	if (key=='\n'||key=='\r')
+		key = def;
+	return key=='y';
+}
+

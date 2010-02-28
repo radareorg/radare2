@@ -176,6 +176,8 @@ R_API void r_cons_strcat(const char *str);
 R_API void r_cons_memcat(const char *str, int len);
 R_API void r_cons_newline();
 R_API void r_cons_flush();
+R_API void r_cons_visual_flush();
+R_API void r_cons_visual_write (char *buffer);
 
 /* input */
 //R_API int  r_cons_fgets(char *buf, int len, int argc, const char **argv);

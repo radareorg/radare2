@@ -673,7 +673,7 @@ R_API int r_core_visual(struct r_core_t *core, const char *input)
 		if (!r_core_visual_cmd (core, input[0])) {
 			r_cons_clear00 ();
 			r_core_cmd (core, printfmt[printidx%NPF], 0);
-			r_cons_flush ();
+			r_cons_visual_flush();
 			r_cons_any_key ();
 			return 0;
 		}
@@ -699,7 +699,7 @@ R_API int r_core_visual(struct r_core_t *core, const char *input)
 		r_print_set_cursor(&core->print, curset, ocursor, cursor);
 		r_core_visual_prompt(core);
 		r_core_cmd(core, printfmt[printidx%NPF], 0);
-		r_cons_flush();
+		r_cons_visual_flush();
 		ch = r_cons_readchar();
 	} while (r_core_visual_cmd(core, ch));
 
