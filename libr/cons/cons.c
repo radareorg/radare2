@@ -1,9 +1,6 @@
 /* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
 
 #include <r_cons.h>
-#if HAVE_DIETLINE // TODO: implement support for it?? i think no :)
-#include <r_line.h>
-#endif
 #include <r_types.h>
 #include <r_util.h>
 #include <stdio.h>
@@ -76,9 +73,6 @@ R_API int r_cons_init() {
 #elif __WINDOWS__
 	GetConsoleMode (h, &I.term_buf);
 	I.term_raw = 0;
-#endif
-#if HAVE_DIETLINE
-	r_line_init ();
 #endif
 	//r_cons_palette_init(NULL);
 	r_cons_reset ();

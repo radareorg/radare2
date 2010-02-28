@@ -2,19 +2,14 @@
 
 #include <r_cons.h>
 #include <string.h>
-#if HAVE_DIETLINE
-#include <r_line.h>
-
-extern char *dl_readline(int argc, const char **argv);
-#endif
 
 R_API int r_cons_arrow_to_hjkl(int ch) {
 	if (ch==0x1b) {
-		ch = r_cons_readchar();
+		ch = r_cons_readchar ();
 		if (ch==0x5b) {
 			// TODO: must also work in interactive visual write ascii mode
 			ch = r_cons_readchar ();
-			switch(ch) {
+			switch (ch) {
 			case 0x35: ch='K'; break; // re.pag
 			case 0x36: ch='J'; break; // av.pag
 			case 0x41: ch='k'; break; // up
@@ -34,36 +29,24 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	RCons *cons = r_cons_singleton ();
 	if (cons->user_fgets)
 		return cons->user_fgets (buf, 512);
-	else {
-#if HAVE_DIETLINE
-		char *ptr;
-		buf[0]='\0';
-		ptr = r_line_readline ((argv)?argc:CMDS, (argv)?argv:radare_argv);
-		if (ptr == NULL)
-			return -1;
-		strncpy (buf, ptr, len);
-#else
-		buf[0]='\0';
-		if (fgets (buf, len, cons->fdin) == NULL)
-			return -1;
-		if (feof (cons->fdin))
-			return -1;
-		buf[strlen(buf)-1]='\0';
-#endif
-	}
+	*buf = '\0';
+	fflush (cons->fdin);
+	if (fgets (buf, len, cons->fdin) == NULL)
+		return -1;
+	if (feof (cons->fdin))
+		return -1;
+	buf[strlen (buf)-1] = '\0';
 	return strlen (buf);
 }
 
-R_API void r_cons_any_key()
-{
+R_API void r_cons_any_key() {
 	r_cons_strcat ("\n--press any key--\n");
 	r_cons_flush ();
 	r_cons_readchar ();
 	//r_cons_strcat ("\x1b[2J\x1b[0;0H"); // wtf?
 }
 
-R_API int r_cons_readchar()
-{
+R_API int r_cons_readchar() {
 	char buf[2];
 #if __WINDOWS__
 	BOOL ret;
@@ -85,7 +68,6 @@ R_API int r_cons_readchar()
 	return buf[0];
 }
 
-
 R_API int r_cons_yesno(int def, const char *fmt, ...) {
 	va_list ap;
 	int key = def;
@@ -99,8 +81,7 @@ R_API int r_cons_yesno(int def, const char *fmt, ...) {
 	if (key == 'Y')
 		key = 'y';
 	r_cons_set_raw (0);
-	if (key=='\n'||key=='\r')
+	if (key=='\n' || key=='\r')
 		key = def;
 	return key=='y';
 }
-
