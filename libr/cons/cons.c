@@ -249,14 +249,19 @@ R_API void r_cons_newline() {
 }
 
 static void sig_winch(int i) {
-	signal (SIGWINCH, sig_winch);
 	r_cons_get_size (NULL);
 }
 
 R_API int r_cons_get_size(int *rows) {
 #if __UNIX__
 	struct winsize win;
+	struct sigaction sa;
+
 	signal (SIGWINCH, sig_winch);
+	sigaction (SIGWINCH, (struct sigaction *)0, &sa);
+	sa.sa_flags &= ~ SA_RESTART;
+	sigaction (SIGWINCH, &sa, (struct sigaction *)0);
+	
 	I.columns = 80;
 	I.rows = 23;
 	if (ioctl (1, TIOCGWINSZ, &win) == 0) {
