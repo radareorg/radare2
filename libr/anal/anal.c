@@ -5,17 +5,26 @@
 #include <r_anal.h>
 #include <r_util.h>
 #include <r_list.h>
+#include "../config.h"
+
+/* plugin pointers */
+extern RAnalysisHandle r_anal_plugin_x86;
+extern RAnalysisHandle r_anal_plugin_x86_bea;
+extern RAnalysisHandle r_anal_plugin_ppc;
+
+static struct r_anal_handle_t *anal_static_plugins[] = 
+	{ R_ANAL_STATIC_PLUGINS };
 
 R_API RAnalysis *r_anal_new() {
-	return r_anal_init (MALLOC_STRUCT (struct r_anal_t));
+	return r_anal_init (MALLOC_STRUCT (RAnalysis));
 }
 
 R_API RAnalysisBB *r_anal_bb_new() {
-	return r_anal_bb_init (MALLOC_STRUCT (struct r_anal_bb_t));
+	return r_anal_bb_init (MALLOC_STRUCT (RAnalysisBB));
 }
 
 R_API RAnalysisAop *r_anal_aop_new() {
-	return r_anal_aop_init (MALLOC_STRUCT (struct r_anal_aop_t));
+	return r_anal_aop_init (MALLOC_STRUCT (RAnalysisAop));
 }
 
 R_API RList *r_anal_bb_list_new() {
@@ -30,7 +39,7 @@ R_API RList *r_anal_aop_list_new() {
 	return list;
 }
 
-R_API RAnalysis *r_anal_free(struct r_anal_t *a) {
+R_API RAnalysis *r_anal_free(RAnalysis *a) {
 	/* TODO: Free a->anals here */
 	r_list_destroy (a->bbs);
 	free (a);
@@ -48,18 +57,22 @@ R_API void r_anal_aop_free(void *aop) {
 	free (aop);
 }
 
-R_API RAnalysis *r_anal_init(struct r_anal_t *anal) {
+R_API RAnalysis *r_anal_init(RAnalysis *anal) {
+	int i;
+
 	if (anal) {
 		memset (anal, 0, sizeof (RAnalysis));
 		anal->bbs = r_anal_bb_list_new();
 		r_anal_set_bits (anal, 32);
 		r_anal_set_big_endian (anal, R_FALSE);
 		INIT_LIST_HEAD (&anal->anals);
+		for (i=0; anal_static_plugins[i]; i++)
+			r_anal_add (anal, anal_static_plugins[i]);
 	}
 	return anal;
 }
 
-R_API RAnalysisBB *r_anal_bb_init(struct r_anal_bb_t *bb) {
+R_API RAnalysisBB *r_anal_bb_init(RAnalysisBB *bb) {
 	if (bb) {
 		memset (bb, 0, sizeof (RAnalysisBB));
 		bb->addr = -1;
@@ -70,7 +83,7 @@ R_API RAnalysisBB *r_anal_bb_init(struct r_anal_bb_t *bb) {
 	return bb;
 }
 
-R_API RAnalysisAop *r_anal_aop_init(struct r_anal_aop_t *aop) {
+R_API RAnalysisAop *r_anal_aop_init(RAnalysisAop *aop) {
 	if (aop) {
 		memset (aop, 0, sizeof (RAnalysisAop));
 		aop->jump = -1;
@@ -79,11 +92,11 @@ R_API RAnalysisAop *r_anal_aop_init(struct r_anal_aop_t *aop) {
 	return aop;
 }
 
-R_API void r_anal_set_user_ptr(struct r_anal_t *anal, void *user) {
+R_API void r_anal_set_user_ptr(RAnalysis *anal, void *user) {
 	anal->user = user;
 }
 
-R_API int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo) {
+R_API int r_anal_add(RAnalysis *anal, struct r_anal_handle_t *foo) {
 	if (foo->init)
 		foo->init(anal->user);
 	list_add_tail(&(foo->list), &(anal->anals));
@@ -91,7 +104,7 @@ R_API int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo) {
 }
 
 // TODO: Must be deprecated
-R_API int r_anal_list(struct r_anal_t *anal) {
+R_API int r_anal_list(RAnalysis *anal) {
 	struct list_head *pos;
 	list_for_each_prev(pos, &anal->anals) {
 		struct r_anal_handle_t *h = list_entry(pos, struct r_anal_handle_t, list);
@@ -100,7 +113,7 @@ R_API int r_anal_list(struct r_anal_t *anal) {
 	return R_FALSE;
 }
 
-R_API int r_anal_use(struct r_anal_t *anal, const char *name) {
+R_API int r_anal_use(RAnalysis *anal, const char *name) {
 	struct list_head *pos;
 	list_for_each_prev (pos, &anal->anals) {
 		struct r_anal_handle_t *h = list_entry(pos, struct r_anal_handle_t, list);
@@ -112,7 +125,7 @@ R_API int r_anal_use(struct r_anal_t *anal, const char *name) {
 	return R_FALSE;
 }
 
-R_API int r_anal_set_bits(struct r_anal_t *anal, int bits) {
+R_API int r_anal_set_bits(RAnalysis *anal, int bits) {
 	switch (bits) {
 	case 8:
 	case 16:
@@ -124,44 +137,43 @@ R_API int r_anal_set_bits(struct r_anal_t *anal, int bits) {
 	return R_FALSE;
 }
 
-R_API int r_anal_set_big_endian(struct r_anal_t *anal, int bigend) {
+R_API int r_anal_set_big_endian(RAnalysis *anal, int bigend) {
 	anal->big_endian = bigend;
 	return R_TRUE;
 }
 
-R_API int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, void *data, int len) { 
-	if (anal && anal->cur && anal->cur->aop)
+R_API int r_anal_aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, int len) {
+	if (anal && aop && anal->cur && anal->cur->aop)
 		return anal->cur->aop(anal, aop, addr, data, len);
-	return R_FALSE;
+	return 0;
 }
 
-R_API int r_anal_bb(struct r_anal_t *anal, struct r_anal_bb_t *bb, ut64 addr, ut8 *buf, ut64 len) {
-	struct r_anal_aop_t *aop;
+R_API int r_anal_bb(RAnalysis *anal, RAnalysisBB *bb, ut64 addr, ut8 *buf, ut64 len) {
+	RAnalysisAop *aop;
 	int oplen, idx = 0;
 
-	bb->addr = addr;
+	if (bb->addr == -1)
+		bb->addr = addr;
 	while (idx < len) {
 		if (!(aop = r_anal_aop_new())) {
 			eprintf ("Error: new (aop)\n");
-			return 0;
+			return -1;
 		}
-		if (!(oplen = r_anal_aop (anal, aop, addr+idx, buf+idx, len-idx))) {
-			free (aop);
+		if ((oplen = r_anal_aop (anal, aop, addr+idx, buf+idx, len-idx)) == 0) {
+			r_anal_aop_free (aop);
 			break;
 		}
 		idx += oplen;
+		bb->size += oplen;
 		r_list_append (bb->aops, aop);
 		switch (aop->type) {
 		case R_ANAL_OP_TYPE_CJMP:
 			bb->fail = aop->fail;
 		case R_ANAL_OP_TYPE_JMP:
 			bb->jump = aop->jump;
-			bb->size = idx;
-			return bb->size;
 		case R_ANAL_OP_TYPE_RET:
-			bb->size = idx;
-			return bb->size;
+			return 0;
 		}
 	}
-	return 0;
+	return bb->size;
 }

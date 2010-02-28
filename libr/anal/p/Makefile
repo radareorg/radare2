@@ -1,30 +1,19 @@
-BINDEPS=foo
 include ../../config.mk
 
-CFLAGS=-I../../include -I../../asm/arch/ -I../arch/ -Wall -fPIC ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}.. -L..
-CFLAGS+=-DR_DEBUG=1
+CFLAGS=-I../../include -I../arch -I../../asm/arch -Wall -fPIC ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
+CFLAGS+=-L../../util -lr_util
 
-ANAL_X86_OBJ=../arch/x86/dislen.o
+foo: all
 
-# TODO: use .mk files
-all: anal_dummy.${EXT_SO} anal_x86.${EXT_SO} anal_x86_bea.${EXT_SO} anal_ppc.${EXT_SO}
+ALL_TARGETS=
+# TODO: rename to enabled plugins
+ARCHS=dummy.mk x86.mk x86_bea.mk ppc.mk
+include $(ARCHS)
+
+all: ${ALL_TARGETS}
 	@true
 
-anal_dummy.${EXT_SO}: anal_dummy.o
-	${CC} ${CFLAGS} -o anal_dummy.${EXT_SO} anal_dummy.o
-	@#strip -s anal_dummy.so
-
-anal_x86.${EXT_SO}: anal_x86.o ${ANAL_X86_OBJ}
-	${CC} ${CFLAGS} -o anal_x86.${EXT_SO} anal_x86.o ${ANAL_X86_OBJ}
-	@#strip -s anal_x86.so
-
-anal_ppc.${EXT_SO}: anal_ppc.o
-	${CC} ${CFLAGS} -o anal_ppc.${EXT_SO} anal_ppc.o
-	@#strip -s anal_ppc.so
-
-anal_x86_bea.${EXT_SO}: anal_x86_bea.o
-	${CC} ${CFLAGS} -o anal_x86_bea.${EXT_SO} anal_x86_bea.o ../../asm/arch/x86/bea/BeaEngine.o
-	@#strip -s anal_x86_bea.so
-
 clean:
-	-rm -f *.so *.o ${ANAL_X86_OBJ}
+	-rm -f *.${EXT_SO} *.o ${STATIC_OBJ}
+
+.PHONY: all clean foo

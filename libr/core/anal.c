@@ -40,7 +40,7 @@ R_API int r_core_anal_bb (struct r_core_t *core, ut64 at, int depth) {
 	RListIter *iter;
 	ut64 jump, fail;
 	ut8 *buf;
-	int len, split = 0;
+	int len, bblen = 0, split = 0;
 
 	if (depth < 0)
 		return R_FALSE;
@@ -76,17 +76,23 @@ R_API int r_core_anal_bb (struct r_core_t *core, ut64 at, int depth) {
 	} else {
 		if (!(buf = malloc (core->blocksize)))
 			return R_FALSE;
-		if ((len = r_io_read_at (&core->io, at, buf, core->blocksize)) == -1)
-			return R_FALSE;
-		if (r_anal_bb (&core->anal, bb, at, buf, len) > 0) {
-			r_list_append (core->anal.bbs, bb);
-			fail = bb->fail;
-			jump = bb->jump;
-			if (fail != -1)
-				r_core_anal_bb (core, fail, depth-1);
-			if (jump != -1)
-				r_core_anal_bb (core, jump, depth-1);
-		} else r_anal_bb_free (bb);
+		do {
+			if ((len = r_io_read_at (&core->io, at+bblen, buf, core->blocksize)) == -1)
+				return R_FALSE;
+			bblen = r_anal_bb (&core->anal, bb, at+bblen, buf, len); 
+			if (bblen == -1) {
+				r_anal_bb_free (bb);
+				return R_FALSE;
+			} else if (bblen == 0) {
+				r_list_append (core->anal.bbs, bb);
+				fail = bb->fail;
+				jump = bb->jump;
+				if (fail != -1)
+					r_core_anal_bb (core, fail, depth-1);
+				if (jump != -1)
+					r_core_anal_bb (core, jump, depth-1);
+			}
+		} while (bblen > 0);
 		free (buf);
 	}
 	return R_TRUE;

@@ -10,12 +10,15 @@
 
 #include "x86/bea/BeaEngine.h"
 
-static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, void *data, int len) {
+int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, int len) {
 	DISASM disasm_obj;
 	ARGTYPE *argptr = NULL;
 	//unsigned long long addr = (ut64)data;
 	char category[1024], argtype[1024];
 	int i;
+
+	if (data == NULL)
+		return 0;
 
 	memset(&disasm_obj, '\0', sizeof(DISASM));
 	disasm_obj.EIP = (long long)(data);
@@ -394,7 +397,7 @@ struct r_anal_handle_t r_anal_plugin_x86_bea = {
 	.aop = &aop
 };
 
-#if !CORELIB
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_x86_bea

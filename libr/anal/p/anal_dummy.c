@@ -4,22 +4,17 @@
 #include <r_lib.h>
 #include <r_anal.h>
 
-static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, void *data)
-{
-	printf("Dummy analysis plugin");
-
-	return R_FALSE;
-}
-
-static struct r_anal_handle_t r_anal_plugin_dummy = {
+struct r_anal_handle_t r_anal_plugin_dummy = {
 	.name = "dummy",
 	.desc = "Dummy analysis plugin",
 	.init = NULL,
 	.fini = NULL,
-	.aop = &aop
+	.aop = NULL
 };
 
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_dummy
 };
+#endif

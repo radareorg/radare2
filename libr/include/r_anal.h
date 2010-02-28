@@ -155,8 +155,8 @@ typedef struct r_anal_handle_t {
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	// TODO: typedef
-	int (*aop)(struct r_anal_t *a, struct r_anal_aop_t *aop,
-			ut64 addr, const ut8 *data, int len);
+	int (*aop)(struct r_anal_t *a, struct r_anal_aop_t *aop, ut64 addr,
+			const ut8 *data, int len);
 	struct list_head list;
 } RAnalysisHandle;
 
@@ -180,8 +180,8 @@ R_API int r_anal_use(struct r_anal_t *anal, const char *name);
 R_API int r_anal_set_bits(struct r_anal_t *anal, int bits);
 R_API int r_anal_set_big_endian(struct r_anal_t *anal, int boolean);
 R_API int r_anal_set_pc(struct r_anal_t *a, ut64 pc);
-R_API int r_anal_aop(struct r_anal_t *anal, struct r_anal_aop_t *aop,
-		ut64 addr, void *data, int len);
+R_API int r_anal_aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr,
+		const ut8 *data, int len);
 R_API int r_anal_bb(struct r_anal_t *anal, struct r_anal_bb_t *bb,
 		ut64 addr, ut8 *buf, ut64 len);
 

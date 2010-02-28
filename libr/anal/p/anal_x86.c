@@ -26,12 +26,12 @@
 
 // NOTE: buf should be at least 16 bytes!
 // XXX addr should be off_t for 64 love
-static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, void *data, int len) {
-	if (anal == NULL || aop == NULL || data == NULL)
+static int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, int len) {
+	if (data == NULL)
 		return 0;
 
 	ut8 *buf = (ut8*)data;
-	memset(aop, '\0', sizeof(struct r_anal_aop_t));
+	memset(aop, '\0', sizeof(RAnalysisAop));
 	aop->type = R_ANAL_OP_TYPE_UNK;
 
 	switch(buf[0]) {
@@ -374,8 +374,8 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, void 
 			aop->jump   = addr+bo+2; //(unsigned long)((buf+1)+5);
 			aop->fail   = addr+2;
 			aop->eob    = 1;
-			aop->addr = addr;
-			return 2;
+			//aop->addr = addr;
+			//return 2;
 		}
 		break;
 	//default:
@@ -391,7 +391,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, void 
 	return aop->length;
 }
 
-static struct r_anal_handle_t r_anal_plugin_x86 = {
+struct r_anal_handle_t r_anal_plugin_x86 = {
 	.name = "x86",
 	.desc = "X86 analysis plugin",
 	.init = NULL,
@@ -399,7 +399,9 @@ static struct r_anal_handle_t r_anal_plugin_x86 = {
 	.aop = &aop
 };
 
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_x86
 };
+#endif

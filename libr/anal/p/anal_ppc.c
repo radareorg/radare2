@@ -7,7 +7,7 @@
 
 // NOTE: buf should be at least 16 bytes!
 // XXX addr should be off_t for 64 love
-static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, const ut8 *bytes, int len) {
+int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *bytes, int len) {
 //int arch_ppc_aop(ut64 addr, const u8 *bytes, struct aop_t *aop)
 // TODO swap endian here??
 	int opcode = (bytes[0] & 0xf8) >> 3; // bytes 0-5
@@ -17,7 +17,7 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, const
 	//if (baddr>0x7fff)
 	//      baddr = -baddr;
 
-	memset (aop, '\0', sizeof (struct r_anal_aop_t));
+	memset (aop, '\0', sizeof (RAnalysisAop));
 	aop->type = R_ANAL_OP_TYPE_NOP;
 	aop->length = 4;
 
@@ -70,10 +70,11 @@ static int aop(struct r_anal_t *anal, struct r_anal_aop_t *aop, ut64 addr, const
 		break;
 	}
 	aop->addr = addr;
-	return 4;
+	aop->length = 4;
+	return aop->length;
 }
 
-static struct r_anal_handle_t r_anal_plugin_ppc = {
+struct r_anal_handle_t r_anal_plugin_ppc = {
 	.name = "ppc",
 	.desc = "PowerPC analysis plugin",
 	.init = NULL,
@@ -81,10 +82,12 @@ static struct r_anal_handle_t r_anal_plugin_ppc = {
 	.aop = &aop
 };
 
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_ppc
 };
+#endif
 
 #if 0
 NOTES:
