@@ -17,8 +17,7 @@
 static char *r_line_nullstr = "";
 
 /* initialize history stuff */
-R_API int r_line_dietline_init()
-{
+R_API int r_line_dietline_init() {
 #if 0
 	if (labels==NULL)
 		labels = malloc(BLOCK);
@@ -34,9 +33,8 @@ R_API int r_line_dietline_init()
 	return R_TRUE;
 }
 
-static int r_line_readchar()
-{
-	char buf[2];
+static int r_line_readchar() {
+	ut8 buf[2];
 	*buf = '\0';
 #if __WINDOWS__
 	BOOL ret;
@@ -51,14 +49,20 @@ static int r_line_readchar()
 		return -1;
 	SetConsoleMode (h, mode);
 #else
-	if (read (0, buf, 1) != 1)
-		return -1;
+	do {
+		if (read (0, buf, 1) != 1)
+			return -1;
+		// TODO: add support for other invalid chars
+		if (*buf==0xc2 || *buf==0xc3) {
+			read (0, buf+1, 1);
+			*buf = '\0';
+		}	
+	} while (*buf == '\0');
 #endif
 	return buf[0];
 }
 
-R_API int r_line_hist_add(const char *line)
-{
+R_API int r_line_hist_add(const char *line) {
 	if (I.history.top>=I.history.size)
 		I.history.top = I.history.index = 0; // workaround
 	if (*line) { // && I.history.index < I.history.size) {
@@ -69,8 +73,7 @@ R_API int r_line_hist_add(const char *line)
 	return R_FALSE;
 }
 
-static int r_line_hist_up()
-{
+static int r_line_hist_up() {
 	if (I.history.index>0) {
 		strncpy (I.buffer.data, I.history.data[--I.history.index], R_LINE_BUFSIZE-1);
 		I.buffer.index = I.buffer.length = strlen (I.buffer.data);
@@ -79,8 +82,7 @@ static int r_line_hist_up()
 	return R_FALSE;
 }
 
-static int r_line_hist_down()
-{
+static int r_line_hist_down() {
 	I.buffer.index = 0;
 	if (I.history.index<I.history.size) {
 		if (I.history.data[I.history.index] == NULL) {
@@ -95,8 +97,7 @@ static int r_line_hist_down()
 	return R_FALSE;
 }
 
-R_API int r_line_hist_list()
-{
+R_API int r_line_hist_list() {
 	int i = 0;
 	if (I.history.data != NULL)
 	for (i=0; i<I.history.size; i++) {
@@ -107,8 +108,7 @@ R_API int r_line_hist_list()
 	return i;
 }
 
-R_API void r_line_hist_free()
-{
+R_API void r_line_hist_free() {
 	int i;
 	if (I.history.data != NULL)
 	for (i=0; i<I.history.size; i++) {
@@ -121,8 +121,7 @@ R_API void r_line_hist_free()
 }
 
 /* load history from file. if file == NULL load from ~/.<prg>.history or so */
-R_API int r_line_hist_load(const char *file)
-{
+R_API int r_line_hist_load(const char *file) {
 	char buf[1024];
 	FILE *fd;
 
@@ -142,8 +141,7 @@ R_API int r_line_hist_load(const char *file)
 	return R_TRUE;
 }
 
-R_API int r_line_hist_save(const char *file)
-{
+R_API int r_line_hist_save(const char *file) {
 	char buf[1024];
 	FILE *fd;
 	int i;
@@ -160,14 +158,12 @@ R_API int r_line_hist_save(const char *file)
 	return R_TRUE;
 }
 
-R_API int r_line_hist_chop(const char *file, int limit)
-{
+R_API int r_line_hist_chop(const char *file, int limit) {
 	/* TODO */
 	return 0;
 }
 
-R_API void r_line_autocomplete()
-{
+R_API void r_line_autocomplete() {
 	int argc;
 	const char **argv;
 	int i, opt, len = 0;
@@ -217,8 +213,7 @@ R_API void r_line_autocomplete()
 
 /* main readline function */
 //R_API char *r_line_readline(const char *prompt, RLineCallba 
-R_API char *r_line_readline()
-{
+R_API char *r_line_readline() {
 	char buf[10];
 	int ch, i, gcomp = 0; /* grep completion */
 	int columns = r_cons_get_size (NULL)-2;
