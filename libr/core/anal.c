@@ -103,8 +103,10 @@ R_API int r_core_anal_graph (struct r_core_t *core) {
 	RListIter *iter;
 	char *str;
 	int reflines = r_config_get_i(&core->config, "asm.reflines");
+	int bytes = r_config_get_i(&core->config, "asm.bytes");
 
 	r_config_set_i(&core->config, "asm.reflines", 0);
+	r_config_set_i(&core->config, "asm.bytes", 0);
 	r_cons_printf ("digraph code {\n");
 	r_cons_printf ("\tgraph [bgcolor=white];\n");
 	r_cons_printf ("\tnode [color=lightgray, style=filled shape=box fontname=\"Courier\" fontsize=\"8\"];\n");
@@ -123,5 +125,6 @@ R_API int r_core_anal_graph (struct r_core_t *core) {
 	}
 	r_cons_printf ("}\n");
 	r_config_set_i(&core->config, "asm.reflines", reflines);
+	r_config_set_i(&core->config, "asm.bytes", bytes);
 	return R_TRUE;
 }
