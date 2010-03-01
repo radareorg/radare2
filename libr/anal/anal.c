@@ -157,7 +157,7 @@ R_API int r_anal_bb(RAnalysis *anal, RAnalysisBB *bb, ut64 addr, ut8 *buf, ut64 
 	while (idx < len) {
 		if (!(aop = r_anal_aop_new())) {
 			eprintf ("Error: new (aop)\n");
-			return -1;
+			return R_ANAL_RET_ERROR;
 		}
 		if ((oplen = r_anal_aop (anal, aop, addr+idx, buf+idx, len-idx)) == 0) {
 			r_anal_aop_free (aop);
@@ -172,8 +172,67 @@ R_API int r_anal_bb(RAnalysis *anal, RAnalysisBB *bb, ut64 addr, ut8 *buf, ut64 
 		case R_ANAL_OP_TYPE_JMP:
 			bb->jump = aop->jump;
 		case R_ANAL_OP_TYPE_RET:
-			return 0;
+			return R_ANAL_RET_END;
 		}
 	}
 	return bb->size;
+}
+
+R_API int r_anal_bb_split(RAnalysis *anal, RAnalysisBB *bb, RList *bbs, ut64 addr) {
+	struct r_anal_bb_t *bbi;
+	struct r_anal_aop_t *aopi;
+	RListIter *iter;
+
+	iter = r_list_iterator (bbs);
+	while (r_list_iter_next (iter)) {
+		bbi = r_list_iter_get (iter);
+		if (addr == bbi->addr)
+			return R_ANAL_RET_DUP;
+		else if (addr > bbi->addr && addr < bbi->addr + bbi->size) {
+			r_list_append (bbs, bb);
+			bb->addr = addr;
+			bb->size = bbi->addr + bbi->size - addr;
+			bb->jump = bbi->jump;
+			bb->fail = bbi->fail;
+			bbi->size = addr - bbi->addr;
+			bbi->jump = addr;
+			bbi->fail = -1;
+			iter = r_list_iterator (bbi->aops);
+			while (r_list_iter_next (iter)) {
+				aopi = r_list_iter_get (iter);
+				if (aopi->addr >= addr) {
+					r_list_split (bbi->aops, aopi);
+					r_list_append (bb->aops, aopi);
+				}
+			}
+			return R_ANAL_RET_END;
+		}
+	}
+	return R_ANAL_RET_NEW;
+}
+
+R_API int r_anal_bb_overlap(RAnalysis *anal, RAnalysisBB *bb, RList *bbs) {
+	struct r_anal_bb_t *bbi;
+	struct r_anal_aop_t *aopi;
+	RListIter *iter;
+
+	iter = r_list_iterator (bbs);
+	while (r_list_iter_next (iter)) {
+		bbi = r_list_iter_get (iter);
+		if (bbi->addr > bb->addr && bbi->addr < bb->addr+bb->size) {
+			bb->size = bbi->addr - bb->addr;
+			bb->jump = bbi->addr;
+			bb->fail = -1;
+			iter = r_list_iterator (bb->aops);
+			while (r_list_iter_next (iter)) {
+				aopi = r_list_iter_get (iter);
+				if (aopi->addr >= bbi->addr) {
+					r_list_unlink (bb->aops, aopi);
+				}
+			}
+			r_list_append (bbs, bb);
+			return R_ANAL_RET_END;
+		}
+	}
+	return R_ANAL_RET_NEW;
 }

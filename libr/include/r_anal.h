@@ -98,6 +98,13 @@ enum {
 	R_ANAL_REFLINE_WIDE = 2,
 };
 
+enum {
+	R_ANAL_RET_ERROR = -1,
+	R_ANAL_RET_DUP,
+	R_ANAL_RET_NEW,
+	R_ANAL_RET_END
+};
+
 typedef struct r_anal_t {
 	int bits;
 	int big_endian;
@@ -190,5 +197,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 		ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout);
 R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list,
 		ut64 addr, char *str, int opts);
+R_API int r_anal_bb_split(RAnalysis *anal, RAnalysisBB *bb, RList *bbs, ut64 addr);
+R_API int r_anal_bb_overlap(RAnalysis *anal, RAnalysisBB *bb, RList *bbs);
 #endif
 #endif

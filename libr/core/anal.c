@@ -35,64 +35,41 @@ static char *r_core_anal_graph_label (struct r_core_t *core, ut64 addr, ut64 siz
 }
 
 R_API int r_core_anal_bb (struct r_core_t *core, ut64 at, int depth) {
-	struct r_anal_bb_t *bb, *bbi;
-	struct r_anal_aop_t *aopi;
-	RListIter *iter;
+	struct r_anal_bb_t *bb;
 	ut64 jump, fail;
 	ut8 *buf;
-	int len, bblen = 0, split = 0;
+	int ret, buflen, bblen = 0;
 
 	if (depth < 0)
 		return R_FALSE;
-	iter = r_list_iterator (core->anal.bbs);
-	while (r_list_iter_next (iter)) {
-		bbi = r_list_iter_get (iter);
-		if (at == bbi->addr)
-			return R_FALSE;
-		else if (at > bbi->addr && at < bbi->addr + bbi->size) {
-			split = 1;
-			break;
-		}
-	}
 	if (!(bb = r_anal_bb_new()))
 		return R_FALSE;
-	if (split) {
-		r_list_append (core->anal.bbs, bb);
-		bb->addr = at;
-		bb->size = bbi->addr + bbi->size - at;
-		bb->jump = bbi->jump;
-		bb->fail = bbi->fail;
-		bbi->size = at - bbi->addr;
-		bbi->jump = at;
-		bbi->fail = -1;
-		iter = r_list_iterator (bbi->aops);
-		while (r_list_iter_next (iter)) {
-			aopi = r_list_iter_get (iter);
-			if (aopi->addr >= at) {
-				r_list_split (bbi->aops, aopi);
-				r_list_append (bb->aops, aopi);
-			}
-		}
-	} else {
+	ret = r_anal_bb_split (&core->anal, bb, core->anal.bbs, at);
+	if (ret == R_ANAL_RET_DUP) { /* Dupped bb */
+		r_anal_bb_free (bb);
+		return R_FALSE;
+	} else if (ret == R_ANAL_RET_NEW) { /* New bb */
 		if (!(buf = malloc (core->blocksize)))
 			return R_FALSE;
 		do {
-			if ((len = r_io_read_at (&core->io, at+bblen, buf, core->blocksize)) == -1)
+			if ((buflen = r_io_read_at (&core->io, at+bblen, buf, core->blocksize)) == -1)
 				return R_FALSE;
-			bblen = r_anal_bb (&core->anal, bb, at+bblen, buf, len); 
-			if (bblen == -1) {
+			bblen = r_anal_bb (&core->anal, bb, at+bblen, buf, buflen); 
+			if (bblen == R_ANAL_RET_ERROR) { /* Error analyzing bb */
 				r_anal_bb_free (bb);
 				return R_FALSE;
-			} else if (bblen == 0) {
-				r_list_append (core->anal.bbs, bb);
-				fail = bb->fail;
-				jump = bb->jump;
-				if (fail != -1)
-					r_core_anal_bb (core, fail, depth-1);
-				if (jump != -1)
-					r_core_anal_bb (core, jump, depth-1);
+			} else if (bblen == R_ANAL_RET_END) { /* bb analysis complete */
+				if (r_anal_bb_overlap (&core->anal, bb, core->anal.bbs) == R_ANAL_RET_NEW) {
+					r_list_append (core->anal.bbs, bb);
+					fail = bb->fail;
+					jump = bb->jump;
+					if (fail != -1)
+						r_core_anal_bb (core, fail, depth-1);
+					if (jump != -1)
+						r_core_anal_bb (core, jump, depth-1);
+				}
 			}
-		} while (bblen > 0);
+		} while (bblen != R_ANAL_RET_END);
 		free (buf);
 	}
 	return R_TRUE;
