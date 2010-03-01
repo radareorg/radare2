@@ -1,12 +1,11 @@
-/* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2010 pancake<nopcode.org> */
 
 #include "r_cons.h"
 #include "r_util.h"
 #include "r_print.h"
 
-static void print_mem_help()
-{
-	printf(
+static void print_mem_help(RPrint *p) {
+	p->printf (
 	"Usage: pm [times][format] [arg0 arg1]\n"
 	"Example: pm 10xiz pointer length string\n"
 	"Example: pm {array_size}b @ array_base\n"
@@ -30,8 +29,7 @@ static void print_mem_help()
 }
 
 /* TODO: needs refactoring */
-void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int len, const char *fmt)
-{
+R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int len, const char *fmt) {
 	unsigned char buffer[256];
 	int endian = 0;
 	int i,j,idx;
@@ -45,51 +43,52 @@ void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int len, con
 	char namefmt[8];
 	i = j = 0;
 
-	while(*arg && *arg==' ') arg = arg +1;
+	while (*arg && *arg==' ') arg = arg +1;
 	/* get times */
 	otimes = times = atoi(arg);
 	if (times > 0)
-		while((*arg>='0'&&*arg<='9')) arg = arg +1;
-	bracket = strchr(arg,'{');
+		while ((*arg>='0'&&*arg<='9')) arg = arg +1;
+	bracket = strchr (arg,'{');
 	if (bracket) {
-		char *end = strchr(arg,'}');
+		char *end = strchr (arg,'}');
 		if (end == NULL) {
-			fprintf(stderr, "No end bracket. Try pm {ecx}b @ esi\n");
+			eprintf ("No end bracket. Try pm {ecx}b @ esi\n");
 			return;
 		}
 		*end='\0';
-		times = r_num_math(NULL, bracket+1);
+		times = r_num_math (NULL, bracket+1);
 		arg = end + 1;
 	}
 
 	if (arg[0]=='\0') {
-		print_mem_help();
+		print_mem_help (p);
 		return;
 	}
 	/* get args */
-	args = strchr(arg, ' ');
+	args = strchr (arg, ' ');
 	if (args) {
 		int l=0, maxl = 0;
 		argend = args;
-		args = strdup(args+1);
-		nargs = r_str_word_set0(args+1);
+		args = strdup (args+1);
+		nargs = r_str_word_set0 (args+1);
 		if (nargs == 0)
-			R_FREE(args);
-		for(i=0;i<nargs;i++) {
-			int len = strlen(r_str_word_get0(args+1, i));
+			R_FREE (args);
+		for (i=0;i<nargs;i++) {
+			int len = strlen (r_str_word_get0 (args+1, i));
 			if (len>maxl) maxl = len;
 		}
 		l++;
-		sprintf(namefmt, "%%%ds : ", maxl);
+		sprintf (namefmt, "%%%ds : ", maxl);
 	}
 
 	/* go format */
 	i = 0;
-	if (times==0) otimes=times=1;
+	if (times==0)
+		otimes = times = 1;
 	for(;times;times--) { // repeat N times
 		const char * orig = arg;
 		if (otimes>1)
-			p->printf("0x%08llx [%d] {\n", seek+i, otimes-times);
+			p->printf ("0x%08llx [%d] {\n", seek+i, otimes-times);
 		for(idx=0;arg<argend && idx<len;idx++, arg=arg+1) {
 			addr = 0LL;
 			if (endian)
@@ -117,14 +116,13 @@ void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int len, con
 				idx--;
 				continue;
 			case '?': // help
-				print_mem_help();
+				print_mem_help (p);
 				idx--;
 				i=len; // exit
 				continue;
 			}
-			if (idx<nargs) {
-				p->printf(namefmt, r_str_word_get0(args, idx));
-			}
+			if (idx<nargs)
+				p->printf (namefmt, r_str_word_get0(args, idx));
 			/* cmt chars */
 			switch(tmp) {
 	#if 0

@@ -26,6 +26,12 @@ enum {
 	//..
 };
 
+/* TODO: move to r_anal */
+typedef struct r_debug_frame_t {
+	ut64 addr;
+	int size;
+} RDebugFrame;
+
 typedef struct r_debug_map_t {
 	char *name;
 	ut64 addr;

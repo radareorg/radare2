@@ -14,7 +14,6 @@ typedef struct r_list_t {
 	RListFree free;
 } RList;
 
-
 #ifdef R_API
 
 // XXX THIS IS BROKEN

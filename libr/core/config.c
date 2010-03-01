@@ -16,6 +16,11 @@ static int config_ioffio_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_bigendian_callback(void *user, void *data) {
+	/* TODO: change endian in r_asm and others */
+	return R_TRUE;
+}
+
 static int config_iova_callback(void *user, void *data) {
 	struct r_core_t *core = (struct r_core_t *) user;
 	struct r_config_node_t *node = (struct r_config_node_t *) data;
@@ -120,12 +125,17 @@ R_API int r_core_config_init(struct r_core_t *core) {
 	r_config_set (cfg, "cfg.fortunes", "true");
 	r_config_set (cfg, "file.type", "");
 	/* TODO cmd */
-	r_config_set(cfg, "cmd.prompt", "");
-	r_config_set(cfg, "cmd.vprompt", ""); //? eip && ?? s eip");
+	r_config_set (cfg, "cmd.prompt", "");
+	r_config_set (cfg, "cmd.vprompt", ""); //? eip && ?? s eip");
 	//r_config_set(cfg, "cmd.vprompt2", "CFV");
 	//r_config_set(cfg, "cmd.vprompt3", "");
-	r_config_set(cfg, "cmd.bp", "");
-	r_config_set_cb(cfg, "dbg.swstep", "false", &config_swstep_callback);
+	r_config_set (cfg, "cmd.bp", "");
+	r_config_set_cb (cfg, "dbg.swstep", "false", &config_swstep_callback);
+#if LIL_ENDIAN
+	r_config_set_cb (cfg, "cfg.bigendian", "false", &config_bigendian_callback);
+#else
+	r_config_set_cb (cfg, "cfg.bigendian", "true", &config_bigendian_callback);
+#endif
 #if 0
 	node = config_set("asm.profile", "default");
 //	node->callback = &config_asm_profile;

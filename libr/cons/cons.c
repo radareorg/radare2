@@ -159,8 +159,8 @@ R_API void r_cons_flush() {
 		return;
 	if (I.is_interactive) {
 		if (I.buffer_len > CONS_MAX_USER) {
-			if (r_cons_yesno ('n',"Do you want to print %d bytes? (y/N)",
-					I.buffer_len)==0) {
+			if (!r_cons_yesno ('n',"Do you want to print %d bytes? (y/N)",
+					I.buffer_len)) {
 				r_cons_reset ();
 				return;
 			}
