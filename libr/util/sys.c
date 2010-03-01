@@ -10,8 +10,7 @@
 #include <sys/types.h>
 /* TODO: import stuff fron bininfo/p/bininfo_addr2line */
 
-R_API char *r_sys_cmd_strf(const char *cmd, ...)
-{
+R_API char *r_sys_cmd_strf(const char *cmd, ...) {
 	// FIXME Implement r_sys_cmd_strf
 	return NULL;
 }
@@ -44,8 +43,7 @@ R_API int r_sys_setenv(const char *key, const char *value, int ow)
 #endif
 }
 
-R_API const char *r_sys_getenv(const char *key)
-{
+R_API const char *r_sys_getenv(const char *key) {
 #if __UNIX__
 	return getenv(key);
 #else
@@ -53,8 +51,7 @@ R_API const char *r_sys_getenv(const char *key)
 #endif
 }
 
-R_API char *r_sys_getcwd()
-{
+R_API char *r_sys_getcwd() {
 #if __UNIX__
 	return getcwd(NULL, 0);
 #elif __WINDOWS__
@@ -64,8 +61,7 @@ R_API char *r_sys_getcwd()
 #endif
 }
 
-R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, char **sterr)
-{
+R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, char **sterr) {
 #if __UNIX__
 	char *inputptr = (char *)input;
 	int bytes = 0;
@@ -142,10 +138,29 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 #endif
 }
 
-R_API int r_sys_cmd (const char *str)
-{
+R_API int r_sys_cmd (const char *str) {
 /* TODO: implement for other systems */
+#if __FreeBSD__
+	/* freebsd system() is broken */
+	int fds[2];
+	int st,pid;
+	char *argv[] ={ "/bin/sh", "-c", input, NULL};
+	pipe(fds);
+	/* not working ?? */
+	//pid = rfork(RFPROC|RFCFDG);
+	pid = vfork();
+	if (pid == 0) {
+		dup2(1, fds[1]);
+		execv(argv[0], argv);
+		_exit(127); /* error */
+	} else {
+		dup2(1, fds[0]);
+		waitpid(pid, &st, 0);
+	}
+	return WEXITSTATUS(st);
+#else
 	return system (str);
+#endif
 }
 
 R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {

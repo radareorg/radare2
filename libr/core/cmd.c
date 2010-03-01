@@ -688,7 +688,8 @@ static int cmd_print(void *data, const char *input) {
 	/* XXX: This is only for pd/pD ??? */
 	if (input[0] && input[1]) {
 		l = (int) r_num_math (&core->num, input+2);
-		if (input[0] != 'd') {
+		// exceptions are: disasm and memoryfmt */
+		if (input[0] != 'd' && input[0] != 'm') {
 			if (l>0) len = l;
 			if (l>tbs) r_core_block_size (core, l);
 			l = 9999;
@@ -748,7 +749,7 @@ static int cmd_print(void *data, const char *input) {
 				if (show_color) {
 					switch (analop.type) {
 					case R_ANAL_OP_TYPE_NOP:
-						r_cons_printf (Color_GRAY);
+						r_cons_printf (Color_BLUE);
 						break;
 					case R_ANAL_OP_TYPE_JMP:
 					case R_ANAL_OP_TYPE_UJMP:
@@ -782,7 +783,7 @@ static int cmd_print(void *data, const char *input) {
 					if (strchr(line, '>'))
 						memset(line, ' ', strlen(line));
 					r_cons_printf("%s", line);
-					r_cons_printf("\t\t; ------------------------------------\n");
+					r_cons_printf("; ------------------------------------\n");
 				}
 			}
 			free (reflines);
@@ -815,6 +816,9 @@ static int cmd_print(void *data, const char *input) {
 	case '8':
 		r_print_bytes (&core->print, core->block, len, "%02x");
 		break;
+	case 'm':
+		r_print_format (&core->print, core->offset, core->block, len, input+1);
+		break;
 	default:
 		r_cons_printf (
 		"Usage: p[fmt] [len]\n"
@@ -823,6 +827,7 @@ static int cmd_print(void *data, const char *input) {
 		" po [len]    octal dump of N bytes\n"
 		" pc [len]    output C format\n"
 		" ps [len]    print string\n"
+		" pm [fmt]    print formatted memory\n" // TODO: rename to pf??
 		" pS [len]    print wide string\n"
 		" pd [len]    disassemble N opcodes\n"
 		" pD [len]    disassemble N bytes\n"
@@ -1382,29 +1387,7 @@ static int cmd_visual(void *data, const char *input) {
 }
 
 static int cmd_system(void *data, const char *input) {
-	//struct r_core_t *core = (struct r_core_t *)data;
-	// slurped from teh old radare_system
-#if __FreeBSD__
-	/* freebsd system() is broken */
-	int fds[2];
-	int st,pid;
-	char *argv[] ={ "/bin/sh", "-c", input, NULL};
-	pipe(fds);
-	/* not working ?? */
-	//pid = rfork(RFPROC|RFCFDG);
-	pid = vfork();
-	if (pid == 0) {
-		dup2(1, fds[1]);
-		execv(argv[0], argv);
-		_exit(127); /* error */
-	} else {
-		dup2(1, fds[0]);
-		waitpid(pid, &st, 0);
-	}
-	return WEXITSTATUS(st);
-#else
 	return r_sys_cmd (input);
-#endif
 }
 
 static int cmd_open(void *data, const char *input) {
@@ -1419,11 +1402,11 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	default:
 	case '?':
-		eprintf("Usage: o [file] ([offset])\n"
-			" o                   ; list opened files\n"
-			" o /bin/ls           ; open /bin/ls file\n"
-			" o /bin/ls 0x8048000 ; map file\n"
-			" o-1                 ; close file index 1\n");
+		eprintf ("Usage: o [file] ([offset])\n"
+		" o                   ; list opened files\n"
+		" o /bin/ls           ; open /bin/ls file\n"
+		" o /bin/ls 0x8048000 ; map file\n"
+		" o-1                 ; close file index 1\n");
 		break;
 	case ' ':
 		ptr = strchr (input+1, ' ');
@@ -1475,8 +1458,8 @@ static int cmd_meta(void *data, const char *input) {
 		// TODO: is this an exception compared to other C? commands?
 		if (input[1]==' ') input = input+1;
 		if (input[1]=='-')
-			r_meta_del(&core->meta, R_META_COMMENT, core->offset, 1, input+2);
-		else r_meta_add(&core->meta, R_META_COMMENT, core->offset, 1, input+1);
+			r_meta_del (&core->meta, R_META_COMMENT, core->offset, 1, input+2);
+		else r_meta_add (&core->meta, R_META_COMMENT, core->offset, 1, input+1);
 		break;
 	case 'S':
 	case 's':
@@ -1493,7 +1476,7 @@ static int cmd_meta(void *data, const char *input) {
 		if (p) {
 			t = strdup (p+1);
 			//eprintf ("T=(%s)\n", t);
-			p = strchr(t, ' ');
+			p = strchr (t, ' ');
 			if (p) {
 				*p='\0';
 				strncpy (fun_name, p+1, sizeof (fun_name));
@@ -1506,7 +1489,7 @@ static int cmd_meta(void *data, const char *input) {
 		break;
 	case '\0':
 	case '?':
-		eprintf(
+		eprintf (
 		"Usage: C[CDF?] [arg]\n"
 		" CL [addr]               ; show 'code line' information (bininfo)\n"
 		" CF [size] [name] [addr] [name] ; register function size here (TODO)\n"
@@ -1567,25 +1550,25 @@ static int r_core_cmd_pipe(struct r_core_t *core, char *radare_cmd, char *shell_
 	int fds[2];
 	int stdout_fd, status;
 
-	stdout_fd = dup(1);
-	pipe(fds);
-	radare_cmd = r_str_trim_head(radare_cmd);
-	shell_cmd = r_str_trim_head(shell_cmd);
+	stdout_fd = dup (1);
+	pipe (fds);
+	radare_cmd = r_str_trim_head (radare_cmd);
+	shell_cmd = r_str_trim_head (shell_cmd);
 	if (fork()) {
 		dup2(fds[1], 1);
-		close(fds[1]);
-		close(fds[0]);
-		r_core_cmd(core, radare_cmd, 0);
-		r_cons_flush();
-		close(1);
-		wait(&status);
-		dup2(stdout_fd, 1);
-		close(stdout_fd);
+		close (fds[1]);
+		close (fds[0]);
+		r_core_cmd (core, radare_cmd, 0);
+		r_cons_flush ();
+		close (1);
+		wait (&status);
+		dup2 (stdout_fd, 1);
+		close (stdout_fd);
 	} else {
-		close(fds[1]);
-		dup2(fds[0], 0);
-		dup2(2, 1);
-		execl("/bin/sh", "sh", "-c", shell_cmd, NULL);
+		close (fds[1]);
+		dup2 (fds[0], 0);
+		dup2 (2, 1);
+		execl ("/bin/sh", "sh", "-c", shell_cmd, NULL);
 	}
 	return status;
 #else
@@ -1666,10 +1649,10 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd) {
 				int ret;
 				printf("> "); fflush(stdout);
 				fgets(buf, 1023, stdin); // XXX use r_line ??
-				if (feof(stdin))
+				if (feof (stdin))
 					break;
-				buf[strlen(buf)-1]='\0';
-				ret = strlen(buf);
+				buf[strlen (buf)-1]='\0';
+				ret = strlen (buf);
 				core->oobi_len+=ret;
 				core->oobi = realloc (core->oobi, core->oobi_len+1);
 				if (!strcmp (buf, str))
@@ -2058,6 +2041,18 @@ static int cmd_debug(void *data, const char *input) {
 				sig, pid);
 			r_debug_kill (&core->dbg, sig);
 		} else eprintf ("Invalid arguments\n");
+		break;
+	case 'f':
+		{
+			int i = 0;
+			RList *list = r_debug_frames (&core->dbg);
+			RListIter *iter = r_list_iterator (list);
+			while (r_list_iter_next (iter)) {
+				RDebugFrame *frame = r_list_iter_get (iter);
+				r_cons_printf ("%d  0x%08llx  %d\n", i++, frame->addr, frame->size);
+			}
+			r_list_destroy (list);
+		}
 		break;
 	case 's':
 		times = atoi (input+2);

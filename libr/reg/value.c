@@ -5,8 +5,7 @@
 
 /* XXX: reg get can be accessed using the print_format stuff */
 // This is the same as r_buf_set_bits, arenas can be r_buf
-R_API ut64 r_reg_get_value(struct r_reg_t *reg, struct r_reg_item_t *item)
-{
+R_API ut64 r_reg_get_value(struct r_reg_t *reg, struct r_reg_item_t *item) {
 	struct r_reg_set_t *regset;
 	ut32 v32;
 	ut16 v16;
@@ -14,42 +13,39 @@ R_API ut64 r_reg_get_value(struct r_reg_t *reg, struct r_reg_item_t *item)
 	ut64 ret = 0LL;
 	int off = BITS2BYTES(item->offset);
 	regset = &reg->regset[item->type];
-	if (item) {
-		switch(item->size) {
-		case 8:
-			memcpy(&v8, regset->arena->bytes+off, 1);
-			ret = v8;
-			break;
-		case 16:
-			memcpy(&v16, regset->arena->bytes+off, 2);
-			ret = v16;
-			break;
-		case 32:
-			memcpy(&v32, regset->arena->bytes+off, 4);
-			ret = v32;
-			break;
-		case 64:
-			memcpy(&ret, regset->arena->bytes+off, 8);
-			break;
-		case 1:
-			ret = (regset->arena->bytes[item->offset/8] & (1<<(item->offset%8)))?1:0;
-			break;
-		default:
-			printf("get_value : TODO: implement bit level\n");
-			break;
-		}
+	if (item)
+	switch (item->size) {
+	case 8:
+		memcpy (&v8, regset->arena->bytes+off, 1);
+		ret = v8;
+		break;
+	case 16:
+		memcpy (&v16, regset->arena->bytes+off, 2);
+		ret = v16;
+		break;
+	case 32:
+		memcpy (&v32, regset->arena->bytes+off, 4);
+		ret = v32;
+		break;
+	case 64:
+		memcpy (&ret, regset->arena->bytes+off, 8);
+		break;
+	case 1:
+		ret = (regset->arena->bytes[item->offset/8] & (1<<(item->offset%8)))?1:0;
+		break;
+	default:
+		eprintf ("r_reg_get_value: Bit size %d not supported\n", item->size);
+		break;
 	}
 	return ret;
 }
 
 // TODO: cleanup this ugly code
-R_API int r_reg_set_value(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 value)
-{
+R_API int r_reg_set_value(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 value) {
 	ut64 v64;
 	ut32 v32;
 	ut16 v16;
-	ut8 v8;
-	ut8 *src;
+	ut8 v8, *src;
 
 	if (!item)
 		return R_FALSE;
@@ -73,35 +69,31 @@ R_API int r_reg_set_value(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 v
 		}
 		break;
 	default: 
-		eprintf ("set_value : TODO: implement bit level\n");
+		eprintf ("r_reg_set_value: Bit size %d not supported\n", item->size);
 		break;
 	}
-	r_mem_copybits(reg->regset[item->type].arena->bytes+
-		BITS2BYTES(item->offset), src, item->size);
+	r_mem_copybits (reg->regset[item->type].arena->bytes+
+		BITS2BYTES (item->offset), src, item->size);
 	return R_TRUE;
 }
 
 /* floating point */
 // XXX: use double for better precission?
-R_API float r_reg_get_fvalue(struct r_reg_t *reg, struct r_reg_item_t *item)
-{
+R_API float r_reg_get_fvalue(struct r_reg_t *reg, struct r_reg_item_t *item) {
 	return 0.0;
 }
 
-R_API int r_reg_set_fvalue(struct r_reg_t *reg, struct r_reg_item_t *item, float value)
-{
+R_API int r_reg_set_fvalue(struct r_reg_t *reg, struct r_reg_item_t *item, float value) {
 	int ret = R_FALSE;
 	return ret;
 }
 
 /* packed registers */
-R_API ut64 r_reg_get_pvalue(struct r_reg_t *reg, struct r_reg_item_t *item, int packidx)
-{
+R_API ut64 r_reg_get_pvalue(struct r_reg_t *reg, struct r_reg_item_t *item, int packidx) {
 	return 0LL;
 }
 
-R_API int r_reg_set_pvalue(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 value, int packidx)
-{
+R_API int r_reg_set_pvalue(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 value, int packidx) {
 	int ret = R_FALSE;
 	return ret;
 }

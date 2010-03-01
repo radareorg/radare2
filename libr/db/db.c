@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include "r_db.h"
 
@@ -7,22 +7,19 @@ Configurable options:
  - allow dupped nodes? (two times the same pointer?)
 #endif
 
-R_API void r_db_init(struct r_db_t *db)
-{
+R_API void r_db_init(struct r_db_t *db) {
 	memset(&db->blocks, '\0', sizeof(db->blocks));
 	db->id_min = -1;
 	db->id_max = -1;
 }
 
-R_API struct r_db_t *r_db_new()
-{
+R_API struct r_db_t *r_db_new() {
 	struct r_db_t *db = (struct r_db_t *)malloc(sizeof(struct r_db_t));
 	r_db_init(db);
 	return db;
 }
 
-R_API struct r_db_block_t *r_db_block_new()
-{
+R_API struct r_db_block_t *r_db_block_new() {
 	struct r_db_block_t *ptr = (struct r_db_block_t *)
 		malloc(sizeof(struct r_db_block_t));
 	ptr->data = NULL;
@@ -30,8 +27,7 @@ R_API struct r_db_block_t *r_db_block_new()
 	return ptr;
 }
 
-R_API int r_db_add_id(struct r_db_t *db, int key, int size)
-{
+R_API int r_db_add_id(struct r_db_t *db, int key, int size) {
 	key &= 0xff;
 	if (db->blocks[key])
 		return R_FALSE;
@@ -47,8 +43,7 @@ R_API int r_db_add_id(struct r_db_t *db, int key, int size)
 	return R_TRUE;
 }
 
-static int _r_db_add_internal(struct r_db_t *db, int key, void *b)
-{
+static int _r_db_add_internal(struct r_db_t *db, int key, void *b) {
 	int i, idx, len, size;
 	struct r_db_block_t *block;
 	if (key<0 || key>255)
@@ -59,7 +54,7 @@ static int _r_db_add_internal(struct r_db_t *db, int key, void *b)
 		block = r_db_block_new();
 		db->blocks[key] = block;
 	}
-	for(i=0;i<size;i++) {
+	for (i=0;i<size;i++) {
 		idx = (((ut8 *)b)[key+i]) & 0xff;
 		if (block->childs[idx] == NULL)
 			block->childs[idx] = r_db_block_new();
@@ -81,34 +76,31 @@ static int _r_db_add_internal(struct r_db_t *db, int key, void *b)
 	return (block != NULL);
 }
 
-R_API int r_db_add(struct r_db_t *db, void *b)
-{
+R_API int r_db_add(struct r_db_t *db, void *b) {
 	int i, ret = R_FALSE;
-	for(i=db->id_min;i<=db->id_max;i++) {
+	for (i=db->id_min;i<=db->id_max;i++) {
 		if (db->blocks[i])
-			ret += _r_db_add_internal(db, i, b);
+			ret += _r_db_add_internal (db, i, b);
 	}
 	return ret;
 }
 
-R_API int r_db_add_unique(struct r_db_t *db, void *b)
-{
+R_API int r_db_add_unique(struct r_db_t *db, void *b) {
 	int i, ret = R_TRUE;
 	for(i=db->id_min;i<=db->id_max;i++) {
 		if (db->blocks[i]) {
-			if (r_db_get(db, i, b) != NULL) {
+			if (r_db_get (db, i, b) != NULL) {
 				ret = R_FALSE;
 				break;
 			}
 		}
 	}
 	if (ret)
-		ret = r_db_add(db, b);
+		ret = r_db_add (db, b);
 	return ret;
 }
 
-R_API void **r_db_get(struct r_db_t *db, int key, const ut8 *b)
-{
+R_API void **r_db_get(struct r_db_t *db, int key, const ut8 *b) {
 	struct r_db_block_t *block;
 	int i, size;
 	if (key == -1) {
@@ -123,7 +115,7 @@ R_API void **r_db_get(struct r_db_t *db, int key, const ut8 *b)
 	}
 	size = db->blocks_sz[key];
 	block = db->blocks[key];
-	for(i=0;block&&i<size;i++)
+	for (i=0;block&&i<size;i++)
 		block = block->childs[b[key+i]];
 	if (block)
 		return block->data;
@@ -131,19 +123,16 @@ R_API void **r_db_get(struct r_db_t *db, int key, const ut8 *b)
 }
 
 /* TODO: MOVE AS DEFINE IN r_db.h */
-R_API void **r_db_get_next(void **ptr)
-{
+R_API void **r_db_get_next(void **ptr) {
 	return ptr+1;
 }
 
 /* TODO: MOVE AS DEFINE IN r_db.h */
-R_API void **r_db_get_cur(void **ptr)
-{
+R_API void **r_db_get_cur(void **ptr) {
 	return ptr[0];
 }
 
-static int _r_db_delete_internal(struct r_db_t *db, int key, const ut8 *b)
-{
+static int _r_db_delete_internal(struct r_db_t *db, int key, const ut8 *b) {
 	struct r_db_block_t *block;
 	int i, j;
 	int size = db->blocks_sz[key];
@@ -168,8 +157,7 @@ static int _r_db_delete_internal(struct r_db_t *db, int key, const ut8 *b)
 	return R_FALSE;
 }
 
-R_API int r_db_delete(struct r_db_t *db, const void *ptr)
-{
+R_API int r_db_delete(struct r_db_t *db, const void *ptr) {
 	int i, ret = 0;
 	//void *ptr = r_db_get(db, -1, ptr);
 	for(i=db->id_min;i<=db->id_max;i++) {
@@ -184,8 +172,7 @@ R_API int r_db_delete(struct r_db_t *db, const void *ptr)
 
 // TODO delete with conditions
 
-R_API struct r_db_iter_t *r_db_iter_new(struct r_db_t *db, int key)
-{
+R_API struct r_db_iter_t *r_db_iter_new(struct r_db_t *db, int key) {
 	struct r_db_iter_t *iter = (struct r_db_iter_t *)malloc(sizeof (struct r_db_iter_t));
 	/* TODO: detect when keys are not valid and return NULL */
 	iter->db = db;
@@ -200,8 +187,7 @@ R_API struct r_db_iter_t *r_db_iter_new(struct r_db_t *db, int key)
 	return iter;
 }
 
-R_API void *r_db_iter_cur(struct r_db_iter_t *iter)
-{
+R_API void *r_db_iter_cur(struct r_db_iter_t *iter) {
 	return iter->cur;
 #if 0
 	void *cur = NULL;
@@ -239,26 +225,22 @@ R_API void *r_db_iter_cur(struct r_db_iter_t *iter)
 #endif
 }
 
-R_API void *r_db_iter_next(struct r_db_iter_t *iter)
-{
+R_API void *r_db_iter_next(struct r_db_iter_t *iter) {
 //	if (iter->db->
 	return NULL;
 }
 
-R_API void *r_db_iter_prev(struct r_db_iter_t *iter)
-{
+R_API void *r_db_iter_prev(struct r_db_iter_t *iter) {
 	/* TODO */
 	return NULL;
 }
 
-R_API struct r_db_iter_t *r_db_iter_free(struct r_db_iter_t *iter)
-{
+R_API struct r_db_iter_t *r_db_iter_free(struct r_db_iter_t *iter) {
 	free(iter);
 	return NULL;
 }
 
-R_API int r_db_free(struct r_db_t *db)
-{
+R_API int r_db_free(struct r_db_t *db) {
 	/* TODO : using the iterator logic */
 	// TODO: use r_pool_mem here!
 #if 0
