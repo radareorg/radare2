@@ -34,6 +34,34 @@ static char *r_core_anal_graph_label (struct r_core_t *core, ut64 addr, ut64 siz
 	return str;
 }
 
+static void r_core_anal_graph_nodes (struct r_core_t *core, ut64 addr) {
+	struct r_anal_bb_t *bbi;
+	RListIter *iter;
+	char *str;
+
+	iter = r_list_iterator (core->anal.bbs);
+	while (r_list_iter_next (iter)) {
+		bbi = r_list_iter_get (iter);
+		if (addr == 0 || (addr >= bbi->addr && addr < bbi->addr+bbi->size)) {
+			if (bbi->jump != -1) {
+				r_cons_printf ("\t\"0x%08llx\" -> \"0x%08llx\" [color=\"green\"];\n", bbi->addr, bbi->jump);
+				r_cons_flush ();
+				if (addr != 0) r_core_anal_graph_nodes (core, bbi->jump);
+			}
+			if (bbi->fail != -1) {
+				r_cons_printf ("\t\"0x%08llx\" -> \"0x%08llx\" [color=\"red\"];\n", bbi->addr, bbi->fail);
+				r_cons_flush ();
+				if (addr != 0) r_core_anal_graph_nodes (core, bbi->fail);
+			}
+			if ((str = r_core_anal_graph_label (core, bbi->addr, bbi->size))) {
+				r_cons_printf (" \"0x%08llx\" [label=\"%s\"]\n", bbi->addr, str);
+				r_cons_flush ();
+				free(str);
+			}
+		}
+	}
+}
+
 R_API int r_core_anal_bb (struct r_core_t *core, ut64 at, int depth) {
 	struct r_anal_bb_t *bb;
 	ut64 jump, fail;
@@ -75,10 +103,36 @@ R_API int r_core_anal_bb (struct r_core_t *core, ut64 at, int depth) {
 	return R_TRUE;
 }
 
-R_API int r_core_anal_graph (struct r_core_t *core) {
+R_API int r_core_anal_bb_clean (struct r_core_t *core, ut64 addr) {
 	struct r_anal_bb_t *bbi;
 	RListIter *iter;
-	char *str;
+	ut64 jump, fail;
+
+	if (!core->anal.bbs)
+		return R_FALSE;
+	if (addr == 0) {
+		r_list_destroy (core->anal.bbs);
+		if (!(core->anal.bbs = r_anal_bb_list_new ()))
+			return R_FALSE;
+	} else {
+		iter = r_list_iterator (core->anal.bbs);
+		while (r_list_iter_next (iter)) {
+			bbi = r_list_iter_get (iter);
+			if (addr >= bbi->addr && addr < bbi->addr+bbi->size) {
+				jump = bbi->jump;
+				fail = bbi->fail;
+				r_list_unlink (core->anal.bbs, bbi);
+				if (fail != -1)
+					r_core_anal_bb_clean (core, fail);
+				if (jump != -1)
+					r_core_anal_bb_clean (core, jump);
+			}
+		}
+	}
+	return R_TRUE;
+}
+
+R_API int r_core_anal_graph (struct r_core_t *core, ut64 addr) {
 	int reflines = r_config_get_i(&core->config, "asm.reflines");
 	int bytes = r_config_get_i(&core->config, "asm.bytes");
 
@@ -87,19 +141,7 @@ R_API int r_core_anal_graph (struct r_core_t *core) {
 	r_cons_printf ("digraph code {\n");
 	r_cons_printf ("\tgraph [bgcolor=white];\n");
 	r_cons_printf ("\tnode [color=lightgray, style=filled shape=box fontname=\"Courier\" fontsize=\"8\"];\n");
-	iter = r_list_iterator (core->anal.bbs);
-	while (r_list_iter_next (iter)) {
-		bbi = r_list_iter_get (iter);
-		if (bbi->jump != -1)
-			r_cons_printf ("\t\"0x%08llx\" -> \"0x%08llx\" [color=\"green\"];\n", bbi->addr, bbi->jump);
-		if (bbi->fail != -1)
-			r_cons_printf ("\t\"0x%08llx\" -> \"0x%08llx\" [color=\"red\"];\n", bbi->addr, bbi->fail);
-		r_cons_flush ();
-		if ((str = r_core_anal_graph_label (core, bbi->addr, bbi->size))) {
-			r_cons_printf (" \"0x%08llx\" [label=\"%s\"]\n", bbi->addr, str);
-			free(str);
-		}
-	}
+	r_core_anal_graph_nodes (core, addr);
 	r_cons_printf ("}\n");
 	r_config_set_i(&core->config, "asm.reflines", reflines);
 	r_config_set_i(&core->config, "asm.bytes", bytes);

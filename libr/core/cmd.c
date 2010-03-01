@@ -941,20 +941,23 @@ static int cmd_anal(void *data, const char *input) {
 		}
 #endif
 		break;
-	case 'c':
-		r_core_anal_bb (core, core->offset,
+	case 'b':
+		if (input[1] == '-')
+			r_core_anal_bb_clean (core, r_num_math (&core->num, input+2));
+		else r_core_anal_bb (core, core->offset,
 				r_config_get_i (&core->config, "anal.depth"));
 		break;
 	case 'g':
-		r_core_anal_graph (core);
+		r_core_anal_graph (core, r_num_math (&core->num, input+2));
 		break;
 	default:
 		r_cons_printf (
 		"Usage: a[o] [len]\n"
 		" ah [handle]     ; Use this analysis plugin\n"
 		" ao [len]        ; Analyze raw bytes\n"
-		" ac @ [addr]     ; Analyze code (start at addr)\n"
-		" ag              ; Output graphviz code\n");
+		" ab @ [addr]     ; Analyze basic blocks (start at addr)\n"
+		" ab- [addr]      ; Clean all basic block info (bb at addr and childs)\n"
+		" ag [addr]       ; Output graphviz code (bb at addr and childs)\n");
 		break;
 	}
 	if (tbs != core->blocksize)
