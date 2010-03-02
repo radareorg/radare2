@@ -87,6 +87,9 @@ R_API ut8* r_reg_get_bytes(struct r_reg_t *reg, int type, int *size);
 R_API int r_reg_set_bytes(struct r_reg_t *reg, int type, const ut8* buf, int len);
 R_API RRegisterArena *r_reg_arena_new (int size);
 R_API int r_reg_fit_arena(struct r_reg_t *reg);
+
+// TODO: r_reg typedef must be renamed to this shorter version
+#define RReg RRegister
 #endif
 
 #endif

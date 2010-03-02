@@ -2,5 +2,7 @@
   - We must think on a way to do it more algoritmically
 * Add support for stepped searchs (skip N bytes after every read)
 * Allow to enable/disable nested hits
+* Define minimum distance between hits
+* Enable/Disable chained hits
 * Added support for negated searchs (find until no keyword matches)
   - useful to find the end of a \xff block

@@ -199,9 +199,9 @@ R_API int r_debug_continue_kill(struct r_debug_t *dbg, int sig) {
 	int ret = R_FALSE;
 	if (dbg && dbg->h && dbg->h->cont) {
 		r_bp_restore (dbg->bp, R_FALSE); // set sw breakpoints
-		ret = dbg->h->cont(dbg->pid, sig);
+		ret = dbg->h->cont (dbg->pid, sig);
 		if (dbg->h->wait)
-			ret = dbg->h->wait(dbg->pid);
+			ret = dbg->h->wait (dbg->pid);
 		r_bp_restore (dbg->bp, R_TRUE); // unset sw breakpoints
 		r_debug_recoil (dbg);
 	}
@@ -241,10 +241,8 @@ R_API int r_debug_kill(struct r_debug_t *dbg, int sig) {
 	return ret;
 }
 
-// TODO: move into r_debug
-// TODO: we need to know the arch backend, frame size, 
-// TODO: merge algorithms from r1 (do we need ebp?)
-// TODO: must return a linked list or r_iter
-R_API int r_anal_backtrace(struct r_anal_t *anal, const ut8 *buf, ut64 esp) {
-	return R_FALSE;
+R_API RList *r_debug_frames (RDebug *dbg) {
+	if (dbg && dbg->h && dbg->h->frames)
+		return dbg->h->frames (dbg);
+	return NULL;
 }

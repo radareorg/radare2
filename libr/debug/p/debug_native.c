@@ -8,6 +8,7 @@
 #include <signal.h>
 
 #define DEBUGGER 1
+#define MAXBT 128
 
 #if __WINDOWS__
 #include <windows.h>
@@ -570,9 +571,89 @@ static int r_debug_native_bp_read(int pid, ut64 addr, int hw, int rwx) {
 	return R_TRUE;
 }
 #endif
+#if __i386__
+/* TODO: Can I use this as in a coroutine? */
+static RList *r_debug_native_frames(RDebug *dbg) {
+	RRegister *reg = dbg->reg;
+	ut32 i, _esp, esp, ebp2;
+	ut8 buf[4];
+	RList *list = r_list_new ();
+	RIOBind *bio = &dbg->iob;
 
-static int r_debug_get_arch()
-{
+	list->free = free;
+	_esp = r_reg_get_value (reg, r_reg_get (reg, "esp", R_REG_TYPE_GPR));
+	// TODO: implement [stack] map uptrace method too
+	esp = _esp;
+	for (i=0; i<MAXBT; i++) {
+		bio->read_at (bio->io, esp, (void *)&ebp2, 4);
+		*buf = '\0';
+		bio->read_at (bio->io, (ebp2-5)-(ebp2-5)%4, (void *)&buf, 4);
+
+		// TODO: arch_is_call() here and this fun will be portable
+		if (buf[(ebp2-5)%4]==0xe8) {
+			RDebugFrame *frame = R_NEW (RDebugFrame);
+			frame->addr = ebp2;
+			frame->size = esp-_esp;
+			r_list_append (list, frame);
+		}
+		esp += 4;
+	}
+	return list;
+}
+#elif __x86_64__
+// XXX: Do this work correctly?
+static RList *r_debug_native_frames(RDebug *dbg) {
+	int i;
+	ut8 buf[4];
+	ut64 ptr, ebp2;
+	ut64 _rip, _rsp, _rbp;
+	RList *list;
+	RRegister *reg = dbg->reg;
+	RIOBind *bio = &dbg->iob;
+
+	_rip = r_reg_get_value (reg, r_reg_get (reg, "rip", R_REG_TYPE_GPR));
+	_rsp = r_reg_get_value (reg, r_reg_get (reg, "rsp", R_REG_TYPE_GPR));
+	_rbp = r_reg_get_value (reg, r_reg_get (reg, "rbp", R_REG_TYPE_GPR));
+
+	list = r_list_new ();
+	list->free = free;
+	bio->read_at (bio->io, _rip, &buf, 4);
+	/* %rbp=old rbp, %rbp+4 points to ret */
+	/* Handle before function prelude: push %rbp ; mov %rsp, %rbp */
+	if (!memcmp (buf, "\x55\x89\xe5", 3) || !memcmp (buf, "\x89\xe5\x57", 3)) {
+		if (bio->read_at (bio->io, _rsp, &ptr, 4) != 4) {
+			eprintf ("read error at 0x%08llx\n", _rsp);
+			return R_FALSE;
+		}
+		RDebugFrame *frame = R_NEW (RDebugFrame);
+		frame->addr = ptr;
+		frame->size = 0; // TODO ?
+		r_list_append (list, frame);
+
+		_rbp = ptr;
+	}
+
+	for (i=1; i<MAXBT; i++) {
+		// TODO: make those two reads in a shot
+		bio->read_at (bio->io, _rbp, &ebp2, 4);
+		bio->read_at (bio->io, _rbp+4, &ptr, 4);
+		if (ptr == 0x0 || _rbp == 0x0)
+			break;
+
+		RDebugFrame *frame = R_NEW (RDebugFrame);
+		frame->addr = ptr;
+		frame->size = 0; // TODO ?
+		r_list_append (list, frame);
+
+		_rbp = ebp2;
+	}
+	return list;
+}
+#else
+#warning Backtrace frames not implemented for this platform
+#endif
+
+static int r_debug_get_arch() {
 #if __i386__ || __x86_64__
 	return R_ASM_ARCH_X86;
 #elif __powerpc__ || __POWERPC__
@@ -618,6 +699,7 @@ struct r_debug_handle_t r_debug_plugin_native = {
 	.detach = &r_debug_native_detach,
 	.wait = &r_debug_native_wait,
 	.kill = &r_debug_native_kill,
+	.frames = &r_debug_native_frames,
 	.get_arch = &r_debug_get_arch,
 	.reg_profile = (void *)&r_debug_native_reg_profile,
 	.reg_read = &r_debug_native_reg_read,

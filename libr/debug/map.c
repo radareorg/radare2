@@ -58,8 +58,7 @@ R_API int r_debug_map_sync(RDebug *dbg) {
 	return ret;
 }
 
-R_API int r_debug_map_alloc(RDebug *dbg, RDebugMap *map)
-{
+R_API int r_debug_map_alloc(RDebug *dbg, RDebugMap *map) {
 	int ret = R_FALSE;
 	if (dbg->h && dbg->h->map_alloc) {
 		if (dbg->h->map_alloc (dbg, map)) {
@@ -70,8 +69,7 @@ R_API int r_debug_map_alloc(RDebug *dbg, RDebugMap *map)
 	return ret;
 }
 
-R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map)
-{
+R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map) {
 	int ret = R_FALSE;
 	ut64 addr = map->addr;
 	if (dbg->h && dbg->h->map_dealloc) 
@@ -82,6 +80,7 @@ R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map)
 	//r_debug_map_free (map);
 	return ret;
 }
+
 R_API RDebugMap *r_debug_map_get(RDebug *dbg, ut64 addr) {
 	RDebugMap *ret = NULL;
 	RListIter *iter = r_list_iterator (dbg->maps);
@@ -95,22 +94,19 @@ R_API RDebugMap *r_debug_map_get(RDebug *dbg, ut64 addr) {
 	return ret;
 }
 
-R_API void r_debug_map_free(RDebugMap *map)
-{
+R_API void r_debug_map_free(RDebugMap *map) {
 	//r_list_unlink (dbg->maps_user, map);
 	free (map->name);
 	free (map);
 }
 
-R_API RList *r_debug_map_list_new()
-{
+R_API RList *r_debug_map_list_new() {
 	RList *list = r_list_new ();
 	list->free = r_debug_map_free;
 	return list;
 }
 
-R_API void r_debug_map_list_free(RList *maps)
-{
+R_API void r_debug_map_list_free(RList *maps) {
 	RListIter *iter = r_list_iterator (maps);
 	while (r_list_iter_next (iter)) {
 		RDebugMap *map = r_list_iter_get (iter);

@@ -83,6 +83,7 @@ typedef struct r_debug_handle_t {
 	int (*wait)(int pid);
 	int (*kill)(RDebug *dbg, int sig);
 	int (*contsc)(int pid, int sc);
+	RList* (*frames)(RDebug *dbg);
 	/* registers */
 	RBreakpointCallback breakpoint;
 	int (*reg_read)(struct r_debug_t *dbg, int type, ut8 *buf, int size);
@@ -165,6 +166,9 @@ R_API ut64 r_debug_reg_get(struct r_debug_t *dbg, const char *name);
 R_API void r_debug_io_bind(RDebug *dbg, RIO *io);
 R_API ut64 r_debug_execute(struct r_debug_t *dbg, ut8 *buf, int len);
 R_API int r_debug_map_sync(RDebug *dbg);
+
+/* backtrace */
+R_API RList *r_debug_frames (RDebug *dbg);
 #endif
 #endif
 

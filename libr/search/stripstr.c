@@ -12,8 +12,7 @@ static char *encodings[3] = { "ascii", "cp850", NULL };
 //static int encoding = ENCODING_ASCII; // default
 	//encoding = resolve_encoding(config_get("cfg.encoding"));
 
-R_API int r_search_get_encoding(const char *name)
-{
+R_API int r_search_get_encoding(const char *name) {
 	int i;
 	if (name != NULL)
 		for(i=0;encodings[i];i++)
@@ -22,13 +21,12 @@ R_API int r_search_get_encoding(const char *name)
 	return ENCODING_ASCII;
 }
 
-static int is_encoded(int encoding, unsigned char c)
-{
-	switch(encoding) {
+static int is_encoded(int encoding, unsigned char c) {
+	switch (encoding) {
 	case ENCODING_ASCII:
 		break;
 	case ENCODING_CP850:
-		switch(c) {
+		switch (c) {
 		// CP850
 		case 128: // cedilla
 		case 133: // a grave

@@ -2076,6 +2076,7 @@ static int cmd_debug(void *data, const char *input) {
 				" dc?               show this help\n"
 				" dc                continue execution of all childs\n"
 				" dcu [addr]        continue until address\n"
+				" dcs [num]         continue until syscall\n"
 				" dck [sig] [pid]   continue sending kill 9 to process\n"
 				" dc [pid]          continue execution of pid\n"
 				" dc[-pid]          stop execution of pid\n"
@@ -2092,6 +2093,12 @@ static int cmd_debug(void *data, const char *input) {
 				r_debug_continue_kill (&core->dbg, atoi (input+2));
 				r_debug_select (&core->dbg, old_pid, old_pid);
 			} else r_debug_continue_kill (&core->dbg, atoi (input+2));
+			break;
+		case 's':
+			sig = r_num_math (&core->num, input+2);
+			eprintf ("Continue until syscall %d\n", sig);
+			r_debug_continue_syscall (&core->dbg, sig);
+			/* TODO : use r_syscall here, to retrieve syscall info */
 			break;
 		case 'u':
 			addr = r_num_math (&core->num, input+2);
