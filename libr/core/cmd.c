@@ -961,7 +961,7 @@ static int cmd_anal(void *data, const char *input) {
 		" ah [handle]     ; Use this analysis plugin\n"
 		" ao [len]        ; Analyze raw bytes\n"
 		" ab @ [addr]     ; Analyze basic blocks (start at addr)\n"
-		" ab- [addr]      ; Clean all basic block info (bb at addr and childs)\n"
+		" ab- [addr]      ; Clean all basic block data (bb at addr and childs)\n"
 		" ag [addr]       ; Output graphviz code (bb at addr and childs)\n");
 		break;
 	}

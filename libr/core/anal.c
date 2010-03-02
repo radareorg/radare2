@@ -34,24 +34,38 @@ static char *r_core_anal_graph_label (struct r_core_t *core, ut64 addr, ut64 siz
 	return str;
 }
 
-static void r_core_anal_graph_nodes (struct r_core_t *core, ut64 addr) {
-	struct r_anal_bb_t *bbi;
+static void r_core_anal_graph_nodes (struct r_core_t *core, RList *pbb, ut64 addr) {
+	struct r_anal_bb_t *bbi, *bbc;
 	RListIter *iter;
 	char *str;
+
+	if (pbb) { /* In partial graphs test if the bb is already printed */
+		iter = r_list_iterator (pbb);
+		while (r_list_iter_next (iter)) {
+			bbi = r_list_iter_get (iter);
+			if (addr >= bbi->addr && addr < bbi->addr+bbi->size)
+				return;
+		}
+	}
 
 	iter = r_list_iterator (core->anal.bbs);
 	while (r_list_iter_next (iter)) {
 		bbi = r_list_iter_get (iter);
 		if (addr == 0 || (addr >= bbi->addr && addr < bbi->addr+bbi->size)) {
+			if (pbb) { /* Copy BB and append to the list of printed bbs */
+				bbc = MALLOC_STRUCT (RAnalysisBB);
+				memcpy (bbc, bbi, sizeof (RAnalysisBB));
+				r_list_append (pbb, bbc);
+			}
 			if (bbi->jump != -1) {
 				r_cons_printf ("\t\"0x%08llx\" -> \"0x%08llx\" [color=\"green\"];\n", bbi->addr, bbi->jump);
 				r_cons_flush ();
-				if (addr != 0) r_core_anal_graph_nodes (core, bbi->jump);
+				if (addr != 0) r_core_anal_graph_nodes (core, pbb, bbi->jump);
 			}
 			if (bbi->fail != -1) {
 				r_cons_printf ("\t\"0x%08llx\" -> \"0x%08llx\" [color=\"red\"];\n", bbi->addr, bbi->fail);
 				r_cons_flush ();
-				if (addr != 0) r_core_anal_graph_nodes (core, bbi->fail);
+				if (addr != 0) r_core_anal_graph_nodes (core, pbb, bbi->fail);
 			}
 			if ((str = r_core_anal_graph_label (core, bbi->addr, bbi->size))) {
 				r_cons_printf (" \"0x%08llx\" [label=\"%s\"]\n", bbi->addr, str);
@@ -133,6 +147,7 @@ R_API int r_core_anal_bb_clean (struct r_core_t *core, ut64 addr) {
 }
 
 R_API int r_core_anal_graph (struct r_core_t *core, ut64 addr) {
+	RList *pbb = NULL;
 	int reflines = r_config_get_i(&core->config, "asm.reflines");
 	int bytes = r_config_get_i(&core->config, "asm.bytes");
 
@@ -141,7 +156,9 @@ R_API int r_core_anal_graph (struct r_core_t *core, ut64 addr) {
 	r_cons_printf ("digraph code {\n");
 	r_cons_printf ("\tgraph [bgcolor=white];\n");
 	r_cons_printf ("\tnode [color=lightgray, style=filled shape=box fontname=\"Courier\" fontsize=\"8\"];\n");
-	r_core_anal_graph_nodes (core, addr);
+	if (addr != 0) pbb = r_anal_bb_list_new (); /* In partial graphs define printed bb list */
+	r_core_anal_graph_nodes (core, pbb, addr);
+	if (pbb) r_list_destroy (pbb);
 	r_cons_printf ("}\n");
 	r_config_set_i(&core->config, "asm.reflines", reflines);
 	r_config_set_i(&core->config, "asm.bytes", bytes);
