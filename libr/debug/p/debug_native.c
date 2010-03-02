@@ -186,8 +186,8 @@ static int r_debug_native_continue(int pid, int sig) {
 	//ptrace(PT_CONTINUE, pid, 0, 0);
 	ptrace (PT_DETACH, pid, 0, 0);
 	#if 0
-	 task_resume(inferior_task); // ???
-	 thread_resume(inferior_threads[0]);
+	task_resume(inferior_task); // ???
+	thread_resume(inferior_threads[0]);
 	#endif
         return 0;
 #else
@@ -670,11 +670,11 @@ const char *archlist[3] = { "x86", "x86-32", 0 };
 #elif __x86_64__
 const char *archlist[4] = { "x86", "x86-32", "x86-64", 0 };
 #elif __powerpc__ || __POWERPC__
-const char *archlist[3] = { "powerpc", 0 };
+const char *archlist[2] = { "powerpc", 0 };
 #elif __mips__
-const char *archlist[3] = { "mips", 0 };
+const char *archlist[2] = { "mips", 0 };
 #elif __arm__
-const char *archlist[3] = { "arm", 0 };
+const char *archlist[2] = { "arm", 0 };
 #endif
 
 static int r_debug_native_kill(struct r_debug_t *dbg, int sig) {
@@ -689,7 +689,6 @@ static int r_debug_native_kill(struct r_debug_t *dbg, int sig) {
 #endif
 }
 
-// TODO: think on a way to define the program counter register name
 struct r_debug_handle_t r_debug_plugin_native = {
 	.name = "native",
 	.archs = (const char **)archlist,

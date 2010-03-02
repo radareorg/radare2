@@ -6,8 +6,7 @@
 static struct r_bp_handle_t *bp_static_plugins[] = 
 	{ R_BP_STATIC_PLUGINS };
 
-R_API struct r_bp_t *r_bp_init(struct r_bp_t *bp)
-{
+R_API struct r_bp_t *r_bp_init(struct r_bp_t *bp) {
 	int i;
 	if (bp) {
 		bp->cur = NULL;
@@ -28,15 +27,13 @@ R_API struct r_bp_t *r_bp_new() {
 	return r_bp_init (MALLOC_STRUCT (struct r_bp_t));
 }
 
-R_API struct r_bp_t *r_bp_free(struct r_bp_t *bp)
-{
+R_API struct r_bp_t *r_bp_free(struct r_bp_t *bp) {
 	/* XXX : properly destroy bp list */
 	free (bp);
 	return NULL;
 }
 
-R_API int r_bp_get_bytes(struct r_bp_t *bp, ut8 *buf, int len, int endian, int idx)
-{
+R_API int r_bp_get_bytes(struct r_bp_t *bp, ut8 *buf, int len, int endian, int idx) {
 	int i;
 	struct r_bp_arch_t *b;
 	if (bp->cur) {
@@ -55,23 +52,20 @@ R_API int r_bp_get_bytes(struct r_bp_t *bp, ut8 *buf, int len, int endian, int i
 	return 0;
 }
 
-R_API RBreakpointItem *r_bp_at_addr(RBreakpoint *bp, ut64 addr, int rwx)
-{
+R_API RBreakpointItem *r_bp_at_addr(RBreakpoint *bp, ut64 addr, int rwx) {
 	struct list_head *pos;
 	RBreakpointItem *b;
 
-	eprintf ("===ataddr=== 0x%08llx\n", addr);
 	list_for_each(pos, &bp->bps) {
 		b = list_entry(pos, struct r_bp_item_t, list);
-		eprintf ("---ataddr--- 0x%08llx %d %d\n", b->addr, b->size, b->recoil);
+	//	eprintf ("---ataddr--- 0x%08llx %d %d\n", b->addr, b->size, b->recoil);
 		if (addr >= b->addr && addr <= b->addr+b->size && rwx&b->rwx)
 			return b;
 	}
 	return NULL;
 }
 
-R_API struct r_bp_item_t *r_bp_enable(struct r_bp_t *bp, ut64 addr, int set)
-{
+R_API struct r_bp_item_t *r_bp_enable(struct r_bp_t *bp, ut64 addr, int set) {
 	struct list_head *pos;
 	struct r_bp_item_t *b;
 	list_for_each(pos, &bp->bps) {
@@ -84,29 +78,25 @@ R_API struct r_bp_item_t *r_bp_enable(struct r_bp_t *bp, ut64 addr, int set)
 	return NULL;
 }
 
-R_API int r_bp_stepy_continuation(struct r_bp_t *bp)
-{
+R_API int r_bp_stepy_continuation(struct r_bp_t *bp) {
 	// TODO: implement
 	return bp->stepcont;
 }
 
-R_API int r_bp_add_cond(struct r_bp_t *bp, const char *cond)
-{
+R_API int r_bp_add_cond(struct r_bp_t *bp, const char *cond) {
 	// TODO: implement contitional breakpoints
 	bp->stepcont = R_TRUE;
 	return 0;
 }
 
-R_API int r_bp_del_cond(struct r_bp_t *bp, int idx)
-{
+R_API int r_bp_del_cond(struct r_bp_t *bp, int idx) {
 	// add contitional
 	bp->stepcont = R_FALSE;
 	return R_TRUE;
 }
 
 /* TODO: detect overlapping of breakpoints */
-static struct r_bp_item_t *r_bp_add(struct r_bp_t *bp, const ut8 *obytes, ut64 addr, int size, int hw, int rwx)
-{
+static struct r_bp_item_t *r_bp_add(struct r_bp_t *bp, const ut8 *obytes, ut64 addr, int size, int hw, int rwx) {
 	int ret;
 	struct r_bp_item_t *b;
 	if (r_bp_at_addr (bp, addr, rwx)) {
@@ -149,14 +139,12 @@ static struct r_bp_item_t *r_bp_add(struct r_bp_t *bp, const ut8 *obytes, ut64 a
 	return b;
 }
 
-R_API int r_bp_add_fault(struct r_bp_t *bp, ut64 addr, int size, int rwx)
-{
+R_API int r_bp_add_fault(struct r_bp_t *bp, ut64 addr, int size, int rwx) {
 	// TODO
 	return R_FALSE;
 }
 
-R_API struct r_bp_item_t *r_bp_add_sw(struct r_bp_t *bp, ut64 addr, int size, int rwx)
-{
+R_API struct r_bp_item_t *r_bp_add_sw(struct r_bp_t *bp, ut64 addr, int size, int rwx) {
 	struct r_bp_item_t *item;
 	ut8 *bytes;
 	if (size<1)
@@ -172,13 +160,11 @@ R_API struct r_bp_item_t *r_bp_add_sw(struct r_bp_t *bp, ut64 addr, int size, in
 	return item;
 }
 
-R_API struct r_bp_item_t *r_bp_add_hw(struct r_bp_t *bp, ut64 addr, int size, int rwx)
-{
+R_API struct r_bp_item_t *r_bp_add_hw(struct r_bp_t *bp, ut64 addr, int size, int rwx) {
 	return r_bp_add (bp, NULL, addr, size, R_BP_TYPE_HW, rwx);
 }
 
-R_API int r_bp_del(struct r_bp_t *bp, ut64 addr)
-{
+R_API int r_bp_del(struct r_bp_t *bp, ut64 addr) {
 	struct list_head *pos;
 	struct r_bp_item_t *b;
 	list_for_each(pos, &bp->bps) {
@@ -194,8 +180,7 @@ R_API int r_bp_del(struct r_bp_t *bp, ut64 addr)
 // TODO: rename or drop?
 // TODO: use a r_bp_item instead of address
 // TODO: we can just drop it.. its just b->trace = R_TRUE or so..
-R_API int r_bp_set_trace(struct r_bp_t *bp, ut64 addr, int set)
-{
+R_API int r_bp_set_trace(struct r_bp_t *bp, ut64 addr, int set) {
 	struct list_head *pos;
 	struct r_bp_item_t *b;
 	list_for_each(pos, &bp->bps) {
@@ -219,8 +204,7 @@ R_API int r_bp_set_trace_bp(struct r_bp_t *bp, ut64 addr, int set)
 #endif
 
 // TODO: deprecate
-R_API int r_bp_list(struct r_bp_t *bp, int rad)
-{
+R_API int r_bp_list(struct r_bp_t *bp, int rad) {
 	int n = 0;
 	struct r_bp_item_t *b;
 	struct list_head *pos;

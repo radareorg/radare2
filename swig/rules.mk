@@ -6,8 +6,6 @@ LIBS+=r_debug.so r_config.so r_io.so r_syscall.so r_search.so r_lib.so libr.so
 all: ${LIBS}
 
 %.so:
-	@echo ignore $@
-	#@if test ../../libr/vapi/`echo $@|sed -e s,.so,.vapi,` -nt ${LIBS_PFX}$@ ; then
 	@-test ../../libr/vapi/`echo $@|sed -e s,.so,.vapi,` -nt ${LIBS_PFX}$@ ; \
 	if [ ! $$? = 0 ]; then \
 	  if [ ! -e ${LIBS_PFX}$@ ]; then \
