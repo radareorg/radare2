@@ -102,7 +102,6 @@ typedef struct r_io_list_t {
 	struct list_head list;
 } RIOList;
 
-
 /* TODO: find better name... RIOSetFd_Callback? ..Func? .. too camels here */
 typedef int (*RIOSetFd)(RIO *io, int fd);
 typedef int (*RIOReadAt)(RIO *io, ut64 addr, ut8 *buf, int size);

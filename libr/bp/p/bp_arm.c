@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_bp.h>
 #include <r_lib.h>
@@ -19,7 +19,7 @@ static struct r_bp_arch_t r_bp_plugin_arm_bps[] = {
 struct r_bp_handle_t r_bp_plugin_arm = {
 	.name = "arm",
 	.arch = "arm",
-	.nbps = 2,
+	.nbps = 10,
 	.bps = r_bp_plugin_arm_bps,
 };
 

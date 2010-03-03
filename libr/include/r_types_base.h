@@ -23,6 +23,7 @@
 #define UT32_MIN 0
 #define UT32_GT0 0x80000000
 #define UT32_LT0 0x7FFFFFFF
+#define ST32_MAX 0x7FFFFFFF
 #define UT32_MAX 0xFFFFFFFF
 
 #endif

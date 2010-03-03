@@ -14,8 +14,7 @@ struct r_class_t {
 #define r_buf_init(x) r_buf_class->init
 #endif
 
-R_API struct r_buf_t *r_buf_init(struct r_buf_t *b)
-{
+R_API struct r_buf_t *r_buf_init(RBuffer *b) {
 	if (b) {
 		b->buf = NULL;
 		b->length = 0;
@@ -25,32 +24,28 @@ R_API struct r_buf_t *r_buf_init(struct r_buf_t *b)
 	return b;
 }
 
-R_API struct r_buf_t *r_buf_new()
-{
-	struct r_buf_t *b = MALLOC_STRUCT(struct r_buf_t);
-	return r_buf_init(b);
+R_API struct r_buf_t *r_buf_new() {
+	RBuffer *b = R_NEW (RBuffer);
+	return r_buf_init (b);
 }
 
-R_API int r_buf_set_bits(struct r_buf_t *b, int bitoff, int bitsize, ut64 value)
-{
+R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value) {
 	// TODO: implement r_buf_set_bits
 	// TODO: get the implementation from reg/value.c ?
 	return R_FALSE;
 }
 
-R_API int r_buf_set_bytes(struct r_buf_t *b, ut8 *buf, int length)
-{
+R_API int r_buf_set_bytes(RBuffer *b, ut8 *buf, int length) {
 	if (b->buf)
-		free(b->buf);
-	if (!(b->buf = malloc(length)))
+		free (b->buf);
+	if (!(b->buf = malloc (length)))
 		return R_FALSE;
-	memcpy(b->buf, buf, length);
+	memcpy (b->buf, buf, length);
 	b->length = length;
 	return R_TRUE;
 }
 
-static int r_buf_cpy(struct r_buf_t *b, ut64 addr, ut8 *dst, const ut8 *src, int len)
-{
+static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len) {
 	int end;
 	if (addr == R_BUF_CUR)
 		addr = b->cur;
@@ -60,18 +55,16 @@ static int r_buf_cpy(struct r_buf_t *b, ut64 addr, ut8 *dst, const ut8 *src, int
  	end = (int)(addr+len);
 	if (end > b->length)
 		len -= end-b->length;
-	memcpy(dst, src+addr, len);
+	memcpy (dst, src+addr, len);
 	b->cur = addr + len;
 	return len;
 }
 
-R_API int r_buf_read_at(struct r_buf_t *b, ut64 addr, ut8 *buf, int len)
-{
-	return r_buf_cpy(b, addr, buf, b->buf, len);
+R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
+	return r_buf_cpy (b, addr, buf, b->buf, len);
 }
 
-R_API int r_buf_fread_at(struct r_buf_t *b, ut64 addr, ut8 *buf, const char *fmt, int n)
-{
+R_API int r_buf_fread_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {
 	int i, j, k, len, tsize, endian, m = 1;
 
 	if (addr == R_BUF_CUR)
@@ -98,25 +91,23 @@ R_API int r_buf_fread_at(struct r_buf_t *b, ut64 addr, ut8 *buf, const char *fmt
 		default: return -1;
 		}
 		for (k = 0; k < m; k++)
-			r_mem_copyendian((ut8*)&buf[len+k*tsize], (ut8*)&b->buf[addr+len+k*tsize], tsize, endian);
+			r_mem_copyendian((ut8*)&buf[len+k*tsize],
+				(ut8*)&b->buf[addr+len+k*tsize], tsize, endian);
 		len += m*tsize; m = 1;
 	}
 	b->cur = addr + len;
 	return len;
 }
 
-R_API int r_buf_write_at(struct r_buf_t *b, ut64 addr, const ut8 *buf, int len)
-{
-	return r_buf_cpy(b, addr, b->buf, buf, len);
+R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
+	return r_buf_cpy (b, addr, b->buf, buf, len);
 }
 
-R_API void r_buf_deinit(struct r_buf_t *b)
-{
-	free(b->buf);
+R_API void r_buf_deinit(struct r_buf_t *b) {
+	free (b->buf);
 }
 
-R_API void r_buf_free(struct r_buf_t *b)
-{
-	r_buf_deinit(b);
-	free(b);
+R_API void r_buf_free(struct r_buf_t *b) {
+	r_buf_deinit (b);
+	free (b);
 }

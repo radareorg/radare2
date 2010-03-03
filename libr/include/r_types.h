@@ -58,6 +58,8 @@
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')
 #define IS_WHITESPACE(x) (x==' '||x=='\t')
 
+#define BIT_SET(x,y) (x[y>>4] |= (1<<(y&0xf)))
+#define BIT_CHK(x,y) ((x[y>>4] & (1<<(y&0xf))))
 
 /* operating system */
 #undef __BSD__

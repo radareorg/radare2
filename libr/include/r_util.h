@@ -60,6 +60,22 @@ typedef struct r_num_t {
 } RNum;
 typedef ut64 (*RNumCallback)(RNum *self, const char *str, int *ok);
 
+typedef struct r_range_item_t {
+	ut64 fr;
+	ut64 to;
+	ut8 *data;
+	int datalen;
+	struct list_head list;
+} RRangeItem;
+
+typedef struct r_range_t {
+	int count;
+	int changed;
+	struct list_head ranges;
+} RRange;
+
+#ifdef R_API
+
 /* arch */
 // TODO: This must deprecate DEFAULT_ARCH??
 #if __i386__
@@ -102,8 +118,6 @@ typedef ut64 (*RNumCallback)(RNum *self, const char *str, int *ok);
 #define R_SYS_ENDIAN "big"
 #endif
 
-#ifdef R_API
-//R_API RBuffer *r_num_new(RNumCallback *cb, void *ptr);
 R_API RNum *r_num_new(RNumCallback cb, void *ptr);
 
 #define R_BUF_CUR -1
@@ -236,6 +250,25 @@ R_API int r_alloca_ret_i(int n);
 R_API int r_log_msg(const char *str);
 R_API int r_log_error(const char *str);
 R_API int r_log_progress(const char *str, int percent);
+
+/* Ranges */
+R_API int r_range_init(struct r_range_t *r);
+R_API RRange *r_range_new();
+R_API RRange *r_range_new_from_string(const char *string);
+R_API RRange *r_range_free(RRange *r);
+R_API 
+R_API struct r_range_item_t *r_range_item_get(RRange *r, ut64 addr);
+R_API ut64 r_range_size(RRange *r);
+R_API int r_range_add_from_string(RRange *rgs, const char *string);
+R_API struct r_range_item_t *r_range_add(RRange *rgs, ut64 from, ut64 to, int rw);
+R_API int r_range_sub(RRange *rgs, ut64 from, ut64 to);
+R_API int r_range_merge(RRange *rgs, RRange *r);
+R_API int r_range_contains(RRange *rgs, ut64 addr);
+R_API int r_range_sort(RRange *rgs);
+R_API void r_range_percent(RRange *rgs);
+R_API int r_range_list(RRange *rgs, int rad);
+R_API int r_range_get_n(RRange *rgs, int n, ut64 *from, ut64 *to);
+R_API RRange *r_range_inverse(RRange *rgs, ut64 from, ut64 to, int flags);
 #endif
 
 #endif

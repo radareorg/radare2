@@ -4,36 +4,32 @@
 #include <stdlib.h>
 
 // TODO: find better name
-R_API int r_mem_count(ut8 **addr)
-{
+R_API int r_mem_count(ut8 **addr) {
 	int i = 0;
 	while(*addr++)
 		i++;
 	return i;
 }
 
-R_API void r_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize)
-{
+R_API void r_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize) {
         int i=0,j;
-        while(i<dsize)
-                for(j=0;j<osize && i<dsize;j++)
+        while (i<dsize)
+                for (j=0; j<osize && i<dsize;j++)
                         dest[i++] = orig[j];
 }
 
-R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len)
-{
+R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len) {
 	int i, ret = 0;
-	for(i=0;i<len;i++)
+	for (i=0;i<len;i++)
 		ret += (orig[i]&mask[i])&dest[i];
 	return ret;
 }
 
-R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits)
-{
+R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits) {
 	int bytes = (int)(bits/8);
 	bits = bits%8;
 	
-	memcpy(dst, src, bytes);
+	memcpy (dst, src, bytes);
 	if (bits) {
 		ut8 srcmask, dstmask;
 		switch(bits) {
@@ -50,8 +46,7 @@ R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits)
 }
 
 // TODO: this method is ugly as shit.
-R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, int bits)
-{
+R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, int bits) {
 	int nbits = bits;
 #if 0
 	int dofb, sofb;
@@ -94,8 +89,7 @@ src |__________|_________|
 }
 
 /* XXX TODO check and use system endian */
-R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian)
-{
+R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian) {
         if (endian) {
 			if (dest != orig)
 				memcpy(dest, orig, size);
@@ -136,8 +130,7 @@ R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian)
 
 //R_DOC r_mem_mem: Finds the needle of nlen size into the haystack of hlen size
 //R_UNIT printf("%s\n", r_mem_mem("food is pure lame", 20, "is", 2));
-R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen)
-{
+R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen) {
 	int i, until = hlen-nlen;
 	for(i=0;i<until;i++) {
 		if (!memcmp(haystack+i, needle, nlen))
@@ -147,14 +140,12 @@ R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int
 }
 
 // TODO: implement pack/unpack helpers use vararg or wtf?
-R_API int r_mem_pack()
-{
-	// TODO
+R_API int r_mem_pack() {
+	// TODO: copy this from r_buf??
 	return R_TRUE;
 }
 
-R_API int r_mem_unpack(const ut8 *buf)
-{
-	// TODO
+R_API int r_mem_unpack(const ut8 *buf) {
+	// TODO: copy this from r_buf??
 	return R_TRUE;
 }

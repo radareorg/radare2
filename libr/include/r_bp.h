@@ -3,6 +3,7 @@
 
 #include <r_types.h>
 #include <r_io.h>
+#include <r_list.h>
 #include "list.h"
 
 #define R_BP_MAXPIDS 10
@@ -54,6 +55,8 @@ typedef struct r_bp_t {
 	ut64 trace_bp;
 	int nbps;
 	int stepcont;
+	int endian;
+	RList *traces;
 	RBreakpointCallback breakpoint;
 	struct r_io_bind_t iob; // compile time dependency
 	struct r_bp_handle_t *cur;
@@ -66,6 +69,17 @@ enum {
 	R_BP_PROT_WRITE = 2,
 	R_BP_PROT_EXEC = 4,
 };
+
+typedef struct r_bp_trace_t {
+	ut64 addr;
+	ut64 addr_end;
+	ut8 *traps;
+	ut8 *buffer;
+	ut8 *bits;
+	int length;
+	int bitlen;
+	struct list_head list;
+} RBreakpointTrace;
 
 #ifdef R_API
 R_API RBreakpoint *r_bp_init(RBreakpoint *bp);
@@ -95,6 +109,18 @@ R_API RBreakpointItem *r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int rwx
 R_API RBreakpointItem *r_bp_at_addr(RBreakpoint *bp, ut64 addr, int rwx);
 R_API int r_bp_restore(RBreakpoint *bp, int set);
 R_API int r_bp_recoil(RBreakpoint *bp, ut64 addr);
+
+/* traptrace */
+R_API void r_bp_traptrace_free(void *ptr);
+R_API void r_bp_traptrace_enable(RBreakpoint *bp, int enable);
+R_API void r_bp_traptrace_reset(RBreakpoint *bp, int hard);
+R_API ut64 r_bp_traptrace_next(RBreakpoint *bp, ut64 addr);
+R_API int r_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to);
+R_API int r_bp_traptrace_free_at(RBreakpoint *bp, ut64 from);
+R_API void r_bp_traptrace_list(RBreakpoint *bp);
+R_API int r_bp_traptrace_at(RBreakpoint *bp, ut64 from, int len);
+R_API RList *r_bp_traptrace_new();
+R_API void r_bp_traptrace_enable(RBreakpoint *bp, int enable);
 #endif
 
 /* plugin pointers */

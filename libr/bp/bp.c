@@ -11,9 +11,11 @@ R_API struct r_bp_t *r_bp_init(struct r_bp_t *bp) {
 	if (bp) {
 		bp->cur = NULL;
 		bp->nbps = 0;
-		bp->trace_bp = 0;
+		bp->trace_bp = R_FALSE;
 		bp->stepcont = R_BP_CONT_NORMAL;
 		bp->breakpoint = NULL;
+		bp->endian = 0; // little by default
+		bp->traces = r_bp_traptrace_new ();
 		INIT_LIST_HEAD(&bp->bps);
 		INIT_LIST_HEAD(&bp->plugins);
 		for (i=0;bp_static_plugins[i];i++)
@@ -96,7 +98,7 @@ R_API int r_bp_del_cond(struct r_bp_t *bp, int idx) {
 }
 
 /* TODO: detect overlapping of breakpoints */
-static struct r_bp_item_t *r_bp_add(struct r_bp_t *bp, const ut8 *obytes, ut64 addr, int size, int hw, int rwx) {
+static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, int size, int hw, int rwx) {
 	int ret;
 	struct r_bp_item_t *b;
 	if (r_bp_at_addr (bp, addr, rwx)) {
