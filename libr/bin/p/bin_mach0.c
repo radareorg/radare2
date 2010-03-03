@@ -125,7 +125,7 @@ static RFList imports(RBin *bin)
 			break;
 		strncpy (ptr->name, (char*)imports[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->type, "NONE", R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
 		ptr->rva = imports[i].addr;
 		ptr->offset = imports[i].offset;
 		ptr->ordinal = 0;

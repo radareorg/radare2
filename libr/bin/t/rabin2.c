@@ -128,6 +128,8 @@ static int rabin_show_imports(ut64 at) {
 				r_flag_name_filter (import->name);
 				printf ("f imp.%s @ 0x%08llx\n",
 						import->name, va?baddr+import->rva:import->offset);
+				printf ("af+ 0x%08llx 0 imp.%s\n",
+						va?baddr+import->rva:import->offset, import->name);
 			} else printf ("address=0x%08llx offset=0x%08llx ordinal=%03lli "
 						   "hint=%03lli bind=%s type=%s name=%s\n",
 						   baddr+import->rva, import->offset,
@@ -169,10 +171,12 @@ static int rabin_show_symbols(ut64 at) {
 			if (rad) {
 				r_flag_name_filter (symbol->name);
 				if (symbol->size) {
-					if (!strncmp (symbol->type,"FUNC", 4))
+					if (!strncmp (symbol->type,"FUNC", 4)) {
 						printf ("CF %lli @ 0x%08llx\n",
 								symbol->size, va?baddr+symbol->rva:symbol->offset);
-					else if (!strncmp (symbol->type,"OBJECT", 6))
+						printf ("af+ 0x%08llx %lli sym.%s\n",
+								va?baddr+symbol->rva:symbol->offset, symbol->size, symbol->name);
+					} else if (!strncmp (symbol->type,"OBJECT", 6))
 							printf ("Cd %lli @ 0x%08llx\n",
 									symbol->size, va?baddr+symbol->rva:symbol->offset);
 					printf ("f sym.%s %lli 0x%08llx\n",
@@ -262,8 +266,8 @@ static int rabin_show_sections(ut64 at) {
 						section->size, section->vsize, section->name);
 				printf ("f section.%s %lli 0x%08llx\n",
 						section->name, section->size, va?baddr+section->rva:section->offset);
-				printf ("CC [%02i] address=0x%08llx offset=0x%08llx size=%08lli vsize=%08lli "
-						"privileges=%c%c%c%c name=%s @ 0x%08llx\n",
+				printf ("CC [%02i] va=0x%08llx pa=0x%08llx sz=%08lli vsz=%08lli "
+						"rwx=%c%c%c%c %s @ 0x%08llx\n",
 						i, baddr+section->rva, section->offset, section->size, section->vsize,
 						R_BIN_SCN_SHAREABLE (section->characteristics)?'s':'-',
 						R_BIN_SCN_READABLE (section->characteristics)?'r':'-',
