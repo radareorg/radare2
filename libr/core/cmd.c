@@ -982,7 +982,7 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		case '?':
 			r_cons_printf (
-			"Usage: ab[ +-]\n"
+			"Usage: ab[?+-l*]\n"
 			" ab @ [addr]     ; Analyze basic blocks (start at addr)\n"
 			" ab+ [addr] [size] [jump] [fail] ; Add basic block\n"
 			" ab- [addr]      ; Clean all basic block data (or bb at addr and childs)\n"
@@ -997,13 +997,28 @@ static int cmd_anal(void *data, const char *input) {
 	case 'f':
 		switch (input[1]) {
 		case '-':
-			eprintf ("TODO af-");
+			eprintf ("TODO af-\n");
 			break;
 		case '+':
-			eprintf ("TODO af+");
+			eprintf ("TODO af+\n");
+			break;
+		case 'l':
+			eprintf ("TODO afl\n");
+			break;
+		case '*':
+			eprintf ("TODO af*\n");
+			break;
+		case '?':
+			r_cons_printf (
+			"Usage: af[?+-l*]\n"
+			" af @ [addr]     ; Analyze functions (start at addr)\n"
+			" af+ [addr] [size] ; Add function\n"
+			" af- [addr]      ; Clean all function analysis data (or function at addr)\n"
+			" afl             ; List functions\n"
+			" af*             ; Output radare commands\n");
 			break;
 		default:
-			eprintf ("TODO af");
+			eprintf ("TODO af\n");
 		}
 		break;
 	case 'g':
@@ -1011,13 +1026,11 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	default:
 		r_cons_printf (
-		"Usage: a[hobfg] [len]\n"
+		"Usage: a[?hobfg]\n"
 		" ah [handle]     ; Use this analysis plugin\n"
 		" ao [len]        ; Analyze raw bytes\n"
-		" ab[ +-?]        ; Analyze basic blocks\n"
-		" af @ [addr]     ; Analyze functions (start at addr)\n"
-		" af+ [addr] [size] ; Add function\n"
-		" af- [addr]      ; Clean all function analysis data (or function at addr)\n"
+		" ab[?+-l*]        ; Analyze basic blocks\n"
+		" af[?+-l*]        ; Analyze functions\n"
 		" ag [addr]       ; Output graphviz code (bb at addr and childs)\n");
 		break;
 	}
