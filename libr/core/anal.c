@@ -172,14 +172,37 @@ R_API int r_core_anal_bb_list (struct r_core_t *core, int rad) {
 	iter = r_list_iterator (core->anal.bbs);
 	while (r_list_iter_next (iter)) {
 		bbi = r_list_iter_get (iter);
-		if (rad)
-			r_cons_printf ("ab+ 0x%08llx %lli 0x%08llx 0x%08llx\n",
-				bbi->addr, bbi->size, bbi->jump, bbi->fail);
-		else r_cons_printf ("[0x%08llx] size=%lli jump=0x%08llx fail=0x%08llx\n",
-				bbi->addr, bbi->size, bbi->jump, bbi->fail);
+		if (rad) {
+			r_cons_printf ("ab+ 0x%08llx %04lli ", bbi->addr, bbi->size);
+			if (bbi->jump != -1)
+				r_cons_printf ("%08llx ", bbi->jump);
+			if (bbi->jump != -1 && bbi->fail != -1)
+				r_cons_printf ("%08llx", bbi->fail);
+			r_cons_printf ("\n");
+		} else {
+			r_cons_printf ("[0x%08llx] size=%04lli ", bbi->addr, bbi->size);
+			if (bbi->jump != -1)
+				r_cons_printf ("jump=%08llx ", bbi->jump);
+			if (bbi->fail != -1)
+				r_cons_printf ("fail=%08llx", bbi->fail);
+			r_cons_printf ("\n");
+		}
 	}
 	r_cons_flush();
 	return R_TRUE;
+}
+
+R_API int r_core_anal_bb_seek (struct r_core_t *core, ut64 addr) {
+	struct r_anal_bb_t *bbi;
+	RListIter *iter;
+
+	iter = r_list_iterator (core->anal.bbs);
+	while (r_list_iter_next (iter)) {
+		bbi = r_list_iter_get (iter);
+		if (addr >= bbi->addr && addr < bbi->addr+bbi->size)
+			return r_core_seek (core, bbi->addr, R_FALSE);
+	}
+	return r_core_seek (core, addr, R_FALSE);
 }
 
 R_API int r_core_anal_fcn (struct r_core_t *core, ut64 at, ut64 from, int depth) {

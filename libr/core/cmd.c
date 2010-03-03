@@ -412,6 +412,9 @@ static int cmd_seek(void *data, const char *input) {
 			}
 			r_core_seek_align (core, off, 0);
 			break;
+		case 'b':
+			r_core_anal_bb_seek (core, off);
+			break;
 		case '?':
 			r_cons_printf (
 			"Usage: s[+-] [addr]\n"
@@ -420,7 +423,8 @@ static int cmd_seek(void *data, const char *input) {
 			" s--        ; seek blocksize bytes backward\n"
 			" s+ 512     ; seek 512 bytes forward\n"
 			" s- 512     ; seek 512 bytes backward\n"
-			" sa [[+-]a] [asz] ; seek asz (or bsize) aligned to addr\n");
+			" sa [[+-]a] [asz] ; seek asz (or bsize) aligned to addr\n"
+			" sb         ; seek aligned to bb start\n");
 			break;
 		}
 	} else r_cons_printf ("0x%llx\n", core->offset);
@@ -986,7 +990,7 @@ static int cmd_anal(void *data, const char *input) {
 			r_cons_printf (
 			"Usage: ab[?+-l*]\n"
 			" ab @ [addr]     ; Analyze basic blocks (start at addr)\n"
-			" ab+ [addr] [size] [jump] [fail] ; Add basic block\n"
+			" ab+ addr size [jump] [fail] ; Add basic block\n"
 			" ab- [addr]      ; Clean all basic block data (or bb at addr and childs)\n"
 			" abl             ; List basic blocks\n"
 			" ab*             ; Output radare commands\n");
@@ -1008,16 +1012,13 @@ static int cmd_anal(void *data, const char *input) {
 			ut64 addr = -1LL;
 			ut64 size = 0LL;
 			
-			switch(r_str_word_set0 (ptr)) {
-			case 3: // get name
+			if (r_str_word_set0 (ptr) == 3) {
 				name = r_str_word_get0 (ptr, 2);
-			case 2: // get size
 				size = r_num_math (&core->num, r_str_word_get0 (ptr, 1));
-			case 1: // get addr
 				addr = r_num_math (&core->num, r_str_word_get0 (ptr, 0));
+				if (!r_core_anal_fcn_add (core, addr, size, name))
+					eprintf ("Cannot add function (duplicated or overlaped)\n");
 			}
-			if (!r_core_anal_fcn_add (core, addr, size, name))
-				eprintf ("Cannot add function (duplicated or overlaped)\n");
 			free (ptr);
 			}
 			break;
@@ -1031,7 +1032,7 @@ static int cmd_anal(void *data, const char *input) {
 			r_cons_printf (
 			"Usage: af[?+-l*]\n"
 			" af @ [addr]     ; Analyze functions (start at addr)\n"
-			" af+ [addr] [size] ; Add function\n"
+			" af+ addr size name ; Add function\n"
 			" af- [addr]      ; Clean all function analysis data (or function at addr)\n"
 			" afl             ; List functions\n"
 			" af*             ; Output radare commands\n");
