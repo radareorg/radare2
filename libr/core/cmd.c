@@ -83,10 +83,12 @@ static void cmd_reg (struct r_core_t *core, const char *str) {
 	case '*':
 		r_debug_reg_sync (&core->dbg, R_REG_TYPE_GPR, R_FALSE);
 		r_debug_reg_list (&core->dbg, R_REG_TYPE_GPR, 32, 1);
+		r_debug_reg_list (&core->dbg, R_REG_TYPE_GPR, 64, 1);
 		break;
 	case '\0':
 		r_debug_reg_sync (&core->dbg, R_REG_TYPE_GPR, R_FALSE);
 		r_debug_reg_list (&core->dbg, R_REG_TYPE_GPR, 32, 0);
+		r_debug_reg_list (&core->dbg, R_REG_TYPE_GPR, 64, 0);
 		break;
 	case ' ':
 		arg = strchr(str+1, '=');

@@ -70,6 +70,7 @@ static int config_asm_bits_callback(void *user, void *data) {
 			ret = R_TRUE;
 		}
 	}
+	// TODO: change debugger backend bit profile here
 	return ret;
 }
 

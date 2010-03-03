@@ -27,6 +27,10 @@ R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write) {
 R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 	int n = 0;
 	struct list_head *pos, *head = r_reg_get_list(dbg->reg, type);
+	const char *fmt;
+	if (dbg->h && dbg->h->bits & R_DBG_BIT_64)
+		fmt = "%s = 0x%016llx\n";
+	else fmt = "%s = 0x%08llx\n";
 	//printf("list type=%d size=%d\n", type, size);
 	list_for_each (pos, head) {
 		struct r_reg_item_t *item = list_entry (pos, struct r_reg_item_t, list);
@@ -35,10 +39,9 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 			continue;
 		if (size != 0 && size != item->size)
 			continue;
-		if (rad) dbg->printf ("f %s @ 0x%08llx\n",
+		if (rad) dbg->printf ("f %s @ 0x%llx\n",
 			item->name, r_reg_get_value (dbg->reg, item));
-		else dbg->printf ("%s = 0x%08llx\n",
-			item->name, r_reg_get_value (dbg->reg, item));
+		else dbg->printf (fmt, item->name, r_reg_get_value (dbg->reg, item));
 		n++;
 	}
 	return n;

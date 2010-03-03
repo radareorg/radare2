@@ -43,7 +43,7 @@ R_API int r_debug_attach(struct r_debug_t *dbg, int pid) {
 		ret = dbg->h->attach (pid);
 		if (ret) {
 			// TODO: get arch and set io pid
-			//int arch = dbg->h->get_arch();
+			//int arch = dbg->h->arch;
 			//r_reg_set(dbg->reg->nregs, arch); //R_DBG_ARCH_X86);
 			// dbg->bp->iob->system("pid %d", pid);
 			dbg->pid = pid;

@@ -26,6 +26,13 @@ enum {
 	//..
 };
 
+enum {
+	R_DBG_BIT_8 = 1,
+	R_DBG_BIT_16 = 2,
+	R_DBG_BIT_32 = 4,
+	R_DBG_BIT_64 = 8,
+};
+
 /* TODO: move to r_anal */
 typedef struct r_debug_frame_t {
 	ut64 addr;
@@ -69,8 +76,9 @@ typedef struct r_debug_t {
 /* TODO: pass dbg and user data pointer everywhere */
 typedef struct r_debug_handle_t {
 	const char *name;
-	const char **archs;
-	int (*get_arch)();
+	const char **archs; // MUST BE DEPREACTED!!!!
+	ut32 bits;
+	ut32 arch;
 	/* life */
 	int (*startv)(int argc, char **argv);
 	int (*attach)(int pid);

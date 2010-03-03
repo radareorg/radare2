@@ -317,7 +317,6 @@ static const char *r_debug_native_reg_profile() {
 	"flg	flag_r	.1	.457	0\n"
 	);
 #elif __x86_64__
-#warning linux-x64 reg profile is incomplete
 	return strdup (
 	"=pc	rip\n"
 	"=sp	rsp\n"
@@ -327,12 +326,33 @@ static const char *r_debug_native_reg_profile() {
 	"=a2	rcx\n"
 	"=a3	rdx\n"
 	"# no profile defined for x86-64\n"
-	"gpr	rbx	.32	0	0\n"
-	"gpr	rcx	.32	8	0\n"
-	"gpr	rdx	.32	16	0\n"
-	"gpr	rsi	.32	24	0\n"
-	"gpr	rdi	.32	32	0\n"
-	"gpr	rip	.32	40	0\n"
+	"gpr	r15	.64	0	0\n"
+	"gpr	r14	.64	8	0\n"
+	"gpr	r13	.64	16	0\n"
+	"gpr	r12	.64	24	0\n"
+	"gpr	rbp	.64	32	0\n"
+	"gpr	rbx	.64	40	0\n"
+	"gpr	r11	.64	48	0\n"
+	"gpr	r10	.64	56	0\n"
+	"gpr	r9	.64	64	0\n"
+	"gpr	r8	.64	72	0\n"
+	"gpr	rax	.64	80	0\n"
+	"gpr	rcx	.64	88	0\n"
+	"gpr	rdx	.64	96	0\n"
+	"gpr	rsi	.64	104	0\n"
+	"gpr	rdi	.64	112	0\n"
+	"gpr	oeax	.64	120	0\n"
+	"gpr	rip	.64	128	0\n"
+	"seg	cs	.64	136	0\n"
+	"flg	eflags	.64	144	0\n"
+	"gpr	rsp	.64	152	0\n"
+	"seg	ss	.64	160	0\n"
+	"seg	fs_base	.64	168	0\n"
+	"seg	gs_base	.64	176	0\n"
+	"seg	ds	.64	184	0\n"
+	"seg	es	.64	192	0\n"
+	"seg	fs	.64	200	0\n"
+	"seg	gs	.64	208	0\n"
 	);
 #elif __arm__
 	return strdup (
@@ -653,30 +673,6 @@ static RList *r_debug_native_frames(RDebug *dbg) {
 #warning Backtrace frames not implemented for this platform
 #endif
 
-static int r_debug_get_arch() {
-#if __i386__ || __x86_64__
-	return R_ASM_ARCH_X86;
-#elif __powerpc__ || __POWERPC__
-	return R_ASM_ARCH_PPC;
-#elif __mips__
-	return R_ASM_ARCH_MIPS;
-#elif __arm__
-	return R_ASM_ARCH_ARM;
-#endif
-}
-
-#if __i386__
-const char *archlist[3] = { "x86", "x86-32", 0 };
-#elif __x86_64__
-const char *archlist[4] = { "x86", "x86-32", "x86-64", 0 };
-#elif __powerpc__ || __POWERPC__
-const char *archlist[2] = { "powerpc", 0 };
-#elif __mips__
-const char *archlist[2] = { "mips", 0 };
-#elif __arm__
-const char *archlist[2] = { "arm", 0 };
-#endif
-
 static int r_debug_native_kill(struct r_debug_t *dbg, int sig) {
 #if __WINDOWS__
 	TerminateProcess (WIN32_PI(hProcess), 1);
@@ -691,7 +687,24 @@ static int r_debug_native_kill(struct r_debug_t *dbg, int sig) {
 
 struct r_debug_handle_t r_debug_plugin_native = {
 	.name = "native",
-	.archs = (const char **)archlist,
+#if __i386__
+	.bits = R_DBG_BIT_32,
+	.arch = R_ASM_ARCH_X86,
+#elif __x86_64__
+	.bits = R_DBG_BIT_32 | R_DBG_BIT_64,
+	.arch = R_ASM_ARCH_X86,
+#elif __arm__
+	.bits = R_DBG_BIT_32,
+	.arch = R_ASM_ARCH_ARM,
+#elif __mips__
+	.bits = R_DBG_BIT_32,
+	.arch = R_ASM_ARCH_MIPS,
+#elif __powerpc__
+	.bits = R_DBG_BIT_32,
+	.arch = R_ASM_ARCH_PPC,
+#else
+#warning food
+#endif
 	.step = &r_debug_native_step,
 	.cont = &r_debug_native_continue,
 	.attach = &r_debug_native_attach,
@@ -699,7 +712,6 @@ struct r_debug_handle_t r_debug_plugin_native = {
 	.wait = &r_debug_native_wait,
 	.kill = &r_debug_native_kill,
 	.frames = &r_debug_native_frames,
-	.get_arch = &r_debug_get_arch,
 	.reg_profile = (void *)&r_debug_native_reg_profile,
 	.reg_read = &r_debug_native_reg_read,
 	.reg_write = (void *)&r_debug_native_reg_write,
