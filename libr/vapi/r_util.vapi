@@ -137,7 +137,7 @@ public class Radare.RRange {
 	public Item *item_get(uint64 addr);
 	public uint64 size();
 	public uint64 add_from_string(string str);
-	public uint64 add_string(string str);
+	//public uint64 add_string(string str);
 	//public uint64 add(uint64 fr, uint64 to, int rw);
 //		public bool sub(uint64 fr, uint64 to);
 	//public bool merge(Range r);
@@ -146,7 +146,7 @@ public class Radare.RRange {
 	//public bool percent(); // XXX
 	public bool list(bool rad); // XXX
 	public bool get_n(int n, out uint64 fr, out uint64 to);
-	public Range *inverse(uint64 fr, uint64 to, int flags);
+	public RRange *inverse(uint64 fr, uint64 to, int flags);
 
 	[Compact]
 	[CCode (cname="struct r_range_item_t", cprefix="r_range_item_")]

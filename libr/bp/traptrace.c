@@ -39,6 +39,7 @@ R_API void r_bp_traptrace_reset(RBreakpoint *bp, int hard) {
 	}
 }
 
+// FIX: efficiency
 R_API ut64 r_bp_traptrace_next(RBreakpoint *bp, ut64 addr) {
 	int i, delta;
 	RListIter *iter = r_list_iterator (bp->traces);

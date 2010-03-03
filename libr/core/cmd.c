@@ -2163,8 +2163,7 @@ static int cmd_debug(void *data, const char *input) {
 			eprintf("Usage: dc[?]  -- continue execution\n"
 				" dc?              show this help\n"
 				" dc               continue execution of all childs\n"
-				" dct [len]        traptrace from current seek to length\n"
-				" dctl             list all traced instructions\n"
+				" dct [len]        traptrace from curseek to len, no argument to list\n"
 				" dcu [addr]       continue until address\n"
 				" dcs [num]        continue until syscall\n"
 				" dck [sig] [pid]  continue sending kill 9 to process\n"
@@ -2207,10 +2206,10 @@ static int cmd_debug(void *data, const char *input) {
 			} while (0);
 			break;
 		case 't':
-			if (input[2]=='l') {
+			len = r_num_math (&core->num, input+2);
+			if (len == 0) {
 				r_bp_traptrace_list (core->dbg.bp);
 			} else {
-				len = r_num_math (&core->num, input+2);
 				eprintf ("Trap tracing 0x%08llx-0x%08llx\n", core->offset, core->offset+len);
 				r_bp_traptrace_reset (core->dbg.bp, R_TRUE);
 				r_bp_traptrace_add (core->dbg.bp, core->offset, core->offset+len);
