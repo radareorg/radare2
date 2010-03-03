@@ -242,6 +242,7 @@ R_API char *r_str_word_get_first(const char *text) {
 	for (;*text && isseparator (*text); text++);
 
 	/* strdup */
+	len = strlen (text);
 	ret = (char *)malloc (len+1);
 	if (ret == NULL) {
 		eprintf ("Cannot allocate %d bytes.\n", len+1);

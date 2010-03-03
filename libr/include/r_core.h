@@ -118,6 +118,7 @@ R_API int r_core_anal_fcn_add (struct r_core_t *core, ut64 addr, ut64 size, cons
 R_API int r_core_anal_fcn_list (struct r_core_t *core, int rad);
 R_API int r_core_anal_fcn_clean (struct r_core_t *core, ut64 addr);
 R_API int r_core_anal_graph (struct r_core_t *core, ut64 addr);
+R_API int r_core_anal_graph_fcn (struct r_core_t *core, char *input);
 #endif
 
 #endif

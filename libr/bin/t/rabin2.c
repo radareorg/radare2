@@ -114,10 +114,8 @@ static int rabin_show_imports(ut64 at) {
 	if ((imports = r_bin_get_imports (bin)) == NULL)
 		return R_FALSE;
 
-	if (!at) {
-		if (rad) printf ("fs imports\n");
-		else printf ("[Imports]\n");
-	}
+	if (!at && !rad)
+		printf ("[Imports]\n");
 
 	r_flist_foreach (imports, import) {
 		if (at) {
@@ -126,7 +124,11 @@ static int rabin_show_imports(ut64 at) {
 		} else {
 			if (rad) {
 				r_flag_name_filter (import->name);
+				printf ("fs imports\n");
 				printf ("f imp.%s @ 0x%08llx\n",
+						import->name, va?baddr+import->rva:import->offset);
+				printf ("fs functions\n");
+				printf ("f fcn.imp.%s @ 0x%08llx\n",
 						import->name, va?baddr+import->rva:import->offset);
 				printf ("af+ 0x%08llx 0 imp.%s\n",
 						va?baddr+import->rva:import->offset, import->name);
@@ -176,6 +178,11 @@ static int rabin_show_symbols(ut64 at) {
 								symbol->size, va?baddr+symbol->rva:symbol->offset);
 						printf ("af+ 0x%08llx %lli sym.%s\n",
 								va?baddr+symbol->rva:symbol->offset, symbol->size, symbol->name);
+						printf ("fs functions\n");
+						printf ("f fcn.sym.%s %lli 0x%08llx\n",
+								symbol->name, symbol->size,
+								va?baddr+symbol->rva:symbol->offset);
+						printf ("fs symbols\n");
 					} else if (!strncmp (symbol->type,"OBJECT", 6))
 							printf ("Cd %lli @ 0x%08llx\n",
 									symbol->size, va?baddr+symbol->rva:symbol->offset);

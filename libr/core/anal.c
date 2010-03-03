@@ -2,6 +2,7 @@
 
 #include <r_types.h>
 #include <r_list.h>
+#include <r_flags.h>
 #include <r_core.h>
 
 static char *r_core_anal_graph_label (struct r_core_t *core, ut64 addr, ut64 size) {
@@ -94,7 +95,7 @@ R_API int r_core_anal_bb (struct r_core_t *core, ut64 at, int depth) {
 		if (!(buf = malloc (core->blocksize)))
 			return R_FALSE;
 		do {
-			if ((buflen = r_io_read_at (&core->io, at+bblen, buf, core->blocksize)) == -1)
+			if ((buflen = r_io_read_at (&core->io, at+bblen, buf, core->blocksize)) != core->blocksize)
 				return R_FALSE;
 			bblen = r_anal_bb (&core->anal, bb, at+bblen, buf, buflen); 
 			if (bblen == R_ANAL_RET_ERROR) { /* Error analyzing bb */
@@ -185,6 +186,7 @@ R_API int r_core_anal_fcn (struct r_core_t *core, ut64 at, ut64 from, int depth)
 	struct r_anal_fcn_t *fcn, *fcni;
 	struct r_anal_ref_t *refi;
 	RListIter *iter, *iter2;
+	char *flagname;
 	ut64 *ref;
 	ut8 *buf;
 	int buflen, fcnlen = 0;
@@ -224,6 +226,10 @@ R_API int r_core_anal_fcn (struct r_core_t *core, ut64 at, ut64 from, int depth)
 			return R_FALSE;
 		} else if (fcnlen == R_ANAL_RET_END) { /* function analysis complete */
 			fcn->name = r_str_dup_printf ("fcn_%08llx", at);
+			/* Add flag */
+			flagname = r_str_dup_printf ("fcn.%s", fcn->name);
+			r_flag_set (&core->flags, flagname, at, fcn->size, 0);
+			free (flagname);
 			r_list_append (core->anal.fcns, fcn);
 			iter = r_list_iterator (fcn->refs);
 			while (r_list_iter_next (iter)) {
@@ -331,4 +337,17 @@ R_API int r_core_anal_graph (struct r_core_t *core, ut64 addr) {
 	r_config_set_i(&core->config, "asm.reflines", reflines);
 	r_config_set_i(&core->config, "asm.bytes", bytes);
 	return R_TRUE;
+}
+
+R_API int r_core_anal_graph_fcn (struct r_core_t *core, char *fname) {
+	struct r_anal_fcn_t *fcni;
+	RListIter *iter;
+
+	iter = r_list_iterator (core->anal.fcns);
+	while (r_list_iter_next (iter)) {
+		fcni = r_list_iter_get (iter);
+		if (!strcmp (fname, fcni->name))
+			return r_core_anal_graph (core, fcni->addr);
+	}
+	return R_FALSE;
 }

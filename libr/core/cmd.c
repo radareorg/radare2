@@ -1040,16 +1040,32 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'g':
-		r_core_anal_graph (core, r_num_math (&core->num, input+2));
+		switch (input[1]) {
+		case 'f':
+			{
+			char *fname = r_str_word_get_first (input+2);
+			r_core_anal_graph_fcn (core, fname);
+			free (fname);
+			}
+			break;
+		case '?':
+			r_cons_printf (
+			"Usage: ag[?f]\n"
+			" ag [addr]       ; Output graphviz code (bb at addr and childs)\n"
+			" agf [fcn name]  ; Output graphviz code of function\n");
+			break;
+		default:
+			r_core_anal_graph (core, r_num_math (&core->num, input+2));
+		}
 		break;
 	default:
 		r_cons_printf (
 		"Usage: a[?hobfg]\n"
 		" ah [handle]     ; Use this analysis plugin\n"
 		" ao [len]        ; Analyze raw bytes\n"
-		" ab[?+-l*]        ; Analyze basic blocks\n"
-		" af[?+-l*]        ; Analyze functions\n"
-		" ag [addr]       ; Output graphviz code (bb at addr and childs)\n");
+		" ab[?+-l*]       ; Analyze basic blocks\n"
+		" af[?+-l*]       ; Analyze functions\n"
+		" ag[?f]          ; Output graphviz code\n");
 		break;
 	}
 	if (tbs != core->blocksize)
