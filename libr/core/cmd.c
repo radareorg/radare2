@@ -2089,7 +2089,8 @@ static int step_line(RCore *core, int times) {
 
 static int cmd_debug(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	int times, pid, sig;
+	struct r_anal_aop_t analop;
+	int len, times, pid, sig;
 	ut64 addr;
 	char *ptr;
 
@@ -2142,13 +2143,15 @@ static int cmd_debug(void *data, const char *input) {
 		switch (input[1]) {
 		case '?':
 			eprintf("Usage: dc[?]  -- continue execution\n"
-				" dc?               show this help\n"
-				" dc                continue execution of all childs\n"
-				" dcu [addr]        continue until address\n"
-				" dcs [num]         continue until syscall\n"
-				" dck [sig] [pid]   continue sending kill 9 to process\n"
-				" dc [pid]          continue execution of pid\n"
-				" dc[-pid]          stop execution of pid\n"
+				" dc?              show this help\n"
+				" dc               continue execution of all childs\n"
+				" dct [len]        traptrace from current seek to length\n"
+				" dctl             list all traced instructions\n"
+				" dcu [addr]       continue until address\n"
+				" dcs [num]        continue until syscall\n"
+				" dck [sig] [pid]  continue sending kill 9 to process\n"
+				" dc [pid]         continue execution of pid\n"
+				" dc[-pid]         stop execution of pid\n"
 				"TODO: support for threads?\n");
 			break;
 		case 'k':
@@ -2184,6 +2187,31 @@ static int cmd_debug(void *data, const char *input) {
 				r_debug_continue (&core->dbg);
 				r_debug_select (&core->dbg, old_pid, old_pid);
 			} while (0);
+			break;
+		case 't':
+			if (input[2]=='l') {
+				r_bp_traptrace_list (core->dbg.bp);
+			} else {
+				len = r_num_math (&core->num, input+2);
+				eprintf ("Trap tracing 0x%08llx-0x%08llx\n", core->offset, core->offset+len);
+				r_bp_traptrace_reset (core->dbg.bp, R_TRUE);
+				r_bp_traptrace_add (core->dbg.bp, core->offset, core->offset+len);
+				r_bp_traptrace_enable (core->dbg.bp, R_TRUE);
+				do {
+					ut8 buf[32];
+					r_debug_continue (&core->dbg);
+					addr = r_debug_reg_get (&core->dbg, "pc");
+					if (addr == 0LL) {
+						eprintf ("pc=0\n");
+						break;
+					}
+					/* XXX Bottleneck..we need to reuse the bytes read by traptrace */
+					// XXX Do asm.arch should define the max size of opcode?
+					r_core_read_at (core, addr, buf, 32); // XXX longer opcodes?
+					r_anal_aop (&core->anal, &analop, addr, buf, sizeof (buf));
+				} while (r_bp_traptrace_at (core->dbg.bp, addr, analop.length));
+				r_bp_traptrace_enable (core->dbg.bp, R_FALSE);
+			}
 			break;
 		default:
 			eprintf ("continue\n");

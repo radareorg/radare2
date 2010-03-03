@@ -71,7 +71,7 @@ R_API int r_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
 	buf = (ut8*) malloc ((int)len);
 	if (buf == NULL)
 		return R_FALSE;
-	trap = (ut8*) malloc ((int)len);
+	trap = (ut8*) malloc ((int)len+4);
 	if (trap == NULL) {
 		free (buf);
 		return R_FALSE;
