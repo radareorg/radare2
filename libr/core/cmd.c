@@ -997,16 +997,33 @@ static int cmd_anal(void *data, const char *input) {
 	case 'f':
 		switch (input[1]) {
 		case '-':
-			eprintf ("TODO af-\n");
+			r_core_anal_fcn_clean (core, r_num_math (&core->num, input+2));
 			break;
 		case '+':
-			eprintf ("TODO af+\n");
+			{
+			char *ptr = strdup(input+3);
+			const char *name = NULL;
+			ut64 addr = -1LL;
+			ut64 size = 0LL;
+			
+			switch(r_str_word_set0 (ptr)) {
+			case 3: // get name
+				name = r_str_word_get0 (ptr, 2);
+			case 2: // get size
+				size = r_num_math (&core->num, r_str_word_get0 (ptr, 1));
+			case 1: // get addr
+				addr = r_num_math (&core->num, r_str_word_get0 (ptr, 0));
+			}
+			if (!r_core_anal_fcn_add (core, addr, size, name))
+				eprintf ("Cannot add function (duplicated or overlaped)\n");
+			free (ptr);
+			}
 			break;
 		case 'l':
-			eprintf ("TODO afl\n");
+			r_core_anal_fcn_list (core, 0);
 			break;
 		case '*':
-			eprintf ("TODO af*\n");
+			r_core_anal_fcn_list (core, 1);
 			break;
 		case '?':
 			r_cons_printf (
@@ -1018,7 +1035,8 @@ static int cmd_anal(void *data, const char *input) {
 			" af*             ; Output radare commands\n");
 			break;
 		default:
-			eprintf ("TODO af\n");
+			r_core_anal_fcn (core, core->offset, -1,
+					r_config_get_i (&core->config, "anal.depth"));
 		}
 		break;
 	case 'g':

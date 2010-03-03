@@ -110,6 +110,7 @@ typedef struct r_anal_t {
 	int big_endian;
 	void *user;
 	RList *bbs;
+	RList *fcns;
 	struct r_anal_ctx_t *ctx;
 	struct r_anal_handle_t *cur;
 	struct list_head anals;
@@ -139,14 +140,15 @@ typedef struct r_anal_bb_t {
 	RList *aops;
 } RAnalysisBB;
 
-typedef struct r_anal_ctx_t {
-	/* TODO: add more info here */
-	/* per opcode deep level */
-	/* per opcode stack size */
-	/* basic blocks */
-	int stacksize;
-	struct r_anal_t *anal;
-} RAnalysisContext;
+typedef struct r_anal_fcn_t {
+	char *name;
+	ut64 addr;
+	int size;
+	RList *refs;
+	RList *xrefs;
+} RAnalysisFcn;
+
+typedef ut64 RAnalysisRef;
 
 typedef struct r_anal_refline_t {
 	ut64 from;
@@ -172,14 +174,22 @@ typedef struct r_anal_handle_t {
 R_API RAnalysis *r_anal_new();
 R_API RAnalysisBB *r_anal_bb_new();
 R_API RAnalysisAop *r_anal_aop_new();
+R_API RAnalysisFcn *r_anal_fcn_new();
+R_API RAnalysisRef *r_anal_ref_new();
 R_API RList *r_anal_bb_list_new();
 R_API RList *r_anal_aop_list_new();
+R_API RList *r_anal_fcn_list_new();
+R_API RList *r_anal_ref_list_new();
 R_API RAnalysis *r_anal_free(struct r_anal_t *r);
 R_API void r_anal_bb_free(void *bb);
 R_API void r_anal_aop_free(void *aop);
+R_API void r_anal_fcn_free(void *fcn);
+R_API void r_anal_ref_free(void *ref);
 R_API RAnalysis *r_anal_init(struct r_anal_t *anal);
 R_API RAnalysisBB *r_anal_bb_init(struct r_anal_bb_t *bb);
 R_API RAnalysisAop *r_anal_aop_init(struct r_anal_aop_t *aop);
+R_API RAnalysisFcn *r_anal_fcn_init(RAnalysisFcn *fcn);
+R_API RAnalysisRef *r_anal_ref_init(RAnalysisRef *ref);
 R_API void r_anal_set_user_ptr(struct r_anal_t *anal, void *user);
 R_API int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo);
 R_API int r_anal_list(struct r_anal_t *anal);
@@ -199,5 +209,6 @@ R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *li
 		ut64 addr, char *str, int opts);
 R_API int r_anal_bb_split(RAnalysis *anal, RAnalysisBB *bb, RList *bbs, ut64 addr);
 R_API int r_anal_bb_overlap(RAnalysis *anal, RAnalysisBB *bb, RList *bbs);
+R_API int r_anal_fcn(RAnalysis *anal, RAnalysisFcn *fcn, ut64 addr, ut8 *buf, ut64 len);
 #endif
 #endif

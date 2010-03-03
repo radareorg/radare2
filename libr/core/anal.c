@@ -122,8 +122,6 @@ R_API int r_core_anal_bb_clean (struct r_core_t *core, ut64 addr) {
 	RListIter *iter;
 	ut64 jump, fail;
 
-	if (!core->anal.bbs)
-		return R_FALSE;
 	if (addr == 0) {
 		r_list_destroy (core->anal.bbs);
 		if (!(core->anal.bbs = r_anal_bb_list_new ()))
@@ -167,7 +165,7 @@ R_API int r_core_anal_bb_add (struct r_core_t *core, ut64 addr, ut64 size, ut64 
 }
 
 R_API int r_core_anal_bb_list (struct r_core_t *core, int rad) {
-	struct r_anal_bb_t *bb, *bbi;
+	struct r_anal_bb_t *bbi;
 	RListIter *iter;
 
 	iter = r_list_iterator (core->anal.bbs);
@@ -178,6 +176,115 @@ R_API int r_core_anal_bb_list (struct r_core_t *core, int rad) {
 				bbi->addr, bbi->size, bbi->jump, bbi->fail);
 		else r_cons_printf ("[0x%08llx] size=%lli jump=0x%08llx fail=0x%08llx\n",
 				bbi->addr, bbi->size, bbi->jump, bbi->fail);
+	}
+	r_cons_flush();
+	return R_TRUE;
+}
+
+R_API int r_core_anal_fcn (struct r_core_t *core, ut64 at, ut64 from, int depth) {
+	struct r_anal_fcn_t *fcn, *fcni;
+	struct r_anal_ref_t *refi;
+	RListIter *iter;
+	ut64 *call;
+	ut8 *buf;
+	int buflen, fcnlen = 0;
+
+	if (depth < 0)
+		return R_FALSE;
+	iter = r_list_iterator (core->anal.fcns);
+	while (r_list_iter_next (iter)) {
+		fcni = r_list_iter_get (iter);
+		if (at >= fcni->addr && at < fcni->addr+fcni->size)
+			return R_FALSE;
+	}
+	eprintf ("Analysing: 0x%08llx\n", at);
+	if (!(fcn = r_anal_fcn_new()))
+		return R_FALSE;
+	if (!(buf = malloc (core->blocksize)))
+		return R_FALSE;
+	do {
+		if ((buflen = r_io_read_at (&core->io, at+fcnlen, buf, core->blocksize)) != core->blocksize)
+			return R_FALSE;
+		fcnlen = r_anal_fcn (&core->anal, fcn, at+fcnlen, buf, buflen); 
+		if (fcnlen == R_ANAL_RET_ERROR) { /* Error analyzing function */
+			r_anal_fcn_free (fcn);
+			return R_FALSE;
+		} else if (fcnlen == R_ANAL_RET_END) { /* function analysis complete */
+			r_list_append (core->anal.fcns, fcn);
+			iter = r_list_iterator (fcn->refs);
+			while (r_list_iter_next (iter)) {
+				refi = r_list_iter_get (iter);
+				call = (ut64*)refi;
+				if (*call != -1)
+					r_core_anal_fcn (core, *call, at, depth-1);
+			}
+		}
+	} while (fcnlen != R_ANAL_RET_END);
+	free (buf);
+	return R_TRUE;
+}
+
+R_API int r_core_anal_fcn_clean (struct r_core_t *core, ut64 addr) {
+	struct r_anal_fcn_t *fcni;
+	RListIter *iter;
+
+	if (addr == 0) {
+		r_list_destroy (core->anal.fcns);
+		if (!(core->anal.fcns = r_anal_fcn_list_new ()))
+			return R_FALSE;
+	} else {
+		iter = r_list_iterator (core->anal.fcns);
+		while (r_list_iter_next (iter)) {
+			fcni = r_list_iter_get (iter);
+			if (addr >= fcni->addr && addr < fcni->addr+fcni->size)
+				r_list_unlink (core->anal.fcns, fcni);
+		}
+	}
+	return R_TRUE;
+}
+
+R_API int r_core_anal_fcn_add (struct r_core_t *core, ut64 addr, ut64 size, const char *name) {
+	struct r_anal_fcn_t *fcn, *fcni;
+	RListIter *iter;
+
+	iter = r_list_iterator (core->anal.fcns);
+	while (r_list_iter_next (iter)) {
+		fcni = r_list_iter_get (iter);
+		if (addr >= fcni->addr && addr < fcni->addr+fcni->size)
+			return R_FALSE;
+	}
+	if (!(fcn = r_anal_fcn_new ()))
+		return R_FALSE;
+	fcn->addr = addr;
+	fcn->size = size;
+	fcn->name = strdup (name);
+	r_list_append (core->anal.fcns, fcn);
+	return R_TRUE;
+}
+
+R_API int r_core_anal_fcn_list (struct r_core_t *core, int rad) {
+	struct r_anal_fcn_t *fcni;
+	struct r_anal_ref_t *refi;
+	RListIter *iter, *iter2;
+	ut64 *call;
+
+	iter = r_list_iterator (core->anal.fcns);
+	while (r_list_iter_next (iter)) {
+		fcni = r_list_iter_get (iter);
+		if (rad)
+			r_cons_printf ("af+ 0x%08llx %lli %s\n", fcni->addr, fcni->size, fcni->name);
+		else {
+			r_cons_printf ("[0x%08llx] size=%lli name=%s\n",
+					fcni->addr, fcni->size, fcni->name);
+			r_cons_printf ("refs: ");
+			iter2 = r_list_iterator (fcni->refs);
+			while (r_list_iter_next (iter)) {
+				refi = r_list_iter_get (iter);
+				call = (ut64*)refi;
+				r_cons_printf ("0x%08llx ", *call);
+			}
+			r_cons_printf ("\n");
+		}
 	}
 	r_cons_flush();
 	return R_TRUE;

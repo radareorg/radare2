@@ -2,6 +2,7 @@
 /*   nibble<.ds@gmail.com> */
 /*   pancake<nopcode.org> */
 
+#if 0
 #include <r_anal.h>
 
 R_API void r_anal_ctx_init(struct r_anal_ctx_t *ctx)
@@ -25,7 +26,6 @@ R_API void r_anal_ctx_reset(struct r_anal_t *anal)
 {
 }
 
-#if 0
 /* getter/setter */
 R_API struct r_anal_ctx_t *r_anal_ctx_get(struct r_anal_t *anal)
 {
