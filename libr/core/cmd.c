@@ -947,21 +947,77 @@ static int cmd_anal(void *data, const char *input) {
 #endif
 		break;
 	case 'b':
-		if (input[1] == '-')
+		switch (input[1]) {
+		case '-':
 			r_core_anal_bb_clean (core, r_num_math (&core->num, input+2));
-		else r_core_anal_bb (core, core->offset,
-				r_config_get_i (&core->config, "anal.depth"));
+			break;
+		case '+':
+			{
+			char *ptr = strdup(input+3);
+			ut64 addr = -1LL;
+			ut64 size = 0LL;
+			ut64 jump = -1LL;
+			ut64 fail = -1LL;
+			
+			switch(r_str_word_set0 (ptr)) {
+			case 4: // get fail
+				fail = r_num_math (&core->num, r_str_word_get0 (ptr, 3));
+			case 3: // get jump
+				jump = r_num_math (&core->num, r_str_word_get0 (ptr, 2));
+			case 2: // get size
+				size = r_num_math (&core->num, r_str_word_get0 (ptr, 1));
+			case 1: // get addr
+				addr = r_num_math (&core->num, r_str_word_get0 (ptr, 0));
+			}
+			if (!r_core_anal_bb_add (core, addr, size, jump, fail))
+				eprintf ("Cannot add bb (duplicated or overlaped)\n");
+			free (ptr);
+			}
+			break;
+		case 'l':
+			r_core_anal_bb_list (core, 0);
+			break;
+		case '*':
+			r_core_anal_bb_list (core, 1);
+			break;
+		case '?':
+			r_cons_printf (
+			"Usage: ab[ +-]\n"
+			" ab @ [addr]     ; Analyze basic blocks (start at addr)\n"
+			" ab+ [addr] [size] [jump] [fail] ; Add basic block\n"
+			" ab- [addr]      ; Clean all basic block data (or bb at addr and childs)\n"
+			" abl             ; List basic blocks\n"
+			" ab*             ; Output radare commands\n");
+			break;
+		default:
+			r_core_anal_bb (core, core->offset,
+					r_config_get_i (&core->config, "anal.depth"));
+		}
+		break;
+	case 'f':
+		switch (input[1]) {
+		case '-':
+			eprintf ("TODO af-");
+			break;
+		case '+':
+			eprintf ("TODO af+");
+			break;
+		default:
+			eprintf ("TODO af");
+		}
 		break;
 	case 'g':
 		r_core_anal_graph (core, r_num_math (&core->num, input+2));
 		break;
 	default:
 		r_cons_printf (
-		"Usage: a[o] [len]\n"
+		"Usage: a[hobfg] [len]\n"
 		" ah [handle]     ; Use this analysis plugin\n"
 		" ao [len]        ; Analyze raw bytes\n"
-		" ab @ [addr]     ; Analyze basic blocks (start at addr)\n"
-		" ab- [addr]      ; Clean all basic block data (bb at addr and childs)\n"
+		" ab[ +-?]        ; Analyze basic blocks\n"
+		" af @ [addr]     ; Analyze functions (start at addr)\n"
+		" af+ [addr] [size] ; Add function\n"
+		" af- [addr]      ; Clean all function analysis data (or function at addr)\n"
 		" ag [addr]       ; Output graphviz code (bb at addr and childs)\n");
 		break;
 	}

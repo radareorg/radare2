@@ -146,6 +146,43 @@ R_API int r_core_anal_bb_clean (struct r_core_t *core, ut64 addr) {
 	return R_TRUE;
 }
 
+R_API int r_core_anal_bb_add (struct r_core_t *core, ut64 addr, ut64 size, ut64 jump, ut64 fail) {
+	struct r_anal_bb_t *bb, *bbi;
+	RListIter *iter;
+
+	iter = r_list_iterator (core->anal.bbs);
+	while (r_list_iter_next (iter)) {
+		bbi = r_list_iter_get (iter);
+		if (addr >= bbi->addr && addr < bbi->addr+bbi->size)
+			return R_FALSE;
+	}
+	if (!(bb = r_anal_bb_new ()))
+		return R_FALSE;
+	bb->addr = addr;
+	bb->size = size;
+	bb->jump = jump;
+	bb->fail = fail;
+	r_list_append (core->anal.bbs, bb);
+	return R_TRUE;
+}
+
+R_API int r_core_anal_bb_list (struct r_core_t *core, int rad) {
+	struct r_anal_bb_t *bb, *bbi;
+	RListIter *iter;
+
+	iter = r_list_iterator (core->anal.bbs);
+	while (r_list_iter_next (iter)) {
+		bbi = r_list_iter_get (iter);
+		if (rad)
+			r_cons_printf ("ab+ 0x%08llx %lli 0x%08llx 0x%08llx\n",
+				bbi->addr, bbi->size, bbi->jump, bbi->fail);
+		else r_cons_printf ("[0x%08llx] size=%lli jump=0x%08llx fail=0x%08llx\n",
+				bbi->addr, bbi->size, bbi->jump, bbi->fail);
+	}
+	r_cons_flush();
+	return R_TRUE;
+}
+
 R_API int r_core_anal_graph (struct r_core_t *core, ut64 addr) {
 	RList *pbb = NULL;
 	int reflines = r_config_get_i(&core->config, "asm.reflines");
@@ -156,10 +193,12 @@ R_API int r_core_anal_graph (struct r_core_t *core, ut64 addr) {
 	r_cons_printf ("digraph code {\n");
 	r_cons_printf ("\tgraph [bgcolor=white];\n");
 	r_cons_printf ("\tnode [color=lightgray, style=filled shape=box fontname=\"Courier\" fontsize=\"8\"];\n");
+	r_cons_flush ();
 	if (addr != 0) pbb = r_anal_bb_list_new (); /* In partial graphs define printed bb list */
 	r_core_anal_graph_nodes (core, pbb, addr);
 	if (pbb) r_list_destroy (pbb);
 	r_cons_printf ("}\n");
+	r_cons_flush ();
 	r_config_set_i(&core->config, "asm.reflines", reflines);
 	r_config_set_i(&core->config, "asm.bytes", bytes);
 	return R_TRUE;
