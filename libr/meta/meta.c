@@ -1,28 +1,24 @@
 /* radare - LGPL - Copyright 2008-2009 pancake<nopcode.org> */
 
-#include "r_meta.h"
+#include <r_meta.h>
 
-int r_meta_init(struct r_meta_t *m)
-{
+R_API int r_meta_init(struct r_meta_t *m) {
 	INIT_LIST_HEAD(&m->data);
 	return R_TRUE;
 }
 
-struct r_meta_t *r_meta_new()
-{
+R_API struct r_meta_t *r_meta_new() {
 	struct r_meta_t *m = MALLOC_STRUCT(struct r_meta_t);
 	r_meta_init(m);
 	return m;
 }
 
-void r_meta_free(struct r_meta_t *m)
-{
+R_API void r_meta_free(struct r_meta_t *m) {
 	/* TODO: memory leak */
 	free(m);
 }
 
-int r_meta_count(struct r_meta_t *m, int type, ut64 from, ut64 to, struct r_meta_count_t *c)
-{
+R_API int r_meta_count(struct r_meta_t *m, int type, ut64 from, ut64 to, struct r_meta_count_t *c) {
 	struct list_head *pos;
 	int count = 0;
 
@@ -41,8 +37,7 @@ int r_meta_count(struct r_meta_t *m, int type, ut64 from, ut64 to, struct r_meta
 	return count;
 }
 
-char *r_meta_get_string(struct r_meta_t *m, int type, ut64 addr)
-{
+R_API char *r_meta_get_string(struct r_meta_t *m, int type, ut64 addr) {
 	char *str = NULL;
 	struct list_head *pos;
 
@@ -268,7 +263,7 @@ const char *r_meta_type_to_string(int type)
 }
 
 #if 0
-#include <r_range.h>
+#include <r_util.h>
 struct r_range_t *r_meta_ranges(struct r_meta_t *m)
 {
 	struct r_range_t *r;
