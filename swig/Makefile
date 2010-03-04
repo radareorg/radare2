@@ -1,4 +1,4 @@
-all: supported.langs ruby perl python
+all: supported.langs ruby perl python lua
 
 supported.langs:
 	sh check-langs.sh
@@ -13,10 +13,14 @@ python:
 ruby:
 	@-[ "`grep ruby supported.langs`" ] && cd ruby && make
 
+lua:
+	@-[ "`grep lua supported.langs`" ] && cd lua && make
+
 test:
 	cd perl && make test
 	cd python && make test
 	cd ruby && make test
+	cd lua && make test
 
 install-python:
 	@if [ "`grep python supported.langs`" ]; then \
@@ -28,6 +32,9 @@ install-python:
 	cp -rf python/*libr* /usr/lib/$$a/ ; \
 	done ; \
 	fi
+
+install-lua:
+	@echo TODO: install-lua
 
 install-ruby:
 	@if [ "`grep ruby supported.langs`" ]; then \
@@ -59,5 +66,6 @@ clean:
 	cd python && make clean
 	cd perl && make clean
 	cd ruby && make clean
+	cd lua && make clean
 
-.PHONY: ruby python perl clean oldtest test all
+.PHONY: ruby lua python perl clean oldtest test all
