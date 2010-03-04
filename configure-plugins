@@ -48,7 +48,7 @@ generate_configh () {
     if [ ! "$oldlib" = "$lib" ]; then
       [ -n "$oldlib" ] && echo "     0"
       oldlib=$lib
-      uclib=$(echo $lib | tr '[:lower:]' '[:upper:]')
+      uclib=$(echo $lib | tr '[a-z]' '[a-Z]')
       echo
       echo "#define R_${uclib}_STATIC_PLUGINS \\"
       plugins="${plugins} __${uclib}"
@@ -63,7 +63,7 @@ generate_configh () {
     plg=$(echo $a | cut -d . -f 2) # plugin name
     if [ ! "$oldlib" = "$lib" ]; then
       oldlib=$lib
-      uclib=$(echo $lib | tr '[:lower:]' '[:upper:]')
+      uclib=$(echo $lib | tr '[a-z]' '[A-Z]')
       if [ -z "`echo ${plugins} | grep __${uclib}`" ]; then
         plugins="${plugins} __${uclib}"
         echo
@@ -82,7 +82,7 @@ generate_configmk () {
     if [ ! "$oldlib" = "$lib" ]; then
       [ -n "$oldlib" ] && printf "\n"
       oldlib=$lib
-      uclib=$(echo $lib | tr '[:lower:]' '[:upper:]')
+      uclib=$(echo $lib | tr '[a-z]' '[A-Z]')
       printf "STATIC_${uclib}_PLUGINS= "
       plugins="${plugins} __${uclib}"
     fi
@@ -94,7 +94,7 @@ generate_configmk () {
   # fill the holes with love
   for a in ${SHARED} ; do
     lib=$(echo $a | cut -d . -f 1) # library
-    uclib=$(echo $lib | tr '[:lower:]' '[:upper:]')
+    uclib=$(echo $lib | tr '[a-z]' '[A-Z]')
     if [ -z "`echo ${plugins} | grep __${uclib}`" ]; then
       plugins="${plugins} __${uclib}"
       echo "STATIC_${uclib}_PLUGINS="
