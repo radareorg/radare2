@@ -124,16 +124,15 @@ R_API void* r_bin_free(RBin *bin) {
 	r_bin_free_items (bin);
 	if (bin->cur && bin->cur->destroy)
 		bin->cur->destroy (bin);
-	free(bin);
+	free (bin);
 	return NULL;
 }
 
 R_API int r_bin_init(RBin *bin) {
 	int i;
-
 	memset (bin, 0, sizeof(RBin));
 	INIT_LIST_HEAD (&bin->bins);
-	for(i=0;bin_static_plugins[i];i++)
+	for (i=0;bin_static_plugins[i];i++)
 		r_bin_add (bin, bin_static_plugins[i]);
 	return R_TRUE;
 }
@@ -219,8 +218,7 @@ R_API RFList r_bin_get_symbols(RBin *bin) {
 
 R_API RBin* r_bin_new() {
 	RBin *bin; 
-
-	if (!(bin = MALLOC_STRUCT (RBin)))
+	if (!(bin = R_NEW (RBin)))
 		return NULL;
 	r_bin_init (bin);
 	return bin;

@@ -246,7 +246,7 @@ R_API char *r_str_word_get_first(const char *text) {
 	ret = (char *)malloc (len+1);
 	if (ret == NULL) {
 		eprintf ("Cannot allocate %d bytes.\n", len+1);
-		exit(1);
+		exit (1);
 	}
 	strncpy (ret, text, len);
 	ret[len]='\0';
@@ -451,6 +451,13 @@ R_API const char *r_str_ansi_chrn(const char *str, int n) {
 	return str+i;
 }
 
+R_API void r_str_filter(char *str, int len) {
+	int i;
+	for (i=0; i<len; i++)
+		if (!IS_PRINTABLE (str[i]))
+			str[i] = '.';
+}
+
 #define MAXARG 128
 R_API char **r_str_argv(const char *_str, int *_argc) {
 	int argc = 0;
@@ -459,7 +466,7 @@ R_API char **r_str_argv(const char *_str, int *_argc) {
 	char *optr, *ptr, *str = strdup (_str);
 	char **argv = (char **)malloc (MAXARG*sizeof(char*));
 
-	optr = ptr = r_str_chop_ro (str);
+	optr = ptr = (char *)r_str_chop_ro (str);
 	for (; *ptr && argc<MAXARG; ptr++) {
 		switch (*ptr) {
 		case '\'':

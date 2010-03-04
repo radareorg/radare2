@@ -15,8 +15,7 @@ R_API char *r_sys_cmd_strf(const char *cmd, ...) {
 	return NULL;
 }
 
-R_API int r_sys_sleep(int secs)
-{
+R_API int r_sys_sleep(int secs) {
 #if __UNIX__
 	return sleep(secs);
 #else
@@ -25,8 +24,7 @@ R_API int r_sys_sleep(int secs)
 #endif
 }
 
-R_API int r_sys_usleep(int usecs)
-{
+R_API int r_sys_usleep(int usecs) {
 #if __UNIX__
 	return usleep(usecs);
 #else
@@ -34,8 +32,7 @@ R_API int r_sys_usleep(int usecs)
 #endif
 }
 
-R_API int r_sys_setenv(const char *key, const char *value, int ow)
-{
+R_API int r_sys_setenv(const char *key, const char *value, int ow) {
 #if __UNIX__
 	return setenv(key, value, ow);
 #else
@@ -145,19 +142,19 @@ R_API int r_sys_cmd (const char *str) {
 	int fds[2];
 	int st,pid;
 	char *argv[] ={ "/bin/sh", "-c", input, NULL};
-	pipe(fds);
+	pipe (fds);
 	/* not working ?? */
 	//pid = rfork(RFPROC|RFCFDG);
-	pid = vfork();
+	pid = vfork ();
 	if (pid == 0) {
-		dup2(1, fds[1]);
-		execv(argv[0], argv);
-		_exit(127); /* error */
+		dup2 (1, fds[1]);
+		execv (argv[0], argv);
+		_exit (127); /* error */
 	} else {
-		dup2(1, fds[0]);
-		waitpid(pid, &st, 0);
+		dup2 (1, fds[0]);
+		waitpid (pid, &st, 0);
 	}
-	return WEXITSTATUS(st);
+	return WEXITSTATUS (st);
 #else
 	return system (str);
 #endif

@@ -1,44 +1,24 @@
 #ifndef _INCLUDE_R_SYSCALL_H_
 #define _INCLUDE_R_SYSCALL_H_
 
-#include "r_types.h"
-#include "list.h"
+#include <r_types.h>
+#include <list.h>
 
-enum {
-	R_SYSCALL_OS_LINUX = 0,
-	R_SYSCALL_OS_NETBSD,
-	R_SYSCALL_OS_OPENBSD,
-	R_SYSCALL_OS_FREEBSD,
-	R_SYSCALL_OS_DARWIN
-};
-
-enum {
-	R_SYSCALL_ARCH_X86 = 0,
-	R_SYSCALL_ARCH_PPC,
-	R_SYSCALL_ARCH_ARM,
-	R_SYSCALL_ARCH_MIPS,
-	R_SYSCALL_ARCH_SPARC
-};
-
-typedef struct r_syscall_list_t {
+typedef struct r_syscall_item_t {
 	const char *name;
 	int swi;
 	int num;
 	int args;
 	char *sargs;
-} RSyscallList;
+} RSyscallItem;
 
-// TODO: use this as arg to store state :)
 typedef struct r_syscall_t {
-#if 0
-	int arch; // XXX char *??
-	int os;
-#endif
 	FILE *fd;
-	struct r_syscall_list_t *sysptr;
+	// TODO char *arch;
+	// TODO char *os;
+	RSyscallItem *sysptr;
 } RSyscall;
 
-//#define R_SYSCALL_CTX struct r_syscall_t 
 /* plugin struct */
 typedef struct r_syscall_handle_t {
 	char *name;
@@ -62,16 +42,16 @@ typedef struct r_syscall_arch_handle_t {
 } RSyscallArchHandle;
 
 #ifdef R_API
-R_API struct r_syscall_t *r_syscall_new();
-R_API void r_syscall_free(struct r_syscall_t *ctx);
-R_API void r_syscall_init(struct r_syscall_t *ctx);
-
-R_API int r_syscall_setup(struct r_syscall_t *ctx, int arch, int os);
-R_API int r_syscall_setup_file(struct r_syscall_t *ctx, const char *path);
-R_API int r_syscall_get(struct r_syscall_t *ctx, const char *str);
-R_API RSyscallList *r_syscall_get_n(struct r_syscall_t *ctx, int n);
-R_API const char *r_syscall_get_i(struct r_syscall_t *ctx, int num, int swi); // XXX const char *
-R_API void r_syscall_list(struct r_syscall_t *ctx);
+R_API RSyscall *r_syscall_new();
+R_API void r_syscall_free(RSyscall *ctx);
+R_API void r_syscall_init(RSyscall *ctx);
+R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os);
+R_API int r_syscall_setup_file(RSyscall *ctx, const char *path);
+R_API RSyscallItem *r_syscall_get(RSyscall *ctx, int num, int swi);
+R_API int r_syscall_get_num(RSyscall *ctx, const char *str);
+R_API RSyscallItem *r_syscall_get_n(RSyscall *ctx, int n); // broken iterator.. must remove
+R_API const char *r_syscall_get_i(RSyscall *ctx, int num, int swi); // XXX const char *
+R_API void r_syscall_list(RSyscall *ctx);
 #endif
 
 #endif

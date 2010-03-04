@@ -915,16 +915,52 @@ static int cmd_flag(void *data, const char *input) {
 	return 0;
 }
 
+static void cmd_syscall_do(RCore *core, int num) {
+	int i;
+	RSyscallItem *item = r_syscall_get (&core->syscall, num, -1);
+	r_cons_printf ("%d = %s (", item->num, item->name);
+	// TODO: move this to r_syscall
+	for (i=0; i<item->args; i++) {
+		ut64 arg = r_debug_arg_get (&core->dbg, R_TRUE, i+1);
+		if (item->sargs==NULL)
+			r_cons_printf ("0x%08llx", arg);
+		else
+		switch (item->sargs[i]) {
+		case 'p': // pointer
+			r_cons_printf ("0x%08llx", arg);
+			break;
+		case 'i':
+			r_cons_printf ("%lld", arg);
+			break;
+		case 'z':
+			{ char str[64];
+			r_io_read_at (&core->io, arg, str, sizeof (str));
+			// TODO: filter zero terminated string
+			str[63] = '\0';
+			r_str_filter (str, strlen (str));
+			r_cons_printf ("\"%s\"", str);
+			}
+			break;
+		default:
+			r_cons_printf ("0x%08llx", arg);
+			break;
+		}
+		if (i+1<item->args)
+			r_cons_printf (", ");
+	}
+	r_cons_printf (")\n");
+}
+
 static int cmd_anal(void *data, const char *input) {
 	struct r_core_t *core = (struct r_core_t *)data;
 	int l, len = core->blocksize;
 	ut32 tbs = core->blocksize;
 
 	if (input[0] && input[1]) {
-		l = (int) r_num_get(&core->num, input+2);
+		l = (int) r_num_get (&core->num, input+2);
 		if (l>0) len = l;
 		if (l>tbs) {
-			r_core_block_size(core, l);
+			r_core_block_size (core, l);
 			len = l;
 		}
 	}
@@ -1061,10 +1097,33 @@ static int cmd_anal(void *data, const char *input) {
 			r_core_anal_graph (core, r_num_math (&core->num, input+2));
 		}
 		break;
+	case 's':
+		switch (input[1]) {
+		case 'l':
+			r_syscall_list (&core->syscall);
+			break;
+		case '\0': {
+			int a0 = (int)r_debug_reg_get (&core->dbg, "oeax");
+			cmd_syscall_do (core, a0);
+			} break;
+		case ' ':
+			cmd_syscall_do (core, (int)r_num_get (&core->num, input+2));
+			break;
+		default:
+		case '?':
+			r_cons_printf (
+			"Usage: as[?]\n"
+			" as       Display syscall and arguments\n"
+			" as 4     Show syscall 4 based on asm.os\n"
+			" asl      List of syscalls by asm.os and asm.arch\n");
+			break;
+		}
+		break;
 	default:
 		r_cons_printf (
 		"Usage: a[?hobfg]\n"
 		" ah [handle]     ; Use this analysis plugin\n"
+		" as [num]        ; Analyze syscall using dbg.reg\n"
 		" ao [len]        ; Analyze raw bytes\n"
 		" ab[?+-l*]       ; Analyze basic blocks\n"
 		" af[?+-l*]       ; Analyze functions\n"

@@ -2,7 +2,7 @@
 
 /* syscall-bsd */
 /* int 0x80 */
-struct r_syscall_list_t syscalls_darwin_x86[] = {
+RSyscallItem syscalls_darwin_x86[] = {
 	{ "syscall", 0x80, 0, 4 },
 	{ "exit", 0x80, 1, 1 },
 	{ "fork", 0x80, 2, 0 },

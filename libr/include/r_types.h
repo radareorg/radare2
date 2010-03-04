@@ -16,27 +16,16 @@
 #include <sys/time.h>
 
 /* provide a per-module debug-enabled feature */
-/* TODO: Deprecate */
+// TODO NOT USED. DEPREACATE
 #if R_DEBUG
 #define IFDBG
 #else
 #define IFDBG if (0)
 #endif
 
-/* arch */
-// XXX: deprecated.. in r_util we have R_SYS_ARCH
-#if __arm__
-#define DEFAULT_ARCH "arm"
-#elif __mips__
-#define DEFAULT_ARCH "mips"
-#elif __POWERPC__
-#define DEFAULT_ARCH "ppc"
-#else
-#define DEFAULT_ARCH "x86"
-#endif
-
+// TODO NOT USED. DEPREACATE
 #if R_RTDEBUG
-#define IFRTDBG if (getenv("LIBR_DEBUG"))
+#define IFRTDBG if (getenv ("LIBR_DEBUG"))
 #else
 #define IFRTDBG if (0)
 #endif
@@ -61,6 +50,7 @@
 #define BIT_SET(x,y) (x[y>>4] |= (1<<(y&0xf)))
 #define BIT_CHK(x,y) ((x[y>>4] & (1<<(y&0xf))))
 
+// TODO: fix this to make it crosscompile-friendly: R_SYS_OSTYPE ?
 /* operating system */
 #undef __BSD__
 #undef __UNIX__

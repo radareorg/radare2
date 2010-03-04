@@ -14,8 +14,6 @@ enum {
 	R_SEARCH_AES
 };
 
-#define R_SEARCH_AES_BOX_SIZE 31
-
 /* search api */
 
 typedef struct r_search_kw_t {
@@ -55,40 +53,44 @@ typedef struct r_search_t {
 } RSearch;
 
 #ifdef R_API
-R_API struct r_search_t *r_search_new(int mode);
-R_API int r_search_set_mode(struct r_search_t *s, int mode);
-R_API int r_search_init(struct r_search_t *s, int mode);
-R_API struct r_search_t *r_search_free(struct r_search_t *s);
+
+#define R_SEARCH_AES_BOX_SIZE 31
+
+R_API RSearch *r_search_new(int mode);
+R_API int r_search_set_mode(RSearch *s, int mode);
+R_API int r_search_init(RSearch *s, int mode);
+R_API RSearch *r_search_free(RSearch *s);
 
 /* keyword management */
-R_API int r_search_update(struct r_search_t *s, ut64 *from, const ut8 *buf, long len);
-R_API int r_search_update_i(struct r_search_t *s, ut64 from, const ut8 *buf, long len);
+R_API int r_search_update(RSearch *s, ut64 *from, const ut8 *buf, long len);
+R_API int r_search_update_i(RSearch *s, ut64 from, const ut8 *buf, long len);
 
 /* */
-R_API int r_search_kw_add(struct r_search_t *s, const char *kw, const char *bm);
-R_API int r_search_kw_add_hex(struct r_search_t *s, const char *kw, const char *bm);
-R_API int r_search_kw_add_bin(struct r_search_t *s, const ut8 *kw, int kw_len, const ut8 *bm, int bm_len);
-R_API struct r_search_kw_t *r_search_kw_list(struct r_search_t *s);
-R_API int r_search_reset(struct r_search_t *s);
-R_API int r_search_kw_reset(struct r_search_t *s);
+R_API int r_search_kw_add(RSearch *s, const char *kw, const char *bm);
+R_API int r_search_kw_add_hex(RSearch *s, const char *kw, const char *bm);
+R_API int r_search_kw_add_bin(RSearch *s, const ut8 *kw, int kw_len, const ut8 *bm, int bm_len);
+// TODO: Must be RList
+R_API struct r_search_kw_t *r_search_kw_list(RSearch *s);
+R_API int r_search_reset(RSearch *s);
+R_API int r_search_kw_reset(RSearch *s);
 
-R_API int r_search_range_add(struct r_search_t *s, ut64 from, ut64 to);
-R_API int r_search_range_set(struct r_search_t *s, ut64 from, ut64 to);
-R_API int r_search_range_reset(struct r_search_t *s);
-R_API int r_search_set_blocksize(struct r_search_t *s, ut32 bsize);
+R_API int r_search_range_add(RSearch *s, ut64 from, ut64 to);
+R_API int r_search_range_set(RSearch *s, ut64 from, ut64 to);
+R_API int r_search_range_reset(RSearch *s);
+R_API int r_search_set_blocksize(RSearch *s, ut32 bsize);
 
 // TODO: this is internal API?
-R_API int r_search_mybinparse_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_aes_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_strings_update(struct r_search_t *s, ut64 from, const char *buf, int len, int enc);
-R_API int r_search_regexp_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_xrefs_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_mybinparse_update(RSearch *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_aes_update(RSearch *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_strings_update(RSearch *s, ut64 from, const char *buf, int len, int enc);
+R_API int r_search_regexp_update(RSearch *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_xrefs_update(RSearch *s, ut64 from, const ut8 *buf, int len);
 
 /* pattern search */
-R_API int r_search_pattern(struct r_search_t *s, ut32 size);
-R_API int r_search_strings(struct r_search_t *s, ut32 min, ut32 max);
-//R_API int r_search_set_callback(struct r_search_t *s, int (*callback)(struct r_search_kw_t *, void *, ut64), void *user);
-R_API int r_search_set_callback(struct r_search_t *s, RSearchCallback(callback), void *user);
-R_API int r_search_begin(struct r_search_t *s);
+R_API int r_search_pattern(RSearch *s, ut32 size);
+R_API int r_search_strings(RSearch *s, ut32 min, ut32 max);
+//R_API int r_search_set_callback(RSearch *s, int (*callback)(struct r_search_kw_t *, void *, ut64), void *user);
+R_API void r_search_set_callback(RSearch *s, RSearchCallback(callback), void *user);
+R_API int r_search_begin(RSearch *s);
 #endif
 #endif

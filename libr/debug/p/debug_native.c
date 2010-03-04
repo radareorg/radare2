@@ -174,6 +174,17 @@ static int r_debug_native_detach(int pid) {
 #endif
 }
 
+static int r_debug_native_continue_syscall(int pid, int num) {
+#if __linux__
+	return ptrace (PTRACE_SYSCALL, pid, 0, 0);
+#elif __BSD__
+	ut64 pc = 0LL; // XXX
+	return ptrace (PTRACE_SYSCALL, pid, pc, 0);
+#else
+	return -1;
+#endif
+}
+
 static int r_debug_native_continue(int pid, int sig) {
 	void *data = NULL;
 	if (sig != -1)
@@ -270,7 +281,7 @@ static const char *r_debug_native_reg_profile() {
 	"=a0	eax\n"
 	"=a1	ebx\n"
 	"=a2	ecx\n"
-	"=a3	edx\n"
+	"=a3	edi\n"
 	"gpr	eip	.32	48	0\n"
 	"gpr	ip	.16	48	0\n"
 	"gpr	oeax	.32	44	0\n"
@@ -688,25 +699,26 @@ static int r_debug_native_kill(struct r_debug_t *dbg, int sig) {
 struct r_debug_handle_t r_debug_plugin_native = {
 	.name = "native",
 #if __i386__
-	.bits = R_DBG_BIT_32,
+	.bits = R_SYS_BITS_32,
 	.arch = R_ASM_ARCH_X86,
 #elif __x86_64__
-	.bits = R_DBG_BIT_32 | R_DBG_BIT_64,
+	.bits = R_SYS_BIT_32 | R_SYS_BIT_64,
 	.arch = R_ASM_ARCH_X86,
 #elif __arm__
-	.bits = R_DBG_BIT_32,
+	.bits = R_SYS_BIT_32,
 	.arch = R_ASM_ARCH_ARM,
 #elif __mips__
-	.bits = R_DBG_BIT_32,
+	.bits = R_SYS_BIT_32,
 	.arch = R_ASM_ARCH_MIPS,
 #elif __powerpc__
-	.bits = R_DBG_BIT_32,
+	.bits = R_SYS_BIT_32,
 	.arch = R_ASM_ARCH_PPC,
 #else
 #warning food
 #endif
 	.step = &r_debug_native_step,
 	.cont = &r_debug_native_continue,
+	.contsc = &r_debug_native_continue_syscall,
 	.attach = &r_debug_native_attach,
 	.detach = &r_debug_native_detach,
 	.wait = &r_debug_native_wait,

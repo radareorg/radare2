@@ -1,6 +1,6 @@
 #include "r_syscall.h"
 
-struct r_syscall_list_t syscalls_win7_x86[] = {
+RSyscallItem syscalls_win7_x86[] = {
 	{ "NtAcceptConnectPort", 0x2e, 0x0000, 6 },
 	{ "NtAccessCheck", 0x2e, 0x0001, 8 },
 	{ "NtAccessCheckAndAuditAlarm", 0x2e, 0x0002, 11 },
@@ -1227,4 +1227,4 @@ struct r_syscall_list_t syscalls_win7_x86[] = {
 	{ "NtUserMagGetContextInformation", 0x2e, 0x1336, 4 },
 	{ "NtUserHwndQueryRedirectionInfo", 0x2e, 0x1337, 4 },
 	{ "NtUserHwndSetRedirectionInfo", 0x2e, 0x1338, 4 }
-}
+};

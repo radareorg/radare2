@@ -75,32 +75,46 @@ typedef struct r_range_t {
 } RRange;
 
 #ifdef R_API
+/* bitsize */
+enum {
+	R_SYS_BITS_8 = 1,
+	R_SYS_BITS_16 = 2,
+	R_SYS_BITS_32 = 4,
+	R_SYS_BITS_64 = 8,
+};
 
 /* arch */
 // TODO: This must deprecate DEFAULT_ARCH??
 #if __i386__
 #define R_SYS_ARCH "x86"
+#define R_SYS_BITS R_SYS_BITS_32
 #elif __x86_64__
 #define R_SYS_ARCH "x86-64"
+#define R_SYS_BITS R_SYS_BITS_32 | R_SYS_BITS_64
 #elif __POWERPC__
 #define R_SYS_ARCH "powerpc"
+#define R_SYS_BITS R_SYS_BITS_32
 #elif __arm__
 #define R_SYS_ARCH "arm"
+#define R_SYS_BITS R_SYS_BITS_32
 #elif __sparc__
 #define R_SYS_ARCH "sparc"
+#define R_SYS_BITS R_SYS_BITS_32
 #elif __mips__
 #define R_SYS_ARCH "mips"
+#define R_SYS_BITS R_SYS_BITS_32
 #else
 #define R_SYS_ARCH "unknown"
+#define R_SYS_BITS R_SYS_BITS_32
 #endif
 
 /* os */
 #if __APPLE__
 #define R_SYS_OS "darwin"
 #elif __linux__
-#define R_SYS_OS "windows"
-#elif __WINDOWS__
 #define R_SYS_OS "linux"
+#elif __WIN32__ || __CYGWIN__ || MINGW32
+#define R_SYS_OS "windows"
 #elif __NetBSD__ 
 #define R_SYS_OS "netbsd"
 #elif __OpenBSD__
@@ -202,6 +216,7 @@ R_API char *r_str_dup_printf(const char *fmt, ...);
 R_API void *r_str_free(void *ptr);
 R_API int r_str_inject(char *begin, char *end, char *str, int maxlen);
 R_API int r_str_delta(char *p, char a, char b);
+R_API void r_str_filter(char *str, int len);
 
 R_API int r_str_re_match(const char *str, const char *reg);
 R_API int r_str_re_replace(const char *str, const char *reg, const char *sub);

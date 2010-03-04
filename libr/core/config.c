@@ -1,17 +1,17 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_core.h>
 
 static int config_scrhtml_callback(void *user, void *data) {
-	struct r_config_node_t *node = (struct r_config_node_t *) data;
+	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton()->is_html = node->i_value;
 // TODO: control error and restore old value (return false?) show errormsg?
 	return R_TRUE;
 }
 
 static int config_ioffio_callback(void *user, void *data) {
-	struct r_core_t *core = (struct r_core_t *) user;
-	struct r_config_node_t *node = (struct r_config_node_t *) data;
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
 	core->ffio = node->i_value;
 	return R_TRUE;
 }
@@ -22,37 +22,46 @@ static int config_bigendian_callback(void *user, void *data) {
 }
 
 static int config_iova_callback(void *user, void *data) {
-	struct r_core_t *core = (struct r_core_t *) user;
-	struct r_config_node_t *node = (struct r_config_node_t *) data;
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
 	core->io.va = node->i_value;
 	return R_TRUE;
 }
 
+static int config_asmos_callback(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	if (!r_syscall_setup (&core->syscall, 
+			r_config_get (&core->config, "asm.arch"), node->value))
+		eprintf ("asm.os: Cannot setup syscall os/arch for '%s'\n", node->value);
+	return R_TRUE;
+}
+
 static int config_swstep_callback(void *user, void *data) {
-	struct r_core_t *core = (struct r_core_t *) user;
-	struct r_config_node_t *node = (struct r_config_node_t *) data;
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
 	core->dbg.swstep = node->i_value;
 	return R_TRUE;
 }
 
-static int config_asm_arch_callback(void *user, void *data) {
-	struct r_core_t *core = (struct r_core_t *) user;
-	struct r_config_node_t *node = (struct r_config_node_t *) data;
-	int ret = r_asm_use (&core->assembler, node->value);
-	if (!ret) {
-		// TODO: control error and restore old value (return false?) show errormsg?
+static int config_asmarch_callback(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	// TODO: control error and restore old value (return false?) show errormsg?
+	if (!r_asm_use (&core->assembler, node->value))
 		eprintf ("asm.arch: Cannot set this arch (%s)\n", node->value);
-	}
+	if (!r_syscall_setup (&core->syscall, node->value,
+			r_config_get (&core->config, "asm.os")))
+		eprintf ("asm.arch: Cannot setup syscall os/arch for '%s'\n", node->value);
 	return R_TRUE;
 }
 
-static int config_asm_parser_callback(void *user, void *data)
-{
-	struct r_core_t *core = (struct r_core_t *) user;
-	struct r_config_node_t *node = (struct r_config_node_t *) data;
+static int config_asm_parser_callback(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
 	// XXX this is wrong? snprintf(buf, 127, "parse_%s", node->value),
-	r_parse_use(&core->parser, node->value);
-// TODO: control error and restore old value (return false?) show errormsg?
+	r_parse_use (&core->parser, node->value);
+	// TODO: control error and restore old value (return false?) show errormsg?
 	return R_TRUE;
 }
 
@@ -84,37 +93,35 @@ static int config_color_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
-R_API int r_core_config_init(struct r_core_t *core) {
+R_API int r_core_config_init(RCore *core) {
 	struct r_config_t *cfg = &core->config;
-	r_config_init(cfg, (void *)core);
+	r_config_init (cfg, (void *)core);
 	cfg->printf = r_cons_printf;
 
-	r_config_set_cb(cfg, "asm.arch", "x86",
-		&config_asm_arch_callback);
+	r_config_set_cb (cfg, "asm.arch", R_SYS_ARCH, &config_asmarch_callback);
 	// XXX: not portable
-	r_parse_use(&core->parser, "x86.pseudo");
-	r_config_set_cb(cfg, "asm.parser", "x86.pseudo",
+	r_parse_use (&core->parser, "x86.pseudo");
+	r_config_set_cb (cfg, "asm.parser", "x86.pseudo",
 		&config_asm_parser_callback);
 
-	r_config_set(cfg, "dir.plugins", LIBDIR"/radare2/");
+	r_config_set (cfg, "dir.plugins", LIBDIR"/radare2/");
 	/* anal */
 	r_config_set_i (cfg, "anal.depth", 10);
-	r_config_set(cfg, "asm.syntax", "intel");
-	r_config_set_i_cb(cfg, "asm.bits", 32,
+	r_config_set (cfg, "asm.syntax", "intel");
+	r_config_set_i_cb (cfg, "asm.bits", 32,
 		&config_asm_bits_callback);
-	r_config_set(cfg, "asm.pseudo", "false");  // DEPRECATED ???
-	r_config_set(cfg, "asm.bytes", "true"); 
-	r_config_set(cfg, "asm.offset", "true"); 
-	r_config_set(cfg, "asm.os", "linux"); 
-	r_config_set(cfg, "asm.reflines", "true");
-	r_config_set(cfg, "asm.reflinesout", "true");
-	r_config_set(cfg, "asm.reflinesstyle", "false");
-	r_config_set(cfg, "asm.reflineswide", "true");
-	r_config_set(cfg, "asm.comments", "true");
-	r_config_set(cfg, "cmd.open", ""); 
-	r_config_set(cfg, "cmd.prompt", ""); 
-	r_config_set(cfg, "cmd.vprompt", ""); 
-	r_config_set(cfg, "cmd.hit", ""); 
+	r_config_set (cfg, "asm.pseudo", "false");  // DEPRECATED ???
+	r_config_set (cfg, "asm.bytes", "true"); 
+	r_config_set (cfg, "asm.offset", "true"); 
+	r_config_set (cfg, "asm.reflines", "true");
+	r_config_set (cfg, "asm.reflinesout", "true");
+	r_config_set (cfg, "asm.reflinesstyle", "false");
+	r_config_set (cfg, "asm.reflineswide", "true");
+	r_config_set (cfg, "asm.comments", "true");
+	r_config_set (cfg, "cmd.open", ""); 
+	r_config_set (cfg, "cmd.prompt", ""); 
+	r_config_set (cfg, "cmd.vprompt", ""); 
+	r_config_set (cfg, "cmd.hit", ""); 
 	r_config_set_cb (cfg, "scr.color",
 		(core->print.flags&R_PRINT_FLAGS_COLOR)?"true":"false",
 		&config_color_callback);
@@ -137,21 +144,11 @@ R_API int r_core_config_init(struct r_core_t *core) {
 #else
 	r_config_set_cb (cfg, "cfg.bigendian", "true", &config_bigendian_callback);
 #endif
+	r_config_set_cb (cfg, "asm.os", R_SYS_OS, &config_asmos_callback);
 #if 0
 	node = config_set("asm.profile", "default");
 //	node->callback = &config_asm_profile;
 
-#if __POWERPC__
-	node = config_set("asm.arch", "ppc");
-#elif __x86_64__
-	node = config_set("asm.arch", "intel64");
-#elif __arm__
-	node = config_set("asm.arch", "arm");
-#elif __mips__
-	node = config_set("asm.arch", "mips");
-#else
-	node = config_set("asm.arch", "intel");
-#endif
 //	node->callback = &config_arch_callback;
 	config_set("asm.comments", "true"); // show comments in disassembly
 	config_set_i("asm.cmtmargin", 10); // show comments in disassembly
@@ -175,19 +172,6 @@ R_API int r_core_config_init(struct r_core_t *core) {
 	config_set("asm.trace", "false"); // trace counter
 	config_set("asm.linesout", "false"); // show left ref lines
 	config_set("asm.linestyle", "false"); // foreach / prev
-	// asm.os = used for syscall tables and so.. redefined with rabin -rI
-	config_set("asm.pseudo", "false"); 
-#if __linux__
-	config_set("asm.os", "linux"); 
-#elif __FreeBSD__
-	config_set("asm.os", "freebsd");
-#elif __NetBSD__
-	config_set("asm.os", "netbsd");
-#elif __OpenBSD__
-	config_set("asm.os", "openbsd");
-#elif __Windows__
-	config_set("asm.os", "linux");
-#endif
 	config_set("asm.split", "true"); // split code blocks
 	config_set("asm.splitall", "false"); // split code blocks
 	config_set("asm.size", "false"); // opcode size
@@ -249,14 +233,7 @@ R_API int r_core_config_init(struct r_core_t *core) {
 	config_set_i("cfg.delta", 4096); // cp850
 	node = config_set("cfg.verbose", "true");
 	node->callback = &config_verbose_callback;
-#if LIL_ENDIAN
-	node = config_set("cfg.bigendian", "false");
-#else
-	node = config_set("cfg.bigendian", "true");
-#endif
-	node->callback = &config_bigendian_callback;
 
-	config.endian = config_get_i("cfg.bigendian");
 	config_set("cfg.inverse", "false");
 	config_set_i("cfg.analdepth", 6);
 	config_set("file.insert", "false");

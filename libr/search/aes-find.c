@@ -37,13 +37,12 @@ static int aes_key_test(const unsigned char *buf) {
 	    &&  buf[31]==(table_sbox[buf[14]]^1))?1:0;
 }
 
-R_API int r_search_aes_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len)
-{
+R_API int r_search_aes_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	int i, last = len-31;
 	if (last < 0)
 		return 0;
-	for(i=0;i<last;i++) {
-		if (aes_key_test(buf+i))
+	for (i=0; i<last; i++) {
+		if (aes_key_test (buf+i))
 			return i;
 	}
 	return 0;

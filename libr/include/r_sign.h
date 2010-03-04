@@ -19,15 +19,15 @@ typedef struct r_sign_t {
 } RSign;
 
 #ifdef R_API
-R_API int r_sign_generate(struct r_sign_t *sig, const char *file, FILE *fd);
-R_API int r_sign_check(struct r_sign_t *sig, const char *binfile);
-R_API struct r_sign_t *r_sign_free(struct r_sign_t *sig);
-R_API int r_sign_info(struct r_sign_t *sig);
-R_API int r_sign_load_file(struct r_sign_t *sig, const char *file);
-R_API struct r_sign_item_t *r_sign_add(struct r_sign_t *sig);
-R_API int r_sign_option(struct r_sign_t *sig, const char *option);
-R_API int r_sign_set(struct r_sign_item_t *sig, const char *key, const char *value);
-R_API int r_sign_init(struct r_sign_t *sig);
+R_API int r_sign_generate(RSign *sig, const char *file, FILE *fd);
+R_API int r_sign_check(RSign *sig, const char *binfile);
+R_API RSign *r_sign_free(RSign *sig);
+R_API int r_sign_info(RSign *sig);
+R_API int r_sign_load_file(RSign *sig, const char *file);
+R_API RSignItem *r_sign_add(RSign *sig);
+R_API int r_sign_option(RSign *sig, const char *option);
+R_API int r_sign_item_set(RSignItem *sig, const char *key, const char *value);
+R_API RSign *r_sign_init(RSign *sig);
 #endif
 
 #endif

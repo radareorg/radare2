@@ -113,6 +113,7 @@ R_API int r_core_init(struct r_core_t *core) {
 	core->num.userptr = core;
 
 	/* initialize libraries */
+	r_syscall_init (&core->syscall);
 	r_print_init (&core->print);
 	core->print.printf = (void *)r_cons_printf;
 	r_lang_init (&core->lang);
@@ -160,23 +161,15 @@ R_API int r_core_init(struct r_core_t *core) {
 	r_core_loadlibs (core);
 
 	// TODO: get arch from r_bin or from native arch
-	r_asm_use (&core->assembler, DEFAULT_ARCH);
-	r_anal_use (&core->anal, DEFAULT_ARCH);
-	r_bp_use (core->dbg.bp, DEFAULT_ARCH);
-#if __x86_64__
-	r_config_set_i (&core->config, "asm.bits", 64);
-#else
-	r_config_set_i (&core->config, "asm.bits", 32);
-#endif
-#if __POWERPC__
-	r_config_set (&core->config, "asm.arch", "ppc");
-#elif __arm__
-	r_config_set (&core->config, "asm.arch", "arm");
-#elif __mips__
-	r_config_set (&core->config, "asm.arch", "mips");
-#else
-	r_config_set (&core->config, "asm.arch", "x86");
-#endif
+	r_asm_use (&core->assembler, R_SYS_ARCH);
+	r_anal_use (&core->anal, R_SYS_ARCH);
+	r_bp_use (core->dbg.bp, R_SYS_ARCH);
+	if (R_SYS_BITS & R_SYS_BITS_64)
+		r_config_set_i (&core->config, "asm.bits", 64);
+	else
+	if (R_SYS_BITS & R_SYS_BITS_32)
+		r_config_set_i (&core->config, "asm.bits", 32);
+	r_config_set (&core->config, "asm.arch", R_SYS_ARCH);
 	return 0;
 }
 
@@ -208,8 +201,7 @@ R_API int r_core_prompt(struct r_core_t *r) {
 	return ret;
 }
 
-R_API int r_core_block_size(struct r_core_t *core, ut32 bsize)
-{
+R_API int r_core_block_size(struct r_core_t *core, ut32 bsize) {
 	int ret = 0;
 	if (bsize<1)
 		bsize = 1;
@@ -222,8 +214,7 @@ R_API int r_core_block_size(struct r_core_t *core, ut32 bsize)
 	return ret;
 }
 
-R_API int r_core_seek_align(struct r_core_t *core, ut64 align, int times)
-{
+R_API int r_core_seek_align(struct r_core_t *core, ut64 align, int times) {
 	int inc = (times>=0)?1:-1;
 	int diff = core->offset%align;
 	ut64 seek = core->offset;
@@ -244,8 +235,7 @@ R_API int r_core_seek_align(struct r_core_t *core, ut64 align, int times)
 	return r_core_seek (core, seek+diff, 1);
 }
 
-R_API int r_core_seek_delta(struct r_core_t *core, st64 addr)
-{
+R_API int r_core_seek_delta(struct r_core_t *core, st64 addr) {
 	ut64 tmp = core->offset;
 	int ret;
 	if (addr == 0)

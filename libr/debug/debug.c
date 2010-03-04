@@ -221,9 +221,22 @@ R_API int r_debug_continue_until(struct r_debug_t *dbg, ut64 addr) {
 }
 
 R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc) {
-	int ret = R_FALSE;
-	if (dbg && dbg->h && dbg->h->contsc)
-		ret = dbg->h->contsc(dbg->pid, sc);
+	int reg, ret = R_FALSE;
+	if (dbg && dbg->h && dbg->h->contsc) {
+		do {
+			ret = dbg->h->contsc (dbg->pid, sc);
+			if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE)) {
+				eprintf ("--> eol\n");
+				break;
+			}
+			reg = (int)r_debug_reg_get (dbg, "oeax"); // XXX
+			eprintf ("--> syscall %d\n", reg);
+			if (reg == 0LL) {
+				break;
+			}
+			// TODO: must use r_core_cmd(as)..import code from rcore
+		} while (sc != 0 && sc != reg);
+	}
 	return ret;
 }
 

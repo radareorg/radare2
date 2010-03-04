@@ -4,5 +4,6 @@
 * Allow to enable/disable nested hits
 * Define minimum distance between hits
 * Enable/Disable chained hits
+* Enable/Disable nested hits (??)
 * Added support for negated searchs (find until no keyword matches)
   - useful to find the end of a \xff block

@@ -1,14 +1,16 @@
 /* radare 2008-2010 GPL -- pancake <youterm.com> */
 
-#include "r_types.h"
-#include "r_syscall.h"
+#include <r_types.h>
+#include <r_util.h>
+#include <r_syscall.h>
 #include <stdio.h>
 #include <string.h>
 
-extern struct r_syscall_list_t syscalls_netbsd_x86[];
-extern struct r_syscall_list_t syscalls_linux_x86[];
-extern struct r_syscall_list_t syscalls_freebsd_x86[];
-extern struct r_syscall_list_t syscalls_darwin_x86[];
+extern RSyscallItem syscalls_netbsd_x86[];
+extern RSyscallItem syscalls_linux_x86[];
+extern RSyscallItem syscalls_freebsd_x86[];
+extern RSyscallItem syscalls_darwin_x86[];
+extern RSyscallItem syscalls_win7_x86[];
 
 R_API RSyscall* r_syscall_new() {
 	RSyscall *ctx;
@@ -29,31 +31,36 @@ R_API void r_syscall_free(struct r_syscall_t *ctx) {
 	free (ctx);
 }
 
-R_API int r_syscall_setup(struct r_syscall_t *ctx, int os, int arch) {
-	switch(arch) {
-	case R_SYSCALL_ARCH_X86:
-	default:
-		switch(os) {
-		case R_SYSCALL_OS_LINUX:
+R_API int r_syscall_setup(struct r_syscall_t *ctx, const char *arch, const char *os) {
+	if (os == NULL)
+		os = R_SYS_OS;
+	if (arch == NULL)
+		arch = R_SYS_ARCH;
+	if (!strcmp (arch, "x86")) {
+		if (!strcmp (os, "linux"))
 			ctx->sysptr = syscalls_linux_x86;
-			break;
-		case R_SYSCALL_OS_NETBSD:
-		case R_SYSCALL_OS_OPENBSD:
+		else if (!strcmp (os, "netbsd"))
 			ctx->sysptr = syscalls_netbsd_x86;
-			break;
-		case R_SYSCALL_OS_FREEBSD:
+		else if (!strcmp (os, "freebsd"))
 			ctx->sysptr = syscalls_freebsd_x86;
-			break;
-		case R_SYSCALL_OS_DARWIN:
+		//else if (!strcmp (os, "openbsd"))
+		//	ctx->sysptr = syscalls_openbsd_x86;
+		else if (!strcmp (os, "darwin"))
 			ctx->sysptr = syscalls_darwin_x86;
-			break;
+		else if (!strcmp (os, "win7"))
+			ctx->sysptr = syscalls_win7_x86;
+		else {
+			eprintf ("r_syscall_setup: Unknown os '%s'\n", os);
+			return R_FALSE;
 		}
-		break;
+	} else {
+		eprintf ("r_syscall_setup: Unknown arch '%s'\n", arch);
+		return R_FALSE;
 	}
 	if (ctx->fd)
 		fclose (ctx->fd);
 	ctx->fd = NULL;
-	return 0;
+	return R_TRUE;
 }
 
 R_API int r_syscall_setup_file(struct r_syscall_t *ctx, const char *path) {
@@ -66,35 +73,46 @@ R_API int r_syscall_setup_file(struct r_syscall_t *ctx, const char *path) {
 	return 0;
 }
 
-R_API int r_syscall_get(struct r_syscall_t *ctx, const char *str) {
+R_API RSyscallItem *r_syscall_get(RSyscall *ctx, int num, int swi) {
 	int i;
-	for (i=0;ctx->sysptr[i].num;i++)
+	for (i=0; ctx->sysptr[i].num; i++) {
+		if (num == ctx->sysptr[i].num && \
+				(swi == -1 || swi == ctx->sysptr[i].swi))
+			return &ctx->sysptr[i];
+	}
+	return NULL;
+}
+
+R_API int r_syscall_get_num(RSyscall *ctx, const char *str) {
+	int i;
+	for (i=0; ctx->sysptr[i].num;i++)
 		if (!strcmp (str, ctx->sysptr[i].name))
 			return ctx->sysptr[i].num;
 	return 0;
 }
 
-R_API RSyscallList *r_syscall_get_n(struct r_syscall_t *ctx, int n)
-{
+/* XXX: ugly iterator implementation */
+R_API RSyscallItem *r_syscall_get_n(struct r_syscall_t *ctx, int n) {
 	int i;
-	for (i=0;ctx->sysptr[i].num && i!=n;i++)
+	for (i=0; ctx->sysptr[i].num && i!=n; i++)
 		return &ctx->sysptr[i];
 	return NULL;
 }
 
-R_API const char *r_syscall_get_i(struct r_syscall_t *ctx, int num, int swi)
-{
+R_API const char *r_syscall_get_i(struct r_syscall_t *ctx, int num, int swi) {
 	int i;
-	for (i=0;ctx->sysptr[i].num;i++)
-		if (num == ctx->sysptr[i].num && (swi == -1 || swi == ctx->sysptr[i].swi))
+	for (i=0; ctx->sysptr[i].num; i++) {
+		if (num == ctx->sysptr[i].num && \
+				(swi == -1 || swi == ctx->sysptr[i].swi))
 			return ctx->sysptr[i].name;
+	}
 	return NULL;
 }
 
 R_API void r_syscall_list(struct r_syscall_t *ctx) {
 	int i;
 	for (i=0; ctx->sysptr[i].num; i++) {
-		printf("%02x: %d = %s\n",
+		printf ("%02x: %d = %s\n",
 			ctx->sysptr[i].swi, ctx->sysptr[i].num, ctx->sysptr[i].name);
 	}
 }

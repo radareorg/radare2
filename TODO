@@ -7,6 +7,15 @@
 
 <{include libr/TODO}>
 
+* Move 'r_syscall_t' stuff into r_debug
+  - Sync r_core
+
+* Implement process launcher wrapper
+  - opens xterm and redirects stdin/stdout/stderr
+  - Allows to change chroot
+  - Allows to setup chroot
+  - Define uid/gid
+
 * BUG:
  rasm2 -s att -a x86.nasm 'push 0x1e(%esp)'
 

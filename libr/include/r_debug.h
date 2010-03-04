@@ -26,13 +26,6 @@ enum {
 	//..
 };
 
-enum {
-	R_DBG_BIT_8 = 1,
-	R_DBG_BIT_16 = 2,
-	R_DBG_BIT_32 = 4,
-	R_DBG_BIT_64 = 8,
-};
-
 /* TODO: move to r_anal */
 typedef struct r_debug_frame_t {
 	ut64 addr;
@@ -177,6 +170,10 @@ R_API int r_debug_map_sync(RDebug *dbg);
 
 /* backtrace */
 R_API RList *r_debug_frames (RDebug *dbg);
+
+/* args */
+R_API ut64 r_debug_arg_get (RDebug *dbg, int fast, int num);
+R_API int r_debug_arg_set (RDebug *dbg, int fast, int num, ut64 value);
 #endif
 #endif
 

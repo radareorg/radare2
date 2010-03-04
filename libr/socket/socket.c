@@ -26,38 +26,33 @@
 
 #define BUFFER_SIZE 4096
 
-R_API int r_socket_write(int fd, void *buf, int len)
-{
-	int delta = 0;
-	int ret;
-	do {
+R_API int r_socket_write(int fd, void *buf, int len) {
+	int ret, delta = 0;
+	for (;;) {
 		ret = send(fd, buf+delta, len, 0);
 		if (ret == 0)
 			return -1;
-		if( ret == len)
+		if (ret == len)
 			return len;
 		if (ret<0)
 			break;
 		delta+=ret;
 		len-=ret;
-	} while(1);
-
+	}
 	if (ret == -1)
 		return -1;
 	return delta;
 }
 
-R_API int r_socket_puts(int fd, char *buf)
-{
-	int len = strlen(buf);
-	return r_socket_write(fd, buf, len);
+R_API int r_socket_puts(int fd, char *buf) {
+	int len = strlen (buf);
+	return r_socket_write (fd, buf, len);
 }
 
 // XXX: rewrite it to use select //
 /* waits secs until new data is received.     */
 /* returns -1 on error, 0 is false, 1 is true */
-R_API int r_socket_ready(int fd, int secs, int usecs)
-{
+R_API int r_socket_ready(int fd, int secs, int usecs) {
 	int ret;
 #if __UNIX__
 	struct pollfd fds[1];

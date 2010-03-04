@@ -10,14 +10,14 @@ R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write) {
 		if (dbg && dbg->h && dbg->h->reg_write) {
 			ut8 *buf = r_reg_get_bytes (dbg->reg, type, &size);
 			if (!dbg->h->reg_write (dbg->pid, type, buf, sizeof (buf)))
-				eprintf ("r_debug_reg: error reading registers\n");
+				eprintf ("r_debug_reg: error writing registers\n");
 		} else eprintf ("r_debug_reg: cannot set registers\n");
 	} else {
 		/* read registers from debugger backend to dbg->regs */
 		if (dbg && dbg->h && dbg->h->reg_read) {
 			size = dbg->h->reg_read (dbg, type, buf, sizeof (buf));
 			if (size == 0)
-				eprintf ("r_debug_reg: error reading registers\n");
+				eprintf ("r_debug_reg: error reading registers pid=%d\n", dbg->pid);
 			ret = r_reg_set_bytes (dbg->reg, type, buf, size);
 		} else eprintf ("r_debug_reg: cannot read registers\n");
 	}
@@ -28,7 +28,7 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 	int n = 0;
 	struct list_head *pos, *head = r_reg_get_list(dbg->reg, type);
 	const char *fmt;
-	if (dbg->h && dbg->h->bits & R_DBG_BIT_64)
+	if (dbg->h && dbg->h->bits & R_SYS_BITS_64)
 		fmt = "%s = 0x%016llx\n";
 	else fmt = "%s = 0x%08llx\n";
 	//printf("list type=%d size=%d\n", type, size);

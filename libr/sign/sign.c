@@ -2,116 +2,103 @@
 
 #include <r_sign.h>
 
-struct r_sign_t *r_sign_new()
-{
-	struct r_sign_t *s = MALLOC_STRUCT(struct r_sign_t);
-	r_sign_init(s);
-	return s;
+R_API RSign *r_sign_new() {
+	return r_sign_init (R_NEW (RSign));
 }
 
-int r_sign_init(struct r_sign_t *sig)
-{
+R_API RSign *r_sign_init(RSign *sig) {
 	sig->count = 0;
-	INIT_LIST_HEAD(&(sig->items));
-	return R_TRUE;
+	INIT_LIST_HEAD (&(sig->items));
+	return sig;
 }
 
-int r_sign_set(struct r_sign_item_t *sig, const char *key, const char *value)
-{
-	if (!strcmp(key, "name")) {
-		strncpy(sig->name, value, sizeof(sig->name));
+R_API int r_sign_item_set(RSignItem *sig, const char *key, const char *value) {
+	if (!strcmp (key, "name")) {
+		strncpy (sig->name, value, sizeof(sig->name));
 	} else
-	if (!strcmp(key, "size")) {
-		sig->size = atoi(value);
+	if (!strcmp (key, "size")) {
+		sig->size = atoi (value);
 	} else
-	if (!strcmp(key, "cksum")) {
-		sscanf(value, "%x", &sig->csum);
+	if (!strcmp (key, "cksum")) {
+		sscanf (value, "%x", &sig->csum);
 	} 
 	return R_TRUE;
-//	fprintf(stderr, "%s:%s\n", key, value);
+//	eprintf("%s:%s\n", key, value);
 }
 
-int r_sign_option(struct r_sign_t *sig, const char *option)
-{
+R_API int r_sign_option(RSign *sig, const char *option) {
 	/* set options here */
 	return R_TRUE;
 }
 
-/* returns a freshly new rsign */
-struct r_sign_item_t *r_sign_add(struct r_sign_t *sig)
-{
-	struct r_sign_item_t *r;
+// r_sign_item_new
+R_API RSignItem *r_sign_add(RSign *sig) {
+	RSignItem *r;
 	sig->count ++;
-	r = (struct r_sign_item_t *)malloc(sizeof(struct r_sign_item_t));
-	memset(r, '\0', sizeof(struct r_sign_item_t));
-	list_add_tail(&(r->list), &(sig->items));
+	r = (RSignItem *)malloc (sizeof (RSignItem));
+	memset (r, '\0', sizeof (RSignItem));
+	list_add_tail (&(r->list), &(sig->items));
 	return r;
 }
 
-int r_sign_load_file(struct r_sign_t *sig, const char *file)
-{
+R_API int r_sign_load_file(RSign *sig, const char *file) {
 	int n;
 	FILE *fd;
-	char buf[1024];
-	char *ptr;
-	struct r_sign_item_t *cursig = r_sign_add(sig);
+	char *ptr, buf[1024];
+	RSignItem *item = r_sign_add (sig);
 
-	fd = fopen(file, "r");
+	fd = fopen (file, "r");
 	if (fd == NULL) {
-		fprintf(stderr, "Cannot open signature file.\n");
+		eprintf ("Cannot open signature file.\n");
 		return 0;
 	}
 	n = 0;
-	while(!feof(fd)) {
+	while (!feof (fd)) {
 		buf[0]='\0';
-		fgets(buf, 1023, fd);
+		fgets (buf, 1023, fd);
 		if (buf[0]=='-') {
 			/* next item */
-			cursig = r_sign_add(sig);
+			item = r_sign_add (sig);
 			continue;
 		}
-		ptr = strchr(buf, ':');
+		ptr = strchr (buf, ':');
 		if (ptr) {
 			*ptr = '\0';
 			ptr = ptr+1;
-			ptr[strlen(ptr)-1]='\0';
-			r_sign_set(cursig, buf, ptr+1);
+			ptr[strlen (ptr)-1]='\0';
+			r_sign_item_set (item, buf, ptr+1);
 		}
 	}
-	fclose(fd);
+	fclose (fd);
 	return n;
 }
 
-int r_sign_info(struct r_sign_t *sig)
-{
-	printf("Loaded %d signatures\n", sig->count);
+R_API int r_sign_info(RSign *sig) {
+	eprintf ("Loaded %d signatures\n", sig->count);
 	return R_TRUE;
 }
 
-struct r_sign_t *r_sign_free(struct r_sign_t *sig)
-{
+R_API RSign *r_sign_free(struct r_sign_t *sig) {
 	struct list_head *pos, *n;
-	list_for_each_safe(pos, n, &sig->items) {
-		struct r_sign_item_t *i = list_entry(pos, struct r_sign_item_t, list);
-		free(i->bytes);
-		free(i);
+	list_for_each_safe (pos, n, &sig->items) {
+		RSignItem *i = list_entry (pos, RSignItem, list);
+		free (i->bytes);
+		free (i);
 	}
 	free (sig);
 	return NULL;
 }
 
-int r_sign_check(struct r_sign_t *sig, const char *binfile)
-{
+R_API int r_sign_check(struct r_sign_t *sig, const char *binfile) {
 	if (binfile==NULL) {
-		fprintf(stderr, "No file specified\n");
+		eprintf ("No file specified\n");
 		return 0;
 	}
-	fprintf(stderr, "Checking loaded signatures against '%s'\n", binfile);
+	eprintf ("Checking loaded signatures against '%s'\n", binfile);
 	return R_TRUE;
 }
 
-int r_sign_generate(struct r_sign_t *sig, const char *file, FILE *fd)
-{
-	fprintf(stderr, "Generating signature file for '%s'\n" , file);
+R_API int r_sign_generate(struct r_sign_t *sig, const char *file, FILE *fd) {
+	eprintf ("Generating signature file for '%s'\n" , file);
 	return R_TRUE;
 }
