@@ -79,7 +79,7 @@ static int myfgets(char *buf, int len) {
 	rli->completion.argv = radare_argv;
 	ptr = r_line_readline (); //CMDS, radare_argv);
 	if (ptr == NULL)
-		return -1;
+		return -2;
 	strncpy (buf, ptr, len);
 	//free(ptr); // XXX leak
 	return strlen (buf)+1;
@@ -194,20 +194,22 @@ R_API int r_core_prompt(struct r_core_t *r) {
 	else sprintf (prompt, "[0x%08llx]> ", r->offset);
 	r_line_singleton()->prompt = prompt;
 	ret = r_cons_fgets (line, sizeof (line), 0, NULL);
-	if (ret<0)
-		return -1;
+	if (ret == -2)
+		return R_CORE_CMD_EXIT;
+	if (ret == -1)
+		return 0;
 	ret = r_core_cmd (r, line, R_TRUE);
 	r_cons_flush ();
 	return ret;
 }
 
 R_API int r_core_block_size(struct r_core_t *core, ut32 bsize) {
-	int ret = 0;
+	int ret = R_FALSE;
 	if (bsize<1)
-		bsize = 1;
+		bsize = R_TRUE;
 	else if (bsize> R_CORE_BLOCKSIZE_MAX)
 		bsize = R_CORE_BLOCKSIZE_MAX;
-	else ret = 1;
+	else ret = R_TRUE;
 	core->block = realloc (core->block, bsize);
 	core->blocksize = bsize;
 	r_core_block_read (core, 0);

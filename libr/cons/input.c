@@ -28,13 +28,13 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	RCons *cons = r_cons_singleton ();
 	if (cons->user_fgets)
-		return cons->user_fgets (buf, 512);
+		return cons->user_fgets (buf, len);
 	*buf = '\0';
 	fflush (cons->fdin);
 	if (fgets (buf, len, cons->fdin) == NULL)
 		return -1;
 	if (feof (cons->fdin))
-		return -1;
+		return -2;
 	buf[strlen (buf)-1] = '\0';
 	return strlen (buf);
 }

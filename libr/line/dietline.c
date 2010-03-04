@@ -232,7 +232,7 @@ R_API char *r_line_readline() {
 	r_cons_set_raw (1);
 
 	if (I.echo) {
-		printf ("%s", I.prompt);
+		printf ("\r%s", I.prompt);
 		fflush (stdout);
 	}
 #if __UNIX__
@@ -259,7 +259,7 @@ R_API char *r_line_readline() {
 		I.buffer.data[I.buffer.length]='\0';
 		ch = r_line_readchar ();
 		if (ch == -1)
-			return NULL;
+			return I.buffer.data;
 		buf[0] = ch;
 		
 //		printf("\x1b[K\r");

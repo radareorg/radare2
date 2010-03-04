@@ -319,7 +319,6 @@ static int cmd_section(void *data, const char *input) {
 	switch (input[0]) {
 	case '?':
 		r_cons_printf (
-		"Usage:\n"
 		" S                ; list sections\n"
 		" S*               ; list sections (in radare commands\n"
 		" S=               ; list sections (in nice ascii-art bars)\n"

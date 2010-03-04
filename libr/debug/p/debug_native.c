@@ -702,16 +702,16 @@ struct r_debug_handle_t r_debug_plugin_native = {
 	.bits = R_SYS_BITS_32,
 	.arch = R_ASM_ARCH_X86,
 #elif __x86_64__
-	.bits = R_SYS_BIT_32 | R_SYS_BIT_64,
+	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = R_ASM_ARCH_X86,
 #elif __arm__
-	.bits = R_SYS_BIT_32,
+	.bits = R_SYS_BITS_32,
 	.arch = R_ASM_ARCH_ARM,
 #elif __mips__
-	.bits = R_SYS_BIT_32,
+	.bits = R_SYS_BITS_32,
 	.arch = R_ASM_ARCH_MIPS,
 #elif __powerpc__
-	.bits = R_SYS_BIT_32,
+	.bits = R_SYS_BITS_32,
 	.arch = R_ASM_ARCH_PPC,
 #else
 #warning food
