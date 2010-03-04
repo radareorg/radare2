@@ -15,7 +15,7 @@ public class Radare.RSearch {
 	public bool kw_add_hex(string kw, string binmask);
 	public bool kw_add_bin(uint8 *kw, uint32 kw_len, uint8 *binmask, long bm_len);
 	public Keyword kw_list();
-	public int set_callback(Callback cb, void *user);
+	public void set_callback(Callback cb, void *user);
 	//public int pattern_update(int size); // this is uint? long?
 	//public int set_pattern_size(int size); // this is uint? long?
 	public int strings_update(uint64 addr, string *buf, int len, int enc);
