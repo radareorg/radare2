@@ -39,11 +39,17 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 			continue;
 		if (size != 0 && size != item->size)
 			continue;
-		if (rad) dbg->printf ("f %s @ 0x%llx\n",
-			item->name, r_reg_get_value (dbg->reg, item));
-		else dbg->printf (fmt, item->name, r_reg_get_value (dbg->reg, item));
+		if (rad==1)
+			dbg->printf ("f %s @ 0x%llx\n", item->name,
+				r_reg_get_value (dbg->reg, item));
+		else if (rad==2) {
+			dbg->printf ("%s 0x%08llx%s", item->name, r_reg_get_value (dbg->reg, item),
+				((n+1)%4)?"   ":"\n");
+		} else dbg->printf (fmt, item->name, r_reg_get_value (dbg->reg, item));
 		n++;
 	}
+	if (rad==2)
+		dbg->printf ("\n");
 	return n;
 }
 

@@ -4,7 +4,7 @@
 
 #define NPF 6
 static int printidx = 0;
-const char *printfmt[] = { "x", "pd", "sr sp&&x 64&&dr&&sr pc&&pd", "p8", "pc", "ps" };
+const char *printfmt[] = { "x", "pd", "sr sp&&x 64&&dr=&&sr pc&&pd", "p8", "pc", "ps" };
 
 static int curset = 0, cursor = -1, ocursor=-1;
 static int color = 1;

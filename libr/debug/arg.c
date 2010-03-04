@@ -2,6 +2,12 @@
 
 #include <r_debug.h>
 
+enum {
+	TYPE_FASTCALL,
+	TYPE_SYSCALL,
+	// ... TODO
+};
+
 R_API ut64 r_debug_arg_get (RDebug *dbg, int type, int num) {
 	char reg[8];
 	// TODO

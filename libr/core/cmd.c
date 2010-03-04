@@ -48,6 +48,8 @@ static void cmd_reg (struct r_core_t *core, const char *str) {
 		} else
 		eprintf ("Usage: dr[*] [type] [size] - get/set registers\n"
 			" dr?        display this help message\n"
+			" dr         show registers in rows\n"
+			" dr=        show registers in columns\n"
 			" dr?eax     show value of eax register\n"
 			" .dr*       include common register values in flags\n"
 			" .dr-       unflag all registers\n"
@@ -80,9 +82,14 @@ static void cmd_reg (struct r_core_t *core, const char *str) {
 			r_cons_printf ("%s\n", name);
 		else eprintf ("Oops. try dn [pc|sp|bp|a0|a1|a2|a3]\n");
 		break;
+	case '=':
+		r_debug_reg_sync (&core->dbg, R_REG_TYPE_GPR, R_FALSE);
+		r_debug_reg_list (&core->dbg, R_REG_TYPE_GPR, 32, 2); // XXX detect which one is current usage
+		r_debug_reg_list (&core->dbg, R_REG_TYPE_GPR, 64, 2);
+		break;
 	case '*':
 		r_debug_reg_sync (&core->dbg, R_REG_TYPE_GPR, R_FALSE);
-		r_debug_reg_list (&core->dbg, R_REG_TYPE_GPR, 32, 1);
+		r_debug_reg_list (&core->dbg, R_REG_TYPE_GPR, 32, 1); // XXX detect which one is current usage
 		r_debug_reg_list (&core->dbg, R_REG_TYPE_GPR, 64, 1);
 		break;
 	case '\0':
@@ -91,7 +98,7 @@ static void cmd_reg (struct r_core_t *core, const char *str) {
 		r_debug_reg_list (&core->dbg, R_REG_TYPE_GPR, 64, 0);
 		break;
 	case ' ':
-		arg = strchr(str+1, '=');
+		arg = strchr (str+1, '=');
 		if (arg) {
 			*arg = 0;
 			r = r_reg_get (core->dbg.reg, str+1, R_REG_TYPE_GPR);
