@@ -89,7 +89,7 @@ enum {
 #define R_SYS_ARCH "x86"
 #define R_SYS_BITS R_SYS_BITS_32
 #elif __x86_64__
-#define R_SYS_ARCH "x86-64"
+#define R_SYS_ARCH "x86"
 #define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
 #elif __POWERPC__
 #define R_SYS_ARCH "powerpc"

@@ -220,7 +220,8 @@ R_API int r_core_anal_fcn (struct r_core_t *core, ut64 at, ut64 from, int depth)
 	iter = r_list_iterator (core->anal.fcns);
 	while (r_list_iter_next (iter)) {
 		fcni = r_list_iter_get (iter);
-		if (at >= fcni->addr && at < fcni->addr+fcni->size) {
+		if ((at >= fcni->addr && at < fcni->addr+fcni->size) ||
+			(at == fcni->addr && fcni->size == 0)) {
 			iter2 = r_list_iterator (fcni->xrefs);
 			while (r_list_iter_next (iter2)) {
 				refi = r_list_iter_get (iter2);

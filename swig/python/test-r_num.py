@@ -1,4 +1,4 @@
-from r2.r_util import *
+from r_util import *
 
 a = RNum ()
 

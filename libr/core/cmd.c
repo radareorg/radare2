@@ -1889,8 +1889,8 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd) {
 		ut64 tmpoff = core->offset;
 		if (ptr[1]=='@') {
 			// TODO: remove temporally seek (should be done by cmd_foreach)
-			r_core_cmd_foreach (core, cmd, ptr+2);
-			ret = -1; /* do not run out-of-foreach cmd */
+			ret = r_core_cmd_foreach (core, cmd, ptr+2);
+			//ret = -1; /* do not run out-of-foreach cmd */
 		} else {
 			r_core_seek (core, r_num_math (&core->num, ptr+1), 1);
 			ret = r_cmd_call (&core->cmd, r_str_trim_head (cmd));
