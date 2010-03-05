@@ -940,7 +940,7 @@ static void cmd_syscall_do(RCore *core, int num) {
 			break;
 		case 'z':
 			{ char str[64];
-			r_io_read_at (&core->io, arg, str, sizeof (str));
+			r_io_read_at (&core->io, arg, (ut8*)str, sizeof (str));
 			// TODO: filter zero terminated string
 			str[63] = '\0';
 			r_str_filter (str, strlen (str));
@@ -2142,6 +2142,7 @@ static void cmd_dm(RCore *core, const char *input) {
 		" dm*        Same as above but in radare commands\n"
 		" dm 4096    Allocate 4096 bytes in child process\n"
 		" dm-0x8048  Deallocate memory map of address 0x8048\n"
+		//" dm rw- esp 9K  set 9KB of the stack as read+write (no exec)\n"
 		"TODO: map files in process memory.\n");
 		break;
 	case '*':
@@ -2208,6 +2209,7 @@ static int cmd_debug(void *data, const char *input) {
 		pid = atoi (input);
 		ptr = strchr (input, ' ');
 		if (ptr) sig = atoi (ptr+1);
+		else sig = 0;
 		if (pid > 0) {
 			eprintf ("Sending signal '%d' to pid '%d'\n",
 				sig, pid);
@@ -2327,11 +2329,16 @@ static int cmd_debug(void *data, const char *input) {
 		//r_core_cmd(core, "|reg", 0);
 		break;
 	case 'p':
-		// TODO: Support PID and Thread
+		if (input[1]=='?')
+			r_cons_printf ("Usage: dp[=][pid]\n");
+		else
+		if (input[1]=='=')
+			r_debug_select (&core->dbg, atoi (input+2), atoi (input+2));
+		else
 		if (input[1]==' ')
+			r_debug_pid_list (&core->dbg, atoi (input+2));
 			//r_debug_select(&core->dbg, core->dbg.pid, atoi(input+2));
-			r_debug_select (&core->dbg, atoi(input+2), atoi(input+2));
-		else eprintf ("TODO: List processes..\n");
+		else r_debug_pid_list (&core->dbg, core->dbg.pid);
 		break;
 	case 'h':
 		if (input[1]==' ')
@@ -2348,15 +2355,13 @@ static int cmd_debug(void *data, const char *input) {
 		" do 3           perform 3 steps overs\n"
 		" dsl            step to next source line\n"
 		" df             show frames (backtrace)\n"
-		" dp [pid]       list or set pid\n"
+		" dp[=?][pid]    list, attach to process id\n"
 		" dt [tid]       select thread id\n"
 		" dc[?]          continue execution. dc? for more\n"
 		" dr[?]          cpu registers, dr? for extended help\n"
 		" db[?]          breakpoints\n"
-		" dm             show memory maps\n"
-		" dm 4096        allocate 4KB in child process\n"
-		" dm rw- esp 9K  set 9KB of the stack as read+write (no exec)\n"
-		" dk pid sig     send signal to a process ID\n");
+		" dk pid sig     send signal to a process ID\n"
+		" dm             show memory maps\n");
 		break;
 	}
 	return 0;

@@ -37,10 +37,8 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 		fmt2 = "%4s 0x%08llx%s";
 		cols = 4;
 	}
-	//printf("list type=%d size=%d\n", type, size);
 	list_for_each (pos, head) {
 		struct r_reg_item_t *item = list_entry (pos, struct r_reg_item_t, list);
-		//printf("--> t=%d\n", item->type);
 		if (type != -1 && type != item->type)
 			continue;
 		if (size != 0 && size != item->size)
@@ -54,7 +52,7 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 		else dbg->printf (fmt, item->name, r_reg_get_value (dbg->reg, item));
 		n++;
 	}
-	if (n>0 && rad==2 && (!(n+1)%cols))
+	if (n>0 && rad==2 && (!((n+1)%cols)))
 		dbg->printf ("\n");
 	return n;
 }

@@ -54,8 +54,7 @@ R_API struct r_socket_proc_t *r_socket_proc_open(char *const argv[])
 #endif
 }
 
-R_API int r_socket_proc_close(struct r_socket_proc_t *sp)
-{
+R_API int r_socket_proc_close(struct r_socket_proc_t *sp) {
 #if __UNIX__
 	/* this is wrong */
 	kill(sp->pid, 9);

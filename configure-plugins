@@ -48,7 +48,7 @@ generate_configh () {
     if [ ! "$oldlib" = "$lib" ]; then
       [ -n "$oldlib" ] && echo "     0"
       oldlib=$lib
-      uclib=$(echo $lib | tr '[a-z]' '[a-Z]')
+      uclib=$(echo $lib | tr '[a-z]' '[A-Z]')
       echo
       echo "#define R_${uclib}_STATIC_PLUGINS \\"
       plugins="${plugins} __${uclib}"
