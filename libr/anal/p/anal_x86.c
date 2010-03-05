@@ -131,6 +131,14 @@ static int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, i
 			aop->length = 6;
 			//aop->eob    = 1;
 		} 
+		else
+		if (buf[1]>=0x40 && buf[1]<=0x4f) { /* Conditional MOV */
+			aop->type = R_ANAL_OP_TYPE_MOV;
+			aop->eob = 0;
+			aop->length = 4;
+			aop->addr = addr;
+			return 4;
+		}
 		break;
 	case 0xcc: // int3
 		aop->eob = 1;

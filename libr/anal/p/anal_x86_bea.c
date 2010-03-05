@@ -10,12 +10,8 @@
 
 #include "x86/bea/BeaEngine.h"
 
-int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, int len) {
+static int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, int len) {
 	DISASM disasm_obj;
-	ARGTYPE *argptr = NULL;
-	//unsigned long long addr = (ut64)data;
-	char category[1024], argtype[1024];
-	int i;
 
 	if (data == NULL)
 		return 0;
@@ -27,19 +23,71 @@ int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, int len)
 	disasm_obj.SecurityBlock = 128;
 
 	memset(aop, 0, sizeof(aop));
+	aop->addr = addr;
+	aop->jump = -1;
+	aop->fail = -1;
 	aop->length = Disasm(&disasm_obj);
+
+	if (aop->length < 1)
+		return 0;
+
+	switch (disasm_obj.Instruction.BranchType) {
+	case JO:
+	case JC:
+	case JE:
+	case JA:
+	case JS:
+	case JP:
+	case JL:
+	case JG:
+	case JB:
+	case JNO:
+	case JNC:
+	case JNE:
+	case JNA:
+	case JNS:
+	case JNP:
+	case JNL:
+	case JNG:
+	case JNB:
+	case JECXZ:
+		aop->type = R_ANAL_OP_TYPE_CJMP;
+		aop->jump = disasm_obj.Instruction.AddrValue;
+		aop->fail = disasm_obj.Instruction.AddrValue + aop->length;
+		break;
+	case JmpType:
+		aop->type = R_ANAL_OP_TYPE_JMP;
+		aop->jump = disasm_obj.Instruction.AddrValue;
+		break;
+	case CallType:
+		aop->type = R_ANAL_OP_TYPE_CALL;
+		aop->jump = disasm_obj.Instruction.AddrValue;
+		aop->fail = disasm_obj.Instruction.AddrValue + aop->length;
+		break;
+	case RetType:
+		aop->type = R_ANAL_OP_TYPE_RET;
+		break;
+	}
+
+	return aop->length;
+
+#if 0
+	ARGTYPE *argptr = NULL;
+	//unsigned long long addr = (ut64)data;
+	char category[1024], argtype[1024];
+	int i;
 
 	IFDBG {
 		eprintf( "[Instruction]\n"
-			"  Opcode: %lx\n"
-			"  Mnemonic: %s\n"
-			"  AddrValue: 0x%llx\n"
-			"  Immediate: 0x%llx\n",
-			disasm_obj.Instruction.Opcode,
-			disasm_obj.Instruction.Mnemonic,
-			disasm_obj.Instruction.AddrValue,
-			disasm_obj.Instruction.Immediat);
-		
+				"  Opcode: %lx\n"
+				"  Mnemonic: %s\n"
+				"  AddrValue: 0x%llx\n"
+				"  Immediate: 0x%llx\n",
+				disasm_obj.Instruction.Opcode,
+				disasm_obj.Instruction.Mnemonic,
+				disasm_obj.Instruction.AddrValue,
+				disasm_obj.Instruction.Immediat);
+
 		category[0] = '\0';
 		if (disasm_obj.Instruction.Category & GENERAL_PURPOSE_INSTRUCTION)
 			strcat(category, "GENERAL_PURPOSE_INSTRUCTION ");
@@ -230,51 +278,6 @@ int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, int len)
 		}
 		eprintf("  Category: %s\n", category);
 
-		switch (disasm_obj.Instruction.BranchType) {
-		case JO:
-		case JC:
-		case JE:
-		case JA:
-		case JS:
-		case JP:
-		case JL:
-		case JG:
-		case JB:
-		case JNO:
-		case JNC:
-		case JNE:
-		case JNA:
-		case JNS:
-		case JNP:
-		case JNL:
-		case JNG:
-		case JNB:
-		case JECXZ:
-			aop->type = R_ANAL_OP_TYPE_CJMP;
-			aop->jump = disasm_obj.Instruction.AddrValue;
-			aop->fail = disasm_obj.Instruction.AddrValue + aop->length;
-			eprintf("  BranchType: JO\n");
-			break;
-		case JmpType:
-			aop->type = R_ANAL_OP_TYPE_JMP;
-			aop->jump = disasm_obj.Instruction.AddrValue;
-			eprintf("  BranchType: JmpType\n");
-			break;
-		case CallType:
-			aop->type = R_ANAL_OP_TYPE_CALL;
-			aop->jump = disasm_obj.Instruction.AddrValue;
-			aop->fail = disasm_obj.Instruction.AddrValue + aop->length;
-			eprintf("  BranchType: CallType\n");
-			break;
-		case RetType:
-			aop->type = R_ANAL_OP_TYPE_RET;
-			eprintf("  BranchType: RetType\n");
-			break;
-		default:
-			eprintf("  BranchType: Unknown (0x%lx)\n", disasm_obj.Instruction.BranchType);
-		}
-
-
 		for(argptr = &disasm_obj.Argument1, i = 0; i< 3; i++) {
 			if (argptr[i].ArgMnemonic[0] == '\0')
 				continue;
@@ -295,7 +298,7 @@ int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, int len)
 					argptr[i].Memory.Scale,
 					argptr[i].Memory.Displacement,
 					argptr[i].SegmentReg
-				  );
+				   );
 
 			eprintf("  AccesMode: ");
 			if (argptr[i].AccessMode == 0x1)
@@ -385,8 +388,8 @@ int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, int len)
 	eprintf("Stackop: %d\n", aop->stackop);
 	eprintf("True: 0x%08llx\n", aop->jump);
 	eprintf("Fail: 0x%08llx\n", aop->fail);
+#endif
 
-	return aop->length;
 }
 
 struct r_anal_handle_t r_anal_plugin_x86_bea = {

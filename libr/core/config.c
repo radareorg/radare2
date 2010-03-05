@@ -79,6 +79,8 @@ static int config_asm_bits_callback(void *user, void *data) {
 			ret = R_TRUE;
 		}
 	}
+	// TODO: test anal bits
+	r_anal_set_bits (&core->anal, node->i_value);
 	// TODO: change debugger backend bit profile here
 	return ret;
 }

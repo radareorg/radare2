@@ -217,25 +217,27 @@ R_API int r_core_anal_fcn (struct r_core_t *core, ut64 at, ut64 from, int depth)
 
 	if (depth < 0)
 		return R_FALSE;
-	iter = r_list_iterator (core->anal.fcns);
-	while (r_list_iter_next (iter)) {
-		fcni = r_list_iter_get (iter);
-		if ((at >= fcni->addr && at < fcni->addr+fcni->size) ||
-			(at == fcni->addr && fcni->size == 0)) {
-			iter2 = r_list_iterator (fcni->xrefs);
-			while (r_list_iter_next (iter2)) {
-				refi = r_list_iter_get (iter2);
-				ref = (ut64*)refi;
-				if (from == *ref)
-					return R_FALSE;
+	if (from != -1) {
+		iter = r_list_iterator (core->anal.fcns);
+		while (r_list_iter_next (iter)) {
+			fcni = r_list_iter_get (iter);
+			if ((at >= fcni->addr && at < fcni->addr+fcni->size) ||
+					(at == fcni->addr && fcni->size == 0)) {
+				iter2 = r_list_iterator (fcni->xrefs);
+				while (r_list_iter_next (iter2)) {
+					refi = r_list_iter_get (iter2);
+					ref = (ut64*)refi;
+					if (from == *ref)
+						return R_FALSE;
+				}
+				if (!(ref = r_anal_ref_new())) {
+					eprintf ("Error: new (xref)\n");
+					return R_ANAL_RET_ERROR;
+				}
+				*ref = from;
+				r_list_append (fcni->xrefs, ref);
+				return R_FALSE;
 			}
-			if (!(ref = r_anal_ref_new())) {
-				eprintf ("Error: new (xref)\n");
-				return R_ANAL_RET_ERROR;
-			}
-			*ref = from;
-			r_list_append (fcni->xrefs, ref);
-			return R_FALSE;
 		}
 	}
 	if (!(fcn = r_anal_fcn_new()))

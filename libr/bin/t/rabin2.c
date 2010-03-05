@@ -172,25 +172,23 @@ static int rabin_show_symbols(ut64 at) {
 		} else {
 			if (rad) {
 				r_flag_name_filter (symbol->name);
-				if (symbol->size) {
-					if (!strncmp (symbol->type,"FUNC", 4)) {
+				if (!strncmp (symbol->type,"FUNC", 4)) {
+					if (symbol->size) 
 						printf ("CF %lli @ 0x%08llx\n",
 								symbol->size, va?baddr+symbol->rva:symbol->offset);
-						printf ("af+ 0x%08llx %lli sym.%s\n",
-								va?baddr+symbol->rva:symbol->offset, symbol->size, symbol->name);
-						printf ("fs functions\n");
-						printf ("f fcn.sym.%s %lli 0x%08llx\n",
-								symbol->name, symbol->size,
-								va?baddr+symbol->rva:symbol->offset);
-						printf ("fs symbols\n");
-					} else if (!strncmp (symbol->type,"OBJECT", 6))
-							printf ("Cd %lli @ 0x%08llx\n",
-									symbol->size, va?baddr+symbol->rva:symbol->offset);
-					printf ("f sym.%s %lli 0x%08llx\n",
+					printf ("af+ 0x%08llx %lli sym.%s\n",
+							va?baddr+symbol->rva:symbol->offset, symbol->size, symbol->name);
+					printf ("fs functions\n");
+					printf ("f fcn.sym.%s %lli 0x%08llx\n",
 							symbol->name, symbol->size,
 							va?baddr+symbol->rva:symbol->offset);
-				} else printf ("f sym.%s @ 0x%08llx\n",
-							   symbol->name, va?baddr+symbol->rva:symbol->offset);
+					printf ("fs symbols\n");
+				} else if (!strncmp (symbol->type,"OBJECT", 6))
+					printf ("Cd %lli @ 0x%08llx\n",
+							symbol->size, va?baddr+symbol->rva:symbol->offset);
+				printf ("f sym.%s %lli 0x%08llx\n",
+						symbol->name, symbol->size,
+						va?baddr+symbol->rva:symbol->offset);
 			} else printf ("address=0x%08llx offset=0x%08llx ordinal=%03lli "
 						   "forwarder=%s size=%08lli bind=%s type=%s name=%s\n",
 						   baddr+symbol->rva, symbol->offset,

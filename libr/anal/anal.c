@@ -208,7 +208,9 @@ R_API int r_anal_bb(RAnalysis *anal, RAnalysisBB *bb, ut64 addr, ut8 *buf, ut64 
 		}
 		if ((oplen = r_anal_aop (anal, aop, addr+idx, buf+idx, len-idx)) == 0) {
 			r_anal_aop_free (aop);
-			break;
+			if (idx == 0)
+				return R_ANAL_RET_ERROR;
+			else break;
 		}
 		idx += oplen;
 		bb->size += oplen;
@@ -292,8 +294,11 @@ R_API int r_anal_fcn(RAnalysis *anal, RAnalysisFcn *fcn, ut64 addr, ut8 *buf, ut
 	if (fcn->addr == -1)
 		fcn->addr = addr;
 	while (idx < len) {
-		if ((oplen = r_anal_aop (anal, &aop, addr+idx, buf+idx, len-idx)) == 0)
-			break;
+		if ((oplen = r_anal_aop (anal, &aop, addr+idx, buf+idx, len-idx)) == 0) {
+			if (idx == 0)
+				return R_ANAL_RET_ERROR;
+			else break;
+		}
 		idx += oplen;
 		fcn->size += oplen;
 		switch (aop.type) {
