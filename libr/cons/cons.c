@@ -50,6 +50,13 @@ R_API RCons *r_cons_free (RCons *foo) {
 	return NULL;
 }
 
+#if __WINDOWS__
+static BOOL __w32_control(DWORD type) {
+	if (type == CTRL_C_EVENT)
+		break_signal (2); // SIGINT
+}
+#endif
+
 R_API int r_cons_init() {
 	I.is_interactive = R_TRUE;
 	I.breaked = R_FALSE;
@@ -73,6 +80,8 @@ R_API int r_cons_init() {
 #elif __WINDOWS__
 	GetConsoleMode (h, &I.term_buf);
 	I.term_raw = 0;
+	if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)__w32_control, TRUE))
+		eprintf ("r_cons: Cannot set control console handler\n");
 #endif
 	//r_cons_palette_init(NULL);
 	r_cons_reset ();

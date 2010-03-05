@@ -7,12 +7,15 @@
 #include <r_lib.h>
 #include <signal.h>
 
+static int r_debug_native_continue(int pid, int sig);
+
 #define DEBUGGER 1
 #define MAXBT 128
 
 #if __WINDOWS__
 #include <windows.h>
 #define R_DEBUG_REG_T CONTEXT
+#include "native/w32.c"
 
 #elif __OpenBSD__ || __NetBSD__ || __FreeBSD__
 #define R_DEBUG_REG_T struct reg
@@ -127,9 +130,21 @@ static void debug_arch_x86_trap_set(int pid, int foo) {
 
 static int r_debug_native_step(int pid) {
 	int ret = R_FALSE;
-	//R_DEBUG_REG_T regs;
+#if __WINDOWS__
+	CONTEXT regs;
 
-#if __APPLE__
+	regs.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
+	GetTheadContext (tid2hnd
+// XXX TODO CONTINUE h
+	/* up TRAP flag */
+	debug_getregs (ps.tid, &regs);
+	GetThreadContext (tid2handler
+	regs.EFlags |= 0x100;
+	debug_setregs (ps.tid, &regs);
+	single_step = ps.tid;
+	r_deubg_native_continue (pid, -1);
+
+#elif __APPLE__
 	debug_arch_x86_trap_set (pid, 1);
 	//eprintf ("stepping from pc = %08x\n", (ut32)get_offset("eip"));
 	//ret = ptrace (PT_STEP, ps.tid, (caddr_t)get_offset("eip"), SIGSTOP);
@@ -154,23 +169,28 @@ static int r_debug_native_step(int pid) {
 }
 
 static int r_debug_native_attach(int pid) {
-	void *addr = 0;
-	void *data = 0;
-#if __APPLE__
-	int ret = ptrace (PT_ATTACH, pid, addr, data);
+	int ret = -1;
+#if __WINDOWS__
+	WIN32_PI (hProcess) = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
+	if (WIN32_PI (hProcess) != (HANDLE)NULL && DebugActiveProcess (pid)) {
+		w32_dbg_threads (pid);
+		ret = 0;
+	} else ret = -1;
+#elif __APPLE__
+	ret = ptrace (PT_ATTACH, pid, 0, 0);
 #else
-	int ret = ptrace (PTRACE_ATTACH, pid, addr, data);
+	ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
 #endif
 	return (ret != -1)?R_TRUE:R_FALSE;
 }
 
 static int r_debug_native_detach(int pid) {
-	void *addr = 0;
-	void *data = 0;
-#if __APPLE__
-	return ptrace (PT_DETACH, pid, addr, data);
+#if __WINDOWS__
+	return win32_detach (pid)? 0 : -1;
+#elif __APPLE__
+	return ptrace (PT_DETACH, pid, NULL, NULL);
 #else
-	return ptrace (PTRACE_DETACH, pid, addr, data);
+	return ptrace (PTRACE_DETACH, pid, NULL, NULL);
 #endif
 }
 
@@ -181,15 +201,23 @@ static int r_debug_native_continue_syscall(int pid, int num) {
 	ut64 pc = 0LL; // XXX
 	return ptrace (PTRACE_SYSCALL, pid, pc, 0);
 #else
+	eprintf ("TODO: continue syscall not implemented yet\n");
 	return -1;
 #endif
 }
 
 static int r_debug_native_continue(int pid, int sig) {
+	int tid = pid;
 	void *data = NULL;
 	if (sig != -1)
 		data = (void*)(size_t)sig;
-#if __APPLE__
+#if __WINDOWS__
+	if (ContinueDebugEvent (pid, tid, DBG_CONTINUE) == 0) {
+		eprintf ("debug_contp: error\n");
+		return -1;
+	}
+	return 0;
+#elif __APPLE__
         eprintf ("debug_contp: program is now running...\n");
  
 	/* XXX */
@@ -208,17 +236,55 @@ static int r_debug_native_continue(int pid, int sig) {
 }
 
 static int r_debug_native_wait(int pid) {
+#if __WINDOWS__
+	return w32_dbg_wait (pid);
+#else
 	int ret, status = -1;
 	//printf ("prewait\n");
 	ret = waitpid (pid, &status, 0);
 	//printf ("status=%d (return=%d)\n", status, ret);
 	return status;
+#endif
 }
 
 // TODO: why strdup here?
 static const char *r_debug_native_reg_profile() {
-#if __POWERPC__ && __APPLE__
-	return strdup(
+#if __WINDOWS__
+	return strdup (
+	"=pc	eip\n"
+	"=sp	esp\n"
+	"=bp	ebp\n"
+	"=a0	eax\n"
+	"=a1	ebx\n"
+	"=a2	ecx\n"
+	"=a3	edi\n"
+	"drx	dr0	.32	4	0\n"
+	"drx	dr1	.32	8	0\n"
+	"drx	dr2	.32	12	0\n"
+	"drx	dr3	.32	16	0\n"
+	"drx	dr6	.32	20	0\n"
+	"drx	dr7	.32	24	0\n"
+	/* floating save area 4+4+4+4+4+4+4+80+4 = 112 */
+	"seg	gs	.32	136	0\n"
+	"seg	fs	.32	140	0\n"
+	"seg	es	.32	144	0\n"
+	"seg	ds	.32	148	0\n"
+	"gpr	edi	.32	152	0\n"
+	"gpr	esi	.32	156	0\n"
+	"gpr	ebx	.32	160	0\n"
+	"gpr	edx	.32	164	0\n"
+	"gpr	ecx	.32	168	0\n"
+	"gpr	eax	.32	172	0\n"
+	"gpr	ebp	.32	176	0\n"
+	"gpr	eip	.32	180	0\n"
+	"seg	cs	.32	184	0\n"
+	"flg	eflags	.32	188	0\n"
+	"seg	esp	.32	192	0\n"
+	"seg	ss	.32	196	0\n"
+	/* +512 bytes for maximum supoprted extension extended registers */
+	);
+#elif __POWERPC__ && __APPLE__
+	return strdup (
 	"=pc	srr0\n"
 	"=sr	srr1\n" // status register
 	"=a0	r0\n"
@@ -274,7 +340,7 @@ static const char *r_debug_native_reg_profile() {
 	"gpr	vrsave	.32	156	0\n"
 	);
 #elif __i386__
-	return strdup(
+	return strdup (
 	"=pc	eip\n"
 	"=sp	esp\n"
 	"=bp	ebp\n"
@@ -395,17 +461,71 @@ static const char *r_debug_native_reg_profile() {
 	"gpr	r16	.32	64	0\n"
 	"gpr	r17	.32	68	0\n"
 	);
-#endif
+#else
 	return NULL;
+#endif
 }
 
+static RList *r_debug_native_pids(int pid) {
+	int i, j, fd;
+	RDebugPid *p;
+	char cmdline[1024];
+// TODO: new syntax: R_LIST (r_debug_pid_free)
+	RList *list = r_list_new ();
+	list->free = &r_debug_pid_free;
+	/* TODO */
+#if __WINDOWS__
+	eprintf ("pids: TODO\n");
+#elif __APPLE__
+	eprintf ("pids: TODO\n");
+#else
+	if (pid == 0) {
+		i = 2;
+		j = 99999;
+	} else {
+		i = pid;
+		j = pid+1;
+	}
+	for (; i<j; i++) {
+		if (kill (i, 0) == 0) {
+			snprintf (cmdline, sizeof (cmdline), "/proc/%d/cmdline", i);
+			fd = open (cmdline, O_RDONLY);
+			cmdline[0] = '\0';
+			if (fd != -1) {
+				read (fd, cmdline, 1024);
+				cmdline[1023] = '\0';
+				close (fd);
+			}
+			p = r_debug_pid_new (cmdline, i, 's');
+			r_list_append (list, p);
+		}
+	}
+#endif
+	return list;
+}
+
+static RList *r_debug_native_threads(int pid) {
+	RList *list = r_list_new ();
+	/* TODO */
+eprintf ("TODO\n");
+	return list;
+}
 // TODO: what about float and hardware regs here ???
 // TODO: add flag for type
 static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int ret; 
 	int pid = dbg->pid;
+#if __WINDOWS__
+	CONTEXT ctx;
+	ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
+	if (!GetThreadContext (w32_t2h (pid), &ctx))
+		return 0;
+	if (sizeof (regs) < size)
+		size = sizeof(regs);
+	memcpy (buf, &ctx, size);
+	return size;
 // XXX this must be defined somewhere else
-#if __APPLE__
+#elif __APPLE__
 	thread_array_t inferior_threads = NULL;
 	unsigned int inferior_thread_count = 0;
 	R_DEBUG_REG_T *regs = (R_DEBUG_REG_T *)buf;
@@ -470,7 +590,11 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 static int r_debug_native_reg_write(int pid, int type, const ut8* buf, int size) {
 	// XXX use switch or so
 	if (type == R_REG_TYPE_GPR) {
-#if __linux__ || __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
+#if __WINDOWS__
+		CONTEXT ctx;
+		ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
+		return SetThreadContext (w32_t2h (pid), &ctx)? 0: -1;
+#elif __linux__ || __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
 		int ret = ptrace (PTRACE_SETREGS, pid, 0, buf);
 		if (sizeof (R_DEBUG_REG_T) < size)
 			size = sizeof (R_DEBUG_REG_T);
@@ -485,6 +609,10 @@ static int r_debug_native_reg_write(int pid, int type, const ut8* buf, int size)
 static RList *r_debug_native_map_get(struct r_debug_t *dbg) {
 	char path[1024];
 	RList *list = NULL;
+#if __WINDOWS__
+	list = w32_dbg_maps ();
+	// TODO
+#else
 #if __sun
 	/* TODO: On solaris parse /proc/%d/map */
 	sprintf (path, "pmap %d > /dev/stderr", ps.tid);
@@ -584,6 +712,7 @@ static RList *r_debug_native_map_get(struct r_debug_t *dbg) {
 	}
 	fclose (fd);
 #endif // __sun
+#endif // __WINDOWS
 	return list;
 }
 
@@ -682,16 +811,27 @@ static RList *r_debug_native_frames(RDebug *dbg) {
 }
 #else
 #warning Backtrace frames not implemented for this platform
+static RList *r_debug_native_frames(RDebug *dbg) {
+       return NULL;
+}
 #endif
 
 static int r_debug_native_kill(struct r_debug_t *dbg, int sig) {
 #if __WINDOWS__
-	TerminateProcess (WIN32_PI(hProcess), 1);
+	TerminateProcess (WIN32_PI (hProcess), 1);
 	return R_FALSE;
 #else
 	int ret = kill (dbg->pid, sig);
 	if (ret == -1)
 		return R_FALSE;
+	return R_TRUE;
+#endif
+}
+
+static int r_debug_native_init(RDebug *dbg) {
+#if __WINDOWS__
+	return w32_dbg_init ();
+#else
 	return R_TRUE;
 #endif
 }
@@ -716,11 +856,14 @@ struct r_debug_handle_t r_debug_plugin_native = {
 #else
 #warning food
 #endif
+	.init = &r_debug_native_init,
 	.step = &r_debug_native_step,
 	.cont = &r_debug_native_continue,
 	.contsc = &r_debug_native_continue_syscall,
 	.attach = &r_debug_native_attach,
 	.detach = &r_debug_native_detach,
+	.pids = &r_debug_native_pids,
+	.threads = &r_debug_native_threads,
 	.wait = &r_debug_native_wait,
 	.kill = &r_debug_native_kill,
 	.frames = &r_debug_native_frames,

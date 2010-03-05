@@ -10,6 +10,7 @@
 #include <r_syscall.h>
 #include "list.h"
 
+// TODO Use chars!! 's' 'r' 'S' 'z' ??
 enum {
 	R_DBG_PROC_STOP,
 	R_DBG_PROC_RUN,
@@ -77,6 +78,8 @@ typedef struct r_debug_handle_t {
 	int (*attach)(int pid);
 	int (*detach)(int pid);
 	int (*select)(int pid, int tid);
+	RList *(*threads)(int pid);
+	RList *(*pids)(int pid);
 	RFList (*backtrace)(int count);
 	/* flow */
 	int (*step)(int pid); // if step() is NULL; reimplement it with traps
@@ -94,13 +97,14 @@ typedef struct r_debug_handle_t {
 	RList *(*map_get)(RDebug *dbg);
 	ut64 (*map_alloc)(RDebug *dbg, RDebugMap *map);
 	int (*map_dealloc)(RDebug *dbg, ut64 addr);
+	int (*init)(RDebug *dbg);
 	struct list_head list;
 } RDebugHandle;
 
 // TODO: rename to r_debug_process_t ? maybe a thread too ?
 typedef struct r_debug_pid_t {
 	int pid;
-	int status; /* stopped, running, zombie, sleeping ,... */
+	char status; /* stopped, running, zombie, sleeping ,... */
 	int runnable; /* when using 'run', 'continue', .. this proc will be runnable */
 	const char *path;
 	//struct list_head threads;
@@ -123,6 +127,9 @@ R_API int r_debug_pid_add(struct r_debug_t *dbg);
 R_API int r_debug_pid_add_thread(struct r_debug_t *dbg);
 R_API int r_debug_pid_del(struct r_debug_t *dbg);
 R_API int r_debug_pid_del_thread(struct r_debug_t *dbg);
+R_API RDebugPid *r_debug_pid_free(RDebugPid *pid);
+R_API int r_debug_pid_list(struct r_debug_t *dbg, int pid);
+R_API RDebugPid *r_debug_pid_new(char *path, int pid, char status);
 
 R_API int r_debug_use(struct r_debug_t *dbg, const char *str);
 R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
