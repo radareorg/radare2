@@ -1,11 +1,14 @@
 use r2::r_bin;
 
+$file = ($ARGV[0] ne "")?$ARGV[0]:"/bin/ls";
 $b = r_bin::RBin->new ();
-$b->load ("/bin/ls", undef);
+$b->load ($file, undef);
 $baddr = $b->get_baddr ();
-printf ("baddr=0x%08x\n", $baddr);
+$sects = $b->get_sections ();
+
 print "-> Sections\n";
-for $i (b->get_sections ()) {
+for ($i = 0; $i < $sects->size (); $i++) {
+	$s = $sects->get ($i);
 	printf ("offset=0x%08x va=0x%08x size=%05i %s\n",
-			$i{"offset"}, baddr+$i{"rva"}, $i{"size"}, $i{"name"});
+			$s->{offset}, $baddr + $s->{rva}, $s->{size}, $s->{name});
 }

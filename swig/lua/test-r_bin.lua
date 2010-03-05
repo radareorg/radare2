@@ -1,7 +1,9 @@
 -- RBin --
 require "r_bin"
+
+file = arg[1] or "/bin/ls"
 b = r_bin.RBin ()
-b:load ("/bin/ls", "")
+b:load (file, "")
 baddr = b:get_baddr ()
 s = b:get_sections ()
 nsects = s:size() - 1
