@@ -59,7 +59,8 @@ static void r_core_anal_graph_nodes (struct r_core_t *core, RList *pbb, ut64 add
 				r_list_append (pbb, bbc);
 			}
 			if (bbi->jump != -1) {
-				r_cons_printf ("\t\"0x%08llx\" -> \"0x%08llx\" [color=\"green\"];\n", bbi->addr, bbi->jump);
+				r_cons_printf ("\t\"0x%08llx\" -> \"0x%08llx\" [color=\"%s\"];\n", bbi->addr, bbi->jump,
+						bbi->fail != -1 ? "green" : "blue");
 				r_cons_flush ();
 				if (addr != 0) r_core_anal_graph_nodes (core, pbb, bbi->jump);
 			}
