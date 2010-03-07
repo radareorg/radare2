@@ -144,9 +144,15 @@ typedef struct r_anal_fcn_t {
 	char *name;
 	ut64 addr;
 	int size;
+	RList *vars;
 	RList *refs;
 	RList *xrefs;
 } RAnalysisFcn;
+
+typedef struct r_anal_var_t {
+	char *name;
+	ut64 addr;
+} RAnalysisVar;
 
 typedef ut64 RAnalysisRef;
 
@@ -176,20 +182,23 @@ R_API RAnalysisBB *r_anal_bb_new();
 R_API RAnalysisAop *r_anal_aop_new();
 R_API RAnalysisFcn *r_anal_fcn_new();
 R_API RAnalysisRef *r_anal_ref_new();
+R_API RAnalysisVar *r_anal_var_new();
 R_API RList *r_anal_bb_list_new();
 R_API RList *r_anal_aop_list_new();
 R_API RList *r_anal_fcn_list_new();
 R_API RList *r_anal_ref_list_new();
+R_API RList *r_anal_var_list_new();
 R_API RAnalysis *r_anal_free(struct r_anal_t *r);
+R_API void r_anal_std_free(void *ptr);
 R_API void r_anal_bb_free(void *bb);
-R_API void r_anal_aop_free(void *aop);
 R_API void r_anal_fcn_free(void *fcn);
-R_API void r_anal_ref_free(void *ref);
+R_API void r_anal_var_free(void *var);
 R_API RAnalysis *r_anal_init(struct r_anal_t *anal);
 R_API RAnalysisBB *r_anal_bb_init(struct r_anal_bb_t *bb);
 R_API RAnalysisAop *r_anal_aop_init(struct r_anal_aop_t *aop);
 R_API RAnalysisFcn *r_anal_fcn_init(RAnalysisFcn *fcn);
 R_API RAnalysisRef *r_anal_ref_init(RAnalysisRef *ref);
+R_API RAnalysisVar *r_anal_var_init(RAnalysisVar *var);
 R_API void r_anal_set_user_ptr(struct r_anal_t *anal, void *user);
 R_API int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo);
 R_API int r_anal_list(struct r_anal_t *anal);

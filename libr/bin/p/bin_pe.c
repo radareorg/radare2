@@ -102,7 +102,7 @@ static RFList symbols(RBin *bin)
 		strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->forwarder, (char*)symbols[i].forwarder, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type 
 		ptr->rva = symbols[i].rva;
 		ptr->offset = symbols[i].offset;
 		ptr->size = 0;

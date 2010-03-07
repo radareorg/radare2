@@ -50,6 +50,8 @@ static int config_asmarch_callback(void *user, void *data) {
 	// TODO: control error and restore old value (return false?) show errormsg?
 	if (!r_asm_use (&core->assembler, node->value))
 		eprintf ("asm.arch: Cannot set this arch (%s)\n", node->value);
+	if (!r_anal_use (&core->anal, node->value))
+		eprintf ("asm.arch: Cannot setup analysis engine for '%s'\n", node->value);
 	if (!r_syscall_setup (&core->syscall, node->value,
 			r_config_get (&core->config, "asm.os")))
 		eprintf ("asm.arch: Cannot setup syscall os/arch for '%s'\n", node->value);
@@ -79,8 +81,8 @@ static int config_asm_bits_callback(void *user, void *data) {
 			ret = R_TRUE;
 		}
 	}
-	// TODO: test anal bits
-	r_anal_set_bits (&core->anal, node->i_value);
+	if (!r_anal_set_bits (&core->anal, node->i_value))
+		eprintf ("asm.arch: Cannot setup '%i' bits analysis engine\n", node->i_value);
 	// TODO: change debugger backend bit profile here
 	return ret;
 }
