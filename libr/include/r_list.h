@@ -21,7 +21,8 @@ typedef struct r_list_t {
 #define r_list_iterator(x) x->head
 #define r_list_iter_free(x) free(x)
 #define r_list_item_free(x) free(x)
-#define r_list_free(x) if(x&&x->free)x->free(x);free(x)
+// XXX MEMORY LEAK #define r_list_free(x) if(x&&x->free)x->free(x);free(x)
+#define r_list_free(x) free(x)
 #define r_list_empty(x) (x->head==NULL && x->tail==NULL)
 #define r_list_head(x) x->head
 #define r_list_tail(x) x->tail

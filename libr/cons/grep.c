@@ -5,6 +5,7 @@
 R_API void r_cons_grep(const char *str) {
 	RCons *cons;
 	char *optr, *tptr;
+	char buf[1024];
 	char *ptr, *ptr2, *ptr3;
 	cons = r_cons_singleton ();
 	cons->grep.counter = 0;
@@ -18,11 +19,11 @@ R_API void r_cons_grep(const char *str) {
 			cons->grep.counter = 1;
 			str = str + 1;
 		}
-		ptr = alloca (strlen (str)+2);
-		strcpy (ptr, str);
+		ptr = buf;
+		strncpy (ptr, str, sizeof (buf));
 
 		ptr3 = strchr (ptr, '[');
-		ptr2 = strchr (ptr, '#');
+		ptr2 = strchr (ptr, '#'); // XXX: this is no longer valid!!! its a comment.
 
 		if (ptr3) {
 			ptr3[0]='\0';
@@ -50,7 +51,7 @@ R_API void r_cons_grep(const char *str) {
 				strncpy (cons->grep.strings[cons->grep.nstrings], optr, 63);
 				cons->grep.nstrings++;
 				optr = tptr+1;
-				tptr = strchr(optr, '!');
+				tptr = strchr (optr, '!');
 			}
 			strncpy (cons->grep.strings[cons->grep.nstrings], optr, 63);
 			cons->grep.nstrings++;
@@ -66,8 +67,7 @@ R_API void r_cons_grep(const char *str) {
 
 /* TODO: use const char * instead ..strdup at the beggining? */
 // TODO: this must be a filter like the html one
-R_API int r_cons_grepbuf(char *buf, int len)
-{
+R_API int r_cons_grepbuf(char *buf, int len) {
 	RCons *cons = r_cons_singleton ();
 	const char delims[6][2] = {"|", "/", "\\", ",", ";", "\t"};
 	int donotline = 0;
@@ -84,10 +84,10 @@ R_API int r_cons_grepbuf(char *buf, int len)
 
 	if (!n) return len;
 
-	for(i=0;i<cons->grep.nstrings;i++) {
+	for (i=0; i<cons->grep.nstrings; i++) {
 		cons->grep.str = cons->grep.strings[i];
-		if ( (!cons->grep.neg && strstr(buf, cons->grep.str))
-		  || (cons->grep.neg && !strstr(buf, cons->grep.str))) {
+		if ( (!cons->grep.neg && strstr (buf, cons->grep.str))
+		  || (cons->grep.neg && !strstr (buf, cons->grep.str))) {
 			hit = 1;
 			break;
 		}
@@ -106,32 +106,34 @@ R_API int r_cons_grepbuf(char *buf, int len)
 	} else donotline = 1;
 
 	if (donotline) {
+//eprintf ("aaa GREPSTRING (%s)\n", cons->grep.str);
 		cons->buffer_len -= strlen (cons->lastline)-len;
-		cons->lastline[0]='\0';
+		cons->lastline[0] = '\0';
 		len = 0;
 	} else {
+//eprintf ("zzz GREPSTRING (%s)\n", cons->grep.str);
 		if (cons->grep.token != -1) {
 			//ptr = alloca(strlen(cons->lastline));
 			char *tok = NULL;
-			char *ptr = alloca(1024); // XXX
+			char *ptr = alloca (1024); // XXX
 			strcpy (ptr, cons->lastline);
-			for (i=0; i<len; i++) for (j=0;j<6;j++)
+			for (i=0; i<len; i++) for (j=0; j<6; j++)
 				if (ptr[i] == delims[j][0])
 					ptr[i] = ' ';
 			tok = ptr;
-			for (i=0;tok != NULL && i<=cons->grep.token;i++) {
-				if (i==0) tok = (char *)strtok(ptr, " ");
-				else tok = (char *)strtok(NULL, " ");
+			for (i=0; tok!=NULL && i<=cons->grep.token; i++) {
+				if (i==0) tok = (char *)strtok (ptr, " ");
+				else tok = (char *)strtok (NULL, " ");
 			}
 			if (tok) {
 				// XXX remove strlen here!
 				cons->buffer_len -= strlen (cons->lastline)-len;
-				len = strlen(tok);
+				len = strlen (tok);
 				memcpy (cons->lastline, tok, len);
 				if (cons->lastline[len-1]!='\n')
 					memcpy (cons->lastline+len, "\n", 2);
 				len++;
-				cons->lastline +=len;
+				cons->lastline += len;
 			}
 		} else cons->lastline = buf+len;
 		cons->lines++;
@@ -141,8 +143,7 @@ R_API int r_cons_grepbuf(char *buf, int len)
 
 
 // XXX: rename char *r_cons_filter_html(const char *ptr)
-R_API int r_cons_html_print(const char *ptr)
-{
+R_API int r_cons_html_print(const char *ptr) {
 	const char *str = ptr;
 	int color = 0;
 	int esc = 0;

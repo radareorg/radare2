@@ -10,6 +10,16 @@
 * Move 'r_syscall_t' stuff into r_debug
   - Sync r_core
 
+* regio not implemented
+  - floating point registers
+  - mmx/xmm
+  - drX control
+* FileDescriptors
+  - df -- copy from !fd in r1
+
+* Implement dump+restore as macros
+  (dump,)
+
 * Implement process launcher wrapper
   - opens xterm and redirects stdin/stdout/stderr
   - Allows to change chroot

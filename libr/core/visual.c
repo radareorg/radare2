@@ -381,12 +381,12 @@ R_API void r_core_visual_config(struct r_core_t *core) {
 		case '*':
 		case '+':
 			if (fs2 != NULL)
-				config_visual_hit_i(core, fs2, +1);
+				config_visual_hit_i (core, fs2, +1);
 			continue;
 		case '/':
 		case '-':
 			if (fs2 != NULL)
-				config_visual_hit_i(core, fs2, -1);
+				config_visual_hit_i (core, fs2, -1);
 			continue;
 		case 'l':
 		case 'e': // edit value

@@ -27,7 +27,7 @@ R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write) {
 R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 	int cols, n = 0;
 	struct list_head *pos, *head = r_reg_get_list(dbg->reg, type);
-	const char *fmt, *fmt2;
+	const char *fmt, *fmt2, *value;
 	if (dbg->h && dbg->h->bits & R_SYS_BITS_64) {
 		fmt = "%s = 0x%016llx%s";
 		fmt2 = "%4s 0x%016llx%s";
@@ -38,18 +38,18 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 		cols = 4;
 	}
 	list_for_each (pos, head) {
+		ut64 value;
 		struct r_reg_item_t *item = list_entry (pos, struct r_reg_item_t, list);
 		if (type != -1 && type != item->type)
 			continue;
 		if (size != 0 && size != item->size)
 			continue;
+		value = r_reg_get_value (dbg->reg, item);
 		if (rad==1)
-			dbg->printf ("f %s @ 0x%llx\n", item->name,
-				r_reg_get_value (dbg->reg, item));
+			dbg->printf ("f %s @ 0x%llx\n", item->name, value);
 		else if (rad==2)
-			dbg->printf (fmt2, item->name, r_reg_get_value (dbg->reg, item),
-				((n+1)%cols)?"   ":"\n");
-		else dbg->printf (fmt, item->name, r_reg_get_value (dbg->reg, item));
+			dbg->printf (fmt2, item->name, value, ((n+1)%cols)?"   ":"\n");
+		else dbg->printf (fmt, item->name, value, "\n");
 		n++;
 	}
 	if (n>0 && rad==2 && (!((n+1)%cols)))

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
 
 #include <r_userconf.h>
 
@@ -101,7 +101,7 @@ static int __open(struct r_io_t *io, const char *file, int rw, int mode) {
 	if (__handle_open (io, file)) {
 		int pid = atoi (file+9);
 		if (file[0]=='a') {
-			ret = ptrace(PTRACE_ATTACH, pid, 0, 0);
+			ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
 			if (ret == -1) {
 				switch (errno) {
 				case EPERM:
@@ -109,7 +109,7 @@ static int __open(struct r_io_t *io, const char *file, int rw, int mode) {
 					eprintf ("Operation not permitted\n");
 					break;
 				case EINVAL:
-					perror("ptrace: Cannot attach");
+					perror ("ptrace: Cannot attach");
 					eprintf ("ERRNO: %d (EINVAL)\n", errno);
 					break;
 				}

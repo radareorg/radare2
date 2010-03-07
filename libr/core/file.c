@@ -67,7 +67,7 @@ R_API int r_core_file_list(struct r_core_t *core) {
 	struct list_head *pos;
 	list_for_each_prev (pos, &core->files) {
 		RCoreFile *f = list_entry (pos, RCoreFile, list);
-		eprintf (" %d %s\n", f->fd, f->uri);
+		eprintf ("%d %s\n", f->fd, f->uri);
 		count++;
 	}
 	return count;

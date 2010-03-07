@@ -1899,7 +1899,9 @@ static int r_core_cmd_subst(struct r_core_t *core, char *cmd) {
 		return ret;
 	}
 
-	return r_cmd_call (&core->cmd, r_str_trim_head (cmd));
+	ret = r_cmd_call (&core->cmd, r_str_trim_head (cmd));
+	//r_cons_grep_end ();
+	return ret;
 }
 
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
@@ -2228,10 +2230,22 @@ static int cmd_debug(void *data, const char *input) {
 			r_list_destroy (list);
 		}
 		break;
+	case 'd':
+		eprintf ("TODO: dd: file descriptors\n");
+		break;
 	case 's':
 		times = atoi (input+2);
 		if (times<1) times = 1;
-		if (input[1]=='l') step_line (core, times);
+		if (input[1]=='?')
+			r_cons_printf ("Usage: ds[ol] [count]\n"
+				" ds      step one instruction\n"
+				" ds 4    step 4 instructions\n"
+				" dso 3   step over 3 instructions\n"
+				" dsl     step one source line\n"
+				" dsl 40  step 40 source lines\n");
+		else if (input[1]=='o')
+			r_debug_step_over (&core->dbg, times);
+		else if (input[1]=='l') step_line (core, times);
 		else r_debug_step (&core->dbg, times);
 		break;
 	case 'b':
@@ -2251,6 +2265,7 @@ static int cmd_debug(void *data, const char *input) {
 				" dc               continue execution of all childs\n"
 				" dct [len]        traptrace from curseek to len, no argument to list\n"
 				" dcu [addr]       continue until address\n"
+				" dco [num]        step over N instructions\n"
 				" dcs [num]        continue until syscall\n"
 				" dck [sig] [pid]  continue sending kill 9 to process\n"
 				" dc [pid]         continue execution of pid\n"
@@ -2330,14 +2345,31 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 	case 'p':
 		if (input[1]=='?')
-			r_cons_printf ("Usage: dp[=][pid]\n");
+			r_cons_printf ("Usage: dp[=][pid]\n"
+				" dp      list current pid and childrens\n"
+				" dp 748  list childs of pid\n"
+				" dp*     list all attachable pids\n"
+				" dpa 377 attach and select this pid\n"
+				" dp=748  select this pid\n");
 		else
+		if (input[1]=='a') {
+			r_debug_attach (&core->dbg,
+				(int) r_num_math (&core->num, input+2));
+			r_debug_select (&core->dbg,
+				(int) r_num_math (&core->num, input+2),
+				(int) r_num_math (&core->num, input+2));
+		} else
 		if (input[1]=='=')
-			r_debug_select (&core->dbg, atoi (input+2), atoi (input+2));
+			r_debug_select (&core->dbg,
+				(int) r_num_math (&core->num, input+2),
+				(int) r_num_math (&core->num, input+2));
+		else
+		if (input[1]=='*')
+			r_debug_pid_list (&core->dbg, 0);
 		else
 		if (input[1]==' ')
-			r_debug_pid_list (&core->dbg, atoi (input+2));
-			//r_debug_select(&core->dbg, core->dbg.pid, atoi(input+2));
+			r_debug_pid_list (&core->dbg,
+				(int) r_num_math (&core->num, input+2));
 		else r_debug_pid_list (&core->dbg, core->dbg.pid);
 		break;
 	case 'h':
@@ -2349,13 +2381,10 @@ static int cmd_debug(void *data, const char *input) {
 		r_cons_printf ("Usage: d[sbhcrbo] [arg]\n"
 		" dh [handler]   list or set debugger handler\n"
 		" dH [handler]   transplant process to a new handler\n"
-		" ds             perform one step\n"
-		" df             file descriptors\n"
-		" ds 3           perform 3 steps\n"
-		" do 3           perform 3 steps overs\n"
-		" dsl            step to next source line\n"
+		" dd             file descriptors\n"
+		" ds[ol] N       step, over, source line\n"
 		" df             show frames (backtrace)\n"
-		" dp[=?][pid]    list, attach to process id\n"
+		" dp[=*?][pid]   list, attach to process id\n"
 		" dt [tid]       select thread id\n"
 		" dc[?]          continue execution. dc? for more\n"
 		" dr[?]          cpu registers, dr? for extended help\n"

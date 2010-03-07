@@ -134,7 +134,7 @@ static int r_debug_native_step(int pid) {
 	CONTEXT regs;
 
 	regs.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-	GetTheadContext (tid2hnd
+//	GetTheadContext (tid2hnd
 // XXX TODO CONTINUE h
 	/* up TRAP flag */
 	debug_getregs (ps.tid, &regs);
@@ -180,6 +180,7 @@ static int r_debug_native_attach(int pid) {
 	ret = ptrace (PT_ATTACH, pid, 0, 0);
 #else
 	ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
+	eprintf ("attach=%d\n", ret);
 #endif
 	return (ret != -1)?R_TRUE:R_FALSE;
 }
@@ -467,9 +468,8 @@ static const char *r_debug_native_reg_profile() {
 }
 
 static RList *r_debug_native_pids(int pid) {
-	int i, j, fd;
-	RDebugPid *p;
-	char cmdline[1024];
+	int i, fd;
+	char *ptr, cmdline[1024];
 // TODO: new syntax: R_LIST (r_debug_pid_free)
 	RList *list = r_list_new ();
 	list->free = &r_debug_pid_free;
@@ -479,25 +479,45 @@ static RList *r_debug_native_pids(int pid) {
 #elif __APPLE__
 	eprintf ("pids: TODO\n");
 #else
-	if (pid == 0) {
-		i = 2;
-		j = 99999;
-	} else {
-		i = pid;
-		j = pid+1;
-	}
-	for (; i<j; i++) {
-		if (kill (i, 0) == 0) {
-			snprintf (cmdline, sizeof (cmdline), "/proc/%d/cmdline", i);
+	if (pid) {
+		r_list_append (list, r_debug_pid_new ("(current)", pid, 's'));
+		/* list parents */
+		for (i=2; i<39999; i++) {
+			snprintf (cmdline, sizeof (cmdline), "/proc/%d/stat", i);
 			fd = open (cmdline, O_RDONLY);
-			cmdline[0] = '\0';
-			if (fd != -1) {
+			if (fd == -1)
+				continue;
+			read (fd, cmdline, 1024);
+			cmdline[1023] = '\0';
+			ptr = strstr (cmdline, "PPid: ");
+			if (ptr) {
+				int ppid = atoi (ptr+6);
+				close (fd);
+				if (ppid != pid)
+					continue;
+				snprintf (cmdline, sizeof (cmdline), "/proc/%d/cmdline", ppid);
+				fd = open (cmdline, O_RDONLY);
+				if (fd == -1)
+					continue;
 				read (fd, cmdline, 1024);
 				cmdline[1023] = '\0';
-				close (fd);
+				r_list_append (list, r_debug_pid_new (cmdline, i, 's'));
 			}
-			p = r_debug_pid_new (cmdline, i, 's');
-			r_list_append (list, p);
+			close (fd);
+		}
+	} else
+	for (i=2; i<39999; i++) {
+		if (kill (i, 0) == 0) {
+			// TODO: Use slurp!
+			snprintf (cmdline, sizeof (cmdline), "/proc/%d/cmdline", i);
+			fd = open (cmdline, O_RDONLY);
+			if (fd == -1)
+				continue;
+			cmdline[0] = '\0';
+			read (fd, cmdline, 1024);
+			cmdline[1023] = '\0';
+			close (fd);
+			r_list_append (list, r_debug_pid_new (cmdline, i, 's'));
 		}
 	}
 #endif
