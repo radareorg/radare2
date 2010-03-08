@@ -8,6 +8,7 @@
 #include "../config.h"
 
 /* plugin pointers */
+extern RAnalysisHandle r_anal_plugin_arm;
 extern RAnalysisHandle r_anal_plugin_x86;
 extern RAnalysisHandle r_anal_plugin_x86_bea;
 extern RAnalysisHandle r_anal_plugin_ppc;
