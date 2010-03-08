@@ -40,18 +40,15 @@ static void r_core_anal_graph_nodes (struct r_core_t *core, RList *pbb, ut64 add
 	RListIter *iter;
 	char *str;
 
-	if (pbb) { /* In partial graphs test if the bb is already printed */
-		iter = r_list_iterator (pbb);
-		while (r_list_iter_next (iter)) {
-			bbi = r_list_iter_get (iter);
+	if (pbb) { 
+		/* In partial graphs test if the bb is already printed */
+		r_list_foreach (pbb, iter, bbi) {
 			if (addr >= bbi->addr && addr < bbi->addr+bbi->size)
 				return;
 		}
 	}
 
-	iter = r_list_iterator (core->anal.bbs);
-	while (r_list_iter_next (iter)) {
-		bbi = r_list_iter_get (iter);
+	r_list_foreach (core->anal.bbs, iter, bbi) {
 		if (addr == 0 || (addr >= bbi->addr && addr < bbi->addr+bbi->size)) {
 			if (pbb) { /* Copy BB and append to the list of printed bbs */
 				bbc = MALLOC_STRUCT (RAnalysisBB);
@@ -129,9 +126,7 @@ R_API int r_core_anal_bb_clean (struct r_core_t *core, ut64 addr) {
 		if (!(core->anal.bbs = r_anal_bb_list_new ()))
 			return R_FALSE;
 	} else {
-		iter = r_list_iterator (core->anal.bbs);
-		while (r_list_iter_next (iter)) {
-			bbi = r_list_iter_get (iter);
+		r_list_foreach (core->anal.bbs, iter, bbi) {
 			if (addr >= bbi->addr && addr < bbi->addr+bbi->size) {
 				jump = bbi->jump;
 				fail = bbi->fail;
@@ -150,12 +145,9 @@ R_API int r_core_anal_bb_add (struct r_core_t *core, ut64 addr, ut64 size, ut64 
 	struct r_anal_bb_t *bb, *bbi;
 	RListIter *iter;
 
-	iter = r_list_iterator (core->anal.bbs);
-	while (r_list_iter_next (iter)) {
-		bbi = r_list_iter_get (iter);
+	r_list_foreach (core->anal.bbs, iter, bbi)
 		if (addr >= bbi->addr && addr < bbi->addr+bbi->size)
 			return R_FALSE;
-	}
 	if (!(bb = r_anal_bb_new ()))
 		return R_FALSE;
 	bb->addr = addr;
@@ -170,9 +162,7 @@ R_API int r_core_anal_bb_list (struct r_core_t *core, int rad) {
 	struct r_anal_bb_t *bbi;
 	RListIter *iter;
 
-	iter = r_list_iterator (core->anal.bbs);
-	while (r_list_iter_next (iter)) {
-		bbi = r_list_iter_get (iter);
+	r_list_foreach (core->anal.bbs, iter, bbi) {
 		if (rad) {
 			r_cons_printf ("ab+ 0x%08llx %04lli ", bbi->addr, bbi->size);
 			if (bbi->jump != -1)
@@ -197,12 +187,9 @@ R_API int r_core_anal_bb_seek (struct r_core_t *core, ut64 addr) {
 	struct r_anal_bb_t *bbi;
 	RListIter *iter;
 
-	iter = r_list_iterator (core->anal.bbs);
-	while (r_list_iter_next (iter)) {
-		bbi = r_list_iter_get (iter);
+	r_list_foreach (core->anal.bbs, iter, bbi)
 		if (addr >= bbi->addr && addr < bbi->addr+bbi->size)
 			return r_core_seek (core, bbi->addr, R_FALSE);
-	}
 	return r_core_seek (core, addr, R_FALSE);
 }
 
@@ -218,14 +205,10 @@ R_API int r_core_anal_fcn (struct r_core_t *core, ut64 at, ut64 from, int depth)
 	if (depth < 0)
 		return R_FALSE;
 	if (from != -1) {
-		iter = r_list_iterator (core->anal.fcns);
-		while (r_list_iter_next (iter)) {
-			fcni = r_list_iter_get (iter);
+		r_list_foreach (core->anal.fcns, iter, fcni)
 			if ((at >= fcni->addr && at < fcni->addr+fcni->size) ||
 					(at == fcni->addr && fcni->size == 0)) {
-				iter2 = r_list_iterator (fcni->xrefs);
-				while (r_list_iter_next (iter2)) {
-					refi = r_list_iter_get (iter2);
+				r_list_foreach (fcni->xrefs, iter2, refi) {
 					ref = (ut64*)refi;
 					if (from == *ref)
 						return R_FALSE;
@@ -238,7 +221,6 @@ R_API int r_core_anal_fcn (struct r_core_t *core, ut64 at, ut64 from, int depth)
 				r_list_append (fcni->xrefs, ref);
 				return R_FALSE;
 			}
-		}
 	}
 	if (!(fcn = r_anal_fcn_new()))
 		return R_FALSE;
@@ -258,9 +240,7 @@ R_API int r_core_anal_fcn (struct r_core_t *core, ut64 at, ut64 from, int depth)
 			r_flag_set (&core->flags, flagname, at, fcn->size, 0);
 			free (flagname);
 			r_list_append (core->anal.fcns, fcn);
-			iter = r_list_iterator (fcn->refs);
-			while (r_list_iter_next (iter)) {
-				refi = r_list_iter_get (iter);
+			r_list_foreach (fcn->refs, iter, refi) {
 				ref = (ut64*)refi;
 				if (*ref != -1)
 					r_core_anal_fcn (core, *ref, at, depth-1);
@@ -279,14 +259,9 @@ R_API int r_core_anal_fcn_clean (struct r_core_t *core, ut64 addr) {
 		r_list_destroy (core->anal.fcns);
 		if (!(core->anal.fcns = r_anal_fcn_list_new ()))
 			return R_FALSE;
-	} else {
-		iter = r_list_iterator (core->anal.fcns);
-		while (r_list_iter_next (iter)) {
-			fcni = r_list_iter_get (iter);
+	} else r_list_foreach (core->anal.fcns, iter, fcni)
 			if (addr >= fcni->addr && addr < fcni->addr+fcni->size)
 				r_list_unlink (core->anal.fcns, fcni);
-		}
-	}
 	return R_TRUE;
 }
 
@@ -294,12 +269,9 @@ R_API int r_core_anal_fcn_add (struct r_core_t *core, ut64 addr, ut64 size, cons
 	struct r_anal_fcn_t *fcn, *fcni;
 	RListIter *iter;
 
-	iter = r_list_iterator (core->anal.fcns);
-	while (r_list_iter_next (iter)) {
-		fcni = r_list_iter_get (iter);
+	r_list_foreach (core->anal.fcns, iter, fcni)
 		if (addr >= fcni->addr && addr < fcni->addr+fcni->size)
 			return R_FALSE;
-	}
 	if (!(fcn = r_anal_fcn_new ()))
 		return R_FALSE;
 	fcn->addr = addr;
@@ -315,32 +287,25 @@ R_API int r_core_anal_fcn_list (struct r_core_t *core, int rad) {
 	RListIter *iter, *iter2;
 	ut64 *ref;
 
-	iter = r_list_iterator (core->anal.fcns);
-	while (r_list_iter_next (iter)) {
-		fcni = r_list_iter_get (iter);
+	r_list_foreach (core->anal.fcns, iter, fcni)
 		if (rad)
 			r_cons_printf ("af+ 0x%08llx %lli %s\n", fcni->addr, fcni->size, fcni->name);
 		else {
 			r_cons_printf ("[0x%08llx] size=%lli name=%s\n",
 					fcni->addr, fcni->size, fcni->name);
 			r_cons_printf ("refs: ");
-			iter2 = r_list_iterator (fcni->refs);
-			while (r_list_iter_next (iter2)) {
-				refi = r_list_iter_get (iter2);
+			r_list_foreach (fcni->refs, iter2, refi) {
 				ref = (ut64*)refi;
 				r_cons_printf ("0x%08llx ", *ref);
 			}
 			r_cons_printf ("\n");
 			r_cons_printf ("xrefs: ");
-			iter2 = r_list_iterator (fcni->xrefs);
-			while (r_list_iter_next (iter2)) {
-				refi = r_list_iter_get (iter2);
+			r_list_foreach (fcni->xrefs, iter2, refi) {
 				ref = (ut64*)refi;
 				r_cons_printf ("0x%08llx ", *ref);
 			}
 			r_cons_printf ("\n");
 		}
-	}
 	r_cons_flush();
 	return R_TRUE;
 }
@@ -370,11 +335,8 @@ R_API int r_core_anal_graph_fcn (struct r_core_t *core, char *fname) {
 	struct r_anal_fcn_t *fcni;
 	RListIter *iter;
 
-	iter = r_list_iterator (core->anal.fcns);
-	while (r_list_iter_next (iter)) {
-		fcni = r_list_iter_get (iter);
+	r_list_foreach (core->anal.fcns, iter, fcni)
 		if (!strcmp (fname, fcni->name))
 			return r_core_anal_graph (core, fcni->addr);
-	}
 	return R_FALSE;
 }

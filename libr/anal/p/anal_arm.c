@@ -8,7 +8,7 @@
 #include <r_anal.h>
 
 /* DEPRECATE ?? */
-#include "arm.h"
+#include "arm/arm.h"
 
 // XXX: must be configured somewhere with anal.bits
 static int arm_mode = 32;

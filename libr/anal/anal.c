@@ -258,9 +258,7 @@ R_API int r_anal_bb_split(RAnalysis *anal, RAnalysisBB *bb, RList *bbs, ut64 add
 	struct r_anal_aop_t *aopi;
 	RListIter *iter;
 
-	iter = r_list_iterator (bbs);
-	while (r_list_iter_next (iter)) {
-		bbi = r_list_iter_get (iter);
+	r_list_foreach (bbs, iter, bbi)
 		if (addr == bbi->addr)
 			return R_ANAL_RET_DUP;
 		else if (addr > bbi->addr && addr < bbi->addr + bbi->size) {
@@ -282,7 +280,6 @@ R_API int r_anal_bb_split(RAnalysis *anal, RAnalysisBB *bb, RList *bbs, ut64 add
 			}
 			return R_ANAL_RET_END;
 		}
-	}
 	return R_ANAL_RET_NEW;
 }
 
@@ -291,24 +288,17 @@ R_API int r_anal_bb_overlap(RAnalysis *anal, RAnalysisBB *bb, RList *bbs) {
 	struct r_anal_aop_t *aopi;
 	RListIter *iter;
 
-	iter = r_list_iterator (bbs);
-	while (r_list_iter_next (iter)) {
-		bbi = r_list_iter_get (iter);
+	r_list_foreach (bbs, iter, bbi)
 		if (bbi->addr > bb->addr && bbi->addr < bb->addr+bb->size) {
 			bb->size = bbi->addr - bb->addr;
 			bb->jump = bbi->addr;
 			bb->fail = -1;
-			iter = r_list_iterator (bb->aops);
-			while (r_list_iter_next (iter)) {
-				aopi = r_list_iter_get (iter);
-				if (aopi->addr >= bbi->addr) {
+			r_list_foreach (bb->aops, iter, aopi)
+				if (aopi->addr >= bbi->addr)
 					r_list_unlink (bb->aops, aopi);
-				}
-			}
 			r_list_append (bbs, bb);
 			return R_ANAL_RET_END;
 		}
-	}
 	return R_ANAL_RET_NEW;
 }
 

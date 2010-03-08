@@ -7,7 +7,7 @@ foo: all
 
 ALL_TARGETS=
 # TODO: rename to enabled plugins
-ARCHS=dummy.mk x86.mk x86_bea.mk ppc.mk
+ARCHS=dummy.mk x86.mk x86_bea.mk ppc.mk arm.mk
 include $(ARCHS)
 
 all: ${ALL_TARGETS}
