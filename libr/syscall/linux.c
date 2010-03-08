@@ -43,3 +43,53 @@ RSyscallItem syscalls_linux_x86[] = {
 	{ "exit_group", 0x80, 252, 1},
 	{ NULL, 0, 0, 0 }
 };
+
+// http://lxr.oss.org.cn/source/include/asm-arm/unistd.h
+/* syscall-linux */
+// XXX: same as in linux-x86 ?
+RSyscallItem syscalls_linux_arm[] = {
+	{ "exit", 0x900000, 1, 1, "i" },
+	{ "fork", 0x900000, 2, 0, NULL },
+	{ "read", 0x900000, 3, 3, "ipi" },
+	{ "write", 0x900000, 4, 3, "izi" },
+	{ "open", 0x900000, 5, 3, "zxx" },
+	{ "close", 0x900000, 6, 1, "i" },
+	{ "waitpid", 0x900000, 7, 3, "ipx"},
+	{ "creat", 0x900000, 8, 2, "zx" },
+	{ "link", 0x900000, 9, 2, "zz" },
+	{ "unlink", 0x900000, 10, 1, "z" },
+	{ "execve", 0x900000, 11, 3, "zzz" }, // XXX this is char**
+	{ "chdir", 0x900000, 12, 1, "z" },
+	{ "time", 0x900000, 13, 1, "p" },
+	{ "mknod", 0x900000, 14, 1, "zxi" },
+	{ "chmod", 0x900000, 15, 1, "zx" },
+	{ "lchown", 0x900000, 16, 1, "zii" },
+	{ "getpid", 0x900000, 20, 0, NULL},
+	{ "setuid", 0x900000, 23, 1, "i" },
+	{ "getuid", 0x900000, 24, 0, NULL },
+	{ "ptrace", 0x900000, 26, 4 },
+	{ "utime", 0x900000, 30, 2 },
+	{ "access", 0x900000, 33, 2 },
+	{ "kill", 0x900000, 37,2 },
+	{ "dup", 0x900000, 41, 2 },
+	{ "brk", 0x900000, 45, 1 },
+	{ "signal", 0x900000, 48, 2 },
+	{ "ioctl", 0x900000, 54, 3 },
+	{ "mmap", 0x900000, 90, 6 },
+	{ "munmap", 0x900000, 91, 1 },
+	{ "socketcall", 0x900000, 102, 2 },
+	{ "sigreturn", 0x900000, 119, 1 },
+	{ "clone", 0x900000, 120, 4 },
+	{ "mprotect", 0x900000, 125, 3},
+	{ "rt_sigaction", 0x900000, 174, 3},
+	{ "rt_sigprocmask", 0x900000, 175, 3},
+	{ "sysctl", 0x900000, 149, 1 },
+	{ "mmap2", 0x900000, 192, 6},
+	{ "fstat64", 0x900000, 197, 2},
+	{ "fcntl64", 0x900000, 221, 3},
+	{ "gettid", 0x900000, 224, 0},
+	{ "set_thread_area", 0x900000, 243, 2},
+	{ "get_thread_area", 0x900000, 244, 2},
+	{ "exit_group", 0x900000, 252, 1},
+	{ NULL, 0, 0, 0 }
+};

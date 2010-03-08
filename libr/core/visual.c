@@ -14,7 +14,7 @@ static int flags = R_PRINT_FLAGS_ADDRMOD;
 static int marks_init = 0;
 static ut64 marks[256];
 
-static void r_core_visual_mark(struct r_core_t *core, ut8 ch) {
+static void r_core_visual_mark(RCore *core, ut8 ch) {
 	if (!marks_init) {
 		int i;
 		for(i=0;i<255;i++)
@@ -24,7 +24,7 @@ static void r_core_visual_mark(struct r_core_t *core, ut8 ch) {
 	marks[ch] = core->offset;
 }
 
-static void r_core_visual_mark_seek(struct r_core_t *core, ut8 ch) {
+static void r_core_visual_mark_seek(RCore *core, ut8 ch) {
 	if (!marks_init) {
 		int i;
 		for(i=0;i<255;i++)
@@ -35,7 +35,7 @@ static void r_core_visual_mark_seek(struct r_core_t *core, ut8 ch) {
 		r_core_seek(core, marks[ch], 1);
 }
 
-R_API int r_core_visual_trackflags(struct r_core_t *core) {
+R_API int r_core_visual_trackflags(RCore *core) {
 	char cmd[1024];
 	struct list_head *pos;
 #define MAX_FORMAT 2
@@ -58,31 +58,7 @@ R_API int r_core_visual_trackflags(struct r_core_t *core) {
 		if (ptr&&ptr[0])
 			r_core_cmd (core, ptr, 0);
 
-		switch (menu) {
-		case 0: // flag space
-			r_cons_printf ("\n Flag spaces:\n\n");
-			hit = 0;
-			for (j=i=0;i<R_FLAG_SPACES_MAX;i++) {
-				if (core->flags.space[i]) {
-					if (option==i) {
-						fs = core->flags.space[i];
-						hit = 1;
-					}
-					if( (i >=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
-						r_cons_printf(" %c %02d %c %s\n",
-						(option==i)?'>':' ', j, 
-						(i==core->flags.space_idx)?'*':' ',
-						core->flags.space[i]);
-						j++;
-					}
-				}
-			}
-			if (!hit && j>0) {
-				option = j-1;
-				continue;
-			}
-			break;
-		case 1: // flag selection
+		if (menu) {
 			r_cons_printf ("\n Flags in flagspace '%s'. Press '?' for help.\n\n",
 				core->flags.space[core->flags.space_idx]);
 			hit = 0;
@@ -131,6 +107,28 @@ R_API int r_core_visual_trackflags(struct r_core_t *core) {
 #endif
 			if (cmd[0])
 				r_core_cmd (core, cmd, 0);
+		} else {
+			r_cons_printf ("\n Flag spaces:\n\n");
+			hit = 0;
+			for (j=i=0;i<R_FLAG_SPACES_MAX;i++) {
+				if (core->flags.space[i]) {
+					if (option==i) {
+						fs = core->flags.space[i];
+						hit = 1;
+					}
+					if( (i >=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+						r_cons_printf(" %c %02d %c %s\n",
+						(option==i)?'>':' ', j, 
+						(i==core->flags.space_idx)?'*':' ',
+						core->flags.space[i]);
+						j++;
+					}
+				}
+			}
+			if (!hit && j>0) {
+				option = j-1;
+				continue;
+			}
 		}
 		r_cons_flush ();
 		ch = r_cons_readchar ();
@@ -235,7 +233,7 @@ R_API int r_core_visual_trackflags(struct r_core_t *core) {
 	return R_TRUE;
 }
 
-static void config_visual_hit_i(struct r_core_t *core, const char *name, int delta) {
+static void config_visual_hit_i(RCore *core, const char *name, int delta) {
 	struct r_config_node_t *node;
 	node = r_config_node_get(&core->config, name);
 	if (node && ((node->flags & CN_INT) || (node->flags & CN_OFFT)))
@@ -243,29 +241,28 @@ static void config_visual_hit_i(struct r_core_t *core, const char *name, int del
 }
 
 /* Visually activate the config variable */
-static void config_visual_hit(struct r_core_t *core, const char *name) {
+static void config_visual_hit(RCore *core, const char *name) {
 	char buf[1024];
-	struct r_config_node_t *node;
+	RConfigNode *node;
 
-	node = r_config_node_get(&core->config, name);
-	if (node) {
-		if (node->flags & CN_BOOL) {
-			/* TOGGLE */
-			node->i_value = !node->i_value;
-			node->value = r_str_dup(node->value, node->i_value?"true":"false");
-		} else {
-			// FGETS AND SO
-			r_cons_printf("New value (old=%s): ", node->value);
-			r_cons_flush();
-			r_cons_set_raw(0);
-			r_cons_fgets(buf, 1023, 0, 0);
-			r_cons_set_raw(1);
-			node->value = r_str_dup(node->value, buf);
-		}
+	if (!(node = r_config_node_get(&core->config, name)))
+		return;
+	if (node->flags & CN_BOOL) {
+		/* TOGGLE */
+		node->i_value = !node->i_value;
+		node->value = r_str_dup(node->value, node->i_value?"true":"false");
+	} else {
+		// FGETS AND SO
+		r_cons_printf("New value (old=%s): ", node->value);
+		r_cons_flush();
+		r_cons_set_raw(0);
+		r_cons_fgets(buf, 1023, 0, 0);
+		r_cons_set_raw(1);
+		node->value = r_str_dup(node->value, buf);
 	}
 }
 
-R_API void r_core_visual_config(struct r_core_t *core) {
+R_API void r_core_visual_config(RCore *core) {
 	char cmd[1024];
 	struct list_head *pos;
 #define MAX_FORMAT 2
@@ -443,7 +440,7 @@ R_API void r_core_visual_config(struct r_core_t *core) {
 }
 
 /* TODO: use r_cmd here in core->vcmd..optimize over 255 table */ 
-R_API int r_core_visual_cmd(struct r_core_t *core, int ch) {
+R_API int r_core_visual_cmd(RCore *core, int ch) {
 	char buf[1024];
 	ch = r_cons_arrow_to_hjkl(ch);
 
@@ -629,28 +626,26 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch) {
 	return 1;
 }
 
-R_API void r_core_visual_prompt(struct r_core_t *core, int color) {
-	if (color)
-		r_cons_printf(Color_YELLOW"[0x%08llx] %s\n"Color_RESET,
-			core->offset, printfmt[printidx%NPF]);
-	else r_cons_printf("[0x%08llx] %s\n", core->offset, printfmt[printidx%NPF]);
+R_API void r_core_visual_prompt(RCore *core, int color) {
+	if (color) r_cons_printf (Color_YELLOW"[0x%08llx] %s\n"Color_RESET,
+		core->offset, printfmt[printidx%NPF]);
+	else r_cons_printf ("[0x%08llx] %s\n", core->offset, printfmt[printidx%NPF]);
 }
 
-R_API int r_core_visual(struct r_core_t *core, const char *input)
-{
+R_API int r_core_visual(RCore *core, const char *input) {
 	const char *cmdprompt;
 	const char *vi;
 	ut64 scrseek;
 	int ch;
 
-	vi = r_config_get(&core->config, "cmd.vprompt");
-	if (vi) r_core_cmd(core, vi, 0);
+	vi = r_config_get (&core->config, "cmd.vprompt");
+	if (vi) r_core_cmd (core, vi, 0);
 
 	while (input[0]) {
 		if (!r_core_visual_cmd (core, input[0])) {
 			r_cons_clear00 ();
 			r_core_cmd (core, printfmt[printidx%NPF], 0);
-			r_cons_visual_flush();
+			r_cons_visual_flush ();
 			r_cons_any_key ();
 			return 0;
 		}

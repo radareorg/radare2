@@ -271,8 +271,7 @@ static struct hunklist diff(struct line *a, int an, struct line *b, int bn)
 
 //--
 // TODO: implement the r_diff_lines // we need to implement r_file_line_at (file, off);
-R_API int r_diff_buffers_delta(RDiff *d, const char *sa, int la, const char *sb, int lb)
-{
+R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, int lb) {
 	RDiffOp dop;
 	char *rb;
 	struct line *al, *bl;
@@ -281,8 +280,8 @@ R_API int r_diff_buffers_delta(RDiff *d, const char *sa, int la, const char *sb,
 	int an, bn, offa, rlen, offb, len = 0;
 	int hits = 0;
 
-	an = splitlines(sa, la, &al);
-	bn = splitlines(sb, lb, &bl);
+	an = splitlines((const char *)sa, la, &al);
+	bn = splitlines((const char*)sb, lb, &bl);
 	if (!al || !bl) {
 		eprintf ("bindiff_buffers: Out of memory.\n");
 		return -1;

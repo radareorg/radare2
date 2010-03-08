@@ -7,7 +7,7 @@ static ut32 count = 0;
 static int cb(struct r_diff_t *d, void *user,
 	struct r_diff_op_t *op)
 {
-	int i, rad = (int)user;
+	int i, rad = (int)(size_t)user;
 	if (count) {
 		count++;
 		return 1;
@@ -26,8 +26,7 @@ static int cb(struct r_diff_t *d, void *user,
 	return 1;
 }
 
-static int show_help(int line)
-{
+static int show_help(int line) {
 	printf ("Usage: radiff2 [-nsdl] [file] [file]\n");
 	if (!line) printf (
 //		"  -l     diff lines of text\n"
@@ -45,8 +44,7 @@ enum {
 	MODE_LOCS,
 };
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
 	struct r_diff_t d;
 	int c, delta = 0;
 	char *file, *file2;
@@ -102,7 +100,7 @@ int main(int argc, char **argv)
 	case MODE_DIFF:
 		r_diff_init (&d, 0LL, 0LL);
 		r_diff_set_delta (&d, delta);
-		r_diff_set_callback (&d, &cb, (void *)rad);
+		r_diff_set_callback (&d, &cb, (void *)(size_t)rad);
 		r_diff_buffers (&d, bufa, sza, bufb, szb);
 		break;
 	case MODE_DIST:

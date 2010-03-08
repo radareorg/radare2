@@ -19,38 +19,36 @@ static int r_flag_name_validate_char(const char ch) {
 	default:
 		if (((ch >= '0') && (ch <= '9')))
 			return 1;
-		if (!IS_PRINTABLE(ch))
+		if (!IS_PRINTABLE (ch))
 			return 0;
 	}
 	return 1;
 }
 
-R_API int r_flag_name_check(const char *name)
-{
+R_API int r_flag_name_check(const char *name) {
 	if (name[0]=='\0')
 		return 0;
-	for(;*name!='\0'; name = name +1) {
-		if (!r_flag_name_validate_char(*name))
+	for (;*name!='\0'; name = name +1) {
+		if (!r_flag_name_validate_char (*name))
 			return 0;
 	}
 	return 1;
 }
 
-R_API int r_flag_name_filter(char *name)
-{
+R_API int r_flag_name_filter(char *name) {
 	int i;
 	char *oname;
 	for(;*name==' ';name=name+1);
 	oname=name;
-	for(i=0;*name!='\0'; name = name +1,i++) {
+	for (i=0;*name!='\0'; name = name +1,i++) {
 		if (i>R_FLAG_NAME_SIZE) {
 			name[0] = '\0';
 			break;
 		}
-		if (!r_flag_name_validate_char(*name)) {
-			strcpy(name, name+1);
+		if (!r_flag_name_validate_char (*name)) {
+			strcpy (name, name+1);
 			name = name -1;
 		}
 	}
-	return r_flag_name_check(oname);
+	return r_flag_name_check (oname);
 }

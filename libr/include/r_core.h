@@ -98,7 +98,6 @@ R_API int r_core_seek_delta(struct r_core_t *core, st64 addr);
 R_API int r_core_write_at(struct r_core_t *core, ut64 addr, const ut8 *buf, int size);
 R_API int r_core_write_op(struct r_core_t *core, const char *arg, char op);
 
-/* yank */
 R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len);
 R_API int r_core_yank_paste(struct r_core_t *core, ut64 addr, int len);
 

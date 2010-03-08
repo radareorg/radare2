@@ -8,6 +8,7 @@
 
 extern RSyscallItem syscalls_netbsd_x86[];
 extern RSyscallItem syscalls_linux_x86[];
+extern RSyscallItem syscalls_linux_arm[];
 extern RSyscallItem syscalls_freebsd_x86[];
 extern RSyscallItem syscalls_darwin_x86[];
 extern RSyscallItem syscalls_win7_x86[];
@@ -22,20 +23,28 @@ R_API RSyscall* r_syscall_new() {
 	return ctx;
 }
 
-R_API void r_syscall_init(struct r_syscall_t *ctx) {
+R_API void r_syscall_init(RSyscall *ctx) {
 	ctx->fd = NULL;
 	ctx->sysptr = syscalls_linux_x86;
 }
 
-R_API void r_syscall_free(struct r_syscall_t *ctx) {
+R_API void r_syscall_free(RSyscall *ctx) {
 	free (ctx);
 }
 
-R_API int r_syscall_setup(struct r_syscall_t *ctx, const char *arch, const char *os) {
+R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
 	if (os == NULL)
 		os = R_SYS_OS;
 	if (arch == NULL)
 		arch = R_SYS_ARCH;
+	if (!strcmp (arch, "arm")) {
+		if (!strcmp (os, "linux"))
+			ctx->sysptr = syscalls_linux_arm;
+		else {
+			eprintf ("r_syscall_setup: Unknown arch '%s'\n", arch);
+			return R_FALSE;
+		}
+	} else
 	if (!strcmp (arch, "x86")) {
 		if (!strcmp (os, "linux"))
 			ctx->sysptr = syscalls_linux_x86;
@@ -63,7 +72,7 @@ R_API int r_syscall_setup(struct r_syscall_t *ctx, const char *arch, const char 
 	return R_TRUE;
 }
 
-R_API int r_syscall_setup_file(struct r_syscall_t *ctx, const char *path) {
+R_API int r_syscall_setup_file(RSyscall *ctx, const char *path) {
 	if (ctx->fd)
 		fclose (ctx->fd);
 	ctx->fd = fopen (path, "r");
@@ -92,14 +101,14 @@ R_API int r_syscall_get_num(RSyscall *ctx, const char *str) {
 }
 
 /* XXX: ugly iterator implementation */
-R_API RSyscallItem *r_syscall_get_n(struct r_syscall_t *ctx, int n) {
+R_API RSyscallItem *r_syscall_get_n(RSyscall *ctx, int n) {
 	int i;
 	for (i=0; ctx->sysptr[i].num && i!=n; i++)
 		return &ctx->sysptr[i];
 	return NULL;
 }
 
-R_API const char *r_syscall_get_i(struct r_syscall_t *ctx, int num, int swi) {
+R_API const char *r_syscall_get_i(RSyscall *ctx, int num, int swi) {
 	int i;
 	for (i=0; ctx->sysptr[i].num; i++) {
 		if (num == ctx->sysptr[i].num && \
@@ -109,7 +118,7 @@ R_API const char *r_syscall_get_i(struct r_syscall_t *ctx, int num, int swi) {
 	return NULL;
 }
 
-R_API void r_syscall_list(struct r_syscall_t *ctx) {
+R_API void r_syscall_list(RSyscall *ctx) {
 	int i;
 	for (i=0; ctx->sysptr[i].num; i++) {
 		printf ("%02x: %d = %s\n",

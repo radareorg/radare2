@@ -3,8 +3,7 @@
 #include "r_hash.h"
 
 /* returns 0-100 */
-R_API int r_hash_pcprint(const ut8 *buffer, ut64 len)
-{
+R_API int r_hash_pcprint(const ut8 *buffer, ut64 len) {
 	const ut8 *end = buffer + len;
 	int n;
 
@@ -15,8 +14,7 @@ R_API int r_hash_pcprint(const ut8 *buffer, ut64 len)
 	return ((100*n)/len);
 }
 
-R_API int r_hash_parity(const ut8 *buf, ut64 len)
-{
+R_API int r_hash_parity(const ut8 *buf, ut64 len) {
 	const ut8 *end = buf+len;
 	ut32 ones = 0;
 	for(;buf<end;buf++) {
@@ -29,8 +27,7 @@ R_API int r_hash_parity(const ut8 *buf, ut64 len)
 
 /* These functions comes from 0xFFFF */
 /* fmi: nopcode.org/0xFFFF */
-R_API ut16 r_hash_xorpair(const ut8 *a, ut64 len)
-{
+R_API ut16 r_hash_xorpair(const ut8 *a, ut64 len) {
 	ut16 *b = (ut16 *)a;
 	ut16 result = 0;
 	for(len>>=1;len--;b=b+1)
@@ -38,16 +35,14 @@ R_API ut16 r_hash_xorpair(const ut8 *a, ut64 len)
 	return result;
 }
 
-R_API ut8 r_hash_xor(const ut8 *b, ut64 len)
-{
+R_API ut8 r_hash_xor(const ut8 *b, ut64 len) {
 	ut8 res = 0;
-	for(;len--;b=b+1)
+	for (;len--;b=b+1)
 		res^=b[0];
 	return res;
 }
 
-R_API ut8 r_hash_mod255(const ut8 *b, ut64 len)
-{
+R_API ut8 r_hash_mod255(const ut8 *b, ut64 len) {
 	int i, c = 0;
 	/* from gdb */
 	for (i = 0; i < len; i++)
@@ -56,8 +51,7 @@ R_API ut8 r_hash_mod255(const ut8 *b, ut64 len)
 }
 
 /* TODO: rewrite in a non-spaguetty way */
-R_API const char *r_hash_name(int bit)
-{
+R_API const char *r_hash_name(int bit) {
 	if (bit & R_HASH_MD4) return "md4";
 	if (bit & R_HASH_MD5) return "md5";
 	if (bit & R_HASH_SHA1) return "sha1";
@@ -73,40 +67,39 @@ R_API const char *r_hash_name(int bit)
 }
 
 /* TODO: ignore case.. we have to use strcasestr */
-R_API ut64 r_hash_name_to_bits(const char *name)
-{
+R_API ut64 r_hash_name_to_bits(const char *name) {
 	ut64 bits = R_HASH_NONE;
-	if (strstr(name, "all"))
+	if (strstr (name, "all"))
 		return 0xffffffff;
-	if (strstr(name, "md4"))
+	if (strstr (name, "md4"))
 		bits |= R_HASH_MD4;
-	if (strstr(name, "md5"))
+	if (strstr (name, "md5"))
 		bits |= R_HASH_MD5;
-	if (strstr(name, "sha1"))
+	if (strstr (name, "sha1"))
 		bits |= R_HASH_SHA1;
-	if (strstr(name, "sha256"))
+	if (strstr (name, "sha256"))
 		bits |= R_HASH_SHA256;
-	if (strstr(name, "sha384"))
+	if (strstr (name, "sha384"))
 		bits |= R_HASH_SHA384;
-	if (strstr(name, "sha512"))
+	if (strstr (name, "sha512"))
 		bits |= R_HASH_SHA512;
-	if (strstr(name, "crc16"))
+	if (strstr (name, "crc16"))
 		bits |= R_HASH_CRC16;
-	if (strstr(name, "crc32"))
+	if (strstr (name, "crc32"))
 		bits |= R_HASH_CRC32;
-	if (strstr(name, "xorpair"))
+	if (strstr (name, "xorpair"))
 		bits |= R_HASH_XORPAIR;
-	else if (strstr(name, "xor")) /* XXX: hacky elsif solution */
+	else if (strstr (name, "xor")) /* XXX: hacky elsif solution */
 		bits |= R_HASH_XOR;
-	if (strstr(name, "parity"))
+	if (strstr (name, "parity"))
 		bits |= R_HASH_PARITY;
-	if (strstr(name, "entropy"))
+	if (strstr (name, "entropy"))
 		bits |= R_HASH_ENTROPY;
-	if (strstr(name, "hamdist"))
+	if (strstr (name, "hamdist"))
 		bits |= R_HASH_HAMDIST;
-	if (strstr(name, "pcprint"))
+	if (strstr (name, "pcprint"))
 		bits |= R_HASH_PCPRINT;
-	if (strstr(name, "mod255"))
+	if (strstr (name, "mod255"))
 		bits |= R_HASH_MOD255;
 	return bits;
 }

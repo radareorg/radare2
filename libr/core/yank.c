@@ -1,9 +1,8 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include "r_core.h"
 
-int r_core_yank(struct r_core_t *core, ut64 addr, int len)
-{
+R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len) {
 	ut64 curseek = core->offset;
 	free(core->yank);
 	core->yank = (ut8 *)malloc(len);
@@ -21,8 +20,7 @@ int r_core_yank(struct r_core_t *core, ut64 addr, int len)
 	return R_TRUE;
 }
 
-int r_core_yank_paste(struct r_core_t *core, ut64 addr, int len)
-{
+R_API int r_core_yank_paste(struct r_core_t *core, ut64 addr, int len) {
 	if (len == 0)
 		len = core->yank_len;
 	if (len > core->yank_len)

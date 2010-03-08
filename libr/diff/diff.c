@@ -2,15 +2,7 @@
 
 #include <r_diff.h>
 
-R_API struct r_diff_t *r_diff_new(ut64 off_a, ut64 off_b)
-{
-	struct r_diff_t *d = MALLOC_STRUCT(struct r_diff_t);
-	r_diff_init(d, off_a, off_b);
-	return d;
-}
-
-R_API int r_diff_init(struct r_diff_t *d, ut64 off_a, ut64 off_b)
-{
+R_API int r_diff_init(RDiff *d, ut64 off_a, ut64 off_b) {
 	d->delta = 1;
 	d->user = NULL;
 	d->off_a = off_a;
@@ -18,29 +10,29 @@ R_API int r_diff_init(struct r_diff_t *d, ut64 off_a, ut64 off_b)
 	return 1;
 }
 
-R_API struct r_diff_t *r_diff_free(struct r_diff_t *d)
-{
-	free(d);
+R_API RDiff *r_diff_new(ut64 off_a, ut64 off_b) {
+	RDiff *d = R_NEW (RDiff);
+	r_diff_init (d, off_a, off_b);
+	return d;
+}
+
+R_API RDiff *r_diff_free(RDiff *d) {
+	free (d);
 	return NULL;
 }
 
-R_API int r_diff_set_callback(struct r_diff_t *d,
-	int (*callback)(struct r_diff_t *d, void *user, struct r_diff_op_t *op),
-	void *user)
-{
+R_API int r_diff_set_callback(RDiff *d, RDiffCallback callback, void *user) {
 	d->callback = callback;
 	d->user = user;
 	return 1;
 }
 
-R_API int r_diff_set_delta(struct r_diff_t *d, int delta)
-{
+R_API int r_diff_set_delta(RDiff *d, int delta) {
 	d->delta = delta;
 	return 1;
 }
 
-R_API int r_diff_buffers_static(struct r_diff_t *d, const ut8 *a, int la, const ut8 *b, int lb)
-{
+R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
 	int i, len;
 	int hit = 0;
 	la = R_ABS(la);
@@ -76,8 +68,7 @@ R_API int r_diff_buffers_static(struct r_diff_t *d, const ut8 *a, int la, const 
 	return 0;
 }
 
-R_API int r_diff_buffers_radiff(struct r_diff_t *d, const ut8 *a, int la, const ut8 *b, int lb)
-{
+R_API int r_diff_buffers_radiff(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
 	char *ptr, *str, buf[64];
 	FILE *fd;
 	char oop = 0;
@@ -180,7 +171,7 @@ R_API int r_diff_buffers_radiff(struct r_diff_t *d, const ut8 *a, int la, const 
 			.b_off = oob, .b_buf = bt, .b_len = btl
 		};
 		if (!d->callback (d, d->user, &o))
-			return NULL;
+			return 0;
 		atl = btl = 0;
 		hit = 0;
 	}
@@ -191,24 +182,24 @@ R_API int r_diff_buffers_radiff(struct r_diff_t *d, const ut8 *a, int la, const 
 	return 0;
 }
 
-R_API int r_diff_buffers(struct r_diff_t *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb) {
+R_API int r_diff_buffers(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb) {
 	if (d->delta)
 		return r_diff_buffers_delta (d, a, la, b, lb);
 	return r_diff_buffers_static (d, a, la, b, lb);
 }
 
 /* TODO: Move into r_util maybe? */
-R_API int r_diff_buffers_distance(struct r_diff_t *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity)
-{
+R_API int r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb,
+		ut32 *distance, double *similarity) {
 	int i, j, cost, tmin, **m;
 
 	if (la < 1 || lb < 1)
 		return R_FALSE;
 
-	if ((m = malloc(la * sizeof(int*))) == NULL)
+	if ((m = malloc (la * sizeof(int*))) == NULL)
 		return R_FALSE;
 	for(i = 0; i <= la; i++)
-		if ((m[i] = malloc(lb * sizeof(int))) == NULL)
+		if ((m[i] = malloc (lb * sizeof(int))) == NULL)
 			return R_FALSE;
 
 	for (i = 0; i <= la; i++)
@@ -221,9 +212,8 @@ R_API int r_diff_buffers_distance(struct r_diff_t *d, const ut8 *a, ut32 la, con
 			if (a[i-1] == b[j-1])
 				cost = 0;
 			else cost = 1;
-
-			tmin = R_MIN(m[i-1][j] + 1, m[i][j-1] + 1);
-			m[i][j] = R_MIN(tmin, m[i-1][j-1] + cost);
+			tmin = R_MIN (m[i-1][j] + 1, m[i][j-1] + 1);
+			m[i][j] = R_MIN (tmin, m[i-1][j-1] + cost);
 		}
 	}
 	

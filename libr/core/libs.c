@@ -126,8 +126,7 @@ R_API int r_core_loadlibs_init(struct r_core_t *core) {
 	return R_TRUE;
 }
 
-R_API int r_core_loadlibs(struct r_core_t *core)
-{
+R_API int r_core_loadlibs(struct r_core_t *core) {
 	/* TODO: all those default plugin paths should be defined in r_lib */
 	char *homeplugindir = r_str_home (".radare/plugins");
 	static int singleton = R_TRUE;
