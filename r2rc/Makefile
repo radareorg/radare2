@@ -1,5 +1,6 @@
 CFLAGS+=-g -Wall
 PREFIX?=/usr
+DESTDIR?=
 
 all: r2rc
 
@@ -16,9 +17,10 @@ test:
 
 install:
 	chmod +x r2rc
-	cp r2rc ${PREFIX}/bin
+	mkdir -p ${DESTDIR}${PREFIX}/bin
+	cp r2rc ${DESTDIR}${PREFIX}/bin
 	chmod +x r2rc-tool
-	cp r2rc-tool ${PREFIX}/bin
+	cp r2rc-tool ${DESTDIR}${PREFIX}/bin
 
 clean:
 	cd t && ${MAKE} clean
