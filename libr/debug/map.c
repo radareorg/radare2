@@ -106,6 +106,7 @@ R_API RList *r_debug_map_list_new() {
 	return list;
 }
 
+/* XXX Use r_list_destroy? */
 R_API void r_debug_map_list_free(RList *maps) {
 	RListIter *iter = r_list_iterator (maps);
 	while (r_list_iter_next (iter)) {

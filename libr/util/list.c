@@ -58,17 +58,13 @@ R_API RList *r_list_new() {
 }
 
 R_API void r_list_destroy (RList *list) {
-	/* TODO: free elements */
-	if (list->free) {
-		RListIter *it = list->head;
-		while (it) {
-			RListIter *next = it->n;
-			r_list_delete (list, it);
-			it = next;
-		}
+	RListIter *it = list->head;
+	while (it) {
+		RListIter *next = it->n;
+		r_list_delete (list, it);
+		it = next;
 	}
 	list->head = list->tail = NULL;
-	//free (list);
 }
 
 R_API RListIter *r_list_item_new (void *data) {
@@ -135,11 +131,11 @@ int main () {
 		printf (" - %s\n", str);
 	}
 
-	r_list_destroy (l);
 	r_list_free (l);
 
 	/* ------------- */
 	l = r_list_new ();
+	l->free = free;
 
 	r_list_append (l, strdup ("one"));
 	r_list_append (l, strdup ("two"));
@@ -156,8 +152,7 @@ int main () {
 		}
 	}
 
-	l->free = free;
-	r_list_destroy (l);
+	r_list_free (l);
 
 	return 0;
 }

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2008-2010 nibble<.ds@gmail.com> */
 
 #ifndef _INCLUDE_R_BIN_H_
 #define _INCLUDE_R_BIN_H_
@@ -59,12 +59,17 @@ typedef struct r_bin_handle_t {
 	RFList (*fields)(RBin *bin);
 	RFList (*libs)(RBin *bin);
 	struct r_bin_meta_t *meta;
+	struct r_bin_write_t *write;
 	struct list_head list;
 } RBinHandle;
 
 typedef struct r_bin_meta_t {
 	int (*get_line)(RBin *bin, ut64 addr, char *file, int len, int *line);
 } RBinMeta;
+
+typedef struct r_bin_write_t {
+	int (*resize_scn)(RBin *bin, const char *name, ut64 size);
+} RBinWrite;
 
 typedef struct r_bin_entry_t {
 	ut64 rva;
@@ -153,6 +158,8 @@ R_API void r_bin_set_user_ptr(RBin *bin, void *user);
 /* bin_meta.c */
 R_API int r_bin_meta_get_line(RBin *bin, ut64 addr, char *file, int len, int *line);
 
+/* bin_write.c */
+R_API int r_bin_wr_resize_scn(RBin *bin, const char *name, ut64 size);
 #endif
 
 #endif
