@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
 
 #include <r_types.h>
-#include <r_util.h>
 #include <r_bin.h>
 
 R_API int r_bin_meta_get_line(RBin *bin, ut64 addr, char *file, int len, int *line) {

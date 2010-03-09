@@ -1,4 +1,12 @@
-/* XXX MOVE TO format/elf */
+/* radare - LGPL - Copyright 2010 nibble<.ds@gmail.com> */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <r_types.h>
+#include <r_util.h>
+#include "elf.h"
+
 #if 0 
 /* TODO: Take care of endianess */
 /* TODO: Real error handling */
@@ -177,3 +185,4 @@ u64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const char
 	return delta;
 }
 #endif
+

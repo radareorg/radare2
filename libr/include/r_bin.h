@@ -63,14 +63,6 @@ typedef struct r_bin_handle_t {
 	struct list_head list;
 } RBinHandle;
 
-typedef struct r_bin_meta_t {
-	int (*get_line)(RBin *bin, ut64 addr, char *file, int len, int *line);
-} RBinMeta;
-
-typedef struct r_bin_write_t {
-	int (*resize_scn)(RBin *bin, const char *name, ut64 size);
-} RBinWrite;
-
 typedef struct r_bin_entry_t {
 	ut64 rva;
 	ut64 offset;
@@ -134,6 +126,14 @@ typedef struct r_bin_field_t {
 	ut64 offset;
 } RBinField;
 
+typedef struct r_bin_meta_t {
+	int (*get_line)(RBin *bin, ut64 addr, char *file, int len, int *line);
+} RBinMeta;
+
+typedef struct r_bin_write_t {
+	int (*scn_set)(RBin *bin, struct r_bin_section_t *scn);
+} RBinWrite;
+
 #ifdef R_API
 
 /* bin.c */
@@ -159,7 +159,7 @@ R_API void r_bin_set_user_ptr(RBin *bin, void *user);
 R_API int r_bin_meta_get_line(RBin *bin, ut64 addr, char *file, int len, int *line);
 
 /* bin_write.c */
-R_API int r_bin_wr_resize_scn(RBin *bin, const char *name, ut64 size);
+R_API int r_bin_wr_scn_set(RBin *bin, RBinSection *scn);
 #endif
 
 #endif

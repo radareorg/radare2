@@ -1,4 +1,4 @@
-/* radare - GPL3 - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare - GPL3 - Copyright 2009-2010 nibble<.ds@gmail.com> */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -248,6 +248,7 @@ static int check(RBin *bin)
 }
 
 extern struct r_bin_meta_t r_bin_meta_elf;
+extern struct r_bin_meta_t r_bin_write_elf;
 
 struct r_bin_handle_t r_bin_plugin_elf = {
 	.name = "elf",
@@ -267,6 +268,7 @@ struct r_bin_handle_t r_bin_plugin_elf = {
 	.fields = &fields,
 	.libs = &libs,
 	.meta = &r_bin_meta_elf,
+	.write = &r_bin_write_elf,
 };
 
 #ifndef CORELIB
