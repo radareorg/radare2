@@ -73,59 +73,23 @@ public class RFList<G> {
 	public unowned G @get();
 }
 
-#if 0
-/* TODO: to be removed. not fully compliant */
-[Compact]
-[CCode (cprefix="ralist_", cheader_filename="r_types.h,list.h", cname="struct list_head")]
-public class KernelList<G> {
-	public KernelList ();
-	[CCode (cname="ralist_next")]
-	public bool next();
-	[CCode (cname="ralist_append")]
-	public void append(owned G foo);
-	[CCode (cname="")]
-	public G @free(G arg);
-	[CCode (cname="ralist_get", generic_type_pos=2)]
-	public unowned G get();
-	[CCode (cname="ralist_iterator")]
-	public KernelList<G> iterator();
-}
-#endif
-
-[Compact]
-[CCode (cprefix="r_list_", cheader_filename="r_util.h", cname="struct r_list_t")]
+//[Compact]
+[CCode (cprefix="r_list_", cheader_filename="r_list.h", cname="struct r_list_t")]
 public class RList<G> {
-	public RList ();
 	public void append(owned G foo);
 	public void prepend(owned G foo);
-	//public unowned G get();
-	//public rListIter<G> iterator();
+	public RListIter<G> iterator();
+	public bool next();
+	public unowned G @get();
 }
 
-[Compact]
+//[Compact]
 [CCode (cprefix="r_list_iter_", cheader_filename="r_list.h", cname="struct r_list_iter_t")]
 public class RListIter<G> {
 	public bool next();
 //	public G @free(G arg);
 	public unowned G get();
 }
-
-/* TODO: deprecated by r_iter ??? */
-/*
-[Compact]
-[CCode (cprefix="rarray_", cheader_filename="r_types.h", cname="void")]
-public static class rArray<G> {
-	[CCode (cname="rarray_next", generic_type_pos=2)]
-	public bool next(); //int type=0);
-	[CCode (cname="")]
-	public G @free(G arg);
-	[CCode (cname="rarray_get", generic_type_pos=2)]
-	public unowned G get(); //int type=0);
-	[CCode (cname="rarray_iterator")] //, generic_type_pos=2)]
-	public rArray<G> iterator();
-}
-*/
-//}
 
 [Compact]
 [CCode (cheader_filename="r_util.h", cname="struct r_range_t", free_function="r_range_free", cprefix="r_range_")]

@@ -25,11 +25,11 @@ test:
 install-python:
 	@if [ "`grep python supported.langs`" ]; then \
 	for a in python2.5 python2.6; do \
-	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/r2 ; \
-	touch ${DESTDIR}${PREFIX}/lib/$$a/r2/__init__.py ; \
+	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2 ; \
+	touch ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2/__init__.py ; \
 	echo "Installing $$a r2 modules..." ; \
-	cp -rf python/* ${DESTDIR}${PREFIX}/lib/$$a/r2 ; \
-	cp -rf python/*libr* ${DESTDIR}${PREFIX}/lib/$$a/ ; \
+	cp -rf python/* ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2 ; \
+	cp -rf python/*libr* ${DESTDIR}${PREFIX}/lib/$$a/site-packages ; \
 	done ; \
 	fi
 
@@ -39,10 +39,10 @@ install-lua:
 install-ruby:
 	@if [ "`grep ruby supported.langs`" ]; then \
 	for a in 1.8 1.9.1; do \
-	mkdir -p ${DESTDIR}${PREFIX}/lib/ruby/$$a/r2 ; \
+	mkdir -p ${DESTDIR}/usr/lib/ruby/$$a/r2 ; \
 	echo "Installing ruby$$a r2 modules..." ; \
-	cp -rf ruby/* ${DESTDIR}${PREFIX}/lib/ruby/$$a/r2 ; \
-	cp -rf ruby/*libr* ${DESTDIR}${PREFIX}/lib/ruby/$$a ; \
+	cp -rf ruby/* ${DESTDIR}/usr/lib/ruby/$$a/r2 ; \
+	cp -rf ruby/*libr* ${DESTDIR}/usr/lib/ruby/$$a ; \
 	done ; \
 	fi
 

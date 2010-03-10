@@ -67,6 +67,11 @@ R_API void r_list_destroy (RList *list) {
 	list->head = list->tail = NULL;
 }
 
+R_API void r_list_free (RList *list) {
+	r_list_destroy (list);
+	free (list);
+}
+
 R_API RListIter *r_list_item_new (void *data) {
 	RListIter *new = MALLOC_STRUCT (RListIter);
 	new->data = data;
