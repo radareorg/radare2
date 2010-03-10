@@ -1,5 +1,6 @@
 OBJ_PPC=asm_ppc.o
-OBJ_PPC+=../arch/ppc/ppc_disasm/ppc_disasm.o
+OBJ_PPC+=../arch/ppc/gnu/ppc-dis.o
+OBJ_PPC+=../arch/ppc/gnu/ppc-opc.o
 
 STATIC_OBJ+=${OBJ_PPC}
 TARGET_PPC=asm_ppc.${EXT_SO}
