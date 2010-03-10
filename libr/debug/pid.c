@@ -34,6 +34,23 @@ R_API int r_debug_pid_list(struct r_debug_t *dbg, int pid) {
 	return R_FALSE;
 }
 
+R_API int r_debug_thread_list(struct r_debug_t *dbg, int pid) {
+	RList *list;
+	RListIter *iter;
+	if (dbg && dbg->h && dbg->h->pids) {
+		list = dbg->h->threads (pid);
+		if (list == NULL)
+			return R_FALSE;
+		iter = r_list_iterator (list);
+		while (r_list_iter_next (iter)) {
+			RDebugPid *p = r_list_iter_get (iter);
+			eprintf (" %d %c %s\n", p->pid, p->status, p->path);
+		}
+		r_list_free (list);
+	}
+	return R_FALSE;
+}
+
 /* processes */
 R_API int r_debug_pid_parent(RDebugPid *pid) {
 	// fork in child

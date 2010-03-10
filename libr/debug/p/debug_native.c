@@ -207,13 +207,13 @@ static int r_debug_native_continue_syscall(int pid, int num) {
 #endif
 }
 
+/* TODO: specify thread? */
 static int r_debug_native_continue(int pid, int sig) {
-	int tid = pid;
 	void *data = NULL;
 	if (sig != -1)
 		data = (void*)(size_t)sig;
 #if __WINDOWS__
-	if (ContinueDebugEvent (pid, tid, DBG_CONTINUE) == 0) {
+	if (ContinueDebugEvent (pid, pid, DBG_CONTINUE) == 0) {
 		eprintf ("debug_contp: error\n");
 		return -1;
 	}
@@ -226,8 +226,8 @@ static int r_debug_native_continue(int pid, int sig) {
 	//ptrace(PT_CONTINUE, pid, 0, 0);
 	ptrace (PT_DETACH, pid, 0, 0);
 	#if 0
-	task_resume(inferior_task); // ???
-	thread_resume(inferior_threads[0]);
+	task_resume (inferior_task); // ???
+	thread_resume (inferior_threads[0]);
 	#endif
         return 0;
 #else
@@ -472,7 +472,7 @@ static RList *r_debug_native_pids(int pid) {
 	char *ptr, cmdline[1024];
 // TODO: new syntax: R_LIST (r_debug_pid_free)
 	RList *list = r_list_new ();
-	list->free = &r_debug_pid_free;
+	list->free = (RListFree)&r_debug_pid_free;
 	/* TODO */
 #if __WINDOWS__
 	eprintf ("pids: TODO\n");
@@ -482,8 +482,15 @@ static RList *r_debug_native_pids(int pid) {
 	if (pid) {
 		r_list_append (list, r_debug_pid_new ("(current)", pid, 's'));
 		/* list parents */
-		for (i=2; i<39999; i++) {
-			snprintf (cmdline, sizeof (cmdline), "/proc/%d/stat", i);
+		DIR *dh;
+		struct dirent *de;
+		dh = opendir ("/proc");
+		if (dh == NULL)
+			return NULL;
+		//for (i=2; i<39999; i++) {
+		while ((de = readdir (dh))) {
+			i = atoi (de->d_name); if (!i) continue;
+			snprintf (cmdline, sizeof (cmdline), "/proc/%d/status", i);
 			fd = open (cmdline, O_RDONLY);
 			if (fd == -1)
 				continue;
@@ -505,6 +512,7 @@ static RList *r_debug_native_pids(int pid) {
 			}
 			close (fd);
 		}
+		closedir (dh);
 	} else
 	for (i=2; i<39999; i++) {
 		if (kill (i, 0) == 0) {
@@ -525,9 +533,44 @@ static RList *r_debug_native_pids(int pid) {
 }
 
 static RList *r_debug_native_threads(int pid) {
+	int i, fd, thid = 0;
+	char *ptr, cmdline[1024];
 	RList *list = r_list_new ();
 	/* TODO */
-eprintf ("TODO\n");
+#if __WINDOWS__
+	eprintf ("pids: TODO\n");
+#elif __APPLE__
+	eprintf ("pids: TODO\n");
+#elif __linux__
+	if (!pid)
+		return NULL;
+	r_list_append (list, r_debug_pid_new ("(current)", pid, 's'));
+	/* list parents */
+	
+	/* LOL! linux hides threads from /proc, but they are accessible!! HAHAHA */
+	//while ((de = readdir (dh))) {
+	for (i=pid; i<64320; i++) { // XXX
+		snprintf (cmdline, sizeof (cmdline), "/proc/%d/status", i);
+		fd = open (cmdline, O_RDONLY);
+		if (fd == -1)
+			continue;
+		read (fd, cmdline, 1024);
+		close (fd);
+		cmdline[1023] = '\0';
+		ptr = strstr (cmdline, "Tgid:");
+		if (ptr) {
+			int tgid = atoi (ptr+5);
+			if (tgid != pid)
+				continue;
+			read (fd, cmdline, 1024);
+			sprintf (cmdline, "thread_%d", thid++);
+			cmdline[1023] = '\0';
+			r_list_append (list, r_debug_pid_new (cmdline, i, 's'));
+		}
+	}
+#else
+	eprintf ("TODO\n");
+#endif
 	return list;
 }
 // TODO: what about float and hardware regs here ???

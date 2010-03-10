@@ -2252,7 +2252,17 @@ static int cmd_debug(void *data, const char *input) {
 		r_core_cmd_bp (core, input);
 		break;
 	case 't':
-		eprintf ("TODO: list/select thread\n");
+		if (input[1]=='?')
+			r_cons_printf ("Usage: dt[=][tid]\n"
+				" dt      list threads of current pid\n"
+				" dt 748  list childs of pid\n"
+				" dt=748  select this pid\n");
+		else
+		if (input[1]=='=' || input[1]==' ')
+			r_debug_select (&core->dbg,
+				(int) r_num_math (&core->num, input+2),
+				(int) r_num_math (&core->num, input+2));
+		else r_debug_thread_list (&core->dbg, core->dbg.pid);
 		break;
 	case 'H':
 		eprintf ("TODO: transplant process\n");
