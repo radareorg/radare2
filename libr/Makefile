@@ -85,7 +85,7 @@ install: install-includes install-vapi install-pkgconfig install-bins install-te
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
 	# libraries
 	@${INSTALL_DIR} ${PFX}/lib
-	@for a in `find * | grep -e '\.${EXT_SO}$$' | grep lib` ; do \
+	@for a in `find * | grep -e '\.${EXT_SO}$$' | grep -v lib/t | grep lib` ; do \
 	echo "$$a ${PFX}/lib"; ${INSTALL_DATA} $$a ${PFX}/lib ; done
 	# object archives
 	@for a in `find * | grep -e '\.a$$'` ; do \
@@ -101,7 +101,7 @@ install: install-includes install-vapi install-pkgconfig install-bins install-te
 
 deinstall uninstall:
 	# libraries
-	-@for a in `find * | grep -e '\.${EXT_SO}$$' | grep lib` ; do \
+	-@for a in `find * | grep -e '\.${EXT_SO}$$' | grep -v 'lib/t' | grep lib` ; do \
 	a=`echo $$a | awk -F / '{ print $$NF; }'`; \
 	echo ${PREFIX}/lib/$$a ; rm -f ${PREFIX}/lib/$$a ; done
 	### object archives
