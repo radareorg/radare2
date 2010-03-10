@@ -5,7 +5,6 @@
 
 #include <r_util.h>
 #include <r_types.h>
-#include <r_flist.h>
 #include <r_list.h>
 #include <list.h>
 
@@ -28,13 +27,13 @@ typedef struct r_bin_t {
 	void *bin_obj;
 	ut64 baddr;
 	struct r_bin_info_t *info;
-	RFList entries;
-	RFList sections;
-	RFList symbols;
-	RFList imports;
-	RFList strings;
-	RFList fields;
-	RFList libs;
+	RList* entries;
+	RList* sections;
+	RList* symbols;
+	RList* imports;
+	RList* strings;
+	RList* fields;
+	RList* libs;
 	RBuffer *buf;
 	void *user;
 	struct r_bin_handle_t *cur;
@@ -50,14 +49,14 @@ typedef struct r_bin_handle_t {
 	int (*destroy)(RBin *bin);
 	int (*check)(RBin *bin);
 	ut64 (*baddr)(RBin *bin);
-	RFList (*entries)(RBin *bin);
-	RFList (*sections)(RBin *bin);
-	RFList (*symbols)(RBin *bin);
-	RFList (*imports)(RBin *bin);
-	RFList (*strings)(RBin *bin);
+	RList* (*entries)(RBin *bin);
+	RList* (*sections)(RBin *bin);
+	RList* (*symbols)(RBin *bin);
+	RList* (*imports)(RBin *bin);
+	RList* (*strings)(RBin *bin);
 	struct r_bin_info_t* (*info)(RBin *bin);
-	RFList (*fields)(RBin *bin);
-	RFList (*libs)(RBin *bin);
+	RList* (*fields)(RBin *bin);
+	RList* (*libs)(RBin *bin);
 	struct r_bin_meta_t *meta;
 	struct r_bin_write_t *write;
 	struct list_head list;
@@ -143,15 +142,15 @@ R_API int r_bin_init(RBin *bin);
 R_API int r_bin_list(RBin *bin);
 R_API int r_bin_load(RBin *bin, const char *file, const char *plugin_name);
 R_API ut64 r_bin_get_baddr(RBin *bin);
-R_API RFList r_bin_get_entries(RBin *bin);
-R_API RFList r_bin_get_fields(RBin *bin);
-R_API RFList r_bin_get_imports(RBin *bin);
+R_API RList* r_bin_get_entries(RBin *bin);
+R_API RList* r_bin_get_fields(RBin *bin);
+R_API RList* r_bin_get_imports(RBin *bin);
 R_API RBinInfo* r_bin_get_info(RBin *bin);
-R_API RFList r_bin_get_libs(RBin *bin);
-R_API RFList r_bin_get_sections(RBin *bin);
+R_API RList* r_bin_get_libs(RBin *bin);
+R_API RList* r_bin_get_sections(RBin *bin);
 R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va);
-R_API RFList r_bin_get_strings(RBin *bin);
-R_API RFList r_bin_get_symbols(RBin *bin);
+R_API RList* r_bin_get_strings(RBin *bin);
+R_API RList* r_bin_get_symbols(RBin *bin);
 R_API RBin* r_bin_new();
 R_API void r_bin_set_user_ptr(RBin *bin, void *user);
 

@@ -26,36 +26,35 @@ static ut64 baddr(RBin *bin)
 	return Elf_(r_bin_elf_get_baddr) (bin->bin_obj);
 }
 
-static RFList entries(RBin *bin)
+static RList* entries(RBin *bin)
 {
-	RFList ret;
+	RList *ret;
 	RBinEntry *ptr = NULL;
 
-	if (!(ret = r_flist_new (1)))
+	if (!(ret = r_list_new ()))
 		return NULL;
+	ret->free = free;
 	if (!(ptr = MALLOC_STRUCT (RBinEntry)))
 		return ret;
 	memset (ptr, '\0', sizeof (RBinEntry));
 	ptr->offset = ptr->rva = Elf_(r_bin_elf_get_entry_offset) (bin->bin_obj);
-	r_flist_set (ret, 0, ptr);
+	r_list_append (ret, ptr);
 	return ret;
 }
 
-static RFList sections(RBin *bin)
+static RList* sections(RBin *bin)
 {
-	int sections_count, i;
-	RFList ret = NULL;
+	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_elf_section_t *section = NULL;
+	int i;
 
+	if (!(ret = r_list_new ()))
+		return NULL;
+	ret->free = free;
 	if (!(section = Elf_(r_bin_elf_get_sections) (bin->bin_obj)))
-		return NULL;
-	for (sections_count = 0; !section[sections_count].last; sections_count++);
-	if (!(ret = r_flist_new (sections_count))) {
-		free (section);
-		return NULL;
-	}
-	for (i = 0; i < sections_count; i++) {
+		return ret;
+	for (i = 0; !section[i].last; i++) {
 		if (!(ptr = MALLOC_STRUCT (RBinSection)))
 			break;
 		strncpy (ptr->name, (char*)section[i].name, R_BIN_SIZEOF_STRINGS);
@@ -70,27 +69,25 @@ static RFList sections(RBin *bin)
 			ptr->characteristics |= 0x2;
 		if (R_BIN_ELF_SCN_IS_READABLE (section[i].flags))
 			ptr->characteristics |= 0x4;
-		r_flist_set (ret, i, ptr);
+		r_list_append (ret, ptr);
 	}
 	free (section);
 	return ret;
 }
 
-static RFList symbols(RBin *bin)
+static RList* symbols(RBin *bin)
 {
-	int symbols_count, i;
-	RFList ret = NULL;
+	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
 	struct r_bin_elf_symbol_t *symbol = NULL;
+	int i;
 
+	if (!(ret = r_list_new ()))
+		return NULL;
+	ret->free = free;
 	if (!(symbol = Elf_(r_bin_elf_get_symbols) (bin->bin_obj, R_BIN_ELF_SYMBOLS)))
-		return NULL;
-	for (symbols_count = 0; !symbol[symbols_count].last; symbols_count++);
-	if (!(ret = r_flist_new (symbols_count))) {
-		free (symbol);
-		return NULL;
-	}
-	for (i = 0; i < symbols_count; i++) {
+		return ret;
+	for (i = 0; !symbol[i].last; i++) {
 		if (!(ptr = MALLOC_STRUCT (RBinSymbol)))
 			break;
 		strncpy (ptr->name, symbol[i].name, R_BIN_SIZEOF_STRINGS);
@@ -101,27 +98,25 @@ static RFList symbols(RBin *bin)
 		ptr->offset = symbol[i].offset;
 		ptr->size = symbol[i].size;
 		ptr->ordinal = 0;
-		r_flist_set (ret, i, ptr);
+		r_list_append (ret, ptr);
 	}
 	free (symbol);
 	return ret;
 }
 
-static RFList imports(RBin *bin)
+static RList* imports(RBin *bin)
 {
-	int imports_count, i;
-	RFList ret = NULL;
+	RList *ret = NULL;
 	RBinImport *ptr = NULL;
 	struct r_bin_elf_symbol_t *import = NULL;
+	int i;
 
+	if (!(ret = r_list_new ()))
+		return NULL;
+	ret->free = free;
 	if (!(import = Elf_(r_bin_elf_get_symbols) (bin->bin_obj, R_BIN_ELF_IMPORTS)))
-		return NULL;
-	for (imports_count = 0; !import[imports_count].last; imports_count++);
-	if (!(ret = r_flist_new (imports_count))) {
-		free (import);
-		return NULL;
-	}
-	for (i = 0; i < imports_count; i++) {
+		return ret;
+	for (i = 0; !import[i].last; i++) {
 		if (!(ptr = MALLOC_STRUCT (RBinImport)))
 			break;
 		strncpy(ptr->name, import[i].name, R_BIN_SIZEOF_STRINGS);
@@ -131,29 +126,27 @@ static RFList imports(RBin *bin)
 		ptr->offset = import[i].offset;
 		ptr->ordinal = 0;
 		ptr->hint = 0;
-		r_flist_set (ret, i, ptr);
+		r_list_append (ret, ptr);
 	}
 	free (import);
 	return ret;
 }
 
-static RFList libs(RBin *bin)
+static RList* libs(RBin *bin)
 {
-	RFList ret = NULL;
+	RList *ret = NULL;
 	char *ptr = NULL;
 	struct r_bin_elf_lib_t *libs = NULL;
-	int i, count;
+	int i;
 
+	if (!(ret = r_list_new ()))
+		return NULL;
+	ret->free = free;
 	if (!(libs = Elf_(r_bin_elf_get_libs) (bin->bin_obj)))
-		return NULL;
-	for (count = 0; !libs[count].last; count++);
-	if (!(ret = r_flist_new (count))) {
-		free (libs);
-		return NULL;
-	}
-	for (i = 0; i < count; i++) {
+		return ret;
+	for (i = 0; !libs[i].last; i++) {
 		ptr = strdup (libs[i].name);
-		r_flist_set (ret, i, ptr);
+		r_list_append (ret, ptr);
 	}
 	free (libs);
 	return ret;
@@ -206,27 +199,25 @@ static RBinInfo* info(RBin *bin)
 	return ret;
 }
 
-static RFList fields(RBin *bin)
+static RList* fields(RBin *bin)
 {
-	RFList ret = NULL;
+	RList *ret = NULL;
 	RBinField *ptr = NULL;
 	struct r_bin_elf_field_t *field = NULL;
-	int i, fields_count;
+	int i;
 	
+	if (!(ret = r_list_new ()))
+		return NULL;
+	ret->free = free;
 	if (!(field = Elf_(r_bin_elf_get_fields) (bin->bin_obj)))
-		return NULL;
-	for (fields_count = 0; !field[fields_count].last; fields_count++);
-	if (!(ret = r_flist_new (fields_count))) {
-		free (field);
-		return NULL;
-	}
-	for (i = 0; i < fields_count; i++) {
+		return ret;
+	for (i = 0; !field[i].last; i++) {
 		if (!(ptr = MALLOC_STRUCT (RBinField)))
 			break;
 		strncpy (ptr->name, field[i].name, R_BIN_SIZEOF_STRINGS);
 		ptr->rva = field[i].offset;
 		ptr->offset = field[i].offset;
-		r_flist_set (ret, i, ptr);
+		r_list_append (ret, ptr);
 	}
 	free (field);
 	return ret;
@@ -248,7 +239,7 @@ static int check(RBin *bin)
 }
 
 extern struct r_bin_meta_t r_bin_meta_elf;
-extern struct r_bin_meta_t r_bin_write_elf;
+extern struct r_bin_write_t r_bin_write_elf;
 
 struct r_bin_handle_t r_bin_plugin_elf = {
 	.name = "elf",

@@ -26,41 +26,40 @@ static ut64 baddr(RBin *bin)
 	return MACH0_(r_bin_mach0_get_baddr) (bin->bin_obj);
 }
 
-static RFList entries(RBin *bin)
+static RList* entries(RBin *bin)
 {
-	RFList ret;
+	RList *ret;
 	RBinEntry *ptr = NULL;
 	struct r_bin_mach0_entrypoint_t *entry = NULL;
 
+	if (!(ret = r_list_new ()))
+		return NULL;
+	ret->free = free;
 	if (!(entry = MACH0_(r_bin_mach0_get_entrypoint) (bin->bin_obj)))
-		return NULL;
-	if (!(ret = r_flist_new (1)))
-		return NULL;
-	if (!(ptr = MALLOC_STRUCT (RBinEntry)))
 		return ret;
-	memset (ptr, '\0', sizeof (RBinEntry));
-	ptr->offset = entry->offset;
-	ptr->rva = entry->addr;
-	r_flist_set (ret, 0, ptr);
+	if ((ptr = MALLOC_STRUCT (RBinEntry))) {
+		memset (ptr, '\0', sizeof (RBinEntry));
+		ptr->offset = entry->offset;
+		ptr->rva = entry->addr;
+		r_list_append (ret, ptr);
+	}
 	free (entry);
 	return ret;
 }
 
-static RFList sections(RBin *bin)
+static RList* sections(RBin *bin)
 {
-	int count, i;
-	RFList ret = NULL;
+	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_mach0_section_t *sections = NULL;
+	int i;
 
+	if (!(ret = r_list_new ()))
+		return NULL;
+	ret->free = free;
 	if (!(sections = MACH0_(r_bin_mach0_get_sections) (bin->bin_obj)))
-		return NULL;
-	for (count = 0; !sections[count].last; count++);
-	if (!(ret = r_flist_new (count))) {
-		free (sections);
-		return NULL;
-	}
-	for (i = 0; i < count; i++) {
+		return ret;
+	for (i = 0; !sections[i].last; i++) {
 		if (!(ptr = MALLOC_STRUCT (RBinSection)))
 			break;
 		strncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
@@ -69,27 +68,25 @@ static RFList sections(RBin *bin)
 		ptr->offset = sections[i].offset;
 		ptr->rva = sections[i].addr;
 		ptr->characteristics = 0;
-		r_flist_set (ret, i, ptr);
+		r_list_append (ret, ptr);
 	}
 	free (sections);
 	return ret;
 }
 
-static RFList symbols(RBin *bin)
+static RList* symbols(RBin *bin)
 {
-	int count, i;
-	RFList ret = NULL;
+	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
 	struct r_bin_mach0_symbol_t *symbols = NULL;
+	int i;
 
+	if (!(ret = r_list_new ()))
+		return NULL;
+	ret->free = free;
 	if (!(symbols = MACH0_(r_bin_mach0_get_symbols) (bin->bin_obj)))
-		return NULL;
-	for (count = 0; !symbols[count].last; count++);
-	if (!(ret = r_flist_new (count))) {
-		free (symbols);
-		return NULL;
-	}
-	for (i = 0; i < count; i++) {
+		return ret;
+	for (i = 0; !symbols[i].last; i++) {
 		if (!(ptr = MALLOC_STRUCT (RBinSymbol)))
 			break;
 		strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
@@ -100,27 +97,25 @@ static RFList symbols(RBin *bin)
 		ptr->offset = symbols[i].offset;
 		ptr->size = symbols[i].size;
 		ptr->ordinal = 0;
-		r_flist_set (ret, i, ptr);
+		r_list_append (ret, ptr);
 	}
 	free (symbols);
 	return ret;
 }
 
-static RFList imports(RBin *bin)
+static RList* imports(RBin *bin)
 {
-	int count, i;
-	RFList ret = NULL;
+	RList *ret = NULL;
 	RBinImport *ptr = NULL;
 	struct r_bin_mach0_import_t *imports = NULL;
+	int i;
 
+	if (!(ret = r_list_new ()))
+		return NULL;
+	ret->free = free;
 	if (!(imports = MACH0_(r_bin_mach0_get_imports) (bin->bin_obj)))
-		return NULL;
-	for (count = 0; !imports[count].last; count++);
-	if (!(ret = r_flist_new (count))) {
-		free (imports);
-		return NULL;
-	}
-	for (i = 0; i < count; i++) {
+		return ret;
+	for (i = 0; !imports[i].last; i++) {
 		if (!(ptr = MALLOC_STRUCT (RBinImport)))
 			break;
 		strncpy (ptr->name, (char*)imports[i].name, R_BIN_SIZEOF_STRINGS);
@@ -130,29 +125,27 @@ static RFList imports(RBin *bin)
 		ptr->offset = imports[i].offset;
 		ptr->ordinal = 0;
 		ptr->hint = 0;
-		r_flist_set (ret, i, ptr);
+		r_list_append (ret, ptr);
 	}
 	free (imports);
 	return ret;
 }
 
-static RFList libs(RBin *bin)
+static RList* libs(RBin *bin)
 {
-	RFList ret = NULL;
+	RList *ret = NULL;
 	char *ptr = NULL;
 	struct r_bin_mach0_lib_t *libs = NULL;
-	int i, count;
+	int i;
 
+	if (!(ret = r_list_new ()))
+		return NULL;
+	ret->free = free;
 	if (!(libs = MACH0_(r_bin_mach0_get_libs) (bin->bin_obj)))
-		return NULL;
-	for (count = 0; !libs[count].last; count++);
-	if (!(ret = r_flist_new (count))) {
-		free (libs);
-		return NULL;
-	}
-	for (i = 0; i < count; i++) {
+		return ret;
+	for (i = 0; !libs[i].last; i++) {
 		ptr = strdup (libs[i].name);
-		r_flist_set (ret, i, ptr);
+		r_list_append (ret, ptr);
 	}
 	free (libs);
 	return ret;

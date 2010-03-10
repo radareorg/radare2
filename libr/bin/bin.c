@@ -4,13 +4,12 @@
  * dlopen library and show address
  */
 
-#include <stdio.h>
-#include <string.h>
-
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
+#include <r_list.h>
 #include <r_bin.h>
+#include <list.h>
 #include "../config.h"
 
 /* plugin pointers */
@@ -25,18 +24,18 @@ extern RBinHandle r_bin_plugin_dummy;
 
 static RBinHandle *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS };
 
-static RFList get_strings(RBin *bin, int min) {
-	RFList ret;
+static RList* get_strings(RBin *bin, int min) {
+	RList *ret;
 	RBinString *ptr = NULL;
 	char str[R_BIN_SIZEOF_STRINGS];
-	int i, matches = 0, ctr = 0, max_str = 0;
+	int i, matches = 0, ctr = 0;
 
-	max_str = (int)(bin->size/min);
-	if (!(ret = r_flist_new (max_str))) {
+	if (!(ret = r_list_new ())) {
 		eprintf ("Error allocating array\n");
 		return NULL;
 	}
-	for(i = 0; i < bin->size && ctr < max_str; i++) { 
+	ret->free = free;
+	for(i = 0; i < bin->size; i++) { 
 		if ((IS_PRINTABLE (bin->buf->buf[i])) && matches < R_BIN_SIZEOF_STRINGS-1) {
 				str[matches] = bin->buf->buf[i];
 				matches++;
@@ -53,7 +52,7 @@ static RFList get_strings(RBin *bin, int min) {
 				ptr->ordinal = ctr;
 				memcpy (ptr->string, str, R_BIN_SIZEOF_STRINGS);
 				ptr->string[R_BIN_SIZEOF_STRINGS-1] = '\0';
-				r_flist_set (ret, ctr, ptr);
+				r_list_append (ret, ptr);
 				ctr++;
 			}
 			matches = 0;
@@ -88,21 +87,21 @@ static void r_bin_init_items(RBin *bin) {
 
 static void r_bin_free_items(RBin *bin) {
 	if (bin->entries)
-		r_flist_free (bin->entries);
+		r_list_free (bin->entries);
 	if (bin->fields)
-		r_flist_free (bin->fields);
+		r_list_free (bin->fields);
 	if (bin->imports)
-		r_flist_free (bin->imports);
+		r_list_free (bin->imports);
 	if (bin->info)
 		free (bin->info);
 	if (bin->libs)
-		r_flist_free (bin->libs);
+		r_list_free (bin->libs);
 	if (bin->sections)
-		r_flist_free (bin->sections);
+		r_list_free (bin->sections);
 	if (bin->strings)
-		r_flist_free (bin->strings);
+		r_list_free (bin->strings);
 	if (bin->symbols)
-		r_flist_free (bin->symbols);
+		r_list_free (bin->symbols);
 }
 
 R_API int r_bin_add(RBin *bin, RBinHandle *foo) {
@@ -170,15 +169,15 @@ R_API ut64 r_bin_get_baddr(RBin *bin) {
 	return bin->baddr;
 }
 
-R_API RFList r_bin_get_entries(RBin *bin) {
+R_API RList* r_bin_get_entries(RBin *bin) {
 	return bin->entries;
 }
 
-R_API RFList r_bin_get_fields(RBin *bin) {
+R_API RList* r_bin_get_fields(RBin *bin) {
 	return bin->fields;
 }
 
-R_API RFList r_bin_get_imports(RBin *bin) {
+R_API RList* r_bin_get_imports(RBin *bin) {
 	return bin->imports;
 }
 
@@ -186,19 +185,20 @@ R_API RBinInfo* r_bin_get_info(RBin *bin) {
 	return bin->info;
 }
 
-R_API RFList r_bin_get_libs(RBin *bin) {
+R_API RList* r_bin_get_libs(RBin *bin) {
 	return bin->libs;
 }
 
-R_API RFList r_bin_get_sections(RBin *bin) {
+R_API RList* r_bin_get_sections(RBin *bin) {
 	return bin->sections;
 }
 
 R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va) {
 	RBinSection *section;
+	RListIter *iter;
 	ut64 from, to;
 
-	r_flist_foreach (bin->sections, section) {
+	r_list_foreach (bin->sections, iter, section) {
 		from = va ? bin->baddr+section->rva : section->offset;
 		to = va ? bin->baddr+section->rva+section->vsize :
 				  section->offset + section->size;
@@ -208,11 +208,11 @@ R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va) {
 	return NULL;
 }
 
-R_API RFList r_bin_get_strings(RBin *bin) {
+R_API RList* r_bin_get_strings(RBin *bin) {
 	return bin->strings;
 }
 
-R_API RFList r_bin_get_symbols(RBin *bin) {
+R_API RList* r_bin_get_symbols(RBin *bin) {
 	return bin->symbols;
 }
 

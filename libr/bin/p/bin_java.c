@@ -21,18 +21,19 @@ static int destroy(RBin *bin)
 	return R_TRUE;
 }
 
-static RFList entries(RBin *bin)
+static RList* entries(RBin *bin)
 {
-	RFList ret;
+	RList *ret;
 	RBinEntry *ptr = NULL;
 
-	if (!(ret = r_flist_new (1)))
+	if (!(ret = r_list_new ()))
 		return NULL;
+	ret->free = free;
 	if (!(ptr = MALLOC_STRUCT (RBinEntry)))
 		return ret;
 	memset (ptr, '\0', sizeof (RBinEntry));
 	ptr->offset = ptr->rva = r_bin_java_get_entrypoint (bin->bin_obj);
-	r_flist_set (ret, 0, ptr);
+	r_list_append (ret, ptr);
 	return ret;
 }
 
@@ -41,21 +42,19 @@ static ut64 baddr(RBin *bin)
 	return 0;
 }
 
-static RFList symbols(RBin *bin)
+static RList* symbols(RBin *bin)
 {
-	RFList ret = NULL;
+	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
 	struct r_bin_java_sym_t *symbols = NULL;
-	int count, i;
+	int i;
 
+	if (!(ret = r_list_new ()))
+		return NULL;
+	ret->free = free;
 	if (!(symbols = r_bin_java_get_symbols ((struct r_bin_java_obj_t*)bin->bin_obj)))
-		return NULL;
-	for (count = 0; !symbols[count].last; count++);
-	if (!(ret = r_flist_new (count))) {
-		free (symbols);
-		return NULL;
-	}
-	for (i = 0; i < count; i++) {
+		return ret;
+	for (i = 0; !symbols[i].last; i++) {
 		if (!(ptr = MALLOC_STRUCT (RBinSymbol)))
 			break;
 		strncpy (ptr->name, symbols[i].name, R_BIN_SIZEOF_STRINGS);
@@ -65,27 +64,25 @@ static RFList symbols(RBin *bin)
 		ptr->rva = ptr->offset = symbols[i].offset;
 		ptr->size = symbols[i].size;
 		ptr->ordinal = 0;
-		r_flist_set (ret, i, ptr);
+		r_list_append (ret, ptr);
 	}
 	free (symbols);
 	return ret;
 }
 
-static RFList strings(RBin *bin)
+static RList* strings(RBin *bin)
 {
-	RFList ret = NULL;
+	RList *ret = NULL;
 	RBinString *ptr = NULL;
 	struct r_bin_java_str_t *strings = NULL;
-	int count, i;
+	int i;
 
+	if (!(ret = r_list_new ()))
+		return NULL;
+	ret->free = free;
 	if (!(strings = r_bin_java_get_strings((struct r_bin_java_obj_t*)bin->bin_obj)))
-		return NULL;
-	for (count = 0; !strings[count].last; count++);
-	if (!(ret = r_flist_new (count))) {
-		free (strings);
-		return NULL;
-	}
-	for (i = 0; i < count; i++) {
+		return ret;
+	for (i = 0; !strings[i].last; i++) {
 		if (!(ptr = MALLOC_STRUCT (RBinString)))
 			break;
 		strncpy (ptr->string, strings[i].str, R_BIN_SIZEOF_STRINGS);
