@@ -219,5 +219,11 @@ R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *li
 R_API int r_anal_bb_split(RAnalysis *anal, RAnalysisBB *bb, RList *bbs, ut64 addr);
 R_API int r_anal_bb_overlap(RAnalysis *anal, RAnalysisBB *bb, RList *bbs);
 R_API int r_anal_fcn(RAnalysis *anal, RAnalysisFcn *fcn, ut64 addr, ut8 *buf, ut64 len);
+
+/* plugin pointers */
+extern RAnalysisHandle r_anal_plugin_arm;
+extern RAnalysisHandle r_anal_plugin_x86;
+extern RAnalysisHandle r_anal_plugin_ppc;
+
 #endif
 #endif

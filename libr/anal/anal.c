@@ -7,12 +7,6 @@
 #include <r_list.h>
 #include "../config.h"
 
-/* plugin pointers */
-extern RAnalysisHandle r_anal_plugin_arm;
-extern RAnalysisHandle r_anal_plugin_x86;
-extern RAnalysisHandle r_anal_plugin_x86_bea;
-extern RAnalysisHandle r_anal_plugin_ppc;
-
 static struct r_anal_handle_t *anal_static_plugins[] = 
 	{ R_ANAL_STATIC_PLUGINS };
 

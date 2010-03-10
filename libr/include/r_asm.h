@@ -119,7 +119,6 @@ extern struct r_asm_handle_t r_asm_plugin_bf;
 extern struct r_asm_handle_t r_asm_plugin_java;
 extern struct r_asm_handle_t r_asm_plugin_mips;
 extern struct r_asm_handle_t r_asm_plugin_x86;
-extern struct r_asm_handle_t r_asm_plugin_x86_bea;
 extern struct r_asm_handle_t r_asm_plugin_x86_olly;
 extern struct r_asm_handle_t r_asm_plugin_x86_nasm;
 extern struct r_asm_handle_t r_asm_plugin_arm;
