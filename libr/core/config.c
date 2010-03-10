@@ -37,6 +37,13 @@ static int config_asmos_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_stopthreads_callback(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->dbg.stop_all_threads = node->i_value;
+	return R_TRUE;
+}
+
 static int config_swstep_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -142,6 +149,7 @@ R_API int r_core_config_init(RCore *core) {
 	//r_config_set(cfg, "cmd.vprompt2", "CFV");
 	//r_config_set(cfg, "cmd.vprompt3", "");
 	r_config_set (cfg, "cmd.bp", "");
+	r_config_set_cb (cfg, "dbg.stopthreads", "true", &config_stopthreads_callback);
 	r_config_set_cb (cfg, "dbg.swstep", "false", &config_swstep_callback);
 #if LIL_ENDIAN
 	r_config_set_cb (cfg, "cfg.bigendian", "false", &config_bigendian_callback);

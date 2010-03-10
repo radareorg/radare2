@@ -7,6 +7,7 @@ R_API struct r_debug_t *r_debug_init(struct r_debug_t *dbg, int hard) {
 		dbg->pid = -1;
 		dbg->tid = -1;
 		dbg->swstep = 0; // software step
+		dbg->stop_all_threads = R_FALSE;
 		dbg->newstate = 0;
 		//dbg->regs = dbg->oregs = NULL;
 		dbg->printf = (void *)printf;
@@ -195,6 +196,7 @@ static int r_debug_recoil(struct r_debug_t *dbg) {
 	return ret;
 }
 
+#include <signal.h>
 R_API int r_debug_continue_kill(struct r_debug_t *dbg, int sig) {
 	int ret = R_FALSE;
 	if (dbg && dbg->h && dbg->h->cont) {
@@ -204,6 +206,8 @@ R_API int r_debug_continue_kill(struct r_debug_t *dbg, int sig) {
 			ret = dbg->h->wait (dbg->pid);
 		r_bp_restore (dbg->bp, R_TRUE); // unset sw breakpoints
 		r_debug_recoil (dbg);
+		if (dbg->stop_all_threads)
+			kill (dbg->pid, SIGSTOP);
 	}
 	return ret;
 }

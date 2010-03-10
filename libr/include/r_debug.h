@@ -49,6 +49,7 @@ typedef struct r_debug_t {
 	int swstep; /* steps with software traps */
 	int steps;  /* counter of steps done */
 	int newstate;
+	int stop_all_threads;
 	char *reg_profile;
 	struct r_reg_t *reg;
 	struct r_bp_t *bp;
