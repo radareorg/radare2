@@ -7,7 +7,6 @@
 #include <r_util.h>
 #include "elf.h"
 
-#if 0 
 /* TODO: Take care of endianess */
 /* TODO: Real error handling */
 /* TODO: Resize sections before .init */
@@ -184,5 +183,4 @@ u64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const char
 
 	return delta;
 }
-#endif
 
