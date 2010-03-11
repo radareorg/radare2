@@ -58,8 +58,6 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 				perror("malloc");
 				return 0;
 			}
-
-			eprintf ("shdrp->sh_offset = %08llx\n", (ut64)shdrp->sh_offset);
 			if (r_buf_read_at(bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1)
 				perror("read (rel)");
 
@@ -157,15 +155,15 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 
 	buf = (ut8 *)malloc (bin->size);
 	r_buf_read_at (bin->b, 0, (ut8*)buf, bin->size);
-	r_buf_set_bytes (bin->b, (ut8*)buf, rsz_offset+rsz_size+rest_size);
+	r_buf_set_bytes (bin->b, (ut8*)buf, (int)(rsz_offset+rsz_size+rest_size));
 
-	printf("COPY FROM 0x%08llx\n", (ut64) rsz_offset+rsz_osize);
-	r_buf_read_at(bin->b, rsz_offset+rsz_osize, (ut8*)buf, rest_size);
-	printf("COPY TO 0x%08llx\n", (ut64) rsz_offset+rsz_size);
+	printf("COPY FROM 0x%08llx\n", (ut64)(rsz_offset+rsz_osize));
+	r_buf_read_at (bin->b, rsz_offset+rsz_osize, (ut8*)buf, rest_size);
+	printf("COPY TO 0x%08llx\n", (ut64)(rsz_offset+rsz_size));
 	r_buf_write_at (bin->b, rsz_offset+rsz_size, (ut8*)buf, rest_size);
 	printf("Shifted %d bytes\n", (int)delta);
 	free(buf);
-	bin->size = rsz_offset+rsz_size+rest_size;
+	bin->size = bin->b->length;
 
 	return delta;
 }

@@ -12,7 +12,5 @@ R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size) {
 }
 
 R_API int r_bin_wr_output(RBin *bin, const char *filename) {
-	if (!r_file_dump (filename, bin->buf->buf, bin->buf->length))
-		return R_FALSE;
-	return R_TRUE;
+	return r_file_dump (filename, bin->buf->buf, bin->buf->length);
 }
