@@ -119,6 +119,7 @@ typedef struct r_anal_t {
 	void *user;
 	RList *bbs;
 	RList *fcns;
+	RList *vartypes;
 	struct r_anal_ctx_t *ctx;
 	struct r_anal_handle_t *cur;
 	struct list_head anals;
@@ -157,46 +158,26 @@ typedef struct r_anal_fcn_t {
 	RList *xrefs;
 } RAnalysisFcn;
 
-typedef ut64 RAnalysisRef;
-
 typedef struct r_anal_var_t {
 	char *name;
-	ut64 addr;
-	int type;
+	int delta;
+	int type;        /* global, local... */
+	char *vartype;   /* float, int... */
+	RList *accesses; /* list of accesses for this var */
 } RAnalysisVar;
 
-#if 0
-typedef struct r_var_anal_t {
-	int type;
-	int delta;
-	int count;
-} RVariableAnalysis;
+typedef struct r_anal_var_type_t {
+	char *name;
+	char *fmt;
+	unsigned int size;
+} RAnalysisVarType;
 
-typedef struct r_var_type_t {
-        char name[128];
-        char fmt[128];
-        unsigned int size;
-        struct list_head list;
-} RVariableType;
-
-typedef struct r_var_access_t {
+typedef struct r_anal_var_access_t {
 	ut64 addr;
 	int set;
-	struct list_head list;
-} RVariableAccess;
+} RAnalysisVarAccess;
 
-typedef struct r_var_item_t {
-	int type;         /* global, local... */
-	ut64 addr;         /* address where it is used */
-	ut64 eaddr;        /* address where it is used */
-	int delta;        /* */
-	int arraysize;    /* size of array var in bytes , 0 is no-array */
-	char name[128];
-	char vartype[128];
-	struct list_head access; /* list of accesses for this var */
-	struct list_head list;
-} RVariableItem;
-#endif
+typedef ut64 RAnalysisRef;
 
 typedef struct r_anal_refline_t {
 	ut64 from;
@@ -224,23 +205,20 @@ R_API RAnalysisBB *r_anal_bb_new();
 R_API RAnalysisAop *r_anal_aop_new();
 R_API RAnalysisFcn *r_anal_fcn_new();
 R_API RAnalysisRef *r_anal_ref_new();
-R_API RAnalysisVar *r_anal_var_new();
 R_API RList *r_anal_bb_list_new();
 R_API RList *r_anal_aop_list_new();
 R_API RList *r_anal_fcn_list_new();
 R_API RList *r_anal_ref_list_new();
-R_API RList *r_anal_var_list_new();
 R_API RAnalysis *r_anal_free(struct r_anal_t *r);
-R_API void r_anal_std_free(void *ptr);
+R_API void r_anal_aop_free(void *aop);
+R_API void r_anal_ref_free(void *ref);
 R_API void r_anal_bb_free(void *bb);
 R_API void r_anal_fcn_free(void *fcn);
-R_API void r_anal_var_free(void *var);
 R_API RAnalysis *r_anal_init(struct r_anal_t *anal);
 R_API RAnalysisBB *r_anal_bb_init(struct r_anal_bb_t *bb);
 R_API RAnalysisAop *r_anal_aop_init(struct r_anal_aop_t *aop);
 R_API RAnalysisFcn *r_anal_fcn_init(RAnalysisFcn *fcn);
 R_API RAnalysisRef *r_anal_ref_init(RAnalysisRef *ref);
-R_API RAnalysisVar *r_anal_var_init(RAnalysisVar *var);
 R_API void r_anal_set_user_ptr(struct r_anal_t *anal, void *user);
 R_API int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo);
 R_API int r_anal_list(struct r_anal_t *anal);
@@ -253,12 +231,22 @@ R_API int r_anal_aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr,
 R_API int r_anal_bb(struct r_anal_t *anal, struct r_anal_bb_t *bb,
 		ut64 addr, ut8 *buf, ut64 len);
 
-#if 0
 /* var.c */
-R_API struct r_var_t *r_var_new();
-R_API void r_var_free(struct r_var_t *var);
-R_API int r_var_init(struct r_var_t *var);
-R_API int r_var_type_add(struct r_var_t *var, const char *typename, int size, const char *fmt);
+R_API RAnalysisVar *r_anal_var_new();
+R_API RAnalysisVarType *r_anal_var_type_new();
+R_API RAnalysisVarAccess *r_anal_var_access_new();
+R_API RList *r_anal_var_list_new();
+R_API RList *r_anal_var_type_list_new();
+R_API RList *r_anal_var_access_list_new();
+R_API void r_anal_var_free(void *var);
+R_API void r_anal_var_type_free(void *vartype);
+R_API void r_anal_var_access_free(void *access);
+R_API RAnalysisVar *r_anal_var_init(RAnalysisVar *var);
+R_API RAnalysisVarType *r_anal_var_type_init(RAnalysisVarType *vartype);
+R_API RAnalysisVarAccess *r_anal_var_access_init(RAnalysisVarAccess *access);
+R_API int r_anal_var_type_add(RList *vartypes, const char *typename, int size, const char *fmt);
+
+#if 0
 R_API int r_var_type_del(struct r_var_t *var, const char *typename);
 R_API int r_var_type_list(struct r_var_t *var);
 R_API struct r_var_type_t *r_var_type_get(struct r_var_t *var, const char *datatype);

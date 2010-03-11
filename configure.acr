@@ -90,7 +90,6 @@ SUBDIRS ./config-user.mk libr/include/r_userconf.h
  pkgcfg/r_trace.pc
  pkgcfg/r_search.pc
  pkgcfg/r_vm.pc
- pkgcfg/r_var.pc
  pkgcfg/r_th.pc
  pkgcfg/r_bp.pc
  pkgcfg/r_db.pc

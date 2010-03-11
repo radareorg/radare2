@@ -1,4 +1,3 @@
-# bin is broken..waiting for the new api
 all: bin lang core regs hash sc socket asm search db io array list
 	@true
 

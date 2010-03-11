@@ -7,8 +7,17 @@
 #include <r_list.h>
 #include "../config.h"
 
-static struct r_anal_handle_t *anal_static_plugins[] = 
+static RAnalysisHandle *anal_static_plugins[] = 
 	{ R_ANAL_STATIC_PLUGINS };
+
+static RAnalysisVarType anal_default_vartypes[] =
+	{{ "char",  "b",  1 },
+	 { "byte",  "b",  1 },
+	 { "int",   "d",  4 },
+	 { "int32", "d",  4 },
+	 { "dword", "x",  4 },
+	 { "float", "f",  4 },
+	 { NULL,    NULL, 0 }};
 
 R_API RAnalysis *r_anal_new() {
 	return r_anal_init (MALLOC_STRUCT (RAnalysis));
@@ -30,10 +39,6 @@ R_API RAnalysisRef *r_anal_ref_new() {
 	return r_anal_ref_init (MALLOC_STRUCT (RAnalysisRef));
 }
 
-R_API RAnalysisVar *r_anal_var_new() {
-	return r_anal_var_init (MALLOC_STRUCT (RAnalysisVar));
-}
-
 R_API RList *r_anal_bb_list_new() {
 	RList *list = r_list_new ();
 	list->free = &r_anal_bb_free;
@@ -42,7 +47,7 @@ R_API RList *r_anal_bb_list_new() {
 
 R_API RList *r_anal_aop_list_new() {
 	RList *list = r_list_new ();
-	list->free = &r_anal_std_free;
+	list->free = &r_anal_aop_free;
 	return list;
 }
 
@@ -54,25 +59,30 @@ R_API RList *r_anal_fcn_list_new() {
 
 R_API RList *r_anal_ref_list_new() {
 	RList *list = r_list_new ();
-	list->free = &r_anal_std_free;
-	return list;
-}
-
-R_API RList *r_anal_var_list_new() {
-	RList *list = r_list_new ();
-	list->free = &r_anal_var_free;
+	list->free = &r_anal_ref_free;
 	return list;
 }
 
 R_API RAnalysis *r_anal_free(RAnalysis *a) {
-	/* TODO: Free a->anals here */
-	r_list_destroy (a->bbs);
+	if (a) {
+		/* TODO: Free a->anals here */
+		if (a->bbs)
+			r_list_destroy (a->bbs);
+		if (a->fcns)
+			r_list_destroy (a->fcns);
+		if (a->vartypes)
+			r_list_destroy (a->vartypes);
+	}
 	free (a);
 	return NULL;
 }
 
-R_API void r_anal_std_free(void *ptr) {
-	free (ptr);
+R_API void r_anal_aop_free(void *aop) {
+	free (aop);
+}
+
+R_API void r_anal_ref_free(void *ref) {
+	free (ref);
 }
 
 R_API void r_anal_bb_free(void *bb) {
@@ -85,16 +95,14 @@ R_API void r_anal_fcn_free(void *fcn) {
 	if (fcn) {
 		if (((RAnalysisFcn*)fcn)->name)
 			free (((RAnalysisFcn*)fcn)->name);
+		if (((RAnalysisFcn*)fcn)->refs)
+			r_list_destroy (((RAnalysisFcn*)fcn)->refs);
+		if (((RAnalysisFcn*)fcn)->xrefs)
+			r_list_destroy (((RAnalysisFcn*)fcn)->xrefs);
 		if (((RAnalysisFcn*)fcn)->vars)
 			r_list_destroy (((RAnalysisFcn*)fcn)->vars);
 	}
 	free (fcn);
-}
-
-R_API void r_anal_var_free(void *var) {
-	if (var && ((RAnalysisVar*)var)->name)
-		free (((RAnalysisVar*)var)->name);
-	free (var);
 }
 
 R_API RAnalysis *r_anal_init(RAnalysis *anal) {
@@ -104,11 +112,15 @@ R_API RAnalysis *r_anal_init(RAnalysis *anal) {
 		memset (anal, 0, sizeof (RAnalysis));
 		anal->bbs = r_anal_bb_list_new ();
 		anal->fcns = r_anal_fcn_list_new ();
+		anal->vartypes = r_anal_var_type_list_new ();
 		r_anal_set_bits (anal, 32);
 		r_anal_set_big_endian (anal, R_FALSE);
 		INIT_LIST_HEAD (&anal->anals);
 		for (i=0; anal_static_plugins[i]; i++)
 			r_anal_add (anal, anal_static_plugins[i]);
+		for (i=0; anal_default_vartypes[i].name; i++)
+			r_anal_var_type_add (anal->vartypes, anal_default_vartypes[i].name,
+					anal_default_vartypes[i].size, anal_default_vartypes[i].fmt);
 	}
 	return anal;
 }
@@ -149,14 +161,6 @@ R_API RAnalysisRef *r_anal_ref_init(RAnalysisRef *ref) {
 	if (ref)
 		*ref = -1;
 	return ref;
-}
-
-R_API RAnalysisVar *r_anal_var_init(RAnalysisVar *var) {
-	if (var) {
-		memset (var, 0, sizeof (RAnalysisVar));
-		var->addr = -1;
-	}
-	return var;
 }
 
 R_API void r_anal_set_user_ptr(RAnalysis *anal, void *user) {
@@ -227,7 +231,7 @@ R_API int r_anal_bb(RAnalysis *anal, RAnalysisBB *bb, ut64 addr, ut8 *buf, ut64 
 			return R_ANAL_RET_ERROR;
 		}
 		if ((oplen = r_anal_aop (anal, aop, addr+idx, buf+idx, len-idx)) == 0) {
-			r_anal_std_free (aop);
+			r_anal_aop_free (aop);
 			if (idx == 0)
 				return R_ANAL_RET_ERROR;
 			else break;

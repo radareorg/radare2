@@ -1,50 +1,98 @@
 /* radare - LGPL - Copyright 2008-2009 pancake<nopcode.org> */
 
 #include "r_anal.h"
-#if 0
-#include "r_cons.h"
 
-R_API struct r_var_t *r_var_new()
-{
-	struct r_var_t *var = MALLOC_STRUCT(struct r_var_t);
-	r_var_init(var);
+
+R_API RAnalysisVar *r_anal_var_new() {
+	return r_anal_var_init (MALLOC_STRUCT (RAnalysisVar));
+}
+
+R_API RAnalysisVarType *r_anal_var_type_new() {
+	return r_anal_var_type_init (MALLOC_STRUCT (RAnalysisVarType));
+}
+
+R_API RAnalysisVarAccess *r_anal_var_access_new() {
+	return r_anal_var_access_init (MALLOC_STRUCT (RAnalysisVarAccess));
+}
+
+R_API RList *r_anal_var_list_new() {
+	RList *list = r_list_new ();
+	list->free = &r_anal_var_free;
+	return list;
+}
+
+R_API RList *r_anal_var_type_list_new() {
+	RList *list = r_list_new ();
+	list->free = &r_anal_var_type_free;
+	return list;
+}
+
+R_API RList *r_anal_var_access_list_new() {
+	RList *list = r_list_new ();
+	list->free = &r_anal_var_access_free;
+	return list;
+}
+
+R_API void r_anal_var_free(void *var) {
+	if (var) {
+		if (((RAnalysisVar*)var)->name)
+			free (((RAnalysisVar*)var)->name);
+		if (((RAnalysisVar*)var)->vartype)
+			free (((RAnalysisVar*)var)->vartype);
+		if (((RAnalysisVar*)var)->accesses)
+			r_list_destroy (((RAnalysisVar*)var)->accesses);
+	}
+	free (var);
+}
+
+R_API void r_anal_var_type_free(void *vartype) {
+	if (vartype) {
+		if (((RAnalysisVarType*)vartype)->name)
+			free (((RAnalysisVarType*)vartype)->name);
+		if (((RAnalysisVarType*)vartype)->fmt)
+			free (((RAnalysisVarType*)vartype)->fmt);
+	}
+	free (vartype);
+}
+
+R_API void r_anal_var_access_free(void *access) {
+	free (access);
+}
+
+R_API RAnalysisVar *r_anal_var_init(RAnalysisVar *var) {
+	if (var) {
+		memset (var, 0, sizeof (RAnalysisVar));
+		var->accesses = r_anal_var_access_list_new ();
+	}
 	return var;
 }
 
-R_API void r_var_free(struct r_var_t *var)
-{
-	free(var);
+R_API RAnalysisVarType *r_anal_var_type_init(RAnalysisVarType *vartype) {
+	if (vartype)
+		memset (vartype, 0, sizeof (RAnalysisVarType));
+	return vartype;
 }
 
-R_API int r_var_init(struct r_var_t *var)
+R_API RAnalysisVarAccess *r_anal_var_access_init(RAnalysisVarAccess *access) {
+	if (access)
+		memset (access, 0, sizeof (RAnalysisVarAccess));
+	return access;
+}
+
+R_API int r_anal_var_type_add(RList *vartypes, const char *typename, int size, const char *fmt)
 {
-	INIT_LIST_HEAD(&(var->vartypes));
-	INIT_LIST_HEAD(&(var->vars));
+	RAnalysisVarType *t;
 
-	r_var_type_add(var, "char", 1, "b");
-	r_var_type_add(var, "byte", 1, "b");
-	r_var_type_add(var, "int", 4, "d");
-	r_var_type_add(var, "int32", 4, "d");
-	r_var_type_add(var, "dword", 4, "x");
-	r_var_type_add(var, "float", 4, "f");
-	r_var_anal_reset(var);
-
+	if (!(t = r_anal_var_type_new ()))
+		return R_FALSE;
+	t->name = strdup (typename);
+	t->fmt = strdup (fmt);
+	t->size = size;
+	r_list_append (vartypes, t);
 	return R_TRUE;
 }
 
-/* data.c */
-
-R_API int r_var_type_add(struct r_var_t *var, const char *typename, int size, const char *fmt)
-{
-	struct r_var_type_t *d = (struct r_var_type_t *)
-		malloc(sizeof(struct r_var_type_t));
-	strncpy(d->name, typename, sizeof(d->name));
-	strncpy(d->fmt, fmt, sizeof(d->fmt));
-	d->size = size;
-	list_add(&(d->list), &var->vartypes);
-	
-	return R_TRUE;
-}
+#if 0
 
 R_API int r_var_type_del(struct r_var_t *var, const char *typename)
 {
