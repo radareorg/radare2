@@ -145,6 +145,7 @@ R_API int r_debug_wait(struct r_debug_t *dbg) {
 	if (dbg && dbg->h && dbg->h->wait) {
 		ret = dbg->h->wait(dbg->pid);
 		dbg->newstate = 1;
+		eprintf ("wait = %d\n", ret);
 	}
 	return ret;
 }
@@ -208,6 +209,7 @@ R_API int r_debug_continue_kill(struct r_debug_t *dbg, int sig) {
 		r_debug_recoil (dbg);
 		if (dbg->stop_all_threads)
 			kill (dbg->pid, SIGSTOP);
+		r_debug_select (dbg, dbg->pid, ret);
 	}
 	return ret;
 }

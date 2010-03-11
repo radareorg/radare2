@@ -182,6 +182,10 @@ R_API RList *r_debug_frames (RDebug *dbg);
 /* args */
 R_API ut64 r_debug_arg_get (RDebug *dbg, int fast, int num);
 R_API int r_debug_arg_set (RDebug *dbg, int fast, int num, ut64 value);
+
+/* pid */
+R_API int r_debug_pid_list(struct r_debug_t *dbg, int pid);
+R_API int r_debug_thread_list(struct r_debug_t *dbg, int pid);
 #endif
 #endif
 
