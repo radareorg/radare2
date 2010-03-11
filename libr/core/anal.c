@@ -5,7 +5,7 @@
 #include <r_flags.h>
 #include <r_core.h>
 
-static char *r_core_anal_graph_label (struct r_core_t *core, ut64 addr, ut64 size) {
+static char *r_core_anal_graph_label(struct r_core_t *core, ut64 addr, ut64 size) {
 	char cmd[1024], *cmdstr = NULL, *str = NULL;
 	int i, j;
 
@@ -35,7 +35,7 @@ static char *r_core_anal_graph_label (struct r_core_t *core, ut64 addr, ut64 siz
 	return str;
 }
 
-static void r_core_anal_graph_nodes (struct r_core_t *core, RList *pbb, ut64 addr) {
+static void r_core_anal_graph_nodes(struct r_core_t *core, RList *pbb, ut64 addr) {
 	struct r_anal_bb_t *bbi, *bbc;
 	RListIter *iter;
 	char *str;
@@ -75,7 +75,7 @@ static void r_core_anal_graph_nodes (struct r_core_t *core, RList *pbb, ut64 add
 	}
 }
 
-R_API int r_core_anal_bb (struct r_core_t *core, ut64 at, int depth) {
+R_API int r_core_anal_bb(struct r_core_t *core, ut64 at, int depth) {
 	struct r_anal_bb_t *bb;
 	ut64 jump, fail;
 	ut8 *buf;
@@ -116,7 +116,7 @@ R_API int r_core_anal_bb (struct r_core_t *core, ut64 at, int depth) {
 	return R_TRUE;
 }
 
-R_API int r_core_anal_bb_clean (struct r_core_t *core, ut64 addr) {
+R_API int r_core_anal_bb_clean(struct r_core_t *core, ut64 addr) {
 	struct r_anal_bb_t *bbi;
 	RListIter *iter;
 	ut64 jump, fail;
@@ -141,7 +141,7 @@ R_API int r_core_anal_bb_clean (struct r_core_t *core, ut64 addr) {
 	return R_TRUE;
 }
 
-R_API int r_core_anal_bb_add (struct r_core_t *core, ut64 addr, ut64 size, ut64 jump, ut64 fail) {
+R_API int r_core_anal_bb_add(struct r_core_t *core, ut64 addr, ut64 size, ut64 jump, ut64 fail) {
 	struct r_anal_bb_t *bb, *bbi;
 	RListIter *iter;
 
@@ -158,7 +158,7 @@ R_API int r_core_anal_bb_add (struct r_core_t *core, ut64 addr, ut64 size, ut64 
 	return R_TRUE;
 }
 
-R_API int r_core_anal_bb_list (struct r_core_t *core, int rad) {
+R_API int r_core_anal_bb_list(struct r_core_t *core, int rad) {
 	struct r_anal_bb_t *bbi;
 	RListIter *iter;
 
@@ -183,7 +183,7 @@ R_API int r_core_anal_bb_list (struct r_core_t *core, int rad) {
 	return R_TRUE;
 }
 
-R_API int r_core_anal_bb_seek (struct r_core_t *core, ut64 addr) {
+R_API int r_core_anal_bb_seek(struct r_core_t *core, ut64 addr) {
 	struct r_anal_bb_t *bbi;
 	RListIter *iter;
 
@@ -193,7 +193,7 @@ R_API int r_core_anal_bb_seek (struct r_core_t *core, ut64 addr) {
 	return r_core_seek (core, addr, R_FALSE);
 }
 
-R_API int r_core_anal_fcn (struct r_core_t *core, ut64 at, ut64 from, int depth) {
+R_API int r_core_anal_fcn(struct r_core_t *core, ut64 at, ut64 from, int depth) {
 	struct r_anal_fcn_t *fcn, *fcni;
 	struct r_anal_ref_t *refi;
 	RListIter *iter, *iter2;
@@ -237,6 +237,7 @@ R_API int r_core_anal_fcn (struct r_core_t *core, ut64 at, ut64 from, int depth)
 			fcn->name = r_str_dup_printf ("fcn_%08llx", at);
 			/* Add flag */
 			flagname = r_str_dup_printf ("fcn.%s", fcn->name);
+			r_flag_space_set (&core->flags, "functions");
 			r_flag_set (&core->flags, flagname, at, fcn->size, 0);
 			free (flagname);
 			r_list_append (core->anal.fcns, fcn);
@@ -251,7 +252,7 @@ R_API int r_core_anal_fcn (struct r_core_t *core, ut64 at, ut64 from, int depth)
 	return R_TRUE;
 }
 
-R_API int r_core_anal_fcn_clean (struct r_core_t *core, ut64 addr) {
+R_API int r_core_anal_fcn_clean(struct r_core_t *core, ut64 addr) {
 	struct r_anal_fcn_t *fcni;
 	RListIter *iter;
 
@@ -265,7 +266,7 @@ R_API int r_core_anal_fcn_clean (struct r_core_t *core, ut64 addr) {
 	return R_TRUE;
 }
 
-R_API int r_core_anal_fcn_add (struct r_core_t *core, ut64 addr, ut64 size, const char *name) {
+R_API int r_core_anal_fcn_add(struct r_core_t *core, ut64 addr, ut64 size, const char *name) {
 	struct r_anal_fcn_t *fcn, *fcni;
 	RListIter *iter;
 
@@ -281,7 +282,7 @@ R_API int r_core_anal_fcn_add (struct r_core_t *core, ut64 addr, ut64 size, cons
 	return R_TRUE;
 }
 
-R_API int r_core_anal_fcn_list (struct r_core_t *core, int rad) {
+R_API int r_core_anal_fcn_list(struct r_core_t *core, int rad) {
 	struct r_anal_fcn_t *fcni;
 	struct r_anal_ref_t *refi;
 	RListIter *iter, *iter2;
@@ -310,7 +311,7 @@ R_API int r_core_anal_fcn_list (struct r_core_t *core, int rad) {
 	return R_TRUE;
 }
 
-R_API int r_core_anal_graph (struct r_core_t *core, ut64 addr) {
+R_API int r_core_anal_graph(struct r_core_t *core, ut64 addr) {
 	RList *pbb = NULL;
 	int reflines = r_config_get_i(&core->config, "asm.reflines");
 	int bytes = r_config_get_i(&core->config, "asm.bytes");
@@ -331,7 +332,7 @@ R_API int r_core_anal_graph (struct r_core_t *core, ut64 addr) {
 	return R_TRUE;
 }
 
-R_API int r_core_anal_graph_fcn (struct r_core_t *core, char *fname) {
+R_API int r_core_anal_graph_fcn(struct r_core_t *core, char *fname) {
 	struct r_anal_fcn_t *fcni;
 	RListIter *iter;
 

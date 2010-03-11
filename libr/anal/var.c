@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2008-2009 pancake<nopcode.org> */
 
-#include "r_var.h"
+#include "r_anal.h"
+#if 0
 #include "r_cons.h"
 
 R_API struct r_var_t *r_var_new()
@@ -297,3 +298,4 @@ R_API int r_var_anal_get(struct r_var_t *var, int type)
 	}
 	return ctr;
 }
+#endif
