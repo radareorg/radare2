@@ -7,33 +7,31 @@
 #include <r_util.h>
 #include "elf.h"
 
-#if 0
+// XXX UGLY CODE
 /* TODO: Take care of endianess */
 /* TODO: Real error handling */
 /* TODO: Resize sections before .init */
-u64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const char *name, u64 size)
-{
+ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const char *name, ut64 size) {
 	Elf_(Ehdr) *ehdr = &bin->ehdr;
 	Elf_(Phdr) *phdr = bin->phdr, *phdrp;
 	Elf_(Shdr) *shdr = bin->shdr, *shdrp;
 	const char *strtab = bin->strtab;
-	u8 *buf;
-	u64 off, got_offset, got_addr = 0, rsz_offset, delta = 0;
-	u64 rsz_osize = 0, rsz_fsize, rsz_size = size, rest_size = 0;
+	ut8 *buf;
+	ut64 off, got_offset, got_addr = 0, rsz_offset, delta = 0;
+	ut64 rsz_osize = 0, rsz_size = size, rest_size = 0;
 	int i, j, done = 0;
 
 	if (size == 0) {
 		printf("0 size section?\n");
 		return 0;
 	}
-	rsz_fsize = lseek(bin->fd, 0, SEEK_END);
 
 	/* calculate delta */
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) 
 		if (!strncmp(name, &strtab[shdrp->sh_name], ELF_STRING_LENGTH)) {
 			delta =  rsz_size - shdrp->sh_size;
-			rsz_offset = (u64)shdrp->sh_offset;
-			rsz_osize = (u64)shdrp->sh_size;
+			rsz_offset = (ut64)shdrp->sh_offset;
+			rsz_osize = (ut64)shdrp->sh_size;
 		}
 
 	if (delta == 0) {
@@ -46,7 +44,7 @@ u64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const char
 	/* rewrite rel's (imports) */
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
 		if (!strcmp(&strtab[shdrp->sh_name], ".got"))
-			got_addr = (u64)shdrp->sh_offset;
+			got_addr = (ut64)shdrp->sh_offset;
 	}
 	if (got_addr == 0) {
 		/* TODO: Unknown GOT address */
@@ -58,25 +56,22 @@ u64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const char
 			rel = (Elf_(Rel) *)malloc(shdrp->sh_size);
 			if (rel == NULL) {
 				perror("malloc");
-				return -1;
+				return 0;
 			}
 
-			if (lseek(bin->fd, shdrp->sh_offset, SEEK_SET) < 0)
-				perror("lseek");
-			if (read(bin->fd, rel, shdrp->sh_size) != shdrp->sh_size)
-				perror("read");
+			eprintf ("shdrp->sh_offset = %08llx\n", (ut64)shdrp->sh_offset);
+			if (r_buf_read_at(bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1)
+				perror("read (rel)");
 
 			got_offset = (rel->r_offset - bin->baddr - got_addr) & ELF_GOTOFF_MASK;
 			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof(Elf_(Rel)), relp++) {
-				r_mem_copyendian((u8*)&(relp->r_offset), sizeof(Elf_(Addr)), !bin->endian);
+				r_mem_copyendian((ut8*)&(relp->r_offset), (ut8*)&(relp->r_offset),
+						sizeof(Elf_(Addr)), !bin->endian);
 				/* rewrite relp->r_offset */
 				if (relp->r_offset - bin->baddr - got_offset >= rsz_offset + rsz_osize) {
 					relp->r_offset+=delta;
 					off = shdrp->sh_offset + j;
-
-					if (lseek(bin->fd, off, SEEK_SET) < 0)
-						perror("lseek");
-					if (write(bin->fd, &relp, sizeof(Elf_(Rel))) != sizeof(Elf_(Rel)))
+					if (r_buf_write_at (bin->b, off, (ut8*)relp, sizeof (Elf_(Rel))) == -1)
 						perror("write (imports)");
 				}
 			}
@@ -87,25 +82,22 @@ u64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const char
 			rel = (Elf_(Rela) *)malloc(shdrp->sh_size);
 			if (rel == NULL) {
 				perror("malloc");
-				return -1;
+				return 0;
 			}
 
-			if (lseek(bin->fd, shdrp->sh_offset, SEEK_SET) < 0)
-				perror("lseek");
-			if (read(bin->fd, rel, shdrp->sh_size) != shdrp->sh_size)
-				perror("read");
+			if (r_buf_read_at(bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1)
+				perror("read (rel)");
 
 			got_offset = (rel->r_offset - bin->baddr - got_addr) & ELF_GOTOFF_MASK;
 			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof(Elf_(Rela)), relp++) {
-				r_mem_copyendian((u8*)&(relp->r_offset), sizeof(Elf_(Addr)), !bin->endian);
+				r_mem_copyendian((ut8*)&(relp->r_offset), (ut8*)&(relp->r_offset),
+						sizeof(Elf_(Addr)), !bin->endian);
 				/* rewrite relp->r_offset */
 				if (relp->r_offset - bin->baddr - got_offset >= rsz_offset + rsz_osize) {
 					relp->r_offset+=delta;
 					off = shdrp->sh_offset + j;
 
-					if (lseek(bin->fd, off, SEEK_SET) < 0)
-						perror("lseek");
-					if (write(bin->fd, &relp, sizeof(Elf_(Rela))) != sizeof(Elf_(Rela)))
+					if (r_buf_write_at (bin->b, off, (ut8*)relp, sizeof (Elf_(Rela))) == -1)
 						perror("write (imports)");
 				}
 			}
@@ -125,9 +117,7 @@ u64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const char
 
 		}
 		off = ehdr->e_shoff + i * sizeof(Elf_(Shdr));
-		if (lseek(bin->fd, off, SEEK_SET) < 0)
-			perror("lseek");
-		if (write(bin->fd, shdrp, sizeof(Elf_(Shdr))) != sizeof(Elf_(Shdr)))
+		if (r_buf_write_at (bin->b, off, (ut8*)shdrp, sizeof (Elf_(Shdr))) == -1)
 			perror("write (shdr)");
 		printf("-> elf section (%s)\n", &strtab[shdrp->sh_name]);
 	}
@@ -146,11 +136,9 @@ u64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const char
 			if (phdrp->p_paddr) phdrp->p_paddr += delta;
 		}
 		off = ehdr->e_phoff + i * sizeof(Elf_(Phdr));
-		if (lseek(bin->fd, off, SEEK_SET) < 0)
-			perror("lseek");
-		if (write(bin->fd, phdrp, sizeof(Elf_(Phdr))) != sizeof(Elf_(Phdr)))
+		if (r_buf_write_at (bin->b, off, (ut8*)phdrp, sizeof (Elf_(Phdr))) == -1)
 			perror("write (phdr)");
-		printf("-> program header (%08llx)\n", (u64) phdrp->p_offset);
+		printf("-> program header (%08llx)\n", (ut64) phdrp->p_offset);
 	}
 
 	/* rewrite other elf pointers (entrypoint, phoff, shoff) */
@@ -160,28 +148,24 @@ u64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const char
 		ehdr->e_phoff += delta;
 	if (ehdr->e_shoff >= rsz_offset + rsz_osize)
 		ehdr->e_shoff += delta;
-	if (lseek(bin->fd, 0, SEEK_SET) < 0)
-		perror("lseek");
-	if (write(bin->fd, ehdr, sizeof(Elf_(Ehdr))) != sizeof(Elf_(Ehdr)))
+	if (r_buf_write_at (bin->b, 0, (ut8*)ehdr, sizeof (Elf_(Ehdr))) == -1)
 		perror("write (ehdr)");
 
 	/* inverse order to write bodies .. avoid overlapping here */
 	/* XXX Check when delta is negative */
-	rest_size = rsz_fsize - (rsz_offset + rsz_osize);
-	buf = (u8 *)malloc(rest_size);
-	printf("COPY FROM 0x%08llx\n", (u64) rsz_offset+rsz_osize);
-	lseek(bin->fd, rsz_offset+rsz_osize, SEEK_SET);
-	read(bin->fd, buf, rest_size);
+	rest_size = bin->size - (rsz_offset + rsz_osize);
 
-	printf("COPY TO 0x%08llx\n", (u64) rsz_offset+rsz_size);
-	lseek(bin->fd, rsz_offset+rsz_size, SEEK_SET);
-	write(bin->fd, buf, rest_size);
+	buf = (ut8 *)malloc (bin->size);
+	r_buf_read_at (bin->b, 0, (ut8*)buf, bin->size);
+	r_buf_set_bytes (bin->b, (ut8*)buf, rsz_offset+rsz_size+rest_size);
+
+	printf("COPY FROM 0x%08llx\n", (ut64) rsz_offset+rsz_osize);
+	r_buf_read_at(bin->b, rsz_offset+rsz_osize, (ut8*)buf, rest_size);
+	printf("COPY TO 0x%08llx\n", (ut64) rsz_offset+rsz_size);
+	r_buf_write_at (bin->b, rsz_offset+rsz_size, (ut8*)buf, rest_size);
 	printf("Shifted %d bytes\n", (int)delta);
 	free(buf);
-
-	/* Reinit structs*/
-	Elf_(r_bin_elf_init)(bin);
+	bin->size = rsz_offset+rsz_size+rest_size;
 
 	return delta;
 }
-#endif

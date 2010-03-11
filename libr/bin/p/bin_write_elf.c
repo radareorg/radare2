@@ -2,15 +2,15 @@
 
 #include <r_types.h>
 #include <r_bin.h>
+#include "elf/elf.h"
 
-static int scn_set(RBin *bin, RBinSection *scn) {
-	/* TODO */
-	return R_FALSE;
+static ut64 scn_resize(RBin *bin, const char *name, ut64 size) {
+	return Elf_(r_bin_elf_resize_section) (bin->bin_obj, name, size);
 }
 
 #if !R_BIN_ELF64
 struct r_bin_write_t r_bin_write_elf = {
-	.scn_set = &scn_set,
+	.scn_resize = &scn_resize,
 };
 #endif
 

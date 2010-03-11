@@ -130,7 +130,7 @@ typedef struct r_bin_meta_t {
 } RBinMeta;
 
 typedef struct r_bin_write_t {
-	int (*scn_set)(RBin *bin, struct r_bin_section_t *scn);
+	ut64 (*scn_resize)(RBin *bin, const char *name, ut64 size);
 } RBinWrite;
 
 #ifdef R_API
@@ -158,7 +158,8 @@ R_API void r_bin_set_user_ptr(RBin *bin, void *user);
 R_API int r_bin_meta_get_line(RBin *bin, ut64 addr, char *file, int len, int *line);
 
 /* bin_write.c */
-R_API int r_bin_wr_scn_set(RBin *bin, RBinSection *scn);
+R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size);
+R_API int r_bin_wr_output(RBin *bin, const char *filename);
 #endif
 
 #endif

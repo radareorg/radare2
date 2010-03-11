@@ -28,11 +28,12 @@
 #define ACTION_LIBS      0x0200 
 
 static struct r_lib_t l;
-static struct r_bin_t *bin;
+static struct r_bin_t *bin = NULL;
 static int rad = R_FALSE;
 static int rw = R_FALSE;
 static int va = R_FALSE;
-static char* file;
+static char* file = NULL;
+static char* output = "a.out";
 
 static int rabin_show_help() {
 	printf ("rabin2 [options] [file]\n"
@@ -44,7 +45,8 @@ static int rabin_show_help() {
 		" -I          Binary info\n"
 		" -H          Header fields\n"
 		" -l          Linked libraries\n"
-		" -o [str]    Write/Extract operations (str=help for help)\n"
+		" -O [str]    Write/Extract operations (str=help for help)\n"
+		" -o [file]   Output file for write operations (a.out by default)\n"
 		" -f [format] Override file format autodetection\n"
 		" -r          radare output\n"
 		" -v          Use vaddr in radare output\n"
@@ -439,7 +441,8 @@ static int rabin_do_operation(const char *op) {
 	if (!strcmp (op, "help")) {
 		printf ("Operation string:\n"
 				"  Dump symbols: d/s/1024\n"
-				"  Dump section: d/S/.text\n");
+				"  Dump section: d/S/.text\n"
+				"  Resize section: r/.data/1024\n");
 		return R_FALSE;
 	}
 	arg = alloca (strlen(op)+1);
@@ -472,9 +475,13 @@ static int rabin_do_operation(const char *op) {
 				return R_FALSE;
 		} else goto _rabin_do_operation_error;
 		break;
+	case 'r':
+		r_bin_wr_scn_resize (bin, ptr, r_num_math (NULL, ptr2));
+		r_bin_wr_output (bin, output);
+		break;
 	default:
-_rabin_do_operation_error:
-		printf ("Unknown operation. use -o help\n");
+	_rabin_do_operation_error:
+		printf ("Unknown operation. use -O help\n");
 		return R_FALSE;
 	}
 
@@ -513,7 +520,7 @@ int main(int argc, char **argv)
 		r_lib_opendir (&l, LIBDIR"/radare2/");
 	}
 
-	while ((c = getopt (argc, argv, "@:VisSzIHelwo:f:rvLh")) != -1)
+	while ((c = getopt (argc, argv, "@:VisSzIHelwO:o:f:rvLh")) != -1)
 	{
 		switch(c) {
 		case 'i':
@@ -543,9 +550,12 @@ int main(int argc, char **argv)
 		case 'w':
 			rw = R_TRUE;
 			break;
-		case 'o':
+		case 'O':
 			op = optarg;
 			action |= ACTION_OPERATION;
+			break;
+		case 'o':
+			output = optarg;
 			break;
 		case 'f':
 			format = optarg;

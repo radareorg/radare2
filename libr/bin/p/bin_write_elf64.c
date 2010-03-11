@@ -4,5 +4,5 @@
 #include "bin_write_elf.c"
 
 struct r_bin_write_t r_bin_write_elf64 = {
-	.scn_set = &scn_set,
+	.scn_resize = &scn_resize,
 };
