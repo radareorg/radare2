@@ -136,8 +136,6 @@ static int rabin_show_imports(ut64 at) {
 				printf ("fs functions\n");
 				printf ("f fcn.imp.%s @ 0x%08llx\n",
 						import->name, va?baddr+import->rva:import->offset);
-				printf ("af+ 0x%08llx 0 imp.%s\n",
-						va?baddr+import->rva:import->offset, import->name);
 			} else printf ("address=0x%08llx offset=0x%08llx ordinal=%03lli "
 						   "hint=%03lli bind=%s type=%s name=%s\n",
 						   baddr+import->rva, import->offset,
@@ -183,8 +181,6 @@ static int rabin_show_symbols(ut64 at) {
 					if (symbol->size) 
 						printf ("CF %lli @ 0x%08llx\n",
 								symbol->size, va?baddr+symbol->rva:symbol->offset);
-					printf ("af+ 0x%08llx %lli sym.%s\n",
-							va?baddr+symbol->rva:symbol->offset, symbol->size, symbol->name);
 					printf ("fs functions\n");
 					printf ("f fcn.sym.%s %lli 0x%08llx\n",
 							symbol->name, symbol->size,
