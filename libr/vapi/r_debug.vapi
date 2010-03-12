@@ -55,10 +55,10 @@ public class Radare.RDebug {
 		SLEEP,
 		ZOMBIE,
 	}
-	public int pid_add();
-	public int pid_del();
-	public int pid_add_thread();
-	public int pid_del_thread();
+	//public int pid_add();
+	//public int pid_del();
+	//public int pid_add_thread();
+	//public int pid_del_thread();
 	//public Process pid_get(int pid); // XXX wrong api syntax 'get' is keyword
 	//public bool pid_set_status(ProcessStatus status);
 }

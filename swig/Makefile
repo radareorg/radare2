@@ -24,12 +24,13 @@ test:
 
 install-python:
 	@if [ "`grep python supported.langs`" ]; then \
-	for a in python2.5 python2.6; do \
-	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2 ; \
-	touch ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2/__init__.py ; \
+	for a in python2.5 python2.6 ; do \
+	echo "  - ${DESTDIR}${PREFIX}/lib/$$a/r2" ; \
+	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/r2 ; \
+	touch ${DESTDIR}${PREFIX}/lib/$$a/r2/__init__.py ; \
 	echo "Installing $$a r2 modules..." ; \
-	cp -rf python/* ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2 ; \
-	cp -rf python/*libr* ${DESTDIR}${PREFIX}/lib/$$a/site-packages ; \
+	cp -rf python/* ${DESTDIR}${PREFIX}/lib/$$a/r2 ; \
+	cp -rf python/*libr* ${DESTDIR}${PREFIX}/lib/$$a ; \
 	done ; \
 	fi
 
