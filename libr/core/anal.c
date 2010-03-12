@@ -204,10 +204,10 @@ R_API int r_core_anal_fcn(struct r_core_t *core, ut64 at, ut64 from, int depth) 
 
 	if (depth < 0)
 		return R_FALSE;
-	if (from != -1) {
-		r_list_foreach (core->anal.fcns, iter, fcni)
-			if ((at >= fcni->addr && at < fcni->addr+fcni->size) ||
-				(at == fcni->addr && fcni->size == 0)) {
+	r_list_foreach (core->anal.fcns, iter, fcni)
+		if ((at >= fcni->addr && at < fcni->addr+fcni->size) ||
+			(at == fcni->addr && fcni->size == 0)) {
+			if (from != -1) {
 				r_list_foreach (fcni->xrefs, iter2, refi) {
 					ref = (ut64*)refi;
 					if (from == *ref)
@@ -219,9 +219,9 @@ R_API int r_core_anal_fcn(struct r_core_t *core, ut64 at, ut64 from, int depth) 
 				}
 				*ref = from;
 				r_list_append (fcni->xrefs, ref);
-				return R_FALSE;
 			}
-	}
+			return R_FALSE;
+		}
 	if (!(fcn = r_anal_fcn_new()))
 		return R_FALSE;
 	if (!(buf = malloc (core->blocksize)))
