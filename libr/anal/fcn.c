@@ -63,37 +63,37 @@ R_API int r_anal_fcn(RAnalysis *anal, RAnalysisFcn *fcn, ut64 addr, ut8 *buf, ut
 		switch (aop.stackop) {
 		case R_ANAL_STACK_LOCAL_SET:
 			if (aop.ref < 0) {
-				varname = r_str_dup_printf ("arg_%i", -aop.ref);
+				varname = r_str_dup_printf ("arg_%x", -aop.ref);
 				r_anal_var_add (anal, fcn, aop.addr, -aop.ref, R_ANAL_VAR_TYPE_ARG,
-						varname, NULL, 1);
+						NULL, varname, 1);
 			} else {
-				varname = r_str_dup_printf ("local_%i", aop.ref);
+				varname = r_str_dup_printf ("local_%x", aop.ref);
 				r_anal_var_add (anal, fcn, aop.addr, aop.ref, R_ANAL_VAR_TYPE_LOCAL,
-						varname, NULL, 1);
+						NULL, varname, 1);
 			}
 			free (varname);
 			break;
 		case R_ANAL_STACK_ARG_SET:
-			varname = r_str_dup_printf ("arg_%i", aop.ref);
+			varname = r_str_dup_printf ("arg_%x", aop.ref);
 			r_anal_var_add (anal, fcn, aop.addr, aop.ref, R_ANAL_VAR_TYPE_ARG,
-					varname, NULL, 1);
+					NULL, varname, 1);
 			free (varname);
 			break;
 		case R_ANAL_STACK_ARG_GET:
-			varname = r_str_dup_printf ("arg_%i", aop.ref);
+			varname = r_str_dup_printf ("arg_%x", aop.ref);
 			r_anal_var_add (anal, fcn, aop.addr, aop.ref, R_ANAL_VAR_TYPE_ARG,
-					varname, NULL, 0);
+					NULL, varname, 0);
 			free (varname);
 			break;
 		case R_ANAL_STACK_LOCAL_GET:
 			if (aop.ref < 0) {
-				varname = r_str_dup_printf ("arg_%i", -aop.ref);
+				varname = r_str_dup_printf ("arg_%x", -aop.ref);
 				r_anal_var_add (anal, fcn, aop.addr, -aop.ref, R_ANAL_VAR_TYPE_ARG,
-						varname, NULL, 0);
+						NULL, varname, 0);
 			} else {
-				varname = r_str_dup_printf ("local_%i", aop.ref);
+				varname = r_str_dup_printf ("local_%x", aop.ref);
 				r_anal_var_add (anal, fcn, aop.addr, aop.ref, R_ANAL_VAR_TYPE_LOCAL,
-						varname, NULL, 0);
+						NULL, varname, 0);
 			}
 			free (varname);
 			break;

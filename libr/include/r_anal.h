@@ -262,6 +262,7 @@ R_API int r_anal_var_add(RAnalysis *anal, RAnalysisFcn *fcn, ut64 from, int delt
 		const char *vartype, const char *name, int set);
 R_API int r_anal_var_del(RAnalysis *anal, RAnalysisFcn *fcn, int delta, int type);
 R_API RAnalysisVar *r_anal_var_get(RAnalysis *anal, RAnalysisFcn *fcn, int delta, int type);
+R_API const char *r_anal_var_type_to_str (RAnalysis *anal, int type);
 R_API int r_anal_var_access_add(RAnalysis *anal, RAnalysisVar *var, ut64 from, int set);
 R_API int r_anal_var_access_del(RAnalysis *anal, RAnalysisVar *var, ut64 from);
 R_API RAnalysisVarAccess *r_anal_var_access_get(RAnalysis *anal, RAnalysisVar *var, ut64 from);

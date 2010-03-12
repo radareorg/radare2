@@ -160,6 +160,16 @@ R_API RAnalysisVar *r_anal_var_get(RAnalysis *anal, RAnalysisFcn *fcn, int delta
 	return NULL;
 }
 
+R_API const char *r_anal_var_type_to_str (RAnalysis *anal, int type) {
+	switch(type) {
+	case R_ANAL_VAR_TYPE_GLOBAL: return "global";
+	case R_ANAL_VAR_TYPE_LOCAL:  return "local";
+	case R_ANAL_VAR_TYPE_ARG:    return "arg";
+	case R_ANAL_VAR_TYPE_ARGREG: return "fastarg";
+	}
+	return "(?)";
+}
+
 R_API int r_anal_var_access_add(RAnalysis *anal, RAnalysisVar *var, ut64 from, int set) {
 	RAnalysisVarAccess *acc, *acci;
 	RListIter *iter;

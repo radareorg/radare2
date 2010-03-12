@@ -207,7 +207,7 @@ R_API int r_core_anal_fcn(struct r_core_t *core, ut64 at, ut64 from, int depth) 
 	if (from != -1) {
 		r_list_foreach (core->anal.fcns, iter, fcni)
 			if ((at >= fcni->addr && at < fcni->addr+fcni->size) ||
-					(at == fcni->addr && fcni->size == 0)) {
+				(at == fcni->addr && fcni->size == 0)) {
 				r_list_foreach (fcni->xrefs, iter2, refi) {
 					ref = (ut64*)refi;
 					if (from == *ref)
@@ -285,6 +285,7 @@ R_API int r_core_anal_fcn_add(struct r_core_t *core, ut64 addr, ut64 size, const
 R_API int r_core_anal_fcn_list(struct r_core_t *core, int rad) {
 	struct r_anal_fcn_t *fcni;
 	struct r_anal_ref_t *refi;
+	struct r_anal_var_t *vari;
 	RListIter *iter, *iter2;
 	ut64 *ref;
 
@@ -294,16 +295,22 @@ R_API int r_core_anal_fcn_list(struct r_core_t *core, int rad) {
 		else {
 			r_cons_printf ("[0x%08llx] size=%lli name=%s\n",
 					fcni->addr, fcni->size, fcni->name);
-			r_cons_printf ("refs: ");
+			r_cons_printf ("refs:\n");
 			r_list_foreach (fcni->refs, iter2, refi) {
 				ref = (ut64*)refi;
 				r_cons_printf ("0x%08llx ", *ref);
 			}
 			r_cons_printf ("\n");
-			r_cons_printf ("xrefs: ");
+			r_cons_printf ("xrefs:\n");
 			r_list_foreach (fcni->xrefs, iter2, refi) {
 				ref = (ut64*)refi;
 				r_cons_printf ("0x%08llx ", *ref);
+			}
+			r_cons_printf ("\n");
+			r_cons_printf ("vars:\n");
+			r_list_foreach (fcni->vars, iter2, vari) {
+				r_cons_printf ("%-10s delta=0x%02x type=%s\n", vari->name, vari->delta,
+						r_anal_var_type_to_str (&core->anal, vari->type));
 			}
 			r_cons_printf ("\n");
 		}
