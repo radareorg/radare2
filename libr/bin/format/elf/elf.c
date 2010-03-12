@@ -375,9 +375,29 @@ char* Elf_(r_bin_elf_get_osabi_name)(struct Elf_(r_bin_elf_obj_t) *bin)
 	}
 }
 
-int Elf_(r_bin_elf_is_big_endian)(struct Elf_(r_bin_elf_obj_t) *bin)
-{
+int Elf_(r_bin_elf_is_big_endian)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	return (bin->ehdr.e_ident[EI_DATA] == ELFDATA2MSB);
+}
+
+char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	char *rpath = NULL;
+	int i, j;
+
+	for (i = 0; i < bin->ehdr.e_phnum; i++) {
+		if (bin->phdr[i].p_type == PT_DYNAMIC) {
+			int ndyn = (int)(bin->phdr[i].p_filesz / sizeof(Elf_(Dyn)));
+			for (j = 0; j < ndyn; j++) {
+				if (bin->phdr[j].p_type == DT_RUNPATH) {
+					// XXX can be vulnerable?
+					//bin->rpath = strdup (bin->strtab[bin->shdr[i].sh_name]);
+eprintf ("11 (%s)\n", bin->strtab[bin->shdr[i].sh_name]);
+					break;
+				}
+			}
+		}
+	}
+
+	return R_TRUE; //(bin->rpath)? R_TRUE:R_FALSE;
 }
 
 struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *bin)

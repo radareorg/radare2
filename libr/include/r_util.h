@@ -249,6 +249,7 @@ R_API int r_file_rm(const char *file);
 R_API int r_file_exist(const char *str);
 R_API char *r_file_slurp_line(const char *file, int line, int context);
 
+R_API ut64 r_sys_now();
 R_API int r_sys_sleep(int secs);
 R_API int r_sys_usleep(int usecs);
 R_API const char *r_sys_getenv(const char *key);

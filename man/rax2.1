@@ -1,32 +1,38 @@
-.Dd February 4, 2007
-.Dt RAX 1
+.Dd Mar 12, 2010
+.Dt RAX2 1
 .Os
 .Sh NAME
-.Nm rax
+.Nm rax2
 .Nd radare base converter
 .Sh SYNOPSIS
-.Nm rax
-.Op Fl e
-.Op Fl s
+.Nm rax2
+.Op Fl V
 .Op Fl h
-.Op -|value
-.Op ...
+.Op [value] ...
 .Sh DESCRIPTION
 This command is part of the radare project.
 .Pp
 This command allows you to convert values between positive and negative integer, float octal, binary and hexadecimal values.
+.Sh OPTIONS
+.Bl -tag -width Fl
+.It Fl e
+Swap endian.
+.It Fl h
+Show usage help message.
+.El
+.Sh USAGE
 .Pp
 With no arguments, rax reads values from stdin. You can pass one or more values as arguments, and swap endiannes of the output with the '-e' flag.
 .Pp
-Using '-' as argument rax will read binary data from stdin and print out the hex pairs to stdout.
+TODO: Using '-' as argument rax will read binary data from stdin and print out the hex pairs to stdout.
 .Pp
-  $ rax -33 -e -33
+  $ rax2 -33 -e -33
   0xffffffdf
   0xdfffffff
 .Pp
-The '-s' flag converts radare into a hexpair-to-binary converter, so you can do 'unpack' hexpair encoded strings easily.
+TODO: The '-s' flag converts radare into a hexpair-to-binary converter, so you can do 'unpack' hexpair encoded strings easily.
 .Pp
-  $ rax -s 41 42 43
+  $ rax2 -s 41 42 43
   ABC
 .Pp
 It is very useful tool for scripting, so you can read floating point values, or get the integer offset of a jump or a stack delta when analyzing programs.
@@ -43,25 +49,15 @@ Available variable types are:
   bin to hex    1101b
   hex to bin     Bx63
 .Pp
-Available flags are:
-.Bl -tag -width Fl
-.It Fl e
-Swap endian.
-.It Fl h
-Show usage help message.
-.El
+
 .Sh SEE ALSO
 .Pp
-.Xr radiff(1) ,
-.Xr radare(1) ,
-.Xr rabin(1) ,
-.Xr hasher(1) ,
-.Xr rsc(1) ,
-.Xr rasc(1) ,
-.Xr rasm(1) ,
-.Xr rfile(1) ,
-.Xr xrefs(1)
+.Xr radare2(1) ,
+.Xr rahash2(1) ,
+.Xr rabin2(1) ,
+.Xr radiff2(1) ,
+.Xr rasm2(1) ,
 .Sh AUTHORS
 .Pp
-pancake <pancake@youterm.com>
+pancake <pancake@nopcode.org>
 .Pp

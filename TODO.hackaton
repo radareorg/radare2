@@ -12,7 +12,6 @@ Inconcrete things to do
     - Vala is a good way to express code
 
 * Cleanup warnings
-  - asm/p/bea? :) -- make it 32-64bit agnostic
   - Find missing function signatures in libr/include/.h
   - R_APIfy those APIs (sync with vapi)
 

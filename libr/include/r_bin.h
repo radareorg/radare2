@@ -117,6 +117,7 @@ typedef struct r_bin_info_t {
 	int bits;
 	int big_endian;
 	ut64 dbg_info;
+	char *rpath;
 } RBinInfo;
 
 typedef struct r_bin_field_t {

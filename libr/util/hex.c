@@ -5,18 +5,17 @@
 #include <stdio.h>
 
 /* int c; ret = hex_to_byet(&c, 'c'); */
-R_API int r_hex_to_byte(ut8 *val, ut8 c)
-{
-	if ('0' <= c && c <= '9')      *val = (unsigned char)(*val) * 16 + ( c - '0');
-	else if (c >= 'A' && c <= 'F') *val = (unsigned char)(*val) * 16 + ( c - 'A' + 10);
-	else if (c >= 'a' && c <= 'f') *val = (unsigned char)(*val) * 16 + ( c - 'a' + 10);
+R_API int r_hex_to_byte(ut8 *val, ut8 c) {
+	if ('0' <= c && c <= '9')      *val = (ut8)(*val) * 16 + ( c - '0');
+	else if (c >= 'A' && c <= 'F') *val = (ut8)(*val) * 16 + ( c - 'A' + 10);
+	else if (c >= 'a' && c <= 'f') *val = (ut8)(*val) * 16 + ( c - 'a' + 10);
 	else return 1;
 	return 0;
 }
 
 /* int byte = hexpair2bin("A0"); */
-R_API int r_hex_pair2bin(const char *arg) // (0A) => 10 || -1 (on error)
-{
+// (0A) => 10 || -1 (on error)
+R_API int r_hex_pair2bin(const char *arg) {
 	unsigned char *ptr;
 	unsigned char c = '\0';
 	unsigned char d = '\0';
@@ -26,49 +25,45 @@ R_API int r_hex_pair2bin(const char *arg) // (0A) => 10 || -1 (on error)
 		if (ptr[0]=='\0'||ptr[0]==' ' || j==2)
 			break;
 		d = c;
-		if (r_hex_to_byte(&c, ptr[0])) {
-			eprintf("Invalid hexa string at char '%c'.\n", ptr[0]);
+		if (r_hex_to_byte (&c, ptr[0])) {
+			eprintf ("Invalid hexa string at char '%c'.\n", ptr[0]);
 			return -1;
 		}
 		c |= d;
 		if (j++ == 0) c <<= 4;
 	}
-
 	return (int)c;
 }
 
-R_API int r_hex_bin2str(const ut8 *in, int len, char *out)
-{
+R_API int r_hex_bin2str(const ut8 *in, int len, char *out) {
 	int i;
 	char tmp[5];
 	out[0]='\0';
-	for(i=0;i<len;i++)  {
-		sprintf(tmp, "%02x", in[i]);
-		strcat(out, tmp);
+	for (i=0;i<len;i++)  {
+		sprintf (tmp, "%02x", in[i]);
+		strcat (out, tmp);
 	}
 	return len;
 }
 
-R_API char *r_hex_bin2strdup(const ut8 *in, int len)
-{
+R_API char *r_hex_bin2strdup(const ut8 *in, int len) {
 	int i;
-	char tmp[5];
-	char *out = malloc((len+1)*2);
+	char tmp[5], *out = malloc ((len+1)*2);
 	out[0]='\0';
-	for(i=0;i<len;i++)  {
-		sprintf(tmp, "%02x", in[i]);
-		strcat(out, tmp);
+	for (i=0;i<len;i++)  {
+		sprintf (tmp, "%02x", in[i]);
+		strcat (out, tmp);
 	}
 	return out;
 }
 /* char buf[1024]; int len = hexstr2binstr("0a 33 45", buf); */
 // XXX control out bytes
-int r_hex_str2bin(const char *in, ut8 *out) // 0A 3B 4E A0
-{
-	const char *ptr;
-	unsigned char  c = '\0';
-	unsigned char  d = '\0';
+// 0A 3B 4E A0
+int r_hex_str2bin(const char *in, ut8 *out) {
 	unsigned int len = 0, j = 0;
+	const char *ptr;
+	ut8 c, d;
+	c = d = '\0';
 
 	for (ptr = in; ;ptr = ptr + 1) {
 		/* ignored chars */
@@ -90,7 +85,7 @@ int r_hex_str2bin(const char *in, ut8 *out) // 0A 3B 4E A0
 
 		d = c;
 		if (ptr[0]=='0' && ptr[1]=='x' ){ //&& c==0) {
-			ut64 addr   = r_num_get(NULL, ptr);
+			ut64 addr = r_num_get (NULL, ptr);
 			unsigned int addr32 = (ut32) addr;
 			if (addr & ~0xFFFFFFFF) {
 				// 64 bit fun
@@ -102,13 +97,13 @@ int r_hex_str2bin(const char *in, ut8 *out) // 0A 3B 4E A0
 				out[len++] = addrp[1];
 				out[len++] = addrp[2];
 				out[len++] = addrp[3];
-				while(ptr[0]&&ptr[0]!=' '&&ptr[0]!='\t')
+				while (*ptr && *ptr!=' ' && *ptr!='\t')
 					ptr = ptr + 1;
 				j = 0;
 			}
 			continue;
 		}
-		if (r_hex_to_byte(&c, ptr[0])) {
+		if (r_hex_to_byte (&c, ptr[0])) {
 			//eprintf("binstr: Invalid hexa string at %d ('0x%02x') (%s).\n", (int)(ptr-in), ptr[0], in);
 			return -1;
 		}

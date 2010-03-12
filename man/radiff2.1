@@ -1,41 +1,38 @@
-.Dd July 17, 2008
-.Dt RADIFF 1
+.Dd Mar 12, 2010
+.Dt RADIFF2 1
 .Os
 .Sh NAME
-.Nm radiff
-.Nd Unified binary diffing utility
+.Nm radiff2
+.Nd unified binary diffing utility
 .Sh SYNOPSIS
 .Nm radiff
-.Op -cbgeirp
-.Op file.a
-.Op file.b
+.Op -scrdV
+.Op file1
+.Op file2
 .Sh DESCRIPTION
 radiff implements some binary diffing algorithms.
 .Pp
 .Bl -tag -width Fl
-.It Fl b
-Use bytediff (byte-per-byte binary diffing between two target files), this is the faster way to do it, but it will not handle byte insertion or offset displacements.
-.It Fl d
-Use the GNU diff as backend (slow, but really good output)
-.It Fl e
-Use the erg0ts generic c++ implementation of bindiff
+.It Fl s
+Calculate text distance from two files.
+.It Fl c
+Count number of differences.
 .It Fl r
-Perform a diff between two RDB files (radare databases) these files can be generated from radare using the code analysis commands, or from IDA using the ida2rdb.idc script)
+Output in radare commands as a binary patch.
+.It Fl d
+Use delta diffing (slower).
+.It Fl V
+Show version information.
 .It Fl h
 Show usage help message.
 .Sh SEE ALSO
 .Pp
-.Xr bindiff(1) ,
-.Xr hasher(1) ,
-.Xr radare(1) ,
-.Xr rabin(1) ,
-.Xr rfile(1) ,
-.Xr xc(1) ,
-.Xr rsc(1) ,
-.Xr rasc(1) ,
-.Xr rasm(1) ,
-.Xr xrefs(1)
+.Xr radare2(1) ,
+.Xr rahash2(1) ,
+.Xr rabin2(1) ,
+.Xr rasm2(1) ,
+.Xr rax2(1) ,
 .Sh AUTHORS
 .Pp
-pancake <@youterm.com>
+pancake <@nopcode.org>
 .Pp

@@ -1,326 +1,59 @@
-.Dd Apr 13, 2009
-.Dt RADARE 1
+.Dd Mar 11, 2010
+.Dt RADARE2 1
 .Os
 .Sh NAME
 .Nm radare2
 .Nd Advanced commandline hexadecimal editor
 .Sh SYNOPSIS
-.Nm radare
-.Op Fl s Ar seek
-.Op Fl b Ar size
-.Op Fl i Ar script
-.Op Fl P Ar project
-.Op Fl l Ar plugin
-.Op Fl e Ar key=val
-.Op Fl d Ar program
-.Op Fl fLcwxnvVuh
-.Ar target-file
+.Nm radare2
+.Op Fl s Ar addr
+.Op Fl b Ar bsize
+.Op Fl e Ar k=v
+.Op Fl dwnLV
+.Ar file
 .Sh DESCRIPTION
-radare is a commandline hexadecimal editor.
+radare2 is a commandline hexadecimal editor.
 .Pp
-This software package contains another utilities related to the hex and asm world. Read the 'see also' section for more information.
+"r2" is the alias program name for radare2.
 .Pp
-You can use radare as in pipes, from the shell, entering the visual mode with the 'V' command, or just graphically using gradare or the pG command to generate and visualize code analysis graphs from the current seek.
+This manpage is not updated yet. Feel free to contribute.
 .Pp
-Most of the commands accept a '?' mark at the end to show the help for it.
-.Pp
-The commands are composed in the following way:
-.Pp
-> [repeat][:][.!][command] [len] @ [offset]
-.Pp
-These are the supported flags:
+The options are:
 .Bl -tag -width Fl
-.It Fl S Ar minlen
-Enters into the 'strings' mode, and defines a minimum length required for the strings.
-.It Fl s Ar offset
-Start at a certain offset inside the file.
-.It Fl d Ar prg|pid
-Run radare in debugger mode and open the program path or attach to pid
-.It Fl b Ar size
-Change the block size (default is 512, 4096 should be useful for filesystems).
+.It Fl s Ar addr
+Start seeking at this address.
+.It Fl b Ar bsize
+Set block size
+.It Fl e Ar k=v
+Set configuration eval variable key=value. For example -e scr.color=false
 .It Fl f
-Set block size = file size
-.It Fl i Ar script
-Interprets a script of radare commands
-.It Fl l Ar plugin
-Links radare against the desired plugin. Read about io plugins for more information. See -L
-.It Fl P Ar prj.rdb
-Define a project file for this session. The projects can be managed with the 'P' command.
-.It Fl e Ar key=val
-Change the default value for an eval configuration key variable
-.It Fl L
-List all available plugins embedded inside radare.
+Blocksize = file size.
+.It Fl d
+Start in debugger mode.
+.It Fl w
+Open in write mode.
+.It Fl u
+Unknown file size. (Do not limit to file boundaries)
 .It Fl n
 Do not load ~/.radarerc or ./radarerc
-.It Fl c
-Enable color. Same as -e scr.color=true
-.It Fl u
-Unknown size. Avoid limit when seeking. Useful for devices or attaching to processes.
-.It Fl v
-Drops verbosity. Useful flag for scripts, to use radare in pipe mode.
+.It Fl L
+list supported IO plugins.
 .It Fl V
 Show version information and exits.
-.It Fl w
-Opens the target file in write mode. In write mode changes are made inmediately. So take care because no commit command exist.
 .It Fl h
 Show help message
 .El
 .Sh SHELL
-The command line interface of radare have multiple commands to be entered. Type '?' for help.
+Type '?' for help.
 .Pp
-The readline extension allows you to autocomplete commands and arguments. Numberic argument can be converted into hexadecimal or decimal bases by using the 'tab' key. For example: $ s 10<tab> $ s 0xa
-.Pp
-.Bl -tag -width Fl
-.It Fl b Ar size
-(b) Change blocksize.
-.It Fl c[dxf] Ar arg
-compares memory from string, offset or file contents against current block. Outputs bindiff.
-.It Fl e Ar 0|1
-(endian) Changes environment endian into little (0) or big (1).
-.It Fl f Ar -|name
-(flag) This command allows you to manage flags. Flags are bookmarks around the file. The search engine store the results as flags. You can list flags by typing 'f' or 'flag' without arguments. 'flag name' sets a new flag using the current environment settings (seek, block size). By prefixing a name with the '-' character you will be able to remove a named flag.
-.It i
-(info) Shows radare's environment information (file, endian, count, mode, size, block size, seek, limit, ...)
-.It m [s] [d]
-(m) moves 's' bytes from the current block to the 'd' destination offset. This command requires the write mode to be enabled. Run radare with '-w' flag or type '%WRITE_MODE 1' into the shell.
-.It o [file]
-(open) opens a file in the mode defined by the %WRITE_MODE environment variable closing the current working file.
-.It p[f] [n]
-(pa, pb, pc, pd, po, pr, ps, pu, px, pX) Prints 'n' bytes in the 'f' print format. Available print formats are documented in the 'print format' section.
-.It Fl R Ar arg
-Manipulates RDB files and data structures. Allows to store code analysis, bindiff them, dump to memory, graph it in cairo or dump/restore them from/to disk
-.It r [size]
-(resize) Changes the size of the file by truncating or extending the file padding zeros at the end.
-.It s [+-]off
-Seeks to an absolute or relative (using the '+' or '-' prefixes) offset. The 'off' argument can be a numeric value or a flag name. (Read 'f' command for more information).
-.It Fl y Ar len
-Copies len bytes from current seek to a clipboard. Use the 'yy' command to paste it to current seek again.
-.It Fl e Ar key=val
-Change the default value for an eval configuration key variable
-.It V
-(Visual) Enters into the visual mode. Use the 'q' key to exit this mode.
-.It w[aAdfwx] str
-Write a formatted string or an hexadecimal space separated string. 'wf' is for specifying a file as contents for write. 'wa' is for assembly, etc.. See 'w?' for details.
-.It
-f.ex: '$ w foo\\x90' or '$ wx 90 90 90'
-.It x [len]
-(x) eXamine current block. This is an alias for the 'px' command. To be gdb friendly.
-.It . [file]
-(.) Interpret a file as a radare command scripting file. A simple example can be found in 'libexec/elf-entry-point'. You can read 'libexec/elf-flag-header' too. This script creates a flag for each field of an elf header.
-.It [-+]off
-Alias of 'seek [+-]off'.
-.It [<] [>]
-Move data block window to the previous ('<') aligned block offset or the next one ('>').
-.It / str
-Searchs a string from the current offset until the end of file or 'cfg.limit' if defined (see 'e' command). To enter a hexadecimal string you can type '\\x01\\x02\\x03...' or use the '/x' command with hexpairs. Here's the supported arguments:
-.Pp
-.Bl -tag -width Fl
-.It /s [string]
-search for an plain ascii string (use \\x## for binary inclusion)
-.It /w [string]
-search for an wide char string ('a\\x00b\\x00')
-.It /x [string]
-search using hexpair format (00 33 4a f2)
-.It /a
-look for expanded aes keys (victor mun~oz algorithm)
-.It //
-repeat last search
-.El
-You can define multiple keywords at a time and launch ranged searches:
-.Bl -tag -width Fl
-.It /k# [string]
-Set keyword number '#' to ascii format string (with esc. chars). f.ex: "/k0 lib"
-.It /m# [mask]
-Define a binary mask for matching with the keyword number '#'.
-.It /r [range]
-Perform a search using the keywords in the defined range. f.ex: "/r 0-2,4"
-.El
-.Pp
-jajaj
-.It ! cmd
-Runs a commandline shell program.
-.It #[hash]
-Calculates the sha1, sha256, sha384, sha512, par, xor, xorpair, hamdist, mod255, crc16, crc32, md4, md5, entropy of the current block from the selected seek
-.It q
-(quit) Quits the program.
-.El
 .Sh VISUAL
-Visual mode allows you to move around the data with 'hjkl' arrows. The '0' and 'G' command are used to go at the first of the file or at the end. 'H' 'L' keys are used to move two bytes forward or backward (double 'h', 'l'). 'J' and 'K' keys are used to seek one block forward or backward.
-.Bl -tag -width Fl
-.It < >
-Go seek to the previous or next offset aligned to a multiple of the data block size (use the :b command to read the value).
-.It p
-The 'p' command allows you to circle around the different available print mode formats (binary, hexadecimal, disassembler, octal, url, shellcode, c array, ...)
-.It [+-*/]
-The basic math ops keys are used to change the size of the working data block. Use '+' and '-' to increase and decrease the size by 1 byte. And '*' and '/' to add or substract one row of bytes (screen depend).
-.It d
-Change data type for the current block or selected bytes with cursor mode. (dd = hex bytes, dc = code, ds = string)
-.It i
-Enter interactive write mode (use tab to move between hex and ascii columns)
-.It :
-The double-dot sign is used to temporally enter into the command line interface and use the desired radare shell commands. f.e: $ Visual :!ls.
-.El
-.Sh PRINT FORMAT
-Print formats are used to format current working block into a certain format. Use p? to list supported ones.
-.Pp
-The output is affected by cfg.endian (see eval command)
-.Pp
-.Bl -tag -width Fl
-.It A
-[-P] Analyze data from current seek. Tries to find memory pointers, strings, pointers to strings, etc. Useful to see stack contents and data structures in memory.
-.It m [format]
-[-P] Formats memory contents as byte, dword, pointers, strings, etc.. Useful to parse data structures (see 'rsc spcc' fmi)
-.It b
-[VP] Binary format
-.It %
-[VP] print progress bar of the whole file marking current seek and flag positions
-.It B
-[VP] LSB steganography (take each less significat bit of each byte to complete bytes)
-.It o
-[VP] Octal format
-.It O
-[VP] Zoom out view (see 'eval zoom.' fmi)
-.It x
-[VP] Hexadecimal value. The view command also have (vx, vw, vW, wq) commands for visualizing one, two, four or eight bytes in hexadecimal (endian affected).
-.It f
-[V-] Floating point value (4 first bytes)
-.It i
-[V-] Integer value (4 first bytes)
-.It l
-[V-] long (4 bytes)
-.It L
-[V-] long long (8 bytes)
-.It o
-[V-] octal value (1 byte)
-.It s
-[V-] ascii string (until end of block escapping chars)
-.It S
-[V-] string with printable chars until end of block
-.It z
-[V-] ascii string (until \\0)
-.It Z
-[V-] wide ascii string (until \\0 with interlaced \\0)
-.It F
-[-P] WINDOWS filetime format (64 bit)
-.It t
-[-P] UNIX timestamp (4 bytes, probably 8 in the future)
-.It T
-[-P] DOS timestamp (4 bytes)
-.It c
-[-P] C array format (unsigned char buffer[ (block size) ] = { 0x90, 0x90, ... };
-.It a
-[-P] Shows the current block as if it was a shellcode in hexadecimal.
-.It r
-[-P] Prints out the current data block to stdout.
-.It u
-[-P] URL encoding format f.ex:  '$ pu' -> %4c%69%63...
-.It d
-[VP] disassemble N opcodes
-.It D
-[VP] disassemble N bytes
-fg
-.El
+To enter visual mode use the 'V' command. Then press '?' for help.
 .Sh DEBUGGER
-The debugger supports multiple commands accessible from the io_system() hook of the plugin. Use !help to list the available commands.
-.Bl -tag -width Fl
-.It !load
-Reload the process into the debugger
-.It !maps
-Show process memory maps (marks current with '*')
-.It !step
-Perform a step on the attached process
-.It !stepu
-step until user code
-.It !stepbp
-emulate a step using breakpoints and code analysis
-.It !run
-run the program
-.It !attach [tid|pid]
-attach to another thread or process id
-.It !detach
-silent unplug
-.It !kill [-signal] [pid]
-send a signal to the process
-.It !jmp [addr]
-change the program counter of the process
-.It !call [addr]
-simulate a call (jmp + stack return address)
-.It !regs
-get register values
-.It !fpregs
-get floating point register values
-.It !oregs
-get old register values (previous step)
-.It !dr[rwx-]
-manipulate the DRX hardware registers (x86 only)
-.It !set [reg] [val]
-change the register value (eax, eflags, r0, etc..)
-.It !fd
-manage the file descriptors of the child process (dup, open, close, seek)
-.It !bt
-Show backtrace
-.It !st
-Show stacktrace (low level backtrace)
-.It !cont
-continue util user code
-.It !contu [addr]
-continue execution until address
-.It alloc [size]
-Allocate 'size' bytes on the child process
-.It free [address]
-frees the memory previously allocated in the selected address
-.It mmap [file] [offset]
-mmaps a file into a certain offset in the child process
-.It !contsc
-continue until syscall
-.It !contfork
-continue until new process is created
-.It !contuh
-continue until here (useful for loop analysis)
-.It !bp [addr]
-set or remove a breakpoint (use !bp? for help, and prefix the address with '-' to remove it)
-.It !mp [rwx] [addr]
-change memory page protections (useful for watchpoints and so)
-.It !dump [dir]
-Performs a dump of all the process memory pages and register state to disk (with no arguments it is auto-incremental)
-.It !restore [dir]
-Restores a previous dump of the process memory from disk
-.El
-.Sh MOVEMENT
-To move around the file you can use the hjkl in visual mode or the 'seek' command in the command line interface.
-.Pp
-To move around the blocks you can use the '<' '>' commands to align your current seek to a block size multiple. Same keys for the visual mode.
-.Pp
-You can seek to a relative offset by prefixing your offset by the '+' or '-' characters. For example: $ seek +10
-.Pp
-You can also use the temporal seek format for commands appending the '@' to the end of the command
+In r2 the debugger commands are implemented under the 'd' command. Type 'd?' for help.
 .Sh ENVIRONMENT
-These values can be used from scripts launched from inside radare (!rsc 
+These values can be used from scripts launched from inside radare ('!' command)
 .Ar FILE
 path to the current working file 
-.Ar DPID
-Debugged process id
-.Ar OFFSET
-decimal value of the current seek
-.Ar XOFFSET
-same as OFFSET prefixed with 0x
-.Ar EDITOR
-default editor to be used for /ascii/ data block edition.
-.Pp
-.Ar OBJDUMP
-path to 'objdump' executable (useful for disassembling other architectures) By default is 'objdump -m i386 --target=binary -D'
-.Pp
-.Ar HITCMD
-a radare command to be executed after a search hit has been found.
-.Pp
-.Ar PRINTCMD
-user command to be used to visualize the data block. This external visor is used by the 'pU' radare command.
-.Pp
-.Ar VISUALCMD
-command to be used as an IDE environment interpreting a set of commands or a radare script. In commandline mode this command is executed before printing the prompt. In visual mode it is a separated view.
-.Pp
-.Ar PAGER
-pager to be used for disassembling.
 .Sh SEE ALSO
 .Pp
 .Xr rahash2(1) ,

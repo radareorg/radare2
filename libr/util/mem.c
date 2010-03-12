@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2010 pancake<nopcode.org> */
 
 #include <r_util.h>
 #include <stdlib.h>
@@ -6,7 +6,7 @@
 // TODO: find better name
 R_API int r_mem_count(ut8 **addr) {
 	int i = 0;
-	while(*addr++)
+	while (*addr++)
 		i++;
 	return i;
 }
@@ -20,7 +20,7 @@ R_API void r_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize) {
 
 R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len) {
 	int i, ret = 0;
-	for (i=0;i<len;i++)
+	for (i=0; i<len; i++)
 		ret += (orig[i]&mask[i])&dest[i];
 	return ret;
 }
@@ -32,7 +32,7 @@ R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits) {
 	memcpy (dst, src, bytes);
 	if (bits) {
 		ut8 srcmask, dstmask;
-		switch(bits) {
+		switch (bits) {
 		case 1: srcmask = 0x80; dstmask = 0x7f; break;
 		case 2: srcmask = 0xc0; dstmask = 0x3f; break;
 		case 3: srcmask = 0xe0; dstmask = 0x1f; break;
@@ -85,55 +85,54 @@ soff     v
 src |__________|_________|
 */
 #endif
-	r_mem_copybits(dst, src, nbits);
+	r_mem_copybits (dst, src, nbits);
 }
 
 /* XXX TODO check and use system endian */
 R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian) {
+	ut8 buffer[8];
         if (endian) {
-			if (dest != orig)
-				memcpy(dest, orig, size);
-        } else {
-                unsigned char buffer[8];
-                switch(size) {
-				case 1:
-						dest[0] = orig[0];
-						break;
-                case 2:
-                        buffer[0] = orig[0];
-                        dest[0]   = orig[1];
-                        dest[1]   = buffer[0];
-                        break;
-                case 4:
-                        memcpy(buffer, orig, 4);
-                        dest[0] = buffer[3];
-                        dest[1] = buffer[2];
-                        dest[2] = buffer[1];
-                        dest[3] = buffer[0];
-                        break;
-                case 8:
-                        memcpy(buffer, orig, 8);
-                        dest[0] = buffer[7];
-                        dest[1] = buffer[6];
-                        dest[2] = buffer[5];
-                        dest[3] = buffer[4];
-                        dest[4] = buffer[3];
-                        dest[5] = buffer[2];
-                        dest[6] = buffer[1];
-                        dest[7] = buffer[0];
-                        break;
-                default:
-                        printf("Invalid size: %d\n", size);
-                }
-        }
+		if (dest != orig)
+			memcpy (dest, orig, size);
+        } else
+	switch (size) {
+	case 1:
+		dest[0] = orig[0];
+		break;
+	case 2:
+		buffer[0] = orig[0];
+		dest[0] = orig[1];
+		dest[1] = buffer[0];
+		break;
+	case 4:
+		memcpy(buffer, orig, 4);
+		dest[0] = buffer[3];
+		dest[1] = buffer[2];
+		dest[2] = buffer[1];
+		dest[3] = buffer[0];
+		break;
+	case 8:
+		memcpy(buffer, orig, 8);
+		dest[0] = buffer[7];
+		dest[1] = buffer[6];
+		dest[2] = buffer[5];
+		dest[3] = buffer[4];
+		dest[4] = buffer[3];
+		dest[5] = buffer[2];
+		dest[6] = buffer[1];
+		dest[7] = buffer[0];
+		break;
+	default:
+		eprintf ("Invalid size: %d\n", size);
+	}
 }
 
 //R_DOC r_mem_mem: Finds the needle of nlen size into the haystack of hlen size
 //R_UNIT printf("%s\n", r_mem_mem("food is pure lame", 20, "is", 2));
 R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen) {
 	int i, until = hlen-nlen;
-	for(i=0;i<until;i++) {
-		if (!memcmp(haystack+i, needle, nlen))
+	for (i=0; i<until; i++) {
+		if (!memcmp (haystack+i, needle, nlen))
 			return haystack+i;
 	}
 	return NULL;

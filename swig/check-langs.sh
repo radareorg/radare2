@@ -5,10 +5,10 @@ for a in ${LANGS}; do
   printf "Checking $a support for valaswig... "
   valaswig-cc --test $a
   if [ $? = 0 ]; then
-    echo ok
+    echo yes
     SUP_LANGS="$a ${SUP_LANGS}"
   else
-    echo fail
+    echo no
   fi
 done
 

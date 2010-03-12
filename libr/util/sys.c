@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+
 #include <r_types.h>
 #include <r_util.h>
 #if __UNIX__
@@ -9,6 +10,17 @@
 #endif
 #include <sys/types.h>
 /* TODO: import stuff fron bininfo/p/bininfo_addr2line */
+
+R_API ut64 r_sys_now() {
+	ut64 ret;
+	struct timeval now;
+	gettimeofday (&now, NULL);
+	ret = now.tv_sec;
+	ret <<= 32;
+	ret |= now.tv_usec;
+	//(sizeof (now.tv_sec) == 4
+	return ret;
+}
 
 R_API char *r_sys_cmd_strf(const char *cmd, ...) {
 	// FIXME Implement r_sys_cmd_strf

@@ -27,7 +27,7 @@ R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write) {
 R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 	int cols, n = 0;
 	struct list_head *pos, *head = r_reg_get_list(dbg->reg, type);
-	const char *fmt, *fmt2, *value;
+	const char *fmt, *fmt2;
 	if (dbg->h && dbg->h->bits & R_SYS_BITS_64) {
 		fmt = "%s = 0x%016llx%s";
 		fmt2 = "%4s 0x%016llx%s";

@@ -43,12 +43,23 @@ typedef struct r_debug_map_t {
 	int user;
 } RDebugMap;
 
+typedef struct r_debug_trace_t {
+	ut64 addr;
+	ut64 tags;
+	int size;
+	int count;
+	ut64 stamp;
+} RDebugTrace;
+
 typedef struct r_debug_t {
 	int pid;    /* selected process id */
 	int tid;    /* selected thread id */
 	int swstep; /* steps with software traps */
 	int steps;  /* counter of steps done */
 	int newstate;
+	int trace_tag;
+	int do_trace;
+	RList *traces;
 	int stop_all_threads;
 	char *reg_profile;
 	struct r_reg_t *reg;
@@ -186,6 +197,14 @@ R_API int r_debug_arg_set (RDebug *dbg, int fast, int num, ut64 value);
 /* pid */
 R_API int r_debug_pid_list(struct r_debug_t *dbg, int pid);
 R_API int r_debug_thread_list(struct r_debug_t *dbg, int pid);
+
+R_API void r_debug_trace_reset (RDebug *dbg, int liberate);
+R_API void r_debug_trace_tag (RDebug *dbg, int tag);
+R_API int r_debug_trace_pc (RDebug *dbg);
+R_API RDebugTrace *r_debug_trace_get (RDebug *dbg, ut64 addr, int tag);
+R_API void r_debug_trace_list (RDebug *dbg, int tag);
+R_API int r_debug_trace_add (RDebug *dbg, ut64 addr, int size, int tag);
+
 #endif
 #endif
 

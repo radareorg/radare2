@@ -44,6 +44,20 @@ static int config_stopthreads_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_trace_callback(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->dbg.do_trace = node->i_value;
+	return R_TRUE;
+}
+
+static int config_tracetag_callback(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->dbg.trace_tag = node->i_value;
+	return R_TRUE;
+}
+
 static int config_swstep_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -151,6 +165,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "cmd.bp", "");
 	r_config_set_cb (cfg, "dbg.stopthreads", "true", &config_stopthreads_callback);
 	r_config_set_cb (cfg, "dbg.swstep", "false", &config_swstep_callback);
+	r_config_set_cb (cfg, "dbg.trace", "false", &config_trace_callback);
+	r_config_set_cb (cfg, "dbg.trace.tag", "0xff", &config_tracetag_callback);
 #if LIL_ENDIAN
 	r_config_set_cb (cfg, "cfg.bigendian", "false", &config_bigendian_callback);
 #else

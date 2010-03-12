@@ -1,6 +1,26 @@
 /* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_debug.h>
+#include <signal.h>
+
+/* restore program counter after breakpoint hit */
+static int r_debug_recoil(struct r_debug_t *dbg) {
+	int recoil, ret = R_FALSE;
+	RRegisterItem *ri;
+	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+	ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], -1);
+	if (ri) {
+		ut64 addr = r_reg_get_value (dbg->reg, ri);
+		recoil = r_bp_recoil (dbg->bp, addr);
+		eprintf ("Breakpoint recoil = %d\n", recoil);
+		if (recoil) {
+			r_reg_set_value (dbg->reg, ri, addr-recoil);
+			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_TRUE);
+			ret = R_TRUE;
+		}
+	} else eprintf ("r_debug_recoil: Cannot get program counter\n");
+	return ret;
+}
 
 R_API struct r_debug_t *r_debug_init(struct r_debug_t *dbg, int hard) {
 	if (dbg) {
@@ -9,6 +29,8 @@ R_API struct r_debug_t *r_debug_init(struct r_debug_t *dbg, int hard) {
 		dbg->swstep = 0; // software step
 		dbg->stop_all_threads = R_FALSE;
 		dbg->newstate = 0;
+		dbg->do_trace = 0;
+		r_debug_trace_reset (dbg, R_FALSE);
 		//dbg->regs = dbg->oregs = NULL;
 		dbg->printf = (void *)printf;
 		dbg->reg = r_reg_new ();
@@ -126,7 +148,7 @@ R_API int r_debug_detach(struct r_debug_t *dbg, int pid) {
 R_API int r_debug_select(struct r_debug_t *dbg, int pid, int tid) {
 	dbg->pid = pid;
 	dbg->tid = tid;
-	eprintf("PID: %d %d\n", pid, tid);
+	eprintf ("PID: %d %d\n", pid, tid);
 	return R_TRUE;
 }
 
@@ -140,12 +162,16 @@ R_API int r_debug_stop_reason(struct r_debug_t *dbg) {
 	return R_TRUE;
 }
 
-R_API int r_debug_wait(struct r_debug_t *dbg) {
-	int ret = R_FALSE;
+/* Returns PID */
+R_API int r_debug_wait(RDebug *dbg) {
+	int ret = 0;
 	if (dbg && dbg->h && dbg->h->wait) {
 		ret = dbg->h->wait(dbg->pid);
 		dbg->newstate = 1;
 		eprintf ("wait = %d\n", ret);
+		//XXX r_debug_select (dbg, dbg->pid, ret);
+		if (dbg->do_trace)
+			r_debug_trace_pc (dbg);
 	}
 	return ret;
 }
@@ -154,11 +180,11 @@ R_API int r_debug_wait(struct r_debug_t *dbg) {
 R_API int r_debug_step(struct r_debug_t *dbg, int steps) {
 	int i, ret = R_FALSE;
 	if (dbg && dbg->h && dbg->h->step) {
-		for(i=0;i<steps;i++) {
-			ret = dbg->h->step(dbg->pid);
+		for (i=0;i<steps;i++) {
+			ret = dbg->h->step (dbg->pid);
 			if (ret == R_FALSE)
 				break;
-			r_debug_wait(dbg);
+			r_debug_wait (dbg);
 			// TODO: create wrapper for dbg_wait
 			// TODO: check return value of wait and show error
 			dbg->steps++;
@@ -178,26 +204,6 @@ R_API int r_debug_step_over(struct r_debug_t *dbg, int steps) {
 	return r_debug_step(dbg, steps);
 }
 
-/* restore program counter after breakpoint hit */
-static int r_debug_recoil(struct r_debug_t *dbg) {
-	int recoil, ret = R_FALSE;
-	RRegisterItem *ri;
-	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
-	ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], -1);
-	if (ri) {
-		ut64 addr = r_reg_get_value (dbg->reg, ri);
-		recoil = r_bp_recoil (dbg->bp, addr);
-		eprintf("Breakpoint recoil = %d\n", recoil);
-		if (recoil) {
-			r_reg_set_value (dbg->reg, ri, addr-recoil);
-			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_TRUE);
-			ret = R_TRUE;
-		}
-	} else eprintf ("r_debug_recoil: Cannot get program counter\n");
-	return ret;
-}
-
-#include <signal.h>
 R_API int r_debug_continue_kill(struct r_debug_t *dbg, int sig) {
 	int ret = R_FALSE;
 	if (dbg && dbg->h && dbg->h->cont) {
@@ -249,6 +255,7 @@ R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc) {
 // TODO: remove from here? this is code injection!
 R_API int r_debug_syscall(struct r_debug_t *dbg, int num) {
 	eprintf ("TODO\n");
+	/* r2rc task? ala inject? */
 	return R_FALSE;
 }
 

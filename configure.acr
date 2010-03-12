@@ -87,7 +87,6 @@ SUBDIRS ./config-user.mk libr/include/r_userconf.h
  pkgcfg/r_macro.pc
  pkgcfg/r_sign.pc
  pkgcfg/r_util.pc
- pkgcfg/r_trace.pc
  pkgcfg/r_search.pc
  pkgcfg/r_vm.pc
  pkgcfg/r_th.pc

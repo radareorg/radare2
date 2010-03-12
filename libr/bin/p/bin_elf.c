@@ -6,8 +6,7 @@
 #include <r_bin.h>
 #include "elf/elf.h"
 
-static int load(RBin *bin)
-{
+static int load(RBin *bin) {
 	if(!(bin->bin_obj = Elf_(r_bin_elf_new) (bin->file)))
 		return R_FALSE;
 	bin->size = ((struct Elf_(r_bin_elf_obj_t)*) (bin->bin_obj))->size;
@@ -15,19 +14,16 @@ static int load(RBin *bin)
 	return R_TRUE;
 }
 
-static int destroy(RBin *bin)
-{
+static int destroy(RBin *bin) {
 	Elf_(r_bin_elf_free) ((struct Elf_(r_bin_elf_obj_t)*)bin->bin_obj);
 	return R_TRUE;
 }
 
-static ut64 baddr(RBin *bin)
-{
+static ut64 baddr(RBin *bin) {
 	return Elf_(r_bin_elf_get_baddr) (bin->bin_obj);
 }
 
-static RList* entries(RBin *bin)
-{
+static RList* entries(RBin *bin) {
 	RList *ret;
 	RBinEntry *ptr = NULL;
 
@@ -159,6 +155,7 @@ static RBinInfo* info(RBin *bin)
 
 	if(!(ret = R_NEW (RBinInfo)))
 		return NULL;
+	ret->rpath = Elf_(r_bin_elf_get_rpath)(bin->bin_obj);
 	memset(ret, '\0', sizeof (RBinInfo));
 	strncpy (ret->file, bin->file, R_BIN_SIZEOF_STRINGS);
 	if ((str = Elf_(r_bin_elf_get_file_type) (bin->bin_obj)) == NULL)

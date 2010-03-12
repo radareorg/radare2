@@ -1,79 +1,43 @@
-.Dd May 30, 2008
-.Dt RASM 1
+.Dd Mar 11, 2010
+.Dt RASM2 1
 .Os
 .Sh NAME
-.Nm rasm
-.Nd Radare patch assembler
+.Nm rasm2
+.Nd radare2 patch assembler and disassembler
 .Sh SYNOPSIS
-.Nm rasm
-.Op -elvV
-.Op -f file
-.Op -d bytes
-.Op -s offset
+.Nm rasm2
+.Op -dfBCLeV
+.Op -o offset
 .Op -a arch
-.Op opcode
+.Op -b bits
+.Op -s syntax
+.Op ARG
 .Sh DESCRIPTION
-Instruction assembler for multiple architectures for easily and fast writing patch opcodes
-.Pp
-You can get the list of the supported opcodes with the '-l' flag.
+TODO: This manpage is incomplete.
 .Pp
 .Bl -tag -width Fl
-.It Fl v
-Enable debug output
-.It Fl f Ar file
-Compile assembly output from file
-.It Fl d Ar bytes
-Disasemble bytes
+.It Fl d
+Disassemble hexpairs. rasm2 -d 9090
+.It Fl f
+Read data from file instead of ARG.
+.It Fl o Ar offset
+Offset of the opcode to assemble
 .It Fl e
 Use big endian
-.It Fl s Ar offset
-Setup an offset to change the base address for the relative jumps
+.It Fl b Ar bits
+Specify bit size of registers: 8, 16, 32, 64
 .It Fl a Ar arch
 Set a different architecture (x86, ppc, arm, java)
 .It Fl h
 Show usage help message.
-.Sh OPCODES
-.Pp
-.Bl -tag -width Fl
-.It call [addr]
-call to address
-.It jmp [addr]
-perform a relative or absolute jump
-.It jz [addr]
-conditional jump (jump if result is zero)
-.It jnz [addr]
-conditional jump (jump if result is not zero)
-.It trap
-Trap instruction (breakpoint)
-.It nop
-Nop instruction
-.It push [arg]
-Push a number or register into the stack
-.It pop [arg]
-Pop a value from stack and store it in register arg
-.It int [num]
-Call the kernel using an interrupt or syscall
-.It ret
-return from subroutine
-.It ret0
-return 0 from subroutine
-.It hang
-perform an infinite loop (hang on)
-.It mov [dst], [src]
-moves an inmediate to a register
-.El
 .Sh SEE ALSO
 .Pp
-.Xr radiff(1) ,
-.Xr hasher(1) ,
-.Xr radare(1) ,
-.Xr rabin(1) ,
-.Xr rfile(1) ,
-.Xr xc(1) ,
-.Xr rsc(1) ,
-.Xr rasc(1) ,
-.Xr xrefs(1)
+.Xr radare2(1) ,
+.Xr rahash2(1) ,
+.Xr rabin2(1) ,
+.Xr radiff2(1) ,
+.Xr rax2(1) ,
 .Sh AUTHORS
 .Pp
-pancake <@youterm.com>
+pancake <@nopcode.org>
 .Pp

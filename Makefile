@@ -45,7 +45,11 @@ mrproper:
 pkgcfg:
 	cd libr && ${MAKE} pkgcfg
 
-install:
+install-man:
+	mkdir -p ${DESTDIR}/${PREFIX}/share/man/man1
+	for a in man/*.1 ; do ${INSTALL_MAN} $$a ${DESTDIR}/${PREFIX}/share/man/man1 ; done
+
+install: install-man
 	${INSTALL_DIR} ${DESTDIR}${PREFIX}/share/doc/radare2
 	for a in doc/* ; do ${INSTALL_DATA} $$a ${DESTDIR}/${PREFIX}/share/doc/radare2 ; done
 	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
@@ -78,4 +82,4 @@ shot:
 
 include ${MKPLUGINS}
 
-.PHONY: all clean mrproper install uninstall deinstall dist shot pkgcfg vdoc swig libr r2rc
+.PHONY: all clean mrproper install uninstall deinstall dist shot pkgcfg vdoc swig libr r2rc install-man

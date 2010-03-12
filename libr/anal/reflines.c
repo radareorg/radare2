@@ -48,11 +48,11 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 					goto __next;
 				if (aop.jump == 0)
 					goto __next;
-				list2 = R_NEW(struct r_anal_refline_t);
+				list2 = R_NEW (struct r_anal_refline_t);
 				list2->from = addr;
 				list2->to = aop.jump;
 				list2->index = index++;
-				list_add_tail(&(list2->list), &(list->list));
+				list_add_tail (&(list2->list), &(list->list));
 				break;
 			}
 		} else sz = 1;
@@ -114,15 +114,15 @@ R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *li
 		}
 		if (wide) {
 			if (ch == '=' || ch == '-')
-				r_str_concatch(str, ch);
-			else strcat(str, " ");
+				r_str_concatch (str, ch);
+			else strcat (str, " ");
 		}
 	}
 
 	switch (dir) {
-	case 1: strcat(str, "-> "); break;
-	case 2: strcat(str, "=< "); break;
-	default: strcat(str, "   "); break;
+	case 1: strcat (str, "-> "); break;
+	case 2: strcat (str, "=< "); break;
+	default: strcat (str, "   "); break;
 	}
 
 	return R_TRUE;

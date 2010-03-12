@@ -136,6 +136,18 @@ static void r_core_cmd_bp (struct r_core_t *core, const char *input) {
 	if (input[1]==' ')
 		input++;
 	switch (input[1]) {
+	case 't':
+		{
+		int i = 0;
+		RList *list = r_debug_frames (&core->dbg);
+		RListIter *iter = r_list_iterator (list);
+		while (r_list_iter_next (iter)) {
+			RDebugFrame *frame = r_list_iter_get (iter);
+			r_cons_printf ("%d  0x%08llx  %d\n", i++, frame->addr, frame->size);
+		}
+		r_list_destroy (list);
+		}
+		break;
 	case '\0':
 		r_bp_list (core->dbg.bp, input[1]=='*');
 		break;
@@ -163,7 +175,9 @@ static void r_core_cmd_bp (struct r_core_t *core, const char *input) {
 		"db -0x804800    ; remove breakpoint\n"
 		"dbe 0x8048000   ; enable breakpoint\n"
 		"dbd 0x8048000   ; disable breakpoint\n"
-		"dbh x86         ; set/list breakpoint plugin handlers\n");
+		"dbh x86         ; set/list breakpoint plugin handlers\n"
+		"Unrelated:\n"
+		"dbt             ; debug backtrace\n");
 		break;
 	default:
 		r_bp_add_sw (core->dbg.bp, r_num_math (&core->num, input+1),
@@ -2192,10 +2206,66 @@ static int step_line(RCore *core, int times) {
 	return R_TRUE;
 }
 
+static void cmd_debug_pid(RCore *core, const char *input) {
+	const char *ptr;
+	int pid, sig;
+	if (input[1] == 'k') {
+		/* XXX: not for threads? signal is for a whole process!! */
+		/* XXX: but we want fine-grained access to process resources */
+		pid = atoi (input+2);
+		ptr = strchr (input, ' ');
+		if (ptr) sig = atoi (ptr+1);
+		else sig = 0;
+		if (pid > 0) {
+			eprintf ("Sending signal '%d' to pid '%d'\n",
+				sig, pid);
+			r_debug_kill (&core->dbg, sig);
+		} else eprintf ("Invalid arguments\n");
+	} else
+	if (input[1] == 't') {
+		if (input[2]=='=' || input[2]==' ')
+			r_debug_select (&core->dbg,
+				(int) r_num_math (&core->num, input+3),
+				(int) r_num_math (&core->num, input+3));
+		else r_debug_thread_list (&core->dbg, core->dbg.pid);
+	} else
+	if (input[1]=='?')
+		r_cons_printf ("Usage: dp[=][pid]\n"
+			" dp      list current pid and childrens\n"
+			" dp 748  list childs of pid\n"
+			" dp*     list all attachable pids\n"
+			" dpa 377 attach and select this pid\n"
+			" dp=748  select this pid\n"
+			" dpt     List threads of current pid\n"
+			" dpt 74  List threads of given process\n"
+			" dpt=64  Attach to thread\n"
+			" dpk P S send signal S to P process id\n");
+	else
+	if (input[1]=='a') {
+		r_debug_attach (&core->dbg,
+			(int) r_num_math (&core->num, input+2));
+		r_debug_select (&core->dbg,
+			(int) r_num_math (&core->num, input+2),
+			(int) r_num_math (&core->num, input+2));
+	} else
+	if (input[1]=='=')
+		r_debug_select (&core->dbg,
+			(int) r_num_math (&core->num, input+2),
+			(int) r_num_math (&core->num, input+2));
+	else
+	if (input[1]=='*')
+		r_debug_pid_list (&core->dbg, 0);
+	else
+	if (input[1]==' ')
+		r_debug_pid_list (&core->dbg,
+			(int) r_num_math (&core->num, input+2));
+	else r_debug_pid_list (&core->dbg, core->dbg.pid);
+}
+
 static int cmd_debug(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	struct r_anal_aop_t analop;
-	int len, times, pid, sig;
+	int len, times, sig;
 	ut64 addr;
 	char *ptr;
 
@@ -2205,30 +2275,11 @@ static int cmd_debug(void *data, const char *input) {
 			"\xc7\xc0\x03\x00\x00\x00\x33\xdb\x33"
 			"\xcc\xc7\xc2\x10\x00\x00\x00\xcd\x80", 18);
 		break;
-	case 'k':
-		/* XXX: not for threads? signal is for a whole process!! */
-		/* XXX: but we want fine-grained access to process resources */
-		pid = atoi (input);
-		ptr = strchr (input, ' ');
-		if (ptr) sig = atoi (ptr+1);
-		else sig = 0;
-		if (pid > 0) {
-			eprintf ("Sending signal '%d' to pid '%d'\n",
-				sig, pid);
-			r_debug_kill (&core->dbg, sig);
-		} else eprintf ("Invalid arguments\n");
-		break;
-	case 'f':
-		{
-			int i = 0;
-			RList *list = r_debug_frames (&core->dbg);
-			RListIter *iter = r_list_iterator (list);
-			while (r_list_iter_next (iter)) {
-				RDebugFrame *frame = r_list_iter_get (iter);
-				r_cons_printf ("%d  0x%08llx  %d\n", i++, frame->addr, frame->size);
-			}
-			r_list_destroy (list);
-		}
+	case 't':
+		// TODO: Add support to change the tag
+		if (input[1]=='r')
+			r_debug_trace_reset (&core->dbg, R_TRUE);
+		else r_debug_trace_list (&core->dbg, -1);
 		break;
 	case 'd':
 		eprintf ("TODO: dd: file descriptors\n");
@@ -2250,19 +2301,6 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 	case 'b':
 		r_core_cmd_bp (core, input);
-		break;
-	case 't':
-		if (input[1]=='?')
-			r_cons_printf ("Usage: dt[=][tid]\n"
-				" dt      list threads of current pid\n"
-				" dt 748  list childs of pid\n"
-				" dt=748  select this pid\n");
-		else
-		if (input[1]=='=' || input[1]==' ')
-			r_debug_select (&core->dbg,
-				(int) r_num_math (&core->num, input+2),
-				(int) r_num_math (&core->num, input+2));
-		else r_debug_thread_list (&core->dbg, core->dbg.pid);
 		break;
 	case 'H':
 		eprintf ("TODO: transplant process\n");
@@ -2354,33 +2392,7 @@ static int cmd_debug(void *data, const char *input) {
 		//r_core_cmd(core, "|reg", 0);
 		break;
 	case 'p':
-		if (input[1]=='?')
-			r_cons_printf ("Usage: dp[=][pid]\n"
-				" dp      list current pid and childrens\n"
-				" dp 748  list childs of pid\n"
-				" dp*     list all attachable pids\n"
-				" dpa 377 attach and select this pid\n"
-				" dp=748  select this pid\n");
-		else
-		if (input[1]=='a') {
-			r_debug_attach (&core->dbg,
-				(int) r_num_math (&core->num, input+2));
-			r_debug_select (&core->dbg,
-				(int) r_num_math (&core->num, input+2),
-				(int) r_num_math (&core->num, input+2));
-		} else
-		if (input[1]=='=')
-			r_debug_select (&core->dbg,
-				(int) r_num_math (&core->num, input+2),
-				(int) r_num_math (&core->num, input+2));
-		else
-		if (input[1]=='*')
-			r_debug_pid_list (&core->dbg, 0);
-		else
-		if (input[1]==' ')
-			r_debug_pid_list (&core->dbg,
-				(int) r_num_math (&core->num, input+2));
-		else r_debug_pid_list (&core->dbg, core->dbg.pid);
+		cmd_debug_pid (core, input);
 		break;
 	case 'h':
 		if (input[1]==' ')
@@ -2393,13 +2405,12 @@ static int cmd_debug(void *data, const char *input) {
 		" dH [handler]   transplant process to a new handler\n"
 		" dd             file descriptors\n"
 		" ds[ol] N       step, over, source line\n"
-		" df             show frames (backtrace)\n"
-		" dp[=*?][pid]   list, attach to process id\n"
-		" dt [tid]       select thread id\n"
+		" dp[=*?t][pid]  list, attach to process or thread id\n"
 		" dc[?]          continue execution. dc? for more\n"
 		" dr[?]          cpu registers, dr? for extended help\n"
 		" db[?]          breakpoints\n"
-		" dk pid sig     send signal to a process ID\n"
+		" dbt            display backtrace\n"
+		" dt[r] [tag]    display instruction traces (dtr=reset)\n"
 		" dm             show memory maps\n");
 		break;
 	}
