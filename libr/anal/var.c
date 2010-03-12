@@ -6,7 +6,6 @@
 #include <r_util.h>
 #include <r_list.h>
 
-
 R_API RAnalysisVar *r_anal_var_new() {
 	return r_anal_var_init (MALLOC_STRUCT (RAnalysisVar));
 }

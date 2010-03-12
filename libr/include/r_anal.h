@@ -198,27 +198,11 @@ typedef struct r_anal_handle_t {
 	struct list_head list;
 } RAnalysisHandle;
 
-/* anal.c */
 #ifdef R_API
+/* anal.c */
 R_API RAnalysis *r_anal_new();
-R_API RAnalysisBB *r_anal_bb_new();
-R_API RAnalysisAop *r_anal_aop_new();
-R_API RAnalysisFcn *r_anal_fcn_new();
-R_API RAnalysisRef *r_anal_ref_new();
-R_API RList *r_anal_bb_list_new();
-R_API RList *r_anal_aop_list_new();
-R_API RList *r_anal_fcn_list_new();
-R_API RList *r_anal_ref_list_new();
 R_API RAnalysis *r_anal_free(struct r_anal_t *r);
-R_API void r_anal_aop_free(void *aop);
-R_API void r_anal_ref_free(void *ref);
-R_API void r_anal_bb_free(void *bb);
-R_API void r_anal_fcn_free(void *fcn);
 R_API RAnalysis *r_anal_init(struct r_anal_t *anal);
-R_API RAnalysisBB *r_anal_bb_init(struct r_anal_bb_t *bb);
-R_API RAnalysisAop *r_anal_aop_init(struct r_anal_aop_t *aop);
-R_API RAnalysisFcn *r_anal_fcn_init(RAnalysisFcn *fcn);
-R_API RAnalysisRef *r_anal_ref_init(RAnalysisRef *ref);
 R_API void r_anal_set_user_ptr(struct r_anal_t *anal, void *user);
 R_API int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo);
 R_API int r_anal_list(struct r_anal_t *anal);
@@ -226,10 +210,37 @@ R_API int r_anal_use(struct r_anal_t *anal, const char *name);
 R_API int r_anal_set_bits(struct r_anal_t *anal, int bits);
 R_API int r_anal_set_big_endian(struct r_anal_t *anal, int boolean);
 R_API int r_anal_set_pc(struct r_anal_t *a, ut64 pc);
-R_API int r_anal_aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr,
-		const ut8 *data, int len);
+
+/* bb.c */
+R_API RAnalysisBB *r_anal_bb_new();
+R_API RList *r_anal_bb_list_new();
+R_API void r_anal_bb_free(void *bb);
+R_API RAnalysisBB *r_anal_bb_init(struct r_anal_bb_t *bb);
 R_API int r_anal_bb(struct r_anal_t *anal, struct r_anal_bb_t *bb,
 		ut64 addr, ut8 *buf, ut64 len);
+R_API int r_anal_bb_split(RAnalysis *anal, RAnalysisBB *bb, RList *bbs, ut64 addr);
+R_API int r_anal_bb_overlap(RAnalysis *anal, RAnalysisBB *bb, RList *bbs);
+
+/* aop.c */
+R_API RAnalysisAop *r_anal_aop_new();
+R_API RList *r_anal_aop_list_new();
+R_API void r_anal_aop_free(void *aop);
+R_API RAnalysisAop *r_anal_aop_init(struct r_anal_aop_t *aop);
+R_API int r_anal_aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr,
+		const ut8 *data, int len);
+
+/* fcn.c */
+R_API RAnalysisFcn *r_anal_fcn_new();
+R_API RList *r_anal_fcn_list_new();
+R_API void r_anal_fcn_free(void *fcn);
+R_API RAnalysisFcn *r_anal_fcn_init(RAnalysisFcn *fcn);
+R_API int r_anal_fcn(RAnalysis *anal, RAnalysisFcn *fcn, ut64 addr, ut8 *buf, ut64 len);
+
+/* ref.c */
+R_API RAnalysisRef *r_anal_ref_new();
+R_API RList *r_anal_ref_list_new();
+R_API void r_anal_ref_free(void *ref);
+R_API RAnalysisRef *r_anal_ref_init(RAnalysisRef *ref);
 
 /* var.c */
 R_API RAnalysisVar *r_anal_var_new();
@@ -260,9 +271,6 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 		ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout);
 R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list,
 		ut64 addr, char *str, int opts);
-R_API int r_anal_bb_split(RAnalysis *anal, RAnalysisBB *bb, RList *bbs, ut64 addr);
-R_API int r_anal_bb_overlap(RAnalysis *anal, RAnalysisBB *bb, RList *bbs);
-R_API int r_anal_fcn(RAnalysis *anal, RAnalysisFcn *fcn, ut64 addr, ut8 *buf, ut64 len);
 
 /* plugin pointers */
 extern RAnalysisHandle r_anal_plugin_arm;
