@@ -93,9 +93,9 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin)
 
 static int Elf_(r_bin_elf_init)(struct Elf_(r_bin_elf_obj_t) *bin)
 {
-    bin->phdr = NULL;
-    bin->shdr = NULL;
-    bin->strtab = NULL;
+	bin->phdr = NULL;
+	bin->shdr = NULL;
+	bin->strtab = NULL;
 	if (!Elf_(r_bin_elf_init_ehdr)(bin)) {
 		eprintf("Warning: File is not ELF\n");
 		return R_FALSE;
@@ -383,14 +383,15 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	char *rpath = NULL;
 	int i, j;
 
+	/* XXX: This is broken */
 	for (i = 0; i < bin->ehdr.e_phnum; i++) {
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
 			int ndyn = (int)(bin->phdr[i].p_filesz / sizeof(Elf_(Dyn)));
 			for (j = 0; j < ndyn; j++) {
-				if (bin->phdr[j].p_type == DT_RUNPATH) {
+				if (bin->phdr[j].p_tag == DT_RUNPATH || bin->phdr[j].p_tag == DT_RPATH) {
 					// XXX can be vulnerable?
 					//bin->rpath = strdup (bin->strtab[bin->shdr[i].sh_name]);
-eprintf ("11 (%s)\n", bin->strtab[bin->shdr[i].sh_name]);
+//eprintf ("==>  (%s)\n", bin->strtab[bin->shdr[i].sh_name]);
 					break;
 				}
 			}
@@ -409,7 +410,7 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 
 	for (i = 0; i < bin->ehdr.e_phnum; i++)
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
-			if (!(dyn = malloc(bin->phdr[i].p_filesz))) {
+			if (!(dyn = malloc (bin->phdr[i].p_filesz))) {
 				perror("malloc (dyn)");
 				return NULL;
 			}

@@ -11,6 +11,7 @@
 #include <sys/types.h>
 /* TODO: import stuff fron bininfo/p/bininfo_addr2line */
 
+/* TODO: check endianness issues here */
 R_API ut64 r_sys_now() {
 	ut64 ret;
 	struct timeval now;
