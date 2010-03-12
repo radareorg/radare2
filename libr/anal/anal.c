@@ -119,7 +119,7 @@ R_API RAnalysis *r_anal_init(RAnalysis *anal) {
 		for (i=0; anal_static_plugins[i]; i++)
 			r_anal_add (anal, anal_static_plugins[i]);
 		for (i=0; anal_default_vartypes[i].name; i++)
-			r_anal_var_type_add (anal->vartypes, anal_default_vartypes[i].name,
+			r_anal_var_type_add (anal, anal_default_vartypes[i].name,
 					anal_default_vartypes[i].size, anal_default_vartypes[i].fmt);
 	}
 	return anal;
@@ -167,7 +167,7 @@ R_API void r_anal_set_user_ptr(RAnalysis *anal, void *user) {
 	anal->user = user;
 }
 
-R_API int r_anal_add(RAnalysis *anal, struct r_anal_handle_t *foo) {
+R_API int r_anal_add(RAnalysis *anal, RAnalysisHandle *foo) {
 	if (foo->init)
 		foo->init(anal->user);
 	list_add_tail(&(foo->list), &(anal->anals));
@@ -178,7 +178,7 @@ R_API int r_anal_add(RAnalysis *anal, struct r_anal_handle_t *foo) {
 R_API int r_anal_list(RAnalysis *anal) {
 	struct list_head *pos;
 	list_for_each_prev(pos, &anal->anals) {
-		struct r_anal_handle_t *h = list_entry(pos, struct r_anal_handle_t, list);
+		RAnalysisHandle *h = list_entry(pos, RAnalysisHandle, list);
 		printf (" %s: %s\n", h->name, h->desc);
 	}
 	return R_FALSE;
@@ -187,7 +187,7 @@ R_API int r_anal_list(RAnalysis *anal) {
 R_API int r_anal_use(RAnalysis *anal, const char *name) {
 	struct list_head *pos;
 	list_for_each_prev (pos, &anal->anals) {
-		struct r_anal_handle_t *h = list_entry(pos, struct r_anal_handle_t, list);
+		RAnalysisHandle *h = list_entry(pos, RAnalysisHandle, list);
 		if (!strcmp (h->name, name)) {
 			anal->cur = h;
 			return R_TRUE;
@@ -252,8 +252,8 @@ R_API int r_anal_bb(RAnalysis *anal, RAnalysisBB *bb, ut64 addr, ut8 *buf, ut64 
 }
 
 R_API int r_anal_bb_split(RAnalysis *anal, RAnalysisBB *bb, RList *bbs, ut64 addr) {
-	struct r_anal_bb_t *bbi;
-	struct r_anal_aop_t *aopi;
+	RAnalysisBB *bbi;
+	RAnalysisAop *aopi;
 	RListIter *iter;
 
 	r_list_foreach (bbs, iter, bbi)
@@ -282,8 +282,8 @@ R_API int r_anal_bb_split(RAnalysis *anal, RAnalysisBB *bb, RList *bbs, ut64 add
 }
 
 R_API int r_anal_bb_overlap(RAnalysis *anal, RAnalysisBB *bb, RList *bbs) {
-	struct r_anal_bb_t *bbi;
-	struct r_anal_aop_t *aopi;
+	RAnalysisBB *bbi;
+	RAnalysisAop *aopi;
 	RListIter *iter;
 
 	r_list_foreach (bbs, iter, bbi)
@@ -301,8 +301,11 @@ R_API int r_anal_bb_overlap(RAnalysis *anal, RAnalysisBB *bb, RList *bbs) {
 }
 
 R_API int r_anal_fcn(RAnalysis *anal, RAnalysisFcn *fcn, ut64 addr, ut8 *buf, ut64 len) {
-	RAnalysisRef *ref;
+	RAnalysisRef *ref, *refi;
+	RListIter *iter;
 	RAnalysisAop aop;
+	ut64 *jump;
+	char *varname;
 	int oplen, idx = 0;
 
 	if (fcn->addr == -1)
@@ -315,14 +318,59 @@ R_API int r_anal_fcn(RAnalysis *anal, RAnalysisFcn *fcn, ut64 addr, ut8 *buf, ut
 		}
 		idx += oplen;
 		fcn->size += oplen;
+		/* TODO: Parse R_ANAL_VAR_ARGREG */
+		switch (aop.stackop) {
+		case R_ANAL_STACK_LOCAL_SET:
+			if (aop.ref < 0) {
+				varname = r_str_dup_printf ("arg_%i", -aop.ref);
+				r_anal_var_add (anal, fcn, aop.addr, -aop.ref, R_ANAL_VAR_TYPE_ARG,
+						varname, NULL, 1);
+			} else {
+				varname = r_str_dup_printf ("local_%i", aop.ref);
+				r_anal_var_add (anal, fcn, aop.addr, aop.ref, R_ANAL_VAR_TYPE_LOCAL,
+						varname, NULL, 1);
+			}
+			free (varname);
+			break;
+		case R_ANAL_STACK_ARG_SET:
+			varname = r_str_dup_printf ("arg_%i", aop.ref);
+			r_anal_var_add (anal, fcn, aop.addr, aop.ref, R_ANAL_VAR_TYPE_ARG,
+					varname, NULL, 1);
+			free (varname);
+			break;
+		case R_ANAL_STACK_ARG_GET:
+			varname = r_str_dup_printf ("arg_%i", aop.ref);
+			r_anal_var_add (anal, fcn, aop.addr, aop.ref, R_ANAL_VAR_TYPE_ARG,
+					varname, NULL, 0);
+			free (varname);
+			break;
+		case R_ANAL_STACK_LOCAL_GET:
+			if (aop.ref < 0) {
+				varname = r_str_dup_printf ("arg_%i", -aop.ref);
+				r_anal_var_add (anal, fcn, aop.addr, -aop.ref, R_ANAL_VAR_TYPE_ARG,
+						varname, NULL, 0);
+			} else {
+				varname = r_str_dup_printf ("local_%i", aop.ref);
+				r_anal_var_add (anal, fcn, aop.addr, aop.ref, R_ANAL_VAR_TYPE_LOCAL,
+						varname, NULL, 0);
+			}
+			free (varname);
+			break;
+		}
 		switch (aop.type) {
 		case R_ANAL_OP_TYPE_CALL:
+			r_list_foreach (fcn->refs, iter, refi) {
+				jump = (ut64*)refi;
+				if (aop.jump == *jump)
+					goto _dup_ref;
+			}
 			if (!(ref = r_anal_ref_new())) {
 				eprintf ("Error: new (ref)\n");
 				return R_ANAL_RET_ERROR;
 			}
 			*ref = aop.jump;
 			r_list_append (fcn->refs, ref);
+		_dup_ref:
 			break;
 		case R_ANAL_OP_TYPE_RET:
 			return R_ANAL_RET_END;

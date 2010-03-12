@@ -244,22 +244,16 @@ R_API void r_anal_var_access_free(void *access);
 R_API RAnalysisVar *r_anal_var_init(RAnalysisVar *var);
 R_API RAnalysisVarType *r_anal_var_type_init(RAnalysisVarType *vartype);
 R_API RAnalysisVarAccess *r_anal_var_access_init(RAnalysisVarAccess *access);
-R_API int r_anal_var_type_add(RList *vartypes, const char *typename, int size, const char *fmt);
-
-#if 0
-R_API int r_var_type_del(struct r_var_t *var, const char *typename);
-R_API int r_var_type_list(struct r_var_t *var);
-R_API struct r_var_type_t *r_var_type_get(struct r_var_t *var, const char *datatype);
-R_API const char *r_var_type_to_string(int type);
-
-R_API void r_var_item_print(struct r_var_t *var, struct r_var_item_t * v);
-R_API int r_var_list_show(struct r_var_t *var, ut64 addr);
-R_API int r_var_list(struct r_var_t *var, ut64 addr, int delta);
-
-R_API int r_var_anal_get(struct r_var_t *var, int type);
-R_API void r_var_anal_reset(struct r_var_t *var);
-R_API int r_var_anal_add(struct r_var_t *var, int type, int delta);
-#endif
+R_API int r_anal_var_type_add(RAnalysis *anal, const char *typename, int size, const char *fmt);
+R_API int r_anal_var_type_del(RAnalysis *anal, const char *typename);
+R_API RAnalysisVarType *r_anal_var_type_get(RAnalysis *anal, const char *typename);
+R_API int r_anal_var_add(RAnalysis *anal, RAnalysisFcn *fcn, ut64 from, int delta, int type,
+		const char *vartype, const char *name, int set);
+R_API int r_anal_var_del(RAnalysis *anal, RAnalysisFcn *fcn, int delta, int type);
+R_API RAnalysisVar *r_anal_var_get(RAnalysis *anal, RAnalysisFcn *fcn, int delta, int type);
+R_API int r_anal_var_access_add(RAnalysis *anal, RAnalysisVar *var, ut64 from, int set);
+R_API int r_anal_var_access_del(RAnalysis *anal, RAnalysisVar *var, ut64 from);
+R_API RAnalysisVarAccess *r_anal_var_access_get(RAnalysis *anal, RAnalysisVar *var, ut64 from);
 
 /* reflines.c */
 R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, 
