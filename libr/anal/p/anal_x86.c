@@ -42,20 +42,22 @@ static int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, i
 		case 0x45:
 		case 0x46:
 		case 0x55:
+		case 0x5d:
+		case 0x7d:
 			/* mov -0xc(%ebp, %eax */
-			aop->ref = (ut64)(int)(-((char)buf[2]));
+			aop->ref = (st64)((char)buf[2]);
 			aop->stackop = R_ANAL_STACK_LOCAL_GET;
 			break;
 
 		case 0x95:
 			if (buf[2]==0xe0) { // ebp
-				aop->ref = (ut64)(-((int)(buf[3]+(buf[4]<<8)+(buf[5]<<16)+(buf[6]<<24))));
+				aop->ref = (st64)((int)(buf[3]+(buf[4]<<8)+(buf[5]<<16)+(buf[6]<<24)));
 				aop->stackop = R_ANAL_STACK_LOCAL_GET;
 			}
 			//aop->ref = -(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24));
 			break;
 		case 0xbd:
-			aop->ref = (ut64)(-((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24))));
+			aop->ref = (st64)((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24)));
 			//aop->ref = -(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24));
 			aop->stackop = R_ANAL_STACK_LOCAL_GET;
 			break;
@@ -68,15 +70,15 @@ static int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, i
 		case 0x4d: //  894de0          mov [ebp-0x20], ecx 
 		case 0x55:
 			aop->stackop = R_ANAL_STACK_LOCAL_SET;
-			aop->ref = (ut64)-((char)buf[2]);
+			aop->ref = (st64)((char)buf[2]);
 			break;
 		case 0x85:
 			aop->stackop = R_ANAL_STACK_LOCAL_SET;
-			aop->ref = (ut64)-((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24)));
+			aop->ref = (st64)((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24)));
 			break;
 		case 0x75:
 			aop->stackop = R_ANAL_STACK_LOCAL_GET;
-			aop->ref = (ut64)(buf[2]); //+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24));
+			aop->ref = (st64)((char)buf[2]); //+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24));
 			break;
 		}
 		aop->type   = R_ANAL_OP_TYPE_MOV;
@@ -97,7 +99,7 @@ static int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, i
 	//case 0xea: // far jmp
 	// TODO moar
 	case 0x3b: //cmp
-		aop->ref = (ut64)(-((char)buf[2]));
+		aop->ref = (st64)((char)buf[2]);
 		aop->stackop = R_ANAL_STACK_LOCAL_GET;
 	case 0x39:
 	case 0x3c:
@@ -113,7 +115,7 @@ static int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, i
 	case 0x0f: // 3 byte nop
 		//0fbe55ff        movsx edx, byte [ebp-0x1]
 		if (buf[1]==0xbe) {
-			aop->ref = (ut64)(int)(-((char)buf[3]));
+			aop->ref = (st64)((char)buf[3]);
 			aop->stackop = R_ANAL_STACK_LOCAL_GET;
 		} else
 		if (buf[1]==0x31) {
@@ -154,7 +156,7 @@ static int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, i
 	case 0xbd: // mov esp, <inmedate>
 	case 0xbf:
 		aop->type = R_ANAL_OP_TYPE_MOV; //  bfdc054000      mov edi, 0x4005dc
-		aop->ref = buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);//((unsigned long)((buf+2))+6);
+		aop->ref = (st64)((int)buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24));//((unsigned long)((buf+2))+6);
 		break;
 	case 0xcd:
 		aop->length = 2;
@@ -196,12 +198,12 @@ static int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, i
 			aop->type = R_ANAL_OP_TYPE_PUSH;
 			aop->stackop = R_ANAL_STACK_ARG_GET;
 			aop->ref = 0LL;
-			aop->ref = (ut64)(((char)(buf[2])));
+			aop->ref = (st64)((char)(buf[2]));
 		} else
 		if (buf[1]== 0x45) {
 			aop->type = R_ANAL_OP_TYPE_ADD;
 			aop->stackop = R_ANAL_STACK_LOCAL_SET;
-			aop->ref = (ut64)(-((char)buf[2]));
+			aop->ref = (st64)((char)buf[2]);
 		} else
 		if (buf[1]>=0x50 && buf[1]<=0x6f) {
 			aop->type = R_ANAL_OP_TYPE_UJMP;
@@ -245,7 +247,7 @@ static int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, i
 		break;
 	case 0x68:
 		aop->type = R_ANAL_OP_TYPE_PUSH;
-		aop->ref = buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
+		aop->ref = (st64)((int)buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24));
 		break;
 	case 0x81:
 		if (buf[1] == 0xec) {
@@ -302,7 +304,7 @@ static int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, i
 	case 0x8d:
 		/* LEA */
 		if (buf[1] == 0x85) {
-			aop->ref = (ut64)(-((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24))));
+			aop->ref = (st64)((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24)));
 			aop->stackop = R_ANAL_STACK_LOCAL_GET;
 		}
 		aop->type =R_ANAL_OP_TYPE_MOV;
@@ -312,16 +314,16 @@ static int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, i
 		/* mov dword [ebp-0xc], 0x0  ||  c7 45 f4 00000000 */
 		switch(buf[1]) {
 		case 0x85:
-			aop->ref = (ut64)(((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24))));
+			aop->ref = (st64)(((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24))));
 			break;
  			//c785 e4fbffff 00. mov dword [ebp+0xfffffbe4], 0x0
 		case 0x45:
 			aop->stackop = R_ANAL_STACK_LOCAL_SET;
-			aop->ref = (ut64)(-((char)buf[2]));
+			aop->ref = (st64)((char)buf[2]);
 			break;
 		case 0x04:
 			// c7042496850408    dword [esp] = 0x8048596 ; LOL
-			aop->ref = (ut64)(((int)(buf[3]+(buf[4]<<8)+(buf[5]<<16)+(buf[6]<<24))));
+			aop->ref = (st64)(((int)(buf[3]+(buf[4]<<8)+(buf[5]<<16)+(buf[6]<<24))));
 			break;
 		}
 		aop->type = R_ANAL_OP_TYPE_STORE;

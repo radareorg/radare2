@@ -135,7 +135,7 @@ typedef struct r_anal_aop_t {
 	int eob;                   /* end of block (boolean) */
 	ut64 jump;                 /* true jmp */
 	ut64 fail;                 /* false jmp */
-	ut64 ref;                  /* reference to memory */
+	st64 ref;                  /*reference to memory */ /* XXX signed? */
 	ut64 value;                /* reference to value */
 	int r_dst[R_ANAL_MAXREG];  /* register arguments */
 	ut64 i_dst[R_ANAL_MAXREG]; /* inmediate arguments */

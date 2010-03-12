@@ -168,6 +168,7 @@ R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian);
 R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len);
 R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen);
 
+#define r_num_abs(x) x>0?x:-x
 R_API void r_num_minmax_swap(ut64 *a, ut64 *b);
 R_API void r_num_minmax_swap_i(int *a, int *b); // XXX this can be a cpp macro :??
 R_API ut64 r_num_math(struct r_num_t *num, const char *str);
