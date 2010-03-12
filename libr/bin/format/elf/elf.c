@@ -380,25 +380,8 @@ int Elf_(r_bin_elf_is_big_endian)(struct Elf_(r_bin_elf_obj_t) *bin) {
 }
 
 char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
-	char *rpath = NULL;
-	int i, j;
-
-	/* XXX: This is broken */
-	for (i = 0; i < bin->ehdr.e_phnum; i++) {
-		if (bin->phdr[i].p_type == PT_DYNAMIC) {
-			int ndyn = (int)(bin->phdr[i].p_filesz / sizeof(Elf_(Dyn)));
-			for (j = 0; j < ndyn; j++) {
-				if (bin->phdr[j].p_tag == DT_RUNPATH || bin->phdr[j].p_tag == DT_RPATH) {
-					// XXX can be vulnerable?
-					//bin->rpath = strdup (bin->strtab[bin->shdr[i].sh_name]);
-//eprintf ("==>  (%s)\n", bin->strtab[bin->shdr[i].sh_name]);
-					break;
-				}
-			}
-		}
-	}
-
-	return R_TRUE; //(bin->rpath)? R_TRUE:R_FALSE;
+	/* TODO */
+	return NULL;
 }
 
 struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *bin)
