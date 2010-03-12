@@ -82,13 +82,13 @@ R_API RAnalysisVarAccess *r_anal_var_access_init(RAnalysisVarAccess *access) {
 	return access;
 }
 
-R_API int r_anal_var_type_add(RAnalysis *anal, const char *typename, int size, const char *fmt) {
+R_API int r_anal_var_type_add(RAnalysis *anal, const char *name, int size, const char *fmt) {
 	RAnalysisVarType *t;
 
 	if (!(t = r_anal_var_type_new ()))
 		return R_FALSE;
-	if (typename)
-		t->name = strdup (typename);
+	if (name)
+		t->name = strdup (name);
 	if (fmt)
 		t->fmt = strdup (fmt);
 	t->size = size;
@@ -96,24 +96,24 @@ R_API int r_anal_var_type_add(RAnalysis *anal, const char *typename, int size, c
 	return R_TRUE;
 }
 
-R_API int r_anal_var_type_del(RAnalysis *anal, const char *typename) {
+R_API int r_anal_var_type_del(RAnalysis *anal, const char *name) {
 	RAnalysisVarType *vti;
 	RListIter *iter;
 
 	r_list_foreach(anal->vartypes, iter, vti)
-		if (!strcmp (typename, vti->name)) {
+		if (!strcmp (name, vti->name)) {
 			r_list_unlink (anal->vartypes, vti);
 			return R_TRUE;
 		}
 	return R_FALSE;
 }
 
-R_API RAnalysisVarType *r_anal_var_type_get(RAnalysis *anal, const char *typename) {
+R_API RAnalysisVarType *r_anal_var_type_get(RAnalysis *anal, const char *name) {
 	RAnalysisVarType *vti;
 	RListIter *iter;
 
 	r_list_foreach(anal->vartypes, iter, vti)
-		if (!strcmp (typename, vti->name))
+		if (!strcmp (name, vti->name))
 			return vti;
 	return NULL;
 }
