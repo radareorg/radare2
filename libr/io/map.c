@@ -39,7 +39,7 @@ R_API int r_io_map_del(struct r_io_t *io, int fd)
 
 R_API int r_io_map_add(struct r_io_t *io, int fd, int flags, ut64 delta, ut64 offset, ut64 size)
 {
-	struct r_io_map_t *im = MALLOC_STRUCT(struct r_io_map_t);
+	struct r_io_map_t *im = R_NEW(struct r_io_map_t);
 	if (im == NULL)
 		return R_FALSE;
 	list_add_tail(&(im->list), &(io->maps));

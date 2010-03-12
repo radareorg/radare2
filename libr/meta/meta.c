@@ -8,7 +8,7 @@ R_API int r_meta_init(struct r_meta_t *m) {
 }
 
 R_API struct r_meta_t *r_meta_new() {
-	struct r_meta_t *m = MALLOC_STRUCT(struct r_meta_t);
+	struct r_meta_t *m = R_NEW(struct r_meta_t);
 	r_meta_init(m);
 	return m;
 }
@@ -164,7 +164,7 @@ int r_meta_add(struct r_meta_t *m, int type, ut64 from, ut64 size, const char *s
 	case R_META_FOLDER:
 	case R_META_XREF_CODE:
 	case R_META_XREF_DATA:
-		mi = MALLOC_STRUCT(struct r_meta_item_t);
+		mi = R_NEW(struct r_meta_item_t);
 		mi->type = type;
 		mi->from = from;
 		mi->size = size;

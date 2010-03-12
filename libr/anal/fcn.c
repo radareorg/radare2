@@ -7,7 +7,7 @@
 #include <r_list.h>
 
 R_API RAnalysisFcn *r_anal_fcn_new() {
-	return r_anal_fcn_init (MALLOC_STRUCT (RAnalysisFcn));
+	return r_anal_fcn_init (R_NEW (RAnalysisFcn));
 }
 
 R_API RList *r_anal_fcn_list_new() {

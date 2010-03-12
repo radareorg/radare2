@@ -9,7 +9,7 @@ R_API void r_cache_init(struct r_cache_t *c)
 
 R_API struct r_cache_t *r_cache_new()
 {
-	struct r_cache_t *a = MALLOC_STRUCT(struct r_cache_t);
+	struct r_cache_t *a = R_NEW(struct r_cache_t);
 	r_cache_init(a);
 	return a;
 }
@@ -32,7 +32,7 @@ R_API char *r_cache_get(struct r_cache_t *c, ut64 addr)
 
 R_API int r_cache_set(struct r_cache_t *c, ut64 addr, char *str)
 {
-	struct r_cache_item_t *a = MALLOC_STRUCT(struct r_cache_item_t);
+	struct r_cache_item_t *a = R_NEW(struct r_cache_item_t);
 	a->addr = addr;
 	a->str = strdup(str);
 	list_add_tail(&(a->list), &(c->items));

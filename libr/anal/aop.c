@@ -7,7 +7,7 @@
 #include <r_list.h>
 
 R_API RAnalysisAop *r_anal_aop_new() {
-	return r_anal_aop_init (MALLOC_STRUCT (RAnalysisAop));
+	return r_anal_aop_init (R_NEW (RAnalysisAop));
 }
 
 R_API RList *r_anal_aop_list_new() {

@@ -18,7 +18,7 @@ R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *fil
 	if (fd == -1)
 		return NULL;
 
-	fh = MALLOC_STRUCT (RCoreFile);
+	fh = R_NEW (RCoreFile);
 	fh->fd = fd;
 	fh->uri = strdup (file);
 	fh->filename = fh->uri;

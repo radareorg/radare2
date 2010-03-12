@@ -54,7 +54,7 @@ static ut64 num_callback(void *userptr, const char *str, int *ok) {
 }
 
 R_API struct r_core_t *r_core_new() {
-	struct r_core_t *c = MALLOC_STRUCT (struct r_core_t);
+	struct r_core_t *c = R_NEW (struct r_core_t);
 	r_core_init (c);
 	return c;
 }

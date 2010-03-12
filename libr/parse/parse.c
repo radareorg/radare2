@@ -17,7 +17,7 @@ static struct r_parse_handle_t *parse_static_plugins[] =
 
 R_API struct r_parse_t *r_parse_new()
 {
-	struct r_parse_t *p = MALLOC_STRUCT(struct r_parse_t);
+	struct r_parse_t *p = R_NEW(struct r_parse_t);
 	return r_parse_init(p);
 }
 

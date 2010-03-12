@@ -26,7 +26,7 @@ R_API RBreakpoint *r_bp_init(RBreakpoint *bp) {
 }
 
 R_API RBreakpoint *r_bp_new() {
-	return r_bp_init (MALLOC_STRUCT (RBreakpoint));
+	return r_bp_init (R_NEW (RBreakpoint));
 }
 
 R_API RBreakpoint *r_bp_free(RBreakpoint *bp) {
@@ -91,7 +91,7 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 		eprintf ("Breakpoint already set at this address.\n");
 		return NULL;
 	}
-	b = MALLOC_STRUCT (struct r_bp_item_t);
+	b = R_NEW (struct r_bp_item_t);
 	b->pids[0] = 0; /* for any pid */
 	b->addr = addr;
 	b->size = size;

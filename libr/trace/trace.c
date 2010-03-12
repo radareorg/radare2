@@ -19,7 +19,7 @@ int r_trace_init(struct r_trace_t *t)
 
 struct r_trace_t *r_trace_new()
 {
-	struct r_trace_t *tr = MALLOC_STRUCT(struct r_trace_t);
+	struct r_trace_t *tr = R_NEW(struct r_trace_t);
 	r_trace_init(tr);
 	return tr;
 }
@@ -147,7 +147,7 @@ int r_trace_add(struct r_trace_t *tr, ut64 addr, int opsize)
 		}
 	}
 
-	t = MALLOC_STRUCT(struct r_trace_item_t);
+	t = R_NEW(struct r_trace_item_t);
 	if (t == NULL) {
 		printf("Cannot alloc\n");
 		return -1;

@@ -40,13 +40,13 @@ R_API int r_crypto_del(struct r_crypto_t *cry, struct r_crypto_handle_t *h)
 
 R_API struct r_crypto_t *r_crypto_new()
 {
-	struct r_crypto_t *cry = MALLOC_STRUCT(struct r_crypto_t);
+	struct r_crypto_t *cry = R_NEW(struct r_crypto_t);
 	return r_crypto_init(cry, R_TRUE);
 }
 
 R_API struct r_crypto_t *r_crypto_as_new(struct r_crypto_t *cry)
 {
-	struct r_crypto_t *c = MALLOC_STRUCT(struct r_crypto_t);
+	struct r_crypto_t *c = R_NEW(struct r_crypto_t);
 	if (c != NULL) {
 		r_crypto_init(c, R_FALSE); // soft init
 		memcpy(&c->handlers, &cry->handlers, sizeof(cry->handlers));

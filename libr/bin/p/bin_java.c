@@ -29,7 +29,7 @@ static RList* entries(RBin *bin)
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(ptr = MALLOC_STRUCT (RBinEntry)))
+	if (!(ptr = R_NEW (RBinEntry)))
 		return ret;
 	memset (ptr, '\0', sizeof (RBinEntry));
 	ptr->offset = ptr->rva = r_bin_java_get_entrypoint (bin->bin_obj);
@@ -55,7 +55,7 @@ static RList* symbols(RBin *bin)
 	if (!(symbols = r_bin_java_get_symbols ((struct r_bin_java_obj_t*)bin->bin_obj)))
 		return ret;
 	for (i = 0; !symbols[i].last; i++) {
-		if (!(ptr = MALLOC_STRUCT (RBinSymbol)))
+		if (!(ptr = R_NEW (RBinSymbol)))
 			break;
 		strncpy (ptr->name, symbols[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
@@ -83,7 +83,7 @@ static RList* strings(RBin *bin)
 	if (!(strings = r_bin_java_get_strings((struct r_bin_java_obj_t*)bin->bin_obj)))
 		return ret;
 	for (i = 0; !strings[i].last; i++) {
-		if (!(ptr = MALLOC_STRUCT (RBinString)))
+		if (!(ptr = R_NEW (RBinString)))
 			break;
 		strncpy (ptr->string, strings[i].str, R_BIN_SIZEOF_STRINGS);
 		ptr->rva = ptr->offset = strings[i].offset;
@@ -99,7 +99,7 @@ static RBinInfo* info(RBin *bin)
 	RBinInfo *ret = NULL;
 	char *version;
 
-	if(!(ret = MALLOC_STRUCT (RBinInfo)))
+	if(!(ret = R_NEW (RBinInfo)))
 		return NULL;
 	memset(ret, '\0', sizeof (RBinInfo));
 	strncpy (ret->file, bin->file, R_BIN_SIZEOF_STRINGS);

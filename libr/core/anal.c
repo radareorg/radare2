@@ -51,7 +51,7 @@ static void r_core_anal_graph_nodes(struct r_core_t *core, RList *pbb, ut64 addr
 	r_list_foreach (core->anal.bbs, iter, bbi) {
 		if (addr == 0 || (addr >= bbi->addr && addr < bbi->addr+bbi->size)) {
 			if (pbb) { /* Copy BB and append to the list of printed bbs */
-				bbc = MALLOC_STRUCT (RAnalysisBB);
+				bbc = R_NEW (RAnalysisBB);
 				memcpy (bbc, bbi, sizeof (RAnalysisBB));
 				r_list_append (pbb, bbc);
 			}

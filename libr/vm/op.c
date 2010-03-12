@@ -5,7 +5,7 @@
 int r_vm_op_add(struct r_vm_t *vm, const char *op, const char *str)
 {
 	struct r_vm_op_t *o;
-	o = MALLOC_STRUCT(struct r_vm_op_t);
+	o = R_NEW(struct r_vm_op_t);
 	if (o == NULL)
 		return -1;
 	strncpy(o->opcode, op, sizeof(o->opcode));

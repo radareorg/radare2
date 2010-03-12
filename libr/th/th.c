@@ -55,7 +55,7 @@ R_API int r_th_push_task(struct r_th_t *th, void *user)
 
 R_API struct r_th_t *r_th_new(R_TH_FUNCTION(fun), void *user, int delay)
 {
-	struct r_th_t *th = MALLOC_STRUCT(struct r_th_t);
+	struct r_th_t *th = R_NEW(struct r_th_t);
 	r_th_init(th, fun, user, delay);
 	return th;
 }

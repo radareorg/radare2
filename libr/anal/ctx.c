@@ -11,7 +11,7 @@ R_API void r_anal_ctx_init(struct r_anal_ctx_t *ctx)
 
 R_API struct r_anal_ctx_t *r_anal_ctx_new(struct r_anal_t *anal)
 {
-	struct r_anal_ctx_t *ctx = MALLOC_STRUCT(struct r_anal_ctx_t);
+	struct r_anal_ctx_t *ctx = R_NEW(struct r_anal_ctx_t);
 	r_anal_ctx_init(ctx);
 	ctx->anal = anal;
 	return ctx;

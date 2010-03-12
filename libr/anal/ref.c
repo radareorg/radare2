@@ -7,7 +7,7 @@
 #include <r_list.h>
 
 R_API RAnalysisRef *r_anal_ref_new() {
-	return r_anal_ref_init (MALLOC_STRUCT (RAnalysisRef));
+	return r_anal_ref_init (R_NEW (RAnalysisRef));
 }
 
 R_API RList *r_anal_ref_list_new() {

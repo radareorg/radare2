@@ -20,7 +20,7 @@ static RAnalysisVarType anal_default_vartypes[] =
 	 { NULL,    NULL, 0 }};
 
 R_API RAnalysis *r_anal_new() {
-	return r_anal_init (MALLOC_STRUCT (RAnalysis));
+	return r_anal_init (R_NEW (RAnalysis));
 }
 
 R_API RAnalysis *r_anal_free(RAnalysis *a) {

@@ -15,7 +15,7 @@ R_API struct r_lang_t *r_lang_init(struct r_lang_t *lang)
 
 R_API struct r_lang_t *r_lang_new()
 {
-	struct r_lang_t *lang = MALLOC_STRUCT(struct r_lang_t);
+	struct r_lang_t *lang = R_NEW(struct r_lang_t);
 	return r_lang_init(lang);
 }
 
@@ -50,7 +50,7 @@ R_API int r_lang_define(struct r_lang_t *lang, const char *type, const char *nam
 		}
 	}
 	if (!ret) {
-		def = MALLOC_STRUCT(struct r_lang_def_t);
+		def = R_NEW(struct r_lang_def_t);
 		if (def != NULL) {
 			def->type = strdup(type);
 			def->name = strdup(name);

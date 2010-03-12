@@ -40,7 +40,7 @@ R_API struct r_mem_pool_t* r_mem_pool_init(struct r_mem_pool_t *pool, int nsize,
 
 R_API struct r_mem_pool_t *r_mem_pool_new(int nodesize, int poolsize, int poolcount)
 {
-	return r_mem_pool_init (MALLOC_STRUCT (struct r_mem_pool_t),
+	return r_mem_pool_init (R_NEW (struct r_mem_pool_t),
 		nodesize, poolsize, poolcount);
 }
 

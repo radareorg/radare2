@@ -34,7 +34,7 @@ static RList* entries(RBin *bin)
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(ptr = MALLOC_STRUCT (RBinEntry)))
+	if (!(ptr = R_NEW (RBinEntry)))
 		return ret;
 	memset (ptr, '\0', sizeof (RBinEntry));
 	ptr->offset = ptr->rva = Elf_(r_bin_elf_get_entry_offset) (bin->bin_obj);
@@ -55,7 +55,7 @@ static RList* sections(RBin *bin)
 	if (!(section = Elf_(r_bin_elf_get_sections) (bin->bin_obj)))
 		return ret;
 	for (i = 0; !section[i].last; i++) {
-		if (!(ptr = MALLOC_STRUCT (RBinSection)))
+		if (!(ptr = R_NEW (RBinSection)))
 			break;
 		strncpy (ptr->name, (char*)section[i].name, R_BIN_SIZEOF_STRINGS);
 		ptr->size = section[i].size;
@@ -88,7 +88,7 @@ static RList* symbols(RBin *bin)
 	if (!(symbol = Elf_(r_bin_elf_get_symbols) (bin->bin_obj, R_BIN_ELF_SYMBOLS)))
 		return ret;
 	for (i = 0; !symbol[i].last; i++) {
-		if (!(ptr = MALLOC_STRUCT (RBinSymbol)))
+		if (!(ptr = R_NEW (RBinSymbol)))
 			break;
 		strncpy (ptr->name, symbol[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
@@ -117,7 +117,7 @@ static RList* imports(RBin *bin)
 	if (!(import = Elf_(r_bin_elf_get_symbols) (bin->bin_obj, R_BIN_ELF_IMPORTS)))
 		return ret;
 	for (i = 0; !import[i].last; i++) {
-		if (!(ptr = MALLOC_STRUCT (RBinImport)))
+		if (!(ptr = R_NEW (RBinImport)))
 			break;
 		strncpy(ptr->name, import[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy(ptr->bind, import[i].bind, R_BIN_SIZEOF_STRINGS);
@@ -157,7 +157,7 @@ static RBinInfo* info(RBin *bin)
 	struct r_bin_info_t *ret = NULL;
 	char *str;
 
-	if(!(ret = MALLOC_STRUCT (RBinInfo)))
+	if(!(ret = R_NEW (RBinInfo)))
 		return NULL;
 	memset(ret, '\0', sizeof (RBinInfo));
 	strncpy (ret->file, bin->file, R_BIN_SIZEOF_STRINGS);
@@ -212,7 +212,7 @@ static RList* fields(RBin *bin)
 	if (!(field = Elf_(r_bin_elf_get_fields) (bin->bin_obj)))
 		return ret;
 	for (i = 0; !field[i].last; i++) {
-		if (!(ptr = MALLOC_STRUCT (RBinField)))
+		if (!(ptr = R_NEW (RBinField)))
 			break;
 		strncpy (ptr->name, field[i].name, R_BIN_SIZEOF_STRINGS);
 		ptr->rva = field[i].offset;

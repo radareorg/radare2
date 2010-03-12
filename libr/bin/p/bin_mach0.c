@@ -37,7 +37,7 @@ static RList* entries(RBin *bin)
 	ret->free = free;
 	if (!(entry = MACH0_(r_bin_mach0_get_entrypoint) (bin->bin_obj)))
 		return ret;
-	if ((ptr = MALLOC_STRUCT (RBinEntry))) {
+	if ((ptr = R_NEW (RBinEntry))) {
 		memset (ptr, '\0', sizeof (RBinEntry));
 		ptr->offset = entry->offset;
 		ptr->rva = entry->addr;
@@ -60,7 +60,7 @@ static RList* sections(RBin *bin)
 	if (!(sections = MACH0_(r_bin_mach0_get_sections) (bin->bin_obj)))
 		return ret;
 	for (i = 0; !sections[i].last; i++) {
-		if (!(ptr = MALLOC_STRUCT (RBinSection)))
+		if (!(ptr = R_NEW (RBinSection)))
 			break;
 		strncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
 		ptr->size = sections[i].size;
@@ -87,7 +87,7 @@ static RList* symbols(RBin *bin)
 	if (!(symbols = MACH0_(r_bin_mach0_get_symbols) (bin->bin_obj)))
 		return ret;
 	for (i = 0; !symbols[i].last; i++) {
-		if (!(ptr = MALLOC_STRUCT (RBinSymbol)))
+		if (!(ptr = R_NEW (RBinSymbol)))
 			break;
 		strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
@@ -116,7 +116,7 @@ static RList* imports(RBin *bin)
 	if (!(imports = MACH0_(r_bin_mach0_get_imports) (bin->bin_obj)))
 		return ret;
 	for (i = 0; !imports[i].last; i++) {
-		if (!(ptr = MALLOC_STRUCT (RBinImport)))
+		if (!(ptr = R_NEW (RBinImport)))
 			break;
 		strncpy (ptr->name, (char*)imports[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
@@ -156,7 +156,7 @@ static RBinInfo* info(RBin *bin)
 	char *str;
 	RBinInfo *ret = NULL;
 
-	if((ret = MALLOC_STRUCT (RBinInfo)) == NULL)
+	if((ret = R_NEW (RBinInfo)) == NULL)
 		return NULL;
 	memset(ret, '\0', sizeof (RBinInfo));
 	strncpy (ret->file, bin->file, R_BIN_SIZEOF_STRINGS);

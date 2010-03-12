@@ -14,7 +14,7 @@ R_API void r_th_pool_init(struct r_th_pool_t *thp, int threads, int size)
 
 R_API struct r_th_pool_t *r_th_pool_new(int threads, int size)
 {
-	struct r_th_pool_t *thp = MALLOC_STRUCT(struct r_th_pool_t);
+	struct r_th_pool_t *thp = R_NEW(struct r_th_pool_t);
 	r_th_pool_init(thp, threads, size);
 	return thp;
 }

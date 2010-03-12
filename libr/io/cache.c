@@ -45,7 +45,7 @@ R_API int r_io_cache_invalidate(struct r_io_t *io, ut64 from, ut64 to)
 
 R_API int r_io_cache_write(struct r_io_t *io, ut64 addr, const ut8 *buf, int len)
 {
-	struct r_io_cache_t *ch = MALLOC_STRUCT(struct r_io_cache_t);
+	struct r_io_cache_t *ch = R_NEW(struct r_io_cache_t);
 	ch->from = addr;
 	ch->to = addr + len;
 	ch->size = len;

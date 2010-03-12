@@ -42,7 +42,7 @@ static RList* get_strings(RBin *bin, int min) {
 		} else {
 			/* check if the length fits on our request */
 			if (matches >= min) {
-				if (!(ptr = MALLOC_STRUCT (RBinString))) {
+				if (!(ptr = R_NEW (RBinString))) {
 					fprintf(stderr, "Error allocating string\n");
 					break;
 				}

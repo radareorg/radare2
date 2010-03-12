@@ -15,7 +15,7 @@ R_API int r_io_handle_add(struct r_io_t *io, struct r_io_handle_t *plugin) {
 	struct r_io_list_t *li;
 	if (plugin == NULL)
 		return R_FALSE;
-	li = MALLOC_STRUCT(struct r_io_list_t);
+	li = R_NEW(struct r_io_list_t);
 	if (li == NULL)
 		return R_FALSE;
 	li->plugin = plugin;

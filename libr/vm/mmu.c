@@ -4,7 +4,7 @@
 
 R_API int r_vm_mmu_cache_write(struct r_vm_t *vm, ut64 addr, ut8 *buf, int len)
 {
-	struct r_vm_change_t *ch = MALLOC_STRUCT(struct r_vm_change_t);
+	struct r_vm_change_t *ch = R_NEW(struct r_vm_change_t);
 	ch->from = addr;
 	ch->to = addr + len;
 	ch->data = (ut8*)malloc(len);

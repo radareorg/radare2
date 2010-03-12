@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 	int c;
 
 	while ((c = getopt(argc, argv, "b:m:s:x:Xzf:t:rnhV")) != -1) {
-		struct str_t *kw = MALLOC_STRUCT(struct str_t);
+		struct str_t *kw = R_NEW(struct str_t);
 		INIT_LIST_HEAD(&(kw->list));
 
 		switch(c) {

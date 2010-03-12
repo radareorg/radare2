@@ -269,7 +269,7 @@ static const char *str_get_arg(const char *buf)
 //tokenizer* binparse_new(int kws)
 R_API struct r_search_binparse_t *binparse_new(int kws)
 {
-	struct r_search_binparse_t *tll = MALLOC_STRUCT(struct r_search_binparse_t);
+	struct r_search_binparse_t *tll = R_NEW(struct r_search_binparse_t);
 	if (tll == NULL)
 		return NULL;
 	tll->tls = (tokenlist**)malloc(sizeof (tokenlist*) * kws);

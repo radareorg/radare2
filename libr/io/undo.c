@@ -95,7 +95,7 @@ R_API void r_io_wundo_new(struct r_io_t *io, ut64 off, const ut8 *data, int len)
 		return;
 
 	/* undo write changes */
-	uw = MALLOC_STRUCT(struct r_io_undo_w_t);
+	uw = R_NEW(struct r_io_undo_w_t);
 	uw->set = R_TRUE;
 	uw->off = off;
 	uw->len = len;

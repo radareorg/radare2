@@ -76,7 +76,7 @@ R_API struct r_lib_t *r_lib_init(struct r_lib_t *lib, const char *symname)
 
 R_API struct r_lib_t *r_lib_new(const char *symname)
 {
-	struct r_lib_t *lib = MALLOC_STRUCT(struct r_lib_t);
+	struct r_lib_t *lib = R_NEW(struct r_lib_t);
 	return r_lib_init(lib, symname);
 }
 
@@ -203,7 +203,7 @@ R_API int r_lib_open(struct r_lib_t *lib, const char *file)
 		}
 	}
 
-	p = MALLOC_STRUCT(struct r_lib_plugin_t);
+	p = R_NEW(struct r_lib_plugin_t);
 	p->type = stru->type;
 	p->data = stru->data;
 	p->file = strdup(file);
@@ -265,7 +265,7 @@ R_API int r_lib_add_handler(struct r_lib_t *lib,
 		}
 	}
 	if (handler == NULL) {
-		handler = MALLOC_STRUCT(struct r_lib_handler_t);
+		handler = R_NEW(struct r_lib_handler_t);
 		if (handler == NULL)
 			return R_FALSE;
 		handler->type = type;

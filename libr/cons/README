@@ -30,7 +30,7 @@ struct r_cons_t {
 
 struct r_cons_frame_t *r_cons_frame_new(int x, int y, int w, int h)
 {
-	struct r_cons_frame_t *f = MALLOC_STRUCT(struct r_cons_frame_t);
+	struct r_cons_frame_t *f = R_NEW(struct r_cons_frame_t);
 	f->text = r_cons_buffer_new(w, h);
 	f->draw = r_cons_buffer_new(w, h);
 	f->w = w;
@@ -75,7 +75,7 @@ void r_cons_buffer_line(struct r_cons_buffer_t *buf, int x0, int y0, int x1, int
 
 struct r_cons_buffer *r_cons_buffer_new(int w, int h)
 {
-	struct r_cons_buffer_t *buf = MALLOC_STRUCT(struct r_cons_buffer_t);
+	struct r_cons_buffer_t *buf = R_NEW(struct r_cons_buffer_t);
 	if (w<1) w=1;
 	if (h<1) h=1;
 	buf->rw = buf->w = w;
@@ -86,7 +86,7 @@ struct r_cons_buffer *r_cons_buffer_new(int w, int h)
 
 int r_cons_buffer_set_size(struct r_cons_buffer *buf, int w, int h)
 {
-	struct r_cons_buffer_t *buf = MALLOC_STRUCT(struct r_cons_buffer_t);
+	struct r_cons_buffer_t *buf = R_NEW(struct r_cons_buffer_t);
 	if (w<1) w=1;
 	if (h<1) h=1;
 	if (w>buf->rw) {

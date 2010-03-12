@@ -8,7 +8,7 @@
 R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 	ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout)
 {
-	struct r_anal_refline_t *list = MALLOC_STRUCT (struct r_anal_refline_t);
+	struct r_anal_refline_t *list = R_NEW (struct r_anal_refline_t);
 	struct r_anal_refline_t *list2;
 	struct r_anal_aop_t aop;
 	ut8 *ptr = buf;
@@ -48,7 +48,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 					goto __next;
 				if (aop.jump == 0)
 					goto __next;
-				list2 = MALLOC_STRUCT(struct r_anal_refline_t);
+				list2 = R_NEW(struct r_anal_refline_t);
 				list2->from = addr;
 				list2->to = aop.jump;
 				list2->index = index++;

@@ -22,12 +22,12 @@ R_API struct r_io_t *r_io_init(struct r_io_t *io) {
 }
 
 R_API struct r_io_t *r_io_new() {
-	return r_io_init (MALLOC_STRUCT (struct r_io_t));
+	return r_io_init (R_NEW (struct r_io_t));
 }
 
 R_API RBuffer *r_io_read_buf(struct r_io_t *io, ut64 addr, int len)
 {
-	RBuffer *b = MALLOC_STRUCT(RBuffer);
+	RBuffer *b = R_NEW(RBuffer);
 	b->buf = malloc(len);
 	len = r_io_read_at(io, addr, b->buf, len);
 	if (len<0) len = 0;

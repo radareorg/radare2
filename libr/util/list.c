@@ -52,7 +52,7 @@ R_API void r_list_delete (RList *list, RListIter *iter) {
 }
 
 R_API RList *r_list_new() {
-	RList *list = MALLOC_STRUCT (RList);
+	RList *list = R_NEW (RList);
 	r_list_init (list);
 	return list;
 }
@@ -73,7 +73,7 @@ R_API void r_list_free (RList *list) {
 }
 
 R_API RListIter *r_list_item_new (void *data) {
-	RListIter *new = MALLOC_STRUCT (RListIter);
+	RListIter *new = R_NEW (RListIter);
 	new->data = data;
 	return new;
 }
@@ -95,7 +95,7 @@ R_API RListIter *r_list_append(RList *list, void *data) {
 }
 
 R_API RListIter *r_list_prepend(RList *list, void *data) {
-	RListIter *new = MALLOC_STRUCT (RListIter);
+	RListIter *new = R_NEW (RListIter);
 	if (list->head)
 		list->head->p = new;
 	new->data = data;

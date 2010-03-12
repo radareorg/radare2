@@ -29,7 +29,7 @@ R_API int r_print_init(struct r_print_t *p)
 
 struct r_print_t *r_print_new()
 {
-	struct r_print_t *p = MALLOC_STRUCT(struct r_print_t);
+	struct r_print_t *p = R_NEW(struct r_print_t);
 	r_print_init(p);
 	return p;
 }

@@ -40,9 +40,7 @@
 
 #define BITS2BYTES(x) ((x/8)+((x%8)?1:0))
 #define ZERO_FILL(x) memset (x, 0, sizeof (x))
-#define MALLOC_STRUCTS(x,y) (x*)malloc(sizeof(x)*y)
-#define MALLOC_STRUCT(x) (x*)malloc(sizeof(x))
-// TODO: deprecate MALLOC_STRUCT... RNEW is cooler
+#define R_NEWS(x,y) (x*)malloc(sizeof(x)*y)
 #define R_NEW(x) (x*)malloc(sizeof(x))
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')
 #define IS_WHITESPACE(x) (x==' '||x=='\t')
@@ -104,7 +102,7 @@
 #if 0
 #define R_DEFINE_OBJECT(type) \
  R_API struct type##_t* type##_new() { \
-    return type##_init(MALLOC_STRUCT(struct type##_t)); \
+    return type##_init(R_NEW(struct type##_t)); \
  } \
  R_API struct type##_t* type##_free(struct type##_t *foo) { \
     return (type##_deinit(foo), free(foo), NULL); \

@@ -15,7 +15,7 @@ struct r_db_table_t *r_db_table_new(const char *name, const char *fmt, const cha
 {
 	int i;
 	int offset = 0;
-	struct r_db_table_t *table = MALLOC_STRUCT(struct r_db_table_t);
+	struct r_db_table_t *table = R_NEW(struct r_db_table_t);
 	table->args = strdup(fields);
 	table->nelems = r_str_word_set0(table->args);
 	if (table->nelems != strlen(fmt)) {

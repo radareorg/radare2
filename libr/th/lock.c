@@ -19,7 +19,7 @@ R_API int r_th_lock_init(struct r_th_lock_t *thl)
 
 R_API struct r_th_lock_t *r_th_lock_new()
 {
-	struct r_th_lock_t *thl = MALLOC_STRUCT(struct r_th_lock_t);
+	struct r_th_lock_t *thl = R_NEW(struct r_th_lock_t);
 	if (!r_th_lock_init(thl))
 		R_FREE(thl);
 	return thl;

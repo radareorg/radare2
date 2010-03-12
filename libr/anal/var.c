@@ -7,15 +7,15 @@
 #include <r_list.h>
 
 R_API RAnalysisVar *r_anal_var_new() {
-	return r_anal_var_init (MALLOC_STRUCT (RAnalysisVar));
+	return r_anal_var_init (R_NEW (RAnalysisVar));
 }
 
 R_API RAnalysisVarType *r_anal_var_type_new() {
-	return r_anal_var_type_init (MALLOC_STRUCT (RAnalysisVarType));
+	return r_anal_var_type_init (R_NEW (RAnalysisVarType));
 }
 
 R_API RAnalysisVarAccess *r_anal_var_access_new() {
-	return r_anal_var_access_init (MALLOC_STRUCT (RAnalysisVarAccess));
+	return r_anal_var_access_init (R_NEW (RAnalysisVarAccess));
 }
 
 R_API RList *r_anal_var_list_new() {

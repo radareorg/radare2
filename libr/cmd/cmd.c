@@ -16,7 +16,7 @@ R_API RCommand *r_cmd_init(struct r_cmd_t *cmd) {
 }
 
 R_API RCommand *r_cmd_new () {
-	return r_cmd_init (MALLOC_STRUCT (RCommand));
+	return r_cmd_init (R_NEW (RCommand));
 }
 
 R_API int r_cmd_set_data(struct r_cmd_t *cmd, void *data) {
@@ -42,7 +42,7 @@ R_API int r_cmd_add(RCommand *c, const char *cmd, const char *desc, r_cmd_callba
 
 	item = c->cmds[idx];
 	if (item == NULL) {
-		item = MALLOC_STRUCT (RCommandItem);
+		item = R_NEW (RCommandItem);
 		c->cmds[idx] = item;
 	}
 	strncpy (item->cmd, cmd, sizeof (item->cmd));

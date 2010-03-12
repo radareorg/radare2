@@ -7,7 +7,7 @@
 #include <r_list.h>
 
 R_API RAnalysisBB *r_anal_bb_new() {
-	return r_anal_bb_init (MALLOC_STRUCT (RAnalysisBB));
+	return r_anal_bb_init (R_NEW (RAnalysisBB));
 }
 
 R_API RList *r_anal_bb_list_new() {
