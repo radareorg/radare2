@@ -1,3 +1,6 @@
+include ../config-user.mk
+include ../global.mk
+
 all: supported.langs ruby perl python lua
 
 supported.langs:
@@ -40,10 +43,10 @@ install-lua:
 install-ruby:
 	@if [ "`grep ruby supported.langs`" ]; then \
 	for a in 1.8 1.9.1; do \
-	mkdir -p ${DESTDIR}/usr/lib/ruby/$$a/r2 ; \
+	mkdir -p ${DESTDIR}${PREFIX}/lib/ruby/$$a/r2 ; \
 	echo "Installing ruby$$a r2 modules..." ; \
-	cp -rf ruby/* ${DESTDIR}/usr/lib/ruby/$$a/r2 ; \
-	cp -rf ruby/*libr* ${DESTDIR}/usr/lib/ruby/$$a ; \
+	cp -rf ruby/* ${DESTDIR}${PREFIX}/lib/ruby/$$a/r2 ; \
+	cp -rf ruby/*libr* ${DESTDIR}${PREFIX}/lib/ruby/$$a ; \
 	done ; \
 	fi
 
