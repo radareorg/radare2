@@ -1,7 +1,7 @@
 include config-user.mk
 include global.mk
 
-all: plugins.cfg libr swig r2rc
+all: plugins.cfg libr r2rc
 
 plugins.cfg:
 	./configure-plugins
@@ -13,9 +13,10 @@ r2rc:
 	cd r2rc && ${MAKE} all
 
 swig:
-ifeq (${HAVE_VALASWIG},1)
-	cd swig && ${MAKE} all
-endif
+	cd swig && ${MAKE} all PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+
+swig-install: install swig
+	cd swig && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
 vdoc:
 	rm -rf vdoc
@@ -53,7 +54,6 @@ install: install-man
 	${INSTALL_DIR} ${DESTDIR}${PREFIX}/share/doc/radare2
 	for a in doc/* ; do ${INSTALL_DATA} $$a ${DESTDIR}/${PREFIX}/share/doc/radare2 ; done
 	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-	cd swig && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd r2rc && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
 uninstall:
@@ -82,4 +82,4 @@ shot:
 
 include ${MKPLUGINS}
 
-.PHONY: all clean mrproper install uninstall deinstall dist shot pkgcfg vdoc swig libr r2rc install-man
+.PHONY: all clean mrproper install uninstall deinstall dist shot pkgcfg vdoc swig libr r2rc install-man swig swig-install

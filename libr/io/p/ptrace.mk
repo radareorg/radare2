@@ -6,5 +6,5 @@ ALL_TARGETS+=${TARGET_PTRACE}
 
 ${TARGET_PTRACE}: ${OBJ_PTRACE}
 	${CC} ${CFLAGS} -o ${TARGET_PTRACE} ${LDFLAGS_LIB} \
-		${LDFLAGS_LINKPATH}../util -lr_util \
+		${LDFLAGS_LINKPATH}../../util -lr_util \
 		${LDFLAGS_LINKPATH}.. -lr_io ${OBJ_PTRACE}
