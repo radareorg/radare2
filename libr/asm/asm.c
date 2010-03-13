@@ -281,10 +281,10 @@ R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
 		tokens[++ctr] = ptr+1)
 			*ptr = '\0';
 
-	/* Stage 0: Parse labels*/
-	/* Stage 1: Assemble */
-	for (stage = 0; stage < 2; stage++) {
-		if (stage == 0 && !labels)
+	/* Stage 0-1: Parse labels*/
+	/* Stage 2: Assemble */
+	for (stage = 0; stage < 3; stage++) {
+		if (stage < 2 && !labels)
 			continue;
 		for (idx = ret = i = j = 0, off = a->pc, acode->buf_hex[0] = '\0';
 			i <= ctr; i++, idx += ret) {
@@ -297,7 +297,7 @@ R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
 				isseparator (*ptr_start); ptr_start++);
 			ptr = strchr (ptr_start, '#'); /* Comments */
 			if (ptr) *ptr = '\0';
-			if (stage == 1) {
+			if (stage == 2) {
 				r_asm_set_pc (a, a->pc + ret);
 				off = a->pc;
 			} else off +=ret;
@@ -308,7 +308,7 @@ R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
 			if (labels) /* Labels */
 			if ((ptr = strchr (ptr_start, ':'))) {
 				char food[64];
-				if (stage != 0)
+				if (stage == 2)
 					continue;
 				*ptr = 0;
 				snprintf (food, sizeof (food), "0x%llx", off);
@@ -362,14 +362,11 @@ R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
 					ret = r_asm_assemble (a, &aop, ptr_start);
 					D eprintf ("%s\n", ptr_start);
 				}
-				if (ret<0) {
-				eprintf ("!!! OH FUCK\n");
-					return r_asm_code_free (acode);
-				}
 			}
-			if (stage==1) {
-				if (ret<1) {
+			if (stage == 2) {
+				if (ret < 1) {
 					printf ("Cannot assemble '%s'\n", ptr_start);
+					return r_asm_code_free (acode);
 				} else {
 					ret = aop.inst_len;
 					acode->len = idx + ret;

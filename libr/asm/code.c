@@ -35,6 +35,7 @@ R_API void* r_asm_code_free(struct r_asm_code_t *acode) {
 
 R_API int r_asm_code_set_equ (RAsmCode *code, const char *key, const char *value) {
 	RAsmEqu *equ;
+	RListIter *iter;
 	if (key == NULL || value == NULL) {
 		eprintf ("Oops, no key or value defined in r_asm_code_set_equ ()\n");
 		return R_FALSE;
@@ -42,7 +43,12 @@ R_API int r_asm_code_set_equ (RAsmCode *code, const char *key, const char *value
 	if (!code->equs) {
 		code->equs = r_list_new ();
 		code->equs->free = free;
-	}
+	} else r_list_foreach (code->equs, iter, equ)
+		if (!strcmp (equ->key, key)) {
+			free (equ->value);
+			equ->value = strdup (value);
+			return R_TRUE;
+		}
 	equ = R_NEW (RAsmEqu);
 	equ->key = strdup (key);
 	equ->value = strdup (value);
