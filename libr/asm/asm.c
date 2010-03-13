@@ -281,25 +281,15 @@ R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
 		tokens[++ctr] = ptr+1)
 			*ptr = '\0';
 
-	/* Stage 1: Parse labels*/
-	/* Stage 2: Assemble */
+	/* Stage 0: Parse labels*/
+	/* Stage 1: Assemble */
 	for (stage = 0; stage < 2; stage++) {
 		if (stage == 0 && !labels)
 			continue;
-		ret = 0;
-		for (idx = ret = i = j = 0, acode->buf_hex[0] = '\0';
+		for (idx = ret = i = j = 0, off = a->pc, acode->buf_hex[0] = '\0';
 			i <= ctr; i++, idx += ret) {
 			if (!tokens[i][0]) {
-
-
-#if 0
-			if (stage == 1) {
-				r_asm_set_pc (a, a->pc + ret);
-			eprintf ("==> %s, %lld\n", buf_token, a->pc);
-				off = a->pc;
-			} else off +=ret;
-#endif
-				//ret = 0;
+				ret = 0;
 				continue;
 			}
 			strncpy (buf_token, tokens[i], R_ASM_BUFSIZE);
