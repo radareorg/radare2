@@ -31,6 +31,13 @@ namespace Radare {
 	}
 #endif
 
+	[CCode (cheader_filename="r_util.h", cprefix="r_hex_", free_function="")]
+	public static class RHex {
+		public static int str2bin (string input, uint8 *buf);
+		public static int bin2str (uint8 *buf, int len, out string str);
+		public static string bin2strdup (uint8 *buf, int len);
+	}
+
 	[CCode (cheader_filename="r_util.h", cprefix="r_sys_", free_function="")]
 	public static class RSystem {
 		//public static const weak string OS;

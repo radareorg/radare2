@@ -38,7 +38,14 @@ install-python:
 	fi
 
 install-lua:
-	@echo TODO: install-lua
+	@if [ "`grep lua supported.langs`" ]; then \
+	for a in 5.1; do \
+	mkdir -p ${DESTDIR}${PREFIX}/lib/lua/$$a/r2 ; \
+	echo "Installing lua$$a r2 modules..." ; \
+	cp -rf lua/* ${DESTDIR}${PREFIX}/lib/lua/$$a/r2 ; \
+	cp -rf lua/*libr* ${DESTDIR}${PREFIX}/lib/lua/$$a ; \
+	done ; \
+	fi
 
 install-ruby:
 	@if [ "`grep ruby supported.langs`" ]; then \
@@ -55,12 +62,12 @@ install-perl:
 	target=${DESTDIR}`perl -e 'print $$INC[0]'` ; \
 	mkdir -p $$target/r2 ; \
 	echo "Installing perl r2 modules..." ; \
-	cp -rf perl/*.so $$target/ ; \
+	cp -rf perl/*.so $$target/r2 ; \
 	cp -rf perl/*.pm $$target/r2 ; \
-	cp -rf perl/*libr* $$target/r2 ; \
+	cp -rf perl/*libr* $$target/ ; \
 	fi
 
-install: install-python install-ruby install-perl
+install: install-python install-ruby install-perl install-lua
 
 oldtest:
 	sh do-swig.sh r_bp

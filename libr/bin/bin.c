@@ -216,6 +216,31 @@ R_API RList* r_bin_get_symbols(RBin *bin) {
 	return bin->symbols;
 }
 
+R_API int r_bin_is_big_endian (RBin *bin) {
+	return bin->info->big_endian;
+}
+
+R_API int r_bin_is_stripped (RBin *bin) {
+	return R_BIN_DBG_STRIPPED (bin->info->dbg_info);
+}
+
+R_API int r_bin_is_static (RBin *bin) {
+	return R_BIN_DBG_STATIC (bin->info->dbg_info);
+}
+
+/* XXX Implement in r_bin_meta and deprecate? */
+R_API int r_bin_has_dbg_linenums (RBin *bin) {
+	return R_BIN_DBG_LINENUMS (bin->info->dbg_info);
+}
+
+R_API int r_bin_has_dbg_syms (RBin *bin) {
+	return R_BIN_DBG_SYMS (bin->info->dbg_info);
+}
+
+R_API int r_bin_has_dbg_relocs (RBin *bin) {
+	return R_BIN_DBG_RELOCS (bin->info->dbg_info);
+}
+
 R_API RBin* r_bin_new() {
 	RBin *bin; 
 	if (!(bin = R_NEW (RBin)))

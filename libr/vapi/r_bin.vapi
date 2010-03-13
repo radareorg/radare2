@@ -21,6 +21,12 @@ namespace Radare {
 		public RList<RBin.String> get_strings();
 		public RList<RBin.Symbol> get_symbols();
 		public RBin.Info get_info();
+		public int is_big_endian();
+		public int is_stripped();
+		public int is_static();
+		public int has_dbg_linenums();
+		public int has_dbg_syms();
+		public int has_dbg_relocs();
 	
 		[CCode (cname="RBinEntry", free_function="", ref_function="", unref_function="")]
 		public class Entry {

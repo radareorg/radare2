@@ -152,6 +152,12 @@ R_API RList* r_bin_get_sections(RBin *bin);
 R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va);
 R_API RList* r_bin_get_strings(RBin *bin);
 R_API RList* r_bin_get_symbols(RBin *bin);
+R_API int r_bin_is_big_endian (RBin *bin);
+R_API int r_bin_is_stripped (RBin *bin);
+R_API int r_bin_is_static (RBin *bin);
+R_API int r_bin_has_dbg_linenums (RBin *bin);
+R_API int r_bin_has_dbg_syms (RBin *bin);
+R_API int r_bin_has_dbg_relocs (RBin *bin);
 R_API RBin* r_bin_new();
 R_API void r_bin_set_user_ptr(RBin *bin, void *user);
 
