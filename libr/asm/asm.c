@@ -36,7 +36,8 @@ static inline int r_asm_pseudo_bits(struct r_asm_t *a, char *input) {
 }
 
 static inline int r_asm_pseudo_org(struct r_asm_t *a, char *input) {
-	return r_asm_set_pc (a, r_num_math (NULL, input));
+	r_asm_set_pc (a, r_num_math (NULL, input));
+	return 0;
 }
 
 static inline int r_asm_pseudo_byte(struct r_asm_aop_t *aop, char *input) {
@@ -288,10 +289,6 @@ R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
 			continue;
 		for (idx = ret = i = j = 0, off = a->pc, acode->buf_hex[0] = '\0';
 			i <= ctr; i++, idx += ret) {
-			if (!tokens[i][0]) {
-				ret = 0;
-				continue;
-			}
 			strncpy (buf_token, tokens[i], R_ASM_BUFSIZE);
 			for (ptr_start = buf_token; *ptr_start &&
 				isseparator (*ptr_start); ptr_start++);
@@ -308,17 +305,18 @@ R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
 			if (labels) /* Labels */
 			if ((ptr = strchr (ptr_start, ':'))) {
 				char food[64];
-				if (stage == 2)
-					continue;
-				*ptr = 0;
-				snprintf (food, sizeof (food), "0x%llx", off);
-				r_asm_code_set_equ (acode, ptr_start, food);
-				D eprintf ("SETEQU (%s,%s)\n", ptr_start, food);
-				*ptr_start = 0;
+				if (stage != 2) {
+					*ptr = 0;
+					snprintf (food, sizeof (food), "0x%llx", off);
+					r_asm_code_set_equ (acode, ptr_start, food);
+					D eprintf ("SETEQU (%s,%s)\n", ptr_start, food);
+				}
+				ptr_start = ptr + 1;
+			}
+			if (*ptr_start == '\0') {
 				ret = 0;
-				continue;
-			} 
-			if (*ptr_start == '.') { /* pseudo */
+				continue;	
+			} else if (*ptr_start == '.') { /* pseudo */
 				ptr = ptr_start;
 				if (!memcmp (ptr, ".string ", 8))
 					ret = r_asm_pseudo_string (&aop, ptr+8);
@@ -341,7 +339,6 @@ R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
 				} else if (!memcmp (ptr, ".org ", 5)) {
 					ret = r_asm_pseudo_org (a, ptr+5);
 					off = a->pc;
-					ret = 0;
 				} else {
 					eprintf ("Unknown keyword (%s)\n", ptr);
 					return r_asm_code_free (acode);
@@ -351,7 +348,6 @@ R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
 					eprintf ("!!! Oops\n");
 					return r_asm_code_free (acode);
 				}
-				continue;
 			} else { /* Instruction */
 				if (acode->equs) {
 					char *str = r_asm_code_equ_replace (acode, strdup (ptr_start));
@@ -368,7 +364,6 @@ R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
 					printf ("Cannot assemble '%s'\n", ptr_start);
 					return r_asm_code_free (acode);
 				} else {
-					ret = aop.inst_len;
 					acode->len = idx + ret;
 					if (!(acode->buf = realloc (acode->buf, (idx+ret)*2)))
 						return r_asm_code_free (acode);
