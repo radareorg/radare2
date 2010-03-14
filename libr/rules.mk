@@ -18,7 +18,7 @@ real_all all: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
 SRC=$(subst .o,.c,$(OBJ))
 
 # TODO: 0 -> version
-LIBNAME=-Wl,-soname,${LIBSO}.0
+LIBNAME=-Wl,-soname,${LIBSO}
 
 ifeq ($(WITHPIC),1)
 ${LIBSO}: ${OBJ}
