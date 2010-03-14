@@ -1,5 +1,4 @@
--include ../config-user.mk
--include ../global.mk
+include config.mk
 
 all: supported.langs ruby perl python lua
 
