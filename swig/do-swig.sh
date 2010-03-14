@@ -15,5 +15,5 @@ cd ${LNG}
 echo LIBS = `pkg-config --libs ${MOD}`
 
 valaswig-cc ${LNG} ${MOD} \
-	-x --vapidir=../../libr/vapi -I../../libr/include \
-	../../libr/vapi/${MOD} `pkg-config --libs ${MOD}`
+	-x --vapidir=../vapi ../vapi/${MOD} \
+	`pkg-config --cflags --libs ${MOD}`
