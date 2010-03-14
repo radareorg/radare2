@@ -12,10 +12,10 @@ R_API struct r_socket_proc_t *r_socket_proc_open(char *const argv[])
 {
 #if __UNIX__
 	struct r_socket_proc_t *sp = R_NEW(struct r_socket_proc_t);
-#if __APPLE__
-	const int flags = 0; //O_NONBLOCK|O_CLOEXEC;
-#else
+#ifdef O_CLOEXEC
 	const int flags = O_CLOEXEC; //O_NONBLOCK|O_CLOEXEC;
+#else
+	const int flags = 0; //O_NONBLOCK|O_CLOEXEC;
 #endif
 
 	if (pipe (sp->fd0)==-1) {

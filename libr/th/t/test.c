@@ -23,7 +23,9 @@ int test1() {
 	th = r_th_new (&looper, &ctr, 0);
 	//th = r_th_new (&looper, &ctr, 0);
 
-asm("int3");
+#if __i386__ || __x86_64__
+	asm ("int3");
+#endif
 	//r_th_start (th, R_TRUE);
 	while (r_th_wait_async (th)) {
 		printf ("\nwaiting...\n");
