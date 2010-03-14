@@ -469,7 +469,10 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 		return NULL;
 
 	for (i = 0; i < bin->ehdr.e_shnum; i++)
-		if (bin->shdr[i].sh_type == (Elf_(r_bin_elf_get_stripped)(bin)?SHT_DYNSYM:SHT_SYMTAB)) {
+		if ((type == R_BIN_ELF_IMPORTS &&
+				bin->shdr[i].sh_type == (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM)) ||
+			(type == R_BIN_ELF_SYMBOLS  &&
+			 	bin->shdr[i].sh_type == (Elf_(r_bin_elf_get_stripped)(bin) ? SHT_DYNSYM : SHT_SYMTAB))) {
 			strtab_section = &bin->shdr[bin->shdr[i].sh_link];
 			if ((strtab = (char *)malloc(strtab_section->sh_size)) == NULL) {
 				perror("malloc (syms strtab)");
