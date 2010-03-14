@@ -76,10 +76,10 @@ install-bins:
 
 install-test-bins:
 	# test programs
-	@${INSTALL_DIR} ${PFX}/bin/libr-test
+	@${INSTALL_DIR} ${PFX}/lib/radare2/test
 	@for a in `find */t -perm -u+x -type f | grep -v 2`; \
-	  do echo "$$a ${PFX}/bin/libr-test"; \
-	  ${INSTALL_PROGRAM} $$a ${PFX}/bin/libr-test ; done
+	  do echo "$$a ${PFX}/lib/radare2/test" ; \
+	  ${INSTALL_PROGRAM} $$a ${PFX}/lib/radare2/test ; done
 
 install: install-includes install-vapi install-pkgconfig install-bins install-test-bins
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
