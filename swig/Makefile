@@ -1,10 +1,31 @@
-include ../config-user.mk
-include ../global.mk
+-include ../config-user.mk
+-include ../global.mk
 
 all: supported.langs ruby perl python lua
 
 supported.langs:
 	sh check-langs.sh
+
+dist:
+	PKG=radare2-swig-${VERSION} ; \
+	FILES=`cd .. && hg st -mac . | grep swig | sed -e "s,swig/,$${PKG}/," | cut -c 3-` ; \
+	cd .. && mv swig $${PKG} && \
+	echo $$FILES ; \
+	tar czvf $${PKG}.tar.gz $${FILES} ; \
+	mv $${PKG} swig
+
+# TODO: valadoc
+vdoc:
+	-rm -rf vdoc
+	cat vapi/*.vapi > .libr.vapi
+	valadoc -o vdoc .libr.vapi
+	-rm -f .libr.vapi
+	# rsync -avz vdoc/* pancake@radare.org:/srv/http/radareorg/vdoc/
+
+vdoc_pkg:
+	rm -rf vdoc
+	valadoc -o vdoc vapi/*.vapi
+	# rsync -avz vdoc/* pancake@radare.org:/srv/http/radareorg/vdoc/
 
 # TODO: make it less spaguetti
 perl:
@@ -67,7 +88,15 @@ install-perl:
 	cp -rf perl/*libr* $$target/ ; \
 	fi
 
-install: install-python install-ruby install-perl install-lua
+install-vapi:
+	@${INSTALL_DIR} ${PFX}/share/vala/vapi
+	${INSTALL_DATA} vapi/*.vapi vapi/*.deps ${PFX}/share/vala/vapi
+
+install: install-python install-ruby install-perl install-lua install-vapi
+
+deinstall: uninstall
+uninstall:
+	cd vapi/ ; for a in *.vapi *.deps ; do rm -f ${PREFIX}/share/vala/vapi/$$a ; done
 
 oldtest:
 	sh do-swig.sh r_bp
@@ -78,5 +107,6 @@ clean:
 	cd perl && make clean
 	cd ruby && make clean
 	cd lua && make clean
+	cd vapi/t && ${MAKE} clean
 
 .PHONY: ruby lua python perl clean oldtest test all

@@ -3,9 +3,6 @@
 -include ../config.mk
 -include ../../config.mk
 
-#-include ../global.mk
-#-include ../../global.mk
-
 #-------------------------------------#
 # Rules for libraries
 ifeq (${BINDEPS},)
@@ -20,14 +17,17 @@ real_all all: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
 
 SRC=$(subst .o,.c,$(OBJ))
 
+# TODO: 0 -> version
+LIBNAME=-Wl,-soname,${LIBSO}.0
+
 ifeq ($(WITHPIC),1)
 ${LIBSO}: ${OBJ}
 	@for a in ${OBJ} ${SRC}; do \
 	  do=0 ; [ ! -e ${LIBSO} ] && do=1 ; \
 	  test $$a -nt ${LIBSO} && do=1 ; \
 	  if [ $$do = 1 ]; then \
-	    echo "${CC_LIB} ${OBJ} ${LDFLAGS} ${LINK}" ; \
-	    ${CC_LIB} ${OBJ} ${LDFLAGS} ${LINK} ; \
+	    echo "${CC_LIB} ${LIBNAME} ${OBJ} ${LDFLAGS} ${LINK}" ; \
+	    ${CC_LIB} ${LIBNAME} ${OBJ} ${LDFLAGS} ${LINK} ; \
 	    if [ -f "../stripsyms.sh" ]; then sh ../stripsyms.sh ${LIBSO} ${NAME} ; fi ; \
 	  break ; \
 	fi ; done
@@ -111,11 +111,4 @@ endif
 
 #-------------------------------
 
-#if RUNTIME_DEBUG
-CFLAGS+=-DR_RTDEBUG
-#endif
-
-// TODO: Not working
-#if STATIC_DEBUG
-#CFLAGS+=-DR_DEBUG
-#endif
+# TODO: deprecate RTDEBUG and R_DEBUG

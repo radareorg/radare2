@@ -54,10 +54,6 @@ pkgcfg:
 	cd asm && ${MAKE} pkgcfg NAME=libr DEPS="r_`echo ${LIBLIST}|sed -e 's, , r_,g'`"
 	# TODO: Magically generate libr.pc.acr here using LIBLIST and so :)
 
-install-vapi:
-	@${INSTALL_DIR} ${PFX}/share/vala/vapi
-	${INSTALL_DATA} vapi/*.vapi vapi/*.deps ${PFX}/share/vala/vapi
-
 install-pkgconfig:
 	@${INSTALL_DIR} ${PFX}/lib/pkgconfig
 	for a in ../pkgcfg/*.pc ; do ${INSTALL_DATA} $$a ${PFX}/lib/pkgconfig ; done
@@ -81,7 +77,7 @@ install-test-bins:
 	  do echo "$$a ${PFX}/lib/radare2/test" ; \
 	  ${INSTALL_PROGRAM} $$a ${PFX}/lib/radare2/test ; done
 
-install: install-includes install-vapi install-pkgconfig install-bins install-test-bins
+install: install-includes install-pkgconfig install-bins install-test-bins
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
 	# libraries
 	@${INSTALL_DIR} ${PFX}/lib
@@ -110,7 +106,6 @@ deinstall uninstall:
 	echo ${PREFIX}/lib/$$a ; rm -f ${PREFIX}/lib/$$a ; done
 	### includes
 	-(cd include && for a in * ; do rm -f ${PREFIX}/libr/$$a ; done)
-	cd vapi/ ; for a in *.vapi *.deps ; do rm -f ${PREFIX}/share/vala/vapi/$$a ; done
 	### programs
 	-@for a in `find */t -perm -u+x -type f | grep 2`; do \
 	a=`echo $$a|awk -F / '{ print $$NF; }'`; \
@@ -134,7 +129,6 @@ todo:
 
 clean:
 	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} clean ); done
-	cd vapi/t && ${MAKE} clean
 	rm -rf .objs
 
 mrproper: clean

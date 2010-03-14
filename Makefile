@@ -18,17 +18,6 @@ swig:
 swig-install: install swig
 	cd swig && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
-vdoc:
-	rm -rf vdoc
-	cat libr/vapi/*.vapi > /tmp/libr.vapi
-	valadoc -o vdoc /tmp/libr.vapi
-	# rsync -avz vdoc/* pancake@radare.org:/srv/http/radareorg/vdoc/
-
-vdoc_pkg:
-	rm -rf vdoc
-	valadoc -o vdoc libr/vapi/*.vapi
-	# rsync -avz vdoc/* pancake@radare.org:/srv/http/radareorg/vdoc/
-
 w32dist:
 	mkdir w32dist
 	for a in `find * | grep -e exe$$ -e dll$$`; do cp $$a w32dist ; done
@@ -62,6 +51,9 @@ uninstall:
 deinstall: uninstall
 	cd libr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	rm -rf ${DESTDIR}${PREFIX}/share/doc/radare2
+
+swig-dist:
+	cd swig && ${MAKE} dist
 
 dist:
 	VERSION=${VERSION} ; \
