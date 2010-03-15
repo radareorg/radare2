@@ -1,4 +1,4 @@
-include config.mk
+-include config.mk
 
 all: supported.langs ruby perl python lua
 
@@ -47,11 +47,10 @@ test:
 
 install-python:
 	@if [ "`grep python supported.langs`" ]; then \
-	for a in python2.5 python2.6 ; do \
-	echo "  - ${DESTDIR}${PREFIX}/lib/$$a/r2" ; \
+	for a in python2.5/site-packages python2.6/dist-packages ; do \
+	echo "Installing $$a r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/r2" ; \
 	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/r2 ; \
 	touch ${DESTDIR}${PREFIX}/lib/$$a/r2/__init__.py ; \
-	echo "Installing $$a r2 modules..." ; \
 	cp -rf python/* ${DESTDIR}${PREFIX}/lib/$$a/r2 ; \
 	cp -rf python/*libr* ${DESTDIR}${PREFIX}/lib/$$a ; \
 	done ; \
@@ -80,6 +79,7 @@ install-ruby:
 install-perl:
 	@if [ "`grep perl supported.langs`" ]; then \
 	target=${DESTDIR}`perl -e 'print $$INC[0]'` ; \
+	target=`perl -e 'for (@INC) { print "$$_\n" if /lib\/perl5/ && !/local/; }'` ; \
 	mkdir -p $$target/r2 ; \
 	echo "Installing perl r2 modules..." ; \
 	cp -rf perl/*.so $$target/r2 ; \
@@ -95,7 +95,7 @@ install: install-python install-ruby install-perl install-lua install-vapi
 
 deinstall: uninstall
 uninstall:
-	cd vapi/ ; for a in *.vapi *.deps ; do rm -f ${PREFIX}/share/vala/vapi/$$a ; done
+	cd vapi/ ; for a in *.vapi *.deps ; do rm -f ${DESTDIR}${PREFIX}/share/vala/vapi/$$a ; done
 
 oldtest:
 	sh do-swig.sh r_bp

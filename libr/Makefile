@@ -30,7 +30,7 @@ libr2.${EXT_SO}:
 ifeq ($(OSTYPE),darwin)
 	@echo Linkage of libr2.dylib is broken on OSX because of dupped .o in .objs extraction
 else
-	${CC} ${LDFLAGS_LIB} ${PIC_CFLAGS} .objs/*.o -o libr2.${EXT_SO}
+	${CC} -Wl,-soname=libr2.${EXT_SO} ${LDFLAGS_LIB} ${PIC_CFLAGS} .objs/*.o -o libr2.${EXT_SO}
 endif
 
 libr2.${EXT_AR}:
@@ -68,7 +68,7 @@ install-bins:
 	@for a in `find */t -perm -u+x -type f | grep 2`; \
 	do echo "$$a ${PFX}/bin"; ${INSTALL_PROGRAM} $$a ${PFX}/bin ; done
 	# shortcut
-	-cp -f ${PFX}/bin/radare2 ${PFX}/bin/r2
+	-cd ${PFX}/bin && rm -f r2 ; ln -fs radare2 r2
 
 install-test-bins:
 	# test programs

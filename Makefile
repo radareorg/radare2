@@ -12,12 +12,6 @@ libr:
 r2rc:
 	cd r2rc && ${MAKE} all
 
-swig:
-	cd swig && ${MAKE} all PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-
-swig-install: install swig
-	cd swig && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-
 w32dist:
 	mkdir w32dist
 	for a in `find * | grep -e exe$$ -e dll$$`; do cp $$a w32dist ; done
@@ -26,7 +20,6 @@ w32dist:
 
 clean:
 	cd libr && ${MAKE} clean
-	cd swig && ${MAKE} clean
 
 mrproper:
 	cd libr && ${MAKE} mrproper
@@ -74,4 +67,4 @@ shot:
 
 include ${MKPLUGINS}
 
-.PHONY: all clean mrproper install uninstall deinstall dist shot pkgcfg vdoc swig libr r2rc install-man swig swig-install
+.PHONY: all clean mrproper install uninstall deinstall dist shot pkgcfg vdoc swig libr r2rc install-man

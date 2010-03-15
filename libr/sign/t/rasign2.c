@@ -5,12 +5,12 @@
 #include "r_sign.h"
 
 static int rasign_show_help() {
-	printf ("Usage: rasign [options] [file]\n"
-	" -r             show output in radare commands\n"
-	" -s [sigfile]   specify one or more signature files\n"
+	printf ("Usage: rasign2 [options] [file]\n"
+	" -r            show output in radare commands\n"
+	" -s [sigfile]  specify one or more signature files\n"
 	"Examples:\n"
-	"  rasign libc.so.6 > libc.sig\n"
-	"  rasign -s libc.sig ls.static\n");
+	"  rasign2 libc.so.6 > libc.sig\n"
+	"  rasign2 -s libc.sig ls.static\n");
 	return 0;
 }
 
