@@ -83,9 +83,9 @@ asm:
 
 bin:
 	valac -C --vapidir=${PWD}/.. bin.vala --pkg r_bin --pkg r_util
-	gcc bin.c `pkg-config gobject-2.0 --libs --cflags` -I../../include/ \
-		-lr_bin -Wl,-R../../bin -L../../bin \
-		-lr_util -Wl,-R../../util -L../../util \
+	gcc bin.c `pkg-config gobject-2.0 --libs --cflags` -I../../../libr/include/ \
+		-lr_bin -Wl,-R../../../libr/bin -L../../../libr/bin \
+		-lr_util -Wl,-R../../../libr/util -L../../../libr/util \
 		-g -o bin
 
 hash:

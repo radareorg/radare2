@@ -88,8 +88,8 @@ install-perl:
 	fi
 
 install-vapi:
-	@${INSTALL_DIR} ${PFX}/share/vala/vapi
-	${INSTALL_DATA} vapi/*.vapi vapi/*.deps ${PFX}/share/vala/vapi
+	@${INSTALL_DIR} ${DESTDIR}${PREFIX}/share/vala/vapi
+	${INSTALL_DATA} vapi/*.vapi vapi/*.deps ${DESTDIR}${PREFIX}/share/vala/vapi
 
 install: install-python install-ruby install-perl install-lua install-vapi
 
