@@ -5,12 +5,33 @@
 #include <r_flags.h>
 #include <r_core.h>
 
-static char *r_core_anal_graph_label(struct r_core_t *core, ut64 addr, ut64 size) {
-	char cmd[1024], *cmdstr = NULL, *str = NULL;
-	int i, j;
+static char *r_core_anal_graph_label(struct r_core_t *core, struct r_anal_bb_t *bb, int lines) {
+	struct r_anal_aop_t *aopi;
+	RListIter *iter;
+	char cmd[1024], file[1024], *cmdstr = NULL, *filestr = NULL, *str = NULL;
+	int i, j, line = 0, oline = 0, idx = 0;
 
-	snprintf (cmd, 1023, "pD %lli @ 0x%08llx", size, addr);
-	if ((cmdstr = r_core_cmd_str(core, cmd))) {
+	if (lines) {
+		r_list_foreach (bb->aops, iter, aopi) {
+			r_bin_meta_get_line (&core->bin, aopi->addr, file, 1023, &line);
+			if (line != 0 && line != oline && strcmp (file, "??")) {
+				filestr = r_file_slurp_line (file, line, 0);
+				if (filestr) {
+					cmdstr = realloc (cmdstr, idx + strlen (filestr) + 3);
+					cmdstr[idx] = 0;
+					strcat (cmdstr, filestr);
+					strcat (cmdstr, "\\l");
+					idx+=strlen (filestr);
+					free (filestr);
+				}
+			}
+			oline = line;
+		}
+	} else {
+		snprintf (cmd, 1023, "pD %lli @ 0x%08llx", bb->size, bb->addr);
+		cmdstr = r_core_cmd_str(core, cmd);
+	}
+	if (cmdstr) {
 		if (!(str = malloc(strlen(cmdstr)*2)))
 			return NULL;
 		for(i=j=0;cmdstr[i];i++,j++) {
@@ -19,6 +40,10 @@ static char *r_core_anal_graph_label(struct r_core_t *core, ut64 addr, ut64 size
 					/* skip ansi chars */
 					for(i++;cmdstr[i]&&cmdstr[i]!='m'&&cmdstr[i]!='H'&&cmdstr[i]!='J';i++);
 					j--;
+					break;
+				case '"':
+					str[j]='\\';
+					str[++j]='"';
 					break;
 				case '\n':
 				case '\r':
@@ -35,7 +60,7 @@ static char *r_core_anal_graph_label(struct r_core_t *core, ut64 addr, ut64 size
 	return str;
 }
 
-static void r_core_anal_graph_nodes(struct r_core_t *core, RList *pbb, ut64 addr) {
+static void r_core_anal_graph_nodes(struct r_core_t *core, RList *pbb, ut64 addr, int lines) {
 	struct r_anal_bb_t *bbi, *bbc;
 	RListIter *iter;
 	char *str;
@@ -59,14 +84,14 @@ static void r_core_anal_graph_nodes(struct r_core_t *core, RList *pbb, ut64 addr
 				r_cons_printf ("\t\"0x%08llx\" -> \"0x%08llx\" [color=\"%s\"];\n", bbi->addr, bbi->jump,
 						bbi->fail != -1 ? "green" : "blue");
 				r_cons_flush ();
-				if (addr != 0) r_core_anal_graph_nodes (core, pbb, bbi->jump);
+				if (addr != 0) r_core_anal_graph_nodes (core, pbb, bbi->jump, lines);
 			}
 			if (bbi->fail != -1) {
 				r_cons_printf ("\t\"0x%08llx\" -> \"0x%08llx\" [color=\"red\"];\n", bbi->addr, bbi->fail);
 				r_cons_flush ();
-				if (addr != 0) r_core_anal_graph_nodes (core, pbb, bbi->fail);
+				if (addr != 0) r_core_anal_graph_nodes (core, pbb, bbi->fail, lines);
 			}
-			if ((str = r_core_anal_graph_label (core, bbi->addr, bbi->size))) {
+			if ((str = r_core_anal_graph_label (core, bbi, lines))) {
 				r_cons_printf (" \"0x%08llx\" [label=\"%s\"]\n", bbi->addr, str);
 				r_cons_flush ();
 				free(str);
@@ -318,7 +343,7 @@ R_API int r_core_anal_fcn_list(struct r_core_t *core, int rad) {
 	return R_TRUE;
 }
 
-R_API int r_core_anal_graph(struct r_core_t *core, ut64 addr) {
+R_API int r_core_anal_graph(struct r_core_t *core, ut64 addr, int lines) {
 	RList *pbb = NULL;
 	int reflines = r_config_get_i(&core->config, "asm.reflines");
 	int bytes = r_config_get_i(&core->config, "asm.bytes");
@@ -330,7 +355,7 @@ R_API int r_core_anal_graph(struct r_core_t *core, ut64 addr) {
 	r_cons_printf ("\tnode [color=lightgray, style=filled shape=box fontname=\"Courier\" fontsize=\"8\"];\n");
 	r_cons_flush ();
 	if (addr != 0) pbb = r_anal_bb_list_new (); /* In partial graphs define printed bb list */
-	r_core_anal_graph_nodes (core, pbb, addr);
+	r_core_anal_graph_nodes (core, pbb, addr, lines);
 	if (pbb) r_list_destroy (pbb);
 	r_cons_printf ("}\n");
 	r_cons_flush ();
@@ -339,12 +364,12 @@ R_API int r_core_anal_graph(struct r_core_t *core, ut64 addr) {
 	return R_TRUE;
 }
 
-R_API int r_core_anal_graph_fcn(struct r_core_t *core, char *fname) {
+R_API int r_core_anal_graph_fcn(struct r_core_t *core, char *fname, int lines) {
 	struct r_anal_fcn_t *fcni;
 	RListIter *iter;
 
 	r_list_foreach (core->anal.fcns, iter, fcni)
 		if (!strcmp (fname, fcni->name))
-			return r_core_anal_graph (core, fcni->addr);
+			return r_core_anal_graph (core, fcni->addr, lines);
 	return R_FALSE;
 }

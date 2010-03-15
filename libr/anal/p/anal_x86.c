@@ -33,6 +33,7 @@ static int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, i
 	ut8 *buf = (ut8*)data;
 	memset(aop, '\0', sizeof(RAnalysisAop));
 	aop->type = R_ANAL_OP_TYPE_UNK;
+	aop->addr = addr;
 
 	switch(buf[0]) {
 	case 0x8a:
@@ -138,7 +139,6 @@ static int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, i
 			aop->type = R_ANAL_OP_TYPE_MOV;
 			aop->eob = 0;
 			aop->length = 4;
-			aop->addr = addr;
 			return 4;
 		}
 		break;
@@ -384,7 +384,6 @@ static int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, i
 			aop->jump   = addr+bo+2; //(unsigned long)((buf+1)+5);
 			aop->fail   = addr+2;
 			aop->eob    = 1;
-			//aop->addr = addr;
 			//return 2;
 		}
 		break;
@@ -394,7 +393,6 @@ static int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, i
 
 	//if (aop->length == 0)
 	aop->length = dislen((unsigned char *)buf, 64); //instLength(buf, 16, 0);
-	aop->addr = addr;
 		//aop->length = instLength(buf, 16, 0);
 	if (!(aop->jump>>33))
 		aop->jump &= 0xFFFFFFFF; // XXX may break on 64 bits here

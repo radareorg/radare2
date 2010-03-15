@@ -1100,10 +1100,13 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'g':
 		switch (input[1]) {
+		case 'l':
+			r_core_anal_graph (core, r_num_math (&core->num, input+2), R_TRUE);
+			break;
 		case 'f':
 			{
-			char *fname = r_str_word_get_first (input+2);
-			r_core_anal_graph_fcn (core, fname);
+			char *fname = r_str_word_get_first (input+(input[2]=='l'?3:2));
+			r_core_anal_graph_fcn (core, fname, input[2]=='l');
 			free (fname);
 			}
 			break;
@@ -1111,10 +1114,12 @@ static int cmd_anal(void *data, const char *input) {
 			r_cons_printf (
 			"Usage: ag[?f]\n"
 			" ag [addr]       ; Output graphviz code (bb at addr and childs)\n"
-			" agf [fcn name]  ; Output graphviz code of function\n");
+			" agl [fcn name]  ; Output graphviz code using meta-data\n"
+			" agf [fcn name]  ; Output graphviz code of function\n"
+			" agfl [fcn name] ; Output graphviz code of function using meta-data\n");
 			break;
 		default:
-			r_core_anal_graph (core, r_num_math (&core->num, input+2));
+			r_core_anal_graph (core, r_num_math (&core->num, input+2), R_FALSE);
 		}
 		break;
 	case 's':

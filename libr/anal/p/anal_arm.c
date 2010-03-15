@@ -53,6 +53,7 @@ static int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *data, i
 		return 0;
 
 	memset (aop, '\0', sizeof(RAnalysisAop));
+	aop->addr = addr;
 	aop->type = R_ANAL_OP_TYPE_UNK;
 
 

@@ -18,6 +18,7 @@ int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *bytes, int len
 	//      baddr = -baddr;
 
 	memset (aop, '\0', sizeof (RAnalysisAop));
+	aop->addr = addr;
 	aop->type = R_ANAL_OP_TYPE_NOP;
 	aop->length = 4;
 
@@ -69,7 +70,6 @@ int aop(RAnalysis *anal, RAnalysisAop *aop, ut64 addr, const ut8 *bytes, int len
 		aop->eob = 1;
 		break;
 	}
-	aop->addr = addr;
 	aop->length = 4;
 	return aop->length;
 }

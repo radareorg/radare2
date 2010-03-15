@@ -118,8 +118,8 @@ R_API int r_core_anal_fcn(struct r_core_t *core, ut64 at, ut64 from, int depth);
 R_API int r_core_anal_fcn_add(struct r_core_t *core, ut64 addr, ut64 size, const char *name);
 R_API int r_core_anal_fcn_list(struct r_core_t *core, int rad);
 R_API int r_core_anal_fcn_clean(struct r_core_t *core, ut64 addr);
-R_API int r_core_anal_graph(struct r_core_t *core, ut64 addr);
-R_API int r_core_anal_graph_fcn(struct r_core_t *core, char *input);
+R_API int r_core_anal_graph(struct r_core_t *core, ut64 addr, int lines);
+R_API int r_core_anal_graph_fcn(struct r_core_t *core, char *input, int lines);
 #endif
 
 #endif
