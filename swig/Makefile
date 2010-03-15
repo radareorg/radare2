@@ -78,8 +78,7 @@ install-ruby:
 
 install-perl:
 	@if [ "`grep perl supported.langs`" ]; then \
-	target=${DESTDIR}`perl -e 'print $$INC[0]'` ; \
-	target=`perl -e 'for (@INC) { print "$$_\n" if /lib\/perl5/ && !/local/; }'` ; \
+	target=${DESTDIR}`perl -e 'for (@INC) { print "$$_\n" if /lib\/perl5/ && !/local/; }'` ; \
 	mkdir -p $$target/r2 ; \
 	echo "Installing perl r2 modules..." ; \
 	cp -rf perl/*.so $$target/r2 ; \
