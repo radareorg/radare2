@@ -29,8 +29,7 @@ static fnditem* init_fi()
 }
 #endif
 
-static void add_fi (fnditem* n, unsigned char* blk, int patlen)
-{
+static void add_fi (fnditem* n, unsigned char* blk, int patlen) {
 	fnditem* p;
 
 	for(p=n;p->next!=NULL;p=p->next);
@@ -42,19 +41,17 @@ static void add_fi (fnditem* n, unsigned char* blk, int patlen)
 	p->next = NULL;
 }
 
-static int is_fi_present(fnditem* n, unsigned char* blk , int patlen)
-{
+static int is_fi_present(fnditem* n, unsigned char* blk , int patlen) {
 	fnditem* p;
-	for(p=n;p->next!=NULL; p=p->next) {
-		if (!memcmp(blk, p->str, patlen))
+	for (p=n;p->next!=NULL; p=p->next) {
+		if (!memcmp (blk, p->str, patlen))
 			return 1;
 	}
 	return 0;
 }
 
 // XXX needs to be refactored
-int do_byte_pat(int patlen) 
-{
+int do_byte_pat(int patlen) {
 	unsigned char block[BSIZE+MAX_PATLEN];
 	unsigned char sblk[MAX_PATLEN+1];
 	static fnditem* root;
@@ -153,8 +150,7 @@ int do_byte_pat(int patlen)
 
 /* -- */
 
-R_API int r_search_pattern_update(int patlen) 
-{
+R_API int r_search_pattern_update(int patlen) {
 	unsigned char block[BSIZE+MAX_PATLEN];
 	unsigned char sblk[MAX_PATLEN+1];
 	static fnditem* root;

@@ -12,16 +12,17 @@ R_API int r_search_init(RSearch *s, int mode) {
 	s->pattern_size = 0;
 	s->string_max = 255;
 	s->string_min = 3;
+	s->hits = r_list_new ();
+	// TODO: review those mempool sizes. ensure never gets NULL
+	s->pool = r_mem_pool_new (sizeof (RSearchHit), 1024, 10);
 	INIT_LIST_HEAD (&(s->kws));
-	INIT_LIST_HEAD (&(s->hits));
-	INIT_LIST_HEAD (&(s->hits));
 	return R_TRUE;
 }
 
 R_API RSearch *r_search_new(int mode) {
 	RSearch *s = R_NEW (RSearch);
-	if (r_search_init (s, mode) == -1) {
-		free (s);
+	if (!r_search_init (s, mode)) {
+		r_search_free (s);
 		s = NULL;
 	}
 	return s;
@@ -29,6 +30,8 @@ R_API RSearch *r_search_new(int mode) {
 
 R_API RSearch *r_search_free(RSearch *s) {
 	// TODO: it leaks
+	r_mem_pool_free (s->pool);
+	r_list_destroy (s->hits);
 	free (s);
 	return NULL;
 }
@@ -74,6 +77,19 @@ R_API int r_search_begin(RSearch *s) {
 	return 1;
 }
 
+R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
+	RSearchHit* hit;
+	if (s->callback)
+		return s->callback (kw, s->user, addr);
+	hit = r_mem_pool_alloc (s->pool);
+	if (!hit)
+		return R_FALSE;
+	hit->kw = kw;
+	hit->addr = addr;
+	r_list_append (s->hits, hit);
+	return R_TRUE;
+}
+
 // TODO: move into a plugin */
 R_API int r_search_mybinparse_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	struct list_head *pos;
@@ -91,10 +107,8 @@ R_API int r_search_mybinparse_update(RSearch *s, ut64 from, const ut8 *buf, int 
 			if (ch == ch2) {
 				kw->idx++;
 				if (kw->idx == kw->keyword_length) {
-					if (s->callback)
-						s->callback(kw, s->user, (ut64)from+i-kw->keyword_length+1);
-					else printf ("hit%d_%d 0x%08llx ; %s\n",
-						count, kw->count, (ut64)from+i+1, buf+i-kw->keyword_length+1);
+					r_search_hit_new (s, kw, (ut64)
+						from+i-kw->keyword_length+1);
 					kw->idx = 0;
 					kw->count++;
 				}
@@ -148,7 +162,6 @@ R_API int r_search_update_i(RSearch *s, ut64 from, const ut8 *buf, long len) {
 }
 
 /* --- keywords --- */
-
 /* string */
 R_API int r_search_kw_add(RSearch *s, const char *kw, const char *bm) {
 	RSearchKeyword *k = R_NEW (RSearchKeyword);
@@ -202,22 +215,22 @@ R_API int r_search_kw_add_bin(RSearch *s, const ut8 *kw, int kw_len, const ut8 *
 	return R_TRUE;
 }
 
-/* show keywords */
+/* // MUST DEPRECATE // show keywords */
 R_API RSearchKeyword *r_search_kw_list(RSearch *s) {
 	struct list_head *pos;
 	list_for_each_prev (pos, &s->kws) {
-		RSearchKeyword *kw = list_entry(pos, RSearchKeyword, list);
+		RSearchKeyword *kw = list_entry (pos, RSearchKeyword, list);
 		printf ("%s %s\n", kw->keyword, kw->binmask);
 	}
 	return NULL;
 }
 
-R_API int r_search_reset(RSearch *s) {
-	// TODO
-	return R_TRUE;
+R_API void r_search_reset(RSearch *s) {
+	r_list_destroy (s->hits);
+	s->hits = r_list_new ();
+	s->hits->free = free;
+	r_search_kw_reset (s);
 }
 
-R_API int r_search_kw_reset(RSearch *s) {
-	// TODO
-	return R_TRUE;
+R_API void r_search_kw_reset(RSearch *s) {
 }

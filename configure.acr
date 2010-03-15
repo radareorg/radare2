@@ -81,7 +81,6 @@ SUBDIRS ./config-user.mk libr/include/r_userconf.h
  pkgcfg/r_cmd.pc
  pkgcfg/r_config.pc
  pkgcfg/r_flags.pc
- pkgcfg/r_meta.pc
  pkgcfg/r_line.pc
  pkgcfg/r_syscall.pc
  pkgcfg/r_macro.pc

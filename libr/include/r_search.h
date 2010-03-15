@@ -14,8 +14,6 @@ enum {
 	R_SEARCH_AES
 };
 
-/* search api */
-
 typedef struct r_search_kw_t {
 	char keyword[128];
 	char binmask[128];
@@ -30,10 +28,8 @@ typedef struct r_search_kw_t {
 } RSearchKeyword;
 
 typedef struct r_search_hit_t {
+	RSearchKeyword *kw;
 	ut64 addr;
-	struct r_search_kw_t *kw;
-	int len;
-	struct list_head list;
 } RSearchHit;
 
 typedef int (*RSearchCallback)(struct r_search_kw_t *kw, void *user, ut64 where);
@@ -45,11 +41,12 @@ typedef struct r_search_t {
 	ut32 string_min; /* min number of matches */
 	ut32 string_max; /* max number of matches */
 	void *user; /* user data */
-	//int (*callback)(struct r_search_kw_t *kw, void *user, ut64 where);
 	RSearchCallback callback;
+	RList *hits;
+	RMemoryPool *pool;
 	//struct r_search_binparse_t *bp;
+	//TODO RList *kws; // TODO: Use r_search_kw_new ()
 	struct list_head kws; //r_search_hw_t kws;
-	struct list_head hits; //r_search_hit_t hits;
 } RSearch;
 
 #ifdef R_API
@@ -71,8 +68,8 @@ R_API int r_search_kw_add_hex(RSearch *s, const char *kw, const char *bm);
 R_API int r_search_kw_add_bin(RSearch *s, const ut8 *kw, int kw_len, const ut8 *bm, int bm_len);
 // TODO: Must be RList
 R_API struct r_search_kw_t *r_search_kw_list(RSearch *s);
-R_API int r_search_reset(RSearch *s);
-R_API int r_search_kw_reset(RSearch *s);
+R_API void r_search_reset(RSearch *s);
+R_API void r_search_kw_reset(RSearch *s);
 
 R_API int r_search_range_add(RSearch *s, ut64 from, ut64 to);
 R_API int r_search_range_set(RSearch *s, ut64 from, ut64 to);
@@ -85,6 +82,7 @@ R_API int r_search_aes_update(RSearch *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_strings_update(RSearch *s, ut64 from, const char *buf, int len, int enc);
 R_API int r_search_regexp_update(RSearch *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_xrefs_update(RSearch *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr);
 
 /* pattern search */
 R_API int r_search_pattern(RSearch *s, ut32 size);

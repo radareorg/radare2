@@ -14,7 +14,6 @@ typedef struct { } RSystem;
 typedef struct { } RStr;
 typedef struct { } RLog;
 
-/* pool */
 typedef struct r_mem_pool_t {
 	void **nodes;
 	int ncount;
@@ -25,7 +24,6 @@ typedef struct r_mem_pool_t {
 	int poolcount;
 } RMemoryPool;
 
-/* buf */
 typedef struct r_buf_t {
 	ut8 *buf;
 	int length;
@@ -161,7 +159,6 @@ R_API int r_cache_invalidate(struct r_cache_t *c, ut64 from, ut64 to);
 R_API void r_prof_start(struct r_prof_t *p);
 R_API double r_prof_end(struct r_prof_t *p);
 
-/* memory */
 R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits);
 R_API void r_mem_copyloop (ut8 *dest, const ut8 *orig, int dsize, int osize);
 R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian);
@@ -229,14 +226,12 @@ R_API char *r_str_concatf(char *ptr, const char *fmt, ...);
 R_API void r_str_concatch(char *x, char y);
 R_API void r_str_case(char *str, int up);
 
-/* hex */
 R_API int r_hex_pair2bin(const char *arg);
 R_API int r_hex_str2bin(const char *in, ut8 *out);
 R_API int r_hex_bin2str(const ut8 *in, int len, char *out);
 R_API char *r_hex_bin2strdup(const ut8 *in, int len);
 R_API int r_hex_to_byte(ut8 *val, ut8 c);
 
-/* file */
 R_API char *r_file_path(const char *bin);
 R_API const char *r_file_basename (const char *path);
 R_API const char *r_file_abspath(const char *file);
@@ -274,7 +269,6 @@ R_API int r_range_init(struct r_range_t *r);
 R_API RRange *r_range_new();
 R_API RRange *r_range_new_from_string(const char *string);
 R_API RRange *r_range_free(RRange *r);
-R_API 
 R_API struct r_range_item_t *r_range_item_get(RRange *r, ut64 addr);
 R_API ut64 r_range_size(RRange *r);
 R_API int r_range_add_from_string(RRange *rgs, const char *string);

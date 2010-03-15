@@ -69,8 +69,7 @@ static int show_help(char *argv0, int line) {
 	return 0;
 }
 
-int rafind_open(char *file)
-{
+static int rafind_open(char *file) {
 	int ret, last = 0;
 	struct list_head *pos;
 	r_io_init(&io);
@@ -120,8 +119,7 @@ int rafind_open(char *file)
 	return 0;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
 	int c;
 
 	while ((c = getopt(argc, argv, "b:m:s:x:Xzf:t:rnhV")) != -1) {
