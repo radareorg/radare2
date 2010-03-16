@@ -114,10 +114,10 @@ typedef struct r_bin_info_t {
 	char machine[R_BIN_SIZEOF_STRINGS];
 	char os[R_BIN_SIZEOF_STRINGS];
 	char subsystem[R_BIN_SIZEOF_STRINGS];
+	char rpath[R_BIN_SIZEOF_STRINGS];
 	int bits;
 	int big_endian;
 	ut64 dbg_info;
-	char *rpath;
 } RBinInfo;
 
 typedef struct r_bin_field_t {
@@ -132,6 +132,7 @@ typedef struct r_bin_meta_t {
 
 typedef struct r_bin_write_t {
 	ut64 (*scn_resize)(RBin *bin, const char *name, ut64 size);
+	int (*rpath_del)(RBin *bin);
 } RBinWrite;
 
 #ifdef R_API
@@ -166,6 +167,7 @@ R_API int r_bin_meta_get_line(RBin *bin, ut64 addr, char *file, int len, int *li
 
 /* bin_write.c */
 R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size);
+R_API int r_bin_wr_rpath_del(RBin *bin);
 R_API int r_bin_wr_output(RBin *bin, const char *filename);
 #endif
 

@@ -5,4 +5,5 @@
 
 struct r_bin_write_t r_bin_write_elf64 = {
 	.scn_resize = &scn_resize,
+	.rpath_del = &rpath_del,
 };

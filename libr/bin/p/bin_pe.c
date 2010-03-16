@@ -167,6 +167,7 @@ static RBinInfo* info(RBin *bin)
 		return NULL;
 	memset(ret, '\0', sizeof (RBinInfo));
 	strncpy (ret->file, bin->file, R_BIN_SIZEOF_STRINGS);
+	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
 	if ((str = PE_(r_bin_pe_get_class) (bin->bin_obj))) {
 		strncpy (ret->bclass, str, R_BIN_SIZEOF_STRINGS);
 		free (str);

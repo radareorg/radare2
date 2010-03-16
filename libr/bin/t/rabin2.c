@@ -329,7 +329,8 @@ static int rabin_show_info() {
 				   "Static=%s\n"
 				   "Line_nums=%s\n"
 				   "Local_syms=%s\n"
-				   "Relocs=%s\n",
+				   "Relocs=%s\n"
+				   "RPath=%s\n",
 				   info->file, info->type, info->bclass,
 				   info->arch, info->bits, info->machine, info->os, 
 				   info->subsystem, info->big_endian?"True":"False",
@@ -337,7 +338,8 @@ static int rabin_show_info() {
 				   R_BIN_DBG_STATIC (info->dbg_info)?"True":"False",
 				   R_BIN_DBG_LINENUMS (info->dbg_info)?"True":"False",
 				   R_BIN_DBG_SYMS (info->dbg_info)?"True":"False",
-				   R_BIN_DBG_RELOCS (info->dbg_info)?"True":"False");
+				   R_BIN_DBG_RELOCS (info->dbg_info)?"True":"False",
+				   info->rpath);
 	
 	return R_TRUE;
 }

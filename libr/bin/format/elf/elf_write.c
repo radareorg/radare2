@@ -167,3 +167,41 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 
 	return delta;
 }
+
+/* XXX Endianness? */
+int Elf_(r_bin_elf_del_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	Elf_(Dyn) *dyn = NULL;
+	ut64 stroff;
+	int ndyn, i, j;
+
+	for (i = 0; i < bin->ehdr.e_phnum; i++)
+		if (bin->phdr[i].p_type == PT_DYNAMIC) {
+			if (!(dyn = malloc (bin->phdr[i].p_filesz))) {
+				perror("malloc (dyn)");
+				return R_FALSE;
+			}
+			if (r_buf_read_at (bin->b, bin->phdr[i].p_offset, (ut8*)dyn, bin->phdr[i].p_filesz) == -1) {
+				eprintf("Error: read (dyn)\n");
+				free (dyn);
+				return R_FALSE;
+			}
+			ndyn = (int)(bin->phdr[i].p_filesz / sizeof(Elf_(Dyn)));
+			for (j = 0; j < ndyn; j++)
+				if (dyn[j].d_tag == DT_STRTAB) {
+					stroff = (ut64)(dyn[j].d_un.d_ptr - bin->baddr);
+					break;
+				}
+			for (j = 0; j < ndyn; j++)
+				if (dyn[j].d_tag == DT_RPATH || dyn[j].d_tag == DT_RUNPATH) {
+					if (r_buf_write_at (bin->b, stroff + dyn[j].d_un.d_val,
+								(ut8*)"", 1) == -1) {
+						eprintf("Error: write (rpath)\n");
+						free (dyn);
+						return R_FALSE;
+					}
+				}
+			free (dyn);
+			break;
+		}
+	return R_TRUE;
+}

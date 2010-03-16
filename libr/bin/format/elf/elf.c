@@ -380,17 +380,12 @@ int Elf_(r_bin_elf_is_big_endian)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	return (bin->ehdr.e_ident[EI_DATA] == ELFDATA2MSB);
 }
 
+/* XXX Init dt_strtab? */
 char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
-	/* TODO */
-	return NULL;
-}
-
-struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *bin)
-{
-	struct r_bin_elf_lib_t *ret = NULL;
 	Elf_(Dyn) *dyn = NULL;
 	ut64 stroff;
-	int ndyn, i, j, k;
+	char *ret = NULL;
+	int ndyn, i, j, len;
 
 	for (i = 0; i < bin->ehdr.e_phnum; i++)
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
@@ -398,12 +393,68 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 				perror("malloc (dyn)");
 				return NULL;
 			}
-			if (r_buf_read_at (bin->b, bin->phdr[i].p_offset, (ut8*)dyn, bin->phdr[i].p_filesz) == -1) {
+			ndyn = (int)(bin->phdr[i].p_filesz / sizeof(Elf_(Dyn)));
+#if R_BIN_ELF64
+			len = r_buf_fread_at(bin->b, bin->phdr[i].p_offset, (ut8*)dyn, bin->endian?"2L":"2l", ndyn);
+#else
+			len = r_buf_fread_at(bin->b, bin->phdr[i].p_offset, (ut8*)dyn, bin->endian?"2I":"2i", ndyn);
+#endif
+			if (len  == -1) {
 				eprintf("Error: read (dyn)\n");
 				free (dyn);
 				return NULL;
 			}
+			for (j = 0; j < ndyn; j++)
+				if (dyn[j].d_tag == DT_STRTAB) {
+					stroff = (ut64)(dyn[j].d_un.d_ptr - bin->baddr);
+					break;
+				}
+			for (j = 0; j < ndyn; j++)
+				if (dyn[j].d_tag == DT_RPATH || dyn[j].d_tag == DT_RUNPATH) {
+					if ((ret = malloc (ELF_STRING_LENGTH)) == NULL) {
+						perror("malloc (rpath)");
+						free (dyn);
+						return NULL;
+					}
+					if (r_buf_read_at (bin->b, stroff + dyn[j].d_un.d_val,
+								(ut8*)ret, ELF_STRING_LENGTH) == -1) {
+						eprintf("Error: read (rpath)\n");
+						free (ret);
+						free (dyn);
+						return NULL;
+					}
+					break;
+				}
+			free (dyn);
+			break;
+		}
+	return ret;
+}
+
+struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *bin)
+{
+	struct r_bin_elf_lib_t *ret = NULL;
+	Elf_(Dyn) *dyn = NULL;
+	ut64 stroff;
+	int ndyn, i, j, k, len;
+
+	for (i = 0; i < bin->ehdr.e_phnum; i++)
+		if (bin->phdr[i].p_type == PT_DYNAMIC) {
+			if (!(dyn = malloc (bin->phdr[i].p_filesz))) {
+				perror("malloc (dyn)");
+				return NULL;
+			}
 			ndyn = (int)(bin->phdr[i].p_filesz / sizeof(Elf_(Dyn)));
+#if R_BIN_ELF64
+			len = r_buf_fread_at(bin->b, bin->phdr[i].p_offset, (ut8*)dyn, bin->endian?"2L":"2l", ndyn);
+#else
+			len = r_buf_fread_at(bin->b, bin->phdr[i].p_offset, (ut8*)dyn, bin->endian?"2I":"2i", ndyn);
+#endif
+			if (len  == -1) {
+				eprintf("Error: read (dyn)\n");
+				free (dyn);
+				return NULL;
+			}
 			for (j = 0; j < ndyn; j++)
 				if (dyn[j].d_tag == DT_STRTAB) {
 					stroff = (ut64)(dyn[j].d_un.d_ptr - bin->baddr);

@@ -155,9 +155,12 @@ static RBinInfo* info(RBin *bin)
 
 	if(!(ret = R_NEW (RBinInfo)))
 		return NULL;
-	ret->rpath = Elf_(r_bin_elf_get_rpath)(bin->bin_obj);
 	memset(ret, '\0', sizeof (RBinInfo));
 	strncpy (ret->file, bin->file, R_BIN_SIZEOF_STRINGS);
+	if ((str = Elf_(r_bin_elf_get_rpath)(bin->bin_obj))) {
+		strncpy (ret->rpath, str, R_BIN_SIZEOF_STRINGS);
+		free (str);
+	} else strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
 	if ((str = Elf_(r_bin_elf_get_file_type) (bin->bin_obj)) == NULL)
 		return NULL;
 	strncpy (ret->type, str, R_BIN_SIZEOF_STRINGS);
