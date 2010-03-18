@@ -762,15 +762,17 @@ static int cmd_print(void *data, const char *input) {
 				}
 				r_anal_aop (&core->anal, &analop, addr, buf+idx, (int)(len-idx));
 
-				if (show_lines) r_cons_strcat(line);
-				if (show_offset) r_cons_printf("0x%08llx  ", core->offset + idx);
+				if (show_lines)
+					r_cons_strcat (line);
+				if (show_offset)
+					r_cons_printf ("0x%08llx  ", core->offset + idx);
 				if (show_bytes) {
-					struct r_flag_item_t *flag = r_flag_get_i(&core->flags, core->offset+idx);
+					RFlagItem *flag = r_flag_get_i (&core->flags, core->offset+idx);
 					if (flag) {
 						if (show_color)
-							r_cons_printf(Color_BWHITE"*[ %10s] "Color_RESET, flag->name);
-						else r_cons_printf("*[ %10s] ", flag->name);
-					} else r_cons_printf("%14s ", asmop.buf_hex);
+							r_cons_printf (Color_BWHITE"*[ %16s] "Color_RESET, flag->name);
+						else r_cons_printf ("*[ %16s] ", flag->name);
+					} else r_cons_printf ("%20s ", asmop.buf_hex);
 				}
 				if (show_color) {
 					switch (analop.type) {
@@ -844,6 +846,22 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'm':
 		r_print_format (&core->print, core->offset, core->block, len, input+1);
+		break;
+	case 'n': // easter penis
+		for (l=0; l<10; l++) {
+			printf ("\r8");
+			for (len=0;len<l;len++)
+				printf ("=");
+			printf ("D");
+			r_sys_usleep (100000);
+			fflush (stdout);
+		}
+		for (l=0; l<3; l++) {
+			printf ("~");
+			fflush (stdout);
+			r_sys_usleep (100000);
+		}
+		printf ("\n");
 		break;
 	default:
 		r_cons_printf (

@@ -56,7 +56,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 
 	buf_global = aop->buf_asm;
 	Offset = a->pc;
-	memcpy(bytes, buf, 4); // TODO handle thumb
+	memcpy (bytes, buf, 4); // TODO handle thumb
 
 	/* prepare disassembler */
 	memset(&disasm_obj,'\0', sizeof(struct disassemble_info));

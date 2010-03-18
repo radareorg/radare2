@@ -127,6 +127,7 @@ extern struct r_asm_handle_t r_asm_plugin_m68k;
 extern struct r_asm_handle_t r_asm_plugin_ppc;
 extern struct r_asm_handle_t r_asm_plugin_sparc;
 extern struct r_asm_handle_t r_asm_plugin_psosvm;
+extern struct r_asm_handle_t r_asm_plugin_avr;
 #endif
 
 #endif
