@@ -140,6 +140,7 @@ R_API int r_buf_set_bytes(RBuffer *b, ut8 *buf, int length);
 R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len);
 R_API int r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n);
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len);
+R_API int r_buf_fwrite_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n);
 R_API void r_buf_free(RBuffer *b);
 
 R_API struct r_mem_pool_t* r_mem_pool_deinit(struct r_mem_pool_t *pool);

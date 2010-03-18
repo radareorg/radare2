@@ -1,4 +1,4 @@
-/* rpathdel.c - rooted 2010 - nibble<develsec.org> */
+/* rpathdel.c - 2010 - nibble<develsec.org> */
 
 #include <stdio.h>
 #include <r_bin.h>

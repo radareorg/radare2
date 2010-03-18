@@ -63,11 +63,7 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 	return len;
 }
 
-R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
-	return r_buf_cpy (b, addr, buf, b->buf, len, R_FALSE);
-}
-
-R_API int r_buf_fread_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {
+static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n, int write) {
 	int i, j, k, len, tsize, endian, m = 1;
 
 	if (addr == R_BUF_CUR)
@@ -93,17 +89,33 @@ R_API int r_buf_fread_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		case 'c': tsize = 1; endian = 1; break;
 		default: return -1;
 		}
-		for (k = 0; k < m; k++)
-			r_mem_copyendian((ut8*)&buf[len+k*tsize],
-				(ut8*)&b->buf[addr+len+k*tsize], tsize, endian);
+		for (k = 0; k < m; k++) {
+			if (write)
+				r_mem_copyendian((ut8*)&buf[addr+len+k*tsize],
+						(ut8*)&b->buf[len+k*tsize], tsize, endian);
+			else r_mem_copyendian((ut8*)&buf[len+k*tsize],
+						(ut8*)&b->buf[addr+len+k*tsize], tsize, endian);
+		}
 		len += m*tsize; m = 1;
 	}
 	b->cur = addr + len;
 	return len;
 }
 
+R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
+	return r_buf_cpy (b, addr, buf, b->buf, len, R_FALSE);
+}
+
+R_API int r_buf_fread_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {
+	return r_buf_fcpy_at (b, addr, buf, fmt, n, R_FALSE);
+}
+
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
 	return r_buf_cpy (b, addr, b->buf, buf, len, R_TRUE);
+}
+
+R_API int r_buf_fwrite_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {
+	return r_buf_fcpy_at (b, addr, buf, fmt, n, R_TRUE);
 }
 
 R_API void r_buf_deinit(struct r_buf_t *b) {

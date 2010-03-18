@@ -16,7 +16,7 @@ static int Elf_(r_bin_elf_init_ehdr)(struct Elf_(r_bin_elf_obj_t) *bin)
 		eprintf("Error: read (magic)\n");
 		return R_FALSE;
 	}
-	if (bin->ehdr.e_ident[EI_DATA] == ELFDATA2MSB)
+	if (e_ident[EI_DATA] == ELFDATA2MSB)
 		bin->endian = LIL_ENDIAN;
 	else bin->endian = !LIL_ENDIAN;
 #if R_BIN_ELF64

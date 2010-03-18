@@ -15,7 +15,7 @@
 R_API ut64 r_num_htonq(ut64 value) {
         ut64 ret  = value;
 #if LIL_ENDIAN
-        endian_memcpy_e((ut8*)&ret, (ut8*)&value, 8, 0);
+        r_mem_copyendian((ut8*)&ret, (ut8*)&value, 8, 0);
 #endif
         return ret;
 }
