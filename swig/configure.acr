@@ -4,40 +4,9 @@ CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
 LANG_CXX!
-
-ARG_WITHOUT DEBUGGER debugger disable native debugger features ;
-
-CHKLIB lua5.1
-CHKLIB tcc
-
-ARG_WITHOUT WANT_VALASWIG valaswig disables the build of the valaswig bindings for python, perl, ruby ;
-CHKPRG VALASWIG valaswig
-CHKPRG SWIG swig
-
-IF WANT_VALASWIG {
-	IFNOT HAVE_SWIG {
-		ECHO valaswig depends on swig ;
-		HAVE_VALASWIG = 0 ;
-	}
-}{
-	HAVE_VALASWIG = 0 ;
-}
-
-ARG_WITHOUT WANT_VALA vala disables the build of all the vala-dependant parts ;
-CHKPRG VALAC valac
-
-(( temporary fix to avoid vala ))
-IF WANT_VALA { 
-	CHKVER vala-1.0 0.7.0
-	IFNOT HAVE_VALA_1_0_VERSION_0_7_0 {
-		ECHO Needs vala 0.7.0 at least ;
-		HAVE_VALAC = 0 ;
-		VALAC = '' ; 
-	}
-}{
-	HAVE_VALAC = 0 ;
-}
+CHKPRG! VALASWIG valaswig
+CHKPRG! SWIG swig
 
 SUBDIRS ./config.mk ;
 
-REPORT PREFIX HAVE_VALASWIG HAVE_LIB_TCC HAVE_VALAC ;
+REPORT PREFIX HAVE_VALASWIG ;

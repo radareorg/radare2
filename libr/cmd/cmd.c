@@ -3,7 +3,7 @@
 #include <r_cmd.h>
 #include <r_util.h>
 
-R_API RCommand *r_cmd_init(struct r_cmd_t *cmd) {
+R_API RCmd *r_cmd_init(RCmd *cmd) {
 	int i;
 	if (cmd) {
 		INIT_LIST_HEAD (&cmd->lcmds);
@@ -11,12 +11,13 @@ R_API RCommand *r_cmd_init(struct r_cmd_t *cmd) {
 			cmd->cmds[i] = NULL;
 		cmd->data = NULL;
 	}
-	r_cmd_handle_init(cmd);
+	r_cmd_handle_init (cmd);
+	r_cmd_macro_init (&cmd->macro);
 	return cmd;
 }
 
-R_API RCommand *r_cmd_new () {
-	return r_cmd_init (R_NEW (RCommand));
+R_API RCmd *r_cmd_new () {
+	return r_cmd_init (R_NEW (RCmd));
 }
 
 R_API int r_cmd_set_data(struct r_cmd_t *cmd, void *data) {
@@ -24,8 +25,8 @@ R_API int r_cmd_set_data(struct r_cmd_t *cmd, void *data) {
 	return 1;
 }
 
-R_API int r_cmd_add_long(RCommand *cmd, const char *lcmd, const char *scmd, const char *desc) {
-	RCommandLongItem *item = R_NEW (RCommandLongItem);
+R_API int r_cmd_add_long(RCmd *cmd, const char *lcmd, const char *scmd, const char *desc) {
+	RCmdLongItem *item = R_NEW (RCmdLongItem);
 	if (item == NULL)
 		return R_FALSE;
 	strncpy (item->cmd, lcmd, sizeof (item->cmd));
@@ -36,13 +37,13 @@ R_API int r_cmd_add_long(RCommand *cmd, const char *lcmd, const char *scmd, cons
 	return R_TRUE;
 }
 
-R_API int r_cmd_add(RCommand *c, const char *cmd, const char *desc, r_cmd_callback(cb)) {
+R_API int r_cmd_add(RCmd *c, const char *cmd, const char *desc, r_cmd_callback(cb)) {
 	struct r_cmd_item_t *item;
 	int idx = (ut8)cmd[0];
 
 	item = c->cmds[idx];
 	if (item == NULL) {
-		item = R_NEW (RCommandItem);
+		item = R_NEW (RCmdItem);
 		c->cmds[idx] = item;
 	}
 	strncpy (item->cmd, cmd, sizeof (item->cmd));
@@ -62,11 +63,11 @@ R_API int r_cmd_call(struct r_cmd_t *cmd, const char *input) {
 	struct r_cmd_item_t *c;
 	int ret = -1;
 	RListIter *iter;
-	RCommandHandle *cp;
+	RCmdHandle *cp;
 	
 	iter = r_list_iterator (cmd->plist);
 	while (r_list_iter_next (iter)) {
-		cp = (RCommandHandle*) r_list_iter_get (iter);
+		cp = (RCmdHandle*) r_list_iter_get (iter);
 		if (cp->call (NULL, input))
 			return R_TRUE;
 	}
@@ -89,7 +90,7 @@ R_API int r_cmd_call_long(struct r_cmd_t *cmd, const char *input) {
 	int inplen = strlen(input)+1;
 
 	list_for_each_prev (pos, &cmd->lcmds) {
-		RCommandLongItem *c = list_entry (pos, struct r_cmd_long_item_t, list);
+		RCmdLongItem *c = list_entry (pos, struct r_cmd_long_item_t, list);
 		if (inplen>=c->cmd_len && !r_str_cmp (input, c->cmd, c->cmd_len)) {
 			inp = alloca(inplen);
 			strcpy (inp, c->cmd_short);

@@ -134,10 +134,7 @@ R_API int r_core_init(struct r_core_t *core) {
 
 	core->search = r_search_new(R_SEARCH_KEYWORD);
 	r_io_init (&core->io);
-	r_macro_init (&core->macro);
-	core->macro.num = &core->num;
-	core->macro.user = core;
-	core->macro.cmd = r_core_cmd0;
+	//r_cmd_macro_init (&core->macro);
 	core->file = NULL;
 	INIT_LIST_HEAD (&core->files);
 	core->offset = 0LL;

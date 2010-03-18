@@ -9,16 +9,21 @@ public class Radare.RCore {
 	public bool loadlibs();
 	/* commands */
 	public int prompt();
+	[CCode (PrintfFormat)]
+	public int cmdf(...);
 	public int cmd(string cmd, bool log);
 	public int cmd0(string cmd);
 	public int cmd_file(string file);
+	public int cmd_command(string cmd);
 	public unowned string cmd_str(string cmd);
 
 	/* io */
 	public int read_at(uint64 addr, out uint8 *buf, int size);
 	public int write_at(uint64 addr, uint8 *buf, int size);
 	public int block_read(bool next);
+	public int block_size(int size);
 	public int seek(uint64 addr, bool rb);
+	public int seek_align(uint64 addr, int count);
 
 	/* files */
 	public File file_open(string file, int mode);

@@ -303,7 +303,7 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	case '(':
 		//eprintf ("macro call (%s)\n", input+1);
-		r_macro_call (&core->macro, input+1);
+		r_cmd_macro_call (&core->cmd.macro, input+1);
 		break;
 	case '?':
 		r_cons_printf (
@@ -1704,13 +1704,13 @@ static int cmd_macro(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	switch(input[0]) {
 	case ')':
-		r_macro_break (&core->macro, input+1);
+		r_cmd_macro_break (&core->cmd.macro, input+1);
 		break;
 	case '-':
-		r_macro_rm (&core->macro, input+1);
+		r_cmd_macro_rm (&core->cmd.macro, input+1);
 		break;
 	case '\0':
-		r_macro_list (&core->macro);
+		r_cmd_macro_list (&core->cmd.macro);
 		break;
 	case '?':
 		eprintf (
@@ -1729,7 +1729,7 @@ static int cmd_macro(void *data, const char *input) {
 		);
 		break;
 	default:
-		r_macro_add (&core->macro, input);
+		r_cmd_macro_add (&core->cmd.macro, input);
 		break;
 	}
 	return 0;
@@ -1973,12 +1973,12 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			char cmd2[1024];
 			// TODO: use controlc() here
 			// XXX whats this 999 ?
-			for(core->macro.counter=0;i<999;core->macro.counter++) {
-				r_macro_call (&core->macro, each+2);
-				if (core->macro.brk_value == NULL)
+			for(core->cmd.macro.counter=0;i<999;core->cmd.macro.counter++) {
+				r_cmd_macro_call (&core->cmd.macro, each+2);
+				if (core->cmd.macro.brk_value == NULL)
 					break;
 
-				addr = core->macro._brk_value;
+				addr = core->cmd.macro._brk_value;
 				sprintf (cmd2, "%s @ 0x%08llx", cmd, addr);
 				eprintf ("0x%08llx (%s)\n", addr, cmd2);
 				r_core_seek (core, addr, 1);
@@ -1990,7 +1990,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			char cmd2[1024];
 			FILE *fd = fopen (each+1, "r");
 			if (fd) {
-				core->macro.counter=0;
+				core->cmd.macro.counter=0;
 				while (!feof (fd)) {
 					buf[0] = '\0';
 					if (fgets (buf, 1024, fd) == NULL)
@@ -2000,14 +2000,14 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					sprintf (cmd2, "%s @ 0x%08llx", cmd, addr);
 					r_core_seek (core, addr, 1); // XXX
 					r_core_cmd (core, cmd2, 0);
-					core->macro.counter++;
+					core->cmd.macro.counter++;
 				}
 				fclose (fd);
 			} else eprintf ("Cannot open file '%s' to read offsets\n", each+1);
 		}
 		break;
 	default:
-		core->macro.counter = 0;
+		core->cmd.macro.counter = 0;
 		//while(str[i]) && !core->interrupted) {
 		while (str[i]) {
 			j = i;
@@ -2067,7 +2067,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	#endif
 				r_cons_break (NULL, NULL);
 
-				core->macro.counter++ ;
+				core->cmd.macro.counter++ ;
 				free (word);
 				word = NULL;
 			}
@@ -2473,6 +2473,9 @@ R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd) {
 
 int r_core_cmd_init(struct r_core_t *core) {
 	r_cmd_init (&core->cmd);
+	core->cmd.macro.num = &core->num;
+	core->cmd.macro.user = core;
+	core->cmd.macro.cmd = r_core_cmd0;
 	r_cmd_set_data (&core->cmd, core);
 	r_cmd_add (&core->cmd, "x",        "alias for px", &cmd_hexdump);
 	r_cmd_add (&core->cmd, "analysis", "analysis", &cmd_anal);

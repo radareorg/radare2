@@ -13,7 +13,6 @@
 #include "r_cons.h"
 #include "r_line.h"
 #include "r_print.h"
-#include "r_macro.h"
 #include "r_search.h"
 #include "r_debug.h"
 #include "r_flags.h"
@@ -63,7 +62,6 @@ typedef struct r_core_t {
 	struct r_lang_t lang;
 	struct r_debug_t dbg;
 	struct r_flag_t flags;
-	struct r_macro_t macro;
 	struct r_config_t config;
 	struct r_search_t *search;
 } RCore;
@@ -82,11 +80,11 @@ R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd);
 R_API int r_core_cmd_file(struct r_core_t *core, const char *file);
 R_API int r_core_cmd_command(struct r_core_t *core, const char *command);
 R_API int r_core_seek(struct r_core_t *core, ut64 addr, int rb);
-R_API int r_core_seek_align(struct r_core_t *core, ut64 align, int times);
+R_API int r_core_seek_align(struct r_core_t *core, ut64 align, int count);
 R_API int r_core_block_read(struct r_core_t *core, int next);
 R_API int r_core_block_size(struct r_core_t *core, ut32 bsize);
 R_API int r_core_read_at(struct r_core_t *core, ut64 addr, ut8 *buf, int size);
-R_API int r_core_cmd_init(struct r_core_t *core);
+R_API int r_core_cmd_init(struct r_core_t *core); // MUST BE STATIC
 R_API int r_core_visual(struct r_core_t *core, const char *input);
 R_API int r_core_visual_cmd(struct r_core_t *core, int ch);
 

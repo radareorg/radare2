@@ -35,6 +35,9 @@ public class RAsmExample
 			stdout.printf("asm: %s\n", code.buf_hex);
 		}
 
+		print ("arg0: %s\n", st.fastcall (0, 4));
+		print ("arg1: %s\n", st.fastcall (1, 4));
+		print ("arg2: %s\n", st.fastcall (2, 4));
 /*
 		stdout.printf("Enumerate fastcall arguments:\n");
 		for(int i=0;i<4;i++) {

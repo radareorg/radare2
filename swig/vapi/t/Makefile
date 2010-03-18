@@ -75,11 +75,7 @@ search:
 		-g -o search
 	
 asm:
-	valac -C --vapidir=${PWD}/.. asm.vala --pkg r_asm
-	gcc asm.c `pkg-config gobject-2.0 --libs --cflags` -I../../include/ \
-		-lr_asm -Wl,-R../../asm -L../../asm \
-		-lr_util -Wl,-R../../util -L../../util \
-		-g -o asm
+	valac --vapidir=.. --pkg r_asm asm.vala
 
 bin:
 	valac -C --vapidir=${PWD}/.. bin.vala --pkg r_bin --pkg r_util

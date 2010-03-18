@@ -58,10 +58,10 @@ install-python:
 
 install-lua:
 	@if [ "`grep lua supported.langs`" ]; then \
-	for a in 5.1; do \
+	for a in 5.1 ; do \
 	mkdir -p ${DESTDIR}${PREFIX}/lib/lua/$$a/r2 ; \
 	echo "Installing lua$$a r2 modules..." ; \
-	cp -rf lua/* ${DESTDIR}${PREFIX}/lib/lua/$$a/r2 ; \
+	cp -rf lua/*.so ${DESTDIR}${PREFIX}/lib/lua/$$a/r2 ; \
 	cp -rf lua/*libr* ${DESTDIR}${PREFIX}/lib/lua/$$a ; \
 	done ; \
 	fi

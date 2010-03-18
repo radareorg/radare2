@@ -34,7 +34,6 @@ public class Radare.RAsm {
 		public string buf_asm;
 		public string buf_hex;
 		public string buf_err;
-		//pointer 
 	}
 
 	[CCode (cname="struct r_asm_code_t", destroy_function="" )]
@@ -64,15 +63,12 @@ public class Radare.RAsm {
 	public bool set_syntax(Syntax syntax);
 	public bool set_pc(uint64 addr);
 	public bool set_big_endian(bool big);
-	//public bool set_parser(RAsm.Parser parser, parse_cb cb, void *aux);
 	public int disassemble(out Aop aop, uint8 *buf, uint64 length);
 	public int assemble(out Aop aop, string buf);
 	public Code? mdisassemble(uint8 *buf, uint64 length);
 	public Code? massemble(string buf);
-//	public weak string fastcall(int idx, int num);
-	//public int parse();
-	// This is the destructor
-	public void free();
+	public weak string fastcall(int idx, int num);
 
-	public delegate int parse_cb();
+	/* TODO: not directy defined here */
+	public void free();
 }

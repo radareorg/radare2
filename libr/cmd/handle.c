@@ -28,11 +28,11 @@ R_API int r_cmd_handle_init(struct r_cmd_t *cmd) {
 
 R_API int r_cmd_handle_check(struct r_cmd_t *cmd, const char *a0) {
 	RListIter *iter;
-	RCommandHandle *cp;
+	RCmdHandle *cp;
 	
 	iter = r_list_iterator (cmd->plist);
 	while (r_list_iter_next (iter)) {
-		cp = (RCommandHandle*) r_list_iter_get (iter);
+		cp = (RCmdHandle*) r_list_iter_get (iter);
 		if (cp->call (NULL, a0))
 			return R_TRUE;
 	}

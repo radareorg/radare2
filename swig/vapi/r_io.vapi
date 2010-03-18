@@ -43,7 +43,14 @@ namespace Radare {
 		public uint64 size(int fd);
 
 
+		public void cache_enable(bool rd, bool wr);
+		public void cache_init();
+		public void cache_write(uint64 addr, weak string buf, int len);
+		public void cache_read(uint64 addr, ref string buf, int len);
+
 		/* undo */
+		// TODO: Implement seek and write undo apis..they must be unified..
+		public boolundo_init();
 		public void undo_enable(bool set, bool write);
 		//public uint64 undo_seek();
 		//public void undo_redo();
@@ -58,10 +65,11 @@ namespace Radare {
 			// TODO: lot of missing stuff here :)
 		}
 
-		/* TODO: make them methods */
+		/* TODO: make them methods of Handle class ? */
 		public bool handle_open(int fd, Handle plugin);
+		public bool handle_close(int fd, Handle plugin);
 		public bool handle_add(Handle plugin);
-		//public int handle_generate();
+		public int handle_generate();
 		public void handle_list();
 
 		/* maps */
@@ -79,8 +87,9 @@ namespace Radare {
 		public int map_write_at(uint64 addr, uint8 *buf, uint64 len);
 
 		/* sections */
+		[Compact]
 		[CCode (cname="RIOSection")]
-		public struct Section {
+		public class Section {
 			string comment;
 			uint64 from;
 			uint64 to;
@@ -88,6 +97,16 @@ namespace Radare {
 			uint64 paddr;
 			int rwx; // TODO: use perms
 		}
+
+		public void section_list(uint64 addr, bool rad);
+		public void section_list_visual(uint64 addr, uint64 len);
+		public Section section_get(uint64 addr);
+		public uint64 section_get_offset(uint64 addr);
+		public uint64 section_get_vaddr(uint64 addr);
+		public int section_get_rwx(uint64 addr);
+		public bool section_get_overlaps(Section refsec);
+		public uint64 section_vaddr_to_offset(uint64 vaddr);
+		public uint64 section_offset_to_vaddr(uint64 offset);
 
 		/* desc */
 		[CCode (cname="RIODesc")]

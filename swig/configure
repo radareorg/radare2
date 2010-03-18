@@ -17,9 +17,6 @@ control_c() {
   exit 1
 }
 trap control_c 2
-DEBUGGER=1
-WANT_VALASWIG=1
-WANT_VALA=1
 split_host() {
 S="$"
 while : ; do
@@ -138,10 +135,6 @@ System types:
   --target=TARGET        configure for building compilers for TARGET [HOST]
 EOF2
 
-printf "\nOptional Features:
-  --without-debugger     disable native debugger features 
-  --without-valaswig     disables the build of the valaswig bindings for python, perl, ruby 
-  --without-vala         disables the build of all the vala-dependant parts \n"
 printf "\nSome influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
@@ -187,9 +180,6 @@ case $flag in
 echo "PKGNAME:   radare2-swig"
 echo "VERSION:   0.4b"
 echo "LANGS:     c c++"
-echo "REQUIRED:  lib>=vala-1.0 libvala-1.0>=0.7.0"
-echo "OPTIONAL:  liblua5.1"
-echo "FLAGS:     --without-debugger --without-valaswig --without-vala"
 	exit 0
 	;;
 "--cache-file") 
@@ -231,9 +221,6 @@ echo "FLAGS:     --without-debugger --without-valaswig --without-vala"
 "--mandir")
 	MANDIR="$value"; ;;
 
-"--without-debugger") DEBUGGER="0"; ;;
-"--without-valaswig") WANT_VALASWIG="0"; ;;
-"--without-vala") WANT_VALA="0"; ;;
 *) if [ "$value" ]; then eval "`echo $flag2=$value`" ; 
 else echo ; echo "WARNING: Unknown flag '$flag'." >&2 ; echo ; fi ;;
 esac
@@ -251,7 +238,7 @@ parse_options $1
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C CXX CXXFLAGS HAVE_LANG_CXX DEBUGGER HAVE_LIB_LUA5_1 HAVE_LIB_TCC WANT_VALASWIG HAVE_VALASWIG VALASWIG HAVE_SWIG SWIG WANT_VALA HAVE_VALAC VALAC HAVE_VALA_1_0_VERSION_0_7_0"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C CXX CXXFLAGS HAVE_LANG_CXX HAVE_VALASWIG VALASWIG HAVE_SWIG SWIG"
 
 create_environ
 
@@ -265,9 +252,6 @@ echo "checking target system type... ${TARGET}"
 echo "checking for working directories... ${WODIS}"
 echo "using prefix '${PREFIX}'"
 ACR_RMFILES=" test.c a.out a.exe test.cxx a.out a.exe"
-
-
-
 
 
 : 
@@ -303,23 +287,6 @@ echo "ERROR: ${CXX} cannot create executables" >&2 ;
 do_remove
 exit 1
  fi
-check_library() {
-VAR=$1
-S="$"
-_REQUIRED=$3
-_CHKLIB_NAME=$2
-_CHKLIB_LIBS=$(echo "-l${_CHKLIB_NAME}" | sed 's,\+, -l,g')
-printf "checking for lib${_CHKLIB_NAME} ... "
-echo "main(){ }" > test.c
-eval ${S}${COMPILER} ${CFLAGS} ${LDFLAGS} ${_CHKLIB_LIBS} test.c >/dev/null 2>&1
-if [ $? = 0 ]; then
-	eval ${VAR}=1
-	echo yes
-else
-	eval ${VAR}=0
-	echo no  ; fi }
-check_library HAVE_LIB_LUA5_1 lua5.1 0 
-check_library HAVE_LIB_TCC tcc 0 
 printf "checking for valaswig... "
 if [ -x "${VALASWIG}" ]; then
 FIND=${VALASWIG}
@@ -339,7 +306,9 @@ if [ -n "${FIND}" ]; then
 else
  HAVE_VALASWIG=0
  VALASWIG=valaswig
- echo no ; fi
+ echo no
+  echo "error: This program is required." >&2
+  exit 1 ; fi
 printf "checking for swig... "
 if [ -x "${SWIG}" ]; then
 FIND=${SWIG}
@@ -359,45 +328,9 @@ if [ -n "${FIND}" ]; then
 else
  HAVE_SWIG=0
  SWIG=swig
- echo no ; fi
-if [ "$WANT_VALASWIG" = "1" ]; then
-if [ "$HAVE_SWIG" = "0" ]; then
-echo "   valaswig depends on swig" >&2 
-HAVE_VALASWIG="0"; fi
-else
-HAVE_VALASWIG="0"; fi
-printf "checking for valac... "
-if [ -x "${VALAC}" ]; then
-FIND=${VALAC}
-else
-FIND=""
-for A in `echo ${PATH} | sed -e 's,:, ,g'`; do
-if [ -x "${A}/valac" ]; then
-        FIND="${A}/valac"
-        break;
-fi
-done
-fi
-if [ -n "${FIND}" ]; then 
- echo ${FIND}; 
- HAVE_VALAC=1
- VALAC=${FIND}
-else
- HAVE_VALAC=0
- VALAC=valac
- echo no ; fi
-if [ "$WANT_VALA" = "1" ]; then
-HAVE_VALA_1_0_VERSION_0_7_0=0
-printf "checking version of library vala-1.0 >= 0.7.0... "
-pkg-config --atleast-version=0.7.0 vala-1.0 >/dev/null 2>&1
-if [ $? = 0 ]; then HAVE_VALA_1_0_VERSION_0_7_0=1 ; echo ok; else
-echo "no" ; fi
-if [ "$HAVE_VALA_1_0_VERSION_0_7_0" = "0" ]; then
-echo "   Needs vala 0.7.0 at least" >&2 
-HAVE_VALAC="0"
-VALAC=""; fi
-else
-HAVE_VALAC="0"; fi
+ echo no
+  echo "error: This program is required." >&2
+  exit 1 ; fi
 SEDFLAGS=" -e '"
 COUNT=0
 for A in ${ENVWORDS} ; do
@@ -444,7 +377,7 @@ done
 do_remove
 echo
 echo "Final report:"
-for A in  PREFIX HAVE_VALASWIG HAVE_LIB_TCC HAVE_VALAC ; do # REPORT
+for A in  PREFIX HAVE_VALASWIG ; do # REPORT
 eval VAL="\$${A}"
 [ -z "${VAL}" ] && VAL="(null)"
 echo " - ${A} = ${VAL}"

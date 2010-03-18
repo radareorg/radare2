@@ -1,0 +1,15 @@
+#!/bin/sh
+if [ -z "$1" ]; then
+  echo "Usage: rapi-list [modname]  # modname can be 'r_asm', 'r_bin' ..."
+  exit 1
+fi
+
+MOD=$1
+cat libr/include/${MOD}.h | \
+  grep ^R_API | \
+  sed -e 's,const ,,g' | \
+  sed -e 's,struct ,,g' | \
+  sed -e 's,\*,,g' | \
+  cut -d '(' -f 1 | \
+  awk '{ print $3 }' | \
+  sed -e "s,^${MOD}_,,"

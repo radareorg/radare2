@@ -152,7 +152,7 @@ typedef struct r_anal_bb_t {
 typedef struct r_anal_fcn_t {
 	char *name;
 	ut64 addr;
-	int size;
+	ut64 size;
 	RList *vars;
 	RList *refs;
 	RList *xrefs;
