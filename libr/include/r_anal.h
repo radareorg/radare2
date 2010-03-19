@@ -113,7 +113,7 @@ enum {
 	R_ANAL_RET_END = -4
 };
 
-typedef RAnal {
+typedef struct r_anal_t {
 	int bits;
 	int big_endian;
 	void *user;
