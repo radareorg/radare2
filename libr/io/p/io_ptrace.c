@@ -29,8 +29,8 @@ static int __waitpid(int pid) {
 
 // FIX: the goto 'err' is buggy
 static int debug_os_read_at(int pid, void *buf, int sz, ut64 addr) {
-        unsigned long words = sz / sizeof(long) ;
-        unsigned long last = sz % sizeof(long) ;
+        unsigned long words = sz / sizeof(long);
+        unsigned long last = sz % sizeof(long);
         long x, lr;
 
         if (sz<0 || addr==-1)
@@ -38,7 +38,7 @@ static int debug_os_read_at(int pid, void *buf, int sz, ut64 addr) {
 
         for (x=0; x<words; x++) {
                 ((long *)buf)[x] = debug_read_raw (pid,
-			(void *)(&((long*)(long )addr)[x]));
+			(void *)(&((long*)(long)addr)[x]));
                 if (((long *)buf)[x] == -1) // && errno)
                         goto err;
         }

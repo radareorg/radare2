@@ -706,12 +706,13 @@ static int cmd_print(void *data, const char *input) {
 	int show_color = r_config_get_i (&core->config, "scr.color");
 	int show_lines = r_config_get_i (&core->config, "asm.lines");
 	int show_dwarf = r_config_get_i (&core->config, "asm.dwarf");
-	int nbytes = r_config_get_i (&core->config, "asm.nbytes");
+	int nb, nbytes = r_config_get_i (&core->config, "asm.nbytes");
 	int linesout = r_config_get_i (&core->config, "asm.linesout");
 	int show_comments = r_config_get_i (&core->config, "asm.comments");
 	int pseudo = r_config_get_i (&core->config, "asm.pseudo");
 	int filter = r_config_get_i (&core->config, "asm.filter");
 	int linesopts = 0;
+	nb = nbytes*2;
 
 	if (r_config_get_i (&core->config, "asm.linesstyle"))
 		linesopts |= R_ANAL_REFLINE_STYLE;
@@ -745,6 +746,7 @@ static int cmd_print(void *data, const char *input) {
 			RAsmAop asmop;
 			struct r_anal_aop_t analop;
 			struct r_anal_refline_t *reflines;
+			RFlagItem *flag;
 		
 			//r_anal_set_pc(&core->anal, core->offset);
 			r_asm_set_pc (&core->assembler, core->offset);
@@ -775,17 +777,18 @@ static int cmd_print(void *data, const char *input) {
 					r_cons_strcat (line);
 				if (show_offset)
 					r_cons_printf ("0x%08llx  ", core->offset + idx);
-				if (show_bytes) {
-					RFlagItem *flag = r_flag_get_i (&core->flags, core->offset+idx);
-					int nb = nbytes*2;
+				flag = r_flag_get_i (&core->flags, core->offset+idx);
+				if (flag || show_bytes) {
 					char *extra = " ";
 					char *str;
 					if (flag) str = strdup (flag->name);
-					else str = strdup (asmop.buf_hex);
-					if (strlen (str) > nb) {
-						str[nb] = '.';
-						str[nb+1] = '\0';
-						extra = "";
+					else {
+						str = strdup (asmop.buf_hex);
+						if (strlen (str) > nb) {
+							str[nb] = '.';
+							str[nb+1] = '\0';
+							extra = "";
+						}
 					}
 					if (flag) {
 						if (show_color)
@@ -793,7 +796,7 @@ static int cmd_print(void *data, const char *input) {
 						else r_cons_printf ("*[ %*s]  ", (nb)-4, str);
 					} else r_cons_printf ("%*s %s", nb, str, extra);
 					free (str);
-				}
+				} else r_cons_printf ("%*s  ", (nb), "");
 				if (show_color) {
 					switch (analop.type) {
 					case R_ANAL_OP_TYPE_NOP:

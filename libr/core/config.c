@@ -132,9 +132,11 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "dir.plugins", LIBDIR"/radare2/");
 	/* anal */
 	r_config_set_i (cfg, "anal.depth", 10);
-	r_config_set (cfg, "asm.syntax", "intel");
 	r_config_set_i_cb (cfg, "asm.bits", 32,
 		&config_asm_bits_callback);
+	r_config_set (cfg, "asm.bytes", "true"); 
+	r_config_set (cfg, "asm.comments", "true");
+	r_config_set (cfg, "asm.dwarf", "false");
 	r_config_set_i (cfg, "asm.nbytes", 8);
 	r_config_set (cfg, "asm.pseudo", "false");  // DEPRECATED ???
 	r_config_set (cfg, "asm.filter", "true");
@@ -144,38 +146,35 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "asm.linesout", "true");
 	r_config_set (cfg, "asm.linesstyle", "false");
 	r_config_set (cfg, "asm.lineswide", "false");
-	r_config_set (cfg, "asm.comments", "true");
-	r_config_set (cfg, "asm.dwarf", "false");
-	r_config_set (cfg, "cmd.open", ""); 
-	r_config_set (cfg, "cmd.prompt", ""); 
-	r_config_set (cfg, "cmd.vprompt", ""); 
-	r_config_set (cfg, "cmd.hit", ""); 
-	r_config_set_cb (cfg, "scr.color",
-		(core->print.flags&R_PRINT_FLAGS_COLOR)?"true":"false",
-		&config_color_callback);
-	r_config_set (cfg, "scr.seek", "");
-	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
-	r_config_set (cfg, "cfg.debug", "false");
-	r_config_set_cb (cfg, "io.ffio", "false", &config_ioffio_callback);
-	r_config_set_cb (cfg, "io.va", "false", &config_iova_callback);
-	r_config_set (cfg, "cfg.fortunes", "true");
-	r_config_set (cfg, "file.type", "");
-	/* TODO cmd */
-	r_config_set (cfg, "cmd.prompt", "");
-	r_config_set (cfg, "cmd.vprompt", ""); //? eip && ?? s eip");
-	//r_config_set(cfg, "cmd.vprompt2", "CFV");
-	//r_config_set(cfg, "cmd.vprompt3", "");
-	r_config_set (cfg, "cmd.bp", "");
-	r_config_set_cb (cfg, "dbg.stopthreads", "true", &config_stopthreads_callback);
-	r_config_set_cb (cfg, "dbg.swstep", "false", &config_swstep_callback);
-	r_config_set_cb (cfg, "dbg.trace", "false", &config_trace_callback);
-	r_config_set_cb (cfg, "dbg.trace.tag", "0xff", &config_tracetag_callback);
+	r_config_set (cfg, "asm.offset", "true"); 
+	r_config_set_cb (cfg, "asm.os", R_SYS_OS, &config_asmos_callback);
+	r_config_set (cfg, "asm.pseudo", "false");  // DEPRECATED ???
+	r_config_set (cfg, "asm.syntax", "intel");
 #if LIL_ENDIAN
 	r_config_set_cb (cfg, "cfg.bigendian", "false", &config_bigendian_callback);
 #else
 	r_config_set_cb (cfg, "cfg.bigendian", "true", &config_bigendian_callback);
 #endif
-	r_config_set_cb (cfg, "asm.os", R_SYS_OS, &config_asmos_callback);
+	r_config_set (cfg, "cfg.debug", "false");
+	r_config_set (cfg, "cfg.fortunes", "true");
+	r_config_set (cfg, "cmd.hit", ""); 
+	r_config_set (cfg, "cmd.open", ""); 
+	r_config_set (cfg, "cmd.prompt", ""); 
+	r_config_set (cfg, "cmd.vprompt", "");
+	r_config_set (cfg, "cmd.bp", "");
+	r_config_set_cb (cfg, "dbg.stopthreads", "true", &config_stopthreads_callback);
+	r_config_set_cb (cfg, "dbg.swstep", "false", &config_swstep_callback);
+	r_config_set_cb (cfg, "dbg.trace", "false", &config_trace_callback);
+	r_config_set_cb (cfg, "dbg.trace.tag", "0xff", &config_tracetag_callback);
+	r_config_set_cb (cfg, "scr.color",
+		(core->print.flags&R_PRINT_FLAGS_COLOR)?"true":"false",
+		&config_color_callback);
+	r_config_set (cfg, "scr.seek", "");
+	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
+	r_config_set_cb (cfg, "io.ffio", "false", &config_ioffio_callback);
+	r_config_set_cb (cfg, "io.va", "false", &config_iova_callback);
+	r_config_set (cfg, "file.type", "");
+	/* TODO cmd */
 #if 0
 	node = config_set("asm.profile", "default");
 //	node->callback = &config_asm_profile;
