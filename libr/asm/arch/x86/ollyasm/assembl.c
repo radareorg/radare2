@@ -287,7 +287,9 @@ static void Scanasm(int mode) {
       idata=hex; scan=SCAN_ICONST;
       while (*asmcmd==' ' || *asmcmd=='\t') asmcmd++;
       return; };
-    if (*asmcmd=='.') {                // Force decimal number
+
+    // XXX YES: we force radix=10 by default
+    if (1) { //*asmcmd=='.') {                // Force decimal number
       if (base==16 || maxdigit>9) {
         asmerror="Not a decimal number"; scan=SCAN_ERR; return; };
       asmcmd++;

@@ -702,6 +702,7 @@ static int cmd_print(void *data, const char *input) {
 	int show_color = r_config_get_i (&core->config, "scr.color");
 	int show_lines = r_config_get_i (&core->config, "asm.lines");
 	int show_dwarf = r_config_get_i (&core->config, "asm.dwarf");
+	int nbytes = r_config_get_i (&core->config, "asm.nbytes");
 	int linesout = r_config_get_i (&core->config, "asm.linesout");
 	int show_comments = r_config_get_i (&core->config, "asm.comments");
 	int pseudo = r_config_get_i (&core->config, "asm.pseudo");
@@ -772,11 +773,22 @@ static int cmd_print(void *data, const char *input) {
 					r_cons_printf ("0x%08llx  ", core->offset + idx);
 				if (show_bytes) {
 					RFlagItem *flag = r_flag_get_i (&core->flags, core->offset+idx);
+					int nb = nbytes*2;
+					char *extra = " ";
+					char *str;
+					if (flag) str = strdup (flag->name);
+					else str = strdup (asmop.buf_hex);
+					if (strlen (str) > nb) {
+						str[nb] = '.';
+						str[nb+1] = '\0';
+						extra = "";
+					}
 					if (flag) {
 						if (show_color)
-							r_cons_printf (Color_BWHITE"*[ %16s] "Color_RESET, flag->name);
-						else r_cons_printf ("*[ %16s] ", flag->name);
-					} else r_cons_printf ("%20s ", asmop.buf_hex);
+							r_cons_printf (Color_BWHITE"*[ %*s]  "Color_RESET, (nb)-4, str);
+						else r_cons_printf ("*[ %*s]  ", (nb)-4, str);
+					} else r_cons_printf ("%*s %s", nb, str, extra);
+					free (str);
 				}
 				if (show_color) {
 					switch (analop.type) {

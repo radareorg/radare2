@@ -135,6 +135,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "asm.syntax", "intel");
 	r_config_set_i_cb (cfg, "asm.bits", 32,
 		&config_asm_bits_callback);
+	r_config_set_i (cfg, "asm.nbytes", 8);
 	r_config_set (cfg, "asm.pseudo", "false");  // DEPRECATED ???
 	r_config_set (cfg, "asm.symreplace", "false");
 	r_config_set (cfg, "asm.bytes", "true"); 
@@ -194,7 +195,6 @@ R_API int r_core_config_init(RCore *core) {
 	config_set("asm.jmpflags", "false");
 	config_set("asm.flags", "true");
 	config_set("asm.flagsall", "true");
-	config_set("asm.flagsline", "false");
 	config_set("asm.functions", "true");
 	config_set("asm.lines", "true"); // show left ref lines
 	config_set_i("asm.nlines", 6); // show left ref lines
