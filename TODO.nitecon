@@ -1,0 +1,15 @@
+Dan palo
+8======D
+  * anal fastargs
+  * console grep
+  * x@esp&&x@eip  # BUG
+
+nibble
+======
+  * code analysis con parse
+  * dcu broken in x86-64
+
+pancake
+=======
+  * stack analysis
+  * r_anal.vapi is empty

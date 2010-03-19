@@ -6,16 +6,16 @@
 #include <r_util.h>
 #include <r_list.h>
 
-R_API RAnalysisVar *r_anal_var_new() {
-	return r_anal_var_init (R_NEW (RAnalysisVar));
+R_API RAnalVar *r_anal_var_new() {
+	return r_anal_var_init (R_NEW (RAnalVar));
 }
 
-R_API RAnalysisVarType *r_anal_var_type_new() {
-	return r_anal_var_type_init (R_NEW (RAnalysisVarType));
+R_API RAnalVarType *r_anal_var_type_new() {
+	return r_anal_var_type_init (R_NEW (RAnalVarType));
 }
 
-R_API RAnalysisVarAccess *r_anal_var_access_new() {
-	return r_anal_var_access_init (R_NEW (RAnalysisVarAccess));
+R_API RAnalVarAccess *r_anal_var_access_new() {
+	return r_anal_var_access_init (R_NEW (RAnalVarAccess));
 }
 
 R_API RList *r_anal_var_list_new() {
@@ -38,22 +38,22 @@ R_API RList *r_anal_var_access_list_new() {
 
 R_API void r_anal_var_free(void *var) {
 	if (var) {
-		if (((RAnalysisVar*)var)->name)
-			free (((RAnalysisVar*)var)->name);
-		if (((RAnalysisVar*)var)->vartype)
-			free (((RAnalysisVar*)var)->vartype);
-		if (((RAnalysisVar*)var)->accesses)
-			r_list_destroy (((RAnalysisVar*)var)->accesses);
+		if (((RAnalVar*)var)->name)
+			free (((RAnalVar*)var)->name);
+		if (((RAnalVar*)var)->vartype)
+			free (((RAnalVar*)var)->vartype);
+		if (((RAnalVar*)var)->accesses)
+			r_list_destroy (((RAnalVar*)var)->accesses);
 	}
 	free (var);
 }
 
 R_API void r_anal_var_type_free(void *vartype) {
 	if (vartype) {
-		if (((RAnalysisVarType*)vartype)->name)
-			free (((RAnalysisVarType*)vartype)->name);
-		if (((RAnalysisVarType*)vartype)->fmt)
-			free (((RAnalysisVarType*)vartype)->fmt);
+		if (((RAnalVarType*)vartype)->name)
+			free (((RAnalVarType*)vartype)->name);
+		if (((RAnalVarType*)vartype)->fmt)
+			free (((RAnalVarType*)vartype)->fmt);
 	}
 	free (vartype);
 }
@@ -62,28 +62,28 @@ R_API void r_anal_var_access_free(void *access) {
 	free (access);
 }
 
-R_API RAnalysisVar *r_anal_var_init(RAnalysisVar *var) {
+R_API RAnalVar *r_anal_var_init(RAnalVar *var) {
 	if (var) {
-		memset (var, 0, sizeof (RAnalysisVar));
+		memset (var, 0, sizeof (RAnalVar));
 		var->accesses = r_anal_var_access_list_new ();
 	}
 	return var;
 }
 
-R_API RAnalysisVarType *r_anal_var_type_init(RAnalysisVarType *vartype) {
+R_API RAnalVarType *r_anal_var_type_init(RAnalVarType *vartype) {
 	if (vartype)
-		memset (vartype, 0, sizeof (RAnalysisVarType));
+		memset (vartype, 0, sizeof (RAnalVarType));
 	return vartype;
 }
 
-R_API RAnalysisVarAccess *r_anal_var_access_init(RAnalysisVarAccess *access) {
+R_API RAnalVarAccess *r_anal_var_access_init(RAnalVarAccess *access) {
 	if (access)
-		memset (access, 0, sizeof (RAnalysisVarAccess));
+		memset (access, 0, sizeof (RAnalVarAccess));
 	return access;
 }
 
-R_API int r_anal_var_type_add(RAnalysis *anal, const char *name, int size, const char *fmt) {
-	RAnalysisVarType *t;
+R_API int r_anal_var_type_add(RAnal *anal, const char *name, int size, const char *fmt) {
+	RAnalVarType *t;
 
 	if (!(t = r_anal_var_type_new ()))
 		return R_FALSE;
@@ -96,8 +96,8 @@ R_API int r_anal_var_type_add(RAnalysis *anal, const char *name, int size, const
 	return R_TRUE;
 }
 
-R_API int r_anal_var_type_del(RAnalysis *anal, const char *name) {
-	RAnalysisVarType *vti;
+R_API int r_anal_var_type_del(RAnal *anal, const char *name) {
+	RAnalVarType *vti;
 	RListIter *iter;
 
 	r_list_foreach(anal->vartypes, iter, vti)
@@ -108,8 +108,8 @@ R_API int r_anal_var_type_del(RAnalysis *anal, const char *name) {
 	return R_FALSE;
 }
 
-R_API RAnalysisVarType *r_anal_var_type_get(RAnalysis *anal, const char *name) {
-	RAnalysisVarType *vti;
+R_API RAnalVarType *r_anal_var_type_get(RAnal *anal, const char *name) {
+	RAnalVarType *vti;
 	RListIter *iter;
 
 	r_list_foreach(anal->vartypes, iter, vti)
@@ -118,8 +118,8 @@ R_API RAnalysisVarType *r_anal_var_type_get(RAnalysis *anal, const char *name) {
 	return NULL;
 }
 
-R_API int r_anal_var_add(RAnalysis *anal, RAnalysisFcn *fcn, ut64 from, int delta, int type, const char *vartype, const char *name, int set) {
-	RAnalysisVar *var, *vari;
+R_API int r_anal_var_add(RAnal *anal, RAnalFcn *fcn, ut64 from, int delta, int type, const char *vartype, const char *name, int set) {
+	RAnalVar *var, *vari;
 	RListIter *iter;
 
 	r_list_foreach(fcn->vars, iter, vari)
@@ -138,8 +138,8 @@ R_API int r_anal_var_add(RAnalysis *anal, RAnalysisFcn *fcn, ut64 from, int delt
 	return R_TRUE;
 }
 
-R_API int r_anal_var_del(RAnalysis *anal, RAnalysisFcn *fcn, int delta, int type) {
-	RAnalysisVar *vari;
+R_API int r_anal_var_del(RAnal *anal, RAnalFcn *fcn, int delta, int type) {
+	RAnalVar *vari;
 	RListIter *iter;
 
 	r_list_foreach(fcn->vars, iter, vari)
@@ -150,8 +150,8 @@ R_API int r_anal_var_del(RAnalysis *anal, RAnalysisFcn *fcn, int delta, int type
 	return R_FALSE;
 }
 
-R_API RAnalysisVar *r_anal_var_get(RAnalysis *anal, RAnalysisFcn *fcn, int delta, int type) {
-	RAnalysisVar *vari;
+R_API RAnalVar *r_anal_var_get(RAnal *anal, RAnalFcn *fcn, int delta, int type) {
+	RAnalVar *vari;
 	RListIter *iter;
 
 	r_list_foreach(fcn->vars, iter, vari)
@@ -160,7 +160,7 @@ R_API RAnalysisVar *r_anal_var_get(RAnalysis *anal, RAnalysisFcn *fcn, int delta
 	return NULL;
 }
 
-R_API const char *r_anal_var_type_to_str (RAnalysis *anal, int type) {
+R_API const char *r_anal_var_type_to_str (RAnal *anal, int type) {
 	switch(type) {
 	case R_ANAL_VAR_TYPE_GLOBAL: return "global";
 	case R_ANAL_VAR_TYPE_LOCAL:  return "local";
@@ -170,8 +170,8 @@ R_API const char *r_anal_var_type_to_str (RAnalysis *anal, int type) {
 	return "(?)";
 }
 
-R_API int r_anal_var_access_add(RAnalysis *anal, RAnalysisVar *var, ut64 from, int set) {
-	RAnalysisVarAccess *acc, *acci;
+R_API int r_anal_var_access_add(RAnal *anal, RAnalVar *var, ut64 from, int set) {
+	RAnalVarAccess *acc, *acci;
 	RListIter *iter;
 
 	r_list_foreach(var->accesses, iter, acci)
@@ -185,8 +185,8 @@ R_API int r_anal_var_access_add(RAnalysis *anal, RAnalysisVar *var, ut64 from, i
 	return R_TRUE;
 }
 
-R_API int r_anal_var_access_del(RAnalysis *anal, RAnalysisVar *var, ut64 from) {
-	RAnalysisVarAccess *acci;
+R_API int r_anal_var_access_del(RAnal *anal, RAnalVar *var, ut64 from) {
+	RAnalVarAccess *acci;
 	RListIter *iter;
 
 	r_list_foreach(var->accesses, iter, acci)
@@ -197,8 +197,8 @@ R_API int r_anal_var_access_del(RAnalysis *anal, RAnalysisVar *var, ut64 from) {
 	return R_TRUE;
 }
 
-R_API RAnalysisVarAccess *r_anal_var_access_get(RAnalysis *anal, RAnalysisVar *var, ut64 from) {
-	RAnalysisVarAccess *acci;
+R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 from) {
+	RAnalVarAccess *acci;
 	RListIter *iter;
 
 	r_list_foreach(var->accesses, iter, acci)

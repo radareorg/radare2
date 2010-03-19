@@ -71,18 +71,15 @@ R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *li
 	struct list_head *pos;
 	int dir = 0;
 	char ch = ' ';
-
 	int linestyle = opts & R_ANAL_REFLINE_STYLE;
 	int wide = opts & R_ANAL_REFLINE_WIDE;
 
 	if (!list)
 		return R_FALSE;
-
 	strcpy (str, " ");
-
 	for (pos = linestyle?(&(list->list))->next:(&(list->list))->prev;
 		pos != (&(list->list)); pos = linestyle?pos->next:pos->prev) {
-		ref = list_entry(pos, struct r_anal_refline_t, list);
+		ref = list_entry (pos, struct r_anal_refline_t, list);
 
 		if (addr == ref->to) dir = 1;
 		// TODO: use else here
@@ -91,26 +88,26 @@ R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *li
 		// TODO: if dir==1
 		if (addr == ref->to) {
 			if (ref->from > ref->to)
-				strcat(str, ".");
-			else strcat(str, "`");
+				strcat (str, ".");
+			else strcat (str, "`");
 			ch = '-';
 		} else if (addr == ref->from) {
 			if (ref->from > ref->to)
-				strcat(str, "`");
-			else strcat(str, ".");
+				strcat (str, "`");
+			else strcat (str, ".");
 			ch = '=';
 		} else if (ref->from < ref->to) { /* down */
 			if (addr > ref->from && addr < ref->to) {
 				if (ch=='-'||ch=='=')
 					r_str_concatch(str, ch);
 				else strcat(str, "|");
-			} else r_str_concatch(str, ch);
+			} else r_str_concatch (str, ch);
 		} else { /* up */
 			if (addr < ref->from && addr > ref->to) {
 				if (ch=='-'||ch=='=')
-					r_str_concatch(str, ch);
-				else strcat(str, "|");
-			} else r_str_concatch(str, ch);
+					r_str_concatch (str, ch);
+				else strcat (str, "|");
+			} else r_str_concatch (str, ch);
 		}
 		if (wide) {
 			if (ch == '=' || ch == '-')
@@ -118,12 +115,18 @@ R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *li
 			else strcat (str, " ");
 		}
 	}
-
-	switch (dir) {
-	case 1: strcat (str, "-> "); break;
-	case 2: strcat (str, "=< "); break;
-	default: strcat (str, "   "); break;
-	}
-
+	strcat (str, (dir==1)?"-> ":(dir==2)?"=< ":"   ");
 	return R_TRUE;
+}
+
+R_API int r_anal_reflines_middle(RAnal *anal, RAnalRefline *list, ut64 addr, int len) {
+	struct list_head *pos;
+	int linestyle = 1;
+	for (pos = (&(list->list))->next; pos != (&(list->list)); pos = pos->next) {
+		RAnalRefline *ref = list_entry (pos, RAnalRefline, list);
+		//if ((addr > ref->to) && (addr < ref->to+len))
+		if ((ref->to> addr) && (ref->to < addr+len))
+			return R_TRUE;
+	}
+	return R_FALSE;
 }

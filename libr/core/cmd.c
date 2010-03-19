@@ -655,7 +655,7 @@ static int cmd_cmp(void *data, const char *input) {
 		" cD [file]     Like above, but using radiff -b\n");
 		break;
 	default:
-		eprintf("Usage: c[?Ddxf] [argument]\n");
+		eprintf ("Usage: c[?Ddxf] [argument]\n");
 	}
 
 	return 0;
@@ -736,7 +736,7 @@ static int cmd_print(void *data, const char *input) {
 		// TODO: move to a function...we need a flag instead of thousand config_foo's
 		{
 			int ret, idx; 
-			int i;
+			int middle, i;
 			ut8 *buf = core->block;
 			char str[128];
 			char line[128];
@@ -744,8 +744,8 @@ static int cmd_print(void *data, const char *input) {
 			char *opstr;
 			char *osl = NULL; // old source line
 			RAsmAop asmop;
-			struct r_anal_aop_t analop;
-			struct r_anal_refline_t *reflines;
+			RAnalAop analop;
+			RAnalRefline *reflines;
 			RFlagItem *flag;
 		
 			//r_anal_set_pc(&core->anal, core->offset);
@@ -772,6 +772,7 @@ static int cmd_print(void *data, const char *input) {
 					continue;
 				}
 				r_anal_aop (&core->anal, &analop, addr, buf+idx, (int)(len-idx));
+				middle = r_anal_reflines_middle (&core->anal, reflines, addr, analop.length);
 
 				if (show_lines)
 					r_cons_strcat (line);
@@ -850,12 +851,16 @@ static int cmd_print(void *data, const char *input) {
 						osl = sl;
 					}
 				}
-				r_cons_strcat ("\n");
+				if (middle != 0) {
+					ret = ret-middle;
+					r_cons_printf (" ;  *middle* %d", ret);
+				}
+				r_cons_newline ();
 				if (show_lines && analop.type == R_ANAL_OP_TYPE_RET) {
-					if (strchr(line, '>'))
-						memset(line, ' ', strlen(line));
-					r_cons_printf("%s", line);
-					r_cons_printf("; ------------------------------------\n");
+					if (strchr (line, '>'))
+						memset (line, ' ', strlen (line));
+					r_cons_strcat (line);
+					r_cons_strcat ("; ------------------------------------\n");
 				}
 			}
 			free (reflines);

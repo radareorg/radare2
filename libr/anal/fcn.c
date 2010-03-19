@@ -6,8 +6,8 @@
 #include <r_util.h>
 #include <r_list.h>
 
-R_API RAnalysisFcn *r_anal_fcn_new() {
-	return r_anal_fcn_init (R_NEW (RAnalysisFcn));
+R_API RAnalFcn *r_anal_fcn_new() {
+	return r_anal_fcn_init (R_NEW (RAnalFcn));
 }
 
 R_API RList *r_anal_fcn_list_new() {
@@ -18,21 +18,21 @@ R_API RList *r_anal_fcn_list_new() {
 
 R_API void r_anal_fcn_free(void *fcn) {
 	if (fcn) {
-		if (((RAnalysisFcn*)fcn)->name)
-			free (((RAnalysisFcn*)fcn)->name);
-		if (((RAnalysisFcn*)fcn)->refs)
-			r_list_destroy (((RAnalysisFcn*)fcn)->refs);
-		if (((RAnalysisFcn*)fcn)->xrefs)
-			r_list_destroy (((RAnalysisFcn*)fcn)->xrefs);
-		if (((RAnalysisFcn*)fcn)->vars)
-			r_list_destroy (((RAnalysisFcn*)fcn)->vars);
+		if (((RAnalFcn*)fcn)->name)
+			free (((RAnalFcn*)fcn)->name);
+		if (((RAnalFcn*)fcn)->refs)
+			r_list_destroy (((RAnalFcn*)fcn)->refs);
+		if (((RAnalFcn*)fcn)->xrefs)
+			r_list_destroy (((RAnalFcn*)fcn)->xrefs);
+		if (((RAnalFcn*)fcn)->vars)
+			r_list_destroy (((RAnalFcn*)fcn)->vars);
 	}
 	free (fcn);
 }
 
-R_API RAnalysisFcn *r_anal_fcn_init(RAnalysisFcn *fcn) {
+R_API RAnalFcn *r_anal_fcn_init(RAnalFcn *fcn) {
 	if (fcn) {
-		memset (fcn, 0, sizeof (RAnalysisFcn));
+		memset (fcn, 0, sizeof (RAnalFcn));
 		fcn->addr = -1;
 		fcn->vars = r_anal_var_list_new ();
 		fcn->refs = r_anal_ref_list_new ();
@@ -41,10 +41,10 @@ R_API RAnalysisFcn *r_anal_fcn_init(RAnalysisFcn *fcn) {
 	return fcn;
 }
 
-R_API int r_anal_fcn(RAnalysis *anal, RAnalysisFcn *fcn, ut64 addr, ut8 *buf, ut64 len) {
-	RAnalysisRef *ref, *refi;
+R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len) {
+	RAnalRef *ref, *refi;
 	RListIter *iter;
-	RAnalysisAop aop;
+	RAnalAop aop;
 	ut64 *jump;
 	char *varname;
 	int oplen, idx = 0;

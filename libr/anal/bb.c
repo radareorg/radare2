@@ -6,8 +6,8 @@
 #include <r_util.h>
 #include <r_list.h>
 
-R_API RAnalysisBB *r_anal_bb_new() {
-	return r_anal_bb_init (R_NEW (RAnalysisBB));
+R_API RAnalBB *r_anal_bb_new() {
+	return r_anal_bb_init (R_NEW (RAnalBB));
 }
 
 R_API RList *r_anal_bb_list_new() {
@@ -17,14 +17,14 @@ R_API RList *r_anal_bb_list_new() {
 }
 
 R_API void r_anal_bb_free(void *bb) {
-	if (bb && ((RAnalysisBB*)bb)->aops)
-		r_list_destroy (((RAnalysisBB*)bb)->aops);
+	if (bb && ((RAnalBB*)bb)->aops)
+		r_list_destroy (((RAnalBB*)bb)->aops);
 	free (bb);
 }
 
-R_API RAnalysisBB *r_anal_bb_init(RAnalysisBB *bb) {
+R_API RAnalBB *r_anal_bb_init(RAnalBB *bb) {
 	if (bb) {
-		memset (bb, 0, sizeof (RAnalysisBB));
+		memset (bb, 0, sizeof (RAnalBB));
 		bb->addr = -1;
 		bb->jump = -1;
 		bb->fail = -1;
@@ -33,8 +33,8 @@ R_API RAnalysisBB *r_anal_bb_init(RAnalysisBB *bb) {
 	return bb;
 }
 
-R_API int r_anal_bb(RAnalysis *anal, RAnalysisBB *bb, ut64 addr, ut8 *buf, ut64 len) {
-	RAnalysisAop *aop;
+R_API int r_anal_bb(RAnal *anal, RAnalBB *bb, ut64 addr, ut8 *buf, ut64 len) {
+	RAnalAop *aop;
 	int oplen, idx = 0;
 
 	if (bb->addr == -1)
@@ -65,9 +65,9 @@ R_API int r_anal_bb(RAnalysis *anal, RAnalysisBB *bb, ut64 addr, ut8 *buf, ut64 
 	return bb->size;
 }
 
-R_API int r_anal_bb_split(RAnalysis *anal, RAnalysisBB *bb, RList *bbs, ut64 addr) {
-	RAnalysisBB *bbi;
-	RAnalysisAop *aopi;
+R_API int r_anal_bb_split(RAnal *anal, RAnalBB *bb, RList *bbs, ut64 addr) {
+	RAnalBB *bbi;
+	RAnalAop *aopi;
 	RListIter *iter;
 
 	r_list_foreach (bbs, iter, bbi)
@@ -95,9 +95,9 @@ R_API int r_anal_bb_split(RAnalysis *anal, RAnalysisBB *bb, RList *bbs, ut64 add
 	return R_ANAL_RET_NEW;
 }
 
-R_API int r_anal_bb_overlap(RAnalysis *anal, RAnalysisBB *bb, RList *bbs) {
-	RAnalysisBB *bbi;
-	RAnalysisAop *aopi;
+R_API int r_anal_bb_overlap(RAnal *anal, RAnalBB *bb, RList *bbs) {
+	RAnalBB *bbi;
+	RAnalAop *aopi;
 	RListIter *iter;
 
 	r_list_foreach (bbs, iter, bbi)
