@@ -289,7 +289,7 @@ static void Scanasm(int mode) {
       return; };
 
     // XXX YES: we force radix=10 by default
-    if (1) { //*asmcmd=='.') {                // Force decimal number
+    if (base==0) { //*asmcmd=='.') {                // Force decimal number
       if (base==16 || maxdigit>9) {
         asmerror="Not a decimal number"; scan=SCAN_ERR; return; };
       asmcmd++;
