@@ -23,6 +23,9 @@
 #define R_CORE_BLOCKSIZE 64
 #define R_CORE_BLOCKSIZE_MAX 0x40000 /* 4 MB */
 
+#define R_CORE_ANAL_GRAPHLINES 0x1
+#define R_CORE_ANAL_GRAPHBODY  0x2
+
 typedef struct r_core_file_t {
 	char *uri;
 	char *filename;

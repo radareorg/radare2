@@ -33,6 +33,8 @@ struct r_parse_handle_t r_parse_plugin_mreplace = {
 	.init = NULL,
 	.fini = NULL,
 	.parse = &parse,
+	.assemble = NULL,
+	.filter = NULL
 };
 
 #else

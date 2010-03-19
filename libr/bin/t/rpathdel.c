@@ -20,10 +20,8 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	if (!r_bin_wr_rpath_del (bin)) {
-		fprintf (stderr, "Error: Cannot remove rpath\n");
+	if (!r_bin_wr_rpath_del (bin))
 		return 1;
-	}
 	r_bin_wr_output (bin, output);
 
 	r_bin_free (bin);

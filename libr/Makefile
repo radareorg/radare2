@@ -66,7 +66,10 @@ install-bins:
 	# programs
 	@${INSTALL_DIR} ${PFX}/bin
 	@for a in `find */t -perm -u+x -type f | grep 2`; \
-	do echo "$$a ${PFX}/bin"; ${INSTALL_PROGRAM} $$a ${PFX}/bin ; done
+	do echo "$$a ${PFX}/bin"; \
+	./bin/t/rpathdel $$a $$a ; \
+	${INSTALL_PROGRAM} $$a ${PFX}/bin ; \
+	done
 	# shortcut
 	-cd ${PFX}/bin && rm -f r2 ; ln -fs radare2 r2
 

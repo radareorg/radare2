@@ -710,7 +710,7 @@ static int cmd_print(void *data, const char *input) {
 	int linesout = r_config_get_i (&core->config, "asm.linesout");
 	int show_comments = r_config_get_i (&core->config, "asm.comments");
 	int pseudo = r_config_get_i (&core->config, "asm.pseudo");
-	int symreplace = r_config_get_i (&core->config, "asm.symreplace");
+	int filter = r_config_get_i (&core->config, "asm.filter");
 	int linesopts = 0;
 
 	if (r_config_get_i (&core->config, "asm.linesstyle"))
@@ -824,8 +824,8 @@ static int cmd_print(void *data, const char *input) {
 				if (pseudo) {
 					r_parse_parse (&core->parser, asmop.buf_asm, str);
 					opstr = str;
-				} else if (symreplace) {
-					r_parse_symreplace (&core->parser, &core->flags, asmop.buf_asm, str);
+				} else if (filter) {
+					r_parse_filter (&core->parser, &core->flags, asmop.buf_asm, str);
 					opstr = str;
 				} else opstr = asmop.buf_asm;
 				r_cons_strcat (opstr);
@@ -1161,7 +1161,7 @@ static int cmd_anal(void *data, const char *input) {
 	case 'g':
 		switch (input[1]) {
 		case 'l':
-			r_core_anal_graph (core, r_num_math (&core->num, input+2), R_TRUE);
+			r_core_anal_graph (core, r_num_math (&core->num, input+2), R_CORE_ANAL_GRAPHLINES);
 			break;
 		case 'f':
 			{
@@ -1170,16 +1170,20 @@ static int cmd_anal(void *data, const char *input) {
 			free (fname);
 			}
 			break;
+		case 'a':
+			r_core_anal_graph (core, r_num_math (&core->num, input+2), 0);
+			break;
 		case '?':
 			r_cons_printf (
 			"Usage: ag[?f]\n"
 			" ag [addr]       ; Output graphviz code (bb at addr and childs)\n"
+			" aga [addr]      ; Idem, but only addresses\n"
 			" agl [fcn name]  ; Output graphviz code using meta-data\n"
 			" agf [fcn name]  ; Output graphviz code of function\n"
 			" agfl [fcn name] ; Output graphviz code of function using meta-data\n");
 			break;
 		default:
-			r_core_anal_graph (core, r_num_math (&core->num, input+2), R_FALSE);
+			r_core_anal_graph (core, r_num_math (&core->num, input+2), R_CORE_ANAL_GRAPHBODY);
 		}
 		break;
 	case 's':

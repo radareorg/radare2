@@ -137,7 +137,7 @@ static int assemble(struct r_parse_t *p, void *data, char *str)
 	return R_TRUE;
 }
 
-static int symreplace(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str)
+static int filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str)
 {
 	struct list_head *pos;
 	char *ptr;
@@ -164,7 +164,7 @@ struct r_parse_handle_t r_parse_plugin_x86_pseudo = {
 	.fini = NULL,
 	.parse = &parse,
 	.assemble = &assemble,
-	.symreplace = &symreplace,
+	.filter = &filter,
 };
 
 struct r_lib_struct_t radare_plugin = {

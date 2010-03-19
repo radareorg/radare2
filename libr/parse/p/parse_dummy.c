@@ -18,6 +18,8 @@ struct r_parse_handle_t r_parse_plugin_dummy = {
 	.init = NULL,
 	.fini = NULL,
 	.parse = &parse,
+	.assemble = NULL,
+	.filter = NULL
 };
 
 #ifndef CORELIB
