@@ -4,7 +4,7 @@
 #include "../config.h"
 
 static ut64 num_callback(void *userptr, const char *str, int *ok) {
-	struct r_core_t *core = userptr;
+	RCore *core = userptr;
 	struct r_flag_item_t *flag;
 	struct r_anal_aop_t aop;
 	
@@ -53,8 +53,8 @@ static ut64 num_callback(void *userptr, const char *str, int *ok) {
 	return (flag)?flag->offset:0LL;
 }
 
-R_API struct r_core_t *r_core_new() {
-	struct r_core_t *c = R_NEW (struct r_core_t);
+R_API RCore *r_core_new() {
+	RCore *c = R_NEW (struct r_core_t);
 	r_core_init (c);
 	return c;
 }
@@ -89,20 +89,20 @@ static int myfgets(char *buf, int len) {
 #if 0
 static int __dbg_read(void *user, int pid, ut64 addr, ut8 *buf, int len)
 {
-	struct r_core_t *core = (struct r_core_t *)user;
+	RCore *core = (RCore *)user;
 	// TODO: pid not used
 	return r_core_read_at(core, addr, buf, len);
 }
 
 static int __dbg_write(void *user, int pid, ut64 addr, const ut8 *buf, int len)
 {
-	struct r_core_t *core = (struct r_core_t *)user;
+	RCore *core = (RCore *)user;
 	// TODO: pid not used
 	return r_core_write_at(core, addr, buf, len);
 }
 #endif
 
-R_API int r_core_init(struct r_core_t *core) {
+R_API int r_core_init(RCore *core) {
 	core->ffio = 0;
 	core->oobi = NULL;
 	core->oobi_len = 0;
@@ -170,14 +170,16 @@ R_API int r_core_init(struct r_core_t *core) {
 	return 0;
 }
 
-R_API struct r_core_t *r_core_free(struct r_core_t *c) {
+R_API RCore *r_core_free(RCore *c) {
 	/* TODO: it leaks as shit */
 	free (c);
 	return NULL;
 }
 
-R_API int r_core_prompt(struct r_core_t *r) {
+R_API int r_core_prompt(RCore *r) {
+	static char *prevcmd = NULL;
 	int ret;
+	char *cmd;
 	char line[1024];
 	char prompt[32];
 	const char *cmdprompt = r_config_get (&r->config, "cmd.prompt");
@@ -195,12 +197,17 @@ R_API int r_core_prompt(struct r_core_t *r) {
 		return R_CORE_CMD_EXIT;
 	if (ret == -1)
 		return 0;
-	ret = r_core_cmd (r, line, R_TRUE);
+	if (strcmp (line, ".")) {
+		free (prevcmd);
+		prevcmd = strdup (line);
+		cmd = line;
+	} else cmd = prevcmd;
+	ret = r_core_cmd (r, cmd, R_TRUE);
 	r_cons_flush ();
 	return ret;
 }
 
-R_API int r_core_block_size(struct r_core_t *core, ut32 bsize) {
+R_API int r_core_block_size(RCore *core, ut32 bsize) {
 	int ret = R_FALSE;
 	if (bsize<1)
 		bsize = R_TRUE;
@@ -213,7 +220,7 @@ R_API int r_core_block_size(struct r_core_t *core, ut32 bsize) {
 	return ret;
 }
 
-R_API int r_core_seek_align(struct r_core_t *core, ut64 align, int times) {
+R_API int r_core_seek_align(RCore *core, ut64 align, int times) {
 	int inc = (times>=0)?1:-1;
 	int diff = core->offset%align;
 	ut64 seek = core->offset;
@@ -234,7 +241,7 @@ R_API int r_core_seek_align(struct r_core_t *core, ut64 align, int times) {
 	return r_core_seek (core, seek+diff, 1);
 }
 
-R_API int r_core_seek_delta(struct r_core_t *core, st64 addr) {
+R_API int r_core_seek_delta(RCore *core, st64 addr) {
 	ut64 tmp = core->offset;
 	int ret;
 	if (addr == 0)

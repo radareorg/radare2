@@ -4,8 +4,12 @@
 #include <r_bin.h>
 
 R_API int r_bin_meta_get_line(RBin *bin, ut64 addr, char *file, int len, int *line) {
-	if (bin && bin->cur && bin->cur->meta && bin->cur->meta->get_line)
-		return bin->cur->meta->get_line (bin, addr, file, len, line);
+	if (bin && bin->cur && bin->cur->meta) {
+		// XXX quick hack to not show lines out of opened bin
+		if (addr >= bin->baddr && addr < (bin->baddr+bin->size))
+		if (bin->cur->meta->get_line)
+			return bin->cur->meta->get_line (bin, addr, file, len, line);
+	}
 	return R_FALSE;
 }
 

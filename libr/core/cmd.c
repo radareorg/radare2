@@ -293,6 +293,10 @@ static int cmd_interpret(void *data, const char *input) {
 	char *str, *ptr, *eol;
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
+	case '\0':
+		/* repeat last command */
+		/* XXX: already handled in r_core_cmd with ugly strcmp */
+		break;
 	case ' ':
 		/* interpret file */
 		r_core_cmd_file (core, input+1);
@@ -1441,7 +1445,7 @@ static int __cb_hit(struct r_search_kw_t *kw, void *user, ut64 addr) {
 	if (!strnull (cmdhit)) {
 		ut64 here = core->offset;
 		r_core_seek (core, addr, R_FALSE);
-		r_core_cmd(core, cmdhit, 0);
+		r_core_cmd (core, cmdhit, 0);
 		r_core_seek (core, here, R_TRUE);
 	}
 
@@ -2138,7 +2142,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	return R_TRUE;
 }
 
-R_API int r_core_cmd(struct r_core_t *core, const char *command, int log) {
+R_API int r_core_cmd(RCore *core, const char *command, int log) {
 	int len, rep, ret = R_FALSE;
 	char *cmd, *ocmd;
 	if (command != NULL) {
@@ -2401,10 +2405,12 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 'u':
 			addr = r_num_math (&core->num, input+2);
-			eprintf ("Continue until 0x%08llx\n", addr);
-			r_bp_add_sw (core->dbg.bp, addr, 1, R_BP_PROT_EXEC);
-			r_debug_continue (&core->dbg);
-			r_bp_del (core->dbg.bp, addr);
+			if (addr) {
+				eprintf ("Continue until 0x%08llx\n", addr);
+				r_bp_add_sw (core->dbg.bp, addr, 1, R_BP_PROT_EXEC);
+				r_debug_continue (&core->dbg);
+				r_bp_del (core->dbg.bp, addr);
+			} else eprintf ("Cannot continue until address 0\n");
 			break;
 		case ' ':
 			do {
@@ -2450,7 +2456,7 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 	case 'r':
 		cmd_reg (core, input+1);
-		//r_core_cmd(core, "|reg", 0);
+		//r_core_cmd (core, "|reg", 0);
 		break;
 	case 'p':
 		cmd_debug_pid (core, input);
