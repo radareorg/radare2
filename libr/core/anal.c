@@ -345,10 +345,10 @@ R_API int r_core_anal_fcn_list(struct r_core_t *core, int rad) {
 
 R_API int r_core_anal_graph(struct r_core_t *core, ut64 addr, int lines) {
 	RList *pbb = NULL;
-	int reflines = r_config_get_i(&core->config, "asm.reflines");
+	int reflines = r_config_get_i(&core->config, "asm.lines");
 	int bytes = r_config_get_i(&core->config, "asm.bytes");
 
-	r_config_set_i(&core->config, "asm.reflines", 0);
+	r_config_set_i(&core->config, "asm.lines", 0);
 	r_config_set_i(&core->config, "asm.bytes", 0);
 	r_cons_printf ("digraph code {\n");
 	r_cons_printf ("\tgraph [bgcolor=white];\n");
@@ -359,7 +359,7 @@ R_API int r_core_anal_graph(struct r_core_t *core, ut64 addr, int lines) {
 	if (pbb) r_list_destroy (pbb);
 	r_cons_printf ("}\n");
 	r_cons_flush ();
-	r_config_set_i(&core->config, "asm.reflines", reflines);
+	r_config_set_i(&core->config, "asm.lines", reflines);
 	r_config_set_i(&core->config, "asm.bytes", bytes);
 	return R_TRUE;
 }

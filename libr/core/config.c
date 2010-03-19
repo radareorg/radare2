@@ -138,11 +138,12 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "asm.pseudo", "false");  // DEPRECATED ???
 	r_config_set (cfg, "asm.bytes", "true"); 
 	r_config_set (cfg, "asm.offset", "true"); 
-	r_config_set (cfg, "asm.reflines", "true");
-	r_config_set (cfg, "asm.reflinesout", "true");
-	r_config_set (cfg, "asm.reflinesstyle", "false");
-	r_config_set (cfg, "asm.reflineswide", "true");
+	r_config_set (cfg, "asm.lines", "true");
+	r_config_set (cfg, "asm.linesout", "true");
+	r_config_set (cfg, "asm.linesstyle", "false");
+	r_config_set (cfg, "asm.lineswide", "false");
 	r_config_set (cfg, "asm.comments", "true");
+	r_config_set (cfg, "asm.dwarf", "false");
 	r_config_set (cfg, "cmd.open", ""); 
 	r_config_set (cfg, "cmd.prompt", ""); 
 	r_config_set (cfg, "cmd.vprompt", ""); 
@@ -311,7 +312,6 @@ R_API int r_core_config_init(RCore *core) {
 	config_set_i("dbg.focus", 0); // focus on ps.pid or not (ignore events of rest of procs)
 	config_set("dbg.syms", "true");
 	config_set("dbg.stepo", "false"); // step over for !contu (debug_step())
-	config_set("dbg.dwarf", "false");
 	config_set("dbg.maps", "true");
 	config_set("dbg.sections", "true");
 	config_set("dbg.strings", "false");

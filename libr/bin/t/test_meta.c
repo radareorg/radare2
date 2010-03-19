@@ -21,7 +21,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	file[0]='\0';
-	if (!r_bin_meta_get_line(bin, r_num_get(NULL, argv[2]), file, 1023, &line)) {
+	if (!r_bin_meta_get_line (bin, r_num_get(NULL, argv[2]), file, 1023, &line)) {
 		eprintf ("Cannot get metadata\n");
 		return 1;
 	}

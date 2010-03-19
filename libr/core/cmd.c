@@ -700,15 +700,16 @@ static int cmd_print(void *data, const char *input) {
 	int show_offset = r_config_get_i (&core->config, "asm.offset");
 	int show_bytes = r_config_get_i (&core->config, "asm.bytes");
 	int show_color = r_config_get_i (&core->config, "scr.color");
-	int show_lines = r_config_get_i (&core->config, "asm.reflines");
-	int linesout = r_config_get_i (&core->config, "asm.reflinesout");
+	int show_lines = r_config_get_i (&core->config, "asm.lines");
+	int show_dwarf = r_config_get_i (&core->config, "asm.dwarf");
+	int linesout = r_config_get_i (&core->config, "asm.linesout");
 	int show_comments = r_config_get_i (&core->config, "asm.comments");
 	int pseudo = r_config_get_i (&core->config, "asm.pseudo");
 	int linesopts = 0;
 
-	if (r_config_get_i (&core->config, "asm.reflinesstyle"))
+	if (r_config_get_i (&core->config, "asm.linesstyle"))
 		linesopts |= R_ANAL_REFLINE_STYLE;
-	if (r_config_get_i (&core->config, "asm.reflineswide"))
+	if (r_config_get_i (&core->config, "asm.lineswide"))
 		linesopts |= R_ANAL_REFLINE_WIDE;
 
 	/* XXX: This is only for pd/pD ??? */
@@ -722,7 +723,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 	} else l = 9999;
 	
-	switch(input[0]) {
+	switch (input[0]) {
 	case 'D':
 	case 'd':
 		// TODO: move to a function...we need a flag instead of thousand config_foo's
@@ -733,7 +734,9 @@ static int cmd_print(void *data, const char *input) {
 			char str[128];
 			char line[128];
 			char *comment;
-			struct r_asm_aop_t asmop;
+			char *opstr;
+			char *osl = NULL; // old source line
+			RAsmAop asmop;
 			struct r_anal_aop_t analop;
 			struct r_anal_refline_t *reflines;
 		
@@ -757,7 +760,7 @@ static int cmd_print(void *data, const char *input) {
 				ret = r_asm_disassemble (&core->assembler, &asmop, buf+idx, len-idx);
 				if (ret<1) {
 					ret = 1;
-					eprintf("** invalid opcode at 0x%08llx **\n", core->assembler.pc + ret);
+					eprintf ("** invalid opcode at 0x%08llx **\n", core->assembler.pc + ret);
 					continue;
 				}
 				r_anal_aop (&core->anal, &analop, addr, buf+idx, (int)(len-idx));
@@ -802,11 +805,29 @@ static int cmd_print(void *data, const char *input) {
 					}
 				}
 				if (pseudo) {
-					r_parse_parse(&core->parser, asmop.buf_asm, str);
-					r_cons_printf("%s\n", str);
-				} else r_cons_printf("%s\n", asmop.buf_asm);
+					r_parse_parse (&core->parser, asmop.buf_asm, str);
+					opstr = str;
+				} else opstr = asmop.buf_asm;
+				r_cons_strcat (opstr);
 				if (show_color)
-					r_cons_printf (Color_RESET);
+					r_cons_strcat (Color_RESET);
+				if (show_dwarf) {
+					char *sl = r_bin_meta_get_source_line (&core->bin, addr);
+					int len = strlen (opstr);
+					if (len<30)
+						len = 30-len;
+					if (sl)
+					if (!osl || (osl && strcmp (sl, osl))) {
+						while (len--)
+							r_cons_strcat (" ");
+						if (show_color)
+							r_cons_printf (Color_TURQOISE"  ; %s"Color_RESET, sl);
+						else r_cons_printf ("  ; %s\n", sl);
+						free (osl);
+						osl = sl;
+					}
+				}
+				r_cons_strcat ("\n");
 				if (show_lines && analop.type == R_ANAL_OP_TYPE_RET) {
 					if (strchr(line, '>'))
 						memset(line, ' ', strlen(line));
@@ -815,6 +836,7 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 			free (reflines);
+			free (osl);
 		}
 		break;
 	case 's':

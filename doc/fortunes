@@ -99,7 +99,7 @@ To remove this message, put `dbxenv suppress_startup_message 7.5' in your .dbxrc
 Heisenbug: A bug that disappears or alters its behavior when one attempts to probe or isolate it.
 radare is for lulzhats
 Use 'e' and 't' in Visual mode to edit configuration and track flags
-Use rabin -rios to get the import/export/other symbols of any binary
+Use rabin2 -rios to get the import/export/other symbols of any binary
 Remember to maintain your ~/.radare_history
 Microloft Visual Radare.NET 2008. Now OOXML Powered!
 Enjoy the 'two girls one backup' viral video

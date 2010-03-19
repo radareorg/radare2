@@ -8,3 +8,12 @@ R_API int r_bin_meta_get_line(RBin *bin, ut64 addr, char *file, int len, int *li
 		return bin->cur->meta->get_line (bin, addr, file, len, line);
 	return R_FALSE;
 }
+
+R_API char *r_bin_meta_get_source_line(RBin *bin, ut64 addr) {
+	char file[4096];
+	int line;
+	char *out = NULL;
+	if (r_bin_meta_get_line (bin, addr, file, sizeof (file), &line))
+		out = r_file_slurp_line (file, line, 0);
+	return out;
+}

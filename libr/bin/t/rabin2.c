@@ -313,7 +313,7 @@ static int rabin_show_info() {
 				"e asm.os=%s\n"
 				"e asm.arch=%s\n"
 				"e asm.bits=%i\n"
-				"e dbg.dwarf=%s\n",
+				"e asm.dwarf=%s\n",
 				info->rclass, info->big_endian?"true":"false", info->os, info->arch,
 				info->bits, R_BIN_DBG_STRIPPED (info->dbg_info)?"false":"true");
 	} else printf ("[File info]\n"
