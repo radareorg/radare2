@@ -108,3 +108,8 @@ R_API int r_io_handle_list(struct r_io_t *io) {
 	}
 	return n;
 }
+
+R_API int r_io_handle_generate(struct r_io_t *io) {
+	//TODO
+	return -1;
+}
