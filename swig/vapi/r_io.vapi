@@ -45,8 +45,8 @@ namespace Radare {
 
 		public void cache_enable(bool rd, bool wr);
 		public void cache_init();
-		public void cache_write(uint64 addr, weak string buf, int len);
-		public void cache_read(uint64 addr, ref string buf, int len);
+		public void cache_write(uint64 addr, ref uint8 *buf, int len);
+		public void cache_read(uint64 addr, ref uint8 *buf, int len);
 
 		/* undo */
 		// TODO: Implement seek and write undo apis..they must be unified..
@@ -104,7 +104,7 @@ namespace Radare {
 		public uint64 section_get_offset(uint64 addr);
 		public uint64 section_get_vaddr(uint64 addr);
 		public int section_get_rwx(uint64 addr);
-		public bool section_get_overlaps(Section refsec);
+		public bool section_overlaps(Section refsec);
 		public uint64 section_vaddr_to_offset(uint64 vaddr);
 		public uint64 section_offset_to_vaddr(uint64 offset);
 

@@ -27,6 +27,8 @@ namespace Radare {
 		public int has_dbg_linenums();
 		public int has_dbg_syms();
 		public int has_dbg_relocs();
+		public int meta_get_line(uint64 addr, ref string file, int len, out int line);
+		public string meta_get_source_line(uint64 addr);
 	
 		[CCode (cname="RBinEntry", free_function="", ref_function="", unref_function="")]
 		public class Entry {

@@ -9,8 +9,8 @@ public class Radare.RCore {
 	public bool loadlibs();
 	/* commands */
 	public int prompt();
-	[CCode (PrintfFormat)]
-	public int cmdf(...);
+	//[CCode (PrintfFormat)]
+	//public int cmdf(...);
 	public int cmd(string cmd, bool log);
 	public int cmd0(string cmd);
 	public int cmd_file(string file);
