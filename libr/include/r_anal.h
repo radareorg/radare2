@@ -113,7 +113,7 @@ enum {
 	R_ANAL_RET_END = -4
 };
 
-typedef struct r_anal_t {
+typedef RAnal {
 	int bits;
 	int big_endian;
 	void *user;
@@ -135,7 +135,7 @@ typedef struct r_anal_aop_t {
 	int eob;                   /* end of block (boolean) */
 	ut64 jump;                 /* true jmp */
 	ut64 fail;                 /* false jmp */
-	st64 ref;                  /*reference to memory */ /* XXX signed? */
+	st64 ref;                  /* reference to memory */ /* XXX signed? */
 	ut64 value;                /* reference to value */ /* XXX signed? */
 	int r_dst[R_ANAL_MAXREG];  /* register arguments */
 	ut64 i_dst[R_ANAL_MAXREG]; /* inmediate arguments */
@@ -193,7 +193,7 @@ typedef struct r_anal_handle_t {
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	// TODO: typedef
-	int (*aop)(struct r_anal_t *a, struct r_anal_aop_t *aop, ut64 addr,
+	int (*aop)(RAnal *a, struct r_anal_aop_t *aop, ut64 addr,
 			const ut8 *data, int len);
 	struct list_head list;
 } RAnalHandle;
@@ -201,22 +201,21 @@ typedef struct r_anal_handle_t {
 #ifdef R_API
 /* anal.c */
 R_API RAnal *r_anal_new();
-R_API RAnal *r_anal_free(struct r_anal_t *r);
-R_API RAnal *r_anal_init(struct r_anal_t *anal);
-R_API void r_anal_set_user_ptr(struct r_anal_t *anal, void *user);
-R_API int r_anal_add(struct r_anal_t *anal, struct r_anal_handle_t *foo);
-R_API int r_anal_list(struct r_anal_t *anal);
-R_API int r_anal_use(struct r_anal_t *anal, const char *name);
-R_API int r_anal_set_bits(struct r_anal_t *anal, int bits);
-R_API int r_anal_set_big_endian(struct r_anal_t *anal, int boolean);
-R_API int r_anal_set_pc(struct r_anal_t *a, ut64 pc);
+R_API RAnal *r_anal_free(RAnal *r);
+R_API RAnal *r_anal_init(RAnal *anal);
+R_API void r_anal_set_user_ptr(RAnal *anal, void *user);
+R_API int r_anal_add(RAnal *anal, struct r_anal_handle_t *foo);
+R_API int r_anal_list(RAnal *anal);
+R_API int r_anal_use(RAnal *anal, const char *name);
+R_API int r_anal_set_bits(RAnal *anal, int bits);
+R_API int r_anal_set_big_endian(RAnal *anal, int boolean);
 
 /* bb.c */
 R_API RAnalBB *r_anal_bb_new();
 R_API RList *r_anal_bb_list_new();
 R_API void r_anal_bb_free(void *bb);
 R_API RAnalBB *r_anal_bb_init(struct r_anal_bb_t *bb);
-R_API int r_anal_bb(struct r_anal_t *anal, struct r_anal_bb_t *bb,
+R_API int r_anal_bb(RAnal *anal, struct r_anal_bb_t *bb,
 		ut64 addr, ut8 *buf, ut64 len);
 R_API int r_anal_bb_split(RAnal *anal, RAnalBB *bb, RList *bbs, ut64 addr);
 R_API int r_anal_bb_overlap(RAnal *anal, RAnalBB *bb, RList *bbs);
@@ -268,11 +267,11 @@ R_API int r_anal_var_access_del(RAnal *anal, RAnalVar *var, ut64 from);
 R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 from);
 
 /* reflines.c */
-R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal, 
+R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal, 
 		ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout);
-R_API int r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list,
+R_API int r_anal_reflines_str(RAnal *anal, struct r_anal_refline_t *list,
 		ut64 addr, char *str, int opts);
-R_API int r_anal_reflines_middle(struct r_anal_t *anal, RAnalRefline *list, ut64 addr, int len);
+R_API int r_anal_reflines_middle(RAnal *anal, RAnalRefline *list, ut64 addr, int len);
 
 /* plugin pointers */
 extern RAnalHandle r_anal_plugin_arm;
