@@ -1,5 +1,5 @@
 NAME=r_parse
-DEPS=r_lib
+DEPS=r_lib r_flags r_util
 
 -include ../config.mk
 foo: pre libr_parse.${EXT_SO} libr_parse.${EXT_AR} plugins bins

@@ -26,6 +26,7 @@
 #define ACTION_STRINGS   0x0080 
 #define ACTION_FIELDS    0x0100 
 #define ACTION_LIBS      0x0200 
+#define ACTION_SRCLINE   0x0400 
 
 static struct r_lib_t l;
 static struct r_bin_t *bin = NULL;
@@ -50,7 +51,7 @@ static int rabin_show_help() {
 		" -f [format] Override file format autodetection\n"
 		" -r          radare output\n"
 		" -v          Use vaddr in radare output\n"
-		" -w          Open file in rw mode\n"
+		" -m [addr]   Show source line at addr\n"
 		" -L          List supported bin plugins\n"
 		" -@ [addr]   Show section, symbol or import at addr\n"
 		" -V          Show version information\n"
@@ -486,6 +487,16 @@ static int rabin_do_operation(const char *op) {
 	return R_TRUE;
 }
 
+static int rabin_show_srcline(ut64 at) {
+	char *srcline;
+	if ((srcline = r_bin_meta_get_source_line (bin, at))) {
+		printf ("%s\n", srcline);
+		free (srcline);
+		return R_TRUE;
+	}
+	return R_FALSE;
+}
+
 /* bin callback */
 static int __lib_bin_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 	struct r_bin_handle_t *hand = (struct r_bin_handle_t *)data;
@@ -518,9 +529,11 @@ int main(int argc, char **argv)
 		r_lib_opendir (&l, LIBDIR"/radare2/");
 	}
 
-	while ((c = getopt (argc, argv, "@:VisSzIHelwO:o:f:rvLh")) != -1)
-	{
+	while ((c = getopt (argc, argv, "m:@:VisSzIHelwO:o:f:rvLh")) != -1) {
 		switch(c) {
+		case 'm':
+			at = r_num_math (NULL, optarg);
+			action |= ACTION_SRCLINE;
 		case 'i':
 			action |= ACTION_IMPORTS;
 			break;
@@ -608,6 +621,8 @@ int main(int argc, char **argv)
 		rabin_show_fields();
 	if (action&ACTION_LIBS)
 		rabin_show_libs();
+	if (action&ACTION_SRCLINE)
+		rabin_show_srcline(at);
 	if (op != NULL && action&ACTION_OPERATION)
 		rabin_do_operation (op);
 

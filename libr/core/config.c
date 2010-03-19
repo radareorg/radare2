@@ -136,6 +136,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_i_cb (cfg, "asm.bits", 32,
 		&config_asm_bits_callback);
 	r_config_set (cfg, "asm.pseudo", "false");  // DEPRECATED ???
+	r_config_set (cfg, "asm.symreplace", "false");
 	r_config_set (cfg, "asm.bytes", "true"); 
 	r_config_set (cfg, "asm.offset", "true"); 
 	r_config_set (cfg, "asm.lines", "true");

@@ -53,10 +53,12 @@ R_API RFlagItem *r_flag_list(RFlag *f, int rad) {
 	struct list_head *pos;
 	list_for_each_prev (pos, &f->flags) {
 		RFlagItem *flag = list_entry (pos, RFlagItem, list);
+		if ((f->space_idx != -1) && (flag->space != f->space_idx))
+			continue;
 		if (rad) r_cons_printf ("f %s %lld @ 0x%08llx\n",
-			flag->name, flag->size, flag->offset);
+				flag->name, flag->size, flag->offset);
 		else r_cons_printf("0x%08llx %lld %s\n",
-			flag->offset, flag->size, flag->name);
+				flag->offset, flag->size, flag->name);
 	}
 	return NULL;
 }

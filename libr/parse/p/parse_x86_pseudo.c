@@ -5,6 +5,8 @@
 #include <string.h>
 
 #include <r_lib.h>
+#include <r_util.h>
+#include <r_flags.h>
 #include <r_parse.h>
 
 static int replace(int argc, const char *argv[], char *newstr)
@@ -135,13 +137,34 @@ static int assemble(struct r_parse_t *p, void *data, char *str)
 	return R_TRUE;
 }
 
+static int symreplace(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str)
+{
+	struct list_head *pos;
+	char *ptr;
+	ut64 off;
+	if ((ptr = strstr (data, "0x"))) {
+		off = r_num_math (NULL, ptr);
+		list_for_each_prev (pos, &f->flags) {
+			RFlagItem *flag = list_entry (pos, RFlagItem, list);
+			if (flag->offset == off) {
+				*ptr = 0;
+				sprintf (str, "%s%s", data, flag->name);
+				return R_TRUE;
+			}
+		}
+	}
+	strcpy (str, data);
+	return R_FALSE;
+}
+
 struct r_parse_handle_t r_parse_plugin_x86_pseudo = {
 	.name = "x86.pseudo",
 	.desc = "X86 pseudo syntax",
 	.init = NULL,
 	.fini = NULL,
 	.parse = &parse,
-	.assemble = (void *)&assemble,
+	.assemble = &assemble,
+	.symreplace = &symreplace,
 };
 
 struct r_lib_struct_t radare_plugin = {

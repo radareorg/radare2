@@ -76,7 +76,7 @@ R_API ut64 r_debug_reg_get(struct r_debug_t *dbg, const char *name) {
 	int role = r_reg_get_name_idx (name);
 	if (role != -1) {
 		name = r_reg_get_name (dbg->reg, role);
-		if (name == NULL && *name == '\0') {
+		if (name == NULL || *name == '\0') {
 			eprintf ("Cannot resolve name for register role '%s'.\n", name);
 		}
 	}

@@ -25,12 +25,14 @@ void flag_space_init(struct r_flag_t *f)
 R_API void r_flag_space_set(struct r_flag_t *f, const char *name)
 {
 	int i;
-	if (name == NULL)
-		name = "noname";
+	if (name == NULL || *name == '*') {
+		f->space_idx = -1;
+		return;
+	}
 
-	for(i=0;i<R_FLAG_SPACES_MAX;i++) {
+	for (i=0;i<R_FLAG_SPACES_MAX;i++) {
 		if (f->space[i] != NULL)
-		if (!strcmp(name, f->space[i])) {
+		if (!strcmp (name, f->space[i])) {
 			f->space_idx = i; //flag_space_idx = i;
 			return;
 		}
@@ -38,7 +40,7 @@ R_API void r_flag_space_set(struct r_flag_t *f, const char *name)
 	/* not found */
 	for(i=0;i<R_FLAG_SPACES_MAX;i++) {
 		if (f->space[i] == NULL) {
-			f->space[i] = strdup(name);
+			f->space[i] = strdup (name);
 			f->space_idx = i;
 			break;
 		}
