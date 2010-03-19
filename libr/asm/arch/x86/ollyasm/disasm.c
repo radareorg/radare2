@@ -16,7 +16,6 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-
 #define STRICT
 
 #include <stdio.h>
@@ -32,7 +31,7 @@ static int lowercase = 1; // Force lowercase display XXX remove it
 #if 1
 static int       ideal;                // Force IDEAL decoding mode
 static int       tabarguments;         // Tab between mnemonic and arguments
-static int       extraspace;           // Extra space between arguments
+static int       extraspace = 1;       // Extra space between arguments
 static int       putdefseg;            // Display default segments in listing
 static int       showmemsize;          // Always show memory size
 static int       shownear;             // Show NEAR modifiers

@@ -74,20 +74,29 @@ static void gen_operand(struct ud* u, struct ud_operand* op, int syn_cast)
 		if (op->offset == 8) {
 			if (op->lval.sbyte < 0)
 				mkasm(u, "-0x%x", -op->lval.sbyte);
-			else	mkasm(u, "%s0x%x", (op_f) ? "+" : "", op->lval.sbyte);
-		}
-		else if (op->offset == 16)
-			mkasm(u, "%s0x%x", (op_f) ? "+" : "", op->lval.uword);
-		else if (op->offset == 32) {
+			else if (op->lval.sbyte > 0)
+				mkasm(u, "%s0x%x", (op_f) ? "+" : "", op->lval.sbyte);
+		} else if (op->offset == 16) {
+			if (op->lval.sbyte < 0)
+				mkasm(u, "-0x%x", -op->lval.uword);
+			else if (op->lval.sbyte > 0)
+				mkasm(u, "%s0x%x", (op_f) ? "+" : "", op->lval.uword);
+		} else if (op->offset == 32) {
 			if (u->adr_mode == 64) {
 				if (op->lval.sdword < 0)
 					mkasm(u, "-0x%x", -op->lval.sdword);
-				else	mkasm(u, "%s0x%x", (op_f) ? "+" : "", op->lval.sdword);
-			} 
-			else	mkasm(u, "%s0x%lx", (op_f) ? "+" : "", op->lval.udword);
-		}
-		else if (op->offset == 64) 
+				else if (op->lval.sdword > 0)
+					mkasm(u, "%s0x%x", (op_f) ? "+" : "", op->lval.sdword);
+			} else {
+				if (op->lval.sdword < 0)
+					mkasm(u, "-0x%lx", -op->lval.udword);
+				else if (op->lval.sdword > 0)
+					mkasm(u, "%s0x%lx", (op_f)?"+":"",op->lval.udword);
+			}
+		} else if (op->offset == 64) {
+			// TODO: Implement 64 bit negative offsets
 			mkasm(u, "%s0x" FMT64 "x", (op_f) ? "+" : "", op->lval.uqword);
+		}
 
 		mkasm(u, "]");
 		break;
