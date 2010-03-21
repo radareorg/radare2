@@ -24,7 +24,7 @@ static int config_bigendian_callback(void *user, void *data) {
 static int config_iova_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	if (!r_config_get_i (&core->config, "cfg.debug"))
+	if (r_config_get_i (&core->config, "cfg.debug"))
 		core->io.va = 0;
 	else core->io.va = node->i_value;
 	return R_TRUE;
