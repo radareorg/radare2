@@ -68,7 +68,6 @@ install-bins:
 	@for a in `find */t -perm -u+x -type f | grep 2`; \
 	do echo "$$a ${PFX}/bin"; \
 	  ${INSTALL_PROGRAM} $$a ${PFX}/bin ; \
-	  ./bin/t/rpathdel ${PFX}/bin/`basename $$a` ; \
 	done
 	# shortcut
 	-cd ${PFX}/bin && rm -f r2 ; ln -fs radare2 r2
@@ -79,7 +78,6 @@ install-test-bins:
 	@for a in `find */t -perm -u+x -type f | grep -v 2`; \
 	  do echo "$$a ${PFX}/lib/radare2/test" ; \
 	  ${INSTALL_PROGRAM} $$a ${PFX}/lib/radare2/test ; \
-	  ./bin/t/rpathdel ${PFX}/lib/radare2/test`basename $$a` ; \
 	done
 
 install: install-includes install-pkgconfig install-bins install-test-bins
@@ -89,7 +87,6 @@ install: install-includes install-pkgconfig install-bins install-test-bins
 	@for a in `find * | grep -e '\.${EXT_SO}$$' | grep -v lib/t | grep lib` ; do \
 	  echo "$$a ${PFX}/lib"; \
 	  ${INSTALL_DATA} $$a ${PFX}/lib ; \
-	  ./bin/t/rpathdel ${PFX}/lib/`basename $$a` ; \
 	done
 	# object archives
 	@for a in `find * | grep -e '\.a$$'` ; do \

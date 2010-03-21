@@ -50,7 +50,7 @@ namespace Radare {
 
 		/* undo */
 		// TODO: Implement seek and write undo apis..they must be unified..
-		public boolundo_init();
+		public bool undo_init();
 		public void undo_enable(bool set, bool write);
 		//public uint64 undo_seek();
 		//public void undo_redo();

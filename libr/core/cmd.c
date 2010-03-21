@@ -1200,7 +1200,7 @@ static int cmd_anal(void *data, const char *input) {
 			r_syscall_list (&core->syscall);
 			break;
 		case '\0': {
-			int a0 = (int)r_debug_reg_get (&core->dbg, "oeax");
+			int a0 = (int)r_debug_reg_get (&core->dbg, "oeax"); //XXX
 			cmd_syscall_do (core, a0);
 			} break;
 		case ' ':
