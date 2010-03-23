@@ -701,6 +701,7 @@ static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int l, len = core->blocksize;
 	ut32 tbs = core->blocksize;
+	int adistrick = r_config_get_i (&core->config, "asm.middle"); // TODO: find better name
 	int show_offset = r_config_get_i (&core->config, "asm.offset");
 	int show_bytes = r_config_get_i (&core->config, "asm.bytes");
 	int show_color = r_config_get_i (&core->config, "scr.color");
@@ -735,8 +736,8 @@ static int cmd_print(void *data, const char *input) {
 	case 'd':
 		// TODO: move to a function...we need a flag instead of thousand config_foo's
 		{
-			int ret, idx; 
-			int middle, i;
+			int ret, idx, i; 
+			int middle = 0;
 			ut8 *buf = core->block;
 			char str[128];
 			char line[128];
@@ -772,7 +773,10 @@ static int cmd_print(void *data, const char *input) {
 					continue;
 				}
 				r_anal_aop (&core->anal, &analop, addr, buf+idx, (int)(len-idx));
-				middle = r_anal_reflines_middle (&core->anal, reflines, addr, analop.length);
+			
+				if (adistrick)
+					middle = r_anal_reflines_middle (&core->anal,
+							reflines, addr, analop.length);
 
 				if (show_lines)
 					r_cons_strcat (line);

@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
 			//r_io_handle_list (&r.io);
 			break;
 		case 'u':
-			fprintf (stderr, "TODO\n");
+			eprintf ("TODO\n");
 			break;
 		default:
 			return 1;
@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
 
 		fh = r_core_file_open (&r, file, perms);
 		if (fh == NULL) {
-			fprintf (stderr, "Cannot open file '%s'\n", file);
+			eprintf ("Cannot open file '%s'\n", file);
 			return 1;
 		}
 		// TODO: move into if (debug) ..
@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
 		r_core_loadlibs (&r);
 		fh = r_core_file_open (&r, file, perms);
 		if (fh == NULL) {
-			fprintf (stderr, "Cannot open file '%s'\n", file);
+			eprintf ("Cannot open file '%s'\n", file);
 			return 1;
 		}
 	}
