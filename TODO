@@ -7,6 +7,17 @@
 
 <{include libr/TODO}>
 
+* Breakpoints are ignored in some situations.. we must check
+  for them and toggle a .dbg variable to break
+
+BUGS
+====
+  * anal fastargs
+  * console grep
+  * x@esp&&x@eip  # BUG
+
+* stack analysis
+* code analysis with r_parse
 
 * Write manpages
 

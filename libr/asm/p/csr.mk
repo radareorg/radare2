@@ -1,5 +1,5 @@
 OBJ_CSR=asm_csr.o
-OBJ_CSR+=../arch/csr/csr_disasm/dis.o
+OBJ_CSR+=../arch/csr/dis.o
 
 STATIC_OBJ+=${OBJ_CSR}
 TARGET_CSR=asm_csr.${EXT_SO}

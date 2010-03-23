@@ -2250,6 +2250,25 @@ static void cmd_dm(RCore *core, const char *input) {
 	}
 }
 
+static int step_until(RCore *core, ut64 addr) {
+	ut64 off = r_debug_reg_get (&core->dbg, "pc");
+	if (off == 0LL) {
+		eprintf ("Cannot 'drn pc'\n");
+		return R_FALSE;
+	}
+	if (addr == 0LL) {
+		eprintf ("Cannot continue until address 0\n");
+		return R_FALSE;
+	}
+	do {
+		r_debug_step (&core->dbg, 1);
+		off = r_debug_reg_get (&core->dbg, "pc");
+		// check breakpoint here
+	} while (off != addr);
+	return R_TRUE;
+	
+}
+
 static int step_line(RCore *core, int times) {
 	char file[512], file2[512];
 	int find_meta, line, line2;
@@ -2366,14 +2385,18 @@ static int cmd_debug(void *data, const char *input) {
 		if (times<1) times = 1;
 		if (input[1]=='?')
 			r_cons_printf ("Usage: ds[ol] [count]\n"
-				" ds      step one instruction\n"
-				" ds 4    step 4 instructions\n"
-				" dso 3   step over 3 instructions\n"
-				" dsl     step one source line\n"
-				" dsl 40  step 40 source lines\n");
-		else if (input[1]=='o')
+				" ds       step one instruction\n"
+				" ds 4     step 4 instructions\n"
+				" dso 3    step over 3 instructions\n"
+				" dsu addr step until address\n"
+				" dsl      step one source line\n"
+				" dsl 40   step 40 source lines\n");
+		else if (input[1]=='u') {
+			step_until (core, r_num_math (&core->num, input+2)); // XXX dupped by times
+		} else if (input[1]=='o')
 			r_debug_step_over (&core->dbg, times);
-		else if (input[1]=='l') step_line (core, times);
+		else if (input[1]=='l')
+			step_line (core, times);
 		else r_debug_step (&core->dbg, times);
 		break;
 	case 'b':

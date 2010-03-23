@@ -33,35 +33,8 @@ IFEQ USEROSTYPE auto ; {
 }
 
 ARG_WITHOUT WITHPIC pic do not build libr as a program independent location ;
-ARG_WITHOUT WANT_VALASWIG valaswig disables the build of the valaswig bindings for python, perl, ruby ;
-CHKPRG VALASWIG valaswig
-CHKPRG SWIG swig
 
-IF WANT_VALASWIG {
-	IFNOT HAVE_SWIG {
-		ECHO valaswig depends on swig ;
-		HAVE_VALASWIG = 0 ;
-	}
-}{
-	HAVE_VALASWIG = 0 ;
-}
-
-ARG_WITHOUT WANT_VALA vala disables the build of all the vala-dependant parts ;
-CHKPRG VALAC valac
-
-(( temporary fix to avoid vala ))
-IF WANT_VALA { 
-	CHKVER vala-1.0 0.5.0
-	IFNOT HAVE_VALA_1_0_VERSION_0_5_0 {
-		ECHO Needs vala 0.5.0 at least ;
-		HAVE_VALAC = 0 ;
-		VALAC = '' ; 
-	}
-}{
-	HAVE_VALAC = 0 ;
-}
-
-REPORT PREFIX HAVE_VALASWIG HAVE_LIB_EWF HAVE_LIB_TCC HAVE_VALAC DEBUGGER USERCC USEROSTYPE ;
+REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_TCC HAVE_VALAC DEBUGGER USERCC USEROSTYPE ;
 
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))
 SUBDIRS ./config-user.mk libr/include/r_userconf.h
