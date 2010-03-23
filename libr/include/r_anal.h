@@ -274,6 +274,7 @@ R_API int r_anal_reflines_str(RAnal *anal, struct r_anal_refline_t *list,
 R_API int r_anal_reflines_middle(RAnal *anal, RAnalRefline *list, ut64 addr, int len);
 
 /* plugin pointers */
+extern RAnalHandle r_anal_plugin_csr;
 extern RAnalHandle r_anal_plugin_arm;
 extern RAnalHandle r_anal_plugin_x86;
 extern RAnalHandle r_anal_plugin_ppc;

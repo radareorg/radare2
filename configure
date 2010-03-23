@@ -391,7 +391,7 @@ done
 do_remove
 echo
 echo "Final report:"
-for A in  PREFIX HAVE_LIB_EWF HAVE_LIB_TCC HAVE_VALAC DEBUGGER USERCC USEROSTYPE ; do # REPORT
+for A in  PREFIX HAVE_LIB_EWF HAVE_LIB_TCC DEBUGGER USERCC USEROSTYPE ; do # REPORT
 eval VAL="\$${A}"
 [ -z "${VAL}" ] && VAL="(null)"
 echo " - ${A} = ${VAL}"
