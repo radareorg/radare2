@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
 
 #include <r_types.h>
 #include <r_list.h>
 #include <r_flags.h>
 #include <r_core.h>
 
-static char *r_core_anal_graph_label(struct r_core_t *core, struct r_anal_bb_t *bb, int opts) {
+static char *r_core_anal_graph_label(RCore *core, struct r_anal_bb_t *bb, int opts) {
 	struct r_anal_aop_t *aopi;
 	RListIter *iter;
 	char cmd[1024], file[1024], *cmdstr = NULL, *filestr = NULL, *str = NULL;
@@ -29,7 +29,7 @@ static char *r_core_anal_graph_label(struct r_core_t *core, struct r_anal_bb_t *
 		}
 	} else if (opts == R_CORE_ANAL_GRAPHBODY) {
 		snprintf (cmd, 1023, "pD %lli @ 0x%08llx", bb->size, bb->addr);
-		cmdstr = r_core_cmd_str(core, cmd);
+		cmdstr = r_core_cmd_str (core, cmd);
 	}
 	if (cmdstr) {
 		if (!(str = malloc(strlen(cmdstr)*2)))
@@ -60,7 +60,7 @@ static char *r_core_anal_graph_label(struct r_core_t *core, struct r_anal_bb_t *
 	return str;
 }
 
-static void r_core_anal_graph_nodes(struct r_core_t *core, RList *pbb, ut64 addr, int opts) {
+static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts) {
 	struct r_anal_bb_t *bbi, *bbc;
 	RListIter *iter;
 	char *str;
@@ -83,24 +83,21 @@ static void r_core_anal_graph_nodes(struct r_core_t *core, RList *pbb, ut64 addr
 			if (bbi->jump != -1) {
 				r_cons_printf ("\t\"0x%08llx\" -> \"0x%08llx\" [color=\"%s\"];\n", bbi->addr, bbi->jump,
 						bbi->fail != -1 ? "green" : "blue");
-				r_cons_flush ();
 				if (addr != 0) r_core_anal_graph_nodes (core, pbb, bbi->jump, opts);
 			}
 			if (bbi->fail != -1) {
 				r_cons_printf ("\t\"0x%08llx\" -> \"0x%08llx\" [color=\"red\"];\n", bbi->addr, bbi->fail);
-				r_cons_flush ();
 				if (addr != 0) r_core_anal_graph_nodes (core, pbb, bbi->fail, opts);
 			}
 			if ((str = r_core_anal_graph_label (core, bbi, opts))) {
 				r_cons_printf (" \"0x%08llx\" [label=\"%s\"]\n", bbi->addr, str);
-				r_cons_flush ();
-				free(str);
+				free (str);
 			}
 		}
 	}
 }
 
-R_API int r_core_anal_bb(struct r_core_t *core, ut64 at, int depth) {
+R_API int r_core_anal_bb(RCore *core, ut64 at, int depth) {
 	struct r_anal_bb_t *bb;
 	ut64 jump, fail;
 	ut8 *buf;
@@ -141,7 +138,7 @@ R_API int r_core_anal_bb(struct r_core_t *core, ut64 at, int depth) {
 	return R_TRUE;
 }
 
-R_API int r_core_anal_bb_clean(struct r_core_t *core, ut64 addr) {
+R_API int r_core_anal_bb_clean(RCore *core, ut64 addr) {
 	struct r_anal_bb_t *bbi;
 	RListIter *iter;
 	ut64 jump, fail;
@@ -166,7 +163,7 @@ R_API int r_core_anal_bb_clean(struct r_core_t *core, ut64 addr) {
 	return R_TRUE;
 }
 
-R_API int r_core_anal_bb_add(struct r_core_t *core, ut64 addr, ut64 size, ut64 jump, ut64 fail) {
+R_API int r_core_anal_bb_add(RCore *core, ut64 addr, ut64 size, ut64 jump, ut64 fail) {
 	struct r_anal_bb_t *bb, *bbi;
 	RListIter *iter;
 
@@ -183,7 +180,7 @@ R_API int r_core_anal_bb_add(struct r_core_t *core, ut64 addr, ut64 size, ut64 j
 	return R_TRUE;
 }
 
-R_API int r_core_anal_bb_list(struct r_core_t *core, int rad) {
+R_API int r_core_anal_bb_list(RCore *core, int rad) {
 	struct r_anal_bb_t *bbi;
 	RListIter *iter;
 
@@ -208,7 +205,7 @@ R_API int r_core_anal_bb_list(struct r_core_t *core, int rad) {
 	return R_TRUE;
 }
 
-R_API int r_core_anal_bb_seek(struct r_core_t *core, ut64 addr) {
+R_API int r_core_anal_bb_seek(RCore *core, ut64 addr) {
 	struct r_anal_bb_t *bbi;
 	RListIter *iter;
 
@@ -218,8 +215,8 @@ R_API int r_core_anal_bb_seek(struct r_core_t *core, ut64 addr) {
 	return r_core_seek (core, addr, R_FALSE);
 }
 
-R_API int r_core_anal_fcn(struct r_core_t *core, ut64 at, ut64 from, int depth) {
-	struct r_anal_fcn_t *fcn, *fcni;
+R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int depth) {
+	RAnalFcn *fcn, *fcni;
 	struct r_anal_ref_t *refi;
 	RListIter *iter, *iter2;
 	char *flagname;
@@ -277,8 +274,8 @@ R_API int r_core_anal_fcn(struct r_core_t *core, ut64 at, ut64 from, int depth) 
 	return R_TRUE;
 }
 
-R_API int r_core_anal_fcn_clean(struct r_core_t *core, ut64 addr) {
-	struct r_anal_fcn_t *fcni;
+R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
+	RAnalFcn *fcni;
 	RListIter *iter;
 
 	if (addr == 0) {
@@ -291,8 +288,40 @@ R_API int r_core_anal_fcn_clean(struct r_core_t *core, ut64 addr) {
 	return R_TRUE;
 }
 
-R_API int r_core_anal_fcn_add(struct r_core_t *core, ut64 addr, ut64 size, const char *name) {
-	struct r_anal_fcn_t *fcn, *fcni;
+R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv) {
+	ut64 *ref;
+	RAnalRef *fcnr;
+	RAnalFcn *fcni;
+	RListIter *iter, *iter2;
+
+	if (gv)
+	r_cons_printf ("digraph code {\n"
+		"\tgraph [bgcolor=white];\n"
+		"\tnode [color=lightgray, style=filled shape=box"
+		" fontname=\"Courier\" fontsize=\"8\"];\n");
+
+	r_list_foreach (core->anal.fcns, iter, fcni) {
+		if (addr != 0 && addr != fcni->addr)
+			continue;
+		if (!gv)
+			r_cons_printf ("0x%08llx\n", fcni->addr);
+		r_list_foreach (fcni->refs, iter2, fcnr) {
+			char *name = "";
+			RFlagItem *flag;
+			ref = (ut64*)fcnr;
+			flag = r_flag_get_i (&core->flags, *ref);
+			if (flag)
+				name = flag->name;
+			if (gv) r_cons_printf ("\t\"0x%08llx\" -> \"0x%08llx\" [label=\"%s\" color=\"%s\"];\n",
+				fcni->addr, *ref, name, "green");
+			else r_cons_printf (" - 0x%08llx\n", *ref);
+		}
+	}
+	r_cons_printf ("}\n");
+}
+
+R_API int r_core_anal_fcn_add(RCore *core, ut64 addr, ut64 size, const char *name) {
+	RAnalFcn *fcn, *fcni;
 	RListIter *iter;
 
 	r_list_foreach (core->anal.fcns, iter, fcni)
@@ -307,8 +336,8 @@ R_API int r_core_anal_fcn_add(struct r_core_t *core, ut64 addr, ut64 size, const
 	return R_TRUE;
 }
 
-R_API int r_core_anal_fcn_list(struct r_core_t *core, int rad) {
-	struct r_anal_fcn_t *fcni;
+R_API int r_core_anal_fcn_list(RCore *core, int rad) {
+	RAnalFcn *fcni;
 	struct r_anal_ref_t *refi;
 	struct r_anal_var_t *vari;
 	RListIter *iter, *iter2;
@@ -325,51 +354,48 @@ R_API int r_core_anal_fcn_list(struct r_core_t *core, int rad) {
 				ref = (ut64*)refi;
 				r_cons_printf ("0x%08llx ", *ref);
 			}
-			r_cons_printf ("\n");
-			r_cons_printf ("xrefs:\n");
+			r_cons_printf ("\nxrefs:\n");
 			r_list_foreach (fcni->xrefs, iter2, refi) {
 				ref = (ut64*)refi;
 				r_cons_printf ("0x%08llx ", *ref);
 			}
-			r_cons_printf ("\n");
-			r_cons_printf ("vars:\n");
+			r_cons_printf ("\nvars:\n");
 			r_list_foreach (fcni->vars, iter2, vari) {
 				r_cons_printf ("%-10s delta=0x%02x type=%s\n", vari->name, vari->delta,
 						r_anal_var_type_to_str (&core->anal, vari->type));
 			}
-			r_cons_printf ("\n");
+			r_cons_newline ();
 		}
-	r_cons_flush();
+	r_cons_flush ();
 	return R_TRUE;
 }
 
-R_API int r_core_anal_graph(struct r_core_t *core, ut64 addr, int opts) {
+R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	RList *pbb = NULL;
-	int reflines = r_config_get_i(&core->config, "asm.lines");
-	int bytes = r_config_get_i(&core->config, "asm.bytes");
-	int dwarf = r_config_get_i(&core->config, "asm.dwarf");
+	int reflines = r_config_get_i (&core->config, "asm.lines");
+	int bytes = r_config_get_i (&core->config, "asm.bytes");
+	int dwarf = r_config_get_i (&core->config, "asm.dwarf");
 
-	r_config_set_i(&core->config, "asm.lines", 0);
-	r_config_set_i(&core->config, "asm.bytes", 0);
-	r_config_set_i(&core->config, "asm.dwarf", 0);
-	r_cons_printf ("digraph code {\n");
-	r_cons_printf ("\tgraph [bgcolor=white];\n");
-	r_cons_printf ("\tnode [color=lightgray, style=filled shape=box fontname=\"Courier\" fontsize=\"8\"];\n");
-	r_cons_flush ();
+	r_config_set_i (&core->config, "asm.lines", 0);
+	r_config_set_i (&core->config, "asm.bytes", 0);
+	r_config_set_i (&core->config, "asm.dwarf", 0);
+	r_cons_printf ("digraph code {\n"
+		"\tgraph [bgcolor=white];\n"
+		"\tnode [color=lightgray, style=filled shape=box"
+		" fontname=\"Courier\" fontsize=\"8\"];\n");
 	if (addr != 0) pbb = r_anal_bb_list_new (); /* In partial graphs define printed bb list */
 	r_core_anal_graph_nodes (core, pbb, addr, opts);
 	if (pbb) r_list_destroy (pbb);
-	r_cons_printf ("}\n");
-	r_cons_flush ();
-	r_config_set_i(&core->config, "asm.lines", reflines);
-	r_config_set_i(&core->config, "asm.bytes", bytes);
-	r_config_set_i(&core->config, "asm.dwarf", dwarf);
+	r_cons_newline ();
+	r_config_set_i (&core->config, "asm.lines", reflines);
+	r_config_set_i (&core->config, "asm.bytes", bytes);
+	r_config_set_i (&core->config, "asm.dwarf", dwarf);
 	return R_TRUE;
 }
 
-R_API int r_core_anal_graph_fcn(struct r_core_t *core, char *fname, int opts) {
-	struct r_anal_fcn_t *fcni;
+R_API int r_core_anal_graph_fcn(RCore *core, char *fname, int opts) {
 	RListIter *iter;
+	RAnalFcn *fcni;
 
 	r_list_foreach (core->anal.fcns, iter, fcni)
 		if (!strcmp (fname, fcni->name))

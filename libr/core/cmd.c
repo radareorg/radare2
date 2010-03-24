@@ -1057,7 +1057,7 @@ static int cmd_anal(void *data, const char *input) {
 		}
 	}
 	
-	switch(input[0]) {
+	switch (input[0]) {
 	case 'h':
 		if (input[1]) {
 			if (!r_anal_use (&core->anal, input+2))
@@ -1172,6 +1172,9 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'g':
 		switch (input[1]) {
+		case 'c':
+			r_core_anal_refs (core, r_num_math (&core->num, input+2), 1);
+			break;
 		case 'l':
 			r_core_anal_graph (core, r_num_math (&core->num, input+2), R_CORE_ANAL_GRAPHLINES);
 			break;
@@ -1190,6 +1193,7 @@ static int cmd_anal(void *data, const char *input) {
 			"Usage: ag[?f]\n"
 			" ag [addr]       ; Output graphviz code (bb at addr and childs)\n"
 			" aga [addr]      ; Idem, but only addresses\n"
+			" agc [addr]      ; Output graphviz call graph of function\n"
 			" agl [fcn name]  ; Output graphviz code using meta-data\n"
 			" agf [fcn name]  ; Output graphviz code of function\n"
 			" agfl [fcn name] ; Output graphviz code of function using meta-data\n");

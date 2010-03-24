@@ -55,7 +55,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len) 
 		if ((oplen = r_anal_aop (anal, &aop, addr+idx, buf+idx, len-idx)) == 0) {
 			if (idx == 0)
 				return R_ANAL_RET_ERROR;
-			else break;
+			break;
 		}
 		idx += oplen;
 		fcn->size += oplen;
@@ -105,7 +105,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len) 
 				if (aop.jump == *jump)
 					goto _dup_ref;
 			}
-			if (!(ref = r_anal_ref_new())) {
+			if (!(ref = r_anal_ref_new ())) {
 				eprintf ("Error: new (ref)\n");
 				return R_ANAL_RET_ERROR;
 			}

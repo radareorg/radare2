@@ -16,9 +16,9 @@ dist:
 # TODO: valadoc
 vdoc:
 	-rm -rf vdoc
-	cat vapi/*.vapi > .libr.vapi
-	valadoc -o vdoc .libr.vapi
-	-rm -f .libr.vapi
+	cat vapi/*.vapi > libr.vapi
+	valadoc -o vdoc libr.vapi
+	-rm -f libr.vapi
 	# rsync -avz vdoc/* pancake@radare.org:/srv/http/radareorg/vdoc/
 
 vdoc_pkg:
@@ -107,4 +107,4 @@ clean:
 	cd lua && make clean
 	cd vapi/t && ${MAKE} clean
 
-.PHONY: ruby lua python perl clean oldtest test all
+.PHONY: ruby lua python perl clean oldtest test all vdoc

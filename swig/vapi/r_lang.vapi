@@ -7,7 +7,7 @@ namespace Radare {
 	public class RLanguage {
 		public RLanguage();
 		public bool define(string type, string name, void* ptr);
-		public bool @add(Language.Handler handler);
+		public bool @add(RLanguage.Handler handler);
 		public bool use(string name);
 		public bool undef();
 		public bool list();
