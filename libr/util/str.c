@@ -35,8 +35,7 @@ R_API void r_str_case(char *str, int up) {
 }
 
 /* TODO: port to w32 and move outside r_str namespace? */
-R_API char *r_str_home(const char *str)
-{
+R_API char *r_str_home(const char *str) {
 	char *dst;
 	const char *home = r_sys_getenv ("HOME");
 	if (home == NULL)

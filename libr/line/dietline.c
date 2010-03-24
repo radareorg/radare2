@@ -52,6 +52,8 @@ static int r_line_readchar() {
 	do {
 		if (read (0, buf, 1) != 1)
 			return -1;
+		if (feof (stdin))
+			return -1;
 		// TODO: add support for other invalid chars
 		if (*buf==0xc2 || *buf==0xc3) {
 			read (0, buf+1, 1);
@@ -142,20 +144,22 @@ R_API int r_line_hist_load(const char *file) {
 }
 
 R_API int r_line_hist_save(const char *file) {
-	char buf[1024];
 	FILE *fd;
-	int i;
-
-	snprintf (buf, 1023, "%s/%s", r_sys_getenv ("HOME"), file);
-	fd = fopen (buf, "w");
-	if (fd == NULL)
-		return R_FALSE;
-	for(i=0; i<I.history.index; i++) {
-		fputs (I.history.data[i], fd);
-		fputs ("\n", fd);
+	int i, ret = R_FALSE;
+	char *path= r_str_home (file);
+	if (path!= NULL) {
+		fd = fopen (path, "w");
+		if (fd != NULL) {
+			for (i=0; i<I.history.index; i++) {
+				fputs (I.history.data[i], fd);
+				fputs ("\n", fd);
+			}
+			fclose (fd);
+			ret = R_TRUE;
+		}
 	}
-	fclose (fd);
-	return R_TRUE;
+	free (path);
+	return ret;
 }
 
 R_API int r_line_hist_chop(const char *file, int limit) {
@@ -235,11 +239,6 @@ R_API char *r_line_readline() {
 		printf ("\r%s", I.prompt);
 		fflush (stdout);
 	}
-#if __UNIX__
-	/* TODO: move into r_line_readchar() */
-	if (feof (stdin))
-		return NULL;
-#endif
 	for (;;) {
 #if 0
 		if (I.echo) {
@@ -259,7 +258,7 @@ R_API char *r_line_readline() {
 		I.buffer.data[I.buffer.length]='\0';
 		ch = r_line_readchar ();
 		if (ch == -1)
-			return I.buffer.data;
+			return NULL; //I.buffer.data;
 		buf[0] = ch;
 		
 //		printf("\x1b[K\r");

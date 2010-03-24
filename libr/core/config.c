@@ -169,6 +169,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "dbg.swstep", "false", &config_swstep_callback);
 	r_config_set_cb (cfg, "dbg.trace", "false", &config_trace_callback);
 	r_config_set_cb (cfg, "dbg.trace.tag", "0xff", &config_tracetag_callback);
+	r_config_set (cfg, "scr.prompt", "true");
 	r_config_set_cb (cfg, "scr.color",
 		(core->print.flags&R_PRINT_FLAGS_COLOR)?"true":"false",
 		&config_color_callback);

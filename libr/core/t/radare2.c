@@ -13,6 +13,7 @@ static int main_help(int line) {
 		" -d        use 'file' as a program to debug\n"
 		" -w        open file in write mode\n"
 		" -n        do not run ~/.radare2rc\n"
+		" -v        nonverbose mode (no prompt)\n"
 		" -f        block size = file size\n"
 		" -s [addr] initial seek\n"
 		" -b [size] initial block size\n"
@@ -44,8 +45,11 @@ int main(int argc, char **argv) {
 
 	r_core_init (&r);
 
-	while ((c = getopt (argc, argv, "wfhe:ndVs:b:Lui:l:"))!=-1) {
+	while ((c = getopt (argc, argv, "wfhe:ndvVs:b:Lui:l:"))!=-1) {
 		switch (c) {
+		case 'v':
+			r_config_set (&r.config, "scr.prompt", "false");
+			break;
 		case 'i':
 			r_core_cmd_file (&r, optarg);
 			break;
