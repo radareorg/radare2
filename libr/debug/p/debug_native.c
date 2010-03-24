@@ -39,9 +39,6 @@ static int r_debug_native_continue(int pid, int sig);
 #include <mach/vm_map.h>
 #include <mach-o/loader.h>
 #include <mach-o/nlist.h>
-#include <sys/ptrace.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <errno.h>
 
 #if __POWERPC__

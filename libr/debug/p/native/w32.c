@@ -4,6 +4,9 @@
 #include <winbase.h>
 #include <psapi.h>
 
+// XXX remove
+#define WIN32_PI(x) x
+
 #if 0
 
 1860 typedef struct _FLOATING_SAVE_AREA {
@@ -57,6 +60,32 @@ static HANDLE WINAPI (*w32_dbgbreak)(HANDLE) = NULL;
 static DWORD WINAPI (*w32_getthreadid)(HANDLE) = NULL; // Vista
 static DWORD WINAPI (*w32_getprocessid)(HANDLE) = NULL; // XP
 
+static void print_lasterr(const char *str) {
+	/* code from MSDN, :? */
+	LPWSTR pMessage = L"%1!*.*s! %4 %5!*s!";
+	DWORD_PTR pArgs[] = { (DWORD_PTR)4, (DWORD_PTR)2, (DWORD_PTR)L"Bill",  // %1!*.*s!
+		(DWORD_PTR)L"Bob",                                                // %4
+		(DWORD_PTR)6, (DWORD_PTR)L"Bill" };                               // %5!*s!
+	const DWORD size = 100+1;
+	WCHAR buffer[size];
+
+	if (!FormatMessage( FORMAT_MESSAGE_FROM_STRING |
+				FORMAT_MESSAGE_ARGUMENT_ARRAY,
+				pMessage,
+				0,  // ignored
+				0,  // ignored
+				(LPTSTR)&buffer,
+				size,
+				(va_list*)pArgs)) {
+
+		eprintf("Format message failed with 0x%x\n", GetLastError());
+		return;
+	}
+
+	eprintf("print_lasterr: %s ::: %s\n", str, buffer);
+}
+
+
 static void w32_dbg_init() {
 	HANDLE lib;
 
@@ -98,6 +127,7 @@ static void w32_dbg_init() {
 	}
 }
 
+#if 0
 static HANDLE w32_t2h(pid_t tid) {
 	TH_INFO *th = get_th (tid);
 	if(th == NULL) {
@@ -110,22 +140,23 @@ static HANDLE w32_t2h(pid_t tid) {
 	}
 	return th->ht;
 }
+#endif
 
 inline static int w32_h2t(HANDLE h) {
-	if (win32_getthreadid != NULL) // >= Windows Vista
-		return win32_getthreadid (h);
-	return ps.tid;
-	if (win32_getprocessid != NULL) // >= Windows XP1
-		return win32_getprocessid (h);
+	if (w32_getthreadid != NULL) // >= Windows Vista
+		return w32_getthreadid (h);
+	if (w32_getprocessid != NULL) // >= Windows XP1
+		return w32_getprocessid (h);
 	return (int)h; // XXX broken
 }
 
 static inline int w32_h2p(HANDLE h) {
-	return GetProcessId (h);
+	return w32_getprocessid (h);
 }
 
 // TODO: not yet used !!!
 static int w32_dbg_threads(int pid) {
+#if 0
 	HANDLE th;
 	THREADENTRY32 te32;
 	TH_INFO *th_i;
@@ -139,16 +170,16 @@ static int w32_dbg_threads(int pid) {
 	//free_th ();
 	do {
 		/* get all threads of process */
-		if (e32.th32OwnerProcessID == pid) {
+		if (te32.th32OwnerProcessID == pid) {
 			const char *path = "unk";
 			RDebugPid *pid = r_debug_pid_new (
 				path, te32.th32ThreadID, 's');
 			eprintf ("THREAD: id=0x%08x flags=0x%08x\n",
 				te32.th32ThreadID, te32.dwFlags);
-			eprintf ("HANDLER: 0x%p\n", win32_openthread (
+			eprintf ("HANDLER: 0x%p\n", w32_openthread (
 				THREAD_ALL_ACCESS, 0, te32.th32ThreadID));
 			/* open a new handler */
-			//th_i->ht = win32_openthread(THREAD_ALL_ACCESS, 0,
+			//th_i->ht = w32_openthread(THREAD_ALL_ACCESS, 0,
 			//		te32.th32ThreadID);
 			ret = te32.th32ThreadID;
 			//r_list_append (list, thread);
@@ -163,35 +194,33 @@ err_load_th:
 	if (th != INVALID_HANDLE_VALUE)
 		CloseHandle (th);
 	return ret;
-}
 #endif
+	return 0;
+}
 
 static int w32_dbg_wait(int pid) {
 	DEBUG_EVENT de;
-	int next_event = 0;
+	int tid, next_event = 0;
 	unsigned int code;
 
 	do {
-		exit_wait = 0;
-
 		/* handle debug events */
 		if (WaitForDebugEvent (&de, INFINITE) == 0) {
 			print_lasterr ((char *)__FUNCTION__);
 			return -1;
 		}
 		/* save thread id */
-		ps.tid = de.dwThreadId;
-		/* save registers */
-		debug_getregs (ps.tid, &WS (regs));
+		tid = de.dwThreadId;
 		/* get exception code */
 		code = de.dwDebugEventCode;
 		/* Ctrl-C? */
-		if (exit_wait == 1 && code == 0x2) {
-			WS(event) = INT_EVENT;
+		if (code == 0x2) {
+			// TODO: interrupted
+			//WS(event) = INT_EVENT;
 			break;
 		}
 		/* set state */
-		WS(event) = UNKNOWN_EVENT;
+		//WS(event) = UNKNOWN_EVENT;
 		/* get kind of event */
 		switch (code) {
 		case CREATE_PROCESS_DEBUG_EVENT:
@@ -256,6 +285,7 @@ static RList *w32_dbg_maps() {
 	RList *list;
 	SYSTEM_INFO SysInfo;
 	MEMORY_BASIC_INFORMATION mbi;
+	HANDLE hProcess;
 	LPBYTE page;
 	char *mapname = NULL;
 	/* DEPRECATED */
@@ -360,4 +390,3 @@ static RList *w32_dbg_maps() {
 	}
 	return list;
 }
-#endif

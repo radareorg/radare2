@@ -1,5 +1,19 @@
-WINDOWS
-=======
+HOW TO BUILD FOR WINDOWS
+========================
+Actually, if you want to build r2 for windows, you can use native compiler with mingw32 or
+cygwin, but there's also the possibility to crosscompile from a Linux box:
 
-./configure --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows
-make
+
+Crosscompilation
+================
+
+  ArchLinux
+  ---------
+  ./configure --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows
+  make
+  
+  Ubuntu
+  ------
+  sudo apt-get install mingw32
+  ./configure --with-compiler=i586-mingw32msvc-gcc  --with-ostype=windows --host=i586-unknown-windows
+  make

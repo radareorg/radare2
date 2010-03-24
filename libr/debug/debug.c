@@ -213,8 +213,10 @@ R_API int r_debug_continue_kill(struct r_debug_t *dbg, int sig) {
 			ret = dbg->h->wait (dbg->pid);
 		r_bp_restore (dbg->bp, R_TRUE); // unset sw breakpoints
 		r_debug_recoil (dbg);
+#if __UNIX__
 		if (dbg->stop_all_threads)
 			kill (dbg->pid, SIGSTOP);
+#endif
 		r_debug_select (dbg, dbg->pid, ret);
 	}
 	return ret;

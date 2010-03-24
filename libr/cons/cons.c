@@ -51,6 +51,7 @@ R_API RCons *r_cons_free (RCons *foo) {
 }
 
 #if __WINDOWS__
+static HANDLE h;
 static BOOL __w32_control(DWORD type) {
 	if (type == CTRL_C_EVENT)
 		break_signal (2); // SIGINT
@@ -78,6 +79,7 @@ R_API int r_cons_init() {
 	I.term_raw.c_cflag |= CS8;
 	I.term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
 #elif __WINDOWS__
+	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &I.term_buf);
 	I.term_raw = 0;
 	if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)__w32_control, TRUE))
