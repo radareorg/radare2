@@ -57,7 +57,7 @@ struct state {
 	int			s_ff_quirk;
 };
 
-int arch_csr_disasm(char *str, unsigned char *b, ut64 seek);
+static int arch_csr_disasm(char *str, unsigned char *b, ut64 seek);
 
 #define MODE_MASK	3
 #define REG_SHIFT	2
@@ -88,6 +88,6 @@ int arch_csr_disasm(char *str, unsigned char *b, ut64 seek);
 #define ADDR_MODE_RELATIVE	0
 #define ADDR_MODE_X_RELATIVE	2
 
-void csr_decode(struct state *s, struct directive *d);
+static void csr_decode(struct state *s, struct directive *d);
 
 #endif

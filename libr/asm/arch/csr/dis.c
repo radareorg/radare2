@@ -16,13 +16,11 @@ static struct state _state;
 
 #include <r_types.h>
 
-static inline struct state *get_state(void)
-{
+static inline struct state *get_state(void) {
 	return &_state;
 }
 
-static uint16_t i2u16(struct instruction *in)
-{
+static uint16_t i2u16(struct instruction *in) {
 	return *((uint16_t*)in);
 }
 
@@ -38,8 +36,7 @@ static void output(struct state *s, char *fmt, ...)
 }
 #endif
 
-static void decode_unknown(struct state *s, struct directive *d)
-{
+static void decode_unknown(struct state *s, struct directive *d) {
 #if 0
 	printf("Opcode 0x%x reg %d mode %d operand 0x%x",
 	       in->in_opcode, in->in_reg, in->in_mode, in->in_operand);
@@ -47,8 +44,7 @@ static void decode_unknown(struct state *s, struct directive *d)
 	sprintf(d->d_asm, "DC\t0x%4x", i2u16(&d->d_inst));
 }
 
-static int decode_fixed(struct state *s, struct directive *d)
-{
+static int decode_fixed(struct state *s, struct directive *d) {
 	*d->d_asm='\0';
 	switch (i2u16(&d->d_inst)) {
 	case INST_NOP:
@@ -68,8 +64,7 @@ static int decode_fixed(struct state *s, struct directive *d)
 	return d->d_asm[0]!=0;
 }
 
-static char *regname(int reg)
-{
+static char *regname(int reg) {
 	switch (reg) {
 	case REG_AH: return "AH";
 	case REG_AL: return "AL";
@@ -79,14 +74,12 @@ static char *regname(int reg)
 	return NULL;
 }
 
-static int get_num(int num, int shift)
-{
+static int get_num(int num, int shift) {
 	char x = (char) ((num >> shift) & 0xff);
 	return (int)(x<<shift);
 }
 
-static int get_operand(struct state *s, struct directive *d)
-{
+static int get_operand(struct state *s, struct directive *d) {
 	int total = get_num(d->d_inst.in_operand, 0);
 	if (s->s_prefix)
 		total += get_num(s->s_prefix_val, 8);
@@ -95,8 +88,7 @@ static int get_operand(struct state *s, struct directive *d)
 	return total;
 }
 
-static int decode_known(struct state *s, struct directive *d)
-{
+static int decode_known(struct state *s, struct directive *d) {
 	char *op = NULL;
 	char *regn = NULL;
 	int reg = 0;
@@ -446,7 +438,7 @@ static int decode_known(struct state *s, struct directive *d)
 	return 1;
 }
 
-void csr_decode(struct state *s, struct directive *d)
+static void csr_decode(struct state *s, struct directive *d)
 {
 	int prefix = s->s_prefix;
 	if (!decode_fixed(s, d))
@@ -463,25 +455,24 @@ static int read_bin(struct state *s, struct directive *d)
 	return 1;
 }
 
-struct directive *next_inst(struct state *s)
-{
+static struct directive *next_inst(struct state *s) {
 	struct directive *d;
 	int rd;
 
-	d = malloc(sizeof(*d));
+	d = malloc (sizeof (*d));
 	if (!d) {
-		perror("malloc()");
+		perror ("malloc()");
 		return NULL;
 	}
-	memset(d, 0, sizeof(*d));
+	memset (d, 0, sizeof (*d));
 #if 0
 	if (s->s_format)
 		rd = read_text(s, d);
 	else
 #endif
-	rd = read_bin(s, d);
+	rd = read_bin (s, d);
 	if (!rd) {
-		free(d);
+		free (d);
 		return NULL;
 	}
 
@@ -574,7 +565,7 @@ static void own(struct state *s)
 }
 #endif
 
-int arch_csr_disasm(char *str, unsigned char *buf, ut64 seek)
+static int arch_csr_disasm(char *str, unsigned char *buf, ut64 seek)
 {
 	struct state *s = get_state();
 	struct directive *d;

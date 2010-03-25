@@ -1,4 +1,4 @@
-/* radare - GPL3 - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare - GPL3 - Copyright 2009-2010 nibble<.ds@gmail.com> */
 
 #include <stdio.h>
 
@@ -6,10 +6,10 @@
 #include <r_lib.h>
 #include <r_util.h>
 #include <r_asm.h>
-#include "csr/dis.h"
+#include "csr/dis.c"
 
 static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len) {
-	arch_csr_disasm(aop->buf_asm, buf, a->pc);
+	arch_csr_disasm (aop->buf_asm, buf, a->pc);
 	return (aop->inst_len=2);
 }
 
