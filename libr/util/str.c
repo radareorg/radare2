@@ -34,16 +34,25 @@ R_API void r_str_case(char *str, int up) {
 	}
 }
 
-/* TODO: port to w32 and move outside r_str namespace? */
+#if __WINDOWS__
+#define __ENV_HOME "USERPROFILE"
+#define __ENV_DIR "\\"
+#else
+#define __ENV_HOME "HOME"
+#define __ENV_DIR "/"
+#endif
+
 R_API char *r_str_home(const char *str) {
 	char *dst;
-	const char *home = r_sys_getenv ("HOME");
+	const char *home = r_sys_getenv (__ENV_HOME);
 	if (home == NULL)
 		return NULL;
 	dst = (char *)malloc (strlen (home) + strlen (str)+2);
 	strcpy (dst, home);
-	strcat (dst, "/");
-	strcat (dst, str);
+	if (str && *str) {
+		strcat (dst, __ENV_DIR);
+		strcat (dst, str);
+	}
 	return dst;
 }
 
@@ -312,13 +321,15 @@ R_API void *r_str_free(void *ptr) {
 }
 
 R_API int r_str_inject(char *begin, char *end, char *str, int maxlen) {
-	int len = strlen(end)+1;
-	char *tmp = alloca(len);
-	if (maxlen > 0 && ((strlen (begin)-(end-begin)+strlen(str)) > maxlen))
+	int len = strlen (end)+1;
+	char *tmp;
+	if (maxlen > 0 && ((strlen (begin)-(end-begin)+strlen (str)) > maxlen))
 		return 0;
+	tmp = malloc (len);
 	memcpy (tmp, end, len);
 	strcpy (begin, str);
 	strcat (begin, tmp);
+	free (tmp);
 	return 1;
 }
 

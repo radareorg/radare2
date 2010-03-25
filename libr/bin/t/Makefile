@@ -1,7 +1,8 @@
 include ../../config.mk
 
 OBJ=rabin2.o
-BIN=rabin2${EXT_EXE}
+BIN=rabin2
+#${EXT_EXE}
 BINDEPS=r_lib r_bin r_flags r_util r_cons
 CFLAGS+=-DLIBDIR=\"${PREFIX}/lib\"
 LIBS+=${DL_LIBS}
@@ -9,7 +10,7 @@ LIBS+=${DL_LIBS}
 LDPATH=-L.. -L../../util
 LDPATH+=-lr_util
 
-all: ${BIN} test_meta${EXT_EXE} mach-ex${EXT_EXE} rpathdel${EXT_EXE}
+all: ${BIN}${EXT_EXE} test_meta${EXT_EXE} mach-ex${EXT_EXE} rpathdel${EXT_EXE}
 
 test_meta${EXT_EXE}: test_meta.o
 	${CC} test_meta.o ${LDPATH} ${LDFLAGS} -o test_meta${EXT_EXE} 

@@ -32,16 +32,17 @@ R_API int r_sys_sleep(int secs) {
 #if __UNIX__
 	return sleep(secs);
 #else
-	Sleep(secs * 1000); // W32
+	Sleep (secs * 1000); // W32
 	return 0;
 #endif
 }
 
 R_API int r_sys_usleep(int usecs) {
 #if __UNIX__
-	return usleep(usecs);
+	return usleep (usecs);
 #else
-	Sleep(usecs); // W32
+	Sleep (usecs); // W32
+	return 0;
 #endif
 }
 
@@ -53,19 +54,21 @@ R_API int r_sys_setenv(const char *key, const char *value, int ow) {
 #endif
 }
 
+static char envbuf[1024];
 R_API const char *r_sys_getenv(const char *key) {
 #if __UNIX__
-	return getenv(key);
+	return getenv (key);
 #else
-#warning TODO: r_sys_getenv
+	GetEnvironmentVariable (key, &envbuf, sizeof (envbuf));
+	return &envbuf;
 #endif
 }
 
 R_API char *r_sys_getcwd() {
 #if __UNIX__
-	return getcwd(NULL, 0);
+	return getcwd (NULL, 0);
 #elif __WINDOWS__
-	return _getcwd(NULL, 0);
+	return _getcwd (NULL, 0);
 #else
 #warning TODO: r_sys_getcwd
 #endif
@@ -143,7 +146,7 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 	}
 	return NULL;
 #else
-#warning NO r_sys_cmd_str support for this platform
+	eprintf ("r_sys_cmd_str: not yet implemented for this platform\n");
 	return NULL;
 #endif
 }
