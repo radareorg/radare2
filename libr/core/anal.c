@@ -83,14 +83,17 @@ static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts
 			if (bbi->jump != -1) {
 				r_cons_printf ("\t\"0x%08llx\" -> \"0x%08llx\" [color=\"%s\"];\n", bbi->addr, bbi->jump,
 						bbi->fail != -1 ? "green" : "blue");
+				r_cons_flush ();
 				if (addr != 0) r_core_anal_graph_nodes (core, pbb, bbi->jump, opts);
 			}
 			if (bbi->fail != -1) {
 				r_cons_printf ("\t\"0x%08llx\" -> \"0x%08llx\" [color=\"red\"];\n", bbi->addr, bbi->fail);
+				r_cons_flush ();
 				if (addr != 0) r_core_anal_graph_nodes (core, pbb, bbi->fail, opts);
 			}
 			if ((str = r_core_anal_graph_label (core, bbi, opts))) {
 				r_cons_printf (" \"0x%08llx\" [label=\"%s\"]\n", bbi->addr, str);
+				r_cons_flush ();
 				free (str);
 			}
 		}
@@ -201,7 +204,7 @@ R_API int r_core_anal_bb_list(RCore *core, int rad) {
 			r_cons_printf ("\n");
 		}
 	}
-	r_cons_flush();
+	r_cons_flush ();
 	return R_TRUE;
 }
 
@@ -383,10 +386,12 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		"\tgraph [bgcolor=white];\n"
 		"\tnode [color=lightgray, style=filled shape=box"
 		" fontname=\"Courier\" fontsize=\"8\"];\n");
+	r_cons_flush ();
 	if (addr != 0) pbb = r_anal_bb_list_new (); /* In partial graphs define printed bb list */
 	r_core_anal_graph_nodes (core, pbb, addr, opts);
 	if (pbb) r_list_destroy (pbb);
-	r_cons_newline ();
+	r_cons_printf ("}\n");
+	r_cons_flush ();
 	r_config_set_i (&core->config, "asm.lines", reflines);
 	r_config_set_i (&core->config, "asm.bytes", bytes);
 	r_config_set_i (&core->config, "asm.dwarf", dwarf);
