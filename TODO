@@ -7,8 +7,7 @@
 
 <{include libr/TODO}>
 
-* Breakpoints are ignored in some situations.. we must check
-  for them and toggle a .dbg variable to break
+See libr/*/TODO FMI
 
 BUGS
 ====
@@ -16,35 +15,29 @@ BUGS
   * console grep
   * x@esp&&x@eip  # BUG
 
+* diff code analysis
+  - diff two programs
+     1st level:
+        - check all functions EQUAL, DIFFERENT, REMOVED, ADDED
+        - check all symbols
+        - check all imports
+        - check all strings
+     2nd level:
+        - basic block level diffing (output in graph mode)
+
 * stack analysis
 * code analysis with r_parse
 
-* Write manpages
-
-* ALL threads must be stopped when a breakpoint is handled..
-  -- how to do this?
+* Finish to write manpages
 
 * Move 'r_syscall_t' stuff into r_debug
   - Sync r_core
-
-* regio not implemented
-  - floating point registers
-  - mmx/xmm
-  - drX control
-* FileDescriptors
-  - df -- copy from !fd in r1
-
-* Implement dump+restore as macros
-  (dump,)
 
 * Implement process launcher wrapper
   - opens xterm and redirects stdin/stdout/stderr
   - Allows to change chroot
   - Allows to setup chroot
   - Define uid/gid
-
-* BUG:
- rasm2 -s att -a x86.nasm 'push 0x1e(%esp)'
 
 * Added lib_handle stub in r_lib, so we can add plugin support to
   any library by using just a macro

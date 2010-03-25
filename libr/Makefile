@@ -103,6 +103,8 @@ install: install-includes install-pkgconfig install-bins install-test-bins
 	${INSTALL_DATA} $$a ${PFX}/lib/radare2 ; done
 	${INSTALL_DATA} lang/p/radare.* ${PFX}/lib/radare2
 	echo "lang/p/radare.* ${PFX}/lib/radare2"
+	# strip rpath from ALL bins
+	./rpathstrip.sh ${PFX}
 
 deinstall uninstall:
 	# libraries

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -8,20 +8,25 @@
 #include "fastcall_x86.h"
 
 #if 0
-static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len)
-{
+static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len) {
 }
 #endif
 
-static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf) {
-	int len = 0;
+static int assemble(RAsm *a, RAsmAop *aop, const char *buf) {
 	char cmd[R_ASM_BUFSIZE];
 	ut8 *out;
-	sprintf(cmd, "nasm /dev/stdin -o /dev/stdout <<__\nBITS %i\nORG 0x%llx\n%s\n__", a->bits, a->pc, buf);
-	out = (ut8 *)r_sys_cmd_str(cmd, "", &len);
+	int len = 0;
+	if (a->syntax != R_ASM_SYNTAX_INTEL) {
+		eprintf ("asm.x86.nasm does not support non-intel syntax\n");
+		return -1;
+	}
+	snprintf (cmd, sizeof (cmd),
+		"nasm /dev/stdin -o /dev/stdout <<__\n"
+		"BITS %i\nORG 0x%llx\n%s\n__", a->bits, a->pc, buf);
+	out = (ut8 *)r_sys_cmd_str (cmd, "", &len);
 	if (out) {
-		memcpy(aop->buf, out, len<=R_ASM_BUFSIZE?len:R_ASM_BUFSIZE);
-		free(out);
+		memcpy (aop->buf, out, len<=R_ASM_BUFSIZE?len:R_ASM_BUFSIZE);
+		free (out);
 	}
 	aop->inst_len = len;
 	return len;
@@ -36,7 +41,7 @@ struct r_asm_handle_t r_asm_plugin_x86_nasm = {
 	.fini = NULL,
 	.disassemble = NULL, /*&disassemble,*/
 	.assemble = &assemble, 
-	.fastcall = fastcall,
+	.fastcall = &fastcall,
 };
 
 #ifndef CORELIB
@@ -50,11 +55,11 @@ struct r_lib_struct_t radare_plugin = {
 main() {
 	struct r_asm_fastcall_t *f;
 	//f = r_asm_plugin_x86_nasm.fastcall;
-	printf("fastcall=%p\n", *r_asm_plugin_x86_nasm.fastcall);
-	printf("fastcall=%p\n", fastcall);
+	printf ("fastcall=%p\n", *r_asm_plugin_x86_nasm.fastcall);
+	printf ("fastcall=%p\n", fastcall);
 	f = fastcall;//r_asm_plugin_x86_nasm.fastcall;
-	printf("f=%p (%s)\n", f, f);
-	printf("f[0]=%p (%s)\n", f[0], f[0]);
-	printf("f[3].arg[1]=%s\n", f[3].arg[1]);
+	printf ("f=%p (%s)\n", f, f);
+	printf ("f[0]=%p (%s)\n", f[0], f[0]);
+	printf ("f[3].arg[1]=%s\n", f[3].arg[1]);
 }
 #endif

@@ -1,0 +1,14 @@
+Debugger TODO
+=============
+* Breakpoints are ignored in some situations.. we must check
+  for them and toggle a .dbg variable to break
+* ALL threads must be stopped when a breakpoint is handled..
+  -- how to do this?
+* regio not implemented
+  - floating point registers
+  - mmx/xmm
+  - drX control
+* FileDescriptors
+  - df -- copy from !fd in r1
+* Implement dump+restore as macros
+  (dump,)
