@@ -1,5 +1,5 @@
 include ../../config.mk
-CFLAGS=-I ../../include -g
+CFLAGS+=-I../../include -g
 
 ifeq ($(WITHPIC),1)
 LDPATH=-L.. ${LDFLAGS_LINKPATH}.. -L../../util -L../../lib
@@ -10,7 +10,7 @@ LDPATH+=../../util/libr_util.a
 LDPATH+=../../lib/libr_lib.a
 endif
 
-all: map cat${EXT_EXE} read4${EXT_EXE}
+all: map${EXT_EXE} cat${EXT_EXE} read4${EXT_EXE}
 
 cat${EXT_EXE}: cat.o
 	${CC} cat.o ${LDPATH} -g -o cat${EXT_EXE}

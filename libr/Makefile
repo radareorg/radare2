@@ -23,7 +23,11 @@ libs:
 	@for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} all ); done
 	@echo Build done for: ${LIBLIST}
 
+ifeq ($(ONELIB),1)
 libr: .objs libr2.${EXT_SO} libr2.${EXT_AR}
+else
+libr:
+endif
 
 ifeq ($(WITHPIC),1)
 libr2.${EXT_SO}:

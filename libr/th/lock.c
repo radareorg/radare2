@@ -32,7 +32,7 @@ R_API int r_th_lock_wait(struct r_th_lock_t *thl)
 	r_th_lock_enter(thl); // locks here
 	r_th_lock_leave(thl); // releases previous mutex
 #elif __WIN32__
-	WaitForSingleObject(thl->lock, INFINITE);
+	WaitForSingleObject (thl->lock, INFINITE);
 #else
 	while(r_th_lock_check());
 #endif

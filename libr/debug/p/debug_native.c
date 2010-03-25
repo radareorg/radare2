@@ -17,7 +17,26 @@ static int r_debug_native_continue(int pid, int sig);
 #define R_DEBUG_REG_T CONTEXT
 #include "native/w32.c"
 
+/* TODO inline this helper */
+static inline int debug_getregs(int tid, CONTEXT *regs) {
+        regs->ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
+        //XXX: tid2handler not implemented!! 
+	//return GetThreadContext (tid2handler (tid), regs)? 0 : -1;
+	return 0;
+}
+
+/* TODO inline this helper */
+static inline int debug_setregs(int tid, CONTEXT *regs) {
+        regs->ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
+        //XXX: tid2handler not implemented!! 
+	//return SetThreadContext (tid2handler (tid), regs)? 0 : -1;
+	return 0;
+}
+
 #elif __OpenBSD__ || __NetBSD__ || __FreeBSD__
+#include <sys/ptrace.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #define R_DEBUG_REG_T struct reg
 
 #elif __APPLE__
@@ -42,6 +61,9 @@ static int r_debug_native_continue(int pid, int sig);
 #include <errno.h>
 
 #if __POWERPC__
+#include <sys/ptrace.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <mach/ppc/_types.h>
 #include <mach/ppc/thread_status.h>
 #define R_DEBUG_REG_T ppc_thread_state_t
@@ -59,12 +81,18 @@ static int r_debug_native_continue(int pid, int sig);
 #endif
 
 #elif __sun
+#include <sys/ptrace.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #define R_DEBUG_REG_T gregset_t
 #undef DEBUGGER
 #define DEBUGGER 0
 #warning No debugger support for SunOS yet
 
 #elif __linux__
+#include <sys/ptrace.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/user.h>
 #include <limits.h>
 # if __i386__ || __x86_64__
@@ -80,9 +108,6 @@ static int r_debug_native_continue(int pid, int sig);
 #endif // ARCH
 
 #if DEBUGGER
-#include <sys/ptrace.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 
 #if __APPLE__
 // TODO: move into native/
@@ -134,12 +159,11 @@ static int r_debug_native_step(int pid) {
 //	GetTheadContext (tid2hnd
 // XXX TODO CONTINUE h
 	/* up TRAP flag */
-	debug_getregs (ps.tid, &regs);
-	GetThreadContext (tid2handler
+	debug_getregs (pid, &regs);
 	regs.EFlags |= 0x100;
-	debug_setregs (ps.tid, &regs);
-	single_step = ps.tid;
-	r_deubg_native_continue (pid, -1);
+	debug_setregs (pid, &regs);
+	//single_step = pid;
+	//r_debug_native_continue (pid, -1);
 
 #elif __APPLE__
 	debug_arch_x86_trap_set (pid, 1);
@@ -168,8 +192,8 @@ static int r_debug_native_step(int pid) {
 static int r_debug_native_attach(int pid) {
 	int ret = -1;
 #if __WINDOWS__
-	WIN32_PI (hProcess) = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
-	if (WIN32_PI (hProcess) != (HANDLE)NULL && DebugActiveProcess (pid)) {
+	HANDLE hProcess = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
+	if (hProcess != (HANDLE)NULL && DebugActiveProcess (pid)) {
 		w32_dbg_threads (pid);
 		ret = 0;
 	} else ret = -1;
@@ -184,7 +208,7 @@ static int r_debug_native_attach(int pid) {
 
 static int r_debug_native_detach(int pid) {
 #if __WINDOWS__
-	return win32_detach (pid)? 0 : -1;
+	return w32_detach (pid)? 0 : -1;
 #elif __APPLE__
 	return ptrace (PT_DETACH, pid, NULL, NULL);
 #else
@@ -465,17 +489,17 @@ static const char *r_debug_native_reg_profile() {
 }
 
 static RList *r_debug_native_pids(int pid) {
-	int i, fd;
-	char *ptr, cmdline[1024];
-// TODO: new syntax: R_LIST (r_debug_pid_free)
 	RList *list = r_list_new ();
-	list->free = (RListFree)&r_debug_pid_free;
-	/* TODO */
 #if __WINDOWS__
 	eprintf ("pids: TODO\n");
 #elif __APPLE__
 	eprintf ("pids: TODO\n");
 #else
+	int i, fd;
+	char *ptr, cmdline[1024];
+// TODO: new syntax: R_LIST (r_debug_pid_free)
+	list->free = (RListFree)&r_debug_pid_free;
+	/* TODO */
 	if (pid) {
 		r_list_append (list, r_debug_pid_new ("(current)", pid, 's'));
 		/* list parents */
@@ -580,8 +604,8 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
 	if (!GetThreadContext (w32_t2h (pid), &ctx))
 		return 0;
-	if (sizeof (regs) < size)
-		size = sizeof(regs);
+	if (sizeof (CONTEXT) < size)
+		size = sizeof (CONTEXT);
 	memcpy (buf, &ctx, size);
 	return size;
 // XXX this must be defined somewhere else
@@ -878,7 +902,8 @@ static RList *r_debug_native_frames(RDebug *dbg) {
 
 static int r_debug_native_kill(struct r_debug_t *dbg, int sig) {
 #if __WINDOWS__
-	TerminateProcess (WIN32_PI (hProcess), 1);
+	HANDLE hProcess; // XXX
+	TerminateProcess (hProcess, 1);
 	return R_FALSE;
 #else
 	int ret = kill (dbg->pid, sig);

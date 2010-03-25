@@ -20,4 +20,4 @@ TARGET_GDB=debug_gdb.${EXT_SO}
 ALL_TARGETS+=${TARGET_GDB}
 
 ${TARGET_GDB}: ${OBJ_GDB}
-	${CC} ${OBJ_GDB} ${CFLAGS} ${LDFLAGS} -o ${TARGET_GDB}
+	${CC} -shared ${OBJ_GDB} ${CFLAGS} ${LDFLAGS} -o ${TARGET_GDB}

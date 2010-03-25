@@ -7,4 +7,4 @@ TARGET_M68K=asm_m68k.${EXT_SO}
 ALL_TARGETS+=${TARGET_M68K}
 
 ${TARGET_M68K}: ${OBJ_M68K}
-	${CC} ${CFLAGS} -o asm_m68k.${EXT_SO} ${OBJ_M68K}
+	${CC} -shared ${CFLAGS} -o asm_m68k.${EXT_SO} ${OBJ_M68K}

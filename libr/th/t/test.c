@@ -3,14 +3,15 @@
 int looper(struct r_th_t *th) {
 	int i;
 	int *ctr = th->user;
-	i++;
 	for (i=0;i<9999;i++) {
 		if (th->breaked)
 			break;
 		(*ctr)++;
 		printf ("%d loop %d\r", i, *ctr);
 		fflush (stdout);
+#if __UNIX__
 sleep (1);
+#endif
 	}
 	return 0; // do not loop
 }

@@ -6,6 +6,5 @@ TARGET_PE=bin_pe.${EXT_SO}
 ALL_TARGETS+=${TARGET_PE}
 
 ${TARGET_PE}: ${OBJ_PE}
-	${CC} ${CFLAGS} -o ${TARGET_PE} ${OBJ_PE}
+	${CC} -shared ${CFLAGS} -o ${TARGET_PE} ${OBJ_PE}
 	@#strip -s ${TARGET_PE}
-

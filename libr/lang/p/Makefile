@@ -49,7 +49,7 @@ lang_perl.${EXT_SO}:
 		`perl -MExtUtils::Embed -e ldopts` -lncurses
 
 lang_dummy.${EXT_SO}: dummy.o
-	${CC} ${CFLAGS} -fPIC ${LDFLAGS_LIB} -o lang_dummy.${EXT_SO} dummy.c ${LDFLAGS_LINKPATH}.. -L..
+	${CC} ${CFLAGS} -shared -fPIC ${LDFLAGS_LIB} -o lang_dummy.${EXT_SO} dummy.c ${LDFLAGS_LINKPATH}.. -L..
 	@#strip -s lua.so
 
 clean:

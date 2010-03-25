@@ -1,7 +1,8 @@
 include ../../config.mk
 
 OBJ=radare2.o
-BIN=radare2${EXT_EXE}
+BIN=radare2
+# this is already appended in rules.mk ${EXT_EXE}
 BINDEPS=r_core r_cons r_util r_flags r_lib r_io r_hash r_cmd r_config r_asm r_anal
 BINDEPS+=r_parse r_lang r_debug r_print r_line r_bin r_search r_meta r_reg r_bp r_util r_syscall
 

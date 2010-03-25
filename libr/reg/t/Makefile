@@ -1,7 +1,8 @@
 include ../../config.mk
 
 OBJ=test.o
-BIN=regtest${EXT_EXE}
+BIN=regtest
+#${EXT_EXE}
 BINDEPS=r_reg r_util
 
 #all: reg${EXT_EXE}

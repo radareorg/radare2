@@ -1,4 +1,5 @@
 NAME=r_bp
+DEPS+=r_util
 
 CFLAGS+=-DCORELIB
 include ../config.mk

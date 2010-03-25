@@ -9,8 +9,11 @@
 
 #include <windows.h>
 
+#undef HAVE_PTHREAD
+#define HAVE_PTHREAD 0
 #define R_TH_TID HANDLE
-#define R_TH_LOCK_T CRITICAL_SECTION
+#define R_TH_LOCK_T PCRITICAL_SECTION
+//HANDLE
 
 #elif HAVE_PTHREAD
 #define __GNU

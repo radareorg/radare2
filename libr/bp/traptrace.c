@@ -2,6 +2,7 @@
 
 // TODO: use r_range here??
 #include <r_bp.h>
+#include <r_list.h>
 
 R_API void r_bp_traptrace_free(void *ptr) {
 	RBreakpointTrace *trace = ptr;

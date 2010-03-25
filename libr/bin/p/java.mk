@@ -6,5 +6,5 @@ TARGET_JAVA=bin_java.${EXT_SO}
 ALL_TARGETS+=${TARGET_JAVA}
 
 ${TARGET_JAVA}: ${OBJ_JAVA}
-	${CC} ${CFLAGS} -o ${TARGET_JAVA} ${OBJ_JAVA}
+	${CC} -shared ${CFLAGS} -o ${TARGET_JAVA} ${OBJ_JAVA}
 	@#strip -s ${TARGET_JAVA}

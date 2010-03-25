@@ -35,6 +35,28 @@
 static int print_insn_powerpc (bfd_vma, struct disassemble_info *, int,
 			       ppc_cpu_t);
 
+static bfd_vma __bfd_getb32 (const void *p) {
+  const bfd_byte *addr = p;
+  unsigned long v;
+
+  v = (unsigned long) addr[0] << 24;
+  v |= (unsigned long) addr[1] << 16;
+  v |= (unsigned long) addr[2] << 8;
+  v |= (unsigned long) addr[3];
+  return v;
+}
+
+static bfd_vma __bfd_getl32 (const void *p) {
+  const bfd_byte *addr = p;
+  unsigned long v;
+
+  v = (unsigned long) addr[0];
+  v |= (unsigned long) addr[1] << 8;
+  v |= (unsigned long) addr[2] << 16;
+  v |= (unsigned long) addr[3] << 24;
+  return v;
+}
+
 struct dis_private
 {
   /* Stash the result of parsing disassembler_options here.  */
@@ -240,9 +262,9 @@ print_insn_powerpc (bfd_vma memaddr,
     }
 
   if (bigendian)
-    insn = bfd_getb32 (buffer);
+    insn = __bfd_getb32 (buffer);
   else
-    insn = bfd_getl32 (buffer);
+    insn = __bfd_getl32 (buffer);
 
   /* Get the major opcode of the instruction.  */
   op = PPC_OP (insn);

@@ -1,4 +1,5 @@
 CC=i586-mingw32msvc-gcc
+ONELIB=0
 OSTYPE=windows
 LINK=
 CC_AR=echo ar -r ${LIBAR}

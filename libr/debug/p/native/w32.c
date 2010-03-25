@@ -86,7 +86,7 @@ static void print_lasterr(const char *str) {
 }
 
 
-static void w32_dbg_init() {
+static int w32_dbg_init() {
 	HANDLE lib;
 
 	w32_detach = (BOOL WINAPI (*)(DWORD))
@@ -104,10 +104,10 @@ static void w32_dbg_init() {
 	w32_getprocessid = (DWORD WINAPI (*)(HANDLE))  
 		GetProcAddress (GetModuleHandle ("kernel32"), "GetProcessId");
 
-	lib = LoadLibrary("psapi.dll");
+	lib = LoadLibrary ("psapi.dll");
 	if(lib == NULL) {
 		eprintf ("Cannot load psapi.dll!!\n");
-		exit (1);
+		return R_FALSE;
 	}
 	gmbn = (void (*)(HANDLE, HMODULE, LPTSTR, int))
 		GetProcAddress (lib, "GetModuleBaseNameA");
@@ -123,12 +123,13 @@ static void w32_dbg_init() {
 			"DebugBreakProcess: 0x%x\n"
 			"GetThreadId: 0x%x\n",
 			w32_detach, w32_openthread, w32_dbgbreak, w32_getthreadid);
-		exit (1);
+		return R_FALSE;
 	}
+	return R_TRUE;
 }
 
-#if 0
 static HANDLE w32_t2h(pid_t tid) {
+#if 0
 	TH_INFO *th = get_th (tid);
 	if(th == NULL) {
 		/* refresh thread list */
@@ -139,8 +140,9 @@ static HANDLE w32_t2h(pid_t tid) {
 			return NULL;
 	}
 	return th->ht;
-}
 #endif
+	return NULL;
+}
 
 inline static int w32_h2t(HANDLE h) {
 	if (w32_getthreadid != NULL) // >= Windows Vista
@@ -196,6 +198,28 @@ err_load_th:
 	return ret;
 #endif
 	return 0;
+}
+
+static int debug_exception_event (unsigned long code) {
+	switch (code) {
+	case EXCEPTION_BREAKPOINT:
+		eprintf ("breakpoint\n");
+		break;
+	case EXCEPTION_SINGLE_STEP:
+		eprintf ("singlestep\n");
+		break;
+	/* fatal exceptions */
+	case EXCEPTION_ACCESS_VIOLATION:
+	case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
+	case EXCEPTION_ILLEGAL_INSTRUCTION:
+	case EXCEPTION_INT_DIVIDE_BY_ZERO:
+	case EXCEPTION_STACK_OVERFLOW:
+		eprintf ("fatal exception\n");
+		break;
+	default:
+		eprintf ("unknown exception\n");
+		break;
+	}
 }
 
 static int w32_dbg_wait(int pid) {
@@ -278,6 +302,19 @@ static int w32_dbg_wait(int pid) {
 		}
 	} while (next_event);
 
+	return 0;
+}
+
+static inline int CheckValidPE(unsigned char * PeHeader) {
+	IMAGE_DOS_HEADER *dos_header = (IMAGE_DOS_HEADER *)PeHeader;
+	IMAGE_NT_HEADERS *nt_headers;
+
+	if (dos_header->e_magic==IMAGE_DOS_SIGNATURE) {
+		nt_headers = (IMAGE_NT_HEADERS *)((char *)dos_header
+				+ dos_header->e_lfanew);
+		if (nt_headers->Signature==IMAGE_NT_SIGNATURE)
+			return 1;
+	}
 	return 0;
 }
 
@@ -384,7 +421,7 @@ static RList *w32_dbg_maps() {
 				return NULL;
 			}
 
-			r_list_apend (list, mr);
+			r_list_append (list, mr);
 			page += mbi.RegionSize; 
 		}
 	}

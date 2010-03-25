@@ -7,5 +7,5 @@ TARGET_ELF=bin_elf.${EXT_SO}
 ALL_TARGETS+=${TARGET_ELF}
 
 ${TARGET_ELF}: ${OBJ_ELF}
-	${CC} ${CFLAGS} -o ${TARGET_ELF} ${OBJ_ELF}
+	${CC} -shared ${CFLAGS} -o ${TARGET_ELF} ${OBJ_ELF}
 	@#strip -s ${TARGET_ELF}

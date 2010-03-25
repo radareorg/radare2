@@ -5,4 +5,4 @@ TARGET_SHM=io_shm.${EXT_SO}
 ALL_TARGETS+=${TARGET_SHM}
 
 ${TARGET_SHM}: ${OBJ_SHM}
-	${CC} ${CFLAGS} -o ${TARGET_SHM} ${OBJ_SHM}
+	${CC} -shared ${CFLAGS} -o ${TARGET_SHM} ${OBJ_SHM}

@@ -6,5 +6,5 @@ TARGET_DUMMY=anal_dummy.${EXT_SO}
 ALL_TARGETS+=${TARGET_DUMMY}
 
 ${TARGET_DUMMY}: ${OBJ_DUMMY}
-	${CC} ${CFLAGS} -o ${TARGET_DUMMY} ${OBJ_DUMMY}
+	${CC} -shared ${CFLAGS} -o ${TARGET_DUMMY} ${OBJ_DUMMY}
 	@#strip -s ${TARGET_DUMMY}

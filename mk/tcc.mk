@@ -1,5 +1,6 @@
 CC=tcc
 LINK=
+ONELIB=1
 CC_AR=ar -r ${LIBAR}
 PIC_CFLAGS+=-fPIC
 CC_LIB=${CC} -shared -o ${LIBSO}

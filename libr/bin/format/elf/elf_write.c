@@ -136,7 +136,7 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 		off = ehdr->e_phoff + i * sizeof(Elf_(Phdr));
 		if (r_buf_write_at (bin->b, off, (ut8*)phdrp, sizeof (Elf_(Phdr))) == -1)
 			perror("write (phdr)");
-		printf("-> program header (%08llx)\n", (ut64) phdrp->p_offset);
+		printf("-> program header (0x%08llx)\n", (ut64) phdrp->p_offset);
 	}
 
 	/* rewrite other elf pointers (entrypoint, phoff, shoff) */
@@ -147,7 +147,7 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 	if (ehdr->e_shoff >= rsz_offset + rsz_osize)
 		ehdr->e_shoff += delta;
 	if (r_buf_write_at (bin->b, 0, (ut8*)ehdr, sizeof (Elf_(Ehdr))) == -1)
-		perror("write (ehdr)");
+		perror ("write (ehdr)");
 
 	/* inverse order to write bodies .. avoid overlapping here */
 	/* XXX Check when delta is negative */

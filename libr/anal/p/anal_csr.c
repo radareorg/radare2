@@ -5,8 +5,9 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include "../asm/arch/csr/dis.h"
+#include "../asm/arch/csr/dis.c"
 
+#if 0
 static int get_num(int num, int shift) {
 	int tmp;
 	char x = (char) ((num >> shift) & 0xff);
@@ -22,6 +23,7 @@ static int get_operand(struct state *s, struct directive *d) {
 	else total += get_num (s->s_prefix_val, 8);
 	return total;
 }
+#endif
 
 static int label_off(struct directive *d) {
 	int off = d->d_operand;
