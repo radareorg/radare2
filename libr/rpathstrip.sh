@@ -15,7 +15,8 @@ if [ ! -x "${BIN}" ]; then
 	exit 0
 fi
 echo "Stripping rpath from installed binaries..."
-export LD_LIBRARY_PATH=$1/lib
+LD_LIBRARY_PATH=$1/lib
+export LD_LIBRARY_PATH
 
 for a in ${BINS}; do
 	${BIN} $1/bin/$a $1/bin/$a

@@ -92,12 +92,12 @@ done
 : ${INSTALL_PROGRAM:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
 : ${INSTALL_LIB:=${INSTALL} -c}
- PKGNAME='radare2-swig' ; VERSION='0.4b' ; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
+ PKGNAME='radare2-swig' ; VERSION='0.4' ; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
 }
                 
 show_usage() {
 cat <<EOF2
-'configure' configures radare2-swig-0.4b to adapt to many kinds of systems.
+'configure' configures radare2-swig-0.4 to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -160,7 +160,7 @@ take_environ() {
 }
 
 show_version() {
-echo "radare2-swig-0.4b configuration script done with acr v0.8.2.
+echo "radare2-swig-0.4 configuration script done with acr v0.8.2.
 The 'Free Software Foundation' message is only for autodetection.
 Originally written by pancake <youterm.com>."
 exit 0
@@ -178,7 +178,7 @@ case $flag in
 	show_version ; ;;
 "-r"|"--r"|"--report")
 echo "PKGNAME:   radare2-swig"
-echo "VERSION:   0.4b"
+echo "VERSION:   0.4"
 echo "LANGS:     c c++"
 	exit 0
 	;;

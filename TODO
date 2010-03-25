@@ -9,6 +9,8 @@
 
 See libr/*/TODO FMI
 
+ manpages for r2, r2rc, r2rc-tool, rafind2 and rasign2 are missing
+
 BUGS
 ====
   * anal fastargs
