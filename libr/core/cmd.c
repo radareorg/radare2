@@ -575,69 +575,89 @@ static int cmd_bsize(void *data, const char *input) {
 	}
 	return 0;
 }
+// move it out // r_diff maybe?
+static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len) {
+	int i, eq = 0;
+	for (i=0;i<len;i++) {
+		if (f[i]==d[i]) {
+			eq++;
+			continue;
+		}
+		r_cons_printf ("0x%08llx (byte=%.2d)   %02x '%c'  ->  %02x '%c'\n",
+			core->offset+i, i+1,
+			f[i], (IS_PRINTABLE(f[i]))?f[i]:' ',
+			d[i], (IS_PRINTABLE(d[i]))?d[i]:' ');
+	}
+	eprintf ("Compare %d/%d equal bytes\n", eq, len);
+	return len-eq;
+}
+
 
 static int cmd_cmp(void *data, const char *input) {
-#if 0
-	int ret;
-	FILE *fd;
-	unsigned int off;
-	unsigned char *buf;
 	RCore *core = data;
-#endif
+	FILE *fd;
+	ut8 *buf;
+	int ret;
+	ut32 v32;
+	ut64 v64;
 
 	switch (*input) {
+	case ' ':
+		radare_compare (core, core->block, (ut8*)input+1, strlen (input+1)+1);
+		break;
+	case 'x':
+		if (input[1]!=' ') {
+			eprintf ("Usage: cx 001122'\n");
+			return 0;
+		}
+		buf = (ut8*)malloc (strlen (input+2));
+		ret = r_hex_str2bin (input+2, buf);
+		if (ret<1) {
+			eprintf ("Cannot parse hexpair\n");
+		} else radare_compare (core, core->block, buf, ret);
+		free (buf);
+		break;
+	case 'X':
+		buf = malloc (core->blocksize);
+		ret = r_io_read_at (&core->io, r_num_math (&core->num, input+1), buf, core->blocksize);
+		radare_compare (core, core->block, buf, ret);
+		free(buf);
+		break;
+	case 'f':
+		if (input[1]!=' ') {
+			eprintf ("Please. use 'cf [file]'\n");
+			return 0;
+		}
+		fd = fopen (input+2, "rb");
+		if (fd == NULL) {
+			eprintf ("Cannot open file '%s'\n", input+2);
+			return 0;
+		}
+		buf = (ut8 *)malloc (core->blocksize);
+		fread (buf, 1, core->blocksize, fd);
+		fclose (fd);
+		radare_compare (core, core->block, buf, core->blocksize);
+		free (buf);
+		break;
+	case 'q':
+		v64 = (ut64) r_num_math (&core->num, input+1);
+		radare_compare (core, core->block, (u8*)&off, sizeof (v64));
+		break;
+	case 'd':
+		v32 = (ut32) r_num_math (&core->num, input+1);
+		radare_compare (core, core->block, (u8*)&v32, sizeof (v32));
+		break;
 #if 0
 	case 'c':
 		radare_compare_code (
 			r_num_math (&core->num, input+1),
 			core->block, core->blocksize);
 		break;
-	case 'd':
-		off = (unsigned int) get_offset(input+1);
-		radare_compare((u8*)&off, config.block, 4);
-		break;
-	case 'f':
-		if (input[1]!=' ') {
-			eprintf("Please. use 'cf [file]'\n");
-			return 0;
-		}
-		fd = fopen(input+2, "r");
-		if (fd == NULL) {
-			eprintf("Cannot open file '%s'\n",input+2);
-			return 0;
-		}
-		buf = (unsigned char *)malloc(config.block_size);
-		fread(buf, 1, config.block_size, fd);
-		fclose(fd);
-		radare_compare(buf, config.block, config.block_size);
-		free(buf);
-		break;
-	case 'x':
-		if (input[1]!=' ') {
-			eprintf("Please. use 'wx 00 11 22'\n");
-			return 0;
-		}
-		buf = (unsigned char *)malloc(strlen(input+2));
-		ret = hexstr2binstr(input+2, buf);
-		radare_compare(buf, config.block, ret);
-		free(buf);
-		break;
-	case 'X':
-		{
-		u8 *buf = malloc(config.block_size);
-		radare_read_at(get_math(input+1), buf, config.block_size);
-		radare_compare_hex(config.seek+config.vaddr, buf, config.block, config.block_size);
-		free(buf);
-		}
-		break;
-	case ' ':
-		radare_compare((unsigned char*)input+1,config.block, strlen(input+1)+1);
-		break;
 	case 'D':
-		{
+		{ // XXX ugly hack
 		char cmd[1024];
-		sprintf(cmd, "radiff -b %s %s", ".curblock", input+2);
-		file_dump(".curblock", config.block, config.block_size);
+		sprintf (cmd, "radiff -b %s %s", ".curblock", input+2);
+		r_file_dump (".curblock", config.block, config.block_size);
 		radare_system(cmd);
 		unlink(".curblock");
 		}
@@ -647,12 +667,13 @@ static int cmd_cmp(void *data, const char *input) {
 		r_cons_strcat (
 		"Usage: c[?cdfx] [argument]\n"
 		" c  [string]   Compares a plain with escaped chars string\n"
-		" cc [offset]   Code bindiff current block against offset\n"
+		//" cc [offset]   Code bindiff current block against offset\n"
 		" cd [value]    Compare a doubleword from a math expression\n"
+		//" cD [file]     Like above, but using radiff -b\n");
+		" cq [value]    Compare a quadword from a math expression\n"
 		" cx [hexpair]  Compare hexpair string\n"
 		" cX [addr]     Like 'cc' but using hexdiff output\n"
 		" cf [file]     Compare contents of file at current seek\n"
-		" cD [file]     Like above, but using radiff -b\n");
 		break;
 	default:
 		eprintf ("Usage: c[?Ddxf] [argument]\n");
