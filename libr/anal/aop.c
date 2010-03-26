@@ -32,6 +32,6 @@ R_API RAnalAop *r_anal_aop_init(RAnalAop *aop) {
 
 R_API int r_anal_aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) {
 	if (anal && aop && anal->cur && anal->cur->aop)
-		return anal->cur->aop(anal, aop, addr, data, len);
+		return anal->cur->aop (anal, aop, addr, data, len);
 	return 0;
 }

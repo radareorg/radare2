@@ -256,6 +256,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int depth) {
 			return R_FALSE;
 		fcnlen = r_anal_fcn (&core->anal, fcn, at+fcnlen, buf, buflen); 
 		if (fcnlen == R_ANAL_RET_ERROR) { /* Error analyzing function */
+			eprintf ("Unknown opcode at 0x%08llx\n", at+fcnlen);
 			r_anal_fcn_free (fcn);
 			return R_FALSE;
 		} else if (fcnlen == R_ANAL_RET_END) { /* function analysis complete */
@@ -347,25 +348,24 @@ R_API int r_core_anal_fcn_list(RCore *core, int rad) {
 	ut64 *ref;
 
 	r_list_foreach (core->anal.fcns, iter, fcni)
-		if (rad)
-			r_cons_printf ("af+ 0x%08llx %lli %s\n", fcni->addr, fcni->size, fcni->name);
+		if (rad) r_cons_printf ("af+ 0x%08llx %lli %s\n", fcni->addr, fcni->size, fcni->name);
 		else {
-			r_cons_printf ("[0x%08llx] size=%lli name=%s\n",
+			r_cons_printf ("[0x%08llx] size=%lli name=%s",
 					fcni->addr, fcni->size, fcni->name);
-			r_cons_printf ("refs:\n");
+			r_cons_printf ("\n  refs: ");
 			r_list_foreach (fcni->refs, iter2, refi) {
 				ref = (ut64*)refi;
 				r_cons_printf ("0x%08llx ", *ref);
 			}
-			r_cons_printf ("\nxrefs:\n");
+			r_cons_printf ("\n  xrefs: ");
 			r_list_foreach (fcni->xrefs, iter2, refi) {
 				ref = (ut64*)refi;
 				r_cons_printf ("0x%08llx ", *ref);
 			}
-			r_cons_printf ("\nvars:\n");
+			r_cons_printf ("\n  vars:\n");
 			r_list_foreach (fcni->vars, iter2, vari) {
-				r_cons_printf ("%-10s delta=0x%02x type=%s\n", vari->name, vari->delta,
-						r_anal_var_type_to_str (&core->anal, vari->type));
+				r_cons_printf ("  %-10s delta=0x%02x type=%s\n", vari->name, vari->delta,
+					r_anal_var_type_to_str (&core->anal, vari->type));
 			}
 			r_cons_newline ();
 		}

@@ -1569,7 +1569,6 @@ enum map_type {
   MAP_DATA
 };
 
-static enum map_type last_type;
 int last_mapping_sym = -1;
 bfd_vma last_mapping_addr = 0;
 

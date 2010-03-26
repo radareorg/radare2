@@ -33,7 +33,7 @@ static int cmd_iopipe(void *data, const char *input) {
 	return R_TRUE;
 }
 
-static void cmd_reg (struct r_core_t *core, const char *str) {
+static void cmd_reg(struct r_core_t *core, const char *str) {
 	struct r_reg_item_t *r;
 	const char *name;
 	char *arg;
@@ -132,7 +132,7 @@ static void cmd_reg (struct r_core_t *core, const char *str) {
 	}
 }
 
-static void r_core_cmd_bp (struct r_core_t *core, const char *input) {
+static void r_core_cmd_bp(struct r_core_t *core, const char *input) {
 	if (input[1]==' ')
 		input++;
 	switch (input[1]) {
@@ -204,7 +204,7 @@ static int cmd_yank_to(struct r_core_t *core, char *arg) {
 		str[0]=' ';
 	}
 	if ((str == NULL) || (pos == -1) || (len == 0)) {
-		eprintf("Usage: yt [len] [dst-addr]\n");
+		eprintf ("Usage: yt [len] [dst-addr]\n");
 		return 1;
 	}
 #if 0
@@ -227,10 +227,10 @@ static int cmd_yank(void *data, const char *input) {
 	struct r_core_t *core = (struct r_core_t *)data;
 	switch (input[0]) {
 	case ' ':
-		r_core_yank(core, core->offset, atoi(input+1));
+		r_core_yank (core, core->offset, atoi(input+1));
 		break;
 	case 'y':
-		r_core_yank_paste(core, r_num_math(&core->num, input+2), 0);
+		r_core_yank_paste (core, r_num_math(&core->num, input+2), 0);
 		break;
 	case 't':
 		{ /* hacky implementation */
@@ -244,7 +244,7 @@ static int cmd_yank(void *data, const char *input) {
 			int i;
 			r_cons_printf ("0x%08llx %d ",
 				core->yank_off, core->yank_len);
-			for(i=0;i<core->yank_len;i++)
+			for (i=0;i<core->yank_len;i++)
 				r_cons_printf ("%02x", core->yank[i]);
 			r_cons_newline ();
 		} else eprintf ("No buffer yanked already\n");
@@ -641,11 +641,11 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 	case 'q':
 		v64 = (ut64) r_num_math (&core->num, input+1);
-		radare_compare (core, core->block, (u8*)&off, sizeof (v64));
+		radare_compare (core, core->block, (ut8*)&v64, sizeof (v64));
 		break;
 	case 'd':
 		v32 = (ut32) r_num_math (&core->num, input+1);
-		radare_compare (core, core->block, (u8*)&v32, sizeof (v32));
+		radare_compare (core, core->block, (ut8*)&v32, sizeof (v32));
 		break;
 #if 0
 	case 'c':
@@ -673,7 +673,7 @@ static int cmd_cmp(void *data, const char *input) {
 		" cq [value]    Compare a quadword from a math expression\n"
 		" cx [hexpair]  Compare hexpair string\n"
 		" cX [addr]     Like 'cc' but using hexdiff output\n"
-		" cf [file]     Compare contents of file at current seek\n"
+		" cf [file]     Compare contents of file at current seek\n");
 		break;
 	default:
 		eprintf ("Usage: c[?Ddxf] [argument]\n");
@@ -1086,8 +1086,6 @@ static int cmd_anal(void *data, const char *input) {
 		} else r_anal_list (&core->anal);
 		break;
 	case 'o':
-		r_cons_printf ("TODO\n");
-#if 0
 		{
 			/* XXX hardcoded */
 			int ret, idx; 
@@ -1095,11 +1093,26 @@ static int cmd_anal(void *data, const char *input) {
 			struct r_anal_aop_t aop;
 			r_anal_use (&core->anal, "anal_x86_bea");
 			
-			for(idx=ret=0; idx < len; idx+=ret)
-				ret = r_anal_aop(&core->anal, &aop,
+			for (idx=ret=0; idx<len; idx+=ret) {
+				ret = r_anal_aop (&core->anal, &aop,
 					core->offset+idx, buf + idx, (len-idx));
+				if (ret<1) {
+					eprintf ("Oops at 0x%08llx\n", core->offset+idx);
+					break;
+				}
+				r_cons_printf ("addr: 0x%08llx\n", core->offset+idx);
+				r_cons_printf ("size: %d\n", aop.length);
+				r_cons_printf ("type: %d\n", aop.type); // TODO: string
+				r_cons_printf ("eob: %d\n", aop.eob);
+				r_cons_printf ("jump: 0x%08llx\n", aop.jump);
+				r_cons_printf ("fail: 0x%08llx\n", aop.fail);
+				r_cons_printf ("stack: %d\n", aop.stackop); // TODO: string
+				r_cons_printf ("cond: %d\n", aop.cond); // TODO: string
+				r_cons_printf ("family: %d\n", aop.family);
+				r_cons_printf ("\n");
+				//r_cons_printf ("false: 0x%08llx\n", core->offset+idx);
+			}
 		}
-#endif
 		break;
 	case 'b':
 		switch (input[1]) {
@@ -1278,7 +1291,7 @@ static int cmd_write(void *data, const char *input) {
 	case 't': {
 			/* TODO: Support user defined size? */
 			int len = core->blocksize;
-			const char *arg = (const char *)(input+(input[1]==' ')?2:1);
+			const char *arg = (const char *)(input+((input[1]==' ')?2:1));
 			const ut8 *buf = core->block;
 			r_file_dump (arg, buf, len);
 		} break;
@@ -1287,7 +1300,7 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case 'f': {
 			int size;
-			const char *arg = (const char *)(input+(input[1]==' ')?2:1);
+			const char *arg = (const char *)(input+((input[1]==' ')?2:1));
 			ut8 *buf = (ut8*) r_file_slurp (arg, &size);
 			if (buf) {
 				r_io_set_fd (&core->io, core->file->fd);
@@ -1297,7 +1310,7 @@ static int cmd_write(void *data, const char *input) {
 		} break;
 	case 'F': {
 			int size;
-			const char *arg = (const char *)(input+(input[1]==' ')?2:1);
+			const char *arg = (const char *)(input+((input[1]==' ')?2:1));
 			ut8 *buf = r_file_slurp_hexpairs (arg, &size);
 			if (buf == NULL) {
 				r_io_set_fd (&core->io, core->file->fd);
@@ -1316,7 +1329,6 @@ static int cmd_write(void *data, const char *input) {
 		}
 		str = tmp;
 
-		// write strifng
 		r_io_set_fd (&core->io, core->file->fd);
 		r_io_write_at (&core->io, core->offset, (const ut8*)str, len);
 		r_core_block_read (core, 0);
@@ -1329,7 +1341,6 @@ static int cmd_write(void *data, const char *input) {
 		r_core_write_at (core, core->offset, buf, len);
 		r_core_block_read (core, 0);
 		}
-		// write hexpairs
 		break;
 	case 'a':
 		{
@@ -1646,16 +1657,16 @@ static int cmd_hash(void *data, const char *input) {
 	ptr = strchr (input, ' ');
 	sscanf (input, "%31s", algo);
 	if (ptr != NULL)
-		len = r_num_math(&core->num, ptr+1);
-
+		len = r_num_math (&core->num, ptr+1);
 	/* TODO: support all hash algorithms and so */
 	if (!r_str_ccmp(input, "crc32", ' ')) {
-		r_cons_printf("%04x\n", r_hash_crc32(core->block, len));
+		r_cons_printf ("%04x\n", r_hash_crc32 (core->block, len));
 	} else
 	if (!r_str_ccmp(input, "crc16", ' ')) {
-		r_cons_printf("%02x\n", r_hash_crc16(0, core->block, len));
-	} else {
-		r_cons_printf(
+		r_cons_printf ("%02x\n", r_hash_crc16 (0, core->block, len));
+	} else
+	if (input[0]=='?') {
+		r_cons_printf (
 		"Usage: #algo <size> @ addr\n"
 		" #crc32               ; calculate crc32 of current block\n"
 		" #crc32 < /etc/fstab  ; calculate crc32 of this file\n"

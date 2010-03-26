@@ -50,9 +50,10 @@ static int r_line_readchar() {
 	SetConsoleMode (h, mode);
 #else
 	do {
-		if (read (0, buf, 1) != 1)
-			return -1;
-		if (feof (stdin))
+		int ret = read (0, buf, 1);
+		if (ret == -1)
+			return 0; // read no char
+		if (ret == 0) // EOF
 			return -1;
 		// TODO: add support for other invalid chars
 		if (*buf==0xc2 || *buf==0xc3) {

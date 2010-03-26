@@ -451,7 +451,7 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 			len = r_buf_fread_at(bin->b, bin->phdr[i].p_offset, (ut8*)dyn, bin->endian?"2I":"2i", ndyn);
 #endif
 			if (len  == -1) {
-				eprintf("Error: read (dyn)\n");
+				eprintf ("Error: read (dyn)\n");
 				free (dyn);
 				return NULL;
 			}
@@ -462,13 +462,14 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 				}
 			for (j = 0, k = 0; j < ndyn; j++)
 				if (dyn[j].d_tag == DT_NEEDED) {
-					if ((ret = realloc (ret, (k+1) * sizeof(struct r_bin_elf_lib_t))) == NULL) {
-						perror("realloc (libs)");
+					ret = realloc (ret, (k+1) * sizeof(struct r_bin_elf_lib_t));
+					if (ret == NULL) {
+						perror ("realloc (libs)");
 						free (dyn);
 						return NULL;
 					}
 					if (r_buf_read_at (bin->b, stroff + dyn[j].d_un.d_val,
-								(ut8*)ret[k].name, ELF_STRING_LENGTH) == -1) {
+							(ut8*)ret[k].name, ELF_STRING_LENGTH) == -1) {
 						eprintf("Error: read (libs)\n");
 						free (ret);
 						free (dyn);

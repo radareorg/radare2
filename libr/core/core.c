@@ -32,7 +32,7 @@ static ut64 num_callback(void *userptr, const char *str, int *ok) {
 					ut64 ret;
 					ptr[0]='\0';
 					ret = r_config_get_i (&core->config, bptr);
-					free(bptr);
+					free (bptr);
 					return ret;
 				}
 			}
@@ -195,6 +195,7 @@ R_API int r_core_prompt(RCore *r) {
 	else sprintf (prompt, "[0x%08llx]> ", r->offset);
 	r_line_singleton()->prompt = prompt;
 	ret = r_cons_fgets (line, sizeof (line), 0, NULL);
+eprintf ("RET=%d\n", ret);
 	if (ret == -2)
 		return R_CORE_CMD_EXIT;
 	if (ret == -1)

@@ -106,7 +106,8 @@ retry:
 			   disasm_rep = disasm_opcode;
 			   goto retry;
 		case 0x66:
-			   if (disasm_flag & C_66) return 0;
+			   if (disasm_flag & C_66)
+				return 8; // workaround for # 66662e0f1f8300. o16 nop [cs:rbx+0x0]
 			   disasm_flag |= C_66;
 			   disasm_defdata = 2;
 			   goto retry;
@@ -157,8 +158,9 @@ retry:
 		case 0x0F:
 			   disasm_flag |= C_OPCODE2;
 			   disasm_opcode2 = *opcode++;
-			   switch (disasm_opcode2)
-			   {
+			   switch (disasm_opcode2) {
+				   case 0x1F:
+					   return 6; // HACK
 				   case 0x00: case 0x01: case 0x02: case 0x03:
 				   case 0x90: case 0x91: case 0x92: case 0x93:
 				   case 0x94: case 0x95: case 0x96: case 0x97:
@@ -207,7 +209,7 @@ retry:
 
 	if (disasm_flag & C_MODRM)
 	{
-		if (limit<4)
+		if (limit<2) // it was 4
 			return 0;
 		disasm_modrm = *opcode++;
 		BYTE mod = disasm_modrm & 0xC0;
@@ -243,3 +245,9 @@ retry:
 	return disasm_len;
 } //disasm
 
+#if 0
+main() { //assert 3 , dislen ("\x00\x41\x57", 3); 
+printf ("6=%d\n", dislen ("\x66\x0f\x1f\x44\x00\x00", 8));
+//printf ("%d\n", dislen ("\x66\x66\x2e\x0f\x1f\x84\x00\x00",10)); 
+}
+#endif

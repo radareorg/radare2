@@ -27,19 +27,18 @@
 // NOTE: buf should be at least 16 bytes!
 // XXX addr should be off_t for 64 love
 static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) {
+	ut8 *buf = (ut8*)data;
 	if (data == NULL)
 		return 0;
-
-	ut8 *buf = (ut8*)data;
-	memset(aop, '\0', sizeof(RAnalAop));
+	memset (aop, '\0', sizeof (RAnalAop));
 	aop->type = R_ANAL_OP_TYPE_UNK;
 	aop->addr = addr;
 
-	switch(buf[0]) {
+	switch (buf[0]) {
 	case 0x8a:
 	case 0x8b:
 	case 0x03: //  034518          add eax, [ebp+0x18]
-		switch(buf[1]) {
+		switch (buf[1]) {
 		case 0x45:
 		case 0x46:
 		case 0x55:
@@ -49,7 +48,6 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 			aop->ref = (st64)((char)buf[2]);
 			aop->stackop = R_ANAL_STACK_LOCAL_GET;
 			break;
-
 		case 0x95:
 			if (buf[2]==0xe0) { // ebp
 				aop->ref = (st64)((int)(buf[3]+(buf[4]<<8)+(buf[5]<<16)+(buf[6]<<24)));
@@ -166,25 +164,25 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 		aop->type   = R_ANAL_OP_TYPE_CALL;
 		aop->length = 5;
 		//aop->jump   = addr+*ptr+5; //(unsigned long)((buf+1)+5);
-		aop->jump   = addr+5+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);//((unsigned long)((buf+2))+6);
-		aop->fail   = addr+5;
+		aop->jump = addr+5+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);//((unsigned long)((buf+2))+6);
+		aop->fail = addr+5;
 //printf("addr: %08llx\n call %08llx \n ret %08llx\n", addr, aop->jump, aop->fail);
 	//	aop->eob    = 1;
 		break;
 	case 0xe9: // jmp
-		aop->type   = R_ANAL_OP_TYPE_JMP;
+		aop->type = R_ANAL_OP_TYPE_JMP;
 		aop->length = 5;
 		//aop->jump   = (unsigned long)((buf+1)+5);
-		aop->jump   = addr+5+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);//((unsigned long)((buf+2))+6);
-		aop->fail   = 0L;
-		aop->eob    = 1;
+		aop->jump = addr+5+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);//((unsigned long)((buf+2))+6);
+		aop->fail = 0L;
+		aop->eob = 1;
 		break;
 	case 0xeb: // short jmp 
-		aop->type   = R_ANAL_OP_TYPE_JMP;
+		aop->type = R_ANAL_OP_TYPE_JMP;
 		aop->length = 2;
-		aop->jump   = addr+((unsigned long)((char)buf[1])+2);
-		aop->fail   = 0L;
-		aop->eob    = 1;
+		aop->jump = addr+((unsigned long)((char)buf[1])+2);
+		aop->fail = 0L;
+		aop->eob = 1;
 		break;
 	case 0xf2: // repnz
 	case 0xf3: // repz
@@ -310,9 +308,8 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 		aop->type =R_ANAL_OP_TYPE_MOV;
 		break;
 	case 0xc7:
-
 		/* mov dword [ebp-0xc], 0x0  ||  c7 45 f4 00000000 */
-		switch(buf[1]) {
+		switch (buf[1]) {
 		case 0x85:
 			aop->ref = (st64)(((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24))));
 			break;
@@ -378,12 +375,12 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 		int bo = (int)((char) buf[1]);
 		/* conditional jump */
 		//if (buf[1]>=0x80&&buf[1]<=0x8F) {
-			aop->type   = R_ANAL_OP_TYPE_CJMP;
+			aop->type = R_ANAL_OP_TYPE_CJMP;
 			aop->length = 2;
 		//	aop->jump   = (unsigned long)((buf+2)+6);
-			aop->jump   = addr+bo+2; //(unsigned long)((buf+1)+5);
-			aop->fail   = addr+2;
-			aop->eob    = 1;
+			aop->jump = addr+bo+2; //(unsigned long)((buf+1)+5);
+			aop->fail = addr+2;
+			aop->eob = 1;
 			//return 2;
 		}
 		break;
@@ -392,7 +389,7 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 	}
 
 	//if (aop->length == 0)
-	aop->length = dislen((unsigned char *)buf, 64); //instLength(buf, 16, 0);
+	aop->length = dislen ((unsigned char *)buf, 64); //instLength(buf, 16, 0);
 		//aop->length = instLength(buf, 16, 0);
 	if (!(aop->jump>>33))
 		aop->jump &= 0xFFFFFFFF; // XXX may break on 64 bits here

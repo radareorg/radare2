@@ -27,10 +27,12 @@ for a in ${LIBS}; do
 done
 
 for a in `cd $1/lib/radare2 ; ls`; do
+	echo ${BIN} $1/lib/radare2/$a $1/lib/radare2/$a
 	${BIN} $1/lib/radare2/$a $1/lib/radare2/$a
 done
 
 for a in `cd $1/lib/radare2/test ; ls`; do
+	echo ${BIN} $1/lib/radare2/test/$a $1/lib/radare2/test/$a
 	${BIN} $1/lib/radare2/test/$a $1/lib/radare2/test/$a
 done
 
