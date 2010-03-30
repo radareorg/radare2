@@ -33,7 +33,7 @@ static int cmd_iopipe(void *data, const char *input) {
 	return R_TRUE;
 }
 
-static void cmd_reg(struct r_core_t *core, const char *str) {
+static void cmd_reg(RCore *core, const char *str) {
 	struct r_reg_item_t *r;
 	const char *name;
 	char *arg;
@@ -132,7 +132,7 @@ static void cmd_reg(struct r_core_t *core, const char *str) {
 	}
 }
 
-static void r_core_cmd_bp(struct r_core_t *core, const char *input) {
+static void r_core_cmd_bp(RCore *core, const char *input) {
 	if (input[1]==' ')
 		input++;
 	switch (input[1]) {
@@ -187,7 +187,7 @@ static void r_core_cmd_bp(struct r_core_t *core, const char *input) {
 }
 
 /* TODO: this should be moved to the core->yank api */
-static int cmd_yank_to(struct r_core_t *core, char *arg) {
+static int cmd_yank_to(RCore *core, char *arg) {
 	ut64 src = core->offset;
 	ut64 len = 0;
 	ut64 pos = -1;
@@ -224,7 +224,7 @@ static int cmd_yank_to(struct r_core_t *core, char *arg) {
 }
 
 static int cmd_yank(void *data, const char *input) {
-	struct r_core_t *core = (struct r_core_t *)data;
+	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case ' ':
 		r_core_yank (core, core->offset, atoi(input+1));
@@ -263,7 +263,7 @@ static int cmd_yank(void *data, const char *input) {
 }
 
 static int cmd_quit(void *data, const char *input) {
-	struct r_core_t *core = (struct r_core_t *)data;
+	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case '?':
 		r_cons_printf (
@@ -333,7 +333,7 @@ static int cmd_interpret(void *data, const char *input) {
 }
 
 static int cmd_section(void *data, const char *input) {
-	struct r_core_t *core = (struct r_core_t *)data;
+	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case '?':
 		r_cons_printf (
@@ -563,7 +563,7 @@ static int cmd_help(void *data, const char *input) {
 }
 
 static int cmd_bsize(void *data, const char *input) {
-	struct r_core_t *core = (struct r_core_t *)data;
+	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case '\0':
 		r_cons_printf ("0x%x\n", core->blocksize);
@@ -1065,7 +1065,7 @@ static void cmd_syscall_do(RCore *core, int num) {
 }
 
 static int cmd_anal(void *data, const char *input) {
-	struct r_core_t *core = (struct r_core_t *)data;
+	RCore *core = (RCore *)data;
 	int l, len = core->blocksize;
 	ut32 tbs = core->blocksize;
 
@@ -1276,11 +1276,36 @@ static int cmd_anal(void *data, const char *input) {
 
 /* TODO: simplify using r_write */
 static int cmd_write(void *data, const char *input) {
-	int i, len = strlen(input);
-	char *tmp, *str = alloca(len)+1;
-	struct r_core_t *core = (struct r_core_t *)data;
-	memcpy(str, input+1, len);
-	switch(input[0]) {
+	int i, len = strlen (input);
+	char *tmp, *str = alloca (len)+1;
+	RCore *core = (RCore *)data;
+	memcpy (str, input+1, len);
+	switch (input[0]) {
+	case 'c':
+		switch (input[1]) {
+		case 'i':
+			r_io_cache_commit (&core->io);
+			break;
+		case 'r':
+			r_io_cache_reset (&core->io, R_TRUE);
+			break;
+		case '?':
+			r_cons_printf (
+			"Usage: wc[ir*?]\n"
+			" wc       list all write changes\n"
+			" wc*      \"\" in radare commands\n"
+			" wcr      reset all write changes in cache\n"
+			" wci      commit write cache\n"
+			"NOTE: Needs io.cache=true\n");
+			break;
+		case '*':
+			r_io_cache_list (&core->io, R_TRUE);
+			break;
+		case '\0':
+			r_io_cache_list (&core->io, R_FALSE);
+			break;
+		}
+		break;
 	case ' ':
 		/* write string */
 		len = r_str_escape (str);
@@ -1469,17 +1494,18 @@ static int cmd_write(void *data, const char *input) {
 		} else
 			r_cons_printf(
 			"Usage: w[x] [str] [<file] [<<EOF] [@addr]\n"
-			" w foobar    ; write string 'foobar'\n"
-			" ww foobar   ; write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'\n"
-			" wa push ebp ; write opcode, separated by ';' (use '\"' around the command)\n"
-			" wb 010203   ; fill current block with cyclic hexpairs\n"
-			" wx 9090     ; write two intel nops\n"
-			" wv eip+34   ; write 32-64 bit value\n"
-			" wo[] hex    ; write in block with operation. 'wo?' fmi\n"
-			" wm f0ff     ; cyclic write mask\n"
-			" wf file     ; write contents of file at current offset\n"
-			" wF file     ; write contents of hexpairs file here\n"
-			" wt file     ; write current block to file\n");
+			" w foobar     write string 'foobar'\n"
+			" ww foobar    write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'\n"
+			" wa push ebp  write opcode, separated by ';' (use '\"' around the command)\n"
+			" wb 010203    fill current block with cyclic hexpairs\n"
+			" wc[ir*?]     write cache commit/reset/list\n"
+			" wx 9090      write two intel nops\n"
+			" wv eip+34    write 32-64 bit value\n"
+			" wo[] hex     write in block with operation. 'wo?' fmi\n"
+			" wm f0ff      cyclic write mask\n"
+			" wf file      write contents of file at current offset\n"
+			" wF file      write contents of hexpairs file here\n"
+			" wt file      write current block to file\n");
 			//TODO: add support for offset+seek
 			// " wf file o s ; write contents of file from optional offset 'o' and size 's'.\n"
 		break;
@@ -1489,7 +1515,7 @@ static int cmd_write(void *data, const char *input) {
 
 static const char *cmdhit = NULL;
 static int __cb_hit(struct r_search_kw_t *kw, void *user, ut64 addr) {
-	struct r_core_t *core = (struct r_core_t *)user;
+	RCore *core = (RCore *)user;
 
 	r_cons_printf ("f hit%d_%d %d 0x%08llx\n",
 		kw->kwidx, kw->count, kw->keyword_length, addr);
@@ -1505,7 +1531,7 @@ static int __cb_hit(struct r_search_kw_t *kw, void *user, ut64 addr) {
 }
 
 static int cmd_search(void *data, const char *input) {
-	struct r_core_t *core = (struct r_core_t *)data;
+	RCore *core = (RCore *)data;
 	ut64 at;
 	ut32 n32;
 	int ret, dosearch = 0;
@@ -1532,17 +1558,17 @@ static int cmd_search(void *data, const char *input) {
 		break;
 	case 'm': /* match regexp */
 		{
-		char *inp = strdup(input+2);
-		char *res = r_str_lchr(inp+1, inp[0]);
+		char *inp = strdup (input+2);
+		char *res = r_str_lchr (inp+1, inp[0]);
 		char *opt = NULL;
 		if (res > inp) {
 			opt = strdup(res+1);
 			res[1]='\0';
 		}
-		r_search_free(core->search);
-		core->search = r_search_new(R_SEARCH_REGEXP);
-		r_search_kw_add(core->search, inp, opt);
-		r_search_begin(core->search);
+		r_search_free (core->search);
+		core->search = r_search_new (R_SEARCH_REGEXP);
+		r_search_kw_add (core->search, inp, opt);
+		r_search_begin (core->search);
 		dosearch = 1;
 		free(inp);
 		free(opt);
@@ -1594,7 +1620,7 @@ static int cmd_search(void *data, const char *input) {
 }
 
 static int cmd_eval(void *data, const char *input) {
-	struct r_core_t *core = (struct r_core_t *)data;
+	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case '\0':
 		r_config_list (&core->config, NULL, 0);
@@ -1630,7 +1656,7 @@ static int cmd_eval(void *data, const char *input) {
 
 static int cmd_hash(void *data, const char *input) {
 	char algo[32];
-	struct r_core_t *core = (struct r_core_t *)data;
+	RCore *core = (RCore *)data;
 	ut32 len = core->blocksize;
 	const char *ptr;
 
@@ -1800,14 +1826,8 @@ static int cmd_meta(void *data, const char *input) {
 	return R_TRUE;
 }
 
-static int cmd_undowrite(void *data, const char *input) {
-	//struct r_core_t *core = (struct r_core_t *)data;
-	// TODO:
-	return 0;
-}
-
 static int cmd_io_system(void *data, const char *input) {
-	struct r_core_t *core = (struct r_core_t *)data;
+	RCore *core = (RCore *)data;
 	r_io_set_fd(&core->io, core->file->fd);
 	return r_io_system(&core->io, input);
 }
@@ -1847,7 +1867,7 @@ static int cmd_macro(void *data, const char *input) {
 	return 0;
 }
 
-static int r_core_cmd_pipe(struct r_core_t *core, char *radare_cmd, char *shell_cmd) {
+static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 #if __UNIX__
 	int fds[2];
 	int stdout_fd, status;
@@ -1879,7 +1899,7 @@ static int r_core_cmd_pipe(struct r_core_t *core, char *radare_cmd, char *shell_
 #endif
 }
 
-static int r_core_cmd_subst(struct r_core_t *core, char *cmd) {
+static int r_core_cmd_subst(RCore *core, char *cmd) {
 	char *ptr, *ptr2, *str;
 	int i, len = strlen(cmd), pipefd, ret;
 
@@ -2228,7 +2248,7 @@ R_API int r_core_cmd(RCore *core, const char *command, int log) {
 	return ret;
 }
 
-R_API int r_core_cmd_file(struct r_core_t *core, const char *file) {
+R_API int r_core_cmd_file(RCore *core, const char *file) {
 	char buf[1024];
 	FILE *fd = fopen (file, "r");
 	if (fd == NULL) {
@@ -2248,7 +2268,7 @@ R_API int r_core_cmd_file(struct r_core_t *core, const char *file) {
 	return 0;
 }
 
-R_API int r_core_cmd_command(struct r_core_t *core, const char *command) {
+R_API int r_core_cmd_command(RCore *core, const char *command) {
 	int len;
 	char *buf, *rcmd, *ptr;
 	rcmd = ptr = buf = r_sys_cmd_str (command, 0, &len);
@@ -2580,19 +2600,19 @@ R_API int r_core_cmdf(void *user, const char *fmt, ...) {
 	va_list ap;
 	va_start (ap, fmt);
 	vsnprintf (string, 1023, fmt, ap);
-	ret = r_core_cmd ((struct r_core_t *)user, string, 0);
+	ret = r_core_cmd ((RCore *)user, string, 0);
 	va_end(ap);
 	return ret;
 }
 
 R_API int r_core_cmd0(void *user, const char *cmd) {
-	return r_core_cmd ((struct r_core_t *)user, cmd, 0);
+	return r_core_cmd ((RCore *)user, cmd, 0);
 }
 
 /*
  * return: pointer to a buffer with the output of the command.
  */
-R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd) {
+R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	char *retstr = NULL;
 	r_cons_reset ();
 	if (r_core_cmd (core, cmd, 0) == -1) {
@@ -2608,7 +2628,7 @@ R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd) {
 	return retstr;
 }
 
-int r_core_cmd_init(struct r_core_t *core) {
+int r_core_cmd_init(RCore *core) {
 	r_cmd_init (&core->cmd);
 	core->cmd.macro.num = &core->num;
 	core->cmd.macro.user = core;
@@ -2630,7 +2650,6 @@ int r_core_cmd_init(struct r_core_t *core) {
 	r_cmd_add (&core->cmd, "open",     "open or map file", &cmd_open);
 	r_cmd_add (&core->cmd, "yank",     "yank bytes", &cmd_yank);
 	r_cmd_add (&core->cmd, "Visual",   "enter visual mode", &cmd_visual);
-	r_cmd_add (&core->cmd, "undo",     "undo writes", &cmd_undowrite);
 	r_cmd_add (&core->cmd, "!",        "run system command", &cmd_system);
 	r_cmd_add (&core->cmd, "|",        "run io system command", &cmd_io_system);
 	r_cmd_add (&core->cmd, "#",        "calculate hash", &cmd_hash);

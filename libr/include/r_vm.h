@@ -68,11 +68,7 @@ typedef struct r_vm_t {
 	ut64 vm_stack_base;
 	ut8 *vm_stack;
 	struct list_head mmu_cache;
-	int realio;
-	/* io callbacks */
-	int (*read)(void *user, ut64 addr, ut8 *buf, int len);
-	int (*write)(void *user, ut64 addr, ut8 *buf, int len);
-	void *user;
+	RIOBind iob;
 } RVm;
 
 #ifdef R_API

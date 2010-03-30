@@ -312,7 +312,7 @@ R_API int r_io_close(struct r_io_t *io, int fd) {
 	return close (fd);
 }
 
-R_API int r_io_bind(struct r_io_t *io, struct r_io_bind_t *bnd) {
+R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->io = io;
 	bnd->init = R_TRUE;
 	bnd->read_at = r_io_read_at;

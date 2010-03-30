@@ -1,0 +1,20 @@
+io cache and write changes
+
+[0x000018a0]> wc?                                                                     
+Usage: wc[ir*?]
+ wc       list all write changes
+ wc*      "" in radare commands
+ wcr      reset all write changes in cache
+ wci      commit write cache
+NOTE: Needs io.cache=true
+[0x000018a0]> e io.cache=true                                                         
+[0x000018a0]> wx 9090                                                                 
+[0x000018a0]> wc                                                                      
+addr=0x000018a0 size=2
+[0x000018a0]> wc*                                                                     
+wx 9090 @ 0x000018a0
+[0x000018a0]> wci                                                                     
+r_io_write: cannot write on fd 3
+[0x000018a0]> wcr                                                                     
+[0x000018a0]> wc                                                                      
+[0x000018a0]> 

@@ -7,6 +7,11 @@
 
 <{include libr/TODO}>
 
+
+* /main segfaults
+ - this is because regexp dosnt works -- NEEDS FIX
+ - overflows the console.. -- NEEDS FIX
+
 See libr/*/TODO FMI
 
  manpages for r2, r2rc, r2rc-tool, rafind2 and rasign2 are missing

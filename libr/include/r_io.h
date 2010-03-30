@@ -178,8 +178,10 @@ R_API int r_io_close(RIO *io, int fd);
 R_API ut64 r_io_size(RIO *io, int fd);
 
 /* io/cache.c */
+R_API void r_io_cache_commit(RIO *io);
 R_API void r_io_cache_enable(RIO *io, int read, int write);
 R_API void r_io_cache_init(RIO *io);
+R_API int r_io_cache_list(struct r_io_t *io, int rad);
 R_API void r_io_cache_reset(struct r_io_t *io, int set);
 R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len);
 R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len);

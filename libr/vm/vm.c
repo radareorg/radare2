@@ -154,7 +154,6 @@ R_API ut64 r_vm_reg_get(struct r_vm_t *vm, const char *name) {
 R_API int r_vm_import(struct r_vm_t *vm, int in_vm) {
 	struct list_head *pos;
 
-	eprintf ("MMU: %s\n" , vm->realio?"real":"cached");
 	eprintf ("Importing register values\n");
 	list_for_each(pos, &vm->regs) {
 		struct r_vm_reg_t *r = list_entry(pos, struct r_vm_reg_t, list);
@@ -184,7 +183,6 @@ R_API int r_vm_init(struct r_vm_t *vm, int init) {
 		INIT_LIST_HEAD(&vm->regs);
 		INIT_LIST_HEAD(&vm->ops);
 		memset(&vm->cpu, '\0', sizeof(struct r_vm_cpu_t));
-		vm->user = vm->read = vm->write = NULL;
 	}
 
 	//vm_mmu_real(vm, config_get_i("vm.realio"));
@@ -481,8 +479,8 @@ R_API int r_vm_eval(RVm *vm, const char *str) {
 	ptr = alloca (len);
 	memcpy (ptr, str, len);
 
-	r_vm_mmu_real (vm, 0);
 #if 0
+	r_vm_mmu_real (vm, 0);
 	r_vm_mmu_real(vm, config_get_i("vm.realio"));
 	.int32 eax alias-get alias-set
 	.alias eax get set

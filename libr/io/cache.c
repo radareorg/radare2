@@ -8,23 +8,36 @@
 
 #include "r_io.h"
 
-R_API void r_io_cache_init(struct r_io_t *io) {
+R_API void r_io_cache_init(RIO *io) {
 	io->cached = R_FALSE; // cache write ops
 	io->cached_read = R_FALSE; // cached read ops
 	INIT_LIST_HEAD (&io->cache);
 }
 
-R_API void r_io_cache_enable(struct r_io_t *io, int read, int write) {
+R_API void r_io_cache_enable(RIO *io, int read, int write) {
 	io->cached = read | write;
 	io->cached_read = read;
 }
 
-R_API void r_io_cache_reset(struct r_io_t *io, int set) {
-	struct r_io_cache_t *c;
+R_API void r_io_cache_commit(RIO *io) {
+	struct list_head *pos, *n;
+	if (io->cached) {
+		io->cached = R_FALSE;
+		list_for_each_safe (pos, n, &io->cache) {
+			RIOCache *c = list_entry (pos, RIOCache, list);
+			if (!r_io_write_at (io, c->from, c->data, c->size))
+				eprintf ("Error writing change at 0x%08llx\n", c->from);
+		}
+		io->cached = R_TRUE;
+		r_io_cache_reset (io, io->cached);
+	}
+}
+
+R_API void r_io_cache_reset(RIO *io, int set) {
 	struct list_head *pos, *n;
 	io->cached = set;
 	list_for_each_safe(pos, n, &io->cache) {
-		c = list_entry (pos, struct r_io_cache_t, list);
+		RIOCache *c = list_entry (pos, RIOCache, list);
 		free (c->data);
 		free (c);
 	}
@@ -32,23 +45,28 @@ R_API void r_io_cache_reset(struct r_io_t *io, int set) {
 	INIT_LIST_HEAD (&io->cache); 
 }
 
-R_API int r_io_cache_invalidate(struct r_io_t *io, ut64 from, ut64 to) {
+R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 	int ret = R_FALSE;
 	/* TODO: Implement: invalidate ranged cached read ops between from/to */
 	return ret;
 }
 
-R_API int r_io_cache_list(struct r_io_t *io) {
-	struct r_io_cache_t *c;
+R_API int r_io_cache_list(RIO *io, int rad) {
+	int i;
 	struct list_head *pos, *n;
-	list_for_each_safe(pos, n, &io->cache) {
-		c = list_entry (pos, struct r_io_cache_t, list);
-		eprintf ("ITEM: 0x%08llx\n", c->from);
+	list_for_each_safe (pos, n, &io->cache) {
+		RIOCache *c = list_entry (pos, RIOCache, list);
+		if (rad) {
+			io->printf ("wx ");
+			for (i=0; i<c->size; i++)
+				io->printf ("%02x", c->data[i]);
+			io->printf (" @ 0x%08llx\n", c->from);
+		} else io->printf ("addr=0x%08llx size=%d\n", c->from, c->size);
 	}
 	return R_FALSE;
 }
 
-R_API int r_io_cache_write(struct r_io_t *io, ut64 addr, const ut8 *buf, int len) {
+R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	RIOCache *ch = R_NEW (RIOCache);
 	ch->from = addr;
 	ch->to = addr + len;

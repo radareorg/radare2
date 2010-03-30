@@ -33,8 +33,6 @@ static int config_iova_callback(void *user, void *data) {
 static int config_iocache_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_io_cache_list (&core->io);
-	r_io_cache_reset (&core->io, R_TRUE);
 	r_io_cache_enable (&core->io, node->i_value, node->i_value);
 	return R_TRUE;
 }
