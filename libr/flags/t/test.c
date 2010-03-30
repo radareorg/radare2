@@ -25,6 +25,7 @@ int main()
 	} else printf("FLAG NOT FOUND\n");
 
 	r_flag_list (&flags, 0);
+	r_flag_list (&flags, 1);
 
 	return 0;
 }

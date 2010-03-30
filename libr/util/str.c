@@ -287,18 +287,16 @@ R_API char *r_str_dup_printf(const char *fmt, ...) {
 	return ret;
 }
 
-R_API int r_str_writef(int fd, const char *fmt, ...) {
-	int ret = R_FALSE;
+R_API void r_str_writef(int fd, const char *fmt, ...) {
 	char *buf;
 	va_list ap;
 	va_start (ap, fmt);
-	if ((buf = malloc (4096)) != NULL)
+	if ((buf = malloc (4096)) != NULL) {
 		vsnprintf (buf, 4096, fmt, ap);
 		r_str_write (fd, buf);
 		free (buf);
 	}
 	va_end (ap);
-	return ret;
 }
 
 /*

@@ -33,7 +33,7 @@ static int main_version() {
 }
 
 int main(int argc, char **argv) {
-	RCore *fh;
+	RCoreFile *fh = NULL;
  	int ret, c, perms = R_IO_READ;
 	int run_rc = 1;
 	int debug = 0;
@@ -185,6 +185,7 @@ int main(int argc, char **argv) {
 		r_cons_flush ();
 	}
 
+	r_core_project_open (&r, r_config_get (&r.config, "file.project"));
 	do {
 		ret = r_core_prompt (&r);
 		if (ret == -1)

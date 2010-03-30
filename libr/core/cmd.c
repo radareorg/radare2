@@ -805,8 +805,7 @@ static int cmd_print(void *data, const char *input) {
 					r_cons_printf ("0x%08llx  ", core->offset + idx);
 				flag = r_flag_get_i (&core->flags, core->offset+idx);
 				if (flag || show_bytes) {
-					char *extra = " ";
-					char *str;
+					char *str, *extra = " ";
 					if (flag) str = strdup (flag->name);
 					else {
 						str = strdup (asmop.buf_hex);
@@ -981,9 +980,10 @@ static int cmd_flag(void *data, const char *input) {
 		s = strchr (str, ' ');
 		if (s) {
 			*s = '\0';
-			s2 = strchr(s+1, ' ');
+			s2 = strchr (s+1, ' ');
 			if (s2) {
 				*s2 = '\0';
+				if (s2[1]&&s2[2])
 				seek = r_num_math (&core->num, s2+1);
 			}
 			bsze = r_num_math (&core->num, s+1);

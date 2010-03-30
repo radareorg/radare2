@@ -2,8 +2,7 @@
 
 #include <r_flags.h>
 
-R_API const char *r_flag_space_get(struct r_flag_t *f, int idx)
-{
+R_API const char *r_flag_space_get(struct r_flag_t *f, int idx) {
 	if (idx==-1 || idx>255 || f->space[idx]=='\0')
 		return "";
 	return f->space[idx];
@@ -22,8 +21,7 @@ void flag_space_init(struct r_flag_t *f)
 }
 #endif
 
-R_API void r_flag_space_set(struct r_flag_t *f, const char *name)
-{
+R_API void r_flag_space_set(struct r_flag_t *f, const char *name) {
 	int i;
 	if (name == NULL || *name == '*') {
 		f->space_idx = -1;

@@ -22,6 +22,8 @@ namespace Radare {
 	public static class RStr {
 		public RStr(string arg);
 		public static int hash(string str);
+		public static int write(int fd, string str);
+		//public static int writef(...);
 	}
 
 	[CCode (cheader_filename="r_util.h", cname="", cprefix="r_log_", free_function="")]
