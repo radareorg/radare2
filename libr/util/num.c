@@ -64,8 +64,8 @@ R_API ut64 r_num_get(struct r_num_t *num, const char *str) {
 
 	/* resolve string with an external callback */
 	if (num && num->callback) {
-		int ok;
-		ret = num->callback(num->userptr, str, &ok);
+		int ok = 0;
+		ret = num->callback (num->userptr, str, &ok);
 		if (ok) return ret;
 	}
 
@@ -115,12 +115,11 @@ R_API ut64 r_num_get(struct r_num_t *num, const char *str) {
 }
 
 R_API ut64 r_num_op(char op, ut64 a, ut64 b) {
-	IFDBG printf("r_num_op: %lld %c %lld\n", a,op,b);
-	switch(op) {
+	switch (op) {
 	case '+': return a+b;
 	case '-': return a-b;
 	case '*': return a*b;
-	case '/': return a/b;
+	case '/': return b?a/b:0;
 	case '&': return a&b;
 	case '|': return a|b;
 	case '^': return a^b;
@@ -132,8 +131,6 @@ R_API static ut64 r_num_math_internal(struct r_num_t *num, char *s) {
 	ut64 ret = 0LL;
 	char *p = s;
 	int i, nop, op='\0';
-
-	IFDBG printf ("r_num_math_internal: %s\n", s);
 
 	for (i=0; s[i]; i++) {
 		switch (s[i]) {
@@ -162,8 +159,6 @@ R_API ut64 r_num_math(struct r_num_t *num, const char *str)
 	char *p, *s = alloca (len);
 	char *group;
 
-	IFDBG printf ("r_num_math: %s\n", str);
-
 	memcpy (s, str, len);
 	for (; *s==' '; s++);
 	p = s;
@@ -172,9 +167,9 @@ R_API ut64 r_num_math(struct r_num_t *num, const char *str)
 		group = strchr (p, '(');
 		if (group) {
 			group[0]='\0';
-			ret = r_num_op(op, ret, r_num_math_internal(num, p));
-			for(;p<group;p+=1) {
-				switch(*p) {
+			ret = r_num_op (op, ret, r_num_math_internal (num, p));
+			for (; p<group; p+=1) {
+				switch (*p) {
 				case '+':
 				case '-':
 				case '*':
@@ -188,18 +183,18 @@ R_API ut64 r_num_math(struct r_num_t *num, const char *str)
 			}
 			group[0]='(';
 			p = group+1;
-			if (r_str_delta(p, '(', ')')<0) {
-				char *p2 = strchr(p, '(');
+			if (r_str_delta (p, '(', ')')<0) {
+				char *p2 = strchr (p, '(');
 				if (p2 != NULL) {
 					p2[0]='\0';
-					ret = r_num_op(op, ret, r_num_math_internal(num, p));
-					ret = r_num_op(op, ret, r_num_math(num, p2+1));
+					ret = r_num_op (op, ret, r_num_math_internal (num, p));
+					ret = r_num_op (op, ret, r_num_math (num, p2+1));
 					p =p2+1; 
 					continue;
-				} else fprintf(stderr, "WTF!\n");
-			} else ret = r_num_op(op, ret, r_num_math_internal(num, p));
-		} else ret = r_num_op(op, ret, r_num_math_internal(num, p));
-	} while(0);
+				} else eprintf ("WTF!\n");
+			} else ret = r_num_op (op, ret, r_num_math_internal (num, p));
+		} else ret = r_num_op (op, ret, r_num_math_internal (num, p));
+	} while (0);
 
 	if (num != NULL)
 		num->value = ret;

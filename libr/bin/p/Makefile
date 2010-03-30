@@ -5,8 +5,6 @@ CFLAGS=-I../../include -I../format/ -Wall -fPIC
 CFLAGS+=${LDFLAGS_LIB}
 #CFLAGS=$CCLIB_SHARED
 CFLAGS+=-L../../util -lr_util
-# XXX
-CFLAGS+=-DLIL_ENDIAN=1 -D__UNIX__ -g -DR_DEBUG=0
 
 foo: all
 

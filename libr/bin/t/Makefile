@@ -19,7 +19,7 @@ rpatdel${EXT_EXE}: rpathdel.o
 	${CC} rpathdel.o ${LDPATH} ${LDFLAGS} -o rpathdel${EXT_EXE} 
 
 mach-ex${EXT_EXE}:
-	${CC} -o mach-ex${EXT_EXE} mach-ex.c
+	${CC} ${CFLAGS} -o mach-ex${EXT_EXE} ${LDFLAGS} mach-ex.c
 
 myclean:
 	rm -f test_meta test_meta.o mach-ex rpathdel

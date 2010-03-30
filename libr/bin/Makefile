@@ -5,9 +5,9 @@ include ../config.mk
 
 foo: pre libr_bin.${EXT_SO} libr_bin.${EXT_AR} plugins
 
+# XXX
 CFLAGS+=-DCORELIB -Iformat
-#XXX
-CFLAGS+=-D__UNIX__=1 -DLIL_ENDIAN=1
+
 include ../config.mk
 include ${STATIC_BIN_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst bin_,p/bin_,$(STATIC_OBJ)))

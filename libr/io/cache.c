@@ -15,11 +15,11 @@ R_API void r_io_cache_init(struct r_io_t *io) {
 }
 
 R_API void r_io_cache_enable(struct r_io_t *io, int read, int write) {
-	io->cached = read|write;
+	io->cached = read | write;
 	io->cached_read = read;
 }
 
-R_API void r_io_cache_free(struct r_io_t *io, int set) {
+R_API void r_io_cache_reset(struct r_io_t *io, int set) {
 	struct r_io_cache_t *c;
 	struct list_head *pos, *n;
 	io->cached = set;
@@ -38,8 +38,18 @@ R_API int r_io_cache_invalidate(struct r_io_t *io, ut64 from, ut64 to) {
 	return ret;
 }
 
+R_API int r_io_cache_list(struct r_io_t *io) {
+	struct r_io_cache_t *c;
+	struct list_head *pos, *n;
+	list_for_each_safe(pos, n, &io->cache) {
+		c = list_entry (pos, struct r_io_cache_t, list);
+		eprintf ("ITEM: 0x%08llx\n", c->from);
+	}
+	return R_FALSE;
+}
+
 R_API int r_io_cache_write(struct r_io_t *io, ut64 addr, const ut8 *buf, int len) {
-	struct r_io_cache_t *ch = R_NEW (struct r_io_cache_t);
+	RIOCache *ch = R_NEW (RIOCache);
 	ch->from = addr;
 	ch->to = addr + len;
 	ch->size = len;
@@ -49,16 +59,30 @@ R_API int r_io_cache_write(struct r_io_t *io, ut64 addr, const ut8 *buf, int len
 	return len;
 }
 
-R_API int r_io_cache_read(struct r_io_t *io, ut64 addr, ut8 *buf, int len) {
-	struct r_io_cache_t *c;
+R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
+	int l, ret, da, db;
 	struct list_head *pos;
 
-	// TODO: support for unaligned and partial accesses
 	list_for_each (pos, &io->cache) {
-		c = list_entry (pos, struct r_io_cache_t, list);
-		if (addr >= c->from && addr+len <= c->to) {
-			memcpy(buf, c->data, len);
-			break;
+		RIOCache *c = list_entry (pos, RIOCache, list);
+		if (r_range_overlap (addr, addr+len, c->from, c->to, &ret)) {
+			if (ret>0) {
+				da = ret;
+				db = 0;
+				l = c->size;
+			} else
+			if (ret<0) {
+				da = 0;
+				db = -ret;
+				l = c->size-db;
+			} else {
+				da = 0;
+				db = 0;
+				l = c->size;
+			}
+			if (l>len)
+				l = len;
+			memcpy (buf+da, c->data+db, l);
 		}
 	}
 	return len;

@@ -31,7 +31,7 @@ int r_vm_op_eval(struct r_vm_t *vm, const char *str)
 
 	list_for_each(pos, &vm->ops) {
 		struct r_vm_op_t *o = list_entry(pos, struct r_vm_op_t, list);
-		if (!strcmp(arg0, o->opcode)) {
+		if (!strcmp (arg0, o->opcode)) {
 			str = o->code;
 			p = alloca(strlen(o->code)+128);
 			strcpy(p,str);

@@ -37,31 +37,29 @@ R_API RRange *r_range_free(RRange *r) {
 
 // TODO: optimize by just returning the pointers to the internal foo?
 R_API int r_range_get_data(RRange *rgs, ut64 addr, ut8 *buf, int len) {
-	RRangeItem *r = r_range_item_get(rgs, addr);
+	RRangeItem *r = r_range_item_get (rgs, addr);
 	if (r == NULL)
 		return 0;
 	if (r->datalen < len)
 		len = r->datalen;
-	memcpy(buf, r->data, len);
+	memcpy (buf, r->data, len);
 	return len;
 }
 
 R_API int r_range_set_data(RRange *rgs, ut64 addr, const ut8 *buf, int len) {
-	RRangeItem *r = r_range_item_get(rgs, addr);
+	RRangeItem *r = r_range_item_get (rgs, addr);
 	if (r == NULL)
 		return 0;
-	r->data = (ut8*)malloc(len);
+	r->data = (ut8*)malloc (len);
 	r->datalen = len;
-	memcpy(r->data, buf, len);
+	memcpy (r->data, buf, len);
 	return 1;
 }
 
-RRangeItem *r_range_item_get(RRange *rgs, ut64 addr)
-{
-	RRangeItem *r;
+RRangeItem *r_range_item_get(RRange *rgs, ut64 addr) {
 	struct list_head *pos;
 	list_for_each(pos, &rgs->ranges) {
-		r = list_entry(pos, RRangeItem, list);
+		RRangeItem *r = list_entry (pos, RRangeItem, list);
 		if (addr >= r->fr && addr < r->to)
 			return r;
 	}
@@ -72,20 +70,18 @@ RRangeItem *r_range_item_get(RRange *rgs, ut64 addr)
 // XXX: can be catched while adding/removing elements
 R_API ut64 r_range_size(RRange *rgs) {
 	struct list_head *pos;
-	RRangeItem *r;
 	ut64 sum = 0;
 
 	list_for_each (pos, &rgs->ranges) {
-		r = list_entry (pos, RRangeItem, list);
+		RRangeItem *r = list_entry (pos, RRangeItem, list);
 		sum += r->to - r->fr;
 	}
 	return sum;
 }
 
-R_API RRange *r_range_new_from_string(const char *string)
-{
-	RRange *rgs = r_range_new();
-	r_range_add_from_string(rgs, string);
+R_API RRange *r_range_new_from_string(const char *string) {
+	RRange *rgs = r_range_new ();
+	r_range_add_from_string (rgs, string);
 	return rgs;
 }
 
@@ -100,7 +96,7 @@ R_API int r_range_add_from_string(RRange *rgs, const char *string) {
 	memcpy (str, string, len);
 
 	for (i=0;i<len;i++) {
-		switch(str[i]) {
+		switch (str[i]) {
 		case '-':
 			str[i]='\0';
 			p2 = p;
@@ -131,7 +127,6 @@ R_API int r_range_add_from_string(RRange *rgs, const char *string) {
 		addr = r_num_get (NULL, p);
 		r = r_range_add (rgs, addr, addr+1, 1);
 	}
-
 	return rgs->changed;
 }
 
@@ -370,10 +365,36 @@ RRange *r_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
 	}
 	if (fr < to) {
 		//eprintf("0x%08llx .. 0x%08llx\n", fr, to);
-		r_range_add(newrgs, fr, to, 1);
+		r_range_add (newrgs, fr, to, 1);
 		total += (to-fr);
 	}
 	// eprintf("Total bytes: %lld\n", total);
 
 	return newrgs;
+}
+
+/*
+	return true if overlap
+	in *d 
+*/
+// TODO: make it a macro
+// TODO: move to num.c ?
+R_API int r_range_overlap(ut64 a0, ut64 a1, ut64 b0, ut64 b1, int *d) {
+	// TODO: ensure ranges minmax .. innecesary at runtime?
+	//r_num_minmax_swap (&a0, &a1);
+	//r_num_minmax_swap (&b0, &b1);
+	return *d=(b0-a0),!(a1<b0||a0>b1);
+#if 0
+	// does not overlap
+	// a  |__|           |__|
+	// b      |__|   |__|
+	if (a1<b0 || a0>b1)
+		return 0;
+
+	// a     |____|   |_____|  |____|     |_____|
+	// b  |____|        |_|       |____| |_______|
+	//      b needs    a needs   a needs   b needs
+	// delta required
+	return (b0-a0);
+#endif
 }

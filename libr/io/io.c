@@ -124,6 +124,7 @@ R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len) {
 	if (io->enforce_rwx && !(r_io_section_get_rwx (io, io->off) & R_IO_READ))
 		return -1;
 
+#if 0
 	if (io->cached) {
 		ret = r_io_cache_read (io, io->off, buf, len);
 		if (ret == len)
@@ -136,6 +137,7 @@ R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len) {
 		if (ret == len)
 			return len;
 	}
+#endif
 	ret = r_io_map_read_at (io, io->off, buf, len);
 
 	// partial reads
@@ -149,14 +151,10 @@ R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len) {
 				ret = io->plugin->read(io, io->fd, buf, len);
 			else eprintf ("IO handler for fd=%d has no read()\n", io->fd);
 		} else ret = read (io->fd, buf, len);
-
-		if (ret > 0 && ret<len) //ret != len)
+		if (ret>0 && ret<len)
 			memset (buf+ret, 0xff, len-ret);
 	}
-
-	/* if read is cached. cache it :) */
-	if (ret != -1 && ret == len && io->cached_read)
-		r_io_cache_write (io, io->off, buf, len);
+	r_io_cache_read (io, io->off, buf, len);
 	return ret;
 }
 

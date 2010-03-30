@@ -27,14 +27,14 @@ R_API void r_socket_printf(int fd, const char *fmt, ...);
 R_API char *r_socket_to_string(int fd);
 
 /* process */
-struct r_socket_proc_t {
+typedef struct r_socket_proc_t {
 	int fd0[2];
 	int fd1[2];
 	int pid;
-};
+} RSocketProc;
 
-R_API struct r_socket_proc_t *r_socket_proc_open(char *const argv[]);
-R_API int r_socket_proc_close(struct r_socket_proc_t *sp);
+R_API RSocketProc *r_socket_proc_open(char *const argv[]);
+R_API int r_socket_proc_close(RSocketProc *sp);
 #define r_socket_proc_read(x,y,z) r_socket_read(x->fd1[0],y,z)
 #define r_socket_proc_gets(x,y,z) r_socket_gets(x->fd1[0],y,z)
 #define r_socket_proc_write(x,y,z) r_socket_write(x->fd0[1],y,z)

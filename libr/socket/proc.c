@@ -8,10 +8,9 @@
 #include <sys/wait.h>
 #endif
 
-R_API struct r_socket_proc_t *r_socket_proc_open(char *const argv[])
-{
+R_API struct r_socket_proc_t *r_socket_proc_open(char *const argv[]) {
 #if __UNIX__
-	struct r_socket_proc_t *sp = R_NEW(struct r_socket_proc_t);
+	RSocketProc *sp = R_NEW (RSocketProc);
 #ifdef O_CLOEXEC
 	const int flags = O_CLOEXEC; //O_NONBLOCK|O_CLOEXEC;
 #else

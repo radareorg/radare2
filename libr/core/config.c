@@ -30,6 +30,15 @@ static int config_iova_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_iocache_callback(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	r_io_cache_list (&core->io);
+	r_io_cache_reset (&core->io, R_TRUE);
+	r_io_cache_enable (&core->io, node->i_value, node->i_value);
+	return R_TRUE;
+}
+
 static int config_asmos_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -177,6 +186,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
 	r_config_set_cb (cfg, "io.ffio", "false", &config_ioffio_callback);
 	r_config_set_cb (cfg, "io.va", "false", &config_iova_callback);
+	r_config_set_cb (cfg, "io.cache", "false", &config_iocache_callback);
 	r_config_set (cfg, "file.type", "");
 	/* TODO cmd */
 #if 0

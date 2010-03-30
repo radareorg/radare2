@@ -7,10 +7,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-
-#ifndef LIL_ENDIAN
-# define LIL_ENDIAN 1
-#endif
+#include <r_userconf.h>
 
 #define ut32 unsigned int
 #define ut8  unsigned char

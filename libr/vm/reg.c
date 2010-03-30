@@ -1,7 +1,8 @@
-/* radare - LGPL - Copyright 2008-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
 
 #include "r_vm.h"
 
+/* TODO: use r_reg here..instead of reimplement the fucking same all the time */
 static char *unkreg = "(unk)";
 
 /* static */

@@ -1,14 +1,13 @@
-/* radare - LGPL - Copyright 2008-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
 
 #include "r_vm.h"
 
 /* TODO: move into r_vm_t */
 int vm_arch = -1;
 
-static ut64 r_vm_get_value(struct r_vm_t *vm, const char *str)
-{
+static ut64 r_vm_get_value(struct r_vm_t *vm, const char *str) {
 	ut64 ret = 0LL;
-	for(;*str&&*str==' ';str=str+1);
+	for (;*str&&*str==' ';str=str+1);
 
 	if (str[0]=='$' && str[1]=='$') {
 #if TODO
@@ -32,8 +31,7 @@ static ut64 r_vm_get_value(struct r_vm_t *vm, const char *str)
 	return ret;
 }
 
-static ut64 r_vm_get_math(struct r_vm_t *vm, const char *str)
-{
+static ut64 r_vm_get_math(struct r_vm_t *vm, const char *str) {
 	int len;
 	char *p,*a;
 
@@ -93,14 +91,13 @@ static ut64 r_vm_get_math(struct r_vm_t *vm, const char *str)
 	return r_vm_get_value(vm, p);
 }
 
-R_API void r_vm_print(struct r_vm_t *vm, int type)
-{
+R_API void r_vm_print(struct r_vm_t *vm, int type) {
 	struct list_head *pos;
 
 	if (type == -2)
 		printf("fs vm\n");
 
-	list_for_each(pos, &vm->regs) {
+	list_for_each (pos, &vm->regs) {
 		struct r_vm_reg_t *r = list_entry(pos, struct r_vm_reg_t, list);
 		if (type == -2) {
 			printf("f vm.%s @ 0x%08llx\n", r->name, r->value);
@@ -113,27 +110,26 @@ R_API void r_vm_print(struct r_vm_t *vm, int type)
 	}
 
 	if (type == -2)
-		printf("fs *\n");
+		printf ("fs *\n");
 }
 
 R_API int r_vm_reg_add(struct r_vm_t *vm, const char *name, int type, ut64 value)
 {
-	struct r_vm_reg_t *r;
+	RVmReg *r;
 
-	r = (struct r_vm_reg_t *)malloc(sizeof (struct r_vm_reg_t));
+	r = (RVmReg*)malloc (sizeof (RVmReg));
 	if (r == NULL)
 		return 0;
-	strncpy(r->name, name, 15);
+	strncpy (r->name, name, 15);
 	r->type = type;
 	r->value = value;
 	r->get = NULL;
 	r->set = NULL;
-	list_add_tail(&(r->list), &vm->regs);
+	list_add_tail (&(r->list), &vm->regs);
 	return 1;
 }
 
-R_API ut64 r_vm_reg_get(struct r_vm_t *vm, const char *name)
-{
+R_API ut64 r_vm_reg_get(struct r_vm_t *vm, const char *name) {
 	struct list_head *pos;
 	int len = strlen(name);
 	if (name[len-1]==']')
@@ -155,12 +151,11 @@ R_API ut64 r_vm_reg_get(struct r_vm_t *vm, const char *name)
 	return -1LL;
 }
 
-R_API int r_vm_import(struct r_vm_t *vm, int in_vm)
-{
+R_API int r_vm_import(struct r_vm_t *vm, int in_vm) {
 	struct list_head *pos;
 
-	printf("MMU: %s\n" , vm->realio?"real":"cached");
-	fprintf(stderr,"Importing register values\n");
+	eprintf ("MMU: %s\n" , vm->realio?"real":"cached");
+	eprintf ("Importing register values\n");
 	list_for_each(pos, &vm->regs) {
 		struct r_vm_reg_t *r = list_entry(pos, struct r_vm_reg_t, list);
 		if (in_vm) {
@@ -172,21 +167,18 @@ R_API int r_vm_import(struct r_vm_t *vm, int in_vm)
 	return 0;
 }
 
-R_API void r_vm_cpu_call(struct r_vm_t *vm, ut64 addr)
-{
+R_API void r_vm_cpu_call(struct r_vm_t *vm, ut64 addr) {
 	/* x86 style */
-	r_vm_stack_push(vm, r_vm_reg_get(vm, vm->cpu.pc));
-	r_vm_reg_set(vm, vm->cpu.pc, addr);
+	r_vm_stack_push (vm, r_vm_reg_get(vm, vm->cpu.pc));
+	r_vm_reg_set (vm, vm->cpu.pc, addr);
 	// XXX this should be the next instruction after pc (we need insn length here)
 }
 
-R_API int r_vm_init(struct r_vm_t *vm, int init)
-{
+R_API int r_vm_init(struct r_vm_t *vm, int init) {
 #if 0
 	if (config.arch != vm_arch)
 		init = 1;
 #endif
-
 	if (init) {
 		INIT_LIST_HEAD(&vm->mmu_cache);
 		INIT_LIST_HEAD(&vm->regs);
@@ -270,26 +262,25 @@ R_API int r_vm_init(struct r_vm_t *vm, int init)
 	return 0;
 }
 
-R_API int r_vm_eval_cmp(struct r_vm_t *vm, const char *str)
-{
+R_API int r_vm_eval_cmp(RVm *vm, const char *str) {
 	int len;
 	char *p, *ptr;
-	for(;*str==' ';str=str+1);
-	len = strlen(str)+1;
+
+	for (;*str==' ';str=str+1);
+	len = strlen (str)+1;
 	ptr = alloca(len);
-	memcpy(ptr, str, len);
-	p = strchr(ptr, ',');
-	if (!p) p = strchr(ptr, ' ');
+	memcpy (ptr, str, len);
+	p = strchr (ptr, ',');
+	if (!p) p = strchr (ptr, ' ');
 	if (p) {
-		r_vm_reg_set(vm, vm->cpu.zf,(r_vm_get_math(vm, ptr)-r_vm_get_math(vm, p+1)));
+		r_vm_reg_set (vm, vm->cpu.zf,(r_vm_get_math(vm, ptr)-r_vm_get_math(vm, p+1)));
 		p='\0';
 		return 0;
 	}
 	return 1;
 }
 
-R_API int r_vm_eval_eq(struct r_vm_t *vm, const char *str, const char *val)
-{
+R_API int r_vm_eval_eq(RVm *vm, const char *str, const char *val) {
 	char *p;
 	ut8 buf[64];
 	ut64 _int8  = 0;
@@ -397,8 +388,7 @@ R_API int r_vm_eval_eq(struct r_vm_t *vm, const char *str, const char *val)
 	return 0;
 }
 
-R_API int r_vm_eval_single(struct r_vm_t *vm, const char *str)
-{
+R_API int r_vm_eval_single(RVm *vm, const char *str) {
 	char *ptr, *eq;
 	char buf[128];
 	int i, len;
@@ -484,15 +474,14 @@ R_API int r_vm_eval_single(struct r_vm_t *vm, const char *str)
 	return 0;
 }
 
-R_API int r_vm_eval(struct r_vm_t *vm, const char *str)
-{
+R_API int r_vm_eval(RVm *vm, const char *str) {
 	char *next, *ptr;
 	int ret, len = strlen(str)+1;
 
-	ptr = alloca(len);
-	memcpy(ptr, str, len);
+	ptr = alloca (len);
+	memcpy (ptr, str, len);
 
-	r_vm_mmu_real(vm, 0);
+	r_vm_mmu_real (vm, 0);
 #if 0
 	r_vm_mmu_real(vm, config_get_i("vm.realio"));
 	.int32 eax alias-get alias-set
@@ -508,14 +497,13 @@ R_API int r_vm_eval(struct r_vm_t *vm, const char *str)
 			next[0]=',';
 			ptr = next +1;
 		}
-	} while(next);
-	r_vm_eval_single(vm, ptr);
+	} while (next);
+	r_vm_eval_single (vm, ptr);
 
 	return 1;
 }
 
-R_API int r_vm_eval_file(struct r_vm_t *vm, const char *str)
-{
+R_API int r_vm_eval_file(struct r_vm_t *vm, const char *str) {
 	char buf[1024];
 	FILE *fd = fopen(str, "r");
 	if (fd) {
@@ -535,8 +523,7 @@ R_API int r_vm_eval_file(struct r_vm_t *vm, const char *str)
 }
 
 /* emulate n opcodes */
-R_API int r_vm_emulate(struct r_vm_t *vm, int n)
-{
+R_API int r_vm_emulate(struct r_vm_t *vm, int n) {
 #if 0
 	ut64 pc;
 	char str[128];
@@ -581,4 +568,3 @@ R_API int r_vm_emulate(struct r_vm_t *vm, int n)
 #endif
 	return -1;
 }
-
