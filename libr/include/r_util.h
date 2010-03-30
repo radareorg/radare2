@@ -184,6 +184,8 @@ R_API void r_num_init(struct r_num_t *num);
 #define ishexchar(x) ((x>='0'&&x<='9') ||  (x>='a'&&x<='f') ||  (x>='A'&&x<='F')) {
 
 /* strings */
+#define r_str_write(x,y) write (x, y, strlen(y))
+R_API int r_str_writef(int fd, const char *fmt, ...);
 R_API char **r_str_argv(const char *str, int *_argc);
 R_API void r_str_argv_free(char **argv);
 R_API char *r_str_new(char *str);

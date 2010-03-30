@@ -280,10 +280,24 @@ R_API char *r_str_dup_printf(const char *fmt, ...) {
 	char *ret;
 	va_list ap;
 	va_start(ap, fmt);
-	if ((ret = malloc(1024)) == NULL)
+	if ((ret = malloc (1024)) == NULL)
 		return NULL;
-	vsnprintf(ret, 1023, fmt, ap);
+	vsnprintf (ret, 1024, fmt, ap);
 	va_end(ap);
+	return ret;
+}
+
+R_API int r_str_writef(int fd, const char *fmt, ...) {
+	int ret = R_FALSE;
+	char *buf;
+	va_list ap;
+	va_start (ap, fmt);
+	if ((buf = malloc (4096)) != NULL)
+		vsnprintf (buf, 4096, fmt, ap);
+		r_str_write (fd, buf);
+		free (buf);
+	}
+	va_end (ap);
 	return ret;
 }
 

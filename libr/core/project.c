@@ -13,15 +13,12 @@ static char *r_core_project_file(const char *file) {
 
 static int r_core_project_init() {
 	int ret;
-	char *str, buf[128];
-	str = r_str_home (".radare2");
-	ret = r_sys_mkdir (str);
-	free (str);
-	if (ret) {
+	char *str = r_str_home (".radare2");
+	if (str && (ret = r_sys_mkdir (str))) {
 		str = r_str_home (".radare2/rdb");
 		ret = r_sys_mkdir (str);
-		free (str);
 	}
+	free (str);
 	return ret;
 }
 
@@ -34,15 +31,18 @@ R_API int r_core_project_open(RCore *core, const char *file) {
 }
 
 R_API int r_core_project_save(RCore *core, const char *file) {
-	int ret = R_TRUE;
+	int fd, ret = R_TRUE;
 	char *prj = r_core_project_file (file);
-	int fd;
 	r_core_project_init ();
 	fd = open (prj, O_RDWR|O_CREAT, 0644);
 	if (fd != -1) {
 		r_cons_singleton ()->fdout = fd;
-		write (fd, "# r2 rdb project file\n", 22);
+		r_str_write (fd, "# r2 rdb project file\n");
+		r_str_write (fd, "# flags\n");
 		r_flag_list (&core->flags, R_TRUE);
+		r_str_write (fd, "# eval\n");
+		// TODO: r_str_writef (fd, "e asm.arch=%s", r_config_get ("asm.arch"));
+		r_config_list (&core->config, NULL, R_TRUE);
 		r_cons_flush ();
 		r_cons_singleton ()->fdout = 1;
 		close (fd);
