@@ -192,7 +192,7 @@ R_API void r_cons_flush() {
 #if __WINDOWS__
 		r_cons_w32_print (I.buffer);
 #else
-		write (1, I.buffer, I.buffer_len);
+		write (I.fdout, I.buffer, I.buffer_len);
 #endif
 	}
 	r_cons_reset ();

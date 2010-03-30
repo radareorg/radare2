@@ -179,3 +179,13 @@ R_API int r_sys_cmd (const char *str) {
 R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
 	return r_sys_cmd_str_full (cmd, input, len, NULL);
 }
+
+R_API int r_sys_mkdir(const char *dir) {
+	int ret;
+#if __WINDOWS__
+	ret = mkdir (dir);
+#else
+	ret = mkdir (dir, 0755);
+#endif
+	return (ret != -1);
+}

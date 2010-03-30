@@ -122,6 +122,9 @@ R_API int r_core_anal_fcn_list(struct r_core_t *core, int rad);
 R_API int r_core_anal_fcn_clean(struct r_core_t *core, ut64 addr);
 R_API int r_core_anal_graph(struct r_core_t *core, ut64 addr, int lines);
 R_API int r_core_anal_graph_fcn(struct r_core_t *core, char *input, int lines);
+
+R_API int r_core_project_open(RCore *core, const char *file);
+R_API int r_core_project_save(RCore *core, const char *file);
 #endif
 
 #endif

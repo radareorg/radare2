@@ -13,6 +13,9 @@ public class Radare.RCore {
 	//public int cmdf(...);
 	public int cmd(string cmd, bool log);
 	public int cmd0(string cmd);
+	/**
+	 * Execute every line of the given file as radare commands
+	 */
 	public int cmd_file(string file);
 	public int cmd_command(string cmd);
 	public unowned string cmd_str(string cmd);

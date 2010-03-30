@@ -8,13 +8,14 @@
 static struct r_core_t r;
 
 static int main_help(int line) {
-	printf ("Usage: radare2 [-dwnLV] [-s addr] [-b bsz] [-e k=v] [file] [...]\n");
+	printf ("Usage: radare2 [-dwnLV] [-p prj] [-s addr] [-b bsz] [-e k=v] [file]\n");
 	if (!line) printf (
 		" -d        use 'file' as a program to debug\n"
 		" -w        open file in write mode\n"
 		" -n        do not run ~/.radare2rc\n"
 		" -v        nonverbose mode (no prompt)\n"
 		" -f        block size = file size\n"
+		" -p [prj]  set project file\n"
 		" -s [addr] initial seek\n"
 		" -b [size] initial block size\n"
 		" -i [file] run script file\n"
@@ -32,7 +33,7 @@ static int main_version() {
 }
 
 int main(int argc, char **argv) {
-	struct r_core_file_t *fh;
+	RCore *fh;
  	int ret, c, perms = R_IO_READ;
 	int run_rc = 1;
 	int debug = 0;
@@ -45,10 +46,13 @@ int main(int argc, char **argv) {
 
 	r_core_init (&r);
 
-	while ((c = getopt (argc, argv, "wfhe:ndvVs:b:Lui:l:"))!=-1) {
+	while ((c = getopt (argc, argv, "wfhe:ndvVs:p:b:Lui:l:"))!=-1) {
 		switch (c) {
 		case 'v':
 			r_config_set (&r.config, "scr.prompt", "false");
+			break;
+		case 'p':
+			r_config_set (&r.config, "file.project", optarg);
 			break;
 		case 'i':
 			r_core_cmd_file (&r, optarg);
@@ -190,6 +194,12 @@ int main(int argc, char **argv) {
 	if (debug)
 	if (r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
 		r_debug_kill (&r.dbg, 9); // KILL
+	{
+		char *prj = r_config_get (&r.config, "file.project");
+		if (prj)
+		if (r_cons_yesno ('y', "Do you want to save the project? (Y/n)"))
+			r_core_project_save (&r, prj);
+	}
 
 	/* capture return value */
 	ret = r.num.value;

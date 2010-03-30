@@ -295,11 +295,11 @@ static int cmd_interpret(void *data, const char *input) {
 	switch (input[0]) {
 	case '\0':
 		/* repeat last command */
-		/* XXX: already handled in r_core_cmd with ugly strcmp */
+		/* NOTE: Handled in r_core_cmd with ugly strcmp */
 		break;
 	case ' ':
-		/* interpret file */
-		r_core_cmd_file (core, input+1);
+		if (!r_core_cmd_file (core, input+1))
+			eprintf ("Cannot interpret file.\n");
 		break;
 	case '!':
 		/* from command */
@@ -2249,23 +2249,25 @@ R_API int r_core_cmd(RCore *core, const char *command, int log) {
 }
 
 R_API int r_core_cmd_file(RCore *core, const char *file) {
-	char buf[1024];
-	FILE *fd = fopen (file, "r");
-	if (fd == NULL) {
-		eprintf ("r_core_cmd_file: Cannot open '%s'\n", file);
-		return -1;
-	}
-	while (!feof (fd)) {
-		if (fgets (buf, 1023, fd) != NULL) {
-			buf[strlen (buf)-1]='\0';
-			if (r_core_cmd (core, buf, 0) == -1) {
-				eprintf ("Error running command '%s'\n", buf);
-				break;
-			}
+	int ret = R_TRUE;
+	char *data, *odata = r_file_slurp (file, NULL);
+	if (odata != NULL) {
+		char *nl = strchr (odata, '\n');
+		if (nl) {
+			data = odata;
+			do {
+				*nl = '\0';
+				if (r_core_cmd (core, data, 0) == -1) {
+					eprintf ("r_core_cmd_file: Failed to run '%s'\n", data);
+					ret = R_FALSE;
+					break;
+				}
+				data = nl+1;
+			} while ((nl = strchr (data, '\n')));
 		}
-	}
-	fclose (fd);
-	return 0;
+		free (odata);
+	} else ret = R_FALSE;
+	return ret;
 }
 
 R_API int r_core_cmd_command(RCore *core, const char *command) {
