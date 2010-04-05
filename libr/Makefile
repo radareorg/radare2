@@ -35,7 +35,7 @@ libr2.${EXT_SO}:
 ifeq ($(OSTYPE),darwin)
 	@echo Linkage of libr2.dylib is broken on OSX because of dupped .o in .objs extraction
 else
-	${CC} -Wl,-soname=libr2.${EXT_SO} ${LDFLAGS_LIB} ${PIC_CFLAGS} .objs/*.o -o libr2.${EXT_SO}
+	${CC} ${LDFLAGS_SONAME}libr2.${EXT_SO} ${LDFLAGS_LIB} ${PIC_CFLAGS} .objs/*.o -o libr2.${EXT_SO}
 endif
 
 libr2.${EXT_AR}:

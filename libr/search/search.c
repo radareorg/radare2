@@ -233,4 +233,6 @@ R_API void r_search_reset(RSearch *s) {
 }
 
 R_API void r_search_kw_reset(RSearch *s) {
+	// leaks
+	INIT_LIST_HEAD (&(s->kws));
 }

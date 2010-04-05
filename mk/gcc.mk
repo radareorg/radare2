@@ -15,9 +15,11 @@ CFLAGS_DEBUG=-g
 ifeq ($(OSTYPE),darwin)
 LDFLAGS_LIB=-dynamiclib
 LDFLAGS_LINKPATH=-L
+LDFLAGS_SONAME=-Wl,-install_name,
 else
 LDFLAGS_LIB=-shared
 LDFLAGS_LINKPATH=-Wl,-R
+LDFLAGS_SONAME=-Wl,-soname=
 endif
 
 CC_LIB=${CC} ${LDFLAGS_LIB} -o ${LIBSO}

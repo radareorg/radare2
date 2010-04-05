@@ -22,6 +22,7 @@ typedef struct r_search_kw_t {
 	ut32 keyword_length;
 	ut32 binmask_length;
 	ut32 idx; // searching purposes
+	void *data;
 	int count;
 	int kwidx;
 	struct list_head list;

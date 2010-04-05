@@ -22,6 +22,14 @@ BUGS
   * console grep
   * x@esp&&x@eip  # BUG
 
+* analyze push arguments before function calls
+  - define number of arguments for given function
+  - when the number of arguments differs between the calling
+    and the result of the code analysis of the given function
+    we should warn
+    - this kind of warnings must be done with r_log_ functions
+      so we hook it into a log file
+
 * diff code analysis
   - diff two programs
      1st level:

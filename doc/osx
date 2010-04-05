@@ -1,0 +1,13 @@
+OSX
+===
+
+To compile for OSX run configure in this way:
+
+	$ ./configure --with-ostype=darwin
+
+And then..
+
+	$ make
+	$ sudo make install
+
+To install r2-swig you will need to install r2, valac, valaswig
