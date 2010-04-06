@@ -28,10 +28,10 @@ static int hexstr = 0;
 static struct r_print_t *pr = NULL;
 LIST_HEAD(kws_head);
 
-struct str_t {
+typedef struct {
 	char *str;
 	struct list_head list;
-};
+} BoxedString;
 
 static int hit(struct r_search_kw_t *kw, void *user, ut64 addr) {
 	//const ut8 *buf = (ut8*)user;
@@ -76,7 +76,7 @@ static int rafind_open(char *file) {
 	
 	fd = r_io_open(&io, file, R_IO_READ, 0);
 	if (fd == -1) {
-		fprintf(stderr, "Cannot open file '%s'\n", file);
+		fprintf (stderr, "Cannot open file '%s'\n", file);
 		return 1;
 	}
 
@@ -89,10 +89,10 @@ static int rafind_open(char *file) {
 	}
 	if (mode == R_SEARCH_KEYWORD) {
 		list_for_each(pos, &(kws_head)) {
-			struct str_t *kw = list_entry(pos, struct str_t, list);
-			if (hexstr)
-				r_search_kw_add_hex(rs, kw->str, mask);
-			else r_search_kw_add(rs, kw->str, mask);
+			BoxedString *kw = list_entry(pos, BoxedString, list);
+			r_search_kw_add (rs, (hexstr)?
+				r_search_keyword_new_hex (kw->str, mask, NULL) : 
+				r_search_keyword_new_str (kw->str, mask, NULL));
 			free(kw);
 		}
 	}
@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
 	int c;
 
 	while ((c = getopt(argc, argv, "b:m:s:x:Xzf:t:rnhV")) != -1) {
-		struct str_t *kw = R_NEW(struct str_t);
+		BoxedString *kw = R_NEW(BoxedString);
 		INIT_LIST_HEAD(&(kw->list));
 
 		switch(c) {

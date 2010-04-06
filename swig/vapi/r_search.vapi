@@ -11,9 +11,20 @@ public class Radare.RSearch {
 	public void reset();
 	public bool update(out uint64 from, uint8 *buf, long len);
 	public bool update_i(uint64 from, uint8 *buf, long len);
+
+	public class Keyword {
+		public Keyword.str (string str, string bmask, string data);
+		public Keyword.hex (string str, string bmask, string data);
+		public Keyword (string str, int len, string bmask, int len, string data);
+	}
+
+	public bool kw_add(Keyword kw);
+/*
+	OLD API
 	public bool kw_add(string kw, string binmask);
 	public bool kw_add_hex(string kw, string binmask);
 	public bool kw_add_bin(uint8 *kw, uint32 kw_len, uint8 *binmask, long bm_len);
+*/
 	public Keyword kw_list();
 	public void set_callback(Callback cb, void *user);
 	//public int pattern_update(int size); // this is uint? long?

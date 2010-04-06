@@ -63,12 +63,13 @@ R_API RSearch *r_search_free(RSearch *s);
 R_API int r_search_update(RSearch *s, ut64 *from, const ut8 *buf, long len);
 R_API int r_search_update_i(RSearch *s, ut64 from, const ut8 *buf, long len);
 
-/* */
-R_API int r_search_kw_add(RSearch *s, const char *kw, const char *bm);
-R_API int r_search_kw_add_hex(RSearch *s, const char *kw, const char *bm);
-R_API int r_search_kw_add_bin(RSearch *s, const ut8 *kw, int kw_len, const ut8 *bm, int bm_len);
+R_API RSearchKeyword* r_search_keyword_new(const ut8 *kw, int kwlen, const ut8 *bm, int bmlen, const char *data);
+R_API RSearchKeyword* r_search_keyword_new_str(const char *kw, const char *bm, const char *data);
+R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bmstr, const char *data);
+
+R_API int r_search_kw_add(RSearch *s, RSearchKeyword *kw);
 // TODO: Must be RList
-R_API struct r_search_kw_t *r_search_kw_list(RSearch *s);
+R_API void r_search_kw_list(RSearch *s);
 R_API void r_search_reset(RSearch *s);
 R_API void r_search_kw_reset(RSearch *s);
 

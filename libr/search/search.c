@@ -162,67 +162,33 @@ R_API int r_search_update_i(RSearch *s, ut64 from, const ut8 *buf, long len) {
 }
 
 /* --- keywords --- */
-/* string */
-R_API int r_search_kw_add(RSearch *s, const char *kw, const char *bm) {
-	RSearchKeyword *k = R_NEW (RSearchKeyword);
-	int kwlen = strlen (kw)+1;
-	if (k == NULL)
-		return R_FALSE;
-	if (bm == NULL) bm = "";
-	memcpy (k->keyword, kw, kwlen);
-	memcpy (k->bin_keyword, kw, kwlen);
-	k->keyword_length = strlen (kw);
-	if (k->binmask_length == -1)
-		k->binmask_length = strlen (bm);
-	if (bm) {
-		memcpy (k->binmask, bm, k->binmask_length);
-		k->binmask_length = r_hex_str2bin (bm, k->bin_binmask);
-	} else k->binmask[0] = k->binmask_length = 0;
-	list_add (&(k->list), &(s->kws));
-	k->kwidx = s->n_kws++;
-	return R_TRUE;
+R_API int r_search_kw_add(RSearch *s, RSearchKeyword *kw) {
+	int ret = R_FALSE;
+	if (kw) {
+		list_add (&(kw->list), &(s->kws));
+		kw->kwidx = s->n_kws++;
+		ret = R_TRUE;
+	}
+	return ret;
 }
 
-/* hexpair string */
-R_API int r_search_kw_add_hex(RSearch *s, const char *kw, const char *bm) {
-	RSearchKeyword *k = R_NEW (RSearchKeyword);
-	if (k == NULL) // is necessary to assert everywhere??
-		return R_FALSE;
-	strncpy (k->keyword, kw, sizeof (k->keyword));
-	k->keyword_length = r_hex_str2bin (kw, k->bin_keyword);
-	if (bm) {
-		strncpy(k->binmask, bm, sizeof (k->binmask));
-		k->binmask_length = r_hex_str2bin (bm, k->bin_binmask);
-	} else k->binmask[0] = k->binmask_length = 0;
-	list_add (&(k->list), &(s->kws));
-	k->kwidx = s->n_kws++;
-	return R_TRUE;
-}
-
-/* raw bin */
-R_API int r_search_kw_add_bin(RSearch *s, const ut8 *kw, int kw_len, const ut8 *bm, int bm_len) {
-	RSearchKeyword *k = R_NEW (RSearchKeyword);
-	if (kw == NULL)
-		return R_FALSE;
-	memcpy (k->bin_keyword, kw, kw_len);
-	k->keyword_length = kw_len;
-	r_hex_bin2str (kw, kw_len, k->keyword);
-	if (bm) memcpy (k->bin_binmask, bm, bm_len);
-	if (bm) r_hex_bin2str (bm, bm_len, k->binmask);
-	else k->binmask_length = 0;
-	list_add (&(k->list), &(s->kws));
-	k->kwidx = s->n_kws++;
-	return R_TRUE;
+R_API void r_search_kw_reset(RSearch *s) {
+	// leaks
+	struct list_head *pos, *n;
+	list_for_each_safe (pos, n, &s->kws) {
+		RSearchKeyword *kw = list_entry (pos, RSearchKeyword, list);
+		free (kw);
+	}
+	INIT_LIST_HEAD (&(s->kws));
 }
 
 /* // MUST DEPRECATE // show keywords */
-R_API RSearchKeyword *r_search_kw_list(RSearch *s) {
-	struct list_head *pos;
-	list_for_each_prev (pos, &s->kws) {
+R_API void r_search_kw_list(RSearch *s) {
+	struct list_head *pos, *n;
+	list_for_each_safe (pos, n, &s->kws) {
 		RSearchKeyword *kw = list_entry (pos, RSearchKeyword, list);
-		printf ("%s %s\n", kw->keyword, kw->binmask);
+		free (kw);
 	}
-	return NULL;
 }
 
 R_API void r_search_reset(RSearch *s) {
@@ -230,9 +196,4 @@ R_API void r_search_reset(RSearch *s) {
 	s->hits = r_list_new ();
 	s->hits->free = free;
 	r_search_kw_reset (s);
-}
-
-R_API void r_search_kw_reset(RSearch *s) {
-	// leaks
-	INIT_LIST_HEAD (&(s->kws));
 }
