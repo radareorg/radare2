@@ -1514,7 +1514,7 @@ static int cmd_write(void *data, const char *input) {
 }
 
 static const char *cmdhit = NULL;
-static int __cb_hit(struct r_search_kw_t *kw, void *user, ut64 addr) {
+static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
 
 	r_cons_printf ("f hit%d_%d %d 0x%08llx\n",

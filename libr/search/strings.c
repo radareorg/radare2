@@ -15,8 +15,8 @@ static char *encodings[3] = { "ascii", "cp850", NULL };
 R_API int r_search_get_encoding(const char *name) {
 	int i;
 	if (name != NULL)
-		for(i=0;encodings[i];i++)
-			if (!strcasecmp(name, encodings[i]))
+		for (i=0;encodings[i];i++)
+			if (!strcasecmp (name, encodings[i]))
 				return i;
 	return ENCODING_ASCII;
 }

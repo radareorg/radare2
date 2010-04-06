@@ -15,10 +15,14 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	if (buf == NULL || str == NULL) {
 		free (buf);
 		free (str);
-		return 0;
+		return R_FALSE;
 	}
 	memcpy (buf, core->block, core->blocksize);
 	len = r_hex_str2bin (arg, (ut8 *)str);
+	if (len==-1) {
+		eprintf ("Invalid hexpair string\n");
+		return R_FALSE;
+	}
 
 	if (op=='2' || op=='4') {
 		op -= '0';
@@ -29,8 +33,8 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 			buf[i+3] = tmp;
 			if (op==4) {
 				tmp = buf[i+1];
-				buf[i+1]=buf[i+2];
-				buf[i+2]=tmp;
+				buf[i+1] = buf[i+2];
+				buf[i+2] = tmp;
 			}
 		}
 	} else {
@@ -40,7 +44,8 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 			case 'a': buf[i] += str[j]; break;
 			case 's': buf[i] -= str[j]; break;
 			case 'm': buf[i] *= str[j]; break;
-			case 'd': buf[i] /= str[j]; break;
+			case 'd': if (str[j]) buf[i] /= str[j];
+				else buf[i] = 0; break;
 			case 'r': buf[i] >>= str[j]; break;
 			case 'l': buf[i] <<= str[j]; break;
 			case 'o': buf[i] |= str[j]; break;
@@ -78,11 +83,11 @@ R_API int r_core_seek(RCore *core, ut64 addr, int rb) {
 }
 
 R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
-	int ret = r_io_set_fd(&core->io, core->file->fd);
+	int ret = r_io_set_fd (&core->io, core->file->fd);
 	if (ret != -1) {
 		ret = r_io_write_at (&core->io, addr, buf, size);
 		if (addr >= core->offset && addr <= core->offset+core->blocksize)
-			r_core_block_read(core, 0);
+			r_core_block_read (core, 0);
 	}
 	return (ret==-1)?R_FALSE:R_TRUE;
 }
