@@ -8,7 +8,7 @@ namespace Radare {
 
 		public int eval(string str);
 
-		public string get(string name);
+		public weak string get(string name);
 		public uint64 get_i(string name);
 
 		public RConfigNode set(string name, string val);

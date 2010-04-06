@@ -33,7 +33,7 @@ typedef struct {
 	struct list_head list;
 } BoxedString;
 
-static int hit(struct r_search_kw_t *kw, void *user, ut64 addr) {
+static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	//const ut8 *buf = (ut8*)user;
 	int delta = addr-cur;
 	if (rad) {

@@ -70,9 +70,9 @@ static int shm__open(struct r_io_t *io, const char *pathname, int flags, int mod
 		// connect
 		shm_buf= shmat(atoi(ptr), 0, 0);
 
-		if (((int)(shm_buf)) != -1) {
+		if (((int)(size_t)(shm_buf)) != -1) {
 			printf("Connected to shared memory 0x%08x\n", atoi(ptr));
-			shm_fd = (int)&shm_buf;
+			shm_fd = (int)(size_t)&shm_buf;
 		} else	{
 			printf("Cannot connect to shared memory (%d)\n", atoi(ptr));
 			shm_buf = NULL;

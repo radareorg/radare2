@@ -2,8 +2,7 @@
 
 ut8 *buffer = "hellowor\x01\x02ldlibis\x01\x02niceandcoolib2loblubljb";
 
-int hit(struct r_search_kw_t *kw, void *user, ut64 addr)
-{
+int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	const ut8 *buf = (ut8*)user;
 	printf("HIT %d AT %lld (%s)\n", kw->count, addr, buffer+addr);
 	return 1;

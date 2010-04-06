@@ -30,7 +30,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 		RConfigNode *bt = list_entry(i, RConfigNode, list);
 		if (str) {
 			if (strncmp(str, bt->name, len) == 0)
-				cfg->printf ("%s = %s\n", rad?"e ":"",
+				cfg->printf ("%s%s = %s\n", rad?"e ":"",
 					bt->name, bt->value);
 		} else cfg->printf ("%s%s = %s\n", rad?"e ":"", bt->name, bt->value);
 	}
@@ -50,7 +50,7 @@ R_API RConfigNode *r_config_node_get(RConfig *cfg, const char *name) {
 	return NULL;
 }
 
-R_API char *r_config_get(RConfig *cfg, const char *name) {
+R_API const char *r_config_get(RConfig *cfg, const char *name) {
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
 		cfg->last_notfound = 0;
@@ -233,27 +233,27 @@ R_API int r_config_eval(RConfig *cfg, const char *str) {
 	int len;
 
 	if (str == NULL)
-		return 0;
+		return R_FALSE;
 
-	len = strlen(str)+1;
-	name = alloca(len);
-	memcpy(name, str, len);
-	str = r_str_chop(name);
+	len = strlen (str)+1;
+	name = alloca (len);
+	memcpy (name, str, len);
+	str = r_str_chop (name);
 
 	if (str == NULL)
-		return 0;
+		return R_FALSE;
 
-	if (str[0]=='\0'||!strcmp(str, "help")) {
-		r_config_list(cfg, NULL, 0);
-		return 0;
+	if (str[0]=='\0' || !strcmp (str, "help")) {
+		r_config_list (cfg, NULL, 0);
+		return R_FALSE;
 	}
 
 	if (str[0]=='-') {
-		r_config_rm(cfg, str+1);
-		return 0;
+		r_config_rm (cfg, str+1);
+		return R_FALSE;
 	}
 
-	ptr = strchr(str, '=');
+	ptr = strchr (str, '=');
 	if (ptr) {
 		/* set */
 		ptr[0]='\0';
@@ -261,20 +261,20 @@ R_API int r_config_eval(RConfig *cfg, const char *str) {
 		b = r_str_chop(ptr+1);
 		r_config_set(cfg, a, b);
 	} else {
-		char *foo = r_str_chop(name);
+		char *foo = r_str_chop (name);
 		if (foo[strlen(foo)-1]=='.') {
-			/* list */
-			r_config_list(cfg, name, 0);
-			return 0;
+			r_config_list (cfg, name, 0);
+			return R_FALSE;
 		} else {
 			/* get */
-			const char * str = r_config_get(cfg, foo);
+			const char *str = r_config_get(cfg, foo);
 			if (cfg->last_notfound)
-				r_config_list(cfg, name, 0);
-			else cfg->printf("%s\n", (((int)str)==1)?"true":(str==0)?"false":str);
+				r_config_list (cfg, name, 0);
+			else cfg->printf ("%s\n", (((int)(size_t)str)==1)?"true":
+					(str==0)?"false":str);
 		}
 	}
-	return 1;
+	return R_TRUE;
 }
 
 R_API void r_config_lock(RConfig *cfg, int l) {

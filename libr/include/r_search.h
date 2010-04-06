@@ -14,7 +14,7 @@ enum {
 	R_SEARCH_AES
 };
 
-typedef struct r_search_kw_t {
+typedef struct r_search_keyword_t {
 	char keyword[128];
 	char binmask[128];
 	ut8 bin_keyword[128];
@@ -33,7 +33,7 @@ typedef struct r_search_hit_t {
 	ut64 addr;
 } RSearchHit;
 
-typedef int (*RSearchCallback)(struct r_search_kw_t *kw, void *user, ut64 where);
+typedef int (*RSearchCallback)(RSearchKeyword *kw, void *user, ut64 where);
 
 typedef struct r_search_t {
 	int n_kws;

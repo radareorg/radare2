@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 	fd = r_io_open(&io, argc>1?argv[1]:"/etc/issue", R_IO_READ, 0);
 	memset(buf, '\0', 4096);
 //r_io_set_fd(&io, fd);
-	r_io_read(&io, buf, 4095);
+	r_io_read (&io, (ut8*)buf, sizeof (buf));
 
 	puts(buf);
 

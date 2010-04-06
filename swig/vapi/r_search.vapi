@@ -3,29 +3,21 @@
 [Compact]
 [CCode (cheader_filename="r_search.h", cname="struct r_search_t", free_function="r_search_free", cprefix="r_search_")]
 public class Radare.RSearch {
+	[CCode (cname="RSearchCallback", has_target="false")]
+	public delegate int Callback(Keyword s, void *user, uint64 addr);
+
 	public RSearch (Mode mode);
 	public bool set_mode (Mode mode);
 //	public bool set_string_limits (uint32 min, uint32 max);
 	public bool begin();
-	public void kw_reset();
 	public void reset();
 	public bool update(out uint64 from, uint8 *buf, long len);
 	public bool update_i(uint64 from, uint8 *buf, long len);
 
-	public class Keyword {
-		public Keyword.str (string str, string bmask, string data);
-		public Keyword.hex (string str, string bmask, string data);
-		public Keyword (string str, int len, string bmask, int len, string data);
-	}
-
 	public bool kw_add(Keyword kw);
-/*
-	OLD API
-	public bool kw_add(string kw, string binmask);
-	public bool kw_add_hex(string kw, string binmask);
-	public bool kw_add_bin(uint8 *kw, uint32 kw_len, uint8 *binmask, long bm_len);
-*/
-	public Keyword kw_list();
+	public void kw_reset();
+	public void kw_list();
+
 	public void set_callback(Callback cb, void *user);
 	//public int pattern_update(int size); // this is uint? long?
 	//public int set_pattern_size(int size); // this is uint? long?
@@ -42,7 +34,7 @@ public class Radare.RSearch {
 	}
 
 	[Compact]
-	[CCode (cname="struct r_search_kw_t")]
+	[CCode (cname="struct r_search_keyword_t", free_function="free", cprefix="r_search_keyword_")]
 	public class Keyword {
 		public unowned string keyword;
 		public unowned string binmask;
@@ -52,8 +44,9 @@ public class Radare.RSearch {
 		public int binmask_length;
 		public int idx;
 		public int count;
-	}
 
-	[CCode (cname="RSearchCallback", has_target="false")]
-	public delegate int Callback(Keyword s, void *user, uint64 addr);
+		public Keyword.str (string str, string bmask, string data);
+		//public Keyword.hex (string str, string bmask, string data);
+		public Keyword (uint8 *s, int sl, uint8 *b, int bl, string data);
+	}
 }
