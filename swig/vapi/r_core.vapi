@@ -30,14 +30,14 @@ public class Radare.RCore {
 
 	/* files */
 	public File file_open(string file, int mode);
+	//public bool file_close_fd(int fd);
 
 	// XXX mode = Radare.Io.Mode
 	[Compact]
-	[CCode (cname="struct r_core_file_t", cprefix="r_core_file_")]
+	[CCode (cname="struct r_core_file_t", cprefix="r_core_file_", free_function="")]
 	public class File {
 		//public static bool set(string file, Core.File file);
 		//public static bool close(string file, Core.File file);
-		public static bool close_fd(string file, int fd);
 		/* attributes */
 		public string uri;
 		public string filename;

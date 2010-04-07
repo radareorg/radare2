@@ -32,7 +32,7 @@ public class Radare.RBreakpoint {
 	}
 
 	[Compact]
-	[CCode (cname="RBreakpointItem")]
+	[CCode (cname="RBreakpointItem", free_function="")]
 	public class Item {
 		uint64 addr;
 		int size;

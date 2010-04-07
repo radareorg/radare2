@@ -94,6 +94,7 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch);
 R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int mode);
 R_API struct r_core_file_t *r_core_file_get_fd(struct r_core_t *core, int fd);
 R_API int r_core_file_close(struct r_core_t *r, RCoreFile *fh);
+R_API int r_core_file_close_fd(struct r_core_t *core, int fd);
 R_API int r_core_file_list(struct r_core_t *core);
 R_API int r_core_seek_delta(struct r_core_t *core, st64 addr);
 R_API int r_core_write_at(struct r_core_t *core, ut64 addr, const ut8 *buf, int size);

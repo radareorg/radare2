@@ -58,7 +58,7 @@ namespace Radare {
 
 		/* handle */
 		[Compact]
-		[CCode (cname="RIOHandle", cprefix="r_io_handle_")]
+		[CCode (cname="RIOHandle", cprefix="r_io_handle_", free_function="")]
 		public class Handle {
 			string name;
 			string desc;
@@ -73,7 +73,7 @@ namespace Radare {
 		public void handle_list();
 
 		/* maps */
-		[CCode (cname="RIOMap", cprefix="r_io_map_")]
+		[CCode (cname="RIOMap", cprefix="r_io_map_", free_function="")]
 		public class Map {
 			int fd;
 			uint64 from;
@@ -88,7 +88,7 @@ namespace Radare {
 
 		/* sections */
 		[Compact]
-		[CCode (cname="RIOSection")]
+		[CCode (cname="RIOSection", free_function="")]
 		public class Section {
 			string comment;
 			uint64 from;

@@ -82,6 +82,7 @@ public class Radare.RAnal {
 	}
 
 	[Compact]
+	[CCode (free_function="")]
 	public class Refline {
 		uint64 from;
 		uint64 to;
