@@ -113,3 +113,45 @@ R_API int r_anal_bb_overlap(RAnal *anal, RAnalBB *bb, RList *bbs) {
 		}
 	return R_ANAL_RET_NEW;
 }
+
+R_API int r_anal_bb_add(RAnal *anal, ut64 addr, ut64 size, ut64 jump, ut64 fail) {
+	RAnalBB *bb, *bbi;
+	RListIter *iter;
+
+	r_list_foreach (anal->bbs, iter, bbi)
+		if (addr >= bbi->addr && addr < bbi->addr+bbi->size)
+			return R_FALSE;
+	if (!(bb = r_anal_bb_new ()))
+		return R_FALSE;
+	bb->addr = addr;
+	bb->size = size;
+	bb->jump = jump;
+	bb->fail = fail;
+	r_list_append (anal->bbs, bb);
+	return R_TRUE;
+}
+
+R_API int r_anal_bb_del(RAnal *anal, ut64 addr) {
+	RAnalBB *bbi;
+	RListIter *iter;
+	ut64 jump, fail;
+
+	if (addr == 0) {
+		r_list_destroy (anal->bbs);
+		if (!(anal->bbs = r_anal_bb_list_new ()))
+			return R_FALSE;
+	} else {
+		r_list_foreach (anal->bbs, iter, bbi) {
+			if (addr >= bbi->addr && addr < bbi->addr+bbi->size) {
+				jump = bbi->jump;
+				fail = bbi->fail;
+				r_list_unlink (anal->bbs, bbi);
+				if (fail != -1)
+					r_anal_bb_del (anal, fail);
+				if (jump != -1)
+					r_anal_bb_del (anal, jump);
+			}
+		}
+	}
+	return R_TRUE;
+}

@@ -141,48 +141,6 @@ R_API int r_core_anal_bb(RCore *core, ut64 at, int depth) {
 	return R_TRUE;
 }
 
-R_API int r_core_anal_bb_clean(RCore *core, ut64 addr) {
-	struct r_anal_bb_t *bbi;
-	RListIter *iter;
-	ut64 jump, fail;
-
-	if (addr == 0) {
-		r_list_destroy (core->anal.bbs);
-		if (!(core->anal.bbs = r_anal_bb_list_new ()))
-			return R_FALSE;
-	} else {
-		r_list_foreach (core->anal.bbs, iter, bbi) {
-			if (addr >= bbi->addr && addr < bbi->addr+bbi->size) {
-				jump = bbi->jump;
-				fail = bbi->fail;
-				r_list_unlink (core->anal.bbs, bbi);
-				if (fail != -1)
-					r_core_anal_bb_clean (core, fail);
-				if (jump != -1)
-					r_core_anal_bb_clean (core, jump);
-			}
-		}
-	}
-	return R_TRUE;
-}
-
-R_API int r_core_anal_bb_add(RCore *core, ut64 addr, ut64 size, ut64 jump, ut64 fail) {
-	struct r_anal_bb_t *bb, *bbi;
-	RListIter *iter;
-
-	r_list_foreach (core->anal.bbs, iter, bbi)
-		if (addr >= bbi->addr && addr < bbi->addr+bbi->size)
-			return R_FALSE;
-	if (!(bb = r_anal_bb_new ()))
-		return R_FALSE;
-	bb->addr = addr;
-	bb->size = size;
-	bb->jump = jump;
-	bb->fail = fail;
-	r_list_append (core->anal.bbs, bb);
-	return R_TRUE;
-}
-
 R_API int r_core_anal_bb_list(RCore *core, int rad) {
 	struct r_anal_bb_t *bbi;
 	RListIter *iter;

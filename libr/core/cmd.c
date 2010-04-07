@@ -1117,7 +1117,7 @@ static int cmd_anal(void *data, const char *input) {
 	case 'b':
 		switch (input[1]) {
 		case '-':
-			r_core_anal_bb_clean (core, r_num_math (&core->num, input+2));
+			r_anal_bb_del (&core->anal, r_num_math (&core->num, input+2));
 			break;
 		case '+':
 			{
@@ -1137,7 +1137,7 @@ static int cmd_anal(void *data, const char *input) {
 			case 1: // get addr
 				addr = r_num_math (&core->num, r_str_word_get0 (ptr, 0));
 			}
-			if (!r_core_anal_bb_add (core, addr, size, jump, fail))
+			if (!r_anal_bb_add (&core->anal, addr, size, jump, fail))
 				eprintf ("Cannot add bb (duplicated or overlaped)\n");
 			free (ptr);
 			}
@@ -1165,7 +1165,7 @@ static int cmd_anal(void *data, const char *input) {
 	case 'f':
 		switch (input[1]) {
 		case '-':
-			r_core_anal_fcn_clean (core, r_num_math (&core->num, input+2));
+			r_anal_fcn_del (&core->anal, r_num_math (&core->num, input+2));
 			break;
 		case '+':
 			{
@@ -1178,7 +1178,7 @@ static int cmd_anal(void *data, const char *input) {
 				name = r_str_word_get0 (ptr, 2);
 				size = r_num_math (&core->num, r_str_word_get0 (ptr, 1));
 				addr = r_num_math (&core->num, r_str_word_get0 (ptr, 0));
-				if (!r_core_anal_fcn_add (core, addr, size, name))
+				if (!r_anal_fcn_add (&core->anal, addr, size, name))
 					eprintf ("Cannot add function (duplicated or overlaped)\n");
 			}
 			free (ptr);

@@ -119,3 +119,33 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len) 
 	}
 	return fcn->size;
 }
+
+R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size, const char *name) {
+	RAnalFcn *fcn, *fcni;
+	RListIter *iter;
+
+	r_list_foreach (anal->fcns, iter, fcni)
+		if (addr >= fcni->addr && addr < fcni->addr+fcni->size)
+			return R_FALSE;
+	if (!(fcn = r_anal_fcn_new ()))
+		return R_FALSE;
+	fcn->addr = addr;
+	fcn->size = size;
+	fcn->name = strdup (name);
+	r_list_append (anal->fcns, fcn);
+	return R_TRUE;
+}
+
+R_API int r_anal_fcn_del(RAnal *anal, ut64 addr) {
+	RAnalFcn *fcni;
+	RListIter *iter;
+
+	if (addr == 0) {
+		r_list_destroy (anal->fcns);
+		if (!(anal->fcns = r_anal_fcn_list_new ()))
+			return R_FALSE;
+	} else r_list_foreach (anal->fcns, iter, fcni)
+			if (addr >= fcni->addr && addr < fcni->addr+fcni->size)
+				r_list_unlink (anal->fcns, fcni);
+	return R_TRUE;
+}
