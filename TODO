@@ -6,15 +6,20 @@
 ----------------------------------------[ todo 
 
 <{include libr/TODO}>
+** See libr/*/TODO FMI
 
+* stack analysis
+* code analysis with r_parse
+
+* Move 'r_syscall_t' stuff into r_debug
+  - Sync r_core
 
 * /main segfaults
  - this is because regexp dosnt works -- NEEDS FIX
  - overflows the console.. -- NEEDS FIX
 
-See libr/*/TODO FMI
-
- manpages for r2, r2rc, r2rc-tool, rafind2 and rasign2 are missing
+* Finish to write manpages
+  - manpages for r2, r2rc, r2rc-tool, rafind2 and rasign2 are missing
 
 BUGS
 ====
@@ -40,33 +45,16 @@ BUGS
      2nd level:
         - basic block level diffing (output in graph mode)
 
-* stack analysis
-* code analysis with r_parse
-
-* Finish to write manpages
-
-* Move 'r_syscall_t' stuff into r_debug
-  - Sync r_core
-
 * Implement process launcher wrapper
   - opens xterm and redirects stdin/stdout/stderr
   - Allows to change chroot
   - Allows to setup chroot
   - Define uid/gid
 
-* Added lib_handle stub in r_lib, so we can add plugin support to
-  any library by using just a macro
-
 * is RCore->block and blocksize a RBuf ? refactor!11
  
-* r_cmd must provide a nesting char table indexing for commands
-  - this is pretty similar to r_db
-  - every module can register their own commands
-  - commands can be listed like in a tree
 * 'Vc' cursor mode makes color toggle
 
-* Add test for config.c with _set_cb
-* Strip non input symbols in plugins (speed up loading)
 * Specify binmask in hexpairs
   - wx 1234:ff0f
   - /x 1234:ff0f
@@ -80,3 +68,4 @@ BUGS
  - We should enable r_lib to implement plugins in any
    scripting language, so we can for example prepare
    a .c stub interface for python/perl/ruby/..
+   - this requires a swig bridge

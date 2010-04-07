@@ -1,3 +1,4 @@
+* add support for readline-like callbacks
 * 'Supr' key not handled properly
 * Optionally link against libreadline (NO PLZ)
 * Remove all label-related stuff (OW YEAH)

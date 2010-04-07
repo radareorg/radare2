@@ -1,8 +1,7 @@
-|| search ||
+|| config ||
 ------------
-  - bytepat and so should be buggy now, bugfix required
-  - implement r_search_xrefs
-  - configure before throw the search
+  - find more common cases for char* or &int maps
+    - automatic callbacks for most common usecases
 
 || asm || 
 ---------
@@ -18,17 +17,6 @@
 || bin || 
 ---------
   - Add dex format support (android)
-
-|| cmd ||
----------
-  - long commands not yet tested at all
-  - added interface to export command list into an autocompletable
-    argc, argv for dietline
-
-|| line ||
-----------
-  - make it work with state like teh rest ???
-  - add support for readline callbacks
 
 || cons ||
 ----------
@@ -51,14 +39,14 @@
 	 - the r_flag_get by string should have another construction with btree
 	   for the string of the name
 
-|| hash ||
-----------
-  - Extend it with plugins?
-
 || diff ||
 ----------
   - Reimplement or fix the delta diffing in C
+    - first we need to do it for ired..
 
 || lib ||
 ---------
   - Cleanup and test w32/osx support
+  - Added lib_handle stub in r_lib, so we can add plugin support to
+    any library by using just a macro
+

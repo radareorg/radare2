@@ -20,6 +20,26 @@ dumpers    - dump the resulting information in ascii              [ OUTPUT ]
              - dump signature
              - dump results of the signature analysis
 
+Items in stored database
+========================
+Should contain something like:
+
+ // raw byte search //
+ typedef struct {
+     char *name;
+     ut8 *bytes;
+     int len;
+     RList hits;
+ } RSignItem;
+
+We need some way to store other kind of properties for signature types..
+
+r_sign_item_new ();
+r_sign_item_add (sign, s_item);
+
+
+Matchers should allow some ranges.. for example. we can accept two matching sequences with a distance of X
+
 Schematics
 -----------
                                              PLUGINS

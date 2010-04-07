@@ -1,4 +1,6 @@
-* Pluggify!
+* Pluggify! -- in plain text files
+  - import syscalls from file (ala r_reg)
+* Store in r_db..so we can query by string or syscall number in an optimal way
 * Add w32 0x2e syscall support
-* import syscalls from file (ala r_reg)
 * Added documentation string per-syscall in r_syscall_list_t
+* Merge it into r_debug .. aka r_debug_syscall
