@@ -478,7 +478,16 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 					ret[k].last = 0;
 					k++;
 				}
-			ret[k].last = 1;
+
+			if (k) {
+				ret = realloc (ret, (k+1) * sizeof(struct r_bin_elf_lib_t));
+				if (ret == NULL) {
+					perror ("realloc (libs)");
+					free (dyn);
+					return NULL;
+				}
+				ret[k].last = 1;
+			}
 			free (dyn);
 			break;
 		}
