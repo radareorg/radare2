@@ -269,10 +269,7 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 		posix_whence = SEEK_END;
 		break;
 	}
-	if (io->va)
-		offset = r_io_section_vaddr_to_offset (io, offset);
-	else if (!r_io_section_get (io, offset))
-		return -1;
+	offset = io->va ? r_io_section_vaddr_to_offset (io, offset) : offset;
 	// TODO: implement io->enforce_seek here!
 	if (io->plugin && io->plugin->lseek)
 		ret = io->plugin->lseek (io, io->fd, offset, whence);
