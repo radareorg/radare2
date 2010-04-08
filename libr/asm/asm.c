@@ -377,3 +377,10 @@ R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
 	}
 	return acode;
 }
+
+R_API int r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val) {
+	int ret = R_FALSE;
+	if (a->cur && a->cur->modify)
+		ret = a->cur->modify (a, buf, field, val);
+	return ret;
+}

@@ -1434,6 +1434,33 @@ static int cmd_write(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	memcpy (str, input+1, len);
 	switch (input[0]) {
+	case 'A':
+		switch (input[1]) {
+		case ' ':
+			if (input[2]&&input[3]==' ') {
+				r_asm_set_pc (&core->assembler, core->offset);
+				eprintf ("modify (%c)=%s\n", input[2], input+4);
+				len = r_asm_modify (&core->assembler, core->block, input[2],
+					r_num_math (&core->num, input+4));
+				eprintf ("len=%d\n", len);
+				if (len>0)
+					r_core_write_at (core, core->offset, core->block, len);
+				else eprintf ("r_asm_modify = %d\n", len);
+			} else eprintf ("Usage: wA [type] [value]\n");
+			break;
+		case '?':
+		default:
+			r_cons_printf ("Usage: wA [type] [value]\n"
+			"Types:\n"
+			" r   raw write value\n"
+			" v   set value (taking care of current address)\n"
+			" d   destination register\n"
+			" 0   1st src register \n"
+			" 1   2nd src register\n"
+			"Example: wA r 0 # e800000000\n");
+			break;
+		}
+		break;
 	case 'c':
 		switch (input[1]) {
 		case 'i':
@@ -1645,17 +1672,18 @@ static int cmd_write(void *data, const char *input) {
 			r_io_set_fd (&core->io, core->file->fd);
 			r_io_write (&core->io, core->oobi, core->oobi_len);
 		} else
-			r_cons_printf(
+			r_cons_printf (
 			"Usage: w[x] [str] [<file] [<<EOF] [@addr]\n"
 			" w foobar     write string 'foobar'\n"
 			" ww foobar    write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'\n"
 			" wa push ebp  write opcode, separated by ';' (use '\"' around the command)\n"
+			" wA r 0       alter/modify opcode at current seek (see wA?)\n"
 			" wb 010203    fill current block with cyclic hexpairs\n"
 			" wc[ir*?]     write cache commit/reset/list\n"
 			" wx 9090      write two intel nops\n"
 			" wv eip+34    write 32-64 bit value\n"
 			" wo[] hex     write in block with operation. 'wo?' fmi\n"
-			" wm f0ff      cyclic write mask\n"
+			" wm f0ff      set binary mask hexpair to be used as cyclic write mask\n"
 			" wf file      write contents of file at current offset\n"
 			" wF file      write contents of hexpairs file here\n"
 			" wt file      write current block to file\n");
@@ -1697,6 +1725,8 @@ static int cmd_search(void *data, const char *input) {
 	case 'v':
 		r_search_free (core->search);
 		core->search = r_search_new (R_SEARCH_KEYWORD);
+		r_search_set_distance (core->search, (int)
+			r_config_get_i (&core->config, "search.distance"));
 		n32 = r_num_math (&core->num, input+1);
 		r_search_kw_add (core->search, 
 			r_search_keyword_new ((const ut8*)&n32, 4, NULL, 0, NULL));
@@ -1706,6 +1736,8 @@ static int cmd_search(void *data, const char *input) {
 	case ' ': /* search string */
 		r_search_free(core->search);
 		core->search = r_search_new (R_SEARCH_KEYWORD);
+		r_search_set_distance (core->search, (int)
+			r_config_get_i (&core->config, "search.distance"));
 		r_search_kw_add (core->search, 
 			r_search_keyword_new_str (input+1, "", NULL));
 		r_search_begin (core->search);
@@ -1722,6 +1754,8 @@ static int cmd_search(void *data, const char *input) {
 		}
 		r_search_free (core->search);
 		core->search = r_search_new (R_SEARCH_REGEXP);
+		r_search_set_distance (core->search, (int)
+			r_config_get_i (&core->config, "search.distance"));
 		r_search_kw_add (core->search, 
 			r_search_keyword_new_str (inp, opt, NULL));
 		r_search_begin (core->search);
@@ -1733,6 +1767,8 @@ static int cmd_search(void *data, const char *input) {
 	case 'x': /* search hex */
 		r_search_free (core->search);
 		core->search = r_search_new (R_SEARCH_KEYWORD);
+		r_search_set_distance (core->search, (int)
+			r_config_get_i (&core->config, "search.distance"));
 		r_search_kw_add (core->search, 
 			r_search_keyword_new_hexmask (input+2, NULL));
 		r_search_begin (core->search);

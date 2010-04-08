@@ -181,6 +181,7 @@ R_API int r_core_config_init(RCore *core) {
 		(core->print.flags&R_PRINT_FLAGS_COLOR)?"true":"false",
 		&config_color_callback);
 	r_config_set (cfg, "scr.seek", "");
+	r_config_set_i (cfg, "search.distance", 0);
 	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
 	r_config_set_cb (cfg, "io.ffio", "false", &config_ioffio_callback);
 	r_config_set_cb (cfg, "io.va", "false", &config_iova_callback);
