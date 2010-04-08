@@ -272,9 +272,9 @@ R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 fro
 
 /* reflines.c */
 R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal, 
-		ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout);
-R_API int r_anal_reflines_str(RAnal *anal, struct r_anal_refline_t *list,
-		ut64 addr, char *str, int opts);
+	ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout);
+R_API char* r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list,
+	ut64 addr, int opts);
 R_API int r_anal_reflines_middle(RAnal *anal, RAnalRefline *list, ut64 addr, int len);
 
 /* plugin pointers */

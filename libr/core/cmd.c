@@ -902,7 +902,7 @@ static int cmd_print(void *data, const char *input) {
 			int middle = 0;
 			ut8 *buf = core->block;
 			char str[128];
-			char line[128];
+			char *line;
 			char *comment;
 			char *opstr;
 			char *osl = NULL; // old source line
@@ -927,7 +927,7 @@ static int cmd_print(void *data, const char *input) {
 						free (comment);
 					}
 				}
-				r_anal_reflines_str (&core->anal, reflines, addr, line, linesopts);
+				line = r_anal_reflines_str (&core->anal, reflines, addr, linesopts);
 				ret = r_asm_disassemble (&core->assembler, &asmop, buf+idx, len-idx);
 				if (ret<1) {
 					ret = 1;
@@ -940,7 +940,7 @@ static int cmd_print(void *data, const char *input) {
 					middle = r_anal_reflines_middle (&core->anal,
 							reflines, addr, analop.length);
 
-				if (show_lines)
+				if (show_lines && line)
 					r_cons_strcat (line);
 				if (show_offset)
 					r_cons_printf ("0x%08llx  ", core->offset + idx);
@@ -1021,11 +1021,14 @@ static int cmd_print(void *data, const char *input) {
 					r_cons_printf (" ;  *middle* %d", ret);
 				}
 				r_cons_newline ();
-				if (show_lines && analop.type == R_ANAL_OP_TYPE_RET) {
-					if (strchr (line, '>'))
-						memset (line, ' ', strlen (line));
-					r_cons_strcat (line);
-					r_cons_strcat ("; ------------------------------------\n");
+				if (line) {
+					if (show_lines && analop.type == R_ANAL_OP_TYPE_RET) {
+						if (strchr (line, '>'))
+							memset (line, ' ', strlen (line));
+						r_cons_strcat (line);
+						r_cons_strcat ("; ------------------------------------\n");
+					}
+					free (line);
 				}
 			}
 			free (reflines);
