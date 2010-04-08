@@ -12,19 +12,55 @@
 
 #include <sys/types.h>
 #include <stdarg.h>
-#if __UNIX__
-// TODO: move this outside
-#include <sys/wait.h>
-#endif
 
 static int cmd_io_system(void *data, const char *input);
 
 static int cmd_zign(void *data, const char *input) {
+	RAnalFcn *fcni;
+	RListIter *iter;
 	RSignItem *item;
 	RCore *core = (RCore *)data;
-	char *ptr;
+	char *ptr, *name;
+	int i, fd, len;
 
 	switch (input[0]) {
+	case 'g':
+		if (input[1]==' ' && input[2]) {
+			ptr = strchr (input+2, ' ');
+			if (ptr) {
+				*ptr = '\0';
+				fd = open (ptr+1, O_RDWR|O_CREAT, 0644);
+				if (fd == -1) {
+					eprintf ("Cannot open %s in read-write\n", ptr+1);
+					return R_FALSE;
+				}
+				r_cons_singleton ()->fdout = fd;
+				r_cons_strcat ("# Signatures\n");
+			}
+			r_cons_printf ("zp %s\n", input+2);
+			
+			r_list_foreach (core->anal.fcns, iter, fcni) {
+				ut8 buf[128];
+				if (r_io_read_at (&core->io, fcni->addr, buf, sizeof (buf)) == sizeof (buf)) {
+					RFlagItem *flag = r_flag_get_i (&core->flags, fcni->addr);
+					if (flag) {
+						name = flag->name;
+						r_cons_printf ("zb %s ", name);
+						len = (fcni->size>sizeof (buf))?sizeof (buf):fcni->size;
+						for (i=0; i<len; i++) {
+							r_cons_printf ("%02x", buf[i]);
+						}
+						r_cons_newline ();
+					} else eprintf ("Unnamed function at 0x%08llx\n", fcni->addr);
+				} else eprintf ("Cannot read at 0x%08llx\n", fcni->addr);
+			}
+			if (ptr) {
+				r_cons_flush ();
+				r_cons_singleton ()->fdout = 1;
+				close (fd);
+			}
+		} else eprintf ("Usage: zg libc [libc.sig]\n");
+		break;
 	case 'p':
 		if (!input[1])
 			r_cons_printf ("%s", core->sign.prefix);
@@ -114,6 +150,7 @@ static int cmd_zign(void *data, const char *input) {
 			" z-*            unload all zignatures\n"
 			" za ...         define new zignature for analysis\n"
 			" zb name bytes  define new zignature for bytes\n"
+			" zg pfx [file]  generate siganture for current file\n"
 			" .zc @ fcn.foo  flag signature if matching (.zc@@fcn)\n"
 			" z/ [ini] [end] search zignatures between these regions\n");
 		break;
