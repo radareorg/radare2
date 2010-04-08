@@ -5,7 +5,7 @@
 grep -e DEPS */Makefile | sed -e 's,/Makefile,,' > /tmp/rdeps.txt
 
 MODE=dot
-MODE=gml
+#MODE=gml
 
 if [ $MODE = "dot" ]; then
 

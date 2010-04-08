@@ -14,6 +14,7 @@
 #include "r_line.h"
 #include "r_print.h"
 #include "r_search.h"
+#include "r_sign.h"
 #include "r_debug.h"
 #include "r_flags.h"
 #include "r_config.h"
@@ -67,6 +68,7 @@ typedef struct r_core_t {
 	struct r_flag_t flags;
 	struct r_config_t config;
 	struct r_search_t *search;
+	RSign sign;
 } RCore;
 
 #ifdef R_API

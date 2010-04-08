@@ -19,6 +19,53 @@
 
 static int cmd_io_system(void *data, const char *input);
 
+static int cmd_zign(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+	char *ptr;
+
+	switch (input[0]) {
+	case 'a':
+		break;
+	case 'b':
+		ptr = strchr (input+2, ' ');
+		if (ptr) {
+			*ptr = 0;
+			r_sign_add (&core->sign, R_SIGN_BYTES, input+2, ptr+1);
+		} else eprintf ("Usage: zb [name] [bytes]\n");
+		break;
+	case ' ':
+		//r_sign_pfx (&core->sign, input+2);
+		break;
+	case '-':
+		//r_sign_unload (&core->sign, input+2);
+		break;
+	case '/':
+		{
+			// TODO: parse arg0 and arg1
+			RIOSection *s = r_io_section_get (&core->io, core->offset);
+			if (s) {
+				eprintf ("Ranges are: 0x%08llx 0x%08llx\n",
+					s->vaddr, s->vaddr+s->size);
+			} else eprintf ("Unknown section. Please specify range\n");
+		}
+		break;
+	default:
+	case '?':
+		r_cons_printf (
+			"Usage: z[-] [arg]\n"
+			" z              show loaded zignatures\n"
+			" z prefix       define prefix for following zignatures\n"
+			" z-prefix       unload zignatures prefixed as\n"
+			" z-*            unload all zignatures\n"
+			" za ...         define new zignature for analysis\n"
+			" zb name bytes  define new zignature for bytes\n"
+			" z/ addr0 addr1 search zignatures between these regions\n"
+			"SEE ALSO: az? to analyze code from signature results\n");
+		break;
+	}
+	return 0;
+}
+
 static int cmd_iopipe(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
@@ -340,7 +387,7 @@ static int cmd_section(void *data, const char *input) {
 		" S                ; list sections\n"
 		" S*               ; list sections (in radare commands\n"
 		" S=               ; list sections (in nice ascii-art bars)\n"
-		" S [offset] [vaddr] [size] [vsize] [name] ; adds new section\n"
+		" S [offset] [vaddr] [size] [vsize] [name] [rwx] ; adds new section\n"
 		" S -[offset]      ; remove this section definition\n");
 		break;
 	case ' ':
@@ -352,7 +399,7 @@ static int cmd_section(void *data, const char *input) {
 			break;
 		default:
 			{
-			int i;
+			int i, rwx = 7;
 			char *ptr = strdup(input+1);
 			const char *name = NULL;
 			ut64 vaddr = 0LL;
@@ -361,7 +408,9 @@ static int cmd_section(void *data, const char *input) {
 			ut64 vsize = 0LL;
 			
 			i = r_str_word_set0 (ptr);
-			switch(i) {
+			switch (i) {
+			case 6: // get rwx
+				rwx = r_str_rwx (r_str_word_get0 (ptr, 5));
 			case 5: // get name
 				name = r_str_word_get0 (ptr, 4);
 			case 4: // get vsize
@@ -373,7 +422,7 @@ static int cmd_section(void *data, const char *input) {
 			case 1: // get offset
 				offset = r_num_math (&core->num, r_str_word_get0 (ptr, 0));
 			}
-			r_io_section_add (&core->io, offset, vaddr, size, vsize, 7, name);
+			r_io_section_add (&core->io, offset, vaddr, size, vsize, rwx, name);
 			free (ptr);
 			}
 			break;
@@ -1079,6 +1128,23 @@ static int cmd_anal(void *data, const char *input) {
 	}
 	
 	switch (input[0]) {
+	case 'z':
+		switch (input[1]) {
+		case 'g':
+			// TODO: generate zignaturez from analysis data
+			break;
+		case '\0':
+			// TODO: analyze results of zignature search
+			r_core_cmd (core, "ac@@sign", 0);
+			break;
+		default:
+			r_cons_printf ("Usage: az[g]\n"
+				" az     analyze zignatures\n"
+				" azg    generate zignature from current file (z-* recommended)\n"
+				"SEE ALSO: z?\n");
+			break;
+		}
+		break;
 	case 'h':
 		if (input[1]) {
 			if (!r_anal_use (&core->anal, input+2))
@@ -2647,6 +2713,7 @@ int r_core_cmd_init(RCore *core) {
 	r_cmd_add (&core->cmd, "info",     "get file info", &cmd_info);
 	r_cmd_add (&core->cmd, "cmp",      "compare memory", &cmd_cmp);
 	r_cmd_add (&core->cmd, "seek",     "seek to an offset", &cmd_seek);
+	r_cmd_add (&core->cmd, "zign",     "zignatures", &cmd_zign);
 	r_cmd_add (&core->cmd, "Section",  "setup section io information", &cmd_section);
 	r_cmd_add (&core->cmd, "bsize",    "change block size", &cmd_bsize);
 	r_cmd_add (&core->cmd, "eval",     "evaluate configuration variable", &cmd_eval);

@@ -1,6 +1,11 @@
 r_sign: signature api for radare2
 =================================
 
+Commandline:
+============
+z
+
+
 Plugins are used to implement data collectors for r_sign.
 
 A data collector is a piece of code that feeds the r_sign

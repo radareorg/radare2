@@ -19,6 +19,31 @@ static int hex2int (ut8 *val, ut8 c) {
 	return 0;
 }
 
+R_API int r_str_rwx(const char *str) {
+	int ret = atoi (str);
+	if (!ret) {
+		ret |= strchr (str, 'r')?4:0;
+		ret |= strchr (str, 'w')?2:0;
+		ret |= strchr (str, 'x')?1:0;
+	}
+	return ret;
+}
+
+R_API const char *r_str_rwx_i(int rwx) {
+	static const char *rwxstr[16] = {
+		[0] = "---",
+		[1] = "--x",
+		[2] = "-w-",
+		[3] = "-wx",
+		[4] = "r--",
+		[5] = "r-x",
+		[6] = "rw-",
+		[7] = "rwx",
+		/* ... */
+	};
+	return rwxstr[rwx&7]; // 15 for srwx
+}
+
 R_API const char *r_str_bool(int b) {
 	if (b) return "true";
 	return "false";

@@ -17,6 +17,7 @@
 || bin || 
 ---------
   - Add dex format support (android)
+  - rename characteristics into srwx
 
 || cons ||
 ----------

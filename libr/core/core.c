@@ -129,6 +129,7 @@ R_API int r_core_init(RCore *core) {
 	r_meta_init (&core->meta);
 	r_cons_init ();
 	r_line_init ();
+	r_sign_init (&core->sign);
 	r_cons_singleton()->user_fgets = (void *)myfgets;
 	r_line_hist_load (".radare2_history");
 

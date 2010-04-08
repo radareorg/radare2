@@ -3,8 +3,7 @@
 #include "r_search.h"
 //#include <regex.h>
 
-R_API int r_search_xrefs_update(struct r_search_t *s, ut64 from, const ut8 *buf, int len)
-{
+R_API int r_search_xrefs_update(void *s, ut64 from, const ut8 *buf, int len) {
 //	ut8 code[1024];
 //	ut8 mask[1024];
 	int count = 0;

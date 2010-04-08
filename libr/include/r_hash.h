@@ -98,7 +98,7 @@ R_API ut8 r_hash_mod255(const ut8 *b, ut64 len);
 R_API const char *r_hash_name(int bit);
 
 /* analysis */
-R_API ut8  r_hash_hamdist(const ut8 *buf, ut64 len);
+R_API ut8  r_hash_hamdist(const ut8 *buf, int len);
 R_API double r_hash_entropy(const ut8 *data, ut64 len);
 R_API int r_hash_pcprint(const ut8 *buffer, ut64 len);
 #endif

@@ -32,26 +32,21 @@ errors that transformed one string into the other.
 
 #include "r_types.h"
 
-static int hamdist(int x, ut64 y)
-{
+static int hamdist(int x, int y) {
 	int dist = 0, val = x^y;
-
-	while(val) {
+	while (val) {
 		++dist; 
 		val &= val - 1;
 	}
-
 	return dist;
 }
 
-R_API ut8 r_hash_hamdist(const ut8 *buf, ut64 len)
-{
+R_API ut8 r_hash_hamdist(const ut8 *buf, int len) {
 	int i, x, y;
 	x = y = i = 0;
-	for(i=0;i<len;i++) {
+	for (i=0; i<len; i++) {
 		y = buf[i];
-		x = hamdist(x, y);
+		x = hamdist (x, y);
 	}
 	return x;
 }
-

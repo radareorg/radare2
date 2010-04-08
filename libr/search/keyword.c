@@ -14,7 +14,11 @@ R_API RSearchKeyword* r_search_keyword_new(const ut8 *kw, int kwlen, const ut8 *
 			k->keyword_length = kwlen;
 			memcpy (k->bin_keyword, kw, kwlen);
 			if (bm && bmlen>0) {
-				memcpy (k->binmask, bm, bmlen);
+				//memcpy (k->binmask, bm, bmlen);
+				// XXX Fix this conversion.. r_hex_str.. ?
+				snprintf (k->binmask, sizeof (k->binmask),
+					"%02x%02x%02x..", bm[0], bm[1], bm[2]);
+				memcpy (k->bin_binmask, bm, bmlen);
 				k->binmask_length = bmlen;
 			} else k->binmask[0] = k->binmask_length = 0;
 		}

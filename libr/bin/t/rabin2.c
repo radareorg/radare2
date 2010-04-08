@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
 
 /* TODO:
  * -L [lib]  dlopen library and show address
@@ -70,9 +70,8 @@ static int rabin_show_entrypoints() {
 	if ((entries = r_bin_get_entries (bin)) == NULL)
 		return R_FALSE;
 
-	if (rad) {
-		printf ("fs symbols\n");
-	} else printf ("[Entrypoints]\n");
+	if (rad) printf ("fs symbols\n");
+	else printf ("[Entrypoints]\n");
 
 	r_list_foreach (entries, iter, entry) {
 		if (rad) {
@@ -272,9 +271,9 @@ static int rabin_show_sections(ut64 at) {
 		} else {
 			if (rad) {
 				r_flag_name_filter (section->name);
-				printf ("S 0x%08llx 0x%08llx 0x%08llx 0x%08llx %s\n",
+				printf ("S 0x%08llx 0x%08llx 0x%08llx 0x%08llx %s %d\n",
 						section->offset, baddr+section->rva,
-						section->size, section->vsize, section->name);
+						section->size, section->vsize, section->name, (int)section->characteristics);
 				printf ("f section.%s %lli 0x%08llx\n",
 						section->name, section->size, va?baddr+section->rva:section->offset);
 				printf ("CC [%02i] va=0x%08llx pa=0x%08llx sz=%08lli vsz=%08lli "

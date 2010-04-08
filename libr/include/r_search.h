@@ -1,9 +1,9 @@
 #ifndef _INCLUDE_R_SEARCH_H_
 #define _INCLUDE_R_SEARCH_H_
 
-#include "r_types.h"
-#include "r_util.h"
-#include "list.h"
+#include <r_types.h>
+#include <r_util.h>
+#include <list.h>
 
 enum {
 	R_SEARCH_KEYWORD,
@@ -11,8 +11,11 @@ enum {
 	R_SEARCH_PATTERN,
 	R_SEARCH_STRING,
 	R_SEARCH_XREFS,
-	R_SEARCH_AES
+	R_SEARCH_AES,
+	R_SEARCH_LAST
 };
+
+#define R_SEARCH_DISTANCE_MAX 10
 
 typedef struct r_search_keyword_t {
 	char keyword[128];
@@ -21,7 +24,8 @@ typedef struct r_search_keyword_t {
 	ut8 bin_binmask[128];
 	ut32 keyword_length;
 	ut32 binmask_length;
-	ut32 idx; // searching purposes
+	ut32 idx[R_SEARCH_DISTANCE_MAX]; // searching purposes
+	int distance;
 	void *data;
 	int count;
 	int kwidx;
@@ -33,6 +37,7 @@ typedef struct r_search_hit_t {
 	ut64 addr;
 } RSearchHit;
 
+typedef int (*RSearchUpdate)(void *s, ut64 from, const ut8 *buf, int len);
 typedef int (*RSearchCallback)(RSearchKeyword *kw, void *user, ut64 where);
 
 typedef struct r_search_t {
@@ -45,6 +50,8 @@ typedef struct r_search_t {
 	RSearchCallback callback;
 	RList *hits;
 	RMemoryPool *pool;
+	int distance;
+	RSearchUpdate update;
 	//struct r_search_binparse_t *bp;
 	//TODO RList *kws; // TODO: Use r_search_kw_new ()
 	struct list_head kws; //r_search_hw_t kws;
@@ -79,12 +86,14 @@ R_API int r_search_range_reset(RSearch *s);
 R_API int r_search_set_blocksize(RSearch *s, ut32 bsize);
 
 // TODO: this is internal API?
-R_API int r_search_mybinparse_update(RSearch *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_aes_update(RSearch *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_strings_update(RSearch *s, ut64 from, const char *buf, int len, int enc);
-R_API int r_search_regexp_update(RSearch *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_xrefs_update(RSearch *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_mybinparse_update(void *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_aes_update(void *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_strings_update(void *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_regexp_update(void *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_xrefs_update(void *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr);
+R_API void r_search_set_distance(RSearch *s, int dist);
+R_API void r_search_set_pattern_size(RSearch *s, int size);
 
 /* pattern search */
 R_API int r_search_pattern(RSearch *s, ut32 size);

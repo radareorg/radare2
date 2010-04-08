@@ -52,7 +52,9 @@ static int is_encoded(int encoding, unsigned char c) {
 	return 0;
 }
 
-R_API int r_search_strings_update(struct r_search_t *s, ut64 from, const char *buf, int len, int enc) {
+R_API int r_search_strings_update(void *_s, ut64 from, const ut8 *buf, int len) {
+	RSearch *s = (RSearch *)_s;
+	const int enc = 0; // hardcoded
 	int i = 0;
 	int widechar = 0;
 	int matches = 0;
@@ -60,7 +62,7 @@ R_API int r_search_strings_update(struct r_search_t *s, ut64 from, const char *b
 
 	for (i=0; i<len; i++) {
 		char ch = buf[i];
-		if (IS_PRINTABLE(ch) || IS_WHITESPACE(ch) || is_encoded(enc, ch)) {
+		if (IS_PRINTABLE(ch) || IS_WHITESPACE(ch) || is_encoded (enc, ch)) {
 			str[matches] = ch;
 			if (matches < sizeof(str))
 				matches++;

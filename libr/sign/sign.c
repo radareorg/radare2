@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_sign.h>
 
@@ -7,11 +7,29 @@ R_API RSign *r_sign_new() {
 }
 
 R_API RSign *r_sign_init(RSign *sig) {
-	sig->count = 0;
+	sig->s_byte = sig->s_anal = 0;
 	INIT_LIST_HEAD (&(sig->items));
 	return sig;
 }
 
+R_API int r_sign_add(RSign *sig, int type, const char *name, const char *arg) {
+	int ret = R_FALSE;
+	switch (type) {
+	case R_SIGN_BYTES:
+		eprintf ("r_sign_add: TODO (%s)(%s)\n", name, arg);
+		sig->s_byte++;
+		break;
+	default:
+	case R_SIGN_GRAPH:
+		eprintf ("r_sign_add: TODO\n");
+		break;
+	}
+	return ret;
+}
+
+#if 0
+// XXX This shit depends only on the graphing stuff.. will be remove when this part gets working
+// XXX : remove.. deprecated stuff
 R_API int r_sign_item_set(RSignItem *sig, const char *key, const char *value) {
 	if (!strcmp (key, "name")) {
 		strncpy (sig->name, value, sizeof(sig->name));
@@ -26,21 +44,11 @@ R_API int r_sign_item_set(RSignItem *sig, const char *key, const char *value) {
 //	eprintf("%s:%s\n", key, value);
 }
 
+// XXX: deprecate here.. must 
 R_API int r_sign_option(RSign *sig, const char *option) {
 	/* set options here */
 	return R_TRUE;
 }
-
-// r_sign_item_new
-R_API RSignItem *r_sign_add(RSign *sig) {
-	RSignItem *r;
-	sig->count ++;
-	r = (RSignItem *)malloc (sizeof (RSignItem));
-	memset (r, '\0', sizeof (RSignItem));
-	list_add_tail (&(r->list), &(sig->items));
-	return r;
-}
-
 R_API int r_sign_load_file(RSign *sig, const char *file) {
 	int n;
 	FILE *fd;
@@ -72,9 +80,23 @@ R_API int r_sign_load_file(RSign *sig, const char *file) {
 	fclose (fd);
 	return n;
 }
+#endif
+
+#if 0
+// r_sign_item_new
+R_API RSignItem *r_sign_add(RSign *sig) {
+	RSignItem *r;
+	r = (RSignItem *)malloc (sizeof (RSignItem));
+	memset (r, '\0', sizeof (RSignItem));
+	list_add_tail (&(r->list), &(sig->items));
+	return r;
+}
+#endif
 
 R_API int r_sign_info(RSign *sig) {
-	eprintf ("Loaded %d signatures\n", sig->count);
+	eprintf ("Loaded %d signatures\n", sig->s_byte + sig->s_anal);
+	eprintf ("  %d byte signatures\n", sig->s_byte);
+	eprintf ("  %d anal signatures\n", sig->s_anal);
 	return R_TRUE;
 }
 
@@ -89,6 +111,7 @@ R_API RSign *r_sign_free(struct r_sign_t *sig) {
 	return NULL;
 }
 
+/// DEPREACATE
 R_API int r_sign_check(struct r_sign_t *sig, const char *binfile) {
 	if (binfile==NULL) {
 		eprintf ("No file specified\n");
@@ -98,6 +121,7 @@ R_API int r_sign_check(struct r_sign_t *sig, const char *binfile) {
 	return R_TRUE;
 }
 
+/// DEPREACATE
 R_API int r_sign_generate(struct r_sign_t *sig, const char *file, FILE *fd) {
 	eprintf ("Generating signature file for '%s'\n" , file);
 	return R_TRUE;
