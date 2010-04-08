@@ -70,6 +70,7 @@ static int cmd_zign(void *data, const char *input) {
 		break;
 	case 'a':
 	case 'b':
+	case 'f':
 		ptr = strchr (input+3, ' ');
 		if (ptr) {
 			*ptr = 0;
@@ -122,12 +123,18 @@ static int cmd_zign(void *data, const char *input) {
 			buf = malloc (len);
 			if (buf != NULL) {
 				eprintf ("Ranges are: 0x%08llx 0x%08llx\n", ini, fin);
+				r_cons_printf ("f-sign*\n");
 				if (r_io_read_at (&core->io, ini, buf, len) == len) {
 					len -= 128;
 					for (idx=0; idx<len; idx++) {
 						si = r_sign_check (&core->sign, buf+idx, 128);
-						if (si) r_cons_printf ("f sign.%s @ 0x%08llx\n",
+						if (si) {
+							if (si->type == 'f') 
+								r_cons_printf ("f sign.fun_%s_%d @ 0x%08llx\n",
+									item->name, idx, core->offset);
+							else r_cons_printf ("f sign.%s @ 0x%08llx\n",
 								item->name, core->offset);
+						}
 					}
 				} else eprintf ("Cannot read %d bytes at 0x%08llx\n", len, ini);
 				free (buf);
@@ -150,9 +157,11 @@ static int cmd_zign(void *data, const char *input) {
 			" z-*            unload all zignatures\n"
 			" za ...         define new zignature for analysis\n"
 			" zb name bytes  define new zignature for bytes\n"
+			" zf name bytes  define new function prelude zignature\n"
 			" zg pfx [file]  generate siganture for current file\n"
 			" .zc @ fcn.foo  flag signature if matching (.zc@@fcn)\n"
-			" z/ [ini] [end] search zignatures between these regions\n");
+			" z/ [ini] [end] search zignatures between these regions\n"
+			"NOTE: bytes can contain '.' (dots) to specify a binary mask\n");
 		break;
 	}
 	return 0;

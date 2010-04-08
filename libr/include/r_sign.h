@@ -7,6 +7,7 @@
 
 enum {
 	R_SIGN_BYTES = 'b',
+	R_SIGN_FUNC= 'f',
 	R_SIGN_ANAL = 'a',
 };
 

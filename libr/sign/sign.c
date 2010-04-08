@@ -30,11 +30,7 @@ R_API int r_sign_add(RSign *sig, int type, const char *name, const char *arg) {
 
 	switch (type) {
 	case R_SIGN_BYTES:
-		if (strstr (arg, ".."))
-			eprintf ("head/tail signatures not yet supported\n");
-		if (strstr (arg, ":"))
-			eprintf ("binmasks not supported yet\n");
-
+	case R_SIGN_FUNC:
 		si = R_NEW (RSignItem);
 		if (si == NULL)
 			break;
@@ -103,82 +99,9 @@ R_API RSignItem *r_sign_check(RSign *sig, const ut8 *buf, int len) {
 		RSignItem *si = list_entry (pos, RSignItem, list);
 		if (si->type == R_SIGN_BYTES) {
 			int l = (len>si->size)?si->size:len;
-			if (!r_mem_cmp_mask (buf, si->bytes, si->mask, l)) {
+			if (!r_mem_cmp_mask (buf, si->bytes, si->mask, l))
 				return si;
-			}
 		}
 	}
 	return NULL;
 }
-
-/// DEPREACATE
-R_API int r_sign_generate(RSign *sig, const char *file, FILE *fd) {
-	eprintf ("Generating signature file for '%s'\n" , file);
-	return R_TRUE;
-}
-
-#if 0
-// XXX This shit depends only on the graphing stuff.. will be remove when this part gets working
-// XXX : remove.. deprecated stuff
-R_API int r_sign_item_set(RSignItem *sig, const char *key, const char *value) {
-	if (!strcmp (key, "name")) {
-		strncpy (sig->name, value, sizeof(sig->name));
-	} else
-	if (!strcmp (key, "size")) {
-		sig->size = atoi (value);
-	} else
-	if (!strcmp (key, "cksum")) {
-		sscanf (value, "%x", &sig->csum);
-	} 
-	return R_TRUE;
-//	eprintf("%s:%s\n", key, value);
-}
-
-// XXX: deprecate here.. must 
-R_API int r_sign_option(RSign *sig, const char *option) {
-	/* set options here */
-	return R_TRUE;
-}
-R_API int r_sign_load_file(RSign *sig, const char *file) {
-	int n;
-	FILE *fd;
-	char *ptr, buf[1024];
-	RSignItem *item = r_sign_add (sig);
-
-	fd = fopen (file, "r");
-	if (fd == NULL) {
-		eprintf ("Cannot open signature file.\n");
-		return 0;
-	}
-	n = 0;
-	while (!feof (fd)) {
-		buf[0]='\0';
-		fgets (buf, 1023, fd);
-		if (buf[0]=='-') {
-			/* next item */
-			item = r_sign_add (sig);
-			continue;
-		}
-		ptr = strchr (buf, ':');
-		if (ptr) {
-			*ptr = '\0';
-			ptr = ptr+1;
-			ptr[strlen (ptr)-1]='\0';
-			r_sign_item_set (item, buf, ptr+1);
-		}
-	}
-	fclose (fd);
-	return n;
-}
-#endif
-
-#if 0
-// r_sign_item_new
-R_API RSignItem *r_sign_add(RSign *sig) {
-	RSignItem *r;
-	r = (RSignItem *)malloc (sizeof (RSignItem));
-	memset (r, '\0', sizeof (RSignItem));
-	list_add_tail (&(r->list), &(sig->items));
-	return r;
-}
-#endif
