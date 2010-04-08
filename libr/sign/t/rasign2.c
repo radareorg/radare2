@@ -25,11 +25,11 @@ int main(int argc, char **argv) {
 	while ((c=getopt (argc, argv, "o:hrs:iV")) !=-1) {
 		switch (c) {
 		case 'o':
-			r_sign_option (&sig, optarg);
+			//r_sign_option (&sig, optarg);
 			break;
 		case 's':
 			action = c;
-			r_sign_load_file (&sig, optarg);
+			//r_sign_load_file (&sig, optarg);
 			break;
 		case 'r':
 			rad = 1;
@@ -45,12 +45,12 @@ int main(int argc, char **argv) {
 	if (argv[optind]==NULL)
 		return rasign_show_help ();
 
-	r_sign_info (&sig);
+	r_sign_list (&sig, 0);
 
 	switch (action) {
 	case 's':
 		/* check sigfiles in optarg file */
-		r_sign_check (&sig, argv[optind]);
+	//	r_sign_check (&sig, argv[optind]);
 		break;
 	default:
 		/* generate signature file */

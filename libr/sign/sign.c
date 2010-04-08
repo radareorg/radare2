@@ -7,9 +7,12 @@ R_API RSign *r_sign_new() {
 }
 
 R_API RSign *r_sign_init(RSign *sig) {
-	sig->s_byte = sig->s_anal = 0;
-	sig->prefix[0] = '\0';
-	INIT_LIST_HEAD (&(sig->items));
+	if (sig) {
+		sig->s_byte = sig->s_anal = 0;
+		sig->prefix[0] = '\0';
+		sig->printf = (FunctionPrintf) printf;
+		INIT_LIST_HEAD (&(sig->items));
+	}
 	return sig;
 }
 
@@ -19,7 +22,7 @@ R_API void r_sign_prefix(RSign *sig, const char *str) {
 }
 
 R_API int r_sign_add(RSign *sig, int type, const char *name, const char *arg) {
-	int ret = R_FALSE;
+	int len, ret = R_FALSE;
 	RSignItem *si; // TODO: like in r_search.. we need r_sign_item_new ()
 			// TODO: but..we need to use a pool here..
 	if (!name || !arg)
@@ -36,9 +39,19 @@ R_API int r_sign_add(RSign *sig, int type, const char *name, const char *arg) {
 		if (si == NULL)
 			break;
 		si->type = type;
-		snprintf (si->name, sizeof (si->name), "%s.%s", *sig->prefix?sig->prefix:"sign", name);
-		si->bytes = (ut8 *)malloc (strlen (arg));
-		si->size = r_hex_str2bin (arg, si->bytes);
+		snprintf (si->name, sizeof (si->name), "%s.%s",
+			*sig->prefix?sig->prefix:"sign", name);
+		len = strlen (arg);
+		si->bytes = (ut8 *)malloc (len);
+		si->mask = (ut8 *)malloc (len);
+		if (si->bytes == NULL || si->mask == NULL) {
+			eprintf ("Cannot malloc\n");
+			free (si->mask);
+			free (si->bytes);
+			free (si);
+			break;
+		}
+		si->size = r_hex_str2binmask (arg, si->bytes, si->mask);
 		if (si->size<1) {
 			free (si->bytes);
 			free (si);
@@ -56,15 +69,15 @@ R_API int r_sign_add(RSign *sig, int type, const char *name, const char *arg) {
 R_API void r_sign_list(RSign *sig, int rad) {
 	if (rad) {
 		struct list_head *pos;
-		eprintf ("zp-");
+		sig->printf ("zp-");
 		list_for_each (pos, &sig->items) {
 			RSignItem *si = list_entry (pos, RSignItem, list);
-			eprintf ("z%c %s ...\n", si->type, si->name); // TODO : show bytes
+			sig->printf ("z%c %s ...\n", si->type, si->name); // TODO : show bytes
 		}
 	} else {
-		eprintf ("Loaded %d signatures\n", sig->s_byte + sig->s_anal);
-		eprintf ("  %d byte signatures\n", sig->s_byte);
-		eprintf ("  %d anal signatures\n", sig->s_anal);
+		sig->printf ("Loaded %d signatures\n", sig->s_byte + sig->s_anal);
+		sig->printf ("  %d byte signatures\n", sig->s_byte);
+		sig->printf ("  %d anal signatures\n", sig->s_anal);
 	}
 }
 
@@ -90,8 +103,9 @@ R_API RSignItem *r_sign_check(RSign *sig, const ut8 *buf, int len) {
 		RSignItem *si = list_entry (pos, RSignItem, list);
 		if (si->type == R_SIGN_BYTES) {
 			int l = (len>si->size)?si->size:len;
-			if (!memcmp (buf, si->bytes, l))
+			if (!r_mem_cmp_mask (buf, si->bytes, si->mask, l)) {
 				return si;
+			}
 		}
 	}
 	return NULL;

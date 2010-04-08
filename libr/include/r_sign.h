@@ -16,6 +16,7 @@ typedef struct r_sign_item_t {
 	char name[32];
 	int size;
 	ut8 *bytes;
+	ut8 *mask;
 	struct list_head list;
 } RSignItem;
 
@@ -23,6 +24,7 @@ typedef struct r_sign_t {
 	int s_byte;
 	int s_anal;
 	char prefix[32];
+	FunctionPrintf printf;
 	struct list_head items;
 } RSign;
 

@@ -11,6 +11,14 @@ R_API int r_mem_count(ut8 **addr) {
 	return i;
 }
 
+R_API int r_mem_eq(ut8 *a, ut8 *b, int len) {
+	register int i;
+	for (i=0; i<len; i++)
+		if (a[i] != b[i])
+			return R_FALSE;
+	return R_TRUE;
+}
+
 R_API void r_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize) {
         int i=0,j;
         while (i<dsize)

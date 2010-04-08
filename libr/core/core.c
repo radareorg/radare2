@@ -149,6 +149,7 @@ R_API int r_core_init(RCore *core) {
 	r_core_cmd_init (core);
 	r_flag_init (&core->flags);
 	r_debug_init (&core->dbg, R_TRUE);
+	core->sign.printf = r_cons_printf;
 	core->io.printf = r_cons_printf;
 	core->dbg.printf = r_cons_printf;
 	r_debug_io_bind (&core->dbg, &core->io);
@@ -218,7 +219,11 @@ R_API int r_core_block_size(RCore *core, ut32 bsize) {
 		bsize = R_CORE_BLOCKSIZE_MAX;
 	else ret = R_TRUE;
 	core->block = realloc (core->block, bsize);
-	core->blocksize = bsize;
+	if (core->block == NULL) {
+		eprintf ("Oops. cannot allocate that much (%u)\n", bsize);
+		core->block = malloc (R_CORE_BLOCKSIZE);
+		core->blocksize = R_CORE_BLOCKSIZE;
+	} else core->blocksize = bsize;
 	r_core_block_read (core, 0);
 	return ret;
 }

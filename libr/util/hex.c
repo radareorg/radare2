@@ -6,9 +6,9 @@
 
 /* int c; ret = hex_to_byet(&c, 'c'); */
 R_API int r_hex_to_byte(ut8 *val, ut8 c) {
-	if ('0' <= c && c <= '9')      *val = (ut8)(*val) * 16 + ( c - '0');
-	else if (c >= 'A' && c <= 'F') *val = (ut8)(*val) * 16 + ( c - 'A' + 10);
-	else if (c >= 'a' && c <= 'f') *val = (ut8)(*val) * 16 + ( c - 'a' + 10);
+	if ('0' <= c && c <= '9')      *val = (ut8)(*val) * 16 + (c-'0');
+	else if (c >= 'A' && c <= 'F') *val = (ut8)(*val) * 16 + (c-'A'+10);
+	else if (c >= 'a' && c <= 'f') *val = (ut8)(*val) * 16 + (c-'a'+10);
 	else return 1;
 	return 0;
 }
@@ -22,7 +22,7 @@ R_API int r_hex_pair2bin(const char *arg) {
 	unsigned int  j = 0;
 
 	for (ptr = (unsigned char *)arg; ;ptr = ptr + 1) {
-		if (ptr[0]=='\0'||ptr[0]==' ' || j==2)
+		if (!*ptr || ptr[0]==' ' || j==2)
 			break;
 		d = c;
 		if (r_hex_to_byte (&c, ptr[0])) {
@@ -59,7 +59,7 @@ R_API char *r_hex_bin2strdup(const ut8 *in, int len) {
 /* char buf[1024]; int len = hexstr2binstr("0a 33 45", buf); */
 // XXX control out bytes
 // 0A 3B 4E A0
-int r_hex_str2bin(const char *in, ut8 *out) {
+R_API int r_hex_str2bin(const char *in, ut8 *out) {
 	unsigned int len = 0, j = 0;
 	const char *ptr;
 	ut8 c, d;
@@ -112,4 +112,18 @@ int r_hex_str2bin(const char *in, ut8 *out) {
 	}
 
 	return (int)len;
+}
+
+R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
+	ut8 *ptr;
+	int len;
+	strcpy ((char*)out, in);
+	for (ptr=out; *ptr; ptr++) if (*ptr=='.') *ptr = '0';
+	len = r_hex_str2bin ((char*)out, out);
+	if (len != -1) {
+		strcpy ((char*)mask, in);
+		for (ptr=mask; *ptr; ptr++) *ptr = (*ptr=='.')?'0':'f';
+		len = r_hex_str2bin ((char*)mask, mask);
+	}
+	return len;
 }

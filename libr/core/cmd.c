@@ -1719,11 +1719,11 @@ static int cmd_search(void *data, const char *input) {
 		}
 		break;
 	case 'x': /* search hex */
-		r_search_free(core->search);
-		core->search = r_search_new(R_SEARCH_KEYWORD);
+		r_search_free (core->search);
+		core->search = r_search_new (R_SEARCH_KEYWORD);
 		r_search_kw_add (core->search, 
-			r_search_keyword_new_hex (input+2, "", NULL));
-		r_search_begin(core->search);
+			r_search_keyword_new_hexmask (input+2, NULL));
+		r_search_begin (core->search);
 		dosearch = 1;
 		break;
 	default:

@@ -23,6 +23,8 @@
 #define IFDBG if (0)
 #endif
 
+typedef void (*FunctionPrintf)(const char *str, ...);
+
 // TODO NOT USED. DEPREACATE
 #if R_RTDEBUG
 #define IFRTDBG if (getenv ("LIBR_DEBUG"))

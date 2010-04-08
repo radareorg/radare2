@@ -73,6 +73,7 @@ R_API int r_search_update_i(RSearch *s, ut64 from, const ut8 *buf, long len);
 R_API RSearchKeyword* r_search_keyword_new(const ut8 *kw, int kwlen, const ut8 *bm, int bmlen, const char *data);
 R_API RSearchKeyword* r_search_keyword_new_str(const char *kw, const char *bm, const char *data);
 R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bmstr, const char *data);
+R_API RSearchKeyword* r_search_keyword_new_hexmask(const char *kwstr, const char *data);
 
 R_API int r_search_kw_add(RSearch *s, RSearchKeyword *kw);
 // TODO: Must be RList

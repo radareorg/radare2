@@ -161,6 +161,7 @@ R_API int r_cache_invalidate(struct r_cache_t *c, ut64 from, ut64 to);
 R_API void r_prof_start(struct r_prof_t *p);
 R_API double r_prof_end(struct r_prof_t *p);
 
+R_API int r_mem_eq(ut8 *a, ut8 *b, int len);
 R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits);
 R_API void r_mem_copyloop (ut8 *dest, const ut8 *orig, int dsize, int osize);
 R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian);
@@ -233,6 +234,7 @@ R_API void r_str_concatch(char *x, char y);
 R_API void r_str_case(char *str, int up);
 
 R_API int r_hex_pair2bin(const char *arg);
+R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask);
 R_API int r_hex_str2bin(const char *in, ut8 *out);
 R_API int r_hex_bin2str(const ut8 *in, int len, char *out);
 R_API char *r_hex_bin2strdup(const ut8 *in, int len);

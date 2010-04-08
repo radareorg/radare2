@@ -63,3 +63,21 @@ R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bm
 	}
 	return ks;
 }
+
+R_API RSearchKeyword* r_search_keyword_new_hexmask(const char *kwstr, const char *data) {
+	RSearchKeyword *ks = NULL;
+	ut8 *kw, *bm;
+	if (kwstr != NULL) {
+		int len = strlen (kwstr);
+		kw = malloc (len);
+		bm = malloc (len);
+		if (kw != NULL && bm != NULL) {
+			len = r_hex_str2binmask (kwstr, (ut8*)kw, (ut8*)bm);
+			if (len>0)
+				ks = r_search_keyword_new (kw, len, bm, len, data);
+		}
+		free (kw);
+		free (bm);
+	}
+	return ks;
+}
