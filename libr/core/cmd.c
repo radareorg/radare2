@@ -20,47 +20,102 @@
 static int cmd_io_system(void *data, const char *input);
 
 static int cmd_zign(void *data, const char *input) {
+	RSignItem *item;
 	RCore *core = (RCore *)data;
 	char *ptr;
 
 	switch (input[0]) {
-	case 'a':
+	case 'p':
+		if (!input[1])
+			r_cons_printf ("%s", core->sign.prefix);
+		else if (!strcmp ("-", input+1))
+			r_sign_prefix (&core->sign, "");
+		else r_sign_prefix (&core->sign, input+2);
 		break;
+	case 'a':
 	case 'b':
-		ptr = strchr (input+2, ' ');
+		ptr = strchr (input+3, ' ');
 		if (ptr) {
 			*ptr = 0;
-			r_sign_add (&core->sign, R_SIGN_BYTES, input+2, ptr+1);
-		} else eprintf ("Usage: zb [name] [bytes]\n");
+			r_sign_add (&core->sign, *input, input+2, ptr+1);
+		} else eprintf ("Usage: z%c [name] [bytes]\n", *input);
 		break;
-	case ' ':
-		//r_sign_pfx (&core->sign, input+2);
+	case 'c':
+		item = r_sign_check (&core->sign, core->block, core->blocksize);
+		if (item)
+			r_cons_printf ("f sign.%s @ 0x%08llx\n", item->name, core->offset);
 		break;
 	case '-':
-		//r_sign_unload (&core->sign, input+2);
+		if (input[1] == '*') {
+			r_sign_reset (&core->sign);
+		} else eprintf ("TODO\n");
 		break;
 	case '/':
 		{
 			// TODO: parse arg0 and arg1
-			RIOSection *s = r_io_section_get (&core->io, core->offset);
-			if (s) {
-				eprintf ("Ranges are: 0x%08llx 0x%08llx\n",
-					s->vaddr, s->vaddr+s->size);
-			} else eprintf ("Unknown section. Please specify range\n");
+			ut8 *buf;
+			int len, idx;
+			ut64 ini, fin;
+			RSignItem *si;
+			RIOSection *s;
+			if (input[1]) {
+				char *ptr = strchr (input, ' ');
+				if (ptr) {
+					*ptr = '\0';
+					ini = r_num_math (&core->num, input+2);
+					fin = r_num_math (&core->num, ptr+1);
+				} else {
+					ini = core->offset;
+					fin = ini+r_num_math (&core->num, input+2);
+				}
+			} else {
+				s = r_io_section_get (&core->io, core->offset);
+				if (s) {
+					ini = s->vaddr;
+					fin = ini + s->size;
+				} else {
+					eprintf ("No section identified, please provide range.\n");
+					return R_FALSE;
+				}
+			}
+			if (ini>=fin) {
+				eprintf ("Invalid range.\n");
+				return R_FALSE;
+			}
+			len = fin-ini;
+			buf = malloc (len);
+			if (buf != NULL) {
+				eprintf ("Ranges are: 0x%08llx 0x%08llx\n", ini, fin);
+				if (r_io_read_at (&core->io, ini, buf, len) == len) {
+					len -= 128;
+					for (idx=0; idx<len; idx++) {
+						si = r_sign_check (&core->sign, buf+idx, 128);
+						if (si) r_cons_printf ("f sign.%s @ 0x%08llx\n",
+								item->name, core->offset);
+					}
+				} else eprintf ("Cannot read %d bytes at 0x%08llx\n", len, ini);
+				free (buf);
+			} else eprintf ("Cannot alloc %d bytes\n", len);
 		}
+		break;
+	case '\0':
+		r_sign_list (&core->sign, (input[1]=='*'));
 		break;
 	default:
 	case '?':
 		r_cons_printf (
-			"Usage: z[-] [arg]\n"
-			" z              show loaded zignatures\n"
-			" z prefix       define prefix for following zignatures\n"
+			"Usage: z[abcp/*-] [arg]\n"
+			" z              show status of zignatures\n"
+			" z*             display all zignatures\n"
+			" zp             display current prefix\n"
+			" zp prefix      define prefix for following zignatures\n"
+			" zp-            unset prefix\n"
 			" z-prefix       unload zignatures prefixed as\n"
 			" z-*            unload all zignatures\n"
 			" za ...         define new zignature for analysis\n"
 			" zb name bytes  define new zignature for bytes\n"
-			" z/ addr0 addr1 search zignatures between these regions\n"
-			"SEE ALSO: az? to analyze code from signature results\n");
+			" .zc @ fcn.foo  flag signature if matching (.zc@@fcn)\n"
+			" z/ [ini] [end] search zignatures between these regions\n");
 		break;
 	}
 	return 0;
@@ -394,7 +449,7 @@ static int cmd_section(void *data, const char *input) {
 		switch (input[1]) {
 		case '-': // remove
 			if (input[2]=='?' || input[2]=='\0')
-				eprintf ("Usage: S -#   ; where # is the section index\n");
+				eprintf ("Usage: S -N   # where N is the section index\n");
 			else r_io_section_rm (&core->io, atoi (input+1));
 			break;
 		default:
@@ -1033,7 +1088,7 @@ static int cmd_flag(void *data, const char *input) {
 			if (s2) {
 				*s2 = '\0';
 				if (s2[1]&&s2[2])
-				seek = r_num_math (&core->num, s2+1);
+					seek = r_num_math (&core->num, s2+1);
 			}
 			bsze = r_num_math (&core->num, s+1);
 		}
@@ -1128,23 +1183,6 @@ static int cmd_anal(void *data, const char *input) {
 	}
 	
 	switch (input[0]) {
-	case 'z':
-		switch (input[1]) {
-		case 'g':
-			// TODO: generate zignaturez from analysis data
-			break;
-		case '\0':
-			// TODO: analyze results of zignature search
-			r_core_cmd (core, "ac@@sign", 0);
-			break;
-		default:
-			r_cons_printf ("Usage: az[g]\n"
-				" az     analyze zignatures\n"
-				" azg    generate zignature from current file (z-* recommended)\n"
-				"SEE ALSO: z?\n");
-			break;
-		}
-		break;
 	case 'h':
 		if (input[1]) {
 			if (!r_anal_use (&core->anal, input+2))
@@ -2254,7 +2292,8 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 						continue;
 					if (word[0]=='\0' || strstr(flag->name, word) != NULL) {
 						r_core_seek (core, flag->offset, 1);
-						r_cons_printf ("; @@ 0x%08llx (%s)\n", core->offset, flag->name);
+						// TODO: Debug mode print
+						//r_cons_printf ("# @@ 0x%08llx (%s)\n", core->offset, flag->name);
 						r_core_cmd (core, cmd, 0);
 					}
 				}

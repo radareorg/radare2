@@ -43,6 +43,11 @@ R_API int r_flag_init(RFlag *f) {
 	return 0;
 }
 
+R_API void r_flag_sort(RFlag *flag) {
+	// TODO: Implement sorted linked list
+	eprintf ("TODO: r_flag_sort\n");
+}
+
 R_API RFlag * r_flag_new() {
 	RFlag *f = R_NEW (RFlag);
 	r_flag_init (f);

@@ -1,10 +1,10 @@
 r_sign: signature api for radare2
 =================================
 
-Commandline:
-============
-z
-
+---
+ - Try to identify only the given functions
+ - Raw signature search
+---
 
 Plugins are used to implement data collectors for r_sign.
 

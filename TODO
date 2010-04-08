@@ -8,6 +8,8 @@
 <{include libr/TODO}>
 ** See libr/*/TODO FMI
 
+
+* Implement r_flag_sort () by name or offset
 * stack analysis
 * code analysis with r_parse
 

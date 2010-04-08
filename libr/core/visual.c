@@ -210,6 +210,8 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			" l/' ' - accept current selection\n"
 			" a/d/e - add/delete/edit flag\n"
 			" +/-   - increase/decrease block size\n"
+			" o     - sort flags by offset\n"
+			" n     - sort flags by name\n"
 			" p/P   - rotate print format\n"
 			" :     - enter command\n");
 			r_cons_flush ();
