@@ -2113,10 +2113,12 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			ret = r_core_cmd_foreach (core, cmd, ptr+2);
 			//ret = -1; /* do not run out-of-foreach cmd */
 		} else {
-			r_core_seek (core, r_num_math (&core->num, ptr+1), 1);
-			ret = r_cmd_call (&core->cmd, r_str_trim_head (cmd));
+			if (r_core_seek (core, r_num_math (&core->num, ptr+1), 1))
+				ret = r_cmd_call (&core->cmd, r_str_trim_head (cmd));
+			else ret = 0;
 		}
 		r_core_seek (core, tmpoff, 1);
+		ptr[0]='@';
 		return ret;
 	}
 

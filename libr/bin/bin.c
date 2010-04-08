@@ -198,6 +198,7 @@ R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va) {
 	RListIter *iter;
 	ut64 from, to;
 
+	if (bin->sections)
 	r_list_foreach (bin->sections, iter, section) {
 		from = va ? bin->baddr+section->rva : section->offset;
 		to = va ? bin->baddr+section->rva+section->vsize :

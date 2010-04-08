@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> nibble <.ds@gmail.com> */
 
 #include "r_io.h"
 
@@ -160,7 +160,7 @@ R_API ut64 r_io_section_vaddr_to_offset(RIO *io, ut64 vaddr) {
 		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize)
 			return (vaddr - s->vaddr + s->offset); 
 	}
-	return vaddr;
+	return -1;
 }
 
 R_API ut64 r_io_section_offset_to_vaddr(RIO *io, ut64 offset) {
@@ -171,5 +171,5 @@ R_API ut64 r_io_section_offset_to_vaddr(RIO *io, ut64 offset) {
 		if (offset >= s->offset && offset < s->offset + s->size)
 			return (s->vaddr + offset - s->offset); 
 	}
-	return offset;
+	return -1;
 }

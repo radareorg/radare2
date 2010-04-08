@@ -62,12 +62,15 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 
 R_API int r_core_seek(RCore *core, ut64 addr, int rb) {
 	ut64 old = core->offset;
+	int ret;
 
 	/* XXX unnecesary call */
 	r_io_set_fd (&core->io, core->file->fd);
-	core->offset = r_io_seek (&core->io, addr, R_IO_SEEK_SET);
+	if (r_io_seek (&core->io, addr, R_IO_SEEK_SET) == -1)
+		return R_FALSE;
+	else core->offset = addr;
 	if (rb) {
-		int ret = r_core_block_read (core, 0);
+		ret = r_core_block_read (core, 0);
 		if (ret<1 && !core->ffio) {
 			core->offset = old;
 			eprintf ("Cannot read block at 0x%08llx\n", addr);
@@ -79,7 +82,7 @@ R_API int r_core_seek(RCore *core, ut64 addr, int rb) {
 			} else memset (core->block+ret, 0xff, core->blocksize-ret);
 		}
 	}
-	return core->offset;
+	return (ret==-1)?R_FALSE:R_TRUE;
 }
 
 R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {

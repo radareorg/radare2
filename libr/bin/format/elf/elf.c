@@ -478,16 +478,13 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 					ret[k].last = 0;
 					k++;
 				}
-
-			if (k) {
-				ret = realloc (ret, (k+1) * sizeof(struct r_bin_elf_lib_t));
-				if (ret == NULL) {
-					perror ("realloc (libs)");
-					free (dyn);
-					return NULL;
-				}
-				ret[k].last = 1;
+			ret = realloc (ret, (k+1) * sizeof(struct r_bin_elf_lib_t));
+			if (ret == NULL) {
+				perror ("realloc (libs)");
+				free (dyn);
+				return NULL;
 			}
+			ret[k].last = 1;
 			free (dyn);
 			break;
 		}
@@ -610,11 +607,9 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 				ret[ret_ctr].last = 0;
 				ret_ctr++;
 			}
-			if (ret_ctr) {
-				if ((ret = realloc(ret, (ret_ctr + 1) * sizeof(struct r_bin_elf_symbol_t))) == NULL)
-					return NULL;
-				ret[ret_ctr].last = 1;
-			}
+			if ((ret = realloc(ret, (ret_ctr + 1) * sizeof(struct r_bin_elf_symbol_t))) == NULL)
+				return NULL;
+			ret[ret_ctr].last = 1;
 			break;
 		}
 	return ret;
