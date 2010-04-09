@@ -1,10 +1,12 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 [Compact]
 [CCode (cheader_filename="r_core.h", cname="struct r_core_t", free_function="r_core_free", cprefix="r_core_")]
 public class Radare.RCore {
+	public RFlag flags;
 	/* lifecycle */
 	public RCore();
+	public RCons cons;
 
 	public static unowned RCore cast(uint64 ptr);
 	public bool loadlibs();

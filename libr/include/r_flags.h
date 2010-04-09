@@ -21,7 +21,7 @@ typedef struct r_flag_item_t {
 	ut64 size;
 	int format; // ??? 
 	int space;
-	const char *cmd;
+	char *cmd;
 	unsigned char data[R_FLAG_BUF_SIZE]; // only take a minor part of the data
 	struct list_head list;
 } RFlagItem;
@@ -39,10 +39,11 @@ typedef struct r_flag_t {
 
 #ifdef R_API
 R_API struct r_flag_t * r_flag_new();
+R_API RFlag * r_flag_free(RFlag *f);
 R_API int r_flag_init(struct r_flag_t *f);
-R_API struct r_flag_item_t *r_flag_list(struct r_flag_t *f, int rad);
-R_API struct r_flag_item_t *r_flag_get(struct r_flag_t *f, const char *name);
-R_API struct r_flag_item_t *r_flag_get_i(struct r_flag_t *f, ut64 off);
+R_API void r_flag_list(struct r_flag_t *f, int rad);
+R_API RFlagItem *r_flag_get(RFlag *f, const char *name);
+R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off);
 R_API int r_flag_unset(struct r_flag_t *f, const char *name);
 R_API int r_flag_set(struct r_flag_t *fo, const char *name, ut64 addr, ut32 size, int dup);
 R_API int r_flag_sort(RFlag *f, int namesort);
@@ -50,9 +51,9 @@ R_API int r_flag_name_check(const char *name);
 R_API int r_flag_name_filter(char *name);
 
 /* spaces */
-R_API const char *r_flag_space_get(struct r_flag_t *f, int idx);
-R_API void r_flag_space_set(struct r_flag_t *f, const char *name);
-R_API void r_flag_space_list(struct r_flag_t *f);
+R_API const char *r_flag_space_get(RFlag *f, int idx);
+R_API void r_flag_space_set(RFlag *f, const char *name);
+R_API void r_flag_space_list(RFlag *f);
 #endif
 
 #endif

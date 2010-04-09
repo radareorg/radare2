@@ -50,4 +50,3 @@
   - Cleanup and test w32/osx support
   - Added lib_handle stub in r_lib, so we can add plugin support to
     any library by using just a macro
-

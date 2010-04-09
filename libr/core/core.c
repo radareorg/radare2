@@ -111,6 +111,7 @@ R_API int r_core_init(RCore *core) {
 	core->yank_off = 0LL;
 	core->num.callback = &num_callback;
 	core->num.userptr = core;
+	core->cons = r_cons_singleton ();
 
 	/* initialize libraries */
 	r_syscall_init (&core->syscall);

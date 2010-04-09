@@ -50,6 +50,7 @@ typedef struct r_core_t {
 	ut64 yank_off;
 	int interrupted; // XXX IS THIS DUPPED SOMEWHERE?
 	/* files */
+	RCons *cons;
 	struct r_io_t io;
 	struct r_core_file_t *file;
 	struct list_head files;

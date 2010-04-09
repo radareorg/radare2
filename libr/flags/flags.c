@@ -85,13 +85,19 @@ R_API int r_flag_sort(RFlag *f, int namesort) {
 	return ret;
 }
 
+R_API RFlag * r_flag_free(RFlag *f) {
+	// XXX leaks
+	free (f);
+	return NULL;
+}
+
 R_API RFlag * r_flag_new() {
 	RFlag *f = R_NEW (RFlag);
 	r_flag_init (f);
 	return f;
 }
 
-R_API RFlagItem *r_flag_list(RFlag *f, int rad) {
+R_API void r_flag_list(RFlag *f, int rad) {
 	int fs = -1;
 	struct list_head *pos;
 	list_for_each_prev (pos, &f->flags) {
@@ -108,7 +114,6 @@ R_API RFlagItem *r_flag_list(RFlag *f, int rad) {
 		} else r_cons_printf("0x%08llx %lld %s\n",
 				flag->offset, flag->size, flag->name);
 	}
-	return NULL;
 }
 
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
