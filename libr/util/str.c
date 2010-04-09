@@ -81,6 +81,19 @@ R_API char *r_str_home(const char *str) {
 	return dst;
 }
 
+R_API ut64 r_str_hash64(const char *str) {
+	int i;
+	ut64 ret = 0;
+	for (i=0; str[i] && i<sizeof (ret); i+=2) {
+		char ch = (str[i]-'a') & 0x1f;
+		ret |= ch<<(i*4);
+		i++;
+		ch = (str[i]-'a') & 0x1f;
+		ret |= ch<<(i*4);
+	}
+	return ret;
+}
+
 R_API int r_str_hash(const char *str) {
 	int i = 1;
 	int a = 0x31;

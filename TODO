@@ -8,10 +8,18 @@
 <{include libr/TODO}>
 ** See libr/*/TODO FMI
 
+* visual byte cursor in disassembly
 
-* Implement r_flag_sort () by name or offset
 * stack analysis
 * code analysis with r_parse
+  RAnalAopArg {
+    int size;
+    int delta;
+    int type;
+  }
+  r_anal_aop_arg_set ();
+  r_anal_aop_arg_get ();
+  r_anal_aop_arg_binmask ();
 
 * Move 'r_syscall_t' stuff into r_debug
   - Sync r_core

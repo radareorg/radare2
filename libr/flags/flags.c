@@ -5,14 +5,19 @@
 #include <r_cons.h>
 #include <stdio.h>
 
+// TODO: remove dependency of r_cons here..
+// TODO: implement btree
+
 /* compare names */
 static int ncmp(const void *a, const void *b) {
 	RFlagItem *fa = (RFlagItem *)a;
 	RFlagItem *fb = (RFlagItem *)b;
 	int ret = 0;
 	/* we cannot use a simple substraction coz ut64 > s32 :) */
-	if (fa->namehash > fb->namehash) ret = 1;
-	else if (fa->namehash < fb->namehash) ret = -1;
+	ret = strcmp (fa->name, fb->name);
+// TODO: Deprecate namehash..
+//	if (fa->namehash > fb->namehash) ret = 1;
+//	else if (fa->namehash < fb->namehash) ret = -1;
 	return ret;
 }
 
@@ -45,34 +50,38 @@ R_API int r_flag_sort(RFlag *f, int namesort) {
 	int ret = R_FALSE;
 	int changes;
 	RFlagItem *fi = NULL;
-	struct list_head *pos;
+	struct list_head *n, *pos, tmp;
 
-	INIT_LIST_HEAD (&f->flags_tmp);
-	// get bigger one
-	list_for_each (pos, &f->flags) {
-		RFlagItem *flag = list_entry (pos, RFlagItem, list);
-		if (fi == NULL)
-			fi = flag;
-		else if (((namesort)? ncmp (fi, flag): cmp (fi, flag)) > 0)
-			fi = flag;
-	}
-	list_move (&fi->list, &f->flags_tmp);
+	INIT_LIST_HEAD (&tmp);
 	// find bigger ones after this
 	do {
 		changes = 0;
-		list_for_each (pos, &f->flags) {
+		fi = NULL;
+		list_for_each_safe (pos, n, &f->flags) {
 			RFlagItem *flag = list_entry (pos, RFlagItem, list);
-			if (((namesort)? ncmp (fi, flag): cmp (fi, flag)) > 0) {
+			if (fi == NULL) {
+				fi = flag;
+				changes = 1;
+			//} else if (flag->offset >= fi->offset) {
+			} else if (((namesort)? ncmp (fi, flag): cmp (fi, flag)) <= 0) {
 				fi = flag;
 				changes = 1;
 			}
 		}
 		if (fi && changes) {
 			ret = R_TRUE;
-			list_move (&fi->list, &f->flags_tmp);
+			list_del (&fi->list);
+			list_add_tail (&fi->list, &tmp);
 		}
 	} while (changes);
-	f->flags = f->flags_tmp;
+
+	INIT_LIST_HEAD (&f->flags);
+	list_for_each_safe (pos, n, &tmp) {
+		RFlagItem *flag = list_entry (pos, RFlagItem, list);
+		list_add_tail (&flag->list, &f->flags);
+	}
+	INIT_LIST_HEAD (&tmp);
+
 	return ret;
 }
 
@@ -112,8 +121,7 @@ R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 	if (name==NULL || name[0]=='\0' || (name[0]>='0'&& name[0]<='9'))
 		return NULL;
 #if USE_BTREE
-	tmp.namehash = r_str_hash (name);
-//eprintf("GET_I (0x%08llx) = %p\n", off, flag);
+	tmp.namehash = r_str_hash64 (name);
 	return btree_get (f->ntree, &tmp, ncmp);
 #else
 	list_for_each_prev (pos, &f->flags) {
@@ -130,7 +138,6 @@ R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 	RFlagItem *i;
 	RFlagItem tmp = { .offset = off };
 	i = btree_get (f->tree, &tmp, cmp);
-//eprintf("GET_N (0x%08llx) = %p\n", off, i);
 	return i;
 #else
 	/* slow workaround */
@@ -158,29 +165,19 @@ R_API int r_flag_unset(RFlag *f, const char *name) {
 }
 
 R_API int r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size, int dup) {
-	const char *ptr;
 	RFlagItem *flag = NULL;
 #if !USE_BTREE
 	struct list_head *pos;
 #endif
-	if (!dup) {
-		/* show flags as radare commands */
-		if (!r_flag_name_check (name)) {
-			eprintf ("invalid flag name '%s'.\n", name);
-			return R_FALSE;
-		}
-		for (ptr = name + 1; *ptr != '\0'; ptr = ptr +1) {
-			if (!IS_PRINTABLE (*ptr)) {
-				eprintf ("invalid flag name\n");
-				return R_FALSE;
-			}
-		}
+	if (!dup && !r_flag_name_check (name)) {
+		eprintf ("r_flag_set: invalid flag name '%s'.\n", name);
+		return R_FALSE;
 	}
 #if USE_BTREE
 	{
 /* XXX : This is not working properly!! */
 		RFlagItem tmp;
-		tmp.namehash = r_str_hash (name);
+		tmp.namehash = r_str_hash64 (name);
 //eprintf("NAME(%s) HASH(%x)\n", name, tmp.namehash);
 		flag = btree_get (fo->ntree, &tmp, ncmp);
 		if (flag) {
@@ -227,7 +224,7 @@ R_API int r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size, int dup)
 		strncpy (flag->name, name, R_FLAG_NAME_SIZE);
 		strncpy (flag->name, r_str_chop (flag->name), R_FLAG_NAME_SIZE);
 		flag->name[R_FLAG_NAME_SIZE-1]='\0';
-		flag->namehash = r_str_hash (flag->name);
+		flag->namehash = r_str_hash64 (flag->name);
 #if USE_BTREE
 		btree_add (&fo->tree, flag, cmp);
 		btree_add (&fo->ntree, flag, ncmp);

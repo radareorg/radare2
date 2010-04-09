@@ -28,10 +28,9 @@ static int r_flag_name_validate_char(const char ch) {
 R_API int r_flag_name_check(const char *name) {
 	if (name[0]=='\0')
 		return 0;
-	for (;*name!='\0'; name = name +1) {
+	for (;*name!='\0'; name++)
 		if (!r_flag_name_validate_char (*name))
 			return 0;
-	}
 	return 1;
 }
 

@@ -1,7 +1,7 @@
 #ifndef _INCLUDE_R_FLAGS_H_
 #define _INCLUDE_R_FLAGS_H_
 
-#define USE_BTREE 1
+#define USE_BTREE 0
 
 #if USE_BTREE
 #include <btree.h>
@@ -16,7 +16,7 @@
 
 typedef struct r_flag_item_t {
 	char name[R_FLAG_NAME_SIZE];
-	int namehash;
+	ut64 namehash;
 	ut64 offset;
 	ut64 size;
 	int format; // ??? 
@@ -35,7 +35,6 @@ typedef struct r_flag_t {
 	struct btree_node *ntree; /* index by name */
 #endif
 	struct list_head flags;
-	struct list_head flags_tmp;
 } RFlag;
 
 #ifdef R_API

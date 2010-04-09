@@ -207,6 +207,7 @@ R_API char *r_str_trim_head(char *str);
 R_API char *r_str_trim_tail(char *str);
 R_API char *r_str_trim_head_tail(char *str);
 R_API int r_str_hash(const char *str);
+R_API ut64 r_str_hash64(const char *str);
 R_API char *r_str_clean(char *str);
 R_API int r_str_nstr(char *from, char *to, int size);
 R_API char *r_str_lchr(char *str, char chr);
