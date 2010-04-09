@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_lang.h>
 #include <r_util.h>
 
-R_API struct r_lang_t *r_lang_init(struct r_lang_t *lang) {
+R_API RLang *r_lang_init(RLang *lang) {
 	if (lang) {
 		lang->user = NULL;
 		INIT_LIST_HEAD (&lang->langs);
@@ -12,12 +12,12 @@ R_API struct r_lang_t *r_lang_init(struct r_lang_t *lang) {
 	return lang;
 }
 
-R_API struct r_lang_t *r_lang_new() {
-	struct r_lang_t *lang = R_NEW (struct r_lang_t);
+R_API RLang *r_lang_new() {
+	RLang *lang = R_NEW (RLang);
 	return r_lang_init (lang);
 }
 
-R_API void *r_lang_free(struct r_lang_t *lang) {
+R_API void *r_lang_free(RLang *lang) {
 	r_lang_undef (lang);
 	// TODO: remove langs plugins
 	free (lang);
@@ -28,16 +28,16 @@ R_API void *r_lang_free(struct r_lang_t *lang) {
 // TODO: when language bindings are done we will need an api to
 // define symbols from C to the language namespace
 // XXX: Depcreate!!
-R_API void r_lang_set_user_ptr(struct r_lang_t *lang, void *user) {
+R_API void r_lang_set_user_ptr(RLang *lang, void *user) {
 	lang->user = user;
 }
 
-R_API int r_lang_define(struct r_lang_t *lang, const char *type, const char *name, void *value) {
+R_API int r_lang_define(RLang *lang, const char *type, const char *name, void *value) {
 	int ret = R_FALSE;
-	struct r_lang_def_t *def;
+	RLangDef *def = NULL;
 	struct list_head *pos;
-	list_for_each_prev (pos, &lang->langs) {
-		def = list_entry (pos, struct r_lang_def_t, list);
+	list_for_each_prev (pos, &lang->defs) {
+		def = list_entry (pos, RLangDef, list);
 		if (!strcmp (name, def->name)) {
 			def->value = value;
 			ret = R_TRUE;
@@ -45,23 +45,22 @@ R_API int r_lang_define(struct r_lang_t *lang, const char *type, const char *nam
 		}
 	}
 	if (!ret) {
-		def = R_NEW (struct r_lang_def_t);
+		def = R_NEW (RLangDef);
 		if (def != NULL) {
-			def->type = strdup(type);
-			def->name = strdup(name);
+			def->type = strdup (type);
+			def->name = strdup (name);
 			def->value = value;
-			list_add_tail(&(def->list), &lang->defs);
+			list_add_tail (&(def->list), &lang->defs);
 			ret = R_TRUE;
 		}
 	}
 	return ret;
 }
 
-R_API void r_lang_undef(struct r_lang_t *lang) {
-	struct r_lang_def_t *def;
+R_API void r_lang_undef(RLang *lang) {
 	struct list_head *pos, *n;
-	list_for_each_safe (pos, n, &lang->langs) {
-		def = list_entry (pos, struct r_lang_def_t, list);
+	list_for_each_safe (pos, n, &lang->defs) {
+		RLangDef *def = list_entry (pos, RLangDef, list);
 		list_del (&def->list);
 		free (def->name);
 		free (def->type);
@@ -69,7 +68,14 @@ R_API void r_lang_undef(struct r_lang_t *lang) {
 	}
 }
 
-R_API int r_lang_add(struct r_lang_t *lang, struct r_lang_handle_t *foo) {
+R_API int r_lang_setup(RLang *lang) {
+	int ret = R_FALSE;
+	if (lang->cur && lang->cur->setup)
+		ret = lang->cur->setup (lang);
+	return ret;
+}
+
+R_API int r_lang_add(RLang *lang, struct r_lang_handle_t *foo) {
 	if (foo->init)
 		foo->init (lang->user);
 	list_add_tail (&(foo->list), &(lang->langs));
@@ -77,16 +83,16 @@ R_API int r_lang_add(struct r_lang_t *lang, struct r_lang_handle_t *foo) {
 }
 
 /* TODO: deprecate all list methods */
-R_API int r_lang_list(struct r_lang_t *lang) {
+R_API int r_lang_list(RLang *lang) {
 	struct list_head *pos;
 	list_for_each_prev (pos, &lang->langs) {
-		struct r_lang_handle_t *h = list_entry (pos, struct r_lang_handle_t, list);
+		RLangHandle *h = list_entry (pos, RLangHandle, list);
 		printf (" %s: %s\n", h->name, h->desc);
 	}
 	return R_FALSE;
 }
 
-R_API int r_lang_use(struct r_lang_t *lang, const char *name) {
+R_API int r_lang_use(RLang *lang, const char *name) {
 	struct list_head *pos;
 	list_for_each_prev(pos, &lang->langs) {
 		struct r_lang_handle_t *h = list_entry (pos, struct r_lang_handle_t, list);
@@ -99,19 +105,24 @@ R_API int r_lang_use(struct r_lang_t *lang, const char *name) {
 }
 
 // TODO: store in r_lang and use it from the plugin?
-R_API int r_lang_set_argv(struct r_lang_t *lang, int argc, char **argv) {
+R_API int r_lang_set_argv(RLang *lang, int argc, char **argv) {
 	if (lang->cur && lang->cur->set_argv)
 		return lang->cur->set_argv (lang, argc, argv);
 	return R_FALSE;
 }
 
-R_API int r_lang_run(struct r_lang_t *lang, const char *code, int len) { 
+
+R_API int r_lang_run(RLang *lang, const char *code, int len) { 
 	if (lang->cur && lang->cur->run)
 		return lang->cur->run (lang, code, len);
 	return R_FALSE;
 }
 
-R_API int r_lang_run_file(struct r_lang_t *lang, const char *file) { 
+R_API int r_lang_run_string(RLang *lang, const char *code) {
+	return r_lang_run (lang, code, strlen (code));
+}
+
+R_API int r_lang_run_file(RLang *lang, const char *file) { 
 	int len, ret = R_FALSE;
 	if (lang->cur) {
 		if (lang->cur->run_file == NULL) {
@@ -126,7 +137,7 @@ R_API int r_lang_run_file(struct r_lang_t *lang, const char *file) {
 }
 
 /* TODO: deprecate or make it more modular .. reading from stdin in a lib?!? wtf */
-R_API int r_lang_prompt(struct r_lang_t *lang) {
+R_API int r_lang_prompt(RLang *lang) {
 	char buf[1024];
 
 	if (lang->cur == NULL)
@@ -149,5 +160,7 @@ R_API int r_lang_prompt(struct r_lang_t *lang) {
 				printf (*lang->cur->help);
 		} else r_lang_run (lang, buf, strlen(buf));
 	}
+	clearerr (stdin);
+	printf ("\n");
 	return R_TRUE;
 }

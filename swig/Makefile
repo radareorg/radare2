@@ -47,12 +47,11 @@ test:
 
 install-python:
 	@if [ "`grep python supported.langs`" ]; then \
-	for a in python2.5/site-packages python2.6/dist-packages ; do \
+	for a in python2.5/site-packages python2.6/site-packages ; do \
 	echo "Installing $$a r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/r2" ; \
 	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/r2 ; \
 	touch ${DESTDIR}${PREFIX}/lib/$$a/r2/__init__.py ; \
 	cp -rf python/* ${DESTDIR}${PREFIX}/lib/$$a/r2 ; \
-	cp -rf python/*libr* ${DESTDIR}${PREFIX}/lib/$$a ; \
 	done ; \
 	fi
 

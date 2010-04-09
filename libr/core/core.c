@@ -117,6 +117,7 @@ R_API int r_core_init(RCore *core) {
 	r_print_init (&core->print);
 	core->print.printf = (void *)r_cons_printf;
 	r_lang_init (&core->lang);
+	r_lang_define (&core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (&core->lang, core);
 	r_anal_init (&core->anal);
 	r_anal_set_user_ptr (&core->anal, core);

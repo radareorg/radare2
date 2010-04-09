@@ -1873,6 +1873,7 @@ static int cmd_hash(void *data, const char *input) {
 		}
 		// TODO: set argv here
 		r_lang_use (&core->lang, input+1);
+		r_lang_setup (&core->lang);
 		if (core->oobi)
 			r_lang_run (&core->lang,(const char *)
 				core->oobi, core->oobi_len);

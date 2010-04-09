@@ -21,7 +21,7 @@ public class Radare.RSearch {
 	public void set_callback(Callback cb, void *user);
 	//public int pattern_update(int size); // this is uint? long?
 	//public int set_pattern_size(int size); // this is uint? long?
-	public int strings_update(uint64 addr, string *buf, int len, int enc);
+	public int strings_update(uint64 addr, uint8 *buf, int len);
 
 	[CCode (cprefix="R_SEARCH_", cname="int")]
 	public enum Mode {

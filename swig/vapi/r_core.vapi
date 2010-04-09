@@ -6,6 +6,7 @@ public class Radare.RCore {
 	/* lifecycle */
 	public RCore();
 
+	public static unowned RCore cast(uint64 ptr);
 	public bool loadlibs();
 	/* commands */
 	public int prompt();

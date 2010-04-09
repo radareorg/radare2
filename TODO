@@ -65,10 +65,6 @@ BUGS
  
 * 'Vc' cursor mode makes color toggle
 
-* Specify binmask in hexpairs
-  - wx 1234:ff0f
-  - /x 1234:ff0f
-
 * radare2 -e dbg.engine=vm -d ls
   - load the program using r_bin in virtual space
   - initialize vm and set regs

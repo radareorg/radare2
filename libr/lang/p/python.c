@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 /* python extension for libr (radare2) */
 
 #include "r_lib.h"
@@ -10,10 +10,10 @@
 #include <Python.h>
 #include <structmember.h>
 
-static struct r_core_t *core = NULL;
+static RCore *core = NULL;
 
-static int run(struct r_lang_t *lang, const char *code, int len) {
-	PyRun_SimpleString(code);
+static int run(RLang *lang, const char *code, int len) {
+	PyRun_SimpleString (code);
 	return R_TRUE;
 }
 
@@ -75,7 +75,7 @@ static PyObject * Radare_cmd(Radare* self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "s", &cmd))
 		return NULL;
 
-	str = r_core_cmd_str(core, cmd);
+	str = r_core_cmd_str (core, cmd);
 	if (str == NULL)
 		str = py_nullstr;
 
@@ -186,12 +186,30 @@ static int prompt(void *user) {
 	return R_TRUE;
 }
 
-static int init(struct r_lang_t *lang) {
+static int setup(RLang *lang) {
+	char cmd[128];
+	struct list_head *pos;
+	PyRun_SimpleString ("from r2.r_core import RCore");
+	list_for_each (pos, &lang->defs) {
+		RLangDef *def = list_entry (pos, RLangDef, list);
+		if (!def->type || !def->name)
+			continue;
+		if (!strcmp (def->type, "int"))
+			snprintf (cmd, sizeof (cmd), "%s=%d", def->name, (int)(size_t)def->value);
+		else if (!strcmp (def->type, "string"))
+			snprintf (cmd, sizeof (cmd), "%s=\"%s\"", def->name, (char *)def->value);
+		else snprintf (cmd, sizeof (cmd), "%s=%s.cast(%p)",
+			def->name, def->type, def->value);
+		PyRun_SimpleString (cmd);
+	}
+	return R_TRUE;
+}
+
+static int init(RLang *lang) {
 	core = lang->user;
-	Py_Initialize();
-	init_radare_module();
+	Py_Initialize ();
+	init_radare_module ();
 	//Py_InitModule3("radare", Radare_methods, NULL);
-	PyRun_SimpleString("import r");
 //	PyRun_SimpleString("import radare");
 //	PyRun_SimpleString("from radare import *");
 	return R_TRUE;
@@ -210,6 +228,7 @@ struct r_lang_handle_t r_lang_plugin_python = {
 	.name = "python",
 	.desc = "Python language extension",
 	.init = &init,
+	.setup = &setup,
 	.fini = (void *)&fini,
 	.help = &help,
 	.prompt = (void *)&prompt,
