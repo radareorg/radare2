@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
 		break;
 	default:
 		/* generate signature file */
-		r_sign_generate (&sig, argv[optind], stdout);
+		//r_sign_generate (&sig, argv[optind], stdout);
 		break;
 	}
 	return 0;

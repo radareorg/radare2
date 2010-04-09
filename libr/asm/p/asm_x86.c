@@ -31,8 +31,14 @@ static int modify(RAsm *a, ut8 *buf, int field, ut64 val) {
 			memcpy (buf+1, &val32, sizeof (val32));
 		}
 		return 5;
+	case 0xeb: // jmp short
 	case 0x73: // jnz
-		buf[1] = (char)(val-a->pc);
+		if (field == R_ASM_MOD_RAWVALUE) {
+			buf[1] = (char)val;
+		} else
+		if (field == R_ASM_MOD_VALUE) {
+			buf[1] = (char)(val-a->pc);
+		}
 		return 2;
 	}
 	return ret;

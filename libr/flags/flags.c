@@ -5,7 +5,6 @@
 #include <r_cons.h>
 #include <stdio.h>
 
-#if USE_BTREE
 /* compare names */
 static int ncmp(const void *a, const void *b) {
 	RFlagItem *fa = (RFlagItem *)a;
@@ -27,25 +26,54 @@ static int cmp(const void *a, const void *b) {
 	else if (fa->offset < fb->offset) ret = -1;
 	return ret;
 }
-#endif
 
 R_API int r_flag_init(RFlag *f) {
 	int i;
-	INIT_LIST_HEAD(&f->flags);
+	INIT_LIST_HEAD (&f->flags);
 	f->space_idx = -1;
 	f->space_idx2 = -1;
 #if USE_BTREE
-	btree_init(&f->tree);
-	btree_init(&f->ntree);
+	btree_init (&f->tree);
+	btree_init (&f->ntree);
 #endif
 	for (i=0;i<R_FLAG_SPACES_MAX;i++)
 		f->space[i] = NULL;
 	return 0;
 }
 
-R_API void r_flag_sort(RFlag *flag) {
-	// TODO: Implement sorted linked list
-	eprintf ("TODO: r_flag_sort\n");
+R_API int r_flag_sort(RFlag *f, int namesort) {
+	int ret = R_FALSE;
+	int changes;
+	RFlagItem *fi = NULL;
+	struct list_head *pos;
+
+	INIT_LIST_HEAD (&f->flags_tmp);
+	// get bigger one
+	list_for_each (pos, &f->flags) {
+		RFlagItem *flag = list_entry (pos, RFlagItem, list);
+		if (fi == NULL)
+			fi = flag;
+		else if (((namesort)? ncmp (fi, flag): cmp (fi, flag)) > 0)
+			fi = flag;
+	}
+	list_move (&fi->list, &f->flags_tmp);
+	// find bigger ones after this
+	do {
+		changes = 0;
+		list_for_each (pos, &f->flags) {
+			RFlagItem *flag = list_entry (pos, RFlagItem, list);
+			if (((namesort)? ncmp (fi, flag): cmp (fi, flag)) > 0) {
+				fi = flag;
+				changes = 1;
+			}
+		}
+		if (fi && changes) {
+			ret = R_TRUE;
+			list_move (&fi->list, &f->flags_tmp);
+		}
+	} while (changes);
+	f->flags = f->flags_tmp;
+	return ret;
 }
 
 R_API RFlag * r_flag_new() {

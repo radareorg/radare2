@@ -137,6 +137,12 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		case 'J':
 			option+=10;
 			break;
+		case 'o':
+			r_flag_sort (&core->flags, 0);
+			break;
+		case 'n':
+			r_flag_sort (&core->flags, 1);
+			break;
 		case 'j':
 			option++;
 			break;

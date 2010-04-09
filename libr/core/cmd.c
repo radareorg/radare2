@@ -1149,6 +1149,9 @@ static int cmd_flag(void *data, const char *input) {
 	case '-':
 		r_flag_unset (&core->flags, input+1);
 		break;
+	case 'S':
+		r_flag_sort (&core->flags, (input[1]=='n'));
+		break;
 	case 's':
 		if (input[1]==' ') r_flag_space_set (&core->flags, input+2);
 		else r_flag_space_list (&core->flags);
@@ -1175,7 +1178,11 @@ static int cmd_flag(void *data, const char *input) {
 		" f+name 12 @ 33   ; like above but creates new one if doesnt exist\n"
 		" f-name           ; remove flag 'name'\n"
 		" f                ; list flags\n"
-		" f*               ; list flags in r commands\n");
+		" f*               ; list flags in r commands\n"
+		" fs functions     ; set flagspace\n"
+		" fs *             ; set no flagspace\n"
+		" fs               ; display flagspaces\n"
+		" fS[on]           ; sort flags by offset or name\n");
 		break;
 	}
 	return 0;

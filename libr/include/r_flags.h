@@ -35,6 +35,7 @@ typedef struct r_flag_t {
 	struct btree_node *ntree; /* index by name */
 #endif
 	struct list_head flags;
+	struct list_head flags_tmp;
 } RFlag;
 
 #ifdef R_API
@@ -45,6 +46,7 @@ R_API struct r_flag_item_t *r_flag_get(struct r_flag_t *f, const char *name);
 R_API struct r_flag_item_t *r_flag_get_i(struct r_flag_t *f, ut64 off);
 R_API int r_flag_unset(struct r_flag_t *f, const char *name);
 R_API int r_flag_set(struct r_flag_t *fo, const char *name, ut64 addr, ut32 size, int dup);
+R_API int r_flag_sort(RFlag *f, int namesort);
 R_API int r_flag_name_check(const char *name);
 R_API int r_flag_name_filter(char *name);
 
