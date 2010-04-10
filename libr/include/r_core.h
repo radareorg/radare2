@@ -52,7 +52,7 @@ typedef struct r_core_t {
 	/* files */
 	RCons *cons;
 	struct r_io_t io;
-	struct r_core_file_t *file;
+	RCoreFile *file;
 	struct list_head files;
 	struct r_num_t num;
 	struct r_lib_t lib;

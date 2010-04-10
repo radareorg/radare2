@@ -37,6 +37,16 @@ static int config_iocache_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_cfgdebug_callback(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	if (node->i_value) {
+		r_debug_use (&core->dbg, r_config_get (&core->config, "dbg.backend"));
+		r_debug_select (&core->dbg, core->file->fd, core->file->fd);
+	}
+	return R_TRUE;
+}
+
 static int config_asmos_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -165,13 +175,14 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	r_config_set_cb (cfg, "cfg.bigendian", "true", &config_bigendian_callback);
 #endif
-	r_config_set (cfg, "cfg.debug", "false");
+	r_config_set_cb (cfg, "cfg.debug", "false", &config_cfgdebug_callback);
 	r_config_set (cfg, "cfg.fortunes", "true");
 	r_config_set (cfg, "cmd.hit", ""); 
 	r_config_set (cfg, "cmd.open", ""); 
 	r_config_set (cfg, "cmd.prompt", ""); 
 	r_config_set (cfg, "cmd.vprompt", "");
 	r_config_set (cfg, "cmd.bp", "");
+	r_config_set (cfg, "dbg.backend", "native");
 	r_config_set_cb (cfg, "dbg.stopthreads", "true", &config_stopthreads_callback);
 	r_config_set_cb (cfg, "dbg.swstep", "false", &config_swstep_callback);
 	r_config_set_cb (cfg, "dbg.trace", "false", &config_trace_callback);

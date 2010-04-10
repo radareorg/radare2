@@ -145,10 +145,10 @@ R_API int r_debug_detach(struct r_debug_t *dbg, int pid) {
 	return R_FALSE;
 }
 
-R_API int r_debug_select(struct r_debug_t *dbg, int pid, int tid) {
+R_API int r_debug_select(RDebug *dbg, int pid, int tid) {
 	dbg->pid = pid;
 	dbg->tid = tid;
-	eprintf ("PID: %d %d\n", pid, tid);
+	eprintf ("r_debug_select: %d %d\n", pid, tid);
 	return R_TRUE;
 }
 

@@ -2610,6 +2610,9 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			(int) r_num_math (&core->num, input+2),
 			(int) r_num_math (&core->num, input+2));
 	} else
+	if (input[1]=='f')
+		r_debug_select (&core->dbg, core->file->fd, core->file->fd);
+	else
 	if (input[1]=='=')
 		r_debug_select (&core->dbg,
 			(int) r_num_math (&core->num, input+2),

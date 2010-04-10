@@ -7,6 +7,8 @@ LANG_CXX!
 CHKPRG! VALASWIG valaswig
 CHKPRG! SWIG swig
 
+PKGCHK libr f..... TODO!
+
 SUBDIRS ./config.mk ;
 
 REPORT PREFIX HAVE_VALASWIG ;

@@ -8,13 +8,11 @@ R_API ut64 r_core_file_resize(struct r_core_t *core, ut64 newsize) {
 	return 0LL;
 }
 
-R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int mode) {
-	struct r_core_file_t *fh;
+R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode) {
+	RCoreFile *fh;
 	const char *cp;
 	char *p;
-	int fd;
-
-	fd = r_io_open (&r->io, file, mode, 0644);
+	int fd = r_io_open (&r->io, file, mode, 0644);
 	if (fd == -1)
 		return NULL;
 
@@ -38,11 +36,6 @@ R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *fil
 	if (cp && *cp)
 		r_core_cmd (r, cp, 0);
 	return fh;
-}
-
-R_API int r_core_file_set(struct r_core_t *r, struct r_core_file_t *fh) {
-	r->file = fh;
-	return R_TRUE;
 }
 
 R_API int r_core_file_close(struct r_core_t *r, struct r_core_file_t *fh) {

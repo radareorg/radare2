@@ -50,5 +50,5 @@ public class Radare.RCore {
 		public int fd;
 	}
 
-	public File file;
+	public RCore.File file;
 }
