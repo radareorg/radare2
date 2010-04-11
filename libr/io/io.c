@@ -254,7 +254,8 @@ R_API int r_io_write_at(struct r_io_t *io, ut64 addr, const ut8 *buf, int len) {
 }
 
 R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
-	int ret, posix_whence = SEEK_SET;
+	int len, posix_whence = SEEK_SET;
+	ut64 ret = -1;
 
 	switch(whence) {
 	case R_IO_SEEK_SET:
@@ -272,13 +273,13 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 	offset = io->va ? r_io_section_vaddr_to_offset (io, offset) : offset;
 	// TODO: implement io->enforce_seek here!
 	if (io->plugin && io->plugin->lseek)
-		ret = io->plugin->lseek (io, io->fd, offset, whence);
+		len = io->plugin->lseek (io, io->fd, offset, whence);
 	// XXX can be problematic on w32..so no 64 bit offset?
-	else ret = lseek (io->fd, offset, posix_whence);
-	if (ret != -1) {
-		io->off = ret;
-		if (io->va) ret = r_io_section_offset_to_vaddr (io, io->off);
+	else len = lseek (io->fd, offset, posix_whence);
+	if (len != -1) {
+		io->off = offset;
 		r_io_sundo_push (io);
+		ret = io->va ? r_io_section_offset_to_vaddr (io, io->off) : io->off;
 	}
 	return ret;
 }
