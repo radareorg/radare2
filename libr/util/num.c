@@ -60,7 +60,7 @@ R_API ut64 r_num_get(struct r_num_t *num, const char *str) {
 	char lch;
 	ut64 ret = 0LL;
 
-	for(;str[0]==' ';) str = str+1;
+	for (;str[0]==' ';) str = str+1;
 
 	/* resolve string with an external callback */
 	if (num && num->callback) {

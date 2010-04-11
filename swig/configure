@@ -180,6 +180,7 @@ case $flag in
 echo "PKGNAME:   radare2-swig"
 echo "VERSION:   0.4.5"
 echo "LANGS:     c c++"
+echo "PKG-CONFIG:  libr"
 	exit 0
 	;;
 "--cache-file") 
@@ -238,7 +239,7 @@ parse_options $1
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C CXX CXXFLAGS HAVE_LANG_CXX HAVE_VALASWIG VALASWIG HAVE_SWIG SWIG"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C CXX CXXFLAGS HAVE_LANG_CXX HAVE_VALASWIG VALASWIG HAVE_SWIG SWIG FOO HAVE_PKGCFG_LIBR"
 
 create_environ
 
@@ -277,7 +278,7 @@ if [ "${CROSSBUILD}" = 1 ]; then
 if [ "$?" = 0 ]; then CXX="${HOST}-${CXX}"; fi
 fi
 echo "#include <iostream>" > test.cxx
-echo "main(){ std::cout << \"\"; }" >> test.cxx
+echo "main(){ std::cout << 1; }" >> test.cxx
 (exec ${CXX} ${CXXFLAGS} ${LDFLAGS} test.cxx -lstdc++ >/dev/null 2>&1)
 if [ $? = 0 ]; then echo ${CXX}; else
 HAVE_LANG_CXX=0
@@ -331,6 +332,17 @@ else
  echo no
   echo "error: This program is required." >&2
   exit 1 ; fi
+printf 'checking pkg-config flags for libr... '
+tmp=`pkg-config --cflags libr 2>/dev/null`
+if [ $? = 1 ]; then echo no ; HAVE_PKGCFG_LIBR=0; 
+echo 'This package is required'
+exit 1
+else 
+FOO=$tmp; 
+tmp=`pkg-config --libs libr 2>/dev/null`
+if [ ! $? = 1 ]; then 
+echo yes; HAVE_PKGCFG_LIBR=1; 
+FOO=$tmp; fi; fi
 SEDFLAGS=" -e '"
 COUNT=0
 for A in ${ENVWORDS} ; do

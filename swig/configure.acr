@@ -7,7 +7,7 @@ LANG_CXX!
 CHKPRG! VALASWIG valaswig
 CHKPRG! SWIG swig
 
-PKGCHK libr f..... TODO!
+PKGCFG! FOO FOO libr
 
 SUBDIRS ./config.mk ;
 

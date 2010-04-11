@@ -4,6 +4,7 @@
 [CCode (cheader_filename="r_core.h", cname="struct r_core_t", free_function="r_core_free", cprefix="r_core_")]
 public class Radare.RCore {
 	public RFlag flags;
+	public RNum num;
 	/* lifecycle */
 	public RCore();
 	public RCons cons;
