@@ -117,18 +117,18 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 }
 
 R_API char *r_file_slurp_range(const char *str, ut64 off, ut64 sz) {
-        char *ret;
-        FILE *fd = fopen (str, "rb");
-        if (fd == NULL)
-                return NULL;
-        fseek (fd, off, SEEK_SET);
-        ret = (char *)malloc (sz+1);
+	char *ret;
+	FILE *fd = fopen (str, "rb");
+	if (fd == NULL)
+		return NULL;
+	fseek (fd, off, SEEK_SET);
+	ret = (char *)malloc (sz+1);
 	if (ret != NULL) {
 		fread (ret, sz, 1, fd);
 		ret[sz] = '\0';
 	}
 	fclose (fd);
-        return ret;
+	return ret;
 }
 
 R_API char *r_file_slurp_random_line(const char *file) {

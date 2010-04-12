@@ -83,8 +83,7 @@ static int Elf_(r_bin_elf_init_shdr)(struct Elf_(r_bin_elf_obj_t) *bin)
 	return R_TRUE;
 }
 
-static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin)
-{
+static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	Elf_(Shdr) *strtab_section;
 
 	strtab_section = &bin->shdr[bin->ehdr.e_shstrndx];
@@ -99,8 +98,7 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin)
 	return R_TRUE;
 }
 
-static int Elf_(r_bin_elf_init)(struct Elf_(r_bin_elf_obj_t) *bin)
-{
+static int Elf_(r_bin_elf_init)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	bin->phdr = NULL;
 	bin->shdr = NULL;
 	bin->strtab = NULL;
@@ -181,20 +179,17 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym)
 	return -1;
 }
 
-ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin)
-{
+ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	return bin->phdr->p_vaddr & ELF_ADDR_MASK;
 }
 
-ut64 Elf_(r_bin_elf_get_entry_offset)(struct Elf_(r_bin_elf_obj_t) *bin)
-{
+ut64 Elf_(r_bin_elf_get_entry_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (bin->ehdr.e_entry < bin->baddr)
 		return bin->ehdr.e_entry;
 	return bin->ehdr.e_entry - bin->baddr; 
 }
 
-int Elf_(r_bin_elf_get_stripped)(struct Elf_(r_bin_elf_obj_t) *bin)
-{
+int Elf_(r_bin_elf_get_stripped)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
 	
 	for (i = 0; i < bin->ehdr.e_shnum; i++)
@@ -203,8 +198,7 @@ int Elf_(r_bin_elf_get_stripped)(struct Elf_(r_bin_elf_obj_t) *bin)
 	return R_TRUE;
 }
 
-int Elf_(r_bin_elf_get_static)(struct Elf_(r_bin_elf_obj_t) *bin)
-{
+int Elf_(r_bin_elf_get_static)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
 
 	for (i = 0; i < bin->ehdr.e_phnum; i++)
@@ -213,8 +207,7 @@ int Elf_(r_bin_elf_get_static)(struct Elf_(r_bin_elf_obj_t) *bin)
 	return R_TRUE;
 }
 
-char* Elf_(r_bin_elf_get_data_encoding)(struct Elf_(r_bin_elf_obj_t) *bin)
-{
+char* Elf_(r_bin_elf_get_data_encoding)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	switch (bin->ehdr.e_ident[EI_DATA]) {
 	case ELFDATANONE: return r_str_dup_printf("none");
 	case ELFDATA2LSB: return r_str_dup_printf("2's complement, little endian");
@@ -223,8 +216,7 @@ char* Elf_(r_bin_elf_get_data_encoding)(struct Elf_(r_bin_elf_obj_t) *bin)
 	}
 }
 
-char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin)
-{
+char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	switch (bin->ehdr.e_machine) {
 	case EM_MIPS:
 	case EM_MIPS_RS3_LE:
@@ -657,24 +649,22 @@ struct r_bin_elf_field_t* Elf_(r_bin_elf_get_fields)(struct Elf_(r_bin_elf_obj_t
 	return ret;
 }
 
-void* Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin)
-{
+void* Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin) {
 	if (!bin)
 		return NULL;
 	if (bin->phdr)
-		free(bin->phdr);
+		free (bin->phdr);
 	if (bin->shdr)
-		free(bin->shdr);
+		free (bin->shdr);
 	if (bin->strtab)
-		free(bin->strtab);
+		free (bin->strtab);
 	if (bin->b)
-		r_buf_free(bin->b);
-	free(bin);
+		r_buf_free (bin->b);
+	free (bin);
 	return NULL;
 }
 
-struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file)
-{
+struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file) {
 	struct Elf_(r_bin_elf_obj_t) *bin;
 	ut8 *buf;
 

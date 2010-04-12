@@ -3,15 +3,14 @@
 #define R_BIN_ELF64 1
 #include "bin_elf.c"
 
-static int check(RBin *bin)
-{
+static int check(RBin *bin) {
 	ut8 *buf;
 	int ret = R_FALSE;
 
 	if (!(buf = (ut8*)r_file_slurp_range (bin->file, 0, 5)))
 		return R_FALSE;
 	/* buf[EI_CLASS] == ELFCLASS64 */
-	if (!memcmp (buf, "\x7F\x45\x4c\x46\x02", 4))
+	if (!memcmp (buf, "\x7F\x45\x4c\x46\x02", 5))
 		ret = R_TRUE;
 	free (buf);
 	return ret;

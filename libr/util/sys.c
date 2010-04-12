@@ -151,6 +151,7 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 			return output;
 	}
 	return NULL;
+}
 #elif __WINDOWS__
 R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, char **sterr) {
 	// TODO: fully implement the rest

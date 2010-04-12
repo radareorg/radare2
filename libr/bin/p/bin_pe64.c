@@ -1,14 +1,13 @@
-/* radare - GPL3 - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare - GPL3 - Copyright 2009-2010 nibble<.ds@gmail.com> */
 
 #define R_BIN_PE64 1
 #include "bin_pe.c"
 
-static int check(RBin *bin)
-{
+static int check(RBin *bin) {
 	ut8 *buf;
 	int ret = R_FALSE;
 
-	if (!(buf = (ut8*)r_file_slurp_range (bin->file, 0, 1024)))
+	if (!(buf = (ut8*)r_file_slurp_range (bin->file, 0, 0x40)))
 		return R_FALSE;
 	if (!memcmp (buf, "\x4d\x5a", 2) &&
 		!memcmp (buf+(buf[0x3c]|(buf[0x3d]<<8)), "\x50\x45", 2) && 
