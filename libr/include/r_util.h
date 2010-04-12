@@ -258,9 +258,12 @@ R_API int r_sys_mkdir(const char *dir);
 R_API int r_sys_sleep(int secs);
 R_API int r_sys_usleep(int usecs);
 R_API const char *r_sys_getenv(const char *key);
-R_API int r_sys_setenv(const char *key, const char *value, int ow);
+R_API int r_sys_setenv(const char *key, const char *value);
 R_API char *r_sys_getcwd();
 R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, char **sterr);
+#if __WINDOWS__
+R_API char *r_sys_cmd_str_w32(const char *cmd);
+#endif
 R_API int r_sys_cmd(const char *cmd);
 R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len);
 //#define r_sys_cmd_str(cmd, input, len) r_sys_cmd_str_full(cmd, input, len, 0)

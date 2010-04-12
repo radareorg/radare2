@@ -13,6 +13,7 @@ r2rc:
 	cd r2rc && ${MAKE} all
 
 w32dist:
+	rm -rf radare2-w32-${VERSION} w32dist
 	mkdir w32dist
 	for a in `find * | grep -e exe$$ -e dll$$`; do cp $$a w32dist ; done
 	mv w32dist radare2-w32-${VERSION}

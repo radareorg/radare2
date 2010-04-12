@@ -115,9 +115,9 @@ static RList* imports(RBin *bin)
 	for (i = 0; !import[i].last; i++) {
 		if (!(ptr = R_NEW (RBinImport)))
 			break;
-		strncpy(ptr->name, import[i].name, R_BIN_SIZEOF_STRINGS);
-		strncpy(ptr->bind, import[i].bind, R_BIN_SIZEOF_STRINGS);
-		strncpy(ptr->type, import[i].type, R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->name, import[i].name, R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->bind, import[i].bind, R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->type, import[i].type, R_BIN_SIZEOF_STRINGS);
 		ptr->rva = import[i].offset;
 		ptr->offset = import[i].offset;
 		ptr->ordinal = 0;
@@ -224,8 +224,7 @@ static RList* fields(RBin *bin)
 }
 
 #if !R_BIN_ELF64
-static int check(RBin *bin)
-{
+static int check(RBin *bin) {
 	ut8 *buf;
 	int ret = R_FALSE;
 
@@ -234,6 +233,7 @@ static int check(RBin *bin)
 	/* buf[EI_CLASS] == ELFCLASS32 */
 	if (!memcmp (buf, "\x7F\x45\x4c\x46\x01", 5))
 		ret = R_TRUE;
+
 	free (buf);
 	return ret;
 }

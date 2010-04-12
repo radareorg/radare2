@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 namespace Radare {
 	[Compact]
 	[CCode (cheader_filename="r_lib.h", cprefix="r_lib_", cname="struct r_lib_t", free_function="r_lib_free")]
-	public class RLibrary {
-		public RLibrary(string symname);
-		public RLibrary init(string symname);
+	public class RLib {
+		public RLib (string symname);
+		public RLib init(string symname);
 		public bool close(string file);
 		public int opendir(string path);
 		//public string types_get(int idx);

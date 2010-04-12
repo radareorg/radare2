@@ -46,11 +46,17 @@ R_API int r_sys_usleep(int usecs) {
 #endif
 }
 
-R_API int r_sys_setenv(const char *key, const char *value, int ow) {
+R_API int r_sys_setenv(const char *key, const char *value) {
 #if __UNIX__
-	return setenv(key, value, ow);
+	if (value == NULL)
+		return unsetenv (key);
+	return setenv (key, value, 1);
+#elif __WINDOWS__
+	SetEnvironmentVariable (key, (LPSTR)value);
+	return 0; // TODO. get ret
 #else
-#warning TODO: r_sys_setenv
+#warning r_sys_setenv : unimplemented for this platform
+	return 0;
 #endif
 }
 
@@ -59,8 +65,8 @@ R_API const char *r_sys_getenv(const char *key) {
 #if __UNIX__
 	return getenv (key);
 #else
-	GetEnvironmentVariable (key, &envbuf, sizeof (envbuf));
-	return &envbuf;
+	GetEnvironmentVariable (key, (LPSTR)&envbuf, sizeof (envbuf));
+	return envbuf;
 #endif
 }
 
@@ -74,8 +80,8 @@ R_API char *r_sys_getcwd() {
 #endif
 }
 
-R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, char **sterr) {
 #if __UNIX__
+R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, char **sterr) {
 	char *inputptr = (char *)input;
 	int bytes = 0;
 	int sh_in[2];
@@ -145,11 +151,18 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 			return output;
 	}
 	return NULL;
+#elif __WINDOWS__
+R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, char **sterr) {
+	// TODO: fully implement the rest
+	if (len) *len = 0;
+	return r_sys_cmd_str_w32 (cmd);
+}
 #else
+R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, char **sterr) {
 	eprintf ("r_sys_cmd_str: not yet implemented for this platform\n");
 	return NULL;
-#endif
 }
+#endif
 
 R_API int r_sys_cmd (const char *str) {
 /* TODO: implement for other systems */
@@ -188,4 +201,31 @@ R_API int r_sys_mkdir(const char *dir) {
 	ret = mkdir (dir, 0755);
 #endif
 	return (ret != -1);
+}
+
+void r_sys_perror(const char *fun) { 
+#if __UNIX__
+	perror (fun);
+#elif __WINDOWS__
+	char *lpMsgBuf;
+	LPVOID lpDisplayBuf;
+	DWORD dw = GetLastError(); 
+
+	FormatMessage ( FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+			FORMAT_MESSAGE_FROM_SYSTEM |
+			FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL,
+			dw,
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			(LPTSTR) &lpMsgBuf,
+			0, NULL );
+
+	lpDisplayBuf = (LPVOID)LocalAlloc (LMEM_ZEROINIT, 
+			(lstrlen((LPCTSTR)lpMsgBuf)+
+			lstrlen((LPCTSTR)fun)+40)*sizeof (TCHAR)); 
+	eprintf ("%s: %s\n", fun, lpMsgBuf);
+
+	LocalFree (lpMsgBuf);
+	LocalFree (lpDisplayBuf);
+#endif
 }

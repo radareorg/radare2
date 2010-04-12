@@ -62,6 +62,7 @@ typedef void (*FunctionPrintf)(const char *str, ...);
 #endif
 #if defined(__linux__) || defined(__APPLE__)
   #define __UNIX__ 1
+  #undef __BSD__
 #endif
 #if __WIN32__ || __CYGWIN__ || MINGW32
   #define __addr_t_defined
@@ -69,6 +70,8 @@ typedef void (*FunctionPrintf)(const char *str, ...);
   #include <winsock.h>
   #undef USE_SOCKETS
   #define __WINDOWS__ 1
+  #undef __UNIX__
+  #undef __BSD__
 #endif
 
 #if __UNIX__

@@ -148,14 +148,13 @@ R_API int r_bin_list(RBin *bin) {
 
 R_API int r_bin_load(RBin *bin, const char *file, const char *plugin_name) {
 	struct list_head *pos;
-
 	if (!bin || !file)
 		return R_FALSE;
 	bin->file = r_file_abspath (file);
-	list_for_each_prev (pos, &bin->bins) {
+	list_for_each (pos, &bin->bins) {
 		RBinHandle *h = list_entry (pos, RBinHandle, list);
 		if ((plugin_name && !strcmp (h->name, plugin_name)) ||
-			(h->check && h->check (bin))) 
+				(h->check && h->check (bin)))
 			bin->cur = h;
 	}
 	if (bin->cur && bin->cur->load && bin->cur->load (bin))

@@ -56,7 +56,7 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
 		//	ctx->sysptr = syscalls_openbsd_x86;
 		else if (!strcmp (os, "darwin"))
 			ctx->sysptr = syscalls_darwin_x86;
-		else if (!strcmp (os, "win7"))
+		else if (!strcmp (os, "windows")) //win7
 			ctx->sysptr = syscalls_win7_x86;
 		else {
 			eprintf ("r_syscall_setup: Unknown os '%s'\n", os);

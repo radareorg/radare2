@@ -54,7 +54,7 @@ R_API int r_search_regexp_update(void *_s, ut64 from, const ut8 *buf, int len) {
 }
 #else
 
-R_API int r_search_regexp_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+R_API int r_search_regexp_update(void *_s, ut64 from, const ut8 *buf, int len) {
 	eprintf ("r_search_regexp_update: unimplemented for this platform\n");
 	return -1;
 }

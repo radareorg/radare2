@@ -7,8 +7,16 @@
 #include <r_util.h>
 #include "elf.h"
 
-static int Elf_(r_bin_elf_init_ehdr)(struct Elf_(r_bin_elf_obj_t) *bin)
-{
+static int __strnlen(const char *str, int len) {
+	int l = 0;
+	while (*str && --len) {
+		str++;
+		l++;
+	}
+	return l;
+}
+
+static int Elf_(r_bin_elf_init_ehdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	ut8 e_ident[16];
 	int len;
 
@@ -513,8 +521,7 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 	return ret;
 }
 
-struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, int type)
-{
+struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, int type) {
 	Elf_(Shdr) *strtab_section;
 	Elf_(Sym) *sym;
 	struct r_bin_elf_symbol_t *ret = NULL;
@@ -533,27 +540,30 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 			(type == R_BIN_ELF_SYMBOLS  &&
 			 	bin->shdr[i].sh_type == (Elf_(r_bin_elf_get_stripped)(bin) ? SHT_DYNSYM : SHT_SYMTAB))) {
 			strtab_section = &bin->shdr[bin->shdr[i].sh_link];
-			if ((strtab = (char *)malloc(strtab_section->sh_size)) == NULL) {
+			if ((strtab = (char *)malloc (8+strtab_section->sh_size)) == NULL) {
 				perror("malloc (syms strtab)");
 				return NULL;
 			}
-			if (r_buf_read_at(bin->b, strtab_section->sh_offset, (ut8*)strtab, strtab_section->sh_size) == -1) {
-				eprintf("Error: read (magic)\n");
+			if (r_buf_read_at (bin->b, strtab_section->sh_offset, (ut8*)strtab, strtab_section->sh_size) == -1) {
+				eprintf ("Error: read (magic)\n");
 				return NULL;
 			}
 
-			if ((sym = (Elf_(Sym) *)malloc(bin->shdr[i].sh_size)) == NULL) {
+			if ((sym = (Elf_(Sym) *)malloc (1+bin->shdr[i].sh_size)) == NULL) {
 				perror("malloc (syms)");
 				return NULL;
 			}
 			nsym = (int)(bin->shdr[i].sh_size/sizeof(Elf_(Sym)));
 #if R_BIN_ELF64
-			len = r_buf_fread_at(bin->b, bin->shdr[i].sh_offset, (ut8*)sym, bin->endian?"I2cS2L":"i2cs2l", nsym);
+#define SH_FMT "I2cS2L"
+#define SH_FMT2 "i2cs2l"
 #else
-			len = r_buf_fread_at(bin->b, bin->shdr[i].sh_offset, (ut8*)sym, bin->endian?"3I2cS":"3i2cs", nsym);
+#define SH_FMT "3I2cS"
+#define SH_FMT2 "3i2cs"
 #endif
-			if (len == -1) {
-				eprintf("Error: read (ehdr)\n");
+			if (r_buf_fread_at(bin->b, bin->shdr[i].sh_offset, (ut8*)sym,
+					bin->endian?SH_FMT:SH_FMT2, nsym) == -1) {
+				eprintf ("Error: read (ehdr)\n");
 				return NULL;
 			}
 
@@ -571,38 +581,43 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 					toffset = (ut64)sym[k].st_value + sym_offset;
 					tsize = sym[k].st_size;
 				} else continue;
-				if ((ret = realloc(ret, (ret_ctr + 1) * sizeof(struct r_bin_elf_symbol_t))) == NULL) {
-					perror("realloc (symbols|imports)");
+				if ((ret = realloc (ret, (ret_ctr + 1) * sizeof(struct r_bin_elf_symbol_t))) == NULL) {
+					perror ("realloc (symbols|imports)");
 					return NULL;
 				}
 				ret[ret_ctr].offset = (toffset >= bin->baddr ? toffset -= bin->baddr : toffset);
 				ret[ret_ctr].size = tsize;
-				memcpy(ret[ret_ctr].name, &strtab[sym[k].st_name], ELF_STRING_LENGTH); 
-				ret[ret_ctr].name[ELF_STRING_LENGTH-1] = '\0';
+				len = __strnlen (&strtab[sym[k].st_name], ELF_STRING_LENGTH-1);
+				memcpy (ret[ret_ctr].name, &strtab[sym[k].st_name], 10); //len); //ELF_STRING_LENGTH-20); 
+				ret[ret_ctr].name[ELF_STRING_LENGTH-2] = '\0';
+
+				#define s_bind(x) snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, x);
 				switch (ELF_ST_BIND(sym[k].st_info)) {
-				case STB_LOCAL:  snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "LOCAL"); break;
-				case STB_GLOBAL: snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "GLOBAL"); break;
-				case STB_NUM:    snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "NUM"); break;
-				case STB_LOOS:   snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "LOOS"); break;
-				case STB_HIOS:   snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "HIOS"); break;
-				case STB_LOPROC: snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "LOPROC"); break;
-				case STB_HIPROC: snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "HIPROC"); break;
-				default:         snprintf(ret[ret_ctr].bind, ELF_STRING_LENGTH, "UNKNOWN");
+				case STB_LOCAL:  s_bind ("LOCAL"); break;
+				case STB_GLOBAL: s_bind ("GLOBAL"); break;
+				case STB_NUM:    s_bind ("NUM"); break;
+				case STB_LOOS:   s_bind ("LOOS"); break;
+				case STB_HIOS:   s_bind ("HIOS"); break;
+				case STB_LOPROC: s_bind ("LOPROC"); break;
+				case STB_HIPROC: s_bind ("HIPROC"); break;
+				default:         s_bind ("UNKNOWN");
 				}
-				switch (ELF_ST_TYPE(sym[k].st_info)) {
-				case STT_NOTYPE:  snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "NOTYPE"); break;
-				case STT_OBJECT:  snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "OBJECT"); break;
-				case STT_FUNC:    snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "FUNC"); break;
-				case STT_SECTION: snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "SECTION"); break;
-				case STT_FILE:    snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "FILE"); break;
-				case STT_COMMON:  snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "COMMON"); break;
-				case STT_TLS:     snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "TLS"); break;
-				case STT_NUM:     snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "NUM"); break;
-				case STT_LOOS:    snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "LOOS"); break;
-				case STT_HIOS:    snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "HIOS"); break;
-				case STT_LOPROC:  snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "LOPROC"); break;
-				case STT_HIPROC:  snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "HIPROC"); break;
-				default:          snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, "UNKNOWN");
+
+				#define s_type(x) snprintf(ret[ret_ctr].type, ELF_STRING_LENGTH, x);
+				switch (ELF_ST_TYPE (sym[k].st_info)) {
+				case STT_NOTYPE:  s_type ("NOTYPE"); break;
+				case STT_OBJECT:  s_type ("OBJECT"); break;
+				case STT_FUNC:    s_type ("FUNC"); break;
+				case STT_SECTION: s_type ("SECTION"); break;
+				case STT_FILE:    s_type ("FILE"); break;
+				case STT_COMMON:  s_type ("COMMON"); break;
+				case STT_TLS:     s_type ("TLS"); break;
+				case STT_NUM:     s_type ("NUM"); break;
+				case STT_LOOS:    s_type ("LOOS"); break;
+				case STT_HIOS:    s_type ("HIOS"); break;
+				case STT_LOPROC:  s_type ("LOPROC"); break;
+				case STT_HIPROC:  s_type ("HIPROC"); break;
+				default:          s_type ("UNKNOWN");
 				}
 				ret[ret_ctr].last = 0;
 				ret_ctr++;

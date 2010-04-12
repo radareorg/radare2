@@ -42,7 +42,7 @@ R_API const char *r_file_abspath(const char *file) {
 
 R_API char *r_file_path(const char *bin) {
 	char file[1024];
-	char *path_env = r_sys_getenv ("PATH");
+	char *path_env = (char *)r_sys_getenv ("PATH");
 	char *path = NULL;
 	char *str, *ptr;
 	if (path_env) {
@@ -116,17 +116,18 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 	return ret;
 }
 
-R_API char *r_file_slurp_range(const char *str, ut64 off, ut64 sz)
-{
+R_API char *r_file_slurp_range(const char *str, ut64 off, ut64 sz) {
         char *ret;
-        FILE *fd = fopen(str, "r");
+        FILE *fd = fopen (str, "rb");
         if (fd == NULL)
                 return NULL;
-        fseek(fd, off,SEEK_SET);
-        ret = (char *)malloc(sz+1);
-        fread(ret, sz, 1, fd);
-        ret[sz]='\0';
-        fclose(fd);
+        fseek (fd, off, SEEK_SET);
+        ret = (char *)malloc (sz+1);
+	if (ret != NULL) {
+		fread (ret, sz, 1, fd);
+		ret[sz] = '\0';
+	}
+	fclose (fd);
         return ret;
 }
 
