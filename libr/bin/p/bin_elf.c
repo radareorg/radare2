@@ -38,8 +38,7 @@ static RList* entries(RBin *bin) {
 	return ret;
 }
 
-static RList* sections(RBin *bin)
-{
+static RList* sections(RBin *bin) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_elf_section_t *section = NULL;
@@ -60,19 +59,18 @@ static RList* sections(RBin *bin)
 		ptr->rva = section[i].offset;
 		ptr->characteristics = 0;
 		if (R_BIN_ELF_SCN_IS_EXECUTABLE (section[i].flags))
-			ptr->characteristics |= 0x1;
+			ptr->characteristics |= 1;
 		if (R_BIN_ELF_SCN_IS_WRITABLE (section[i].flags))
-			ptr->characteristics |= 0x2;
+			ptr->characteristics |= 2;
 		if (R_BIN_ELF_SCN_IS_READABLE (section[i].flags))
-			ptr->characteristics |= 0x4;
+			ptr->characteristics |= 4;
 		r_list_append (ret, ptr);
 	}
 	free (section);
 	return ret;
 }
 
-static RList* symbols(RBin *bin)
-{
+static RList* symbols(RBin *bin) {
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
 	struct r_bin_elf_symbol_t *symbol = NULL;
@@ -100,8 +98,7 @@ static RList* symbols(RBin *bin)
 	return ret;
 }
 
-static RList* imports(RBin *bin)
-{
+static RList* imports(RBin *bin) {
 	RList *ret = NULL;
 	RBinImport *ptr = NULL;
 	struct r_bin_elf_symbol_t *import = NULL;
@@ -128,8 +125,7 @@ static RList* imports(RBin *bin)
 	return ret;
 }
 
-static RList* libs(RBin *bin)
-{
+static RList* libs(RBin *bin) {
 	RList *ret = NULL;
 	char *ptr = NULL;
 	struct r_bin_elf_lib_t *libs = NULL;
@@ -148,14 +144,13 @@ static RList* libs(RBin *bin)
 	return ret;
 }
 
-static RBinInfo* info(RBin *bin)
-{
-	struct r_bin_info_t *ret = NULL;
+static RBinInfo* info(RBin *bin) {
+	RBinInfo *ret = NULL;
 	char *str;
 
 	if(!(ret = R_NEW (RBinInfo)))
 		return NULL;
-	memset(ret, '\0', sizeof (RBinInfo));
+	memset (ret, '\0', sizeof (RBinInfo));
 	strncpy (ret->file, bin->file, R_BIN_SIZEOF_STRINGS);
 	if ((str = Elf_(r_bin_elf_get_rpath)(bin->bin_obj))) {
 		strncpy (ret->rpath, str, R_BIN_SIZEOF_STRINGS);
@@ -199,8 +194,7 @@ static RBinInfo* info(RBin *bin)
 	return ret;
 }
 
-static RList* fields(RBin *bin)
-{
+static RList* fields(RBin *bin) {
 	RList *ret = NULL;
 	RBinField *ptr = NULL;
 	struct r_bin_elf_field_t *field = NULL;
@@ -226,15 +220,15 @@ static RList* fields(RBin *bin)
 #if !R_BIN_ELF64
 static int check(RBin *bin) {
 	ut8 *buf;
-	int ret = R_FALSE;
+	int n, ret = R_FALSE;
 
-	if (!(buf = (ut8*)r_file_slurp_range (bin->file, 0, 5)))
-		return R_FALSE;
-	/* buf[EI_CLASS] == ELFCLASS32 */
-	if (!memcmp (buf, "\x7F\x45\x4c\x46\x01", 5))
-		ret = R_TRUE;
-
-	free (buf);
+	if ((buf = (ut8*)r_file_slurp_range (bin->file, 0, 5, &n))) {
+		/* buf[EI_CLASS] == ELFCLASS32 */
+		if (n == 5)
+		if (!memcmp (buf, "\x7F\x45\x4c\x46\x01", 5))
+			ret = R_TRUE;
+		free (buf);
+	}
 	return ret;
 }
 

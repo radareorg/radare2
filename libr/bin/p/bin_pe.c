@@ -6,8 +6,7 @@
 #include <r_bin.h>
 #include "pe/pe.h"
 
-static int load(RBin *bin)
-{
+static int load(RBin *bin) {
 	if(!(bin->bin_obj = PE_(r_bin_pe_new) (bin->file)))
 		return R_FALSE;
 	bin->size = ((struct PE_(r_bin_pe_obj_t)*) (bin->bin_obj))->size;
@@ -15,19 +14,16 @@ static int load(RBin *bin)
 	return R_TRUE;
 }
 
-static int destroy (RBin *bin)
-{
+static int destroy (RBin *bin) {
 	PE_(r_bin_pe_free) ((struct PE_(r_bin_pe_obj_t)*)bin->bin_obj);
 	return R_TRUE;
 }
 
-static ut64 baddr(RBin *bin)
-{
+static ut64 baddr(RBin *bin) {
 	return PE_(r_bin_pe_get_image_base) (bin->bin_obj);
 }
 
-static RList* entries(RBin *bin)
-{
+static RList* entries(RBin *bin) {
 	RList* ret;
 	RBinEntry *ptr = NULL;
 	struct r_bin_pe_entrypoint_t *entry = NULL;
@@ -46,8 +42,7 @@ static RList* entries(RBin *bin)
 	return ret;
 }
 
-static RList* sections(RBin *bin)
-{
+static RList* sections(RBin *bin) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_pe_section_t *sections = NULL;
@@ -81,8 +76,7 @@ static RList* sections(RBin *bin)
 	return ret;
 }
 
-static RList* symbols(RBin *bin)
-{
+static RList* symbols(RBin *bin) {
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
 	struct r_bin_pe_export_t *symbols = NULL;
@@ -110,8 +104,7 @@ static RList* symbols(RBin *bin)
 	return ret;
 }
 
-static RList* imports(RBin *bin)
-{
+static RList* imports(RBin *bin) {
 	RList *ret = NULL;
 	RBinImport *ptr = NULL;
 	struct r_bin_pe_import_t *imports = NULL;
@@ -138,8 +131,7 @@ static RList* imports(RBin *bin)
 	return ret;
 }
 
-static RList* libs(RBin *bin)
-{
+static RList* libs(RBin *bin) {
 	RList *ret = NULL;
 	char *ptr = NULL;
 	struct r_bin_pe_lib_t *libs = NULL;
@@ -158,8 +150,7 @@ static RList* libs(RBin *bin)
 	return ret;
 }
 
-static RBinInfo* info(RBin *bin)
-{
+static RBinInfo* info(RBin *bin) {
 	char *str;
 	RBinInfo *ret = NULL;
 
@@ -207,18 +198,18 @@ static RBinInfo* info(RBin *bin)
 }
 
 #if !R_BIN_PE64
-static int check(RBin *bin)
-{
+static int check(RBin *bin) {
 	ut8 *buf;
-	int ret = R_FALSE;
-
-	if (!(buf = (ut8*)r_file_slurp_range (bin->file, 0, 1024)))
-		return R_FALSE;
-	if (!memcmp (buf, "\x4d\x5a", 2) &&
-		!memcmp (buf+(buf[0x3c]|(buf[0x3d]<<8)), "\x50\x45", 2) && 
-		!memcmp (buf+(buf[0x3c]|buf[0x3d]<<8)+0x18, "\x0b\x01", 2))
-		ret = R_TRUE;
-	free (buf);
+	int n, idx, ret = R_FALSE;
+	if ((buf = (ut8*)r_file_slurp_range (bin->file, 0, 0xffff+0x20, &n))) {
+		int idx = (buf[0x3c]|(buf[0x3d]<<8));
+		if (n>idx)
+		if (!memcmp (buf, "\x4d\x5a", 2) &&
+			!memcmp (buf+idx, "\x50\x45", 2) && 
+			!memcmp (buf+idx+0x18, "\x0b\x01", 2))
+			ret = R_TRUE;
+		free (buf);
+	}
 	return ret;
 }
 

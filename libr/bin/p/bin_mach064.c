@@ -1,20 +1,18 @@
-/* radare - GPL3 - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare - GPL3 - Copyright 2009-2010 nibble<.ds@gmail.com> */
 
 #define R_BIN_MACH064 1
 #include "bin_mach0.c"
 
-static int check(RBin *bin)
-{
+static int check(RBin *bin) {
 	ut8 *buf;
-	int ret = R_FALSE;
-
-	if (!(buf = (ut8*)r_file_slurp_range (bin->file, 0, 4)))
-		return R_FALSE;
-	if (!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
-		!memcmp (buf, "\xcf\xfa\xed\xfe", 4))
-		ret = R_TRUE;
-	free (buf);
-	
+	int n, ret = R_FALSE;
+	if ((buf = (ut8*)r_file_slurp_range (bin->file, 0, 4, &n))) {
+		if (n==4)
+		if (!memcmp (buf, "\xfe\xed\xfa\xcf", 4) \
+		 || !memcmp (buf, "\xcf\xfa\xed\xfe", 4))
+			ret = R_TRUE;
+		free (buf);
+	}
 	return ret;
 }
 

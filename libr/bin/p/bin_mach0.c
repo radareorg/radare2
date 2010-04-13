@@ -6,8 +6,7 @@
 #include <r_bin.h>
 #include "mach0/mach0.h"
 
-static int load(RBin *bin)
-{
+static int load(RBin *bin) {
 	if(!(bin->bin_obj = MACH0_(r_bin_mach0_new) (bin->file)))
 		return R_FALSE;
 	bin->size = ((struct MACH0_(r_bin_mach0_obj_t)*) (bin->bin_obj))->size;
@@ -15,19 +14,16 @@ static int load(RBin *bin)
 	return R_TRUE;
 }
 
-static int destroy(RBin *bin)
-{
+static int destroy(RBin *bin) {
 	MACH0_(r_bin_mach0_free) (bin->bin_obj);
 	return R_TRUE;
 }
 
-static ut64 baddr(RBin *bin)
-{
+static ut64 baddr(RBin *bin) {
 	return MACH0_(r_bin_mach0_get_baddr) (bin->bin_obj);
 }
 
-static RList* entries(RBin *bin)
-{
+static RList* entries(RBin *bin) {
 	RList *ret;
 	RBinEntry *ptr = NULL;
 	struct r_bin_mach0_entrypoint_t *entry = NULL;
@@ -47,8 +43,7 @@ static RList* entries(RBin *bin)
 	return ret;
 }
 
-static RList* sections(RBin *bin)
-{
+static RList* sections(RBin *bin) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_mach0_section_t *sections = NULL;
@@ -74,8 +69,7 @@ static RList* sections(RBin *bin)
 	return ret;
 }
 
-static RList* symbols(RBin *bin)
-{
+static RList* symbols(RBin *bin) {
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
 	struct r_bin_mach0_symbol_t *symbols = NULL;
@@ -103,8 +97,7 @@ static RList* symbols(RBin *bin)
 	return ret;
 }
 
-static RList* imports(RBin *bin)
-{
+static RList* imports(RBin *bin) {
 	RList *ret = NULL;
 	RBinImport *ptr = NULL;
 	struct r_bin_mach0_import_t *imports = NULL;
@@ -131,8 +124,7 @@ static RList* imports(RBin *bin)
 	return ret;
 }
 
-static RList* libs(RBin *bin)
-{
+static RList* libs(RBin *bin) {
 	RList *ret = NULL;
 	char *ptr = NULL;
 	struct r_bin_mach0_lib_t *libs = NULL;
@@ -151,8 +143,7 @@ static RList* libs(RBin *bin)
 	return ret;
 }
 
-static RBinInfo* info(RBin *bin)
-{
+static RBinInfo* info(RBin *bin) {
 	char *str;
 	RBinInfo *ret = NULL;
 
@@ -189,17 +180,17 @@ static RBinInfo* info(RBin *bin)
 }
 
 #if !R_BIN_MACH064
-static int check(RBin *bin)
-{
+static int check(RBin *bin) {
 	ut8 *buf;
-	int ret = R_FALSE;
+	int n, ret = R_FALSE;
 
-	if (!(buf = (ut8*)r_file_slurp_range (bin->file, 0, 4)))
-		return R_FALSE;
-	if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
-		!memcmp (buf, "\xfe\xed\xfa\xce", 4))
-		ret = R_TRUE;
-	free (buf);
+	if ((buf = (ut8*)r_file_slurp_range (bin->file, 0, 4, &n))) {
+		if (n == 4)
+		if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
+			!memcmp (buf, "\xfe\xed\xfa\xce", 4))
+			ret = R_TRUE;
+		free (buf);
+	}
 	return ret;
 }
 

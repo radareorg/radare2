@@ -6,8 +6,7 @@
 #include <r_bin.h>
 #include "java/java.h"
 
-static int load(RBin *bin)
-{
+static int load(RBin *bin) {
 	if(!(bin->bin_obj = r_bin_java_new(bin->file)))
 		return R_FALSE;
 	bin->size = ((struct r_bin_java_obj_t*)(bin->bin_obj))->size;
@@ -15,14 +14,12 @@ static int load(RBin *bin)
 	return R_TRUE;
 }
 
-static int destroy(RBin *bin)
-{
-	r_bin_java_free((struct r_bin_java_obj_t*)bin->bin_obj);
+static int destroy(RBin *bin) {
+	r_bin_java_free ((struct r_bin_java_obj_t*)bin->bin_obj);
 	return R_TRUE;
 }
 
-static RList* entries(RBin *bin)
-{
+static RList* entries(RBin *bin) {
 	RList *ret;
 	RBinEntry *ptr = NULL;
 
@@ -37,13 +34,11 @@ static RList* entries(RBin *bin)
 	return ret;
 }
 
-static ut64 baddr(RBin *bin)
-{
+static ut64 baddr(RBin *bin) {
 	return 0;
 }
 
-static RList* symbols(RBin *bin)
-{
+static RList* symbols(RBin *bin) {
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
 	struct r_bin_java_sym_t *symbols = NULL;
@@ -70,8 +65,7 @@ static RList* symbols(RBin *bin)
 	return ret;
 }
 
-static RList* strings(RBin *bin)
-{
+static RList* strings(RBin *bin) {
 	RList *ret = NULL;
 	RBinString *ptr = NULL;
 	struct r_bin_java_str_t *strings = NULL;
@@ -94,14 +88,13 @@ static RList* strings(RBin *bin)
 	return ret;
 }
 
-static RBinInfo* info(RBin *bin)
-{
+static RBinInfo* info(RBin *bin) {
 	RBinInfo *ret = NULL;
 	char *version;
 
-	if(!(ret = R_NEW (RBinInfo)))
+	if (!(ret = R_NEW (RBinInfo)))
 		return NULL;
-	memset(ret, '\0', sizeof (RBinInfo));
+	memset (ret, '\0', sizeof (RBinInfo));
 	strncpy (ret->file, bin->file, R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->type, "JAVA CLASS", R_BIN_SIZEOF_STRINGS);
@@ -115,20 +108,18 @@ static RBinInfo* info(RBin *bin)
 	strncpy (ret->arch, "java", R_BIN_SIZEOF_STRINGS);
 	ret->bits = 32;
 	ret->big_endian= 0;
-	ret->dbg_info = 0x04 | 0x08; /* LineNums | Syms */
+	ret->dbg_info = 4 | 8; /* LineNums | Syms */
 	return ret;
 }
 
-static int check(RBin *bin)
-{
+static int check(RBin *bin) {
 	ut8 *buf;
-	int ret = R_FALSE;
-
-	if (!(buf = (ut8*)r_file_slurp_range (bin->file, 0, 4)))
-		return R_FALSE;
-	if (!memcmp (buf, "\xca\xfe\xba\xbe", 4))
-		ret = R_TRUE;
-	free (buf);
+	int n, ret = R_FALSE;
+	if ((buf = (ut8*)r_file_slurp_range (bin->file, 0, 4, &n))) {
+		if (n==4 && !memcmp (buf, "\xca\xfe\xba\xbe", 4))
+			ret = R_TRUE;
+		free (buf);
+	}
 	return ret;
 }
 

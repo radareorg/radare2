@@ -5,15 +5,17 @@
 
 static int check(RBin *bin) {
 	ut8 *buf;
-	int ret = R_FALSE;
+	int n, idx, ret = R_FALSE;
 
-	if (!(buf = (ut8*)r_file_slurp_range (bin->file, 0, 0x40)))
-		return R_FALSE;
-	if (!memcmp (buf, "\x4d\x5a", 2) &&
-		!memcmp (buf+(buf[0x3c]|(buf[0x3d]<<8)), "\x50\x45", 2) && 
-		!memcmp (buf+(buf[0x3c]|buf[0x3d]<<8)+0x18, "\x0b\x02", 2))
-		ret = R_TRUE;
-	free (buf);
+	if ((buf = (ut8*)r_file_slurp_range (bin->file, 0, 0xffff+0x20, &n))) {
+		idx = buf[0x3c]|(buf[0x3d]<<8);
+		if (n>=idx+0x20)
+		if (!memcmp (buf, "\x4d\x5a", 2) &&
+			!memcmp (buf+idx, "\x50\x45", 2) && 
+			!memcmp (buf+idx+0x18, "\x0b\x02", 2))
+			ret = R_TRUE;
+		free (buf);
+	}
 	return ret;
 }
 

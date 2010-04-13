@@ -46,8 +46,9 @@ test:
 	cd lua && make test
 
 install-python:
+	@# py2.6 in debian uses dist-packages, but site-packages in arch..
 	@if [ "`grep python supported.langs`" ]; then \
-	for a in python2.5/site-packages python2.6/site-packages ; do \
+	for a in python2.5/site-packages python2.6/site-packages python2.6/dist-packages; do \
 	echo "Installing $$a r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/r2" ; \
 	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/r2 ; \
 	touch ${DESTDIR}${PREFIX}/lib/$$a/r2/__init__.py ; \

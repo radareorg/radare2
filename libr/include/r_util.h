@@ -245,7 +245,8 @@ R_API char *r_file_path(const char *bin);
 R_API const char *r_file_basename (const char *path);
 R_API const char *r_file_abspath(const char *file);
 R_API char *r_file_slurp(const char *str, int *usz);
-R_API char *r_file_slurp_range(const char *str, ut64 off, ut64 sz);
+//R_API char *r_file_slurp_range(const char *str, ut64 off, ut64 sz);
+R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz);
 R_API char *r_file_slurp_random_line(const char *file);
 R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz);
 R_API int r_file_dump(const char *file, const ut8 *buf, int len);
@@ -266,6 +267,7 @@ R_API char *r_sys_cmd_str_w32(const char *cmd);
 #endif
 R_API int r_sys_cmd(const char *cmd);
 R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len);
+R_API char *r_sys_cmd_strf(const char *cmd, ...);
 //#define r_sys_cmd_str(cmd, input, len) r_sys_cmd_str_full(cmd, input, len, 0)
 R_API int r_alloca_init();
 R_API ut8 *r_alloca_bytes(int len);

@@ -23,9 +23,14 @@ R_API ut64 r_sys_now() {
 	return ret;
 }
 
-R_API char *r_sys_cmd_strf(const char *cmd, ...) {
-	// FIXME Implement r_sys_cmd_strf
-	return NULL;
+R_API char *r_sys_cmd_strf(const char *fmt, ...) {
+	char *ret, cmd[1024];
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf (cmd, sizeof (cmd), fmt, ap);
+	ret = r_sys_cmd_str (cmd, NULL, NULL);
+	va_end(ap);
+	return ret;
 }
 
 R_API int r_sys_sleep(int secs) {
@@ -60,15 +65,17 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 #endif
 }
 
+#if __WINDOWS__
 static char envbuf[1024];
 R_API const char *r_sys_getenv(const char *key) {
-#if __UNIX__
-	return getenv (key);
-#else
 	GetEnvironmentVariable (key, (LPSTR)&envbuf, sizeof (envbuf));
 	return envbuf;
-#endif
 }
+#else
+R_API const char *r_sys_getenv(const char *key) {
+	return getenv (key);
+}
+#endif
 
 R_API char *r_sys_getcwd() {
 #if __UNIX__
@@ -94,53 +101,50 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 
 	int pid = fork();
 	if (!pid) {
-		dup2(sh_in[0], 0); close(sh_in[0]); close(sh_in[1]);
-		dup2(sh_out[1], 1); close(sh_out[0]); close(sh_out[1]);
-		if (sterr) dup2(sh_err[1], 2);
+		dup2 (sh_in[0], 0); close (sh_in[0]); close (sh_in[1]);
+		dup2 (sh_out[1], 1); close (sh_out[0]); close (sh_out[1]);
+		if (sterr) dup2 (sh_err[1], 2);
 		else close(2);
-		close(sh_err[0]); close(sh_err[1]); 
-		execl("/bin/sh", "sh", "-c", cmd, NULL);
+		close (sh_err[0]); close (sh_err[1]); 
+		execl ("/bin/sh", "sh", "-c", cmd, NULL);
 	} else {
 		char buffer[1024];
-		char *output = calloc(1, 1024);
+		char *output = calloc (1, 1024);
 		if (sterr)
-			*sterr = calloc(1, 1024);
-
-		close(sh_out[1]);
-		close(sh_err[1]);
-		close(sh_in[0]);
+			*sterr = calloc (1, 1024);
+		close (sh_out[1]);
+		close (sh_err[1]);
+		close (sh_in[0]);
 		if (!inputptr || !*inputptr)
-			close(sh_in[1]);
+			close (sh_in[1]);
 
-		while (1) {
+		for (;;) {
 			fd_set rfds, wfds;
 			int nfd;
 
-			FD_ZERO(&rfds);
-			FD_ZERO(&wfds);
-			FD_SET(sh_out[0], &rfds);
+			FD_ZERO (&rfds);
+			FD_ZERO (&wfds);
+			FD_SET (sh_out[0], &rfds);
 			if (sterr) 
-				FD_SET(sh_err[0], &rfds);
+				FD_SET (sh_err[0], &rfds);
 			if (inputptr && *inputptr)
-				FD_SET(sh_in[1], &wfds);
+				FD_SET (sh_in[1], &wfds);
 
-			memset(buffer, 0, sizeof(buffer));
-			nfd = select(sh_err[0] + 1, &rfds, &wfds, NULL, NULL);
-	        if (nfd < 0) {
+			memset (buffer, 0, sizeof(buffer));
+			nfd = select (sh_err[0] + 1, &rfds, &wfds, NULL, NULL);
+			if (nfd < 0)
 				break;
-			} else {
-				if (FD_ISSET(sh_out[0], &rfds)) {
-					if ((bytes = read(sh_out[0], buffer, sizeof(buffer)-1)) == 0) break;
-					*len += bytes;
-					output = r_str_concat(output, buffer);
-				} else if (FD_ISSET(sh_err[0], &rfds) && sterr) {
-					if (read(sh_err[0], buffer, sizeof(buffer)-1) == 0) break;
-					*sterr = r_str_concat(*sterr, buffer);
-				} else if (FD_ISSET(sh_in[1], &wfds) && inputptr && *inputptr) {
-					bytes = write(sh_in[1], inputptr, strlen(inputptr));
-					inputptr += bytes;
-					if (!*inputptr) close(sh_in[1]);
-				}  
+			if (FD_ISSET (sh_out[0], &rfds)) {
+				if ((bytes = read (sh_out[0], buffer, sizeof (buffer)-1)) == 0) break;
+				*len += bytes;
+				output = r_str_concat (output, buffer);
+			} else if (FD_ISSET (sh_err[0], &rfds) && sterr) {
+				if (read (sh_err[0], buffer, sizeof (buffer)-1) == 0) break;
+				*sterr = r_str_concat (*sterr, buffer);
+			} else if (FD_ISSET (sh_in[1], &wfds) && inputptr && *inputptr) {
+				bytes = write (sh_in[1], inputptr, strlen(inputptr));
+				inputptr += bytes;
+				if (!*inputptr) close (sh_in[1]);
 			}
 		}
 		close(sh_out[0]);

@@ -74,7 +74,7 @@ R_API char *r_file_slurp(const char *str, int *usz) {
         sz = ftell (fd);
         fseek (fd, 0,SEEK_SET);
         ret = (char *)malloc (sz+1);
-        fread (ret, sz, 1, fd);
+        fread (ret, sz, 1, fd); // TODO: handle return value :?
         ret[sz]='\0';
         fclose (fd);
 	if (usz)
@@ -116,7 +116,7 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 	return ret;
 }
 
-R_API char *r_file_slurp_range(const char *str, ut64 off, ut64 sz) {
+R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz) {
 	char *ret;
 	FILE *fd = fopen (str, "rb");
 	if (fd == NULL)
@@ -124,7 +124,7 @@ R_API char *r_file_slurp_range(const char *str, ut64 off, ut64 sz) {
 	fseek (fd, off, SEEK_SET);
 	ret = (char *)malloc (sz+1);
 	if (ret != NULL) {
-		fread (ret, sz, 1, fd);
+		*osz = (int)(size_t)fread (ret, 1, sz, fd);
 		ret[sz] = '\0';
 	}
 	fclose (fd);
