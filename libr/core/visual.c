@@ -632,10 +632,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	return 1;
 }
 
+// TODO: simplify R_ABS(printidx%NPF) into a macro, or just control negative values..
 R_API void r_core_visual_prompt(RCore *core, int color) {
 	if (color) r_cons_printf (Color_YELLOW"[0x%08"PFMT64x"] %s\n"Color_RESET,
-		core->offset, printfmt[printidx%NPF]);
-	else r_cons_printf ("[0x%08"PFMT64x"] %s\n", core->offset, printfmt[printidx%NPF]);
+		core->offset, printfmt[R_ABS (printidx%NPF)]);
+	else r_cons_printf ("[0x%08"PFMT64x"] %s\n", core->offset, printfmt[R_ABS (printidx%NPF)]);
 }
 
 R_API int r_core_visual(RCore *core, const char *input) {
@@ -650,7 +651,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	while (input[0]) {
 		if (!r_core_visual_cmd (core, input[0])) {
 			r_cons_clear00 ();
-			r_core_cmd (core, printfmt[printidx%NPF], 0);
+			r_core_cmd (core, printfmt[R_ABS (printidx%NPF)], 0);
 			r_cons_visual_flush ();
 			r_cons_any_key ();
 			return 0;
@@ -675,7 +676,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 		r_cons_clear00 ();
 		r_print_set_cursor (&core->print, curset, ocursor, cursor);
 		r_core_visual_prompt (core, color);
-		r_core_cmd (core, printfmt[printidx%NPF], 0);
+		r_core_cmd (core, printfmt[R_ABS (printidx%NPF)], 0);
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
 	} while (r_core_visual_cmd (core, ch));
