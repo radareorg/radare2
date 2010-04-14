@@ -8,15 +8,14 @@
 R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 	ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout)
 {
-	struct r_anal_refline_t *list = R_NEW (struct r_anal_refline_t);
-	struct r_anal_refline_t *list2;
-	struct r_anal_aop_t aop;
+	RAnalRefline *list2, *list = R_NEW (RAnalRefline);
+	RAnalAop aop;
 	ut8 *ptr = buf;
 	ut8 *end = buf + len;
 	ut64 opc = addr;
 	int sz = 0, index = 0;
 
-	INIT_LIST_HEAD(&(list->list));
+	INIT_LIST_HEAD (&(list->list));
 
 	/* analyze code block */
 	while (ptr<end) {
@@ -46,9 +45,9 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 			case R_ANAL_OP_TYPE_JMP:
 				if (!linesout && (aop.jump > opc+len || aop.jump < opc))
 					goto __next;
-				if (aop.jump == 0)
+				if (aop.jump == 0LL)
 					goto __next;
-				list2 = R_NEW (struct r_anal_refline_t);
+				list2 = R_NEW (RAnalRefline);
 				list2->from = addr;
 				list2->to = aop.jump;
 				list2->index = index++;
@@ -59,7 +58,6 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 	__next:
 		ptr = ptr + sz;
 	}
-
 	return list;
 }
 
@@ -76,10 +74,10 @@ R_API char* r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *
 
 	if (!list)
 		return NULL;
-	r_str_concat (str, " ");
+	str = r_str_concat (str, " ");
 	for (pos = linestyle?(&(list->list))->next:(&(list->list))->prev;
 		pos != (&(list->list)); pos = linestyle?pos->next:pos->prev) {
-		ref = list_entry (pos, struct r_anal_refline_t, list);
+		ref = list_entry (pos, RAnalRefline, list);
 
 		if (addr == ref->to) dir = 1;
 		// TODO: use else here
@@ -88,34 +86,34 @@ R_API char* r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *
 		// TODO: if dir==1
 		if (addr == ref->to) {
 			if (ref->from > ref->to)
-				r_str_concat (str, ".");
-			else r_str_concat (str, "`");
+				str = r_str_concat (str, ".");
+			else str = r_str_concat (str, "`");
 			ch = '-';
 		} else if (addr == ref->from) {
 			if (ref->from > ref->to)
-				r_str_concat (str, "`");
-			else r_str_concat (str, ".");
+				str = r_str_concat (str, "`");
+			else str = r_str_concat (str, ".");
 			ch = '=';
 		} else if (ref->from < ref->to) { /* down */
 			if (addr > ref->from && addr < ref->to) {
 				if (ch=='-'||ch=='=')
-					r_str_concatch (str, ch);
-				else r_str_concat(str, "|");
-			} else r_str_concatch (str, ch);
+					str = r_str_concatch (str, ch);
+				else str = r_str_concat(str, "|");
+			} else str = r_str_concatch (str, ch);
 		} else { /* up */
 			if (addr < ref->from && addr > ref->to) {
 				if (ch=='-'||ch=='=')
-					r_str_concatch (str, ch);
-				else r_str_concat (str, "|");
-			} else r_str_concatch (str, ch);
+					str = r_str_concatch (str, ch);
+				else str = r_str_concat (str, "|");
+			} else str = r_str_concatch (str, ch);
 		}
 		if (wide) {
 			if (ch == '=' || ch == '-')
-				r_str_concatch (str, ch);
-			else r_str_concat (str, " ");
+				str = r_str_concatch (str, ch);
+			else str = r_str_concat (str, " ");
 		}
 	}
-	r_str_concat (str, (dir==1)?"-> ":(dir==2)?"=< ":"   ");
+	str = r_str_concat (str, (dir==1)?"-> ":(dir==2)?"=< ":"   ");
 	return str;
 }
 

@@ -12,6 +12,185 @@
 
 #include <sys/types.h>
 #include <stdarg.h>
+/* TODO: move to print/disasm.c */
+static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
+	int ret, idx, i, j, k;
+	int middle = 0;
+	char str[128];
+	char *line;
+	char *comment;
+	char *opstr;
+	char *osl = NULL; // old source line
+	RAsmAop asmop;
+	RAnalAop analop;
+	RAnalRefline *reflines;
+	RFlagItem *flag;
+
+	// TODO: All those options must be print flags
+	int show_color = r_config_get_i (&core->config, "scr.color");
+	int pseudo = r_config_get_i (&core->config, "asm.pseudo");
+	int filter = r_config_get_i (&core->config, "asm.filter");
+	int show_lines = r_config_get_i (&core->config, "asm.lines");
+	int show_dwarf = r_config_get_i (&core->config, "asm.dwarf");
+	int linesout = r_config_get_i (&core->config, "asm.linesout");
+	int adistrick = r_config_get_i (&core->config, "asm.middle"); // TODO: find better name
+	int show_offset = r_config_get_i (&core->config, "asm.offset");
+	int show_bytes = r_config_get_i (&core->config, "asm.bytes");
+	int show_comments = r_config_get_i (&core->config, "asm.comments");
+	int linesopts = 0;
+	int nb, nbytes = r_config_get_i (&core->config, "asm.nbytes");
+	nb = nbytes*2;
+
+	if (r_config_get_i (&core->config, "asm.linesstyle"))
+		linesopts |= R_ANAL_REFLINE_STYLE;
+	if (r_config_get_i (&core->config, "asm.lineswide"))
+		linesopts |= R_ANAL_REFLINE_WIDE;
+
+	r_asm_set_pc (&core->assembler, core->offset);
+
+	reflines = r_anal_reflines_get (&core->anal, core->offset,
+		buf, len, -1, linesout);
+	for (i=idx=ret=0; idx < len && i<l; idx+=ret,i++) {
+		ut64 addr = core->offset + idx;
+		r_asm_set_pc (&core->assembler, addr);
+		if (show_comments) {
+			comment = r_meta_get_string (&core->meta, R_META_COMMENT, addr);
+			if (comment) {
+				r_cons_strcat (comment);
+				free (comment);
+			}
+		}
+		line = r_anal_reflines_str (&core->anal, reflines, addr, linesopts);
+		ret = r_asm_disassemble (&core->assembler, &asmop, buf+idx, len-idx);
+		if (ret<1) {
+			ret = 1;
+			eprintf ("** invalid opcode at 0x%08"PFMT64x" **\n",
+				core->assembler.pc + ret);
+			continue;
+		}
+		r_anal_aop (&core->anal, &analop, addr, buf+idx, (int)(len-idx));
+	
+		if (adistrick)
+			middle = r_anal_reflines_middle (&core->anal,
+					reflines, addr, analop.length);
+
+		if (show_lines && line)
+			r_cons_strcat (line);
+		if (show_offset) {
+			if (show_color)
+				r_cons_printf (Color_GREEN"0x%08"PFMT64x"  "Color_RESET, core->offset + idx);
+			else r_cons_printf ("0x%08"PFMT64x"  ", core->offset + idx);
+		}
+		flag = r_flag_get_i (&core->flags, core->offset+idx);
+		if (flag || show_bytes) {
+			char pad[64];
+			char *str, *extra = " ";
+			if (!flag) {
+				str = strdup (asmop.buf_hex);
+				if (strlen (str) > nb) {
+					str[nb] = '.';
+					str[nb+1] = '\0';
+					extra = "";
+				}
+				k = nb-strlen (str);
+				if (k<0) k = 0;
+				for (j=0; j<k; j++)
+					pad[j] = ' ';
+				pad[j] = '\0';
+				if (show_color) {
+					char *nstr = r_print_hexpair (p, str);
+					free (str);
+					str = nstr;
+				}
+			} else {
+				str = strdup (flag->name);
+				k = nb-strlen (str)-2;
+				if (k<0) k = 0;
+				for (j=0; j<k; j++)
+					pad[j] = ' ';
+				pad[j] = '\0';
+			}
+			if (flag) {
+				if (show_color)
+					r_cons_printf (Color_BWHITE"*[ %s%s]  "Color_RESET, pad, str);
+				else r_cons_printf ("*[ %s%s]  ", pad, str);
+			} else r_cons_printf (" %s %s %s", pad, str, extra);
+			free (str);
+		} else r_cons_printf ("%*s  ", (nb), "");
+
+		if (show_color) {
+			switch (analop.type) {
+			case R_ANAL_OP_TYPE_NOP:
+				r_cons_printf (Color_BLUE);
+				break;
+			case R_ANAL_OP_TYPE_JMP:
+			case R_ANAL_OP_TYPE_UJMP:
+			case R_ANAL_OP_TYPE_CJMP:
+				r_cons_printf (Color_GREEN);
+				break;
+			case R_ANAL_OP_TYPE_CALL:
+				r_cons_printf (Color_BGREEN);
+				break;
+			case R_ANAL_OP_TYPE_SWI:
+				r_cons_printf (Color_MAGENTA);
+				break;
+			case R_ANAL_OP_TYPE_RET:
+				r_cons_printf (Color_RED);
+				break;
+			case R_ANAL_OP_TYPE_LOAD:
+				r_cons_printf (Color_YELLOW);
+				break;
+			case R_ANAL_OP_TYPE_STORE:
+				r_cons_printf (Color_BYELLOW);
+				break;
+			}
+		}
+		if (pseudo) {
+			r_parse_parse (&core->parser, asmop.buf_asm, str);
+			opstr = str;
+		} else if (filter) {
+			r_parse_filter (&core->parser, &core->flags, asmop.buf_asm, str);
+			opstr = str;
+		} else opstr = asmop.buf_asm;
+		r_cons_strcat (opstr);
+		if (show_color)
+			r_cons_strcat (Color_RESET);
+		if (show_dwarf) {
+			char *sl = r_bin_meta_get_source_line (&core->bin, addr);
+			int len = strlen (opstr);
+			if (len<30)
+				len = 30-len;
+			if (sl)
+			if (!osl || (osl && strcmp (sl, osl))) {
+				while (len--)
+					r_cons_strcat (" ");
+				if (show_color)
+					r_cons_printf (Color_TURQOISE"  ; %s"Color_RESET, sl);
+				else r_cons_printf ("  ; %s\n", sl);
+				free (osl);
+				osl = sl;
+			}
+		}
+		if (middle != 0) {
+			ret = ret-middle;
+			r_cons_printf (" ;  *middle* %d", ret);
+		}
+		r_cons_newline ();
+		if (line) {
+			if (show_lines && analop.type == R_ANAL_OP_TYPE_RET) {
+				if (strchr (line, '>'))
+					memset (line, ' ', strlen (line));
+				r_cons_strcat (line);
+				r_cons_strcat ("; ------------------------------------\n");
+			}
+			free (line);
+		}
+	}
+	/* IT LEAKS AS THERE IS NO TOMORROW */
+	free (reflines);
+	free (osl);
+}
+/* </move> */
 
 static int cmd_io_system(void *data, const char *input);
 
@@ -872,24 +1051,6 @@ static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int l, len = core->blocksize;
 	ut32 tbs = core->blocksize;
-	int adistrick = r_config_get_i (&core->config, "asm.middle"); // TODO: find better name
-	int show_offset = r_config_get_i (&core->config, "asm.offset");
-	int show_bytes = r_config_get_i (&core->config, "asm.bytes");
-	int show_color = r_config_get_i (&core->config, "scr.color");
-	int show_lines = r_config_get_i (&core->config, "asm.lines");
-	int show_dwarf = r_config_get_i (&core->config, "asm.dwarf");
-	int nb, nbytes = r_config_get_i (&core->config, "asm.nbytes");
-	int linesout = r_config_get_i (&core->config, "asm.linesout");
-	int show_comments = r_config_get_i (&core->config, "asm.comments");
-	int pseudo = r_config_get_i (&core->config, "asm.pseudo");
-	int filter = r_config_get_i (&core->config, "asm.filter");
-	int linesopts = 0;
-	nb = nbytes*2;
-
-	if (r_config_get_i (&core->config, "asm.linesstyle"))
-		linesopts |= R_ANAL_REFLINE_STYLE;
-	if (r_config_get_i (&core->config, "asm.lineswide"))
-		linesopts |= R_ANAL_REFLINE_WIDE;
 
 	/* XXX: This is only for pd/pD ??? */
 	if (input[0] && input[1]) {
@@ -898,151 +1059,14 @@ static int cmd_print(void *data, const char *input) {
 		if (input[0] != 'd' && input[0] != 'm') {
 			if (l>0) len = l;
 			if (l>tbs) r_core_block_size (core, l);
-			l = 9999;
+			l = len;
 		}
-	} else l = 9999;
+	} else l = len;
 	
 	switch (input[0]) {
 	case 'D':
 	case 'd':
-		// TODO: move to a function...we need a flag instead of thousand config_foo's
-		{
-			int ret, idx, i; 
-			int middle = 0;
-			ut8 *buf = core->block;
-			char str[128];
-			char *line;
-			char *comment;
-			char *opstr;
-			char *osl = NULL; // old source line
-			RAsmAop asmop;
-			RAnalAop analop;
-			RAnalRefline *reflines;
-			RFlagItem *flag;
-		
-			//r_anal_set_pc(&core->anal, core->offset);
-			r_asm_set_pc (&core->assembler, core->offset);
-
-			reflines = r_anal_reflines_get (&core->anal, core->offset,
-				buf, len, -1, linesout);
-			for (i=idx=ret=0; idx < len && i<l; idx+=ret,i++) {
-				ut64 addr = core->offset + idx;
-				r_asm_set_pc (&core->assembler, addr);
-				//r_anal_set_pc (&core->anal, core->anal.pc + ret);
-				if (show_comments) {
-					comment = r_meta_get_string (&core->meta, R_META_COMMENT, addr);
-					if (comment) {
-						r_cons_strcat (comment);
-						free (comment);
-					}
-				}
-				line = r_anal_reflines_str (&core->anal, reflines, addr, linesopts);
-				ret = r_asm_disassemble (&core->assembler, &asmop, buf+idx, len-idx);
-				if (ret<1) {
-					ret = 1;
-					eprintf ("** invalid opcode at 0x%08"PFMT64x" **\n", core->assembler.pc + ret);
-					continue;
-				}
-				r_anal_aop (&core->anal, &analop, addr, buf+idx, (int)(len-idx));
-			
-				if (adistrick)
-					middle = r_anal_reflines_middle (&core->anal,
-							reflines, addr, analop.length);
-
-				if (show_lines && line)
-					r_cons_strcat (line);
-				if (show_offset)
-					r_cons_printf ("0x%08"PFMT64x"  ", core->offset + idx);
-				flag = r_flag_get_i (&core->flags, core->offset+idx);
-				if (flag || show_bytes) {
-					char *str, *extra = " ";
-					if (flag) str = strdup (flag->name);
-					else {
-						str = strdup (asmop.buf_hex);
-						if (strlen (str) > nb) {
-							str[nb] = '.';
-							str[nb+1] = '\0';
-							extra = "";
-						}
-					}
-					if (flag) {
-						if (show_color)
-							r_cons_printf (Color_BWHITE"*[ %*s]  "Color_RESET, (nb)-4, str);
-						else r_cons_printf ("*[ %*s]  ", (nb)-4, str);
-					} else r_cons_printf ("%*s %s", nb, str, extra);
-					free (str);
-				} else r_cons_printf ("%*s  ", (nb), "");
-				if (show_color) {
-					switch (analop.type) {
-					case R_ANAL_OP_TYPE_NOP:
-						r_cons_printf (Color_BLUE);
-						break;
-					case R_ANAL_OP_TYPE_JMP:
-					case R_ANAL_OP_TYPE_UJMP:
-					case R_ANAL_OP_TYPE_CJMP:
-						r_cons_printf (Color_GREEN);
-						break;
-					case R_ANAL_OP_TYPE_CALL:
-						r_cons_printf (Color_BGREEN);
-						break;
-					case R_ANAL_OP_TYPE_SWI:
-						r_cons_printf (Color_MAGENTA);
-						break;
-					case R_ANAL_OP_TYPE_RET:
-						r_cons_printf (Color_RED);
-						break;
-					case R_ANAL_OP_TYPE_LOAD:
-						r_cons_printf (Color_YELLOW);
-						break;
-					case R_ANAL_OP_TYPE_STORE:
-						r_cons_printf (Color_BYELLOW);
-						break;
-					}
-				}
-				if (pseudo) {
-					r_parse_parse (&core->parser, asmop.buf_asm, str);
-					opstr = str;
-				} else if (filter) {
-					r_parse_filter (&core->parser, &core->flags, asmop.buf_asm, str);
-					opstr = str;
-				} else opstr = asmop.buf_asm;
-				r_cons_strcat (opstr);
-				if (show_color)
-					r_cons_strcat (Color_RESET);
-				if (show_dwarf) {
-					char *sl = r_bin_meta_get_source_line (&core->bin, addr);
-					int len = strlen (opstr);
-					if (len<30)
-						len = 30-len;
-					if (sl)
-					if (!osl || (osl && strcmp (sl, osl))) {
-						while (len--)
-							r_cons_strcat (" ");
-						if (show_color)
-							r_cons_printf (Color_TURQOISE"  ; %s"Color_RESET, sl);
-						else r_cons_printf ("  ; %s\n", sl);
-						free (osl);
-						osl = sl;
-					}
-				}
-				if (middle != 0) {
-					ret = ret-middle;
-					r_cons_printf (" ;  *middle* %d", ret);
-				}
-				r_cons_newline ();
-				if (line) {
-					if (show_lines && analop.type == R_ANAL_OP_TYPE_RET) {
-						if (strchr (line, '>'))
-							memset (line, ' ', strlen (line));
-						r_cons_strcat (line);
-						r_cons_strcat ("; ------------------------------------\n");
-					}
-					free (line);
-				}
-			}
-			free (reflines);
-			free (osl);
-		}
+		r_print_disasm (&core->print, core, core->offset, core->block, len, l);
 		break;
 	case 's':
 		r_print_string (&core->print, core->offset, core->block, len, 0, 1, 0); //, 78, 1);

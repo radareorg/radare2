@@ -5,8 +5,8 @@
 
 static ut64 num_callback(void *userptr, const char *str, int *ok) {
 	RCore *core = userptr;
-	struct r_flag_item_t *flag;
-	struct r_anal_aop_t aop;
+	RFlagItem *flag;
+	RAnalAop aop;
 	
 	if (str[0]=='$') {
 		/* analyze opcode */
@@ -256,7 +256,7 @@ R_API int r_core_seek_delta(RCore *core, st64 addr) {
 	int ret;
 	if (addr == 0)
 		return R_TRUE;
-	if (addr>0) {
+	if (addr>0LL) {
 		/* check end of file */
 		if (0) addr = 0; // XXX tmp+addr>) {
 		else addr += tmp;

@@ -31,6 +31,7 @@
 ** See libr/*/TODO FMI
 
 * Merge r_socket inside r_util ?
+* Move disasm loop into r_print (r_print should depend on r_asm)
 
 * visual byte cursor in disassembly
 

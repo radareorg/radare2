@@ -21,10 +21,10 @@ Code analysis module
 
 * TODO: Add static plugin support here
 
-var an = new rAnalysis ();
+var an = new RAnal ();
 io.bind (an);
 an.set ("x86");
-var ctx = new Analysis.Context(an);
+var ctx = new RAnal.Context(an);
 //ctx.set_bytes (0x8048000, buf, 1024); // this must be a callback
 ctx.analyze (0x8048300);
 var foo = an.get_function_preludes ();

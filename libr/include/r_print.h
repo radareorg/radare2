@@ -27,25 +27,26 @@ typedef struct r_print_t {
 } RPrint;
 
 #ifdef R_API
-R_API struct r_print_t *r_print_new();
-R_API int r_print_init(struct r_print_t *p);
-R_API struct r_print_t *r_print_free(struct r_print_t *p);
-R_API void r_print_set_flags(struct r_print_t *p, int _flags);
-void r_print_unset_flags(struct r_print_t *p, int flags);
-R_API void r_print_set_width(struct r_print_t *p, int width);
-R_API void r_print_addr(struct r_print_t *p, ut64 addr);
-R_API void r_print_hexdump(struct r_print_t *p, ut64 addr, ut8 *buf, int len, int base, int step);
-R_API void r_print_hexpairs(struct r_print_t *p, ut64 addr, ut8 *buf, int len);
-R_API void r_print_bytes(struct r_print_t *p, const ut8* buf, int len, const char *fmt);
-R_API void r_print_byte(struct r_print_t *p, const char *fmt, int idx, ut8 ch);
-R_API void r_print_c(struct r_print_t *p, const char *str, int len);
-R_API void r_print_raw(struct r_print_t *p, const ut8* buf, int len);
-R_API void r_print_cursor(struct r_print_t *p, int cur, int set);
-R_API void r_print_set_cursor(struct r_print_t *p, int curset, int ocursor, int cursor);
-R_API void r_print_code(struct r_print_t *p, ut64 addr, ut8 *buf, int len);
-R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int len, const char *fmt);
+R_API char *r_print_hexpair(RPrint *p, const char *str);
+R_API RPrint *r_print_new();
+R_API RPrint *r_print_init(RPrint *p);
+R_API RPrint *r_print_free(RPrint *p);
+R_API void r_print_set_flags(RPrint *p, int _flags);
+void r_print_unset_flags(RPrint *p, int flags);
+R_API void r_print_set_width(RPrint *p, int width);
+R_API void r_print_addr(RPrint *p, ut64 addr);
+R_API void r_print_hexdump(RPrint *p, ut64 addr, ut8 *buf, int len, int base, int step);
+R_API void r_print_hexpairs(RPrint *p, ut64 addr, ut8 *buf, int len);
+R_API void r_print_bytes(RPrint *p, const ut8* buf, int len, const char *fmt);
+R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch);
+R_API void r_print_c(RPrint *p, const char *str, int len);
+R_API void r_print_raw(RPrint *p, const ut8* buf, int len);
+R_API void r_print_cursor(RPrint *p, int cur, int set);
+R_API void r_print_set_cursor(RPrint *p, int curset, int ocursor, int cursor);
+R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len);
+R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const char *fmt);
 // XXX . change wide, zeroend, urlencode for option flags
-R_API int r_print_string(struct r_print_t *p, ut64 seek, const ut8 *str, int len, int wide, int zeroend, int urlencode);
+R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *str, int len, int wide, int zeroend, int urlencode);
 #endif
 
 #endif

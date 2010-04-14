@@ -6,8 +6,8 @@ PFX=${DESTDIR}${PREFIX}
 #PREFIX=${PFX}
 
 # Libraries
-LIBLIST=util line cons line lib io meta lang flags bin hash print config syscall 
-LIBLIST+=socket cmd asm anal parse search diff bp reg debug core sign vm th db
+LIBLIST=util line cons line lib io meta lang flags bin hash config syscall socket
+LIBLIST+=cmd asm anal print parse search diff bp reg debug core sign vm th db
 
 # Under development
 #LIBLIST+=print

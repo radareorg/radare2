@@ -86,6 +86,13 @@
  * <machine/endian.h> where the appropriate definitions are actually
  * made).
  */
+#ifndef BYTE_ORDER
+// XXX: workaround for windows
+#define LITTLE_ENDIAN 1234
+#define BIG_ENDIAN    4321
+#define BYTE_ORDER LITTLE_ENDIAN 
+#endif
+
 #if !defined(BYTE_ORDER) || (BYTE_ORDER != LITTLE_ENDIAN && BYTE_ORDER != BIG_ENDIAN)
 #warning Define BYTE_ORDER to be equal to either LITTLE_ENDIAN or BIG_ENDIAN
 #define BYTE_ORDER BIG_ENDIAN

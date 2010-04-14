@@ -231,7 +231,7 @@ R_API int r_str_escape(char *buf);
 R_API char *r_str_home(const char *str);
 R_API char *r_str_concat(char *ptr, const char *string);
 R_API char *r_str_concatf(char *ptr, const char *fmt, ...);
-R_API void r_str_concatch(char *x, char y);
+R_API char *r_str_concatch(char *x, char y);
 R_API void r_str_case(char *str, int up);
 
 R_API int r_hex_pair2bin(const char *arg);

@@ -1,18 +1,19 @@
-/* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2010 pancake<nopcode.org> */
 
 #include "r_cons.h"
 #include "r_print.h"
 #include "r_util.h"
 
-R_API int r_print_init(struct r_print_t *p)
-{
+R_API RPrint *r_print_init(RPrint *p) {
+	if (p == NULL)
+		return NULL;
 	/* read callback */
 	p->user = NULL;
 	p->read_at = NULL;
 	p->printf = printf;
 	p->interrupt = 0;
 
-	strcpy(p->datefmt, "%Y:%m:%d %H:%M:%S %z");
+	strcpy (p->datefmt, "%Y:%m:%d %H:%M:%S %z");
 
 	/* setup prefs */
 	p->bigendian = 0;
@@ -24,36 +25,29 @@ R_API int r_print_init(struct r_print_t *p)
 		R_PRINT_FLAGS_COLOR |
 		R_PRINT_FLAGS_HEADER |
 		R_PRINT_FLAGS_ADDRMOD;
-	return R_TRUE;
-}
-
-struct r_print_t *r_print_new()
-{
-	struct r_print_t *p = R_NEW(struct r_print_t);
-	r_print_init(p);
 	return p;
 }
 
-void r_print_set_flags(struct r_print_t *p, int _flags)
-{
+R_API RPrint *r_print_new() {
+	return r_print_init (R_NEW (RPrint));
+}
+
+R_API void r_print_set_flags(RPrint *p, int _flags) {
 	p->flags = _flags;
 }
 
-void r_print_unset_flags(struct r_print_t *p, int flags)
-{
+R_API void r_print_unset_flags(RPrint *p, int flags) {
 	p->flags = p->flags & (p->flags^flags);
 }
 
-struct r_print_t *r_print_free(struct r_print_t *p)
-{
+R_API RPrint *r_print_free(RPrint *p) {
 	free(p);
 	return NULL;
 }
 
 // XXX this is not thread safe...store into r_print_t ?
 
-void r_print_set_cursor(struct r_print_t *p, int enable, int ocursor, int cursor)
-{
+R_API void r_print_set_cursor(RPrint *p, int enable, int ocursor, int cursor) {
 	p->cur_enabled = enable;
 	//if (ocursor<0) ocursor=0;
 	p->ocur = ocursor;
@@ -61,24 +55,21 @@ void r_print_set_cursor(struct r_print_t *p, int enable, int ocursor, int cursor
 	p->cur = cursor;
 }
 
-R_API void r_print_cursor(struct r_print_t *p, int cur, int set)
-{
+R_API void r_print_cursor(RPrint *p, int cur, int set) {
 	if (!p->cur_enabled)
 		return;
-	if (p->ocur == -1) {
-		if (cur==p->cur)
-			r_cons_invert(set, p->flags & R_PRINT_FLAGS_COLOR);
-	} else {
+	if (p->ocur != -1) {
 		int from = p->ocur;
 		int to = p->cur;
 		r_num_minmax_swap_i(&from, &to);
 		if (cur>=from&&cur<=to)
-			r_cons_invert(set, p->flags&R_PRINT_FLAGS_COLOR);
-	}
+			r_cons_invert (set, p->flags&R_PRINT_FLAGS_COLOR);
+	} else
+	if (cur==p->cur)
+		r_cons_invert (set, p->flags & R_PRINT_FLAGS_COLOR);
 }
 
-void r_print_addr(struct r_print_t *p, ut64 addr)
-{
+R_API void r_print_addr(RPrint *p, ut64 addr) {
 	//config_get_i("cfg.addrmod");
 	int mod = p->flags & R_PRINT_FLAGS_ADDRMOD;
 	char ch = (0==(addr%(mod?mod:1)))?',':' ';
@@ -92,52 +83,80 @@ void r_print_addr(struct r_print_t *p, ut64 addr)
 	} else r_cons_printf ("0x%08"PFMT64x"%c ", addr, ch);
 }
 
-R_API void r_print_byte(struct r_print_t *p, const char *fmt, int idx, ut8 ch)
-{
+// XXX: bad designed function :)
+R_API char *r_print_hexpair(RPrint *p, const char *str) {
+	const char *s;
+	char *d, *dst = (char *)malloc (1024); //(strlen (str)+2)*6);
+
+	for (s=str,d=dst; *s; s+=2, d+=2) {
+		if (s[0]=='0' && s[1]=='0') {
+			memcpy (d, "\x1b[31m", 5);
+			d += 5;
+		} else
+		if (s[0]=='f' && s[1]=='f') {
+			memcpy (d, "\x1b[32m", 5);
+			d += 5;
+		} else
+		if (s[0]=='7' && s[1]=='f') {
+			memcpy (d, "\x1b[33m", 5);
+			d += 5;
+		} else {
+			int ch;
+			sscanf (s, "%02x", &ch);
+			if (IS_PRINTABLE (ch)) {
+				memcpy (d, "\x1b[35m", 5);
+				d += 5;
+			}
+		}
+		d[0] = s[0];
+		d[1] = s[1];
+	}
+	memcpy (d, "\x1b[0m", 5);
+	return dst;
+}
+
+R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 	ut8 rch = ch;
 
-	if (!IS_PRINTABLE(ch) && fmt[0]=='%'&&fmt[1]=='c')
+	if (!IS_PRINTABLE (ch) && fmt[0]=='%'&&fmt[1]=='c')
 		rch = '.';
 
-	r_print_cursor(p, idx, 1);
+	r_print_cursor (p, idx, 1);
 	//if (p->flags & R_PRINT_FLAGS_CURSOR && idx == p->cur) {
 	if (p->flags & R_PRINT_FLAGS_COLOR) {
 		char *pre = NULL;
 		switch(ch) {
-		case 0x00: pre = "\e[31m"; break;
-		case 0xFF: pre = "\e[32m"; break;
-		case 0x7F: pre = "\e[33m"; break;
+		case 0x00: pre = "\x1b[31m"; break;
+		case 0xFF: pre = "\x1b[32m"; break;
+		case 0x7F: pre = "\x1b[33m"; break;
 		default:
-			if (IS_PRINTABLE(ch))
-				pre = "\e[35m";
+			if (IS_PRINTABLE (ch))
+				pre = "\x1b[35m";
 		}
-		if (pre)
-			p->printf(pre);
-		p->printf(fmt, rch);
-		if (pre)
-			p->printf("\x1b[0m");
-	} else p->printf(fmt, rch);
-	r_print_cursor(p, idx, 0);
+		if (pre) p->printf (pre);
+		p->printf (fmt, rch);
+		if (pre) p->printf ("\x1b[0m");
+	} else p->printf (fmt, rch);
+	r_print_cursor (p, idx, 0);
 }
 
-void r_print_code(struct r_print_t *p, ut64 addr, ut8 *buf, int len)
-{
+R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len) {
 	int i, w = 0;
-	p->printf("#define _BUFFER_SIZE %d\n", len);
-	p->printf("unsigned char buffer[%d] = {", len);
+	p->printf ("#define _BUFFER_SIZE %d\n", len);
+	p->printf ("unsigned char buffer[%d] = {", len);
 	p->interrupt = 0;
-	for(i=0;!p->interrupt&&i<len;i++) {
+	for (i=0;!p->interrupt&&i<len;i++) {
 		if (!(w%p->width))
-			p->printf("\n  ");
-		r_print_cursor(p, i, 1);
+			p->printf ("\n  ");
+		r_print_cursor (p, i, 1);
 		p->printf("0x%02x, ", buf[i]);
-		r_print_cursor(p, i, 0);
+		r_print_cursor (p, i, 0);
 		w+=6;
 	}
 	p->printf("};\n");
 }
 
-R_API int r_print_string(struct r_print_t *p, ut64 seek, const ut8 *buf, int len, int wide, int zeroend, int urlencode)
+R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int wide, int zeroend, int urlencode)
 {
 	int i;
 
@@ -164,17 +183,15 @@ R_API int r_print_string(struct r_print_t *p, ut64 seek, const ut8 *buf, int len
 }
 
 static const char hex[16] = "0123456789ABCDEF";
-R_API void r_print_hexpairs(struct r_print_t *p, ut64 addr, ut8 *buf, int len)
-{
+R_API void r_print_hexpairs(RPrint *p, ut64 addr, ut8 *buf, int len) {
 	int i;
-	for(i=0;i<len;i++) {
-		p->printf("%02x ", buf[i]);
+	for (i=0;i<len;i++) {
+		p->printf ("%02x ", buf[i]);
 	}
 }
 
 // XXX: step is borken
-R_API void r_print_hexdump(struct r_print_t *p, ut64 addr, ut8 *buf, int len, int base, int step)
-{
+R_API void r_print_hexdump(RPrint *p, ut64 addr, ut8 *buf, int len, int base, int step) {
 	int i,j,k,inc;
 	const char *fmt = "%02x";
 	const char *pre = "";
@@ -198,23 +215,23 @@ R_API void r_print_hexdump(struct r_print_t *p, ut64 addr, ut8 *buf, int len, in
 	if (p->flags & R_PRINT_FLAGS_HEADER) {
 		// only for color..too many options .. brbr
 		//p->printf(r_cons_palette[PAL_HEADER]);
-		p->printf("   offset   ");
+		p->printf ("   offset   ");
 		k = 0; // TODO: ??? SURE??? config.seek & 0xF;
 		for (i=0; i<inc; i++) {
-			p->printf(pre);
-			p->printf(" %c", hex[(i+k)%16]);
-			if (i&1) p->printf(" ");
+			p->printf (pre);
+			p->printf (" %c", hex[(i+k)%16]);
+			if (i&1) p->printf (" ");
 		}
 		for (i=0; i<inc; i++)
-			p->printf("%c", hex[(i+k)%16]);
-		p->printf("\n");
+			p->printf ("%c", hex[(i+k)%16]);
+		p->printf ("\n");
 	}
 
 	p->interrupt = 0;
-	for(i=0; !p->interrupt&& i<len; i+=inc) {
-		r_print_addr(p, addr+(i*step));
+	for (i=0; !p->interrupt && i<len; i+=inc) {
+		r_print_addr (p, addr+(i*step));
 
-		for(j=i;j<i+inc;j++) {
+		for (j=i;j<i+inc;j++) {
 			if (j>=len) {
 				p->printf("  ");
 				if (j%2) p->printf(" ");
@@ -224,39 +241,36 @@ R_API void r_print_hexdump(struct r_print_t *p, ut64 addr, ut8 *buf, int len, in
 			if (j%2) p->printf(" ");
 		}
 
-		for(j=i; j<i+inc; j++) {
+		for (j=i; j<i+inc; j++) {
 			if (j >= len)
-				p->printf(" ");
-			else r_print_byte(p, "%c", j, buf[j]);
+				p->printf (" ");
+			else r_print_byte (p, "%c", j, buf[j]);
 		}
-		p->printf("\n");
+		p->printf ("\n");
 		//addr+=inc;
 	}
 }
 
-R_API void r_print_bytes(struct r_print_t *p, const ut8* buf, int len, const char *fmt)
-{
+R_API void r_print_bytes(RPrint *p, const ut8* buf, int len, const char *fmt) {
 	int i;
-	for(i=0;i<len;i++)
-		p->printf(fmt, buf[i]);
-	p->printf("\n");
+	for (i=0;i<len;i++)
+		p->printf (fmt, buf[i]);
+	p->printf ("\n");
 }
 
-R_API void r_print_raw(struct r_print_t *p, const ut8* buf, int len)
-{
+R_API void r_print_raw(RPrint *p, const ut8* buf, int len) {
 	// TODO independize from cons
-	r_cons_memcat((char *)buf, len);
+	r_cons_memcat ((char *)buf, len);
 }
 
-
-R_API void r_print_c(struct r_print_t *p, const char *str, int len)
+R_API void r_print_c(RPrint *p, const char *str, int len)
 {
 	int i,j;
 	int inc= p->width/6;
-	p->printf("#define _BUFFER_SIZE %d\n"
+	p->printf ("#define _BUFFER_SIZE %d\n"
 		"unsigned char buffer[_BUFFER_SIZE] = {\n", len);
 	p->interrupt = 0;
-	for(j = i = 0; !p->interrupt && i < len;) {
+	for (j = i = 0; !p->interrupt && i < len;) {
 		r_print_byte(p, "0x%02x", i, str[i]);
 		
 		if (++i<len) p->printf(", ");
@@ -267,16 +281,15 @@ R_API void r_print_c(struct r_print_t *p, const char *str, int len)
 }
 
 /* TODO: handle screen width */
-R_API void r_print_progressbar(struct r_print_t *pr, int pc)
-{
+R_API void r_print_progressbar(RPrint *pr, int pc) {
         int tmp, cols = 78;
         (pc<0)?pc=0:(pc>100)?pc=100:0;
-        fprintf(stderr, "\x1b[K  %3d%% [", pc);
+        fprintf (stderr, "\x1b[K  %3d%% [", pc);
         cols-=15;
         for(tmp=cols*pc/100;tmp;tmp--) fprintf(stderr,"#");
         for(tmp=cols-(cols*pc/100);tmp;tmp--) fprintf(stderr,"-");
-        fprintf(stderr, "]\r");
-        fflush(stderr);
+        fprintf (stderr, "]\r");
+        fflush (stderr);
 }
 
 #if 0

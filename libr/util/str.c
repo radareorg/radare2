@@ -341,7 +341,7 @@ R_API void r_str_writef(int fd, const char *fmt, ...) {
  * return: the pointer ptr resized to string size.
  */
 R_API char *r_str_concat(char *ptr, const char *string) {
-	if (!ptr)
+	if (ptr == NULL)
 		return strdup (string);
 	ptr = realloc (ptr, strlen (string)+strlen (ptr)+1);
 	if (ptr == NULL)
@@ -360,9 +360,9 @@ R_API char *r_str_concatf(char *ptr, const char *fmt, ...) {
 	return ptr;
 }
 
-R_API void r_str_concatch(char *x, char y) {
-	char b[2]={y,0};
-	r_str_concat (x,b);
+R_API char *r_str_concatch(char *x, char y) {
+	char b[2] = {y, 0};
+	return r_str_concat (x,b);
 }
 
 R_API void *r_str_free(void *ptr) {
