@@ -5,7 +5,7 @@ include ../../config.mk
 foo: all
 
 ALL_TARGETS=
-DEBUGS=ptrace.mk debug.mk malloc.mk shm.mk mach.mk
+DEBUGS=ptrace.mk debug.mk malloc.mk shm.mk mach.mk w32dbg.mk
 include ${DEBUGS}
 
 #ALL_TARGETS+=io_ewf.so

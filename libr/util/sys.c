@@ -208,7 +208,7 @@ R_API int r_sys_mkdir(const char *dir) {
 	return (ret != -1);
 }
 
-void r_sys_perror(const char *fun) { 
+R_API void r_sys_perror(const char *fun) { 
 #if __UNIX__
 	perror (fun);
 #elif __WINDOWS__

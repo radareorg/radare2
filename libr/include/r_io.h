@@ -247,6 +247,7 @@ R_API int r_io_desc_generate(RIO *io);
 /* plugins */
 extern struct r_io_handle_t r_io_plugin_malloc;
 extern struct r_io_handle_t r_io_plugin_ptrace;
+extern struct r_io_handle_t r_io_plugin_w32dbg;
 extern struct r_io_handle_t r_io_plugin_mach;
 extern struct r_io_handle_t r_io_plugin_debug;
 extern struct r_io_handle_t r_io_plugin_shm;
