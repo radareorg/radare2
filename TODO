@@ -30,6 +30,8 @@
 <{include libr/TODO}>
 ** See libr/*/TODO FMI
 
+* Merge r_socket inside r_util ?
+
 * visual byte cursor in disassembly
 
 * stack analysis

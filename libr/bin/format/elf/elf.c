@@ -7,7 +7,7 @@
 #include <r_util.h>
 #include "elf.h"
 
-static int __strnlen(const char *str, int len) {
+static inline int __strnlen(const char *str, int len) {
 	int l = 0;
 	while (*str && --len) {
 		str++;

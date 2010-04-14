@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2006-2010 pancake<nopcode.org> */
 
 #define USE_SOCKETS
 
@@ -53,15 +53,15 @@ R_API int r_socket_puts(int fd, char *buf) {
 /* waits secs until new data is received.     */
 /* returns -1 on error, 0 is false, 1 is true */
 R_API int r_socket_ready(int fd, int secs, int usecs) {
-	int ret;
 #if __UNIX__
+	int ret;
 	struct pollfd fds[1];
 	fds[0].fd = fd;
 	fds[0].events = POLLIN|POLLPRI;
 	fds[0].revents = POLLNVAL|POLLHUP|POLLERR;
 	ret = poll((struct pollfd *)&fds, 1, usecs);
 	return ret;
-#elif _WINDOWS_
+#elif __WINDOWS__
 	fd_set rfds;
 	struct timeval tv;
 	int retval;
@@ -73,7 +73,7 @@ R_API int r_socket_ready(int fd, int secs, int usecs) {
 	tv.tv_sec = secs;
 	tv.tv_usec = usecs;
 
-	retval = select(1, &rfds, NULL, NULL, &tv);
+	retval = select (1, &rfds, NULL, NULL, &tv);
 	if (retval==-1)
 		return -1;
 	return FD_ISSET(0, &rfds);
@@ -82,17 +82,15 @@ R_API int r_socket_ready(int fd, int secs, int usecs) {
 #endif
 }
 
-R_API void r_socket_block(int fd, int block)
-{
-#if _UNIX_
-	fcntl(fd, F_SETFL, O_NONBLOCK, !block);
-#elif _WINDOWS_
-	ioctlsocket(fd, FIONBIO, (u_long FAR*)&block);
+R_API void r_socket_block(int fd, int block) {
+#if __UNIX__
+	fcntl (fd, F_SETFL, O_NONBLOCK, !block);
+#elif __WINDOWS__
+	ioctlsocket (fd, FIONBIO, (u_long FAR*)&block);
 #endif
 }
 
-R_API void r_socket_printf(int fd, const char *fmt, ...)
-{
+R_API void r_socket_printf(int fd, const char *fmt, ...) {
 	char buf[BUFFER_SIZE];
 	va_list ap;
 
@@ -107,12 +105,11 @@ R_API void r_socket_printf(int fd, const char *fmt, ...)
 }
 
 #if __UNIX__
-R_API int r_socket_unix_connect(const char *file)
-{
+R_API int r_socket_unix_connect(const char *file) {
 	struct sockaddr_un addr;
 	int sock;
 
-	sock = socket(PF_UNIX, SOCK_STREAM, 0);
+	sock = socket (PF_UNIX, SOCK_STREAM, 0);
 	if (sock <0)
 		return -1;
 	// TODO: set socket options
@@ -127,8 +124,7 @@ R_API int r_socket_unix_connect(const char *file)
 	return sock;
 }
 
-R_API int r_socket_unix_listen(const char *file)
-{
+R_API int r_socket_unix_listen(const char *file) {
 	struct sockaddr_un unix_name;
 	int sock;
 
@@ -156,8 +152,7 @@ R_API int r_socket_unix_listen(const char *file)
 }
 #endif
 
-R_API int r_socket_connect(char *host, int port)
-{
+R_API int r_socket_connect(char *host, int port) {
 	struct sockaddr_in sa;
 	struct hostent *he;
 	int s;
@@ -191,8 +186,7 @@ R_API int r_socket_connect(char *host, int port)
 	return s;
 }
 
-R_API int r_socket_listen(int port)
-{
+R_API int r_socket_listen(int port) {
 	int ret, s;
 	struct sockaddr_in sa;
 	struct linger linger = { 0 };
@@ -221,8 +215,7 @@ R_API int r_socket_listen(int port)
 	return s;
 }
 
-R_API int r_socket_close(int fd)
-{
+R_API int r_socket_close(int fd) {
 #if __UNIX__
 	shutdown(fd, SHUT_RDWR);
 	return close(fd);
@@ -232,28 +225,24 @@ R_API int r_socket_close(int fd)
 #endif
 }
 
-R_API int r_socket_read(int fd, unsigned char *buf, int len)
-{
-#if __UNIX__
-	return read(fd, buf, len);
+R_API int r_socket_read(int fd, unsigned char *buf, int len) {
+#if __WINDOWS__
+	return recv (fd, (void *)buf, len, 0);
 #else
-	return recv(fd, buf, len, 0);
+	return read (fd, buf, len);
 #endif
 }
 
-R_API int r_socket_accept(int fd)
-{
-	return accept(fd, NULL, NULL);
+R_API int r_socket_accept(int fd) {
+	return accept (fd, NULL, NULL);
 }
 
-R_API int r_socket_flush(int fd)
-{
+R_API int r_socket_flush(int fd) {
 	/* TODO */
 	return 0;
 }
 
-R_API int r_socket_gets(int fd, char *buf,  int size)
-{
+R_API int r_socket_gets(int fd, char *buf,  int size) {
 	int i = 0;
 	int ret = 0;
 
@@ -279,21 +268,17 @@ R_API int r_socket_gets(int fd, char *buf,  int size)
 	return i;
 }
 
-R_API char *r_socket_to_string(int fd)
-{
+R_API char *r_socket_to_string(int fd) {
 	char *str = NULL;
 	struct sockaddr sa;
-	unsigned int sl = sizeof(sa);
-	memset (&sa, 0, sizeof(sa));
-	if (getpeername (fd, &sa, &sl) != 0) {
-		printf("ERRNO IS %d\n", errno);
-		perror("getpeername");
-	} else {
+	socklen_t sl = sizeof (sa);
+	memset (&sa, 0, sizeof (sa));
+	if (!getpeername (fd, &sa, &sl)) {
 		struct sockaddr_in *sain = (struct sockaddr_in*) &sa;
 		ut8 *a = (ut8*) &(sain->sin_addr);
 		if ((str = malloc(32)))
-			sprintf(str, "%d.%d.%d.%d:%d",
-				a[0],a[1],a[2],a[3], ntohs(sain->sin_port));
-	}
+			sprintf (str, "%d.%d.%d.%d:%d",
+				a[0],a[1],a[2],a[3], ntohs (sain->sin_port));
+	} else eprintf ("getperrname: failed\n"); //r_sys_perror ("getpeername");
 	return str;
 }

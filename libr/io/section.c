@@ -5,26 +5,25 @@
 R_API void r_io_section_init(RIO *io) {
 	io->enforce_rwx = 0; // do not enforce RWX section permissions by default
 	io->enforce_seek = 0; // do not limit seeks out of the file by default
-	INIT_LIST_HEAD(&(io->sections));
+	INIT_LIST_HEAD (&(io->sections));
 }
 
 R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name) {
-	RIOSection *s = (RIOSection *)malloc(sizeof(RIOSection));
+	RIOSection *s = R_NEW (RIOSection);
 	s->offset = offset;
 	s->vaddr = vaddr;
 	s->size = size;
 	s->vsize = vsize;
 	s->rwx = rwx;
-	if (name)
-		strncpy(s->name, name, 254);
-	else s->name[0]='\0';
-	list_add(&(s->list), &io->sections);
+	if (name) strncpy (s->name, name, sizeof (s->name));
+	else *s->name = '\0';
+	list_add (&(s->list), &io->sections);
 }
 
 R_API RIOSection *r_io_section_get_i(RIO *io, int idx) {
 	int i = 0;
 	struct list_head *pos;
-	list_for_each_prev(pos, &io->sections) {
+	list_for_each_prev (pos, &io->sections) {
 		RIOSection *s = (RIOSection *)list_entry(pos, RIOSection, list);
 		if (i == idx)
 			return s;
