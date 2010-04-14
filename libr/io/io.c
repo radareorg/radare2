@@ -104,13 +104,12 @@ R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode) {
 		r_io_desc_add (io, fd, file, flags, io->plugin);
 	} else fd = -1;
 
-	free((void *)uri);
+	free ((void *)uri);
 	return fd;
 }
 
 // TODO: Rename to use_fd ?
-R_API int r_io_set_fd(struct r_io_t *io, int fd)
-{
+R_API int r_io_set_fd(struct r_io_t *io, int fd) {
 	if (fd != -1 && fd != io->fd) {
 		io->plugin = r_io_handle_resolve_fd (io, fd);
 		io->fd = fd;
