@@ -88,7 +88,7 @@ R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int le
 	for(;times;times--) { // repeat N times
 		const char * orig = arg;
 		if (otimes>1)
-			p->printf ("0x%08llx [%d] {\n", seek+i, otimes-times);
+			p->printf ("0x%08"PFMT64x" [%d] {\n", seek+i, otimes-times);
 		for(idx=0;arg<argend && idx<len;idx++, arg=arg+1) {
 			addr = 0LL;
 			if (endian)
@@ -196,7 +196,7 @@ R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int le
 				ut32 addr32 = (ut32)addr;
 				//char buf[128];
 				p->printf("0x%08x = ", seek+i);
-				p->printf("0x%08llx ", addr32);
+				p->printf("0x%08"PFMT64x" ", addr32);
 				//if (string_flag_offset(buf, (ut64)addr32, -1))
 				//	p->printf("; %s", buf);
 				i+=4;

@@ -104,7 +104,7 @@ int r_io_map_list(struct r_io_t *io)
 	struct list_head *pos;
 	list_for_each_prev(pos, &io->maps) {
 		struct r_io_map_t *im = list_entry(pos, struct r_io_map_t, list);
-		printf("0x%08llx 0x%08llx delta=0x%08llx fd=%d flags=%x\n",
+		printf("0x%08"PFMT64x" 0x%08"PFMT64x" delta=0x%08"PFMT64x" fd=%d flags=%x\n",
 			im->from, im->to, im->delta, im->fd, im->flags);
 		n++;
 	}

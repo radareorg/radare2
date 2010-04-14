@@ -56,7 +56,7 @@ class Radare
 
  # code
  def comment_add(addr, str)
-  $r.cmd("CC #{str} @ 0x%08llx"%addr)
+  $r.cmd("CC #{str} @ 0x%08"PFMT64x""%addr)
  end
 
  def comment_del(str)

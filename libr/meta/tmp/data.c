@@ -296,7 +296,7 @@ struct data_t *data_get_between(ut64 from, ut64 to)
 		d->times = stc;
 	}
 	// TODO add struct
-//printf("0x%llx-0x%llx: %d %d %d = %d\n", from, to, hex, str, code, d->type);
+//printf("0x%"PFMT64x"-0x%"PFMT64x": %d %d %d = %d\n", from, to, hex, str, code, d->type);
 
 	return d;
 #endif
@@ -376,7 +376,7 @@ int data_list_ranges()
 		d = (struct data_t *)list_entry(pos, struct data_t, list);
 		switch(d->type) {
 		case DATA_FUN:
-			cons_printf("ar+ 0x%08llx 0x%08llx\n",
+			cons_printf("ar+ 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 				d->from, d->to);
 			break;
 		}
@@ -404,12 +404,12 @@ int data_list()
 		case DATA_STR:    cons_strcat("Cs "); break;
 		case DATA_STRUCT: cons_strcat("Cm "); arg = d->arg; break;
 		default:          cons_strcat("Cc "); break; }
-		cons_printf("%lld %s@ 0x%08llx ; %s", d->to-d->from, arg?arg:"", d->from, label);
+		cons_printf("%"PFMT64d" %s@ 0x%08"PFMT64x" ; %s", d->to-d->from, arg?arg:"", d->from, label);
 #if 0
 		if (verbose)
 		if (d->type == DATA_STR) {
 			cons_printf("  (");
-			sprintf(label, "pz@0x%08llx", d->from);
+			sprintf(label, "pz@0x%08"PFMT64x"", d->from);
 			radare_cmd(label, 0);
 		}else
 #endif
@@ -430,9 +430,9 @@ int data_xrefs_print(ut64 addr, int type)
 			str[0]='\0';
 			string_flag_offset(str, x->from, 0);
 			switch(type) {
-			case 0: if (x->type == type) { cons_printf("; 0x%08llx CODE xref 0x%08llx (%s)\n", addr, x->from, str); n++; } break;
-			case 1: if (x->type == type) { cons_printf("; 0x%08llx DATA xref 0x%08llx (%s)\n", addr, x->from), str; n++; } break;
-			default: { cons_printf("; 0x%08llx %s xref from 0x%08llx (%s)\n", addr, (x->type==1)?"DATA":(x->type==0)?"CODE":"UNKNOWN",x->from, str); n++; };
+			case 0: if (x->type == type) { cons_printf("; 0x%08"PFMT64x" CODE xref 0x%08"PFMT64x" (%s)\n", addr, x->from, str); n++; } break;
+			case 1: if (x->type == type) { cons_printf("; 0x%08"PFMT64x" DATA xref 0x%08"PFMT64x" (%s)\n", addr, x->from), str; n++; } break;
+			default: { cons_printf("; 0x%08"PFMT64x" %s xref from 0x%08"PFMT64x" (%s)\n", addr, (x->type==1)?"DATA":(x->type==0)?"CODE":"UNKNOWN",x->from, str); n++; };
 			}
 		}
 	}
@@ -563,7 +563,7 @@ void data_comment_list()
 	struct list_head *pos;
 	list_for_each(pos, &comments) {
 		struct comment_t *cmt = list_entry(pos, struct comment_t, list);
-		cons_printf("CC %s @ 0x%llx\n", cmt->comment, cmt->offset);
+		cons_printf("CC %s @ 0x%"PFMT64x"\n", cmt->comment, cmt->offset);
 	}
 }
 
@@ -579,7 +579,7 @@ void data_xrefs_here(ut64 addr)
 		if (addr = x->addr) {
 			label[0]='\0';
 			string_flag_offset(label, x->from, 0);
-			cons_printf("%d %s xref 0x%08llx @ 0x%08llx ; %s\n",
+			cons_printf("%d %s xref 0x%08"PFMT64x" @ 0x%08"PFMT64x" ; %s\n",
 				count+1, x->type?"data":"code", x->from, x->addr, label);
 			count++;
 		}
@@ -599,7 +599,7 @@ void data_xrefs_list()
 		x = (struct xrefs_t *)list_entry(pos, struct xrefs_t, list);
 		label[0]='\0';
 		string_flag_offset(label, x->from, 0);
-		cons_printf("C%c 0x%08llx @ 0x%08llx ; %s\n", x->type?'d':'x', x->from, x->addr, label);
+		cons_printf("C%c 0x%08"PFMT64x" @ 0x%08"PFMT64x" ; %s\n", x->type?'d':'x', x->from, x->addr, label);
 	}
 }
 

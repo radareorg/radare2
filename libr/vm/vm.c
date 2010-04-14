@@ -23,10 +23,10 @@ static ut64 r_vm_get_value(struct r_vm_t *vm, const char *str) {
 	}
 
 	if (str[0]=='0' && str[1]=='x')
-		sscanf(str, "0x%llx", &ret);
+		sscanf(str, "0x%"PFMT64x"", &ret);
 	else
 	if (str[0]>='0' && str[0]<='9')
-		sscanf(str, "%lld", &ret);
+		sscanf(str, "%"PFMT64d"", &ret);
 	else ret = r_vm_reg_get(vm, str);
 	return ret;
 }
@@ -100,10 +100,10 @@ R_API void r_vm_print(struct r_vm_t *vm, int type) {
 	list_for_each (pos, &vm->regs) {
 		struct r_vm_reg_t *r = list_entry(pos, struct r_vm_reg_t, list);
 		if (type == -2) {
-			printf("f vm.%s @ 0x%08llx\n", r->name, r->value);
+			printf("f vm.%s @ 0x%08"PFMT64x"\n", r->name, r->value);
 		} else {
 			if (type == -1 || type == r->type)
-			printf(".%s\t%s = 0x%08llx\n",
+			printf(".%s\t%s = 0x%08"PFMT64x"\n",
 				r_vm_reg_type(r->type), r->name,
 				(r->get!=NULL)?r_vm_reg_get(vm, r->name):r->value);
 		}
@@ -327,7 +327,7 @@ R_API int r_vm_eval_eq(RVm *vm, const char *str, const char *val) {
 			// XXX support 64 bits here
 			ut32 v = (ut32)r_vm_get_math(vm, val); // TODO control endian
 			p = strchr(str+1,':');
-			fprintf(stderr,"   ;==> [0x%08llx] = %x  ((%s))\n", off, v, str+1);
+			fprintf(stderr,"   ;==> [0x%08"PFMT64x"] = %x  ((%s))\n", off, v, str+1);
 
 			if (p) {
 				int size = atoi(val+1);
@@ -344,7 +344,7 @@ R_API int r_vm_eval_eq(RVm *vm, const char *str, const char *val) {
 					r_vm_mmu_write(vm, off, buf, 4);
 				}
 			} else {
-				printf("   ; write %x @ 0x%08llx\n", v, off);
+				printf("   ; write %x @ 0x%08"PFMT64x"\n", v, off);
 				r_vm_mmu_write(vm, off, (ut8*)&v, 4);
 			}
 		}
@@ -543,13 +543,13 @@ R_API int r_vm_emulate(struct r_vm_t *vm, int n) {
 		udis_set_pc(pc);
 		vm_mmu_read(pc, buf, 32);
 //fprintf(stderr,"(%02x %02x)\n",  buf[0], buf[1]);
-		radare_cmdf("pd 1 @ 0x%08llx", pc);
+		radare_cmdf("pd 1 @ 0x%08"PFMT64x"", pc);
 		pas_aop(config.arch, pc, buf, 32, &aop, str, 1);
 
 		arch_aop(pc, buf, &aop);
 		opsize = aop.length;
-//fprintf(stderr,"%llx +  %d (%02x %02x)\n", pc, opsize, buf[0], buf[1]);
-		//printf("=> 0x%08llx '%s' (%d)\n", vm_reg_get(vm->cpu.pc), str, opsize);
+//fprintf(stderr,"%"PFMT64x" +  %d (%02x %02x)\n", pc, opsize, buf[0], buf[1]);
+		//printf("=> 0x%08"PFMT64x" '%s' (%d)\n", vm_reg_get(vm->cpu.pc), str, opsize);
 		vm_reg_set(vm->cpu.pc, vm_reg_get(vm->cpu.pc)+opsize);
 		vm_op_eval(str);
 	}

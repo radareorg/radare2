@@ -58,7 +58,7 @@ R_API RBreakpointItem *r_bp_at_addr(RBreakpoint *bp, ut64 addr, int rwx) {
 	struct list_head *pos;
 	list_for_each(pos, &bp->bps) {
 		RBreakpointItem *b = list_entry (pos, RBreakpointItem, list);
-	//	eprintf ("---ataddr--- 0x%08llx %d %d\n", b->addr, b->size, b->recoil);
+	//	eprintf ("---ataddr--- 0x%08"PFMT64x" %d %d\n", b->addr, b->size, b->recoil);
 		if (addr>=b->addr && addr<=b->addr+b->size && rwx&b->rwx)
 			return b;
 	}
@@ -200,7 +200,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 	eprintf ("Breakpoint list:\n");
 	list_for_each (pos, &bp->bps) {
 		b = list_entry (pos, struct r_bp_item_t, list);
-		printf ("0x%08llx - 0x%08llx %d %c%c%c %s %s %s\n",
+		printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %d %c%c%c %s %s %s\n",
 			b->addr, b->addr+b->size, b->size,
 			(b->rwx & R_BP_PROT_READ)?'r':'-',
 			(b->rwx & R_BP_PROT_WRITE)?'w':'-',

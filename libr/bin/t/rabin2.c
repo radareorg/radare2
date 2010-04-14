@@ -75,9 +75,9 @@ static int rabin_show_entrypoints() {
 
 	r_list_foreach (entries, iter, entry) {
 		if (rad) {
-			printf ("f entry%i @ 0x%08llx\n", i, va?baddr+entry->rva:entry->offset);
+			printf ("f entry%i @ 0x%08"PFMT64x"\n", i, va?baddr+entry->rva:entry->offset);
 			printf ("s entry%i\n", i);
-		} else printf ("address=0x%08llx offset=0x%08llx baddr=0x%08llx\n",
+		} else printf ("address=0x%08"PFMT64x" offset=0x%08"PFMT64x" baddr=0x%08"PFMT64x"\n",
 				baddr+entry->rva, entry->offset, baddr);
 		i++;
 	}
@@ -131,13 +131,13 @@ static int rabin_show_imports(ut64 at) {
 			if (rad) {
 				r_flag_name_filter (import->name);
 				printf ("fs imports\n");
-				printf ("f imp.%s @ 0x%08llx\n",
+				printf ("f imp.%s @ 0x%08"PFMT64x"\n",
 						import->name, va?baddr+import->rva:import->offset);
 				printf ("fs functions\n");
-				printf ("f fcn.imp.%s @ 0x%08llx\n",
+				printf ("f fcn.imp.%s @ 0x%08"PFMT64x"\n",
 						import->name, va?baddr+import->rva:import->offset);
-			} else printf ("address=0x%08llx offset=0x%08llx ordinal=%03lli "
-						   "hint=%03lli bind=%s type=%s name=%s\n",
+			} else printf ("address=0x%08"PFMT64x" offset=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
+						   "hint=%03"PFMT64d" bind=%s type=%s name=%s\n",
 						   baddr+import->rva, import->offset,
 						   import->ordinal, import->hint,  import->bind,
 						   import->type, import->name);
@@ -179,21 +179,21 @@ static int rabin_show_symbols(ut64 at) {
 				r_flag_name_filter (symbol->name);
 				if (!strncmp (symbol->type,"FUNC", 4)) {
 					if (symbol->size) 
-						printf ("CF %lli @ 0x%08llx\n",
+						printf ("CF %"PFMT64d" @ 0x%08"PFMT64x"\n",
 								symbol->size, va?baddr+symbol->rva:symbol->offset);
 					printf ("fs functions\n");
-					printf ("f fcn.sym.%s %lli 0x%08llx\n",
+					printf ("f fcn.sym.%s %"PFMT64d" 0x%08"PFMT64x"\n",
 							symbol->name, symbol->size,
 							va?baddr+symbol->rva:symbol->offset);
 					printf ("fs symbols\n");
 				} else if (!strncmp (symbol->type,"OBJECT", 6))
-					printf ("Cd %lli @ 0x%08llx\n",
+					printf ("Cd %"PFMT64d" @ 0x%08"PFMT64x"\n",
 							symbol->size, va?baddr+symbol->rva:symbol->offset);
-				printf ("f sym.%s %lli 0x%08llx\n",
+				printf ("f sym.%s %"PFMT64d" 0x%08"PFMT64x"\n",
 						symbol->name, symbol->size,
 						va?baddr+symbol->rva:symbol->offset);
-			} else printf ("address=0x%08llx offset=0x%08llx ordinal=%03lli "
-						   "forwarder=%s size=%08lli bind=%s type=%s name=%s\n",
+			} else printf ("address=0x%08"PFMT64x" offset=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
+						   "forwarder=%s size=%"PFMT64d" bind=%s type=%s name=%s\n",
 						   baddr+symbol->rva, symbol->offset,
 						   symbol->ordinal, symbol->forwarder,
 						   symbol->size, symbol->bind, symbol->type, 
@@ -227,12 +227,12 @@ static int rabin_show_strings() {
 		section = r_bin_get_section_at (bin, string->offset, 0);
 		if (rad) {
 			r_flag_name_filter (string->string);
-			printf ("f str.%s %lli @ 0x%08llx\n"
-					"Cs %lli @ 0x%08llx\n",
+			printf ("f str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
+					"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
 					string->string, string->size, va?baddr+string->rva:string->offset,
 					string->size, va?baddr+string->rva:string->offset);
-		} else printf ("address=0x%08llx offset=0x%08llx ordinal=%03lli "
-					   "size=%08lli section=%s string=%s\n",
+		} else printf ("address=0x%08"PFMT64x" offset=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
+					   "size=%"PFMT64d" section=%s string=%s\n",
 					   baddr+string->rva, string->offset,
 					   string->ordinal, string->size,
 					   section?section->name:"unknown", string->string);
@@ -271,20 +271,20 @@ static int rabin_show_sections(ut64 at) {
 		} else {
 			if (rad) {
 				r_flag_name_filter (section->name);
-				printf ("S 0x%08llx 0x%08llx 0x%08llx 0x%08llx %s %d\n",
+				printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d\n",
 						section->offset, baddr+section->rva,
 						section->size, section->vsize, section->name, (int)section->characteristics);
-				printf ("f section.%s %lli 0x%08llx\n",
+				printf ("f section.%s %"PFMT64d" 0x%08"PFMT64x"\n",
 						section->name, section->size, va?baddr+section->rva:section->offset);
-				printf ("CC [%02i] va=0x%08llx pa=0x%08llx sz=%08lli vsz=%08lli "
-						"rwx=%c%c%c%c %s @ 0x%08llx\n",
+				printf ("CC [%02i] va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
+						"rwx=%c%c%c%c %s @ 0x%08"PFMT64x"\n",
 						i, baddr+section->rva, section->offset, section->size, section->vsize,
 						R_BIN_SCN_SHAREABLE (section->characteristics)?'s':'-',
 						R_BIN_SCN_READABLE (section->characteristics)?'r':'-',
 						R_BIN_SCN_WRITABLE (section->characteristics)?'w':'-',
 						R_BIN_SCN_EXECUTABLE (section->characteristics)?'x':'-',
 						section->name,va?baddr+section->rva:section->offset);
-			} else printf ("idx=%02i address=0x%08llx offset=0x%08llx size=%08lli vsize=%08lli "
+			} else printf ("idx=%02i address=0x%08"PFMT64x" offset=0x%08"PFMT64x" size=%"PFMT64d" vsize=%"PFMT64d" "
 						   "privileges=%c%c%c%c name=%s\n",
 						   i, baddr+section->rva, section->offset, section->size, section->vsize,
 						   R_BIN_SCN_SHAREABLE (section->characteristics)?'s':'-',
@@ -362,11 +362,11 @@ static int rabin_show_fields() {
 	r_list_foreach (fields, iter, field) {
 		if (rad) {
 			r_flag_name_filter (field->name);
-			printf ("f header.%s @ 0x%08llx\n",
+			printf ("f header.%s @ 0x%08"PFMT64x"\n",
 					field->name, va?baddr+field->rva:field->offset);
-			printf ("[%02i] address=0x%08llx offset=0x%08llx name=%s\n",
+			printf ("[%02i] address=0x%08"PFMT64x" offset=0x%08"PFMT64x" name=%s\n",
 					i, baddr+field->rva, field->offset, field->name);
-		} else printf ("idx=%02i address=0x%08llx offset=0x%08llx name=%s\n",
+		} else printf ("idx=%02i address=0x%08"PFMT64x" offset=0x%08"PFMT64x" name=%s\n",
 					   i, baddr+field->rva, field->offset, field->name);
 		i++;
 	}

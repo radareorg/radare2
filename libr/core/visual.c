@@ -75,7 +75,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 					hit = 1;
 				}
 				if ((i >=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
-					r_cons_printf (" %c  %03d 0x%08llx %4lld %s\n",
+					r_cons_printf (" %c  %03d 0x%08"PFMT64x" %4"PFMT64d" %s\n",
 						(option==i)?'>':' ',
 						i, flag->offset, flag->size, flag->name);
 					j++;
@@ -633,9 +633,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 }
 
 R_API void r_core_visual_prompt(RCore *core, int color) {
-	if (color) r_cons_printf (Color_YELLOW"[0x%08llx] %s\n"Color_RESET,
+	if (color) r_cons_printf (Color_YELLOW"[0x%08"PFMT64x"] %s\n"Color_RESET,
 		core->offset, printfmt[printidx%NPF]);
-	else r_cons_printf ("[0x%08llx] %s\n", core->offset, printfmt[printidx%NPF]);
+	else r_cons_printf ("[0x%08"PFMT64x"] %s\n", core->offset, printfmt[printidx%NPF]);
 }
 
 R_API int r_core_visual(RCore *core, const char *input) {

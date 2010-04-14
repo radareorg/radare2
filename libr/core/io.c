@@ -73,7 +73,7 @@ R_API int r_core_seek(RCore *core, ut64 addr, int rb) {
 		ret = r_core_block_read (core, 0);
 		if (ret<1 && !core->ffio) {
 			core->offset = old;
-			eprintf ("Cannot read block at 0x%08llx\n", addr);
+			eprintf ("Cannot read block at 0x%08"PFMT64x"\n", addr);
 		} else
 		if (ret != core->blocksize) {
 			if (core->ffio) {

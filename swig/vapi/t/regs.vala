@@ -13,7 +13,7 @@ void main() {
 		reg.get_list (rRegister.Type.GPR);
 
 	foreach (rRegister.Item* item in head) {
-		print (" - %s (%d) = 0x%08llx\n",
+		print (" - %s (%d) = 0x%08"PFMT64x"\n",
 			item->name, item->size,
 			reg.get_value (item));
 	}

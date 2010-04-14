@@ -67,19 +67,19 @@ R_API char *r_meta_get_string(struct r_meta_t *m, int type, ut64 addr) {
 			if (d->from == addr)
 			switch(d->type) {
 			case R_META_FUNCTION:
-				str = r_str_concatf(str, "; FUNCTION SIZE %lld\n", d->size);
+				str = r_str_concatf(str, "; FUNCTION SIZE %"PFMT64d"\n", d->size);
 				break;
 			case R_META_COMMENT:
 				str = r_str_concatf(str, "; %s\n", d->str);
 				break;
 			case R_META_FOLDER:
-				str = r_str_concatf(str, "; FOLDER %lld bytes\n", d->size);
+				str = r_str_concatf(str, "; FOLDER %"PFMT64d" bytes\n", d->size);
 				break;
 			case R_META_XREF_CODE:
-				str = r_str_concatf(str, "; CODE XREF FROM 0x%08llx\n", d->to);
+				str = r_str_concatf(str, "; CODE XREF FROM 0x%08"PFMT64x"\n", d->to);
 				break;
 			case R_META_XREF_DATA:
-				str = r_str_concatf(str, "; DATA XREF FROM 0x%08llx\n", d->to);
+				str = r_str_concatf(str, "; DATA XREF FROM 0x%08"PFMT64x"\n", d->to);
 				break;
 			}
 		}
@@ -288,7 +288,7 @@ int r_meta_list(struct r_meta_t *m, int type)
 		struct r_meta_item_t *d = (struct r_meta_item_t *)
 			list_entry(pos, struct r_meta_item_t, list);
 		if (d->type == type || type == R_META_ANY) {
-			printf("%s 0x%08llx 0x%08llx %d %s\n",
+			printf("%s 0x%08"PFMT64x" 0x%08"PFMT64x" %d %s\n",
 				r_meta_type_to_string(d->type),
 				d->from, d->to, (int)(d->to-d->from), d->str);
 			count++;

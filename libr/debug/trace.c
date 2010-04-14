@@ -46,7 +46,7 @@ R_API void r_debug_trace_list (RDebug *dbg, int tag) {
 	while (r_list_iter_next (iter)) {
 		RDebugTrace *trace = r_list_iter_get (iter);
 		if (!trace->tags || (tag & trace->tags))
-			eprintf ("0x%08llx %d\n", trace->addr, trace->count);
+			eprintf ("0x%08"PFMT64x" %d\n", trace->addr, trace->count);
 	}
 }
 

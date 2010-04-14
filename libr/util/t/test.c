@@ -15,9 +15,9 @@ ut64 num_callback(void *userptr, const char *str, int *ok)
 int test_num(struct r_num_t *num, const char *str, ut64 okvalue)
 {
 	ut64 ret;
-	printf("        %.2lld == ", okvalue);
+	printf("        %"PFMT64d" == ", okvalue);
  	ret = r_num_math(num, str);
-	printf("%.2lld  \t; %s", ret, str);
+	printf("%"PFMT64d"  \t; %s", ret, str);
 	if (ret == okvalue) printf("\r ok\n");
 	else printf("\rFAIL\n");
 }

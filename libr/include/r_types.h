@@ -101,6 +101,16 @@ typedef void (*FunctionPrintf)(const char *str, ...);
 #define HAVE_REGEXP 1
 #endif
 
+#if __WINDOWS__
+#define PFMT64x "I64x"
+#define PFMT64d "I64d"
+#define PFMT64o "I64o"
+#else
+#define PFMT64x "llx"
+#define PFMT64d "lld"
+#define PFMT64o "llo"
+#endif
+
 #endif
 
 // Usage: R_DEFINE_OBJECT(r_asm);

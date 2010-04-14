@@ -85,11 +85,11 @@ void r_print_addr(struct r_print_t *p, ut64 addr)
 
 	if (p->flags & R_PRINT_FLAGS_COLOR) {
 #if 0
-		p->printf("%s0x%08llx"Color_RESET"%c ",
+		p->printf("%s0x%08"PFMT64x""Color_RESET"%c ",
 			r_cons_singleton ()->palette[PAL_ADDRESS], addr, ch);
 #endif
-		p->printf("0x%08llx%c ", addr, ch);
-	} else r_cons_printf ("0x%08llx%c ", addr, ch);
+		p->printf("0x%08"PFMT64x"%c ", addr, ch);
+	} else r_cons_printf ("0x%08"PFMT64x"%c ", addr, ch);
 }
 
 R_API void r_print_byte(struct r_print_t *p, const char *fmt, int idx, ut8 ch)

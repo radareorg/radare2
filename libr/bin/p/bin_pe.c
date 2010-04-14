@@ -202,7 +202,7 @@ static int check(RBin *bin) {
 	ut8 *buf;
 	int n, idx, ret = R_FALSE;
 	if ((buf = (ut8*)r_file_slurp_range (bin->file, 0, 0xffff+0x20, &n))) {
-		int idx = (buf[0x3c]|(buf[0x3d]<<8));
+		idx = (buf[0x3c]|(buf[0x3d]<<8));
 		if (n>idx)
 		if (!memcmp (buf, "\x4d\x5a", 2) &&
 			!memcmp (buf+idx, "\x50\x45", 2) && 

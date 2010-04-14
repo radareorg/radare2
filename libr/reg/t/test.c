@@ -8,7 +8,7 @@ void show_regs(struct r_reg_t *reg, int bitsize)
 	list_for_each(pos, reglist) {
 		struct r_reg_item_t *ri = list_entry(pos, struct r_reg_item_t, list);
 		if (ri->size == bitsize)
-			printf(" - %s : 0x%08llx\n", ri->name, r_reg_get_value(reg, ri));
+			printf(" - %s : 0x%08"PFMT64x"\n", ri->name, r_reg_get_value(reg, ri));
 	}
 }
 

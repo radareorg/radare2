@@ -51,8 +51,8 @@ static int cmd_zign(void *data, const char *input) {
 							r_cons_printf ("%02x", buf[i]);
 						}
 						r_cons_newline ();
-					} else eprintf ("Unnamed function at 0x%08llx\n", fcni->addr);
-				} else eprintf ("Cannot read at 0x%08llx\n", fcni->addr);
+					} else eprintf ("Unnamed function at 0x%08"PFMT64x"\n", fcni->addr);
+				} else eprintf ("Cannot read at 0x%08"PFMT64x"\n", fcni->addr);
 			}
 			if (ptr) {
 				r_cons_flush ();
@@ -80,7 +80,7 @@ static int cmd_zign(void *data, const char *input) {
 	case 'c':
 		item = r_sign_check (&core->sign, core->block, core->blocksize);
 		if (item)
-			r_cons_printf ("f sign.%s @ 0x%08llx\n", item->name, core->offset);
+			r_cons_printf ("f sign.%s @ 0x%08"PFMT64x"\n", item->name, core->offset);
 		break;
 	case '-':
 		if (input[1] == '*') {
@@ -122,7 +122,7 @@ static int cmd_zign(void *data, const char *input) {
 			len = fin-ini;
 			buf = malloc (len);
 			if (buf != NULL) {
-				eprintf ("Ranges are: 0x%08llx 0x%08llx\n", ini, fin);
+				eprintf ("Ranges are: 0x%08"PFMT64x" 0x%08"PFMT64x"\n", ini, fin);
 				r_cons_printf ("f-sign*\n");
 				if (r_io_read_at (&core->io, ini, buf, len) == len) {
 					len -= 128;
@@ -130,13 +130,13 @@ static int cmd_zign(void *data, const char *input) {
 						si = r_sign_check (&core->sign, buf+idx, 128);
 						if (si) {
 							if (si->type == 'f') 
-								r_cons_printf ("f sign.fun_%s_%d @ 0x%08llx\n",
+								r_cons_printf ("f sign.fun_%s_%d @ 0x%08"PFMT64x"\n",
 									item->name, idx, core->offset);
-							else r_cons_printf ("f sign.%s @ 0x%08llx\n",
+							else r_cons_printf ("f sign.%s @ 0x%08"PFMT64x"\n",
 								item->name, core->offset);
 						}
 					}
-				} else eprintf ("Cannot read %d bytes at 0x%08llx\n", len, ini);
+				} else eprintf ("Cannot read %d bytes at 0x%08"PFMT64x"\n", len, ini);
 				free (buf);
 			} else eprintf ("Cannot alloc %d bytes\n", len);
 		}
@@ -192,7 +192,7 @@ static void cmd_reg(RCore *core, const char *str) {
 			r_debug_reg_sync (&core->dbg, R_REG_TYPE_GPR, R_FALSE);
 			r = r_reg_get (core->dbg.reg, str+1, R_REG_TYPE_GPR);
 			if (r == NULL) eprintf ("Unknown register (%s)\n", str+1);
-			else r_cons_printf ("0x%08llx\n", r_reg_get_value (core->dbg.reg, r));
+			else r_cons_printf ("0x%08"PFMT64x"\n", r_reg_get_value (core->dbg.reg, r));
 		} else
 		eprintf ("Usage: dr[*] [type] [size] - get/set registers\n"
 			" dr?        display this help message\n"
@@ -252,12 +252,12 @@ static void cmd_reg(RCore *core, const char *str) {
 			r = r_reg_get (core->dbg.reg, str+1, R_REG_TYPE_GPR);
 			if (r) {
 				//eprintf ("SET(%s)(%s)\n", str, arg+1);
-				r_cons_printf ("0x%08llx ->", str,
+				r_cons_printf ("0x%08"PFMT64x" ->", str,
 					r_reg_get_value (core->dbg.reg, r));
 				r_reg_set_value (core->dbg.reg, r,
 					r_num_math (&core->num, arg+1));
 				r_debug_reg_sync (&core->dbg, R_REG_TYPE_GPR, R_TRUE);
-				r_cons_printf ("0x%08llx\n",
+				r_cons_printf ("0x%08"PFMT64x"\n",
 					r_reg_get_value (core->dbg.reg, r));
 			} else eprintf ("Unknown register '%s'\n", str+1);
 			return;
@@ -291,7 +291,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		RListIter *iter = r_list_iterator (list);
 		while (r_list_iter_next (iter)) {
 			RDebugFrame *frame = r_list_iter_get (iter);
-			r_cons_printf ("%d  0x%08llx  %d\n", i++, frame->addr, frame->size);
+			r_cons_printf ("%d  0x%08"PFMT64x"  %d\n", i++, frame->addr, frame->size);
 		}
 		r_list_destroy (list);
 		}
@@ -390,7 +390,7 @@ static int cmd_yank(void *data, const char *input) {
 	case '\0':
 		if (core->yank) {
 			int i;
-			r_cons_printf ("0x%08llx %d ",
+			r_cons_printf ("0x%08"PFMT64x" %d ",
 				core->yank_off, core->yank_len);
 			for (i=0;i<core->yank_len;i++)
 				r_cons_printf ("%02x", core->yank[i]);
@@ -601,7 +601,7 @@ static int cmd_seek(void *data, const char *input) {
 			" sb         ; seek aligned to bb start\n");
 			break;
 		}
-	} else r_cons_printf ("0x%llx\n", core->offset);
+	} else r_cons_printf ("0x%"PFMT64x"\n", core->offset);
 	return 0;
 }
 
@@ -611,7 +611,7 @@ static int cmd_help(void *data, const char *input) {
 	switch (input[0]) {
 	case ' ':
 		n = r_num_math (&core->num, input+1);
-		r_cons_printf ("%lld 0x%llx\n", n,n);
+		r_cons_printf ("%"PFMT64d" 0x%"PFMT64x"\n", n,n);
 		break;
 	case '=':
 		r_num_math (&core->num, input+1);
@@ -620,19 +620,19 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1]) {
 			if (core->num.value & UT64_GT0)
 				r_core_cmd (core, input+1, 0);
-		} else r_cons_printf ("0x%llx\n", core->num.value);
+		} else r_cons_printf ("0x%"PFMT64x"\n", core->num.value);
 		break;
 	case '-':
 		if (input[1]) {
 			if (core->num.value & UT64_LT0)
 				r_core_cmd (core, input+1, 0);
-		} else r_cons_printf ("0x%llx\n", core->num.value);
+		} else r_cons_printf ("0x%"PFMT64x"\n", core->num.value);
 		break;
 	case '!': // ??
 		if (input[1]) {
 			if (&core->num.value != UT64_MIN)
 				r_core_cmd (core, input+1, 0);
-		} else r_cons_printf ("0x%llx\n", core->num.value);
+		} else r_cons_printf ("0x%"PFMT64x"\n", core->num.value);
 		break;
 	case '$':
 		return cmd_help (data, " $?");
@@ -676,7 +676,7 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1]) {
 			if (&core->num.value == UT64_MIN)
 				r_core_cmd (core, input+1, 0);
-		} else r_cons_printf ("0x%llx\n", core->num.value);
+		} else r_cons_printf ("0x%"PFMT64x"\n", core->num.value);
 		break;
 	case '\0':
 	default:
@@ -733,7 +733,7 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len) {
 			eq++;
 			continue;
 		}
-		r_cons_printf ("0x%08llx (byte=%.2d)   %02x '%c'  ->  %02x '%c'\n",
+		r_cons_printf ("0x%08"PFMT64x" (byte=%.2d)   %02x '%c'  ->  %02x '%c'\n",
 			core->offset+i, i+1,
 			f[i], (IS_PRINTABLE(f[i]))?f[i]:' ',
 			d[i], (IS_PRINTABLE(d[i]))?d[i]:' ');
@@ -940,7 +940,7 @@ static int cmd_print(void *data, const char *input) {
 				ret = r_asm_disassemble (&core->assembler, &asmop, buf+idx, len-idx);
 				if (ret<1) {
 					ret = 1;
-					eprintf ("** invalid opcode at 0x%08llx **\n", core->assembler.pc + ret);
+					eprintf ("** invalid opcode at 0x%08"PFMT64x" **\n", core->assembler.pc + ret);
 					continue;
 				}
 				r_anal_aop (&core->anal, &analop, addr, buf+idx, (int)(len-idx));
@@ -952,7 +952,7 @@ static int cmd_print(void *data, const char *input) {
 				if (show_lines && line)
 					r_cons_strcat (line);
 				if (show_offset)
-					r_cons_printf ("0x%08llx  ", core->offset + idx);
+					r_cons_printf ("0x%08"PFMT64x"  ", core->offset + idx);
 				flag = r_flag_get_i (&core->flags, core->offset+idx);
 				if (flag || show_bytes) {
 					char *str, *extra = " ";
@@ -1196,14 +1196,14 @@ static void cmd_syscall_do(RCore *core, int num) {
 	for (i=0; i<item->args; i++) {
 		ut64 arg = r_debug_arg_get (&core->dbg, R_TRUE, i+1);
 		if (item->sargs==NULL)
-			r_cons_printf ("0x%08llx", arg);
+			r_cons_printf ("0x%08"PFMT64x"", arg);
 		else
 		switch (item->sargs[i]) {
 		case 'p': // pointer
-			r_cons_printf ("0x%08llx", arg);
+			r_cons_printf ("0x%08"PFMT64x"", arg);
 			break;
 		case 'i':
-			r_cons_printf ("%lld", arg);
+			r_cons_printf ("%"PFMT64d"", arg);
 			break;
 		case 'z':
 			{ char str[64];
@@ -1215,7 +1215,7 @@ static void cmd_syscall_do(RCore *core, int num) {
 			}
 			break;
 		default:
-			r_cons_printf ("0x%08llx", arg);
+			r_cons_printf ("0x%08"PFMT64x"", arg);
 			break;
 		}
 		if (i+1<item->args)
@@ -1257,20 +1257,20 @@ static int cmd_anal(void *data, const char *input) {
 				ret = r_anal_aop (&core->anal, &aop,
 					core->offset+idx, buf + idx, (len-idx));
 				if (ret<1) {
-					eprintf ("Oops at 0x%08llx\n", core->offset+idx);
+					eprintf ("Oops at 0x%08"PFMT64x"\n", core->offset+idx);
 					break;
 				}
-				r_cons_printf ("addr: 0x%08llx\n", core->offset+idx);
+				r_cons_printf ("addr: 0x%08"PFMT64x"\n", core->offset+idx);
 				r_cons_printf ("size: %d\n", aop.length);
 				r_cons_printf ("type: %d\n", aop.type); // TODO: string
 				r_cons_printf ("eob: %d\n", aop.eob);
-				r_cons_printf ("jump: 0x%08llx\n", aop.jump);
-				r_cons_printf ("fail: 0x%08llx\n", aop.fail);
+				r_cons_printf ("jump: 0x%08"PFMT64x"\n", aop.jump);
+				r_cons_printf ("fail: 0x%08"PFMT64x"\n", aop.fail);
 				r_cons_printf ("stack: %d\n", aop.stackop); // TODO: string
 				r_cons_printf ("cond: %d\n", aop.cond); // TODO: string
 				r_cons_printf ("family: %d\n", aop.family);
 				r_cons_printf ("\n");
-				//r_cons_printf ("false: 0x%08llx\n", core->offset+idx);
+				//r_cons_printf ("false: 0x%08"PFMT64x"\n", core->offset+idx);
 			}
 		}
 		break;
@@ -1705,7 +1705,7 @@ static const char *cmdhit = NULL;
 static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
 
-	r_cons_printf ("f hit%d_%d %d 0x%08llx\n",
+	r_cons_printf ("f hit%d_%d %d 0x%08"PFMT64x"\n",
 		kw->kwidx, kw->count, kw->keyword_length, addr);
 
 	if (!strnull (cmdhit)) {
@@ -1947,7 +1947,7 @@ static int cmd_open(void *data, const char *input) {
 				addr = r_num_math (&core->num, ptr+1);
 				size = r_io_size (&core->io, file->fd);
 				r_io_map_add (&core->io, file->fd, R_IO_READ, 0, addr, size);
-				eprintf ("Map '%s' in 0x%08llx with size 0x%llx\n",
+				eprintf ("Map '%s' in 0x%08"PFMT64x" with size 0x%"PFMT64x"\n",
 					input+1, addr, size);
 			}
 		} else eprintf ("Cannot open file '%s'\n", input+1);
@@ -1980,7 +1980,7 @@ static int cmd_meta(void *data, const char *input) {
 				char *row = r_file_slurp_line (file, line+i, 0);
 				r_cons_printf ("%c %.3x  %s\n", (i==2)?'>':' ', line+i, row);
 			}
-		} else eprintf ("Cannot find meta information at 0x%08llx\n", core->offset);
+		} else eprintf ("Cannot find meta information at 0x%08"PFMT64x"\n", core->offset);
 		break;
 	case 'C': /* add comment */
 		// TODO: do we need to get the size? or the offset?
@@ -2009,7 +2009,7 @@ static int cmd_meta(void *data, const char *input) {
 			if (p) {
 				*p='\0';
 				strncpy (fun_name, p+1, sizeof (fun_name));
-			} else sprintf (fun_name, "sub_%08llx", addr);
+			} else sprintf (fun_name, "sub_%08"PFMT64x"", addr);
 			addr = r_num_math (&core->num, t);
 			free(t);
 		}
@@ -2296,7 +2296,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				addr = r_num_math (&core->num, each);
 				str[0]=' ';
 			} else addr = r_num_math (&core->num, each);
-			eprintf ("; 0x%08llx:\n", addr);
+			eprintf ("; 0x%08"PFMT64x":\n", addr);
 			each = str+1;
 			r_core_seek (core, addr, 1);
 			r_core_cmd (core, cmd, 0);
@@ -2314,8 +2314,8 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					break;
 
 				addr = core->cmd.macro._brk_value;
-				sprintf (cmd2, "%s @ 0x%08llx", cmd, addr);
-				eprintf ("0x%08llx (%s)\n", addr, cmd2);
+				sprintf (cmd2, "%s @ 0x%08"PFMT64x"", cmd, addr);
+				eprintf ("0x%08"PFMT64x" (%s)\n", addr, cmd2);
 				r_core_seek (core, addr, 1);
 				r_core_cmd (core, cmd2, 0);
 				i++;
@@ -2331,8 +2331,8 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					if (fgets (buf, 1024, fd) == NULL)
 						break;
 					addr = r_num_math (&core->num, buf);
-					eprintf ("0x%08llx: %s\n", addr, cmd);
-					sprintf (cmd2, "%s @ 0x%08llx", cmd, addr);
+					eprintf ("0x%08"PFMT64x": %s\n", addr, cmd);
+					sprintf (cmd2, "%s @ 0x%08"PFMT64x"", cmd, addr);
 					r_core_seek (core, addr, 1); // XXX
 					r_core_cmd (core, cmd2, 0);
 					core->cmd.macro.counter++;
@@ -2367,7 +2367,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 
 					core->offset = flag->offset;
 					radare_read(0);
-					cons_printf("; @@ 0x%08llx (%s)\n", core->offset, flag->name);
+					cons_printf("; @@ 0x%08"PFMT64x" (%s)\n", core->offset, flag->name);
 					radare_cmd(cmd,0);
 				}
 #else
@@ -2386,7 +2386,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					if (word[0]=='\0' || strstr(flag->name, word) != NULL) {
 						r_core_seek (core, flag->offset, 1);
 						// TODO: Debug mode print
-						//r_cons_printf ("# @@ 0x%08llx (%s)\n", core->offset, flag->name);
+						//r_cons_printf ("# @@ 0x%08"PFMT64x" (%s)\n", core->offset, flag->name);
 						r_core_cmd (core, cmd, 0);
 					}
 				}
@@ -2397,7 +2397,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 						core->offset = core->offset + r_num_math (get_math(&core->num, word);
 					else	core->offset = r_num_math (get_math(&core->num, word);
 					radare_read(0);
-					cons_printf("; @@ 0x%08llx\n", core->offset);
+					cons_printf("; @@ 0x%08"PFMT64x"\n", core->offset);
 					radare_cmd(cmd,0);
 				}
 	#endif
@@ -2546,7 +2546,7 @@ static int step_line(RCore *core, int times) {
 		return R_FALSE;
 	}
 	if (r_bin_meta_get_line (&core->bin, off, file, sizeof (file), &line)) {
-		eprintf ("--> 0x%08llx %s : %d\n", off, file, line);
+		eprintf ("--> 0x%08"PFMT64x" %s : %d\n", off, file, line);
 		eprintf ("--> %s\n", r_file_slurp_line (file, line, 0));
 		find_meta = R_FALSE;
 	} else {
@@ -2559,11 +2559,11 @@ static int step_line(RCore *core, int times) {
 		if (!r_bin_meta_get_line (&core->bin, off, file2, sizeof (file2), &line2)) {
 			if (find_meta)
 				continue;
-			eprintf ("Cannot retrieve dwarf info at 0x%08llx\n", off);
+			eprintf ("Cannot retrieve dwarf info at 0x%08"PFMT64x"\n", off);
 			return R_FALSE;
 		}
 	} while (!strcmp (file, file2) && line == line2);
-	eprintf ("--> 0x%08llx %s : %d\n", off, file2, line2);
+	eprintf ("--> 0x%08"PFMT64x" %s : %d\n", off, file2, line2);
 	eprintf ("--> %s\n", r_file_slurp_line (file2, line2, 0));
 	return R_TRUE;
 }
@@ -2710,7 +2710,7 @@ static int cmd_debug(void *data, const char *input) {
 		case 'u':
 			addr = r_num_math (&core->num, input+2);
 			if (addr) {
-				eprintf ("Continue until 0x%08llx\n", addr);
+				eprintf ("Continue until 0x%08"PFMT64x"\n", addr);
 				r_bp_add_sw (core->dbg.bp, addr, 1, R_BP_PROT_EXEC);
 				r_debug_continue (&core->dbg);
 				r_bp_del (core->dbg.bp, addr);
@@ -2730,7 +2730,7 @@ static int cmd_debug(void *data, const char *input) {
 			if (len == 0) {
 				r_bp_traptrace_list (core->dbg.bp);
 			} else {
-				eprintf ("Trap tracing 0x%08llx-0x%08llx\n", core->offset, core->offset+len);
+				eprintf ("Trap tracing 0x%08"PFMT64x"-0x%08"PFMT64x"\n", core->offset, core->offset+len);
 				r_bp_traptrace_reset (core->dbg.bp, R_TRUE);
 				r_bp_traptrace_add (core->dbg.bp, core->offset, core->offset+len);
 				r_bp_traptrace_enable (core->dbg.bp, R_TRUE);

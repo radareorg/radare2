@@ -8,8 +8,8 @@ static int rax(const char *str) {
 		return 0;
  	n = r_num_math(NULL, str);
 	if (str[0]=='0'&&str[1]=='x')
-		printf("%lld\n", n);
-	else printf("0x%llx\n", n);
+		printf("%"PFMT64d"\n", n);
+	else printf("0x%"PFMT64x"\n", n);
 	return 1;
 }
 

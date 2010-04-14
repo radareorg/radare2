@@ -85,7 +85,7 @@ R_API int r_bp_recoil(RBreakpoint *bp, ut64 addr)
 {
 	RBreakpointItem *b = r_bp_at_addr (bp, addr, 0xFFFFFF);
 	if (b) {
-		eprintf("HIT AT ADDR 0x%llx\n", addr);
+		eprintf("HIT AT ADDR 0x%"PFMT64x"\n", addr);
 		eprintf("  recoil = %d\n", b->recoil);
 		eprintf("  size = %d\n", b->size);
 	}

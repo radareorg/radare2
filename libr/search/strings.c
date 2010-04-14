@@ -79,10 +79,10 @@ R_API int r_search_strings_update(void *_s, ut64 from, const ut8 *buf, int len) 
 				if (len>2) {
 					if (widechar) {
 						ut64 off = (ut64)from+i-(len*2)+1;
-						printf("0x%08llx %3d W %s\n", off, len, str);
+						printf("0x%08"PFMT64x" %3d W %s\n", off, len, str);
 					} else {
 						ut64 off = (ut64)from+i-matches;
-						printf("0x%08llx %3d A %s\n", off, len, str);
+						printf("0x%08"PFMT64x" %3d A %s\n", off, len, str);
 					}
 				}
 				fflush(stdout);
@@ -147,9 +147,9 @@ R_API int r_search_strings_update_char(const ut8 *buf, int min, int max, int enc
 					if (len>2) {
 						if (widechar) {
 							ut64 off = offset-(len*2)+1;
-							printf("0x%08llx %3d W %s\n", off, len, str);
+							printf("0x%08"PFMT64x" %3d W %s\n", off, len, str);
 						} else {
-							printf("0x%08llx %3d A %s\n",
+							printf("0x%08"PFMT64x" %3d A %s\n",
 								(ut64)offset-matches, len, str);
 						}
 					}

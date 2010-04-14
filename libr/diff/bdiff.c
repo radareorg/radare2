@@ -317,13 +317,13 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 #if 0	
 			if (rlen > 0) {
 				//printf ("Remove %d bytes at %d\n", rlen, offa);
-				printf ("r-%d @ 0x%llx\n", rlen, (ut64)offa);
+				printf ("r-%d @ 0x%"PFMT64x"\n", rlen, (ut64)offa);
 			}
 			printf ("e file.write=true\n"); // XXX
 			printf ("wx ");
 			for(i=0;i<len;i++)
 				printf ("%02x", bl[lb].l[i]);
-			printf (" @ 0x%llx\n", (ut64)offa);
+			printf (" @ 0x%"PFMT64x"\n", (ut64)offa);
 #endif
 			rb += 12 + len;
 		}

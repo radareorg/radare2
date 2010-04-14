@@ -4,7 +4,7 @@
 #include <r_bin.h>
 
 static int get_line(RBin *bin, ut64 addr, char *file, int len, int *line) {
-	char *p, *out = r_sys_cmd_strf ("addr2line -e '%s' 0x%08llx", bin->file, addr);
+	char *p, *out = r_sys_cmd_strf ("addr2line -e '%s' 0x%08"PFMT64x"", bin->file, addr);
 	if (out == NULL || *out=='?')
 		return R_FALSE;
 	p = strchr (out, ':');

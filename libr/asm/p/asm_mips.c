@@ -40,7 +40,7 @@ static void print_address(bfd_vma address, struct disassemble_info *info)
 	char tmp[32];
 	if (buf_global == NULL)
 		return;
-	sprintf(tmp, "0x%08llx", (ut64)address-8); /* WTF ?!?! why gnu disasm doesnt do this well? */
+	sprintf(tmp, "0x%08"PFMT64x"", (ut64)address-8); /* WTF ?!?! why gnu disasm doesnt do this well? */
 	strcat(buf_global, tmp);
 }
 static int buf_fprintf(void *stream, const char *format, ...)

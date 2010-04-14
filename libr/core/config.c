@@ -114,7 +114,7 @@ static int config_asm_bits_callback(void *user, void *data) {
 	if (ret == R_FALSE) {
 		struct r_asm_handle_t *h = core->assembler.cur;
 		if (h) {
-			eprintf ("Cannot set bits %lld to '%s'\n",
+			eprintf ("Cannot set bits %"PFMT64d" to '%s'\n",
 				node->i_value, h->name);
 		} else {
 			eprintf ("e asm.bits: Cannot set value, no plugins defined yet\n");

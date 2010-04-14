@@ -78,12 +78,12 @@ int do_byte_pat(int patlen) {
 	str = config_get("search.from");
 	if (str&&str[0]) {
 		bact = config_get_i("search.from");
-		fprintf(stderr, "Searching from 0x%08llx\n", bact);
+		fprintf(stderr, "Searching from 0x%08"PFMT64x"\n", bact);
 	}
 	str = config_get("search.to");
 	if (str&&str[0]) {
 		bytes = config_get_i("search.to");
-		fprintf(stderr, "Searching from 0x%08llx\n", bytes);
+		fprintf(stderr, "Searching from 0x%08"PFMT64x"\n", bytes);
 	}
 
 	bytes += bact;
@@ -124,11 +124,11 @@ int do_byte_pat(int patlen) {
 						printf("bytes:%d: ", pcnt);
 						for(k = 0; k<patlen; k++)
 							printf("%02x", sblk[k]);
-						printf("\nfound:%d: 0x%08llx ", pcnt, intaddr);
+						printf("\nfound:%d: 0x%08"PFMT64x" ", pcnt, intaddr);
 					}
 					moar++;
 					cnt++;
-					printf("0x%08llx ", bproc+i );
+					printf("0x%08"PFMT64x" ", bproc+i );
 				}
 			}
 			if (moar>0) {
@@ -177,12 +177,12 @@ R_API int r_search_pattern_update(int patlen) {
 	str = config_get("search.from");
 	if (str&&str[0]) {
 		bact = config_get_i("search.from");
-		fprintf(stderr, "Searching from 0x%08llx\n", bact);
+		fprintf(stderr, "Searching from 0x%08"PFMT64x"\n", bact);
 	}
 	str = config_get("search.to");
 	if (str&&str[0]) {
 		bytes = config_get_i("search.to");
-		fprintf(stderr, "Searching from 0x%08llx\n", bytes);
+		fprintf(stderr, "Searching from 0x%08"PFMT64x"\n", bytes);
 	}
 
 	bytes += bact;
@@ -225,11 +225,11 @@ R_API int r_search_pattern_update(int patlen) {
 						printf("bytes:%d: ", pcnt);
 						for(k = 0; k<patlen; k++)
 							printf("%02x", sblk[k]);
-						printf("\nfound:%d: 0x%08llx ", pcnt, intaddr);
+						printf("\nfound:%d: 0x%08"PFMT64x" ", pcnt, intaddr);
 					}
 					moar++;
 					cnt++;
-					printf("0x%08llx ", bproc+i );
+					printf("0x%08"PFMT64x" ", bproc+i );
 				}
 			}
 			if (moar>0) {

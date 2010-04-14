@@ -144,7 +144,7 @@ static int ewf__open(struct r_io_t *io, const char *pathname, int flags, int mod
 			libewf_get_volume_type(ewf_h, &volume_type);
 			eprintf("VolumeType:       %d\n", volume_type);
 			libewf_get_media_size(ewf_h, &media_size);
-			eprintf("MediaSize:        %lld\n", media_size);
+			eprintf("MediaSize:        %"PFMT64d"\n", media_size);
 			libewf_get_media_type(ewf_h, &media_type);
 			eprintf("MediaType:        %d\n", media_type);
 			libewf_get_media_flags(ewf_h, &media_flags);

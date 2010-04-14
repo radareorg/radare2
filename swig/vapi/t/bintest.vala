@@ -11,12 +11,12 @@ void main(string[] args) {
 	if (bin.open(args[1], false)<0)
 		error("Cannot open file");
 
-	print("Entrypoint: 0x%08llx\n", bin.get_entry().offset);
+	print("Entrypoint: 0x%08"PFMT64x"\n", bin.get_entry().offset);
 	foreach (rBin.Symbol *f in bin.get_symbols())
-		print(" - 0x%08llx  %s\n", f->offset, f->name);
+		print(" - 0x%08"PFMT64x"  %s\n", f->offset, f->name);
 
 	foreach (rBin.Section *f in bin.get_sections())
-		print(" - 0x%08llx  %s\n", f->offset, f->name);
+		print(" - 0x%08"PFMT64x"  %s\n", f->offset, f->name);
 
 	bin.close();
 }
