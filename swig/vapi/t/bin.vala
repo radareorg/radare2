@@ -11,7 +11,7 @@ public void main (string[] args) {
 		error ("Cannot open binary file\n");
 
 	uint64 baddr = bin.get_baddr();
-	print ("Base addr: 0x%08llx\n", baddr);
+	print ("Base addr: 0x%08"PFMT64x"\n", baddr);
 	foreach (var sym in bin.get_symbols ())
-		print ("0x%08llx - %s\n", baddr+sym.rva, sym.name);
+		print ("0x%08"PFMT64x" - %s\n", baddr+sym.rva, sym.name);
 }

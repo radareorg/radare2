@@ -46,7 +46,7 @@ void flag_from(const char *str)
 	if (str[0]) {
 		flag_from_i = get_math(str);
 	} else
-		cons_printf("0x%08llx\n", flag_from_i);
+		cons_printf("0x%08"PFMT64x"\n", flag_from_i);
 }
 
 void flag_help()
@@ -93,7 +93,7 @@ int flag_interpolation(const char *from, const char *to)
 			}
 
 			if (tmp != 0) {
-				printf("%s (0x%08llx) -> %s (0x%08llx)   ; size = %lld\n",
+				printf("%s (0x%08"PFMT64x") -> %s (0x%08"PFMT64x")   ; size = %"PFMT64d"\n",
 					flag->name, flag->offset, str, tmp, tmp-flag->offset);
 			}
 		}
@@ -142,7 +142,7 @@ flag_t *flag_get_i(int id)
 void flag_show(flag_t *flag, int cmd_flag)
 {
 	// TODO: use flags[i]->format over flags[i]->data and flags[i]->length
-	cons_printf("0x%08llx\t %lld\t %s\n",
+	cons_printf("0x%08"PFMT64x"\t %"PFMT64d"\t %s\n",
 		flag->offset, flag->length, flag->name);
 	if (cmd_flag && flag->cmd!=NULL && *flag->cmd) {
 		ut64 seek = config.seek;
@@ -190,7 +190,7 @@ void flag_grep_np(const char *str, ut64 addr, int next)
 	}
 
 	if (fag)
-		cons_printf("0x%08llx %s\n", fag->offset, fag->name);
+		cons_printf("0x%08"PFMT64x" %s\n", fag->offset, fag->name);
 }
 
 // TODO: USE GLOB OR SO...
@@ -489,7 +489,7 @@ void flag_list(char *arg)
 
 		flag_show(flag, 0);
 #if 0
-		cons_printf("%03d 0x%08llx %4lld %s",
+		cons_printf("%03d 0x%08"PFMT64x" %4lld %s",
 			i++, flag->offset, flag->length, flag->name);
 #endif
 	// TODO: use flags[i]->format over flags[i]->data and flags[i]->length
@@ -934,7 +934,7 @@ void flags_visual_menu()
 					hit = 1;
 				}
 				if( (i >=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
-					cons_printf(" %c  %03d 0x%08llx %4lld %s\n",
+					cons_printf(" %c  %03d 0x%08"PFMT64x" %4lld %s\n",
 						(option==i)?'>':' ',
 						i, flag->offset, flag->length, flag->name);
 					j++;

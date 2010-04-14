@@ -30,7 +30,7 @@ ctx.analyze (0x8048300);
 var foo = an.get_function_preludes ();
 var calls = an.get_calls ();
 foreach var (calls) {
-  stdout.printf("0x%llx: call 0x%llx", var.from, var.to);
+  stdout.printf("0x%"PFMT64x": call 0x%"PFMT64x"", var.from, var.to);
   for(int i=0;i<var.args;i++) {
     stdout.printf("arg%d: %s\n" i, var.arg[i]);
   }
@@ -62,7 +62,7 @@ void analyze_graph(Analysis an, uint64 addr)
     if (op.type == Analysis.OpcodeType.BRANCH) {
       foreach (var jmp in op.refs) {
         if (jmp.type | Analysis.AccessType.EXEC)
-          print("0x%08llx : branch 0x%08llx\n", op.addr, jmp.addr);
+          print("0x%08"PFMT64x" : branch 0x%08"PFMT64x"\n", op.addr, jmp.addr);
           analyze_graph(an, jmp.addr);
       }
     }
@@ -74,7 +74,7 @@ void analyze_function(Analysis an, uint64 addr)
 {
   Analysis.Function? fun = an.get_fun(addr);
   if (fun == null)
-    Log.err("No function found at address 0x%08llx".printf());
+    Log.err("No function found at address 0x%08"PFMT64x"".printf());
     return;
   }
 }

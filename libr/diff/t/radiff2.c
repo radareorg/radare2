@@ -15,13 +15,13 @@ static int cb(struct r_diff_t *d, void *user,
 	if (rad) {
 		// TODO
 	} else {
-		printf ("0x%08llx ", op->a_off);
+		printf ("0x%08"PFMT64x" ", op->a_off);
 		for (i = 0;i<op->a_len;i++)
 			printf ("%02x", op->a_buf[i]);
 		printf (" => ");
 		for (i = 0;i<op->b_len;i++)
 			printf ("%02x", op->b_buf[i]);
-		printf (" 0x%08llx\n", op->b_off);
+		printf (" 0x%08"PFMT64x"\n", op->b_off);
 	}
 	return 1;
 }

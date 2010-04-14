@@ -57,7 +57,7 @@ int r_vm_op_eval(struct r_vm_t *vm, const char *str)
 							}
 						} else {
 							char w[32];
-							sprintf(w, "0x%08llx", config.seek);
+							sprintf(w, "0x%08"PFMT64x"", config.seek);
 							if (w[0]) {
 								strcpy(p+k, w);
 								k += strlen(w)-1;

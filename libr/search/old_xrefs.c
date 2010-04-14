@@ -153,9 +153,9 @@ static ut32 get_value32(const char *arg)
 	for(;arg[i]=='\\';i++); i++;
 
         if (arg[i] == 'x')
-                sscanf(arg, "0x%08llx", (ut64 *)&ret);
+                sscanf(arg, "0x%08"PFMT64x"", (ut64 *)&ret);
         else
-                sscanf(arg, "%lld", (ut64 *)&ret);
+                sscanf(arg, "%"PFMT64d"", (ut64 *)&ret);
 
         return ret;
 }
@@ -383,15 +383,15 @@ int main(int argc, char **argv)
 		}
 
 		if (verbose)
-			printf("0x%08llx  try %02x %02x %02x %02x (0x%08llx) - %lld\n",
+			printf("0x%08"PFMT64x"  try %02x %02x %02x %02x (0x%08"PFMT64x") - %"PFMT64d"\n",
 				(ut64)i, buf[0], buf[1], buf[2], buf[3], (ut64) base+value, (ut64) (base+value));
 
 		if (xylum && i == xylum) {
-			printf("# offset: 0x%08llx\n", (ut64)i);
-			printf("# delta:  %lld\n", (ut64)delta);
-			printf("# size:   %lld\n", (ut64)size);
-			printf("# value:  %lld\n", (ut64)value);
-			printf("# bytes:  %02x %02x %02x %02x (0x%08llx) - %lld\n",
+			printf("# offset: 0x%08"PFMT64x"\n", (ut64)i);
+			printf("# delta:  %"PFMT64d"\n", (ut64)delta);
+			printf("# size:   %"PFMT64d"\n", (ut64)size);
+			printf("# value:  %"PFMT64d"\n", (ut64)value);
+			printf("# bytes:  %02x %02x %02x %02x (0x%08"PFMT64x") - %"PFMT64d"\n",
 				buf[0], buf[1], buf[2], buf[3], (ut64)value, (ut64)value);
 			tmpvalue = ma[i+gamme];
 			printf("# found:  %02x %02x %02x %02x\n",
@@ -427,7 +427,7 @@ int main(int argc, char **argv)
 		}
 
 		if (xylum && ovalue == xylum) {
-			printf("# buf:  %02x %02x %02x %02x (+%lld)\n",
+			printf("# buf:  %02x %02x %02x %02x (+%"PFMT64d")\n",
 				buf[0], buf[1], buf[2], buf[3], (ut64)(4-size));
 			printf("# map:  %02x %02x %02x \n",
 				ma[i+gamme], ma[i+1+gamme], ma[i+2+gamme]);
@@ -444,9 +444,9 @@ int main(int argc, char **argv)
 
 		if (memcmp((unsigned char *)ma+i+gamme, (unsigned char *)buf+(4-size), size) == 0) {
 			if (quite)
-				printf("0x%08llx\n", (ut64)i);
+				printf("0x%08"PFMT64x"\n", (ut64)i);
 			else
-				printf("match value 0x%08llx (%02x%02x%02x) at offset 0x%08llx\n",
+				printf("match value 0x%08"PFMT64x" (%02x%02x%02x) at offset 0x%08"PFMT64x"\n",
 					(ut64)ovalue,
 					buf[0+(4-size)], buf[1+(4-size)], buf[2+(4-size)],
 					(ut64)((ut32)i)+((gamme<0)?-1:0));

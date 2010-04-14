@@ -123,7 +123,7 @@ R_API ut64 r_debug_execute(struct r_debug_t *dbg, ut8 *buf, int len) {
 
 		free (backup);
 		free (orig);
-		eprintf ("ra0=0x%08llx\n", ra0);
+		eprintf ("ra0=0x%08"PFMT64x"\n", ra0);
 	} else eprintf ("r_debug_execute: Cannot get program counter\n");
 	return (ra0);
 }

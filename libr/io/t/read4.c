@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 	memset(buf, '\0', sizeof(buf));
 	r_io_read (&io, (ut8 *)buf, 4);
 	buf[4]='\0';
-	printf("%llx\n", r_io_read_i(&io, 0LL, 4, 0));
+	printf("%"PFMT64x"\n", r_io_read_i(&io, 0LL, 4, 0));
 
 	puts(buf);
 

@@ -431,7 +431,7 @@ static int attributes_walk(FILE *fd, int sz2, int fields)
 				printf("      Max Stack: %d\n", USHORT(buf, 0));
 				printf("      Max Locals: %d\n", USHORT(buf, 2));
 				printf("      Code Length: %d\n", UINT(buf, 4));
-				printf("      Code At Offset: 0x%08llx\n", (ut64)ftell(fd));
+				printf("      Code At Offset: 0x%08"PFMT64x"\n", (ut64)ftell(fd));
 
 				fread(buf, UINT(buf, 4), 1, fd); // READ CODE
 				sz4 = read_short(fd);

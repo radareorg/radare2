@@ -73,15 +73,15 @@ R_API ut64 r_num_get(struct r_num_t *num, const char *str) {
 		return (ut64)str[1];
 
 	if (str[0]=='0' && str[1]=='x') {
-		sscanf(str, "0x%llx", &ret);
+		sscanf(str, "0x%"PFMT64x"", &ret);
 	} else {
 		lch = str[strlen(str)-1];
 		switch (lch) {
 		case 'h': // hexa
-			sscanf(str, "%llx", &ret);
+			sscanf(str, "%"PFMT64x"", &ret);
 			break;
 		case 'o': // octal
-			sscanf(str, "%llo", &ret);
+			sscanf (str, "%"PFMT64o"", &ret);
 			break;
 		case 'b': // binary
 			ret = 0;
@@ -91,18 +91,18 @@ R_API ut64 r_num_get(struct r_num_t *num, const char *str) {
 			}
 			break;
 		default:
-			sscanf(str, "%lld", &ret);
+			sscanf(str, "%"PFMT64d"", &ret);
 			break;
 		case 'K': case 'k':
-			sscanf(str, "%lld", &ret);
+			sscanf(str, "%"PFMT64d"", &ret);
 			ret *= 1024;
 			break;
 		case 'M': case 'm':
-			sscanf(str, "%lld", &ret);
+			sscanf(str, "%"PFMT64d"", &ret);
 			ret *= 1024*1024;
 			break;
 		case 'G': case 'g':
-			sscanf(str, "%lld", &ret);
+			sscanf(str, "%"PFMT64d"", &ret);
 			ret *= 1024*1024*1024;
 			break;
 		}

@@ -166,7 +166,7 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 		//aop->jump   = addr+*ptr+5; //(unsigned long)((buf+1)+5);
 		aop->jump = addr+5+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);//((unsigned long)((buf+2))+6);
 		aop->fail = addr+5;
-//printf("addr: %08llx\n call %08llx \n ret %08llx\n", addr, aop->jump, aop->fail);
+//printf("addr: %08"PFMT64x"\n call %08"PFMT64x" \n ret %08"PFMT64x"\n", addr, aop->jump, aop->fail);
 	//	aop->eob    = 1;
 		break;
 	case 0xe9: // jmp

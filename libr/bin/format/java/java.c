@@ -104,7 +104,7 @@ static int attributes_walk(struct r_bin_java_obj_t *bin, struct r_bin_java_attr_
 				attr->info.code.code_length = R_BIN_JAVA_UINT(buf, 4);
 				IFDBG printf("      Code Length: %d\n", attr->info.code.code_length);
 				attr->info.code.code_offset = (ut64)bin->b->cur;
-				IFDBG printf("      Code At Offset: 0x%08llx\n", (ut64)attr->info.code.code_offset);
+				IFDBG printf("      Code At Offset: 0x%08"PFMT64x"\n", (ut64)attr->info.code.code_offset);
 
 				r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)buf, R_BIN_JAVA_UINT(buf, 4)); // READ CODE
 				sz4 = read_short(bin);
@@ -204,7 +204,7 @@ static int javasm_init(struct r_bin_java_obj_t *bin)
 			}
 		}
 		if (c == NULL) {
-			fprintf(stderr, "Invalid tag '%d' at offset 0x%08llx\n",
+			fprintf(stderr, "Invalid tag '%d' at offset 0x%08"PFMT64x"\n",
 				buf[0], (ut64)bin->b->cur);
 			return R_FALSE;
 		}

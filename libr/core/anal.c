@@ -28,7 +28,7 @@ static char *r_core_anal_graph_label(RCore *core, struct r_anal_bb_t *bb, int op
 			oline = line;
 		}
 	} else if (opts == R_CORE_ANAL_GRAPHBODY) {
-		snprintf (cmd, 1023, "pD %lli @ 0x%08llx", bb->size, bb->addr);
+		snprintf (cmd, 1023, "pD %"PFMT64d" @ 0x%08"PFMT64x"", bb->size, bb->addr);
 		cmdstr = r_core_cmd_str (core, cmd);
 	}
 	if (cmdstr) {
@@ -81,18 +81,18 @@ static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts
 				r_list_append (pbb, bbc);
 			}
 			if (bbi->jump != -1) {
-				r_cons_printf ("\t\"0x%08llx\" -> \"0x%08llx\" [color=\"%s\"];\n", bbi->addr, bbi->jump,
+				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" [color=\"%s\"];\n", bbi->addr, bbi->jump,
 						bbi->fail != -1 ? "green" : "blue");
 				r_cons_flush ();
 				if (addr != 0) r_core_anal_graph_nodes (core, pbb, bbi->jump, opts);
 			}
 			if (bbi->fail != -1) {
-				r_cons_printf ("\t\"0x%08llx\" -> \"0x%08llx\" [color=\"red\"];\n", bbi->addr, bbi->fail);
+				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" [color=\"red\"];\n", bbi->addr, bbi->fail);
 				r_cons_flush ();
 				if (addr != 0) r_core_anal_graph_nodes (core, pbb, bbi->fail, opts);
 			}
 			if ((str = r_core_anal_graph_label (core, bbi, opts))) {
-				r_cons_printf (" \"0x%08llx\" [label=\"%s\"]\n", bbi->addr, str);
+				r_cons_printf (" \"0x%08"PFMT64x"\" [label=\"%s\"]\n", bbi->addr, str);
 				r_cons_flush ();
 				free (str);
 			}
@@ -147,18 +147,18 @@ R_API int r_core_anal_bb_list(RCore *core, int rad) {
 
 	r_list_foreach (core->anal.bbs, iter, bbi) {
 		if (rad) {
-			r_cons_printf ("ab+ 0x%08llx %04lli ", bbi->addr, bbi->size);
+			r_cons_printf ("ab+ 0x%08"PFMT64x" %04"PFMT64d" ", bbi->addr, bbi->size);
 			if (bbi->jump != -1)
-				r_cons_printf ("%08llx ", bbi->jump);
+				r_cons_printf ("%08"PFMT64x" ", bbi->jump);
 			if (bbi->jump != -1 && bbi->fail != -1)
-				r_cons_printf ("%08llx", bbi->fail);
+				r_cons_printf ("%08"PFMT64x"", bbi->fail);
 			r_cons_printf ("\n");
 		} else {
-			r_cons_printf ("[0x%08llx] size=%04lli ", bbi->addr, bbi->size);
+			r_cons_printf ("[0x%08"PFMT64x"] size=%04"PFMT64d" ", bbi->addr, bbi->size);
 			if (bbi->jump != -1)
-				r_cons_printf ("jump=%08llx ", bbi->jump);
+				r_cons_printf ("jump=%08"PFMT64x" ", bbi->jump);
 			if (bbi->fail != -1)
-				r_cons_printf ("fail=%08llx", bbi->fail);
+				r_cons_printf ("fail=%08"PFMT64x"", bbi->fail);
 			r_cons_printf ("\n");
 		}
 	}
@@ -214,11 +214,11 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int depth) {
 			return R_FALSE;
 		fcnlen = r_anal_fcn (&core->anal, fcn, at+fcnlen, buf, buflen); 
 		if (fcnlen == R_ANAL_RET_ERROR) { /* Error analyzing function */
-			eprintf ("Unknown opcode at 0x%08llx\n", at+fcnlen);
+			eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", at+fcnlen);
 			r_anal_fcn_free (fcn);
 			return R_FALSE;
 		} else if (fcnlen == R_ANAL_RET_END) { /* function analysis complete */
-			fcn->name = r_str_dup_printf ("fcn_%08llx", at);
+			fcn->name = r_str_dup_printf ("fcn_%08"PFMT64x"", at);
 			/* Add flag */
 			flagname = r_str_dup_printf ("fcn.%s", fcn->name);
 			r_flag_space_set (&core->flags, "functions");
@@ -266,7 +266,7 @@ R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv) {
 		if (addr != 0 && addr != fcni->addr)
 			continue;
 		if (!gv)
-			r_cons_printf ("0x%08llx\n", fcni->addr);
+			r_cons_printf ("0x%08"PFMT64x"\n", fcni->addr);
 		r_list_foreach (fcni->refs, iter2, fcnr) {
 			char *name = "";
 			RFlagItem *flag;
@@ -274,9 +274,9 @@ R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv) {
 			flag = r_flag_get_i (&core->flags, *ref);
 			if (flag)
 				name = flag->name;
-			if (gv) r_cons_printf ("\t\"0x%08llx\" -> \"0x%08llx\" [label=\"%s\" color=\"%s\"];\n",
+			if (gv) r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" [label=\"%s\" color=\"%s\"];\n",
 				fcni->addr, *ref, name, "green");
-			else r_cons_printf (" - 0x%08llx\n", *ref);
+			else r_cons_printf (" - 0x%08"PFMT64x"\n", *ref);
 		}
 	}
 	r_cons_printf ("}\n");
@@ -306,19 +306,19 @@ R_API int r_core_anal_fcn_list(RCore *core, int rad) {
 	ut64 *ref;
 
 	r_list_foreach (core->anal.fcns, iter, fcni)
-		if (rad) r_cons_printf ("af+ 0x%08llx %lli %s\n", fcni->addr, fcni->size, fcni->name);
+		if (rad) r_cons_printf ("af+ 0x%08"PFMT64x" %"PFMT64d" %s\n", fcni->addr, fcni->size, fcni->name);
 		else {
-			r_cons_printf ("[0x%08llx] size=%lli name=%s",
+			r_cons_printf ("[0x%08"PFMT64x"] size=%"PFMT64d" name=%s",
 					fcni->addr, fcni->size, fcni->name);
 			r_cons_printf ("\n  refs: ");
 			r_list_foreach (fcni->refs, iter2, refi) {
 				ref = (ut64*)refi;
-				r_cons_printf ("0x%08llx ", *ref);
+				r_cons_printf ("0x%08"PFMT64x" ", *ref);
 			}
 			r_cons_printf ("\n  xrefs: ");
 			r_list_foreach (fcni->xrefs, iter2, refi) {
 				ref = (ut64*)refi;
-				r_cons_printf ("0x%08llx ", *ref);
+				r_cons_printf ("0x%08"PFMT64x" ", *ref);
 			}
 			r_cons_printf ("\n  vars:\n");
 			r_list_foreach (fcni->vars, iter2, vari) {

@@ -126,7 +126,7 @@ R_API void r_bp_traptrace_list(RBreakpoint *bp) {
 		RBreakpointTrace *trace = r_list_iter_get (iter);
 		for (i=0; i<trace->bitlen; i++) {
 			if (BIT_CHK (trace->bits, i))
-				eprintf ("  - 0x%08llx\n", trace->addr+(i<<4));
+				eprintf ("  - 0x%08"PFMT64x"\n", trace->addr+(i<<4));
 		}
 	}
 }

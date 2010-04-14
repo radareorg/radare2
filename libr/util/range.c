@@ -299,14 +299,14 @@ R_API void r_range_percent(RRange *rgs) {
 	} else step = fr = to = 0;
 	seek = 0;
 	// XXX do not use printf here!
-	printf ("0x%08llx [", fr);
+	printf ("0x%08"PFMT64x" [", fr);
 	for (i=0; i<w; i++) {
 		if (r_range_contains (rgs, seek))
 			printf ("#");
 		else printf (".");
 		seek += step;
 	}
-	printf ("] 0x%08llx\n", to);
+	printf ("] 0x%08"PFMT64x"\n", to);
 }
 
 // TODO: total can be cached in rgs!!
@@ -316,11 +316,11 @@ int r_range_list(RRange *rgs, int rad) {
 	r_range_sort (rgs);
 	list_for_each (pos, &rgs->ranges) {
 		RRangeItem *r = list_entry (pos, RRangeItem, list);
-		if (rad) printf ("ar+ 0x%08llx 0x%08llx\n", r->fr, r->to);
-		else printf ("0x%08llx 0x%08llx ; %lld\n", r->fr, r->to, r->to-r->fr);
+		if (rad) printf ("ar+ 0x%08"PFMT64x" 0x%08"PFMT64x"\n", r->fr, r->to);
+		else printf ("0x%08"PFMT64x" 0x%08"PFMT64x" ; %"PFMT64d"\n", r->fr, r->to, r->to-r->fr);
 		total += (r->to-r->fr);
 	}
-	eprintf ("Total bytes: %lld\n", total);
+	eprintf ("Total bytes: %"PFMT64d"\n", total);
 	return 0;
 }
 
@@ -358,17 +358,17 @@ RRange *r_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
 		r = list_entry(pos, RRangeItem, list);
 		if (r->fr > fr && r->fr < to) {
 			r_range_add(newrgs, fr, r->fr, 1);
-			//eprintf("0x%08llx .. 0x%08llx\n", fr, r->fr);
+			//eprintf("0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", fr, r->fr);
 			total += (r->fr - fr);
 			fr = r->to;
 		}
 	}
 	if (fr < to) {
-		//eprintf("0x%08llx .. 0x%08llx\n", fr, to);
+		//eprintf("0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", fr, to);
 		r_range_add (newrgs, fr, to, 1);
 		total += (to-fr);
 	}
-	// eprintf("Total bytes: %lld\n", total);
+	// eprintf("Total bytes: %"PFMT64d"\n", total);
 
 	return newrgs;
 }

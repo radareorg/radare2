@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 	r_io_read(&io, buf, size);
 	printf("----\n%s\n----\n", buf);
 
-	printf("file size = %lld\n", size);
+	printf("file size = %"PFMT64d"\n", size);
 	printf("CRC32: 0x%08x\n", r_hash_crc32(buf, size));
 
 	{

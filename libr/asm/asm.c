@@ -231,7 +231,7 @@ R_API struct r_asm_code_t* r_asm_mdisassemble(struct r_asm_t *a, ut8 *buf, ut64 
 		r_asm_set_pc(a, a->pc + ret);
 		ret = r_asm_disassemble (a, &aop, buf+idx, len-idx);
 		if (ret<1) {
-			eprintf ("error disassemble at offset %lld\n", idx);
+			eprintf ("error disassemble at offset %"PFMT64d"\n", idx);
 			return r_asm_code_free (acode);
 		}
 		//eprintf ("++ %d %d\n", ret, aop.inst_len);
@@ -307,7 +307,7 @@ R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
 				char food[64];
 				if (stage != 2) {
 					*ptr = 0;
-					snprintf (food, sizeof (food), "0x%llx", off);
+					snprintf (food, sizeof (food), "0x%"PFMT64x"", off);
 					r_asm_code_set_equ (acode, ptr_start, food);
 					D eprintf ("SETEQU (%s,%s)\n", ptr_start, food);
 				}

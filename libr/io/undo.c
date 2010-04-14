@@ -80,7 +80,7 @@ R_API void r_io_sundo_list(struct r_io_t *io)
 	if (io->undo.idx>0) {
 		cons_printf("f undo_idx @ %d\n", io->undo.idx);
 		for(i=io->undo.idx-1;i!=0;i--)
-			cons_printf("f undo_%d @ 0x%llx\n",
+			cons_printf("f undo_%d @ 0x%"PFMT64x"\n",
 				io->undo.idx-1-i, io->undo.seek[i-1]);
 	} else eprintf("-no seeks done-\n");
 }
@@ -133,7 +133,7 @@ R_API void r_io_wundo_list(struct r_io_t *io)
 	if (io->undo.w_init)
 	list_for_each_prev(p, &(io->undo.w_list)) {
 		struct r_io_undo_w_t *u = list_entry(p, struct r_io_undo_w_t, list);
-		cons_printf("%02d %c %d %08llx: ", i, u->set?'+':'-', u->len, u->off);
+		cons_printf("%02d %c %d %08"PFMT64x": ", i, u->set?'+':'-', u->len, u->off);
 		len = (u->len>BW)?BW:u->len;
 		for(j=0;j<len;j++) cons_printf("%02x ", u->o[j]);
 		if (len == BW) cons_printf(".. ");
@@ -167,7 +167,7 @@ R_API void r_io_wundo_apply_all(struct r_io_t *io, int set)
 	list_for_each_prev(p, &(io->undo.w_list)) {
 		struct r_io_undo_w_t *u = list_entry(p, struct r_io_undo_w_t, list);
 		r_io_wundo_apply(io, u, set); //UNDO_WRITE_UNSET);
-		eprintf("%s 0x%08llx\n", set?"redo":"undo", u->off);
+		eprintf("%s 0x%08"PFMT64x"\n", set?"redo":"undo", u->off);
 	}
 }
 

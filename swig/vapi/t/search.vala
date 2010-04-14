@@ -11,7 +11,7 @@ public class SearchExample
 		s.kw_add ("lib", "");
 		s.set_callback (
 			(kw, user, addr) => {
-				stdout.printf("Hit %d! at 0x%llx\n", (int)kw.count, addr);
+				stdout.printf("Hit %d! at 0x%"PFMT64x"\n", (int)kw.count, addr);
 				return 0;
 			}, null);
 		s.begin ();

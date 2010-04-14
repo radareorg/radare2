@@ -29,12 +29,12 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 	struct list_head *pos, *head = r_reg_get_list(dbg->reg, type);
 	const char *fmt, *fmt2;
 	if (dbg->h && dbg->h->bits & R_SYS_BITS_64) {
-		fmt = "%s = 0x%016llx%s";
-		fmt2 = "%4s 0x%016llx%s";
+		fmt = "%s = 0x%016"PFMT64x"%s";
+		fmt2 = "%4s 0x%016"PFMT64x"%s";
 		cols = 3;
 	} else {
-		fmt = "%s = 0x%08llx%s";
-		fmt2 = "%4s 0x%08llx%s";
+		fmt = "%s = 0x%08"PFMT64x"%s";
+		fmt2 = "%4s 0x%08"PFMT64x"%s";
 		cols = 4;
 	}
 	list_for_each (pos, head) {
@@ -46,7 +46,7 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 			continue;
 		value = r_reg_get_value (dbg->reg, item);
 		if (rad==1)
-			dbg->printf ("f %s @ 0x%llx\n", item->name, value);
+			dbg->printf ("f %s @ 0x%"PFMT64x"\n", item->name, value);
 		else if (rad==2)
 			dbg->printf (fmt2, item->name, value, ((n+1)%cols)?"   ":"\n");
 		else dbg->printf (fmt, item->name, value, "\n");

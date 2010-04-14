@@ -99,7 +99,7 @@ R_API int r_diff_buffers_radiff(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 		ptr = strchr(buf, ' ');
 		if (!ptr) continue;
 		*ptr='\0';
-		sscanf (str, "0x%08llx", &oa);
+		sscanf (str, "0x%08"PFMT64x"", &oa);
 
 		str = r_str_ichr (ptr+1, ' ');
 		if (*str!='|'&&*str!='>'&&*str!='<') {
@@ -127,7 +127,7 @@ R_API int r_diff_buffers_radiff(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 		ptr = strchr (str, '\n');
 		if (!ptr) continue;
 		*ptr='\0';
-		sscanf (str, "0x%08llx", &ob);
+		sscanf (str, "0x%08"PFMT64x"", &ob);
 
 		if (oop == op || oop==-1) {
 			if (hit == 0) {

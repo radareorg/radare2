@@ -91,7 +91,7 @@ static int ptrace_write_at(int tid, const void *buff, int len, ut64 addr) {
         vm_protect (pid_to_task (tid), addr+(addr%4096), 4096, 0,
 		VM_PROT_READ | VM_PROT_EXECUTE);
         if (err != KERN_SUCCESS) {
-        	eprintf ("Oops (0x%llx) error (%s)\n", addr,
+        	eprintf ("Oops (0x%"PFMT64x") error (%s)\n", addr,
 			MACH_ERROR_STRING (err));
                 eprintf ("cant change page perms to rx\n");
 	}

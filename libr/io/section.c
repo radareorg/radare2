@@ -50,9 +50,9 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 	offset = io->va ? r_io_section_vaddr_to_offset (io, offset) : offset;
 	list_for_each_prev(pos, &io->sections) {
 		RIOSection *s = (RIOSection *)list_entry(pos, RIOSection, list);
-		if (rad) io->printf ("S 0x%08llx 0x%08llx 0x%08llx 0x%08llx %s %d\n",
+		if (rad) io->printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d\n",
 			s->offset, s->vaddr, s->size, s->vsize, s->name, s->rwx);
-		else io->printf ("[%02d] %c 0x%08llx %s vaddr=0x%08llx size=0x%08llx vsize=%08llx %s\n",
+		else io->printf ("[%02d] %c 0x%08"PFMT64x" %s vaddr=0x%08"PFMT64x" size=0x%08"PFMT64x" vsize=%08"PFMT64x" %s\n",
 			i, (offset>=s->offset && offset<s->offset+s->size)?'*':'.', 
 			s->offset, r_str_rwx_i (s->rwx), s->vaddr, s->size, s->vsize, s->name);
 		i++;
@@ -81,26 +81,26 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len) {
 		i = 0;
 		list_for_each_prev (pos, &io->sections) {
 			RIOSection *s = (RIOSection *)list_entry(pos, RIOSection, list);
-			io->printf ("%02d  0x%08llx |", i, s->offset);
+			io->printf ("%02d  0x%08"PFMT64x" |", i, s->offset);
 			for(j=0;j<width;j++) {
 				if ((j*mul)+min >= s->offset && (j*mul)+min <=s->offset+s->size)
 					io->printf("#");
 				else
 					io->printf("-");
 			}
-			io->printf ("| 0x%08llx %s\n", s->offset+s->size, s->name);
+			io->printf ("| 0x%08"PFMT64x" %s\n", s->offset+s->size, s->name);
 			i++;
 		}
 		/* current seek */
 		if (i>0 && len != 0) {
-			io->printf ("=>  0x%08llx |", seek);
+			io->printf ("=>  0x%08"PFMT64x" |", seek);
 			for(j=0;j<width;j++) {
 				io->printf (
 					((j*mul)+min >= seek &&
 					 (j*mul)+min <= seek+len)
 					?"#":"-");
 			}
-			io->printf ("| 0x%08llx\n", seek+len);
+			io->printf ("| 0x%08"PFMT64x"\n", seek+len);
 		}
 	}
 }

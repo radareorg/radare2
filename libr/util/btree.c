@@ -148,7 +148,7 @@ int shownode(char *str, struct mydata *m)
 {
 	if (m == NULL)
 		printf ("==> not found\n");
-	else printf ("==> %s: %s, %lld\n", str, m->str, m->addr);
+	else printf ("==> %s: %s, %"PFMT64d"\n", str, m->str, m->addr);
 	return 0;
 }
 int mycmp(const void *a, const void *b)

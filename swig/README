@@ -23,7 +23,7 @@ These api changes are for:
 
     Example:
       foreach (var foo in binls.get_symbols ()) {
-        print ("%s 0x%08llx\n", foo.name, foo.offset);
+        print ("%s 0x%08"PFMT64x"\n", foo.name, foo.offset);
       }
 
   - Unit testing

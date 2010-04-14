@@ -37,10 +37,10 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	//const ut8 *buf = (ut8*)user;
 	int delta = addr-cur;
 	if (rad) {
-		printf("f hit%d_%d 0x%08llx ; %s\n", 0, kw->count, addr, curfile);
+		printf("f hit%d_%d 0x%08"PFMT64x" ; %s\n", 0, kw->count, addr, curfile);
 	} else {
 		if (!kw->count) printf("; %s\n", kw->keyword);
-		printf("%s: %03d @ 0x%llx\n", curfile, kw->count, addr);
+		printf("%s: %03d @ 0x%"PFMT64x"\n", curfile, kw->count, addr);
 		if (pr) {
 			r_print_hexdump(pr, addr, (ut8*)buffer+delta, 78, 16, R_TRUE);
 			r_cons_flush();
@@ -99,7 +99,7 @@ static int rafind_open(char *file) {
 	curfile = file;
 	r_search_begin(rs);
 	r_io_seek(&io, from, R_IO_SEEK_SET);
-	//printf("; %s 0x%08llx-0x%08llx\n", file, from, to);
+	//printf("; %s 0x%08"PFMT64x"-0x%08"PFMT64x"\n", file, from, to);
 	for(cur=from; !last && cur<to;cur+=bsize) {
 		if ((cur+bsize)>to) {
 			bsize = to-cur;
@@ -108,7 +108,7 @@ static int rafind_open(char *file) {
 		ret = r_io_read(&io, buffer, bsize);
 		if (ret == 0) {
 			if (nonstop) continue;
-		//	fprintf(stderr, "Error reading at 0x%08llx\n", cur);
+		//	fprintf(stderr, "Error reading at 0x%08"PFMT64x"\n", cur);
 			return 1;
 		}
 		if (ret != bsize)

@@ -196,7 +196,7 @@ R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 		if (node->flags & CN_BOOL) {
 			node->value = strdup(i?"true":"false");
 		} else {
-			sprintf (buf, "%lld", i); //0x%08lx", i);
+			sprintf (buf, "%"PFMT64d"", i); //0x%08lx", i);
 			node->value = strdup(buf);
 		}
 		//node->flags = CN_RW | CN_INT;
@@ -205,7 +205,7 @@ R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 		if (cfg->lock) {
 			eprintf ("(locked: no new keys can be created)");
 		} else {
-			sprintf(buf, "0x%08llx", i);
+			sprintf(buf, "0x%08"PFMT64x"", i);
 			node = r_config_node_new(name, buf);
 			node->flags = CN_RW | CN_OFFT;
 			node->i_value = i;
