@@ -97,7 +97,7 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 	pipe(sh_in);
 	pipe(sh_out);
 	pipe(sh_err);
-	*len = 0;
+	if (len) *len = 0;
 
 	int pid = fork();
 	if (!pid) {
@@ -136,7 +136,7 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 				break;
 			if (FD_ISSET (sh_out[0], &rfds)) {
 				if ((bytes = read (sh_out[0], buffer, sizeof (buffer)-1)) == 0) break;
-				*len += bytes;
+				if (len) *len += bytes;
 				output = r_str_concat (output, buffer);
 			} else if (FD_ISSET (sh_err[0], &rfds) && sterr) {
 				if (read (sh_err[0], buffer, sizeof (buffer)-1) == 0) break;

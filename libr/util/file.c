@@ -162,7 +162,7 @@ R_API char *r_file_slurp_random_line(const char *file) {
 R_API char *r_file_slurp_line(const char *file, int line, int context) {
 	int i, lines = 0;
 	int sz;
-	char *ptr, *str = r_file_slurp (file, &sz);
+	char *ptr = NULL, *str = r_file_slurp (file, &sz);
 	// TODO: Implement context
 	if (str) {
 		for (i=0;str[i];i++)
