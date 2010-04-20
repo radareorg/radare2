@@ -443,8 +443,9 @@ static int rabin_do_operation(const char *op) {
 				"  Resize section: r/.data/1024\n");
 		return R_FALSE;
 	}
-	arg = alloca (strlen(op)+1);
-	strcpy (arg, op);
+	/* Implement alloca with fixed-size buffer? */
+	if (!(arg = strdup (op)))
+		return R_FALSE;
 
 	if ((ptr = strchr (arg, '/'))) {
 		ptr[0] = '\0';
@@ -482,6 +483,8 @@ static int rabin_do_operation(const char *op) {
 		printf ("Unknown operation. use -O help\n");
 		return R_FALSE;
 	}
+
+	free (arg);
 
 	return R_TRUE;
 }
