@@ -1271,11 +1271,9 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'o':
 		{
-			/* XXX hardcoded */
 			int ret, idx; 
 			ut8 *buf = core->block;
 			struct r_anal_aop_t aop;
-			r_anal_use (&core->anal, "anal_x86_bea");
 			
 			for (idx=ret=0; idx<len; idx+=ret) {
 				ret = r_anal_aop (&core->anal, &aop,
