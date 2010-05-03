@@ -51,6 +51,7 @@ Concrete TODO points
   - Fix visual cursor in ANSI (raw ascii is inneficient)
   - Use r_bin with r_io to get symbols
     - The offset to read will define the module to analyze and retrieve syms
+  - Import msdn doc as comments
 
 * r_db
   - Implement iterators r_db_next() and r_db_prev()

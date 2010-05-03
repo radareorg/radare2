@@ -9,7 +9,7 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-#include "x86/dislen.h"
+#include "x86/dislen/dislen.h"
 
 /* code analysis functions */
 

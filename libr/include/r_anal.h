@@ -281,6 +281,7 @@ R_API int r_anal_reflines_middle(RAnal *anal, RAnalRefline *list, ut64 addr, int
 extern RAnalHandle r_anal_plugin_csr;
 extern RAnalHandle r_anal_plugin_arm;
 extern RAnalHandle r_anal_plugin_x86;
+extern RAnalHandle r_anal_plugin_x86_x86im;
 extern RAnalHandle r_anal_plugin_ppc;
 
 #endif

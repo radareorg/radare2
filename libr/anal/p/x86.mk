@@ -1,5 +1,5 @@
 OBJ_X86=anal_x86.o
-OBJ_X86+=../arch/x86/dislen.o
+OBJ_X86+=../arch/x86/dislen/dislen.o
 
 STATIC_OBJ+=${OBJ_X86}
 TARGET_X86=anal_x86.${EXT_SO}
