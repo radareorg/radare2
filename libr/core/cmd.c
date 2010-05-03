@@ -874,7 +874,7 @@ static int cmd_help(void *data, const char *input) {
 		" p?[len]           ; print current block with format and length\n"
 		" V[vcmds]          ; enter visual mode (vcmds=visualvisual  keystrokes)\n"
 		" w[mode] [arg]     ; multiple write operations\n"
-		" x [len]           ; alias for 'px' (print hexadecimal\n"
+		" x [len]           ; alias for 'px' (print hexadecimal)\n"
 		" y [len] [off]     ; yank/paste bytes from/to memory\n"
 		" ? [expr]          ; help or evaluate math expression\n"
 		" /[xmp/]           ; search for bytes, regexps, patterns, ..\n"

@@ -65,6 +65,7 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 #endif
 }
 
+// TODO: strdup?
 #if __WINDOWS__
 static char envbuf[1024];
 R_API const char *r_sys_getenv(const char *key) {
@@ -88,30 +89,44 @@ R_API char *r_sys_getcwd() {
 }
 
 #if __UNIX__
+static void pipeclose(int pipe[2]) {
+	close (pipe[0]);
+	close (pipe[1]);
+}
+
 R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, char **sterr) {
 	char *inputptr = (char *)input;
-	int bytes = 0;
-	int sh_in[2];
-	int sh_out[2];
-	int sh_err[2];
+	int pid, bytes = 0;
+	int sh_in[2], sh_out[2], sh_err[2];
+
 	pipe(sh_in);
 	pipe(sh_out);
-	pipe(sh_err);
+	if (sterr)
+		pipe(sh_err);
 	if (len) *len = 0;
 
-	int pid = fork();
-	if (!pid) {
+	pid = fork();
+	switch (pid) {
+	case -1:
+		return NULL;
+	case 0:
 		dup2 (sh_in[0], 0); close (sh_in[0]); close (sh_in[1]);
 		dup2 (sh_out[1], 1); close (sh_out[0]); close (sh_out[1]);
-		if (sterr) dup2 (sh_err[1], 2);
-		else close(2);
+		if (sterr) dup2 (sh_err[1], 2); else close (2);
 		close (sh_err[0]); close (sh_err[1]); 
 		execl ("/bin/sh", "sh", "-c", cmd, NULL);
-	} else {
+		exit (1);
+	default:
 		char buffer[1024];
-		char *output = calloc (1, 1024);
+		char *output = calloc (1, 1024); // TODO: use malloc
+		if (!output)
+			return NULL;
 		if (sterr)
 			*sterr = calloc (1, 1024);
+		if (!*sterr) {
+			free (output);
+			return NULL;
+		}
 		close (sh_out[1]);
 		close (sh_err[1]);
 		close (sh_in[0]);
@@ -129,8 +144,7 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 				FD_SET (sh_err[0], &rfds);
 			if (inputptr && *inputptr)
 				FD_SET (sh_in[1], &wfds);
-
-			memset (buffer, 0, sizeof(buffer));
+			memset (buffer, 0, sizeof (buffer));
 			nfd = select (sh_err[0] + 1, &rfds, &wfds, NULL, NULL);
 			if (nfd < 0)
 				break;
@@ -142,17 +156,18 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 				if (read (sh_err[0], buffer, sizeof (buffer)-1) == 0) break;
 				*sterr = r_str_concat (*sterr, buffer);
 			} else if (FD_ISSET (sh_in[1], &wfds) && inputptr && *inputptr) {
-				bytes = write (sh_in[1], inputptr, strlen(inputptr));
+				bytes = write (sh_in[1], inputptr, strlen (inputptr));
 				inputptr += bytes;
 				if (!*inputptr) close (sh_in[1]);
 			}
 		}
-		close(sh_out[0]);
-		close(sh_err[0]);
-		close(sh_in[1]);
+		close (sh_out[0]);
+		close (sh_err[0]);
+		close (sh_in[1]);
 
-		if (strlen(output))
+		if (*output)
 			return output;
+		free (output);
 	}
 	return NULL;
 }
