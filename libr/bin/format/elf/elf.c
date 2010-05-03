@@ -28,11 +28,13 @@ static int Elf_(r_bin_elf_init_ehdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (e_ident[EI_DATA] == ELFDATA2MSB)
 		bin->endian = LIL_ENDIAN;
 	else bin->endian = !LIL_ENDIAN;
+	len = r_buf_fread_at (bin->b, 0, (ut8*)&bin->ehdr,
 #if R_BIN_ELF64
-	len = r_buf_fread_at (bin->b, 0, (ut8*)&bin->ehdr, bin->endian?"16c2SI3LI6S":"16c2si3li6s", 1);
+			bin->endian?"16c2SI3LI6S":"16c2si3li6s",
 #else
-	len = r_buf_fread_at (bin->b, 0, (ut8*)&bin->ehdr, bin->endian?"16c2S5I6S":"16c2s5i6s", 1);
+			bin->endian?"16c2S5I6S":"16c2s5i6s",
 #endif
+			1);
 	if (len == -1) {
 		eprintf ("Error: read (ehdr)\n");
 		return R_FALSE;
@@ -50,11 +52,13 @@ static int Elf_(r_bin_elf_init_phdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		perror ("malloc (phdr)");
 		return R_FALSE;
 	}
+	len = r_buf_fread_at (bin->b, bin->ehdr.e_phoff, (ut8*)bin->phdr,
 #if R_BIN_ELF64
-	len = r_buf_fread_at (bin->b, bin->ehdr.e_phoff, (ut8*)bin->phdr, bin->endian?"2I6L":"2i6l", bin->ehdr.e_phnum);
+			bin->endian?"2I6L":"2i6l",
 #else
-	len = r_buf_fread_at (bin->b, bin->ehdr.e_phoff, (ut8*)bin->phdr, bin->endian?"8I":"8i", bin->ehdr.e_phnum);
+			bin->endian?"8I":"8i",
 #endif
+			bin->ehdr.e_phnum);
 	if (len == -1) {
 		eprintf ("Error: read (phdr)\n");
 		R_FREE (bin->phdr);
@@ -71,11 +75,13 @@ static int Elf_(r_bin_elf_init_shdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		perror ("malloc (shdr)");
 		return R_FALSE;
 	}
+	len = r_buf_fread_at (bin->b, bin->ehdr.e_shoff, (ut8*)bin->shdr,
 #if R_BIN_ELF64
-	len = r_buf_fread_at (bin->b, bin->ehdr.e_shoff, (ut8*)bin->shdr, bin->endian?"2I4L2I2L":"2i4l2i2l", bin->ehdr.e_shnum);
+			bin->endian?"2I4L2I2L":"2i4l2i2l",
 #else
-	len = r_buf_fread_at (bin->b, bin->ehdr.e_shoff, (ut8*)bin->shdr, bin->endian?"10I":"10i", bin->ehdr.e_shnum);
+			bin->endian?"10I":"10i",
 #endif
+			bin->ehdr.e_shnum);
 	if (len == -1) {
 		eprintf ("Error: read (shdr)\n");
 		R_FREE (bin->shdr);
@@ -94,7 +100,8 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		perror ("malloc");
 		return R_FALSE;
 	}
-	if (r_buf_read_at (bin->b, strtab_section->sh_offset, (ut8*)bin->strtab, strtab_section->sh_size) == -1) {
+	if (r_buf_read_at (bin->b, strtab_section->sh_offset, (ut8*)bin->strtab,
+				strtab_section->sh_size) == -1) {
 		eprintf ("Error: read (strtab)\n");
 		R_FREE (bin->strtab);
 		return R_FALSE;
@@ -121,8 +128,7 @@ static int Elf_(r_bin_elf_init)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	return R_TRUE;
 }
 
-static ut64 Elf_(r_bin_elf_get_section_offset)(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name)
-{
+static ut64 Elf_(r_bin_elf_get_section_offset)(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name) {
 	int i;
 
 	if (!bin->shdr || !bin->strtab)
@@ -133,8 +139,7 @@ static ut64 Elf_(r_bin_elf_get_section_offset)(struct Elf_(r_bin_elf_obj_t) *bin
 	return -1;
 }
 
-static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym)
-{
+static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 	Elf_(Rel) *rel;
 	Elf_(Addr) plt_sym_addr;
 	ut64 got_addr, got_offset;
@@ -156,11 +161,13 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym)
 			return -1;
 		}
 		for (j = k = 0; j < bin->shdr[i].sh_size; j += tsize, k++) {
+			len = r_buf_fread_at (bin->b, bin->shdr[i].sh_offset + j, (ut8*)&rel[k],
 #if R_BIN_ELF64
-			len = r_buf_fread_at (bin->b, bin->shdr[i].sh_offset + j, (ut8*)&rel[k], bin->endian?"2L":"2l", 1);
+					bin->endian?"2L":"2l",
 #else
-			len = r_buf_fread_at (bin->b, bin->shdr[i].sh_offset + j, (ut8*)&rel[k], bin->endian?"2I":"2i", 1);
+					bin->endian?"2I":"2i",
 #endif
+					1);
 			if (len == -1) {
 				eprintf ("Error: read (rel)\n");
 				return -1;
@@ -218,9 +225,9 @@ int Elf_(r_bin_elf_get_static)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 char* Elf_(r_bin_elf_get_data_encoding)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	switch (bin->ehdr.e_ident[EI_DATA]) {
-	case ELFDATANONE: return r_str_dup_printf ("none");
-	case ELFDATA2LSB: return r_str_dup_printf ("2's complement, little endian");
-	case ELFDATA2MSB: return r_str_dup_printf ("2's complement, big endian");
+	case ELFDATANONE: return strdup ("none");
+	case ELFDATA2LSB: return strdup ("2's complement, little endian");
+	case ELFDATA2MSB: return strdup ("2's complement, big endian");
 	default: return r_str_dup_printf ("<unknown: %x>", bin->ehdr.e_ident[EI_DATA]);
 	}
 }
@@ -230,110 +237,110 @@ char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case EM_MIPS:
 	case EM_MIPS_RS3_LE:
 	case EM_MIPS_X:
-		return r_str_dup_printf ("mips");
+		return strdup ("mips");
 	case EM_ARM:
-		return r_str_dup_printf ("arm");
+		return strdup ("arm");
 	case EM_SPARC:
 	case EM_SPARC32PLUS:
 	case EM_SPARCV9:
-		return r_str_dup_printf ("sparc");
+		return strdup ("sparc");
 	case EM_PPC:
 	case EM_PPC64:
-		return r_str_dup_printf ("powerpc");
+		return strdup ("powerpc");
 	case EM_68K:
-		return r_str_dup_printf ("m68k");
+		return strdup ("m68k");
 	default:
-		return r_str_dup_printf ("x86");
+		return strdup ("x86");
 	}
 }
 
 char* Elf_(r_bin_elf_get_machine_name)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	switch (bin->ehdr.e_machine) {
-	case EM_NONE:        return r_str_dup_printf ("No machine");
-	case EM_M32:         return r_str_dup_printf ("AT&T WE 32100");
-	case EM_SPARC:       return r_str_dup_printf ("SUN SPARC");
-	case EM_386:         return r_str_dup_printf ("Intel 80386");
-	case EM_68K:         return r_str_dup_printf ("Motorola m68k family");
-	case EM_88K:         return r_str_dup_printf ("Motorola m88k family");
-	case EM_860:         return r_str_dup_printf ("Intel 80860");
-	case EM_MIPS:        return r_str_dup_printf ("MIPS R3000 big-endian");
-	case EM_S370:        return r_str_dup_printf ("IBM System/370");
-	case EM_MIPS_RS3_LE: return r_str_dup_printf ("MIPS R3000 little-endian");
-	case EM_PARISC:      return r_str_dup_printf ("HPPA");
-	case EM_VPP500:      return r_str_dup_printf ("Fujitsu VPP500");
-	case EM_SPARC32PLUS: return r_str_dup_printf ("Sun's \"v8plus\"");
-	case EM_960:         return r_str_dup_printf ("Intel 80960");
-	case EM_PPC:         return r_str_dup_printf ("PowerPC");
-	case EM_PPC64:       return r_str_dup_printf ("PowerPC 64-bit");
-	case EM_S390:        return r_str_dup_printf ("IBM S390");
-	case EM_V800:        return r_str_dup_printf ("NEC V800 series");
-	case EM_FR20:        return r_str_dup_printf ("Fujitsu FR20");
-	case EM_RH32:        return r_str_dup_printf ("TRW RH-32");
-	case EM_RCE:         return r_str_dup_printf ("Motorola RCE");
-	case EM_ARM:         return r_str_dup_printf ("ARM");
-	case EM_FAKE_ALPHA:  return r_str_dup_printf ("Digital Alpha");
-	case EM_SH:          return r_str_dup_printf ("Hitachi SH");
-	case EM_SPARCV9:     return r_str_dup_printf ("SPARC v9 64-bit");
-	case EM_TRICORE:     return r_str_dup_printf ("Siemens Tricore");
-	case EM_ARC:         return r_str_dup_printf ("Argonaut RISC Core");
-	case EM_H8_300:      return r_str_dup_printf ("Hitachi H8/300");
-	case EM_H8_300H:     return r_str_dup_printf ("Hitachi H8/300H");
-	case EM_H8S:         return r_str_dup_printf ("Hitachi H8S");
-	case EM_H8_500:      return r_str_dup_printf ("Hitachi H8/500");
-	case EM_IA_64:       return r_str_dup_printf ("Intel Merced");
-	case EM_MIPS_X:      return r_str_dup_printf ("Stanford MIPS-X");
-	case EM_COLDFIRE:    return r_str_dup_printf ("Motorola Coldfire");
-	case EM_68HC12:      return r_str_dup_printf ("Motorola M68HC12");
-	case EM_MMA:         return r_str_dup_printf ("Fujitsu MMA Multimedia Accelerator");
-	case EM_PCP:         return r_str_dup_printf ("Siemens PCP");
-	case EM_NCPU:        return r_str_dup_printf ("Sony nCPU embeeded RISC");
-	case EM_NDR1:        return r_str_dup_printf ("Denso NDR1 microprocessor");
-	case EM_STARCORE:    return r_str_dup_printf ("Motorola Start*Core processor");
-	case EM_ME16:        return r_str_dup_printf ("Toyota ME16 processor");
-	case EM_ST100:       return r_str_dup_printf ("STMicroelectronic ST100 processor");
-	case EM_TINYJ:       return r_str_dup_printf ("Advanced Logic Corp. Tinyj emb.fam");
-	case EM_X86_64:      return r_str_dup_printf ("AMD x86-64 architecture");
-	case EM_PDSP:        return r_str_dup_printf ("Sony DSP Processor");
-	case EM_FX66:        return r_str_dup_printf ("Siemens FX66 microcontroller");
-	case EM_ST9PLUS:     return r_str_dup_printf ("STMicroelectronics ST9+ 8/16 mc");
-	case EM_ST7:         return r_str_dup_printf ("STmicroelectronics ST7 8 bit mc");
-	case EM_68HC16:      return r_str_dup_printf ("Motorola MC68HC16 microcontroller");
-	case EM_68HC11:      return r_str_dup_printf ("Motorola MC68HC11 microcontroller");
-	case EM_68HC08:      return r_str_dup_printf ("Motorola MC68HC08 microcontroller");
-	case EM_68HC05:      return r_str_dup_printf ("Motorola MC68HC05 microcontroller");
-	case EM_SVX:         return r_str_dup_printf ("Silicon Graphics SVx");
-	case EM_ST19:        return r_str_dup_printf ("STMicroelectronics ST19 8 bit mc");
-	case EM_VAX:         return r_str_dup_printf ("Digital VAX");
-	case EM_CRIS:        return r_str_dup_printf ("Axis Communications 32-bit embedded processor");
-	case EM_JAVELIN:     return r_str_dup_printf ("Infineon Technologies 32-bit embedded processor");
-	case EM_FIREPATH:    return r_str_dup_printf ("Element 14 64-bit DSP Processor");
-	case EM_ZSP:         return r_str_dup_printf ("LSI Logic 16-bit DSP Processor");
-	case EM_MMIX:        return r_str_dup_printf ("Donald Knuth's educational 64-bit processor");
-	case EM_HUANY:       return r_str_dup_printf ("Harvard University machine-independent object files");
-	case EM_PRISM:       return r_str_dup_printf ("SiTera Prism");
-	case EM_AVR:         return r_str_dup_printf ("Atmel AVR 8-bit microcontroller");
-	case EM_FR30:        return r_str_dup_printf ("Fujitsu FR30");
-	case EM_D10V:        return r_str_dup_printf ("Mitsubishi D10V");
-	case EM_D30V:        return r_str_dup_printf ("Mitsubishi D30V");
-	case EM_V850:        return r_str_dup_printf ("NEC v850");
-	case EM_M32R:        return r_str_dup_printf ("Mitsubishi M32R");
-	case EM_MN10300:     return r_str_dup_printf ("Matsushita MN10300");
-	case EM_MN10200:     return r_str_dup_printf ("Matsushita MN10200");
-	case EM_PJ:          return r_str_dup_printf ("picoJava");
-	case EM_OPENRISC:    return r_str_dup_printf ("OpenRISC 32-bit embedded processor");
-	case EM_ARC_A5:      return r_str_dup_printf ("ARC Cores Tangent-A5");
-	case EM_XTENSA:      return r_str_dup_printf ("Tensilica Xtensa Architecture");
+	case EM_NONE:        return strdup ("No machine");
+	case EM_M32:         return strdup ("AT&T WE 32100");
+	case EM_SPARC:       return strdup ("SUN SPARC");
+	case EM_386:         return strdup ("Intel 80386");
+	case EM_68K:         return strdup ("Motorola m68k family");
+	case EM_88K:         return strdup ("Motorola m88k family");
+	case EM_860:         return strdup ("Intel 80860");
+	case EM_MIPS:        return strdup ("MIPS R3000 big-endian");
+	case EM_S370:        return strdup ("IBM System/370");
+	case EM_MIPS_RS3_LE: return strdup ("MIPS R3000 little-endian");
+	case EM_PARISC:      return strdup ("HPPA");
+	case EM_VPP500:      return strdup ("Fujitsu VPP500");
+	case EM_SPARC32PLUS: return strdup ("Sun's \"v8plus\"");
+	case EM_960:         return strdup ("Intel 80960");
+	case EM_PPC:         return strdup ("PowerPC");
+	case EM_PPC64:       return strdup ("PowerPC 64-bit");
+	case EM_S390:        return strdup ("IBM S390");
+	case EM_V800:        return strdup ("NEC V800 series");
+	case EM_FR20:        return strdup ("Fujitsu FR20");
+	case EM_RH32:        return strdup ("TRW RH-32");
+	case EM_RCE:         return strdup ("Motorola RCE");
+	case EM_ARM:         return strdup ("ARM");
+	case EM_FAKE_ALPHA:  return strdup ("Digital Alpha");
+	case EM_SH:          return strdup ("Hitachi SH");
+	case EM_SPARCV9:     return strdup ("SPARC v9 64-bit");
+	case EM_TRICORE:     return strdup ("Siemens Tricore");
+	case EM_ARC:         return strdup ("Argonaut RISC Core");
+	case EM_H8_300:      return strdup ("Hitachi H8/300");
+	case EM_H8_300H:     return strdup ("Hitachi H8/300H");
+	case EM_H8S:         return strdup ("Hitachi H8S");
+	case EM_H8_500:      return strdup ("Hitachi H8/500");
+	case EM_IA_64:       return strdup ("Intel Merced");
+	case EM_MIPS_X:      return strdup ("Stanford MIPS-X");
+	case EM_COLDFIRE:    return strdup ("Motorola Coldfire");
+	case EM_68HC12:      return strdup ("Motorola M68HC12");
+	case EM_MMA:         return strdup ("Fujitsu MMA Multimedia Accelerator");
+	case EM_PCP:         return strdup ("Siemens PCP");
+	case EM_NCPU:        return strdup ("Sony nCPU embeeded RISC");
+	case EM_NDR1:        return strdup ("Denso NDR1 microprocessor");
+	case EM_STARCORE:    return strdup ("Motorola Start*Core processor");
+	case EM_ME16:        return strdup ("Toyota ME16 processor");
+	case EM_ST100:       return strdup ("STMicroelectronic ST100 processor");
+	case EM_TINYJ:       return strdup ("Advanced Logic Corp. Tinyj emb.fam");
+	case EM_X86_64:      return strdup ("AMD x86-64 architecture");
+	case EM_PDSP:        return strdup ("Sony DSP Processor");
+	case EM_FX66:        return strdup ("Siemens FX66 microcontroller");
+	case EM_ST9PLUS:     return strdup ("STMicroelectronics ST9+ 8/16 mc");
+	case EM_ST7:         return strdup ("STmicroelectronics ST7 8 bit mc");
+	case EM_68HC16:      return strdup ("Motorola MC68HC16 microcontroller");
+	case EM_68HC11:      return strdup ("Motorola MC68HC11 microcontroller");
+	case EM_68HC08:      return strdup ("Motorola MC68HC08 microcontroller");
+	case EM_68HC05:      return strdup ("Motorola MC68HC05 microcontroller");
+	case EM_SVX:         return strdup ("Silicon Graphics SVx");
+	case EM_ST19:        return strdup ("STMicroelectronics ST19 8 bit mc");
+	case EM_VAX:         return strdup ("Digital VAX");
+	case EM_CRIS:        return strdup ("Axis Communications 32-bit embedded processor");
+	case EM_JAVELIN:     return strdup ("Infineon Technologies 32-bit embedded processor");
+	case EM_FIREPATH:    return strdup ("Element 14 64-bit DSP Processor");
+	case EM_ZSP:         return strdup ("LSI Logic 16-bit DSP Processor");
+	case EM_MMIX:        return strdup ("Donald Knuth's educational 64-bit processor");
+	case EM_HUANY:       return strdup ("Harvard University machine-independent object files");
+	case EM_PRISM:       return strdup ("SiTera Prism");
+	case EM_AVR:         return strdup ("Atmel AVR 8-bit microcontroller");
+	case EM_FR30:        return strdup ("Fujitsu FR30");
+	case EM_D10V:        return strdup ("Mitsubishi D10V");
+	case EM_D30V:        return strdup ("Mitsubishi D30V");
+	case EM_V850:        return strdup ("NEC v850");
+	case EM_M32R:        return strdup ("Mitsubishi M32R");
+	case EM_MN10300:     return strdup ("Matsushita MN10300");
+	case EM_MN10200:     return strdup ("Matsushita MN10200");
+	case EM_PJ:          return strdup ("picoJava");
+	case EM_OPENRISC:    return strdup ("OpenRISC 32-bit embedded processor");
+	case EM_ARC_A5:      return strdup ("ARC Cores Tangent-A5");
+	case EM_XTENSA:      return strdup ("Tensilica Xtensa Architecture");
 	default:             return r_str_dup_printf ("<unknown>: 0x%x", bin->ehdr.e_machine);
 	}
 }
 
 char* Elf_(r_bin_elf_get_file_type)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	switch (bin->ehdr.e_type) {
-	case ET_NONE: return r_str_dup_printf ("NONE (None)");
-	case ET_REL:  return r_str_dup_printf ("REL (Relocatable file)");
-	case ET_EXEC: return r_str_dup_printf ("EXEC (Executable file)");
-	case ET_DYN:  return r_str_dup_printf ("DYN (Shared object file)");
-	case ET_CORE: return r_str_dup_printf ("CORE (Core file)");
+	case ET_NONE: return strdup ("NONE (None)");
+	case ET_REL:  return strdup ("REL (Relocatable file)");
+	case ET_EXEC: return strdup ("EXEC (Executable file)");
+	case ET_DYN:  return strdup ("DYN (Shared object file)");
+	case ET_CORE: return strdup ("CORE (Core file)");
 	}
 
 	if ((bin->ehdr.e_type >= ET_LOPROC) && (bin->ehdr.e_type <= ET_HIPROC))
@@ -345,9 +352,9 @@ char* Elf_(r_bin_elf_get_file_type)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 char* Elf_(r_bin_elf_get_elf_class)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	switch (bin->ehdr.e_ident[EI_CLASS]) {
-	case ELFCLASSNONE: return r_str_dup_printf ("none");
-	case ELFCLASS32:   return r_str_dup_printf ("ELF32");
-	case ELFCLASS64:   return r_str_dup_printf ("ELF64");
+	case ELFCLASSNONE: return strdup ("none");
+	case ELFCLASS32:   return strdup ("ELF32");
+	case ELFCLASS64:   return strdup ("ELF64");
 	default:           return r_str_dup_printf ("<unknown: %x>", bin->ehdr.e_ident[EI_CLASS]);
 	}
 }
@@ -364,19 +371,19 @@ int Elf_(r_bin_elf_get_bits)(struct Elf_(r_bin_elf_obj_t) *bin) {
 // TODO: must return const char * all those strings must be const char os[LINUX] or so
 char* Elf_(r_bin_elf_get_osabi_name)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	switch (bin->ehdr.e_ident[EI_OSABI]) {
-	case ELFOSABI_NONE:       return r_str_dup_printf ("linux"); // sysv
-	case ELFOSABI_HPUX:       return r_str_dup_printf ("hpux");
-	case ELFOSABI_NETBSD:     return r_str_dup_printf ("netbsd");
-	case ELFOSABI_LINUX:      return r_str_dup_printf ("linux");
-	case ELFOSABI_SOLARIS:    return r_str_dup_printf ("solaris");
-	case ELFOSABI_AIX:        return r_str_dup_printf ("aix");
-	case ELFOSABI_IRIX:       return r_str_dup_printf ("irix");
-	case ELFOSABI_FREEBSD:    return r_str_dup_printf ("freebsd");
-	case ELFOSABI_TRU64:      return r_str_dup_printf ("tru64");
-	case ELFOSABI_MODESTO:    return r_str_dup_printf ("modesto");
-	case ELFOSABI_OPENBSD:    return r_str_dup_printf ("openbsd");
-	case ELFOSABI_STANDALONE: return r_str_dup_printf ("standalone");
-	case ELFOSABI_ARM:        return r_str_dup_printf ("arm");
+	case ELFOSABI_NONE:       return strdup ("linux"); // sysv
+	case ELFOSABI_HPUX:       return strdup ("hpux");
+	case ELFOSABI_NETBSD:     return strdup ("netbsd");
+	case ELFOSABI_LINUX:      return strdup ("linux");
+	case ELFOSABI_SOLARIS:    return strdup ("solaris");
+	case ELFOSABI_AIX:        return strdup ("aix");
+	case ELFOSABI_IRIX:       return strdup ("irix");
+	case ELFOSABI_FREEBSD:    return strdup ("freebsd");
+	case ELFOSABI_TRU64:      return strdup ("tru64");
+	case ELFOSABI_MODESTO:    return strdup ("modesto");
+	case ELFOSABI_OPENBSD:    return strdup ("openbsd");
+	case ELFOSABI_STANDALONE: return strdup ("standalone");
+	case ELFOSABI_ARM:        return strdup ("arm");
 	default:                  return r_str_dup_printf ("<unknown: %x>", bin->ehdr.e_ident[EI_OSABI]);
 	}
 }
@@ -401,11 +408,13 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 				return NULL;
 			}
 			ndyn = (int)(bin->phdr[i].p_filesz / sizeof (Elf_(Dyn)));
+			len = r_buf_fread_at (bin->b, bin->phdr[i].p_offset, (ut8*)dyn,
 #if R_BIN_ELF64
-			len = r_buf_fread_at (bin->b, bin->phdr[i].p_offset, (ut8*)dyn, bin->endian?"2L":"2l", ndyn);
+				bin->endian?"2L":"2l",
 #else
-			len = r_buf_fread_at (bin->b, bin->phdr[i].p_offset, (ut8*)dyn, bin->endian?"2I":"2i", ndyn);
+				bin->endian?"2I":"2i",
 #endif
+					ndyn);
 			if (len  == -1) {
 				eprintf ("Error: read (dyn)\n");
 				free (dyn);
@@ -453,11 +462,13 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 				return NULL;
 			}
 			ndyn = (int)(bin->phdr[i].p_filesz / sizeof (Elf_(Dyn)));
+			len = r_buf_fread_at (bin->b, bin->phdr[i].p_offset, (ut8*)dyn,
 #if R_BIN_ELF64
-			len = r_buf_fread_at (bin->b, bin->phdr[i].p_offset, (ut8*)dyn, bin->endian?"2L":"2l", ndyn);
+					bin->endian?"2L":"2l",
 #else
-			len = r_buf_fread_at (bin->b, bin->phdr[i].p_offset, (ut8*)dyn, bin->endian?"2I":"2i", ndyn);
+					bin->endian?"2I":"2i",
 #endif
+					ndyn);
 			if (len  == -1) {
 				eprintf ("Error: read (dyn)\n");
 				free (dyn);
@@ -552,15 +563,13 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 				return NULL;
 			}
 			nsym = (int)(bin->shdr[i].sh_size/sizeof (Elf_(Sym)));
-#if R_BIN_ELF64
-#define SH_FMT "I2cS2L"
-#define SH_FMT2 "i2cs2l"
-#else
-#define SH_FMT "3I2cS"
-#define SH_FMT2 "3i2cs"
-#endif
 			if (r_buf_fread_at (bin->b, bin->shdr[i].sh_offset, (ut8*)sym,
-					bin->endian?SH_FMT:SH_FMT2, nsym) == -1) {
+#if R_BIN_ELF64
+					bin->endian?"I2cS2L":"i2cs2l",
+#else
+					bin->endian?"3I2cS":"3i2cs",
+#endif
+					nsym) == -1) {
 				eprintf ("Error: read (ehdr)\n");
 				return NULL;
 			}
@@ -629,7 +638,8 @@ struct r_bin_elf_field_t* Elf_(r_bin_elf_get_fields)(struct Elf_(r_bin_elf_obj_t
 	struct r_bin_elf_field_t *ret = NULL;
 	int i = 0, j;
 
-	if ((ret = malloc ((bin->ehdr.e_phnum+3 + 1) * sizeof (struct r_bin_elf_field_t))) == NULL)
+	if ((ret = malloc ((bin->ehdr.e_phnum+3 + 1) *
+			sizeof (struct r_bin_elf_field_t))) == NULL)
 		return NULL;
 	strncpy (ret[i].name, "ehdr", ELF_STRING_LENGTH); 
 	ret[i].offset = 0;
