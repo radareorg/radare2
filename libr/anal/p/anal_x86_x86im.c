@@ -23,6 +23,7 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 	if ((x86im_dec (&io,
 					anal->bits == 32 ? X86IM_IO_MODE_32BIT : X86IM_IO_MODE_64BIT,
 					(unsigned char*)data)) == X86IM_STATUS_SUCCESS) {
+		/* XXX Fix io.imm values using io.imm_size */
 		if (X86IM_IO_IS_GPI_JMP (&io)) {
 			aop->type = R_ANAL_OP_TYPE_JMP;
 			aop->jump = aop->fail + io.imm;
@@ -42,6 +43,55 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 		}
 		if (X86IM_IO_IS_GPI_RET (&io)) {
 			aop->type = R_ANAL_OP_TYPE_RET;
+			aop->eob = R_TRUE;
+		}
+		if (X86IM_IO_IS_GPI_CMP (&io)) {
+			aop->type = R_ANAL_OP_TYPE_CMP;
+			aop->stackop = R_ANAL_STACK_LOCAL_GET;
+			aop->value = io.imm;
+		}
+		if (X86IM_IO_IS_GPI_PUSH (&io)) {
+			aop->type = R_ANAL_OP_TYPE_PUSH;
+			aop->stackop = R_ANAL_STACK_ARG_GET;
+			aop->ref = io.imm;
+		}
+		if (X86IM_IO_IS_GPI_POP (&io)) {
+			aop->type = R_ANAL_OP_TYPE_POP;
+		}
+		if (X86IM_IO_IS_GPI_ADD (&io)) {
+			aop->type = R_ANAL_OP_TYPE_ADD;
+			aop->stackop = R_ANAL_STACK_LOCAL_SET;
+			aop->ref = io.imm;
+		}
+		if (X86IM_IO_IS_GPI_SUB (&io)) {
+			aop->type = R_ANAL_OP_TYPE_SUB;
+		}
+		if (X86IM_IO_IS_GPI_MUL (&io)) {
+			aop->type = R_ANAL_OP_TYPE_MUL;
+		}
+		if (X86IM_IO_IS_GPI_DIV (&io)) {
+			aop->type = R_ANAL_OP_TYPE_DIV;
+		}
+		if (X86IM_IO_IS_GPI_SHR (&io)) {
+			aop->type = R_ANAL_OP_TYPE_SHR;
+		}
+		if (X86IM_IO_IS_GPI_SHL (&io)) {
+			aop->type = R_ANAL_OP_TYPE_SHL;
+		}
+		if (X86IM_IO_IS_GPI_OR (&io)) {
+			aop->type = R_ANAL_OP_TYPE_OR;
+		}
+		if (X86IM_IO_IS_GPI_AND (&io)) {
+			aop->type = R_ANAL_OP_TYPE_AND;
+		}
+		if (X86IM_IO_IS_GPI_XOR (&io)) {
+			aop->type = R_ANAL_OP_TYPE_XOR;
+		}
+		if (X86IM_IO_IS_GPI_NOT (&io)) {
+			aop->type = R_ANAL_OP_TYPE_NOT;
+		}
+		if (X86IM_IO_IS_GPI_DIV (&io)) {
+			aop->type = R_ANAL_OP_TYPE_DIV;
 		}
 		aop->length = io.len;
 	}
