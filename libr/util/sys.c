@@ -101,8 +101,7 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 
 	pipe(sh_in);
 	pipe(sh_out);
-	if (sterr)
-		pipe(sh_err);
+	pipe(sh_err);
 	if (len) *len = 0;
 
 	pid = fork();
@@ -117,15 +116,17 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 		execl ("/bin/sh", "sh", "-c", cmd, NULL);
 		exit (1);
 	default:
+		{
 		char buffer[1024];
 		char *output = calloc (1, 1024); // TODO: use malloc
 		if (!output)
 			return NULL;
-		if (sterr)
+		if (sterr) {
 			*sterr = calloc (1, 1024);
-		if (!*sterr) {
-			free (output);
-			return NULL;
+			if (!*sterr) {
+				free (output);
+				return NULL;
+			}
 		}
 		close (sh_out[1]);
 		close (sh_err[1]);
@@ -168,6 +169,7 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 		if (*output)
 			return output;
 		free (output);
+		}
 	}
 	return NULL;
 }
