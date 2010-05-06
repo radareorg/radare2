@@ -28,68 +28,68 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 			aop->type = R_ANAL_OP_TYPE_JMP;
 			aop->jump = aop->fail + io.imm;
 			aop->eob = R_TRUE;
-		}
+		} else
 		if (X86IM_IO_IS_GPI_JCC (&io)) {
 			aop->type = R_ANAL_OP_TYPE_CJMP;
 			aop->fail = aop->addr + io.len;
 			aop->jump = aop->fail + io.imm;
 			aop->eob = R_TRUE;
-		}
+		} else
 		if (X86IM_IO_IS_GPI_CALL (&io)) {
 			aop->type = R_ANAL_OP_TYPE_CALL;
 			aop->fail = aop->addr + io.len;
 			aop->jump = aop->fail + io.imm;
 
-		}
+		} else
 		if (X86IM_IO_IS_GPI_RET (&io)) {
 			aop->type = R_ANAL_OP_TYPE_RET;
 			aop->eob = R_TRUE;
-		}
+		} else
 		if (X86IM_IO_IS_GPI_CMP (&io)) {
 			aop->type = R_ANAL_OP_TYPE_CMP;
 			aop->stackop = R_ANAL_STACK_LOCAL_GET;
 			aop->value = io.imm;
-		}
+		} else
 		if (X86IM_IO_IS_GPI_PUSH (&io)) {
 			aop->type = R_ANAL_OP_TYPE_PUSH;
 			aop->stackop = R_ANAL_STACK_ARG_GET;
 			aop->ref = io.imm;
-		}
+		} else
 		if (X86IM_IO_IS_GPI_POP (&io)) {
 			aop->type = R_ANAL_OP_TYPE_POP;
-		}
+		} else
 		if (X86IM_IO_IS_GPI_ADD (&io)) {
 			aop->type = R_ANAL_OP_TYPE_ADD;
 			aop->stackop = R_ANAL_STACK_LOCAL_SET;
 			aop->ref = io.imm;
-		}
+		} else
 		if (X86IM_IO_IS_GPI_SUB (&io)) {
 			aop->type = R_ANAL_OP_TYPE_SUB;
-		}
+		} else
 		if (X86IM_IO_IS_GPI_MUL (&io)) {
 			aop->type = R_ANAL_OP_TYPE_MUL;
-		}
+		} else
 		if (X86IM_IO_IS_GPI_DIV (&io)) {
 			aop->type = R_ANAL_OP_TYPE_DIV;
-		}
+		} else
 		if (X86IM_IO_IS_GPI_SHR (&io)) {
 			aop->type = R_ANAL_OP_TYPE_SHR;
-		}
+		} else
 		if (X86IM_IO_IS_GPI_SHL (&io)) {
 			aop->type = R_ANAL_OP_TYPE_SHL;
-		}
+		} else
 		if (X86IM_IO_IS_GPI_OR (&io)) {
 			aop->type = R_ANAL_OP_TYPE_OR;
-		}
+		} else
 		if (X86IM_IO_IS_GPI_AND (&io)) {
 			aop->type = R_ANAL_OP_TYPE_AND;
-		}
+		} else
 		if (X86IM_IO_IS_GPI_XOR (&io)) {
 			aop->type = R_ANAL_OP_TYPE_XOR;
-		}
+		} else
 		if (X86IM_IO_IS_GPI_NOT (&io)) {
 			aop->type = R_ANAL_OP_TYPE_NOT;
-		}
+		} else
 		if (X86IM_IO_IS_GPI_DIV (&io)) {
 			aop->type = R_ANAL_OP_TYPE_DIV;
 		}
