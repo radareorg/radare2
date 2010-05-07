@@ -18,8 +18,7 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 	memset (aop, '\0', sizeof (RAnalAop));
 	aop->type = R_ANAL_OP_TYPE_UNK;
 	aop->addr = addr;
-	aop->jump = -1;
-	aop->fail = -1;
+	aop->jump = aop->fail = -1;
 
 	if ((x86im_dec (&io,
 					anal->bits == 32 ? X86IM_IO_MODE_32BIT : X86IM_IO_MODE_64BIT,
@@ -33,14 +32,14 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 				aop->eob = R_TRUE;
 			} else {
 				aop->type = R_ANAL_OP_TYPE_JMP;
-				aop->jump = aop->fail + io.imm;
+				aop->jump = aop->addr + io.len + io.imm;
 				aop->eob = R_TRUE;
 			}
 		} else
 		if (X86IM_IO_IS_GPI_JCC (&io)) { /* conditional jump*/
 			aop->type = R_ANAL_OP_TYPE_CJMP;
 			aop->fail = aop->addr + io.len;
-			aop->jump = aop->fail + io.imm;
+			aop->jump = aop->addr + io.len + io.imm;
 			aop->eob = R_TRUE;
 		} else
 		if (X86IM_IO_IS_GPI_CALL (&io)) { /* call */
@@ -49,11 +48,15 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 				aop->eob = R_TRUE;
 			} else {
 				aop->type = R_ANAL_OP_TYPE_CALL;
-				aop->fail = aop->addr + io.len;
-				aop->jump = aop->fail + io.imm;
+				aop->jump = aop->addr + io.len + io.imm;
 			}
+			aop->fail = aop->addr + io.len;
 		} else
-		if (X86IM_IO_IS_GPI_RET (&io)) { /* ret*/
+		if (X86IM_IO_IS_GPI_RET (&io)) { /* ret */
+			aop->type = R_ANAL_OP_TYPE_RET;
+			aop->eob = R_TRUE;
+		} else
+		if (io.id == X86IM_IO_ID_HLT) { /* htl */
 			aop->type = R_ANAL_OP_TYPE_RET;
 			aop->eob = R_TRUE;
 		} else

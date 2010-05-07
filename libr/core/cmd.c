@@ -1053,6 +1053,7 @@ static int cmd_print(void *data, const char *input) {
 	ut32 tbs = core->blocksize;
 
 	/* XXX: This is only for pd/pD ??? */
+	/* XXX: pd must change bs too */
 	if (input[0] && input[1]) {
 		l = (int) r_num_math (&core->num, input+2);
 		// exceptions are: disasm and memoryfmt */

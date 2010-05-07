@@ -130,10 +130,20 @@ R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 
 R_API ut64 r_hex_bin_truncate (ut64 in, int n) {
 	switch (n) {
-	case 1: return in&0xFF;
-	case 2: return in&0xFFFF;
-	case 4: return in&UT32_MAX;
-	case 8: return in&UT64_MAX;
+	case 1:
+		if ((in&UT8_GT0))
+			return UT64_8U|in;
+		else return in&UT8_MAX;
+	case 2: 
+		if ((in&UT16_GT0))
+			return UT64_16U|in;
+		else return in&UT16_MAX;
+	case 4: 
+		if ((in&UT32_GT0))
+			return UT64_32U|in;
+		else return in&UT32_MAX;
+	case 8:
+		return in&UT64_MAX;
 	}
 	return in;
 }
