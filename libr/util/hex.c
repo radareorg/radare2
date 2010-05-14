@@ -128,7 +128,7 @@ R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 	return len;
 }
 
-R_API ut64 r_hex_bin_truncate (ut64 in, int n) {
+R_API st64 r_hex_bin_truncate (ut64 in, int n) {
 	switch (n) {
 	case 1:
 		if ((in&UT8_GT0))

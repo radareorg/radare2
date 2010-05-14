@@ -140,15 +140,16 @@ static int assemble(struct r_parse_t *p, void *data, char *str)
 static int filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str)
 {
 	struct list_head *pos;
-	char *ptr;
+	char *ptr, *ptr2;
 	ut64 off;
 	if ((ptr = strstr (data, "0x"))) {
+		for (ptr2 = ptr; *ptr2 && !isseparator (*ptr2); ptr2++);
 		off = r_num_math (NULL, ptr);
 		list_for_each_prev (pos, &f->flags) {
 			RFlagItem *flag = list_entry (pos, RFlagItem, list);
 			if (flag->offset == off) {
 				*ptr = 0;
-				sprintf (str, "%s%s", data, flag->name);
+				sprintf (str, "%s%s%s", data, flag->name, ptr2!=ptr?ptr2:"");
 				return R_TRUE;
 			}
 		}

@@ -103,7 +103,7 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 		aop->type = R_ANAL_OP_TYPE_MOV;
 		if (b[2]==0x1b) {
 			/* XXX pretty incomplete */
-			aop->stackop = R_ANAL_STACK_LOCAL_GET;
+			aop->stackop = R_ANAL_STACK_GET;
 			aop->ref = b[0];
 			//var_add_access(addr, -b[0], 1, 0); // TODO: set/get (the last 0)
 		} else {
@@ -122,7 +122,7 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 	if (b[3]==0xe5) {
 		/* STORE */
 		aop->type = R_ANAL_OP_TYPE_STORE;
-		aop->stackop = R_ANAL_STACK_LOCAL_SET;
+		aop->stackop = R_ANAL_STACK_SET;
 		aop->ref = b[0];
 	}
 

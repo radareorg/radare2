@@ -240,7 +240,7 @@ R_API int r_hex_str2bin(const char *in, ut8 *out);
 R_API int r_hex_bin2str(const ut8 *in, int len, char *out);
 R_API char *r_hex_bin2strdup(const ut8 *in, int len);
 R_API int r_hex_to_byte(ut8 *val, ut8 c);
-R_API ut64 r_hex_bin_truncate (ut64 in, int n);
+R_API st64 r_hex_bin_truncate (ut64 in, int n);
 
 R_API char *r_file_path(const char *bin);
 R_API const char *r_file_basename (const char *path);
