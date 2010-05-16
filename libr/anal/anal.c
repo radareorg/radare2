@@ -106,3 +106,36 @@ R_API int r_anal_set_big_endian(RAnal *anal, int bigend) {
 	anal->big_endian = bigend;
 	return R_TRUE;
 }
+
+R_API char *r_anal_strmask (RAnal *anal, const char *data) {
+	RAnalAop *aop;
+	ut8 *buf;
+	char *ret = NULL;
+	int oplen, len, idx = 0;
+
+	ret = strdup (data);
+	buf = malloc (strlen (data));
+	aop = r_anal_aop_new ();
+	if (aop == NULL || ret == NULL || buf == NULL) {
+		free (aop);
+		free (buf);
+		free (ret);
+		return NULL;
+	}
+	len = r_hex_str2bin (data, buf);
+	while (idx < len) {
+		if ((oplen = r_anal_aop (anal, aop, 0, buf+idx, len-idx)) == 0)
+			break;
+		switch (aop->type) {
+		case R_ANAL_OP_TYPE_CALL:
+		case R_ANAL_OP_TYPE_CJMP:
+		case R_ANAL_OP_TYPE_JMP:
+			if (aop->nopcode != 0)
+				memset (ret+(idx+aop->nopcode)*2, '.', (oplen-aop->nopcode)*2);
+		}
+		idx += oplen;
+	}
+	free (aop);
+	free (buf);
+	return ret;
+}

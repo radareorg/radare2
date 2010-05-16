@@ -129,6 +129,7 @@ typedef struct r_anal_aop_t {
 	int stackop;               /* operation on stack? */
 	int cond;                  /* condition type */
 	int length;                /* length in bytes of opcode */
+	int nopcode;               /* number of opcodes */
 	int family;                /* family of opcode */
 	int eob;                   /* end of block (boolean) */
 	ut64 jump;                 /* true jmp */
@@ -207,6 +208,7 @@ R_API int r_anal_list(RAnal *anal);
 R_API int r_anal_use(RAnal *anal, const char *name);
 R_API int r_anal_set_bits(RAnal *anal, int bits);
 R_API int r_anal_set_big_endian(RAnal *anal, int boolean);
+R_API char *r_anal_strmask (RAnal *anal, const char *data);
 
 /* bb.c */
 R_API RAnalBB *r_anal_bb_new();

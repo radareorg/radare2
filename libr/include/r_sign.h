@@ -2,6 +2,7 @@
 #define _INCLUDE_R_SIGN_H_
 
 #include <r_types.h>
+#include <r_anal.h>
 #include <r_util.h>
 #include "list.h"
 
@@ -33,7 +34,8 @@ typedef int (*RSignCallback)(RSignItem *si, void *user);
 
 #ifdef R_API
 R_API RSign *r_sign_init(RSign *sig);
-R_API int r_sign_add(RSign *sig, int type, const char *name, const char *arg);
+R_API int r_sign_add(RSign *sig, RAnal *anal, int type,
+		const char *name, const char *arg);
 R_API RSign *r_sign_free(RSign *sig);
 R_API void r_sign_prefix(RSign *sig, const char *str);
 R_API void r_sign_list(RSign *sig, int rad);

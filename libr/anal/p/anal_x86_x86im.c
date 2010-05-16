@@ -157,6 +157,7 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 			aop->value = imm;
 		}
 		aop->length = io.len;
+		aop->nopcode = io.opcode_count;
 	}
 
 	return aop->length;

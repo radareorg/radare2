@@ -253,7 +253,7 @@ static int cmd_zign(void *data, const char *input) {
 		ptr = strchr (input+3, ' ');
 		if (ptr) {
 			*ptr = 0;
-			r_sign_add (&core->sign, *input, input+2, ptr+1);
+			r_sign_add (&core->sign, &core->anal, (int)*input, input+2, ptr+1);
 		} else eprintf ("Usage: z%c [name] [bytes]\n", *input);
 		break;
 	case 'c':

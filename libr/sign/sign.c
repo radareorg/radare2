@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_sign.h>
+#include <r_anal.h>
 
 R_API RSign *r_sign_new() {
 	return r_sign_init (R_NEW (RSign));
@@ -21,11 +22,13 @@ R_API void r_sign_prefix(RSign *sig, const char *str) {
 	sig->prefix[sizeof (sig->prefix)] = '\0';
 }
 
-R_API int r_sign_add(RSign *sig, int type, const char *name, const char *arg) {
+R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const char *arg) {
 	int len, ret = R_FALSE;
+	char *data;
 	RSignItem *si; // TODO: like in r_search.. we need r_sign_item_new ()
 			// TODO: but..we need to use a pool here..
-	if (!name || !arg)
+
+	if (!name || !arg || !anal)
 		return R_FALSE;
 
 	switch (type) {
@@ -37,7 +40,10 @@ R_API int r_sign_add(RSign *sig, int type, const char *name, const char *arg) {
 		si->type = type;
 		snprintf (si->name, sizeof (si->name), "%s.%s",
 			*sig->prefix?sig->prefix:"sign", name);
-		len = strlen (arg);
+		data = r_anal_strmask (anal, arg);
+		if (data == NULL)
+			break;
+		len = strlen (data);
 		si->bytes = (ut8 *)malloc (len);
 		si->mask = (ut8 *)malloc (len);
 		if (si->bytes == NULL || si->mask == NULL) {
@@ -47,12 +53,13 @@ R_API int r_sign_add(RSign *sig, int type, const char *name, const char *arg) {
 			free (si);
 			break;
 		}
-		si->size = r_hex_str2binmask (arg, si->bytes, si->mask);
+		si->size = r_hex_str2binmask (data, si->bytes, si->mask);
 		if (si->size<1) {
 			free (si->bytes);
 			free (si);
 		} else list_add_tail (&(si->list), &(sig->items));
 		sig->s_byte++;
+		free (data);
 		break;
 	default:
 	case R_SIGN_ANAL:

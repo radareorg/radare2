@@ -59,6 +59,7 @@
 BUGS
 ====
   * anal fastargs
+  * anal_x86_x86im vars 0xff...
   * console grep
   * x@esp&&x@eip  # BUG
 
