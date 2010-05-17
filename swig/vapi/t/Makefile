@@ -1,5 +1,8 @@
-all: bin lang core regs hash sc socket asm search db io array list
+all: plugin.so bin lang core regs hash sc socket asm search db io array list
 	@true
+
+plugin.so:
+	valac --library=plugin -o plugin.so --Xcc=-shared --Xcc=-fPIC --vapidir=.. --pkg r_cmd --pkg r_lib --pkg r_core plugin.vala
 
 #bin:
 #	valac --vapidir=.. bin.vala --pkg r_bin --pkg r_util 

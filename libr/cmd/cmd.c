@@ -68,7 +68,7 @@ R_API int r_cmd_call(struct r_cmd_t *cmd, const char *input) {
 	iter = r_list_iterator (cmd->plist);
 	while (r_list_iter_next (iter)) {
 		cp = (RCmdHandle*) r_list_iter_get (iter);
-		if (cp->call (NULL, input))
+		if (cp->call (cmd->data, input))
 			return R_TRUE;
 	}
 	

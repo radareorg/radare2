@@ -1,14 +1,15 @@
 /* radare - LGPL - Copyright 2010 pancake<@nopcode.org> */
 
+namespace Radare {
 [Compact]
-[CCode (cheader_filename="r_anal.h", cprefix="r_anal_", lowercase_c_prefix="r_anal_", free_function="r_anal_free")]
-public class Radare.RAnal {
+[CCode (cheader_filename="r_anal.h", cprefix="r_anal_", lowercase_c_prefix="r_anal_", free_function="r_anal_free", cname="RAnal")]
+public class RAnal {
 	public int bits;
 	public bool big_endian;
 	public void *user;
-	RList <BasicBlock> bbs;
-	RList <Function> fcns;
-	RList <VariableType> vartypes;
+	public RList <BasicBlock> bbs;
+	public RList <Function> fcns;
+	public RList <VariableType> vartypes;
 
 	public RAnal ();
 	//public weak RAnal init ();
@@ -45,7 +46,7 @@ public class Radare.RAnal {
 	}
 
 	[Compact]
-	[CCode (cprefix="r_anal_fcn_t")]
+	[CCode (cprefix="r_anal_fcn_t", cname="RAnalFcn")]
 	public class Function {
 		public string name;
 		public uint64 addr;
@@ -88,4 +89,5 @@ public class Radare.RAnal {
 		uint64 to;
 		int index;
 	}
+}
 }

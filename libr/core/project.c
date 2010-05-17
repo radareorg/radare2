@@ -17,6 +17,11 @@ static int r_core_project_init() {
 	if (str && (ret = r_sys_mkdir (str))) {
 		str = r_str_home (".radare2/rdb");
 		ret = r_sys_mkdir (str);
+		if (!ret) {
+			free (str);
+			str = r_str_home (".radare2/plugins");
+			ret = r_sys_mkdir (str);
+		}
 	}
 	free (str);
 	return ret;

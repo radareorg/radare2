@@ -38,6 +38,7 @@ typedef struct r_cmd_macro_t {
 	struct list_head macros;
 } RCmdMacro;
 
+typedef int (*RCmdCallback)(void *user, const char *cmd);
 
 typedef struct r_cmd_item_t {
 	char cmd[64];
@@ -64,7 +65,7 @@ typedef struct r_cmd_t {
 
 typedef struct r_cmd_handle_t {
 	char *name;
-	int (*call)(void *user, const char *cmd);
+	RCmdCallback call;
 } RCmdHandle;
 
 #ifdef R_API

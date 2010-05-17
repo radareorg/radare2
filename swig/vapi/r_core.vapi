@@ -8,6 +8,7 @@ public class Radare.RCore {
 	/* lifecycle */
 	public RCore();
 	public RCons cons;
+	public RAnal anal;
 
 	public static unowned RCore cast(uint64 ptr);
 	public bool loadlibs();

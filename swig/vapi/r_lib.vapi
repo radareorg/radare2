@@ -31,4 +31,29 @@ namespace Radare {
 			// destructor
 		}
 	}
+
+	[Compact]
+	[CCode (cheader_filename="r_lib.h", cprefix="r_lib_struct_", cname="struct r_lib_struct_t", free_function="r_lib_free")]
+	public struct RLibStruct {
+		public RLibType foo;
+		public void *data;
+	}
+
+	[CCode (cprefix="R_LIB_TYPE_", cname="int")]
+	public enum RLibType {
+		IO,
+		DBG,
+		LANG,
+		ASM,
+		ANAL,
+		PARSE,
+		BIN,
+		BININFO,
+		BP,
+		SYSCALL,
+		FASTCALL,
+		CRYPTO,
+		CMD,
+		LAST
+	}
 }

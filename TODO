@@ -3,6 +3,8 @@
 |    <  V  . T  . V      <   _/ .--'_/ |  ()  |
 |_|\__|_|__|___/|_|_|_|\__\___/ |_____(_)____/
 
+* r_cmd.vapi not done?!?
+
 ----------------------------------------[ todo 
 33       decompilation               -- we need better code analysis, but basic decompilation will be in 0.5
 29       bindiffing (graph)          -- nibble is working on this too, pancake has some binary diffing in C
@@ -30,8 +32,14 @@
 <{include libr/TODO}>
 ** See libr/*/TODO FMI
 
+* Added 'prj.name', 'prj.desc' and 'prj.md5'
+
+* Add description to project e file.desc ?
 * Merge r_socket inside r_util ?
+* Add SSL support to r_socket ?
 * Move disasm loop into r_print (r_print should depend on r_asm)
+
+* references: data (read, write), code (call, jmp)
 
 * visual byte cursor in disassembly
 

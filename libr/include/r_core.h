@@ -57,7 +57,7 @@ typedef struct r_core_t {
 	struct r_num_t num;
 	struct r_lib_t lib;
 	struct r_cmd_t cmd;
-	struct r_anal_t anal;
+	RAnal anal;
 	RSyscall syscall;
 	RAsm assembler;
 	struct r_parse_t parser;
