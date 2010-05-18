@@ -16,6 +16,7 @@
 static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
 	int ret, idx, i, j, k;
 	int middle = 0;
+	int stack_ptr = 0, ostack_ptr;
 	char str[128];
 	char *line;
 	char *comment;
@@ -37,6 +38,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	int show_offset = r_config_get_i (&core->config, "asm.offset");
 	int show_bytes = r_config_get_i (&core->config, "asm.bytes");
 	int show_comments = r_config_get_i (&core->config, "asm.comments");
+	int show_stackptr = r_config_get_i (&core->config, "asm.stackptr");
 	int linesopts = 0;
 	int nb, nbytes = r_config_get_i (&core->config, "asm.nbytes");
 	nb = nbytes*2;
@@ -81,6 +83,23 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 				r_cons_printf (Color_GREEN"0x%08"PFMT64x"  "Color_RESET, core->offset + idx);
 			else r_cons_printf ("0x%08"PFMT64x"  ", core->offset + idx);
 		}
+		if (show_stackptr) {
+			ostack_ptr = stack_ptr;
+			if (analop.stackop == R_ANAL_STACK_INCSTACK)
+				stack_ptr += analop.value;
+			else {
+				switch(analop.type) {
+				case R_ANAL_OP_TYPE_UPUSH:
+				case R_ANAL_OP_TYPE_PUSH:
+					stack_ptr += 8;
+					break;
+				case R_ANAL_OP_TYPE_POP:
+					stack_ptr -= 8;
+					break;
+				}
+			}
+			r_cons_printf("%3d%s  ", stack_ptr, stack_ptr!=ostack_ptr?"_":" ");
+		}
 		flag = r_flag_get_i (&core->flags, core->offset+idx);
 		if (flag || show_bytes) {
 			char pad[64];
@@ -117,7 +136,6 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			} else r_cons_printf (" %s %s %s", pad, str, extra);
 			free (str);
 		} else r_cons_printf ("%*s  ", (nb), "");
-
 		if (show_color) {
 			switch (analop.type) {
 			case R_ANAL_OP_TYPE_NOP:

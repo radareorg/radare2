@@ -156,6 +156,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "asm.bytes", "true"); 
 	r_config_set (cfg, "asm.middle", "false"); // jump in the middle because of antidisasm tricks
 	r_config_set (cfg, "asm.comments", "true");
+	r_config_set (cfg, "asm.stackptr", "true");
 	r_config_set (cfg, "asm.dwarf", "false");
 	r_config_set_i (cfg, "asm.nbytes", 8);
 	r_config_set (cfg, "asm.pseudo", "false");  // DEPRECATED ???
