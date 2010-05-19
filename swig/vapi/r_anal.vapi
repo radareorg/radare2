@@ -30,7 +30,7 @@ public class RAnal {
 	public bool bb_overlap(BasicBlock bb, RList<BasicBlock> bbs);
 
 	[Compact]
-	[CCode (cprefix="r_anal_aop_t")]
+	[CCode (cprefix="r_anal_aop_t", cname="RAnalAop")]
 	public class Opcode {
 		public uint64 addr;
 		public int type;
@@ -46,7 +46,7 @@ public class RAnal {
 	}
 
 	[Compact]
-	[CCode (cprefix="r_anal_fcn_t", cname="RAnalFcn")]
+	[CCode (lower_case_cprefix="r_anal_fcn_", cprefix="r_anal_fcn_t", cname="RAnalFcn")]
 	public class Function {
 		public string name;
 		public uint64 addr;
@@ -54,6 +54,7 @@ public class RAnal {
 		public RList<Variable> vars;
 		public RList<uint64> refs;
 		public RList<uint64> xrefs;
+		public RList<BasicBlock> bb_list ();
 	}
 
 	[Compact]

@@ -152,6 +152,7 @@ typedef struct r_anal_fcn_t {
 	char *name;
 	ut64 addr;
 	ut64 size;
+	int stack;
 	RList *vars;
 	RList *refs;
 	RList *xrefs;
@@ -238,6 +239,7 @@ R_API RAnalFcn *r_anal_fcn_init(RAnalFcn *fcn);
 R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len);
 R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size, const char *name);
 R_API int r_anal_fcn_del(RAnal *anal, ut64 addr);
+R_API RList *r_anal_fcn_bb_list(RAnal *anal, RAnalFcn *fcn);
 
 /* ref.c */
 R_API RAnalRef *r_anal_ref_new();

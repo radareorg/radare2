@@ -137,6 +137,7 @@ R_API int r_core_init(RCore *core) {
 
 	core->search = r_search_new(R_SEARCH_KEYWORD);
 	r_io_init (&core->io);
+	r_io_undo_enable (&core->io, 1, 0); // TODO: configurable via eval
 	//r_cmd_macro_init (&core->macro);
 	core->file = NULL;
 	INIT_LIST_HEAD (&core->files);

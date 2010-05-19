@@ -277,7 +277,8 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 	else len = lseek (io->fd, offset, posix_whence);
 	if (len != -1) {
 		io->off = offset;
-		r_io_sundo_push (io);
+		// XXX this can be tricky.. better not to use this .. must be deprecated 
+		// r_io_sundo_push (io);
 		ret = io->va ? r_io_section_offset_to_vaddr (io, io->off) : io->off;
 	}
 	return ret;

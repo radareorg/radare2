@@ -541,6 +541,14 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			ocursor=-1;
 		} else r_core_cmd (core, "s+1", 0);
 		break;
+	case 'u':
+		if (r_io_sundo (&core->io))
+			r_core_seek (core, core->io.off, 0);
+		break;
+	case 'U':
+		if (r_io_sundo_redo (&core->io))
+			r_core_seek (core, core->io.off, 0);
+		break;
 	case 'j':
 		if (curset) {
 			cursor+=16;
@@ -619,6 +627,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" P||p    -  rotate print modes\n"
 		" /*+-    -  change block size\n"
 		" cC      -  toggle cursor and colors\n"
+		" uU      -  undo/redo seek\n"
+		" mK/'K   -  mark/go to Key (any key)\n"
 		" :cmd    -  run radare command\n"
 		" ;[-]cmt -  add/remove comment\n"
 		" q       -  back to radare shell\n");

@@ -34,6 +34,7 @@ R_API RAnalFcn *r_anal_fcn_init(RAnalFcn *fcn) {
 	if (fcn) {
 		memset (fcn, 0, sizeof (RAnalFcn));
 		fcn->addr = -1;
+		fcn->stack = 0;
 		fcn->vars = r_anal_var_list_new ();
 		fcn->refs = r_anal_ref_list_new ();
 		fcn->xrefs = r_anal_ref_list_new ();
@@ -61,6 +62,9 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len) 
 		fcn->size += oplen;
 		/* TODO: Parse fastargs (R_ANAL_VAR_ARGREG), check negative ref meaning */
 		switch (aop.stackop) {
+		case R_ANAL_STACK_INCSTACK:
+			fcn->stack += aop.value;
+			break;
 		case R_ANAL_STACK_SET:
 			if (aop.ref > 0) {
 				varname = r_str_dup_printf ("arg_%x", aop.ref);
@@ -136,4 +140,15 @@ R_API int r_anal_fcn_del(RAnal *anal, ut64 addr) {
 			if (addr >= fcni->addr && addr < fcni->addr+fcni->size)
 				r_list_unlink (anal->fcns, fcni);
 	return R_TRUE;
+}
+
+R_API RList *r_anal_fcn_bb_list(RAnal *anal, RAnalFcn *fcn) {
+	RAnalBB *bbi;
+	RListIter *iter;
+	RList *list = r_list_new ();
+	r_list_foreach (anal->bbs, iter, bbi) {
+		if (bbi->addr>=fcn->addr && bbi->addr<(fcn->addr+fcn->size))
+			r_list_append (list, bbi);
+	}
+	return list;
 }

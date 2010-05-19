@@ -5,6 +5,14 @@
 
 * r_cmd.vapi not done?!?
 
+* add file.md5 check support when opening new file or project or so..
+
+* anal bug:
+[0x08048eec]> pd 2 
+    0x08048eec    0               c20400  ret 0x4
+ -> this opcodes increments the stack 8 bytes (4+4) . it is not handled correctly
+
+
 ----------------------------------------[ todo 
 33       decompilation               -- we need better code analysis, but basic decompilation will be in 0.5
 29       bindiffing (graph)          -- nibble is working on this too, pancake has some binary diffing in C

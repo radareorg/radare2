@@ -39,7 +39,6 @@ R_API RAnal *r_anal_free(RAnal *a) {
 
 R_API RAnal *r_anal_init(RAnal *anal) {
 	int i;
-
 	if (anal) {
 		memset (anal, 0, sizeof (RAnal));
 		anal->bbs = r_anal_bb_list_new ();

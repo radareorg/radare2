@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<@nopcode.org> */
 
 namespace Radare {
 //[Compact]
@@ -52,7 +52,7 @@ namespace Radare {
 		public static string cmd_str (string command, string? input, out int len=null);
 	}
 
-	[CCode (cheader_filename="r_util.h", cprefix="r_num_", free_function="")]
+	[CCode (cname="RNum", cheader_filename="r_util.h", cprefix="r_num_", free_function="")]
 	public static class RNum {
 		public RNum(RNumCallback cb, void *user);
 		public uint64 get(string str);

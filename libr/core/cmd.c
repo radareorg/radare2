@@ -3,6 +3,7 @@
 /*   pancake<nopcode.org> */
 
 #include "r_core.h"
+#include "r_io.h"
 #include "r_flags.h"
 #include "r_hash.h"
 #include "r_asm.h"
@@ -14,6 +15,7 @@
 #include <stdarg.h>
 /* TODO: move to print/disasm.c */
 static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
+	RAnalFcn *fcni = NULL;
 	int ret, idx, i, j, k;
 	int middle = 0;
 	int stack_ptr = 0, ostack_ptr;
@@ -50,6 +52,22 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 
 	r_asm_set_pc (&core->assembler, core->offset);
 
+#if 0
+	/* find last function else stackptr=0 */
+	{
+		RAnalFcn *fcni;
+		RListIter *iter;
+
+		r_list_foreach (core->anal.fcns, iter, fcni) {
+			if (addr >= fcni->addr && addr<(fcni->addr+fcni->size)) {
+				stack_ptr = fcni->stack;
+				r_cons_printf ("/* function: %s (%d) */\n", fcni->name, fcni->size, stack_ptr);
+				break;
+			}
+		}
+	}
+#endif
+
 	reflines = r_anal_reflines_get (&core->anal, core->offset,
 		buf, len, -1, linesout);
 	for (i=idx=ret=0; idx < len && i<l; idx+=ret,i++) {
@@ -75,12 +93,47 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		if (adistrick)
 			middle = r_anal_reflines_middle (&core->anal,
 					reflines, addr, analop.length);
+		{
+			int found = 0;
+			RListIter *iter;
+			RAnalFcn *f = fcni;
+			r_list_foreach (core->anal.fcns, iter, fcni) {
+				if (addr == fcni->addr) {
+					r_cons_printf ("/* function: %s (%d) */\n", fcni->name, fcni->size);
+					stack_ptr = 0;
+					found = 1;
+					break;
+				}
+			}
+			if (!found)
+				fcni = f;
+		}
+		if (fcni) {
+			if (addr >= fcni->addr+fcni->size-1) {
+				r_cons_printf ("\\*");
+				fcni = NULL;
+			} else
+			if (addr >= fcni->addr)
+				r_cons_printf (": ");
+		}
+		flag = r_flag_get_i (&core->flags, core->offset+idx);
+		if (flag && !show_bytes) {
+			if (show_lines && line)
+				r_cons_strcat (line);
+			if (show_offset) {
+				if (show_color)
+					r_cons_printf (Color_GREEN"0x%08"PFMT64x"  "Color_RESET, core->offset + idx);
+				else r_cons_printf ("0x%08"PFMT64x"  ", core->offset + idx);
+			}
+			r_cons_printf ("%s:\n", flag->name);
+		}
 
 		if (show_lines && line)
 			r_cons_strcat (line);
 		if (show_offset) {
 			if (show_color)
-				r_cons_printf (Color_GREEN"0x%08"PFMT64x"  "Color_RESET, core->offset + idx);
+				r_cons_printf (Color_GREEN"0x%08"PFMT64x
+					"  "Color_RESET, core->offset + idx);
 			else r_cons_printf ("0x%08"PFMT64x"  ", core->offset + idx);
 		}
 		if (show_stackptr) {
@@ -98,10 +151,12 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 					break;
 				}
 			}
-			r_cons_printf("%3d%s  ", stack_ptr, stack_ptr!=ostack_ptr?"_":" ");
+			r_cons_printf ("%3d%s  ", stack_ptr,
+				stack_ptr>ostack_ptr?"+":stack_ptr<ostack_ptr?"-":" ");
 		}
-		flag = r_flag_get_i (&core->flags, core->offset+idx);
-		if (flag || show_bytes) {
+		//flag = r_flag_get_i (&core->flags, core->offset+idx);
+		//if (flag || show_bytes) {
+		if (show_bytes) {
 			char pad[64];
 			char *str, *extra = " ";
 			if (!flag) {
@@ -135,7 +190,9 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 				else r_cons_printf ("*[ %s%s]  ", pad, str);
 			} else r_cons_printf (" %s %s %s", pad, str, extra);
 			free (str);
-		} else r_cons_printf ("%*s  ", (nb), "");
+		} else {
+		//	r_cons_printf ("%*s  ", (nb), "");
+		}
 		if (show_color) {
 			switch (analop.type) {
 			case R_ANAL_OP_TYPE_NOP:
@@ -153,6 +210,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 				r_cons_printf (Color_MAGENTA);
 				break;
 			case R_ANAL_OP_TYPE_RET:
+				stack_ptr = 0;
 				r_cons_printf (Color_RED);
 				break;
 			case R_ANAL_OP_TYPE_LOAD:
@@ -199,7 +257,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 				if (strchr (line, '>'))
 					memset (line, ' ', strlen (line));
 				r_cons_strcat (line);
-				r_cons_strcat ("; ------------------------------------\n");
+				r_cons_strcat ("/* ------------ */\n");
 			}
 			free (line);
 		}
@@ -750,7 +808,7 @@ static int cmd_seek(void *data, const char *input) {
 			r_core_seek (core, off, 1);
 		} else eprintf ("Usage: 'sr pc' ; seek to register\n");
 	} else
-	if (input[0] && input[1]) {
+	if (input[0]) { // && input[1]) {
 		st32 delta = (input[1]==' ')?2:1;
 		off = r_num_math (&core->num, input + delta); 
 		if (input[0]==' ' && (input[1]=='+'||input[1]=='-'))
@@ -758,14 +816,24 @@ static int cmd_seek(void *data, const char *input) {
 		switch (input[0]) {
 		case ' ':
 			r_core_seek (core, off, 1);
+			r_io_sundo_push (&core->io);
+			break;
+		case '*':
+			r_io_sundo_list (&core->io);
 			break;
 		case '+':
-			if (input[1]=='+') delta = core->blocksize; else delta = off;
-			r_core_seek_delta (core, delta);
+			if (input[1]!='\0') {
+				if (input[1]=='+') delta = core->blocksize; else delta = off;
+				r_core_seek_delta (core, delta);
+			} else if (r_io_sundo_redo (&core->io))
+				r_core_seek (core, core->io.off, 0);
 			break;
 		case '-':
-			if (input[1]=='-') delta = -core->blocksize; else delta = -off;
-			r_core_seek_delta (core, delta);
+			if (input[1]!='\0') {
+				if (input[1]=='-') delta = -core->blocksize; else delta = -off;
+				r_core_seek_delta (core, delta);
+			} else if (r_io_sundo (&core->io))
+				r_core_seek (core, core->io.off, 0);
 			break;
 		case 'a':
 			off = core->blocksize;
@@ -790,6 +858,9 @@ static int cmd_seek(void *data, const char *input) {
 			r_cons_printf (
 			"Usage: s[+-] [addr]\n"
 			" s 0x320    ; seek to this address\n"
+			" s-         ; undo seek\n"
+			" s+         ; redo seek\n"
+			" s*         ; list undo seek history\n"
 			" s++        ; seek blocksize bytes forward\n"
 			" s--        ; seek blocksize bytes backward\n"
 			" s+ 512     ; seek 512 bytes forward\n"
@@ -922,6 +993,7 @@ static int cmd_bsize(void *data, const char *input) {
 	}
 	return 0;
 }
+
 // move it out // r_diff maybe?
 static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len) {
 	int i, eq = 0;
@@ -938,7 +1010,6 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len) {
 	eprintf ("Compare %d/%d equal bytes\n", eq, len);
 	return len-eq;
 }
-
 
 static int cmd_cmp(void *data, const char *input) {
 	RCore *core = data;
@@ -1233,6 +1304,7 @@ static int cmd_flag(void *data, const char *input) {
 
 static void cmd_syscall_do(RCore *core, int num) {
 	int i;
+	char str[64];
 	RSyscallItem *item = r_syscall_get (&core->syscall, num, -1);
 	r_cons_printf ("%d = %s (", item->num, item->name);
 	// TODO: move this to r_syscall
@@ -1249,13 +1321,11 @@ static void cmd_syscall_do(RCore *core, int num) {
 			r_cons_printf ("%"PFMT64d"", arg);
 			break;
 		case 'z':
-			{ char str[64];
 			r_io_read_at (&core->io, arg, (ut8*)str, sizeof (str));
 			// TODO: filter zero terminated string
 			str[63] = '\0';
 			r_str_filter (str, strlen (str));
 			r_cons_printf ("\"%s\"", str);
-			}
 			break;
 		default:
 			r_cons_printf ("0x%08"PFMT64x"", arg);
@@ -2904,13 +2974,14 @@ int r_core_cmd_init(RCore *core) {
 	r_cmd_add (&core->cmd, "yank",     "yank bytes", &cmd_yank);
 	r_cmd_add (&core->cmd, "Visual",   "enter visual mode", &cmd_visual);
 	r_cmd_add (&core->cmd, "!",        "run system command", &cmd_system);
+	// XXX WTF DUPPED CMD!?!?! //
 	r_cmd_add (&core->cmd, "|",        "run io system command", &cmd_io_system);
+	r_cmd_add (&core->cmd, "|",        "io pipe", &cmd_iopipe);
 	r_cmd_add (&core->cmd, "#",        "calculate hash", &cmd_hash);
 	r_cmd_add (&core->cmd, "?",        "help message", &cmd_help);
 	r_cmd_add (&core->cmd, ".",        "interpret", &cmd_interpret);
 	r_cmd_add (&core->cmd, "/",        "search kw, pattern aes", &cmd_search);
 	r_cmd_add (&core->cmd, "(",        "macro", &cmd_macro);
-	r_cmd_add (&core->cmd, "|",        "io pipe", &cmd_iopipe);
 	r_cmd_add (&core->cmd, "quit",     "exit program session", &cmd_quit);
 
 	return 0;
