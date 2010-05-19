@@ -56,7 +56,7 @@ public class Radare.RAsm {
 	public void *aux;
 
 	public RAsm();
-	public weak RAsm init();
+	public unowned RAsm init();
 	public int list();
 	public bool use(string name);
 	public bool set_bits(int bits);
@@ -67,7 +67,7 @@ public class Radare.RAsm {
 	public int assemble(out Aop aop, string buf);
 	public Code? mdisassemble(uint8 *buf, uint64 length);
 	public Code? massemble(string buf);
-	public weak string fastcall(int idx, int num);
+	public unowned string fastcall(int idx, int num);
 
 	/* TODO: not directy defined here */
 	public void free();

@@ -16,6 +16,7 @@ public class RAnal {
 	public bool set_bits (int bits);
 	public bool set_big_endian (bool big);
 	//public bool set_pc (uint64 addr);
+	public RList<BasicBlock> fcn_bb_list(Function fun);
 
 	[Compact]
 	[CCode (cname="RAnalBB")]
@@ -46,7 +47,7 @@ public class RAnal {
 	}
 
 	[Compact]
-	[CCode (lower_case_cprefix="r_anal_fcn_", cprefix="r_anal_fcn_t", cname="RAnalFcn")]
+	[CCode (cprefix="r_anal_fcn_", cname="RAnalFcn")]
 	public class Function {
 		public string name;
 		public uint64 addr;
@@ -54,7 +55,6 @@ public class RAnal {
 		public RList<Variable> vars;
 		public RList<uint64> refs;
 		public RList<uint64> xrefs;
-		public RList<BasicBlock> bb_list ();
 	}
 
 	[Compact]
