@@ -82,13 +82,21 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 			}
 		} else
 		if (X86IM_IO_IS_GPI_PUSH (&io)) { /* push */
-			if ((io.rop[0] & X86IM_IO_ROP_SGR_GPR_16) ||
-				(io.rop[0] & X86IM_IO_ROP_SGR_GPR_32) ||
-				(io.rop[0] & X86IM_IO_ROP_SGR_GPR_64))
+			if ((io.rop[0] & X86IM_IO_ROP_SGR_GPR_16)) {
 				aop->type = R_ANAL_OP_TYPE_UPUSH;
-			else {
+				aop->stackptr = 2;
+			} else
+			if ((io.rop[0] & X86IM_IO_ROP_SGR_GPR_32)) {
+				aop->type = R_ANAL_OP_TYPE_UPUSH;
+				aop->stackptr = 4;
+			} else
+			if ((io.rop[0] & X86IM_IO_ROP_SGR_GPR_64)) {
+				aop->type = R_ANAL_OP_TYPE_UPUSH;
+				aop->stackptr = 8;
+			} else {
 				aop->type = R_ANAL_OP_TYPE_PUSH;
 				aop->ref = imm;
+				aop->stackptr = io.imm_size;
 			}
 			if (io.id == X86IM_IO_ID_PUSH_MM &&
 				(io.mem_base & X86IM_IO_ROP_ID_EBP)) {
@@ -97,6 +105,14 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 		} else
 		if (X86IM_IO_IS_GPI_POP (&io)) { /* pop */
 			aop->type = R_ANAL_OP_TYPE_POP;
+			if ((io.rop[0] & X86IM_IO_ROP_SGR_GPR_16))
+				aop->stackptr = -2;
+			else
+			if ((io.rop[0] & X86IM_IO_ROP_SGR_GPR_32))
+				aop->stackptr = -4;
+			else
+			if ((io.rop[0] & X86IM_IO_ROP_SGR_GPR_64))
+				aop->stackptr = -8;
 		} else
 		if (X86IM_IO_IS_GPI_ADD (&io)) { /* add */
 			aop->type = R_ANAL_OP_TYPE_ADD;
@@ -114,6 +130,7 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 				(io.rop[0] & X86IM_IO_ROP_ID_ESP)) {
 				aop->stackop = R_ANAL_STACK_INCSTACK;
 				aop->value = imm;
+				aop->stackptr = -imm;
 			}
 		} else
 		if (X86IM_IO_IS_GPI_SUB (&io)) { /* sub */
@@ -121,6 +138,7 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 				(io.rop[0] & X86IM_IO_ROP_ID_ESP)) {
 				aop->stackop = R_ANAL_STACK_INCSTACK;
 				aop->value = imm;
+				aop->stackptr = imm;
 			}
 			aop->type = R_ANAL_OP_TYPE_SUB;
 		} else

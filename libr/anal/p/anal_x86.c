@@ -199,6 +199,7 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 			aop->stackop = R_ANAL_STACK_GET;
 			aop->ref = 0LL;
 			aop->ref = (st64)((char)(buf[2]));
+			aop->stackptr = 4;
 		} else
 		if (buf[1]== 0x45) {
 			aop->type = R_ANAL_OP_TYPE_ADD;
@@ -235,6 +236,7 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 	case 0x59:
 		aop->type = R_ANAL_OP_TYPE_UPUSH;
 		aop->ref = 0; // TODO value of register here! get_offset
+		aop->stackptr = 4;
 		break;
 	case 0x5a:
 	case 0x5b:
@@ -244,10 +246,12 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 	case 0x5f:
 		aop->type = R_ANAL_OP_TYPE_POP;
 		aop->length = 1;
+		aop->stackptr = -4;
 		break;
 	case 0x68:
 		aop->type = R_ANAL_OP_TYPE_PUSH;
 		aop->ref = (st64)((int)buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24));
+		aop->stackptr = 4;
 		break;
 	case 0x81:
 		if (buf[1] == 0xec) {
@@ -255,6 +259,7 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
   			// 81ece00d0000    sub esp, 0xde0 ; 
 			aop->value = buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24);
 			aop->stackop = R_ANAL_STACK_INCSTACK;
+			aop->stackptr = aop->value;
 			break;
 		}
 		aop->type = R_ANAL_OP_TYPE_ADD;
@@ -269,11 +274,13 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 			/* inc $0x????????, $esp*/
 			aop->value = -(ut64)(unsigned char)buf[2];
 			aop->stackop = R_ANAL_STACK_INCSTACK;
+			aop->stackptr = aop->value;
 			break;
 		case 0xec:
 			/* sub $0x????????, $esp*/
 			aop->value = (ut64)(unsigned char)buf[2];
 			aop->stackop = R_ANAL_STACK_INCSTACK;
+			aop->stackptr = aop->value;
 			break;
 		case 0xbd: /* 837dfc02        cmp dword [ebp-0x4], 0x2 */
 			switch(buf[2]) {

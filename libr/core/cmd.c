@@ -18,7 +18,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	RAnalFcn *fcni = NULL;
 	int ret, idx, i, j, k;
 	int middle = 0;
-	int stack_ptr = 0, ostack_ptr;
+	int stackptr = 0, ostackptr;
 	char str[128];
 	char *line;
 	char *comment;
@@ -100,7 +100,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			r_list_foreach (core->anal.fcns, iter, fcni) {
 				if (addr == fcni->addr) {
 					r_cons_printf ("/* function: %s (%d) */\n", fcni->name, fcni->size);
-					stack_ptr = 0;
+					stackptr = 0;
 					found = 1;
 					break;
 				}
@@ -137,22 +137,12 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			else r_cons_printf ("0x%08"PFMT64x"  ", core->offset + idx);
 		}
 		if (show_stackptr) {
-			ostack_ptr = stack_ptr;
-			if (analop.stackop == R_ANAL_STACK_INCSTACK)
-				stack_ptr += analop.value;
-			else {
-				switch(analop.type) {
-				case R_ANAL_OP_TYPE_UPUSH:
-				case R_ANAL_OP_TYPE_PUSH:
-					stack_ptr += 8;
-					break;
-				case R_ANAL_OP_TYPE_POP:
-					stack_ptr -= 8;
-					break;
-				}
-			}
-			r_cons_printf ("%3d%s  ", stack_ptr,
-				stack_ptr>ostack_ptr?"+":stack_ptr<ostack_ptr?"-":" ");
+			if (analop.type == R_ANAL_OP_TYPE_RET)
+				stackptr = 0;
+			ostackptr = stackptr;
+			stackptr += analop.stackptr;
+			r_cons_printf ("%3d%s  ", stackptr,
+				stackptr>ostackptr?"+":stackptr<ostackptr?"-":" ");
 		}
 		//flag = r_flag_get_i (&core->flags, core->offset+idx);
 		//if (flag || show_bytes) {
@@ -210,7 +200,6 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 				r_cons_printf (Color_MAGENTA);
 				break;
 			case R_ANAL_OP_TYPE_RET:
-				stack_ptr = 0;
 				r_cons_printf (Color_RED);
 				break;
 			case R_ANAL_OP_TYPE_LOAD:
