@@ -51,6 +51,7 @@ R_API RNum *r_num_new(RNumCallback cb, void *ptr) {
 	RNum *num = (RNum *) malloc (sizeof (RNum));
 	r_num_init (num);
 	num->callback = cb;
+	num->userptr = ptr;
 	return num;
 }
 

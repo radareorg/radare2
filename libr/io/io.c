@@ -12,12 +12,12 @@ R_API struct r_io_t *r_io_init(struct r_io_t *io) {
 	io->write_mask_fd = -1;
 	io->redirect = NULL;
 	io->printf = (void*) printf;
-	r_io_cache_init(io);
-	r_io_map_init(io);
-	r_io_section_init(io);
-	r_io_handle_init(io);
-	r_io_desc_init(io);
-	r_io_undo_init(io);
+	r_io_cache_init (io);
+	r_io_map_init (io);
+	r_io_section_init (io);
+	r_io_handle_init (io);
+	r_io_desc_init (io);
+	r_io_undo_init (io);
 	return io;
 }
 
@@ -284,7 +284,7 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 	return ret;
 }
 
-R_API ut64 r_io_size(struct r_io_t *io, int fd) {
+R_API ut64 r_io_size(RIO *io, int fd) {
 	ut64 size, here;
 	fd = r_io_set_fd (io, fd);
 	here = r_io_seek (io, 0, R_IO_SEEK_CUR);
@@ -293,7 +293,7 @@ R_API ut64 r_io_size(struct r_io_t *io, int fd) {
 	return size;
 }
 
-R_API int r_io_system(struct r_io_t *io, const char *cmd) {
+R_API int r_io_system(RIO *io, const char *cmd) {
 	int ret = -1;
 	if (io->plugin && io->plugin->system)
 		ret = io->plugin->system (io, io->fd, cmd);

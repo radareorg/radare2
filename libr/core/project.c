@@ -50,15 +50,15 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		r_str_write (fd, "# r2 rdb project file\n");
 		//--
 		r_str_write (fd, "# flags\n");
-		tmp = core->flags.space_idx;
-		core->flags.space_idx = -1;
-		r_flag_list (&core->flags, R_TRUE);
-		core->flags.space_idx = tmp;
+		tmp = core->flags->space_idx;
+		core->flags->space_idx = -1;
+		r_flag_list (core->flags, R_TRUE);
+		core->flags->space_idx = tmp;
 		r_cons_flush ();
 		//--
 		r_str_write (fd, "# eval\n");
 		// TODO: r_str_writef (fd, "e asm.arch=%s", r_config_get ("asm.arch"));
-		r_config_list (&core->config, NULL, R_TRUE);
+		r_config_list (core->config, NULL, R_TRUE);
 		r_cons_flush ();
 		r_cons_singleton ()->fdout = 1;
 		close (fd);

@@ -12,7 +12,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode) {
 	RCoreFile *fh;
 	const char *cp;
 	char *p;
-	int fd = r_io_open (&r->io, file, mode, 0644);
+	int fd = r_io_open (r->io, file, mode, 0644);
 	if (fd == -1)
 		return NULL;
 
@@ -25,21 +25,21 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode) {
 		fh->filename = p+3;
 	fh->rwx = mode;
 	r->file = fh;
-	fh->size = r_io_size(&r->io, fd);
+	fh->size = r_io_size (r->io, fd);
 	list_add (&(fh->list), &r->files);
 
-	r_bin_load (&r->bin, fh->filename, NULL);
+	r_bin_load (r->bin, fh->filename, NULL);
 
 	r_core_block_read (r, 0);
 
-	cp = r_config_get (&r->config, "cmd.open");
+	cp = r_config_get (r->config, "cmd.open");
 	if (cp && *cp)
 		r_core_cmd (r, cp, 0);
 	return fh;
 }
 
 R_API int r_core_file_close(struct r_core_t *r, struct r_core_file_t *fh) {
-	int ret = r_io_close (&r->io, fh->fd);
+	int ret = r_io_close (r->io, fh->fd);
 	list_del (&(fh->list));
 	// TODO: set previous opened file as current one
 	return ret;
@@ -67,7 +67,7 @@ R_API int r_core_file_list(struct r_core_t *core) {
 }
 
 R_API int r_core_file_close_fd(struct r_core_t *core, int fd) {
-	int ret = r_io_close (&core->io, fd);
+	int ret = r_io_close (core->io, fd);
 	struct r_core_file_t *fh = r_core_file_get_fd (core, fd);
 	if (fh != NULL)
 		list_del (&(fh->list));

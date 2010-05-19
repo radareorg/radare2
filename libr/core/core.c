@@ -3,8 +3,8 @@
 #include <r_core.h>
 #include "../config.h"
 
-static ut64 num_callback(void *userptr, const char *str, int *ok) {
-	RCore *core = userptr;
+static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
+	RCore *core = (RCore *)userptr; // XXX ?
 	RFlagItem *flag;
 	RAnalAop aop;
 	
@@ -17,7 +17,7 @@ static ut64 num_callback(void *userptr, const char *str, int *ok) {
 		case 'j':
 		case 'f':
 		case 'r':
-			r_anal_aop (&core->anal, &aop, core->offset,
+			r_anal_aop (core->anal, &aop, core->offset,
 				core->block, core->blocksize);
 			break;
 		}
@@ -31,7 +31,7 @@ static ut64 num_callback(void *userptr, const char *str, int *ok) {
 				if (ptr != NULL) {
 					ut64 ret;
 					ptr[0]='\0';
-					ret = r_config_get_i (&core->config, bptr);
+					ret = r_config_get_i (core->config, bptr);
 					free (bptr);
 					return ret;
 				}
@@ -43,11 +43,11 @@ static ut64 num_callback(void *userptr, const char *str, int *ok) {
 		case 'r': return aop.ref;
 		case 'b': return core->blocksize;
 		case 's': return core->file->size;
-		case '?': return core->num.value;
+		case '?': return core->num->value;
 		}
 	}
 
-	flag = r_flag_get (&(core->flags), str);
+	flag = r_flag_get (core->flags, str);
 	if (flag) *ok = R_TRUE;
 	else *ok = R_FALSE;
 	return (flag)?flag->offset:0LL;
@@ -107,37 +107,39 @@ R_API int r_core_init(RCore *core) {
 	core->oobi = NULL;
 	core->oobi_len = 0;
 	core->yank = NULL;
+	core->reflines = NULL;
 	core->yank_len = 0;
 	core->yank_off = 0LL;
-	core->num.callback = &num_callback;
-	core->num.userptr = core;
+	core->num = r_num_new (&num_callback, core);
+	//core->num->callback = &num_callback;
+	//core->num->userptr = core;
 	core->cons = r_cons_singleton ();
 
 	/* initialize libraries */
-	r_syscall_init (&core->syscall);
-	r_print_init (&core->print);
-	core->print.printf = (void *)r_cons_printf;
-	r_lang_init (&core->lang);
-	r_lang_define (&core->lang, "RCore", "core", core);
-	r_lang_set_user_ptr (&core->lang, core);
-	r_anal_init (&core->anal);
-	r_anal_set_user_ptr (&core->anal, core);
-	r_asm_init (&core->assembler);
-	r_asm_set_user_ptr (&core->assembler, core);
-	r_parse_init (&core->parser);
-	r_parse_set_user_ptr (&core->parser, core);
-	r_bin_init (&core->bin);
-	r_bin_set_user_ptr (&core->bin, core);
-	r_meta_init (&core->meta);
+	core->syscall = r_syscall_new ();
+	core->print = r_print_new ();
+	core->print->printf = (void *)r_cons_printf;
+	core->lang = r_lang_new ();
+	r_lang_define (core->lang, "RCore", "core", core);
+	r_lang_set_user_ptr (core->lang, core);
+	core->anal = r_anal_new ();
+	r_anal_set_user_ptr (core->anal, core);
+	core->assembler = r_asm_new ();
+	r_asm_set_user_ptr (core->assembler, core);
+	core->parser = r_parse_new ();
+	r_parse_set_user_ptr (core->parser, core);
+	core->bin = r_bin_new ();
+	r_bin_set_user_ptr (core->bin, core);
+	core->meta = r_meta_new ();
 	r_cons_init ();
 	r_line_init ();
-	r_sign_init (&core->sign);
+	core->io = r_io_new ();
+	core->sign = r_sign_new ();
 	r_cons_singleton()->user_fgets = (void *)myfgets;
 	r_line_hist_load (".radare2_history");
 
-	core->search = r_search_new(R_SEARCH_KEYWORD);
-	r_io_init (&core->io);
-	r_io_undo_enable (&core->io, 1, 0); // TODO: configurable via eval
+	core->search = r_search_new (R_SEARCH_KEYWORD);
+	r_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
 	//r_cmd_macro_init (&core->macro);
 	core->file = NULL;
 	INIT_LIST_HEAD (&core->files);
@@ -150,12 +152,12 @@ R_API int r_core_init(RCore *core) {
 		return R_FALSE;
 	}
 	r_core_cmd_init (core);
-	r_flag_init (&core->flags);
-	r_debug_init (&core->dbg, R_TRUE);
-	core->sign.printf = r_cons_printf;
-	core->io.printf = r_cons_printf;
-	core->dbg.printf = r_cons_printf;
-	r_debug_io_bind (&core->dbg, &core->io);
+	core->flags = r_flag_new ();
+	core->dbg = r_debug_new (R_TRUE);
+	core->sign->printf = r_cons_printf;
+	core->io->printf = r_cons_printf;
+	core->dbg->printf = r_cons_printf;
+	r_debug_io_bind (core->dbg, core->io);
 	r_core_config_init (core);
 	// XXX fix path here
 
@@ -163,15 +165,15 @@ R_API int r_core_init(RCore *core) {
 	r_core_loadlibs (core);
 
 	// TODO: get arch from r_bin or from native arch
-	r_asm_use (&core->assembler, R_SYS_ARCH);
-	r_anal_use (&core->anal, R_SYS_ARCH);
-	r_bp_use (core->dbg.bp, R_SYS_ARCH);
+	r_asm_use (core->assembler, R_SYS_ARCH);
+	r_anal_use (core->anal, R_SYS_ARCH);
+	r_bp_use (core->dbg->bp, R_SYS_ARCH);
 	if (R_SYS_BITS & R_SYS_BITS_64)
-		r_config_set_i (&core->config, "asm.bits", 64);
+		r_config_set_i (core->config, "asm.bits", 64);
 	else
 	if (R_SYS_BITS & R_SYS_BITS_32)
-		r_config_set_i (&core->config, "asm.bits", 32);
-	r_config_set (&core->config, "asm.arch", R_SYS_ARCH);
+		r_config_set_i (core->config, "asm.bits", 32);
+	r_config_set (core->config, "asm.arch", R_SYS_ARCH);
 	return 0;
 }
 
@@ -187,15 +189,15 @@ R_API int r_core_prompt(RCore *r) {
 	char *cmd;
 	char line[1024];
 	char prompt[32];
-	const char *cmdprompt = r_config_get (&r->config, "cmd.prompt");
+	const char *cmdprompt = r_config_get (r->config, "cmd.prompt");
 
 	if (cmdprompt && cmdprompt[0])
 		ret = r_core_cmd (r, cmdprompt, 0);
 
 	/* XXX : ultraslow */
-	if (!r_config_get_i (&r->config, "scr.prompt"))
+	if (!r_config_get_i (r->config, "scr.prompt"))
 		*prompt = 0;
-	else if (r_config_get_i (&r->config, "scr.color"))
+	else if (r_config_get_i (r->config, "scr.color"))
 		sprintf (prompt, Color_YELLOW"[0x%08"PFMT64x"]> "Color_RESET, r->offset);
 	else sprintf (prompt, "[0x%08"PFMT64x"]> ", r->offset);
 	r_line_singleton()->prompt = prompt;

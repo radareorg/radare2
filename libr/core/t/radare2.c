@@ -49,22 +49,22 @@ int main(int argc, char **argv) {
 	while ((c = getopt (argc, argv, "wfhe:ndvVs:p:b:Lui:l:"))!=-1) {
 		switch (c) {
 		case 'v':
-			r_config_set (&r.config, "scr.prompt", "false");
+			r_config_set (r.config, "scr.prompt", "false");
 			break;
 		case 'p':
-			r_config_set (&r.config, "file.project", optarg);
+			r_config_set (r.config, "file.project", optarg);
 			break;
 		case 'i':
 			r_core_cmd_file (&r, optarg);
 			break;
 		case 'l':
-			r_lib_open (&r.lib, optarg);
+			r_lib_open (r.lib, optarg);
 			break;
 		case 'd':
 			debug = 1;
 			break;
 		case 'e':
-			r_config_eval (&r.config, optarg);
+			r_config_eval (r.config, optarg);
 			break;
 		case 'h':
 			return main_help (0);
@@ -86,10 +86,10 @@ int main(int argc, char **argv) {
 			seek = atoi (optarg); // XXX use r_num
 			break;
 		case 'L':
-			r_lib_opendir (&r.lib, r_config_get (
-				&r.config, "dir.plugins"));
+			r_lib_opendir (r.lib, r_config_get (
+				r.config, "dir.plugins"));
 			r_core_loadlibs (&r);
-			r_lib_list (&r.lib);
+			r_lib_list (r.lib);
 			//r_io_handle_list (&r.io);
 			break;
 		case 'u':
@@ -125,8 +125,8 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 		// TODO: move into if (debug) ..
-		r_config_set (&r.config, "cfg.debug", "true");
-		r_debug_use (&r.dbg, "native");
+		r_config_set (r.config, "cfg.debug", "true");
+		r_debug_use (r.dbg, "native");
 	} else
 	while (optind < argc) {
 		const char *file = argv[optind++];
@@ -158,8 +158,8 @@ int main(int argc, char **argv) {
 		r_core_cmdf (&r, "dp=%d", r.file->fd);
 		r_core_cmd (&r, ".dr*", 0);
 		r_core_cmd (&r, "s eip", 0);
-		r_config_set (&r.config, "cmd.prompt", ".dr*");
-		r_config_set (&r.config, "cmd.vprompt", ".dr*");
+		r_config_set (r.config, "cmd.prompt", ".dr*");
+		r_config_set (r.config, "cmd.vprompt", ".dr*");
 	}
 
 	if (seek)
@@ -174,18 +174,18 @@ int main(int argc, char **argv) {
 	// Load the binary information from rabin2
 	{
 		char *cmd = r_str_dup_printf (".!rabin2 -rSIeis%s %s",
-				(debug||r.io.va)?"v":"", r.file->filename);
+				(debug||r.io->va)?"v":"", r.file->filename);
 		r_core_cmd (&r, cmd, 0);
 		r_str_free (cmd);
 	}
 
 	if (run_rc)
-	if (r_config_get_i (&r.config, "cfg.fortunes")) {
+	if (r_config_get_i (r.config, "cfg.fortunes")) {
 		r_core_cmd (&r, "fo", 0);
 		r_cons_flush ();
 	}
 
-	r_core_project_open (&r, r_config_get (&r.config, "file.project"));
+	r_core_project_open (&r, r_config_get (r.config, "file.project"));
 	do {
 		ret = r_core_prompt (&r);
 		if (ret == -1)
@@ -194,16 +194,16 @@ int main(int argc, char **argv) {
 
 	if (debug)
 	if (r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
-		r_debug_kill (&r.dbg, 9); // KILL
+		r_debug_kill (r.dbg, 9); // KILL
 	{
-		const char *prj = r_config_get (&r.config, "file.project");
+		const char *prj = r_config_get (r.config, "file.project");
 		if (prj && *prj)
 		if (r_cons_yesno ('y', "Do you want to save the project? (Y/n)"))
 			r_core_project_save (&r, prj);
 	}
 
 	/* capture return value */
-	ret = r.num.value;
+	ret = r.num->value;
 	r_core_file_close (&r, fh);
 	return ret;
 }

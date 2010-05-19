@@ -51,25 +51,26 @@ typedef struct r_core_t {
 	int interrupted; // XXX IS THIS DUPPED SOMEWHERE?
 	/* files */
 	RCons *cons;
-	struct r_io_t io;
+	RIO *io;
 	RCoreFile *file;
 	struct list_head files;
-	struct r_num_t num;
-	struct r_lib_t lib;
-	struct r_cmd_t cmd;
-	RAnal anal;
-	RSyscall syscall;
-	RAsm assembler;
-	struct r_parse_t parser;
-	struct r_print_t print;
-	struct r_bin_t bin;
-	struct r_meta_t meta;
-	struct r_lang_t lang;
-	struct r_debug_t dbg;
-	struct r_flag_t flags;
-	struct r_config_t config;
-	struct r_search_t *search;
-	RSign sign;
+	RNum *num;
+	RLib *lib;
+	RCmd *cmd;
+	RAnal *anal;
+	RSyscall *syscall;
+	RAsm *assembler;
+	RAnalRefline *reflines;
+	RParse *parser;
+	RPrint *print;
+	RBin *bin;
+	RMeta *meta;
+	RLang *lang;
+	RDebug *dbg;
+	RFlag *flags;
+	RConfig *config;
+	RSearch *search;
+	RSign *sign;
 } RCore;
 
 #ifdef R_API

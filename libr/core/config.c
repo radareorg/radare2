@@ -24,16 +24,16 @@ static int config_bigendian_callback(void *user, void *data) {
 static int config_iova_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	if (r_config_get_i (&core->config, "cfg.debug"))
-		core->io.va = 0;
-	else core->io.va = node->i_value;
+	if (r_config_get_i (core->config, "cfg.debug"))
+		core->io->va = 0;
+	else core->io->va = node->i_value;
 	return R_TRUE;
 }
 
 static int config_iocache_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	r_io_cache_enable (&core->io, node->i_value, node->i_value);
+	r_io_cache_enable (core->io, node->i_value, node->i_value);
 	return R_TRUE;
 }
 
@@ -41,8 +41,8 @@ static int config_cfgdebug_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->i_value) {
-		r_debug_use (&core->dbg, r_config_get (&core->config, "dbg.backend"));
-		r_debug_select (&core->dbg, core->file->fd, core->file->fd);
+		r_debug_use (core->dbg, r_config_get (core->config, "dbg.backend"));
+		r_debug_select (core->dbg, core->file->fd, core->file->fd);
 	}
 	return R_TRUE;
 }
@@ -50,8 +50,8 @@ static int config_cfgdebug_callback(void *user, void *data) {
 static int config_asmos_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (!r_syscall_setup (&core->syscall, 
-			r_config_get (&core->config, "asm.arch"), node->value))
+	if (!r_syscall_setup (core->syscall, 
+			r_config_get (core->config, "asm.arch"), node->value))
 		eprintf ("asm.os: Cannot setup syscall os/arch for '%s'\n", node->value);
 	return R_TRUE;
 }
@@ -59,28 +59,28 @@ static int config_asmos_callback(void *user, void *data) {
 static int config_stopthreads_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->dbg.stop_all_threads = node->i_value;
+	core->dbg->stop_all_threads = node->i_value;
 	return R_TRUE;
 }
 
 static int config_trace_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->dbg.do_trace = node->i_value;
+	core->dbg->do_trace = node->i_value;
 	return R_TRUE;
 }
 
 static int config_tracetag_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->dbg.trace_tag = node->i_value;
+	core->dbg->trace_tag = node->i_value;
 	return R_TRUE;
 }
 
 static int config_swstep_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->dbg.swstep = node->i_value;
+	core->dbg->swstep = node->i_value;
 	return R_TRUE;
 }
 
@@ -88,12 +88,12 @@ static int config_asmarch_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	// TODO: control error and restore old value (return false?) show errormsg?
-	if (!r_asm_use (&core->assembler, node->value))
+	if (!r_asm_use (core->assembler, node->value))
 		eprintf ("asm.arch: Cannot set this arch (%s)\n", node->value);
-	if (!r_anal_use (&core->anal, node->value))
+	if (!r_anal_use (core->anal, node->value))
 		eprintf ("asm.arch: Cannot setup analysis engine for '%s'\n", node->value);
-	if (!r_syscall_setup (&core->syscall, node->value,
-			r_config_get (&core->config, "asm.os")))
+	if (!r_syscall_setup (core->syscall, node->value,
+			r_config_get (core->config, "asm.os")))
 		eprintf ("asm.arch: Cannot setup syscall os/arch for '%s'\n", node->value);
 	return R_TRUE;
 }
@@ -102,7 +102,7 @@ static int config_asm_parser_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	// XXX this is wrong? snprintf(buf, 127, "parse_%s", node->value),
-	r_parse_use (&core->parser, node->value);
+	r_parse_use (core->parser, node->value);
 	// TODO: control error and restore old value (return false?) show errormsg?
 	return R_TRUE;
 }
@@ -110,9 +110,9 @@ static int config_asm_parser_callback(void *user, void *data) {
 static int config_asm_bits_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	int ret = r_asm_set_bits (&core->assembler, node->i_value);
+	int ret = r_asm_set_bits (core->assembler, node->i_value);
 	if (ret == R_FALSE) {
-		struct r_asm_handle_t *h = core->assembler.cur;
+		struct r_asm_handle_t *h = core->assembler->cur;
 		if (h) {
 			eprintf ("Cannot set bits %"PFMT64d" to '%s'\n",
 				node->i_value, h->name);
@@ -121,7 +121,7 @@ static int config_asm_bits_callback(void *user, void *data) {
 			ret = R_TRUE;
 		}
 	}
-	if (!r_anal_set_bits (&core->anal, node->i_value))
+	if (!r_anal_set_bits (core->anal, node->i_value))
 		eprintf ("asm.arch: Cannot setup '%i' bits analysis engine\n", (int)node->i_value);
 	// TODO: change debugger backend bit profile here
 	return ret;
@@ -131,20 +131,19 @@ static int config_color_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
-		core->print.flags |= R_PRINT_FLAGS_COLOR;
-	} else if (core->print.flags&R_PRINT_FLAGS_COLOR)
-		core->print.flags ^= R_PRINT_FLAGS_COLOR;
+		core->print->flags |= R_PRINT_FLAGS_COLOR;
+	} else if (core->print->flags&R_PRINT_FLAGS_COLOR)
+		core->print->flags ^= R_PRINT_FLAGS_COLOR;
 	return R_TRUE;
 }
 
 R_API int r_core_config_init(RCore *core) {
-	struct r_config_t *cfg = &core->config;
-	r_config_init (cfg, (void *)core);
+	RConfig *cfg = cfg = core->config = r_config_new (core);
 	cfg->printf = r_cons_printf;
 
 	r_config_set_cb (cfg, "asm.arch", R_SYS_ARCH, &config_asmarch_callback);
 	// XXX: not portable
-	r_parse_use (&core->parser, "x86.pseudo");
+	r_parse_use (core->parser, "x86.pseudo");
 	r_config_set_cb (cfg, "asm.parser", "x86.pseudo",
 		&config_asm_parser_callback);
 
@@ -190,7 +189,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "dbg.trace.tag", "0xff", &config_tracetag_callback);
 	r_config_set (cfg, "scr.prompt", "true");
 	r_config_set_cb (cfg, "scr.color",
-		(core->print.flags&R_PRINT_FLAGS_COLOR)?"true":"false",
+		(core->print->flags&R_PRINT_FLAGS_COLOR)?"true":"false",
 		&config_color_callback);
 	r_config_set (cfg, "scr.seek", "");
 	r_config_set_i (cfg, "search.distance", 0);
