@@ -186,22 +186,25 @@ int main(int argc, char **argv) {
 	}
 
 	r_core_project_open (&r, r_config_get (r.config, "file.project"));
+	mainloop:
 	do {
 		ret = r_core_prompt (&r);
 		if (ret == -1)
 			eprintf ("Invalid command\n");
 	} while (ret != R_CORE_CMD_EXIT);
 
-	if (debug)
-	if (r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
-		r_debug_kill (r.dbg, 9); // KILL
-	{
-		const char *prj = r_config_get (r.config, "file.project");
-		if (prj && *prj)
-		if (r_cons_yesno ('y', "Do you want to save the project? (Y/n)"))
-			r_core_project_save (&r, prj);
+	if (debug) {
+		if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
+			if (r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
+				r_debug_kill (r.dbg, 9); // KILL
+			{
+				const char *prj = r_config_get (r.config, "file.project");
+				if (prj && *prj)
+				if (r_cons_yesno ('y', "Do you want to save the project? (Y/n)"))
+					r_core_project_save (&r, prj);
+			}
+		} else goto mainloop;
 	}
-
 	/* capture return value */
 	ret = r.num->value;
 	r_core_file_close (&r, fh);

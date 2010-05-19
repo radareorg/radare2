@@ -3,6 +3,9 @@
 |    <  V  . T  . V      <   _/ .--'_/ |  ()  |
 |_|\__|_|__|___/|_|_|_|\__\___/ |_____(_)____/
 
+
+* Add 'prj.name', 'prj.desc' and 'prj.md5'
+* Add description to project e file.desc ?
 * add file.md5 check support when opening new file or project or so..
 
 * anal bug:
@@ -38,9 +41,6 @@
 <{include libr/TODO}>
 ** See libr/*/TODO FMI
 
-* Added 'prj.name', 'prj.desc' and 'prj.md5'
-
-* Add description to project e file.desc ?
 * Merge r_socket inside r_util ?
 * Add SSL support to r_socket ?
 * Move disasm loop into r_print (r_print should depend on r_asm)
