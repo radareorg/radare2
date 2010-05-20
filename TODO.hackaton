@@ -25,26 +25,16 @@ Concrete TODO points
 * r_io
   - Design and implement a undo/redo subsystem that can be
     enabled and disabled. It is actually mostly done, but
-    lacks coherence and can be done better.
+    lacks coherence and can be done better. // IMHO THIS IS ALREADY DONE //
 
   - We need a way to get the underlying file which responds
     to the read call (this way we can know which library
     lives at a specified offset.
 
-  - Implement 'S' command in radare2 (libr/core/cmd)
-    - It must use the r_io_section API
-    - Implement the rest of io-related commands in r2
-      - 'o' open - We need to manage more than one file
-  - do e io.vaddr and io.baddr get sense in r2? (discuss)
-
-  - radare2 must be able to know the real/virtual offset
-    - We need a function like r_io_get_real_offset();
-    - We also need to know if there are overlapped sections
-      and where those sections are. (like in hiew)
-
 * r_bin
-  - Make it IO agnostic (use r_io_bind) (HIGH PRIORITY)
+  - Make it IO agnostic (use r_io_bind) (HIGH PRIORITY) // really needed?
   - Add mach0 file format support
+  - Add DEX file format support
   - Find why objdump can find stripped symbols with objcopy (see /TODO)
 
 * radare2
@@ -54,7 +44,7 @@ Concrete TODO points
   - Import msdn doc as comments
 
 * r_db
-  - Implement iterators r_db_next() and r_db_prev()
+  - Implement iterators r_db_next() and r_db_prev() (HIGH PRIO)
   - Write test programs to ensure the data is stored correctly
 
 * r_search
@@ -67,12 +57,6 @@ Concrete TODO points
   - Update vapi (r_search_regexp not implemented)
   - Enable/disable nested hits? (discuss+ implement in parent app?)
     - Just skip bytes until end of keyword
-
-./libr/TODO
-./libr/line/TODO
-./libr/syscall/TODO
-./libr/search/TODO
-
 
 Portability
 ===========

@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2009-2010 pancake<@nopcode.org> */
 
+// XXX. not implemented
+
 using Radare;
 
 public class TestObject {
@@ -10,8 +12,8 @@ public class TestObject {
 	}
 }
 
-rArray<TestObject> get_iter_list () {
-	rArray<TestObject> list = new rArray<TestObject>(5);
+RArray<TestObject> get_iter_list () {
+	var list = new RArray<TestObject>(5);
 
 	list.set (0, new TestObject ("patata"));
 	list.set (1, new TestObject ("cacatua"));

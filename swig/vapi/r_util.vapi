@@ -83,11 +83,12 @@ public class RFList<G> {
 }
 
 //[Compact]
-[CCode (cprefix="r_list_", cheader_filename="r_list.h", cname="struct r_list_t")]
+[CCode (cprefix="r_list_", cheader_filename="r_util.h", cname="RList")]
 public class RList<G> {
 	public void append(owned G foo);
 	public void prepend(owned G foo);
 	public RListIter<G> iterator();
+	public RList();
 	public bool next();
 	public unowned G @get();
 }

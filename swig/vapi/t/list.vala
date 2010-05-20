@@ -10,8 +10,8 @@ public class IterableObject {
 	}
 }
 
-rList<IterableObject> get_list () {
-	var list = new rList<IterableObject>();
+RList<IterableObject> get_list () {
+	var list = new RList<IterableObject>();
 
 	list.append (new IterableObject ("patata"));
 	list.append (new IterableObject ("cacatua"));

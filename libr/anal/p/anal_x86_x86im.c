@@ -9,14 +9,14 @@
 
 #include "x86/x86im/x86im.h"
 
-static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) {
+static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	x86im_instr_object io;
 	st64 imm, disp;
 
 	if (data == NULL)
 		return 0;
 
-	memset (aop, '\0', sizeof (RAnalAop));
+	memset (aop, '\0', sizeof (RAnalOp));
 	aop->type = R_ANAL_OP_TYPE_UNK;
 	aop->addr = addr;
 	aop->jump = aop->fail = -1;

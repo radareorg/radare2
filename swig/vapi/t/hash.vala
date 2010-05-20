@@ -18,16 +18,16 @@ public class HashExample
 		print ("CRC32: %x\n", RHash.crc32("hello", 5));
 
 		/* directly calculate md5 */
-		var st = new RHash (true);
+		var st = new RHash (true, RHash.Algorithm.ALL);
 		printChecksum ("Single MD5: ",
 			(uint8*)st.do_md5 ("helloworld", 10), RHash.Size.MD5);
 
 		/* incrementally calculate md5 */
-		st = new RHash (false);
+		st = new RHash (false, RHash.Algorithm.ALL);
 		st.do_md5 ("hello", 5);
 		st.do_md5 ("world", 5);
 		printChecksum ("Incremental MD5: ",
 			(uint8*)st.do_md5 (null,0), RHash.Size.MD5);
-		st.init (true, RHash.Algorithm.ALL);
+		//st.init (true, RHash.Algorithm.ALL);
 	}
 }

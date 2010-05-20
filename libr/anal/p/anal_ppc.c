@@ -7,7 +7,7 @@
 
 // NOTE: buf should be at least 16 bytes!
 // XXX addr should be off_t for 64 love
-int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *bytes, int len) {
+int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *bytes, int len) {
 //int arch_ppc_aop(ut64 addr, const u8 *bytes, struct aop_t *aop)
 // TODO swap endian here??
 	int opcode = (bytes[0] & 0xf8) >> 3; // bytes 0-5
@@ -17,7 +17,7 @@ int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *bytes, int len) {
 	//if (baddr>0x7fff)
 	//      baddr = -baddr;
 
-	memset (aop, '\0', sizeof (RAnalAop));
+	memset (aop, '\0', sizeof (RAnalOp));
 	aop->addr = addr;
 	aop->type = R_ANAL_OP_TYPE_NOP;
 	aop->length = 4;

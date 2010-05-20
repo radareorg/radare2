@@ -6,7 +6,7 @@
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RCore *core = (RCore *)userptr; // XXX ?
 	RFlagItem *flag;
-	RAnalAop aop;
+	RAnalOp aop;
 	
 	if (str[0]=='$') {
 		/* analyze opcode */
@@ -288,9 +288,9 @@ int ret;
 	
 }
 
-R_API RAnalAop *r_core_op_anal(RCore *core, ut64 addr) {
+R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr) {
 	ut8 buf[64];
-	RAnalAop *aop = R_NEW (RAnalAop);
+	RAnalOp *aop = R_NEW (RAnalOp);
 	r_core_read_at (core, addr, buf, sizeof (buf));
 	r_anal_aop (core->anal, aop, addr, buf, sizeof (buf));
 	return aop;

@@ -106,7 +106,7 @@ R_API int r_anal_set_big_endian(RAnal *anal, int bigend) {
 }
 
 R_API char *r_anal_strmask (RAnal *anal, const char *data) {
-	RAnalAop *aop;
+	RAnalOp *aop;
 	ut8 *buf;
 	char *ret = NULL;
 	int oplen, len, idx = 0;

@@ -27,7 +27,7 @@ public class Radare.RCore {
 	public unowned string cmd_str(string cmd);
 
 	public string op_str(uint64 addr);
-	public RAnal.Opcode op_anal(uint64 addr);
+	public RAnal.Op op_anal(uint64 addr);
 
 	/* io */
 	public int read_at(uint64 addr, out uint8 *buf, int size);

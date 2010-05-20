@@ -1,5 +1,8 @@
 /* radare - LGPL - Copyright 2010 pancake<@nopcode.org> */
 
+/* this vapi is broken as shit... we need to rename some stuff here ..
+   if we can just avoid to use cname CCode attribute... */
+
 namespace Radare {
 [Compact]
 [CCode (cheader_filename="r_anal.h", cprefix="r_anal_", lowercase_c_prefix="r_anal_", free_function="r_anal_free", cname="RAnal")]
@@ -7,31 +10,31 @@ public class RAnal {
 	public int bits;
 	public bool big_endian;
 	public void *user;
-	public RList <BasicBlock> bbs;
-	public RList <Function> fcns;
-	public RList <VariableType> vartypes;
+	public RList <Block> bbs;
+	public RList <Fcn> fcns;
+	public RList <VarType> vartypes;
 
 	public RAnal ();
 	public bool set_bits (int bits);
 	public bool set_big_endian (bool big);
 	//public bool set_pc (uint64 addr);
-	public RList<BasicBlock> fcn_bb_list(Function fun);
+	public RList<Block> fcn_bb_list(Fcn fun);
 
 	[Compact]
-	[CCode (cname="RAnalBB")]
-	public class BasicBlock {
+	[CCode (cname="RAnalBlock")]
+	public class Block {
 		public uint64 addr;
 		public uint64 size;
 		public uint64 jump;
 		public uint64 fail;
-		public RList<Opcode> aops;
+		public RList<Op> aops;
 	}
-	public bool bb_split(BasicBlock bb, RList<BasicBlock> bbs, uint64 addr);
-	public bool bb_overlap(BasicBlock bb, RList<BasicBlock> bbs);
+	public bool bb_split(Block bb, RList<Block> bbs, uint64 addr);
+	public bool bb_overlap(Block bb, RList<Block> bbs);
 
 	[Compact]
-	[CCode (cprefix="r_anal_aop_t", cname="RAnalAop")]
-	public class Opcode {
+	[CCode (cname="RAnalOp")]
+	public class Op {
 		public uint64 addr;
 		public int type;
 		public int stackop;
@@ -47,43 +50,43 @@ public class RAnal {
 
 	[Compact]
 	[CCode (cprefix="r_anal_fcn_", cname="RAnalFcn")]
-	public class Function {
+	public class Fcn {
 		public string name;
 		public uint64 addr;
 		public uint64 size;
-		public RList<Variable> vars;
+		public RList<Var> vars;
 		public RList<uint64> refs;
 		public RList<uint64> xrefs;
 	}
 
 	[Compact]
-	[CCode (cprefix="r_anal_var_t")]
-	public class Variable {
+	[CCode (cname="RAnalVar")]
+	public class Var {
 		public string name;
 		public int delta;
 		public int type;
-		public RList<VariableAccess> accesses;
+		public RList<VarAccess> accesses;
 	}
 
 	[Compact]
-	[CCode (cprefix="r_anal_var_access_t")]
-	public class VariableAccess {
+	[CCode (cname="RAnalVarAccess")]
+	public class VarAccess {
 		public string name;
 		public int delta;
 		public int type;
-		public RList<VariableAccess> accessess;
+		public RList<VarAccess> accessess;
 	}
 
 	[Compact]
-	[CCode (cprefix="r_anal_var_type_t")]
-	public class VariableType {
+	[CCode (cname="RAnalVarType")]
+	public class VarType {
 		public string name;
 		public string fmt;
 		public uint size;
 	}
 
 	[Compact]
-	[CCode (free_function="")]
+	[CCode (cname="RAnalRefline", free_function="")]
 	public class Refline {
 		uint64 from;
 		uint64 to;

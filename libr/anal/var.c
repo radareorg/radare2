@@ -7,9 +7,7 @@
 #include <r_list.h>
 
 R_API RAnalVar *r_anal_var_new() {
-	RAnalVar *var;
-
-	var = R_NEW (RAnalVar);
+	RAnalVar *var = R_NEW (RAnalVar);
 	if (var) {
 		memset (var, 0, sizeof (RAnalVar));
 		var->accesses = r_anal_var_access_list_new ();

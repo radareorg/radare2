@@ -26,11 +26,11 @@
 
 // NOTE: buf should be at least 16 bytes!
 // XXX addr should be off_t for 64 love
-static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) {
+static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	ut8 *buf = (ut8*)data;
 	if (data == NULL)
 		return 0;
-	memset (aop, '\0', sizeof (RAnalAop));
+	memset (aop, '\0', sizeof (RAnalOp));
 	aop->type = R_ANAL_OP_TYPE_UNK;
 	aop->addr = addr;
 	aop->jump = -1;

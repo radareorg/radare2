@@ -32,9 +32,9 @@ typedef struct r_cmd_macro_t {
 	int (*cmd)(void *user, const char *cmd);
 	int (*printf)(const char str, ...);
 	void *user;
-	struct r_num_t *num;
+	RNum *num;
 	int labels_n;
-	struct r_cmd_macro_label_t labels[MACRO_LABELS];
+	RCmdMacroLabel labels[MACRO_LABELS];
 	struct list_head macros;
 } RCmdMacro;
 
@@ -43,7 +43,7 @@ typedef int (*RCmdCallback)(void *user, const char *cmd);
 typedef struct r_cmd_item_t {
 	char cmd[64];
 	char desc[128];
-	r_cmd_callback(callback);
+	r_cmd_callback (callback);
 } RCmdItem;
 
 typedef struct r_cmd_long_item_t {
@@ -56,9 +56,9 @@ typedef struct r_cmd_long_item_t {
 
 typedef struct r_cmd_t {
 	void *data;
-	r_cmd_nullcallback(nullcallback);
+	r_cmd_nullcallback (nullcallback);
 	struct list_head lcmds;
-	struct r_cmd_item_t *cmds[255];
+	RCmdItem *cmds[UT8_MAX];
 	RCmdMacro macro;
 	RList *plist;
 } RCmd;

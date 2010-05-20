@@ -43,7 +43,7 @@ static unsigned int disarm_branch_offset ( unsigned int pc, unsigned int insoff 
 #define IS_EXITPOINT(x) \
 	(IS_BRANCH (x) || IS_RETURN (x) || IS_UNKJMP (x))
 
-static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) {
+static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	unsigned int i = 0;
 	unsigned int* code = (unsigned int *)data;
 	unsigned int branch_dst_addr;
@@ -52,7 +52,7 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) 
 	if (data == NULL)
 		return 0;
 
-	memset (aop, '\0', sizeof(RAnalAop));
+	memset (aop, '\0', sizeof(RAnalOp));
 	aop->addr = addr;
 	aop->type = R_ANAL_OP_TYPE_UNK;
 

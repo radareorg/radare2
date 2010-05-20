@@ -8,10 +8,11 @@ public class SearchExample
 	{
 		string buf = "liblubliuamlibfoo";
 		var s = new RSearch (RSearch.Mode.KEYWORD);
-		s.kw_add ("lib", "");
+		s.kw_add (new RSearch.Keyword.str ("lib", "", ""));
 		s.set_callback (
 			(kw, user, addr) => {
-				stdout.printf("Hit %d! at 0x%"PFMT64x"\n", (int)kw.count, addr);
+				stdout.printf("Hit %d! at 0x%"+uint64.FORMAT+
+					"\n", (int)kw.count, addr);
 				return 0;
 			}, null);
 		s.begin ();

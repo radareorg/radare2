@@ -51,7 +51,7 @@ static inline ut16 i2ut16(struct instruction *in) {
 	return *((uint16_t*)in);
 }
 
-static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *bytes, int len) {
+static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *bytes, int len) {
 	struct instruction *in = (struct instruction *)bytes;
 	ut16 lol, ins;
 	struct directive d;
@@ -72,7 +72,7 @@ static int aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *bytes, int len)
 	csr_decode (&s, &d);
 	d.d_operand = get_operand (&s, &d);
 
-	memset (aop, 0, sizeof (RAnalAop));
+	memset (aop, 0, sizeof (RAnalOp));
 	aop->type = R_ANAL_OP_TYPE_UNK;
 	aop->length = 2;
 

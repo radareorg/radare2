@@ -3,11 +3,11 @@
 [CCode (cheader_filename="r_lang.h", cprefix="r_lang_", lower_case_cprefix="r_lang_")]
 namespace Radare {
 	[Compact]
-	[CCode (cname="struct r_lang_t", free_function="r_lang_free", cprefix="r_lang_")]
-	public class RLanguage {
-		public RLanguage();
+	[CCode (cname="RLang", free_function="r_lang_free", cprefix="r_lang_")]
+	public class RLang {
+		public RLang ();
 		public bool define(string type, string name, void* ptr);
-		public bool @add(RLanguage.Handler handler);
+		public bool @add(RLang.Handler handler);
 		public bool use(string name);
 		public bool undef();
 		public bool list();

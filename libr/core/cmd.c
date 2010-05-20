@@ -25,7 +25,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	char *opstr;
 	char *osl = NULL; // old source line
 	RAsmAop asmop;
-	RAnalAop analop;
+	RAnalOp analop;
 	RFlagItem *flag;
 	int counter = 0;
 

@@ -1,7 +1,12 @@
 || config ||
 ------------
-  - find more common cases for char* or &int maps
+  - find/use more common cases for char* or &int maps
     - automatic callbacks for most common usecases
+
+|| socket ||
+------------
+* Merge r_socket inside r_util ?
+* Add SSL support to r_socket ?
 
 || asm || 
 ---------
@@ -9,9 +14,9 @@
   - http://git.linux-xtensa.org/cgi-bin/git.cgi?p=buildroot/buildroot-xtensa;a=blob;f=toolchain/binutils/binutils-xtensa_dc232b.tgz;h=214164399158c540a3033e52b3bb9f65c55289af;hb=HEAD
   - Check if there are endianess issues
 
-|| anal ||  **MISSING**
+|| anal ||
 ----------
-  - define api, write vapi, integrate in core, etc..
+  - anal fastargs
   - integrate with r_var to make variable access analysis
 
 || bin || 
@@ -22,13 +27,10 @@
 || cons ||
 ----------
   - add pipe_to_buffer..not only file descriptors
-  - major cleanup
-  - split in multiple files
-  - get_real_columns() should be renamed to get_columns()
 
 || flags ||
 -----------
-  - We probably need more methods
+  - We probably need more methods..or less ? :)
   - support to define relations between flags
     (flag hirearchies)
 	r_flagtree
@@ -49,4 +51,4 @@
 ---------
   - Cleanup and test w32/osx support
   - Added lib_handle stub in r_lib, so we can add plugin support to
-    any library by using just a macro
+    any library by using just a macro. will this help in Vala plugins?

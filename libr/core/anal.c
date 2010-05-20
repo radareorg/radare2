@@ -76,8 +76,8 @@ static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts
 	r_list_foreach (core->anal->bbs, iter, bbi) {
 		if (addr == 0 || (addr >= bbi->addr && addr < bbi->addr+bbi->size)) {
 			if (pbb) { /* Copy BB and append to the list of printed bbs */
-				bbc = R_NEW (RAnalBB);
-				memcpy (bbc, bbi, sizeof (RAnalBB));
+				bbc = R_NEW (RAnalBlock);
+				memcpy (bbc, bbi, sizeof (RAnalBlock));
 				r_list_append (pbb, bbc);
 			}
 			if (bbi->jump != -1) {

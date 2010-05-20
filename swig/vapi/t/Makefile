@@ -1,4 +1,4 @@
-all: plugin.so bin lang core regs hash sc socket asm search db io array list
+all: plugin.so bin lang core regs hash sc socket asm search db io list
 	@true
 
 plugin.so:
@@ -14,10 +14,10 @@ regs:
 	valac --vapidir=.. --pkg r_reg regs.vala --pkg r_util
 
 lang:
-	valac lang.vala --pkg r_lang --pkg r_util
+	valac --vapidir=.. lang.vala --pkg r_lang --pkg r_util
 
-array:
-	valac --vapidir=.. --pkg r_util array.vala
+#array:
+#	valac --vapidir=.. --pkg r_util array.vala
 
 arrayc:
 	valac -C --vapidir=.. --pkg r_util array.vala
@@ -40,12 +40,12 @@ db:
 
 sc:
 	valac -C --vapidir=${PWD}/.. sc.vala --pkg r_syscall
-	gcc sc.c `pkg-config gobject-2.0 --libs --cflags` -I../../include/ -lr_syscall -Wl,-R../../syscall -L../../syscall -o sc
+	gcc sc.c `pkg-config gobject-2.0 --libs --cflags` -I../../../libr/include/ -lr_syscall -Wl,-R../../syscall -L../../syscall -o sc
 
 core:
-	valac -C --vapidir=${PWD}/.. core.vala --pkg r_core --pkg r_cons
+	valac -C --vapidir=.. core.vala --pkg r_asm --pkg r_anal --pkg r_core --pkg r_cons
 	#gcc `PKG_CONFIG_PATH=../.. pkg-config --libs --cflags gobject-2.0 libr` core.c -o core
-	gcc core.c `pkg-config gobject-2.0 --libs --cflags` -I../../include/ \
+	gcc core.c `pkg-config gobject-2.0 --libs --cflags` -I../../../libr/include/ \
 		-lr_core -Wl,-R../../core -L../../core \
 		-lr_util -Wl,-R../../util -L../../util \
 		-lr_asm -Wl,-R../../asm -L../../asm \
@@ -72,7 +72,7 @@ core:
 
 search:
 	valac -C --vapidir=${PWD}/.. search.vala --pkg r_search
-	gcc search.c `pkg-config gobject-2.0 --libs --cflags` -I../../include/ \
+	gcc search.c `pkg-config gobject-2.0 --libs --cflags` -I../../../libr/include/ \
 		-lr_search -Wl,-R../../search -L../../search \
 		-lr_util -Wl,-R../../util -L../../util \
 		-g -o search
@@ -89,12 +89,12 @@ bin:
 
 hash:
 	valac -C --vapidir=${PWD}/.. hash.vala --pkg r_hash
-	gcc hash.c `pkg-config gobject-2.0 --libs --cflags` -I../../include/ -lr_hash -Wl,-R../../hash -L../../hash -o hash
+	gcc hash.c `pkg-config gobject-2.0 --libs --cflags` -I../../../libr/include/ -lr_hash -Wl,-R../../hash -L../../hash -o hash
 
 socket:
 	#valac -C --profile=posix --vapidir=${PWD}/.. socket.vala --pkg r_socket
 	valac -C --vapidir=${PWD}/.. socket.vala --pkg r_socket --pkg posix
-	gcc socket.c `pkg-config gobject-2.0 --libs --cflags` -I../../include/ -lr_socket -Wl,-R../../socket -L../../socket -o socket
+	gcc socket.c `pkg-config gobject-2.0 --libs --cflags` -I../../../libr/include/ -lr_socket -Wl,-R../../socket -L../../socket -o socket
 
 clean:
 	-rm -f *.c hash sc *.o *.h core socket asm search bin io

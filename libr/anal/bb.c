@@ -6,12 +6,12 @@
 #include <r_util.h>
 #include <r_list.h>
 
-R_API RAnalBB *r_anal_bb_new() {
-	RAnalBB *bb;
+R_API RAnalBlock *r_anal_bb_new() {
+	RAnalBlock *bb;
 	
-	bb = R_NEW (RAnalBB);
+	bb = R_NEW (RAnalBlock);
 	if (bb) {
-		memset (bb, 0, sizeof (RAnalBB));
+		memset (bb, 0, sizeof (RAnalBlock));
 		bb->addr = -1;
 		bb->jump = -1;
 		bb->fail = -1;
@@ -27,13 +27,13 @@ R_API RList *r_anal_bb_list_new() {
 }
 
 R_API void r_anal_bb_free(void *bb) {
-	if (bb && ((RAnalBB*)bb)->aops)
-		r_list_destroy (((RAnalBB*)bb)->aops);
+	if (bb && ((RAnalBlock*)bb)->aops)
+		r_list_destroy (((RAnalBlock*)bb)->aops);
 	free (bb);
 }
 
-R_API int r_anal_bb(RAnal *anal, RAnalBB *bb, ut64 addr, ut8 *buf, ut64 len) {
-	RAnalAop *aop;
+R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len) {
+	RAnalOp *aop;
 	int oplen, idx = 0;
 
 	if (bb->addr == -1)
@@ -64,9 +64,9 @@ R_API int r_anal_bb(RAnal *anal, RAnalBB *bb, ut64 addr, ut8 *buf, ut64 len) {
 	return bb->size;
 }
 
-R_API int r_anal_bb_split(RAnal *anal, RAnalBB *bb, RList *bbs, ut64 addr) {
-	RAnalBB *bbi;
-	RAnalAop *aopi;
+R_API int r_anal_bb_split(RAnal *anal, RAnalBlock *bb, RList *bbs, ut64 addr) {
+	RAnalBlock *bbi;
+	RAnalOp *aopi;
 	RListIter *iter;
 
 	r_list_foreach (bbs, iter, bbi)
@@ -94,9 +94,9 @@ R_API int r_anal_bb_split(RAnal *anal, RAnalBB *bb, RList *bbs, ut64 addr) {
 	return R_ANAL_RET_NEW;
 }
 
-R_API int r_anal_bb_overlap(RAnal *anal, RAnalBB *bb, RList *bbs) {
-	RAnalBB *bbi;
-	RAnalAop *aopi;
+R_API int r_anal_bb_overlap(RAnal *anal, RAnalBlock *bb, RList *bbs) {
+	RAnalBlock *bbi;
+	RAnalOp *aopi;
 	RListIter *iter;
 
 	r_list_foreach (bbs, iter, bbi)
@@ -114,7 +114,7 @@ R_API int r_anal_bb_overlap(RAnal *anal, RAnalBB *bb, RList *bbs) {
 }
 
 R_API int r_anal_bb_add(RAnal *anal, ut64 addr, ut64 size, ut64 jump, ut64 fail) {
-	RAnalBB *bb, *bbi;
+	RAnalBlock *bb, *bbi;
 	RListIter *iter;
 
 	r_list_foreach (anal->bbs, iter, bbi)
@@ -131,7 +131,7 @@ R_API int r_anal_bb_add(RAnal *anal, ut64 addr, ut64 size, ut64 jump, ut64 fail)
 }
 
 R_API int r_anal_bb_del(RAnal *anal, ut64 addr) {
-	RAnalBB *bbi;
+	RAnalBlock *bbi;
 	RListIter *iter;
 	ut64 jump, fail;
 

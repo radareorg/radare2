@@ -6,7 +6,7 @@ public class SyscallExample
 	public static void main(string[] args)
 	{
 		var sc = new RSyscall();
-		sc.setup (RSyscall.ARCH.X86, RSyscall.OS.LINUX);
-		print ("write = %d\n", sc.get("write"));
+		sc.setup ("x86", "linux");
+		print ("write = %d\n", sc.get_num("write"));
 	}
 }

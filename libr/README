@@ -1,7 +1,7 @@
-                              ___  ___
-  =========================  |  _\/_  \
-  libr - codename 'radare2'  |   <|  _|
-  =========================  |_|_||___|
+                                 ___ ___
+  =========================     |  _\_  \
+  libr - codename 'radare2'     |   /  _/
+  =========================     |_|__\__\
 
 
 LibR is the refactoring of the old radare1 core in a set of libraries

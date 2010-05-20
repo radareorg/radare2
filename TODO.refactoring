@@ -15,7 +15,7 @@ These refactoring bugs should be discussed and reviewed. Feedback is welcome
   - fits better with plan9 compiler
   - use getopt() p9-like macros
 
-* Store version information in libraries ?
+* Store version information in libraries ? debian claims for it
 
 * rasm2 should be configurable at startup time to choose default arch (use environment?)
 

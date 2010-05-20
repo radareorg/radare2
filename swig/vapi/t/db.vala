@@ -2,7 +2,7 @@ using Radare;
 
 void main()
 {
-	var db = new rDatabase();
+	var db = new RDatabase();
 	db.add_id(0, 4);
 
 	db.add("food");

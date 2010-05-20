@@ -139,7 +139,7 @@ typedef struct r_anal_aop_t {
 	st64 stackptr;             /* stack pointer */
 	int r_dst[R_ANAL_MAXREG];  /* register arguments */
 	ut64 i_dst[R_ANAL_MAXREG]; /* inmediate arguments */
-} RAnalAop;
+} RAnalOp;
 
 typedef struct r_anal_bb_t {
 	ut64 addr;
@@ -147,7 +147,7 @@ typedef struct r_anal_bb_t {
 	ut64 jump;
 	ut64 fail;
 	RList *aops;
-} RAnalBB;
+} RAnalBlock;
 
 typedef struct r_anal_fcn_t {
 	char *name;
@@ -178,7 +178,7 @@ typedef struct r_anal_var_access_t {
 	int set;
 } RAnalVarAccess;
 
-typedef ut64 RAnalRef;
+typedef ut64 RAnalRef; // XXX
 
 typedef struct r_anal_refline_t {
 	ut64 from;
@@ -187,7 +187,7 @@ typedef struct r_anal_refline_t {
 	struct list_head list;
 } RAnalRefline;
 
-//TODO: typedef RAnalAopCallback
+//TODO: typedef RAnalOpCallback
 typedef struct r_anal_handle_t {
 	char *name;
 	char *desc;
@@ -212,21 +212,21 @@ R_API int r_anal_set_big_endian(RAnal *anal, int boolean);
 R_API char *r_anal_strmask (RAnal *anal, const char *data);
 
 /* bb.c */
-R_API RAnalBB *r_anal_bb_new();
+R_API RAnalBlock *r_anal_bb_new();
 R_API RList *r_anal_bb_list_new();
 R_API void r_anal_bb_free(void *bb);
 R_API int r_anal_bb(RAnal *anal, struct r_anal_bb_t *bb,
 		ut64 addr, ut8 *buf, ut64 len);
-R_API int r_anal_bb_split(RAnal *anal, RAnalBB *bb, RList *bbs, ut64 addr);
-R_API int r_anal_bb_overlap(RAnal *anal, RAnalBB *bb, RList *bbs);
+R_API int r_anal_bb_split(RAnal *anal, RAnalBlock *bb, RList *bbs, ut64 addr);
+R_API int r_anal_bb_overlap(RAnal *anal, RAnalBlock *bb, RList *bbs);
 R_API int r_anal_bb_add(RAnal *anal, ut64 addr, ut64 size, ut64 jump, ut64 fail);
 R_API int r_anal_bb_del(RAnal *anal, ut64 addr);
 
 /* aop.c */
-R_API RAnalAop *r_anal_aop_new();
+R_API RAnalOp *r_anal_aop_new();
 R_API RList *r_anal_aop_list_new();
 R_API void r_anal_aop_free(void *aop);
-R_API int r_anal_aop(RAnal *anal, RAnalAop *aop, ut64 addr,
+R_API int r_anal_aop(RAnal *anal, RAnalOp *aop, ut64 addr,
 		const ut8 *data, int len);
 
 /* fcn.c */
