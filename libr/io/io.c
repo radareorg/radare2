@@ -265,7 +265,7 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 		posix_whence = SEEK_CUR;
 		break;
 	case R_IO_SEEK_END:
-		offset = UT64_MAX; // XXX: depending on io bits?
+		//offset = UT64_MAX; // XXX: depending on io bits?
 		posix_whence = SEEK_END;
 		break;
 	}
@@ -276,7 +276,7 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 	// XXX can be problematic on w32..so no 64 bit offset?
 	else len = lseek (io->fd, offset, posix_whence);
 	if (len != -1) {
-		io->off = offset;
+		io->off = len;
 		// XXX this can be tricky.. better not to use this .. must be deprecated 
 		// r_io_sundo_push (io);
 		ret = io->va ? r_io_section_offset_to_vaddr (io, io->off) : io->off;

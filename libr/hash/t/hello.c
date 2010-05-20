@@ -25,7 +25,6 @@ int main(int argc, char **argv)
 
 	/* get file size */
 	size = r_io_size(io, fd);
-	eprintf ("AAA: %lli\n", size);
 
 	/* read bytes */
 	buf = (ut8*) malloc(size);
