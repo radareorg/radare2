@@ -274,3 +274,24 @@ R_API int r_core_seek_delta(RCore *core, st64 addr) {
 		core->offset = tmp;
 	return ret;
 }
+
+R_API char *r_core_op_str(RCore *core, ut64 addr) {
+int ret;
+	ut8 buf[64];
+	RAsmAop aop;
+	r_asm_set_pc (core->assembler, addr);
+	r_core_read_at (core, addr, buf, sizeof (buf));
+	ret = r_asm_disassemble (core->assembler, &aop, buf, sizeof (buf));
+	if (ret>0)
+		return strdup (aop.buf_asm);
+	return NULL;
+	
+}
+
+R_API RAnalAop *r_core_op_anal(RCore *core, ut64 addr) {
+	ut8 buf[64];
+	RAnalAop *aop = R_NEW (RAnalAop);
+	r_core_read_at (core, addr, buf, sizeof (buf));
+	r_anal_aop (core->anal, aop, addr, buf, sizeof (buf));
+	return aop;
+}

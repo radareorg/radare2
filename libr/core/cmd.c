@@ -50,6 +50,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	if (r_config_get_i (core->config, "asm.lineswide"))
 		linesopts |= R_ANAL_REFLINE_WIDE;
 
+	// uhm... is this necesary? imho can be removed
 	r_asm_set_pc (core->assembler, core->offset);
 #if 0
 	/* find last function else stackptr=0 */
