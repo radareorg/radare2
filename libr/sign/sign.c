@@ -4,10 +4,9 @@
 #include <r_anal.h>
 
 R_API RSign *r_sign_new() {
-	return r_sign_init (R_NEW (RSign));
-}
+	RSign *sig;
 
-R_API RSign *r_sign_init(RSign *sig) {
+	sig = R_NEW (RSign);
 	if (sig) {
 		sig->s_byte = sig->s_anal = 0;
 		sig->prefix[0] = '\0';

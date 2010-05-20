@@ -2,15 +2,13 @@
 
 #include <r_util.h>
 
-R_API void r_cache_init(struct r_cache_t *c)
-{
-	INIT_LIST_HEAD(&c->items);
-}
-
 R_API struct r_cache_t *r_cache_new()
 {
-	struct r_cache_t *a = R_NEW(struct r_cache_t);
-	r_cache_init(a);
+	RCache *a;
+	
+	a = R_NEW (RCache);
+	if (a)
+		INIT_LIST_HEAD(&a->items);
 	return a;
 }
 

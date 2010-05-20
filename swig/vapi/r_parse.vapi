@@ -7,7 +7,6 @@ namespace Radare {
 	public class RParse {
 		public RParse();
 
-		public int init();
 		public int list();
 		public bool use(string name);
 		public bool assemble(ref string dst, string src);

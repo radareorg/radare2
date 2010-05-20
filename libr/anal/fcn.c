@@ -7,7 +7,18 @@
 #include <r_list.h>
 
 R_API RAnalFcn *r_anal_fcn_new() {
-	return r_anal_fcn_init (R_NEW (RAnalFcn));
+	RAnalFcn *fcn;
+
+	fcn = R_NEW (RAnalFcn);
+	if (fcn) {
+		memset (fcn, 0, sizeof (RAnalFcn));
+		fcn->addr = -1;
+		fcn->stack = 0;
+		fcn->vars = r_anal_var_list_new ();
+		fcn->refs = r_anal_ref_list_new ();
+		fcn->xrefs = r_anal_ref_list_new ();
+	}
+	return fcn;
 }
 
 R_API RList *r_anal_fcn_list_new() {
@@ -28,18 +39,6 @@ R_API void r_anal_fcn_free(void *fcn) {
 			r_list_destroy (((RAnalFcn*)fcn)->vars);
 	}
 	free (fcn);
-}
-
-R_API RAnalFcn *r_anal_fcn_init(RAnalFcn *fcn) {
-	if (fcn) {
-		memset (fcn, 0, sizeof (RAnalFcn));
-		fcn->addr = -1;
-		fcn->stack = 0;
-		fcn->vars = r_anal_var_list_new ();
-		fcn->refs = r_anal_ref_list_new ();
-		fcn->xrefs = r_anal_ref_list_new ();
-	}
-	return fcn;
 }
 
 R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len) {

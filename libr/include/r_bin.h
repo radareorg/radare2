@@ -140,7 +140,6 @@ typedef struct r_bin_write_t {
 /* bin.c */
 R_API int r_bin_add(RBin *bin, RBinHandle *foo);
 R_API void* r_bin_free(RBin *bin);
-R_API int r_bin_init(RBin *bin);
 R_API int r_bin_list(RBin *bin);
 R_API int r_bin_load(RBin *bin, const char *file, const char *plugin_name);
 R_API ut64 r_bin_get_baddr(RBin *bin);

@@ -14,17 +14,13 @@
 #define r_flist_unref(x) x
 #endif
 
-R_API void **r_flist_init(void **it, int n) {
-	*it = it;
-	memset (++it, 0, (n+1) * sizeof (void*));
-	return it;
-}
-
 R_API void **r_flist_new(int n) {
 	void **it;
 	if (!(it = (void **)malloc ((n+2) * sizeof (void*))))
 		return NULL;
-	return r_flist_init (it, n);
+	*it = it;
+	memset (++it, 0, (n+1) * sizeof (void*));
+	return it;
 }
 
 R_API void **r_flist_prev(void **it) {

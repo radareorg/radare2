@@ -6,8 +6,11 @@
 static struct r_bp_handle_t *bp_static_plugins[] = 
 	{ R_BP_STATIC_PLUGINS };
 
-R_API RBreakpoint *r_bp_init(RBreakpoint *bp) {
+R_API RBreakpoint *r_bp_new() {
+	RBreakpoint *bp;
 	int i;
+
+	bp = R_NEW (RBreakpoint);
 	if (bp) {
 		bp->cur = NULL;
 		bp->nbps = 0;
@@ -23,10 +26,6 @@ R_API RBreakpoint *r_bp_init(RBreakpoint *bp) {
 		memset (&bp->iob, 0, sizeof(bp->iob));
 	}
 	return bp;
-}
-
-R_API RBreakpoint *r_bp_new() {
-	return r_bp_init (R_NEW (RBreakpoint));
 }
 
 R_API RBreakpoint *r_bp_free(RBreakpoint *bp) {

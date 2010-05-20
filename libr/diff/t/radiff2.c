@@ -45,7 +45,7 @@ enum {
 };
 
 int main(int argc, char **argv) {
-	struct r_diff_t d;
+	struct r_diff_t *d;
 	int c, delta = 0;
 	char *file, *file2;
 	ut8 *bufa, *bufb;
@@ -98,10 +98,11 @@ int main(int argc, char **argv) {
 
 	switch(mode) {
 	case MODE_DIFF:
-		r_diff_init (&d, 0LL, 0LL);
-		r_diff_set_delta (&d, delta);
-		r_diff_set_callback (&d, &cb, (void *)(size_t)rad);
-		r_diff_buffers (&d, bufa, sza, bufb, szb);
+		d = r_diff_new (0LL, 0LL);
+		r_diff_set_delta (d, delta);
+		r_diff_set_callback (d, &cb, (void *)(size_t)rad);
+		r_diff_buffers (d, bufa, sza, bufb, szb);
+		r_diff_free (d);
 		break;
 	case MODE_DIST:
 		r_diff_buffers_distance (NULL, bufa, sza, bufb, szb, &count, &sim);

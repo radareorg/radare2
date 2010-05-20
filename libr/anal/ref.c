@@ -7,7 +7,12 @@
 #include <r_list.h>
 
 R_API RAnalRef *r_anal_ref_new() {
-	return r_anal_ref_init (R_NEW (RAnalRef));
+	RAnalRef *ref;
+
+	ref = R_NEW (RAnalRef);
+	if (ref)
+		*ref = -1;
+	return ref;
 }
 
 R_API RList *r_anal_ref_list_new() {
@@ -18,10 +23,4 @@ R_API RList *r_anal_ref_list_new() {
 
 R_API void r_anal_ref_free(void *ref) {
 	free (ref);
-}
-
-R_API RAnalRef *r_anal_ref_init(RAnalRef *ref) {
-	if (ref)
-		*ref = -1;
-	return ref;
 }

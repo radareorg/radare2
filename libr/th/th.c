@@ -9,17 +9,17 @@ static void *_r_th_launcher(void *_th) {
 	th->ready = R_TRUE;
 #if __UNIX__
 	if (th->delay>0) sleep(th->delay);
-	else if (th->delay<0) r_th_lock_wait(&th->lock);
+	else if (th->delay<0) r_th_lock_wait(th->lock);
 #else
-	if (th->delay<0) r_th_lock_wait(&th->lock);
+	if (th->delay<0) r_th_lock_wait(th->lock);
 #endif
 
 	do {
-		r_th_lock_leave(&th->lock);
+		r_th_lock_leave(th->lock);
 		th->running = R_TRUE;
 		ret = th->fun(th);
 		th->running = R_FALSE;
-		r_th_lock_enter(&th->lock);
+		r_th_lock_enter(th->lock);
 	} while(ret);
 
 #if HAVE_PTHREAD
@@ -28,35 +28,31 @@ static void *_r_th_launcher(void *_th) {
 	return 0;
 }
 
-R_API int r_th_init(struct r_th_t *th, R_TH_FUNCTION(fun), void *user, int delay) {
-	int ret = R_TRUE;
-
-	r_th_lock_init(&th->lock);
-	th->running = R_FALSE;
-	th->fun = fun;	
-	th->user = user;
-	th->delay = delay;
-	th->breaked = R_FALSE;
-	th->ready = R_FALSE;
-#if HAVE_PTHREAD
-	if (pthread_create(&th->tid, NULL, _r_th_launcher, th))
-		ret = R_FALSE;
-#elif __WIN32__
-	th->tid = CreateThread(NULL, 0, _r_th_launcher, th, 0, &th->tid);
-#endif
-	return ret;
-}
-
 R_API int r_th_push_task(struct r_th_t *th, void *user) {
 	int ret = R_TRUE;
 	th->user = user;
-	r_th_lock_leave(&th->lock);
+	r_th_lock_leave(th->lock);
 	return ret;
 }
 
 R_API struct r_th_t *r_th_new(R_TH_FUNCTION(fun), void *user, int delay) {
-	struct r_th_t *th = R_NEW (struct r_th_t);
-	r_th_init (th, fun, user, delay);
+	RThread *th;
+	
+	th = R_NEW (RThread);
+	if (th) {
+		th->lock = r_th_lock_new();
+		th->running = R_FALSE;
+		th->fun = fun;	
+		th->user = user;
+		th->delay = delay;
+		th->breaked = R_FALSE;
+		th->ready = R_FALSE;
+#if HAVE_PTHREAD
+		pthread_create(&th->tid, NULL, _r_th_launcher, th);
+#elif __WIN32__
+		th->tid = CreateThread(NULL, 0, _r_th_launcher, th, 0, &th->tid);
+#endif
+	}
 	return th;
 }
 
@@ -80,13 +76,13 @@ R_API int r_th_start(struct r_th_t *th, int enable) {
 		if (!th->running) {
 			// start thread
 			while (!th->ready);
-			r_th_lock_leave (&th->lock);
+			r_th_lock_leave (th->lock);
 		}
 	} else {
 		if (th->running) {
 			// stop thread
 			r_th_kill (th, 0);
-			r_th_lock_enter (&th->lock); // deadlock?
+			r_th_lock_enter (th->lock); // deadlock?
 		}
 	}
 	th->running = enable;
@@ -109,6 +105,7 @@ R_API int r_th_wait_async(struct r_th_t *th) {
 
 R_API void *r_th_free(struct r_th_t *th) {
 	r_th_kill (th, R_TRUE);
+	r_th_lock_free (th->lock);
 	free (th);
 	return NULL;
 }

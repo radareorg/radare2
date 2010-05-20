@@ -281,18 +281,17 @@ R_API void r_config_lock(RConfig *cfg, int l) {
 	cfg->lock = l;
 }
 
-R_API int r_config_init(RConfig *cfg, void *user) {
-	cfg->user = user;
-	cfg->n_nodes = 0;
-	cfg->lock = 0;
-	cfg->printf = (void *)printf;
-	INIT_LIST_HEAD (&(cfg->nodes));
-	return 0;
-}
-
 R_API RConfig *r_config_new(void *user) {
-	RConfig *cfg = R_NEW (RConfig);
-	r_config_init (cfg, user);
+	RConfig *cfg;
+	
+	cfg = R_NEW (RConfig);
+	if (cfg) {
+		cfg->user = user;
+		cfg->n_nodes = 0;
+		cfg->lock = 0;
+		cfg->printf = (void *)printf;
+		INIT_LIST_HEAD (&(cfg->nodes));
+	}
 	return cfg;
 }
 

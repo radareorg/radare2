@@ -12,7 +12,6 @@ public class RAnal {
 	public RList <VariableType> vartypes;
 
 	public RAnal ();
-	//public weak RAnal init ();
 	public bool set_bits (int bits);
 	public bool set_big_endian (bool big);
 	//public bool set_pc (uint64 addr);

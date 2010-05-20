@@ -7,15 +7,15 @@ Configurable options:
  - allow dupped nodes? (two times the same pointer?)
 #endif
 
-R_API void r_db_init(struct r_db_t *db) {
-	memset(&db->blocks, '\0', sizeof(db->blocks));
-	db->id_min = -1;
-	db->id_max = -1;
-}
-
 R_API struct r_db_t *r_db_new() {
-	struct r_db_t *db = (struct r_db_t *)malloc(sizeof(struct r_db_t));
-	r_db_init(db);
+	struct r_db_t *db;
+	
+	db = R_NEW (RDatabase);
+	if (db) {
+		memset(&db->blocks, '\0', sizeof(db->blocks));
+		db->id_min = -1;
+		db->id_max = -1;
+	}
 	return db;
 }
 

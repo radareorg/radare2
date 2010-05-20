@@ -56,7 +56,6 @@ public class Radare.RAsm {
 	public void *aux;
 
 	public RAsm();
-	public unowned RAsm init();
 	public int list();
 	public bool use(string name);
 	public bool set_bits(int bits);

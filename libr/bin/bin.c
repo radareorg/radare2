@@ -127,15 +127,6 @@ R_API void* r_bin_free(RBin *bin) {
 	return NULL;
 }
 
-R_API int r_bin_init(RBin *bin) {
-	int i;
-	memset (bin, 0, sizeof(RBin));
-	INIT_LIST_HEAD (&bin->bins);
-	for (i=0;bin_static_plugins[i];i++)
-		r_bin_add (bin, bin_static_plugins[i]);
-	return R_TRUE;
-}
-
 R_API int r_bin_list(RBin *bin) {
 	struct list_head *pos;
 
@@ -243,9 +234,15 @@ R_API int r_bin_has_dbg_relocs (RBin *bin) {
 
 R_API RBin* r_bin_new() {
 	RBin *bin; 
-	if (!(bin = R_NEW (RBin)))
-		return NULL;
-	r_bin_init (bin);
+	int i;
+
+	bin = R_NEW (RBin);
+	if (bin) {
+		memset (bin, 0, sizeof(RBin));
+		INIT_LIST_HEAD (&bin->bins);
+		for (i=0;bin_static_plugins[i];i++)
+			r_bin_add (bin, bin_static_plugins[i]);
+	}
 	return bin;
 }
 

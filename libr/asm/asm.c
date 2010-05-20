@@ -47,7 +47,22 @@ static inline int r_asm_pseudo_byte(struct r_asm_aop_t *aop, char *input) {
 }
 
 R_API RAsm *r_asm_new() {
-	return r_asm_init (R_NEW (RAsm));
+	RAsm *a;
+	int i;
+
+	a = R_NEW (RAsm);
+	if (a) {
+		a->user = NULL;
+		a->cur = NULL;
+		a->bits = 32;
+		a->big_endian = 0;
+		a->syntax = R_ASM_SYNTAX_INTEL;
+		a->pc = 0;
+		INIT_LIST_HEAD (&a->asms);
+		for (i=0; asm_static_plugins[i]; i++)
+			r_asm_add (a, asm_static_plugins[i]);
+	}
+	return a;
 }
 
 R_API void r_asm_free(struct r_asm_t *a) {
@@ -64,22 +79,6 @@ R_API const char *r_asm_fastcall(struct r_asm_t *a, int idx, int num) {
 	if (fastcall && idx<=num)
 		ret = fastcall[num].arg[idx];
 	return ret;
-}
-
-R_API struct r_asm_t *r_asm_init(struct r_asm_t *a) {
-	int i;
-	if (a) {
-		a->user = NULL;
-		a->cur = NULL;
-		a->bits = 32;
-		a->big_endian = 0;
-		a->syntax = R_ASM_SYNTAX_INTEL;
-		a->pc = 0;
-		INIT_LIST_HEAD (&a->asms);
-		for (i=0; asm_static_plugins[i]; i++)
-			r_asm_add (a, asm_static_plugins[i]);
-	}
-	return a;
 }
 
 R_API void r_asm_set_user_ptr(struct r_asm_t *a, void *user) {

@@ -13,15 +13,11 @@ R_API RLine *r_line_singleton () {
 	return &r_line_instance;
 }
 
-R_API RLine *r_line_init () {
+R_API RLine *r_line_new () {
 	I.prompt = strdup ("> ");
 	if (!r_line_dietline_init ())
 		eprintf ("error: r_line_dietline_init\n");
 	return &I;
-}
-
-R_API RLine *r_line_new () {
-	return r_line_init ();
 }
 
 R_API void r_line_free () {

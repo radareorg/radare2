@@ -18,9 +18,9 @@ int main(int argc, char **argv) {
 	int c;
 	int action = 0;
 	int rad = 0;
-	RSign sig;
+	RSign *sig;
 
-	r_sign_init (&sig);
+	sig = r_sign_new ();
 
 	while ((c=getopt (argc, argv, "o:hrs:iV")) !=-1) {
 		switch (c) {
@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
 	if (argv[optind]==NULL)
 		return rasign_show_help ();
 
-	r_sign_list (&sig, 0);
+	r_sign_list (sig, 0);
 
 	switch (action) {
 	case 's':
@@ -57,5 +57,8 @@ int main(int argc, char **argv) {
 		//r_sign_generate (&sig, argv[optind], stdout);
 		break;
 	}
+
+	r_sign_free (sig);
+
 	return 0;
 }

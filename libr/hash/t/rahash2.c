@@ -6,32 +6,32 @@
 
 static int do_hash(const char *algo, const ut8 *buf, int len, int bsize)
 {
-	struct r_hash_t ctx;
+	struct r_hash_t *ctx;
 	const ut8 *c;
 	int i, j, dlen;
 	ut64 algobit = r_hash_name_to_bits (algo);
+
 	if (algobit == R_HASH_NONE) {
 		fprintf(stderr, "Invalid hashing algorithm specified\n");
 		return 1;
 	}
 	if (bsize>len)
 		bsize = len;
-
-	r_hash_init(&ctx, R_TRUE, algobit);
-
+	ctx = r_hash_new (R_TRUE, algobit);
 	/* iterate over all algorithm bits */
 	for(i=1;i<0xf00000;i<<=1) {
 		if (algobit & i) {
-			dlen = r_hash_calculate(&ctx, algobit&i, buf, len);
+			dlen = r_hash_calculate(ctx, algobit&i, buf, len);
 			if (dlen) {
-				c = ctx.digest;
+				c = ctx->digest;
 				printf("%s: ", r_hash_name(i));
 				for(j=0;j<dlen;j++)
 					printf("%02x", c[j]);
 				printf("\n");
 			}
 		}
-	}
+	} 
+	r_hash_free (ctx);
 	return 0;
 }
 

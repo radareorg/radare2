@@ -131,8 +131,8 @@ R_API int r_core_init(RCore *core) {
 	core->bin = r_bin_new ();
 	r_bin_set_user_ptr (core->bin, core);
 	core->meta = r_meta_new ();
-	r_cons_init ();
-	r_line_init ();
+	r_cons_new ();
+	r_line_new ();
 	core->io = r_io_new ();
 	core->sign = r_sign_new ();
 	r_cons_singleton()->user_fgets = (void *)myfgets;

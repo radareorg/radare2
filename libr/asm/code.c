@@ -4,20 +4,17 @@
 #include <r_asm.h>
 
 R_API RAsmCode *r_asm_code_new() {
-	RAsmCode *acode = R_NEW (RAsmCode);
-	if (!acode)
-		return NULL;
-	r_asm_code_init(acode);
+	RAsmCode *acode;
+	
+	acode = R_NEW (RAsmCode);
+	if (acode) {
+		acode->len = 0;
+		acode->equs = NULL;
+		acode->buf_asm = NULL;
+		acode->buf_hex = NULL;
+		acode->buf = NULL;
+	}
 	return acode;
-}
-
-R_API int r_asm_code_init(struct r_asm_code_t *acode) {
-	acode->len = 0;
-	acode->equs = NULL;
-	acode->buf_asm = NULL;
-	acode->buf_hex = NULL;
-	acode->buf = NULL;
-	return R_TRUE;
 }
 
 R_API void* r_asm_code_free(struct r_asm_code_t *acode) {

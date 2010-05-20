@@ -37,7 +37,6 @@ typedef struct r_config_t {
 #ifdef R_API
 R_API RConfig *r_config_new(void *user);
 R_API int r_config_free(RConfig *cfg);
-R_API int r_config_init(RConfig *core, void *user);
 R_API void r_config_lock(RConfig *cfg, int l);
 R_API int r_config_eval(RConfig *cfg, const char *str);
 R_API struct r_config_node_t *r_config_set_i(RConfig *cfg, const char *name, const ut64 i);

@@ -31,7 +31,6 @@ typedef int (*RDiffCallback)(RDiff *diff, void *user, RDiffOp *op);
 /* XXX: this api needs to be reviewed , constructor with offa+offb?? */
 #ifdef R_API
 R_API struct r_diff_t *r_diff_new(ut64 off_a, ut64 off_b);
-R_API int r_diff_init(struct r_diff_t *d, ut64 off_a, ut64 off_b);
 R_API struct r_diff_t *r_diff_free(struct r_diff_t *d);
 
 R_API int r_diff_buffers(struct r_diff_t *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb);

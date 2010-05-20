@@ -82,7 +82,6 @@ typedef struct r_bp_trace_t {
 } RBreakpointTrace;
 
 #ifdef R_API
-R_API RBreakpoint *r_bp_init(RBreakpoint *bp);
 R_API RBreakpoint *r_bp_new();
 R_API RBreakpoint *r_bp_free(RBreakpoint *bp);
 

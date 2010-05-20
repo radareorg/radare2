@@ -48,7 +48,6 @@ typedef struct r_line_t {
 //extern RLine r_line_instance;
 R_API RLine *r_line_new ();
 R_API RLine *r_line_singleton ();
-R_API RLine *r_line_init();
 R_API void r_line_free ();
 
 R_API int r_line_hist_load(const char *file);

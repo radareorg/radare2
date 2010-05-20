@@ -9,8 +9,8 @@
 #include <r_util.h>
 #include <r_lib.h>
 
-static struct r_lib_t l;
-static struct r_asm_t a;
+static struct r_lib_t *l;
+static struct r_asm_t *a;
 static int coutput = R_FALSE;
 
 static int rasm_show_help() {
@@ -58,8 +58,8 @@ static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin) {
 	if (!len || clen <= len)
 		len = clen;
 
-	r_asm_set_pc (&a, offset);
-	if (!(acode = r_asm_mdisassemble (&a, data, len)))
+	r_asm_set_pc (a, offset);
+	if (!(acode = r_asm_mdisassemble (a, data, len)))
 		return 0;
 	printf ("%s\n", acode->buf_asm);
 	ret = acode->len;
@@ -95,15 +95,15 @@ static int rasm_asm(char *buf, ut64 offset, ut64 len, int bin) {
 		return 1;
 	}
 #endif 
-	r_asm_set_pc (&a, offset);
-	if (!(acode = r_asm_massemble (&a, buf)))
+	r_asm_set_pc (a, offset);
+	if (!(acode = r_asm_massemble (a, buf)))
 		return 0;
 	if (bin)
 		for (i = 0; i < acode->len; i++)
 			printf ("%c", acode->buf[i]);
 	else print_buf (acode->buf_hex);
 	for (ret = 0, idx = acode->len; idx < len; idx+=ret) {
-		if (!(ret = r_asm_assemble (&a, &aop, "nop")))
+		if (!(ret = r_asm_assemble (a, &aop, "nop")))
 			return 0;
 		if (bin)
 			for (i = 0; i < ret; i++)
@@ -119,7 +119,7 @@ static int rasm_asm(char *buf, ut64 offset, ut64 len, int bin) {
 static int __lib_asm_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 {
 	RAsmHandle *hand = (struct r_asm_handle_t *)data;
-	r_asm_add (&a, hand);
+	r_asm_add (a, hand);
 	return R_TRUE;
 }
 static int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
@@ -131,16 +131,16 @@ int main(int argc, char *argv[])
 	int dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c;
 	ut64 len = 0, idx = 0;
 
-	r_asm_init (&a);
-	r_lib_init (&l, "radare_plugin");
-	r_lib_add_handler (&l, R_LIB_TYPE_ASM, "(dis)assembly plugins",
+	a = r_asm_new ();
+	l = r_lib_new ("radare_plugin");
+	r_lib_add_handler (l, R_LIB_TYPE_ASM, "(dis)assembly plugins",
 		&__lib_asm_cb, &__lib_asm_dt, NULL);
-	r_lib_opendir (&l, r_sys_getenv ("LIBR_PLUGINS"));
+	r_lib_opendir (l, r_sys_getenv ("LIBR_PLUGINS"));
 
 	if (argc<2)
 		return rasm_show_help ();
 
-	r_asm_use (&a, "x86"); // XXX: do not harcode default arch
+	r_asm_use (a, "x86"); // XXX: do not harcode default arch
 	while ((c = getopt (argc, argv, "CVa:b:s:do:Bl:hLf:")) != -1) {
 		switch (c) {
 		case 'f':
@@ -157,8 +157,8 @@ int main(int argc, char *argv[])
 			break;
 		case 's':
 			if (!strcmp (optarg, "att"))
-				r_asm_set_syntax (&a, R_ASM_SYNTAX_ATT);
-			else r_asm_set_syntax (&a, R_ASM_SYNTAX_INTEL);
+				r_asm_set_syntax (a, R_ASM_SYNTAX_ATT);
+			else r_asm_set_syntax (a, R_ASM_SYNTAX_INTEL);
 			break;
 		case 'd':
 			dis = 1;
@@ -173,10 +173,10 @@ int main(int argc, char *argv[])
 			len = r_num_math (NULL, optarg);
 			break;
 		case 'L':
-			r_asm_list (&a);
+			r_asm_list (a);
 			exit (1);
 		case 'e':
-			r_asm_set_big_endian (&a, R_TRUE);
+			r_asm_set_big_endian (a, R_TRUE);
 			break;
 		case 'V':
 			printf ("rasm2 v"VERSION"\n");
@@ -187,17 +187,17 @@ int main(int argc, char *argv[])
 	}
 
 	if (arch) {
-		if (!r_asm_use (&a, arch)) {
+		if (!r_asm_use (a, arch)) {
 			eprintf ("Error: Unknown asm plugin '%s'\n", arch);
 			return 0;
 		}
 		if (!strcmp (arch, "bf"))
 			ascii = 1;
-	} else if (!r_asm_use (&a, "x86")) {
+	} else if (!r_asm_use (a, "x86")) {
 		eprintf ("Error: Cannot find asm.x86 plugin\n");
 		return 0;
 	}
-	if (!r_asm_set_bits (&a, bits))
+	if (!r_asm_set_bits (a, bits))
 		eprintf ("cannot set bits (triying with 32)\n");
 
 	if (file) {

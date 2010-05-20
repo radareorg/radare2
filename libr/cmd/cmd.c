@@ -3,8 +3,11 @@
 #include <r_cmd.h>
 #include <r_util.h>
 
-R_API RCmd *r_cmd_init(RCmd *cmd) {
+R_API RCmd *r_cmd_new () {
+	RCmd *cmd;
 	int i;
+
+	cmd = R_NEW (RCmd);
 	if (cmd) {
 		INIT_LIST_HEAD (&cmd->lcmds);
 		for (i=0;i<255;i++)
@@ -14,10 +17,6 @@ R_API RCmd *r_cmd_init(RCmd *cmd) {
 	r_cmd_handle_init (cmd);
 	r_cmd_macro_init (&cmd->macro);
 	return cmd;
-}
-
-R_API RCmd *r_cmd_new () {
-	return r_cmd_init (R_NEW (RCmd));
 }
 
 R_API int r_cmd_set_data(struct r_cmd_t *cmd, void *data) {

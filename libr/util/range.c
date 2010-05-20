@@ -10,18 +10,15 @@
 
 //void (*ranges_new_callback)(struct range_t *r) = NULL;
 
-R_API int r_range_init(RRange *r) {
-	r->count = 0;
-	r->changed = 0;
-	INIT_LIST_HEAD (&r->ranges);
-	return 0;
-}
-
 R_API RRange *r_range_new() {
-	RRange *r = R_NEW (RRange);
-	if (r == NULL)
-		return NULL;
-	r_range_init (r);
+	RRange *r;
+
+	r = R_NEW (RRange);
+	if (r) {
+		r->count = 0;
+		r->changed = 0;
+		INIT_LIST_HEAD (&r->ranges);
+	}
 	return r;
 }
 

@@ -148,8 +148,7 @@ R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo
 R_API int r_debug_handle_init(struct r_debug_t *dbg);
 R_API int r_debug_handle_list(struct r_debug_t *dbg);
 
-R_API struct r_debug_t *r_debug_init(struct r_debug_t *dbg, int hard);
-R_API struct r_debug_t *r_debug_new();
+R_API struct r_debug_t *r_debug_new(int hard);
 R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg);
 
 /* send signals */

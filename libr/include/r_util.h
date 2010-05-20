@@ -134,7 +134,6 @@ enum {
 R_API RNum *r_num_new(RNumCallback cb, void *ptr);
 
 #define R_BUF_CUR -1
-R_API RBuffer *r_buf_init(RBuffer *b);
 R_API RBuffer *r_buf_new();
 R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value);
 R_API int r_buf_set_bytes(RBuffer *b, ut8 *buf, int length);
@@ -145,12 +144,10 @@ R_API int r_buf_fwrite_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int
 R_API void r_buf_free(RBuffer *b);
 
 R_API struct r_mem_pool_t* r_mem_pool_deinit(struct r_mem_pool_t *pool);
-R_API struct r_mem_pool_t* r_mem_pool_init(struct r_mem_pool_t *pool, int nodesize, int poolsize, int poolcount);
 R_API struct r_mem_pool_t *r_mem_pool_new(int nodesize, int poolsize, int poolcount);
 R_API struct r_mem_pool_t *r_mem_pool_free(struct r_mem_pool_t *pool);
 R_API void* r_mem_pool_alloc(struct r_mem_pool_t *pool);
 R_API int r_mem_count(ut8 **addr);
-R_API void r_cache_init(struct r_cache_t *lang);
 R_API RCache* r_cache_new();
 R_API void r_cache_free(struct r_cache_t *c);
 R_API char *r_cache_get(struct r_cache_t *c, ut64 addr);
@@ -173,7 +170,6 @@ R_API void r_num_minmax_swap(ut64 *a, ut64 *b);
 R_API void r_num_minmax_swap_i(int *a, int *b); // XXX this can be a cpp macro :??
 R_API ut64 r_num_math(struct r_num_t *num, const char *str);
 R_API ut64 r_num_get(struct r_num_t *num, const char *str);
-R_API void r_num_init(struct r_num_t *num);
 
 /* TODO ..use as uppercase maybe? they are macros! */
 #define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
@@ -282,7 +278,6 @@ R_API int r_log_error(const char *str);
 R_API int r_log_progress(const char *str, int percent);
 
 /* Ranges */
-R_API int r_range_init(struct r_range_t *r);
 R_API RRange *r_range_new();
 R_API RRange *r_range_new_from_string(const char *string);
 R_API RRange *r_range_free(RRange *r);

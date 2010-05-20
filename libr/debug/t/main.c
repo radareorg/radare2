@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	dbg = r_debug_new ();
+	dbg = r_debug_new (R_TRUE);
 	printf("Supported debugger backends:\n");
 
 	ret = r_debug_use (dbg, "native");

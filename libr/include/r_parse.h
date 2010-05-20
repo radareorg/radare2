@@ -30,7 +30,6 @@ typedef struct r_parse_handle_t {
 /* parse.c */
 R_API struct r_parse_t *r_parse_new();
 R_API void r_parse_free(struct r_parse_t *p);
-R_API struct r_parse_t *r_parse_init(struct r_parse_t *p);
 R_API void r_parse_set_user_ptr(struct r_parse_t *p, void *user);
 R_API int r_parse_add(struct r_parse_t *p, struct r_parse_handle_t *foo);
 R_API int r_parse_list(struct r_parse_t *p);

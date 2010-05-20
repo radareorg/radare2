@@ -12,8 +12,8 @@ static int complete (void *pline) {
 int main()
 {
 	const char *str;
-	RLine *line = r_line_init ();
-	r_cons_init ();
+	RLine *line = r_line_new ();
+	r_cons_new ();
 
 	line->completion.run = complete;
 

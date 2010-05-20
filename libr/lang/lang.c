@@ -3,18 +3,16 @@
 #include <r_lang.h>
 #include <r_util.h>
 
-R_API RLang *r_lang_init(RLang *lang) {
+R_API RLang *r_lang_new() {
+	RLang *lang;
+	
+	lang = R_NEW (RLang);
 	if (lang) {
 		lang->user = NULL;
 		INIT_LIST_HEAD (&lang->langs);
 		INIT_LIST_HEAD (&lang->defs);
 	}
 	return lang;
-}
-
-R_API RLang *r_lang_new() {
-	RLang *lang = R_NEW (RLang);
-	return r_lang_init (lang);
 }
 
 R_API void *r_lang_free(RLang *lang) {

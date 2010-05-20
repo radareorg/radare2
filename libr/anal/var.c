@@ -7,15 +7,32 @@
 #include <r_list.h>
 
 R_API RAnalVar *r_anal_var_new() {
-	return r_anal_var_init (R_NEW (RAnalVar));
+	RAnalVar *var;
+
+	var = R_NEW (RAnalVar);
+	if (var) {
+		memset (var, 0, sizeof (RAnalVar));
+		var->accesses = r_anal_var_access_list_new ();
+	}
+	return var;
 }
 
 R_API RAnalVarType *r_anal_var_type_new() {
-	return r_anal_var_type_init (R_NEW (RAnalVarType));
+	RAnalVarType *vartype;
+
+	vartype = R_NEW (RAnalVarType);
+	if (vartype)
+		memset (vartype, 0, sizeof (RAnalVarType));
+	return vartype;
 }
 
 R_API RAnalVarAccess *r_anal_var_access_new() {
-	return r_anal_var_access_init (R_NEW (RAnalVarAccess));
+	RAnalVarAccess *access;
+
+	access = R_NEW (RAnalVarAccess);
+	if (access)
+		memset (access, 0, sizeof (RAnalVarAccess));
+	return access;
 }
 
 R_API RList *r_anal_var_list_new() {
@@ -60,26 +77,6 @@ R_API void r_anal_var_type_free(void *vartype) {
 
 R_API void r_anal_var_access_free(void *access) {
 	free (access);
-}
-
-R_API RAnalVar *r_anal_var_init(RAnalVar *var) {
-	if (var) {
-		memset (var, 0, sizeof (RAnalVar));
-		var->accesses = r_anal_var_access_list_new ();
-	}
-	return var;
-}
-
-R_API RAnalVarType *r_anal_var_type_init(RAnalVarType *vartype) {
-	if (vartype)
-		memset (vartype, 0, sizeof (RAnalVarType));
-	return vartype;
-}
-
-R_API RAnalVarAccess *r_anal_var_access_init(RAnalVarAccess *access) {
-	if (access)
-		memset (access, 0, sizeof (RAnalVarAccess));
-	return access;
 }
 
 R_API int r_anal_var_type_add(RAnal *anal, const char *name, int size, const char *fmt) {

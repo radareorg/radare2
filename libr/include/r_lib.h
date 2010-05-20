@@ -84,7 +84,6 @@ R_API int r_lib_dl_check_filename(const char *file);
 
 /* high level api */
 R_API struct r_lib_t *r_lib_new(const char *symname);
-R_API struct r_lib_t *r_lib_init(struct r_lib_t *lib, const char *symname);
 R_API struct r_lib_t *r_lib_free(struct r_lib_t *lib);
 R_API int r_lib_run_handler(struct r_lib_t *lib, struct r_lib_plugin_t *plugin, struct r_lib_struct_t *symbol);
 R_API struct r_lib_handler_t *r_lib_get_handler(struct r_lib_t *lib, int type);

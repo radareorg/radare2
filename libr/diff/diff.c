@@ -2,17 +2,16 @@
 
 #include <r_diff.h>
 
-R_API int r_diff_init(RDiff *d, ut64 off_a, ut64 off_b) {
-	d->delta = 1;
-	d->user = NULL;
-	d->off_a = off_a;
-	d->off_b = off_b;
-	return 1;
-}
-
 R_API RDiff *r_diff_new(ut64 off_a, ut64 off_b) {
-	RDiff *d = R_NEW (RDiff);
-	r_diff_init (d, off_a, off_b);
+	RDiff *d;
+	
+	d = R_NEW (RDiff);
+	if (d) {
+		d->delta = 1;
+		d->user = NULL;
+		d->off_a = off_a;
+		d->off_b = off_b;
+	}
 	return d;
 }
 

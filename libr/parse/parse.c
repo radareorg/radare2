@@ -11,23 +11,21 @@ static struct r_parse_handle_t *parse_static_plugins[] =
 	{ R_PARSE_STATIC_PLUGINS };
 
 R_API struct r_parse_t *r_parse_new() {
-	struct r_parse_t *p = R_NEW(struct r_parse_t);
-	return r_parse_init(p);
-}
-
-R_API void r_parse_free(struct r_parse_t *p) {
-	free(p);
-}
-
-R_API struct r_parse_t *r_parse_init(struct r_parse_t *p) {
+	RParse *p;
+	int i;
+	
+	p = R_NEW(RParse);
 	if (p) {
-		int i;
 		p->user = NULL;
 		INIT_LIST_HEAD(&p->parsers);
 		for(i=0;parse_static_plugins[i];i++)
 			r_parse_add(p, parse_static_plugins[i]);
 	}
 	return p;
+}
+
+R_API void r_parse_free(struct r_parse_t *p) {
+	free(p);
 }
 
 R_API void r_parse_set_user_ptr(struct r_parse_t *p, void *user) {

@@ -23,11 +23,6 @@ R_API RSyscall* r_syscall_new() {
 	return ctx;
 }
 
-R_API void r_syscall_init(RSyscall *ctx) {
-	ctx->fd = NULL;
-	ctx->sysptr = syscalls_linux_x86;
-}
-
 R_API void r_syscall_free(RSyscall *ctx) {
 	free (ctx);
 }

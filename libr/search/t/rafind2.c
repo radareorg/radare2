@@ -12,7 +12,7 @@
 #include <r_lib.h>
 #include <r_io.h>
 
-static struct r_io_t io;
+static struct r_io_t *io;
 static int fd = -1;
 static int rad = 0;
 struct r_search_t *rs;
@@ -72,20 +72,20 @@ static int show_help(char *argv0, int line) {
 static int rafind_open(char *file) {
 	int ret, last = 0;
 	struct list_head *pos;
-	r_io_init(&io);
+	io = r_io_new();
 	
-	fd = r_io_open(&io, file, R_IO_READ, 0);
+	fd = r_io_open(io, file, R_IO_READ, 0);
 	if (fd == -1) {
 		fprintf (stderr, "Cannot open file '%s'\n", file);
 		return 1;
 	}
 
-	r_cons_init();
+	r_cons_new();
 	rs = r_search_new(mode);
 	buffer = malloc(bsize);
 	r_search_set_callback(rs, &hit, buffer);
 	if (to == -1) {
-		to = r_io_size(&io, fd);
+		to = r_io_size(io, fd);
 	}
 	if (mode == R_SEARCH_KEYWORD) {
 		list_for_each(pos, &(kws_head)) {
@@ -98,14 +98,14 @@ static int rafind_open(char *file) {
 	}
 	curfile = file;
 	r_search_begin(rs);
-	r_io_seek(&io, from, R_IO_SEEK_SET);
+	r_io_seek(io, from, R_IO_SEEK_SET);
 	//printf("; %s 0x%08"PFMT64x"-0x%08"PFMT64x"\n", file, from, to);
 	for(cur=from; !last && cur<to;cur+=bsize) {
 		if ((cur+bsize)>to) {
 			bsize = to-cur;
 			last=1;
 		}
-		ret = r_io_read(&io, buffer, bsize);
+		ret = r_io_read(io, buffer, bsize);
 		if (ret == 0) {
 			if (nonstop) continue;
 		//	fprintf(stderr, "Error reading at 0x%08"PFMT64x"\n", cur);
@@ -177,6 +177,8 @@ int main(int argc, char **argv) {
 
 	for (;optind < argc;optind++)
 		rafind_open(argv[optind]);
+	
+	r_search_free (rs);
 
 	return 0;
 }

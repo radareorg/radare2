@@ -40,7 +40,6 @@ typedef struct r_flag_t {
 #ifdef R_API
 R_API struct r_flag_t * r_flag_new();
 R_API RFlag * r_flag_free(RFlag *f);
-R_API int r_flag_init(struct r_flag_t *f);
 R_API void r_flag_list(struct r_flag_t *f, int rad);
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name);
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off);

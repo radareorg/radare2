@@ -5,7 +5,7 @@ int main()
 {
 	char buf[1024];
 
-	r_cons_init();
+	r_cons_new();
 
 	r_cons_strcat("Hello World\n");
 	r_cons_flush();

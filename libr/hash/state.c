@@ -10,21 +10,19 @@ void mdfour(ut8 *out, const ut8 *in, int n);
 
 #define CHKFLAG(f,x) if (f==0||f&x)
 
-R_API void r_hash_init(struct r_hash_t *ctx, int rst, int flags)
+R_API struct r_hash_t *r_hash_new(int rst, int flags)
 {
-	CHKFLAG(flags,R_HASH_MD5)    MD5Init(&ctx->md5);
-	CHKFLAG(flags,R_HASH_SHA1)   SHA1_Init(&ctx->sha1);
-	CHKFLAG(flags,R_HASH_SHA256) SHA256_Init(&ctx->sha256);
-	CHKFLAG(flags,R_HASH_SHA384) SHA384_Init(&ctx->sha384);
-	CHKFLAG(flags,R_HASH_SHA512) SHA512_Init(&ctx->sha512);
-	ctx->rst = rst;
-}
+	RHash *ctx;
 
-R_API struct r_hash_t *r_hash_new(int rst)
-{
-	struct r_hash_t *ctx;
-	ctx = malloc(sizeof(struct r_hash_t));
-	r_hash_init(ctx, rst, R_HASH_ALL);
+	ctx = R_NEW (RHash);
+	if (ctx) {
+		CHKFLAG(flags,R_HASH_MD5)    MD5Init(&ctx->md5);
+		CHKFLAG(flags,R_HASH_SHA1)   SHA1_Init(&ctx->sha1);
+		CHKFLAG(flags,R_HASH_SHA256) SHA256_Init(&ctx->sha256);
+		CHKFLAG(flags,R_HASH_SHA384) SHA384_Init(&ctx->sha384);
+		CHKFLAG(flags,R_HASH_SHA512) SHA512_Init(&ctx->sha512);
+		ctx->rst = rst;
+	}
 	return ctx;
 }
 

@@ -4,24 +4,20 @@
 
 /* locks/mutex/sems */
 
-R_API int r_th_lock_init(struct r_th_lock_t *thl)
-{
-	int ret;
-	thl->refs = 0;
-#if HAVE_PTHREAD
-	ret = pthread_mutex_init (&thl->lock, NULL)?R_TRUE:R_FALSE;
-#elif __WIN32__
-	//thl->lock = CreateSemaphore(NULL, 0, 1, NULL);
-	InitializeCriticalSection(&thl->lock);
-#endif
-	return ret;
-}
-
 R_API struct r_th_lock_t *r_th_lock_new()
 {
-	struct r_th_lock_t *thl = R_NEW(struct r_th_lock_t);
-	if (!r_th_lock_init(thl))
-		R_FREE(thl);
+	RThreadLock *thl;
+	
+	thl = R_NEW(RThreadLock);
+	if (thl) {
+		thl->refs = 0;
+#if HAVE_PTHREAD
+		pthread_mutex_init (&thl->lock, NULL);
+#elif __WIN32__
+		//thl->lock = CreateSemaphore(NULL, 0, 1, NULL);
+		InitializeCriticalSection(&thl->lock);
+#endif
+	}
 	return thl;
 }
 

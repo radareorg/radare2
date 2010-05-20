@@ -16,43 +16,43 @@ int cb(struct r_diff_t *d, void *user, struct r_diff_op_t *op)
 
 int test_equal()
 {
-	struct r_diff_t d;
+	struct r_diff_t *d;
 	char *bufa = "helloworld";
 	char *bufb = "heprswarld";
 
 	printf("Diffing '%s' vs '%s'\n", bufa, bufb);
-	r_diff_init(&d, 0, 0);
-	r_diff_set_delta(&d, 0);
-	r_diff_set_callback(&d, &cb, NULL);
-	r_diff_buffers(&d, (ut8*)bufa, strlen(bufa), (ut8*)bufb, strlen((char*)bufb));
+	d = r_diff_new (0, 0);
+	r_diff_set_delta(d, 0);
+	r_diff_set_callback(d, &cb, NULL);
+	r_diff_buffers(d, (ut8*)bufa, strlen(bufa), (ut8*)bufb, strlen((char*)bufb));
 	return 1;
 }
 
 int test_diff()
 {
-	struct r_diff_t d;
+	struct r_diff_t *d;
 	char *bufa = "hello";
 	char *bufb = "hellpworld";
 
 	printf("Truncated diffing '%s' vs '%s'\n", bufa, bufb);
-	r_diff_init(&d, 0, 0);
-	r_diff_set_delta(&d, 0);
-	r_diff_set_callback(&d, &cb, NULL);
-	r_diff_buffers(&d, (ut8*)bufa, strlen(bufa), (ut8*)bufb, strlen(bufb));
+	d = r_diff_new (0, 0);
+	r_diff_set_delta(d, 0);
+	r_diff_set_callback(d, &cb, NULL);
+	r_diff_buffers(d, (ut8*)bufa, strlen(bufa), (ut8*)bufb, strlen(bufb));
 	return 1;
 }
 
 int test_delta()
 {
-	struct r_diff_t d;
+	struct r_diff_t *d;
 	char *bufa = "hello";
 	char *bufb = "heprpworld";
 
 	printf("Delta diffing '%s' vs '%s'\n", bufa, bufb);
-	r_diff_init(&d, 0, 0);
-	r_diff_set_delta(&d, 1);
-	r_diff_set_callback(&d, &cb, NULL);
-	r_diff_buffers(&d, (ut8*)bufa, strlen(bufa), (ut8*)bufb, strlen(bufb));
+	r_diff_new(0, 0);
+	r_diff_set_delta(d, 1);
+	r_diff_set_callback(d, &cb, NULL);
+	r_diff_buffers(d, (ut8*)bufa, strlen(bufa), (ut8*)bufb, strlen(bufb));
 	return 1;
 }
 

@@ -28,7 +28,7 @@
 #define ACTION_LIBS      0x0200 
 #define ACTION_SRCLINE   0x0400 
 
-static struct r_lib_t l;
+static struct r_lib_t *l;
 static struct r_bin_t *bin = NULL;
 static int rad = R_FALSE;
 static int rw = R_FALSE;
@@ -520,15 +520,15 @@ int main(int argc, char **argv)
 	const char *plugin_name = NULL;
 
 	bin = r_bin_new ();
-	r_lib_init (&l, "radare_plugin");
-	r_lib_add_handler (&l, R_LIB_TYPE_BIN, "bin plugins",
+	l = r_lib_new ("radare_plugin");
+	r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
 					   &__lib_bin_cb, &__lib_bin_dt, NULL);
 
 	{ /* load plugins everywhere */
 		char *homeplugindir = r_str_home (".radare/plugins");
-		r_lib_opendir (&l, getenv ("LIBR_PLUGINS"));
-		r_lib_opendir (&l, homeplugindir);
-		r_lib_opendir (&l, LIBDIR"/radare2/");
+		r_lib_opendir (l, getenv ("LIBR_PLUGINS"));
+		r_lib_opendir (l, homeplugindir);
+		r_lib_opendir (l, LIBDIR"/radare2/");
 	}
 
 	while ((c = getopt (argc, argv, "m:@:VisSzIHelwO:o:f:rvLh")) != -1) {

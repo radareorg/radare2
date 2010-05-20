@@ -7,7 +7,17 @@
 #include <r_list.h>
 
 R_API RAnalBB *r_anal_bb_new() {
-	return r_anal_bb_init (R_NEW (RAnalBB));
+	RAnalBB *bb;
+	
+	bb = R_NEW (RAnalBB);
+	if (bb) {
+		memset (bb, 0, sizeof (RAnalBB));
+		bb->addr = -1;
+		bb->jump = -1;
+		bb->fail = -1;
+		bb->aops = r_anal_aop_list_new();
+	}
+	return bb;
 }
 
 R_API RList *r_anal_bb_list_new() {
@@ -20,17 +30,6 @@ R_API void r_anal_bb_free(void *bb) {
 	if (bb && ((RAnalBB*)bb)->aops)
 		r_list_destroy (((RAnalBB*)bb)->aops);
 	free (bb);
-}
-
-R_API RAnalBB *r_anal_bb_init(RAnalBB *bb) {
-	if (bb) {
-		memset (bb, 0, sizeof (RAnalBB));
-		bb->addr = -1;
-		bb->jump = -1;
-		bb->fail = -1;
-		bb->aops = r_anal_aop_list_new();
-	}
-	return bb;
 }
 
 R_API int r_anal_bb(RAnal *anal, RAnalBB *bb, ut64 addr, ut8 *buf, ut64 len) {

@@ -3,7 +3,6 @@ namespace Radare {
 	[Compact]
 	[CCode (cprefix="r_config_", cname="struct r_config_t", free_function="r_config_free")]
 	public class RConfig {
-		public void init (void *user);
 		//TODO: public void setup_file(string file);
 
 		public int eval(string str);

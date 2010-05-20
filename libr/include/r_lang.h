@@ -36,7 +36,6 @@ typedef struct r_lang_def_t {
 R_API struct r_lang_t *r_lang_new();
 R_API void *r_lang_free(struct r_lang_t *lang);
 R_API int r_lang_setup(RLang *lang);
-R_API struct r_lang_t *r_lang_init(struct r_lang_t *lang);
 R_API int r_lang_add(struct r_lang_t *lang, struct r_lang_handle_t *foo);
 R_API int r_lang_list(struct r_lang_t *lang);
 R_API int r_lang_use(struct r_lang_t *lang, const char *name);

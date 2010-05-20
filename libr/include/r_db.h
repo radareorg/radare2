@@ -37,7 +37,6 @@ typedef struct r_db_table_t {
 } RDatabaseTable;
 
 #ifdef R_API
-R_API void r_db_init(struct r_db_t *db);
 R_API struct r_db_t *r_db_new();
 R_API struct r_db_block_t *r_db_block_new();
 R_API int r_db_add_id(struct r_db_t *db, int off, int size);

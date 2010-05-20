@@ -160,7 +160,6 @@ R_API struct r_io_handle_t *r_io_handle_resolve(RIO *io, const char *filename);
 R_API struct r_io_handle_t *r_io_handle_resolve_fd(RIO *io, int fd);
 
 /* io/io.c */
-R_API RIO* r_io_init(RIO *io);
 R_API int r_io_set_write_mask(RIO *io, const ut8 *buf, int len);
 R_API int r_io_open(RIO *io, const char *file, int flags, int mode);
 R_API int r_io_open_as(RIO *io, const char *urihandler, const char *file, int flags, int mode);

@@ -2,14 +2,12 @@
 
 #include <r_meta.h>
 
-R_API int r_meta_init(struct r_meta_t *m) {
-	INIT_LIST_HEAD(&m->data);
-	return R_TRUE;
-}
-
 R_API struct r_meta_t *r_meta_new() {
-	struct r_meta_t *m = R_NEW(struct r_meta_t);
-	r_meta_init(m);
+	RMeta *m;
+	
+	m = R_NEW (RMeta);
+	if (m)
+		INIT_LIST_HEAD(&m->data);
 	return m;
 }
 

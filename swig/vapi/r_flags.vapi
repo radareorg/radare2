@@ -15,7 +15,6 @@ namespace Radare {
 	[CCode (cname="struct r_flag_t", free_function="r_flag_free", cprefix="r_flag_")]
 	public class RFlag {
 		public RFlag();
-		public int init();
 		public void list(bool rad);
 		public RFlagItem get(string name);
 		public RFlagItem get_i(uint64 addr);

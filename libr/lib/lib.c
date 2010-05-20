@@ -59,18 +59,16 @@ R_API int r_lib_dl_close(void *handle) {
 
 /* ---- */
 
-R_API RLib *r_lib_init(RLib *lib, const char *symname) {
+R_API RLib *r_lib_new(const char *symname) {
+	RLib *lib;
+	
+	lib = R_NEW (RLib);
 	if (lib) {
 		INIT_LIST_HEAD (&lib->handlers);
 		INIT_LIST_HEAD (&lib->plugins);
 		strncpy (lib->symname, symname, sizeof (lib->symname)-1);
 	}
 	return lib;
-}
-
-R_API RLib *r_lib_new(const char *symname) {
-	RLib *lib = R_NEW (RLib);
-	return r_lib_init (lib, symname);
 }
 
 R_API RLib *r_lib_free(RLib *lib) {

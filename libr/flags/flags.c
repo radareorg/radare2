@@ -32,20 +32,6 @@ static int cmp(const void *a, const void *b) {
 	return ret;
 }
 
-R_API int r_flag_init(RFlag *f) {
-	int i;
-	INIT_LIST_HEAD (&f->flags);
-	f->space_idx = -1;
-	f->space_idx2 = -1;
-#if USE_BTREE
-	btree_init (&f->tree);
-	btree_init (&f->ntree);
-#endif
-	for (i=0;i<R_FLAG_SPACES_MAX;i++)
-		f->space[i] = NULL;
-	return 0;
-}
-
 R_API int r_flag_sort(RFlag *f, int namesort) {
 	int ret = R_FALSE;
 	int changes;
@@ -92,8 +78,21 @@ R_API RFlag * r_flag_free(RFlag *f) {
 }
 
 R_API RFlag * r_flag_new() {
-	RFlag *f = R_NEW (RFlag);
-	r_flag_init (f);
+	RFlag *f;
+	int i;
+
+	f = R_NEW (RFlag);
+	if (f) {
+		INIT_LIST_HEAD (&f->flags);
+		f->space_idx = -1;
+		f->space_idx2 = -1;
+#if USE_BTREE
+		btree_init (&f->tree);
+		btree_init (&f->ntree);
+#endif
+		for (i=0;i<R_FLAG_SPACES_MAX;i++)
+			f->space[i] = NULL;
+	}
 	return f;
 }
 

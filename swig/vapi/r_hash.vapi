@@ -40,8 +40,6 @@ public class Radare.RHash {
 
 	/* methods */
 	public RHash(bool rst);
-//	public void init(int rst, Algorithm bits);
-	public void init(bool rst, int bits);
 	public uint8 *do_md4(uint8 *input, uint32 len);
 	public uint8 *do_md5(uint8 *input, uint32 len);
 	public uint8 *do_sha1(uint8 *input, uint32 len);

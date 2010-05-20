@@ -103,7 +103,6 @@ R_API const char *r_asm_fastcall(RAsm *a, int idx, int num);
 
 R_API void r_asm_free(RAsm *a);
 R_API void* r_asm_code_free(struct r_asm_code_t *acode);
-R_API RAsm *r_asm_init(RAsm *a);
 R_API int r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val);
 R_API void r_asm_set_user_ptr(RAsm *a, void *user);
 R_API int r_asm_add(RAsm *a, struct r_asm_handle_t *foo);
@@ -120,7 +119,6 @@ R_API struct r_asm_code_t* r_asm_massemble(RAsm *a, const char *buf);
 
 /* code.c */
 R_API RAsmCode *r_asm_code_new();
-R_API int r_asm_code_init(struct r_asm_code_t *acode);
 R_API void* r_asm_code_free(struct r_asm_code_t *acode);
 R_API int r_asm_code_set_equ (RAsmCode *code, const char *key, const char *value);
 R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str);

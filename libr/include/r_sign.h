@@ -34,7 +34,6 @@ typedef int (*RSignCallback)(RSignItem *si, void *user);
 
 #ifdef R_API
 R_API RSign *r_sign_new();
-R_API RSign *r_sign_init(RSign *sig);
 R_API int r_sign_add(RSign *sig, RAnal *anal, int type,
 		const char *name, const char *arg);
 R_API RSign *r_sign_free(RSign *sig);

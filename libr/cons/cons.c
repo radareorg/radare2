@@ -41,24 +41,6 @@ R_API void r_cons_break_end() {
 }
 
 R_API RCons *r_cons_new () {
-	r_cons_init ();
-	return &I;
-}
-
-R_API RCons *r_cons_free (RCons *foo) {
-	/* do nothing */
-	return NULL;
-}
-
-#if __WINDOWS__
-static HANDLE h;
-static BOOL __w32_control(DWORD type) {
-	if (type == CTRL_C_EVENT)
-		break_signal (2); // SIGINT
-}
-#endif
-
-R_API int r_cons_init() {
 	I.is_interactive = R_TRUE;
 	I.breaked = R_FALSE;
 	I.noflush = R_FALSE;
@@ -87,8 +69,21 @@ R_API int r_cons_init() {
 #endif
 	//r_cons_palette_init(NULL);
 	r_cons_reset ();
-	return R_TRUE;
+	return &I;
 }
+
+R_API RCons *r_cons_free (RCons *foo) {
+	/* do nothing */
+	return NULL;
+}
+
+#if __WINDOWS__
+static HANDLE h;
+static BOOL __w32_control(DWORD type) {
+	if (type == CTRL_C_EVENT)
+		break_signal (2); // SIGINT
+}
+#endif
 
 #define MOAR 4096*4
 static void palloc(int moar) {

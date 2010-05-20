@@ -44,7 +44,6 @@ namespace Radare {
 
 
 		public void cache_enable(bool rd, bool wr);
-		public void cache_init();
 		public void cache_write(uint64 addr, ref uint8 *buf, int len);
 		public void cache_read(uint64 addr, ref uint8 *buf, int len);
 

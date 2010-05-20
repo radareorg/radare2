@@ -158,9 +158,6 @@ R_API void r_cons_break_end();
 R_API int r_cons_pipe_open(const char *file, int append);
 R_API void r_cons_pipe_close(int fd);
 
-/* constructor */
-R_API int  r_cons_init();
-
 /* control */
 R_API void r_cons_reset();
 R_API void r_cons_clear();

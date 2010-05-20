@@ -44,7 +44,6 @@ typedef struct r_syscall_arch_handle_t {
 #ifdef R_API
 R_API RSyscall *r_syscall_new();
 R_API void r_syscall_free(RSyscall *ctx);
-R_API void r_syscall_init(RSyscall *ctx);
 R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os);
 R_API int r_syscall_setup_file(RSyscall *ctx, const char *path);
 R_API RSyscallItem *r_syscall_get(RSyscall *ctx, int num, int swi);

@@ -61,7 +61,6 @@ enum {
 };
 
 #ifdef R_API
-R_API int r_meta_init(struct r_meta_t *m);
 R_API struct r_meta_t *r_meta_new();
 R_API void r_meta_free(struct r_meta_t *m);
 R_API int r_meta_count(struct r_meta_t *m, int type, ut64 from, ut64 to, struct r_meta_count_t *c);

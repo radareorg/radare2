@@ -22,7 +22,10 @@ static int r_debug_recoil(struct r_debug_t *dbg) {
 	return ret;
 }
 
-R_API struct r_debug_t *r_debug_init(struct r_debug_t *dbg, int hard) {
+R_API struct r_debug_t *r_debug_new(int hard) {
+	RDebug *dbg;
+
+	dbg = R_NEW (RDebug);
 	if (dbg) {
 		dbg->pid = -1;
 		dbg->tid = -1;
@@ -45,10 +48,6 @@ R_API struct r_debug_t *r_debug_init(struct r_debug_t *dbg, int hard) {
 		}
 	}
 	return dbg;
-}
-
-R_API struct r_debug_t *r_debug_new() {
-	return r_debug_init (R_NEW (RDebug), R_TRUE);
 }
 
 R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg) {

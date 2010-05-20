@@ -4,32 +4,31 @@
 #include "r_print.h"
 #include "r_util.h"
 
-R_API RPrint *r_print_init(RPrint *p) {
-	if (p == NULL)
-		return NULL;
-	/* read callback */
-	p->user = NULL;
-	p->read_at = NULL;
-	p->printf = printf;
-	p->interrupt = 0;
-
-	strcpy (p->datefmt, "%Y:%m:%d %H:%M:%S %z");
-
-	/* setup prefs */
-	p->bigendian = 0;
-	p->width = 78;
-	p->cur_enabled = R_FALSE;
-	p->cur = p->ocur = -1;
-	p->addrmod = 4;
-	p->flags = \
-		R_PRINT_FLAGS_COLOR |
-		R_PRINT_FLAGS_HEADER |
-		R_PRINT_FLAGS_ADDRMOD;
-	return p;
-}
-
 R_API RPrint *r_print_new() {
-	return r_print_init (R_NEW (RPrint));
+	RPrint *p;
+	
+	p = R_NEW (RPrint);
+	if (p) {
+		/* read callback */
+		p->user = NULL;
+		p->read_at = NULL;
+		p->printf = printf;
+		p->interrupt = 0;
+
+		strcpy (p->datefmt, "%Y:%m:%d %H:%M:%S %z");
+
+		/* setup prefs */
+		p->bigendian = 0;
+		p->width = 78;
+		p->cur_enabled = R_FALSE;
+		p->cur = p->ocur = -1;
+		p->addrmod = 4;
+		p->flags = \
+				   R_PRINT_FLAGS_COLOR |
+				   R_PRINT_FLAGS_HEADER |
+				   R_PRINT_FLAGS_ADDRMOD;
+	}
+	return p;
 }
 
 R_API void r_print_set_flags(RPrint *p, int _flags) {

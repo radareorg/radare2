@@ -14,7 +14,10 @@ struct r_class_t {
 #define r_buf_init(x) r_buf_class->init
 #endif
 
-R_API struct r_buf_t *r_buf_init(RBuffer *b) {
+R_API struct r_buf_t *r_buf_new() {
+	RBuffer *b;
+	
+	b = R_NEW (RBuffer);
 	if (b) {
 		b->buf = NULL;
 		b->length = 0;
@@ -22,11 +25,6 @@ R_API struct r_buf_t *r_buf_init(RBuffer *b) {
 		b->base = 0LL;
 	}
 	return b;
-}
-
-R_API struct r_buf_t *r_buf_new() {
-	RBuffer *b = R_NEW (RBuffer);
-	return r_buf_init (b);
 }
 
 R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value) {

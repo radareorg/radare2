@@ -5,10 +5,6 @@
 public class Radare.RDatabase {
 	/* lifecycle */
 	public RDatabase();
-	/**
-	* Initializes a database object
-	*/
-	public void init();
 	public void free();
 
 	/* storage */

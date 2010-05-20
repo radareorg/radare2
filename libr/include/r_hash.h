@@ -70,8 +70,7 @@ typedef struct r_hash_t {
 
 #ifdef R_API
 /* OO */
-R_API struct r_hash_t *r_hash_new(int _init);
-R_API void r_hash_init(struct r_hash_t *ptr, int rst, int flags);
+R_API struct r_hash_t *r_hash_new(int rst, int flags);
 R_API void r_hash_free(struct r_hash_t *ctx);
 
 /* methods */

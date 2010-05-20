@@ -63,7 +63,6 @@ typedef struct r_search_t {
 
 R_API RSearch *r_search_new(int mode);
 R_API int r_search_set_mode(RSearch *s, int mode);
-R_API int r_search_init(RSearch *s, int mode);
 R_API RSearch *r_search_free(RSearch *s);
 
 /* keyword management */

@@ -21,7 +21,6 @@ namespace Radare {
 			/* TODO: bold colors */
 		}
 #endif
-		public static bool init (); /* you have to call this before using it */
 
 		public static bool is_interactive;
 		public static bool is_html;

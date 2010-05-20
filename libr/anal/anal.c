@@ -20,25 +20,10 @@ static RAnalVarType anal_default_vartypes[] =
 	 { NULL,    NULL, 0 }};
 
 R_API RAnal *r_anal_new() {
-	return r_anal_init (R_NEW (RAnal));
-}
-
-R_API RAnal *r_anal_free(RAnal *a) {
-	if (a) {
-		/* TODO: Free a->anals here */
-		if (a->bbs)
-			r_list_destroy (a->bbs);
-		if (a->fcns)
-			r_list_destroy (a->fcns);
-		if (a->vartypes)
-			r_list_destroy (a->vartypes);
-	}
-	free (a);
-	return NULL;
-}
-
-R_API RAnal *r_anal_init(RAnal *anal) {
+	RAnal *anal;
 	int i;
+
+	anal = R_NEW (RAnal);
 	if (anal) {
 		memset (anal, 0, sizeof (RAnal));
 		anal->bbs = r_anal_bb_list_new ();
@@ -54,6 +39,20 @@ R_API RAnal *r_anal_init(RAnal *anal) {
 					anal_default_vartypes[i].size, anal_default_vartypes[i].fmt);
 	}
 	return anal;
+}
+
+R_API RAnal *r_anal_free(RAnal *anal) {
+	if (anal) {
+		/* TODO: Free a->anals here */
+		if (anal->bbs)
+			r_list_destroy (anal->bbs);
+		if (anal->fcns)
+			r_list_destroy (anal->fcns);
+		if (anal->vartypes)
+			r_list_destroy (anal->vartypes);
+	}
+	free (anal);
+	return NULL;
 }
 
 R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {

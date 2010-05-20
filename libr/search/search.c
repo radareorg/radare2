@@ -2,31 +2,27 @@
 
 #include <r_search.h>
 
-R_API int r_search_init(RSearch *s, int mode) {
-	memset (s,'\0', sizeof (RSearch));
-	if (!r_search_set_mode (s, mode)) {
-		eprintf ("Cannot init search for mode %d\n", mode);
-		return R_FALSE;
-	}
-	s->mode = mode;
-	s->user = NULL;
-	s->callback = NULL;
-	s->distance = 0;
-	s->pattern_size = 0;
-	s->string_max = 255;
-	s->string_min = 3;
-	s->hits = r_list_new ();
-	// TODO: review those mempool sizes. ensure never gets NULL
-	s->pool = r_mem_pool_new (sizeof (RSearchHit), 1024, 10);
-	INIT_LIST_HEAD (&(s->kws));
-	return R_TRUE;
-}
-
 R_API RSearch *r_search_new(int mode) {
-	RSearch *s = R_NEW (RSearch);
-	if (!r_search_init (s, mode)) {
-		r_search_free (s);
-		s = NULL;
+	RSearch *s;
+	
+	s = R_NEW (RSearch);
+	if (s) {
+		memset (s,'\0', sizeof (RSearch));
+		if (!r_search_set_mode (s, mode)) {
+			eprintf ("Cannot init search for mode %d\n", mode);
+			return R_FALSE;
+		}
+		s->mode = mode;
+		s->user = NULL;
+		s->callback = NULL;
+		s->distance = 0;
+		s->pattern_size = 0;
+		s->string_max = 255;
+		s->string_min = 3;
+		s->hits = r_list_new ();
+		// TODO: review those mempool sizes. ensure never gets NULL
+		s->pool = r_mem_pool_new (sizeof (RSearchHit), 1024, 10);
+		INIT_LIST_HEAD (&(s->kws));
 	}
 	return s;
 }

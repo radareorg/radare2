@@ -42,16 +42,17 @@ R_API void r_num_minmax_swap_i(int *a, int *b) {
 }
 
 R_API void r_num_init(struct r_num_t *num) {
-	num->callback = NULL;
-	num->userptr = NULL;
-	num->value = 0LL;
 }
 
 R_API RNum *r_num_new(RNumCallback cb, void *ptr) {
-	RNum *num = (RNum *) malloc (sizeof (RNum));
-	r_num_init (num);
-	num->callback = cb;
-	num->userptr = ptr;
+	RNum *num;
+	
+	num = R_NEW (RNum);
+	if (num) {
+		num->value = 0LL;
+		num->callback = cb;
+		num->userptr = ptr;
+	}
 	return num;
 }
 

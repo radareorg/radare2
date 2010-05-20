@@ -7,22 +7,22 @@
 // TODO: R_API int r_io_fetch(struct r_io_t *io, ut8 *buf, int len)
 //  --- check for EXEC perms in section (use cached read to accelerate)
 
-R_API struct r_io_t *r_io_init(struct r_io_t *io) {
-	if (!io) return NULL;
-	io->write_mask_fd = -1;
-	io->redirect = NULL;
-	io->printf = (void*) printf;
-	r_io_cache_init (io);
-	r_io_map_init (io);
-	r_io_section_init (io);
-	r_io_handle_init (io);
-	r_io_desc_init (io);
-	r_io_undo_init (io);
-	return io;
-}
-
 R_API struct r_io_t *r_io_new() {
-	return r_io_init (R_NEW (struct r_io_t));
+	RIO *io;
+
+	io = R_NEW (struct r_io_t);
+	if (io) {
+		io->write_mask_fd = -1;
+		io->redirect = NULL;
+		io->printf = (void*) printf;
+		r_io_cache_init (io);
+		r_io_map_init (io);
+		r_io_section_init (io);
+		r_io_handle_init (io);
+		r_io_desc_init (io);
+		r_io_undo_init (io);
+	}
+	return io;
 }
 
 R_API RBuffer *r_io_read_buf(struct r_io_t *io, ut64 addr, int len) {
@@ -286,7 +286,7 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 
 R_API ut64 r_io_size(RIO *io, int fd) {
 	ut64 size, here;
-	fd = r_io_set_fd (io, fd);
+	r_io_set_fd (io, fd);
 	here = r_io_seek (io, 0, R_IO_SEEK_CUR);
 	size = r_io_seek (io, 0, R_IO_SEEK_END);
 	r_io_seek (io, here, R_IO_SEEK_SET);

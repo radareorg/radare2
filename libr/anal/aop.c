@@ -7,7 +7,16 @@
 #include <r_list.h>
 
 R_API RAnalAop *r_anal_aop_new() {
-	return r_anal_aop_init (R_NEW (RAnalAop));
+	RAnalAop *aop;
+
+	aop = R_NEW (RAnalAop);
+	if (aop) {
+		memset (aop, 0, sizeof (RAnalAop));
+		aop->addr = -1;
+		aop->jump = -1;
+		aop->fail = -1;
+	}
+	return aop;
 }
 
 R_API RList *r_anal_aop_list_new() {
@@ -18,16 +27,6 @@ R_API RList *r_anal_aop_list_new() {
 
 R_API void r_anal_aop_free(void *aop) {
 	free (aop);
-}
-
-R_API RAnalAop *r_anal_aop_init(RAnalAop *aop) {
-	if (aop) {
-		memset (aop, 0, sizeof (RAnalAop));
-		aop->addr = -1;
-		aop->jump = -1;
-		aop->fail = -1;
-	}
-	return aop;
 }
 
 R_API int r_anal_aop(RAnal *anal, RAnalAop *aop, ut64 addr, const ut8 *data, int len) {

@@ -19,29 +19,25 @@ R_API RMemoryPool* r_mem_pool_deinit(RMemoryPool *pool) {
 	return pool;
 }
 
-R_API RMemoryPool* r_mem_pool_init(RMemoryPool *pool, int nsize, int psize, int pcount) {
-	if (pool) {
-		if (psize<1)
-			psize = ALLOC_POOL_SIZE;
-		if (pcount<1)
-			pcount = ALLOC_POOL_COUNT;
+R_API RMemoryPool *r_mem_pool_new(int nodesize, int poolsize, int poolcount) {
+	RMemoryPool *mp;
+	
+	mp = R_NEW (RMemoryPool);
+	if (mp) {
+		if (poolsize<1)
+			poolsize = ALLOC_POOL_SIZE;
+		if (poolcount<1)
+			poolcount = ALLOC_POOL_COUNT;
 		// TODO: assert nodesize?;
-		pool->poolsize = psize;
-		pool->poolcount = pcount;
-		pool->nodesize = nsize;
-		pool->npool = -1;
-		pool->ncount = pool->poolsize; // force init
-		pool->nodes = (void**) malloc (sizeof (void*) * pool->poolcount);
-		if (pool->nodes == NULL)
+		mp->poolsize = poolsize;
+		mp->poolcount = poolcount;
+		mp->nodesize = nodesize;
+		mp->npool = -1;
+		mp->ncount = mp->poolsize; // force init
+		mp->nodes = (void**) malloc (sizeof (void*) * mp->poolcount);
+		if (mp->nodes == NULL)
 			return NULL;
 	}
-	return pool;
-}
-
-R_API RMemoryPool *r_mem_pool_new(int nodesize, int poolsize, int poolcount) {
-	RMemoryPool *mp = R_NEW (struct r_mem_pool_t);
-	if (!r_mem_pool_init (mp, nodesize, poolsize, poolcount))
-		r_mem_pool_free (mp);
 	return mp;
 }
 

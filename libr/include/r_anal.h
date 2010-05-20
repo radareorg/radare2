@@ -203,7 +203,6 @@ typedef struct r_anal_handle_t {
 /* anal.c */
 R_API RAnal *r_anal_new();
 R_API RAnal *r_anal_free(RAnal *r);
-R_API RAnal *r_anal_init(RAnal *anal);
 R_API void r_anal_set_user_ptr(RAnal *anal, void *user);
 R_API int r_anal_add(RAnal *anal, struct r_anal_handle_t *foo);
 R_API int r_anal_list(RAnal *anal);
@@ -216,7 +215,6 @@ R_API char *r_anal_strmask (RAnal *anal, const char *data);
 R_API RAnalBB *r_anal_bb_new();
 R_API RList *r_anal_bb_list_new();
 R_API void r_anal_bb_free(void *bb);
-R_API RAnalBB *r_anal_bb_init(struct r_anal_bb_t *bb);
 R_API int r_anal_bb(RAnal *anal, struct r_anal_bb_t *bb,
 		ut64 addr, ut8 *buf, ut64 len);
 R_API int r_anal_bb_split(RAnal *anal, RAnalBB *bb, RList *bbs, ut64 addr);
@@ -228,7 +226,6 @@ R_API int r_anal_bb_del(RAnal *anal, ut64 addr);
 R_API RAnalAop *r_anal_aop_new();
 R_API RList *r_anal_aop_list_new();
 R_API void r_anal_aop_free(void *aop);
-R_API RAnalAop *r_anal_aop_init(struct r_anal_aop_t *aop);
 R_API int r_anal_aop(RAnal *anal, RAnalAop *aop, ut64 addr,
 		const ut8 *data, int len);
 
@@ -236,7 +233,6 @@ R_API int r_anal_aop(RAnal *anal, RAnalAop *aop, ut64 addr,
 R_API RAnalFcn *r_anal_fcn_new();
 R_API RList *r_anal_fcn_list_new();
 R_API void r_anal_fcn_free(void *fcn);
-R_API RAnalFcn *r_anal_fcn_init(RAnalFcn *fcn);
 R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len);
 R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size, const char *name);
 R_API int r_anal_fcn_del(RAnal *anal, ut64 addr);
@@ -246,7 +242,6 @@ R_API RList *r_anal_fcn_bb_list(RAnal *anal, RAnalFcn *fcn);
 R_API RAnalRef *r_anal_ref_new();
 R_API RList *r_anal_ref_list_new();
 R_API void r_anal_ref_free(void *ref);
-R_API RAnalRef *r_anal_ref_init(RAnalRef *ref);
 
 /* var.c */
 R_API RAnalVar *r_anal_var_new();
@@ -258,9 +253,6 @@ R_API RList *r_anal_var_access_list_new();
 R_API void r_anal_var_free(void *var);
 R_API void r_anal_var_type_free(void *vartype);
 R_API void r_anal_var_access_free(void *access);
-R_API RAnalVar *r_anal_var_init(RAnalVar *var);
-R_API RAnalVarType *r_anal_var_type_init(RAnalVarType *vartype);
-R_API RAnalVarAccess *r_anal_var_access_init(RAnalVarAccess *access);
 R_API int r_anal_var_type_add(RAnal *anal, const char *name, int size, const char *fmt);
 R_API int r_anal_var_type_del(RAnal *anal, const char *name);
 R_API RAnalVarType *r_anal_var_type_get(RAnal *anal, const char *name);
