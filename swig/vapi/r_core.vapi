@@ -2,7 +2,7 @@
 
 namespace Radare {
 [Compact]
-[CCode (cheader_filename="r_core.h", cname="struct r_core_t", free_function="r_core_free", cprefix="r_core_")]
+[CCode (cheader_filename="r_core.h", cname="RCore", free_function="r_core_free", cprefix="r_core_")]
 public class RCore {
 	public RFlag flags;
 	public RNum num;
@@ -40,7 +40,7 @@ public class RCore {
 
 	// XXX mode = Radare.Io.Mode
 	[Compact]
-	[CCode (cname="struct r_core_file_t", cprefix="r_core_file_", free_function="")]
+	[CCode (cname="RCoreFile", cprefix="r_core_file_", free_function="")]
 	public class File {
 		//public static bool set(string file, Core.File file);
 		//public static bool close(string file, Core.File file);

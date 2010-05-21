@@ -19,6 +19,11 @@ R_API RCmd *r_cmd_new () {
 	return cmd;
 }
 
+R_API RCmd *r_cmd_free(RCmd *cmd) {
+	free (cmd);
+	return NULL;
+}
+
 R_API int r_cmd_set_data(struct r_cmd_t *cmd, void *data) {
 	cmd->data = data;
 	return 1;
