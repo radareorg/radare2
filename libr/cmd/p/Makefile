@@ -15,6 +15,6 @@ all: ${ALL_TARGETS}
 	@true
 
 clean:
-	-rm -f *.${LIB_SO} *.o ${STATIC_OBJ}
+	-rm -f *.${EXT_SO} *.o ${STATIC_OBJ}
 
 .PHONY: all clean foo

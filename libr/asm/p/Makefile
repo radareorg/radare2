@@ -20,6 +20,6 @@ a:
 	${CC} -DTEST asm_x86_nasm.c `pkg-config --libs --cflags r_asm` -o a${EXT_EXE}
 
 clean:
-	-rm -f *.${LIB_SO} *.o ${STATIC_OBJ}
+	-rm -f *.${EXT_SO} *.o ${STATIC_OBJ}
 
 .PHONY: all clean foo

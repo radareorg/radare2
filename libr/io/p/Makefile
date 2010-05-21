@@ -5,7 +5,7 @@ include ../../config.mk
 foo: all
 
 ALL_TARGETS=
-DEBUGS=ptrace.mk debug.mk malloc.mk shm.mk mach.mk w32dbg.mk
+DEBUGS=ptrace.mk debug.mk malloc.mk shm.mk mach.mk w32dbg.mk procpid.mk
 include ${DEBUGS}
 
 #ALL_TARGETS+=io_ewf.so
@@ -19,4 +19,4 @@ io_ewf.${LIB_SO}: io_ewf.o
 	${CC} ${CFLAGS} ${PIC_CFLAGS} ${LDFLAGS_LIB} io_ewf.${LIB_SO} ewf.c -lr_io -L../../io ${LDFLAGS_LINKPTH}.. -lewf
 
 clean:
-	-rm -f *.so *.o
+	-rm -f *.so *.o *.dll *.dylib *.${EXT_SO}

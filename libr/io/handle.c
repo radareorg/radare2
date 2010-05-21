@@ -28,7 +28,7 @@ R_API int r_io_handle_add(struct r_io_t *io, struct r_io_handle_t *plugin) {
 R_API int r_io_handle_init(struct r_io_t *io) {
 	int i;
 	INIT_LIST_HEAD(&io->io_list);
-	for(i=0;io_static_plugins[i];i++)
+	for (i=0;io_static_plugins[i];i++)
 		r_io_handle_add (io, io_static_plugins[i]);
 	return R_TRUE;
 }
