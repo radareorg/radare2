@@ -142,11 +142,11 @@ typedef struct r_anal_aop_t {
 } RAnalOp;
 
 typedef struct r_anal_bb_t {
-	int type;
 	ut64 addr;
 	ut64 size;
 	ut64 jump;
 	ut64 fail;
+	int type;
 	RList *aops;
 } RAnalBlock;
 
@@ -216,11 +216,13 @@ R_API char *r_anal_strmask (RAnal *anal, const char *data);
 R_API RAnalBlock *r_anal_bb_new();
 R_API RList *r_anal_bb_list_new();
 R_API void r_anal_bb_free(void *bb);
-R_API int r_anal_bb(RAnal *anal, struct r_anal_bb_t *bb,
-		ut64 addr, ut8 *buf, ut64 len);
-R_API int r_anal_bb_split(RAnal *anal, RAnalBlock *bb, RList *bbs, ut64 addr);
+R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb,
+		ut64 addr, ut8 *buf, ut64 len, int head);
+R_API int r_anal_bb_split(RAnal *anal, RAnalBlock *bb,
+		RList *bbs, ut64 addr);
 R_API int r_anal_bb_overlap(RAnal *anal, RAnalBlock *bb, RList *bbs);
-R_API int r_anal_bb_add(RAnal *anal, ut64 addr, ut64 size, ut64 jump, ut64 fail);
+R_API int r_anal_bb_add(RAnal *anal, ut64 addr,
+		ut64 size, ut64 jump, ut64 fail, int type);
 R_API int r_anal_bb_del(RAnal *anal, ut64 addr);
 
 /* aop.c */

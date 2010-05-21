@@ -100,7 +100,7 @@ static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts
 	}
 }
 
-R_API int r_core_anal_bb(RCore *core, ut64 at, int depth) {
+R_API int r_core_anal_bb(RCore *core, ut64 at, int depth, int head) {
 	struct r_anal_bb_t *bb;
 	ut64 jump, fail;
 	ut8 *buf;
@@ -120,7 +120,7 @@ R_API int r_core_anal_bb(RCore *core, ut64 at, int depth) {
 		do {
 			if ((buflen = r_io_read_at (core->io, at+bblen, buf, core->blocksize)) != core->blocksize)
 				return R_FALSE;
-			bblen = r_anal_bb (core->anal, bb, at+bblen, buf, buflen); 
+			bblen = r_anal_bb (core->anal, bb, at+bblen, buf, buflen, head); 
 			if (bblen == R_ANAL_RET_ERROR) { /* Error analyzing bb */
 				r_anal_bb_free (bb);
 				return R_FALSE;
@@ -130,9 +130,9 @@ R_API int r_core_anal_bb(RCore *core, ut64 at, int depth) {
 					fail = bb->fail;
 					jump = bb->jump;
 					if (fail != -1)
-						r_core_anal_bb (core, fail, depth-1);
+						r_core_anal_bb (core, fail, depth-1, R_FALSE);
 					if (jump != -1)
-						r_core_anal_bb (core, jump, depth-1);
+						r_core_anal_bb (core, jump, depth-1, R_FALSE);
 				}
 			}
 		} while (bblen != R_ANAL_RET_END);

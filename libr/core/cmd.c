@@ -1388,13 +1388,24 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		case '+':
 			{
-			char *ptr = strdup(input+3);
+			char *ptr = strdup(input+3), *ptr2 = NULL;
 			ut64 addr = -1LL;
 			ut64 size = 0LL;
 			ut64 jump = -1LL;
 			ut64 fail = -1LL;
+			int type = R_ANAL_BB_TYPE_NULL;
 			
 			switch(r_str_word_set0 (ptr)) {
+			case 5:
+				ptr2 = r_str_word_get0 (ptr, 4);
+				if (*ptr2 == 'h')
+					type = R_ANAL_BB_TYPE_HEAD;
+				else if (*ptr2 == 'b')
+					type = R_ANAL_BB_TYPE_BODY;
+				else if (*ptr2 == 'l')
+					type = R_ANAL_BB_TYPE_LAST;
+				else if (*ptr2 == 'f')
+					type = R_ANAL_BB_TYPE_FOOT;
 			case 4: // get fail
 				fail = r_num_math (core->num, r_str_word_get0 (ptr, 3));
 			case 3: // get jump
@@ -1404,7 +1415,7 @@ static int cmd_anal(void *data, const char *input) {
 			case 1: // get addr
 				addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 			}
-			if (!r_anal_bb_add (core->anal, addr, size, jump, fail))
+			if (!r_anal_bb_add (core->anal, addr, size, jump, fail, type))
 				eprintf ("Cannot add bb (duplicated or overlaped)\n");
 			free (ptr);
 			}
@@ -1419,14 +1430,14 @@ static int cmd_anal(void *data, const char *input) {
 			r_cons_printf (
 			"Usage: ab[?+-l*]\n"
 			" ab @ [addr]     ; Analyze basic blocks (start at addr)\n"
-			" ab+ addr size [jump] [fail] ; Add basic block\n"
+			" ab+ addr size [jump] [fail] [type] ; Add basic block\n"
 			" ab- [addr]      ; Clean all basic block data (or bb at addr and childs)\n"
 			" abl             ; List basic blocks\n"
 			" ab*             ; Output radare commands\n");
 			break;
 		default:
 			r_core_anal_bb (core, core->offset,
-					r_config_get_i (core->config, "anal.depth"));
+					r_config_get_i (core->config, "anal.depth"), R_TRUE);
 		}
 		break;
 	case 'f':
