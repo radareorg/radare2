@@ -20,9 +20,121 @@ public class RAnal {
 	//public bool set_pc (uint64 addr);
 	public RList<Block> fcn_bb_list(Fcn fun);
 
+	[CCode (cprefix="R_ANAL_OP_COND_")]
+	public enum OpCond {
+		EQ,
+		NE,
+		GE,
+		GT,
+		LE,
+		LT
+	}
+
+/*
+XXX: jam! 
+	[CCode (cprefix="R_ANAL_VAR_TYPE")]
+	public enum VarType {
+		NULL,
+		GLOBAL,
+		LOCAL,
+		ARG,
+		ARGREG
+	}
+*/
+
+	[CCode (cprefix="R_ANAL_BB_TYPE_")]
+	public enum BlockType {
+		NULL,
+		HEAD,
+		BODY,
+		LAST,
+		FOOT
+	}
+
+/* XXX JAM!
+	[CCode (cprefix="R_ANAL_REFLINE_")]
+	public enum Refline {
+		STYLE,
+		WIDE
+	}
+*/
+
+	[CCode (cprefix="R_ANAL_RET_")]
+	public enum Ret {
+		ERROR,
+		DUP,
+		NEW,
+		END
+	}
+
+	[CCode (cprefix="R_ANAL_STACK_")]
+	public enum Stack {
+		NULL,
+		INCSTACK,
+		GET,
+		SET
+	}
+
+	[CCode (cprefix="R_ANAL_DATA")]
+	public enum Data {
+		NULL,
+		HEX,
+		STR,
+		CODE,
+		FUN,
+		STRUCT,
+		LAST
+	}
+
+	[CCode (cprefix="R_ANAL_OP_FAMILY_")]
+	public enum OpFamily {
+		UNKNOWN,
+		CPU,
+		FPU,
+		MMX,
+		PRIV,
+		LAST
+	}
+
+	[CCode (cprefix="R_ANAL_OP_TYPE_")]
+	public enum OpType {
+		NULL,
+		JMP,
+		UJMP,
+		CJMP,
+		CALL,
+		RCALL,
+		REP,
+		RET,
+		ILL,
+		UNK,
+		NOP,
+		MOV,
+		TRAP, 
+		SWI,  
+		UPUSH,
+		PUSH, 
+		POP,  
+		CMP,  
+		ADD,
+		SUB,
+		MUL,
+		DIV,
+		SHR,
+		SHL,
+		OR,
+		AND,
+		XOR,
+		NOT,
+		STORE,
+		LOAD, 
+		LAST
+	}
+
 	[Compact]
 	[CCode (cprefix="r_anal_bb_", cname="RAnalBlock")]
 	public class Block {
+		public BlockType type;
 		public uint64 addr;
 		public uint64 size;
 		public uint64 jump;

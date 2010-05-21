@@ -15,6 +15,7 @@ R_API RAnalBlock *r_anal_bb_new() {
 		bb->addr = -1;
 		bb->jump = -1;
 		bb->fail = -1;
+		bb->type = R_ANAL_BB_TYPE_NULL;
 		bb->aops = r_anal_aop_list_new();
 	}
 	return bb;

@@ -29,6 +29,7 @@ typedef struct r_list_t {
 RList *r_list_new();
 RListIter *r_list_append(RList *list, void *data);
 RListIter *r_list_prepend(RList *list, void *data);
+R_API int r_list_length(RList *list);
 
 R_API void r_list_init(RList *list);
 R_API void r_list_delete (RList *list, RListIter *iter);

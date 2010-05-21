@@ -73,7 +73,7 @@ enum {
 	R_ANAL_VAR_TYPE_ARGREG,
 };
 
-enum {
+typedef enum {
 	R_ANAL_DATA_NULL = 0,
 	R_ANAL_DATA_HEX,      /* hex byte pairs */
 	R_ANAL_DATA_STR,      /* ascii string */
@@ -81,15 +81,15 @@ enum {
 	R_ANAL_DATA_FUN,      /* plain assembly code */
 	R_ANAL_DATA_STRUCT,   /* memory */
 	R_ANAL_DATA_LAST
-};
+} RAnalData;
 
-enum {
+typedef enum {
 	R_ANAL_BB_TYPE_NULL = 0,
 	R_ANAL_BB_TYPE_HEAD,     /* first block */
 	R_ANAL_BB_TYPE_BODY,     /* conditional jump */
 	R_ANAL_BB_TYPE_LAST,     /* ret */
 	R_ANAL_BB_TYPE_FOOT      /* unknown jump */
-};
+} RAnalBlockType;
 
 enum {
 	R_ANAL_STACK_NULL = 0,
@@ -142,6 +142,7 @@ typedef struct r_anal_aop_t {
 } RAnalOp;
 
 typedef struct r_anal_bb_t {
+	int type;
 	ut64 addr;
 	ut64 size;
 	ut64 jump;

@@ -6,6 +6,16 @@ R_API void r_list_init(RList *list) {
 	list->free = NULL;
 }
 
+R_API int r_list_length(RList *list) {
+	int count = 0;
+	RListIter *iter = r_list_iterator (list);
+	while (iter) {
+		count ++;
+		iter = iter->n;
+	}
+	return count;
+}
+
 R_API void r_list_unlink (RList *list, void *ptr) {
 	RListIter *iter = r_list_iterator (list);
 	while (iter) {
