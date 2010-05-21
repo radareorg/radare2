@@ -53,22 +53,22 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 		idx += oplen;
 		bb->size += oplen;
 		r_list_append (bb->aops, aop);
-		bb->type = R_ANAL_BB_TYPE_HEAD;
+		if (head) bb->type = R_ANAL_BB_TYPE_HEAD;
 		switch (aop->type) {
 		case R_ANAL_OP_TYPE_CJMP:
 			bb->fail = aop->fail;
 			bb->jump = aop->jump;
-			if (!head) bb->type = R_ANAL_BB_TYPE_BODY;
+			bb->type |= R_ANAL_BB_TYPE_BODY;
 			return R_ANAL_RET_END;
 		case R_ANAL_OP_TYPE_JMP:
 			bb->jump = aop->jump;
-			if (!head) bb->type = R_ANAL_BB_TYPE_BODY;
+			bb->type |= R_ANAL_BB_TYPE_BODY;
 			return R_ANAL_RET_END;
 		case R_ANAL_OP_TYPE_UJMP:
-			if (!head) bb->type = R_ANAL_BB_TYPE_FOOT;
+			bb->type |= R_ANAL_BB_TYPE_FOOT;
 			return R_ANAL_RET_END;
 		case R_ANAL_OP_TYPE_RET:
-			if (!head) bb->type = R_ANAL_BB_TYPE_LAST;
+			bb->type |= R_ANAL_BB_TYPE_LAST;
 			return R_ANAL_RET_END;
 		}
 	}
@@ -92,6 +92,12 @@ R_API int r_anal_bb_split(RAnal *anal, RAnalBlock *bb, RList *bbs, ut64 addr) {
 			bbi->size = addr - bbi->addr;
 			bbi->jump = addr;
 			bbi->fail = -1;
+			if (bbi->type&R_ANAL_BB_TYPE_HEAD) {
+				bb->type = bbi->type^R_ANAL_BB_TYPE_HEAD;
+			} else {
+				bb->type = bbi->type;
+				bbi->type = R_ANAL_BB_TYPE_BODY;
+			}
 			bbi->type = R_ANAL_BB_TYPE_BODY;
 			iter = r_list_iterator (bbi->aops);
 			while (r_list_iter_next (iter)) {
@@ -116,7 +122,14 @@ R_API int r_anal_bb_overlap(RAnal *anal, RAnalBlock *bb, RList *bbs) {
 			bb->size = bbi->addr - bb->addr;
 			bb->jump = bbi->addr;
 			bb->fail = -1;
-			bb->type = R_ANAL_BB_TYPE_BODY;
+			if (bbi->type&R_ANAL_BB_TYPE_HEAD) {
+				bb->type = R_ANAL_BB_TYPE_HEAD;
+				bbi->type = bbi->type^R_ANAL_BB_TYPE_HEAD;
+			} else {
+				bb->type = R_ANAL_BB_TYPE_BODY;
+			}
+			bb->type = bbi->type;
+			//bbi->type = k
 			r_list_foreach (bb->aops, iter, aopi)
 				if (aopi->addr >= bbi->addr)
 					r_list_unlink (bb->aops, aopi);

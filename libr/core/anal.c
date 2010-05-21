@@ -151,14 +151,35 @@ R_API int r_core_anal_bb_list(RCore *core, int rad) {
 			if (bbi->jump != -1)
 				r_cons_printf ("%08"PFMT64x" ", bbi->jump);
 			if (bbi->jump != -1 && bbi->fail != -1)
-				r_cons_printf ("%08"PFMT64x"", bbi->fail);
+				r_cons_printf ("%08"PFMT64x" ", bbi->fail);
+			if ((bbi->type & R_ANAL_BB_TYPE_BODY))
+				r_cons_printf ("b");
+			if ((bbi->type & R_ANAL_BB_TYPE_FOOT))
+				r_cons_printf ("f");
+			if ((bbi->type & R_ANAL_BB_TYPE_HEAD))
+				r_cons_printf ("h");
+			if ((bbi->type & R_ANAL_BB_TYPE_LAST))
+				r_cons_printf ("l");
 			r_cons_printf ("\n");
 		} else {
 			r_cons_printf ("[0x%08"PFMT64x"] size=%04"PFMT64d" ", bbi->addr, bbi->size);
 			if (bbi->jump != -1)
 				r_cons_printf ("jump=%08"PFMT64x" ", bbi->jump);
 			if (bbi->fail != -1)
-				r_cons_printf ("fail=%08"PFMT64x"", bbi->fail);
+				r_cons_printf ("fail=%08"PFMT64x" ", bbi->fail);
+			r_cons_printf ("type = ");
+			if (bbi->type == R_ANAL_BB_TYPE_NULL)
+				r_cons_printf ("null");
+			else {
+			if ((bbi->type & R_ANAL_BB_TYPE_BODY))
+				r_cons_printf ("body ");
+			if ((bbi->type & R_ANAL_BB_TYPE_FOOT))
+				r_cons_printf ("foot ");
+			if ((bbi->type & R_ANAL_BB_TYPE_HEAD))
+				r_cons_printf ("head ");
+			if ((bbi->type & R_ANAL_BB_TYPE_LAST))
+				r_cons_printf ("last ");
+			}
 			r_cons_printf ("\n");
 		}
 	}

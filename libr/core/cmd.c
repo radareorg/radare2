@@ -1398,14 +1398,14 @@ static int cmd_anal(void *data, const char *input) {
 			switch(r_str_word_set0 (ptr)) {
 			case 5:
 				ptr2 = r_str_word_get0 (ptr, 4);
-				if (*ptr2 == 'h')
-					type = R_ANAL_BB_TYPE_HEAD;
-				else if (*ptr2 == 'b')
-					type = R_ANAL_BB_TYPE_BODY;
-				else if (*ptr2 == 'l')
-					type = R_ANAL_BB_TYPE_LAST;
-				else if (*ptr2 == 'f')
-					type = R_ANAL_BB_TYPE_FOOT;
+				if (strchr (ptr2, 'h'))
+					type |= R_ANAL_BB_TYPE_HEAD;
+				if (strchr (ptr2, 'b'))
+					type |= R_ANAL_BB_TYPE_BODY;
+				if (strchr (ptr2, 'l'))
+					type |= R_ANAL_BB_TYPE_LAST;
+				if (strchr (ptr2, 'f'))
+					type |= R_ANAL_BB_TYPE_FOOT;
 			case 4: // get fail
 				fail = r_num_math (core->num, r_str_word_get0 (ptr, 3));
 			case 3: // get jump

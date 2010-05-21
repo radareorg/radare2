@@ -85,10 +85,10 @@ typedef enum {
 
 typedef enum {
 	R_ANAL_BB_TYPE_NULL = 0,
-	R_ANAL_BB_TYPE_HEAD,     /* first block */
-	R_ANAL_BB_TYPE_BODY,     /* conditional jump */
-	R_ANAL_BB_TYPE_LAST,     /* ret */
-	R_ANAL_BB_TYPE_FOOT      /* unknown jump */
+	R_ANAL_BB_TYPE_HEAD = 0x1,     /* first block */
+	R_ANAL_BB_TYPE_BODY = 0x2,     /* conditional jump */
+	R_ANAL_BB_TYPE_LAST = 0x4,     /* ret */
+	R_ANAL_BB_TYPE_FOOT = 0x8      /* unknown jump */
 } RAnalBlockType;
 
 enum {
