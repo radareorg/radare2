@@ -10,7 +10,6 @@ namespace Radare {
 
 		public RBin();
 
-		public int init();
 		public int load(string file, string? plugin_name = null);
 		public int list();
 		public uint64 get_baddr();

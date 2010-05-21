@@ -21,7 +21,7 @@ public class RAnal {
 	public RList<Block> fcn_bb_list(Fcn fun);
 
 	[Compact]
-	[CCode (cname="RAnalBlock")]
+	[CCode (cprefix="r_anal_bb_", cname="RAnalBlock")]
 	public class Block {
 		public uint64 addr;
 		public uint64 size;
@@ -33,7 +33,7 @@ public class RAnal {
 	public bool bb_overlap(Block bb, RList<Block> bbs);
 
 	[Compact]
-	[CCode (cname="RAnalOp")]
+	[CCode (cprefix="r_anal_aop_", cname="RAnalOp")]
 	public class Op {
 		public uint64 addr;
 		public int type;

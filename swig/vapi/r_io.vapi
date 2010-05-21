@@ -20,7 +20,6 @@ namespace Radare {
 
 		public RIO();
 		public RIO free();
-		public unowned RIO init();
 		public bool set_write_mask(uint8 *buf, int len);
 
 		//public uint64 off;

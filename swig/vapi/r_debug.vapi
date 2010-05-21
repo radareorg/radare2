@@ -4,7 +4,7 @@
 [CCode (cheader_filename="r_debug.h", cname="struct r_debug_t", free_function="r_debug_free", cprefix="r_debug_")]
 public class Radare.RDebug {
 	public RBreakpoint bp;
-	public RDebug();
+	public RDebug(int hard);
 
 	public bool use(string plugin);
 

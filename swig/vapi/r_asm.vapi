@@ -1,8 +1,9 @@
 /* radare - LGPL - Copyright 2009, 2010 nibble<.ds@gmail.com> */
 
+namespace Radare {
 [Compact]
 [CCode (cheader_filename="r_asm.h", cname="struct r_asm_t", free_function="r_asm_free", cprefix="r_asm_")]
-public class Radare.RAsm {
+public class RAsm {
 	[CCode (cprefix="R_ASM_ARCH_", cname="int")]
 	public enum Arch {
 		NONE,
@@ -70,4 +71,5 @@ public class Radare.RAsm {
 
 	/* TODO: not directy defined here */
 	public void free();
+}
 }

@@ -48,7 +48,7 @@ public class Radare.RRegister {
 	/* TODO: use r_flist or r_list here */
 	//public KernelList<RRegister.Item*> get_list(RRegister.Type type);
 
-	public static string? get_type(int idx);
+	public static unowned string? get_type(int idx);
 
 	public uint64 get_value(Item item);
 	public bool set_value(Item item, uint64 val);
