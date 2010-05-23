@@ -66,6 +66,13 @@ enum {
 };
 
 enum {
+	R_ANAL_BB_DIFF_NULL = 0,
+	R_ANAL_BB_DIFF_NEW,
+	R_ANAL_BB_DIFF_MATCH,
+	R_ANAL_BB_DIFF_UNMATCH,
+};
+
+enum {
 	R_ANAL_VAR_TYPE_NULL = 0,
 	R_ANAL_VAR_TYPE_GLOBAL,
 	R_ANAL_VAR_TYPE_LOCAL,
@@ -124,7 +131,8 @@ typedef struct r_anal_t {
 } RAnal;
 
 typedef struct r_anal_aop_t {
-	ut64 addr;
+	char *mnemonic;            /* mnemonic */
+	ut64 addr;                 /* address */
 	int type;                  /* type of opcode */
 	int stackop;               /* operation on stack? */
 	int cond;                  /* condition type */
@@ -147,6 +155,9 @@ typedef struct r_anal_bb_t {
 	ut64 jump;
 	ut64 fail;
 	int type;
+	int diff;
+	int ninstr;
+	ut64 fingerprint;
 	RList *aops;
 } RAnalBlock;
 
@@ -155,6 +166,8 @@ typedef struct r_anal_fcn_t {
 	ut64 addr;
 	ut64 size;
 	int stack;
+	int ninstr;
+	ut64 fingerprint;
 	RList *vars;
 	RList *refs;
 	RList *xrefs;

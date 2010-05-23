@@ -14,6 +14,13 @@
 char *x86f_get_imn( __in x86im_instr_object *io );
 char *x86f_get_reg( __in unsigned short reg );
 unsigned int x86im_fmt( __in x86im_instr_object *io );
+void x86im_fmt_format_prefix( __in x86im_instr_object *io,
+                    __out char *pfx );
+void x86im_fmt_format_name( __in x86im_instr_object *io,
+                   __in char *name );
+void x86im_fmt_format_operand( __in x86im_instr_object *io,
+                     __out char *dst,
+                     __out char *src );
 
 #endif
 

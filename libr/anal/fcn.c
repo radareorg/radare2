@@ -55,6 +55,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len) 
 				return R_ANAL_RET_ERROR;
 			break;
 		}
+		fcn->ninstr++;
 		idx += oplen;
 		fcn->size += oplen;
 		/* TODO: Parse fastargs (R_ANAL_VAR_ARGREG), check negative ref meaning */

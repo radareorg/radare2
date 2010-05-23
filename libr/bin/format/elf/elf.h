@@ -16,6 +16,7 @@
 
 typedef struct r_bin_elf_section_t {
 	ut64 offset;
+	ut64 rva;
 	ut64 size;
 	ut64 align;
 	ut32 flags;

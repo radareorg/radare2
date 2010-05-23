@@ -12,6 +12,7 @@
 static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	x86im_instr_object io;
 	st64 imm, disp;
+	char mnem[256];
 
 	if (data == NULL)
 		return 0;
@@ -26,8 +27,8 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 					(unsigned char*)data)) == X86IM_STATUS_SUCCESS) {
 		if (io.len > len)
 			return 0;
-		aop->length = io.len;
-		aop->nopcode = io.opcode_count;
+		x86im_fmt_format_name (&io, mnem);	
+		aop->mnemonic = strdup (mnem);
 		imm = r_hex_bin_truncate (io.imm, io.imm_size);
 		disp = r_hex_bin_truncate (io.disp, io.disp_size);
 		if (X86IM_IO_IS_GPI_JMP (&io)) { /* jump */
@@ -178,6 +179,8 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 			aop->type = R_ANAL_OP_TYPE_NOT;
 			aop->value = imm;
 		}
+		aop->length = io.len;
+		aop->nopcode = io.opcode_count;
 	}
 
 	return aop->length;

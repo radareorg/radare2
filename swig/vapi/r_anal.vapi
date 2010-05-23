@@ -51,6 +51,14 @@ XXX: jam!
 		FOOT
 	}
 
+	[CCode (cprefix="R_ANAL_BB_DIFF_")]
+	public enum BlockDiff {
+		NULL,
+		NEW,
+		MATCH,
+		UNMATCH
+	}
+
 /* XXX JAM!
 	[CCode (cprefix="R_ANAL_REFLINE_")]
 	public enum Refline {
@@ -134,11 +142,12 @@ XXX: jam!
 	[Compact]
 	[CCode (cprefix="r_anal_bb_", cname="RAnalBlock")]
 	public class Block {
-		public BlockType type;
 		public uint64 addr;
 		public uint64 size;
 		public uint64 jump;
 		public uint64 fail;
+		public BlockType type;
+		public BlockDiff diff;
 		public RList<Op> aops;
 	}
 	public bool bb_split(Block bb, RList<Block> bbs, uint64 addr);

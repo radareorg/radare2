@@ -756,7 +756,7 @@ char *x86f_get_reg( __in unsigned short reg )
     return ( char * )( ( tbl_reg[ ( X86IM_IO_ROP_GET_GR( reg )-1 ) >> 4 ] )[ X86IM_IO_ROP_GET_ID( reg ) ] );
 }
 
-void format_prefix( __in x86im_instr_object *io,
+void x86im_fmt_format_prefix( __in x86im_instr_object *io,
                     __out char *pfx )
 {
     char *tbl_pfx[]= { "LOCK", "REP", "REPNE" };
@@ -780,7 +780,7 @@ void format_prefix( __in x86im_instr_object *io,
     }
 }
 
-void format_name( __in x86im_instr_object *io,
+void x86im_fmt_format_name( __in x86im_instr_object *io,
                    __in char *name )
 {
     char size[6]= {"BWDQER"}; 
@@ -947,7 +947,7 @@ void format_name( __in x86im_instr_object *io,
     }
 }
 
-void format_operand( __in x86im_instr_object *io,
+void x86im_fmt_format_operand( __in x86im_instr_object *io,
                      __out char *dst,
                      __out char *src )
 {
@@ -1150,9 +1150,9 @@ unsigned int x86im_fmt( __in x86im_instr_object *io )
         dst  = name + 256;
         src  = dst  + 256;
 
-        format_prefix( io, pfx );
-        format_name( io, name );
-        format_operand( io, dst, src );
+        x86im_fmt_format_prefix( io, pfx );
+        x86im_fmt_format_name( io, name );
+        x86im_fmt_format_operand( io, dst, src );
 
         io->data = ( char * ) calloc( 1, 256 );
         if ( io->data )

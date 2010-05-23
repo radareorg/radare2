@@ -56,7 +56,7 @@ static RList* sections(RBin *bin) {
 		ptr->size = section[i].size;
 		ptr->vsize = section[i].size;
 		ptr->offset = section[i].offset;
-		ptr->rva = section[i].offset;
+		ptr->rva = section[i].rva;
 		ptr->characteristics = 0;
 		if (R_BIN_ELF_SCN_IS_EXECUTABLE (section[i].flags))
 			ptr->characteristics |= 1;

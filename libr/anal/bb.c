@@ -16,6 +16,7 @@ R_API RAnalBlock *r_anal_bb_new() {
 		bb->jump = -1;
 		bb->fail = -1;
 		bb->type = R_ANAL_BB_TYPE_NULL;
+		bb->diff = R_ANAL_BB_DIFF_NULL;
 		bb->aops = r_anal_aop_list_new();
 	}
 	return bb;
@@ -52,6 +53,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 		}
 		idx += oplen;
 		bb->size += oplen;
+		bb->ninstr++;
 		r_list_append (bb->aops, aop);
 		if (head) bb->type = R_ANAL_BB_TYPE_HEAD;
 		switch (aop->type) {

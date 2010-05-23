@@ -26,6 +26,7 @@ R_API RList *r_anal_aop_list_new() {
 }
 
 R_API void r_anal_aop_free(void *aop) {
+	free (((RAnalOp*)aop)->mnemonic);
 	free (aop);
 }
 
