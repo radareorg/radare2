@@ -61,8 +61,8 @@ enum AVR_Formatting_Options {
 };
 
 /* See avr_disasm.c for more information on these variables. */
-extern int AVR_Long_Instruction;
-extern uint32_t AVR_Long_Address;
+//extern int AVR_Long_Instruction;
+//extern uint32_t AVR_Long_Address;
 
 /* Structure to hold various formatting options supported
  * by this disassembler. */

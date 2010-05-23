@@ -53,8 +53,10 @@ R_API int r_sys_usleep(int usecs) {
 
 R_API int r_sys_setenv(const char *key, const char *value) {
 #if __UNIX__
-	if (value == NULL)
-		return unsetenv (key);
+	if (value == NULL) {
+		unsetenv (key);
+		return 0;
+	}
 	return setenv (key, value, 1);
 #elif __WINDOWS__
 	SetEnvironmentVariable (key, (LPSTR)value);

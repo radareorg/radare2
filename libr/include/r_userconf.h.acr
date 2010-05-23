@@ -1,6 +1,9 @@
 #ifndef _INCLUDE_R_CONFIGURE_H_
 #define _INCLUDE_R_CONFIGURE_H_
 
+#ifdef LIL_ENDIAN
+#undef LIL_ENDIAN
+#endif
 #define LIL_ENDIAN @LIL_ENDIAN@
 
 #ifdef PREFIX

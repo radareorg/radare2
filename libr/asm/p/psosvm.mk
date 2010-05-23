@@ -7,4 +7,4 @@ TARGET_PSOSVM=asm_psosvm.${EXT_SO}
 ALL_TARGETS+=${TARGET_PSOSVM}
 
 ${TARGET_PSOSVM}: ${OBJ_PSOSVM}
-	${CC} -shared ${CFLAGS} -o asm_psosvm.${EXT_SO} ${OBJ_PSOSVM}
+	${CC} ${LDFLAGS} ${CFLAGS} -o asm_psosvm.${EXT_SO} ${OBJ_PSOSVM}

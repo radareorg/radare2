@@ -5,5 +5,4 @@ ALL_TARGETS+=${TARGET_BF}
 STATIC_OBJ+=${OBJ_BF}
 
 ${TARGET_BF}: ${OBJ_BF}
-	${CC} -shared ${CFLAGS} -o ${TARGET_BF} ${OBJ_BF}
-	@#strip -s asm_x86.${EXT_SO}
+	${CC} ${LDFLAGS} ${CFLAGS} -o ${TARGET_BF} ${OBJ_BF}

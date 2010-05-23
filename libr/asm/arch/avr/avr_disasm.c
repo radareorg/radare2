@@ -37,7 +37,7 @@ extern instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS];
 /* Variable to keep track of long instructions that have been found and are to be printed. */
 int AVR_Long_Instruction = 0;
 /* Variable to hold the address of the long instructions */
-uint32_t AVR_Long_Address;
+static uint32_t AVR_Long_Address;
 /* A copy of the AVR long instruction, we need to keep this so we know information about the
  * instruction (mnemonic, operands) after we've read the next 16-bits from the program file. */
 static disassembledInstruction longInstruction;

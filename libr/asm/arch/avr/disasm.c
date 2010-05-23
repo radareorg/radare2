@@ -1,5 +1,5 @@
-#include "format.c"
 #include "avr_disasm.c"
+#include "format.c"
 #include "avr_instructionset.c"
 #ifndef ut64
 #define ut64 unsigned long long

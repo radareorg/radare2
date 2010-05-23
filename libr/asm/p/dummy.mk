@@ -5,4 +5,4 @@ ALL_TARGETS+=${TARGET_DUMMY}
 STATIC_OBJ+=${OBJ_DUMMY}
 
 ${TARGET_DUMMY}: ${OBJ_DUMMY}
-	${CC} -shared ${CFLAGS} -o asm_dummy.${EXT_SO} asm_dummy.o
+	${CC} ${LDFLAGS} ${CFLAGS} -o asm_dummy.${EXT_SO} asm_dummy.o
