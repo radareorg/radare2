@@ -25,6 +25,12 @@ struct cp_item {
 	ut64 off;
 };
 
+struct java_op {
+	char *name;
+	unsigned char byte;
+	int size;
+};
+extern struct java_op java_ops[];
 //extern struct cp_item *cp_items;
 //extern struct cp_item cp_null_item; // NOTE: must be initialized for safe use
 

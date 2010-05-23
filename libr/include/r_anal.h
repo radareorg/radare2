@@ -294,6 +294,7 @@ extern RAnalHandle r_anal_plugin_arm;
 extern RAnalHandle r_anal_plugin_x86;
 extern RAnalHandle r_anal_plugin_x86_x86im;
 extern RAnalHandle r_anal_plugin_ppc;
+extern RAnalHandle r_anal_plugin_java;
 
 #endif
 #endif

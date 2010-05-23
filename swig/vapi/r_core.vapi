@@ -9,6 +9,7 @@ public class RCore {
 	/* lifecycle */
 	public RCore();
 	public RCons cons;
+	public RConfig config;
 	public RAsm assembler;
 	public RAnal anal;
 

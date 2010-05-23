@@ -8,4 +8,3 @@ ALL_TARGETS+=${TARGET_X86}
 
 ${TARGET_X86}: ${OBJ_X86}
 	${CC} -shared ${CFLAGS} -o anal_x86.${EXT_SO} ${OBJ_X86}
-	@#strip -s anal_x86.${EXT_SO}

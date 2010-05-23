@@ -42,7 +42,7 @@ R_API void *r_lib_dl_open(const char *libname) {
 	ret = DLOPEN (libname);
 	if (ret == NULL)
 #if __UNIX__
-		eprintf ("dlerror: %s\n", dlerror());
+		eprintf ("dlerror(%s): %s\n", libname, dlerror());
 #else
 		eprintf ("r_lib_dl_open: Cannot open '%s'\n", libname);
 #endif

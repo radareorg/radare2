@@ -1,5 +1,6 @@
 OBJ_JAVA=asm_java.o
 OBJ_JAVA+=../arch/java/javasm/javasm.o
+OBJ_JAVA+=../arch/java/javasm/java_ops.o
 
 STATIC_OBJ+=${OBJ_JAVA}
 TARGET_JAVA=asm_java.${EXT_SO}
