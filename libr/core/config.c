@@ -17,7 +17,9 @@ static int config_ioffio_callback(void *user, void *data) {
 }
 
 static int config_bigendian_callback(void *user, void *data) {
-	/* TODO: change endian in r_asm and others */
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->assembler->big_endian = node->i_value;
 	return R_TRUE;
 }
 

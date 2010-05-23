@@ -294,6 +294,22 @@ R_API int r_range_list(RRange *rgs, int rad);
 R_API int r_range_get_n(RRange *rgs, int n, ut64 *from, ut64 *to);
 R_API RRange *r_range_inverse(RRange *rgs, ut64 from, ut64 to, int flags);
 R_API int r_range_overlap(ut64 a0, ut64 a1, ut64 b0, ut64 b1, int *d);
+
+/* big */
+#define	R_BIG_SIZE 100
+typedef struct r_num_big_t {
+        char dgts[R_BIG_SIZE];
+	int sign, last;
+} RNumBig;
+R_API void r_big_sub(RNumBig *a, RNumBig *b, RNumBig *c);
+R_API void r_big_print(RNumBig *n);
+R_API void r_big_set(RNumBig *n, int v);
+R_API void r_big_add (RNumBig *c, RNumBig *a, RNumBig *b);
+R_API void r_big_sub(RNumBig *c, RNumBig *a, RNumBig *b);
+R_API int r_big_cmp(RNumBig *a, RNumBig *b);
+R_API void r_big_shift(RNumBig *n, int d);
+R_API void r_big_mul (RNumBig *c, RNumBig *a, RNumBig *b);
+R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b);
 #endif
 
 #endif
