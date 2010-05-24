@@ -35,6 +35,7 @@ static int show_help(int line) {
 		"  -r     radare commands\n"
 		"  -d     use delta diffing\n"
 		"  -g     graph diff\n"
+		"  -v     Use vaddr"
 		"  -V     show version information\n");;
 	return 1;
 }
@@ -51,13 +52,16 @@ int main(int argc, char **argv) {
 	int c, delta = 0;
 	char *file, *file2;
 	ut8 *bufa, *bufb;
-	int sza, szb, rad = 0;
+	int sza, szb, rad = 0, va = 0;
 	int mode = MODE_DIFF;
 	int showcount = 0;
 	double sim;
 
-	while ((c = getopt (argc, argv, "grhcdlsV")) != -1) {
+	while ((c = getopt (argc, argv, "vgrhcdlsV")) != -1) {
 		switch(c) {
+		case 'v':
+			va = 1;
+			break;
 		case 'r':
 			rad = 1;
 			break;
@@ -118,7 +122,7 @@ int main(int argc, char **argv) {
 //		count = r_diff_lines(file, (char*)bufa, sza, file2, (char*)bufb, szb);
 //		break;
 	case MODE_GRAPH:
-		r_diff_gdiff (file, file2, rad);
+		r_diff_gdiff (file, file2, rad, va);
 	}
 
 	if (showcount)

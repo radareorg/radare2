@@ -45,7 +45,7 @@ R_API int r_diff_buffers_distance(struct r_diff_t *d,
 /* static method !??! */
 R_API int r_diff_lines(const char *file1, const char *sa, int la, const char *file2, const char *sb, int lb);
 R_API int r_diff_set_delta(struct r_diff_t *d, int delta);
-R_API int r_diff_gdiff(char *file1, char *file2, int rad);
+R_API int r_diff_gdiff(char *file1, char *file2, int rad, int va);
 #endif
 
 #endif

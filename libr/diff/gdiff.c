@@ -253,7 +253,7 @@ static void gdiff_diff_fcn(RList *fcns, RList *fcns2, RList *bbs, RList *bbs2) {
 	r_big_free (fingerprint2);
 }
 
-R_API int r_diff_gdiff(char *file1, char *file2, int rad) {
+R_API int r_diff_gdiff(char *file1, char *file2, int rad, int va) {
 	RCore *core;
 	RAnalFcn *fcn;
 	RAnalBlock *bb;
@@ -271,8 +271,8 @@ R_API int r_diff_gdiff(char *file1, char *file2, int rad) {
 			fprintf (stderr, "Cannot open file '%s'\n", files[i]);
 			return R_FALSE;
 		}
-		r_config_set_i (core->config, "io.va", 1);
-		sprintf (cmd, ".!rabin2 -rSIeisv %s", files[i]);
+		r_config_set_i (core->config, "io.va", va);
+		sprintf (cmd, ".!rabin2 -rSIeis%s %s", va?"v":"", files[i]);
 		r_core_cmd0 (core, cmd);
 		r_core_cmd0 (core, "ah x86_x86im");
 		r_core_cmd0 (core, "fs *");
@@ -345,7 +345,7 @@ R_API int r_diff_gdiff(char *file1, char *file2, int rad) {
 		}
 	} else {
 		/* Print graph */
-		r_config_set_i (core->config, "io.va", 1);
+		r_config_set_i (core->config, "io.va", va);
 		sprintf (cmd, ".!rabin2 -rSIeisv %s", files[0]);
 		r_config_set_i (core->config, "asm.lines", 0);
 		r_config_set_i (core->config, "asm.bytes", 0);
