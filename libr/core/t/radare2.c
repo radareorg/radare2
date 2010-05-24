@@ -86,9 +86,6 @@ int main(int argc, char **argv) {
 			seek = atoi (optarg); // XXX use r_num
 			break;
 		case 'L':
-			r_lib_opendir (r.lib, r_config_get (
-				r.config, "dir.plugins"));
-			//r_core_loadlibs (&r);
 			r_lib_list (r.lib);
 			//r_io_handle_list (&r.io);
 			return 0;

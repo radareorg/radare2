@@ -823,6 +823,7 @@ static int cmd_seek(void *data, const char *input) {
 		if (input[1] && input[2]) {
 			off = r_debug_reg_get (core->dbg, input+2);
 			r_core_seek (core, off, 1);
+			r_io_sundo_push (core->io);
 		} else eprintf ("Usage: 'sr pc' ; seek to register\n");
 	} else
 	if (input[0]) { // && input[1]) {

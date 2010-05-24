@@ -4,7 +4,7 @@
 
 #define NPF 6
 static int printidx = 0;
-const char *printfmt[] = { "x", "pd", "sr sp&&x 64&&dr=&&sr pc&&pd", "p8", "pc", "ps" };
+const char *printfmt[] = { "x", "pd", "f tmp&&sr sp&&x 64&&dr=&&s-&&s tmp&&f-tmp&&pd", "p8", "pc", "ps" };
 
 static int curset = 0, cursor = -1, ocursor=-1;
 static int color = 1;
@@ -679,13 +679,16 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" >||<    -  seek aligned to block size\n"
 		" hjkl    -  move around\n"
 		" HJKL    -  move around faster\n"
-		" P||p    -  rotate print modes\n"
+		" pP      -  rotate print modes\n"
 		" /*+-    -  change block size\n"
 		" cC      -  toggle cursor and colors\n"
+		" d[f?]   -  define function, data, code, ..\n"
+		" sS      -  step / step over\n"
 		" uU      -  undo/redo seek\n"
 		" mK/'K   -  mark/go to Key (any key)\n"
 		" :cmd    -  run radare command\n"
 		" ;[-]cmt -  add/remove comment\n"
+		" .       -  seek to program counter\n"
 		" q       -  back to radare shell\n");
 		r_cons_flush ();
 		r_cons_any_key ();
@@ -699,9 +702,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 
 // TODO: simplify R_ABS(printidx%NPF) into a macro, or just control negative values..
 R_API void r_core_visual_prompt(RCore *core, int color) {
-	if (color) r_cons_printf (Color_YELLOW"[0x%08"PFMT64x"] %s\n"Color_RESET,
+	if (color) r_cons_printf (Color_YELLOW"[0x%08"PFMT64x"]> %s\n"Color_RESET,
 		core->offset, printfmt[R_ABS (printidx%NPF)]);
-	else r_cons_printf ("[0x%08"PFMT64x"] %s\n", core->offset, printfmt[R_ABS (printidx%NPF)]);
+	else r_cons_printf ("[0x%08"PFMT64x"]> %s\n", core->offset, printfmt[R_ABS (printidx%NPF)]);
 }
 
 R_API int r_core_visual(RCore *core, const char *input) {
