@@ -30,9 +30,7 @@ public class RAnal {
 		LT
 	}
 
-/*
-XXX: jam! 
-	[CCode (cprefix="R_ANAL_VAR_TYPE")]
+	[CCode (cprefix="R_ANAL_VAR_TYPE_")]
 	public enum VarType {
 		NULL,
 		GLOBAL,
@@ -40,7 +38,6 @@ XXX: jam!
 		ARG,
 		ARGREG
 	}
-*/
 
 	[CCode (cprefix="R_ANAL_BB_TYPE_")]
 	public enum BlockType {
@@ -197,6 +194,7 @@ XXX: jam!
 		public RList<VarAccess> accessess;
 	}
 
+/*
 	[Compact]
 	[CCode (cname="RAnalVarType")]
 	public class VarType {
@@ -204,6 +202,7 @@ XXX: jam!
 		public string fmt;
 		public uint size;
 	}
+*/
 
 	[Compact]
 	[CCode (cname="RAnalRefline", free_function="")]

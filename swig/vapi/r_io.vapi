@@ -17,6 +17,7 @@ namespace Radare {
 			CUR = 1,
 			END = 2,
 		}
+		public uint64 va;
 
 		public RIO();
 		public RIO free();

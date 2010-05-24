@@ -8,6 +8,7 @@ public class RCore {
 	public RNum num;
 	/* lifecycle */
 	public RCore();
+	public RIO io;
 	public RCons cons;
 	public RConfig config;
 	public RAsm assembler;
