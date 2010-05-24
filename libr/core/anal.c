@@ -92,6 +92,9 @@ static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts
 				if (addr != 0) r_core_anal_graph_nodes (core, pbb, bbi->fail, opts);
 			}
 			if ((str = r_core_anal_graph_label (core, bbi, opts))) {
+				printf (" \"0x%08"PFMT64x"\" [color=%s,label=\"%s\"]\n", bbi->addr, 
+						bbi->diff==R_ANAL_DIFF_MATCH?"green":
+						bbi->diff==R_ANAL_DIFF_UNMATCH?"red":"lightgray",str);
 				r_cons_printf (" \"0x%08"PFMT64x"\" [label=\"%s\"]\n", bbi->addr, str);
 				r_cons_flush ();
 				free (str);
@@ -148,28 +151,38 @@ R_API int r_core_anal_bb_list(RCore *core, int rad) {
 	r_list_foreach (core->anal->bbs, iter, bbi) {
 		if (rad) {
 			r_cons_printf ("ab+ 0x%08"PFMT64x" %04"PFMT64d" ", bbi->addr, bbi->size);
-			if (bbi->jump != -1)
-				r_cons_printf ("%08"PFMT64x" ", bbi->jump);
-			if (bbi->jump != -1 && bbi->fail != -1)
-				r_cons_printf ("%08"PFMT64x" ", bbi->fail);
-			if ((bbi->type & R_ANAL_BB_TYPE_BODY))
-				r_cons_printf ("b");
-			if ((bbi->type & R_ANAL_BB_TYPE_FOOT))
-				r_cons_printf ("f");
-			if ((bbi->type & R_ANAL_BB_TYPE_HEAD))
-				r_cons_printf ("h");
-			if ((bbi->type & R_ANAL_BB_TYPE_LAST))
-				r_cons_printf ("l");
+			r_cons_printf ("0x%08"PFMT64x" ", bbi->jump);
+			r_cons_printf ("0x%08"PFMT64x" ", bbi->fail);
+
+			if (bbi->type == R_ANAL_BB_TYPE_NULL)
+				r_cons_printf ("n");
+			else {
+				if ((bbi->type & R_ANAL_BB_TYPE_BODY))
+					r_cons_printf ("b");
+				if ((bbi->type & R_ANAL_BB_TYPE_FOOT))
+					r_cons_printf ("f");
+				if ((bbi->type & R_ANAL_BB_TYPE_HEAD))
+					r_cons_printf ("h");
+				if ((bbi->type & R_ANAL_BB_TYPE_LAST))
+					r_cons_printf ("l");
+			}
+
+			if ((bbi->diff == R_ANAL_DIFF_MATCH))
+				r_cons_printf (" m");
+			else if ((bbi->diff == R_ANAL_DIFF_UNMATCH))
+				r_cons_printf (" u");
+			else r_cons_printf (" n");
 			r_cons_printf ("\n");
 		} else {
-			r_cons_printf ("[0x%08"PFMT64x"] size=%04"PFMT64d" ", bbi->addr, bbi->size);
+			r_cons_printf ("[0x%08"PFMT64x"] size=%04"PFMT64d, bbi->addr, bbi->size);
 			if (bbi->jump != -1)
-				r_cons_printf ("jump=%08"PFMT64x" ", bbi->jump);
+				r_cons_printf (" jump=0x%08"PFMT64x, bbi->jump);
 			if (bbi->fail != -1)
-				r_cons_printf ("fail=%08"PFMT64x" ", bbi->fail);
-			r_cons_printf ("type = ");
+				r_cons_printf (" fail=0x%08"PFMT64x, bbi->fail);
+
+			r_cons_printf (" type=");
 			if (bbi->type == R_ANAL_BB_TYPE_NULL)
-				r_cons_printf ("null");
+				r_cons_printf ("null ");
 			else {
 			if ((bbi->type & R_ANAL_BB_TYPE_BODY))
 				r_cons_printf ("body ");
@@ -180,6 +193,13 @@ R_API int r_core_anal_bb_list(RCore *core, int rad) {
 			if ((bbi->type & R_ANAL_BB_TYPE_LAST))
 				r_cons_printf ("last ");
 			}
+
+			r_cons_printf ("diff=");
+			if ((bbi->diff == R_ANAL_DIFF_MATCH))
+				r_cons_printf ("match");
+			else if ((bbi->diff == R_ANAL_DIFF_UNMATCH))
+				r_cons_printf ("unmatch");
+			else r_cons_printf ("new");
 			r_cons_printf ("\n");
 		}
 	}
@@ -327,10 +347,27 @@ R_API int r_core_anal_fcn_list(RCore *core, int rad) {
 	ut64 *ref;
 
 	r_list_foreach (core->anal->fcns, iter, fcni)
-		if (rad) r_cons_printf ("af+ 0x%08"PFMT64x" %"PFMT64d" %s\n", fcni->addr, fcni->size, fcni->name);
-		else {
+		if (rad) {
+			r_cons_printf ("af+ 0x%08"PFMT64x" %"PFMT64d" %s", fcni->addr, fcni->size, fcni->name);
+
+			if ((fcni->diff == R_ANAL_DIFF_MATCH))
+				r_cons_printf (" m");
+			else if ((fcni->diff == R_ANAL_DIFF_UNMATCH))
+				r_cons_printf (" u");
+			else r_cons_printf (" n");
+			r_cons_printf ("\n");
+		} else {
 			r_cons_printf ("[0x%08"PFMT64x"] size=%"PFMT64d" name=%s",
 					fcni->addr, fcni->size, fcni->name);
+
+			r_cons_printf (" diff=");
+			if ((fcni->diff == R_ANAL_DIFF_MATCH))
+				r_cons_printf ("match");
+			else if ((fcni->diff == R_ANAL_DIFF_UNMATCH))
+				r_cons_printf ("unmatch");
+			else r_cons_printf ("new");
+			r_cons_printf ("\n");
+
 			r_cons_printf ("\n  refs: ");
 			r_list_foreach (fcni->refs, iter2, refi) {
 				ref = (ut64*)refi;

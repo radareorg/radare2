@@ -15,6 +15,7 @@ R_API RAnalFcn *r_anal_fcn_new() {
 		fcn->vars = r_anal_var_list_new ();
 		fcn->refs = r_anal_ref_list_new ();
 		fcn->xrefs = r_anal_ref_list_new ();
+		fcn->diff = R_ANAL_DIFF_NULL;
 		fcn->fingerprint = r_big_new (NULL);
 	}
 	return fcn;
@@ -113,19 +114,32 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len) 
 	return fcn->size;
 }
 
-R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size, const char *name) {
-	RAnalFcn *fcn, *fcni;
+R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size, const char *name, int diff) {
+	RAnalFcn *fcn = NULL, *fcni;
 	RListIter *iter;
+	int append = 0, mid = 0;
 
-	r_list_foreach (anal->fcns, iter, fcni)
-		if (addr >= fcni->addr && addr < fcni->addr+fcni->size)
-			return R_FALSE;
-	if (!(fcn = r_anal_fcn_new ()))
+	r_list_foreach (anal->fcns, iter, fcni) {
+		if (addr == fcni->addr) {
+			fcn = fcni;
+			mid = 0;
+			break;
+		} else if (addr > fcni->addr && addr < fcni->addr+fcni->size)
+			mid = 1;
+	}
+	if (mid)
 		return R_FALSE;
+	if (fcn == NULL) {
+		if (!(fcn = r_anal_fcn_new ()))
+			return R_FALSE;
+		append = 1;
+	}
 	fcn->addr = addr;
 	fcn->size = size;
+	free (fcn->name);
 	fcn->name = strdup (name);
-	r_list_append (anal->fcns, fcn);
+	fcn->diff = diff;
+	if (append) r_list_append (anal->fcns, fcn);
 	return R_TRUE;
 }
 

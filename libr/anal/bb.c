@@ -16,7 +16,7 @@ R_API RAnalBlock *r_anal_bb_new() {
 		bb->jump = -1;
 		bb->fail = -1;
 		bb->type = R_ANAL_BB_TYPE_NULL;
-		bb->diff = R_ANAL_BB_DIFF_NULL;
+		bb->diff = R_ANAL_DIFF_NULL;
 		bb->aops = r_anal_aop_list_new();
 		bb->fingerprint = r_big_new (NULL);
 	}
@@ -146,21 +146,33 @@ R_API int r_anal_bb_overlap(RAnal *anal, RAnalBlock *bb, RList *bbs) {
 	return R_ANAL_RET_NEW;
 }
 
-R_API int r_anal_bb_add(RAnal *anal, ut64 addr, ut64 size, ut64 jump, ut64 fail, int type) {
-	RAnalBlock *bb, *bbi;
+R_API int r_anal_bb_add(RAnal *anal, ut64 addr, ut64 size, ut64 jump, ut64 fail, int type, int diff) {
+	RAnalBlock *bb = NULL, *bbi;
 	RListIter *iter;
+	int append = 0, mid = 0;
 
-	r_list_foreach (anal->bbs, iter, bbi)
-		if (addr >= bbi->addr && addr < bbi->addr+bbi->size)
-			return R_FALSE;
-	if (!(bb = r_anal_bb_new ()))
+	r_list_foreach (anal->bbs, iter, bbi) {
+		if (addr == bbi->addr) {
+			bb = bbi;
+			mid = 0;
+			break;
+		} else if (addr > bbi->addr && addr < bbi->addr+bbi->size)
+			mid = 1;
+	}
+	if (mid)
 		return R_FALSE;
+	if (bb == NULL) {
+		if (!(bb = r_anal_bb_new ()))
+			return R_FALSE;
+		append = 1;
+	}
 	bb->addr = addr;
 	bb->size = size;
 	bb->jump = jump;
 	bb->fail = fail;
 	bb->type = type;
-	r_list_append (anal->bbs, bb);
+	bb->diff = diff;
+	if (append) r_list_append (anal->bbs, bb);
 	return R_TRUE;
 }
 

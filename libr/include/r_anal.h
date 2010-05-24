@@ -67,9 +67,9 @@ enum {
 };
 
 enum {
-	R_ANAL_BB_DIFF_NULL = 0,
-	R_ANAL_BB_DIFF_MATCH,
-	R_ANAL_BB_DIFF_UNMATCH,
+	R_ANAL_DIFF_NULL = 0,
+	R_ANAL_DIFF_MATCH,
+	R_ANAL_DIFF_UNMATCH,
 };
 
 enum {
@@ -166,6 +166,7 @@ typedef struct r_anal_fcn_t {
 	ut64 addr;
 	ut64 size;
 	int stack;
+	int diff;
 	int ninstr;
 	RNumBig *fingerprint;
 	RList *vars;
@@ -235,7 +236,7 @@ R_API int r_anal_bb_split(RAnal *anal, RAnalBlock *bb,
 		RList *bbs, ut64 addr);
 R_API int r_anal_bb_overlap(RAnal *anal, RAnalBlock *bb, RList *bbs);
 R_API int r_anal_bb_add(RAnal *anal, ut64 addr,
-		ut64 size, ut64 jump, ut64 fail, int type);
+		ut64 size, ut64 jump, ut64 fail, int type, int diff);
 R_API int r_anal_bb_del(RAnal *anal, ut64 addr);
 
 /* aop.c */
@@ -250,7 +251,8 @@ R_API RAnalFcn *r_anal_fcn_new();
 R_API RList *r_anal_fcn_list_new();
 R_API void r_anal_fcn_free(void *fcn);
 R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len);
-R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size, const char *name);
+R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size,
+		const char *name, int diff);
 R_API int r_anal_fcn_del(RAnal *anal, ut64 addr);
 R_API RList *r_anal_fcn_bb_list(RAnal *anal, RAnalFcn *fcn);
 

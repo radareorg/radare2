@@ -1394,8 +1394,15 @@ static int cmd_anal(void *data, const char *input) {
 			ut64 jump = -1LL;
 			ut64 fail = -1LL;
 			int type = R_ANAL_BB_TYPE_NULL;
+			int diff = R_ANAL_DIFF_NULL;
 			
 			switch(r_str_word_set0 (ptr)) {
+			case 6:
+				ptr2 = r_str_word_get0 (ptr, 5);
+				if (ptr2[0] == 'm')
+					diff = R_ANAL_DIFF_MATCH;
+				else if (ptr2[0] == 'u')
+					diff = R_ANAL_DIFF_UNMATCH;
 			case 5:
 				ptr2 = r_str_word_get0 (ptr, 4);
 				if (strchr (ptr2, 'h'))
@@ -1415,7 +1422,7 @@ static int cmd_anal(void *data, const char *input) {
 			case 1: // get addr
 				addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 			}
-			if (!r_anal_bb_add (core->anal, addr, size, jump, fail, type))
+			if (!r_anal_bb_add (core->anal, addr, size, jump, fail, type, diff))
 				eprintf ("Cannot add bb (duplicated or overlaped)\n");
 			free (ptr);
 			}
@@ -1430,7 +1437,7 @@ static int cmd_anal(void *data, const char *input) {
 			r_cons_printf (
 			"Usage: ab[?+-l*]\n"
 			" ab @ [addr]     ; Analyze basic blocks (start at addr)\n"
-			" ab+ addr size [jump] [fail] [type] ; Add basic block\n"
+			" ab+ addr size [jump] [fail] [type] [diff] ; Add basic block\n"
 			" ab- [addr]      ; Clean all basic block data (or bb at addr and childs)\n"
 			" abl             ; List basic blocks\n"
 			" ab*             ; Output radare commands\n");
@@ -1447,16 +1454,25 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		case '+':
 			{
-			char *ptr = strdup(input+3);
+			char *ptr = strdup(input+3), *ptr2;
+			int n = r_str_word_set0 (ptr);
 			const char *name = NULL;
 			ut64 addr = -1LL;
 			ut64 size = 0LL;
+			int diff = R_ANAL_DIFF_NULL;
 			
-			if (r_str_word_set0 (ptr) == 3) {
+			if (n > 2) {
+				if (n == 4) {
+					ptr2 = r_str_word_get0 (ptr, 3);
+					if (ptr2[0] == 'm')
+						diff = R_ANAL_DIFF_MATCH;
+					else if (ptr2[0] == 'u')
+						diff = R_ANAL_DIFF_UNMATCH;
+				}
 				name = r_str_word_get0 (ptr, 2);
 				size = r_num_math (core->num, r_str_word_get0 (ptr, 1));
 				addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
-				if (!r_anal_fcn_add (core->anal, addr, size, name))
+				if (!r_anal_fcn_add (core->anal, addr, size, name, diff))
 					eprintf ("Cannot add function (duplicated or overlaped)\n");
 			}
 			free (ptr);
