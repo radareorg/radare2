@@ -302,6 +302,7 @@ typedef struct r_num_big_t {
 	int sign, last;
 } RNumBig;
 
+#define r_big_copy(x,y)memcpy(x,y,sizeof(RNumBig))
 R_API RNumBig *r_big_new(RNumBig *b);
 R_API void r_big_free(RNumBig *b);
 R_API void r_big_sub(RNumBig *a, RNumBig *b, RNumBig *c);

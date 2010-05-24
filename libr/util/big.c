@@ -7,8 +7,8 @@
 #include <r_util.h>
 
 static inline void r_big_zero(RNumBig *n) {
-	while ((n->last > 0) && (n->dgts[ n->last ] == 0))
-		n->last --;
+	while ((n->last>0) && !n->dgts[n->last])
+		n->last--;
         if (!n->last && !*n->dgts)
 		n->sign = 1; /* hack to avoid -0 */
 }
@@ -29,11 +29,10 @@ R_API void r_big_set_str(RNumBig *n, const char *str) {
 	if (*str=='-') {
 		n->sign = -1;
 		str++;
-	} else n->sign =1;
-	len = strlen (str);
-	for (i=len; *str; i--,str++)
+	} else n->sign = 1;
+	for (i=len=strlen (str)-1; *str; i--, str++)
 		n->dgts[i] = *str-'0';
-	n->last = len-1;
+	n->last = len;
 }
 
 R_API RNumBig *r_big_new(RNumBig *b) {
@@ -49,13 +48,11 @@ R_API void r_big_free(RNumBig *b) {
 
 R_API void r_big_set(RNumBig *n, int v) {
 	int t;
+	n->last = 0;
 	n->sign = (v>=0)?1:-1;
 	memset (n->dgts, 0, R_BIG_SIZE);
-	n->last = -1;
-	for (t=R_ABS (v); t>0; t/=10) {
-		n->last++;
+	for (n->last=0, t=R_ABS (v); t>0; t/=10, n->last++)
 		n->dgts[n->last] = (t % 10);
-	}
 	if (!v) n->last = 0;
 }
 
@@ -63,7 +60,7 @@ R_API void r_big_set64(RNumBig *n, st64 v) {
 	st64 t;
 	n->sign = (v<0)?-1:1;
 	memset (n->dgts, 0, R_BIG_SIZE);
-	n->last = -1;
+	n->last = 0;//-1;
 	for (t=R_ABS(v); t>0; t/=10) {
 		n->last++;
 		n->dgts[n->last] = t%10;
@@ -87,7 +84,7 @@ R_API void r_big_add (RNumBig *c, RNumBig *a, RNumBig *b) {
 
 	t.last = R_MAX (a->last, b->last)+1;
 
-	for (carry=i=0; i<=t.last; i++) {
+	for (carry=i=0; i<=t.last && i<R_BIG_SIZE; i++) {
 		t.dgts[i] = (char) (carry+a->dgts[i]+b->dgts[i]) % 10;
 		carry = (carry + a->dgts[i] + b->dgts[i]) / 10;
 	}
@@ -105,17 +102,19 @@ R_API void r_big_sub(RNumBig *c, RNumBig *a, RNumBig *b) {
                 b->sign *= -1;
                 r_big_add (&t, a, b);
                 b->sign *= -1;
+		*c = t;
 		return;
         }
 
 	if (r_big_cmp (a, b) == 1) {
 		r_big_sub (&t, b, a);
 		t.sign = -1;
+		*c = t;
 		return;
 	}
 
         t.last = R_MAX (a->last, b->last);
-        for (borrow=i=0; i<=(t.last); i++) {
+        for (borrow=i=0; i<=(t.last) &&i<R_BIG_SIZE; i++) {
 		v = (a->dgts[i] - borrow - b->dgts[i]);
 		if (v < 0) {
 			v += 10;
@@ -157,10 +156,11 @@ R_API void r_big_mul (RNumBig *c, RNumBig *a, RNumBig *b) {
 	RNumBig t, tmp, row;
 	int i,j;
 	r_big_set (&t, 0);
+	r_big_set (&tmp, 0);
 	row = *a;
-	for (i=0; i<=b->last; i++) {
+	for (i=0; i<=b->last && i<R_BIG_SIZE; i++) {
 		for (j=1; j<=b->dgts[i]; j++) {
-			r_big_add (&tmp, &row, &t);
+			r_big_add (&tmp, &t, &row);
 			t = tmp;
 		}
 		r_big_shift (&row, 1);
@@ -212,14 +212,14 @@ void main() {
 	int a,b;
 	RNumBig n1, n2, n3, zero;
 
-	r_big_set (&n2, 70);
-	r_big_set_str (&n3, "-20");
+	r_big_set (&n2, -2);
+	r_big_set_str (&n3, "-3");
+	//r_big_set (&n3, -3);
 printf ("n3last = %d\n", n3.last);
-	//r_big_set (&n3, -20);
-printf("--\n");
-printf ("n3last = %d\n", n3.last);
-	r_big_div (&n2, &n2, &n3);
+printf ("%d %d\n", n3.dgts[0], n3.dgts[1]);
+	r_big_mul (&n2, &n2, &n3);
 	r_big_print (&n2);
+printf("--\n");
 
 	r_big_set (&n1, 2);
 	r_big_set (&n2, 3);
