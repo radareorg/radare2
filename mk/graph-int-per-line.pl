@@ -1,7 +1,8 @@
 #!/usr/bin/perl
 #
 # $ hg clone http://hg.youterm.com/toys
-# locdiff > locdiff.txt
+# lochist > lochist.txt
+# perl graph-int-per-line.pl
 #
 
 my $min = 0;

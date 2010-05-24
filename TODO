@@ -4,7 +4,6 @@
 |_|\__|_|__|___/|_|_|_|\__\___/ |_____(_)____/
 
 
-* cfg.bigendian doesnt works with ppc disassembelr
 * merge r_asm and r_anal?
 
 * filter search results..
