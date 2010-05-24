@@ -1102,7 +1102,6 @@ static int cmd_cmp(void *data, const char *input) {
 		{
 		char cmd[512];
 		snprintf (cmd, sizeof (cmd), ".!radiff2 -rg %s %s", core->file->filename, input+1);
-		eprintf ("AA: %s\n", cmd);
 		r_core_cmd_str (core, cmd);
 		}
 		break;

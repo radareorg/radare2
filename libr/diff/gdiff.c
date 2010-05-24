@@ -8,6 +8,69 @@
 #include <r_util.h>
 #include "gdiff.h"
 
+/* XXX Fix r_cons and remove this functions (dupped) */
+static char *gdiff_graph_label(RCore *core, struct r_anal_bb_t *bb) {
+	char cmd[1024], *cmdstr = NULL, *str = NULL;
+	int i, j;
+
+	snprintf (cmd, sizeof (cmd), "pD %"PFMT64d" @ 0x%08"PFMT64x"", bb->size, bb->addr);
+	cmdstr = r_core_cmd_str (core, cmd);
+	if (cmdstr) {
+		if (!(str = malloc(strlen(cmdstr)*2)))
+			return NULL;
+		for(i=j=0;cmdstr[i];i++,j++) {
+			switch(cmdstr[i]) {
+				case 0x1b:
+					/* skip ansi chars */
+					for(i++;cmdstr[i]&&cmdstr[i]!='m'&&cmdstr[i]!='H'&&cmdstr[i]!='J';i++);
+					j--;
+					break;
+				case '"':
+					str[j]='\\';
+					str[++j]='"';
+					break;
+				case '\n':
+				case '\r':
+					str[j]='\\';
+					str[++j]='l';
+					break;
+				default:
+					str[j]=cmdstr[i];
+			}
+		}
+		str[j]='\0';
+		free (cmdstr);
+	}
+	return str;
+}
+
+static void gdiff_graph(RCore *core) {
+	struct r_anal_bb_t *bbi;
+	RListIter *iter;
+	char *str;
+
+	printf ("digraph code {\n"
+			"\tgraph [bgcolor=white];\n"
+			"\tnode [color=lightgray, style=filled shape=box"
+			" fontname=\"Courier\" fontsize=\"8\"];\n");
+	r_list_foreach (core->anal->bbs, iter, bbi) {
+		if (bbi->jump != -1) {
+			printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" [color=\"%s\"];\n", bbi->addr, bbi->jump,
+					bbi->fail != -1 ? "green" : "blue");
+		}
+		if (bbi->fail != -1) {
+			printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" [color=\"red\"];\n", bbi->addr, bbi->fail);
+		}
+		if ((str = gdiff_graph_label (core, bbi))) {
+			printf (" \"0x%08"PFMT64x"\" [color=%s,label=\"%s\"]\n", bbi->addr, 
+					bbi->diff==R_ANAL_DIFF_MATCH?"green":
+					bbi->diff==R_ANAL_DIFF_UNMATCH?"red":"lightgray",str);
+			free (str);
+		}
+	}
+	printf ("}\n");
+}
+
 /* XXX NEED A HASH ALGO */
 static ut32 gdiff_get_prime(char* mnemonic) {
 	int i;
@@ -208,7 +271,7 @@ R_API int r_diff_gdiff(char *file1, char *file2, int rad) {
 			fprintf (stderr, "Cannot open file '%s'\n", files[i]);
 			return R_FALSE;
 		}
-		r_core_cmd0 (core, "e io.va = 1");
+		r_config_set_i (core->config, "io.va", 1);
 		sprintf (cmd, ".!rabin2 -rSIeisv %s", files[i]);
 		r_core_cmd0 (core, cmd);
 		r_core_cmd0 (core, "ah x86_x86im");
@@ -253,6 +316,7 @@ R_API int r_diff_gdiff(char *file1, char *file2, int rad) {
 		return R_FALSE;
 	}
 
+	/* Fill analysis info in core */
 	iter = r_list_iterator (bbs[0]);
 	while (r_list_iter_next (iter)) {
 		bb = r_list_iter_get (iter);
@@ -280,7 +344,13 @@ R_API int r_diff_gdiff(char *file1, char *file2, int rad) {
 		}
 	} else {
 		/* Print graph */
-		r_core_anal_graph (core, 0, R_CORE_ANAL_GRAPHBODY);
+		r_config_set_i (core->config, "io.va", 1);
+		sprintf (cmd, ".!rabin2 -rSIeisv %s", files[0]);
+		r_config_set_i (core->config, "asm.lines", 0);
+		r_config_set_i (core->config, "asm.bytes", 0);
+		r_config_set_i (core->config, "asm.dwarf", 0);
+		gdiff_graph (core);
+		//XXX r_core_anal_graph (core, 0, R_CORE_ANAL_GRAPHBODY);
 	}
 
 	/* Free resources */
