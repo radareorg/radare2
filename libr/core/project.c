@@ -27,12 +27,36 @@ static int r_core_project_init() {
 	return ret;
 }
 
-R_API int r_core_project_open(RCore *core, const char *file) {
+R_API int r_core_project_open(RCore *core, const char *prjfile) {
 	int ret;
-	char *prj = r_core_project_file (file);
+	char *prj = r_core_project_file (prjfile);
 	ret = r_core_cmd_file (core, prj);
 	free (prj);
 	return ret;
+}
+
+R_API char *r_core_project_info(RCore *core, const char *prjfile) {
+	char buf[256], *file = NULL;
+	char *prj = r_core_project_file (prjfile);
+	FILE *fd;
+	if (prj && (fd = fopen (prj, "r"))) {
+		for (;;) {
+			fgets (buf, sizeof (buf), fd);
+			if (feof (fd))
+				break;
+			if (!memcmp (buf, "e file.path = ", 14)) {
+				buf[strlen(buf)-1]=0;
+				file = strdup (buf+14);
+				break;
+			}
+		}
+		fclose (fd);
+	}
+	printf ("Project : %s\n", prj);
+	if (file)
+		printf ("FilePath: %s\n", file);
+	free (prj);
+	return file;
 }
 
 R_API int r_core_project_save(RCore *core, const char *file) {

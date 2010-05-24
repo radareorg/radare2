@@ -266,13 +266,34 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 
 static int cmd_io_system(void *data, const char *input);
 
+static int cmd_project(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+	const char *arg = input+1;
+	char *str = strdup (r_config_get (core->config, "file.project"));
+	if (*arg==' ') arg++;
+	switch (input[0]) {
+	case 'o': r_core_project_open (core, input[1]?arg:str); break;
+	case 's': r_core_project_save (core, input[1]?arg:str); break;
+	case 'i': free (r_core_project_info (core, input[1]?arg:str)); break;
+	default:
+		r_cons_printf (
+		"Usage: P[osi] [file]\n"
+		" Po [file]  open project\n"
+		" Ps [file]  save project\n"
+		" Pi [file]  info\n");
+		break;
+	}
+	free (str);
+	return R_TRUE;
+}
+
 static int cmd_zign(void *data, const char *input) {
+	RCore *core = (RCore *)data;
 	RAnalFcn *fcni;
 	RListIter *iter;
 	RSignItem *item;
-	RCore *core = (RCore *)data;
-	char *ptr, *name;
 	int i, fd, len;
+	char *ptr, *name;
 
 	switch (input[0]) {
 	case 'g':
@@ -3017,6 +3038,7 @@ int r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->cmd, "print",    "print current block", &cmd_print);
 	r_cmd_add (core->cmd, "write",    "write bytes", &cmd_write);
 	r_cmd_add (core->cmd, "Code",     "code metadata", &cmd_meta);
+	r_cmd_add (core->cmd, "Project",  "project", &cmd_project);
 	r_cmd_add (core->cmd, "open",     "open or map file", &cmd_open);
 	r_cmd_add (core->cmd, "yank",     "yank bytes", &cmd_yank);
 	r_cmd_add (core->cmd, "Visual",   "enter visual mode", &cmd_visual);

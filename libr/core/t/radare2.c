@@ -88,10 +88,10 @@ int main(int argc, char **argv) {
 		case 'L':
 			r_lib_opendir (r.lib, r_config_get (
 				r.config, "dir.plugins"));
-			r_core_loadlibs (&r);
+			//r_core_loadlibs (&r);
 			r_lib_list (r.lib);
 			//r_io_handle_list (&r.io);
-			break;
+			return 0;
 		case 'u':
 			eprintf ("TODO\n");
 			break;
@@ -99,7 +99,6 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 	}
-
 	if (debug) {
 		char file[1024];
 		strcpy (file, "dbg://");
@@ -117,26 +116,27 @@ int main(int argc, char **argv) {
 			if (++optind != argc)
 				strcat (file, " ");
 		}
-		r_core_loadlibs (&r);
 
 		fh = r_core_file_open (&r, file, perms);
-		if (fh == NULL) {
-			eprintf ("Cannot open file '%s'\n", file);
-			return 1;
-		}
 		// TODO: move into if (debug) ..
 		r_config_set (r.config, "cfg.debug", "true");
 		r_debug_use (r.dbg, "native");
-	} else
-	while (optind < argc) {
-		const char *file = argv[optind++];
-		// XXX dupped
-		r_core_loadlibs (&r);
-		fh = r_core_file_open (&r, file, perms);
-		if (fh == NULL) {
-			eprintf ("Cannot open file '%s'\n", file);
-			return 1;
+	} else {
+		if (optind<argc) {
+			while (optind < argc)
+				fh = r_core_file_open (&r, argv[optind++], perms);
+		} else {
+			const char *prj = r_config_get (r.config, "file.project");
+			if (prj && *prj) {
+				char *file = r_core_project_info (&r, prj);
+				if (file) fh = r_core_file_open (&r, file, perms);
+				else fprintf (stderr, "No file\n");
+			}
 		}
+	}
+	if (fh == NULL) {
+		eprintf ("Cannot open file.\n");
+		return 1;
 	}
 
 	if (r.file == NULL) {
@@ -185,7 +185,27 @@ int main(int argc, char **argv) {
 		r_cons_flush ();
 	}
 
-	r_core_project_open (&r, r_config_get (r.config, "file.project"));
+	{
+		char *path = strdup (r_config_get (r.config, "file.path"));
+
+		r_core_project_open (&r, r_config_get (r.config, "file.project"));
+		/* check if file.sha1 has changed */
+	{
+		const char *npath, *nsha1;
+		char *sha1 = strdup (r_config_get (r.config, "file.sha1"));
+		char *cmd = r_str_dup_printf (".!rahash2 -r %s", r.file->filename);
+		r_core_cmd (&r, cmd, 0);
+		nsha1 = r_config_get (r.config, "file.sha1");
+		npath = r_config_get (r.config, "file.path");
+		if (sha1 && *sha1 && strcmp (sha1, nsha1))
+			fprintf (stderr, "WARNING: file.sha1 change: %s => %s\n", sha1, nsha1);
+		if (path && *path && strcmp (path, npath))
+			fprintf (stderr, "WARNING: file.path change: %s => %s\n", path, npath);
+		r_str_free (cmd);
+		free (sha1);
+		free (path);
+	}
+	}
 	mainloop:
 	do {
 		ret = r_core_prompt (&r);

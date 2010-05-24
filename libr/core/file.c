@@ -35,6 +35,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode) {
 	cp = r_config_get (r->config, "cmd.open");
 	if (cp && *cp)
 		r_core_cmd (r, cp, 0);
+	r_config_set (r->config, "file.path", file);
 	return fh;
 }
 

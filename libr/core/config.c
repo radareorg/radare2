@@ -199,8 +199,9 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "io.ffio", "false", &config_ioffio_callback);
 	r_config_set_cb (cfg, "io.va", "false", &config_iova_callback);
 	r_config_set_cb (cfg, "io.cache", "false", &config_iocache_callback);
+	r_config_set (cfg, "file.path", "");
 	r_config_set (cfg, "file.project", "");
-	r_config_set (cfg, "file.md5", ""); 
+	r_config_set (cfg, "file.sha1", ""); 
 	r_config_set (cfg, "file.type", "");
 	/* TODO cmd */
 #if 0

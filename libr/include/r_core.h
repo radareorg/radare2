@@ -130,6 +130,7 @@ R_API int r_core_anal_graph_fcn(struct r_core_t *core, char *input, int opts);
 
 R_API int r_core_project_open(RCore *core, const char *file);
 R_API int r_core_project_save(RCore *core, const char *file);
+R_API char *r_core_project_info(RCore *core, const char *file);
 #endif
 
 #endif
