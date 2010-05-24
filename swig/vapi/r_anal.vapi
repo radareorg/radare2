@@ -51,10 +51,9 @@ XXX: jam!
 		FOOT
 	}
 
-	[CCode (cprefix="R_ANAL_BB_DIFF_")]
+	[CCode (cprefix="R_ANAL_DIFF_")]
 	public enum BlockDiff {
 		NULL,
-		NEW,
 		MATCH,
 		UNMATCH
 	}
@@ -136,7 +135,7 @@ XXX: jam!
 		NOT,
 		STORE,
 		LOAD, 
-		LAST
+		//LAST
 	}
 
 	[Compact]
