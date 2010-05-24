@@ -1077,6 +1077,14 @@ static int cmd_cmp(void *data, const char *input) {
 		}
 		break;
 #endif
+	case 'g':
+		{
+		char cmd[512];
+		snprintf (cmd, sizeof (cmd), ".!radiff2 -rg %s %s", core->file->filename, input+1);
+		eprintf ("AA: %s\n", cmd);
+		r_core_cmd_str (core, cmd);
+		}
+		break;
 	case '?':
 		r_cons_strcat (
 		"Usage: c[?cdfx] [argument]\n"
@@ -1087,7 +1095,8 @@ static int cmd_cmp(void *data, const char *input) {
 		" cq [value]    Compare a quadword from a math expression\n"
 		" cx [hexpair]  Compare hexpair string\n"
 		" cX [addr]     Like 'cc' but using hexdiff output\n"
-		" cf [file]     Compare contents of file at current seek\n");
+		" cf [file]     Compare contents of file at current seek\n"
+		" cg [file]     Graphdiff current file and [file]\n");
 		break;
 	default:
 		eprintf ("Usage: c[?Ddxf] [argument]\n");
@@ -1488,7 +1497,7 @@ static int cmd_anal(void *data, const char *input) {
 			r_cons_printf (
 			"Usage: af[?+-l*]\n"
 			" af @ [addr]     ; Analyze functions (start at addr)\n"
-			" af+ addr size name ; Add function\n"
+			" af+ addr size name [diff] ; Add function\n"
 			" af- [addr]      ; Clean all function analysis data (or function at addr)\n"
 			" afl             ; List functions\n"
 			" af*             ; Output radare commands\n");
@@ -1516,6 +1525,10 @@ static int cmd_anal(void *data, const char *input) {
 		case 'a':
 			r_core_anal_graph (core, r_num_math (core->num, input+2), 0);
 			break;
+		case 'd':
+			r_core_anal_graph (core, r_num_math (core->num, input+2),
+					R_CORE_ANAL_GRAPHBODY|R_CORE_ANAL_GRAPHDIFF);
+			break;
 		case '?':
 			r_cons_printf (
 			"Usage: ag[?f]\n"
@@ -1524,6 +1537,7 @@ static int cmd_anal(void *data, const char *input) {
 			" agc [addr]      ; Output graphviz call graph of function\n"
 			" agl [fcn name]  ; Output graphviz code using meta-data\n"
 			" agf [fcn name]  ; Output graphviz code of function\n"
+			" agd [fcn name]  ; Output graphviz code of diffed function\n"
 			" agfl [fcn name] ; Output graphviz code of function using meta-data\n");
 			break;
 		default:

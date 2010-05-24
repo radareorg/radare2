@@ -11,7 +11,7 @@ static char *r_core_anal_graph_label(RCore *core, struct r_anal_bb_t *bb, int op
 	char cmd[1024], file[1024], *cmdstr = NULL, *filestr = NULL, *str = NULL;
 	int i, j, line = 0, oline = 0, idx = 0;
 
-	if (opts == R_CORE_ANAL_GRAPHLINES) {
+	if (opts & R_CORE_ANAL_GRAPHLINES) {
 		r_list_foreach (bb->aops, iter, aopi) {
 			r_bin_meta_get_line (core->bin, aopi->addr, file, 1023, &line);
 			if (line != 0 && line != oline && strcmp (file, "??")) {
@@ -27,7 +27,7 @@ static char *r_core_anal_graph_label(RCore *core, struct r_anal_bb_t *bb, int op
 			}
 			oline = line;
 		}
-	} else if (opts == R_CORE_ANAL_GRAPHBODY) {
+	} else if (opts & R_CORE_ANAL_GRAPHBODY) {
 		snprintf (cmd, sizeof (cmd), "pD %"PFMT64d" @ 0x%08"PFMT64x"", bb->size, bb->addr);
 		cmdstr = r_core_cmd_str (core, cmd);
 	}
@@ -92,9 +92,13 @@ static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts
 				if (addr != 0) r_core_anal_graph_nodes (core, pbb, bbi->fail, opts);
 			}
 			if ((str = r_core_anal_graph_label (core, bbi, opts))) {
-				printf (" \"0x%08"PFMT64x"\" [color=%s,label=\"%s\"]\n", bbi->addr, 
-						bbi->diff==R_ANAL_DIFF_MATCH?"green":
-						bbi->diff==R_ANAL_DIFF_UNMATCH?"red":"lightgray",str);
+				if (opts & R_CORE_ANAL_GRAPHDIFF) {
+					printf (" \"0x%08"PFMT64x"\" [color=%s,label=\"%s\"]\n", bbi->addr, 
+							bbi->diff==R_ANAL_DIFF_MATCH?"green":
+							bbi->diff==R_ANAL_DIFF_UNMATCH?"red":"lightgray",str);
+				} else {
+					printf (" \"0x%08"PFMT64x"\" [label=\"%s\"]\n", bbi->addr, str);
+				}
 				r_cons_printf (" \"0x%08"PFMT64x"\" [label=\"%s\"]\n", bbi->addr, str);
 				r_cons_flush ();
 				free (str);

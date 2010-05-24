@@ -40,7 +40,7 @@ R_API void r_big_print(RNumBig *n) {
 
 R_API void r_big_set_str(RNumBig *n, const char *str) {
 #ifdef HAVE_LIB_GMP
-	return;
+	mpz_set_str (*n, str, 10);
 #else
 	int i, len;
 	if (*str=='-') {
@@ -60,7 +60,7 @@ R_API RNumBig *r_big_new(RNumBig *b) {
 #ifdef HAVE_LIB_GMP
 	mpz_init (*n);
 #else
-	r_big_set (n, 0);
+	r_big_set_st (n, 0);
 #endif
 	return n;
 }
@@ -69,7 +69,15 @@ R_API void r_big_free(RNumBig *b) {
 	free (b);
 }
 
-R_API void r_big_set(RNumBig *n, int v) {
+R_API void r_big_set(RNumBig *a, RNumBig *b) {
+#ifdef HAVE_LIB_GMP
+	mpz_set (*a, *b);
+#else
+	memcpy (a, b, sizeof (RNumBig));
+#endif
+}
+
+R_API void r_big_set_st(RNumBig *n, int v) {
 #ifdef HAVE_LIB_GMP
 	return;
 #else
@@ -83,7 +91,7 @@ R_API void r_big_set(RNumBig *n, int v) {
 #endif
 }
 
-R_API void r_big_set64(RNumBig *n, st64 v) {
+R_API void r_big_set_st64(RNumBig *n, st64 v) {
 #ifdef HAVE_LIB_GMP
 	return;
 #else
@@ -106,7 +114,7 @@ R_API void r_big_add (RNumBig *c, RNumBig *a, RNumBig *b) {
 #else
 	int i, carry;
 	RNumBig t;
-	r_big_set (&t, 0);
+	r_big_set_st (&t, 0);
 	if (a->sign != b->sign) {
 		a->sign = 1;
 		if (a->sign == -1)
@@ -135,7 +143,7 @@ R_API void r_big_sub(RNumBig *c, RNumBig *a, RNumBig *b) {
 	RNumBig t;
 	int i, v, borrow;
 
-	r_big_set (&t, 0);
+	r_big_set_st (&t, 0);
 
 	if ((a->sign == -1) || (b->sign == -1)) {
                 b->sign *= -1;
@@ -170,7 +178,7 @@ R_API void r_big_sub(RNumBig *c, RNumBig *a, RNumBig *b) {
 
 R_API int r_big_cmp(RNumBig *a, RNumBig *b) {
 #ifdef HAVE_LIB_GMP
-	return 0;
+	return mpz_cmp (*a, *b);
 #else
 	int i;
 	if ((a->sign == -1) && (b->sign == 1)) return 1;
@@ -181,6 +189,14 @@ R_API int r_big_cmp(RNumBig *a, RNumBig *b) {
 		if (a->dgts[i] > b->dgts[i]) return a->sign*-1;
 		if (b->dgts[i] > a->dgts[i]) return a->sign;
 	}
+	return 0;
+#endif
+}
+
+R_API int r_big_cmp_st(RNumBig *n, int v) {
+#ifdef HAVE_LIB_GMP
+	return mpz_cmp_si (*n, v);
+#else
 	return 0;
 #endif
 }
@@ -202,12 +218,12 @@ R_API void r_big_shift(RNumBig *n, int d) {
 
 R_API void r_big_mul (RNumBig *c, RNumBig *a, RNumBig *b) {
 #ifdef HAVE_LIB_GMP
-	return;
+	mpz_mul (*c, *a, *b);
 #else
 	RNumBig t, tmp, row;
 	int i,j;
-	r_big_set (&t, 0);
-	r_big_set (&tmp, 0);
+	r_big_set_st (&t, 0);
+	r_big_set_st (&tmp, 0);
 	row = *a;
 	for (i=0; i<=b->last && i<R_BIG_SIZE; i++) {
 		for (j=1; j<=b->dgts[i]; j++) {
@@ -222,6 +238,14 @@ R_API void r_big_mul (RNumBig *c, RNumBig *a, RNumBig *b) {
 #endif
 }
 
+R_API void r_big_mul_ut (RNumBig *c, RNumBig *a, ut32 b) {
+#ifdef HAVE_LIB_GMP
+	mpz_mul_ui (*c, *a, b);
+#else
+	return;
+#endif
+}
+
 R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
 #ifdef HAVE_LIB_GMP
 	return;
@@ -229,13 +253,13 @@ R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
 	RNumBig t, tmp, row;
 	int i, asign, bsign;
 
-	r_big_set (&t, 0);
+	r_big_set_st (&t, 0);
 	t.sign = a->sign * b->sign;
 	asign = a->sign;
 	bsign = b->sign;
 	a->sign = b->sign = 1;
-	r_big_set (&row, 0);
-	r_big_set (&tmp, 0);
+	r_big_set_st (&row, 0);
+	r_big_set_st (&tmp, 0);
 	t.last = a->last;
 
 	for (i=a->last; i>=0; i--) {
@@ -252,6 +276,22 @@ R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
 	r_big_zero (c);
 	a->sign = asign;
 	b->sign = bsign;
+#endif
+}
+
+R_API void r_big_div_ut(RNumBig *c, RNumBig *a, ut32 b) {
+#ifdef HAVE_LIB_GMP
+	mpz_divexact_ui (*c, *a, b);
+#else
+	return;
+#endif
+}
+
+R_API int r_big_divisible_ut(RNumBig *n, ut32 v) {
+#ifdef HAVE_LIB_GMP
+	return mpz_divisible_ui_p (*n, v);
+#else
+	return 0;
 #endif
 }
 
@@ -272,28 +312,28 @@ void main() {
 	int a,b;
 	RNumBig n1, n2, n3, zero;
 
-	r_big_set (&n2, -2);
+	r_big_set_st (&n2, -2);
 	r_big_set_str (&n3, "-3");
-	//r_big_set (&n3, -3);
+	//r_big_set_st (&n3, -3);
 printf ("n3last = %d\n", n3.last);
 printf ("%d %d\n", n3.dgts[0], n3.dgts[1]);
 	r_big_mul (&n2, &n2, &n3);
 	r_big_print (&n2);
 printf("--\n");
 
-	r_big_set (&n1, 2);
-	r_big_set (&n2, 3);
+	r_big_set_st (&n1, 2);
+	r_big_set_st (&n2, 3);
 	r_big_mul(&n1, &n1, &n2);
 	r_big_print (&n1);
 
-	r_big_set (&n3, 923459999);
+	r_big_set_st (&n3, 923459999);
 	r_big_mul (&n1, &n2, &n3);
 	r_big_mul (&n2, &n1, &n3);
 	r_big_mul (&n1, &n2, &n3);
 	r_big_print (&n1);
 
-	r_big_set64 (&n2, 9999923459999999);
-	r_big_set64 (&n3, 9999992345999999);
+	r_big_set_st64 (&n2, 9999923459999999);
+	r_big_set_st64 (&n3, 9999992345999999);
 	r_big_mul (&n1, &n2, &n3);
 	r_big_mul (&n2, &n1, &n3);
 	r_big_mul (&n1, &n2, &n3);
@@ -301,8 +341,8 @@ printf("--\n");
 
 	while (scanf ("%d %d\n",&a,&b) != EOF) {
 		printf("a = %d    b = %d\n",a,b);
-		r_big_set(&n1, a);
-		r_big_set(&n2, b);
+		r_big_set_st(&n1, a);
+		r_big_set_st(&n2, b);
 
 		r_big_add (&n3, &n1, &n2);
 		printf ("addition -- ");
@@ -318,7 +358,7 @@ printf("--\n");
 		printf("multiplication -- ");
                 r_big_print (&n3);
 
-		r_big_set(&zero, 0);
+		r_big_set_st(&zero, 0);
 		if (r_big_cmp(&zero, &n2) == 0)
 			printf("division -- NaN \n");
                 else {

@@ -34,7 +34,8 @@ static int show_help(int line) {
 		"  -c     count of changes\n"
 		"  -r     radare commands\n"
 		"  -d     use delta diffing\n"
-		"  -V     show version information\n");
+		"  -g     graph diff\n"
+		"  -V     show version information\n");;
 	return 1;
 }
 
@@ -42,6 +43,7 @@ enum {
 	MODE_DIFF,
 	MODE_DIST,
 	MODE_LOCS,
+	MODE_GRAPH,
 };
 
 int main(int argc, char **argv) {
@@ -49,15 +51,18 @@ int main(int argc, char **argv) {
 	int c, delta = 0;
 	char *file, *file2;
 	ut8 *bufa, *bufb;
-	int sza, szb, rad;
+	int sza, szb, rad = 0;
 	int mode = MODE_DIFF;
 	int showcount = 0;
 	double sim;
 
-	while ((c = getopt (argc, argv, "rhcdlsV")) != -1) {
+	while ((c = getopt (argc, argv, "grhcdlsV")) != -1) {
 		switch(c) {
 		case 'r':
 			rad = 1;
+			break;
+		case 'g':
+			mode = MODE_GRAPH;
 			break;
 		case 'c':
 			showcount = 1;
@@ -112,6 +117,8 @@ int main(int argc, char **argv) {
 //	case MODE_LOCS:
 //		count = r_diff_lines(file, (char*)bufa, sza, file2, (char*)bufb, szb);
 //		break;
+	case MODE_GRAPH:
+		r_diff_gdiff (file, file2, rad);
 	}
 
 	if (showcount)
