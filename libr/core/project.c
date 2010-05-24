@@ -14,13 +14,14 @@ static char *r_core_project_file(const char *file) {
 static int r_core_project_init() {
 	int ret;
 	char *str = r_str_home (".radare2");
-	if (str && (ret = r_sys_mkdir (str))) {
+	if (str && !(ret = r_sys_mkdir (str))) {
 		str = r_str_home (".radare2/rdb");
 		ret = r_sys_mkdir (str);
 		if (!ret) {
 			free (str);
 			str = r_str_home (".radare2/plugins");
 			ret = r_sys_mkdir (str);
+			if (ret) fprintf (stderr, "Cannot create ~/.radare2/plugins\n");
 		}
 	}
 	free (str);
@@ -87,7 +88,7 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		r_cons_singleton ()->fdout = 1;
 		close (fd);
 	} else {
-		eprintf ("Cannot open '%s' for writing\n", file);
+		eprintf ("Cannot open '%s' for writing\n", prj);
 		ret = R_FALSE;
 	}
 	free (prj);

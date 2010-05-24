@@ -399,19 +399,19 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin)
 	int delay_import_dirs_count = PE_(r_bin_pe_get_delay_import_dirs_count)(bin);
 	int i, j;
 	
-	if ((libs = malloc((import_dirs_count + delay_import_dirs_count + 1) * sizeof(struct r_bin_pe_string_t))) == NULL) {
+	if ((libs = malloc((import_dirs_count + delay_import_dirs_count + 2) * sizeof(struct r_bin_pe_string_t))) == NULL) {
 		perror("malloc (libs)");
 		return NULL;
 	}
 	for (i = j = 0; i < import_dirs_count; i++, j++)
 		if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->import_directory[i].Name),
-					(ut8*)libs[j].name, PE_STRING_LENGTH) == -1) {
+				(ut8*)libs[j].name, PE_STRING_LENGTH) == -1) {
 			eprintf("Error: read (libs - import dirs)\n");
 			return NULL;
 		}
 	for (i = 0; i < delay_import_dirs_count; i++, j++)
 		if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->delay_import_directory[i].Name),
-					(ut8*)libs[j].name, PE_STRING_LENGTH) == -1) {
+				(ut8*)libs[j].name, PE_STRING_LENGTH) == -1) {
 			eprintf("Error: read (libs - delay import dirs)\n");
 			return NULL;
 		}
