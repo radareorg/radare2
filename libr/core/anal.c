@@ -327,22 +327,6 @@ R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv) {
 	r_cons_printf ("}\n");
 }
 
-R_API int r_core_anal_fcn_add(RCore *core, ut64 addr, ut64 size, const char *name) {
-	RAnalFcn *fcn, *fcni;
-	RListIter *iter;
-
-	r_list_foreach (core->anal->fcns, iter, fcni)
-		if (addr >= fcni->addr && addr < fcni->addr+fcni->size)
-			return R_FALSE;
-	if (!(fcn = r_anal_fcn_new ()))
-		return R_FALSE;
-	fcn->addr = addr;
-	fcn->size = size;
-	fcn->name = strdup (name);
-	r_list_append (core->anal->fcns, fcn);
-	return R_TRUE;
-}
-
 R_API int r_core_anal_fcn_list(RCore *core, int rad) {
 	RAnalFcn *fcni;
 	struct r_anal_ref_t *refi;

@@ -117,18 +117,13 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len) 
 R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size, const char *name, int diff) {
 	RAnalFcn *fcn = NULL, *fcni;
 	RListIter *iter;
-	int append = 0, mid = 0;
+	int append = 0;
 
-	r_list_foreach (anal->fcns, iter, fcni) {
+	r_list_foreach (anal->fcns, iter, fcni)
 		if (addr == fcni->addr) {
 			fcn = fcni;
-			mid = 0;
 			break;
-		} else if (addr > fcni->addr && addr < fcni->addr+fcni->size)
-			mid = 1;
-	}
-	if (mid)
-		return R_FALSE;
+		}
 	if (fcn == NULL) {
 		if (!(fcn = r_anal_fcn_new ()))
 			return R_FALSE;

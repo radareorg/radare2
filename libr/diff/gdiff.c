@@ -159,7 +159,7 @@ static void gdiff_diff_bb(RAnalFcn *mfcn, RAnalFcn *mfcn2, RList *bbs, RList *bb
 						t = (float)1-(float)(bb->ninstr-p)/bb->ninstr;
 					else t = (float)1-(float)(bb2->ninstr-p)/bb2->ninstr;
 #if 0 
-					printf ("%llx - %llx => %i - %i - %i => %f\n", bb->addr, bb2->addr,
+					printf ("BB: %llx - %llx => %i - %i - %i => %f\n", bb->addr, bb2->addr,
 							bb->ninstr, bb2->ninstr, p, t);
 #endif 
 					if (t > THRESHOLDBB && t > ot) {
@@ -226,8 +226,8 @@ static void gdiff_diff_fcn(RList *fcns, RList *fcns2, RList *bbs, RList *bbs2) {
 			if (fcn->ninstr > fcn2->ninstr)
 				t = (float)1-(float)(fcn->ninstr-p)/fcn->ninstr;
 			else t = (float)1-(float)(fcn2->ninstr-p)/fcn2->ninstr;
-#if 0 
-			printf ("%s - %s => %i - %i - %i => %f\n", fcn->name, fcn2->name,
+#if 0
+			printf ("FCN: %s - %s => %i - %i - %i => %f\n", fcn->name, fcn2->name,
 					fcn->ninstr, fcn2->ninstr, p, t);
 #endif 
 			if (t > THRESHOLDFCN && t > ot) {
@@ -276,6 +276,7 @@ R_API int r_diff_gdiff(char *file1, char *file2, int rad) {
 		r_core_cmd0 (core, cmd);
 		r_core_cmd0 (core, "ah x86_x86im");
 		r_core_cmd0 (core, "fs *");
+		r_core_cmd0 (core, "af @ entry0");
 		r_core_cmd0 (core, "af @@ fcn.");
 		r_core_cmd0 (core, "ab @@ fcn.");
 		/* Copy bb's and fcn's */
