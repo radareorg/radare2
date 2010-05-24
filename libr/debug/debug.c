@@ -165,7 +165,7 @@ R_API int r_debug_stop_reason(struct r_debug_t *dbg) {
 R_API int r_debug_wait(RDebug *dbg) {
 	int ret = 0;
 	if (dbg && dbg->h && dbg->h->wait) {
-		ret = dbg->h->wait(dbg->pid);
+		ret = dbg->h->wait (dbg->pid);
 		dbg->newstate = 1;
 		eprintf ("wait = %d\n", ret);
 		//XXX r_debug_select (dbg, dbg->pid, ret);
@@ -198,9 +198,21 @@ R_API void r_debug_io_bind(RDebug *dbg, RIO *io) {
 }
 
 R_API int r_debug_step_over(RDebug *dbg, int steps) {
-	// TODO: analyze opcode if it is stepoverable
-	eprintf ("r_debug_step_over: TODO\n");
-	return r_debug_step(dbg, steps);
+	RAnalOp op;
+	ut8 buf[64];
+	int ret = -1;
+	if (dbg->anal) {
+		ut64 pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+		dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
+		r_anal_aop (dbg->anal, &op, pc, buf, sizeof (buf));
+		if (op.type & R_ANAL_OP_TYPE_CALL) {
+			ut64 bpaddr = pc + op.length;
+			r_bp_add_sw (dbg->bp, bpaddr, 1, R_BP_PROT_EXEC);
+			ret = r_debug_continue (dbg);
+			r_bp_del (dbg->bp, bpaddr);
+		} else ret = r_debug_step (dbg, 1);
+	} else fprintf (stderr, "Undefined pointer at dbg->anal\n");
+	return ret;
 }
 
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
@@ -225,22 +237,24 @@ R_API int r_debug_continue(RDebug *dbg) {
 	return r_debug_continue_kill (dbg, -1);
 }
 
-R_API int r_debug_continue_until_optype(RDebug *dbg, int type) {
-	int n = 0;
+R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
+	int ret, n = 0;
 	RAnalOp op;
 	ut8 buf[64];
 	ut64 pc = 0;
 	if (dbg->anal) {
 		do {
-			if (!r_debug_step(dbg, 1)) {
+			if (over) ret = r_debug_step_over (dbg, 1);
+			else ret = r_debug_step (dbg, 1);
+			if (!ret) {
 				printf ("r_debug_step: failed\n");
 				break;
 			}
-			pc = r_debug_reg_get(dbg, dbg->reg->name[R_REG_NAME_PC]);
+			pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 			dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
 			r_anal_aop (dbg->anal, &op, pc, buf, sizeof (buf));
 			n++;
-		} while (op.type != type);
+		} while (!(op.type&type));
 	} else fprintf (stderr, "Undefined pointer at dbg->anal\n");
 	return n;
 }
@@ -279,7 +293,7 @@ R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc) {
 				// TODO: must use r_core_cmd(as)..import code from rcore
 			} while (sc != 0 && sc != reg);
 		} else {
-			r_debug_continue_until_optype (dbg, R_ANAL_OP_TYPE_SWI);
+			r_debug_continue_until_optype (dbg, R_ANAL_OP_TYPE_SWI, 0);
 			reg = (int)r_debug_reg_get (dbg, "oeax"); // XXX
 			eprintf ("--> syscall %d\n", reg);
 		}
@@ -293,11 +307,10 @@ R_API int r_debug_syscall(struct r_debug_t *dbg, int num) {
 	if (dbg->h->contsc) {
 		ret = dbg->h->contsc (dbg->pid, num);
 	} else {
-		r_debug_continue_until_optype (dbg, R_ANAL_OP_TYPE_SWI);
 		ret = R_TRUE;
 		// TODO.check for num
 	}
-	printf ("TODO: show syscall information\n");
+	fprintf (stderr, "TODO: show syscall information\n");
 	/* r2rc task? ala inject? */
 	return ret;
 }

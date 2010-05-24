@@ -135,7 +135,7 @@ R_API int r_debug_stop_reason(struct r_debug_t *dbg);
 R_API int r_debug_wait(struct r_debug_t *dbg);
 R_API int r_debug_step_over(struct r_debug_t *dbg, int steps);
 R_API int r_debug_continue_until(struct r_debug_t *dbg, ut64 addr);
-R_API int r_debug_continue_until_optype(RDebug *dbg, int type);
+R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over);
 R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc);
 //R_API int r_debug_pid_add(struct r_debug_t *dbg);
 //R_API int r_debug_pid_add_thread(struct r_debug_t *dbg);

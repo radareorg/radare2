@@ -85,6 +85,25 @@ install-test-bins:
 	  ${INSTALL_PROGRAM} $$a ${PFX}/lib/radare2/test ; \
 	done
 
+install-symlink:
+	mkdir -p ${PFX}/bin
+	mkdir -p ${PFX}/include
+	mkdir -p ${PFX}/lib/radare2
+	ln -fs ${PWD}/include ${PFX}/include/libr
+	ln -fs ${PWD}/asm/t/rasm2 ${PFX}/bin/rasm2
+	ln -fs ${PWD}/hash/t/rahash2 ${PFX}/bin/rahash2
+	ln -fs ${PWD}/util/t/rax2 ${PFX}/bin/rax2
+	ln -fs ${PWD}/diff/t/radiff2 ${PFX}/bin/radiff2
+	ln -fs ${PWD}/bin/t/rabin2 ${PFX}/bin/rabin2
+	ln -fs ${PWD}/core/t/radare2 ${PFX}/bin/radare2
+	for a in ${LIBLIST} ; do \
+		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_SO} ${PFX}/lib/libr_$${a}.${EXT_SO} ; \
+		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_AR} ${PFX}/lib/libr_$${a}.${EXT_AR} ; \
+		for b in $${a}/p/*.${EXT_SO} ; do \
+			ln -fs ${PWD}/$${b} ${PFX}/lib/radare2/ ; \
+		done ; \
+	done
+
 install: install-includes install-pkgconfig install-bins install-test-bins
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
 	# libraries

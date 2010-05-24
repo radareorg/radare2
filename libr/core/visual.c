@@ -614,6 +614,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_core_cmd (core, ".dr", 0);
 		//r_core_cmd(core, "s eip", 0);
 		break;
+	case 'S':
+		r_core_cmd (core, "dso", 0);
+		r_core_cmd (core, ".dr", 0);
+		//r_core_cmd(core, "s eip", 0);
+		break;
 	case 'p':
 		printidx++;
 		break;

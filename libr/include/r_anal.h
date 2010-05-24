@@ -24,36 +24,36 @@ enum {
 
 enum {
 	R_ANAL_OP_TYPE_NULL = 0,
-	R_ANAL_OP_TYPE_JMP,   /* mandatory jump */
-	R_ANAL_OP_TYPE_UJMP,  /* unknown jump (register or so) */
-	R_ANAL_OP_TYPE_CJMP,  /* conditional jump */
-	R_ANAL_OP_TYPE_CALL,  /* call to subroutine (branch+link) */
-	R_ANAL_OP_TYPE_RCALL, /* call to register */
-	R_ANAL_OP_TYPE_REP,   /* repeats next instruction N times */
-	R_ANAL_OP_TYPE_RET,   /* returns from subrutine */
-	R_ANAL_OP_TYPE_ILL,   /* illegal instruction // trap */
-	R_ANAL_OP_TYPE_UNK,   /* unknown opcode type */
-	R_ANAL_OP_TYPE_NOP,   /* does nothing */
-	R_ANAL_OP_TYPE_MOV,   /* register move */
-	R_ANAL_OP_TYPE_TRAP,  /* it's a trap! */
-	R_ANAL_OP_TYPE_SWI,   /* syscall, software interrupt */
-	R_ANAL_OP_TYPE_UPUSH, /* unknown push of data into stack */
-	R_ANAL_OP_TYPE_PUSH,  /* push value into stack */
-	R_ANAL_OP_TYPE_POP,   /* pop value from stack to register */
-	R_ANAL_OP_TYPE_CMP,   /* copmpare something */
-	R_ANAL_OP_TYPE_ADD,
-	R_ANAL_OP_TYPE_SUB,
-	R_ANAL_OP_TYPE_MUL,
-	R_ANAL_OP_TYPE_DIV,
-	R_ANAL_OP_TYPE_SHR,
-	R_ANAL_OP_TYPE_SHL,
-	R_ANAL_OP_TYPE_OR,
-	R_ANAL_OP_TYPE_AND,
-	R_ANAL_OP_TYPE_XOR,
-	R_ANAL_OP_TYPE_NOT,
-	R_ANAL_OP_TYPE_STORE, /* store from register to memory */
-	R_ANAL_OP_TYPE_LOAD,  /* load from memory to register */
-	R_ANAL_OP_TYPE_LAST
+	R_ANAL_OP_TYPE_JMP  = 1,  /* mandatory jump */
+	R_ANAL_OP_TYPE_UJMP = 2,  /* unknown jump (register or so) */
+	R_ANAL_OP_TYPE_CJMP = 4,  /* conditional jump */
+	R_ANAL_OP_TYPE_CALL = 8,  /* call to subroutine (branch+link) */
+	R_ANAL_OP_TYPE_RCALL= 16, /* call to register */
+	R_ANAL_OP_TYPE_REP  = 32, /* repeats next instruction N times */
+	R_ANAL_OP_TYPE_RET  = 64, /* returns from subrutine */
+	R_ANAL_OP_TYPE_ILL  = 0x80,  /* illegal instruction // trap */
+	R_ANAL_OP_TYPE_UNK  = 0x100, /* unknown opcode type */
+	R_ANAL_OP_TYPE_NOP  = 0x200, /* does nothing */
+	R_ANAL_OP_TYPE_MOV  = 0x400, /* register move */
+	R_ANAL_OP_TYPE_TRAP = 0x800, /* it's a trap! */
+	R_ANAL_OP_TYPE_SWI  = 0x1000,  /* syscall, software interrupt */
+	R_ANAL_OP_TYPE_UPUSH = 0x2000, /* unknown push of data into stack */
+	R_ANAL_OP_TYPE_PUSH = 0x4000,  /* push value into stack */
+	R_ANAL_OP_TYPE_POP = 0x8000,   /* pop value from stack to register */
+	R_ANAL_OP_TYPE_CMP = 0x10000,  /* copmpare something */
+	R_ANAL_OP_TYPE_ADD = 0x20000,
+	R_ANAL_OP_TYPE_SUB = 0x40000,
+	R_ANAL_OP_TYPE_MUL = 0x100000,
+	R_ANAL_OP_TYPE_DIV = 0x200000,
+	R_ANAL_OP_TYPE_SHR = 0x400000,
+	R_ANAL_OP_TYPE_SHL = 0x800000,
+	R_ANAL_OP_TYPE_OR  = 0x1000000,
+	R_ANAL_OP_TYPE_AND = 0x2000000,
+	R_ANAL_OP_TYPE_XOR = 0x4000000,
+	R_ANAL_OP_TYPE_NOT =   0x8000000,
+	R_ANAL_OP_TYPE_STORE = 0x10000000, /* store from register to memory */
+	R_ANAL_OP_TYPE_LOAD  = 0x20000000,  /* load from memory to register */
+	//R_ANAL_OP_TYPE_LAST
 };
 
 /* TODO: what to do with signed/unsigned conditionals? */

@@ -4,8 +4,12 @@
 |_|\__|_|__|___/|_|_|_|\__\___/ |_____(_)____/
 
 
+* install.sh (to track installed files ..)
+* add support for asm.trace (show and trace register
+  changes and per-opcode execution count (RRange)
+* grava layout using layers
+
 * merge r_asm and r_anal?
-* Add gmp code to r_big 
 
 * filter search results..
   cc 8080 @@ hit* .. check for values that has changed.
@@ -15,7 +19,7 @@
 * Add description to project e file.desc ?
 * add file.md5 check support when opening new file or project or so..
 
-* anal bug:
+* anal bug: (fixed??)
 [0x08048eec]> pd 2 
     0x08048eec    0               c20400  ret 0x4
  -> this opcodes increments the stack 8 bytes (4+4) . it is not handled correctly

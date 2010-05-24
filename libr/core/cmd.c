@@ -2820,18 +2820,20 @@ static int cmd_debug(void *data, const char *input) {
 				" dcu [addr]       continue until address\n"
 				" dco [num]        step over N instructions\n"
 				" dcs [num]        continue until syscall\n"
-				" dcc              continue until call\n"
-				" dcr              continue until ret\n"
+				" dcc              continue until call (use step into)\n"
+				" dcr              continue until ret (uses step over)\n"
 				" dck [sig] [pid]  continue sending kill 9 to process\n"
 				" dc [pid]         continue execution of pid\n"
 				" dc[-pid]         stop execution of pid\n"
+				"TODO: dcu/dcr needs dbg.untilover=true??\n"
+				"TODO: same for only user/libs side, to avoid steping into libs\n"
 				"TODO: support for threads?\n");
 			break;
 		case 'c':
-			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL);
+			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 0);
 			break;
 		case 'r':
-			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_RET);
+			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_RET, 1);
 			break;
 		case 'k':
 			// select pid and r_debug_continue_kill (core->dbg, 
