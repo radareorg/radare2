@@ -2,3 +2,6 @@
 
 all:
 	sw.gen site
+
+clean:
+	rm -rf site.static

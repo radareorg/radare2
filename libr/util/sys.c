@@ -33,6 +33,23 @@ R_API char *r_sys_cmd_strf(const char *fmt, ...) {
 	return ret;
 }
 
+R_API void r_sys_bt(void) {
+#if __linux__
+        void *array[10];
+        size_t size;
+        char **strings;
+        size_t i;
+        size = backtrace (array, 10);
+        strings = backtrace_symbols (array, size);
+        printf ("Backtrace %zd stack frames.\n", size);
+        for (i = 0; i < size; i++)
+                printf ("%s\n", strings[i]);
+        free (strings);
+#else
+#warning TODO: r_sys_bt : unimplemented
+#endif
+}
+
 R_API int r_sys_sleep(int secs) {
 #if __UNIX__
 	return sleep(secs);

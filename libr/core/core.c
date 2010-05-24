@@ -154,6 +154,7 @@ R_API int r_core_init(RCore *core) {
 	r_core_cmd_init (core);
 	core->flags = r_flag_new ();
 	core->dbg = r_debug_new (R_TRUE);
+	core->dbg->anal = core->anal;
 	core->sign->printf = r_cons_printf;
 	core->io->printf = r_cons_printf;
 	core->dbg->printf = r_cons_printf;

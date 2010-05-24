@@ -7,4 +7,4 @@ test${EXT_EXE}:
 	../../util/*.o -o test${EXT_EXE}
 
 clean:
-	rm -f test
+	rm -f test *.exe

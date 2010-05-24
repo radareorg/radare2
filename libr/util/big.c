@@ -3,6 +3,7 @@
  * --pancake
  */
 
+/* XXX : seems broken for big numbers */
 /* TODO: Implement gmp code */
 
 #include <stdio.h>
@@ -112,6 +113,7 @@ R_API void r_big_add (RNumBig *c, RNumBig *a, RNumBig *b) {
 			r_big_sub (&t, b, a);
 		else r_big_sub (&t, a, b);
 		a->sign = -1;
+		*c = t;
 		return;
 	} else t.sign = a->sign;
 

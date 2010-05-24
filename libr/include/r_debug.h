@@ -69,6 +69,7 @@ typedef struct r_debug_t {
 	void (*printf)(const char *str, ...);
 	struct r_debug_handle_t *h;
 	struct list_head handlers;
+	RAnal *anal;
 	RIOBind iob;
 	RList *maps; // <RDebugMap>
 	RList *maps_user; // <RDebugMap>
@@ -134,6 +135,7 @@ R_API int r_debug_stop_reason(struct r_debug_t *dbg);
 R_API int r_debug_wait(struct r_debug_t *dbg);
 R_API int r_debug_step_over(struct r_debug_t *dbg, int steps);
 R_API int r_debug_continue_until(struct r_debug_t *dbg, ut64 addr);
+R_API int r_debug_continue_until_optype(RDebug *dbg, int type);
 R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc);
 //R_API int r_debug_pid_add(struct r_debug_t *dbg);
 //R_API int r_debug_pid_add_thread(struct r_debug_t *dbg);

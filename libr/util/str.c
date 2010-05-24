@@ -83,46 +83,17 @@ R_API char *r_str_home(const char *str) {
 
 /* XXX Fix new hash algo*/
 R_API ut64 r_str_hash64(const char *str) {
-#if 1
-	int i;
 	ut64 ret = 0;
-	for (i=0; str[i] && i<sizeof (ret); i+=2) {
-		char ch = (str[i]-'a') & 0x1f;
-		ret |= ch<<(i*4);
-		i++;
-		ch = (str[i]-'a') & 0x1f;
-		ret |= ch<<(i*4);
-	}
+	for (;*str; str++)
+		ret ^= (ret<<7 | *str);
 	return ret;
-#else
-	ut64 ret = 0;
-	for (;*str; str++) {
-		ret<<=7;
-		ret+=*str;
-	}
-	return ret;
-#endif
 }
 
 R_API int r_str_hash(const char *str) {
-#if 1
-	int i = 1;
-	int a = 0x31;
-	int b = 0x337;
-	int h = str[0];
-	for (; str[i]; i++) {
-		h += str[i]*i*a;
-		a *= b;
-	}
-	return h&0x7fffffff;
-#else
 	int ret = 0;
-	for (;*str; str++) {
-		ret<<=7;
-		ret+=*str;
-	}
+	for (;*str; str++)
+		ret ^= (ret<<7 | *str);
 	return ret;
-#endif
 }
 
 R_API int r_str_delta(char *p, char a, char b) {

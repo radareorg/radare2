@@ -112,7 +112,7 @@ static int __init(struct r_io_t *io) {
 }
 
 // TODO: rename ptrace to io_ptrace .. err io.ptrace ??
-struct r_io_handle_t r_io_plugin_ptrace = {
+struct r_io_handle_t r_io_plugin_procpid = {
         //void *handle;
 	.name = "procpid",
         .desc = "proc/pid/mem io",
@@ -141,6 +141,6 @@ struct r_io_handle_t r_io_plugin_ptrace = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_ptrace
+	.data = &r_io_plugin_procpid
 };
 #endif

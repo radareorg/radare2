@@ -102,7 +102,7 @@ R_API void r_debug_map_free(RDebugMap *map) {
 
 R_API RList *r_debug_map_list_new() {
 	RList *list = r_list_new ();
-	list->free = r_debug_map_free;
+	list->free = (RListFree)r_debug_map_free;
 	return list;
 }
 

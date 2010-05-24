@@ -536,15 +536,15 @@ static RList *r_debug_native_pids(int pid) {
 		closedir (dh);
 	} else
 	for (i=2; i<39999; i++) {
-		if (kill (i, 0) == 0) {
+		if (!kill (i, 0)) {
 			// TODO: Use slurp!
 			snprintf (cmdline, sizeof (cmdline), "/proc/%d/cmdline", i);
 			fd = open (cmdline, O_RDONLY);
 			if (fd == -1)
 				continue;
 			cmdline[0] = '\0';
-			read (fd, cmdline, 1024);
-			cmdline[1023] = '\0';
+			read (fd, cmdline, sizeof (cmdline));
+			cmdline[sizeof (cmdline)-1] = '\0';
 			close (fd);
 			r_list_append (list, r_debug_pid_new (cmdline, i, 's'));
 		}
@@ -906,10 +906,12 @@ static int r_debug_native_kill(struct r_debug_t *dbg, int sig) {
 	TerminateProcess (hProcess, 1);
 	return R_FALSE;
 #else
-	int ret = kill (dbg->pid, sig);
-	if (ret == -1)
-		return R_FALSE;
-	return R_TRUE;
+	int ret = R_FALSE;
+	if (dbg->pid>0 && (ret = kill (dbg->pid, sig))) {
+		if (ret != -1)
+			ret = R_TRUE;
+	}
+	return ret;
 #endif
 }
 
