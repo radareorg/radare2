@@ -8,6 +8,9 @@
 #include <list.h> // kernel linked list
 /* profiling */
 #include <sys/time.h>
+#ifdef HAVE_LIB_GMP
+#include <gmp.h>
+#endif
 
 /* empty classes */
 typedef struct { } RSystem;
@@ -296,11 +299,15 @@ R_API RRange *r_range_inverse(RRange *rgs, ut64 from, ut64 to, int flags);
 R_API int r_range_overlap(ut64 a0, ut64 a1, ut64 b0, ut64 b1, int *d);
 
 /* big */
-#define	R_BIG_SIZE 100
+#ifdef HAVE_LIB_GMP
+#define RNumBig mpz_t
+#else
+#define	R_BIG_SIZE 10000
 typedef struct r_num_big_t {
-        char dgts[R_BIG_SIZE];
+	char dgts[R_BIG_SIZE];
 	int sign, last;
 } RNumBig;
+#endif
 
 #define r_big_copy(x,y)memcpy(x,y,sizeof(RNumBig))
 R_API RNumBig *r_big_new(RNumBig *b);

@@ -18,6 +18,7 @@ R_API RAnalBlock *r_anal_bb_new() {
 		bb->type = R_ANAL_BB_TYPE_NULL;
 		bb->diff = R_ANAL_BB_DIFF_NULL;
 		bb->aops = r_anal_aop_list_new();
+		bb->fingerprint = r_big_new (NULL);
 	}
 	return bb;
 }
@@ -31,6 +32,8 @@ R_API RList *r_anal_bb_list_new() {
 R_API void r_anal_bb_free(void *bb) {
 	if (bb && ((RAnalBlock*)bb)->aops)
 		r_list_destroy (((RAnalBlock*)bb)->aops);
+	if (((RAnalBlock*)bb)->fingerprint)
+		r_big_free (((RAnalBlock*)bb)->fingerprint);
 	free (bb);
 }
 
@@ -106,7 +109,9 @@ R_API int r_anal_bb_split(RAnal *anal, RAnalBlock *bb, RList *bbs, ut64 addr) {
 				aopi = r_list_iter_get (iter);
 				if (aopi->addr >= addr) {
 					r_list_split (bbi->aops, aopi);
+					bbi->ninstr--;
 					r_list_append (bb->aops, aopi);
+					bb->ninstr++;
 				}
 			}
 			return R_ANAL_RET_END;

@@ -156,14 +156,24 @@ R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 }
 
 R_API int r_flag_unset(RFlag *f, const char *name) {
-	RFlagItem *item = r_flag_get (f, name);
-	/* MARK: entrypoint to remove flags */
-	if (item) {
+	RFlagItem *item;
+	struct list_head *pos, *tmp;
+
+	if (name[0] == '*') {
+		list_for_each_safe (pos, tmp, &f->flags) {
+			item = list_entry (pos, RFlagItem, list);
+			list_del (&item->list);
+		}
+	} else {
+		item = r_flag_get (f, name);
+		/* MARK: entrypoint to remove flags */
+		if (item) {
 #if USE_BTREE
-		btree_del (f->tree, item, cmp, NULL);
-		btree_del (f->ntree, item, ncmp, NULL);
+			btree_del (f->tree, item, cmp, NULL);
+			btree_del (f->ntree, item, ncmp, NULL);
 #endif
-		list_del (&item->list);
+			list_del (&item->list);
+		}
 	}
 	return 0;
 }

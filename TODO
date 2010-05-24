@@ -5,6 +5,7 @@
 
 
 * merge r_asm and r_anal?
+* Add gmp code to r_big 
 
 * filter search results..
   cc 8080 @@ hit* .. check for values that has changed.

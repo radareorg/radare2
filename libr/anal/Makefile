@@ -4,6 +4,8 @@ CFLAGS+=-DCORELIB -Iarch
 
 include ../config.mk
 
+LDFLAGS+=${BN_LIBS}
+
 foo: pre libr_anal.${EXT_SO} libr_anal.${EXT_AR} plugins
 
 include ${STATIC_ANAL_PLUGINS}

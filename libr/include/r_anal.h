@@ -8,6 +8,7 @@
 #include <r_types.h>
 #include <list.h>
 #include <r_list.h>
+#include <r_util.h>
 
 // deprecate this macro?
 #define R_ANAL_MAXREG 16
@@ -67,7 +68,6 @@ enum {
 
 enum {
 	R_ANAL_BB_DIFF_NULL = 0,
-	R_ANAL_BB_DIFF_NEW,
 	R_ANAL_BB_DIFF_MATCH,
 	R_ANAL_BB_DIFF_UNMATCH,
 };
@@ -157,7 +157,7 @@ typedef struct r_anal_bb_t {
 	int type;
 	int diff;
 	int ninstr;
-	ut64 fingerprint;
+	RNumBig *fingerprint;
 	RList *aops;
 } RAnalBlock;
 
@@ -167,7 +167,7 @@ typedef struct r_anal_fcn_t {
 	ut64 size;
 	int stack;
 	int ninstr;
-	ut64 fingerprint;
+	RNumBig *fingerprint;
 	RList *vars;
 	RList *refs;
 	RList *xrefs;

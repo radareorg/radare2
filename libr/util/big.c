@@ -3,17 +3,29 @@
  * --pancake
  */
 
+/* TODO: Implement gmp code */
+
 #include <stdio.h>
 #include <r_util.h>
+#ifdef HAVE_LIB_GMP
+#include <gmp.h>
+#endif
 
 static inline void r_big_zero(RNumBig *n) {
+#ifdef HAVE_LIB_GMP
+	return;
+#else
 	while ((n->last>0) && !n->dgts[n->last])
 		n->last--;
         if (!n->last && !*n->dgts)
 		n->sign = 1; /* hack to avoid -0 */
+#endif
 }
 
 R_API void r_big_print(RNumBig *n) {
+#ifdef HAVE_LIB_GMP
+	return;
+#else
 	int i;
 	if (n->last>=0) {
 		if (n->sign<0)
@@ -22,9 +34,13 @@ R_API void r_big_print(RNumBig *n) {
 			printf ("%c", '0'+n->dgts[i]);
 		printf ("\n");
 	}
+#endif
 }
 
 R_API void r_big_set_str(RNumBig *n, const char *str) {
+#ifdef HAVE_LIB_GMP
+	return;
+#else
 	int i, len;
 	if (*str=='-') {
 		n->sign = -1;
@@ -33,13 +49,19 @@ R_API void r_big_set_str(RNumBig *n, const char *str) {
 	for (i=len=strlen (str)-1; *str; i--, str++)
 		n->dgts[i] = *str-'0';
 	n->last = len;
+#endif
 }
 
 R_API RNumBig *r_big_new(RNumBig *b) {
 	RNumBig *n = R_NEW (RNumBig);
 	if (b) memcpy (n, b, sizeof (RNumBig));
-	else r_big_set (n, 0);
-	return b;
+	else
+#ifdef HAVE_LIB_GMP
+	mpz_init (*n);
+#else
+	r_big_set (n, 0);
+#endif
+	return n;
 }
 
 R_API void r_big_free(RNumBig *b) {
@@ -47,6 +69,9 @@ R_API void r_big_free(RNumBig *b) {
 }
 
 R_API void r_big_set(RNumBig *n, int v) {
+#ifdef HAVE_LIB_GMP
+	return;
+#else
 	int t;
 	n->last = 0;
 	n->sign = (v>=0)?1:-1;
@@ -54,9 +79,13 @@ R_API void r_big_set(RNumBig *n, int v) {
 	for (n->last=0, t=R_ABS (v); t>0; t/=10, n->last++)
 		n->dgts[n->last] = (t % 10);
 	if (!v) n->last = 0;
+#endif
 }
 
 R_API void r_big_set64(RNumBig *n, st64 v) {
+#ifdef HAVE_LIB_GMP
+	return;
+#else
 	st64 t;
 	n->sign = (v<0)?-1:1;
 	memset (n->dgts, 0, R_BIG_SIZE);
@@ -66,10 +95,14 @@ R_API void r_big_set64(RNumBig *n, st64 v) {
 		n->dgts[n->last] = t%10;
 	}
 	if (!v) n->last = 0;
+#endif
 }
 
 /* c = a [+*-/] b; */
 R_API void r_big_add (RNumBig *c, RNumBig *a, RNumBig *b) {
+#ifdef HAVE_LIB_GMP
+	return;
+#else
 	int i, carry;
 	RNumBig t;
 	r_big_set (&t, 0);
@@ -90,9 +123,13 @@ R_API void r_big_add (RNumBig *c, RNumBig *a, RNumBig *b) {
 	}
 	*c = t;
 	r_big_zero (c);
+#endif
 }
 
 R_API void r_big_sub(RNumBig *c, RNumBig *a, RNumBig *b) {
+#ifdef HAVE_LIB_GMP
+	return;
+#else
 	RNumBig t;
 	int i, v, borrow;
 
@@ -126,9 +163,13 @@ R_API void r_big_sub(RNumBig *c, RNumBig *a, RNumBig *b) {
         }
 	*c = t;
 	r_big_zero (c);
+#endif
 }
 
 R_API int r_big_cmp(RNumBig *a, RNumBig *b) {
+#ifdef HAVE_LIB_GMP
+	return 0;
+#else
 	int i;
 	if ((a->sign == -1) && (b->sign == 1)) return 1;
 	if ((a->sign == 1) && (b->sign == -1)) return -1;
@@ -139,10 +180,14 @@ R_API int r_big_cmp(RNumBig *a, RNumBig *b) {
 		if (b->dgts[i] > a->dgts[i]) return a->sign;
 	}
 	return 0;
+#endif
 }
 
 /* multiply n by 10^d */
 R_API void r_big_shift(RNumBig *n, int d) {
+#ifdef HAVE_LIB_GMP
+	return;
+#else
 	int i;
 	if (!n->last && !*n->dgts)
 		return;
@@ -150,9 +195,13 @@ R_API void r_big_shift(RNumBig *n, int d) {
 		n->dgts[i+d] = n->dgts[i];
 	memset (n->dgts, 0, d);
 	n->last += d;
+#endif
 }
 
 R_API void r_big_mul (RNumBig *c, RNumBig *a, RNumBig *b) {
+#ifdef HAVE_LIB_GMP
+	return;
+#else
 	RNumBig t, tmp, row;
 	int i,j;
 	r_big_set (&t, 0);
@@ -168,10 +217,14 @@ R_API void r_big_mul (RNumBig *c, RNumBig *a, RNumBig *b) {
 	*c = t;
 	c->sign = a->sign * b->sign;
 	r_big_zero (c);
+#endif
 }
 
 R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
-        RNumBig t, tmp, row;
+#ifdef HAVE_LIB_GMP
+	return;
+#else
+	RNumBig t, tmp, row;
 	int i, asign, bsign;
 
 	r_big_set (&t, 0);
@@ -197,13 +250,18 @@ R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
 	r_big_zero (c);
 	a->sign = asign;
 	b->sign = bsign;
+#endif
 }
 
 R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b) {
+#ifdef HAVE_LIB_GMP
+	return;
+#else
 	RNumBig t; // a%b = a-((a/b)*b)
 	r_big_div (c, a, b); // c=a/b
 	r_big_mul (&t, c, b); // t=c*b
 	r_big_sub (c, a, &t); // c=a-t
+#endif
 }
 
 #if TEST

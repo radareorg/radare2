@@ -12,7 +12,11 @@ USE_DL
 CHECK_ENDIAN
 CHKLIB ewf
 ARG_WITHOUT HAVE_EWF ewf disable EWF dependency ;
-IF HAVE_EWF { HAVE_LIB_EWF = 0 ; }
+IFNOT HAVE_EWF { HAVE_LIB_EWF = 0 ; }
+
+CHKLIB gmp
+ARG_WITHOUT HAVE_GMP gmp disable GMP dependency ;
+IFNOT HAVE_GMP { HAVE_LIB_GMP = 0 ; }
 
 CHKLIB lua5.1
 CHKLIB tcc
@@ -34,7 +38,7 @@ IFEQ USEROSTYPE auto ; {
 
 ARG_WITHOUT WITHPIC pic do not build libr as a program independent location ;
 
-REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_TCC DEBUGGER USERCC USEROSTYPE ;
+REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_GMP HAVE_LIB_TCC DEBUGGER USERCC USEROSTYPE ;
 
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))
 SUBDIRS ./config-user.mk libr/include/r_userconf.h
