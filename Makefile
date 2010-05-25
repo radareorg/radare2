@@ -39,7 +39,7 @@ install: install-man
 	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd r2rc && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
-ins install-symlink:
+symstall install-symlink:
 	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
 uninstall:
@@ -71,4 +71,4 @@ shot:
 
 include ${MKPLUGINS}
 
-.PHONY: all clean mrproper install uninstall deinstall dist shot pkgcfg vdoc swig libr r2rc install-man
+.PHONY: all clean mrproper install symstall uninstall deinstall dist shot pkgcfg vdoc swig libr r2rc install-man

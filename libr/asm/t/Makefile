@@ -2,7 +2,7 @@ include ../../config.mk
 
 OBJ=rasm2.o
 BIN=rasm2${EXT_EXE}
-BINDEPS=r_lib r_asm r_print r_cons r_util
+BINDEPS=r_lib r_asm r_util
 LIBS+=-ldl
 
 LDPATH=-L.. -L../../util -L../../lib
