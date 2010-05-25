@@ -49,7 +49,7 @@ int test_delta()
 	char *bufb = "heprpworld";
 
 	printf("Delta diffing '%s' vs '%s'\n", bufa, bufb);
-	r_diff_new(0, 0);
+	d = r_diff_new(0, 0);
 	r_diff_set_delta(d, 1);
 	r_diff_set_callback(d, &cb, NULL);
 	r_diff_buffers(d, (ut8*)bufa, strlen(bufa), (ut8*)bufb, strlen(bufb));
