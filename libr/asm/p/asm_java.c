@@ -10,17 +10,14 @@
 
 static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len) {
 	javasm_init();
-	aop->inst_len = java_disasm(buf, aop->buf_asm);
-
-	return aop->inst_len;
+	return aop->inst_len = java_disasm(buf, aop->buf_asm);
 }
 
 static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf) {
-	aop->inst_len = java_assemble(aop->buf, buf);
-	return aop->inst_len;
+	return aop->inst_len = java_assemble(aop->buf, buf);
 }
 
-struct r_asm_handle_t r_asm_plugin_java = {
+RAsmHandler r_asm_plugin_java = {
 	.name = "java",
 	.desc = "Java CLASS assembler/disassembler",
 	.arch = "java",

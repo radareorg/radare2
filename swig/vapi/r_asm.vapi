@@ -28,6 +28,16 @@ public class RAsm {
 	}
 
 	[Compact]
+	[CCode (cname="RAsmHandler", destroy_function="" )]
+	public class Handler {
+		public string name;
+		public string arch;
+		public string desc;
+		[CCode (array_length = false)]
+		public int[] bits;
+	}
+
+	[Compact]
 	[CCode (cname="struct r_asm_aop_t", destroy_function="" )]
 	public struct Aop {
 		public int inst_len;
@@ -56,13 +66,14 @@ public class RAsm {
 	public string buf_err;
 	public void *aux;
 
+	public RList<Handler> handlers;
 	public RAsm();
-	public int list();
 	public bool use(string name);
 	public bool set_bits(int bits);
 	public bool set_syntax(Syntax syntax);
 	public bool set_pc(uint64 addr);
 	public bool set_big_endian(bool big);
+	// TODO: Use Code? instead of aop??
 	public int disassemble(out Aop aop, uint8 *buf, uint64 length);
 	public int assemble(out Aop aop, string buf);
 	public Code? mdisassemble(uint8 *buf, uint64 length);

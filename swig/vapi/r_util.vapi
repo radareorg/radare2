@@ -1,9 +1,10 @@
 /* radare - LGPL - Copyright 2009-2010 pancake<@nopcode.org> */
 
 namespace Radare {
-//[Compact]
-//[CCode (cheader_filename="r_util.h", cprefix="r_util_")]
-//public static class Radare.RUtil {
+[Compact]
+[CCode (cheader_filename="r_util.h", cprefix="r_")]
+public static class Radare.RHex {
+	public static int str2bin (string input, uint8 *buf);
 	//public static int hex_str2bin (string input, uint8 *buf);
 	//public static int hex_bin2str (uint8 *buf, int len, out string str);
 	//public static string hex_bin2strdup (uint8 *buf, int len);
@@ -15,7 +16,7 @@ namespace Radare {
 	/* num */
 	//public static uint64 num_get(void *num, string str); // XXX void *
 	//public static int offsetof(void *type, void *member);
-//}
+}
 
 #if FAILFAIL
 	[CCode (cheader_filename="r_util.h", cprefix="r_str_")]

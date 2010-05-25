@@ -12,11 +12,10 @@
 #include "../arch/avr/disasm.c"
 
 static int disassemble(RAsm *a, RAsmAop *aop, ut8 *buf, ut64 len) {
-	aop->inst_len = avrdis (aop->buf_asm, a->pc, buf, len);
-	return aop->inst_len;
+	return aop->inst_len = avrdis (aop->buf_asm, a->pc, buf, len);
 }
 
-struct r_asm_handle_t r_asm_plugin_avr = {
+RAsmHandler r_asm_plugin_avr = {
 	.name = "avr",
 	.arch = "avr",
 	.bits = (int[]){ 16, 32, 0 },

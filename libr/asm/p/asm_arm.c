@@ -79,7 +79,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	return aop->inst_len;
 }
 
-struct r_asm_handle_t r_asm_plugin_arm = {
+RAsmHandler r_asm_plugin_arm = {
 	.name = "arm",
 	.arch = "arm",
 	.bits = (int[]){ 16, 32, 0 },

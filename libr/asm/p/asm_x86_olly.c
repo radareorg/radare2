@@ -46,7 +46,7 @@ static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf)
 	return aop->inst_len;
 }
 
-struct r_asm_handle_t r_asm_plugin_x86_olly = {
+RAsmHandler r_asm_plugin_x86_olly = {
 	.name = "x86.olly",
 	.desc = "X86 disassembly plugin (olly engine)",
 	.arch = "x86",

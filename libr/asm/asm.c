@@ -8,9 +8,7 @@
 #include <list.h>
 #include "../config.h"
 
-#define D if (0)
-
-static struct r_asm_handle_t *asm_static_plugins[] = 
+static RAsmHandler *asm_static_plugins[] = 
 	{ R_ASM_STATIC_PLUGINS };
 
 static int r_asm_pseudo_string(struct r_asm_aop_t *aop, char *input) {
@@ -20,7 +18,7 @@ static int r_asm_pseudo_string(struct r_asm_aop_t *aop, char *input) {
 	return len;
 }
 
-static inline int r_asm_pseudo_arch(struct r_asm_t *a, char *input) {
+static inline int r_asm_pseudo_arch(RAsm *a, char *input) {
 	if (!r_asm_use (a, input)) {
 		eprintf ("Error: Unknown plugin\n");
 		return -1;
@@ -28,14 +26,14 @@ static inline int r_asm_pseudo_arch(struct r_asm_t *a, char *input) {
 	return 0;
 }
 
-static inline int r_asm_pseudo_bits(struct r_asm_t *a, char *input) {
+static inline int r_asm_pseudo_bits(RAsm *a, char *input) {
 	if (!(r_asm_set_bits (a, r_num_math (NULL, input))))
 		eprintf ("Error: Unsupported bits value\n");
 	else return 0;
 	return -1;
 }
 
-static inline int r_asm_pseudo_org(struct r_asm_t *a, char *input) {
+static inline int r_asm_pseudo_org(RAsm *a, char *input) {
 	r_asm_set_pc (a, r_num_math (NULL, input));
 	return 0;
 }
@@ -47,10 +45,8 @@ static inline int r_asm_pseudo_byte(struct r_asm_aop_t *aop, char *input) {
 }
 
 R_API RAsm *r_asm_new() {
-	RAsm *a;
 	int i;
-
-	a = R_NEW (RAsm);
+	RAsm *a = R_NEW (RAsm);
 	if (a) {
 		a->user = NULL;
 		a->cur = NULL;
@@ -58,20 +54,20 @@ R_API RAsm *r_asm_new() {
 		a->big_endian = 0;
 		a->syntax = R_ASM_SYNTAX_INTEL;
 		a->pc = 0;
-		INIT_LIST_HEAD (&a->asms);
+		a->handlers = r_list_new ();
 		for (i=0; asm_static_plugins[i]; i++)
 			r_asm_add (a, asm_static_plugins[i]);
 	}
 	return a;
 }
 
-R_API void r_asm_free(struct r_asm_t *a) {
+R_API void r_asm_free(RAsm *a) {
 	// TOOD: free plugins and so on
 	free(a);
 }
 
 /* return fastcall register argument 'idx' for a syscall with 'num' args */
-R_API const char *r_asm_fastcall(struct r_asm_t *a, int idx, int num) {
+R_API const char *r_asm_fastcall(RAsm *a, int idx, int num) {
 	struct r_asm_fastcall_t *fastcall;
 	const char *ret = NULL;
 	if (a && a->cur && a->cur->fastcall)
@@ -81,61 +77,48 @@ R_API const char *r_asm_fastcall(struct r_asm_t *a, int idx, int num) {
 	return ret;
 }
 
-R_API void r_asm_set_user_ptr(struct r_asm_t *a, void *user) {
+R_API void r_asm_set_user_ptr(RAsm *a, void *user) {
 	a->user = user;
 }
 
-R_API int r_asm_add(struct r_asm_t *a, struct r_asm_handle_t *foo) {
-	struct list_head *pos;
+R_API int r_asm_add(RAsm *a, RAsmHandler *foo) {
+	RListIter *iter;
+	RAsmHandler *h;
 	// TODO: cache foo->name length and use memcmp instead of strcmp
 	if (foo->init)
 		foo->init (a->user);
-	/* avoid dupped plugins */
-	list_for_each_prev (pos, &a->asms) {
-		RAsmHandle *h = list_entry (pos, RAsmHandle, list);
+	r_list_foreach (a->handlers, iter, h)
 		if (!strcmp (h->name, foo->name))
 			return R_FALSE;
-	}
-	
-	list_add_tail (&(foo->list), &(a->asms));
+	r_list_append (a->handlers, foo);
 	return R_TRUE;
 }
 
-R_API int r_asm_del(struct r_asm_t *a, const char *name) {
+R_API int r_asm_del(RAsm *a, const char *name) {
 	/* TODO: Implement r_asm_del */
 	return R_FALSE;
 }
 
-R_API int r_asm_list(struct r_asm_t *a) {
-	struct list_head *pos;
-	list_for_each_prev(pos, &a->asms) {
-		RAsmHandle *h = list_entry(pos, RAsmHandle, list);
-		printf ("asm %s\t %s\n", h->name, h->desc);
-	}
-	return R_FALSE;
-}
-
 // TODO: this can be optimized using r_str_hash()
-R_API int r_asm_use(struct r_asm_t *a, const char *name) {
-	struct list_head *pos;
-	list_for_each_prev (pos, &a->asms) {
-		RAsmHandle *h = list_entry (pos, RAsmHandle, list);
+R_API int r_asm_use(RAsm *a, const char *name) {
+	RAsmHandler *h;
+	RListIter *iter;
+	r_list_foreach (a->handlers, iter, h)
 		if (!strcmp (h->name, name)) {
 			a->cur = h;
 			return R_TRUE;
 		}
-	}
 	return R_FALSE;
 }
 
-R_API int r_asm_set_subarch(struct r_asm_t *a, const char *name) {
+R_API int r_asm_set_subarch(RAsm *a, const char *name) {
 	int ret = R_FALSE;
 	if (a->cur && a->cur->set_subarch)
 		ret = a->cur->set_subarch(a, name);
 	return ret;
 }
 
-static int has_bits(struct r_asm_handle_t *h, int bits) {
+static int has_bits(RAsmHandler *h, int bits) {
 	int i;
 	if (h && h->bits)
 		for(i=0; h->bits[i]; i++)
@@ -144,7 +127,7 @@ static int has_bits(struct r_asm_handle_t *h, int bits) {
 	return R_FALSE;
 }
 
-R_API int r_asm_set_bits(struct r_asm_t *a, int bits) {
+R_API int r_asm_set_bits(RAsm *a, int bits) {
 	if (has_bits (a->cur, bits)) {
 		a->bits = bits;
 		return R_TRUE;
@@ -152,12 +135,12 @@ R_API int r_asm_set_bits(struct r_asm_t *a, int bits) {
 	return R_FALSE;
 }
 
-R_API int r_asm_set_big_endian(struct r_asm_t *a, int boolean) {
+R_API int r_asm_set_big_endian(RAsm *a, int boolean) {
 	a->big_endian = boolean;
 	return R_TRUE;
 }
 
-R_API int r_asm_set_syntax(struct r_asm_t *a, int syntax) {
+R_API int r_asm_set_syntax(RAsm *a, int syntax) {
 	switch (syntax) {
 	case R_ASM_SYNTAX_INTEL:
 	case R_ASM_SYNTAX_ATT:
@@ -168,12 +151,12 @@ R_API int r_asm_set_syntax(struct r_asm_t *a, int syntax) {
 	}
 }
 
-R_API int r_asm_set_pc(struct r_asm_t *a, ut64 pc) {
+R_API int r_asm_set_pc(RAsm *a, ut64 pc) {
 	a->pc = pc;
 	return R_TRUE;
 }
 
-R_API int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len) {
+R_API int r_asm_disassemble(RAsm *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len) {
 	int ret = 0;
 	if (a->cur && a->cur->disassemble)
 		ret = a->cur->disassemble(a, aop, buf, len);
@@ -184,21 +167,21 @@ R_API int r_asm_disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf
 	return ret;
 }
 
-R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf) {
+R_API int r_asm_assemble(RAsm *a, struct r_asm_aop_t *aop, const char *buf) {
 	int ret = 0;
-	struct list_head *pos;
+	RAsmHandler *h;
+	RListIter *iter;
 	if (a->cur) {
-		if (a->cur->assemble)
-			ret = a->cur->assemble (a, aop, buf);
-		/* find callback if no assembler support in current plugin */
-		else list_for_each_prev (pos, &a->asms) {
-			RAsmHandle *h = list_entry (pos, RAsmHandle, list);
-			if (h->arch && h->assemble && has_bits(h, a->bits)
-			&& !strcmp(a->cur->arch, h->arch)) {
-				ret = h->assemble(a, aop, buf);
-				break;
+		if (!a->cur->assemble) {
+			/* find callback if no assembler support in current plugin */
+			r_list_foreach (a->handlers, iter, h) {
+				if (h->arch && h->assemble && has_bits(h, a->bits)
+				&& !strcmp(a->cur->arch, h->arch)) {
+					ret = h->assemble(a, aop, buf);
+					break;
+				}
 			}
-		}
+		} else ret = a->cur->assemble (a, aop, buf);
 	}
 	if (aop && ret > 0) {
 		r_hex_bin2str (aop->buf, ret, aop->buf_hex);
@@ -209,9 +192,9 @@ R_API int r_asm_assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char 
 	return ret;
 }
 
-R_API struct r_asm_code_t* r_asm_mdisassemble(struct r_asm_t *a, ut8 *buf, ut64 len) {
+R_API RAsmCode* r_asm_mdisassemble(RAsm *a, ut8 *buf, ut64 len) {
 	struct r_asm_aop_t aop;
-	struct r_asm_code_t *acode;
+	RAsmCode *acode;
 	int ret, slen;
 	ut64 idx;
 
@@ -248,7 +231,7 @@ R_API struct r_asm_code_t* r_asm_mdisassemble(struct r_asm_t *a, ut8 *buf, ut64 
 	return acode;
 }
 
-R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
+R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL,
 		 *tokens[R_ASM_BUFSIZE], buf_token[R_ASM_BUFSIZE];
 	int labels = 0, stage, ret, idx, ctr, i, j;
@@ -308,7 +291,6 @@ R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
 					*ptr = 0;
 					snprintf (food, sizeof (food), "0x%"PFMT64x"", off);
 					r_asm_code_set_equ (acode, ptr_start, food);
-					D eprintf ("SETEQU (%s,%s)\n", ptr_start, food);
 				}
 				ptr_start = ptr + 1;
 			}
@@ -342,35 +324,31 @@ R_API struct r_asm_code_t* r_asm_massemble(struct r_asm_t *a, const char *buf) {
 					eprintf ("Unknown keyword (%s)\n", ptr);
 					return r_asm_code_free (acode);
 				}
-				if (!ret) continue;
-				else if (ret < 0) {
+				if (!ret)
+					continue;
+				if (ret < 0) {
 					eprintf ("!!! Oops\n");
 					return r_asm_code_free (acode);
 				}
 			} else { /* Instruction */
 				if (acode->equs) {
 					char *str = r_asm_code_equ_replace (acode, strdup (ptr_start));
-					D eprintf ("%s\n", str);
 					ret = r_asm_assemble (a, &aop, str);
 					free (str);
-				} else {
-					ret = r_asm_assemble (a, &aop, ptr_start);
-					D eprintf ("%s\n", ptr_start);
-				}
+				} else ret = r_asm_assemble (a, &aop, ptr_start);
 			}
 			if (stage == 2) {
 				if (ret < 1) {
 					printf ("Cannot assemble '%s'\n", ptr_start);
 					return r_asm_code_free (acode);
-				} else {
-					acode->len = idx + ret;
-					if (!(acode->buf = realloc (acode->buf, (idx+ret)*2)))
-						return r_asm_code_free (acode);
-					if (!(acode->buf_hex = realloc (acode->buf_hex, (acode->len*2)+1)))
-						return r_asm_code_free (acode);
-					memcpy (acode->buf+idx, aop.buf, ret);
-					strcat (acode->buf_hex, aop.buf_hex);
 				}
+				acode->len = idx + ret;
+				if (!(acode->buf = realloc (acode->buf, (idx+ret)*2)))
+					return r_asm_code_free (acode);
+				if (!(acode->buf_hex = realloc (acode->buf_hex, (acode->len*2)+1)))
+					return r_asm_code_free (acode);
+				memcpy (acode->buf+idx, aop.buf, ret);
+				strcat (acode->buf_hex, aop.buf_hex);
 			}
 		}
 	}

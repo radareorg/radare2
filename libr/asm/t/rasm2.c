@@ -13,6 +13,14 @@ static struct r_lib_t *l;
 static struct r_asm_t *a;
 static int coutput = R_FALSE;
 
+// TODO: remove or gtfo
+static void r_asm_list(RAsm *a) {
+	RAsmHandler *h;
+	RListIter *iter;
+	r_list_foreach (a->handlers, iter, h)
+		printf ("asm %s\t %s\n", h->name, h->desc);
+}
+
 static int rasm_show_help() {
 	printf ("rasm2 [-e] [-o offset] [-a arch] [-s syntax] -d \"opcode\"|\"hexpairs\"|- [-f file ..]\n"
 		" -d           Disassemble from hexpair bytes\n"

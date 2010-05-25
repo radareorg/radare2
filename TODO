@@ -15,9 +15,8 @@
   cc 8080 @@ hit* .. check for values that has changed.
   - maybe we should 'cache' some memory regions
 
-* Add 'prj.name', 'prj.desc' and 'prj.md5'
+* Add 'prj.name', 'prj.desc'
 * Add description to project e file.desc ?
-* add file.md5 check support when opening new file or project or so..
 
 * anal bug: (fixed??)
 [0x08048eec]> pd 2 

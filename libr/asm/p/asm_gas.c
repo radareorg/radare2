@@ -14,8 +14,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 #endif
 
 // XXX: TODO Implement
-static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf)
-{
+static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf) {
 	int len = 0;
 	char cmd[R_ASM_BUFSIZE];
 	ut8 *out;
@@ -29,7 +28,7 @@ static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf)
 	return len;
 }
 
-struct r_asm_handle_t r_asm_plugin_x86_nasm = {
+RAsmHandler r_asm_plugin_x86_nasm = {
 	.name = "gas",
 	.desc = "GNU Assembler plugin",
 	.arch = "x86", // XXX

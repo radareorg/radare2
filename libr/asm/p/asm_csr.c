@@ -13,7 +13,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	return (aop->inst_len=2);
 }
 
-struct r_asm_handle_t r_asm_plugin_csr = {
+RAsmHandler r_asm_plugin_csr = {
 	.name = "csr",
 	.arch = "csr",
 	.bits = (int[]){ 16, 0 },

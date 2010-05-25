@@ -32,7 +32,7 @@ static int assemble(RAsm *a, RAsmAop *aop, const char *buf) {
 	return len;
 }
 
-struct r_asm_handle_t r_asm_plugin_x86_nasm = {
+RAsmHandler r_asm_plugin_x86_nasm = {
 	.name = "x86.nasm",
 	.desc = "X86 nasm assembler plugin",
 	.arch = "x86",

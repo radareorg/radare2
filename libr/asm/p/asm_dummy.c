@@ -7,12 +7,12 @@
 
 static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len)
 {
-	printf("Dummy (dis)assembly plugin");
+	printf ("Dummy (dis)assembly plugin");
 
 	return R_FALSE;
 }
 
-struct r_asm_handle_t r_asm_plugin_dummy = {
+RAsmHandler r_asm_plugin_dummy = {
 	.name = "dummy",
 	.arch = "none",
 	.bits = (int[]){ 0 },

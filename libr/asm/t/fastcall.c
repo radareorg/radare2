@@ -1,7 +1,13 @@
 #include "r_asm.h"
 
-int main(int argc, char **argv)
-{
+static void r_asm_list(RAsm *a) {
+	RAsmHandler *h;
+	RListIter *iter;
+	r_list_foreach (a->handlers, iter, h)
+		printf ("asm %s\t %s\n", h->name, h->desc);
+}
+
+int main(int argc, char **argv) {
 	struct r_asm_t *a;
 	const char *arg;
 	int num, i = 0;
@@ -19,8 +25,7 @@ int main(int argc, char **argv)
 	printf("Fastcall args for %d\n", atoi(argv[1]));
 
 	printf("Using plugin: %s\n", a->cur->name);
-	do {
-		arg = r_asm_fastcall(a, i++, num);
+	do {	arg = r_asm_fastcall(a, i++, num);
 		if (arg) printf("%s\n", arg);
 	} while(arg);
 	return 0;
