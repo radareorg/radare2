@@ -3,11 +3,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <r_anal.h>
-#include <r_core.h>
 #include <r_list.h>
 #include <r_util.h>
 #include "gdiff.h"
 
+/* XXX Solve cross-dependency */
+#if 0 
+#include <r_core.h>
 /* XXX Fix r_cons and remove this functions (dupped) */
 static char *gdiff_graph_label(RCore *core, struct r_anal_bb_t *bb) {
 	char cmd[1024], *cmdstr = NULL, *str = NULL;
@@ -363,3 +365,8 @@ R_API int r_diff_gdiff(char *file1, char *file2, int rad, int va) {
 
 	return R_TRUE;
 }
+#else
+R_API int r_diff_gdiff(char *file1, char *file2, int rad, int va) {
+	return R_FALSE;
+}
+#endif 
