@@ -73,7 +73,7 @@ R_API int r_lang_setup(RLang *lang) {
 	return ret;
 }
 
-R_API int r_lang_add(RLang *lang, struct r_lang_handle_t *foo) {
+R_API int r_lang_add(RLang *lang, struct r_lang_plugin_t *foo) {
 	if (foo->init)
 		foo->init (lang->user);
 	list_add_tail (&(foo->list), &(lang->langs));
@@ -84,7 +84,7 @@ R_API int r_lang_add(RLang *lang, struct r_lang_handle_t *foo) {
 R_API int r_lang_list(RLang *lang) {
 	struct list_head *pos;
 	list_for_each_prev (pos, &lang->langs) {
-		RLangHandle *h = list_entry (pos, RLangHandle, list);
+		RLangPlugin *h = list_entry (pos, RLangPlugin, list);
 		printf (" %s: %s\n", h->name, h->desc);
 	}
 	return R_FALSE;
@@ -93,7 +93,7 @@ R_API int r_lang_list(RLang *lang) {
 R_API int r_lang_use(RLang *lang, const char *name) {
 	struct list_head *pos;
 	list_for_each_prev(pos, &lang->langs) {
-		struct r_lang_handle_t *h = list_entry (pos, struct r_lang_handle_t, list);
+		struct r_lang_plugin_t *h = list_entry (pos, struct r_lang_plugin_t, list);
 		if (!strcmp (h->name, name)) {
 			lang->cur = h;
 			return R_TRUE;

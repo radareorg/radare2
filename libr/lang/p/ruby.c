@@ -89,7 +89,7 @@ static const char *help =
 	" $r = RadareInternal.new()\n"
 	" bytes = $r.cmd(\"p8 10\");\n";
 
-static struct r_lang_handle_t r_lang_plugin_ruby = {
+static struct r_lang_plugin_t r_lang_plugin_ruby = {
 	.name = "ruby",
 	.desc = "Ruby language extension",
 	.init = &init,

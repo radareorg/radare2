@@ -63,7 +63,7 @@ typedef struct r_io_t {
 	int write_mask_fd;
 	ut8 *write_mask_buf;
 	int write_mask_len;
-	struct r_io_handle_t *plugin;
+	struct r_io_plugin_t *plugin;
 	struct r_io_undo_t undo;
 	struct list_head io_list;
 	struct list_head sections;
@@ -77,7 +77,7 @@ typedef struct r_io_t {
 // ... store io changes here
 //};
 
-typedef struct r_io_handle_t {
+typedef struct r_io_plugin_t {
         void *handle;
         char *name;
         char *desc;
@@ -95,10 +95,10 @@ typedef struct r_io_handle_t {
         int (*handle_open)(RIO *io, const char *);
         //int (*handle_fd)(RIO *, int);
 	int fds[R_IO_NFDS];
-} RIOHandle;
+} RIOPlugin;
 
 typedef struct r_io_list_t {
-	struct r_io_handle_t *plugin;
+	struct r_io_plugin_t *plugin;
 	struct list_head list;
 } RIOList;
 
@@ -139,7 +139,7 @@ typedef struct r_io_desc_t {
 	int fd;
 	int flags;
 	char name[4096];
-	struct r_io_handle_t *handle;
+	struct r_io_plugin_t *handle;
 	struct list_head list;
 } RIODesc;
 
@@ -150,14 +150,14 @@ typedef struct r_io_desc_t {
 R_API RIO *r_io_new();
 R_API RIO *r_io_free(RIO *io);
 R_API int r_io_handle_init(RIO *io);
-R_API int r_io_handle_open(RIO *io, int fd, struct r_io_handle_t *plugin);
-R_API int r_io_handle_close(RIO *io, int fd, struct r_io_handle_t *plugin);
+R_API int r_io_handle_open(RIO *io, int fd, struct r_io_plugin_t *plugin);
+R_API int r_io_handle_close(RIO *io, int fd, struct r_io_plugin_t *plugin);
 R_API int r_io_handle_generate(RIO *io);
-R_API int r_io_handle_add(RIO *io, struct r_io_handle_t *plugin);
+R_API int r_io_handle_add(RIO *io, struct r_io_plugin_t *plugin);
 R_API int r_io_handle_list(RIO *io);
 // TODO: _del ??
-R_API struct r_io_handle_t *r_io_handle_resolve(RIO *io, const char *filename);
-R_API struct r_io_handle_t *r_io_handle_resolve_fd(RIO *io, int fd);
+R_API struct r_io_plugin_t *r_io_handle_resolve(RIO *io, const char *filename);
+R_API struct r_io_plugin_t *r_io_handle_resolve_fd(RIO *io, int fd);
 
 /* io/io.c */
 R_API int r_io_set_write_mask(RIO *io, const ut8 *buf, int len);
@@ -237,20 +237,20 @@ R_API int r_io_wundo_set(RIO *io, int n, int set);
 
 /* io/desc.c */
 R_API int r_io_desc_init(RIO *io);
-R_API int r_io_desc_add(RIO *io, int fd, const char *file, int flags, struct r_io_handle_t *handle);
+R_API int r_io_desc_add(RIO *io, int fd, const char *file, int flags, struct r_io_plugin_t *handle);
 R_API int r_io_desc_del(RIO *io, int fd);
 R_API struct r_io_desc_t *r_io_desc_get(RIO *io, int fd);
 R_API int r_io_desc_generate(RIO *io);
 
 
 /* plugins */
-extern struct r_io_handle_t r_io_plugin_procpid;
-extern struct r_io_handle_t r_io_plugin_malloc;
-extern struct r_io_handle_t r_io_plugin_ptrace;
-extern struct r_io_handle_t r_io_plugin_w32dbg;
-extern struct r_io_handle_t r_io_plugin_mach;
-extern struct r_io_handle_t r_io_plugin_debug;
-extern struct r_io_handle_t r_io_plugin_shm;
+extern struct r_io_plugin_t r_io_plugin_procpid;
+extern struct r_io_plugin_t r_io_plugin_malloc;
+extern struct r_io_plugin_t r_io_plugin_ptrace;
+extern struct r_io_plugin_t r_io_plugin_w32dbg;
+extern struct r_io_plugin_t r_io_plugin_mach;
+extern struct r_io_plugin_t r_io_plugin_debug;
+extern struct r_io_plugin_t r_io_plugin_shm;
 #endif
 
 #if 0

@@ -1168,7 +1168,7 @@ unsigned int ud_decode( struct ud* u )
     ; /* error */
   }
 
-  /* Handle decode error. */
+  /* Plugin decode error. */
   if ( u->error ) {
     /* clear out the decode data. */
     clear_insn( u );

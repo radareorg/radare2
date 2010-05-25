@@ -3,7 +3,7 @@
 #include "r_crypto.h"
 #include "../config.h"
 
-static struct r_crypto_handle_t *crypto_static_plugins[] = 
+static struct r_crypto_plugin_t *crypto_static_plugins[] = 
 	{ R_CRYPTO_STATIC_PLUGINS };
 
 R_API struct r_crypto_t *r_crypto_init(struct r_crypto_t *cry, int hard)
@@ -25,14 +25,14 @@ R_API struct r_crypto_t *r_crypto_init(struct r_crypto_t *cry, int hard)
 	return cry;
 }
 
-R_API int r_crypto_add(struct r_crypto_t *cry, struct r_crypto_handle_t *h)
+R_API int r_crypto_add(struct r_crypto_t *cry, struct r_crypto_plugin_t *h)
 {
 	// add a check ?
 	list_add_tail(&(h->list), &(cry->handlers));
 	return R_TRUE;
 }
 
-R_API int r_crypto_del(struct r_crypto_t *cry, struct r_crypto_handle_t *h)
+R_API int r_crypto_del(struct r_crypto_t *cry, struct r_crypto_plugin_t *h)
 {
 	list_del(&(h->list));
 	return R_TRUE;
@@ -70,7 +70,7 @@ R_API int r_crypto_use(struct r_crypto_t *cry, const char *algo)
 	int ret = R_FALSE;
 	struct list_head *pos;
 	list_for_each_prev(pos, &cry->handlers) {
-		struct r_crypto_handle_t *h = list_entry(pos, struct r_crypto_handle_t, list);
+		struct r_crypto_plugin_t *h = list_entry(pos, struct r_crypto_plugin_t, list);
 		if (h->use(algo)) {
 			cry->h = h;
 			cry->key_len = h->get_key_size(cry);

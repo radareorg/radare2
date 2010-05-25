@@ -222,7 +222,7 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *bytes, int len) 
 	return aop->length;
 }
 
-struct r_anal_handle_t r_anal_plugin_csr = {
+struct r_anal_plugin_t r_anal_plugin_csr = {
 	.name = "csr",
 	.desc = "CSR code analysis plugin",
 	.init = NULL,

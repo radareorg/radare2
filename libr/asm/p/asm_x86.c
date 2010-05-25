@@ -61,7 +61,7 @@ static int disassemble(RAsm *a, RAsmAop *aop, ut8 *buf, ut64 len) {
 	return aop->inst_len;
 }
 
-RAsmHandler r_asm_plugin_x86 = {
+RAsmPlugin r_asm_plugin_x86 = {
 	.name = "x86",
 	.desc = "udis86 disassembly plugin",
 	.arch = "x86",

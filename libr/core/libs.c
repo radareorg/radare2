@@ -4,7 +4,7 @@
 
 /* io callback */
 static int __lib_io_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
-	struct r_io_handle_t *hand = (struct r_io_handle_t *)data;
+	struct r_io_plugin_t *hand = (struct r_io_plugin_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
 	//printf(" * Added IO handler\n");
 	r_io_handle_add (core->io, hand);
@@ -15,7 +15,7 @@ static int __lib_io_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_T
 
 /* cmd callback */
 static int __lib_cmd_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
-	struct r_cmd_handle_t *hand = (struct r_cmd_handle_t *)data;
+	struct r_cmd_plugin_t *hand = (struct r_cmd_plugin_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
 	//printf(" * Added CMD handler\n");
 	r_cmd_handle_add (core->cmd, hand);
@@ -26,7 +26,7 @@ static int __lib_cmd_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_
 
 /* debug callback */
 static int __lib_dbg_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
-	struct r_debug_handle_t *hand = (struct r_debug_handle_t *)data;
+	struct r_debug_plugin_t *hand = (struct r_debug_plugin_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
 	//printf(" * Added debugger handler\n");
 	r_debug_handle_add (core->dbg, hand);
@@ -38,7 +38,7 @@ static int __lib_dbg_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_
 /* breakpoint callback */
 static int __lib_bp_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 {
-	struct r_bp_handle_t *hand = (struct r_bp_handle_t *)data;
+	struct r_bp_plugin_t *hand = (struct r_bp_plugin_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
 	//printf(" * Added bpger handler\n");
 	r_bp_handle_add (core->dbg->bp, hand);
@@ -49,7 +49,7 @@ static int __lib_bp_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_T
 
 /* lang callback */
 static int __lib_lng_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
-	struct r_lang_handle_t *hand = (struct r_lang_handle_t *)data;
+	struct r_lang_plugin_t *hand = (struct r_lang_plugin_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
 	//printf(" * Added language handler\n");
 	r_lang_add (core->lang, hand);
@@ -60,7 +60,7 @@ static int __lib_lng_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_
 
 /* anal callback */
 static int __lib_anl_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
-	struct r_anal_handle_t *hand = (struct r_anal_handle_t *)data;
+	struct r_anal_plugin_t *hand = (struct r_anal_plugin_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
 	//printf(" * Added analysis handler\n");
 	r_anal_add (core->anal, hand);
@@ -71,7 +71,7 @@ static int __lib_anl_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_
 
 /* asm callback */
 static int __lib_asm_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
-	struct r_asm_handle_t *hand = (struct r_asm_handle_t *)data;
+	struct r_asm_plugin_t *hand = (struct r_asm_plugin_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
 	//printf(" * Added (dis)assembly handler\n");
 	r_asm_add (core->assembler, hand);
@@ -82,7 +82,7 @@ static int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_
 
 /* parse callback */
 static int __lib_parse_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
-	struct r_parse_handle_t *hand = (struct r_parse_handle_t *)data;
+	struct r_parse_plugin_t *hand = (struct r_parse_plugin_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
 	//printf(" * Added (dis)assembly handler\n");
 	r_parse_add (core->parser, hand);
@@ -93,7 +93,7 @@ static int __lib_parse_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return 
 
 /* bin callback */
 static int __lib_bin_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
-	struct r_bin_handle_t *hand = (struct r_bin_handle_t *)data;
+	struct r_bin_plugin_t *hand = (struct r_bin_plugin_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
 	//printf(" * Added (dis)assembly handler\n");
 	r_bin_add (core->bin, hand);

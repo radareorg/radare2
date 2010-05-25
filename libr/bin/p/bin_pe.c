@@ -213,7 +213,7 @@ static int check(RBin *bin) {
 	return ret;
 }
 
-struct r_bin_handle_t r_bin_plugin_pe = {
+struct r_bin_plugin_t r_bin_plugin_pe = {
 	.name = "pe",
 	.desc = "PE bin plugin",
 	.init = NULL,

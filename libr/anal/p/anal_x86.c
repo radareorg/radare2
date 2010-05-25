@@ -405,7 +405,7 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	return aop->length;
 }
 
-struct r_anal_handle_t r_anal_plugin_x86 = {
+struct r_anal_plugin_t r_anal_plugin_x86 = {
 	.name = "x86",
 	.desc = "X86 analysis plugin",
 	.init = NULL,

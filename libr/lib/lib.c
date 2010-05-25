@@ -271,7 +271,7 @@ R_API int r_lib_del_handler(RLib *lib, int type) {
 R_API void r_lib_list(RLib *lib) {
 	struct list_head *pos;
 #if 0
-	printf("Plugin Handlers:\n");
+	printf("Plugin Plugins:\n");
 	list_for_each_prev(pos, &lib->handlers) {
 		RLibHandler *h = list_entry(pos, RLibHandler, list);
 		printf(" - %d: %s\n", h->type, h->desc);

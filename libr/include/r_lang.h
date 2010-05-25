@@ -5,13 +5,13 @@
 #include <list.h>
 
 typedef struct r_lang_t {
-	struct r_lang_handle_t *cur;
+	struct r_lang_plugin_t *cur;
 	void *user;
 	struct list_head defs;
 	struct list_head langs;
 } RLang;
 
-typedef struct r_lang_handle_t {
+typedef struct r_lang_plugin_t {
 	const char *name;
 	const char *desc;
 	const char **help;
@@ -23,7 +23,7 @@ typedef struct r_lang_handle_t {
 	int (*run_file)(struct r_lang_t *user, const char *file);
 	int (*set_argv)(struct r_lang_t *user, int argc, char **argv);
 	struct list_head list;
-} RLangHandle;
+} RLangPlugin;
 
 typedef struct r_lang_def_t {
 	char *name;
@@ -36,7 +36,7 @@ typedef struct r_lang_def_t {
 R_API struct r_lang_t *r_lang_new();
 R_API void *r_lang_free(struct r_lang_t *lang);
 R_API int r_lang_setup(RLang *lang);
-R_API int r_lang_add(struct r_lang_t *lang, struct r_lang_handle_t *foo);
+R_API int r_lang_add(struct r_lang_t *lang, struct r_lang_plugin_t *foo);
 R_API int r_lang_list(struct r_lang_t *lang);
 R_API int r_lang_use(struct r_lang_t *lang, const char *name);
 R_API int r_lang_run(struct r_lang_t *lang, const char *code, int len);

@@ -13,16 +13,16 @@
 #include "../config.h"
 
 /* plugin pointers */
-extern RBinHandler r_bin_plugin_elf;
-extern RBinHandler r_bin_plugin_elf64;
-extern RBinHandler r_bin_plugin_pe;
-extern RBinHandler r_bin_plugin_pe64;
-extern RBinHandler r_bin_plugin_mach0;
-extern RBinHandler r_bin_plugin_mach064;
-extern RBinHandler r_bin_plugin_java;
-extern RBinHandler r_bin_plugin_dummy;
+extern RBinPlugin r_bin_plugin_elf;
+extern RBinPlugin r_bin_plugin_elf64;
+extern RBinPlugin r_bin_plugin_pe;
+extern RBinPlugin r_bin_plugin_pe64;
+extern RBinPlugin r_bin_plugin_mach0;
+extern RBinPlugin r_bin_plugin_mach064;
+extern RBinPlugin r_bin_plugin_java;
+extern RBinPlugin r_bin_plugin_dummy;
 
-static RBinHandler *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS };
+static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS };
 
 static RList* get_strings(RBin *bin, int min) {
 	RList *ret;
@@ -104,12 +104,12 @@ static void r_bin_free_items(RBin *bin) {
 		r_list_free (bin->symbols);
 }
 
-R_API int r_bin_add(RBin *bin, RBinHandler *foo) {
+R_API int r_bin_add(RBin *bin, RBinPlugin *foo) {
 	struct list_head *pos;
 	if (foo->init)
 		foo->init (bin->user);
 	list_for_each_prev (pos, &bin->bins) {
-		RBinHandler *h = list_entry (pos, RBinHandler, list);
+		RBinPlugin *h = list_entry (pos, RBinPlugin, list);
 		if (!strcmp (h->name, foo->name))
 			return R_FALSE;
 	}
@@ -131,7 +131,7 @@ R_API int r_bin_list(RBin *bin) {
 	struct list_head *pos;
 
 	list_for_each_prev(pos, &bin->bins) {
-		RBinHandler *h = list_entry (pos, RBinHandler, list);
+		RBinPlugin *h = list_entry (pos, RBinPlugin, list);
 		printf ("bin %-10s %s\n", h->name, h->desc);
 	}
 	return R_FALSE;
@@ -143,7 +143,7 @@ R_API int r_bin_load(RBin *bin, const char *file, const char *plugin_name) {
 		return R_FALSE;
 	bin->file = r_file_abspath (file);
 	list_for_each (pos, &bin->bins) {
-		RBinHandler *h = list_entry (pos, RBinHandler, list);
+		RBinPlugin *h = list_entry (pos, RBinPlugin, list);
 		if ((plugin_name && !strcmp (h->name, plugin_name)) ||
 				(h->check && h->check (bin)))
 			bin->cur = h;

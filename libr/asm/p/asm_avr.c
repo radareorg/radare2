@@ -15,7 +15,7 @@ static int disassemble(RAsm *a, RAsmAop *aop, ut8 *buf, ut64 len) {
 	return aop->inst_len = avrdis (aop->buf_asm, a->pc, buf, len);
 }
 
-RAsmHandler r_asm_plugin_avr = {
+RAsmPlugin r_asm_plugin_avr = {
 	.name = "avr",
 	.arch = "avr",
 	.bits = (int[]){ 16, 32, 0 },

@@ -18,11 +18,11 @@ namespace Radare {
 	// we need delegates here (function pointerz)
 	//	public bool add_handler(int type, string desc, /* */, void* user);
 		public bool del_handler(int type);
-		public Handler get_handler(int type);
+		public Plugin get_handler(int type);
 		//public struct Struct { }
 		[Compact]
 		[CCode (cname="struct r_lib_handler_t*")]
-		public struct Handler {
+		public struct Plugin {
 			int type;
 			string desc;
 			void* user;

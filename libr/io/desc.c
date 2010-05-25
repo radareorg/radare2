@@ -7,7 +7,7 @@ R_API int r_io_desc_init(struct r_io_t *io) {
 	return R_TRUE;
 }
 
-R_API int r_io_desc_add(struct r_io_t *io, int fd, const char *file, int flags, struct r_io_handle_t *handle) {
+R_API int r_io_desc_add(struct r_io_t *io, int fd, const char *file, int flags, struct r_io_plugin_t *handle) {
 	RIODesc *desc = R_NEW (RIODesc);
 	if (desc == NULL)
 		return R_FALSE;

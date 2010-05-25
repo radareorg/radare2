@@ -87,7 +87,7 @@ static int shm__init(struct r_io_t *io)
 	return R_TRUE;
 }
 
-struct r_io_handle_t r_io_plugin_shm = {
+struct r_io_plugin_t r_io_plugin_shm = {
         //void *handle;
 	.name = "shm",
         .desc = "shared memory resources (shm://key)",

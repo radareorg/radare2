@@ -36,11 +36,11 @@ typedef struct r_bin_t {
 	RList* libs;
 	RBuffer *buf;
 	void *user;
-	struct r_bin_handle_t *cur;
+	struct r_bin_plugin_t *cur;
 	struct list_head bins;
 } RBin;
 
-typedef struct r_bin_handle_t {
+typedef struct r_bin_plugin_t {
 	char *name;
 	char *desc;
 	int (*init)(void *user);
@@ -60,7 +60,7 @@ typedef struct r_bin_handle_t {
 	struct r_bin_meta_t *meta;
 	struct r_bin_write_t *write;
 	struct list_head list;
-} RBinHandle;
+} RBinPlugin;
 
 typedef struct r_bin_entry_t {
 	ut64 rva;
@@ -138,7 +138,7 @@ typedef struct r_bin_write_t {
 #ifdef R_API
 
 /* bin.c */
-R_API int r_bin_add(RBin *bin, RBinHandle *foo);
+R_API int r_bin_add(RBin *bin, RBinPlugin *foo);
 R_API void* r_bin_free(RBin *bin);
 R_API int r_bin_list(RBin *bin);
 R_API int r_bin_load(RBin *bin, const char *file, const char *plugin_name);

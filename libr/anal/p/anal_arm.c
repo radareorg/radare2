@@ -160,7 +160,7 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	return (arm_mode==16)?2:4;
 }
 
-struct r_anal_handle_t r_anal_plugin_arm = {
+struct r_anal_plugin_t r_anal_plugin_arm = {
 	.name = "arm",
 	.desc = "ARM code analysis plugin",
 	.init = NULL,

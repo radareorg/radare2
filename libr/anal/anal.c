@@ -7,7 +7,7 @@
 #include <r_list.h>
 #include "../config.h"
 
-static RAnalHandle *anal_static_plugins[] = 
+static RAnalPlugin *anal_static_plugins[] = 
 	{ R_ANAL_STATIC_PLUGINS };
 
 static RAnalVarType anal_default_vartypes[] =
@@ -59,7 +59,7 @@ R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {
 	anal->user = user;
 }
 
-R_API int r_anal_add(RAnal *anal, RAnalHandle *foo) {
+R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo) {
 	if (foo->init)
 		foo->init(anal->user);
 	list_add_tail(&(foo->list), &(anal->anals));
@@ -70,7 +70,7 @@ R_API int r_anal_add(RAnal *anal, RAnalHandle *foo) {
 R_API int r_anal_list(RAnal *anal) {
 	struct list_head *pos;
 	list_for_each_prev(pos, &anal->anals) {
-		RAnalHandle *h = list_entry(pos, RAnalHandle, list);
+		RAnalPlugin *h = list_entry(pos, RAnalPlugin, list);
 		printf (" %s: %s\n", h->name, h->desc);
 	}
 	return R_FALSE;
@@ -79,7 +79,7 @@ R_API int r_anal_list(RAnal *anal) {
 R_API int r_anal_use(RAnal *anal, const char *name) {
 	struct list_head *pos;
 	list_for_each_prev (pos, &anal->anals) {
-		RAnalHandle *h = list_entry(pos, RAnalHandle, list);
+		RAnalPlugin *h = list_entry(pos, RAnalPlugin, list);
 		if (!strcmp (h->name, name)) {
 			anal->cur = h;
 			return R_TRUE;

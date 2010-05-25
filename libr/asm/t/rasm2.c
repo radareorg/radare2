@@ -15,7 +15,7 @@ static int coutput = R_FALSE;
 
 // TODO: remove or gtfo
 static void r_asm_list(RAsm *a) {
-	RAsmHandler *h;
+	RAsmPlugin *h;
 	RListIter *iter;
 	r_list_foreach (a->handlers, iter, h)
 		printf ("asm %s\t %s\n", h->name, h->desc);
@@ -126,7 +126,7 @@ static int rasm_asm(char *buf, ut64 offset, ut64 len, int bin) {
 /* asm callback */
 static int __lib_asm_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 {
-	RAsmHandle *hand = (struct r_asm_handle_t *)data;
+	RAsmPlugin *hand = (struct r_asm_plugin_t *)data;
 	r_asm_add (a, hand);
 	return R_TRUE;
 }

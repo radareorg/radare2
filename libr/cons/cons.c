@@ -61,10 +61,10 @@ R_API RCons *r_cons_new () {
 	I.term_raw.c_cflag |= CS8;
 	I.term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
 #elif __WINDOWS__
-	h = GetStdHandle (STD_INPUT_HANDLE);
+	h = GetStdPlugin (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &I.term_buf);
 	I.term_raw = 0;
-	if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)__w32_control, TRUE))
+	if (!SetConsoleCtrlPlugin ((PHANDLER_ROUTINE)__w32_control, TRUE))
 		eprintf ("r_cons: Cannot set control console handler\n");
 #endif
 	//r_cons_palette_init(NULL);
@@ -108,7 +108,7 @@ R_API void r_cons_gotoxy(int x, int y) {
         coord.X = x;
         coord.Y = y;
         if (!hStdout)
-                hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
+                hStdout = GetStdPlugin (STD_OUTPUT_HANDLE);
         SetConsoleCursorPosition (hStdout,coord);
 #else
 	r_cons_printf ("\x1b[%d;%dH", y, x);
@@ -128,7 +128,7 @@ R_API void r_cons_clear() {
 	DWORD dummy;
 	
 	if (!hStdout) {
-		hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
+		hStdout = GetStdPlugin (STD_OUTPUT_HANDLE);
 		GetConsoleScreenBufferInfo (hStdout,&csbi);
 	}
 	

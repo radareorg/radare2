@@ -123,7 +123,7 @@ static int check(RBin *bin) {
 	return ret;
 }
 
-struct r_bin_handle_t r_bin_plugin_java = {
+struct r_bin_plugin_t r_bin_plugin_java = {
 	.name = "java",
 	.desc = "java bin plugin",
 	.init = NULL,

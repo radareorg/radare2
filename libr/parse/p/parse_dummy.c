@@ -12,7 +12,7 @@ static int parse(struct r_parse_t *p, void *data, char *str)
 	return R_FALSE;
 }
 
-struct r_parse_handle_t r_parse_plugin_dummy = {
+struct r_parse_plugin_t r_parse_plugin_dummy = {
 	.name = "dummy",
 	.desc = "dummy parsing plugin",
 	.init = NULL,

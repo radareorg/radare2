@@ -12,7 +12,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	return R_FALSE;
 }
 
-RAsmHandler r_asm_plugin_dummy = {
+RAsmPlugin r_asm_plugin_dummy = {
 	.name = "dummy",
 	.arch = "none",
 	.bits = (int[]){ 0 },

@@ -112,7 +112,7 @@ static int __init(struct r_io_t *io) {
 }
 
 // TODO: rename ptrace to io_ptrace .. err io.ptrace ??
-struct r_io_handle_t r_io_plugin_procpid = {
+struct r_io_plugin_t r_io_plugin_procpid = {
         //void *handle;
 	.name = "procpid",
         .desc = "proc/pid/mem io",
@@ -132,7 +132,7 @@ struct r_io_handle_t r_io_plugin_procpid = {
 */
 };
 #else
-struct r_io_handle_t r_io_plugin_ptrace = {
+struct r_io_plugin_t r_io_plugin_ptrace = {
 	.name = "procpid",
         .desc = "proc/pid/mem io (NOT SUPPORTED FOR THIS PLATFORM)",
 };

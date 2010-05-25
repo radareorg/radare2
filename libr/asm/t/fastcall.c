@@ -1,7 +1,7 @@
 #include "r_asm.h"
 
 static void r_asm_list(RAsm *a) {
-	RAsmHandler *h;
+	RAsmPlugin *h;
 	RListIter *iter;
 	r_list_foreach (a->handlers, iter, h)
 		printf ("asm %s\t %s\n", h->name, h->desc);

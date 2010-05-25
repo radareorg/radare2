@@ -27,7 +27,7 @@ static ut64 baddr(RBin *bin) {
 	return 0LL;
 }
 
-struct r_bin_handle_t r_bin_plugin_dummy = {
+struct r_bin_plugin_t r_bin_plugin_dummy = {
 	.name = "dummy",
 	.desc = "dummy bin plugin",
 	.init = NULL,

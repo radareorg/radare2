@@ -27,7 +27,7 @@ static int parse(struct r_parse_t *p, void *data, char *str)
 	return R_TRUE;
 }
 
-struct r_parse_handle_t r_parse_plugin_mreplace = {
+struct r_parse_plugin_t r_parse_plugin_mreplace = {
 	.name = "mreplace",
 	.desc = "mreplace parsing plugin",
 	.init = NULL,
@@ -38,7 +38,7 @@ struct r_parse_handle_t r_parse_plugin_mreplace = {
 };
 
 #else
-struct r_parse_handle_t r_parse_plugin_mreplace = {
+struct r_parse_plugin_t r_parse_plugin_mreplace = {
 	.name = "mreplace",
 	.desc = "mreplace parsing plugin (NOT SUPPORTED FOR THIS PLATFORM)",
 };

@@ -1363,7 +1363,7 @@ print_insn_mips (bfd_vma memaddr,
 	}
     }
 
-  /* Handle undefined instructions.  */
+  /* Plugin undefined instructions.  */
   info->insn_type = dis_noninsn;
   (*info->fprintf_func) (info->stream, "0x%lx", word);
   return INSNLEN;
@@ -1907,7 +1907,7 @@ print_insn_mips16 (bfd_vma memaddr, struct disassemble_info *info)
   else
     insn = bfd_getl16 (buffer);
 
-  /* Handle the extend opcode specially.  */
+  /* Plugin the extend opcode specially.  */
   use_extend = FALSE;
   if ((insn & 0xf800) == 0xf000)
     {

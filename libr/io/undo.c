@@ -5,7 +5,7 @@
 #if 0
 * TODO:
 * - make path of indirections shortr (io->undo.foo is slow) */
-* - Handle changes in write and seeks
+* - Plugin changes in write and seeks
 * - Per-fd history log
 #endif
 

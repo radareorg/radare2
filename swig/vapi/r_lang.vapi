@@ -7,7 +7,7 @@ namespace Radare {
 	public class RLang {
 		public RLang ();
 		public bool define(string type, string name, void* ptr);
-		public bool @add(RLang.Handler handler);
+		public bool @add(RLang.Plugin handler);
 		public bool use(string name);
 		public bool undef();
 		public bool list();
@@ -17,14 +17,14 @@ namespace Radare {
 		public bool prompt();
 
 		[Compact]
-		[CCode (cname="struct r_lang_handle_t", destroy_function="", free_function="" )]
-		public class Handler {
+		[CCode (cname="struct r_lang_plugin_t", destroy_function="", free_function="" )]
+		public class Plugin {
 			public string name;
 			public string desc;
 			public string help;
 		}
 
-		public Handler cur;
+		public Plugin cur;
 	}
 }
 

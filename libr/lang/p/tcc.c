@@ -16,7 +16,7 @@ static int r_lang_tcc_run(struct r_lang_t *lang, const char *code, int len)
 	return R_TRUE;
 }
 
-static struct r_lang_handle_t r_lang_plugin_tcc = {
+static struct r_lang_plugin_t r_lang_plugin_tcc = {
 	.name = "c99",
 	.desc = "C99 language extension (using libtcc)",
 	.help = NULL,

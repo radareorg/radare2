@@ -79,7 +79,7 @@ static const char *help =
 	"Perl plugin usage:\n"
 	" print \"r(\"pd 10\")\\n\";\n";
 
-static struct r_lang_handle_t r_lang_plugin_perl = {
+static struct r_lang_plugin_t r_lang_plugin_perl = {
 	.name = "perl",
 	.desc = "Perl language extension",
 	.init = &init,

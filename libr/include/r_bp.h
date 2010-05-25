@@ -24,14 +24,14 @@ enum {
 	R_BP_TYPE_DELETE,
 };
 
-typedef struct r_bp_handle_t {
+typedef struct r_bp_plugin_t {
 	char *name;
 	char *arch;
 	int type; // R_BP_TYPE_SW
 	int nbps;
 	struct r_bp_arch_t *bps;
 	struct list_head list;
-} RBreakpointHandler;
+} RBreakpointPlugin;
 
 typedef struct r_bp_item_t {
 	ut64 addr;
@@ -59,7 +59,7 @@ typedef struct r_bp_t {
 	RList *traces;
 	RBreakpointCallback breakpoint;
 	struct r_io_bind_t iob; // compile time dependency
-	struct r_bp_handle_t *cur;
+	struct r_bp_plugin_t *cur;
 	struct list_head plugins;
 	struct list_head bps;
 } RBreakpoint;
@@ -87,7 +87,7 @@ R_API RBreakpoint *r_bp_free(RBreakpoint *bp);
 
 R_API int r_bp_del(RBreakpoint *bp, ut64 addr);
 
-R_API int r_bp_handle_add(RBreakpoint *bp, struct r_bp_handle_t *foo);
+R_API int r_bp_handle_add(RBreakpoint *bp, struct r_bp_plugin_t *foo);
 R_API int r_bp_use(RBreakpoint *bp, const char *name);
 R_API int r_bp_handle_del(RBreakpoint *bp, const char *name);
 R_API void r_bp_handle_list(RBreakpoint *bp);
@@ -123,12 +123,12 @@ R_API void r_bp_traptrace_enable(RBreakpoint *bp, int enable);
 #endif
 
 /* plugin pointers */
-extern struct r_bp_handle_t r_bp_plugin_x86;
-extern struct r_bp_handle_t r_bp_plugin_arm;
+extern struct r_bp_plugin_t r_bp_plugin_x86;
+extern struct r_bp_plugin_t r_bp_plugin_arm;
 #if 0
-extern struct r_bp_handle_t r_bp_plugin_powerpc;
-extern struct r_bp_handle_t r_bp_plugin_mips;
-extern struct r_bp_handle_t r_bp_plugin_sparc;
+extern struct r_bp_plugin_t r_bp_plugin_powerpc;
+extern struct r_bp_plugin_t r_bp_plugin_mips;
+extern struct r_bp_plugin_t r_bp_plugin_sparc;
 #endif
 
 #endif

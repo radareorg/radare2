@@ -9,7 +9,7 @@ static int dummy_run(void *user, const char *code, int len)
 	return R_TRUE;
 }
 
-static struct r_lang_handle_t r_lang_plugin_dummy = {
+static struct r_lang_plugin_t r_lang_plugin_dummy = {
 	.name = "dummy",
 	.desc = "Dummy language extension",
 	.help = NULL,

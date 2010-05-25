@@ -3,7 +3,7 @@
 #include <r_bp.h>
 #include "../config.h"
 
-static struct r_bp_handle_t *bp_static_plugins[] = 
+static struct r_bp_plugin_t *bp_static_plugins[] = 
 	{ R_BP_STATIC_PLUGINS };
 
 R_API RBreakpoint *r_bp_new() {

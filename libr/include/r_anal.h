@@ -126,7 +126,7 @@ typedef struct r_anal_t {
 	RList *fcns;
 	RList *vartypes;
 	struct r_anal_ctx_t *ctx;
-	struct r_anal_handle_t *cur;
+	struct r_anal_plugin_t *cur;
 	struct list_head anals;
 } RAnal;
 
@@ -203,7 +203,7 @@ typedef struct r_anal_refline_t {
 } RAnalRefline;
 
 //TODO: typedef RAnalOpCallback
-typedef struct r_anal_handle_t {
+typedef struct r_anal_plugin_t {
 	char *name;
 	char *desc;
 	int (*init)(void *user);
@@ -212,14 +212,14 @@ typedef struct r_anal_handle_t {
 	int (*aop)(RAnal *a, struct r_anal_aop_t *aop, ut64 addr,
 			const ut8 *data, int len);
 	struct list_head list;
-} RAnalHandle;
+} RAnalPlugin;
 
 #ifdef R_API
 /* anal.c */
 R_API RAnal *r_anal_new();
 R_API RAnal *r_anal_free(RAnal *r);
 R_API void r_anal_set_user_ptr(RAnal *anal, void *user);
-R_API int r_anal_add(RAnal *anal, struct r_anal_handle_t *foo);
+R_API int r_anal_add(RAnal *anal, struct r_anal_plugin_t *foo);
 R_API int r_anal_list(RAnal *anal);
 R_API int r_anal_use(RAnal *anal, const char *name);
 R_API int r_anal_set_bits(RAnal *anal, int bits);
@@ -291,12 +291,12 @@ R_API char* r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *
 R_API int r_anal_reflines_middle(RAnal *anal, RAnalRefline *list, ut64 addr, int len);
 
 /* plugin pointers */
-extern RAnalHandle r_anal_plugin_csr;
-extern RAnalHandle r_anal_plugin_arm;
-extern RAnalHandle r_anal_plugin_x86;
-extern RAnalHandle r_anal_plugin_x86_x86im;
-extern RAnalHandle r_anal_plugin_ppc;
-extern RAnalHandle r_anal_plugin_java;
+extern RAnalPlugin r_anal_plugin_csr;
+extern RAnalPlugin r_anal_plugin_arm;
+extern RAnalPlugin r_anal_plugin_x86;
+extern RAnalPlugin r_anal_plugin_x86_x86im;
+extern RAnalPlugin r_anal_plugin_ppc;
+extern RAnalPlugin r_anal_plugin_java;
 
 #endif
 #endif

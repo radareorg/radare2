@@ -70,7 +70,7 @@ R_API int r_io_open_as(struct r_io_t *io, const char *urihandler, const char *fi
 R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode) {
 	int fd = -2;
 	char *uri = strdup (file);
-	struct r_io_handle_t *plugin;
+	struct r_io_plugin_t *plugin;
 	if (io != NULL) {
 		for (;;) {
 			plugin = r_io_handle_resolve (io, uri);
@@ -179,7 +179,7 @@ R_API int r_io_resize(struct r_io_t *io, const char *file, int flags, int mode) 
 	// XXX not implemented
 #if 0
 	/* TODO */
-	struct r_io_handle_t *plugin = r_io_handle_resolve(file);
+	struct r_io_plugin_t *plugin = r_io_handle_resolve(file);
 	if (plugin && io->plugin->resize) {
 		int fd = plugin->resize(file, flags, mode);
 		if (fd != -1)

@@ -8,7 +8,7 @@ R_API int r_bp_handle_del(struct r_bp_t *bp, const char *name)
 	return R_FALSE;
 }
 
-R_API int r_bp_handle_add(struct r_bp_t *bp, struct r_bp_handle_t *foo)
+R_API int r_bp_handle_add(struct r_bp_t *bp, struct r_bp_plugin_t *foo)
 {
 	struct list_head *pos;
 	if (bp == NULL) {
@@ -17,7 +17,7 @@ R_API int r_bp_handle_add(struct r_bp_t *bp, struct r_bp_handle_t *foo)
 	}
 	/* avoid dupped plugins */
 	list_for_each_prev (pos, &bp->bps) {
-		struct r_bp_handle_t *h = list_entry (pos, struct r_bp_handle_t, list);
+		struct r_bp_plugin_t *h = list_entry (pos, struct r_bp_plugin_t, list);
 		if (!strcmp (h->name, foo->name))
 			return R_FALSE;
 	}
@@ -30,7 +30,7 @@ R_API int r_bp_use(struct r_bp_t *bp, const char *name)
 {
 	struct list_head *pos;
 	list_for_each_prev (pos, &bp->plugins) {
-		struct r_bp_handle_t *h = list_entry(pos, struct r_bp_handle_t, list);
+		struct r_bp_plugin_t *h = list_entry(pos, struct r_bp_plugin_t, list);
 		if (!strcmp (h->name, name)) {
 			bp->cur = h;
 			return R_TRUE;
@@ -41,10 +41,10 @@ R_API int r_bp_use(struct r_bp_t *bp, const char *name)
 
 // TODO: deprecate
 R_API void r_bp_handle_list(struct r_bp_t *bp) {
-	struct r_bp_handle_t *b;
+	struct r_bp_plugin_t *b;
 	struct list_head *pos;
 	list_for_each (pos, &bp->plugins) {
-		b = list_entry(pos, struct r_bp_handle_t, list);
+		b = list_entry(pos, struct r_bp_plugin_t, list);
 		printf ("bp %c %s\n", 
 			(bp->cur && !strcmp (bp->cur->name, b->name))?'*':'-',
 			b->name);

@@ -1064,7 +1064,7 @@ description:
   - dp=394 # is used to attach
   - dp 0 # to list all attachable pids
   - dp # list current used pid
-* Added not-yet-implemented threads() callback in RDebugHandle
+* Added not-yet-implemented threads() callback in RDebugPlugin
 * Fix r_list_free callback handler
 * Fix again the 'dr=' command :/
 * Cleanup the help of 'd?' and 'dm', 'dp'
@@ -1141,7 +1141,7 @@ description:
 * Lot of syntax cleanup to use the new code convention
   - Clean r_sign, r_search, r_syscall
 * Define global R_SYS_ARCH, _OS and _BITS
-  - Handle asm.os and asm.arch to hook r_syscall plugins
+  - Plugin asm.os and asm.arch to hook r_syscall plugins
   - Display 8 or 16 zeros depending on asm.bits
   - Added r_str_filter () to filter nonprintable chars
 
@@ -1411,7 +1411,7 @@ description:
 * Implement native kill as a debugger callback
 * cmd.visual is now cmd.vprompt
 * Add r_debug_reg_{get|set}
-  - Handle register name aliases
+  - Plugin register name aliases
   - Works only with ut64 type
 * 'dr:eax' is now 'dr?eax'
 * Lot of random syntax cleanups
@@ -1464,7 +1464,7 @@ date:        Sun Feb 28 14:49:26 2010 +0100
 files:       libr/cons/cons.c libr/cons/input.c libr/core/config.c libr/core/visual.c libr/include/r_cons.h
 description:
 * Added patch from whats fixing the height in visual
-  - Handles WINCH signal in __UNIX__ to get size
+  - Plugins WINCH signal in __UNIX__ to get size
   - Some code cleanup
 
 
@@ -3083,7 +3083,7 @@ user:        pancake
 date:        Thu Dec 31 01:20:08 2009 +0100
 files:       libr/core/visual.c
 description:
-* Handle arrow keys in visual (thx whats)
+* Plugin arrow keys in visual (thx whats)
 
 
 changeset:   292:2d67b9c2a1bc
@@ -3310,7 +3310,7 @@ files:       TODO libr/core/cmd.c libr/core/file.c libr/core/t/radare2.c libr/de
 description:
 * Drop PFX in debug plugin names
 * Minor cosmetic fixups
-* Handle binmask==NULL in all _add methods of r_search
+* Plugin binmask==NULL in all _add methods of r_search
   - Added empty declarations of reset() and kw_reset()
 * Various random fixes in some vapis
 
@@ -4588,7 +4588,7 @@ files:       libr/debug/Makefile libr/debug/debug.c libr/debug/p/dbg_ptrace.c li
 description:
 * Initial work on the register API for r_debug
   - r_debug_reg and r_debug_regset
-  - Handles dbg->newstate to force register sync
+  - Plugins dbg->newstate to force register sync
   - Only dbg.reg.read() for x86-32 and 64
 * Added dummy copy of manpages (from old radare1)
 
@@ -6170,7 +6170,7 @@ description:
 * Fix a bug in the regexp algorithm that can get into infinite loop
 * Binmask can now contain non hexpair values
 * Add '/m' search regexp matches using the new R_SEARCH_REGEXP algorithm
-  - Handle ^C in search loop..needs to use callback method
+  - Plugin ^C in search loop..needs to use callback method
 * Properly cleanup the flag names
 * Added asm.bits and asm.os eval vars
 * Added some random tips for debug in README

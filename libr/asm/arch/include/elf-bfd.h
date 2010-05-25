@@ -1060,7 +1060,7 @@ struct elf_backend_data
   bfd_boolean (*is_function_type) (unsigned int type);
 
   /* Used to handle bad SHF_LINK_ORDER input.  */
-  bfd_error_handler_type link_order_error_handler;
+  bfd_error_plugin_type link_order_error_handler;
 
   /* Name of the PLT relocation section.  */
   const char *relplt_name;

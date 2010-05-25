@@ -95,7 +95,7 @@ static int lua_run(struct r_lang_t *lang, const char *code, int len)
 	return R_TRUE;
 }
 
-static struct r_lang_handle_t r_lang_plugin_lua = {
+static struct r_lang_plugin_t r_lang_plugin_lua = {
 	.name = "lua",
 	.desc = "LUA language extension",
 	.help = NULL,

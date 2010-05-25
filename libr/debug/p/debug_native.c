@@ -863,7 +863,7 @@ static RList *r_debug_native_frames(RDebug *dbg) {
 	list->free = free;
 	bio->read_at (bio->io, _rip, &buf, 4);
 	/* %rbp=old rbp, %rbp+4 points to ret */
-	/* Handle before function prelude: push %rbp ; mov %rsp, %rbp */
+	/* Plugin before function prelude: push %rbp ; mov %rsp, %rbp */
 	if (!memcmp (buf, "\x55\x89\xe5", 3) || !memcmp (buf, "\x89\xe5\x57", 3)) {
 		if (bio->read_at (bio->io, _rsp, &ptr, 4) != 4) {
 			eprintf ("read error at 0x%08"PFMT64x"\n", _rsp);
@@ -923,7 +923,7 @@ static int r_debug_native_init(RDebug *dbg) {
 #endif
 }
 
-struct r_debug_handle_t r_debug_plugin_native = {
+struct r_debug_plugin_t r_debug_plugin_native = {
 	.name = "native",
 #if __i386__
 	.bits = R_SYS_BITS_32,
@@ -971,7 +971,7 @@ struct r_lib_struct_t radare_plugin = {
 
 //#endif
 #else // DEBUGGER
-struct r_debug_handle_t r_debug_plugin_native = {
+struct r_debug_plugin_t r_debug_plugin_native = {
 	.name = "native",
 };
 

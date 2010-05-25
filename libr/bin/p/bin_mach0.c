@@ -194,7 +194,7 @@ static int check(RBin *bin) {
 	return ret;
 }
 
-struct r_bin_handle_t r_bin_plugin_mach0 = {
+struct r_bin_plugin_t r_bin_plugin_mach0 = {
 	.name = "mach0",
 	.desc = "mach0 bin plugin",
 	.init = NULL,

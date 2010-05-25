@@ -28,7 +28,7 @@ static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf)
 	return len;
 }
 
-RAsmHandler r_asm_plugin_x86_nasm = {
+RAsmPlugin r_asm_plugin_x86_nasm = {
 	.name = "gas",
 	.desc = "GNU Assembler plugin",
 	.arch = "x86", // XXX

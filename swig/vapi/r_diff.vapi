@@ -11,8 +11,8 @@ namespace Radare {
 		//public static int lines (string file, string sa, int la, string file2, string sb, int lb);
 
 		[Compact]
-		[CCode (cname="struct r_diff_handle_t", destroy_function="", free_function="" )]
-		public struct Handle {
+		[CCode (cname="struct r_diff_plugin_t", destroy_function="", free_function="" )]
+		public struct Plugin {
 			public uint64 a_off;
 			public uint8* a_buf;
 			public int a_len;

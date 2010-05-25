@@ -9,7 +9,7 @@ static struct r_bp_arch_t r_bp_plugin_ppc_bps[] = {
 	{ 4, 1, (const ut8*)"\x0d\x00\x00\x00" }, // big endian
 };
 
-struct r_bp_handle_t r_bp_plugin_ppc = {
+struct r_bp_plugin_t r_bp_plugin_ppc = {
 	.name = "ppc",
 	.arch = "ppc",
 	.nbps = 2,

@@ -20,7 +20,7 @@ typedef struct r_syscall_t {
 } RSyscall;
 
 /* plugin struct */
-typedef struct r_syscall_handle_t {
+typedef struct r_syscall_plugin_t {
 	char *name;
 	char *arch;
 	char *os;
@@ -29,9 +29,9 @@ typedef struct r_syscall_handle_t {
 	int nargs;
 	struct r_syscall_args_t *args;
 	struct list_head list;
-} RSyscallHandle;
+} RSyscallPlugin;
 
-typedef struct r_syscall_arch_handle_t {
+typedef struct r_syscall_arch_plugin_t {
 	char *name;
 	char *arch;
 	char *desc;
@@ -39,7 +39,7 @@ typedef struct r_syscall_arch_handle_t {
 	int nargs;
 	struct r_syscall_args_t **args;
 	struct list_head list;
-} RSyscallArchHandle;
+} RSyscallArchPlugin;
 
 #ifdef R_API
 R_API RSyscall *r_syscall_new();

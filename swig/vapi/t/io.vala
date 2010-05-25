@@ -13,9 +13,9 @@ void main(string[] args)
 	print ("0x8048000 : %02x %02x %02x %02x\n",
 		buf[0], buf[1], buf[2], buf[3]);
 /*
-	Radare.List<IO.Handle> handle = io.handlers;
+	Radare.List<IO.Plugin> handle = io.handlers;
 	while (!handle->last()) {
-		print(" Handle: %s\n", handle->name);
+		print(" Plugin: %s\n", handle->name);
 		handle = handle->next();
 	}
 	handle->free();

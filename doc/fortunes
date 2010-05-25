@@ -72,7 +72,7 @@ Control the height of the terminal on serial consoles with eval scr.height
 Use eval file.id=true and eval file.flag=true in your ~/.radarerc to get symbols, strings, .. when loading
 Disassemble unsupported architectures with external objdump defined in eval asm.objdump. Use 'pd' command.
 Emulate the base address of a file with eval file.baddr
-Dump the class header information with 'javasm -c <file.class>'. Handled by radare if file.id=true
+Dump the class header information with 'javasm -c <file.class>'. Plugind by radare if file.id=true
 Use gradare if you prefer simple frontend for gui users
 Feedback, bug reports, patches, ideas are welcome to the mailing list at radare.nopcode.org
 Bindiff two files with '$ bdiff /bin/true /bin/false'

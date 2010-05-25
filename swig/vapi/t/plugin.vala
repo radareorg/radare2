@@ -26,7 +26,7 @@ private bool mycall(void *user, string cmd) {
 	return false;
 }
 
-private const RCmdHandle plugin = {
+private const RCmdPlugin plugin = {
 	"my plugin", mycall
 };
 

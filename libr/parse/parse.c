@@ -7,7 +7,7 @@
 #include <list.h>
 #include "../config.h"
 
-static struct r_parse_handle_t *parse_static_plugins[] = 
+static struct r_parse_plugin_t *parse_static_plugins[] = 
 	{ R_PARSE_STATIC_PLUGINS };
 
 R_API struct r_parse_t *r_parse_new() {
@@ -32,7 +32,7 @@ R_API void r_parse_set_user_ptr(struct r_parse_t *p, void *user) {
 	p->user = user;
 }
 
-R_API int r_parse_add(struct r_parse_t *p, struct r_parse_handle_t *foo) {
+R_API int r_parse_add(struct r_parse_t *p, struct r_parse_plugin_t *foo) {
 	if (foo->init)
 		foo->init(p->user);
 	list_add_tail(&(foo->list), &(p->parsers));
@@ -42,7 +42,7 @@ R_API int r_parse_add(struct r_parse_t *p, struct r_parse_handle_t *foo) {
 R_API int r_parse_list(struct r_parse_t *p) {
 	struct list_head *pos;
 	list_for_each_prev(pos, &p->parsers) {
-		struct r_parse_handle_t *h = list_entry(pos, struct r_parse_handle_t, list);
+		struct r_parse_plugin_t *h = list_entry(pos, struct r_parse_plugin_t, list);
 		printf("parse %10s %s\n", h->name, h->desc);
 	}
 	return R_FALSE;
@@ -51,7 +51,7 @@ R_API int r_parse_list(struct r_parse_t *p) {
 R_API int r_parse_use(struct r_parse_t *p, const char *name) {
 	struct list_head *pos;
 	list_for_each_prev(pos, &p->parsers) {
-		struct r_parse_handle_t *h = list_entry(pos, struct r_parse_handle_t, list);
+		struct r_parse_plugin_t *h = list_entry(pos, struct r_parse_plugin_t, list);
 		if (!strcmp(h->name, name)) {
 			p->cur = h;
 			return R_TRUE;

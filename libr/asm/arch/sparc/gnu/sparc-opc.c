@@ -1864,7 +1864,7 @@ lookup_value (const arg *table, int value)
   return NULL;
 }
 
-/* Handle ASI's.  */
+/* Plugin ASI's.  */
 
 static arg asi_table[] =
 {
@@ -1922,7 +1922,7 @@ sparc_decode_asi (int value)
   return lookup_value (asi_table, value);
 }
 
-/* Handle membar masks.  */
+/* Plugin membar masks.  */
 
 static arg membar_table[] =
 {
@@ -1952,7 +1952,7 @@ sparc_decode_membar (int value)
   return lookup_value (membar_table, value);
 }
 
-/* Handle prefetch args.  */
+/* Plugin prefetch args.  */
 
 static arg prefetch_table[] =
 {
@@ -1981,7 +1981,7 @@ sparc_decode_prefetch (int value)
   return lookup_value (prefetch_table, value);
 }
 
-/* Handle sparclet coprocessor registers.  */
+/* Plugin sparclet coprocessor registers.  */
 
 static arg sparclet_cpreg_table[] =
 {

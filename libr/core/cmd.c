@@ -715,7 +715,7 @@ static int cmd_interpret(void *data, const char *input) {
 	switch (input[0]) {
 	case '\0':
 		/* repeat last command */
-		/* NOTE: Handled in r_core_cmd with ugly strcmp */
+		/* NOTE: Plugind in r_core_cmd with ugly strcmp */
 		break;
 	case ' ':
 		if (!r_core_cmd_file (core, input+1))

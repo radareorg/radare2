@@ -266,7 +266,7 @@ typedef struct {
 typedef struct {
 	ut32 Attributes;
 	ut32 Name;
-	ut32 ModuleHandle;
+	ut32 ModulePlugin;
 	ut32 DelayImportAddressTable;
 	ut32 DelayImportNameTable;
 	ut32 BoundDelayImportTable;

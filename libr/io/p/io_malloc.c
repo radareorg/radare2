@@ -102,7 +102,7 @@ static int __system(struct r_io_t *io, int fd, const char *cmd)
 	return 0;
 }
 
-struct r_io_handle_t r_io_plugin_malloc = {
+struct r_io_plugin_t r_io_plugin_malloc = {
         //void *handle;
 	.name = "malloc",
         .desc = "memory allocation ( malloc://size-in-bytes )",

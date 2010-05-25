@@ -62,7 +62,7 @@ static int r_debug_gdb_detach(int pid) {
 	return R_TRUE;
 }
 
-struct r_debug_handle_t r_dbg_plugin_gdb = {
+struct r_debug_plugin_t r_dbg_plugin_gdb = {
 	.name = "gdb",
 	.archs = { "x86", 0 }, //"x86-64", "arm", "powerpc", 0 },
 	.step = &r_debug_gdb_step,

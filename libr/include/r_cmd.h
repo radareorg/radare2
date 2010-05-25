@@ -63,10 +63,10 @@ typedef struct r_cmd_t {
 	RList *plist;
 } RCmd;
 
-typedef struct r_cmd_handle_t {
+typedef struct r_cmd_plugin_t {
 	char *name;
 	RCmdCallback call;
-} RCmdHandle;
+} RCmdPlugin;
 
 #ifdef R_API
 
@@ -88,11 +88,11 @@ R_API int r_cmd_call_long(struct r_cmd_t *cmd, const char *input);
 R_API char **r_cmd_args(struct r_cmd_t *cmd, int *argc);
 
 R_API int r_cmd_handle_init(struct r_cmd_t *cmd);
-R_API int r_cmd_handle_add(struct r_cmd_t *cmd, struct r_cmd_handle_t *plugin);
+R_API int r_cmd_handle_add(struct r_cmd_t *cmd, struct r_cmd_plugin_t *plugin);
 R_API int r_cmd_handle_check(struct r_cmd_t *cmd, const char *a0);
 
 /* plugins */
-extern struct r_cmd_handle_t r_cmd_plugin_dummy;
+extern struct r_cmd_plugin_t r_cmd_plugin_dummy;
 
 /* r_cmd_macro */
 R_API void r_cmd_macro_init(struct r_cmd_macro_t *mac);

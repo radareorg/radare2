@@ -71,7 +71,7 @@ typedef struct r_asm_t {
 	int  syntax;
 	ut64 pc;
 	void *user;
-	struct r_asm_handler_t *cur;
+	struct r_asm_plugin_t *cur;
 	RAsmFastcall *fastcall;
 	RList *handlers;
 } RAsm;
@@ -79,7 +79,7 @@ typedef struct r_asm_t {
 typedef int (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
 
 // TODO: rename to handler?
-typedef struct r_asm_handler_t {
+typedef struct r_asm_plugin_t {
 	char *name;
 	char *arch;
 	char *desc;
@@ -93,7 +93,7 @@ typedef struct r_asm_handler_t {
 	RAsmModifyCallback modify;
 	int (*set_subarch)(RAsm *a, const char *buf);
 	struct r_asm_fastcall_t *fastcall[R_ASM_FASTCALL_ARGS];
-} RAsmHandler;
+} RAsmPlugin;
 
 #ifdef R_API
 /* asm.c */
@@ -104,7 +104,7 @@ R_API void r_asm_free(RAsm *a);
 R_API void* r_asm_code_free(struct r_asm_code_t *acode);
 R_API int r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val);
 R_API void r_asm_set_user_ptr(RAsm *a, void *user);
-R_API int r_asm_add(RAsm *a, RAsmHandler *foo);
+R_API int r_asm_add(RAsm *a, RAsmPlugin *foo);
 R_API int r_asm_use(RAsm *a, const char *name);
 R_API int r_asm_set_bits(RAsm *a, int bits);
 R_API int r_asm_set_big_endian(RAsm *a, int boolean);
@@ -122,20 +122,20 @@ R_API int r_asm_code_set_equ (RAsmCode *code, const char *key, const char *value
 R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str);
 
 /* plugin pointers */
-extern RAsmHandler r_asm_plugin_dummy;
-extern RAsmHandler r_asm_plugin_bf;
-extern RAsmHandler r_asm_plugin_java;
-extern RAsmHandler r_asm_plugin_mips;
-extern RAsmHandler r_asm_plugin_x86;
-extern RAsmHandler r_asm_plugin_x86_olly;
-extern RAsmHandler r_asm_plugin_x86_nasm;
-extern RAsmHandler r_asm_plugin_arm;
-extern RAsmHandler r_asm_plugin_csr;
-extern RAsmHandler r_asm_plugin_m68k;
-extern RAsmHandler r_asm_plugin_ppc;
-extern RAsmHandler r_asm_plugin_sparc;
-extern RAsmHandler r_asm_plugin_psosvm;
-extern RAsmHandler r_asm_plugin_avr;
+extern RAsmPlugin r_asm_plugin_dummy;
+extern RAsmPlugin r_asm_plugin_bf;
+extern RAsmPlugin r_asm_plugin_java;
+extern RAsmPlugin r_asm_plugin_mips;
+extern RAsmPlugin r_asm_plugin_x86;
+extern RAsmPlugin r_asm_plugin_x86_olly;
+extern RAsmPlugin r_asm_plugin_x86_nasm;
+extern RAsmPlugin r_asm_plugin_arm;
+extern RAsmPlugin r_asm_plugin_csr;
+extern RAsmPlugin r_asm_plugin_m68k;
+extern RAsmPlugin r_asm_plugin_ppc;
+extern RAsmPlugin r_asm_plugin_sparc;
+extern RAsmPlugin r_asm_plugin_psosvm;
+extern RAsmPlugin r_asm_plugin_avr;
 #endif
 
 #endif

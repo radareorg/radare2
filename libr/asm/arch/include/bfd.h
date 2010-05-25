@@ -4544,13 +4544,13 @@ const char *bfd_errmsg (bfd_error_type error_tag);
 
 void bfd_perror (const char *message);
 
-typedef void (*bfd_error_handler_type) (const char *, ...);
+typedef void (*bfd_error_plugin_type) (const char *, ...);
 
-bfd_error_handler_type bfd_set_error_handler (bfd_error_handler_type);
+bfd_error_plugin_type bfd_set_error_handler (bfd_error_plugin_type);
 
 void bfd_set_error_program_name (const char *);
 
-bfd_error_handler_type bfd_get_error_handler (void);
+bfd_error_plugin_type bfd_get_error_handler (void);
 
 long bfd_get_reloc_upper_bound (bfd *abfd, asection *sect);
 

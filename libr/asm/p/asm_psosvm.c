@@ -18,7 +18,7 @@ static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf)
 	return aop->inst_len;
 }
 
-RAsmHandler r_asm_plugin_psosvm = {
+RAsmPlugin r_asm_plugin_psosvm = {
 	.name = "psosvm",
 	.desc = "PSOS-VM disassembly plugin",
 	.arch = "psosvm",

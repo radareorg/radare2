@@ -5,7 +5,7 @@
 #if __WINDOWS__
 int r_cons_w32_print(ut8 *ptr)
 {
-	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	HANDLE hConsole = GetStdPlugin(STD_OUTPUT_HANDLE);
 	int esc = 0;
 	int bg = 0;
 	ut8 *str = ptr;

@@ -8,7 +8,7 @@
 #include <list.h>
 #include "../config.h"
 
-static RAsmHandler *asm_static_plugins[] = 
+static RAsmPlugin *asm_static_plugins[] = 
 	{ R_ASM_STATIC_PLUGINS };
 
 static int r_asm_pseudo_string(struct r_asm_aop_t *aop, char *input) {
@@ -81,9 +81,9 @@ R_API void r_asm_set_user_ptr(RAsm *a, void *user) {
 	a->user = user;
 }
 
-R_API int r_asm_add(RAsm *a, RAsmHandler *foo) {
+R_API int r_asm_add(RAsm *a, RAsmPlugin *foo) {
 	RListIter *iter;
-	RAsmHandler *h;
+	RAsmPlugin *h;
 	// TODO: cache foo->name length and use memcmp instead of strcmp
 	if (foo->init)
 		foo->init (a->user);
@@ -101,7 +101,7 @@ R_API int r_asm_del(RAsm *a, const char *name) {
 
 // TODO: this can be optimized using r_str_hash()
 R_API int r_asm_use(RAsm *a, const char *name) {
-	RAsmHandler *h;
+	RAsmPlugin *h;
 	RListIter *iter;
 	r_list_foreach (a->handlers, iter, h)
 		if (!strcmp (h->name, name)) {
@@ -118,7 +118,7 @@ R_API int r_asm_set_subarch(RAsm *a, const char *name) {
 	return ret;
 }
 
-static int has_bits(RAsmHandler *h, int bits) {
+static int has_bits(RAsmPlugin *h, int bits) {
 	int i;
 	if (h && h->bits)
 		for(i=0; h->bits[i]; i++)
@@ -169,7 +169,7 @@ R_API int r_asm_disassemble(RAsm *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len
 
 R_API int r_asm_assemble(RAsm *a, struct r_asm_aop_t *aop, const char *buf) {
 	int ret = 0;
-	RAsmHandler *h;
+	RAsmPlugin *h;
 	RListIter *iter;
 	if (a->cur) {
 		if (!a->cur->assemble) {

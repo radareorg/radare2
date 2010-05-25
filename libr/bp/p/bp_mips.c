@@ -8,7 +8,7 @@ static struct r_bp_arch_t r_bp_plugin_mips_bps[] = {
 	{ 4, 1, (const ut8*)"\x0d\x00\x00\x00" }, // big endian
 };
 
-struct r_bp_handle_t r_bp_plugin_mips = {
+struct r_bp_plugin_t r_bp_plugin_mips = {
 	.name = "mips",
 	.arch = "mips",
 	.nbps = 2,

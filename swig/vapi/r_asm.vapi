@@ -28,8 +28,8 @@ public class RAsm {
 	}
 
 	[Compact]
-	[CCode (cname="RAsmHandler", destroy_function="" )]
-	public class Handler {
+	[CCode (cname="RAsmPlugin", destroy_function="" )]
+	public class Plugin {
 		public string name;
 		public string arch;
 		public string desc;
@@ -66,7 +66,7 @@ public class RAsm {
 	public string buf_err;
 	public void *aux;
 
-	public RList<Handler> handlers;
+	public RList<Plugin> handlers;
 	public RAsm();
 	public bool use(string name);
 	public bool set_bits(int bits);

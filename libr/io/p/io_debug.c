@@ -70,7 +70,7 @@ static int setup_tokens() {
         err = 0;
 err_enable:
         if (tok != NULL)
-                CloseHandle (tok);
+                ClosePlugin (tok);
         if (err)
 		r_sys_perror ("setup_tokens");
         return err;
@@ -102,7 +102,7 @@ static int fork_and_ptraceme(const char *cmd) {
 		THREADENTRY32 te32;
 		HANDLE WINAPI (*win32_openthread)(DWORD, BOOL, DWORD) = NULL;
 		win32_openthread = (HANDLE WINAPI (*)(DWORD, BOOL, DWORD))
-			GetProcAddress (GetModuleHandle ("kernel32"), "OpenThread");
+			GetProcAddress (GetModulePlugin ("kernel32"), "OpenThread");
 
 		th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, pid);
 		if (th == INVALID_HANDLE_VALUE || !Thread32First(th, &te32)) {
@@ -140,7 +140,7 @@ static int fork_and_ptraceme(const char *cmd) {
         }
 
 	if (th != INVALID_HANDLE_VALUE)
-		CloseHandle (th);
+		ClosePlugin (th);
 
 
 	eprintf ("PID=%d\n", pid);
@@ -150,7 +150,7 @@ static int fork_and_ptraceme(const char *cmd) {
 err_fork:
         TerminateProcess (pi.hProcess, 1);
 	if (th != INVALID_HANDLE_VALUE)
-		CloseHandle (th);
+		ClosePlugin (th);
         return -1;
 }
 #else
@@ -251,7 +251,7 @@ static int __init(struct r_io_t *io) {
 	return R_TRUE;
 }
 
-struct r_io_handle_t r_io_plugin_debug = {
+struct r_io_plugin_t r_io_plugin_debug = {
         //void *handle;
 	.name = "debug",
         .desc = "Debug a program or pid. dbg:///bin/ls, dbg://1388",
@@ -269,7 +269,7 @@ struct r_io_handle_t r_io_plugin_debug = {
 */
 };
 #else // DEBUGGER
-struct r_io_handle_t r_io_plugin_debug = {
+struct r_io_plugin_t r_io_plugin_debug = {
 	.name = "debug",
         .desc = "Debug a program or pid. (NOT SUPPORTED FOR THIS PLATFORM)",
 	.debug = (void *)1,

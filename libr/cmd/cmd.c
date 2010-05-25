@@ -67,11 +67,11 @@ R_API int r_cmd_call(struct r_cmd_t *cmd, const char *input) {
 	struct r_cmd_item_t *c;
 	int ret = -1;
 	RListIter *iter;
-	RCmdHandle *cp;
+	RCmdPlugin *cp;
 	
 	iter = r_list_iterator (cmd->plist);
 	while (r_list_iter_next (iter)) {
-		cp = (RCmdHandle*) r_list_iter_get (iter);
+		cp = (RCmdPlugin*) r_list_iter_get (iter);
 		if (cp->call (cmd->data, input))
 			return R_TRUE;
 	}

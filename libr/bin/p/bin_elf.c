@@ -235,7 +235,7 @@ static int check(RBin *bin) {
 extern struct r_bin_meta_t r_bin_meta_elf;
 extern struct r_bin_write_t r_bin_write_elf;
 
-struct r_bin_handle_t r_bin_plugin_elf = {
+struct r_bin_plugin_t r_bin_plugin_elf = {
 	.name = "elf",
 	.desc = "ELF format r_bin plugin",
 	.init = NULL,

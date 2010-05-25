@@ -158,7 +158,7 @@ static int filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str
 	return R_FALSE;
 }
 
-struct r_parse_handle_t r_parse_plugin_x86_pseudo = {
+struct r_parse_plugin_t r_parse_plugin_x86_pseudo = {
 	.name = "x86.pseudo",
 	.desc = "X86 pseudo syntax",
 	.init = NULL,

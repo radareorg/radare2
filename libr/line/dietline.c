@@ -39,7 +39,7 @@ static int r_line_readchar() {
 #if __WINDOWS__
 	BOOL ret;
 	LPDWORD mode, out;
-	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);
+	HANDLE h = GetStdPlugin (STD_INPUT_HANDLE);
 
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0); // RAW

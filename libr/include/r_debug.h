@@ -67,7 +67,7 @@ typedef struct r_debug_t {
 	void *user;
 	/* io */
 	void (*printf)(const char *str, ...);
-	struct r_debug_handle_t *h;
+	struct r_debug_plugin_t *h;
 	struct list_head handlers;
 	RAnal *anal;
 	RIOBind iob;
@@ -81,7 +81,7 @@ typedef struct r_debug_t {
 } RDebug;
 
 /* TODO: pass dbg and user data pointer everywhere */
-typedef struct r_debug_handle_t {
+typedef struct r_debug_plugin_t {
 	const char *name;
 	const char **archs; // MUST BE DEPREACTED!!!!
 	ut32 bits;
@@ -112,7 +112,7 @@ typedef struct r_debug_handle_t {
 	int (*map_dealloc)(RDebug *dbg, ut64 addr);
 	int (*init)(RDebug *dbg);
 	struct list_head list;
-} RDebugHandle;
+} RDebugPlugin;
 
 // TODO: rename to r_debug_process_t ? maybe a thread too ?
 typedef struct r_debug_pid_t {
@@ -146,7 +146,7 @@ R_API int r_debug_pid_list(struct r_debug_t *dbg, int pid);
 R_API RDebugPid *r_debug_pid_new(char *path, int pid, char status);
 
 R_API int r_debug_use(struct r_debug_t *dbg, const char *str);
-R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
+R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_plugin_t *foo);
 R_API int r_debug_handle_init(struct r_debug_t *dbg);
 R_API int r_debug_handle_list(struct r_debug_t *dbg);
 
@@ -165,7 +165,7 @@ R_API int r_debug_select(struct r_debug_t *dbg, int pid, int tid);
 R_API int r_debug_handle_init(struct r_debug_t *dbg);
 R_API int r_debug_handle_set(struct r_debug_t *dbg, const char *str);
 R_API int r_debug_handle_list(struct r_debug_t *dbg);
-R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_handle_t *foo);
+R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_plugin_t *foo);
 
 /* memory */
 R_API int r_debug_map_alloc(RDebug *dbg, RDebugMap *map);

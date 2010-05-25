@@ -9,7 +9,7 @@ static struct r_bp_arch_t r_bp_plugin_x86_bps[] = {
 	{ 0, 0, NULL },
 };
 
-struct r_bp_handle_t r_bp_plugin_x86 = {
+struct r_bp_plugin_t r_bp_plugin_x86 = {
 	.name = "x86",
 	.arch = "x86",
 	.nbps = 2,

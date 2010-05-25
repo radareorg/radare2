@@ -173,7 +173,7 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	return sz;
 }
 
-struct r_anal_handle_t r_anal_plugin_java = {
+struct r_anal_plugin_t r_anal_plugin_java = {
 	.name = "java",
 	.desc = "Java bytecode analysis plugin",
 	.init = NULL,

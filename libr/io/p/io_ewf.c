@@ -123,7 +123,7 @@ static int ewf__open(struct r_io_t *io, const char *pathname, int flags, int mod
 	else {
 		ewf_fd = EWF_FD;
 #if 0
-		if( ((libewf_internal_handle_t*)ewf_h)->header_values == NULL ) {
+		if( ((libewf_internal_plugin_t*)ewf_h)->header_values == NULL ) {
 			fprintf( stream, "\tNo information found in file.\n" );
 		} else {
 			libewf_get_header_value_examiner_name(ewf_h, hash, 128);
@@ -163,7 +163,7 @@ static int ewf__init(struct r_io_t *io) {
 	return R_TRUE;
 }
 
-struct r_io_handle_t r_io_plugin_ewf = {
+struct r_io_plugin_t r_io_plugin_ewf = {
         //void *handle;
 	.name = "ewf",
         .desc = "Forensic file formats (Encase, ..) (ewf://file, els://file)",

@@ -150,7 +150,7 @@ static int __init(struct r_io_t *io) {
 }
 
 // TODO: rename ptrace to io_ptrace .. err io.ptrace ??
-struct r_io_handle_t r_io_plugin_ptrace = {
+struct r_io_plugin_t r_io_plugin_ptrace = {
         //void *handle;
 	.name = "io_ptrace",
         .desc = "ptrace io",
@@ -170,7 +170,7 @@ struct r_io_handle_t r_io_plugin_ptrace = {
 */
 };
 #else
-struct r_io_handle_t r_io_plugin_ptrace = {
+struct r_io_plugin_t r_io_plugin_ptrace = {
 	.name = "ptrace",
         .desc = "ptrace io (NOT SUPPORTED FOR THIS PLATFORM)",
 };

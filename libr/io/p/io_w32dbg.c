@@ -91,7 +91,7 @@ static int __init(struct r_io_t *io) {
 }
 
 // TODO: rename w32dbg to io_w32dbg .. err io.w32dbg ??
-struct r_io_handle_t r_io_plugin_w32dbg = {
+struct r_io_plugin_t r_io_plugin_w32dbg = {
         //void *handle;
 	.name = "io_w32dbg",
         .desc = "w32dbg io",
@@ -111,7 +111,7 @@ struct r_io_handle_t r_io_plugin_w32dbg = {
 */
 };
 #else
-struct r_io_handle_t r_io_plugin_w32dbg = {
+struct r_io_plugin_t r_io_plugin_w32dbg = {
 	.name = "w32dbg",
         .desc = "w32dbg io (NOT SUPPORTED FOR THIS PLATFORM)",
 };

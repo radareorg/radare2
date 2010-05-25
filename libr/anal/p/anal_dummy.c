@@ -4,7 +4,7 @@
 #include <r_lib.h>
 #include <r_anal.h>
 
-struct r_anal_handle_t r_anal_plugin_dummy = {
+struct r_anal_plugin_t r_anal_plugin_dummy = {
 	.name = "dummy",
 	.desc = "Dummy analysis plugin",
 	.init = NULL,

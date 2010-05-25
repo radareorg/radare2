@@ -224,7 +224,7 @@ static const char *help =
 	//" r = new RadareInternal()\n"
 	" bytes = r.cmd(\"p8 10\");\n";
 
-struct r_lang_handle_t r_lang_plugin_python = {
+struct r_lang_plugin_t r_lang_plugin_python = {
 	.name = "python",
 	.desc = "Python language extension",
 	.init = &init,

@@ -6,7 +6,7 @@ namespace Radare {
 	[CCode (cheader_filename="r_lib.h", cprefix="r_lib_struct_", cname="struct r_lib_struct_t", free_function="", destroy_function="")]
 	public struct RCmdStruct {
 		public RLibType type;
-		public RCmdHandle data;
+		public RCmdPlugin data;
 	}
 
 	[Compact]
@@ -19,8 +19,8 @@ namespace Radare {
 	[CCode (has_target=false, cname="RCmdCallback")]
 	public delegate bool RCmdCallback (void *user, string cmd);
 
-	[CCode (cheader_filename="r_cmd.h", cname="RCmdHandle", free_function="", destroy_function="")]
-	public struct RCmdHandle {
+	[CCode (cheader_filename="r_cmd.h", cname="RCmdPlugin", free_function="", destroy_function="")]
+	public struct RCmdPlugin {
 		string name;
 		RCmdCallback call;
 	}

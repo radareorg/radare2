@@ -4,10 +4,10 @@
 #include "../config.h"
 
 /* plugin pointers */
-extern RDebugHandle r_debug_plugin_native;
-extern RDebugHandle r_debug_plugin_gdb;
+extern RDebugPlugin r_debug_plugin_native;
+extern RDebugPlugin r_debug_plugin_gdb;
 
-static RDebugHandle *debug_static_plugins[] = 
+static RDebugPlugin *debug_static_plugins[] = 
 	{ R_DEBUG_STATIC_PLUGINS };
 
 R_API int r_debug_handle_init(RDebug *dbg) {
@@ -22,7 +22,7 @@ R_API int r_debug_handle_init(RDebug *dbg) {
 R_API int r_debug_use(RDebug *dbg, const char *str) {
 	struct list_head *pos;
 	list_for_each_prev (pos, &dbg->handlers) {
-		RDebugHandle *h = list_entry (pos, RDebugHandle, list);
+		RDebugPlugin *h = list_entry (pos, RDebugPlugin, list);
 		if (!strcmp (str, h->name)) {
 			dbg->h = h;
 			if (h->reg_profile) {
@@ -40,14 +40,14 @@ R_API int r_debug_handle_list(RDebug *dbg) {
 	int count = 0;
 	struct list_head *pos;
 	list_for_each_prev(pos, &dbg->handlers) {
-		RDebugHandle *h = list_entry(pos, RDebugHandle, list);
+		RDebugPlugin *h = list_entry(pos, RDebugPlugin, list);
 		eprintf ("dbg %d %s %s\n", count, h->name, ((h==dbg->h)?"*":""));
 		count++;
 	}
 	return R_FALSE;
 }
 
-R_API int r_debug_handle_add(RDebug *dbg, RDebugHandle *foo) {
+R_API int r_debug_handle_add(RDebug *dbg, RDebugPlugin *foo) {
 	list_add_tail(&(foo->list), &(dbg->handlers));
 	return R_TRUE;
 }

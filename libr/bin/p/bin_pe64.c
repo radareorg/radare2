@@ -19,7 +19,7 @@ static int check(RBin *bin) {
 	return ret;
 }
 
-struct r_bin_handle_t r_bin_plugin_pe64 = {
+struct r_bin_plugin_t r_bin_plugin_pe64 = {
 	.name = "pe64",
 	.desc = "PE64 (PE32+) bin plugin",
 	.init = NULL,

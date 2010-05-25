@@ -17,7 +17,7 @@ static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf)
 	return aop->inst_len = java_assemble(aop->buf, buf);
 }
 
-RAsmHandler r_asm_plugin_java = {
+RAsmPlugin r_asm_plugin_java = {
 	.name = "java",
 	.desc = "Java CLASS assembler/disassembler",
 	.arch = "java",

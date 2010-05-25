@@ -11,7 +11,7 @@ static int call(void *user, const char *cmd) {
 	return R_TRUE;
 }
 
-struct r_cmd_handle_t r_cmd_plugin_dummy = {
+struct r_cmd_plugin_t r_cmd_plugin_dummy = {
 	.name = "dummy",
 	.call = call,
 };

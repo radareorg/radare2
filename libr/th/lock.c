@@ -71,7 +71,7 @@ R_API void *r_th_lock_free(struct r_th_lock_t *thl)
 		pthread_mutex_destroy(&thl->lock);
 #elif __WIN32__
 		DeleteCriticalSection(&thl->lock);
-		CloseHandle(thl->lock);
+		ClosePlugin(thl->lock);
 #endif
 		free(thl);
 	}

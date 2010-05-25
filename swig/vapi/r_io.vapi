@@ -57,17 +57,17 @@ namespace Radare {
 
 		/* handle */
 		[Compact]
-		[CCode (cname="RIOHandle", cprefix="r_io_handle_", free_function="")]
-		public class Handle {
+		[CCode (cname="RIOPlugin", cprefix="r_io_handle_", free_function="")]
+		public class Plugin {
 			string name;
 			string desc;
 			// TODO: lot of missing stuff here :)
 		}
 
-		/* TODO: make them methods of Handle class ? */
-		public bool handle_open(int fd, Handle plugin);
-		public bool handle_close(int fd, Handle plugin);
-		public bool handle_add(Handle plugin);
+		/* TODO: make them methods of Plugin class ? */
+		public bool handle_open(int fd, Plugin plugin);
+		public bool handle_close(int fd, Plugin plugin);
+		public bool handle_add(Plugin plugin);
 		public int handle_generate();
 		public void handle_list();
 
@@ -115,6 +115,6 @@ namespace Radare {
 			const string name;
 		}
 		// int perms -> RIOPerm ?
-		public bool desc_add(int fd, string file, int perms, Handle handle);
+		public bool desc_add(int fd, string file, int perms, Plugin handle);
 	}
 }

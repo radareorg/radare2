@@ -19,7 +19,7 @@ static int check(RBin *bin) {
 extern struct r_bin_meta_t r_bin_meta_elf64;
 extern struct r_bin_write_t r_bin_write_elf64;
 
-struct r_bin_handle_t r_bin_plugin_elf64 = {
+struct r_bin_plugin_t r_bin_plugin_elf64 = {
 	.name = "elf64",
 	.desc = "elf64 bin plugin",
 	.init = NULL,
