@@ -177,8 +177,6 @@ int main(int argc, char **argv) {
 
 	for (;optind < argc;optind++)
 		rafind_open(argv[optind]);
-	
-	r_search_free (rs);
 
 	return 0;
 }

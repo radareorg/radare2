@@ -28,7 +28,7 @@ public class RAsm {
 	}
 
 	[Compact]
-	[CCode (cname="RAsmPlugin", destroy_function="" )]
+	[CCode (cname="RAsmPlugin", destroy_function="", free_function="" )]
 	public class Plugin {
 		public string name;
 		public string arch;
