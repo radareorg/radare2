@@ -213,7 +213,7 @@ static int fork_and_ptraceme(const char *cmd) {
 }
 #endif
 
-static int __handle_open(struct r_io_t *io, const char *file) {
+static int __plugin_open(struct r_io_t *io, const char *file) {
 	if (!memcmp (file, "dbg://", 6))
 		return R_TRUE;
 	return R_FALSE;
@@ -221,7 +221,7 @@ static int __handle_open(struct r_io_t *io, const char *file) {
 
 static int __open(struct r_io_t *io, const char *file, int rw, int mode) {
 	char uri[1024];
-	if (__handle_open (io, file)) {
+	if (__plugin_open (io, file)) {
 		int pid = atoi (file+6);
 		if (pid == 0) {
 			pid = fork_and_ptraceme(file+6);
@@ -256,7 +256,7 @@ struct r_io_plugin_t r_io_plugin_debug = {
 	.name = "debug",
         .desc = "Debug a program or pid. dbg:///bin/ls, dbg://1388",
         .open = __open,
-        .handle_open = __handle_open,
+        .handle_open = __plugin_open,
 	.lseek = NULL,
 	.system = NULL,
 	.debug = (void *)1,

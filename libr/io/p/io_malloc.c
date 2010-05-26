@@ -62,7 +62,7 @@ static ut64 __lseek(struct r_io_t *io, int fildes, ut64 offset, int whence)
 	return malloc_seek;
 }
 
-static int __handle_open(struct r_io_t *io, const char *pathname)
+static int __plugin_open(struct r_io_t *io, const char *pathname)
 {
 	return (!memcmp(pathname, "malloc://", 9));
 }
@@ -109,7 +109,7 @@ struct r_io_plugin_t r_io_plugin_malloc = {
         .open = __open,
         .close = __close,
 	.read = __read,
-        .handle_open = __handle_open,
+        .handle_open = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
 	.init = __init,

@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
 			break;
 		case 'L':
 			r_lib_list (r.lib);
-			//r_io_handle_list (&r.io);
+			//r_io_plugin_list (&r.io);
 			return 0;
 		case 'u':
 			eprintf ("TODO\n");

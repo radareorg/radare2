@@ -49,12 +49,12 @@ R_API void *r_lib_dl_open(const char *libname) {
 	return ret;
 }
 
-R_API void *r_lib_dl_sym(void *handle, const char *name) {
-	return DLSYM (handle, name);
+R_API void *r_lib_dl_sym(void *handler, const char *name) {
+	return DLSYM (handler, name);
 }
 
-R_API int r_lib_dl_close(void *handle) {
-	return DLCLOSE (handle);
+R_API int r_lib_dl_close(void *handler) {
+	return DLCLOSE (handler);
 }
 
 /* ---- */

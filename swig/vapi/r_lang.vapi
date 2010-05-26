@@ -7,7 +7,7 @@ namespace Radare {
 	public class RLang {
 		public RLang ();
 		public bool define(string type, string name, void* ptr);
-		public bool @add(RLang.Plugin handler);
+		public bool @add(RLang.Plugin plugin);
 		public bool use(string name);
 		public bool undef();
 		public bool list();

@@ -10,18 +10,18 @@ extern RDebugPlugin r_debug_plugin_gdb;
 static RDebugPlugin *debug_static_plugins[] = 
 	{ R_DEBUG_STATIC_PLUGINS };
 
-R_API int r_debug_handle_init(RDebug *dbg) {
+R_API int r_debug_plugin_init(RDebug *dbg) {
 	int i;
 	dbg->reg_profile = NULL;
-	INIT_LIST_HEAD(&dbg->handlers);
+	INIT_LIST_HEAD(&dbg->plugins);
 	for (i=0; debug_static_plugins[i]; i++)
-		r_debug_handle_add (dbg, debug_static_plugins[i]);
+		r_debug_plugin_add (dbg, debug_static_plugins[i]);
 	return R_TRUE;
 }
 
 R_API int r_debug_use(RDebug *dbg, const char *str) {
 	struct list_head *pos;
-	list_for_each_prev (pos, &dbg->handlers) {
+	list_for_each_prev (pos, &dbg->plugins) {
 		RDebugPlugin *h = list_entry (pos, RDebugPlugin, list);
 		if (!strcmp (str, h->name)) {
 			dbg->h = h;
@@ -36,10 +36,10 @@ R_API int r_debug_use(RDebug *dbg, const char *str) {
 	return R_FALSE;
 }
 
-R_API int r_debug_handle_list(RDebug *dbg) {
+R_API int r_debug_plugin_list(RDebug *dbg) {
 	int count = 0;
 	struct list_head *pos;
-	list_for_each_prev(pos, &dbg->handlers) {
+	list_for_each_prev(pos, &dbg->plugins) {
 		RDebugPlugin *h = list_entry(pos, RDebugPlugin, list);
 		eprintf ("dbg %d %s %s\n", count, h->name, ((h==dbg->h)?"*":""));
 		count++;
@@ -47,7 +47,7 @@ R_API int r_debug_handle_list(RDebug *dbg) {
 	return R_FALSE;
 }
 
-R_API int r_debug_handle_add(RDebug *dbg, RDebugPlugin *foo) {
-	list_add_tail(&(foo->list), &(dbg->handlers));
+R_API int r_debug_plugin_add(RDebug *dbg, RDebugPlugin *foo) {
+	list_add_tail(&(foo->list), &(dbg->plugins));
 	return R_TRUE;
 }

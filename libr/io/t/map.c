@@ -9,7 +9,7 @@ int main () {
 
 	io = r_io_new();
 
-	r_io_handle_list(io);
+	r_io_plugin_list(io);
 	//fd = r_io_open(io, "/bin/ls", R_IO_READ, 0);
 	fd = r_io_open(io, "dbg:///bin/ls", R_IO_READ, 0);
 	r_io_set_fd(io, fd);

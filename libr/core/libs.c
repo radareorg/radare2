@@ -7,7 +7,7 @@ static int __lib_io_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 	struct r_io_plugin_t *hand = (struct r_io_plugin_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
 	//printf(" * Added IO handler\n");
-	r_io_handle_add (core->io, hand);
+	r_io_plugin_add (core->io, hand);
 	return R_TRUE;
 }
 
@@ -18,7 +18,7 @@ static int __lib_cmd_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 	struct r_cmd_plugin_t *hand = (struct r_cmd_plugin_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
 	//printf(" * Added CMD handler\n");
-	r_cmd_handle_add (core->cmd, hand);
+	r_cmd_plugin_add (core->cmd, hand);
 	return R_TRUE;
 }
 
@@ -29,7 +29,7 @@ static int __lib_dbg_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 	struct r_debug_plugin_t *hand = (struct r_debug_plugin_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
 	//printf(" * Added debugger handler\n");
-	r_debug_handle_add (core->dbg, hand);
+	r_debug_plugin_add (core->dbg, hand);
 	return R_TRUE;
 }
 
@@ -41,7 +41,7 @@ static int __lib_bp_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 	struct r_bp_plugin_t *hand = (struct r_bp_plugin_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
 	//printf(" * Added bpger handler\n");
-	r_bp_handle_add (core->dbg->bp, hand);
+	r_bp_plugin_add (core->dbg->bp, hand);
 	return R_TRUE;
 }
 

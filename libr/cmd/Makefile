@@ -1,5 +1,5 @@
 NAME=r_cmd
-OBJ=cmd.o handle.o macro.o
+OBJ=cmd.o plugin.o macro.o
 DEPS=r_util
 
 include ../config.mk

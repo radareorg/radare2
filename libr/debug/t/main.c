@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 
 	io = r_io_new ();
 	printf ("Supported IO pluggins:\n");
-	r_io_handle_list (io);
+	r_io_plugin_list (io);
 
 	ret = r_io_open (io, "dbg:///bin/ls", 0, 0);
 //	r_io_set_fd(io, ret);

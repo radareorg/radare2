@@ -2,13 +2,13 @@
 
 #include <r_bp.h>
 
-R_API int r_bp_handle_del(struct r_bp_t *bp, const char *name)
+R_API int r_bp_plugin_del(struct r_bp_t *bp, const char *name)
 {
-#warning TODO: r_bp_handle_del
+#warning TODO: r_bp_plugin_del
 	return R_FALSE;
 }
 
-R_API int r_bp_handle_add(struct r_bp_t *bp, struct r_bp_plugin_t *foo)
+R_API int r_bp_plugin_add(struct r_bp_t *bp, struct r_bp_plugin_t *foo)
 {
 	struct list_head *pos;
 	if (bp == NULL) {
@@ -40,7 +40,7 @@ R_API int r_bp_use(struct r_bp_t *bp, const char *name)
 }
 
 // TODO: deprecate
-R_API void r_bp_handle_list(struct r_bp_t *bp) {
+R_API void r_bp_plugin_list(struct r_bp_t *bp) {
 	struct r_bp_plugin_t *b;
 	struct list_head *pos;
 	list_for_each (pos, &bp->plugins) {

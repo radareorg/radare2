@@ -14,7 +14,7 @@ R_API RCmd *r_cmd_new () {
 			cmd->cmds[i] = NULL;
 		cmd->data = NULL;
 	}
-	r_cmd_handle_init (cmd);
+	r_cmd_plugin_init (cmd);
 	r_cmd_macro_init (&cmd->macro);
 	return cmd;
 }

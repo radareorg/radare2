@@ -191,7 +191,7 @@ date:        Fri Mar 19 14:01:37 2010 +0100
 files:       libr/io/handle.c
 description:
 * r_io
-  - Implements missing r_io_handle_generate
+  - Implements missing r_io_plugin_generate
 
 
 changeset:   554:ba8085ca2555
@@ -3723,7 +3723,7 @@ files:       libr/util/num.c libr/util/str.c
 description:
 * Fix build of r_util
 * Added r_bprintf helper for buffering printfs
-  - Can be used to capture the output of r_io_handle_list()
+  - Can be used to capture the output of r_io_plugin_list()
     without having to use r_cons
 
 

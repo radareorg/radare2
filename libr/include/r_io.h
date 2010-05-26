@@ -73,7 +73,7 @@ typedef struct r_io_t {
 	struct list_head cache;
 } RIO;
 
-//struct r_io_handle_fd_t {
+//struct r_io_plugin_fd_t {
 // ... store io changes here
 //};
 
@@ -149,15 +149,15 @@ typedef struct r_io_desc_t {
 /* io/handle.c */
 R_API RIO *r_io_new();
 R_API RIO *r_io_free(RIO *io);
-R_API int r_io_handle_init(RIO *io);
-R_API int r_io_handle_open(RIO *io, int fd, struct r_io_plugin_t *plugin);
-R_API int r_io_handle_close(RIO *io, int fd, struct r_io_plugin_t *plugin);
-R_API int r_io_handle_generate(RIO *io);
-R_API int r_io_handle_add(RIO *io, struct r_io_plugin_t *plugin);
-R_API int r_io_handle_list(RIO *io);
+R_API int r_io_plugin_init(RIO *io);
+R_API int r_io_plugin_open(RIO *io, int fd, struct r_io_plugin_t *plugin);
+R_API int r_io_plugin_close(RIO *io, int fd, struct r_io_plugin_t *plugin);
+R_API int r_io_plugin_generate(RIO *io);
+R_API int r_io_plugin_add(RIO *io, struct r_io_plugin_t *plugin);
+R_API int r_io_plugin_list(RIO *io);
 // TODO: _del ??
-R_API struct r_io_plugin_t *r_io_handle_resolve(RIO *io, const char *filename);
-R_API struct r_io_plugin_t *r_io_handle_resolve_fd(RIO *io, int fd);
+R_API struct r_io_plugin_t *r_io_plugin_resolve(RIO *io, const char *filename);
+R_API struct r_io_plugin_t *r_io_plugin_resolve_fd(RIO *io, int fd);
 
 /* io/io.c */
 R_API int r_io_set_write_mask(RIO *io, const ut8 *buf, int len);

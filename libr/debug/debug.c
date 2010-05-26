@@ -43,7 +43,7 @@ R_API RDebug *r_debug_new(int hard) {
 		dbg->maps_user = r_debug_map_list_new ();
 		if (hard) {
 			dbg->bp = r_bp_new ();
-			r_debug_handle_init (dbg);
+			r_debug_plugin_init (dbg);
 			dbg->bp->iob.init = R_FALSE;
 		}
 	}
@@ -54,7 +54,7 @@ R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg) {
 	// TODO: free it correctly
 	//r_bp_free(&dbg->bp);
 	//r_reg_free(&dbg->reg);
-	//r_debug_handle_free();
+	//r_debug_plugin_free();
 	free (dbg);
 	return NULL;
 }

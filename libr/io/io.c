@@ -18,7 +18,7 @@ R_API struct r_io_t *r_io_new() {
 		r_io_cache_init (io);
 		r_io_map_init (io);
 		r_io_section_init (io);
-		r_io_handle_init (io);
+		r_io_plugin_init (io);
 		r_io_desc_init (io);
 		r_io_undo_init (io);
 	}
@@ -73,7 +73,7 @@ R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode) {
 	struct r_io_plugin_t *plugin;
 	if (io != NULL) {
 		for (;;) {
-			plugin = r_io_handle_resolve (io, uri);
+			plugin = r_io_plugin_resolve (io, uri);
 			if (plugin) {
 				fd = plugin->open (io, uri, flags, mode);
 				if (io->redirect) {
@@ -83,7 +83,7 @@ R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode) {
 					continue;
 				}
 				if (fd != -1)
-					r_io_handle_open (io, fd, plugin);
+					r_io_plugin_open (io, fd, plugin);
 				if (fd != io->fd)
 					io->plugin = plugin;
 			}
@@ -111,7 +111,7 @@ R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode) {
 // TODO: Rename to use_fd ?
 R_API int r_io_set_fd(struct r_io_t *io, int fd) {
 	if (fd != -1 && fd != io->fd) {
-		io->plugin = r_io_handle_resolve_fd (io, fd);
+		io->plugin = r_io_plugin_resolve_fd (io, fd);
 		io->fd = fd;
 	}
 	return io->fd;
@@ -179,11 +179,11 @@ R_API int r_io_resize(struct r_io_t *io, const char *file, int flags, int mode) 
 	// XXX not implemented
 #if 0
 	/* TODO */
-	struct r_io_plugin_t *plugin = r_io_handle_resolve(file);
+	struct r_io_plugin_t *plugin = r_io_plugin_resolve(file);
 	if (plugin && io->plugin->resize) {
 		int fd = plugin->resize(file, flags, mode);
 		if (fd != -1)
-			r_io_handle_open(fd, plugin);
+			r_io_plugin_open(fd, plugin);
 		return fd;
 	}
 #endif
@@ -306,7 +306,7 @@ R_API int r_io_close(struct r_io_t *io, int fd) {
 	if (fd != -1 && io->plugin) {
 		r_io_desc_del (io, fd);
 		r_io_map_del (io, fd);
-		r_io_handle_close (io, fd, io->plugin);
+		r_io_plugin_close (io, fd, io->plugin);
 		if (io->plugin->close)
 			return io->plugin->close (io, fd);
 	}

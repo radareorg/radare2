@@ -78,7 +78,6 @@ typedef struct r_asm_t {
 
 typedef int (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
 
-// TODO: rename to handler?
 typedef struct r_asm_plugin_t {
 	char *name;
 	char *arch;

@@ -52,11 +52,11 @@ static ut64 ewf__lseek(struct r_io_t *io, int fildes, ut64 offset, int whence) {
 	return lseek(fildes, offset, whence);
 }
 
-static int ewf__handle_fd(struct r_io_t *io, int fd) {
+static int ewf__plugin_fd(struct r_io_t *io, int fd) {
 	return fd == ewf_fd;
 }
 
-static int ewf__handle_open(struct r_io_t *io, const char *pathname)
+static int ewf__plugin_open(struct r_io_t *io, const char *pathname)
 {
 	if ((!memcmp(file, "ewf://", 6))
 	||  (!memcmp(file, "els://", 6)))
@@ -170,8 +170,8 @@ struct r_io_plugin_t r_io_plugin_ewf = {
         .open = ewf__open,
         .close = ewf__close,
 	.read = ewf__read,
-        .handle_open = ewf__handle_open,
-        .handle_fd = ewf__handle_fd,
+        .handle_open = ewf__plugin_open,
+        .handle_fd = ewf__plugin_fd,
 	.lseek = ewf__lseek,
 	.system = NULL, // ewf__system,
 	.init = ewf__init,

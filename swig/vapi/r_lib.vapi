@@ -12,7 +12,7 @@ namespace Radare {
 		/* lowlevel api */
 		public static void* dl_open(string libname);
 		public void* dl_sym(string symname);
-		public static bool dl_close(void *handle);
+		public static bool dl_close(void *handler);
 		public static bool dl_check_filename(string file);
 		/* handlers */
 	// we need delegates here (function pointerz)

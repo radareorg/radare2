@@ -17,7 +17,7 @@ R_API struct r_crypto_t *r_crypto_init(struct r_crypto_t *cry, int hard)
 		if (hard) {
 			// first call initializes the output_* variables
 			r_crypto_get_output(cry);
-			INIT_LIST_HEAD(&cry->handlers);
+			INIT_LIST_HEAD(&cry->plugins);
 			for(i=0;crypto_static_plugins[i];i++)
 				r_crypto_add(cry, crypto_static_plugins[i]);
 		}
@@ -28,7 +28,7 @@ R_API struct r_crypto_t *r_crypto_init(struct r_crypto_t *cry, int hard)
 R_API int r_crypto_add(struct r_crypto_t *cry, struct r_crypto_plugin_t *h)
 {
 	// add a check ?
-	list_add_tail(&(h->list), &(cry->handlers));
+	list_add_tail(&(h->list), &(cry->plugins));
 	return R_TRUE;
 }
 
@@ -49,7 +49,7 @@ R_API struct r_crypto_t *r_crypto_as_new(struct r_crypto_t *cry)
 	struct r_crypto_t *c = R_NEW(struct r_crypto_t);
 	if (c != NULL) {
 		r_crypto_init(c, R_FALSE); // soft init
-		memcpy(&c->handlers, &cry->handlers, sizeof(cry->handlers));
+		memcpy(&c->plugins, &cry->plugins, sizeof(cry->plugins));
 	}
 	return c;
 }
@@ -69,7 +69,7 @@ R_API int r_crypto_use(struct r_crypto_t *cry, const char *algo)
 {
 	int ret = R_FALSE;
 	struct list_head *pos;
-	list_for_each_prev(pos, &cry->handlers) {
+	list_for_each_prev(pos, &cry->plugins) {
 		struct r_crypto_plugin_t *h = list_entry(pos, struct r_crypto_plugin_t, list);
 		if (h->use(algo)) {
 			cry->h = h;

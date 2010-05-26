@@ -444,7 +444,7 @@ static int cmd_iopipe(void *data, const char *input) {
 	switch (input[0]) {
 	case '\0':
 		r_lib_list (core->lib);
-		r_io_handle_list (core->io);
+		r_io_plugin_list (core->io);
 		break;
 	default:
 		cmd_io_system (data, input);
@@ -584,7 +584,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		if (input[2]==' ') {
 			if (!r_bp_use (core->dbg->bp, input+3))
 				eprintf ("Invalid name: '%s'.\n", input+3);
-		} else r_bp_handle_list (core->dbg->bp);
+		} else r_bp_plugin_list (core->dbg->bp);
 		break;
 	case '?':
 		r_cons_printf (
@@ -2949,7 +2949,7 @@ static int cmd_debug(void *data, const char *input) {
 	case 'h':
 		if (input[1]==' ')
 			r_debug_use (core->dbg, input+2);
-		else r_debug_handle_list (core->dbg);
+		else r_debug_plugin_list (core->dbg);
 		break;
 	default:
 		r_cons_printf ("Usage: d[sbhcrbo] [arg]\n"

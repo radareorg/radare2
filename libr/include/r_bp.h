@@ -87,10 +87,10 @@ R_API RBreakpoint *r_bp_free(RBreakpoint *bp);
 
 R_API int r_bp_del(RBreakpoint *bp, ut64 addr);
 
-R_API int r_bp_handle_add(RBreakpoint *bp, struct r_bp_plugin_t *foo);
+R_API int r_bp_plugin_add(RBreakpoint *bp, struct r_bp_plugin_t *foo);
 R_API int r_bp_use(RBreakpoint *bp, const char *name);
-R_API int r_bp_handle_del(RBreakpoint *bp, const char *name);
-R_API void r_bp_handle_list(RBreakpoint *bp);
+R_API int r_bp_plugin_del(RBreakpoint *bp, const char *name);
+R_API void r_bp_plugin_list(RBreakpoint *bp);
 
 R_API int r_bp_in(RBreakpoint *bp, ut64 addr, int rwx);
 R_API int r_bp_list(RBreakpoint *bp, int rad);

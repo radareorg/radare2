@@ -25,7 +25,7 @@ typedef struct r_crypto_t {
 	int output_len;
 	int output_size;
 	void *user;
-	struct list_head handlers;
+	struct list_head plugins;
 } RCrypto;
 
 typedef struct r_crypto_plugin_t {

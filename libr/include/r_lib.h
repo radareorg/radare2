@@ -78,8 +78,8 @@ typedef struct r_lib_t {
 
 /* low level api */
 R_API void *r_lib_dl_open(const char *libname);
-R_API void *r_lib_dl_sym(void *handle, const char *name);
-R_API int r_lib_dl_close(void *handle);
+R_API void *r_lib_dl_sym(void *handler, const char *name);
+R_API int r_lib_dl_close(void *handler);
 R_API int r_lib_dl_check_filename(const char *file);
 
 /* high level api */

@@ -88,7 +88,7 @@ static int __write(struct r_io_t *io, int pid, const ut8 *buf, int len) {
 	return ptrace_write_at(pid, buf, len, io->off);
 }
 
-static int __handle_open(struct r_io_t *io, const char *file) {
+static int __plugin_open(struct r_io_t *io, const char *file) {
 	if (!memcmp (file, "ptrace://", 9))
 		return R_TRUE;
 	if (!memcmp (file, "attach://", 9))
@@ -98,7 +98,7 @@ static int __handle_open(struct r_io_t *io, const char *file) {
 
 static int __open(struct r_io_t *io, const char *file, int rw, int mode) {
 	int ret = -1;
-	if (__handle_open (io, file)) {
+	if (__plugin_open (io, file)) {
 		int pid = atoi (file+9);
 		if (file[0]=='a') {
 			ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
@@ -157,7 +157,7 @@ struct r_io_plugin_t r_io_plugin_ptrace = {
         .open = __open,
         .close = __close,
 	.read = __read,
-        .handle_open = __handle_open,
+        .handle_open = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
 	.init = __init,

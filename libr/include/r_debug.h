@@ -68,7 +68,7 @@ typedef struct r_debug_t {
 	/* io */
 	void (*printf)(const char *str, ...);
 	struct r_debug_plugin_t *h;
-	struct list_head handlers;
+	struct list_head plugins;
 	RAnal *anal;
 	RIOBind iob;
 	RList *maps; // <RDebugMap>
@@ -146,9 +146,9 @@ R_API int r_debug_pid_list(struct r_debug_t *dbg, int pid);
 R_API RDebugPid *r_debug_pid_new(char *path, int pid, char status);
 
 R_API int r_debug_use(struct r_debug_t *dbg, const char *str);
-R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_plugin_t *foo);
-R_API int r_debug_handle_init(struct r_debug_t *dbg);
-R_API int r_debug_handle_list(struct r_debug_t *dbg);
+R_API int r_debug_plugin_add(struct r_debug_t *dbg, struct r_debug_plugin_t *foo);
+R_API int r_debug_plugin_init(struct r_debug_t *dbg);
+R_API int r_debug_plugin_list(struct r_debug_t *dbg);
 
 R_API struct r_debug_t *r_debug_new(int hard);
 R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg);
@@ -162,10 +162,10 @@ R_API int r_debug_continue_kill(struct r_debug_t *dbg, int signal);
 R_API int r_debug_select(struct r_debug_t *dbg, int pid, int tid);
 
 /* handle.c */
-R_API int r_debug_handle_init(struct r_debug_t *dbg);
-R_API int r_debug_handle_set(struct r_debug_t *dbg, const char *str);
-R_API int r_debug_handle_list(struct r_debug_t *dbg);
-R_API int r_debug_handle_add(struct r_debug_t *dbg, struct r_debug_plugin_t *foo);
+R_API int r_debug_plugin_init(struct r_debug_t *dbg);
+R_API int r_debug_plugin_set(struct r_debug_t *dbg, const char *str);
+R_API int r_debug_plugin_list(struct r_debug_t *dbg);
+R_API int r_debug_plugin_add(struct r_debug_t *dbg, struct r_debug_plugin_t *foo);
 
 /* memory */
 R_API int r_debug_map_alloc(RDebug *dbg, RDebugMap *map);
