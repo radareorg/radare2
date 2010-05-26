@@ -54,7 +54,7 @@ R_API RAsm *r_asm_new() {
 		a->big_endian = 0;
 		a->syntax = R_ASM_SYNTAX_INTEL;
 		a->pc = 0;
-		a->handlers = r_list_new ();
+		a->plugins = r_list_new ();
 		for (i=0; asm_static_plugins[i]; i++)
 			r_asm_add (a, asm_static_plugins[i]);
 	}
@@ -87,10 +87,10 @@ R_API int r_asm_add(RAsm *a, RAsmPlugin *foo) {
 	// TODO: cache foo->name length and use memcmp instead of strcmp
 	if (foo->init)
 		foo->init (a->user);
-	r_list_foreach (a->handlers, iter, h)
+	r_list_foreach (a->plugins, iter, h)
 		if (!strcmp (h->name, foo->name))
 			return R_FALSE;
-	r_list_append (a->handlers, foo);
+	r_list_append (a->plugins, foo);
 	return R_TRUE;
 }
 
@@ -103,7 +103,7 @@ R_API int r_asm_del(RAsm *a, const char *name) {
 R_API int r_asm_use(RAsm *a, const char *name) {
 	RAsmPlugin *h;
 	RListIter *iter;
-	r_list_foreach (a->handlers, iter, h)
+	r_list_foreach (a->plugins, iter, h)
 		if (!strcmp (h->name, name)) {
 			a->cur = h;
 			return R_TRUE;
@@ -174,7 +174,7 @@ R_API int r_asm_assemble(RAsm *a, struct r_asm_aop_t *aop, const char *buf) {
 	if (a->cur) {
 		if (!a->cur->assemble) {
 			/* find callback if no assembler support in current plugin */
-			r_list_foreach (a->handlers, iter, h) {
+			r_list_foreach (a->plugins, iter, h) {
 				if (h->arch && h->assemble && has_bits(h, a->bits)
 				&& !strcmp(a->cur->arch, h->arch)) {
 					ret = h->assemble(a, aop, buf);

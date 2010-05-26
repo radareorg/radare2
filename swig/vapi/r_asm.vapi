@@ -66,7 +66,7 @@ public class RAsm {
 	public string buf_err;
 	public void *aux;
 
-	public RList<Plugin> handlers;
+	public RList<Plugin> plugins;
 	public RAsm();
 	public bool use(string name);
 	public bool set_bits(int bits);

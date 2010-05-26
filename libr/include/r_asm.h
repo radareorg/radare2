@@ -73,7 +73,7 @@ typedef struct r_asm_t {
 	void *user;
 	struct r_asm_plugin_t *cur;
 	RAsmFastcall *fastcall;
-	RList *handlers;
+	RList *plugins;
 } RAsm;
 
 typedef int (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
