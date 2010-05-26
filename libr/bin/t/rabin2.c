@@ -502,7 +502,7 @@ static int rabin_show_srcline(ut64 at) {
 /* bin callback */
 static int __lib_bin_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 	struct r_bin_plugin_t *hand = (struct r_bin_plugin_t *)data;
-	//printf(" * Added (dis)assembly handler\n");
+	//printf(" * Added (dis)assembly plugin\n");
 	r_bin_add (bin, hand);
 	return R_TRUE;
 }

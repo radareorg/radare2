@@ -252,11 +252,11 @@ static int __init(struct r_io_t *io) {
 }
 
 struct r_io_plugin_t r_io_plugin_debug = {
-        //void *handle;
+        //void *plugin;
 	.name = "debug",
         .desc = "Debug a program or pid. dbg:///bin/ls, dbg://1388",
         .open = __open,
-        .handle_open = __plugin_open,
+        .plugin_open = __plugin_open,
 	.lseek = NULL,
 	.system = NULL,
 	.debug = (void *)1,

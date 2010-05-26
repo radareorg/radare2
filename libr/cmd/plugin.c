@@ -44,7 +44,7 @@ R_API int r_cmd_plugin_check(struct r_cmd_t *cmd, const char *a0) {
 R_API int r_cmd_plugin_list(struct r_cmd_t *cmd) {
 	int n = 0;
 	struct list_head *pos;
-	cmd->printf ("IO handlers:\n");
+	cmd->printf ("IO plugins:\n");
 	list_for_each_prev(pos, &cmd->plist) {
 		struct r_cmd_list_t *il = list_entry(pos, struct r_cmd_list_t, list);
 		cmd->printf(" - %s\n", il->plugin->name);

@@ -92,13 +92,13 @@ static int __init(struct r_io_t *io) {
 
 // TODO: rename w32dbg to io_w32dbg .. err io.w32dbg ??
 struct r_io_plugin_t r_io_plugin_w32dbg = {
-        //void *handle;
+        //void *plugin;
 	.name = "io_w32dbg",
         .desc = "w32dbg io",
         .open = __open,
         .close = __close,
 	.read = __read,
-        .handle_open = __plugin_open,
+        .plugin_open = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
 	.init = __init,

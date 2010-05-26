@@ -88,13 +88,13 @@ static int shm__init(struct r_io_t *io)
 }
 
 struct r_io_plugin_t r_io_plugin_shm = {
-        //void *handle;
+        //void *plugin;
 	.name = "shm",
         .desc = "shared memory resources (shm://key)",
         .open = shm__open,
         .close = shm__close,
 	.read = shm__read,
-        .handle_open = shm__plugin_open,
+        .plugin_open = shm__plugin_open,
 	.lseek = shm__lseek,
 	.system = NULL, // shm__system,
 	.init = shm__init,

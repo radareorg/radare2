@@ -12,7 +12,7 @@ R_API int r_bp_plugin_add(struct r_bp_t *bp, struct r_bp_plugin_t *foo)
 {
 	struct list_head *pos;
 	if (bp == NULL) {
-		eprintf("Cannot add plugin because dbg->bp is null and/or handle is null\n");
+		eprintf("Cannot add plugin because dbg->bp is null and/or plugin is null\n");
 		return R_FALSE;
 	}
 	/* avoid dupped plugins */

@@ -103,13 +103,13 @@ static int __system(struct r_io_t *io, int fd, const char *cmd)
 }
 
 struct r_io_plugin_t r_io_plugin_malloc = {
-        //void *handle;
+        //void *plugin;
 	.name = "malloc",
         .desc = "memory allocation ( malloc://size-in-bytes )",
         .open = __open,
         .close = __close,
 	.read = __read,
-        .handle_open = __plugin_open,
+        .plugin_open = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
 	.init = __init,

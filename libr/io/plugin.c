@@ -39,9 +39,9 @@ R_API struct r_io_plugin_t *r_io_plugin_resolve(struct r_io_t *io, const char *f
 		struct r_io_list_t *il = list_entry(pos, struct r_io_list_t, list);
 		if (il->plugin == NULL)
 			continue;
-		if (il->plugin->handle_open == NULL)
+		if (il->plugin->plugin_open == NULL)
 			continue;
-		if (il->plugin->handle_open(io, filename))
+		if (il->plugin->plugin_open(io, filename))
 			return il->plugin;
 	}
 	return NULL;
@@ -100,7 +100,7 @@ R_API int r_io_plugin_close(struct r_io_t *io, int fd, struct r_io_plugin_t *plu
 R_API int r_io_plugin_list(struct r_io_t *io) {
 	int n = 0;
 	struct list_head *pos;
-	io->printf ("IO handlers:\n");
+	io->printf ("IO plugins:\n");
 	list_for_each_prev(pos, &io->io_list) {
 		struct r_io_list_t *il = list_entry(pos, struct r_io_list_t, list);
 		io->printf(" - %s\n", il->plugin->name);

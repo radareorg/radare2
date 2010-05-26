@@ -148,7 +148,7 @@ R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len) {
 		if (io->plugin && io->plugin->read) {
 			if (io->plugin->read != NULL)
 				ret = io->plugin->read(io, io->fd, buf, len);
-			else eprintf ("IO handler for fd=%d has no read()\n", io->fd);
+			else eprintf ("IO plugin for fd=%d has no read()\n", io->fd);
 		} else ret = read (io->fd, buf, len);
 		if (ret>0 && ret<len)
 			memset (buf+ret, 0xff, len-ret);

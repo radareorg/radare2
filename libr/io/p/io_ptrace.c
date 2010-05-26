@@ -151,13 +151,13 @@ static int __init(struct r_io_t *io) {
 
 // TODO: rename ptrace to io_ptrace .. err io.ptrace ??
 struct r_io_plugin_t r_io_plugin_ptrace = {
-        //void *handle;
+        //void *plugin;
 	.name = "io_ptrace",
         .desc = "ptrace io",
         .open = __open,
         .close = __close,
 	.read = __read,
-        .handle_open = __plugin_open,
+        .plugin_open = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
 	.init = __init,

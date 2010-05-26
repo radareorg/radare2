@@ -7,14 +7,14 @@ R_API int r_io_desc_init(struct r_io_t *io) {
 	return R_TRUE;
 }
 
-R_API int r_io_desc_add(struct r_io_t *io, int fd, const char *file, int flags, struct r_io_plugin_t *handle) {
+R_API int r_io_desc_add(struct r_io_t *io, int fd, const char *file, int flags, struct r_io_plugin_t *plugin) {
 	RIODesc *desc = R_NEW (RIODesc);
 	if (desc == NULL)
 		return R_FALSE;
 	strncpy (desc->name, file, sizeof (desc->name));
 	desc->flags = flags;
 	desc->fd = fd;
-	desc->handle = handle;
+	desc->plugin = plugin;
 	list_add_tail (&(desc->list), &(io->desc));
 	return R_TRUE;
 }

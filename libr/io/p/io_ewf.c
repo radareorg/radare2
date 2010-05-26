@@ -164,14 +164,14 @@ static int ewf__init(struct r_io_t *io) {
 }
 
 struct r_io_plugin_t r_io_plugin_ewf = {
-        //void *handle;
+        //void *plugin;
 	.name = "ewf",
         .desc = "Forensic file formats (Encase, ..) (ewf://file, els://file)",
         .open = ewf__open,
         .close = ewf__close,
 	.read = ewf__read,
-        .handle_open = ewf__plugin_open,
-        .handle_fd = ewf__plugin_fd,
+        .plugin_open = ewf__plugin_open,
+        .plugin_fd = ewf__plugin_fd,
 	.lseek = ewf__lseek,
 	.system = NULL, // ewf__system,
 	.init = ewf__init,
