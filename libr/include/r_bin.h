@@ -169,6 +169,16 @@ R_API char *r_bin_meta_get_source_line(RBin *bin, ut64 addr);
 R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size);
 R_API int r_bin_wr_rpath_del(RBin *bin);
 R_API int r_bin_wr_output(RBin *bin, const char *filename);
-#endif
 
+/* plugin pointers */
+extern RBinPlugin r_bin_plugin_elf;
+extern RBinPlugin r_bin_plugin_elf64;
+extern RBinPlugin r_bin_plugin_pe;
+extern RBinPlugin r_bin_plugin_pe64;
+extern RBinPlugin r_bin_plugin_mach0;
+extern RBinPlugin r_bin_plugin_mach064;
+extern RBinPlugin r_bin_plugin_java;
+extern RBinPlugin r_bin_plugin_dummy;
+
+#endif
 #endif

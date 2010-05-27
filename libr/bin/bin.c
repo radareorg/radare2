@@ -12,16 +12,6 @@
 #include <list.h>
 #include "../config.h"
 
-/* plugin pointers */
-extern RBinPlugin r_bin_plugin_elf;
-extern RBinPlugin r_bin_plugin_elf64;
-extern RBinPlugin r_bin_plugin_pe;
-extern RBinPlugin r_bin_plugin_pe64;
-extern RBinPlugin r_bin_plugin_mach0;
-extern RBinPlugin r_bin_plugin_mach064;
-extern RBinPlugin r_bin_plugin_java;
-extern RBinPlugin r_bin_plugin_dummy;
-
 static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS };
 
 static RList* get_strings(RBin *bin, int min) {
@@ -142,6 +132,7 @@ R_API int r_bin_load(RBin *bin, const char *file, const char *plugin_name) {
 	if (!bin || !file)
 		return R_FALSE;
 	bin->file = r_file_abspath (file);
+	bin->cur = NULL;
 	list_for_each (pos, &bin->bins) {
 		RBinPlugin *h = list_entry (pos, RBinPlugin, list);
 		if ((plugin_name && !strcmp (h->name, plugin_name)) ||

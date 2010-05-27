@@ -104,7 +104,6 @@ static int __lib_bin_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_
 
 R_API int r_core_loadlibs_init(struct r_core_t *core) {
 	/* initialize handlers */
-	core->lib = r_lib_new ("radare_plugin");
 	r_lib_add_handler (core->lib, R_LIB_TYPE_IO, "io plugins",
 		&__lib_io_cb, &__lib_io_dt, core);
 	r_lib_add_handler (core->lib, R_LIB_TYPE_CMD, "cmd plugins",
@@ -130,6 +129,7 @@ R_API int r_core_loadlibs(struct r_core_t *core) {
 	/* TODO: all those default plugin paths should be defined in r_lib */
 	char *homeplugindir = r_str_home (".radare2/plugins");
 	static int singleton = R_TRUE;
+	core->lib = r_lib_new ("radare_plugin");
 	if (singleton) {
 		r_core_loadlibs_init (core);
 		singleton = R_FALSE;
