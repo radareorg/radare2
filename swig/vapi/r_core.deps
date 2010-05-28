@@ -11,3 +11,5 @@ r_lib
 r_search
 r_syscall
 r_flags
+r_config
+r_asm
