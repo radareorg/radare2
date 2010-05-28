@@ -1,13 +1,16 @@
 include config-user.mk
 include global.mk
 
-all: plugins.cfg libr r2rc
+all: plugins.cfg libr binr r2rc
 
 plugins.cfg:
 	./configure-plugins
 
 libr:
 	cd libr && ${MAKE} all
+
+binr:
+	cd binr && ${MAKE} all
 
 r2rc:
 	cd r2rc && ${MAKE} all
@@ -71,4 +74,4 @@ shot:
 
 include ${MKPLUGINS}
 
-.PHONY: all clean mrproper install symstall uninstall deinstall dist shot pkgcfg vdoc swig libr r2rc install-man
+.PHONY: all clean mrproper install symstall uninstall deinstall dist shot pkgcfg vdoc swig libr binr r2rc install-man
