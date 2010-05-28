@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_diff.h>
+#include <r_core.h>
 
 static ut32 count = 0;
 
@@ -48,7 +49,7 @@ enum {
 };
 
 int main(int argc, char **argv) {
-	struct r_diff_t *d;
+	RDiff *d;
 	int c, delta = 0;
 	char *file, *file2;
 	ut8 *bufa, *bufb;
@@ -122,7 +123,27 @@ int main(int argc, char **argv) {
 //		count = r_diff_lines(file, (char*)bufa, sza, file2, (char*)bufb, szb);
 //		break;
 	case MODE_GRAPH:
-		printf ("TODO\n");
+		{
+		RCore *core;
+		char cmd[1024];
+		if (!(core = r_core_new ()))
+				return 1;
+		if (!r_core_file_open (core, file, 0)) {
+			fprintf (stderr, "Cannot open file '%s'\n", file);
+			return 1;
+		}
+		sprintf (cmd, ".!rabin2 -rSIeis%s %s", va?"v":"", file);
+		r_core_cmd0 (core, cmd);
+		r_config_set_i (core->config, "io.va", va);
+		r_core_gdiff (core, file, file2, va);
+		if (rad) {
+			r_core_anal_bb_list (core, R_TRUE);
+			r_core_anal_fcn_list (core, R_TRUE);
+		} else
+			r_core_anal_graph (core, 0, R_CORE_ANAL_GRAPHBODY|R_CORE_ANAL_GRAPHDIFF);
+		r_core_free (core);
+		}
+		break;
 	}
 
 	if (showcount)

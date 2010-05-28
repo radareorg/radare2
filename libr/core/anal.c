@@ -93,13 +93,12 @@ static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts
 			}
 			if ((str = r_core_anal_graph_label (core, bbi, opts))) {
 				if (opts & R_CORE_ANAL_GRAPHDIFF) {
-					printf (" \"0x%08"PFMT64x"\" [color=%s,label=\"%s\"]\n", bbi->addr, 
+					r_cons_printf (" \"0x%08"PFMT64x"\" [color=%s,label=\"%s\"]\n", bbi->addr, 
 							bbi->diff==R_ANAL_DIFF_MATCH?"green":
 							bbi->diff==R_ANAL_DIFF_UNMATCH?"red":"lightgray",str);
 				} else {
-					printf (" \"0x%08"PFMT64x"\" [label=\"%s\"]\n", bbi->addr, str);
+					r_cons_printf (" \"0x%08"PFMT64x"\" [label=\"%s\"]\n", bbi->addr, str);
 				}
-				r_cons_printf (" \"0x%08"PFMT64x"\" [label=\"%s\"]\n", bbi->addr, str);
 				r_cons_flush ();
 				free (str);
 			}

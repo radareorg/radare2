@@ -1100,7 +1100,7 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 #endif
 	case 'g':
-		r_core_gdiff (core, core->file->filename, input+2, core->io->va);
+		r_core_gdiff (core, core->file->filename, (char*)r_str_chop_ro (input+1), core->io->va);
 		break;
 	case '?':
 		r_cons_strcat (

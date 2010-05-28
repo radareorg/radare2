@@ -1,7 +1,6 @@
 NAME=r_diff
 OBJ=diff.o bdiff.o
 DEPS=r_util 
-#DEPS+=r_core
 
 #EXTRA_TARGETS=linediff
 #EXTRA_CLEAN=clean_me
