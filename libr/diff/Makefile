@@ -1,5 +1,5 @@
 NAME=r_diff
-OBJ=diff.o bdiff.o gdiff.o
+OBJ=diff.o bdiff.o
 DEPS=r_util 
 #DEPS+=r_core
 

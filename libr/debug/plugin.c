@@ -11,11 +11,16 @@ static RDebugPlugin *debug_static_plugins[] =
 	{ R_DEBUG_STATIC_PLUGINS };
 
 R_API int r_debug_plugin_init(RDebug *dbg) {
+	RDebugPlugin *static_plugin;
 	int i;
+
 	dbg->reg_profile = NULL;
 	INIT_LIST_HEAD(&dbg->plugins);
-	for (i=0; debug_static_plugins[i]; i++)
-		r_debug_plugin_add (dbg, debug_static_plugins[i]);
+	for (i=0; debug_static_plugins[i]; i++) {
+		static_plugin = R_NEW (RDebugPlugin);
+		memcpy (static_plugin, debug_static_plugins[i], sizeof (RDebugPlugin));
+		r_debug_plugin_add (dbg, static_plugin);
+	}
 	return R_TRUE;
 }
 

@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
 //		count = r_diff_lines(file, (char*)bufa, sza, file2, (char*)bufb, szb);
 //		break;
 	case MODE_GRAPH:
-		r_diff_gdiff (file, file2, rad, va);
+		printf ("TODO\n");
 	}
 
 	if (showcount)

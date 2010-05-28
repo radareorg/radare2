@@ -47,6 +47,12 @@ endif
 # Debug
 CFLAGS+=-g -Wall
 
+# libgmp
+ifeq (${HAVE_LIB_GMP},1)
+CFLAGS+=-DHAVE_LIB_GMP=1
+BN_LIBS=-lgmp
+endif
+
 # XXX do it in configure stage
 OSTYPE?=gnulinux
 # Output

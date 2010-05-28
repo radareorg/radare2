@@ -103,6 +103,7 @@ static int __dbg_write(void *user, int pid, ut64 addr, const ut8 *buf, int len)
 #endif
 
 R_API int r_core_init(RCore *core) {
+	static int singleton = R_TRUE;
 	core->ffio = 0;
 	core->oobi = NULL;
 	core->oobi_len = 0;
@@ -116,6 +117,13 @@ R_API int r_core_init(RCore *core) {
 	core->cons = r_cons_singleton ();
 
 	/* initialize libraries */
+	if (singleton) {
+		r_cons_new ();
+		r_line_new ();
+		r_cons_singleton()->user_fgets = (void *)myfgets;
+		r_line_hist_load (".radare2_history");
+		singleton = R_FALSE;
+	}
 	core->syscall = r_syscall_new ();
 	core->print = r_print_new ();
 	core->print->printf = (void *)r_cons_printf;
@@ -131,13 +139,8 @@ R_API int r_core_init(RCore *core) {
 	core->bin = r_bin_new ();
 	r_bin_set_user_ptr (core->bin, core);
 	core->meta = r_meta_new ();
-	r_cons_new ();
-	r_line_new ();
 	core->io = r_io_new ();
 	core->sign = r_sign_new ();
-	r_cons_singleton()->user_fgets = (void *)myfgets;
-	r_line_hist_load (".radare2_history");
-
 	core->search = r_search_new (R_SEARCH_KEYWORD);
 	r_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
 	//r_cmd_macro_init (&core->macro);

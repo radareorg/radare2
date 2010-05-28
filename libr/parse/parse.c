@@ -12,14 +12,18 @@ static struct r_parse_plugin_t *parse_static_plugins[] =
 
 R_API struct r_parse_t *r_parse_new() {
 	RParse *p;
+	RParsePlugin *static_plugin;
 	int i;
 	
 	p = R_NEW(RParse);
 	if (p) {
 		p->user = NULL;
 		INIT_LIST_HEAD(&p->parsers);
-		for(i=0;parse_static_plugins[i];i++)
-			r_parse_add(p, parse_static_plugins[i]);
+		for(i=0;parse_static_plugins[i];i++) {
+			static_plugin = R_NEW (RParsePlugin);
+			memcpy (static_plugin, parse_static_plugins[i], sizeof (RParsePlugin));
+			r_parse_add(p, static_plugin);
+		}
 	}
 	return p;
 }

@@ -9,6 +9,8 @@ static struct r_crypto_plugin_t *crypto_static_plugins[] =
 R_API struct r_crypto_t *r_crypto_init(struct r_crypto_t *cry, int hard)
 {
 	int i;
+	RCryptoPlugin *static_plugin;
+
 	if (cry) {
 		cry->key = NULL;
 		cry->iv = NULL;
@@ -18,8 +20,11 @@ R_API struct r_crypto_t *r_crypto_init(struct r_crypto_t *cry, int hard)
 			// first call initializes the output_* variables
 			r_crypto_get_output(cry);
 			INIT_LIST_HEAD(&cry->plugins);
-			for(i=0;crypto_static_plugins[i];i++)
-				r_crypto_add(cry, crypto_static_plugins[i]);
+			for(i=0;crypto_static_plugins[i];i++) {
+				static_plugin = R_NEW (RCryptoPlugin);
+				memcpy (static_plugin, crypto_static_plugins[i], sizeof (RCryptoPlugin));
+				r_crypto_add(cry, static_plugin);
+			}
 		}
 	}
 	return cry;

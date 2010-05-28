@@ -17,12 +17,17 @@ R_API int r_cmd_plugin_add(struct r_cmd_t *cmd, struct r_cmd_plugin_t *plugin) {
 
 R_API int r_cmd_plugin_init(struct r_cmd_t *cmd) {
 	int i;
+	RCmdPlugin *static_plugin;
+
 	cmd->plist = r_list_new ();
-	for (i=0; cmd_static_plugins[i]; i++)
-		if (!r_cmd_plugin_add (cmd, cmd_static_plugins[i])) {
+	for (i=0; cmd_static_plugins[i]; i++) {
+		static_plugin = R_NEW (RCmdPlugin);
+		memcpy (static_plugin, cmd_static_plugins[i], sizeof (RCmdPlugin));
+		if (!r_cmd_plugin_add (cmd, static_plugin)) {
 			eprintf ("Error loading cmd plugin\n");
 			return R_FALSE;
 		}
+	}
 	return R_TRUE;
 }
 

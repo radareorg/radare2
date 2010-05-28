@@ -75,6 +75,7 @@ static void r_bin_init_items(RBin *bin) {
 		bin->symbols = bin->cur->symbols (bin);
 }
 
+/* TODO: Free plugins */
 static void r_bin_free_items(RBin *bin) {
 	if (bin->entries)
 		r_list_free (bin->entries);
@@ -225,14 +226,18 @@ R_API int r_bin_has_dbg_relocs (RBin *bin) {
 
 R_API RBin* r_bin_new() {
 	RBin *bin; 
+	RBinPlugin *static_plugin;
 	int i;
 
 	bin = R_NEW (RBin);
 	if (bin) {
 		memset (bin, 0, sizeof(RBin));
 		INIT_LIST_HEAD (&bin->bins);
-		for (i=0;bin_static_plugins[i];i++)
-			r_bin_add (bin, bin_static_plugins[i]);
+		for (i=0;bin_static_plugins[i];i++) {
+			static_plugin = R_NEW (RBinPlugin);
+			memcpy (static_plugin, bin_static_plugins[i], sizeof (RBinPlugin));
+			r_bin_add (bin, static_plugin);
+		}
 	}
 	return bin;
 }

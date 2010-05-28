@@ -5,73 +5,8 @@
 #include <r_anal.h>
 #include <r_list.h>
 #include <r_util.h>
-#include "gdiff.h"
-
-/* XXX Solve cross-dependency */
-#if 0 
 #include <r_core.h>
-/* XXX Fix r_cons and remove this functions (dupped) */
-static char *gdiff_graph_label(RCore *core, struct r_anal_bb_t *bb) {
-	char cmd[1024], *cmdstr = NULL, *str = NULL;
-	int i, j;
-
-	snprintf (cmd, sizeof (cmd), "pD %"PFMT64d" @ 0x%08"PFMT64x"", bb->size, bb->addr);
-	cmdstr = r_core_cmd_str (core, cmd);
-	if (cmdstr) {
-		if (!(str = malloc(strlen(cmdstr)*2)))
-			return NULL;
-		for(i=j=0;cmdstr[i];i++,j++) {
-			switch(cmdstr[i]) {
-				case 0x1b:
-					/* skip ansi chars */
-					for(i++;cmdstr[i]&&cmdstr[i]!='m'&&cmdstr[i]!='H'&&cmdstr[i]!='J';i++);
-					j--;
-					break;
-				case '"':
-					str[j]='\\';
-					str[++j]='"';
-					break;
-				case '\n':
-				case '\r':
-					str[j]='\\';
-					str[++j]='l';
-					break;
-				default:
-					str[j]=cmdstr[i];
-			}
-		}
-		str[j]='\0';
-		free (cmdstr);
-	}
-	return str;
-}
-
-static void gdiff_graph(RCore *core) {
-	struct r_anal_bb_t *bbi;
-	RListIter *iter;
-	char *str;
-
-	printf ("digraph code {\n"
-			"\tgraph [bgcolor=white];\n"
-			"\tnode [color=lightgray, style=filled shape=box"
-			" fontname=\"Courier\" fontsize=\"8\"];\n");
-	r_list_foreach (core->anal->bbs, iter, bbi) {
-		if (bbi->jump != -1) {
-			printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" [color=\"%s\"];\n", bbi->addr, bbi->jump,
-					bbi->fail != -1 ? "green" : "blue");
-		}
-		if (bbi->fail != -1) {
-			printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" [color=\"red\"];\n", bbi->addr, bbi->fail);
-		}
-		if ((str = gdiff_graph_label (core, bbi))) {
-			printf (" \"0x%08"PFMT64x"\" [color=%s,label=\"%s\"]\n", bbi->addr, 
-					bbi->diff==R_ANAL_DIFF_MATCH?"green":
-					bbi->diff==R_ANAL_DIFF_UNMATCH?"red":"lightgray",str);
-			free (str);
-		}
-	}
-	printf ("}\n");
-}
+#include "gdiff.h"
 
 /* XXX NEED A HASH ALGO */
 static ut32 gdiff_get_prime(char* mnemonic) {
@@ -255,47 +190,47 @@ static void gdiff_diff_fcn(RList *fcns, RList *fcns2, RList *bbs, RList *bbs2) {
 	r_big_free (fingerprint2);
 }
 
-R_API int r_diff_gdiff(char *file1, char *file2, int rad, int va) {
-	RCore *core;
+R_API int r_core_gdiff(RCore *core, char *file1, char *file2, int va) {
+	RCore *core2;
 	RAnalFcn *fcn;
 	RAnalBlock *bb;
 	RList *fcns[2], *bbs[2];
 	RListIter *iter;
-	char cmd[1024], *cmdret, *files[2] = {file1, file2};
+	char cmd[1024], *files[2] = {file1, file2};
 	int i;
 
 	/* Init resources  */
-	core = r_core_new ();
+	core2 = r_core_new ();
 
 	for (i = 0; i < 2; i++) {
 		/* Load and analyze bin*/
-		if (!r_core_file_open (core, files[i], 0)) {
+		if (!r_core_file_open (core2, files[i], 0)) {
 			fprintf (stderr, "Cannot open file '%s'\n", files[i]);
 			return R_FALSE;
 		}
-		r_config_set_i (core->config, "io.va", va);
+		r_config_set_i (core2->config, "io.va", va);
 		sprintf (cmd, ".!rabin2 -rSIeis%s %s", va?"v":"", files[i]);
-		r_core_cmd0 (core, cmd);
-		r_core_cmd0 (core, "ah x86_x86im");
-		r_core_cmd0 (core, "fs *");
-		r_core_cmd0 (core, "af @ entry0");
-		r_core_cmd0 (core, "af @@ fcn.");
-		r_core_cmd0 (core, "ab @@ fcn.");
+		r_core_cmd0 (core2, cmd);
+		r_core_cmd0 (core2, "ah x86_x86im");
+		r_core_cmd0 (core2, "fs *");
+		r_core_cmd0 (core2, "af @ entry0");
+		r_core_cmd0 (core2, "af @@ fcn.");
+		r_core_cmd0 (core2, "ab @@ fcn.");
 		/* Copy bb's and fcn's */
 		bbs[i] = r_list_new ();
 		bbs[i]->free = &r_anal_bb_free;
-		iter = r_list_iterator (core->anal->bbs);
+		iter = r_list_iterator (core2->anal->bbs);
 		while (r_list_iter_next (iter)) {
 			bb = r_list_iter_get (iter);
-			r_list_split (core->anal->bbs, bb);
+			r_list_split (core2->anal->bbs, bb);
 			r_list_append (bbs[i], bb);
 		}
 		fcns[i] = r_list_new ();
 		fcns[i]->free = &r_anal_fcn_free;
-		iter = r_list_iterator (core->anal->fcns);
+		iter = r_list_iterator (core2->anal->fcns);
 		while (r_list_iter_next (iter)) {
 			fcn = r_list_iter_get (iter);
-			r_list_split (core->anal->fcns, fcn);
+			r_list_split (core2->anal->fcns, fcn);
 			r_list_append (fcns[i], fcn);
 		}
 		/* Fingerprint bb's and fcn's */
@@ -304,60 +239,29 @@ R_API int r_diff_gdiff(char *file1, char *file2, int rad, int va) {
 		r_list_foreach (fcns[i], iter, fcn)
 			gdiff_fingerprint_fcn (bbs[i], fcn);
 		/* Remove flags and analysis info */
-		r_core_cmd0 (core, "af-");
-		r_core_cmd0 (core, "ab-");
-		r_core_cmd0 (core, "f-*");
+		r_core_cmd0 (core2, "af-");
+		r_core_cmd0 (core2, "ab-");
+		r_core_cmd0 (core2, "f-*");
 	}
 
 	/* Diff functions */
 	/* XXX Avoid dupped code diffing bb's directly? */
 	gdiff_diff_fcn (fcns[0], fcns[1], bbs[0], bbs[1]);
 
-	/* Output results */
-	if (!r_core_file_open (core, files[0], 0)) {
-		fprintf (stderr, "Cannot open file '%s'\n", files[0]);
-		return R_FALSE;
-	}
-
 	/* Fill analysis info in core */
 	iter = r_list_iterator (bbs[0]);
 	while (r_list_iter_next (iter)) {
 		bb = r_list_iter_get (iter);
-		r_list_split (bbs[0], bb);
-		r_list_append (core->anal->bbs, bb);
+		r_anal_bb_add (core->anal, bb->addr, bb->size, bb->jump, bb->fail, bb->type, bb->diff);
 	}
 	iter = r_list_iterator (fcns[0]);
 	while (r_list_iter_next (iter)) {
 		fcn = r_list_iter_get (iter);
-		r_list_split (fcns[0], fcn);
-		r_list_append (core->anal->fcns, fcn);
-	}
-
-	if (rad) { 
-		/* Print f2 cmds */
-		cmdret = r_core_cmd_str (core, "ab*");
-		if (cmdret) {
-			printf ("%s", cmdret);
-			free (cmdret);
-		}
-		cmdret = r_core_cmd_str (core, "af*");
-		if (cmdret) {
-			printf ("%s", cmdret);
-			free (cmdret);
-		}
-	} else {
-		/* Print graph */
-		r_config_set_i (core->config, "io.va", va);
-		sprintf (cmd, ".!rabin2 -rSIeisv %s", files[0]);
-		r_config_set_i (core->config, "asm.lines", 0);
-		r_config_set_i (core->config, "asm.bytes", 0);
-		r_config_set_i (core->config, "asm.dwarf", 0);
-		gdiff_graph (core);
-		//XXX r_core_anal_graph (core, 0, R_CORE_ANAL_GRAPHBODY);
+		r_anal_fcn_add (core->anal, fcn->addr, fcn->size, fcn->name, fcn->diff);
 	}
 
 	/* Free resources */
-	r_core_free (core);
+	r_core_free (core2);
 	for (i=0;i<2;i++) {
 		r_list_free (bbs[i]);
 		r_list_free (fcns[i]);
@@ -365,8 +269,3 @@ R_API int r_diff_gdiff(char *file1, char *file2, int rad, int va) {
 
 	return R_TRUE;
 }
-#else
-R_API int r_diff_gdiff(char *file1, char *file2, int rad, int va) {
-	return R_FALSE;
-}
-#endif 

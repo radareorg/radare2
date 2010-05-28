@@ -46,7 +46,10 @@ static inline int r_asm_pseudo_byte(struct r_asm_aop_t *aop, char *input) {
 
 R_API RAsm *r_asm_new() {
 	int i;
-	RAsm *a = R_NEW (RAsm);
+	RAsm *a;
+	RAsmPlugin *static_plugin;
+	
+	a = R_NEW (RAsm);
 	if (a) {
 		a->user = NULL;
 		a->cur = NULL;
@@ -55,14 +58,17 @@ R_API RAsm *r_asm_new() {
 		a->syntax = R_ASM_SYNTAX_INTEL;
 		a->pc = 0;
 		a->plugins = r_list_new ();
-		for (i=0; asm_static_plugins[i]; i++)
-			r_asm_add (a, asm_static_plugins[i]);
+		for (i=0; asm_static_plugins[i]; i++) {
+			static_plugin = R_NEW (RAsmPlugin);
+			memcpy (static_plugin, asm_static_plugins[i], sizeof (RAsmPlugin));
+			r_asm_add (a, static_plugin);
+		}
 	}
 	return a;
 }
 
 R_API void r_asm_free(RAsm *a) {
-	// TOOD: free plugins and so on
+	// TODO: free plugins and so on
 	free(a);
 }
 

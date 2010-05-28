@@ -128,9 +128,13 @@ R_API int r_core_anal_fcn_list(struct r_core_t *core, int rad);
 R_API int r_core_anal_graph(struct r_core_t *core, ut64 addr, int opts);
 R_API int r_core_anal_graph_fcn(struct r_core_t *core, char *input, int opts);
 
+/* gdiff.c */
+R_API int r_core_gdiff(struct r_core_t *core, char *file1, char *file2, int va);
+
 R_API int r_core_project_open(RCore *core, const char *file);
 R_API int r_core_project_save(RCore *core, const char *file);
 R_API char *r_core_project_info(RCore *core, const char *file);
+
 #endif
 
 #endif

@@ -8,6 +8,7 @@ static struct r_bp_plugin_t *bp_static_plugins[] =
 
 R_API RBreakpoint *r_bp_new() {
 	RBreakpoint *bp;
+	RBreakpointPlugin *static_plugin;
 	int i;
 
 	bp = R_NEW (RBreakpoint);
@@ -21,8 +22,11 @@ R_API RBreakpoint *r_bp_new() {
 		bp->traces = r_bp_traptrace_new ();
 		INIT_LIST_HEAD (&bp->bps);
 		INIT_LIST_HEAD (&bp->plugins);
-		for (i=0; bp_static_plugins[i]; i++)
-			r_bp_plugin_add (bp, bp_static_plugins[i]);
+		for (i=0; bp_static_plugins[i]; i++) {
+			static_plugin = R_NEW (RBreakpointPlugin);
+			memcpy (static_plugin, bp_static_plugins[i], sizeof (RBreakpointPlugin));
+			r_bp_plugin_add (bp, static_plugin);
+		}
 		memset (&bp->iob, 0, sizeof(bp->iob));
 	}
 	return bp;

@@ -21,6 +21,7 @@ static RAnalVarType anal_default_vartypes[] =
 
 R_API RAnal *r_anal_new() {
 	RAnal *anal;
+	RAnalPlugin *static_plugin;
 	int i;
 
 	anal = R_NEW (RAnal);
@@ -32,8 +33,11 @@ R_API RAnal *r_anal_new() {
 		r_anal_set_bits (anal, 32);
 		r_anal_set_big_endian (anal, R_FALSE);
 		INIT_LIST_HEAD (&anal->anals);
-		for (i=0; anal_static_plugins[i]; i++)
-			r_anal_add (anal, anal_static_plugins[i]);
+		for (i=0; anal_static_plugins[i]; i++) {
+			static_plugin = R_NEW (RAnalPlugin);
+			memcpy (static_plugin, anal_static_plugins[i], sizeof (RAnalPlugin));
+			r_anal_add (anal, static_plugin);
+		}
 		for (i=0; anal_default_vartypes[i].name; i++)
 			r_anal_var_type_add (anal, anal_default_vartypes[i].name,
 					anal_default_vartypes[i].size, anal_default_vartypes[i].fmt);

@@ -26,10 +26,15 @@ R_API int r_io_plugin_add(struct r_io_t *io, struct r_io_plugin_t *plugin) {
 }
 
 R_API int r_io_plugin_init(struct r_io_t *io) {
+	RIOPlugin *static_plugin;
 	int i;
+
 	INIT_LIST_HEAD(&io->io_list);
-	for (i=0;io_static_plugins[i];i++)
-		r_io_plugin_add (io, io_static_plugins[i]);
+	for (i=0;io_static_plugins[i];i++) {
+		static_plugin = R_NEW (RIOPlugin);
+		memcpy (static_plugin, io_static_plugins[i], sizeof (RIOPlugin));
+		r_io_plugin_add (io, static_plugin);
+	}
 	return R_TRUE;
 }
 

@@ -1100,11 +1100,7 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 #endif
 	case 'g':
-		{
-		char cmd[512];
-		snprintf (cmd, sizeof (cmd), ".!radiff2 -rg%s %s %s", core->io->va?"v":"", core->file->filename, input+1);
-		r_core_cmd_str (core, cmd);
-		}
+		r_core_gdiff (core, core->file->filename, input+2, core->io->va);
 		break;
 	case '?':
 		r_cons_strcat (
