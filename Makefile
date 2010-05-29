@@ -40,6 +40,7 @@ install: install-man
 	${INSTALL_DIR} ${DESTDIR}${PREFIX}/share/doc/radare2
 	for a in doc/* ; do ${INSTALL_DATA} $$a ${DESTDIR}/${PREFIX}/share/doc/radare2 ; done
 	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd binr && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd r2rc && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
 symstall install-symlink:

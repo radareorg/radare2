@@ -6,15 +6,12 @@ BINDEPS+=r_parse r_lang r_debug r_print r_line r_bin r_search r_meta r_reg r_bp 
 CFLAGS+=-DVERSION=\"${VERSION}\"
 CFLAGS+=-g -I../../include
 
-all: test${EXT_EXE} radiff2${EXT_EXE}
+all: test${EXT_EXE}
 
 test${EXT_EXE}: test.o
 	${CC} ${CFLAGS} test.o ${LDFLAGS} -o test${EXT_EXE}
 
-radiff2${EXT_EXE}: radiff2.o
-	${CC} ${CFLAGS} radiff2.c ${LDFLAGS} -o radiff2${EXT_EXE}
-
 myclean:
-	rm -f test${EXT_EXE} test.o radiff2${EXT_EXE} radiff2.o
+	rm -f test${EXT_EXE} test.o
 
 include ../../rules.mk

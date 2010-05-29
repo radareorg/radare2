@@ -2,7 +2,7 @@ include ../config-user.mk
 
 .PHONY: all clean
 
-BINS=rabin2
+BINS=rax2 rasm2 rabin2 rahash2 radiff2 radare2
 
 all:
 	@for a in ${BINS} ; do (cd $$a && ${MAKE} all); done
