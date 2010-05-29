@@ -6,13 +6,8 @@ PFX=${DESTDIR}${PREFIX}
 #PREFIX=${PFX}
 
 # Libraries
-LIBLIST=util line cons line lib io meta lang flags bin hash config syscall socket
-LIBLIST+=cmd asm anal print parse search diff bp reg sign vm th db debug core diff
-
-# Under development
-#LIBLIST+=print
-#LIBLIST+=util
-#LIBLIST+=search
+LIBLIST=util line cons lib io meta lang flags bin hash config syscall socket
+LIBLIST+=cmd asm anal print parse search diff bp reg sign vm th db debug core
 
 # TODO : generate single library linking against the rest
 #LIBSO=libr.so
@@ -67,24 +62,6 @@ install-includes:
 	@${INSTALL_DIR} ${PFX}/include/libr
 	(cd include && ${INSTALL_DATA} * ${PFX}/include/libr)
 
-install-bins:
-	# programs
-	@${INSTALL_DIR} ${PFX}/bin
-	@for a in `find */t -perm -u+x -type f | grep 2`; \
-	do echo "$$a ${PFX}/bin"; \
-	  ${INSTALL_PROGRAM} $$a ${PFX}/bin ; \
-	done
-	# shortcut
-	-cd ${PFX}/bin && rm -f r2 ; ln -fs radare2 r2
-
-install-test-bins:
-	# test programs
-	@${INSTALL_DIR} ${PFX}/lib/radare2/test
-	@for a in `find */t -perm -u+x -type f | grep -v 2`; \
-	  do echo "$$a ${PFX}/lib/radare2/test" ; \
-	  ${INSTALL_PROGRAM} $$a ${PFX}/lib/radare2/test ; \
-	done
-
 install-symlink:
 	mkdir -p ${PFX}/bin
 	mkdir -p ${PFX}/include
@@ -104,7 +81,7 @@ install-symlink:
 		done ; \
 	done
 
-install: install-includes install-pkgconfig install-bins install-test-bins
+install: install-includes install-pkgconfig
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
 	# libraries
 	@${INSTALL_DIR} ${PFX}/lib
@@ -116,28 +93,27 @@ install: install-includes install-pkgconfig install-bins install-test-bins
 	@for a in `find * | grep -e '\.a$$'` ; do \
 	echo "$$a ${PFX}/lib"; ${INSTALL_DATA} $$a ${PFX}/lib ; done
 	# plugins
-	#${INSTALL_DATA} libr.pc ${PFX}/lib/pkgconfig
 	@${INSTALL_DIR} ${PFX}/lib/radare2
 	@for a in `find */p -perm -u+x -type f`; \
 	do echo "$$a ${PFX}/lib/radare2"; \
 	${INSTALL_DATA} $$a ${PFX}/lib/radare2 ; done
 	${INSTALL_DATA} lang/p/radare.* ${PFX}/lib/radare2
 	echo "lang/p/radare.* ${PFX}/lib/radare2"
-	# strip rpath from ALL bins
-	./rpathstrip.sh ${PFX}
+	# strip rpath from ALL bins ONLY in Linux
+	[ "`uname`" = Linux ] && ./rpathstrip.sh ${PFX}
 
 deinstall uninstall:
 	# libraries
 	-@for a in `find * | grep -e '\.${EXT_SO}$$' | grep -v 'lib/t' | grep lib` ; do \
 	a=`echo $$a | awk -F / '{ print $$NF; }'`; \
 	echo ${PREFIX}/lib/$$a ; rm -f ${PREFIX}/lib/$$a ; done
-	### object archives
+	# object archives
 	-@for a in `find * | grep -e '\.a$$'` ; do \
 	a=`echo $$a | awk -F / '{ print $$NF; }'`; \
 	echo ${PREFIX}/lib/$$a ; rm -f ${PREFIX}/lib/$$a ; done
-	### includes
+	# includes
 	-(cd include && for a in * ; do rm -f ${PREFIX}/libr/$$a ; done)
-	### programs
+	# programs
 	-@for a in `find */t -perm -u+x -type f | grep 2`; do \
 	a=`echo $$a|awk -F / '{ print $$NF; }'`; \
 	echo ${PREFIX}/bin/$$a ; rm -f ${PREFIX}/bin/$$a ; done
@@ -149,14 +125,8 @@ deinstall uninstall:
 	rm -f ${PREFIX}/lib/pkgconfig/libr.pc
 	rm -f ${PREFIX}/lib/pkgconfig/r_*.pc
 	# test programs
-	-@for a in `find */t -perm -u+x -type f | grep -v 2`; do \
-	a="${PREFIX}/bin/libr-test/`echo $$a|awk -F / '{ print $$NF; }'`"; \
-	echo $$a ; rm -f $$a ; done
 	rm -rf ${PREFIX}/bin/libr-test
 	@echo libr aka radare2 has been uninstalled from PREFIX=${PREFIX}
-
-todo:
-	grep -re TODO -e XXX *
 
 clean:
 	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} clean ); done
@@ -168,4 +138,4 @@ mrproper: clean
 sloc:
 	${MAKE} -C .. sloc SLOCDIR=libr
 
-.PHONY: sloc mrproper clean todo all pkgcfg install deinstall uninstall libr
+.PHONY: sloc mrproper clean all pkgcfg install deinstall uninstall libr

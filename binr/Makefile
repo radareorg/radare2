@@ -9,6 +9,8 @@ all:
 
 install:
 	for a in ${BINS} ; do ${INSTALL_PROGRAM} $$a/$$a ${DESTDIR}/${PREFIX}/bin ; done
+	# shortcut
+	-cd ${PFX}/bin && rm -f r2 ; ln -fs radare2 r2
 
 clean:
 	@for a in ${BINS} ; do (cd $$a && ${MAKE} clean); done

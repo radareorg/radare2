@@ -11,7 +11,6 @@ all: fastcall${EXT_EXE}
 
 fastcall${EXT_EXE}: fastcall.o
 	${CC} fastcall.o ${LDPATH} ${LDFLAGS} -o fastcall${EXT_EXE} 
-	@#-Wl,-R.. -L.. -lr_asm -o fastcall
 
 myclean:
 	rm -f fastcall fastcall.o
