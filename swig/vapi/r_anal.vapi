@@ -5,20 +5,20 @@
 
 namespace Radare {
 [Compact]
-[CCode (cheader_filename="r_anal.h", cprefix="r_anal_", lowercase_c_prefix="r_anal_", free_function="r_anal_free", cname="RAnal")]
+[CCode (cheader_filename="r_anal.h,r_list.h,r_types_base.h", cprefix="r_anal_", lowercase_c_prefix="r_anal_", free_function="r_anal_free", cname="RAnal")]
 public class RAnal {
 	public int bits;
 	public bool big_endian;
 	public void *user;
-	public RList <Block> bbs;
-	public RList <Fcn> fcns;
-	public RList <VarType> vartypes;
+	public RList<RAnal.Block> bbs;
+	public RList<RAnal.Fcn> fcns;
+	public RList<RAnal.VarType> vartypes;
 
 	public RAnal ();
 	public bool set_bits (int bits);
 	public bool set_big_endian (bool big);
 	//public bool set_pc (uint64 addr);
-	public RList<Block> fcn_bb_list(Fcn fun);
+	public RList<RAnal.Block> fcn_bb_list(Fcn fun);
 
 	[CCode (cprefix="R_ANAL_OP_COND_")]
 	public enum OpCond {
@@ -144,10 +144,10 @@ public class RAnal {
 		public uint64 fail;
 		public BlockType type;
 		public BlockDiff diff;
-		public RList<Op> aops;
+		public RList<RAnal.Op> aops;
 	}
-	public bool bb_split(Block bb, RList<Block> bbs, uint64 addr);
-	public bool bb_overlap(Block bb, RList<Block> bbs);
+	public bool bb_split(Block bb, RList<RAnal.Block> bbs, uint64 addr);
+	public bool bb_overlap(Block bb, RList<RAnal.Block> bbs);
 
 	[Compact]
 	[CCode (cprefix="r_anal_aop_", cname="RAnalOp")]
@@ -171,7 +171,7 @@ public class RAnal {
 		public string name;
 		public uint64 addr;
 		public uint64 size;
-		public RList<Var> vars;
+		public RList<RAnal.Var> vars;
 		public RList<uint64> refs;
 		public RList<uint64> xrefs;
 	}
@@ -182,7 +182,7 @@ public class RAnal {
 		public string name;
 		public int delta;
 		public int type;
-		public RList<VarAccess> accesses;
+		public RList<RAnal.VarAccess> accesses;
 	}
 
 	[Compact]
@@ -191,7 +191,7 @@ public class RAnal {
 		public string name;
 		public int delta;
 		public int type;
-		public RList<VarAccess> accessess;
+		public RList<RAnal.VarAccess> accessess;
 	}
 
 /*

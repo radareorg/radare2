@@ -1,9 +1,8 @@
 /* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
 
-[CCode (cheader_filename="r_bin.h,r_list.h,r_types_base.h", cprefix="r_bin_", lower_case_cprefix="r_bin_")]
 namespace Radare {
 	[Compact]
-	[CCode (cname="RBin", free_function="r_bin_free", cprefix="r_bin_")]
+	[CCode (cheader_filename="r_bin.h,r_list.h,r_types_base.h", cname="struct r_bin_t", free_function="r_bin_free", cprefix="r_bin_")]
 	public class RBin {
 		public const string file;
 		public int size;

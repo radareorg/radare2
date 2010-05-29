@@ -7,7 +7,7 @@ PFX=${DESTDIR}${PREFIX}
 
 # Libraries
 LIBLIST=util line cons lib io meta lang flags bin hash config syscall socket
-LIBLIST+=cmd asm anal print parse search diff bp reg sign vm th db debug core
+LIBLIST+=cmd asm anal print parse search diff bp reg sign vm th db crypto debug core
 
 # TODO : generate single library linking against the rest
 #LIBSO=libr.so

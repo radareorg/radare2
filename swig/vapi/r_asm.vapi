@@ -2,7 +2,7 @@
 
 namespace Radare {
 [Compact]
-[CCode (cheader_filename="r_asm.h,r_list.h,r_types_base.h", cname="struct r_asm_t", free_function="r_asm_free", cprefix="r_asm_")]
+[CCode (cheader_filename="r_asm.h", cname="struct r_asm_t", free_function="r_asm_free", cprefix="r_asm_")]
 public class RAsm {
 	[CCode (cprefix="R_ASM_ARCH_", cname="int")]
 	public enum Arch {
@@ -66,7 +66,7 @@ public class RAsm {
 	public string buf_err;
 	public void *aux;
 
-	public RList<Plugin> plugins;
+	public RList<RAsm.Plugin> plugins;
 	public RAsm();
 	public bool use(string name);
 	public bool set_bits(int bits);

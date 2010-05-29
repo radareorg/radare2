@@ -4,6 +4,7 @@
 |_|\__|_|__|___/|_|_|_|\__\___/ |_____(_)____/
 
 
+* generate accessors automatically from valaswig
 * install.sh (to track installed files ..)
 * add support for asm.trace (show and trace register
   changes and per-opcode execution count (RRange)
