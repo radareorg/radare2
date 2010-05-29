@@ -60,7 +60,6 @@
 #define	_INCLUDE_ELF_SPECS_H
 
 #define ELF_STRING_LENGTH 256
-#define ELF_ADDR_MASK   0xFFFFFFFFFFFF8000LL
 #define ELF_GOTOFF_MASK 0xFFFFFFFFFFFFF000LL
 
 /* Type for a 16-bit quantity.  */

@@ -47,6 +47,8 @@ static int Elf_(r_bin_elf_init_ehdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 static int Elf_(r_bin_elf_init_phdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int phdr_size, len;
 
+	if (bin->ehdr.e_phnum == 0)
+		return R_FALSE;
 	phdr_size = bin->ehdr.e_phnum * sizeof (Elf_(Phdr));
 	if ((bin->phdr = (Elf_(Phdr) *)malloc (phdr_size)) == NULL) {
 		perror ("malloc (phdr)");
@@ -190,9 +192,14 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 }
 
 ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	int i;
+
 	if (!bin->phdr)
-		return -1;
-	return bin->phdr->p_vaddr & ELF_ADDR_MASK;
+		return 0;
+	for (i = 0; i < bin->ehdr.e_phnum; i++)
+		if (bin->phdr[i].p_type == PT_LOAD && bin->phdr[i].p_offset == 0)
+			return (ut64)bin->phdr[i].p_vaddr;
+	return 0;
 }
 
 ut64 Elf_(r_bin_elf_get_entry_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
@@ -536,14 +543,17 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 	Elf_(Sym) *sym;
 	struct r_bin_elf_symbol_t *ret = NULL;
 	char *strtab;
-	ut64 sym_offset, toffset;
+	ut64 sym_offset = 0, data_offset = 0, toffset;
 	int tsize, nsym, ret_ctr, i, j, k, len;
 
-	if (!bin->shdr)
+	if (!bin->shdr || bin->ehdr.e_shnum == 0)
 		return NULL;
-	sym_offset = (bin->ehdr.e_type == ET_REL ? Elf_(r_bin_elf_get_section_offset)(bin, ".text") : 0);
-	if (bin->ehdr.e_shnum == 0)
-		return NULL;
+	if (bin->ehdr.e_type == ET_REL) {
+		if ((sym_offset = Elf_(r_bin_elf_get_section_offset)(bin, ".text")) == -1)
+			sym_offset = 0;
+		if ((data_offset = Elf_(r_bin_elf_get_section_offset)(bin, ".rodata")) == -1)
+			data_offset = 0;
+	}
 	for (i = 0; i < bin->ehdr.e_shnum; i++)
 		if ((type == R_BIN_ELF_IMPORTS &&
 				bin->shdr[i].sh_type == (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM)) ||
@@ -585,7 +595,8 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 					tsize = 0;
 				} else if (type == R_BIN_ELF_SYMBOLS && sym[k].st_shndx != STN_UNDEF &&
 						ELF_ST_TYPE(sym[k].st_info) != STT_SECTION && ELF_ST_TYPE(sym[k].st_info) != STT_FILE) {
-					toffset = (ut64)sym[k].st_value + sym_offset;
+					toffset = (ut64)sym[k].st_value +
+						(ELF_ST_TYPE(sym[k].st_info) == STT_FUNC?sym_offset:data_offset);
 					tsize = sym[k].st_size;
 				} else continue;
 				if ((ret = realloc (ret, (ret_ctr + 1) * sizeof (struct r_bin_elf_symbol_t))) == NULL) {
