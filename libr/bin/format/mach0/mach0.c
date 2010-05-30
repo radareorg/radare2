@@ -446,14 +446,14 @@ struct r_bin_mach0_import_t* MACH0_(r_bin_mach0_get_imports)(struct MACH0_(r_bin
 	return imports;
 }
 
-struct r_bin_mach0_entrypoint_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bin_mach0_obj_t)* bin)
+struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 {
-	struct r_bin_mach0_entrypoint_t *entry;
+	struct r_bin_mach0_addr_t *entry;
 	int i;
 
 	if (!bin->entry && !bin->sects)
 		return NULL;
-	if (!(entry = malloc(sizeof(struct r_bin_mach0_entrypoint_t))))
+	if (!(entry = malloc(sizeof(struct r_bin_mach0_addr_t))))
 		return NULL;
 	if (bin->entry) {
 		entry->offset = MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry);

@@ -261,11 +261,11 @@ char* PE_(r_bin_pe_get_arch)(struct PE_(r_bin_pe_obj_t)* bin)
 	return arch;
 }
 
-struct r_bin_pe_entrypoint_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)* bin)
+struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)* bin)
 {
-	struct r_bin_pe_entrypoint_t *entry = NULL;
+	struct r_bin_pe_addr_t *entry = NULL;
 
-	if ((entry = malloc(sizeof(struct r_bin_pe_entrypoint_t))) == NULL) {
+	if ((entry = malloc(sizeof(struct r_bin_pe_addr_t))) == NULL) {
 		perror("malloc (entrypoint)");
 		return NULL;
 	}

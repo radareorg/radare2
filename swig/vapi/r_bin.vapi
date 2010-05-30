@@ -12,7 +12,8 @@ namespace Radare {
 		public int load(string file, string? plugin_name = null);
 		public int list();
 		public uint64 get_baddr();
-		public RList<RBin.Entry> get_entries();
+		public RBin.Addr get_main();
+		public RList<RBin.Addr> get_entries();
 		public RList<RBin.Field> get_fields();
 		public RList<RBin.Import> get_imports();
 		public RList<RBin.Section> get_sections();
@@ -28,8 +29,8 @@ namespace Radare {
 		public int meta_get_line(uint64 addr, ref string file, int len, out int line);
 		public string meta_get_source_line(uint64 addr);
 	
-		[CCode (cname="RBinEntry", free_function="", ref_function="", unref_function="")]
-		public class Entry {
+		[CCode (cname="RBinAddr", free_function="", ref_function="", unref_function="")]
+		public class Addr {
 			public uint64 rva;
 			public uint64 offset;
 		}

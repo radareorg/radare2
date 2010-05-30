@@ -56,6 +56,8 @@ static void r_bin_init_items(RBin *bin) {
 		return;
 	if (bin->cur->baddr)
 		bin->baddr = bin->cur->baddr (bin);
+	if (bin->cur->main)
+		bin->main = bin->cur->main (bin);
 	if (bin->cur->entries)
 		bin->entries = bin->cur->entries (bin);
 	if (bin->cur->fields)
@@ -149,6 +151,10 @@ R_API int r_bin_load(RBin *bin, const char *file, const char *plugin_name) {
 // remove this getters.. we have no threads or mutexes to protect here
 R_API ut64 r_bin_get_baddr(RBin *bin) {
 	return bin->baddr;
+}
+
+R_API RBinAddr* r_bin_get_main(RBin *bin) {
+	return bin->main;
 }
 
 R_API RList* r_bin_get_entries(RBin *bin) {

@@ -36,6 +36,7 @@ struct r_bin_plugin_t r_bin_plugin_dummy = {
 	.destroy = &destroy,
 	.check = NULL,
 	.baddr = &baddr,
+	.main = NULL,
 	.entries = NULL,
 	.sections = NULL,
 	.symbols = NULL,

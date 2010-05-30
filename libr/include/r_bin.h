@@ -26,6 +26,7 @@ typedef struct r_bin_t {
 	int size;
 	void *bin_obj;
 	ut64 baddr;
+	struct r_bin_addr_t *main;
 	struct r_bin_info_t *info;
 	RList* entries;
 	RList* sections;
@@ -49,6 +50,7 @@ typedef struct r_bin_plugin_t {
 	int (*destroy)(RBin *bin);
 	int (*check)(RBin *bin);
 	ut64 (*baddr)(RBin *bin);
+	struct r_bin_addr_t* (*main)(RBin *bin);
 	RList* (*entries)(RBin *bin);
 	RList* (*sections)(RBin *bin);
 	RList* (*symbols)(RBin *bin);
@@ -62,10 +64,10 @@ typedef struct r_bin_plugin_t {
 	struct list_head list;
 } RBinPlugin;
 
-typedef struct r_bin_entry_t {
+typedef struct r_bin_addr_t {
 	ut64 rva;
 	ut64 offset;
-} RBinEntry;
+} RBinAddr;
 
 typedef struct r_bin_section_t {
 	char name[R_BIN_SIZEOF_STRINGS];
@@ -143,6 +145,7 @@ R_API void* r_bin_free(RBin *bin);
 R_API int r_bin_list(RBin *bin);
 R_API int r_bin_load(RBin *bin, const char *file, const char *plugin_name);
 R_API ut64 r_bin_get_baddr(RBin *bin);
+R_API RBinAddr* r_bin_get_main(RBin *bin);
 R_API RList* r_bin_get_entries(RBin *bin);
 R_API RList* r_bin_get_fields(RBin *bin);
 R_API RList* r_bin_get_imports(RBin *bin);

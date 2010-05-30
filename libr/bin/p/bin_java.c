@@ -21,14 +21,14 @@ static int destroy(RBin *bin) {
 
 static RList* entries(RBin *bin) {
 	RList *ret;
-	RBinEntry *ptr = NULL;
+	RBinAddr *ptr = NULL;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(ptr = R_NEW (RBinEntry)))
+	if (!(ptr = R_NEW (RBinAddr)))
 		return ret;
-	memset (ptr, '\0', sizeof (RBinEntry));
+	memset (ptr, '\0', sizeof (RBinAddr));
 	ptr->offset = ptr->rva = r_bin_java_get_entrypoint (bin->bin_obj);
 	r_list_append (ret, ptr);
 	return ret;
@@ -132,6 +132,7 @@ struct r_bin_plugin_t r_bin_plugin_java = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.main = NULL,
 	.entries = &entries,
 	.sections = NULL,
 	.symbols = &symbols,

@@ -27,6 +27,7 @@
 #define ACTION_FIELDS    0x0100 
 #define ACTION_LIBS      0x0200 
 #define ACTION_SRCLINE   0x0400 
+#define ACTION_MAIN      0x0800 
 
 static struct r_lib_t *l;
 static struct r_bin_t *bin = NULL;
@@ -39,6 +40,7 @@ static char* output = "a.out";
 static int rabin_show_help() {
 	printf ("rabin2 [options] [file]\n"
 		" -e          Entrypoint\n"
+		" -M          Main\n"
 		" -i          Imports (symbols imported from libraries)\n"
 		" -s          Symbols (exports)\n"
 		" -S          Sections\n"
@@ -62,7 +64,7 @@ static int rabin_show_help() {
 static int rabin_show_entrypoints() {
 	RList *entries;
 	RListIter *iter;
-	RBinEntry *entry;
+	RBinAddr *entry;
 	int i = 0;
 
 	ut64 baddr = r_bin_get_baddr (bin);
@@ -83,6 +85,25 @@ static int rabin_show_entrypoints() {
 	}
 
 	if (!rad) printf("\n%i entrypoints\n", i);
+
+	return R_TRUE;
+}
+
+static int rabin_show_main() {
+	RBinAddr *binmain;
+
+	ut64 baddr = r_bin_get_baddr (bin);
+
+	if ((binmain = r_bin_get_main (bin)) == NULL)
+		return R_FALSE;
+
+	if (rad) printf ("fs symbols\n");
+	else printf ("[Main]\n");
+
+	if (rad) {
+		printf ("f main @ 0x%08"PFMT64x"\n", va?baddr+binmain->rva:binmain->offset);
+	} else printf ("address=0x%08"PFMT64x" offset=0x%08"PFMT64x"\n",
+			baddr+binmain->rva, binmain->offset);
 
 	return R_TRUE;
 }
@@ -531,7 +552,7 @@ int main(int argc, char **argv)
 		r_lib_opendir (l, LIBDIR"/radare2/");
 	}
 
-	while ((c = getopt (argc, argv, "m:@:VisSzIHelwO:o:f:rvLh")) != -1) {
+	while ((c = getopt (argc, argv, "Mm:@:VisSzIHelwO:o:f:rvLh")) != -1) {
 		switch(c) {
 		case 'm':
 			at = r_num_math (NULL, optarg);
@@ -556,6 +577,9 @@ int main(int argc, char **argv)
 			break;
 		case 'e':
 			action |= ACTION_ENTRIES;
+			break;
+		case 'M':
+			action |= ACTION_MAIN;
 			break;
 		case 'l':
 			action |= ACTION_LIBS;
@@ -611,6 +635,8 @@ int main(int argc, char **argv)
 		rabin_show_sections (at);
 	if (action&ACTION_ENTRIES)
 		rabin_show_entrypoints ();
+	if (action&ACTION_MAIN)
+		rabin_show_main ();
 	if (action&ACTION_IMPORTS)
 		rabin_show_imports (at);
 	if (action&ACTION_SYMBOLS)

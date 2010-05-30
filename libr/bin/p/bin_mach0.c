@@ -25,16 +25,16 @@ static ut64 baddr(RBin *bin) {
 
 static RList* entries(RBin *bin) {
 	RList *ret;
-	RBinEntry *ptr = NULL;
-	struct r_bin_mach0_entrypoint_t *entry = NULL;
+	RBinAddr *ptr = NULL;
+	struct r_bin_mach0_addr_t *entry = NULL;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
 	if (!(entry = MACH0_(r_bin_mach0_get_entrypoint) (bin->bin_obj)))
 		return ret;
-	if ((ptr = R_NEW (RBinEntry))) {
-		memset (ptr, '\0', sizeof (RBinEntry));
+	if ((ptr = R_NEW (RBinAddr))) {
+		memset (ptr, '\0', sizeof (RBinAddr));
 		ptr->offset = entry->offset;
 		ptr->rva = entry->addr;
 		r_list_append (ret, ptr);
@@ -203,6 +203,7 @@ struct r_bin_plugin_t r_bin_plugin_mach0 = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.main = NULL,
 	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,

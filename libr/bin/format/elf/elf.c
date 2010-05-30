@@ -208,6 +208,28 @@ ut64 Elf_(r_bin_elf_get_entry_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	return bin->ehdr.e_entry - bin->baddr; 
 }
 
+ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
+	ut8 buf[7];
+
+#if R_BIN_ELF64
+	if (r_buf_read_at (bin->b, entry+29, buf, 7) == -1) {
+		eprintf ("Error: read (entry)\n");
+		return 0;
+	}
+	if (!memcmp (buf, "\x48\xc7\xc7", 3))
+		return (ut64)((int)(buf[3]+(buf[4]<<8)+(buf[5]<<16)+(buf[6]<<24)))-bin->baddr;
+#else
+	if (r_buf_read_at (bin->b, entry+23, buf, 5) == -1) {
+		eprintf ("Error: read (entry)\n");
+		return 0;
+	}
+	if (buf[0] == '\x68')
+		return (ut64)((int)(buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24)))-bin->baddr;
+#endif
+	return 0;
+}
+
 int Elf_(r_bin_elf_get_stripped)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
 	

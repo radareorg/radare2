@@ -23,16 +23,26 @@ static ut64 baddr(RBin *bin) {
 	return Elf_(r_bin_elf_get_baddr) (bin->bin_obj);
 }
 
+static RBinAddr* binmain(RBin *bin) {
+	RBinAddr *ret = NULL;
+
+	if (!(ret = R_NEW (RBinAddr)))
+		return NULL;
+	memset (ret, '\0', sizeof (RBinAddr));
+	ret->offset = ret->rva = Elf_(r_bin_elf_get_main_offset) (bin->bin_obj);
+	return ret;
+}
+
 static RList* entries(RBin *bin) {
 	RList *ret;
-	RBinEntry *ptr = NULL;
+	RBinAddr *ptr = NULL;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(ptr = R_NEW (RBinEntry)))
+	if (!(ptr = R_NEW (RBinAddr)))
 		return ret;
-	memset (ptr, '\0', sizeof (RBinEntry));
+	memset (ptr, '\0', sizeof (RBinAddr));
 	ptr->offset = ptr->rva = Elf_(r_bin_elf_get_entry_offset) (bin->bin_obj);
 	r_list_append (ret, ptr);
 	return ret;
@@ -244,6 +254,7 @@ struct r_bin_plugin_t r_bin_plugin_elf = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.main = &binmain,
 	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,

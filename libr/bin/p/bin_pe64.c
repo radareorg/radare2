@@ -28,6 +28,7 @@ struct r_bin_plugin_t r_bin_plugin_pe64 = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.main = NULL,
 	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,

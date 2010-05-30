@@ -28,6 +28,7 @@ struct r_bin_plugin_t r_bin_plugin_elf64 = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.main = &binmain,
 	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,
