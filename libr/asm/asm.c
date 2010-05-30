@@ -237,6 +237,19 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, ut8 *buf, ut64 len) {
 	return acode;
 }
 
+R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, const char *hexstr) {
+	RAsmCode *ret;
+	ut8 *buf;
+	int len;
+
+	if (!(buf = malloc (strlen (hexstr))))
+		return NULL;
+	len = r_hex_str2bin (hexstr, buf);
+	ret = r_asm_mdisassemble (a, buf, len);
+	free (buf);
+	return ret;
+}
+
 R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL,
 		 *tokens[R_ASM_BUFSIZE], buf_token[R_ASM_BUFSIZE];

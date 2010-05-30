@@ -77,6 +77,7 @@ public class RAsm {
 	public int disassemble(out Aop aop, uint8 *buf, uint64 length);
 	public int assemble(out Aop aop, string buf);
 	public Code? mdisassemble(uint8 *buf, uint64 length);
+	public Code? mdisassemble_hexstr(string hexstr);
 	public Code? massemble(string buf);
 	public unowned string fastcall(int idx, int num);
 

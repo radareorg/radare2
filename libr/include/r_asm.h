@@ -112,6 +112,7 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc);
 R_API int r_asm_disassemble(RAsm *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len);
 R_API int r_asm_assemble(RAsm *a, struct r_asm_aop_t *aop, const char *buf);
 R_API struct r_asm_code_t* r_asm_mdisassemble(RAsm *a, ut8 *buf, ut64 len);
+R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, const char *hexstr);
 R_API struct r_asm_code_t* r_asm_massemble(RAsm *a, const char *buf);
 
 /* code.c */
