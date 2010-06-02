@@ -55,13 +55,15 @@ R_API void r_big_set_str(RNumBig *n, const char *str) {
 
 R_API RNumBig *r_big_new(RNumBig *b) {
 	RNumBig *n = R_NEW (RNumBig);
-	if (b) memcpy (n, b, sizeof (RNumBig));
-	else
+	if (n) {
+		if (b) memcpy (n, b, sizeof (RNumBig));
+		else
 #ifdef HAVE_LIB_GMP
-	mpz_init (*n);
+			mpz_init (*n);
 #else
-	r_big_set_st (n, 0);
+			r_big_set_st (n, 0);
 #endif
+	}
 	return n;
 }
 

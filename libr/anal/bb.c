@@ -99,11 +99,11 @@ R_API int r_anal_bb_split(RAnal *anal, RAnalBlock *bb, RList *bbs, ut64 addr) {
 			bbi->fail = -1;
 			if (bbi->type&R_ANAL_BB_TYPE_HEAD) {
 				bb->type = bbi->type^R_ANAL_BB_TYPE_HEAD;
+				bbi->type = R_ANAL_BB_TYPE_HEAD;
 			} else {
 				bb->type = bbi->type;
 				bbi->type = R_ANAL_BB_TYPE_BODY;
 			}
-			bbi->type = R_ANAL_BB_TYPE_BODY;
 			iter = r_list_iterator (bbi->aops);
 			while (r_list_iter_next (iter)) {
 				aopi = r_list_iter_get (iter);
@@ -125,7 +125,7 @@ R_API int r_anal_bb_overlap(RAnal *anal, RAnalBlock *bb, RList *bbs) {
 	RListIter *iter;
 
 	r_list_foreach (bbs, iter, bbi)
-		if (bbi->addr > bb->addr && bbi->addr < bb->addr+bb->size) {
+		if (bb->addr+bb->size > bbi->addr && bb->addr+bb->size < bbi->addr+bbi->size) {
 			bb->size = bbi->addr - bb->addr;
 			bb->jump = bbi->addr;
 			bb->fail = -1;
@@ -135,8 +135,6 @@ R_API int r_anal_bb_overlap(RAnal *anal, RAnalBlock *bb, RList *bbs) {
 			} else {
 				bb->type = R_ANAL_BB_TYPE_BODY;
 			}
-			bb->type = bbi->type;
-			//bbi->type = k
 			r_list_foreach (bb->aops, iter, aopi)
 				if (aopi->addr >= bbi->addr)
 					r_list_unlink (bb->aops, aopi);

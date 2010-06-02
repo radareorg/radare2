@@ -65,20 +65,20 @@ static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts
 	RListIter *iter;
 	char *str;
 
-	if (pbb) { 
-		/* In partial graphs test if the bb is already printed */
-		r_list_foreach (pbb, iter, bbi) {
-			if (addr >= bbi->addr && addr < bbi->addr+bbi->size)
+	/* In partial graphs test if the bb is already printed */
+	if (pbb)
+		r_list_foreach (pbb, iter, bbi)
+			if (addr == bbi->addr)
 				return;
-		}
-	}
 
 	r_list_foreach (core->anal->bbs, iter, bbi) {
-		if (addr == 0 || (addr >= bbi->addr && addr < bbi->addr+bbi->size)) {
+		if (addr == 0 || addr == bbi->addr) {
 			if (pbb) { /* Copy BB and append to the list of printed bbs */
 				bbc = R_NEW (RAnalBlock);
-				memcpy (bbc, bbi, sizeof (RAnalBlock));
-				r_list_append (pbb, bbc);
+				if (bbc) {
+					memcpy (bbc, bbi, sizeof (RAnalBlock));
+					r_list_append (pbb, bbc);
+				}
 			}
 			if (bbi->jump != -1) {
 				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" [color=\"%s\"];\n", bbi->addr, bbi->jump,
@@ -107,16 +107,24 @@ static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts
 }
 
 R_API int r_core_anal_bb(RCore *core, ut64 at, int depth, int head) {
-	struct r_anal_bb_t *bb;
+	struct r_anal_bb_t *bb, *bbi;
+	RListIter *iter;
 	ut64 jump, fail;
 	ut8 *buf;
-	int ret, buflen, bblen = 0;
+	int ret = R_ANAL_RET_NEW, buflen, bblen = 0;
+	int split = r_config_get_i (core->config, "anal.split");
 
 	if (depth < 0)
 		return R_FALSE;
 	if (!(bb = r_anal_bb_new()))
 		return R_FALSE;
-	ret = r_anal_bb_split (core->anal, bb, core->anal->bbs, at);
+	if (split)
+		ret = r_anal_bb_split (core->anal, bb, core->anal->bbs, at);
+	else {
+		r_list_foreach (core->anal->bbs, iter, bbi)
+			if (at == bbi->addr)
+				ret = R_ANAL_RET_DUP;
+	}
 	if (ret == R_ANAL_RET_DUP) { /* Dupped bb */
 		r_anal_bb_free (bb);
 		return R_FALSE;
@@ -131,7 +139,9 @@ R_API int r_core_anal_bb(RCore *core, ut64 at, int depth, int head) {
 				r_anal_bb_free (bb);
 				return R_FALSE;
 			} else if (bblen == R_ANAL_RET_END) { /* bb analysis complete */
-				if (r_anal_bb_overlap (core->anal, bb, core->anal->bbs) == R_ANAL_RET_NEW) {
+				if (split)
+					ret = r_anal_bb_overlap (core->anal, bb, core->anal->bbs);
+				if (ret == R_ANAL_RET_NEW) {
 					r_list_append (core->anal->bbs, bb);
 					fail = bb->fail;
 					jump = bb->jump;

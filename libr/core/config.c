@@ -152,6 +152,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "dir.plugins", LIBDIR"/radare2/");
 	/* anal */
 	r_config_set_i (cfg, "anal.depth", 10);
+	r_config_set (cfg, "anal.split", "false");
+	/* asm */
 	r_config_set_i_cb (cfg, "asm.bits", 32,
 		&config_asm_bits_callback);
 	r_config_set (cfg, "asm.bytes", "true"); 

@@ -209,6 +209,7 @@ R_API int r_core_gdiff(RCore *core, char *file1, char *file2, int va) {
 			return R_FALSE;
 		}
 		r_config_set_i (core2->config, "io.va", va);
+		r_config_set_i (core2->config, "anal.split", 0);
 		sprintf (cmd, ".!rabin2 -rSIeMis%s %s", va?"v":"", files[i]);
 		r_core_cmd0 (core2, cmd);
 		/* XXX Select correct analysis plugin */

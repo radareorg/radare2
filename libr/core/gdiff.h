@@ -4,7 +4,7 @@
 #define _INCLUDE_GDIFF_H_
 
 #define THRESHOLDFCN 0.8F
-#define THRESHOLDBB 0.5F
+#define THRESHOLDBB 0.8F
 #define NPRIMES 999
 
 const char mnemonics[442][32] = {
