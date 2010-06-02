@@ -249,6 +249,13 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			else r_cons_printf (" [%d]", counter);
 			break;
 		}
+		if (analop.refptr) {
+			ut32 word = 0;
+			int ret = r_io_read_at (core->io, analop.ref, (void *)&word, sizeof (word));
+			if (ret == sizeof (word))
+				r_cons_printf ("; => 0x%08x", word);
+			else r_cons_printf ("; err [0x%"PFMT64x"]", analop.ref);
+		}
 		r_cons_newline ();
 		if (line) {
 			if (show_lines && analop.type == R_ANAL_OP_TYPE_RET) {

@@ -147,6 +147,7 @@ typedef struct r_anal_aop_t {
 	st64 stackptr;             /* stack pointer */
 	int r_dst[R_ANAL_MAXREG];  /* register arguments */
 	ut64 i_dst[R_ANAL_MAXREG]; /* inmediate arguments */
+	int refptr;
 } RAnalOp;
 
 typedef struct r_anal_bb_t {

@@ -52,7 +52,7 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	if (data == NULL)
 		return 0;
 
-	memset (aop, '\0', sizeof(RAnalOp));
+	memset (aop, '\0', sizeof (RAnalOp));
 	aop->addr = addr;
 	aop->type = R_ANAL_OP_TYPE_UNK;
 
@@ -60,13 +60,20 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	if (aop == NULL)
 		return (arm_mode==16)?2:4;
 
-	memset(aop, '\0', sizeof(struct r_anal_aop_t));
+	memset (aop, '\0', sizeof (RAnalOp));
 	aop->type = R_ANAL_OP_TYPE_UNK;
 #if 0
 	fprintf(stderr, "CODE %02x %02x %02x %02x\n",
 		codeA[0], codeA[1], codeA[2], codeA[3]);
 #endif
 
+	if (b[3]==0xe5 && b[2]==0x9f) {
+		/* STORE */
+		aop->type = R_ANAL_OP_TYPE_STORE;
+		aop->stackop = R_ANAL_STACK_SET;
+		aop->ref = 4+addr+b[0];
+		aop->refptr = R_TRUE;
+	} else
 //eprintf("0x%08x\n", code[i] & ARM_DTX_LOAD);
 	// 0x0001B4D8,           1eff2fe1        bx    lr
 	if (b[3]==0xe2 && b[2]==0x8d && b[1]==0xd0) {
@@ -74,7 +81,7 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 		aop->type = R_ANAL_OP_TYPE_ADD;
 		aop->stackop = R_ANAL_STACK_INCSTACK;
 		aop->value = -b[0];
-	}
+	} else
 	if (b[3]==0xe2 && b[2]==0x4d && b[1]==0xd0) {
 		// SUB SP, SP, ..
 		aop->type = R_ANAL_OP_TYPE_SUB;
@@ -118,12 +125,6 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 				aop->ref = 0;
 			}
 		}
-	} else
-	if (b[3]==0xe5) {
-		/* STORE */
-		aop->type = R_ANAL_OP_TYPE_STORE;
-		aop->stackop = R_ANAL_STACK_SET;
-		aop->ref = b[0];
 	}
 
 	if (IS_EXITPOINT (code[i])) {

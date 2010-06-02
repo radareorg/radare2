@@ -30,9 +30,9 @@ static int Elf_(r_bin_elf_init_ehdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	else bin->endian = !LIL_ENDIAN;
 	len = r_buf_fread_at (bin->b, 0, (ut8*)&bin->ehdr,
 #if R_BIN_ELF64
-			bin->endian?"16c2SI3LI6S":"16c2si3li6s",
+		bin->endian?"16c2SI3LI6S":"16c2si3li6s",
 #else
-			bin->endian?"16c2S5I6S":"16c2s5i6s",
+		bin->endian?"16c2S5I6S":"16c2s5i6s",
 #endif
 			1);
 	if (len == -1) {
@@ -56,11 +56,11 @@ static int Elf_(r_bin_elf_init_phdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 	len = r_buf_fread_at (bin->b, bin->ehdr.e_phoff, (ut8*)bin->phdr,
 #if R_BIN_ELF64
-			bin->endian?"2I6L":"2i6l",
+		bin->endian?"2I6L":"2i6l",
 #else
-			bin->endian?"8I":"8i",
+		bin->endian?"8I":"8i",
 #endif
-			bin->ehdr.e_phnum);
+		bin->ehdr.e_phnum);
 	if (len == -1) {
 		eprintf ("Error: read (phdr)\n");
 		R_FREE (bin->phdr);
@@ -210,22 +210,26 @@ ut64 Elf_(r_bin_elf_get_entry_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
-	ut8 buf[7];
+	ut8 buf[512];
 
+	if (r_buf_read_at (bin->b, entry, buf, sizeof (buf)) == -1) {
+		eprintf ("Error: read (entry)\n");
+		return 0;
+	}
+	// ARM
+	if (!memcmp (buf, "\x24\xc0\x9f\xe5\x00\xb0\xa0\xe3", 8)) {
+		return (ut64)((int)(buf[48+0]+(buf[48+1]<<8)+
+		(buf[48+2]<<16)+(buf[48+3]<<24)))-bin->baddr;
+	}
+	// X86
 #if R_BIN_ELF64
-	if (r_buf_read_at (bin->b, entry+29, buf, 7) == -1) {
-		eprintf ("Error: read (entry)\n");
-		return 0;
-	}
 	if (!memcmp (buf, "\x48\xc7\xc7", 3))
-		return (ut64)((int)(buf[3]+(buf[4]<<8)+(buf[5]<<16)+(buf[6]<<24)))-bin->baddr;
+		return (ut64)((int)(buf[29+3]+(buf[29+4]<<8)+
+		(buf[29+5]<<16)+(buf[29+6]<<24)))-bin->baddr;
 #else
-	if (r_buf_read_at (bin->b, entry+23, buf, 5) == -1) {
-		eprintf ("Error: read (entry)\n");
-		return 0;
-	}
-	if (buf[0] == '\x68')
-		return (ut64)((int)(buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24)))-bin->baddr;
+	if (buf[23] == '\x68')
+		return (ut64)((int)(buf[23+1]+(buf[23+2]<<8)+
+		(buf[23+3]<<16)+(buf[23+4]<<24)))-bin->baddr;
 #endif
 	return 0;
 }
