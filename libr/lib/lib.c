@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
 
 #include "r_types.h"
+#include "r_util.h"
 #include "r_lib.h"
 #include <stdio.h>
 #include <dirent.h>
@@ -30,6 +31,8 @@ static const char *r_lib_types[] = {
 	"bp", "syscall", "fastcall", "crypto", "cmd", NULL
 };
 
+static int r_lib_debug_enabled = 0;
+
 /* XXX: Rename this helper function */
 R_API const char *r_lib_types_get(int idx) {
 	if (idx<0||idx>R_LIB_TYPE_LAST)
@@ -40,9 +43,9 @@ R_API const char *r_lib_types_get(int idx) {
 R_API void *r_lib_dl_open(const char *libname) {
 	void *ret;
 	ret = DLOPEN (libname);
-	if (ret == NULL)
+	if (r_lib_debug_enabled && ret == NULL)
 #if __UNIX__
-		eprintf ("dlerror(%s): %s\n", libname, dlerror());
+		eprintf ("dlerror(%s): %s\n", libname, dlerror ());
 #else
 		eprintf ("r_lib_dl_open: Cannot open '%s'\n", libname);
 #endif
@@ -64,6 +67,7 @@ R_API RLib *r_lib_new(const char *symname) {
 	
 	lib = R_NEW (RLib);
 	if (lib) {
+		r_lib_debug_enabled = r_sys_getenv ("R_DEBUG")?R_TRUE:R_FALSE;
 		INIT_LIST_HEAD (&lib->handlers);
 		INIT_LIST_HEAD (&lib->plugins);
 		strncpy (lib->symname, symname, sizeof (lib->symname)-1);
@@ -132,7 +136,6 @@ static int samefile(const char *a, const char *b) {
 			ptr = strstr(sa, "//");
 			if (ptr) strcpy(ptr, ptr+1);	
 		} while(ptr);
-
 		do {
 			ptr = strstr(sb, "//");
 			if (ptr) strcpy(ptr, ptr+1);	
@@ -187,11 +190,11 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 	
 	ret = r_lib_run_handler(lib, p, stru);
 	if (ret == R_FAIL) {
-		IFDBG fprintf(stderr, "Library handler has failed for '%s'\n", file);
-		free(p->file);
-		free(p);
-		r_lib_dl_close(handler);
-	} else list_add(&p->list, &lib->plugins);
+		IFDBG eprintf ("Library handler has failed for '%s'\n", file);
+		free (p->file);
+		free (p);
+		r_lib_dl_close (handler);
+	} else list_add (&p->list, &lib->plugins);
 
 	return ret;
 }
@@ -213,7 +216,7 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 		IFDBG eprintf ("Cannot open directory '%s'\n", path);
 		return R_FALSE;
 	}
-	while ((de = (struct dirent *)readdir(dh))) {
+	while ((de = (struct dirent *)readdir (dh))) {
 		snprintf (file, sizeof (file), "%s/%s", path, de->d_name);
 		if (r_lib_dl_check_filename (file))
 			r_lib_open (lib, file);
@@ -234,7 +237,7 @@ R_API int r_lib_add_handler(RLib *lib,
 	list_for_each_prev(pos, &lib->handlers) {
 		RLibHandler *h = list_entry(pos, RLibHandler, list);
 		if (type == h->type) {
-			IFDBG fprintf(stderr, "Redefining library handler constructor for %d\n", type);
+			IFDBG eprintf ("Redefining library handler constructor for %d\n", type);
 			handler = h;
 			break;
 		}

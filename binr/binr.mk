@@ -5,6 +5,7 @@ include ../../libr/config.mk
 CFLAGS+=-I../../libr/include
 CFLAGS+=-DVERSION=\"${VERSION}\"
 CFLAGS+=-DLIBDIR=\"${PREFIX}/lib\"
+
 LIBS=$(subst r_,-lr_,$(DEPS))
 LIBS+=$(subst r_,-L../../libr/,$(DEPS))
 

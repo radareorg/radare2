@@ -1,4 +1,5 @@
 NAME=r_lib
+DEPS=r_util
 OBJ=lib.o
 
 include ../config.mk
