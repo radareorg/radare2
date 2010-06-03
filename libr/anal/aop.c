@@ -12,6 +12,7 @@ R_API RAnalOp *r_anal_aop_new() {
 	aop = R_NEW (RAnalOp);
 	if (aop) {
 		memset (aop, 0, sizeof (RAnalOp));
+		aop->mnemonic = NULL;
 		aop->addr = -1;
 		aop->jump = -1;
 		aop->fail = -1;
