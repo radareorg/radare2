@@ -32,8 +32,7 @@ R_API RDebug *r_debug_new(int hard) {
 		dbg->swstep = 0; // software step
 		dbg->stop_all_threads = R_FALSE;
 		dbg->newstate = 0;
-		dbg->do_trace = 0;
-		r_debug_trace_reset (dbg, R_FALSE);
+		dbg->trace = r_debug_trace_new ();
 		//dbg->regs = dbg->oregs = NULL;
 		dbg->printf = (void *)printf;
 		dbg->reg = r_reg_new ();
@@ -169,7 +168,7 @@ R_API int r_debug_wait(RDebug *dbg) {
 		dbg->newstate = 1;
 		eprintf ("wait = %d\n", ret);
 		//XXX r_debug_select (dbg, dbg->pid, ret);
-		if (dbg->do_trace)
+		if (dbg->trace->enabled)
 			r_debug_trace_pc (dbg);
 	}
 	return ret;
@@ -235,6 +234,11 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 
 R_API int r_debug_continue(RDebug *dbg) {
 	return r_debug_continue_kill (dbg, -1);
+}
+
+R_API int r_debug_continue_until_nontraced(RDebug *dbg) {
+	eprintf ("TODO\n");
+	return R_FALSE;
 }
 
 R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {

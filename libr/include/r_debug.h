@@ -44,12 +44,43 @@ typedef struct r_debug_map_t {
 } RDebugMap;
 
 typedef struct r_debug_trace_t {
+	RList *traces;
+	int count;
+	int enabled;
+	//int changed;
+	int tag;
+	int dup;
+	// TODO: add range here
+} RDebugTrace;
+
+typedef struct r_debug_tracepoint_t {
 	ut64 addr;
 	ut64 tags;
+	int tag;
 	int size;
 	int count;
+	int times;
 	ut64 stamp;
-} RDebugTrace;
+} RDebugTracepoint;
+
+#if 0 // XXX . to be used as inspiration
+R_API int r_trace_init(struct r_trace_t *t);
+R_API struct r_trace_t *r_trace_new();
+R_API int r_trace_tag_get(struct r_trace_t *t);
+R_API int r_trace_tag_set(struct r_trace_t *t, int id);
+R_API int r_trace_sort(struct r_trace_t *t);
+R_API struct r_trace_item_t *r_trace_get(struct r_trace_t *t, ut64 addr, int tag);
+R_API int r_trace_times(struct r_trace_t *tr, ut64 addr);
+R_API int r_trace_count(struct r_trace_t *tr, ut64 addr);
+R_API int r_trace_index(struct r_trace_t *tr, ut64 addr);
+R_API int r_trace_set_times(struct r_trace_t *tr, ut64 addr, int times);
+R_API int r_trace_add(struct r_trace_t *tr, ut64 addr, int opsize);
+R_API ut64 r_trace_range(struct r_trace_t *t, ut64 from, int tag);
+R_API ut64 r_trace_next(struct r_trace_t *tr, ut64 from, int tag);
+R_API void r_trace_show(struct r_trace_t *tr, int plain, int tag);
+R_API void r_trace_reset(struct r_trace_t *tr);
+R_API int r_trace_get_between(struct r_trace_t *tr, ut64 from, ut64 to);
+#endif
 
 typedef struct r_debug_t {
 	int pid;    /* selected process id */
@@ -57,9 +88,7 @@ typedef struct r_debug_t {
 	int swstep; /* steps with software traps */
 	int steps;  /* counter of steps done */
 	int newstate;
-	int trace_tag;
-	int do_trace;
-	RList *traces;
+	RDebugTrace *trace;
 	int stop_all_threads;
 	char *reg_profile;
 	struct r_reg_t *reg;
@@ -136,6 +165,7 @@ R_API int r_debug_wait(struct r_debug_t *dbg);
 R_API int r_debug_step_over(struct r_debug_t *dbg, int steps);
 R_API int r_debug_continue_until(struct r_debug_t *dbg, ut64 addr);
 R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over);
+R_API int r_debug_continue_until_nontraced(RDebug *dbg);
 R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc);
 //R_API int r_debug_pid_add(struct r_debug_t *dbg);
 //R_API int r_debug_pid_add_thread(struct r_debug_t *dbg);
@@ -191,7 +221,7 @@ R_API int r_debug_map_sync(RDebug *dbg);
 /* backtrace */
 R_API RList *r_debug_frames (RDebug *dbg);
 
-/* args */
+/* args XXX: weird food */
 R_API ut64 r_debug_arg_get (RDebug *dbg, int fast, int num);
 R_API int r_debug_arg_set (RDebug *dbg, int fast, int num, ut64 value);
 
@@ -200,11 +230,13 @@ R_API int r_debug_pid_list(struct r_debug_t *dbg, int pid);
 R_API int r_debug_thread_list(struct r_debug_t *dbg, int pid);
 
 R_API void r_debug_trace_reset (RDebug *dbg, int liberate);
-R_API void r_debug_trace_tag (RDebug *dbg, int tag);
 R_API int r_debug_trace_pc (RDebug *dbg);
-R_API RDebugTrace *r_debug_trace_get (RDebug *dbg, ut64 addr, int tag);
+R_API RDebugTracepoint *r_debug_trace_get (RDebug *dbg, ut64 addr, int tag);
 R_API void r_debug_trace_list (RDebug *dbg, int tag);
-R_API int r_debug_trace_add (RDebug *dbg, ut64 addr, int size, int tag);
+R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size, int tag);
+R_API RDebugTrace *r_debug_trace_new ();
+R_API void r_debug_trace_free (RDebug *dbg);
+R_API int r_debug_trace_tag (RDebug *dbg, int tag);
 
 #endif
 #endif

@@ -2,17 +2,28 @@
 
 #include <r_debug.h>
 
-/* first argument can leak in bad usage.. weird */
-R_API void r_debug_trace_reset (RDebug *dbg, int liberate) {
-	if (liberate)
-		r_list_destroy (dbg->traces);
-	dbg->traces = r_list_new ();
-	dbg->traces->free = free;
-	dbg->trace_tag = -1;
+R_API RDebugTrace *r_debug_trace_new () {
+	RDebugTrace *t = R_NEW (RDebugTrace);
+	t->tag = UT32_MAX;
+	t->enabled = R_FALSE;
+	t->traces = r_list_new ();
+	t->traces->free = free;
+	return t;
 }
 
-R_API void r_debug_trace_tag (RDebug *dbg, int tag) {
-	dbg->trace_tag = tag;
+R_API void r_debug_trace_free (RDebug *dbg) {
+	if (dbg->trace == NULL)
+		return;
+	r_list_destroy (dbg->trace->traces);
+	free (dbg->trace);
+	dbg->trace = NULL;
+}
+
+// TODO: added overlap/mask support here... wtf?
+// TODO: think about tagged traces
+R_API int r_debug_trace_tag (RDebug *dbg, int tag) {
+	//if (tag>0 && tag<31) core->dbg->trace->tag = 1<<(sz-1);
+	return (dbg->trace->tag = (tag>0)? tag: UT32_MAX);
 }
 
 R_API int r_debug_trace_pc (RDebug *dbg) {
@@ -22,18 +33,18 @@ R_API int r_debug_trace_pc (RDebug *dbg) {
 	if (ri) {
 		ut64 addr = r_reg_get_value (dbg->reg, ri);
 		int size = 1; // TODO: read code if not cached and analyze opcode
-		r_debug_trace_add (dbg, addr, size, dbg->trace_tag);
+		r_debug_trace_add (dbg, addr, size, dbg->trace->tag);
 		return R_TRUE;
 	} else eprintf ("trace_pc: cannot get prgoram counter\n");
 	return R_FALSE;
 }
 
-R_API RDebugTrace *r_debug_trace_get (RDebug *dbg, ut64 addr, int tag) {
+R_API RDebugTracepoint *r_debug_trace_get (RDebug *dbg, ut64 addr, int tag) {
 	/* TODO: handle opcode size .. warn when jumping in the middle of instructions */
-	RListIter *iter = r_list_iterator (dbg->traces);
+	RListIter *iter = r_list_iterator (dbg->trace->traces);
 	while (r_list_iter_next (iter)) {
-		RDebugTrace *trace = r_list_iter_get (iter);
-		if (tag != 0 && !(dbg->trace_tag & (1<<tag)))
+		RDebugTracepoint *trace = (RDebugTracepoint *)r_list_iter_get (iter);
+		if (tag != 0 && !(dbg->trace->tag & (1<<tag)))
 			continue;
 		if (trace->addr == addr)
 			return trace;
@@ -42,26 +53,26 @@ R_API RDebugTrace *r_debug_trace_get (RDebug *dbg, ut64 addr, int tag) {
 }
 
 R_API void r_debug_trace_list (RDebug *dbg, int tag) {
-	RListIter *iter = r_list_iterator (dbg->traces);
+	RListIter *iter = r_list_iterator (dbg->trace->traces);
 	while (r_list_iter_next (iter)) {
-		RDebugTrace *trace = r_list_iter_get (iter);
-		if (!trace->tags || (tag & trace->tags))
+		RDebugTracepoint *trace = r_list_iter_get (iter);
+		if (!trace->tag || (tag & trace->tag))
 			eprintf ("0x%08"PFMT64x" %d\n", trace->addr, trace->count);
 	}
 }
 
 /* sort insert, or separated sort function ? */
 /* TODO: detect if inner opcode */
-R_API int r_debug_trace_add (RDebug *dbg, ut64 addr, int size, int tag) {
-	RDebugTrace *trace = r_debug_trace_get (dbg, addr, tag);
-	if (!trace) {
-		trace = R_NEW (RDebugTrace);
-		trace->stamp = r_sys_now ();
-		trace->addr = addr;
-		trace->tags = tag;
-		trace->size = size;
-		trace->count = 0;
-		r_list_append (dbg->traces, trace);
-	} else trace->count++;
-	return trace->count;
+R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size, int tag) {
+	RDebugTracepoint *tp = r_debug_trace_get (dbg, addr, tag);
+	if (!tp) {
+		tp = R_NEW (RDebugTracepoint);
+		tp->stamp = r_sys_now ();
+		tp->addr = addr;
+		tp->tags = tag;
+		tp->size = size;
+		tp->count = 0;
+		r_list_append (dbg->trace->traces, tp);
+	} else tp->count++;
+	return tp;
 }

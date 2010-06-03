@@ -1368,6 +1368,7 @@ static void cmd_syscall_do(RCore *core, int num) {
 }
 
 static int cmd_anal(void *data, const char *input) {
+	const char *ptr;
 	RCore *core = (RCore *)data;
 	int l, len = core->blocksize;
 	ut32 tbs = core->blocksize;
@@ -1569,6 +1570,77 @@ static int cmd_anal(void *data, const char *input) {
 			r_core_anal_graph (core, r_num_math (core->num, input+2), R_CORE_ANAL_GRAPHBODY);
 		}
 		break;
+	case 't':
+		switch(input[1]) {
+		case '?':
+			r_cons_strcat ("Usage: at[*] [addr]\n"
+			" at?                ; show help message\n"
+			" at                 ; list all traced opcode ranges\n"
+			" at-                ; reset the tracing information\n"
+			" at*                ; list all traced opcode offsets\n"
+			" at+ [addr] [times] ; add trace for address N times\n"
+			" at [addr]          ; show trace info at address\n"
+			" att [tag]          ; select trace tag (no arg unsets)\n"
+			" at%                ; TODO\n"
+			" atr                ; show traces as range commands (ar+)\n"
+			" atd                ; show disassembly trace\n"
+			" atD                ; show dwarf trace (at*|rsc dwarf-traces $FILE)\n");
+			eprintf ("Current Tag: %d\n", core->dbg->trace->tag);
+			break;
+		case 't':
+			r_debug_trace_tag (core->dbg, atoi (input+2));
+			break;
+		case 'd':
+			//trace_show (2, trace_tag_get());
+			eprintf ("TODO\n");
+			break;
+		case 'D':
+			// XXX: not yet tested..and rsc dwarf-traces comes from r1
+			r_core_cmd (core, "at*|rsc dwarf-traces $FILE", 0);
+			break;
+		case '+':
+			ptr = input+3;
+			ut64 addr = r_num_math (core->num, ptr);
+			ptr = strchr (ptr, ' ');
+			if (ptr != NULL) {
+				int opsize = 1; // XXX must get opcode size here
+				//eprintf("at(0x%08llx)=%d (%s)\n", addr, atoi(ptr+1), ptr+1);
+				//trace_set_times(addr, atoi(ptr+1));
+				RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr,
+					opsize, core->dbg->trace->tag);
+				tp->count = atoi (ptr+1);
+			}
+			break;
+		case '-':
+			r_debug_trace_free (core->dbg);
+			core->dbg->trace = r_debug_trace_new (core->dbg);
+			break;
+		case ' ': {
+			RDebugTracepoint *t = r_debug_trace_get (core->dbg,
+				r_num_math (core->num, input+1), core->dbg->trace->tag);
+			if (t != NULL) {
+				r_cons_printf ("offset = 0x%llx\n", t->addr);
+				r_cons_printf ("opsize = %d\n", t->size);
+				r_cons_printf ("times = %d\n", t->times);
+				r_cons_printf ("count = %d\n", t->count);
+				//TODO cons_printf("time = %d\n", t->tm);
+			} }
+			break;
+		case '*':
+			eprintf ("TODO\n");
+			r_debug_trace_list (core->dbg, core->dbg->trace->tag);
+			//trace_show(1, trace_tag_get());
+			break;
+		case 'r':
+			eprintf ("TODO\n");
+			r_debug_trace_list (core->dbg, core->dbg->trace->tag);
+			//trace_show(-1, trace_tag_get());
+			break;
+		default:
+			r_debug_trace_list (core->dbg, core->dbg->trace->tag);
+			//trace_show(0, trace_tag_get());
+		}
+		break;
 	case 's':
 		switch (input[1]) {
 		case 'l':
@@ -1594,12 +1666,13 @@ static int cmd_anal(void *data, const char *input) {
 	default:
 		r_cons_printf (
 		"Usage: a[?hobfg]\n"
-		" ah [handle]     ; Use this analysis plugin\n"
+		" ah [handle]     ; Use this analysis plugin handler\n" // XXX: rename to ap ?
 		" as [num]        ; Analyze syscall using dbg.reg\n"
-		" ao [len]        ; Analyze raw bytes\n"
-		" ab[?+-l*]       ; Analyze basic blocks\n"
-		" af[?+-l*]       ; Analyze functions\n"
-		" ag[?f]          ; Output graphviz code\n");
+		" ao [len]        ; Analyze raw bytes as Opcodes\n"
+		" ab[?+-l*]       ; Analyze Basic blocks\n"
+		" af[?+-l*]       ; Analyze Functions\n"
+		" ag[?f]          ; Output Graphviz code\n"
+		" at[trd+-*?] [.] ; Analyze execution Traces\n");
 		break;
 	}
 	if (tbs != core->blocksize)
@@ -2826,9 +2899,10 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 	case 't':
 		// TODO: Add support to change the tag
-		if (input[1]=='r')
-			r_debug_trace_reset (core->dbg, R_TRUE);
-		else r_debug_trace_list (core->dbg, -1);
+		if (input[1]=='r') {
+			r_debug_trace_free (core->dbg);
+			core->dbg->trace = r_debug_trace_new ();
+		} else r_debug_trace_list (core->dbg, -1);
 		break;
 	case 'd':
 		eprintf ("TODO: dd: file descriptors\n");

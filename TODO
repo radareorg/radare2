@@ -4,6 +4,11 @@
 |_|\__|_|__|___/|_|_|_|\__\___/ |_____(_)____/
 
 
+FOR THE RELEASE WE HAVE TO:
+===========================
+* FIX: binr/ must be compiled AGAINST system libr
+* continue untraced instruction
+
 * generate accessors automatically from valaswig
 * install.sh (to track installed files ..)
 * add support for asm.trace (show and trace register

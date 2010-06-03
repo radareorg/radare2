@@ -68,14 +68,14 @@ static int config_stopthreads_callback(void *user, void *data) {
 static int config_trace_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->dbg->do_trace = node->i_value;
+	core->dbg->trace->enabled = node->i_value;
 	return R_TRUE;
 }
 
 static int config_tracetag_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->dbg->trace_tag = node->i_value;
+	core->dbg->trace->tag = node->i_value;
 	return R_TRUE;
 }
 

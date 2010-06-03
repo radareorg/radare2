@@ -94,7 +94,7 @@ install: install-includes install-pkgconfig
 	echo "$$a ${PFX}/lib"; ${INSTALL_DATA} $$a ${PFX}/lib ; done
 	# plugins
 	@${INSTALL_DIR} ${PFX}/lib/radare2
-	@for a in `find */p -perm -u+x -type f`; \
+	@for a in `find */p -perm -u+x -type f | grep -v exe | grep -v dll`; \
 	do echo "$$a ${PFX}/lib/radare2"; \
 	${INSTALL_DATA} $$a ${PFX}/lib/radare2 ; done
 	${INSTALL_DATA} lang/p/radare.* ${PFX}/lib/radare2
