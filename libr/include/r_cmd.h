@@ -65,6 +65,7 @@ typedef struct r_cmd_t {
 
 typedef struct r_cmd_plugin_t {
 	char *name;
+	char *desc;
 	RCmdCallback call;
 } RCmdPlugin;
 

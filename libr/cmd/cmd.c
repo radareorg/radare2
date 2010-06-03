@@ -4,10 +4,8 @@
 #include <r_util.h>
 
 R_API RCmd *r_cmd_new () {
-	RCmd *cmd;
 	int i;
-
-	cmd = R_NEW (RCmd);
+	RCmd *cmd = R_NEW (RCmd);
 	if (cmd) {
 		INIT_LIST_HEAD (&cmd->lcmds);
 		for (i=0;i<255;i++)
@@ -78,11 +76,11 @@ R_API int r_cmd_call(struct r_cmd_t *cmd, const char *input) {
 	
 	if (input == NULL || input[0] == '\0') {
 		if (cmd->nullcallback != NULL)
-			cmd->nullcallback(cmd->data);
+			cmd->nullcallback (cmd->data);
 	} else {
 		c = cmd->cmds[(ut8)input[0]];
 		if (c != NULL && c->callback!=NULL)
-			ret = c->callback(cmd->data, input+1);
+			ret = c->callback (cmd->data, input+1);
 		else ret = -1;
 	}
 	return ret;

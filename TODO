@@ -63,12 +63,6 @@
      2nd level:
         - basic block level diffing (output in graph mode)
 
-* Implement process launcher wrapper // anybody
-  - opens xterm and redirects stdin/stdout/stderr
-  - Allows to change chroot
-  - Allows to setup chroot
-  - Define uid/gid
-
 * Is RCore->block and blocksize a RBuf ? refactor!11
  
 * radare2 -e dbg.engine=vm -d ls

@@ -995,6 +995,7 @@ static int cmd_help(void *data, const char *input) {
 		" |[cmd]            ; run this command thru the io pipe (no args=list)\n"
 		" #[algo] [len]     ; calculate hash checksum of current block\n"
 		" .[ file|!cmd|cmd|(macro)]  ; interpret as radare cmds\n"
+		" :command          ; list or execute a plugin command\n"
 		" (macro arg0 arg1) ; define scripting macros\n"
 		" q [ret]           ; quit program with a return value\n"
 		"Use '?$' to get help for the variables\n"
@@ -2596,6 +2597,15 @@ R_API int r_core_cmd(RCore *core, const char *command, int log) {
 	int len, rep, ret = R_FALSE;
 	char *cmd, *ocmd;
 	if (command != NULL) {
+		/* list command plugins */
+		if (!strcmp (command, ":")) {
+			RListIter *iter = r_list_iterator (core->cmd->plist);
+			while (r_list_iter_next (iter)) {
+				RCmdPlugin *cp = (RCmdPlugin*) r_list_iter_get (iter);
+				r_cons_printf ("%s: %s\n", cp->name, cp->desc);
+			}
+			return 0;
+		}
 		len = strlen (command)+1;
 		ocmd = cmd = malloc (len+8192);
 		if (ocmd == NULL)
