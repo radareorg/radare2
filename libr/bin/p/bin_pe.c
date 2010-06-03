@@ -23,6 +23,16 @@ static ut64 baddr(RBin *bin) {
 	return PE_(r_bin_pe_get_image_base) (bin->bin_obj);
 }
 
+static RBinAddr* binmain(RBin *bin) {
+	RBinAddr *ret = NULL;
+
+	if (!(ret = R_NEW (RBinAddr)))
+		return NULL;
+	memset (ret, '\0', sizeof (RBinAddr));
+	ret->offset = ret->rva = PE_(r_bin_pe_get_main_offset) (bin->bin_obj);
+	return ret;
+}
+
 static RList* entries(RBin *bin) {
 	RList* ret;
 	RBinAddr *ptr = NULL;
@@ -222,7 +232,7 @@ struct r_bin_plugin_t r_bin_plugin_pe = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
-	.main = NULL,
+	.main = &binmain,
 	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2008-2010 nibble<.ds@gmail.com>, pancake<nopcode.org> */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,8 +7,26 @@
 #include <r_util.h>
 #include "pe.h"
 
-static PE_DWord PE_(r_bin_pe_rva_to_offset)(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord rva)
-{
+ut64 PE_(r_bin_pe_get_main_offset)(struct PE_(r_bin_pe_obj_t) *bin) {
+	struct r_bin_pe_addr_t *entry = PE_(r_bin_pe_get_entrypoint) (bin);
+	ut64 addr = 0LL;
+	ut8 buf[512];
+
+	// option2: /x 8bff558bec83ec20         
+	if (r_buf_read_at (bin->b, entry->offset, buf, sizeof (buf)) == -1) {
+		eprintf ("Error: read (entry)\n");
+	} else {
+		if (buf[367] == 0xe8) {
+			int delta = (buf[368] | buf[369]<<8 | buf[370]<<16 | buf[371]<<24);
+			addr = entry->rva + 367 + 5 + delta;
+		}
+	}
+	free (entry);
+
+	return addr;
+}
+
+static PE_DWord PE_(r_bin_pe_rva_to_offset)(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord rva) {
 	PE_DWord section_base;
 	int i, section_size;
 

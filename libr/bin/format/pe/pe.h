@@ -75,6 +75,7 @@ struct PE_(r_bin_pe_obj_t) {
 
 char* PE_(r_bin_pe_get_arch)(struct PE_(r_bin_pe_obj_t)* bin);
 struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)* bin);
+ut64 PE_(r_bin_pe_get_main_offset)(struct PE_(r_bin_pe_obj_t) *bin);
 struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* bin); // TODO
 int PE_(r_bin_pe_get_file_alignment)(struct PE_(r_bin_pe_obj_t)* bin);
 ut64 PE_(r_bin_pe_get_image_base)(struct PE_(r_bin_pe_obj_t)* bin);
