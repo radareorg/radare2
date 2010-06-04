@@ -20,11 +20,9 @@ static RAnalVarType anal_default_vartypes[] =
 	 { NULL,    NULL, 0 }};
 
 R_API RAnal *r_anal_new() {
-	RAnal *anal;
-	RAnalPlugin *static_plugin;
 	int i;
-
-	anal = R_NEW (RAnal);
+	RAnalPlugin *static_plugin;
+	RAnal *anal = R_NEW (RAnal);
 	if (anal) {
 		memset (anal, 0, sizeof (RAnal));
 		anal->bbs = r_anal_bb_list_new ();

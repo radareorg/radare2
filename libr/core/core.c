@@ -157,7 +157,7 @@ R_API int r_core_init(RCore *core) {
 	r_core_cmd_init (core);
 	core->flags = r_flag_new ();
 	core->dbg = r_debug_new (R_TRUE);
-	core->dbg->anal = core->anal;
+	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz
 	core->sign->printf = r_cons_printf;
 	core->io->printf = r_cons_printf;
 	core->dbg->printf = r_cons_printf;
@@ -280,16 +280,13 @@ R_API int r_core_seek_delta(RCore *core, st64 addr) {
 }
 
 R_API char *r_core_op_str(RCore *core, ut64 addr) {
-int ret;
-	ut8 buf[64];
 	RAsmAop aop;
+	ut8 buf[64];
+	int ret;
 	r_asm_set_pc (core->assembler, addr);
 	r_core_read_at (core, addr, buf, sizeof (buf));
 	ret = r_asm_disassemble (core->assembler, &aop, buf, sizeof (buf));
-	if (ret>0)
-		return strdup (aop.buf_asm);
-	return NULL;
-	
+	return (ret>0)?strdup (aop.buf_asm): NULL;
 }
 
 R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr) {

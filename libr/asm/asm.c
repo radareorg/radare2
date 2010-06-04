@@ -206,9 +206,9 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, ut8 *buf, ut64 len) {
 
 	if (!(acode = r_asm_code_new()))
 		return NULL;
-	if (!(acode->buf = malloc(len)))
-		return r_asm_code_free(acode);
-	memcpy(acode->buf, buf, len);
+	if (!(acode->buf = malloc (len)))
+		return r_asm_code_free (acode);
+	memcpy (acode->buf, buf, len);
 	if (!(acode->buf_hex = malloc(2*len+1)))
 		return r_asm_code_free(acode);
 	r_hex_bin2str(buf, len, acode->buf_hex);

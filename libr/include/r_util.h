@@ -67,13 +67,12 @@ typedef struct r_range_item_t {
 	ut64 to;
 	ut8 *data;
 	int datalen;
-	struct list_head list;
 } RRangeItem;
 
 typedef struct r_range_t {
 	int count;
 	int changed;
-	struct list_head ranges;
+	RList *ranges;
 } RRange;
 
 #ifdef R_API
@@ -290,7 +289,7 @@ R_API ut64 r_range_size(RRange *r);
 R_API int r_range_add_from_string(RRange *rgs, const char *string);
 R_API struct r_range_item_t *r_range_add(RRange *rgs, ut64 from, ut64 to, int rw);
 R_API int r_range_sub(RRange *rgs, ut64 from, ut64 to);
-R_API int r_range_merge(RRange *rgs, RRange *r);
+R_API void r_range_merge(RRange *rgs, RRange *r);
 R_API int r_range_contains(RRange *rgs, ut64 addr);
 R_API int r_range_sort(RRange *rgs);
 R_API void r_range_percent(RRange *rgs);

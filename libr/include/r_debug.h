@@ -55,8 +55,8 @@ typedef struct r_debug_trace_t {
 
 typedef struct r_debug_tracepoint_t {
 	ut64 addr;
-	ut64 tags;
-	int tag;
+	ut64 tags; // XXX
+	int tag; // XXX
 	int size;
 	int count;
 	int times;
@@ -231,9 +231,9 @@ R_API int r_debug_thread_list(struct r_debug_t *dbg, int pid);
 
 R_API void r_debug_trace_reset (RDebug *dbg, int liberate);
 R_API int r_debug_trace_pc (RDebug *dbg);
-R_API RDebugTracepoint *r_debug_trace_get (RDebug *dbg, ut64 addr, int tag);
-R_API void r_debug_trace_list (RDebug *dbg, int tag);
-R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size, int tag);
+R_API RDebugTracepoint *r_debug_trace_get (RDebug *dbg, ut64 addr);
+R_API void r_debug_trace_list (RDebug *dbg, int mode);
+R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size);
 R_API RDebugTrace *r_debug_trace_new ();
 R_API void r_debug_trace_free (RDebug *dbg);
 R_API int r_debug_trace_tag (RDebug *dbg, int tag);

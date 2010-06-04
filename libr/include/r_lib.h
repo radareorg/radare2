@@ -56,7 +56,6 @@ enum {
 	R_LIB_TYPE_ANAL,    /* analysis */
 	R_LIB_TYPE_PARSE,   /* parsers */
 	R_LIB_TYPE_BIN,     /* bins */
-	R_LIB_TYPE_BININFO, /* bin info */
 	R_LIB_TYPE_BP,      /* breakpoint */
 	R_LIB_TYPE_SYSCALL, /* syscall */
 	R_LIB_TYPE_FASTCALL,/* fastcall */

@@ -22,6 +22,7 @@ namespace Radare {
 	[CCode (cheader_filename="r_cmd.h", cname="RCmdPlugin", free_function="", destroy_function="")]
 	public struct RCmdPlugin {
 		string name;
+		string desc;
 		RCmdCallback call;
 	}
 

@@ -109,7 +109,7 @@ R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode) {
 }
 
 // TODO: Rename to use_fd ?
-R_API int r_io_set_fd(struct r_io_t *io, int fd) {
+R_API int r_io_set_fd(RIO *io, int fd) {
 	if (fd != -1 && fd != io->fd) {
 		io->plugin = r_io_plugin_resolve_fd (io, fd);
 		io->fd = fd;

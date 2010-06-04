@@ -242,8 +242,9 @@ R_API int r_anal_bb_del(RAnal *anal, ut64 addr);
 
 /* aop.c */
 R_API RAnalOp *r_anal_aop_new();
+R_API void r_anal_aop_free(RAnalOp *aop);
 R_API RList *r_anal_aop_list_new();
-R_API void r_anal_aop_free(void *aop);
+R_API void r_anal_aop_free(RAnalOp *aop);
 R_API int r_anal_aop(RAnal *anal, RAnalOp *aop, ut64 addr,
 		const ut8 *data, int len);
 

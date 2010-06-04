@@ -1371,6 +1371,7 @@ static int cmd_anal(void *data, const char *input) {
 	const char *ptr;
 	RCore *core = (RCore *)data;
 	int l, len = core->blocksize;
+	ut64 addr = core->offset;
 	ut32 tbs = core->blocksize;
 
 	if (input[0] && input[1]) {
@@ -1571,7 +1572,7 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 't':
-		switch(input[1]) {
+		switch (input[1]) {
 		case '?':
 			r_cons_strcat ("Usage: at[*] [addr]\n"
 			" at?                ; show help message\n"
@@ -1600,15 +1601,17 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		case '+':
 			ptr = input+3;
-			ut64 addr = r_num_math (core->num, ptr);
+			addr = r_num_math (core->num, ptr);
 			ptr = strchr (ptr, ' ');
 			if (ptr != NULL) {
-				int opsize = 1; // XXX must get opcode size here
-				//eprintf("at(0x%08llx)=%d (%s)\n", addr, atoi(ptr+1), ptr+1);
-				//trace_set_times(addr, atoi(ptr+1));
-				RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr,
-					opsize, core->dbg->trace->tag);
-				tp->count = atoi (ptr+1);
+				RAnalOp *aop = r_core_op_anal (core, addr);
+				if (aop != NULL) {
+					//eprintf("at(0x%08llx)=%d (%s)\n", addr, atoi(ptr+1), ptr+1);
+					//trace_set_times(addr, atoi(ptr+1));
+					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, aop->length);
+					tp->count = atoi (ptr+1);
+					r_anal_aop_free (aop);
+				} else eprintf ("Cannot analyze opcode at 0x%"PFMT64x"\n", addr);
 			}
 			break;
 		case '-':
@@ -1617,7 +1620,7 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		case ' ': {
 			RDebugTracepoint *t = r_debug_trace_get (core->dbg,
-				r_num_math (core->num, input+1), core->dbg->trace->tag);
+				r_num_math (core->num, input+1));
 			if (t != NULL) {
 				r_cons_printf ("offset = 0x%llx\n", t->addr);
 				r_cons_printf ("opsize = %d\n", t->size);
@@ -1627,18 +1630,14 @@ static int cmd_anal(void *data, const char *input) {
 			} }
 			break;
 		case '*':
-			eprintf ("TODO\n");
-			r_debug_trace_list (core->dbg, core->dbg->trace->tag);
-			//trace_show(1, trace_tag_get());
+			r_debug_trace_list (core->dbg, 1);
 			break;
 		case 'r':
 			eprintf ("TODO\n");
-			r_debug_trace_list (core->dbg, core->dbg->trace->tag);
 			//trace_show(-1, trace_tag_get());
 			break;
 		default:
-			r_debug_trace_list (core->dbg, core->dbg->trace->tag);
-			//trace_show(0, trace_tag_get());
+			r_debug_trace_list (core->dbg, 0);
 		}
 		break;
 	case 's':

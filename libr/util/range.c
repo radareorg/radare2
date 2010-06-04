@@ -2,7 +2,8 @@
 
 #include <r_util.h>
 
-// TODO: redesign this api
+// TODO: use r_list instead of list.h
+// TODO: redesign this api.. why? :)
 
 #if 0
 // TODO: add tags to ranges
@@ -11,23 +12,17 @@
 //void (*ranges_new_callback)(struct range_t *r) = NULL;
 
 R_API RRange *r_range_new() {
-	RRange *r;
-
-	r = R_NEW (RRange);
+	RRange *r = R_NEW (RRange);
 	if (r) {
-		r->count = 0;
-		r->changed = 0;
-		INIT_LIST_HEAD (&r->ranges);
+		r->count = r->changed = 0;
+		r->ranges = r_list_new ();
+		r->ranges->free = free;
 	}
 	return r;
 }
 
 R_API RRange *r_range_free(RRange *r) {
-	struct list_head *pos;
-	list_for_each (pos, &r->ranges) {
-		RRangeItem *h = list_entry (pos, RRangeItem, list);
-		free (h);
-	}
+	r_list_destroy (r->ranges);
 	free (r);
 	return NULL;
 }
@@ -54,9 +49,9 @@ R_API int r_range_set_data(RRange *rgs, ut64 addr, const ut8 *buf, int len) {
 }
 
 RRangeItem *r_range_item_get(RRange *rgs, ut64 addr) {
-	struct list_head *pos;
-	list_for_each(pos, &rgs->ranges) {
-		RRangeItem *r = list_entry (pos, RRangeItem, list);
+	RRangeItem *r;
+	RListIter *iter;
+	r_list_foreach (rgs->ranges, iter, r) {
 		if (addr >= r->fr && addr < r->to)
 			return r;
 	}
@@ -66,13 +61,11 @@ RRangeItem *r_range_item_get(RRange *rgs, ut64 addr) {
 /* returns the sum of all the ranges contained */
 // XXX: can be catched while adding/removing elements
 R_API ut64 r_range_size(RRange *rgs) {
-	struct list_head *pos;
 	ut64 sum = 0;
-
-	list_for_each (pos, &rgs->ranges) {
-		RRangeItem *r = list_entry (pos, RRangeItem, list);
+	RListIter *iter;
+	RRangeItem *r;
+	r_list_foreach (rgs->ranges, iter, r)
 		sum += r->to - r->fr;
-	}
 	return sum;
 }
 
@@ -137,15 +130,13 @@ R_API int r_range_add_from_string(RRange *rgs, const char *string) {
 #endif
 
 RRangeItem *r_range_add(RRange *rgs, ut64 fr, ut64 to, int rw) {
-	struct list_head *pos;
-	RRangeItem *r;
-	RRangeItem *ret = NULL;
+	RListIter *iter;
+	RRangeItem *r, *ret = NULL;
 	int add = 1;
 
 	r_num_minmax_swap (&fr, &to);
 
-	list_for_each (pos, &rgs->ranges) {
-		r = list_entry(pos, RRangeItem, list);
+	r_list_foreach (rgs->ranges, iter, r) {
 		if (r->fr == fr && r->to==to) {
 			add = 0;
 		} else
@@ -177,7 +168,7 @@ RRangeItem *r_range_add(RRange *rgs, ut64 fr, ut64 to, int rw) {
 		ret->to = to;
 		ret->datalen = 0;
 		ret->data = NULL;
-		list_add_tail (&(ret->list), &rgs->ranges);
+		r_list_append (rgs->ranges, ret);
 		rgs->changed = 1;
 	}
 
@@ -195,13 +186,12 @@ RRangeItem *r_range_add(RRange *rgs, ut64 fr, ut64 to, int rw) {
 
 R_API int r_range_sub(RRange *rgs, ut64 fr, ut64 to) {
 	RRangeItem *r;
-	struct list_head *pos;
+	RListIter *iter;
 
 	r_num_minmax_swap (&fr, &to);
 
 	__reloop:
-	list_for_each(pos, &rgs->ranges) {
-		r = list_entry(pos, RRangeItem, list);
+	r_list_foreach (rgs->ranges, iter, r) {
 		/* update to */
 		if (r->fr<fr && r->fr < to && r->to>fr && r->to < to) {
 			r->to = fr;
@@ -213,7 +203,7 @@ R_API int r_range_sub(RRange *rgs, ut64 fr, ut64 to) {
 		/* delete */
 		if (r->fr>fr && r->fr<to && r->to>fr && r->to < to) {
 			/* delete */
-			list_del(&(r->list));
+			r_list_delete (rgs->ranges, iter);
 			rgs->changed = 1;
 			goto __reloop;
 		}
@@ -228,22 +218,21 @@ R_API int r_range_sub(RRange *rgs, ut64 fr, ut64 to) {
 	return 0;
 }
 
+#if 0
 /* TODO: should remove some of them right? */
-//int r_range_merge(RRange *r)
-R_API int r_range_merge(RRange *rgs, RRange *r) {
-	struct list_head *pos;
-	list_for_each(pos, &r->ranges) {
-		RRangeItem *r = list_entry (pos, RRangeItem, list);
+R_API void r_range_merge(RRange *rgs, RRange *r) {
+	RListIter *iter;
+	RRangeItem *r;
+	r_list_foreach (rgs->ranges, iter, r)
 		r_range_add (rgs, r->fr, r->to, 0);
-	}
-	return 0;
 }
+#endif
 
 //int ranges_is_used(ut64 addr)
 R_API int r_range_contains(RRange *rgs, ut64 addr) {
-	struct list_head *pos;
-	list_for_each (pos, &rgs->ranges) {
-		RRangeItem *r = list_entry(pos, RRangeItem, list);
+	RRangeItem *r;
+	RListIter *iter;
+	r_list_foreach (rgs->ranges, iter, r) {
 		if (addr >= r->fr && addr <= r->to)
 			return R_TRUE;
 	}
@@ -251,19 +240,19 @@ R_API int r_range_contains(RRange *rgs, ut64 addr) {
 }
 
 R_API int r_range_sort(RRange *rgs) {
-	struct list_head *pos, *pos2, *n, *n2;
+	RListIter *iter, *iter2;
+	RRangeItem *r, *r2;
 
 	if (!rgs->changed)
 		return R_FALSE;
 	rgs->changed = R_FALSE;
 
-	list_for_each_safe (pos, n, &rgs->ranges) {
-		RRangeItem *r = list_entry (pos, RRangeItem, list);
-		list_for_each_safe (pos2, n2, &rgs->ranges) {
-			RRangeItem *r2 = list_entry (pos2, RRangeItem, list);
+	r_list_foreach (rgs->ranges, iter, r) {
+		r_list_foreach (rgs->ranges, iter2, r2) {
 			if ((r != r2) && (r->fr > r2->fr)) {
-				list_move (pos, pos2);
-				rgs->changed = 1;
+				// TODO : IMPLEMENTED A FUCKING SWAP IN R_LIST!!!
+				// list_move (pos, pos2);
+				rgs->changed = R_TRUE;
 			}
 		}
 	}
@@ -271,13 +260,13 @@ R_API int r_range_sort(RRange *rgs) {
 }
 
 R_API void r_range_percent(RRange *rgs) {
-	struct list_head *pos;
+	RListIter *iter;
+	RRangeItem *r;
 	int w, i;
 	ut64 seek, step;
 	ut64 dif, fr = -1, to = -1;
 
-	list_for_each (pos, &rgs->ranges) {
-		RRangeItem *r = list_entry(pos, RRangeItem, list);
+	r_list_foreach (rgs->ranges, iter, r) {
 		if (fr == -1) {
 			/* init */
 			fr = r->fr;
@@ -309,10 +298,10 @@ R_API void r_range_percent(RRange *rgs) {
 // TODO: total can be cached in rgs!!
 int r_range_list(RRange *rgs, int rad) {
 	ut64 total = 0;
-	struct list_head *pos;
+	RRangeItem *r;
+	RListIter *iter;
 	r_range_sort (rgs);
-	list_for_each (pos, &rgs->ranges) {
-		RRangeItem *r = list_entry (pos, RRangeItem, list);
+	r_list_foreach (rgs->ranges, iter, r) {
 		if (rad) printf ("ar+ 0x%08"PFMT64x" 0x%08"PFMT64x"\n", r->fr, r->to);
 		else printf ("0x%08"PFMT64x" 0x%08"PFMT64x" ; %"PFMT64d"\n", r->fr, r->to, r->to-r->fr);
 		total += (r->to-r->fr);
@@ -323,10 +312,10 @@ int r_range_list(RRange *rgs, int rad) {
 
 int r_range_get_n(RRange *rgs, int n, ut64 *fr, ut64 *to) {
 	int count = 0;
-	struct list_head *pos;
+	RRangeItem *r;
+	RListIter *iter;
 	r_range_sort (rgs);
-	list_for_each (pos, &rgs->ranges) {
-		RRangeItem *r = list_entry (pos, RRangeItem, list);
+	r_list_foreach (rgs->ranges, iter, r) {
 		if  (count == n) {
 			*fr = r->fr;
 			*to = r->to;
@@ -345,14 +334,13 @@ int r_range_get_n(RRange *rgs, int n, ut64 *fr, ut64 *to) {
 #endif
 RRange *r_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
 	ut64 total = 0;
-	struct list_head *pos;
+	RListIter *iter;
 	RRangeItem *r = NULL;
 	RRange *newrgs = r_range_new();
 
 	r_range_sort(rgs);
 
-	list_for_each(pos, &rgs->ranges) {
-		r = list_entry(pos, RRangeItem, list);
+	r_list_foreach (rgs->ranges, iter, r) {
 		if (r->fr > fr && r->fr < to) {
 			r_range_add(newrgs, fr, r->fr, 1);
 			//eprintf("0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", fr, r->fr);
