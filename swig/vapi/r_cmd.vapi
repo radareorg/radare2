@@ -6,7 +6,7 @@ namespace Radare {
 	[CCode (cheader_filename="r_lib.h", cprefix="r_lib_struct_", cname="struct r_lib_struct_t", free_function="", destroy_function="")]
 	public struct RCmdStruct {
 		public RLibType type;
-		public RCmdPlugin data;
+		public RCmdPlugin *data;
 	}
 
 	[Compact]

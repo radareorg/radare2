@@ -47,7 +47,6 @@ namespace Radare {
 		ANAL,
 		PARSE,
 		BIN,
-		BININFO,
 		BP,
 		SYSCALL,
 		FASTCALL,
