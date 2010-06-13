@@ -13,18 +13,16 @@ static unsigned int malloc_bufsz = 0;
 // XXX shitty vars -- should be state
 static ut64 malloc_seek = 0;
 
-static int __write(struct r_io_t *io, int fd, const ut8 *buf, int count)
-{
+static int __write(struct r_io_t *io, int fd, const ut8 *buf, int count) {
 	if (malloc_buf == NULL)
 		return 0;
-	return (ssize_t)memcpy(malloc_buf+io->off, buf, count);
+	memcpy (malloc_buf+io->off, buf, count);
+	return count;
 }
 
-static int __read(struct r_io_t *io, int fd, ut8 *buf, int count)
-{
+static int __read(struct r_io_t *io, int fd, ut8 *buf, int count) {
 	if (malloc_buf == NULL)
 		return 0;
-
 	if (malloc_seek + count > malloc_bufsz) {
 		//config.seek = 0; // ugly hack
 		//count = config.seek+count-config.size;
@@ -32,12 +30,11 @@ static int __read(struct r_io_t *io, int fd, ut8 *buf, int count)
 	}
 	if (malloc_seek + count > malloc_bufsz)
 		malloc_seek = malloc_bufsz;
-
-	return (ssize_t)memcpy(buf, malloc_buf+malloc_seek, count);
+	memcpy (buf, malloc_buf+malloc_seek, count);
+	return count;
 }
 
-static int __close(struct r_io_t *io, int fd)
-{
+static int __close(struct r_io_t *io, int fd) {
 	if (malloc_buf == NULL)
 		return -1;
 	free(malloc_buf);
@@ -46,9 +43,8 @@ static int __close(struct r_io_t *io, int fd)
 }
 
 extern ut64 posix_lseek(int fildes, ut64 offset, int whence);
-static ut64 __lseek(struct r_io_t *io, int fildes, ut64 offset, int whence)
-{
-	switch(whence) {
+static ut64 __lseek(struct r_io_t *io, int fildes, ut64 offset, int whence) {
+	switch (whence) {
 	case SEEK_SET:
 		malloc_seek = offset;
 		break;
@@ -62,13 +58,11 @@ static ut64 __lseek(struct r_io_t *io, int fildes, ut64 offset, int whence)
 	return malloc_seek;
 }
 
-static int __plugin_open(struct r_io_t *io, const char *pathname)
-{
+static int __plugin_open(struct r_io_t *io, const char *pathname) {
 	return (!memcmp(pathname, "malloc://", 9));
 }
 
-static int __open(struct r_io_t *io, const char *pathname, int flags, int mode)
-{
+static int __open(struct r_io_t *io, const char *pathname, int flags, int mode) {
 	char buf[1024];
 	char *ptr = buf;
 
@@ -91,13 +85,11 @@ static int __open(struct r_io_t *io, const char *pathname, int flags, int mode)
 	return malloc_fd;
 }
 
-static int __init(struct r_io_t *io)
-{
+static int __init(struct r_io_t *io) {
 	return R_TRUE;
 }
 
-static int __system(struct r_io_t *io, int fd, const char *cmd)
-{
+static int __system(struct r_io_t *io, int fd, const char *cmd) {
 	/* */
 	return 0;
 }
