@@ -232,6 +232,7 @@ R_API int r_debug_thread_list(struct r_debug_t *dbg, int pid);
 
 R_API void r_debug_trace_reset (RDebug *dbg, int liberate);
 R_API int r_debug_trace_pc (RDebug *dbg);
+R_API int r_debug_trace_at (RDebug *dbg, const char *str);
 R_API RDebugTracepoint *r_debug_trace_get (RDebug *dbg, ut64 addr);
 R_API void r_debug_trace_list (RDebug *dbg, int mode);
 R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size);

@@ -35,8 +35,14 @@ R_API void r_bp_traptrace_reset(RBreakpoint *bp, int hard) {
 		RBreakpointTrace *trace = r_list_iter_get (iter);
 		if (hard) {
 			r_bp_traptrace_free (trace);
-			r_list_delete (bp->traces, r_list_iter_cur (iter));
+			// XXX: This segfaults
+			//r_list_delete (bp->traces, r_list_iter_cur (iter));
 		} else memset (trace->bits, 0x00, trace->bitlen);
+	}
+	if (hard) {
+		// XXX: traces not freed correctly (memleak)
+		bp->traces = r_list_new ();
+		bp->traces->free = r_bp_traptrace_free;
 	}
 }
 

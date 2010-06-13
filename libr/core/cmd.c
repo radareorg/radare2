@@ -3003,6 +3003,7 @@ static int cmd_debug(void *data, const char *input) {
 			if (len == 0) {
 				r_bp_traptrace_list (core->dbg->bp);
 			} else {
+				ut64 oaddr = 0LL;
 				eprintf ("Trap tracing 0x%08"PFMT64x"-0x%08"PFMT64x"\n", core->offset, core->offset+len);
 				r_bp_traptrace_reset (core->dbg->bp, R_TRUE);
 				r_bp_traptrace_add (core->dbg->bp, core->offset, core->offset+len);
@@ -3015,6 +3016,11 @@ static int cmd_debug(void *data, const char *input) {
 						eprintf ("pc=0\n");
 						break;
 					}
+					if (addr == oaddr) {
+						eprintf ("pc=opc\n");
+						break;
+					}
+					oaddr = addr;
 					/* XXX Bottleneck..we need to reuse the bytes read by traptrace */
 					// XXX Do asm.arch should define the max size of opcode?
 					r_core_read_at (core, addr, buf, 32); // XXX longer opcodes?
