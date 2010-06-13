@@ -7,10 +7,8 @@ Configurable options:
  - allow dupped nodes? (two times the same pointer?)
 #endif
 
-R_API struct r_db_t *r_db_new() {
-	struct r_db_t *db;
-	
-	db = R_NEW (RDatabase);
+R_API RDatabase *r_db_new() {
+	RDatabase *db = R_NEW (RDatabase);
 	if (db) {
 		memset(&db->blocks, '\0', sizeof(db->blocks));
 		db->id_min = -1;
@@ -19,9 +17,8 @@ R_API struct r_db_t *r_db_new() {
 	return db;
 }
 
-R_API struct r_db_block_t *r_db_block_new() {
-	struct r_db_block_t *ptr = (struct r_db_block_t *)
-		malloc(sizeof(struct r_db_block_t));
+R_API RDatabaseBlock *r_db_block_new() {
+	RDatabaseBlock *ptr = R_NEW (RDatabaseBlock);
 	ptr->data = NULL;
 	memset(&ptr->childs, '\0', sizeof(ptr->childs));
 	return ptr;
@@ -67,8 +64,7 @@ static int _r_db_add_internal(struct r_db_t *db, int key, void *b) {
 			block->data[1] = NULL;
 		} else {
 			for(len=0;block->data[len];len++);
-			block->data = realloc(block->data,
-					sizeof(void *)*(len+1));
+			block->data = realloc(block->data, sizeof(void *)*(len+1));
 			block->data[len] = b;
 			block->data[len+1] = NULL;
 		}
@@ -78,33 +74,32 @@ static int _r_db_add_internal(struct r_db_t *db, int key, void *b) {
 
 R_API int r_db_add(struct r_db_t *db, void *b) {
 	int i, ret = R_FALSE;
-	for (i=db->id_min;i<=db->id_max;i++) {
+	for (i=db->id_min;i<=db->id_max;i++)
 		if (db->blocks[i])
 			ret += _r_db_add_internal (db, i, b);
-	}
 	return ret;
 }
 
 R_API int r_db_add_unique(struct r_db_t *db, void *b) {
 	int i, ret = R_TRUE;
 	for(i=db->id_min;i<=db->id_max;i++) {
-		if (db->blocks[i]) {
-			if (r_db_get (db, i, b) != NULL) {
-				ret = R_FALSE;
-				break;
-			}
+		if (db->blocks[i] && r_db_get (db, i, b) != NULL) {
+			ret = R_FALSE;
+			break;
 		}
 	}
-	if (ret)
-		ret = r_db_add (db, b);
+	if (ret) ret = r_db_add (db, b);
 	return ret;
 }
 
 R_API void **r_db_get(struct r_db_t *db, int key, const ut8 *b) {
-	struct r_db_block_t *block;
+	RDatabaseBlock *block;
 	int i, size;
 	if (key == -1) {
-		for(i=0;i<R_DB_KEYS;i++) {
+		key = db->id_min;
+#if 0
+UNNECESSARY LOOPZ
+		for (i=0;i<R_DB_KEYS;i++) {
 			if (db->blocks[i]) {
 				key = i;
 				break;
@@ -112,6 +107,7 @@ R_API void **r_db_get(struct r_db_t *db, int key, const ut8 *b) {
 		}
 		if (key == -1)
 			return NULL;
+#endif
 	}
 	size = db->blocks_sz[key];
 	block = db->blocks[key];
@@ -133,20 +129,18 @@ R_API void **r_db_get_cur(void **ptr) {
 }
 
 static int _r_db_delete_internal(struct r_db_t *db, int key, const ut8 *b) {
-	struct r_db_block_t *block;
-	int i, j;
-	int size = db->blocks_sz[key];
+	RDatabaseBlock *block;
+	int i, j, size = db->blocks_sz[key];
 	block = db->blocks[key];
 
-	for(i=0;block&&i<size;i++)
+	for (i=0;block&&i<size;i++)
 		block = block->childs[b[key+i]];
 
 	if (block && block->data) {
 		for(i=0;block->data[i]; i++) {
-			if (block->data[i] == b) {
+			if (block->data[i] == b)
 				for(j=i;block->data[j]; j++)
 					block->data[j] = block->data[j+1];
-			}
 		}
 		if (block->data[0] == NULL) {
 			free(block->data);
@@ -158,22 +152,24 @@ static int _r_db_delete_internal(struct r_db_t *db, int key, const ut8 *b) {
 }
 
 R_API int r_db_delete(struct r_db_t *db, const void *ptr) {
-	int i, ret = 0;
-	//void *ptr = r_db_get(db, -1, ptr);
-	for(i=db->id_min;i<=db->id_max;i++) {
+	int i;
+	for(i=db->id_min;i<=db->id_max;i++)
 		if (db->blocks[i])
-			ret += _r_db_delete_internal(db, i, ptr);
-	}
+			if (!_r_db_delete_internal(db, i, ptr))
+				eprintf ("failed to delete internal pointer\n");
 	/* TODO */
 	if (db->cb_free && ptr)
 		return db->cb_free(db, ptr, db->cb_user);
 	return (ptr != NULL);
 }
 
-// TODO delete with conditions
+static int r_db_iter_find_next(RDatabaseIter *it) {
+	
+	return R_FALSE;
+}
 
-R_API struct r_db_iter_t *r_db_iter_new(struct r_db_t *db, int key) {
-	struct r_db_iter_t *iter = (struct r_db_iter_t *)malloc(sizeof (struct r_db_iter_t));
+R_API RDatabaseIter *r_db_iter_new(RDatabase *db, int key) {
+	RDatabaseIter *iter = R_NEW (RDatabaseIter);
 	/* TODO: detect when keys are not valid and return NULL */
 	iter->db = db;
 	iter->key = key;
@@ -182,8 +178,8 @@ R_API struct r_db_iter_t *r_db_iter_new(struct r_db_t *db, int key) {
 	/* TODO: detect when no keys are found and return NULL */
 	iter->ptr = 0;
 	iter->cur = NULL;
+	r_db_iter_find_next (iter);
 	/* TODO: first iteration must be done here */
-
 	return iter;
 }
 
@@ -225,9 +221,33 @@ R_API void *r_db_iter_cur(struct r_db_iter_t *iter) {
 #endif
 }
 
-R_API void *r_db_iter_next(struct r_db_iter_t *iter) {
-//	if (iter->db->
-	return NULL;
+// NOTE: required for vala/swig
+R_API void *r_db_iterator(RDatabase *db) {
+	return r_db_iter_new (db, db->id_min);
+}
+
+/* returns 1 if there is a next element */
+R_API int r_db_iter_next(RDatabaseIter *iter) {
+	RDatabaseBlock *b, *block;
+	int i, j;
+// TODO: must be implemented for Vala/Swig
+	// if (something) return 1;
+	// depth = iter->size
+	// 
+	for (i=iter->ptr;i<iter->size;i++) {
+		//block = block->childs[b[key+i]];
+	}
+	iter->ptr = i; // update pointer
+	iter->cur = NULL;
+	return 0;
+}
+
+/* return current iter data and go to next iterable element */
+R_API void *r_db_iter_get(RDatabaseIter *iter) {
+	void *data = iter->cur;
+	
+// TODO: must be implemented for Vala/Swig
+	return data;
 }
 
 R_API void *r_db_iter_prev(struct r_db_iter_t *iter) {

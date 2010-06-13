@@ -50,6 +50,7 @@ typedef struct r_debug_trace_t {
 	//int changed;
 	int tag;
 	int dup;
+	char *addresses;
 	// TODO: add range here
 } RDebugTrace;
 

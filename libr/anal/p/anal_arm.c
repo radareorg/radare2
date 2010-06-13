@@ -56,7 +56,6 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	aop->addr = addr;
 	aop->type = R_ANAL_OP_TYPE_UNK;
 
-
 	if (aop == NULL)
 		return (arm_mode==16)?2:4;
 
@@ -67,12 +66,25 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 		codeA[0], codeA[1], codeA[2], codeA[3]);
 #endif
 
-	if (b[3]==0xe5 && b[2]==0x9f) {
-		/* STORE */
-		aop->type = R_ANAL_OP_TYPE_STORE;
-		aop->stackop = R_ANAL_STACK_SET;
-		aop->ref = 4+addr+b[0];
-		aop->refptr = R_TRUE;
+	if (b[3]==0xe5) {
+		if (b[2]==0x9f) {
+			/* STORE */
+			aop->type = R_ANAL_OP_TYPE_STORE;
+			aop->stackop = R_ANAL_STACK_SET;
+
+//printf ("FUCKING PT Rpc AT 0x%08llx + %d\n", addr, b[0]);
+			aop->ref = 4+addr+b[0];
+			aop->refptr = R_TRUE;
+		} else
+		if ((b[1]&0xf0) == 0xf0) {
+			//ldr pc, [pc, #1] ; 
+			aop->type = R_ANAL_OP_TYPE_UJMP;
+			aop->type = R_ANAL_OP_TYPE_RET; // FAKE FOR FUN
+			//aop->stackop = R_ANAL_STACK_SET;
+			aop->jump = 1234;
+			//aop->ref = 4+addr+b[0]; // sure? :)
+			//aop->refptr = R_TRUE;
+		}
 	} else
 //eprintf("0x%08x\n", code[i] & ARM_DTX_LOAD);
 	// 0x0001B4D8,           1eff2fe1        bx    lr

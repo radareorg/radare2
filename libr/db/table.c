@@ -11,8 +11,7 @@ int sizes[256];
 sizes['i'] = 4;
 #endif
 
-struct r_db_table_t *r_db_table_new(const char *name, const char *fmt, const char *fields)
-{
+struct r_db_table_t *r_db_table_new(const char *name, const char *fmt, const char *fields) {
 	int i;
 	int offset = 0;
 	struct r_db_table_t *table = R_NEW(struct r_db_table_t);
@@ -37,8 +36,7 @@ struct r_db_table_t *r_db_table_new(const char *name, const char *fmt, const cha
 }
 
 /* Get offset of given named field inside the table */
-int r_db_table_key(struct r_db_table_t *table, const char *name)
-{
+int r_db_table_key(struct r_db_table_t *table, const char *name) {
 	char *word;
 	int i;
 	for(i=0;i<table->nelems;i++) {
@@ -50,8 +48,7 @@ int r_db_table_key(struct r_db_table_t *table, const char *name)
 }
 
 /* Get offset of the N field in the table */
-int r_db_table_key_i(struct r_db_table_t *table, int elem)
-{
+int r_db_table_key_i(struct r_db_table_t *table, int elem) {
 	int key = -1;
 	if (elem>=0 && table->nelems<elem)
 		key = table->offset[elem];
@@ -59,16 +56,14 @@ int r_db_table_key_i(struct r_db_table_t *table, int elem)
 }
 
 /* Get name of the N field in the table */
-const char *r_db_table_field_i(struct r_db_table_t *table, int elem)
-{
+const char *r_db_table_field_i(struct r_db_table_t *table, int elem) {
 	char *name;
 	if (elem>=0 && table->nelems<elem)
 		name = r_str_word_get0(table->args, elem);
 	return name;
 }
 
-void *r_db_table_free(struct r_db_table_t *table)
-{
+void *r_db_table_free(struct r_db_table_t *table) {
 	free(table);
 	return NULL;
 }

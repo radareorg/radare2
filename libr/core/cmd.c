@@ -42,6 +42,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	int show_comments = r_config_get_i (core->config, "asm.comments");
 	int show_stackptr = r_config_get_i (core->config, "asm.stackptr");
 	int linesopts = 0;
+	int cursor = (core->print->cur_enabled)?core->print->cur:-1;
 	int nb, nbytes = r_config_get_i (core->config, "asm.nbytes");
 	nb = nbytes*2;
 
@@ -1583,10 +1584,15 @@ static int cmd_anal(void *data, const char *input) {
 			" at [addr]          ; show trace info at address\n"
 			" att [tag]          ; select trace tag (no arg unsets)\n"
 			" at%                ; TODO\n"
+			" ata 0x804020 ...   ; only trace given addresses\n"
 			" atr                ; show traces as range commands (ar+)\n"
 			" atd                ; show disassembly trace\n"
 			" atD                ; show dwarf trace (at*|rsc dwarf-traces $FILE)\n");
 			eprintf ("Current Tag: %d\n", core->dbg->trace->tag);
+			break;
+		case 'a':
+			eprintf ("NOTE: Ensure given addresses are in 0x%%08llx format\n");
+			r_debug_trace_at (core->dbg, input+2);
 			break;
 		case 't':
 			r_debug_trace_tag (core->dbg, atoi (input+2));

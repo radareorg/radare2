@@ -5,6 +5,7 @@
 R_API RDebugTrace *r_debug_trace_new () {
 	RDebugTrace *t = R_NEW (RDebugTrace);
 	t->tag = 1; // UT32_MAX;
+	t->addresses = NULL;
 	t->enabled = R_FALSE;
 	t->traces = r_list_new ();
 	t->traces->free = free;
@@ -43,6 +44,12 @@ R_API int r_debug_trace_pc (RDebug *dbg) {
 	return R_FALSE;
 }
 
+R_API void r_debug_trace_at(RDebug *dbg, const char *str) {
+	// TODO: parse offsets and so use ut64 instead of strstr()
+	free (dbg->trace->addresses);
+	dbg->trace->addresses = (str&&*str)? strdup (str): NULL;
+}
+
 R_API RDebugTracepoint *r_debug_trace_get (RDebug *dbg, ut64 addr) {
 	/* TODO: handle opcode size .. warn when jumping in the middle of instructions */
 	int tag = dbg->trace->tag;
@@ -71,11 +78,25 @@ R_API void r_debug_trace_list (RDebug *dbg, int mode) {
 	}
 }
 
+// XXX: find better name, make it public?
+static int r_debug_trace_is_traceable(RDebug *dbg, ut64 addr) {
+	int ret = R_TRUE;
+	char addr_str[32];
+	if (dbg->trace->addresses) {
+		snprintf (addr_str, sizeof (addr_str), "0x%08"PFMT64x, addr);
+		ret = strstr (dbg->trace->addresses, addr_str);
+	}
+	return ret;
+}
+
 /* sort insert, or separated sort function ? */
 /* TODO: detect if inner opcode */
 R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
+	RDebugTracepoint *tp;
 	int tag = dbg->trace->tag;
-	RDebugTracepoint *tp = r_debug_trace_get (dbg, addr);
+	if (!r_debug_trace_is_traceable (dbg, addr))
+		return NULL;
+	tp = r_debug_trace_get (dbg, addr);
 	if (!tp) {
 		tp = R_NEW (RDebugTracepoint);
 		memset (tp, 0, sizeof (RDebugTracepoint));

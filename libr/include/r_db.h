@@ -1,10 +1,10 @@
 #include "r_types.h"
 #define R_DB_KEYS 256
 
-struct r_db_block_t {
+typedef struct r_db_block_t {
 	void **data; /* { 0x80380, 0x80380, 0 } */
 	struct r_db_block_t *childs[256];
-};
+} RDatabaseBlock;
 
 #define R_DB_INDEXOF(type, member) \
   (int)((type *)((unsigned long)(&((type *)0)->member)))
@@ -36,6 +36,15 @@ typedef struct r_db_table_t {
 	int *offset;
 } RDatabaseTable;
 
+#if 0
+it = r_db_iterator (db);
+while (r_db_iter_next(it)) {
+	f = (RAnalFcn*) r_db_iter_get (it);
+	/* ... */
+}
+#endif
+
+
 #ifdef R_API
 R_API struct r_db_t *r_db_new();
 R_API struct r_db_block_t *r_db_block_new();
@@ -47,7 +56,7 @@ R_API int r_db_delete(struct r_db_t *db, const void *b);
 R_API void **r_db_get_next(void **ptr);
 R_API struct r_db_iter_t *r_db_iter(struct r_db_t *db, int key, const ut8 *b);
 R_API void *r_db_iter_cur(struct r_db_iter_t *iter);
-R_API void *r_db_iter_next(struct r_db_iter_t *iter);
+R_API int r_db_iter_next(struct r_db_iter_t *iter);
 R_API void *r_db_iter_prev(struct r_db_iter_t *iter);
 R_API struct r_db_iter_t *r_db_iter_new(struct r_db_t *db, int key);
 R_API struct r_db_iter_t *r_db_iter_free(struct r_db_iter_t *iter);

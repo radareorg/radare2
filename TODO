@@ -6,8 +6,10 @@
 
 FOR THE RELEASE WE HAVE TO:
 ===========================
-* FIX: binr/ must be compiled AGAINST system libr
-* continue untraced instruction
+* fix Vu, deosnt seems to work fine ..
+* continue until untraced instruction
+* Do not draw call lines (asm.linescall=false)
+
 
 * generate accessors automatically from valaswig
 * install.sh (to track installed files ..)

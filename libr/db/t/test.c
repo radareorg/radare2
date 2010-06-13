@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include "r_db.h"
 
@@ -11,8 +11,7 @@ struct item_t {
 #define K_ID R_DB_INDEXOF(struct item_t, id)
 #define K_CITY R_DB_INDEXOF(struct item_t, city)
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
 	struct r_db_t *db = r_db_new();
 	void **siter;
 	struct item_t *it, tmp;
