@@ -194,7 +194,15 @@ typedef struct r_anal_var_access_t {
 	int set;
 } RAnalVarAccess;
 
-typedef ut64 RAnalRef; // XXX
+enum {
+	R_ANAL_REF_TYPE_CODE='c', // call
+	R_ANAL_REF_TYPE_DATA='d'  // mem ref
+} RAnalRefType;
+
+typedef struct r_anal_ref_t {
+	int type;
+	ut64 addr;
+} RAnalRef;
 
 typedef struct r_anal_refline_t {
 	ut64 from;

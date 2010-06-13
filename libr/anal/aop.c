@@ -20,7 +20,7 @@ R_API RAnalOp *r_anal_aop_new() {
 
 R_API RList *r_anal_aop_list_new() {
 	RList *list = r_list_new ();
-	list->free = &r_anal_aop_free;
+	list->free = r_anal_aop_free;
 	return list;
 }
 

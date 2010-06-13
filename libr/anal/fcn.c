@@ -47,7 +47,6 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len) 
 	RAnalRef *ref, *refi;
 	RListIter *iter;
 	RAnalOp aop;
-	ut64 *jump;
 	char *varname;
 	int oplen, idx = 0;
 
@@ -93,17 +92,19 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len) 
 			break;
 		}
 		switch (aop.type) {
+		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CALL:
 			r_list_foreach (fcn->refs, iter, refi) {
-				jump = (ut64*)refi;
-				if (aop.jump == *jump)
+				if (aop.jump == refi->addr)
 					goto _dup_ref;
 			}
 			if (!(ref = r_anal_ref_new ())) {
 				eprintf ("Error: new (ref)\n");
 				return R_ANAL_RET_ERROR;
 			}
-			*ref = aop.jump;
+			ref = R_NEW (RAnalRef);
+			ref->type = R_ANAL_REF_TYPE_CODE;
+			ref->addr = aop.jump;
 			r_list_append (fcn->refs, ref);
 		_dup_ref:
 			break;

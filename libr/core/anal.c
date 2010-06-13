@@ -235,7 +235,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int depth) {
 	struct r_anal_ref_t *refi;
 	RListIter *iter, *iter2;
 	char *flagname;
-	ut64 *ref;
+	RAnalRef *ref;
 	ut8 *buf;
 	int buflen, fcnlen = 0;
 
@@ -246,15 +246,14 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int depth) {
 			(at == fcni->addr && fcni->size == 0)) {
 			if (from != -1) {
 				r_list_foreach (fcni->xrefs, iter2, refi) {
-					ref = (ut64*)refi;
-					if (from == *ref)
+					if (from == refi->addr)
 						return R_FALSE;
 				}
 				if (!(ref = r_anal_ref_new())) {
 					eprintf ("Error: new (xref)\n");
 					return R_ANAL_RET_ERROR;
 				}
-				*ref = from;
+				ref->addr = from;
 				r_list_append (fcni->xrefs, ref);
 			}
 			return R_FALSE;
@@ -280,9 +279,8 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int depth) {
 			free (flagname);
 			r_list_append (core->anal->fcns, fcn);
 			r_list_foreach (fcn->refs, iter, refi) {
-				ref = (ut64*)refi;
-				if (*ref != -1)
-					r_core_anal_fcn (core, *ref, at, depth-1);
+				if (refi->addr != -1)
+					r_core_anal_fcn (core, refi->addr, at, depth-1);
 			}
 		}
 	} while (fcnlen != R_ANAL_RET_END);
@@ -305,7 +303,6 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 }
 
 R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv) {
-	ut64 *ref;
 	RAnalRef *fcnr;
 	RAnalFcn *fcni;
 	RListIter *iter, *iter2;
@@ -323,14 +320,12 @@ R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv) {
 			r_cons_printf ("0x%08"PFMT64x"\n", fcni->addr);
 		r_list_foreach (fcni->refs, iter2, fcnr) {
 			char *name = "";
-			RFlagItem *flag;
-			ref = (ut64*)fcnr;
-			flag = r_flag_get_i (core->flags, *ref);
+			RFlagItem *flag = r_flag_get_i (core->flags, fcnr->addr);
 			if (flag)
 				name = flag->name;
 			if (gv) r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" [label=\"%s\" color=\"%s\"];\n",
-				fcni->addr, *ref, name, "green");
-			else r_cons_printf (" - 0x%08"PFMT64x"\n", *ref);
+				fcni->addr, fcnr->addr, name, "green");
+			else r_cons_printf (" - 0x%08"PFMT64x"\n", fcnr->addr);
 		}
 	}
 	r_cons_printf ("}\n");
@@ -341,7 +336,6 @@ R_API int r_core_anal_fcn_list(RCore *core, int rad) {
 	struct r_anal_ref_t *refi;
 	struct r_anal_var_t *vari;
 	RListIter *iter, *iter2;
-	ut64 *ref;
 
 	r_list_foreach (core->anal->fcns, iter, fcni)
 		if (rad) {
@@ -367,13 +361,11 @@ R_API int r_core_anal_fcn_list(RCore *core, int rad) {
 
 			r_cons_printf ("\n  refs: ");
 			r_list_foreach (fcni->refs, iter2, refi) {
-				ref = (ut64*)refi;
-				r_cons_printf ("0x%08"PFMT64x" ", *ref);
+				r_cons_printf ("0x%08"PFMT64x"(%c) ", refi->addr, refi->type);
 			}
 			r_cons_printf ("\n  xrefs: ");
 			r_list_foreach (fcni->xrefs, iter2, refi) {
-				ref = (ut64*)refi;
-				r_cons_printf ("0x%08"PFMT64x" ", *ref);
+				r_cons_printf ("0x%08"PFMT64x"(%c) ", refi->addr, refi->type);
 			}
 			r_cons_printf ("\n  vars:\n");
 			r_list_foreach (fcni->vars, iter2, vari) {
