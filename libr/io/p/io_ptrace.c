@@ -29,30 +29,25 @@ static int __waitpid(int pid) {
 
 // FIX: the goto 'err' is buggy
 static int debug_os_read_at(int pid, void *buf, int sz, ut64 addr) {
-        unsigned long words = sz / sizeof(long);
-        unsigned long last = sz % sizeof(long);
+        unsigned long words = sz / sizeof (long);
+        unsigned long last = sz % sizeof (long);
         long x, lr;
 
         if (sz<0 || addr==-1)
                 return -1; 
-
         for (x=0; x<words; x++) {
                 ((long *)buf)[x] = debug_read_raw (pid,
 			(void *)(&((long*)(long)addr)[x]));
                 if (((long *)buf)[x] == -1) // && errno)
-                        goto err;
+                        return -1;
         }
-
         if (last) {
                 lr = debug_read_raw (pid, &((long*)(long)addr)[x]);
                 if (lr == -1) // && errno)
-                        goto err;
+                        return -1;
                 memcpy (&((long *)buf)[x], &lr, last) ;
         }
-
         return sz; 
-err:
-        return --x * sizeof (long);
 }
 
 static int __read(struct r_io_t *io, int pid, ut8 *buf, int len) {
@@ -66,7 +61,7 @@ static int ptrace_write_at(int pid, const ut8 *buf, int sz, ut64 addr) {
         long last = (sz % sizeof(long))*8;
         int lr, x;
 
-	for(x=0;x<words;x++)
+	for (x=0;x<words;x++)
 		if (ptrace (PTRACE_POKEDATA, pid, &((long *)(long)addr)[x], ((long *)buf)[x]))
 			goto err;
 	if (last) {

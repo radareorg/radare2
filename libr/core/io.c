@@ -71,16 +71,17 @@ R_API int r_core_seek(RCore *core, ut64 addr, int rb) {
 	else core->offset = addr;
 	if (rb) {
 		ret = r_core_block_read (core, 0);
-		if (ret<1 && !core->ffio) {
-			core->offset = old;
-			eprintf ("Cannot read block at 0x%08"PFMT64x"\n", addr);
-		} else
-		if (ret <= core->blocksize) {
-			if (core->ffio) {
+		if (core->ffio) {
+			if (ret<1 || ret > core->blocksize)
 				memset (core->block, 0xff, core->blocksize);
-				core->offset = addr;
-			} else memset (core->block+ret, 0xff, core->blocksize-ret);
-		} else eprintf ("Error: IO backend error\n");
+			else memset (core->block+ret, 0xff, core->blocksize-ret);
+			core->offset = addr;
+		} else {
+			if (ret<1) {
+				core->offset = old;
+				eprintf ("Cannot read block at 0x%08"PFMT64x"\n", addr);
+			}
+		}
 	}
 	return (ret==-1)?R_FALSE:R_TRUE;
 }
