@@ -51,6 +51,11 @@ uninstall:
 
 deinstall: uninstall
 	cd libr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	rm -rf ${DESTDIR}${PREFIX}/include/libr
+	rm -rf ${DESTDIR}${PREFIX}/lib/libr_*.so
+	rm -rf ${DESTDIR}${PREFIX}/lib/libr_*.a
+	rm -rf ${DESTDIR}${PREFIX}/lib/libr.so
+	rm -rf ${DESTDIR}${PREFIX}/lib/libr.a
 	rm -rf ${DESTDIR}${PREFIX}/share/doc/radare2
 
 swig-dist:

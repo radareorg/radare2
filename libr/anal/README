@@ -19,8 +19,6 @@ Code analysis module
 
   -- allow to load register values from traces
 
-* TODO: Add static plugin support here
-
 var an = new RAnal ();
 io.bind (an);
 an.set ("x86");
@@ -57,7 +55,7 @@ r_anal_get_fun(an, 0x804800);
 
 void analyze_graph(Analysis an, uint64 addr)
 {
-  var? op = an.get_op(addr);
+  var op = an.get_op(addr);
   while (op != null) {
     if (op.type == Analysis.OpcodeType.BRANCH) {
       foreach (var jmp in op.refs) {
