@@ -77,6 +77,8 @@ static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts
 				bbc = R_NEW (RAnalBlock);
 				if (bbc) {
 					memcpy (bbc, bbi, sizeof (RAnalBlock));
+					bbc->aops = NULL;
+					bbc->fingerprint = NULL;
 					r_list_append (pbb, bbc);
 				}
 			}
