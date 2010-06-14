@@ -24,9 +24,11 @@ w32dist:
 
 clean:
 	cd libr && ${MAKE} clean
+	cd binr && ${MAKE} clean
 
 mrproper:
 	cd libr && ${MAKE} mrproper
+	cd binr && ${MAKE} mrproper
 	rm -f plugins.cfg libr/config.h libr/config.mk
 
 pkgcfg:

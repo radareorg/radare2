@@ -15,5 +15,7 @@ install:
 	# shortcut
 	-cd ${PFX}/bin && rm -f r2 ; ln -fs radare2 r2
 
+mrproper:clean
+
 clean:
 	@for a in ${BINS} ; do (cd $$a && ${MAKE} clean); done

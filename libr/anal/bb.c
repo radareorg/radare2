@@ -32,7 +32,7 @@ R_API RList *r_anal_bb_list_new() {
 R_API void r_anal_bb_free(void *bb) {
 	if (bb) {
 		if (((RAnalBlock*)bb)->aops)
-			r_list_destroy (((RAnalBlock*)bb)->aops);
+			r_list_free (((RAnalBlock*)bb)->aops);
 		if (((RAnalBlock*)bb)->fingerprint)
 			r_big_free (((RAnalBlock*)bb)->fingerprint);
 		free (bb);
@@ -182,7 +182,7 @@ R_API int r_anal_bb_del(RAnal *anal, ut64 addr) {
 	ut64 jump, fail;
 
 	if (addr == 0) {
-		r_list_destroy (anal->bbs);
+		r_list_free (anal->bbs);
 		if (!(anal->bbs = r_anal_bb_list_new ()))
 			return R_FALSE;
 	} else {

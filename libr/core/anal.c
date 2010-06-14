@@ -394,7 +394,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	r_cons_flush ();
 	if (addr != 0) pbb = r_anal_bb_list_new (); /* In partial graphs define printed bb list */
 	r_core_anal_graph_nodes (core, pbb, addr, opts);
-	if (pbb) r_list_destroy (pbb);
+	if (pbb) r_list_free (pbb);
 	r_cons_printf ("}\n");
 	r_cons_flush ();
 	r_config_set_i (core->config, "asm.lines", reflines);

@@ -7,7 +7,9 @@
 #include <r_list.h>
 
 R_API RAnalOp *r_anal_aop_new() {
-	RAnalOp *aop = R_NEW (RAnalOp);
+	RAnalOp *aop;
+
+	aop = R_NEW (RAnalOp);
 	if (aop) {
 		memset (aop, 0, sizeof (RAnalOp));
 		aop->mnemonic = NULL;
@@ -24,13 +26,14 @@ R_API RList *r_anal_aop_list_new() {
 	return list;
 }
 
-R_API void r_anal_aop_free(RAnalOp *aop) {
-	free (aop->mnemonic);
+R_API void r_anal_aop_free(void *aop) {
+	if (aop)
+		free (((RAnalOp*)aop)->mnemonic);
 	free (aop);
 }
 
 R_API int r_anal_aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	if (anal && aop && anal->cur && anal->cur->aop)
 		return anal->cur->aop (anal, aop, addr, data, len);
-	return R_FALSE;
+	return 0;
 }
