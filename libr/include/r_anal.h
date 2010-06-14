@@ -68,8 +68,8 @@ enum {
 
 enum {
 	R_ANAL_DIFF_NULL = 0,
-	R_ANAL_DIFF_MATCH,
-	R_ANAL_DIFF_UNMATCH,
+	R_ANAL_DIFF_MATCH = 'm',
+	R_ANAL_DIFF_UNMATCH = 'u'
 };
 
 enum {
@@ -149,6 +149,39 @@ typedef struct r_anal_aop_t {
 	ut64 i_dst[R_ANAL_MAXREG]; /* inmediate arguments */
 	int refptr;
 } RAnalOp;
+
+// value+regbase+regidx+delta
+typedef struct r_anal_value_t {
+	int memref; // is memory reference? or value?
+	ut64 base ; // numeric address
+	int delta; // numeric delta
+	int regbase; // register index used (-1 if no reg)
+	int regdelta; // register index used (-1 if no reg)
+} RAnalValue;
+
+enum {
+	R_ANAL_COND_TYPE_Z = 0, //'z', // only 'src' used
+	R_ANAL_COND_TYPE_E = 1,
+	R_ANAL_COND_TYPE_G = 2,
+	R_ANAL_COND_TYPE_GE = 1|2,
+};
+
+// 80f92f  cmp cl, 0x2f
+//   7543  jnz 0xb78b2dc0 
+//         cmp byte [ecx+eax-0x1], 0x2f
+// RAnalCond = {
+//   .type = R_ANAL_COND_TYPE_Z,
+//   .negate = 1,
+//   .src = { 
+
+typedef struct r_anal_cond_t {
+	// filled by CJMP opcode
+	int type;
+	int negate;
+	// filled by 'cmp' opcode
+	RAnalValue src;
+	RAnalValue dst;
+} RAnalCond;
 
 typedef struct r_anal_bb_t {
 	ut64 addr;

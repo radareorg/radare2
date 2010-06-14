@@ -303,29 +303,27 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 }
 
 R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv) {
+	RListIter *iter, *iter2;
 	RAnalRef *fcnr;
 	RAnalFcn *fcni;
-	RListIter *iter, *iter2;
+	const char *name;
 
-	if (gv)
-	r_cons_printf ("digraph code {\n"
+	if (gv) r_cons_printf ("digraph code {\n"
 		"\tgraph [bgcolor=white];\n"
 		"\tnode [color=lightgray, style=filled shape=box"
 		" fontname=\"Courier\" fontsize=\"8\"];\n");
-
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (addr != 0 && addr != fcni->addr)
 			continue;
-		if (!gv)
-			r_cons_printf ("0x%08"PFMT64x"\n", fcni->addr);
+		if (!gv) r_cons_printf ("0x%08"PFMT64x"\n", fcni->addr);
 		r_list_foreach (fcni->refs, iter2, fcnr) {
-			char *name = "";
+			// TODO: display only code or data refs?
 			RFlagItem *flag = r_flag_get_i (core->flags, fcnr->addr);
-			if (flag)
-				name = flag->name;
-			if (gv) r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" [label=\"%s\" color=\"%s\"];\n",
-				fcni->addr, fcnr->addr, name, "green");
-			else r_cons_printf (" - 0x%08"PFMT64x"\n", fcnr->addr);
+			if (gv) r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
+					"[label=\"%s\" color=\"%s\"];\n",
+				fcni->addr, fcnr->addr, flag?flag->name:"",
+				(fcnr->type==R_ANAL_REF_TYPE_CODE)?"green":"red");
+			else r_cons_printf (" - 0x%08"PFMT64x" (%c)\n", fcnr->addr, fcnr->type);
 		}
 	}
 	r_cons_printf ("}\n");
@@ -339,26 +337,12 @@ R_API int r_core_anal_fcn_list(RCore *core, int rad) {
 
 	r_list_foreach (core->anal->fcns, iter, fcni)
 		if (rad) {
-			r_cons_printf ("af+ 0x%08"PFMT64x" %"PFMT64d" %s", fcni->addr, fcni->size, fcni->name);
-
-			if ((fcni->diff == R_ANAL_DIFF_MATCH))
-				r_cons_printf (" m");
-			else if ((fcni->diff == R_ANAL_DIFF_UNMATCH))
-				r_cons_printf (" u");
-			else r_cons_printf (" n");
-			r_cons_printf ("\n");
+			r_cons_printf ("af+ 0x%08"PFMT64x" %"PFMT64d" %s (%c)\n",
+				fcni->addr, fcni->size, fcni->name, fcni->diff?fcni->diff:'n');
 		} else {
 			r_cons_printf ("[0x%08"PFMT64x"] size=%"PFMT64d" name=%s",
 					fcni->addr, fcni->size, fcni->name);
-
-			r_cons_printf (" diff=");
-			if ((fcni->diff == R_ANAL_DIFF_MATCH))
-				r_cons_printf ("match");
-			else if ((fcni->diff == R_ANAL_DIFF_UNMATCH))
-				r_cons_printf ("unmatch");
-			else r_cons_printf ("new");
-			r_cons_printf ("\n");
-
+			r_cons_printf (" diff=%s", fcni->diff=='m'?"match": fcni->diff=='u'?"unmatch": "new");
 			r_cons_printf ("\n  refs: ");
 			r_list_foreach (fcni->refs, iter2, refi) {
 				r_cons_printf ("0x%08"PFMT64x"(%c) ", refi->addr, refi->type);
