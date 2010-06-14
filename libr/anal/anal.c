@@ -47,11 +47,11 @@ R_API RAnal *r_anal_free(RAnal *anal) {
 	if (anal) {
 		/* TODO: Free a->anals here */
 		if (anal->bbs)
-			r_list_destroy (anal->bbs);
+			r_list_free (anal->bbs);
 		if (anal->fcns)
-			r_list_destroy (anal->fcns);
+			r_list_free (anal->fcns);
 		if (anal->vartypes)
-			r_list_destroy (anal->vartypes);
+			r_list_free (anal->vartypes);
 	}
 	free (anal);
 	return NULL;

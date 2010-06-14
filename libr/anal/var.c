@@ -58,7 +58,7 @@ R_API void r_anal_var_free(void *var) {
 		if (((RAnalVar*)var)->vartype)
 			free (((RAnalVar*)var)->vartype);
 		if (((RAnalVar*)var)->accesses)
-			r_list_destroy (((RAnalVar*)var)->accesses);
+			r_list_free (((RAnalVar*)var)->accesses);
 	}
 	free (var);
 }

@@ -32,11 +32,11 @@ R_API void r_anal_fcn_free(void *fcn) {
 		if (((RAnalFcn*)fcn)->name)
 			free (((RAnalFcn*)fcn)->name);
 		if (((RAnalFcn*)fcn)->refs)
-			r_list_destroy (((RAnalFcn*)fcn)->refs);
+			r_list_free (((RAnalFcn*)fcn)->refs);
 		if (((RAnalFcn*)fcn)->xrefs)
-			r_list_destroy (((RAnalFcn*)fcn)->xrefs);
+			r_list_free (((RAnalFcn*)fcn)->xrefs);
 		if (((RAnalFcn*)fcn)->vars)
-			r_list_destroy (((RAnalFcn*)fcn)->vars);
+			r_list_free (((RAnalFcn*)fcn)->vars);
 		if (((RAnalFcn*)fcn)->fingerprint)
 			r_big_free (((RAnalFcn*)fcn)->fingerprint);
 	}
@@ -144,7 +144,7 @@ R_API int r_anal_fcn_del(RAnal *anal, ut64 addr) {
 	RListIter *iter;
 
 	if (addr == 0) {
-		r_list_destroy (anal->fcns);
+		r_list_free (anal->fcns);
 		if (!(anal->fcns = r_anal_fcn_list_new ()))
 			return R_FALSE;
 	} else r_list_foreach (anal->fcns, iter, fcni)
