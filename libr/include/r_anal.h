@@ -193,6 +193,7 @@ typedef struct r_anal_bb_t {
 	int ninstr;
 	RNumBig *fingerprint;
 	RList *aops;
+	RAnalCond *cond;
 } RAnalBlock;
 
 typedef struct r_anal_fcn_t {
@@ -324,6 +325,9 @@ R_API const char *r_anal_var_type_to_str (RAnal *anal, int type);
 R_API int r_anal_var_access_add(RAnal *anal, RAnalVar *var, ut64 from, int set);
 R_API int r_anal_var_access_del(RAnal *anal, RAnalVar *var, ut64 from);
 R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 from);
+
+R_API RAnalCond *r_anal_cond_new();
+#define r_anal_cond_free(x) free(x);
 
 /* reflines.c */
 R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal, 
