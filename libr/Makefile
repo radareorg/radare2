@@ -65,13 +65,21 @@ install-includes:
 install-symlink:
 	mkdir -p ${PFX}/bin
 	mkdir -p ${PFX}/include
+	mkdir -p ${PFX}/lib/pkgconfig
 	mkdir -p ${PFX}/lib/radare2
-	ln -fs ${PWD}/include ${PFX}/include/libr
+	rm -f ${PFX}/include/libr && ln -fs ${PWD}/include ${PFX}/include/libr
+	cd ../pkgcfg && for a in *.pc ; do \
+		if [ -e ${PWD}/../pkgcfg/$${a} ] ; then \
+			ln -fs ${PWD}/../pkgcfg/$${a} ${PFX}/lib/pkgconfig/$${a} ; \
+		fi ; \
+	done
 	for a in ${LIBLIST} ; do \
 		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_SO} ${PFX}/lib/libr_$${a}.${EXT_SO} ; \
 		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_AR} ${PFX}/lib/libr_$${a}.${EXT_AR} ; \
 		for b in $${a}/p/*.${EXT_SO} ; do \
-			ln -fs ${PWD}/$${b} ${PFX}/lib/radare2/ ; \
+			if [ -e ${PWD}/$${b} ] ; then \
+				ln -fs ${PWD}/$${b} ${PFX}/lib/radare2/ ; \
+			fi ; \
 		done ; \
 	done
 
