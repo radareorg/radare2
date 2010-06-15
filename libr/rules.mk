@@ -62,8 +62,14 @@ deinstall uninstall:
 clean: ${EXTRA_CLEAN}
 	-rm -f *.${EXT_EXE} *.${EXT_SO} *.${EXT_AR}
 	-rm -f ${LIBSO} ${LIBAR} ${OBJ} ${BIN} *.exe a.out
-	@if [ -e t/Makefile ]; then (cd t && ${MAKE} clean) ; fi
-	@if [ -e p/Makefile ]; then (cd p && ${MAKE} clean) ; fi
+	-@if [ -e t/Makefile ]; then (cd t && ${MAKE} clean) ; fi
+	-@if [ -e p/Makefile ]; then (cd p && ${MAKE} clean) ; fi
+	@true
+
+mrproper: clean
+	-@if [ -e t/Makefile ]; then (cd t && ${MAKE} mrproper) ; fi
+	-@if [ -e p/Makefile ]; then (cd p && ${MAKE} mrproper) ; fi
+	-rm -f *.d
 	@true
 
 sloc:
@@ -101,6 +107,9 @@ myclean:
 
 clean: myclean
 	-rm -f ${OBJ} ${BIN}
+
+mrproper: clean
+	-rm -f *.d
 
 install:
 	cd ../.. && ${MAKE} install

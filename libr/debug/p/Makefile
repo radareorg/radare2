@@ -18,4 +18,7 @@ pre:
 clean:
 	-rm -f *.${EXT_SO} *.o ${STATIC_OBJ}
 
-.PHONY: all clean
+mrproper: clean
+	-rm -f *.d */*.d
+
+.PHONY: all clean foo mrproper

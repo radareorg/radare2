@@ -15,4 +15,7 @@ all: ${ALL_TARGETS}
 clean:
 	-rm -f *.so *.o ${STATIC_OBJ}
 
-.PHONY: all clean foo
+mrproper: clean
+	-rm -f *.d
+
+.PHONY: all clean foo mrproper

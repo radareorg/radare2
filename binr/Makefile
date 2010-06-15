@@ -24,7 +24,5 @@ deinstall uninstall:
 	for a in ${BINS} ; do rm -f ${PFX}/bin/$$a ; done
 	-rm -f ${PFX}/bin/r2
 
-mrproper:clean
-
-clean:
+clean mrproper:
 	@for a in ${BINS} ; do (cd $$a && ${MAKE} clean); done

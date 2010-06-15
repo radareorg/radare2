@@ -31,9 +31,9 @@ install-symlink:
 deinstall uninstall:
 	rm -f ${PFX}/bin/r2rc ${PFX}/bin/r2rc-tool
 
-clean:
+clean mrproper:
 	cd t && ${MAKE} clean
 	-rm -f r2rc r2rc.o out.o emit*.o
 
 
-.PHONY: all clean install install-symlink deinstall uninstall r2rc test
+.PHONY: all clean install install-symlink deinstall uninstall r2rc test mrproper

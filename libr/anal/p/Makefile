@@ -16,4 +16,7 @@ all: ${ALL_TARGETS}
 clean:
 	-rm -f *.${EXT_SO} *.o ${STATIC_OBJ}
 
-.PHONY: all clean foo
+mrproper: clean
+	-rm -f *.d ../arch/*/*/*.d
+
+.PHONY: all clean foo mrproper

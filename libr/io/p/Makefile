@@ -20,3 +20,8 @@ io_ewf.${LIB_SO}: io_ewf.o
 
 clean:
 	-rm -f *.so *.o *.dll *.dylib *.${EXT_SO}
+
+mrproper: clean
+	-rm -f *.d
+
+.PHONY: all clean foo mrproper

@@ -25,11 +25,14 @@ w32dist:
 clean:
 	cd libr && ${MAKE} clean
 	cd binr && ${MAKE} clean
+	cd r2rc && ${MAKE} clean
 
 mrproper:
 	cd libr && ${MAKE} mrproper
 	cd binr && ${MAKE} mrproper
-	rm -f plugins.cfg libr/config.h libr/config.mk
+	cd r2rc && ${MAKE} mrproper
+	rm -f config-user.mk plugins.cfg libr/config.h libr/include/r_userconf.h libr/config.mk
+	rm -f pkgcfg/*.pc
 
 pkgcfg:
 	cd libr && ${MAKE} pkgcfg
@@ -57,13 +60,6 @@ deinstall: uninstall
 	cd libr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd r2rc && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-# MOVE TO libr/Makefile, use for a in LIBS...
-	rm -rf ${DESTDIR}${PREFIX}/include/libr
-	rm -rf ${DESTDIR}${PREFIX}/lib/libr_*.so
-	rm -rf ${DESTDIR}${PREFIX}/lib/libr_*.a
-	rm -rf ${DESTDIR}${PREFIX}/lib/libr.so
-	rm -rf ${DESTDIR}${PREFIX}/lib/libr.a
-	rm -rf ${DESTDIR}${PREFIX}/share/doc/radare2
 
 swig-dist:
 	cd swig && ${MAKE} dist

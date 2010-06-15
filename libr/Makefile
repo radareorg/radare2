@@ -118,13 +118,22 @@ deinstall uninstall:
 	rm -f ${PFX}/lib/pkgconfig/r_*.pc
 	# test programs
 	rm -rf ${PFX}/bin/libr-test
+	# TODO: use for a in LIBLIST (like in binr/Makefile)
+	rm -rf ${PFX}/include/libr
+	rm -rf ${PFX}/lib/libr_*.so
+	rm -rf ${PFX}/lib/libr_*.a
+	rm -rf ${PFX}/lib/libr.so
+	rm -rf ${PFX}/lib/libr.a
+	rm -rf ${PFX}/share/doc/radare2
 	@echo libr aka radare2 has been uninstalled from PREFIX=${PFX}
 
 clean:
 	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} clean ); done
+	rm -f libr2.so
 	rm -rf .objs
 
 mrproper: clean
+	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} mrproper ); done
 	rm -f libr.pc
 
 sloc:

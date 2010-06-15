@@ -23,3 +23,6 @@ read4${EXT_EXE}: read4.o
 
 clean:
 	rm -f cat read4 map *.o
+
+mrproper: clean
+	-rm -f *.d
