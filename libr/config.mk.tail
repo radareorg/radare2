@@ -23,12 +23,6 @@ LDFLAGS+=$(subst r_,-lr_,$(DEPS))
 LDFLAGS+=$(subst r_,-L../,$(DEPS))
 LDFLAGS+=$(subst r_,-lr_,$(BINDEPS))
 LDFLAGS+=$(subst r_,-L../../,$(BINDEPS))
-ifeq ($(OSTYPE),darwin)
-BOO=-L../../
-else
-BOO=-Wl,-R../../
-endif
-LDFLAGS+=$(subst r_,${BOO},$(BINDEPS))
 CFLAGS+=${PIC_CFLAGS}
 LDFLAGS+=${PIC_CFLAGS}
 else

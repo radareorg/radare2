@@ -47,12 +47,17 @@ install: install-man
 
 symstall install-symlink:
 	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd binr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd r2rc && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
 uninstall:
 	rm -rf prefix
 
 deinstall: uninstall
 	cd libr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd binr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd r2rc && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+# MOVE TO libr/Makefile, use for a in LIBS...
 	rm -rf ${DESTDIR}${PREFIX}/include/libr
 	rm -rf ${DESTDIR}${PREFIX}/lib/libr_*.so
 	rm -rf ${DESTDIR}${PREFIX}/lib/libr_*.a

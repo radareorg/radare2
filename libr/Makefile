@@ -67,12 +67,6 @@ install-symlink:
 	mkdir -p ${PFX}/include
 	mkdir -p ${PFX}/lib/radare2
 	ln -fs ${PWD}/include ${PFX}/include/libr
-	ln -fs ${PWD}/asm/t/rasm2 ${PFX}/bin/rasm2
-	ln -fs ${PWD}/hash/t/rahash2 ${PFX}/bin/rahash2
-	ln -fs ${PWD}/util/t/rax2 ${PFX}/bin/rax2
-	ln -fs ${PWD}/diff/t/radiff2 ${PFX}/bin/radiff2
-	ln -fs ${PWD}/bin/t/rabin2 ${PFX}/bin/rabin2
-	ln -fs ${PWD}/core/t/radare2 ${PFX}/bin/radare2
 	for a in ${LIBLIST} ; do \
 		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_SO} ${PFX}/lib/libr_$${a}.${EXT_SO} ; \
 		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_AR} ${PFX}/lib/libr_$${a}.${EXT_AR} ; \
@@ -99,34 +93,32 @@ install: install-includes install-pkgconfig
 	${INSTALL_DATA} $$a ${PFX}/lib/radare2 ; done
 	${INSTALL_DATA} lang/p/radare.* ${PFX}/lib/radare2
 	echo "lang/p/radare.* ${PFX}/lib/radare2"
-	# strip rpath from ALL bins ONLY in Linux
-	[ "`uname`" = Linux ] && ./rpathstrip.sh ${PFX}
 
 deinstall uninstall:
 	# libraries
 	-@for a in `find * | grep -e '\.${EXT_SO}$$' | grep -v 'lib/t' | grep lib` ; do \
 	a=`echo $$a | awk -F / '{ print $$NF; }'`; \
-	echo ${PREFIX}/lib/$$a ; rm -f ${PREFIX}/lib/$$a ; done
+	echo ${PFX}/lib/$$a ; rm -f ${PFX}/lib/$$a ; done
 	# object archives
 	-@for a in `find * | grep -e '\.a$$'` ; do \
 	a=`echo $$a | awk -F / '{ print $$NF; }'`; \
-	echo ${PREFIX}/lib/$$a ; rm -f ${PREFIX}/lib/$$a ; done
+	echo ${PFX}/lib/$$a ; rm -f ${PFX}/lib/$$a ; done
 	# includes
-	-(cd include && for a in * ; do rm -f ${PREFIX}/libr/$$a ; done)
+	-(cd include && for a in * ; do rm -f ${PFX}/libr/$$a ; done)
 	# programs
 	-@for a in `find */t -perm -u+x -type f | grep 2`; do \
 	a=`echo $$a|awk -F / '{ print $$NF; }'`; \
-	echo ${PREFIX}/bin/$$a ; rm -f ${PREFIX}/bin/$$a ; done
+	echo ${PFX}/bin/$$a ; rm -f ${PFX}/bin/$$a ; done
 	# plugins
 	-@for a in `find */p -perm -u+x -type f`; do \
-	a="${PREFIX}/lib/radare2/`echo $$a|awk -F / '{ print $$NF; }'`"; \
+	a="${PFX}/lib/radare2/`echo $$a|awk -F / '{ print $$NF; }'`"; \
 	echo $$a ; rm -f $$a ; done
-	rm -rf ${PREFIX}/lib/radare2
-	rm -f ${PREFIX}/lib/pkgconfig/libr.pc
-	rm -f ${PREFIX}/lib/pkgconfig/r_*.pc
+	rm -rf ${PFX}/lib/radare2
+	rm -f ${PFX}/lib/pkgconfig/libr.pc
+	rm -f ${PFX}/lib/pkgconfig/r_*.pc
 	# test programs
-	rm -rf ${PREFIX}/bin/libr-test
-	@echo libr aka radare2 has been uninstalled from PREFIX=${PREFIX}
+	rm -rf ${PFX}/bin/libr-test
+	@echo libr aka radare2 has been uninstalled from PREFIX=${PFX}
 
 clean:
 	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} clean ); done
@@ -138,4 +130,4 @@ mrproper: clean
 sloc:
 	${MAKE} -C .. sloc SLOCDIR=libr
 
-.PHONY: sloc mrproper clean all pkgcfg install deinstall uninstall libr
+.PHONY: sloc mrproper clean all pkgcfg install deinstall uninstall libr install-symlink

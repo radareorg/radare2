@@ -1,6 +1,7 @@
 CFLAGS+=-g -Wall
 PREFIX?=/usr
 DESTDIR?=
+PFX=${DESTDIR}${PREFIX}
 
 all: r2rc
 
@@ -17,11 +18,22 @@ test:
 
 install:
 	chmod +x r2rc
-	mkdir -p ${DESTDIR}${PREFIX}/bin
-	cp r2rc ${DESTDIR}${PREFIX}/bin
+	mkdir -p ${PFX}/bin
+	cp r2rc ${PFX}/bin
 	chmod +x r2rc-tool
-	cp r2rc-tool ${DESTDIR}${PREFIX}/bin
+	cp r2rc-tool ${PFX}/bin
+
+install-symlink:
+	mkdir -p ${PFX}/bin
+	ln -fs ${PWD}/r2rc ${PFX}/bin/r2rc
+	ln -fs ${PWD}/r2rc-tool ${PFX}/bin/r2rc-tool
+
+deinstall uninstall:
+	rm -f ${PFX}/bin/r2rc ${PFX}/bin/r2rc-tool
 
 clean:
 	cd t && ${MAKE} clean
 	-rm -f r2rc r2rc.o out.o emit*.o
+
+
+.PHONY: all clean install install-symlink deinstall uninstall r2rc test

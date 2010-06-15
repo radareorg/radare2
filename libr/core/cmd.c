@@ -1305,8 +1305,10 @@ static int cmd_flag(void *data, const char *input) {
 		{
 			char *file = PREFIX"/share/doc/radare2/fortunes";
 			char *line = r_file_slurp_random_line (file);
-			r_cons_printf (" -- %s\n", line);
-			free (line);
+			if (line) {
+				r_cons_printf (" -- %s\n", line);
+				free (line);
+			}
 		}
 		break;
 	case '*':
