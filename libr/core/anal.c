@@ -79,6 +79,7 @@ static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts
 					memcpy (bbc, bbi, sizeof (RAnalBlock));
 					bbc->aops = NULL;
 					bbc->fingerprint = NULL;
+					bbc->cond = NULL;
 					r_list_append (pbb, bbc);
 				}
 			}
@@ -308,7 +309,6 @@ R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv) {
 	RListIter *iter, *iter2;
 	RAnalRef *fcnr;
 	RAnalFcn *fcni;
-	const char *name;
 
 	if (gv) r_cons_printf ("digraph code {\n"
 		"\tgraph [bgcolor=white];\n"
