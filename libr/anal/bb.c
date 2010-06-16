@@ -42,7 +42,7 @@ R_API void r_anal_bb_free(void *_bb) {
 }
 
 R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, int head) {
-	RAnalOp *aop;
+	RAnalOp *aop = NULL;
 	int oplen, idx = 0;
 
 	if (bb->addr == -1)
@@ -65,13 +65,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 		if (head) bb->type = R_ANAL_BB_TYPE_HEAD;
 		switch (aop->type) {
 		case R_ANAL_OP_TYPE_CMP:
-			bb->cond = r_anal_cond_new ();
-			// TODO fill conditional information
-			//bb->cond->type = 0; // UNKNOWN
-			bb->cond->arg[0] = r_anal_value_new_from_aop(aop, 0);
-			bb->cond->arg[1] = r_anal_value_new_from_aop(aop, 1);
-			// bb->src = { 0,0,0,0,0 }
-			// bb->dst = { 0,0,0,0,0 }
+			bb->cond = r_anal_cond_new_from_aop (aop);
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
 			if (bb->cond) {
@@ -81,18 +75,23 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			bb->fail = aop->fail;
 			bb->jump = aop->jump;
 			bb->type |= R_ANAL_BB_TYPE_BODY;
+			r_anal_aop_free (aop);
 			return R_ANAL_RET_END;
 		case R_ANAL_OP_TYPE_JMP:
 			bb->jump = aop->jump;
 			bb->type |= R_ANAL_BB_TYPE_BODY;
+			r_anal_aop_free (aop);
 			return R_ANAL_RET_END;
 		case R_ANAL_OP_TYPE_UJMP:
 			bb->type |= R_ANAL_BB_TYPE_FOOT;
+			r_anal_aop_free (aop);
 			return R_ANAL_RET_END;
 		case R_ANAL_OP_TYPE_RET:
 			bb->type |= R_ANAL_BB_TYPE_LAST;
+			r_anal_aop_free (aop);
 			return R_ANAL_RET_END;
 		}
+		r_anal_aop_free (aop);
 	}
 	return bb->size;
 }

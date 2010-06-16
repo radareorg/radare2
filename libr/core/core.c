@@ -7,6 +7,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RCore *core = (RCore *)userptr; // XXX ?
 	RFlagItem *flag;
 	RAnalOp aop;
+	ut64 ret;
 	
 	if (str[0]=='$') {
 		/* analyze opcode */
@@ -46,11 +47,11 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case '?': return core->num->value;
 		}
 	}
-
-	flag = r_flag_get (core->flags, str);
-	if (flag) *ok = R_TRUE;
-	else *ok = R_FALSE;
-	return (flag)?flag->offset:0LL;
+	if ( (flag = r_flag_get (core->flags, str)) ) {
+		ret = flag->offset;
+		*ok = R_TRUE;
+	} else *ok = ret = 0;
+	return ret;
 }
 
 R_API RCore *r_core_new() {
@@ -158,7 +159,7 @@ R_API int r_core_init(RCore *core) {
 	core->flags = r_flag_new ();
 	core->dbg = r_debug_new (R_TRUE);
 	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz
-	core->dbg->anal->reg = core->anal->reg; // XXX: dupped instance.. can cause lost pointerz
+//	core->dbg->anal->reg = core->anal->reg; // XXX: dupped instance.. can cause lost pointerz
 	core->sign->printf = r_cons_printf;
 	core->io->printf = r_cons_printf;
 	core->dbg->printf = r_cons_printf;

@@ -149,8 +149,8 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			stackptr += analop.stackptr;
 		}
 		if (show_bytes) {
-			char pad[64];
-			char *str, *extra = " ";
+			char *str, pad[64];
+			const char *extra = " ";
 			if (!flag) {
 				str = strdup (asmop.buf_hex);
 				if (strlen (str) > nb) {
@@ -499,6 +499,7 @@ static void cmd_reg(RCore *core, const char *str) {
 				r_cons_printf ("%s\n", core->dbg->reg_profile);
 			else eprintf ("No register profile defined. Try 'dr.'\n");
 		} else r_reg_set_profile (core->dbg->reg, str+2);
+		core->anal->reg = core->dbg->reg;
 		break;
 	case 't':
 		for (i=0; (name=r_reg_get_type (i));i++)

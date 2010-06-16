@@ -132,6 +132,17 @@ typedef struct r_anal_t {
 	struct list_head anals; // XXX: use RList here
 } RAnal;
 
+// mul*value+regbase+regidx+delta
+typedef struct r_anal_value_t {
+	int memref; // is memory reference? or value?
+	ut64 base ; // numeric address
+	int delta; // numeric delta
+	int mul; // multiplier (reg*4+base)
+// TODO: add multiplier 
+	RRegisterItem *reg; // register index used (-1 if no reg)
+	RRegisterItem *regdelta; // register index used (-1 if no reg)
+} RAnalValue;
+
 typedef struct r_anal_aop_t {
 	char *mnemonic; /* mnemonic */
 	ut64 addr;      /* address */
@@ -147,22 +158,10 @@ typedef struct r_anal_aop_t {
 	st64 ref;       /* reference to memory */ /* XXX signed? */
 	ut64 value;     /* reference to value */ /* XXX signed? */
 	st64 stackptr;  /* stack pointer */
-	RRegisterItem *src[3];
-	RRegisterItem *dst;
+	RAnalValue *src[3];
+	RAnalValue *dst;
 	int refptr;
 } RAnalOp;
-
-//mov    0x8175780(,%eax,4),%eax
-// value+regbase+regidx+delta
-typedef struct r_anal_value_t {
-	int memref; // is memory reference? or value?
-	ut64 base ; // numeric address
-	int delta; // numeric delta
-	int mul; // multiplier (reg*4+base)
-// TODO: add multiplier 
-	RRegisterItem *regbase; // register index used (-1 if no reg)
-	RRegisterItem *regdelta; // register index used (-1 if no reg)
-} RAnalValue;
 
 #define R_ANAL_COND_SINGLE(x) (!x->arg[1] || x->arg[0]==x->arg[1])
 
@@ -314,7 +313,14 @@ R_API int r_anal_var_access_add(RAnal *anal, RAnalVar *var, ut64 from, int set);
 R_API int r_anal_var_access_del(RAnal *anal, RAnalVar *var, ut64 from);
 R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 from);
 
+R_API RAnalValue *r_anal_value_new();
+R_API RAnalValue *r_anal_value_new_from_string(const char *str);
+R_API st64 r_anal_value_eval(RAnalValue *value);
+R_API char *r_anal_value_to_string (RAnalValue *value);
+R_API void r_anal_value_free(RAnalValue *value);
+
 R_API RAnalCond *r_anal_cond_new();
+R_API RAnalCond *r_anal_cond_new_from_aop(RAnalOp *op);
 #define r_anal_cond_free(x) free(x);
 R_API int r_anal_cond_eval(RAnalCond *cond);
 R_API char *r_anal_cond_to_string(RAnalCond *cond);

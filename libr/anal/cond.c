@@ -47,6 +47,19 @@ R_API char *r_anal_cond_to_string(RAnalCond *cond) {
 	return out;
 }
 
+R_API RAnalCond *r_anal_cond_new_from_aop(RAnalOp *op) {
+	RAnalCond *cond;
+	if (!(cond = r_anal_cond_new()))
+		return NULL;
+	//v->reg[0] = op->src[0];
+	//v->reg[1] = op->src[1];
+	cond->arg[0] = op->src[0];
+	op->src[0] = NULL;
+	// TODO: moar!
+	//cond->arg[1] = op->src[1];
+	return cond;
+}
+
 R_API RAnalCond *r_anal_cond_new_from_string(const char *str) {
 	RAnalCond *cond = R_NEW (RAnalCond);
 	// TODO: find '<','=','>','!'...

@@ -114,7 +114,7 @@ static int config_asm_bits_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	int ret = r_asm_set_bits (core->assembler, node->i_value);
 	if (ret == R_FALSE) {
-		struct r_asm_plugin_t *h = core->assembler->cur;
+		RAsmPlugin *h = core->assembler->cur;
 		if (h) {
 			eprintf ("Cannot set bits %"PFMT64d" to '%s'\n",
 				node->i_value, h->name);

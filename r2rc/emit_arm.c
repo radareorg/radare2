@@ -176,11 +176,11 @@ static void emit_while_end (const char *labelback) {
 #if SYNTAX_ATT
 	rcc_printf ("  pop %%"R_AX"\n");
 	rcc_printf ("  cmp $0, %%"R_AX"\n"); // XXX MUST SUPPORT != 0 COMPARE HERE
-	rcc_printf ("  jnz %s\n", labelback);
+	rcc_printf ("  bne %s\n", labelback);
 #else
 	rcc_printf ("  pop "R_AX"\n");
-	rcc_printf ("  test "R_AX", "R_AX"\n"); // XXX MUST SUPPORT != 0 COMPARE HERE
-	rcc_printf ("  jnz %s\n", labelback);
+	rcc_printf ("  cmp "R_AX", $0\n"); // XXX MUST SUPPORT != 0 COMPARE HERE
+	rcc_printf ("  bne %s\n", labelback);
 #endif
 }
 

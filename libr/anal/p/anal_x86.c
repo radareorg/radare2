@@ -114,11 +114,20 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 				"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi" };
 			int src = buf[1]&7;
 			int dst = (buf[1]&0x38)>>3;
-			aop->src[0] = r_reg_get (anal->reg, testregs[src%8], R_REG_TYPE_GPR);
-			aop->src[1] = r_reg_get (anal->reg, testregs[dst%8], R_REG_TYPE_GPR);
-			if (aop->src[0] == aop->src[1])
+			aop->src[0] = r_anal_value_new ();
+			aop->src[0]->reg = r_reg_get (anal->reg, testregs[src%8], R_REG_TYPE_GPR);
+			aop->src[1] = r_anal_value_new ();
+			aop->src[1]->reg = r_reg_get (anal->reg, testregs[dst%8], R_REG_TYPE_GPR);
+			aop->src[2] = NULL;
+//eprintf ("REGZ (%s)\n", anal->reg);
+//eprintf ("REG IZ: (%s)\n", testregs[src%8]);
+//eprintf ("REG IZ: %p (%s)\n", aop->src[0], aop->src[0]->reg->name);
+			if (aop->src[0]->reg == aop->src[1]->reg) {
+//eprintf ("fruity\n");
+				r_anal_value_free (aop->src[1]);
 				aop->src[1] = NULL;
-		//	eprintf ("0x%"PFMT64x": (%02x) %d %d\n", addr, buf[1], src, dst);
+			}
+			//eprintf ("0x%"PFMT64x": (%02x) %d %d\n", addr, buf[1], src, dst);
 		} else if (buf[1]<0xc0) { // test [eax+delta], eax
 			/* not yet supported */
 		}
