@@ -158,6 +158,7 @@ R_API int r_core_init(RCore *core) {
 	core->flags = r_flag_new ();
 	core->dbg = r_debug_new (R_TRUE);
 	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz
+	core->dbg->anal->reg = core->anal->reg; // XXX: dupped instance.. can cause lost pointerz
 	core->sign->printf = r_cons_printf;
 	core->io->printf = r_cons_printf;
 	core->dbg->printf = r_cons_printf;

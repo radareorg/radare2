@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 */
+/* radare - LGPL - Copyright 2009-2010 */
 /*   pancake<nopcode.org> */
 /*   nibble<.ds@gmail.com> */
 
@@ -30,7 +30,7 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	ut8 *buf = (ut8*)data;
 	if (data == NULL)
 		return 0;
-	memset (aop, '\0', sizeof (RAnalOp));
+	memset (aop, 0, sizeof (RAnalOp));
 	aop->type = R_ANAL_OP_TYPE_UNK;
 	aop->addr = addr;
 	aop->jump = -1;
@@ -66,7 +66,7 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 		break;
 	case 0x88:
 	case 0x89: // move
-		switch(buf[1]) {
+		switch (buf[1]) {
 		case 0x45:
 		case 0x4d: //  894de0          mov [ebp-0x20], ecx 
 		case 0x55:
@@ -94,7 +94,6 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	case 0xcb: // lret
 	case 0xcf: // iret
 		aop->type   = R_ANAL_OP_TYPE_RET;
-	//	aop->length = 1;
 		aop->eob = 1;
 		break;
 	//case 0xea: // far jmp
@@ -105,9 +104,28 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	case 0x39:
 	case 0x3c:
 	case 0x3d:
-	case 0x85:
-		aop->type   = R_ANAL_OP_TYPE_CMP;
+		aop->type = R_ANAL_OP_TYPE_CMP;
 		aop->length = 2;
+		break;
+	case 0x85:
+		aop->type = R_ANAL_OP_TYPE_CMP;
+		if (buf[1]>=0xc0 && buf[1]<=0xff) { // test eax, eax
+			static const char *testregs[] = {
+				"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi" };
+			int src = buf[1]&7;
+			int dst = (buf[1]&0x38)>>3;
+			aop->src[0] = r_reg_get (anal->reg, testregs[src%8], R_REG_TYPE_GPR);
+			aop->src[1] = r_reg_get (anal->reg, testregs[dst%8], R_REG_TYPE_GPR);
+			if (aop->src[0] == aop->src[1])
+				aop->src[1] = NULL;
+		//	eprintf ("0x%"PFMT64x": (%02x) %d %d\n", addr, buf[1], src, dst);
+		} else if (buf[1]<0xc0) { // test [eax+delta], eax
+			/* not yet supported */
+		}
+		// c0-c7 : eax, ecx, edx, ebx, esp, ebp, esi, edi
+		// 83f821  cmp eax, 0x21
+		// 85c0    test eax, eax
+		// 85c9  test ecx, ecx
 		break;
 	case 0x90:
 		aop->type   = R_ANAL_OP_TYPE_NOP;
@@ -276,6 +294,11 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 			aop->stackop = R_ANAL_STACK_INCSTACK;
 			aop->stackptr = aop->value;
 			break;
+		case 0xf8:
+			// 83f821  cmp eax, 0x21
+			aop->type = R_ANAL_OP_TYPE_CMP;
+			aop->length = 3;
+			break;
 		case 0xec:
 			/* sub $0x????????, $esp*/
 			aop->value = (ut64)(unsigned char)buf[2];
@@ -283,7 +306,7 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 			aop->stackptr = aop->value;
 			break;
 		case 0xbd: /* 837dfc02        cmp dword [ebp-0x4], 0x2 */
-			switch(buf[2]) {
+			switch (buf[2]) {
 			case 0xe0: // ebp
 				if ((char)buf[2]>0) {
 					aop->stackop = R_ANAL_STACK_GET;

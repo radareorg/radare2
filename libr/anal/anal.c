@@ -25,6 +25,7 @@ R_API RAnal *r_anal_new() {
 	RAnal *anal = R_NEW (RAnal);
 	if (anal) {
 		memset (anal, 0, sizeof (RAnal));
+		anal->reg = NULL;
 		anal->bbs = r_anal_bb_list_new ();
 		anal->fcns = r_anal_fcn_list_new ();
 		anal->vartypes = r_anal_var_type_list_new ();
@@ -63,8 +64,8 @@ R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {
 
 R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo) {
 	if (foo->init)
-		foo->init(anal->user);
-	list_add_tail(&(foo->list), &(anal->anals));
+		foo->init (anal->user);
+	list_add_tail (&(foo->list), &(anal->anals));
 	return R_TRUE;
 }
 

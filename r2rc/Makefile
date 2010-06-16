@@ -5,7 +5,7 @@ PFX=${DESTDIR}${PREFIX}
 
 all: r2rc
 
-r2rc: r2rc.o emit_x86.o emit_x64.o out.o
+r2rc: r2rc.o emit_x86.o emit_x64.o emit_arm.o out.o
 	gcc -I. out.o r2rc.o emit*.o -o r2rc
 
 test:

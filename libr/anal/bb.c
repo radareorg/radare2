@@ -67,14 +67,16 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 		case R_ANAL_OP_TYPE_CMP:
 			bb->cond = r_anal_cond_new ();
 			// TODO fill conditional information
+			//bb->cond->type = 0; // UNKNOWN
+			bb->cond->arg[0] = r_anal_value_new_from_aop(aop, 0);
+			bb->cond->arg[1] = r_anal_value_new_from_aop(aop, 1);
 			// bb->src = { 0,0,0,0,0 }
 			// bb->dst = { 0,0,0,0,0 }
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
 			if (bb->cond) {
 				// TODO: get values from anal backend
-				bb->cond->type = R_ANAL_COND_TYPE_Z;
-				bb->cond->negate = 0;
+				bb->cond->type = R_ANAL_COND_EQ;
 			} else eprintf ("Unknown conditional for block 0x%"PFMT64x"\n", bb->addr);
 			bb->fail = aop->fail;
 			bb->jump = aop->jump;

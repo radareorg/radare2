@@ -13,7 +13,7 @@ static int r_debug_recoil(RDebug *dbg) {
 	if (ri) {
 		ut64 addr = r_reg_get_value (dbg->reg, ri);
 		recoil = r_bp_recoil (dbg->bp, addr);
-		eprintf ("Breakpoint recoil = %d\n", recoil);
+		eprintf ("Recoil at 0x%"PFMT64x" = %d\n", addr, recoil);
 		recoil = 1; // XXX hack
 		if (recoil) {
 			r_reg_set_value (dbg->reg, ri, addr-recoil);

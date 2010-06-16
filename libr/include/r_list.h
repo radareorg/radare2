@@ -1,6 +1,8 @@
 #ifndef _INCLUDE_R_LIST_H_
 #define _INCLUDE_R_LIST_H_
 
+#include <r_flist.h>
+
 typedef void (*RListFree)(void *ptr);
 
 typedef struct r_list_iter_t {
@@ -13,6 +15,12 @@ typedef struct r_list_t {
 	struct r_list_iter_t *tail;
 	RListFree free;
 } RList;
+
+#define RListFList_Parent RList
+typedef struct r_lflist_t {
+	RListFList_Parent super; // super class
+	RFList *list;
+} RLFList;
 
 #ifdef R_API
 #define r_list_foreach(list, it, pos) \
@@ -40,6 +48,26 @@ R_API RListIter *r_list_item_new (void *data);
 R_API void r_list_unlink (RList *list, void *ptr);
 R_API void r_list_split (RList *list, void *ptr);
 R_API void r_list_split_iter (RList *list, RListIter *iter);
+
+/* rlistflist */
+#define r_lflist_new(x) 
+#define r_lflist_length(x,y) r_list_length(x,y)
+#define r_lflist_destroy(x) r_lflist_deserialize(x), r_list_destroy(x)
+#define r_lflist_free(x) r_lflist_deserialize(x), r_list_free(x)
+#define r_lflist_append(x,y) r_lflist_deserialize(x), r_list_append(x,y)
+#define r_lflist_prepend(x,y) r_lflist_deserialize(x), r_list_prepend(x,y)
+#define r_lflist_delete(x,y) r_lflist_deserialize(x), r_list_delete(x,y)
+#define r_lflist_array(x) x->array?x->array:(x->array=r_lflist_serialize(x)),x->array
+#define r_lflist_deserialize(x) \
+	free(x->array-1),x->array=0
+#define r_lflist_serialize(x) \
+	x->array = r_flist_new(r_list_length(x)), { \
+		int idx = 0; \
+		void *ptr; \
+		RListIter *iter; \
+		r_list_foreach (x, iter, ptr) \
+			r_flist_set (x->array, idx++, ptr); \
+	} x->array;
 #endif
 
 #endif

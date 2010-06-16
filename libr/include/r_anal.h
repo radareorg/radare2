@@ -7,6 +7,7 @@
 
 #include <r_types.h>
 #include <list.h>
+#include <r_reg.h>
 #include <r_list.h>
 #include <r_util.h>
 
@@ -58,12 +59,12 @@ enum {
 
 /* TODO: what to do with signed/unsigned conditionals? */
 enum {
-	R_ANAL_OP_COND_EQ = 0,
-	R_ANAL_OP_COND_NE,
-	R_ANAL_OP_COND_GE,
-	R_ANAL_OP_COND_GT,
-	R_ANAL_OP_COND_LE,
-	R_ANAL_OP_COND_LT,
+	R_ANAL_COND_EQ = 0,
+	R_ANAL_COND_NE,
+	R_ANAL_COND_GE,
+	R_ANAL_COND_GT,
+	R_ANAL_COND_LE,
+	R_ANAL_COND_LT,
 };
 
 enum {
@@ -125,62 +126,49 @@ typedef struct r_anal_t {
 	RList *bbs;
 	RList *fcns;
 	RList *vartypes;
+	RRegister *reg;
 	struct r_anal_ctx_t *ctx;
 	struct r_anal_plugin_t *cur;
-	struct list_head anals;
+	struct list_head anals; // XXX: use RList here
 } RAnal;
 
 typedef struct r_anal_aop_t {
-	char *mnemonic;            /* mnemonic */
-	ut64 addr;                 /* address */
-	int type;                  /* type of opcode */
-	int stackop;               /* operation on stack? */
-	int cond;                  /* condition type */
-	int length;                /* length in bytes of opcode */
-	int nopcode;               /* number of opcodes */
-	int family;                /* family of opcode */
-	int eob;                   /* end of block (boolean) */
-	ut64 jump;                 /* true jmp */
-	ut64 fail;                 /* false jmp */
-	st64 ref;                  /* reference to memory */ /* XXX signed? */
-	ut64 value;                /* reference to value */ /* XXX signed? */
-	st64 stackptr;             /* stack pointer */
-	int r_dst[R_ANAL_MAXREG];  /* register arguments */
-	ut64 i_dst[R_ANAL_MAXREG]; /* inmediate arguments */
+	char *mnemonic; /* mnemonic */
+	ut64 addr;      /* address */
+	int type;       /* type of opcode */
+	int stackop;    /* operation on stack? */
+	int cond;       /* condition type */
+	int length;     /* length in bytes of opcode */
+	int nopcode;    /* number of opcodes */
+	int family;     /* family of opcode */
+	int eob;        /* end of block (boolean) */
+	ut64 jump;      /* true jmp */
+	ut64 fail;      /* false jmp */
+	st64 ref;       /* reference to memory */ /* XXX signed? */
+	ut64 value;     /* reference to value */ /* XXX signed? */
+	st64 stackptr;  /* stack pointer */
+	RRegisterItem *src[3];
+	RRegisterItem *dst;
 	int refptr;
 } RAnalOp;
 
+//mov    0x8175780(,%eax,4),%eax
 // value+regbase+regidx+delta
 typedef struct r_anal_value_t {
 	int memref; // is memory reference? or value?
 	ut64 base ; // numeric address
 	int delta; // numeric delta
-	int regbase; // register index used (-1 if no reg)
-	int regdelta; // register index used (-1 if no reg)
+	int mul; // multiplier (reg*4+base)
+// TODO: add multiplier 
+	RRegisterItem *regbase; // register index used (-1 if no reg)
+	RRegisterItem *regdelta; // register index used (-1 if no reg)
 } RAnalValue;
 
-enum {
-	R_ANAL_COND_TYPE_Z = 0, //'z', // only 'src' used
-	R_ANAL_COND_TYPE_E = 1,
-	R_ANAL_COND_TYPE_G = 2,
-	R_ANAL_COND_TYPE_GE = 1|2,
-};
-
-// 80f92f  cmp cl, 0x2f
-//   7543  jnz 0xb78b2dc0 
-//         cmp byte [ecx+eax-0x1], 0x2f
-// RAnalCond = {
-//   .type = R_ANAL_COND_TYPE_Z,
-//   .negate = 1,
-//   .src = { 
+#define R_ANAL_COND_SINGLE(x) (!x->arg[1] || x->arg[0]==x->arg[1])
 
 typedef struct r_anal_cond_t {
-	// filled by CJMP opcode
-	int type;
-	int negate;
-	// filled by 'cmp' opcode
-	RAnalValue src;
-	RAnalValue dst;
+	int type; // filled by CJMP opcode
+	RAnalValue *arg[2]; // filled by CMP opcode
 } RAnalCond;
 
 typedef struct r_anal_bb_t {
@@ -328,6 +316,10 @@ R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 fro
 
 R_API RAnalCond *r_anal_cond_new();
 #define r_anal_cond_free(x) free(x);
+R_API int r_anal_cond_eval(RAnalCond *cond);
+R_API char *r_anal_cond_to_string(RAnalCond *cond);
+R_API char *r_anal_value_to_string (RAnalValue *value);
+R_API RAnalCond *r_anal_cond_new_from_string(const char *str);
 
 /* reflines.c */
 R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal, 

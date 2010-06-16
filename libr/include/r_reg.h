@@ -53,7 +53,7 @@ typedef struct r_reg_set_t {
 typedef struct r_reg_t {
 	char *profile;
 	char *name[R_REG_NAME_LAST];
-	struct r_reg_set_t regset[R_REG_TYPE_LAST];
+	RRegisterSet regset[R_REG_TYPE_LAST];
 } RRegister;
 
 #define r_reg_new() r_reg_init (R_NEW (RRegister))
