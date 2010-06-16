@@ -29,7 +29,15 @@ R_API st64 r_anal_value_eval(RAnalValue *value) {
 R_API char *r_anal_value_to_string (RAnalValue *value) {
 	char *out = r_str_new ("");
 	if (value) {
-		if (value->memref) out = r_str_concat (out, "[");
+		if (value->memref) {
+			switch (value->memref) {
+			case 1: out = r_str_concat (out, "(char)"); break;
+			case 2: out = r_str_concat (out, "(short)"); break;
+			case 4: out = r_str_concat (out, "(word)"); break;
+			case 8: out = r_str_concat (out, "(dword)"); break;
+			}
+			out = r_str_concat (out, "[");
+		}
 		if (value->mul) out = r_str_concatf (out, "%d*", value->mul);
 		if (value->reg) out = r_str_concatf (out, "%s", value->reg->name);
 		if (value->regdelta) out = r_str_concatf (out, "+%s", value->regdelta->name);

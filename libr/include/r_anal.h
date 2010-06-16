@@ -134,7 +134,7 @@ typedef struct r_anal_t {
 
 // mul*value+regbase+regidx+delta
 typedef struct r_anal_value_t {
-	int memref; // is memory reference? or value?
+	int memref; // is memory reference? which size? 1, 2 ,4, 8
 	ut64 base ; // numeric address
 	int delta; // numeric delta
 	int mul; // multiplier (reg*4+base)

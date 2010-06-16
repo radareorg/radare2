@@ -16,6 +16,7 @@
 /* arch_aop for x86 */
 // CMP ARG1
 // 837d0801        cmp dword [ebp+0x8], 0x1
+// 803db501060800  cmp byte [0x80601b5], 0x0
 // SET VAR_41c
 // 8985e4fbffff    mov [ebp-41C],eax 
 // GET VAR_41c
@@ -23,6 +24,13 @@
 // 8b450c          mov eax,[ebp+C] 
 // 8d85e8fbffff    lea eax,[ebp-418]
 // c68405e7fbffff. mov byte ptr [ebp+eax-419],0x0
+
+//3d00400000  cmp eax, 0x4000
+//81fa00c00000  cmp edx, 0xc000
+//83fa01  cmp edx, 0x1
+
+static const char *testregs[] = {
+	"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi" };
 
 // NOTE: buf should be at least 16 bytes!
 // XXX addr should be off_t for 64 love
@@ -82,8 +90,10 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 			aop->ref = (st64)((char)buf[2]); //+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24));
 			break;
 		}
-		aop->type   = R_ANAL_OP_TYPE_MOV;
-		aop->length = 2;
+		// XXX: maybe store or mov depending on opcode
+		// 89c3  mov ebx, eax
+		// 897c2408  mov [esp+0x8], edi
+		aop->type = R_ANAL_OP_TYPE_STORE;
 		break;
 	case 0xf4: // hlt
 		aop->type   = R_ANAL_OP_TYPE_RET;
@@ -104,14 +114,28 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	case 0x39:
 	case 0x3c:
 	case 0x3d:
+		// 3d 00 40 00 00  cmp eax, 0x4000
+		aop->src[0] = r_anal_value_new ();
+		aop->src[0]->reg = r_reg_get (anal->reg, testregs[(buf[0]&7)%8], R_REG_TYPE_GPR);
+		aop->src[1] = r_anal_value_new ();
+		aop->src[1]->base = buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);
 		aop->type = R_ANAL_OP_TYPE_CMP;
-		aop->length = 2;
+		break;
+	case 0x80:
+		aop->type = R_ANAL_OP_TYPE_CMP;
+		switch (buf[1]) {
+		case 0x3d: // 80 3d b5010608 00  cmp byte [0x80601b5], 0x0
+			aop->src[0] = r_anal_value_new ();
+			aop->src[0]->memref = 1;
+			aop->src[0]->base = buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24);
+			aop->src[1] = r_anal_value_new ();
+			aop->src[1]->base = buf[6];
+			break;
+		}
 		break;
 	case 0x85:
 		aop->type = R_ANAL_OP_TYPE_CMP;
 		if (buf[1]>=0xc0 && buf[1]<=0xff) { // test eax, eax
-			static const char *testregs[] = {
-				"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi" };
 			int src = buf[1]&7;
 			int dst = (buf[1]&0x38)>>3;
 			aop->src[0] = r_anal_value_new ();
@@ -281,6 +305,7 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 		aop->stackptr = 4;
 		break;
 	case 0x81:
+		aop->type = R_ANAL_OP_TYPE_ADD;
 		if (buf[1] == 0xec) {
 			/* sub $0x????????, $esp*/
   			// 81ece00d0000    sub esp, 0xde0 ; 
@@ -288,11 +313,15 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 			aop->stackop = R_ANAL_STACK_INCSTACK;
 			aop->stackptr = aop->value;
 			break;
+		} else
+		if (buf[1] == 0xfa) {
+			aop->type = R_ANAL_OP_TYPE_CMP;
+			// 81fa00c00000  cmp edx, 0xc000
+			// XXX TODO
 		}
-		aop->type = R_ANAL_OP_TYPE_ADD;
 		break;
 	case 0x83:
-		switch(buf[1]) {
+		switch (buf[1]) {
 		case 0xe4: // and
 			aop->value = (ut64)(unsigned char)buf[2];
 			aop->type = R_ANAL_OP_TYPE_AND;
@@ -304,9 +333,18 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 			aop->stackptr = aop->value;
 			break;
 		case 0xf8:
+		case 0xf9:
+		case 0xfa:
+			{
+			int src = buf[1]&7;
+			aop->src[0] = r_anal_value_new ();
+			aop->src[0]->reg = r_reg_get (anal->reg, testregs[src%8], R_REG_TYPE_GPR);
+			aop->src[1] = r_anal_value_new ();
+			aop->src[1]->base = buf[2];
 			// 83f821  cmp eax, 0x21
 			aop->type = R_ANAL_OP_TYPE_CMP;
 			aop->length = 3;
+			}
 			break;
 		case 0xec:
 			/* sub $0x????????, $esp*/
@@ -348,6 +386,7 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 		}
 		aop->type =R_ANAL_OP_TYPE_MOV;
 		break;
+	case 0xc6:
 	case 0xc7:
 		/* mov dword [ebp-0xc], 0x0  ||  c7 45 f4 00000000 */
 		switch (buf[1]) {
@@ -358,6 +397,11 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 		case 0x45:
 			aop->stackop = R_ANAL_STACK_SET;
 			aop->ref = (st64)((char)buf[2]);
+			break;
+		case 0x05:
+			// c7050c0106080000. mov dword [0x806010c], 0x0
+			//  c605b401060800  mov byte [0x80601b4], 0x0
+			// TODO: 
 			break;
 		case 0x04:
 			// c7042496850408    dword [esp] = 0x8048596 ; LOL

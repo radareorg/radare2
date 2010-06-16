@@ -1,5 +1,9 @@
 Code analysis module
 ====================
+* Opcodes that will be executed depending on cond?
+  - for example: (x86, arm..)
+    |          0x08049a41    0               0f94c2  setz dl
+
 * Direction of the stack? increase? decrease?
 * Register value source type
   - This is static entropy level for a register at some point

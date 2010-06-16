@@ -193,6 +193,9 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			case R_ANAL_OP_TYPE_UJMP:
 				r_cons_printf (Color_GREEN);
 				break;
+			case R_ANAL_OP_TYPE_CMP:
+				r_cons_printf (Color_YELLOW);
+				break;
 			case R_ANAL_OP_TYPE_CALL:
 				r_cons_printf (Color_BGREEN);
 				break;
