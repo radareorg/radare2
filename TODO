@@ -8,11 +8,19 @@
 
 VERY IMPORTANT
 ==============
-* trace counts after step..thats not correct!
-* nibble: rename characteristics into srwx
-* implement GMP in util/big.c
+* pancake: we need an api to define function signatures
+  - integrated with function signatures
+  -  offset -> formatstring (offset is the key to function signature)
+* fix Vu, deosnt seems to work fine ..
 * pancake: implement RAnalCall (analyze function arguments, return values, propagate types..)
-* Visual byte cursor in disassembly
+  - define number of arguments for given function
+  - when the number of arguments differs between the calling
+    and the result of the code analysis of the given function
+    we should warn
+    - this kind of warnings must be done with r_log_ functions
+      so we hook it into a log file
+* nibble: trace counts after step..thats not correct!
+* gerardo?: implement GMP in util/big.c
 * Write manpages for r2, r2rc, r2rc-tool, rafind2 and rasign2
 * Implement C command as in r1 (same for visual..define strings, hexdumps, etc..)
 * Implement 'av' command we need it  (really?) how about to eval with ?
@@ -35,23 +43,11 @@ VERY IMPORTANT
      2nd level:
         - basic block level diffing (output in graph mode)
 
-FOR THE RELEASE WE HAVE TO:
-===========================
-* fix Vu, deosnt seems to work fine ..
-
 Analysis
 ========
 * Do we have to enable jump/call toggles for breaking basicblocks? (yes/no)
-* we need an api to define function signatures
-// integrated with function signatures
-// offset -> formatstring (offset is the key to function signature)
-* analyze push arguments before function calls
-  - define number of arguments for given function
-  - when the number of arguments differs between the calling
-    and the result of the code analysis of the given function
-    we should warn
-    - this kind of warnings must be done with r_log_ functions
-      so we hook it into a log file
+  - pancake: no
+  - nibble: ?
 
 Bindings
 ========
@@ -90,4 +86,3 @@ Future
   - load the program using r_bin in virtual space
   - initialize vm and set regs
   - debug backend should use the vm
-
