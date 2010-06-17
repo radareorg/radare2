@@ -328,14 +328,14 @@ R_API RAnalValue *r_anal_value_new();
 R_API RAnalValue *r_anal_value_new_from_string(const char *str);
 R_API st64 r_anal_value_eval(RAnalValue *value);
 R_API char *r_anal_value_to_string (RAnalValue *value);
+R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val);
 R_API void r_anal_value_free(RAnalValue *value);
 
 R_API RAnalCond *r_anal_cond_new();
 R_API RAnalCond *r_anal_cond_new_from_aop(RAnalOp *op);
 #define r_anal_cond_free(x) free(x);
-R_API int r_anal_cond_eval(RAnalCond *cond);
 R_API char *r_anal_cond_to_string(RAnalCond *cond);
-R_API char *r_anal_value_to_string (RAnalValue *value);
+R_API int r_anal_cond_eval (RAnal *anal, RAnalCond *cond);
 R_API RAnalCond *r_anal_cond_new_from_string(const char *str);
 
 /* reflines.c */

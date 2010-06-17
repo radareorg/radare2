@@ -1,4 +1,6 @@
-/* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2010 */
+/* pancake<nopcode.org> */
+/* nibble<.ds@gmail.com> */
 
 #include <r_types.h>
 #include <r_list.h>
@@ -216,8 +218,11 @@ R_API int r_core_anal_bb_list(RCore *core, int rad) {
 				r_cons_printf ("unmatch");
 			else r_cons_printf ("new");
 
-			r_cons_printf (" cond=\"%s\"\n", bbi->cond?
-				r_anal_cond_to_string (bbi->cond):"none");
+			if (bbi->cond)
+				r_cons_printf (" cond=\"%s\" match=%d\n",
+					r_anal_cond_to_string (bbi->cond),
+					r_anal_cond_eval (core->anal, bbi->cond));
+			else r_cons_newline();
 		}
 	}
 	r_cons_flush ();

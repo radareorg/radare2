@@ -19,11 +19,25 @@ R_API void r_anal_value_free(RAnalValue *value) {
 	free (value);
 }
 
-R_API st64 r_anal_value_eval(RAnalValue *value) {
-	/* OMFG TODO.. this is done by r_num_shit */
-	// r_num_math (anal->num, ...);
-#warning TODO r_anal_value_eval
-	return 0LL;
+R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val) {
+	ut64 num;
+	if (val==NULL)
+		return 0LL;
+	num = val->base + (val->delta*(val->mul?val->mul:1));
+	if (val->reg)
+		num += r_reg_get_value (anal->reg, val->reg);
+	if (val->regdelta)
+		num += r_reg_get_value (anal->reg, val->regdelta);
+	switch (val->memref) {
+	case 1:
+	case 2:
+	case 4:
+	case 8:
+		//anal->bio ...
+		eprintf ("TODO: memref for to_ut64 not supported\n");
+		break;
+	}
+	return num;
 }
 
 R_API char *r_anal_value_to_string (RAnalValue *value) {
