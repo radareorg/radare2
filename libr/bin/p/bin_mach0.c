@@ -62,7 +62,7 @@ static RList* sections(RBin *bin) {
 		ptr->vsize = sections[i].size;
 		ptr->offset = sections[i].offset;
 		ptr->rva = sections[i].addr;
-		ptr->characteristics = 0;
+		ptr->srwx = 0;
 		r_list_append (ret, ptr);
 	}
 	free (sections);

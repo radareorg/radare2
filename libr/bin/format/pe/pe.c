@@ -630,7 +630,7 @@ struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)
 		sections[i].size = shdr[i].SizeOfRawData;
 		sections[i].vsize = shdr[i].Misc.VirtualSize;
 		sections[i].offset = shdr[i].PointerToRawData;
-		sections[i].characteristics = shdr[i].Characteristics;
+		sections[i].flags = shdr[i].Characteristics;
 		sections[i].last = 0;
 	}
 	sections[i].last = 1;

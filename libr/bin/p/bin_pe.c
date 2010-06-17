@@ -71,15 +71,15 @@ static RList* sections(RBin *bin) {
 		ptr->vsize = sections[i].vsize;
 		ptr->offset = sections[i].offset;
 		ptr->rva = sections[i].rva;
-		ptr->characteristics = 0;
-		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].characteristics))
-			ptr->characteristics |= 0x1;
-		if (R_BIN_PE_SCN_IS_WRITABLE (sections[i].characteristics))
-			ptr->characteristics |= 0x2;
-		if (R_BIN_PE_SCN_IS_READABLE (sections[i].characteristics))
-			ptr->characteristics |= 0x4;
-		if (R_BIN_PE_SCN_IS_SHAREABLE (sections[i].characteristics))
-			ptr->characteristics |= 0x8;
+		ptr->srwx = 0;
+		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].flags))
+			ptr->srwx |= 0x1;
+		if (R_BIN_PE_SCN_IS_WRITABLE (sections[i].flags))
+			ptr->srwx |= 0x2;
+		if (R_BIN_PE_SCN_IS_READABLE (sections[i].flags))
+			ptr->srwx |= 0x4;
+		if (R_BIN_PE_SCN_IS_SHAREABLE (sections[i].flags))
+			ptr->srwx |= 0x8;
 		r_list_append (ret, ptr);
 	}
 	free (sections);

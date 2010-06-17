@@ -67,13 +67,13 @@ static RList* sections(RBin *bin) {
 		ptr->vsize = section[i].size;
 		ptr->offset = section[i].offset;
 		ptr->rva = section[i].rva;
-		ptr->characteristics = 0;
+		ptr->srwx = 0;
 		if (R_BIN_ELF_SCN_IS_EXECUTABLE (section[i].flags))
-			ptr->characteristics |= 1;
+			ptr->srwx |= 1;
 		if (R_BIN_ELF_SCN_IS_WRITABLE (section[i].flags))
-			ptr->characteristics |= 2;
+			ptr->srwx |= 2;
 		if (R_BIN_ELF_SCN_IS_READABLE (section[i].flags))
-			ptr->characteristics |= 4;
+			ptr->srwx |= 4;
 		r_list_append (ret, ptr);
 	}
 	free (section);

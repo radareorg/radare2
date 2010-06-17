@@ -294,24 +294,24 @@ static int rabin_show_sections(ut64 at) {
 				r_flag_name_filter (section->name);
 				printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d\n",
 						section->offset, baddr+section->rva,
-						section->size, section->vsize, section->name, (int)section->characteristics);
+						section->size, section->vsize, section->name, (int)section->srwx);
 				printf ("f section.%s %"PFMT64d" 0x%08"PFMT64x"\n",
 						section->name, section->size, va?baddr+section->rva:section->offset);
 				printf ("CC [%02i] va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
 						"rwx=%c%c%c%c %s @ 0x%08"PFMT64x"\n",
 						i, baddr+section->rva, section->offset, section->size, section->vsize,
-						R_BIN_SCN_SHAREABLE (section->characteristics)?'s':'-',
-						R_BIN_SCN_READABLE (section->characteristics)?'r':'-',
-						R_BIN_SCN_WRITABLE (section->characteristics)?'w':'-',
-						R_BIN_SCN_EXECUTABLE (section->characteristics)?'x':'-',
+						R_BIN_SCN_SHAREABLE (section->srwx)?'s':'-',
+						R_BIN_SCN_READABLE (section->srwx)?'r':'-',
+						R_BIN_SCN_WRITABLE (section->srwx)?'w':'-',
+						R_BIN_SCN_EXECUTABLE (section->srwx)?'x':'-',
 						section->name,va?baddr+section->rva:section->offset);
 			} else printf ("idx=%02i address=0x%08"PFMT64x" offset=0x%08"PFMT64x" size=%"PFMT64d" vsize=%"PFMT64d" "
 						   "privileges=%c%c%c%c name=%s\n",
 						   i, baddr+section->rva, section->offset, section->size, section->vsize,
-						   R_BIN_SCN_SHAREABLE (section->characteristics)?'s':'-',
-						   R_BIN_SCN_READABLE (section->characteristics)?'r':'-',
-						   R_BIN_SCN_WRITABLE (section->characteristics)?'w':'-',
-						   R_BIN_SCN_EXECUTABLE (section->characteristics)?'x':'-',
+						   R_BIN_SCN_SHAREABLE (section->srwx)?'s':'-',
+						   R_BIN_SCN_READABLE (section->srwx)?'r':'-',
+						   R_BIN_SCN_WRITABLE (section->srwx)?'w':'-',
+						   R_BIN_SCN_EXECUTABLE (section->srwx)?'x':'-',
 						   section->name);
 		}
 		i++;
