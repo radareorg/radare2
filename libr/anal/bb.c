@@ -75,23 +75,18 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			bb->fail = aop->fail;
 			bb->jump = aop->jump;
 			bb->type |= R_ANAL_BB_TYPE_BODY;
-			r_anal_aop_free (aop);
 			return R_ANAL_RET_END;
 		case R_ANAL_OP_TYPE_JMP:
 			bb->jump = aop->jump;
 			bb->type |= R_ANAL_BB_TYPE_BODY;
-			r_anal_aop_free (aop);
 			return R_ANAL_RET_END;
 		case R_ANAL_OP_TYPE_UJMP:
 			bb->type |= R_ANAL_BB_TYPE_FOOT;
-			r_anal_aop_free (aop);
 			return R_ANAL_RET_END;
 		case R_ANAL_OP_TYPE_RET:
 			bb->type |= R_ANAL_BB_TYPE_LAST;
-			r_anal_aop_free (aop);
 			return R_ANAL_RET_END;
 		}
-		r_anal_aop_free (aop);
 	}
 	return bb->size;
 }

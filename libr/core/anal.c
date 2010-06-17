@@ -77,6 +77,7 @@ static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts
 				bbc = R_NEW (RAnalBlock);
 				if (bbc) {
 					memcpy (bbc, bbi, sizeof (RAnalBlock));
+					/* We don't want to free this refs when the temporary list is destroyed */
 					bbc->aops = NULL;
 					bbc->fingerprint = NULL;
 					bbc->cond = NULL;
