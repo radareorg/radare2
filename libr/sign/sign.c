@@ -4,9 +4,7 @@
 #include <r_anal.h>
 
 R_API RSign *r_sign_new() {
-	RSign *sig;
-
-	sig = R_NEW (RSign);
+	RSign *sig = R_NEW (RSign);
 	if (sig) {
 		sig->s_byte = sig->s_anal = 0;
 		sig->prefix[0] = '\0';
@@ -23,26 +21,40 @@ R_API void r_sign_prefix(RSign *sig, const char *str) {
 
 R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const char *arg) {
 	int len, ret = R_FALSE;
-	char *data;
+	char *data, *ptr;
 	RSignItem *si; // TODO: like in r_search.. we need r_sign_item_new ()
 			// TODO: but..we need to use a pool here..
-
 	if (!name || !arg || !anal)
 		return R_FALSE;
 
+	if (!(si = R_NEW (RSignItem)))
+		return R_FALSE;
+	si->type = type;
+	snprintf (si->name, sizeof (si->name), "%s.%c.%s",
+		*sig->prefix?sig->prefix:"sign", type, name);
+
 	switch (type) {
-	case R_SIGN_BYTES:
-	case R_SIGN_FUNC:
-		si = R_NEW (RSignItem);
-		if (si == NULL)
+	case R_SIGN_FUNC: // function signature
+		sig->s_func++;
+		// FUNC FORMAT [addr] [function-signature]
+		ptr = strchr (arg, ' ');
+		if (ptr) {
+		// TODO. matching must be done by sym/flag/function name
+		//	sig->addr = 
+		}
+		list_add_tail (&(si->list), &(sig->items));
+		break;
+	case R_SIGN_HEAD: // function prefix (push ebp..)
+	case R_SIGN_BYTE: // function mask
+		if (type==R_SIGN_HEAD)
+		sig->s_head++;
+		else if (type==R_SIGN_BYTE)
+			sig->s_byte++;
+		if (!(data = r_anal_strmask (anal, arg))) {
+			free (si);
 			break;
-		si->type = type;
-		snprintf (si->name, sizeof (si->name), "%s.%s",
-			*sig->prefix?sig->prefix:"sign", name);
-		data = r_anal_strmask (anal, arg);
-		if (data == NULL)
-			break;
-		len = strlen (data);
+		}
+		len = strlen (data)+1;
 		si->bytes = (ut8 *)malloc (len);
 		si->mask = (ut8 *)malloc (len);
 		if (si->bytes == NULL || si->mask == NULL) {
@@ -55,14 +67,14 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 		si->size = r_hex_str2binmask (data, si->bytes, si->mask);
 		if (si->size<1) {
 			free (si->bytes);
+			free (si->mask);
 			free (si);
 		} else list_add_tail (&(si->list), &(sig->items));
-		sig->s_byte++;
 		free (data);
 		break;
 	default:
 	case R_SIGN_ANAL:
-		eprintf ("r_sign_add: TODO\n");
+		eprintf ("r_sign_add: TODO. unsupported signature type %d\n", type);
 		break;
 	}
 	return ret;
@@ -79,7 +91,8 @@ R_API void r_sign_list(RSign *sig, int rad) {
 	} else {
 		sig->printf ("Loaded %d signatures\n", sig->s_byte + sig->s_anal);
 		sig->printf ("  %d byte signatures\n", sig->s_byte);
-		sig->printf ("  %d anal signatures\n", sig->s_anal);
+		sig->printf ("  %d head signatures\n", sig->s_head);
+		sig->printf ("  %d func signatures\n", sig->s_func);
 	}
 }
 
@@ -103,7 +116,7 @@ R_API RSignItem *r_sign_check(RSign *sig, const ut8 *buf, int len) {
 	struct list_head *pos;
 	list_for_each (pos, &sig->items) {
 		RSignItem *si = list_entry (pos, RSignItem, list);
-		if (si->type == R_SIGN_BYTES) {
+		if (si->type == R_SIGN_BYTE) {
 			int l = (len>si->size)?si->size:len;
 			if (!r_mem_cmp_mask (buf, si->bytes, si->mask, l))
 				return si;

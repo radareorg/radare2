@@ -184,6 +184,16 @@ typedef struct r_anal_bb_t {
 	RAnalCond *cond;
 } RAnalBlock;
 
+// TODO: add other call convections here
+enum {
+	R_ANAL_CALL_FAST='f',
+	R_ANAL_CALL_SLOW='s',
+};
+typedef struct r_anal_call_t {
+	int type; // fast, stack/slow
+	RAnalValue *args[16]; // XXX
+} RAnalCall;
+
 typedef struct r_anal_fcn_t {
 	char *name;
 	ut64 addr;

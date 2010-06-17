@@ -8,7 +8,10 @@
 
 VERY IMPORTANT
 ==============
+* trace counts after step..thats not correct!
 * nibble: rename characteristics into srwx
+* implement GMP in util/big.c
+* pancake: implement RAnalCall (analyze function arguments, return values, propagate types..)
 * Visual byte cursor in disassembly
 * Write manpages for r2, r2rc, r2rc-tool, rafind2 and rasign2
 * Implement C command as in r1 (same for visual..define strings, hexdumps, etc..)

@@ -27,7 +27,7 @@ typedef struct r_print_t {
 } RPrint;
 
 #ifdef R_API
-R_API char *r_print_hexpair(RPrint *p, const char *str);
+R_API char *r_print_hexpair(RPrint *p, const char *str, int idx);
 R_API RPrint *r_print_new();
 R_API RPrint *r_print_free(RPrint *p);
 R_API void r_print_set_flags(RPrint *p, int _flags);

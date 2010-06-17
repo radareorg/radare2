@@ -16,11 +16,11 @@ typedef struct r_list_t {
 	RListFree free;
 } RList;
 
-#define RListFList_Parent RList
-typedef struct r_lflist_t {
-	RListFList_Parent super; // super class
-	RFList *list;
-} RLFList;
+#define ROFList_Parent RList
+typedef struct r_oflist_t {
+	ROFList_Parent super; // super class
+	RFList *array; // statical readonly cache of linked list as a pointer array
+} ROFList;
 
 #ifdef R_API
 #define r_list_foreach(list, it, pos) \
@@ -50,17 +50,17 @@ R_API void r_list_split (RList *list, void *ptr);
 R_API void r_list_split_iter (RList *list, RListIter *iter);
 
 /* rlistflist */
-#define r_lflist_new(x) 
-#define r_lflist_length(x,y) r_list_length(x,y)
-#define r_lflist_destroy(x) r_lflist_deserialize(x), r_list_destroy(x)
-#define r_lflist_free(x) r_lflist_deserialize(x), r_list_free(x)
-#define r_lflist_append(x,y) r_lflist_deserialize(x), r_list_append(x,y)
-#define r_lflist_prepend(x,y) r_lflist_deserialize(x), r_list_prepend(x,y)
-#define r_lflist_delete(x,y) r_lflist_deserialize(x), r_list_delete(x,y)
-#define r_lflist_array(x) x->array?x->array:(x->array=r_lflist_serialize(x)),x->array
-#define r_lflist_deserialize(x) \
+// TODO: rename to init or so.. #define r_oflist_new() R_NEW(ROFList);memset
+#define r_oflist_length(x,y) r_list_length(x,y)
+#define r_oflist_destroy(x) r_oflist_deserialize(x), r_list_destroy(x)
+#define r_oflist_free(x) r_oflist_deserialize(x), r_list_free(x)
+#define r_oflist_append(x,y) r_oflist_deserialize(x), r_list_append(x,y)
+#define r_oflist_prepend(x,y) r_oflist_deserialize(x), r_list_prepend(x,y)
+#define r_oflist_delete(x,y) r_oflist_deserialize(x), r_list_delete(x,y)
+#define r_oflist_array(x) x->array?x->array:(x->array=r_oflist_serialize(x)),x->array
+#define r_oflist_deserialize(x) \
 	free(x->array-1),x->array=0
-#define r_lflist_serialize(x) \
+#define r_oflist_serialize(x) \
 	x->array = r_flist_new(r_list_length(x)), { \
 		int idx = 0; \
 		void *ptr; \

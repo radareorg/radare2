@@ -44,9 +44,14 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	int show_comments = r_config_get_i (core->config, "asm.comments");
 	int show_stackptr = r_config_get_i (core->config, "asm.stackptr");
 	int linesopts = 0;
-	int cursor = (core->print->cur_enabled)?core->print->cur:-1;
-	int nb, nbytes = r_config_get_i (core->config, "asm.nbytes");
+	int cursor, nb, nbytes = r_config_get_i (core->config, "asm.nbytes");
 	nb = nbytes*2;
+
+	if (core->print->cur_enabled) {
+		if (core->print->cur<0)
+			core->print->cur = 0;
+		cursor = core->print->cur;
+	} else cursor = -1;
 
 	if (r_config_get_i (core->config, "asm.linesstyle"))
 		linesopts |= R_ANAL_REFLINE_STYLE;
@@ -77,12 +82,10 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	for (i=idx=ret=0; idx < len && i<l; idx+=ret,i++) {
 		ut64 addr = core->offset + idx;
 		r_asm_set_pc (core->assembler, addr);
-		if (show_comments) {
-			comment = r_meta_get_string (core->meta, R_META_COMMENT, addr);
-			if (comment) {
-				r_cons_strcat (comment);
-				free (comment);
-			}
+		if (show_comments)
+		if ((comment = r_meta_get_string (core->meta, R_META_COMMENT, addr))) {
+			r_cons_strcat (comment);
+			free (comment);
 		}
 		line = r_anal_reflines_str (core->anal, core->reflines, addr, linesopts);
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx);
@@ -171,7 +174,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 					pad[j] = ' ';
 				pad[j] = '\0';
 				if (show_color) {
-					char *nstr = r_print_hexpair (p, str);
+					char *nstr = r_print_hexpair (p, str, cursor-idx);
 					free (str);
 					str = nstr;
 				}
@@ -360,12 +363,13 @@ static int cmd_zign(void *data, const char *input) {
 		break;
 	case 'a':
 	case 'b':
+	case 'h':
 	case 'f':
 		ptr = strchr (input+3, ' ');
 		if (ptr) {
 			*ptr = 0;
 			r_sign_add (core->sign, core->anal, (int)*input, input+2, ptr+1);
-		} else eprintf ("Usage: z%c [name] [bytes]\n", *input);
+		} else eprintf ("Usage: z%c [name] [arg]\n", *input);
 		break;
 	case 'c':
 		item = r_sign_check (core->sign, core->block, core->blocksize);
@@ -446,8 +450,9 @@ static int cmd_zign(void *data, const char *input) {
 			" z-prefix       unload zignatures prefixed as\n"
 			" z-*            unload all zignatures\n"
 			" za ...         define new zignature for analysis\n"
-			" zb name bytes  define new zignature for bytes\n"
-			" zf name bytes  define new function prelude zignature\n"
+			" zf name fmt    define function zignature (fast/slow, args, types)\n"
+			" zb name bytes  define zignature for bytes\n"
+			" zh name bytes  define function header zignature\n"
 			" zg pfx [file]  generate siganture for current file\n"
 			" .zc @ fcn.foo  flag signature if matching (.zc@@fcn)\n"
 			" z/ [ini] [end] search zignatures between these regions\n"

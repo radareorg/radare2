@@ -176,10 +176,14 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			if (menu<=0) return R_TRUE; menu--;
 			break;
 		case '*':
+			r_core_block_size (core, core->blocksize+16);
+			break;
 		case '+':
 			r_core_block_size (core, core->blocksize+1);
 			break;
 		case '/':
+			r_core_block_size (core, core->blocksize-16);
+			break;
 		case '-':
 			r_core_block_size (core, core->blocksize-1);
 			break;
@@ -470,8 +474,9 @@ R_API void r_core_visual_define (RCore *core) {
 /* TODO: use r_cmd here in core->vcmd..optimize over 255 table */ 
 R_API int r_core_visual_cmd(RCore *core, int ch) {
 	char buf[1024];
-	ch = r_cons_arrow_to_hjkl(ch);
+	ch = r_cons_arrow_to_hjkl (ch);
 
+	// do we need hotkeys for data references? not only calls?
 	if (ch>='0'&&ch<='9') {
 		if (core->reflines) {
 			struct list_head *pos;
@@ -545,7 +550,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'J':
 		if (curset) {
 			if (ocursor==-1) ocursor = cursor;
-			cursor+=16;
+			cursor += 16;
 		} else r_core_cmd (core, "s++", 0);
 		break;
 	case 'g':
@@ -625,17 +630,31 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'P':
 		printidx--;
 		break;
-	case '-':
-		r_core_block_size (core, core->blocksize-1);
-		break;
 	case 'm':
 		r_core_visual_mark (core, r_cons_readchar());
 		break;
 	case '\'':
 		r_core_visual_mark_seek (core, r_cons_readchar());
 		break;
+	case '-':
+		if (core->print->cur_enabled) {
+			ut8 ch;
+			int cur = core->print->cur;
+			if (cur>=core->blocksize)
+				cur = core->print->cur-1;
+			ch = core->block[cur]-1;
+			r_core_write_at (core, core->offset+cur, &ch, 1);
+		} else r_core_block_size (core, core->blocksize-1);
+		break;
 	case '+':
-		r_core_block_size (core, core->blocksize+1);
+		if (core->print->cur_enabled) {
+			ut8 ch;
+			int cur = core->print->cur;
+			if (cur>=core->blocksize)
+				cur = core->print->cur-1;
+			ch = core->block[cur]+1;
+			r_core_write_at (core, core->offset+cur, &ch, 1);
+		} else r_core_block_size (core, core->blocksize-1);
 		break;
 	case '/':
 		r_core_block_size (core, core->blocksize-16);
