@@ -8,10 +8,9 @@
 VERY IMPORTANT
 ==============
 * trace counts after step..thats not correct!
-* implement GMP in util/big.c
-* pancake: fix RAnalCond because jz is not only !eax.. comparision doesnt works
-* pancake: implement RAnalCall (analyze function arguments, return values, propagate types..)
 * nibble: rename characteristics into srwx
+* implement GMP in util/big.c
+* pancake: implement RAnalCall (analyze function arguments, return values, propagate types..)
 * Visual byte cursor in disassembly
 * Write manpages for r2, r2rc, r2rc-tool, rafind2 and rasign2
 * Implement C command as in r1 (same for visual..define strings, hexdumps, etc..)
