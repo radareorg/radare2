@@ -4,6 +4,11 @@ TODO for hackatons
 Inconcrete things to do
 =======================
 
+* Compile radare2 on many OS and platforms as possible
+  - Windows? 32/64 bits (mingw32, cygwin)
+  - OSX?
+  - Solaris?  (-lsocket ..)
+
 * Test w32 bins with rabin2, r2, ..
 
 * Implement process launcher wrapper // anybody
@@ -60,11 +65,3 @@ Concrete TODO points
   - Update vapi (r_search_regexp not implemented)
   - Enable/disable nested hits? (discuss+ implement in parent app?)
     - Just skip bytes until end of keyword
-
-Portability
-===========
-
-* Compile radare2 on many OS and platforms as possible
-  - Windows? 32/64 bits (mingw32, cygwin)
-  - OSX?
-  - Solaris?  (-lsocket ..)

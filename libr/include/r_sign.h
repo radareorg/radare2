@@ -7,8 +7,9 @@
 #include "list.h"
 
 enum {
-	R_SIGN_BYTES = 'b',
-	R_SIGN_FUNC= 'f',
+	R_SIGN_BYTE = 'b',
+	R_SIGN_FUNC = 'f',
+	R_SIGN_HEAD = 'h',
 	R_SIGN_ANAL = 'a',
 };
 
@@ -17,14 +18,17 @@ typedef struct r_sign_item_t {
 	int type;
 	char name[32];
 	int size;
+	ut64 addr;
 	ut8 *bytes;
 	ut8 *mask;
 	struct list_head list;
 } RSignItem;
 
 typedef struct r_sign_t {
-	int s_byte;
 	int s_anal;
+	int s_byte;
+	int s_head;
+	int s_func; // TODO: this must be an array count[N]
 	char prefix[32];
 	FunctionPrintf printf;
 	struct list_head items;

@@ -9,28 +9,25 @@ R_API RPrint *r_print_new() {
 	
 	p = R_NEW (RPrint);
 	if (p) {
-		/* read callback */
+		strcpy (p->datefmt, "%Y:%m:%d %H:%M:%S %z");
 		p->user = NULL;
 		p->read_at = NULL;
 		p->printf = printf;
 		p->interrupt = 0;
-
-		strcpy (p->datefmt, "%Y:%m:%d %H:%M:%S %z");
-
-		/* setup prefs */
 		p->bigendian = 0;
 		p->width = 78;
 		p->cur_enabled = R_FALSE;
 		p->cur = p->ocur = -1;
 		p->addrmod = 4;
 		p->flags = \
-				   R_PRINT_FLAGS_COLOR |
-				   R_PRINT_FLAGS_HEADER |
-				   R_PRINT_FLAGS_ADDRMOD;
+			   R_PRINT_FLAGS_COLOR |
+			   R_PRINT_FLAGS_HEADER |
+			   R_PRINT_FLAGS_ADDRMOD;
 	}
 	return p;
 }
 
+// dummy setter
 R_API void r_print_set_flags(RPrint *p, int _flags) {
 	p->flags = _flags;
 }
@@ -83,11 +80,21 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 }
 
 // XXX: bad designed function :)
-R_API char *r_print_hexpair(RPrint *p, const char *str) {
+R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 	const char *s;
+	int i=0;
 	char *d, *dst = (char *)malloc (1024); //(strlen (str)+2)*6);
 
-	for (s=str,d=dst; *s; s+=2, d+=2) {
+	// XXX: overflow here
+	for (s=str,d=dst; *s; s+=2, d+=2, i++) {
+		if (i-1==n) {
+			memcpy (d, "\x1b[0m", 4);
+			d += 4;
+		}
+		if (i==n) {
+			memcpy (d, "\x1b[7m", 4);
+			d += 4;
+		} else
 		if (s[0]=='0' && s[1]=='0') {
 			memcpy (d, "\x1b[31m", 5);
 			d += 5;
