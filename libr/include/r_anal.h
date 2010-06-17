@@ -134,6 +134,7 @@ typedef struct r_anal_t {
 
 // mul*value+regbase+regidx+delta
 typedef struct r_anal_value_t {
+	int absolute; // if true, unsigned cast is used
 	int memref; // is memory reference? which size? 1, 2 ,4, 8
 	ut64 base ; // numeric address
 	int delta; // numeric delta
@@ -329,7 +330,7 @@ R_API RAnalCond *r_anal_cond_new_from_string(const char *str);
 
 /* reflines.c */
 R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal, 
-	ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout);
+	ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout, int linescall);
 R_API char* r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list,
 	ut64 addr, int opts);
 R_API int r_anal_reflines_middle(RAnal *anal, RAnalRefline *list, ut64 addr, int len);

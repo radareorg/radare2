@@ -6,7 +6,7 @@
 #include <r_util.h>
 
 R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
-	ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout)
+	ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout, int linescall)
 {
 	RAnalRefline *list2, *list = R_NEW (RAnalRefline);
 	RAnalOp aop;
@@ -41,6 +41,8 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 			/* store data */
 			switch(aop.type) {
 			case R_ANAL_OP_TYPE_CALL:
+				if (!linescall)
+					break;
 			case R_ANAL_OP_TYPE_CJMP:
 			case R_ANAL_OP_TYPE_JMP:
 				if (!linesout && (aop.jump > opc+len || aop.jump < opc))

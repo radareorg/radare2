@@ -35,6 +35,8 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	int filter = r_config_get_i (core->config, "asm.filter");
 	int show_lines = r_config_get_i (core->config, "asm.lines");
 	int show_dwarf = r_config_get_i (core->config, "asm.dwarf");
+	int show_linescall = r_config_get_i (core->config, "asm.linescall");
+	int show_trace = r_config_get_i (core->config, "asm.trace");
 	int linesout = r_config_get_i (core->config, "asm.linesout");
 	int adistrick = r_config_get_i (core->config, "asm.middle"); // TODO: find better name
 	int show_offset = r_config_get_i (core->config, "asm.offset");
@@ -71,7 +73,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	// TODO: make anal->reflines implicit
 	free (core->reflines); // TODO: leak
 	core->reflines = r_anal_reflines_get (core->anal, core->offset,
-		buf, len, -1, linesout);
+		buf, len, -1, linesout, show_linescall);
 	for (i=idx=ret=0; idx < len && i<l; idx+=ret,i++) {
 		ut64 addr = core->offset + idx;
 		r_asm_set_pc (core->assembler, addr);
@@ -139,6 +141,11 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 				r_cons_printf (Color_GREEN"0x%08"PFMT64x
 					"  "Color_RESET, core->offset + idx);
 			else r_cons_printf ("0x%08"PFMT64x"  ", core->offset + idx);
+		}
+//TODO: core->offset+idx must be a var named 'addr'!! less ops
+		if (show_trace) {
+			RDebugTracepoint *tp = r_debug_trace_get (core->dbg, core->offset+idx);
+			r_cons_printf ("%d:%d ", tp?tp->times:0, tp?tp->count:0);
 		}
 		if (show_stackptr) {
 			r_cons_printf ("%3d%s  ", stackptr,

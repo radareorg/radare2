@@ -3,41 +3,16 @@
 |    <  V  . T  . V      <   _/ .--'_/ |  ()  |
 |_|\__|_|__|___/|_|_|_|\__\___/ |_____(_)____/
 
-
-FOR THE RELEASE WE HAVE TO:
-===========================
-* fix Vu, deosnt seems to work fine ..
-* continue until untraced instruction
-* Do not draw call lines (asm.linescall=false)
-
-
-* generate accessors automatically from valaswig
-* install.sh (to track installed files ..)
-* add support for asm.trace (show and trace register
-  changes and per-opcode execution count (RRange)
-* grava layout using layers
-
-* merge r_asm and r_anal?
-
-* filter search results..
-  cc 8080 @@ hit* .. check for values that has changed.
-  - maybe we should 'cache' some memory regions
-
-* Add 'prj.name', 'prj.desc'
-* Add description to project e file.desc ?
-
-* anal bug: (fixed??)
-[0x08048eec]> pd 2 
-    0x08048eec    0               c20400  ret 0x4
- -> this opcodes increments the stack 8 bytes (4+4) . it is not handled correctly
-
 <{include libr/TODO}>
 
-* Move disasm loop into r_print (r_print should depend on r_asm)
-* references: data (read, write), code (call, jmp)
-* visual byte cursor in disassembly
-
-* code analysis with r_parse
+VERY IMPORTANT
+==============
+* nibble: rename characteristics into srwx
+* Visual byte cursor in disassembly
+* Write manpages for r2, r2rc, r2rc-tool, rafind2 and rasign2
+* Implement C command as in r1 (same for visual..define strings, hexdumps, etc..)
+* Implement 'av' command we need it  (really?) how about to eval with ?
+* code analysis with r_parse // isnt this already done? nibble?
   RAnalAopArg {
     int size;
     int delta;
@@ -46,20 +21,6 @@ FOR THE RELEASE WE HAVE TO:
   r_anal_aop_arg_set ();
   r_anal_aop_arg_get ();
   r_anal_aop_arg_binmask ();
-
-* Move 'r_syscall_t' stuff into r_debug
-  - Sync r_core
-
-* Write manpages for r2, r2rc, r2rc-tool, rafind2 and rasign2
-
-* analyze push arguments before function calls
-  - define number of arguments for given function
-  - when the number of arguments differs between the calling
-    and the result of the code analysis of the given function
-    we should warn
-    - this kind of warnings must be done with r_log_ functions
-      so we hook it into a log file
-
 * diff code analysis // nibble
   - diff two programs
      1st level:
@@ -70,15 +31,59 @@ FOR THE RELEASE WE HAVE TO:
      2nd level:
         - basic block level diffing (output in graph mode)
 
-* Is RCore->block and blocksize a RBuf ? refactor!11
- 
-* radare2 -e dbg.engine=vm -d ls
-  - load the program using r_bin in virtual space
-  - initialize vm and set regs
-  - debug backend should use the vm
+FOR THE RELEASE WE HAVE TO:
+===========================
+* fix Vu, deosnt seems to work fine ..
 
+Analysis
+========
+* Do we have to enable jump/call toggles for breaking basicblocks? (yes/no)
+* we need an api to define function signatures
+// integrated with function signatures
+// offset -> formatstring (offset is the key to function signature)
+* analyze push arguments before function calls
+  - define number of arguments for given function
+  - when the number of arguments differs between the calling
+    and the result of the code analysis of the given function
+    we should warn
+    - this kind of warnings must be done with r_log_ functions
+      so we hook it into a log file
+
+Bindings
+========
+* generate accessors automatically from valaswig
 * Script plugins
  - We should enable r_lib to implement plugins in any
    scripting language, so we can for example prepare
    a .c stub interface for python/perl/ruby/..
    - this requires a swig bridge
+
+Build system
+============
+* install.sh (to track installed files ..)
+  changes and per-opcode execution count (RRange)
+
+Refactoring
+===========
+* Move disasm loop into r_print (r_print should depend on r_asm)
+* Move 'r_syscall_t' stuff into r_debug
+  - Sync r_core
+* merge r_asm and r_anal?
+* Is RCore->block and blocksize a RBuf ? refactor!11
+
+Design
+======
+* references: data (read, write), code (call, jmp)
+* filter search results..
+  cc 8080 @@ hit* .. check for values that has changed.
+  - maybe we should 'cache' some memory regions
+* Add 'prj.name', 'prj.desc'
+* Add description to project e file.desc ?
+ 
+Future
+======
+* radare2 -e dbg.engine=vm -d ls
+  - load the program using r_bin in virtual space
+  - initialize vm and set regs
+  - debug backend should use the vm
+

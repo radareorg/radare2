@@ -113,11 +113,8 @@ R_API void r_vm_print(struct r_vm_t *vm, int type) {
 		printf ("fs *\n");
 }
 
-R_API int r_vm_reg_add(struct r_vm_t *vm, const char *name, int type, ut64 value)
-{
-	RVmReg *r;
-
-	r = (RVmReg*)malloc (sizeof (RVmReg));
+R_API int r_vm_reg_add(struct r_vm_t *vm, const char *name, int type, ut64 value) {
+	RVmReg *r = (RVmReg*)malloc (sizeof (RVmReg));
 	if (r == NULL)
 		return 0;
 	strncpy (r->name, name, 15);

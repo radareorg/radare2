@@ -164,12 +164,14 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_i (cfg, "asm.nbytes", 8);
 	r_config_set (cfg, "asm.pseudo", "false");  // DEPRECATED ???
 	r_config_set (cfg, "asm.filter", "true");
+	r_config_set (cfg, "asm.trace", "true");
 	r_config_set (cfg, "asm.bytes", "true"); 
 	r_config_set (cfg, "asm.offset", "true"); 
 	r_config_set (cfg, "asm.lines", "true");
 	r_config_set (cfg, "asm.linesout", "true");
 	r_config_set (cfg, "asm.linesstyle", "false");
 	r_config_set (cfg, "asm.lineswide", "false");
+	r_config_set (cfg, "asm.linescall", "false");
 	r_config_set (cfg, "asm.offset", "true"); 
 	r_config_set_cb (cfg, "asm.os", R_SYS_OS, &config_asmos_callback);
 	r_config_set (cfg, "asm.pseudo", "false");  // DEPRECATED ???
@@ -189,7 +191,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "dbg.backend", "native");
 	r_config_set_cb (cfg, "dbg.stopthreads", "true", &config_stopthreads_callback);
 	r_config_set_cb (cfg, "dbg.swstep", "false", &config_swstep_callback);
-	r_config_set_cb (cfg, "dbg.trace", "false", &config_trace_callback);
+	r_config_set_cb (cfg, "dbg.trace", "true", &config_trace_callback);
 	r_config_set_cb (cfg, "dbg.trace.tag", "0xff", &config_tracetag_callback);
 	r_config_set (cfg, "scr.prompt", "true");
 	r_config_set_cb (cfg, "scr.color",

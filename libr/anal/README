@@ -86,7 +86,6 @@ void analyze_function(Analysis an, uint64 addr)
 // Must use r_alloc_pool for every type of structure (per function level)
 // Must store all this info using r_db
 // Only index when requested (tempral analysis are temporal)
-// Do we have to enable jump/call toggles for breaking basicblocks?
 // Memory selectors are just modifiers .. how?
 // How to handle with self-modifying code?
   - if its a conditional branch, refs are true , false

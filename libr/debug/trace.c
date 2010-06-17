@@ -105,7 +105,7 @@ R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
 		tp->tags = tag;
 		tp->size = size;
 		tp->count = dbg->trace->count++;
-		tp->times = 0;
+		tp->times = 1;
 		r_list_append (dbg->trace->traces, tp);
 	} else tp->times++;
 	return tp;
