@@ -50,7 +50,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 }
 
 static int show_help(char *argv0, int line) {
-	printf("Usage: %s [-Xnzh] [-f from] [-t to] [-z] [-s str] [-x hex] file ...\n", argv0);
+	printf("Usage: %s [-Xnzh] [-f from] [-t to] [-s str] [-x hex] file ...\n", argv0);
 	if (line) return 0;
 	printf(
 	" -z        search for zero-terminated strings\n"
@@ -58,7 +58,7 @@ static int show_help(char *argv0, int line) {
 	" -m [str]  set a mask\n"
 	" -x [hex]  search for hexpair string (909090) (can be used multiple times)\n"
 	" -f [from] start searching from address 'from'\n"
-	" -f [to]   stop search at address 'to'\n"
+	" -t [to]   stop search at address 'to'\n"
 	" -X        show hexdump of search results\n"
 	" -n        do not stop on read errors\n"
 	" -r        print using radare commands\n"

@@ -14,11 +14,6 @@
   - http://git.linux-xtensa.org/cgi-bin/git.cgi?p=buildroot/buildroot-xtensa;a=blob;f=toolchain/binutils/binutils-xtensa_dc232b.tgz;h=214164399158c540a3033e52b3bb9f65c55289af;hb=HEAD
   - Check if there are endianess issues
 
-|| anal ||
-----------
-  - anal fastargs
-  - integrate with r_var to make variable access analysis
-
 || bin || 
 ---------
   - Add dex format support (android)

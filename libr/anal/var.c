@@ -79,7 +79,6 @@ R_API void r_anal_var_access_free(void *access) {
 
 R_API int r_anal_var_type_add(RAnal *anal, const char *name, int size, const char *fmt) {
 	RAnalVarType *t;
-
 	if (!(t = r_anal_var_type_new ()))
 		return R_FALSE;
 	if (name)

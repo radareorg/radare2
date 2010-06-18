@@ -40,6 +40,12 @@ pkgcfg:
 install-man:
 	mkdir -p ${DESTDIR}/${PREFIX}/share/man/man1
 	for a in man/*.1 ; do ${INSTALL_MAN} $$a ${DESTDIR}/${PREFIX}/share/man/man1 ; done
+	cd ${DESTDIR}/${PREFIX}/share/man/man1 && ln -fs radare2.1 r2.1
+
+install-man-symlink:
+	mkdir -p ${DESTDIR}/${PREFIX}/share/man/man1
+	cd man && for a in *.1 ; do ln -fs `pwd`/$$a ${DESTDIR}/${PREFIX}/share/man/man1/$$a ; done
+	cd ${DESTDIR}/${PREFIX}/share/man/man1 && ln -fs radare2.1 r2.1
 
 install: install-man
 	${INSTALL_DIR} ${DESTDIR}${PREFIX}/share/doc/radare2
@@ -48,7 +54,7 @@ install: install-man
 	cd binr && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd r2rc && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
-symstall install-symlink:
+symstall install-symlink: install-man-symlink
 	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd r2rc && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}

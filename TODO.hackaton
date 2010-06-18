@@ -37,7 +37,7 @@ Concrete TODO points
 * r_io
   - We need a way to get the underlying file which responds
     to the read call (this way we can know which library
-    lives at a specified offset.
+    lives at a specified offset. (is this already done?)
 
 * r_bin
   - Implement more get_main() (NOOB)
@@ -45,8 +45,6 @@ Concrete TODO points
   - Find why objdump can find stripped symbols with objcopy (see /TODO)
 
 * radare2
-  - Implement cursor in visual mode
-  - Fix visual cursor in ANSI (raw ascii is inneficient)
   - Use r_bin with r_io to get symbols
     - The offset to read will define the module to analyze and retrieve syms
   - Import msdn doc as comments
@@ -59,9 +57,9 @@ Concrete TODO points
   - The pattern finding functions are not following the design
     of the rest of the library, it needs a redesign and code cleanup
     (see bytepat.c)
-  - implement radare/src/xrefs.c into r_search
+  - Implement radare/src/xrefs.c into r_search
   - Add support to change the case sensitive of searchs (ignore case)
     - This must be keyword-based. Not globally
-  - Update vapi (r_search_regexp not implemented)
+  - Sync vapi (r_search_regexp not implemented)
   - Enable/disable nested hits? (discuss+ implement in parent app?)
     - Just skip bytes until end of keyword

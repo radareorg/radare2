@@ -9,29 +9,21 @@
 0.5 RELEASE
 ===========
 
-Discussion:
------------
-* Implement 'av' command we need it  (really?) how about to eval with ?
-
 Bugs:
 -----
-* fix Vu, deosnt seems to work fine ..
+* fix Vu, doesnt seems to work fine ..
 * nibble: trace counts after step..thats not correct!
 
 Features:
 ---------
-* pancake: FileDescriptors: df -- copy from !fd in r1
-* Write manpages for r2, r2rc, r2rc-tool, rafind2 and rasign2
+* pancake: FileDescriptors: dd -- copy from !fd in r1
+* Write manpages for r2rc, r2rc-tool, rasign2
 * pancake: we need an api to define function signatures
   - integrated with function signatures
   -  offset -> formatstring (offset is the key to function signature)
 * pancake: implement RAnalCall (analyze function arguments, return values, propagate types..)
   - define number of arguments for given function
-  - when the number of arguments differs between the calling
-    and the result of the code analysis of the given function
-    we should warn
-    - this kind of warnings must be done with r_log_ functions
-      so we hook it into a log file
+  - warn if signature and analysis differs in number of args or so..
 * gerardo?: implement GMP in util/big.c
 * Implement C command as in r1 (same for visual..define strings, hexdumps, etc..)
 * nibble: diff code analysis
@@ -48,6 +40,7 @@ Features:
 
 Analysis
 ========
+* Implement more get_main() (NOOB)
 * Do we have to enable jump/call toggles for breaking basicblocks? (yes/no)
   - pancake: no
   - nibble: ?
@@ -73,25 +66,35 @@ Bindings
 
 Build system
 ============
+* Store version information in libraries ? debian claims for it
 * install.sh (to track installed files ..)
   changes and per-opcode execution count (RRange)
 
 Refactoring
 ===========
 * Move disasm loop into r_print (r_print should depend on r_asm)
-* Move 'r_syscall_t' stuff into r_debug
-  - Sync r_core
+* Move 'r_syscall_t' stuff into r_debug (sync r_core)
 * merge r_asm and r_anal?
+* what do we have to do with r_th, r_parse and r_vm ?
 * Is RCore->block and blocksize a RBuf ? refactor!11
+* Find a better name for r_buf_fread (really?)
+* typedef all function pointers, like in r_bp
+* Review r_io API
+* rasm2 should be configurable at startup time to choose default arch (use environment?)
+* correct result (R_TRUFAE), but with warnings (implement r_errno and r_errstr in r_util?)
+* Finish and import the spp's getopt owns implementation in r_util (like in p9)
+* Rename __UNIX__ as __POSIX__
 
 Design
 ======
+* Implement 'av' command we need it  (really?) how about to eval with ?
 * references: data (read, write), code (call, jmp)
 * filter search results..
   cc 8080 @@ hit* .. check for values that has changed.
   - maybe we should 'cache' some memory regions
 * Add 'prj.name', 'prj.desc'
 * Add description to project e file.desc ?
+* Add RLog API.. pipeable to disk and stderr..also hookable ..cool for ui
  
 Future
 ======
