@@ -4,11 +4,9 @@ Debugger TODO
   for them and toggle a .dbg variable to break
 * ALL threads must be stopped when a breakpoint is handled..
   -- how to do this?
-* regio not implemented
-  - floating point registers
-  - mmx/xmm
-  - drX control
-* FileDescriptors
-  - df -- copy from !fd in r1
+* floating point registers
+* mmx/xmm
+* DRX control
 * Implement dump+restore as macros
   (dump,)
+* regio not implemented // really necessary?

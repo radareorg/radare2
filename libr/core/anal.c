@@ -67,6 +67,7 @@ static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts
 	RListIter *iter;
 	char *str;
 
+// TODO: display nodes in yellow when those are traced ones
 	/* In partial graphs test if the bb is already printed */
 	if (pbb)
 		r_list_foreach (pbb, iter, bbi)
@@ -87,21 +88,23 @@ static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts
 				}
 			}
 			if (bbi->jump != -1) {
-				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" [color=\"%s\"];\n", bbi->addr, bbi->jump,
+				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
+						"[color=\"%s\"];\n", bbi->addr, bbi->jump,
 						bbi->fail != -1 ? "green" : "blue");
 				r_cons_flush ();
 				if (addr != 0) r_core_anal_graph_nodes (core, pbb, bbi->jump, opts);
 			}
 			if (bbi->fail != -1) {
-				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" [color=\"red\"];\n", bbi->addr, bbi->fail);
+				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
+					"[color=\"red\"];\n", bbi->addr, bbi->fail);
 				r_cons_flush ();
 				if (addr != 0) r_core_anal_graph_nodes (core, pbb, bbi->fail, opts);
 			}
 			if ((str = r_core_anal_graph_label (core, bbi, opts))) {
 				if (opts & R_CORE_ANAL_GRAPHDIFF) {
 					r_cons_printf (" \"0x%08"PFMT64x"\" [color=%s,label=\"%s\"]\n", bbi->addr, 
-							bbi->diff==R_ANAL_DIFF_MATCH?"green":
-							bbi->diff==R_ANAL_DIFF_UNMATCH?"red":"lightgray",str);
+						bbi->diff==R_ANAL_DIFF_MATCH?"green":
+						bbi->diff==R_ANAL_DIFF_UNMATCH?"red":"lightgray",str);
 				} else {
 					r_cons_printf (" \"0x%08"PFMT64x"\" [label=\"%s\"]\n", bbi->addr, str);
 				}
@@ -198,18 +201,16 @@ R_API int r_core_anal_bb_list(RCore *core, int rad) {
 				r_cons_printf (" fail=0x%08"PFMT64x, bbi->fail);
 
 			r_cons_printf (" type=");
-			if (bbi->type == R_ANAL_BB_TYPE_NULL)
-				r_cons_printf ("null ");
-			else {
-			if ((bbi->type & R_ANAL_BB_TYPE_BODY))
-				r_cons_printf ("body ");
-			if ((bbi->type & R_ANAL_BB_TYPE_FOOT))
-				r_cons_printf ("foot ");
-			if ((bbi->type & R_ANAL_BB_TYPE_HEAD))
-				r_cons_printf ("head ");
-			if ((bbi->type & R_ANAL_BB_TYPE_LAST))
-				r_cons_printf ("last ");
-			}
+			if (bbi->type != R_ANAL_BB_TYPE_NULL) {
+				if ((bbi->type & R_ANAL_BB_TYPE_BODY))
+					r_cons_printf ("body,");
+				if ((bbi->type & R_ANAL_BB_TYPE_FOOT))
+					r_cons_printf ("foot,");
+				if ((bbi->type & R_ANAL_BB_TYPE_HEAD))
+					r_cons_printf ("head,");
+				if ((bbi->type & R_ANAL_BB_TYPE_LAST))
+					r_cons_printf ("last ");
+			} else r_cons_printf ("null ");
 
 			r_cons_printf ("diff=");
 			if ((bbi->diff == R_ANAL_DIFF_MATCH))
@@ -218,6 +219,7 @@ R_API int r_core_anal_bb_list(RCore *core, int rad) {
 				r_cons_printf ("unmatch");
 			else r_cons_printf ("new");
 
+			r_cons_printf (" traced=%d", bbi->traced);
 			if (bbi->cond)
 				r_cons_printf (" cond=\"%s\" match=%d\n",
 					r_anal_cond_to_string (bbi->cond),

@@ -179,6 +179,7 @@ typedef struct r_anal_bb_t {
 	int type;
 	int diff;
 	int ninstr;
+	int traced;
 	RNumBig *fingerprint;
 	RList *aops;
 	RAnalCond *cond;
@@ -271,6 +272,7 @@ R_API char *r_anal_strmask (RAnal *anal, const char *data);
 R_API RAnalBlock *r_anal_bb_new();
 R_API RList *r_anal_bb_list_new();
 R_API void r_anal_bb_free(void *bb);
+R_API void r_anal_bb_trace(RAnal *anal, ut64 addr);
 R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb,
 		ut64 addr, ut8 *buf, ut64 len, int head);
 R_API int r_anal_bb_split(RAnal *anal, RAnalBlock *bb,

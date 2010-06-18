@@ -10,12 +10,11 @@
 #include <r_syscall.h>
 #include "list.h"
 
-// TODO Use chars!! 's' 'r' 'S' 'z' ??
 enum {
-	R_DBG_PROC_STOP,
-	R_DBG_PROC_RUN,
-	R_DBG_PROC_SLEEP,
-	R_DBG_PROC_ZOMBIE,
+	R_DBG_PROC_STOP = 's',
+	R_DBG_PROC_RUN = 'r',
+	R_DBG_PROC_SLEEP = 'S',
+	R_DBG_PROC_ZOMBIE = 'z'
 };
 
 // signal handling must support application and debugger level options
@@ -64,25 +63,6 @@ typedef struct r_debug_tracepoint_t {
 	ut64 stamp;
 } RDebugTracepoint;
 
-#if 0 // XXX . to be used as inspiration
-R_API int r_trace_init(struct r_trace_t *t);
-R_API struct r_trace_t *r_trace_new();
-R_API int r_trace_tag_get(struct r_trace_t *t);
-R_API int r_trace_tag_set(struct r_trace_t *t, int id);
-R_API int r_trace_sort(struct r_trace_t *t);
-R_API struct r_trace_item_t *r_trace_get(struct r_trace_t *t, ut64 addr, int tag);
-R_API int r_trace_times(struct r_trace_t *tr, ut64 addr);
-R_API int r_trace_count(struct r_trace_t *tr, ut64 addr);
-R_API int r_trace_index(struct r_trace_t *tr, ut64 addr);
-R_API int r_trace_set_times(struct r_trace_t *tr, ut64 addr, int times);
-R_API int r_trace_add(struct r_trace_t *tr, ut64 addr, int opsize);
-R_API ut64 r_trace_range(struct r_trace_t *t, ut64 from, int tag);
-R_API ut64 r_trace_next(struct r_trace_t *tr, ut64 from, int tag);
-R_API void r_trace_show(struct r_trace_t *tr, int plain, int tag);
-R_API void r_trace_reset(struct r_trace_t *tr);
-R_API int r_trace_get_between(struct r_trace_t *tr, ut64 from, ut64 to);
-#endif
-
 typedef struct r_debug_t {
 	int pid;    /* selected process id */
 	int tid;    /* selected thread id */
@@ -109,6 +89,16 @@ typedef struct r_debug_t {
 	- list of managed memory (allocated in child...)
 	*/
 } RDebug;
+
+typedef struct r_debug_desc_plugin_t {
+	int (*open)(const char *path);
+	int (*close)(int fd);
+	int (*read)(int fd, ut64 addr, int len);
+	int (*write)(int fd, ut64 addr, int len);
+	int (*seek)(int fd, ut64 addr);
+	int (*dup)(int fd, int newfd);
+	RList* (*list)();
+} RDebugDescPlugin;
 
 /* TODO: pass dbg and user data pointer everywhere */
 typedef struct r_debug_plugin_t {
@@ -141,6 +131,8 @@ typedef struct r_debug_plugin_t {
 	ut64 (*map_alloc)(RDebug *dbg, RDebugMap *map);
 	int (*map_dealloc)(RDebug *dbg, ut64 addr);
 	int (*init)(RDebug *dbg);
+	RDebugDescPlugin desc;
+	// TODO: use RList here
 	struct list_head list;
 } RDebugPlugin;
 
@@ -153,7 +145,6 @@ typedef struct r_debug_pid_t {
 	//struct list_head threads;
 	//struct list_head childs;
 	//struct r_debug_pid_t *parent;
-	//struct list_head list;
 } RDebugPid;
 
 #ifdef R_API
@@ -208,6 +199,15 @@ R_API RDebugMap *r_debug_map_new (char *name, ut64 addr, ut64 addr_end, int perm
 R_API void r_debug_map_free(RDebugMap *map);
 R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map);
 R_API void r_debug_map_list(RDebug *dbg, ut64 addr);
+
+/* descriptors */
+R_API int r_debug_desc_open(RDebug *dbg, const char *path);
+R_API int r_debug_desc_close(RDebug *dbg, int fd);
+R_API int r_debug_desc_dup(RDebug *dbg, int fd, int newfd);
+R_API int r_debug_desc_read(RDebug *dbg, int fd, ut64 addr, int len);
+R_API int r_debug_desc_seek(RDebug *dbg, int fd, ut64 addr);
+R_API int r_debug_desc_write(RDebug *dbg, int fd, ut64 addr, int len);
+R_API int r_debug_desc_list(RDebug *dbg, int rad);
 
 /* registers */
 R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write);

@@ -16,10 +16,23 @@ R_API RAnalBlock *r_anal_bb_new() {
 		bb->type = R_ANAL_BB_TYPE_NULL;
 		bb->diff = R_ANAL_DIFF_NULL;
 		bb->aops = r_anal_aop_list_new();
+		bb->traced = 0;
 		bb->fingerprint = r_big_new (NULL);
 		bb->cond = NULL;
 	}
 	return bb;
+}
+
+R_API void r_anal_bb_trace(RAnal *anal, ut64 addr) {
+	RAnalBlock *bbi;
+	RListIter *iter;
+eprintf("bbtraced\n");
+	r_list_foreach (anal->bbs, iter, bbi) {
+		if (addr>=bbi->addr && addr<(bbi->addr+bbi->size)) {
+			bbi->traced = R_TRUE;
+			break;
+		}
+	}
 }
 
 R_API RList *r_anal_bb_list_new() {

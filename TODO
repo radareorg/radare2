@@ -6,12 +6,25 @@
 
 <{include libr/TODO}>
 
-VERY IMPORTANT
-==============
+0.5 RELEASE
+===========
+
+Discussion:
+-----------
+* Implement 'av' command we need it  (really?) how about to eval with ?
+
+Bugs:
+-----
+* fix Vu, deosnt seems to work fine ..
+* nibble: trace counts after step..thats not correct!
+
+Features:
+---------
+* pancake: FileDescriptors: df -- copy from !fd in r1
+* Write manpages for r2, r2rc, r2rc-tool, rafind2 and rasign2
 * pancake: we need an api to define function signatures
   - integrated with function signatures
   -  offset -> formatstring (offset is the key to function signature)
-* fix Vu, deosnt seems to work fine ..
 * pancake: implement RAnalCall (analyze function arguments, return values, propagate types..)
   - define number of arguments for given function
   - when the number of arguments differs between the calling
@@ -19,21 +32,9 @@ VERY IMPORTANT
     we should warn
     - this kind of warnings must be done with r_log_ functions
       so we hook it into a log file
-* nibble: trace counts after step..thats not correct!
 * gerardo?: implement GMP in util/big.c
-* Write manpages for r2, r2rc, r2rc-tool, rafind2 and rasign2
 * Implement C command as in r1 (same for visual..define strings, hexdumps, etc..)
-* Implement 'av' command we need it  (really?) how about to eval with ?
-* code analysis with r_parse // isnt this already done? nibble?
-  RAnalAopArg {
-    int size;
-    int delta;
-    int type;
-  }
-  r_anal_aop_arg_set ();
-  r_anal_aop_arg_get ();
-  r_anal_aop_arg_binmask ();
-* diff code analysis // nibble
+* nibble: diff code analysis
   - diff two programs
      1st level:
         - check all functions EQUAL, DIFFERENT, REMOVED, ADDED
@@ -43,6 +44,8 @@ VERY IMPORTANT
      2nd level:
         - basic block level diffing (output in graph mode)
 
+---8<------------8<------------------8<---------------------8<------------- -- - -
+
 Analysis
 ========
 * Do we have to enable jump/call toggles for breaking basicblocks? (yes/no)
@@ -51,6 +54,16 @@ Analysis
 
 Bindings
 ========
+* code analysis with r_parse // isnt this already done? nibble?
+  - generate by just parsing the opcode
+  RAnalAopArg {
+    int size;
+    int delta;
+    int type;
+  }
+  r_anal_aop_arg_set ();
+  r_anal_aop_arg_get ();
+  r_anal_aop_arg_binmask ();
 * generate accessors automatically from valaswig
 * Script plugins
  - We should enable r_lib to implement plugins in any

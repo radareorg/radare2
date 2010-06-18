@@ -1634,6 +1634,7 @@ static int cmd_anal(void *data, const char *input) {
 					//trace_set_times(addr, atoi(ptr+1));
 					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, aop->length);
 					tp->count = atoi (ptr+1);
+					r_anal_bb_trace (core->anal, addr);
 					r_anal_aop_free (aop);
 				} else eprintf ("Cannot analyze opcode at 0x%"PFMT64x"\n", addr);
 			}
@@ -2929,6 +2930,32 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 	case 'd':
 		eprintf ("TODO: dd: file descriptors\n");
+		switch (input[1]) {
+		case 0:
+			// r_debug_desc_list()
+			break;
+		case '*':
+			// r_debug_desc_list(1)
+			break;
+		case 's':
+			// r_debug_desc_seek()
+			break;
+		case 'd':
+			// r_debug_desc_dup()
+			break;
+		case 'r':
+			// r_debug_desc_read()
+			break;
+		case 'w':
+			// r_debug_desc_write()
+			break;
+		case '-':
+			// close file
+			break;
+		case ' ':
+			// open file
+			break;
+		}
 		break;
 	case 's':
 		times = atoi (input+2);
@@ -3071,7 +3098,7 @@ static int cmd_debug(void *data, const char *input) {
 		r_cons_printf ("Usage: d[sbhcrbo] [arg]\n"
 		" dh [handler]   list or set debugger handler\n"
 		" dH [handler]   transplant process to a new handler\n"
-		" dd             file descriptors\n"
+		" dd             file descriptors (!fd in r1)\n"
 		" ds[ol] N       step, over, source line\n"
 		" dp[=*?t][pid]  list, attach to process or thread id\n"
 		" dc[?]          continue execution. dc? for more\n"
