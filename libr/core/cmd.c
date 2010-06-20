@@ -28,6 +28,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	RAnalOp analop;
 	RFlagItem *flag;
 	int counter = 0;
+	RMetaItem *mi;
 
 	// TODO: All those options must be print flags
 	int show_color = r_config_get_i (core->config, "scr.color");
@@ -90,7 +91,9 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			r_cons_strcat (comment);
 			free (comment);
 		}
+// TODO : line analysis must respect data types! shouldnt be interpreted as code
 		line = r_anal_reflines_str (core->anal, core->reflines, addr, linesopts);
+ 		mi = r_meta_find (core->meta, (ut64)core->offset+idx, R_META_ANY, R_META_WHERE_HERE);
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx);
 		if (ret<1) {
 			ret = 1;
@@ -161,6 +164,15 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 				stackptr = 0;
 			ostackptr = stackptr;
 			stackptr += analop.stackptr;
+		}
+		if (mi)
+		switch (mi->type) {
+		case R_META_STRING:
+			// TODO: filter string (r_str_unscape)
+			r_cons_printf ("string(%lld): \"%s\"\n", mi->size, mi->str);
+			ret = (int)mi->size;
+			free (line);
+			continue;
 		}
 		if (show_bytes) {
 			char *str, pad[64];
@@ -269,15 +281,24 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			ut32 word = 0;
 			int ret = r_io_read_at (core->io, analop.ref, (void *)&word, sizeof (word));
 			if (ret == sizeof (word)) {
-				RMetaItem *mi = r_meta_find (core->meta, word,
+				RMetaItem *mi2 = r_meta_find (core->meta, (ut64)word,
 					R_META_ANY, R_META_WHERE_HERE);
-				if (mi) {
-					if (mi->type == R_META_STRING) {
-						char *str = r_str_unscape (mi->str);
-						r_cons_printf (" (at=0x%08x) (len=%lld) \"%s\" ", word, mi->size, str);
+				if (!mi2) {
+					mi2 = r_meta_find (core->meta, (ut64)analop.ref,
+						R_META_ANY, R_META_WHERE_HERE);
+					if (mi2) {
+						char *str = r_str_unscape (mi2->str);
+						r_cons_printf (" (at=0x%08llx) (len=%lld) \"%s\" ", analop.ref, mi2->size, str);
 						free (str);
-					} else r_cons_printf ("unknown type '%c'\n", mi->type);
-				} else r_cons_printf ("; => 0x%08x ", word);
+						
+					} else r_cons_printf ("; => 0x%08x ", word);
+				} else {
+					if (mi2->type == R_META_STRING) {
+						char *str = r_str_unscape (mi2->str);
+						r_cons_printf (" (at=0x%08x) (len=%lld) \"%s\" ", word, mi2->size, str);
+						free (str);
+					} else r_cons_printf ("unknown type '%c'\n", mi2->type);
+				} 
 			} else r_cons_printf ("; err [0x%"PFMT64x"]", analop.ref);
 		}
 		r_cons_newline ();
@@ -387,9 +408,9 @@ static int cmd_zign(void *data, const char *input) {
 			r_cons_printf ("f sign.%s @ 0x%08"PFMT64x"\n", item->name, core->offset);
 		break;
 	case '-':
-		if (input[1] == '*') {
+		if (input[1] == '*')
 			r_sign_reset (core->sign);
-		} else eprintf ("TODO\n");
+		else eprintf ("TODO\n");
 		break;
 	case '/':
 		{
@@ -1291,15 +1312,17 @@ static int cmd_flag(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int len = strlen (input)+1;
 	char *str = alloca (len);
+	ut64 off = core->offset;
+	if (core->print->cur_enabled)
+		off += core->print->cur;
 	memcpy (str, input+1, len);
 
 	switch (input[0]) {
 	case '+':
-		r_flag_set (core->flags, str, core->offset, core->blocksize, 1);
+		r_flag_set (core->flags, str, off, core->blocksize, 1);
 		break;
 	case ' ': {
 		char *s = NULL, *s2 = NULL;
-		ut64 seek = core->offset;
 		ut32 bsze = core->blocksize;
 		s = strchr (str, ' ');
 		if (s) {
@@ -1308,17 +1331,18 @@ static int cmd_flag(void *data, const char *input) {
 			if (s2) {
 				*s2 = '\0';
 				if (s2[1]&&s2[2])
-					seek = r_num_math (core->num, s2+1);
+					off = r_num_math (core->num, s2+1);
 			}
 			bsze = r_num_math (core->num, s+1);
 		}
-		r_flag_set (core->flags, str, seek, bsze, 0);
+		r_flag_set (core->flags, str, off, bsze, 0);
 		if (s) *s=' ';
 		if (s2) *s2=' ';
 		}
 		break;
 	case '-':
-		r_flag_unset (core->flags, input+1);
+		if (input[1]) r_flag_unset (core->flags, input+1);
+		else r_flag_unset_i (core->flags, off);
 		break;
 	case 'S':
 		r_flag_sort (core->flags, (input[1]=='n'));
@@ -1350,6 +1374,7 @@ static int cmd_flag(void *data, const char *input) {
 		" f name 12 33     ; same as above\n"
 		" f+name 12 @ 33   ; like above but creates new one if doesnt exist\n"
 		" f-name           ; remove flag 'name'\n"
+		" f-@addr          ; remove flag at address expression\n"
 		" f                ; list flags\n"
 		" f*               ; list flags in r commands\n"
 		" fs functions     ; set flagspace\n"
@@ -2248,6 +2273,7 @@ static int cmd_open(void *data, const char *input) {
 static int cmd_meta(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int i, ret, line = 0;
+	ut64 addr = core->offset;
 	char file[1024];
 	switch (input[0]) {
 	case '*':
@@ -2279,10 +2305,14 @@ static int cmd_meta(void *data, const char *input) {
 	case 'x': /* code xref */
 	case 'X': /* data xref */
 	case 'F': /* add function */
+		if (input[1]=='-') {
+			if (input[2]==' ')
+				addr = r_num_math (core->num, input+3);
+			r_meta_del (core->meta, input[0], addr, 1, "");
+		} else
 		if (input[1]=='\0'||input[1]=='*') {
 			r_meta_list (core->meta, input[0]);
 		} else {
-			ut64 addr = core->offset;
 			char fun_name[128];
 			int size = atoi (input+1);
 			int type = input[0];
@@ -2317,18 +2347,24 @@ static int cmd_meta(void *data, const char *input) {
 			r_meta_add (core->meta, type, addr, size, fun_name);
 		}
 		break;
+	case '-':
+		if (input[1]==' ')
+			addr = r_num_math (core->num, input+2);
+		r_meta_del (core->meta, R_META_ANY, addr, 1, "");
+		break;
 	case '\0':
 	case '?':
 		eprintf (
-		"Usage: C[CDFsSmxX?] [arg]\n"
-		" CL [addr]           ; show 'code line' information (bininfo)\n"
+		"Usage: C[-LCFsSmxX?] [...]\n"
+		" C-[@][ addr]           ; delete metadata at given address\n"
+		" CL[-] [addr]           ; show 'code line' information (bininfo)\n"
 		" CF [size] [name] [addr] [name] ; register function size here\n"
-		" CC [string]         ; add comment\n"
-		" Cs [size] [[addr]]  ; add string\n"
-		" CS                  ; ...\n"
-		" Cm [fmt] [args]     ; string\n"
-		" Cx [...]            ; add code xref\n"
-		" CX [...]            ; add data xref\n");
+		" CC [string]            ; add comment\n"
+		" Cs[-] [size] [[addr]]  ; add string\n"
+		" CS[-] [size]           ; ...\n"
+		" Cm[-] [fmt] [args]     ; string\n"
+		" Cx[-] [...]            ; add code xref\n"
+		" CX[-] [...]            ; add data xref\n");
 	}
 	return R_TRUE;
 }

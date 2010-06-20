@@ -451,16 +451,24 @@ R_API void r_core_visual_config(RCore *core) {
 
 R_API void r_core_visual_define (RCore *core) {
 	int ch;
-	r_cons_printf ("Define current block as:\n");
-	r_cons_printf (" f  - analyze function\n");
-	r_cons_printf (" q  - quit/cancel operation\n");
-	r_cons_printf ("TODO: add support for data, string, code ..\n");
+	ut64 off = core->offset;
+	if (core->print->cur_enabled)
+		off += core->print->cur;
+	r_cons_printf ("Define current block as:\n"
+		" u  - undefine metadata here\n"
+		" f  - analyze function\n"
+		" q  - quit/cancel operation\n"
+		"TODO: add support for data, string, code ..\n");
 	r_cons_flush ();
 
-	ch = r_cons_readchar();
-	ch = r_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
+	ch = r_cons_readchar ();
+	ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 
 	switch(ch) {
+	case 'u':
+		r_meta_del (core->meta, R_META_ANY, off, 1, "");
+		r_flag_unset_i (core->flags, off);
+		break;
 	case 'f':
 		r_core_cmd (core, "af", 0);
 		r_core_cmd (core, "ab", 0);
@@ -732,6 +740,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	ut64 scrseek;
 	int ch;
 
+	core->print->cur_enabled = R_FALSE;
 	vi = r_config_get (core->config, "cmd.vprompt");
 	if (vi) r_core_cmd (core, vi, 0);
 
@@ -770,6 +779,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 
 	if (color)
 		r_cons_printf (Color_RESET);
+	core->print->cur_enabled = R_FALSE;
 
 	return 0;
 }

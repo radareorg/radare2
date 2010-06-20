@@ -405,6 +405,7 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 			break;
 		case 0x04:
 			// c7042496850408    dword [esp] = 0x8048596 ; LOL
+			aop->refptr = 4;
 			aop->ref = (st64)(((int)(buf[3]+(buf[4]<<8)+(buf[5]<<16)+(buf[6]<<24))));
 			break;
 		}

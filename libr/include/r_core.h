@@ -83,6 +83,7 @@ R_API struct r_core_t *r_core_free(struct r_core_t *c);
 R_API int r_core_config_init(struct r_core_t *core);
 R_API int r_core_prompt(struct r_core_t *r);
 R_API int r_core_cmd(struct r_core_t *r, const char *cmd, int log);
+// XXX void*?? must be RCore !
 R_API int r_core_cmdf(void *user, const char *fmt, ...);
 R_API int r_core_cmd0(void *user, const char *cmd);
 R_API void r_core_cmd_init(struct r_core_t *core);

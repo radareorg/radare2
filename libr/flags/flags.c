@@ -155,6 +155,28 @@ R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 #endif
 }
 
+R_API int r_flag_unset_i(RFlag *f, ut64 addr) {
+	RFlagItem *item;
+	struct list_head *pos, *tmp;
+
+	list_for_each_safe (pos, tmp, &f->flags) {
+		item = list_entry (pos, RFlagItem, list);
+		if (item->offset == addr) {
+		// TODO: free item!!
+			list_del (&item->list);
+//TODO: segfaults !! r_flag_item_free (item);
+			return R_TRUE;
+		}
+	}
+	return R_FALSE;
+#if USE_BTREE
+	/* XXX */
+	btree_del (f->tree, item, cmp, NULL);
+	btree_del (f->ntree, item, ncmp, NULL);
+#endif
+	return 0;
+}
+
 R_API int r_flag_unset(RFlag *f, const char *name) {
 	RFlagItem *item;
 	struct list_head *pos, *tmp;

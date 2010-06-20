@@ -127,13 +127,10 @@ R_API int r_core_anal_bb(RCore *core, ut64 at, int depth, int head) {
 		return R_FALSE;
 	if (!(bb = r_anal_bb_new()))
 		return R_FALSE;
-	if (split)
-		ret = r_anal_bb_split (core->anal, bb, core->anal->bbs, at);
-	else {
-		r_list_foreach (core->anal->bbs, iter, bbi)
-			if (at == bbi->addr)
-				ret = R_ANAL_RET_DUP;
-	}
+	if (split) ret = r_anal_bb_split (core->anal, bb, core->anal->bbs, at);
+	else r_list_foreach (core->anal->bbs, iter, bbi)
+		if (at == bbi->addr)
+			ret = R_ANAL_RET_DUP;
 	if (ret == R_ANAL_RET_DUP) { /* Dupped bb */
 		r_anal_bb_free (bb);
 		return R_FALSE;
