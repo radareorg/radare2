@@ -48,16 +48,16 @@ enum {
 enum {
 	R_META_ANY = -1,
 	/* content type */
-	R_META_DATA = 0,
-	R_META_CODE,
-	R_META_STRING,
-	R_META_STRUCT,
+	R_META_DATA = 'd',
+	R_META_CODE = 'c',
+	R_META_STRING = 's',
+	R_META_STRUCT = 'm',
 	/* line */
-	R_META_FUNCTION,
-	R_META_COMMENT,
-	R_META_FOLDER,
-	R_META_XREF_CODE,
-	R_META_XREF_DATA,
+	R_META_FUNCTION = 'F',
+	R_META_COMMENT = 'C',
+	R_META_FOLDER = 'f', // XXX deprecate?
+	R_META_XREF_CODE = 'x',
+	R_META_XREF_DATA = 'X',
 };
 
 #ifdef R_API

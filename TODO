@@ -16,6 +16,7 @@ Bugs:
 
 Features:
 ---------
+* Handle metadata from disassembler
 * pancake: FileDescriptors: dd -- copy from !fd in r1
 * Write manpages for r2rc, r2rc-tool, rasign2
 * pancake: we need an api to define function signatures

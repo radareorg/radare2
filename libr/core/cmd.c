@@ -43,8 +43,8 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	int show_bytes = r_config_get_i (core->config, "asm.bytes");
 	int show_comments = r_config_get_i (core->config, "asm.comments");
 	int show_stackptr = r_config_get_i (core->config, "asm.stackptr");
-	int linesopts = 0;
 	int cursor, nb, nbytes = r_config_get_i (core->config, "asm.nbytes");
+	int linesopts = 0;
 	nb = nbytes*2;
 
 	if (core->print->cur_enabled) {
@@ -77,8 +77,11 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 #endif
 	// TODO: make anal->reflines implicit
 	free (core->reflines); // TODO: leak
+	free (core->reflines2); // TODO: leak
 	core->reflines = r_anal_reflines_get (core->anal, core->offset,
 		buf, len, -1, linesout, show_linescall);
+	core->reflines2 = r_anal_reflines_get (core->anal, core->offset,
+		buf, len, -1, linesout, 1);
 	for (i=idx=ret=0; idx < len && i<l; idx+=ret,i++) {
 		ut64 addr = core->offset + idx;
 		r_asm_set_pc (core->assembler, addr);
@@ -152,6 +155,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		}
 		if (show_stackptr) {
 			r_cons_printf ("%3d%s  ", stackptr,
+				analop.type==R_ANAL_OP_TYPE_CALL?">":
 				stackptr>ostackptr?"+":stackptr<ostackptr?"-":" ");
 			if (analop.type == R_ANAL_OP_TYPE_RET)
 				stackptr = 0;
@@ -236,10 +240,8 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		if (show_dwarf) {
 			char *sl = r_bin_meta_get_source_line (core->bin, addr);
 			int len = strlen (opstr);
-			if (len<30)
-				len = 30-len;
-			if (sl)
-			if (!osl || (osl && strcmp (sl, osl))) {
+			if (len<30) len = 30-len;
+			if (sl && (!osl || (osl && strcmp (sl, osl)))) {
 				while (len--)
 					r_cons_strcat (" ");
 				if (show_color)
@@ -266,9 +268,17 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		if (analop.refptr) {
 			ut32 word = 0;
 			int ret = r_io_read_at (core->io, analop.ref, (void *)&word, sizeof (word));
-			if (ret == sizeof (word))
-				r_cons_printf ("; => 0x%08x", word);
-			else r_cons_printf ("; err [0x%"PFMT64x"]", analop.ref);
+			if (ret == sizeof (word)) {
+				RMetaItem *mi = r_meta_find (core->meta, word,
+					R_META_ANY, R_META_WHERE_HERE);
+				if (mi) {
+					if (mi->type == R_META_STRING) {
+						char *str = r_str_unscape (mi->str);
+						r_cons_printf (" (at=0x%08x) (len=%lld) \"%s\" ", word, mi->size, str);
+						free (str);
+					} else r_cons_printf ("unknown type '%c'\n", mi->type);
+				} else r_cons_printf ("; => 0x%08x ", word);
+			} else r_cons_printf ("; err [0x%"PFMT64x"]", analop.ref);
 		}
 		r_cons_newline ();
 		if (line) {
@@ -2234,6 +2244,7 @@ static int cmd_open(void *data, const char *input) {
 	return 0;
 }
 
+// XXX this command is broken. output of _list is not compatible with input
 static int cmd_meta(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int i, ret, line = 0;
@@ -2268,33 +2279,56 @@ static int cmd_meta(void *data, const char *input) {
 	case 'x': /* code xref */
 	case 'X': /* data xref */
 	case 'F': /* add function */
-		{
-		ut64 addr = core->offset;
-		char fun_name[128];
-		int size = atoi(input);
-		int type = R_META_FUNCTION;
-		char *t, *p = strchr (input+1, ' ');
-		if (p) {
-			t = strdup (p+1);
-			//eprintf ("T=(%s)\n", t);
-			p = strchr (t, ' ');
+		if (input[1]=='\0'||input[1]=='*') {
+			r_meta_list (core->meta, input[0]);
+		} else {
+			ut64 addr = core->offset;
+			char fun_name[128];
+			int size = atoi (input+1);
+			int type = input[0];
+			char *t, *p = strchr (input+2, ' ');
 			if (p) {
-				*p='\0';
-				strncpy (fun_name, p+1, sizeof (fun_name));
-			} else sprintf (fun_name, "sub_%08"PFMT64x"", addr);
-			addr = r_num_math (core->num, t);
-			free(t);
-		}
-		r_meta_add (core->meta, type, addr, size, fun_name);
+				t = strdup (p+1);
+				p = strchr (t, ' ');
+				if (p) {
+					*p='\0';
+					strncpy (fun_name, p+1, sizeof (fun_name));
+				} else 
+				switch (type) {
+				case 'F':
+					sprintf (fun_name, "sub_%08"PFMT64x"", addr);
+					break;
+				case 's':
+					// TODO: filter \n and so on :)
+					r_core_read_at (core, addr, (ut8*)fun_name, sizeof (fun_name));
+					break;
+				default:
+					{
+					RFlagItem *fi = r_flag_get_i (core->flags, addr);
+					if (fi) snprintf (fun_name, sizeof (fun_name), fi->name);
+					else sprintf (fun_name, "ptr_%08"PFMT64x"", addr);
+					}
+				}
+				addr = r_num_math (core->num, t);
+				if (addr==0LL)
+					addr = core->offset;
+				free (t);
+			}
+			r_meta_add (core->meta, type, addr, size, fun_name);
 		}
 		break;
 	case '\0':
 	case '?':
 		eprintf (
-		"Usage: C[CDF?] [arg]\n"
-		" CL [addr]               ; show 'code line' information (bininfo)\n"
-		" CF [size] [name] [addr] [name] ; register function size here (TODO)\n"
-		" CC [string]             ; add comment (TODO)\n");
+		"Usage: C[CDFsSmxX?] [arg]\n"
+		" CL [addr]           ; show 'code line' information (bininfo)\n"
+		" CF [size] [name] [addr] [name] ; register function size here\n"
+		" CC [string]         ; add comment\n"
+		" Cs [size] [[addr]]  ; add string\n"
+		" CS                  ; ...\n"
+		" Cm [fmt] [args]     ; string\n"
+		" Cx [...]            ; add code xref\n"
+		" CX [...]            ; add data xref\n");
 	}
 	return R_TRUE;
 }
@@ -3113,14 +3147,14 @@ static int cmd_debug(void *data, const char *input) {
 }
 
 R_API int r_core_cmd_buffer(void *user, const char *buf) {
-	char *str = strdup (buf);
-	char *ptr = strchr (str, '\n');
-	char *optr = str;
+	char *ptr, *optr, *str = strdup (buf);
+	optr = str;
+	ptr = strchr (str, '\n');
 	while (ptr) {
 		ptr[0]='\0';
 		r_core_cmd (user, optr, 0);
 		optr = ptr+1;
-		ptr = strchr (str,'\n');
+		ptr = strchr (str, '\n');
 	}
 	r_core_cmd (user, optr, 0);
 	free (str);
@@ -3132,7 +3166,7 @@ R_API int r_core_cmdf(void *user, const char *fmt, ...) {
 	int ret;
 	va_list ap;
 	va_start (ap, fmt);
-	vsnprintf (string, 1023, fmt, ap);
+	vsnprintf (string, sizeof (string), fmt, ap);
 	ret = r_core_cmd ((RCore *)user, string, 0);
 	va_end(ap);
 	return ret;
@@ -3142,9 +3176,7 @@ R_API int r_core_cmd0(void *user, const char *cmd) {
 	return r_core_cmd ((RCore *)user, cmd, 0);
 }
 
-/*
- * return: pointer to a buffer with the output of the command.
- */
+/* return: pointer to a buffer with the output of the command */
 R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	char *retstr = NULL;
 	r_cons_reset ();
@@ -3161,7 +3193,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	return retstr;
 }
 
-int r_core_cmd_init(RCore *core) {
+void r_core_cmd_init(RCore *core) {
 	core->cmd = r_cmd_new ();
 	core->cmd->macro.num = core->num;
 	core->cmd->macro.user = core;
@@ -3195,6 +3227,4 @@ int r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->cmd, "/",        "search kw, pattern aes", &cmd_search);
 	r_cmd_add (core->cmd, "(",        "macro", &cmd_macro);
 	r_cmd_add (core->cmd, "quit",     "exit program session", &cmd_quit);
-
-	return 0;
 }

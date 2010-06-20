@@ -479,6 +479,29 @@ R_API int r_str_escape(char *buf) {
 	return i;
 }
 
+R_API char *r_str_unscape(char *buf) {
+	char *ptr, *ret;
+	int len = strlen (buf);
+	ptr = ret = malloc (len*2);
+	for (;*buf;buf++,ptr++) {
+		if (*buf=='\n') {
+			*ptr = '\\';
+			ptr++;
+			*ptr = 'n';
+		} else
+		if (*buf=='\t') {
+			*ptr = '\\';
+			ptr++;
+			*ptr = 't';
+		} else
+		if (IS_PRINTABLE(*buf)) {
+			*ptr = *buf;
+		} else break;
+	}
+	*ptr = 0;
+	return ret;
+}
+
 /* ansi helpers */
 R_API int r_str_ansi_len(const char *str) {
 	int i=0, len = 0;

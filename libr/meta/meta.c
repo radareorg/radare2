@@ -3,17 +3,14 @@
 #include <r_meta.h>
 
 R_API struct r_meta_t *r_meta_new() {
-	RMeta *m;
-	
-	m = R_NEW (RMeta);
-	if (m)
-		INIT_LIST_HEAD(&m->data);
+	RMeta *m = R_NEW (RMeta);
+	if (m) INIT_LIST_HEAD (&m->data);
 	return m;
 }
 
 R_API void r_meta_free(struct r_meta_t *m) {
 	/* TODO: memory leak */
-	free(m);
+	free (m);
 }
 
 R_API int r_meta_count(struct r_meta_t *m, int type, ut64 from, ut64 to, struct r_meta_count_t *c) {
@@ -55,10 +52,10 @@ R_API char *r_meta_get_string(struct r_meta_t *m, int type, ut64 addr) {
 		return "(Unsupported meta type)";
 		break;
 	default:
-		fprintf(stderr, "Unhandled\n");
+		eprintf ("Unhandled\n");
 		return "(Unhandled meta type)";
 	}
-	list_for_each(pos, &m->data) {
+	list_for_each (pos, &m->data) {
 		struct r_meta_item_t *d = (struct r_meta_item_t *)
 			list_entry(pos, struct r_meta_item_t, list);
 		if (d->type == type || type == R_META_ANY) {
@@ -85,20 +82,18 @@ R_API char *r_meta_get_string(struct r_meta_t *m, int type, ut64 addr) {
 	return str;
 }
 
-int r_meta_del(struct r_meta_t *m, int type, ut64 from, ut64 size, const char *str)
-{
+R_API int r_meta_del(RMeta *m, int type, ut64 from, ut64 size, const char *str) {
 	int ret = R_FALSE;
 	struct list_head *pos, *n;
 
-	list_for_each_safe(pos, n, &m->data) {
-		struct r_meta_item_t *d = (struct r_meta_item_t *)
-			list_entry(pos, struct r_meta_item_t, list);
+	list_for_each_safe (pos, n, &m->data) {
+		RMetaItem *d = (RMetaItem *) list_entry(pos, RMetaItem, list);
 		if (d->type == type || type == R_META_ANY) {
 			if (str != NULL && !strstr(d->str, str))
 				continue;
 			if (from >= d->from && from <= d->to) {
-				free(d->str);
-				list_del(&(d->list));
+				free (d->str);
+				list_del (&(d->list));
 				ret = R_TRUE;
 			}
 		}
@@ -106,12 +101,11 @@ int r_meta_del(struct r_meta_t *m, int type, ut64 from, ut64 size, const char *s
 	return ret;
 }
 
-int r_meta_cleanup(struct r_meta_t *m, ut64 from, ut64 to)
-{
+R_API int r_meta_cleanup(struct r_meta_t *m, ut64 from, ut64 to) {
 	struct list_head *pos, *n;
 	int ret = R_FALSE;
 
-	list_for_each_safe(pos, n, &m->data) {
+	list_for_each_safe (pos, n, &m->data) {
 		struct r_meta_item_t *d = (struct r_meta_item_t *)
 			list_entry(pos, struct r_meta_item_t, list);
 		switch(d->type) {
@@ -147,9 +141,8 @@ int r_meta_cleanup(struct r_meta_t *m, ut64 from, ut64 to)
 	return ret;
 }
 
-int r_meta_add(struct r_meta_t *m, int type, ut64 from, ut64 size, const char *str)
-{
-	struct r_meta_item_t *mi;
+R_API int r_meta_add(RMeta *m, int type, ut64 from, ut64 size, const char *str) {
+	RMetaItem *mi;
 	switch(type) {
 	case R_META_CODE:
 	case R_META_DATA:
@@ -162,14 +155,14 @@ int r_meta_add(struct r_meta_t *m, int type, ut64 from, ut64 size, const char *s
 	case R_META_FOLDER:
 	case R_META_XREF_CODE:
 	case R_META_XREF_DATA:
-		mi = R_NEW(struct r_meta_item_t);
+		mi = R_NEW (RMetaItem);
 		mi->type = type;
 		mi->from = from;
 		mi->size = size;
 		mi->to = from+size;
-		if (str) mi->str = strdup(str);
+		if (str) mi->str = strdup (str);
 		else mi->str = NULL;
-		list_add(&(mi->list), &m->data);
+		list_add (&(mi->list), &m->data);
 		break;
 	default:
 		return R_FALSE;
@@ -179,34 +172,33 @@ int r_meta_add(struct r_meta_t *m, int type, ut64 from, ut64 size, const char *s
 
 /* snippet from data.c */
 /* XXX: we should add a 4th arg to define next or prev */
-struct r_meta_item_t *r_meta_find(struct r_meta_t *m, ut64 off, int type, int where)
-{
-	struct r_meta_item_t *it = NULL;
+R_API RMetaItem *r_meta_find(RMeta *m, ut64 off, int type, int where) {
+	RMetaItem *it = NULL;
 	struct list_head *pos;
+	if (off==0LL)
+		return NULL;
 
 	list_for_each(pos, &m->data) {
-		struct r_meta_item_t *d = (struct r_meta_item_t *)
-			list_entry(pos, struct r_meta_item_t, list);
+		RMetaItem *d = (RMetaItem*) list_entry(pos, RMetaItem, list);
 		if (d->type == type || type == R_META_ANY) {
 			switch(where) {
 			case R_META_WHERE_PREV:
 				if (d->from < off) {
-					if (it) {
-						if (d->from > it->from)
-							it = d;
-					} else it = d;
+					if (it && d->from > it->from)
+						it = d;
+					else it = d;
 				}
 				break;
 			case R_META_WHERE_HERE:
-				if (d->from < off && d->to > off)
+				if (off>=d->from && off <d->to) {
 					it = d;
+				}
 				break;
 			case R_META_WHERE_NEXT:
 				if (d->from > off) {
-					if (it)  {
-						if (d->from < it->from)
-							it = d;
-					} else it = d;
+					if (it && d->from < it->from)
+						it = d;
+					else it = d;
 				}
 				break;
 			}
@@ -244,8 +236,8 @@ int r_meta_get_bounds(struct r_meta_t *m, ut64 addr, int type, ut64 *from, ut64 
 }
 #endif
 
-const char *r_meta_type_to_string(int type)
-{
+R_API const char *r_meta_type_to_string(int type) {
+	// XXX: use type as '%c'
 	switch(type) {
 	case R_META_CODE: return "Cc";
 	case R_META_DATA: return "Cd";
@@ -277,19 +269,18 @@ struct r_range_t *r_meta_ranges(struct r_meta_t *m)
 }
 #endif
 
-int r_meta_list(struct r_meta_t *m, int type)
-{
+int r_meta_list(struct r_meta_t *m, int type) {
 	int count = 0;
 	struct list_head *pos;
-
-	list_for_each(pos, &m->data) {
-		struct r_meta_item_t *d = (struct r_meta_item_t *)
-			list_entry(pos, struct r_meta_item_t, list);
+	list_for_each (pos, &m->data) {
+		RMetaItem *d = (RMetaItem*) list_entry(pos, RMetaItem, list);
 		if (d->type == type || type == R_META_ANY) {
-			printf("%s 0x%08"PFMT64x" 0x%08"PFMT64x" %d %s\n",
-				r_meta_type_to_string(d->type),
-				d->from, d->to, (int)(d->to-d->from), d->str);
+			char *str = r_str_unscape (d->str);
+			printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x" %d \"%s\"\n",
+				r_meta_type_to_string (d->type),
+				d->from, d->to, (int)(d->to-d->from), str);
 			count++;
+			free (str);
 		}
 	}
 	return count;

@@ -73,7 +73,8 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 			aop->stackop = R_ANAL_STACK_SET;
 
 //printf ("FUCKING PT Rpc AT 0x%08llx + %d\n", addr, b[0]);
-			aop->ref = 4+addr+b[0];
+			//aop->ref = 4+addr+b[0]+(b[1]&4<<8);
+			aop->ref = 8+addr+b[0]+((b[1]&0xf)<<8);
 			aop->refptr = R_TRUE;
 		} else
 		if ((b[1]&0xf0) == 0xf0) {

@@ -14,6 +14,7 @@
 
 static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS };
 
+// TODO: check only in data section. filter chars only in -r mode
 static RList* get_strings(RBin *bin, int min) {
 	RList *ret;
 	RBinString *ptr = NULL;
@@ -27,19 +28,20 @@ static RList* get_strings(RBin *bin, int min) {
 	ret->free = free;
 	for(i = 0; i < bin->size; i++) { 
 		if ((IS_PRINTABLE (bin->buf->buf[i])) && matches < R_BIN_SIZEOF_STRINGS-1) {
-				str[matches] = bin->buf->buf[i];
-				matches++;
+			str[matches] = bin->buf->buf[i];
+			matches++;
 		} else {
 			/* check if the length fits on our request */
 			if (matches >= min) {
 				if (!(ptr = R_NEW (RBinString))) {
-					fprintf(stderr, "Error allocating string\n");
+					eprintf ("Error allocating string\n");
 					break;
 				}
 				str[matches] = '\0';
 				ptr->rva = ptr->offset = i-matches;
 				ptr->size = matches;
 				ptr->ordinal = ctr;
+				// copying so many bytes here..
 				memcpy (ptr->string, str, R_BIN_SIZEOF_STRINGS);
 				ptr->string[R_BIN_SIZEOF_STRINGS-1] = '\0';
 				r_list_append (ret, ptr);
@@ -72,7 +74,7 @@ static void r_bin_init_items(RBin *bin) {
 		bin->sections = bin->cur->sections (bin);
 	if (bin->cur->strings)
 		bin->strings = bin->cur->strings (bin);
-	else bin->strings = get_strings (bin, 5);
+	else bin->strings = get_strings (bin, 4);
 	if (bin->cur->symbols)
 		bin->symbols = bin->cur->symbols (bin);
 }

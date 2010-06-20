@@ -478,10 +478,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 
 	// do we need hotkeys for data references? not only calls?
 	if (ch>='0'&&ch<='9') {
-		if (core->reflines) {
+		if (core->reflines2) {
 			struct list_head *pos;
 			int n = ch-'0';
-			list_for_each (pos, &core->reflines->list) {
+			list_for_each (pos, &core->reflines2->list) {
 				RAnalRefline *r = list_entry (pos, RAnalRefline, list);
 				if (!--n) {
 					r_core_seek (core, r->to, 1);

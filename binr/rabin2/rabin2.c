@@ -233,10 +233,8 @@ static int rabin_show_strings() {
 	RListIter *iter;
 	RBinString *string;
 	RBinSection *section;
-	ut64 baddr;
 	int i = 0;
-
-	baddr = r_bin_get_baddr (bin);
+	ut64 baddr = r_bin_get_baddr (bin);
 
 	if ((strings = r_bin_get_strings (bin)) == NULL)
 		return R_FALSE;

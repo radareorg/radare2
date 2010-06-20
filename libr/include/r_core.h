@@ -62,6 +62,7 @@ typedef struct r_core_t {
 	RSyscall *syscall;
 	RAsm *assembler;
 	RAnalRefline *reflines;
+	RAnalRefline *reflines2;
 	RParse *parser;
 	RPrint *print;
 	RBin *bin;
@@ -84,7 +85,7 @@ R_API int r_core_prompt(struct r_core_t *r);
 R_API int r_core_cmd(struct r_core_t *r, const char *cmd, int log);
 R_API int r_core_cmdf(void *user, const char *fmt, ...);
 R_API int r_core_cmd0(void *user, const char *cmd);
-R_API int r_core_cmd_init(struct r_core_t *core);
+R_API void r_core_cmd_init(struct r_core_t *core);
 R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd);
 R_API int r_core_cmd_file(struct r_core_t *core, const char *file);
 R_API int r_core_cmd_command(struct r_core_t *core, const char *command);
@@ -93,7 +94,6 @@ R_API int r_core_seek_align(struct r_core_t *core, ut64 align, int count);
 R_API int r_core_block_read(struct r_core_t *core, int next);
 R_API int r_core_block_size(struct r_core_t *core, ut32 bsize);
 R_API int r_core_read_at(struct r_core_t *core, ut64 addr, ut8 *buf, int size);
-R_API int r_core_cmd_init(struct r_core_t *core); // MUST BE STATIC
 R_API int r_core_visual(struct r_core_t *core, const char *input);
 R_API int r_core_visual_cmd(struct r_core_t *core, int ch);
 
