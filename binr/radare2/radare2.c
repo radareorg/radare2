@@ -38,8 +38,8 @@ int main(int argc, char **argv) {
 	int run_rc = 1;
 	int debug = 0;
 	int fullfile = 0;
-	int bsize = 0;
-	int seek = 0; // XXX use 64
+	ut32 bsize = 0;
+	ut64 seek = 0;
 
 	if (argc < 2)
 		return main_help (1);
@@ -80,10 +80,10 @@ int main(int argc, char **argv) {
 			perms = R_IO_READ | R_IO_WRITE;
 			break;
 		case 'b':
-			bsize = atoi (optarg); // XXX use r_num
+			bsize = (ut32) r_num_math (r.num, optarg);
 			break;
 		case 's':
-			seek = atoi (optarg); // XXX use r_num
+			seek = r_num_math (r.num, optarg);
 			break;
 		case 'L':
 			r_lib_list (r.lib);
@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
 			if (prj && *prj) {
 				char *file = r_core_project_info (&r, prj);
 				if (file) fh = r_core_file_open (&r, file, perms);
-				else fprintf (stderr, "No file\n");
+				else eprintf ("No file\n");
 			}
 		}
 	}
@@ -162,11 +162,8 @@ int main(int argc, char **argv) {
 	if (seek)
 		r_core_seek (&r, seek, 1);
 
-	if (fullfile)
-		r_core_block_size (&r, r.file->size);
-	else
-	if (bsize)
-		r_core_block_size (&r, bsize);
+	if (fullfile) r_core_block_size (&r, r.file->size);
+	else if (bsize) r_core_block_size (&r, bsize);
 
 	// Load the binary information from rabin2
 	{
@@ -176,51 +173,45 @@ int main(int argc, char **argv) {
 		r_str_free (cmd);
 	}
 
-	if (run_rc)
-	if (r_config_get_i (r.config, "cfg.fortunes")) {
+	if (run_rc && r_config_get_i (r.config, "cfg.fortunes")) {
 		r_core_cmd (&r, "fo", 0);
 		r_cons_flush ();
 	}
 
-	{
+	{ /* check if file.sha1 has changed */
 		char *path = strdup (r_config_get (r.config, "file.path"));
-
-		r_core_project_open (&r, r_config_get (r.config, "file.project"));
-		/* check if file.sha1 has changed */
-	{
 		const char *npath, *nsha1;
 		char *sha1 = strdup (r_config_get (r.config, "file.sha1"));
 		char *cmd = r_str_dup_printf (".!rahash2 -r %s", r.file->filename);
+		r_core_project_open (&r, r_config_get (r.config, "file.project"));
 		r_core_cmd (&r, cmd, 0);
 		nsha1 = r_config_get (r.config, "file.sha1");
 		npath = r_config_get (r.config, "file.path");
 		if (sha1 && *sha1 && strcmp (sha1, nsha1))
-			fprintf (stderr, "WARNING: file.sha1 change: %s => %s\n", sha1, nsha1);
+			eprintf ("WARNING: file.sha1 change: %s => %s\n", sha1, nsha1);
 		if (path && *path && strcmp (path, npath))
-			fprintf (stderr, "WARNING: file.path change: %s => %s\n", path, npath);
+			eprintf ("WARNING: file.path change: %s => %s\n", path, npath);
 		r_str_free (cmd);
 		free (sha1);
 		free (path);
 	}
-	}
-	mainloop:
-	do {
-		ret = r_core_prompt (&r);
-		if (ret == -1)
+	for (;;) {
+		do { if ((ret = r_core_prompt (&r))==-1)
 			eprintf ("Invalid command\n");
-	} while (ret != R_CORE_CMD_EXIT);
+		} while (ret != R_CORE_CMD_EXIT);
 
-	if (debug) {
-		if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
-			if (r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
-				r_debug_kill (r.dbg, 9); // KILL
-			{
-				const char *prj = r_config_get (r.config, "file.project");
-				if (prj && *prj)
-				if (r_cons_yesno ('y', "Do you want to save the project? (Y/n)"))
-					r_core_project_save (&r, prj);
-			}
-		} else goto mainloop;
+		if (debug) {
+			if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
+				if (r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
+					r_debug_kill (r.dbg, 9); // KILL
+				{
+					const char *prj = r_config_get (r.config, "file.project");
+					if (prj && *prj && r_cons_yesno ('y', "Do you want to save the project? (Y/n)"))
+						r_core_project_save (&r, prj);
+				}
+			} else continue;
+		}
+		break;
 	}
 	/* capture return value */
 	ret = r.num->value;

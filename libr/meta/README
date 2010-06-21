@@ -1,10 +1,9 @@
-r_meta
-======
+RMeta api
+=========
 
-** Should we store traces here??..or do we have to use r_trace
-** xrefs stuff should be delegated to the flags?
-  - we can generate xrefs metadata from flags analysis
-  - we can use r_meta as 'static storage' and flags as playground.
+** xrefs stuff should be delegated to the flags? (dont think so..)
+ - we can generate xrefs metadata from flags analysis
+ - we can use r_meta as 'static storage' and flags as playground.
 ** data_* api should be refactored to use less functions with more
    flexible arguments.
 ** We can store multiple linked lists depending on type of data, to
