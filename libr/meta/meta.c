@@ -105,10 +105,15 @@ R_API int r_meta_cleanup(struct r_meta_t *m, ut64 from, ut64 to) {
 	struct list_head *pos, *n;
 	int ret = R_FALSE;
 
+	if (from == 0LL && to == UT64_MAX) {
+		// XXX: memory leak
+		INIT_LIST_HEAD (&m->data);
+		return R_TRUE;
+	}
 	list_for_each_safe (pos, n, &m->data) {
-		struct r_meta_item_t *d = (struct r_meta_item_t *)
+		RMetaItem *d = (struct r_meta_item_t *)
 			list_entry(pos, struct r_meta_item_t, list);
-		switch(d->type) {
+		switch (d->type) {
 		case R_META_CODE:
 		case R_META_DATA:
 		case R_META_STRING:

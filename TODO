@@ -11,12 +11,11 @@
 
 Bugs:
 -----
-* fix Vu, doesnt seems to work fine ..
 * nibble: trace counts after step..thats not correct!
 
 Features:
 ---------
-* Handle metadata from disassembler
+* Handle metadata from disassembler (structs, hexdump, ...)
 * pancake: FileDescriptors: dd -- copy from !fd in r1
 * Write manpages for r2rc, r2rc-tool, rasign2
 * pancake: we need an api to define function signatures

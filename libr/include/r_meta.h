@@ -68,6 +68,7 @@ R_API char *r_meta_get_string(struct r_meta_t *m, int type, ut64 addr);
 R_API int r_meta_del(struct r_meta_t *m, int type, ut64 from, ut64 size, const char *str);
 R_API int r_meta_add(struct r_meta_t *m, int type, ut64 from, ut64 size, const char *str);
 R_API struct r_meta_item_t *r_meta_find(struct r_meta_t *m, ut64 off, int type, int where);
+R_API int r_meta_cleanup(struct r_meta_t *m, ut64 from, ut64 to);
 R_API const char *r_meta_type_to_string(int type);
 R_API int r_meta_list(struct r_meta_t *m, int type);
 #endif

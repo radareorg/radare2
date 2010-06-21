@@ -2348,9 +2348,13 @@ static int cmd_meta(void *data, const char *input) {
 		}
 		break;
 	case '-':
-		if (input[1]==' ')
-			addr = r_num_math (core->num, input+2);
-		r_meta_del (core->meta, R_META_ANY, addr, 1, "");
+		if (input[1]=='*') {
+			r_meta_cleanup (core->meta, 0LL, UT64_MAX);
+		} else {
+			if (input[1]==' ')
+				addr = r_num_math (core->num, input+2);
+			r_meta_del (core->meta, R_META_ANY, addr, 1, "");
+		}
 		break;
 	case '\0':
 	case '?':
