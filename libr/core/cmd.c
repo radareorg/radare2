@@ -32,6 +32,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 
 	// TODO: All those options must be print flags
 	int show_color = r_config_get_i (core->config, "scr.color");
+	int decode = r_config_get_i (core->config, "asm.decode");
 	int pseudo = r_config_get_i (core->config, "asm.pseudo");
 	int filter = r_config_get_i (core->config, "asm.filter");
 	int show_lines = r_config_get_i (core->config, "asm.lines");
@@ -239,6 +240,11 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 				break;
 			}
 		}
+		if (decode) {
+			// TODO: Use data from code analysis..not raw analop here
+			// if we want to get more information
+			opstr = r_anal_aop_to_string (core->anal, &analop);
+		} else
 		if (pseudo) {
 			r_parse_parse (core->parser, asmop.buf_asm, str);
 			opstr = str;
@@ -247,6 +253,8 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			opstr = str;
 		} else opstr = asmop.buf_asm;
 		r_cons_strcat (opstr);
+		if (decode)
+			free (opstr);
 		if (show_color)
 			r_cons_strcat (Color_RESET);
 		if (show_dwarf) {

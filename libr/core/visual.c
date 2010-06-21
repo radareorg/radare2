@@ -455,8 +455,11 @@ R_API void r_core_visual_define (RCore *core) {
 	if (core->print->cur_enabled)
 		off += core->print->cur;
 	r_cons_printf ("Define current block as:\n"
-		" u  - undefine metadata here\n"
+		" d  - set as data\n"
+		" c  - set as code\n"
+		" s  - set string\n"
 		" f  - analyze function\n"
+		" u  - undefine metadata here\n"
 		" q  - quit/cancel operation\n"
 		"TODO: add support for data, string, code ..\n");
 	r_cons_flush ();
@@ -465,6 +468,18 @@ R_API void r_core_visual_define (RCore *core) {
 	ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 
 	switch(ch) {
+	case 's':
+		// detect type of string
+		// find EOS
+		// capture string value
+		r_meta_add (core->meta, R_META_STRING, off, core->blocksize, "");
+		break;
+	case 'd': // TODO: check
+		r_meta_add (core->meta, R_META_DATA, off, core->blocksize, "");
+		break;
+	case 'c': // TODO: check 
+		r_meta_add (core->meta, R_META_CODE, off, core->blocksize, "");
+		break;
 	case 'u':
 		r_meta_del (core->meta, R_META_ANY, off, 1, "");
 		r_flag_unset_i (core->flags, off);

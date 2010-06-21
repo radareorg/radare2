@@ -9,23 +9,29 @@
 0.5 RELEASE
 ===========
 
+Build fixes:
+------------
+* Store version information in libraries ? debian claims for it
+
 Bugs:
 -----
 * nibble: trace counts after step..thats not correct!
 
 Features:
 ---------
+* references: data (read, write), code (call, jmp)
 * Handle metadata from disassembler (structs, hexdump, ...)
+  - r_meta_print (RMeta, RMetaItem, RPrint);
 * pancake: FileDescriptors: dd -- copy from !fd in r1
 * Write manpages for r2rc, r2rc-tool, rasign2
 * pancake: we need an api to define function signatures
+  - arg/var set name/get value/ ..
   - integrated with function signatures
-  -  offset -> formatstring (offset is the key to function signature)
+  - offset -> formatstring (offset is the key to function signature)
 * pancake: implement RAnalCall (analyze function arguments, return values, propagate types..)
   - define number of arguments for given function
   - warn if signature and analysis differs in number of args or so..
 * gerardo?: implement GMP in util/big.c
-* Implement C command as in r1 (same for visual..define strings, hexdumps, etc..)
 * nibble: diff code analysis
   - diff two programs
      1st level:
@@ -35,6 +41,16 @@ Features:
         - check all strings
      2nd level:
         - basic block level diffing (output in graph mode)
+* code analysis with r_parse // isnt this already done? nibble?
+  - generate by just parsing the opcode
+  RAnalAopArg {
+    int size;
+    int delta;
+    int type;
+  }
+  r_anal_aop_arg_set ();
+  r_anal_aop_arg_get ();
+  r_anal_aop_arg_binmask ();
 
 ---8<------------8<------------------8<---------------------8<------------- -- - -
 
@@ -47,16 +63,6 @@ Analysis
 
 Bindings
 ========
-* code analysis with r_parse // isnt this already done? nibble?
-  - generate by just parsing the opcode
-  RAnalAopArg {
-    int size;
-    int delta;
-    int type;
-  }
-  r_anal_aop_arg_set ();
-  r_anal_aop_arg_get ();
-  r_anal_aop_arg_binmask ();
 * generate accessors automatically from valaswig
 * Script plugins
  - We should enable r_lib to implement plugins in any
@@ -66,29 +72,29 @@ Bindings
 
 Build system
 ============
-* Store version information in libraries ? debian claims for it
 * install.sh (to track installed files ..)
-  changes and per-opcode execution count (RRange)
 
 Refactoring
 ===========
 * Move disasm loop into r_print (r_print should depend on r_asm)
+  - thats hard :)
 * Move 'r_syscall_t' stuff into r_debug (sync r_core)
 * merge r_asm and r_anal?
+* Implement r_bind api to link multiple pointers
+  core->asm = r_bind_set (core->asm->bind, r_asm_new ());
 * what do we have to do with r_th, r_parse and r_vm ?
 * Is RCore->block and blocksize a RBuf ? refactor!11
 * Find a better name for r_buf_fread (really?)
 * typedef all function pointers, like in r_bp
 * Review r_io API
-* rasm2 should be configurable at startup time to choose default arch (use environment?)
-* correct result (R_TRUFAE), but with warnings (implement r_errno and r_errstr in r_util?)
+* rasm2 should be configurable at startup time to choose default arch (use env?)
+* semi-ok state (R_TRUFAE), implement r_errno and r_errstr in r_util?
 * Finish and import the spp's getopt owns implementation in r_util (like in p9)
 * Rename __UNIX__ as __POSIX__
 
 Design
 ======
 * Implement 'av' command we need it  (really?) how about to eval with ?
-* references: data (read, write), code (call, jmp)
 * filter search results..
   cc 8080 @@ hit* .. check for values that has changed.
   - maybe we should 'cache' some memory regions

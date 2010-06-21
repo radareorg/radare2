@@ -165,6 +165,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "asm.pseudo", "false");  // DEPRECATED ???
 	r_config_set (cfg, "asm.filter", "true");
 	r_config_set (cfg, "asm.trace", "true");
+	r_config_set (cfg, "asm.decode", "false"); 
 	r_config_set (cfg, "asm.bytes", "true"); 
 	r_config_set (cfg, "asm.offset", "true"); 
 	r_config_set (cfg, "asm.lines", "true");

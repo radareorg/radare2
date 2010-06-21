@@ -2,14 +2,18 @@ http://www.pivotaltracker.com/
 
 Objectives
 ==========
-- name local variables argments and global vars
-- locate variable types
-- find switchcases
+- Name local variables argments and global vars
+  - Cv ...
+- Detect and propagate variable types
+- Identify switch statements
 - Symbol Recognising
-- Loop Detection (for/while/do)
-- Oh, Enum detection would be Awesome.. As in the Defaults of the glib. IDA doesnt 
-   do this. As its hard (I guess)
-  ANd ofc lowerlevel.. like Block Detection (but Radare does this already)
-  enum? or switch?
-  We can do this if it can read header files of the symbols I guess
-  As most of those enums are Macros and thus are Pre-Compilation Parsed
+- Loop detection (for/while/do)
+- enum detection/support (load from .h ?) #define /enum parse only
+- Detect sign of variables (depending on the conditionals used)
+- change operations to ease reading ('\n' instead of 0xa.. sub<->add)
+
+UI
+==
+- Walk along the decompiled program code
+  - go xrefs
+  - change variable names

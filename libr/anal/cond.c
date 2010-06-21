@@ -19,8 +19,10 @@ R_API RAnalCond *r_anal_cond_clone(RAnalCond *cond) {
 static inline const char *condstring(RAnalCond *cond) {
 	const char *condstr_single[] = { "!", "", "0<", "0<=", "0>", "0>=" };
 	const char *condstr[] = { "==", "!=", ">=", ">", "<=", "<" };
+	if (cond)
 	return (cond->arg[1])?condstr [cond->type%sizeof (condstr)]:
 		condstr_single [cond->type%sizeof (condstr_single)];
+	return "";
 }
 
 R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
@@ -61,10 +63,13 @@ R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
 }
 
 R_API char *r_anal_cond_to_string(RAnalCond *cond) {
-	char *out = NULL;
-	const char *cnd = condstring (cond);
-	char *val0 = r_anal_value_to_string (cond->arg[0]);
-	char *val1 = r_anal_value_to_string (cond->arg[1]);
+	char *val0, *val1, *out = NULL;
+	const char *cnd;
+	if (cond == NULL)
+		return "?=";
+	cnd = condstring (cond);
+	val0 = r_anal_value_to_string (cond->arg[0]);
+	val1 = r_anal_value_to_string (cond->arg[1]);
 	if (val0) {
 		if (R_ANAL_COND_SINGLE(cond)) {
 			if ( (out = malloc (strlen (val0) + 10)) )
