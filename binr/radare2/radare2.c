@@ -41,9 +41,8 @@ int main(int argc, char **argv) {
 	ut32 bsize = 0;
 	ut64 seek = 0;
 
-	if (argc < 2)
+	if (argc<2)
 		return main_help (1);
-
 	r_core_init (&r);
 
 	while ((c = getopt (argc, argv, "wfhe:ndvVs:p:b:Lui:l:"))!=-1) {
@@ -98,6 +97,8 @@ int main(int argc, char **argv) {
 	}
 	if (debug) {
 		char file[1024];
+		r_config_set (r.config, "io.va", "false");
+		r.io->va = R_FALSE;
 		strcpy (file, "dbg://");
 		if (optind < argc) {
 			char *ptr = r_file_path (argv[optind]);
@@ -135,11 +136,8 @@ int main(int argc, char **argv) {
 		eprintf ("Cannot open file.\n");
 		return 1;
 	}
-
-	if (r.file == NULL) {
-		//fprintf (stderr, "No file specified\n");
+	if (r.file == NULL) // no given file
 		return 1;
-	}
 
 	if (run_rc) {
 		char *homerc = r_str_home (".radare2rc");
@@ -166,9 +164,10 @@ int main(int argc, char **argv) {
 	else if (bsize) r_core_block_size (&r, bsize);
 
 	// Load the binary information from rabin2
-	{
+	// TODO: use thread to load this, split contents line, per line and use global lock
+	if (r_file_exist (r.file->filename)) {
 		char *cmd = r_str_dup_printf (".!rabin2 -rSIeMzis%s %s",
-				(debug||r.io->va)?"v":"", r.file->filename);
+			(debug||r.io->va)?"v":"", r.file->filename);
 		r_core_cmd (&r, cmd, 0);
 		r_str_free (cmd);
 	}

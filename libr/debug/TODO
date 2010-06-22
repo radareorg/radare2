@@ -2,6 +2,7 @@ Debugger TODO
 =============
 * Breakpoints are ignored in some situations.. we must check
   for them and toggle a .dbg variable to break
+* stepover waits for one unknown event
 * ALL threads must be stopped when a breakpoint is handled..
   -- how to do this?
 * floating point registers
@@ -9,4 +10,4 @@ Debugger TODO
 * DRX control
 * Implement dump+restore as macros
   (dump,)
-* regio not implemented // really necessary?
+* regio not implemented // it is really necessary?

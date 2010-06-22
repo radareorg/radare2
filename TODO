@@ -54,6 +54,26 @@ Features:
 
 ---8<------------8<------------------8<---------------------8<------------- -- - -
 
+Transactions
+============
+Loading big binaries results on broken interaction.
+  - Optimize bottlenecks
+    - Index flags by name and offset
+    - Dont walk all the entries all the time
+    - Use RDB or RHashMap
+  - Transactions and threads
+    - BIGLOCK is enought i think
+    - A background thread can load rabin info
+    - r_th is required
+    - We need a way to get 'status' info from thread (msg passing?)
+      - r_th_msg
+    - We can lock the loading thread when a shell command is going to be executed
+      |
+      |--- (while (prompt,lock,run,unlock))
+      \
+       `-- (while (lock,load,unlock))
+
+
 Analysis
 ========
 * Implement more get_main() (NOOB)

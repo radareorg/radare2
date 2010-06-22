@@ -28,36 +28,18 @@ static void r_reg_free_internal(struct r_reg_t *reg) {
 }
 
 R_API int r_reg_get_name_idx(const char *type) {
-	int role = type[0] + (type[1]<<8);
-	switch (role) {
-	case 'p'+('c'<<8):
-		role = R_REG_NAME_PC;
-		break;
-	case 's'+('r'<<8):
-		role = R_REG_NAME_SR;
-		break;
-	case 's'+('p'<<8):
-		role = R_REG_NAME_SP;
-		break;
-	case 'b'+('p'<<8):
-		role = R_REG_NAME_BP;
-		break;
-	case 'a'+('0'<<8):
-		role = R_REG_NAME_A0;
-		break;
-	case 'a'+('1'<<8):
-		role = R_REG_NAME_A1;
-		break;
-	case 'a'+('2'<<8):
-		role = R_REG_NAME_A2;
-		break;
-	case 'a'+('3'<<8):
-		role = R_REG_NAME_A3;
-		break;
-	default:
-		role = -1;
+	if (type)
+	switch (*type | (type[1]<<8)) {
+	case 'p'+('c'<<8): return R_REG_NAME_PC;
+	case 's'+('r'<<8): return R_REG_NAME_SR;
+	case 's'+('p'<<8): return R_REG_NAME_SP;
+	case 'b'+('p'<<8): return R_REG_NAME_BP;
+	case 'a'+('0'<<8): return R_REG_NAME_A0;
+	case 'a'+('1'<<8): return R_REG_NAME_A1;
+	case 'a'+('2'<<8): return R_REG_NAME_A2;
+	case 'a'+('3'<<8): return R_REG_NAME_A3;
 	}
-	return role;
+	return -1;
 }
 
 R_API int r_reg_set_name(struct r_reg_t *reg, int role, const char *name) {

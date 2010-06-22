@@ -201,7 +201,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	RAnalOp op;
 	ut8 buf[64];
 	int ret = -1;
-	if (dbg->anal) {
+	if (dbg->anal && dbg->reg) {
 		ut64 pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
 		r_anal_aop (dbg->anal, &op, pc, buf, sizeof (buf));
@@ -211,7 +211,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 			ret = r_debug_continue (dbg);
 			r_bp_del (dbg->bp, bpaddr);
 		} else ret = r_debug_step (dbg, 1);
-	} else fprintf (stderr, "Undefined pointer at dbg->anal\n");
+	} else fprintf (stderr, "Undefined debugger backend\n");
 	return ret;
 }
 
