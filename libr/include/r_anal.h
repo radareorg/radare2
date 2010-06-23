@@ -355,6 +355,7 @@ extern RAnalPlugin r_anal_plugin_x86;
 extern RAnalPlugin r_anal_plugin_x86_x86im;
 extern RAnalPlugin r_anal_plugin_ppc;
 extern RAnalPlugin r_anal_plugin_java;
+extern RAnalPlugin r_anal_plugin_mips;
 
 #endif
 #endif
