@@ -1354,7 +1354,7 @@ print_insn_mips (bfd_vma memaddr,
 	      d = op->args;
 	      if (d != NULL && *d != '\0')
 		{
-		  (*info->fprintf_func) (info->stream, "\t");
+		  (*info->fprintf_func) (info->stream, " ");
 		  print_insn_args (d, word, memaddr, info, op);
 		}
 
@@ -1982,7 +1982,7 @@ print_insn_mips16 (bfd_vma memaddr, struct disassemble_info *info)
 
 	  (*info->fprintf_func) (info->stream, "%s", op->name);
 	  if (op->args[0] != '\0')
-	    (*info->fprintf_func) (info->stream, "\t");
+	    (*info->fprintf_func) (info->stream, " ");
 
 	  for (s = op->args; *s != '\0'; s++)
 	    {

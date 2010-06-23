@@ -6,6 +6,8 @@
 R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write) {
 	ut8 buf[4096]; // XXX hacky!
 	int size, ret = R_FALSE;
+	if (!dbg || !dbg->reg)
+		return R_FALSE;
 	if (write) {
 		if (dbg && dbg->h && dbg->h->reg_write) {
 			ut8 *buf = r_reg_get_bytes (dbg->reg, type, &size);
@@ -26,8 +28,11 @@ R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write) {
 
 R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 	int cols, n = 0;
-	struct list_head *pos, *head = r_reg_get_list(dbg->reg, type);
+	struct list_head *pos, *head;
 	const char *fmt, *fmt2;
+	if (!dbg || !dbg->reg)
+		return R_FALSE;
+	head = r_reg_get_list(dbg->reg, type);
 	if (dbg->h && dbg->h->bits & R_SYS_BITS_64) {
 		fmt = "%s = 0x%016"PFMT64x"%s";
 		fmt2 = "%4s 0x%016"PFMT64x"%s";
@@ -60,6 +65,8 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 num) {
 	RRegisterItem *ri;
 	int role = r_reg_get_name_idx (name);
+	if (!dbg || !dbg->reg)
+		return R_FALSE;
 	if (role != -1)
 		name = r_reg_get_name (dbg->reg, role);
 	ri = r_reg_get (dbg->reg, name, R_REG_TYPE_GPR);
@@ -74,6 +81,8 @@ R_API ut64 r_debug_reg_get(struct r_debug_t *dbg, const char *name) {
 	RRegisterItem *ri = NULL;
 	ut64 ret = 0LL;
 	int role = r_reg_get_name_idx (name);
+	if (!dbg || !dbg->reg)
+		return R_FALSE;
 	if (role != -1) {
 		name = r_reg_get_name (dbg->reg, role);
 		if (name == NULL || *name == '\0') {

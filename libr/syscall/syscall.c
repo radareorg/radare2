@@ -8,6 +8,7 @@
 
 extern RSyscallItem syscalls_netbsd_x86[];
 extern RSyscallItem syscalls_linux_x86[];
+extern RSyscallItem syscalls_linux_mips[];
 extern RSyscallItem syscalls_linux_arm[];
 extern RSyscallItem syscalls_freebsd_x86[];
 extern RSyscallItem syscalls_darwin_x86[];
@@ -32,6 +33,15 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
 		os = R_SYS_OS;
 	if (arch == NULL)
 		arch = R_SYS_ARCH;
+	/// XXX: spaghetti here
+	if (!strcmp (arch, "mips")) {
+		if (!strcmp (os, "linux"))
+			ctx->sysptr = syscalls_linux_mips;
+		else {
+			eprintf ("r_syscall_setup: Unknown arch '%s'\n", arch);
+			return R_FALSE;
+		}
+	} else
 	if (!strcmp (arch, "arm")) {
 		if (!strcmp (os, "linux"))
 			ctx->sysptr = syscalls_linux_arm;
@@ -58,7 +68,7 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
 			return R_FALSE;
 		}
 	} else {
-		eprintf ("r_syscall_setup: Unknown arch '%s'\n", arch);
+		eprintf ("r_syscall_setup: Unknown os/arch '%s'/'%s'\n", os, arch);
 		return R_FALSE;
 	}
 	if (ctx->fd)
