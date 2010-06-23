@@ -1,6 +1,6 @@
  ____  ___ ____  ___ ____  ___  ______   ____
 |  _ \/   \'   \/   \  _ \/ _ \ \__   | /    \
-|    <  V  . T  . V      <   _/ .--'_/ |  ()  |
+|    <  V  . T  . V      <   _/ .-' _/ |  ()  |
 |_|\__|_|__|___/|_|_|_|\__\___/ |_____(_)____/
 
 
@@ -8,6 +8,11 @@
 
 0.5 RELEASE
 ===========
+
+Changez:
+--------
+pm x -> pm d (d=dword) (unsigned)
+pm d -> pm i (i=int) (signed)
 
 Build fixes:
 ------------
@@ -19,6 +24,8 @@ Bugs:
 
 Features:
 ---------
+* Do we have to enable jump/call toggles for breaking basicblocks? (yes/no)
+  - pancake: no , nibble: (WHAT DO YOU THINK ABOUT THIS? :)
 * references: data (read, write), code (call, jmp)
 * Handle metadata from disassembler (structs, hexdump, ...)
   - r_meta_print (RMeta, RMetaItem, RPrint);
@@ -61,6 +68,9 @@ Loading big binaries results on broken interaction.
     - Index flags by name and offset
     - Dont walk all the entries all the time
     - Use RDB or RHashMap
+  - Cache
+    - We can just cache the last N used pointers to resolve them faster
+    - Should work fine for disassembling and others
   - Transactions and threads
     - BIGLOCK is enought i think
     - A background thread can load rabin info
@@ -77,9 +87,6 @@ Loading big binaries results on broken interaction.
 Analysis
 ========
 * Implement more get_main() (NOOB)
-* Do we have to enable jump/call toggles for breaking basicblocks? (yes/no)
-  - pancake: no
-  - nibble: ?
 
 Bindings
 ========

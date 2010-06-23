@@ -99,6 +99,10 @@ static inline int debug_setregs(int tid, CONTEXT *regs) {
 # define R_DEBUG_REG_T struct user_regs_struct
 # elif __arm__
 # define R_DEBUG_REG_T struct user_regs
+# elif __mips__
+#include <sys/ucontext.h>
+typedef unsigned long mips64_regs_t [4096];
+# define R_DEBUG_REG_T mips64_regs_t
 # endif
 #else // OS
 

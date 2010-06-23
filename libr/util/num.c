@@ -45,9 +45,7 @@ R_API void r_num_init(struct r_num_t *num) {
 }
 
 R_API RNum *r_num_new(RNumCallback cb, void *ptr) {
-	RNum *num;
-	
-	num = R_NEW (RNum);
+	RNum *num = R_NEW (RNum);
 	if (num) {
 		num->value = 0LL;
 		num->callback = cb;

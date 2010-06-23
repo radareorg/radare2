@@ -69,7 +69,9 @@ R_API char *r_anal_aop_to_string(RAnal *anal, RAnalOp *op) {
 		else snprintf (ret, retsz, "%s = %s / %s", r0, a0, a1);
 		break;
 	case R_ANAL_OP_TYPE_CJMP:
-		cstr = r_anal_cond_to_string (op->cond);
+		// XXX: op->cond is not a valid pointer
+		//cstr = r_anal_cond_to_string (op->cond);
+		cstr = (char*)"";
 		snprintf (ret, retsz, "if (%s) goto 0x%08llx", cstr, op->jump);
 		//free (cstr);
 		break;
