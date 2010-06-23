@@ -91,10 +91,12 @@ R_API int r_th_start(struct r_th_t *th, int enable) {
 
 R_API int r_th_wait(struct r_th_t *th) {
 	int ret = R_FALSE;
-#if HAVE_PTHREAD
 	void *thret;
-	ret = pthread_join (th->tid, &thret);
-	th->running = R_FALSE;
+#if HAVE_PTHREAD
+	if (th) {
+		ret = pthread_join (th->tid, &thret);
+		th->running = R_FALSE;
+	}
 #endif
 	return ret;
 }

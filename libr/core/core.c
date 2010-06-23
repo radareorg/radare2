@@ -189,7 +189,7 @@ R_API RCore *r_core_free(RCore *c) {
 	return NULL;
 }
 
-R_API int r_core_prompt(RCore *r) {
+R_API int r_core_prompt(RCore *r, int sync) {
 	static char *prevcmd = NULL;
 	int ret;
 	char *cmd;
@@ -211,13 +211,24 @@ R_API int r_core_prompt(RCore *r) {
 	if (ret == -2)
 		return R_CORE_CMD_EXIT;
 	if (ret == -1)
-		return 0;
+		return R_FALSE;
 	if (strcmp (line, ".")) {
 		free (prevcmd);
 		prevcmd = strdup (line);
 		cmd = line;
 	} else cmd = prevcmd;
-	ret = r_core_cmd (r, cmd, R_TRUE);
+	if (sync) {
+		ret = r_core_cmd (r, r->cmdqueue, R_TRUE);
+		r_cons_flush ();
+	} else {
+		r->cmdqueue = cmd;
+		ret = R_TRUE;
+	}
+	return ret;
+}
+
+R_API int r_core_prompt_exec(RCore *r) {
+	int ret = r_core_cmd (r, r->cmdqueue, R_TRUE);
 	r_cons_flush ();
 	return ret;
 }

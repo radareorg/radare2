@@ -151,7 +151,7 @@ typedef struct r_anal_aop_t {
 	int stackop;    /* operation on stack? */
 	int cond;       /* condition type */
 	int length;     /* length in bytes of opcode */
-	int nopcode;    /* number of opcodes */
+	int nopcode;    /* number of bytes representing the opcode (not the arguments) */
 	int family;     /* family of opcode */
 	int eob;        /* end of block (boolean) */
 	ut64 jump;      /* true jmp */

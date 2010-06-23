@@ -1,11 +1,13 @@
 /* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
-#include "r_core.h"
-#include "r_io.h"
+#include <r_core.h>
+#include <r_th.h>
+#include <r_io.h>
 #include <stdio.h>
 #include <getopt.h>
 
 static struct r_core_t r;
+static char *rabin_cmd = NULL;
 
 static int main_help(int line) {
 	printf ("Usage: radare2 [-dwnLV] [-p prj] [-s addr] [-b bsz] [-e k=v] [file]\n");
@@ -32,7 +34,32 @@ static int main_version() {
 	return 0;
 }
 
+// Load the binary information from rabin2
+// TODO: use thread to load this, split contents line, per line and use global lock
+static int rabin_delegate(RThread *th) {
+	eprintf ("rabin2: loading data in thread\n");
+	if (rabin_cmd && r_file_exist (r.file->filename)) {
+		char *nptr, *ptr, *cmd = r_sys_cmd_str (rabin_cmd, NULL, NULL);
+		ptr = cmd;
+		do {
+			r_th_lock_enter(th->user);
+			nptr = strchr (ptr, '\n');
+			if (nptr) *nptr = 0;
+			r_core_cmd (&r, ptr, 0);
+			if (nptr) ptr = nptr+1;
+			r_th_lock_leave(th->user);
+		} while (nptr);
+		//r_core_cmd (&r, cmd, 0);
+		r_str_free (rabin_cmd);
+		rabin_cmd = NULL;
+	}
+	eprintf ("rabin2: done\n");
+	return 0;
+}
+
 int main(int argc, char **argv) {
+	RThreadLock *lock;
+	RThread *rabin_th;
 	RCoreFile *fh = NULL;
  	int ret, c, perms = R_IO_READ;
 	int run_rc = 1;
@@ -163,14 +190,10 @@ int main(int argc, char **argv) {
 	if (fullfile) r_core_block_size (&r, r.file->size);
 	else if (bsize) r_core_block_size (&r, bsize);
 
-	// Load the binary information from rabin2
-	// TODO: use thread to load this, split contents line, per line and use global lock
-	if (r_file_exist (r.file->filename)) {
-		char *cmd = r_str_dup_printf (".!rabin2 -rSIeMzis%s %s",
-			(debug||r.io->va)?"v":"", r.file->filename);
-		r_core_cmd (&r, cmd, 0);
-		r_str_free (cmd);
-	}
+	rabin_cmd = r_str_dup_printf ("rabin2 -rSIeMzis%s %s",
+		(debug||r.io->va)?"v":"", r.file->filename);
+	lock = r_th_lock_new ();
+	rabin_th = r_th_new (&rabin_delegate, lock, 0);
 
 	if (run_rc && r_config_get_i (r.config, "cfg.fortunes")) {
 		r_core_cmd (&r, "fo", 0);
@@ -195,8 +218,19 @@ int main(int argc, char **argv) {
 		free (path);
 	}
 	for (;;) {
-		do { if ((ret = r_core_prompt (&r))==-1)
-			eprintf ("Invalid command\n");
+		do { 
+			r_core_prompt (&r, R_FALSE);
+			if (lock) r_th_lock_enter (lock);
+			if ((ret = r_core_prompt_exec (&r))==-1)
+				eprintf ("Invalid command\n");
+			if (lock)r_th_lock_leave (lock);
+			if (rabin_th && !r_th_wait_async (rabin_th)) {
+				eprintf ("rabin thread end \n");
+				r_th_free (rabin_th);
+				r_th_lock_free (lock);
+				lock = NULL;
+				rabin_th = NULL;
+			}
 		} while (ret != R_CORE_CMD_EXIT);
 
 		if (debug) {

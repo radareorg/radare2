@@ -14,24 +14,17 @@
 
 static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS };
 
-// TODO: check only in data section. filter chars only in -r mode
-static RList* get_strings(RBin *bin, int min) {
-	RList *ret;
-	RBinString *ptr = NULL;
+static void get_strings_range(RBin *bin, RList *list, int min, ut64 from, ut64 to) {
 	char str[R_BIN_SIZEOF_STRINGS];
 	int i, matches = 0, ctr = 0;
+	RBinString *ptr = NULL;
 
-	if (!(ret = r_list_new ())) {
-		eprintf ("Error allocating array\n");
-		return NULL;
-	}
-	ret->free = free;
-	for(i = 0; i < bin->size; i++) { 
+	for(i = from; i < to; i++) { 
 		if ((IS_PRINTABLE (bin->buf->buf[i])) && matches < R_BIN_SIZEOF_STRINGS-1) {
 			str[matches] = bin->buf->buf[i];
 			matches++;
 		} else {
-			/* check if the length fits on our request */
+			/* check if the length fits in our request */
 			if (matches >= min) {
 				if (!(ptr = R_NEW (RBinString))) {
 					eprintf ("Error allocating string\n");
@@ -44,12 +37,39 @@ static RList* get_strings(RBin *bin, int min) {
 				// copying so many bytes here..
 				memcpy (ptr->string, str, R_BIN_SIZEOF_STRINGS);
 				ptr->string[R_BIN_SIZEOF_STRINGS-1] = '\0';
-				r_list_append (ret, ptr);
+				r_list_append (list, ptr);
 				ctr++;
 			}
 			matches = 0;
 		}
 	}
+}
+
+// TODO: check only in data section. filter chars only in -r mode
+static RList* get_strings(RBin *bin, int min) {
+	RList *ret;
+	int count = 0;
+
+	if (!(ret = r_list_new ())) {
+		eprintf ("Error allocating array\n");
+		return NULL;
+	}
+	ret->free = free;
+	
+	if (bin->sections) {
+		RBinSection *section;
+		RListIter *iter;
+		r_list_foreach (bin->sections, iter, section) {
+			// XXX: should we check sections srwx to be READ ONLY and NONEXEC?
+			if (strstr (section->name, "data")) {
+				count ++;
+				get_strings_range (bin, ret, min, 
+					section->offset, section->offset+section->size);
+			}
+		}	
+	}
+	if (count == 0)
+		get_strings_range (bin, ret, min, 0, bin->size);
 	return ret;
 }
 

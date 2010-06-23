@@ -34,7 +34,7 @@ typedef struct r_th_lock_t {
 
 typedef struct r_th_t {
 	R_TH_TID tid;
-	struct r_th_lock_t *lock;
+	RThreadLock *lock;
 	R_TH_FUNCTION(fun);
 	void *user;    // user pointer
 	int running;
@@ -45,24 +45,24 @@ typedef struct r_th_t {
 
 typedef struct r_th_pool_t {
 	int size;
-	struct r_th_t **threads;
+	RThread **threads;
 } RThreadPool;
 
 #ifdef R_API
-R_API struct r_th_t *r_th_new(R_TH_FUNCTION(fun), void *user, int delay);
-R_API int r_th_start(struct r_th_t *th, int enable);
-R_API int r_th_wait(struct r_th_t *th);
-R_API int r_th_wait_async(struct r_th_t *th);
-R_API void r_th_break(struct r_th_t *th);
-R_API int r_th_wait(struct r_th_t *th);
-R_API void *r_th_free(struct r_th_t *th);
+R_API RThread *r_th_new(R_TH_FUNCTION(fun), void *user, int delay);
+R_API int r_th_start(RThread *th, int enable);
+R_API int r_th_wait(RThread *th);
+R_API int r_th_wait_async(RThread *th);
+R_API void r_th_break(RThread *th);
+R_API int r_th_wait(RThread *th);
+R_API void *r_th_free(RThread *th);
 
-R_API struct r_th_lock_t *r_th_lock_new();
-R_API int r_th_lock_wait(struct r_th_lock_t *th);
-R_API int r_th_lock_check(struct r_th_lock_t *thl);
-R_API int r_th_lock_enter(struct r_th_lock_t *thl);
-R_API int r_th_lock_leave(struct r_th_lock_t *thl);
-R_API void *r_th_lock_free(struct r_th_lock_t *thl);
+R_API RThreadLock *r_th_lock_new();
+R_API int r_th_lock_wait(RThreadLock *th);
+R_API int r_th_lock_check(RThreadLock *thl);
+R_API int r_th_lock_enter(RThreadLock *thl);
+R_API int r_th_lock_leave(RThreadLock *thl);
+R_API void *r_th_lock_free(RThreadLock *thl);
 #endif
 
 #endif
