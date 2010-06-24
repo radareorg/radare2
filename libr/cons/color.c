@@ -4,10 +4,10 @@
 #include <string.h>
 
 static const char *nullstr="";
-const char *r_cons_palette_default = "7624 6646 2378 6824 3623";
+static const char *r_cons_palette_default = "7624 6646 2378 6824 3623";
 
 // XXX -- deprecate -- do not use global/extern stuff
-char r_cons_palette[CONS_PALETTE_SIZE][8] = {
+static char r_cons_palette[CONS_PALETTE_SIZE][8] = {
 	/* PROMPT */
 	/* ADDRESS */
 	/* DEFAULT */
@@ -34,7 +34,7 @@ char r_cons_palette[CONS_PALETTE_SIZE][8] = {
 	/* FF */
 };
 
-const char *r_cons_color_names[CONS_COLORS_SIZE+1] = {
+static const char *r_cons_color_names[CONS_COLORS_SIZE+1] = {
 	"black", "gray", "white", "red", "magenta", "blue", "green", "yellow",
 	"turqoise", "bblack", "bgray", "bwhite", "bred", "bmagenta", "bblue",
 	"bgreen", "byellow", "bturqoise", "reset", "bgblack", "bgred", NULL
@@ -50,7 +50,7 @@ R_API void r_cons_invert(int set, int color) {
 	}
 }
 
-const char *r_cons_colors[CONS_COLORS_SIZE+1] = {
+static const char *r_cons_colors[CONS_COLORS_SIZE+1] = {
 	Color_BLACK,      // 0
 	Color_GRAY,       // 1
 	Color_WHITE,      // 2
@@ -84,8 +84,7 @@ const char *pal_names[CONS_PALETTE_SIZE]={
 	NULL
 };
 
-static const char *r_cons_get_color(int ch)
-{
+static const char *r_cons_get_color(int ch) {
 	if (ch>='0' && ch<='8')
 		return r_cons_colors[ch-'0'];
 	if (ch>='a' && ch<='i')
@@ -93,26 +92,24 @@ static const char *r_cons_get_color(int ch)
 	return NULL;
 }
 
-static const char *r_cons_get_color_by_name(const char *str)
-{
+static const char *r_cons_get_color_by_name(const char *str) {
 	int i;
-	for(i=0;r_cons_color_names[i];i++) {
+	for (i=0;r_cons_color_names[i];i++) {
 		if (!strcmp(str, r_cons_color_names[i]))
 			return r_cons_colors[i];
 	}
 	return nullstr;
 }
 
-int r_cons_palette_init(const unsigned char *pal)
-{
+R_API int r_cons_palette_init(const unsigned char *pal) {
 	int palstrlen;
 	int i,j=1,k;
 
 	if (pal==NULL || pal[0]=='\0') {
-		r_cons_printf("\n=>( Targets ):");
-		for(j=0;pal_names[j]&&*pal_names[j];j++)
+		r_cons_printf ("\n=>( Targets ):");
+		for (j=0;pal_names[j]&&*pal_names[j];j++)
 			r_cons_printf("%s .%s\x1b[0m ", r_cons_palette[j], pal_names[j]);
-		r_cons_printf("\n\n=>( Colors ): "
+		r_cons_printf ("\n\n=>( Colors ): "
 		"/*normal*/, " "black, = 0, " "gray, = 1, " "white, = 2, " "red, = 3, " "magenta, = 4, "
 		"blue, = 5, " "green, = 6, " "yellow, = 7, " "turqoise, = 8, " "/*bold*/, " "bblack, = a, "
 		"bgray, = b, " "bwhite, = c, " "bred, = d, " "bmagenta, = e, " "bblue, = f, " "bgreen, = g, "
@@ -122,10 +119,10 @@ int r_cons_palette_init(const unsigned char *pal)
 	}
 
 	palstrlen = strlen((const char *)pal);
-	for(i=k=0;i<CONS_PALETTE_SIZE;i++,k++)
+	for (i=k=0;i<CONS_PALETTE_SIZE;i++,k++)
 		if (j && pal[i]) {
 			if (pal[i] == '.') { // che! action!!
-				for(j=0;pal_names[j]&&*pal_names[j];j++) {
+				for (j=0;pal_names[j]&&*pal_names[j];j++) {
 					int memcmp_len = palstrlen-i-1;
 					if (!pal_names[j]) break;
 					if (strlen(pal_names[j])<memcmp_len)
@@ -135,7 +132,7 @@ int r_cons_palette_init(const unsigned char *pal)
 					if (!memcmp(pal_names[j], pal+i+1, memcmp_len -1)) {
 						i+=memcmp_len+1;
 						if (pal[i] != '=') {
-							printf("oops (%c) invalid format string (%s)\n", pal[i], pal+i);
+							eprintf ("oops (%c) invalid format string (%s)\n", pal[i], pal+i);
 							continue;
 						}
 				//		printf("KEYWORD FOUND = %s (value = %c)\n", pal_names[j], pal[i+1]);
@@ -144,27 +141,25 @@ int r_cons_palette_init(const unsigned char *pal)
 				}
 			} else {
 				const char *ptr = r_cons_get_color(pal[i]);
-				if (ptr)
-					strcpy(r_cons_palette[k], ptr);
+				if (ptr) strcpy(r_cons_palette[k], ptr);
 				else k--;
 			}
 		} else {
+			strcpy (r_cons_palette[i], Color_RESET);
 			j = 0;
-			strcpy(r_cons_palette[i], Color_RESET);
 		}
 	return 1;
 }
 
-int r_cons_palette_set(const char *key, const char *value)
-{
+R_API int r_cons_palette_set(const char *key, const char *value) {
 	const char *str;
 	int i;
 
-	for(i=0;pal_names[i];i++) {
-		if (!strcmp(key, pal_names[i])) {
-			str = r_cons_get_color_by_name(value);
+	for (i=0;pal_names[i];i++) {
+		if (!strcmp (key, pal_names[i])) {
+			str = r_cons_get_color_by_name (value);
 			if (str != NULL) {
-				strcpy(r_cons_palette[i], str);
+				strcpy (r_cons_palette[i], str);
 				return 0;
 			}
 		}

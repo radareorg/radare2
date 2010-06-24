@@ -20,6 +20,14 @@ static void break_signal(int sig) {
 		I.break_cb (I.break_user);
 }
 
+static inline void r_cons_write (char *buf, int len) {
+#if __WINDOWS__
+	r_cons_w32_print (buf);
+#else
+	write (I.fdout, buf, len);
+#endif
+}
+
 R_API RCons *r_cons_singleton () {
 	return &I;
 }
@@ -172,6 +180,8 @@ R_API void r_cons_flush() {
 			}
 		}
 	}
+	if (I.grep.nstrings>0)
+		r_cons_grepbuf (I.buffer, I.buffer_len);
 
 	if (tee&&tee[0]) {
 		FILE *d = fopen (tee, "a+");
@@ -181,14 +191,8 @@ R_API void r_cons_flush() {
 		}
 	} else {
 		// is_html must be a filter, not a write endpoint
-		if (I.is_html)
-			r_cons_html_print (I.buffer);
-		else
-#if __WINDOWS__
-		r_cons_w32_print (I.buffer);
-#else
-		write (I.fdout, I.buffer, I.buffer_len);
-#endif
+		if (I.is_html) r_cons_html_print (I.buffer);
+		else r_cons_write (I.buffer, I.buffer_len);
 	}
 	r_cons_reset ();
 	return;
@@ -208,14 +212,10 @@ R_API void r_cons_visual_flush() {
 }
 
 R_API void r_cons_visual_write (char *buffer) {
-	int lines = 80;
-	char *nl;
-	char *ptr = buffer;
-
-	lines = I.rows-1;
-
+	int lines = I.rows-1;
+	char *nl, *ptr = buffer;
 	while (lines && (nl = strchr (ptr, '\n'))) {
-		write (I.fdout, ptr, nl-ptr+1);
+		r_cons_write (ptr, nl-ptr+1);
 		lines--;
 		ptr = nl+1;
 	}
@@ -239,7 +239,7 @@ R_API void r_cons_printf(const char *format, ...) {
 R_API void r_cons_memcat(const char *str, int len) {
 	palloc (len+1);
 	memcpy (I.buffer+I.buffer_len, str, len+1);
-	I.buffer_len += r_cons_grepbuf (I.buffer+I.buffer_len, len);
+	I.buffer_len += len;
 }
 
 R_API void r_cons_strcat(const char *str) {
@@ -249,8 +249,7 @@ R_API void r_cons_strcat(const char *str) {
 }
 
 R_API void r_cons_newline() {
-	if (I.is_html)
-		r_cons_strcat ("<br />\n");
+	if (I.is_html) r_cons_strcat ("<br />\n");
 	else r_cons_strcat ("\n");
 }
 
@@ -262,12 +261,10 @@ R_API int r_cons_get_size(int *rows) {
 #if __UNIX__
 	struct winsize win;
 	struct sigaction sa;
-
 	signal (SIGWINCH, sig_winch);
 	sigaction (SIGWINCH, (struct sigaction *)0, &sa);
 	sa.sa_flags &= ~ SA_RESTART;
 	sigaction (SIGWINCH, &sa, (struct sigaction *)0);
-	
 	I.columns = 80;
 	I.rows = 23;
 	if (ioctl (1, TIOCGWINSZ, &win) == 0) {

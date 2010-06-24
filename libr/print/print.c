@@ -162,10 +162,8 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len) {
 	p->printf("};\n");
 }
 
-R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int wide, int zeroend, int urlencode)
-{
+R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int wide, int zeroend, int urlencode) {
 	int i;
-
 	//if (p->flags & R_PRINT_FLAGS_OFFSET)
 		// r_print_addr(p, seek);
 	p->interrupt = 0;
@@ -210,7 +208,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, ut8 *buf, int len, int base, in
 	// TODO: Use base to change %03o and so on
 	if (p == NULL) {
 		// TODO: use defaults r_print_t (static one)
-		fprintf(stderr, "TODO: r_print_hexdump does not supports NULL as arg0\n");
+		eprintf ("TODO: r_print_hexdump does not supports NULL as arg0\n");
 		return;
 	}
 
