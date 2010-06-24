@@ -9,6 +9,16 @@
 0.5 RELEASE
 ===========
 
+Practical pointz
+----------------
+analysis:
+  - strings xrefs
+  - import xrefs
+  - symbol xrefs
+'ax' command.
+  - disassemble .text looking for calls to imports
+  - xrefs must be inside function, string, data.. dupped?
+
 Changez:
 --------
 pm x -> pm d (d=dword) (unsigned)

@@ -21,7 +21,7 @@ static int r_core_project_init() {
 			free (str);
 			str = r_str_home (".radare2/plugins");
 			ret = r_sys_mkdir (str);
-			if (ret) fprintf (stderr, "Cannot create ~/.radare2/plugins\n");
+			if (ret) eprintf ("Cannot create ~/.radare2/plugins\n");
 		}
 	}
 	free (str);
@@ -47,15 +47,15 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 				break;
 			if (!memcmp (buf, "e file.path = ", 14)) {
 				buf[strlen(buf)-1]=0;
-				file = strdup (buf+14);
+				file = r_str_new (buf+14);
 				break;
 			}
 		}
 		fclose (fd);
 	}
-	printf ("Project : %s\n", prj);
+	r_cons_printf ("Project : %s\n", prj);
 	if (file)
-		printf ("FilePath: %s\n", file);
+		r_cons_printf ("FilePath: %s\n", file);
 	free (prj);
 	return file;
 }

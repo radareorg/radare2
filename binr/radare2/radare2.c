@@ -10,7 +10,7 @@ static struct r_core_t r;
 static char *rabin_cmd = NULL;
 
 static int main_help(int line) {
-	printf ("Usage: radare2 [-dwnLV] [-p prj] [-s addr] [-b bsz] [-e k=v] [file]\n");
+	printf ("Usage: radare2 [-dwntLV] [-p prj] [-s addr] [-b bsz] [-e k=v] [file]\n");
 	if (!line) printf (
 		" -d        use 'file' as a program to debug\n"
 		" -w        open file in write mode\n"
@@ -23,6 +23,7 @@ static int main_help(int line) {
 		" -i [file] run script file\n"
 		" -V        show radare2 version\n"
 		" -l [lib]  load plugin file\n"
+		" -t        load rabin2 info in thread\n"
 		" -L        list supported IO plugins\n"
 		" -u        unknown file size\n"
 		" -e k=v    evaluate config var\n");
@@ -37,30 +38,31 @@ static int main_version() {
 // Load the binary information from rabin2
 // TODO: use thread to load this, split contents line, per line and use global lock
 static int rabin_delegate(RThread *th) {
-	eprintf ("rabin2: loading data in thread\n");
 	if (rabin_cmd && r_file_exist (r.file->filename)) {
 		char *nptr, *ptr, *cmd = r_sys_cmd_str (rabin_cmd, NULL, NULL);
 		ptr = cmd;
 		do {
-			r_th_lock_enter(th->user);
+			if (th) r_th_lock_enter(th->user);
 			nptr = strchr (ptr, '\n');
 			if (nptr) *nptr = 0;
 			r_core_cmd (&r, ptr, 0);
 			if (nptr) ptr = nptr+1;
-			r_th_lock_leave(th->user);
+			if (th) r_th_lock_leave(th->user);
 		} while (nptr);
 		//r_core_cmd (&r, cmd, 0);
 		r_str_free (rabin_cmd);
 		rabin_cmd = NULL;
 	}
-	eprintf ("rabin2: done\n");
+	if (th) eprintf ("rabin2: done\n");
 	return 0;
 }
 
 int main(int argc, char **argv) {
-	RThreadLock *lock;
-	RThread *rabin_th;
+	RThreadLock *lock = NULL;
+	RThread *rabin_th = NULL;
 	RCoreFile *fh = NULL;
+	int threaded = R_FALSE;
+	int has_project = R_FALSE;
  	int ret, c, perms = R_IO_READ;
 	int run_rc = 1;
 	int debug = 0;
@@ -72,8 +74,11 @@ int main(int argc, char **argv) {
 		return main_help (1);
 	r_core_init (&r);
 
-	while ((c = getopt (argc, argv, "wfhe:ndvVs:p:b:Lui:l:"))!=-1) {
+	while ((c = getopt (argc, argv, "wtfhe:ndvVs:p:b:Lui:l:"))!=-1) {
 		switch (c) {
+		case 't':
+			threaded = R_TRUE;
+			break;
 		case 'v':
 			r_config_set (r.config, "scr.prompt", "false");
 			break;
@@ -190,11 +195,6 @@ int main(int argc, char **argv) {
 	if (fullfile) r_core_block_size (&r, r.file->size);
 	else if (bsize) r_core_block_size (&r, bsize);
 
-	rabin_cmd = r_str_dup_printf ("rabin2 -rSIeMzis%s %s",
-		(debug||r.io->va)?"v":"", r.file->filename);
-	lock = r_th_lock_new ();
-	rabin_th = r_th_new (&rabin_delegate, lock, 0);
-
 	if (run_rc && r_config_get_i (r.config, "cfg.fortunes")) {
 		r_core_cmd (&r, "fo", 0);
 		r_cons_flush ();
@@ -205,7 +205,7 @@ int main(int argc, char **argv) {
 		const char *npath, *nsha1;
 		char *sha1 = strdup (r_config_get (r.config, "file.sha1"));
 		char *cmd = r_str_dup_printf (".!rahash2 -r %s", r.file->filename);
-		r_core_project_open (&r, r_config_get (r.config, "file.project"));
+		has_project = r_core_project_open (&r, r_config_get (r.config, "file.project"));
 		r_core_cmd (&r, cmd, 0);
 		nsha1 = r_config_get (r.config, "file.sha1");
 		npath = r_config_get (r.config, "file.path");
@@ -217,13 +217,25 @@ int main(int argc, char **argv) {
 		free (sha1);
 		free (path);
 	}
+
+	if (!has_project) {
+		rabin_cmd = r_str_dup_printf ("rabin2 -rSIeMzis%s %s",
+			(debug||r.io->va)?"v":"", r.file->filename);
+		if (threaded) {
+			/* TODO: only load data if no project is used */
+			lock = r_th_lock_new ();
+			rabin_th = r_th_new (&rabin_delegate, lock, 0);
+		} else rabin_delegate (NULL);
+	} else eprintf ("Metadata loaded from 'file.project'\n");
+
 	for (;;) {
 		do { 
-			r_core_prompt (&r, R_FALSE);
+			if (r_core_prompt (&r, R_FALSE)<1)
+				break;
 			if (lock) r_th_lock_enter (lock);
 			if ((ret = r_core_prompt_exec (&r))==-1)
 				eprintf ("Invalid command\n");
-			if (lock)r_th_lock_leave (lock);
+			if (lock) r_th_lock_leave (lock);
 			if (rabin_th && !r_th_wait_async (rabin_th)) {
 				eprintf ("rabin thread end \n");
 				r_th_free (rabin_th);
@@ -235,17 +247,17 @@ int main(int argc, char **argv) {
 
 		if (debug) {
 			if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
+				const char *prj = r_config_get (r.config, "file.project");
 				if (r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
 					r_debug_kill (r.dbg, 9); // KILL
-				{
-					const char *prj = r_config_get (r.config, "file.project");
-					if (prj && *prj && r_cons_yesno ('y', "Do you want to save the project? (Y/n)"))
-						r_core_project_save (&r, prj);
-				}
+				if (prj && *prj && r_cons_yesno ('y', "Do you want to save the project? (Y/n)"))
+					r_core_project_save (&r, prj);
 			} else continue;
 		}
 		break;
 	}
+	// TODO: kill thread
+
 	/* capture return value */
 	ret = r.num->value;
 	r_core_file_close (&r, fh);

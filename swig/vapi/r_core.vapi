@@ -17,7 +17,8 @@ public class RCore {
 	public static unowned RCore cast(uint64 ptr);
 	public bool loadlibs();
 	/* commands */
-	public int prompt();
+	public int prompt(bool sync);
+	public int prompt_exec();
 	//[CCode (PrintfFormat)]
 	//public int cmdf(...);
 	public int cmd(string cmd, bool log);

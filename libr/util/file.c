@@ -26,7 +26,9 @@ R_API int r_file_mkdir(const char *path) {
 
 R_API int r_file_exist(const char *str) {
 	struct stat buf;
-	return (stat (str, &buf)==-1)?R_FALSE:R_TRUE;
+	if (stat (str, &buf)==-1)
+		return R_FALSE;
+	return (S_ISREG (buf.st_mode));
 }
 
 R_API const char *r_file_abspath(const char *file) {
@@ -66,13 +68,16 @@ R_API char *r_file_path(const char *bin) {
 
 R_API char *r_file_slurp(const char *str, int *usz) {
         char *ret;
+        FILE *fd;
         long sz;
-        FILE *fd = fopen (str, "rb");
+	if (!r_file_exist (str))
+		return NULL;
+	fd = fopen (str, "rb");
         if (fd == NULL)
                 return NULL;
-        fseek (fd, 0,SEEK_END);
+        fseek (fd, 0, SEEK_END);
         sz = ftell (fd);
-        fseek (fd, 0,SEEK_SET);
+        fseek (fd, 0, SEEK_SET);
         ret = (char *)malloc (sz+1);
         fread (ret, sz, 1, fd); // TODO: handle return value :?
         ret[sz]='\0';
