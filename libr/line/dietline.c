@@ -320,15 +320,12 @@ R_API char *r_line_readline() {
 			I.buffer.length = 0;
 			I.buffer.index = 0;
 			break;
-		case 23: // ^W
+		case 23: // ^W ^w
 			if (I.buffer.index>0) {
-				for (i=I.buffer.index-1; i&&I.buffer.data[i]==' '; i--);
+				for (i=I.buffer.index-1; i>0&&I.buffer.data[i]==' '; i--);
 				for (; i&&I.buffer.data[i]!=' '; i--);
-				for (; i>0&&I.buffer.data[i]==' '; i--);
-				if (i>1) {
-					if (I.buffer.data[i+1]==' ')
-					i+=2;
-				} else if (i<0) i=0;
+				if (!i) for (; i>0&&I.buffer.data[i]==' '; i--);
+				if (i>0) i++; else if (i<0) i=0;
 				strcpy (I.buffer.data+i, I.buffer.data+I.buffer.index);
 				I.buffer.length = strlen (I.buffer.data);
 				I.buffer.index = i;

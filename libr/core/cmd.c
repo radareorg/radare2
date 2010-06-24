@@ -2035,10 +2035,30 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 
 static int cmd_search(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	ut64 at;
-	ut32 n32;
+	ut64 at, from, to;
+	//RIOSection *section;
 	int ret, dosearch = 0;
+	ut32 n32;
 	ut8 *buf;
+
+	// TODO: repeat last search doesnt works for /a
+	from = r_config_get_i (core->config, "search.from");
+	to = r_config_get_i (core->config, "search.to");
+/*
+	TODO: handle section ranges if from&&to==0
+	section = r_io_section_get (core->io, core->offset);
+	if (s) {
+		ini = s->vaddr;
+		fin = ini + s->size;
+	} else {
+	}
+*/
+	if (from == 0LL)
+		from = core->offset;
+	if (to == 0LL)
+		to = core->file->size; 
+	// TODO: handle current section boundaries!
+
 	switch (input[0]) {
 	case '/':
 		r_search_begin (core->search);
@@ -2096,40 +2116,50 @@ static int cmd_search(void *data, const char *input) {
 		r_search_begin (core->search);
 		dosearch = 1;
 		break;
+	case 'a':
+		if (input[1]==' ')
+			r_core_anal_search (core, from, to, r_num_math (core->num, input+2));
+		else r_core_anal_search (core, from, to, core->offset);
+		break;
 	default:
 		r_cons_printf (
-		"Usage: /[xm/] [arg]\n"
-		" / foo     ; search for string 'foo'\n"
-		" /m /E.F/i ; match regular expression\n"
-		" /x ff0033 ; search for hex string\n"
-		" //        ; repeat last search\n");
+		"Usage: /[amx/] [arg]\n"
+		" / foo           # search for string 'foo'\n"
+		" /m /E.F/i       # match regular expression\n"
+		" /x ff0033       # search for hex string\n"
+		" /a sym.printf   # analyze code referencing an offset\n"
+		" //              # repeat last search\n"
+		"Configuration:\n"
+		" e search.distance = 0 # search string distance\n"
+		" e search.from = 0     # start address\n"
+		" e search.to = 0       # end address\n");
 		break;
 	}
-	if (core->search->n_kws==0) {
-		eprintf ("No keywords defined\n");
-	} else
 	if (dosearch) {
-		/* set callback */
-		/* TODO: handle last block of data */
-		/* TODO: handle ^C */
-		/* TODO: launch search in background support */
-		buf = (ut8 *)malloc(core->blocksize);
-		r_search_set_callback(core->search, &__cb_hit, core);
-		cmdhit = r_config_get(core->config, "cmd.hit");
-		r_cons_break(NULL, NULL);
-		for(at = core->offset; at < core->file->size; at += core->blocksize) {
-			if (r_cons_singleton()->breaked)
-				break;
-			r_io_set_fd(core->io, core->file->fd);
-			ret = r_io_read_at(core->io, at, buf, core->blocksize);
-			if (ret != core->blocksize)
-				break;
-			if (r_search_update(core->search, &at, buf, ret) == -1) {
-				printf("search:update error\n");
-				break;
+		if (core->search->n_kws>0) {
+			/* set callback */
+			/* TODO: handle last block of data */
+			/* TODO: handle ^C */
+			/* TODO: launch search in background support */
+			buf = (ut8 *)malloc (core->blocksize);
+			r_search_set_callback (core->search, &__cb_hit, core);
+			cmdhit = r_config_get (core->config, "cmd.hit");
+			r_cons_break (NULL, NULL);
+			// ??? needed?
+			r_io_set_fd (core->io, core->file->fd);
+			for (at = from; at < to; at += core->blocksize) {
+				if (r_cons_singleton ()->breaked)
+					break;
+				ret = r_io_read_at (core->io, at, buf, core->blocksize);
+				if (ret != core->blocksize)
+					break;
+				if (r_search_update (core->search, &at, buf, ret) == -1) {
+					eprintf ("search: update read error\n");
+					break;
+				}
 			}
-		}
-		r_cons_break_end ();
+			r_cons_break_end ();
+		} else eprintf ("No keywords defined\n");
 	}
 	return R_TRUE;
 }

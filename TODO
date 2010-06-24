@@ -17,7 +17,6 @@ analysis:
   - symbol xrefs
 'ax' command.
   - disassemble .text looking for calls to imports
-  - xrefs must be inside function, string, data.. dupped?
 
 Changez:
 --------
@@ -34,6 +33,7 @@ Bugs:
 
 Features:
 ---------
+* pancake: Implement search.align
 * Do we have to enable jump/call toggles for breaking basicblocks? (yes/no)
   - pancake: no , nibble: (WHAT DO YOU THINK ABOUT THIS? :)
 * references: data (read, write), code (call, jmp)
@@ -97,6 +97,7 @@ Loading big binaries results on broken interaction.
 Analysis
 ========
 * Implement more get_main() (NOOB)
+* xrefs must be inside function, string, data.. dupped?
 
 Bindings
 ========
