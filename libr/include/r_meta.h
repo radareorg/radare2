@@ -34,6 +34,7 @@ typedef struct r_meta_item_t {
 
 typedef struct r_meta_t {
 	struct list_head data;
+	int (*printf)(const char *str, ...); // XXX
 //	struct reflines_t *reflines = NULL;
 //	struct list_head comments;
 //	struct list_head xrefs;

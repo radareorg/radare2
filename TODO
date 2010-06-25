@@ -28,6 +28,7 @@ TODO:
 * Initial analysis looking for xrefs to strings and so? ax? ./a@@entry0
 * references: data (read, write), code (call, jmp) must be inside Function
   - Cx doesnt works as expected (from-to, from-size, ..)
+  - xrefs must be inside function, string, data.. dupped?
   - done with r_meta_sync() ?
   - use r_db in flags and meta
 * Handle metadata from disassembler (structs, hexdump, ...)
@@ -54,8 +55,8 @@ TODO:
 
 ---8<------------8<------------------8<---------------------8<------------- -- - -
 
-Transactions
-============
+Transaction notes
+=================
 Loading big binaries results on broken interaction.
   - Optimize bottlenecks
     - Index flags by name and offset
@@ -83,7 +84,6 @@ Build fixes:
 Analysis
 ========
 * Implement more get_main() (NOOB)
-* xrefs must be inside function, string, data.. dupped?
 
 Bindings
 ========

@@ -427,12 +427,13 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 		for (i=0; i<core->blocksize-OPSZ; i++) {
 			r_anal_aop (core->anal, &op, at+i, buf+i, sizeof (buf)-i);
 			if (op.jump == ref) {
-				r_cons_printf ("Cx 0x%08"PFMT64x"@0x%08"PFMT64x"\n",
+				r_cons_printf ("Cx 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 					(ut64)(at+i), (ut64) ref);
 				count ++;
 			}
 			if (op.ref == ref) {
-				r_cons_printf ("CX 0x%08"PFMT64x"@0x%08"PFMT64x"\n",
+				r_cons_printf ("CX 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+					//(ut64)(ref), (ut64)at+i);
 					(ut64)(at+i), (ut64)ref);
 				count ++;
 			}

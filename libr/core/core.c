@@ -140,6 +140,7 @@ R_API int r_core_init(RCore *core) {
 	core->bin = r_bin_new ();
 	r_bin_set_user_ptr (core->bin, core);
 	core->meta = r_meta_new ();
+	core->meta->printf = (void *) r_cons_printf;
 	core->io = r_io_new ();
 	core->sign = r_sign_new ();
 	core->search = r_search_new (R_SEARCH_KEYWORD);

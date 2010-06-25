@@ -4,7 +4,10 @@
 
 R_API struct r_meta_t *r_meta_new() {
 	RMeta *m = R_NEW (RMeta);
-	if (m) INIT_LIST_HEAD (&m->data);
+	if (m) {
+		INIT_LIST_HEAD (&m->data);
+		m->printf = printf;
+	}
 	return m;
 }
 
@@ -18,8 +21,7 @@ R_API int r_meta_count(struct r_meta_t *m, int type, ut64 from, ut64 to, struct 
 	int count = 0;
 
 	list_for_each(pos, &m->data) {
-		struct r_meta_item_t *d = (struct r_meta_item_t *)
-			list_entry(pos, struct r_meta_item_t, list);
+		RMetaItem *d = (RMetaItem *) list_entry(pos, RMetaItem, list);
 		if (d->type == type || type == R_META_ANY) {
 			if (from >= d->from && d->to < to) {
 				if (c) {
@@ -56,8 +58,7 @@ R_API char *r_meta_get_string(struct r_meta_t *m, int type, ut64 addr) {
 		return "(Unhandled meta type)";
 	}
 	list_for_each (pos, &m->data) {
-		struct r_meta_item_t *d = (struct r_meta_item_t *)
-			list_entry(pos, struct r_meta_item_t, list);
+		RMetaItem *d = (RMetaItem *) list_entry(pos, RMetaItem, list);
 		if (d->type == type || type == R_META_ANY) {
 			if (d->from == addr)
 			switch(d->type) {
@@ -111,8 +112,7 @@ R_API int r_meta_cleanup(struct r_meta_t *m, ut64 from, ut64 to) {
 		return R_TRUE;
 	}
 	list_for_each_safe (pos, n, &m->data) {
-		RMetaItem *d = (struct r_meta_item_t *)
-			list_entry(pos, struct r_meta_item_t, list);
+		RMetaItem *d = (RMetaItem*) list_entry(pos, RMetaItem, list);
 		switch (d->type) {
 		case R_META_CODE:
 		case R_META_DATA:
@@ -137,7 +137,7 @@ R_API int r_meta_cleanup(struct r_meta_t *m, ut64 from, ut64 to) {
 				ret= R_TRUE;
 			} else
 			if (from>d->from&&to<d->to) {
-				list_del(&(d->list));
+				list_del (&(d->list));
 				ret= R_TRUE;
 			}
 			break;
@@ -146,25 +146,32 @@ R_API int r_meta_cleanup(struct r_meta_t *m, ut64 from, ut64 to) {
 	return ret;
 }
 
-R_API int r_meta_add(RMeta *m, int type, ut64 from, ut64 size, const char *str) {
-	RMetaItem *mi;
-	switch(type) {
+R_API int r_meta_add(RMeta *m, int type, ut64 from, ut64 to, const char *str) {
+	RMetaItem *mi = R_NEW (RMetaItem);
+	switch (type) {
+	case R_META_XREF_CODE:
+	case R_META_XREF_DATA:
+		mi->size = 1;
+		break;
+	default:
+		mi->size = R_ABS (to-from);//size;
+		break;
+	}
+	switch (type) {
 	case R_META_CODE:
 	case R_META_DATA:
 	case R_META_STRING:
 	case R_META_STRUCT:
 		/* we should remove overlapped types and so on.. */
-		r_meta_cleanup(m, from, from + size);
+		r_meta_cleanup(m, from, to);
 	case R_META_FUNCTION:
 	case R_META_COMMENT:
 	case R_META_FOLDER:
 	case R_META_XREF_CODE:
 	case R_META_XREF_DATA:
-		mi = R_NEW (RMetaItem);
 		mi->type = type;
 		mi->from = from;
-		mi->size = size;
-		mi->to = from+size;
+		mi->to = to;
 		if (str) mi->str = strdup (str);
 		else mi->str = NULL;
 		list_add (&(mi->list), &m->data);
@@ -186,7 +193,7 @@ R_API RMetaItem *r_meta_find(RMeta *m, ut64 off, int type, int where) {
 	list_for_each(pos, &m->data) {
 		RMetaItem *d = (RMetaItem*) list_entry(pos, RMetaItem, list);
 		if (d->type == type || type == R_META_ANY) {
-			switch(where) {
+			switch (where) {
 			case R_META_WHERE_PREV:
 				if (d->from < off) {
 					if (it && d->from > it->from)
@@ -195,9 +202,12 @@ R_API RMetaItem *r_meta_find(RMeta *m, ut64 off, int type, int where) {
 				}
 				break;
 			case R_META_WHERE_HERE:
-				if (off>=d->from && off <d->to) {
+				// XXX: This is hacky coz xrefs must be inside functions, strings..
+				if ((d->type == 'x' || d->type == 'X') && off==d->from)
 					it = d;
-				}
+				else
+				if (off>=d->from && off <d->to)
+					it = d;
 				break;
 			case R_META_WHERE_NEXT:
 				if (d->from > off) {
@@ -274,14 +284,15 @@ struct r_range_t *r_meta_ranges(struct r_meta_t *m)
 }
 #endif
 
-int r_meta_list(struct r_meta_t *m, int type) {
+// TODO: Deprecate
+R_API int r_meta_list(RMeta *m, int type) {
 	int count = 0;
 	struct list_head *pos;
 	list_for_each (pos, &m->data) {
 		RMetaItem *d = (RMetaItem*) list_entry(pos, RMetaItem, list);
 		if (d->type == type || type == R_META_ANY) {
 			char *str = r_str_unscape (d->str);
-			printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x" %d \"%s\"\n",
+			m->printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x" %d \"%s\"\n",
 				r_meta_type_to_string (d->type),
 				d->from, d->to, (int)(d->to-d->from), str);
 			count++;

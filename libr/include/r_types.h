@@ -91,7 +91,7 @@ typedef void (*FunctionPrintf)(const char *str, ...);
 
 #define R_MAX(x,y) (x>y)?x:y
 #define R_MIN(x,y) (x>y)?y:x
-#define R_ABS(x) ((x<0)?-x:x)
+#define R_ABS(x) (((x)<0)?-(x):(x))
 
 #define R_FREE(x) { free(x); x = NULL; }
 

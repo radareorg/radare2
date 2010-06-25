@@ -104,18 +104,17 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		}
 		r_anal_aop (core->anal, &analop, addr, buf+idx, (int)(len-idx));
 	
+		// TODO: Show xrefs in both sides..
 		if (mi)
 		switch (mi->type) {
+		case 'c':
 		case R_META_XREF_CODE:
-case 'c':
-			r_cons_printf ("Cx # code xref from 0x%08llx\n", mi->from);
+			r_cons_printf ("Cx # code xref from 0x%08llx\n", mi->to);
 			break;
-case 'd':
+		case 'd':
 		case R_META_XREF_DATA:
-			r_cons_printf ("CX # data xref from 0x%08llx\n", mi->from);
+			r_cons_printf ("CX # data xref from 0x%08llx\n", mi->to);
 			break;
-default:
-	r_cons_printf("no xref\n");
 		}
 		if (adistrick)
 			middle = r_anal_reflines_middle (core->anal,
@@ -2323,6 +2322,7 @@ static int cmd_open(void *data, const char *input) {
 static int cmd_meta(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int i, ret, line = 0;
+	ut64 addr_end = 0LL;
 	ut64 addr = core->offset;
 	char file[1024];
 	switch (input[0]) {
@@ -2338,16 +2338,17 @@ static int cmd_meta(void *data, const char *input) {
 			for (i = 0; i<ret; i++) {
 				char *row = r_file_slurp_line (file, line+i, 0);
 				r_cons_printf ("%c %.3x  %s\n", (i==2)?'>':' ', line+i, row);
+				free (row);
 			}
 		} else eprintf ("Cannot find meta information at 0x%08"PFMT64x"\n", core->offset);
 		break;
 	case 'C': /* add comment */
 		// TODO: do we need to get the size? or the offset?
 		// TODO: is this an exception compared to other C? commands?
-		if (input[1]==' ') input = input+1;
+		if (input[1]==' ') input++;
 		if (input[1]=='-')
-			r_meta_del (core->meta, R_META_COMMENT, core->offset, 1, input+2);
-		else r_meta_add (core->meta, R_META_COMMENT, core->offset, 1, input+1);
+			r_meta_del (core->meta, R_META_COMMENT, core->offset, core->offset, input+2);
+		else r_meta_add (core->meta, R_META_COMMENT, core->offset, core->offset, input+1);
 		break;
 	case 'S':
 	case 's':
@@ -2358,23 +2359,21 @@ static int cmd_meta(void *data, const char *input) {
 		if (input[1]=='-') {
 			if (input[2]==' ')
 				addr = r_num_math (core->num, input+3);
-			r_meta_del (core->meta, input[0], addr, 1, "");
+			r_meta_del (core->meta, input[0], addr, addr+1, "");
 		} else
 		if (input[1]=='\0'||input[1]=='*') {
 			r_meta_list (core->meta, input[0]);
 		} else {
 			char fun_name[128];
-			int size = atoi (input+1);
 			int type = input[0];
 			char *t, *p = strchr (input+2, ' ');
-// XXX: we use size..when we should define [from-to]
 			if (p) {
 				t = strdup (p+1);
 				p = strchr (t, ' ');
 				if (p) {
-					*p='\0';
+					*p = '\0';
 					strncpy (fun_name, p+1, sizeof (fun_name));
-				} else 
+				} else
 				switch (type) {
 				case 'F':
 					sprintf (fun_name, "sub_%08"PFMT64x"", addr);
@@ -2391,21 +2390,25 @@ static int cmd_meta(void *data, const char *input) {
 					}
 				}
 				addr = r_num_math (core->num, t);
-				if (addr==0LL)
+				// only get abs address in Cx and CX
+				if (type == 'x' || type == 'X')
+					addr_end = r_num_math (core->num, input+2);
+				else addr_end = addr + atoi (input+1);
+				if (addr==0LL) {
+					// TODO: handle this? eprintf ("FAIL. meta\n");
 					addr = core->offset;
+				}
 				free (t);
 			}
-			r_meta_add (core->meta, type, addr, size, fun_name);
+			r_meta_add (core->meta, type, addr, addr_end, fun_name);
 		}
 		break;
 	case '-':
-		if (input[1]=='*') {
-			r_meta_cleanup (core->meta, 0LL, UT64_MAX);
-		} else {
+		if (input[1]!='*') {
 			if (input[1]==' ')
 				addr = r_num_math (core->num, input+2);
 			r_meta_del (core->meta, R_META_ANY, addr, 1, "");
-		}
+		} else r_meta_cleanup (core->meta, 0LL, UT64_MAX);
 		break;
 	case '\0':
 	case '?':
