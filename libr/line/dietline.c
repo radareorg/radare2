@@ -185,30 +185,43 @@ R_API void r_line_autocomplete() {
 		if (!strncmp (argv[i], I.buffer.data, I.buffer.index))
 			opt++;
 
-	if (I.buffer.length>0 && opt==1)
-	for (i=0; i<argc; i++) {
-		if (!strncmp (I.buffer.data, argv[i], I.buffer.length)) {
-			strcpy (I.buffer.data, argv[i]);
-			I.buffer.index = I.buffer.length = strlen (I.buffer.data) + 1;
-			/* fucking inneficient */
-			strcat (I.buffer.data, " ");
-			I.buffer.length = ++I.buffer.index;
-			break;
+	// XXX: This autocompletion method is hacky
+	if (I.buffer.length>0 && opt==1) {
+		for (i=0; i<argc; i++) {
+			if (!strncmp (I.buffer.data, argv[i], I.buffer.length)) {
+				strcpy (I.buffer.data, argv[i]);
+				I.buffer.index = I.buffer.length = strlen (I.buffer.data) + 1;
+				/* fucking inneficient */
+				strcat (I.buffer.data, " ");
+				I.buffer.length = ++I.buffer.index;
+				break;
+			}
 		}
+	} else
+	if (argc==1) {
+		char *p = strchr (I.buffer.data, ' ');
+		if (p) p++; else p = I.buffer.data;
+		strcpy (p, argv[0]);
+		I.buffer.index = I.buffer.length = strlen (I.buffer.data) + 1;
+		strcat (p, " ");
+		I.buffer.length = strlen (I.buffer.data);
 	}
 
 	/* show options */
-	if (I.buffer.index==0 || opt>1) {
+	//if (I.buffer.index==0 || opt>1) {
+	if (argc>1) {
 		if (I.echo)
 			printf ("%s%s\n", I.prompt, I.buffer.data);
 		for (i=0; i<argc; i++) {
-			if (argv[i] != NULL)
-			if (I.buffer.length==0 || !strncmp (argv[i], I.buffer.data, I.buffer.length)) {
-				len += strlen (argv[i]);
-	//			if (len+I.buffer.length+4 >= columns) break;
-				if (I.echo)
-					printf ("%s ", argv[i]);
-			}
+			if (argv[i] == NULL)
+				break;
+	//		if (I.buffer.length==0 || !strncmp (argv[i], I.buffer.data, I.buffer.length)) {
+			len += strlen (argv[i]);
+//			if (len+I.buffer.length+4 >= columns) break;
+			if (I.echo)
+				printf ("%s\t", argv[i]);
+			if (5==(i%6)) printf ("\n");
+	//		}
 		}
 		if (I.echo)
 			printf ("\n");

@@ -28,6 +28,26 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode) {
 	fh->size = r_io_size (r->io, fd);
 	list_add (&(fh->list), &r->files);
 
+	r_sys_setenv ("FILE", fh->filename);
+#if 0
+TODO: clean this list add !!? and all those vars
+Usage: !!shell program
+ DEBUG       cfg.debug value as 0 or 1
+ EDITOR      cfg.editor (vim or so)
+ ARCH        asm.arch value
+ OFFSET      decimal value of current seek
+ XOFFSET     hexadecimal value of cur seek
+ CURSOR      cursor position (offset from curseek)
+ VADDR       io.vaddr
+ COLOR       scr.color?1:0
+ VERBOSE     cfg.verbose
+ FILE        cfg.file
+ SIZE        file size
+ BSIZE       block size
+ ENDIAN      'big' or 'little' depending on cfg.bigendian
+ BYTES       hexpairs of current block
+ BLOCK       temporally file with contents of current block
+#endif
 	r_bin_load (r->bin, fh->filename, NULL);
 
 	r_core_block_read (r, 0);

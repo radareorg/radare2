@@ -1,9 +1,13 @@
-* add support for readline-like callbacks
-* 'Supr' key not handled properly
-* Optionally link against libreadline (NO PLZ)
+* Deprecate argc . only argv needed
 * Remove all label-related stuff (OW YEAH)
-* Make dietline fully compatible with readline (WHY?)
 * Define API outside as r_line_... in ../include/
+
+Readline compatibility
+======================
+* add support for readline-like callbacks
+  - NO! they are ugly! we have our own callbacks
+  - Make dietline fully compatible with readline (WHY?)
+  - Optionally link against libreadline (NO PLZ)
 
 Design:
 =======

@@ -63,13 +63,55 @@ R_API RCore *r_core_new() {
 /*-----------------------------------*/
 #define CMDS 54
 static const char *radare_argv[CMDS] ={
-	"?", "!step", "!stepo", "!cont", "!signal", "!fd", "!maps", ".!maps*",
-	"!bp", "!!", "#md5", "#sha1", "#crc32", "#entropy", "Visual", "ad", "ac",
-	"ag", "emenu", "eval", "seek", "info", "help", "move", "quit", "flag",
-	"Po", "Ps", "Pi", "H", "H no", "H nj", "H fj", "H lua", "x", "b",
+	"?", "ds", "dso", "dc", "dd", "dm", "db", "S", "s",
+	"!", "!!", "#md5", "#sha1", "#crc32", "V", "ad", "ac",
+	"ag", "ag", "e", "i", "m", "q", "f", "x", "b", "/", "/a", "/x",
 	"y", "yy", "y?", "wx", "ww", "wf", "w?", "pD", "pG", "pb", "px",
 	"pX", "po", "pm", "pz", "pr >", "p?", NULL
 };
+
+#define TMP_ARGV_SZ 256
+static char *tmp_argv[TMP_ARGV_SZ];
+static int autocomplete(RLine *line) {
+	RCore *core = line->user;
+	struct list_head *pos;
+	line->completion.argc = CMDS;
+	line->completion.argv = radare_argv;
+	if (core) {
+		if ((!memcmp (line->buffer.data, "s ", 2)) ||
+		    (!memcmp (line->buffer.data, "f ", 2)) ||
+		    (!memcmp (line->buffer.data, "? ", 2))) {
+			int n, i = 0;
+			n = strlen (line->buffer.data+2);
+			list_for_each_prev (pos, &core->flags->flags) {
+				RFlagItem *flag = list_entry (pos, RFlagItem, list);
+				if (!memcmp (flag->name, line->buffer.data+2, n)) {
+					tmp_argv[i++] = flag->name;
+					if (i==TMP_ARGV_SZ)
+						break;
+				}
+			}
+			tmp_argv[i] = NULL;
+			line->completion.argc = i;
+			line->completion.argv = tmp_argv;
+		} else
+		if (!memcmp (line->buffer.data, "e ", 2)) {
+			int i = 0, n = strlen (line->buffer.data+2);
+			list_for_each_prev (pos, &core->config->nodes) {
+				RConfigNode *bt = list_entry(pos, RConfigNode, list);
+				if (!memcmp (bt->name, line->buffer.data+2, n)) {
+					tmp_argv[i++] = bt->name;
+					if (i==TMP_ARGV_SZ)
+						break;
+				}
+			}
+			tmp_argv[i] = NULL;
+			line->completion.argc = i;
+			line->completion.argv = tmp_argv;
+		}
+	}
+	return R_TRUE;
+}
 
 static int myfgets(char *buf, int len) {
 	/* TODO: link against dietline if possible for autocompletion */
@@ -78,6 +120,7 @@ static int myfgets(char *buf, int len) {
 	buf[0]='\0';
 	rli->completion.argc = CMDS;
 	rli->completion.argv = radare_argv;
+	rli->completion.run = autocomplete;
 	ptr = r_line_readline (); //CMDS, radare_argv);
 	if (ptr == NULL)
 		return -2;
@@ -119,9 +162,11 @@ R_API int r_core_init(RCore *core) {
 
 	/* initialize libraries */
 	if (singleton) {
+		RLine *line = r_line_new ();
 		r_cons_new ();
-		r_line_new ();
+		line->user = core;
 		r_cons_singleton()->user_fgets = (void *)myfgets;
+		//r_line_singleton()->user = (void *)core;
 		r_line_hist_load (".radare2_history");
 		singleton = R_FALSE;
 	}

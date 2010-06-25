@@ -26,7 +26,7 @@ struct r_line_t; // ugly forward declaration
 typedef int (*RLineCallback)(struct r_line_t *line);
 
 typedef struct r_line_comp_t {
-	int argc;
+	int argc; // TODO: Deprecate
 	const char **argv;
 	RLineCallback run;
 } RLineCompletion;
@@ -40,6 +40,7 @@ typedef struct r_line_t {
 	const char *prompt;
 	char *clipboard;
 	int disable; // NOT YET USED
+	void *user;
 } RLine;
 
 
