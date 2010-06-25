@@ -9,34 +9,27 @@
 0.5 RELEASE
 ===========
 
-Practical pointz
-----------------
-analysis:
-  - strings xrefs
-  - import xrefs
-  - symbol xrefs
-'ax' command.
-  - disassemble .text looking for calls to imports
-
-Changez:
---------
-pm x -> pm d (d=dword) (unsigned)
-pm d -> pm i (i=int) (signed)
-
-Build fixes:
-------------
-* Store version information in libraries ? debian claims for it
+Questions:
+----------
+* Do we have to enable jump/call toggles for breaking basicblocks? (yes/no)
+  - pancake: no , nibble: (WHAT DO YOU THINK ABOUT THIS? :)
+* code analysis with r_parse // isnt this already done? nibble?
+  - generate by just parsing the opcode
+  - RAnalAopArg { int size; int delta; int type; }
+  - r_anal_aop_arg_set (); r_anal_aop_arg_get (); r_anal_aop_arg_binmask ();
 
 Bugs:
 -----
 * nibble: trace counts after step..thats not correct!
 
-Features:
----------
+TODO:
+-----
 * pancake: Implement search.align
-* Do we have to enable jump/call toggles for breaking basicblocks? (yes/no)
-  - pancake: no , nibble: (WHAT DO YOU THINK ABOUT THIS? :)
-* references: data (read, write), code (call, jmp)
+* Initial analysis looking for xrefs to strings and so? ax? ./a@@entry0
+* references: data (read, write), code (call, jmp) must be inside Function
+  - Cx doesnt works as expected (from-to, from-size, ..)
+  - done with r_meta_sync() ?
+  - use r_db in flags and meta
 * Handle metadata from disassembler (structs, hexdump, ...)
   - r_meta_print (RMeta, RMetaItem, RPrint);
 * pancake: FileDescriptors: dd -- copy from !fd in r1
@@ -58,16 +51,6 @@ Features:
         - check all strings
      2nd level:
         - basic block level diffing (output in graph mode)
-* code analysis with r_parse // isnt this already done? nibble?
-  - generate by just parsing the opcode
-  RAnalAopArg {
-    int size;
-    int delta;
-    int type;
-  }
-  r_anal_aop_arg_set ();
-  r_anal_aop_arg_get ();
-  r_anal_aop_arg_binmask ();
 
 ---8<------------8<------------------8<---------------------8<------------- -- - -
 
@@ -93,6 +76,9 @@ Loading big binaries results on broken interaction.
       \
        `-- (while (lock,load,unlock))
 
+Build fixes:
+------------
+* Store version information in libraries ? debian claims for it
 
 Analysis
 ========

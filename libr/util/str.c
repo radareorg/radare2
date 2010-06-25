@@ -254,18 +254,19 @@ R_API int r_str_ccmp(const char *dst, const char *src, int ch) {
 }
 
 R_API int r_str_cmp(const char *a, const char *b, int len) {
+	if (a==b)
+		return R_TRUE;
 	for (;len--;) {
 		if (*a=='\0'||*b=='\0'||*a!=*b)
-			return 1;
-		a=a+1;
-		b=b+1;
+			return R_TRUE;
+		a++; b++;
 	}
-	return 0;
+	return R_FALSE;
 }
 
 R_API int r_str_ccpy(char *dst, char *src, int ch) {
 	int i;
-	for(i=0;src[i] && src[i] != ch; i++)
+	for (i=0;src[i] && src[i] != ch; i++)
 		dst[i] = src[i];
 	dst[i] = '\0';
 	return i;

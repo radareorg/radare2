@@ -14,11 +14,11 @@ static void print_mem_help(RPrint *p) {
 	" f - float value\n"
 	" b - one byte \n"
 	" B - show 10 first bytes of buffer\n"
-	" d - %%d integer value (4 bytes)\n"
+	" i - %%i integer value (4 bytes)\n"
 	" w - word (16 bit hexa)\n"
 	" q - quadword (8 bytes)\n"
 	" p - pointer reference\n"
-	" x - 0x%%08x hexadecimal value\n"
+	" d - 0x%%08x hexadecimal value\n"
 	" X - 0x%%08x hexadecimal value and flag (fd @ addr)\n"
 	" z - \\0 terminated string\n"
 	" Z - \\0 terminated wide string\n"
@@ -182,12 +182,12 @@ R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int le
 				p->printf(")");
 				i+=4;
 				break;
-			case 'd':
+			case 'i':
 				p->printf("0x%08x = ", seek+i);
 				p->printf("%d", addr);
 				i+=4;
 				break;
-			case 'x':
+			case 'd':
 				p->printf("0x%08x = ", seek+i);
 				p->printf("0x%08x ", addr);
 				i+=4;

@@ -128,9 +128,11 @@ R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 	tmp.namehash = r_str_hash64 (name);
 	return btree_get (f->ntree, &tmp, ncmp);
 #else
+	ut64 hash = r_str_hash64 (name);
 	list_for_each_prev (pos, &f->flags) {
 		flag = list_entry (pos, RFlagItem, list);
-		if (!strcmp (name, flag->name))
+		//if (!strcmp (name, flag->name))
+		if (hash == flag->namehash)
 			return flag;
 	}
 #endif
@@ -234,10 +236,12 @@ R_API int r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size, int dup)
 //		else eprintf("NOT REGISTERED(%s)\n", name);
 	}
 #else
+	ut64 hash = r_str_hash64 (name);
 	list_for_each (pos, &fo->flags) {
 		RFlagItem *f = (RFlagItem *)
 			list_entry(pos, RFlagItem, list);
-		if (!strcmp(f->name, name)) {
+		//if (!strcmp(f->name, name)) {
+		if (hash == f->namehash) {
 			if (dup) {
 				/* ignore dupped name+offset */
 				if (f->offset == addr)

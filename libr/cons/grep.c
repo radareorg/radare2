@@ -2,6 +2,7 @@
 
 #include <r_cons.h>
 
+// XXX: needs to be rewritten/reviewed to work for columns and rows
 R_API void r_cons_grep(const char *str) {
 	RCons *cons;
 	char *optr, *tptr;
@@ -9,6 +10,7 @@ R_API void r_cons_grep(const char *str) {
 	char *ptr, *ptr2, *ptr3;
 	cons = r_cons_singleton ();
 	cons->grep.counter = 0;
+	cons->grep.token = -1;
 	/* set grep string */
 	if (str != NULL && *str) {
 		if (*str == '!') {
@@ -22,15 +24,14 @@ R_API void r_cons_grep(const char *str) {
 		ptr = buf;
 		strncpy (ptr, str, sizeof (buf));
 
-		ptr3 = strchr (ptr, '[');
-		ptr2 = strchr (ptr, '#'); // XXX: this is no longer valid!!! its a comment.
-
+		ptr3 = strchr (ptr, '['); // column number
 		if (ptr3) {
 			ptr3[0]='\0';
 			cons->grep.token = atoi (ptr3+1);
 			if (cons->grep.token<0)
-				cons->grep.token--;
+				cons->grep.token = 0;
 		}
+		ptr2 = strchr (ptr, ':'); // line number
 		if (ptr2) {
 			ptr2[0]='\0';
 			cons->grep.line = atoi (ptr2+1);
@@ -79,11 +80,13 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		if (l>0) {
 			ret = r_cons_grep_line (ptr, l);
 			if (!p) break;
-			if (ret>0) {
-				*p = '\n';
+			*p = '\n';
+			//if (ret != l)
+				//memcpy (ptr+ret, p+1, len- (buf-ptr));
+			if (ret>0)
 				ptr += ret;
-			} else break;
-		} else ptr ++;
+			else break;
+		} else ptr++;
 	}
 	return ret;
 }
@@ -96,26 +99,26 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	int i, j, hit = 0;
 
 	cons->lines++;
-	if (cons->grep.nstrings==0)
-		return len+1;
-	if (cons->lastline==NULL)
-		cons->lastline = cons->buffer;
-	for (i=0; i<cons->grep.nstrings; i++) {
-		cons->grep.str = cons->grep.strings[i];
-		if ( (!cons->grep.neg && strstr (buf, cons->grep.str))
-		   || (cons->grep.neg && !strstr (buf, cons->grep.str))) {
-			hit = 1;
-			break;
+	if (cons->grep.nstrings>0) {
+		//return len+1;
+		if (cons->lastline==NULL)
+			cons->lastline = cons->buffer;
+		for (i=0; i<cons->grep.nstrings; i++) {
+			cons->grep.str = cons->grep.strings[i];
+			if ( (!cons->grep.neg && strstr (buf, cons->grep.str))
+			   || (cons->grep.neg && !strstr (buf, cons->grep.str))) {
+				hit = 1;
+				break;
+			}
 		}
-	}
+	}cons->lastline = buf;
 	if (hit) {
 		if (cons->grep.line != -1) {
-			if (cons->grep.line==cons->lines)
+			if (cons->grep.line==cons->lines-1) {
 				cons->lastline = buf+len;
-			else donotline = 1;
-		}
+			} else donotline = 1;
+		} 
 	} else donotline = 1;
-	cons->lastline = buf;
 
 	if (donotline) {
 //eprintf ("\naaa GREPSTRING (%s) hit=%d (%d)\n\n", cons->lastline, hit, len);
@@ -125,10 +128,10 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	} else {
 //eprintf ("\nzzz GREPSTRING (%s) hit=%d (%d)\n\n", cons->lastline, hit, len);
 		if (cons->grep.token != -1) {
-			//ptr = alloca(strlen(cons->lastline));
 			char *tok = NULL;
-			char *ptr = alloca (1024); // XXX
-			strcpy (ptr, cons->lastline);
+			char ptr[1024];
+//eprintf ("TOEKEN (%s)\n", cons->lastline);
+			strcpy (ptr, buf); //cons->lastline);
 			for (i=0; i<len; i++) for (j=0; j<6; j++)
 				if (ptr[i] == delims[j][0])
 					ptr[i] = ' ';
@@ -144,11 +147,8 @@ R_API int r_cons_grep_line(char *buf, int len) {
 				memcpy (cons->lastline, tok, len);
 				if (cons->lastline[len-1]!='\n')
 					memcpy (cons->lastline+len, "\n", 2);
-				len++;
-				cons->lastline += len;
 			}
-		} else cons->lastline = buf+len;
-		cons->lines++;
+		}
 	}
 	return len+1;
 }

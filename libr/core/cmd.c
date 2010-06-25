@@ -104,6 +104,19 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		}
 		r_anal_aop (core->anal, &analop, addr, buf+idx, (int)(len-idx));
 	
+		if (mi)
+		switch (mi->type) {
+		case R_META_XREF_CODE:
+case 'c':
+			r_cons_printf ("Cx # code xref from 0x%08llx\n", mi->from);
+			break;
+case 'd':
+		case R_META_XREF_DATA:
+			r_cons_printf ("CX # data xref from 0x%08llx\n", mi->from);
+			break;
+default:
+	r_cons_printf("no xref\n");
+		}
 		if (adistrick)
 			middle = r_anal_reflines_middle (core->anal,
 					core->reflines, addr, analop.length);
@@ -2044,20 +2057,19 @@ static int cmd_search(void *data, const char *input) {
 	// TODO: repeat last search doesnt works for /a
 	from = r_config_get_i (core->config, "search.from");
 	to = r_config_get_i (core->config, "search.to");
+	//TODO: handle section ranges if from&&to==0
 /*
-	TODO: handle section ranges if from&&to==0
 	section = r_io_section_get (core->io, core->offset);
-	if (s) {
-		ini = s->vaddr;
-		fin = ini + s->size;
-	} else {
+	if (section) {
+		from += section->vaddr;
+		//fin = ini + s->size;
 	}
 */
+	/* XXX: Think how to get the section ranges here */
 	if (from == 0LL)
 		from = core->offset;
 	if (to == 0LL)
-		to = core->file->size; 
-	// TODO: handle current section boundaries!
+		to = 0xFFFFFFFF; //core->file->size+0x8048000;
 
 	switch (input[0]) {
 	case '/':
@@ -2355,6 +2367,7 @@ static int cmd_meta(void *data, const char *input) {
 			int size = atoi (input+1);
 			int type = input[0];
 			char *t, *p = strchr (input+2, ' ');
+// XXX: we use size..when we should define [from-to]
 			if (p) {
 				t = strdup (p+1);
 				p = strchr (t, ' ');

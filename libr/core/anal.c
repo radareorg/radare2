@@ -15,7 +15,7 @@ static char *r_core_anal_graph_label(RCore *core, struct r_anal_bb_t *bb, int op
 
 	if (opts & R_CORE_ANAL_GRAPHLINES) {
 		r_list_foreach (bb->aops, iter, aopi) {
-			r_bin_meta_get_line (core->bin, aopi->addr, file, 1023, &line);
+			r_bin_meta_get_line (core->bin, aopi->addr, file, sizeof (file)-1, &line);
 			if (line != 0 && line != oline && strcmp (file, "??")) {
 				filestr = r_file_slurp_line (file, line, 0);
 				if (filestr) {
@@ -402,9 +402,9 @@ R_API int r_core_anal_graph_fcn(RCore *core, char *fname, int opts) {
 
 #define OPSZ 32
 R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
-	RAnalOp op;
 	ut8 *buf = (ut8 *)malloc (core->blocksize);
 	int ret, i, count = 0;
+	RAnalOp op;
 	ut32 at;
 	// TODO: get current section range here or gtfo
 	// ???
@@ -415,29 +415,30 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	if (ref==0LL)
 		eprintf ("Null reference search is not supported\n");
 	else
-	if (core->blocksize>OPSZ)
-		for (at = from; at < to; at += core->blocksize) {
-			if (r_cons_singleton ()->breaked)
-				break;
-			ret = r_io_read_at (core->io, at, buf, core->blocksize);
-			if (ret != core->blocksize)
-				break;
-			for (i=0; i<core->blocksize-8; i++) {
-				r_anal_aop (core->anal, &op, at+i, buf+i, sizeof (buf)-i);
-				if (op.jump == ref) {
-					r_cons_printf ("Cx 0x%08"PFMT64x" @ 0x%08"PFMT64x"\n",
-						(ut64)(at+i), (ut64) ref);
-					count ++;
-				}
-				if (op.ref == ref) {
-					r_cons_printf ("CX 0x%08"PFMT64x" @ 0x%08"PFMT64x"\n",
-						(ut64)(at+i), (ut64)ref);
-					count ++;
-				}
+	if (core->blocksize<=OPSZ)
+		eprintf ("erro: block size too small\n");
+	else
+	for (at = from; at < to; at += core->blocksize) {
+		if (r_cons_singleton ()->breaked)
+			break;
+		ret = r_io_read_at (core->io, at, buf, core->blocksize);
+		if (ret != core->blocksize)
+			break;
+		for (i=0; i<core->blocksize-OPSZ; i++) {
+			r_anal_aop (core->anal, &op, at+i, buf+i, sizeof (buf)-i);
+			if (op.jump == ref) {
+				r_cons_printf ("Cx 0x%08"PFMT64x"@0x%08"PFMT64x"\n",
+					(ut64)(at+i), (ut64) ref);
+				count ++;
 			}
-			at -= 8;
+			if (op.ref == ref) {
+				r_cons_printf ("CX 0x%08"PFMT64x"@0x%08"PFMT64x"\n",
+					(ut64)(at+i), (ut64)ref);
+				count ++;
+			}
 		}
-	else eprintf ("erro: block size too small\n");
+		at -= OPSZ;
+	}
 	free (buf);
 	return count;
 }

@@ -315,14 +315,13 @@ R_API void r_core_visual_config(RCore *core) {
 					fs = bt->name;
 					hit = 1;
 				}
-				show = 0;
 				if (old[0]=='\0') {
-					r_str_ccpy(old, bt->name, '.');
+					r_str_ccpy (old, bt->name, '.');
 					show = 1;
 				} else if (r_str_ccmp(old, bt->name, '.')) {
-					r_str_ccpy(old, bt->name, '.');
+					r_str_ccpy (old, bt->name, '.');
 					show = 1;
-				}
+				} else show = 0;
 
 				if (show) {
 					if( (i >=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
@@ -714,6 +713,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		r_cons_set_raw (1);
 		break;
+	case 'x':
+		r_core_cmdf (core, "./a 0x%08llx @ entry0", core->offset);
+		break;
 	case '?':
 		r_cons_clear00 ();
 		r_cons_printf (
@@ -725,6 +727,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" /*+-    -  change block size\n"
 		" cC      -  toggle cursor and colors\n"
 		" d[f?]   -  define function, data, code, ..\n"
+		" x       -  find xrefs for current offset\n"
 		" sS      -  step / step over\n"
 		" uU      -  undo/redo seek\n"
 		" mK/'K   -  mark/go to Key (any key)\n"

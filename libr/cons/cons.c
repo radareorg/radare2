@@ -180,7 +180,7 @@ R_API void r_cons_flush() {
 			}
 		}
 	}
-	if (I.grep.nstrings>0)
+	if (I.grep.nstrings>0||I.grep.token!=-1||I.grep.line!=-1)
 		r_cons_grepbuf (I.buffer, I.buffer_len);
 
 	if (tee&&tee[0]) {
