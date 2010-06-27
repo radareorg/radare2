@@ -184,11 +184,15 @@ static int check(RBin *bin) {
 	ut8 *buf;
 	int n, ret = R_FALSE;
 
-	if ((buf = (ut8*)r_file_slurp_range (bin->file, 0, 4, &n))) {
-		if (n == 4)
-		if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
-			!memcmp (buf, "\xfe\xed\xfa\xce", 4))
-			ret = R_TRUE;
+	if ((buf = (ut8*)r_file_slurp_range (bin->file, 0, 8, &n))) {
+		if (n == 8) {
+			if (!memcmp (buf, "\xca\xfe\xba\xbe\x00\x00\x00\x02", 8))
+				ret = R_TRUE;
+			else
+			if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
+				!memcmp (buf, "\xfe\xed\xfa\xce", 4))
+				ret = R_TRUE;
+		}
 		free (buf);
 	}
 	return ret;

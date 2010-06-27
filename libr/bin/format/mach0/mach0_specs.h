@@ -8,10 +8,12 @@
 #define MACH0_(name) name##_64
 #define MH_MAGIC 0xfeedfacf
 #define MH_CIGAM 0xcffaedfe
+#define FAT_CIGAM 0xbabefeca /* XXX */
 #else
 #define MACH0_(name) name
 #define	MH_MAGIC 0xfeedface
 #define MH_CIGAM 0xcefaedfe
+#define FAT_CIGAM 0xbebafeca
 #endif
 
 #ifndef _INCLUDE_MACHO_SPECS_H_

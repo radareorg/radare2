@@ -115,8 +115,9 @@ static RBinInfo* info(RBin *bin) {
 static int check(RBin *bin) {
 	ut8 *buf;
 	int n, ret = R_FALSE;
-	if ((buf = (ut8*)r_file_slurp_range (bin->file, 0, 4, &n))) {
-		if (n==4 && !memcmp (buf, "\xca\xfe\xba\xbe", 4))
+	if ((buf = (ut8*)r_file_slurp_range (bin->file, 0, 16, &n))) {
+		if (n==16 && !memcmp (buf, "\xca\xfe\xba\xbe", 4)
+			&& (buf[7]!=2 && buf[11]!=7))
 			ret = R_TRUE;
 		free (buf);
 	}

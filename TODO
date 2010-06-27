@@ -11,6 +11,9 @@
 
 Questions:
 ----------
+* rabin2 doesnt works for osx-x86 mach0 bins..so io.va=1 fails
+  - opening simple fiels with io.va=1 fails !!!
+  - if no sections defined it should read as plain
 * Do we have to enable jump/call toggles for breaking basicblocks? (yes/no)
   - pancake: no , nibble: (WHAT DO YOU THINK ABOUT THIS? :)
 * code analysis with r_parse // isnt this already done? nibble?
@@ -24,6 +27,8 @@ Bugs:
 
 TODO:
 -----
+* nibble: mach0 new binary format is not supported by bin_mach0 :(
+* java disassembler do not uses the constant pool
 * Implement r_sys_setenv stuff from r1 in core/file.c:33 (!!?)
 * pancake: Implement search.align
 * Initial analysis looking for xrefs to strings and so? ax? ./a@@entry0

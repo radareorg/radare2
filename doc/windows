@@ -9,7 +9,7 @@ Crosscompilation
 
   ArchLinux
   ---------
-  ./configure --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows
+  ./configure --without-gmp --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows
   make
   
   Ubuntu

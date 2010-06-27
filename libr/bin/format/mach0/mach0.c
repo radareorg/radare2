@@ -5,8 +5,7 @@
 #include <r_util.h>
 #include "mach0.h"
 
-static int MACH0_(r_bin_mach0_addr_to_offset)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 addr)
-{
+static int MACH0_(r_bin_mach0_addr_to_offset)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 addr) {
 	ut64 section_base, section_size;
 	int i;
 
@@ -21,17 +20,18 @@ static int MACH0_(r_bin_mach0_addr_to_offset)(struct MACH0_(r_bin_mach0_obj_t)* 
 	return 0;
 }
 
-static int MACH0_(r_bin_mach0_init_hdr)(struct MACH0_(r_bin_mach0_obj_t)* bin)
-{
+static int MACH0_(r_bin_mach0_init_hdr)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	int magic, len;
 
-	if (r_buf_read_at(bin->b, 0, (ut8*)&magic, 4) == -1) {
-		eprintf("Error: read (magic)\n");
+	if (r_buf_read_at (bin->b, 0, (ut8*)&magic, 4) == -1) {
+		eprintf ("Error: read (magic)\n");
 		return R_FALSE;
 	}
 	if (magic == MH_MAGIC)
 		bin->endian = !LIL_ENDIAN;
 	else if (magic == MH_CIGAM)
+		bin->endian = LIL_ENDIAN;
+	else if (magic == FAT_CIGAM)
 		bin->endian = LIL_ENDIAN;
 	else return R_FALSE;
 #if R_BIN_MACH064
@@ -40,7 +40,7 @@ static int MACH0_(r_bin_mach0_init_hdr)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 	len = r_buf_fread_at(bin->b, 0, (ut8*)&bin->hdr, bin->endian?"7I":"7i", 1);
 #endif
 	if (len == -1) {
-		eprintf("Error: read (hdr)\n");
+		eprintf ("Error: read (hdr)\n");
 		return R_FALSE;
 	}
 	return R_TRUE;
@@ -56,9 +56,9 @@ static int MACH0_(r_bin_mach0_parse_seg)(struct MACH0_(r_bin_mach0_obj_t)* bin, 
 		return R_FALSE;
 	}
 #if R_BIN_MACH064
-	len = r_buf_fread_at(bin->b, off, (ut8*)&bin->segs[seg], bin->endian?"2I16c4L4I":"2i16c4l4i", 1);
+	len = r_buf_fread_at (bin->b, off, (ut8*)&bin->segs[seg], bin->endian?"2I16c4L4I":"2i16c4l4i", 1);
 #else
-	len = r_buf_fread_at(bin->b, off, (ut8*)&bin->segs[seg], bin->endian?"2I16c8I":"2i16c8i", 1);
+	len = r_buf_fread_at (bin->b, off, (ut8*)&bin->segs[seg], bin->endian?"2I16c8I":"2i16c8i", 1);
 #endif
 	if (len == -1) {
 		eprintf("Error: read (seg)\n");
@@ -72,10 +72,10 @@ static int MACH0_(r_bin_mach0_parse_seg)(struct MACH0_(r_bin_mach0_obj_t)* bin, 
 			return R_FALSE;
 		}
 #if R_BIN_MACH064
-		len = r_buf_fread_at(bin->b, off + sizeof(struct MACH0_(segment_command)),
+		len = r_buf_fread_at (bin->b, off + sizeof(struct MACH0_(segment_command)),
 				(ut8*)&bin->sects[sect], bin->endian?"16c16c2L8I":"16c16c2l8i", bin->nsects - sect);
 #else
-		len = r_buf_fread_at(bin->b, off + sizeof(struct MACH0_(segment_command)),
+		len = r_buf_fread_at (bin->b, off + sizeof(struct MACH0_(segment_command)),
 				(ut8*)&bin->sects[sect], bin->endian?"16c16c9I":"16c16c9i", bin->nsects - sect);
 #endif
 		if (len == -1) {
@@ -251,7 +251,7 @@ static int MACH0_(r_bin_mach0_parse_dylib)(struct MACH0_(r_bin_mach0_obj_t)* bin
 	}
 	len = r_buf_fread_at (bin->b, off, (ut8*)&dl, bin->endian?"6I":"6i", 1);
 	if (len == -1) {
-		eprintf("Error: read (dylib)\n");
+		eprintf ("Error: read (dylib)\n");
 		return R_FALSE;
 	}
 	if (r_buf_read_at (bin->b, off+dl.dylib.name.offset, (ut8*)bin->libs[lib], R_BIN_MACH0_STRING_LENGTH) == -1) {
@@ -264,13 +264,13 @@ static int MACH0_(r_bin_mach0_parse_dylib)(struct MACH0_(r_bin_mach0_obj_t)* bin
 static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 {
 	struct load_command lc = {0, 0};
-	ut64 off;
+	ut64 off = 0LL;
 	int i, len;
 
-	for (i = 0, off = sizeof(struct MACH0_(mach_header)); i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
+	for (i = 0, off = sizeof (struct MACH0_(mach_header)); i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
 		len = r_buf_fread_at(bin->b, off, (ut8*)&lc, bin->endian?"2I":"2i", 1);
 		if (len == -1) {
-			eprintf("Error: read (lc)\n");
+			eprintf ("Error: read (lc) at 0x%08llx\n", off);
 			return R_FALSE;
 		}
 		switch (lc.cmd) {

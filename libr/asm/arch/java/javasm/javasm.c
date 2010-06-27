@@ -31,7 +31,7 @@
 #include <arpa/inet.h>
 #endif
 
-static  struct cp_item *cp_items;
+static struct cp_item *cp_items = NULL;
 static struct cp_item cp_null_item; // NOTE: must be initialized for safe use
 
 static struct constant_t {
@@ -66,21 +66,20 @@ static ut16 r_ntohs (ut16 foo) {
 	return foo;
 }
 
-static struct cp_item * get_cp(int i)
-{
+static struct cp_item * get_cp(int i) {
 	if (i<0||i>cf.cp_count)
 		return &cp_null_item;
 	return &cp_items[i];
 }
 
-static int java_resolve(int idx, char *str)
-{
+static int java_resolve(int idx, char *str) {
 	if (str == NULL)
 		return 0;
 
 	str[0]='\0';
 	if (idx<0||idx>cf.cp_count)
 		return 1;
+	if (cp_items) {
 	if((!strcmp(cp_items[idx].name, "MethodRef"))
 	|| (!strcmp(cp_items[idx].name, "FieldRef"))) {
 		int class = USHORT(get_cp(idx)->bytes,0);
@@ -94,9 +93,9 @@ static int java_resolve(int idx, char *str)
 		sprintf(str, "\"%s\"", get_cp(USHORT(get_cp(idx)->bytes,0)-1)->value);
 	} else
 	if (!strcmp(cp_items[idx].name, "Utf8")) {
-		sprintf(str, "\"%s\"", get_cp(idx)->value);
-	} else
-		sprintf(str, "0x%04x", USHORT(get_cp(idx)->bytes,0));
+		sprintf (str, "\"%s\"", get_cp(idx)->value);
+	} else sprintf (str, "0x%04x", USHORT(get_cp(idx)->bytes,0));
+	} else strcpy (str, "(null)");
 	return 0;
 }
 

@@ -269,7 +269,8 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 		posix_whence = SEEK_END;
 		break;
 	}
-	offset = io->va ? r_io_section_vaddr_to_offset (io, offset) : offset;
+	offset = (io->va && !list_empty (&io->sections))? 
+		r_io_section_vaddr_to_offset (io, offset) : offset;
 	// TODO: implement io->enforce_seek here!
 	if (io->plugin && io->plugin->lseek)
 		ret = io->plugin->lseek (io, io->fd, offset, whence);
@@ -279,7 +280,8 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 		io->off = ret;
 		// XXX this can be tricky.. better not to use this .. must be deprecated 
 		// r_io_sundo_push (io);
-		ret = io->va ? r_io_section_offset_to_vaddr (io, io->off) : io->off;
+		ret = (io->va && !list_empty (&io->sections))?
+			r_io_section_offset_to_vaddr (io, io->off) : io->off;
 	}
 	return ret;
 }

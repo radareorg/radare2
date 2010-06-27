@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2007, 2008, 2009
- *       pancake <youterm.com>, nibbke <develsec.org>
+ * Copyright (C) 2007, 2008, 2009, 2010
+ *       pancake <youterm.com>, nibble <develsec.org>
  *
  * radare is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
