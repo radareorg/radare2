@@ -10,6 +10,15 @@
 #define __X86IM_FMT_H__
 
 #ifdef __X86IM_USE_FMT__
+#ifndef __in
+#define __in
+#endif
+#ifndef __out
+#define __out
+#endif
+#ifndef __inout
+#define __inout
+#endif
 
 char *x86f_get_imn( __in x86im_instr_object *io );
 char *x86f_get_reg( __in unsigned short reg );

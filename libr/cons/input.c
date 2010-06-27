@@ -52,7 +52,7 @@ R_API int r_cons_readchar() {
 	BOOL ret;
 	DWORD out;
 	LPDWORD mode;
-	HANDLE h = GetStdPlugin (STD_INPUT_HANDLE);
+	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0); // RAW
 	ret = ReadConsole (h, buf,1, &out, NULL);

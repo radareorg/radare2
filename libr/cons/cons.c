@@ -48,6 +48,14 @@ R_API void r_cons_break_end() {
 #endif
 }
 
+#if __WINDOWS__
+static HANDLE h;
+static BOOL __w32_control(DWORD type) {
+	if (type == CTRL_C_EVENT)
+		break_signal (2); // SIGINT
+}
+#endif
+
 R_API RCons *r_cons_new () {
 	I.is_interactive = R_TRUE;
 	I.breaked = R_FALSE;
@@ -69,10 +77,10 @@ R_API RCons *r_cons_new () {
 	I.term_raw.c_cflag |= CS8;
 	I.term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
 #elif __WINDOWS__
-	h = GetStdPlugin (STD_INPUT_HANDLE);
+	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &I.term_buf);
 	I.term_raw = 0;
-	if (!SetConsoleCtrlPlugin ((PHANDLER_ROUTINE)__w32_control, TRUE))
+	if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)__w32_control, TRUE))
 		eprintf ("r_cons: Cannot set control console handler\n");
 #endif
 	//r_cons_palette_init(NULL);
@@ -84,14 +92,6 @@ R_API RCons *r_cons_free (RCons *foo) {
 	/* do nothing */
 	return NULL;
 }
-
-#if __WINDOWS__
-static HANDLE h;
-static BOOL __w32_control(DWORD type) {
-	if (type == CTRL_C_EVENT)
-		break_signal (2); // SIGINT
-}
-#endif
 
 #define MOAR 4096*4
 static void palloc(int moar) {
@@ -116,7 +116,7 @@ R_API void r_cons_gotoxy(int x, int y) {
         coord.X = x;
         coord.Y = y;
         if (!hStdout)
-                hStdout = GetStdPlugin (STD_OUTPUT_HANDLE);
+                hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
         SetConsoleCursorPosition (hStdout,coord);
 #else
 	r_cons_printf ("\x1b[%d;%dH", y, x);
@@ -136,7 +136,7 @@ R_API void r_cons_clear() {
 	DWORD dummy;
 	
 	if (!hStdout) {
-		hStdout = GetStdPlugin (STD_OUTPUT_HANDLE);
+		hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
 		GetConsoleScreenBufferInfo (hStdout,&csbi);
 	}
 	

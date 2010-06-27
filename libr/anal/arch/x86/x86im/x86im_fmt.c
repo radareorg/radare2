@@ -6,6 +6,7 @@
 //
 //////////////////////////////////////////////////////////////
 
+#include <r_types.h>
 #define _CRT_SECURE_NO_WARNINGS
 #if __WINDOWS__
 # include <windows.h>
@@ -1003,7 +1004,7 @@ void x86im_fmt_format_operand( __in x86im_instr_object *io,
             {
                 if ( X86IM_IO_MOP_AMC_HAS_DISP64( io ) )
                 {
-                    p = "%s%llX";
+                    p = "%s%"PFMT64x;
                 }
                 else
                 {
@@ -1090,7 +1091,7 @@ void x86im_fmt_format_operand( __in x86im_instr_object *io,
                 {
                     if ( io->imm_size == X86IM_IO_IM_SZ_QWORD )
                     {
-                        sprintf( src, "%llX", io->imm );
+                        sprintf( src, "%"PFMT64x, io->imm );
                     }
                     else
                     {
@@ -1114,7 +1115,7 @@ void x86im_fmt_format_operand( __in x86im_instr_object *io,
 
                     if ( io->imm_size == 8 )
                     {
-                        sprintf( dst + strlen(dst), "%llX", io->imm );
+                        sprintf( dst + strlen(dst), "%"PFMT64x, io->imm );
                     }
                     else if ( io->imm_size == 3 )
                     {
@@ -1125,7 +1126,7 @@ void x86im_fmt_format_operand( __in x86im_instr_object *io,
                     }
                     else
                     {
-                        sprintf( dst + strlen(dst), "%llX", io->imm );
+                        sprintf( dst + strlen(dst), "%"PFMT64x, io->imm );
                     }
                 }
             }

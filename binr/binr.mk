@@ -9,10 +9,10 @@ CFLAGS+=-DLIBDIR=\"${PREFIX}/lib\"
 #LIBS=$(subst r_,-lr_,$(DEPS))
 LIBS+=$(subst r_,-L../../libr/,$(DEPS))
 
-all: ${BIN}
+all: ${BIN}${EXT_EXE}
 
-${BIN}: ${BIN}.o
-	${CC} -o ${BIN} ${LIBS} ${LDFLAGS} ${BIN}.o
+${BIN}${EXT_EXE}: ${BIN}.o
+	${CC} -o ${BIN}${EXT_EXE} ${LIBS} ${LDFLAGS} ${BIN}.o
 
 clean:
 	rm -f ${BIN} ${BIN}.o ${BIN}.d

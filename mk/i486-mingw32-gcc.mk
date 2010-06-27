@@ -1,7 +1,7 @@
 CC=i486-mingw32-gcc
 OSTYPE=windows
 ONELIB=0
-LINK=
+LINK=-shared
 CC_AR=echo ar -r ${LIBAR}
 PICFLAGS=
 CFLAGS+=${PICFLAGS} -MD -D__WINDOWS__=1

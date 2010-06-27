@@ -1,6 +1,7 @@
 include ../../config.mk
 # XXX
 CFLAGS=-I../../include -I../arch/ -I../arch/include -Wall -fPIC ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
+LDFLAGS+=${LINK}
 
 foo: all
 

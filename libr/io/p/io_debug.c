@@ -70,7 +70,7 @@ static int setup_tokens() {
         err = 0;
 err_enable:
         if (tok != NULL)
-                ClosePlugin (tok);
+                CloseHandle (tok);
         if (err)
 		r_sys_perror ("setup_tokens");
         return err;
@@ -102,7 +102,7 @@ static int fork_and_ptraceme(const char *cmd) {
 		THREADENTRY32 te32;
 		HANDLE WINAPI (*win32_openthread)(DWORD, BOOL, DWORD) = NULL;
 		win32_openthread = (HANDLE WINAPI (*)(DWORD, BOOL, DWORD))
-			GetProcAddress (GetModulePlugin ("kernel32"), "OpenThread");
+			GetProcAddress (GetModuleHandle ("kernel32"), "OpenThread");
 
 		th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, pid);
 		if (th == INVALID_HANDLE_VALUE || !Thread32First(th, &te32)) {
@@ -140,7 +140,7 @@ static int fork_and_ptraceme(const char *cmd) {
         }
 
 	if (th != INVALID_HANDLE_VALUE)
-		ClosePlugin (th);
+		CloseHandle (th);
 
 
 	eprintf ("PID=%d\n", pid);
@@ -150,7 +150,7 @@ static int fork_and_ptraceme(const char *cmd) {
 err_fork:
         TerminateProcess (pi.hProcess, 1);
 	if (th != INVALID_HANDLE_VALUE)
-		ClosePlugin (th);
+		CloseHandle (th);
         return -1;
 }
 #else

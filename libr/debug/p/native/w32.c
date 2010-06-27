@@ -90,19 +90,19 @@ static int w32_dbg_init() {
 	HANDLE lib;
 
 	w32_detach = (BOOL WINAPI (*)(DWORD))
-		GetProcAddress (GetModulePlugin ("kernel32"),
+		GetProcAddress (GetModuleHandle ("kernel32"),
 				"DebugActiveProcessStop");
 	w32_openthread = (HANDLE WINAPI (*)(DWORD, BOOL, DWORD))
-		GetProcAddress (GetModulePlugin ("kernel32"), "OpenThread");
+		GetProcAddress (GetModuleHandle ("kernel32"), "OpenThread");
 	w32_dbgbreak = (HANDLE WINAPI (*)(HANDLE))
-		GetProcAddress (GetModulePlugin ("kernel32"),
+		GetProcAddress (GetModuleHandle ("kernel32"),
 				"DebugBreakProcess");
 	// only windows vista :(
 	w32_getthreadid = (DWORD WINAPI (*)(HANDLE))
-		GetProcAddress (GetModulePlugin ("kernel32"), "GetThreadId");
+		GetProcAddress (GetModuleHandle ("kernel32"), "GetThreadId");
 	// from xp1
 	w32_getprocessid = (DWORD WINAPI (*)(HANDLE))  
-		GetProcAddress (GetModulePlugin ("kernel32"), "GetProcessId");
+		GetProcAddress (GetModuleHandle ("kernel32"), "GetProcessId");
 
 	lib = LoadLibrary ("psapi.dll");
 	if(lib == NULL) {

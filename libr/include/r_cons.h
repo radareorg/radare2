@@ -154,6 +154,10 @@ R_API void r_cons_break_end();
 R_API int r_cons_pipe_open(const char *file, int append);
 R_API void r_cons_pipe_close(int fd);
 
+#if __WINDOWS__
+R_API int r_cons_w32_print(ut8 *ptr);
+#endif
+
 /* control */
 R_API void r_cons_reset();
 R_API void r_cons_clear();

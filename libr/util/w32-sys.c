@@ -32,7 +32,7 @@ R_API char *r_sys_cmd_str_w32(const char *cmd) {
 
 	// Set the bInheritPlugin flag so pipe handles are inherited. 
 	saAttr.nLength = sizeof (SECURITY_ATTRIBUTES); 
-	saAttr.bInheritPlugin = TRUE; 
+	saAttr.bInheritHandle = TRUE; 
 	saAttr.lpSecurityDescriptor = NULL; 
 	HANDLE fh;
 
@@ -41,8 +41,8 @@ R_API char *r_sys_cmd_str_w32(const char *cmd) {
 		ErrorExit ("StdoutRd CreatePipe"); 
 
 	// Ensure the read handle to the pipe for STDOUT is not inherited.
-	if (!SetPluginInformation (fh, HANDLE_FLAG_INHERIT, 0) )
-		ErrorExit ("Stdout SetPluginInformation"); 
+	if (!SetHandleInformation (fh, HANDLE_FLAG_INHERIT, 0) )
+		ErrorExit ("Stdout SetHandleInformation"); 
 
 	CreateChildProcess (cmd, out);
 
@@ -61,8 +61,8 @@ R_API char *r_sys_cmd_str_w32(const char *cmd) {
 	// read end of the pipe, to control child process execution.
 	// The pipe is assumed to have enough buffer space to hold the
 	// data the child process has already written to it.
-	if (!ClosePlugin (out))
-		ErrorExit ("StdOutWr ClosePlugin"); 
+	if (!CloseHandle (out))
+		ErrorExit ("StdOutWr CloseHandle"); 
 	ret = ReadFromPipe (fh);
 	free (argv0);
 
@@ -97,8 +97,8 @@ static int CreateChildProcess(const char *szCmdline, HANDLE out) {
 			&piProcInfo);  // receives PROCESS_INFORMATION 
 
 	if (bSuccess) {
-		ClosePlugin (piProcInfo.hProcess);
-		ClosePlugin (piProcInfo.hThread);
+		CloseHandle (piProcInfo.hProcess);
+		CloseHandle (piProcInfo.hThread);
 	} else r_sys_perror ("CreateProcess");
 	return bSuccess;
 }
