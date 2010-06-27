@@ -105,16 +105,23 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		r_anal_aop (core->anal, &analop, addr, buf+idx, (int)(len-idx));
 	
 		// TODO: Show xrefs in both sides..
-		if (mi)
-		switch (mi->type) {
-		case 'c':
-		case R_META_XREF_CODE:
-			r_cons_printf ("Cx # code xref from 0x%08llx\n", mi->to);
-			break;
-		case 'd':
-		case R_META_XREF_DATA:
-			r_cons_printf ("CX # data xref from 0x%08llx\n", mi->to);
-			break;
+		if (mi) {
+			if (mi->from == addr) {
+				RListIter *iter;
+				RMetaItem *x;
+				r_list_foreach (mi->xrefs, iter, x) {
+					switch (x->type) {
+					case 'c':
+					case R_META_XREF_CODE:
+						r_cons_printf ("Cx # code xref from 0x%08llx\n", mi->to);
+						break;
+					case 'd':
+					case R_META_XREF_DATA:
+						r_cons_printf ("CX # data xref from 0x%08llx\n", mi->to);
+						break;
+					}
+				}
+			}
 		}
 		if (adistrick)
 			middle = r_anal_reflines_middle (core->anal,
@@ -2350,6 +2357,9 @@ static int cmd_meta(void *data, const char *input) {
 			r_meta_del (core->meta, R_META_COMMENT, core->offset, core->offset, input+2);
 		else r_meta_add (core->meta, R_META_COMMENT, core->offset, core->offset, input+1);
 		break;
+	case '!':
+		r_meta_sync (core->meta);
+		break;
 	case 'S':
 	case 's':
 	case 'm': /* struct */
@@ -2390,14 +2400,12 @@ static int cmd_meta(void *data, const char *input) {
 					}
 				}
 				addr = r_num_math (core->num, t);
+				if (addr==0LL) // TODO: handle this? eprintf ("FAIL. meta\n");
+					addr = core->offset;
 				// only get abs address in Cx and CX
 				if (type == 'x' || type == 'X')
 					addr_end = r_num_math (core->num, input+2);
 				else addr_end = addr + atoi (input+1);
-				if (addr==0LL) {
-					// TODO: handle this? eprintf ("FAIL. meta\n");
-					addr = core->offset;
-				}
 				free (t);
 			}
 			r_meta_add (core->meta, type, addr, addr_end, fun_name);
@@ -2414,15 +2422,16 @@ static int cmd_meta(void *data, const char *input) {
 	case '?':
 		eprintf (
 		"Usage: C[-LCFsSmxX?] [...]\n"
-		" C-[@][ addr]           ; delete metadata at given address\n"
-		" CL[-] [addr]           ; show 'code line' information (bininfo)\n"
-		" CF [size] [name] [addr] [name] ; register function size here\n"
-		" CC [string]            ; add comment\n"
-		" Cs[-] [size] [[addr]]  ; add string\n"
-		" CS[-] [size]           ; ...\n"
-		" Cm[-] [fmt] [args]     ; string\n"
-		" Cx[-] [...]            ; add code xref\n"
-		" CX[-] [...]            ; add data xref\n");
+		" C!                     # sync xrefs with\n"
+		" C-[@][ addr]           # delete metadata at given address\n"
+		" CL[-] [addr]           # show 'code line' information (bininfo)\n"
+		" CF [size] [name] [addr] [name] # register function size here\n"
+		" CC [string]            # add comment\n"
+		" Cs[-] [size] [[addr]]  # add string\n"
+		" CS[-] [size]           # ...\n"
+		" Cm[-] [fmt] [..]       # format memory\n"
+		" Cx[-] [...]            # add code xref\n"
+		" CX[-] [...]            # add data xref\n");
 	}
 	return R_TRUE;
 }
@@ -2649,7 +2658,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			else ret = 0;
 		}
 		r_core_seek (core, tmpoff, 1);
-		ptr[0]='@';
+		ptr[0] = '@';
 		return ret;
 	}
 

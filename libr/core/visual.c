@@ -676,7 +676,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				cur = core->print->cur-1;
 			ch = core->block[cur]+1;
 			r_core_write_at (core, core->offset+cur, &ch, 1);
-		} else r_core_block_size (core, core->blocksize-1);
+		} else r_core_block_size (core, core->blocksize+1);
 		break;
 	case '/':
 		r_core_block_size (core, core->blocksize-16);

@@ -45,7 +45,7 @@ static inline int debug_setregs(int tid, CONTEXT *regs) {
 #elif __APPLE__
 
 #define MACH_ERROR_STRING(ret) \
-	(mach_error_string (ret) ? mach_error_string (ret) : "(unknown)")
+	(mach_error_string (ret) ? r_str_get (mach_error_string (ret)) : "(unknown)")
 
 #include <sys/ptrace.h>
 #include <sys/types.h>

@@ -269,6 +269,7 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 		posix_whence = SEEK_END;
 		break;
 	}
+	// XXX: list_empty trick must be done in r_io_set_va();
 	offset = (io->va && !list_empty (&io->sections))? 
 		r_io_section_vaddr_to_offset (io, offset) : offset;
 	// TODO: implement io->enforce_seek here!
