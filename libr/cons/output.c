@@ -11,17 +11,18 @@ R_API int r_cons_w32_print(ut8 *ptr) {
 	int len = 0;
 	int inv = 0;
 
+	if (ptr && hConsole)
 	for (;ptr[0]; ptr = ptr + 1) {
 		if (ptr[0] == 0x1b) {
 			esc = 1;
-			write(1, str, ptr-str);
+			write (1, str, ptr-str);
 			str = ptr + 1;
 			continue;
 		}
 		if (esc == 1) {
 			// \x1b[2J
 			if (ptr[0] != '[') {
-				eprintf("Oops invalid escape char\n");
+				eprintf ("Oops invalid escape char\n");
 				esc = 0;
 				str = ptr + 1;
 				continue;
@@ -32,7 +33,7 @@ R_API int r_cons_w32_print(ut8 *ptr) {
 		if (esc == 2) {
 			if (ptr[0]=='2'&&ptr[1]=='J') {
 				ptr = ptr +1;
-				r_cons_clear();
+				r_cons_clear ();
 				esc = 0;
 				str = ptr;
 				continue;
@@ -45,7 +46,7 @@ R_API int r_cons_w32_print(ut8 *ptr) {
 				continue;
 			} else
 			if (ptr[0]=='0'&&ptr[1]=='m') {
-				SetConsoleTextAttribute(hConsole, 1|2|4|8);
+				SetConsoleTextAttribute (hConsole, 1|2|4|8);
 				ptr = ptr + 1;
 				str = ptr + 1;
 				inv = 0;
@@ -54,7 +55,7 @@ R_API int r_cons_w32_print(ut8 *ptr) {
 				// reset color
 			} else
 			if (ptr[0]=='7'&&ptr[1]=='m') {
-				SetConsoleTextAttribute(hConsole, 128);
+				SetConsoleTextAttribute (hConsole, 128);
 				inv = 128;
 				ptr = ptr + 1;
 				str = ptr + 1;
@@ -66,31 +67,31 @@ R_API int r_cons_w32_print(ut8 *ptr) {
 				// http://www.betarun.com/Pages/ConsoleColor/
 				switch(ptr[1]) {
 				case '0': // BLACK
-					SetConsoleTextAttribute(hConsole, bg|0|inv);
+					SetConsoleTextAttribute (hConsole, bg|0|inv);
 					break;
 				case '1': // RED
-					SetConsoleTextAttribute(hConsole, bg|4|inv);
+					SetConsoleTextAttribute (hConsole, bg|4|inv);
 					break;
 				case '2': // GREEN
-					SetConsoleTextAttribute(hConsole, bg|2|inv);
+					SetConsoleTextAttribute (hConsole, bg|2|inv);
 					break;
 				case '3': // YELLOW
-					SetConsoleTextAttribute(hConsole, bg|2|4|inv);
+					SetConsoleTextAttribute (hConsole, bg|2|4|inv);
 					break;
 				case '4': // BLUE
-					SetConsoleTextAttribute(hConsole, bg|1|inv);
+					SetConsoleTextAttribute (hConsole, bg|1|inv);
 					break;
 				case '5': // MAGENTA
-					SetConsoleTextAttribute(hConsole, bg|1|4|inv);
+					SetConsoleTextAttribute (hConsole, bg|1|4|inv);
 					break;
 				case '6': // TURQOISE
-					SetConsoleTextAttribute(hConsole, bg|1|2|8|inv);
+					SetConsoleTextAttribute (hConsole, bg|1|2|8|inv);
 					break;
 				case '7': // WHITE
-					SetConsoleTextAttribute(hConsole, bg|1|2|4|inv);
+					SetConsoleTextAttribute (hConsole, bg|1|2|4|inv);
 					break;
 				case '8': // GRAY
-					SetConsoleTextAttribute(hConsole, bg|8|inv);
+					SetConsoleTextAttribute (hConsole, bg|8|inv);
 					break;
 				case '9': // ???
 					break;
