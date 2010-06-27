@@ -180,7 +180,7 @@ R_API int r_debug_step(struct r_debug_t *dbg, int steps) {
 	int i, ret = R_FALSE;
 	if (dbg && dbg->h && dbg->h->step) {
 		for (i=0;i<steps;i++) {
-			ret = dbg->h->step (dbg->pid);
+			ret = dbg->h->step (dbg, dbg->pid);
 			if (ret == R_FALSE)
 				break;
 			r_debug_wait (dbg);
@@ -269,7 +269,7 @@ R_API int r_debug_continue_until(struct r_debug_t *dbg, ut64 addr) {
 	int n = 0;
 	ut64 pc = 0;
 	do {
-		if (pc !=0) r_debug_step(dbg, 1);
+		if (pc !=0) r_debug_step (dbg, 1);
 		n++;
 	} while (pc != addr);
 	return n;

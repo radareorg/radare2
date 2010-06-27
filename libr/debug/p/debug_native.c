@@ -8,6 +8,9 @@
 #include <signal.h>
 
 static int r_debug_native_continue(int pid, int sig);
+static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
+static int r_debug_native_reg_write(int pid, int type, const ut8* buf, int size);
+
 
 #define DEBUGGER 1
 #define MAXBT 128
@@ -128,7 +131,7 @@ task_t pid_to_task(int pid) {
 	err = task_for_pid(mach_task_self(), (pid_t)pid, &task);
 	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID(task)) {
 		eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
-		eprintf ("Reason: 0x%x: %s\n", err, MACH_ERROR_STRING(err));
+		eprintf ("Reason: 0x%x: %s\n", err, (char *)MACH_ERROR_STRING (err));
 		eprintf ("You probably need to add user to procmod group.\n"
 			" Or chmod g+s radare && chown root:procmod radare\n");
 		eprintf ("FMI: http://developer.apple.com/documentation/Darwin/Reference/ManPages/man8/taskgated.8.html\n");
@@ -142,19 +145,19 @@ task_t pid_to_task(int pid) {
 
 // XXX intel specific -- generalize in r_reg..ease access
 #define EFLAGS_TRAP_FLAG 0x100
-static void debug_arch_x86_trap_set(int pid, int foo) {
+static inline void debug_arch_x86_trap_set(RDebug *dbg, int foo) {
 #if __i386__ || __x86_64__
         R_DEBUG_REG_T regs;
-        debug_getregs (pid_to_task (pid), &regs);
-        printf("trap flag: %d\n", (regs.__eflags&0x100));
+	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR, &regs, sizeof (regs));
+        printf ("trap flag: %d\n", (regs.__eflags&0x100));
         if (foo) regs.__eflags |= EFLAGS_TRAP_FLAG;
         else regs.__eflags &= ~EFLAGS_TRAP_FLAG;
-        debug_setregs (pid_to_task (pid), &regs);
+	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, &regs, sizeof (regs));
 #endif
 }
 #endif // __APPLE__
 
-static int r_debug_native_step(int pid) {
+static int r_debug_native_step(RDebug *dbg, int pid) {
 	int ret = R_FALSE;
 #if __WINDOWS__
 	CONTEXT regs;
@@ -170,7 +173,7 @@ static int r_debug_native_step(int pid) {
 	//r_debug_native_continue (pid, -1);
 
 #elif __APPLE__
-	debug_arch_x86_trap_set (pid, 1);
+	debug_arch_x86_trap_set (dbg, 1);
 	//eprintf ("stepping from pc = %08x\n", (ut32)get_offset("eip"));
 	//ret = ptrace (PT_STEP, ps.tid, (caddr_t)get_offset("eip"), SIGSTOP);
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, SIGTRAP); //SIGINT);

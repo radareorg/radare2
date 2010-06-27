@@ -132,7 +132,7 @@ struct r_io_plugin_t r_io_plugin_procpid = {
 */
 };
 #else
-struct r_io_plugin_t r_io_plugin_ptrace = {
+struct r_io_plugin_t r_io_plugin_procpid = {
 	.name = "procpid",
         .desc = "proc/pid/mem io (NOT SUPPORTED FOR THIS PLATFORM)",
 };
