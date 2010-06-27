@@ -28,7 +28,7 @@ R_API int r_debug_use(RDebug *dbg, const char *str) {
 	struct list_head *pos;
 	list_for_each_prev (pos, &dbg->plugins) {
 		RDebugPlugin *h = list_entry (pos, RDebugPlugin, list);
-		if (!strcmp (str, h->name)) {
+		if (h->name && !strcmp (str, h->name)) {
 			dbg->h = h;
 			if (h->reg_profile) {
 				free (dbg->reg_profile);

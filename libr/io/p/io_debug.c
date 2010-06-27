@@ -105,19 +105,16 @@ static int fork_and_ptraceme(const char *cmd) {
 			GetProcAddress (GetModuleHandle ("kernel32"), "OpenThread");
 
 		th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, pid);
-		if (th == INVALID_HANDLE_VALUE || !Thread32First(th, &te32)) {
+		if (th == INVALID_HANDLE_VALUE || !Thread32First(th, &te32))
 			r_sys_perror ("CreateToolhelp32Snapshot");
-		}
 
 		do {
 			if (te32.th32OwnerProcessID == pid) {
 				h = win32_openthread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
-				if (h == NULL) {
-					r_sys_perror ("OpenThread");
-				} else eprintf ("HANDLE=%p\n", h);
+				if (h == NULL) r_sys_perror ("OpenThread");
+				else eprintf ("HANDLE=%p\n", h);
 			}
 		} while (Thread32Next (th, &te32));
-
 	}
 
 #if 0
@@ -142,7 +139,6 @@ static int fork_and_ptraceme(const char *cmd) {
 	if (th != INVALID_HANDLE_VALUE)
 		CloseHandle (th);
 
-
 	eprintf ("PID=%d\n", pid);
 	eprintf ("TID=%d\n", tid);
         return pid;
@@ -157,11 +153,11 @@ err_fork:
 
 static int __waitpid(int pid) {
 	int st = 0;
-	if (waitpid(pid, &st, 0) == -1)
+	if (waitpid (pid, &st, 0) == -1)
 		return R_FALSE;
-	if (WIFEXITED(st)) {
+	if (WIFEXITED (st)) {
 	//if ((WEXITSTATUS(wait_val)) != 0) {
-		perror("==> Process has exited\n");
+		perror ("==> Process has exited\n");
 		//debug_exit();
 		return -1;
 	}
@@ -198,7 +194,6 @@ static int fork_and_ptraceme(const char *cmd) {
 		//printf(stderr, "[%d] %s execv failed.\n", getpid(), ps.filename);
 		exit (MAGIC_EXIT); /* error */
 		return 0; // invalid pid // if exit is overriden.. :)
-		break;
 	default:
 		/* XXX: clean this dirty code */
                 wait (&status);

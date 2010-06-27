@@ -71,7 +71,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	char *p, *ptr = buf;
 	int ret = 0;
 	int l = 0;
-	for (;(((int)(size_t)(buf-ptr))<len);) {
+	for (;(((int)(size_t)(ptr-buf))<len);) {
 		p = strchr (ptr, '\n');
 		if (p) {
 			*p = '\0';
