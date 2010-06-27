@@ -41,6 +41,7 @@ static int rabin_delegate(RThread *th) {
 	if (rabin_cmd && r_file_exist (r.file->filename)) {
 		char *nptr, *ptr, *cmd = r_sys_cmd_str (rabin_cmd, NULL, NULL);
 		ptr = cmd;
+		if (ptr)
 		do {
 			if (th) r_th_lock_enter(th->user);
 			nptr = strchr (ptr, '\n');
