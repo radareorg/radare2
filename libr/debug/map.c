@@ -4,19 +4,13 @@
 #include <r_list.h>
 
 R_API void r_debug_map_list(struct r_debug_t *dbg, ut64 addr) {
-	char here;
 	RListIter *iter = r_list_iterator (dbg->maps);
 	while (r_list_iter_next (iter)) {
 		RDebugMap *map = r_list_iter_get (iter);
-		if (addr>=map->addr && addr<=map->addr_end)
-			here = '*';
-		else	here = '-';
 		eprintf ("sys 0x%08"PFMT64x" %c 0x%08"PFMT64x" %c %x %s\n",
-			map->addr, here, map->addr_end,
-			map->user?'u':'s',
-			map->perm, map->name);
+			map->addr, (addr>=map->addr && addr<=map->addr_end)?'*':'-',
+			map->addr_end, map->user?'u':'s', map->perm, map->name);
 	}
-
 	iter = r_list_iterator (dbg->maps_user);
 	while (r_list_iter_next (iter)) {
 		RDebugMap *map = r_list_iter_get (iter);
@@ -45,9 +39,8 @@ R_API RDebugMap *r_debug_map_new (char *name, ut64 addr, ut64 addr_end, int perm
 
 R_API int r_debug_map_sync(RDebug *dbg) {
 	int ret = R_FALSE;
-	RList *newmaps;
 	if (dbg->h && dbg->h->map_get) {
-		newmaps = dbg->h->map_get (dbg);
+		RList *newmaps = dbg->h->map_get (dbg);
 		if (newmaps) {
 			// XXX free all non-user maps // but not unallocate!! only unlink from list
 			r_debug_map_list_free (dbg->maps);

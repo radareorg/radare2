@@ -25,9 +25,9 @@ Bugs:
 TODO:
 -----
 * Implement r_sys_setenv stuff from r1 in core/file.c:33 (!!?)
-* implement 'm' command
 * pancake: Implement search.align
 * Initial analysis looking for xrefs to strings and so? ax? ./a@@entry0
+  - Launched at startup
 * references: data (read, write), code (call, jmp) must be inside Function
   - Cx doesnt works as expected (from-to, from-size, ..)
   - xrefs must be inside function, string, data.. dupped?

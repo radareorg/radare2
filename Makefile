@@ -89,4 +89,4 @@ shot:
 
 include ${MKPLUGINS}
 
-.PHONY: all clean mrproper install symstall uninstall deinstall dist shot pkgcfg vdoc swig libr binr r2rc install-man
+.PHONY: all clean mrproper install symstall uninstall deinstall dist shot pkgcfg swig libr binr r2rc install-man

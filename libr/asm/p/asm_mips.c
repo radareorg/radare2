@@ -36,8 +36,8 @@ static void print_address(bfd_vma address, struct disassemble_info *info) {
 	char tmp[32];
 	if (buf_global == NULL)
 		return;
-	sprintf(tmp, "0x%08"PFMT64x"", (ut64)address-8); /* WTF ?!?! why gnu disasm doesnt do this well? */
-	strcat(buf_global, tmp);
+	sprintf (tmp, "0x%08"PFMT64x, (ut64)address);
+	strcat (buf_global, tmp);
 }
 
 static int buf_fprintf(void *stream, const char *format, ...) {
@@ -45,11 +45,11 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	char *tmp;
 	if (buf_global == NULL)
 		return 0;
-	va_start(ap, format);
- 	tmp = alloca(strlen(format)+strlen(buf_global)+2);
-	sprintf(tmp, "%s%s", buf_global, format);
-	vsprintf(buf_global, tmp, ap);
-	va_end(ap);
+	va_start (ap, format);
+ 	tmp = alloca (strlen(format)+strlen(buf_global)+2);
+	sprintf (tmp, "%s%s", buf_global, format);
+	vsprintf (buf_global, tmp, ap);
+	va_end (ap);
 	return 0;
 }
 
@@ -58,7 +58,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 
 	buf_global = aop->buf_asm;
 	Offset = a->pc;
-	memcpy(bytes, buf, 4); // TODO handle thumb
+	memcpy (bytes, buf, 4); // TODO handle thumb
 
 	/* prepare disassembler */
 	memset(&disasm_obj,'\0', sizeof(struct disassemble_info));
@@ -77,12 +77,10 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 
 	aop->buf_asm[0]='\0';
 	if (a->big_endian)
-		aop->inst_len = print_insn_big_mips((bfd_vma)Offset, &disasm_obj);
-	else aop->inst_len = print_insn_little_mips((bfd_vma)Offset, &disasm_obj);
-			
+		aop->inst_len = print_insn_big_mips ((bfd_vma)Offset, &disasm_obj);
+	else aop->inst_len = print_insn_little_mips ((bfd_vma)Offset, &disasm_obj);
 	if (aop->inst_len == -1)
-		strncpy(aop->buf_asm, " (data)", R_ASM_BUFSIZE);
-
+		strncpy (aop->buf_asm, " (data)", R_ASM_BUFSIZE);
 	return aop->inst_len;
 }
 

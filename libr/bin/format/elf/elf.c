@@ -132,7 +132,6 @@ static int Elf_(r_bin_elf_init)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 static ut64 Elf_(r_bin_elf_get_section_offset)(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name) {
 	int i;
-
 	if (!bin->shdr || !bin->strtab)
 		return -1;
 	for (i = 0; i < bin->ehdr.e_shnum; i++)
@@ -193,7 +192,6 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 
 ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
-
 	if (!bin->phdr)
 		return 0;
 	for (i = 0; i < bin->ehdr.e_phnum; i++)
@@ -216,6 +214,15 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		eprintf ("Error: read (entry)\n");
 		return 0;
 	}
+	// MIPS
+	/* get .got, calculate offset of main symbol */
+	if (!memcmp (buf, "\x21\x00\xe0\x03\x01\x00\x11\x04\x00\x00\x00\x00", 12)) {
+		ut64 got_addr = 0LL; // TODO: get .got offset
+		short delta = (buf[28]+(buf[29]<<8));
+		// NOTE: This is the way to resolve 'gp' register
+		r_buf_read_at (bin->b, got_addr+(32734+delta), buf, 4);
+		return (ut64)((int)(buf[0]+(buf[1]<<8)+(buf[2]<<16)+(buf[3]<<24)))-bin->baddr;
+	}
 	// ARM
 	if (!memcmp (buf, "\x24\xc0\x9f\xe5\x00\xb0\xa0\xe3", 8)) {
 		return (ut64)((int)(buf[48+0]+(buf[48+1]<<8)+
@@ -236,7 +243,6 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 int Elf_(r_bin_elf_get_stripped)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
-	
 	if (!bin->shdr)
 		return R_FALSE;
 	for (i = 0; i < bin->ehdr.e_shnum; i++)
@@ -247,7 +253,6 @@ int Elf_(r_bin_elf_get_stripped)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 int Elf_(r_bin_elf_get_static)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
-
 	if (!bin->phdr)
 		return R_FALSE;
 	for (i = 0; i < bin->ehdr.e_phnum; i++)

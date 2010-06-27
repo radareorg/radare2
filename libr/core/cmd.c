@@ -2947,9 +2947,7 @@ static int step_until(RCore *core, ut64 addr) {
 static int step_line(RCore *core, int times) {
 	char file[512], file2[512];
 	int find_meta, line, line2;
-	ut64 off;
-
-	off = r_debug_reg_get (core->dbg, "pc");
+	ut64 off = r_debug_reg_get (core->dbg, "pc");
 	if (off == 0LL) {
 		eprintf ("Cannot 'drn pc'\n");
 		return R_FALSE;
@@ -2980,7 +2978,8 @@ static int step_line(RCore *core, int times) {
 static void cmd_debug_pid(RCore *core, const char *input) {
 	const char *ptr;
 	int pid, sig;
-	if (input[1] == 'k') {
+	switch (input[1]) {
+	case 'k':
 		/* XXX: not for threads? signal is for a whole process!! */
 		/* XXX: but we want fine-grained access to process resources */
 		pid = atoi (input+2);
@@ -2992,15 +2991,15 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 				sig, pid);
 			r_debug_kill (core->dbg, sig);
 		} else eprintf ("Invalid arguments\n");
-	} else
-	if (input[1] == 't') {
+		break;
+	case 't':
 		if (input[2]=='=' || input[2]==' ')
 			r_debug_select (core->dbg,
 				(int) r_num_math (core->num, input+3),
 				(int) r_num_math (core->num, input+3));
 		else r_debug_thread_list (core->dbg, core->dbg->pid);
-	} else
-	if (input[1]=='?')
+		break;
+	case '?':
 		r_cons_printf ("Usage: dp[=][pid]\n"
 			" dp      list current pid and childrens\n"
 			" dp 748  list childs of pid\n"
@@ -3011,29 +3010,33 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			" dpt 74  List threads of given process\n"
 			" dpt=64  Attach to thread\n"
 			" dpk P S send signal S to P process id\n");
-	else
-	if (input[1]=='a') {
+		break;
+	case 'a':
 		r_debug_attach (core->dbg,
 			(int) r_num_math (core->num, input+2));
 		r_debug_select (core->dbg,
 			(int) r_num_math (core->num, input+2),
 			(int) r_num_math (core->num, input+2));
-	} else
-	if (input[1]=='f')
+		break;
+	case 'f':
 		r_debug_select (core->dbg, core->file->fd, core->file->fd);
-	else
-	if (input[1]=='=')
+		break;
+	case '=':
 		r_debug_select (core->dbg,
 			(int) r_num_math (core->num, input+2),
 			(int) r_num_math (core->num, input+2));
-	else
-	if (input[1]=='*')
+		break;
+	case '*':
 		r_debug_pid_list (core->dbg, 0);
-	else
-	if (input[1]==' ')
+		break;
+	case ' ':
 		r_debug_pid_list (core->dbg,
 			(int) r_num_math (core->num, input+2));
-	else r_debug_pid_list (core->dbg, core->dbg->pid);
+		break;
+	default:
+		r_debug_pid_list (core->dbg, core->dbg->pid);
+		break;
+	}
 }
 
 static int cmd_debug(void *data, const char *input) {
@@ -3088,7 +3091,8 @@ static int cmd_debug(void *data, const char *input) {
 	case 's':
 		times = atoi (input+2);
 		if (times<1) times = 1;
-		if (input[1]=='?')
+		switch (input[1]) {
+		case '?':
 			r_cons_printf ("Usage: ds[ol] [count]\n"
 				" ds       step one instruction\n"
 				" ds 4     step 4 instructions\n"
@@ -3096,13 +3100,19 @@ static int cmd_debug(void *data, const char *input) {
 				" dsu addr step until address\n"
 				" dsl      step one source line\n"
 				" dsl 40   step 40 source lines\n");
-		else if (input[1]=='u') {
+			break;
+		case 'u':
 			step_until (core, r_num_math (core->num, input+2)); // XXX dupped by times
-		} else if (input[1]=='o')
+			break;
+		case 'o':
 			r_debug_step_over (core->dbg, times);
-		else if (input[1]=='l')
+			break;
+		case 'l':
 			step_line (core, times);
-		else r_debug_step (core->dbg, times);
+			break;
+		default:
+			r_debug_step (core->dbg, times);
+		}
 		break;
 	case 'b':
 		r_core_cmd_bp (core, input);
@@ -3116,6 +3126,7 @@ static int cmd_debug(void *data, const char *input) {
 			eprintf("Usage: dc[?]  -- continue execution\n"
 				" dc?              show this help\n"
 				" dc               continue execution of all childs\n"
+				" dcf              continue until fork (TODO)\n"
 				" dct [len]        traptrace from curseek to len, no argument to list\n"
 				" dcu [addr]       continue until address\n"
 				" dco [num]        step over N instructions\n"
