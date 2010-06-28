@@ -1,0 +1,57 @@
+.Dd Jun 28, 2010
+.Dt RARC2 1
+.Os
+.Sh NAME
+.Nm rarc2
+.Nd radare2 relocatable compiler
+.Sh SYNOPSIS
+.Nm rarc2
+.Op < source
+.Op > assembly
+.Nm rarc2-tool
+.Op -b
+.Op -x
+.Op -c
+.Op -S
+.Op file
+.Sh DESCRIPTION
+This command is part of the radare project.
+.Pp
+This compiler parses a syntax-free language similar to C and generates assembly code for various architectures.
+.Sh OPTIONS
+.Bl -tag -width Fl
+.It Fl b
+Dump bytes of compiled code
+.It Fl x
+Execute code instead
+.It Fl c
+Link with libc
+.It Fl S
+Generate .S assembly file instead of executable
+.El
+.Sh USAGE
+.Pp
+Using rarc2:
+  $ echo 'main(64){printf("hello world\n");}' | rarc2 > hello.S
+  $ gcc hello.S
+  $ ./a.out
+  hello world
+.Pp
+Using rarc2-tool:
+  $ cat test.r
+  main(64){ printf("hello world\n"); }
+  $ rarc2-tool -x test.r
+  hello world
+.Sh SEE ALSO
+.Pp
+.Xr radare2(1) ,
+.Xr rahash2(1) ,
+.Xr rafind2(1) ,
+.Xr rabin2(1) ,
+.Xr radiff2(1) ,
+.Xr rasm2(1) ,
+.Xr rax2(1) ,
+.Sh AUTHORS
+.Pp
+pancake <pancake@nopcode.org>
+.Pp

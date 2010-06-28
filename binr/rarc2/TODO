@@ -1,3 +1,4 @@
+* specify syntax and arch with envvars or args
 * Add support for rasm2
 * Add preprocessing support to compile 32/64 bit specific code.. or OS-dependent
 * Rename to r_rcc

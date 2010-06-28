@@ -1,6 +1,6 @@
 /* pancake // nopcode.org 2010 -- emit module for rcc */
 
-#include "rcc.h"
+#include "rarc2.h"
 
 #ifdef ARCH_X86_64
 # define EMIT_NAME emit_x64

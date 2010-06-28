@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <unistd.h>
-#include "rcc.h"
+#include "rarc2.h"
 
 static int parsechar(char c);
 

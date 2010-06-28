@@ -1,14 +1,14 @@
 #!/bin/sh
 # pancake / nopcode.org
 
-[ -z "${ARCH}" ] && ARCH=`r2rc -a`
+[ -z "${ARCH}" ] && ARCH=`rarc2 -a`
 
 compile() {
 	spp -h 2>&1 >/dev/null
 	if [ $? = 0 ]; then
-		spp -Darch=${ARCH} $@ | r2rc -${ARCH} > .a.S || exit $?
+		spp -Darch=${ARCH} $@ | rarc2 -${ARCH} > .a.S || exit $?
 	else
-		r2rc -${ARCH} $@ > .a.S || exit $?
+		rarc2 -${ARCH} $@ > .a.S || exit $?
 	fi
 }
 
@@ -26,29 +26,33 @@ case "$flg" in
 "-S")
 	compile $@
 	;;
+"-cx"|"-xc")
+	compile $@
+	gcc .a.S -o .a.out
+	[ -e .a.out ] && ./.a.out
+	rm -f .a.S .a.out
+	;;
 "-c")
 	compile $@
 	gcc .a.S -o .a.out
-	if [ -e .a.out ]; then
-		cp .a.out $1.out
-	fi
+	[ -e .a.out ] && cp .a.out $1.out
 	rm -f .a.S .a.out
 	;;
 "-x")
 	compile $@
 	gcc -nostdlib .a.S -o .a.out
 	if [ -e .a.out ]; then
-		bytes=`rabin -o d/S/.text .a.out`
+		bytes=`rabin2 -o d/S/.text .a.out`
 		rasc -s $bytes -X
 	fi
 	rm -f .a.S .a.out
 	;;
 *)
-	echo "Usage: r2rc-tool [-flag] [file]"
+	echo "Usage: rarc2-tool [-flag] [file]"
 	echo "   -b  dump bytes"
 	echo "   -x  execute"
 	echo "   -c  compile against libc"
 	echo "   -S  only generate .S file"
-	echo "ARCH: environ to set architecture: x86, x64"
+	echo "ARCH: environ to set architecture: arm, x86, x64"
 	;;
 esac

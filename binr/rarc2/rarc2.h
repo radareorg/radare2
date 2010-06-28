@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-#define SYNTAX_ATT 0
+#include "config.h"
 
 enum {
 	NORMAL = 0,

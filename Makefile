@@ -1,7 +1,7 @@
 include config-user.mk
 include global.mk
 
-all: plugins.cfg libr binr r2rc
+all: plugins.cfg libr binr
 
 plugins.cfg:
 	./configure-plugins
@@ -11,9 +11,6 @@ libr:
 
 binr:
 	cd binr && ${MAKE} all
-
-r2rc:
-	cd r2rc && ${MAKE} all
 
 w32dist:
 	rm -rf radare2-w32-${VERSION} w32dist
@@ -26,12 +23,10 @@ w32dist:
 clean:
 	cd libr && ${MAKE} clean
 	cd binr && ${MAKE} clean
-	cd r2rc && ${MAKE} clean
 
 mrproper:
 	cd libr && ${MAKE} mrproper
 	cd binr && ${MAKE} mrproper
-	cd r2rc && ${MAKE} mrproper
 	rm -f config-user.mk plugins.cfg libr/config.h libr/include/r_userconf.h libr/config.mk
 	rm -f pkgcfg/*.pc
 
@@ -53,12 +48,10 @@ install: install-man
 	for a in doc/* ; do ${INSTALL_DATA} $$a ${DESTDIR}/${PREFIX}/share/doc/radare2 ; done
 	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-	cd r2rc && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
 symstall install-symlink: install-man-symlink
 	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-	cd r2rc && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
 uninstall:
 	rm -rf prefix
@@ -66,7 +59,6 @@ uninstall:
 deinstall: uninstall
 	cd libr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-	cd r2rc && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
 swig-dist:
 	cd swig && ${MAKE} dist
@@ -90,4 +82,4 @@ shot:
 
 include ${MKPLUGINS}
 
-.PHONY: all clean mrproper install symstall uninstall deinstall dist shot pkgcfg swig libr binr r2rc install-man
+.PHONY: all clean mrproper install symstall uninstall deinstall dist shot pkgcfg swig libr binr install-man

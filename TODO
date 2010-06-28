@@ -14,10 +14,20 @@ Questions:
 * imports from PE doesnt works with /a because there's an indirect call
 * rabin2 doesnt works for osx-x86 mach0 bins..so io.va=1 fails
 
+Bugs:
+-----
+* if we use objcopy --stripsymbols on a library..the stripped symbols are not
+  listed by nm or rabin..but objcopy is able to see them O_O
+* anal bug: (fixed??)
+[0x08048eec]> pd 2 
+    0x08048eec    0               c20400  ret 0x4
+ -> this opcodes increments the stack 8 bytes (4+4) . it is not handled correctly
+
+
 TODO:
 -----
+* rarc2 : choose syntax in runtime
 * Store version information in libraries ? debian claims for it
-* Write manpages for r2rc, r2rc-tool .. find better name rarc2?
 * nibble: trace counts after step..thats not correct!
 * implement grep{col,row}
 * pancake: dietline.c : do not show all options at first tab if matches
@@ -53,6 +63,7 @@ TODO:
 0.6
 ===
 * rasign2 : must be done, write manpage
+* distribute 'spp' with 'rarc2' ?
 
 Transaction notes
 =================
@@ -131,3 +142,11 @@ Future
   - load the program using r_bin in virtual space
   - initialize vm and set regs
   - debug backend should use the vm
+
+.------------------------.
+|   ___       ___  ____  |
+|  | - ) _ _ | _ |/  _/  |    please!
+|  | - \| | |\_  |\_  \  |___.  report! :)
+|  |___/'___'|___'|___/   ___/
+|                        |
+`------------------------'

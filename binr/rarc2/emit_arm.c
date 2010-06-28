@@ -1,7 +1,7 @@
 /* TODO */
 /* pancake // nopcode.org 2010 -- emit module for rcc */
 
-#include "rcc.h"
+#include "rarc2.h"
 
 #define EMIT_NAME emit_arm
 #define R_ARCH "arm"
