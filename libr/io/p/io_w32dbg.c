@@ -63,16 +63,28 @@ static int __open(struct r_io_t *io, const char *file, int rw, int mode) {
 	return ret;
 }
 
-static ut64 __lseek(struct r_io_t *io, int fildes, ut64 offset, int whence) {
-	return offset;
+static ut64 __lseek(RIO *io, int fildes, ut64 offset, int whence) {
+	static ut64 malloc_seek = 0LL;
+	switch (whence) {
+	case SEEK_SET:
+		malloc_seek = offset;
+		break;
+	case SEEK_CUR:
+		malloc_seek += offset;
+		break;
+	case SEEK_END:
+		malloc_seek = UT64_MAX;
+		break;
+	}
+	return malloc_seek;
 }
 
-static int __close(struct r_io_t *io, int pid) {
+static int __close(RIO *io, int pid) {
 	// TODO: detach
 	return R_TRUE;
 }
 
-static int __system(struct r_io_t *io, int fd, const char *cmd) {
+static int __system(RIO *io, int fd, const char *cmd) {
 	//printf("w32dbg io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
 	if (!strcmp (cmd, "pid")) {

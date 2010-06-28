@@ -15,7 +15,7 @@ R_API int r_debug_plugin_init(RDebug *dbg) {
 	int i;
 
 	dbg->reg_profile = NULL;
-	INIT_LIST_HEAD(&dbg->plugins);
+	INIT_LIST_HEAD (&dbg->plugins);
 	for (i=0; debug_static_plugins[i]; i++) {
 		static_plugin = R_NEW (RDebugPlugin);
 		memcpy (static_plugin, debug_static_plugins[i], sizeof (RDebugPlugin));
@@ -34,6 +34,9 @@ R_API int r_debug_use(RDebug *dbg, const char *str) {
 				free (dbg->reg_profile);
 				dbg->reg_profile = dbg->h->reg_profile ();
 				dbg->anal->reg = dbg->reg;
+				if (h->init) {
+					h->init (dbg);
+				}
 				r_reg_set_profile_string (dbg->reg, dbg->reg_profile);
 			}
 			return R_TRUE;
@@ -54,6 +57,6 @@ R_API int r_debug_plugin_list(RDebug *dbg) {
 }
 
 R_API int r_debug_plugin_add(RDebug *dbg, RDebugPlugin *foo) {
-	list_add_tail(&(foo->list), &(dbg->plugins));
+	list_add_tail (&(foo->list), &(dbg->plugins));
 	return R_TRUE;
 }

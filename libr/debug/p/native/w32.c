@@ -77,8 +77,7 @@ static void print_lasterr(const char *str) {
 				(LPTSTR)&buffer,
 				size,
 				(va_list*)pArgs)) {
-
-		eprintf("Format message failed with 0x%x\n", GetLastError());
+		eprintf ("Format message failed with 0x%x\n", GetLastError());
 		return;
 	}
 
@@ -94,6 +93,7 @@ static int w32_dbg_init() {
 				"DebugActiveProcessStop");
 	w32_openthread = (HANDLE WINAPI (*)(DWORD, BOOL, DWORD))
 		GetProcAddress (GetModuleHandle ("kernel32"), "OpenThread");
+eprintf ("OPENTHREAD %p\n", w32_openthread);
 	w32_dbgbreak = (HANDLE WINAPI (*)(HANDLE))
 		GetProcAddress (GetModuleHandle ("kernel32"),
 				"DebugBreakProcess");
@@ -396,12 +396,12 @@ static RList *w32_dbg_maps() {
 				}
 			} else {
 				eprintf ("Invalid read\n");
-				return 0;
+				return NULL;
 			}
 
 			if (gmi (WIN32_PI (hProcess), (HMODULE) page,
 					(LPMODULEINFO) &ModInfo, sizeof(MODULEINFO)) == 0)
-				return 0;
+				return NULL;
 /* THIS CODE SEGFAULTS WITH NO REASON. BYPASS IT! */
 #if 0
 		eprintf("--> 0x%08x\n", ModInfo.lpBaseOfDll);

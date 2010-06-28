@@ -20,20 +20,35 @@ static int r_debug_native_reg_write(int pid, int type, const ut8* buf, int size)
 #define R_DEBUG_REG_T CONTEXT
 #include "native/w32.c"
 
-/* TODO inline this helper */
-static inline int debug_getregs(int tid, CONTEXT *regs) {
-        regs->ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-        //XXX: tid2handler not implemented!! 
-	//return GetThreadContext (tid2handler (tid), regs)? 0 : -1;
-	return 0;
-}
+static HANDLE tid2handler(int tid) {
+        HANDLE th = INVALID_HANDLE_VALUE;
+        THREADENTRY32 te32;
+        int ret = -1;
 
-/* TODO inline this helper */
-static inline int debug_setregs(int tid, CONTEXT *regs) {
-        regs->ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-        //XXX: tid2handler not implemented!! 
-	//return SetThreadContext (tid2handler (tid), regs)? 0 : -1;
-	return 0;
+        te32.dwSize = sizeof (THREADENTRY32);
+
+        th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, tid);
+        if(th == INVALID_HANDLE_VALUE || !Thread32First(th, &te32))
+                goto err_load_th;
+
+        do {
+                /* get all threads of process */
+		// XXX
+                if (te32.th32OwnerProcessID == tid) {
+		//	if (te32.th32ThreadID == tid) {
+				return w32_openthread (THREAD_ALL_ACCESS, 0,
+						te32.th32ThreadID);
+		//	}{
+                }
+        } while (Thread32Next (th, &te32));
+
+err_load_th:
+
+        if(ret == -1)
+                print_lasterr ((char *)__FUNCTION__);
+        if(th != INVALID_HANDLE_VALUE)
+                CloseHandle (th);
+        return th;
 }
 
 #elif __OpenBSD__ || __NetBSD__ || __FreeBSD__
@@ -166,9 +181,9 @@ static int r_debug_native_step(RDebug *dbg, int pid) {
 //	GetTheadContext (tid2hnd
 // XXX TODO CONTINUE h
 	/* up TRAP flag */
-	debug_getregs (pid, &regs);
+	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR, &regs, sizeof (regs));
 	regs.EFlags |= 0x100;
-	debug_setregs (pid, &regs);
+	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, &regs, sizeof (regs));
 	//single_step = pid;
 	//r_debug_native_continue (pid, -1);
 
@@ -561,8 +576,6 @@ static RList *r_debug_native_pids(int pid) {
 }
 
 static RList *r_debug_native_threads(int pid) {
-	int i, fd, thid = 0;
-	char *ptr, cmdline[1024];
 	RList *list = r_list_new ();
 	/* TODO */
 #if __WINDOWS__
@@ -570,6 +583,9 @@ static RList *r_debug_native_threads(int pid) {
 #elif __APPLE__
 	eprintf ("pids: TODO\n");
 #elif __linux__
+	int i, fd, thid = 0;
+	char *ptr, cmdline[1024];
+
 	if (!pid)
 		return NULL;
 	r_list_append (list, r_debug_pid_new ("(current)", pid, 's'));
@@ -604,19 +620,21 @@ static RList *r_debug_native_threads(int pid) {
 // TODO: what about float and hardware regs here ???
 // TODO: add flag for type
 static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
-	int ret; 
 	int pid = dbg->pid;
 #if __WINDOWS__
 	CONTEXT ctx;
 	ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-	if (!GetThreadContext (w32_t2h (pid), &ctx))
+	if (!GetThreadContext (tid2handler (pid), &ctx)) {
+		eprintf ("OOPS: %s\n", GetLastError());
 		return 0;
+	}
 	if (sizeof (CONTEXT) < size)
 		size = sizeof (CONTEXT);
 	memcpy (buf, &ctx, size);
 	return size;
 // XXX this must be defined somewhere else
 #elif __APPLE__
+	int ret; 
 	thread_array_t inferior_threads = NULL;
 	unsigned int inferior_thread_count = 0;
 	R_DEBUG_REG_T *regs = (R_DEBUG_REG_T *)buf;
@@ -644,6 +662,7 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
         return R_TRUE; //gp_count;
 
 #elif __linux__ || __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
+	int ret; 
 	switch (type) {
 	case R_REG_TYPE_SEG:
 	case R_REG_TYPE_FLG:
@@ -684,7 +703,7 @@ static int r_debug_native_reg_write(int pid, int type, const ut8* buf, int size)
 #if __WINDOWS__
 		CONTEXT ctx;
 		ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-		return SetThreadContext (w32_t2h (pid), &ctx)? 0: -1;
+		return SetThreadContext (tid2handler (pid), &ctx)? 0: -1;
 #elif __linux__ || __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
 		int ret = ptrace (PTRACE_SETREGS, pid, 0, buf);
 		if (sizeof (R_DEBUG_REG_T) < size)

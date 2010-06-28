@@ -1,11 +1,10 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_util.h>
 #include <r_debug.h>
 #include <r_io.h>
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
 	int ret, i;
 	int tid, pid;
 	struct r_io_t *io;

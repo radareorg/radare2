@@ -145,7 +145,7 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 		}
 	} else {
 		if (cfg->lock) {
-			fprintf(stderr, "config is locked: cannot create '%s'\n", name);
+			eprintf ("config is locked: cannot create '%s'\n", name);
 		} else {
 			node = r_config_node_new (name, value);
 			if (value && (!strcmp(value,"true")||!strcmp(value,"false"))) {
@@ -223,20 +223,20 @@ R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 			node->value = strdup(ov);
 		}
 	}
-	free(ov);
+	free (ov);
 	return node;
 }
 
 R_API int r_config_eval(RConfig *cfg, const char *str) {
 	char *ptr,*a,*b;
-	char *name;
+	char name[1024];
 	int len;
 
 	if (str == NULL)
-		return R_FALSE;
 
 	len = strlen (str)+1;
-	name = alloca (len);
+	if (len >=sizeof (name))
+		return R_FALSE;
 	memcpy (name, str, len);
 	str = r_str_chop (name);
 

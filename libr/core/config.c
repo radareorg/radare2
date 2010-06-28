@@ -184,16 +184,16 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	r_config_set_cb (cfg, "cfg.debug", "false", &config_cfgdebug_callback);
 	r_config_set (cfg, "cfg.fortunes", "true");
-	r_config_set (cfg, "cmd.hit", ""); 
-	r_config_set (cfg, "cmd.open", ""); 
-	r_config_set (cfg, "cmd.prompt", ""); 
-	r_config_set (cfg, "cmd.vprompt", "");
-	r_config_set (cfg, "cmd.bp", "");
 	r_config_set (cfg, "dbg.backend", "native");
 	r_config_set_cb (cfg, "dbg.stopthreads", "true", &config_stopthreads_callback);
 	r_config_set_cb (cfg, "dbg.swstep", "false", &config_swstep_callback);
 	r_config_set_cb (cfg, "dbg.trace", "true", &config_trace_callback);
 	r_config_set_cb (cfg, "dbg.trace.tag", "0xff", &config_tracetag_callback);
+	r_config_set (cfg, "cmd.hit", ""); 
+	r_config_set (cfg, "cmd.open", ""); 
+	r_config_set (cfg, "cmd.prompt", ""); 
+	r_config_set (cfg, "cmd.vprompt", "");
+	r_config_set (cfg, "cmd.bp", "");
 	r_config_set (cfg, "scr.prompt", "true");
 	r_config_set_cb (cfg, "scr.color",
 		(core->print->flags&R_PRINT_FLAGS_COLOR)?"true":"false",
