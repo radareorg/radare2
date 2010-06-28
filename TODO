@@ -13,6 +13,7 @@ Questions:
 ----------
 * imports from PE doesnt works with /a because there's an indirect call
 * rabin2 doesnt works for osx-x86 mach0 bins..so io.va=1 fails
+* Store version information in libraries ? debian claims for it
 
 Bugs:
 -----
@@ -27,16 +28,12 @@ Bugs:
 TODO:
 -----
 * rarc2 : choose syntax in runtime
-* Store version information in libraries ? debian claims for it
 * nibble: trace counts after step..thats not correct!
 * implement grep{col,row}
-* pancake: dietline.c : do not show all options at first tab if matches
 * nibble: mach0 new binary format is not supported by bin_mach0 :(
-* java disassembler do not uses the constant pool
+#################      * java disassembler do not uses the constant pool
 * Implement r_sys_setenv stuff from r1 in core/file.c:33 (!!?)
 * pancake: Implement search.align
-* Initial analysis looking for xrefs to strings and so? ax? ./a@@entry0
-  - Launched at startup
 * Handle metadata from disassembler (structs, hexdump, ...)
   - r_meta_print (RMeta, RMetaItem, RPrint);
 * pancake: FileDescriptors: dd -- copy from !fd in r1
@@ -64,6 +61,7 @@ TODO:
 ===
 * rasign2 : must be done, write manpage
 * distribute 'spp' with 'rarc2' ?
+* Initial analysis looking for xrefs to strings and so? ax? ./a@@entry0 - Launched at startup
 
 Transaction notes
 =================

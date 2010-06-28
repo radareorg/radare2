@@ -169,35 +169,20 @@ R_API int r_line_hist_chop(const char *file, int limit) {
 }
 
 R_API void r_line_autocomplete() {
-	int argc;
-	const char **argv;
+	int argc = 0;
+	const char **argv = NULL;
 	int i, opt, len = 0;
 
 	/* prepare argc and argv */
-	if (I.completion.run != NULL)
+	if (I.completion.run != NULL) {
 		I.completion.run (&I);
+		opt = argc = I.completion.argc;
+		argv = I.completion.argv;
+	}
 
-	argc = I.completion.argc;
-	argv = I.completion.argv;
+	// TODO: implement partial autocompletion ?
 
-	if (I.buffer.index>0)
-	for (i=0,opt=0; argv[i] && i<argc; i++)
-		if (!strncmp (argv[i], I.buffer.data, I.buffer.index))
-			opt++;
-
-	// XXX: This autocompletion method is hacky
-	if (I.buffer.length>0 && opt==1) {
-		for (i=0; i<argc; i++) {
-			if (!strncmp (I.buffer.data, argv[i], I.buffer.length)) {
-				strcpy (I.buffer.data, argv[i]);
-				I.buffer.index = I.buffer.length = strlen (I.buffer.data) + 1;
-				/* fucking inneficient */
-				strcat (I.buffer.data, " ");
-				I.buffer.length = ++I.buffer.index;
-				break;
-			}
-		}
-	} else
+	/* autocomplete */
 	if (argc==1) {
 		char *p = strchr (I.buffer.data, ' ');
 		if (p) p++; else p = I.buffer.data;
@@ -207,21 +192,21 @@ R_API void r_line_autocomplete() {
 		I.buffer.length = strlen (I.buffer.data);
 	}
 
+#define COLS 70
 	/* show options */
-	//if (I.buffer.index==0 || opt>1) {
-	if (argc>1) {
+	if (opt>1) {
 		if (I.echo)
 			printf ("%s%s\n", I.prompt, I.buffer.data);
-		for (i=0; i<argc; i++) {
+		for (len=i=0; i<argc; i++) {
 			if (argv[i] == NULL)
 				break;
-	//		if (I.buffer.length==0 || !strncmp (argv[i], I.buffer.data, I.buffer.length)) {
-			len += strlen (argv[i]);
-//			if (len+I.buffer.length+4 >= columns) break;
+			len += strlen (argv[i]) + 4;
+			if (len>0 && len>COLS) {
+				printf ("\n");
+				len = 0;
+			}
 			if (I.echo)
 				printf ("%s\t", argv[i]);
-			if (5==(i%6)) printf ("\n");
-	//		}
 		}
 		if (I.echo)
 			printf ("\n");

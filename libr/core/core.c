@@ -75,8 +75,6 @@ static char *tmp_argv[TMP_ARGV_SZ];
 static int autocomplete(RLine *line) {
 	RCore *core = line->user;
 	struct list_head *pos;
-	line->completion.argc = CMDS;
-	line->completion.argv = radare_argv;
 	if (core) {
 		if ((!memcmp (line->buffer.data, "s ", 2)) ||
 		    (!memcmp (line->buffer.data, "f ", 2)) ||
@@ -108,7 +106,23 @@ static int autocomplete(RLine *line) {
 			tmp_argv[i] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
+		} else {
+			int i,j;
+			for (i=j=0; radare_argv[i] && i<CMDS; i++)
+				if (!memcmp (radare_argv[i], line->buffer.data, line->buffer.index))
+					tmp_argv[j++] = radare_argv[i];
+			tmp_argv[j] = NULL;
+			line->completion.argc = j;
+			line->completion.argv = tmp_argv;
 		}
+	} else {
+		int i,j;
+		for (i=j=0; radare_argv[i] && i<CMDS; i++)
+			if (!memcmp (radare_argv[i], line->buffer.data, line->buffer.index))
+				tmp_argv[j++] = radare_argv[i];
+		tmp_argv[j] = NULL;
+		line->completion.argc = j;
+		line->completion.argv = tmp_argv;
 	}
 	return R_TRUE;
 }
