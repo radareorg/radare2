@@ -11,7 +11,6 @@ static int r_debug_native_continue(int pid, int sig);
 static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
 static int r_debug_native_reg_write(int pid, int type, const ut8* buf, int size);
 
-
 #define DEBUGGER 1
 #define MAXBT 128
 
@@ -21,34 +20,28 @@ static int r_debug_native_reg_write(int pid, int type, const ut8* buf, int size)
 #include "native/w32.c"
 
 static HANDLE tid2handler(int tid) {
-        HANDLE th = INVALID_HANDLE_VALUE;
-        THREADENTRY32 te32;
+        HANDLE th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, tid);
+        THREADENTRY32 te32 = { .dwSize = sizeof (THREADENTRY32) };
         int ret = -1;
-
-        te32.dwSize = sizeof (THREADENTRY32);
-
-        th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, tid);
-        if(th == INVALID_HANDLE_VALUE || !Thread32First(th, &te32))
-                goto err_load_th;
-
+        if (th == INVALID_HANDLE_VALUE)
+		return NULL;
+	if (!Thread32First (th, &te32)) {
+		CloseHandle (th);
+                return NULL;
+	}
         do {
-                /* get all threads of process */
-		// XXX
                 if (te32.th32OwnerProcessID == tid) {
 		//	if (te32.th32ThreadID == tid) {
-				return w32_openthread (THREAD_ALL_ACCESS, 0,
-						te32.th32ThreadID);
+			return w32_openthread (THREAD_ALL_ACCESS, 0,
+					te32.th32ThreadID);
 		//	}{
                 }
+		ret++;
         } while (Thread32Next (th, &te32));
-
-err_load_th:
-
-        if(ret == -1)
+        if (ret == -1)
                 print_lasterr ((char *)__FUNCTION__);
-        if(th != INVALID_HANDLE_VALUE)
-                CloseHandle (th);
-        return th;
+	CloseHandle (th);
+        return NULL;
 }
 
 #elif __OpenBSD__ || __NetBSD__ || __FreeBSD__
@@ -164,7 +157,7 @@ static inline void debug_arch_x86_trap_set(RDebug *dbg, int foo) {
 #if __i386__ || __x86_64__
         R_DEBUG_REG_T regs;
 	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR, &regs, sizeof (regs));
-        printf ("trap flag: %d\n", (regs.__eflags&0x100));
+        eprintf ("trap flag: %d\n", (regs.__eflags&0x100));
         if (foo) regs.__eflags |= EFLAGS_TRAP_FLAG;
         else regs.__eflags &= ~EFLAGS_TRAP_FLAG;
 	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, &regs, sizeof (regs));
@@ -176,6 +169,7 @@ static int r_debug_native_step(RDebug *dbg, int pid) {
 	int ret = R_FALSE;
 #if __WINDOWS__
 	CONTEXT regs;
+	//R_DEBUG_REG_T regs;
 
 	regs.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
 //	GetTheadContext (tid2hnd
@@ -185,7 +179,7 @@ static int r_debug_native_step(RDebug *dbg, int pid) {
 	regs.EFlags |= 0x100;
 	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, &regs, sizeof (regs));
 	//single_step = pid;
-	//r_debug_native_continue (pid, -1);
+	r_debug_native_continue (pid, -1);
 
 #elif __APPLE__
 	debug_arch_x86_trap_set (dbg, 1);
@@ -251,6 +245,7 @@ static int r_debug_native_continue_syscall(int pid, int num) {
 }
 
 /* TODO: specify thread? */
+/* TODO: must return true/false */
 static int r_debug_native_continue(int pid, int sig) {
 	void *data = NULL;
 	if (sig != -1)
@@ -625,8 +620,8 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	CONTEXT ctx;
 	ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
 	if (!GetThreadContext (tid2handler (pid), &ctx)) {
-		eprintf ("OOPS: %s\n", GetLastError());
-		return 0;
+		eprintf ("GetThreadContext: %x\n", (int)GetLastError());
+		return R_FALSE;
 	}
 	if (sizeof (CONTEXT) < size)
 		size = sizeof (CONTEXT);
@@ -899,7 +894,6 @@ static RList *r_debug_native_frames(RDebug *dbg) {
 		frame->addr = ptr;
 		frame->size = 0; // TODO ?
 		r_list_append (list, frame);
-
 		_rbp = ptr;
 	}
 

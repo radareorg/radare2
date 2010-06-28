@@ -14,42 +14,41 @@ extern int errno;
 static int fds[3];
 
 #include <windows.h>
+#include <tlhelp32.h>
 
 static PROCESS_INFORMATION pi;
 
-// FIX: the goto 'err' is buggy
 static int debug_os_read_at(int pid, void *buf, int len, ut64 addr) {
 	PDWORD ret;
-        ReadProcessMemory(pi.hProcess, (PCVOID)(ULONG)addr,
-                        buf, len, &ret);
-	return (int)ret;
+        ReadProcessMemory (pi.hProcess, (PCVOID)(ULONG)addr, buf, len, &ret);
+//	if (len != ret)
+//		eprintf ("Cannot read 0x%08llx\n", addr);
+	return len; // XXX: Handle read correctly and not break r2 shell
+	//return (int)ret; //(int)len; //ret;
 }
 
 static int __read(struct r_io_t *io, int pid, ut8 *buf, int len) {
-	ut64 addr = io->off;
 	memset (buf, '\xff', len); // TODO: only memset the non-readed bytes
-	return debug_os_read_at (pid, buf, len, addr);
+	return debug_os_read_at (pid, buf, len, io->off);
 }
 
 static int w32dbg_write_at(int pid, const ut8 *buf, int len, ut64 addr) {
 	PDWORD ret;
-        WriteProcessMemory (pi.hProcess, (PCVOID)(ULONG)addr,
-                        buf, len, &ret);
+        WriteProcessMemory (pi.hProcess, (PCVOID)(ULONG)addr, buf, len, &ret);
 	return ret;
 }
 
 static int __write(struct r_io_t *io, int pid, const ut8 *buf, int len) {
-	return w32dbg_write_at(pid, buf, len, io->off);
+	return w32dbg_write_at (pid, buf, len, io->off);
 }
 
 static int __plugin_open(struct r_io_t *io, const char *file) {
-	if (!memcmp (file, "w32dbg://", 9))
-		return R_TRUE;
-	return R_FALSE;
+	return (!memcmp (file, "w32dbg://", 9))? R_TRUE: R_FALSE;
 }
 
 static int __attach (int pid) {
 	eprintf ("---> attach to %d\n", pid);
+	pi.hProcess = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
 	return pid;
 }
 

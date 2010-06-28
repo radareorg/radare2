@@ -4,8 +4,7 @@
 /* TODO: add push/pop.. */
 
 /* non-endian safe - used for raw mapping with system registers */
-R_API ut8* r_reg_get_bytes(struct r_reg_t *reg, int type, int *size)
-{
+R_API ut8* r_reg_get_bytes(struct r_reg_t *reg, int type, int *size) {
 	RRegisterArena *arena;
 	int i, sz, osize;
 	ut8 *buf;
@@ -39,8 +38,7 @@ R_API ut8* r_reg_get_bytes(struct r_reg_t *reg, int type, int *size)
 }
 
 /* reduce number of return statements */
-R_API int r_reg_set_bytes(struct r_reg_t *reg, int type, const ut8* buf, int len)
-{
+R_API int r_reg_set_bytes(struct r_reg_t *reg, int type, const ut8* buf, int len) {
 	int i, ret = R_FALSE;
 	struct r_reg_set_t *regset;
 	struct r_reg_arena_t *arena;
@@ -77,8 +75,7 @@ R_API int r_reg_set_bytes(struct r_reg_t *reg, int type, const ut8* buf, int len
 	return ret;
 }
 
-R_API int r_reg_export_to(struct r_reg_t *reg, struct r_reg_t *dst)
-{
+R_API int r_reg_export_to(struct r_reg_t *reg, struct r_reg_t *dst) {
 	//struct r_reg_arena_t *arena;
 	struct r_reg_item_t *r;
 	struct list_head *pos;
@@ -97,8 +94,7 @@ R_API int r_reg_export_to(struct r_reg_t *reg, struct r_reg_t *dst)
 	return ret;
 }
 
-R_API int r_reg_fit_arena(struct r_reg_t *reg)
-{
+R_API int r_reg_fit_arena(struct r_reg_t *reg) {
 	struct list_head *pos;
 	struct r_reg_item_t *r;
 	struct r_reg_arena_t *arena;

@@ -13,21 +13,13 @@ Questions:
 ----------
 * imports from PE doesnt works with /a because there's an indirect call
 * rabin2 doesnt works for osx-x86 mach0 bins..so io.va=1 fails
-  - opening simple fiels with io.va=1 fails !!!
-  - if no sections defined it should read as plain
-* Do we have to enable jump/call toggles for breaking basicblocks? (yes/no)
-  - pancake: no , nibble: (WHAT DO YOU THINK ABOUT THIS? :)
-* code analysis with r_parse // isnt this already done? nibble?
-  - generate by just parsing the opcode
-  - RAnalAopArg { int size; int delta; int type; }
-  - r_anal_aop_arg_set (); r_anal_aop_arg_get (); r_anal_aop_arg_binmask ();
-
-Bugs:
------
-* nibble: trace counts after step..thats not correct!
 
 TODO:
 -----
+* Store version information in libraries ? debian claims for it
+* Write manpages for r2rc, r2rc-tool .. find better name rarc2?
+* nibble: trace counts after step..thats not correct!
+* implement grep{col,row}
 * pancake: dietline.c : do not show all options at first tab if matches
 * nibble: mach0 new binary format is not supported by bin_mach0 :(
 * java disassembler do not uses the constant pool
@@ -35,15 +27,9 @@ TODO:
 * pancake: Implement search.align
 * Initial analysis looking for xrefs to strings and so? ax? ./a@@entry0
   - Launched at startup
-* references: data (read, write), code (call, jmp) must be inside Function
-  - Cx doesnt works as expected (from-to, from-size, ..)
-  - xrefs must be inside function, string, data.. dupped?
-  - done with r_meta_sync() ?
-  - use r_db in flags and meta
 * Handle metadata from disassembler (structs, hexdump, ...)
   - r_meta_print (RMeta, RMetaItem, RPrint);
 * pancake: FileDescriptors: dd -- copy from !fd in r1
-* Write manpages for r2rc, r2rc-tool, rasign2
 * pancake: we need an api to define function signatures
   - arg/var set name/get value/ ..
   - integrated with function signatures
@@ -63,6 +49,10 @@ TODO:
         - basic block level diffing (output in graph mode)
 
 ---8<------------8<------------------8<---------------------8<------------- -- - -
+
+0.6
+===
+* rasign2 : must be done, write manpage
 
 Transaction notes
 =================
@@ -86,13 +76,13 @@ Loading big binaries results on broken interaction.
       \
        `-- (while (lock,load,unlock))
 
-Build fixes:
-------------
-* Store version information in libraries ? debian claims for it
-
 Analysis
 ========
 * Implement more get_main() (NOOB)
+* code analysis with r_parse // isnt this already done? nibble?
+  - generate by just parsing the opcode
+  - RAnalAopArg { int size; int delta; int type; }
+  - r_anal_aop_arg_set (); r_anal_aop_arg_get (); r_anal_aop_arg_binmask ();
 
 Bindings
 ========

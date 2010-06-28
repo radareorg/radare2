@@ -66,15 +66,23 @@ R_API int r_core_seek(RCore *core, ut64 addr, int rb) {
 
 	/* XXX unnecesary call */
 	r_io_set_fd (core->io, core->file->fd);
-	if (r_io_seek (core->io, addr, R_IO_SEEK_SET) == -1)
-		return R_FALSE;
-	else core->offset = addr;
+	ret = r_io_seek (core->io, addr, R_IO_SEEK_SET);
+	if (ret == -1) {
+eprintf ("RET =%d %llx\n", ret, addr);
+/*
+		if (core->ffio) {
+			core->offset = addr;
+		} else return R_FALSE;
+*/
+core->offset = addr;
+	} else core->offset = addr;
 	if (rb) {
 		ret = r_core_block_read (core, 0);
 		if (core->ffio) {
 			if (ret<1 || ret > core->blocksize)
 				memset (core->block, 0xff, core->blocksize);
 			else memset (core->block+ret, 0xff, core->blocksize-ret);
+			ret = core->blocksize;
 			core->offset = addr;
 		} else {
 			if (ret<1) {

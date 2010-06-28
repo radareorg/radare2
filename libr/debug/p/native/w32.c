@@ -68,8 +68,7 @@ static void print_lasterr(const char *str) {
 		(DWORD_PTR)6, (DWORD_PTR)L"Bill" };                               // %5!*s!
 	const DWORD size = 100+1;
 	WCHAR buffer[size];
-
-	if (!FormatMessage( FORMAT_MESSAGE_FROM_STRING |
+	if (!FormatMessage (FORMAT_MESSAGE_FROM_STRING |
 				FORMAT_MESSAGE_ARGUMENT_ARRAY,
 				pMessage,
 				0,  // ignored
@@ -77,11 +76,11 @@ static void print_lasterr(const char *str) {
 				(LPTSTR)&buffer,
 				size,
 				(va_list*)pArgs)) {
-		eprintf ("Format message failed with 0x%x\n", GetLastError());
+		eprintf ("(%s): Format message failed with 0x%x\n",
+			r_str_get (str), GetLastError());
 		return;
 	}
-
-	eprintf("print_lasterr: %s ::: %s\n", str, buffer);
+	eprintf ("print_lasterr: %s ::: %s\n", r_str_get (str), r_str_get (buffer));
 }
 
 
@@ -93,7 +92,6 @@ static int w32_dbg_init() {
 				"DebugActiveProcessStop");
 	w32_openthread = (HANDLE WINAPI (*)(DWORD, BOOL, DWORD))
 		GetProcAddress (GetModuleHandle ("kernel32"), "OpenThread");
-eprintf ("OPENTHREAD %p\n", w32_openthread);
 	w32_dbgbreak = (HANDLE WINAPI (*)(HANDLE))
 		GetProcAddress (GetModuleHandle ("kernel32"),
 				"DebugBreakProcess");

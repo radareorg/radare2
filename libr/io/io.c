@@ -8,9 +8,7 @@
 //  --- check for EXEC perms in section (use cached read to accelerate)
 
 R_API struct r_io_t *r_io_new() {
-	RIO *io;
-
-	io = R_NEW (struct r_io_t);
+	RIO *io = R_NEW (struct r_io_t);
 	if (io) {
 		io->write_mask_fd = -1;
 		io->redirect = NULL;
@@ -204,6 +202,7 @@ R_API int r_io_set_write_mask(struct r_io_t *io, const ut8 *buf, int len) {
 
 R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len) {
 	int i, ret = -1;
+	ut8 *data = NULL;
 
 	/* check section permissions */
 	if (io->enforce_rwx && !(r_io_section_get_rwx (io, io->off) & R_IO_WRITE))
@@ -223,26 +222,27 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len) {
 
 	/* apply write binary mask */
 	if (io->write_mask_fd != -1) {
-		ut8 *data = alloca(len);
+		data = malloc (len);
 		r_io_seek (io, io->off, R_IO_SEEK_SET);
 		r_io_read (io, data, len);
 		r_io_seek (io, io->off, R_IO_SEEK_SET);
-		for (i=0;i<len;i++) {
+		for (i=0; i<len; i++)
 			data[i] = buf[i] & \
 				io->write_mask_buf[i%io->write_mask_len];
-		}
 		buf = data;
 	}
 
-	if (r_io_map_write_at (io, io->off, buf, len) != 0)
-		return len;
-	if (io->plugin) {
-		if (io->plugin->write) {
-			ret = io->plugin->write (io, io->fd, buf, len);
-		} else eprintf ("r_io_write: io handler with no write callback\n");
-	} else ret = write (io->fd, buf, len);
-	if (ret == -1)
-		eprintf ("r_io_write: cannot write on fd %d\n", io->fd);
+	if (!r_io_map_write_at (io, io->off, buf, len)) {
+		if (io->plugin) {
+			if (io->plugin->write)
+				ret = io->plugin->write (io, io->fd, buf, len);
+			else eprintf ("r_io_write: io handler with no write callback\n");
+		} else ret = write (io->fd, buf, len);
+		if (ret == -1)
+			eprintf ("r_io_write: cannot write on fd %d\n", io->fd);
+	} else ret = len;
+	if (data)
+		free (data);
 	return ret;
 }
 

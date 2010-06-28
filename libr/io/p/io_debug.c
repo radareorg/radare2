@@ -81,14 +81,14 @@ static int fork_and_ptraceme(const char *cmd) {
         STARTUPINFO si = { sizeof (si) };
         DEBUG_EVENT de;
 	int pid, tid;
-	HANDLE h, th = INVALID_HANDLE_VALUE;
+	HANDLE th = INVALID_HANDLE_VALUE;
 
 	setup_tokens ();
         /* TODO: with args */
-        if( !CreateProcess (cmd, NULL,
+        if (!CreateProcess (cmd, NULL,
                         NULL, NULL, FALSE,
                         CREATE_NEW_CONSOLE | DEBUG_ONLY_THIS_PROCESS,
-                        NULL, NULL, &si, &pi ) ) {
+                        NULL, NULL, &si, &pi)) {
                 r_sys_perror ("CreateProcess");
                 return -1;
         }
@@ -97,8 +97,10 @@ static int fork_and_ptraceme(const char *cmd) {
         pid = pi.dwProcessId;
         tid = pi.dwThreadId;
 
+#if 0
         /* load thread list */
 	{
+		HANDLE h;
 		THREADENTRY32 te32;
 		HANDLE WINAPI (*win32_openthread)(DWORD, BOOL, DWORD) = NULL;
 		win32_openthread = (HANDLE WINAPI (*)(DWORD, BOOL, DWORD))
@@ -116,6 +118,7 @@ static int fork_and_ptraceme(const char *cmd) {
 			}
 		} while (Thread32Next (th, &te32));
 	}
+#endif
 
 #if 0
 	// Access denied here :?
@@ -144,6 +147,7 @@ static int fork_and_ptraceme(const char *cmd) {
         return pid;
 
 err_fork:
+	eprintf ("ERRFORK\n");
         TerminateProcess (pi.hProcess, 1);
 	if (th != INVALID_HANDLE_VALUE)
 		CloseHandle (th);

@@ -4,6 +4,7 @@ CFLAGS=-I../../include -I../arch/ -I../arch/include -Wall -fPIC ${LDFLAGS_LIB} $
 # XXX
 CFLAGS+=-DLIL_ENDIAN=1
 CFLAGS+=-L../../util -lr_util
+LDFLAGS+=${LINK}
 
 foo: all
 
