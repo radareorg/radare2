@@ -1,9 +1,9 @@
-OBJ_ARM=bp_ppc.o
+OBJ_PPC=bp_ppc.o
 
-STATIC_OBJ+=${OBJ_ARM}
-TARGET_ARM=bp_ppc.${EXT_SO}
+STATIC_OBJ+=${OBJ_PPC}
+TARGET_PPC=bp_ppc.${EXT_SO}
 
-ALL_TARGETS+=${TARGET_ARM}
+ALL_TARGETS+=${TARGET_PPC}
 
-${TARGET_ARM}: ${OBJ_ARM}
-	${CC} -shared ${CFLAGS} -o ${TARGET_ARM} ${OBJ_ARM}
+${TARGET_PPC}: ${OBJ_PPC}
+	${CC} -shared ${CFLAGS} -o ${TARGET_PPC} ${OBJ_PPC}

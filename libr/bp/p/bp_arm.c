@@ -13,7 +13,8 @@ static struct r_bp_arch_t r_bp_plugin_arm_bps[] = {
 	{ 2, 0, (const ut8*)"\xde\x01" },         // thumb-le
 	{ 2, 1, (const ut8*)"\x01\xde" },         // thumb-be
 	{ 2, 0, (const ut8*)"\xfe\xdf" },         // arm-thumb-le
-	{ 2, 1, (const ut8*)"\xdf\xfe" }          // arm-thumb-be
+	{ 2, 1, (const ut8*)"\xdf\xfe" },         // arm-thumb-be
+	{ 0, 0, NULL }
 };
 
 struct r_bp_plugin_t r_bp_plugin_arm = {

@@ -1,9 +1,9 @@
-OBJ_ARM=bp_mips.o
+OBJ_MIPS=bp_mips.o
 
-STATIC_OBJ+=${OBJ_ARM}
-TARGET_ARM=bp_mips.${EXT_SO}
+STATIC_OBJ+=${OBJ_MIPS}
+TARGET_MIPS=bp_mips.${EXT_SO}
 
-ALL_TARGETS+=${TARGET_ARM}
+ALL_TARGETS+=${TARGET_MIPS}
 
-${TARGET_ARM}: ${OBJ_ARM}
-	${CC} -shared ${CFLAGS} -o ${TARGET_ARM} ${OBJ_ARM}
+${TARGET_MIPS}: ${OBJ_MIPS}
+	${CC} -shared ${CFLAGS} -o ${TARGET_MIPS} ${OBJ_MIPS}

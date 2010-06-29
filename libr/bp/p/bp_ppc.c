@@ -7,6 +7,7 @@ static struct r_bp_arch_t r_bp_plugin_ppc_bps[] = {
 	/* XXX: FIX those are not really breakpoint opcodes at all */
 	{ 4, 0, (const ut8*)"\x00\x00\x00\x0d" }, // little endian
 	{ 4, 1, (const ut8*)"\x0d\x00\x00\x00" }, // big endian
+	{ 0, 0, NULL }
 };
 
 struct r_bp_plugin_t r_bp_plugin_ppc = {

@@ -125,8 +125,8 @@ R_API void r_bp_traptrace_enable(RBreakpoint *bp, int enable);
 extern struct r_bp_plugin_t r_bp_plugin_x86;
 extern struct r_bp_plugin_t r_bp_plugin_arm;
 extern struct r_bp_plugin_t r_bp_plugin_mips;
+extern struct r_bp_plugin_t r_bp_plugin_ppc;
 #if 0
-extern struct r_bp_plugin_t r_bp_plugin_powerpc;
 extern struct r_bp_plugin_t r_bp_plugin_sparc;
 #endif
 
