@@ -38,5 +38,5 @@ int java_print_opcode(int idx, const ut8 *bytes, char *output);
 int java_disasm(const ut8 *bytes, char *output);
 int java_assemble(unsigned char *bytes, const char *string);
 unsigned short read_short(FILE *fd);
-int javasm_init();
-int java_classdump(const char *file);
+void javasm_init();
+int java_classdump(const char *file, int verbose);

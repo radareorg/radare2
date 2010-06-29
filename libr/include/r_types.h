@@ -32,6 +32,12 @@ typedef void (*FunctionPrintf)(const char *str, ...);
 #define IFRTDBG if (0)
 #endif
 
+/* compile-time introspection helpers */
+#define CTO(y,z) ((size_t) &((y*)0)->z)
+#define CTA(x,y,z) (x+CTO(y,z))
+#define CTI(x,y,z) (*((size_t*)(CTA(x,y,z))))
+#define CTS(x,y,z,t,v) {t* _=(t*)CTA(x,y,z);*_=v;}
+
 #if R_SWIG
   #define R_API export
 #elif R_INLINE

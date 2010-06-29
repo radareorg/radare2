@@ -31,7 +31,6 @@ TODO:
 * nibble: trace counts after step..thats not correct!
 * implement grep{col,row}
 * nibble: mach0 new binary format is not supported by bin_mach0 :(
-#################      * java disassembler do not uses the constant pool
 * Implement r_sys_setenv stuff from r1 in core/file.c:33 (!!?)
 * pancake: Implement search.align
 * Handle metadata from disassembler (structs, hexdump, ...)

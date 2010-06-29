@@ -46,10 +46,8 @@ static inline int r_asm_pseudo_byte(struct r_asm_aop_t *aop, char *input) {
 
 R_API RAsm *r_asm_new() {
 	int i;
-	RAsm *a;
 	RAsmPlugin *static_plugin;
-	
-	a = R_NEW (RAsm);
+	RAsm *a = R_NEW (RAsm);
 	if (a) {
 		a->user = NULL;
 		a->cur = NULL;
