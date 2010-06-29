@@ -71,7 +71,7 @@ static const char *radare_argv[CMDS] ={
 };
 
 #define TMP_ARGV_SZ 256
-static char *tmp_argv[TMP_ARGV_SZ];
+static const char *tmp_argv[TMP_ARGV_SZ];
 static int autocomplete(RLine *line) {
 	RCore *core = line->user;
 	struct list_head *pos;
@@ -223,6 +223,7 @@ R_API int r_core_init(RCore *core) {
 	core->sign->printf = r_cons_printf;
 	core->io->printf = r_cons_printf;
 	core->dbg->printf = r_cons_printf;
+	core->dbg->bp->printf = r_cons_printf;
 	r_debug_io_bind (core->dbg, core->io);
 	r_core_config_init (core);
 	// XXX fix path here

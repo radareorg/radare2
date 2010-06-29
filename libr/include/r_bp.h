@@ -4,7 +4,6 @@
 #include <r_types.h>
 #include <r_io.h>
 #include <r_list.h>
-#include "list.h"
 
 #define R_BP_MAXPIDS 10
 #define R_BP_CONT_NORMAL 0
@@ -30,8 +29,9 @@ typedef struct r_bp_plugin_t {
 	int type; // R_BP_TYPE_SW
 	int nbps;
 	struct r_bp_arch_t *bps;
-	struct list_head list;
 } RBreakpointPlugin;
+
+typedef int (*RBreakpointCallback)(void *user, int type, ut64 addr, int hw, int rwx);
 
 typedef struct r_bp_item_t {
 	ut64 addr;
@@ -45,10 +45,9 @@ typedef struct r_bp_item_t {
 	ut8 *obytes; /* original bytes */
 	ut8 *bbytes; /* breakpoint bytes */
 	int pids[R_BP_MAXPIDS];
-	struct list_head list;
+	void *data;
+	RBreakpointCallback callback; // per-bp callback
 } RBreakpointItem;
-
-typedef int (*RBreakpointCallback)(void *user, int type, ut64 addr, int hw, int rwx);
 
 typedef struct r_bp_t {
 	int trace_all;
@@ -56,12 +55,13 @@ typedef struct r_bp_t {
 	int nbps;
 	int stepcont;
 	int endian;
+	RBreakpointCallback breakpoint; // global callback
+	RIOBind iob; // compile time dependency
+	RBreakpointPlugin *cur;
+	RList *bps;
 	RList *traces;
-	RBreakpointCallback breakpoint;
-	struct r_io_bind_t iob; // compile time dependency
-	struct r_bp_plugin_t *cur;
-	struct list_head plugins;
-	struct list_head bps;
+	RList *plugins;
+	PrintfCallback printf;
 } RBreakpoint;
 
 enum {
@@ -78,7 +78,6 @@ typedef struct r_bp_trace_t {
 	ut8 *bits;
 	int length;
 	int bitlen;
-	struct list_head list;
 } RBreakpointTrace;
 
 #ifdef R_API
@@ -125,9 +124,9 @@ R_API void r_bp_traptrace_enable(RBreakpoint *bp, int enable);
 /* plugin pointers */
 extern struct r_bp_plugin_t r_bp_plugin_x86;
 extern struct r_bp_plugin_t r_bp_plugin_arm;
+extern struct r_bp_plugin_t r_bp_plugin_mips;
 #if 0
 extern struct r_bp_plugin_t r_bp_plugin_powerpc;
-extern struct r_bp_plugin_t r_bp_plugin_mips;
 extern struct r_bp_plugin_t r_bp_plugin_sparc;
 #endif
 

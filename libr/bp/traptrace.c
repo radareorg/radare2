@@ -19,20 +19,18 @@ R_API RList *r_bp_traptrace_new() {
 }
 
 R_API void r_bp_traptrace_enable(RBreakpoint *bp, int enable) {
-	RListIter *iter = r_list_iterator (bp->traces);
-	ut8 *buf;
-	while (r_list_iter_next (iter)) {
-		RBreakpointTrace *trace = r_list_iter_get (iter);
-		if (enable) buf = trace->traps;
-		else buf = trace->buffer;
+	RListIter *iter;
+	RBreakpointTrace *trace;
+	r_list_foreach (bp->traces, iter, trace) {
+		ut8 *buf = (enable)?trace->traps:trace->buffer;
 		bp->iob.write_at (bp->iob.io, trace->addr, buf, trace->length);
 	}
 }
 
 R_API void r_bp_traptrace_reset(RBreakpoint *bp, int hard) {
-	RListIter *iter = r_list_iterator (bp->traces);
-	while (r_list_iter_next (iter)) {
-		RBreakpointTrace *trace = r_list_iter_get (iter);
+	RListIter *iter;
+	RBreakpointTrace *trace;
+	r_list_foreach (bp->traces, iter, trace) {
 		if (hard) {
 			r_bp_traptrace_free (trace);
 			// XXX: This segfaults
@@ -49,9 +47,9 @@ R_API void r_bp_traptrace_reset(RBreakpoint *bp, int hard) {
 // FIX: efficiency
 R_API ut64 r_bp_traptrace_next(RBreakpoint *bp, ut64 addr) {
 	int i, delta;
-	RListIter *iter = r_list_iterator (bp->traces);
-	while (r_list_iter_next (iter)) {
-		RBreakpointTrace *trace = r_list_iter_get (iter);
+	RListIter *iter;
+	RBreakpointTrace *trace;
+	r_list_foreach (bp->traces, iter, trace) {
 		if (addr>=trace->addr && addr<=trace->addr_end) {
 			delta = (int)(addr-trace->addr);
 			for (i=delta; i<trace->length; i++) {
@@ -127,8 +125,9 @@ R_API int r_bp_traptrace_free_at(RBreakpoint *bp, ut64 from) {
 
 R_API void r_bp_traptrace_list(RBreakpoint *bp) {
 	int i;
-	RListIter *iter = r_list_iterator (bp->traces);
-	while (r_list_iter_next (iter)) {
+	RListIter *iter;
+	RBreakpointTrace *trace;
+	r_list_foreach (bp->traces, iter, trace) {
 		RBreakpointTrace *trace = r_list_iter_get (iter);
 		for (i=0; i<trace->bitlen; i++) {
 			if (BIT_CHK (trace->bits, i))
@@ -139,10 +138,10 @@ R_API void r_bp_traptrace_list(RBreakpoint *bp) {
 
 R_API int r_bp_traptrace_at(RBreakpoint *bp, ut64 from, int len) {
 	int delta;
+	RListIter *iter;
+	RBreakpointTrace *trace;
+	r_list_foreach (bp->traces, iter, trace) {
 	// TODO: do we really need len?
-	RListIter *iter = r_list_iterator (bp->traces);
-	while (r_list_iter_next (iter)) {
-		RBreakpointTrace *trace = r_list_iter_get (iter);
 		if (from>=trace->addr && from+len<=trace->addr_end) {
 			delta = (int) (from-trace->addr);
 			if (BIT_CHK (trace->bits, delta))

@@ -23,7 +23,7 @@
 #define IFDBG if (0)
 #endif
 
-typedef void (*FunctionPrintf)(const char *str, ...);
+typedef void (*PrintfCallback)(const char *str, ...);
 
 // TODO NOT USED. DEPREACATE
 #if R_RTDEBUG

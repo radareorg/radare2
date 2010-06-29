@@ -14,6 +14,7 @@ Questions:
 * imports from PE doesnt works with /a because there's an indirect call
 * rabin2 doesnt works for osx-x86 mach0 bins..so io.va=1 fails
 * Store version information in libraries ? debian claims for it
+* Load symbol information from libraries (only the ones imported by rabin2?)
 
 Bugs:
 -----
@@ -27,13 +28,15 @@ Bugs:
 
 TODO:
 -----
+* port r_sign to RList
+* pancake: implement callback for conditional breakpoints
 * nibble: trace counts after step..thats not correct!
 * implement grep{col,row}
 * nibble: mach0 new binary format is not supported by bin_mach0 :(
 * Implement r_sys_setenv stuff from r1 in core/file.c:33 (!!?)
-* pancake: Implement search.align
-* Handle metadata from disassembler (structs, hexdump, ...)
-  - r_meta_print (RMeta, RMetaItem, RPrint);
+################ * pancake: Implement search.align
+################ * Handle metadata from disassembler (structs, hexdump, ...)
+################   - r_meta_print (RMeta, RMetaItem, RPrint);
 * pancake: FileDescriptors: dd -- copy from !fd in r1
 * pancake: we need an api to define function signatures
   - arg/var set name/get value/ ..

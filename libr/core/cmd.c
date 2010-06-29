@@ -174,7 +174,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 //TODO: core->offset+idx must be a var named 'addr'!! less ops
 		if (show_trace) {
 			RDebugTracepoint *tp = r_debug_trace_get (core->dbg, core->offset+idx);
-			r_cons_printf ("%d:%d ", tp?tp->times:0, tp?tp->count:0);
+			r_cons_printf ("%02x:%04x ", tp?tp->times:0, tp?tp->count:0);
 		}
 		if (show_stackptr) {
 			r_cons_printf ("%3d%s  ", stackptr,

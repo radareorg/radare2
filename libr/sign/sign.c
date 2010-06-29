@@ -8,7 +8,7 @@ R_API RSign *r_sign_new() {
 	if (sig) {
 		sig->s_byte = sig->s_anal = 0;
 		sig->prefix[0] = '\0';
-		sig->printf = (FunctionPrintf) printf;
+		sig->printf = (PrintfCallback) printf;
 		INIT_LIST_HEAD (&(sig->items));
 	}
 	return sig;

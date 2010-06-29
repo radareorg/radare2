@@ -55,23 +55,20 @@ R_API int r_debug_bp_add(struct r_debug_t *dbg, ut64 addr, int size, int hw, int
  * reflect all r_bp stuff in the process using dbg->bp_write
  */
 // XXX remove 
-R_API int r_bp_restore(struct r_bp_t *bp, int set)
-{
-	struct list_head *pos;
-	struct r_bp_item_t *b;
+R_API int r_bp_restore(struct r_bp_t *bp, int set) {
+	RListIter *iter;
+	RBreakpointItem *b;
 
 	/* write obytes from every breakpoint in r_bp */
 	if (set) {
-		list_for_each(pos, &bp->bps) {
-			b = list_entry(pos, struct r_bp_item_t, list);
+		r_list_foreach (bp->bps, iter, b) {
 			if (b->hw || !b->obytes)
 				eprintf ("hw breakpoints not supported yet\n");
 			else bp->iob.write_at (bp->iob.io, b->addr, b->obytes, b->size);
 // TODO: CALL TO bp->breakpoint()
 		}
 	} else {
-		list_for_each(pos, &bp->bps) {
-			b = list_entry(pos, struct r_bp_item_t, list);
+		r_list_foreach (bp->bps, iter, b) {
 			if (b->hw || !b->bbytes)
 				eprintf ("hw breakpoints not supported yet\n");
 			else bp->iob.write_at (bp->iob.io, b->addr, b->bbytes, b->size);
@@ -81,15 +78,14 @@ R_API int r_bp_restore(struct r_bp_t *bp, int set)
 	return R_TRUE;
 }
 
-R_API int r_bp_recoil(RBreakpoint *bp, ut64 addr)
-{
+R_API int r_bp_recoil(RBreakpoint *bp, ut64 addr) {
 	RBreakpointItem *b = r_bp_at_addr (bp, addr, 0xFFFFFF);
 	if (b) {
 		eprintf("HIT AT ADDR 0x%"PFMT64x"\n", addr);
 		eprintf("  recoil = %d\n", b->recoil);
 		eprintf("  size = %d\n", b->size);
+		if (!b->hw && ((b->addr + b->size) == addr))
+			return b->recoil;
 	}
-	if (b) if (!b->hw && ((b->addr + b->size) == addr))
-		return b->recoil;
 	return 0;
 }

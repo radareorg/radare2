@@ -1,36 +1,33 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_bp.h>
 
-R_API int r_bp_plugin_del(struct r_bp_t *bp, const char *name)
-{
+R_API int r_bp_plugin_del(struct r_bp_t *bp, const char *name) {
 #warning TODO: r_bp_plugin_del
 	return R_FALSE;
 }
 
-R_API int r_bp_plugin_add(struct r_bp_t *bp, struct r_bp_plugin_t *foo)
-{
-	struct list_head *pos;
+R_API int r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *foo) {
+	RListIter *iter;
+	RBreakpointPlugin *h;
 	if (bp == NULL) {
-		eprintf("Cannot add plugin because dbg->bp is null and/or plugin is null\n");
+		eprintf ("Cannot add plugin because dbg->bp is null and/or plugin is null\n");
 		return R_FALSE;
 	}
 	/* avoid dupped plugins */
-	list_for_each_prev (pos, &bp->bps) {
-		struct r_bp_plugin_t *h = list_entry (pos, struct r_bp_plugin_t, list);
+	r_list_foreach (bp->bps, iter, h) {
 		if (!strcmp (h->name, foo->name))
 			return R_FALSE;
 	}
 	bp->nbps++;
-	list_add_tail (&(foo->list), &(bp->plugins));
+	r_list_append (bp->plugins, foo);
 	return R_TRUE;
 }
 
-R_API int r_bp_use(struct r_bp_t *bp, const char *name)
-{
-	struct list_head *pos;
-	list_for_each_prev (pos, &bp->plugins) {
-		struct r_bp_plugin_t *h = list_entry(pos, struct r_bp_plugin_t, list);
+R_API int r_bp_use(struct r_bp_t *bp, const char *name) {
+	RListIter *iter;
+	RBreakpointPlugin *h;
+	r_list_foreach (bp->plugins, iter, h) {
 		if (!strcmp (h->name, name)) {
 			bp->cur = h;
 			return R_TRUE;
@@ -40,12 +37,11 @@ R_API int r_bp_use(struct r_bp_t *bp, const char *name)
 }
 
 // TODO: deprecate
-R_API void r_bp_plugin_list(struct r_bp_t *bp) {
-	struct r_bp_plugin_t *b;
-	struct list_head *pos;
-	list_for_each (pos, &bp->plugins) {
-		b = list_entry(pos, struct r_bp_plugin_t, list);
-		printf ("bp %c %s\n", 
+R_API void r_bp_plugin_list(RBreakpoint *bp) {
+	RListIter *iter;
+	RBreakpointPlugin *b;
+	r_list_foreach (bp->plugins, iter, b) {
+		bp->printf ("bp %c %s\n", 
 			(bp->cur && !strcmp (bp->cur->name, b->name))?'*':'-',
 			b->name);
 	}

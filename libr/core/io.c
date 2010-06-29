@@ -68,7 +68,7 @@ R_API int r_core_seek(RCore *core, ut64 addr, int rb) {
 	r_io_set_fd (core->io, core->file->fd);
 	ret = r_io_seek (core->io, addr, R_IO_SEEK_SET);
 	if (ret == -1) {
-eprintf ("RET =%d %llx\n", ret, addr);
+//eprintf ("RET =%d %llx\n", ret, addr);
 /*
 		if (core->ffio) {
 			core->offset = addr;

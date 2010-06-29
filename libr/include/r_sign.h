@@ -30,7 +30,7 @@ typedef struct r_sign_t {
 	int s_head;
 	int s_func; // TODO: this must be an array count[N]
 	char prefix[32];
-	FunctionPrintf printf;
+	PrintfCallback printf;
 	struct list_head items;
 } RSign;
 

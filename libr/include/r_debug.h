@@ -73,10 +73,10 @@ typedef struct r_debug_t {
 	int stop_all_threads;
 	char *reg_profile;
 	struct r_reg_t *reg;
-	struct r_bp_t *bp;
+	RBreakpoint *bp;
 	void *user;
 	/* io */
-	void (*printf)(const char *str, ...);
+	PrintfCallback printf;
 	struct r_debug_plugin_t *h;
 	struct list_head plugins;
 	RAnal *anal;
@@ -122,7 +122,7 @@ typedef struct r_debug_plugin_t {
 	int (*contsc)(int pid, int sc);
 	RList* (*frames)(RDebug *dbg);
 	/* registers */
-	RBreakpointCallback breakpoint;
+	RBreakpointCallback breakpoint; // ???
 	int (*reg_read)(struct r_debug_t *dbg, int type, ut8 *buf, int size);
 	char* (*reg_profile)();
 	int (*reg_write)(int pid, int type, const ut8 *buf, int size); //XXX struct r_regset_t regs);
