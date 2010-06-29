@@ -1,14 +1,14 @@
 #!/bin/sh
 # pancake / nopcode.org
 
-[ -z "${ARCH}" ] && ARCH=`rarc2 -a`
+[ -z "${ARCH}" ] && ARCH=`rarc2 -A`
 
 compile() {
 	spp -h 2>&1 >/dev/null
 	if [ $? = 0 ]; then
-		spp -Darch=${ARCH} $@ | rarc2 -${ARCH} > .a.S || exit $?
+		spp -Darch=${ARCH} $@ | rarc2 -s -${ARCH} > .a.S || exit $?
 	else
-		rarc2 -${ARCH} $@ > .a.S || exit $?
+		rarc2 -s -${ARCH} $@ > .a.S || exit $?
 	fi
 }
 

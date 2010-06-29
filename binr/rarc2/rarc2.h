@@ -28,6 +28,7 @@ extern void rcc_printf(const char *fmt, ...);
 extern void rcc_flush();
 extern void rcc_init();
 extern char *mk_var(char *out, const char *str, int delta);
+extern int attsyntax;
 
 /* emit */
 typedef unsigned long long ut64;
@@ -35,11 +36,12 @@ typedef unsigned long long ut64;
 struct emit_t {
 	const char *arch;
 	int size; /* in bytes.. 32bit arch is 4, 64bit is 8 .. */
-	const char *syscall_body;
+	//const char *syscall_body;
 	const char* (*regs)(int idx);
 	void (*call)(const char *addr, int ptr);
 	//void (*sc)(int num);
 	void (*frame)(int sz);
+	char* (*syscall)();
 	void (*trap)();
 	void (*frame_end)(int sz, int ctx);
 	void (*comment)(const char *fmt, ...);

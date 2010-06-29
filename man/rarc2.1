@@ -6,6 +6,10 @@
 .Nd radare2 relocatable compiler
 .Sh SYNOPSIS
 .Nm rarc2
+.Op -A
+.Op -l
+.Op -s
+.Op -a[arch]
 .Op < source
 .Op > assembly
 .Nm rarc2-tool
@@ -18,7 +22,18 @@
 This command is part of the radare project.
 .Pp
 This compiler parses a syntax-free language similar to C and generates assembly code for various architectures.
-.Sh OPTIONS
+.Pp
+The benefit of using rarc2 instead of any other language is that the generated assembly code is designed to be minimal, position independent and easily injectable into processes or binaries.
+.Sh OPTIONS for rarc2
+.Bl -tag -width Fl
+.It Fl a[arch]
+Specify architecture to generate code for (x86, x64, arm)
+.It Fl l
+List all supported architectures
+.It Fl s
+Use AT&T syntax for assembly instead of the intel one
+.El
+.Sh OPTIONS for rarc2-tool
 .Bl -tag -width Fl
 .It Fl b
 Dump bytes of compiled code
@@ -32,14 +47,14 @@ Generate .S assembly file instead of executable
 .Sh USAGE
 .Pp
 Using rarc2:
-  $ echo 'main(64){printf("hello world\n");}' | rarc2 > hello.S
+  $ echo 'main@global(,64){printf("hello world\\n");}' | rarc2 -s > hello.S
   $ gcc hello.S
   $ ./a.out
   hello world
 .Pp
 Using rarc2-tool:
   $ cat test.r
-  main(64){ printf("hello world\n"); }
+  main@global(,64){ printf("hello world\\n"); }
   $ rarc2-tool -x test.r
   hello world
 .Sh SEE ALSO

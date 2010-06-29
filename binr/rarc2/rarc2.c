@@ -35,6 +35,7 @@ static int slurpin = 0;
 static int slurp = 0;
 static int line = 1;
 static char elem[1024];
+int attsyntax = 0;
 static int elem_n = 0;
 static int context = 0;
 static char *callname = NULL;
@@ -54,12 +55,16 @@ static int mode = NORMAL;
 
 extern struct emit_t emit_x86;
 extern struct emit_t emit_x64;
-struct emit_t *emits[3] = {
+extern struct emit_t emit_arm;
+struct emit_t *emits[4] = {
 	&emit_x86,
 	&emit_x64,
+	&emit_arm,
 	NULL
 };
-#if __i386__
+#if __arm__
+static struct emit_t *emit = &emit_arm;
+#elif __i386__
 static struct emit_t *emit = &emit_x86;
 #else
 static struct emit_t *emit = &emit_x64;
@@ -689,37 +694,47 @@ static int parsechar(char c) {
 static void showhelp() {
 	fprintf (stderr,
 		"Usage: r2rc [-alh] [files] > file.S\n"
-		"  -a     Show current architecture\n"
-		"  -l     List all supported architectures\n"
-		"  -h     Display this help\n"
-		"  -x86   use x86-32\n"
-		"  -x64   use x86-64\n");
+		"  -A      Show current architecture\n"
+		"  -l      List all supported architectures\n"
+		"  -s      use at&t syntax instead of intel\n"
+		"  -h      Display this help\n"
+		"  -ax86  use x86-32\n"
+		"  -ax64  use x86-64\n"
+		"  -aarm  use ARM\n");
 }
 
 static void parseflag(const char *arg) {
 	int i;
-	if (!strcmp (arg, "a")) {
-		printf ("%s\n", emit->arch);
-	} else
-	if (!strcmp (arg, "l")) {
-		for (i=0; emits[i]; i++)
-			printf ("%s\n", emits[i]->arch);
-	} else
-	if (!strcmp (arg, "h")) {
-		showhelp ();
-	} else {
+	switch (*arg) {
+	case 'a':
 		emit = NULL;
 		for (i=0; emits[i]; i++)
-			if (!strcmp (emits[i]->arch, arg)) {
+			if (!strcmp (emits[i]->arch, arg+1)) {
 				emit = emits[i];
-				syscallbody = strdup (emit->syscall_body);
+				syscallbody = emit->syscall ();
 				break;
 			}
-		if (emit == NULL)
-			eprintf ("Invalid architecture: '%s'\n", arg);
-		else return;
+		if (emit == NULL) {
+			eprintf ("Invalid architecture: '%s'\n", arg+1);
+			exit (1);
+		}
+		break;
+	case 's':
+		attsyntax = 1;
+		break;
+	case 'A':
+		printf ("%s\n", emit->arch);
+		exit (0);
+	case 'l':
+		for (i=0; emits[i]; i++)
+			printf ("%s\n", emits[i]->arch);
+		exit (0);
+	case 'h':
+		showhelp ();
+		exit (0);
+	default:
+		eprintf ("Unknown flag\n");
 	}
-	exit (0);
 }
 
 int main(int argc, char **argv) {

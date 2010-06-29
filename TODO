@@ -27,7 +27,6 @@ Bugs:
 
 TODO:
 -----
-* rarc2 : choose syntax in runtime
 * nibble: trace counts after step..thats not correct!
 * implement grep{col,row}
 * nibble: mach0 new binary format is not supported by bin_mach0 :(
