@@ -5,9 +5,7 @@
 #include "r_util.h"
 
 R_API RPrint *r_print_new() {
-	RPrint *p;
-	
-	p = R_NEW (RPrint);
+	RPrint *p = R_NEW (RPrint);
 	if (p) {
 		strcpy (p->datefmt, "%Y:%m:%d %H:%M:%S %z");
 		p->user = NULL;
@@ -66,10 +64,8 @@ R_API void r_print_cursor(RPrint *p, int cur, int set) {
 }
 
 R_API void r_print_addr(RPrint *p, ut64 addr) {
-	//config_get_i("cfg.addrmod");
 	int mod = p->flags & R_PRINT_FLAGS_ADDRMOD;
-	char ch = (0==(addr%(mod?mod:1)))?',':' ';
-
+	char ch = (p->addrmod&&mod)?((addr%p->addrmod)?' ':','):' ';
 	if (p->flags & R_PRINT_FLAGS_COLOR) {
 #if 0
 		p->printf("%s0x%08"PFMT64x""Color_RESET"%c ",
@@ -82,7 +78,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 // XXX: bad designed function :)
 R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 	const char *s;
-	int i=0;
+	int i = 0;
 	char *d, *dst = (char *)malloc (1024); //(strlen (str)+2)*6);
 
 	// XXX: overflow here
@@ -123,10 +119,8 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 
 R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 	ut8 rch = ch;
-
 	if (!IS_PRINTABLE (ch) && fmt[0]=='%'&&fmt[1]=='c')
 		rch = '.';
-
 	r_print_cursor (p, idx, 1);
 	//if (p->flags & R_PRINT_FLAGS_CURSOR && idx == p->cur) {
 	if (p->flags & R_PRINT_FLAGS_COLOR) {

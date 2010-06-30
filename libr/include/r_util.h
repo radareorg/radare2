@@ -270,7 +270,7 @@ R_API int r_sys_cmd(const char *cmd);
 R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len);
 R_API char *r_sys_cmd_strf(const char *cmd, ...);
 //#define r_sys_cmd_str(cmd, input, len) r_sys_cmd_str_full(cmd, input, len, 0)
-R_API void r_sys_bt(void);
+R_API void r_sys_backtrace(void);
 R_API int r_alloca_init();
 R_API ut8 *r_alloca_bytes(int len);
 R_API char *r_alloca_str(const char *str);

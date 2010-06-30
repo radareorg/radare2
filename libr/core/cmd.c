@@ -291,7 +291,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			}
 		}
 		if (middle != 0) {
-			ret = ret-middle;
+			ret -= middle;
 			r_cons_printf (" ;  *middle* %d", ret);
 		}
 		switch (analop.type) {
@@ -2063,6 +2063,7 @@ static int cmd_search(void *data, const char *input) {
 	// TODO: repeat last search doesnt works for /a
 	from = r_config_get_i (core->config, "search.from");
 	to = r_config_get_i (core->config, "search.to");
+	core->search->align = r_config_get_i (core->config, "search.align");
 	//TODO: handle section ranges if from&&to==0
 /*
 	section = r_io_section_get (core->io, core->offset);
@@ -2083,8 +2084,7 @@ static int cmd_search(void *data, const char *input) {
 		dosearch = 1;
 		break;
 	case 'v':
-		r_search_free (core->search);
-		core->search = r_search_new (R_SEARCH_KEYWORD);
+		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
 		n32 = r_num_math (core->num, input+1);
@@ -2094,8 +2094,7 @@ static int cmd_search(void *data, const char *input) {
 		dosearch = 1;
 		break;
 	case ' ': /* search string */
-		r_search_free(core->search);
-		core->search = r_search_new (R_SEARCH_KEYWORD);
+		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
 		r_search_kw_add (core->search, 
@@ -2112,8 +2111,7 @@ static int cmd_search(void *data, const char *input) {
 			opt = strdup(res+1);
 			res[1]='\0';
 		}
-		r_search_free (core->search);
-		core->search = r_search_new (R_SEARCH_REGEXP);
+		r_search_reset (core->search, R_SEARCH_REGEXP);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
 		r_search_kw_add (core->search, 
@@ -2125,8 +2123,7 @@ static int cmd_search(void *data, const char *input) {
 		}
 		break;
 	case 'x': /* search hex */
-		r_search_free (core->search);
-		core->search = r_search_new (R_SEARCH_KEYWORD);
+		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
 		r_search_kw_add (core->search, 
@@ -2149,6 +2146,7 @@ static int cmd_search(void *data, const char *input) {
 		" //              # repeat last search\n"
 		"Configuration:\n"
 		" e search.distance = 0 # search string distance\n"
+		" e search.align = 4    # only catch aligned search hits\n"
 		" e search.from = 0     # start address\n"
 		" e search.to = 0       # end address\n");
 		break;
@@ -2210,6 +2208,9 @@ static int cmd_eval(void *data, const char *input) {
 		"  e a   ; get value of var 'a'\n"
 		"  e a=b ; set var 'a' the 'b' value\n");
 		//r_cmd_help(core->cmd, "e");
+		break;
+	case ' ':
+		r_config_eval (core->config, input+1);
 		break;
 	default:
 		r_config_eval (core->config, input);
@@ -2302,8 +2303,7 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case ' ':
 		ptr = strchr (input+1, ' ');
-		if (ptr)
-			*ptr = '\0';
+		if (ptr) *ptr = '\0';
 		file = r_core_file_open (core, input+1, R_IO_READ);
 		if (file) {
 			if (ptr) {
@@ -2317,8 +2317,7 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case '-':
 		file = r_core_file_get_fd (core, atoi (input+1));
-		if (file)
-			r_core_file_close (core, file);
+		if (file) r_core_file_close (core, file);
 		else eprintf ("Unable to find filedescriptor %d\n", atoi (input+1));
 		break;
 	}
@@ -2332,7 +2331,7 @@ static int cmd_meta(void *data, const char *input) {
 	ut64 addr_end = 0LL;
 	ut64 addr = core->offset;
 	char file[1024];
-	switch (input[0]) {
+	switch (*input) {
 	case '*':
 		r_meta_list (core->meta, R_META_ANY);
 		break;

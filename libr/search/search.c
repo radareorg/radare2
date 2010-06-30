@@ -3,18 +3,16 @@
 #include <r_search.h>
 
 R_API RSearch *r_search_new(int mode) {
-	RSearch *s;
-	
-	s = R_NEW (RSearch);
+	RSearch *s = R_NEW (RSearch);
 	if (s) {
 		memset (s,'\0', sizeof (RSearch));
 		if (!r_search_set_mode (s, mode)) {
 			eprintf ("Cannot init search for mode %d\n", mode);
 			return R_FALSE;
 		}
-		s->mode = mode;
 		s->user = NULL;
 		s->callback = NULL;
+		s->align = 0;
 		s->distance = 0;
 		s->pattern_size = 0;
 		s->string_max = 255;
@@ -88,15 +86,18 @@ R_API int r_search_begin(RSearch *s) {
 		break;
 	}
 #endif
-	return 1;
+	return R_TRUE;
 }
 
 R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
 	RSearchHit* hit;
+	if (s->align && (addr%s->align)) {
+		eprintf ("0x%08"PFMT64x" unaligned\n", addr);
+		return R_FALSE;
+	}
 	if (s->callback)
 		return s->callback (kw, s->user, addr);
-	hit = r_mem_pool_alloc (s->pool);
-	if (!hit)
+	if (!(hit = r_mem_pool_alloc (s->pool)))
 		return R_FALSE;
 	hit->kw = kw;
 	hit->addr = addr;
@@ -138,7 +139,8 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 					if (kw->idx[j] == kw->keyword_length) {
 						r_search_hit_new (s, kw, (ut64)
 							from+i-kw->keyword_length+1);
-						kw->idx[0] = 0;
+						kw->idx[j] = 0;
+						//kw->idx[0] = 0;
 						kw->distance = 0;
 						kw->count++;
 						count++;
@@ -158,6 +160,7 @@ R_API void r_search_set_distance(RSearch *s, int dist) {
 	} else s->distance = (dist>0)?dist:0;
 }
 
+// deprecate? or standarize with ->align ??
 R_API void r_search_set_pattern_size(RSearch *s, int size) {
 	s->pattern_size = size;
 }
@@ -216,9 +219,11 @@ R_API void r_search_kw_list(RSearch *s) {
 	}
 }
 
-R_API void r_search_reset(RSearch *s) {
+R_API void r_search_reset(RSearch *s, int mode) {
 	r_list_destroy (s->hits);
 	s->hits = r_list_new ();
 	s->hits->free = free;
 	r_search_kw_reset (s);
+	if (!r_search_set_mode (s, mode))
+		eprintf ("Cannot init search for mode %d\n", mode);
 }

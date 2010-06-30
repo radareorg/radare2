@@ -95,13 +95,10 @@ R_API RConfigNode *r_config_set_cb(RConfig *cfg, const char *name, const char *v
 	return node;
 }
 
-// TODO: use typedef declaration here
-R_API RConfigNode *r_config_set_i_cb(RConfig *cfg, const char *name, int ivalue, int (*callback)(void *user, void *data))
-{
-	RConfigNode *node = r_config_set_i(cfg, name, ivalue);
-	node->callback = callback;
-	if (node->callback)
-		node->callback(cfg->user, node);
+R_API RConfigNode *r_config_set_i_cb(RConfig *cfg, const char *name, int ivalue, RConfigCallback cb) {
+	RConfigNode *node = r_config_set_i (cfg, name, ivalue);
+	if ((node->callback = cb))
+		node->callback (cfg->user, node);
 	return node;
 }
 
@@ -228,13 +225,8 @@ R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 }
 
 R_API int r_config_eval(RConfig *cfg, const char *str) {
-	char *ptr,*a,*b;
-	char name[1024];
-	int len;
-
-	if (str == NULL)
-
-	len = strlen (str)+1;
+	char *ptr, *a, *b, name[1024];
+	int len = strlen (str)+1;
 	if (len >=sizeof (name))
 		return R_FALSE;
 	memcpy (name, str, len);

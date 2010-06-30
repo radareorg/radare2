@@ -51,6 +51,7 @@ typedef struct r_search_t {
 	RList *hits;
 	RMemoryPool *pool;
 	int distance;
+	int align;
 	RSearchUpdate update;
 	//struct r_search_binparse_t *bp;
 	//TODO RList *kws; // TODO: Use r_search_kw_new ()
@@ -77,7 +78,7 @@ R_API RSearchKeyword* r_search_keyword_new_hexmask(const char *kwstr, const char
 R_API int r_search_kw_add(RSearch *s, RSearchKeyword *kw);
 // TODO: Must be RList
 R_API void r_search_kw_list(RSearch *s);
-R_API void r_search_reset(RSearch *s);
+R_API void r_search_reset(RSearch *s, int mode);
 R_API void r_search_kw_reset(RSearch *s);
 
 R_API int r_search_range_add(RSearch *s, ut64 from, ut64 to);

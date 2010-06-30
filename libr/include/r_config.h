@@ -3,7 +3,7 @@
 
 #include "r_types.h"
 #include "r_util.h"
-#include "list.h"
+#include "list.h" // TODO: port to r_list
 
 #define CN_BOOL  0x000001
 #define CN_INT   0x000002
@@ -11,6 +11,8 @@
 #define CN_STR   0x000008
 #define CN_RO    0x000010
 #define CN_RW    0x000020
+
+typedef int (*RConfigCallback)(void *user, void *data);
 
 typedef struct r_config_node_t {
 	char *name;
@@ -21,7 +23,7 @@ typedef struct r_config_node_t {
 	ut64 *cb_ptr_q;
 	int *cb_ptr_i;
 	char **cb_ptr_s;
-	int (*callback)(void *user, void *data);
+	RConfigCallback callback;
 	struct list_head list;
 } RConfigNode;
 

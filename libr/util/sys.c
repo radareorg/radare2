@@ -12,7 +12,7 @@
 /* TODO: import stuff fron bininfo/p/bininfo_addr2line */
 
 /* TODO: check endianness issues here */
-R_API ut64 r_sys_now() {
+R_API ut64 r_sys_now(void) {
 	ut64 ret;
 	struct timeval now;
 	gettimeofday (&now, NULL);
@@ -33,7 +33,7 @@ R_API char *r_sys_cmd_strf(const char *fmt, ...) {
 	return ret;
 }
 
-R_API void r_sys_bt(void) {
+R_API void r_sys_backtrace(void) {
 #if __linux__
         void *array[10];
         size_t size;
@@ -97,7 +97,7 @@ R_API const char *r_sys_getenv(const char *key) {
 }
 #endif
 
-R_API char *r_sys_getcwd() {
+R_API char *r_sys_getcwd(void) {
 #if __UNIX__
 	return getcwd (NULL, 0);
 #elif __WINDOWS__
@@ -114,17 +114,17 @@ static void pipeclose(int pipe[2]) {
 }
 
 R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, char **sterr) {
+	char *output, buffer[1024];
 	char *inputptr = (char *)input;
 	int pid, bytes = 0;
 	int sh_in[2], sh_out[2], sh_err[2];
 
-	pipe(sh_in);
-	pipe(sh_out);
-	pipe(sh_err);
 	if (len) *len = 0;
+	pipe (sh_in);
+	pipe (sh_out);
+	pipe (sh_err);
 
-	pid = fork();
-	switch (pid) {
+	switch ((pid=fork ())) {
 	case -1:
 		return NULL;
 	case 0:
@@ -136,8 +136,7 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 		exit (1);
 	default:
 		{
-		char buffer[1024];
-		char *output = calloc (1, 1024); // TODO: use malloc
+		output = calloc (1, 1024); // TODO: use malloc
 		if (!output)
 			return NULL;
 		if (sterr) {

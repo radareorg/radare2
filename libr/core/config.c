@@ -9,6 +9,14 @@ static int config_scrhtml_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_searchalign_callback(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->search->align = node->i_value;
+	core->print->addrmod = node->i_value;
+	return R_TRUE;
+}
+
 static int config_ioffio_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -201,7 +209,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "scr.seek", "");
 	r_config_set_i (cfg, "search.from", 0);
 	r_config_set_i (cfg, "search.to", 0);
-	r_config_set_i (cfg, "search.distance", 0);
+	r_config_set_i (cfg, "search.distance", 0); // TODO: use i_cb here and remove code in cmd.c
+	r_config_set_i_cb (cfg, "search.align", 0, &config_searchalign_callback);
 	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
 	r_config_set_cb (cfg, "io.ffio", "false", &config_ioffio_callback);
 	r_config_set_cb (cfg, "io.va", "true", &config_iova_callback);
@@ -253,8 +262,6 @@ R_API int r_core_config_init(RCore *core) {
 	config_set("cmd.visualbind", "");
 	config_set("cmd.touchtrace", "");
 
-
-	r_config_set_i("search.align", 0);
 	config_set("search.flag", "true");
 	config_set("search.verbose", "true");
 

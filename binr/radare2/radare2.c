@@ -219,7 +219,7 @@ int main(int argc, char **argv) {
 		free (path);
 	}
 
-	if (!has_project) {
+	if (!has_project && run_rc) {
 		rabin_cmd = r_str_dup_printf ("rabin2 -rSIeMzis%s %s",
 			(debug||r.io->va)?"v":"", r.file->filename);
 		if (threaded) {
