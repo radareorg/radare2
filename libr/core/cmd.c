@@ -94,6 +94,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		}
 // TODO : line analysis must respect data types! shouldnt be interpreted as code
 		line = r_anal_reflines_str (core->anal, core->reflines, addr, linesopts);
+		// TODO: implement ranged meta find (if not at the begging of function..
  		mi = r_meta_find (core->meta, (ut64)core->offset+idx, R_META_ANY, R_META_WHERE_HERE);
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx);
 		if (ret<1) {
@@ -105,27 +106,26 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		r_anal_aop (core->anal, &analop, addr, buf+idx, (int)(len-idx));
 	
 		// TODO: Show xrefs in both sides..
-		if (mi) {
-			if (mi->from == addr) {
-				RListIter *iter;
-				RMetaItem *x;
-				r_list_foreach (mi->xrefs, iter, x) {
-					switch (x->type) {
-					case 'c':
-					case R_META_XREF_CODE:
-						r_cons_printf ("Cx # code xref from 0x%08llx\n", mi->to);
-						break;
-					case 'd':
-					case R_META_XREF_DATA:
-						r_cons_printf ("CX # data xref from 0x%08llx\n", mi->to);
-						break;
-					}
+		if (mi && mi->from == addr) {
+			RListIter *iter;
+			RMetaItem *x;
+			r_list_foreach (mi->xrefs, iter, x) {
+				switch (x->type) {
+				case 'c':
+				case R_META_XREF_CODE:
+					r_cons_printf ("Cx # code xref from 0x%08llx\n", mi->to);
+					break;
+				case 'd':
+				case R_META_XREF_DATA:
+					r_cons_printf ("CX # data xref from 0x%08llx\n", mi->to);
+					break;
 				}
 			}
 		}
 		if (adistrick)
 			middle = r_anal_reflines_middle (core->anal,
 					core->reflines, addr, analop.length);
+		/* XXX: This is really cpu consuming.. need to be fixed */
 		{
 			int found = 0;
 			RListIter *iter;
@@ -1271,7 +1271,18 @@ static int cmd_print(void *data, const char *input) {
 	switch (input[0]) {
 	case 'D':
 	case 'd':
-		r_print_disasm (core->print, core, core->offset, core->block, len, l);
+		if (input[1]=='f') {
+			RMetaItem *item = r_meta_find (core->meta, core->offset, R_META_FUNCTION, R_META_WHERE_HERE);
+			if (item) {
+				int blocklen = item->size;
+				ut8 *block = malloc (item->size+1);
+				if (block) {
+					r_core_read_at (core, core->offset, block, blocklen);
+					r_print_disasm (core->print, core, core->offset, block, blocklen, 9999);
+					free (block);
+				}
+			} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
+		} else r_print_disasm (core->print, core, core->offset, core->block, len, l);
 		break;
 	case 's':
 		r_print_string (core->print, core->offset, core->block, len, 0, 1, 0); //, 78, 1);
@@ -2376,49 +2387,50 @@ static int cmd_meta(void *data, const char *input) {
 	case 'x': /* code xref */
 	case 'X': /* data xref */
 	case 'F': /* add function */
-		if (input[1]=='-') {
+		switch (input[1]) {
+		case '-':
 			if (input[2]==' ')
 				addr = r_num_math (core->num, input+3);
 			r_meta_del (core->meta, input[0], addr, addr+1, "");
-		} else
-		if (input[1]=='\0'||input[1]=='*') {
+			break;
+		case '\0':
+		case '*':
 			r_meta_list (core->meta, input[0]);
-		} else {
-			char fun_name[128];
+			break;
+		default: {
+			char *t, *p, fun_name[128];
 			int type = input[0];
-			char *t, *p = strchr (input+2, ' ');
+			t = strdup (input+2);
+			p = strchr (t, ' ');
 			if (p) {
-				t = strdup (p+1);
-				p = strchr (t, ' ');
-				if (p) {
-					*p = '\0';
-					strncpy (fun_name, p+1, sizeof (fun_name));
-				} else
-				switch (type) {
-				case 'F':
-					sprintf (fun_name, "sub_%08"PFMT64x"", addr);
-					break;
-				case 's':
-					// TODO: filter \n and so on :)
-					r_core_read_at (core, addr, (ut8*)fun_name, sizeof (fun_name));
-					break;
-				default:
-					{
-					RFlagItem *fi = r_flag_get_i (core->flags, addr);
-					if (fi) snprintf (fun_name, sizeof (fun_name), fi->name);
-					else sprintf (fun_name, "ptr_%08"PFMT64x"", addr);
-					}
+				*p = '\0';
+				strncpy (fun_name, p+1, sizeof (fun_name));
+			} else
+			switch (type) {
+			case 'F':
+				sprintf (fun_name, "sub_%08"PFMT64x"", addr);
+				break;
+			case 's':
+				// TODO: filter \n and so on :)
+				r_core_read_at (core, addr, (ut8*)fun_name, sizeof (fun_name));
+				break;
+			default:
+				{
+				RFlagItem *fi = r_flag_get_i (core->flags, addr);
+				if (fi) snprintf (fun_name, sizeof (fun_name), fi->name);
+				else sprintf (fun_name, "ptr_%08"PFMT64x"", addr);
 				}
-				addr = r_num_math (core->num, t);
-				if (addr==0LL) // TODO: handle this? eprintf ("FAIL. meta\n");
-					addr = core->offset;
-				// only get abs address in Cx and CX
-				if (type == 'x' || type == 'X')
-					addr_end = r_num_math (core->num, input+2);
-				else addr_end = addr + atoi (input+1);
-				free (t);
 			}
+			// only get abs address in Cx and CX
+			if (type == 'x' || type == 'X') {
+				if (p) {
+					addr = r_num_math (core->num, input+2);
+					addr_end = r_num_math (core->num, p+1);
+				} else addr_end = r_num_math (core->num, input+2);
+			} else addr_end = addr + atoi (input+1);
+			free (t);
 			r_meta_add (core->meta, type, addr, addr_end, fun_name);
+			}
 		}
 		break;
 	case '-':

@@ -11,13 +11,18 @@
 
 Questions:
 ----------
+* There's dup of info between RMeta and RAnal .. functions.. oh fuck!
 * imports from PE doesnt works with /a because there's an indirect call
 * rabin2 doesnt works for osx-x86 mach0 bins..so io.va=1 fails
 * Store version information in libraries ? debian claims for it
 * Load symbol information from libraries (only the ones imported by rabin2?)
+* Implement 'av' command we need it  (really?) how about to eval with ?
+* filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
 
 Bugs:
 -----
+* Vu doesnt seems to work always fine :/
+* Cx/CX are not displayed in disasm as they should.. (C! must die)
 * if we use objcopy --stripsymbols on a library..the stripped symbols are not
   listed by nm or rabin..but objcopy is able to see them O_O
 * anal bug: (fixed??)
@@ -28,6 +33,7 @@ Bugs:
 
 TODO:
 -----
+* Add 'prj.name', 'prj.desc'
 * port r_sign to RList
 * pancake: implement callback for conditional breakpoints
 * nibble: trace counts after step..thats not correct!
@@ -38,6 +44,7 @@ TODO:
 * pancake: FileDescriptors: dd -- copy from !fd in r1
 * pancake: we need an api to define function signatures
   - arg/var set name/get value/ ..
+  - CF* must be used to define function shit
   - integrated with function signatures
   - offset -> formatstring (offset is the key to function signature)
 * pancake: implement RAnalCall (analyze function arguments, return values, propagate types..)
@@ -107,6 +114,7 @@ Build system
 
 Refactoring
 ===========
+* Add RLog API.. pipeable to disk and stderr..also hookable ..cool for ui
 * Move disasm loop into r_print (r_print should depend on r_asm)
   - thats hard :)
 * Move 'r_syscall_t' stuff into r_debug (sync r_core)
@@ -122,16 +130,6 @@ Refactoring
 * semi-ok state (R_TRUFAE), implement r_errno and r_errstr in r_util?
 * Finish and import the spp's getopt owns implementation in r_util (like in p9)
 * Rename __UNIX__ as __POSIX__
-
-Design
-======
-* Implement 'av' command we need it  (really?) how about to eval with ?
-* filter search results..
-  cc 8080 @@ hit* .. check for values that has changed.
-  - maybe we should 'cache' some memory regions
-* Add 'prj.name', 'prj.desc'
-* Add description to project e file.desc ?
-* Add RLog API.. pipeable to disk and stderr..also hookable ..cool for ui
  
 Future
 ======

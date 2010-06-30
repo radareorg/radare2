@@ -224,9 +224,7 @@ R_API int r_meta_add(RMeta *m, int type, ut64 from, ut64 to, const char *str) {
 R_API RMetaItem *r_meta_find(RMeta *m, ut64 off, int type, int where) {
 	RMetaItem *d, *it = NULL;
 	RListIter *iter;
-	if (off==0LL)
-		return NULL;
-
+	if (off)
 	r_list_foreach (m->data, iter, d) {
 		if (d->type == type || type == R_META_ANY) {
 			switch (where) {
