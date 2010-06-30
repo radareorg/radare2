@@ -471,13 +471,13 @@ R_API void r_core_visual_define (RCore *core) {
 		// detect type of string
 		// find EOS
 		// capture string value
-		r_meta_add (core->meta, R_META_STRING, off, core->blocksize, "");
+		r_meta_add (core->meta, R_META_STRING, off, off+core->blocksize, "");
 		break;
 	case 'd': // TODO: check
-		r_meta_add (core->meta, R_META_DATA, off, core->blocksize, "");
+		r_meta_add (core->meta, R_META_DATA, off, off+core->blocksize, "");
 		break;
 	case 'c': // TODO: check 
-		r_meta_add (core->meta, R_META_CODE, off, core->blocksize, "");
+		r_meta_add (core->meta, R_META_CODE, off, off+core->blocksize, "");
 		break;
 	case 'u':
 		r_meta_del (core->meta, R_META_ANY, off, 1, "");

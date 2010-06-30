@@ -193,6 +193,16 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			ret = (int)mi->size;
 			free (line);
 			continue;
+		case R_META_DATA:
+			r_print_hexdump (core->print, addr, buf+i, len-i, 16, 1);
+			ret = (int)mi->size;
+			free (line);
+			continue;
+		case R_META_STRUCT:
+			r_print_format (core->print, addr, buf+i, len-i, mi->str);
+			ret = (int)mi->size;
+			free (line);
+			continue;
 		}
 		if (show_bytes) {
 			char *str, pad[64];
@@ -2361,6 +2371,7 @@ static int cmd_meta(void *data, const char *input) {
 		break;
 	case 'S':
 	case 's':
+	case 'd': /* data */
 	case 'm': /* struct */
 	case 'x': /* code xref */
 	case 'X': /* data xref */
@@ -2428,6 +2439,7 @@ static int cmd_meta(void *data, const char *input) {
 		" CC [string]            # add comment\n"
 		" Cs[-] [size] [[addr]]  # add string\n"
 		" CS[-] [size]           # ...\n"
+		" Cd[-] [fmt] [..]       # hexdump data\n"
 		" Cm[-] [fmt] [..]       # format memory\n"
 		" Cx[-] [...]            # add code xref\n"
 		" CX[-] [...]            # add data xref\n");
