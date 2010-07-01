@@ -10,7 +10,7 @@ public class Radare.RSearch {
 	public bool set_mode (Mode mode);
 //	public bool set_string_limits (uint32 min, uint32 max);
 	public bool begin();
-	public void reset();
+	public void reset(int mode);
 	public bool update(out uint64 from, uint8 *buf, long len);
 	public bool update_i(uint64 from, uint8 *buf, long len);
 

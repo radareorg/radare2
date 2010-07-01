@@ -20,6 +20,7 @@ public class RAnal {
 	//public bool set_pc (uint64 addr);
 	public RList<RAnal.Block> fcn_bb_list(Fcn fun);
 
+/*
 	[CCode (cprefix="R_ANAL_OP_COND_")]
 	public enum OpCond {
 		EQ,
@@ -29,6 +30,7 @@ public class RAnal {
 		LE,
 		LT
 	}
+*/
 
 	[CCode (cprefix="R_ANAL_VAR_TYPE_")]
 	public enum VarType {
