@@ -11,6 +11,8 @@
 
 Questions:
 ----------
+* #md5 #sha1 #entropy ...
+* vsize=>vs, vaddr=>va, size=>sz ??? in 'S' command
 * There's dup of info between RMeta and RAnal .. functions.. oh fuck!
 * imports from PE doesnt works with /a because there's an indirect call
 * rabin2 doesnt works for osx-x86 mach0 bins..so io.va=1 fails

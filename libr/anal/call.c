@@ -3,7 +3,7 @@
 
 #include <r_anal.h>
 
-R_API RAnalCall *r_anal_call(RAnal *anal, ut64 addr) {
+R_API void r_anal_call(RAnal *anal, ut64 addr) {
 	// TODO: must use anal->sign to retrieve function signature
-	return NULL;
+	return;
 }

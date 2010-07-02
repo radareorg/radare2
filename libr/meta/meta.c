@@ -45,7 +45,7 @@ R_API char *r_meta_get_string(RMeta *m, int type, ut64 addr) {
 	RMetaItem *d;
 
 	switch(type) {
-	case R_META_FUNCTION:
+	//case R_META_FUNCTION:
 	case R_META_COMMENT:
 	case R_META_FOLDER:
 	case R_META_XREF_CODE:
@@ -65,21 +65,21 @@ R_API char *r_meta_get_string(RMeta *m, int type, ut64 addr) {
 	r_list_foreach (m->data, iter, d) {
 		if (d->type == type || type == R_META_ANY) {
 			if (d->from == addr)
-			switch(d->type) {
-			case R_META_FUNCTION:
-				str = r_str_concatf(str, "; FUNCTION SIZE %"PFMT64d"\n", d->size);
-				break;
+			switch (d->type) {
+			//case R_META_FUNCTION:
+				//str = r_str_concatf(str, "; FUNCTION SIZE %"PFMT64d"\n", d->size);
+				//break;
 			case R_META_COMMENT:
-				str = r_str_concatf(str, "; %s\n", d->str);
+				str = r_str_concatf (str, "; %s\n", d->str);
 				break;
 			case R_META_FOLDER:
-				str = r_str_concatf(str, "; FOLDER %"PFMT64d" bytes\n", d->size);
+				str = r_str_concatf (str, "; FOLDER %"PFMT64d" bytes\n", d->size);
 				break;
 			case R_META_XREF_CODE:
-				str = r_str_concatf(str, "; CODE XREF FROM 0x%08"PFMT64x"\n", d->to);
+				str = r_str_concatf (str, "; CODE XREF FROM 0x%08"PFMT64x"\n", d->to);
 				break;
 			case R_META_XREF_DATA:
-				str = r_str_concatf(str, "; DATA XREF FROM 0x%08"PFMT64x"\n", d->to);
+				str = r_str_concatf (str, "; DATA XREF FROM 0x%08"PFMT64x"\n", d->to);
 				break;
 			}
 		}
@@ -202,7 +202,7 @@ R_API int r_meta_add(RMeta *m, int type, ut64 from, ut64 to, const char *str) {
 	case R_META_STRUCT:
 		/* we should remove overlapped types and so on.. */
 		r_meta_cleanup (m, from, to);
-	case R_META_FUNCTION:
+	//case R_META_FUNCTION:
 	case R_META_COMMENT:
 	case R_META_FOLDER:
 		mi->size = R_ABS (to-from);//size;
@@ -282,7 +282,7 @@ R_API const char *r_meta_type_to_string(int type) {
 	case R_META_DATA: return "Cd";
 	case R_META_STRING: return "Cs";
 	case R_META_STRUCT: return "Cm";
-	case R_META_FUNCTION: return "CF";
+	//case R_META_FUNCTION: return "CF";
 	case R_META_COMMENT: return "CC";
 	case R_META_FOLDER: return "CF";
 	case R_META_XREF_CODE: return "Cx";

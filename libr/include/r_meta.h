@@ -36,10 +36,9 @@ typedef struct r_meta_item_t {
 typedef struct r_meta_t {
 	RList *data;
 	RList *xrefs;
-	int (*printf)(const char *str, ...); // XXX
+	PrintfCallback printf;
 //	struct reflines_t *reflines = NULL;
-//	struct list_head comments;
-//	struct list_head xrefs;
+//	RLIst *comments;
 } RMeta;
 
 enum {
@@ -56,7 +55,7 @@ enum {
 	R_META_STRING = 's',
 	R_META_STRUCT = 'm',
 	/* line */
-	R_META_FUNCTION = 'F',
+//	R_META_FUNCTION = 'F',
 	R_META_COMMENT = 'C',
 	R_META_FOLDER = 'f', // XXX deprecate?
 	R_META_XREF_CODE = 'x',
@@ -75,9 +74,7 @@ R_API int r_meta_cleanup(RMeta *m, ut64 from, ut64 to);
 R_API const char *r_meta_type_to_string(int type);
 R_API int r_meta_list(RMeta *m, int type);
 R_API void r_meta_sync(RMeta *m);
-
 R_API void r_meta_item_free(void *_item);
 R_API RMetaItem *r_meta_item_new(int type);
 #endif
-
 #endif

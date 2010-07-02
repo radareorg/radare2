@@ -47,13 +47,15 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 	int i = 0;
 	struct list_head *pos;
 
-	offset = io->va ? r_io_section_vaddr_to_offset (io, offset) : offset;
+	if (io->va)
+		offset = r_io_section_vaddr_to_offset (io, offset);
 	list_for_each_prev(pos, &io->sections) {
 		RIOSection *s = (RIOSection *)list_entry(pos, RIOSection, list);
+		ut64 ptr = (s->vaddr>=offset)?s->vaddr:s->offset;
 		if (rad) io->printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d\n",
 			s->offset, s->vaddr, s->size, s->vsize, s->name, s->rwx);
 		else io->printf ("[%02d] %c 0x%08"PFMT64x" %s vaddr=0x%08"PFMT64x" size=0x%08"PFMT64x" vsize=%08"PFMT64x" %s\n",
-			i, (offset>=s->offset && offset<s->offset+s->size)?'*':'.', 
+			i, (offset>=ptr && offset<ptr+s->size)?'*':'.', 
 			s->offset, r_str_rwx_i (s->rwx), s->vaddr, s->size, s->vsize, s->name);
 		i++;
 	}
@@ -153,7 +155,6 @@ R_API int r_io_section_overlaps(RIO *io, RIOSection *s) {
 
 R_API ut64 r_io_section_vaddr_to_offset(RIO *io, ut64 vaddr) {
 	struct list_head *pos;
-
 	list_for_each_prev (pos, &io->sections) {
 		RIOSection *s = (RIOSection *)list_entry (pos, RIOSection, list);
 		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize)
@@ -164,7 +165,6 @@ R_API ut64 r_io_section_vaddr_to_offset(RIO *io, ut64 vaddr) {
 
 R_API ut64 r_io_section_offset_to_vaddr(RIO *io, ut64 offset) {
 	struct list_head *pos;
-
 	list_for_each_prev(pos, &io->sections) {
 		RIOSection *s = (RIOSection *)list_entry(pos, RIOSection, list);
 		if (offset >= s->offset && offset < s->offset + s->size)

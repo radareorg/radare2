@@ -14,6 +14,10 @@ CFt printf void=char*,...
 CFt puts int=char*
 CFt system int=char*
 CFt exit void=int
+CFv [arraysize] [type] [name]
+CFa [arraysize] [type] [name]
+CFf 320 @ fun -> framesize for function
+CF 20 
 
 // how to define a function pointer?
 // how to define a structure or complex types?

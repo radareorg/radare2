@@ -15,10 +15,6 @@
 #include <sys/wait.h>
 #endif
 
-static void inferior_abort_handler(int pid) {
-        eprintf ("Inferior received signal SIGABRT. Executing BKPT.\n");
-}
-
 #if __APPLE__
 #include <sys/ptrace.h>
 #include <sys/types.h>
@@ -35,6 +31,9 @@ static void inferior_abort_handler(int pid) {
 #include <mach-o/loader.h>
 #include <mach-o/nlist.h>
 
+static void inferior_abort_handler(int pid) {
+        eprintf ("Inferior received signal SIGABRT. Executing BKPT.\n");
+}
 #endif
 
 /* 

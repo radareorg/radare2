@@ -7,9 +7,9 @@ R_API void r_debug_map_list(struct r_debug_t *dbg, ut64 addr) {
 	RListIter *iter = r_list_iterator (dbg->maps);
 	while (r_list_iter_next (iter)) {
 		RDebugMap *map = r_list_iter_get (iter);
-		eprintf ("sys 0x%08"PFMT64x" %c 0x%08"PFMT64x" %c %x %s\n",
+		eprintf ("sys 0x%08"PFMT64x" %c 0x%08"PFMT64x" %c %s %s\n",
 			map->addr, (addr>=map->addr && addr<=map->addr_end)?'*':'-',
-			map->addr_end, map->user?'u':'s', map->perm, map->name);
+			map->addr_end, map->user?'u':'s', r_str_rwx_i (map->perm), map->name);
 	}
 	iter = r_list_iterator (dbg->maps_user);
 	while (r_list_iter_next (iter)) {

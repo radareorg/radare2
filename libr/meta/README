@@ -1,28 +1,41 @@
 RMeta api
 =========
 
+-- zignature stuff --
+* zf name fmt    define function zignature (fast/slow, args, types)
+
 ** xrefs stuff should be delegated to the flags? (dont think so..)
  - we can generate xrefs metadata from flags analysis
  - we can use r_meta as 'static storage' and flags as playground.
 ** data_* api should be refactored to use less functions with more
    flexible arguments.
-** We can store multiple linked lists depending on type of data, to
-   reduce the search space.
 
-struct r_meta_t * meta = r_meta_new();
+What we need:
+- a database of data types
+	Ct char* 4 z
+	Ct void 0
+	Ct int 4 d
+	Ct ut32 4 x
+	Ct ut64 8 q
+- a database of function signatures
+	CFt printf void=char*,...
+	CFt puts int=char*
+	CFt system int=char*
+	CFt exit void=int
+- to store on each function
+  - fastcall ?
+  - local { vars, args } + type + arraysize + name
+  - framesize (should be detected by the code analysis
+- casting between types
+  - signed/unsigned
+  - different size
+  - all cast operations must be supported?
+- serialization/deserialization of strings into structures
 
-/* get list of xrefs to this addr */
-r_meta_xrefs_get(meta, 0x8040400);
-r_meta_xrefs_add(meta, 0x8040400, 0x8049030);
-
-r_meta_list(meta, RMetaCallback)
-
-r_meta_add(meta, R_META_CODE_XREF, 100, 200);
-r_meta_add_s(meta, R_META_COMMENT, 100, "Hello world");
-r_meta_add_s(meta, R_META_STRUCT, 100, "xxi");
-
-r_meta_get(meta, R_META_COMMENT, 0x804800);
-r_meta_get_range(meta, R_META_COMMENT, 0x804800, 0x8049000);
-
-// TODO: rethink argument order
-r_meta_get_closer(meta, 0x0394, R_META_STRING, R_META_GET_FORWARD);
+* We need a way to follow a variable access along the function flow
+  - r_anal_access (RAnal, RAnalFcn, RAnalOp);
+    - analyze opcode to update function vars/args accesses and determine function calls..
+  - to determine it's type and if it's stored in a register or pushed
+    in the stack before being used
+  - RAnalVar r_anal_var_from_value(RAnal, RFunction fun, RValue *val);
+    - return a variable reference for a variable
