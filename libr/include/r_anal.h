@@ -296,6 +296,7 @@ R_API int r_anal_aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int 
 
 /* fcn.c */
 R_API RAnalFcn *r_anal_fcn_new();
+R_API RAnalFcn *r_anal_fcn_find(RAnal *anal, ut64 addr);
 R_API RList *r_anal_fcn_list_new();
 R_API void r_anal_fcn_free(void *fcn);
 R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len);

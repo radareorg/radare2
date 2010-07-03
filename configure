@@ -349,8 +349,17 @@ if [ "$USEROSTYPE" = "auto" ]; then
 if [ "$HOST_OS" = "linux" ]; then
 USEROSTYPE="gnulinux"
 else
+if [ "$HOST_OS" = "netbsd" ]; then
+USEROSTYPE="gnulinux"
+else
+if [ "$HOST_OS" = "freebsd" ]; then
+USEROSTYPE="gnulinux"
+else
+if [ "$HOST_OS" = "openbsd" ]; then
+USEROSTYPE="gnulinux"
+else
 if [ "$HOST_OS" = "darwin" ]; then
-USEROSTYPE="darwin"; fi; fi; fi
+USEROSTYPE="darwin"; fi; fi; fi; fi; fi; fi
 SEDFLAGS=" -e '"
 COUNT=0
 for A in ${ENVWORDS} ; do

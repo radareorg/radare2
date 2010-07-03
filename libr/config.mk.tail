@@ -72,6 +72,11 @@ EXT_EXE=
 TH_LIBS=-lpthread
 endif
 
+ifeq (${EXT_SO},)
+all:
+	@echo Unidentified platform; exit 1
+endif
+
 LIB=lib${NAME}
 LIBAR=${LIB}.${EXT_AR}
 LIBSO=${LIB}.${EXT_SO}

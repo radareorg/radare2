@@ -13,21 +13,24 @@
 
 #include <sys/types.h>
 #include <stdarg.h>
+
+static int cmd_io_system(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+	r_io_set_fd(core->io, core->file->fd);
+	return r_io_system(core->io, input);
+}
+
 /* TODO: move to print/disasm.c */
 static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
 	RAnalFcn *fcni = NULL;
-	int ret, idx, i, j, k;
+	int ret, idx, i, j, k, ostackptr, stackptr = 0;
+	int counter = 0;
 	int middle = 0;
-	int stackptr = 0, ostackptr;
 	char str[128];
-	char *line;
-	char *comment;
-	char *opstr;
-	char *osl = NULL; // old source line
+	char *line, *comment, *opstr, *osl = NULL; // old source line
 	RAsmAop asmop;
 	RAnalOp analop;
 	RFlagItem *flag;
-	int counter = 0;
 	RMetaItem *mi;
 
 	// TODO: All those options must be print flags
@@ -61,7 +64,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		linesopts |= R_ANAL_REFLINE_WIDE;
 
 	// uhm... is this necesary? imho can be removed
-	r_asm_set_pc (core->assembler, core->offset);
+	r_asm_set_pc (core->assembler, addr);
 #if 0
 	/* find last function else stackptr=0 */
 	{
@@ -80,22 +83,20 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	// TODO: make anal->reflines implicit
 	free (core->reflines); // TODO: leak
 	free (core->reflines2); // TODO: leak
-	core->reflines = r_anal_reflines_get (core->anal, core->offset,
-		buf, len, -1, linesout, show_linescall);
-	core->reflines2 = r_anal_reflines_get (core->anal, core->offset,
-		buf, len, -1, linesout, 1);
+	core->reflines = r_anal_reflines_get (core->anal, addr, buf, len, -1, linesout, show_linescall);
+	core->reflines2 = r_anal_reflines_get (core->anal, addr, buf, len, -1, linesout, 1);
 	for (i=idx=ret=0; idx < len && i<l; idx+=ret,i++) {
-		ut64 addr = core->offset + idx;
-		r_asm_set_pc (core->assembler, addr);
+		ut64 at = addr + idx;
+		r_asm_set_pc (core->assembler, at);
 		if (show_comments)
-		if ((comment = r_meta_get_string (core->meta, R_META_COMMENT, addr))) {
+		if ((comment = r_meta_get_string (core->meta, R_META_COMMENT, at))) {
 			r_cons_strcat (comment);
 			free (comment);
 		}
 // TODO : line analysis must respect data types! shouldnt be interpreted as code
-		line = r_anal_reflines_str (core->anal, core->reflines, addr, linesopts);
+		line = r_anal_reflines_str (core->anal, core->reflines, at, linesopts);
 		// TODO: implement ranged meta find (if not at the begging of function..
- 		mi = r_meta_find (core->meta, (ut64)core->offset+idx, R_META_ANY, R_META_WHERE_HERE);
+ 		mi = r_meta_find (core->meta, at, R_META_ANY, R_META_WHERE_HERE);
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx);
 		if (ret<1) {
 			ret = 1;
@@ -103,10 +104,10 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 				core->assembler->pc + ret);
 			continue;
 		}
-		r_anal_aop (core->anal, &analop, addr, buf+idx, (int)(len-idx));
+		r_anal_aop (core->anal, &analop, at, buf+idx, (int)(len-idx));
 	
 		// TODO: Show xrefs in both sides..
-		if (mi && mi->from == addr) {
+		if (mi && mi->from == at) {
 			RListIter *iter;
 			RMetaItem *x;
 			r_list_foreach (mi->xrefs, iter, x) {
@@ -124,14 +125,22 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		}
 		if (adistrick)
 			middle = r_anal_reflines_middle (core->anal,
-					core->reflines, addr, analop.length);
+					core->reflines, at, analop.length);
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		{
+			RAnalFcn *f = r_anal_fcn_find (core->anal, addr);
+			if (f && f->addr == at) {
+				r_cons_printf ("/* function: %s (%d) */\n",
+					fcni->name, fcni->size);
+				stackptr = 0;
+				fcni = f;
+			}
+#if 0
 			int found = 0;
 			RListIter *iter;
 			RAnalFcn *f = fcni;
 			r_list_foreach (core->anal->fcns, iter, fcni) {
-				if (addr == fcni->addr) {
+				if (at == fcni->addr) {
 					r_cons_printf ("/* function: %s (%d) */\n",
 						fcni->name, fcni->size);
 					stackptr = 0;
@@ -141,39 +150,44 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			}
 			if (!found)
 				fcni = f;
+#endif
 		}
 		if (fcni) {
-			if (addr >= fcni->addr+fcni->size-1) {
+
+#if 0
+			if (f && f->addr == at) {
+				r_cons_printf ("/* function: %s (%d) */\n",
+					fcni->name, fcni->size);
+				stackptr = 0;
+				fcni = f;
+#endif
+			if (at >= fcni->addr+fcni->size-1) {
 				r_cons_printf ("\\*");
 				fcni = NULL;
 			} else
-			if (addr >= fcni->addr)
+			if (at >= fcni->addr)
 				r_cons_printf (": ");
 		}
-		flag = r_flag_get_i (core->flags, core->offset+idx);
+		flag = r_flag_get_i (core->flags, at);
 		if (flag && !show_bytes) {
 			if (show_lines && line)
 				r_cons_strcat (line);
 			if (show_offset) {
 				if (show_color)
-					r_cons_printf (Color_GREEN"0x%08"PFMT64x
-						"  "Color_RESET, core->offset + idx);
-				else r_cons_printf ("0x%08"PFMT64x"  ", core->offset + idx);
+					r_cons_printf (Color_GREEN"0x%08"PFMT64x"  "Color_RESET, at);
+				else r_cons_printf ("0x%08"PFMT64x"  ", at);
 			}
 			r_cons_printf ("%s:\n", flag->name);
 		}
-
 		if (show_lines && line)
 			r_cons_strcat (line);
 		if (show_offset) {
 			if (show_color)
-				r_cons_printf (Color_GREEN"0x%08"PFMT64x
-					"  "Color_RESET, core->offset + idx);
-			else r_cons_printf ("0x%08"PFMT64x"  ", core->offset + idx);
+				r_cons_printf (Color_GREEN"0x%08"PFMT64x"  "Color_RESET, at);
+			else r_cons_printf ("0x%08"PFMT64x"  ", at);
 		}
-//TODO: core->offset+idx must be a var named 'addr'!! less ops
 		if (show_trace) {
-			RDebugTracepoint *tp = r_debug_trace_get (core->dbg, core->offset+idx);
+			RDebugTracepoint *tp = r_debug_trace_get (core->dbg, at);
 			r_cons_printf ("%02x:%04x ", tp?tp->times:0, tp?tp->count:0);
 		}
 		if (show_stackptr) {
@@ -194,12 +208,12 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			free (line);
 			continue;
 		case R_META_DATA:
-			r_print_hexdump (core->print, addr, buf+i, len-i, 16, 1);
+			r_print_hexdump (core->print, at, buf+i, len-i, 16, 1);
 			ret = (int)mi->size;
 			free (line);
 			continue;
 		case R_META_STRUCT:
-			r_print_format (core->print, addr, buf+i, len-i, mi->str);
+			r_print_format (core->print, at, buf+i, len-i, mi->str);
 			ret = (int)mi->size;
 			free (line);
 			continue;
@@ -287,7 +301,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		if (show_color)
 			r_cons_strcat (Color_RESET);
 		if (show_dwarf) {
-			char *sl = r_bin_meta_get_source_line (core->bin, addr);
+			char *sl = r_bin_meta_get_source_line (core->bin, at);
 			int len = strlen (opstr);
 			if (len<30) len = 30-len;
 			if (sl && (!osl || (osl && strcmp (sl, osl)))) {
@@ -351,9 +365,6 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	}
 	free (osl);
 }
-/* </move> */
-
-static int cmd_io_system(void *data, const char *input);
 
 static int cmd_project(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -1272,13 +1283,12 @@ static int cmd_print(void *data, const char *input) {
 	case 'D':
 	case 'd':
 		if (input[1]=='f') {
-			RMetaItem *item = r_meta_find (core->meta, core->offset, R_META_FUNCTION, R_META_WHERE_HERE);
-			if (item) {
-				int blocklen = item->size;
-				ut8 *block = malloc (item->size+1);
+			RAnalFcn *f = r_anal_fcn_find (core->anal, core->offset);
+			if (f) {
+				ut8 *block = malloc (f->size+1);
 				if (block) {
-					r_core_read_at (core, core->offset, block, blocklen);
-					r_print_disasm (core->print, core, core->offset, block, blocklen, 9999);
+					r_core_read_at (core, f->addr, block, f->size);
+					r_print_disasm (core->print, core, f->addr, block, f->size, 9999);
 					free (block);
 				}
 			} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
@@ -2457,12 +2467,6 @@ static int cmd_meta(void *data, const char *input) {
 		" CX[-] [...]            # add data xref\n");
 	}
 	return R_TRUE;
-}
-
-static int cmd_io_system(void *data, const char *input) {
-	RCore *core = (RCore *)data;
-	r_io_set_fd(core->io, core->file->fd);
-	return r_io_system(core->io, input);
 }
 
 static int cmd_macro(void *data, const char *input) {

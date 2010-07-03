@@ -163,3 +163,13 @@ R_API RList *r_anal_fcn_bb_list(RAnal *anal, RAnalFcn *fcn) {
 	}
 	return list;
 }
+
+R_API RAnalFcn *r_anal_fcn_find(RAnal *anal, ut64 addr) {
+	RAnalFcn *fcn;
+	RListIter *iter;
+	r_list_foreach (anal->fcns, iter, fcn) {
+		if (addr >= fcn->addr && addr < fcn->addr+fcn->size)
+			return fcn;
+	}
+	return NULL;
+}

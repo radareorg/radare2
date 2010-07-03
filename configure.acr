@@ -26,14 +26,23 @@ ARG_WITH USERCC=gcc compiler Define compiler to use (see mk/) ;
 ARG_WITH USEROSTYPE=auto ostype Choose OS type ( gnulinux windows darwin ) ;
 
 (( TODO: throw error if unknown ostype ))
+(( TODO: handle BSD os as different ostype? ))
 IFEQ USEROSTYPE auto ; {
 	IFEQ HOST_OS linux ; {
 		USEROSTYPE = gnulinux ;
 	}{
-		IFEQ HOST_OS darwin ; {
-			USEROSTYPE = darwin ;
-		}
-	}
+	IFEQ HOST_OS netbsd ; {
+		USEROSTYPE = gnulinux ;
+	}{
+	IFEQ HOST_OS freebsd ; {
+		USEROSTYPE = gnulinux ;
+	}{
+	IFEQ HOST_OS openbsd ; {
+		USEROSTYPE = gnulinux ;
+	}{
+	IFEQ HOST_OS darwin ; {
+		USEROSTYPE = darwin ;
+	} } } } }
 }
 
 ARG_WITHOUT WITHPIC pic do not build libr as a program independent location ;
