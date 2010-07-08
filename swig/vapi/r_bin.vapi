@@ -42,7 +42,7 @@ namespace Radare {
 			public int32 vsize;
 			public int64 rva;
 			public int64 offset;
-			public int32 stringacteristics;
+			public int32 rwx;
 		}
 
 		[CCode (cname="RBinSymbol", free_function="", ref_function="", unref_function="")]

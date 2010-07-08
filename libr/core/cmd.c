@@ -131,7 +131,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			RAnalFcn *f = r_anal_fcn_find (core->anal, addr);
 			if (f && f->addr == at) {
 				r_cons_printf ("/* function: %s (%d) */\n",
-					fcni->name, fcni->size);
+					f->name, f->size);
 				stackptr = 0;
 				fcni = f;
 			}
