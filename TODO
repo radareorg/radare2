@@ -39,6 +39,7 @@ Bugs:
 
 TODO:
 -----
+* Test r_lib^w32/osx support
 * port r_sign to RList
 * pancake: implement callback for conditional breakpoints
 * nibble: trace counts after step..thats not correct!

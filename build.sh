@@ -14,18 +14,24 @@ fi
 PREFIX=/usr
 DESTDIR=${WD}/prefix
 MAKE=make
-CONFIGUREFLAGS=--prefix=${PREFIX}
+DONTFIND=""
+MAKEFLAGS="-j4"
+CONFIGUREFLAGS="--prefix=${PREFIX}"
 DOLOG="2>&1 | tee -a ${LOGFILE}"
 DOLOG="2>&1 | tee -a ${LOGFILE} > /dev/null"
 
 testcc() {
-	log "[==] Testing $1"
-	
+	eval type $1 2>&1 > /dev/null
+	if [ $? = 0 ]; then
+		log "[==] Found $1"
+		cc=$1
+	else
+		log "[==] Cannot find $1"
+	fi
 }
 
 log() {
-	echo $@
-	echo $@ >> ${LOGFILE}
+	echo $@ ; echo $@ >> ${LOGFILE}
 }
 
 logcmd() {
@@ -33,10 +39,127 @@ logcmd() {
 }
 
 registerpurge() {
-	if [ -z "`grep purge ~/.hgrc`" ]; then
-		echo 'purge=' >> ~/.hgrc
+	[ -z "`grep purge ~/.hgrc`" ] && echo 'purge=' >> ~/.hgrc
+}
+
+r2deinstall() {
+	cd radare2
+	make deinstall DESTDIR=${DESTDIR}
+}
+
+installdeps() {
+	VALA=vala-0.9.2
+	wget -c http://download.gnome.org/sources/vala/0.9/${VALA}.tar.bz2
+	tar xjvf ${VALA}.tar.bz2
+	cd ${VALA}
+	./configure --prefix=/usr
+	make
+	make install
+	cd ..
+	echo ${VALA} > ${WD}/version.vala
+
+	type swig 2>&1 > /dev/null
+	if [ $? = 1 ]; then
+		# TODO: install swig from svn!
+		echo "Cannot find 'swig'. apt-get install swig or get it from svn"
+		echo "svn co https://swig.svn.sourceforge.net/svnroot/swig/trunk swig"
+	else
+		if [ -d valaswig ]; then
+			cd valaswig
+			registerpurge
+			hg purge --all
+			hg pull -u
+		else
+			hg clone http://hg.youterm.com/valaswig
+			cd valaswig
+		fi
+		chmod +x configure
+		./configure --prefix=/usr
+		${MAKE} ${MAKEFLAGS}	
+		${MAKE} install DESTDIR=${DESTDIR}
+		cd ..
 	fi
 }
+
+deinstalldeps() {
+	VALA=`cat ${WD}/version.vala`
+	cd ${VALA}
+	${MAKE} deinstall DESTDIR=${DESTDIR}
+	cd ..
+	rm -rf ${VALA} ${VALA}.tar.bz2
+	cd valaswig
+	${MAKE} deinstall DESTDIR=${DESTDIR}
+}
+
+mkdir -p ${DIR}
+cd ${DIR}
+
+case "$1" in
+"-i")
+	if [ -z "$2" ]; then
+		echo "Usage: build.sh -i [path]"
+		exit 1
+	fi
+	DONTFIND=1
+	DESTDIR="$2"
+	;;
+"-I")
+	if [ -z "$2" ]; then
+		echo "Usage: build.sh -I [path]"
+		exit 1
+	fi
+	DESTDIR="$2"
+	r2deinstall
+	exit 0
+	;;
+"-d")
+	if [ -z "$2" ]; then
+		echo "Usage: build.sh -d [path]"
+		exit 1
+	fi
+	DESTDIR="$2"
+	installdeps
+	exit 0
+	;;
+"-D")
+	if [ -z "$2" ]; then
+		echo "Usage: build.sh -D [path]"
+		exit 1
+	fi
+	DESTDIR="$2"
+	deinstalldeps
+	exit 0
+	;;
+"-c")
+	rm -f ${WD}/build.*
+	rm -rf ${WD}/prefix
+	rm -rf ${WD}/vala*
+	;;
+"-h")
+	cat<<EOF
+Usage: build.sh [logfile|-option]
+  -i [destdir]    install r2
+  -I [destdir]    deinstall r2
+  -c              clean build directory
+  -d [destdir]    compile and install dependencies
+  -D [destdir]    deinstall dependencies
+  -h              show this help
+Dependencies:
+  vala        http://live.gnome.org/Vala
+  swig        http://www.swig.org
+  valaswig    http://hg.youterm.com/valaswig
+Examples:
+  sh build.sh              do the build and generate log
+  sudo sh build.sh -i /    install system-wide (/+/usr)
+  sudo sh build.sh -I      deinstall
+  sudo sh build.sh -d /    install dependencies system-wide
+  sh build.sh -d ~/prefix  install dependencies in home
+  sudo sh build.sh -c      clean build directory
+  rm -rf radare2.build     remove build directory
+EOF
+	exit 0
+	;;
+esac
 
 log "[==] Logging ${LOGFILE}"
 :> ${LOGFILE}
@@ -46,14 +169,16 @@ uname -a >> ${LOGFILE}
 cat /proc/cpuinfo >> ${LOGFILE}
 
 log "[==] Working directory: $WD/$DIR"
-mkdir -p ${DIR}
-cd ${DIR}
 
 if [ -d "${NAME}" ]; then
 	log "[==] Cleaning up old build directory..."
 	cd ${NAME}
 	registerpurge
 	hg purge --all
+
+	log "[==] Updating repository to HEAD..."
+	logcmd hg revert -a
+	logcmd hg pull -u
 else
 	log "[==] Checking out from ${URL}..."
 	hg clone ${URL} 2>&1 | tee -a ${LOGFILE}
@@ -71,8 +196,13 @@ logcmd time ./configure ${CONFIGUREFLAGS}
 log "[==] Running make ${MAKEFLAGS}"
 logcmd time ${MAKE} ${MAKEFLAGS}
 
-log "[==] Installing in ${PREFIX}"
-logcmd time ${MAKE} install DESTDIR="${DESTDIR}"
+log "[==] Symbolic installation... "
+${MAKE} symstall DESTDIR="${DESTDIR}" 2>&1 > /dev/null
+
+if [ -z "${DONTFIND}" ]; then
+	log "[==] List of symbollically installed files"
+	logcmd "(cd ${DESTDIR} && find *)"
+fi
 
 log "[==] Running some tests..."
 export PATH=${DESTDIR}/${PREFIX}/bin:$PATH
@@ -83,27 +213,26 @@ logcmd type rasm2
 logcmd type rabin2
 logcmd radare2 -V
 
-log "[==] List of installed files"
-logcmd "(cd ${DESTDIR} && find *)"
+if [ -z "${DONTFIND}" ]; then
+	log "[==] List of installed files"
+	logcmd "(cd ${DESTDIR} && find *)"
 
-log "[==] Uninstalling.."
-logcmd time ${MAKE} uninstall DESTDIR="${DESTDIR}"
+	log "[==] Uninstalling.."
+	logcmd time ${MAKE} uninstall DESTDIR="${DESTDIR}"
 
-log "[==] List of residual files"
-logcmd "(cd ${DESTDIR} && find *)"
+	log "[==] List of residual files"
+	logcmd "(cd ${DESTDIR} && find *)"
+fi
 
-log "[==] Symbolic installation... "
-${MAKE} symstall DESTDIR="${DESTDIR}" 2>&1 > /dev/null
-
-log "[==] List of symbollically installed files"
-logcmd "(cd ${DESTDIR} && find *)"
+log "[==] Installing in ${PREFIX}"
+logcmd time ${MAKE} install DESTDIR="${DESTDIR}"
 
 log "[==] Configuring valaswig bindings..."
 cd swig
 logcmd time ./configure --prefix=${PREFIX}
 
 log "[==] Compiling swig/..."
-logcmd time ${MAKE}
+logcmd time ${MAKE} ${MAKEFLAGS}
 
 log "[==] Installing valaswig bindings..."
 logcmd time ${MAKE} install DESTDIR=${DESTDIR}
@@ -112,22 +241,26 @@ log "[==] Testing bindings.."
 logcmd python -c 'from r2.r_core import *;c=RCore()'
 # TODO. add more tests here
 
+# back to root dir
+cd ..
+
 log "[==] Looking for mingw32 crosscompilers.."
 cc=""
 for a in i486-mingw32-gcc i586-mingw32msvc-gcc ; do
-	cc=$(testcc $a)
+	testcc $a
 	[ -n "$cc"] && break
 done
 
 if [ -n "$cc" ]; then
-	log "[==] mingw32 build"
-	${MAKE} mrproper
+	log "[==] mingw32 build using $cc"
+	${MAKE} ${MAKEFLAGS} mrproper
 	log "[==] mingw32 configure"
 	logcmd ./configure --without-gmp --with-ostype=windows --with-compiler=$cc --host=i586-unknown-windows
 	log "[==] mingw32 make"
-	logcmd ${MAKE}
+	logcmd ${MAKE} ${MAKEFLAGS}
 	log "[==] mingw32 w32dist"
 	logcmd ${MAKE} w32dist
+	cp radare2-w32*.zip ${WD}
 else
 	log "[==] Cannot find any compatible w32 crosscompiler. Report if not true"
 fi
