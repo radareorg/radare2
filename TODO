@@ -9,6 +9,11 @@
 0.5 RELEASE
 ===========
 
+Build system:
+-------------
+* Write documentation about how to build r2, r2-swig, valaswig, make symstall and
+  some basics about the organization of the code (boring++)
+
 Questions:
 ----------
 * #md5 #sha1 #entropy ...
@@ -34,11 +39,10 @@ Bugs:
 
 TODO:
 -----
-* Add 'prj.name', 'prj.desc'
 * port r_sign to RList
 * pancake: implement callback for conditional breakpoints
 * nibble: trace counts after step..thats not correct!
-######### * implement grep{col,row}
+* implement grep{col,row}
 * nibble: mach0 new binary format is not supported by bin_mach0 :(
 * Implement r_sys_setenv stuff from r1 in core/file.c:33 (!!?)
 * Implement visual selection of bytes
@@ -66,6 +70,7 @@ TODO:
 
 0.6
 ===
+* r_bin->relocs // RLit of relocations
 * rasign2 : must be done, write manpage
 * distribute 'spp' with 'rarc2' ?
 * Initial analysis looking for xrefs to strings and so? ax? ./a@@entry0 - Launched at startup

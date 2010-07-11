@@ -277,9 +277,10 @@ R_API char *r_alloca_str(const char *str);
 R_API int r_alloca_ret_i(int n);
 
 /* LOG */
-R_API int r_log_msg(const char *str);
-R_API int r_log_error(const char *str);
-R_API int r_log_progress(const char *str, int percent);
+R_API void r_log_msg(const char *str);
+R_API void r_log_error(const char *str);
+R_API void r_log_file(const char *str);
+R_API void r_log_progress(const char *str, int percent);
 
 /* Ranges */
 R_API RRange *r_range_new();

@@ -29,12 +29,14 @@ public static class Radare.RHex {
 		//public static int writef(...);
 	}
 
-	[CCode (cheader_filename="r_util.h", cname="", cprefix="r_log_", free_function="")]
-	public static class RLog {
-		public static bool msg(string str);
-		public static bool err(string str);
-	}
 #endif
+	[CCode (cheader_filename="r_util.h", cprefix="r_log_", free_function="")]
+	public static class RLog {
+		public static void msg(string str);
+		public static void error(string str);
+		public static void file(string str);
+		public static void progress(string str, int pc);
+	}
 
 	[CCode (cheader_filename="r_util.h", cprefix="r_hex_", free_function="")]
 	public static class RHex {
@@ -52,7 +54,7 @@ public static class Radare.RHex {
 		public static unowned string getenv (string key);
 		//public static string cmd_str_full(string str, string input = "", out int len = null, out string sterr = null);
 		public static int cmd (string command);
-		public static string cmd_str (string command, string? input, out int len=null);
+		public static string cmd_str (string command, string? input=null, out int len=null);
 	}
 
 	[CCode (cname="RNum", cheader_filename="r_util.h", cprefix="r_num_", free_function="")]

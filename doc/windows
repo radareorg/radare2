@@ -15,5 +15,5 @@ Crosscompilation
   Ubuntu
   ------
   sudo apt-get install mingw32
-  ./configure --with-compiler=i586-mingw32msvc-gcc  --with-ostype=windows --host=i586-unknown-windows
+  ./configure --without-gmp --with-compiler=i586-mingw32msvc-gcc  --with-ostype=windows --host=i586-unknown-windows
   make
