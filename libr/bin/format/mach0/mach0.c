@@ -431,13 +431,18 @@ struct r_bin_mach0_import_t* MACH0_(r_bin_mach0_get_imports)(struct MACH0_(r_bin
 		memcpy(sectname, bin->sects[i].sectname, 16);
 		if ((bin->sects[i].flags & S_SYMBOL_STUBS) && bin->sects[i].reserved2 != 0) {
 			nsyms = (int)(bin->sects[i].size / bin->sects[i].reserved2);
-			for (j = 0; j < nsyms; j++, k++) {
+			for (j = 0; j < nsyms; j++) {
+				if (bin->sects[i].reserved1 + j >= bin->nindirectsyms)
+					continue;
 				sym = bin->indirectsyms[bin->sects[i].reserved1 + j];
+				if (sym >= bin->nsymtab)
+					continue;
 				imports[k].offset = bin->sects[i].offset + j * bin->sects[i].reserved2;
 				imports[k].addr = bin->sects[i].addr + j * bin->sects[i].reserved2;
 				snprintf (imports[k].name, R_BIN_MACH0_STRING_LENGTH, "%s:%s",
 						  sectname, (char*)bin->symstr+bin->symtab[sym].n_un.n_strx);
 				imports[k].last = 0;
+				k++;
 			}
 		}
 	}

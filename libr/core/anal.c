@@ -67,7 +67,6 @@ static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts
 	RListIter *iter;
 	char *str;
 
-// TODO: display nodes in yellow when those are traced ones
 	/* In partial graphs test if the bb is already printed */
 	if (pbb)
 		r_list_foreach (pbb, iter, bbi)
@@ -106,7 +105,8 @@ static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts
 						bbi->diff==R_ANAL_DIFF_MATCH?"green":
 						bbi->diff==R_ANAL_DIFF_UNMATCH?"red":"lightgray",str);
 				} else {
-					r_cons_printf (" \"0x%08"PFMT64x"\" [label=\"%s\"]\n", bbi->addr, str);
+					r_cons_printf (" \"0x%08"PFMT64x"\" [color=%s,label=\"%s\"]\n", bbi->addr,
+						bbi->traced?"yellow":"lightgray",str);
 				}
 				r_cons_flush ();
 				free (str);

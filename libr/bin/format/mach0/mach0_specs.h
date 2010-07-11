@@ -13,7 +13,7 @@
 #define MACH0_(name) name
 #define	MH_MAGIC 0xfeedface
 #define MH_CIGAM 0xcefaedfe
-#define FAT_CIGAM 0xbebafeca
+#define FAT_CIGAM 0xcafebabe
 #endif
 
 #ifndef _INCLUDE_MACHO_SPECS_H_
