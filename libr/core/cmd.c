@@ -15,8 +15,8 @@
 #include <stdarg.h>
 
 static int checkbpcallback(RCore *core) {
-	ut64 pc = r_debug_reg_get (core->debug, "pc");
-	RBreakpointItem *bpi = r_bp_get (core->bp, pc);
+	ut64 pc = r_debug_reg_get (core->dbg, "pc");
+	RBreakpointItem *bpi = r_bp_get (core->dbg->bp, pc);
 	if (bpi) {
 		if (bpi->data)
 			r_core_cmd (core, bpi->data, 0);
@@ -693,16 +693,19 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case '-':
 		r_bp_del (core->dbg->bp, r_num_math (core->num, input+2));
 		break;
-	case 'c':{
-		char *arg = strchr (input+2, ' ');
-		if (arg) {
+	case 'c': {
 			ut64 off = r_num_math (core->num, input+2);
 			RBreakpointItem *bpi = r_bp_get (core->dbg->bp, off);
 			if (bpi) {
-				free (bpi->data);
-				bpi->data = strdup (arg+1);
+				char *arg = strchr (input+2, ' ');
+				if (arg) {
+					free (bpi->data);
+					bpi->data = strdup (arg+1);
+				} else {
+					free (bpi->data);
+					bpi->data = NULL;
+				}
 			} else eprintf ("No breakpoint defined at 0x%08"PFMT64x"\n", off);
-		} else eprintf ("Usage: dbc 0x804840 command\n");
 		}
 		break;
 	case 'e':
