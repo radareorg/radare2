@@ -130,8 +130,11 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		{
 			RAnalFcn *f = r_anal_fcn_find (core->anal, addr);
 			if (f && f->addr == at) {
+				char *sign = r_anal_fcn_to_string (core->anal, f);
 				r_cons_printf ("/* function: %s (%d) */\n",
 					f->name, f->size);
+				if (sign) r_cons_printf ("// %s\n", sign);
+				free (sign);
 				stackptr = 0;
 				fcni = f;
 			}
@@ -534,7 +537,7 @@ static int cmd_zign(void *data, const char *input) {
 			" zf name fmt    define function zignature (fast/slow, args, types)\n"
 			" zb name bytes  define zignature for bytes\n"
 			" zh name bytes  define function header zignature\n"
-			" zg pfx [file]  generate siganture for current file\n"
+			" zg pfx [file]  generate signature for current file\n"
 			" .zc @ fcn.foo  flag signature if matching (.zc@@fcn)\n"
 			" z/ [ini] [end] search zignatures between these regions\n"
 			"NOTE: bytes can contain '.' (dots) to specify a binary mask\n");
@@ -2411,13 +2414,15 @@ static int cmd_meta(void *data, const char *input) {
 	case '!':
 		r_meta_sync (core->meta);
 		break;
+	case 'F': /* add function */
+		eprintf ("TODO\n");
+		break;
 	case 'S':
 	case 's':
 	case 'd': /* data */
 	case 'm': /* struct */
 	case 'x': /* code xref */
 	case 'X': /* data xref */
-	case 'F': /* add function */
 		switch (input[1]) {
 		case '-':
 			if (input[2]==' ')
@@ -2475,10 +2480,10 @@ static int cmd_meta(void *data, const char *input) {
 	case '?':
 		eprintf (
 		"Usage: C[-LCFsSmxX?] [...]\n"
-		" C!                     # sync xrefs with\n"
+		" C!                     # sync xrefs with (to be deprecated)\n"
 		" C-[@][ addr]           # delete metadata at given address\n"
 		" CL[-] [addr]           # show 'code line' information (bininfo)\n"
-		" CF [size] [name] [addr] [name] # register function size here\n"
+		//" CF [size] [name] [addr] [name] # register function size here\n"
 		" CC [string]            # add comment\n"
 		" Cs[-] [size] [[addr]]  # add string\n"
 		" CS[-] [size]           # ...\n"
@@ -2492,7 +2497,7 @@ static int cmd_meta(void *data, const char *input) {
 
 static int cmd_macro(void *data, const char *input) {
 	RCore *core = (RCore*)data;
-	switch(input[0]) {
+	switch (input[0]) {
 	case ')':
 		r_cmd_macro_break (&core->cmd->macro, input+1);
 		break;

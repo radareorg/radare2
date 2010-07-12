@@ -11,47 +11,36 @@
 
 Build system:
 -------------
+* Design new website...
 * Write documentation about how to build r2, r2-swig, valaswig, make symstall and
   some basics about the organization of the code (boring++)
+* Store version information in libraries ? debian claims for it
+* install.sh (to track installed files ..)
 
 Questions:
 ----------
-* #md5 #sha1 #entropy ...
-* There's dup of info between RMeta and RAnal .. functions.. oh fuck!
 * imports from PE doesnt works with /a because there's an indirect call
-* rabin2 doesnt works for fat mach-o
-* Store version information in libraries ? debian claims for it
 * Load symbol information from libraries (only the ones imported by rabin2?)
+  - only in runtime when eip is in library code?
 * Implement 'av' command we need it  (really?) how about to eval with ?
 * filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
+* code analysis with r_parse // isnt this already done? nibble?
+  - generate by just parsing the opcode
+  - RAnalAopArg { int size; int delta; int type; }
+  - r_anal_aop_arg_set (); r_anal_aop_arg_get (); r_anal_aop_arg_binmask ();
 
 Bugs:
 -----
 * Vu doesnt seems to work always fine :/
 * Cx/CX are not displayed in disasm as they should.. (C! must die)
-* if we use objcopy --stripsymbols on a library..the stripped symbols are not
+* nibble: check if we use objcopy --stripsymbols on a library..the stripped symbols are not
   listed by nm or rabin..but objcopy is able to see them O_O
 
-TODO:
------
-* asm.syntax=att doesnt seems to work
-* Test r_lib^w32/osx support
-* port r_sign to RList
-* pancake: implement callback for conditional breakpoints
-* nibble: trace counts after step..thats not correct!
-* implement grep{col,row}
-* Implement r_sys_setenv stuff from r1 in core/file.c:33 (!!?)
-* Implement visual selection of bytes
-* pancake: FileDescriptors: dd -- copy from !fd in r1
-* pancake: we need an api to define function signatures
-  - arg/var set name/get value/ ..
-  - CF* must be used to define function shit
-  - integrated with function signatures
-  - offset -> formatstring (offset is the key to function signature)
-* pancake: implement RAnalCall (analyze function arguments, return values, propagate types..)
-  - define number of arguments for given function
-  - warn if signature and analysis differs in number of args or so..
-* gerardo?: implement GMP in util/big.c
+TODO nibble
+-----------
+* rabin2 doesnt works for fat mach-o
+* #md5 #sha1 #entropy ...
+* trace counts after step..thats not correct!
 * nibble: diff code analysis
   - diff two programs
      1st level:
@@ -62,14 +51,78 @@ TODO:
      2nd level:
         - basic block level diffing (output in graph mode)
 
+TODO pancake
+------------
+* implement callback for conditional breakpoints
+* FileDescriptors: dd -- copy from !fd in r1
+* we need an api to define function signatures
+  - arg/var set name/get value/ ..
+  - CF* must be used to define function shit
+  - integrated with function signatures
+  - offset -> formatstring (offset is the key to function signature)
+* implement RAnalCall (analyze function arguments, return values, propagate types..)
+  - define number of arguments for given function
+  - warn if signature and analysis differs in number of args or so..
+
+TODO gerardo
+------------
+* implement GMP in util/big.c
+
+unassigned
+----------
+* Implement a r_list_get_n() to get Nth element in linked list
+* Test r_lib^w32/osx support
+* port r_sign to RList
+* implement grep{col,row}
+* Implement r_sys_setenv stuff from r1 in core/file.c:33 (!!?)
+* Implement visual selection of bytes
+
 ---8<------------8<------------------8<---------------------8<------------- -- - -
 
 0.6
 ===
-* r_bin->relocs // RLit of relocations
+* r_bin->relocs // RList of relocations
 * rasign2 : must be done, write manpage
 * distribute 'spp' with 'rarc2' ?
 * Initial analysis looking for xrefs to strings and so? ax? ./a@@entry0 - Launched at startup
+
+Analysis
+========
+* Implement more get_main() (NOOB)
+
+Bindings
+========
+* generate accessors automatically from valaswig
+* Script plugins
+ - We should enable r_lib to implement plugins in any
+   scripting language, so we can for example prepare
+   a .c stub interface for python/perl/ruby/..
+   - this requires a swig bridge
+
+Refactoring
+===========
+* Add RLog API.. pipeable to disk and stderr..also hookable ..cool for ui
+* Move disasm loop into r_print (r_print should depend on r_asm)
+  - thats hard :)
+* Move 'r_syscall_t' stuff into r_debug (sync r_core)
+* merge r_asm and r_anal?
+* Implement r_bind api to link multiple pointers
+  core->asm = r_bind_set (core->asm->bind, r_asm_new ());
+* what do we have to do with r_th, r_parse and r_vm ?
+* Is RCore->block and blocksize a RBuf ? refactor!11
+* Find a better name for r_buf_fread (really?)
+* typedef all function pointers, like in r_bp
+* Review r_io API
+* semi-ok state (R_TRUFAE), implement r_errno and r_errstr in r_util?
+* Finish and import the spp's getopt owns implementation in r_util (like in p9)
+* Rename __UNIX__ as __POSIX__
+ 
+Future
+======
+* radare2 -e dbg.engine=vm -d ls
+  - load the program using r_bin in virtual space
+  - initialize vm and set regs
+  - debug backend should use the vm
 
 Transaction notes
 =================
@@ -93,52 +146,6 @@ Loading big binaries results on broken interaction.
       \
        `-- (while (lock,load,unlock))
 
-Analysis
-========
-* Implement more get_main() (NOOB)
-* code analysis with r_parse // isnt this already done? nibble?
-  - generate by just parsing the opcode
-  - RAnalAopArg { int size; int delta; int type; }
-  - r_anal_aop_arg_set (); r_anal_aop_arg_get (); r_anal_aop_arg_binmask ();
-
-Bindings
-========
-* generate accessors automatically from valaswig
-* Script plugins
- - We should enable r_lib to implement plugins in any
-   scripting language, so we can for example prepare
-   a .c stub interface for python/perl/ruby/..
-   - this requires a swig bridge
-
-Build system
-============
-* install.sh (to track installed files ..)
-
-Refactoring
-===========
-* Add RLog API.. pipeable to disk and stderr..also hookable ..cool for ui
-* Move disasm loop into r_print (r_print should depend on r_asm)
-  - thats hard :)
-* Move 'r_syscall_t' stuff into r_debug (sync r_core)
-* merge r_asm and r_anal?
-* Implement r_bind api to link multiple pointers
-  core->asm = r_bind_set (core->asm->bind, r_asm_new ());
-* what do we have to do with r_th, r_parse and r_vm ?
-* Is RCore->block and blocksize a RBuf ? refactor!11
-* Find a better name for r_buf_fread (really?)
-* typedef all function pointers, like in r_bp
-* Review r_io API
-* rasm2 should be configurable at startup time to choose default arch (use env?)
-* semi-ok state (R_TRUFAE), implement r_errno and r_errstr in r_util?
-* Finish and import the spp's getopt owns implementation in r_util (like in p9)
-* Rename __UNIX__ as __POSIX__
- 
-Future
-======
-* radare2 -e dbg.engine=vm -d ls
-  - load the program using r_bin in virtual space
-  - initialize vm and set regs
-  - debug backend should use the vm
 
 .------------------------.
 |   ___       ___  ____  |

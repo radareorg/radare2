@@ -171,6 +171,8 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			break;
 		case 'e':
 			/* TODO: prompt for addr, size, name */
+			eprintf ("TODO\n");
+			sleep (1);
 			break;
 		case 'q':
 			if (menu<=0) return R_TRUE; menu--;
@@ -186,6 +188,20 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			break;
 		case '-':
 			r_core_block_size (core, core->blocksize-1);
+			break;
+		case 'r':
+			if (menu == 1) {
+				int len;
+				r_cons_set_raw (0);
+				// TODO: use r_flag_rename or wtf?..fr doesnt uses this..
+				snprintf (cmd, sizeof (cmd), "fr %s ", fs2);
+				len = strlen (cmd);
+				eprintf ("Rename flag '%s' as:\n", fs2);
+				if (r_cons_fgets (cmd+len, sizeof (cmd)-len-1, 0, NULL) <0)
+					cmd[0]='\0';
+				r_core_cmd (core, cmd, 0);
+				r_cons_set_raw (1);
+			}
 			break;
 		case 'P':
 			if (--format<0)
@@ -219,6 +235,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			" a/d/e - add/delete/edit flag\n"
 			" +/-   - increase/decrease block size\n"
 			" o     - sort flags by offset\n"
+			" r     - rename flag\n"
 			" n     - sort flags by name\n"
 			" p/P   - rotate print format\n"
 			" :     - enter command\n");
@@ -426,7 +443,7 @@ R_API void r_core_visual_config(RCore *core) {
 #if HAVE_LIB_READLINE
 			char *ptr = readline(VISUAL_PROMPT);
 			if (ptr) {
-				strncpy(cmd, ptr, sizeof(cmd));
+				strncpy(cmd, ptr, sizeof (cmd));
 				r_core_cmd(core, cmd, 1);
 				free(ptr);
 			}

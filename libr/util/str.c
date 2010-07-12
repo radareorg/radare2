@@ -187,6 +187,16 @@ R_API char *r_str_new(char *str) {
 	return strdup (str);
 }
 
+R_API char *r_str_newf(const char *fmt, ...) {
+	char string[1024];
+	va_list ap;
+	va_start (ap, fmt);
+	vsnprintf (string, 1023, fmt, ap);
+	fmt = r_str_new (string);
+	va_end (ap);
+	return (char*)fmt;
+}
+
 R_API char *r_str_chop(char *str) {
 	int len;
 	char *ptr;

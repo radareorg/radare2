@@ -16,9 +16,7 @@ R_API RAnalVar *r_anal_var_new() {
 }
 
 R_API RAnalVarType *r_anal_var_type_new() {
-	RAnalVarType *vartype;
-
-	vartype = R_NEW (RAnalVarType);
+	RAnalVarType *vartype = R_NEW (RAnalVarType);
 	if (vartype)
 		memset (vartype, 0, sizeof (RAnalVarType));
 	return vartype;

@@ -148,8 +148,8 @@ R_API int r_anal_fcn_del(RAnal *anal, ut64 addr) {
 		if (!(anal->fcns = r_anal_fcn_list_new ()))
 			return R_FALSE;
 	} else r_list_foreach (anal->fcns, iter, fcni)
-			if (addr >= fcni->addr && addr < fcni->addr+fcni->size)
-				r_list_unlink (anal->fcns, fcni);
+		if (addr >= fcni->addr && addr < fcni->addr+fcni->size)
+			r_list_unlink (anal->fcns, fcni);
 	return R_TRUE;
 }
 
@@ -172,4 +172,33 @@ R_API RAnalFcn *r_anal_fcn_find(RAnal *anal, ut64 addr) {
 			return fcn;
 	}
 	return NULL;
+}
+
+R_API RAnalVar *r_anal_fcn_get_var(RAnalFcn *fs, int num, int dir) {
+	RAnalVar *var;
+	RListIter *iter;
+	int count = 0;
+	// TODO: vars must be sorted by delta
+	r_list_foreach (fs->vars, iter, var) {
+		if (dir & var->dir)
+			if (count++ == num)
+				return var;
+	}
+	return NULL;
+}
+
+R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFcn* fs) {
+	int i;
+	char *sign;
+	RAnalVar *arg, *ret = r_anal_fcn_get_var (fs, 0, R_ANAL_VAR_OUT);
+	if (ret) sign = r_str_newf ("%s %s (", ret->name, fs->name);
+	else sign = r_str_newf ("void %s (", fs->name);
+	for (i=0;;i++) {
+		arg = r_anal_fcn_get_var (fs, i, R_ANAL_VAR_IN);
+		if (!arg) break;
+		if (i) sign = r_str_concatf (sign, ", %s %s", arg->vartype, arg->name);
+		else sign = r_str_concatf (sign, "%s %s", arg->vartype, arg->name);
+	}
+	sign = r_str_concatf (sign, ");");
+	return sign;
 }

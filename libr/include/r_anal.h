@@ -216,11 +216,18 @@ typedef struct r_anal_var_access_t {
 	int set;
 } RAnalVarAccess;
 
+enum {
+	R_ANAL_VAR_IN = 1,
+	R_ANAL_VAR_OUT = 2
+};
+
 typedef struct r_anal_var_t {
-	char *name;
-	int delta;
-	int type;        /* global, local... */
-	char *vartype;   /* float, int... */
+	char *name;    /* name of the variable */
+	int delta;     /* delta offset inside stack frame */
+	int dir;       /* direction (in, out) */
+	int type;      /* global, local... */
+	int array;     /* array size */
+	char *vartype; /* float, int... */
 	/* probably dupped or so */
 	RList/*RAnalVarAccess*/ *accesses; /* list of accesses for this var */
 	RList/*RAnalValue*/ *stores;   /* where this */
@@ -259,7 +266,6 @@ typedef struct r_anal_plugin_t {
 	RAnalCallback aop;
 	struct list_head list;
 } RAnalPlugin;
-
 
 #ifdef R_API
 /* anal.c */
@@ -304,6 +310,8 @@ R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size,
 		const char *name, int diff);
 R_API int r_anal_fcn_del(RAnal *anal, ut64 addr);
 R_API RList *r_anal_fcn_bb_list(RAnal *anal, RAnalFcn *fcn);
+R_API RAnalVar *r_anal_fcn_get_var(RAnalFcn *fs, int num, int dir);
+R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFcn* fs);
 
 /* ref.c */
 R_API RAnalRef *r_anal_ref_new();

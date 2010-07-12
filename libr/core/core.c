@@ -82,7 +82,7 @@ static int autocomplete(RLine *line) {
 		    (!memcmp (line->buffer.data, "/a ", 3)) ||
 		    (!memcmp (line->buffer.data, "? ", 2))) {
 			int n, i = 0;
-			int sdelta = (line->buffer.data[0]=='/' || (!memcmp (line->buffer.data, "fr ", 3)))?3:2;
+			int sdelta = (line->buffer.data[1]==' ')?2:3;
 			n = strlen (line->buffer.data+sdelta);
 			list_for_each_prev (pos, &core->flags->flags) {
 				RFlagItem *flag = list_entry (pos, RFlagItem, list);

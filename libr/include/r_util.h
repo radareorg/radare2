@@ -190,6 +190,7 @@ R_API void r_str_writef(int fd, const char *fmt, ...);
 R_API char **r_str_argv(const char *str, int *_argc);
 R_API void r_str_argv_free(char **argv);
 R_API char *r_str_new(char *str);
+R_API char *r_str_newf(const char *fmt, ...);
 R_API const char *r_str_bool(int b);
 R_API const char *r_str_ansi_chrn(const char *str, int n);
 R_API int r_str_ansi_len(const char *str);

@@ -7,8 +7,7 @@
 /* this is the base fd.. more than one is supported :) */
 static int backup_fd=999;
 
-R_API int r_cons_pipe_open(const char *file, int append)
-{
+R_API int r_cons_pipe_open(const char *file, int append) {
 	int fd = open(file, O_RDWR | O_CREAT | (append?O_APPEND:O_TRUNC), 0644);
 	if (fd==-1) {
 		fprintf(stderr, "Cannot open file '%s'\n", file);
@@ -19,8 +18,7 @@ R_API int r_cons_pipe_open(const char *file, int append)
 	return fd;
 }
 
-R_API void r_cons_pipe_close(int fd)
-{
+R_API void r_cons_pipe_close(int fd) {
 	if (fd == -1)
 		return;
 	close(fd);
