@@ -142,11 +142,11 @@ static int filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str
 	ptr = data;
 	while ((ptr = strstr (ptr, "0x"))) {
 		for (ptr2 = ptr; *ptr2 && !isseparator (*ptr2); ptr2++);
-		if (!strcmp (ptr, "0x0")) {
-			ptr = ptr2;
+		off = r_num_math (NULL, ptr);
+		if(!off){
+			ptr=ptr2;
 			continue;
 		}
-		off = r_num_math (NULL, ptr);
 		list_for_each_prev (pos, &f->flags) {
 			RFlagItem *flag = list_entry (pos, RFlagItem, list);
 			if (flag->offset == off) {

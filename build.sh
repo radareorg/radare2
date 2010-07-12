@@ -184,6 +184,23 @@ date >> ${LOGFILE}
 uname -a >> ${LOGFILE}
 cat /proc/cpuinfo >> ${LOGFILE}
 
+type hg 2>&1 > /dev/null
+if [ ! $? = 0 ]; then
+	cat <<EOF
+Cannot find 'hg'. Please install mercurial:
+ # easy_install mercurial
+or
+ $ apt-get install mercurial
+or
+ $ wget http://mercurial.selenic.com/downloads
+ $ tar xzvf mercurial-*.tar.gz
+ $ cd mercurial-*
+ $ python setup.py build
+ $ sudo python setup.py install
+EOF
+	exit 1
+fi
+
 log "[==] Working directory: $WD/$DIR"
 
 if [ -d "${NAME}" ]; then

@@ -70,11 +70,12 @@ R_API int r_core_seek(RCore *core, ut64 addr, int rb) {
 	if (ret == -1) {
 //eprintf ("RET =%d %llx\n", ret, addr);
 /*
+	XXX handle read errors correctly
 		if (core->ffio) {
 			core->offset = addr;
 		} else return R_FALSE;
 */
-core->offset = addr;
+		core->offset = addr;
 	} else core->offset = addr;
 	if (rb) {
 		ret = r_core_block_read (core, 0);

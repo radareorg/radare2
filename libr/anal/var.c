@@ -103,7 +103,6 @@ R_API int r_anal_var_type_del(RAnal *anal, const char *name) {
 R_API RAnalVarType *r_anal_var_type_get(RAnal *anal, const char *name) {
 	RAnalVarType *vti;
 	RListIter *iter;
-
 	r_list_foreach(anal->vartypes, iter, vti)
 		if (!strcmp (name, vti->name))
 			return vti;
@@ -133,7 +132,6 @@ R_API int r_anal_var_add(RAnal *anal, RAnalFcn *fcn, ut64 from, int delta, int t
 R_API int r_anal_var_del(RAnal *anal, RAnalFcn *fcn, int delta, int type) {
 	RAnalVar *vari;
 	RListIter *iter;
-
 	r_list_foreach(fcn->vars, iter, vari)
 		if (vari->type == type && vari->delta == delta) {
 			r_list_unlink (fcn->vars, vari);
@@ -145,7 +143,6 @@ R_API int r_anal_var_del(RAnal *anal, RAnalFcn *fcn, int delta, int type) {
 R_API RAnalVar *r_anal_var_get(RAnal *anal, RAnalFcn *fcn, int delta, int type) {
 	RAnalVar *vari;
 	RListIter *iter;
-
 	r_list_foreach(fcn->vars, iter, vari)
 		if (vari->type == type && vari->delta == delta)
 			return vari;
@@ -165,7 +162,6 @@ R_API const char *r_anal_var_type_to_str (RAnal *anal, int type) {
 R_API int r_anal_var_access_add(RAnal *anal, RAnalVar *var, ut64 from, int set) {
 	RAnalVarAccess *acc, *acci;
 	RListIter *iter;
-
 	r_list_foreach(var->accesses, iter, acci)
 		if (acci->addr == from)
 			return R_TRUE;
@@ -180,7 +176,6 @@ R_API int r_anal_var_access_add(RAnal *anal, RAnalVar *var, ut64 from, int set) 
 R_API int r_anal_var_access_del(RAnal *anal, RAnalVar *var, ut64 from) {
 	RAnalVarAccess *acci;
 	RListIter *iter;
-
 	r_list_foreach(var->accesses, iter, acci)
 		if (acci->addr == from) {
 			r_list_unlink (var->accesses, acci);
@@ -192,7 +187,6 @@ R_API int r_anal_var_access_del(RAnal *anal, RAnalVar *var, ut64 from) {
 R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 from) {
 	RAnalVarAccess *acci;
 	RListIter *iter;
-
 	r_list_foreach(var->accesses, iter, acci)
 		if (acci->addr == from)
 			return acci;

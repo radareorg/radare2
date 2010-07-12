@@ -196,8 +196,13 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFcn* fs) {
 	for (i=0;;i++) {
 		arg = r_anal_fcn_get_var (fs, i, R_ANAL_VAR_IN);
 		if (!arg) break;
-		if (i) sign = r_str_concatf (sign, ", %s %s", arg->vartype, arg->name);
-		else sign = r_str_concatf (sign, "%s %s", arg->vartype, arg->name);
+		if (arg->array>1) {
+			if (i) sign = r_str_concatf (sign, ", %s %s[%d]", arg->vartype, arg->name, arg->array);
+			else sign = r_str_concatf (sign, "%s %s[%d]", arg->vartype, arg->name, arg->array);
+		} else {
+			if (i) sign = r_str_concatf (sign, ", %s %s", arg->vartype, arg->name);
+			else sign = r_str_concatf (sign, "%s %s", arg->vartype, arg->name);
+		}
 	}
 	sign = r_str_concatf (sign, ");");
 	return sign;

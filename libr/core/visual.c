@@ -627,11 +627,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'u':
 		if (r_io_sundo (core->io))
-			r_core_seek (core, core->io->off, 0);
+			r_core_seek (core, core->io->off, 1);
 		break;
 	case 'U':
 		if (r_io_sundo_redo (core->io))
-			r_core_seek (core, core->io->off, 0);
+			r_core_seek (core, core->io->off, 1);
 		break;
 	case 'j':
 		if (curset) {

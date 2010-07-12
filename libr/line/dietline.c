@@ -389,6 +389,12 @@ R_API char *r_line_readline() {
 				case 0x44:
 					I.buffer.index = I.buffer.index?I.buffer.index-1:0;
 					break;
+				case 0x48: // Start
+					I.buffer.index = 0;
+					break;
+				case 0x46: // End
+					I.buffer.index = I.buffer.length;
+					break;
 				}
 			}
 			break;

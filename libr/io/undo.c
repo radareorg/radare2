@@ -51,12 +51,14 @@ R_API int r_io_sundo_redo(struct r_io_t *io) {
 	return R_FALSE;
 }
 
-R_API void r_io_sundo_push(struct r_io_t *io) {
+R_API void r_io_sundo_push(RIO *io) {
+	ut64 off = (io->va && !list_empty (&io->sections))? 
+		r_io_section_offset_to_vaddr (io, io->off) : io->off;
 	if (!io->undo.s_enable)
 		return;
-	if (io->undo.seek[io->undo.idx-1] == io->off)
+	if (io->undo.seek[io->undo.idx-1] == off)
 		return;
-	io->undo.seek[io->undo.idx] = io->off;
+	io->undo.seek[io->undo.idx] = off;
 	if (++io->undo.idx==R_IO_UNDOS-1)
 		io->undo.idx--;
 	if (io->undo.limit<io->undo.idx)

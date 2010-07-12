@@ -31,7 +31,6 @@ Questions:
 
 Bugs:
 -----
-* Vu doesnt seems to work always fine :/
 * Cx/CX are not displayed in disasm as they should.. (C! must die)
 * nibble: check if we use objcopy --stripsymbols on a library..the stripped symbols are not
   listed by nm or rabin..but objcopy is able to see them O_O
@@ -53,9 +52,10 @@ TODO nibble
 
 TODO pancake
 ------------
-* implement callback for conditional breakpoints
+#### * implement callback for conditional breakpoints
 * FileDescriptors: dd -- copy from !fd in r1
 * we need an api to define function signatures
+  - Ct to manage types
   - arg/var set name/get value/ ..
   - CF* must be used to define function shit
   - integrated with function signatures
