@@ -53,6 +53,7 @@ TODO nibble
 TODO pancake
 ------------
 #### * implement callback for conditional breakpoints
+ ### * must check from core if stopped address is a breakpoint and run it
 * FileDescriptors: dd -- copy from !fd in r1
 * we need an api to define function signatures
   - Ct to manage types

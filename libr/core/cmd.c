@@ -14,6 +14,17 @@
 #include <sys/types.h>
 #include <stdarg.h>
 
+static int checkbpcallback(RCore *core) {
+	ut64 pc = r_debug_reg_get (core->debug, "pc");
+	RBreakpointItem *bpi = r_bp_get (core->bp, pc);
+	if (bpi) {
+		if (bpi->data)
+			r_core_cmd (core, bpi->data, 0);
+		return R_TRUE;
+	}
+	return R_FALSE;
+}
+
 static int cmd_io_system(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	r_io_set_fd(core->io, core->file->fd);
@@ -682,6 +693,18 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case '-':
 		r_bp_del (core->dbg->bp, r_num_math (core->num, input+2));
 		break;
+	case 'c':{
+		char *arg = strchr (input+2, ' ');
+		if (arg) {
+			ut64 off = r_num_math (core->num, input+2);
+			RBreakpointItem *bpi = r_bp_get (core->dbg->bp, off);
+			if (bpi) {
+				free (bpi->data);
+				bpi->data = strdup (arg+1);
+			} else eprintf ("No breakpoint defined at 0x%08"PFMT64x"\n", off);
+		} else eprintf ("Usage: dbc 0x804840 command\n");
+		}
+		break;
 	case 'e':
 		r_bp_enable (core->dbg->bp, r_num_math (core->num, input+2), 1);
 		break;
@@ -696,16 +719,17 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		break;
 	case '?':
 		r_cons_printf (
-		"Usage: db [[-]addr] [len] [rwx] [condstring]\n"
-		"db              ; list breakpoints\n"
-		"db sym.main     ; add breakpoint into sym.main\n"
-		"db 0x804800     ; add breakpoint\n"
-		"db -0x804800    ; remove breakpoint\n"
-		"dbe 0x8048000   ; enable breakpoint\n"
-		"dbd 0x8048000   ; disable breakpoint\n"
-		"dbh x86         ; set/list breakpoint plugin handlers\n"
+		"Usage: db[ecdht] [[-]addr] [len] [rwx] [condstring]\n"
+		"db                ; list breakpoints\n"
+		"db sym.main       ; add breakpoint into sym.main\n"
+		"db 0x804800       ; add breakpoint\n"
+		"db -0x804800      ; remove breakpoint\n"
+		"dbe 0x8048000     ; enable breakpoint\n"
+		"dbc 0x8048000 cmd ; run command when breakpoint is hit\n"
+		"dbd 0x8048000     ; disable breakpoint\n"
+		"dbh x86           ; set/list breakpoint plugin handlers\n"
 		"Unrelated:\n"
-		"dbt             ; debug backtrace\n");
+		"dbt               ; debug backtrace\n");
 		break;
 	default:
 		r_bp_add_sw (core->dbg->bp, r_num_math (core->num, input+1),
@@ -2999,6 +3023,10 @@ static int step_until(RCore *core, ut64 addr) {
 	}
 	do {
 		r_debug_step (core->dbg, 1);
+		if (checkbpcallback (core)) {
+			eprintf ("Interrupted by a breakpoint\n");
+			break;
+		}
 		off = r_debug_reg_get (core->dbg, "pc");
 		// check breakpoint here
 	} while (off != addr);
@@ -3024,6 +3052,10 @@ static int step_line(RCore *core, int times) {
 	}
 	do {
 		r_debug_step (core->dbg, 1);
+		if (checkbpcallback (core)) {
+			eprintf ("Interrupted by a breakpoint\n");
+			break;
+		}
 		off = r_debug_reg_get (core->dbg, "pc");
 		if (!r_bin_meta_get_line (core->bin, off, file2, sizeof (file2), &line2)) {
 			if (find_meta)
@@ -3168,12 +3200,20 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 'o':
 			r_debug_step_over (core->dbg, times);
+			if (checkbpcallback (core)) {
+				eprintf ("Interrupted by a breakpoint\n");
+				break;
+			}
 			break;
 		case 'l':
 			step_line (core, times);
 			break;
 		default:
 			r_debug_step (core->dbg, times);
+			if (checkbpcallback (core)) {
+				eprintf ("Interrupted by a breakpoint\n");
+				break;
+			}
 		}
 		break;
 	case 'b':
@@ -3204,9 +3244,11 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 'c':
 			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 0);
+			checkbpcallback (core);
 			break;
 		case 'r':
 			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_RET, 1);
+			checkbpcallback (core);
 			break;
 		case 'k':
 			// select pid and r_debug_continue_kill (core->dbg, 
@@ -3219,11 +3261,13 @@ static int cmd_debug(void *data, const char *input) {
 				r_debug_continue_kill (core->dbg, atoi (input+2));
 				r_debug_select (core->dbg, old_pid, old_pid);
 			} else r_debug_continue_kill (core->dbg, atoi (input+2));
+			checkbpcallback (core);
 			break;
 		case 's':
 			sig = r_num_math (core->num, input+2);
 			eprintf ("Continue until syscall %d\n", sig);
 			r_debug_continue_syscall (core->dbg, sig);
+			checkbpcallback (core);
 			/* TODO : use r_syscall here, to retrieve syscall info */
 			break;
 		case 'u':
@@ -3232,6 +3276,7 @@ static int cmd_debug(void *data, const char *input) {
 				eprintf ("Continue until 0x%08"PFMT64x"\n", addr);
 				r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
 				r_debug_continue (core->dbg);
+				checkbpcallback (core);
 				r_bp_del (core->dbg->bp, addr);
 			} else eprintf ("Cannot continue until address 0\n");
 			break;
@@ -3242,6 +3287,7 @@ static int cmd_debug(void *data, const char *input) {
 				r_debug_select (core->dbg, pid, pid);
 				r_debug_continue (core->dbg);
 				r_debug_select (core->dbg, old_pid, old_pid);
+				checkbpcallback (core);
 			} while (0);
 			break;
 		case 't':
@@ -3257,6 +3303,10 @@ static int cmd_debug(void *data, const char *input) {
 				do {
 					ut8 buf[32];
 					r_debug_continue (core->dbg);
+					if (checkbpcallback (core)) {
+						eprintf ("Interrupted by breakpoint\n");
+						break;
+					}
 					addr = r_debug_reg_get (core->dbg, "pc");
 					if (addr == 0LL) {
 						eprintf ("pc=0\n");
@@ -3278,6 +3328,7 @@ static int cmd_debug(void *data, const char *input) {
 		default:
 			eprintf ("continue\n");
 			r_debug_continue (core->dbg);
+			checkbpcallback (core);
 		}
 		break;
 	case 'm':

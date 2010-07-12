@@ -56,6 +56,15 @@ R_API int r_bp_get_bytes(RBreakpoint *bp, ut8 *buf, int len, int endian, int idx
 	return 0;
 }
 
+R_API RBreakpointItem *r_bp_get(RBreakpoint *bp, ut64 addr) {
+	RListIter *iter;
+	RBreakpointItem *b;
+	r_list_foreach(bp->bps, iter, b)
+		if (b->addr == addr)
+			return b;
+	return NULL;
+}
+
 R_API RBreakpointItem *r_bp_at_addr(RBreakpoint *bp, ut64 addr, int rwx) {
 	RListIter *iter;
 	RBreakpointItem *b;
@@ -95,6 +104,7 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 	b = R_NEW (struct r_bp_item_t);
 	b->pids[0] = 0; /* for any pid */
 	b->addr = addr;
+	b->data = NULL;
 	b->size = size;
 	b->enabled = R_TRUE;
 	b->hw = hw;
@@ -197,14 +207,15 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 	RListIter *iter;
 	eprintf ("Breakpoint list:\n");
 	r_list_foreach (bp->bps, iter, b) {
-		bp->printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %d %c%c%c %s %s %s\n",
+		bp->printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %d %c%c%c %s %s %s \"%s\"\n",
 			b->addr, b->addr+b->size, b->size,
 			(b->rwx & R_BP_PROT_READ)?'r':'-',
 			(b->rwx & R_BP_PROT_WRITE)?'w':'-',
 			(b->rwx & R_BP_PROT_EXEC)?'x':'-',
 			b->hw?"hw":"sw",
 			b->trace?"trace":"break",
-			b->enabled?"enabled":"disabled");
+			b->enabled?"enabled":"disabled",
+			b->data);
 		/* TODO: Show list of pids and trace points, conditionals */
 		n++;
 	}

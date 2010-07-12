@@ -45,7 +45,7 @@ typedef struct r_bp_item_t {
 	ut8 *obytes; /* original bytes */
 	ut8 *bbytes; /* breakpoint bytes */
 	int pids[R_BP_MAXPIDS];
-	void *data;
+	char *data;
 	RBreakpointCallback callback; // per-bp callback
 } RBreakpointItem;
 
@@ -97,6 +97,7 @@ R_API int r_bp_get_bytes(RBreakpoint *bp, ut8 *buf, int len, int endian, int idx
 R_API int r_bp_set_trace(RBreakpoint *bp, ut64 addr, int set);
 //R_API int r_bp_set_trace_bp(RBreakpoint *bp, ut64 addr, int set);
 R_API RBreakpointItem *r_bp_enable(RBreakpoint *bp, ut64 addr, int set);
+R_API RBreakpointItem *r_bp_get(RBreakpoint *bp, ut64 addr);
 
 R_API int r_bp_add_cond(RBreakpoint *bp, const char *cond);
 R_API int r_bp_del_cond(RBreakpoint *bp, int idx);
