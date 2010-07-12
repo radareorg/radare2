@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,8 +9,7 @@
 #include <r_flags.h>
 #include <r_parse.h>
 
-static int replace(int argc, const char *argv[], char *newstr)
-{
+static int replace(int argc, const char *argv[], char *newstr) {
 	int i,j,k;
 	struct {
 		char *op;
@@ -125,10 +124,9 @@ static int parse(struct r_parse_t *p, void *data, char *str)
 	return R_TRUE;
 }
 
-static int assemble(struct r_parse_t *p, void *data, char *str)
-{
+static int assemble(struct r_parse_t *p, void *data, char *str) {
 	char *ptr;
-	printf("assembling '%s' to generate real asm code\n", str);
+	printf ("assembling '%s' to generate real asm code\n", str);
 	ptr = strchr(str, '=');
 	if (ptr) {
 		*ptr='\0';
@@ -137,13 +135,17 @@ static int assemble(struct r_parse_t *p, void *data, char *str)
 	return R_TRUE;
 }
 
-static int filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str)
-{
+static int filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str) {
 	struct list_head *pos;
 	char *ptr, *ptr2;
 	ut64 off;
-	if ((ptr = strstr (data, "0x"))) {
+	ptr = data;
+	while ((ptr = strstr (ptr, "0x"))) {
 		for (ptr2 = ptr; *ptr2 && !isseparator (*ptr2); ptr2++);
+		if (!strcmp (ptr, "0x0")) {
+			ptr = ptr2;
+			continue;
+		}
 		off = r_num_math (NULL, ptr);
 		list_for_each_prev (pos, &f->flags) {
 			RFlagItem *flag = list_entry (pos, RFlagItem, list);
@@ -153,6 +155,7 @@ static int filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str
 				return R_TRUE;
 			}
 		}
+		ptr = ptr2;
 	}
 	strcpy (str, data);
 	return R_FALSE;

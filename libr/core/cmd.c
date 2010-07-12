@@ -1419,6 +1419,24 @@ static int cmd_flag(void *data, const char *input) {
 			}
 		}
 		break;
+	case 'r':
+		{
+			char *old, *new;
+			RFlagItem *item;
+			old = str+1;
+			new = strchr (old, ' ');
+			if (new) {
+				*new = 0;
+				new++;
+				item = r_flag_get (core->flags, old);
+			} else {
+				new = old;
+				item = r_flag_get_i (core->flags, core->offset);
+			}
+			if (item) strncpy (item->name, new, sizeof (item->name));
+			else eprintf ("Cannot find flag\n");
+		}
+		break;
 	case '*':
 		r_flag_list (core->flags, 1);
 		break;
@@ -1435,6 +1453,7 @@ static int cmd_flag(void *data, const char *input) {
 		" f-@addr          ; remove flag at address expression\n"
 		" f                ; list flags\n"
 		" f*               ; list flags in r commands\n"
+		" fr [old] [new]   ; rename flag\n"
 		" fs functions     ; set flagspace\n"
 		" fs *             ; set no flagspace\n"
 		" fs               ; display flagspaces\n"

@@ -36,9 +36,9 @@ Bugs:
     0x08048eec    0               c20400  ret 0x4
  -> this opcodes increments the stack 8 bytes (4+4) . it is not handled correctly
 
-
 TODO:
 -----
+* asm.syntax=att doesnt seems to work
 * Test r_lib^w32/osx support
 * port r_sign to RList
 * pancake: implement callback for conditional breakpoints

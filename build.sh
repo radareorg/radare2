@@ -180,6 +180,7 @@ log "[==] Logging ${LOGFILE}"
 :> ${LOGFILE}
 ln -fs ${LOGFILE} ${WD}/build.log
 log "[==] Retrieving system information"
+date >> ${LOGFILE}
 uname -a >> ${LOGFILE}
 cat /proc/cpuinfo >> ${LOGFILE}
 
