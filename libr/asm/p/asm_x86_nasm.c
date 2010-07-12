@@ -27,7 +27,7 @@ static int assemble(RAsm *a, RAsmAop *aop, const char *buf) {
 	if (out) {
 		memcpy (aop->buf, out, len<=R_ASM_BUFSIZE?len:R_ASM_BUFSIZE);
 		free (out);
-	}
+	} else eprintf ("Error running 'nasm'\n");
 	aop->inst_len = len;
 	return len;
 }

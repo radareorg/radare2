@@ -65,7 +65,7 @@ R_API RCore *r_core_new() {
 static const char *radare_argv[CMDS] ={
 	"?", "ds", "dso", "dc", "dd", "dm", "db", "S", "s",
 	"!", "!!", "#md5", "#sha1", "#crc32", "V", "ad", "ac",
-	"ag", "ag", "e", "i", "m", "q", "f", "x", "b", "/", "/a", "/x",
+	"ag", "ag", "e", "i", "m", "q", "f", "fr", "x", "b", "/", "/a", "/x",
 	"y", "yy", "y?", "wx", "ww", "wf", "w?", "pD", "pG", "pb", "px",
 	"pX", "po", "pm", "pz", "pr >", "p?", NULL
 };
@@ -78,10 +78,11 @@ static int autocomplete(RLine *line) {
 	if (core) {
 		if ((!memcmp (line->buffer.data, "s ", 2)) ||
 		    (!memcmp (line->buffer.data, "f ", 2)) ||
+		    (!memcmp (line->buffer.data, "fr ", 3)) ||
 		    (!memcmp (line->buffer.data, "/a ", 3)) ||
 		    (!memcmp (line->buffer.data, "? ", 2))) {
 			int n, i = 0;
-			int sdelta = (line->buffer.data[0]=='/')?3:2;
+			int sdelta = (line->buffer.data[0]=='/' || (!memcmp (line->buffer.data, "fr ", 3)))?3:2;
 			n = strlen (line->buffer.data+sdelta);
 			list_for_each_prev (pos, &core->flags->flags) {
 				RFlagItem *flag = list_entry (pos, RFlagItem, list);
