@@ -66,6 +66,17 @@ static int config_asmos_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_asmsyntax_callback(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	if (!strcmp (node->value, "intel"))
+		r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
+	else if (!strcmp (node->value, "att"))
+		r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_ATT);
+	else return R_FALSE;
+	return R_TRUE;
+}
+
 static int config_stopthreads_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -184,7 +195,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "asm.offset", "true"); 
 	r_config_set_cb (cfg, "asm.os", R_SYS_OS, &config_asmos_callback);
 	r_config_set (cfg, "asm.pseudo", "false");  // DEPRECATED ???
-	r_config_set (cfg, "asm.syntax", "intel");
+	r_config_set_cb (cfg, "asm.syntax", "intel", &config_asmsyntax_callback);
 #if LIL_ENDIAN
 	r_config_set_cb (cfg, "cfg.bigendian", "false", &config_bigendian_callback);
 #else
