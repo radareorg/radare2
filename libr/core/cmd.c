@@ -194,10 +194,12 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			r_cons_printf ("%3d%s  ", stackptr,
 				analop.type==R_ANAL_OP_TYPE_CALL?">":
 				stackptr>ostackptr?"+":stackptr<ostackptr?"-":" ");
-			if (analop.type == R_ANAL_OP_TYPE_RET)
-				stackptr = 0;
 			ostackptr = stackptr;
 			stackptr += analop.stackptr;
+			/* XXX if we reset the stackptr 'ret 0x4' has not effect.
+			 * Use RAnalFcn->RAnalAop->stackptr? */
+			if (analop.type == R_ANAL_OP_TYPE_RET)
+				stackptr = 0;
 		}
 		if (mi)
 		switch (mi->type) {

@@ -19,7 +19,7 @@ Questions:
 * #md5 #sha1 #entropy ...
 * There's dup of info between RMeta and RAnal .. functions.. oh fuck!
 * imports from PE doesnt works with /a because there's an indirect call
-* rabin2 doesnt works for osx-x86 mach0 bins..so io.va=1 fails
+* rabin2 doesnt works for fat mach-o
 * Store version information in libraries ? debian claims for it
 * Load symbol information from libraries (only the ones imported by rabin2?)
 * Implement 'av' command we need it  (really?) how about to eval with ?
@@ -31,10 +31,6 @@ Bugs:
 * Cx/CX are not displayed in disasm as they should.. (C! must die)
 * if we use objcopy --stripsymbols on a library..the stripped symbols are not
   listed by nm or rabin..but objcopy is able to see them O_O
-* anal bug: (fixed??)
-[0x08048eec]> pd 2 
-    0x08048eec    0               c20400  ret 0x4
- -> this opcodes increments the stack 8 bytes (4+4) . it is not handled correctly
 
 TODO:
 -----
@@ -44,7 +40,6 @@ TODO:
 * pancake: implement callback for conditional breakpoints
 * nibble: trace counts after step..thats not correct!
 * implement grep{col,row}
-* nibble: mach0 new binary format is not supported by bin_mach0 :(
 * Implement r_sys_setenv stuff from r1 in core/file.c:33 (!!?)
 * Implement visual selection of bytes
 * pancake: FileDescriptors: dd -- copy from !fd in r1

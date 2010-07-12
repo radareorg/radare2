@@ -57,6 +57,9 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 		if (X86IM_IO_IS_GPI_RET (&io)) { /* ret */
 			aop->type = R_ANAL_OP_TYPE_RET;
 			aop->eob = R_TRUE;
+			if (io.id == X86IM_IO_ID_RET_N_IM)
+				aop->stackptr = anal->bits/8 + imm;
+			else aop->stackptr = anal->bits/8;
 		} else
 		if (io.id == X86IM_IO_ID_HLT) { /* htl */
 			aop->type = R_ANAL_OP_TYPE_RET;
@@ -85,25 +88,24 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 			}
 		} else
 		if (X86IM_IO_IS_GPI_PUSH (&io)) { /* push */
-			if ((io.rop[0] & X86IM_IO_ROP_SGR_GPR_16)) {
+			if (io.id == X86IM_IO_ID_PUSH_RG2) {
 				aop->type = R_ANAL_OP_TYPE_UPUSH;
-				aop->stackptr = 2;
-			} else
-			if ((io.rop[0] & X86IM_IO_ROP_SGR_GPR_32)) {
+				if ((io.rop[0] & X86IM_IO_ROP_SGR_GPR_16))
+					aop->stackptr = 2;
+				else if ((io.rop[0] & X86IM_IO_ROP_SGR_GPR_32))
+					aop->stackptr = 4;
+				else if ((io.rop[0] & X86IM_IO_ROP_SGR_GPR_64))
+					aop->stackptr = 8;
+			} else if (io.id == X86IM_IO_ID_PUSH_MM) {
 				aop->type = R_ANAL_OP_TYPE_UPUSH;
-				aop->stackptr = 4;
-			} else
-			if ((io.rop[0] & X86IM_IO_ROP_SGR_GPR_64)) {
-				aop->type = R_ANAL_OP_TYPE_UPUSH;
-				aop->stackptr = 8;
+				aop->ref = disp;
+				aop->stackptr = io.mem_size;
+				if (io.mem_base & X86IM_IO_ROP_ID_EBP)
+					aop->stackop = R_ANAL_STACK_GET;
 			} else {
 				aop->type = R_ANAL_OP_TYPE_PUSH;
-				aop->ref = imm;
+				aop->value = imm;
 				aop->stackptr = io.imm_size;
-			}
-			if (io.id == X86IM_IO_ID_PUSH_MM &&
-				(io.mem_base & X86IM_IO_ROP_ID_EBP)) {
-				aop->stackop = R_ANAL_STACK_GET;
 			}
 		} else
 		if (X86IM_IO_IS_GPI_POP (&io)) { /* pop */

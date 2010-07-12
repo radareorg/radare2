@@ -186,9 +186,11 @@ static int check(RBin *bin) {
 
 	if ((buf = (ut8*)r_file_slurp_range (bin->file, 0, 8, &n))) {
 		if (n == 8) {
-			if (!memcmp (buf, "\xca\xfe\xba\xbe\x00\x00\x00\x02", 8))
+			/* XXX HACK to avoid conflicts with java class */
+			if (!memcmp (buf, "\xca\xfe\xba\xbe\x00\x00\x00\x02", 8)) {
+				eprintf ("Warning: fat mach-o, use bin/t/mach-ex to extract the bins\n");
 				ret = R_TRUE;
-			else
+			} else
 			if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
 				!memcmp (buf, "\xfe\xed\xfa\xce", 4))
 				ret = R_TRUE;
