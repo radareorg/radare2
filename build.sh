@@ -1,6 +1,8 @@
 #!/bin/sh
 # Build script for radare2 - pancake<nopcode.org>
 
+[ -z "${MAKEFLAGS}" ] && MAKEFLAGS="-j4"
+[ -z "${MAKE}" ] && MAKE=make
 [ -z "${NAME}" ] && NAME=radare2
 [ -z "${DIR}" ] && DIR=radare2.build
 [ -z "${URL}" ] && URL=http://radare.org/hg/${NAME}
@@ -11,13 +13,12 @@ if [ -z "$1" ]; then
 else
 	LOGFILE="$1"
 fi
+
 PREFIX=/usr
 DESTDIR=${WD}/prefix
-MAKE=make
 DONTFIND=""
-MAKEFLAGS="-j4"
 CONFIGUREFLAGS="--prefix=${PREFIX}"
-DOLOG="2>&1 | tee -a ${LOGFILE}"
+DOLOG="2>&1 | tee -a ${LOGFILE}" # verbose build
 DOLOG="2>&1 | tee -a ${LOGFILE} > /dev/null"
 
 testcc() {
@@ -34,8 +35,17 @@ log() {
 	echo $@ ; echo $@ >> ${LOGFILE}
 }
 
+logchk() {
+	if [ $1 = 0 ]; then
+		log "[==] RESULT: ok"
+	else
+		log "[==] RESULT: Shit happens"
+	fi
+}
+
 logcmd() {
 	eval $@ ${DOLOG}
+	logchk $?
 }
 
 registerpurge() {
@@ -49,6 +59,10 @@ r2deinstall() {
 
 installdeps() {
 	VALA=vala-0.9.2
+
+	echo "I am going to install ${VALA} and valaswig..."
+	sleep 2
+
 	wget -c http://download.gnome.org/sources/vala/0.9/${VALA}.tar.bz2
 	tar xjvf ${VALA}.tar.bz2
 	cd ${VALA}
@@ -94,6 +108,7 @@ deinstalldeps() {
 mkdir -p ${DIR}
 cd ${DIR}
 
+# TODO: clean spaguettis
 case "$1" in
 "-i")
 	if [ -z "$2" ]; then
@@ -146,7 +161,7 @@ Usage: build.sh [logfile|-option]
   -h              show this help
 Dependencies:
   vala        http://live.gnome.org/Vala
-  swig        http://www.swig.org
+  swig        http://www.swig.org/
   valaswig    http://hg.youterm.com/valaswig
 Examples:
   sh build.sh              do the build and generate log
@@ -238,7 +253,10 @@ log "[==] Installing valaswig bindings..."
 logcmd time ${MAKE} install DESTDIR=${DESTDIR}
 
 log "[==] Testing bindings.."
-logcmd python -c 'from r2.r_core import *;c=RCore()'
+export PYTHONPATH=${DESTDIR}/${PREFIX}/lib/python2.5/site-packages/
+logcmd python -c "'from r2.r_util import *;b=RBuffer()'"
+logcmd python -c "'from r2.r_asm import *;a=RAsm()'"
+logcmd python -c "'from r2.r_core import *;c=RCore()'"
 # TODO. add more tests here
 
 # back to root dir
@@ -248,7 +266,7 @@ log "[==] Looking for mingw32 crosscompilers.."
 cc=""
 for a in i486-mingw32-gcc i586-mingw32msvc-gcc ; do
 	testcc $a
-	[ -n "$cc"] && break
+	[ -n "$cc" ] && break
 done
 
 if [ -n "$cc" ]; then
