@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2010 pancake<nopcode.org> */
 
+// XXX: All this stuff must be linked to the code injection api
+
 #include <r_debug.h>
 
 R_API int r_debug_desc_open(RDebug *dbg, const char *path) {

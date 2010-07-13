@@ -127,7 +127,7 @@ typedef unsigned long mips64_regs_t [4096];
 #if __APPLE__
 // TODO: move into native/
 task_t pid_to_task(int pid) {
-	static task_t old_pid  = -1;
+	static task_t old_pid = -1;
 	static task_t old_task = -1;
 	task_t task = 0;
 	int err;
@@ -180,7 +180,6 @@ static int r_debug_native_step(RDebug *dbg, int pid) {
 	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, &regs, sizeof (regs));
 	//single_step = pid;
 	r_debug_native_continue (pid, -1);
-
 #elif __APPLE__
 	debug_arch_x86_trap_set (dbg, 1);
 	//eprintf ("stepping from pc = %08x\n", (ut32)get_offset("eip"));
@@ -188,7 +187,7 @@ static int r_debug_native_step(RDebug *dbg, int pid) {
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, SIGTRAP); //SIGINT);
 	if (ret != 0) {
 		perror ("ptrace-step");
-		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING(ret));
+		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
 		/* DO NOT WAIT FOR EVENTS !!! */
 		ret = R_FALSE;
 	} else ret = R_TRUE;
@@ -501,6 +500,7 @@ static const char *r_debug_native_reg_profile() {
 	"gpr	r17	.32	68	0\n"
 	);
 #else
+#warning NO DEBUGGER REGISTERS PROFILE DEFINED
 	return NULL;
 #endif
 }
@@ -679,7 +679,7 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		if (ret != 0)
 			return R_FALSE;
 		if (sizeof (regs) < size)
-			size = sizeof(regs);
+			size = sizeof (regs);
 		memcpy (buf, &regs, size);
 		return sizeof (regs);
 		}
@@ -705,7 +705,7 @@ static int r_debug_native_reg_write(int pid, int type, const ut8* buf, int size)
 			size = sizeof (R_DEBUG_REG_T);
 		return (ret != 0) ? R_FALSE: R_TRUE;
 #else
-		#warning r_debug_native_reg_write not implemented
+#warning r_debug_native_reg_write not implemented
 #endif
 	} else eprintf("TODO: reg_write_non-gpr (%d)\n", type);
 	return R_FALSE;
@@ -841,9 +841,9 @@ static int r_debug_native_bp_read(int pid, ut64 addr, int hw, int rwx) {
 static RList *r_debug_native_frames(RDebug *dbg) {
 	RRegister *reg = dbg->reg;
 	ut32 i, _esp, esp, ebp2;
-	ut8 buf[4];
 	RList *list = r_list_new ();
 	RIOBind *bio = &dbg->iob;
+	ut8 buf[4];
 
 	list->free = free;
 	_esp = r_reg_get_value (reg, r_reg_get (reg, "esp", R_REG_TYPE_GPR));
@@ -901,14 +901,12 @@ static RList *r_debug_native_frames(RDebug *dbg) {
 		// TODO: make those two reads in a shot
 		bio->read_at (bio->io, _rbp, &ebp2, 4);
 		bio->read_at (bio->io, _rbp+4, &ptr, 4);
-		if (ptr == 0x0 || _rbp == 0x0)
+		if (!ptr || !_rbp)
 			break;
-
 		RDebugFrame *frame = R_NEW (RDebugFrame);
 		frame->addr = ptr;
 		frame->size = 0; // TODO ?
 		r_list_append (list, frame);
-
 		_rbp = ebp2;
 	}
 	return list;

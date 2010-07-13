@@ -19,6 +19,10 @@ Build system:
 
 Questions:
 ----------
+* We need a command to retrieve r2 version '?V'
+* How to search for an opcode like CALL+REG? or MOV+CONST, ...
+  - r_anal_match(anal, aop CALL | REG) ?
+  - Implememnted in a command like /a..
 * imports from PE doesnt works with /a because there's an indirect call
 * Load symbol information from libraries (only the ones imported by rabin2?)
   - only in runtime when eip is in library code?
@@ -28,12 +32,7 @@ Questions:
   - generate by just parsing the opcode
   - RAnalAopArg { int size; int delta; int type; }
   - r_anal_aop_arg_set (); r_anal_aop_arg_get (); r_anal_aop_arg_binmask ();
-
-Bugs:
------
 * Cx/CX are not displayed in disasm as they should.. (C! must die)
-* nibble: check if we use objcopy --stripsymbols on a library..the stripped symbols are not
-  listed by nm or rabin..but objcopy is able to see them O_O
 
 TODO nibble
 -----------
@@ -52,15 +51,10 @@ TODO nibble
 
 TODO pancake
 ------------
-#### * implement callback for conditional breakpoints
- ### * must check from core if stopped address is a breakpoint and run it
 * FileDescriptors: dd -- copy from !fd in r1
 * we need an api to define function signatures
-  - Ct to manage types
+  - CF<addr> void name(int foo, char* var)
   - arg/var set name/get value/ ..
-  - CF* must be used to define function shit
-  - integrated with function signatures
-  - offset -> formatstring (offset is the key to function signature)
 * implement RAnalCall (analyze function arguments, return values, propagate types..)
   - define number of arguments for given function
   - warn if signature and analysis differs in number of args or so..
@@ -69,8 +63,8 @@ TODO gerardo
 ------------
 * implement GMP in util/big.c
 
-unassigned
-----------
+unassigned TODO pointz
+----------------------
 * Implement a r_list_get_n() to get Nth element in linked list
 * Test r_lib^w32/osx support
 * port r_sign to RList

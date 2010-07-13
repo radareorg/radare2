@@ -104,7 +104,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			r_cons_strcat (comment);
 			free (comment);
 		}
-// TODO : line analysis must respect data types! shouldnt be interpreted as code
+		// TODO : line analysis must respect data types! shouldnt be interpreted as code
 		line = r_anal_reflines_str (core->anal, core->reflines, at, linesopts);
 		// TODO: implement ranged meta find (if not at the begging of function..
  		mi = r_meta_find (core->meta, at, R_META_ANY, R_META_WHERE_HERE);
@@ -125,11 +125,11 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 				switch (x->type) {
 				case 'c':
 				case R_META_XREF_CODE:
-					r_cons_printf ("Cx # code xref from 0x%08llx\n", mi->to);
+					r_cons_printf ("Cx # code xref from 0x%08"PFMT64x"\n", mi->to);
 					break;
 				case 'd':
 				case R_META_XREF_DATA:
-					r_cons_printf ("CX # data xref from 0x%08llx\n", mi->to);
+					r_cons_printf ("CX # data xref from 0x%08"PFMT64x"\n", mi->to);
 					break;
 				}
 			}
@@ -219,7 +219,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		switch (mi->type) {
 		case R_META_STRING:
 			// TODO: filter string (r_str_unscape)
-			r_cons_printf ("string(%lld): \"%s\"\n", mi->size, mi->str);
+			r_cons_printf ("string(%"PFMTd"): \"%s\"\n", mi->size, mi->str);
 			ret = (int)mi->size;
 			free (line);
 			continue;
@@ -355,14 +355,14 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 						R_META_ANY, R_META_WHERE_HERE);
 					if (mi2) {
 						char *str = r_str_unscape (mi2->str);
-						r_cons_printf (" (at=0x%08llx) (len=%lld) \"%s\" ", analop.ref, mi2->size, str);
+						r_cons_printf (" (at=0x%08"PFMT64x") (len=%"PFMT64d") \"%s\" ", analop.ref, mi2->size, str);
 						free (str);
 						
 					} else r_cons_printf ("; => 0x%08x ", word);
 				} else {
 					if (mi2->type == R_META_STRING) {
 						char *str = r_str_unscape (mi2->str);
-						r_cons_printf (" (at=0x%08x) (len=%lld) \"%s\" ", word, mi2->size, str);
+						r_cons_printf (" (at=0x%08x) (len=%"PFMT64d") \"%s\" ", word, mi2->size, str);
 						free (str);
 					} else r_cons_printf ("unknown type '%c'\n", mi2->type);
 				} 
@@ -1058,8 +1058,8 @@ static int cmd_help(void *data, const char *input) {
 	case '$':
 		return cmd_help (data, " $?");
 	case 'z':
-		for (input=input+1;input[0]==' ';input=input+1);
-		core->num->value = strlen(input);
+		for (input=input+1; input[0]==' '; input=input+1);
+		core->num->value = strlen (input);
 		break;
 	case 't': {
 		struct r_prof_t prof;
@@ -1184,16 +1184,15 @@ static int cmd_cmp(void *data, const char *input) {
 		}
 		buf = (ut8*)malloc (strlen (input+2));
 		ret = r_hex_str2bin (input+2, buf);
-		if (ret<1) {
-			eprintf ("Cannot parse hexpair\n");
-		} else radare_compare (core, core->block, buf, ret);
+		if (ret<1) eprintf ("Cannot parse hexpair\n");
+		else radare_compare (core, core->block, buf, ret);
 		free (buf);
 		break;
 	case 'X':
 		buf = malloc (core->blocksize);
 		ret = r_io_read_at (core->io, r_num_math (core->num, input+1), buf, core->blocksize);
 		radare_compare (core, core->block, buf, ret);
-		free(buf);
+		free (buf);
 		break;
 	case 'f':
 		if (input[1]!=' ') {
@@ -1791,7 +1790,7 @@ static int cmd_anal(void *data, const char *input) {
 			RDebugTracepoint *t = r_debug_trace_get (core->dbg,
 				r_num_math (core->num, input+1));
 			if (t != NULL) {
-				r_cons_printf ("offset = 0x%llx\n", t->addr);
+				r_cons_printf ("offset = 0x%"PFMT64x"\n", t->addr);
 				r_cons_printf ("opsize = %d\n", t->size);
 				r_cons_printf ("times = %d\n", t->times);
 				r_cons_printf ("count = %d\n", t->count);
@@ -2408,6 +2407,8 @@ static int cmd_open(void *data, const char *input) {
 
 // XXX this command is broken. output of _list is not compatible with input
 static int cmd_meta(void *data, const char *input) {
+	RAnalVar *var;
+	RListIter *iter;
 	RCore *core = (RCore*)data;
 	int i, ret, line = 0;
 	ut64 addr_end = 0LL;
@@ -2416,6 +2417,40 @@ static int cmd_meta(void *data, const char *input) {
 	switch (*input) {
 	case '*':
 		r_meta_list (core->meta, R_META_ANY);
+		break;
+	case 't':
+		switch (input[1]) {
+		case '-':
+			r_anal_var_type_del (core->anal, input+2);
+			break;
+		case ' ':
+			{
+			int size;
+			const char *fmt= NULL;
+			const char *ptr, *name = input+2;
+			ptr = strchr (name, ' ');
+			if (ptr) {
+				size = atoi (ptr+1);
+				ptr = strchr (ptr+2, ' ');
+				if (ptr)
+					fmt = ptr+1;
+			}
+			if (fmt==NULL)
+				eprintf ("Usage: Ct name size format\n");
+			else r_anal_var_type_add (core->anal, name, size, fmt);
+			}
+			break;
+		case '\0':
+			r_list_foreach (core->anal->vars, iter, var) {
+				r_cons_printf ("Ct %s %d %s\n", var->name, var->size, var->fmt);
+			}
+			break;
+		default:
+			eprintf ("Usage: Ct[..]\n"
+				" Ct-int       : remove 'int' type\n"
+				" Ct int 4 d   : define int type\n");
+			break;
+		}
 		break;
 	case 'L': // debug information of current offset
 		ret = r_bin_meta_get_line (core->bin, core->offset, file, 1023, &line);
@@ -2595,7 +2630,6 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 
 	if (!*cmd || cmd[0]=='\0')
 		return 0;
-
 	cmd = r_str_trim_head_tail (cmd);
 
 	/* quoted / raw command */
@@ -2659,7 +2693,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			for (;;) {
 				char buf[1024];
 				int ret;
-				printf("> "); fflush(stdout);
+				printf ("> "); fflush (stdout);
 				fgets(buf, 1023, stdin); // XXX use r_line ??
 				if (feof (stdin))
 					break;

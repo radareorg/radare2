@@ -23,9 +23,7 @@ R_API RAnalVarType *r_anal_var_type_new() {
 }
 
 R_API RAnalVarAccess *r_anal_var_access_new() {
-	RAnalVarAccess *access;
-
-	access = R_NEW (RAnalVarAccess);
+	RAnalVarAccess *access = R_NEW (RAnalVarAccess);
 	if (access)
 		memset (access, 0, sizeof (RAnalVarAccess));
 	return access;
@@ -57,8 +55,8 @@ R_API void r_anal_var_free(void *var) {
 			free (((RAnalVar*)var)->vartype);
 		if (((RAnalVar*)var)->accesses)
 			r_list_free (((RAnalVar*)var)->accesses);
+		free (var);
 	}
-	free (var);
 }
 
 R_API void r_anal_var_type_free(void *vartype) {
@@ -91,7 +89,6 @@ R_API int r_anal_var_type_add(RAnal *anal, const char *name, int size, const cha
 R_API int r_anal_var_type_del(RAnal *anal, const char *name) {
 	RAnalVarType *vti;
 	RListIter *iter;
-
 	r_list_foreach(anal->vartypes, iter, vti)
 		if (!strcmp (name, vti->name)) {
 			r_list_unlink (anal->vartypes, vti);
@@ -103,7 +100,7 @@ R_API int r_anal_var_type_del(RAnal *anal, const char *name) {
 R_API RAnalVarType *r_anal_var_type_get(RAnal *anal, const char *name) {
 	RAnalVarType *vti;
 	RListIter *iter;
-	r_list_foreach(anal->vartypes, iter, vti)
+	r_list_foreach (anal->vartypes, iter, vti)
 		if (!strcmp (name, vti->name))
 			return vti;
 	return NULL;
@@ -112,7 +109,6 @@ R_API RAnalVarType *r_anal_var_type_get(RAnal *anal, const char *name) {
 R_API int r_anal_var_add(RAnal *anal, RAnalFcn *fcn, ut64 from, int delta, int type, const char *vartype, const char *name, int set) {
 	RAnalVar *var, *vari;
 	RListIter *iter;
-
 	r_list_foreach(fcn->vars, iter, vari)
 		if (vari->type == type && vari->delta == delta)
 			return r_anal_var_access_add (anal, vari, from, set);
@@ -149,6 +145,7 @@ R_API RAnalVar *r_anal_var_get(RAnal *anal, RAnalFcn *fcn, int delta, int type) 
 	return NULL;
 }
 
+// XXX: rename function type? i think this is 'scope' 
 R_API const char *r_anal_var_type_to_str (RAnal *anal, int type) {
 	switch(type) {
 	case R_ANAL_VAR_TYPE_GLOBAL: return "global";
