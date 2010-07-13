@@ -24,7 +24,7 @@ clean:
 	cd libr && ${MAKE} clean
 	cd binr && ${MAKE} clean
 
-mrproper: clean
+mrproper:
 	cd libr && ${MAKE} mrproper
 	cd binr && ${MAKE} mrproper
 	rm -f config-user.mk plugins.cfg libr/config.h libr/include/r_userconf.h libr/config.mk

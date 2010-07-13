@@ -37,8 +37,11 @@ install-symlink:
 deinstall uninstall:
 	rm -f ${PFX}/bin/rarc2 ${PFX}/bin/rarc2-tool
 
-clean mrproper:
+clean:
 	cd t && ${MAKE} clean
 	-rm -f rarc2 rarc2.o out.o emit*.o
+
+mrproper: clean
+	-rm -f config.h
 
 .PHONY: all clean install install-symlink deinstall uninstall test mrproper

@@ -29,5 +29,8 @@ deinstall uninstall:
 	rm -f ${PFX}/bin/rarc2-tool
 	-rm -f ${PFX}/bin/r2
 
-clean mrproper:
+clean:
 	@for a in ${BINS} ; do (cd $$a && ${MAKE} clean); done
+
+mrproper:
+	@for a in ${BINS} ; do (cd $$a && ${MAKE} mrproper); done

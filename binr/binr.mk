@@ -15,4 +15,7 @@ ${BIN}${EXT_EXE}: ${BIN}.o
 	${CC} -o ${BIN}${EXT_EXE} ${LIBS} ${LDFLAGS} ${BIN}.o
 
 clean:
-	rm -f ${BIN} ${BIN}.o ${BIN}.d
+	-rm -f ${BIN} ${BIN}.o
+
+mrproper: clean
+	-rm -f ${BIN}.d

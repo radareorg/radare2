@@ -48,6 +48,7 @@ TODO nibble
         - check all strings
      2nd level:
         - basic block level diffing (output in graph mode)
+* implement grep{col,row}
 
 TODO pancake
 ------------
@@ -68,7 +69,6 @@ unassigned TODO pointz
 * Implement a r_list_get_n() to get Nth element in linked list
 * Test r_lib^w32/osx support
 * port r_sign to RList
-* implement grep{col,row}
 * Implement r_sys_setenv stuff from r1 in core/file.c:33 (!!?)
 * Implement visual selection of bytes
 

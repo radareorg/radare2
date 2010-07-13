@@ -140,8 +140,10 @@ clean:
 	rm -f libr2.so
 	rm -rf .objs
 
-mrproper: clean
+mrproper:
 	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} mrproper ); done
+	rm -f libr2.so
+	rm -rf .objs
 	rm -f libr.pc
 
 sloc:
