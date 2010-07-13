@@ -219,7 +219,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		switch (mi->type) {
 		case R_META_STRING:
 			// TODO: filter string (r_str_unscape)
-			r_cons_printf ("string(%"PFMTd"): \"%s\"\n", mi->size, mi->str);
+			r_cons_printf ("string(%"PFMT64d"): \"%s\"\n", mi->size, mi->str);
 			ret = (int)mi->size;
 			free (line);
 			continue;
@@ -2407,7 +2407,7 @@ static int cmd_open(void *data, const char *input) {
 
 // XXX this command is broken. output of _list is not compatible with input
 static int cmd_meta(void *data, const char *input) {
-	RAnalVar *var;
+	RAnalVarType *var;
 	RListIter *iter;
 	RCore *core = (RCore*)data;
 	int i, ret, line = 0;
@@ -2441,7 +2441,7 @@ static int cmd_meta(void *data, const char *input) {
 			}
 			break;
 		case '\0':
-			r_list_foreach (core->anal->vars, iter, var) {
+			r_list_foreach (core->anal->vartypes, iter, var) {
 				r_cons_printf ("Ct %s %d %s\n", var->name, var->size, var->fmt);
 			}
 			break;

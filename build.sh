@@ -49,7 +49,10 @@ logcmd() {
 }
 
 registerpurge() {
-	[ -z "`grep purge ~/.hgrc`" ] && echo 'purge=' >> ~/.hgrc
+	if [ -z "`grep purge ~/.hgrc 2>/dev/null`" ]; then
+		echo '[extensions]' >> ~/.hgrc
+		echo 'purge=' >> ~/.hgrc
+	fi
 }
 
 r2deinstall() {
@@ -218,9 +221,9 @@ else
 	cd ${NAME}
 fi
 
-if [ -e "Makefile" ]; then
+if [ -e "config-user.mk" ]; then
 	log "[==] Running mrproper..."
-	${MAKE} mrproper
+	${MAKE} mrproper 2>&1 > /dev/null
 fi
 
 log "[==] Running configure..."
@@ -289,7 +292,9 @@ done
 
 if [ -n "$cc" ]; then
 	log "[==] mingw32 build using $cc"
-	${MAKE} ${MAKEFLAGS} mrproper
+	if [ -e "config-user.mk" ]; then
+		${MAKE} ${MAKEFLAGS} mrproper 2>&1 >/dev/null
+	fi
 	log "[==] mingw32 configure"
 	logcmd ./configure --without-gmp --with-ostype=windows --with-compiler=$cc --host=i586-unknown-windows
 	log "[==] mingw32 make"
