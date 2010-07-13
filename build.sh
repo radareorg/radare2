@@ -222,7 +222,8 @@ else
 fi
 
 if [ -e "config-user.mk" ]; then
-	log "[==] Running mrproper..."
+	log "[==] Running clean and mrproper..."
+	${MAKE} clean 2>&1 > /dev/null
 	${MAKE} mrproper 2>&1 > /dev/null
 fi
 
@@ -293,7 +294,8 @@ done
 if [ -n "$cc" ]; then
 	log "[==] mingw32 build using $cc"
 	if [ -e "config-user.mk" ]; then
-		${MAKE} ${MAKEFLAGS} mrproper 2>&1 >/dev/null
+		${MAKE} clean 2>&1 > /dev/null
+		${MAKE} mrproper 2>&1 >/dev/null
 	fi
 	log "[==] mingw32 configure"
 	logcmd ./configure --without-gmp --with-ostype=windows --with-compiler=$cc --host=i586-unknown-windows
