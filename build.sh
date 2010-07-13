@@ -22,7 +22,7 @@ DOLOG="2>&1 | tee -a ${LOGFILE}" # verbose build
 DOLOG="2>&1 | tee -a ${LOGFILE} > /dev/null"
 
 testcc() {
-	eval type $1 2>&1 > /dev/null
+	eval type $1 > /dev/null 2>&1
 	if [ $? = 0 ]; then
 		log "[==] Found $1"
 		cc=$1
@@ -44,8 +44,7 @@ logchk() {
 }
 
 logcmd() {
-	eval $@ ${DOLOG}
-	logchk $?
+	eval "( $@ ; logchk $? ) ${DOLOG}"
 }
 
 registerpurge() {
@@ -75,7 +74,7 @@ installdeps() {
 	cd ..
 	echo ${VALA} > ${WD}/version.vala
 
-	type swig 2>&1 > /dev/null
+	type swig > /dev/null 2>&1
 	if [ $? = 1 ]; then
 		# TODO: install swig from svn!
 		echo "Cannot find 'swig'. apt-get install swig or get it from svn"
@@ -187,7 +186,7 @@ date >> ${LOGFILE}
 uname -a >> ${LOGFILE}
 cat /proc/cpuinfo >> ${LOGFILE}
 
-type hg 2>&1 > /dev/null
+type hg > /dev/null 2>&1
 if [ ! $? = 0 ]; then
 	cat <<EOF
 Cannot find 'hg'. Please install mercurial:
@@ -223,8 +222,8 @@ fi
 
 if [ -e "config-user.mk" ]; then
 	log "[==] Running clean and mrproper..."
-	${MAKE} clean 2>&1 > /dev/null
-	${MAKE} mrproper 2>&1 > /dev/null
+	${MAKE} clean > /dev/null 2>&1
+	${MAKE} mrproper > /dev/null 2>&1
 fi
 
 log "[==] Running configure..."
@@ -234,7 +233,7 @@ log "[==] Running make ${MAKEFLAGS}"
 logcmd time ${MAKE} ${MAKEFLAGS}
 
 log "[==] Symbolic installation... "
-${MAKE} symstall DESTDIR="${DESTDIR}" 2>&1 > /dev/null
+${MAKE} symstall DESTDIR="${DESTDIR}" > /dev/null 2>&1
 
 if [ -z "${DONTFIND}" ]; then
 	log "[==] List of symbollically installed files"
@@ -294,20 +293,17 @@ done
 if [ -n "$cc" ]; then
 	log "[==] mingw32 build using $cc"
 	if [ -e "config-user.mk" ]; then
-		${MAKE} clean 2>&1 > /dev/null
-		${MAKE} mrproper 2>&1 >/dev/null
+		${MAKE} clean > /dev/null 2>&1
+		${MAKE} mrproper >/dev/null 2>&1
 	fi
+	rm -f *.zip
 	log "[==] mingw32 configure"
 	logcmd ./configure --without-gmp --with-ostype=windows --with-compiler=$cc --host=i586-unknown-windows
 	log "[==] mingw32 make"
 	logcmd ${MAKE} ${MAKEFLAGS}
 	log "[==] mingw32 w32dist"
 	logcmd ${MAKE} w32dist
-	if [ -e "radare2-w32*.zip" ]; then
-		cp radare2-w32*.zip ${WD}
-	else
-		log "[==] Cannot find radare2-w32*.zip"
-	fi
+	cp radare2-w32*.zip ${WD}
 else
 	log "[==] Cannot find any compatible w32 crosscompiler. Report if not true"
 fi
