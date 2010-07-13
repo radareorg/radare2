@@ -303,7 +303,11 @@ if [ -n "$cc" ]; then
 	logcmd ${MAKE} ${MAKEFLAGS}
 	log "[==] mingw32 w32dist"
 	logcmd ${MAKE} w32dist
-	cp radare2-w32*.zip ${WD}
+	if [ -e "radare2-w32*.zip" ]; then
+		cp radare2-w32*.zip ${WD}
+	else
+		log "[==] Cannot find radare2-w32*.zip"
+	fi
 else
 	log "[==] Cannot find any compatible w32 crosscompiler. Report if not true"
 fi
