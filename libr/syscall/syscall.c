@@ -12,6 +12,7 @@ extern RSyscallItem syscalls_linux_mips[];
 extern RSyscallItem syscalls_linux_arm[];
 extern RSyscallItem syscalls_freebsd_x86[];
 extern RSyscallItem syscalls_darwin_x86[];
+extern RSyscallItem syscalls_darwin_arm[];
 extern RSyscallItem syscalls_win7_x86[];
 
 R_API RSyscall* r_syscall_new() {
@@ -45,6 +46,8 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
 	if (!strcmp (arch, "arm")) {
 		if (!strcmp (os, "linux"))
 			ctx->sysptr = syscalls_linux_arm;
+		if (!strcmp (os, "darwin"))
+			ctx->sysptr = syscalls_darwin_arm;
 		else {
 			eprintf ("r_syscall_setup: Unknown arch '%s'\n", arch);
 			return R_FALSE;

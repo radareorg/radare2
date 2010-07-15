@@ -114,3 +114,8 @@ RSyscallItem syscalls_darwin_x86[] = {
 	{ "iokit_user_client_trap", 0x81,           100  ,1},
 	{ NULL, 0x81, 0, 0 }
 };
+
+/* XXX */
+RSyscallItem syscalls_darwin_arm[] = {
+	{ NULL, 0x81, 0, 0 }
+};

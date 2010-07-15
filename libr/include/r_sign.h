@@ -4,7 +4,7 @@
 #include <r_types.h>
 #include <r_anal.h>
 #include <r_util.h>
-#include "list.h"
+#include <r_list.h>
 
 enum {
 	R_SIGN_BYTE = 'b',
@@ -21,7 +21,7 @@ typedef struct r_sign_item_t {
 	ut64 addr;
 	ut8 *bytes;
 	ut8 *mask;
-	struct list_head list;
+	RList *list;
 } RSignItem;
 
 typedef struct r_sign_t {
@@ -31,7 +31,7 @@ typedef struct r_sign_t {
 	int s_func; // TODO: this must be an array count[N]
 	char prefix[32];
 	PrintfCallback printf;
-	struct list_head items;
+	RList *items;
 } RSign;
 
 typedef int (*RSignCallback)(RSignItem *si, void *user);
@@ -44,6 +44,7 @@ R_API RSign *r_sign_free(RSign *sig);
 R_API void r_sign_prefix(RSign *sig, const char *str);
 R_API void r_sign_list(RSign *sig, int rad);
 R_API void r_sign_reset(RSign *sig);
+R_API void r_sign_item_free(void *_item);
 
 // old api
 R_API int r_sign_generate(RSign *sig, const char *file, FILE *fd);

@@ -309,11 +309,11 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 static int MACH0_(r_bin_mach0_init)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 {
 	if (!MACH0_(r_bin_mach0_init_hdr)(bin)) {
-		eprintf("Warning: File is not MACH0\n");
+		eprintf ("Warning: File is not MACH0\n");
 		return R_FALSE;
 	}
 	if (!MACH0_(r_bin_mach0_init_items)(bin))
-		eprintf("Warning: Cannot initalize items\n");
+		eprintf ("Warning: Cannot initalize items\n");
 	return R_TRUE;
 }
 

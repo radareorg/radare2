@@ -9,7 +9,8 @@ R_API RSign *r_sign_new() {
 		sig->s_byte = sig->s_anal = 0;
 		sig->prefix[0] = '\0';
 		sig->printf = (PrintfCallback) printf;
-		INIT_LIST_HEAD (&(sig->items));
+		sig->items = r_list_new ();
+		sig->items->free = r_sign_item_free;
 	}
 	return sig;
 }
@@ -42,7 +43,7 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 		// TODO. matching must be done by sym/flag/function name
 		//	sig->addr = 
 		}
-		list_add_tail (&(si->list), &(sig->items));
+		r_list_append (sig->items, si);
 		break;
 	case R_SIGN_HEAD: // function prefix (push ebp..)
 	case R_SIGN_BYTE: // function mask
@@ -69,7 +70,7 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 			free (si->bytes);
 			free (si->mask);
 			free (si);
-		} else list_add_tail (&(si->list), &(sig->items));
+		} else r_list_append (sig->items, si);
 		free (data);
 		break;
 	default:
@@ -82,12 +83,11 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 
 R_API void r_sign_list(RSign *sig, int rad) {
 	if (rad) {
-		struct list_head *pos;
+		RListIter *iter;
+		RSignItem *si;
 		sig->printf ("zp-");
-		list_for_each (pos, &sig->items) {
-			RSignItem *si = list_entry (pos, RSignItem, list);
+		r_list_foreach (sig->items, iter, si)
 			sig->printf ("z%c %s ...\n", si->type, si->name); // TODO : show bytes
-		}
 	} else {
 		sig->printf ("Loaded %d signatures\n", sig->s_byte + sig->s_anal);
 		sig->printf ("  %d byte signatures\n", sig->s_byte);
@@ -97,25 +97,28 @@ R_API void r_sign_list(RSign *sig, int rad) {
 }
 
 R_API void r_sign_reset(RSign *sig) {
-	struct list_head *pos, *n;
-	list_for_each_safe (pos, n, &sig->items) {
-		RSignItem *i = list_entry (pos, RSignItem, list);
-		free (i->bytes);
-		free (i);
-	}
-	INIT_LIST_HEAD (&(sig->items));
+	r_list_free (sig->items);
+	sig->items = r_list_new ();
 }
 
 R_API RSign *r_sign_free(RSign *sig) {
-	r_sign_reset (sig);
+	r_list_free (sig->items);
 	free (sig);
 	return NULL;
 }
 
+R_API void r_sign_item_free(void *_item) {
+	RSignItem *item = _item;
+	free (item->bytes);
+	free (item->mask);
+	free (item);
+}
+
+
 R_API RSignItem *r_sign_check(RSign *sig, const ut8 *buf, int len) {
-	struct list_head *pos;
-	list_for_each (pos, &sig->items) {
-		RSignItem *si = list_entry (pos, RSignItem, list);
+	RListIter *iter;
+	RSignItem *si;
+	r_list_foreach (sig->items, iter, si) {
 		if (si->type == R_SIGN_BYTE) {
 			int l = (len>si->size)?si->size:len;
 			if (!r_mem_cmp_mask (buf, si->bytes, si->mask, l))
