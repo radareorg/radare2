@@ -23,16 +23,15 @@ TODO edu
 TODO nibble
 -----------
 * implement grep{col,row}
-* trace counts after step..thats not correct!
 * rabin2 doesnt works for fat mach-o
-* #md5 #sha1 #entropy ...
+* af renames as fcn.* the already named functions..which is wrong
 
 TODO pancake
 ------------
+* Implement visual selection of bytes in disassembly
 * we need an api to define function signatures
   - CF<addr> void name(int foo, char* var)
   - arg/var set name/get value/ ..
-* FileDescriptors: dd -- copy from !fd in r1
 * implement RAnalCall (analyze function arguments, return values, propagate types..)
   - define number of arguments for given function
   - warn if signature and analysis differs in number of args or so..
@@ -46,13 +45,13 @@ unassigned TODO pointz
 * Implement a r_list_get_n() to get Nth element in linked list
 * Test r_lib^w32/osx support
 * Implement r_sys_setenv stuff from r1 in core/file.c:33 (!!?)
-* Implement visual selection of bytes
 * Implement more get_main() (NOOB)
 
 ---8<------------8<------------------8<---------------------8<------------- -- - -
 
 0.6
 ===
+* FileDescriptors: dd -- copy from !fd in r1
 * r_bin->relocs // RList of relocations
 * rasign2 : must be done, write manpage
 * distribute 'spp' with 'rarc2' ?
@@ -95,7 +94,7 @@ Bindings
 
 Refactoring
 ===========
-* Add RLog API.. pipeable to disk and stderr..also hookable ..cool for ui
+* Add RLog API.. pipeable to disk and stderr..also hookable ..cool for ui (partially done)
 * Move disasm loop into r_print (r_print should depend on r_asm)
   - thats hard :)
 * Move 'r_syscall_t' stuff into r_debug (sync r_core)

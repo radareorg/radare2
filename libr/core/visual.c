@@ -480,10 +480,10 @@ R_API void r_core_visual_define (RCore *core) {
 		"TODO: add support for data, string, code ..\n");
 	r_cons_flush ();
 
-	ch = r_cons_readchar ();
-	ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+	// get ESC+char, return 'hjkl' char
+	ch = r_cons_arrow_to_hjkl (r_cons_readchar ());
 
-	switch(ch) {
+	switch (ch) {
 	case 's':
 		// detect type of string
 		// find EOS
@@ -532,9 +532,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	} else
 	switch (ch) {
 	case 'c':
+		// XXX dupped flag imho
 		curset ^= 1;
-		if (curset) flags|=R_PRINT_FLAGS_CURSOR; // XXX dupped flag imho
-		else flags &= !(flags&R_PRINT_FLAGS_CURSOR);
+		if (curset) flags|=R_PRINT_FLAGS_CURSOR; 
+		else flags &= ~(flags&R_PRINT_FLAGS_CURSOR);
 		r_print_set_flags (core->print, flags);
 		break;
 	case 'd':
@@ -543,7 +544,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'C':
 		color ^= 1;
 		if (color) flags |= R_PRINT_FLAGS_COLOR;
-		else flags &= !(flags&R_PRINT_FLAGS_COLOR);
+		else flags &= ~(flags&R_PRINT_FLAGS_COLOR);
 		r_config_set_i (core->config, "scr.color", color);
 		r_print_set_flags (core->print, flags);
 		break;
@@ -647,11 +648,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (curset) {
 			cursor-=16;
 			ocursor=-1;
-		} else {
-			if (printidx==1)
-				r_core_cmd (core, "s- 8", 0);
-			else r_core_cmd (core, "s- 16", 0);
-		}
+		} else r_core_cmd (core, (printidx==1)?"s- 8":"s- 16", 0);
 		break;
 	case 's':
 		r_core_cmd (core, "ds", 0);
@@ -757,9 +754,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'q':
 	case 'Q':
-		return 0;
+		return R_FALSE;
 	}
-	return 1;
+	return R_TRUE;
 }
 
 // TODO: simplify R_ABS(printidx%NPF) into a macro, or just control negative values..
@@ -792,6 +789,8 @@ R_API int r_core_visual(RCore *core, const char *input) {
 
 	color = r_config_get_i (core->config, "scr.color");
 	debug = r_config_get_i (core->config, "cfg.debug");
+	flags = R_PRINT_FLAGS_ADDRMOD | R_PRINT_FLAGS_HEADER;
+	if (color) flags |= R_PRINT_FLAGS_COLOR;
 	do {
 		scrseek = r_num_math (core->num, 
 			r_config_get (core->config, "scr.seek"));

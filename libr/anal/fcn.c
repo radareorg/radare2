@@ -49,7 +49,6 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len) 
 	RAnalOp aop;
 	char *varname;
 	int oplen, idx = 0;
-
 	if (fcn->addr == -1)
 		fcn->addr = addr;
 	while (idx < len) {
@@ -119,7 +118,6 @@ R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size, const char *name, in
 	RAnalFcn *fcn = NULL, *fcni;
 	RListIter *iter;
 	int append = 0;
-
 	r_list_foreach (anal->fcns, iter, fcni)
 		if (addr == fcni->addr) {
 			fcn = fcni;

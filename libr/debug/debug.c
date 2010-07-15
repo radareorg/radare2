@@ -151,7 +151,7 @@ R_API int r_debug_select(RDebug *dbg, int pid, int tid) {
 	return R_TRUE;
 }
 
-R_API int r_debug_stop_reason(struct r_debug_t *dbg) {
+R_API int r_debug_stop_reason(RDebug *dbg) {
 	// TODO: return reason to stop debugging
 	// - new process
 	// - trap instruction
@@ -168,7 +168,6 @@ R_API int r_debug_wait(RDebug *dbg) {
 		ret = dbg->h->wait (dbg->pid);
 		dbg->newstate = 1;
 		eprintf ("wait = %d\n", ret);
-		//XXX r_debug_select (dbg, dbg->pid, ret);
 		if (dbg->trace->enabled)
 			r_debug_trace_pc (dbg);
 	}

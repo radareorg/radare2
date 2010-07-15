@@ -30,13 +30,16 @@ R_API int r_debug_trace_tag (RDebug *dbg, int tag) {
 R_API int r_debug_trace_pc (RDebug *dbg) {
 	ut8 buf[32];
 	RRegisterItem *ri;
+	RAnalOp aop;
+	static ut64 oldpc = 0LL; // Must trace the previously traced instruction
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
 	if ((ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], -1))) {
 		ut64 addr = r_reg_get_value (dbg->reg, ri);
 		if (dbg->iob.read_at (dbg->iob.io, addr, buf, sizeof (buf))>0) {
-			RAnalOp aop;
 			if (r_anal_aop (dbg->anal, &aop, addr, buf, sizeof (buf))>0) {
-				r_debug_trace_add (dbg, addr, aop.length);
+				if (oldpc!=0LL)
+					r_debug_trace_add (dbg, oldpc, aop.length);
+				oldpc = addr;
 				return R_TRUE;
 			} else eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", addr);
 		} else eprintf ("trace_pc: cannot read memory at 0x%"PFMT64x"\n", addr);
