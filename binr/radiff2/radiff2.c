@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
 //			mode = MODE_LOCS;
 //			break;
 		case 'V':
-			printf ("radiff2 v"VERSION"\n");
+			printf ("radiff2 v"R2_VERSION"\n");
 			return 0;
 		default:
 			return show_help (R_TRUE);

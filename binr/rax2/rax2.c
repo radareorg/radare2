@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2010 pancake<nopcode.org> */
 
 #include <r_util.h>
 
@@ -13,31 +13,30 @@ static int rax(const char *str) {
 	return 1;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
 	int i;
 	char buf[1024];
 
 	if (argc == 1) {
-		while(!feof(stdin)) {
-			fgets(buf, 1023, stdin);
-			if (feof(stdin)) break;
-			buf[strlen(buf)-1] = '\0';
-			if (!rax(buf)) break;
+		while (!feof (stdin)) {
+			fgets (buf, 1023, stdin);
+			if (feof (stdin)) break;
+			buf[strlen (buf)-1] = '\0';
+			if (!rax (buf)) break;
 		}
 		return 0;
 	}
 	if (argv[1][0]=='-') {
-		switch(argv[1][1]) {
+		switch (argv[1][1]) {
 		case 'h':
-			printf("Usage: rax2 [-hV] [expression]\n");
+			printf ("Usage: rax2 [-hV] [expression]\n");
 			return 0;
 		case 'V':
-			printf("rax2 v"VERSION"\n");
+			printf ("rax2 v"R2_VERSION"\n");
 			return 0;
 		}
 	}
-	for(i=1; i<argc; i++)
-		rax( argv[i] );
+	for (i=1; i<argc; i++)
+		rax (argv[i]);
 	return 0;
 }

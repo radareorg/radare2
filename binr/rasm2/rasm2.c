@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 			r_asm_set_big_endian (a, R_TRUE);
 			break;
 		case 'V':
-			printf ("rasm2 v"VERSION"\n");
+			printf ("rasm2 v"R2_VERSION"\n");
 			return 0;
 		case 'h':
 			return rasm_show_help ();

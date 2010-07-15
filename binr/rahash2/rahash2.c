@@ -18,21 +18,21 @@ static int do_hash(const char *algo, const ut8 *buf, int len, int bsize, int rad
 		bsize = len;
 	ctx = r_hash_new (R_TRUE, algobit);
 	/* iterate over all algorithm bits */
-	for (i=1;i<0x800000;i<<=1) {
+	for (i=1; i<0x800000; i<<=1) {
 		if (algobit & i) {
-			dlen = r_hash_calculate(ctx, algobit&i, buf, len);
+			dlen = r_hash_calculate (ctx, algobit&i, buf, len);
 			if (dlen) {
 				c = ctx->digest;
 				if (rad) {
-					printf("e file.%s=", r_hash_name(i));
-					for(j=0;j<dlen;j++)
-						printf("%02x", c[j]);
-					printf("\n");
+					printf ("e file.%s=", r_hash_name(i));
+					for (j=0;j<dlen;j++)
+						printf ("%02x", c[j]);
+					printf ("\n");
 				} else {
-					printf("%s: ", r_hash_name(i));
+					printf ("%s: ", r_hash_name (i));
 					for(j=0;j<dlen;j++)
-						printf("%02x", c[j]);
-					printf("\n");
+						printf ("%02x", c[j]);
+					printf ("\n");
 				}
 			}
 		}
@@ -72,25 +72,23 @@ int main(int argc, char **argv) {
 			algo = optarg;
 			break;
 		case 'b':
-			bsize = (int)r_num_math(NULL, optarg);
+			bsize = (int)r_num_math (NULL, optarg);
 			break;
 		case 's':
-			buf = (ut8*) optarg;
-			buf_len = strlen(optarg);
+			buf = (const ut8*) optarg;
+			buf_len = strlen (optarg);
 			break;
 		case 'V':
-			printf("rahash2 v"VERSION"\n");
+			printf ("rahash2 v"R2_VERSION"\n");
 			return 0;
 		case 'h':
-			return do_help(0);
+			return do_help (0);
 		}
 	}
 	if (optind<argc)
-		buf = (const ut8*)r_file_slurp(argv[optind], &buf_len);
-
+		buf = (const ut8*)r_file_slurp (argv[optind], &buf_len);
 	if (buf == NULL)
 		do_help(1);
-	else ret = do_hash(algo, buf, buf_len, bsize, rad);
-
+	else ret = do_hash (algo, buf, buf_len, bsize, rad);
 	return ret;
 }

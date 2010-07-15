@@ -7,7 +7,7 @@ PFX=${DESTDIR}${PREFIX}
 BINS=rax2 rasm2 rabin2 rahash2 radiff2 radare2 rafind2 rarc2
 
 all:
-	@for a in ${BINS} ; do (cd $$a && ${MAKE} all); done
+	@for a in ${BINS} ; do (cd $$a && ${MAKE} all) || exit 1; done
 
 install:
 	mkdir -p ${PFX}/bin

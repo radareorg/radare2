@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -149,23 +149,23 @@ int main(int argc, char **argv) {
 			mode = R_SEARCH_KEYWORD;
 			hexstr = 1;
 			kw->str = optarg;
-			list_add(&(kw->list), &(kws_head));
+			list_add (&(kw->list), &(kws_head));
 			break;
 		case 'm':
 			// XXX should be from hexbin
 			mask = optarg;
 			break;
 		case 'f':
-			from = r_num_math(NULL, optarg);
+			from = r_num_math (NULL, optarg);
 			break;
 		case 't':
-			to = r_num_math(NULL, optarg);
+			to = r_num_math (NULL, optarg);
 			break;
 		case 'X':
-			pr = r_print_new();
+			pr = r_print_new ();
 			break;
 		case 'V':
-			printf("rafind2 v"VERSION"\n");
+			printf ("rafind2 v"R2_VERSION"\n");
 			return 0;
 		case 'h':
 			return show_help(argv[0], 0);

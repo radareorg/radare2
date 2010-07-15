@@ -3,7 +3,6 @@ include ../../libr/config.mk
 .PHONY: all clean
 
 CFLAGS+=-I../../libr/include
-CFLAGS+=-DVERSION=\"${VERSION}\"
 CFLAGS+=-DLIBDIR=\"${PREFIX}/lib\"
 
 #LIBS=$(subst r_,-lr_,$(DEPS))

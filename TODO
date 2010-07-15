@@ -11,15 +11,65 @@
 
 Build system:
 -------------
-* Design new website...
 * Write documentation about how to build r2, r2-swig, valaswig, make symstall and
   some basics about the organization of the code (boring++)
 * Store version information in libraries ? debian claims for it
 * install.sh (to track installed files ..)
 
+TODO edu
+--------
+* port r_sign and r_diff to RList
+
+TODO nibble
+-----------
+* implement grep{col,row}
+* trace counts after step..thats not correct!
+* rabin2 doesnt works for fat mach-o
+* #md5 #sha1 #entropy ...
+
+TODO pancake
+------------
+* we need an api to define function signatures
+  - CF<addr> void name(int foo, char* var)
+  - arg/var set name/get value/ ..
+* FileDescriptors: dd -- copy from !fd in r1
+* implement RAnalCall (analyze function arguments, return values, propagate types..)
+  - define number of arguments for given function
+  - warn if signature and analysis differs in number of args or so..
+
+TODO gerardo
+------------
+* implement GMP in util/big.c
+
+unassigned TODO pointz
+----------------------
+* Implement a r_list_get_n() to get Nth element in linked list
+* Test r_lib^w32/osx support
+* Implement r_sys_setenv stuff from r1 in core/file.c:33 (!!?)
+* Implement visual selection of bytes
+* Implement more get_main() (NOOB)
+
+---8<------------8<------------------8<---------------------8<------------- -- - -
+
+0.6
+===
+* r_bin->relocs // RList of relocations
+* rasign2 : must be done, write manpage
+* distribute 'spp' with 'rarc2' ?
+* Initial analysis looking for xrefs to strings and so? ax? ./a@@entry0 - Launched at startup
+
+* nibble: diff code analysis
+  - diff two programs
+     1st level:
+        - check all functions EQUAL, DIFFERENT, REMOVED, ADDED
+        - check all symbols
+        - check all imports
+        - check all strings
+     2nd level:
+        - basic block level diffing (output in graph mode)
+
 Questions:
 ----------
-* We need a command to retrieve r2 version '?V'
 * How to search for an opcode like CALL+REG? or MOV+CONST, ...
   - r_anal_match(anal, aop CALL | REG) ?
   - Implememnted in a command like /a..
@@ -33,57 +83,6 @@ Questions:
   - RAnalAopArg { int size; int delta; int type; }
   - r_anal_aop_arg_set (); r_anal_aop_arg_get (); r_anal_aop_arg_binmask ();
 * Cx/CX are not displayed in disasm as they should.. (C! must die)
-
-TODO nibble
------------
-* rabin2 doesnt works for fat mach-o
-* #md5 #sha1 #entropy ...
-* trace counts after step..thats not correct!
-* nibble: diff code analysis
-  - diff two programs
-     1st level:
-        - check all functions EQUAL, DIFFERENT, REMOVED, ADDED
-        - check all symbols
-        - check all imports
-        - check all strings
-     2nd level:
-        - basic block level diffing (output in graph mode)
-* implement grep{col,row}
-
-TODO pancake
-------------
-* FileDescriptors: dd -- copy from !fd in r1
-* we need an api to define function signatures
-  - CF<addr> void name(int foo, char* var)
-  - arg/var set name/get value/ ..
-* implement RAnalCall (analyze function arguments, return values, propagate types..)
-  - define number of arguments for given function
-  - warn if signature and analysis differs in number of args or so..
-
-TODO gerardo
-------------
-* implement GMP in util/big.c
-
-unassigned TODO pointz
-----------------------
-* Implement a r_list_get_n() to get Nth element in linked list
-* Test r_lib^w32/osx support
-* port r_sign to RList
-* Implement r_sys_setenv stuff from r1 in core/file.c:33 (!!?)
-* Implement visual selection of bytes
-
----8<------------8<------------------8<---------------------8<------------- -- - -
-
-0.6
-===
-* r_bin->relocs // RList of relocations
-* rasign2 : must be done, write manpage
-* distribute 'spp' with 'rarc2' ?
-* Initial analysis looking for xrefs to strings and so? ax? ./a@@entry0 - Launched at startup
-
-Analysis
-========
-* Implement more get_main() (NOOB)
 
 Bindings
 ========

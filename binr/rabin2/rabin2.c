@@ -608,7 +608,7 @@ int main(int argc, char **argv)
 			at = r_num_math (NULL, optarg);
 			break;
 		case 'V':
-			printf ("rabin2 v"VERSION"\n");
+			printf ("rabin2 v"R2_VERSION"\n");
 			return 0;
 		case 'h':
 		default:

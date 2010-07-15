@@ -31,7 +31,7 @@ static int main_help(int line) {
 }
 
 static int main_version() {
-	printf ("radare2 "VERSION" @ "R_SYS_OS"-"R_SYS_ENDIAN"-"R_SYS_ARCH"\n");
+	printf ("radare2 "R2_VERSION" @ "R_SYS_OS"-"R_SYS_ENDIAN"-"R_SYS_ARCH"\n");
 	return 0;
 }
 

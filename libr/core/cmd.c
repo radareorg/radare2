@@ -1057,6 +1057,9 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case '$':
 		return cmd_help (data, " $?");
+	case 'V':
+		r_cons_printf (R2_VERSION"\n");
+		break;
 	case 'z':
 		for (input=input+1; input[0]==' '; input=input+1);
 		core->num->value = strlen (input);
@@ -2331,8 +2334,20 @@ static int cmd_hash(void *data, const char *input) {
 	if (ptr != NULL)
 		len = r_num_math (core->num, ptr+1);
 	/* TODO: support all hash algorithms and so */
+	if (!r_str_ccmp(input, "entropy", ' ')) {
+		r_cons_printf ("%lf\n", r_hash_entropy (core->block, len));
+	} else
+	if (!r_str_ccmp(input, "hamdist", ' ')) {
+		r_cons_printf ("%d\n", r_hash_hamdist (core->block, len));
+	} else
+	if (!r_str_ccmp(input, "pcprint", ' ')) {
+		r_cons_printf ("%d\n", r_hash_pcprint (core->block, len));
+	} else
 	if (!r_str_ccmp(input, "crc32", ' ')) {
 		r_cons_printf ("%04x\n", r_hash_crc32 (core->block, len));
+	} else
+	if (!r_str_ccmp(input, "xor", ' ')) {
+		r_cons_printf ("%02x\n", r_hash_xor (core->block, len));
 	} else
 	if (!r_str_ccmp(input, "crc16", ' ')) {
 		r_cons_printf ("%02x\n", r_hash_crc16 (0, core->block, len));
@@ -2340,9 +2355,13 @@ static int cmd_hash(void *data, const char *input) {
 	if (input[0]=='?') {
 		r_cons_printf (
 		"Usage: #algo <size> @ addr\n"
+		" #xor                 ; calculate xor of all bytes in current block\n"
 		" #crc32               ; calculate crc32 of current block\n"
 		" #crc32 < /etc/fstab  ; calculate crc32 of this file\n"
-		" #md5 128K @ edi      ; calculate md5 of 128K from 'edi'\n"
+		" #pcprint             ; count printable chars in current block\n"
+		" #hamdist             ; calculate hamming distance in current block\n"
+		" #entropy             ; calculate entropy of current block\n"
+		" #md5 128K @ edi      ; calculate md5 of 128K from 'edi' (TODO)\n"
 		"Usage #!interpreter [<args>] [<file] [<<eof]\n"
 		" #!                   ; list all available interpreters\n"
 		" #!python             ; run python commandline\n"
