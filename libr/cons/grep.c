@@ -56,48 +56,37 @@ R_API void r_cons_grep(const char *str) {
 	}
 }
 
-/* TODO: Ugly code */
 R_API int r_cons_grepbuf(char *buf, int len) {
 	RCons *cons = r_cons_singleton ();
-	char *tline, *tbuf, *p, *out, *in = buf;
-	int ret, buffer_len = 0, l = 0, printline = 1;
+	char tline[1024], *tbuf, *p, *out, *in = buf;
+	int ret, buffer_len = 0, l = 0;
 
-	out = tbuf = malloc (len);
-	memset (tbuf, '\0', len);
+	out = tbuf = calloc (1, len);
 	cons->lines = 0;
 	while (in-buf<len) {
 		p = strchr (in, '\n');
-		if (p) {
-			*p = '\0';
-			l = p-in;
-		} else l = strlen (in);
-		if (l>0) {
-			tline = malloc (l+1);
+		if (!p) {
+			free (tbuf);
+			return 0;
+		}
+		l = p-in+1;
+		if (l>0 && l<sizeof (tline)-1) {
+			memset (tline, 0, sizeof (tline));
 			memcpy (tline, in, l);
-			tline[l] = '\n';
-			ret = r_cons_grep_line (tline, l+1);
+			ret = r_cons_grep_line (tline, l);
 			if (ret > 0) {
-				if (cons->grep.line != -1) {
-					if (cons->grep.line != cons->lines)
-						printline = 0;
-					else printline = 1;
-				}
-				if (printline) {
+				if (cons->grep.line == -1 ||
+					(cons->grep.line != -1 && cons->grep.line == cons->lines)) {
 					memcpy (out, tline, ret);
 					out += ret;
 					buffer_len += ret;
 				}
 				cons->lines++;
-			} else if (ret<0) {
-				free (tline);
+			} else if (ret < 0) {
 				free (tbuf);
 				return 0;
 			} 
 			in += l+1;
-			free (tline);
-			if (p)
-				*p = '\n';
-			else break;
 		} else in++;
 	}
 	memcpy (buf, tbuf, len);
@@ -129,13 +118,13 @@ R_API int r_cons_grep_line(char *buf, int len) {
 			for (tok = buf, i=0; i<=cons->grep.token; i++) {
 				if (i==0) tok = (char *)strtok (ptr, " ");
 				else tok = (char *)strtok (NULL, " ");
+				if (tok == NULL)
+					return -1;
 			}
-			if (tok) {
-				len = strlen (tok);
-				memcpy (buf, tok, len);
-				memcpy (buf+len, "\n", 2);
-				len += 2;
-			} else len = -1;
+			len = strlen (tok);
+			memcpy (buf, tok, len);
+			memcpy (buf+len, "\n", 2);
+			len += 2;
 		}
 	} else len = 0;
 
