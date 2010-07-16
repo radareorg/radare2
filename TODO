@@ -37,6 +37,8 @@ TODO pancake
 
 TODO gerardo
 ------------
+* big-ssl.c big-gmp.c ...
+* http://etutorials.org/Programming/secure+programming/Chapter+7.+Public+Key+Cryptography/7.5+Generating+a+Prime+Number+Testing+for+Primality/
 * implement GMP in util/big.c
 
 unassigned TODO pointz

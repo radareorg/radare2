@@ -1,2 +1,2 @@
 #!/bin/sh
-./configure-plugins
+[ ! -e plugins.cfg ] && ./configure-plugins
