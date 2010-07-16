@@ -11,6 +11,9 @@
 #ifdef HAVE_LIB_GMP
 #include <gmp.h>
 #endif
+#ifdef HAVE_LIB_OPENSSL
+#include <openssl/bn.h>
+#endif
 
 /* empty classes */
 typedef struct { } RSystem;
@@ -305,11 +308,15 @@ R_API int r_range_overlap(ut64 a0, ut64 a1, ut64 b0, ut64 b1, int *d);
 #ifdef HAVE_LIB_GMP
 #define RNumBig mpz_t
 #else
+#ifdef HAVE_LIB_OPENSSL
+#define RNumBig BIGNUM
+#else
 #define	R_BIG_SIZE 10000
 typedef struct r_num_big_t {
 	char dgts[R_BIG_SIZE];
 	int sign, last;
 } RNumBig;
+#endif
 #endif
 
 R_API RNumBig *r_big_new(RNumBig *b);

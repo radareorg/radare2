@@ -4,29 +4,17 @@
  */
 
 /* XXX : seems broken for big numbers */
-/* TODO: Implement gmp code */
-
 #include <stdio.h>
 #include <r_util.h>
-#ifdef HAVE_LIB_GMP
-#include <gmp.h>
-#endif
 
 static inline void r_big_zero(RNumBig *n) {
-#ifdef HAVE_LIB_GMP
-	return;
-#else
 	while ((n->last>0) && !n->dgts[n->last])
 		n->last--;
         if (!n->last && !*n->dgts)
 		n->sign = 1; /* hack to avoid -0 */
-#endif
 }
 
 R_API void r_big_print(RNumBig *n) {
-#ifdef HAVE_LIB_GMP
-	return;
-#else
 	int i;
 	if (n->last>=0) {
 		if (n->sign<0)
@@ -35,13 +23,9 @@ R_API void r_big_print(RNumBig *n) {
 			printf ("%c", '0'+n->dgts[i]);
 		printf ("\n");
 	}
-#endif
 }
 
 R_API void r_big_set_str(RNumBig *n, const char *str) {
-#ifdef HAVE_LIB_GMP
-	mpz_set_str (*n, str, 10);
-#else
 	int i, len;
 	if (*str=='-') {
 		n->sign = -1;
@@ -50,19 +34,13 @@ R_API void r_big_set_str(RNumBig *n, const char *str) {
 	for (i=len=strlen (str)-1; *str; i--, str++)
 		n->dgts[i] = *str-'0';
 	n->last = len;
-#endif
 }
 
 R_API RNumBig *r_big_new(RNumBig *b) {
 	RNumBig *n = R_NEW (RNumBig);
 	if (n) {
 		if (b) memcpy (n, b, sizeof (RNumBig));
-		else
-#ifdef HAVE_LIB_GMP
-			mpz_init (*n);
-#else
-			r_big_set_st (n, 0);
-#endif
+		else r_big_set_st (n, 0);
 	}
 	return n;
 }
@@ -72,17 +50,10 @@ R_API void r_big_free(RNumBig *b) {
 }
 
 R_API void r_big_set(RNumBig *a, RNumBig *b) {
-#ifdef HAVE_LIB_GMP
-	mpz_set (*a, *b);
-#else
 	memcpy (a, b, sizeof (RNumBig));
-#endif
 }
 
 R_API void r_big_set_st(RNumBig *n, int v) {
-#ifdef HAVE_LIB_GMP
-	return;
-#else
 	int t;
 	n->last = 0;
 	n->sign = (v>=0)?1:-1;
@@ -90,13 +61,9 @@ R_API void r_big_set_st(RNumBig *n, int v) {
 	for (n->last=0, t=R_ABS (v); t>0; t/=10, n->last++)
 		n->dgts[n->last] = (t % 10);
 	if (!v) n->last = 0;
-#endif
 }
 
 R_API void r_big_set_st64(RNumBig *n, st64 v) {
-#ifdef HAVE_LIB_GMP
-	return;
-#else
 	st64 t;
 	n->sign = (v<0)?-1:1;
 	memset (n->dgts, 0, R_BIG_SIZE);
@@ -106,14 +73,10 @@ R_API void r_big_set_st64(RNumBig *n, st64 v) {
 		n->dgts[n->last] = t%10;
 	}
 	if (!v) n->last = 0;
-#endif
 }
 
 /* c = a [+*-/] b; */
 R_API void r_big_add (RNumBig *c, RNumBig *a, RNumBig *b) {
-#ifdef HAVE_LIB_GMP
-	return;
-#else
 	int i, carry;
 	RNumBig t;
 	r_big_set_st (&t, 0);
@@ -135,13 +98,9 @@ R_API void r_big_add (RNumBig *c, RNumBig *a, RNumBig *b) {
 	}
 	*c = t;
 	r_big_zero (c);
-#endif
 }
 
 R_API void r_big_sub(RNumBig *c, RNumBig *a, RNumBig *b) {
-#ifdef HAVE_LIB_GMP
-	return;
-#else
 	RNumBig t;
 	int i, v, borrow;
 
@@ -175,13 +134,9 @@ R_API void r_big_sub(RNumBig *c, RNumBig *a, RNumBig *b) {
         }
 	*c = t;
 	r_big_zero (c);
-#endif
 }
 
 R_API int r_big_cmp(RNumBig *a, RNumBig *b) {
-#ifdef HAVE_LIB_GMP
-	return mpz_cmp (*a, *b);
-#else
 	int i;
 	if ((a->sign == -1) && (b->sign == 1)) return 1;
 	if ((a->sign == 1) && (b->sign == -1)) return -1;
@@ -192,22 +147,14 @@ R_API int r_big_cmp(RNumBig *a, RNumBig *b) {
 		if (b->dgts[i] > a->dgts[i]) return a->sign;
 	}
 	return 0;
-#endif
 }
 
 R_API int r_big_cmp_st(RNumBig *n, int v) {
-#ifdef HAVE_LIB_GMP
-	return mpz_cmp_si (*n, v);
-#else
 	return 0;
-#endif
 }
 
 /* multiply n by 10^d */
 R_API void r_big_shift(RNumBig *n, int d) {
-#ifdef HAVE_LIB_GMP
-	return;
-#else
 	int i;
 	if (!n->last && !*n->dgts)
 		return;
@@ -215,13 +162,9 @@ R_API void r_big_shift(RNumBig *n, int d) {
 		n->dgts[i+d] = n->dgts[i];
 	memset (n->dgts, 0, d);
 	n->last += d;
-#endif
 }
 
 R_API void r_big_mul (RNumBig *c, RNumBig *a, RNumBig *b) {
-#ifdef HAVE_LIB_GMP
-	mpz_mul (*c, *a, *b);
-#else
 	RNumBig t, tmp, row;
 	int i,j;
 	r_big_set_st (&t, 0);
@@ -237,21 +180,13 @@ R_API void r_big_mul (RNumBig *c, RNumBig *a, RNumBig *b) {
 	*c = t;
 	c->sign = a->sign * b->sign;
 	r_big_zero (c);
-#endif
 }
 
 R_API void r_big_mul_ut (RNumBig *c, RNumBig *a, ut32 b) {
-#ifdef HAVE_LIB_GMP
-	mpz_mul_ui (*c, *a, b);
-#else
 	return;
-#endif
 }
 
 R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
-#ifdef HAVE_LIB_GMP
-	return;
-#else
 	RNumBig t, tmp, row;
 	int i, asign, bsign;
 
@@ -278,97 +213,19 @@ R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
 	r_big_zero (c);
 	a->sign = asign;
 	b->sign = bsign;
-#endif
 }
 
 R_API void r_big_div_ut(RNumBig *c, RNumBig *a, ut32 b) {
-#ifdef HAVE_LIB_GMP
-	mpz_divexact_ui (*c, *a, b);
-#else
 	return;
-#endif
 }
 
 R_API int r_big_divisible_ut(RNumBig *n, ut32 v) {
-#ifdef HAVE_LIB_GMP
-	return mpz_divisible_ui_p (*n, v);
-#else
 	return 0;
-#endif
 }
 
 R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b) {
-#ifdef HAVE_LIB_GMP
-	return;
-#else
 	RNumBig t; // a%b = a-((a/b)*b)
 	r_big_div (c, a, b); // c=a/b
 	r_big_mul (&t, c, b); // t=c*b
 	r_big_sub (c, a, &t); // c=a-t
-#endif
 }
-
-#if TEST
-
-void main() {
-	int a,b;
-	RNumBig n1, n2, n3, zero;
-
-	r_big_set_st (&n2, -2);
-	r_big_set_str (&n3, "-3");
-	//r_big_set_st (&n3, -3);
-printf ("n3last = %d\n", n3.last);
-printf ("%d %d\n", n3.dgts[0], n3.dgts[1]);
-	r_big_mul (&n2, &n2, &n3);
-	r_big_print (&n2);
-printf("--\n");
-
-	r_big_set_st (&n1, 2);
-	r_big_set_st (&n2, 3);
-	r_big_mul(&n1, &n1, &n2);
-	r_big_print (&n1);
-
-	r_big_set_st (&n3, 923459999);
-	r_big_mul (&n1, &n2, &n3);
-	r_big_mul (&n2, &n1, &n3);
-	r_big_mul (&n1, &n2, &n3);
-	r_big_print (&n1);
-
-	r_big_set_st64 (&n2, 9999923459999999);
-	r_big_set_st64 (&n3, 9999992345999999);
-	r_big_mul (&n1, &n2, &n3);
-	r_big_mul (&n2, &n1, &n3);
-	r_big_mul (&n1, &n2, &n3);
-	r_big_print (&n1);
-
-	while (scanf ("%d %d\n",&a,&b) != EOF) {
-		printf("a = %d    b = %d\n",a,b);
-		r_big_set_st(&n1, a);
-		r_big_set_st(&n2, b);
-
-		r_big_add (&n3, &n1, &n2);
-		printf ("addition -- ");
-		r_big_print (&n3);
-
-		printf ("r_big_cmp a ? b = %d\n",r_big_cmp(&n1, &n2));
-
-		r_big_sub (&n3,&n1,&n2);
-		printf("subtraction -- ");
-		r_big_print (&n3);
-
-                r_big_mul (&n3,&n1,&n2);
-		printf("multiplication -- ");
-                r_big_print (&n3);
-
-		r_big_set_st(&zero, 0);
-		if (r_big_cmp(&zero, &n2) == 0)
-			printf("division -- NaN \n");
-                else {
-			r_big_div (&n3,&n1,&n2);
-			printf("division -- ");
-                	r_big_print (&n3);
-		}
-		printf("--------------------------\n");
-	}
-}
-#endif
