@@ -28,7 +28,6 @@ TODO nibble
 
 TODO pancake
 ------------
-* Implement visual selection of bytes in disassembly
 * we need an api to define function signatures
   - CF<addr> void name(int foo, char* var)
   - arg/var set name/get value/ ..

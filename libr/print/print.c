@@ -25,7 +25,7 @@ R_API RPrint *r_print_new() {
 	return p;
 }
 
-// dummy setter
+// dummy setter can be removed
 R_API void r_print_set_flags(RPrint *p, int _flags) {
 	p->flags = _flags;
 }
@@ -39,11 +39,8 @@ R_API RPrint *r_print_free(RPrint *p) {
 	return NULL;
 }
 
-// XXX this is not thread safe...store into r_print_t ?
-
 R_API void r_print_set_cursor(RPrint *p, int enable, int ocursor, int cursor) {
 	p->cur_enabled = enable;
-	//if (ocursor<0) ocursor=0;
 	p->ocur = ocursor;
 	if (cursor<0) cursor=0;
 	p->cur = cursor;
@@ -78,16 +75,23 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 // XXX: bad designed function :)
 R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 	const char *s;
+	char *d, *dst = (char *)malloc ((strlen (str)+2)*6);
 	int i = 0;
-	char *d, *dst = (char *)malloc (1024); //(strlen (str)+2)*6);
+	/* XXX That's hacky as shit.. but partially works O:) */
+	int cur = R_MIN (p->cur, p->ocur);
+	int ocur = R_MAX (p->cur, p->ocur);
+	if (cur==-1) {
+		cur=ocur;
+		ocur++;
+	}
 
 	// XXX: overflow here
 	for (s=str,d=dst; *s; s+=2, d+=2, i++) {
-		if (i-1==n) {
+		if (i-1==(cur-n)) {
 			memcpy (d, "\x1b[0m", 4);
 			d += 4;
 		}
-		if (i==n) {
+		if (i>=(cur-n) && i<(ocur-n)) {
 			memcpy (d, "\x1b[7m", 4);
 			d += 4;
 		} else
@@ -153,7 +157,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len) {
 		r_print_cursor (p, i, 0);
 		w+=6;
 	}
-	p->printf("};\n");
+	p->printf ("};\n");
 }
 
 R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int wide, int zeroend, int urlencode) {
@@ -161,31 +165,30 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int wide
 	//if (p->flags & R_PRINT_FLAGS_OFFSET)
 		// r_print_addr(p, seek);
 	p->interrupt = 0;
-	for(i=0;!p->interrupt&&i<len;i++) {
+	for (i=0;!p->interrupt&&i<len;i++) {
 		if (zeroend && buf[i]=='\0')
 			break;
-		r_print_cursor(p, i, 1);
+		r_print_cursor (p, i, 1);
 		if (urlencode) {
 			// TODO: some ascii can be bypassed here
-			p->printf("%%%02x", buf[i]);
+			p->printf ("%%%02x", buf[i]);
 		} else {
-			if (IS_PRINTABLE(buf[i]))
-				p->printf("%c", buf[i]);
-			else p->printf("\\x%02x", buf[i]);
+			if (IS_PRINTABLE (buf[i]))
+				p->printf ("%c", buf[i]);
+			else p->printf ("\\x%02x", buf[i]);
 		}
-		r_print_cursor(p, i, 0);
+		r_print_cursor (p, i, 0);
 		if (wide) i++;
 	}
-	p->printf("\n");
+	p->printf ("\n");
 	return i;
 }
 
 static const char hex[16] = "0123456789ABCDEF";
 R_API void r_print_hexpairs(RPrint *p, ut64 addr, ut8 *buf, int len) {
 	int i;
-	for (i=0;i<len;i++) {
+	for (i=0;i<len;i++)
 		p->printf ("%02x ", buf[i]);
-	}
 }
 
 // XXX: step is borken
@@ -231,8 +234,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, ut8 *buf, int len, int base, in
 
 		for (j=i;j<i+inc;j++) {
 			if (j>=len) {
-				p->printf("  ");
-				if (j%2) p->printf(" ");
+				if (j%2) p->printf ("   ");
+				else p->printf("  ");
 				continue;
 			}
 			r_print_byte(p, fmt, j, buf[j]);
@@ -240,8 +243,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, ut8 *buf, int len, int base, in
 		}
 
 		for (j=i; j<i+inc; j++) {
-			if (j >= len)
-				p->printf (" ");
+			if (j >= len) p->printf (" ");
 			else r_print_byte (p, "%c", j, buf[j]);
 		}
 		p->printf ("\n");
@@ -261,21 +263,18 @@ R_API void r_print_raw(RPrint *p, const ut8* buf, int len) {
 	r_cons_memcat ((char *)buf, len);
 }
 
-R_API void r_print_c(RPrint *p, const char *str, int len)
-{
+R_API void r_print_c(RPrint *p, const char *str, int len) {
 	int i,j;
 	int inc= p->width/6;
 	p->printf ("#define _BUFFER_SIZE %d\n"
 		"unsigned char buffer[_BUFFER_SIZE] = {\n", len);
 	p->interrupt = 0;
 	for (j = i = 0; !p->interrupt && i < len;) {
-		r_print_byte(p, "0x%02x", i, str[i]);
-		
-		if (++i<len) p->printf(", ");
-		if (!(i%inc))
-			p->printf("\n");
+		r_print_byte (p, "0x%02x", i, str[i]);
+		if (++i<len) p->printf (", ");
+		if (!(i%inc)) p->printf ("\n");
 	}
-	p->printf(" };\n");
+	p->printf (" };\n");
 }
 
 /* TODO: handle screen width */

@@ -250,7 +250,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 					pad[j] = ' ';
 				pad[j] = '\0';
 				if (show_color) {
-					char *nstr = r_print_hexpair (p, str, cursor-idx);
+					char *nstr = r_print_hexpair (p, str, idx);
 					free (str);
 					str = nstr;
 				}

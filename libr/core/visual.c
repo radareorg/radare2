@@ -6,7 +6,7 @@
 static int printidx = 0;
 const char *printfmt[] = { "x", "pd", "f tmp&&sr sp&&x 64&&dr=&&s-&&s tmp&&f-tmp&&pd", "p8", "pc", "ps" };
 
-static int curset = 0, cursor = -1, ocursor=-1;
+static int curset = 0, cursor = 0, ocursor=-1;
 static int color = 1;
 static int debug = 1;
 static int flags = R_PRINT_FLAGS_ADDRMOD;
@@ -761,9 +761,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 
 // TODO: simplify R_ABS(printidx%NPF) into a macro, or just control negative values..
 R_API void r_core_visual_prompt(RCore *core, int color) {
-	if (color) r_cons_printf (Color_YELLOW"[0x%08"PFMT64x"]> %s\n"Color_RESET,
-		core->offset, printfmt[R_ABS (printidx%NPF)]);
+	if (cursor<0) cursor = 0;
+	if (color) r_cons_strcat (Color_YELLOW);
+	if (curset) r_cons_printf ("[0x%08"PFMT64x"(%d:%d=%d)]> %s\n", core->offset,
+		cursor, ocursor, ocursor==-1?1:R_ABS (cursor-ocursor)+1, printfmt[R_ABS (printidx%NPF)]);
 	else r_cons_printf ("[0x%08"PFMT64x"]> %s\n", core->offset, printfmt[R_ABS (printidx%NPF)]);
+	if (color) r_cons_strcat (Color_RESET);
 }
 
 R_API int r_core_visual(RCore *core, const char *input) {
