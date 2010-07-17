@@ -22,7 +22,6 @@ TODO edu
 
 TODO nibble
 -----------
-* implement grep{col,row}
 * rabin2 doesnt works for fat mach-o
 * af renames as fcn.* the already named functions..which is wrong
 

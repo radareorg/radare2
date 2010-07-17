@@ -51,7 +51,7 @@ IFEQ USEROSTYPE auto ; {
 
 ARG_WITHOUT WITHPIC pic do not build libr as a program independent location ;
 
-REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_GMP HAVE_LIB_TCC DEBUGGER USERCC USEROSTYPE ;
+REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_GMP HAVE_LIB_OPENSSL HAVE_LIB_TCC DEBUGGER USERCC USEROSTYPE ;
 
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))
 SUBDIRS ./config-user.mk libr/include/r_userconf.h

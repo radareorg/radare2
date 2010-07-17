@@ -241,7 +241,6 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int depth) {
 	RAnalFcn *fcn, *fcni;
 	struct r_anal_ref_t *refi;
 	RListIter *iter, *iter2;
-	char *flagname;
 	RAnalRef *ref;
 	ut8 *buf;
 	int buflen, fcnlen = 0;
@@ -278,12 +277,18 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int depth) {
 			r_anal_fcn_free (fcn);
 			return R_FALSE;
 		} else if (fcnlen == R_ANAL_RET_END) { /* function analysis complete */
-			fcn->name = r_str_dup_printf ("fcn_%08"PFMT64x"", at);
-			/* Add flag */
-			flagname = r_str_dup_printf ("fcn.%s", fcn->name);
-			r_flag_space_set (core->flags, "functions");
-			r_flag_set (core->flags, flagname, at, fcn->size, 0);
-			free (flagname);
+			RFlagItem *f = r_flag_get_i (core->flags, at);
+			if (f) { /* Check if it's already flagged */
+				fcn->name = strdup (f->name);
+			} else {
+				char *flagname;
+				fcn->name = r_str_dup_printf ("fcn_%08"PFMT64x"", at);
+				/* Add flag */
+				flagname = r_str_dup_printf ("fcn.%s", fcn->name);
+				r_flag_space_set (core->flags, "functions");
+				r_flag_set (core->flags, flagname, at, fcn->size, 0);
+				free (flagname);
+			}
 			r_list_append (core->anal->fcns, fcn);
 			r_list_foreach (fcn->refs, iter, refi) {
 				if (refi->addr != -1)
