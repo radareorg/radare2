@@ -48,6 +48,7 @@ R_API RListIter *r_list_item_new (void *data);
 R_API void r_list_unlink (RList *list, void *ptr);
 R_API void r_list_split (RList *list, void *ptr);
 R_API void r_list_split_iter (RList *list, RListIter *iter);
+R_API void *r_list_get_n(RList *list, int n);
 
 /* rlistflist */
 // TODO: rename to init or so.. #define r_oflist_new() R_NEW(ROFList);memset

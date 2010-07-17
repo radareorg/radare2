@@ -117,6 +117,16 @@ R_API RListIter *r_list_prepend(RList *list, void *data) {
 	return new;
 }
 
+R_API void *r_list_get_n(RList *list, int n) {
+	RListIter *it;
+	int i;
+
+	for (it = list->head, i = 0; it && it->data; it = it->n, i++)
+		if (i == n)
+			return it->data;
+	return NULL;
+}
+
 #if TEST
 int main () {
 	RListIter *iter, *it;
@@ -131,6 +141,8 @@ int main () {
 
 	r_list_delete (l, it);
 
+	char *foo = (char*) r_list_get_n (l, 2);
+	printf (" - n=2 => %s\n", foo);
 	iter = r_list_iterator (l);
 	while (r_list_iter_next (iter)) {
 		RListIter *cur = iter;

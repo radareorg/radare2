@@ -23,7 +23,6 @@ TODO edu
 TODO nibble
 -----------
 * rabin2 doesnt works for fat mach-o
-* af renames as fcn.* the already named functions..which is wrong
 
 TODO pancake
 ------------
@@ -42,7 +41,6 @@ TODO gerardo
 
 unassigned TODO pointz
 ----------------------
-* Implement a r_list_get_n() to get Nth element in linked list
 * Test r_lib^w32/osx support
 * Implement r_sys_setenv stuff from r1 in core/file.c:33 (!!?)
 * Implement more get_main() (NOOB)
