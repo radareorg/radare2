@@ -69,7 +69,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 			free (tbuf);
 			return 0;
 		}
-		l = p-in+1;
+		l = p-in;
 		if (l>0 && l<sizeof (tline)-1) {
 			memset (tline, 0, sizeof (tline));
 			memcpy (tline, in, l);
@@ -101,12 +101,13 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	int hit = cons->grep.neg;
 	int i, j;
 
-	if (cons->grep.nstrings>0)
+	if (cons->grep.nstrings>0) {
 		for (i=0; i<cons->grep.nstrings; i++)
 			if (strstr (buf, cons->grep.strings[i])) {
 				hit = !cons->grep.neg;
 				break;
 			}
+	} else hit = 1;
 
 	if (hit) {
 		if (cons->grep.token != -1) {
@@ -123,9 +124,9 @@ R_API int r_cons_grep_line(char *buf, int len) {
 			}
 			len = strlen (tok);
 			memcpy (buf, tok, len);
-			memcpy (buf+len, "\n", 2);
-			len += 2;
 		}
+		memcpy (buf+len, "\n", 2);
+		len += 2;
 	} else len = 0;
 
 	return len;
