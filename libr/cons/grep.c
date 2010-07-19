@@ -110,7 +110,8 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	} else hit = 1;
 
 	if (hit) {
-		if (cons->grep.token != -1) {
+		if (cons->grep.token != -1 && (cons->grep.line == -1 ||
+			(cons->grep.line != -1 && cons->grep.line == cons->lines))) {
 			char ptr[1024], *tok = NULL;
 			strncpy (ptr, buf, 1023);
 			for (i=0; i<len; i++) for (j=0; j<6; j++)
@@ -125,8 +126,8 @@ R_API int r_cons_grep_line(char *buf, int len) {
 			len = strlen (tok);
 			memcpy (buf, tok, len);
 		}
-		memcpy (buf+len, "\n", 2);
-		len += 2;
+		memcpy (buf+len, "\n", 1);
+		len += 1;
 	} else len = 0;
 
 	return len;
