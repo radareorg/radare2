@@ -16,8 +16,8 @@ R_API RSign *r_sign_new() {
 }
 
 R_API void r_sign_prefix(RSign *sig, const char *str) {
-	strncpy (sig->prefix, str, sizeof (sig->prefix));
-	sig->prefix[sizeof (sig->prefix)] = '\0';
+	strncpy (sig->prefix, str, sizeof (sig->prefix)-1);
+	sig->prefix[sizeof (sig->prefix)-1] = '\0';
 }
 
 R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const char *arg) {

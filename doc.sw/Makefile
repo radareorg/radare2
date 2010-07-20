@@ -2,6 +2,7 @@
 
 all:
 	sw.gen site
+	md5sum site.static/*/*
 
 clean:
 	rm -rf site.static

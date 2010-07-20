@@ -261,10 +261,7 @@ R_API int r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size, int dup)
 		flag = R_NEW (RFlagItem);
 		memset (flag,'\0', sizeof (RFlagItem));
 		flag->offset = addr;
-		strncpy (flag->name, name, R_FLAG_NAME_SIZE);
-		strncpy (flag->name, r_str_chop (flag->name), R_FLAG_NAME_SIZE);
-		flag->name[R_FLAG_NAME_SIZE-1]='\0';
-		flag->namehash = r_str_hash64 (flag->name);
+		r_flag_item_rename (item, name);
 #if USE_BTREE
 		btree_add (&fo->tree, flag, cmp);
 		btree_add (&fo->ntree, flag, ncmp);
@@ -281,4 +278,11 @@ R_API int r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size, int dup)
 	flag->cmd = NULL;
 
 	return R_FALSE;
+}
+
+R_API void r_flag_item_rename(RFlagItem *item, const char *name) {
+	strncpy (flag->name, name, R_FLAG_NAME_SIZE);
+	strncpy (flag->name, r_str_chop (flag->name), R_FLAG_NAME_SIZE);
+	item->name[R_FLAG_NAME_SIZE-1]='\0';
+	item->namehash = r_str_hash64 (item->name);
 }

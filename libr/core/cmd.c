@@ -426,7 +426,6 @@ static int cmd_zign(void *data, const char *input) {
 				r_cons_strcat ("# Signatures\n");
 			}
 			r_cons_printf ("zp %s\n", input+2);
-			
 			r_list_foreach (core->anal->fcns, iter, fcni) {
 				ut8 buf[128];
 				if (r_io_read_at (core->io, fcni->addr, buf, sizeof (buf)) == sizeof (buf)) {
@@ -442,6 +441,7 @@ static int cmd_zign(void *data, const char *input) {
 					} else eprintf ("Unnamed function at 0x%08"PFMT64x"\n", fcni->addr);
 				} else eprintf ("Cannot read at 0x%08"PFMT64x"\n", fcni->addr);
 			}
+			r_cons_strcat ("zp-\n");
 			if (ptr) {
 				r_cons_flush ();
 				r_cons_singleton ()->fdout = 1;
@@ -1467,7 +1467,7 @@ static int cmd_flag(void *data, const char *input) {
 				new = old;
 				item = r_flag_get_i (core->flags, core->offset);
 			}
-			if (item) strncpy (item->name, new, sizeof (item->name));
+			if (item) r_flag_item_rename (item, new);
 			else eprintf ("Cannot find flag\n");
 		}
 		break;
