@@ -23,7 +23,7 @@ cd `dirname ${IDIR}`
 FILES=`find ${IDIR} -iname "*.md"`
 for a in $FILES ; do
 	echo "* $a"
-	REQUEST_URI=$(echo /sw.cgi/$a|sed "s,${IDIR},,") SWCONF="./sw.conf" /var/www/sw.cgi > xxx
+	REQUEST_URI=$(echo /sw.cgi/$a|sed "s,${IDIR},,") SWCONF="./sw.conf" sw.cgi > xxx
 	[ $? = 1 ] && exit 1 # this hack is to detect exit 1 of sw.cgi... kinda ugly :)
 	b="$CDIR/`echo "$a"|sed -e 's,.md$,.html,g'|sed -e "s,${IDIR},${ODIR},g"`"
 	cat xxx | sed -e "s,sw.cgi,./,g" -e 's,\.md",.html",g' | \

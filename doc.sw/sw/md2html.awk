@@ -1,3 +1,4 @@
+#!/bin/awk -f
 #!/usr/bin/awk -f
 #
 # by: Jesus Galan (yiyus) 2009
