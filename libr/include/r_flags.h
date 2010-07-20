@@ -49,6 +49,7 @@ R_API int r_flag_set(struct r_flag_t *fo, const char *name, ut64 addr, ut32 size
 R_API int r_flag_sort(RFlag *f, int namesort);
 R_API int r_flag_name_check(const char *name);
 R_API int r_flag_name_filter(char *name);
+R_API void r_flag_item_rename(RFlagItem *item, const char *name);
 
 /* spaces */
 R_API const char *r_flag_space_get(RFlag *f, int idx);

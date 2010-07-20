@@ -21,7 +21,6 @@ typedef struct r_sign_item_t {
 	ut64 addr;
 	ut8 *bytes;
 	ut8 *mask;
-	RList *list;
 } RSignItem;
 
 typedef struct r_sign_t {

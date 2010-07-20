@@ -83,11 +83,18 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 
 R_API void r_sign_list(RSign *sig, int rad) {
 	if (rad) {
+		int i;
 		RListIter *iter;
 		RSignItem *si;
-		sig->printf ("zp-");
-		r_list_foreach (sig->items, iter, si)
-			sig->printf ("z%c %s ...\n", si->type, si->name); // TODO : show bytes
+		if (!r_list_empty (sig->items))
+			sig->printf ("zp-\n");
+		r_list_foreach (sig->items, iter, si) {
+			sig->printf ("z%c %s ", si->type, si->name);
+			// TODO: show mask..
+			for (i=0; i<si->size; i++)
+				sig->printf ("%02x", si->bytes[i]);
+			sig->printf ("\n");
+		}
 	} else {
 		sig->printf ("Loaded %d signatures\n", sig->s_byte + sig->s_anal);
 		sig->printf ("  %d byte signatures\n", sig->s_byte);
