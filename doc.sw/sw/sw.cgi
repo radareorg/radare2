@@ -39,7 +39,7 @@ sw_menu() {
 		NAME=`echo "${i}" | sed -e "s/\..*$//" -e "s/_/ /g"`
 		# THIS IS RELATIVE STATIC FUN
 		[ -z "`echo $i | grep md$`" ] && i="$i/index.md"
-		echo "<li><a href=\"${PREFIX}${BIN}/${i}\">${NAME}</a></li>"
+		echo "<li><a href=\"${PREFIX}${BIN}${i}\">${NAME}</a></li>"
 		# THIS IS FOR WEB
 		#echo "<li><a href=\"${PREFIX}${BIN}/${DIR}/${i}\">${NAME}</a></li>"
 	done

@@ -15,15 +15,17 @@ Build system:
   some basics about the organization of the code (boring++)
 * Store version information in libraries ? debian claims for it
 * install.sh (to track installed files ..)
-* acr -ldl check must be fixed
+* acr -ldl check must be fixed for kfreebsd
 
 TODO edu
 --------
 * use RList in r_search
+* typedef all function pointers, like in r_bp
 
 TODO nibble
 -----------
 * rabin2 doesnt works for fat mach-o
+* Cx/CX are not displayed in disasm as they should.. (C! must die)
 
 TODO pancake
 ------------
@@ -79,7 +81,6 @@ Questions:
   - generate by just parsing the opcode
   - RAnalAopArg { int size; int delta; int type; }
   - r_anal_aop_arg_set (); r_anal_aop_arg_get (); r_anal_aop_arg_binmask ();
-* Cx/CX are not displayed in disasm as they should.. (C! must die)
 * rasign2 : must be done, write manpage (isn't r2 enought?)
 
 Bindings
@@ -103,7 +104,6 @@ Refactoring
 * what do we have to do with r_th, r_parse and r_vm ?
 * Is RCore->block and blocksize a RBuf ? refactor!11
 * Find a better name for r_buf_fread (really?)
-* typedef all function pointers, like in r_bp
 * Review r_io API
 * semi-ok state (R_TRUFAE), implement r_errno and r_errstr in r_util?
 * Finish and import the spp's getopt owns implementation in r_util (like in p9)
