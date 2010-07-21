@@ -20,16 +20,24 @@ R_API int r_mem_eq(ut8 *a, ut8 *b, int len) {
 }
 
 R_API void r_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize) {
-        int i=0,j;
-        while (i<dsize)
-                for (j=0; j<osize && i<dsize;j++)
-                        dest[i++] = orig[j];
+	int i=0,j;
+	while (i<dsize)
+		for (j=0; j<osize && i<dsize;j++)
+			dest[i++] = orig[j];
 }
 
 R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len) {
-	int i, ret = 0;
-	for (i=0; i<len; i++)
-		ret += (orig[i]&mask[i])&dest[i];
+	int i, ret = -1;
+	ut8 *mdest, *morig;
+	mdest = malloc (len);
+	morig = malloc (len);
+	for (i=0; i<len; i++) {
+		mdest[i] = dest[i]&mask[i];
+		morig[i] = orig[i]&mask[i];
+	}
+	ret = memcmp (mdest, morig, len);
+	free (mdest);
+	free (morig);
 	return ret;
 }
 

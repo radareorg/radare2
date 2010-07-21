@@ -514,9 +514,8 @@ static int cmd_zign(void *data, const char *input) {
 				eprintf ("Ranges are: 0x%08"PFMT64x" 0x%08"PFMT64x"\n", ini, fin);
 				r_cons_printf ("f-sign*\n");
 				if (r_io_read_at (core->io, ini, buf, len) == len) {
-					len -= 128;
 					for (idx=0; idx<len; idx++) {
-						si = r_sign_check (core->sign, buf+idx, idx);
+						si = r_sign_check (core->sign, buf+idx, len-idx);
 						if (si) {
 							if (si->type == 'f') 
 								r_cons_printf ("f sign.fun_%s_%d @ 0x%08"PFMT64x"\n",
