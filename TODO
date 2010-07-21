@@ -28,7 +28,6 @@ TODO nibble
 TODO pancake
 ------------
 * signatures: z/ results in some false positive hits :?
-* io_read doesnt works for inter-section reads.. this makes / and z/ search broken on io.va=1
 * we need an api to define function signatures
   - CF<addr> void name(int foo, char* var)
   - arg/var set name/get value/ ..

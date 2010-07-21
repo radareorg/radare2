@@ -495,10 +495,10 @@ static int cmd_zign(void *data, const char *input) {
 					fin = ini+r_num_math (core->num, input+2);
 				}
 			} else {
-				s = r_io_section_get (core->io, core->offset);
+				s = r_io_section_get (core->io, core->io->off);
 				if (s) {
-					ini = s->vaddr;
-					fin = ini + s->size;
+					ini = core->io->va?s->vaddr:s->offset;
+					fin = ini + (core->io->va?s->vsize:s->size);
 				} else {
 					eprintf ("No section identified, please provide range.\n");
 					return R_FALSE;
