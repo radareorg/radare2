@@ -13,15 +13,15 @@
 static int ewf_fd = -1;
 static LIBEWF_HANDLE *ewf_h = NULL;
 
-static int ewf__write(struct r_io_t *io, int fd, const ut8 *buf, int count) {
+static int ewf__write(RIO *io, int fd, const ut8 *buf, int count) {
 	return libewf_write_buffer(ewf_h, buf, count);
 }
 
-static int ewf__read(struct r_io_t *io, int fd, ut8 *buf, int count) {
+static int ewf__read(RIO *io, int fd, ut8 *buf, int count) {
 	return libewf_read_buffer(ewf_h, buf, count);
 }
 
-static int ewf__close(struct r_io_t *io, int fd) {
+static int ewf__close(RIO *io, int fd) {
 	if (fd == ewf_fd) {
 		libewf_close(ewf_h);
 		ewf_fd = -1;
@@ -29,7 +29,7 @@ static int ewf__close(struct r_io_t *io, int fd) {
 	}
 }
 
-static ut64 ewf__lseek(struct r_io_t *io, int fildes, ut64 offset, int whence) {
+static ut64 ewf__lseek(RIO *io, int fildes, ut64 offset, int whence) {
 	size64_t media_size;
 
 	if (fildes == ewf_fd) {
@@ -52,11 +52,11 @@ static ut64 ewf__lseek(struct r_io_t *io, int fildes, ut64 offset, int whence) {
 	return lseek(fildes, offset, whence);
 }
 
-static int ewf__plugin_fd(struct r_io_t *io, int fd) {
+static int ewf__plugin_fd(RIO *io, int fd) {
 	return fd == ewf_fd;
 }
 
-static int ewf__plugin_open(struct r_io_t *io, const char *pathname)
+static int ewf__plugin_open(RIO *io, const char *pathname)
 {
 	if ((!memcmp(file, "ewf://", 6))
 	||  (!memcmp(file, "els://", 6)))
@@ -64,7 +64,7 @@ static int ewf__plugin_open(struct r_io_t *io, const char *pathname)
 	return 0;
 }
 
-static int ewf__open(struct r_io_t *io, const char *pathname, int flags, int mode) {
+static int ewf__open(RIO *io, const char *pathname, int flags, int mode) {
 	// XXX filename list should be dynamic. 1024 limit is ugly
 	const char *filenames[1024];
 	char *ptr,*optr;
@@ -159,7 +159,7 @@ static int ewf__open(struct r_io_t *io, const char *pathname, int flags, int mod
 	return ewf_fd;
 }
 
-static int ewf__init(struct r_io_t *io) {
+static int ewf__init(RIO *io) {
 	return R_TRUE;
 }
 

@@ -117,6 +117,25 @@ R_API RListIter *r_list_prepend(RList *list, void *data) {
 	return new;
 }
 
+R_API void r_list_sort(RList *list, RListComparator cmp) {
+	RListIter *it;
+	RListIter *it2;
+	for (it = list->head; it && it->data; it = it->n) {
+		for (it2 = it->n; it2 && it2->data; it2 = it2->n) {
+			if (cmp (it->data, it2->data)>0) {
+				void *t = it->data;
+				it->data = it2->data;
+				it2->data = t;
+			}
+		}
+	}
+}
+
+R_API void r_list_add_sorted(RList *list, void *data, RListComparator cmp) {
+	if (r_list_append (list, data))
+		r_list_sort (list, cmp); // TODO: inefficient
+}
+
 R_API void *r_list_get_n(RList *list, int n) {
 	RListIter *it;
 	int i;
@@ -128,6 +147,8 @@ R_API void *r_list_get_n(RList *list, int n) {
 }
 
 #if TEST
+
+// TODO: move into t/list.c
 int main () {
 	RListIter *iter, *it;
 	RList *l = r_list_new ();
@@ -138,6 +159,19 @@ int main () {
 	r_list_prepend (l, "HEAD");
 	r_list_prepend (l, "HEAD 00");
 	it = r_list_append (l, "LAST");
+
+	iter = r_list_iterator (l);
+	while (r_list_iter_next (iter)) {
+		const char *str = r_list_iter_get (iter);
+		printf ("-> %s\n", str);
+	}
+	eprintf ("--sort--\n");
+	r_list_sort (l, (RListComparator)strcmp);
+	iter = r_list_iterator (l);
+	while (r_list_iter_next (iter)) {
+		const char *str = r_list_iter_get (iter);
+		printf ("-> %s\n", str);
+	}
 
 	r_list_delete (l, it);
 

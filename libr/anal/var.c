@@ -106,6 +106,10 @@ R_API RAnalVarType *r_anal_var_type_get(RAnal *anal, const char *name) {
 	return NULL;
 }
 
+static int cmpdelta(RAnalVar *a, RAnalVar *b) {
+	return (a->delta - b->delta);
+}
+
 R_API int r_anal_var_add(RAnal *anal, RAnalFcn *fcn, ut64 from, int delta, int type, const char *vartype, const char *name, int set) {
 	RAnalVar *var, *vari;
 	RListIter *iter;
@@ -121,7 +125,7 @@ R_API int r_anal_var_add(RAnal *anal, RAnalFcn *fcn, ut64 from, int delta, int t
 	var->type = type;
 	var->delta = delta;
 	r_anal_var_access_add (anal, var, from, set);
-	r_list_append (fcn->vars, var);
+	r_list_add_sorted (fcn->vars, var, cmpdelta);
 	return R_TRUE;
 }
 

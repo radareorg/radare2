@@ -176,7 +176,7 @@ R_API RAnalVar *r_anal_fcn_get_var(RAnalFcn *fs, int num, int dir) {
 	RAnalVar *var;
 	RListIter *iter;
 	int count = 0;
-	// TODO: vars must be sorted by delta
+	// vars are sorted by delta in r_anal_var_add()
 	r_list_foreach (fs->vars, iter, var) {
 		if (dir & var->dir)
 			if (count++ == num)

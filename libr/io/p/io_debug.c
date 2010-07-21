@@ -245,7 +245,6 @@ static int __open(struct r_io_t *io, const char *file, int rw, int mode) {
 }
 
 static int __init(struct r_io_t *io) {
-	eprintf ("dbg init\n");
 	return R_TRUE;
 }
 

@@ -1,5 +1,5 @@
 NAME=r_io
-DEPS=r_lib r_util
+DEPS=r_lib r_util r_socket
 #DEPS=r_util
 CFLAGS+=-Wall -DCORELIB
 

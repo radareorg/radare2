@@ -251,6 +251,7 @@ extern struct r_io_plugin_t r_io_plugin_w32dbg;
 extern struct r_io_plugin_t r_io_plugin_mach;
 extern struct r_io_plugin_t r_io_plugin_debug;
 extern struct r_io_plugin_t r_io_plugin_shm;
+extern struct r_io_plugin_t r_io_plugin_gdb;
 #endif
 
 #if 0
