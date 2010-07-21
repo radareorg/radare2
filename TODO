@@ -15,10 +15,11 @@ Build system:
   some basics about the organization of the code (boring++)
 * Store version information in libraries ? debian claims for it
 * install.sh (to track installed files ..)
+* acr -ldl check must be fixed
 
 TODO edu
 --------
-* port r_sign and r_diff to RList
+* use RList in r_search
 
 TODO nibble
 -----------
@@ -26,6 +27,8 @@ TODO nibble
 
 TODO pancake
 ------------
+* signatures: z/ results in some false positive hits :?
+* io_read doesnt works for inter-section reads.. this makes / and z/ search broken on io.va=1
 * we need an api to define function signatures
   - CF<addr> void name(int foo, char* var)
   - arg/var set name/get value/ ..
@@ -51,7 +54,6 @@ unassigned TODO pointz
 ===
 * FileDescriptors: dd -- copy from !fd in r1
 * r_bin->relocs // RList of relocations
-* rasign2 : must be done, write manpage
 * distribute 'spp' with 'rarc2' ?
 * Initial analysis looking for xrefs to strings and so? ax? ./a@@entry0 - Launched at startup
 
@@ -80,6 +82,7 @@ Questions:
   - RAnalAopArg { int size; int delta; int type; }
   - r_anal_aop_arg_set (); r_anal_aop_arg_get (); r_anal_aop_arg_binmask ();
 * Cx/CX are not displayed in disasm as they should.. (C! must die)
+* rasign2 : must be done, write manpage (isn't r2 enought?)
 
 Bindings
 ========

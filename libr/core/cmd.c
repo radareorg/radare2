@@ -485,7 +485,7 @@ static int cmd_zign(void *data, const char *input) {
 			RSignItem *si;
 			RIOSection *s;
 			if (input[1]) {
-				char *ptr = strchr (input, ' ');
+				char *ptr = strchr (input+2, ' ');
 				if (ptr) {
 					*ptr = '\0';
 					ini = r_num_math (core->num, input+2);
@@ -505,7 +505,7 @@ static int cmd_zign(void *data, const char *input) {
 				}
 			}
 			if (ini>=fin) {
-				eprintf ("Invalid range.\n");
+				eprintf ("Invalid range (0x%"PFMT64x"-0x%"PFMT64x").\n", ini, fin);
 				return R_FALSE;
 			}
 			len = fin-ini;
@@ -516,13 +516,13 @@ static int cmd_zign(void *data, const char *input) {
 				if (r_io_read_at (core->io, ini, buf, len) == len) {
 					len -= 128;
 					for (idx=0; idx<len; idx++) {
-						si = r_sign_check (core->sign, buf+idx, 128);
+						si = r_sign_check (core->sign, buf+idx, idx);
 						if (si) {
 							if (si->type == 'f') 
 								r_cons_printf ("f sign.fun_%s_%d @ 0x%08"PFMT64x"\n",
-									item->name, idx, core->offset);
+									si->name, idx, ini+idx); //core->offset);
 							else r_cons_printf ("f sign.%s @ 0x%08"PFMT64x"\n",
-								item->name, core->offset);
+								si->name, ini+idx); //core->offset+idx);
 						}
 					}
 				} else eprintf ("Cannot read %d bytes at 0x%08"PFMT64x"\n", len, ini);

@@ -16,8 +16,10 @@ R_API RSign *r_sign_new() {
 }
 
 R_API void r_sign_prefix(RSign *sig, const char *str) {
-	strncpy (sig->prefix, str, sizeof (sig->prefix)-1);
-	sig->prefix[sizeof (sig->prefix)-1] = '\0';
+	if (str) {
+		strncpy (sig->prefix, str, sizeof (sig->prefix)-1);
+		sig->prefix[sizeof (sig->prefix)-1] = '\0';
+	} else sig->prefix[0] = '\0';
 }
 
 R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const char *arg) {
@@ -36,21 +38,17 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 
 	switch (type) {
 	case R_SIGN_FUNC: // function signature
-		sig->s_func++;
 		// FUNC FORMAT [addr] [function-signature]
 		ptr = strchr (arg, ' ');
 		if (ptr) {
 		// TODO. matching must be done by sym/flag/function name
 		//	sig->addr = 
 		}
+		sig->s_func++;
 		r_list_append (sig->items, si);
 		break;
 	case R_SIGN_HEAD: // function prefix (push ebp..)
 	case R_SIGN_BYTE: // function mask
-		if (type==R_SIGN_HEAD)
-		sig->s_head++;
-		else if (type==R_SIGN_BYTE)
-			sig->s_byte++;
 		if (!(data = r_anal_strmask (anal, arg))) {
 			free (si);
 			break;
@@ -70,7 +68,13 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 			free (si->bytes);
 			free (si->mask);
 			free (si);
-		} else r_list_append (sig->items, si);
+		} else {
+			r_list_append (sig->items, si);
+			if (type==R_SIGN_HEAD)
+				sig->s_head++;
+			else if (type==R_SIGN_BYTE)
+				sig->s_byte++;
+		}
 		free (data);
 		break;
 	default:
@@ -106,6 +110,7 @@ R_API void r_sign_list(RSign *sig, int rad) {
 R_API void r_sign_reset(RSign *sig) {
 	r_list_free (sig->items);
 	sig->items = r_list_new ();
+	sig->s_anal = sig->s_byte = sig->s_head = sig->s_func = 0;
 }
 
 R_API RSign *r_sign_free(RSign *sig) {
