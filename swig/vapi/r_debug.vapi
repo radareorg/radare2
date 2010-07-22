@@ -17,7 +17,8 @@ public class Radare.RDebug {
 	public int stop_reason();
 
 	/* control flow */
-	public bool wait();
+	[CCode (cname="r_debug_wait")]
+	public bool hold();
 	public bool step(int count);
 	//public bool kill(int pid, int sig);
 	public bool step_over(int count);
