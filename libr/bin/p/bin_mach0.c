@@ -188,7 +188,7 @@ static int check(RBin *bin) {
 		if (n == 8) {
 			/* XXX HACK to avoid conflicts with java class */
 			if (!memcmp (buf, "\xca\xfe\xba\xbe\x00\x00\x00\x02", 8)) {
-				eprintf ("Warning: fat mach-o, use bin/t/mach-ex to extract the bins\n");
+				eprintf ("Warning: fat mach-o, use mach-ex to extract the bins\n");
 				ret = R_TRUE;
 			} else
 			if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||

@@ -82,6 +82,8 @@ install-symlink:
 			fi ; \
 		done ; \
 	done
+	# XXX mach-ex will be deprecated soon
+	ln -fs ${PWD}/bin/t/mach-ex${EXT_EXE} ${PFX}/bin/mach-ex${EXT_EXE}
 
 install: install-includes install-pkgconfig
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
@@ -101,6 +103,8 @@ install: install-includes install-pkgconfig
 	${INSTALL_DATA} $$a ${PFX}/lib/radare2 ; done
 	${INSTALL_DATA} lang/p/radare.* ${PFX}/lib/radare2
 	echo "lang/p/radare.* ${PFX}/lib/radare2"
+	# XXX mach-ex will be deprecated soon
+	cp bin/t/mach-ex${EXT_EXE} ${PFX}/bin
 
 deinstall uninstall:
 	# libraries
@@ -134,6 +138,8 @@ deinstall uninstall:
 	rm -rf ${PFX}/lib/libr.a
 	rm -rf ${PFX}/share/doc/radare2
 	@echo libr aka radare2 has been uninstalled from PREFIX=${PFX}
+	# XXX mach-ex will be deprecated soon
+	rm -f ${PFX}/bin/mach-ex${EXT_EXE}
 
 clean:
 	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} clean ); done
