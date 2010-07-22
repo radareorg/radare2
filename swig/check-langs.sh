@@ -1,6 +1,6 @@
 #!/bin/sh
 SUP_LANGS=""
-LANGS="python perl ruby lua"
+LANGS="python perl ruby lua java"
 for a in ${LANGS}; do
   printf "Checking $a support for valaswig... "
   valaswig-cc --test $a

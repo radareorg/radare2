@@ -39,11 +39,15 @@ ruby:
 lua:
 	@-[ "`grep lua supported.langs`" ] && cd lua && make
 
+java:
+	@-[ "`grep java supported.langs`" ] && cd java && make
+
 test:
 	cd perl && make test
 	cd python && make test
 	cd ruby && make test
 	cd lua && make test
+	cd java && make test
 
 install-python:
 	@# py2.6 in debian uses dist-packages, but site-packages in arch..
@@ -65,6 +69,9 @@ install-lua:
 	cp -rf lua/*libr* ${DESTDIR}${PREFIX}/lib/lua/$$a ; \
 	done ; \
 	fi
+
+install-java:
+	echo "TODO"
 
 install-ruby:
 	@if [ "`grep ruby supported.langs`" ]; then \
@@ -90,7 +97,7 @@ install-vapi:
 	@${INSTALL_DIR} ${DESTDIR}${PREFIX}/share/vala/vapi
 	${INSTALL_DATA} vapi/*.vapi vapi/*.deps ${DESTDIR}${PREFIX}/share/vala/vapi
 
-install: install-python install-ruby install-perl install-lua install-vapi
+install: install-python install-ruby install-perl install-lua install-java install-vapi
 
 deinstall: uninstall
 uninstall:
@@ -105,6 +112,7 @@ clean:
 	cd perl && make clean
 	cd ruby && make clean
 	cd lua && make clean
+	cd java && make clean
 	cd vapi/t && ${MAKE} clean
 
-.PHONY: ruby lua python perl clean oldtest test all vdoc
+.PHONY: ruby lua java python perl clean oldtest test all vdoc
