@@ -1,5 +1,17 @@
 === RELEASE 0.5 ===
 
+changeset:   828:594e044222f0
+tag:         tip
+user:        pancake
+date:        Fri Jul 23 01:15:03 2010 +0200
+files:       ChangeLog TODO binr/radare2/radare2.c configure.hook libr/core/project.c swig/java/TestRBin.java
+description:
+* Fix creation of ~/.radare2/rdb and r2 -p (Thanks edu!)
+* Re-run ./configure-plugins if .def.cfg is newer than .cfg
+* Documentate build instructions of the TestRBin.java
+* Sync TODO and ChangeLog
+
+
 changeset:   827:7f37e049d037
 tag:         tip
 user:        nibble
