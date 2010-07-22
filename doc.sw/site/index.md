@@ -1,6 +1,10 @@
-Description
-===========
+Introduction
+============
 
-This directory aims to provide helpful documentation tips for radare2.
+radare is a multiplatform *nix-like reverse engineering framework.
+
+It is composed by a set of libraries, programs and scripts.
+
+[Analysis](analysis/index.html)
 
 --pancake

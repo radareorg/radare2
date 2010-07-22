@@ -8,6 +8,8 @@
 
 0.5 RELEASE
 ===========
+* Ensure -p works (to choose project, save, etc..)
+* Handle ^C in search..
 
 Build system:
 -------------
@@ -19,11 +21,13 @@ Build system:
 
 TODO edu
 --------
+* review vapis and bindings
 * use RList in r_search
 * typedef all function pointers, like in r_bp
 
 TODO nibble
 -----------
+* ret 4?
 * rabin2 doesnt works for fat mach-o
 * Cx/CX are not displayed in disasm as they should.. (C! must die)
 

@@ -34,8 +34,9 @@ sw_menu() {
 	# absolute paz
 	#[ -n "${DIR}" ] && echo "<li><a href=\"`dirname ${PREFIX}${BIN}/${DIR}`\">..</a></li>"
 	# relative fun
+	[ -z "`echo $FILE|grep index.md`" ] && echo "<li><a href=\"index.html\">.</a></li>"
 	[ -n "${DIR}" ] && echo "<li><a href=\"../index.html\">..</a></li>"
-	for i in `ls ${SITE}/${DIR} | grep -v ${BL} ` ; do
+	for i in `ls ${SITE}/${DIR} | grep -v ${BL} | grep -v index` ; do
 		NAME=`echo "${i}" | sed -e "s/\..*$//" -e "s/_/ /g"`
 		# THIS IS RELATIVE STATIC FUN
 		[ -z "`echo $i | grep md$`" ] && i="$i/index.md"
