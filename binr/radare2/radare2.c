@@ -248,13 +248,13 @@ int main(int argc, char **argv) {
 
 		if (debug) {
 			if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
-				const char *prj = r_config_get (r.config, "file.project");
 				if (r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
 					r_debug_kill (r.dbg, 9); // KILL
-				if (prj && *prj && r_cons_yesno ('y', "Do you want to save the project? (Y/n)"))
-					r_core_project_save (&r, prj);
 			} else continue;
 		}
+		const char *prj = r_config_get (r.config, "file.project");
+		if (prj && *prj && r_cons_yesno ('y', "Do you want to save the project? (Y/n)"))
+			r_core_project_save (&r, prj);
 		break;
 	}
 	// TODO: kill thread

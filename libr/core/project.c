@@ -11,12 +11,11 @@ static char *r_core_project_file(const char *file) {
 	return r_str_home (buf);
 }
 
+//TODO: Don't try mkdir rdb if mdkir .radare2 fails. (Maybe R_TRUFAE??)
 static int r_core_project_init() {
 	int ret;
 	char *str = r_str_home (".radare2");
-	if (str && !(ret = r_sys_mkdir (str))) {
-		str = r_str_home (".radare2/rdb");
-		ret = r_sys_mkdir (str);
+	if (str && (ret = r_sys_mkdir (str))) {
 		if (!ret) {
 			free (str);
 			str = r_str_home (".radare2/plugins");
@@ -24,6 +23,8 @@ static int r_core_project_init() {
 			if (ret) eprintf ("Cannot create ~/.radare2/plugins\n");
 		}
 	}
+	str = r_str_home (".radare2/rdb");
+	ret = r_sys_mkdir (str);
 	free (str);
 	return ret;
 }

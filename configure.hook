@@ -1,2 +1,3 @@
 #!/bin/sh
+[ plugins.def.cfg -nt ./plugins.cfg ] && rm -f plugins.cfg
 [ ! -e plugins.cfg ] && ./configure-plugins

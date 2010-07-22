@@ -1,3 +1,5 @@
+/* Run: java -Djava.library.path=. TestRBin */
+
 import java.util.*;
 
 class TestRBin {

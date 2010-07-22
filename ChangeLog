@@ -1,5 +1,41 @@
 === RELEASE 0.5 ===
 
+changeset:   827:7f37e049d037
+tag:         tip
+user:        nibble
+date:        Thu Jul 22 20:15:03 2010 +0200
+files:       swig/java/TestRBin.java swig/vapi/r_debug.vapi
+description:
+* Add example for java bindings (TestRBin.java)
+* Rename wait into hold in r_debug.vapi to avoid conflict with java
+
+
+changeset:   826:9890cc5633e7
+user:        nibble
+date:        Thu Jul 22 18:54:07 2010 +0200
+files:       libr/Makefile swig/Makefile swig/check-langs.sh swig/java/Makefile
+description:
+* Add initial support for java bindings
+* Fix build
+
+
+changeset:   825:7c4c01ef8209
+user:        pancake
+date:        Thu Jul 22 14:29:03 2010 +0200
+files:       ChangeLog TODO doc.sw/site/index.md doc.sw/sw/sw.cgi
+description:
+* Some fixes in sw, update TODO and prepare Changelog for release..
+
+
+changeset:   824:46749513aa03
+user:        nibble
+date:        Thu Jul 22 13:10:22 2010 +0200
+files:       libr/Makefile libr/bin/p/bin_mach0.c
+description:
+* Install mach-ex
+* Update fat mach-o warning message
+
+
 changeset:   823:f1cec6000a7d
 tag:         tip
 user:        pancake

@@ -6,10 +6,8 @@
 
 <{include libr/TODO}>
 
-0.5 RELEASE
+0.6 RELEASE
 ===========
-* Ensure -p works (to choose project, save, etc..)
-* Handle ^C in search..
 
 Build system:
 -------------
@@ -21,7 +19,6 @@ Build system:
 
 TODO edu
 --------
-* review vapis and bindings
 * use RList in r_search
 * typedef all function pointers, like in r_bp
 
@@ -33,6 +30,7 @@ TODO nibble
 
 TODO pancake
 ------------
+* fix visual cursor byte selection (support +,- for blocks)
 * we need an api to define function signatures
   - CF<addr> void name(int foo, char* var)
   - arg/var set name/get value/ ..
@@ -48,14 +46,11 @@ TODO gerardo
 
 unassigned TODO pointz
 ----------------------
+* Realign flags when using project in debug mode
 * Test r_lib^w32/osx support
 * Implement r_sys_setenv stuff from r1 in core/file.c:33 (!!?)
 * Implement more get_main() (NOOB)
 
----8<------------8<------------------8<---------------------8<------------- -- - -
-
-0.6
-===
 * FileDescriptors: dd -- copy from !fd in r1
 * r_bin->relocs // RList of relocations
 * distribute 'spp' with 'rarc2' ?
@@ -110,6 +105,7 @@ Refactoring
 * Find a better name for r_buf_fread (really?)
 * Review r_io API
 * semi-ok state (R_TRUFAE), implement r_errno and r_errstr in r_util?
+  - useful in r_sys_mkdir ?
 * Finish and import the spp's getopt owns implementation in r_util (like in p9)
 * Rename __UNIX__ as __POSIX__
  
