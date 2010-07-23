@@ -270,6 +270,7 @@ R_API int r_socket_gets(int fd, char *buf,  int size) {
 
 R_API char *r_socket_to_string(int fd) {
 	char *str = NULL;
+#if __UNIX__
 	struct sockaddr sa;
 	socklen_t sl = sizeof (sa);
 	memset (&sa, 0, sizeof (sa));
@@ -280,5 +281,6 @@ R_API char *r_socket_to_string(int fd) {
 			sprintf (str, "%d.%d.%d.%d:%d",
 				a[0],a[1],a[2],a[3], ntohs (sain->sin_port));
 	} else eprintf ("getperrname: failed\n"); //r_sys_perror ("getpeername");
+#endif
 	return str;
 }
