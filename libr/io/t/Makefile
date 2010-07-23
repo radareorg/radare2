@@ -2,8 +2,8 @@ include ../../config.mk
 CFLAGS+=-I../../include -g
 
 ifeq ($(WITHPIC),1)
-LDPATH=-L.. ${LDFLAGS_LINKPATH}.. -L../../util -L../../lib
-LDPATH+=-lr_io -lr_util -lr_lib
+LDPATH=-L.. ${LDFLAGS_LINKPATH}.. -L../../util -L../../lib -L../../socket
+LDPATH+=-lr_io -lr_util -lr_lib -lr_socket
 else
 LDPATH=../../io/libr_io.a
 LDPATH+=../../util/libr_util.a

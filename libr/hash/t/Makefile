@@ -1,7 +1,7 @@
 include ../../config.mk
 
 # already appended in rules.mk ${EXT_EXE}
-BINDEPS=r_io r_hash r_util
+BINDEPS=r_io r_hash r_util r_socket
 LIBS=-lm
 
 all: hello${EXT_EXE}

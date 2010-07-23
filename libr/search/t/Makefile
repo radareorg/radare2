@@ -1,4 +1,4 @@
-BINDEPS=r_util r_search r_print r_io r_cons r_line
+BINDEPS=r_util r_search
 
 include ../../config.mk
 
