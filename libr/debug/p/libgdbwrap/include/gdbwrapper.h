@@ -15,6 +15,10 @@
 #include <errno.h>
 #include "libaspect.h"
 
+#if __WINDOWS__
+typedef unsigned char uint8_t;
+#endif
+
 typedef struct  gdbwrap_gdbreg32
 {
   ureg32   eax;

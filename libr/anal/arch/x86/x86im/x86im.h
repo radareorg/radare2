@@ -11,15 +11,15 @@
 
 #if __UNIX__
 # define __stdcall 
-# define __in 
-# define __out 
-# define __inout
 # define WORD unsigned short
 # define DWORD unsigned int
 # define BOOL int
 # define TRUE 1
 # define FALSE 0
 #endif
+# define __inout
+# define __in 
+# define __out 
 
 #include "x86im_io.h"
 #ifdef __X86IM_USE_FMT__

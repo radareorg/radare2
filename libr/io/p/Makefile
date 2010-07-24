@@ -1,6 +1,14 @@
 CFLAGS=-I../../include -Wall -DWORDSIZE=64 ${PIC_CFLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}.. -DCORELIB
 
 include ../../config.mk
+# on solaris only
+ifeq (${OSTYPE},solaris)
+CFLAGS+=-lsocket
+endif
+# windows
+ifeq (${OSTYPE},windows)
+CFLAGS+=-lws2_32
+endif
 
 foo: all
 

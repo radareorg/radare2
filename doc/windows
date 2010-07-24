@@ -9,11 +9,11 @@ Crosscompilation
 
   ArchLinux
   ---------
-  ./configure --without-gmp --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows
+  ./configure --without-gmp --without-openssl --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows
   make
   
   Ubuntu
   ------
   sudo apt-get install mingw32
-  ./configure --without-gmp --with-compiler=i586-mingw32msvc-gcc  --with-ostype=windows --host=i586-unknown-windows
+  ./configure --without-gmp --without-openssl --with-compiler=i586-mingw32msvc-gcc  --with-ostype=windows --host=i586-unknown-windows
   make

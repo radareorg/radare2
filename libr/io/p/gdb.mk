@@ -12,11 +12,10 @@ CFLAGS+=-I../../debug/p/libgdbwrap/include
 
 # TODO : link against gdbwrapper
 ${TARGET_GDB}: ${OBJ_GDB}
-	${CC} ${CFLAGS} \
+	${CC} ${OBJ_GDB} ${CFLAGS} \
 		-I../debug/p/libgdbwrap/ \
 		-I../debug/p/libgdbwrap/include \
 		-shared -o ${TARGET_GDB} ${LDFLAGS_LIB} \
 		${LDFLAGS_LINKPATH}../../socket -L../../socket -lr_socket \
 		${LDFLAGS_LINKPATH}../../util -L../../util -lr_util \
 		${LDFLAGS_LINKPATH}.. -L.. -L../../lib -lr_lib -lr_io \
-		${OBJ_GDB}

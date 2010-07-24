@@ -1,3 +1,5 @@
+include ../../config.mk
+
 CFLAGS+=-I ../arch -I../../include -D__UNIX__=1
 LDFLAGS=-L../../util -lr_util
 

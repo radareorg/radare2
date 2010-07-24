@@ -24,6 +24,11 @@ typedef unsigned int uint32_t;
 typedef unsigned short uint16_t;
 typedef unsigned char uint8_t; 
 
+#if __WINDOWS__
+typedef int int32_t;
+typedef short int16_t;
+#endif
+
 typedef int	cpu_type_t;
 typedef int	cpu_subtype_t;
 typedef int	vm_prot_t;

@@ -172,7 +172,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		case 'e':
 			/* TODO: prompt for addr, size, name */
 			eprintf ("TODO\n");
-			sleep (1);
+			r_sys_sleep (1);
 			break;
 		case 'q':
 			if (menu<=0) return R_TRUE; menu--;

@@ -24,6 +24,8 @@
 #include <ctype.h>
 #if __UNIX__
 #include <arpa/inet.h>
+#elif __WINDOWS__
+typedef unsigned short uint16_t;
 #endif
 
 enum{

@@ -1,7 +1,16 @@
+include ../config.mk
+
 NAME=r_io
 DEPS=r_lib r_util r_socket
-#DEPS=r_util
 CFLAGS+=-Wall -DCORELIB
+# on solaris only
+ifeq (${OSTYPE},solaris)
+LDFLAGS+=-lsocket
+endif
+# windows
+ifeq (${OSTYPE},windows)
+LDFLAGS+=-lws2_32
+endif
 
 
 STATIC_OBJS=

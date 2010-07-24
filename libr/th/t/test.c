@@ -1,4 +1,5 @@
 #include <r_th.h>
+#include <r_util.h>
 
 int looper(struct r_th_t *th) {
 	int i;
@@ -31,7 +32,7 @@ int test1() {
 	while (r_th_wait_async (th)) {
 		printf ("\nwaiting...\n");
 		fflush (stdout);
-		usleep (400);
+		r_sys_usleep (400);
 		//	r_th_break(th);
 	}
 	printf ("\nfinished\n");

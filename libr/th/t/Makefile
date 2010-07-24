@@ -1,7 +1,6 @@
 OBJ=test.o
 BIN=test
-LDFLAGS+=-L..
-BINDEPS=r_th
+BINDEPS=r_th r_util
 LIBS+=${TH_LIBS}
 
 include ../../rules.mk
