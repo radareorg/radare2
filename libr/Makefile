@@ -104,6 +104,7 @@ install: install-includes install-pkgconfig
 	${INSTALL_DATA} lang/p/radare.* ${PFX}/lib/radare2
 	echo "lang/p/radare.* ${PFX}/lib/radare2"
 	# XXX mach-ex will be deprecated soon
+	mkdir -p ${PFX}/bin
 	cp bin/t/mach-ex${EXT_EXE} ${PFX}/bin
 
 deinstall uninstall:
