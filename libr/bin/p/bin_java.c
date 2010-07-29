@@ -120,7 +120,7 @@ static int check(RBin *bin) {
 		if (!memcmp (filebuf, "\xca\xfe\xba\xbe", 4)) {
 			ret = R_TRUE;
 			memcpy (&off, filebuf+4*sizeof(int), sizeof(int));
-			r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), 0);
+			r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
 			if (off > 0 && off < filesize) {
 				memcpy (buf, filebuf+off, 4);
 				if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
