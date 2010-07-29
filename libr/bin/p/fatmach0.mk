@@ -1,0 +1,10 @@
+OBJ_FATMACH0=bin_fatmach0.o ../format/mach0/fatmach0.o
+
+STATIC_OBJ+=${OBJ_FATMACH0}
+TARGET_FATMACH0=bin_fatmach0.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_FATMACH0}
+
+${TARGET_FATMACH0}: ${OBJ_FATMACH0}
+	${CC} -shared ${CFLAGS} -o ${TARGET_FATMACH0} ${OBJ_FATMACH0}
+	@#strip -s ${TARGET_FATMACH0}

@@ -251,6 +251,7 @@ struct r_bin_plugin_t r_bin_plugin_elf = {
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
+	.extract = NULL,
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,

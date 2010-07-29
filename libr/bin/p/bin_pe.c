@@ -229,6 +229,7 @@ struct r_bin_plugin_t r_bin_plugin_pe = {
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
+	.extract = NULL,
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
@@ -242,6 +243,7 @@ struct r_bin_plugin_t r_bin_plugin_pe = {
 	.fields = NULL,
 	.libs = &libs,
 	.meta = NULL,
+	.write = NULL,
 };
 
 #ifndef CORELIB

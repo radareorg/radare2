@@ -16,18 +16,19 @@
 #include <r_util.h>
 
 #define ACTION_UNK       0x0000
-#define ACTION_ENTRIES   0x0001 
-#define ACTION_IMPORTS   0x0002 
-#define ACTION_SYMBOLS   0x0004 
-#define ACTION_SECTIONS  0x0008 
+#define ACTION_ENTRIES   0x0001
+#define ACTION_IMPORTS   0x0002
+#define ACTION_SYMBOLS   0x0004
+#define ACTION_SECTIONS  0x0008
 #define ACTION_INFO      0x0010
 #define ACTION_OPERATION 0x0020
 #define ACTION_HELP      0x0040
-#define ACTION_STRINGS   0x0080 
-#define ACTION_FIELDS    0x0100 
-#define ACTION_LIBS      0x0200 
-#define ACTION_SRCLINE   0x0400 
-#define ACTION_MAIN      0x0800 
+#define ACTION_STRINGS   0x0080
+#define ACTION_FIELDS    0x0100
+#define ACTION_LIBS      0x0200
+#define ACTION_SRCLINE   0x0400
+#define ACTION_MAIN      0x0800
+#define ACTION_EXTRACT   0x1000
 
 static struct r_lib_t *l;
 static struct r_bin_t *bin = NULL;
@@ -56,6 +57,7 @@ static int rabin_show_help() {
 		" -m [addr]   Show source line at addr\n"
 		" -L          List supported bin plugins\n"
 		" -@ [addr]   Show section, symbol or import at addr\n"
+		" -x          Extract bins contained in file\n"
 		" -V          Show version information\n"
 		" -h          This help\n");
 	return R_TRUE;
@@ -106,6 +108,17 @@ static int rabin_show_main() {
 			baddr+binmain->rva, binmain->offset);
 
 	return R_TRUE;
+}
+
+static int rabin_extract() {
+	int n;
+
+	n = r_bin_extract (bin);
+	if (n != 0) {
+		printf ("%i bins extracted\n", n);
+		return R_TRUE;
+	}
+	return R_FALSE;
 }
 
 static int rabin_show_libs() {
@@ -550,7 +563,7 @@ int main(int argc, char **argv)
 		r_lib_opendir (l, LIBDIR"/radare2/");
 	}
 
-	while ((c = getopt (argc, argv, "Mm:@:VisSzIHelwO:o:f:rvLh")) != -1) {
+	while ((c = getopt (argc, argv, "Mm:@:VisSzIHelwO:o:f:rvLhx")) != -1) {
 		switch(c) {
 		case 'm':
 			at = r_num_math (NULL, optarg);
@@ -581,6 +594,9 @@ int main(int argc, char **argv)
 			break;
 		case 'l':
 			action |= ACTION_LIBS;
+			break;
+		case 'x':
+			action |= ACTION_EXTRACT;
 			break;
 		case 'w':
 			rw = R_TRUE;
@@ -649,6 +665,8 @@ int main(int argc, char **argv)
 		rabin_show_libs();
 	if (action&ACTION_SRCLINE)
 		rabin_show_srcline(at);
+	if (action&ACTION_EXTRACT)
+		rabin_extract();
 	if (op != NULL && action&ACTION_OPERATION)
 		rabin_do_operation (op);
 

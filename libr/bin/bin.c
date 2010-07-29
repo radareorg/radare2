@@ -132,6 +132,13 @@ R_API int r_bin_add(RBin *bin, RBinPlugin *foo) {
 	return R_TRUE;
 }
 
+R_API int r_bin_extract(RBin *bin) {
+	if (bin->cur && bin->cur->extract)
+		return bin->cur->extract (bin);
+	return 0;
+}
+
+
 R_API void* r_bin_free(RBin *bin) {
 	if (!bin)
 		return NULL;

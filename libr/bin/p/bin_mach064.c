@@ -22,6 +22,7 @@ struct r_bin_plugin_t r_bin_plugin_mach064 = {
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
+	.extract = NULL,
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
@@ -35,6 +36,7 @@ struct r_bin_plugin_t r_bin_plugin_mach064 = {
 	.fields = NULL,
 	.libs = &libs,
 	.meta = NULL,
+	.write = NULL,
 };
 
 #ifndef CORELIB

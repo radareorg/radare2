@@ -1,7 +1,10 @@
-/* mach-ex :: mach-O extractor
- * Copyleft 2010 nibble <at develsec dot org> */
+/* radare - LGPL - Copyright 2010 nibble at develsec.org */
 
 #include <stdio.h>
+#include <r_types.h>
+#include <r_util.h>
+#include "fatmach0.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -9,26 +12,6 @@
 #include <sys/stat.h>
 #include <r_userconf.h>
 
-#define ut32 unsigned int
-#define ut8  unsigned char
-
-#define FAT_MAGIC 0xcafebabe
-#define FAT_CIGAM 0xbebafeca
-
-struct fat_header {
-	ut32 magic;
-	ut32 nfat_arch;
-};
-
-struct fat_arch {
-	int cputype;
-	int cpusubtype;
-	ut32 offset;
-	ut32 size;
-	ut32 align;
-};
-
-char *file = NULL;
 int fd;
 int file_size;
 int endian = LIL_ENDIAN;
@@ -103,7 +86,7 @@ static int init() {
 	return 1;
 }
 
-static int extract() {
+static int extract(const char *file) {
 	ut8 *buf = NULL;
 	char output[256];
 	int i, fdo;
@@ -141,12 +124,7 @@ static int extract() {
 	return 1;
 }
 
-int main(int argc, char **argv) {
-	if (argc != 2) {
-		fprintf (stderr, "Usage: %s <fat mach-o file>\n", argv[0]);
-		return 1;
-	}
-	file = argv[1];
+int r_bin_fatmach0_extract(const char *file) {
 	if ((fd = open (file , O_RDONLY)) == -1) {
 		fprintf (stderr, "Cannot open file\n");
 		return 1;
@@ -156,7 +134,7 @@ int main(int argc, char **argv) {
 		fprintf (stderr, "Invalid file type\n");
 		return 1;
 	}
-	if (!extract ()) {
+	if (!extract (file)) {
 		fprintf (stderr, "Cannot extract mach-o files\n");
 		return 1;
 	}

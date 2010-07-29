@@ -112,6 +112,7 @@ static RBinInfo* info(RBin *bin) {
 	return ret;
 }
 
+/* TODO: Avoid conflict with mach0 */
 static int check(RBin *bin) {
 	ut8 *buf;
 	int n, ret = R_FALSE;
@@ -130,6 +131,7 @@ struct r_bin_plugin_t r_bin_plugin_java = {
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
+	.extract = NULL,
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
@@ -143,6 +145,7 @@ struct r_bin_plugin_t r_bin_plugin_java = {
 	.fields = NULL,
 	.libs = NULL,
 	.meta = NULL,
+	.write = NULL,
 };
 
 #ifndef CORELIB

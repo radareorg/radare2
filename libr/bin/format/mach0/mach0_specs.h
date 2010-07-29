@@ -8,13 +8,13 @@
 #define MACH0_(name) name##_64
 #define MH_MAGIC 0xfeedfacf
 #define MH_CIGAM 0xcffaedfe
-#define FAT_CIGAM 0xbabefeca /* XXX */
 #else
 #define MACH0_(name) name
 #define	MH_MAGIC 0xfeedface
 #define MH_CIGAM 0xcefaedfe
-#define FAT_CIGAM 0xcafebabe
 #endif
+#define FAT_MAGIC 0xcafebabe
+#define FAT_CIGAM 0xbebafeca
 
 #ifndef _INCLUDE_MACHO_SPECS_H_
 #define _INCLUDE_MACHO_SPECS_H_
@@ -1728,5 +1728,18 @@ extern int nlist (const char *filename, struct nlist *list);
  * for the berkeley pascal compiler, pc(1):
  */
 #define	N_PC	0x30	/* global pascal symbol: name,,NO_SECT,subtype,line */
+
+struct fat_header {
+	uint32_t magic;
+	uint32_t nfat_arch;
+};
+
+struct fat_arch {
+	int cputype;
+	int cpusubtype;
+	uint32_t offset;
+	uint32_t size;
+	uint32_t align;
+};
 
 #endif /* _MACHO_LOADER_H_ */

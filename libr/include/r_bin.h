@@ -47,6 +47,7 @@ typedef struct r_bin_plugin_t {
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	int (*load)(RBin *bin);
+	int (*extract)(RBin *bin);
 	int (*destroy)(RBin *bin);
 	int (*check)(RBin *bin);
 	ut64 (*baddr)(RBin *bin);
@@ -141,6 +142,7 @@ typedef struct r_bin_write_t {
 
 /* bin.c */
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo);
+R_API int r_bin_extract(RBin *bin);
 R_API void* r_bin_free(RBin *bin);
 R_API int r_bin_list(RBin *bin);
 R_API int r_bin_load(RBin *bin, const char *file, const char *plugin_name);
@@ -180,6 +182,7 @@ extern RBinPlugin r_bin_plugin_pe;
 extern RBinPlugin r_bin_plugin_pe64;
 extern RBinPlugin r_bin_plugin_mach0;
 extern RBinPlugin r_bin_plugin_mach064;
+extern RBinPlugin r_bin_plugin_fatmach0;
 extern RBinPlugin r_bin_plugin_java;
 extern RBinPlugin r_bin_plugin_dummy;
 
