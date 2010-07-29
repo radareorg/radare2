@@ -20,12 +20,22 @@ static int check(RBin *bin) {
 	return ret;
 }
 
+static int destroy(RBin *bin) {
+	r_bin_fatmach0_free ((struct r_bin_fatmach0_obj_t*)bin->bin_obj);
+	return R_TRUE;
+}
+
 static int load(RBin *bin) {
+	if(!(bin->bin_obj = r_bin_fatmach0_new(bin->file)))
+		return R_FALSE;
+	bin->size = ((struct r_bin_fatmach0_obj_t*)(bin->bin_obj))->size;
+	bin->buf = ((struct r_bin_fatmach0_obj_t*)(bin->bin_obj))->b;
+	eprintf ("Warning: fat mach-o, use rabin2 -x to extract the bins\n");
 	return R_TRUE;
 }
 
 static int extract(RBin *bin) {
-	return r_bin_fatmach0_extract (bin->file);
+	return r_bin_fatmach0_extract ((struct r_bin_fatmach0_obj_t*)bin->bin_obj);
 }
 
 struct r_bin_plugin_t r_bin_plugin_fatmach0 = {
@@ -35,7 +45,7 @@ struct r_bin_plugin_t r_bin_plugin_fatmach0 = {
 	.fini = NULL,
 	.load = &load,
 	.extract = &extract,
-	.destroy = NULL,
+	.destroy = &destroy,
 	.check = &check,
 	.baddr = NULL,
 	.main = NULL,
@@ -57,4 +67,3 @@ struct r_lib_struct_t radare_plugin = {
 	.data = &r_bin_plugin_fatmach0
 };
 #endif
-

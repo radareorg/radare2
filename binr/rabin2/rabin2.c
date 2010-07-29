@@ -115,7 +115,7 @@ static int rabin_extract() {
 
 	n = r_bin_extract (bin);
 	if (n != 0) {
-		printf ("%i bins extracted\n", n);
+		if (!rad) printf ("%i bins extracted\n", n);
 		return R_TRUE;
 	}
 	return R_FALSE;

@@ -6,6 +6,17 @@
 #ifndef _INCLUDE_R_BIN_FATMACH0_H_
 #define _INCLUDE_R_BIN_FATMACH0_H_
 
-int r_bin_fatmach0_extract(const char *file);
+struct r_bin_fatmach0_obj_t {
+	const char *file;
+	int size;
+	int nfat_arch;
+	struct fat_header hdr;
+	struct fat_arch *archs;
+	struct r_buf_t* b;
+};
+
+int r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t* bin);
+void* r_bin_fatmach0_free(struct r_bin_fatmach0_obj_t* bin);
+struct r_bin_fatmach0_obj_t* r_bin_fatmach0_new(const char* file);
 
 #endif

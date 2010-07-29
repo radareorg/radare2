@@ -5,140 +5,88 @@
 #include <r_util.h>
 #include "fatmach0.h"
 
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <r_userconf.h>
+static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
+	int len;
 
-int fd;
-int file_size;
-int endian = LIL_ENDIAN;
-struct fat_header hdr;
-struct fat_arch *archs = NULL;
-
-static void swapendian (ut8 *orig, int size)
-{
-	if (endian) {
-		ut8 buffer[8];
-		switch(size) {
-		case 2:
-			buffer[0] = orig[0];
-			orig[0]   = orig[1];
-			orig[1]   = buffer[0];
-			break;
-		case 4:
-			memcpy(buffer, orig, 4);
-			orig[0] = buffer[3];
-			orig[1] = buffer[2];
-			orig[2] = buffer[1];
-			orig[3] = buffer[0];
-			break;
-		case 8:
-			memcpy(buffer, orig, 8);
-			orig[0] = buffer[7];
-			orig[1] = buffer[6];
-			orig[2] = buffer[5];
-			orig[3] = buffer[4];
-			orig[4] = buffer[3];
-			orig[5] = buffer[2];
-			orig[6] = buffer[1];
-			orig[7] = buffer[0];
-			break;
-		default:
-			printf("Invalid size: %d\n", size);
-		}
-	}
-}
-
-static int init() {
-	int i;
-
-	lseek (fd, 0, SEEK_SET);
-	if (read(fd, &hdr, sizeof (struct fat_header))
-			!= sizeof (struct fat_header)) {
+	len = r_buf_fread_at(bin->b, 0, (ut8*)&bin->hdr, "2I", 1);
+	if (len == -1) {
 		perror ("read (fat_header)");
-		return 0;
+		return R_FALSE;
 	}
-	if (hdr.magic != FAT_MAGIC && hdr.magic != FAT_CIGAM)
-		return 0;
-	swapendian ((ut8*)&hdr.magic, sizeof (ut32));
-	swapendian ((ut8*)&hdr.nfat_arch, sizeof (ut32));
-	if (hdr.nfat_arch == 0)
-		return 0;
-	if (!(archs = malloc (hdr.nfat_arch * sizeof (struct fat_arch)))) {
+	bin->nfat_arch = bin->hdr.nfat_arch;
+	if (bin->hdr.magic != FAT_MAGIC || bin->nfat_arch == 0)
+		return R_FALSE;
+	if (!(bin->archs = malloc (bin->nfat_arch * sizeof (struct fat_arch)))) {
 		perror ("malloc (fat_arch)");
-		return 0;
+		return R_FALSE;
 	}
-	if (read (fd, archs, hdr.nfat_arch * sizeof (struct fat_arch))
-			!= hdr.nfat_arch * sizeof (struct fat_arch)) {
+	len = r_buf_fread_at (bin->b, R_BUF_CUR, (ut8*)bin->archs, "5I", bin->nfat_arch);
+	if (len == -1) {
 		perror ("read (fat_arch)");
-		return 0;
+		return R_FALSE;
 	}
-	for (i = 0; i < hdr.nfat_arch; i++) {
-		swapendian ((ut8*)&archs[i].cputype, sizeof (int));
-		swapendian ((ut8*)&archs[i].cpusubtype, sizeof (int));
-		swapendian ((ut8*)&archs[i].offset, sizeof (ut32));
-		swapendian ((ut8*)&archs[i].size, sizeof (ut32));
-		swapendian ((ut8*)&archs[i].align, sizeof (ut32));
-	}
-	return 1;
+	return R_TRUE;
 }
 
-static int extract(const char *file) {
+int r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t* bin) {
 	ut8 *buf = NULL;
 	char output[256];
-	int i, fdo;
+	int i;
 
-	fprintf (stderr, "Extracting files...\n");
-	for (i = 0; i < hdr.nfat_arch; i++) {
-		snprintf (output, 255, "%s.%i", file, i);
-		fprintf (stderr, " %s... ", output);
-		if (archs[i].size == 0 ||
-			archs[i].size > file_size) {
-			fprintf (stderr, "Corrupted file\n");
-			return 0;
+	eprintf ("Extracting files...\n");
+	for (i = 0; i < bin->hdr.nfat_arch; i++) {
+		snprintf (output, 255, "%s.%i", bin->file, i);
+		eprintf (" %s... ", output);
+		if (bin->archs[i].size == 0 || bin->archs[i].size > bin->size) {
+			eprintf ("Corrupted file\n");
+			return R_FALSE;
 		}
-		fprintf (stderr, "%u\n", archs[i].size);
-		if (!(buf = malloc (archs[i].size))) {
+		eprintf ("%u\n", bin->archs[i].size);
+		if (!(buf = malloc (bin->archs[i].size))) {
 			perror ("malloc (buf)");
-			return 0;
+			return R_FALSE;
 		}
-		lseek (fd, archs[i].offset, SEEK_SET);
-		if (read (fd, buf, archs[i].size) != archs[i].size) {
-			perror ("read (file)");
-			return 0;
+		if (r_buf_read_at (bin->b, bin->archs[i].offset, buf, bin->archs[i].size) == -1) {
+			perror ("read (buf)");
+			free (buf);
+			return R_FALSE;
 		}
-		if ((fdo = open (output, O_RDWR|O_CREAT, S_IRWXU)) == -1) {
-			fprintf (stderr, "Cannot open output file\n");
-			return 0;
-		}
-		if (write (fdo, buf, archs[i].size) != archs[i].size) {
+		if (!r_file_dump (output, buf, bin->archs[i].size)) {
 			perror ("write (file)");
-			return 0;
+			free (buf);
+			return R_FALSE;
 		}
-		close (fdo);
 		free (buf);
 	}
-	return 1;
+	return bin->nfat_arch;
 }
 
-int r_bin_fatmach0_extract(const char *file) {
-	if ((fd = open (file , O_RDONLY)) == -1) {
-		fprintf (stderr, "Cannot open file\n");
-		return 1;
-	}
-	file_size = lseek (fd, 0, SEEK_END);
-	if (!init ()) {
-		fprintf (stderr, "Invalid file type\n");
-		return 1;
-	}
-	if (!extract (file)) {
-		fprintf (stderr, "Cannot extract mach-o files\n");
-		return 1;
-	}
-	free (archs);
-	close (fd);
-	return 0;
+void* r_bin_fatmach0_free(struct r_bin_fatmach0_obj_t* bin) {
+	if (!bin)
+		return NULL;
+	if (bin->archs)
+		free (bin->archs);
+	if (bin->b)
+		r_buf_free (bin->b);
+	free(bin);
+	return NULL;
+}
+
+struct r_bin_fatmach0_obj_t* r_bin_fatmach0_new(const char* file) {
+	struct r_bin_fatmach0_obj_t *bin;
+	ut8 *buf;
+
+	if (!(bin = malloc(sizeof(struct r_bin_fatmach0_obj_t))))
+		return NULL;
+	memset (bin, 0, sizeof (struct r_bin_fatmach0_obj_t));
+	bin->file = file;
+	if (!(buf = (ut8*)r_file_slurp(file, &bin->size))) 
+		return r_bin_fatmach0_free(bin);
+	bin->b = r_buf_new();
+	if (!r_buf_set_bytes(bin->b, buf, bin->size))
+		return r_bin_fatmach0_free(bin);
+	free (buf);
+	if (!r_bin_fatmach0_init(bin))
+		return r_bin_fatmach0_free(bin);
+	return bin;
 }
