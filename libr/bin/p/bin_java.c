@@ -112,15 +112,25 @@ static RBinInfo* info(RBin *bin) {
 	return ret;
 }
 
-/* TODO: Avoid conflict with mach0 */
 static int check(RBin *bin) {
-	ut8 *buf;
-	int n, ret = R_FALSE;
-	if ((buf = (ut8*)r_file_slurp_range (bin->file, 0, 16, &n))) {
-		if (n==16 && !memcmp (buf, "\xca\xfe\xba\xbe", 4)
-			&& (buf[7]!=2 && buf[11]!=7))
+	ut8 *filebuf, buf[4];
+	int off, filesize, ret = R_FALSE;
+
+	if ((filebuf = (ut8*)r_file_slurp (bin->file, &filesize))) {
+		if (!memcmp (filebuf, "\xca\xfe\xba\xbe", 4)) {
 			ret = R_TRUE;
-		free (buf);
+			memcpy (&off, filebuf+4*sizeof(int), sizeof(int));
+			r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), 0);
+			if (off > 0 && off < filesize) {
+				memcpy (buf, filebuf+off, 4);
+				if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
+					!memcmp (buf, "\xfe\xed\xfa\xce", 4) ||
+					!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
+					!memcmp (buf, "\xcf\xfa\xed\xfe", 4))
+					ret = R_FALSE;
+			}
+		}
+		free (filebuf);
 	}
 	return ret;
 }

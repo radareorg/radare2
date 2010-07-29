@@ -7,15 +7,23 @@
 #include "mach0/fatmach0.h"
 
 static int check(RBin *bin) {
-	ut8 *buf;
-	int n, ret = R_FALSE;
+	ut8 *filebuf, buf[4];
+	int off, filesize, ret = R_FALSE;
 
-	if ((buf = (ut8*)r_file_slurp_range (bin->file, 0, 8, &n))) {
-		if (n == 8)
-		/* XXX HACK to avoid conflicts with java class */
-		if (!memcmp (buf, "\xca\xfe\xba\xbe\x00\x00\x00\x02", 8))
-			ret = R_TRUE;
-		free (buf);
+	if ((filebuf = (ut8*)r_file_slurp (bin->file, &filesize))) {
+		if (!memcmp (filebuf, "\xca\xfe\xba\xbe", 4)) {
+			memcpy (&off, filebuf+4*sizeof(int), sizeof(int));
+			r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), 0);
+			if (off > 0 && off < filesize) {
+				memcpy (buf, filebuf+off, 4);
+				if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
+					!memcmp (buf, "\xfe\xed\xfa\xce", 4) ||
+					!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
+					!memcmp (buf, "\xcf\xfa\xed\xfe", 4))
+					ret = R_TRUE;
+			}
+		}
+		free (filebuf);
 	}
 	return ret;
 }
