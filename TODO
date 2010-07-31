@@ -24,7 +24,6 @@ TODO edu
 
 TODO nibble
 -----------
-* ret 4?
 * rabin2 doesnt works for fat mach-o
 * Cx/CX are not displayed in disasm as they should.. (C! must die)
 

@@ -248,8 +248,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int depth) {
 	if (depth < 0)
 		return R_FALSE;
 	r_list_foreach (core->anal->fcns, iter, fcni)
-		if ((at >= fcni->addr && at < fcni->addr+fcni->size) ||
-			(at == fcni->addr && fcni->size == 0)) {
+		if (at == fcni->addr) {
 			if (from != -1) {
 				r_list_foreach (fcni->xrefs, iter2, refi) {
 					if (from == refi->addr)
