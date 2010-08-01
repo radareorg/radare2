@@ -127,6 +127,7 @@ static RList* imports(RBin *bin) {
 		strncpy (ptr->type, import[i].type, R_BIN_SIZEOF_STRINGS);
 		ptr->rva = import[i].offset;
 		ptr->offset = import[i].offset;
+		ptr->size = import[i].size;
 		ptr->ordinal = 0;
 		ptr->hint = 0;
 		r_list_append (ret, ptr);

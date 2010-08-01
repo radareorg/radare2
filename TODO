@@ -24,7 +24,7 @@ TODO edu
 
 TODO nibble
 -----------
-* rabin2 doesnt works for fat mach-o
+* Fix PLT bounds detection
 * Cx/CX are not displayed in disasm as they should.. (C! must die)
 
 TODO pancake
@@ -80,6 +80,8 @@ Questions:
   - RAnalAopArg { int size; int delta; int type; }
   - r_anal_aop_arg_set (); r_anal_aop_arg_get (); r_anal_aop_arg_binmask ();
 * rasign2 : must be done, write manpage (isn't r2 enought?)
+* rabin2 can now extract fat mach-o with rabin -x, is it worth native support for fat bins? nibble: NO pancake: ??
+* Deprecate CF and use af+ instead?
 
 Bindings
 ========

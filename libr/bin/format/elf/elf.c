@@ -623,7 +623,7 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 						toffset = sym[k].st_value;
 					else if ((toffset = Elf_(get_import_addr) (bin, k)) == -1)
 						toffset = 0;
-					tsize = 0;
+					tsize = 16;
 				} else if (type == R_BIN_ELF_SYMBOLS && sym[k].st_shndx != STN_UNDEF &&
 						ELF_ST_TYPE(sym[k].st_info) != STT_SECTION && ELF_ST_TYPE(sym[k].st_info) != STT_FILE) {
 					toffset = (ut64)sym[k].st_value +

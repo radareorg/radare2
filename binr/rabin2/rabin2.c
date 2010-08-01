@@ -164,6 +164,9 @@ static int rabin_show_imports(ut64 at) {
 		} else {
 			if (rad) {
 				r_flag_name_filter (import->name);
+				if (import->size) 
+					printf ("af+ 0x%08"PFMT64x" %"PFMT64d" fcn.imp.%s\n",
+							va?baddr+import->rva:import->offset, import->size, import->name);
 				printf ("fs imports\n");
 				printf ("f imp.%s @ 0x%08"PFMT64x"\n",
 						import->name, va?baddr+import->rva:import->offset);
@@ -213,8 +216,8 @@ static int rabin_show_symbols(ut64 at) {
 				r_flag_name_filter (symbol->name);
 				if (!strncmp (symbol->type,"FUNC", 4)) {
 					if (symbol->size) 
-						printf ("CF %"PFMT64d" @ 0x%08"PFMT64x"\n",
-								symbol->size, va?baddr+symbol->rva:symbol->offset);
+						printf ("af+ 0x%08"PFMT64x" %"PFMT64d" fcn.sym.%s\n",
+								va?baddr+symbol->rva:symbol->offset, symbol->size, symbol->name);
 					printf ("fs functions\n");
 					printf ("f fcn.sym.%s %"PFMT64d" 0x%08"PFMT64x"\n",
 							symbol->name, symbol->size,

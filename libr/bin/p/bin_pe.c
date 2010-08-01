@@ -133,6 +133,7 @@ static RList* imports(RBin *bin) {
 		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
 		ptr->rva = imports[i].rva;
 		ptr->offset = imports[i].offset;
+		ptr->size = 0;
 		ptr->ordinal = imports[i].ordinal;
 		ptr->hint = imports[i].hint;
 		r_list_append (ret, ptr);

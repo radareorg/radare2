@@ -1674,7 +1674,7 @@ static int cmd_anal(void *data, const char *input) {
 				size = r_num_math (core->num, r_str_word_get0 (ptr, 1));
 				addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 				if (!r_anal_fcn_add (core->anal, addr, size, name, diff))
-					eprintf ("Cannot add function (duplicated or overlaped)\n");
+					eprintf ("Cannot add function (duplicated)\n");
 			}
 			free (ptr);
 			}
@@ -2534,7 +2534,7 @@ static int cmd_meta(void *data, const char *input) {
 	case '!':
 		r_meta_sync (core->meta);
 		break;
-	case 'F': /* add function */
+	case 'F': /* add function */ /* XXX use af+ ? */
 		eprintf ("TODO\n");
 		break;
 	case 'S':
