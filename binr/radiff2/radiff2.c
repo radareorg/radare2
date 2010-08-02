@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
 		r_core_gdiff (core, file, file2, va);
 		if (rad) {
 			r_core_anal_bb_list (core, R_TRUE);
-			r_core_anal_fcn_list (core, R_TRUE);
+			r_core_anal_fcn_list (core, NULL, R_TRUE);
 		} else
 			r_core_anal_graph (core, 0, R_CORE_ANAL_GRAPHBODY|R_CORE_ANAL_GRAPHDIFF);
 		r_core_free (core);

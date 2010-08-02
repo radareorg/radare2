@@ -246,6 +246,7 @@ enum {
 
 typedef struct r_anal_ref_t {
 	int type;
+	ut64 at;
 	ut64 addr;
 } RAnalRef;
 

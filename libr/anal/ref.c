@@ -10,6 +10,7 @@ R_API RAnalRef *r_anal_ref_new() { // TODO: deprecate?
 	RAnalRef *ref = R_NEW (RAnalRef);
 	if (ref) {
 		ref->addr = -1;
+		ref->at = -1;
 		ref->type = R_ANAL_REF_TYPE_CODE; // HUH?
 	}
 	return ref;

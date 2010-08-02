@@ -1680,10 +1680,10 @@ static int cmd_anal(void *data, const char *input) {
 			}
 			break;
 		case 'l':
-			r_core_anal_fcn_list (core, 0);
+			r_core_anal_fcn_list (core, input+2, 0);
 			break;
 		case '*':
-			r_core_anal_fcn_list (core, 1);
+			r_core_anal_fcn_list (core, input+2, 1);
 			break;
 		case '?':
 			r_cons_printf (
@@ -1691,7 +1691,7 @@ static int cmd_anal(void *data, const char *input) {
 			" af @ [addr]     ; Analyze functions (start at addr)\n"
 			" af+ addr size name [diff] ; Add function\n"
 			" af- [addr]      ; Clean all function analysis data (or function at addr)\n"
-			" afl             ; List functions\n"
+			" afl [fcn name]  ; List functions\n"
 			" af*             ; Output radare commands\n");
 			break;
 		default:
