@@ -23,7 +23,7 @@ typedef struct r_parse_plugin_t {
 	int (*fini)(void *user);
 	int (*parse)(struct r_parse_t *p, void *data, char *str);
 	int (*assemble)(struct r_parse_t *p, char *data, char *str);
-	int (*filter)(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str);
+	int (*filter)(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str, int len);
 	struct list_head list;
 } RParsePlugin;
 
@@ -36,7 +36,7 @@ R_API int r_parse_list(struct r_parse_t *p);
 R_API int r_parse_use(struct r_parse_t *p, const char *name);
 R_API int r_parse_parse(struct r_parse_t *p, void *data, char *str);
 R_API int r_parse_assemble(struct r_parse_t *p, char *data, char *str);
-R_API int r_parse_filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str);
+R_API int r_parse_filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str, int len);
 
 /* plugin pointers */
 extern struct r_parse_plugin_t r_parse_plugin_dummy;

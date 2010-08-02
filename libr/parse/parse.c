@@ -90,9 +90,9 @@ R_API int r_parse_assemble(struct r_parse_t *p, char *data, char *str) {
 	return ret;
 }
 
-R_API int r_parse_filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str) {
+R_API int r_parse_filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str, int len) {
 	if (p->cur && p->cur->filter)
-		return p->cur->filter(p, f, data, str);
+		return p->cur->filter(p, f, data, str, len);
 	return R_FALSE;
 }
 

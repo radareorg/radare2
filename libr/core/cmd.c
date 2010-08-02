@@ -308,7 +308,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			r_parse_parse (core->parser, asmop.buf_asm, str);
 			opstr = str;
 		} else if (filter) {
-			r_parse_filter (core->parser, core->flags, asmop.buf_asm, str);
+			r_parse_filter (core->parser, core->flags, asmop.buf_asm, str, sizeof (str));
 			opstr = str;
 		} else opstr = asmop.buf_asm;
 		r_cons_strcat (opstr);
