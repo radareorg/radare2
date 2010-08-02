@@ -16,6 +16,6 @@ rpathdel${EXT_EXE}: rpathdel.o
 	${CC} rpathdel.o ${LDPATH} ${LDFLAGS} -o rpathdel${EXT_EXE} 
 
 myclean:
-	rm -f test_meta test_meta.o rpathdel
+	rm -f test_meta${EXT_EXE} test_meta.o rpathdel${EXT_EXE} rpathdel.o
 
 include ../../rules.mk

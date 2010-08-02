@@ -149,7 +149,7 @@ R_API int r_anal_bb_overlap(RAnal *anal, RAnalBlock *bb, RList *bbs) {
 	RListIter *iter;
 
 	r_list_foreach (bbs, iter, bbi)
-		if (bb->addr+bb->size > bbi->addr && bb->addr+bb->size < bbi->addr+bbi->size) {
+		if (bb->addr+bb->size > bbi->addr && bb->addr+bb->size <= bbi->addr+bbi->size) {
 			bb->size = bbi->addr - bb->addr;
 			bb->jump = bbi->addr;
 			bb->fail = -1;
