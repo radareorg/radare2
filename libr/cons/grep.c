@@ -9,7 +9,9 @@ R_API void r_cons_grep(const char *str) {
 	cons = r_cons_singleton ();
 	cons->grep.str = NULL;
 	cons->grep.nstrings = 0;
-	cons->grep.token = cons->grep.line = -1;
+	cons->grep.tokenfrom = 0;
+	cons->grep.tokento = ST32_MAX;
+	cons->grep.line = -1;
 	cons->grep.counter = cons->grep.neg = 0;
 
 	if (str == NULL || !*str)
@@ -29,9 +31,17 @@ R_API void r_cons_grep(const char *str) {
 	ptr3 = strchr (ptr, '['); // column number
 	if (ptr3) {
 		ptr3[0]='\0';
-		cons->grep.token = atoi (ptr3+1);
-		if (cons->grep.token<0)
-			cons->grep.token = -1;
+		cons->grep.tokenfrom = atoi (ptr3+1);
+		ptr3 = strchr (ptr3+1, '-');
+		if (ptr3) {
+			cons->grep.tokento = atoi (ptr3+1);
+			if (cons->grep.tokento == 0)
+				cons->grep.tokento = ST32_MAX;
+		} else cons->grep.tokento = cons->grep.tokenfrom;
+		if (cons->grep.tokenfrom<0)
+			cons->grep.tokenfrom = 0;
+		if (cons->grep.tokento<0)
+			cons->grep.tokento = ST32_MAX;
 	}
 	ptr2 = strchr (ptr, ':'); // line number
 	if (ptr2) {
@@ -110,21 +120,30 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	} else hit = 1;
 
 	if (hit) {
-		if (cons->grep.token != -1 && (cons->grep.line == -1 ||
-			(cons->grep.line != -1 && cons->grep.line == cons->lines))) {
-			char ptr[1024], *tok = NULL;
-			strncpy (ptr, buf, 1023);
+		if ((cons->grep.tokenfrom != 0 || cons->grep.tokento != ST32_MAX) &&
+			(cons->grep.line == -1 || cons->grep.line == cons->lines)) {
+			char in[1024], out[1024], *tok = NULL;
+			if (len > sizeof (in))
+				return -1;
+			memset (in, 0, sizeof (in));
+			memcpy (in, buf, len);
 			for (i=0; i<len; i++) for (j=0; j<6; j++)
-				if (ptr[i] == delims[j][0])
-					ptr[i] = ' ';
-			for (tok = buf, i=0; i<=cons->grep.token; i++) {
-				if (i==0) tok = (char *)strtok (ptr, " ");
+				if (in[i] == delims[j][0])
+					in[i] = ' ';
+			for (i=0, out[0] = '\0'; i <= cons->grep.tokento; i++) {
+				if (i==0) tok = (char *)strtok (in, " ");
 				else tok = (char *)strtok (NULL, " ");
-				if (tok == NULL)
-					return -1;
+				if (tok == NULL) {
+					if (strlen (out)==0) return -1;
+					else break;
+				}
+				if (i >= cons->grep.tokenfrom) {
+					strncat (out, tok, sizeof (out) - 1);
+					strncat (out, " ", sizeof (out) - 1);
+				}
 			}
-			len = strlen (tok);
-			memcpy (buf, tok, len);
+			len = strlen (out) - 1;
+			memcpy (buf, out, len);
 		}
 		memcpy (buf+len, "\n", 1);
 		len += 1;

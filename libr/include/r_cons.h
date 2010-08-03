@@ -34,7 +34,8 @@ typedef struct r_cons_grep_t {
 	char *str;
 	int counter;
 	int line;
-	int token;
+	int tokenfrom;
+	int tokento;
 	int neg;
 } RConsGrep;
 

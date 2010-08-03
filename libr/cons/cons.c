@@ -160,7 +160,8 @@ R_API void r_cons_reset() {
 	I.grep.nstrings = 0; // XXX
 	I.grep.line = -1;
 	I.grep.str = NULL;
-	I.grep.token = -1;
+	I.grep.tokenfrom = 0;
+	I.grep.tokento = ST32_MAX;
 }
 
 R_API const char *r_cons_get_buffer() {
@@ -180,7 +181,7 @@ R_API void r_cons_flush() {
 			}
 		}
 	}
-	if (I.grep.nstrings>0||I.grep.token!=-1||I.grep.line!=-1)
+	if (I.grep.nstrings>0||I.grep.tokenfrom!=0||I.grep.tokento!=ST32_MAX||I.grep.line!=-1)
 		r_cons_grepbuf (I.buffer, I.buffer_len);
 
 	if (tee&&tee[0]) {
