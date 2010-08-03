@@ -68,32 +68,35 @@ R_API void r_cons_grep(const char *str) {
 
 R_API int r_cons_grepbuf(char *buf, int len) {
 	RCons *cons = r_cons_singleton ();
-	char tline[1024], *tbuf, *p, *out, *in = buf;
+	char *tline, *tbuf, *p, *out, *in = buf;
 	int ret, buffer_len = 0, l = 0;
 
 	out = tbuf = calloc (1, len);
+	tline = malloc (len);
 	cons->lines = 0;
 	while (in-buf<len) {
 		p = strchr (in, '\n');
 		if (!p) {
 			free (tbuf);
+			free (tline);
 			return 0;
 		}
 		l = p-in;
-		if (l>0 && l<sizeof (tline)-1) {
-			memset (tline, 0, sizeof (tline));
+		if (l > 0) {
 			memcpy (tline, in, l);
 			ret = r_cons_grep_line (tline, l);
 			if (ret > 0) {
 				if (cons->grep.line == -1 ||
 					(cons->grep.line != -1 && cons->grep.line == cons->lines)) {
 					memcpy (out, tline, ret);
-					out += ret;
-					buffer_len += ret;
+					memcpy (out+ret, "\n", 1);
+					out += ret+1;
+					buffer_len += ret+1;
 				}
 				cons->lines++;
 			} else if (ret < 0) {
 				free (tbuf);
+				free (tline);
 				return 0;
 			} 
 			in += l+1;
@@ -102,18 +105,24 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	memcpy (buf, tbuf, len);
 	cons->buffer_len = buffer_len;
 	free (tbuf);
+	free (tline);
 	return cons->lines;
 }
 
 R_API int r_cons_grep_line(char *buf, int len) {
 	RCons *cons = r_cons_singleton ();
 	const char delims[6][2] = { "|", "/", "\\", ",", ";", "\t" };
+	char *in, *out, *tok = NULL;
 	int hit = cons->grep.neg;
 	int i, j;
 
+	in = calloc (1, len+1);
+	out = calloc (1, len+2);
+	memcpy (in, buf, len);
+
 	if (cons->grep.nstrings>0) {
 		for (i=0; i<cons->grep.nstrings; i++)
-			if (strstr (buf, cons->grep.strings[i])) {
+			if (strstr (in, cons->grep.strings[i])) {
 				hit = !cons->grep.neg;
 				break;
 			}
@@ -122,32 +131,31 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	if (hit) {
 		if ((cons->grep.tokenfrom != 0 || cons->grep.tokento != ST32_MAX) &&
 			(cons->grep.line == -1 || cons->grep.line == cons->lines)) {
-			char in[1024], out[1024], *tok = NULL;
-			if (len > sizeof (in))
-				return -1;
-			memset (in, 0, sizeof (in));
-			memcpy (in, buf, len);
 			for (i=0; i<len; i++) for (j=0; j<6; j++)
 				if (in[i] == delims[j][0])
 					in[i] = ' ';
-			for (i=0, out[0] = '\0'; i <= cons->grep.tokento; i++) {
+			for (i=0; i <= cons->grep.tokento; i++) {
 				if (i==0) tok = (char *)strtok (in, " ");
 				else tok = (char *)strtok (NULL, " ");
 				if (tok == NULL) {
-					if (strlen (out)==0) return -1;
-					else break;
+					if (strlen (out) == 0) {
+						free (in);
+						free (out);
+						return -1;
+					} else break;
 				}
 				if (i >= cons->grep.tokenfrom) {
-					strncat (out, tok, sizeof (out) - 1);
-					strncat (out, " ", sizeof (out) - 1);
+					strcat (out, tok);
+					strcat (out, " ");
 				}
 			}
 			len = strlen (out) - 1;
 			memcpy (buf, out, len);
 		}
-		memcpy (buf+len, "\n", 1);
-		len += 1;
 	} else len = 0;
+
+	free (in);
+	free (out);
 
 	return len;
 }
