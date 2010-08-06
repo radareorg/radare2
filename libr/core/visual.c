@@ -652,12 +652,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 's':
 		r_core_cmd (core, "ds", 0);
-		r_core_cmd (core, ".dr", 0);
+		r_core_cmd (core, ".dr*", 0);
 		//r_core_cmd(core, "s eip", 0);
 		break;
 	case 'S':
 		r_core_cmd (core, "dso", 0);
-		r_core_cmd (core, ".dr", 0);
+		r_core_cmd (core, ".dr*", 0);
 		//r_core_cmd(core, "s eip", 0);
 		break;
 	case 'p':
@@ -712,6 +712,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case ':':
 		r_cons_fgets (buf, 1023, 0, NULL);
 		r_core_cmd (core, buf, 0);
+		r_cons_any_key ();
 		break;
 	case ';':
 		r_cons_printf ("Enter a comment: (prefix it with '-' to remove)\n");

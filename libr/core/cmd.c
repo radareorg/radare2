@@ -1108,7 +1108,7 @@ static int cmd_help(void *data, const char *input) {
 		"Usage:\n"
 		" a                 ; perform analysis of code\n"
 		" b [bsz]           ; get or change block size\n"
-		" C[CFf..]          ; Code metadata management\n"
+		" C[Cf..]          ; Code metadata management\n"
 		" d[hrscb]          ; debugger commands\n"
 		" e [a[=b]]         ; list/get/set config evaluable vars\n"
 		" f [name][sz][at]  ; set flag at current address\n"
@@ -2534,9 +2534,6 @@ static int cmd_meta(void *data, const char *input) {
 	case '!':
 		r_meta_sync (core->meta);
 		break;
-	case 'F': /* add function */ /* XXX use af+ ? */
-		eprintf ("TODO\n");
-		break;
 	case 'S':
 	case 's':
 	case 'd': /* data */
@@ -2599,11 +2596,10 @@ static int cmd_meta(void *data, const char *input) {
 	case '\0':
 	case '?':
 		eprintf (
-		"Usage: C[-LCFsSmxX?] [...]\n"
+		"Usage: C[-LCsSmxX?] [...]\n"
 		" C!                     # sync xrefs with (to be deprecated)\n"
 		" C-[@][ addr]           # delete metadata at given address\n"
 		" CL[-] [addr]           # show 'code line' information (bininfo)\n"
-		//" CF [size] [name] [addr] [name] # register function size here\n"
 		" CC [string]            # add comment\n"
 		" Cs[-] [size] [[addr]]  # add string\n"
 		" CS[-] [size]           # ...\n"

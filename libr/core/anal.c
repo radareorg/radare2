@@ -359,17 +359,27 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 						fcni->addr, fcni->size, fcni->name);
 				r_cons_printf (" diff=%s",
 						fcni->diff=='m'?"match":fcni->diff=='u'?"unmatch":"new");
-				r_cons_printf ("\n  refs: ");
+
+				r_cons_printf ("\n  CODE refs: ");
 				r_list_foreach (fcni->refs, iter2, refi)
-					r_cons_printf ("0x%08"PFMT64x"(%c) ", refi->addr, refi->type);
+					if (refi->type == R_ANAL_REF_TYPE_CODE)
+						r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
+
+				r_cons_printf ("\n  DATA refs: ");
+				r_list_foreach (fcni->refs, iter2, refi)
+					if (refi->type == R_ANAL_REF_TYPE_DATA)
+						r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
+
 				r_cons_printf ("\n  CODE xrefs: ");
 				r_list_foreach (fcni->xrefs, iter2, refi)
 					if (refi->type == R_ANAL_REF_TYPE_CODE)
-						r_cons_printf ("0x%08"PFMT64x" ", refi->addr, refi->type);
+						r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
+
 				r_cons_printf ("\n  DATA xrefs: ");
 				r_list_foreach (fcni->xrefs, iter2, refi)
 					if (refi->type == R_ANAL_REF_TYPE_DATA)
-						r_cons_printf ("0x%08"PFMT64x" ", refi->addr, refi->type);
+						r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
+
 				r_cons_printf ("\n  vars:\n");
 				r_list_foreach (fcni->vars, iter2, vari)
 					r_cons_printf ("  %-10s delta=0x%02x type=%s\n", vari->name,
