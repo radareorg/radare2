@@ -3,7 +3,7 @@
 
 #include <r_types.h>
 #include <r_util.h>
-#include <list.h>
+#include <r_list.h>
 
 enum {
 	R_SEARCH_KEYWORD,
@@ -29,7 +29,7 @@ typedef struct r_search_keyword_t {
 	void *data;
 	int count;
 	int kwidx;
-	struct list_head list;
+	RList *list;
 } RSearchKeyword;
 
 typedef struct r_search_hit_t {
@@ -54,8 +54,8 @@ typedef struct r_search_t {
 	int align;
 	RSearchUpdate update;
 	//struct r_search_binparse_t *bp;
-	//TODO RList *kws; // TODO: Use r_search_kw_new ()
-	struct list_head kws; //r_search_hw_t kws;
+	RList *kws; // TODO: Use r_search_kw_new ()
+	//struct list_head kws; //r_search_hw_t kws;
 } RSearch;
 
 #ifdef R_API
@@ -76,8 +76,6 @@ R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bm
 R_API RSearchKeyword* r_search_keyword_new_hexmask(const char *kwstr, const char *data);
 
 R_API int r_search_kw_add(RSearch *s, RSearchKeyword *kw);
-// TODO: Must be RList
-R_API void r_search_kw_list(RSearch *s);
 R_API void r_search_reset(RSearch *s, int mode);
 R_API void r_search_kw_reset(RSearch *s);
 

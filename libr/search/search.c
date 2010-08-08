@@ -20,7 +20,8 @@ R_API RSearch *r_search_new(int mode) {
 		s->hits = r_list_new ();
 		// TODO: review those mempool sizes. ensure never gets NULL
 		s->pool = r_mem_pool_new (sizeof (RSearchHit), 1024, 10);
-		INIT_LIST_HEAD (&(s->kws));
+		s->kws = r_list_new ();
+		s->kws->free = free;
 	}
 	return s;
 }
@@ -29,6 +30,7 @@ R_API RSearch *r_search_free(RSearch *s) {
 	// TODO: it leaks
 	r_mem_pool_free (s->pool);
 	r_list_destroy (s->hits);
+	r_list_destroy (s->kws);
 	free (s);
 	return NULL;
 }
@@ -72,9 +74,9 @@ R_API int r_search_set_mode(RSearch *s, int mode) {
 }
 
 R_API int r_search_begin(RSearch *s) {
-	struct list_head *pos;
-	list_for_each_prev (pos, &s->kws) {
-		RSearchKeyword *kw = list_entry (pos, RSearchKeyword, list);
+	RListIter *iter;
+	RSearchKeyword *kw;
+	r_list_foreach (s->kws, iter, kw) {
 		kw->count = 0;
 		kw->idx[0] = 0;
 		kw->distance = 0;//s->distance;
@@ -109,13 +111,13 @@ R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
 // TODO: This algorithm can be simplified by just using a non-distance search
 // ... split this algorithm in two for performance
 R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int len) {
-	struct list_head *pos;
+	RListIter *iter;
 	int i, j, hit, count = 0;
 	RSearch *s = (RSearch*)_s;
 
 	for (i=0; i<len; i++) {
-		list_for_each_prev (pos, &s->kws) {
-			RSearchKeyword *kw = list_entry (pos, RSearchKeyword, list);
+		RSearchKeyword *kw;
+		r_list_foreach (s->kws, iter, kw) {
 			for (j=0;j<=kw->distance;j++) {
 				ut8 ch = kw->bin_keyword[kw->idx[j]];
 				ut8 ch2 = buf[i];
@@ -193,7 +195,7 @@ R_API int r_search_update_i(RSearch *s, ut64 from, const ut8 *buf, long len) {
 R_API int r_search_kw_add(RSearch *s, RSearchKeyword *kw) {
 	int ret = R_FALSE;
 	if (kw) {
-		list_add (&(kw->list), &(s->kws));
+		r_list_append (s->kws, kw);
 		kw->kwidx = s->n_kws++;
 		ret = R_TRUE;
 	}
@@ -201,22 +203,8 @@ R_API int r_search_kw_add(RSearch *s, RSearchKeyword *kw) {
 }
 
 R_API void r_search_kw_reset(RSearch *s) {
-	// leaks
-	struct list_head *pos, *n;
-	list_for_each_safe (pos, n, &s->kws) {
-		RSearchKeyword *kw = list_entry (pos, RSearchKeyword, list);
-		free (kw);
-	}
-	INIT_LIST_HEAD (&(s->kws));
-}
-
-/* // MUST DEPRECATE // show keywords */
-R_API void r_search_kw_list(RSearch *s) {
-	struct list_head *pos, *n;
-	list_for_each_safe (pos, n, &s->kws) {
-		RSearchKeyword *kw = list_entry (pos, RSearchKeyword, list);
-		free (kw);
-	}
+	r_list_free (s->kws);
+	s->kws = r_list_new ();
 }
 
 R_API void r_search_reset(RSearch *s, int mode) {

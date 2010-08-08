@@ -11,9 +11,11 @@ Crosscompilation
   ---------
   ./configure --without-gmp --without-openssl --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows
   make
+  make w32dist
   
   Ubuntu
   ------
   sudo apt-get install mingw32
   ./configure --without-gmp --without-openssl --with-compiler=i586-mingw32msvc-gcc  --with-ostype=windows --host=i586-unknown-windows
   make
+  make w32dist

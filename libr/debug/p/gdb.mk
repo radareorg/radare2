@@ -12,7 +12,7 @@ endif
 OBJ_GDB=debug_gdb.o libgdbwrap/gdbwrapper.o
 
 libgdbwrap/gdbwrapper.o:
-	${CC} -c ${CFLAGS} -o libgdbwrap/gdbwrapper.o libgdbwrap/gdbwrapper.c
+	${CC} -c ${CFLAGS} ${LDFLAGS} -o libgdbwrap/gdbwrapper.o libgdbwrap/gdbwrapper.c
 
 STATIC_OBJ+=${OBJ_GDB}
 TARGET_GDB=debug_gdb.${EXT_SO}

@@ -6,7 +6,7 @@
 
 R_API int r_search_regexp_update(void *_s, ut64 from, const ut8 *buf, int len) {
 	RSearch *s = (RSearch*)_s;
-	struct list_head *pos;
+	RListIter *iter;
 	char *buffer = malloc (len+1);
 	char *skipz, *end;
 	int count = 0;
@@ -14,8 +14,8 @@ R_API int r_search_regexp_update(void *_s, ut64 from, const ut8 *buf, int len) {
 	memcpy (buffer, buf, len);
 	buffer[len]='\0';
 
-	list_for_each_prev (pos, &s->kws) {
-		RSearchKeyword *kw = list_entry (pos, RSearchKeyword, list);
+	RSearchKeyword *kw;
+	r_list_foreach (s->kws, iter, kw) {
 		int reflags = REG_EXTENDED;
 		int ret, delta = 0;
 		regmatch_t matches[10];

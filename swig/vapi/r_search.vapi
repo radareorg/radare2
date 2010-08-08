@@ -16,7 +16,6 @@ public class Radare.RSearch {
 
 	public bool kw_add(Keyword kw);
 	public void kw_reset();
-	public void kw_list();
 
 	public void set_callback(Callback cb, void *user);
 	//public int pattern_update(int size); // this is uint? long?
@@ -32,6 +31,7 @@ public class Radare.RSearch {
 		XREFS,
 		AES
 	}
+	public RList<Keyword> kws;
 
 	[Compact]
 	[CCode (cname="struct r_search_keyword_t", free_function="free", cprefix="r_search_keyword_")]

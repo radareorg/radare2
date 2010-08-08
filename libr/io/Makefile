@@ -12,6 +12,16 @@ ifeq (${OSTYPE},windows)
 LDFLAGS+=-lws2_32
 endif
 
+# copypasted from socket/Makefile
+# on solaris only
+ifeq (${OSTYPE},solaris)
+LDFLAGS+=-lsocket
+endif
+# windows
+ifeq (${OSTYPE},windows)
+LDFLAGS=-lwsock32
+endif
+
 
 STATIC_OBJS=
 include ../config.mk

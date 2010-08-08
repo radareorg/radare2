@@ -50,6 +50,8 @@ R_API struct r_socket_proc_t *r_socket_proc_open(char *const argv[]) {
 		//r_socket_block(sp, R_FALSE);
 	}
 	return sp;
+#else
+	return NULL;
 #endif
 }
 

@@ -269,6 +269,11 @@ R_API int r_socket_gets(int fd, char *buf,  int size) {
 }
 
 R_API char *r_socket_to_string(int fd) {
+#if __WINDOWS__
+	char *str = malloc (32);
+	snprintf (str, sizeof (str), "fd%d", fd);
+	return str;
+#else
 	char *str = NULL;
 #if __UNIX__
 	struct sockaddr sa;
@@ -283,4 +288,5 @@ R_API char *r_socket_to_string(int fd) {
 	} else eprintf ("getperrname: failed\n"); //r_sys_perror ("getpeername");
 #endif
 	return str;
+#endif
 }
