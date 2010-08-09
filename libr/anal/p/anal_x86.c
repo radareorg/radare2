@@ -194,10 +194,14 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 		}
 		break;
 	case 0xcc: // int3
-		aop->eob = 1;
+//		aop->eob = 1;
+		aop->value = 3;
+		aop->type = R_ANAL_OP_TYPE_SWI;
+		break;
 	case 0xf1: // int1
 		aop->length = 1;
-		aop->type   = R_ANAL_OP_TYPE_SWI;
+		aop->value = 1;
+		aop->type = R_ANAL_OP_TYPE_SWI;
 		break;
 	case 0xb8: // mov eax, <inmedate>
 	case 0xb9: // mov ecx, <inmedate>
@@ -211,7 +215,8 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 		break;
 	case 0xcd:
 		aop->length = 2;
-		aop->type   = R_ANAL_OP_TYPE_SWI;
+		aop->type = R_ANAL_OP_TYPE_SWI;
+		aop->value = buf[1];
 		break;
 	case 0xe8: // call
 		aop->type   = R_ANAL_OP_TYPE_CALL;

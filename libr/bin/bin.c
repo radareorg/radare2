@@ -61,7 +61,8 @@ static RList* get_strings(RBin *bin, int min) {
 		RListIter *iter;
 		r_list_foreach (bin->sections, iter, section) {
 			// XXX: should we check sections srwx to be READ ONLY and NONEXEC?
-			if (strstr (section->name, "data")) {
+			if ((strstr (section->name, "_cstring"))  // OSX
+				|| (strstr (section->name, "data"))) { // LINUX
 				count ++;
 				get_strings_range (bin, ret, min, 
 					section->offset, section->offset+section->size);

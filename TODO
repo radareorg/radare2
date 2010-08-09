@@ -8,6 +8,14 @@
 
 0.6 RELEASE
 ===========
+* Is necesary to prefix all OSX symbols with section name?
+  name=__symbol_stub4:_uname .. imho no!
+* Support indirect references on /a and similars.. (e search.refptr) .. or /A?
+* Implement /A : search AES
+* Implement case-insensitive search (e search.casematters ?) any better name? Use /i?
+* Implement /. to search using a file .. isnt zignatures about this?
+* Implement /p to search for patterns
+* Implement search and replace /s
 
 Build system:
 -------------
@@ -19,7 +27,7 @@ Build system:
 
 TODO edu
 --------
-* use RList in r_search
+* fix visual cursor byte selection (support +,- for blocks)
 * typedef all function pointers, like in r_bp
 
 TODO nibble
@@ -29,7 +37,8 @@ TODO nibble
 
 TODO pancake
 ------------
-* fix visual cursor byte selection (support +,- for blocks)
+* Display syscall information when disassembling svc/int/.. (edu?)
+  - store last value of REG0 (EAX, R0, ...), select interrupt vector by aop->value and use r_syscall()
 * we need an api to define function signatures
   - CF<addr> void name(int foo, char* var)
   - arg/var set name/get value/ ..

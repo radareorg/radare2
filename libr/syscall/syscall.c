@@ -46,7 +46,7 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
 	if (!strcmp (arch, "arm")) {
 		if (!strcmp (os, "linux"))
 			ctx->sysptr = syscalls_linux_arm;
-		if (!strcmp (os, "darwin"))
+		if (!strcmp (os, "macos") || !strcmp (os, "darwin"))
 			ctx->sysptr = syscalls_darwin_arm;
 		else {
 			eprintf ("r_syscall_setup: Unknown arch '%s'\n", arch);
@@ -62,7 +62,7 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
 			ctx->sysptr = syscalls_freebsd_x86;
 		//else if (!strcmp (os, "openbsd"))
 		//	ctx->sysptr = syscalls_openbsd_x86;
-		else if (!strcmp (os, "darwin"))
+		else if ((!strcmp (os, "darwin")) || (!strcmp (os, "macos")))
 			ctx->sysptr = syscalls_darwin_x86;
 		else if (!strcmp (os, "windows")) //win7
 			ctx->sysptr = syscalls_win7_x86;

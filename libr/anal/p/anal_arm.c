@@ -55,17 +55,21 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	memset (aop, '\0', sizeof (RAnalOp));
 	aop->addr = addr;
 	aop->type = R_ANAL_OP_TYPE_UNK;
+	aop->length = (arm_mode==16)?2:4;
 
 	if (aop == NULL)
-		return (arm_mode==16)?2:4;
-
+		return aop->length;
 	memset (aop, '\0', sizeof (RAnalOp));
 	aop->type = R_ANAL_OP_TYPE_UNK;
 #if 0
 	fprintf(stderr, "CODE %02x %02x %02x %02x\n",
 		codeA[0], codeA[1], codeA[2], codeA[3]);
 #endif
-
+    	// 0x000037b8  00:0000   0             800000ef  svc 0x00000080
+	if (b[3]==0xef) {
+		aop->type = R_ANAL_OP_TYPE_SWI;
+		aop->value = (b[0] | (b[1]<<8) | (b[2]<<2));
+	} else
 	if (b[3]==0xe5) {
 		if (b[2]==0x9f) {
 			/* STORE */
@@ -134,9 +138,7 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 				aop->ref = b[0] + (b[1]<<8) + (b[2]<<16) + (b[3]<<24);
 				//XXX data_xrefs_add(oaddr, aop->ref, 1);
 				//TODO change data type to pointer
-			} else {
-				aop->ref = 0;
-			}
+			} else aop->ref = 0;
 		}
 	}
 
@@ -170,8 +172,7 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 			aop->eob = 1;
 		}
 	}
-
-	return (arm_mode==16)?2:4;
+	return aop->length;
 }
 
 struct r_anal_plugin_t r_anal_plugin_arm = {
