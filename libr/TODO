@@ -40,3 +40,4 @@
 ----------
   - Reimplement or fix the delta diffing in C
     - first we need to do it for ired..
+  - take a look on the fossil diff.c ?

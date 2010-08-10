@@ -6,16 +6,33 @@
 
 <{include libr/TODO}>
 
+Questions:
+----------
+* Meld r_meta inside r_anal?
+* How to search for an opcode like CALL+REG? or MOV+CONST, ...
+  - r_anal_match(anal, aop CALL | REG) ?
+  - Implememnted in a command like /a..
+* imports from PE doesnt works with /a because there's an indirect call
+* Load symbol information from libraries (only the ones imported by rabin2?)
+  - only in runtime when eip is in library code?
+* Implement 'av' command we need it  (really?) how about to eval with ?
+* filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
+* code analysis with r_parse // isnt this already done? nibble?
+  - generate by just parsing the opcode
+  - RAnalAopArg { int size; int delta; int type; }
+  - r_anal_aop_arg_set (); r_anal_aop_arg_get (); r_anal_aop_arg_binmask ();
+* rasign2 : must be done, write manpage (isn't r2 enought?)
+* rabin2 can now extract fat mach-o with rabin -x, is it worth native support for fat bins? nibble: NO pancake: ??
+* Deprecate CF and use af+ instead? (pancake: yes)
+
 0.6 RELEASE
 ===========
-* Is necesary to prefix all OSX symbols with section name?
-  name=__symbol_stub4:_uname .. imho no!
+* Implement fcn_from_string anal/fcn.c
+  - define function signature command: (afs? CF?)
+  > afs int foo(int var, char* str) @ fun.main
+  - How to define function variables? CFv? CFa for args?
 * Support indirect references on /a and similars.. (e search.refptr) .. or /A?
-* Implement /A : search AES
-* Implement case-insensitive search (e search.casematters ?) any better name? Use /i?
-* Implement /. to search using a file .. isnt zignatures about this?
-* Implement /p to search for patterns
-* Implement search and replace /s
+* Cx/CX are not displayed in disasm as they should.. (C! must die)
 
 Build system:
 -------------
@@ -27,13 +44,14 @@ Build system:
 
 TODO edu
 --------
+* Implement more get_main()
 * fix visual cursor byte selection (support +,- for blocks)
 * typedef all function pointers, like in r_bp
-
-TODO nibble
------------
-* Fix PLT bounds detection
-* Cx/CX are not displayed in disasm as they should.. (C! must die)
+* Implement /A : search AES
+* Implement case-insensitive search (e search.casematters ?) any better name? Use /i?
+* Implement /. to search using a file .. isnt zignatures about this?
+* Implement /p to search for patterns
+* Implement search and replace /s
 
 TODO pancake
 ------------
@@ -57,7 +75,6 @@ unassigned TODO pointz
 * Realign flags when using project in debug mode
 * Test r_lib^w32/osx support
 * Implement r_sys_setenv stuff from r1 in core/file.c:33 (!!?)
-* Implement more get_main() (NOOB)
 
 * FileDescriptors: dd -- copy from !fd in r1
 * r_bin->relocs // RList of relocations
@@ -73,24 +90,6 @@ unassigned TODO pointz
         - check all strings
      2nd level:
         - basic block level diffing (output in graph mode)
-
-Questions:
-----------
-* How to search for an opcode like CALL+REG? or MOV+CONST, ...
-  - r_anal_match(anal, aop CALL | REG) ?
-  - Implememnted in a command like /a..
-* imports from PE doesnt works with /a because there's an indirect call
-* Load symbol information from libraries (only the ones imported by rabin2?)
-  - only in runtime when eip is in library code?
-* Implement 'av' command we need it  (really?) how about to eval with ?
-* filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
-* code analysis with r_parse // isnt this already done? nibble?
-  - generate by just parsing the opcode
-  - RAnalAopArg { int size; int delta; int type; }
-  - r_anal_aop_arg_set (); r_anal_aop_arg_get (); r_anal_aop_arg_binmask ();
-* rasign2 : must be done, write manpage (isn't r2 enought?)
-* rabin2 can now extract fat mach-o with rabin -x, is it worth native support for fat bins? nibble: NO pancake: ??
-* Deprecate CF and use af+ instead?
 
 Bindings
 ========

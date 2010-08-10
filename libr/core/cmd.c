@@ -2749,7 +2749,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 				char buf[1024];
 				int ret;
 				printf ("> "); fflush (stdout);
-				fgets(buf, 1023, stdin); // XXX use r_line ??
+				fgets (buf, sizeof (buf)-1, stdin); // XXX use r_line ??
 				if (feof (stdin))
 					break;
 				buf[strlen (buf)-1]='\0';
@@ -2815,19 +2815,31 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	/* seek commands */
 	ptr = strchr (cmd, '@');
 	if (ptr) {
-		ptr[0]='\0';
-		ut64 tmpoff = core->offset;
+		ut64 tmpoff, tmpbsz;
+		char *ptr2 = strchr (ptr+1, ':');
+		*ptr = '\0';
+		tmpoff = core->offset;
+		tmpbsz = core->blocksize;
+		if (ptr2) {
+			*ptr2 = '\0';
+			r_core_block_size (core, r_num_math (core->num, ptr2+1));
+		}
+
 		if (ptr[1]=='@') {
 			// TODO: remove temporally seek (should be done by cmd_foreach)
 			ret = r_core_cmd_foreach (core, cmd, ptr+2);
 			//ret = -1; /* do not run out-of-foreach cmd */
 		} else {
-			if (r_core_seek (core, r_num_math (core->num, ptr+1), 1))
+			if (!ptr[1] || r_core_seek (core, r_num_math (core->num, ptr+1), 1))
 				ret = r_cmd_call (core->cmd, r_str_trim_head (cmd));
 			else ret = 0;
 		}
+		if (ptr2) {
+			*ptr2 = ':';
+			r_core_block_size (core, tmpbsz);
+		}
 		r_core_seek (core, tmpoff, 1);
-		ptr[0] = '@';
+		*ptr = '@';
 		return ret;
 	}
 

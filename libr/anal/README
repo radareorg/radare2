@@ -1,3 +1,6 @@
+NOTE: Most of the information in this document is not matching with reality.
+      Take it as random ideas, proposals and so on
+
 Code analysis module
 ====================
 * Opcodes that will be executed depending on cond?

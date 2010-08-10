@@ -137,7 +137,6 @@ R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size, const char *name, in
 R_API int r_anal_fcn_del(RAnal *anal, ut64 addr) {
 	RAnalFcn *fcni;
 	RListIter *iter;
-
 	if (addr == 0) {
 		r_list_free (anal->fcns);
 		if (!(anal->fcns = r_anal_fcn_list_new ()))
@@ -189,8 +188,8 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFcn* fs) {
 	if (ret) sign = r_str_newf ("%s %s (", ret->name, fs->name);
 	else sign = r_str_newf ("void %s (", fs->name);
 	for (i=0;;i++) {
-		arg = r_anal_fcn_get_var (fs, i, R_ANAL_VAR_IN);
-		if (!arg) break;
+		if (!(arg = r_anal_fcn_get_var (fs, i, R_ANAL_VAR_IN)))
+			break;
 		if (arg->array>1) {
 			if (i) sign = r_str_concatf (sign, ", %s %s[%d]", arg->vartype, arg->name, arg->array);
 			else sign = r_str_concatf (sign, "%s %s[%d]", arg->vartype, arg->name, arg->array);
@@ -199,6 +198,12 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFcn* fs) {
 			else sign = r_str_concatf (sign, "%s %s", arg->vartype, arg->name);
 		}
 	}
-	sign = r_str_concatf (sign, ");");
-	return sign;
+	return (sign = r_str_concatf (sign, ");"));
+}
+
+R_API void r_anal_fcn_from_string(RAnal *a, RAnalFcn *f, const char *str) {
+	/* TODO : implement parser */
+	//r_list_destroy (fs->vars);
+	//set: fs->vars = r_list_new ();
+	//set: fs->name
 }
