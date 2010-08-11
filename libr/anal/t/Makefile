@@ -11,3 +11,6 @@ test_x86im${EXT_EXE}: test_x86im.o ../arch/x86/x86im/x86im.o
 
 clean:
 	rm -f test_x86im${EXT_EXE} test_x86im.o
+
+mrproper: clean
+	rm -f test_x86im.d

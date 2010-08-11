@@ -2216,6 +2216,29 @@ static int cmd_search(void *data, const char *input) {
 		r_search_begin (core->search);
 		dosearch = 1;
 		break;
+	case 'c': /* search asm */
+		{
+		struct r_asm_code_t *acode;
+		int asmstr = r_config_get_i (core->config, "search.asmstr");
+		if (asmstr) {
+			eprintf ("TODO");
+			return R_FALSE;
+		} else {
+			if (!(acode = r_asm_massemble (core->assembler, input+2))) {
+				eprintf ("Cannot assemble \"%s\"\n", input+2);
+				return R_FALSE;
+			}
+			r_search_reset (core->search, R_SEARCH_KEYWORD);
+			r_search_set_distance (core->search, (int)
+					r_config_get_i (core->config, "search.distance"));
+			r_search_kw_add (core->search, 
+					r_search_keyword_new_hexmask (acode->buf_hex, NULL));
+			r_search_begin (core->search);
+			r_asm_code_free (acode);
+			dosearch = 1;
+		}
+		}
+		break;
 	case 'a':
 		if (input[1]==' ')
 			r_core_anal_search (core, from, to, r_num_math (core->num, input+2));
@@ -2227,13 +2250,15 @@ static int cmd_search(void *data, const char *input) {
 		" / foo           # search for string 'foo'\n"
 		" /m /E.F/i       # match regular expression\n"
 		" /x ff0033       # search for hex string\n"
+		" /c jmp [esp]    # search for asm code\n"
 		" /a sym.printf   # analyze code referencing an offset\n"
 		" //              # repeat last search\n"
 		"Configuration:\n"
 		" e search.distance = 0 # search string distance\n"
 		" e search.align = 4    # only catch aligned search hits\n"
 		" e search.from = 0     # start address\n"
-		" e search.to = 0       # end address\n");
+		" e search.to = 0       # end address\n"
+		" e search.asmstr = 0   # search string instead of assembly\n");
 		break;
 	}
 	if (dosearch) {

@@ -222,6 +222,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_i (cfg, "search.to", 0);
 	r_config_set_i (cfg, "search.distance", 0); // TODO: use i_cb here and remove code in cmd.c
 	r_config_set_i_cb (cfg, "search.align", 0, &config_searchalign_callback);
+	r_config_set_i (cfg, "search.asmstr", 0);
 	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
 	r_config_set_cb (cfg, "io.ffio", "false", &config_ioffio_callback);
 	r_config_set_cb (cfg, "io.va", "true", &config_iova_callback);

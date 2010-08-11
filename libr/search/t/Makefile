@@ -16,4 +16,4 @@ test-str${EXT_EXE}:
 	${CC} -g -I ../../include test-str.c ${LDFLAGS} -o test-str${EXT_EXE}
 
 myclean:
-	rm -f test test.o test-str test-str.o test-regexp *.o *.d
+	rm -f test${EXT_EXE} test.o test-str${EXT_EXE} test-str.o test-regexp${EXT_EXE} test-regexp.o
