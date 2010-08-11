@@ -2218,16 +2218,37 @@ static int cmd_search(void *data, const char *input) {
 		break;
 	case 'c': /* search asm */
 		{
-		struct r_asm_code_t *acode;
+		/* TODO: Move to a separate function */
 		int asmstr = r_config_get_i (core->config, "search.asmstr");
 		if (asmstr) {
-			eprintf ("TODO\n");
-			return R_FALSE;
-		} else {
-			if (!(acode = r_asm_massemble (core->assembler, input+2))) {
-				eprintf ("Cannot assemble \"%s\"\n", input+2);
-				return R_FALSE;
+			RAsmAop aop;
+			ut64 at, toff = core->offset;
+			ut8 *buf;
+			int i, count;
+			buf = (ut8 *)malloc (core->blocksize);
+			for (at = from, count = 0; at < to; at += core->blocksize) {
+				if (r_cons_singleton ()->breaked)
+					break;
+				ret = r_io_read_at (core->io, at, buf, core->blocksize);
+				if (ret != core->blocksize)
+					break;
+				for (i=0; i<core->blocksize; i++) {
+					r_asm_set_pc (core->assembler, at+i);
+					if (!(r_asm_disassemble (core->assembler, &aop, buf+i, core->blocksize-i)))
+						continue;
+					if (strstr (aop.buf_asm, input+2)) {
+						r_cons_printf ("f hit0_%i 0x%08"PFMT64x"\n", count, (ut64)(at+i));
+						count++;
+					}
+				}
 			}
+			r_asm_set_pc (core->assembler, toff);
+			free (buf);
+			dosearch = 0;
+		} else {
+			RAsmCode *acode;
+			if (!(acode = r_asm_massemble (core->assembler, input+2)))
+				return R_FALSE;
 			r_search_reset (core->search, R_SEARCH_KEYWORD);
 			r_search_set_distance (core->search, (int)
 					r_config_get_i (core->config, "search.distance"));
