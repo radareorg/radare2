@@ -2221,7 +2221,7 @@ static int cmd_search(void *data, const char *input) {
 		struct r_asm_code_t *acode;
 		int asmstr = r_config_get_i (core->config, "search.asmstr");
 		if (asmstr) {
-			eprintf ("TODO");
+			eprintf ("TODO\n");
 			return R_FALSE;
 		} else {
 			if (!(acode = r_asm_massemble (core->assembler, input+2))) {
