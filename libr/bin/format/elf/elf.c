@@ -148,7 +148,8 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 	
 	if (!bin->shdr || !bin->strtab)
 		return -1;
-	if ((got_addr = Elf_ (r_bin_elf_get_section_offset) (bin, ".got")) == -1)
+	if ((got_addr = Elf_ (r_bin_elf_get_section_offset) (bin, ".got")) == -1 &&
+		(got_addr = Elf_ (r_bin_elf_get_section_offset) (bin, ".got.plt")) == -1)
 		return -1;
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
 		if (!strcmp (&bin->strtab[bin->shdr[i].sh_name], ".rel.plt"))
