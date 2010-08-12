@@ -2654,6 +2654,13 @@ static int cmd_meta(void *data, const char *input) {
 		" Cm[-] [fmt] [..]       # format memory\n"
 		" Cx[-] [...]            # add code xref\n"
 		" CX[-] [...]            # add data xref\n");
+		break;
+	case 'F':
+		{
+		RAnalFcn *f = r_anal_fcn_find (core->anal, core->offset);
+		r_anal_fcn_from_string (core->anal, f, input+2);
+		}
+		break;
 	}
 	return R_TRUE;
 }
@@ -3553,9 +3560,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 		retstr = strdup ("");
 	} else {
 		const char *static_str = r_cons_get_buffer();
-		if (static_str==NULL)
-			retstr = strdup("");
-		else retstr = strdup(static_str);
+		retstr = strdup (static_str?static_str:"");
 		r_cons_reset();
 	}
 	return retstr;

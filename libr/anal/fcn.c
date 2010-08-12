@@ -201,9 +201,59 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFcn* fs) {
 	return (sign = r_str_concatf (sign, ");"));
 }
 
-R_API void r_anal_fcn_from_string(RAnal *a, RAnalFcn *f, const char *str) {
+R_API int r_anal_fcn_from_string(RAnal *a, RAnalFcn *f, const char *_str) {
+	char *str = strdup (_str);
+	char *p, *q, *r;
+	int arg;
+// TODO: This function is not fully implemented
+	if (!a || !f) {
+		eprintf ("r_anal_fcn_from_string: No function received\n");
+		return R_FALSE;
+	}
 	/* TODO : implement parser */
 	//r_list_destroy (fs->vars);
 	//set: fs->vars = r_list_new ();
 	//set: fs->name
+	printf("ORIG=(%s)\n", _str);
+	p = strchr (str, '(');
+	if (!p) goto parsefail;
+	*p = 0;
+	q = strrchr (str, ' ');
+	if (!q) goto parsefail;
+	*q = 0;
+	printf ("RET=(%s)\n", str);
+	printf ("NAME=(%s)\n", q+1);
+	/* set function name */
+	free (f->name);
+	f->name = strdup (q+1);
+	/* set return value */
+	// TODO: simplify this complex api usage
+	r_anal_var_add (a, f, 0LL, 0, R_ANAL_VAR_TYPE_RET, str, "ret", 1);
+
+	/* parse arguments */
+	for (arg=0,p++;;) {
+		q = strchr (p, ',');
+		if (!q) {
+			q = strchr (p, ')');
+			if (!q) break;
+		}
+		*q = 0;
+		p = r_str_chop (p);
+		r = strrchr (p, ' ');
+		if (!r) goto parsefail;
+		*r = 0;
+		r = r_str_chop (r+1);
+		printf ("VAR %d=(%s)(%s)\n", arg, p, r);
+		// TODO : increment arg by var size
+		r_anal_var_add (a, f, 0LL, arg, R_ANAL_VAR_TYPE_RET, p, r, 1);
+		arg++;
+		p=q+1;
+	}
+	// r_anal_fcn_set_var (fs, 0, R_ANAL_VAR_OUT, );
+	free (str);
+	return R_TRUE;
+
+	parsefail:
+	eprintf ("Function string parse fail\n");
+	return R_FALSE;
 }

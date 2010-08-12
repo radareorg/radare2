@@ -113,7 +113,8 @@ static int cmpdelta(RAnalVar *a, RAnalVar *b) {
 R_API int r_anal_var_add(RAnal *anal, RAnalFcn *fcn, ut64 from, int delta, int type, const char *vartype, const char *name, int set) {
 	RAnalVar *var, *vari;
 	RListIter *iter;
-	r_list_foreach(fcn->vars, iter, vari)
+	if (from != 0LL)
+	r_list_foreach (fcn->vars, iter, vari)
 		if (vari->type == type && vari->delta == delta)
 			return r_anal_var_access_add (anal, vari, from, set);
 	if (!(var = r_anal_var_new ()))
@@ -124,7 +125,8 @@ R_API int r_anal_var_add(RAnal *anal, RAnalFcn *fcn, ut64 from, int delta, int t
 		var->vartype = strdup (vartype);
 	var->type = type;
 	var->delta = delta;
-	r_anal_var_access_add (anal, var, from, set);
+	if (from != 0LL)
+		r_anal_var_access_add (anal, var, from, set);
 	r_list_add_sorted (fcn->vars, var, cmpdelta);
 	return R_TRUE;
 }
@@ -143,7 +145,7 @@ R_API int r_anal_var_del(RAnal *anal, RAnalFcn *fcn, int delta, int type) {
 R_API RAnalVar *r_anal_var_get(RAnal *anal, RAnalFcn *fcn, int delta, int type) {
 	RAnalVar *vari;
 	RListIter *iter;
-	r_list_foreach(fcn->vars, iter, vari)
+	r_list_foreach (fcn->vars, iter, vari)
 		if (vari->type == type && vari->delta == delta)
 			return vari;
 	return NULL;
@@ -188,7 +190,7 @@ R_API int r_anal_var_access_del(RAnal *anal, RAnalVar *var, ut64 from) {
 R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 from) {
 	RAnalVarAccess *acci;
 	RListIter *iter;
-	r_list_foreach(var->accesses, iter, acci)
+	r_list_foreach (var->accesses, iter, acci)
 		if (acci->addr == from)
 			return acci;
 	return NULL;

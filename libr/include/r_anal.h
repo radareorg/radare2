@@ -79,6 +79,7 @@ enum {
 	R_ANAL_VAR_TYPE_LOCAL,
 	R_ANAL_VAR_TYPE_ARG,
 	R_ANAL_VAR_TYPE_ARGREG,
+	R_ANAL_VAR_TYPE_RET,
 };
 
 typedef enum {
@@ -313,6 +314,7 @@ R_API int r_anal_fcn_del(RAnal *anal, ut64 addr);
 R_API RList *r_anal_fcn_bb_list(RAnal *anal, RAnalFcn *fcn);
 R_API RAnalVar *r_anal_fcn_get_var(RAnalFcn *fs, int num, int dir);
 R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFcn* fs);
+R_API int r_anal_fcn_from_string(RAnal *a, RAnalFcn *f, const char *_str);
 
 /* ref.c */
 R_API RAnalRef *r_anal_ref_new();

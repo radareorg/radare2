@@ -102,7 +102,8 @@ R_API int r_str_delta(char *p, char a, char b) {
 	return (!_a||!_b)?0:(_a-_b);
 }
 
-R_API int r_str_word_set0(char *str) { int i;
+R_API int r_str_word_set0(char *str) {
+	int i;
 	char *p;
 	if (str[0]=='\0')
 		return 0;
