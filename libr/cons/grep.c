@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> nibble<develsec.org> */
 
 #include <r_cons.h>
+#include <r_util.h>
 
 R_API void r_cons_grep(const char *str) {
 	RCons *cons;
@@ -69,7 +70,7 @@ R_API void r_cons_grep(const char *str) {
 R_API int r_cons_grepbuf(char *buf, int len) {
 	RCons *cons = r_cons_singleton ();
 	char *tline, *tbuf, *p, *out, *in = buf;
-	int ret, buffer_len = 0, l = 0;
+	int ret, buffer_len = 0, l = 0, tl = 0;
 
 	out = tbuf = calloc (1, len);
 	tline = malloc (len);
@@ -84,7 +85,10 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		l = p-in;
 		if (l > 0) {
 			memcpy (tline, in, l);
-			ret = r_cons_grep_line (tline, l);
+			tl = r_str_ansi_filter (tline, l);
+			if (tl < 0)
+				ret = -1;
+			else ret = r_cons_grep_line (tline, tl);
 			if (ret > 0) {
 				if (cons->grep.line == -1 ||
 					(cons->grep.line != -1 && cons->grep.line == cons->lines)) {

@@ -2875,7 +2875,6 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	}
 
 	ret = r_cmd_call (core->cmd, r_str_trim_head (cmd));
-	//r_cons_grep_end ();
 	return ret;
 }
 
