@@ -672,14 +672,27 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case '\'':
 		r_core_visual_mark_seek (core, r_cons_readchar());
 		break;
+	case 'y':
+		if (ocursor==-1) r_core_yank (core, core->offset+cursor, 1);
+		else r_core_yank (core, core->offset+((ocursor<cursor)?ocursor:cursor), R_ABS (cursor-ocursor)+1);
+		break;
+	case 'Y':
+		if (core->yank) r_core_yank_paste (core, core->offset+cursor, 0);
+		else {
+			r_cons_printf ("Can't paste, clipboard is empty.\n");
+			r_cons_flush ();
+			r_cons_any_key ();
+		}
+		break;
 	case '-':
 		if (core->print->cur_enabled) {
 			ut8 ch;
 			int cur = core->print->cur;
 			if (cur>=core->blocksize)
 				cur = core->print->cur-1;
-			ch = core->block[cur]-1;
-			r_core_write_at (core, core->offset+cur, &ch, 1);
+			if (ocursor==-1) sprintf (buf, "wos 01 @ $$+%i:1",cursor);
+			else sprintf (buf, "wos 01 @ $$+%i:%i", cursor<ocursor?cursor:ocursor, R_ABS (ocursor-cursor)+1);
+			r_core_cmd (core, buf, 0);
 		} else r_core_block_size (core, core->blocksize-1);
 		break;
 	case '+':
@@ -688,8 +701,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			int cur = core->print->cur;
 			if (cur>=core->blocksize)
 				cur = core->print->cur-1;
-			ch = core->block[cur]+1;
-			r_core_write_at (core, core->offset+cur, &ch, 1);
+			if (ocursor==-1) sprintf (buf, "woa 01 @ $$+%i:1",cursor);
+			else sprintf (buf, "woa 01 @ $$+%i:%i", cursor<ocursor?cursor:ocursor, R_ABS (ocursor-cursor)+1);
+			r_core_cmd (core, buf, 0);
 		} else r_core_block_size (core, core->blocksize+1);
 		break;
 	case '/':
@@ -745,6 +759,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" x       -  find xrefs for current offset\n"
 		" sS      -  step / step over\n"
 		" uU      -  undo/redo seek\n"
+		" yY      -  copy and paste selection\n"
 		" mK/'K   -  mark/go to Key (any key)\n"
 		" :cmd    -  run radare command\n"
 		" ;[-]cmt -  add/remove comment\n"
