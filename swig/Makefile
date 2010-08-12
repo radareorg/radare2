@@ -71,7 +71,7 @@ install-lua:
 	fi
 
 install-java:
-	echo "TODO"
+	@echo "TODO: install-java"
 
 install-ruby:
 	@if [ "`grep ruby supported.langs`" ]; then \
@@ -84,8 +84,13 @@ install-ruby:
 	fi
 
 install-perl:
-	@if [ "`grep perl supported.langs`" ]; then \
-	target=${DESTDIR}`perl -e 'for (@INC) { print "$$_\n" if /lib\/perl5/ && !/local/; }'|head -n 1` ; \
+	# hack for slpm
+	@-if [ "`grep perl supported.langs`" ]; then \
+	if [ -n "`echo ${PREFIX}${DESTDIR}|grep home`" ]; then \
+		target=${PREFIX}${DESTDIR}`perl -e 'for (@INC) { print "$$_\n" if /lib\/perl5/ && !/local/; }'|head -n 1` ; \
+	else \
+		target=${DESTDIR}`perl -e 'for (@INC) { print "$$_\n" if /lib\/perl5/ && !/local/; }'|head -n 1` ; \
+	fi ; \
 	mkdir -p $$target/r2 ; \
 	echo "Installing perl r2 modules..." ; \
 	cp -rf perl/*.so $$target/r2 ; \
