@@ -132,6 +132,10 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad);
 R_API int r_core_anal_graph(struct r_core_t *core, ut64 addr, int opts);
 R_API int r_core_anal_graph_fcn(struct r_core_t *core, char *input, int opts);
 
+/* asm.c */
+R_API char* r_core_asm_search(RCore *core, const char *input, ut64 from, ut64 to);
+R_API int r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to);
+
 /* gdiff.c */
 R_API int r_core_gdiff(struct r_core_t *core, char *file1, char *file2, int va);
 

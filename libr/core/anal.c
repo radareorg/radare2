@@ -442,7 +442,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 		eprintf ("Null reference search is not supported\n");
 	else
 	if (core->blocksize<=OPSZ)
-		eprintf ("erro: block size too small\n");
+		eprintf ("error: block size too small\n");
 	else
 	for (at = from; at < to; at += core->blocksize) {
 		if (r_cons_singleton ()->breaked)

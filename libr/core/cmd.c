@@ -2221,41 +2221,19 @@ static int cmd_search(void *data, const char *input) {
 		/* TODO: Move to a separate function */
 		int asmstr = r_config_get_i (core->config, "search.asmstr");
 		if (asmstr) {
-			RAsmAop aop;
-			ut64 at, toff = core->offset;
-			ut8 *buf;
-			int i, count;
-			buf = (ut8 *)malloc (core->blocksize);
-			for (at = from, count = 0; at < to; at += core->blocksize) {
-				if (r_cons_singleton ()->breaked)
-					break;
-				ret = r_io_read_at (core->io, at, buf, core->blocksize);
-				if (ret != core->blocksize)
-					break;
-				for (i=0; i<core->blocksize; i++) {
-					r_asm_set_pc (core->assembler, at+i);
-					if (!(r_asm_disassemble (core->assembler, &aop, buf+i, core->blocksize-i)))
-						continue;
-					if (strstr (aop.buf_asm, input+2)) {
-						r_cons_printf ("f hit0_%i 0x%08"PFMT64x"\n", count, (ut64)(at+i));
-						count++;
-					}
-				}
-			}
-			r_asm_set_pc (core->assembler, toff);
-			free (buf);
+			r_core_asm_strsearch (core, input+2, from, to);
 			dosearch = 0;
 		} else {
-			RAsmCode *acode;
-			if (!(acode = r_asm_massemble (core->assembler, input+2)))
+			char *kwd;
+			if (!(kwd = r_core_asm_search (core, input+2, from, to)))
 				return R_FALSE;
 			r_search_reset (core->search, R_SEARCH_KEYWORD);
 			r_search_set_distance (core->search, (int)
 					r_config_get_i (core->config, "search.distance"));
 			r_search_kw_add (core->search, 
-					r_search_keyword_new_hexmask (acode->buf_hex, NULL));
+					r_search_keyword_new_hexmask (kwd, NULL));
 			r_search_begin (core->search);
-			r_asm_code_free (acode);
+			free (kwd);
 			dosearch = 1;
 		}
 		}
