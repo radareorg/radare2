@@ -538,17 +538,15 @@ R_API const char *r_str_ansi_chrn(const char *str, int n) {
 
 R_API int r_str_ansi_filter(char *str, int len) {
 	char *tmp;
-	int i = 0, j = 0;
+	int i, j;
 
 	if (!(tmp = malloc (len)))
 		return -1;
 	memcpy (tmp, str, len);
-	while (i<len) {
-		if (i+1<len && tmp[i] == 0x1b && tmp[i+1] == '['){
+	for (i=j=0; i<len; i++)
+		if (i+1<len && tmp[i] == 0x1b && tmp[i+1] == '[')
 			for (i+=2;i<len&&str[i]!='J'&&str[i]!='m'&&str[i]!='H';i++);
-			i++;
-		} else str[j++] = tmp[i++];
-	}
+		else str[j++] = tmp[i];
 	free (tmp);
 	return j;
 }
