@@ -231,7 +231,7 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 	// X86
 #if R_BIN_ELF64
-	if (!memcmp (buf, "\x48\xc7\xc7", 3))
+	if (!memcmp (buf+29, "\x48\xc7\xc7", 3))
 		return (ut64)((int)(buf[29+3]+(buf[29+4]<<8)+
 		(buf[29+5]<<16)+(buf[29+6]<<24)))-bin->baddr;
 #else
