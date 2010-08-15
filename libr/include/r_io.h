@@ -56,6 +56,7 @@ typedef struct r_io_t {
 	int cached;
 	int cached_read;
 	ut64 off;
+	int debug;
 	int va;
 	char *redirect;
 	/* write mask */

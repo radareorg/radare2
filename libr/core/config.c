@@ -34,9 +34,7 @@ static int config_bigendian_callback(void *user, void *data) {
 static int config_iova_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	if (r_config_get_i (core->config, "cfg.debug"))
-		core->io->va = 0;
-	else core->io->va = node->i_value;
+	core->io->va = node->i_value;
 	return R_TRUE;
 }
 
@@ -50,6 +48,7 @@ static int config_iocache_callback(void *user, void *data) {
 static int config_cfgdebug_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
+	core->io->debug = node->i_value;
 	if (node->i_value) {
 		r_debug_use (core->dbg, r_config_get (core->config, "dbg.backend"));
 		r_debug_select (core->dbg, core->file->fd, core->file->fd);
