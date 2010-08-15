@@ -86,7 +86,7 @@ static int rabin_show_entrypoints() {
 		i++;
 	}
 
-	if (!rad) printf("\n%i entrypoints\n", i);
+	if (!rad) printf ("\n%i entrypoints\n", i);
 
 	return R_TRUE;
 }
@@ -263,14 +263,14 @@ static int rabin_show_strings() {
 		if (rad) {
 			r_flag_name_filter (string->string);
 			printf ("f str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
-					"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
-					string->string, string->size, va?baddr+string->rva:string->offset,
-					string->size, va?baddr+string->rva:string->offset);
+				"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
+				string->string, string->size, va?baddr+string->rva:string->offset,
+				string->size, va?baddr+string->rva:string->offset);
 		} else printf ("address=0x%08"PFMT64x" offset=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
-					   "size=%"PFMT64d" section=%s string=%s\n",
-					   baddr+string->rva, string->offset,
-					   string->ordinal, string->size,
-					   section?section->name:"unknown", string->string);
+			"size=%"PFMT64d" section=%s string=%s\n",
+			baddr+string->rva, string->offset,
+			string->ordinal, string->size,
+			section?section->name:"unknown", string->string);
 		i++;
 	}
 
@@ -307,26 +307,28 @@ static int rabin_show_sections(ut64 at) {
 			if (rad) {
 				r_flag_name_filter (section->name);
 				printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d\n",
-						section->offset, baddr+section->rva,
-						section->size, section->vsize, section->name, (int)section->srwx);
+					// XXX: this line fixes debug but breaks io->va :XXX
+					// (va?baddr:section->rva)+section->offset, baddr+section->rva,
+					section->offset, baddr+section->rva,
+					section->size, section->vsize, section->name, (int)section->srwx);
 				printf ("f section.%s %"PFMT64d" 0x%08"PFMT64x"\n",
-						section->name, section->size, va?baddr+section->rva:section->offset);
+					section->name, section->size, va?baddr+section->rva:section->offset);
 				printf ("CC [%02i] va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
-						"rwx=%c%c%c%c %s @ 0x%08"PFMT64x"\n",
-						i, baddr+section->rva, section->offset, section->size, section->vsize,
-						R_BIN_SCN_SHAREABLE (section->srwx)?'s':'-',
-						R_BIN_SCN_READABLE (section->srwx)?'r':'-',
-						R_BIN_SCN_WRITABLE (section->srwx)?'w':'-',
-						R_BIN_SCN_EXECUTABLE (section->srwx)?'x':'-',
-						section->name,va?baddr+section->rva:section->offset);
+					"rwx=%c%c%c%c %s @ 0x%08"PFMT64x"\n",
+					i, baddr+section->rva, section->offset, section->size, section->vsize,
+					R_BIN_SCN_SHAREABLE (section->srwx)?'s':'-',
+					R_BIN_SCN_READABLE (section->srwx)?'r':'-',
+					R_BIN_SCN_WRITABLE (section->srwx)?'w':'-',
+					R_BIN_SCN_EXECUTABLE (section->srwx)?'x':'-',
+					section->name,va?baddr+section->rva:section->offset);
 			} else printf ("idx=%02i address=0x%08"PFMT64x" offset=0x%08"PFMT64x" size=%"PFMT64d" vsize=%"PFMT64d" "
-						   "privileges=%c%c%c%c name=%s\n",
-						   i, baddr+section->rva, section->offset, section->size, section->vsize,
-						   R_BIN_SCN_SHAREABLE (section->srwx)?'s':'-',
-						   R_BIN_SCN_READABLE (section->srwx)?'r':'-',
-						   R_BIN_SCN_WRITABLE (section->srwx)?'w':'-',
-						   R_BIN_SCN_EXECUTABLE (section->srwx)?'x':'-',
-						   section->name);
+				"privileges=%c%c%c%c name=%s\n",
+				i, baddr+section->rva, section->offset, section->size, section->vsize,
+				R_BIN_SCN_SHAREABLE (section->srwx)?'s':'-',
+				R_BIN_SCN_READABLE (section->srwx)?'r':'-',
+				R_BIN_SCN_WRITABLE (section->srwx)?'w':'-',
+				R_BIN_SCN_EXECUTABLE (section->srwx)?'x':'-',
+				section->name);
 		}
 		i++;
 	}

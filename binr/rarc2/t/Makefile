@@ -1,4 +1,4 @@
-LC=../rcc
+LC=../rarc2
 CC=tcc
 CC=gcc
 
@@ -9,8 +9,8 @@ all: top ${BIN}
 
 top:
 	#rm -f shell
-	rm -f ../rcc
-	cd .. && ${MAKE} rcc
+	rm -f ../rarc2
+	cd .. && ${MAKE} rarc2
 
 syscall:
 	${LC} syscall.r > syscall.S

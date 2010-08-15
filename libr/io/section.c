@@ -67,7 +67,7 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len) {
 	ut64 min = -1;
 	ut64 max = -1;
 	ut64 mul;
-	int j, i, width = 78; //config.width-30;
+	int j, i, width = 50; //config.width-30;
 
 	seek = io->va ? r_io_section_vaddr_to_offset (io, seek) : seek;
 	list_for_each (pos, &io->sections) {
@@ -82,9 +82,10 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len) {
 	if (min != -1 && mul != 0) {
 		i = 0;
 		list_for_each_prev (pos, &io->sections) {
-			RIOSection *s = (RIOSection *)list_entry(pos, RIOSection, list);
-			io->printf ("%02d  0x%08"PFMT64x" |", i, s->offset);
-			for(j=0;j<width;j++) {
+			RIOSection *s = (RIOSection *)list_entry (pos, RIOSection, list);
+			io->printf ("%02d%c 0x%08"PFMT64x" |", 
+				i, (s->offset==io->off)?'*':' ', s->offset);
+			for (j=0; j<width; j++) {
 				if ((j*mul)+min >= s->offset && (j*mul)+min <=s->offset+s->size)
 					io->printf("#");
 				else
