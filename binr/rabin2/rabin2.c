@@ -307,8 +307,6 @@ static int rabin_show_sections(ut64 at) {
 			if (rad) {
 				r_flag_name_filter (section->name);
 				printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d\n",
-					// XXX: this line fixes debug but breaks io->va :XXX
-					// (va?baddr:section->rva)+section->offset, baddr+section->rva,
 					section->offset, baddr+section->rva,
 					section->size, section->vsize, section->name, (int)section->srwx);
 				printf ("f section.%s %"PFMT64d" 0x%08"PFMT64x"\n",

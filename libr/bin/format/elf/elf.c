@@ -639,6 +639,7 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 				ret[ret_ctr].size = tsize;
 				len = __strnlen (&strtab[sym[k].st_name], ELF_STRING_LENGTH-1);
 				memcpy (ret[ret_ctr].name, &strtab[sym[k].st_name], len);
+				ret[ret_ctr].ordinal = k;
 				ret[ret_ctr].name[ELF_STRING_LENGTH-2] = '\0';
 				#define s_bind(x) snprintf (ret[ret_ctr].bind, ELF_STRING_LENGTH, x);
 				switch (ELF_ST_BIND(sym[k].st_info)) {

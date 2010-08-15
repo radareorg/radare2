@@ -27,6 +27,7 @@ typedef struct r_bin_elf_section_t {
 typedef struct r_bin_elf_symbol_t {
 	ut64 offset;
 	ut64 size;
+	int ordinal;
 	char bind[ELF_STRING_LENGTH];
 	char type[ELF_STRING_LENGTH];
 	char name[ELF_STRING_LENGTH];

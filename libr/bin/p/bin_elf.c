@@ -101,7 +101,7 @@ static RList* symbols(RBin *bin) {
 		ptr->rva = symbol[i].offset;
 		ptr->offset = symbol[i].offset;
 		ptr->size = symbol[i].size;
-		ptr->ordinal = 0;
+		ptr->ordinal = symbol[i].ordinal;
 		r_list_append (ret, ptr);
 	}
 	free (symbol);
@@ -128,7 +128,7 @@ static RList* imports(RBin *bin) {
 		ptr->rva = import[i].offset;
 		ptr->offset = import[i].offset;
 		ptr->size = import[i].size;
-		ptr->ordinal = 0;
+		ptr->ordinal = import[i].ordinal;
 		ptr->hint = 0;
 		r_list_append (ret, ptr);
 	}
