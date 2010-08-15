@@ -7,6 +7,9 @@ plugin.so:
 #bin:
 #	valac --vapidir=.. bin.vala --pkg r_bin --pkg r_util 
 
+rgot:
+	valac --vapidir=.. rgot.vala --pkg r_bin --pkg r_util
+
 bintest:
 	valac --vapidir=.. bintest.vala --pkg r_bin --pkg r_util 
 
