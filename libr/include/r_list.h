@@ -3,6 +3,8 @@
 
 #include <r_flist.h>
 
+// TODO: implement r_list_foreach_prev
+
 typedef void (*RListFree)(void *ptr);
 
 typedef struct r_list_iter_t {

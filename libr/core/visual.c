@@ -686,7 +686,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case '-':
 		if (core->print->cur_enabled) {
-			ut8 ch;
 			int cur = core->print->cur;
 			if (cur>=core->blocksize)
 				cur = core->print->cur-1;
@@ -697,7 +696,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case '+':
 		if (core->print->cur_enabled) {
-			ut8 ch;
 			int cur = core->print->cur;
 			if (cur>=core->blocksize)
 				cur = core->print->cur-1;

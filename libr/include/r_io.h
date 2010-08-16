@@ -69,7 +69,7 @@ typedef struct r_io_t {
 	struct list_head io_list;
 	struct list_head sections;
 	/* maps */
-	struct list_head maps;
+	RList *maps; /*<RIOMap>*/
 	struct list_head desc;
 	struct list_head cache;
 } RIO;

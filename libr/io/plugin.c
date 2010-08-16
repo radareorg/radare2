@@ -86,10 +86,10 @@ R_API int r_io_plugin_open(struct r_io_t *io, int fd, struct r_io_plugin_t *plug
 R_API int r_io_plugin_close(struct r_io_t *io, int fd, struct r_io_plugin_t *plugin) {
 	int i=0;
 	struct list_head *pos;
-	list_for_each_prev(pos, &io->io_list) {
-		struct r_io_list_t *il = list_entry(pos, struct r_io_list_t, list);
+	list_for_each_prev (pos, &io->io_list) {
+		struct r_io_list_t *il = list_entry (pos, struct r_io_list_t, list);
 		if (plugin == il->plugin) {
-			for(i=0;i<R_IO_NFDS;i++) {
+			for (i=0;i<R_IO_NFDS;i++) {
 				if (il->plugin->fds[i] == fd) {
 					il->plugin->fds[i] = -1;
 					return 0;

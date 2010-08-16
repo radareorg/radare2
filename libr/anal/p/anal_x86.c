@@ -25,6 +25,8 @@
 // 8d85e8fbffff    lea eax,[ebp-418]
 // c68405e7fbffff. mov byte ptr [ebp+eax-419],0x0
 
+
+
 //3d00400000  cmp eax, 0x4000
 //81fa00c00000  cmp edx, 0xc000
 //83fa01  cmp edx, 0x1
@@ -184,8 +186,7 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 			aop->fail   = addr+6;
 			aop->length = 6;
 			//aop->eob    = 1;
-		} 
-		else
+		} else
 		if (buf[1]>=0x40 && buf[1]<=0x4f) { /* Conditional MOV */
 			aop->type = R_ANAL_OP_TYPE_MOV;
 			aop->eob = 0;
@@ -418,6 +419,14 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 		break;
 	case 0x82:
 		aop->type = R_ANAL_OP_TYPE_ADD;
+		break;
+	case 0x2e: // 2e64796e        jns 0xb770a4ab !! XXX JMP BAD CALCULATED  !!! 
+		   //  64796e  jns 0xb78944b3     XXX: NOT IMPLEMNETED  
+		aop->type = R_ANAL_OP_TYPE_CJMP;
+		aop->jump = addr+4+buf[1]+(buf[2]<<8)+(buf[3]<<16); // XXX
+		aop->length = 4;
+		aop->fail = addr+aop->length;
+		//aop->eob    = 1;
 		break;
 	case 0x29:
 		aop->type = R_ANAL_OP_TYPE_SUB;
