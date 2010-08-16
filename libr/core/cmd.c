@@ -3140,7 +3140,8 @@ static void cmd_dm(RCore *core, const char *input) {
 		" dm*        Same as above but in radare commands\n"
 		" dm 4096    Allocate 4096 bytes in child process\n"
 		" dm-0x8048  Deallocate memory map of address 0x8048\n"
-		" dmi [addr|libname]  Flag symbols of target lib\n"
+		" dmi [addr|libname]   List symbols of target lib\n"
+		" dmi* [addr|libname]  Same as above but in radare commands\n"
 		//" dm rw- esp 9K  set 9KB of the stack as read+write (no exec)\n"
 		"TODO: map files in process memory.\n");
 		break;
@@ -3148,18 +3149,22 @@ static void cmd_dm(RCore *core, const char *input) {
 		{ // Move to a separate function
 		ut64 addr = 0LL;
 		const char *libname = NULL;
-		char cmd[1024];
-		addr = r_num_math (core->num, input+2);
-		if (!addr) libname = input+2;
+		char cmd[1024], *cmdret;
+		int len;
+		addr = r_num_math (core->num, r_str_trim_head ((char*)input+2));
+		if (!addr) libname = r_str_trim_head ((char*)input+2);
 		r_debug_map_sync (core->dbg); // update process memory maps
 		RListIter *iter = r_list_iterator (core->dbg->maps);
 		while (r_list_iter_next (iter)) {
 			RDebugMap *map = r_list_iter_get (iter);
 			if ((addr != -1 && (addr >= map->addr && addr < map->addr_end)) ||
 				(libname != NULL && (strstr (map->name, libname)))) {
-				snprintf (cmd, sizeof (cmd), ".!rabin2 -b 0x%08"PFMT64x" -srv %s",
-						map->addr, map->name);
-				r_core_cmd (core, cmd, 0);
+				snprintf (cmd, sizeof (cmd), "rabin2 -b 0x%08"PFMT64x" -s%sv %s",
+						map->addr, input[1]=='*'?"r":"", map->name);
+				if ((cmdret = r_sys_cmd_str (cmd, 0, &len))) {
+					r_cons_printf (cmdret);
+					free (cmdret);
+				}
 				break;
 			}
 		}
