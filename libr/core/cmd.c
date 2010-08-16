@@ -2729,6 +2729,10 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		return ret;
 	}
 
+	/* comments */
+	ptr = strrchr (cmd, '#');
+	if (ptr) ptr[0]='\0';
+
 	/* multiple commands */
 	ptr = strrchr (cmd, ';');
 	if (ptr) {
@@ -2849,6 +2853,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		ut64 tmpoff, tmpbsz;
 		char *ptr2 = strchr (ptr+1, ':');
 		*ptr = '\0';
+		cmd = r_str_clean (cmd);
 		tmpoff = core->offset;
 		tmpbsz = core->blocksize;
 		if (ptr2) {

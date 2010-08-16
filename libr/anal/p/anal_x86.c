@@ -36,7 +36,7 @@ static const char *testregs[] = {
 
 // NOTE: buf should be at least 16 bytes!
 // XXX addr should be off_t for 64 love
-static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
+static int myaop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	ut8 *buf = (ut8*)data;
 	if (data == NULL)
 		return 0;
@@ -305,6 +305,24 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 		aop->length = 1;
 		aop->stackptr = -4;
 		break;
+	case 0x2e: // 2e64796e jns 0xb770a4ab !!
+		if (buf[1]>=0x64 && buf[1]<=0x67) {
+			int ret = myaop (anal, aop, addr, data+1, len-1);
+			aop->jump++;
+			aop->length++;
+			return ret;
+		}
+		break;
+	case 0x64:
+	case 0x65:
+	case 0x66:
+	case 0x67:
+		aop->type = R_ANAL_OP_TYPE_CJMP;
+		aop->jump = addr+3+buf[2]; //+(buf[2]<<8)+(buf[3]<<16); // XXX
+		aop->length = 3;
+		aop->fail = addr+aop->length;
+		//aop->eob    = 1;
+		break;
 	case 0x68:
 		aop->type = R_ANAL_OP_TYPE_PUSH;
 		aop->ref = (st64)((int)buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24));
@@ -420,14 +438,6 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	case 0x82:
 		aop->type = R_ANAL_OP_TYPE_ADD;
 		break;
-	case 0x2e: // 2e64796e        jns 0xb770a4ab !! XXX JMP BAD CALCULATED  !!! 
-		   //  64796e  jns 0xb78944b3     XXX: NOT IMPLEMNETED  
-		aop->type = R_ANAL_OP_TYPE_CJMP;
-		aop->jump = addr+4+buf[1]+(buf[2]<<8)+(buf[3]<<16); // XXX
-		aop->length = 4;
-		aop->fail = addr+aop->length;
-		//aop->eob    = 1;
-		break;
 	case 0x29:
 		aop->type = R_ANAL_OP_TYPE_SUB;
 		break;
@@ -501,7 +511,7 @@ struct r_anal_plugin_t r_anal_plugin_x86 = {
 	.desc = "X86 analysis plugin",
 	.init = NULL,
 	.fini = NULL,
-	.aop = &aop
+	.aop = &myaop
 };
 
 #ifndef CORELIB

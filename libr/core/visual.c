@@ -17,7 +17,7 @@ static ut64 marks[UT8_MAX+1];
 static void r_core_visual_mark(RCore *core, ut8 ch) {
 	if (!marks_init) {
 		int i;
-		for(i=0;i<UT8_MAX;i++)
+		for (i=0;i<UT8_MAX;i++)
 			marks[i] = 0;
 		marks_init = 1;
 	}
@@ -27,12 +27,12 @@ static void r_core_visual_mark(RCore *core, ut8 ch) {
 static void r_core_visual_mark_seek(RCore *core, ut8 ch) {
 	if (!marks_init) {
 		int i;
-		for(i=0;i<UT8_MAX;i++)
+		for (i=0;i<UT8_MAX;i++)
 			marks[i] = 0;
 		marks_init = 1;
 	}
 	if (marks[ch])
-		r_core_seek(core, marks[ch], 1);
+		r_core_seek (core, marks[ch], 1);
 }
 
 R_API int r_core_visual_trackflags(RCore *core) {
@@ -440,12 +440,15 @@ R_API void r_core_visual_config(RCore *core) {
 			break;
 		case ':':
 			r_cons_set_raw(0);
+/* WTF READLINE?? WE DONT USE THAT!! */
 #if HAVE_LIB_READLINE
+			{
 			char *ptr = readline(VISUAL_PROMPT);
 			if (ptr) {
 				strncpy(cmd, ptr, sizeof (cmd));
 				r_core_cmd(core, cmd, 1);
 				free(ptr);
+			}
 			}
 #else
 			cmd[0]='\0';
@@ -721,10 +724,14 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case '.':
 		r_core_cmd (core, "sr pc", 0); // XXX
 		break;
-	case ':':
+	case ':': {
+		ut64 oseek = core->offset;
+		if (curset) r_core_seek (core, core->offset+cursor, 1);
 		r_cons_fgets (buf, 1023, 0, NULL);
 		r_core_cmd (core, buf, 0);
 		r_cons_any_key ();
+		if (curset) r_core_seek (core, oseek, 1);
+		}
 		break;
 	case ';':
 		r_cons_printf ("Enter a comment: (prefix it with '-' to remove)\n");
