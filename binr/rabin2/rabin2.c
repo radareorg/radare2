@@ -35,11 +35,13 @@ static struct r_bin_t *bin = NULL;
 static int rad = R_FALSE;
 static int rw = R_FALSE;
 static int va = R_FALSE;
+static ut64 gbaddr = 0LL;
 static char* file = NULL;
 static char* output = "a.out";
 
 static int rabin_show_help() {
 	printf ("rabin2 [options] [file]\n"
+		" -b [addr]   Override baddr\n"
 		" -e          Entrypoint\n"
 		" -M          Main\n"
 		" -i          Imports (symbols imported from libraries)\n"
@@ -69,7 +71,7 @@ static int rabin_show_entrypoints() {
 	RBinAddr *entry;
 	int i = 0;
 
-	ut64 baddr = r_bin_get_baddr (bin);
+	ut64 baddr = gbaddr?gbaddr:r_bin_get_baddr (bin);
 
 	if ((entries = r_bin_get_entries (bin)) == NULL)
 		return R_FALSE;
@@ -94,7 +96,7 @@ static int rabin_show_entrypoints() {
 static int rabin_show_main() {
 	RBinAddr *binmain;
 
-	ut64 baddr = r_bin_get_baddr (bin);
+	ut64 baddr = gbaddr?gbaddr:r_bin_get_baddr (bin);
 
 	if ((binmain = r_bin_get_main (bin)) == NULL)
 		return R_FALSE;
@@ -149,7 +151,7 @@ static int rabin_show_imports(ut64 at) {
 	ut64 baddr;
 	int i = 0;
 
-	baddr = r_bin_get_baddr (bin);
+	baddr = gbaddr?gbaddr:r_bin_get_baddr (bin);
 
 	if ((imports = r_bin_get_imports (bin)) == NULL)
 		return R_FALSE;
@@ -194,7 +196,7 @@ static int rabin_show_symbols(ut64 at) {
 	ut64 baddr;
 	int i = 0;
 
-	baddr = r_bin_get_baddr (bin);
+	baddr = gbaddr?gbaddr:r_bin_get_baddr (bin);
 
 	if ((symbols = r_bin_get_symbols (bin)) == NULL)
 		return R_FALSE;
@@ -250,7 +252,7 @@ static int rabin_show_strings() {
 	RBinString *string;
 	RBinSection *section;
 	int i = 0;
-	ut64 baddr = r_bin_get_baddr (bin);
+	ut64 baddr = gbaddr?gbaddr:r_bin_get_baddr (bin);
 
 	if ((strings = r_bin_get_strings (bin)) == NULL)
 		return R_FALSE;
@@ -286,7 +288,7 @@ static int rabin_show_sections(ut64 at) {
 	ut64 baddr;
 	int i = 0;
 
-	baddr = r_bin_get_baddr (bin);
+	baddr = gbaddr?gbaddr:r_bin_get_baddr (bin);
 
 	if ((sections = r_bin_get_sections (bin)) == NULL)
 		return R_FALSE;
@@ -386,7 +388,7 @@ static int rabin_show_fields() {
 	ut64 baddr;
 	int i = 0;
 
-	baddr = r_bin_get_baddr (bin);
+	baddr = gbaddr?gbaddr:r_bin_get_baddr (bin);
 
 	if ((fields = r_bin_get_fields (bin)) == NULL)
 		return R_FALSE;
@@ -566,7 +568,7 @@ int main(int argc, char **argv)
 		r_lib_opendir (l, LIBDIR"/radare2/");
 	}
 
-	while ((c = getopt (argc, argv, "Mm:@:VisSzIHelwO:o:f:rvLhx")) != -1) {
+	while ((c = getopt (argc, argv, "b:Mm:@:VisSzIHelwO:o:f:rvLhx")) != -1) {
 		switch(c) {
 		case 'm':
 			at = r_num_math (NULL, optarg);
@@ -623,6 +625,9 @@ int main(int argc, char **argv)
 		case 'L':
 			r_bin_list (bin);
 			exit(1);
+		case 'b':
+			gbaddr = r_num_math (NULL, optarg);
+			break;
 		case '@':
 			at = r_num_math (NULL, optarg);
 			break;
