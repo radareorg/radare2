@@ -34,7 +34,7 @@ R_API RMemoryPool *r_mem_pool_new(int nodesize, int poolsize, int poolcount) {
 		mp->nodesize = nodesize;
 		mp->npool = -1;
 		mp->ncount = mp->poolsize; // force init
-		mp->nodes = (void**) malloc (sizeof (void*) * mp->poolcount);
+		mp->nodes = (ut8**) malloc (sizeof (void*) * mp->poolcount);
 		if (mp->nodes == NULL)
 			return NULL;
 	}

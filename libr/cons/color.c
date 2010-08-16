@@ -4,7 +4,7 @@
 #include <string.h>
 
 static const char *nullstr="";
-static const char *r_cons_palette_default = "7624 6646 2378 6824 3623";
+//static const char *r_cons_palette_default = "7624 6646 2378 6824 3623";
 
 // XXX -- deprecate -- do not use global/extern stuff
 static char r_cons_palette[CONS_PALETTE_SIZE][8] = {

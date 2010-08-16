@@ -21,7 +21,7 @@ typedef struct { } RStr;
 typedef struct { } RLog;
 
 typedef struct r_mem_pool_t {
-	void **nodes;
+	ut8 **nodes;
 	int ncount;
 	int npool;
 	//
@@ -58,7 +58,7 @@ typedef struct r_prof_t {
 
 /* numbers */
 typedef struct r_num_t {
-	ut64 (*callback)(void *userptr, const char *str, int *ok);
+	ut64 (*callback)(struct r_num_t *userptr, const char *str, int *ok);
 //	RNumCallback callback;
 	ut64 value;
 	void *userptr;

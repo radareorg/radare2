@@ -5,6 +5,7 @@
 #if __UNIX__
 #include <sys/wait.h>
 #include <signal.h>
+#include <execinfo.h>
 #elif __WINDOWS__
 #include <io.h>
 #endif
@@ -108,11 +109,6 @@ R_API char *r_sys_getcwd(void) {
 }
 
 #if __UNIX__
-static void pipeclose(int pipe[2]) {
-	close (pipe[0]);
-	close (pipe[1]);
-}
-
 R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, char **sterr) {
 	char *output, buffer[1024];
 	char *inputptr = (char *)input;

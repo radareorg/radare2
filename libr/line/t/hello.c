@@ -13,7 +13,7 @@ int main() {
 	const char *str;
 	RLine *line = r_line_new ();
 	r_cons_new ();
-	line->completion.run = complete;
+	line->completion.run = (RLineCallback) complete;
 #if 0
 	if (!r_line_init ()) {
 		printf ("Cannot initizalize r_line\n");

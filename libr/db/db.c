@@ -228,8 +228,8 @@ R_API void *r_db_iterator(RDatabase *db) {
 
 /* returns 1 if there is a next element */
 R_API int r_db_iter_next(RDatabaseIter *iter) {
-	RDatabaseBlock *b, *block;
-	int i, j;
+	//RDatabaseBlock *b, *block;
+	int i;//, j;
 // TODO: must be implemented for Vala/Swig
 	// if (something) return 1;
 	// depth = iter->size

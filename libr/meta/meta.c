@@ -9,7 +9,7 @@ R_API RMeta *r_meta_new() {
 		m->data->free = r_meta_item_free;
 		m->xrefs = r_list_new ();
 		m->xrefs->free = r_meta_item_free;
-		m->printf = printf;
+		m->printf = (PrintfCallback) printf;
 	}
 	return m;
 }

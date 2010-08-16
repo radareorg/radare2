@@ -127,7 +127,7 @@ R_API int r_anal_var_add(RAnal *anal, RAnalFcn *fcn, ut64 from, int delta, int t
 	var->delta = delta;
 	if (from != 0LL)
 		r_anal_var_access_add (anal, var, from, set);
-	r_list_add_sorted (fcn->vars, var, cmpdelta);
+	r_list_add_sorted (fcn->vars, var, (RListComparator)cmpdelta);
 	return R_TRUE;
 }
 

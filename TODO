@@ -6,33 +6,13 @@
 
 <{include libr/TODO}>
 
-Questions:
-----------
-* Meld r_meta inside r_anal?
-* How to search for an opcode like CALL+REG? or MOV+CONST, ...
-  - r_anal_match(anal, aop CALL | REG) ?
-  - Implememnted in a command like /a..
-* imports from PE doesnt works with /a because there's an indirect call
-* Load symbol information from libraries (only the ones imported by rabin2?)
-  - only in runtime when eip is in library code?
-* Implement 'av' command we need it  (really?) how about to eval with ?
-* filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
-* code analysis with r_parse // isnt this already done? nibble?
-  - generate by just parsing the opcode
-  - RAnalAopArg { int size; int delta; int type; }
-  - r_anal_aop_arg_set (); r_anal_aop_arg_get (); r_anal_aop_arg_binmask ();
-* rasign2 : must be done, write manpage (isn't r2 enought?)
-* rabin2 can now extract fat mach-o with rabin -x, is it worth native support for fat bins? nibble: NO pancake: ??
-* Deprecate CF and use af+ instead? (pancake: yes)
-
 0.6 RELEASE
 ===========
-* Implement fcn_from_string anal/fcn.c
-  - define function signature command: (afs? CF?)
-  > afs int foo(int var, char* str) @ fun.main
-  - How to define function variables? CFv? CFa for args?
-* Support indirect references on /a and similars.. (e search.refptr) .. or /A?
+* Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
+* Meld r_meta inside r_anal
 * Cx/CX are not displayed in disasm as they should.. (C! must die)
+* Create radare2-testsuite project
+* Implement remote:// socket:// and listen://
 
 Build system:
 -------------
@@ -42,10 +22,26 @@ Build system:
 * install.sh (to track installed files ..)
 * acr -ldl check must be fixed for kfreebsd
 
+TODO nibble
+-----------
+* imports from PE doesnt works with /a because there's an indirect call
+* r_bin->relocs // RList of relocations
+* Support indirect references on /a and similars.. (e search.refptr) .. or /A?
+* big-ssl.c big-gmp.c ...
+* native fat bins support (push uncommited changes)
+* diff code analysis
+  - diff two programs
+     1st level:
+        - check all functions EQUAL, DIFFERENT, REMOVED, ADDED
+        - check all symbols
+        - check all imports
+        - check all strings
+     2nd level:
+        - basic block level diffing (output in graph mode)
+
 TODO edu
 --------
 * Implement more get_main()
-* fix visual cursor byte selection (support +,- for blocks)
 * typedef all function pointers, like in r_bp
 * Implement /A : search AES
 * Implement case-insensitive search (e search.casematters ?) any better name? Use /i?
@@ -55,6 +51,10 @@ TODO edu
 
 TODO pancake
 ------------
+* Implement fcn_from_string anal/fcn.c
+  - define function signature command: (afs? CF?)
+  > afs int foo(int var, char* str) @ fun.main
+  - How to define function variables? CFv? CFa for args?
 * Display syscall information when disassembling svc/int/.. (edu?)
   - store last value of REG0 (EAX, R0, ...), select interrupt vector by aop->value and use r_syscall()
 * we need an api to define function signatures
@@ -63,33 +63,19 @@ TODO pancake
 * implement RAnalCall (analyze function arguments, return values, propagate types..)
   - define number of arguments for given function
   - warn if signature and analysis differs in number of args or so..
+* Implement r_sys_setenv stuff from r1 in core/file.c:33 (!!?)
 
 TODO gerardo
 ------------
-* big-ssl.c big-gmp.c ...
 * http://etutorials.org/Programming/secure+programming/Chapter+7.+Public+Key+Cryptography/7.5+Generating+a+Prime+Number+Testing+for+Primality/
 * implement GMP in util/big.c
 
 unassigned TODO pointz
 ----------------------
 * Realign flags when using project in debug mode
-* Test r_lib^w32/osx support
-* Implement r_sys_setenv stuff from r1 in core/file.c:33 (!!?)
-
 * FileDescriptors: dd -- copy from !fd in r1
-* r_bin->relocs // RList of relocations
 * distribute 'spp' with 'rarc2' ?
 * Initial analysis looking for xrefs to strings and so? ax? ./a@@entry0 - Launched at startup
-
-* nibble: diff code analysis
-  - diff two programs
-     1st level:
-        - check all functions EQUAL, DIFFERENT, REMOVED, ADDED
-        - check all symbols
-        - check all imports
-        - check all strings
-     2nd level:
-        - basic block level diffing (output in graph mode)
 
 Bindings
 ========
@@ -106,17 +92,19 @@ Refactoring
 * Move disasm loop into r_print (r_print should depend on r_asm)
   - thats hard :)
 * Move 'r_syscall_t' stuff into r_debug (sync r_core)
-* merge r_asm and r_anal?
 * Implement r_bind api to link multiple pointers
   core->asm = r_bind_set (core->asm->bind, r_asm_new ());
+* r_config set_int and so..simplify
 * what do we have to do with r_th, r_parse and r_vm ?
-* Is RCore->block and blocksize a RBuf ? refactor!11
 * Find a better name for r_buf_fread (really?)
 * Review r_io API
 * semi-ok state (R_TRUFAE), implement r_errno and r_errstr in r_util?
   - useful in r_sys_mkdir ?
 * Finish and import the spp's getopt owns implementation in r_util (like in p9)
-* Rename __UNIX__ as __POSIX__
+
+0.7
+===
+* Is RCore->block and blocksize a RBuf ? refactor!11
  
 Future
 ======
@@ -146,6 +134,7 @@ Loading big binaries results on broken interaction.
       |--- (while (prompt,lock,run,unlock))
       \
        `-- (while (lock,load,unlock))
+* Implement 'av' command we need it  (really?) how about to eval with ?
 
 
 .------------------------.

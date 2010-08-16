@@ -44,9 +44,8 @@ R_API void r_anal_fcn_free(void *fcn) {
 }
 
 R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len) {
-	RAnalRef *ref, *refi;
-	RListIter *iter;
 	RAnalOp aop;
+	RAnalRef *ref;
 	char *varname;
 	int oplen, idx = 0;
 	if (fcn->addr == -1)

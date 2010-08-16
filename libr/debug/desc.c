@@ -41,7 +41,7 @@ R_API int r_debug_desc_write(RDebug *dbg, int fd, ut64 addr, int len) {
 }
 
 R_API int r_debug_desc_list(RDebug *dbg, int rad) {
-	int count;
+	int count = 0;
 	// callback or rlist? i would prefer rlist here..
 	//RList *list = dbg->h->desc.list ();
 	// TODO: loop here
