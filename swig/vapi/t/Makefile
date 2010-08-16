@@ -1,4 +1,4 @@
-all: plugin.so bin lang core regs hash sc socket asm search db io list
+all: plugin.so bin lang core regs hash sc socket asm search db io list rgot
 	@true
 
 plugin.so:
@@ -46,7 +46,7 @@ sc:
 	gcc sc.c `pkg-config gobject-2.0 --libs --cflags` -I../../../libr/include/ -lr_syscall -Wl,-R../../syscall -L../../syscall -o sc
 
 core:
-	valac -C --vapidir=.. core.vala --pkg r_asm --pkg r_anal --pkg r_core --pkg r_cons
+	valac -C --vapidir=.. core.vala --pkg r_asm --pkg r_anal --pkg r_core --pkg r_cons --pkg r_bp
 	#gcc `PKG_CONFIG_PATH=../.. pkg-config --libs --cflags gobject-2.0 libr` core.c -o core
 	gcc core.c `pkg-config gobject-2.0 --libs --cflags` -I../../../libr/include/ \
 		-lr_core -Wl,-R../../core -L../../core \
@@ -63,7 +63,6 @@ core:
 		-lr_parse -Wl,-R../../parse -L../../parse \
 		-lr_flags -Wl,-R../../flags -L../../flags \
 		-lr_meta -Wl,-R../../meta -L../../meta \
-		-lr_macro -Wl,-R../../macro -L../../macro \
 		-lr_print -Wl,-R../../print -L../../print \
 		-lr_config -Wl,-R../../config -L../../config \
 		-lr_search -Wl,-R../../search -L../../search \
@@ -74,8 +73,9 @@ core:
 		-g -o core
 
 search:
-	valac -C --vapidir=${PWD}/.. search.vala --pkg r_search
+	valac -C --vapidir=${PWD}/.. search.vala --pkg r_search --pkg r_util
 	gcc search.c `pkg-config gobject-2.0 --libs --cflags` -I../../../libr/include/ \
+		-lr_util -Wl,-R../../util -L../../util \
 		-lr_search -Wl,-R../../search -L../../search \
 		-lr_util -Wl,-R../../util -L../../util \
 		-g -o search

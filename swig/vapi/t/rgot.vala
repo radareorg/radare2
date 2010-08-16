@@ -3,6 +3,11 @@
 
 using Radare;
 
+struct Rel {
+	uint32 r_offset;
+	uint16 r_info;
+}
+
 void main(string[] args) {
 	if (args.length != 2)
 		error ("Usage: %s <file>\n", args[0]);
@@ -31,10 +36,13 @@ void main(string[] args) {
 
 	var relpltp = RFile.slurp_range (file, relplt, relpltsz, out relpltsz);
 	// only for 32 bit ELFs
-	uint32 *ptr = relpltp;
+	Rel *ptr = relpltp;
 
 	foreach (var sym in bin.get_imports ()) {
-		uint64 got = (uint32) ptr [(sym.ordinal-1)*2];
+		Rel gotrel = (Rel) ptr [(sym.ordinal-1)];
+		uint64 got = gotrel.r_offset;
+		//int nfo = gotrel.r_info >> 8;
+		//stderr.print ("nfo %d\n", nfo);
 		if (got >= gotaddr && got <= gotaddr+gotsize)
 			print ("f got.%s @ 0x%08"+uint64.FORMAT_MODIFIER+"x\n", sym.name, got);
 		else stderr.printf ("Cannot resolve GOT address for import '%s'\n", sym.name);

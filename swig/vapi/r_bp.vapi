@@ -4,8 +4,8 @@
 [CCode (cheader_filename="r_bp.h,r_list.h", cname="struct r_bp_t", free_function="r_bp_free", cprefix="r_bp_")]
 public class Radare.RBreakpoint {
 	public RBreakpoint ();
-	public RList<RBreakpointItem> bps;
-	public RList<RBreakpointTrace> traces;
+	public RList<Item> bps;
+	public RList<Trace> traces;
 	public bool use (string arch);
 	public void enable (uint64 addr, bool enabled);
 	public unowned Item? at_addr (uint64 addr, int rwx);
@@ -45,5 +45,17 @@ public class Radare.RBreakpoint {
 		uint8* obytes;
 		uint8* bbytes;
 		int[] pids;
+	}
+
+	[Compact]
+	[CCode (cname="RBreakpointTrace", free_function="")]
+	public class Trace {
+		uint64 addr;
+		uint64 addr_end;
+		uint8 *traps;
+		uint8 *buffer;
+		uint8 *bits;
+		int length;
+		int bitlen;
 	}
 }
