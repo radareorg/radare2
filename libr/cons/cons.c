@@ -168,10 +168,19 @@ R_API const char *r_cons_get_buffer() {
 	return I.buffer;
 }
 
+R_API void r_cons_filter() {
+	/* grep*/
+	if (I.grep.nstrings>0||I.grep.tokenfrom!=0||I.grep.tokento!=ST32_MAX||I.grep.line!=-1)
+		r_cons_grepbuf (I.buffer, I.buffer_len);
+	/* html */
+	/* TODO */
+}
+
 R_API void r_cons_flush() {
 	const char *tee = I.teefile;
 	if (I.noflush)
 		return;
+	r_cons_filter ();
 	if (I.is_interactive) {
 		if (I.buffer_len > CONS_MAX_USER) {
 			if (!r_cons_yesno ('n',"Do you want to print %d bytes? (y/N)",
@@ -181,9 +190,6 @@ R_API void r_cons_flush() {
 			}
 		}
 	}
-	if (I.grep.nstrings>0||I.grep.tokenfrom!=0||I.grep.tokento!=ST32_MAX||I.grep.line!=-1)
-		r_cons_grepbuf (I.buffer, I.buffer_len);
-
 	if (tee&&tee[0]) {
 		FILE *d = fopen (tee, "a+");
 		if (d != NULL) {

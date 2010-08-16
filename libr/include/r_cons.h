@@ -173,6 +173,7 @@ R_API void r_cons_printf(const char *format, ...);
 R_API void r_cons_strcat(const char *str);
 R_API void r_cons_memcat(const char *str, int len);
 R_API void r_cons_newline();
+R_API void r_cons_filter();
 R_API void r_cons_flush();
 R_API void r_cons_visual_flush();
 R_API void r_cons_visual_write (char *buffer);

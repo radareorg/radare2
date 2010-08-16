@@ -2724,6 +2724,10 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	cmd = r_str_trim_head_tail (cmd);
 
 	/* quoted / raw command */
+	if (cmd[0] =='.' && cmd[1] == '"') {
+		ret = r_cmd_call (core->cmd, cmd);
+		return ret;
+	}
 	if (cmd[0] =='"') {
 		if (cmd[len-1] != '"') {
 			eprintf ("parse: Missing ending '\"'\n");
@@ -3573,9 +3577,10 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 		eprintf ("Invalid command: %s\n", cmd);
 		retstr = strdup ("");
 	} else {
-		const char *static_str = r_cons_get_buffer();
+		r_cons_filter ();
+		const char *static_str = r_cons_get_buffer ();
 		retstr = strdup (static_str?static_str:"");
-		r_cons_reset();
+		r_cons_reset ();
 	}
 	return retstr;
 }
