@@ -2723,11 +2723,14 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		return 0;
 	cmd = r_str_trim_head_tail (cmd);
 
-	/* quoted / raw command */
-	if (cmd[0] =='.' && cmd[1] == '"') {
+	/* interpret */
+	/* XXX should it interpret all the cmds separated by ';'? */
+	if (cmd[0] =='.') {
 		ret = r_cmd_call (core->cmd, cmd);
 		return ret;
 	}
+
+	/* quoted / raw command */
 	if (cmd[0] =='"') {
 		if (cmd[len-1] != '"') {
 			eprintf ("parse: Missing ending '\"'\n");
