@@ -3,8 +3,15 @@
 
 using Radare;
 
+// only for 32 bit ELFs
 struct Rel {
 	uint32 r_offset;
+	uint16 r_info;
+}
+
+// not used
+struct Rel64 {
+	uint64 r_offset;
 	uint16 r_info;
 }
 
@@ -35,14 +42,20 @@ void main(string[] args) {
 		error ("Cannot find .rel.plt\n");
 
 	var relpltp = RFile.slurp_range (file, relplt, relpltsz, out relpltsz);
-	// only for 32 bit ELFs
+
 	Rel *ptr = relpltp;
+	Rel *ptrend = (Rel*)(((uint8*)relpltp) + relpltsz);
 
 	foreach (var sym in bin.get_imports ()) {
-		Rel gotrel = (Rel) ptr [(sym.ordinal-1)];
-		uint64 got = gotrel.r_offset;
-		//int nfo = gotrel.r_info >> 8;
-		//stderr.print ("nfo %d\n", nfo);
+		int n;
+		uint64 got = 0;
+		for (n=0, ptr = relpltp; ptr < ptrend; ptr++) {
+			if ((ptr->r_info>>8) == sym.ordinal) {
+				got = ptr->r_offset;
+				break;
+			}
+			n++;
+		}
 		if (got >= gotaddr && got <= gotaddr+gotsize)
 			print ("f got.%s @ 0x%08"+uint64.FORMAT_MODIFIER+"x\n", sym.name, got);
 		else stderr.printf ("Cannot resolve GOT address for import '%s'\n", sym.name);

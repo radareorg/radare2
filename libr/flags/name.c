@@ -5,7 +5,7 @@
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')
 
 static int r_flag_name_validate_char(const char ch) {
-	switch(ch) {
+	switch (ch) {
 	case '*':
 	case '/':
 	case '+':
@@ -14,14 +14,19 @@ static int r_flag_name_validate_char(const char ch) {
 	case ';':
 	case '>':
 	case '<':
+	case '"':
+	case '#':
+	case '%':
+	case '(':
+	case ')':
 	case '`':
 	case '\'':
-	case '"':
 	case '-':
 	case ' ':
 	case '\n':
 	case '\t':
 	case '[':
+	case ']':
 	case '@':
 		return 0;
 	default:

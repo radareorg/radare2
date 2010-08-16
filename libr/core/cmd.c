@@ -219,7 +219,11 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		switch (mi->type) {
 		case R_META_STRING:
 			// TODO: filter string (r_str_unscape)
-			r_cons_printf ("string(%"PFMT64d"): \"%s\"\n", mi->size, mi->str);
+			{
+			char *out = r_str_unscape (mi->str);
+			r_cons_printf ("string(%"PFMT64d"): \"%s\"\n", mi->size, out);
+			free (out);
+			}
 			ret = (int)mi->size;
 			free (line);
 			continue;
@@ -2554,7 +2558,8 @@ static int cmd_meta(void *data, const char *input) {
 		if (input[1]==' ') input++;
 		if (input[1]=='-')
 			r_meta_del (core->meta, R_META_COMMENT, core->offset, core->offset, input+2);
-		else r_meta_add (core->meta, R_META_COMMENT, core->offset, core->offset, input+1);
+		else if (input[1])
+			r_meta_add (core->meta, R_META_COMMENT, core->offset, core->offset, input+1);
 		break;
 	case '!':
 		r_meta_sync (core->meta);

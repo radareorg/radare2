@@ -267,9 +267,9 @@ R_API RBin* r_bin_new() {
 
 	bin = R_NEW (RBin);
 	if (bin) {
-		memset (bin, 0, sizeof(RBin));
+		memset (bin, 0, sizeof (RBin));
 		INIT_LIST_HEAD (&bin->bins);
-		for (i=0;bin_static_plugins[i];i++) {
+		for (i=0; bin_static_plugins[i]; i++) {
 			static_plugin = R_NEW (RBinPlugin);
 			memcpy (static_plugin, bin_static_plugins[i], sizeof (RBinPlugin));
 			r_bin_add (bin, static_plugin);

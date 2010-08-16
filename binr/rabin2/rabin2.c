@@ -95,7 +95,6 @@ static int rabin_show_entrypoints() {
 
 static int rabin_show_main() {
 	RBinAddr *binmain;
-
 	ut64 baddr = gbaddr?gbaddr:r_bin_get_baddr (bin);
 
 	if ((binmain = r_bin_get_main (bin)) == NULL)
@@ -113,9 +112,7 @@ static int rabin_show_main() {
 }
 
 static int rabin_extract() {
-	int n;
-
-	n = r_bin_extract (bin);
+	int n = r_bin_extract (bin);
 	if (n != 0) {
 		if (!rad) printf ("%i bins extracted\n", n);
 		return R_TRUE;
