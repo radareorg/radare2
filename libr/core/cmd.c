@@ -2723,15 +2723,12 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		return 0;
 	cmd = r_str_trim_head_tail (cmd);
 
-	/* interpret */
-	/* XXX should it interpret all the cmds separated by ';'? */
-	if (cmd[0] =='.') {
+	/* quoted / raw command */
+	if (cmd[0] =='.' && cmd[1] == '"') { /* interpret */
 		ret = r_cmd_call (core->cmd, cmd);
 		return ret;
 	}
-
-	/* quoted / raw command */
-	if (cmd[0] =='"') {
+	if (cmd[0] == '"') {
 		if (cmd[len-1] != '"') {
 			eprintf ("parse: Missing ending '\"'\n");
 			return -1;
@@ -3147,27 +3144,39 @@ static void cmd_dm(RCore *core, const char *input) {
 		" dm*        Same as above but in radare commands\n"
 		" dm 4096    Allocate 4096 bytes in child process\n"
 		" dm-0x8048  Deallocate memory map of address 0x8048\n"
-		" dmi [addr|libname]   List symbols of target lib\n"
-		" dmi* [addr|libname]  Same as above but in radare commands\n"
+		" dmi [addr|libname] [symname]   List symbols of target lib\n"
+		" dmi* [addr|libname] [symname]  Same as above but in radare commands\n"
 		//" dm rw- esp 9K  set 9KB of the stack as read+write (no exec)\n"
 		"TODO: map files in process memory.\n");
 		break;
 	case 'i':
 		{ // Move to a separate function
 		ut64 addr = 0LL;
-		const char *libname = NULL;
+		char *libname = NULL, *symname = NULL;
+		char *ptr = strdup (r_str_trim_head ((char*)input+2));
 		char cmd[1024], *cmdret;
-		int len;
-		addr = r_num_math (core->num, r_str_trim_head ((char*)input+2));
-		if (!addr) libname = r_str_trim_head ((char*)input+2);
+		int i, len;
+
+		i = r_str_word_set0 (ptr);
+		switch (i) {
+			case 2: // get symname
+				symname = r_str_word_get0 (ptr, 1);
+			case 1: // get addr|libname
+				addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
+				if (!addr) libname = r_str_word_get0 (ptr, 0);
+		}
 		r_debug_map_sync (core->dbg); // update process memory maps
 		RListIter *iter = r_list_iterator (core->dbg->maps);
 		while (r_list_iter_next (iter)) {
 			RDebugMap *map = r_list_iter_get (iter);
 			if ((addr != -1 && (addr >= map->addr && addr < map->addr_end)) ||
 				(libname != NULL && (strstr (map->name, libname)))) {
-				snprintf (cmd, sizeof (cmd), "rabin2 -b 0x%08"PFMT64x" -s%sv %s",
-						map->addr, input[1]=='*'?"r":"", map->name);
+				if (symname)
+					snprintf (cmd, sizeof (cmd), "rabin2 -b 0x%08"PFMT64x" -s%svn %s %s",
+							map->addr, input[1]=='*'?"r":"", symname, map->name);
+				else
+					snprintf (cmd, sizeof (cmd), "rabin2 -b 0x%08"PFMT64x" -s%sv %s",
+							map->addr, input[1]=='*'?"r":"", map->name);
 				if ((cmdret = r_sys_cmd_str (cmd, 0, &len))) {
 					r_cons_printf (cmdret);
 					free (cmdret);
@@ -3175,6 +3184,7 @@ static void cmd_dm(RCore *core, const char *input) {
 				break;
 			}
 		}
+		free (ptr);
 		}
 		break;
 	case '*':

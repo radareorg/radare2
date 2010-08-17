@@ -38,6 +38,8 @@ static int va = R_FALSE;
 static ut64 gbaddr = 0LL;
 static char* file = NULL;
 static char* output = "a.out";
+static ut64 at = 0LL;
+static char *name = NULL;
 
 static int rabin_show_help() {
 	printf ("rabin2 [options] [file]\n"
@@ -59,6 +61,7 @@ static int rabin_show_help() {
 		" -m [addr]   Show source line at addr\n"
 		" -L          List supported bin plugins\n"
 		" -@ [addr]   Show section, symbol or import at addr\n"
+		" -n [str]    Show section, symbol or import named str\n"
 		" -x          Extract bins contained in file\n"
 		" -V          Show version information\n"
 		" -h          This help\n");
@@ -141,7 +144,7 @@ static int rabin_show_libs() {
 	return R_TRUE;
 }
 
-static int rabin_show_imports(ut64 at) {
+static int rabin_show_imports() {
 	RList *imports;
 	RListIter *iter;
 	RBinImport *import;
@@ -157,6 +160,8 @@ static int rabin_show_imports(ut64 at) {
 		printf ("[Imports]\n");
 
 	r_list_foreach (imports, iter, import) {
+		if (name && strcmp (import->name, name))
+			continue;
 		if (at) {
 			if (baddr+import->rva == at || import->offset == at)
 				printf ("%s\n", import->name);
@@ -186,7 +191,7 @@ static int rabin_show_imports(ut64 at) {
 	return R_TRUE;
 }
 
-static int rabin_show_symbols(ut64 at) {
+static int rabin_show_symbols() {
 	RList *symbols;
 	RListIter *iter;
 	RBinSymbol *symbol;
@@ -204,6 +209,8 @@ static int rabin_show_symbols(ut64 at) {
 	}
 
 	r_list_foreach (symbols, iter, symbol) {
+		if (name && strcmp (symbol->name, name))
+			continue;
 		if (at) {
 			if ((symbol->size != 0 &&
 				((baddr+symbol->rva <= at && baddr+symbol->rva+symbol->size > at) ||
@@ -278,7 +285,7 @@ static int rabin_show_strings() {
 	return R_TRUE;
 }
 
-static int rabin_show_sections(ut64 at) {
+static int rabin_show_sections() {
 	RList *sections;
 	RListIter *iter;
 	RBinSection *section;
@@ -296,6 +303,8 @@ static int rabin_show_sections(ut64 at) {
 	}
 
 	r_list_foreach (sections, iter, section) {
+		if (name && strcmp (section->name, name))
+			continue;
 		if (at) {
 			if ((section->size != 0 &&
 				((baddr+section->rva <= at && baddr+section->rva+section->size > at) ||
@@ -440,7 +449,7 @@ static int rabin_dump_symbols(int len) {
 	return R_TRUE;
 }
 
-static int rabin_dump_sections(char *name) {
+static int rabin_dump_sections(char *scnname) {
 	RList *sections;
 	RListIter *iter;
 	RBinSection *section;
@@ -451,7 +460,7 @@ static int rabin_dump_sections(char *name) {
 		return R_FALSE;
 
 	r_list_foreach (sections, iter, section) {
-		if (!strcmp (name, section->name)) {
+		if (!strcmp (scnname, section->name)) {
 			if (!(buf = malloc (section->size)) ||
 					!(ret = malloc (section->size*2+1)))
 				return R_FALSE;
@@ -523,7 +532,7 @@ static int rabin_do_operation(const char *op) {
 	return R_TRUE;
 }
 
-static int rabin_show_srcline(ut64 at) {
+static int rabin_show_srcline() {
 	char *srcline;
 	if ((srcline = r_bin_meta_get_source_line (bin, at))) {
 		printf ("%s\n", srcline);
@@ -547,7 +556,6 @@ static int __lib_bin_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
 
 int main(int argc, char **argv)
 {
-	ut64 at = 0LL;
 	int c;
 	int action = ACTION_UNK;
 	const char *format = NULL, *op = NULL;
@@ -565,7 +573,7 @@ int main(int argc, char **argv)
 		r_lib_opendir (l, LIBDIR"/radare2/");
 	}
 
-	while ((c = getopt (argc, argv, "b:Mm:@:VisSzIHelwO:o:f:rvLhx")) != -1) {
+	while ((c = getopt (argc, argv, "b:Mm:n:@:VisSzIHelwO:o:f:rvLhx")) != -1) {
 		switch(c) {
 		case 'm':
 			at = r_num_math (NULL, optarg);
@@ -627,6 +635,9 @@ int main(int argc, char **argv)
 			break;
 		case '@':
 			at = r_num_math (NULL, optarg);
+			break;
+		case 'n':
+			name = optarg;
 			break;
 		case 'V':
 			printf ("rabin2 v"R2_VERSION"\n");
