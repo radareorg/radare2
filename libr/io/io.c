@@ -169,7 +169,8 @@ R_API ut64 r_io_read_i(struct r_io_t *io, ut64 addr, int sz, int endian) {
 	if (sz < 0) sz = 1;
 	err = r_io_read_at (io, addr, buf, sz);
 	if (err == sz) r_mem_copyendian ((ut8*)&ret, buf, sz, endian);
-	else perror("Cannot read");
+	else return -1;
+	//else perror("Cannot read");
 	return ret;
 }
 

@@ -56,6 +56,8 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	aop->addr = addr;
 	aop->type = R_ANAL_OP_TYPE_UNK;
 	aop->length = (arm_mode==16)?2:4;
+	aop->jump = aop->fail = -1;
+	aop->ref = aop->value = -1;
 
 	if (aop == NULL)
 		return aop->length;

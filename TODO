@@ -26,7 +26,6 @@ TODO nibble
 -----------
 * imports from PE doesnt works with /a because there's an indirect call
 * r_bin->relocs // RList of relocations
-* Support indirect references on /a and similars.. (e search.refptr) .. or /A?
 * big-ssl.c big-gmp.c ...
 * native fat bins support (push uncommited changes)
 * diff code analysis

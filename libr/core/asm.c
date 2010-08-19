@@ -16,7 +16,7 @@ R_API char* r_core_asm_search(RCore *core, const char *input, ut64 from, ut64 to
 	return ret;
 }
 
-#define OPSZ 32
+#define OPSZ 8
 R_API int r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to) {
 	RAsmAop aop;
 	ut64 at, toff = core->offset;

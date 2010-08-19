@@ -43,8 +43,8 @@ static int myaop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len)
 	memset (aop, 0, sizeof (RAnalOp));
 	aop->type = R_ANAL_OP_TYPE_UNK;
 	aop->addr = addr;
-	aop->jump = -1;
-	aop->fail = -1;
+	aop->jump = aop->fail = -1;
+	aop->ref = aop->value = -1;
 
 	switch (buf[0]) {
 	case 0x8a:
