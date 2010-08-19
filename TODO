@@ -6,14 +6,18 @@
 
 <{include libr/TODO}>
 
+Questions
+=========
+* Implement minimalist 'ar' and add support for .a archive libs? 
+
 0.6 RELEASE
 ===========
 * Do not write a lot of spaces in r_line .. results in ugly copypasta and slow terminal
 * Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
-* Meld r_meta inside r_anal
 * Cx/CX are not displayed in disasm as they should.. (C! must die)
 * Create radare2-testsuite project
 * Implement remote:// socket:// and listen://
+* Colorize registers that has changed 
 
 Build system:
 -------------

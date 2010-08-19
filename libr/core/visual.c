@@ -784,9 +784,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 R_API void r_core_visual_prompt(RCore *core, int color) {
 	if (cursor<0) cursor = 0;
 	if (color) r_cons_strcat (Color_YELLOW);
-	if (curset) r_cons_printf ("[0x%08"PFMT64x"(%d:%d=%d)]> %s\n", core->offset,
+	if (curset) r_cons_printf ("[%s 0x%08"PFMT64x"(%d:%d=%d)]> %s\n", core->file->filename, core->offset,
 		cursor, ocursor, ocursor==-1?1:R_ABS (cursor-ocursor)+1, printfmt[R_ABS (printidx%NPF)]);
-	else r_cons_printf ("[0x%08"PFMT64x"]> %s\n", core->offset, printfmt[R_ABS (printidx%NPF)]);
+	else r_cons_printf ("[%s 0x%08"PFMT64x"]> %s\n", core->file->filename, core->offset, printfmt[R_ABS (printidx%NPF)]);
 	if (color) r_cons_strcat (Color_RESET);
 }
 
