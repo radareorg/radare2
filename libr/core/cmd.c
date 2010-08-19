@@ -1690,14 +1690,34 @@ static int cmd_anal(void *data, const char *input) {
 		case '*':
 			r_core_anal_fcn_list (core, input+2, 1);
 			break;
+		case 's': {
+			ut64 addr;
+			RAnalFcn *f;
+			const char *arg = input+3;
+			if (input[2] && (addr = r_num_math (core->num, arg))) {
+				arg = strchr (arg, ' ');
+				if (arg) arg++;
+			} else addr = core->offset;
+			if ((f = r_anal_fcn_find (core->anal, addr))) {
+				if (arg && *arg) {
+					r_anal_fcn_from_string (core->anal, f, arg);
+				} else {
+					char *str = r_anal_fcn_to_string (core->anal, f);
+					r_cons_printf ("%s\n", str);
+					free (str);
+				}
+			} else eprintf("No function defined at 0x%08"PFMT64x"\n", addr);
+			}
+			break;
 		case '?':
 			r_cons_printf (
 			"Usage: af[?+-l*]\n"
-			" af @ [addr]     ; Analyze functions (start at addr)\n"
+			" af @ [addr]               ; Analyze functions (start at addr)\n"
 			" af+ addr size name [diff] ; Add function\n"
-			" af- [addr]      ; Clean all function analysis data (or function at addr)\n"
-			" afl [fcn name]  ; List functions\n"
-			" af*             ; Output radare commands\n");
+			" af- [addr]                ; Clean all function analysis data (or function at addr)\n"
+			" afl [fcn name]            ; List functions\n"
+			" afs [addr] [fcnsign]      ; Get/set function signature at current address\n"
+			" af*                       ; Output radare commands\n");
 			break;
 		default:
 			r_core_anal_fcn (core, core->offset, -1,
@@ -1857,6 +1877,9 @@ static int cmd_anal(void *data, const char *input) {
 
 /* TODO: simplify using r_write */
 static int cmd_write(void *data, const char *input) {
+	int size;
+	const char *arg;
+	ut8 *buf;
 	int i, len = strlen (input);
 	char *tmp, *str = alloca (len)+1;
 	RCore *core = (RCore *)data;
@@ -1921,47 +1944,39 @@ static int cmd_write(void *data, const char *input) {
 		r_io_write_at (core->io, core->offset, (const ut8*)str, len);
 		r_core_block_read (core, 0);
 		break;
-	case 't': {
-			/* TODO: Support user defined size? */
-			int len = core->blocksize;
-			const char *arg = (const char *)(input+((input[1]==' ')?2:1));
-			const ut8 *buf = core->block;
-			r_file_dump (arg, buf, len);
-		} break;
+	case 't':
+		/* TODO: support userdefined size? */
+		arg = (const char *)(input+((input[1]==' ')?2:1));
+		r_file_dump (arg, core->block, core->blocksize);
+		break;
 	case 'T':
 		eprintf ("TODO\n");
 		break;
-	case 'f': {
-			int size;
-			const char *arg = (const char *)(input+((input[1]==' ')?2:1));
-			ut8 *buf = (ut8*) r_file_slurp (arg, &size);
-			if (buf) {
-				r_io_set_fd (core->io, core->file->fd);
-				r_io_write_at (core->io, core->offset, buf, size);
-				free(buf);
-			} else eprintf ("Cannot open file '%s'\n", arg);
-		} break;
-	case 'F': {
-			int size;
-			const char *arg = (const char *)(input+((input[1]==' ')?2:1));
-			ut8 *buf = r_file_slurp_hexpairs (arg, &size);
-			if (buf == NULL) {
-				r_io_set_fd (core->io, core->file->fd);
-				r_io_write_at (core->io, core->offset, buf, size);
-				free (buf);
-			} else eprintf ("Cannot open file '%s'\n", arg);
-		} break;
+	case 'f':
+		arg = (const char *)(input+((input[1]==' ')?2:1));
+		if (!(buf = (ut8*) r_file_slurp (arg, &size))) {
+			r_io_set_fd (core->io, core->file->fd);
+			r_io_write_at (core->io, core->offset, buf, size);
+			free(buf);
+		} else eprintf ("Cannot open file '%s'\n", arg);
+		break;
+	case 'F':
+		arg = (const char *)(input+((input[1]==' ')?2:1));
+		if (!(buf = r_file_slurp_hexpairs (arg, &size))) {
+			r_io_set_fd (core->io, core->file->fd);
+			r_io_write_at (core->io, core->offset, buf, size);
+			free (buf);
+		} else eprintf ("Cannot open file '%s'\n", arg);
+		break;
 	case 'w':
 		str = str+1;
-		len = len-1;
-		len *= 2;
-		tmp = alloca(len);
+		len = (len-1)<<1;
+		tmp = alloca (len);
 		for (i=0;i<len;i++) {
 			if (i%2) tmp[i] = 0;
 			else tmp[i] = str[i>>1];
 		}
 		str = tmp;
-
 		r_io_set_fd (core->io, core->file->fd);
 		r_io_write_at (core->io, core->offset, (const ut8*)str, len);
 		r_core_block_read (core, 0);
@@ -2003,8 +2018,7 @@ static int cmd_write(void *data, const char *input) {
 		}
 		break;
 	case 'm':
-		{
-		int len = r_hex_str2bin (input+1, (ut8*)str);
+		size = r_hex_str2bin (input+1, (ut8*)str);
 		switch (input[1]) {
 		case '\0':
 			eprintf ("Current write mask: TODO\n");
@@ -2017,18 +2031,15 @@ static int cmd_write(void *data, const char *input) {
 			eprintf ("Write mask disabled\n");
 			break;
 		case ' ':
-			if (len == 0) {
-				eprintf ("Invalid string\n");
-			} else {
-				r_io_set_fd(core->io, core->file->fd);
-				r_io_set_write_mask(core->io, (const ut8*)str, len);
+			if (size>0) {
+				r_io_set_fd (core->io, core->file->fd);
+				r_io_set_write_mask (core->io, (const ut8*)str, size);
 				eprintf ("Write mask set to '");
-				for (i=0;i<len;i++)
+				for (i=0;i<size;i++)
 					eprintf ("%02x", str[i]);
 				eprintf ("'\n");
-			}
+			} else eprintf ("Invalid string\n");
 			break;
-		}
 		}
 		break;
 	case 'v':
@@ -2448,6 +2459,7 @@ static int cmd_visual(void *data, const char *input) {
 }
 
 static int cmd_system(void *data, const char *input) {
+	r_core_sysenv_update ((RCore*)data);
 	return r_sys_cmd (input);
 }
 

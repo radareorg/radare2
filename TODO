@@ -8,6 +8,7 @@
 
 0.6 RELEASE
 ===========
+* Do not write a lot of spaces in r_line .. results in ugly copypasta and slow terminal
 * Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
 * Meld r_meta inside r_anal
 * Cx/CX are not displayed in disasm as they should.. (C! must die)
@@ -50,19 +51,21 @@ TODO edu
 
 TODO pancake
 ------------
-* Implement fcn_from_string anal/fcn.c
-  - define function signature command: (afs? CF?)
-  > afs int foo(int var, char* str) @ fun.main
-  - How to define function variables? CFv? CFa for args?
-* Display syscall information when disassembling svc/int/.. (edu?)
+* Display syscall information when disassembling svc/int/..
   - store last value of REG0 (EAX, R0, ...), select interrupt vector by aop->value and use r_syscall()
-* we need an api to define function signatures
-  - CF<addr> void name(int foo, char* var)
+{
+ * we need an api to define local vars and accesses in function
   - arg/var set name/get value/ ..
-* implement RAnalCall (analyze function arguments, return values, propagate types..)
+  - CFv{gs}.. => afv
+	 CFv.                          ; show variables for current function
+	 CFv 20 int                    ; define local var
+	 CFvg 20 @ 0x8048000           ; access 'get' to delta 20 var (creates var if not exist)
+	 CFvs 20 @ 0x8049000           ; access 'set' to delta 20 var ("")
+	 CFV @ 0x8049000               ; Show local variables and arg values at function
+ * Implement RAnalCall (analyze function arguments, return values, propagate types..)
   - define number of arguments for given function
   - warn if signature and analysis differs in number of args or so..
-* Implement r_sys_setenv stuff from r1 in core/file.c:33 (!!?)
+}
 
 TODO gerardo
 ------------
@@ -87,6 +90,7 @@ Bindings
 
 Refactoring
 ===========
+* Discuss missing r_core_sysenv_update in core/file.c:33
 * Add RLog API.. pipeable to disk and stderr..also hookable ..cool for ui (partially done)
 * Move disasm loop into r_print (r_print should depend on r_asm)
   - thats hard :)

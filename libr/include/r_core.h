@@ -142,6 +142,7 @@ R_API int r_core_gdiff(struct r_core_t *core, char *file1, char *file2, int va);
 R_API int r_core_project_open(RCore *core, const char *file);
 R_API int r_core_project_save(RCore *core, const char *file);
 R_API char *r_core_project_info(RCore *core, const char *file);
+R_API void r_core_sysenv_update(RCore *core);
 
 #endif
 

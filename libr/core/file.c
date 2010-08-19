@@ -8,6 +8,35 @@ R_API ut64 r_core_file_resize(struct r_core_t *core, ut64 newsize) {
 	return 0LL;
 }
 
+R_API void r_core_sysenv_update(RCore *core) {
+	char buf[64];
+#if DISCUSS
+ EDITOR      cfg.editor (vim or so)
+ CURSOR      cursor position (offset from curseek)
+ COLOR       scr.color?1:0
+ VERBOSE     cfg.verbose
+// only if cmd matches BYTES or BLOCK ?
+ BYTES       hexpairs of current block
+ BLOCK       temporally file with contents of current block
+#endif
+	if (!core->file)
+		return;
+	if (core->file->filename)
+		r_sys_setenv ("FILE", core->file->filename);
+	snprintf (buf, sizeof (buf), "%"PFMT64d, core->offset);
+	r_sys_setenv ("OFFSET", buf);
+	snprintf (buf, sizeof (buf), "0x%08"PFMT64x, core->offset);
+	r_sys_setenv ("XOFFSET", buf);
+	snprintf (buf, sizeof (buf), "%"PFMT64d, core->file->size);
+	r_sys_setenv ("SIZE", buf);
+	r_sys_setenv ("ENDIAN", core->assembler->big_endian?"big":"little");
+	snprintf (buf, sizeof (buf), "%d", core->blocksize);
+	r_sys_setenv ("BSIZE", buf);
+	r_sys_setenv ("ARCH", r_config_get (core->config, "asm.arch"));
+	r_sys_setenv ("DEBUG", r_config_get_i (core->config, "cfg.debug")?"1":"0");
+	r_sys_setenv ("IOVA", r_config_get_i (core->config, "io.va")?"1":"0");
+}
+
 R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode) {
 	RCoreFile *fh;
 	const char *cp;
@@ -28,26 +57,6 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode) {
 	fh->size = r_io_size (r->io, fd);
 	list_add (&(fh->list), &r->files);
 
-	r_sys_setenv ("FILE", fh->filename);
-#if 0
-TODO: clean this list add !!? and all those vars
-Usage: !!shell program
- DEBUG       cfg.debug value as 0 or 1
- EDITOR      cfg.editor (vim or so)
- ARCH        asm.arch value
- OFFSET      decimal value of current seek
- XOFFSET     hexadecimal value of cur seek
- CURSOR      cursor position (offset from curseek)
- VADDR       io.vaddr
- COLOR       scr.color?1:0
- VERBOSE     cfg.verbose
- FILE        cfg.file
- SIZE        file size
- BSIZE       block size
- ENDIAN      'big' or 'little' depending on cfg.bigendian
- BYTES       hexpairs of current block
- BLOCK       temporally file with contents of current block
-#endif
 	r_bin_load (r->bin, fh->filename, NULL);
 
 	r_core_block_read (r, 0);
