@@ -1277,7 +1277,6 @@ static int cmd_info(void *data, const char *input) {
 	case 'z':
 		snprintf (buf, sizeof (buf), "rabin2 -%c%s%s '%s'", input[0],
 			input[1]=='*'?"r":"", core->io->va?"v":"", core->file->filename);
-		eprintf ("(%s)\n", buf);
 		r_sys_cmd (buf);
 		break;
 	case '?':
