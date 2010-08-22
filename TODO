@@ -69,7 +69,7 @@ TODO pancake
   | r_asm   > r_vm  |
   | r_debug > r_reg |
   `-----------------'
-* Implement visual function editor .. its done hacky in anal.c
+* Implement visual function editor .. its done hacky in core/cmd.c .. maybe move to visual.c
 * Implement remote:// socket:// and listen://
 {
  * Implement RAnalCall (analyze function arguments, return values, propagate types..)

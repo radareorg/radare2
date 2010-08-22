@@ -468,6 +468,194 @@ R_API void r_core_visual_config(RCore *core) {
 	}
 }
 
+#if 1
+static void var_index_show(RAnal *anal, RAnalFcn *fcn, ut64 addr, int idx) {
+	int i = 0;
+	RAnalVar *v;
+	RAnalVarAccess *x;
+	RListIter *iter, *iter2;
+	int window = 15;
+	int wdelta = (idx>5)?idx-5:0;
+	if (!fcn)
+		return;
+	r_list_foreach(fcn->vars, iter, v) {
+		if (addr == 0 || (addr >= v->addr && addr <= v->eaddr)) {
+			if (i>=wdelta) {
+				if (i> window+wdelta) {
+					r_cons_printf("...\n");
+					break;
+				}
+				if (idx == i) r_cons_printf(" * ");
+				else r_cons_printf("   ");
+				r_cons_printf("0x%08llx - 0x%08llx type=%s type=%s name=%s delta=%d array=%d\n",
+					v->addr, v->eaddr, r_anal_var_type_to_str (anal, v->type),
+					v->vartype, v->name, v->delta, v->array);
+				r_list_foreach(v->accesses, iter2, x) {
+					r_cons_printf("  0x%08llx %s\n", x->addr, x->set?"set":"get");
+				}
+			}
+			i++;
+		}
+	}
+}
+
+// helper
+static ut64 var_functions_show(RCore *core, int idx) {
+	const char *mark = "";//nullstr;
+	int i = 0;
+	ut64 seek = core->offset;
+	ut64 addr = core->offset;
+	int window = 15;
+	int wdelta = (idx>5)?idx-5:0;
+	RListIter *iter;
+	RAnalFcn *fcn;
+
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		if (i>=wdelta) {
+			if (i> window+wdelta) {
+				r_cons_printf("...\n");
+				break;
+			}
+			if (seek > fcn->addr && seek < fcn->addr+fcn->size)
+				mark = "<SEEK IS HERE>";
+			else mark = "";
+			if (idx == i)
+				addr = fcn->addr;
+			r_cons_printf (" %c 0x%08llx (%s) %s\n", (idx==i)?'*':' ',
+				fcn->addr, fcn->name, mark);
+		}
+		i++;
+	}
+	return addr;
+}
+/* Like emenu but for real */
+R_API void r_core_visual_anal(RCore *core) {
+	int option = 0;
+	int _option = 0;
+	int ch, level = 0;
+	char old[1024];
+	ut64 size, addr = core->offset;
+	old[0]='\0';
+	RAnalFcn *fcn = r_anal_fcn_find (core->anal, core->offset);
+
+	for(;;) {
+		r_cons_gotoxy(0,0);
+		r_cons_clear();
+		r_cons_printf("Visual code analysis manipulation\n");
+		switch(level) {
+		case 0:
+			r_cons_printf("-[ functions ]------------------- \n"
+				"(a) add       (x)xrefs       (q)quit\n"
+				"(m) modify    (c)calls       (g)go\n"
+				"(d) delete    (v)variables\n");
+			addr = var_functions_show(core, option);
+			break;
+		case 1:
+			r_cons_printf("-[ variables ]------------------- 0x%08llx\n"
+				"(a) add       (x)xrefs       (q)quit\n"
+				"(m) modify    (c)calls       (g)go\n"
+				"(d) delete    (v)variables\n", addr);
+			var_index_show(core->anal, fcn, addr, option);
+			break;
+		case 2:
+			r_cons_printf("-[ calls ]----------------------- 0x%08llx (TODO)\n", addr);
+#if 0
+			sprintf(old, "aCf@0x%08llx", addr);
+			cons_flush();
+			radare_cmd(old, 0);
+#endif
+			break;
+		case 3:
+			r_cons_printf("-[ xrefs ]----------------------- 0x%08llx\n", addr);
+			sprintf(old, "Cx~0x%08llx", addr);
+			r_core_cmd0 (core, old);
+			//cons_printf("\n");
+			break;
+		}
+		r_cons_flush();
+// show indexable vars
+		ch = r_cons_readchar();
+		ch = r_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
+		switch(ch) {
+		case 'a':
+			switch(level) {
+			case 0:
+				r_cons_set_raw(0);
+				printf("Address: ");
+				fflush(stdout);
+				if (!fgets(old, sizeof(old), stdin)) break;
+				old[strlen(old)-1] = 0;
+				if (!old[0]) break;
+				addr = r_num_math(core->num, old);
+				printf("Size: ");
+				fflush(stdout);
+				if (!fgets(old, sizeof(old), stdin)) break;
+				old[strlen(old)-1] = 0;
+				if (!old[0]) break;
+				size = r_num_math(core->num, old);
+				printf("Name: ");
+				fflush(stdout);
+				if (!fgets(old, sizeof(old), stdin)) break;
+				old[strlen(old)-1] = 0;
+				r_flag_set(core->flags, old, addr, 0, 0);
+				//XXX sprintf(cmd, "CF %lld @ 0x%08llx", size, addr);
+				// XXX r_core_cmd0(core, cmd);
+				r_cons_set_raw(1);
+				break;
+			case 1:
+				break;
+			}
+			break;
+		case 'd':
+			switch(level) {
+			case 0:
+				eprintf ("TODO\n");
+				//data_del(addr, DATA_FUN, 0);
+				// XXX correcly remove all the data contained inside the size of the function
+				//flag_remove_at(addr);
+				break;
+			}
+			break;
+		case 'x':
+			level = 3;
+			break;
+		case 'c':
+			level = 2;
+			break;
+		case 'v':
+			level = 1;
+			break;
+		case 'j':
+			option++;
+			break;
+		case 'k':
+			if (--option<0)
+				option = 0;
+			break;
+		case 'g': // go!
+			r_core_seek (core, addr, SEEK_SET);
+			return;
+		case ' ':
+		case 'l':
+			level = 1;
+			_option = option;
+			break;
+		case 'h':
+		case 'b': // back
+			level = 0;
+			option = _option;
+			break;
+		case 'q':
+			if (level==0)
+				return;
+			level = 0;
+			break;
+		}
+	}
+}
+#endif
+
+
 R_API void r_core_visual_define (RCore *core) {
 	int ch;
 	ut64 off = core->offset;
@@ -589,6 +777,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 't':
 		r_core_visual_trackflags (core);
+		break;
+	case 'v':
+		r_core_visual_anal (core);
 		break;
 	case 'J':
 		if (curset) {
