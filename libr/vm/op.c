@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
 
 #include "r_vm.h"
 
@@ -24,6 +24,7 @@ R_API int r_vm_op_eval(struct r_vm_t *vm, const char *str) {
 	memcpy(s, str, len);
 	r_str_subchr (s, ',', 0);
 	r_str_subchr (s, '\t', 0);
+	r_str_subchr (s, '#', 0);
 
 	nargs = r_str_word_set0(s);
 	arg0 = r_str_word_get0(s, 0);
@@ -80,7 +81,7 @@ R_API int r_vm_op_eval(struct r_vm_t *vm, const char *str) {
 }
 
 /* TODO : Allow to remove and so on */
-R_API int r_vm_op_cmd(struct r_vm_t *vm, const char *op) {
+R_API int r_vm_op_cmd(RVm *vm, const char *op) {
 	char *cmd, *ptr;
 	int len = strlen (op)+1;
 	if (*op==' ')
@@ -89,9 +90,13 @@ R_API int r_vm_op_cmd(struct r_vm_t *vm, const char *op) {
 	memcpy (cmd, op, len);
 	ptr = strchr (cmd, ' ');
 	if (ptr) {
+		// XXX: merge those two functions in one
 		ptr[0]='\0';
-//		eprintf("vm: opcode '%s' added\n", cmd);
-		r_vm_op_add (vm, cmd, ptr+1);
+		if (!memcmp (op, "avo", 3)) {
+			r_vm_op_add (vm, cmd, ptr+1);
+			if (vm->log)
+				eprintf("vm: opcode '%s' added\n", cmd);
+		} else r_vm_cmd_reg (vm, op);
 	} else r_vm_cmd_op_help ();
 	return 0;
 }

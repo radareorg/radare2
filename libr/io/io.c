@@ -24,7 +24,7 @@ R_API struct r_io_t *r_io_new() {
 }
 
 R_API int r_io_is_listener(RIO *io) {
-	if (io->plugin->listener)
+	if (io && io->plugin && io->plugin->listener)
 		return io->plugin->listener (io);
 	return R_FALSE;
 }

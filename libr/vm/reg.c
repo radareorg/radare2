@@ -63,6 +63,7 @@ R_API int r_vm_reg_del(struct r_vm_t *vm, const char *name) {
 R_API int r_vm_reg_set(struct r_vm_t *vm, const char *name, ut64 value) {
 	struct list_head *pos;
 
+	if(name)
 	list_for_each(pos, &vm->regs) {
 		struct r_vm_reg_t *r = list_entry(pos, struct r_vm_reg_t, list);
 		if (!strcmp(name, r->name)) {
@@ -118,24 +119,59 @@ int r_vm_reg_alias(struct r_vm_t *vm, const char *name, const char *get, const c
 			return 1;
 		}
 	}
-	fprintf(stderr, "Register '%s' not defined.\n", name);
+	eprintf ("Register '%s' not defined.\n", name);
 	return 0;
+}
+
+R_API int r_vm_cmd_eval(RVm *vm, const char *cmd) {
+	char *next;
+	do {
+		next = strchr (cmd,'\n');
+		if (next) {
+			*next=0;
+			next++;
+		}
+		if (strlen(cmd)>2)
+			r_vm_cmd_reg (vm, cmd+2);
+		cmd = next;
+	} while (next);
+	return 1;
 }
 
 R_API int r_vm_cmd_reg(struct r_vm_t *vm, const char *_str) {
 	char *str, *ptr;
 	int len;
 
-	len = strlen(_str)+1;
-	str = alloca(len);
-	memcpy(str, _str, len);
+	len = strlen (_str)+1;
+	str = alloca (len);
+	memcpy (str, _str, len);
 
 	if (str==NULL || str[0]=='\0') {
 		/* show all registers */
-		r_vm_print(vm, -1);
+		r_vm_print (vm, -1);
 		return 0;
 	}
+	if (str[0]=='o') {
+		r_vm_cmd_op (vm, str+2);
+		return 0;
+	}
+	strcpy(str, str+1);
 	switch(str[0]) {
+	case 'r':
+		r_vm_setup_ret (vm, str+2);
+		break;
+	case 'c':
+		{
+		char *sp, *bp, *pc = str+2;
+		sp = strchr(pc, ' ');
+		if (!sp) return 0;
+		*sp=0;sp++;
+		bp = strchr(sp, ' ');
+		if (!sp) return 0;
+		*bp=0;bp++;
+		r_vm_setup_cpu (vm, pc, sp, bp);
+		}
+		break;
 	case 'a':
 		if (str[1]==' ') {
 			char *get,*set;
@@ -174,6 +210,9 @@ R_API int r_vm_cmd_reg(struct r_vm_t *vm, const char *_str) {
 			INIT_LIST_HEAD(&vm->regs); // XXX Memory leak
 		else r_vm_reg_del(vm, str);
 		break;
+	case 'f':
+		r_vm_setup_flags(vm, str+2);
+		break;
 	default:
 		for(;str&&*str==' ';str=str+1);
 		ptr = strchr(str, '=');
@@ -191,7 +230,7 @@ R_API int r_vm_cmd_reg(struct r_vm_t *vm, const char *_str) {
 				r_vm_print(vm, r_vm_reg_type_i(str+1));
 			} else {
 				/* show single registers */
-				printf("%s = 0x%08"PFMT64x"\n", str, r_vm_reg_get(vm, str));
+				eprintf("%s = 0x%08"PFMT64x"\n", str, r_vm_reg_get(vm, str));
 			}
 		}
 	}

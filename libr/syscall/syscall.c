@@ -92,7 +92,7 @@ R_API int r_syscall_setup_file(RSyscall *ctx, const char *path) {
 
 R_API RSyscallItem *r_syscall_get(RSyscall *ctx, int num, int swi) {
 	int i;
-	for (i=0; ctx->sysptr[i].num; i++) {
+	for (i=0; ctx->sysptr[i].name; i++) {
 		if (num == ctx->sysptr[i].num && \
 				(swi == -1 || swi == ctx->sysptr[i].swi))
 			return &ctx->sysptr[i];

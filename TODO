@@ -60,15 +60,9 @@ TODO edu
 
 TODO pancake
 ------------
-* r_asm must provide a template configuration file for r_vm
-  - r_asm must provide evaluable strings as internal representation (microcode)
+* Import r_vm register values from flags or from r_debug->r_reg
   - r_vm must use mmu cache when emulating code
     - use the one from r_io? and deprecate vm->mmu_cache?
-  - as r_debug does for r_reg
-  .-----------------.
-  | r_asm   > r_vm  |
-  | r_debug > r_reg |
-  `-----------------'
 {
  * Implement RAnalCall (analyze function arguments, return values, propagate types..)
   - define number of arguments for given function

@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
 
 #include "r_vm.h"
+#include "p/plugins.h"
 
 /* TODO: move into r_vm_t */
 int vm_arch = -1;
@@ -14,8 +15,8 @@ static ut64 r_vm_get_value(struct r_vm_t *vm, const char *str) {
 		struct aop_t aop;
 		char w[32];
 		if (str[2]=='$') { // $$$
-			ret = r_vm_reg_get(vm, vm->cpu.pc);
-			arch_aop(ret , config.block,&aop);
+			ret = r_vm_reg_get (vm, vm->cpu.pc);
+			arch_aop (ret , config.block, &aop);
 			return aop.length;
 		} else // $$
 			return config.seek;
@@ -23,11 +24,11 @@ static ut64 r_vm_get_value(struct r_vm_t *vm, const char *str) {
 	}
 
 	if (str[0]=='0' && str[1]=='x')
-		sscanf(str, "0x%"PFMT64x"", &ret);
+		sscanf (str, "0x%"PFMT64x"", &ret);
 	else
 	if (str[0]>='0' && str[0]<='9')
-		sscanf(str, "%"PFMT64d"", &ret);
-	else ret = r_vm_reg_get(vm, str);
+		sscanf (str, "%"PFMT64d"", &ret);
+	else ret = r_vm_reg_get (vm, str);
 	return ret;
 }
 
@@ -100,10 +101,10 @@ R_API void r_vm_print(RVm *vm, int type) {
 	list_for_each (pos, &vm->regs) {
 		struct r_vm_reg_t *r = list_entry(pos, struct r_vm_reg_t, list);
 		if (type == -2) {
-			printf("f vm.%s @ 0x%08"PFMT64x"\n", r->name, r->value);
+			eprintf("f vm.%s @ 0x%08"PFMT64x"\n", r->name, r->value);
 		} else {
 			if (type == -1 || type == r->type)
-			printf(".%s\t%s = 0x%08"PFMT64x"\n",
+			eprintf(".%s\t%s = 0x%08"PFMT64x"\n",
 				r_vm_reg_type(r->type), r->name,
 				(r->get!=NULL)?r_vm_reg_get(vm, r->name):r->value);
 		}
@@ -135,9 +136,9 @@ R_API ut64 r_vm_reg_get(struct r_vm_t *vm, const char *name) {
 	if (name[len-1]==']')
 		len--;
 
-	list_for_each(pos, &vm->regs) {
-		struct r_vm_reg_t *r = list_entry(pos, struct r_vm_reg_t, list);
-		if (!strncmp(name, r->name, len)) {
+	list_for_each (pos, &vm->regs) {
+		RVmReg *r = list_entry(pos, struct r_vm_reg_t, list);
+		if (!strncmp (name, r->name, len)) {
 			if (vm->rec==NULL && r->get != NULL) {
 				vm->rec = r;
 				r_vm_eval(vm, r->get);
@@ -175,11 +176,47 @@ R_API void r_vm_cpu_call(struct r_vm_t *vm, ut64 addr) {
 
 R_API RVm *r_vm_new() {
 	RVm *vm = R_NEW (RVm);
-	r_vm_init (vm, 1);
+	if (vm) r_vm_init (vm, 1);
 	return vm;
 }
 
-R_API int r_vm_init(struct r_vm_t *vm, int init) {
+
+R_API int r_vm_set_arch(RVm *vm, const char *name, int bits) {
+	const char *profile = NULL;
+	if (strstr (name, "x86")) {
+		switch (bits) {
+		case 16:
+			profile = vmprofile_x86_16;
+			break;
+		case 32:
+			profile = vmprofile_x86_32;
+			break;
+		case 64:
+			profile = vmprofile_x86_64;
+			break;
+		}
+	} else
+	if (strstr (name, "arm")) {
+		switch (bits) {
+		case 16:
+			//profile = vmprofile_arm_16;
+			break;
+		case 32:
+			profile = vmprofile_arm_32;
+			break;
+		}
+	}
+	if (profile) {
+		char *str = strdup (profile);
+		r_vm_init (vm, 2);
+		r_vm_cmd_eval (vm, str);
+		free (str);
+	} else eprintf ("No profile found for '%s' %d\n", name, bits);
+	return 0;
+}
+
+// This is conceptually rotten
+R_API int r_vm_init(RVm *vm, int init) {
 #if 0
 	if (config.arch != vm_arch)
 		init = 1;
@@ -191,80 +228,16 @@ R_API int r_vm_init(struct r_vm_t *vm, int init) {
 		INIT_LIST_HEAD (&vm->regs);
 		INIT_LIST_HEAD (&vm->ops);
 		memset (&vm->cpu, '\0', sizeof(RVmCpu));
+		if (init==2)
+			return 0;
 	}
 
 	//vm_mmu_real(vm, config_get_i("vm.realio"));
-	/* vm_dbg_arch_x86_nregs */
-	/* XXX: this is hardcoded ..should be moved outside or as in plugins */
-	switch (1) { //config.arch) {
-#if 0
-	case ARCH_X86_64:
-		vm_reg_add("rax", R_VMREG_INT64, 0);
-		vm_reg_add("rbx", R_VMREG_INT64, 0);
-		vm_reg_add("rcx", R_VMREG_INT64, 0);
-		vm_reg_add("rdx", R_VMREG_INT64, 0);
-		vm_reg_add("rdi", R_VMREG_INT64, 0);
-		vm_reg_add("rsi", R_VMREG_INT64, 0);
-		vm_reg_add("rip", R_VMREG_INT64, 0);
-	case ARCH_X86:
-#endif
-	default:
-		//fprintf(stderr,"R_VM: Initialized\n");
-		r_vm_op_add(vm,"mov", "$1=$2");
-		r_vm_op_add(vm,"lea", "$1=$2");
-		r_vm_op_add(vm,"add", "$1=$1+$2");
-		r_vm_op_add(vm,"sub", "$1=$1-$2");
-		r_vm_op_add(vm,"jmp", "eip=$1");
-		r_vm_op_add(vm,"push", "esp=esp-4,[esp]=$1");
-		r_vm_op_add(vm,"pop", "$1=[esp],esp=esp+4");
-		r_vm_op_add(vm,"call", "esp=esp-4,[esp]=eip+$$$,eip=$1");
-		r_vm_op_add(vm,"ret", "eip=[esp],esp=esp+4");
-
-		r_vm_reg_add(vm,"eax", R_VMREG_INT32, 0);
-		r_vm_reg_add(vm,"ax", R_VMREG_INT16, 0);
-		r_vm_reg_alias(vm, "ax","ax=eax&0xffff", "eax=eax>16,eax=eax<16,eax=eax|ax");
-		r_vm_reg_add(vm,"al", R_VMREG_INT8, 0);
-		r_vm_reg_alias(vm, "al","al=eax&0xff", "al=al&0xff,eax=eax>16,eax=eax<16,eax=eax|al");
-		r_vm_reg_add(vm,"ah", R_VMREG_INT8, 0);
-		r_vm_reg_alias(vm, "ah","ah=eax&0xff00,ah=ah>8", "eax=eax&0xFFFF00ff,ah=ah<8,eax=eax|ah,ah=ah>8");
-		r_vm_reg_add(vm,"ebx", R_VMREG_INT32, 0);
-		r_vm_reg_add(vm,"ecx", R_VMREG_INT32, 0);
-		r_vm_reg_add(vm,"edx", R_VMREG_INT32, 0);
-		r_vm_reg_add(vm,"esi", R_VMREG_INT32, 0);
-		r_vm_reg_add(vm,"edi", R_VMREG_INT32, 0);
-		r_vm_reg_add(vm,"eip", R_VMREG_INT32, 0);
-		r_vm_reg_add(vm,"esp", R_VMREG_INT32, 0);
-		r_vm_reg_add(vm,"ebp", R_VMREG_INT32, 0);
-		r_vm_reg_add(vm,"zf",  R_VMREG_BIT, 0);
-		r_vm_reg_add(vm,"cf",  R_VMREG_BIT, 0); // ...
-
-		r_vm_setup_cpu(vm, "eip", "esp", "ebp");
-		r_vm_setup_flags(vm, "zf");
-		//vm_setup_call("[ebp-4]", "[ebp-8]", "[ebp-12]", "edx");
-		r_vm_setup_fastcall(vm, "eax", "ebx", "ecx", "edx");
-		//vm_setup_loop("ecx");
-		//vm_setup_copy("esi", "edi");
-		r_vm_setup_ret(vm, "eax");
-		// TODO: do the same for fpregs and mmregs
-#if 0
-		if (init) // XXX
-			r_vm_arch_x86_init(vm);
-#endif
-		break;
-#if 0
-	case ARCH_MIPS:
-#if 0
-		vm_nregs    = vm_arch_mips_nregs;
-		vm_regs     = vm_arch_mips_regs;
-		vm_regs_str = vm_arch_mips_regs_str;
-#endif
-		// TODO: do the same for fpregs and mmregs
-		if (init)
-			vm_arch_mips_init();
-		break;
-		//vm_regs = NULL;
-#endif
-	}
+	//vm_setup_call("[ebp-4]", "[ebp-8]", "[ebp-12]", "edx");
+	r_vm_setup_fastcall (vm, "eax", "ebx", "ecx", "edx");
+	//vm_setup_loop("ecx");
+	//vm_setup_copy("esi", "edi");
+	// TODO: do the same for fpregs and mmregs
 	return 0;
 }
 
@@ -408,6 +381,7 @@ R_API int r_vm_eval_single(RVm *vm, const char *str) {
 	ptr = alloca(len);
 	memcpy(ptr, str, len);
 	
+//eprintf("EVAL(%s)\n", str);
 /* TODO: sync with r1 */
 	eq = strchr(ptr, '=');
 	if (eq) {
@@ -593,7 +567,8 @@ R_API int r_vm_cmd_op(RVm *vm, const char *op) {
 	ptr = strchr (cmd, ' ');
 	if (ptr) {
 		ptr[0]='\0';
-		eprintf ("vm: opcode '%s' added\n", cmd);
+		if(vm->log)
+			eprintf ("vm: opcode '%s' added\n", cmd);
 		r_vm_op_add (vm, cmd, ptr+1);
 	} else r_vm_cmd_op_help ();
 	return 0;

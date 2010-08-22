@@ -347,7 +347,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		switch (analop.type) {
 		case R_ANAL_OP_TYPE_SWI:
 			{
-			int eax = (int)r_vm_reg_get (core->vm, "eax");
+			int eax = (int)r_vm_reg_get (core->vm, core->vm->cpu.ret); //"eax");
 			RSyscallItem *si = r_syscall_get (core->syscall, eax, (int)analop.value);
 			if (si) {
 				//DEBUG r_cons_printf (" ; sc[0x%x][%d]=%s(", (int)analop.value, eax, si->name);
@@ -2050,6 +2050,8 @@ static int cmd_anal(void *data, const char *input) {
 			" avx N        ; execute N instructions from cur seek\n"
 			" av-          ; restart vm using asm.arch\n"
 			" avr eax      ; show register eax\n"
+			" avrr eax     ; set return register\n" // TODO .merge avrr and avrc
+			" avrc eip esp ebp ; set basic cpu registers PC, SP, BP\n"
 			" avra         ; show register aliases\n"
 			" avra al eax=0xff ; define 'get' alias for register 'al'\n"
 			" avrt         ; list valid register types\n"
@@ -2742,7 +2744,7 @@ static int cmd_meta(void *data, const char *input) {
 		case ' ':
 			{
 			int size;
-			const char *fmt= NULL;
+			const char *fmt = NULL;
 			const char *ptr, *name = input+2;
 			ptr = strchr (name, ' ');
 			if (ptr) {
@@ -2940,6 +2942,7 @@ static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	return status;
 #else
 #warning r_core_cmd_pipe UNIMPLEMENTED FOR THIS PLATFORM
+	eprintf ("r_core_cmd_pipe: unimplemented for this platform\n");
 	return -1;
 #endif
 }
