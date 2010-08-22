@@ -1559,6 +1559,285 @@ static void cmd_syscall_do(RCore *core, int num) {
 	r_cons_printf (")\n");
 }
 
+
+#if 1
+/* TODO: Move into cmd_anal() */
+static void var_help() {
+	eprintf("Try afv?\n");
+	eprintf(" afv 12 int buffer[3]\n");
+	eprintf(" afv 12 byte buffer[1024]\n");
+	eprintf("Try af[aAv][gs] [delta] [[addr]]\n");
+	eprintf(" afag 0  = arg0 get\n");
+	eprintf(" afvs 12 = var12 set\n");
+	eprintf("a = arg, A = fastarg, v = var\n");
+	eprintf("TODO: [[addr]] is not yet implemented. use @\n");
+}
+
+static int var_cmd(RCore *core, const char *str) {
+	RAnalFcn *fcn = r_anal_fcn_find (core->anal, core->offset);
+	char *p,*p2,*p3;
+	int type, delta, len = strlen(str)+1;
+
+	p = alloca(len);
+	memcpy(p, str, len);
+	str = p;
+
+	switch(*str) {
+	case 'V': // show vars in human readable format
+		return r_anal_var_list_show(core->anal, fcn, core->offset);
+	case '?':
+		var_help();
+		return 0;
+	case 'v': // frame variable
+	case 'a': // stack arg
+	case 'A': // fastcall arg
+		// XXX nested dup
+		switch (*str) {
+		case 'v': type = R_ANAL_VAR_TYPE_LOCAL; break;
+		case 'a': type = R_ANAL_VAR_TYPE_ARG; break;
+		case 'A': type = R_ANAL_VAR_TYPE_ARGREG; break;
+		default:
+			eprintf ("Unknown type\n");
+			return 0;
+		}
+
+		/* Variable access CFvs = set fun var */
+		switch(str[1]) {
+		case '\0': return r_anal_var_list (core->anal, fcn, 0, 0);
+		case '?': var_help(); return 0;
+		case '.':  return r_anal_var_list (core->anal, fcn, core->offset, 0);
+		case 's':  
+		case 'g':
+			if (str[2]!='\0') {
+				RAnalVar *var = r_anal_var_get (core->anal, fcn, atoi (str+2), R_ANAL_VAR_TYPE_LOCAL);
+				return r_anal_var_access_add (core->anal, var, atoi (str+2), (str[1]=='g')?0:1);
+			}
+			break;
+		}
+		str++;
+		if (str[0]==' ') str++;
+		delta = atoi (str);
+		p = strchr (str, ' ');
+		if (p==NULL) {
+			var_help();
+			return 0;
+		}
+		p[0]='\0'; p++;
+		p2 = strchr (p, ' ');
+		if (p2) {
+			p2[0]='\0'; p2 = p2+1;
+			p3 = strchr (p2,'[');
+			if (p3 != NULL) {
+				p3[0]='\0';
+				p3=p3+1;
+			}
+			r_anal_var_add (core->anal, fcn, core->offset, delta, type, p, p2, p3?atoi(p3):0);
+		} else var_help();
+		break;
+	default:
+		var_help();
+		break;
+	}
+	return 0;
+}
+#endif
+
+#if 0
+ -- function boundaries are used to limit variables life-cycle --
+ // global vars are handled as flags??
+ // "CV 0x8049200 x global_counter
+ // local vars
+ // types: glar: g=global, l=local, a=arg, r=argreg
+  Cv l d i @ 0x8048200
+   /* using code analysis we can identify local var accesses */
+
+ f.ex:
+ ; Set var0 
+  0x4a13c014,  mov [ebp-0x34], eax
+
+ ; set name for variable accessed.
+ Cvn counter @ 0x4a13c014
+
+ stack frame {
+   var1 { offset, size, type, name }
+   var2 { offset, size, type, name }
+ }
+
+// how to track a variable 
+
+#endif
+
+////// VISUAL /////////
+
+#if 0
+void var_index_show(ut64 addr, int idx)
+{
+	int i = 0;
+	struct list_head *pos, *pos2;
+	struct var_t *v;
+	struct var_xs_t *x;
+int window = 15;
+int wdelta = (idx>5)?idx-5:0;
+
+	list_for_each(pos, &vars) {
+		v = (struct var_t *)list_entry(pos, struct var_t, list);
+	if (addr == 0 || (addr >= v->addr && addr <= v->eaddr)) {
+		if (i>=wdelta) {
+			if (i> window+wdelta) {
+				cons_printf("...\n");
+				break;
+			}
+			if (idx == i) printf(" * ");
+			else printf("   ");
+			cons_printf("0x%08llx - 0x%08llx type=%s type=%s name=%s delta=%d array=%d\n",
+				v->addr, v->eaddr, var_type_str(v->type),
+				v->vartype, v->name, v->delta, v->arraysize);
+			list_for_each_prev(pos2, &v->access) {
+				x = (struct var_xs_t *)list_entry(pos2, struct var_xs_t, list);
+				cons_printf("  0x%08llx %s\n", x->addr, x->set?"set":"get");
+			}
+		}
+		i++;
+	}
+		//}
+	}
+}
+
+/* Like emenu but for real */
+void var_visual_menu()
+{
+	struct list_head *pos;
+	const char *ptr;
+	char *fs = NULL;
+	char *fs2 = NULL;
+	int option = 0;
+	int _option = 0;
+	int delta = 9;
+	int menu = 0;
+	int i,j, ch;
+	int hit;
+	int level = 0;
+	int show;
+	char old[1024];
+	char cmd[1024];
+	ut64 size, addr = config.seek;
+	old[0]='\0';
+
+	while(1) {
+		cons_gotoxy(0,0);
+		cons_clear();
+		cons_printf("Visual code analysis manipulation\n");
+		switch(level) {
+		case 0:
+			cons_printf("-[ functions ]------------------- \n");
+			cons_printf("(a) add       (x)xrefs       (q)quit\n");
+			cons_printf("(m) modify    (c)calls       (g)go\n");
+			cons_printf("(d) delete    (v)variables\n");
+			addr = var_functions_show(option);
+			break;
+		case 1:
+			cons_printf("-[ variables ]------------------- 0x%08llx\n", addr);
+			cons_printf("(a) add       (x)xrefs       (q)quit\n");
+			cons_printf("(m) modify    (c)calls       (g)go\n");
+			cons_printf("(d) delete    (v)variables\n");
+			var_index_show(addr, option);
+			break;
+		case 2:
+			cons_printf("-[ calls ]----------------------- 0x%08llx\n", addr);
+			sprintf(old, "aCf@0x%08llx", addr);
+			cons_flush();
+			radare_cmd(old, 0);
+			//cons_printf("\n");
+			break;
+		case 3:
+			cons_printf("-[ xrefs ]----------------------- 0x%08llx\n", addr);
+			sprintf(old, "Cx~0x%08llx", addr);
+			radare_cmd(old, 0);
+			//cons_printf("\n");
+			break;
+		}
+		cons_flushit();
+// show indexable vars
+		ch = cons_readchar();
+		ch = cons_get_arrow(ch); // get ESC+char, return 'hjkl' char
+		switch(ch) {
+		case 'a':
+			switch(level) {
+			case 0:
+				cons_set_raw(0);
+				printf("Address: ");
+				fflush(stdout);
+				if (!fgets(old, sizeof(old), stdin)) break;
+				old[strlen(old)-1] = 0;
+				if (!old[0]) break;
+				addr = get_math(old);
+				printf("Size: ");
+				fflush(stdout);
+				if (!fgets(old, sizeof(old), stdin)) break;
+				old[strlen(old)-1] = 0;
+				if (!old[0]) break;
+				size = get_math(old);
+				printf("Name: ");
+				fflush(stdout);
+				if (!fgets(old, sizeof(old), stdin)) break;
+				old[strlen(old)-1] = 0;
+				flag_set(old, addr, 0);
+				sprintf(cmd, "CF %lld @ 0x%08llx", size, addr);
+				radare_cmd(cmd, 0);
+				cons_set_raw(1);
+				break;
+			case 1:
+				break;
+			}
+			break;
+		case 'd':
+			switch(level) {
+			case 0:
+				data_del(addr, DATA_FUN, 0);
+				// XXX correcly remove all the data contained inside the size of the function
+				flag_remove_at(addr);
+				break;
+			}
+			break;
+		case 'x':
+			level = 3;
+			break;
+		case 'c':
+			level = 2;
+			break;
+		case 'v':
+			level = 1;
+			break;
+		case 'j':
+			option++;
+			break;
+		case 'k':
+			if (--option<0)
+				option = 0;
+			break;
+		case 'g': // go!
+			radare_seek(addr, SEEK_SET);
+			return;
+		case ' ':
+		case 'l':
+			level = 1;
+			_option = option;
+			break;
+		case 'h':
+		case 'b': // back
+			level = 0;
+			option = _option;
+			break;
+		case 'q':
+			if (level==0)
+				return;
+			level = 0;
+			break;
+		}
+	}
+}
+#endif
+
 static int cmd_anal(void *data, const char *input) {
 	const char *ptr;
 	RCore *core = (RCore *)data;
@@ -1731,6 +2010,11 @@ static int cmd_anal(void *data, const char *input) {
 			} else eprintf("No function defined at 0x%08"PFMT64x"\n", addr);
 			}
 			break;
+		case 'a':
+		case 'A':
+		case 'v':
+			var_cmd (core, input+1);
+			break;
 		case '?':
 			r_cons_printf (
 			"Usage: af[?+-l*]\n"
@@ -1739,6 +2023,7 @@ static int cmd_anal(void *data, const char *input) {
 			" af- [addr]                ; Clean all function analysis data (or function at addr)\n"
 			" afl [fcn name]            ; List functions\n"
 			" afs [addr] [fcnsign]      ; Get/set function signature at current address\n"
+			" af[aAv][?] [arg]          ; Manipulate args, fastargs and variables in function\n"
 			" af*                       ; Output radare commands\n");
 			break;
 		default:

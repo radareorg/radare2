@@ -224,6 +224,8 @@ enum {
 
 typedef struct r_anal_var_t {
 	char *name;    /* name of the variable */
+	ut64 addr; // not used correctly?
+	ut64 eaddr; // not used correctly?
 	int delta;     /* delta offset inside stack frame */
 	int dir;       /* direction (in, out) */
 	int type;      /* global, local... */
@@ -363,6 +365,10 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal,
 R_API char* r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list,
 	ut64 addr, int opts);
 R_API int r_anal_reflines_middle(RAnal *anal, RAnalRefline *list, ut64 addr, int len);
+
+/* TO MOVE into r_core */
+R_API int r_anal_var_list_show(RAnal *anal, RAnalFcn *fcn, ut64 addr);
+R_API int r_anal_var_list(RAnal *anal, RAnalFcn *fcn, ut64 addr, int delta);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_csr;
