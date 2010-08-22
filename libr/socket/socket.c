@@ -140,6 +140,7 @@ R_API int r_socket_unix_listen(const char *file) {
 
 	if (bind (sock, (struct sockaddr *) &unix_name, sizeof (unix_name)) < 0)
 		return -1;
+	signal(SIGPIPE, SIG_IGN);
 
 	/* change permissions */
 	if (chmod (unix_name.sun_path, 0777) != 0)
@@ -223,6 +224,17 @@ R_API int r_socket_close(int fd) {
 	WSACleanup();
 	return closesocket(fd);
 #endif
+}
+
+R_API int r_socket_read_block(int fd, unsigned char *buf, int len) {
+	int ret = 0;
+	for(ret=0;ret<len;) {
+		int r= r_socket_read (fd, buf+ret, len-ret);
+		if (r==-1)
+			break;
+		ret += r;
+	}
+	return ret;
 }
 
 R_API int r_socket_read(int fd, unsigned char *buf, int len) {

@@ -15,6 +15,16 @@
 
 #define R_IO_NFDS 32
 
+#define RMT_OPEN   0x01
+#define RMT_READ   0x02
+#define RMT_WRITE  0x03
+#define RMT_SEEK   0x04
+#define RMT_CLOSE  0x05
+#define RMT_SYSTEM 0x06
+#define RMT_CMD    0x07
+#define RMT_REPLY  0x80
+
+
 #define IO_MAP_N 128
 typedef struct r_io_map_t {
         int fd;
@@ -83,6 +93,7 @@ typedef struct r_io_plugin_t {
         char *name;
         char *desc;
         void *widget;
+	int (*listener)(RIO *io);
         int (*init)();
 	struct r_io_undo_t undo;
         struct debug_t *debug; // ???
@@ -156,6 +167,7 @@ R_API int r_io_plugin_close(RIO *io, int fd, struct r_io_plugin_t *plugin);
 R_API int r_io_plugin_generate(RIO *io);
 R_API int r_io_plugin_add(RIO *io, struct r_io_plugin_t *plugin);
 R_API int r_io_plugin_list(RIO *io);
+R_API int r_io_is_listener(RIO *io);
 // TODO: _del ??
 R_API struct r_io_plugin_t *r_io_plugin_resolve(RIO *io, const char *filename);
 R_API struct r_io_plugin_t *r_io_plugin_resolve_fd(RIO *io, int fd);
@@ -253,6 +265,7 @@ extern struct r_io_plugin_t r_io_plugin_mach;
 extern struct r_io_plugin_t r_io_plugin_debug;
 extern struct r_io_plugin_t r_io_plugin_shm;
 extern struct r_io_plugin_t r_io_plugin_gdb;
+extern struct r_io_plugin_t r_io_plugin_rap;
 #endif
 
 #if 0

@@ -201,7 +201,8 @@ int main(int argc, char **argv) {
 		r_cons_flush ();
 	}
 
-	{ /* check if file.sha1 has changed */
+	/* check if file.sha1 has changed */
+	if (!strstr(r.file->filename,"://")) {
 		char *path = strdup (r_config_get (r.config, "file.path"));
 		const char *npath, *nsha1;
 		char *sha1 = strdup (r_config_get (r.config, "file.sha1"));
@@ -229,6 +230,9 @@ int main(int argc, char **argv) {
 		} else rabin_delegate (NULL);
 	} else eprintf ("Metadata loaded from 'file.project'\n");
 
+	if (r_io_is_listener (r.io))
+		r_core_serve (&r, r.io->fd);
+	else
 	for (;;) {
 		do { 
 			if (r_core_prompt (&r, R_FALSE)<1)

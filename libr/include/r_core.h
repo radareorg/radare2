@@ -102,6 +102,7 @@ R_API int r_core_read_at(struct r_core_t *core, ut64 addr, ut8 *buf, int size);
 R_API int r_core_visual(struct r_core_t *core, const char *input);
 R_API int r_core_visual_cmd(struct r_core_t *core, int ch);
 
+R_API int r_core_serve(RCore *core, int fd);
 R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int mode);
 R_API struct r_core_file_t *r_core_file_get_fd(struct r_core_t *core, int fd);
 R_API int r_core_file_close(struct r_core_t *r, RCoreFile *fh);

@@ -87,6 +87,7 @@ typedef struct r_asm_plugin_t {
 	int *bits;
 	int (*init)(void *user);
 	int (*fini)(void *user);
+	const char *(*profile)();
 	int (*disassemble)(RAsm *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len);
 	int (*assemble)(RAsm *a, struct r_asm_aop_t *aop, const char *buf);
 	RAsmModifyCallback modify;

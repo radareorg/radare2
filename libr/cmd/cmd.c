@@ -79,7 +79,7 @@ R_API int r_cmd_call(struct r_cmd_t *cmd, const char *input) {
 			cmd->nullcallback (cmd->data);
 	} else {
 		c = cmd->cmds[(ut8)input[0]];
-		if (c != NULL && c->callback!=NULL)
+		if (c && c->callback)
 			ret = c->callback (cmd->data, input+1);
 		else ret = -1;
 	}

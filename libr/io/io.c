@@ -23,6 +23,12 @@ R_API struct r_io_t *r_io_new() {
 	return io;
 }
 
+R_API int r_io_is_listener(RIO *io) {
+	if (io->plugin->listener)
+		return io->plugin->listener (io);
+	return R_FALSE;
+}
+
 R_API RBuffer *r_io_read_buf(struct r_io_t *io, ut64 addr, int len) {
 	RBuffer *b = R_NEW (RBuffer);
 	b->buf = malloc (len);

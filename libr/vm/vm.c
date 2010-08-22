@@ -334,28 +334,28 @@ R_API int r_vm_eval_eq(RVm *vm, const char *str, const char *val) {
 			ut64 off = r_vm_get_math(vm, str+1);
 			// XXX support 64 bits here
 			ut32 v = (ut32)r_vm_get_math(vm, val); // TODO control endian
-			p = strchr(str+1,':');
+			p = strchr (str+1,':');
 			if (vm->log)
-				eprintf("   ; ==> [0x%08"PFMT64x"] = %x  ((%s))\n", off, v, str+1);
+				eprintf ("   ; ==> [0x%08"PFMT64x"] = %x  ((%s))\n", off, v, str+1);
 
 			if (p) {
-				int size = atoi(val+1);
-				off = r_vm_get_math(vm, p+1);
+				int size = atoi (val+1);
+				off = r_vm_get_math (vm, p+1);
 				printf(" write size: %d\n", size);
 				switch(size) {
-				case 8: r_vm_mmu_write(vm, off, buf, 1);
+				case 8: r_vm_mmu_write (vm, off, buf, 1);
 					break;
-				case 16: r_vm_mmu_write(vm, off, buf, 2);
+				case 16: r_vm_mmu_write (vm, off, buf, 2);
 					break;
-				case 64: r_vm_mmu_write(vm, off, buf, 8);
+				case 64: r_vm_mmu_write (vm, off, buf, 8);
 					break;
 				default:
-					r_vm_mmu_write(vm, off, buf, 4);
+					r_vm_mmu_write (vm, off, buf, 4);
 				}
 			} else {
 				if (vm->log)
-					eprintf("   ; write %x @ 0x%08"PFMT64x"\n", v, off);
-				r_vm_mmu_write(vm, off, (ut8*)&v, 4);
+					eprintf ("   ; write %x @ 0x%08"PFMT64x"\n", v, off);
+				r_vm_mmu_write (vm, off, (ut8*)&v, 4);
 			}
 		}
 	} else {
@@ -453,30 +453,30 @@ R_API int r_vm_eval_single(RVm *vm, const char *str) {
 			if (vm->log)
 				eprintf("TODO: syscall interface not yet implemented\n");
 		} else
-		if((!memcmp(ptr, "call ", 4))
-		|| (!memcmp(ptr, "jmp ", 4))){
+		if((!memcmp (ptr, "call ", 4))
+		|| (!memcmp (ptr, "jmp ", 4))){
 			if (ptr[0]=='c')
 				r_vm_stack_push(vm, r_vm_get_value(vm, vm->cpu.pc));
-			printf("CALL(%s)\n", ptr+4);
+			eprintf ("CALL(%s)\n", ptr+4);
 			r_vm_reg_set(vm, vm->cpu.pc, r_vm_get_value(vm, ptr+4));
 		} else
-		if (!memcmp(ptr, "jz ", 3)){
-			if (r_vm_reg_get(vm, ptr+3)==0)
+		if (!memcmp (ptr, "jz ", 3)){
+			if (r_vm_reg_get (vm, ptr+3)==0)
 				r_vm_reg_set(vm, vm->cpu.pc, r_vm_get_value(vm, ptr+3));
 		} else
-		if (!memcmp(ptr, "jnz ", 4)){
+		if (!memcmp (ptr, "jnz ", 4)){
 			if (r_vm_reg_get(vm, ptr+4)==0)
-				r_vm_reg_set(vm, vm->cpu.pc, r_vm_get_value(vm, ptr+4));
+				r_vm_reg_set (vm, vm->cpu.pc, r_vm_get_value(vm, ptr+4));
 		} else
 		if (!memcmp(ptr, "push ", 5)) {
-			r_vm_stack_push(vm, r_vm_get_value(vm, str+5));
+			r_vm_stack_push (vm, r_vm_get_value(vm, str+5));
 		} else
 		if (!memcmp(str, "pop ", 4)) {
-			r_vm_stack_pop(vm, str+5);
+			r_vm_stack_pop (vm, str+5);
 		} else
 		if (!memcmp(ptr, "ret", 3)) {
 			r_vm_stack_pop(vm, vm->cpu.pc);
-			printf("RET (%x)\n", (ut32)vm->cpu.pc);
+			if (vm->log) eprintf("RET (%x)\n", (ut32)vm->cpu.pc);
 		} else if (vm->log) eprintf("r_vm: Unknown opcode\n");
 	}
 	return 0;
@@ -488,7 +488,6 @@ R_API int r_vm_eval(RVm *vm, const char *str) {
 
 	ptr = alloca (len);
 	memcpy (ptr, str, len);
-
 #if 0
 	r_vm_mmu_real (vm, 0);
 	r_vm_mmu_real(vm, config_get_i("vm.realio"));
@@ -507,8 +506,7 @@ R_API int r_vm_eval(RVm *vm, const char *str) {
 		}
 	} while (next);
 	r_vm_eval_single (vm, ptr);
-
-	return 1;
+	return R_TRUE;
 }
 
 R_API int r_vm_eval_file(struct r_vm_t *vm, const char *str) {
@@ -521,16 +519,16 @@ R_API int r_vm_eval_file(struct r_vm_t *vm, const char *str) {
 			if (*buf) {
 				buf[strlen(buf)-1]='\0';
 				//r_vm_eval(vm, buf);
-				r_vm_op_eval(vm, buf);
+				r_vm_op_eval (vm, buf);
 			}
 		}
-		fclose(fd);
-		return 1;
+		fclose (fd);
+		return R_TRUE;
 	}
-	return 0;
+	return R_FALSE;
 }
 
-/* emulate n opcodes */
+/* XXX: this must go in core, not here! i.. or add&use RIOBind? emulate n opcodes */
 R_API int r_vm_emulate(struct r_vm_t *vm, int n) {
 #if 0
 	ut64 pc;
@@ -544,9 +542,6 @@ R_API int r_vm_emulate(struct r_vm_t *vm, int n) {
 	///vm_init(1);
 	vm_mmu_real(config_get_i("vm.realio"));
 	vm_import(0);
-	config_set("asm.pseudo", "true");
-	config_set("asm.syntax", "intel");
-	config_set("asm.profile", "simple");
 	while(n--) {
 		pc = vm_reg_get(vm->cpu.pc);
 	udis_init();
@@ -590,16 +585,16 @@ R_API void r_vm_reset(RVm *vm) {
 /* TODO : Allow to remove and so on */
 R_API int r_vm_cmd_op(RVm *vm, const char *op) {
 	char *cmd, *ptr;
-	int len = strlen(op)+1;
+	int len = strlen (op)+1;
 	if (*op==' ')
 		op = op + 1;
-	cmd = alloca(len);
-	memcpy(cmd, op, len);
+	cmd = alloca (len);
+	memcpy (cmd, op, len);
 	ptr = strchr (cmd, ' ');
 	if (ptr) {
 		ptr[0]='\0';
 		eprintf ("vm: opcode '%s' added\n", cmd);
 		r_vm_op_add (vm, cmd, ptr+1);
-	} else r_vm_cmd_op_help();
+	} else r_vm_cmd_op_help ();
 	return 0;
 }

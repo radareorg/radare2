@@ -211,20 +211,20 @@ R_API int r_anal_var_list_show(RAnal *anal, RAnalFcn *fcn, ut64 addr) {
 		if (addr == 0 || (addr >= v->addr && addr <= v->eaddr)) {
 			//ut32 value = r_var_dbg_read(v->delta);
 			if (v->array>1)
-				r_cons_printf("%s %s %s[%d] = ",
+				eprintf ("%s %s %s[%d] = ",
 					r_anal_var_type_to_str(anal, v->type), v->vartype,
-					v->array, v->name);
-			else r_cons_printf("%s %s %s = ", r_anal_var_type_to_str (anal, v->type),
+					v->name, v->array);
+			else eprintf ("%s %s %s = ", r_anal_var_type_to_str (anal, v->type),
 				v->vartype, v->name);
 			// TODO: implement r_var_dbg_read using r_vm or r_num maybe?? sounds dupped
 			// XXX: not fully implemented
-			r_cons_printf ("0x%"PFMT64x, 0LL);
+			eprintf ("0x%"PFMT64x, 0LL);
 			//r_var_print_value(anal, v);
 			/* TODO: detect pointer to strings and so on */
 			//if (string_flag_offset(NULL, buf, value, 0))
 			//	r_cons_printf(" ; %s\n", buf);
 			//else 
-			r_cons_newline();
+			eprintf ("\n"); //r_cons_newline();
 		}
 	}
 
@@ -243,11 +243,11 @@ R_API int r_anal_var_list(RAnal *anal, RAnalFcn *fcn, ut64 addr, int delta) {
 	}
 	r_list_foreach (fcn->vars, iter, v) {
 		if (addr == 0 || (addr >= v->addr && addr <= v->eaddr)) {
-			r_cons_printf("0x%08llx - 0x%08llx type=%s type=%s name=%s delta=%d array=%d\n",
+			eprintf ("0x%08llx - 0x%08llx type=%s type=%s name=%s delta=%d array=%d\n",
 				v->addr, v->eaddr, r_anal_var_type_to_str(anal, v->type),
 				v->vartype, v->name, v->delta, v->array);
 			r_list_foreach (v->accesses, iter2, x) {
-				r_cons_printf("  0x%08llx %s\n", x->addr, x->set?"set":"get");
+				eprintf ("  0x%08llx %s\n", x->addr, x->set?"set":"get");
 			}
 		}
 	}
