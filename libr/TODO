@@ -3,20 +3,10 @@
   - find/use more common cases for char* or &int maps
     - automatic callbacks for most common usecases
 
-|| socket ||
-------------
-* Merge r_socket inside r_util ?
-* Add SSL support to r_socket ?
-
 || asm || 
 ---------
   - Add CIC, lua, dalvik, xtensa (mm cpu) disassemblers
   - http://git.linux-xtensa.org/cgi-bin/git.cgi?p=buildroot/buildroot-xtensa;a=blob;f=toolchain/binutils/binutils-xtensa_dc232b.tgz;h=214164399158c540a3033e52b3bb9f65c55289af;hb=HEAD
-  - Check if there are endianess issues
-
-|| bin || 
----------
-  - Add dex format support (android)
 
 || cons ||
 ----------
@@ -35,9 +25,3 @@
 	   - hooks r_flag_del to recalculate too.
 	 - the r_flag_get by string should have another construction with btree
 	   for the string of the name
-
-|| diff ||
-----------
-  - Reimplement or fix the delta diffing in C
-    - first we need to do it for ired..
-  - take a look on the fossil diff.c ?

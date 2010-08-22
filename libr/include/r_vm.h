@@ -68,6 +68,8 @@ typedef struct r_vm_t {
 	ut64 vm_stack_base;
 	ut8 *vm_stack;
 	struct list_head mmu_cache;
+	int log;
+	int use_mmu_cache;
 	RIOBind iob;
 } RVm;
 
@@ -81,6 +83,8 @@ static ut64 r_vm_get_math(struct r_vm_t *vm, const char *str);
 R_API void r_vm_print(struct r_vm_t *vm, int type);
 R_API int r_vm_import(struct r_vm_t *vm, int in_vm);
 R_API void r_vm_cpu_call(struct r_vm_t *vm, ut64 addr);
+R_API RVm *r_vm_new();
+R_API void r_vm_reset(RVm *vm);
 R_API int r_vm_init(struct r_vm_t *vm, int init);
 R_API int r_vm_eval_cmp(struct r_vm_t *vm, const char *str);
 R_API int r_vm_eval_eq(struct r_vm_t *vm, const char *str, const char *val);
@@ -127,6 +131,7 @@ R_API void r_vm_mmu_set_io(struct r_vm_t *vm,
 
 /* extra */
 R_API int r_vm_cmd_op_help();
+R_API int r_vm_cmd_op(RVm *vm, const char *op);
 R_API int r_vm_op_list(struct r_vm_t *vm);
 #endif
 

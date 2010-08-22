@@ -9,6 +9,7 @@
 #include "r_parse.h"
 #include "r_anal.h"
 #include "r_cmd.h"
+#include "r_vm.h"
 #include "r_meta.h"
 #include "r_cons.h"
 #include "r_line.h"
@@ -73,6 +74,7 @@ typedef struct r_core_t {
 	RConfig *config;
 	RSearch *search;
 	RSign *sign;
+	RVm *vm;
 	char *cmdqueue;
 } RCore;
 

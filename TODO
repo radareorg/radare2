@@ -8,15 +8,20 @@
 
 Questions
 =========
+* Merge r_vm into r_anal ?
+* ds debugger broken?
 * Implement minimalist 'ar' and add support for .a archive libs? 
 
 0.6 RELEASE
 ===========
+* Reimplement or fix the delta diffing in C
+  - first we need to do it for ired..
+* Display eflags in ascii mode
 * Do not write a lot of spaces in r_line .. results in ugly copypasta and slow terminal
+* Add dex format support to rabin (android)
 * Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
 * Cx/CX are not displayed in disasm as they should.. (C! must die)
 * Create radare2-testsuite project
-* Implement remote:// socket:// and listen://
 * Colorize registers that has changed 
 
 Build system:
@@ -55,14 +60,24 @@ TODO edu
 
 TODO pancake
 ------------
-* Display syscall information when disassembling svc/int/..
-  - store last value of REG0 (EAX, R0, ...), select interrupt vector by aop->value and use r_syscall()
+* r_asm must provide a template configuration file for r_vm
+  - r_asm must provide evaluable strings as internal representation (microcode)
+  - r_vm must use mmu cache when emulating code
+    - use the one from r_io? and deprecate vm->mmu_cache?
+  - as r_debug does for r_reg
+  .-----------------.
+  | r_asm   > r_vm  |
+  | r_debug > r_reg |
+  `-----------------'
+* Implement remote:// socket:// and listen://
 {
  * we need an api to define local vars and accesses in function
   - arg/var set name/get value/ ..
+  - afv{gs}
   - CFv{gs}.. => afv
 	 CFv.                          ; show variables for current function
 	 CFv 20 int                    ; define local var
+	 CFv 20 int loopvar            ; define local var named 'loopvar' of type 'int'
 	 CFvg 20 @ 0x8048000           ; access 'get' to delta 20 var (creates var if not exist)
 	 CFvs 20 @ 0x8049000           ; access 'set' to delta 20 var ("")
 	 CFV @ 0x8049000               ; Show local variables and arg values at function
@@ -94,6 +109,8 @@ Bindings
 
 Refactoring
 ===========
+* Merge r_socket inside r_util ?
+* Add SSL support to r_socket ?
 * Discuss missing r_core_sysenv_update in core/file.c:33
 * Add RLog API.. pipeable to disk and stderr..also hookable ..cool for ui (partially done)
 * Move disasm loop into r_print (r_print should depend on r_asm)
@@ -141,7 +158,6 @@ Loading big binaries results on broken interaction.
       |--- (while (prompt,lock,run,unlock))
       \
        `-- (while (lock,load,unlock))
-* Implement 'av' command we need it  (really?) how about to eval with ?
 
 
 .------------------------.

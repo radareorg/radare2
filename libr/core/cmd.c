@@ -44,6 +44,11 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	RFlagItem *flag;
 	RMetaItem *mi;
 
+	r_vm_reset (core->vm);
+	// TODO: import values from debugger is possible
+	// TODO: allow to get those register snapshots from traces
+	// TODO: per-function register state trace
+
 	// TODO: All those options must be print flags
 	int show_color = r_config_get_i (core->config, "scr.color");
 	int decode = r_config_get_i (core->config, "asm.decode");
@@ -338,7 +343,25 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			ret -= middle;
 			r_cons_printf (" ;  *middle* %d", ret);
 		}
+		r_vm_op_eval (core->vm, asmop.buf_asm);
 		switch (analop.type) {
+		case R_ANAL_OP_TYPE_SWI:
+			{
+			int eax = (int)r_vm_reg_get (core->vm, "eax");
+			RSyscallItem *si = r_syscall_get (core->syscall, eax, (int)analop.value);
+			if (si) {
+				//DEBUG r_cons_printf (" ; sc[0x%x][%d]=%s(", (int)analop.value, eax, si->name);
+				r_cons_printf (" ; %s(", si->name);
+				for (i=0; i<si->args; i++) {
+					const char *reg = r_asm_fastcall (core->assembler, i+1, si->args);
+					r_cons_printf ("0x%"PFMT64x, r_vm_reg_get (core->vm, reg));
+					if (i<si->args-1)
+						r_cons_printf (",");
+				}
+				r_cons_printf (")");
+			} else r_cons_printf (" ; sc[0x%x][%d]=?", (int)analop.value, eax);
+			}
+			break;
 		case R_ANAL_OP_TYPE_CALL:
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
@@ -1857,16 +1880,93 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		}
 		break;
+	case 'v':
+		switch(input[1]) {
+		case 'e':
+			if (input[2]=='\0')
+				r_cons_printf ("Usage: \"ave [expression]\n"
+				"Note: The prefix '\"' quotes the command and does not parses pipes and so\n");
+			else r_vm_eval (core->vm, input+2);
+			break;
+		case 'f':
+			if (input[2]=='\0')
+				r_cons_printf ("Usage: avf [file]\n");
+			else r_vm_eval_file(core->vm, input+2);
+			break;
+		case 'r':
+			if (input[2]=='?')
+				r_cons_printf (
+				"Usage: avr [reg|type]\n"
+				" avr+ eax int32  ; add register\n"
+				" avr- eax        ; remove register\n"
+				" \"avra al al=eax&0xff al=al&0xff,eax=eax>16,eax=eax<16,eax=eax|al\n"
+				"                 ; set register alias\n"
+				" avr eax         ; view register\n"
+				" avr eax=33      ; set register value\n"
+				" avrt            ; list valid register types\n"
+				"Note: The prefix '\"' quotes the command and does not parses pipes and so\n");
+			else r_vm_cmd_reg (core->vm, input+2);
+			break;
+		case 'I':
+			r_vm_import(core->vm, 1);
+			break;
+		case 'i':
+			r_vm_import(core->vm, 0);
+			break;
+		case '-':
+			r_vm_init(core->vm, 1);
+			break;
+		case 'o':
+			if (input[2]=='\0')
+				r_vm_op_list (core->vm);
+			else if (input[2]=='?')
+				r_vm_cmd_op_help ();
+			else r_vm_cmd_op (core->vm, input+2);
+			break;
+		case '\0':
+		case '?':
+			r_cons_printf("Usage: av[ier] [arg]\n"
+			" ave eax=33   ; evaluate expression in vm\n"
+			" avf file     ; evaluate expressions from file\n"
+			" avi          ; import register values from flags (eax, ..)\n"
+			" avI          ; import register values from vm flags (vm.eax, ..)\n"
+			" avm          ; select MMU (default current one)\n"
+			" avo op expr  ; define new opcode (avo? for help)\n"
+			" avr          ; show registers\n"
+			" avx N        ; execute N instructions from cur seek\n"
+			" av-          ; restart vm using asm.arch\n"
+			" avr eax      ; show register eax\n"
+			" avra         ; show register aliases\n"
+			" avra al eax=0xff ; define 'get' alias for register 'al'\n"
+			" avrt         ; list valid register types\n"
+			" e vm.realio  ; if true enables real write changes\n"
+			"Note: The prefix '\"' quotes the command and does not parses pipes and so\n");
+			break;
+		case 'm':
+			eprintf("TODO\n");
+			break;
+		case 'x':
+			r_vm_emulate (core->vm, atoi (input+2));
+			break;
+		case '*':
+			r_vm_print(core->vm, -2);
+			break;
+		default:
+			r_vm_print(core->vm, 0);
+			break;
+		}
+		break;
 	default:
 		r_cons_printf (
-		"Usage: a[?hobfg]\n"
+		"Usage: a[?hobfgtv]\n"
 		" ah [handle]     ; Use this analysis plugin handler\n" // XXX: rename to ap ?
 		" as [num]        ; Analyze syscall using dbg.reg\n"
 		" ao [len]        ; Analyze raw bytes as Opcodes\n"
 		" ab[?+-l*]       ; Analyze Basic blocks\n"
 		" af[?+-l*]       ; Analyze Functions\n"
 		" ag[?f]          ; Output Graphviz code\n"
-		" at[trd+-*?] [.] ; Analyze execution Traces\n");
+		" at[trd+-*?] [.] ; Analyze execution Traces\n"
+		" av[?] [arg]     ;analyze code with virtual machine\n");
 		break;
 	}
 	if (tbs != core->blocksize)
@@ -1953,18 +2053,20 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case 'f':
 		arg = (const char *)(input+((input[1]==' ')?2:1));
-		if (!(buf = (ut8*) r_file_slurp (arg, &size))) {
+		if ((buf = (ut8*) r_file_slurp (arg, &size))) {
 			r_io_set_fd (core->io, core->file->fd);
 			r_io_write_at (core->io, core->offset, buf, size);
 			free(buf);
+			r_core_block_read (core, 0);
 		} else eprintf ("Cannot open file '%s'\n", arg);
 		break;
 	case 'F':
 		arg = (const char *)(input+((input[1]==' ')?2:1));
-		if (!(buf = r_file_slurp_hexpairs (arg, &size))) {
+		if ((buf = r_file_slurp_hexpairs (arg, &size))) {
 			r_io_set_fd (core->io, core->file->fd);
 			r_io_write_at (core->io, core->offset, buf, size);
 			free (buf);
+			r_core_block_read (core, 0);
 		} else eprintf ("Cannot open file '%s'\n", arg);
 		break;
 	case 'w':
@@ -2003,6 +2105,7 @@ static int cmd_write(void *data, const char *input) {
 			r_asm_code_free (acode);
 			r_core_block_read (core, 0);
 			r_asm_use (core->assembler, "x86"); /* XXX */
+			r_core_block_read (core, 0);
 		}
 		}
 		break;
@@ -2080,7 +2183,8 @@ static int cmd_write(void *data, const char *input) {
                         }
                 case '2':
                 case '4':
-                        r_core_write_op(core, input+3, input[1]);
+                        r_core_write_op (core, input+3, input[1]);
+			r_core_block_read (core, 0);
                         break;
                 case '\0':
                 case '?':
@@ -2111,8 +2215,8 @@ static int cmd_write(void *data, const char *input) {
 			eprintf ("Writing oobi buffer!\n");
 			r_io_set_fd (core->io, core->file->fd);
 			r_io_write (core->io, core->oobi, core->oobi_len);
-		} else
-			r_cons_printf (
+			r_core_block_read (core, 0);
+		} else r_cons_printf (
 			"Usage: w[x] [str] [<file] [<<EOF] [@addr]\n"
 			" w foobar     write string 'foobar'\n"
 			" ww foobar    write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'\n"

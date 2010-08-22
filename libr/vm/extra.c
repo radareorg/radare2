@@ -1,8 +1,7 @@
 #include "r_vm.h"
 #include "list.h"
 
-int r_vm_op_list(struct r_vm_t *vm)
-{
+R_API int r_vm_op_list(struct r_vm_t *vm) {
 	struct list_head *pos;
 
 	printf("Oplist:\n");
@@ -13,8 +12,7 @@ int r_vm_op_list(struct r_vm_t *vm)
 	return 0;
 }
 
-int r_vm_cmd_op_help()
-{
+R_API int r_vm_cmd_op_help() {
 	printf("avo [op] [expr]\n"
 	" \"avo call [esp]=eip+$$$,esp=esp+4,eip=$1\n"
 	" \"avo jmp eip=$1\n"
@@ -22,4 +20,3 @@ int r_vm_cmd_op_help()
 	"Note: The prefix '\"' quotes the command and does not parses pipes and so\n");
 	return 0;
 }
-

@@ -10,6 +10,16 @@
 static const char *nullstr = "";
 static const char *nullstr_c = "(null)";
 
+R_API void r_str_subchr (char *s, int a, int b) {
+	while (*s) {
+		if(*s==a) {
+			if (b) *s = b;
+			else strcpy (s, s+1);
+		}
+		s++;
+	}
+}
+
 /* int c; ret = hex2int(&c, 'c'); */
 static int hex2int (ut8 *val, ut8 c) {
 	if ('0' <= c && c <= '9') *val = (ut8)(*val) * 16 + ( c - '0');

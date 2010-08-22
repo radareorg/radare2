@@ -47,8 +47,7 @@ R_API int r_vm_reg_type_i(const char *str) {
 	return -1;
 }
 
-int r_vm_reg_del(struct r_vm_t *vm, const char *name)
-{
+R_API int r_vm_reg_del(struct r_vm_t *vm, const char *name) {
 	struct list_head *pos;
 
 	list_for_each(pos, &vm->regs) {
@@ -61,8 +60,7 @@ int r_vm_reg_del(struct r_vm_t *vm, const char *name)
 	return 1;
 }
 
-int r_vm_reg_set(struct r_vm_t *vm, const char *name, ut64 value)
-{
+R_API int r_vm_reg_set(struct r_vm_t *vm, const char *name, ut64 value) {
 	struct list_head *pos;
 
 	list_for_each(pos, &vm->regs) {
@@ -80,8 +78,7 @@ int r_vm_reg_set(struct r_vm_t *vm, const char *name, ut64 value)
 	return 0;
 }
 
-int r_vm_reg_alias_list(struct r_vm_t *vm)
-{
+R_API int r_vm_reg_alias_list(struct r_vm_t *vm) {
 	struct r_vm_reg_t *reg;
 	struct list_head *pos;
 	int len,space;
@@ -125,8 +122,7 @@ int r_vm_reg_alias(struct r_vm_t *vm, const char *name, const char *get, const c
 	return 0;
 }
 
-int r_vm_cmd_reg(struct r_vm_t *vm, const char *_str)
-{
+R_API int r_vm_cmd_reg(struct r_vm_t *vm, const char *_str) {
 	char *str, *ptr;
 	int len;
 

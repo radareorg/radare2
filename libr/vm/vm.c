@@ -35,50 +35,50 @@ static ut64 r_vm_get_math(struct r_vm_t *vm, const char *str) {
 	int len;
 	char *p,*a;
 
-	len = strlen(str)+1;
-	p = alloca(len);
-	memcpy(p, str, len);
-	a = strchr(p,'+');
+	len = strlen (str)+1;
+	p = alloca (len);
+	memcpy (p, str, len);
+	a = strchr (p,'+');
 	if (a) {
 		*a='\0';
 		return r_vm_get_value(vm, p) + r_vm_get_value(vm, a+1);
 	}
-	a = strchr(p,'-');
+	a = strchr (p,'-');
 	if (a) {
 		*a='\0';
 		return r_vm_get_value(vm, p) - r_vm_get_value(vm, a+1);
 	}
-	a = strchr(p,'*');
+	a = strchr (p,'*');
 	if (a) {
 		*a='\0';
 		return r_vm_get_value(vm, p) * r_vm_get_value(vm, a+1);
 	}
-	a = strchr(p,'/');
+	a = strchr (p,'/');
 	if (a) {
 		*a='\0';
-		return r_vm_get_value(vm, p) / r_vm_get_value(vm, a+1);
+		return r_vm_get_value (vm, p) / r_vm_get_value(vm, a+1);
 	}
-	a = strchr(p,'&');
+	a = strchr (p,'&');
 	if (a) {
 		*a='\0';
-		return r_vm_get_value(vm, p) & r_vm_get_value(vm, a+1);
+		return r_vm_get_value (vm, p) & r_vm_get_value(vm, a+1);
 	}
-	a = strchr(p,'|');
+	a = strchr (p,'|');
 	if (a) {
 		*a='\0';
-		return r_vm_get_value(vm, p) | r_vm_get_value(vm, a+1);
+		return r_vm_get_value (vm, p) | r_vm_get_value(vm, a+1);
 	}
-	a = strchr(p,'^');
+	a = strchr (p,'^');
 	if (a) {
 		*a='\0';
-		return r_vm_get_value(vm, p) ^ r_vm_get_value(vm, a+1);
+		return r_vm_get_value (vm, p) ^ r_vm_get_value(vm, a+1);
 	}
-	a = strchr(p,'%');
+	a = strchr (p,'%');
 	if (a) {
 		*a='\0';
-		return r_vm_get_value(vm, p) % r_vm_get_value(vm, a+1);
+		return r_vm_get_value (vm, p) % r_vm_get_value(vm, a+1);
 	}
-	a = strchr(p,'>');
+	a = strchr (p,'>');
 	if (a) {
 		*a='\0';
 		return r_vm_get_value(vm, p) >> r_vm_get_value(vm, a+1);
@@ -86,12 +86,12 @@ static ut64 r_vm_get_math(struct r_vm_t *vm, const char *str) {
 	a = strchr(p,'<');
 	if (a) {
 		*a='\0';
-		return r_vm_get_value(vm, p) << r_vm_get_value(vm, a+1);
+		return r_vm_get_value (vm, p) << r_vm_get_value(vm, a+1);
 	}
-	return r_vm_get_value(vm, p);
+	return r_vm_get_value (vm, p);
 }
 
-R_API void r_vm_print(struct r_vm_t *vm, int type) {
+R_API void r_vm_print(RVm *vm, int type) {
 	struct list_head *pos;
 
 	if (type == -2)
@@ -128,7 +128,10 @@ R_API int r_vm_reg_add(struct r_vm_t *vm, const char *name, int type, ut64 value
 
 R_API ut64 r_vm_reg_get(struct r_vm_t *vm, const char *name) {
 	struct list_head *pos;
-	int len = strlen(name);
+	int len;
+	if (!name)
+		return 0LL;
+	len = strlen(name);
 	if (name[len-1]==']')
 		len--;
 
@@ -165,9 +168,15 @@ R_API int r_vm_import(struct r_vm_t *vm, int in_vm) {
 
 R_API void r_vm_cpu_call(struct r_vm_t *vm, ut64 addr) {
 	/* x86 style */
-	r_vm_stack_push (vm, r_vm_reg_get(vm, vm->cpu.pc));
+	r_vm_stack_push (vm, r_vm_reg_get (vm, vm->cpu.pc));
 	r_vm_reg_set (vm, vm->cpu.pc, addr);
 	// XXX this should be the next instruction after pc (we need insn length here)
+}
+
+R_API RVm *r_vm_new() {
+	RVm *vm = R_NEW (RVm);
+	r_vm_init (vm, 1);
+	return vm;
 }
 
 R_API int r_vm_init(struct r_vm_t *vm, int init) {
@@ -176,10 +185,12 @@ R_API int r_vm_init(struct r_vm_t *vm, int init) {
 		init = 1;
 #endif
 	if (init) {
-		INIT_LIST_HEAD(&vm->mmu_cache);
-		INIT_LIST_HEAD(&vm->regs);
-		INIT_LIST_HEAD(&vm->ops);
-		memset(&vm->cpu, '\0', sizeof(struct r_vm_cpu_t));
+		vm->log = 0;
+		vm->use_mmu_cache = 0;
+		INIT_LIST_HEAD (&vm->mmu_cache);
+		INIT_LIST_HEAD (&vm->regs);
+		INIT_LIST_HEAD (&vm->ops);
+		memset (&vm->cpu, '\0', sizeof(RVmCpu));
 	}
 
 	//vm_mmu_real(vm, config_get_i("vm.realio"));
@@ -263,13 +274,13 @@ R_API int r_vm_eval_cmp(RVm *vm, const char *str) {
 
 	for (;*str==' ';str=str+1);
 	len = strlen (str)+1;
-	ptr = alloca(len);
+	ptr = alloca (len);
 	memcpy (ptr, str, len);
 	p = strchr (ptr, ',');
 	if (!p) p = strchr (ptr, ' ');
 	if (p) {
 		r_vm_reg_set (vm, vm->cpu.zf,(r_vm_get_math(vm, ptr)-r_vm_get_math(vm, p+1)));
-		p='\0';
+		p = '\0';
 		return 0;
 	}
 	return 1;
@@ -324,7 +335,8 @@ R_API int r_vm_eval_eq(RVm *vm, const char *str, const char *val) {
 			// XXX support 64 bits here
 			ut32 v = (ut32)r_vm_get_math(vm, val); // TODO control endian
 			p = strchr(str+1,':');
-			fprintf(stderr,"   ;==> [0x%08"PFMT64x"] = %x  ((%s))\n", off, v, str+1);
+			if (vm->log)
+				eprintf("   ; ==> [0x%08"PFMT64x"] = %x  ((%s))\n", off, v, str+1);
 
 			if (p) {
 				int size = atoi(val+1);
@@ -341,7 +353,8 @@ R_API int r_vm_eval_eq(RVm *vm, const char *str, const char *val) {
 					r_vm_mmu_write(vm, off, buf, 4);
 				}
 			} else {
-				printf("   ; write %x @ 0x%08"PFMT64x"\n", v, off);
+				if (vm->log)
+					eprintf("   ; write %x @ 0x%08"PFMT64x"\n", v, off);
 				r_vm_mmu_write(vm, off, (ut8*)&v, 4);
 			}
 		}
@@ -389,7 +402,7 @@ R_API int r_vm_eval_single(RVm *vm, const char *str) {
 	int i, len;
 
 //	if (log)
-	fprintf(stderr,"   ; %s\n", str);
+	//fprintf(stderr,"   ; %s\n", str);
 	for(;str&&str[0]==' ';str=str+1);
 	len = strlen(str)+1;
 	ptr = alloca(len);
@@ -422,7 +435,7 @@ R_API int r_vm_eval_single(RVm *vm, const char *str) {
 		}
 		eq[0]='=';
 	} else {
-		fprintf(stderr, "Unknown opcode\n");
+		//eprintf("Unknown opcode\n");
 		if (!memcmp(ptr, "if ", 3)) {
 			if (r_vm_reg_get(vm, ptr+3)!=0)
 				return -1;
@@ -437,7 +450,8 @@ R_API int r_vm_eval_single(RVm *vm, const char *str) {
 		return 0;
 
 		if (!memcmp(ptr, "syscall", 6)) {
-			fprintf(stderr,"TODO: syscall interface not yet implemented\n");
+			if (vm->log)
+				eprintf("TODO: syscall interface not yet implemented\n");
 		} else
 		if((!memcmp(ptr, "call ", 4))
 		|| (!memcmp(ptr, "jmp ", 4))){
@@ -463,8 +477,7 @@ R_API int r_vm_eval_single(RVm *vm, const char *str) {
 		if (!memcmp(ptr, "ret", 3)) {
 			r_vm_stack_pop(vm, vm->cpu.pc);
 			printf("RET (%x)\n", (ut32)vm->cpu.pc);
-		} else
-			fprintf(stderr, "r_vm: Unknown opcode\n");
+		} else if (vm->log) eprintf("r_vm: Unknown opcode\n");
 	}
 	return 0;
 }
@@ -502,12 +515,12 @@ R_API int r_vm_eval_file(struct r_vm_t *vm, const char *str) {
 	char buf[1024];
 	FILE *fd = fopen(str, "r");
 	if (fd) {
-		while(!feof(fd)) {
+		while (!feof(fd)) {
 			*buf='\0';
 			fgets(buf, 1023, fd);
 			if (*buf) {
 				buf[strlen(buf)-1]='\0';
-				//vm_eval(buf);
+				//r_vm_eval(vm, buf);
 				r_vm_op_eval(vm, buf);
 			}
 		}
@@ -562,4 +575,31 @@ R_API int r_vm_emulate(struct r_vm_t *vm, int n) {
 	return n;
 #endif
 	return -1;
+}
+
+R_API void r_vm_reset(RVm *vm) {
+	struct list_head *pos;
+
+	list_for_each(pos, &vm->regs) {
+		RVmReg *r = list_entry (pos, struct r_vm_reg_t, list);
+		r->value = 0LL;
+	}
+}
+
+
+/* TODO : Allow to remove and so on */
+R_API int r_vm_cmd_op(RVm *vm, const char *op) {
+	char *cmd, *ptr;
+	int len = strlen(op)+1;
+	if (*op==' ')
+		op = op + 1;
+	cmd = alloca(len);
+	memcpy(cmd, op, len);
+	ptr = strchr (cmd, ' ');
+	if (ptr) {
+		ptr[0]='\0';
+		eprintf ("vm: opcode '%s' added\n", cmd);
+		r_vm_op_add (vm, cmd, ptr+1);
+	} else r_vm_cmd_op_help();
+	return 0;
 }

@@ -9,7 +9,7 @@ R_API int r_vm_mmu_read(RVm *vm, ut64 off, ut8 *data, int len) {
 }
 
 R_API int r_vm_mmu_write(RVm *vm, ut64 off, ut8 *data, int len) {
-	if (vm->iob.write_at)
+	if (vm->use_mmu_cache && vm->iob.write_at)
 		return vm->iob.write_at (vm->iob.io, off, data, len);
 	return -1;
 }
