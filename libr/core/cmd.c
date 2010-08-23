@@ -3006,7 +3006,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	ptr = strchr (cmd, '|');
 	if (ptr) {
 		ptr[0] = '\0';
-		r_core_cmd_pipe (core, cmd, ptr+1);
+		cmd = r_str_clean (cmd);
+		if (*cmd) r_core_cmd_pipe (core, cmd, ptr+1);
+		else r_io_system (core->io, ptr+1);
 		return 0;
 	}
 

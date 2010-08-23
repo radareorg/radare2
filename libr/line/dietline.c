@@ -267,8 +267,13 @@ R_API char *r_line_readline() {
 		columns = r_cons_get_size (NULL)-2;
 		if (columns<1)
 			columns = 40;
+#if __WINDOWS__
 		if (I.echo)
 			printf ("\r%*c\r", columns, ' ');
+#else
+		if (I.echo)
+			printf ("\r\x1b[2K\r"); //%*c\r", columns, ' ');
+#endif
 
 		switch (buf[0]) {
 		//case -1: // ^D
