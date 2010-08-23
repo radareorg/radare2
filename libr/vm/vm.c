@@ -152,17 +152,19 @@ R_API ut64 r_vm_reg_get(struct r_vm_t *vm, const char *name) {
 	return -1LL;
 }
 
+// XXX: deprecate
 R_API int r_vm_import(struct r_vm_t *vm, int in_vm) {
+	char name[64];
 	struct list_head *pos;
 
-	eprintf ("Importing register values\n");
+	//eprintf ("Importing register values\n");
 	list_for_each(pos, &vm->regs) {
 		struct r_vm_reg_t *r = list_entry(pos, struct r_vm_reg_t, list);
+		snprintf(name, 63, "vm.%s", r->name);
 		if (in_vm) {
-			char name[64];
-			snprintf(name, 63, "vm.%s", r->name);
-			r->value = r_num_get(NULL, name); // XXX doesnt work for eflags and so
-		} else r->value = r_num_get(NULL, r->name); // XXX doesnt work for eflags and so
+			r->value = r_num_get (NULL, name); // XXX doesnt work for eflags and so
+		} else r->value = r_num_get (NULL, r->name); // XXX doesnt work for eflags and so
+		vm->printf ("f %s @ 0x%08llx\n", name, r->value);
 	}
 	return 0;
 }

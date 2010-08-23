@@ -61,14 +61,12 @@ TODO edu
 
 TODO pancake
 ------------
-* implement = command as in r1
-* implement rap:// upload/download protocol commands (maybe just system() with rsc2+wget?
-* rap:// system() doesnt works
-* rap:// server-system does not works and client-system is not proxied
-* Record register status for each function when running
 * Import r_vm register values from flags or from r_debug->r_reg
   - r_vm must use mmu cache when emulating code
     - use the one from r_io? and deprecate vm->mmu_cache?
+* implement = command as in r1
+* implement rap:// upload/download protocol commands (maybe just system() with rsc2+wget?
+* Record trace of register status for each function when running
 {
  * Implement RAnalCall (analyze function arguments, return values, propagate types..)
   - define number of arguments for given function

@@ -1669,6 +1669,22 @@ static int var_cmd(RCore *core, const char *str) {
 
 #endif
 
+// dir=0: import, dir=1: export
+static void vmimport(RCore *core, int dir) {
+	struct list_head *pos;
+	list_for_each(pos, &core->vm->regs) {
+		struct r_vm_reg_t *r = list_entry(pos, struct r_vm_reg_t, list);
+		if (dir) {
+			r_cons_printf ("ave %s=0x%"PFMT64x"\n", r->name, r->value);
+			r_cons_printf ("f vm.%s=0x%"PFMT64x"\n", r->name, r->value);
+		} else {
+			//ut64 value = r_num_math (core->num, r->name);
+			ut64 value = r_debug_reg_get (core->dbg, r->name);
+			r_cons_printf ("ave %s=0x%"PFMT64x"\n", r->name, value);
+		}
+	}
+}
+
 static int cmd_anal(void *data, const char *input) {
 	const char *ptr;
 	RCore *core = (RCore *)data;
@@ -2024,13 +2040,13 @@ static int cmd_anal(void *data, const char *input) {
 			else r_vm_cmd_reg (core->vm, input+2);
 			break;
 		case 'I':
-			r_vm_import(core->vm, 1);
+			vmimport (core, 1);
 			break;
 		case 'i':
-			r_vm_import(core->vm, 0);
+			vmimport (core, 0);
 			break;
 		case '-':
-			r_vm_init(core->vm, 1);
+			r_vm_init (core->vm, 1);
 			break;
 		case 'o':
 			if (input[2]=='\0')

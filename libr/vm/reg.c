@@ -131,11 +131,11 @@ R_API int r_vm_cmd_eval(RVm *vm, const char *cmd) {
 			*next=0;
 			next++;
 		}
-		if (strlen(cmd)>2)
+		if (strlen(cmd)>2 && !memcmp (cmd, "av", 2))
 			r_vm_cmd_reg (vm, cmd+2);
 		cmd = next;
 	} while (next);
-	return 1;
+	return R_TRUE;
 }
 
 R_API int r_vm_cmd_reg(struct r_vm_t *vm, const char *_str) {

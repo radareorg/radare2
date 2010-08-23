@@ -95,66 +95,25 @@ static int rap__plugin_open(struct r_io_t *io, const char *pathname) {
 }
 
 static int rap__open(struct r_io_t *io, const char *pathname, int flags, int mode) {
-	int i;
+	char *file, *port, *ptr;
 	char buf[1024];
-	char *ptr = buf;
+	int i, p, listenmode;
 
-	strncpy (buf, pathname, 1000);
-
-	if (!memcmp (ptr , "rap://", 6)) {
-		ptr = ptr+6;
-		if (strchr (ptr, '/')) {
-			// connect
-			char *file, *port = strchr(buf+6, ':');
-			if (port == NULL) {
-				eprintf("No port defined.\n");
-				return -1;
-			}
-			port[0] = '\0';
-
-			// file
-			file = strchr (pathname+6,'/');
-			if (file == NULL) {
-				eprintf ("No remote file specified.\n");
-				return -1;
-			}
-
-			rap_fd = r_socket_connect (ptr, atoi (port+1));
-			if (rap_fd>=0)
-				eprintf ("Connected to: %s at port %d\n", ptr, atoi(port+1));
-			else {
-				eprintf ("Cannot connect to '%s' (%d)\n", ptr, atoi(port+1));
-				return -1;
-			}
-			// send
-			buf[0] = RMT_OPEN;
-			buf[1] = flags;
-			buf[2] = (ut8)strlen(file)-1;
-			memcpy (buf+3, file+1, buf[2]);
-			r_socket_write (rap_fd, buf, 3+buf[2]);
-			//eprintf("OPENFILE(%s)\n", file+1);
-			// read
-			eprintf ("waiting... ");
-			read (rap_fd, (ut8*)buf, 5);
-			if (buf[0] != (char)(RMT_OPEN|RMT_REPLY))
-				return -1;
-
-			r_mem_copyendian ((ut8 *)&i, (ut8*)buf+1, 4, endian);
-			if (i>0) eprintf ("ok\n");
-			// ???
-			//io->fd = rap_fd;
-			is_listener = R_FALSE;
-			return rap_fd;
-		} else {
-			// listen
-			char *port = strchr (ptr, ':');
-			int p;
-			if (port == NULL) {
-				eprintf ("No port defined.\n");
-				return -1;
-			}
-			buf[0] = '\0';
-			p = atoi (port+1);
+	strncpy (buf, pathname, sizeof (buf)-1);
+	if (!memcmp (buf, "rap://", 6)) {
+		ptr = buf + 6;
+		if (!(port = strchr (ptr, ':'))) {
+			eprintf ("rap: wrong uri\n");
+			return -1;
+		}
+		listenmode = (*ptr==':');
+		*port = 0;
+		p = atoi (port+1);
+		if ((file = strchr (port+1, '/'))) {
+			*file = 0;
+			file++;
+		}
+		if (listenmode) {
 			if (p<=0) {
 				eprintf ("rap: cannot listen here. Try rap://:9999\n");
 				return -1;
@@ -163,6 +122,28 @@ static int rap__open(struct r_io_t *io, const char *pathname, int flags, int mod
 			eprintf ("rap: listening at port %d\n", p);
 			is_listener = R_TRUE;
 			return r_socket_listen (p);
+		} else {
+			if ((rap_fd=r_socket_connect (ptr, p))==-1) {
+				eprintf ("Cannot connect to '%s' (%d)\n", ptr, p);
+				return -1;
+			} else eprintf ("Connected to: %s at port %d\n", ptr, p);
+			if (file&&*file) {
+				// send
+				buf[0] = RMT_OPEN;
+				buf[1] = flags;
+				buf[2] = (ut8)strlen(file);
+				memcpy (buf+3, file, buf[2]);
+				r_socket_write (rap_fd, buf, 3+buf[2]);
+				// read
+				eprintf ("waiting... ");
+				read (rap_fd, (ut8*)buf, 5);
+				if (buf[0] != (char)(RMT_OPEN|RMT_REPLY))
+					return -1;
+				r_mem_copyendian ((ut8 *)&i, (ut8*)buf+1, 4, endian);
+				if (i>0) eprintf ("ok\n");
+			}
+			is_listener = R_FALSE;
+			return rap_fd;
 		}
 	}
 	return rap_fd;
@@ -194,7 +175,7 @@ static int rap__system(RIO *io, int fd, const char *command) {
 		return -1;
 	}
 	if (buf[0] != (RMT_SYSTEM | RMT_REPLY)) {
-		eprintf("Unexpected system reply\n");
+		eprintf ("Unexpected system reply\n");
 		return -1;
 	}
 	r_mem_copyendian ((ut8*)&i, buf+1, 4, !endian);

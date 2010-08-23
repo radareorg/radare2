@@ -1,4 +1,6 @@
 avo mov $1=$2
+avo inc $1+=1
+avo dec $1-=1
 avo lea $1=$2
 avo add $1=$1+$2
 avo sub $1=$1-$2
@@ -25,6 +27,6 @@ avr+ al int8
 avr+ ah int8
 avra al al=eax&0xff al=al&0xff,eax=eax>16,eax=eax<16,eax=eax|al
 avra ah ah=eax&0xff00,ah=ah>8 eax=eax&0xFFFF00ff,ah=ah<8,eax=eax|ah,ah=ah>8
+avrr eax
 avrc eip esp ebp
 avrf zf
-avrr eax
