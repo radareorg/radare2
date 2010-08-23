@@ -164,7 +164,7 @@ R_API int r_vm_import(struct r_vm_t *vm, int in_vm) {
 		if (in_vm) {
 			r->value = r_num_get (NULL, name); // XXX doesnt work for eflags and so
 		} else r->value = r_num_get (NULL, r->name); // XXX doesnt work for eflags and so
-		vm->printf ("f %s @ 0x%08llx\n", name, r->value);
+		printf ("f %s @ 0x%08llx\n", name, r->value);
 	}
 	return 0;
 }

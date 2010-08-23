@@ -1,6 +1,6 @@
 BIN=radiff2
 DEPS=r_diff r_config r_parse r_lib r_cons r_search r_anal r_reg
-DEPS+=r_bin r_flags r_debug r_util r_core r_bp r_io r_cmd r_socket
-DEPS+=r_sign r_print r_lang r_asm r_syscall r_hash r_line
+DEPS+=r_bin r_flags r_debug r_util r_vm r_core r_bp r_io r_cmd
+DEPS+=r_sign r_print r_lang r_asm r_syscall r_hash r_line r_socket
 
 include ../binr.mk

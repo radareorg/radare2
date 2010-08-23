@@ -9,7 +9,7 @@ test_anal${EXT_EXE}: test_anal.o
 	${CC} -lr_anal ${CFLAGS} ${LDFLAGS} test_anal.o -o test_anal${EXT_EXE}
 
 test_meta${EXT_EXE}: test_meta.o
-	${CC} -lr_meta ${CFLAGS} ${LDFLAGS} test_meta.o -o test_meta${EXT_EXE}
+	${CC} -lr_anal ${CFLAGS} ${LDFLAGS} test_meta.o -o test_meta${EXT_EXE}
 
 test_x86im${EXT_EXE}: test_x86im.o ../arch/x86/x86im/x86im.o
 	${CC} ${CFLAGS} ${LDFLAGS} -o test_x86im${EXT_EXE} \
