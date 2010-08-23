@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
 	if (optind<argc)
 		buf = (const ut8*)r_file_slurp (argv[optind], &buf_len);
 	if (buf == NULL)
-		do_help(1);
+		return 1;
 	else ret = do_hash (algo, buf, buf_len, bsize, rad);
 	return ret;
 }

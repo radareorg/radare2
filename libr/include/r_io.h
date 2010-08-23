@@ -15,6 +15,7 @@
 
 #define R_IO_NFDS 32
 
+#define RMT_MAX 1024
 #define RMT_OPEN   0x01
 #define RMT_READ   0x02
 #define RMT_WRITE  0x03
@@ -24,6 +25,10 @@
 #define RMT_CMD    0x07
 #define RMT_REPLY  0x80
 
+// #define RMT_DLDIR "/tmp/$USER/r2"
+// #define RMT_UPLOAD 0x08
+// #define RMT_DOWNLOAD 0x09
+// - upload a file giving a chksum
 
 #define IO_MAP_N 128
 typedef struct r_io_map_t {

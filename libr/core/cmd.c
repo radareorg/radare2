@@ -25,12 +25,6 @@ static int checkbpcallback(RCore *core) {
 	return R_FALSE;
 }
 
-static int cmd_io_system(void *data, const char *input) {
-	RCore *core = (RCore *)data;
-	r_io_set_fd(core->io, core->file->fd);
-	return r_io_system(core->io, input);
-}
-
 /* TODO: move to print/disasm.c */
 static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
 	RAnalFcn *fcni = NULL;
@@ -584,15 +578,22 @@ static int cmd_zign(void *data, const char *input) {
 	return 0;
 }
 
-static int cmd_iopipe(void *data, const char *input) {
+static int cmd_rap(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case '\0':
 		r_lib_list (core->lib);
 		r_io_plugin_list (core->io);
 		break;
+	case '?':
+		eprintf ("usage: =[fd] [cmd]\n"
+			"TODO: import the rest of functionality from r1\n");
+		break;
 	default:
-		cmd_io_system (data, input);
+		r_io_set_fd (core->io, core->file->fd);
+		if (input[0]==' ')
+			input++;
+		r_io_system (core->io, input);
 		break;
 	}
 	return R_TRUE;
@@ -1151,7 +1152,8 @@ static int cmd_help(void *data, const char *input) {
 		" y [len] [off]     ; yank/paste bytes from/to memory\n"
 		" ? [expr]          ; help or evaluate math expression\n"
 		" /[xmp/]           ; search for bytes, regexps, patterns, ..\n"
-		" |[cmd]            ; run this command thru the io pipe (no args=list)\n"
+		" ![cmd]            ; run given command as in system(3)\n"
+		" = [cmd]           ; run this command via rap://\n"
 		" #[algo] [len]     ; calculate hash checksum of current block\n"
 		" .[ file|!cmd|cmd|(macro)]  ; interpret as radare cmds\n"
 		" :command          ; list or execute a plugin command\n"
@@ -3855,9 +3857,7 @@ void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->cmd, "yank",     "yank bytes", &cmd_yank);
 	r_cmd_add (core->cmd, "Visual",   "enter visual mode", &cmd_visual);
 	r_cmd_add (core->cmd, "!",        "run system command", &cmd_system);
-	// XXX WTF DUPPED CMD!?!?! //
-	r_cmd_add (core->cmd, "|",        "run io system command", &cmd_io_system);
-	r_cmd_add (core->cmd, "|",        "io pipe", &cmd_iopipe);
+	r_cmd_add (core->cmd, "=",        "io pipe", &cmd_rap); 
 	r_cmd_add (core->cmd, "#",        "calculate hash", &cmd_hash);
 	r_cmd_add (core->cmd, "?",        "help message", &cmd_help);
 	r_cmd_add (core->cmd, ".",        "interpret", &cmd_interpret);

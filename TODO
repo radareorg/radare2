@@ -9,6 +9,7 @@
 Questions
 =========
 * Merge r_vm into r_anal ?
+* Merge r_vm into r_parse ?
 * ds debugger broken?
 * Implement minimalist 'ar' and add support for .a archive libs? 
 
@@ -60,6 +61,11 @@ TODO edu
 
 TODO pancake
 ------------
+* implement = command as in r1
+* implement rap:// upload/download protocol commands (maybe just system() with rsc2+wget?
+* rap:// system() doesnt works
+* rap:// server-system does not works and client-system is not proxied
+* Record register status for each function when running
 * Import r_vm register values from flags or from r_debug->r_reg
   - r_vm must use mmu cache when emulating code
     - use the one from r_io? and deprecate vm->mmu_cache?

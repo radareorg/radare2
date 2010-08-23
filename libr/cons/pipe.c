@@ -10,11 +10,12 @@ static int backup_fd=999;
 R_API int r_cons_pipe_open(const char *file, int append) {
 	int fd = open(file, O_RDWR | O_CREAT | (append?O_APPEND:O_TRUNC), 0644);
 	if (fd==-1) {
-		fprintf(stderr, "Cannot open file '%s'\n", file);
+		eprintf ("Cannot open file '%s'\n", file);
 		return -1;
-	}
-	dup2(1, backup_fd+fd);
-	dup2(fd, 1);
+	} else eprintf ("%s created\n", file);
+	dup2 (1, backup_fd+fd);
+	close(1);
+	dup2 (fd, 1);
 	return fd;
 }
 

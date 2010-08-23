@@ -378,7 +378,7 @@ R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr) {
 	return aop;
 }
 
-/* XXX : this function needs more love */
+// TODO: move into core/io? */
 R_API int r_core_serve(RCore *core, int fd) {
 	ut8 cmd, flg, *ptr, buf[1024];
 	int i, c, pipefd;
@@ -393,8 +393,9 @@ R_API int r_core_serve(RCore *core, int fd) {
 #if __UNIX__
 	// XXX: ugly workaround
 	signal (SIGINT, SIG_DFL);
-	signal (SIGPIPE, SIG_IGN);
+	signal (SIGPIPE, SIG_DFL);
 #endif
+reaccept:
 	while ((c = r_socket_accept (fd))) {
 		if (c == -1) {
 			eprintf ("rap: cannot accept\n");
@@ -402,40 +403,45 @@ R_API int r_core_serve(RCore *core, int fd) {
 			return -1;
 		}
 
-		eprintf ("Client connected\n");
+		eprintf ("rap: client connected\n");
 		
 		for (;;) {
-			i = r_socket_read_block (c, &cmd, 1);
-			if (i==0) continue;
+			i = r_socket_read (c, &cmd, 1);
+			if (i==0) {
+				eprintf ("rap: connection closed\n");
+				if (r_config_get_i (core->config, "rap.loop"))
+					goto reaccept;
+				return -1;
+			}
 
 			switch ((ut8)cmd) {
 			case RMT_OPEN:
 				r_socket_read_block (c, &flg, 1); // flags
 				eprintf ("open (%d): ", cmd);
 				r_socket_read_block (c, &cmd, 1); // len
-				ptr = malloc(cmd);
-				if (ptr == NULL) {
-					eprintf("Cannot malloc in rmt-open len = %d\n", cmd);
-					return -1;
+				pipefd = -1;
+				if (cmd<RMT_MAX) {
+					ptr = malloc(cmd);
+					if (ptr == NULL) {
+						eprintf ("Cannot malloc in rmt-open len = %d\n", cmd);
+					} else {
+						r_socket_read_block (c, ptr, cmd); //filename
+						ptr[cmd] = 0;
+						r_core_file_open (core, (const char *)ptr, R_IO_READ); // XXX: mode write?
+						pipefd = core->file->fd;
+						eprintf("(flags: %hhd) len: %hhd filename: '%s'\n",
+							flg, cmd, ptr); //config.file);
+					}
 				}
-				r_socket_read_block (c, ptr, cmd); //filename
-				ptr[cmd] = 0;
-				r_core_file_open (core, (const char *)ptr, R_IO_READ); // XXX: mode write?
-				//memcpy(config.file, ptr, cmd);
-				//config.file[cmd]='\0';
-				eprintf("(flags: %hhd) len: %hhd filename: '%s'\n",
-					flg, cmd, ptr); //config.file);
 				buf[0] = RMT_OPEN | RMT_REPLY;
-				//config.fd = -1;
-				//radare_open(0);
-				r_mem_copyendian(buf+1, (ut8 *)&core->file->fd, 4, endian);
-				write (c, buf, 5);
-				free(ptr);
+				r_mem_copyendian (buf+1, (ut8 *)&pipefd, 4, !endian);
+				r_socket_write (c, buf, 5);
+				free (ptr);
 				break;
 			case RMT_READ:
 				r_socket_read_block (c, (ut8*)&buf, 4);
-				r_mem_copyendian ((ut8*)&i, buf, 4, 1);
-				ptr = (ut8 *)malloc (i+5);
+				r_mem_copyendian ((ut8*)&i, buf, 4, !endian);
+				ptr = (ut8 *)malloc (i+core->blocksize+5);
 				if (ptr==NULL) {
 					eprintf ("Cannot read %d bytes\n", i);
 					// TODO: reply error here
@@ -443,9 +449,11 @@ R_API int r_core_serve(RCore *core, int fd) {
 				} else {
 					r_core_block_read (core, 0);
 					ptr[0] = RMT_READ|RMT_REPLY;
+					if (i>RMT_MAX)
+						i = RMT_MAX;
 					if (i>core->blocksize) 
 						r_core_block_size (core, i);
-					r_mem_copyendian (ptr+1, (ut8 *)&i, 4, endian);
+					r_mem_copyendian (ptr+1, (ut8 *)&i, 4, !endian);
 					memcpy (ptr+5, core->block, i); //core->blocksize);
 					write (c, ptr, i+5);
 				}
@@ -459,27 +467,30 @@ R_API int r_core_serve(RCore *core, int fd) {
 				/* read */
 				r_socket_read_block (c, (ut8*)&bufr, 4);
 				r_mem_copyendian ((ut8*)&i, (ut8 *)bufr, 4, endian);
-				if (i <1) {
-					eprintf ("Invalid length '%d'\n", i);
-				} else {
-					cmd = malloc(i);
-					r_socket_read_block (c, (ut8*)cmd, i);
-					cmd[i] = '\0';
-					eprintf ("len: %d cmd: '%s'\n",
-						i, cmd); fflush(stdout);
-					cmd_output = r_core_cmd_str (core, cmd);
-					if (cmd_output) 
-						cmd_len = strlen(cmd_output) + 1;
-					free(cmd);
-					/* write */
-					bufw = malloc(cmd_len + 5);
-					bufw[0] = RMT_CMD | RMT_REPLY;
-					r_mem_copyendian((ut8*)bufw+1, (ut8 *)&cmd_len, 4, endian);
-					memcpy(bufw+5, cmd_output, cmd_len);
-					write(c, bufw, cmd_len+5);
-					free(bufw);
-					free(cmd_output);
+				if (i >0 && i<RMT_MAX) {
+					if ((cmd=malloc(i))) {
+						r_socket_read_block (c, (ut8*)cmd, i);
+						cmd[i] = '\0';
+						eprintf ("len: %d cmd: '%s'\n",
+							i, cmd); fflush(stdout);
+						cmd_output = r_core_cmd_str (core, cmd);
+						free(cmd);
+					} else eprintf ("rap: cannot malloc\n");
+				} else eprintf ("rap: invalid length '%d'\n", i);
+				/* write */
+				if (cmd_output)
+					cmd_len = strlen(cmd_output) + 1;
+				else {
+					cmd_output = strdup("");
+					cmd_len = 0; 
 				}
+				bufw = malloc(cmd_len + 5);
+				bufw[0] = RMT_CMD | RMT_REPLY;
+				r_mem_copyendian((ut8*)bufw+1, (ut8 *)&cmd_len, 4, !endian);
+				memcpy(bufw+5, cmd_output, cmd_len);
+				r_socket_write (c, bufw, cmd_len+5);
+				free(bufw);
+				free(cmd_output);
 				break;
 				}
 			case RMT_WRITE:
@@ -492,61 +503,79 @@ R_API int r_core_serve(RCore *core, int fd) {
 				break;
 			case RMT_SEEK:
 				r_socket_read_block (c, buf, 9);
-				r_mem_copyendian((ut8 *)&x, buf+1, 8, endian);
-				if (r_core_seek (core, x, R_TRUE)) {
-					//core->offset = r__lseek(config.fd, x, buf[0]);
-					x = (int)core->offset;
-				} else x = (int)core->offset;
+				r_mem_copyendian((ut8 *)&x, buf+1, 8, !endian);
+				if (buf[0]!=2) {
+					r_core_seek (core, x, buf[0]);
+					x = core->offset;
+				} else x = core->file->size;
 				buf[0] = RMT_SEEK | RMT_REPLY;
-				r_mem_copyendian (buf+1, (ut8*)&x, 8, endian);
-				write (c, buf, 9);
+				r_mem_copyendian (buf+1, (ut8*)&x, 8, !endian);
+				r_socket_write (c, buf, 9);
 				break;
 			case RMT_CLOSE:
+				eprintf ("CLOSE\n");
 				// XXX : proper shutdown
 				r_socket_read_block (c, buf, 4);
 				r_mem_copyendian ((ut8*)&i, buf, 4, endian);
 				{
 				int ret = r_socket_close (i);
-				r_mem_copyendian (buf+1, (ut8*)&ret, 4, endian);
+				r_mem_copyendian (buf+1, (ut8*)&ret, 4, !endian);
 				buf[0] = RMT_CLOSE | RMT_REPLY;
-				write(c, buf, 5);
+				r_socket_write (c, buf, 5);
 				}
 				break;
 			case RMT_SYSTEM:
 				// read
 				r_socket_read_block (c, buf, 4);
-				r_mem_copyendian((ut8*)&i, buf, 4, endian);
-				ptr = (ut8 *) malloc(i+6);
-				ptr[5]='!';
-				r_socket_read_block (c, ptr+6, i);
-				ptr[6+i]='\0';
-				//env_update();
-				//pipe_stdout_to_tmp_file((char*)&buf, (char*)ptr+5);
-				pipefd = r_cons_pipe_open ((const char *)buf, 0);
-				{
-					FILE *fd = fopen((char*)buf, "r");
-					free(ptr); i = 0;
-					if (fd == NULL) {
-						eprintf("Cannot open tmpfile\n");
-						i = -1;
-					} else {
-						fseek(fd, 0, SEEK_END);
-						i = ftell(fd);
-						fseek(fd, 0, SEEK_SET);
-						ptr = (ut8 *) malloc(i+5);
-						fread(ptr+5, i, 1, fd);
-						ptr[i+5]='\0';
-						fclose(fd);
+				r_mem_copyendian((ut8*)&i, buf, 4, !endian);
+				if (i>0&&i<RMT_MAX) {
+					ptr = (ut8 *) malloc(i+6);
+					ptr[5]='!';
+					r_socket_read_block (c, ptr+6, i);
+					ptr[6+i]='\0';
+					//env_update();
+					//pipe_stdout_to_tmp_file((char*)&buf, (char*)ptr+5);
+					strcpy((char*)buf, "/tmp/.out");
+					pipefd = r_cons_pipe_open ((const char *)buf, 0);
+eprintf("SYSTEM(%s)\n", ptr+6);
+					system((const char*)ptr+6);
+					r_cons_pipe_close (pipefd);
+
+					{
+						FILE *fd = fopen((char*)buf, "r");
+						 i = 0;
+						if (fd == NULL) {
+							eprintf("Cannot open tmpfile\n");
+							i = -1;
+						} else {
+							fseek(fd, 0, SEEK_END);
+							i = ftell(fd);
+							fseek(fd, 0, SEEK_SET);
+							free(ptr);
+							ptr = (ut8 *) malloc(i+5);
+							fread(ptr+5, i, 1, fd);
+							ptr[i+5]='\0';
+							fclose(fd);
+						}
 					}
+					{
+					char *out = r_file_slurp ((char*)buf, &i);
+					free(ptr);
+//eprintf("PIPE(%s)\n", out);
+					ptr = (ut8 *) malloc(i+5);
+					if (ptr) {
+						memcpy (ptr+5, out, i);
+						free(out);
+					}
+					}
+					//unlink((char*)buf);
 				}
-				r_cons_pipe_close (pipefd);
-				unlink((char*)buf);
 
 				// send
 				ptr[0] = (RMT_SYSTEM | RMT_REPLY);
 				r_mem_copyendian ((ut8*)ptr+1, (ut8*)&i, 4, endian);
 				if (i<0)i=0;
-				write (c, ptr, i+5);
+				r_socket_write (c, ptr, i+5);
 				eprintf ("REPLY SENT (%d) (%s)\n", i, ptr+5);
 				free (ptr);
 				break;
@@ -556,6 +585,7 @@ R_API int r_core_serve(RCore *core, int fd) {
 				return -1;
 			}
 		}
+		eprintf ("client: disconnected\n");
 	}
 	return -1;
 }

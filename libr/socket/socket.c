@@ -227,9 +227,9 @@ R_API int r_socket_close(int fd) {
 }
 
 R_API int r_socket_read_block(int fd, unsigned char *buf, int len) {
-	int ret = 0;
-	for(ret=0;ret<len;) {
-		int r= r_socket_read (fd, buf+ret, len-ret);
+	int r, ret = 0;
+	for (ret=0;ret<len;) {
+		r = r_socket_read (fd, buf+ret, len-ret);
 		if (r==-1)
 			break;
 		ret += r;

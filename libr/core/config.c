@@ -236,6 +236,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "file.md5", "");
 	r_config_set (cfg, "file.sha1", "");
 	r_config_set (cfg, "file.type", "");
+	r_config_set (cfg, "rap.loop", "true");
 	/* TODO cmd */
 #if 0
 	node = config_set("asm.profile", "default");
