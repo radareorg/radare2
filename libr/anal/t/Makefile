@@ -3,10 +3,7 @@ include ../../config.mk
 CFLAGS+=-I ../arch -I../../include -D__UNIX__=1
 LDFLAGS=-L../../util -lr_util
 
-all: test_anal${EXT_EXE} test_meta${EXT_EXE} test_x86im${EXT_EXE}
-
-test_anal${EXT_EXE}: test_anal.o
-	${CC} -lr_anal ${CFLAGS} ${LDFLAGS} test_anal.o -o test_anal${EXT_EXE}
+all: test_meta${EXT_EXE} test_x86im${EXT_EXE}
 
 test_meta${EXT_EXE}: test_meta.o
 	${CC} -lr_anal ${CFLAGS} ${LDFLAGS} test_meta.o -o test_meta${EXT_EXE}
@@ -16,8 +13,8 @@ test_x86im${EXT_EXE}: test_x86im.o ../arch/x86/x86im/x86im.o
 		../arch/x86/x86im/x86im.o test_x86im.o
 
 clean:
-	rm -f test_anal${EXT_EXE} test_anal.o test_meta${EXT_EXE} test_meta.o
+	rm -f test_meta${EXT_EXE} test_meta.o
 	rm -f test_x86im${EXT_EXE} test_x86im.o
 
 mrproper: clean
-	rm -f test_anal.d test_meta.d test_x86im.d
+	rm -f test_meta.d test_x86im.d

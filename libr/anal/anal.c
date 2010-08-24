@@ -74,7 +74,7 @@ R_API int r_anal_list(RAnal *anal) {
 	struct list_head *pos;
 	list_for_each_prev(pos, &anal->anals) {
 		RAnalPlugin *h = list_entry(pos, RAnalPlugin, list);
-		printf (" %s: %s\n", h->name, h->desc);
+		printf ("anal %-10s %s\n", h->name, h->desc);
 	}
 	return R_FALSE;
 }
