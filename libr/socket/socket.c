@@ -303,7 +303,7 @@ R_API char *r_socket_to_string(int fd) {
 #endif
 }
 
-R_API int socket_udp_connect(const char *host, int port) {
+R_API int r_socket_udp_connect(const char *host, int port) {
 	struct sockaddr_in sa;
 	struct hostent *he;
 	int s;

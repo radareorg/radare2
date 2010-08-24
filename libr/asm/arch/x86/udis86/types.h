@@ -1,14 +1,49 @@
-/* -----------------------------------------------------------------------------
- * types.h
+/* udis86 - libudis86/types.h
  *
- * Copyright (c) 2006, Vivek Mohan <vivek@sig9.com>
- * All rights reserved. See LICENSE
- * -----------------------------------------------------------------------------
+ * Copyright (c) 2002-2009 Vivek Thampi
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification, 
+ * are permitted provided that the following conditions are met:
+ * 
+ *     * Redistributions of source code must retain the above copyright notice, 
+ *       this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright notice, 
+ *       this list of conditions and the following disclaimer in the documentation 
+ *       and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #ifndef UD_TYPES_H
 #define UD_TYPES_H
 
-#include <stdio.h>
+#ifdef __KERNEL__
+  /* -D__KERNEL__ is automatically passed on the command line when
+     building something as part of the Linux kernel */
+# include <linux/kernel.h>
+# include <linux/string.h>
+# define __UD_STANDALONE__ 1
+#endif /* __KERNEL__ */
+
+#ifndef __UD_STANDALONE__
+# include <stdio.h>
+#endif /* __UD_STANDALONE__ */
+
+/* gcc specific extensions */
+#ifdef __GNUC__
+# define UD_ATTR_PACKED __attribute__((packed))
+#else
+# define UD_ATTR_PACKED
+#endif /* UD_ATTR_PACKED */
 
 #ifdef _MSC_VER
 # define FMT64 "%I64"
@@ -22,10 +57,10 @@
   typedef __int64 int64_t;
 #else
 # define FMT64 "%ll"
-# include <inttypes.h>
+# ifndef __UD_STANDALONE__
+#  include <inttypes.h>
+# endif /* __UD_STANDALONE__ */
 #endif
-
-#include "itab.h"
 
 /* -----------------------------------------------------------------------------
  * All possible "types" of objects in udis86. Order is Important!
@@ -97,6 +132,8 @@ enum ud_type
   UD_OP_JIMM,	UD_OP_CONST
 };
 
+#include "itab.h"
+
 /* -----------------------------------------------------------------------------
  * struct ud_operand - Disassembled instruction Operand.
  * -----------------------------------------------------------------------------
@@ -136,7 +173,9 @@ struct ud
   int 			(*inp_hook) (struct ud*);
   uint8_t		inp_curr;
   uint8_t		inp_fill;
+#ifndef __UD_STANDALONE__
   FILE*			inp_file;
+#endif
   uint8_t		inp_ctr;
   uint8_t*		inp_buff;
   uint8_t*		inp_buff_end;
@@ -173,7 +212,11 @@ struct ud
   uint8_t		c3;
   uint8_t 		inp_cache[256];
   uint8_t		inp_sess[64];
+  uint8_t       have_modrm;
+  uint8_t       modrm;
+  void *        user_opaque_data;
   struct ud_itab_entry * itab_entry;
+  struct ud_lookup_table_list_entry *le;
 };
 
 /* -----------------------------------------------------------------------------
@@ -192,6 +235,7 @@ typedef struct ud_operand 	ud_operand_t;
 #define UD_INP_CACHE_SZ		32
 #define UD_VENDOR_AMD		0
 #define UD_VENDOR_INTEL		1
+#define UD_VENDOR_ANY		2
 
 #define bail_out(ud,error_code) longjmp( (ud)->bailout, error_code )
 #define try_decode(ud) if ( setjmp( (ud)->bailout ) == 0 )

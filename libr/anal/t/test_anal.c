@@ -14,16 +14,38 @@ static int usage() {
 }
 
 static int analyze(RAnal *anal, RAnalOp *aop, ut64 offset, ut8* buf, int len) {
+	char *stackop = NULL;
 	int ret;
 
 	ret = r_anal_aop (anal, aop, offset, buf, len);
 	if (ret) {
+		switch (aop->stackop) {
+		case R_ANAL_STACK_NULL:
+			stackop = strdup ("null");
+			break;
+		case R_ANAL_STACK_NOP:
+			stackop = strdup ("nop");
+			break;
+		case R_ANAL_STACK_INCSTACK:
+			stackop = strdup ("incstack");
+			break;
+		case R_ANAL_STACK_GET:
+			stackop = strdup ("get");
+			break;
+		case R_ANAL_STACK_SET:
+			stackop = strdup ("set");
+			break;
+
+		}
 		eprintf ("jump:     0x%08"PFMT64x"\n"
 				 "fail:     0x%08"PFMT64x"\n"
 				 "ref:      0x%08"PFMT64x"\n"
 				 "value:    0x%08"PFMT64x"\n"
+				 "stackop:  %s\n"
 				 "stackptr: %"PFMT64d"\n",
-				 aop->jump, aop->fail, aop->ref, aop->value, aop->stackptr);
+				 aop->jump, aop->fail, aop->ref, aop->value,
+				 stackop?stackop:"unk", aop->stackptr);
+		free (stackop);
 	}
 	return ret;
 }
