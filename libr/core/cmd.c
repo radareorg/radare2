@@ -582,6 +582,32 @@ static int cmd_rap(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case '\0':
+		r_core_rtr_list(core);
+		break;
+	case '?':
+		r_core_rtr_help(core);
+		break;
+	case '+':
+		r_core_rtr_add(core, input+1);
+		break;
+	case '-':
+		r_core_rtr_remove(core, input+1);
+		break;
+	case '=':
+		r_core_rtr_session(core, input+1);
+		break;
+	case '<':
+		r_core_rtr_pushout (core, input+1);
+		break;
+	case '!':
+		r_io_system (core->io, input+1);
+		break;
+	default:
+		r_core_rtr_cmd (core, input);
+	}
+#if 0
+	switch (input[0]) {
+	case '\0':
 		r_lib_list (core->lib);
 		r_io_plugin_list (core->io);
 		break;
@@ -596,6 +622,7 @@ static int cmd_rap(void *data, const char *input) {
 		r_io_system (core->io, input);
 		break;
 	}
+#endif
 	return R_TRUE;
 }
 

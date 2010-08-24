@@ -302,3 +302,37 @@ R_API char *r_socket_to_string(int fd) {
 	return str;
 #endif
 }
+
+R_API int socket_udp_connect(const char *host, int port) {
+	struct sockaddr_in sa;
+	struct hostent *he;
+	int s;
+
+#if __WINDOWS__
+	WSADATA wsadata;
+	if (WSAStartup (MAKEWORD (1,1), &wsadata) == SOCKET_ERROR) {
+		eprintf ("Error creating socket.");
+		return -1;
+	}
+#endif
+#if __UNIX__
+	signal (SIGPIPE, SIG_IGN);
+#endif
+	s = socket (AF_INET, SOCK_DGRAM, 0);
+	if (s == -1)
+		return -1;
+
+	memset (&sa, 0, sizeof (sa));
+	sa.sin_family = AF_INET;
+	he = (struct hostent *)gethostbyname (host);
+	if (he == (struct hostent*)0)
+		return -1;
+
+	sa.sin_addr = *((struct in_addr *)he->h_addr);
+	sa.sin_port = htons( port );
+
+	if (connect (s, (const struct sockaddr*)&sa, sizeof (struct sockaddr)))
+		return -1;
+
+	return s;
+}

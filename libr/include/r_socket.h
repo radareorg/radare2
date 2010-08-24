@@ -13,6 +13,7 @@
 R_API int r_socket_unix_connect(const char *file);
 R_API int r_socket_unix_listen(const char *file);
 #endif
+R_API int r_socket_udp_connect(const char *host, int port);
 R_API int r_socket_flush(int fd);
 R_API void r_socket_block(int fd, int block);
 R_API int r_socket_ready(int fd, int secs, int usecs);

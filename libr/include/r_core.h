@@ -29,6 +29,26 @@
 #define R_CORE_ANAL_GRAPHBODY  0x2
 #define R_CORE_ANAL_GRAPHDIFF  0x4
 
+/* rtr */
+#define RTR_PROT_RAP 0
+#define RTR_PROT_TCP 1
+#define RTR_PROT_UDP 2
+
+#define RTR_RAP_OPEN   0x01
+#define RTR_RAP_CMD    0x07
+#define RTR_RAP_REPLY  0x80
+
+#define RTR_MAX_HOSTS 255
+
+typedef struct r_core_rtr_host_t {
+	int proto;
+	char host[512];
+	int port;
+	char file[1024];
+	int fd;
+} RCoreRtrHost;
+/* rtr */
+
 typedef struct r_core_file_t {
 	char *uri;
 	char *filename;
@@ -76,6 +96,8 @@ typedef struct r_core_t {
 	RSign *sign;
 	RVm *vm;
 	char *cmdqueue;
+	int rtr_n;
+	RCoreRtrHost rtr_host[RTR_MAX_HOSTS];
 } RCore;
 
 #ifdef R_API
@@ -147,6 +169,14 @@ R_API int r_core_project_save(RCore *core, const char *file);
 R_API char *r_core_project_info(RCore *core, const char *file);
 R_API void r_core_sysenv_update(RCore *core);
 
+/* rtr */
+R_API void r_core_rtr_help(RCore *core);
+R_API void r_core_rtr_pushout(RCore *core, const char *input);
+R_API void r_core_rtr_list(RCore *core);
+R_API void r_core_rtr_add(RCore *core, const char *input);
+R_API void r_core_rtr_remove(RCore *core, const char *input);
+R_API void r_core_rtr_session(RCore *core, const char *input);
+R_API void r_core_rtr_cmd(RCore *core, const char *input);
 #endif
 
 #endif

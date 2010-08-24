@@ -168,6 +168,7 @@ static int __dbg_write(void *user, int pid, ut64 addr, const ut8 *buf, int len)
 
 R_API int r_core_init(RCore *core) {
 	static int singleton = R_TRUE;
+	core->rtr_n = 0;
 	core->ffio = 0;
 	core->oobi = NULL;
 	core->oobi_len = 0;
