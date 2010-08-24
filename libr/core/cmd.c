@@ -2989,8 +2989,10 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	}
 
 	/* comments */
-	ptr = strrchr (cmd, '#');
-	if (ptr) ptr[0]='\0';
+	if (*cmd!='#') {
+		ptr = strrchr (cmd, '#');
+		if (ptr) ptr[0]='\0';
+	}
 
 	/* multiple commands */
 	ptr = strrchr (cmd, ';');

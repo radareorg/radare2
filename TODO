@@ -11,10 +11,10 @@ Questions
 * Merge r_vm into r_anal ?
 * Merge r_vm into r_parse ?
 * ds debugger broken?
-* Implement minimalist 'ar' and add support for .a archive libs? 
 
 0.6 RELEASE
 ===========
+* Colorize destination address when cursor in branch
 * Reimplement or fix the delta diffing in C
   - first we need to do it for ired..
 * Display eflags in ascii mode
@@ -80,6 +80,7 @@ TODO gerardo
 
 unassigned TODO pointz
 ----------------------
+* Implement minimalist 'ar' and add support for .a archive libs? 
 * Realign flags when using project in debug mode
 * FileDescriptors: dd -- copy from !fd in r1
 * distribute 'spp' with 'rarc2' ?
