@@ -25,15 +25,9 @@ static int checkbpcallback(RCore *core) {
 	return R_FALSE;
 }
 
-static ut64 resetesp(RCore *core) {
-	ut64 ret = r_vm_reg_get (core->vm, core->vm->cpu.sp);
-	return ret;
-}
-
 /* TODO: move to print/disasm.c */
 static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
 	RAnalFcn *fcn, *fcni = NULL;
-	ut64 esp = 0;
 	int ret, idx, i, j, k, ostackptr, stackptr = 0;
 	int counter = 0;
 	int middle = 0;
@@ -46,8 +40,8 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	RFlagItem *flag;
 	RMetaItem *mi;
 
+	r_io_bind (core->io, &(core->vm->iob));
 	r_vm_reset (core->vm);
-	esp = resetesp (core);
 	// TODO: import values from debugger is possible
 	// TODO: allow to get those register snapshots from traces
 	// TODO: per-function register state trace

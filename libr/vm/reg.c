@@ -19,7 +19,7 @@ static struct r_vm_reg_type r_vm_reg_types[] = {
 
 R_API void r_vm_reg_type_list() {
 	struct r_vm_reg_type *p = r_vm_reg_types;
-	while (p) {
+	while (p && p->str) {
 		if (p->str==NULL)
 			break;
 		printf(" .%s\n", p->str);
@@ -29,7 +29,7 @@ R_API void r_vm_reg_type_list() {
 
 R_API const char *r_vm_reg_type(int type) {
 	struct r_vm_reg_type *p = r_vm_reg_types;
-	while (p) {
+	while (p && p->str) {
 		if (p->type == type)
 			return p->str;
 		p++;
@@ -39,7 +39,7 @@ R_API const char *r_vm_reg_type(int type) {
 
 R_API int r_vm_reg_type_i(const char *str) {
 	struct r_vm_reg_type *p = r_vm_reg_types;
-	while(p) {
+	while (p && p->str) {
 		if (!strcmp(str, p->str))
 			return p->type;
 		p++;
@@ -54,16 +54,15 @@ R_API int r_vm_reg_del(struct r_vm_t *vm, const char *name) {
 		struct r_vm_reg_t *r = list_entry(pos, struct r_vm_reg_t, list);
 		if (!strcmp(name, r->name)) {
 			list_del(&r->list);
-			return 0;
+			return R_FALSE;
 		}
 	}
-	return 1;
+	return R_TRUE;
 }
 
 R_API int r_vm_reg_set(struct r_vm_t *vm, const char *name, ut64 value) {
 	struct list_head *pos;
-
-	if(name)
+	if (name)
 	list_for_each(pos, &vm->regs) {
 		struct r_vm_reg_t *r = list_entry(pos, struct r_vm_reg_t, list);
 		if (!strcmp(name, r->name)) {
@@ -73,10 +72,10 @@ R_API int r_vm_reg_set(struct r_vm_t *vm, const char *name, ut64 value) {
 				r_vm_eval(vm, r->set);
 				vm->rec = NULL;
 			}
-			return 1;
+			return R_TRUE;
 		}
 	}
-	return 0;
+	return R_FALSE;
 }
 
 R_API int r_vm_reg_alias_list(struct r_vm_t *vm) {
@@ -84,9 +83,9 @@ R_API int r_vm_reg_alias_list(struct r_vm_t *vm) {
 	struct list_head *pos;
 	int len,space;
 
-	printf("Register alias:\n");
-	list_for_each(pos, &vm->regs) {
-		reg= list_entry(pos, struct r_vm_reg_t, list);
+	eprintf ("Register alias:\n");
+	list_for_each (pos, &vm->regs) {
+		reg= list_entry (pos, struct r_vm_reg_t, list);
 		if (reg->get == NULL && reg->set == NULL)
 			continue;
 		len = strlen(reg->name)+1;
@@ -95,7 +94,7 @@ R_API int r_vm_reg_alias_list(struct r_vm_t *vm) {
 			space = R_VM_ALEN;
 			printf("\n");
 		} else space = R_VM_ALEN-len;
-		printf("%*cget = %s\n%*cset = %s\n",
+		eprintf ("%*cget = %s\n%*cset = %s\n",
 			space, ' ', reg->get, R_VM_ALEN,' ', reg->set);
 	}
 	return 0;
