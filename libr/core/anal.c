@@ -273,7 +273,6 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int depth) {
 			return R_FALSE;
 		fcnlen = r_anal_fcn (core->anal, fcn, at+fcnlen, buf, buflen); 
 		if (fcnlen == R_ANAL_RET_ERROR) { /* Error analyzing function */
-			eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", at+fcnlen);
 			r_anal_fcn_free (fcn);
 			return R_FALSE;
 		} else if (fcnlen == R_ANAL_RET_END) { /* function analysis complete */

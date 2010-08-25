@@ -14,32 +14,63 @@ static int __lib_anal_cb(struct r_lib_plugin_t *pl, void *user, void *data)
 }
 static int __lib_anal_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
 
+static char *stackop2str(int type) {
+	switch (type) {
+		case R_ANAL_STACK_NULL:     return strdup ("null");
+		case R_ANAL_STACK_NOP:      return strdup ("nop");
+		case R_ANAL_STACK_INCSTACK: return strdup ("incstack");
+		case R_ANAL_STACK_GET:      return strdup ("get");
+		case R_ANAL_STACK_SET:      return strdup ("set");
+	}
+	return strdup ("unknown");
+}
+
+static char *optype2str(int type) {
+	switch (type) {
+		case R_ANAL_OP_TYPE_JMP:   return strdup ("jmp");
+		case R_ANAL_OP_TYPE_UJMP:  return strdup ("ujmp");
+		case R_ANAL_OP_TYPE_CJMP:  return strdup ("cjmp");
+		case R_ANAL_OP_TYPE_CALL:  return strdup ("call");
+		case R_ANAL_OP_TYPE_RCALL: return strdup ("rcall");
+		case R_ANAL_OP_TYPE_REP:   return strdup ("rep");
+		case R_ANAL_OP_TYPE_RET:   return strdup ("ret");
+		case R_ANAL_OP_TYPE_ILL:   return strdup ("ill");
+		case R_ANAL_OP_TYPE_NOP:   return strdup ("nop");
+		case R_ANAL_OP_TYPE_MOV:   return strdup ("mov");
+		case R_ANAL_OP_TYPE_TRAP:  return strdup ("trap");
+		case R_ANAL_OP_TYPE_SWI:   return strdup ("swi");
+		case R_ANAL_OP_TYPE_UPUSH: return strdup ("upush");
+		case R_ANAL_OP_TYPE_PUSH:  return strdup ("push");
+		case R_ANAL_OP_TYPE_POP:   return strdup ("pop");
+		case R_ANAL_OP_TYPE_CMP:   return strdup ("cmd");
+		case R_ANAL_OP_TYPE_ADD:   return strdup ("add");
+		case R_ANAL_OP_TYPE_SUB:   return strdup ("sub");
+		case R_ANAL_OP_TYPE_MUL:   return strdup ("mul");
+		case R_ANAL_OP_TYPE_DIV:   return strdup ("div");
+		case R_ANAL_OP_TYPE_SHR:   return strdup ("shr");
+		case R_ANAL_OP_TYPE_SHL:   return strdup ("shl");
+		case R_ANAL_OP_TYPE_OR:    return strdup ("or");
+		case R_ANAL_OP_TYPE_AND:   return strdup ("and");
+		case R_ANAL_OP_TYPE_XOR:   return strdup ("xor");
+		case R_ANAL_OP_TYPE_NOT:   return strdup ("not");
+		case R_ANAL_OP_TYPE_STORE: return strdup ("store");
+		case R_ANAL_OP_TYPE_LOAD:  return strdup ("load");
+	}
+	return strdup ("unknown");
+
+}
+
 static int analyze(RAnal *anal, RAnalOp *aop, ut64 offset, ut8* buf, int len) {
-	char *bytes, *stackop = NULL;
+	char *bytes, *optype = NULL, *stackop = NULL;
 	int ret;
 
 	ret = r_anal_aop (anal, aop, offset, buf, len);
 	if (ret) {
-		switch (aop->stackop) {
-		case R_ANAL_STACK_NULL:
-			stackop = strdup ("null");
-			break;
-		case R_ANAL_STACK_NOP:
-			stackop = strdup ("nop");
-			break;
-		case R_ANAL_STACK_INCSTACK:
-			stackop = strdup ("incstack");
-			break;
-		case R_ANAL_STACK_GET:
-			stackop = strdup ("get");
-			break;
-		case R_ANAL_STACK_SET:
-			stackop = strdup ("set");
-			break;
-
-		}
+		stackop = stackop2str (aop->stackop);
+		optype = optype2str (aop->type);
 		bytes = r_hex_bin2strdup (buf, ret);
 		eprintf ("bytes:    %s\n"
+				 "type:     %s\n"
 				 "jump:     0x%08"PFMT64x"\n"
 				 "fail:     0x%08"PFMT64x"\n"
 				 "ref:      0x%08"PFMT64x"\n"
@@ -47,8 +78,9 @@ static int analyze(RAnal *anal, RAnalOp *aop, ut64 offset, ut8* buf, int len) {
 				 "stackop:  %s\n"
 				 "stackptr: %"PFMT64d"\n"
 				 "--\n",
-				 bytes, aop->jump, aop->fail, aop->ref,
-				 aop->value, stackop?stackop:"unk", aop->stackptr);
+				 bytes, optype, aop->jump, aop->fail, aop->ref,
+				 aop->value, stackop, aop->stackptr);
+		free (optype);
 		free (stackop);
 		free (bytes);
 	}
