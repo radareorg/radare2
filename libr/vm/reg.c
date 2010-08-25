@@ -101,8 +101,7 @@ R_API int r_vm_reg_alias_list(struct r_vm_t *vm) {
 	return 0;
 }
 
-int r_vm_reg_alias(struct r_vm_t *vm, const char *name, const char *get, const char *set)
-{
+R_API int r_vm_reg_alias(struct r_vm_t *vm, const char *name, const char *get, const char *set) {
 	struct r_vm_reg_t *reg;
 	struct list_head *pos;
 
@@ -235,4 +234,29 @@ R_API int r_vm_cmd_reg(struct r_vm_t *vm, const char *_str) {
 		}
 	}
 	return 0;
+}
+
+R_API ut64 r_vm_reg_get(struct r_vm_t *vm, const char *name) {
+	struct list_head *pos;
+	int len;
+	if (!name)
+		return 0LL;
+	len = strlen(name);
+	if (name[len-1]==']')
+		len--;
+
+	list_for_each (pos, &vm->regs) {
+		RVmReg *r = list_entry(pos, struct r_vm_reg_t, list);
+		if (!strncmp (name, r->name, len)) {
+			if (vm->rec==NULL && r->get != NULL) {
+				vm->rec = r;
+				r_vm_eval(vm, r->get);
+				//vm_op_eval(r->get);
+				vm->rec = NULL;
+				return r->value;
+			}
+			return r->value;
+		}
+	}
+	return -1LL;
 }

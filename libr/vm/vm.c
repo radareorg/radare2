@@ -6,7 +6,7 @@
 /* TODO: move into r_vm_t */
 int vm_arch = -1;
 
-static ut64 r_vm_get_value(struct r_vm_t *vm, const char *str) {
+static ut64 r_vm_get_value(RVm *vm, const char *str) {
 	ut64 ret = 0LL;
 	for (;*str&&*str==' ';str=str+1);
 
@@ -125,31 +125,6 @@ R_API int r_vm_reg_add(struct r_vm_t *vm, const char *name, int type, ut64 value
 	r->set = NULL;
 	list_add_tail (&(r->list), &vm->regs);
 	return 1;
-}
-
-R_API ut64 r_vm_reg_get(struct r_vm_t *vm, const char *name) {
-	struct list_head *pos;
-	int len;
-	if (!name)
-		return 0LL;
-	len = strlen(name);
-	if (name[len-1]==']')
-		len--;
-
-	list_for_each (pos, &vm->regs) {
-		RVmReg *r = list_entry(pos, struct r_vm_reg_t, list);
-		if (!strncmp (name, r->name, len)) {
-			if (vm->rec==NULL && r->get != NULL) {
-				vm->rec = r;
-				r_vm_eval(vm, r->get);
-				//vm_op_eval(r->get);
-				vm->rec = NULL;
-				return r->value;
-			}
-			return r->value;
-		}
-	}
-	return -1LL;
 }
 
 // XXX: deprecate

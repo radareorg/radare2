@@ -25,12 +25,20 @@ static int checkbpcallback(RCore *core) {
 	return R_FALSE;
 }
 
+static ut64 resetesp(RCore *core) {
+	ut64 ret = r_vm_reg_get (core->vm, core->vm->cpu.sp);
+	return ret;
+}
+
 /* TODO: move to print/disasm.c */
 static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
-	RAnalFcn *fcni = NULL;
+	RAnalFcn *fcn, *fcni = NULL;
+	ut64 esp = 0;
 	int ret, idx, i, j, k, ostackptr, stackptr = 0;
 	int counter = 0;
 	int middle = 0;
+	int nargs = 0;
+	ut64 args[32];
 	char str[128];
 	char *line, *comment, *opstr, *osl = NULL; // old source line
 	RAsmAop asmop;
@@ -39,6 +47,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	RMetaItem *mi;
 
 	r_vm_reset (core->vm);
+	esp = resetesp (core);
 	// TODO: import values from debugger is possible
 	// TODO: allow to get those register snapshots from traces
 	// TODO: per-function register state trace
@@ -339,6 +348,15 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		}
 		r_vm_op_eval (core->vm, asmop.buf_asm);
 		switch (analop.type) {
+		case R_ANAL_OP_TYPE_PUSH:
+		case R_ANAL_OP_TYPE_UPUSH:
+			nargs++;
+			// setarg(nargs);
+			if (nargs<sizeof(args)) {
+				args[nargs] = analop.ref;
+			}
+			//r_cons_printf(" ; setarg(%d)=%llx\n", nargs, analop.ref);
+			break;
 		case R_ANAL_OP_TYPE_SWI:
 			{
 			int eax = (int)r_vm_reg_get (core->vm, core->vm->cpu.ret); //"eax");
@@ -357,6 +375,27 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			}
 			break;
 		case R_ANAL_OP_TYPE_CALL:
+			{
+			ut8 arg[64];
+#if 0
+			esp = resetesp(core)-esp;
+			if((st64)esp<0) esp=-esp;
+			nargs = (esp)/4;
+#endif
+
+			fcn = r_anal_fcn_find (core->anal, analop.jump);
+			if(fcn&&fcn->name) r_cons_printf ("; %s(", fcn->name);
+			else r_cons_printf ("; 0x%08"PFMT64x"(", analop.jump);
+			for(i=0;i<nargs;i++) {
+				if (arg[i]>1024) r_cons_printf("%d", args[nargs-i]);
+				else r_cons_printf("0x%x", args[nargs-i]);
+				if (i<nargs-1) r_cons_printf(", ");
+			}
+			//r_cons_printf("args=%d (%d)", nargs, esp);
+			r_cons_printf (")");
+			nargs = 0;
+			}
+			break;
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
 			counter++;
