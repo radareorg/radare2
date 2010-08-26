@@ -40,7 +40,6 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	RFlagItem *flag;
 	RMetaItem *mi;
 
-	r_io_bind (core->io, &(core->vm->iob));
 	r_vm_reset (core->vm);
 	// TODO: import values from debugger is possible
 	// TODO: allow to get those register snapshots from traces

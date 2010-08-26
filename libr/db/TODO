@@ -1,17 +1,13 @@
 * Use r_mem_pool
-
+* Add support for one level RDB.. to 8x speed up
 * Serialize/Deserialize from disk
-
 * Return FALSE when adding two elements with the same
   attributes (get before add) if the db is unique
   // not necessary, we can just do this by manually checkingc
-
 * Benchmarking
   - Compilation support for profiling memory usage
   - Compare performance against sqlite
-
 * Import/export from/to SQL
-
 * SQL support
 
 CREATE TABLE flags (

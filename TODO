@@ -10,16 +10,18 @@ Questions
 =========
 * Merge r_vm into r_anal ?
 * Merge r_vm into r_parse ?
-* ds debugger broken?
 
 0.6 RELEASE
 ===========
-* Fix segfault in r_print_disasm due to r_vm (missing r_io_bind?)
+* Add support for STATIC_PLUGINS in r_lang
+  - r_lang_define is implemented in lang.c, but requires the collaboration
+    of the plugins to properly setup the environment for the script execution.
+  - Add support for STATIC_PLUGINS in r_lang
+  - dlerror(/usr/lib/radare2/lang_perl.so): libperl.so: cannot open shared object file: No such file or directory
+    This issue is fixed by setting LD_LIBRARY_PATH...looks like dlopen ignores rpath
 * Colorize destination address when cursor in branch
 * Reimplement or fix the delta diffing in C
   - first we need to do it for ired..
-* Display eflags in ascii mode
-* Do not write a lot of spaces in r_line .. results in ugly copypasta and slow terminal
 * Add dex format support to rabin (android)
 * Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
 * Cx/CX are not displayed in disasm as they should.. (C! must die)
@@ -52,6 +54,7 @@ TODO nibble
 
 TODO edu
 --------
+* print data timestamps with 'p'
 * Implement more get_main()
 * typedef all function pointers, like in r_bp
 * Implement /A : search AES
@@ -62,10 +65,15 @@ TODO edu
 
 TODO pancake
 ------------
+* Display eflags in ascii mode
+  - r_reg_eflags(dbg->reg, "cpastidor")
+  - static buffer in dbg->reg..fixed size (32)
+  - printf("eflags: %s\n", r_reg_get_flags (dbg->reg, "cpastidor");
+  void foo(RRegister *r, RRegisterItem *ri, const char *str) {
+  }
 * Import r_vm register values from flags or from r_debug->r_reg
   - r_vm must use mmu cache when emulating code
     - use the one from r_io? and deprecate vm->mmu_cache?
-* implement rap:// upload/download protocol commands (maybe just system() with rsc2+wget?
 * Record trace of register status for each function when running
 {
  * Implement RAnalCall (analyze function arguments, return values, propagate types..)
@@ -77,6 +85,12 @@ TODO pancake
        - function signature comparsion if they dont match
        r_anal_fcn_cmp (anal, f1, f2);
 }
+  - add support for sign/unsigned registers..or at least a way to cast them
+  - add push/pop of register states (maybe we only need 2 levels of states)
+    - display regs in colors
+    - can be used for diffing registers
+    - is also useful to store values before emulating code
+    - we can probably implement this in a clone() method? (too heavy? more orgtogonal)
 
 TODO gerardo
 ------------
@@ -85,7 +99,7 @@ TODO gerardo
 
 unassigned TODO pointz
 ----------------------
-* Implement minimalist 'ar' and add support for .a archive libs? 
+* Implement minimalist 'ar' and add support for .a archive libs? (not necessary in this life)
 * Realign flags when using project in debug mode
 * FileDescriptors: dd -- copy from !fd in r1
 * distribute 'spp' with 'rarc2' ?
@@ -93,7 +107,7 @@ unassigned TODO pointz
 
 Bindings
 ========
-* generate accessors automatically from valaswig
+* generate accessors from valaswig
 * Script plugins
  - We should enable r_lib to implement plugins in any
    scripting language, so we can for example prepare
@@ -122,6 +136,7 @@ Refactoring
 0.7
 ===
 * Is RCore->block and blocksize a RBuf ? refactor!11
+* Implement rap:// upload/download protocol commands (maybe just system() with rsc2+wget?
  
 Future
 ======
