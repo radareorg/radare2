@@ -928,8 +928,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_cons_printf ("Enter a comment: (prefix it with '-' to remove)\n");
 		r_cons_flush ();
 		r_cons_set_raw (0);
-		strcpy (buf, "CC ");
-		if (r_cons_fgets (buf+3, 1000, 0, NULL) <0)
+		strcpy (buf, "CC 0 ");
+		if (r_cons_fgets (buf+5, 1000, 0, NULL) <0)
 			buf[0]='\0';
 		if (buf[0]) {
 			if (curset) r_core_seek (core, core->offset + cursor, 0);

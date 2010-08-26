@@ -86,6 +86,15 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		// TODO: r_str_writef (fd, "e asm.arch=%s", r_config_get ("asm.arch"));
 		r_config_list (core->config, NULL, R_TRUE);
 		r_cons_flush ();
+		r_str_write (fd, "# sections\n");
+		r_io_section_list (core->io, core->offset, 1);
+		r_cons_flush ();
+		r_str_write (fd, "# meta\n");
+		r_meta_list (core->meta, R_META_ANY);
+		r_cons_flush ();
+		r_str_write (fd, "# seek\n");
+		r_str_writef (fd, "s 0x%08"PFMT64x, core->offset);
+		r_cons_flush ();
 		r_cons_singleton ()->fdout = 1;
 		close (fd);
 	} else {

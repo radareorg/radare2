@@ -981,7 +981,7 @@ static int cmd_section(void *data, const char *input) {
 	case '?':
 		r_cons_printf (
 		" S                ; list sections\n"
-		" S*               ; list sections (in radare commands\n"
+		" S*               ; list sections (in radare commands)\n"
 		" S=               ; list sections (in nice ascii-art bars)\n"
 		" S [offset] [vaddr] [size] [vsize] [name] [rwx] ; adds new section\n"
 		" S -[offset]      ; remove this section definition\n");
@@ -2861,18 +2861,10 @@ static int cmd_meta(void *data, const char *input) {
 			}
 		} else eprintf ("Cannot find meta information at 0x%08"PFMT64x"\n", core->offset);
 		break;
-	case 'C': /* add comment */
-		// TODO: do we need to get the size? or the offset?
-		// TODO: is this an exception compared to other C? commands?
-		if (input[1]==' ') input++;
-		if (input[1]=='-')
-			r_meta_del (core->meta, R_META_COMMENT, core->offset, core->offset, input+2);
-		else if (input[1])
-			r_meta_add (core->meta, R_META_COMMENT, core->offset, core->offset, input+1);
-		break;
 	case '!':
 		r_meta_sync (core->meta);
 		break;
+	case 'C':
 	case 'S':
 	case 's':
 	case 'd': /* data */
@@ -2937,6 +2929,7 @@ static int cmd_meta(void *data, const char *input) {
 		eprintf (
 		"Usage: C[-LCsSmxX?] [...]\n"
 		" C!                     # sync xrefs with (to be deprecated)\n"
+		" C*                     # List meta and xref info in r2 commands\n"
 		" C-[@][ addr]           # delete metadata at given address\n"
 		" CL[-] [addr]           # show 'code line' information (bininfo)\n"
 		" CC [string]            # add comment\n"
