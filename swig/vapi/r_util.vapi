@@ -33,7 +33,7 @@ public static class Radare.RHex {
 #endif
 	[CCode (cheader_filename="r_util.h", cprefix="r_file_")]
 	public static class RFile {
-		public static string slurp(string file, uint64 off, int sz, out int osz=0);
+		public static string slurp(string file, out int osz=0);
 		public static string slurp_range(string file, uint64 off, int sz, out int osz=0);
 	}
 	[CCode (cheader_filename="r_util.h", cprefix="r_log_", free_function="")]

@@ -87,9 +87,9 @@ install-perl:
 	# hack for slpm
 	@-if [ "`grep perl supported.langs`" ]; then \
 	if [ -n "`echo ${PREFIX}${DESTDIR}|grep home`" ]; then \
-		target=${PREFIX}${DESTDIR}`perl -e 'for (@INC) { print "$$_\n" if /lib\/perl5/ && !/local/; }'|head -n 1` ; \
+		target=${PREFIX}${DESTDIR}`perl -e 'for (@INC) { print "$$_\n" if /lib(64)?\/perl5/ && !/local/; }'|head -n 1` ; \
 	else \
-		target=${DESTDIR}`perl -e 'for (@INC) { print "$$_\n" if /lib\/perl5/ && !/local/; }'|head -n 1` ; \
+		target=${DESTDIR}`perl -e 'for (@INC) { print "$$_\n" if /lib(64)?\/perl5/ && !/local/; }'|head -n 1` ; \
 	fi ; \
 	mkdir -p $$target/r2 ; \
 	echo "Installing perl r2 modules..." ; \
