@@ -146,6 +146,37 @@ R_API void *r_list_get_n(RList *list, int n) {
 	return NULL;
 }
 
+R_API void *r_list_get_by_int(RList *list, int off, int n) {
+	ut8 *p;
+	RListIter *iter;
+	r_list_foreach(list, iter, p) {
+		if (!memcmp (&n, p+off, sizeof (int)))
+			return p;
+	}
+	return NULL;
+}
+
+R_API void *r_list_get_by_int64(RList *list, int off, ut64 n) {
+	ut8 *p;
+	RListIter *iter;
+	r_list_foreach(list, iter, p) {
+		if (!memcmp (&n, p+off, sizeof (ut64)))
+			return p;
+	}
+	return NULL;
+}
+
+R_API void *r_list_get_by_string(RList *list, int off, const char *str) {
+	ut8 *p;
+	RListIter *iter;
+	r_list_foreach(list, iter, p) {
+		const char *ptr = p+off;
+		if (!strcmp (str, ptr))
+			return p;
+	}
+	return NULL;
+}
+
 #if TEST
 
 // TODO: move into t/list.c

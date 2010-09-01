@@ -79,6 +79,12 @@ typedef struct r_bin_section_t {
 	ut64 srwx;
 } RBinSection;
 
+#define RBinSectionName r_offsetof(RBinSection, name)
+#define RBinSectionOffset r_offsetof(RBinSection, offset)
+// usage:
+// r_list_get_by_name(bin->sections, RBinSectionName, ".text");
+// bin.sections.get_by_name(SectionName, ".text");
+
 typedef struct r_bin_symbol_t {
 	char name[R_BIN_SIZEOF_STRINGS];
 	char forwarder[R_BIN_SIZEOF_STRINGS];

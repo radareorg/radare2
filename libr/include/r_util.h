@@ -177,6 +177,7 @@ R_API ut64 r_num_math(struct r_num_t *num, const char *str);
 R_API ut64 r_num_get(struct r_num_t *num, const char *str);
 
 /* TODO ..use as uppercase maybe? they are macros! */
+#define R_BETWEEN(x,y,z) (((x)>=(y)) && ((x)<=(z)))
 #define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
 #define strnull(x) (!x||!*x)
 #define iswhitechar(x) (x==' '||x=='\t'||x=='\n'||x=='\r')

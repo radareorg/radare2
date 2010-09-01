@@ -56,6 +56,11 @@ R_API void r_list_split (RList *list, void *ptr);
 R_API void r_list_split_iter (RList *list, RListIter *iter);
 R_API void *r_list_get_n(RList *list, int n);
 
+/* hashlike api */
+R_API void *r_list_get_by_int(RList *list, int off, int n);
+R_API void *r_list_get_by_int64(RList *list, int off, ut64 n);
+R_API void *r_list_get_by_string(RList *list, int off, const char *str);
+
 /* rlistflist */
 // TODO: rename to init or so.. #define r_oflist_new() R_NEW(ROFList);memset
 #define r_oflist_length(x,y) r_list_length(x,y)
