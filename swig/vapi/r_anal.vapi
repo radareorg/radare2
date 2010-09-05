@@ -109,7 +109,7 @@ public class RAnal {
 		UJMP,
 		CJMP,
 		CALL,
-		RCALL,
+		UCALL,
 		REP,
 		RET,
 		ILL,

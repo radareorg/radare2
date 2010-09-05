@@ -25,14 +25,14 @@ enum {
 };
 
 enum {
-	R_ANAL_OP_TYPE_NULL  = 0,
-	R_ANAL_OP_TYPE_JMP   = 1,  /* mandatory jump */
-	R_ANAL_OP_TYPE_UJMP  = 2,  /* unknown jump (register or so) */
-	R_ANAL_OP_TYPE_CJMP  = 4,  /* conditional jump */
-	R_ANAL_OP_TYPE_CALL  = 8,  /* call to subroutine (branch+link) */
-	R_ANAL_OP_TYPE_RCALL = 16, /* call to register */
-	R_ANAL_OP_TYPE_REP   = 32, /* repeats next instruction N times */
-	R_ANAL_OP_TYPE_RET   = 64, /* returns from subrutine */
+	R_ANAL_OP_TYPE_NULL  = 0x0,
+	R_ANAL_OP_TYPE_JMP   = 0x1,  /* mandatory jump */
+	R_ANAL_OP_TYPE_UJMP  = 0x2,  /* unknown jump (register or so) */
+	R_ANAL_OP_TYPE_CJMP  = 0x4,  /* conditional jump */
+	R_ANAL_OP_TYPE_CALL  = 0x8,  /* call to subroutine (branch+link) */
+	R_ANAL_OP_TYPE_UCALL = 0x10, /* unknown call (register or so) */
+	R_ANAL_OP_TYPE_REP   = 0x20, /* repeats next instruction N times */
+	R_ANAL_OP_TYPE_RET   = 0x40, /* returns from subrutine */
 	R_ANAL_OP_TYPE_ILL   = 0x80,  /* illegal instruction // trap */
 	R_ANAL_OP_TYPE_UNK   = 0x100, /* unknown opcode type */
 	R_ANAL_OP_TYPE_NOP   = 0x200, /* does nothing */
@@ -53,7 +53,7 @@ enum {
 	R_ANAL_OP_TYPE_AND   = 0x2000000,
 	R_ANAL_OP_TYPE_XOR   = 0x4000000,
 	R_ANAL_OP_TYPE_NOT   = 0x8000000,
-	R_ANAL_OP_TYPE_STORE = 0x10000000, /* store from register to memory */
+	R_ANAL_OP_TYPE_STORE = 0x10000000,  /* store from register to memory */
 	R_ANAL_OP_TYPE_LOAD  = 0x20000000,  /* load from memory to register */
 };
 
@@ -156,6 +156,7 @@ typedef struct r_anal_aop_t {
 	int eob;        /* end of block (boolean) */
 	ut64 jump;      /* true jmp */
 	ut64 fail;      /* false jmp */
+	ut32 selector;  /* segment selector */
 	st64 ref;       /* reference to memory */ /* XXX signed? */
 	ut64 value;     /* reference to value */ /* XXX signed? */
 	st64 stackptr;  /* stack pointer */

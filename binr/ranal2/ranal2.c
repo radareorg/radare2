@@ -31,7 +31,7 @@ static char *optype2str(int type) {
 		case R_ANAL_OP_TYPE_UJMP:  return strdup ("ujmp");
 		case R_ANAL_OP_TYPE_CJMP:  return strdup ("cjmp");
 		case R_ANAL_OP_TYPE_CALL:  return strdup ("call");
-		case R_ANAL_OP_TYPE_RCALL: return strdup ("rcall");
+		case R_ANAL_OP_TYPE_UCALL: return strdup ("ucall");
 		case R_ANAL_OP_TYPE_REP:   return strdup ("rep");
 		case R_ANAL_OP_TYPE_RET:   return strdup ("ret");
 		case R_ANAL_OP_TYPE_ILL:   return strdup ("ill");

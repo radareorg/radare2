@@ -52,7 +52,7 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *bytes, int len) 
 	//case 9: // jalr
 		reg = op>>24;
 		if (reg<10) {
-			aop->type = R_ANAL_OP_TYPE_RCALL;
+			aop->type = R_ANAL_OP_TYPE_UCALL;
 			snprintf (buf, sizeof (buf), "t%d", reg); // XXX must be rN...!regs* should be synced here
 			aop->jump = 1234;//flag_get_addr(buf);
 			aop->fail = addr+8;
