@@ -104,6 +104,7 @@ static int MACH0_(r_bin_mach0_parse_symtab)(struct MACH0_(r_bin_mach0_obj_t)* bi
 		}
 		if (r_buf_read_at(bin->b, st.stroff, (ut8*)bin->symstr, st.strsize) == -1) {
 			eprintf("Error: read (symstr)\n");
+			R_FREE (bin->symstr);
 			return R_FALSE;
 		}
 		if (!(bin->symtab = malloc(bin->nsymtab * sizeof(struct MACH0_(nlist))))) {
@@ -117,6 +118,7 @@ static int MACH0_(r_bin_mach0_parse_symtab)(struct MACH0_(r_bin_mach0_obj_t)* bi
 #endif
 		if (len == -1) {
 			eprintf("Error: read (nlist)\n");
+			R_FREE (bin->symtab);
 			return R_FALSE;
 		}
 	}
@@ -141,6 +143,7 @@ static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* 
 		len = r_buf_fread_at(bin->b, bin->dysymtab.tocoff, (ut8*)bin->toc, bin->endian?"2I":"2i", bin->ntoc);
 		if (len == -1) {
 			eprintf("Error: read (toc)\n");
+			R_FREE (bin->toc);
 			return R_FALSE;
 		}
 	}
@@ -157,6 +160,7 @@ static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* 
 #endif
 		if (len == -1) {
 			eprintf("Error: read (modtab)\n");
+			R_FREE (bin->modtab);
 			return R_FALSE;
 		}
 	}
@@ -170,6 +174,7 @@ static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* 
 				(ut8*)bin->indirectsyms, bin->endian?"I":"i", bin->nindirectsyms);
 		if (len == -1) {
 			eprintf("Error: read (indirect syms)\n");
+			R_FREE (bin->indirectsyms);
 			return R_FALSE;
 		}
 	}
@@ -412,7 +417,7 @@ struct r_bin_mach0_import_t* MACH0_(r_bin_mach0_get_imports)(struct MACH0_(r_bin
 	char sectname[17];
 	int i, j, k, nsyms, sym;
 
-	if (!bin->symtab || !bin->symstr)
+	if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms)
 		return NULL;
 	if (!(imports = malloc((bin->dysymtab.nundefsym + 1) * sizeof(struct r_bin_mach0_import_t))))
 		return NULL;
