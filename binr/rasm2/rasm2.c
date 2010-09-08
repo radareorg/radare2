@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 		return rasm_show_help ();
 
 	r_asm_use (a, "x86"); // XXX: do not harcode default arch
-	while ((c = getopt (argc, argv, "CVa:b:s:do:Bl:hLf:")) != -1) {
+	while ((c = getopt (argc, argv, "CeVa:b:s:do:Bl:hLf:")) != -1) {
 		switch (c) {
 		case 'f':
 			file = optarg;
