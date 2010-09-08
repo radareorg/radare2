@@ -8,6 +8,8 @@
 
 Questions
 =========
+* rarc2 allows to compile invalid code like calling puts() out of context
+* add asm.profile into r2
 * Merge r_vm into r_anal ?
 * Merge r_vm into r_parse ?
 * Add rabin2 .! calls into r_core api? r_core_rabin_import(core, "rIs") ?

@@ -38,6 +38,7 @@ static char elem[1024];
 int attsyntax = 0;
 static int elem_n = 0;
 static int context = 0;
+static int showmain = 0;
 static char *callname = NULL;
 static char *endframe = NULL;
 static char *ctxpush[32];
@@ -697,6 +698,7 @@ static void showhelp() {
 		"  -A      Show current architecture\n"
 		"  -l      List all supported architectures\n"
 		"  -s      use at&t syntax instead of intel\n"
+		"  -m      add 'call main prefix\n"
 		"  -h      Display this help\n"
 		"  -ax86  use x86-32\n"
 		"  -ax64  use x86-64\n"
@@ -719,6 +721,8 @@ static void parseflag(const char *arg) {
 			exit (1);
 		}
 		break;
+	case 'm':
+		showmain = 1;
 	case 's':
 		attsyntax = 1;
 		break;
@@ -741,8 +745,6 @@ int main(int argc, char **argv) {
 	int fd = 0;
 	char ch;
 	rcc_init ();
-	emit->call ("main", 0);
-	emit->trap ();
 	while (argc-->0) {
 		if (argc>0) {
 			if (argv[argc][0]!='-') {
@@ -753,6 +755,10 @@ int main(int argc, char **argv) {
 		if (fd == -1) {
 			eprintf ("Cannot open '%s'.\n", file);
 			return 1;
+		}
+		if (showmain) {
+			emit->call ("main", 0);
+			emit->trap ();
 		}
 		for (line=1; read (fd, &ch, 1)==1; )
 			parsechar (ch);

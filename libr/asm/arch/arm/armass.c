@@ -23,6 +23,7 @@ enum {
 	TYPE_SWI = 3,
 	TYPE_BRA = 4,
 	TYPE_ARI = 5,
+	TYPE_IMM = 6,
 };
 
 static ArmOp ops[] = {
@@ -39,8 +40,12 @@ static ArmOp ops[] = {
 	{ "rsc", 0xe000, TYPE_ARI },
 	{ "rscs", 0xf000, TYPE_ARI },
 
+	{ "cps", 0xb1, TYPE_IMM },
+
+	{ "blx", 0x30ff2fe1, TYPE_BRA },
 	{ "bl", 0xb, TYPE_BRA },
-	{ "bx", 0xb, TYPE_BRA },
+	{ "bx", 0x10ff2fe1, TYPE_BRA },
+	//{ "bx", 0xb, TYPE_BRA },
 	{ "b", 0xa, TYPE_BRA },
 
 	{ "str", 0x4, TYPE_MOV },
@@ -139,15 +144,22 @@ static int arm_opcode_cond(ArmOpcode *ao, int delta) {
 }
 
 static int arm_opcode_name(ArmOpcode *ao) {
-	int i;
+	int i, ret;
 	for (i=0;ops[i].name;i++) {
 		if (!memcmp(ao->op, ops[i].name, strlen (ops[i].name))) {
 			ao->o = (ops[i].code);//<<24;
 			arm_opcode_cond(ao, strlen(ops[i].name));
 			switch(ops[i].type) {
+			case TYPE_IMM:
+				ao->o |= getnum(ao->a0)<<24; // ???
+				break;
 			case TYPE_BRA:
+				if (!(ret = getreg(ao->a0)<<24)) {
 				// XXX: Needs to calc (eip-off-8)>>2
-				ao->o |= getnum(ao->a0)<<24;
+			arm_opcode_cond(ao, strlen(ops[i].name));
+					ao->o = ao->o&0x70 | 0xb | getnum(ao->a0)<<24;
+				} else ao->o |= ret;
+				printf("---> %s\n", ao->a0);
 				break;
 			case TYPE_SWI:
 				ao->o |= getnum(ao->a0)<<24;
@@ -205,8 +217,15 @@ main() {
 	display("add r0, r1, r2");
 	display("mov fp, 0");
 #endif
-	display("str r0, 33");
-	display("bx 33");
+	display("adds r3, #8");
+	display("subs r2, #1");
+	display("bne r3");
+	display("str r1, 33");
+	display("cmp r1, r3");
+	display("bcc 33");
+	display("blx r1");
+	display("bx r1");
+	display("blx 0x8048");
 #if 0
 	display("b 0x123");
 	display("bl 0x123");
