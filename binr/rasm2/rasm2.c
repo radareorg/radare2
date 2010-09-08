@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 	if (!r_asm_set_bits (a, bits))
-		eprintf ("cannot set bits (triying with 32)\n");
+		eprintf ("WARNING: cannot set asm backend to %d bits\n", bits);
 
 	if (file) {
 		char *content;

@@ -46,10 +46,11 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
 	if (!strcmp (arch, "arm")) {
 		if (!strcmp (os, "linux"))
 			ctx->sysptr = syscalls_linux_arm;
+		else
 		if (!strcmp (os, "macos") || !strcmp (os, "darwin"))
 			ctx->sysptr = syscalls_darwin_arm;
 		else {
-			eprintf ("r_syscall_setup: Unknown arch '%s'\n", arch);
+			eprintf ("r_syscall_setup: Unknown OS '%s'\n", os);
 			return R_FALSE;
 		}
 	} else

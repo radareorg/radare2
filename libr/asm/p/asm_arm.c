@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <string.h>
 
+
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
@@ -79,6 +80,15 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	return aop->inst_len;
 }
 
+int armass_assemble(const char *str);
+static int assemble(RAsm *a, RAsmAop *aop, const char *buf) {
+	int op = armass_assemble(buf);
+	if (op==-1)
+		return -1;
+	r_mem_copyendian (aop->buf, &op, 4, a->big_endian);
+	return (a->bits/8);
+}
+
 RAsmPlugin r_asm_plugin_arm = {
 	.name = "arm",
 	.arch = "arm",
@@ -87,7 +97,7 @@ RAsmPlugin r_asm_plugin_arm = {
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = NULL
+	.assemble = &assemble 
 };
 
 #ifndef CORELIB

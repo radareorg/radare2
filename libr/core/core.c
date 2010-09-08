@@ -539,10 +539,9 @@ reaccept:
 					//pipe_stdout_to_tmp_file((char*)&buf, (char*)ptr+5);
 					strcpy((char*)buf, "/tmp/.out");
 					pipefd = r_cons_pipe_open ((const char *)buf, 0);
-eprintf("SYSTEM(%s)\n", ptr+6);
+//eprintf("SYSTEM(%s)\n", ptr+6);
 					system((const char*)ptr+6);
 					r_cons_pipe_close (pipefd);
-
 					{
 						FILE *fd = fopen((char*)buf, "r");
 						 i = 0;

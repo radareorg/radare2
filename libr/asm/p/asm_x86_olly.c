@@ -1,4 +1,4 @@
-/* radare - GPL3 - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare - GPL3 - Copyright 2009-2010 pancake<nopcode.org> nibble<.ds@gmail.com> */
 
 #include <stdio.h>
 #include <string.h>
@@ -36,13 +36,9 @@ static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf)
 			}
 		}
 	}
-	aop->inst_len = Assemble((char*)buf, a->pc, &asm_obj, oattempt, oconstsize, aop->buf_err);
-	if (aop->inst_len < 0)
-		aop->inst_len = 0;
-
+	aop->inst_len = R_MAX (0, Assemble((char*)buf, a->pc, &asm_obj, oattempt, oconstsize, aop->buf_err));
 	if (aop->inst_len > 0)
-		memcpy(aop->buf, asm_obj.code, aop->inst_len<=R_ASM_BUFSIZE?aop->inst_len:R_ASM_BUFSIZE);
-
+		memcpy (aop->buf, asm_obj.code, R_MIN(aop->inst_len, R_ASM_BUFSIZE));
 	return aop->inst_len;
 }
 

@@ -295,6 +295,12 @@ static int myaop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len)
 		aop->ref = 0; // TODO value of register here! get_offset
 		aop->stackptr = 4;
 		break;
+	case 0x6a: // push $7
+		aop->type = R_ANAL_OP_TYPE_PUSH;
+		aop->ref = buf[1];
+		aop->stackptr = 4;
+		break;
+		break;
 	case 0x5a:
 	case 0x5b:
 	case 0x5c:

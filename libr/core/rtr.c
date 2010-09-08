@@ -3,11 +3,7 @@
 #include "r_core.h"
 #include "r_socket.h"
 
-/* TODO: Move inside r_core */
-static const int endian = 0;
-//static int rtr_n = 0;
-//static struct rtr_host_t rtr_host[RTR_MAX_HOSTS];
-
+#define endian core->assembler->big_endian
 #define rtr_n core->rtr_n
 #define rtr_host core->rtr_host
 
@@ -77,7 +73,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	char input[1024], *host = NULL, *file = NULL, *ptr = NULL, buf[1024];
 	int proto, port, fd, i;
 
-	strncpy (input, _input, 1020);
+	strncpy (input, _input, sizeof (input)-4);
 	/* Parse uri */
 	if ((ptr = strstr(input, "tcp://"))) {
 		proto = RTR_PROT_TCP;
@@ -127,7 +123,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		/* read */
 		eprintf ("waiting... "); fflush(stdout);
 		r_socket_read (fd, (ut8*)buf, 5);
-		r_mem_copyendian ((ut8 *)&i, (ut8*)buf+1, 4, endian);
+		r_mem_copyendian ((ut8 *)&i, (ut8*)buf+1, 4, core->assembler->big_endian);
 		if (buf[0] != (char)(RTR_RAP_OPEN|RTR_RAP_REPLY) || i<= 0) {
 			eprintf ("Error: Wrong reply\n");
 			return;

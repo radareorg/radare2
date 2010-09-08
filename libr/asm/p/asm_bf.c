@@ -1,4 +1,4 @@
-/* radare - GPL3 - Copyright 2009 pancake <youterm.com> - nibble<.ds@gmail.com> */
+/* radare - GPL3 - Copyright 2009-2010 pancake <youterm.com> - nibble<.ds@gmail.com> */
 
 #include <stdio.h>
 #include <string.h>
@@ -8,8 +8,7 @@
 #include <r_asm.h>
 
 
-static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len)
-{
+static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len) {
 	int i;
 	char *buf_cp, *b;
 
@@ -64,9 +63,9 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 
 RAsmPlugin r_asm_plugin_bf = {
 	.name = "bf",
-	.arch = "brainfuck",
-	.bits = (int[]){ 8, 0 },
-	.desc = "BF disassembly plugin",
+	.arch = "bf",
+	.bits = (int[]){ 8, 16, 32, 0 }, // dummy
+	.desc = "Brainfuck disassembly plugin",
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
