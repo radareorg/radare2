@@ -426,44 +426,27 @@ R_API int r_core_anal_graph_fcn(RCore *core, char *fname, int opts) {
 }
 
 static int r_core_anal_followptr(RCore *core, ut64 at, ut64 ptr, ut64 ref, int code, int depth) {
-	RAnalOp op;
-	ut8* buf;
 	ut64 dataptr;
 	int wordsize, endian;
 
-	if (depth < 0)
-		return R_FALSE;
-	if (code) {
-		if (ptr == ref) {
+	if (ptr == ref) {
+		if (code)
 			r_cons_printf ("Cx 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 					(ut64)(at), (ut64) ref);
-			return R_TRUE;
-		} else {
-			if ((buf = (ut8 *)malloc (core->blocksize)) == NULL)
-				return R_FALSE;
-			if (r_io_read_at (core->io, ptr, buf, core->blocksize) != core->blocksize ||
-				!r_anal_aop (core->anal, &op, ptr, buf, core->blocksize)) {
-				free (buf);
-				return R_FALSE;
-			}
-			free (buf);
-			return r_core_anal_followptr (core, at, op.jump, ref, R_TRUE, depth-1);
-		}
-	} else {
-		if (ptr == ref) {
-			r_cons_printf ("CX 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+		else r_cons_printf ("CX 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 					(ut64)(at), (ut64)ref);
-			return R_TRUE;
-		}
-		if (core->bin->info->big_endian)
-			endian = LIL_ENDIAN;
-		else endian = !LIL_ENDIAN;
-		wordsize = (int)(core->anal->bits/8);
-		if ((dataptr = r_io_read_i (core->io, ptr, wordsize, endian)) == -1) {
-			return R_FALSE;
-		}
-		return r_core_anal_followptr (core, at, dataptr, ref, R_FALSE, depth-1);
+		return R_TRUE;
 	}
+	if (depth < 1)
+		return R_FALSE;
+	if (core->bin->info->big_endian)
+		endian = !LIL_ENDIAN;
+	else endian = LIL_ENDIAN;
+	wordsize = (int)(core->anal->bits/8);
+	if ((dataptr = r_io_read_i (core->io, ptr, wordsize, endian)) == -1) {
+		return R_FALSE;
+	}
+	return r_core_anal_followptr (core, at, dataptr, ref, code, depth-1);
 }
 
 #define OPSZ 8
@@ -494,13 +477,22 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 			for (i=0; i<core->blocksize-OPSZ; i++) {
 				if (!r_anal_aop (core->anal, &op, at+i, buf+i, core->blocksize-i))
 					continue;
-				if (op.jump != -1 &&
-					r_core_anal_followptr (core, at+i, op.jump, ref, R_TRUE, ptrdepth)) {
-					count ++;
-				}
-				if (op.ref != -1 &&
-					r_core_anal_followptr (core, at+i, op.ref, ref, R_FALSE, ptrdepth)) {
-					count ++;
+				if (op.type == R_ANAL_OP_TYPE_JMP || op.type == R_ANAL_OP_TYPE_CJMP ||
+					op.type == R_ANAL_OP_TYPE_CALL) {
+					if (op.jump != -1 &&
+						r_core_anal_followptr (core, at+i, op.jump, ref, R_TRUE, 0)) {
+						count ++;
+					}
+				} else if (op.type == R_ANAL_OP_TYPE_UJMP || op.type == R_ANAL_OP_TYPE_UCALL) {
+					if (op.ref != -1 &&
+						r_core_anal_followptr (core, at+i, op.ref, ref, R_TRUE, 1)) {
+						count ++;
+					}
+				} else {
+					if (op.ref != -1 &&
+						r_core_anal_followptr (core, at+i, op.ref, ref, R_FALSE, ptrdepth)) {
+						count ++;
+					}
 				}
 			}
 		}
