@@ -25,7 +25,7 @@ R_API ut64 r_sys_now(void) {
 }
 
 R_API char *r_sys_cmd_strf(const char *fmt, ...) {
-	char *ret, cmd[1024];
+	char *ret, cmd[4096];
 	va_list ap;
 	va_start(ap, fmt);
 	vsnprintf (cmd, sizeof (cmd), fmt, ap);
@@ -199,6 +199,16 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 	return NULL;
 }
 #endif
+
+R_API int r_sys_cmdf (const char *fmt, ...) {
+	char *ret, cmd[4096];
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf (cmd, sizeof (cmd), fmt, ap);
+	ret = r_sys_cmd (cmd);
+	va_end(ap);
+	return ret;
+}
 
 R_API int r_sys_cmd (const char *str) {
 /* TODO: implement for other systems */
