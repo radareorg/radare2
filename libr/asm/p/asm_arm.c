@@ -80,9 +80,9 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	return aop->inst_len;
 }
 
-int armass_assemble(const char *str);
+int armass_assemble(const char *str, unsigned long off);
 static int assemble(RAsm *a, RAsmAop *aop, const char *buf) {
-	int op = armass_assemble(buf);
+	int op = armass_assemble(buf, a->pc);
 	if (op==-1)
 		return -1;
 	r_mem_copyendian (aop->buf, &op, 4, a->big_endian);

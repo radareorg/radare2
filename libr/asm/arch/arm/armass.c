@@ -1,11 +1,13 @@
 /* radare - LGPL - Copyright 2010 pancake<@nopcode.org> */
 
+// TODO: Add thumb mode
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
 
 typedef struct {
+	unsigned long off;
 	int o;
 	char op[32];
 	char *a0, *a1, *a2;
@@ -24,15 +26,16 @@ enum {
 	TYPE_BRA = 4,
 	TYPE_ARI = 5,
 	TYPE_IMM = 6,
+	TYPE_MEM = 7,
 };
 
 static ArmOp ops[] = {
 	{ "adc", 0xa000, TYPE_ARI },
 	{ "adcs", 0xb000, TYPE_ARI },
-	{ "add", 0x8000, TYPE_ARI },
 	{ "adds", 0x9000, TYPE_ARI },
-	{ "sub", 0x4000, TYPE_ARI },
+	{ "add", 0x8000, TYPE_ARI },
 	{ "subs", 0x5000, TYPE_ARI },
+	{ "sub", 0x4000, TYPE_ARI },
 	{ "sbc", 0xc000, TYPE_ARI },
 	{ "sbcs", 0xd000, TYPE_ARI },
 	{ "rsb", 0x6000, TYPE_ARI },
@@ -40,7 +43,12 @@ static ArmOp ops[] = {
 	{ "rsc", 0xe000, TYPE_ARI },
 	{ "rscs", 0xf000, TYPE_ARI },
 
+	{ "pop", 0xbd08, TYPE_IMM },
+
 	{ "cps", 0xb1, TYPE_IMM },
+
+	{ "ldr", 0x9004, TYPE_MEM },
+	{ "str", 0x8004, TYPE_MEM },
 
 	{ "blx", 0x30ff2fe1, TYPE_BRA },
 	{ "bl", 0xb, TYPE_BRA },
@@ -48,9 +56,10 @@ static ArmOp ops[] = {
 	//{ "bx", 0xb, TYPE_BRA },
 	{ "b", 0xa, TYPE_BRA },
 
-	{ "str", 0x4, TYPE_MOV },
 
-	{ "mov", 0x3, TYPE_MOV },
+	//{ "mov", 0x3, TYPE_MOV },
+	//{ "mov", 0x0a3, TYPE_MOV },
+	{ "mov", 0xa001, TYPE_MOV },
 	{ "mvn", 0, TYPE_MOV },
 	{ "svc", 0xf, TYPE_SWI }, // ???
 
@@ -61,11 +70,11 @@ static ArmOp ops[] = {
 	{ "orr", 0x0, TYPE_TST },
 	{ "bic", 0x0, TYPE_TST },
 
-	{ "cmp", 0x0, TYPE_TST },
+	{ "cmp", 0x4001, TYPE_TST },
 	{ "cmn", 0x0, TYPE_TST },
 	{ "teq", 0x0, TYPE_TST },
 	{ "tst", 0xe1, TYPE_TST },
-	NULL
+	{ NULL }
 };
 
 static int getnum(const char *str) {
@@ -79,9 +88,28 @@ static int getnum(const char *str) {
 	return atoi(str);
 }
 
+static char *getrange(char *s) {
+	char *p = NULL;
+	while(s&&*s) {
+		if (*s==',') {
+			p = s+1;
+			*p=0;
+		}
+		if (*s=='[' || *s==']')
+			strcpy(s, s+1);
+		if (*s=='}')
+			*s=0;
+		s++;
+	}
+	while (p&&*p==' ') p++;
+	return p;
+}
+
 static int getreg(const char *str) {
 	if (!str)
-		return 0;
+		return -1;
+	if (*str=='r')
+		return atoi (str+1);
 	if (!strcmp(str, "pc"))
 		return 15;
 	if (!strcmp(str, "lr"))
@@ -94,9 +122,7 @@ static int getreg(const char *str) {
 		return 11;
 	if (!strcmp(str, "sl"))
 		return 10;
-	if (*str=='r')
-		return atoi (str+1);
-	return 0; // XXX
+	return -1; // XXX
 }
 
 static int getshift(const char *str) {
@@ -127,7 +153,7 @@ static void arm_opcode_parse(ArmOpcode *ao, const char *str) {
 	while (ao->a2&&*ao->a2==' ') ao->a2++;
 }
 
-static int arm_opcode_cond(ArmOpcode *ao, int delta) {
+static void arm_opcode_cond(ArmOpcode *ao, int delta) {
 	const char *conds[] = {
 		"eq", "ne", "cs", "cc", "mi", "pl", "vs", "vc",
 		"hi", "ls", "ge", "lt", "gt", "le", "al", "nv", 0
@@ -147,34 +173,67 @@ static int arm_opcode_name(ArmOpcode *ao) {
 	int i, ret;
 	for (i=0;ops[i].name;i++) {
 		if (!memcmp(ao->op, ops[i].name, strlen (ops[i].name))) {
-			ao->o = (ops[i].code);//<<24;
-			arm_opcode_cond(ao, strlen(ops[i].name));
+			ao->o = ops[i].code;
+			arm_opcode_cond (ao, strlen(ops[i].name));
 			switch(ops[i].type) {
+			case TYPE_MEM:
+				getrange (ao->a0);
+				getrange (ao->a1);
+				getrange (ao->a2);
+printf("a0(%s) a1(%s) a2(%s)\n",
+ao->a0, ao->a1, ao->a2);
+				ao->o |= getreg(ao->a0)<<20;
+				ao->o |= getreg(ao->a1)<<8; // delta
+				ao->o |= (getreg(ao->a2)&0x0f)<<24; // delta
+				//ao->o |= getreg(ao->a1)<<16; // delta2
+				// XXX: detect reg or value
+				//ao->o |= getshift(ao->a2)<<16; // shift
+				break;
 			case TYPE_IMM:
-				ao->o |= getnum(ao->a0)<<24; // ???
+				if (*ao->a0=='{') {
+					int reg, regmask;
+					getrange (ao->a0+1); // XXX filter regname string
+					reg = getreg(ao->a0+1);
+					regmask = (reg>7)? 1<<(reg-8): 1<<(reg+8);
+					if (reg>=0 && reg<=0xf)
+						ao->o |= regmask<<16;
+					// char *r1 = getrange (ao->a0+1); // XXX: its a bitmask?
+					//if (r1) ao->o |= getreg(r1)<<24;
+				} else ao->o |= getnum(ao->a0)<<24; // ???
 				break;
 			case TYPE_BRA:
-				if (!(ret = getreg(ao->a0)<<24)) {
-				// XXX: Needs to calc (eip-off-8)>>2
-			arm_opcode_cond(ao, strlen(ops[i].name));
-					ao->o = ao->o&0x70 | 0xb | getnum(ao->a0)<<24;
-				} else ao->o |= ret;
-				printf("---> %s\n", ao->a0);
+				if ((ret = getreg(ao->a0)) != -1) {
+					// XXX: Needs to calc (eip-off-8)>>2
+					arm_opcode_cond(ao, strlen(ops[i].name));
+					ao->o = (ao->o&0x70) | 0xb | (getnum(ao->a0)<<24);
+				} else {
+					ret = (getnum(ao->a0)-ao->off-8)/4;
+					ao->o |= ((ret>>8)&0xff)<<16;
+					ao->o |= ((ret)&0xff)<<24;
+				}
 				break;
 			case TYPE_SWI:
 				ao->o |= getnum(ao->a0)<<24;
 				break;
 			case TYPE_ARI:
+				if (!ao->a2) {
+					ao->a2 = ao->a1;
+					ao->a1 = ao->a0;
+				}
 				ao->o |= getreg(ao->a0)<<20;
 				ao->o |= getreg(ao->a1)<<8;
-				ao->o |= getreg(ao->a2)<<24;
+				ret = getreg(ao->a2);
+				ao->o |= (ret!=-1)? ret<<24 : 2 | getnum(ao->a2)<<24;
 				break;
 			case TYPE_MOV:
 				ao->o |= getreg(ao->a0)<<20;
-				ao->o |= getnum(ao->a1)<<24;
+				ret = getreg(ao->a1);
+				if (ret!=-1) ao->o |= ret<<24;
+				else ao->o |= 0xa003 | getnum(ao->a1)<<24;
 				break;
 			case TYPE_TST:
-				ao->o |= getreg(ao->a0)<<20;
+				//ao->o |= getreg(ao->a0)<<20; // ??? 
+				ao->o |= getreg(ao->a0)<<8;
 				ao->o |= getreg(ao->a1)<<24;
 				ao->o |= getshift(ao->a2)<<16; // shift
 				break;
@@ -186,11 +245,12 @@ static int arm_opcode_name(ArmOpcode *ao) {
 }
 
 // XXX: check endian stuff
-int armass_assemble(const char *str) {
+int armass_assemble(const char *str, unsigned long off) {
 	ArmOpcode aop = {0};
+	aop.off = off;
 	arm_opcode_parse (&aop, str);
 	if (!arm_opcode_name (&aop)) {
-		printf ("Unknown opcode\n");
+		printf ("armass: Unknown opcode (%s)\n", str);
 		return -1;
 	}
 	////printf ("PARSE (%s) (%s)(%s)(%s)\n", aop.op, aop.a0, aop.a1, aop.a2);
@@ -200,7 +260,7 @@ int armass_assemble(const char *str) {
 #ifdef MAIN
 void display(const char *str) {
 	char cmd[32];
-	int op = armass_assemble(str);
+	int op = armass_assemble(str, 0x1000);
 	printf("%08x %s\n", op, str);
 	snprintf(cmd, sizeof(cmd), "rasm2 -d -a arm %08x", op);
 	system(cmd);
@@ -216,20 +276,50 @@ main() {
 	display("sub r3, r1, r2");
 	display("add r0, r1, r2");
 	display("mov fp, 0");
-#endif
-	display("adds r3, #8");
-	display("subs r2, #1");
-	display("bne r3");
-	display("str r1, 33");
-	display("cmp r1, r3");
-	display("bcc 33");
-	display("blx r1");
+	display("pop {pc}");
+	display("pop {r3}");
 	display("bx r1");
+	display("bx r3");
+	display("bx pc");
+	display("blx fp");
+	display("pop {pc}");
+	display("adds r3, #8");
+	display("adds r3, r2, #8");
+	display("subs r2, #1");
+	display("cmp r0, r4");
+	display("cmp r7, pc");
+	display("cmp r1, r3");
+	display("mov pc, 44");
+	display("mov pc, r3");
+	display("ldr r1, [r2, 33]");
+	display("ldr r1, [r2, r3]");
+	display("ldr r3, [r4, r6]");
+	display("str r1, [pc, 33]");
+#endif
+	display("bne r3");
+	display("bne 0x1200");
+
+	display("str r1, [pc, 33]");
+	display("str r1, [pc, r4]");
+	display("bcc 33");
+#if 0
+	display("blx r1");
 	display("blx 0x8048");
+#endif
+
 #if 0
 	display("b 0x123");
 	display("bl 0x123");
 	display("blt 0x123"); // XXX: not supported
 #endif
 }
+#endif
+#if 0
+[pancake@dazo ~]$ rasm2 -o 0 -a arm -d 000080e5
+str r0, [r0]
+
+[pancake@dazo ~]$ rasm2 -o 0 -a arm -d 000081e5
+str r0, [r1]
+
+[pancake@dazo ~]$ rasm2 -o 0 -a arm -d 000081e5
 #endif
