@@ -24,6 +24,11 @@ typedef unsigned int uint32_t;
 typedef unsigned short uint16_t;
 typedef unsigned char uint8_t; 
 
+#define R_BIN_MACH0_IMPORT_TYPE_OBJECT 0
+#define R_BIN_MACH0_IMPORT_TYPE_FUNC 1
+#define R_BIN_MACH0_SYMBOL_TYPE_EXT 0
+#define R_BIN_MACH0_SYMBOL_TYPE_LOCAL 1
+
 #if __WINDOWS__
 typedef int int32_t;
 typedef short int16_t;

@@ -87,6 +87,8 @@ static RList* symbols(RBin *bin) {
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type
+		if (symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)
+			strncat (ptr->type, "_LOCAL", R_BIN_SIZEOF_STRINGS);
 		ptr->rva = symbols[i].addr;
 		ptr->offset = symbols[i].offset;
 		ptr->size = symbols[i].size;
@@ -113,7 +115,9 @@ static RList* imports(RBin *bin) {
 			break;
 		strncpy (ptr->name, (char*)imports[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
+		if (imports[i].type == R_BIN_MACH0_IMPORT_TYPE_FUNC)
+			strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
+		else strncpy (ptr->type, "OBJECT", R_BIN_SIZEOF_STRINGS);
 		ptr->rva = imports[i].addr;
 		ptr->offset = imports[i].offset;
 		ptr->size = 0;

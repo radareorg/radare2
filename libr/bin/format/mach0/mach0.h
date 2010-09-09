@@ -29,6 +29,7 @@ struct r_bin_mach0_symbol_t {
 	ut64 offset;
 	ut64 addr;
 	ut64 size;
+	int type;
 	char name[R_BIN_MACH0_STRING_LENGTH];
 	int last;
 };
@@ -36,6 +37,7 @@ struct r_bin_mach0_symbol_t {
 struct r_bin_mach0_import_t {
 	ut64 offset;
 	ut64 addr;
+	int type;
 	char name[R_BIN_MACH0_STRING_LENGTH];
 	int last;
 };
