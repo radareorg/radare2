@@ -492,7 +492,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 	Elf_(Sym) *sym;
 	Elf_(Rel) *rel;
 	char *strtab;
-	int i, j, nrel, tsize, len, nsym;
+	int i, j, nrel, tsize, len, nsym, idx;
 	
 	if (!bin->shdr || !bin->strtab)
 		return NULL;
@@ -551,9 +551,10 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 			return NULL;
 		}
 		for (j =  0; j < nrel; j++) {
-			if (j < nsym) {
-				len = __strnlen (&strtab[sym[ELF_R_SYM (rel[j].r_info)].st_name], ELF_STRING_LENGTH-1);
-				memcpy (ret[j].name, &strtab[sym[ELF_R_SYM (rel[j].r_info)].st_name], len);
+			idx = ELF_R_SYM (rel[j].r_info);
+			if (idx < nsym) {
+				len = __strnlen (&strtab[sym[idx].st_name], ELF_STRING_LENGTH-1);
+				memcpy (ret[j].name, &strtab[sym[idx].st_name], len);
 			} else strncpy (ret[j].name, "unknown", ELF_STRING_LENGTH);
 			ret[j].sym = ELF_R_SYM (rel[j].r_info);
 			ret[j].type = ELF_R_TYPE (rel[j].r_info);
