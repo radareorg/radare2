@@ -78,7 +78,7 @@ static void emit_syscall_args(int nargs) {
 		if (attsyntax)
 		rcc_printf ("  mov %d(%%"R_SP"), %%%s\n", k, regs[j+1]);
 		else
-		rcc_printf ("  mov %s, dword ["R_SP"%c%d]\n", regs[j+1], k>0?'+':' ', k);
+		rcc_printf ("  mov %s, dword ptr ["R_SP"%c%d]\n", regs[j+1], k>0?'+':' ', k);
 	}
 }
 
@@ -169,8 +169,8 @@ static void emit_get_var (int type, char *out, int idx) {
 		}
 	} else {
 		switch (type) {
-		case 0: sprintf (out, "dword ["R_BP"%c%d]", idx>0?' ':'+', -idx); break; /* variable */
-		case 1: sprintf(out, "dword ["R_SP"%c%d]", idx>0?'+':' ', idx); break; /* argument */
+		case 0: sprintf (out, "dword ptr ["R_BP"%c%d]", idx>0?' ':'+', -idx); break; /* variable */
+		case 1: sprintf(out, "dword ptr ["R_SP"%c%d]", idx>0?'+':' ', idx); break; /* argument */
 		}
 	}
 }
@@ -184,7 +184,7 @@ static void emit_load_ptr(const char *dst) {
 	eprintf ("HACK HACK HACK\n");
 	// XXX: 32/64bit care
 	if (attsyntax) rcc_printf ("  leal %d(%%"R_BP"), %%"R_AX"\n", d);
-	else rcc_printf ("  leal "R_AX", dword ["R_BP"+%d]\n", d);
+	else rcc_printf ("  leal "R_AX", dword ptr ["R_BP"+%d]\n", d);
 	//rcc_printf ("  movl %%"R_BP", %%"R_AX"\n");
 	//rcc_printf ("  addl $%d, %%"R_AX"\n", d);
 }

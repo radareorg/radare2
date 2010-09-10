@@ -316,7 +316,11 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				continue;	
 			} else if (*ptr_start == '.') { /* pseudo */
 				ptr = ptr_start;
-				if (!memcmp (ptr, ".string ", 8))
+				if (!memcmp (ptr, ".intel_syntax", 13)) 
+					a->syntax = R_ASM_SYNTAX_INTEL;
+				else if (!memcmp (ptr, ".att_syntax", 10)) 
+					a->syntax = R_ASM_SYNTAX_ATT;
+				else if (!memcmp (ptr, ".string ", 8))
 					ret = r_asm_pseudo_string (&aop, ptr+8);
 				else if (!memcmp (ptr, ".arch ", 6))
 					ret = r_asm_pseudo_arch (a, ptr+6);

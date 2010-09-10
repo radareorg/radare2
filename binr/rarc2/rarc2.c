@@ -723,6 +723,7 @@ static void parseflag(const char *arg) {
 		break;
 	case 'm':
 		showmain = 1;
+		break;
 	case 's':
 		attsyntax = 1;
 		break;
@@ -742,28 +743,34 @@ static void parseflag(const char *arg) {
 }
 
 int main(int argc, char **argv) {
-	int fd = 0;
+	int once=0, i, fd = 0;
 	char ch;
 	rcc_init ();
-	while (argc-->0) {
-		if (argc>0) {
-			if (argv[argc][0]!='-') {
-				file = argv[argc];
-				fd = open (file, O_RDONLY);
-			} else parseflag (argv[argc]+1);
-		}
+	for (i=1;i<argc;i++) {
+		if (argv[i][0]=='-')
+			parseflag (argv[i]+1);
+		else break;
+	}
+	do {
+		if (i!=argc)
+			fd = open ((file=argv[i++]), O_RDONLY);
 		if (fd == -1) {
 			eprintf ("Cannot open '%s'.\n", file);
 			return 1;
 		}
-		if (showmain) {
-			emit->call ("main", 0);
-			emit->trap ();
+		if (!once) {
+			once++;
+			if (!attsyntax)
+				rcc_printf (".intel_syntax noprefix\n");
+			if (showmain) {
+				emit->call ("main", 0);
+				emit->trap ();
+			}
 		}
 		for (line=1; read (fd, &ch, 1)==1; )
 			parsechar (ch);
 		close (fd);
-	}
+	} while (i<argc);
 	rcc_flush ();
 	return 0;
 }

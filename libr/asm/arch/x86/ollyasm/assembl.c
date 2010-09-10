@@ -262,14 +262,16 @@ static void Scanasm(int mode) {
     asmerror="Unknown identifier";
     scan=SCAN_ERR; return; }
   else if (isdigit(*asmcmd)) {         // Constant
-    base=0; maxdigit=0; decimal=hex=0L; floating=0.0;
+    base=10; maxdigit=0; decimal=hex=0L; floating=0.0;
     if (asmcmd[0]=='0' && toupper(asmcmd[1])=='X') {
       base=16; asmcmd+=2; };           // Force hexadecimal number
+//printf("DIGIT (%s) %d\n", asmcmd, base);
     while (1) {
       if (isdigit(*asmcmd)) {
         decimal=decimal*10+(*asmcmd)-'0';
         floating=floating*10.0+(*asmcmd)-'0';
-        hex=hex*16+(*asmcmd)-'0';
+        //hex=hex*16+(*asmcmd)-'0';
+        hex=hex*base+(*asmcmd)-'0';
         if (maxdigit==0) maxdigit=9;
         asmcmd++; }
       else if (isxdigit(*asmcmd)) {
