@@ -43,12 +43,14 @@ static ArmOp ops[] = {
 	{ "rsc", 0xe000, TYPE_ARI },
 	{ "rscs", 0xf000, TYPE_ARI },
 
+	{ "push", 0x2d09, TYPE_IMM },
 	{ "pop", 0xbd08, TYPE_IMM },
 
 	{ "cps", 0xb1, TYPE_IMM },
+	{ "nop", 0xa0e1, -1 },
 
-	{ "ldr", 0x9004, TYPE_MEM },
-	{ "str", 0x8004, TYPE_MEM },
+	{ "ldr", 0x9000, TYPE_MEM },
+	{ "str", 0x8000, TYPE_MEM },
 
 	{ "blx", 0x30ff2fe1, TYPE_BRA },
 	{ "bl", 0xb, TYPE_BRA },
@@ -169,7 +171,7 @@ static void arm_opcode_cond(ArmOpcode *ao, int delta) {
 	ao->o |= cond<<4;
 }
 
-static int arm_opcode_name(ArmOpcode *ao) {
+static int arm_opcode_name(ArmOpcode *ao, const char *str) {
 	int i, ret;
 	for (i=0;ops[i].name;i++) {
 		if (!memcmp(ao->op, ops[i].name, strlen (ops[i].name))) {
@@ -180,14 +182,17 @@ static int arm_opcode_name(ArmOpcode *ao) {
 				getrange (ao->a0);
 				getrange (ao->a1);
 				getrange (ao->a2);
-printf("a0(%s) a1(%s) a2(%s)\n",
-ao->a0, ao->a1, ao->a2);
+				//printf("a0(%s) a1(%s) a2(%s)\n", ao->a0, ao->a1, ao->a2);
 				ao->o |= getreg(ao->a0)<<20;
 				ao->o |= getreg(ao->a1)<<8; // delta
-				ao->o |= (getreg(ao->a2)&0x0f)<<24; // delta
-				//ao->o |= getreg(ao->a1)<<16; // delta2
-				// XXX: detect reg or value
-				//ao->o |= getshift(ao->a2)<<16; // shift
+				ret = getreg(ao->a2);
+				if (ret != -1) {
+					ao->o |= (strstr(str,"],"))?6:7;
+					ao->o |= (ret&0x0f)<<24;//(getreg(ao->a2)&0x0f);
+				} else {
+					ao->o |= (strstr(str,"],"))?4:5;
+					ao->o |= (getnum(ao->a2)&0x7f)<<24; // delta
+				}
 				break;
 			case TYPE_IMM:
 				if (*ao->a0=='{') {
@@ -249,7 +254,7 @@ int armass_assemble(const char *str, unsigned long off) {
 	ArmOpcode aop = {0};
 	aop.off = off;
 	arm_opcode_parse (&aop, str);
-	if (!arm_opcode_name (&aop)) {
+	if (!arm_opcode_name (&aop, str)) {
 		printf ("armass: Unknown opcode (%s)\n", str);
 		return -1;
 	}
@@ -291,17 +296,23 @@ main() {
 	display("cmp r1, r3");
 	display("mov pc, 44");
 	display("mov pc, r3");
+	display("push {pc}");
+	display("pop {pc}");
+	display("nop");
 	display("ldr r1, [r2, 33]");
 	display("ldr r1, [r2, r3]");
 	display("ldr r3, [r4, r6]");
 	display("str r1, [pc, 33]");
+	display("str r1, [pc], 2");
+	display("str r1, [pc, 3]");
+	display("str r1, [pc, r4]");
 #endif
+	display("b r3");
+	display("bcc 33");
 	display("bne r3");
 	display("bne 0x1200");
 
-	display("str r1, [pc, 33]");
-	display("str r1, [pc, r4]");
-	display("bcc 33");
+
 #if 0
 	display("blx r1");
 	display("blx 0x8048");

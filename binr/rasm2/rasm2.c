@@ -60,7 +60,8 @@ static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin) {
 			ptr += 1;
 		}
 		data = alloca (clen);
-		r_hex_str2bin (buf, data);
+		if (r_hex_str2bin (buf, data)==-1)
+			return 0;
 	}
 
 	if (!len || clen <= len)
@@ -69,10 +70,10 @@ static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin) {
 	r_asm_set_pc (a, offset);
 	if (!(acode = r_asm_mdisassemble (a, data, len)))
 		return 0;
+
 	printf ("%s\n", acode->buf_asm);
 	ret = acode->len;
 	r_asm_code_free (acode);
-
 	return ret;
 }
 
