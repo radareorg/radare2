@@ -41,10 +41,10 @@ Build system:
 
 TODO nibble
 -----------
+* r_bin->relocs // RList of relocations
+* use r_anal_value everywhere in r_anal
 * make x86_x86im the default backend for x86 analysis
 * implement analysis for more instructions in x86_x86im
-* use r_anal_value everywhere in r_anal
-* r_bin->relocs // RList of relocations
 * big-ssl.c big-gmp.c ...
 * native fat bins support (push uncommited changes)
 * diff code analysis

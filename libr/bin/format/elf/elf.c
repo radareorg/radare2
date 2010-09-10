@@ -486,6 +486,86 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	return ret;
 }
 
+struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	struct r_bin_elf_reloc_t *ret = NULL;
+	Elf_(Shdr) *strtab_section;
+	Elf_(Sym) *sym;
+	Elf_(Rel) *rel;
+	char *strtab;
+	int i, j, nrel, tsize, len, nsym;
+	
+	if (!bin->shdr || !bin->strtab)
+		return NULL;
+	for (i = 0, nsym = 0; i < bin->ehdr.e_shnum; i++)
+		if (bin->shdr[i].sh_type == (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM)) {
+			strtab_section = &bin->shdr[bin->shdr[i].sh_link];
+			if ((strtab = (char *)malloc (8+strtab_section->sh_size)) == NULL) {
+				perror ("malloc (syms strtab)");
+				return NULL;
+			}
+			if (r_buf_read_at (bin->b, strtab_section->sh_offset, (ut8*)strtab, strtab_section->sh_size) == -1) {
+				eprintf ("Error: read (syms strtab)\n");
+				return NULL;
+			}
+			if ((sym = (Elf_(Sym) *)malloc (1+bin->shdr[i].sh_size)) == NULL) {
+				perror ("malloc (syms)");
+				return NULL;
+			}
+			nsym = (int)(bin->shdr[i].sh_size/sizeof (Elf_(Sym)));
+			if (r_buf_fread_at (bin->b, bin->shdr[i].sh_offset, (ut8*)sym,
+#if R_BIN_ELF64
+					bin->endian?"I2cS2L":"i2cs2l",
+#else
+					bin->endian?"3I2cS":"3i2cs",
+#endif
+					nsym) == -1) {
+				eprintf ("Error: read (sym)\n");
+				return NULL;
+			}
+		}
+	for (i = 0; i < bin->ehdr.e_shnum; i++) {
+		if (!strcmp (&bin->strtab[bin->shdr[i].sh_name], ".rel.plt"))
+			tsize = sizeof (Elf_(Rel));
+		else if (!strcmp (&bin->strtab[bin->shdr[i].sh_name], ".rela.plt"))
+			tsize = sizeof (Elf_(Rela));
+		else continue;
+		if ((rel = (Elf_(Rel) *)malloc ((int)(bin->shdr[i].sh_size / tsize) * sizeof (Elf_(Rel)))) == NULL) {
+			perror ("malloc (rel)");
+			return NULL;
+		}
+		for (j = nrel = 0; j < bin->shdr[i].sh_size; j += tsize, nrel++) {
+			len = r_buf_fread_at (bin->b, bin->shdr[i].sh_offset + j, (ut8*)&rel[nrel],
+#if R_BIN_ELF64
+					bin->endian?"2L":"2l",
+#else
+					bin->endian?"2I":"2i",
+#endif
+					1);
+			if (len == -1) {
+				eprintf ("Error: read (rel)\n");
+				return NULL;
+			}
+		}
+		if ((ret = (struct r_bin_elf_reloc_t *)malloc (nrel * sizeof (struct r_bin_elf_reloc_t))) == NULL) {
+			perror ("malloc (reloc)");
+			return NULL;
+		}
+		for (j =  0; j < nrel; j++) {
+			if (j < nsym) {
+				len = __strnlen (&strtab[sym[ELF_R_SYM (rel[j].r_info)].st_name], ELF_STRING_LENGTH-1);
+				memcpy (ret[j].name, &strtab[sym[ELF_R_SYM (rel[j].r_info)].st_name], len);
+			} else strncpy (ret[j].name, "unknown", ELF_STRING_LENGTH);
+			ret[j].sym = ELF_R_SYM (rel[j].r_info);
+			ret[j].type = ELF_R_TYPE (rel[j].r_info);
+			ret[j].offset = rel[j].r_offset - bin->baddr;
+			ret[j].last = 0;
+		}
+		ret[j].last = 1;
+		break;
+	}
+	return ret;
+}
+
 struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	struct r_bin_elf_lib_t *ret = NULL;
 	Elf_(Dyn) *dyn = NULL;
@@ -597,7 +677,7 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 				return NULL;
 			}
 			if (r_buf_read_at (bin->b, strtab_section->sh_offset, (ut8*)strtab, strtab_section->sh_size) == -1) {
-				eprintf ("Error: read (magic)\n");
+				eprintf ("Error: read (syms strtab)\n");
 				return NULL;
 			}
 
@@ -613,7 +693,7 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 					bin->endian?"3I2cS":"3i2cs",
 #endif
 					nsym) == -1) {
-				eprintf ("Error: read (ehdr)\n");
+				eprintf ("Error: read (sym)\n");
 				return NULL;
 			}
 			for (j = k = ret_ctr = 0; j < bin->shdr[i].sh_size; j += sizeof (Elf_(Sym)), k++) {
@@ -725,6 +805,7 @@ struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file) {
 
 	if (!(bin = malloc (sizeof (struct Elf_(r_bin_elf_obj_t)))))
 		return NULL;
+	memset (bin, 0, sizeof (struct Elf_(r_bin_elf_obj_t)));
 	bin->file = file;
 	if (!(buf = (ut8*)r_file_slurp (file, &bin->size))) 
 		return Elf_(r_bin_elf_free) (bin);

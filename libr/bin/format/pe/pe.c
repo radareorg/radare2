@@ -745,6 +745,7 @@ struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new)(const char* file)
 
 	if (!(bin = malloc(sizeof(struct PE_(r_bin_pe_obj_t)))))
 		return NULL;
+	memset (bin, 0, sizeof (struct PE_(r_bin_pe_obj_t)));
 	bin->file = file;
 	if (!(buf = (ut8*)r_file_slurp(file, &bin->size))) 
 		return PE_(r_bin_pe_free)(bin);

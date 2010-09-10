@@ -154,6 +154,7 @@ struct r_bin_plugin_t r_bin_plugin_java = {
 	.info = &info,
 	.fields = NULL,
 	.libs = NULL,
+	.relocs = NULL,
 	.meta = NULL,
 	.write = NULL,
 };

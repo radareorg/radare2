@@ -38,6 +38,7 @@ struct r_bin_plugin_t r_bin_plugin_elf64 = {
 	.info = &info,
 	.fields = &fields,
 	.libs = &libs,
+	.relocs = &relocs,
 	.meta = &r_bin_meta_elf64,
 	.write = &r_bin_write_elf64,
 };

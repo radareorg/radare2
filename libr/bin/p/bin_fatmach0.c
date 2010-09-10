@@ -65,6 +65,7 @@ struct r_bin_plugin_t r_bin_plugin_fatmach0 = {
 	.info = NULL,
 	.fields = NULL,
 	.libs = NULL,
+	.relocs = NULL,
 	.meta = NULL,
 	.write = NULL,
 };

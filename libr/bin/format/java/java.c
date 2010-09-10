@@ -421,6 +421,7 @@ struct r_bin_java_obj_t* r_bin_java_new(const char* file) {
 
 	if (!(bin = malloc(sizeof(struct r_bin_java_obj_t))))
 		return NULL;
+	memset (bin, 0, sizeof (struct r_bin_java_obj_t));
 	bin->file = file;
 	if (!(buf = (ut8*)r_file_slurp(file, &bin->size))) 
 		return r_bin_java_free(bin);

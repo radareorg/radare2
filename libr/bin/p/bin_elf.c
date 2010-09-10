@@ -155,6 +155,31 @@ static RList* libs(RBin *bin) {
 	return ret;
 }
 
+static RList* relocs(RBin *bin) {
+	RList *ret = NULL;
+	RBinReloc *ptr = NULL;
+	struct r_bin_elf_reloc_t *relocs = NULL;
+	int i;
+
+	if (!(ret = r_list_new ()))
+		return NULL;
+	ret->free = free;
+	if (!(relocs = Elf_(r_bin_elf_get_relocs) (bin->bin_obj)))
+		return ret;
+	for (i = 0; !relocs[i].last; i++) {
+		if (!(ptr = R_NEW (RBinReloc)))
+			break;
+		strncpy (ptr->name, relocs[i].name, R_BIN_SIZEOF_STRINGS);
+		ptr->rva = relocs[i].offset;
+		ptr->offset = relocs[i].offset;
+		ptr->type = relocs[i].type;
+		ptr->sym = relocs[i].sym;
+		r_list_append (ret, ptr);
+	}
+	free (relocs);
+	return ret;
+}
+
 static RBinInfo* info(RBin *bin) {
 	RBinInfo *ret = NULL;
 	char *str;
@@ -265,6 +290,7 @@ struct r_bin_plugin_t r_bin_plugin_elf = {
 	.info = &info,
 	.fields = &fields,
 	.libs = &libs,
+	.relocs = &relocs,
 	.meta = &r_bin_meta_elf,
 	.write = &r_bin_write_elf,
 };

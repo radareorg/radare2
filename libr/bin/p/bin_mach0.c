@@ -217,6 +217,7 @@ struct r_bin_plugin_t r_bin_plugin_mach0 = {
 	.info = &info,
 	.fields = NULL,
 	.libs = &libs,
+	.relocs = NULL,
 	.meta = NULL,
 	.write = NULL,
 };

@@ -91,6 +91,8 @@ static void r_bin_init_items(RBin *bin) {
 		bin->info = bin->cur->info (bin);
 	if (bin->cur->libs)
 		bin->libs = bin->cur->libs (bin);
+	if (bin->cur->relocs)
+		bin->relocs = bin->cur->relocs (bin);
 	if (bin->cur->sections)
 		bin->sections = bin->cur->sections (bin);
 	if (bin->cur->strings)
@@ -112,6 +114,8 @@ static void r_bin_free_items(RBin *bin) {
 		free (bin->info);
 	if (bin->libs)
 		r_list_free (bin->libs);
+	if (bin->relocs)
+		r_list_free (bin->relocs);
 	if (bin->sections)
 		r_list_free (bin->sections);
 	if (bin->strings)
@@ -205,6 +209,10 @@ R_API RBinInfo* r_bin_get_info(RBin *bin) {
 
 R_API RList* r_bin_get_libs(RBin *bin) {
 	return bin->libs;
+}
+
+R_API RList* r_bin_get_relocs(RBin *bin) {
+	return bin->relocs;
 }
 
 R_API RList* r_bin_get_sections(RBin *bin) {

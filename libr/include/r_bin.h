@@ -35,6 +35,7 @@ typedef struct r_bin_t {
 	RList* strings;
 	RList* fields;
 	RList* libs;
+	RList* relocs;
 	RBuffer *buf;
 	void *user;
 	struct r_bin_plugin_t *cur;
@@ -60,6 +61,7 @@ typedef struct r_bin_plugin_t {
 	struct r_bin_info_t* (*info)(RBin *bin);
 	RList* (*fields)(RBin *bin);
 	RList* (*libs)(RBin *bin);
+	RList* (*relocs)(RBin *bin);
 	struct r_bin_meta_t *meta;
 	struct r_bin_write_t *write;
 	struct list_head list;
@@ -106,6 +108,14 @@ typedef struct r_bin_import_t {
 	ut64 ordinal;
 	ut64 hint;
 } RBinImport;
+
+typedef struct r_bin_reloc_t {
+	char name[R_BIN_SIZEOF_STRINGS];
+	ut64 rva;
+	ut64 offset;
+	int sym;
+	int type;
+} RBinReloc;
 
 typedef struct r_bin_string_t {
 	char string[R_BIN_SIZEOF_STRINGS];
@@ -160,6 +170,7 @@ R_API RList* r_bin_get_fields(RBin *bin);
 R_API RList* r_bin_get_imports(RBin *bin);
 R_API RBinInfo* r_bin_get_info(RBin *bin);
 R_API RList* r_bin_get_libs(RBin *bin);
+R_API RList* r_bin_get_relocs(RBin *bin);
 R_API RList* r_bin_get_sections(RBin *bin);
 R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va);
 R_API RList* r_bin_get_strings(RBin *bin);

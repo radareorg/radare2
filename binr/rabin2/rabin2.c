@@ -29,6 +29,7 @@
 #define ACTION_SRCLINE   0x0400
 #define ACTION_MAIN      0x0800
 #define ACTION_EXTRACT   0x1000
+#define ACTION_RELOCS    0x2000
 
 static struct r_lib_t *l;
 static struct r_bin_t *bin = NULL;
@@ -53,6 +54,7 @@ static int rabin_show_help() {
 		" -I          Binary info\n"
 		" -H          Header fields\n"
 		" -l          Linked libraries\n"
+		" -R          Relocations\n"
 		" -O [str]    Write/Extract operations (str=help for help)\n"
 		" -o [file]   Output file for write operations (a.out by default)\n"
 		" -f [format] Override file format autodetection\n"
@@ -141,6 +143,33 @@ static int rabin_show_libs() {
 
 	if (!rad) printf ("\n%i libraries\n", i);
 	
+	return R_TRUE;
+}
+
+static int rabin_show_relocs() {
+	RList *relocs;
+	RListIter *iter;
+	RBinReloc *reloc;
+	int i = 0;
+
+	ut64 baddr = gbaddr?gbaddr:r_bin_get_baddr (bin);
+
+	if ((relocs = r_bin_get_relocs (bin)) == NULL)
+		return R_FALSE;
+
+	if (rad) printf ("fs relocs\n");
+	else printf ("[Relocations]\n");
+
+	r_list_foreach (relocs, iter, reloc) {
+		if (rad) {
+			printf ("f reloc.%s @ 0x%08"PFMT64x"\n", reloc->name, va?baddr+reloc->rva:reloc->offset);
+		} else printf ("sym=%02i address=0x%08"PFMT64x" offset=0x%08"PFMT64x" type=0x%08x %s\n",
+				reloc->sym, baddr+reloc->rva, reloc->offset, reloc->type, reloc->name);
+		i++;
+	}
+
+	if (!rad) printf ("\n%i relocations\n", i);
+
 	return R_TRUE;
 }
 
@@ -573,7 +602,7 @@ int main(int argc, char **argv)
 		r_lib_opendir (l, LIBDIR"/radare2/");
 	}
 
-	while ((c = getopt (argc, argv, "b:Mm:n:@:VisSzIHelwO:o:f:rvLhx")) != -1) {
+	while ((c = getopt (argc, argv, "b:Mm:n:@:VisSzIHelRwO:o:f:rvLhx")) != -1) {
 		switch(c) {
 		case 'm':
 			at = r_num_math (NULL, optarg);
@@ -604,6 +633,9 @@ int main(int argc, char **argv)
 			break;
 		case 'l':
 			action |= ACTION_LIBS;
+			break;
+		case 'R':
+			action |= ACTION_RELOCS;
 			break;
 		case 'x':
 			action |= ACTION_EXTRACT;
@@ -679,6 +711,8 @@ int main(int argc, char **argv)
 		rabin_show_fields();
 	if (action&ACTION_LIBS)
 		rabin_show_libs();
+	if (action&ACTION_RELOCS)
+		rabin_show_relocs();
 	if (action&ACTION_SRCLINE)
 		rabin_show_srcline(at);
 	if (action&ACTION_EXTRACT)

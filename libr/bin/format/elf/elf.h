@@ -34,6 +34,14 @@ typedef struct r_bin_elf_symbol_t {
 	int last;
 } RBinElfSymbol;
 
+typedef struct r_bin_elf_reloc_t {
+	int sym;
+	int type;
+	ut64 offset;
+	int last;
+	char name[ELF_STRING_LENGTH];
+} RBinElfReloc;
+
 typedef struct r_bin_elf_field_t {
 	ut64 offset;
 	char name[ELF_STRING_LENGTH];
@@ -79,6 +87,7 @@ char* Elf_(r_bin_elf_get_elf_class)(struct Elf_(r_bin_elf_obj_t) *bin);
 int Elf_(r_bin_elf_get_bits)(struct Elf_(r_bin_elf_obj_t) *bin);
 char* Elf_(r_bin_elf_get_osabi_name)(struct Elf_(r_bin_elf_obj_t) *bin);
 int Elf_(r_bin_elf_is_big_endian)(struct Elf_(r_bin_elf_obj_t) *bin);
+struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t) *bin);
 struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *bin);
 struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_obj_t) *bin);
 struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, int type);
