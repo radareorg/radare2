@@ -546,7 +546,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 				return NULL;
 			}
 		}
-		if ((ret = (struct r_bin_elf_reloc_t *)malloc (nrel * sizeof (struct r_bin_elf_reloc_t))) == NULL) {
+		if ((ret = (struct r_bin_elf_reloc_t *)malloc ((nrel+1) * sizeof (struct r_bin_elf_reloc_t))) == NULL) {
 			perror ("malloc (reloc)");
 			return NULL;
 		}

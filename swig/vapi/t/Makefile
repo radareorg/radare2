@@ -10,6 +10,9 @@ plugin.so:
 rgot:
 	valac --vapidir=.. rgot.vala --pkg r_bin --pkg r_util
 
+reloc:
+	valac --vapidir=.. reloc.vala --pkg r_bin --pkg r_util
+
 bintest:
 	valac --vapidir=.. bintest.vala --pkg r_bin --pkg r_util 
 
@@ -100,4 +103,4 @@ socket:
 	gcc socket.c `pkg-config gobject-2.0 --libs --cflags` -I../../../libr/include/ -lr_socket -Wl,-R../../socket -L../../socket -o socket
 
 clean:
-	-rm -f *.c hash sc *.o *.h core socket asm search bin io
+	-rm -f *.c hash sc *.o *.h core socket asm search bin io rgot reloc

@@ -19,6 +19,7 @@ namespace Radare {
 		public RList<RBin.Section> get_sections();
 		public RList<RBin.String> get_strings();
 		public RList<RBin.Symbol> get_symbols();
+		public RList<RBin.Reloc> get_relocs();
 		public RBin.Info get_info();
 		public int is_big_endian();
 		public int is_stripped();
@@ -66,6 +67,15 @@ namespace Radare {
 			public uint64 offset;
 			public uint32 ordinal;
 			public uint32 hint;
+		}
+
+		[CCode (cname="RBinReloc", free_function="", ref_function="", unref_function="")]
+		public class Reloc {
+			public string name;
+			public uint64 rva;
+			public uint64 offset;
+			public uint32 sym;
+			public uint32 type;
 		}
 
 		[CCode (cname="RBinInfo", free_function="", ref_function="", unref_function="")]
