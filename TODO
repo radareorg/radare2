@@ -41,6 +41,7 @@ Build system:
 
 TODO nibble
 -----------
+* Better way to fix got_offset issue?
 * use r_anal_value everywhere in r_anal
 * make x86_x86im the default backend for x86 analysis
 * implement analysis for more instructions in x86_x86im

@@ -173,7 +173,7 @@ R_API int r_bin_load(RBin *bin, const char *file, const char *plugin_name) {
 	list_for_each (pos, &bin->bins) {
 		RBinPlugin *h = list_entry (pos, RBinPlugin, list);
 		if ((plugin_name && !strcmp (h->name, plugin_name)) ||
-				(h->check && h->check (bin)))
+			(h->check && h->check (bin)))
 			bin->cur = h;
 	}
 	if (bin->cur && bin->cur->load && bin->cur->load (bin))

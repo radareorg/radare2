@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 [Compact]
-[CCode (cheader_filename="r_list.h,r_search.h", cname="struct r_search_t", free_function="r_search_free", cprefix="r_search_")]
+[CCode (cheader_filename="r_types_base.h,r_list.h,r_search.h", cname="struct r_search_t", free_function="r_search_free", cprefix="r_search_")]
 public class Radare.RSearch {
 	[CCode (cname="RSearchCallback", has_target="false")]
 	public delegate int Callback(Keyword s, void *user, uint64 addr);

@@ -221,7 +221,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (!has_project && run_rc) {
-		rabin_cmd = r_str_dup_printf ("rabin2 -rSIeMzis%s %s",
+		rabin_cmd = r_str_dup_printf ("rabin2 -rSIeMzisR%s %s",
 			(debug||r.io->va)?"v":"", r.file->filename);
 		if (threaded) {
 			/* TODO: only load data if no project is used */

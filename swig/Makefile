@@ -1,6 +1,6 @@
 -include config.mk
 
-all: supported.langs ruby perl python lua
+all: supported.langs ruby perl python lua go
 
 supported.langs:
 	sh check-langs.sh
@@ -39,6 +39,9 @@ ruby:
 lua:
 	@-[ "`grep lua supported.langs`" ] && cd lua && make
 
+go:
+	@-[ "`grep go supported.langs`" ] && cd go && make
+
 java:
 	@-[ "`grep java supported.langs`" ] && cd java && make
 
@@ -47,6 +50,7 @@ test:
 	cd python && make test
 	cd ruby && make test
 	cd lua && make test
+	cd go && make test
 	cd java && make test
 
 install-python:
@@ -68,6 +72,14 @@ install-lua:
 	cp -rf lua/*.so ${DESTDIR}${PREFIX}/lib/lua/$$a/r2 ; \
 	cp -rf lua/*libr* ${DESTDIR}${PREFIX}/lib/lua/$$a ; \
 	done ; \
+	fi
+
+install-go:
+	@if [ -n "${GOROOT}" -a -n "${GOOS}" -a -n "${GOARCH}" ]; then \
+	echo "Installing r2 modules in ${GOROOT}/pkg/${GOOS}_${GOARCH}" ; \
+	cp -f go/*.a go/*.so ${GOROOT}/pkg/${GOOS}_${GOARCH} ; \
+	else \
+	echo "You have to set the following vars: GORROT, GOOS and GOARCH" ; \
 	fi
 
 install-java:
@@ -102,7 +114,7 @@ install-vapi:
 	@${INSTALL_DIR} ${DESTDIR}${PREFIX}/share/vala/vapi
 	${INSTALL_DATA} vapi/*.vapi vapi/*.deps ${DESTDIR}${PREFIX}/share/vala/vapi
 
-install: install-python install-ruby install-perl install-lua install-java install-vapi
+install: install-python install-ruby install-perl install-lua install-go install-java install-vapi
 
 deinstall: uninstall
 uninstall:
@@ -117,7 +129,8 @@ clean:
 	cd perl && make clean
 	cd ruby && make clean
 	cd lua && make clean
+	cd go && make clean
 	cd java && make clean
 	cd vapi/t && ${MAKE} clean
 
-.PHONY: ruby lua java python perl clean oldtest test all vdoc
+.PHONY: ruby lua go java python perl clean oldtest test all vdoc

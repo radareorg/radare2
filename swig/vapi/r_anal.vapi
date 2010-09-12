@@ -33,7 +33,7 @@ public class RAnal {
 */
 
 	[CCode (cprefix="R_ANAL_VAR_TYPE_")]
-	public enum VarType {
+	public enum VarClass {
 		NULL,
 		GLOBAL,
 		LOCAL,
@@ -196,7 +196,6 @@ public class RAnal {
 		public RList<RAnal.VarAccess> accessess;
 	}
 
-/*
 	[Compact]
 	[CCode (cname="RAnalVarType")]
 	public class VarType {
@@ -204,7 +203,6 @@ public class RAnal {
 		public string fmt;
 		public uint size;
 	}
-*/
 
 	[Compact]
 	[CCode (cname="RAnalRefline", free_function="")]
