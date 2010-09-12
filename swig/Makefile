@@ -79,7 +79,7 @@ install-go:
 	echo "Installing r2 modules in ${GOROOT}/pkg/${GOOS}_${GOARCH}" ; \
 	cp -f go/*.a go/*.so ${GOROOT}/pkg/${GOOS}_${GOARCH} ; \
 	else \
-	echo "You have to set the following vars: GORROT, GOOS and GOARCH" ; \
+	echo "You have to set the following vars: GOROOT, GOOS and GOARCH" ; \
 	fi
 
 install-java:
