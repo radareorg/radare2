@@ -14,12 +14,18 @@ include ../rules.mk
           fi ; \
 	fi ; \
 	if [ "${GOARCH}" = "amd64" ]; then \
-		FLAGS_6c=-D_64BIT ; \
-	fi ; \
+		GO_FLAGS=-D_64BIT ; \
+		GO_N=6 ; \
+	else \
+	if [ "${GOARCH}" = "386" ]; then \
+		GO_N=8 ; \
+	else \
+		GO_N=5 ; \
+	fi ; fi ; \
 	if [ $$? = 0 ]; then \
 	  (cd .. && sh do-swig.sh ${LANG} `echo $@ | sed -e s,.so,,`) ; \
 	  sed -i 's,^\(const UT.*\) int,\1 uint,' `echo $@ | sed -e s,.so,.go,` ; \
-	  6g `echo $@ | sed -e s,.so,.go,` ; \
-	  6c $${FLAGS_6c} -I ${GOROOT}/pkg/${GOOS}_${GOARCH} `echo $@ | sed -e s,.so,_gc.c,` ; \
-	  gopack grc `echo $@ | sed -e s,.so,.a,` `echo $@ | sed -e s,.so,.6,` `echo $@ | sed -e s,.so,_gc.6,` ; \
+	  $${GO_N}g `echo $@ | sed -e s,.so,.go,` ; \
+	  $${GO_N}c $${GO_FLAGS} -I ${GOROOT}/pkg/${GOOS}_${GOARCH} `echo $@ | sed -e s,.so,_gc.c,` ; \
+	  gopack grc `echo $@ | sed -e s,.so,.a,` `echo $@ | sed -e s,.so,.$${GO_N},` `echo $@ | sed -e s,.so,_gc.$${GO_N},` ; \
 	fi
