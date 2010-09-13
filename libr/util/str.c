@@ -152,9 +152,8 @@ R_API int r_str_word_count(const char *string) {
 	for (word = 0; *text; word++) {
 		for (;*text && !isseparator (*text); text++);
 		for (tmp = text; *text && isseparator (*text); text++);
-		if (tmp == text) word--;
 	}
-	return word-1;
+	return word;
 }
 
 R_API char *r_str_ichr(char *str, char chr) {

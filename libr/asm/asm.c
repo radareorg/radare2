@@ -11,6 +11,11 @@
 static RAsmPlugin *asm_static_plugins[] = 
 	{ R_ASM_STATIC_PLUGINS };
 
+static int r_asm_pseudo_align(struct r_asm_aop_t *aop, char *input) {
+	eprintf ("TODO: .align\n");
+	return 0;
+}
+
 static int r_asm_pseudo_string(struct r_asm_aop_t *aop, char *input) {
 	int len = strlen (input)+1;
 	r_hex_bin2str ((ut8*)input, len, aop->buf_hex);
@@ -38,10 +43,32 @@ static inline int r_asm_pseudo_org(RAsm *a, char *input) {
 	return 0;
 }
 
-static inline int r_asm_pseudo_byte(struct r_asm_aop_t *aop, char *input) {
+static inline int r_asm_pseudo_hex(struct r_asm_aop_t *aop, char *input) {
 	int len = r_hex_str2bin (input, aop->buf);
-	strncpy (aop->buf_hex, r_str_trim(input), R_ASM_BUFSIZE);
+	strncpy (aop->buf_hex, r_str_trim (input), R_ASM_BUFSIZE);
 	return len;
+}
+
+// TODO: add .short, .word, .dword, ...
+static inline int r_asm_pseudo_byte(struct r_asm_aop_t *aop, char *input) {
+	int i, len = 0;
+	r_str_subchr (input, ',', ' ');
+	len = r_str_word_count (input);
+	r_str_word_set0 (input);
+	for(i=0;i<len;i++) {
+		char *word = r_str_word_get0 (input, i);
+		int num = (int)r_num_math (NULL, word);
+		aop->buf[i] = num;
+	}
+	r_hex_bin2str (aop->buf, len, aop->buf_hex);
+	return len;
+}
+
+static inline int r_asm_pseudo_fill(struct r_asm_aop_t *aop, char *input) {
+	// repeat, size, value
+	// TODO
+	eprintf ("TODO: .fill\n");
+	return 0;
 }
 
 R_API RAsm *r_asm_new() {
@@ -53,8 +80,8 @@ R_API RAsm *r_asm_new() {
 		a->cur = NULL;
 		a->bits = 32;
 		a->big_endian = 0;
-		a->syntax = R_ASM_SYNTAX_INTEL;
 		a->pc = 0;
+		a->syntax = R_ASM_SYNTAX_INTEL;
 		a->plugins = r_list_new ();
 		for (i=0; asm_static_plugins[i]; i++) {
 			static_plugin = R_NEW (RAsmPlugin);
@@ -67,7 +94,7 @@ R_API RAsm *r_asm_new() {
 
 R_API void r_asm_free(RAsm *a) {
 	// TODO: free plugins and so on
-	free(a);
+	free (a);
 }
 
 /* return fastcall register argument 'idx' for a syscall with 'num' args */
@@ -220,18 +247,13 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, ut8 *buf, ut64 len) {
 			eprintf ("error disassemble at offset %"PFMT64d"\n", idx);
 			return r_asm_code_free (acode);
 		}
-		//eprintf ("++ %d %d\n", ret, aop.inst_len);
-		//ret = aop.inst_len; // are always equal??
 		slen += strlen (aop.buf_asm) + 2;
 		if(!(acode->buf_asm = realloc (acode->buf_asm, slen)))
 			return r_asm_code_free (acode);
 		strcat (acode->buf_asm, aop.buf_asm);
 		strcat (acode->buf_asm, "\n");
-		//if (idx + ret < len)
 	}
-
 	acode->len = idx;
-
 	return acode;
 }
 
@@ -322,13 +344,19 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					a->syntax = R_ASM_SYNTAX_ATT;
 				else if (!memcmp (ptr, ".string ", 8))
 					ret = r_asm_pseudo_string (&aop, ptr+8);
+				else if (!memcmp (ptr, ".align", 7))
+					ret = r_asm_pseudo_align (&aop, ptr+7);
 				else if (!memcmp (ptr, ".arch ", 6))
 					ret = r_asm_pseudo_arch (a, ptr+6);
 				else if (!memcmp (ptr, ".bits ", 6))
 					ret = r_asm_pseudo_bits (a, ptr+6);
+				else if (!memcmp (ptr, ".fill ", 6))
+					ret = r_asm_pseudo_fill (&aop, ptr+6);
+				else if (!memcmp (ptr, ".hex ", 5))
+					ret = r_asm_pseudo_hex (&aop, ptr+5);
 				else if (!memcmp (ptr, ".byte ", 6))
 					ret = r_asm_pseudo_byte (&aop, ptr+6);
-				else if (!memcmp (ptr, ".global ", 8)) {
+				else if (!memcmp (ptr, ".glob", 5)) { // .global .globl
 				//	eprintf (".global directive not yet implemented\n");
 					ret = 0;
 					continue;

@@ -760,7 +760,7 @@ int main(int argc, char **argv) {
 		}
 		if (!once) {
 			once++;
-			if (!attsyntax)
+			if (!attsyntax && (emit==&emit_x86 || emit==&emit_x64))
 				rcc_printf (".intel_syntax noprefix\n");
 			if (showmain) {
 				emit->call ("main", 0);

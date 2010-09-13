@@ -10,6 +10,7 @@ EFLAGS=../libr_util.a
 endif
 
 BINS=test${EXT_EXE}
+BINS=set0${EXT_EXE}
 BINS+=rax2${EXT_EXE}
 BINS+=ralloc${EXT_EXE}
 BINS+=array${EXT_EXE}
@@ -27,6 +28,9 @@ ralloc${EXT_EXE}:
 
 test${EXT_EXE}:
 	${CC} ${FLAGS} test.c ${EFLAGS} -o test${EXT_EXE}
+
+set0${EXT_EXE}:
+	${CC} ${FLAGS} set0.c ${EFLAGS} -o set0${EXT_EXE}
 
 argv${EXT_EXE}:
 	${CC} ${FLAGS} argv.c ${EFLAGS} -o argv${EXT_EXE}

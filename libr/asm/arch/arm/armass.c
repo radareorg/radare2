@@ -24,10 +24,13 @@ enum {
 	TYPE_TST = 2,
 	TYPE_SWI = 3,
 	TYPE_BRA = 4,
-	TYPE_ARI = 5,
-	TYPE_IMM = 6,
-	TYPE_MEM = 7,
+	TYPE_BRR = 5,
+	TYPE_ARI = 6,
+	TYPE_IMM = 7,
+	TYPE_MEM = 8,
 };
+
+// static const char *const arm_shift[] = {"lsl", "lsr", "asr", "ror"};
 
 static ArmOp ops[] = {
 	{ "adc", 0xa000, TYPE_ARI },
@@ -52,12 +55,17 @@ static ArmOp ops[] = {
 	{ "ldr", 0x9000, TYPE_MEM },
 	{ "str", 0x8000, TYPE_MEM },
 
-	{ "blx", 0x30ff2fe1, TYPE_BRA },
+	{ "blx", 0x30ff2fe1, TYPE_BRR },
+	{ "bx", 0x10ff2fe1, TYPE_BRR },
+
 	{ "bl", 0xb, TYPE_BRA },
-	{ "bx", 0x10ff2fe1, TYPE_BRA },
+// bx/blx - to register, b, bne,.. justjust  offset
+//    2220:       e12fff1e        bx      lr
+//    2224:       e12fff12        bx      r2
+//    2228:       e12fff13        bx      r3
+
 	//{ "bx", 0xb, TYPE_BRA },
 	{ "b", 0xa, TYPE_BRA },
-
 
 	//{ "mov", 0x3, TYPE_MOV },
 	//{ "mov", 0x0a3, TYPE_MOV },
@@ -80,11 +88,13 @@ static ArmOp ops[] = {
 };
 
 static int getnum(const char *str) {
-	while (str&&(*str=='$'||*str=='#'))
+	if (!str)
+		return 0;
+	while (*str=='$'||*str=='#')
 		str++;
 	if (*str=='0'&&str[1]=='x') {
 		int x;
-		if(sscanf(str+2, "%x", &x))
+		if (sscanf (str+2, "%x", &x))
 			return x;
 	}
 	return atoi(str);
@@ -98,7 +108,7 @@ static char *getrange(char *s) {
 			*p=0;
 		}
 		if (*s=='[' || *s==']')
-			strcpy(s, s+1);
+			strcpy (s, s+1);
 		if (*s=='}')
 			*s=0;
 		s++;
@@ -108,28 +118,21 @@ static char *getrange(char *s) {
 }
 
 static int getreg(const char *str) {
+	int i;
+	const char *aliases[] = { "sl", "fp", "ip", "sp", "lr", "pc", NULL };
 	if (!str)
 		return -1;
 	if (*str=='r')
 		return atoi (str+1);
-	if (!strcmp(str, "pc"))
-		return 15;
-	if (!strcmp(str, "lr"))
-		return 14;
-	if (!strcmp(str, "sp"))
-		return 13;
-	if (!strcmp(str, "ip"))
-		return 12;
-	if (!strcmp(str, "fp"))
-		return 11;
-	if (!strcmp(str, "sl"))
-		return 10;
-	return -1; // XXX
+	for(i=0;aliases[i];i++)
+		if (!strcmp (str, aliases[i]))
+			return 10+i;
+	return -1;
 }
 
 static int getshift(const char *str) {
 	if(!str) return 0;
-	while (str&&*str&&!atoi(str))
+	while (str&&*str&&!atoi (str))
 		str++;
 	return atoi(str)/2;
 }
@@ -162,8 +165,8 @@ static void arm_opcode_cond(ArmOpcode *ao, int delta) {
 	};
 	int i, cond = 14; // 'always' is default
 	char *c = ao->op+delta;
-	for(i=0;conds[i];i++) {
-		if (!strcmp(c, conds[i])) {
+	for (i=0;conds[i];i++) {
+		if (!strcmp (c, conds[i])) {
 			cond = i;
 			break;
 		}
@@ -191,7 +194,7 @@ static int arm_opcode_name(ArmOpcode *ao, const char *str) {
 					ao->o |= (ret&0x0f)<<24;//(getreg(ao->a2)&0x0f);
 				} else {
 					ao->o |= (strstr(str,"],"))?4:5;
-					ao->o |= (getnum(ao->a2)&0x7f)<<24; // delta
+					ao->o |= (getnum (ao->a2)&0x7f)<<24; // delta
 				}
 				break;
 			case TYPE_IMM:
@@ -207,40 +210,50 @@ static int arm_opcode_name(ArmOpcode *ao, const char *str) {
 				} else ao->o |= getnum(ao->a0)<<24; // ???
 				break;
 			case TYPE_BRA:
-				if ((ret = getreg(ao->a0)) != -1) {
-					// XXX: Needs to calc (eip-off-8)>>2
-					arm_opcode_cond(ao, strlen(ops[i].name));
-					ao->o = (ao->o&0x70) | 0xb | (getnum(ao->a0)<<24);
-				} else {
+				if ((ret = getreg(ao->a0)) == -1) {
+					// TODO: control if branch out of range
 					ret = (getnum(ao->a0)-ao->off-8)/4;
 					ao->o |= ((ret>>8)&0xff)<<16;
 					ao->o |= ((ret)&0xff)<<24;
+				} else {
+					printf("This branch does not accept reg as arg\n");
+					return 0;
+				}
+				break;
+			case TYPE_BRR:
+				if ((ret = getreg(ao->a0)) != -1) {
+					ao->o |= (getreg (ao->a0)<<24);
+				} else {
+					printf("This branch does not accept off as arg\n");
+					return 0;
 				}
 				break;
 			case TYPE_SWI:
-				ao->o |= getnum(ao->a0)<<24;
+				ao->o |= (getnum (ao->a0)&0xff)<<24;
+				ao->o |= ((getnum (ao->a0)>>8)&0xff)<<16;
+				ao->o |= ((getnum (ao->a0)>>16)&0xff)<<8;
 				break;
 			case TYPE_ARI:
 				if (!ao->a2) {
 					ao->a2 = ao->a1;
 					ao->a1 = ao->a0;
 				}
-				ao->o |= getreg(ao->a0)<<20;
-				ao->o |= getreg(ao->a1)<<8;
-				ret = getreg(ao->a2);
+				ao->o |= getreg (ao->a0)<<20;
+				ao->o |= getreg (ao->a1)<<8;
+				ret = getreg (ao->a2);
 				ao->o |= (ret!=-1)? ret<<24 : 2 | getnum(ao->a2)<<24;
 				break;
 			case TYPE_MOV:
-				ao->o |= getreg(ao->a0)<<20;
-				ret = getreg(ao->a1);
+				ao->o |= getreg (ao->a0)<<20;
+				ret = getreg (ao->a1);
 				if (ret!=-1) ao->o |= ret<<24;
-				else ao->o |= 0xa003 | getnum(ao->a1)<<24;
+				else ao->o |= 0xa003 | getnum (ao->a1)<<24;
 				break;
 			case TYPE_TST:
 				//ao->o |= getreg(ao->a0)<<20; // ??? 
-				ao->o |= getreg(ao->a0)<<8;
-				ao->o |= getreg(ao->a1)<<24;
-				ao->o |= getshift(ao->a2)<<16; // shift
+				ao->o |= getreg (ao->a0)<<8;
+				ao->o |= getreg (ao->a1)<<24;
+				ao->o |= getshift (ao->a2)<<16; // shift
 				break;
 			}
 			return 1;
@@ -249,7 +262,6 @@ static int arm_opcode_name(ArmOpcode *ao, const char *str) {
 	return 0;
 }
 
-// XXX: check endian stuff
 int armass_assemble(const char *str, unsigned long off) {
 	ArmOpcode aop = {0};
 	aop.off = off;
@@ -265,10 +277,10 @@ int armass_assemble(const char *str, unsigned long off) {
 #ifdef MAIN
 void display(const char *str) {
 	char cmd[32];
-	int op = armass_assemble(str, 0x1000);
-	printf("%08x %s\n", op, str);
-	snprintf(cmd, sizeof(cmd), "rasm2 -d -a arm %08x", op);
-	system(cmd);
+	int op = armass_assemble (str, 0x1000);
+	printf ("%08x %s\n", op, str);
+	snprintf (cmd, sizeof(cmd), "rasm2 -d -a arm %08x", op);
+	system (cmd);
 }
 
 main() {
@@ -288,6 +300,7 @@ main() {
 	display("bx pc");
 	display("blx fp");
 	display("pop {pc}");
+	display("add lr, pc, lr");
 	display("adds r3, #8");
 	display("adds r3, r2, #8");
 	display("subs r2, #1");
@@ -306,11 +319,20 @@ main() {
 	display("str r1, [pc], 2");
 	display("str r1, [pc, 3]");
 	display("str r1, [pc, r4]");
-#endif
-	display("b r3");
+	display("bx r3");
 	display("bcc 33");
-	display("bne r3");
+	display("blx r3");
 	display("bne 0x1200");
+	display("str r0, [r1]");
+#endif
+
+   //10ab4:       00047e30        andeq   r7, r4, r0, lsr lr
+   //10ab8:       00036e70        andeq   r6, r3, r0, ror lr
+
+	display("andeq r7, r4, r0, lsr lr");
+	display("andeq r6, r3, r0, ror lr");
+	display("push {fp,lr}");
+	display("pop {fp,lr}");
 
 
 #if 0
@@ -324,13 +346,4 @@ main() {
 	display("blt 0x123"); // XXX: not supported
 #endif
 }
-#endif
-#if 0
-[pancake@dazo ~]$ rasm2 -o 0 -a arm -d 000080e5
-str r0, [r0]
-
-[pancake@dazo ~]$ rasm2 -o 0 -a arm -d 000081e5
-str r0, [r1]
-
-[pancake@dazo ~]$ rasm2 -o 0 -a arm -d 000081e5
 #endif
