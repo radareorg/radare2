@@ -16,7 +16,7 @@ macros   : architecture independent assembly-like macro-based
 assembly : macros are then converted into assembly
   |        - specific for an OS/arch
   V
- gas
+gas/rasm2 : assembler compatible with GNU assembler and r2 asm
   |
   V
 binary   : the executable, relocatable code

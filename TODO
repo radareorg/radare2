@@ -8,10 +8,8 @@
 
 Questions
 =========
+* Add support for nasm for rarc2 (it is already done? :)
 * rarc2 allows to compile invalid code like calling puts() out of context
-* add asm.profile into r2
-* Merge r_vm into r_anal ?
-* Merge r_vm into r_parse ?
 * Add rabin2 .! calls into r_core api? r_core_rabin_import(core, "rIs") ?
 
 0.6 RELEASE
@@ -27,7 +25,6 @@ Questions
   - first we need to do it for ired..
 * Add dex format support to rabin (android)
 * Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
-* Cx/CX are not displayed in disasm as they should.. (C! must die)
 * Create radare2-testsuite project
 * Colorize registers that has changed 
 
@@ -41,6 +38,7 @@ Build system:
 
 TODO nibble
 -----------
+* Cx/CX are not displayed in disasm as they should.. (C! must die)
 * Better way to fix got_offset issue?
 * use r_anal_value everywhere in r_anal
 * make x86_x86im the default backend for x86 analysis
@@ -71,11 +69,13 @@ TODO edu
 TODO pancake
 ------------
 * Display eflags in ascii mode
-  - r_reg_eflags(dbg->reg, "cpastidor")
+  - use r_str_bits()
+  - r_reg_eflags(dbg->reg, "cpastidor", mode) // must be in r_util.. as a bit helper
   - static buffer in dbg->reg..fixed size (32)
   - printf("eflags: %s\n", r_reg_get_flags (dbg->reg, "cpastidor");
   void foo(RRegister *r, RRegisterItem *ri, const char *str) {
   }
+
 * Import r_vm register values from flags or from r_debug->r_reg
   - r_vm must use mmu cache when emulating code
     - use the one from r_io? and deprecate vm->mmu_cache?
@@ -121,6 +121,8 @@ Bindings
 
 Refactoring
 ===========
+* Merge r_vm into r_anal ?
+* Merge r_vm into r_parse ?
 * Merge r_socket inside r_util ?
 * Add SSL support to r_socket ?
 * Discuss missing r_core_sysenv_update in core/file.c:33

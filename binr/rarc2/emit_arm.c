@@ -1,4 +1,3 @@
-// TODO: The arm support is not done. only few callbacks
 /* pancake // nopcode.org 2010 -- emit module for rcc */
 
 #include "rarc2.h"
@@ -24,8 +23,8 @@ static void emit_frame (int sz) {
 	if (sz>0) rcc_printf (
 		"  push {fp,lr}\n"
 		//"  mov "R_BP", "R_SP"\n"
-		"  add fp, sp, 4\n" // huh?
-		"  sub sp, %d\n", sz); // 8, 16, ..
+		"  add fp, sp, 4\n" // size of arguments
+		"  sub sp, %d\n", sz); // size of stackframe 8, 16, ..
 }
 
 static void emit_frame_end (int sz, int ctx) {
@@ -50,13 +49,12 @@ static void emit_syscall_args(int nargs) {
 	int j, k;
 	for (j=0; j<nargs; j++) {
 		k = j*R_SZ;
-		rcc_printf ("  ldr %s, ["R_SP", #%c%d]\n", regs[j+1], k>0?'+':' ', k);
+		rcc_printf ("  ldr %s, [sp, #%c%d]\n", regs[j+1], k>0?'+':' ', k);
 	}
 }
 
 static void emit_set_string(const char *dstvar, const char *str, int j) {
 	int off = 0;
-	// TODO: branch string+off
 	off = strlen (str);
 	off += (off%4);
 	rcc_printf ("  add pc, %d\n", off);
@@ -122,12 +120,7 @@ static void emit_trap () {
 }
 
 static void emit_load_ptr(const char *dst) {
-	int d = atoi (dst);
-	eprintf ("HACK HACK HACK\n");
-	// XXX: 32/64bit care
-	rcc_printf ("  ldr "R_AX", ["R_BP", %d]\n", d);
-	//rcc_printf ("  movl %%"R_BP", %%"R_AX"\n");
-	//rcc_printf ("  addl $%d, %%"R_AX"\n", d);
+	rcc_printf ("  ldr r0, [fp, %d]\n", atoi (dst));
 }
 
 static void emit_branch(char *b, char *g, char *e, char *n, int sz, const char *dst) {

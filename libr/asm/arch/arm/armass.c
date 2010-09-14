@@ -124,14 +124,14 @@ static int getreg(const char *str) {
 		return -1;
 	if (*str=='r')
 		return atoi (str+1);
-	for(i=0;aliases[i];i++)
+	for (i=0;aliases[i];i++)
 		if (!strcmp (str, aliases[i]))
 			return 10+i;
 	return -1;
 }
 
 static int getshift(const char *str) {
-	if(!str) return 0;
+	if (!str) return 0;
 	while (str&&*str&&!atoi (str))
 		str++;
 	return atoi(str)/2;
@@ -139,7 +139,7 @@ static int getshift(const char *str) {
 
 static void arm_opcode_parse(ArmOpcode *ao, const char *str) {
 	memset (ao, 0, sizeof (ArmOpcode));
-	strncpy (ao->op, str, sizeof(ao->op));
+	strncpy (ao->op, str, sizeof (ao->op));
 	ao->a0 = strchr (ao->op, ' ');
 	if (ao->a0) {
 		*ao->a0 = 0;
@@ -199,12 +199,20 @@ static int arm_opcode_name(ArmOpcode *ao, const char *str) {
 				break;
 			case TYPE_IMM:
 				if (*ao->a0=='{') {
-					int reg, regmask;
+					int reg, regmask, reg2;
 					getrange (ao->a0+1); // XXX filter regname string
-					reg = getreg(ao->a0+1);
+					reg = getreg (ao->a0+1);
 					regmask = (reg>7)? 1<<(reg-8): 1<<(reg+8);
 					if (reg>=0 && reg<=0xf)
 						ao->o |= regmask<<16;
+					if (ao->a1 && *ao->a1) {
+						getrange (ao->a1);
+						reg2 = getreg (ao->a1);
+						if (reg2 != -1)
+							ao->o |= (reg2-reg+1)<<20;
+					}
+					if (ao->a2)
+						fprintf (stderr, "XXX: push/pop with more than 2 regs is broken\n");
 					// char *r1 = getrange (ao->a0+1); // XXX: its a bitmask?
 					//if (r1) ao->o |= getreg(r1)<<24;
 				} else ao->o |= getnum(ao->a0)<<24; // ???
@@ -324,6 +332,9 @@ main() {
 	display("blx r3");
 	display("bne 0x1200");
 	display("str r0, [r1]");
+	display("push {fp,lr}");
+	display("pop {fp,lr}");
+	display("pop {pc}");
 #endif
 
    //10ab4:       00047e30        andeq   r7, r4, r0, lsr lr
@@ -331,8 +342,8 @@ main() {
 
 	display("andeq r7, r4, r0, lsr lr");
 	display("andeq r6, r3, r0, ror lr");
-	display("push {fp,lr}");
-	display("pop {fp,lr}");
+//  c4:   e8bd80f0        pop     {r4, r5, r6, r7, pc}
+	display("pop {r4,r5,r6,r7,pc}");
 
 
 #if 0

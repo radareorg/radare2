@@ -76,6 +76,94 @@ static int config_asmsyntax_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int asm_profile(RConfig *cfg, const char *profile) {
+	// TODO: Do a cleanup on those configurations
+	if (!strcmp(profile, "help")) {
+		eprintf("Available asm.profile:\n"
+			" default, gas, smart, graph, debug, full, simple\n");
+		return R_FALSE;
+	} else if (!strcmp (profile, "default")) {
+		r_config_set (cfg, "asm.bytes", "true");
+		r_config_set (cfg, "asm.lines", "true");
+		r_config_set (cfg, "asm.linesout", "false");
+		r_config_set (cfg, "asm.lineswide", "false");
+		r_config_set (cfg, "asm.offset", "true");
+		r_config_set (cfg, "asm.comments", "true");
+		r_config_set (cfg, "asm.flagsline", "false");
+		r_config_set (cfg, "asm.section", "false");
+		r_config_set (cfg, "asm.trace", "false");
+		r_config_set (cfg, "asm.split", "true");
+		r_config_set (cfg, "asm.flags", "true");
+		r_config_set (cfg, "asm.size", "false");
+		r_config_set (cfg, "asm.xrefs", "true");
+		r_config_set (cfg, "scr.color", "true");
+	} else if (!strcmp(profile, "compact")) {
+		asm_profile (cfg, "simple");
+		r_config_set (cfg, "asm.lines", "true");
+		r_config_set (cfg, "asm.comments", "false");
+		r_config_set (cfg, "scr.color", "false");
+	} else if (!strcmp(profile, "gas")) {
+		asm_profile (cfg, "default");
+		r_config_set (cfg, "asm.lines", "false");
+		r_config_set (cfg, "asm.comments", "false");
+		r_config_set (cfg, "asm.section", "false");
+		r_config_set (cfg, "asm.trace", "false");
+		r_config_set (cfg, "asm.bytes", "false");
+		r_config_set (cfg, "asm.stackptr", "false");
+		r_config_set (cfg, "asm.offset", "false");
+		r_config_set (cfg, "asm.flags", "true");
+		r_config_set (cfg, "asm.flagsline", "true");
+		r_config_set (cfg, "asm.jmpflags", "true");
+		r_config_set (cfg, "scr.color", "false");
+	} else if (!strcmp(profile, "smart")) {
+		asm_profile (cfg, "default");
+		r_config_set (cfg, "asm.section", "false");
+		r_config_set (cfg, "asm.trace", "false");
+		r_config_set (cfg, "asm.bytes", "false");
+		r_config_set (cfg, "asm.stackptr", "false");
+	} else if (!strcmp(profile, "graph")) {
+		asm_profile (cfg, "default");
+		r_config_set (cfg, "asm.section", "false");
+		r_config_set (cfg, "asm.bytes", "false");
+		r_config_set (cfg, "asm.trace", "false");
+		r_config_set (cfg, "scr.color", "false");
+		r_config_set (cfg, "asm.lines", "false");
+		r_config_set (cfg, "asm.stackptr", "false");
+		if (r_config_get (cfg, "graph.offset"))
+			r_config_set (cfg, "asm.offset", "true");
+		else   r_config_set (cfg, "asm.offset", "false");
+	} else if (!strcmp(profile, "debug")) {
+		asm_profile (cfg, "default");
+		r_config_set (cfg, "asm.trace", "true");
+	} else if (!strcmp(profile, "full")) {
+		asm_profile (cfg, "default");
+		r_config_set (cfg, "asm.bytes", "true");
+		r_config_set (cfg, "asm.lines", "true");
+		r_config_set (cfg, "asm.linesout", "true");
+		r_config_set (cfg, "asm.lineswide", "true");
+		r_config_set (cfg, "asm.section", "true");
+		r_config_set (cfg, "asm.size", "true");
+	} else if (!strcmp(profile, "simple")) {
+		asm_profile (cfg, "default");
+		r_config_set (cfg, "asm.bytes", "false");
+		r_config_set (cfg, "asm.lines", "false");
+		r_config_set (cfg, "asm.comments", "true");
+		r_config_set (cfg, "asm.split", "false");
+		r_config_set (cfg, "asm.flags", "false");
+		r_config_set (cfg, "asm.flagsline", "true");
+		r_config_set (cfg, "asm.xrefs", "false");
+		r_config_set (cfg, "asm.stackptr", "false");
+		r_config_set (cfg, "asm.section", "false");
+	}
+	return R_TRUE;
+}
+
+static int config_asmprofile_callback(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	return asm_profile (core->config, node->value);
+}
+
 static int config_stopthreads_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -199,6 +287,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "asm.os", R_SYS_OS, &config_asmos_callback);
 	r_config_set (cfg, "asm.pseudo", "false");  // DEPRECATED ???
 	r_config_set_cb (cfg, "asm.syntax", "intel", &config_asmsyntax_callback);
+	r_config_set_cb (cfg, "asm.profile", "default", &config_asmprofile_callback);
 #if LIL_ENDIAN
 	r_config_set_cb (cfg, "cfg.bigendian", "false", &config_bigendian_callback);
 #else
@@ -239,8 +328,6 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "rap.loop", "true");
 	/* TODO cmd */
 #if 0
-	node = config_set("asm.profile", "default");
-//	node->callback = &config_asm_profile;
 
 //	node->callback = &config_arch_callback;
 	config_set("asm.comments", "true"); // show comments in disassembly

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -88,11 +88,10 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		default: return -1;
 		}
 		for (k = 0; k < m; k++) {
-			if (write)
-				r_mem_copyendian((ut8*)&buf[addr+len+k*tsize],
-						(ut8*)&b->buf[len+k*tsize], tsize, endian);
+			if (write) r_mem_copyendian((ut8*)&buf[addr+len+k*tsize],
+					(ut8*)&b->buf[len+k*tsize], tsize, endian);
 			else r_mem_copyendian((ut8*)&buf[len+k*tsize],
-						(ut8*)&b->buf[addr+len+k*tsize], tsize, endian);
+					(ut8*)&b->buf[addr+len+k*tsize], tsize, endian);
 		}
 		len += m*tsize; m = 1;
 	}

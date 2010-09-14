@@ -12,7 +12,7 @@ static RAsmPlugin *asm_static_plugins[] =
 	{ R_ASM_STATIC_PLUGINS };
 
 static int r_asm_pseudo_align(struct r_asm_aop_t *aop, char *input) {
-	eprintf ("TODO: .align\n");
+	eprintf ("TODO: .align\n"); // Must add padding for labels and others.. but this is from RAsm, not RAsmAop
 	return 0;
 }
 
@@ -65,10 +65,15 @@ static inline int r_asm_pseudo_byte(struct r_asm_aop_t *aop, char *input) {
 }
 
 static inline int r_asm_pseudo_fill(struct r_asm_aop_t *aop, char *input) {
-	// repeat, size, value
-	// TODO
-	eprintf ("TODO: .fill\n");
-	return 0;
+	int i, repeat, size, value;
+	sscanf (input, "%d,%d,%d", &repeat, &size, &value); // use r_num?
+	size *= repeat;
+	if (size>0) {
+		for (i=0; i<size; i++)
+			aop->buf[i] = value;
+		r_hex_bin2str (aop->buf, size, aop->buf_hex);
+	} else size = 0;
+	return size;
 }
 
 R_API RAsm *r_asm_new() {
