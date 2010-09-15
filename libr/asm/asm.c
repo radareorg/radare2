@@ -17,7 +17,7 @@ static int r_asm_pseudo_align(struct r_asm_aop_t *aop, char *input) {
 }
 
 static int r_asm_pseudo_string(struct r_asm_aop_t *aop, char *input) {
-	int len = strlen (input)+1;
+	int len = r_str_escape (input);
 	r_hex_bin2str ((ut8*)input, len, aop->buf_hex);
 	strncpy ((char*)aop->buf, input, R_ASM_BUFSIZE);
 	return len;
@@ -319,7 +319,8 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 			for (ptr_start = buf_token; *ptr_start &&
 				isseparator (*ptr_start); ptr_start++);
 			ptr = strchr (ptr_start, '#'); /* Comments */
-			if (ptr) *ptr = '\0';
+			if (ptr && !R_BETWEEN (ptr[1],'0','9'))
+				*ptr = '\0';
 			if (stage == 2) {
 				r_asm_set_pc (a, a->pc + ret);
 				off = a->pc;

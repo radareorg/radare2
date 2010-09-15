@@ -18,7 +18,7 @@ enum {
 	LAST
 };
 
-#define eprintf(x,y...) (fprintf(stderr,"\x1b[31m"x"\x1b[0m",##y),1)
+#define eprintf(x,y...) (fprintf(stderr,"\x1b[33m"x"\x1b[0m",##y),1)
 #define FREE(x) free(x); x=NULL
 #define IS_VAR(x) (x[0]=='.'||((x[0]=='*'||x[0]=='&')&&x[1]=='.'))
 #define MAX 255

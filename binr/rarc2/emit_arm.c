@@ -20,15 +20,15 @@ static char *emit_syscall (int num) {
 }
 
 static void emit_frame (int sz) {
+	rcc_printf ("  push {fp,lr}\n");
 	if (sz>0) rcc_printf (
-		"  push {fp,lr}\n"
 		//"  mov "R_BP", "R_SP"\n"
-		"  add fp, sp, 4\n" // size of arguments
-		"  sub sp, %d\n", sz); // size of stackframe 8, 16, ..
+		"  add fp, sp, $4\n" // size of arguments
+		"  sub sp, $%d\n", sz); // size of stackframe 8, 16, ..
 }
 
 static void emit_frame_end (int sz, int ctx) {
-	if (sz>0) rcc_printf ("  add "R_SP", %d\n", sz);
+	if (sz>0) rcc_printf ("  add sp, fp, $%d\n", sz);
 	if (ctx>0) rcc_puts ("  pop {fp,pc}\n");
 }
 
@@ -54,14 +54,16 @@ static void emit_syscall_args(int nargs) {
 }
 
 static void emit_set_string(const char *dstvar, const char *str, int j) {
-	int off = 0;
-	off = strlen (str);
-	off += (off%4);
-	rcc_printf ("  add pc, %d\n", off);
+	int rest, off = 0;
+	off = strlen (str)+1;
+	rest = (off%4);
+	if (rest) rest = 4-rest;
+	off += rest-8;
+	rcc_printf ("  add pc, $%d\n", (off));
 	// XXX: does not handle \n and so on.. must use r_util
 	rcc_printf (".string \"%s\"\n", str);
-	if (off%4) rcc_printf (".fill %d, 1, 0\n", (off%4));
-	rcc_printf ("  sub r0, pc, %d\n", off);
+	if (rest) rcc_printf (".fill %d, 1, 0\n", (rest));
+	rcc_printf ("  sub r0, pc, $%d\n", off+16);
 }
 
 static void emit_call(const char *str, int atr) {
@@ -75,6 +77,8 @@ static void emit_arg (int xs, int num, const char *str) {
 	int d = atoi (str);
 	if (!attsyntax && (*str=='$'))
 		str++;
+// ARGMENTS ONLY IN R0, R1, .. ooh common!
+return; // XXX
 	switch (xs) {
 	case 0:
 		rcc_printf ("  push {%s}\n", str);
@@ -95,7 +99,7 @@ static void emit_get_result(const char *ocn) {
 }
 
 static void emit_restore_stack (int size) {
-	rcc_printf("  add sp, %d\n", size);
+	//rcc_printf("  add sp, %d\n", size);
 }
 
 static void emit_get_while_end (char *str, const char *ctxpush, const char *label) {
@@ -103,9 +107,10 @@ static void emit_get_while_end (char *str, const char *ctxpush, const char *labe
 }
 
 static void emit_while_end (const char *labelback) {
-	rcc_printf ("  pop "R_AX"\n");
-	rcc_printf ("  cmp "R_AX", "R_AX"\n"); // XXX MUST SUPPORT != 0 COMPARE HERE
-	rcc_printf ("  beq %s\n", labelback);
+	rcc_printf (
+		"  pop "R_AX"\n"
+		"  cmp "R_AX", "R_AX"\n" // XXX MUST SUPPORT != 0 COMPARE HERE
+		"  beq %s\n", labelback);
 }
 
 static void emit_get_var (int type, char *out, int idx) {
@@ -150,13 +155,8 @@ static void emit_branch(char *b, char *g, char *e, char *n, int sz, const char *
 
 	if (*arg=='=') arg++; /* for <=, >=, ... */
 	p = mk_var (str, arg, 0);
-	if (attsyntax) {
-		rcc_printf ("  pop %%"R_AX"\n"); /* TODO: add support for more than one arg get arg0 */
-		rcc_printf ("  cmp%c %s, %%"R_AX"\n", sz, p);
-	} else {
-		rcc_printf ("  pop "R_AX"\n"); /* TODO: add support for more than one arg get arg0 */
-		rcc_printf ("  cmp %s, "R_AX"\n", p);
-	}
+	rcc_printf ("  pop "R_AX"\n"); /* TODO: add support for more than one arg get arg0 */
+	rcc_printf ("  cmp %s, "R_AX"\n", p);
 	// if (context>0)
 	rcc_printf ("  %s %s\n", op, dst);
 }

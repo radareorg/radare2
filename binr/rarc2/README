@@ -1,6 +1,10 @@
 RCC : Ralang/Relocatable Code Compiler
 ======================================
 
+TODO:
+-----
+add support for /* comments */
+
 Compiler pipeline: the picture
 ------------------------------
 

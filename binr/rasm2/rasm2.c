@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
 
 #include <stdio.h>
 #include <string.h>
@@ -13,7 +13,6 @@ static struct r_lib_t *l;
 static struct r_asm_t *a;
 static int coutput = R_FALSE;
 
-// TODO: remove or gtfo
 static void r_asm_list(RAsm *a) {
 	RAsmPlugin *h;
 	RListIter *iter;
@@ -48,17 +47,15 @@ static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin) {
 	ut64 word = 0, clen = 0; 
 
 	if (bin) {
-		clen = len; //XXX
+		clen = len; // XXX
 		data = (ut8*)buf;
 	} else if (ascii) {
 		clen = strlen (buf);
 		data = (ut8*)buf;
 	} else {
-		while (ptr[0]) {
+		for (; *ptr; ptr++)
 			if (ptr[0]!= ' ' && ptr[0]!= '\n' && ptr[0]!= '\r')
-				if (0==(++word%2))clen++;
-			ptr += 1;
-		}
+				if (!(++word%2)) clen++;
 		data = alloca (clen);
 		if (r_hex_str2bin (buf, data)==-1)
 			return 0;
@@ -97,13 +94,6 @@ static int rasm_asm(char *buf, ut64 offset, ut64 len, int bin) {
 	struct r_asm_aop_t aop;
 	int ret, idx, i;
 
-#if 0 
-	/* TODO: Arch, syntax... */
-	if (!r_asm_use(&a, "x86.olly")) {
-		fprintf(stderr, "Error: Cannot find asm_x86 plugin\n");
-		return 1;
-	}
-#endif 
 	r_asm_set_pc (a, offset);
 	if (!(acode = r_asm_massemble (a, buf)))
 		return 0;
@@ -125,16 +115,14 @@ static int rasm_asm(char *buf, ut64 offset, ut64 len, int bin) {
 }
 
 /* asm callback */
-static int __lib_asm_cb(struct r_lib_plugin_t *pl, void *user, void *data)
-{
+static int __lib_asm_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 	RAsmPlugin *hand = (struct r_asm_plugin_t *)data;
 	r_asm_add (a, hand);
 	return R_TRUE;
 }
 static int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 	char *arch = NULL, *file = NULL;
 	ut64 offset = 0x8048000;
 	int dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c;
@@ -253,8 +241,7 @@ int main(int argc, char *argv[])
 		}
 		if (dis) ret = rasm_disasm (argv[optind], offset, len, ascii, bin);
 		else ret = rasm_asm (argv[optind], offset, len, bin);
-		if (!ret)
-			eprintf ("invalid\n");
+		if (!ret) eprintf ("invalid\n");
 		return ret;
 	}
 	return 0;

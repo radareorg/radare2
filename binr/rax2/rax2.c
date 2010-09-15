@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
 
 	if (argc == 1) {
 		while (!feof (stdin)) {
-			fgets (buf, 1023, stdin);
+			fgets (buf, sizeof (buf)-1, stdin);
 			if (feof (stdin)) break;
 			buf[strlen (buf)-1] = '\0';
 			if (!rax (buf)) break;

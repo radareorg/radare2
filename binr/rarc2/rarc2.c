@@ -629,6 +629,7 @@ static int parsechar(char c) {
 			elem[elem_n] = '\0';
 			if (elem_n > 0)
 				rcc_element (elem);
+			else emit->frame (0);
 			elem_n = 0;
 		} else elem[elem_n++] = c;
 		elem[elem_n] = '\0';

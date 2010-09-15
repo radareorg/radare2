@@ -11,7 +11,7 @@ static int do_hash(const char *algo, const ut8 *buf, int len, int bsize, int rad
 	ut64 algobit = r_hash_name_to_bits (algo);
 
 	if (algobit == R_HASH_NONE) {
-		fprintf(stderr, "Invalid hashing algorithm specified\n");
+		eprintf ("Invalid hashing algorithm specified\n");
 		return 1;
 	}
 	if (bsize>len)

@@ -26,7 +26,7 @@ static char *curfile = NULL;
 static ut64 bsize = 4096;
 static int hexstr = 0;
 static struct r_print_t *pr = NULL;
-LIST_HEAD(kws_head);
+static LIST_HEAD(kws_head);
 
 typedef struct {
 	char *str;
@@ -34,7 +34,6 @@ typedef struct {
 } BoxedString;
 
 static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
-	//const ut8 *buf = (ut8*)user;
 	int delta = addr-cur;
 	if (rad) {
 		printf("f hit%d_%d 0x%08"PFMT64x" ; %s\n", 0, kw->count, addr, curfile);
@@ -72,40 +71,43 @@ static int show_help(char *argv0, int line) {
 static int rafind_open(char *file) {
 	int ret, last = 0;
 	struct list_head *pos;
+
 	io = r_io_new();
-	
 	fd = r_io_open(io, file, R_IO_READ, 0);
 	if (fd == -1) {
-		fprintf (stderr, "Cannot open file '%s'\n", file);
+		eprintf ("Cannot open file '%s'\n", file);
 		return 1;
 	}
 
 	r_cons_new();
-	rs = r_search_new(mode);
-	buffer = malloc(bsize);
-	r_search_set_callback(rs, &hit, buffer);
-	if (to == -1) {
-		to = r_io_size(io, fd);
+	rs = r_search_new (mode);
+	buffer = malloc (bsize);
+	if (buffer==NULL) {
+		eprintf ("Cannot allocate %"PFMT64d" bytes\n", bsize);
+		return 1;
 	}
+	r_search_set_callback (rs, &hit, buffer);
+	if (to == -1)
+		to = r_io_size(io, fd);
 	if (mode == R_SEARCH_KEYWORD) {
 		list_for_each(pos, &(kws_head)) {
 			BoxedString *kw = list_entry(pos, BoxedString, list);
 			r_search_kw_add (rs, (hexstr)?
 				r_search_keyword_new_hex (kw->str, mask, NULL) : 
 				r_search_keyword_new_str (kw->str, mask, NULL));
-			free(kw);
+			free (kw);
 		}
 	}
 	curfile = file;
-	r_search_begin(rs);
-	r_io_seek(io, from, R_IO_SEEK_SET);
+	r_search_begin (rs);
+	r_io_seek (io, from, R_IO_SEEK_SET);
 	//printf("; %s 0x%08"PFMT64x"-0x%08"PFMT64x"\n", file, from, to);
 	for(cur=from; !last && cur<to;cur+=bsize) {
 		if ((cur+bsize)>to) {
 			bsize = to-cur;
 			last=1;
 		}
-		ret = r_io_read(io, buffer, bsize);
+		ret = r_io_read (io, buffer, bsize);
 		if (ret == 0) {
 			if (nonstop) continue;
 		//	fprintf(stderr, "Error reading at 0x%08"PFMT64x"\n", cur);
@@ -113,9 +115,9 @@ static int rafind_open(char *file) {
 		}
 		if (ret != bsize)
 			bsize = ret;
-		r_search_update_i(rs, cur, buffer, bsize);
+		r_search_update_i (rs, cur, buffer, bsize);
 	}
-	rs = r_search_free(rs);
+	rs = r_search_free (rs);
 	return 0;
 }
 
@@ -173,10 +175,10 @@ int main(int argc, char **argv) {
 	}
 
 	if (optind == argc)
-		return show_help(argv[0], 1);
+		return show_help (argv[0], 1);
 
 	for (;optind < argc;optind++)
-		rafind_open(argv[optind]);
+		rafind_open (argv[optind]);
 
 	return 0;
 }
