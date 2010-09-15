@@ -34,7 +34,7 @@ else
 endif
 
 libr2.${EXT_AR}:
-	@echo No archive libr.a. Try --without-pic in configure
+	@echo NOTE: Use --without-pic in configure to create libr2.${EXT_AR}
 else
 libr2.${EXT_SO}:
 

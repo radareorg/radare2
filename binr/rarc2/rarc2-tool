@@ -1,58 +1,58 @@
 #!/bin/sh
 # pancake / nopcode.org
+# TODO: execute in this way? rasc -s $bytes -X
+# TODO: use rasm2 instead of gas
 
 [ -z "${ARCH}" ] && ARCH=`rarc2 -A`
+[ -z "${CC}" ] && CC=gcc
 
 compile() {
-	spp -h 2>&1 >/dev/null
+	spp -h >/dev/null 2>&1
 	if [ $? = 0 ]; then
-		spp -Darch=${ARCH} $@ | rarc2 -s -${ARCH} > .a.S || exit $?
+		spp -Darch=${ARCH} $@ | rarc2 -s -a${ARCH} > .a.S || exit $?
 	else
-		rarc2 -s -${ARCH} $@ > .a.S || exit $?
+		rarc2 -s -a${ARCH} $@ > .a.S || exit $?
 	fi
 }
 
-flg=$1
-shift
-case "$flg" in
-"-b")
+help() {
+	cat << EOF
+Usage: rarc2-tool [-flag] [file]
+   -b  dump bytes
+   -x  execute
+   -c  compile against libc
+   -S  only generate .S file
+ARCH: environ to set architecture: arm, x86, x64
+EOF
+	exit 1
+}
+
+while getopts bSxc o ; do
+	[ "$o" = "?" ] && help
+	eval $o=1
+done
+
+shift $((${OPTIND}-1))
+
+if [ -n "`echo $@`" ]; then
 	compile $@
-	gcc -nostdlib .a.S -o .a.out
-	if [ -e .a.out ]; then
-		rabin2 -o d/S/.text .a.out
-		rm -f .a.S .a.out
+	if [ -n "$c" ]; then
+		${CC} .a.S -o .a.out
+	else
+		${CC} -nostdlib .a.S -o .a.out
 	fi
-	;;
-"-S")
-	compile $@
-	;;
-"-cx"|"-xc")
-	compile $@
-	gcc .a.S -o .a.out
-	[ -e .a.out ] && ./.a.out
-	rm -f .a.S .a.out
-	;;
-"-c")
-	compile $@
-	gcc .a.S -o .a.out
-	[ -e .a.out ] && cp .a.out $1.out
-	rm -f .a.S .a.out
-	;;
-"-x")
-	compile $@
-	gcc -nostdlib .a.S -o .a.out
 	if [ -e .a.out ]; then
-		bytes=`rabin2 -o d/S/.text .a.out`
-		rasc -s $bytes -X
+		if [ -n "$b" ]; then
+			rabin2 -O d/S/.text .a.out
+		else
+			if [ -n "$x" ]; then
+				./.a.out
+			else
+				cp .a.out $1.out
+			fi
+		fi
 	fi
 	rm -f .a.S .a.out
-	;;
-*)
-	echo "Usage: rarc2-tool [-flag] [file]"
-	echo "   -b  dump bytes"
-	echo "   -x  execute"
-	echo "   -c  compile against libc"
-	echo "   -S  only generate .S file"
-	echo "ARCH: environ to set architecture: arm, x86, x64"
-	;;
-esac
+else
+	help
+fi

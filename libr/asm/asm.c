@@ -17,7 +17,13 @@ static int r_asm_pseudo_align(struct r_asm_aop_t *aop, char *input) {
 }
 
 static int r_asm_pseudo_string(struct r_asm_aop_t *aop, char *input) {
-	int len = r_str_escape (input);
+	int len = strlen(input)-1;
+	// TODO: if not starting with '"'.. give up
+	if (input[len]=='"')
+		input[len] = 0;
+	if (*input=='"')
+		input++;
+	len = r_str_escape (input)+1;
 	r_hex_bin2str ((ut8*)input, len, aop->buf_hex);
 	strncpy ((char*)aop->buf, input, R_ASM_BUFSIZE);
 	return len;

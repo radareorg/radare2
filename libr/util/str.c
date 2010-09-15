@@ -458,12 +458,12 @@ R_API char *r_str_clean(char *str) {
 	int len;
 	char *ptr;
 	if (str != NULL) {
-		while (str[0] && iswhitechar (str[0]))
-			str = str + 1;
+		while (*str && iswhitechar (*str))
+			str++;
 		if ((len = strlen(str))>0) 
-		for (ptr = str+len-1;ptr!=str;ptr = ptr - 1) {
-			if (iswhitechar (ptr[0]))
-				ptr[0]='\0';
+		for (ptr = str+len-1; ptr!=str; ptr = ptr - 1) {
+			if (iswhitechar (*ptr))
+				*ptr = '\0';
 			else break;
 		}
 	}
@@ -507,7 +507,10 @@ R_API int r_str_escape(char *buf) {
 			return 0;
 		}
 	}
-	return i;
+
+	//char *p = buf; while(*p) { eprintf("%d %c\n", *p, *p); p++; }
+	//eprintf("OLEN=%d (%s)\n", strlen(buf), buf);
+	return strlen(buf);
 }
 
 R_API char *r_str_unscape(char *buf) {

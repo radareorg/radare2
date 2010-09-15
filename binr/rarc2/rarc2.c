@@ -24,6 +24,7 @@ static struct {
 
 static int nsyscalls = 0;
 static char *syscallbody = NULL;
+static int commentmode = 0;
 static int varsize = 'l';
 static int varxs = 0;
 static int lastctxdelta = 0;
@@ -619,6 +620,12 @@ static int parsechar(char c) {
 		}
 	}
 
+	if(commentmode) {
+		if (c=='/' && oc == '*')
+			commentmode = 0;
+		return 0;
+	} else if (c=='*' && oc == '/')
+		commentmode = 1;
 	if (slurp) {
 		if (slurp != '"' && c == slurpin)
 			exit (eprintf (
@@ -634,7 +641,7 @@ static int parsechar(char c) {
 		} else elem[elem_n++] = c;
 		elem[elem_n] = '\0';
 	} else {
-		switch(c) {
+		switch (c) {
 		case ';':
 			rcc_next ();
 			break;
@@ -739,7 +746,7 @@ static void parseflag(const char *arg) {
 		showhelp ();
 		exit (0);
 	default:
-		eprintf ("Unknown flag\n");
+		eprintf ("Unknown flag '%c'\n", *arg);
 	}
 }
 
@@ -772,6 +779,10 @@ int main(int argc, char **argv) {
 			parsechar (ch);
 		close (fd);
 	} while (i<argc);
+	if (commentmode) {
+		eprintf("ERROR: non-closed /**/ comment\n");
+		return 1;
+	}
 	rcc_flush ();
 	return 0;
 }
