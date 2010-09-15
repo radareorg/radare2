@@ -24,8 +24,13 @@ include ../rules.mk
 	fi ; fi ; \
 	if [ $$? = 0 ]; then \
 	  (cd .. && sh do-swig.sh ${LANG} `echo $@ | sed -e s,.so,,`) ; \
-	  sed -i 's,^\(const UT.*\) int,\1 uint,' `echo $@ | sed -e s,.so,.go,` ; \
+	  ./fixgoswig.sh `echo $@ | sed -e s,.so,.go,` ; \
 	  $${GO_N}g `echo $@ | sed -e s,.so,.go,` ; \
 	  $${GO_N}c $${GO_FLAGS} -I ${GOROOT}/pkg/${GOOS}_${GOARCH} `echo $@ | sed -e s,.so,_gc.c,` ; \
 	  gopack grc `echo $@ | sed -e s,.so,.a,` `echo $@ | sed -e s,.so,.$${GO_N},` `echo $@ | sed -e s,.so,_gc.$${GO_N},` ; \
 	fi
+
+rbintest:
+	6g test-r_bin.go
+	6l test-r_bin.6
+	./6.out /bin/ls
