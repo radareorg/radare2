@@ -1,4 +1,4 @@
-/* pancake // nopcode.org 2010 -- emit module for rcc */
+/* pancake // nopcode.org 2010 -- arm emiter */
 
 #include "rarc2.h"
 
@@ -14,6 +14,8 @@
 
 // no attsyntax for arm
 static char *regs[] = R_GP;
+static int lastarg = 0;
+static char lastargs[16][32];
 
 static char *emit_syscall (int num) {
 	return strdup (": mov "R_AX", `.arg`\n: svc 0x8000\n");
@@ -64,9 +66,21 @@ static void emit_set_string(const char *dstvar, const char *str, int j) {
 	rcc_printf (".string \"%s\"\n", str);
 	if (rest) rcc_printf (".fill %d, 1, 0\n", (rest));
 	rcc_printf ("  sub r0, pc, $%d\n", off+16);
+	{
+		char str[32], *p = mk_var (str, dstvar, 0);
+		//rcc_printf("DSTVAR=%s --> %s\n", dstvar, p);
+		rcc_printf ("  str r0, [%s]\n", p);
+	}
 }
 
 static void emit_call(const char *str, int atr) {
+	int i;
+	//rcc_printf(" ARGS=%d CALL(%s,%d)\n", lastarg, str, atr);
+	for(i=0;i<lastarg;i++) {
+		rcc_printf ("  ldr r%d, [%s]\n", lastarg-1-i, lastargs[i]);
+		lastargs[i][0] = 0;
+	}
+
 	if (atr) {
 		rcc_printf("  ldr r0, %s", str);
 		rcc_printf("  blx r0\n");
@@ -77,11 +91,18 @@ static void emit_arg (int xs, int num, const char *str) {
 	int d = atoi (str);
 	if (!attsyntax && (*str=='$'))
 		str++;
-// ARGMENTS ONLY IN R0, R1, .. ooh common!
-return; // XXX
+	lastarg = num;
 	switch (xs) {
 	case 0:
-		rcc_printf ("  push {%s}\n", str);
+		if (strchr(str, ',')) {
+			//rcc_printf (".  str r0, [%s]\n", str);
+			strncpy (lastargs[num-1], str, sizeof(lastargs[0]));
+		} else {
+			if (!atoi (str)) eprintf ("WARNING: probably a bug?\n");
+			rcc_printf ("  mov r0, $%s\n", str);
+			snprintf( lastargs[num-1], sizeof (lastargs[0]), "fp, $-%d", 8+(num*4));
+			rcc_printf ("  str r0, [%s]\n", lastargs[num-1]);
+		}
 		break;
 	case '*':
 		rcc_printf ("  push {%s}\n", str);
@@ -99,7 +120,8 @@ static void emit_get_result(const char *ocn) {
 }
 
 static void emit_restore_stack (int size) {
-	//rcc_printf("  add sp, %d\n", size);
+	// XXX: must die.. or add emit_store_stack. not needed by ARM
+	// rcc_printf("  add sp, %d\n", size);
 }
 
 static void emit_get_while_end (char *str, const char *ctxpush, const char *label) {
@@ -115,8 +137,8 @@ static void emit_while_end (const char *labelback) {
 
 static void emit_get_var (int type, char *out, int idx) {
 	switch (type) {
-	case 0: sprintf (out, "fp,%c%d", idx>0?' ':'+', -idx); break; /* variable */
-	case 1: sprintf (out, "sp,%c%d", idx>0?'+':' ', idx); break; /* argument */
+	case 0: sprintf (out, "fp,$%d", -idx); break; /* variable */
+	case 1: sprintf (out, "sp,$%d", idx); break; /* argument */ // XXX: MUST BE r0, r1, r2, ..
 	}
 }
 
@@ -180,9 +202,9 @@ static void emit_load(const char *dst, int sz) {
 static void emit_mathop(int ch, int vs, int type, const char *eq, const char *p) {
 	char *op;
 	switch (ch) {
-	case '^': op = "xor"; break;
+	case '^': op = "eor"; break;
 	case '&': op = "and"; break;
-	case '|': op = "or";  break;
+	case '|': op = "orr"; break;
 	case '-': op = "sub"; break;
 	case '+': op = "add"; break;
 	case '*': op = "mul"; break;

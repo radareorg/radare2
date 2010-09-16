@@ -1,11 +1,18 @@
-LC=../rarc2
+.PHONY: all clean run top
+
+RC=../rarc2 -s
 CC=tcc
 CC=gcc
 
-BIN=ptr ret hello shell loop input inline syscall data sub if dump bytedump argv room rawsys
+BIN=hi ptr ret hello shell loop input inline syscall data sub if dump bytedump argv room rawsys
 
 all: top ${BIN}
 
+clean:
+	rm -f ${BIN} *.S
+
+run:
+	for a in ${BIN}; do ./$$a ; done
 
 top:
 	#rm -f shell
@@ -13,71 +20,69 @@ top:
 	cd .. && ${MAKE} rarc2
 
 syscall:
-	${LC} syscall.r > syscall.S
+	${RC} syscall.r > syscall.S
 	${CC} syscall.S -o syscall
 
+hi:
+	${RC} hi.r > hi.S
+	${CC} hi.S -o hi
+
 rawsys:
-	${LC} rawsys.r > rawsys.S
+	${RC} rawsys.r > rawsys.S
 	${CC} rawsys.S -o rawsys
 
 data:
-	${LC} data.r > data.S
+	${RC} data.r > data.S
 	${CC} data.S -o data
 
 ret:
-	${LC} ret.r > ret.S
+	${RC} ret.r > ret.S
 	${CC} ret.S -o ret
 
 sub:
-	${LC} sub.r > sub.S
+	${RC} sub.r > sub.S
 	${CC} sub.S -o sub
 
 inline:
-	${LC} inline.r > inline.S
+	${RC} inline.r > inline.S
 	${CC} inline.S -o inline
 
 loop:
-	${LC} loop.r > loop.S
+	${RC} loop.r > loop.S
 	${CC} loop.S -o loop
 
 shell:
-	${LC} shell.r > shell.S
+	${RC} shell.r > shell.S
 	${CC} shell.S -o shell
 
 hello:
-	${LC} hello.r > hello.S
+	${RC} hello.r > hello.S
 	${CC} -g hello.S -o hello
 
 ptr:
-	${LC} ptr.r > ptr.S
+	${RC} ptr.r > ptr.S
 	${CC} ptr.S -o ptr
 
 input:
-	${LC} input.r > input.S
+	${RC} input.r > input.S
 	${CC} input.S -o input
 
 if:
-	${LC} if.r > if.S
+	${RC} if.r > if.S
 	${CC} if.S -o if
 
 dump:
-	${LC} dump.r > dump.S
+	${RC} dump.r > dump.S
 	${CC} dump.S -o dump
 
 bytedump:
-	${LC} bytedump.r > bytedump.S
+	${RC} bytedump.r > bytedump.S
 	${CC} bytedump.S -o bytedump
 
 argv:
-	${LC} argv.r > argv.S
+	${RC} argv.r > argv.S
 	${CC} argv.S -o argv
 
 room:
-	${LC} room.r > room.S
+	${RC} room.r > room.S
 	${CC} room.S -o room
-
-clean:
-	rm -f ${BIN} *.S
-
-run:
-	for a in ${BIN}; do ./$$a ; done

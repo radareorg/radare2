@@ -101,11 +101,14 @@ static char *get_frame_label(int type) {
 	return label;
 }
 
-static void rcc_pushstr(char *str) {
+static void rcc_pushstr(char *str, int filter) {
 	int dotrim = 1;
 	int i, j, len;
 
-	emit->comment ("encode string (%s) (%s)", str, callname);
+	emit->comment ("encode %s string (%s) (%s)",
+		filter?"filtered":"unfiltered", str, callname);
+
+	if (filter)
 	for (i=0; str[i]; i++) {
 		if (str[i]=='\\') {
 			switch (str[i+1]) {
@@ -152,7 +155,7 @@ char *mk_var(char *out, const char *_str, int delta) {
 			emit->get_var (0, out, idx-stackfixed);
 			//sprintf(out, "%d(%%"R_BP")", -(atoi(str+4)+delta+R_SZ-stackfixed));
 		} else
-		if (!memcmp(str+1, "var", 3)) {
+		if (!memcmp (str+1, "var", 3)) {
 			emit->get_var (0, out, idx);
 		//sprintf(out, "%d(%%"R_BP")", -(atoi(str+4)+delta+R_SZ));
 		} else
@@ -186,7 +189,8 @@ char *mk_var(char *out, const char *_str, int delta) {
 			ret = str; /* TODO: show error, invalid var name? */
 			eprintf ("FUCKED UP\n");
 		}
-	} else if (str[0]=='"') {
+	} else if (*str=='"' || *str=='\'') {
+		int mustfilter = *str=='"';
 		if (!stackfixed)
 			eprintf ("WARNING: No room in the static stackframe!\n");
 		/* TODO: check for room in stackfixed area */
@@ -195,7 +199,7 @@ char *mk_var(char *out, const char *_str, int delta) {
 		str[len]='\0';
 		sprintf (foo, ".fix%d", nargs*16); /* XXX FIX DELTA !!!1 */
 		dstvar = strdup (foo);
-		rcc_pushstr (str);
+		rcc_pushstr (str, mustfilter);
 		ret = mk_var (out, foo, 0);
 	}
 	//free ((void *)_str);
@@ -288,7 +292,7 @@ static void rcc_element(char *str) {
 			if (!atoi (str)) {
 				if (dstvar == NULL) /* return string */
 					dstvar = strdup (".fix0");
-				rcc_pushstr (str);
+				rcc_pushstr (str, 1);
 			}
 		}
 	} else {
@@ -680,6 +684,10 @@ static int parsechar(char c) {
 			break;
 		case '#':
 			if (oc == '\n')
+				skipline = 1;
+			break;
+		case '/':
+			if (oc == '/')
 				skipline = 1;
 			break;
 		default:

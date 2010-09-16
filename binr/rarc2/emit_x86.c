@@ -181,7 +181,7 @@ static void emit_trap () {
 
 static void emit_load_ptr(const char *dst) {
 	int d = atoi (dst);
-	eprintf ("HACK HACK HACK\n");
+	//eprintf ("emit_load_ptr: HACK\n");
 	// XXX: 32/64bit care
 	if (attsyntax) rcc_printf ("  leal %d(%%"R_BP"), %%"R_AX"\n", d);
 	else rcc_printf ("  leal "R_AX", dword ptr ["R_BP"+%d]\n", d);
