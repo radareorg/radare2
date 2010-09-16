@@ -7,7 +7,6 @@ sed -n '
 1!H
 $ {
 	g
-	s/\(\nconst UT[^\n]*\) int/\1 uint/g
 	s/\(\n\t[^\n(]*([^\n)]*)\) \([a-zA-Z0-9]\+\)Vector/\1 []\2/g
 	s/\(\nfunc ([^\n]*\) \([a-zA-Z0-9]\+\)Vector {\n\treturn \([^\n]*\)\n}/\1 []\2 {\
 	v := \3\
