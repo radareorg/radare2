@@ -7,7 +7,7 @@
 /* restore program counter after breakpoint hit */
 static int r_debug_recoil(RDebug *dbg) {
 	int recoil, ret = R_FALSE;
-	RRegisterItem *ri;
+	RRegItem *ri;
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
 	ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], -1);
 	if (ri) {
@@ -83,7 +83,7 @@ R_API ut64 r_debug_execute(struct r_debug_t *dbg, ut8 *buf, int len) {
 	int orig_sz;
 	ut8 stackbackup[4096];
 	ut8 *backup, *orig = NULL;
-	RRegisterItem *ri, *risp, *ripc;
+	RRegItem *ri, *risp, *ripc;
 	ut64 rsp, rpc, ra0 = 0LL;
 	ripc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
 	risp = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);

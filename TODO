@@ -14,19 +14,12 @@ Questions
 
 0.6 RELEASE
 ===========
-* Add support for STATIC_PLUGINS in r_lang
-  - r_lang_define is implemented in lang.c, but requires the collaboration
-    of the plugins to properly setup the environment for the script execution.
-  - Add support for STATIC_PLUGINS in r_lang
-  - dlerror(/usr/lib/radare2/lang_perl.so): libperl.so: cannot open shared object file: No such file or directory
-    This issue is fixed by setting LD_LIBRARY_PATH...looks like dlopen ignores rpath
 * Colorize destination address when cursor in branch
 * Reimplement or fix the delta diffing in C
   - first we need to do it for ired..
 * Add dex format support to rabin (android)
 * Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
 * Create radare2-testsuite project
-* Colorize registers that has changed 
 
 Build system:
 -------------
@@ -70,6 +63,7 @@ TODO pancake
 ------------
 * Display eflags in ascii mode
   - use r_str_bits()
+  - r_reg must have a format string for flags, using r_str_bitz
   - r_reg_eflags(dbg->reg, "cpastidor", mode) // must be in r_util.. as a bit helper
   - static buffer in dbg->reg..fixed size (32)
   - printf("eflags: %s\n", r_reg_get_flags (dbg->reg, "cpastidor");
@@ -90,10 +84,8 @@ TODO pancake
        - function signature comparsion if they dont match
        r_anal_fcn_cmp (anal, f1, f2);
 }
-  - add support for sign/unsigned registers..or at least a way to cast them
   - add push/pop of register states (maybe we only need 2 levels of states)
-    - display regs in colors
-    - can be used for diffing registers
+    - display changed registers in colors
     - is also useful to store values before emulating code
     - we can probably implement this in a clone() method? (too heavy? more orgtogonal)
 
@@ -143,7 +135,14 @@ Refactoring
 0.7
 ===
 * Is RCore->block and blocksize a RBuf ? refactor!11
+* add support for sign/unsigned registers..or at least a way to cast them
 * Implement rap:// upload/download protocol commands (maybe just system() with rsc2+wget?
+* Add support for STATIC_PLUGINS in r_lang
+  - r_lang_define is implemented in lang.c, but requires the collaboration
+    of the plugins to properly setup the environment for the script execution.
+  - Add support for STATIC_PLUGINS in r_lang
+  - dlerror(/usr/lib/radare2/lang_perl.so): libperl.so: cannot open shared object file: No such file or directory
+    This issue is fixed by setting LD_LIBRARY_PATH...looks like dlopen ignores rpath
  
 Future
 ======

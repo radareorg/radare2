@@ -25,6 +25,7 @@ seg	xgs	.32	40	0
 seg	xcs	.32	52	0
 seg	xss	.32	52	0
 gpr	eflags	.32	56	0
+#>cpazstidor0 carry parity above zero XX trap XX direction XX XX XX
 
 # base address is 448bit
 flg	carry	.1	.448	0

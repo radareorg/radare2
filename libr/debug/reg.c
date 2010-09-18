@@ -28,8 +28,11 @@ R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write) {
 
 R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 	int cols, n = 0;
-	struct list_head *pos, *head;
+	RList *head; //struct list_head *pos, *head;
+	RListIter *iter;
+	RRegItem *item;
 	const char *fmt, *fmt2;
+
 	if (!dbg || !dbg->reg)
 		return R_FALSE;
 	head = r_reg_get_list(dbg->reg, type);
@@ -42,9 +45,8 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 		fmt2 = "%4s 0x%08"PFMT64x"%s";
 		cols = 4;
 	}
-	list_for_each (pos, head) {
+	r_list_foreach (head, iter, item) {
 		ut64 value;
-		struct r_reg_item_t *item = list_entry (pos, struct r_reg_item_t, list);
 		if (type != -1 && type != item->type)
 			continue;
 		if (size != 0 && size != item->size)
@@ -63,7 +65,7 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 }
 
 R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 num) {
-	RRegisterItem *ri;
+	RRegItem *ri;
 	int role = r_reg_get_name_idx (name);
 	if (!dbg || !dbg->reg)
 		return R_FALSE;
@@ -78,7 +80,7 @@ R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 num) {
 }
 
 R_API ut64 r_debug_reg_get(struct r_debug_t *dbg, const char *name) {
-	RRegisterItem *ri = NULL;
+	RRegItem *ri = NULL;
 	ut64 ret = 0LL;
 	int role = r_reg_get_name_idx (name);
 	if (!dbg || !dbg->reg)

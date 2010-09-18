@@ -127,7 +127,7 @@ typedef struct r_anal_t {
 	RList *bbs;
 	RList *fcns;
 	RList *vartypes;
-	RRegister *reg;
+	RReg *reg;
 	struct r_anal_ctx_t *ctx;
 	struct r_anal_plugin_t *cur;
 	struct list_head anals;
@@ -140,8 +140,8 @@ typedef struct r_anal_value_t {
 	ut64 base ; // numeric address
 	int delta; // numeric delta
 	int mul; // multiplier (reg*4+base)
-	RRegisterItem *reg; // register index used (-1 if no reg)
-	RRegisterItem *regdelta; // register index used (-1 if no reg)
+	RRegItem *reg; // register index used (-1 if no reg)
+	RRegItem *regdelta; // register index used (-1 if no reg)
 } RAnalValue;
 
 typedef struct r_anal_aop_t {

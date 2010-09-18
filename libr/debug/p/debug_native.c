@@ -839,7 +839,7 @@ static int r_debug_native_bp_read(int pid, ut64 addr, int hw, int rwx) {
 #if __i386__
 /* TODO: Can I use this as in a coroutine? */
 static RList *r_debug_native_frames(RDebug *dbg) {
-	RRegister *reg = dbg->reg;
+	RReg *reg = dbg->reg;
 	ut32 i, _esp, esp, ebp2;
 	RList *list = r_list_new ();
 	RIOBind *bio = &dbg->iob;
@@ -873,7 +873,7 @@ static RList *r_debug_native_frames(RDebug *dbg) {
 	ut64 ptr, ebp2;
 	ut64 _rip, _rsp, _rbp;
 	RList *list;
-	RRegister *reg = dbg->reg;
+	RReg *reg = dbg->reg;
 	RIOBind *bio = &dbg->iob;
 
 	_rip = r_reg_get_value (reg, r_reg_get (reg, "rip", R_REG_TYPE_GPR));

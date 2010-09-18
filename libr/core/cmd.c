@@ -25,6 +25,11 @@ static int checkbpcallback(RCore *core) {
 	return R_FALSE;
 }
 
+static void printoffset(ut64 off, int show_color) {
+	if (show_color)
+		r_cons_printf (Color_GREEN"0x%08"PFMT64x"  "Color_RESET, off);
+	else r_cons_printf ("0x%08"PFMT64x"  ", off);
+}
 /* TODO: move to print/disasm.c */
 static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
 	RAnalFcn *fcn, *fcni = NULL;
@@ -39,8 +44,8 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	RAnalOp analop;
 	RFlagItem *flag;
 	RMetaItem *mi;
+	ut64 dest = UT64_MAX;
 
-	r_vm_reset (core->vm);
 	// TODO: import values from debugger is possible
 	// TODO: allow to get those register snapshots from traces
 	// TODO: per-function register state trace
@@ -64,6 +69,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	int linesopts = 0;
 	nb = nbytes*2;
 
+	r_vm_reset (core->vm);
 	if (core->print->cur_enabled) {
 		if (core->print->cur<0)
 			core->print->cur = 0;
@@ -92,6 +98,22 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		}
 	}
 #endif
+	if (core->print->cur_enabled) {
+		// TODO: support in-the-middle-of-instruction too
+		int ret = r_anal_aop (core->anal, &analop, core->offset+core->print->cur,
+			buf+core->print->cur, (int)(len-core->print->cur));
+		// TODO: check for analop.type and ret
+		dest = analop.jump;
+#if 0
+		if (ret)
+		switch (analop.type) {
+		case R_ANAL_OP_TYPE_JMP:
+		case R_ANAL_OP_TYPE_CALL:
+			dest = analop.jump;
+			break;
+		}
+#endif
+	}
 	// TODO: make anal->reflines implicit
 	free (core->reflines); // TODO: leak
 	free (core->reflines2); // TODO: leak
@@ -187,19 +209,16 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		if (flag && !show_bytes) {
 			if (show_lines && line)
 				r_cons_strcat (line);
-			if (show_offset) {
-				if (show_color)
-					r_cons_printf (Color_GREEN"0x%08"PFMT64x"  "Color_RESET, at);
-				else r_cons_printf ("0x%08"PFMT64x"  ", at);
-			}
+			if (show_offset)
+				printoffset(at, show_color);
 			r_cons_printf ("%s:\n", flag->name);
 		}
 		if (show_lines && line)
 			r_cons_strcat (line);
 		if (show_offset) {
-			if (show_color)
-				r_cons_printf (Color_GREEN"0x%08"PFMT64x"  "Color_RESET, at);
-			else r_cons_printf ("0x%08"PFMT64x"  ", at);
+			if (at == dest)
+				r_cons_invert (R_TRUE, R_TRUE);
+			printoffset (at, show_color);
 		}
 		if (show_trace) {
 			RDebugTracepoint *tp = r_debug_trace_get (core->dbg, at);
@@ -375,8 +394,8 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			if((st64)esp<0) esp=-esp;
 			nargs = (esp)/4;
 #endif
-
 			fcn = r_anal_fcn_find (core->anal, analop.jump);
+			r_cons_printf("\n    ");
 			if(fcn&&fcn->name) r_cons_printf ("; %s(", fcn->name);
 			else r_cons_printf ("; 0x%08"PFMT64x"(", analop.jump);
 			for(i=0;i<nargs;i++) {

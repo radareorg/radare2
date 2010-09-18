@@ -36,32 +36,31 @@ typedef struct r_reg_item_t {
 	int offset; // offset in data structure
 	int packed_size; /* 0 means no packed register, 1byte pack, 2b pack... */
 	struct list_head list;
-} RRegisterItem;
+} RRegItem;
 
 typedef struct r_reg_arena_t {
 	ut8 *bytes;
 	int size;
 	struct list_head list;
-} RRegisterArena;
+} RRegArena;
 
 typedef struct r_reg_set_t {
-	struct r_reg_arena_t *arena;
-	struct list_head arenas; /* r_reg_arena_t */
-	struct list_head regs;   /* r_reg_item_t */
-} RRegisterSet;
+	RRegArena *arena;
+	RList *pool; /* RRegArena */
+	RList *regs; /* RRegItem */
+} RRegSet;
 
 typedef struct r_reg_t {
 	char *profile;
 	char *name[R_REG_NAME_LAST];
-	RRegisterSet regset[R_REG_TYPE_LAST];
-} RRegister;
+	RRegSet regset[R_REG_TYPE_LAST];
+} RReg;
 
-#define r_reg_new() r_reg_init (R_NEW (RRegister))
 
 #ifdef R_API
 R_API const char *r_reg_get_type(int idx);
 R_API struct r_reg_t *r_reg_free(struct r_reg_t *reg);
-R_API struct r_reg_t *r_reg_init(struct r_reg_t *reg);
+R_API struct r_reg_t *r_reg_new();
 //R_API struct r_reg_t *r_reg_new();
 R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *profile);
 R_API int r_reg_set_profile(struct r_reg_t *reg, const char *profile);
@@ -71,7 +70,7 @@ R_API const char *r_reg_get_name(struct r_reg_t *reg, int kind);
 R_API int r_reg_set_name(struct r_reg_t *reg, int role, const char *name);
 
 R_API struct r_reg_item_t *r_reg_get(struct r_reg_t *reg, const char *name, int type);
-R_API struct list_head *r_reg_get_list(struct r_reg_t *reg, int type);
+R_API RList *r_reg_get_list(struct r_reg_t *reg, int type);
 R_API int r_reg_type_by_name(const char *str);
 
 /* value */
@@ -85,11 +84,11 @@ R_API int r_reg_set_pvalue(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 
 /* byte arena */
 R_API ut8* r_reg_get_bytes(struct r_reg_t *reg, int type, int *size);
 R_API int r_reg_set_bytes(struct r_reg_t *reg, int type, const ut8* buf, int len);
-R_API RRegisterArena *r_reg_arena_new (int size);
+R_API RRegArena *r_reg_arena_new (int size);
+R_API void r_reg_arena_free(RRegArena* ra);
 R_API int r_reg_fit_arena(struct r_reg_t *reg);
-
-// TODO: r_reg typedef must be renamed to this shorter version
-#define RReg RRegister
+R_API int r_reg_push(RReg *reg);
+R_API void r_reg_pop(RReg *reg);
 #endif
 
 #endif

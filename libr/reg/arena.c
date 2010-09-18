@@ -1,11 +1,10 @@
 /* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_reg.h>
-/* TODO: add push/pop.. */
 
 /* non-endian safe - used for raw mapping with system registers */
-R_API ut8* r_reg_get_bytes(struct r_reg_t *reg, int type, int *size) {
-	RRegisterArena *arena;
+R_API ut8* r_reg_get_bytes(RReg *reg, int type, int *size) {
+	RRegArena *arena;
 	int i, sz, osize;
 	ut8 *buf;
 	if (type == -1) {
@@ -38,22 +37,21 @@ R_API ut8* r_reg_get_bytes(struct r_reg_t *reg, int type, int *size) {
 }
 
 /* reduce number of return statements */
-R_API int r_reg_set_bytes(struct r_reg_t *reg, int type, const ut8* buf, int len) {
+R_API int r_reg_set_bytes(RReg *reg, int type, const ut8* buf, int len) {
 	int i, ret = R_FALSE;
 	struct r_reg_set_t *regset;
-	struct r_reg_arena_t *arena;
+	RRegArena *arena;
 	int off = 0;
 
 	if (type == -1) {
 		ret = R_TRUE;
 		/* deserialize ALL register types in a single buffer */
 		for(i=0; i<R_REG_TYPE_LAST; i++) {
-			arena = reg->regset[i].arena;
-			if (arena == NULL) {
-				arena = reg->regset[i].arena = R_NEW (RRegisterArena);
+			if (!reg->regset[i].arena) {
+				arena = reg->regset[i].arena = R_NEW (RRegArena);
 				arena->size = len;
 				arena->bytes = malloc(len);
-			}
+			} else arena = reg->regset[i].arena;
 			if (arena->bytes == NULL)
 				return R_FALSE;
 			memcpy (arena->bytes, buf+off, arena->size);
@@ -75,16 +73,14 @@ R_API int r_reg_set_bytes(struct r_reg_t *reg, int type, const ut8* buf, int len
 	return ret;
 }
 
-R_API int r_reg_export_to(struct r_reg_t *reg, struct r_reg_t *dst) {
-	//struct r_reg_arena_t *arena;
-	struct r_reg_item_t *r;
-	struct list_head *pos;
+R_API int r_reg_export_to(RReg *reg, RReg *dst) {
+	RRegItem *r;
+	RListIter *iter;
 	int i, ret = R_FALSE;
 	if (dst) {
 		// foreach reg of every time in reg, define it in dst
 		for(i=0;i<R_REG_TYPE_LAST;i++) {
-			list_for_each(pos, &reg->regset[i].regs) {
-				r = list_entry(pos, struct r_reg_item_t, list);
+			r_list_foreach (reg->regset[i].regs, iter, r) {
 				// TODO: export to not implemented
 				//r_reg_set(dst, r_reg_get(dst, r->name), );
 				//r_mem_copybits_delta(
@@ -94,19 +90,18 @@ R_API int r_reg_export_to(struct r_reg_t *reg, struct r_reg_t *dst) {
 	return ret;
 }
 
-R_API int r_reg_fit_arena(struct r_reg_t *reg) {
-	struct list_head *pos;
-	struct r_reg_item_t *r;
-	struct r_reg_arena_t *arena;
+R_API int r_reg_fit_arena(RReg *reg) {
+	RRegArena *arena;
+	RListIter *iter;
+	RRegItem *r;
 	int size, i;
 
 	/* propagate arenas */
-	for(i=0;i<R_REG_TYPE_LAST;i++) {
+	for (i=0; i<R_REG_TYPE_LAST; i++) {
 		arena = reg->regset[i].arena;
 		arena->size = 0;
-		list_for_each(pos, &reg->regset[i].regs) {
-			r = list_entry(pos, struct r_reg_item_t, list);
-			size = BITS2BYTES(r->offset+r->size);
+		r_list_foreach (reg->regset[i].regs, iter, r) {
+			size = BITS2BYTES (r->offset+r->size);
 			if (size>arena->size) {
 				arena->size = size;
 				arena->bytes = realloc (arena->bytes, size);
@@ -114,18 +109,25 @@ R_API int r_reg_fit_arena(struct r_reg_t *reg) {
 					return R_FALSE;
 			}
 		}
-		memset(arena->bytes, 0, arena->size);
+		memset (arena->bytes, 0, arena->size);
 	}
 	return R_TRUE;
 }
 
-R_API RRegisterArena *r_reg_arena_new (int size) {
-	RRegisterArena *arena = R_NEW (RRegisterArena);
+R_API RRegArena *r_reg_arena_new (int size) {
+	RRegArena *arena = R_NEW (RRegArena);
 	if (arena) {
-		if ((arena->bytes = malloc (size+8)) == NULL) {
+		if (size<1)
+			size = 1;
+		if (!(arena->bytes = malloc (size+8))) {
 			free (arena);
 			arena = NULL;
 		} else arena->size = size;
 	}
 	return arena;
+}
+
+R_API void r_reg_arena_free(RRegArena* ra) {
+	free (ra->bytes);
+	free (ra);
 }

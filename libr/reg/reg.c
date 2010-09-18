@@ -14,17 +14,9 @@ R_API const char *r_reg_get_type(int idx) {
 	return NULL;
 }
 
-static void r_reg_free_internal(struct r_reg_t *reg) {
-	struct list_head *pos, *n;
-	RRegisterItem *r;
-	int i;
-
-	for (i=0; i<R_REG_TYPE_LAST; i++)
-	list_for_each_safe (pos, n, &reg->regset[i].regs) {
-		r = list_entry (pos, RRegisterItem, list);
-		list_del (&r->list);
-		free (r);
-	}
+static void r_reg_item_free(RRegItem *item) {
+	free (item->name);
+	free (item);
 }
 
 R_API int r_reg_get_name_idx(const char *type) {
@@ -42,51 +34,107 @@ R_API int r_reg_get_name_idx(const char *type) {
 	return -1;
 }
 
-R_API int r_reg_set_name(struct r_reg_t *reg, int role, const char *name) {
-	int ret = R_TRUE;
+
+R_API int r_reg_set_name(RReg *reg, int role, const char *name) {
 	// TODO: ensure this range check in a define.. somewhere
-	if (role>=0 && role<R_REG_NAME_LAST)
+	if (role>=0 && role<R_REG_NAME_LAST) {
 		reg->name[role] = r_str_dup (reg->name[role], name);
-	else ret = R_FALSE;
-	return ret;
+		return R_TRUE;
+	}
+	return R_FALSE;
 }
 
-R_API const char *r_reg_get_name(struct r_reg_t *reg, int role) {
+R_API const char *r_reg_get_name(RReg *reg, int role) {
 	if (reg && role>=0 && role<R_REG_NAME_LAST)
 		return reg->name[role];
 	return NULL;
 }
 
-R_API struct r_reg_t *r_reg_free(struct r_reg_t *reg) {
+R_API void r_reg_free_internal(RReg *reg) {
+	int i;
+	for (i=0; i<R_REG_TYPE_LAST; i++) {
+		r_list_destroy (reg->regset[i].regs);
+		r_list_destroy (reg->regset[i].pool);
+		reg->regset[i].arena = r_reg_arena_new (0);
+	}
+}
+
+R_API RReg *r_reg_free(RReg *reg) {
 	if (reg) {
-		// TODO: free more things here
+		r_reg_free_internal (reg);
 		free (reg);
 	}
 	return NULL;
 }
 
-// TODO: must be deprecated.. use from _new()
-R_API struct r_reg_t *r_reg_init(struct r_reg_t *reg) {
+R_API RReg *r_reg_new() {
+	RReg *reg = R_NEW (RReg);
 	int i;
-	if (!reg)
-		return NULL;
 	reg->profile = NULL;
 	for (i=0; i<R_REG_NAME_LAST; i++)
 		reg->name[i] = NULL;
 	for (i=0; i<R_REG_TYPE_LAST; i++) {
-		INIT_LIST_HEAD (&reg->regset[i].arenas);
-		INIT_LIST_HEAD (&reg->regset[i].regs);
-		if ((reg->regset[i].arena = r_reg_arena_new (0)) == NULL)
+		reg->regset[i].pool = r_list_new ();
+		reg->regset[i].pool->free = (RListFree)r_reg_arena_free;
+		reg->regset[i].regs = r_list_new ();
+		reg->regset[i].regs->free = (RListFree)r_reg_item_free;
+		if (!(reg->regset[i].arena = r_reg_arena_new (0)))
 			return NULL;
-		list_add_tail (&reg->regset[i].arena->list,
-			&reg->regset[i].arenas);
+		r_list_append (reg->regset[i].pool, reg->regset[i].arena);
 	}
 	return reg;
 }
 
-static RRegisterItem *r_reg_item_new() {
-	RRegisterItem *item = R_NEW (RRegisterItem);
-	memset (item, 0, sizeof (RRegisterItem));
+R_API int r_reg_push(RReg *reg) {
+	int i;
+	for (i=0; i<R_REG_TYPE_LAST; i++) {
+		if (!(reg->regset[i].arena = r_reg_arena_new (0)))
+			return 0;
+		r_list_prepend (reg->regset[i].pool, reg->regset[i].arena);
+	}
+	return r_list_length (reg->regset[0].pool);
+}
+
+/* 
+
+arena2
+
+// notify the debugger that something has changed, and registers needs to be pushed
+r_debug_reg_change()
+
+for(;;) {
+  read_regs  \___ reg_pre()
+  r_reg_push /
+
+  step
+
+  read_regs    \_.
+  r_reg_cmp(); /  '- reg_post()
+
+  r_reg_pop() >-- reg_fini()
+}
+*/
+
+
+R_API void r_reg_pop(RReg *reg) {
+	int i;
+	for (i=0; i<R_REG_TYPE_LAST; i++) {
+		if (r_list_length(reg->regset[i].pool)>0) {
+			r_list_delete (reg->regset[i].pool, 
+				r_list_head (reg->regset[i].pool));
+			// SEGFAULT: r_reg_arena_free (reg->regset[i].arena);
+			reg->regset[i].arena = (RRegArena*)r_list_head (
+				reg->regset[i].pool);
+		} else {
+			eprintf ("Cannot pop more\n");
+			break;
+		}
+	}
+}
+
+static RRegItem *r_reg_item_new() {
+	RRegItem *item = R_NEW (RRegItem);
+	memset (item, 0, sizeof (RRegItem));
 	return item;
 }
 
@@ -102,7 +150,7 @@ R_API int r_reg_type_by_name(const char *str) {
 }
 
 /* TODO: make this parser better and cleaner */
-static int r_reg_set_word(RRegisterItem *item, int idx, char *word) {
+static int r_reg_set_word(RRegItem *item, int idx, char *word) {
 	int ret = R_TRUE;
 	switch(idx) {
 	case 0:
@@ -135,8 +183,8 @@ static int r_reg_set_word(RRegisterItem *item, int idx, char *word) {
 }
 
 /* TODO: make this parser better and cleaner */
-R_API int r_reg_set_profile_string(RRegister *reg, const char *str) {
-	RRegisterItem *item;
+R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
+	RRegItem *item;
 	int setname = -1;
 	int ret = R_FALSE;
 	int lastchar = 0;
@@ -160,7 +208,7 @@ R_API int r_reg_set_profile_string(RRegister *reg, const char *str) {
 		switch (*str) {
 		case ' ':
 		case '\t':
-			// UGLY PASTAFARIAN TO PARSE 
+			/* UGLY PASTAFARIAN PARSING */
 			if (word==0 && *buf=='=') {
 				setname = r_reg_get_name_idx (buf+1);
 				if (setname == -1)
@@ -177,7 +225,7 @@ R_API int r_reg_set_profile_string(RRegister *reg, const char *str) {
 			else if (word>3) {
 				r_reg_set_word (item, word, buf);
 				if (item->name != NULL) {
-					list_add_tail(&item->list, &reg->regset[item->type].regs);
+					r_list_append (reg->regset[item->type].regs, item);
 					item = r_reg_item_new();
 				}
 			}
@@ -194,16 +242,13 @@ R_API int r_reg_set_profile_string(RRegister *reg, const char *str) {
 		lastchar = *str;
 		str++;
 	}
-	free (item->name);
-	free (item);
+	r_reg_item_free (item);
 	r_reg_fit_arena (reg);
-	
-	/* do we reach the end ? */
-	if (!*str) ret = R_TRUE;
-	return ret;
+
+	return *str?ret:R_TRUE;
 }
 
-R_API int r_reg_set_profile(struct r_reg_t *reg, const char *profile) {
+R_API int r_reg_set_profile(RReg *reg, const char *profile) {
 	int ret = R_FALSE;
 	const char *base;
 	char *str, *file;
@@ -222,9 +267,9 @@ R_API int r_reg_set_profile(struct r_reg_t *reg, const char *profile) {
 	return ret;
 }
 
-R_API RRegisterItem *r_reg_get(struct r_reg_t *reg, const char *name, int type) {
-	struct list_head *pos;
-	RRegisterItem *r;
+R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
+	RListIter *iter;
+	RRegItem *r;
 	int i, e;
 	if (!reg)
 		return NULL;
@@ -236,19 +281,17 @@ R_API RRegisterItem *r_reg_get(struct r_reg_t *reg, const char *name, int type) 
 		e = type+1;
 	}
 
-	// TODO: use RList here
-	for (; i<e; i++)
-	list_for_each (pos, &reg->regset[i].regs) {
-		r = list_entry (pos, RRegisterItem, list);
-		if (!strcmp (r->name, name))
-			return r;
+	for (; i<e; i++) {
+		r_list_foreach (reg->regset[i].regs, iter, r) {
+			if (!strcmp (r->name, name))
+				return r;
+		}
 	}
 	return NULL;
 }
 
-// TODO: deprecate.. must use RList here
-R_API struct list_head *r_reg_get_list(struct r_reg_t *reg, int type) {
+R_API RList *r_reg_get_list(RReg *reg, int type) {
 	if (type<0 || type>R_REG_TYPE_LAST)
 		return NULL;
-	return &reg->regset[type].regs;
+	return reg->regset[type].regs;
 }

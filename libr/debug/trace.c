@@ -29,7 +29,7 @@ R_API int r_debug_trace_tag (RDebug *dbg, int tag) {
 
 R_API int r_debug_trace_pc (RDebug *dbg) {
 	ut8 buf[32];
-	RRegisterItem *ri;
+	RRegItem *ri;
 	RAnalOp aop;
 	static ut64 oldpc = 0LL; // Must trace the previously traced instruction
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);

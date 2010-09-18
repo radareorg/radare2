@@ -1,12 +1,12 @@
 #include <r_reg.h>
 
-void show_regs(struct r_reg_t *reg, int bitsize)
-{
-	struct list_head *pos, *reglist;
+void show_regs(struct r_reg_t *reg, int bitsize) {
+	RList *reglist;
+	RListIter *iter;
+	RRegItem *ri;
 	printf("%d bit registers:\n", bitsize);
 	reglist = r_reg_get_list(reg, R_REG_TYPE_GPR);
-	list_for_each(pos, reglist) {
-		struct r_reg_item_t *ri = list_entry(pos, struct r_reg_item_t, list);
+	r_list_foreach (reglist, iter, ri) {
 		if (ri->size == bitsize)
 			printf(" - %s : 0x%08"PFMT64x"\n", ri->name, r_reg_get_value(reg, ri));
 	}
@@ -36,6 +36,25 @@ int main() {
 
 	for (i=0;(type=r_reg_get_type(i));i++)
 		printf (" - %s\n", type);
+
+	r_reg_push(reg);
+	r_reg_pop(reg);
+
+	r_reg_push(reg);
+	r_reg_push(reg);
+	r_reg_push(reg);
+	r_reg_pop(reg);
+	r_reg_pop(reg);
+	r_reg_push(reg);
+	r_reg_pop(reg);
+	r_reg_pop(reg);
+
+/*
+	r_reg_pop(reg);
+	r_reg_pop(reg);
+	r_reg_pop(reg);
+	r_reg_pop(reg);
+*/
 
 	return 0;
 }

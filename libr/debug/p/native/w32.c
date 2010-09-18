@@ -18,7 +18,7 @@
 1865         DWORD   ErrorSelector;
 1866         DWORD   DataOffset;
 1867         DWORD   DataSelector;
-1868         BYTE    RegisterArea[80];
+1868         BYTE    RegArea[80];
 1869         DWORD   Cr0NpxState;
 1870 } FLOATING_SAVE_AREA;
 
@@ -47,7 +47,7 @@
 1893         DWORD   EFlags;
 1894         DWORD   Esp;
 1895         DWORD   SegSs;
-1896         BYTE    ExtendedRegisters[MAXIMUM_SUPPORTED_EXTENSION];
+1896         BYTE    ExtendedRegs[MAXIMUM_SUPPORTED_EXTENSION];
 1897 } CONTEXT;
 #endif
 
