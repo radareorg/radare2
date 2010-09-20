@@ -26,6 +26,17 @@ enum {
 	//..
 };
 
+enum { // TODO: not yet used by r_debug
+	R_DBG_REASON_NEWPROC,
+	R_DBG_REASON_TRAP,
+	R_DBG_REASON_ILL,
+	R_DBG_REASON_INT,
+	R_DBG_REASON_SIGNAL,
+	R_DBG_REASON_FPU,
+	R_DBG_REASON_BP,
+	R_DBG_REASON_UNKNOWN,
+};
+
 /* TODO: move to r_anal */
 typedef struct r_debug_frame_t {
 	ut64 addr;
@@ -69,6 +80,7 @@ typedef struct r_debug_t {
 	int swstep; /* steps with software traps */
 	int steps;  /* counter of steps done */
 	int newstate;
+	//int checkpoints;
 	RDebugTrace *trace;
 	int stop_all_threads;
 	char *reg_profile;

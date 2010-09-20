@@ -51,7 +51,7 @@ R_API RDebug *r_debug_new(int hard) {
 }
 
 R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg) {
-	// TODO: free it correctly
+	// TODO: free it correctly.. we must ensure this is an instance and not a reference..
 	//r_bp_free(&dbg->bp);
 	//r_reg_free(&dbg->reg);
 	//r_debug_plugin_free();
@@ -157,8 +157,8 @@ R_API int r_debug_stop_reason(RDebug *dbg) {
 	// - trap instruction
 	// - illegal instruction
 	// - fpu exception
-	// ...
-	return R_TRUE;
+	// return dbg->reason
+	return R_DBG_REASON_UNKNOWN;
 }
 
 /* Returns PID */
@@ -279,6 +279,7 @@ R_API int r_debug_continue_until(struct r_debug_t *dbg, ut64 addr) {
 	//return -1;
 }
 
+// XXX: this function uses 'oeax' which is linux-i386-specific
 R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc) {
 	int reg, ret = R_FALSE;
 	if (dbg && dbg->h) {

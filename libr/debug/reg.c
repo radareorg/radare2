@@ -27,7 +27,7 @@ R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write) {
 }
 
 R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
-	int cols, n = 0;
+	int diff, cols, n = 0;
 	RList *head; //struct list_head *pos, *head;
 	RListIter *iter;
 	RRegItem *item;
@@ -52,6 +52,9 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 		if (size != 0 && size != item->size)
 			continue;
 		value = r_reg_get_value (dbg->reg, item);
+		diff = r_reg_cmp (dbg->reg, item);
+		if (diff) // TODO: use inverse colors
+			dbg->printf ("*");
 		if (rad==1)
 			dbg->printf ("f %s @ 0x%"PFMT64x"\n", item->name, value);
 		else if (rad==2)
