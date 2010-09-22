@@ -138,8 +138,9 @@ typedef struct r_anal_value_t {
 	int absolute; // if true, unsigned cast is used
 	int memref; // is memory reference? which size? 1, 2 ,4, 8
 	ut64 base ; // numeric address
-	int delta; // numeric delta
+	st64 delta; // numeric delta
 	int mul; // multiplier (reg*4+base)
+	ut16 sel; // segment selector
 	RRegItem *reg; // register index used (-1 if no reg)
 	RRegItem *regdelta; // register index used (-1 if no reg)
 } RAnalValue;

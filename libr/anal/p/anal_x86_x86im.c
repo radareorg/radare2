@@ -10,6 +10,38 @@
 
 #include "x86/x86im/x86im.h"
 
+static const char *gpr8[] = {
+	"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh" };
+static const char *gpr8b[] = {
+	"spl", "bpl", "sil", "dil" };
+static const char *gpr16[] = {
+	"ax", "cx", "dx", "bx", "sp", "bp", "si", "di" };
+static const char *gpr32[] = {
+	"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi" };
+static const char *gpr64[] = {
+	"rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi",
+	"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15" };
+
+static const char* anal_reg(ut32 rop) {
+	const char **table;
+
+	if (X86IM_IO_ROP_IS_GPR8 (rop))
+		table = gpr8;
+	else
+	if (X86IM_IO_ROP_IS_GPR8B (rop))
+		table = gpr8b;
+	else
+	if (X86IM_IO_ROP_IS_GPR16 (rop))
+		table = gpr16;
+	else
+	if (X86IM_IO_ROP_IS_GPR32 (rop))
+		table = gpr32;
+	else
+	if (X86IM_IO_ROP_IS_GPR64 (rop))
+		table = gpr64;
+	return table[X86IM_IO_ROP_GET_ID (rop)];
+}
+
 static void anal_jmp(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 	st64 imm, disp;
 	imm = r_hex_bin_truncate (io.imm, io.imm_size);
@@ -21,6 +53,10 @@ static void anal_jmp(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 	case X86IM_IO_ID_JMP_N_R:   /* jmp 0x0ff */
 		/* io.imm = rel 0x0ff */
 		aop->type = R_ANAL_OP_TYPE_JMP;
+		aop->dst = r_anal_value_new ();
+		aop->dst->memref = 0;
+		aop->dst->base = aop->addr + io.len + imm;
+		/* TODO: Deprecate */
 		aop->jump = aop->addr + io.len + imm;
 		break;
 	case X86IM_IO_ID_JMP_N_AI_MM: /* jmp  [0x0ff | reg1+reg2+0x0ff] */
@@ -28,17 +64,36 @@ static void anal_jmp(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 		/* io.rop[0] = reg & io.mem_base = reg1 & io.mem_index = reg2 &
 		 * io.disp = 0x0ff */
 		aop->type = R_ANAL_OP_TYPE_UJMP;
+		aop->dst = r_anal_value_new ();
+		aop->dst->memref = anal->bits/8;
 		if (io.mem_base == 0) { /* jmp [0x0ff] */
+			aop->dst->base = disp;
+			/* TODO: Deprecate */
 			aop->ref = disp;
+		} else {
+			aop->dst->reg = r_reg_get (anal->reg,
+					anal_reg (io.mem_base), R_REG_TYPE_GPR);
+			aop->dst->delta = disp;
+			if (io.mem_index != 0)
+				aop->dst->regdelta = r_reg_get (anal->reg,
+						anal_reg (io.mem_index), R_REG_TYPE_GPR);
 		}
 		break;
 	case X86IM_IO_ID_JMP_N_AI_RG: /* jmp reg */
 		/* io.rop[0] = reg */
 		aop->type = R_ANAL_OP_TYPE_UJMP;
+		aop->dst = r_anal_value_new ();
+		aop->dst->reg = r_reg_get (anal->reg,
+				anal_reg (io.rop[0]), R_REG_TYPE_GPR);
 		break;
 	case X86IM_IO_ID_JMP_F_A: /* jmp dword sel:0x0ff */
 		/* io.selector = sel & io.imm = 0x0ff */
+		/* TODO: Use selector? */
 		aop->type = R_ANAL_OP_TYPE_UJMP;
+		aop->dst = r_anal_value_new ();
+		aop->dst->sel = io.selector;
+		aop->dst->delta = imm;
+		/* TODO: Deprecate */
 		aop->selector = io.selector;
 		aop->ref = imm;
 		break;
