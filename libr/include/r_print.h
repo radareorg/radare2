@@ -46,6 +46,9 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len);
 R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const char *fmt);
 // XXX . change wide, zeroend, urlencode for option flags
 R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *str, int len, int wide, int zeroend, int urlencode);
+R_API int r_print_date_dos(struct r_print_t *p, ut8 *buf, int len);
+R_API int r_print_date_w32(struct r_print_t *p, const ut8 *buf, int len);
+R_API int r_print_date_unix(struct r_print_t *p, const ut8 *buf, int len);
 #endif
 
 #endif

@@ -1418,7 +1418,7 @@ static int cmd_print(void *data, const char *input) {
 			l = len;
 		}
 	} else l = len;
-	
+
 	switch (input[0]) {
 	case 'D':
 	case 'd':
@@ -1453,10 +1453,10 @@ static int cmd_print(void *data, const char *input) {
 		r_print_raw (core->print, core->block, len);
 		break;
 	case 'o':
-        	r_print_hexdump (core->print, core->offset, core->block, len, 8, 1); //, 78, !(input[1]=='-'));
+		r_print_hexdump (core->print, core->offset, core->block, len, 8, 1); //, 78, !(input[1]=='-'));
 		break;
 	case 'x':
-        	r_print_hexdump (core->print, core->offset, core->block, len, 16, 1); //, 78, !(input[1]=='-'));
+		r_print_hexdump (core->print, core->offset, core->block, len, 16, 1); //, 78, !(input[1]=='-'));
 		break;
 	case '8':
 		r_print_bytes (core->print, core->block, len, "%02x");
@@ -1480,6 +1480,31 @@ static int cmd_print(void *data, const char *input) {
 		}
 		printf ("\n");
 		break;
+	case 't':
+		switch (input[1]) {
+			case ' ':
+			case '\0':
+				for (l=0; l<len; l+=sizeof(time_t))
+					r_print_date_unix (core->print, core->block+l, sizeof(time_t));
+				break;
+			case 'd':
+				for (l=0; l<len; l+=4)
+					r_print_date_dos (core->print, core->block+l, 4);
+				break;
+			case 'n':
+				for (l=0; l<len; l+=sizeof(ut64))
+					r_print_date_w32 (core->print, core->block+l, sizeof(ut64));
+				break;
+		case '?':
+			r_cons_printf (
+			"Usage: pt[dn?]\n"
+			" pt      print unix time\n"
+			" ptd     print dos time\n"
+			" ptn     print ntfs time\n"
+			" pt?     show help message\n");
+			break;
+		}
+		break;
 	default:
 		r_cons_printf (
 		"Usage: p[fmt] [len]\n"
@@ -1490,6 +1515,7 @@ static int cmd_print(void *data, const char *input) {
 		" ps [len]    print string\n"
 		" pm [fmt]    print formatted memory\n" // TODO: rename to pf??
 		" pS [len]    print wide string\n"
+		" pt [len]    print diferent timestamps\n"
 		" pd [len]    disassemble N opcodes\n"
 		" pD [len]    disassemble N bytes\n"
 		" pr [len]    print N raw bytes\n"

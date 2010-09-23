@@ -56,6 +56,13 @@ static int config_cfgdebug_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_cfgdatefmt_callback(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	strncpy (core->print->datefmt, node->value, 32);
+	return R_TRUE;
+}
+
 static int config_asmos_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -294,6 +301,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "cfg.bigendian", "true", &config_bigendian_callback);
 #endif
 	r_config_set_cb (cfg, "cfg.debug", "false", &config_cfgdebug_callback);
+	r_config_set_cb (cfg, "cfg.datefmt", "%d:%m:%Y %H:%M:%S %z", &config_cfgdatefmt_callback);
 	r_config_set (cfg, "cfg.fortunes", "true");
 	r_config_set (cfg, "dbg.backend", "native");
 	r_config_set_cb (cfg, "dbg.stopthreads", "true", &config_stopthreads_callback);

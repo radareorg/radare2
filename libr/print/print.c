@@ -7,7 +7,7 @@
 R_API RPrint *r_print_new() {
 	RPrint *p = R_NEW (RPrint);
 	if (p) {
-		strcpy (p->datefmt, "%Y:%m:%d %H:%M:%S %z");
+		strcpy (p->datefmt, "%d:%m:%Y %H:%M:%S %z");
 		p->user = NULL;
 		p->read_at = NULL;
 		p->printf = printf;
