@@ -51,15 +51,15 @@ R_API const char *r_reg_get_name(RReg *reg, int role) {
 
 R_API void r_reg_free_internal(RReg *reg) {
 	int i;
-	for (i=0; i<R_REG_TYPE_LAST; i++) {
+	for (i=0; i<R_REG_TYPE_LAST; i++)
 		r_list_destroy (reg->regset[i].regs);
-		r_list_destroy (reg->regset[i].pool);
-		reg->regset[i].arena = r_reg_arena_new (0);
-	}
 }
 
 R_API RReg *r_reg_free(RReg *reg) {
 	if (reg) {
+		int i;
+		for (i=0; i<R_REG_TYPE_LAST; i++)
+			r_list_destroy (reg->regset[i].pool);
 		r_reg_free_internal (reg);
 		free (reg);
 	}
@@ -69,6 +69,7 @@ R_API RReg *r_reg_free(RReg *reg) {
 R_API RReg *r_reg_new() {
 	RReg *reg = R_NEW (RReg);
 	int i;
+	reg->iters = 0;
 	reg->profile = NULL;
 	for (i=0; i<R_REG_NAME_LAST; i++)
 		reg->name[i] = NULL;
@@ -248,77 +249,11 @@ R_API RList *r_reg_get_list(RReg *reg, int type) {
 	return reg->regset[type].regs;
 }
 
-R_API int r_reg_push(RReg *reg) {
-	int i;
-	for (i=0; i<R_REG_TYPE_LAST; i++) {
-		if (!(reg->regset[i].arena = r_reg_arena_new (0)))
-			return 0;
-		r_list_prepend (reg->regset[i].pool, reg->regset[i].arena);
-	}
-	return r_list_length (reg->regset[0].pool);
-}
-
-R_API int r_reg_arena_set(RReg *reg, int n) {
-	int i;
-	if (n>r_list_length(reg->regset[0].pool))
-		return R_FALSE;
-	for (i=0; i<R_REG_TYPE_LAST; i++)
-		reg->regset[i].arena = (RRegArena*)r_list_get_n (reg->regset[i].pool, n);
-	return R_TRUE;
-}
-
 R_API int r_reg_cmp(RReg *reg, RRegItem *item) {
 	int len = (item->size/8); // TODO: must use r_mem_bitcmp or so.. flags not correctly checked
-	void *src = r_list_head (reg->regset[item->type].pool)->data;
-	void *dst = r_list_head (reg->regset[item->type].pool)->n->data;
-	return memcmp (dst, src, len);
+	int off = BITS2BYTES(item->offset);
+	RRegArena *src = r_list_head (reg->regset[item->type].pool)->data;
+	RRegArena *dst = r_list_head (reg->regset[item->type].pool)->n->data;
+	return memcmp (dst->bytes+off, src->bytes+off, len);
 }
 
-/* 
-arena2
-
-// notify the debugger that something has changed, and registers needs to be pushed
-r_debug_reg_change()
-
-for(;;) {
-  read_regs  \___ reg_pre()
-  r_reg_push /
-
-  step
-
-  read_regs    \_.
-  r_reg_cmp(); /  '- reg_post()
-
-  r_reg_pop() >-- reg_fini()
-}
-
-// must call before read_regs.. readregs cannot be the checkpoint
-r_debug_checkpoint() {
-  dbg->arenaptr = !dbg->arenaptr;
-  dbg->childmodified = R_TRUE;
-  // set arena 0 or 1
-}
-
-r_reg_push() // as init in debugger
-for(;;) {
-  r_debug_checkpoint();
-  r_debug_read_regs();
-}
-*/
-
-
-R_API void r_reg_pop(RReg *reg) {
-	int i;
-	for (i=0; i<R_REG_TYPE_LAST; i++) {
-		if (r_list_length(reg->regset[i].pool)>0) {
-			r_list_delete (reg->regset[i].pool, 
-				r_list_head (reg->regset[i].pool));
-			// SEGFAULT: r_reg_arena_free (reg->regset[i].arena);
-			reg->regset[i].arena = (RRegArena*)r_list_head (
-				reg->regset[i].pool);
-		} else {
-			eprintf ("Cannot pop more\n");
-			break;
-		}
-	}
-}

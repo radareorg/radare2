@@ -37,23 +37,23 @@ int main() {
 	for (i=0;(type=r_reg_get_type(i));i++)
 		printf (" - %s\n", type);
 
-	r_reg_push(reg);
-	r_reg_pop(reg);
+	r_reg_arena_push(reg);
+	r_reg_arena_pop(reg);
 
-	r_reg_push(reg);
-	r_reg_push(reg);
-	r_reg_push(reg);
-	r_reg_pop(reg);
-	r_reg_pop(reg);
-	r_reg_push(reg);
-	r_reg_pop(reg);
-	r_reg_pop(reg);
+	r_reg_arena_push(reg);
+	r_reg_arena_push(reg);
+	r_reg_arena_push(reg);
+	r_reg_arena_pop(reg);
+	r_reg_arena_pop(reg);
+	r_reg_arena_push(reg);
+	r_reg_arena_pop(reg);
+	r_reg_arena_pop(reg);
 
 /*
-	r_reg_pop(reg);
-	r_reg_pop(reg);
-	r_reg_pop(reg);
-	r_reg_pop(reg);
+	r_reg_arena_pop(reg);
+	r_reg_arena_pop(reg);
+	r_reg_arena_pop(reg);
+	r_reg_arena_pop(reg);
 */
 
 	return 0;

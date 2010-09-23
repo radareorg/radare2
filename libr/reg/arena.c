@@ -131,3 +131,56 @@ R_API void r_reg_arena_free(RRegArena* ra) {
 	free (ra->bytes);
 	free (ra);
 }
+
+R_API void r_reg_arena_swap(RReg *reg, int copy) {
+	r_reg_arena_set (reg, (++reg->iters)%2, copy);
+}
+
+R_API int r_reg_arena_set(RReg *reg, int n, int copy) {
+	int i;
+	if (n>r_list_length (reg->regset[0].pool))
+		return R_FALSE;
+	for (i=0; i<R_REG_TYPE_LAST; i++) {
+		RRegArena *o = reg->regset[i].arena;
+		RRegArena *a = (RRegArena*)r_list_get_n (reg->regset[i].pool, n); 
+		reg->regset[i].arena = a;
+		if (a->size != o->size) {
+			a->size = o->size;
+			a->bytes = realloc (a->bytes, a->size+1);
+			if (!a->bytes) {
+				eprintf ("Cannot malloc %d in arena\n", a->size);
+				// XXX This is critical!
+				return R_FALSE;
+			}
+		}
+		if (copy)
+			r_reg_set_bytes(reg, i, o->bytes, a->size);
+	}
+	return R_TRUE;
+}
+
+R_API void r_reg_arena_pop(RReg *reg) {
+	int i;
+	for (i=0; i<R_REG_TYPE_LAST; i++) {
+		if (r_list_length(reg->regset[i].pool)>0) {
+			r_list_delete (reg->regset[i].pool, 
+				r_list_head (reg->regset[i].pool));
+			// SEGFAULT: r_reg_arena_free (reg->regset[i].arena);
+			reg->regset[i].arena = (RRegArena*)r_list_head (
+				reg->regset[i].pool);
+		} else {
+			eprintf ("Cannot pop more\n");
+			break;
+		}
+	}
+}
+
+R_API int r_reg_arena_push(RReg *reg) {
+	int i;
+	for (i=0; i<R_REG_TYPE_LAST; i++) {
+		if (!(reg->regset[i].arena = r_reg_arena_new (0)))
+			return 0;
+		r_list_prepend (reg->regset[i].pool, reg->regset[i].arena);
+	}
+	return r_list_length (reg->regset[0].pool);
+}

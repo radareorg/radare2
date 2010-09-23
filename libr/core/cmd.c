@@ -100,19 +100,19 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 #endif
 	if (core->print->cur_enabled) {
 		// TODO: support in-the-middle-of-instruction too
-		int ret = r_anal_aop (core->anal, &analop, core->offset+core->print->cur,
-			buf+core->print->cur, (int)(len-core->print->cur));
-		// TODO: check for analop.type and ret
-		dest = analop.jump;
-#if 0
-		if (ret)
-		switch (analop.type) {
-		case R_ANAL_OP_TYPE_JMP:
-		case R_ANAL_OP_TYPE_CALL:
+		if (r_anal_aop (core->anal, &analop, core->offset+core->print->cur,
+			buf+core->print->cur, (int)(len-core->print->cur))) {
+			// TODO: check for analop.type and ret
 			dest = analop.jump;
-			break;
-		}
+#if 0
+			switch (analop.type) {
+			case R_ANAL_OP_TYPE_JMP:
+			case R_ANAL_OP_TYPE_CALL:
+				dest = analop.jump;
+				break;
+			}
 #endif
+		}
 	}
 	// TODO: make anal->reflines implicit
 	free (core->reflines); // TODO: leak
@@ -702,11 +702,13 @@ static void cmd_reg(RCore *core, const char *str) {
 			" dr         show 'gpr' registers\n"
 			" drt        show all register types\n"
 			" drn [pc]   get register name for pc,sp,bp,a0-3\n"
+			" dro        show previous (old) values of registers\n"
 			" dr all     show all registers\n"
 			" dr flg 1   show flag registers ('flg' is type, see drt)\n"
 			" dr 16      show 16 bit registers\n"
 			" dr 32      show 32 bit registers\n"
 			" dr eax=33  set register value. eax = 33\n");
+		// TODO: 'drs' to swap register arenas and display old register valuez
 		break;
 	case 'p':
 		if (str[1]) {
@@ -726,6 +728,11 @@ static void cmd_reg(RCore *core, const char *str) {
 		if (name && *name)
 			r_cons_printf ("%s\n", name);
 		else eprintf ("Oops. try dn [pc|sp|bp|a0|a1|a2|a3]\n");
+		break;
+	case 'o':
+		r_reg_arena_swap (core->dbg->reg, R_FALSE);
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 32, 0); // XXX detect which one is current usage
+		r_reg_arena_swap (core->dbg->reg, R_FALSE);
 		break;
 	case '=':
 		r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
@@ -3679,7 +3686,7 @@ static int cmd_debug(void *data, const char *input) {
 	char *ptr;
 
 	switch (input[0]) {
-	case 'x':
+	case 'x': // XXX : only for testing
 		r_debug_execute (core->dbg, (ut8*)
 			"\xc7\xc0\x03\x00\x00\x00\x33\xdb\x33"
 			"\xcc\xc7\xc2\x10\x00\x00\x00\xcd\x80", 18);
@@ -3734,9 +3741,11 @@ static int cmd_debug(void *data, const char *input) {
 				" dsl 40   step 40 source lines\n");
 			break;
 		case 'u':
+			r_reg_arena_swap (core->dbg->reg, R_TRUE);
 			step_until (core, r_num_math (core->num, input+2)); // XXX dupped by times
 			break;
 		case 'o':
+			r_reg_arena_swap (core->dbg->reg, R_TRUE);
 			r_debug_step_over (core->dbg, times);
 			if (checkbpcallback (core)) {
 				eprintf ("Interrupted by a breakpoint\n");
@@ -3744,9 +3753,12 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		case 'l':
+			r_reg_arena_swap (core->dbg->reg, R_TRUE);
 			step_line (core, times);
 			break;
 		default:
+			r_reg_arena_swap (core->dbg->reg, R_TRUE);
+			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
 			r_debug_step (core->dbg, times);
 			if (checkbpcallback (core)) {
 				eprintf ("Interrupted by a breakpoint\n");
@@ -3781,15 +3793,18 @@ static int cmd_debug(void *data, const char *input) {
 				"TODO: support for threads?\n");
 			break;
 		case 'c':
+			r_reg_arena_swap (core->dbg->reg, R_TRUE);
 			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 0);
 			checkbpcallback (core);
 			break;
 		case 'r':
+			r_reg_arena_swap (core->dbg->reg, R_TRUE);
 			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_RET, 1);
 			checkbpcallback (core);
 			break;
 		case 'k':
 			// select pid and r_debug_continue_kill (core->dbg, 
+			r_reg_arena_swap (core->dbg->reg, R_TRUE);
 			ptr = strchr (input+3, ' ');
 			if (ptr) {
 				int old_pid = core->dbg->pid;
@@ -3804,6 +3819,7 @@ static int cmd_debug(void *data, const char *input) {
 		case 's':
 			sig = r_num_math (core->num, input+2);
 			eprintf ("Continue until syscall %d\n", sig);
+			r_reg_arena_swap (core->dbg->reg, R_TRUE);
 			r_debug_continue_syscall (core->dbg, sig);
 			checkbpcallback (core);
 			/* TODO : use r_syscall here, to retrieve syscall info */
@@ -3812,6 +3828,7 @@ static int cmd_debug(void *data, const char *input) {
 			addr = r_num_math (core->num, input+2);
 			if (addr) {
 				eprintf ("Continue until 0x%08"PFMT64x"\n", addr);
+				r_reg_arena_swap (core->dbg->reg, R_TRUE);
 				r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
 				r_debug_continue (core->dbg);
 				checkbpcallback (core);
@@ -3819,14 +3836,15 @@ static int cmd_debug(void *data, const char *input) {
 			} else eprintf ("Cannot continue until address 0\n");
 			break;
 		case ' ':
-			do {
+			{
 				int old_pid = core->dbg->pid;
 				int pid = atoi (input+2);
+				r_reg_arena_swap (core->dbg->reg, R_TRUE);
 				r_debug_select (core->dbg, pid, pid);
 				r_debug_continue (core->dbg);
 				r_debug_select (core->dbg, old_pid, old_pid);
 				checkbpcallback (core);
-			} while (0);
+			}
 			break;
 		case 't':
 			len = r_num_math (core->num, input+2);
@@ -3835,6 +3853,7 @@ static int cmd_debug(void *data, const char *input) {
 			} else {
 				ut64 oaddr = 0LL;
 				eprintf ("Trap tracing 0x%08"PFMT64x"-0x%08"PFMT64x"\n", core->offset, core->offset+len);
+				r_reg_arena_swap (core->dbg->reg, R_TRUE);
 				r_bp_traptrace_reset (core->dbg->bp, R_TRUE);
 				r_bp_traptrace_add (core->dbg->bp, core->offset, core->offset+len);
 				r_bp_traptrace_enable (core->dbg->bp, R_TRUE);
@@ -3864,7 +3883,7 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		default:
-			eprintf ("continue\n");
+			r_reg_arena_swap (core->dbg->reg, R_TRUE);
 			r_debug_continue (core->dbg);
 			checkbpcallback (core);
 		}

@@ -80,7 +80,6 @@ typedef struct r_debug_t {
 	int swstep; /* steps with software traps */
 	int steps;  /* counter of steps done */
 	int newstate;
-	//int checkpoints;
 	RDebugTrace *trace;
 	int stop_all_threads;
 	char *reg_profile;

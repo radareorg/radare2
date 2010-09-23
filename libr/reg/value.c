@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_reg.h>
 #include <r_util.h>
 
 /* XXX: reg get can be accessed using the print_format stuff */
 // This is the same as r_buf_set_bits, arenas can be r_buf
-R_API ut64 r_reg_get_value(struct r_reg_t *reg, struct r_reg_item_t *item) {
+R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	struct r_reg_set_t *regset;
 	ut32 v32;
 	ut16 v16;
@@ -41,7 +41,7 @@ R_API ut64 r_reg_get_value(struct r_reg_t *reg, struct r_reg_item_t *item) {
 }
 
 // TODO: cleanup this ugly code
-R_API int r_reg_set_value(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 value) {
+R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	ut64 v64;
 	ut32 v32;
 	ut16 v16;
@@ -79,21 +79,25 @@ R_API int r_reg_set_value(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 v
 
 /* floating point */
 // XXX: use double for better precission?
-R_API float r_reg_get_fvalue(struct r_reg_t *reg, struct r_reg_item_t *item) {
+R_API float r_reg_get_fvalue(RReg *reg, RRegItem *item) {
+	// TODO
 	return 0.0;
 }
 
-R_API int r_reg_set_fvalue(struct r_reg_t *reg, struct r_reg_item_t *item, float value) {
+R_API int r_reg_set_fvalue(RReg *reg, RRegItem *item, float value) {
 	int ret = R_FALSE;
+	// TODO
 	return ret;
 }
 
 /* packed registers */
-R_API ut64 r_reg_get_pvalue(struct r_reg_t *reg, struct r_reg_item_t *item, int packidx) {
+R_API ut64 r_reg_get_pvalue(RReg *reg, RRegItem *item, int packidx) {
+	// TODO
 	return 0LL;
 }
 
-R_API int r_reg_set_pvalue(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 value, int packidx) {
+R_API int r_reg_set_pvalue(RReg *reg, RRegItem *item, ut64 value, int packidx) {
 	int ret = R_FALSE;
+	// TODO
 	return ret;
 }

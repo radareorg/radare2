@@ -226,6 +226,7 @@ R_API int r_core_init(RCore *core) {
 	r_core_cmd_init (core);
 	core->flags = r_flag_new ();
 	core->dbg = r_debug_new (R_TRUE);
+	r_reg_arena_push (core->dbg->reg); // create a 2 level register state stack
 	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz
 //	core->dbg->anal->reg = core->anal->reg; // XXX: dupped instance.. can cause lost pointerz
 	core->sign->printf = r_cons_printf;

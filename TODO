@@ -8,13 +8,14 @@
 
 Questions
 =========
+* in Visual Debugger mode cursor mode also scrolls O_o
+* r2 -dls HANGS!!1
 * Add support for nasm for rarc2 (it is already done? :)
 * rarc2 allows to compile invalid code like calling puts() out of context
 * Add rabin2 .! calls into r_core api? r_core_rabin_import(core, "rIs") ?
 
 0.6 RELEASE
 ===========
-* Colorize destination address when cursor in branch
 * Reimplement or fix the delta diffing in C
   - first we need to do it for ired..
 * Add dex format support to rabin (android)
@@ -84,10 +85,6 @@ TODO pancake
        - function signature comparsion if they dont match
        r_anal_fcn_cmp (anal, f1, f2);
 }
-  - add push/pop of register states (maybe we only need 2 levels of states)
-    - display changed registers in colors
-    - is also useful to store values before emulating code
-    - we can probably implement this in a clone() method? (too heavy? more orgtogonal)
 
 TODO gerardo
 ------------

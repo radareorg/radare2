@@ -30,15 +30,14 @@ R_API RDebug *r_debug_new(int hard) {
 		dbg->anal = NULL;
 		dbg->pid = -1;
 		dbg->tid = -1;
-		dbg->swstep = 0; // software step
-		dbg->stop_all_threads = R_FALSE;
+		dbg->swstep = 0;
 		dbg->newstate = 0;
+		dbg->stop_all_threads = R_FALSE;
 		dbg->trace = r_debug_trace_new ();
-		//dbg->regs = dbg->oregs = NULL;
 		dbg->printf = (void *)printf;
 		dbg->reg = r_reg_new ();
 		dbg->h = NULL;
-		/* TODO: this is not well designed */
+		/* TODO: needs a redesign? */
 		dbg->maps = r_debug_map_list_new ();
 		dbg->maps_user = r_debug_map_list_new ();
 		if (hard) {
@@ -175,12 +174,11 @@ R_API int r_debug_wait(RDebug *dbg) {
 }
 
 // TODO: count number of steps done to check if no error??
-R_API int r_debug_step(struct r_debug_t *dbg, int steps) {
+R_API int r_debug_step(RDebug *dbg, int steps) {
 	int i, ret = R_FALSE;
 	if (dbg && dbg->h && dbg->h->step) {
 		for (i=0;i<steps;i++) {
-			ret = dbg->h->step (dbg, dbg->pid);
-			if (ret == R_FALSE)
+			if (!(ret = dbg->h->step (dbg, dbg->pid)))
 				break;
 			r_debug_wait (dbg);
 			// TODO: create wrapper for dbg_wait
@@ -210,7 +208,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 			ret = r_debug_continue (dbg);
 			r_bp_del (dbg->bp, bpaddr);
 		} else ret = r_debug_step (dbg, 1);
-	} else fprintf (stderr, "Undefined debugger backend\n");
+	} else eprintf ("Undefined debugger backend\n");
 	return ret;
 }
 
@@ -251,7 +249,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 			if (over) ret = r_debug_step_over (dbg, 1);
 			else ret = r_debug_step (dbg, 1);
 			if (!ret) {
-				printf ("r_debug_step: failed\n");
+				eprintf ("r_debug_step: failed\n");
 				break;
 			}
 			pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
@@ -259,7 +257,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 			r_anal_aop (dbg->anal, &op, pc, buf, sizeof (buf));
 			n++;
 		} while (!(op.type&type));
-	} else fprintf (stderr, "Undefined pointer at dbg->anal\n");
+	} else eprintf ("Undefined pointer at dbg->anal\n");
 	return n;
 }
 
@@ -292,9 +290,8 @@ R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc) {
 				}
 				reg = (int)r_debug_reg_get (dbg, "oeax"); // XXX
 				eprintf ("--> syscall %d\n", reg);
-				if (reg == 0LL) {
+				if (reg == 0LL)
 					break;
-				}
 				// TODO: must use r_core_cmd(as)..import code from rcore
 			} while (sc != 0 && sc != reg);
 		} else {
@@ -315,7 +312,7 @@ R_API int r_debug_syscall(struct r_debug_t *dbg, int num) {
 		ret = R_TRUE;
 		// TODO.check for num
 	}
-	fprintf (stderr, "TODO: show syscall information\n");
+	eprintf ("TODO: show syscall information\n");
 	/* r2rc task? ala inject? */
 	return ret;
 }

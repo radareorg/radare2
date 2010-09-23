@@ -54,6 +54,7 @@ typedef struct r_reg_t {
 	char *profile;
 	char *name[R_REG_NAME_LAST];
 	RRegSet regset[R_REG_TYPE_LAST];
+	int iters;
 } RReg;
 
 
@@ -87,9 +88,10 @@ R_API int r_reg_set_bytes(struct r_reg_t *reg, int type, const ut8* buf, int len
 R_API RRegArena *r_reg_arena_new (int size);
 R_API void r_reg_arena_free(RRegArena* ra);
 R_API int r_reg_fit_arena(struct r_reg_t *reg);
-R_API int r_reg_arena_set(RReg *reg, int n);
-R_API int r_reg_push(RReg *reg);
-R_API void r_reg_pop(RReg *reg);
+R_API int r_reg_arena_set(RReg *reg, int n, int copy);
+R_API void r_reg_arena_swap(RReg *reg, int copy);
+R_API int r_reg_arena_push(RReg *reg);
+R_API void r_reg_arena_pop(RReg *reg);
 R_API int r_reg_cmp(RReg *reg, RRegItem *item);
 #endif
 

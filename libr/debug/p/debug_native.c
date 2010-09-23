@@ -959,7 +959,7 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 	.bits = R_SYS_BITS_32,
 	.arch = R_ASM_ARCH_PPC,
 #else
-#warning food
+#warning Unsupported architecture
 #endif
 	.init = &r_debug_native_init,
 	.step = &r_debug_native_step,
