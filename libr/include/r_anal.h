@@ -139,6 +139,7 @@ typedef struct r_anal_value_t {
 	int memref; // is memory reference? which size? 1, 2 ,4, 8
 	ut64 base ; // numeric address
 	st64 delta; // numeric delta
+	st64 imm; // immediate value
 	int mul; // multiplier (reg*4+base)
 	ut16 sel; // segment selector
 	RRegItem *reg; // register index used (-1 if no reg)

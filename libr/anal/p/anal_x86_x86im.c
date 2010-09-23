@@ -42,6 +42,62 @@ static const char* anal_reg(ut32 rop) {
 	return table[X86IM_IO_ROP_GET_ID (rop)];
 }
 
+/* 0x0ff */
+/* io.imm = rel 0x0ff */
+static RAnalValue *anal_fill_r(RAnal *anal, x86im_instr_object io, ut64 addr) {
+	RAnalValue *ret = r_anal_value_new ();
+	st64 imm = r_hex_bin_truncate (io.imm, io.imm_size);
+	ret->base = addr + io.len + imm;
+	return ret;
+}
+
+/* dword sel:0x0ff */
+/* io.selector = sel; io.imm = 0x0ff */
+static RAnalValue *anal_fill_f(RAnal *anal, x86im_instr_object io) {
+	RAnalValue *ret = r_anal_value_new ();
+	st64 imm = r_hex_bin_truncate (io.imm, io.imm_size);
+	ret->sel = io.selector;
+	ret->delta = imm;
+	return ret;
+}
+
+/* n */
+/* io.imm = n */
+static RAnalValue *anal_fill_im(RAnal *anal, x86im_instr_object io) {
+	RAnalValue *ret = r_anal_value_new ();
+	st64 imm = r_hex_bin_truncate (io.imm, io.imm_size);
+	ret->imm = imm;
+	return ret;
+}
+
+/* reg */
+/* io.rop[0] = reg */
+static RAnalValue *anal_fill_ai_rg(RAnal *anal, x86im_instr_object io, int idx) {
+	RAnalValue *ret = r_anal_value_new ();
+	ret->reg = r_reg_get (anal->reg,
+			anal_reg (io.rop[idx]), R_REG_TYPE_GPR);
+	return ret;
+}
+
+/* [0x0ff | reg1+reg2+0x0ff] */
+/* io.mem_base = reg1; io.mem_index = reg2; io.disp = 0x0ff */
+static RAnalValue *anal_fill_ai_mm(RAnal *anal, x86im_instr_object io) {
+	RAnalValue *ret = r_anal_value_new ();
+	st64 disp = r_hex_bin_truncate (io.disp, io.disp_size);
+	if (io.mem_base == 0) {
+		ret->memref = anal->bits/8;
+		ret->base = disp;
+	} else {
+		ret->reg = r_reg_get (anal->reg,
+				anal_reg (io.mem_base), R_REG_TYPE_GPR);
+		ret->delta = disp;
+		if (io.mem_index != 0)
+			ret->regdelta = r_reg_get (anal->reg,
+					anal_reg (io.mem_index), R_REG_TYPE_GPR);
+	}
+	return ret;
+}
+
 static void anal_jmp(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 	st64 imm, disp;
 	imm = r_hex_bin_truncate (io.imm, io.imm_size);
@@ -51,48 +107,25 @@ static void anal_jmp(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 	switch (io.id) {
 	case X86IM_IO_ID_JMP_N_R_S: /* jmp short 0x0ff */ 
 	case X86IM_IO_ID_JMP_N_R:   /* jmp 0x0ff */
-		/* io.imm = rel 0x0ff */
 		aop->type = R_ANAL_OP_TYPE_JMP;
-		aop->dst = r_anal_value_new ();
-		aop->dst->memref = 0;
-		aop->dst->base = aop->addr + io.len + imm;
-		/* TODO: Deprecate */
+		aop->dst = anal_fill_r (anal, io, aop->addr);
 		aop->jump = aop->addr + io.len + imm;
 		break;
 	case X86IM_IO_ID_JMP_N_AI_MM: /* jmp  [0x0ff | reg1+reg2+0x0ff] */
 	case X86IM_IO_ID_JMP_F_AI_MM: /* jmp dword far  [0x0ff | reg1+reg2+0x0ff] */
-		/* io.rop[0] = reg & io.mem_base = reg1 & io.mem_index = reg2 &
-		 * io.disp = 0x0ff */
 		aop->type = R_ANAL_OP_TYPE_UJMP;
-		aop->dst = r_anal_value_new ();
-		aop->dst->memref = anal->bits/8;
-		if (io.mem_base == 0) { /* jmp [0x0ff] */
-			aop->dst->base = disp;
-			/* TODO: Deprecate */
+		aop->dst = anal_fill_ai_mm (anal, io);
+		/* TODO: Deprecate */
+		if (io.mem_base == 0)
 			aop->ref = disp;
-		} else {
-			aop->dst->reg = r_reg_get (anal->reg,
-					anal_reg (io.mem_base), R_REG_TYPE_GPR);
-			aop->dst->delta = disp;
-			if (io.mem_index != 0)
-				aop->dst->regdelta = r_reg_get (anal->reg,
-						anal_reg (io.mem_index), R_REG_TYPE_GPR);
-		}
 		break;
 	case X86IM_IO_ID_JMP_N_AI_RG: /* jmp reg */
-		/* io.rop[0] = reg */
 		aop->type = R_ANAL_OP_TYPE_UJMP;
-		aop->dst = r_anal_value_new ();
-		aop->dst->reg = r_reg_get (anal->reg,
-				anal_reg (io.rop[0]), R_REG_TYPE_GPR);
+		aop->dst = anal_fill_ai_rg (anal, io, 0);
 		break;
 	case X86IM_IO_ID_JMP_F_A: /* jmp dword sel:0x0ff */
-		/* io.selector = sel & io.imm = 0x0ff */
-		/* TODO: Use selector? */
 		aop->type = R_ANAL_OP_TYPE_UJMP;
-		aop->dst = r_anal_value_new ();
-		aop->dst->sel = io.selector;
-		aop->dst->delta = imm;
+		aop->dst = anal_fill_f (anal, io);
 		/* TODO: Deprecate */
 		aop->selector = io.selector;
 		aop->ref = imm;
@@ -108,8 +141,8 @@ static void anal_cjmp(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 	switch (io.id) {
 	case X86IM_IO_ID_JCC_S: /* j* 0x0ff */
 	case X86IM_IO_ID_JCC_N: /* j* dword 0x0ff */ 
-		/* io.imm = rel 0x0ff */
 		aop->type = R_ANAL_OP_TYPE_CJMP;
+		aop->dst = anal_fill_r (anal, io, aop->addr);
 		aop->fail = aop->addr + io.len;
 		aop->jump = aop->addr + io.len + imm;
 		break;
@@ -123,29 +156,28 @@ static void anal_call(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 
 	switch (io.id) {
 	case X86IM_IO_ID_CALL_N_R: /* call 0x0ff */
-		/* io.imm = rel 0x0ff */
 		aop->type = R_ANAL_OP_TYPE_CALL;
+		aop->dst = anal_fill_r (anal, io, aop->addr);
 		aop->jump = aop->addr + io.len + imm;
 		aop->fail = aop->addr + io.len;
 		break;
 	case X86IM_IO_ID_CALL_N_AI_MM: /* call [0x0ff | reg1+reg2+0x0ff] */
 	case X86IM_IO_ID_CALL_F_AI_MM: /* call dword far [0x0ff | reg1+reg2+0x0ff] */
-		/* io.rop[0] = reg & io.mem_base = reg1 & io.mem_index = reg2 &
-		 * io.disp = 0x0ff */
 		aop->type = R_ANAL_OP_TYPE_UCALL;
-		if (io.mem_base == 0) { /* call [0x0ff] */
+		aop->dst = anal_fill_ai_mm (anal, io);
+		/* TODO: Deprecate */
+		if (io.mem_base == 0)
 			aop->ref = disp;
-			aop->fail = aop->addr + io.len;
-		}
 		break;
 	case X86IM_IO_ID_CALL_N_AI_RG: /* call reg */
-		/* io.rop[0] = reg */
 		aop->type = R_ANAL_OP_TYPE_UCALL;
+		aop->dst = anal_fill_ai_rg (anal, io, 0);
 		aop->fail = aop->addr + io.len;
 		break;
 	case X86IM_IO_ID_CALL_F_A: /* call dword sel:0x0ff */
-		/* io.selector = sel & io.imm = 0x0ff */
 		aop->type = R_ANAL_OP_TYPE_UCALL;
+		aop->dst = anal_fill_f (anal, io);
+		/* TODO: Deprecate */
 		aop->selector = io.selector;
 		aop->ref = imm;
 		aop->fail = aop->addr + io.len;
@@ -166,8 +198,9 @@ static void anal_ret(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 		break;
 	case X86IM_IO_ID_RET_N_IM: /* ret n */
 	case X86IM_IO_ID_RET_F_IM: /* retf n */
-		/* io.imm = n */
+		aop->dst = anal_fill_im (anal, io);
 		aop->stackptr = anal->bits/8 + imm;
+		/* TODO: Deprecate */
 		aop->value = imm;
 		break;
 	}
@@ -187,8 +220,9 @@ static void anal_mov(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 	switch (io.id) {
 	case X86IM_IO_ID_MOV_MM_RG:  /* mov [0x0ff | reg1+reg2+0x0ff], reg */
 	case X86IM_IO_ID_MOV_MM_AC:
-		/* io.rop[0] = reg & io.mem_base = reg1 & io.mem_index = reg2 &
-		 * io.disp = 0x0ff */
+		aop->src[0] = anal_fill_ai_mm (anal, io);
+		aop->dst = anal_fill_ai_rg (anal, io, 0);
+		/* TODO: Deprecate */
 		if (io.mem_base == 0) { /* mov [0x0ff], reg */
 			aop->ref = disp;
 		} else 
@@ -200,12 +234,14 @@ static void anal_mov(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 		break;
 	case X86IM_IO_ID_MOV_R2_R1: /* mov reg2, reg1 */
 	case X86IM_IO_ID_MOV_R1_R2:
-		/* io.rop[0] identify reg2 & io.rop[1] identify reg1  */
+		aop->dst = anal_fill_ai_rg (anal, io, 0);
+		aop->src[0] = anal_fill_ai_rg (anal, io, 1);
 		break;
 	case X86IM_IO_ID_MOV_RG_MM: /* mov reg, [0x0ff | reg1+reg2+0x0ff] */
 	case X86IM_IO_ID_MOV_AC_MM:
-		/* io.rop[0] = reg & io.mem_base = reg1 & io.mem_index = reg2 &
-		 * io.disp = 0x0ff */
+		aop->dst = anal_fill_ai_rg (anal, io, 0);
+		aop->src[0] = anal_fill_ai_mm (anal, io);
+		/* TODO: Deprecate */
 		if (io.mem_base == 0) { /* mov reg, [0x0ff] */
 			aop->ref = disp;
 		} else 
@@ -216,8 +252,9 @@ static void anal_mov(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 		}
 		break;
 	case X86IM_IO_ID_MOV_MM_IM: /* mov [0x0ff | reg1+reg2+0x0ff], 0x1 */
-		/* io.imm = 0x1 & io.mem_base = reg1 & io.mem_index = reg2 &
-		 * io.disp = 0x0ff */
+		aop->dst = anal_fill_ai_mm (anal, io);
+		aop->src[0] = anal_fill_im (anal, io);
+		/* TODO: Deprecate */
 		if (io.mem_base == 0) { /* [0x0ff], 0x1 */
 			aop->ref = disp;
 		} else 
@@ -272,26 +309,30 @@ static void anal_cmp(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 	aop->type = R_ANAL_OP_TYPE_CMP;
 	switch (io.id) {
 	case X86IM_IO_ID_CMP_MM_RG: /* cmp [0x0ff | reg1+reg2+0x0ff], reg */
-		/* io.rop[0] = reg & io.mem_base = reg1 & io.mem_index = reg2 &
-		 * io.disp = 0x0ff */
+		aop->src[0] = anal_fill_ai_mm (anal, io);
+		aop->dst = anal_fill_ai_rg (anal, io, 0);
+		/* TODO: Deprecate */
 		if (io.mem_base == 0) { /* cmp [0x0ff], reg */
 			aop->ref = disp;
 		}
 		break;
 	case X86IM_IO_ID_CMP_R1_R2: /* cmp reg2, reg1 */
 	case X86IM_IO_ID_CMP_R2_R1:
-		/* io.rop[0] identify reg2 & io.rop[1] identify reg1  */
+		aop->dst = anal_fill_ai_rg (anal, io, 0);
+		aop->src[0] = anal_fill_ai_rg (anal, io, 1);
 		break;
 	case X86IM_IO_ID_CMP_RG_MM: /* cmp reg, [0x0ff | reg1+reg2+0x0ff] */
-		/* io.rop[0] = reg & io.mem_base = reg1 & io.mem_index = reg2 &
-		 * io.disp = 0x0ff */
+		aop->dst = anal_fill_ai_rg (anal, io, 0);
+		aop->src[0] = anal_fill_ai_mm (anal, io);
+		/* TODO: Deprecate */
 		if (io.mem_base == 0) { /* cmp reg, [0x0ff] */
 			aop->ref = disp;
 		}
 		break;
 	case X86IM_IO_ID_CMP_MM_IM: /* cmp [0x0ff | reg1+reg2+0x0ff], 0x1 */
-		/* io.imm = 0x1 & io.mem_base = reg1 & io.mem_index = reg2 &
-		 * io.disp = 0x0ff */
+		aop->dst = anal_fill_ai_mm (anal, io);
+		aop->src[0] = anal_fill_im (anal, io);
+		/* TODO: Deprecate */
 		if (io.mem_base == 0) { /* cmp [0x0ff], 0x1 */
 			aop->ref = disp;
 		} else 
@@ -303,7 +344,8 @@ static void anal_cmp(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 		break;
 	case X86IM_IO_ID_CMP_RG_IM: /* cmp reg, 0x1 */
 	case X86IM_IO_ID_CMP_AC_IM:
-		/* io.imm = 0x1 & io.rop[0] = reg */
+		aop->dst = anal_fill_ai_rg (anal, io, 0);
+		aop->src[0] = anal_fill_im (anal, io);
 		break;
 	}
 }
@@ -315,8 +357,9 @@ static void anal_push(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 
 	switch (io.id) {
 	case X86IM_IO_ID_PUSH_MM: /* push [0x0ff | reg1+reg2+0x0ff] */
-		/* io.mem_base = reg1 & io.mem_index = reg2 & io.disp = 0x0ff */
 		aop->type = R_ANAL_OP_TYPE_UPUSH;
+		aop->src[0] = anal_fill_ai_mm (anal, io);
+		/* TODO: Deprecate */
 		aop->stackptr = io.mem_size;
 		if (io.mem_base == 0) { /* push [0x0ff] */
 			aop->ref = disp;
@@ -329,8 +372,9 @@ static void anal_push(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 		break;
 	case X86IM_IO_ID_PUSH_RG1: /* push reg */
 	case X86IM_IO_ID_PUSH_RG2:
-		/* io.rop[0] = reg */
 		aop->type = R_ANAL_OP_TYPE_UPUSH;
+		aop->src[0] = anal_fill_ai_rg (anal, io, 0);
+		/* TODO: Deprecate */
 		if ((io.rop[0] & X86IM_IO_ROP_SGR_GPR_16))
 			aop->stackptr = 2;
 		else if ((io.rop[0] & X86IM_IO_ROP_SGR_GPR_32))
@@ -339,8 +383,9 @@ static void anal_push(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 			aop->stackptr = 8;
 		break;
 	case X86IM_IO_ID_PUSH_IM: /* push 0x1 */
-		/* io.imm = 0x1 */
 		aop->type = R_ANAL_OP_TYPE_PUSH;
+		aop->src[0] = anal_fill_im (anal, io);
+		/* TODO: Deprecate */
 		aop->value = imm;
 		aop->stackptr = io.imm_size;
 		break;
@@ -364,7 +409,8 @@ static void anal_pop(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 	aop->type = R_ANAL_OP_TYPE_POP;
 	switch (io.id) {
 	case X86IM_IO_ID_POP_MM: /* pop [0x0ff | reg1+reg2+0x0ff] */
-		/* io.mem_base = reg1 & io.mem_index = reg2 & io.disp = 0x0ff */
+		aop->dst = anal_fill_ai_mm (anal, io);
+		/* TODO: Deprecate */
 		if (io.mem_base == 0) { /* pop [0x0ff] */
 			aop->ref = disp;
 		}
@@ -372,7 +418,8 @@ static void anal_pop(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 		break;
 	case X86IM_IO_ID_POP_RG1: /* pop reg */
 	case X86IM_IO_ID_POP_RG2:
-		/* io.rop[0] = reg */
+		aop->dst = anal_fill_ai_rg (anal, io, 0);
+		/* TODO: Deprecate */
 		if ((io.rop[0] & X86IM_IO_ROP_SGR_GPR_16))
 			aop->stackptr = -2;
 		else
@@ -400,8 +447,9 @@ static void anal_add(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 	aop->type = R_ANAL_OP_TYPE_ADD;
 	switch (io.id) {
 	case X86IM_IO_ID_ADD_MM_RG: /* add [0x0ff | reg1+reg2+0x0ff], reg */
-		/* io.rop[0] = reg & io.mem_base = reg1 & io.mem_index = reg2 &
-		 * io.disp = 0x0ff */
+		aop->src[0] = anal_fill_ai_mm (anal, io);
+		aop->dst = anal_fill_ai_rg (anal, io, 0);
+		/* TODO: Deprecate */
 		if (io.mem_base == 0) { /* add [0x0ff], reg */
 			aop->ref = disp;
 		} else 
@@ -412,8 +460,9 @@ static void anal_add(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 		}
 		break;
 	case X86IM_IO_ID_ADD_RG_MM: /* add reg, [0x0ff | reg1+reg2+0x0ff] */
-		/* io.rop[0] = reg & io.mem_base = reg1 & io.mem_index = reg2 &
-		 * io.disp = 0x0ff */
+		aop->dst = anal_fill_ai_rg (anal, io, 0);
+		aop->src[0] = anal_fill_ai_mm (anal, io);
+		/* TODO: Deprecate */
 		if (io.mem_base == 0) { /* add reg, [0x0ff] */
 			aop->ref = disp;
 		} else 
@@ -425,18 +474,22 @@ static void anal_add(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 		break;
 	case X86IM_IO_ID_ADD_R1_R2: /* add reg2, reg1 */
 	case X86IM_IO_ID_ADD_R2_R1:
-		/* io.rop[0] identify reg2 & io.rop[1] identify reg1  */
+		aop->dst = anal_fill_ai_rg (anal, io, 0);
+		aop->src[0] = anal_fill_ai_rg (anal, io, 1);
 		break;
 	case X86IM_IO_ID_ADD_MM_IM: /* add [0x0ff | reg1+reg2+0x0ff], 0x1 */
-		/* io.imm = 0x1 & io.mem_base = reg1 & io.mem_index = reg2 &
-		 * io.disp = 0x0ff */
+		aop->dst = anal_fill_ai_mm (anal, io);
+		aop->src[0] = anal_fill_im (anal, io);
+		/* TODO: Deprecate */
 		if (io.mem_base == 0) { /* add [0x0ff], 0x1 */
 			aop->ref = disp;
 		}
 		break;
 	case X86IM_IO_ID_ADD_RG_IM: /* add reg, 0x1 */
 	case X86IM_IO_ID_ADD_AC_IM:
-		/* io.imm = 0x1 & io.rop[0] = reg */
+		aop->dst = anal_fill_ai_rg (anal, io, 0);
+		aop->src[0] = anal_fill_im (anal, io);
+		/* TODO: Deprecate */
 		if (io.rop[0] & X86IM_IO_ROP_ID_ESP) { /* add esp, 0x1 */
 			aop->stackop = R_ANAL_STACK_INCSTACK;
 			aop->value = imm;
@@ -454,33 +507,39 @@ static void anal_sub(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 	aop->type = R_ANAL_OP_TYPE_SUB;
 	switch (io.id) {
 	case X86IM_IO_ID_SUB_MM_RG: /* sub [0x0ff | reg1+reg2+0x0ff], reg */
-		/* io.rop[0] = reg & io.mem_base = reg1 & io.mem_index = reg2 &
-		 * io.disp = 0x0ff */
+		aop->src[0] = anal_fill_ai_mm (anal, io);
+		aop->dst = anal_fill_ai_rg (anal, io, 0);
+		/* TODO: Deprecate */
 		if (io.mem_base == 0) { /* sub [0x0ff], reg */
 			aop->ref = disp;
 		}
 		break;
 	case X86IM_IO_ID_SUB_R1_R2: /* sub reg2, reg1 */
 	case X86IM_IO_ID_SUB_R2_R1:
-		/* io.rop[0] identify reg2 & io.rop[1] identify reg1  */
+		aop->dst = anal_fill_ai_rg (anal, io, 0);
+		aop->src[0] = anal_fill_ai_rg (anal, io, 1);
 		break;
 	case X86IM_IO_ID_SUB_RG_MM: /* sub reg, [0x0ff | reg1+reg2+0x0ff] */
-		/* io.rop[0] = reg & io.mem_base = reg1 & io.mem_index = reg2 &
-		 * io.disp = 0x0ff */
+		aop->dst = anal_fill_ai_rg (anal, io, 0);
+		aop->src[0] = anal_fill_ai_mm (anal, io);
+		/* TODO: Deprecate */
 		if (io.mem_base == 0) { /* sub reg, [0x0ff] */
 			aop->ref = disp;
 		}
 		break;
 	case X86IM_IO_ID_SUB_MM_IM: /* sub [0x0ff | reg1+reg2+0x0ff], 0x1 */
-		/* io.imm = 0x1 & io.mem_base = reg1 & io.mem_index = reg2 &
-		 * io.disp = 0x0ff */
+		aop->dst = anal_fill_ai_mm (anal, io);
+		aop->src[0] = anal_fill_im (anal, io);
+		/* TODO: Deprecate */
 		if (io.mem_base == 0) { /* sub [0x0ff], 0x1 */
 			aop->ref = disp;
 		}
 		break;
 	case X86IM_IO_ID_SUB_RG_IM: /* sub reg, 0x1 */
 	case X86IM_IO_ID_SUB_AC_IM:
-		/* io.imm = 0x1 & io.rop[0] = reg */
+		aop->dst = anal_fill_ai_rg (anal, io, 0);
+		aop->src[0] = anal_fill_im (anal, io);
+		/* TODO: Deprecate */
 		if (io.rop[0] & X86IM_IO_ROP_ID_ESP) { /* sub esp, 0x1*/
 			aop->stackop = R_ANAL_STACK_INCSTACK;
 			aop->value = imm;
