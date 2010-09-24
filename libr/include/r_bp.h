@@ -31,6 +31,7 @@ typedef struct r_bp_plugin_t {
 	struct r_bp_arch_t *bps;
 } RBreakpointPlugin;
 
+// XXX: type is add() or del()
 typedef int (*RBreakpointCallback)(void *user, int type, ut64 addr, int hw, int rwx);
 
 typedef struct r_bp_item_t {
@@ -55,13 +56,14 @@ typedef struct r_bp_t {
 	int nbps;
 	int stepcont;
 	int endian;
-	RBreakpointCallback breakpoint; // global callback
 	RIOBind iob; // compile time dependency
 	RBreakpointPlugin *cur;
 	RList *bps;
 	RList *traces;
 	RList *plugins;
 	PrintfCallback printf;
+	RBreakpointCallback breakpoint;
+	void *user;
 } RBreakpoint;
 
 enum {

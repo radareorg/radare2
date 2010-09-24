@@ -30,6 +30,8 @@ R_API int r_debug_use(RDebug *dbg, const char *str) {
 		RDebugPlugin *h = list_entry (pos, RDebugPlugin, list);
 		if (h->name && !strcmp (str, h->name)) {
 			dbg->h = h;
+			dbg->bp->breakpoint = dbg->h->breakpoint;
+			dbg->bp->user = dbg;
 			if (h->reg_profile) {
 				free (dbg->reg_profile);
 				dbg->reg_profile = dbg->h->reg_profile ();

@@ -52,27 +52,27 @@ R_API int r_debug_bp_add(struct r_debug_t *dbg, ut64 addr, int size, int hw, int
 #endif
 
 /**
- * reflect all r_bp stuff in the process using dbg->bp_write
+ * reflect all r_bp stuff in the process using dbg->bp_write or ->breakpoint
  */
-// XXX remove 
 R_API int r_bp_restore(struct r_bp_t *bp, int set) {
 	RListIter *iter;
 	RBreakpointItem *b;
 
+	r_list_foreach (bp->bps, iter, b) {
+		bp->breakpoint (bp->user, set, b->addr, b->hw, b->rwx);
+	}
 	/* write obytes from every breakpoint in r_bp */
 	if (set) {
 		r_list_foreach (bp->bps, iter, b) {
 			if (b->hw || !b->obytes)
 				eprintf ("hw breakpoints not supported yet\n");
 			else bp->iob.write_at (bp->iob.io, b->addr, b->obytes, b->size);
-// TODO: CALL TO bp->breakpoint()
 		}
 	} else {
 		r_list_foreach (bp->bps, iter, b) {
 			if (b->hw || !b->bbytes)
 				eprintf ("hw breakpoints not supported yet\n");
 			else bp->iob.write_at (bp->iob.io, b->addr, b->bbytes, b->size);
-// TODO: CALL TO bp->breakpoint()
 		}
 	}
 	return R_TRUE;

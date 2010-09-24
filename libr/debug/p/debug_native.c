@@ -430,6 +430,14 @@ static const char *r_debug_native_reg_profile() {
 	"flg	flag_d	.1	.455	0\n"
 	"flg	flag_o	.1	.456	0\n"
 	"flg	flag_r	.1	.457	0\n"
+	"drx	dr0	.32	0	0\n"
+	"drx	dr1	.32	4	0\n"
+	"drx	dr2	.32	8	0\n"
+	"drx	dr3	.32	12	0\n"
+	//"drx	dr4	.32	16	0\n"
+	//"drx	dr5	.32	20	0\n"
+	"drx	dr6	.32	24	0\n"
+	"drx	dr7	.32	28	0\n"
 	);
 #elif __x86_64__
 	return strdup (
@@ -469,6 +477,12 @@ static const char *r_debug_native_reg_profile() {
 	"seg	es	.64	192	0\n"
 	"seg	fs	.64	200	0\n"
 	"seg	gs	.64	208	0\n"
+	"drx	dr0	.32	0	0\n"
+	"drx	dr1	.32	4	0\n"
+	"drx	dr2	.32	8	0\n"
+	"drx	dr3	.32	12	0\n"
+	"drx	dr6	.32	24	0\n"
+	"drx	dr7	.32	28	0\n"
 	);
 #elif __arm__
 	return strdup (
@@ -596,15 +610,15 @@ static RList *r_debug_native_threads(int pid) {
 			continue;
 		read (fd, cmdline, 1024);
 		close (fd);
-		cmdline[1023] = '\0';
+		cmdline[sizeof(cmdline)-1] = '\0';
 		ptr = strstr (cmdline, "Tgid:");
 		if (ptr) {
 			int tgid = atoi (ptr+5);
 			if (tgid != pid)
 				continue;
-			read (fd, cmdline, 1024);
+			read (fd, cmdline, sizeof(cmdline)-1);
 			sprintf (cmdline, "thread_%d", thid++);
-			cmdline[1023] = '\0';
+			cmdline[sizeof(cmdline)-1] = '\0';
 			r_list_append (list, r_debug_pid_new (cmdline, i, 's'));
 		}
 	}
@@ -660,6 +674,31 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 #elif __linux__ || __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
 	int ret; 
 	switch (type) {
+	case R_REG_TYPE_DRX:
+#ifdef __FreeBSD__
+	{
+		// TODO
+		struct dbreg dbr;
+		ret = ptrace (PTRACE_GETDBREGS, pid, &dbr, sizeof (dbr));
+		if (ret != 0)
+			return R_FALSE;
+		// XXX: maybe the register map is not correct, must review
+	}
+#elif __linux__
+	{
+		int i;
+		for (i=0; i<7; i++) { // DR0-DR7
+			ret = ptrace (PTRACE_PEEKUSER, pid, r_offsetof (
+				struct user, u_debugreg[i]), 0);
+			if (ret != 0)
+				return R_FALSE;
+			memcpy (buf+(i*4), &ret, 4);
+		}
+	}
+#else
+		return R_FALSE;
+#endif
+		break;
 	case R_REG_TYPE_SEG:
 	case R_REG_TYPE_FLG:
 	case R_REG_TYPE_GPR:
@@ -695,6 +734,25 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 
 static int r_debug_native_reg_write(int pid, int type, const ut8* buf, int size) {
 	// XXX use switch or so
+	if (type == R_REG_TYPE_DRX) {
+#ifdef __FreeBSD__
+		return (0 == ptrace (PTRACE_SETDBREGS, pid, buf, sizeof (struct dbreg)));
+#elif __linux__
+		{
+		int i;
+		ut32 *val = (ut32 *)buf;
+		for (i=0; i<7; i++) { // DR0-DR7
+			ptrace (PTRACE_POKEUSER, pid, r_offsetof (
+				struct user, u_debugreg[i]), *(val+i));
+			//if (ret != 0)
+			//	return R_FALSE;
+		}
+		}
+#else
+		eprintf ("TODO: add support for write DRX registers\n");
+		return R_FALSE;
+#endif
+	} else
 	if (type == R_REG_TYPE_GPR) {
 #if __WINDOWS__
 		CONTEXT ctx;
@@ -712,7 +770,7 @@ static int r_debug_native_reg_write(int pid, int type, const ut8* buf, int size)
 	return R_FALSE;
 }
 
-static RList *r_debug_native_map_get(struct r_debug_t *dbg) {
+static RList *r_debug_native_map_get(RDebug *dbg) {
 	char path[1024];
 	RList *list = NULL;
 #if __WINDOWS__
@@ -919,7 +977,7 @@ static RList *r_debug_native_frames(RDebug *dbg) {
 }
 #endif
 
-static int r_debug_native_kill(struct r_debug_t *dbg, int sig) {
+static int r_debug_native_kill(RDebug *dbg, int sig) {
 #if __WINDOWS__
 	HANDLE hProcess; // XXX
 	TerminateProcess (hProcess, 1);
@@ -940,6 +998,29 @@ static int r_debug_native_init(RDebug *dbg) {
 #else
 	return R_TRUE;
 #endif
+}
+
+#if __i386__ || __x86_64__
+int drx_add(RDebug *dbg, ut64 addr, int rwx) {
+	// TODO
+	return R_FALSE;
+}
+
+int drx_del(RDebug *dbg, ut64 addr, int rwx) {
+	// TODO
+	return R_FALSE;
+}
+#endif
+
+static int r_debug_native_bp(void *user, int add, ut64 addr, int hw, int rwx) {
+	RDebug *dbg = user;
+#if __i386__ || __x86_64__
+	if (hw) {
+		if (add) return drx_add (dbg, addr, rwx);
+		return drx_del (dbg, addr, rwx);
+	}
+#endif
+	return R_FALSE;
 }
 
 struct r_debug_plugin_t r_debug_plugin_native = {
@@ -977,8 +1058,7 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 	.reg_read = &r_debug_native_reg_read,
 	.reg_write = (void *)&r_debug_native_reg_write,
 	.map_get = (void *)&r_debug_native_map_get,
-	//.bp_read = &r_debug_native_bp_read,
-	//.bp_write = &r_debug_native_bp_write,
+	.breakpoint = r_debug_native_bp,
 };
 
 #ifndef CORELIB

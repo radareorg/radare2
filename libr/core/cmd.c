@@ -773,7 +773,7 @@ static void cmd_reg(RCore *core, const char *str) {
 				*arg='\0';
 				size = atoi (arg);
 			} else size = 32;
-			eprintf ("ARG(%s)\n", str+1);
+			//eprintf ("ARG(%s)\n", str+1);
 			type = r_reg_type_by_name (str+1);
 		}
 		//printf("type = %d\nsize = %d\n", type, size);
@@ -785,6 +785,7 @@ static void cmd_reg(RCore *core, const char *str) {
 }
 
 static void r_core_cmd_bp(RCore *core, const char *input) {
+	int hwbp = r_config_get_i (core->config, "dbg.hwbp");
 	if (input[1]==' ')
 		input++;
 	switch (input[1]) {
@@ -848,6 +849,10 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbt               ; debug backtrace\n");
 		break;
 	default:
+		if (hwbp)
+		r_bp_add_hw (core->dbg->bp, r_num_math (core->num, input+1),
+			1, R_BP_PROT_EXEC);
+		else
 		r_bp_add_sw (core->dbg->bp, r_num_math (core->num, input+1),
 			1, R_BP_PROT_EXEC);
 		break;
