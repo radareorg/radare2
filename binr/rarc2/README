@@ -1,6 +1,12 @@
 RCC : Ralang/Relocatable Code Compiler
 ======================================
 
+NASM support
+------------
+remove comments | grep -v '^#'
+remove ptr
+section .text \n global main
+
 Compiler pipeline: the picture
 ------------------------------
 

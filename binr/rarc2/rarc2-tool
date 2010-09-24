@@ -5,13 +5,14 @@
 
 [ -z "${ARCH}" ] && ARCH=`rarc2 -A`
 [ -z "${CC}" ] && CC=gcc
+RF="-s"
 
 compile() {
 	spp -h >/dev/null 2>&1
 	if [ $? = 0 ]; then
-		spp -Darch=${ARCH} $@ | rarc2 -s -a${ARCH} > .a.S || exit $?
+		spp -Darch=${ARCH} $@ | rarc2 $RF -a${ARCH} > .a.S || exit $?
 	else
-		rarc2 -s -a${ARCH} $@ > .a.S || exit $?
+		rarc2 $RF -a${ARCH} $@ > .a.S || exit $?
 	fi
 }
 
@@ -19,6 +20,7 @@ help() {
 	cat << EOF
 Usage: rarc2-tool [-flag] [file]
    -b  dump bytes
+   -n  use nasm
    -x  execute
    -c  compile against libc
    -S  only generate .S file
@@ -27,7 +29,7 @@ EOF
 	exit 1
 }
 
-while getopts bSxc o ; do
+while getopts nbSxc o ; do
 	[ "$o" = "?" ] && help
 	eval $o=1
 done
@@ -35,11 +37,26 @@ done
 shift $((${OPTIND}-1))
 
 if [ -n "`echo $@`" ]; then
+	if [ -n "$n" ]; then
+		RF=""
+	fi
 	compile $@
+	if [ -n "$n" ]; then
+		cat .a.S | grep -v '^#' | sed -e 's, ptr , ,g' | \
+			grep -v 'intel_syntax' | \
+			sed -e 's|^\.||' | \
+			awk '{if (/^equ /){gsub(","," ");/(.*) (.*) (.*)/;print $2" equ "$3;}else {print}}' | \
+			sed -e 's|lea eax, dword|lea eax, |g' > .a.S2
+		#echo 'section .text' > .a.S
+		mv .a.S2 .a.S
+		nasm -f elf .a.S
+	#	exit 0
+	else
 	if [ -n "$c" ]; then
 		${CC} .a.S -o .a.out
 	else
 		${CC} -nostdlib .a.S -o .a.out
+	fi
 	fi
 	if [ -e .a.out ]; then
 		if [ -n "$b" ]; then

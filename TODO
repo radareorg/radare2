@@ -11,7 +11,6 @@ Questions
 * in Visual Debugger mode cursor mode also scrolls O_o
 * distribute 'spp' with 'rarc2' ?
 * r2 -dls HANGS!!1
-* Add support for nasm for rarc2 (it is already done? :)
 * rarc2 allows to compile invalid code like calling puts() out of context
 * Add rabin2 .! calls into r_core api? r_core_rabin_import(core, "rIs") ?
 
@@ -55,6 +54,7 @@ TODO edu
 TODO pancake
 ------------
 * Add drd: debug regs diff: 
+ - deprecate dro? why?
  - [0xB78B5810]> !dregs
 	esp = 0xbff0b090 (0x00000000) eflags = 0x0292 (0x0000)
 * Import r_vm register values from flags or from r_debug->r_reg
