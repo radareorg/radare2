@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2010 pancake<nopcode.org> */
 
 #include <r_util.h>
 
@@ -9,8 +9,7 @@
 #endif
 
 /* returns 1 if 'str' matches 'reg' regexp */
-R_API int r_str_re_match(const char *str, const char *reg)
-{
+R_API int r_str_re_match(const char *str, const char *reg) {
 #if HAVE_REGEXP
 	regex_t preg;
 	regmatch_t pmatch[NUM_MATCHES];
@@ -22,8 +21,7 @@ R_API int r_str_re_match(const char *str, const char *reg)
 #endif
 }
 
-R_API int r_str_re_replace(const char *str, const char *reg, const char *sub)
-{
+R_API int r_str_re_replace(const char *str, const char *reg, const char *sub) {
 	/* TODO: not yet implemented */
 	return -1;
 }

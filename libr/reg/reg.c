@@ -253,11 +253,19 @@ R_API RList *r_reg_get_list(RReg *reg, int type) {
 	return reg->regset[type].regs;
 }
 
-R_API int r_reg_cmp(RReg *reg, RRegItem *item) {
+R_API ut64 r_reg_cmp(RReg *reg, RRegItem *item) {
 	int len = (item->size/8); // TODO: must use r_mem_bitcmp or so.. flags not correctly checked
-	int off = BITS2BYTES(item->offset);
+	int off = BITS2BYTES (item->offset);
 	RRegArena *src = r_list_head (reg->regset[item->type].pool)->data;
 	RRegArena *dst = r_list_head (reg->regset[item->type].pool)->n->data;
-	return memcmp (dst->bytes+off, src->bytes+off, len);
+	if (memcmp (dst->bytes+off, src->bytes+off, len)) {
+		ut64 ret;
+		int ptr = !(reg->iters%2);
+		r_reg_arena_set (reg, ptr, 0);
+		ret = r_reg_get_value (reg, item);
+		r_reg_arena_set (reg, !ptr, 0);
+		return ret;
+	}
+	return 0LL;
 }
 

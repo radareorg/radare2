@@ -15,6 +15,9 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	regset = &reg->regset[item->type];
 	if (item)
 	switch (item->size) {
+	case 1:
+		ret = (regset->arena->bytes[item->offset/8] & (1<<(item->offset%8)))?1:0;
+		break;
 	case 8:
 		memcpy (&v8, regset->arena->bytes+off, 1);
 		ret = v8;
@@ -29,9 +32,6 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		break;
 	case 64:
 		memcpy (&ret, regset->arena->bytes+off, 8);
-		break;
-	case 1:
-		ret = (regset->arena->bytes[item->offset/8] & (1<<(item->offset%8)))?1:0;
 		break;
 	default:
 		eprintf ("r_reg_get_value: Bit size %d not supported\n", item->size);

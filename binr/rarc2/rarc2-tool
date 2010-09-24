@@ -50,13 +50,14 @@ if [ -n "`echo $@`" ]; then
 		#echo 'section .text' > .a.S
 		mv .a.S2 .a.S
 		nasm -f elf .a.S
+		ld -e main .a.o -o .a.out
 	#	exit 0
 	else
-	if [ -n "$c" ]; then
-		${CC} .a.S -o .a.out
-	else
-		${CC} -nostdlib .a.S -o .a.out
-	fi
+		if [ -n "$c" ]; then
+			${CC} .a.S -o .a.out
+		else
+			${CC} -nostdlib .a.S -o .a.out
+		fi
 	fi
 	if [ -e .a.out ]; then
 		if [ -n "$b" ]; then

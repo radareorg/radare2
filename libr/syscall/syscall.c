@@ -14,6 +14,7 @@ extern RSyscallItem syscalls_freebsd_x86[];
 extern RSyscallItem syscalls_darwin_x86[];
 extern RSyscallItem syscalls_darwin_arm[];
 extern RSyscallItem syscalls_win7_x86[];
+extern RSyscallPort sysport_x86[];
 
 R_API RSyscall* r_syscall_new() {
 	RSyscall *ctx;
@@ -22,6 +23,8 @@ R_API RSyscall* r_syscall_new() {
 		return NULL;
 	ctx->fd = NULL;
 	ctx->sysptr = syscalls_linux_x86;
+	ctx->sysport = sysport_x86;
+	ctx->printf = (PrintfCallback)printf;
 	return ctx;
 }
 
@@ -109,6 +112,7 @@ R_API int r_syscall_get_num(RSyscall *ctx, const char *str) {
 	return 0;
 }
 
+// we can probably wrap all this with r_list getters
 /* XXX: ugly iterator implementation */
 R_API RSyscallItem *r_syscall_get_n(RSyscall *ctx, int n) {
 	int i;
@@ -127,10 +131,19 @@ R_API const char *r_syscall_get_i(RSyscall *ctx, int num, int swi) {
 	return NULL;
 }
 
+R_API const char *r_syscall_get_io(RSyscall *ctx, int ioport) {
+	int i;
+	for (i=0; ctx->sysport[i].name; i++) {
+		if (ioport == ctx->sysport[i].port)
+			return ctx->sysport[i].name;
+	}
+	return NULL;
+}
+
 R_API void r_syscall_list(RSyscall *ctx) {
 	int i;
 	for (i=0; ctx->sysptr[i].num; i++) {
-		printf ("%02x: %d = %s\n",
+		ctx->printf ("%02x: %d = %s\n",
 			ctx->sysptr[i].swi, ctx->sysptr[i].num, ctx->sysptr[i].name);
 	}
 }

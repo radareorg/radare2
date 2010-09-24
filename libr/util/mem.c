@@ -3,7 +3,7 @@
 #include <r_util.h>
 #include <stdlib.h>
 
-// TODO: find better name
+// TODO: find better name (r_mem_length()); is this used somewhere?
 R_API int r_mem_count(ut8 **addr) {
 	int i = 0;
 	while (*addr++)

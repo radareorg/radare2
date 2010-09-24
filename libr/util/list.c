@@ -160,7 +160,7 @@ R_API void *r_list_get_by_int(RList *list, int off, int n) {
 R_API void *r_list_get_by_int64(RList *list, int off, ut64 n) {
 	ut8 *p;
 	RListIter *iter;
-	r_list_foreach(list, iter, p) {
+	r_list_foreach (list, iter, p) {
 		if (!memcmp (&n, p+off, sizeof (ut64)))
 			return p;
 	}
@@ -168,9 +168,9 @@ R_API void *r_list_get_by_int64(RList *list, int off, ut64 n) {
 }
 
 R_API void *r_list_get_by_string(RList *list, int off, const char *str) {
-	ut8 *p;
+	char *p;
 	RListIter *iter;
-	r_list_foreach(list, iter, p) {
+	r_list_foreach (list, iter, p) {
 		const char *ptr = p+off;
 		if (!strcmp (str, ptr))
 			return p;
@@ -191,6 +191,17 @@ int main () {
 	r_list_prepend (l, "HEAD");
 	r_list_prepend (l, "HEAD 00");
 	it = r_list_append (l, "LAST");
+
+	{
+		char *str;
+		r_list_foreach(l, iter, str) {
+			printf("-- %s\n", str);
+		}
+		printf("--**--\n");
+		r_list_foreach_prev(l, iter, str) {
+			printf("-- %s\n", str);
+		}
+	}
 
 	iter = r_list_iterator (l);
 	while (r_list_iter_next (iter)) {

@@ -55,4 +55,3 @@ RSyscallItem syscalls_netbsd_x86[] = {
   { "exit_group", 0x80, 252, 1},
   { NULL, 0x80, 0, 0 }
 };
-

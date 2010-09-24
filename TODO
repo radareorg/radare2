@@ -8,6 +8,10 @@
 
 Questions
 =========
+* Add "pm ?" for bit print like in pb?
+* Only use uppercase KMG for Kilo,Mega,Giga in r_num?
+  - 'g' is for double
+* Add support for float/double in r_num
 * in Visual Debugger mode cursor mode also scrolls O_o
 * distribute 'spp' with 'rarc2' ?
 * r2 -dls HANGS!!1
@@ -53,10 +57,6 @@ TODO edu
 
 TODO pancake
 ------------
-* Add drd: debug regs diff: 
- - deprecate dro? why?
- - [0xB78B5810]> !dregs
-	esp = 0xbff0b090 (0x00000000) eflags = 0x0292 (0x0000)
 * Import r_vm register values from flags or from r_debug->r_reg
   - r_vm must use mmu cache when emulating code
     - use the one from r_io? and deprecate vm->mmu_cache?
@@ -91,7 +91,11 @@ Bindings
 
 Refactoring
 ===========
+* Review the r_flags api
+* add pipe_to_buffer..not only file descriptors
 * r_config set_int and so..simplify
+  - find/use more common cases for char* or &int maps
+    - automatic callbacks for most common usecases
 * Merge r_vm into r_anal ?
 * Merge r_vm into r_parse ?
 * Merge r_socket inside r_util ?
@@ -112,6 +116,7 @@ Refactoring
 
 0.7
 ===
+* Add lua and dalvik disassembler
 * Reimplement or fix the delta diffing in C
   - first we need to do it for ired..
 * Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
@@ -138,6 +143,19 @@ Future
   - load the program using r_bin in virtual space
   - initialize vm and set regs
   - debug backend should use the vm
+
+Flags
+=====
+  - metaflags? support to define relations between flags
+    (flag hirearchies)
+	r_flagtree
+	 - r_flags should have a tree construction to access to them faster
+	   - btree? following pointers like bigger,smaller
+	    { struct r_flag_t *bigger, *smaller; }
+	   - hooks r_flag_add to recalculate in r_flag_optimize(), bigger/smaller pointers
+	   - hooks r_flag_del to recalculate too.
+	 - the r_flag_get by string should have another construction with btree
+	   for the string of the name
 
 Transaction notes
 =================

@@ -12,11 +12,18 @@ typedef struct r_syscall_item_t {
 	char *sargs;
 } RSyscallItem;
 
+typedef struct r_syscall_port_t {
+	int port;
+	const char *name;
+} RSyscallPort;
+
 typedef struct r_syscall_t {
 	FILE *fd;
 	// TODO char *arch;
 	// TODO char *os;
 	RSyscallItem *sysptr;
+	RSyscallPort *sysport;
+	PrintfCallback printf;
 } RSyscall;
 
 /* plugin struct */

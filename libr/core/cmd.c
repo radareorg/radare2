@@ -729,6 +729,9 @@ static void cmd_reg(RCore *core, const char *str) {
 			r_cons_printf ("%s\n", name);
 		else eprintf ("Oops. try dn [pc|sp|bp|a0|a1|a2|a3]\n");
 		break;
+	case 'd':
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 32, 3); // XXX detect which one is current usage
+		break;
 	case 'o':
 		r_reg_arena_swap (core->dbg->reg, R_FALSE);
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 32, 0); // XXX detect which one is current usage

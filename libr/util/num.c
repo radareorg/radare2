@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2010 pancake<nopcode.org> */
 
 #include "r_util.h"
 
@@ -41,9 +41,6 @@ R_API void r_num_minmax_swap_i(int *a, int *b) {
 	}
 }
 
-R_API void r_num_init(struct r_num_t *num) {
-}
-
 R_API RNum *r_num_new(RNumCallback cb, void *ptr) {
 	RNum *num = R_NEW (RNum);
 	if (num) {
@@ -55,7 +52,7 @@ R_API RNum *r_num_new(RNumCallback cb, void *ptr) {
 }
 
 /* old get_offset */
-R_API ut64 r_num_get(struct r_num_t *num, const char *str) {
+R_API ut64 r_num_get(RNum *num, const char *str) {
 	int i, j;
 	char lch;
 	ut64 ret = 0LL;
@@ -127,7 +124,7 @@ R_API ut64 r_num_op(char op, ut64 a, ut64 b) {
 	return b;
 }
 
-R_API static ut64 r_num_math_internal(struct r_num_t *num, char *s) {
+R_API static ut64 r_num_math_internal(RNum *num, char *s) {
 	ut64 ret = 0LL;
 	char *p = s;
 	int i, nop, op='\0';
@@ -151,8 +148,7 @@ R_API static ut64 r_num_math_internal(struct r_num_t *num, char *s) {
 	return r_num_op (op, ret, r_num_get (num, p));
 }
 
-R_API ut64 r_num_math(struct r_num_t *num, const char *str)
-{
+R_API ut64 r_num_math(RNum *num, const char *str) {
 	ut64 ret = 0LL;
 	char op = '+';
 	int len = strlen (str)+1;
@@ -200,4 +196,15 @@ R_API ut64 r_num_math(struct r_num_t *num, const char *str)
 		num->value = ret;
 
 	return ret;
+}
+
+R_API int r_num_is_float(struct r_num_t *num, const char *str) {
+	// TODO: also support 'f' terminated strings
+	return (int) strchr (str, '.');
+}
+
+R_API double r_num_get_float(struct r_num_t *num, const char *str) {
+	double d = 0.0f;
+	sscanf (str, "%lf", &d);
+	return d;
 }

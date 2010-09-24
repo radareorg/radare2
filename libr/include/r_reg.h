@@ -92,7 +92,7 @@ R_API int r_reg_arena_set(RReg *reg, int n, int copy);
 R_API void r_reg_arena_swap(RReg *reg, int copy);
 R_API int r_reg_arena_push(RReg *reg);
 R_API void r_reg_arena_pop(RReg *reg);
-R_API int r_reg_cmp(RReg *reg, RRegItem *item);
+R_API ut64 r_reg_cmp(RReg *reg, RRegItem *item);
 #endif
 
 #endif

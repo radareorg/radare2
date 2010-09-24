@@ -1,14 +1,12 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <btree.h>
 
-R_API void btree_init(struct btree_node **T)
-{
+R_API void btree_init(struct btree_node **T) {
 	*T = NULL;
 }
 
-R_API struct btree_node *btree_remove(struct btree_node *p, BTREE_DEL(del))
-{
+R_API struct btree_node *btree_remove(struct btree_node *p, BTREE_DEL(del)) {
 	struct btree_node *rp = NULL, *f;
 	if (p==NULL) return p;
 	if (p->right!=NULL) {
@@ -31,8 +29,7 @@ R_API struct btree_node *btree_remove(struct btree_node *p, BTREE_DEL(del))
 	return(rp);
 }
 
-R_API void *btree_search(struct btree_node *root, void *x, BTREE_CMP(cmp), int parent)
-{
+R_API void *btree_search(struct btree_node *root, void *x, BTREE_CMP(cmp), int parent) {
 	struct btree_node *p = NULL;
 
 	if (root!=NULL) {
@@ -50,8 +47,7 @@ R_API void *btree_search(struct btree_node *root, void *x, BTREE_CMP(cmp), int p
 	} return NULL;
 }
 
-R_API int btree_del(struct btree_node *proot, void *x, BTREE_CMP(cmp), BTREE_DEL(del))
-{
+R_API int btree_del(struct btree_node *proot, void *x, BTREE_CMP(cmp), BTREE_DEL(del)) {
 	struct btree_node *p = btree_search (proot, x, cmp, 1);
 	if (p) {
 		p->right = btree_remove (p->left, del);
@@ -60,8 +56,7 @@ R_API int btree_del(struct btree_node *proot, void *x, BTREE_CMP(cmp), BTREE_DEL
 	return R_FALSE;
 }
 
-R_API void *btree_get(struct btree_node *proot, void *x, BTREE_CMP(cmp))
-{
+R_API void *btree_get(struct btree_node *proot, void *x, BTREE_CMP(cmp)) {
 	struct btree_node *p = btree_search (proot, x, cmp, 0);
 	if (p) {
 		p->hits++;
@@ -70,8 +65,7 @@ R_API void *btree_get(struct btree_node *proot, void *x, BTREE_CMP(cmp))
 	return NULL;
 }
 
-R_API void btree_cleartree(struct btree_node *proot, BTREE_DEL(del))
-{
+R_API void btree_cleartree(struct btree_node *proot, BTREE_DEL(del)) {
 	if (proot!=NULL) {
 		btree_cleartree (proot->left, del);
 		btree_cleartree (proot->right, del);
@@ -80,8 +74,7 @@ R_API void btree_cleartree(struct btree_node *proot, BTREE_DEL(del))
 	}
 }
 
-R_API void btree_insert(struct btree_node **T, struct btree_node *p, BTREE_CMP(cmp))
-{
+R_API void btree_insert(struct btree_node **T, struct btree_node *p, BTREE_CMP(cmp)) {
 	int ret = cmp (p->data, (*T)->data);
 	if (ret<0) {
 		if ((*T)->left) btree_insert (&(*T)->left, p, cmp);
@@ -92,8 +85,7 @@ R_API void btree_insert(struct btree_node **T, struct btree_node *p, BTREE_CMP(c
 	}
 }
 
-R_API void btree_add(struct btree_node **T, void *e, BTREE_CMP(cmp))
-{
+R_API void btree_add(struct btree_node **T, void *e, BTREE_CMP(cmp)) {
 	struct btree_node *p = (struct btree_node*)
 		malloc(sizeof(struct btree_node));
 	p->data = e;
@@ -104,13 +96,11 @@ R_API void btree_add(struct btree_node **T, void *e, BTREE_CMP(cmp))
 }
 
 /* unused */
-R_API int btree_empty(struct btree_node **T)
-{
+R_API int btree_empty(struct btree_node **T) {
 	return !( (T && (*T) && ((*T)->right || (*T)->left)) );
 }
 
-R_API struct btree_node *btree_hittest(struct btree_node *root, struct btree_node *hn)
-{
+R_API struct btree_node *btree_hittest(struct btree_node *root, struct btree_node *hn) {
 	struct btree_node *p = root;
 	if (root != NULL) {
 		struct btree_node *ml = btree_hittest(root->left, root);
@@ -121,8 +111,7 @@ R_API struct btree_node *btree_hittest(struct btree_node *root, struct btree_nod
 	return p;
 }
 
-R_API int btree_optimize(struct btree_node **T, BTREE_CMP(cmp))
-{
+R_API int btree_optimize(struct btree_node **T, BTREE_CMP(cmp)) {
 	struct btree_node *NT, *node;
 	do {
 		node = btree_hittest(*T, NULL);
@@ -135,24 +124,20 @@ R_API int btree_optimize(struct btree_node **T, BTREE_CMP(cmp))
 	return 0;
 }
 
-/*--------------------*/
-
 #if MAIN
-
 struct mydata {
 	unsigned long long addr;
 	char *str;
 };
 
-int shownode(char *str, struct mydata *m)
-{
+int shownode(char *str, struct mydata *m) {
 	if (m == NULL)
 		printf ("==> not found\n");
 	else printf ("==> %s: %s, %"PFMT64d"\n", str, m->str, m->addr);
 	return 0;
 }
-int mycmp(const void *a, const void *b)
-{
+
+int mycmp(const void *a, const void *b) {
 	struct mydata *ma = (struct mydata *)a;
 	struct mydata *mb = (struct mydata *)b;
 	if (a==NULL || b == NULL)
@@ -160,8 +145,7 @@ int mycmp(const void *a, const void *b)
 	return (int)(ma->addr-mb->addr);
 }
 
-int main()
-{
+int main() {
 	struct btree_node *n, *bt = NULL;
 	//btree_init(&bt);
 

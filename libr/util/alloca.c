@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2010 pancake<nopcode.org> */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -20,8 +20,7 @@ static int bufidx = 0;
 static ut8 *bufnext = 0;
 static ut8 *bufmax;
 
-R_API int r_alloca_init()
-{
+R_API int r_alloca_init() {
 	buf = (ut8 *)malloc(ALLOC_SIZE);
 	if (buf == NULL)
 		return R_FALSE;
@@ -31,8 +30,7 @@ R_API int r_alloca_init()
 	return R_TRUE;
 }
 
-R_API ut8 *r_alloca_bytes(int len)
-{
+R_API ut8 *r_alloca_bytes(int len) {
 	ut8 *next = bufnext;
 	ut8 *tnext = bufnext + len;
 	if (tnext > bufmax)
@@ -41,8 +39,7 @@ R_API ut8 *r_alloca_bytes(int len)
 	return next;
 }
 
-R_API char *r_alloca_str(const char *str)
-{
+R_API char *r_alloca_str(const char *str) {
 	int len;
 	ut8 *p;
 	if (str == NULL) {
@@ -59,8 +56,7 @@ R_API char *r_alloca_str(const char *str)
 }
 
 /* free last allocated buffer */
-R_API int r_alloca_ret_i(int n)
-{
+R_API int r_alloca_ret_i(int n) {
 	/* check for underflows */
 	if (bufidx==0) return n;
 	bufnext = bufptr[--bufidx];
