@@ -188,6 +188,7 @@ R_API ut64 r_num_get(struct r_num_t *num, const char *str);
 
 /* strings */
 #define r_str_write(x,y) write (x, y, strlen(y))
+R_API int r_str_bits (char *strout, ut8 *buf, int len, const char *bitz);
 R_API int r_str_rwx(const char *str);
 R_API void r_str_subchr (char *s, int a, int b);
 R_API const char *r_str_rwx_i(int rwx);

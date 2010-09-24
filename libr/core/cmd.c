@@ -1253,10 +1253,26 @@ static int cmd_help(void *data, const char *input) {
 }
 
 static int cmd_bsize(void *data, const char *input) {
+	RFlagItem *flag;
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
+	case 'f':
+		if (input[1]==' ') {
+			flag = r_flag_get (core->flags, input+2);
+			if (flag)
+				r_core_block_size (core, flag->size);
+			else eprintf ("bf: Cannot find flag named '%s'\n", input+2);
+		} else eprintf ("Usage: bf [flagname]\n");
+		break;
 	case '\0':
 		r_cons_printf ("0x%x\n", core->blocksize);
+		break;
+	case '?':
+		r_cons_printf ("Usage: b[f] [arg]\n"
+			" b        # display current block size\n"
+			" b 33     # set block size to 33\n"
+			" b eip+4  # numeric argument can be an expression\n"
+			" bf foo   # set block size to flag size\n");
 		break;
 	default:
 		//input = r_str_clean(input);

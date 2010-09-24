@@ -35,13 +35,12 @@ typedef struct r_reg_item_t {
 	int size; /* 8,16,32,64 ... 128/256 ??? */
 	int offset; // offset in data structure
 	int packed_size; /* 0 means no packed register, 1byte pack, 2b pack... */
-	struct list_head list;
+	char *flags;
 } RRegItem;
 
 typedef struct r_reg_arena_t {
 	ut8 *bytes;
 	int size;
-	struct list_head list;
 } RRegArena;
 
 typedef struct r_reg_set_t {
@@ -80,6 +79,7 @@ R_API int r_reg_set_value(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 v
 R_API float r_reg_get_fvalue(struct r_reg_t *reg, struct r_reg_item_t *item);
 R_API int r_reg_set_fvalue(struct r_reg_t *reg, struct r_reg_item_t *item, float value);
 R_API ut64 r_reg_get_pvalue(struct r_reg_t *reg, struct r_reg_item_t *item, int packidx);
+R_API char *r_reg_get_bvalue(RReg *reg, RRegItem *item);
 R_API int r_reg_set_pvalue(struct r_reg_t *reg, struct r_reg_item_t *item, ut64 value, int packidx);
 
 /* byte arena */

@@ -16,6 +16,7 @@ R_API const char *r_reg_get_type(int idx) {
 
 static void r_reg_item_free(RRegItem *item) {
 	free (item->name);
+	free (item->flags);
 	free (item);
 }
 
@@ -127,6 +128,9 @@ static int r_reg_set_word(RRegItem *item, int idx, char *word) {
 		if (*word=='.') // XXX; this is kinda ugly
 			item->packed_size = atoi (word+1);
 		else item->packed_size = atoi (word)*8;
+		break;
+	case 5:
+		item->flags = strdup (word);
 		break;
 	default:
 		eprintf ("register set fail (%s)\n", word);

@@ -35,7 +35,7 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 
 	if (!dbg || !dbg->reg)
 		return R_FALSE;
-	head = r_reg_get_list(dbg->reg, type);
+	head = r_reg_get_list (dbg->reg, type);
 	if (dbg->h && dbg->h->bits & R_SYS_BITS_64) {
 		fmt = "%s = 0x%016"PFMT64x"%s";
 		fmt2 = "%4s 0x%016"PFMT64x"%s";
@@ -45,6 +45,7 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 		fmt2 = "%4s 0x%08"PFMT64x"%s";
 		cols = 4;
 	}
+	if (head)
 	r_list_foreach (head, iter, item) {
 		ut64 value;
 		if (type != -1 && type != item->type)
@@ -58,8 +59,11 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 		else if (rad==2) {
 			if (diff) // TODO: DO NOT COLORIZE ALWAYS ..do debug knows about console?? use inverse colors
 				dbg->printf ("\x1b[1;37m");
-			dbg->printf (fmt2, item->name, value, 
-				((n+1)%cols)?"   ":"\n");
+			if (item->flags) {
+				char *str = r_reg_get_bvalue (dbg->reg, item);
+				dbg->printf ("%s = %s%s", item->name, str, ((n+1)%cols)?"   ":"\n");
+				free (str);
+			} else dbg->printf (fmt2, item->name, value, ((n+1)%cols)?"   ":"\n");
 			if (diff) // TODO: use inverse colors
 				dbg->printf ("\x1b[0m");
 		} else dbg->printf (fmt, item->name, value, "\n");

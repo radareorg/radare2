@@ -77,6 +77,17 @@ R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	return R_TRUE;
 }
 
+R_API char *r_reg_get_bvalue(RReg *reg, RRegItem *item) {
+	char *out;
+	ut64 num;
+	if (!item->flags)
+		return NULL;
+	out = malloc (strlen (item->flags)+1);
+	num = r_reg_get_value (reg, item);
+	r_str_bits (out, (ut8*)&num, strlen (item->flags)*8, item->flags);
+	return out;
+}
+
 /* floating point */
 // XXX: use double for better precission?
 R_API float r_reg_get_fvalue(RReg *reg, RRegItem *item) {

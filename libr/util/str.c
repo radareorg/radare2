@@ -23,8 +23,8 @@ R_API void r_str_subchr (char *s, int a, int b) {
 // TODO: do not use toupper.. must support modes to also append lowercase chars like in r1
 R_API int r_str_bits (char *strout, ut8 *buf, int len, const char *bitz) {
 	int i, j, *p = (int*)buf;
-	for (i=j=0; i<len &&bitz[i]; i++)
-		if (*p&(1<<i))
+	for (i=j=0; i<len && bitz[i]; i++)
+		if (*p&(1<<(i)))
 			strout[j++] = toupper (bitz[i]);
 	strout[j] = 0;
 	return j;

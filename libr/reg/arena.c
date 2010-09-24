@@ -73,22 +73,20 @@ R_API int r_reg_set_bytes(RReg *reg, int type, const ut8* buf, int len) {
 	return ret;
 }
 
-R_API int r_reg_export_to(RReg *reg, RReg *dst) {
+#if 0
+R_API int r_reg_arena_copy(RReg *reg, RRegArena *b) {
+	RReg *
 	RRegItem *r;
 	RListIter *iter;
 	int i, ret = R_FALSE;
 	if (dst) {
-		// foreach reg of every time in reg, define it in dst
 		for(i=0;i<R_REG_TYPE_LAST;i++) {
-			r_list_foreach (reg->regset[i].regs, iter, r) {
-				// TODO: export to not implemented
-				//r_reg_set(dst, r_reg_get(dst, r->name), );
-				//r_mem_copybits_delta(
-			}
+			// TODO
 		}
 	}
 	return ret;
 }
+#endif
 
 R_API int r_reg_fit_arena(RReg *reg) {
 	RRegArena *arena;
@@ -96,7 +94,6 @@ R_API int r_reg_fit_arena(RReg *reg) {
 	RRegItem *r;
 	int size, i;
 
-	/* propagate arenas */
 	for (i=0; i<R_REG_TYPE_LAST; i++) {
 		arena = reg->regset[i].arena;
 		arena->size = 0;

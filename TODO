@@ -9,6 +9,7 @@
 Questions
 =========
 * in Visual Debugger mode cursor mode also scrolls O_o
+* distribute 'spp' with 'rarc2' ?
 * r2 -dls HANGS!!1
 * Add support for nasm for rarc2 (it is already done? :)
 * rarc2 allows to compile invalid code like calling puts() out of context
@@ -16,19 +17,9 @@ Questions
 
 0.6 RELEASE
 ===========
-* Reimplement or fix the delta diffing in C
-  - first we need to do it for ired..
-* Add dex format support to rabin (android)
-* Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
+* Fix eflags string and str_bits
 * Create radare2-testsuite project
-
-Build system:
--------------
-* Write documentation about how to build r2, r2-swig, valaswig, make symstall and
-  some basics about the organization of the code (boring++)
-* Store version information in libraries ? debian claims for it
-* install.sh (to track installed files ..)
-* acr -ldl check must be fixed for kfreebsd
+  - tests for ired, rax2, radare2, rabin2 ...
 
 TODO nibble
 -----------
@@ -37,7 +28,6 @@ TODO nibble
 * use r_anal_value everywhere in r_anal
 * make x86_x86im the default backend for x86 analysis
 * implement analysis for more instructions in x86_x86im
-* big-ssl.c big-gmp.c ...
 * native fat bins support (push uncommited changes)
 * diff code analysis
   - diff two programs
@@ -48,10 +38,12 @@ TODO nibble
         - check all strings
      2nd level:
         - basic block level diffing (output in graph mode)
+* big-ssl.c big-gmp.c ...
+* implement GMP in util/big.c
+  - http://etutorials.org/Programming/secure+programming/Chapter+7.+Public+Key+Cryptography/7.5+Generating+a+Prime+Number+Testing+for+Primality/
 
 TODO edu
 --------
-* print data timestamps with 'p'
 * Implement more get_main()
 * typedef all function pointers, like in r_bp
 * Implement /A : search AES
@@ -62,19 +54,11 @@ TODO edu
 
 TODO pancake
 ------------
-* Display eflags in ascii mode
-  - use r_str_bits()
-  - r_reg must have a format string for flags, using r_str_bitz
-  - r_reg_eflags(dbg->reg, "cpastidor", mode) // must be in r_util.. as a bit helper
-  - static buffer in dbg->reg..fixed size (32)
-  - printf("eflags: %s\n", r_reg_get_flags (dbg->reg, "cpastidor");
-  void foo(RRegister *r, RRegisterItem *ri, const char *str) {
-  }
-
 * Import r_vm register values from flags or from r_debug->r_reg
   - r_vm must use mmu cache when emulating code
     - use the one from r_io? and deprecate vm->mmu_cache?
 * Record trace of register status for each function when running
+  - r_reg_arena_copy();
 {
  * Implement RAnalCall (analyze function arguments, return values, propagate types..)
   - define number of arguments for given function
@@ -86,17 +70,11 @@ TODO pancake
        r_anal_fcn_cmp (anal, f1, f2);
 }
 
-TODO gerardo
-------------
-* http://etutorials.org/Programming/secure+programming/Chapter+7.+Public+Key+Cryptography/7.5+Generating+a+Prime+Number+Testing+for+Primality/
-* implement GMP in util/big.c
-
 unassigned TODO pointz
 ----------------------
 * Implement minimalist 'ar' and add support for .a archive libs? (not necessary in this life)
 * Realign flags when using project in debug mode
 * FileDescriptors: dd -- copy from !fd in r1
-* distribute 'spp' with 'rarc2' ?
 * Initial analysis looking for xrefs to strings and so? ax? ./a@@entry0 - Launched at startup
 
 Bindings
@@ -110,6 +88,7 @@ Bindings
 
 Refactoring
 ===========
+* r_config set_int and so..simplify
 * Merge r_vm into r_anal ?
 * Merge r_vm into r_parse ?
 * Merge r_socket inside r_util ?
@@ -121,16 +100,19 @@ Refactoring
 * Move 'r_syscall_t' stuff into r_debug (sync r_core)
 * Implement r_bind api to link multiple pointers
   core->asm = r_bind_set (core->asm->bind, r_asm_new ());
-* r_config set_int and so..simplify
 * what do we have to do with r_th, r_parse and r_vm ?
 * Find a better name for r_buf_fread (really?)
-* Review r_io API
+* Review r_io and r_reg API
 * semi-ok state (R_TRUFAE), implement r_errno and r_errstr in r_util?
   - useful in r_sys_mkdir ?
 * Finish and import the spp's getopt owns implementation in r_util (like in p9)
 
 0.7
 ===
+* Reimplement or fix the delta diffing in C
+  - first we need to do it for ired..
+* Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
+* Add dex format support to rabin (android)
 * Is RCore->block and blocksize a RBuf ? refactor!11
 * add support for sign/unsigned registers..or at least a way to cast them
 * Implement rap:// upload/download protocol commands (maybe just system() with rsc2+wget?
@@ -140,6 +122,12 @@ Refactoring
   - Add support for STATIC_PLUGINS in r_lang
   - dlerror(/usr/lib/radare2/lang_perl.so): libperl.so: cannot open shared object file: No such file or directory
     This issue is fixed by setting LD_LIBRARY_PATH...looks like dlopen ignores rpath
+
+Build system:
+-------------
+* Store version information in libraries ? debian claims for it
+* install.sh (to track installed files ..)
+* acr -ldl check must be fixed for kfreebsd
  
 Future
 ======
