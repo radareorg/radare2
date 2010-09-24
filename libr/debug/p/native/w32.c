@@ -320,7 +320,7 @@ static RList *w32_dbg_maps() {
 	RList *list;
 	SYSTEM_INFO SysInfo;
 	MEMORY_BASIC_INFORMATION mbi;
-	HANDLE hProcess;
+	HANDLE hProcess = 0; // XXX NEEDS TO HAVE A VALUE
 	LPBYTE page;
 	char *mapname = NULL;
 	/* DEPRECATED */

@@ -274,8 +274,10 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	/* XXX : ultraslow */
 	if (!r_config_get_i (r->config, "scr.prompt"))
 		*prompt = 0;
+#if __UNIX__
 	else if (r_config_get_i (r->config, "scr.color"))
 		sprintf (prompt, Color_YELLOW"[0x%08"PFMT64x"]> "Color_RESET, r->offset);
+#endif
 	else sprintf (prompt, "[0x%08"PFMT64x"]> ", r->offset);
 	r_line_singleton()->prompt = prompt;
 	ret = r_cons_fgets (line, sizeof (line), 0, NULL);

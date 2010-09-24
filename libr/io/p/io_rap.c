@@ -1,14 +1,11 @@
 /* radare - LGPL - Copyright 2010 pancake<nopcode.org> */
 
 // TODO: implement the rap API in r_socket ?
-#if __UNIX__
-
 #include "r_io.h"
 #include "r_lib.h"
 #include "r_core.h"
 #include "r_socket.h"
 #include <sys/types.h>
-#include <sys/ipc.h>
 
 static int rap_fd = -1;
 static int is_listener = 0;
@@ -211,6 +208,4 @@ struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_rap
 };
-#endif
-
 #endif

@@ -394,19 +394,20 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			if((st64)esp<0) esp=-esp;
 			nargs = (esp)/4;
 #endif
-			fcn = r_anal_fcn_find (core->anal, analop.jump);
-			r_cons_printf("\n    ");
-			if(fcn&&fcn->name) r_cons_printf ("; %s(", fcn->name);
-			else r_cons_printf ("; 0x%08"PFMT64x"(", analop.jump);
-			for(i=0;i<nargs;i++) {
-				if (arg[i]>1024) r_cons_printf("%d", args[nargs-i]);
-				else r_cons_printf("0x%x", args[nargs-i]);
-				if (i<nargs-1) r_cons_printf(", ");
-			}
-			//r_cons_printf("args=%d (%d)", nargs, esp);
-			r_cons_printf (")");
-			nargs = 0;
-			}
+			if (analop.jump != UT64_MAX) {
+				fcn = r_anal_fcn_find (core->anal, analop.jump);
+				r_cons_printf("\n    ");
+				if(fcn&&fcn->name) r_cons_printf ("; %s(", fcn->name);
+				else r_cons_printf ("; 0x%08"PFMT64x"(", analop.jump);
+				for(i=0;i<nargs;i++) {
+					if (arg[i]>1024) r_cons_printf("%d", args[nargs-i]);
+					else r_cons_printf("0x%x", args[nargs-i]);
+					if (i<nargs-1) r_cons_printf(", ");
+				}
+				//r_cons_printf("args=%d (%d)", nargs, esp);
+				r_cons_printf (")");
+				nargs = 0;
+			} }
 			break;
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
