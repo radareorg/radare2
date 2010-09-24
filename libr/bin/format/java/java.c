@@ -433,3 +433,16 @@ struct r_bin_java_obj_t* r_bin_java_new(const char* file) {
 		return r_bin_java_free(bin);
 	return bin;
 }
+
+struct r_bin_java_obj_t* r_bin_java_new_buf(struct r_buf_t *buf) {
+	struct r_bin_java_obj_t *bin;
+
+	if (!(bin = malloc(sizeof(struct r_bin_java_obj_t))))
+		return NULL;
+	memset (bin, 0, sizeof (struct r_bin_java_obj_t));
+	bin->b = buf;
+	bin->size = buf->length;
+	if (!javasm_init(bin))
+		return r_bin_java_free(bin);
+	return bin;
+}

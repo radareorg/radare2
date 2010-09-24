@@ -757,3 +757,17 @@ struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new)(const char* file)
 		return PE_(r_bin_pe_free)(bin);
 	return bin;
 }
+
+struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new_buf)(struct r_buf_t *buf)
+{
+	struct PE_(r_bin_pe_obj_t) *bin;
+
+	if (!(bin = malloc(sizeof(struct PE_(r_bin_pe_obj_t)))))
+		return NULL;
+	memset (bin, 0, sizeof (struct PE_(r_bin_pe_obj_t)));
+	bin->b = buf;
+	bin->size = buf->length;
+	if (!PE_(r_bin_pe_init)(bin))
+		return PE_(r_bin_pe_free)(bin);
+	return bin;
+}

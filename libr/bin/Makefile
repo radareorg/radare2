@@ -10,6 +10,7 @@ CFLAGS+=-DCORELIB -Iformat
 
 include ../config.mk
 include ${STATIC_BIN_PLUGINS}
+include ${STATIC_BIN_XTR_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst bin_,p/bin_,$(STATIC_OBJ)))
 OBJ=bin.o bin_meta.o bin_write.o ${STATIC_OBJS}
 

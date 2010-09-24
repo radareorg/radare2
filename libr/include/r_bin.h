@@ -20,11 +20,11 @@
 #define R_BIN_DBG_RELOCS(x)   x & 0x10
 
 #define R_BIN_SIZEOF_STRINGS 256
+#define R_BIN_MAX_ARCH 32
 
-typedef struct r_bin_t {
+typedef struct r_bin_arch_t {
 	const char *file;
 	int size;
-	void *bin_obj;
 	ut64 baddr;
 	struct r_bin_addr_t *main;
 	struct r_bin_info_t *info;
@@ -37,31 +37,52 @@ typedef struct r_bin_t {
 	RList* libs;
 	RList* relocs;
 	RBuffer *buf;
+	void *bin_obj;
+	struct r_bin_plugin_t *curplugin;
+} RBinArch;
+
+typedef struct r_bin_t {
+	const char *file;
+	struct r_bin_arch_t arch[R_BIN_MAX_ARCH];
+	struct r_bin_arch_t *curarch;
+	int narch;
 	void *user;
-	struct r_bin_plugin_t *cur;
+	void *bin_obj;
+	struct r_bin_xtr_plugin_t *curxtr;
 	struct list_head bins;
+	struct list_head binxtrs;
 } RBin;
+
+typedef struct r_bin_xtr_plugin_t {
+	char *name;
+	char *desc;
+	int (*init)(void *user);
+	int (*fini)(void *user);
+	int (*check)(RBin *bin);
+	int (*extract)(RBin *bin);
+	int (*destroy)(RBin *bin);
+	struct list_head list;
+} RBinXtrPlugin;
 
 typedef struct r_bin_plugin_t {
 	char *name;
 	char *desc;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-	int (*load)(RBin *bin);
-	int (*extract)(RBin *bin);
-	int (*destroy)(RBin *bin);
-	int (*check)(RBin *bin);
-	ut64 (*baddr)(RBin *bin);
-	struct r_bin_addr_t* (*main)(RBin *bin);
-	RList* (*entries)(RBin *bin);
-	RList* (*sections)(RBin *bin);
-	RList* (*symbols)(RBin *bin);
-	RList* (*imports)(RBin *bin);
-	RList* (*strings)(RBin *bin);
-	struct r_bin_info_t* (*info)(RBin *bin);
-	RList* (*fields)(RBin *bin);
-	RList* (*libs)(RBin *bin);
-	RList* (*relocs)(RBin *bin);
+	int (*load)(RBinArch *arch);
+	int (*destroy)(RBinArch *arch);
+	int (*check)(RBinArch *arch);
+	ut64 (*baddr)(RBinArch *arch);
+	struct r_bin_addr_t* (*main)(RBinArch *arch);
+	RList* (*entries)(RBinArch *arch);
+	RList* (*sections)(RBinArch *arch);
+	RList* (*symbols)(RBinArch *arch);
+	RList* (*imports)(RBinArch *arch);
+	RList* (*strings)(RBinArch *arch);
+	struct r_bin_info_t* (*info)(RBinArch *arch);
+	RList* (*fields)(RBinArch *arch);
+	RList* (*libs)(RBinArch *arch);
+	RList* (*relocs)(RBinArch *arch);
 	struct r_bin_meta_t *meta;
 	struct r_bin_write_t *write;
 	struct list_head list;
@@ -147,22 +168,22 @@ typedef struct r_bin_field_t {
 } RBinField;
 
 typedef struct r_bin_meta_t {
-	int (*get_line)(RBin *bin, ut64 addr, char *file, int len, int *line);
+	int (*get_line)(RBinArch *arch, ut64 addr, char *file, int len, int *line);
 } RBinMeta;
 
 typedef struct r_bin_write_t {
-	ut64 (*scn_resize)(RBin *bin, const char *name, ut64 size);
-	int (*rpath_del)(RBin *bin);
+	ut64 (*scn_resize)(RBinArch *arch, const char *name, ut64 size);
+	int (*rpath_del)(RBinArch *arch);
 } RBinWrite;
 
 #ifdef R_API
 
 /* bin.c */
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo);
-R_API int r_bin_extract(RBin *bin);
+R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
 R_API void* r_bin_free(RBin *bin);
 R_API int r_bin_list(RBin *bin);
-R_API int r_bin_load(RBin *bin, const char *file, const char *plugin_name);
+R_API int r_bin_load(RBin *bin, const char *file, int dummy);
 R_API ut64 r_bin_get_baddr(RBin *bin);
 R_API RBinAddr* r_bin_get_main(RBin *bin);
 R_API RList* r_bin_get_entries(RBin *bin);
@@ -182,6 +203,7 @@ R_API int r_bin_has_dbg_linenums (RBin *bin);
 R_API int r_bin_has_dbg_syms (RBin *bin);
 R_API int r_bin_has_dbg_relocs (RBin *bin);
 R_API RBin* r_bin_new();
+R_API int r_bin_set_arch(RBin *bin, const char *arch, int bits);
 R_API void r_bin_set_user_ptr(RBin *bin, void *user);
 
 /* bin_meta.c */
@@ -200,9 +222,9 @@ extern RBinPlugin r_bin_plugin_pe;
 extern RBinPlugin r_bin_plugin_pe64;
 extern RBinPlugin r_bin_plugin_mach0;
 extern RBinPlugin r_bin_plugin_mach064;
-extern RBinPlugin r_bin_plugin_fatmach0;
 extern RBinPlugin r_bin_plugin_java;
 extern RBinPlugin r_bin_plugin_dummy;
+extern RBinXtrPlugin r_bin_xtr_plugin_fatmach0;
 
 #endif
 #endif

@@ -97,3 +97,4 @@ int PE_(r_bin_pe_is_stripped_local_syms)(struct PE_(r_bin_pe_obj_t)* bin);
 int PE_(r_bin_pe_is_stripped_debug)(struct PE_(r_bin_pe_obj_t)* bin);
 void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin);
 struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new)(const char* file);
+struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new_buf)(struct r_buf_t *buf);

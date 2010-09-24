@@ -4,12 +4,12 @@
 #include <r_bin.h>
 #include "elf/elf.h"
 
-static ut64 scn_resize(RBin *bin, const char *name, ut64 size) {
-	return Elf_(r_bin_elf_resize_section) (bin->bin_obj, name, size);
+static ut64 scn_resize(RBinArch *arch, const char *name, ut64 size) {
+	return Elf_(r_bin_elf_resize_section) (arch->bin_obj, name, size);
 }
 
-static int rpath_del(RBin *bin) {
-	return Elf_(r_bin_elf_del_rpath) (bin->bin_obj);
+static int rpath_del(RBinArch *arch) {
+	return Elf_(r_bin_elf_del_rpath) (arch->bin_obj);
 }
 
 #if !R_BIN_ELF64

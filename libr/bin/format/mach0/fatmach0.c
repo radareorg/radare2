@@ -28,37 +28,43 @@ static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
 	return R_TRUE;
 }
 
-int r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t* bin) {
+struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t* bin) {
 	ut8 *buf = NULL;
-	char output[256];
+	struct r_bin_fatmach0_arch_t *ret;
 	int i;
 
-	eprintf ("Extracting files...\n");
+	if (bin->hdr.nfat_arch < 0)
+		return R_FALSE;
+	ret = malloc ((bin->hdr.nfat_arch+1) * sizeof(struct r_bin_fatmach0_arch_t));
 	for (i = 0; i < bin->hdr.nfat_arch; i++) {
-		snprintf (output, 255, "%s.%i", bin->file, i);
-		eprintf (" %s... ", output);
 		if (bin->archs[i].size == 0 || bin->archs[i].size > bin->size) {
 			eprintf ("Corrupted file\n");
-			return R_FALSE;
+			return NULL;
 		}
-		eprintf ("%u\n", bin->archs[i].size);
 		if (!(buf = malloc (bin->archs[i].size))) {
 			perror ("malloc (buf)");
-			return R_FALSE;
+			return NULL;
 		}
 		if (r_buf_read_at (bin->b, bin->archs[i].offset, buf, bin->archs[i].size) == -1) {
 			perror ("read (buf)");
 			free (buf);
-			return R_FALSE;
+			return NULL;
 		}
-		if (!r_file_dump (output, buf, bin->archs[i].size)) {
-			perror ("write (file)");
+		if (!(ret[i].b = r_buf_new ())) {
 			free (buf);
-			return R_FALSE;
+			return NULL;
+		}
+		if (!r_buf_set_bytes (ret[i].b, buf, bin->archs[i].size)) {
+			free (buf);
+			r_buf_free (ret[i].b);
+			return NULL;
 		}
 		free (buf);
+		ret[i].size = bin->archs[i].size;
+		ret[i].last = 0;
 	}
-	return bin->nfat_arch;
+	ret[i].last = 1;
+	return ret;
 }
 
 void* r_bin_fatmach0_free(struct r_bin_fatmach0_obj_t* bin) {

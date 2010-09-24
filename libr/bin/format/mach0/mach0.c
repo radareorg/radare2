@@ -367,6 +367,20 @@ struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new)(const char* file)
 	return bin;
 }
 
+struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new_buf)(struct r_buf_t *buf)
+{
+	struct MACH0_(r_bin_mach0_obj_t) *bin;
+
+	if (!(bin = malloc(sizeof(struct MACH0_(r_bin_mach0_obj_t)))))
+		return NULL;
+	memset (bin, 0, sizeof (struct MACH0_(r_bin_mach0_obj_t)));
+	bin->b = buf;
+	bin->size = buf->length;
+	if (!MACH0_(r_bin_mach0_init)(bin))
+		return MACH0_(r_bin_mach0_free)(bin);
+	return bin;
+}
+
 struct r_bin_mach0_section_t* MACH0_(r_bin_mach0_get_sections)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 {
 	struct r_bin_mach0_section_t *sections;

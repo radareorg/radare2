@@ -30,6 +30,7 @@
 #define ACTION_MAIN      0x0800
 #define ACTION_EXTRACT   0x1000
 #define ACTION_RELOCS    0x2000
+#define ACTION_LISTARCHS 0x4000
 
 static struct r_lib_t *l;
 static struct r_bin_t *bin = NULL;
@@ -44,6 +45,8 @@ static char *name = NULL;
 
 static int rabin_show_help() {
 	printf ("rabin2 [options] [file]\n"
+		" -a [arch]   Set arch\n"
+		" -B [bits]   Set bits\n"
 		" -b [addr]   Override baddr\n"
 		" -e          Entrypoint\n"
 		" -M          Main\n"
@@ -57,7 +60,6 @@ static int rabin_show_help() {
 		" -R          Relocations\n"
 		" -O [str]    Write/Extract operations (str=help for help)\n"
 		" -o [file]   Output file for write operations (a.out by default)\n"
-		" -f [format] Override file format autodetection\n"
 		" -r          radare output\n"
 		" -v          Use vaddr in radare output\n"
 		" -m [addr]   Show source line at addr\n"
@@ -67,7 +69,7 @@ static int rabin_show_help() {
 		" -x          Extract bins contained in file\n"
 		" -V          Show version information\n"
 		" -h          This help\n");
-	return R_TRUE;
+	return 1;
 }
 
 static int rabin_show_entrypoints() {
@@ -82,7 +84,7 @@ static int rabin_show_entrypoints() {
 		return R_FALSE;
 
 	if (rad) printf ("fs symbols\n");
-	else printf ("[Entrypoints]\n");
+	else eprintf ("[Entrypoints]\n");
 
 	r_list_foreach (entries, iter, entry) {
 		if (rad) {
@@ -93,7 +95,7 @@ static int rabin_show_entrypoints() {
 		i++;
 	}
 
-	if (!rad) printf ("\n%i entrypoints\n", i);
+	if (!rad) eprintf ("\n%i entrypoints\n", i);
 
 	return R_TRUE;
 }
@@ -106,7 +108,7 @@ static int rabin_show_main() {
 		return R_FALSE;
 
 	if (rad) printf ("fs symbols\n");
-	else printf ("[Main]\n");
+	else eprintf ("[Main]\n");
 
 	if (rad) {
 		printf ("f main @ 0x%08"PFMT64x"\n", va?baddr+binmain->rva:binmain->offset);
@@ -117,12 +119,8 @@ static int rabin_show_main() {
 }
 
 static int rabin_extract() {
-	int n = r_bin_extract (bin);
-	if (n != 0) {
-		if (!rad) printf ("%i bins extracted\n", n);
-		return R_TRUE;
-	}
-	return R_FALSE;
+	/* TODO */
+	return R_TRUE;
 }
 
 static int rabin_show_libs() {
@@ -134,14 +132,14 @@ static int rabin_show_libs() {
 	if ((libs = r_bin_get_libs (bin)) == NULL)
 		return R_FALSE;
 
-	printf ("[Linked libraries]\n");
+	eprintf ("[Linked libraries]\n");
 
 	r_list_foreach (libs, iter, lib) {
 		printf ("%s\n", lib);
 		i++;
 	}
 
-	if (!rad) printf ("\n%i libraries\n", i);
+	if (!rad) eprintf ("\n%i libraries\n", i);
 	
 	return R_TRUE;
 }
@@ -158,7 +156,7 @@ static int rabin_show_relocs() {
 		return R_FALSE;
 
 	if (rad) printf ("fs relocs\n");
-	else printf ("[Relocations]\n");
+	else eprintf ("[Relocations]\n");
 
 	r_list_foreach (relocs, iter, reloc) {
 		if (rad) {
@@ -168,7 +166,7 @@ static int rabin_show_relocs() {
 		i++;
 	}
 
-	if (!rad) printf ("\n%i relocations\n", i);
+	if (!rad) eprintf ("\n%i relocations\n", i);
 
 	return R_TRUE;
 }
@@ -186,7 +184,7 @@ static int rabin_show_imports() {
 		return R_FALSE;
 
 	if (!at && !rad)
-		printf ("[Imports]\n");
+		eprintf ("[Imports]\n");
 
 	r_list_foreach (imports, iter, import) {
 		if (name && strcmp (import->name, name))
@@ -215,7 +213,7 @@ static int rabin_show_imports() {
 		i++;
 	}
 
-	if (!at && !rad) printf ("\n%i imports\n", i);
+	if (!at && !rad) eprintf ("\n%i imports\n", i);
 
 	return R_TRUE;
 }
@@ -234,7 +232,7 @@ static int rabin_show_symbols() {
 
 	if (!at) {
 		if (rad) printf ("fs symbols\n");
-		else printf ("[Symbols]\n");
+		else eprintf ("[Symbols]\n");
 	}
 
 	r_list_foreach (symbols, iter, symbol) {
@@ -274,7 +272,7 @@ static int rabin_show_symbols() {
 		i++;
 	}
 
-	if (!at && !rad) printf ("\n%i symbols\n", i);
+	if (!at && !rad) eprintf ("\n%i symbols\n", i);
 
 	return R_TRUE;
 }
@@ -291,7 +289,7 @@ static int rabin_show_strings() {
 		return R_FALSE;
 
 	if (rad) printf ("fs strings\n");
-	else printf ("[strings]\n");
+	else eprintf ("[strings]\n");
 
 	r_list_foreach (strings, iter, string) {
 		section = r_bin_get_section_at (bin, string->offset, 0);
@@ -309,7 +307,7 @@ static int rabin_show_strings() {
 		i++;
 	}
 
-	if (!rad) printf ("\n%i strings\n", i);
+	if (!rad) eprintf ("\n%i strings\n", i);
 	
 	return R_TRUE;
 }
@@ -328,7 +326,7 @@ static int rabin_show_sections() {
 
 	if (!at) {
 		if (rad) printf ("fs sections\n");
-		else printf ("[Sections]\n");
+		else eprintf ("[Sections]\n");
 	}
 
 	r_list_foreach (sections, iter, section) {
@@ -368,7 +366,7 @@ static int rabin_show_sections() {
 		i++;
 	}
 
-	if (!at && !rad) printf ("\n%i sections\n", i);
+	if (!at && !rad) eprintf ("\n%i sections\n", i);
 
 	return R_TRUE;
 }
@@ -388,32 +386,41 @@ static int rabin_show_info() {
 				"e asm.dwarf=%s\n",
 				info->rclass, info->big_endian?"true":"false", info->os, info->arch,
 				info->bits, R_BIN_DBG_STRIPPED (info->dbg_info)?"false":"true");
-	} else printf ("[File info]\n"
-				   "File=%s\n"
-				   "Type=%s\n"
-				   "Class=%s\n"
-				   "Arch=%s %i\n"
-				   "Machine=%s\n"
-				   "OS=%s\n"
-				   "Subsystem=%s\n"
-				   "Big endian=%s\n"
-				   "Stripped=%s\n"
-				   "Static=%s\n"
-				   "Line_nums=%s\n"
-				   "Local_syms=%s\n"
-				   "Relocs=%s\n"
-				   "RPath=%s\n",
-				   info->file, info->type, info->bclass,
-				   info->arch, info->bits, info->machine, info->os, 
-				   info->subsystem, info->big_endian?"True":"False",
-				   R_BIN_DBG_STRIPPED (info->dbg_info)?"True":"False",
-				   R_BIN_DBG_STATIC (info->dbg_info)?"True":"False",
-				   R_BIN_DBG_LINENUMS (info->dbg_info)?"True":"False",
-				   R_BIN_DBG_SYMS (info->dbg_info)?"True":"False",
-				   R_BIN_DBG_RELOCS (info->dbg_info)?"True":"False",
-				   info->rpath);
+	} else {
+		eprintf ("[File info]\n");
+		printf ("File=%s\n"
+				"Type=%s\n"
+				"Class=%s\n"
+				"Arch=%s %i\n"
+				"Machine=%s\n"
+				"OS=%s\n"
+				"Subsystem=%s\n"
+				"Big endian=%s\n"
+				"Stripped=%s\n"
+				"Static=%s\n"
+				"Line_nums=%s\n"
+				"Local_syms=%s\n"
+				"Relocs=%s\n"
+				"RPath=%s\n",
+				info->file, info->type, info->bclass,
+				info->arch, info->bits, info->machine, info->os, 
+				info->subsystem, info->big_endian?"True":"False",
+				R_BIN_DBG_STRIPPED (info->dbg_info)?"True":"False",
+				R_BIN_DBG_STATIC (info->dbg_info)?"True":"False",
+				R_BIN_DBG_LINENUMS (info->dbg_info)?"True":"False",
+				R_BIN_DBG_SYMS (info->dbg_info)?"True":"False",
+				R_BIN_DBG_RELOCS (info->dbg_info)?"True":"False",
+				info->rpath);
+	}
 	
 	return R_TRUE;
+}
+
+static void rabin_list_archs() {
+	int i;
+
+	for (i=0; i<bin->narch; i++)
+		printf ("%-5s %i\n", bin->arch[i].info->arch, bin->arch[i].info->bits);
 }
 
 static int rabin_show_fields() {
@@ -429,7 +436,7 @@ static int rabin_show_fields() {
 		return R_FALSE;
 
 	if (rad) printf ("fs header\n");
-	else printf ("[Header fields]\n");
+	else eprintf ("[Header fields]\n");
 
 	r_list_foreach (fields, iter, field) {
 		if (rad) {
@@ -443,7 +450,7 @@ static int rabin_show_fields() {
 		i++;
 	}
 
-	if (!rad) printf ("\n%i fields\n", i);
+	if (!rad) eprintf ("\n%i fields\n", i);
 
 	return R_TRUE;
 }
@@ -468,7 +475,7 @@ static int rabin_dump_symbols(int len) {
 
 		if (!(buf = malloc (len)) || !(ret = malloc(len*2+1)))
 			return R_FALSE;
-		r_buf_read_at (bin->buf, symbol->offset, buf, len);
+		r_buf_read_at (bin->curarch->buf, symbol->offset, buf, len);
 		r_hex_bin2str (buf, len, ret);
 		printf ("%s %s\n", symbol->name, ret);
 		free (buf);
@@ -493,7 +500,7 @@ static int rabin_dump_sections(char *scnname) {
 			if (!(buf = malloc (section->size)) ||
 					!(ret = malloc (section->size*2+1)))
 				return R_FALSE;
-			r_buf_read_at (bin->buf, section->offset, buf, section->size);
+			r_buf_read_at (bin->curarch->buf, section->offset, buf, section->size);
 			r_hex_bin2str (buf, section->size, ret);
 			printf ("%s\n", ret);
 			free (buf);
@@ -552,7 +559,7 @@ static int rabin_do_operation(const char *op) {
 		break;
 	default:
 	_rabin_do_operation_error:
-		printf ("Unknown operation. use -O help\n");
+		eprintf ("Unknown operation. use -O help\n");
 		return R_FALSE;
 	}
 
@@ -583,17 +590,30 @@ static int __lib_bin_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
 	return R_TRUE;
 }
 
+/* binxtr callback */
+static int __lib_bin_xtr_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
+	struct r_bin_xtr_plugin_t *hand = (struct r_bin_xtr_plugin_t *)data;
+	//printf(" * Added (dis)assembly plugin\n");
+	r_bin_xtr_add (bin, hand);
+	return R_TRUE;
+}
+
+static int __lib_bin_xtr_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
+	return R_TRUE;
+}
+
 int main(int argc, char **argv)
 {
-	int c;
+	int c, bits = 32;
 	int action = ACTION_UNK;
-	const char *format = NULL, *op = NULL;
-	const char *plugin_name = NULL;
+	const char *op = NULL, *arch = NULL;
 
 	bin = r_bin_new ();
 	l = r_lib_new ("radare_plugin");
 	r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
 					   &__lib_bin_cb, &__lib_bin_dt, NULL);
+	r_lib_add_handler (l, R_LIB_TYPE_BIN_XTR, "bin xtr plugins",
+					   &__lib_bin_xtr_cb, &__lib_bin_xtr_dt, NULL);
 
 	{ /* load plugins everywhere */
 		char *homeplugindir = r_str_home (".radare/plugins");
@@ -602,11 +622,21 @@ int main(int argc, char **argv)
 		r_lib_opendir (l, LIBDIR"/radare2/");
 	}
 
-	while ((c = getopt (argc, argv, "b:Mm:n:@:VisSzIHelRwO:o:f:rvLhx")) != -1) {
+	while ((c = getopt (argc, argv, "Aa:B:b:Mm:n:@:VisSzIHelRwO:o:rvLhx")) != -1) {
 		switch(c) {
+		case 'A':
+			action |= ACTION_LISTARCHS;
+			break;
+		case 'a':
+			arch = optarg;
+			break;
+		case 'B':
+			bits = r_num_math (NULL, optarg);
+			break;
 		case 'm':
 			at = r_num_math (NULL, optarg);
 			action |= ACTION_SRCLINE;
+			break;
 		case 'i':
 			action |= ACTION_IMPORTS;
 			break;
@@ -650,9 +680,6 @@ int main(int argc, char **argv)
 		case 'o':
 			output = optarg;
 			break;
-		case 'f':
-			format = optarg;
-			break;
 		case 'r':
 			rad = R_TRUE;
 			break;
@@ -661,7 +688,7 @@ int main(int argc, char **argv)
 			break;
 		case 'L':
 			r_bin_list (bin);
-			exit(1);
+			return 1;
 		case 'b':
 			gbaddr = r_num_math (NULL, optarg);
 			break;
@@ -684,13 +711,15 @@ int main(int argc, char **argv)
 	if (action == ACTION_HELP || action == ACTION_UNK || file == NULL)
 		return rabin_show_help ();
 
-	if (format)
-		plugin_name = format;
-
-	if (!r_bin_load (bin, file, plugin_name) &&
-		!r_bin_load (bin, file, "dummy")) {
+	if (!r_bin_load (bin, file, R_FALSE) &&
+		!r_bin_load (bin, file, R_TRUE)) {
 		eprintf ("r_bin: Cannot open '%s'\n", file);
-		return R_FALSE;
+		return 1;
+	}
+	if (action&ACTION_LISTARCHS || (arch && !r_bin_set_arch (bin, arch, bits))) {
+		rabin_list_archs ();
+		r_bin_free (bin);
+		return 1;
 	}
 
 	if (action&ACTION_SECTIONS)
@@ -722,5 +751,5 @@ int main(int argc, char **argv)
 
 	r_bin_free (bin);
 
-	return R_FALSE;
+	return 0;
 }

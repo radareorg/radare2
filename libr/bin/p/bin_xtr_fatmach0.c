@@ -33,46 +33,37 @@ static int destroy(RBin *bin) {
 	return R_TRUE;
 }
 
-static int load(RBin *bin) {
-	if(!(bin->bin_obj = r_bin_fatmach0_new(bin->file)))
-		return R_FALSE;
-	bin->size = ((struct r_bin_fatmach0_obj_t*)(bin->bin_obj))->size;
-	bin->buf = ((struct r_bin_fatmach0_obj_t*)(bin->bin_obj))->b;
-	eprintf ("Warning: fat mach-o, use rabin2 -x to extract the bins\n");
-	return R_TRUE;
-}
-
 static int extract(RBin *bin) {
-	return r_bin_fatmach0_extract ((struct r_bin_fatmach0_obj_t*)bin->bin_obj);
+	struct r_bin_fatmach0_arch_t *archs;
+	int i;
+
+	if(!(bin->bin_obj = r_bin_fatmach0_new(bin->file)))
+		return 0;
+	archs = r_bin_fatmach0_extract ((struct r_bin_fatmach0_obj_t*)bin->bin_obj);
+	if (!archs)
+		return 0;
+	for (i = 0; !archs[i].last; i++) {
+		bin->arch[i].file = bin->file;
+		bin->arch[i].buf = archs[i].b;
+		bin->arch[i].size = archs[i].size;
+	}
+	free (archs);
+	return i;
 }
 
-struct r_bin_plugin_t r_bin_plugin_fatmach0 = {
+struct r_bin_xtr_plugin_t r_bin_xtr_plugin_fatmach0 = {
 	.name = "fatmach0",
-	.desc = "fat mach0 bin plugin",
+	.desc = "fat mach0 bin extractor plugin",
 	.init = NULL,
 	.fini = NULL,
-	.load = &load,
+	.check = &check,
 	.extract = &extract,
 	.destroy = &destroy,
-	.check = &check,
-	.baddr = NULL,
-	.main = NULL,
-	.entries = NULL,
-	.sections = NULL,
-	.symbols = NULL,
-	.imports = NULL,
-	.strings = NULL,
-	.info = NULL,
-	.fields = NULL,
-	.libs = NULL,
-	.relocs = NULL,
-	.meta = NULL,
-	.write = NULL,
 };
 
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
-	.data = &r_bin_plugin_fatmach0
+	.type = R_LIB_TYPE_BIN_XTR,
+	.data = &r_bin_xtr_plugin_fatmach0
 };
 #endif

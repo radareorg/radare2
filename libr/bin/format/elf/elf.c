@@ -818,3 +818,16 @@ struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file) {
 		return Elf_(r_bin_elf_free) (bin);
 	return bin;
 }
+
+struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new_buf)(struct r_buf_t *buf) {
+	struct Elf_(r_bin_elf_obj_t) *bin;
+
+	if (!(bin = malloc (sizeof (struct Elf_(r_bin_elf_obj_t)))))
+		return NULL;
+	memset (bin, 0, sizeof (struct Elf_(r_bin_elf_obj_t)));
+	bin->b = buf;
+	bin->size = buf->length;
+	if (!Elf_(r_bin_elf_init) (bin))
+		return Elf_(r_bin_elf_free) (bin);
+	return bin;
+}

@@ -6,24 +6,16 @@
 #include <r_bin.h>
 #include "java/java.h"
 
-static int load(RBin *bin) {
-	int ret = R_FALSE;
-	ut8* buf;
-	if ((buf = (ut8*)r_file_slurp (bin->file, &bin->size))) {
-		bin->buf = r_buf_new ();
-		if (r_buf_set_bytes (bin->buf, buf, bin->size))
-			ret = R_TRUE;
-		free (buf);
-	}
-	return ret;
-}
-
-static int destroy(RBin *bin) {
-	r_buf_free(bin->buf);
+static int load(RBinArch *arch) {
 	return R_TRUE;
 }
 
-static ut64 baddr(RBin *bin) {
+static int destroy(RBinArch *arch) {
+	r_buf_free (arch->buf);
+	return R_TRUE;
+}
+
+static ut64 baddr(RBinArch *arch) {
 	return 0LL;
 }
 
@@ -33,7 +25,6 @@ struct r_bin_plugin_t r_bin_plugin_dummy = {
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
-	.extract = NULL,
 	.destroy = &destroy,
 	.check = NULL,
 	.baddr = &baddr,

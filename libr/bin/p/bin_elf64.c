@@ -3,17 +3,10 @@
 #define R_BIN_ELF64 1
 #include "bin_elf.c"
 
-static int check(RBin *bin) {
-	ut8 *buf;
-	int n, ret = R_FALSE;
-
-	if ((buf = (ut8*)r_file_slurp_range (bin->file, 0, 5, &n))) {
-		/* buf[EI_CLASS] == ELFCLASS64 */
-		if (n==5 && !memcmp (buf, "\x7F\x45\x4c\x46\x02", 5))
-			ret = R_TRUE;
-		free (buf);
-	}
-	return ret;
+static int check(RBinArch *arch) {
+	if (!memcmp (arch->buf->buf, "\x7F\x45\x4c\x46\x02", 5))
+		return R_TRUE;
+	return R_FALSE;
 }
 
 extern struct r_bin_meta_t r_bin_meta_elf64;
@@ -25,7 +18,6 @@ struct r_bin_plugin_t r_bin_plugin_elf64 = {
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
-	.extract = NULL,
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,

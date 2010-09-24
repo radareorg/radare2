@@ -15,7 +15,13 @@ struct r_bin_fatmach0_obj_t {
 	struct r_buf_t* b;
 };
 
-int r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t* bin);
+struct r_bin_fatmach0_arch_t {
+	int size;
+	struct r_buf_t *b; 
+	int last;
+};
+
+struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t* bin);
 void* r_bin_fatmach0_free(struct r_bin_fatmach0_obj_t* bin);
 struct r_bin_fatmach0_obj_t* r_bin_fatmach0_new(const char* file);
 

@@ -26,6 +26,7 @@ Questions
 
 TODO nibble
 -----------
+* implement rabin2 -x
 * Cx/CX are not displayed in disasm as they should.. (C! must die)
 * Better way to fix got_offset issue?
 * use r_anal_value everywhere in r_anal

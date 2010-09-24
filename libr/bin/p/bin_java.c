@@ -6,20 +6,18 @@
 #include <r_bin.h>
 #include "java/java.h"
 
-static int load(RBin *bin) {
-	if(!(bin->bin_obj = r_bin_java_new(bin->file)))
+static int load(RBinArch *arch) {
+	if(!(arch->bin_obj = r_bin_java_new_buf(arch->buf)))
 		return R_FALSE;
-	bin->size = ((struct r_bin_java_obj_t*)(bin->bin_obj))->size;
-	bin->buf = ((struct r_bin_java_obj_t*)(bin->bin_obj))->b;
 	return R_TRUE;
 }
 
-static int destroy(RBin *bin) {
-	r_bin_java_free ((struct r_bin_java_obj_t*)bin->bin_obj);
+static int destroy(RBinArch *arch) {
+	r_bin_java_free ((struct r_bin_java_obj_t*)arch->bin_obj);
 	return R_TRUE;
 }
 
-static RList* entries(RBin *bin) {
+static RList* entries(RBinArch *arch) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 
@@ -29,16 +27,16 @@ static RList* entries(RBin *bin) {
 	if (!(ptr = R_NEW (RBinAddr)))
 		return ret;
 	memset (ptr, '\0', sizeof (RBinAddr));
-	ptr->offset = ptr->rva = r_bin_java_get_entrypoint (bin->bin_obj);
+	ptr->offset = ptr->rva = r_bin_java_get_entrypoint (arch->bin_obj);
 	r_list_append (ret, ptr);
 	return ret;
 }
 
-static ut64 baddr(RBin *bin) {
+static ut64 baddr(RBinArch *arch) {
 	return 0;
 }
 
-static RList* symbols(RBin *bin) {
+static RList* symbols(RBinArch *arch) {
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
 	struct r_bin_java_sym_t *symbols = NULL;
@@ -47,7 +45,7 @@ static RList* symbols(RBin *bin) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(symbols = r_bin_java_get_symbols ((struct r_bin_java_obj_t*)bin->bin_obj)))
+	if (!(symbols = r_bin_java_get_symbols ((struct r_bin_java_obj_t*)arch->bin_obj)))
 		return ret;
 	for (i = 0; !symbols[i].last; i++) {
 		if (!(ptr = R_NEW (RBinSymbol)))
@@ -65,7 +63,7 @@ static RList* symbols(RBin *bin) {
 	return ret;
 }
 
-static RList* strings(RBin *bin) {
+static RList* strings(RBinArch *arch) {
 	RList *ret = NULL;
 	RBinString *ptr = NULL;
 	struct r_bin_java_str_t *strings = NULL;
@@ -74,7 +72,7 @@ static RList* strings(RBin *bin) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(strings = r_bin_java_get_strings((struct r_bin_java_obj_t*)bin->bin_obj)))
+	if (!(strings = r_bin_java_get_strings((struct r_bin_java_obj_t*)arch->bin_obj)))
 		return ret;
 	for (i = 0; !strings[i].last; i++) {
 		if (!(ptr = R_NEW (RBinString)))
@@ -88,17 +86,17 @@ static RList* strings(RBin *bin) {
 	return ret;
 }
 
-static RBinInfo* info(RBin *bin) {
+static RBinInfo* info(RBinArch *arch) {
 	RBinInfo *ret = NULL;
 	char *version;
 
 	if (!(ret = R_NEW (RBinInfo)))
 		return NULL;
 	memset (ret, '\0', sizeof (RBinInfo));
-	strncpy (ret->file, bin->file, R_BIN_SIZEOF_STRINGS);
+	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->type, "JAVA CLASS", R_BIN_SIZEOF_STRINGS);
-	version = r_bin_java_get_version (bin->bin_obj);
+	version = r_bin_java_get_version (arch->bin_obj);
 	strncpy (ret->bclass, version, R_BIN_SIZEOF_STRINGS);
 	free (version);
 	strncpy (ret->rclass, "class", R_BIN_SIZEOF_STRINGS);
@@ -112,25 +110,21 @@ static RBinInfo* info(RBin *bin) {
 	return ret;
 }
 
-static int check(RBin *bin) {
-	ut8 *filebuf, buf[4];
-	int off, filesize, ret = R_FALSE;
+static int check(RBinArch *arch) {
+	int off, ret = R_FALSE;
 
-	if ((filebuf = (ut8*)r_file_slurp (bin->file, &filesize))) {
-		if (!memcmp (filebuf, "\xca\xfe\xba\xbe", 4)) {
-			ret = R_TRUE;
-			memcpy (&off, filebuf+4*sizeof(int), sizeof(int));
-			r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
-			if (off > 0 && off < filesize) {
-				memcpy (buf, filebuf+off, 4);
-				if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
-					!memcmp (buf, "\xfe\xed\xfa\xce", 4) ||
-					!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
-					!memcmp (buf, "\xcf\xfa\xed\xfe", 4))
-					ret = R_FALSE;
-			}
+	if (!memcmp (arch->buf->buf, "\xca\xfe\xba\xbe", 4)) {
+		ret = R_TRUE;
+		memcpy (&off, arch->buf->buf+4*sizeof(int), sizeof(int));
+		r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
+		if (off > 0 && off < arch->buf->length) {
+			memcpy (arch->buf->buf, arch->buf->buf+off, 4);
+			if (!memcmp (arch->buf->buf, "\xce\xfa\xed\xfe", 4) ||
+				!memcmp (arch->buf->buf, "\xfe\xed\xfa\xce", 4) ||
+				!memcmp (arch->buf->buf, "\xfe\xed\xfa\xcf", 4) ||
+				!memcmp (arch->buf->buf, "\xcf\xfa\xed\xfe", 4))
+				ret = R_FALSE;
 		}
-		free (filebuf);
 	}
 	return ret;
 }
@@ -141,7 +135,6 @@ struct r_bin_plugin_t r_bin_plugin_java = {
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
-	.extract = NULL,
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,

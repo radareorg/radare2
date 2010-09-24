@@ -3,19 +3,15 @@
 #define R_BIN_PE64 1
 #include "bin_pe.c"
 
-static int check(RBin *bin) {
-	ut8 *buf;
-	int n, idx, ret = R_FALSE;
+static int check(RBinArch *arch) {
+	int idx, ret = R_FALSE;
 
-	if ((buf = (ut8*)r_file_slurp_range (bin->file, 0, 0xffff+0x20, &n))) {
-		idx = buf[0x3c]|(buf[0x3d]<<8);
-		if (n>=idx+0x20)
-		if (!memcmp (buf, "\x4d\x5a", 2) &&
-			!memcmp (buf+idx, "\x50\x45", 2) && 
-			!memcmp (buf+idx+0x18, "\x0b\x02", 2))
+	idx = arch->buf->buf[0x3c]|(arch->buf->buf[0x3d]<<8);
+	if (arch->buf->length>=idx+0x20)
+		if (!memcmp (arch->buf->buf, "\x4d\x5a", 2) &&
+			!memcmp (arch->buf->buf+idx, "\x50\x45", 2) && 
+			!memcmp (arch->buf->buf+idx+0x18, "\x0b\x02", 2))
 			ret = R_TRUE;
-		free (buf);
-	}
 	return ret;
 }
 
@@ -25,7 +21,6 @@ struct r_bin_plugin_t r_bin_plugin_pe64 = {
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
-	.extract = NULL,
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
