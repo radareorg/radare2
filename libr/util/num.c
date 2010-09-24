@@ -158,7 +158,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 	memcpy (s, str, len);
 	for (; *s==' '; s++);
 	p = s;
-	
+
 	do {
 		group = strchr (p, '(');
 		if (group) {
@@ -207,4 +207,17 @@ R_API double r_num_get_float(struct r_num_t *num, const char *str) {
 	double d = 0.0f;
 	sscanf (str, "%lf", &d);
 	return d;
+}
+
+R_API int r_num_to_bits (char *out, ut64 num) {
+	int size, i;
+
+	if (num&0xff000000) size = 64;
+	else if (num&0xff0000) size = 32;
+	else if (num&0xff00) size = 16;
+	else if (num&0xff) size = 8;
+	for(i=0;i<size;i++)
+		out[size-1-i]=(num>>i&1)?'1':'0';
+	out[size]='\0'; //Maybe not nesesary?
+	return size;
 }
