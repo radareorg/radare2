@@ -118,12 +118,25 @@ static int rabin_show_main() {
 	return R_TRUE;
 }
 
-static int rabin_extract() {
-	if (!r_file_dump (output, bin->curarch->buf->buf, bin->curarch->size)) {
-		eprintf ("Error extracting %s_%i\n",
-				bin->curarch->info->arch, bin->curarch->info->bits);
-		return R_FALSE;
-	} else eprintf ("%s created\n", output);
+static int rabin_extract(int all) {
+	char out[512];
+	int i;
+	if (all) {
+		for (i=0; i<bin->narch; i++) {
+			snprintf (out, sizeof (out), "%s.%s_%i", output,
+					bin->arch[i].info->arch, bin->arch[i].info->bits);
+			if (!r_file_dump (out, bin->arch[i].buf->buf, bin->arch[i].size)) {
+				eprintf ("Error extracting %s\n", out);
+				return R_FALSE;
+			} else eprintf ("%s created\n", out);
+		}
+	} else {
+		if (!r_file_dump (output, bin->curarch->buf->buf, bin->curarch->size)) {
+			eprintf ("Error extracting %s_%i\n",
+					bin->curarch->info->arch, bin->curarch->info->bits);
+			return R_FALSE;
+		} else eprintf ("%s created\n", output);
+	}
 	return R_TRUE;
 }
 
@@ -424,7 +437,9 @@ static void rabin_list_archs() {
 	int i;
 
 	for (i=0; i<bin->narch; i++)
-		printf ("%s_%i\n", bin->arch[i].info->arch, bin->arch[i].info->bits);
+		printf ("%s_%i   %s (%s endian)\n", bin->arch[i].info->arch,
+				bin->arch[i].info->bits, bin->arch[i].info->machine,
+				bin->arch[i].info->big_endian?"big":"litle");
 }
 
 static int rabin_show_fields() {
@@ -759,7 +774,7 @@ int main(int argc, char **argv)
 	if (action&ACTION_SRCLINE)
 		rabin_show_srcline(at);
 	if (action&ACTION_EXTRACT)
-		rabin_extract();
+		rabin_extract(arch==NULL);
 	if (op != NULL && action&ACTION_OPERATION)
 		rabin_do_operation (op);
 
