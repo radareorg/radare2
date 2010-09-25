@@ -26,13 +26,11 @@ Questions
 
 TODO nibble
 -----------
-* implement rabin2 -x
 * Cx/CX are not displayed in disasm as they should.. (C! must die)
 * Better way to fix got_offset issue?
 * use r_anal_value everywhere in r_anal
 * make x86_x86im the default backend for x86 analysis
 * implement analysis for more instructions in x86_x86im
-* native fat bins support (push uncommited changes)
 * diff code analysis
   - diff two programs
      1st level:
