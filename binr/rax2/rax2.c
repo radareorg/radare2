@@ -2,13 +2,14 @@
 
 #include <r_util.h>
 
-int flags = 0;
+static int flags = 0;
 
-int format_output (char mode, ut64 n) {
+static int format_output (char mode, ut64 n) {
 	char *str = (char*) &n;
 
-	if (flags & 2) r_mem_copyendian ((ut8*) str, (ut8*) str, 4, 0);
-	switch (mode){
+	if (flags & 2)
+		r_mem_copyendian ((ut8*) str, (ut8*) str, 4, 0);
+	switch (mode) {
 	case 'I':
 		printf ("%"PFMT64d"\n", n);
 		break;
@@ -19,14 +20,12 @@ int format_output (char mode, ut64 n) {
 		printf ("%ff\n", (float)(ut32)n);
 		break;
 	case 'B':
-		if (!n)
-			printf ("0b\n");
-		else {
-			str = malloc (sizeof(ut64));
+		if (n) {
+			str = malloc (sizeof (ut64));
 			r_num_to_bits (str, n);
 			printf ("%sb\n", str);
 			free (str);
-		}
+		} else printf ("0b\n");
 		break;
 	case 'O':
 		printf ("%"PFMT64o"\n", n);
@@ -36,12 +35,11 @@ int format_output (char mode, ut64 n) {
 }
 
 static int rax (char *str) {
-	ut64 n;
 	float f;
 	char *buf, out_mode = '0';
 
 	if (flags & 1) {
-		n = (strlen (str)) >> 4;
+		ut64 n = (strlen (str)) >> 4;
 		buf = malloc (sizeof (char) * n);
 		memset (buf, '\0', n);
 		n = r_hex_str2bin (str, (ut8*)buf);
@@ -53,8 +51,9 @@ static int rax (char *str) {
 		flags ^= 2;
 		return R_TRUE;
 	}
-	if (*str=='q') return R_FALSE;
-	else if (*str=='h' || *str=='?') {
+	if (*str=='q')
+		return R_FALSE;
+	if (*str=='h' || *str=='?') {
 		printf(
 		" int   ->  hex           ;  rax 10\n"
 		" hex   ->  int           ;  rax 0xa\n"
@@ -70,26 +69,26 @@ static int rax (char *str) {
 		" -s    swap hex to bin   ;  rax -s 43 4a 50\n"
 		" -     read data from stdin until eof\n");
 		return R_TRUE;
-	} else if (str[0]=='0' && str[1]=='x') {
+	}
+	if (str[0]=='0' && str[1]=='x') {
 		out_mode='I';
 	} else if (str[0]=='F' && str[1]=='x') {
 		out_mode = 'F';
-		str[0] = '0';
+		*str = '0';
 	} else if (str[0]=='B' && str[1]=='x') {
 		out_mode = 'B';
-		str[0] = '0';
+		*str = '0';
 	} else if (str[0]=='O' && str[1]=='x') {
 		out_mode = 'O';
-		str[0] = '0';
+		*str = '0';
 	//TODO: Move print into format_output
 	} else if (str[strlen(str)-1]=='f') {
 		unsigned char *p = (unsigned char *)&f;
-		sscanf(str, "%f", &f);
-		printf("Fx%02x%02x%02x%02x\n", p[0], p[1], p[2], p[3]);
+		sscanf (str, "%f", &f);
+		printf ("Fx%02x%02x%02x%02x\n", p[0], p[1], p[2], p[3]);
 		return R_TRUE;
 	}
-	n = r_num_math (NULL, str);
-	return format_output (out_mode, n);
+	return format_output (out_mode, r_num_math (NULL, str));
 }
 
 int use_stdin () {
@@ -114,8 +113,9 @@ int main (int argc, char **argv) {
 	for (i=1;i<argc;i++) {
 		if (argv[i][0]=='-') {
 			if (argv[i][1]=='\0') {
-				if (i==argc-1) return use_stdin ();
-				else break;
+				if (i==argc-1)
+					return use_stdin ();
+				break;
 			}
 			switch (argv[i][1]) {
 			case 's':

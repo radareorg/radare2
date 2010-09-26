@@ -1,5 +1,6 @@
 #!/usr/bin/python
-from r_cons import RCons, Color_RED, Color_GREEN, Color_RESET, RCons_is_html
+from r2.r_cons import RCons, Color_RED, Color_GREEN, Color_RESET
+#, RCons_is_html
 
 # Get the singleton instance
 con = RCons()
@@ -18,6 +19,8 @@ con.flush()
 con.any_key()
 con.clear()
 
-print "IS HTML %d"%RCons_is_html
+print dir(RCons.is_html)
+print RCons.is_html.getter(0)
+print "IS HTML %d"%int(RCons.is_html)
 con.printf(Color_RED + "Hello "+Color_GREEN + "World\n" + Color_RESET)
 con.flush();

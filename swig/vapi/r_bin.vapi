@@ -9,7 +9,7 @@ namespace Radare {
 
 		public RBin();
 
-		public int load(string file, string? plugin_name = null);
+		public int load(string file, int dummy);
 		public int list();
 		public uint64 get_baddr();
 		public RBin.Addr get_main();
