@@ -156,6 +156,7 @@ R_API int r_core_anal_fcn(struct r_core_t *core, ut64 at, ut64 from, int depth);
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad);
 R_API int r_core_anal_graph(struct r_core_t *core, ut64 addr, int opts);
 R_API int r_core_anal_graph_fcn(struct r_core_t *core, char *input, int opts);
+R_API int r_core_anal_ref_list(struct r_core_t *core, int rad);
 
 /* asm.c */
 R_API char* r_core_asm_search(RCore *core, const char *input, ut64 from, ut64 to);

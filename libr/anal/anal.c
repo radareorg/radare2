@@ -28,6 +28,7 @@ R_API RAnal *r_anal_new() {
 		anal->reg = NULL;
 		anal->bbs = r_anal_bb_list_new ();
 		anal->fcns = r_anal_fcn_list_new ();
+		anal->refs = r_anal_ref_list_new ();
 		anal->vartypes = r_anal_var_type_list_new ();
 		r_anal_set_bits (anal, 32);
 		r_anal_set_big_endian (anal, R_FALSE);

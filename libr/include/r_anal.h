@@ -328,6 +328,7 @@ R_API RList *r_anal_ref_list_new();
 R_API void r_anal_ref_free(void *ref);
 R_API int r_anal_ref_add(RAnal *anal, ut64 addr, ut64 at, int type);
 R_API int r_anal_ref_del(RAnal *anal, ut64 at);
+R_API RList *r_anal_xref_get(RAnal *anal, ut64 addr);
 
 /* var.c */
 R_API RAnalVar *r_anal_var_new();

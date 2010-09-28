@@ -33,7 +33,6 @@ TODO nibble
   - implement analysis for more instructions
 * r_bin
   - Better way to fix got_offset issue?
-* Cx/CX are not displayed in disasm as they should.. (C! must die)
 * diff code analysis
   - diff two programs
      1st level:

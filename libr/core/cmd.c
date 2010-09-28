@@ -137,7 +137,22 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			continue;
 		}
 		r_anal_aop (core->anal, &analop, at, buf+idx, (int)(len-idx));
-		// TODO: Show xrefs in both sides..
+		// Show xrefs
+		{
+			RList *xrefs;
+			RAnalRef *refi;
+			RListIter *iter;
+			RAnalFcn *f;
+			if ((xrefs = r_anal_xref_get (core->anal, at))) {
+				r_list_foreach (xrefs, iter, refi) {
+					f = r_anal_fcn_find (core->anal, refi->addr);
+					r_cons_printf (Color_TURQOISE"; %s XREF 0x%"PFMT64x" (%s)"Color_RESET"\n",
+							refi->type==R_ANAL_REF_TYPE_CODE?"CODE":"DATA", refi->addr,
+							f?f->name:"unk");
+				}
+				r_list_destroy (xrefs);
+			}
+		}
 		if (adistrick)
 			middle = r_anal_reflines_middle (core->anal,
 					core->reflines, at, analop.length);
@@ -2205,8 +2220,34 @@ static int cmd_anal(void *data, const char *input) {
 			" arl            ; List refs\n"
 			" ar*            ; Output radare commands\n");
 			break;
+		case '-':
+			r_anal_ref_del (core->anal, r_num_math (core->num, input+2));
+			break;
+		case 'l':
+			r_core_anal_ref_list (core, R_FALSE);
+			break;
+		case '*':
+			r_core_anal_ref_list (core, R_TRUE);
+			break;
 		default:
-			eprintf ("TODO refs\n");
+			{
+			char *ptr = strdup (r_str_trim_head ((char*)input+2));
+			int n = r_str_word_set0 (ptr);
+			ut64 at = core->offset;
+			ut64 addr = -1LL;
+			switch (n) {
+			case 2: // get at
+				at = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+			case 1: // get addr
+				addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
+				break;
+			default:
+				return R_FALSE;
+			}
+			r_anal_ref_add (core->anal, addr, at,
+					input[1]=='d'?R_ANAL_REF_TYPE_DATA:R_ANAL_REF_TYPE_CODE);
+			free (ptr);
+			}
 		}
 		break;
 	default:
