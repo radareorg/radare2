@@ -399,10 +399,12 @@ static int rabin_show_info() {
 				"e cfg.bigendian=%s\n"
 				"e asm.os=%s\n"
 				"e asm.arch=%s\n"
+				"e anal.plugin=%s\n"
 				"e asm.bits=%i\n"
 				"e asm.dwarf=%s\n",
-				info->rclass, info->big_endian?"true":"false", info->os, info->arch,
-				info->bits, R_BIN_DBG_STRIPPED (info->dbg_info)?"false":"true");
+				info->rclass, info->big_endian?"true":"false", info->os,
+				info->arch, info->arch, info->bits,
+				R_BIN_DBG_STRIPPED (info->dbg_info)?"false":"true");
 	} else {
 		eprintf ("[File info]\n");
 		printf ("File=%s\n"

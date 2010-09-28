@@ -129,8 +129,6 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		}
 		// TODO : line analysis must respect data types! shouldnt be interpreted as code
 		line = r_anal_reflines_str (core->anal, core->reflines, at, linesopts);
-		// TODO: implement ranged meta find (if not at the begging of function..
- 		mi = r_meta_find (core->meta, at, R_META_ANY, R_META_WHERE_HERE);
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx);
 		if (ret<1) {
 			ret = 1;
@@ -139,24 +137,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			continue;
 		}
 		r_anal_aop (core->anal, &analop, at, buf+idx, (int)(len-idx));
-	
 		// TODO: Show xrefs in both sides..
-		if (mi && mi->from == at) {
-			RListIter *iter;
-			RMetaItem *x;
-			r_list_foreach (mi->xrefs, iter, x) {
-				switch (x->type) {
-				case 'c':
-				case R_META_XREF_CODE:
-					r_cons_printf ("Cx # code xref from 0x%08"PFMT64x"\n", mi->to);
-					break;
-				case 'd':
-				case R_META_XREF_DATA:
-					r_cons_printf ("CX # data xref from 0x%08"PFMT64x"\n", mi->to);
-					break;
-				}
-			}
-		}
 		if (adistrick)
 			middle = r_anal_reflines_middle (core->anal,
 					core->reflines, at, analop.length);
@@ -235,6 +216,8 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			if (analop.type == R_ANAL_OP_TYPE_RET)
 				stackptr = 0;
 		}
+		// TODO: implement ranged meta find (if not at the begging of function..
+ 		mi = r_meta_find (core->meta, at, R_META_ANY, R_META_WHERE_HERE);
 		if (mi)
 		switch (mi->type) {
 		case R_META_STRING:
@@ -1837,12 +1820,6 @@ static int cmd_anal(void *data, const char *input) {
 	}
 	
 	switch (input[0]) {
-	case 'h':
-		if (input[1]) {
-			if (!r_anal_use (core->anal, input+2))
-				eprintf ("Cannot use '%s' anal plugin.\n", input+2);
-		} else r_anal_list (core->anal);
-		break;
 	case 'o':
 		{
 			int ret, idx; 
@@ -2021,13 +1998,6 @@ static int cmd_anal(void *data, const char *input) {
 		case 'l':
 			r_core_anal_graph (core, r_num_math (core->num, input+2), R_CORE_ANAL_GRAPHLINES);
 			break;
-		case 'f':
-			{
-			char *fname = r_str_word_get_first (input+(input[2]=='l'?3:2));
-			r_core_anal_graph_fcn (core, fname, input[2]=='l');
-			free (fname);
-			}
-			break;
 		case 'a':
 			r_core_anal_graph (core, r_num_math (core->num, input+2), 0);
 			break;
@@ -2042,7 +2012,6 @@ static int cmd_anal(void *data, const char *input) {
 			" aga [addr]      ; Idem, but only addresses\n"
 			" agc [addr]      ; Output graphviz call graph of function\n"
 			" agl [fcn name]  ; Output graphviz code using meta-data\n"
-			" agf [fcn name]  ; Output graphviz code of function\n"
 			" agd [fcn name]  ; Output graphviz code of diffed function\n"
 			" agfl [fcn name] ; Output graphviz code of function using meta-data\n");
 			break;
@@ -2225,17 +2194,32 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		}
 		break;
+	case 'r':
+		switch(input[1]) {
+		case '?':
+			r_cons_printf (
+			"Usage: ar[?d-l*]\n"
+			" ar addr [at]   ; Add code ref\n"
+			" ard addr [at]  ; Add dara ref\n"
+			" ar- [at]       ; Clean all refs (or refs from addr)\n"
+			" arl            ; List refs\n"
+			" ar*            ; Output radare commands\n");
+			break;
+		default:
+			eprintf ("TODO refs\n");
+		}
+		break;
 	default:
 		r_cons_printf (
-		"Usage: a[?hobfgtv]\n"
-		" ah [handle]     ; Use this analysis plugin handler\n" // XXX: rename to ap ?
+		"Usage: a[?obfrgtv]\n"
 		" as [num]        ; Analyze syscall using dbg.reg\n"
 		" ao [len]        ; Analyze raw bytes as Opcodes\n"
 		" ab[?+-l*]       ; Analyze Basic blocks\n"
 		" af[?+-l*]       ; Analyze Functions\n"
+		" ar[?d-l*]       ; Manage refs/xrefs\n"
 		" ag[?f]          ; Output Graphviz code\n"
 		" at[trd+-*?] [.] ; Analyze execution Traces\n"
-		" av[?] [arg]     ;analyze code with virtual machine\n");
+		" av[?] [arg]     ; Analyze code with virtual machine\n");
 		break;
 	}
 	if (tbs != core->blocksize)
@@ -2936,59 +2920,45 @@ static int cmd_meta(void *data, const char *input) {
 			}
 		} else eprintf ("Cannot find meta information at 0x%08"PFMT64x"\n", core->offset);
 		break;
-	case '!':
-		r_meta_sync (core->meta);
-		break;
 	case 'C':
 	case 'S':
 	case 's':
 	case 'd': /* data */
 	case 'm': /* struct */
-	case 'x': /* code xref */
-	case 'X': /* data xref */
 		switch (input[1]) {
 		case '-':
 			if (input[2]==' ')
 				addr = r_num_math (core->num, input+3);
-			r_meta_del (core->meta, input[0], addr, addr+1, "");
+			r_meta_del (core->meta, input[0], addr, addr+1, NULL);
 			break;
 		case '\0':
 		case '*':
 			r_meta_list (core->meta, input[0]);
 			break;
 		default: {
-			char *t, *p, fun_name[128];
+			char *t, *p, name[128];
 			int type = input[0];
 			t = strdup (input+2);
 			p = strchr (t, ' ');
 			if (p) {
 				*p = '\0';
-				strncpy (fun_name, p+1, sizeof (fun_name));
+				strncpy (name, p+1, sizeof (name));
 			} else
 			switch (type) {
-			case 'F':
-				sprintf (fun_name, "sub_%08"PFMT64x"", addr);
-				break;
 			case 's':
 				// TODO: filter \n and so on :)
-				r_core_read_at (core, addr, (ut8*)fun_name, sizeof (fun_name));
+				r_core_read_at (core, addr, (ut8*)name, sizeof (name));
 				break;
 			default:
 				{
 				RFlagItem *fi = r_flag_get_i (core->flags, addr);
-				if (fi) snprintf (fun_name, sizeof (fun_name), fi->name);
-				else sprintf (fun_name, "ptr_%08"PFMT64x"", addr);
+				if (fi) snprintf (name, sizeof (name), fi->name);
+				else sprintf (name, "ptr_%08"PFMT64x"", addr);
 				}
 			}
-			// only get abs address in Cx and CX
-			if (type == 'x' || type == 'X') {
-				if (p) {
-					addr = r_num_math (core->num, input+2);
-					addr_end = r_num_math (core->num, p+1);
-				} else addr_end = r_num_math (core->num, input+2);
-			} else addr_end = addr + atoi (input+1);
+			addr_end = addr + atoi (input+1);
 			free (t);
-			r_meta_add (core->meta, type, addr, addr_end, fun_name);
+			r_meta_add (core->meta, type, addr, addr_end, name);
 			}
 		}
 		break;
@@ -3003,17 +2973,14 @@ static int cmd_meta(void *data, const char *input) {
 	case '?':
 		eprintf (
 		"Usage: C[-LCsSmxX?] [...]\n"
-		" C!                     # sync xrefs with (to be deprecated)\n"
-		" C*                     # List meta and xref info in r2 commands\n"
+		" C*                     # List meta info in r2 commands\n"
 		" C-[@][ addr]           # delete metadata at given address\n"
 		" CL[-] [addr]           # show 'code line' information (bininfo)\n"
 		" CC [string]            # add comment\n"
 		" Cs[-] [size] [[addr]]  # add string\n"
 		" CS[-] [size]           # ...\n"
 		" Cd[-] [fmt] [..]       # hexdump data\n"
-		" Cm[-] [fmt] [..]       # format memory\n"
-		" Cx[-] [...]            # add code xref\n"
-		" CX[-] [...]            # add data xref\n");
+		" Cm[-] [fmt] [..]       # format memory\n");
 		break;
 	case 'F':
 		{

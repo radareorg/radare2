@@ -126,6 +126,7 @@ typedef struct r_anal_t {
 	void *user;
 	RList *bbs;
 	RList *fcns;
+	RList *refs;
 	RList *vartypes;
 	RReg *reg;
 	struct r_anal_ctx_t *ctx;
@@ -252,8 +253,8 @@ enum {
 
 typedef struct r_anal_ref_t {
 	int type;
-	ut64 at;
 	ut64 addr;
+	ut64 at;
 } RAnalRef;
 
 typedef struct r_anal_refline_t {
@@ -325,6 +326,8 @@ R_API int r_anal_fcn_from_string(RAnal *a, RAnalFcn *f, const char *_str);
 R_API RAnalRef *r_anal_ref_new();
 R_API RList *r_anal_ref_list_new();
 R_API void r_anal_ref_free(void *ref);
+R_API int r_anal_ref_add(RAnal *anal, ut64 addr, ut64 at, int type);
+R_API int r_anal_ref_del(RAnal *anal, ut64 at);
 
 /* var.c */
 R_API RAnalVar *r_anal_var_new();

@@ -567,7 +567,7 @@ R_API void r_core_visual_anal(RCore *core) {
 			break;
 		case 3:
 			r_cons_printf("-[ xrefs ]----------------------- 0x%08llx\n", addr);
-			sprintf(old, "Cx~0x%08llx", addr);
+			sprintf(old, "arl~0x%08llx", addr);
 			r_core_cmd0 (core, old);
 			//cons_printf("\n");
 			break;

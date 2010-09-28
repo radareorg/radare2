@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2010 nibble<develsec.org> + pancake<nopcode.org> */
 
 #include <r_meta.h>
 
@@ -7,8 +7,6 @@ R_API RMeta *r_meta_new() {
 	if (m) {
 		m->data = r_list_new ();
 		m->data->free = r_meta_item_free;
-		m->xrefs = r_list_new ();
-		m->xrefs->free = r_meta_item_free;
 		m->printf = (PrintfCallback) printf;
 	}
 	return m;
@@ -16,7 +14,6 @@ R_API RMeta *r_meta_new() {
 
 R_API void r_meta_free(RMeta *m) {
 	r_list_free (m->data);
-	r_list_free (m->xrefs);
 	/* TODO: memory leak */
 	free (m);
 }
@@ -45,11 +42,8 @@ R_API char *r_meta_get_string(RMeta *m, int type, ut64 addr) {
 	RMetaItem *d;
 
 	switch(type) {
-	//case R_META_FUNCTION:
 	case R_META_COMMENT:
 	case R_META_FOLDER:
-	case R_META_XREF_CODE:
-	case R_META_XREF_DATA:
 	case R_META_ANY:
 		break;
 	case R_META_CODE:
@@ -66,20 +60,11 @@ R_API char *r_meta_get_string(RMeta *m, int type, ut64 addr) {
 		if (d->type == type || type == R_META_ANY) {
 			if (d->from == addr)
 			switch (d->type) {
-			//case R_META_FUNCTION:
-				//str = r_str_concatf(str, "; FUNCTION SIZE %"PFMT64d"\n", d->size);
-				//break;
 			case R_META_COMMENT:
 				str = r_str_concatf (str, "; %s\n", d->str);
 				break;
 			case R_META_FOLDER:
 				str = r_str_concatf (str, "; FOLDER %"PFMT64d" bytes\n", d->size);
-				break;
-			case R_META_XREF_CODE:
-				str = r_str_concatf (str, "; CODE XREF FROM 0x%08"PFMT64x"\n", d->to);
-				break;
-			case R_META_XREF_DATA:
-				str = r_str_concatf (str, "; DATA XREF FROM 0x%08"PFMT64x"\n", d->to);
 				break;
 			}
 		}
@@ -114,9 +99,7 @@ R_API int r_meta_cleanup(RMeta *m, ut64 from, ut64 to) {
 	if (from == 0LL && to == UT64_MAX) {
 		RMeta *m2 = r_meta_new ();
 		r_list_free (m->data);
-		r_list_free (m->xrefs);
 		m->data = m2->data;
-		m->xrefs = m2->xrefs;
 		free (m2);
 		return R_TRUE;
 	}
@@ -154,24 +137,8 @@ R_API int r_meta_cleanup(RMeta *m, ut64 from, ut64 to) {
 	return ret;
 }
 
-R_API void r_meta_sync(RMeta *m) {
-	RMetaItem *x, *d;
-	RListIter *iter, *iter2;
-	
-	// move from m->xrefs into m->data...
-	r_list_foreach (m->xrefs, iter, x) {
-		r_list_foreach (m->data, iter2, d) {
-			if (d->from == x->from) {
-				r_list_unlink (m->xrefs, iter);
-				r_list_append (d->xrefs, x);
-			}
-		}
-	}
-}
-
 R_API void r_meta_item_free(void *_item) {
 	RMetaItem *item = _item;
-	r_list_free (item->xrefs);
 	free (item);
 }
 
@@ -179,30 +146,18 @@ R_API RMetaItem *r_meta_item_new(int type) {
 	RMetaItem *mi = R_NEW (RMetaItem);
 	memset (mi, 0, sizeof (RMetaItem));
 	mi->type = type;
-	mi->xrefs = r_list_new ();
-	mi->xrefs->free = r_meta_item_free;
 	return mi;
 }
 
 R_API int r_meta_add(RMeta *m, int type, ut64 from, ut64 to, const char *str) {
 	RMetaItem *mi = r_meta_item_new (type);
 	switch (type) {
-	case R_META_XREF_CODE:
-	case R_META_XREF_DATA:
-		mi->from = from;
-		mi->to = to;
-		mi->size = 1;
-		if (str) mi->str = strdup (str);
-		else mi->str = NULL;
-		r_list_append (m->xrefs, mi);
-		break;
 	case R_META_CODE:
 	case R_META_DATA:
 	case R_META_STRING:
 	case R_META_STRUCT:
 		/* we should remove overlapped types and so on.. */
 		r_meta_cleanup (m, from, to);
-	//case R_META_FUNCTION:
 	case R_META_COMMENT:
 	case R_META_FOLDER:
 		mi->size = R_ABS (to-from);//size;
@@ -282,11 +237,8 @@ R_API const char *r_meta_type_to_string(int type) {
 	case R_META_DATA: return "Cd";
 	case R_META_STRING: return "Cs";
 	case R_META_STRUCT: return "Cm";
-	//case R_META_FUNCTION: return "CF";
 	case R_META_COMMENT: return "CC";
 	case R_META_FOLDER: return "CF";
-	case R_META_XREF_CODE: return "Cx";
-	case R_META_XREF_DATA: return "CX";
 	}
 	return "(...)";
 }
@@ -323,12 +275,6 @@ R_API int r_meta_list(RMeta *m, int type) {
 	RMetaItem *d;
 
 	r_list_foreach (m->data, iter, d) {
-		if (d->type == type || type == R_META_ANY) {
-			printmetaitem (m, d);
-			count++;
-		}
-	}
-	r_list_foreach (m->xrefs, iter, d) {
 		if (d->type == type || type == R_META_ANY) {
 			printmetaitem (m, d);
 			count++;

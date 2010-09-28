@@ -7,9 +7,6 @@
 #include <list.h>
 
 typedef struct r_meta_count_t {
-	int functions;
-	int xref_code;
-	int xref_data;
 	/* TODO: ... */
 } RMetaCount;
 
@@ -30,12 +27,10 @@ typedef struct r_meta_item_t {
 	int type;
 //	int times;
 	char *str;
-	RList *xrefs;
 } RMetaItem;
 
 typedef struct r_meta_t {
 	RList *data;
-	RList *xrefs;
 	PrintfCallback printf;
 //	struct reflines_t *reflines = NULL;
 //	RLIst *comments;
@@ -55,11 +50,8 @@ enum {
 	R_META_STRING = 's',
 	R_META_STRUCT = 'm',
 	/* line */
-//	R_META_FUNCTION = 'F',
 	R_META_COMMENT = 'C',
 	R_META_FOLDER = 'f', // XXX deprecate?
-	R_META_XREF_CODE = 'x',
-	R_META_XREF_DATA = 'X',
 };
 
 #ifdef R_API
@@ -73,7 +65,6 @@ R_API struct r_meta_item_t *r_meta_find(RMeta *m, ut64 off, int type, int where)
 R_API int r_meta_cleanup(RMeta *m, ut64 from, ut64 to);
 R_API const char *r_meta_type_to_string(int type);
 R_API int r_meta_list(RMeta *m, int type);
-R_API void r_meta_sync(RMeta *m);
 R_API void r_meta_item_free(void *_item);
 R_API RMetaItem *r_meta_item_new(int type);
 #endif
