@@ -21,9 +21,10 @@ static const char *gpr32[] = {
 static const char *gpr64[] = {
 	"rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi",
 	"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15" };
+static const char unkreg[] = "";
 
 static const char* anal_reg(ut32 rop) {
-	const char **table;
+	const char **table = NULL, *ret = NULL;
 
 	if (X86IM_IO_ROP_IS_GPR8 (rop))
 		table = gpr8;
@@ -39,7 +40,10 @@ static const char* anal_reg(ut32 rop) {
 	else
 	if (X86IM_IO_ROP_IS_GPR64 (rop))
 		table = gpr64;
-	return table[X86IM_IO_ROP_GET_ID (rop)];
+	if (table)
+		ret = table[X86IM_IO_ROP_GET_ID (rop)];
+	else ret = unkreg;
+	return ret;
 }
 
 /* 0x0ff */

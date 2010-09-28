@@ -146,7 +146,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			if ((xrefs = r_anal_xref_get (core->anal, at))) {
 				r_list_foreach (xrefs, iter, refi) {
 					f = r_anal_fcn_find (core->anal, refi->addr);
-					r_cons_printf (Color_TURQOISE"; %s XREF 0x%"PFMT64x" (%s)"Color_RESET"\n",
+					r_cons_printf (Color_TURQOISE"; %s XREF 0x08%"PFMT64x" (%s)"Color_RESET"\n",
 							refi->type==R_ANAL_REF_TYPE_CODE?"CODE":"DATA", refi->addr,
 							f?f->name:"unk");
 				}

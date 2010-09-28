@@ -432,9 +432,9 @@ static int r_core_anal_followptr(RCore *core, ut64 at, ut64 ptr, ut64 ref, int c
 	if (ptr == ref) {
 		if (code)
 			r_cons_printf ("ar 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
-					(ut64)(at), (ut64) ref);
+					(ut64)ref, (ut64)at);
 		else r_cons_printf ("ard 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
-					(ut64)(at), (ut64)ref);
+					(ut64)ref, (ut64)at);
 		return R_TRUE;
 	}
 	if (depth < 1)
@@ -508,19 +508,19 @@ R_API int r_core_anal_ref_list(RCore *core, int rad) {
 	r_list_foreach (core->anal->fcns, iter, fcni)
 		r_list_foreach (fcni->refs, iter2, refi) {
 			if (rad)
-			r_cons_printf ("ar%s 0x%"PFMT64x" 0x%"PFMT64x"\n", 
+			r_cons_printf ("ar%s 0x08%"PFMT64x" 0x08%"PFMT64x"\n", 
 						refi->type==R_ANAL_REF_TYPE_DATA?"d":"",
 						refi->at, refi->addr);
-			else r_cons_printf ("0x%"PFMT64x" -> 0x%"PFMT64x" (%c)\n", 
+			else r_cons_printf ("0x08%"PFMT64x" -> 0x08%"PFMT64x" (%c)\n", 
 					refi->at, refi->addr, refi->type);
 
 		}
 	r_list_foreach (core->anal->refs, iter2, refi) {
 		if (rad)
-			r_cons_printf ("ar%s 0x%"PFMT64x" 0x%"PFMT64x"\n", 
+			r_cons_printf ("ar%s 0x08%"PFMT64x" 0x08%"PFMT64x"\n", 
 					refi->type==R_ANAL_REF_TYPE_DATA?"d":"",
 					refi->at, refi->addr);
-		else r_cons_printf ("0x%"PFMT64x" -> 0x%"PFMT64x" (%c)\n", 
+		else r_cons_printf ("0x08%"PFMT64x" -> 0x08%"PFMT64x" (%c)\n", 
 				refi->at, refi->addr, refi->type);
 
 	}

@@ -53,7 +53,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len) 
 	while (idx < len) {
 		if ((oplen = r_anal_aop (anal, &aop, addr+idx, buf+idx, len-idx)) == 0) {
 			if (idx == 0) {
-				IFDBG eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
+				eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
 				return R_ANAL_RET_ERROR;
 			} else break;
 		}
