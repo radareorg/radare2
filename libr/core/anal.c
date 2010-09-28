@@ -508,19 +508,19 @@ R_API int r_core_anal_ref_list(RCore *core, int rad) {
 	r_list_foreach (core->anal->fcns, iter, fcni)
 		r_list_foreach (fcni->refs, iter2, refi) {
 			if (rad)
-			r_cons_printf ("ar%s 0x08%"PFMT64x" 0x08%"PFMT64x"\n", 
+			r_cons_printf ("ar%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n", 
 						refi->type==R_ANAL_REF_TYPE_DATA?"d":"",
 						refi->at, refi->addr);
-			else r_cons_printf ("0x08%"PFMT64x" -> 0x08%"PFMT64x" (%c)\n", 
+			else r_cons_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" (%c)\n", 
 					refi->at, refi->addr, refi->type);
 
 		}
 	r_list_foreach (core->anal->refs, iter2, refi) {
 		if (rad)
-			r_cons_printf ("ar%s 0x08%"PFMT64x" 0x08%"PFMT64x"\n", 
+			r_cons_printf ("ar%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n", 
 					refi->type==R_ANAL_REF_TYPE_DATA?"d":"",
 					refi->at, refi->addr);
-		else r_cons_printf ("0x08%"PFMT64x" -> 0x08%"PFMT64x" (%c)\n", 
+		else r_cons_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" (%c)\n", 
 				refi->at, refi->addr, refi->type);
 
 	}
