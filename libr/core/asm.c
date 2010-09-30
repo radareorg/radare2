@@ -5,6 +5,30 @@
 #include <r_core.h>
 #include <r_asm.h>
 
+R_API RCoreAsmHit *r_core_asm_hit_new() {
+	RCoreAsmHit *hit = R_NEW (RCoreAsmHit);
+	if (hit) {
+		hit->code = NULL;
+		hit->addr = -1;
+	}
+	return hit;
+}
+
+R_API RList *r_core_asm_hit_list_new() {
+	RList *list = r_list_new ();
+	list->free = &r_core_asm_hit_free;
+	return list;
+}
+
+R_API void r_core_asm_hit_free(void *_hit) {
+	RCoreAsmHit *hit = _hit;
+	if (hit) {
+		if (hit->code)
+			free (hit->code);
+		free (hit);
+	}
+}
+
 R_API char* r_core_asm_search(RCore *core, const char *input, ut64 from, ut64 to) {
 	RAsmCode *acode;
 	char *ret;
@@ -17,27 +41,31 @@ R_API char* r_core_asm_search(RCore *core, const char *input, ut64 from, ut64 to
 }
 
 #define OPSZ 8
-R_API int r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to) {
+R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to) {
+	RCoreAsmHit *hit;
 	RAsmAop aop;
+	RList *hits;
 	ut64 at, toff = core->offset;
 	ut8 *buf;
-	char *tok, *tokens[1024];
+	char *tok, *tokens[1024], *code = NULL;
 	int idx, tidx, ret, len; 
-	int tokcount, matchcount, count;
+	int tokcount, matchcount;
 
+	if (!(hits = r_core_asm_hit_list_new ()))
+		return NULL;
 	for (tokcount=0;;tokcount++) {
 		if (tokcount==0) tok = (char*)strtok ((char*)input, ";");
 		else tok = (char*)strtok (NULL, ";");
 		if (tok == NULL)
 			break;
-		tokens[tokcount] = tok;
+		tokens[tokcount] = r_str_trim_head_tail (tok);
 	}
 	if (core->blocksize<=OPSZ) {
 		eprintf ("error: block size too small\n");
 		return R_FALSE;
 	}
 	buf = (ut8 *)malloc (core->blocksize);
-	for (at = from, count = 0, matchcount = 0; at < to; at += core->blocksize-OPSZ) {
+	for (at = from, matchcount = 0; at < to; at += core->blocksize-OPSZ) {
 		if (r_cons_singleton ()->breaked)
 			break;
 		ret = r_io_read_at (core->io, at, buf, core->blocksize);
@@ -54,11 +82,18 @@ R_API int r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 t
 				continue;
 			}
 			if (strstr (aop.buf_asm, tokens[matchcount])) {
+				code = r_str_concatf (code, "%s; ", aop.buf_asm);
 				if (matchcount == tokcount-1) {
 					if (tokcount == 1)
 						tidx = idx;
-					r_cons_printf ("f hit0_%i @ 0x%08"PFMT64x"\n", count, at+tidx);
-					count++;
+					if (!(hit = r_core_asm_hit_new ())) {
+						r_list_destroy (hits);
+						return NULL;
+					}
+					hit->addr = at+tidx;
+					hit->code = strdup (code);
+					r_list_append (hits, hit);
+					R_FREE (code);
 					matchcount = 0;
 					idx = tidx+1;
 				} else  if (matchcount == 0) {
@@ -73,11 +108,12 @@ R_API int r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 t
 				if (matchcount != 0)
 					idx = tidx+1;
 				else idx++;
+				R_FREE (code);
 				matchcount = 0;
 			}
 		}
 	}
 	r_asm_set_pc (core->assembler, toff);
 	free (buf);
-	return R_TRUE;
+	return hits;
 }

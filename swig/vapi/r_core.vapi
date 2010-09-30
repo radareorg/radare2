@@ -2,7 +2,7 @@
 
 namespace Radare {
 [Compact]
-[CCode (cheader_filename="r_core.h", cname="RCore", free_function="r_core_free", cprefix="r_core_")]
+[CCode (cheader_filename="r_core.h,r_list.h,r_types_base.h", cname="RCore", free_function="r_core_free", cprefix="r_core_")]
 public class RCore {
 	public RFlag flags;
 	public RNum num;
@@ -41,6 +41,9 @@ public class RCore {
 	public int seek(uint64 addr, bool rb);
 	public int seek_align(uint64 addr, int count);
 
+	/* asm */
+	public RList<RCore.AsmHit> asm_strsearch(string input, uint64 from, uint64 to);
+
 	// XXX mode = Radare.Io.Mode
 	[Compact]
 	[CCode (cname="RCoreFile", cprefix="r_core_file_", free_function="")]
@@ -54,6 +57,12 @@ public class RCore {
 		public uint64 size;
 		public int rwx;
 		public int fd;
+	}
+
+	[CCode (cname="RCoreAsmHit", free_function="", ref_function="", unref_function="")]
+	public class AsmHit {
+		string code;
+		uint64 addr;
 	}
 
 	/* files */
