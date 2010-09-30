@@ -61,8 +61,8 @@ public class RCore {
 
 	[CCode (cname="RCoreAsmHit", free_function="", ref_function="", unref_function="")]
 	public class AsmHit {
-		string code;
-		uint64 addr;
+		public string code;
+		public uint64 addr;
 	}
 
 	/* files */

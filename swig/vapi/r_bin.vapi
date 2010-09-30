@@ -9,7 +9,7 @@ namespace Radare {
 
 		public RBin();
 
-		public int load(string file, int dummy);
+		public int load(string file, bool dummy);
 		public int list();
 		public uint64 get_baddr();
 		public RBin.Addr get_main();
@@ -43,7 +43,7 @@ namespace Radare {
 			public int32 vsize;
 			public int64 rva;
 			public int64 offset;
-			public int32 rwx;
+			public int32 srwx;
 		}
 
 		[CCode (cname="RBinSymbol", free_function="", ref_function="", unref_function="")]

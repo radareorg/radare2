@@ -1,4 +1,4 @@
-all: plugin.so bin lang core regs hash sc socket asm search db io list rgot
+all: plugin.so bin lang core asmsearch regs hash sc socket asm search db io list rgot
 	@true
 
 plugin.so:
@@ -65,7 +65,6 @@ core:
 		-lr_lib -Wl,-R../../lib -L../../lib \
 		-lr_parse -Wl,-R../../parse -L../../parse \
 		-lr_flags -Wl,-R../../flags -L../../flags \
-		-lr_meta -Wl,-R../../meta -L../../meta \
 		-lr_print -Wl,-R../../print -L../../print \
 		-lr_config -Wl,-R../../config -L../../config \
 		-lr_search -Wl,-R../../search -L../../search \
@@ -74,6 +73,9 @@ core:
 		-lr_reg -Wl,-R../../reg -L../../reg \
 		-lr_bp -Wl,-R../../bp -L../../bp \
 		-g -o core
+
+asmsearch:
+	valac --vapidir=.. asmsearch.vala --pkg r_core --pkg r_bin -o asmsearch
 
 search:
 	valac -C --vapidir=${PWD}/.. search.vala --pkg r_search --pkg r_util
@@ -103,4 +105,4 @@ socket:
 	gcc socket.c `pkg-config gobject-2.0 --libs --cflags` -I../../../libr/include/ -lr_socket -Wl,-R../../socket -L../../socket -o socket
 
 clean:
-	-rm -f *.c hash sc *.o *.h core socket asm search bin io rgot reloc
+	-rm -f *.c hash sc *.o *.h core socket asm search bin io rgot reloc asmsearch

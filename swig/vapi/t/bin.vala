@@ -7,7 +7,7 @@ public void main (string[] args) {
 		error ("Usage: %s <file>\n", args[0]);
 
 	var bin = new RBin ();
-	if (bin.load (args[1], null) != 1)
+	if (bin.load (args[1], false) != 1)
 		error ("Cannot open binary file\n");
 
 	uint64 baddr = bin.get_baddr();

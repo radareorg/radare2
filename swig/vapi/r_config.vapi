@@ -16,7 +16,7 @@ namespace Radare {
 		public void list(string? foo, int bar);
 	}
 
-	[CCode (cname="RConfigNode", free_function="")]
+	[CCode (cname="RConfigNode", free_function="", unref_function="")]
 	public class RConfigNode {
 		string name;
 		int hash;

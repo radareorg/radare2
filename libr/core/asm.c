@@ -47,14 +47,16 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	RList *hits;
 	ut64 at, toff = core->offset;
 	ut8 *buf;
-	char *tok, *tokens[1024], *code = NULL;
+	char *tok, *tokens[1024], *code = NULL, *ptr;
 	int idx, tidx, ret, len; 
 	int tokcount, matchcount;
 
+	if (!(ptr = strdup (input)))
+		return NULL;
 	if (!(hits = r_core_asm_hit_list_new ()))
 		return NULL;
 	for (tokcount=0;;tokcount++) {
-		if (tokcount==0) tok = (char*)strtok ((char*)input, ";");
+		if (tokcount==0) tok = (char*)strtok (ptr, ";");
 		else tok = (char*)strtok (NULL, ";");
 		if (tok == NULL)
 			break;
@@ -115,5 +117,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	}
 	r_asm_set_pc (core->assembler, toff);
 	free (buf);
+	free (ptr);
+	free (code);
 	return hits;
 }
