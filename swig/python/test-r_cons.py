@@ -20,7 +20,6 @@ con.any_key()
 con.clear()
 
 print dir(RCons.is_html)
-print RCons.is_html.getter(0)
 print "IS HTML %d"%int(RCons.is_html)
 con.printf(Color_RED + "Hello "+Color_GREEN + "World\n" + Color_RESET)
 con.flush();

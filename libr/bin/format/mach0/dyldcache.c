@@ -6,9 +6,7 @@
 #include "dyldcache.h"
 
 static int r_bin_dyldcache_init(struct r_bin_dyldcache_obj_t* bin) {
-	int len;
-
-	len = r_buf_fread_at(bin->b, 0, (ut8*)&bin->hdr, "16c4il", 1);
+	int len = r_buf_fread_at (bin->b, 0, (ut8*)&bin->hdr, "16c4il", 1);
 	if (len == -1) {
 		perror ("read (cache_header)");
 		return R_FALSE;
@@ -62,7 +60,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 		strncpy (ret[i].path, libname, sizeof (ret[j].path));
 		ret[j].size = libsz;
 		ret[j].last = 0;
-		j = j+1;
+		j++;
 		//printf("0x%08llx -> %i -> %s\n", liboff, libsz, libname);
 	}
 	ret[i].last = 1;
@@ -81,7 +79,6 @@ void* r_bin_dyldcache_free(struct r_bin_dyldcache_obj_t* bin) {
 struct r_bin_dyldcache_obj_t* r_bin_dyldcache_new(const char* file) {
 	struct r_bin_dyldcache_obj_t *bin;
 	ut8 *buf;
-
 	if (!(bin = malloc(sizeof(struct r_bin_dyldcache_obj_t))))
 		return NULL;
 	memset (bin, 0, sizeof (struct r_bin_dyldcache_obj_t));

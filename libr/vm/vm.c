@@ -18,8 +18,7 @@ static ut64 r_vm_get_value(RVm *vm, const char *str) {
 			ret = r_vm_reg_get (vm, vm->cpu.pc);
 			arch_aop (ret , config.block, &aop);
 			return aop.length;
-		} else // $$
-			return config.seek;
+		} else return config.seek; // $$
 #endif
 	}
 

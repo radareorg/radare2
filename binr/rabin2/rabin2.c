@@ -121,30 +121,38 @@ static int rabin_show_main() {
 
 static int rabin_extract(int all) {
 	char out[512], *ptr;
-	int i;
+	int i = 0;
 
 	if (all) {
 		for (i=0; i<bin->narch; i++) {
-			if ((ptr = strrchr (bin->arch[i].file, '/')))
-				ptr = ptr+1;
-			else ptr = bin->arch[i].file;
-			snprintf (out, sizeof (out), "%s.%s_%i", ptr,
-					bin->arch[i].info->arch, bin->arch[i].info->bits);
-			if (!r_file_dump (out, bin->arch[i].buf->buf, bin->arch[i].size)) {
-				eprintf ("Error extracting %s\n", out);
-				return R_FALSE;
-			} else eprintf ("%s created (%i)\n", out, bin->arch[i].size);
+			if (bin->arch[i].info == NULL) {
+				eprintf ("No extract info found.\n");
+			} else {
+				if ((ptr = strrchr (bin->arch[i].file, '/')))
+					ptr = ptr+1;
+				else ptr = bin->arch[i].file;
+				snprintf (out, sizeof (out), "%s.%s_%i", ptr,
+						bin->arch[i].info->arch, bin->arch[i].info->bits);
+				if (!r_file_dump (out, bin->arch[i].buf->buf, bin->arch[i].size)) {
+					eprintf ("Error extracting %s\n", out);
+					return R_FALSE;
+				} else printf ("%s created (%i)\n", out, bin->arch[i].size);
+			}
 		}
 	} else {
-		if ((ptr = strrchr (bin->arch[i].file, '/')))
-			ptr = ptr+1;
-		else ptr = bin->arch[i].file;
-		snprintf (out, sizeof (out), "%s.%s_%i", ptr,
-				bin->arch[i].info->arch, bin->arch[i].info->bits);
-		if (!r_file_dump (out, bin->curarch->buf->buf, bin->curarch->size)) {
-			eprintf ("Error extracting %s\n", out);
-			return R_FALSE;
-		} else eprintf ("%s created (%i)\n", out, bin->arch[i].size);
+		if (bin->curarch->info == NULL) {
+			eprintf ("No extract info found.\n");
+		} else {
+			if ((ptr = strrchr (bin->curarch->file, '/')))
+				ptr = ptr+1;
+			else ptr = bin->curarch->file;
+			snprintf (out, sizeof (out), "%s.%s_%i", ptr,
+					bin->curarch->info->arch, bin->curarch->info->bits);
+			if (!r_file_dump (out, bin->curarch->buf->buf, bin->curarch->size)) {
+				eprintf ("Error extracting %s\n", out);
+				return R_FALSE;
+			} else printf ("%s created (%i)\n", out, bin->curarch->size);
+		}
 	}
 	return R_TRUE;
 }
@@ -448,6 +456,7 @@ static void rabin_list_archs() {
 	int i;
 
 	for (i=0; i<bin->narch; i++) {
+		if (bin->arch[i].info)
 		printf ("%s_%i %s (%s)\n", bin->arch[i].info->arch,
 				bin->arch[i].info->bits, bin->arch[i].file,
 				bin->arch[i].info->machine);

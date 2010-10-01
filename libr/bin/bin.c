@@ -137,9 +137,8 @@ static int r_bin_extract(RBin *bin, const char* file) {
 	bin->file = r_file_abspath (file);
 	list_for_each (pos, &bin->binxtrs) {
 		RBinXtrPlugin *h = list_entry (pos, RBinXtrPlugin, list);
-		if (h->check && h->check (bin)) {
+		if (h->check && h->check (bin))
 			bin->curxtr = h;
-		}
 	}
 	if (bin->curxtr && bin->curxtr->extract)
 		n = bin->curxtr->extract (bin);
@@ -353,10 +352,11 @@ R_API int r_bin_set_arch(RBin *bin, const char *arch, int bits, const char *name
 	int i;
 
 	for (i = 0; i < bin->narch; i++) {
-		if ((arch && !strstr (arch, bin->arch[i].info->arch)) ||
+		if (!bin->arch[i].info ||
+			(arch && !strstr (bin->arch[i].info->arch, arch)) ||
 			(bits && bits != bin->arch[i].info->bits) ||
 			(name && !strstr (bin->arch[i].file, name)))
-				continue;
+			continue;
 		bin->curarch = &bin->arch[i];
 		return R_TRUE;
 	}

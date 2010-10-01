@@ -59,9 +59,8 @@ TODO edu
 
 TODO pancake
 ------------
-* Import r_vm register values from flags or from r_debug->r_reg
-  - r_vm must use mmu cache when emulating code
-    - use the one from r_io? and deprecate vm->mmu_cache?
+* Embed RBin inside RCoreFile
+* Implement DRX support
 * Record trace of register status for each function when running
   - r_reg_arena_copy();
 {
@@ -93,6 +92,9 @@ Bindings
 
 Refactoring
 ===========
+* Import r_vm register values from flags or from r_debug->r_reg
+  - r_vm must use mmu cache when emulating code
+    - use the one from r_io? and deprecate vm->mmu_cache?
 * Review the r_flags api
 * add pipe_to_buffer..not only file descriptors
 * r_config set_int and so..simplify
