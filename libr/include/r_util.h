@@ -265,7 +265,11 @@ R_API char *r_file_slurp_line(const char *file, int line, int context);
 
 R_API ut64 r_sys_now();
 R_API void r_sys_perror(const char *fun);
-R_API int r_sys_mkdir(const char *dir);
+#if __WINDOWS__
+#define r_sys_mkdir(x) (mkdir(x)!=-1)
+#else
+#define r_sys_mkdir(x) (mkdir(x,0755)!=-1)
+#endif
 R_API int r_sys_sleep(int secs);
 R_API int r_sys_usleep(int usecs);
 R_API const char *r_sys_getenv(const char *key);

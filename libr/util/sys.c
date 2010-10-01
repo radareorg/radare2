@@ -239,14 +239,18 @@ R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
 	return r_sys_cmd_str_full (cmd, input, len, NULL);
 }
 
-R_API int r_sys_mkdir(const char *dir) {
-	int ret;
-#if __WINDOWS__
-	ret = mkdir (dir);
-#else
-	ret = mkdir (dir, 0755);
-#endif
-	return (ret != -1);
+R_API int r_sys_rmkdir(const char *dir) {
+	char *ptr, *path = r_str_dup (dir);
+	// XXX: Wrong for w32
+	while ((ptr = strrchr (dir, '/'))) {
+		if (!r_sys_mkdir (ptr+1)) {
+			free (path);
+			return R_FALSE;
+		}
+		*ptr = 0;
+	}
+	free (path);
+	return R_TRUE;
 }
 
 R_API void r_sys_perror(const char *fun) { 
