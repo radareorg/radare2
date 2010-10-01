@@ -34,7 +34,7 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 	int i;
 
 	if (bin->hdr.nfat_arch < 0)
-		return R_FALSE;
+		return NULL;
 	ret = malloc ((bin->hdr.nfat_arch+1) * sizeof(struct r_bin_fatmach0_arch_t));
 	for (i = 0; i < bin->hdr.nfat_arch; i++) {
 		if (bin->archs[i].size == 0 || bin->archs[i].size > bin->size) {

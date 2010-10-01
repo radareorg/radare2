@@ -436,12 +436,16 @@ static int rabin_show_info() {
 }
 
 static void rabin_list_archs() {
+	RBinInfo *info;
 	int i;
 
-	for (i=0; i<bin->narch; i++)
-		printf ("%s_%i   %s (%s endian)\n", bin->arch[i].info->arch,
-				bin->arch[i].info->bits, bin->arch[i].info->machine,
-				bin->arch[i].info->big_endian?"big":"litle");
+	for (i=0; i<bin->narch; i++) {
+		bin->curarch = &bin->arch[i];
+		if ((info = r_bin_get_info (bin)) == NULL)
+			return;
+		printf ("%s_%i %s (%s - %s endian)\n", info->arch, info->bits, bin->curarch->file,
+				info->machine, info->big_endian?"big":"litle");
+	}
 }
 
 static int rabin_show_fields() {

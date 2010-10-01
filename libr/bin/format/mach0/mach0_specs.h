@@ -1747,4 +1747,17 @@ struct fat_arch {
 	uint32_t align;
 };
 
+/* Cache header */
+
+struct cache_header {
+	char version[16];
+	uint32_t baseaddroff;
+	uint32_t unk2;
+	uint32_t startaddr;
+	uint32_t numlibs;
+
+	uint64_t dyldaddr;
+	//uint64_t codesignoff;
+};
+
 #endif /* _MACHO_LOADER_H_ */

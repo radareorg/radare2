@@ -125,6 +125,8 @@ static void r_bin_free_items(RBinArch *arch) {
 		r_list_free (arch->symbols);
 	if (arch->main)
 		free (arch->main);
+	if (arch->file)
+		free (arch->file);
 }
 
 static int r_bin_extract(RBin *bin, const char* file) {
@@ -142,7 +144,7 @@ static int r_bin_extract(RBin *bin, const char* file) {
 	if (bin->curxtr && bin->curxtr->extract)
 		n = bin->curxtr->extract (bin);
 	else {
-		bin->arch[0].file = bin->file;
+		bin->arch[0].file = strdup (bin->file);
 		if (!(buf = (ut8*)r_file_slurp (bin->file, &bin->arch[0].size))) 
 			return 0;
 		bin->arch[0].buf = r_buf_new ();

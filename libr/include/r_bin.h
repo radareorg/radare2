@@ -20,10 +20,10 @@
 #define R_BIN_DBG_RELOCS(x)   x & 0x10
 
 #define R_BIN_SIZEOF_STRINGS 256
-#define R_BIN_MAX_ARCH 32
+#define R_BIN_MAX_ARCH 1024
 
 typedef struct r_bin_arch_t {
-	const char *file;
+	char *file;
 	int size;
 	ut64 baddr;
 	struct r_bin_addr_t *main;
@@ -225,6 +225,7 @@ extern RBinPlugin r_bin_plugin_mach064;
 extern RBinPlugin r_bin_plugin_java;
 extern RBinPlugin r_bin_plugin_dummy;
 extern RBinXtrPlugin r_bin_xtr_plugin_fatmach0;
+extern RBinXtrPlugin r_bin_xtr_plugin_dyldcache;
 
 #endif
 #endif

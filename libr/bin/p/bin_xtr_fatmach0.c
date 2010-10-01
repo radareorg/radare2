@@ -43,7 +43,7 @@ static int extract(RBin *bin) {
 	if (!archs)
 		return 0;
 	for (i = 0; !archs[i].last; i++) {
-		bin->arch[i].file = bin->file;
+		bin->arch[i].file = strdup (bin->file);
 		bin->arch[i].buf = archs[i].b;
 		bin->arch[i].size = archs[i].size;
 	}
