@@ -349,14 +349,17 @@ R_API RBin* r_bin_new() {
 	return bin;
 }
 
-R_API int r_bin_set_arch(RBin *bin, const char *arch, int bits) {
+R_API int r_bin_set_arch(RBin *bin, const char *arch, int bits, const char *name) {
 	int i;
 
-	for (i = 0; i < bin->narch; i++)
-		if (!strcmp (arch, bin->arch[i].info->arch) && bits == bin->arch[i].info->bits) {
-			bin->curarch = &bin->arch[i];
-			return R_TRUE;
-		}
+	for (i = 0; i < bin->narch; i++) {
+		if ((arch && !strstr (arch, bin->arch[i].info->arch)) ||
+			(bits && bits != bin->arch[i].info->bits) ||
+			(name && !strstr (bin->arch[i].file, name)))
+				continue;
+		bin->curarch = &bin->arch[i];
+		return R_TRUE;
+	}
 	return R_FALSE;
 }
 

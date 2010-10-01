@@ -45,30 +45,31 @@ static char *name = NULL;
 
 static int rabin_show_help() {
 	printf ("rabin2 [options] [file]\n"
-		" -a [arch] [bits]  Set arch\n"
-		" -A                List archs\n"
-		" -b [addr]         Override baddr\n"
-		" -e                Entrypoint\n"
-		" -M                Main\n"
-		" -i                Imports (symbols imported from libraries)\n"
-		" -s                Symbols (exports)\n"
-		" -S                Sections\n"
-		" -z                Strings\n"
-		" -I                Binary info\n"
-		" -H                Header fields\n"
-		" -l                Linked libraries\n"
-		" -R                Relocations\n"
-		" -O [str]          Write/Extract operations (str=help for help)\n"
-		" -o [file]         Output file for write operations (a.out by default)\n"
-		" -r                radare output\n"
-		" -v                Use vaddr in radare output\n"
-		" -m [addr]         Show source line at addr\n"
-		" -L                List supported bin plugins\n"
-		" -@ [addr]         Show section, symbol or import at addr\n"
-		" -n [str]          Show section, symbol or import named str\n"
-		" -x                Extract bins contained in file\n"
-		" -V                Show version information\n"
-		" -h                This help\n");
+		" -a [arch_bits]   Set arch\n"
+		" -A               List archs\n"
+		" -b [addr]        Override baddr\n"
+		" -e               Entrypoint\n"
+		" -M               Main\n"
+		" -i               Imports (symbols imported from libraries)\n"
+		" -s               Symbols (exports)\n"
+		" -S               Sections\n"
+		" -z               Strings\n"
+		" -I               Binary info\n"
+		" -H               Header fields\n"
+		" -l               Linked libraries\n"
+		" -R               Relocations\n"
+		" -O [str]         Write/Extract operations (str=help for help)\n"
+		" -o [file]        Output file for write operations (a.out by default)\n"
+		" -r               radare output\n"
+		" -v               Use vaddr in radare output\n"
+		" -m [addr]        Show source line at addr\n"
+		" -L               List supported bin plugins\n"
+		" -@ [addr]        Show section, symbol or import at addr\n"
+		" -n [str]         Show section, symbol or import named str\n"
+		"                  or extract, analyze arch named str\n"
+		" -x               Extract bins contained in file\n"
+		" -V               Show version information\n"
+		" -h               This help\n");
 	return 1;
 }
 
@@ -132,7 +133,7 @@ static int rabin_extract(int all) {
 			if (!r_file_dump (out, bin->arch[i].buf->buf, bin->arch[i].size)) {
 				eprintf ("Error extracting %s\n", out);
 				return R_FALSE;
-			} else eprintf ("%s created\n", out);
+			} else eprintf ("%s created (%i)\n", out, bin->arch[i].size);
 		}
 	} else {
 		if ((ptr = strrchr (bin->arch[i].file, '/')))
@@ -143,7 +144,7 @@ static int rabin_extract(int all) {
 		if (!r_file_dump (out, bin->curarch->buf->buf, bin->curarch->size)) {
 			eprintf ("Error extracting %s\n", out);
 			return R_FALSE;
-		} else eprintf ("%s created\n", out);
+		} else eprintf ("%s created (%i)\n", out, bin->arch[i].size);
 	}
 	return R_TRUE;
 }
@@ -634,7 +635,7 @@ static int __lib_bin_xtr_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
 
 int main(int argc, char **argv)
 {
-	int c, bits = 32;
+	int c, bits = 0;
 	int action = ACTION_UNK;
 	const char *op = NULL;
 	char *arch = NULL;
@@ -755,7 +756,7 @@ int main(int argc, char **argv)
 			bits = r_num_math (NULL, ptr+1);
 		}
 	}
-	if (action&ACTION_LISTARCHS || (arch && !r_bin_set_arch (bin, arch, bits))) {
+	if (action&ACTION_LISTARCHS || !r_bin_set_arch (bin, arch, bits, name)) {
 		rabin_list_archs ();
 		free (arch);
 		r_bin_free (bin);
@@ -785,7 +786,7 @@ int main(int argc, char **argv)
 	if (action&ACTION_SRCLINE)
 		rabin_show_srcline(at);
 	if (action&ACTION_EXTRACT)
-		rabin_extract(arch==NULL);
+		rabin_extract((arch==NULL&&name==NULL&&bits==0));
 	if (op != NULL && action&ACTION_OPERATION)
 		rabin_do_operation (op);
 

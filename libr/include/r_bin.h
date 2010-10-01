@@ -203,7 +203,7 @@ R_API int r_bin_has_dbg_linenums (RBin *bin);
 R_API int r_bin_has_dbg_syms (RBin *bin);
 R_API int r_bin_has_dbg_relocs (RBin *bin);
 R_API RBin* r_bin_new();
-R_API int r_bin_set_arch(RBin *bin, const char *arch, int bits);
+R_API int r_bin_set_arch(RBin *bin, const char *arch, int bits, const char *name);
 R_API void r_bin_set_user_ptr(RBin *bin, void *user);
 
 /* bin_meta.c */
