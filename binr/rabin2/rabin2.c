@@ -119,11 +119,15 @@ static int rabin_show_main() {
 }
 
 static int rabin_extract(int all) {
-	char out[512];
+	char out[512], *ptr;
 	int i;
+
 	if (all) {
 		for (i=0; i<bin->narch; i++) {
-			snprintf (out, sizeof (out), "%s.%s_%i", output,
+			if ((ptr = strrchr (bin->arch[i].file, '/')))
+				ptr = ptr+1;
+			else ptr = bin->arch[i].file;
+			snprintf (out, sizeof (out), "%s.%s_%i", ptr,
 					bin->arch[i].info->arch, bin->arch[i].info->bits);
 			if (!r_file_dump (out, bin->arch[i].buf->buf, bin->arch[i].size)) {
 				eprintf ("Error extracting %s\n", out);
@@ -131,11 +135,15 @@ static int rabin_extract(int all) {
 			} else eprintf ("%s created\n", out);
 		}
 	} else {
-		if (!r_file_dump (output, bin->curarch->buf->buf, bin->curarch->size)) {
-			eprintf ("Error extracting %s_%i\n",
-					bin->curarch->info->arch, bin->curarch->info->bits);
+		if ((ptr = strrchr (bin->arch[i].file, '/')))
+			ptr = ptr+1;
+		else ptr = bin->arch[i].file;
+		snprintf (out, sizeof (out), "%s.%s_%i", ptr,
+				bin->arch[i].info->arch, bin->arch[i].info->bits);
+		if (!r_file_dump (out, bin->curarch->buf->buf, bin->curarch->size)) {
+			eprintf ("Error extracting %s\n", out);
 			return R_FALSE;
-		} else eprintf ("%s created\n", output);
+		} else eprintf ("%s created\n", out);
 	}
 	return R_TRUE;
 }
@@ -436,15 +444,12 @@ static int rabin_show_info() {
 }
 
 static void rabin_list_archs() {
-	RBinInfo *info;
 	int i;
 
 	for (i=0; i<bin->narch; i++) {
-		bin->curarch = &bin->arch[i];
-		if ((info = r_bin_get_info (bin)) == NULL)
-			return;
-		printf ("%s_%i %s (%s - %s endian)\n", info->arch, info->bits, bin->curarch->file,
-				info->machine, info->big_endian?"big":"litle");
+		printf ("%s_%i %s (%s)\n", bin->arch[i].info->arch,
+				bin->arch[i].info->bits, bin->arch[i].file,
+				bin->arch[i].info->machine);
 	}
 }
 

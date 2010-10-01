@@ -21,7 +21,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	struct r_bin_dyldcache_lib_t *ret;
 	ut64 curoffset, liboff, libla, libpath, nextliboff;
 	ut8 *buf;
-	char *ptr, *libname;
+	char *libname;
 	int i, j, libsz;
 
 	if (bin->nlibs < 0)
@@ -32,12 +32,13 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 		libla = *(ut64*)(bin->b->buf+curoffset);
 		liboff = libla - *(ut64*)&bin->b->buf[bin->hdr.baseaddroff];
 		libpath = *(ut64*)(bin->b->buf+curoffset + 24);
+		/* TODO: Find the real size */
 		if (i != bin->nlibs-1) {
 			nextliboff = *(ut64*)(bin->b->buf+curoffset+32) - *(ut64*)&bin->b->buf[bin->hdr.baseaddroff];
 			libsz = nextliboff - liboff;
 		} else libsz = bin->size - liboff;
-		if (libsz <= 0)
-			libsz = 10240;
+		if (libsz <= 0 || libsz > bin->size)
+			libsz = bin->size - liboff;
 		if (!(buf = malloc (libsz))) {
 			perror ("malloc (buf)");
 			return NULL;
@@ -58,8 +59,6 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 		}
 		free (buf);
 		libname = (char*)(bin->b->buf+libpath);
-		if ((ptr = strrchr (libname, '/')))
-			libname = ptr+1;
 		strncpy (ret[i].path, libname, sizeof (ret[j].path));
 		ret[j].size = libsz;
 		ret[j].last = 0;
