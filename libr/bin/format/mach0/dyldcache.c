@@ -16,27 +16,34 @@ static int r_bin_dyldcache_init(struct r_bin_dyldcache_obj_t* bin) {
 }
 
 struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj_t* bin) {
-	struct r_bin_dyldcache_lib_t *ret;
-	ut64 curoffset, liboff, libla, libpath, nextliboff;
+	struct r_bin_dyldcache_lib_t *ret = NULL;
+	ut64 curoffset, liboff, libla, libpath;
+	ut64 tcuroffset, tliboff, tlibla, nextliboff;
 	ut8 *buf;
 	char *libname;
-	int i, j, libsz;
+	int i, j, k, libsz;
 
-	if (bin->nlibs < 0)
+	if (bin->nlibs < 0 || bin->hdr.baseaddroff >= bin->b->length)
 		return NULL;
 	if (!(ret = malloc ((bin->nlibs+1) * sizeof(struct r_bin_dyldcache_lib_t))))
 		return NULL;
 	for (i = 0, j = 0, curoffset = bin->hdr.startaddr; i < bin->nlibs; i++, curoffset+=32) {
+		if (curoffset+24 >= bin->b->length)
+			return NULL;
 		libla = *(ut64*)(bin->b->buf+curoffset);
 		liboff = libla - *(ut64*)&bin->b->buf[bin->hdr.baseaddroff];
+		if (liboff < 0 || liboff > bin->size)
+			continue;
 		libpath = *(ut64*)(bin->b->buf+curoffset + 24);
-		/* TODO: Find the real size */
-		if (i != bin->nlibs-1) {
-			nextliboff = *(ut64*)(bin->b->buf+curoffset+32) - *(ut64*)&bin->b->buf[bin->hdr.baseaddroff];
-			libsz = nextliboff - liboff;
-		} else libsz = bin->size - liboff;
-		if (libsz <= 0 || libsz > bin->size)
-			libsz = bin->size - liboff;
+		for (k = 0, nextliboff = bin->size, tcuroffset = bin->hdr.startaddr; k < bin->nlibs; k++, tcuroffset+=32) {
+			if (tcuroffset >= bin->b->length)
+				return NULL;
+			tlibla = *(ut64*)(bin->b->buf+tcuroffset);
+			tliboff = tlibla - *(ut64*)&bin->b->buf[bin->hdr.baseaddroff];
+			if (tliboff > liboff && tliboff <= nextliboff)
+				nextliboff = tliboff;
+		}
+		libsz = nextliboff - liboff;
 		if (!(buf = malloc (libsz))) {
 			perror ("malloc (buf)");
 			return NULL;
