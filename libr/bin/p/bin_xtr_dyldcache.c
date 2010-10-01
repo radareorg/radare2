@@ -28,7 +28,7 @@ static int extract(RBin *bin) {
 	struct r_bin_dyldcache_lib_t *libs;
 	int i;
 
-	if(!(bin->bin_obj = r_bin_dyldcache_new(bin->file)))
+	if(!(bin->bin_obj = r_bin_dyldcache_new (bin->file)))
 		return 0;
 	libs = r_bin_dyldcache_extract ((struct r_bin_dyldcache_obj_t*)bin->bin_obj);
 	if (!libs)

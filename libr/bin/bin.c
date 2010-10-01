@@ -137,13 +137,13 @@ static int r_bin_extract(RBin *bin, const char* file) {
 	bin->file = r_file_abspath (file);
 	list_for_each (pos, &bin->binxtrs) {
 		RBinXtrPlugin *h = list_entry (pos, RBinXtrPlugin, list);
-		if (h->check && h->check (bin)) {
+		if (h->check && h->check (bin))
 			bin->curxtr = h;
-		}
 	}
 	if (bin->curxtr && bin->curxtr->extract)
 		n = bin->curxtr->extract (bin);
 	else {
+		// TODO XXX: fill bin->arch[0].info!
 		bin->arch[0].file = strdup (bin->file);
 		if (!(buf = (ut8*)r_file_slurp (bin->file, &bin->arch[0].size))) 
 			return 0;

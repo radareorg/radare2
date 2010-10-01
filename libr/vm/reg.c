@@ -142,19 +142,21 @@ R_API int r_vm_cmd_reg(struct r_vm_t *vm, const char *_str) {
 
 	len = strlen (_str)+1;
 	str = alloca (len);
-	memcpy (str, _str, len);
+	memcpy (str, _str, len); // XXX: suboptimal
 
-	if (str==NULL || str[0]=='\0') {
-		/* show all registers */
+	switch(*str) {
+	case '*':
+		r_vm_print (vm, -2);
+		return 0;
+	case '\0':
 		r_vm_print (vm, -1);
 		return 0;
-	}
-	if (str[0]=='o') {
+	case 'o':
 		r_vm_cmd_op (vm, str+2);
 		return 0;
 	}
-	strcpy(str, str+1);
-	switch(str[0]) {
+	str++;
+	switch (*str) {
 	case 'r':
 		r_vm_setup_ret (vm, str+2);
 		break;
@@ -205,11 +207,11 @@ R_API int r_vm_cmd_reg(struct r_vm_t *vm, const char *_str) {
 		// avr-*
 		for(str=str+1;str&&*str==' ';str=str+1);
 		if (str[0]=='*')
-			INIT_LIST_HEAD(&vm->regs); // XXX Memory leak
-		else r_vm_reg_del(vm, str);
+			INIT_LIST_HEAD (&vm->regs); // XXX Memory leak
+		else r_vm_reg_del (vm, str);
 		break;
 	case 'f':
-		r_vm_setup_flags(vm, str+2);
+		r_vm_setup_flags (vm, str+2);
 		break;
 	default:
 		for(;str&&*str==' ';str=str+1);
@@ -240,7 +242,7 @@ R_API ut64 r_vm_reg_get(struct r_vm_t *vm, const char *name) {
 	int len;
 	if (!name)
 		return 0LL;
-	len = strlen(name);
+	len = strlen (name);
 	if (name[len-1]==']')
 		len--;
 
@@ -252,7 +254,6 @@ R_API ut64 r_vm_reg_get(struct r_vm_t *vm, const char *name) {
 				r_vm_eval(vm, r->get);
 				//vm_op_eval(r->get);
 				vm->rec = NULL;
-				return r->value;
 			}
 			return r->value;
 		}

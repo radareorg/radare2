@@ -1806,7 +1806,7 @@ static int var_cmd(RCore *core, const char *str) {
 static void vmimport(RCore *core, int dir) {
 	struct list_head *pos;
 	list_for_each(pos, &core->vm->regs) {
-		struct r_vm_reg_t *r = list_entry(pos, struct r_vm_reg_t, list);
+		RVmReg *r = list_entry(pos, RVmReg, list);
 		if (dir) {
 			r_cons_printf ("ave %s=0x%"PFMT64x"\n", r->name, r->value);
 			r_cons_printf ("f vm.%s=0x%"PFMT64x"\n", r->name, r->value);
@@ -2154,6 +2154,7 @@ static int cmd_anal(void *data, const char *input) {
 				"                 ; set register alias\n"
 				" avr eax         ; view register\n"
 				" avr eax=33      ; set register value\n"
+				" avr*            ; show registers as in flags\n"
 				" avrt            ; list valid register types\n"
 				"Note: The prefix '\"' quotes the command and does not parses pipes and so\n");
 			else r_vm_cmd_reg (core->vm, input+2);
@@ -2186,6 +2187,7 @@ static int cmd_anal(void *data, const char *input) {
 			" avr          ; show registers\n"
 			" avx N        ; execute N instructions from cur seek\n"
 			" av-          ; restart vm using asm.arch\n"
+			" av*          ; show registers as in flags\n"
 			" avr eax      ; show register eax\n"
 			" avrr eax     ; set return register\n" // TODO .merge avrr and avrc
 			" avrc eip esp ebp ; set basic cpu registers PC, SP, BP\n"
