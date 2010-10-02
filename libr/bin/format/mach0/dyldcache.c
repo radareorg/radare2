@@ -35,6 +35,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 		return NULL;
 	if (!(ret = malloc ((bin->nlibs+1) * sizeof(struct r_bin_dyldcache_lib_t))))
 		return NULL;
+	memset (ret, 0, (bin->nlibs+1) * sizeof(struct r_bin_dyldcache_lib_t));
 	for (i = j = 0, curoffset = bin->hdr.startaddr; i < bin->nlibs; i++, curoffset+=32) {
 		libla = *(ut64*)(bin->b->buf+curoffset);
 		liboff = libla - *(ut64*)&bin->b->buf[bin->hdr.baseaddroff];
@@ -125,12 +126,12 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 		/* Fill r_bin_dyldcache_lib_t array */
 		ret[j].b = dbuf;
 		libname = (char*)(bin->b->buf+libpath);
-		strncpy (ret[i].path, libname, sizeof (ret[j].path));
+		strncpy (ret[j].path, libname, sizeof (ret[j].path));
 		ret[j].size = libsz;
 		ret[j].last = 0;
 		j++;
 	}
-	ret[i].last = 1;
+	ret[j].last = 1;
 	return ret;
 }
 
