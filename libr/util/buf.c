@@ -43,6 +43,14 @@ R_API int r_buf_set_bytes(RBuffer *b, ut8 *buf, int length) {
 	return R_TRUE;
 }
 
+R_API int r_buf_append_bytes(RBuffer *b, ut8 *buf, int length) {
+	if (!(b->buf = realloc (b->buf, b->length+length)))
+		return R_FALSE;
+	memcpy (b->buf+b->length, buf, length);
+	b->length += length;
+	return R_TRUE;
+}
+
 static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, int write) {
 	int end;
 	if (addr == R_BUF_CUR)

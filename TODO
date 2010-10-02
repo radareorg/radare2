@@ -32,6 +32,7 @@ TODO nibble
   - make x86_x86im the default backend for x86 analysis
   - implement analysis for more instructions
 * r_bin
+  - Don't load in memory all the bins within a fatbin (problems with huge bins like dyldcache)
   - Better way to fix got_offset issue?
 * diff code analysis
   - diff two programs

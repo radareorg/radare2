@@ -240,7 +240,7 @@ R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
 }
 
 R_API int r_sys_rmkdir(const char *dir) {
-	char *ptr, *path = r_str_dup (dir);
+	char *ptr, *path = strdup (dir);
 	// XXX: Wrong for w32
 	while ((ptr = strrchr (dir, '/'))) {
 		if (!r_sys_mkdir (ptr+1)) {

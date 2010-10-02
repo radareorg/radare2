@@ -1499,13 +1499,13 @@ struct nlist {
  * This is the symbol table entry structure for 64-bit architectures.
  */
 struct nlist_64 {
-    union {
-        uint32_t  n_strx; /* index into the string table */
-    } n_un;
-    uint8_t n_type;        /* type flag, see below */
-    uint8_t n_sect;        /* section number or NO_SECT */
-    uint16_t n_desc;       /* see <mach-o/stab.h> */
-    uint64_t n_value;      /* value of this symbol (or stab offset) */
+	union {
+		uint32_t  n_strx; /* index into the string table */
+	} n_un;
+	uint8_t n_type;        /* type flag, see below */
+	uint8_t n_sect;        /* section number or NO_SECT */
+	uint16_t n_desc;       /* see <mach-o/stab.h> */
+	uint64_t n_value;      /* value of this symbol (or stab offset) */
 };
 
 /*
@@ -1758,6 +1758,23 @@ struct cache_header {
 
 	uint64_t dyldaddr;
 	//uint64_t codesignoff;
+};
+
+#define LC_DYLD_INFO      0x22
+#define LC_DYLD_INFO_ONLY 0x80000022
+struct dyld_info_32 {
+	uint32_t cmd;
+	uint32_t cmdsize;
+	uint32_t rebase_off;
+	uint32_t rebase_size;
+	uint32_t bind_off;
+	uint32_t bind_size;
+	uint32_t weak_bind_off;
+	uint32_t weak_bind_size;
+	uint32_t lazy_bind_off;
+	uint32_t lazy_bind_size;
+	uint32_t export_off;
+	uint32_t export_size;
 };
 
 #endif /* _MACHO_LOADER_H_ */
