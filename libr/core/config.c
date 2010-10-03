@@ -251,7 +251,7 @@ static int config_asm_bits_callback(void *user, void *data) {
 	}
 	if (!r_anal_set_bits (core->anal, node->i_value))
 		eprintf ("asm.arch: Cannot setup '%i' bits analysis engine\n", (int)node->i_value);
-	if(core->assembler->cur)
+	if (core->assembler->cur)
 	r_vm_set_arch (core->vm, core->assembler->cur->name, node->i_value);
 	// TODO: change debugger backend bit profile here
 	return ret;

@@ -8,8 +8,6 @@ Before entering a 'call' you can identify the arguments passed to it using the '
 Use the '[' and ']' keys in visual mode to adjust the screen width (scr.width)
 Choose your architecture by typing: 'e asm.arch=ppc' (or arm, java, m68k, intel, intel16 or intel64)
 Move between your search hits in visual mode using the 'f' and 'F' keys
-Run python scripts with the python hack plugin. ('H python <filename>' command)
-Run LUA scripts with the lua hack plugin. ('H lua <filename>' command)
 Save your projects with 'Ps <project-filename>' and restore then with 'Po <project-filename>'
 Everytime you run radare. It removes a random file :)
 RADARE CUMS WITH ABSOLUTELY NO WARRANTY

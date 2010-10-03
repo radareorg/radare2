@@ -642,8 +642,7 @@ static int __lib_bin_xtr_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
 	return R_TRUE;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
 	int c, bits = 0;
 	int action = ACTION_UNK;
 	const char *op = NULL;
@@ -795,7 +794,7 @@ int main(int argc, char **argv)
 	if (action&ACTION_SRCLINE)
 		rabin_show_srcline(at);
 	if (action&ACTION_EXTRACT)
-		rabin_extract((arch==NULL&&name==NULL&&bits==0));
+		rabin_extract ((arch==NULL&&name==NULL&&bits==0));
 	if (op != NULL && action&ACTION_OPERATION)
 		rabin_do_operation (op);
 

@@ -15,6 +15,13 @@
 #include <stdarg.h>
 #include <sys/time.h>
 
+#undef FS
+#if __WINDOWS__
+#define FS "\\"
+#else
+#define FS "/"
+#endif
+
 /* provide a per-module debug-enabled feature */
 // TODO NOT USED. DEPREACATE
 #if R_DEBUG

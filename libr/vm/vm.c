@@ -175,7 +175,7 @@ R_API int r_vm_set_arch(RVm *vm, const char *name, int bits) {
 	if (strstr (name, "arm")) {
 		switch (bits) {
 		case 16:
-			//profile = vmprofile_arm_16;
+			profile = vmprofile_arm_32; // XXX 16;
 			break;
 		case 32:
 			profile = vmprofile_arm_32;
@@ -187,7 +187,7 @@ R_API int r_vm_set_arch(RVm *vm, const char *name, int bits) {
 		r_vm_init (vm, 2);
 		r_vm_cmd_eval (vm, str);
 		free (str);
-	} else eprintf ("No profile found for '%s' %d\n", name, bits);
+	} else eprintf ("r_vm: No profile found for '%s' on %d bits\n", name, bits);
 	return 0;
 }
 

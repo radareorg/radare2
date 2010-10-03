@@ -71,13 +71,15 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	disasm_obj.endian = !a->big_endian;
 	disasm_obj.fprintf_func = &buf_fprintf;
 	disasm_obj.stream = stdout;
+	disasm_obj.bytes_per_chunk =
+	disasm_obj.bytes_per_line = (a->bits/8);
 
 	aop->buf_asm[0]='\0';
 	aop->inst_len = print_insn_arm((bfd_vma)Offset, &disasm_obj);
 	if (aop->inst_len == -1)
 		strncpy(aop->buf_asm, " (data)", R_ASM_BUFSIZE);
 
-	return aop->inst_len;
+	return aop->inst_len; //(a->bits/8); //aop->inst_len;
 }
 
 int armass_assemble(const char *str, unsigned long off);

@@ -10,14 +10,11 @@
 /* DEPRECATE ?? */
 #include "arm/arm.h"
 
-// XXX: must be configured somewhere with anal.bits
-static int arm_mode = 32;
-
-static unsigned int disarm_branch_offset ( unsigned int pc, unsigned int insoff ) {
+static unsigned int disarm_branch_offset (unsigned int pc, unsigned int insoff) {
 	unsigned int add = insoff << 2;
 	/* zero extend if higher is 1 (0x02000000) */
-	if ( (add & 0x02000000) == 0x02000000 )
-		add = add | 0xFC000000 ;
+	if ((add & 0x02000000) == 0x02000000)
+		add |= 0xFC000000;
 	return add + pc + 8;
 }
 
@@ -55,7 +52,7 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	memset (aop, '\0', sizeof (RAnalOp));
 	aop->addr = addr;
 	aop->type = R_ANAL_OP_TYPE_UNK;
-	aop->length = (arm_mode==16)?2:4;
+	aop->length = (anal->bits==16)?2:4;
 	aop->jump = aop->fail = -1;
 	aop->ref = aop->value = -1;
 
@@ -124,7 +121,6 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 		aop->eob = 1;
 	} else
 	if ((code[i] & ARM_DTX_LOAD)) { //IS_LOAD(code[i])) {
-		int ret = arm_mode/8;
 		ut32 ptr = 0;
 		aop->type = R_ANAL_OP_TYPE_MOV;
 		if (b[2]==0x1b) {
@@ -135,7 +131,7 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 		} else {
 			//ut32 oaddr = addr+8+b[0];
 			//XXX TODO ret = radare_read_at(oaddr, (ut8*)&ptr, 4);
-			if (ret == 4) {
+			if (anal->bits == 32) {
 				b = (ut8*)&ptr;
 				aop->ref = b[0] + (b[1]<<8) + (b[2]<<16) + (b[3]<<24);
 				//XXX data_xrefs_add(oaddr, aop->ref, 1);
