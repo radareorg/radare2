@@ -120,42 +120,41 @@ static int rabin_show_main() {
 }
 
 static int rabin_extract(int all) {
-#if 0 
 	char out[512], *ptr;
 	int i = 0;
 
 	if (all) {
 		for (i=0; i<bin->narch; i++) {
-			if (bin->arch[i].info == NULL) {
+			r_bin_set_archidx (bin, i);
+			if (bin->curarch.info == NULL) {
 				eprintf ("No extract info found.\n");
 			} else {
-				if ((ptr = strrchr (bin->arch[i].file, '/')))
+				if ((ptr = strrchr (bin->curarch.file, '/')))
 					ptr = ptr+1;
-				else ptr = bin->arch[i].file;
+				else ptr = bin->curarch.file;
 				snprintf (out, sizeof (out), "%s.%s_%i", ptr,
-						bin->arch[i].info->arch, bin->arch[i].info->bits);
-				if (!r_file_dump (out, bin->arch[i].buf->buf, bin->arch[i].size)) {
+						bin->curarch.info->arch, bin->curarch.info->bits);
+				if (!r_file_dump (out, bin->curarch.buf->buf, bin->curarch.size)) {
 					eprintf ("Error extracting %s\n", out);
 					return R_FALSE;
-				} else printf ("%s created (%i)\n", out, bin->arch[i].size);
+				} else printf ("%s created (%i)\n", out, bin->curarch.size);
 			}
 		}
 	} else {
-		if (bin->curarch->info == NULL) {
+		if (bin->curarch.info == NULL) {
 			eprintf ("No extract info found.\n");
 		} else {
-			if ((ptr = strrchr (bin->curarch->file, '/')))
+			if ((ptr = strrchr (bin->curarch.file, '/')))
 				ptr = ptr+1;
-			else ptr = bin->curarch->file;
+			else ptr = bin->curarch.file;
 			snprintf (out, sizeof (out), "%s.%s_%i", ptr,
-					bin->curarch->info->arch, bin->curarch->info->bits);
-			if (!r_file_dump (out, bin->curarch->buf->buf, bin->curarch->size)) {
+					bin->curarch.info->arch, bin->curarch.info->bits);
+			if (!r_file_dump (out, bin->curarch.buf->buf, bin->curarch.size)) {
 				eprintf ("Error extracting %s\n", out);
 				return R_FALSE;
-			} else printf ("%s created (%i)\n", out, bin->curarch->size);
+			} else printf ("%s created (%i)\n", out, bin->curarch.size);
 		}
 	}
-#endif 
 	return R_TRUE;
 }
 
@@ -790,7 +789,7 @@ int main(int argc, char **argv) {
 	if (action&ACTION_SRCLINE)
 		rabin_show_srcline(at);
 	if (action&ACTION_EXTRACT)
-		rabin_extract ((arch==NULL&&name==NULL&&bits==0));
+		rabin_extract ((arch==NULL&&arch_name==NULL&&bits==0));
 	if (op != NULL && action&ACTION_OPERATION)
 		rabin_do_operation (op);
 
