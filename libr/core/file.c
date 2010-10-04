@@ -37,6 +37,30 @@ R_API void r_core_sysenv_update(RCore *core) {
 	r_sys_setenv ("IOVA", r_config_get_i (core->config, "io.va")?"1":"0");
 }
 
+R_API int r_core_bin_load(RCore *r, const char *file) {
+	RBinObj *obj;
+
+	if (!r_bin_load (r->bin, file, 0))
+		return R_FALSE;
+	r->file->obj = obj = r_bin_get_object (r->bin, 0);
+#if 0
+	RListIter *iter;
+	RBinImport *import;
+	RBinSection *section;
+	r_list_foreach (obj->sections, iter, section) {
+		printf ("ff %s\n", section->name);
+	}
+	r_list_foreach (obj->imports, iter, import) {
+		printf ("ff %s\n", import->name);
+	}
+	r_list_foreach (obj->symbols, iter, symbol) {
+		printf ("ff %s\n", symbol->name);
+	}
+#endif
+	// TODO: moar
+	return R_TRUE;
+}
+
 R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode) {
 	RCoreFile *fh;
 	const char *cp;
@@ -57,8 +81,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode) {
 	fh->size = r_io_size (r->io, fd);
 	list_add (&(fh->list), &r->files);
 
-	r_bin_load (r->bin, fh->filename, NULL);
-
+	r_core_bin_load (r, fh->filename);
 	r_core_block_read (r, 0);
 
 	cp = r_config_get (r->config, "cmd.open");
@@ -70,6 +93,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode) {
 
 R_API int r_core_file_close(struct r_core_t *r, struct r_core_file_t *fh) {
 	int ret = r_io_close (r->io, fh->fd);
+	// TODO: free fh->obj
 	list_del (&(fh->list));
 	// TODO: set previous opened file as current one
 	return ret;

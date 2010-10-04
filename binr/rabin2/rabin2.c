@@ -194,9 +194,8 @@ static int rabin_show_relocs() {
 	else eprintf ("[Relocations]\n");
 
 	r_list_foreach (relocs, iter, reloc) {
-		if (rad) {
-			printf ("f reloc.%s @ 0x%08"PFMT64x"\n", reloc->name, va?baddr+reloc->rva:reloc->offset);
-		} else printf ("sym=%02i address=0x%08"PFMT64x" offset=0x%08"PFMT64x" type=0x%08x %s\n",
+		if (rad) printf ("f reloc.%s @ 0x%08"PFMT64x"\n", reloc->name, va?baddr+reloc->rva:reloc->offset);
+		else printf ("sym=%02i address=0x%08"PFMT64x" offset=0x%08"PFMT64x" type=0x%08x %s\n",
 				reloc->sym, baddr+reloc->rva, reloc->offset, reloc->type, reloc->name);
 		i++;
 	}

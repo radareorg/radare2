@@ -57,6 +57,7 @@ typedef struct r_core_file_t {
 	int rwx;
 	int fd;
 	int dbg;
+	RBinObj *obj;
 	struct list_head list;
 } RCoreFile;
 

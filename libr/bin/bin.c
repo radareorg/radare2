@@ -391,3 +391,20 @@ R_API void r_bin_list_archs(RBin *bin) {
 R_API void r_bin_set_user_ptr(RBin *bin, void *user) {
 	bin->user = user;
 }
+
+R_API RBinObj *r_bin_get_object(RBin *bin, int flags) {
+	RBinObj *obj = R_NEW (RBinObj);
+	if (obj) {
+		obj->symbols = r_bin_get_symbols (bin);
+		obj->imports = r_bin_get_imports (bin);
+		obj->entries = r_bin_get_entries (bin);
+		obj->main = r_bin_get_main (bin);
+		obj->baddr = r_bin_get_baddr (bin);
+	}
+	return obj;
+}
+
+R_API void r_bin_object_free(RBinObj *obj) {
+	// XXX: leak
+	free (obj);
+}

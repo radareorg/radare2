@@ -176,6 +176,23 @@ typedef struct r_bin_write_t {
 	int (*rpath_del)(RBinArch *arch);
 } RBinWrite;
 
+typedef struct r_bin_obj_t {
+	ut64 baddr;
+	RList/*<RBinSection>*/ *sections;
+	RList/*<RBinImport>*/ *imports;
+	RList/*<RBinSymbol>*/ *symbols;
+	RList/*<??>*/ *entries;
+	RList/*<??>*/ *fields;
+	RList/*<??>*/ *libs;
+	RList/*<??>*/ *relocs;
+	RList/*<??>*/ *strings;
+	RBinInfo *info;
+	RBinAddr *main;
+// TODO: deprecate r_bin_is_big_endian
+// TODO: r_bin_is_stripped .. wrapped inside rbinobj?
+// TODO: has_dbg_syms... maybe flags?
+} RBinObj;
+
 #ifdef R_API
 
 /* bin.c */
@@ -184,6 +201,7 @@ R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
 R_API void* r_bin_free(RBin *bin);
 R_API int r_bin_list(RBin *bin);
 R_API int r_bin_load(RBin *bin, const char *file, int dummy);
+R_API RBinObj *r_bin_get_object(RBin *bin, int flags);
 R_API ut64 r_bin_get_baddr(RBin *bin);
 R_API RBinAddr* r_bin_get_main(RBin *bin);
 R_API RList* r_bin_get_entries(RBin *bin);
