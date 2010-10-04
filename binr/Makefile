@@ -4,7 +4,7 @@ include ../config-user.mk
 
 PFX=${DESTDIR}${PREFIX}
 
-BINS=rax2 rasm2 rabin2 rahash2 radiff2 radare2 rafind2 rarc2 ranal2
+BINS=rax2 rasm2 rabin2 rahash2 radiff2 radare2 rafind2 rarc2 ranal2 rasc2
 
 all:
 	@for a in ${BINS} ; do (cd $$a && ${MAKE} all) || exit 1; done

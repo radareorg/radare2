@@ -49,6 +49,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	RBinSection *section;
 	r_list_foreach (obj->sections, iter, section) {
 		printf ("ff %s\n", section->name);
+		//r_flag_set(r->flags, name, section->offset, section->size, 0);
 	}
 	r_list_foreach (obj->imports, iter, import) {
 		printf ("ff %s\n", import->name);
