@@ -337,10 +337,14 @@ void* MACH0_(r_bin_mach0_free)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 		free(bin->symtab);
 	if (bin->symstr)
 		free(bin->symstr);
+	if (bin->indirectsyms)
+		free (bin->indirectsyms);
 	if (bin->toc)
 		free(bin->toc);
 	if (bin->modtab)
 		free(bin->modtab);
+	if (bin->libs)
+		free (bin->libs);
 	if (bin->b)
 		r_buf_free(bin->b);
 	free(bin);

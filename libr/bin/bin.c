@@ -143,8 +143,8 @@ static void r_bin_free_items(RBin *bin) {
 		free (arch->main);
 	if (arch->file)
 		free (arch->file);
-	if (bin->curarch.curplugin && bin->curarch.curplugin->destroy)
-		bin->curarch.curplugin->destroy (&bin->curarch);
+	if (arch->curplugin && arch->curplugin->destroy)
+		arch->curplugin->destroy (arch);
 }
 
 static void r_bin_init(RBin *bin) {
