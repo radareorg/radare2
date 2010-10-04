@@ -28,42 +28,46 @@ static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
 	return R_TRUE;
 }
 
-struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t* bin) {
+struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t* bin, int idx, int *narch) {
 	ut8 *buf = NULL;
 	struct r_bin_fatmach0_arch_t *ret;
-	int i;
 
-	if (bin->hdr.nfat_arch < 0)
+	if (bin->hdr.nfat_arch < 0 || idx < 0 || idx > bin->hdr.nfat_arch)
 		return NULL;
-	ret = malloc ((bin->hdr.nfat_arch+1) * sizeof(struct r_bin_fatmach0_arch_t));
-	for (i = 0; i < bin->hdr.nfat_arch; i++) {
-		if (bin->archs[i].size == 0 || bin->archs[i].size > bin->size) {
-			eprintf ("Corrupted file\n");
-			return NULL;
-		}
-		if (!(buf = malloc (bin->archs[i].size))) {
-			perror ("malloc (buf)");
-			return NULL;
-		}
-		if (r_buf_read_at (bin->b, bin->archs[i].offset, buf, bin->archs[i].size) == -1) {
-			perror ("read (buf)");
-			free (buf);
-			return NULL;
-		}
-		if (!(ret[i].b = r_buf_new ())) {
-			free (buf);
-			return NULL;
-		}
-		if (!r_buf_set_bytes (ret[i].b, buf, bin->archs[i].size)) {
-			free (buf);
-			r_buf_free (ret[i].b);
-			return NULL;
-		}
-		free (buf);
-		ret[i].size = bin->archs[i].size;
-		ret[i].last = 0;
+	*narch = bin->hdr.nfat_arch;
+	if (!(ret = malloc (sizeof(struct r_bin_fatmach0_arch_t)))) {
+		perror ("malloc (ret)");
+		return NULL;
 	}
-	ret[i].last = 1;
+	if (bin->archs[idx].size == 0 || bin->archs[idx].size > bin->size) {
+		eprintf ("Corrupted file\n");
+		free (ret);
+		return NULL;
+	}
+	if (!(buf = malloc (bin->archs[idx].size))) {
+		perror ("malloc (buf)");
+		free (ret);
+		return NULL;
+	}
+	if (r_buf_read_at (bin->b, bin->archs[idx].offset, buf, bin->archs[idx].size) == -1) {
+		perror ("read (buf)");
+		free (buf);
+		free (ret);
+		return NULL;
+	}
+	if (!(ret->b = r_buf_new ())) {
+		free (buf);
+		free (ret);
+		return NULL;
+	}
+	if (!r_buf_set_bytes (ret->b, buf, bin->archs[idx].size)) {
+		free (buf);
+		r_buf_free (ret->b);
+		free (ret);
+		return NULL;
+	}
+	free (buf);
+	ret->size = bin->archs[idx].size;
 	return ret;
 }
 

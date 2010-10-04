@@ -43,8 +43,7 @@ typedef struct r_bin_arch_t {
 
 typedef struct r_bin_t {
 	const char *file;
-	struct r_bin_arch_t arch[R_BIN_MAX_ARCH];
-	struct r_bin_arch_t *curarch;
+	struct r_bin_arch_t curarch;
 	int narch;
 	void *user;
 	void *bin_obj;
@@ -59,7 +58,8 @@ typedef struct r_bin_xtr_plugin_t {
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	int (*check)(RBin *bin);
-	int (*extract)(RBin *bin);
+	int (*extract)(RBin *bin, int idx);
+	int (*load)(RBin *bin);
 	int (*destroy)(RBin *bin);
 	struct list_head list;
 } RBinXtrPlugin;
@@ -204,6 +204,8 @@ R_API int r_bin_has_dbg_syms (RBin *bin);
 R_API int r_bin_has_dbg_relocs (RBin *bin);
 R_API RBin* r_bin_new();
 R_API int r_bin_set_arch(RBin *bin, const char *arch, int bits, const char *name);
+R_API int r_bin_set_archidx(RBin *bin, int idx);
+R_API void r_bin_list_archs(RBin *bin);
 R_API void r_bin_set_user_ptr(RBin *bin, void *user);
 
 /* bin_meta.c */

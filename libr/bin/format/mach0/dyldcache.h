@@ -21,7 +21,7 @@ struct r_bin_dyldcache_lib_t {
 	int last;
 };
 
-struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj_t* bin);
+struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj_t* bin, int idx, int *nlib);
 void *r_bin_dyldcache_free(struct r_bin_dyldcache_obj_t* bin);
 struct r_bin_dyldcache_obj_t* r_bin_dyldcache_new(const char* file);
 

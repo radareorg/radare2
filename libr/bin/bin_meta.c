@@ -4,11 +4,11 @@
 #include <r_bin.h>
 
 R_API int r_bin_meta_get_line(RBin *bin, ut64 addr, char *file, int len, int *line) {
-	if (bin->curarch && bin->curarch->curplugin && bin->curarch->curplugin->meta) {
+	if (bin->curarch.curplugin && bin->curarch.curplugin->meta) {
 		// XXX quick hack to not show lines out of opened bin
-		if (addr >= bin->curarch->baddr && addr < (bin->curarch->baddr+bin->curarch->size))
-		if (bin->curarch->curplugin->meta->get_line)
-			return bin->curarch->curplugin->meta->get_line (bin->arch, addr,
+		if (addr >= bin->curarch.baddr && addr < (bin->curarch.baddr+bin->curarch.size))
+		if (bin->curarch.curplugin->meta->get_line)
+			return bin->curarch.curplugin->meta->get_line (&bin->curarch, addr,
 					file, len, line);
 	}
 	return R_FALSE;

@@ -75,9 +75,22 @@ static RList* get_strings(RBinArch *arch, int min) {
 	return ret;
 }
 
-static void r_bin_init_items(RBinArch *arch) {
-	if (!arch->curplugin)
-		return;
+static int r_bin_init_items(RBin *bin, int dummy) {
+	struct list_head *pos;
+	RBinArch *arch = &bin->curarch;
+
+	arch->curplugin = NULL;
+	list_for_each (pos, &bin->bins) {
+		RBinPlugin *h = list_entry (pos, RBinPlugin, list);
+		if ((dummy && !strncmp (h->name, "dummy", 5)) || 
+			(!dummy && (h->check && h->check (&bin->curarch)))) {
+			bin->curarch.curplugin = h;
+			break;
+		}
+	}
+	if (!arch->curplugin || !arch->curplugin->load ||
+		!arch->curplugin->load (arch))
+		return R_FALSE;
 	if (arch->curplugin->baddr)
 		arch->baddr = arch->curplugin->baddr (arch);
 	if (arch->curplugin->main)
@@ -101,10 +114,13 @@ static void r_bin_init_items(RBinArch *arch) {
 	else arch->strings = get_strings (arch, 4);
 	if (arch->curplugin->symbols)
 		arch->symbols = arch->curplugin->symbols (arch);
+	return R_TRUE;
 }
 
 /* TODO: Free plugins */
-static void r_bin_free_items(RBinArch *arch) {
+static void r_bin_free_items(RBin *bin) {
+	RBinArch *arch = &bin->curarch;
+
 	if (arch->entries)
 		r_list_free (arch->entries);
 	if (arch->fields)
@@ -127,27 +143,37 @@ static void r_bin_free_items(RBinArch *arch) {
 		free (arch->main);
 	if (arch->file)
 		free (arch->file);
+	if (bin->curarch.curplugin && bin->curarch.curplugin->destroy)
+		bin->curarch.curplugin->destroy (&bin->curarch);
 }
 
-static int r_bin_extract(RBin *bin, const char* file) {
+static void r_bin_init(RBin *bin) {
 	struct list_head *pos;
-	ut8 *buf;
-	int n = 1;
+
 	bin->curxtr = NULL;
-	bin->file = r_file_abspath (file);
 	list_for_each (pos, &bin->binxtrs) {
 		RBinXtrPlugin *h = list_entry (pos, RBinXtrPlugin, list);
-		if (h->check && h->check (bin))
+		if (h->check && h->check (bin)) {
 			bin->curxtr = h;
+			break;
+		}
 	}
+	if (bin->curxtr && bin->curxtr->load)
+		bin->curxtr->load (bin);
+}
+
+static int r_bin_extract(RBin *bin, int idx) {
+	ut8 *buf;
+	int n = 1;
+
 	if (bin->curxtr && bin->curxtr->extract)
-		n = bin->curxtr->extract (bin);
+		n = bin->curxtr->extract (bin, idx);
 	else {
-		bin->arch[0].file = strdup (bin->file);
-		if (!(buf = (ut8*)r_file_slurp (bin->file, &bin->arch[0].size))) 
+		bin->curarch.file = strdup (bin->file);
+		if (!(buf = (ut8*)r_file_slurp (bin->file, &bin->curarch.size))) 
 			return 0;
-		bin->arch[0].buf = r_buf_new ();
-		if (!r_buf_set_bytes (bin->arch[0].buf, buf, bin->arch[0].size)) {
+		bin->curarch.buf = r_buf_new ();
+		if (!r_buf_set_bytes (bin->curarch.buf, buf, bin->curarch.size)) {
 			free (buf);
 			return 0;
 		}
@@ -158,6 +184,7 @@ static int r_bin_extract(RBin *bin, const char* file) {
 
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo) {
 	struct list_head *pos;
+
 	if (foo->init)
 		foo->init (bin->user);
 	list_for_each_prev (pos, &bin->bins) {
@@ -171,6 +198,7 @@ R_API int r_bin_add(RBin *bin, RBinPlugin *foo) {
 
 R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
 	struct list_head *pos;
+
 	if (foo->init)
 		foo->init (bin->user);
 	list_for_each_prev (pos, &bin->binxtrs) {
@@ -183,15 +211,11 @@ R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
 }
 
 R_API void* r_bin_free(RBin *bin) {
-	int i;
-
 	if (!bin)
 		return NULL;
-	for (i = 0; i < bin->narch; i++) {
-		r_bin_free_items (&bin->arch[i]);
-		if (bin->arch[i].curplugin && bin->arch[i].curplugin->destroy)
-			bin->arch[i].curplugin->destroy (&bin->arch[i]);
-	}
+	r_bin_free_items (bin);
+	if (bin->curxtr && bin->curxtr->destroy)
+		bin->curxtr->destroy (bin);
 	free (bin);
 	return NULL;
 }
@@ -211,67 +235,51 @@ R_API int r_bin_list(RBin *bin) {
 }
 
 R_API int r_bin_load(RBin *bin, const char *file, int dummy) {
-	struct list_head *pos;
-	int i;
 	if (!bin || !file)
 		return R_FALSE;
-	bin->narch = r_bin_extract (bin, file);
+	bin->file = r_file_abspath (file);
+	r_bin_init (bin);
+	bin->narch = r_bin_extract (bin, 0);
 	if (bin->narch == 0)
 		return R_FALSE;
-	bin->curarch = &bin->arch[0];
-	for (i = 0; i < bin->narch; i++) {
-		bin->arch[i].curplugin = NULL;
-		list_for_each (pos, &bin->bins) {
-			RBinPlugin *h = list_entry (pos, RBinPlugin, list);
-			if ((dummy && !strncmp (h->name, "dummy", 5)) || 
-				(!dummy && (h->check && h->check (&bin->arch[i])))) {
-				bin->arch[i].curplugin = h;
-				break;
-			}
-		}
-		if (bin->arch[i].curplugin && bin->arch[i].curplugin->load &&
-			bin->arch[i].curplugin->load (&bin->arch[i]))
-			r_bin_init_items (&bin->arch[i]);
-		else return R_FALSE;
-	}
-	return R_TRUE;
+	return r_bin_init_items (bin, dummy);
 }
 
 // remove this getters.. we have no threads or mutexes to protect here
 R_API ut64 r_bin_get_baddr(RBin *bin) {
-	return bin->curarch->baddr;
+	return bin->curarch.baddr;
 }
 
 R_API RBinAddr* r_bin_get_main(RBin *bin) {
-	return bin->curarch->main;
+	return bin->curarch.main;
 }
 
 R_API RList* r_bin_get_entries(RBin *bin) {
-	return bin->curarch->entries;
+	return bin->curarch.entries;
 }
 
 R_API RList* r_bin_get_fields(RBin *bin) {
-	return bin->curarch->fields;
+	return bin->curarch.fields;
 }
 
 R_API RList* r_bin_get_imports(RBin *bin) {
-	return bin->curarch->imports;
+	return bin->curarch.imports;
 }
 
 R_API RBinInfo* r_bin_get_info(RBin *bin) {
-	return bin->curarch->info;
+	return bin->curarch.info;
 }
 
 R_API RList* r_bin_get_libs(RBin *bin) {
-	return bin->curarch->libs;
+	return bin->curarch.libs;
 }
 
 R_API RList* r_bin_get_relocs(RBin *bin) {
-	return bin->curarch->relocs;
+	return bin->curarch.relocs;
 }
 
 R_API RList* r_bin_get_sections(RBin *bin) {
-	return bin->curarch->sections;
+	return bin->curarch.sections;
 }
 
 R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va) {
@@ -279,10 +287,10 @@ R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va) {
 	RListIter *iter;
 	ut64 from, to;
 
-	if (bin->curarch->sections)
-	r_list_foreach (bin->curarch->sections, iter, section) {
-		from = va ? bin->curarch->baddr+section->rva : section->offset;
-		to = va ? bin->curarch->baddr+section->rva+section->vsize :
+	if (bin->curarch.sections)
+	r_list_foreach (bin->curarch.sections, iter, section) {
+		from = va ? bin->curarch.baddr+section->rva : section->offset;
+		to = va ? bin->curarch.baddr+section->rva+section->vsize :
 				  section->offset + section->size;
 		if (off >= from && off < to)
 			return section;
@@ -291,36 +299,36 @@ R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va) {
 }
 
 R_API RList* r_bin_get_strings(RBin *bin) {
-	return bin->curarch->strings;
+	return bin->curarch.strings;
 }
 
 R_API RList* r_bin_get_symbols(RBin *bin) {
-	return bin->curarch->symbols;
+	return bin->curarch.symbols;
 }
 
 R_API int r_bin_is_big_endian (RBin *bin) {
-	return bin->curarch->info->big_endian;
+	return bin->curarch.info->big_endian;
 }
 
 R_API int r_bin_is_stripped (RBin *bin) {
-	return R_BIN_DBG_STRIPPED (bin->curarch->info->dbg_info);
+	return R_BIN_DBG_STRIPPED (bin->curarch.info->dbg_info);
 }
 
 R_API int r_bin_is_static (RBin *bin) {
-	return R_BIN_DBG_STATIC (bin->curarch->info->dbg_info);
+	return R_BIN_DBG_STATIC (bin->curarch.info->dbg_info);
 }
 
 /* XXX Implement in r_bin_meta and deprecate? */
 R_API int r_bin_has_dbg_linenums (RBin *bin) {
-	return R_BIN_DBG_LINENUMS (bin->curarch->info->dbg_info);
+	return R_BIN_DBG_LINENUMS (bin->curarch.info->dbg_info);
 }
 
 R_API int r_bin_has_dbg_syms (RBin *bin) {
-	return R_BIN_DBG_SYMS (bin->curarch->info->dbg_info);
+	return R_BIN_DBG_SYMS (bin->curarch.info->dbg_info);
 }
 
 R_API int r_bin_has_dbg_relocs (RBin *bin) {
-	return R_BIN_DBG_RELOCS (bin->curarch->info->dbg_info);
+	return R_BIN_DBG_RELOCS (bin->curarch.info->dbg_info);
 }
 
 R_API RBin* r_bin_new() {
@@ -352,15 +360,32 @@ R_API int r_bin_set_arch(RBin *bin, const char *arch, int bits, const char *name
 	int i;
 
 	for (i = 0; i < bin->narch; i++) {
-		if (!bin->arch[i].info ||
-			(arch && !strstr (bin->arch[i].info->arch, arch)) ||
-			(bits && bits != bin->arch[i].info->bits) ||
-			(name && !strstr (bin->arch[i].file, name)))
+		r_bin_set_archidx (bin, i);
+		if (!bin->curarch.info || !bin->curarch.file ||
+			(arch && !strstr (bin->curarch.info->arch, arch)) ||
+			(bits && bits != bin->curarch.info->bits) ||
+			(name && !strstr (bin->curarch.file, name)))
 			continue;
-		bin->curarch = &bin->arch[i];
 		return R_TRUE;
 	}
 	return R_FALSE;
+}
+
+R_API int r_bin_set_archidx(RBin *bin, int idx) {
+	r_bin_free_items (bin);
+	if (r_bin_extract (bin, idx))
+		return r_bin_init_items (bin, R_FALSE);
+	return R_FALSE;
+}
+
+R_API void r_bin_list_archs(RBin *bin) {
+	int i;
+
+	for (i = 0; i < bin->narch; i++)
+		if (r_bin_set_archidx (bin, i) && bin->curarch.info)
+			printf ("%03i %s %s_%i (%s)\n", i, bin->curarch.file,
+					bin->curarch.info->arch, bin->curarch.info->bits,
+					bin->curarch.info->machine);
 }
 
 R_API void r_bin_set_user_ptr(RBin *bin, void *user) {

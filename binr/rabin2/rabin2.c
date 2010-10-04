@@ -45,8 +45,9 @@ static char *name = NULL;
 
 static int rabin_show_help() {
 	printf ("rabin2 [options] [file]\n"
-		" -a [arch_bits]   Set arch\n"
 		" -A               List archs\n"
+		" -a [arch_bits]   Set arch\n"
+		" -f [str]         Select sub-bin named str\n"
 		" -b [addr]        Override baddr\n"
 		" -e               Entrypoint\n"
 		" -M               Main\n"
@@ -66,7 +67,6 @@ static int rabin_show_help() {
 		" -L               List supported bin plugins\n"
 		" -@ [addr]        Show section, symbol or import at addr\n"
 		" -n [str]         Show section, symbol or import named str\n"
-		"                  or extract, analyze arch named str\n"
 		" -x               Extract bins contained in file\n"
 		" -V               Show version information\n"
 		" -h               This help\n");
@@ -120,6 +120,7 @@ static int rabin_show_main() {
 }
 
 static int rabin_extract(int all) {
+#if 0 
 	char out[512], *ptr;
 	int i = 0;
 
@@ -154,6 +155,7 @@ static int rabin_extract(int all) {
 			} else printf ("%s created (%i)\n", out, bin->curarch->size);
 		}
 	}
+#endif 
 	return R_TRUE;
 }
 
@@ -452,17 +454,6 @@ static int rabin_show_info() {
 	return R_TRUE;
 }
 
-static void rabin_list_archs() {
-	int i;
-
-	for (i=0; i<bin->narch; i++) {
-		if (bin->arch[i].info)
-		printf ("%s_%i %s (%s)\n", bin->arch[i].info->arch,
-				bin->arch[i].info->bits, bin->arch[i].file,
-				bin->arch[i].info->machine);
-	}
-}
-
 static int rabin_show_fields() {
 	RList *fields;
 	RListIter *iter;
@@ -515,7 +506,7 @@ static int rabin_dump_symbols(int len) {
 
 		if (!(buf = malloc (len)) || !(ret = malloc(len*2+1)))
 			return R_FALSE;
-		r_buf_read_at (bin->curarch->buf, symbol->offset, buf, len);
+		r_buf_read_at (bin->curarch.buf, symbol->offset, buf, len);
 		r_hex_bin2str (buf, len, ret);
 		printf ("%s %s\n", symbol->name, ret);
 		free (buf);
@@ -540,7 +531,7 @@ static int rabin_dump_sections(char *scnname) {
 			if (!(buf = malloc (section->size)) ||
 					!(ret = malloc (section->size*2+1)))
 				return R_FALSE;
-			r_buf_read_at (bin->curarch->buf, section->offset, buf, section->size);
+			r_buf_read_at (bin->curarch.buf, section->offset, buf, section->size);
 			r_hex_bin2str (buf, section->size, ret);
 			printf ("%s\n", ret);
 			free (buf);
@@ -646,7 +637,7 @@ int main(int argc, char **argv) {
 	int c, bits = 0;
 	int action = ACTION_UNK;
 	const char *op = NULL;
-	char *arch = NULL;
+	char *arch = NULL, *arch_name = NULL;
 
 	bin = r_bin_new ();
 	l = r_lib_new ("radare_plugin");
@@ -662,13 +653,16 @@ int main(int argc, char **argv) {
 		r_lib_opendir (l, LIBDIR"/radare2/");
 	}
 
-	while ((c = getopt (argc, argv, "Aa:B:b:Mm:n:@:VisSzIHelRwO:o:rvLhx")) != -1) {
+	while ((c = getopt (argc, argv, "Af:a:B:b:Mm:n:@:VisSzIHelRwO:o:rvLhx")) != -1) {
 		switch(c) {
 		case 'A':
 			action |= ACTION_LISTARCHS;
 			break;
 		case 'a':
 			if (optarg) arch = strdup (optarg);
+			break;
+		case 'f':
+			if (optarg) arch_name = strdup (optarg);
 			break;
 		case 'B':
 			bits = r_num_math (NULL, optarg);
@@ -764,8 +758,10 @@ int main(int argc, char **argv) {
 			bits = r_num_math (NULL, ptr+1);
 		}
 	}
-	if (action&ACTION_LISTARCHS || !r_bin_set_arch (bin, arch, bits, name)) {
-		rabin_list_archs ();
+	if (action&ACTION_LISTARCHS ||
+		((arch || bits || arch_name) &&
+		 !r_bin_set_arch (bin, arch, bits, arch_name))) {
+		r_bin_list_archs (bin);
 		free (arch);
 		r_bin_free (bin);
 		return 1;

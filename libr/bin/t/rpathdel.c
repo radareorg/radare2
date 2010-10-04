@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
 	output = argv[2];
 
 	bin = r_bin_new ();
-	if (!r_bin_load (bin, input, NULL)) {
+	if (!r_bin_load (bin, input, R_FALSE)) {
 		fprintf (stderr, "Error: Cannot open file '%s'\n", input);
 		return 1;
 	}

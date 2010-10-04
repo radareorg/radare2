@@ -32,23 +32,24 @@ static int destroy(RBin *bin) {
 	r_bin_fatmach0_free ((struct r_bin_fatmach0_obj_t*)bin->bin_obj);
 	return R_TRUE;
 }
+static int load(RBin *bin) {
+	if((bin->bin_obj = r_bin_fatmach0_new(bin->file)))
+		return R_TRUE;
+	return R_FALSE;
+}
 
-static int extract(RBin *bin) {
-	struct r_bin_fatmach0_arch_t *archs;
-	int i;
+static int extract(RBin *bin, int idx) {
+	struct r_bin_fatmach0_arch_t *arch;
+	int narch;
 
-	if(!(bin->bin_obj = r_bin_fatmach0_new(bin->file)))
+	arch = r_bin_fatmach0_extract ((struct r_bin_fatmach0_obj_t*)bin->bin_obj, idx, &narch);
+	if (!arch)
 		return 0;
-	archs = r_bin_fatmach0_extract ((struct r_bin_fatmach0_obj_t*)bin->bin_obj);
-	if (!archs)
-		return 0;
-	for (i = 0; !archs[i].last; i++) {
-		bin->arch[i].file = strdup (bin->file);
-		bin->arch[i].buf = archs[i].b;
-		bin->arch[i].size = archs[i].size;
-	}
-	free (archs);
-	return i;
+	bin->curarch.file = strdup (bin->file);
+	bin->curarch.buf = arch->b;
+	bin->curarch.size = arch->size;
+	free (arch);
+	return narch;
 }
 
 struct r_bin_xtr_plugin_t r_bin_xtr_plugin_fatmach0 = {
@@ -57,6 +58,7 @@ struct r_bin_xtr_plugin_t r_bin_xtr_plugin_fatmach0 = {
 	.init = NULL,
 	.fini = NULL,
 	.check = &check,
+	.load = &load,
 	.extract = &extract,
 	.destroy = &destroy,
 };

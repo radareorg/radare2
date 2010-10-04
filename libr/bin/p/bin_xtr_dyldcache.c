@@ -24,22 +24,24 @@ static int destroy(RBin *bin) {
 	return R_TRUE;
 }
 
-static int extract(RBin *bin) {
-	struct r_bin_dyldcache_lib_t *libs;
-	int i;
+static int load(RBin *bin) {
+	if((bin->bin_obj = r_bin_dyldcache_new (bin->file)))
+		return R_TRUE;
+	return R_FALSE;
+}
 
-	if(!(bin->bin_obj = r_bin_dyldcache_new (bin->file)))
+static int extract(RBin *bin, int idx) {
+	struct r_bin_dyldcache_lib_t *lib;
+	int nlib;
+
+	lib = r_bin_dyldcache_extract ((struct r_bin_dyldcache_obj_t*)bin->bin_obj, idx, &nlib);
+	if (!lib)
 		return 0;
-	libs = r_bin_dyldcache_extract ((struct r_bin_dyldcache_obj_t*)bin->bin_obj);
-	if (!libs)
-		return 0;
-	for (i = 0; !libs[i].last; i++) {
-		bin->arch[i].file = strdup (libs[i].path);
-		bin->arch[i].buf = libs[i].b;
-		bin->arch[i].size = libs[i].size;
-	}
-	free (libs);
-	return i;
+	bin->curarch.file = strdup (lib->path);
+	bin->curarch.buf = lib->b;
+	bin->curarch.size = lib->size;
+	free (lib);
+	return nlib;
 }
 
 struct r_bin_xtr_plugin_t r_bin_xtr_plugin_dyldcache = {
@@ -48,6 +50,7 @@ struct r_bin_xtr_plugin_t r_bin_xtr_plugin_dyldcache = {
 	.init = NULL,
 	.fini = NULL,
 	.check = &check,
+	.load = &load,
 	.extract = &extract,
 	.destroy = &destroy,
 };
