@@ -19,7 +19,7 @@ static int r_bin_dyldcache_apply_patch (struct r_buf_t* buf, ut32 data, ut64 off
 	return r_buf_write_at (buf, offset, (ut8*)&data, sizeof (data));
 }
 
-#define NZ_OFFSET(x) if(x > 0) r_bin_dyldcache_apply_patch (dbuf, x - linkedit_offset, (ut64)&x - (ut64)data)
+#define NZ_OFFSET(x) if(x > 0) r_bin_dyldcache_apply_patch (dbuf, x - linkedit_offset, (ut64)((unsigned long)&x - (unsigned long)data))
 
 /* TODO: Needs more testing and ERROR HANDLING */
 struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj_t* bin, int idx, int *nlib) {
@@ -84,7 +84,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 			if (seg->fileoff+seg->filesize > bin->b->length)
 				t = bin->b->length - seg->fileoff;
 			r_buf_append_bytes (dbuf, bin->b->buf+seg->fileoff, t);
-			r_bin_dyldcache_apply_patch (dbuf, dbuf->length, (ut64)&seg->fileoff - (ut64)data);
+			r_bin_dyldcache_apply_patch (dbuf, dbuf->length, (ut64)((unsigned long)&seg->fileoff - (unsigned long)data));
 			/* Patch section offsets */
 			int sect_offset = seg->fileoff - libsz;
 			libsz = dbuf->length;
@@ -96,7 +96,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 				int nsect;
 				for(nsect = 0; nsect < seg->nsects; nsect++) {
 					if(sects[nsect].offset > libsz) {
-						r_bin_dyldcache_apply_patch (dbuf, sects[nsect].offset - sect_offset, (ut64)&sects[nsect].offset - (ut64)data);
+						r_bin_dyldcache_apply_patch (dbuf, sects[nsect].offset - sect_offset, (ut64)((unsigned long)&sects[nsect].offset - (unsigned long)data));
 					}
 				}
 			}
