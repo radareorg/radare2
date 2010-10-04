@@ -39,7 +39,7 @@ static int rw = R_FALSE;
 static int va = R_FALSE;
 static ut64 gbaddr = 0LL;
 static char* file = NULL;
-static char* output = "a.out";
+static char* output = "out";
 static ut64 at = 0LL;
 static char *name = NULL;
 
@@ -60,7 +60,7 @@ static int rabin_show_help() {
 		" -l               Linked libraries\n"
 		" -R               Relocations\n"
 		" -O [str]         Write/Extract operations (str=help for help)\n"
-		" -o [file]        Output file for write operations (a.out by default)\n"
+		" -o [str]         Output file/folder for write operations (out by default)\n"
 		" -r               radare output\n"
 		" -v               Use vaddr in radare output\n"
 		" -m [addr]        Show source line at addr\n"
@@ -120,39 +120,49 @@ static int rabin_show_main() {
 }
 
 static int rabin_extract(int all) {
-	char out[512], *ptr;
+	char outfile[512], outpath[512], *path, *ptr;
 	int i = 0;
 
+	// XXX: Wrong for w32 (/)
 	if (all) {
 		for (i=0; i<bin->narch; i++) {
 			r_bin_set_archidx (bin, i);
 			if (bin->curarch.info == NULL) {
 				eprintf ("No extract info found.\n");
 			} else {
-				if ((ptr = strrchr (bin->curarch.file, '/')))
+				path = strdup (bin->curarch.file);
+				if ((ptr = strrchr (path, '/'))) {
+					*ptr = '\0';
 					ptr = ptr+1;
+				}
 				else ptr = bin->curarch.file;
-				snprintf (out, sizeof (out), "%s.%s_%i", ptr,
-						bin->curarch.info->arch, bin->curarch.info->bits);
-				if (!r_file_dump (out, bin->curarch.buf->buf, bin->curarch.size)) {
-					eprintf ("Error extracting %s\n", out);
+				snprintf (outpath, sizeof (outpath), "%s/%s", output, path);
+				if (!r_sys_rmkdir (outpath)) {
+					eprintf ("Error creating dir structure\n");
 					return R_FALSE;
-				} else printf ("%s created (%i)\n", out, bin->curarch.size);
+				}
+				snprintf (outfile, sizeof (outfile), "%s/%s.%s_%i",
+						outpath, ptr, bin->curarch.info->arch,
+						bin->curarch.info->bits);
+				if (!r_file_dump (outfile, bin->curarch.buf->buf, bin->curarch.size)) {
+					eprintf ("Error extracting %s\n", outfile);
+					return R_FALSE;
+				} else printf ("%s created (%i)\n", outfile, bin->curarch.size);
 			}
 		}
-	} else {
+	} else { /* XXX: Use 'output' for filename? */
 		if (bin->curarch.info == NULL) {
 			eprintf ("No extract info found.\n");
 		} else {
 			if ((ptr = strrchr (bin->curarch.file, '/')))
 				ptr = ptr+1;
 			else ptr = bin->curarch.file;
-			snprintf (out, sizeof (out), "%s.%s_%i", ptr,
+			snprintf (outfile, sizeof (outfile), "%s.%s_%i", ptr,
 					bin->curarch.info->arch, bin->curarch.info->bits);
-			if (!r_file_dump (out, bin->curarch.buf->buf, bin->curarch.size)) {
-				eprintf ("Error extracting %s\n", out);
+			if (!r_file_dump (outfile, bin->curarch.buf->buf, bin->curarch.size)) {
+				eprintf ("Error extracting %s\n", outfile);
 				return R_FALSE;
-			} else printf ("%s created (%i)\n", out, bin->curarch.size);
+			} else printf ("%s created (%i)\n", outfile, bin->curarch.size);
 		}
 	}
 	return R_TRUE;

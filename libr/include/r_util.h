@@ -271,6 +271,7 @@ R_API void r_sys_perror(const char *fun);
 #else
 #define r_sys_mkdir(x) (mkdir(x,0755)!=-1)
 #endif
+R_API int r_sys_rmkdir(const char *dir);
 R_API int r_sys_sleep(int secs);
 R_API int r_sys_usleep(int usecs);
 R_API const char *r_sys_getenv(const char *key);
