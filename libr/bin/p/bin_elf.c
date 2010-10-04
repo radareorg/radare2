@@ -219,7 +219,7 @@ static RBinInfo* info(RBinArch *arch) {
 	ret->big_endian=Elf_(r_bin_elf_is_big_endian) (arch->bin_obj);
 	ret->dbg_info = 0;
 	if (!Elf_(r_bin_elf_get_stripped) (arch->bin_obj))
-		ret->dbg_info |= 0x04 | 0x08 | 0x10
+		ret->dbg_info |= 0x04 | 0x08 | 0x10;
 	else  ret->dbg_info |= 0x01;
 	if (Elf_(r_bin_elf_get_static) (arch->bin_obj))
 		ret->dbg_info |= 0x02;
