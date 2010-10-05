@@ -12,9 +12,5 @@ def disasm(a, arch, op):
 		print "HEX: %s"%code.buf_hex
 	
 a = RAsm()
-print "---[ name ]-----[ description ]----------"
-a.list()
-
 disasm (a, 'x86.olly', 'mov eax, 33')
 disasm (a, 'java', 'bipush 33')
-disasm (a, 'java', 'invalid opcode')
