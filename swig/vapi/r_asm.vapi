@@ -28,7 +28,7 @@ public class RAsm {
 	}
 
 	[Compact]
-	[CCode (cname="RAsmPlugin", destroy_function="", free_function="" )]
+	[CCode (cname="RAsmPlugin", destroy_function="")]
 	public class Plugin {
 		public string name;
 		public string arch;
@@ -38,7 +38,7 @@ public class RAsm {
 	}
 
 	[Compact]
-	[CCode (cname="struct r_asm_aop_t", destroy_function="" )]
+	[CCode (cname="RAsmAop", destroy_function="")]
 	public struct Aop {
 		public int inst_len;
 		public uint8 *buf;
@@ -47,7 +47,8 @@ public class RAsm {
 		public string buf_err;
 	}
 
-	[CCode (cname="struct r_asm_code_t", destroy_function="" )]
+	[Compact]
+	[CCode (cname="RAsmCode", destroy_function="")]
 	public struct Code {
 		public int len;
 		public uint8* buf;

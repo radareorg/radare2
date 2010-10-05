@@ -10,6 +10,8 @@ namespace Radare {
 		public RBin();
 
 		public int load(string file, bool dummy);
+		public int set_arch(string arch, int bits, string name);
+		public int set_archidx(int idx);
 		public int list();
 		public uint64 get_baddr();
 		public RBin.Addr get_main();

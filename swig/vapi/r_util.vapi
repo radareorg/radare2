@@ -46,7 +46,7 @@ public static class Radare.RHex {
 
 	[CCode (cheader_filename="r_util.h", cprefix="r_hex_", free_function="")]
 	public static class RHex {
-		public static int str2bin (string input, out uint8 *buf);
+		public static int str2bin (string input, uint8 *buf);
 		public static int bin2str (uint8 *buf, int len, out string str);
 		public static string bin2strdup (uint8 *buf, int len);
 	}
