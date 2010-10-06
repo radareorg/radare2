@@ -78,16 +78,17 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	aop->inst_len = print_insn_arm((bfd_vma)Offset, &disasm_obj);
 	if (aop->inst_len == -1)
 		strncpy(aop->buf_asm, " (data)", R_ASM_BUFSIZE);
-
 	return aop->inst_len; //(a->bits/8); //aop->inst_len;
 }
 
-int armass_assemble(const char *str, unsigned long off);
+int armass_assemble(const char *str, unsigned long off, int thumb);
 static int assemble(RAsm *a, RAsmAop *aop, const char *buf) {
-	int op = armass_assemble(buf, a->pc);
+	int op = armass_assemble(buf, a->pc, (a->bits==16)?1:0);
 	if (op==-1)
 		return -1;
-	r_mem_copyendian (aop->buf, (void *)&op, 4, a->big_endian);
+	if (a->bits==32)
+		r_mem_copyendian (aop->buf, (void *)&op, 4, a->big_endian);
+	else r_mem_copyendian (aop->buf, (void *)&op, 2, a->big_endian);
 	return (a->bits/8);
 }
 

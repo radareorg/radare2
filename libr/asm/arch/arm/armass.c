@@ -1,6 +1,5 @@
 /* radare - LGPL - Copyright 2010 pancake<@nopcode.org> */
 
-// TODO: Add thumb mode
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -90,9 +89,9 @@ static ArmOp ops[] = {
 static int getnum(const char *str) {
 	if (!str)
 		return 0;
-	while (*str=='$'||*str=='#')
+	while (*str=='$' || *str=='#')
 		str++;
-	if (*str=='0'&&str[1]=='x') {
+	if (*str=='0' && str[1]=='x') {
 		int x;
 		if (sscanf (str+2, "%x", &x))
 			return x;
@@ -102,7 +101,7 @@ static int getnum(const char *str) {
 
 static char *getrange(char *s) {
 	char *p = NULL;
-	while(s&&*s) {
+	while (s && *s) {
 		if (*s==',') {
 			p = s+1;
 			*p=0;
@@ -113,7 +112,7 @@ static char *getrange(char *s) {
 			*s=0;
 		s++;
 	}
-	while (p&&*p==' ') p++;
+	while (p && *p==' ') p++;
 	return p;
 }
 
@@ -124,7 +123,7 @@ static int getreg(const char *str) {
 		return -1;
 	if (*str=='r')
 		return atoi (str+1);
-	for (i=0;aliases[i];i++)
+	for (i=0; aliases[i]; i++)
 		if (!strcmp (str, aliases[i]))
 			return 10+i;
 	return -1;
@@ -132,7 +131,7 @@ static int getreg(const char *str) {
 
 static int getshift(const char *str) {
 	if (!str) return 0;
-	while (str&&*str&&!atoi (str))
+	while (str && *str&&!atoi (str))
 		str++;
 	return atoi(str)/2;
 }
@@ -158,23 +157,187 @@ static void arm_opcode_parse(ArmOpcode *ao, const char *str) {
 	while (ao->a2&&*ao->a2==' ') ao->a2++;
 }
 
-static void arm_opcode_cond(ArmOpcode *ao, int delta) {
+static inline int arm_opcode_cond(ArmOpcode *ao, int delta) {
 	const char *conds[] = {
 		"eq", "ne", "cs", "cc", "mi", "pl", "vs", "vc",
 		"hi", "ls", "ge", "lt", "gt", "le", "al", "nv", 0
 	};
 	int i, cond = 14; // 'always' is default
 	char *c = ao->op+delta;
-	for (i=0;conds[i];i++) {
+	for (i=0; conds[i]; i++) {
 		if (!strcmp (c, conds[i])) {
-			cond = i;
+			cond = i; 
 			break;
 		}
 	}
 	ao->o |= cond<<4;
+	return cond;
 }
 
-static int arm_opcode_name(ArmOpcode *ao, const char *str) {
+// str, ldr
+static int thumb_assemble(ArmOpcode *ao, const char *str) {
+	// TODO: Add thumb mode
+	// mov r, n = 2[r0-7][nn]
+	// mov r, r = 46[7bits,7bits]
+	// cmp r, n = 2[r(8-f)-8][nn]
+	// cmp r, r = 45[7bits,7bits]
+	// subs r, n = 3[r(8-f)-8][nn]
+	//
+	// and r, r = 40[7bits=r][7bits=r] 
+	//     asrs = 41
+	// tst r, r = 42[7bits,7bits]
+	//      orr = 43
+	//     
+	// b[cond] n = d[cond][nn]
+	// b.n = e0[nn] = 
+	// bx rN = 47[7bits(regidx)][7bits(ignored)]
+	// bl = 4 bytes = f0[nn][????]
+	// add r0, pc, n = a[r0-7][nn]
+	// add r0, sp, n = a[r(8-f)-8][nn]
+	// rasm2 -b 16 -a arm -e -d 2700 // movs r7, #0
+
+	if (!strcmp (ao->op, "nop")) {
+		ao->o = 0xbf;
+	} else
+	if (!strcmp (ao->op, "and")) {
+		ao->o = 0x40;
+		ao->o |= (0xff & getreg (ao->a0)) << 8;
+		ao->o |= (0xff & getreg (ao->a1)) << 11;
+	} else
+	if (!strcmp (ao->op, "svc")) {
+		ao->o = 0xdf;
+		ao->o |= (0xff & getnum (ao->a0)) << 8;
+	} else
+	if (!strcmp (ao->op, "b") || !strcmp (ao->op, "b.n")) {
+		ao->o = 0xe0;
+		ao->o |= getnum (ao->a0)<<8;
+	} else
+	if (!strcmp (ao->op, "bx")) {
+		ao->o = 0x47;
+		ao->o |= getreg (ao->a0)<<11;
+	} else
+	if (!strcmp (ao->op, "bl")) {
+		ao->o = 0x47;
+		ao->o |= getnum (ao->a0)<<8;
+		// XXX: length = 4
+	} else
+	if (*ao->op == 'b') { // conditional branch
+		ao->o = 0xd0 | arm_opcode_cond (ao, 1);
+		ao->o |= getnum (ao->a0)<<8;
+	} else
+	if (!strcmp (ao->op, "mov")) {
+		int reg = getreg (ao->a1);
+		if (reg!=-1) {
+			ao->o = 0x46;
+			ao->o |= (getreg (ao->a0))<<8;
+			ao->o |= reg<<11;
+		} else {
+			ao->o = 0x20;
+			ao->o |= (getreg (ao->a0));
+			ao->o |= (getnum (ao->a1)&0xff)<<8;
+		}
+	} else
+	if (!strcmp (ao->op, "ldr")) {
+		getrange (ao->a1);
+		getrange (ao->a2);
+		if (!strcmp (ao->a1, "sp")) {
+			// ldr r0, [sp, n] = a[r0-7][nn]
+			if (getreg (ao->a2) == -1) {
+				ao->o = 0x98 + (0xf & getreg (ao->a0));
+				ao->o |= (0xff & getnum (ao->a2)/4)<<8;
+			} else {
+				ao->o = 0x58;// + (0xf & getreg (ao->a0));
+				ao->o |= (0xff & getreg (ao->a2)/4)<<8;
+				printf("DUnno\n");
+			}
+		} else
+		if (!strcmp (ao->a1, "pc")) {
+			// ldr r0, [pc, n] = 4[r0-8][nn*4]
+			ao->o = 0x40 | (0xf & getreg (ao->a0));
+			ao->o |= (0xff & getnum (ao->a2)/4)<<8;
+		} else {
+			// ldr r0, [rN, rN] = 58[7bits:basereg + 7bits:destreg]
+			int a0 = getreg (ao->a0);
+			int a1 = getreg (ao->a1);
+			int a2 = getreg (ao->a2);
+			ao->o = 0x58; // | (8+(0xf & a0));
+			ao->o |= (7&a0)<<8;
+			ao->o |= (7&a1)<<11;
+			ao->o |= (7&a2)<<14;
+		}
+		// [0379] ldrb r3, [r0, #4]
+		// [0188] ldrh r1, [r0, #0]
+
+	} else
+	if (!strcmp (ao->op, "str")) {
+		// TODO
+		// str r0, [sp, n] = a[r(8-f)-8][nn]
+		//  " strh = 9
+		//  " strb = 8
+		// str r0, [rN, n] = 6[n*16][7bits:basereg + 7bits:destreg]
+		// str r0, [rN, rN] = 50[7bits:basereg + 7bits:destreg]
+		getrange (ao->a1);
+		getrange (ao->a2);
+		if (!strcmp (ao->a1, "sp")) {
+			// ldr r0, [sp, n] = a[r0-7][nn]
+			if (getreg (ao->a2) == -1) {
+				ao->o = 0x90 + (0xf & getreg (ao->a0));
+				ao->o |= (0xff & getnum (ao->a2)/4)<<8;
+			} else {
+				printf ("DUnno\n");
+			}
+		}
+	} else
+	if (!strcmp (ao->op, "tst")) {
+		ao->o = 0x42;
+		ao->o |= (getreg (ao->a0))<<8;
+		ao->o |= getreg (ao->a1)<<11;
+	} else
+	if (!strcmp (ao->op, "cmp")) {
+		int reg = getreg (ao->a1);
+		if (reg!=-1) {
+			ao->o = 0x45;
+			ao->o |= (getreg (ao->a0))<<8;
+			ao->o |= reg<<11;
+		} else {
+			ao->o = 0x20;
+			ao->o |= 8+(getreg (ao->a0));
+			ao->o |= (getnum (ao->a1)&0xff)<<8;
+		}
+	} else
+	if (!strcmp (ao->op, "add")) {
+		// XXX: signed unsigned ??
+		// add r, r = 44[7bits,7bits]
+		// adds r, n = 3[r0-7][nn]
+		int reg = getreg (ao->a1);
+		if (reg!=-1) {
+			ao->o = 0x44;
+			ao->o |= (getreg (ao->a0))<<8;
+			ao->o |= reg<<11;
+		} else {
+			ao->o = 0x30;
+			ao->o |= (getreg (ao->a0));
+			ao->o |= (getnum (ao->a1)&0xff)<<8;
+		}
+	} else
+	if (!strcmp (ao->op, "sub")) {
+		// TODO
+		int reg = getreg (ao->a1);
+		if (reg!=-1) {
+			ao->o = 0x1e;
+			ao->o |= (getreg (ao->a0))<<8;
+			ao->o |= reg<<11;
+			// TODO: ao->o |= getnum(ao->a2)<<11;
+		} else {
+			ao->o = 0x30;
+			ao->o |= 8+(getreg (ao->a0));
+			ao->o |= (getnum (ao->a1)&0xff)<<8;
+		}
+	} else return 0;
+	return 1;
+}
+
+static int arm_assemble(ArmOpcode *ao, const char *str) {
 	int i, ret;
 	for (i=0;ops[i].name;i++) {
 		if (!memcmp(ao->op, ops[i].name, strlen (ops[i].name))) {
@@ -229,12 +392,10 @@ static int arm_opcode_name(ArmOpcode *ao, const char *str) {
 				}
 				break;
 			case TYPE_BRR:
-				if ((ret = getreg(ao->a0)) != -1) {
-					ao->o |= (getreg (ao->a0)<<24);
-				} else {
+				if ((ret = getreg(ao->a0)) == -1) {
 					printf("This branch does not accept off as arg\n");
 					return 0;
-				}
+				} else ao->o |= (getreg (ao->a0)<<24);
 				break;
 			case TYPE_SWI:
 				ao->o |= (getnum (ao->a0)&0xff)<<24;
@@ -270,11 +431,14 @@ static int arm_opcode_name(ArmOpcode *ao, const char *str) {
 	return 0;
 }
 
-int armass_assemble(const char *str, unsigned long off) {
+typedef int (*AssembleFunction)(ArmOpcode *, const char *);
+static AssembleFunction assemble[2] = { &arm_assemble, &thumb_assemble };
+
+int armass_assemble(const char *str, unsigned long off, int thumb) {
 	ArmOpcode aop = {0};
 	aop.off = off;
 	arm_opcode_parse (&aop, str);
-	if (!arm_opcode_name (&aop, str)) {
+	if (!assemble[thumb] (&aop, str)) {
 		printf ("armass: Unknown opcode (%s)\n", str);
 		return -1;
 	}
@@ -283,15 +447,57 @@ int armass_assemble(const char *str, unsigned long off) {
 }
 
 #ifdef MAIN
+void thisplay(const char *str) {
+	char cmd[32];
+	int op = armass_assemble (str, 0x1000, 1);
+	printf ("[%04x] %s\n", op, str);
+	snprintf (cmd, sizeof(cmd), "rasm2 -d -b 16 -a arm %04x", op);
+	system (cmd);
+}
+
 void display(const char *str) {
 	char cmd[32];
-	int op = armass_assemble (str, 0x1000);
-	printf ("%08x %s\n", op, str);
+	int op = armass_assemble (str, 0x1000, 0);
+	printf ("[%08x] %s\n", op, str);
 	snprintf (cmd, sizeof(cmd), "rasm2 -d -a arm %08x", op);
 	system (cmd);
 }
 
-main() {
+int main() {
+#if 0
+	thisplay("mov r0, 11");
+	thisplay("mov r0, r2");
+	thisplay("mov r1, r4");
+	thisplay("cmp r1, r2");
+	thisplay("cmp r3, 44");
+	thisplay("nop");
+	thisplay("svc 15");
+	thisplay("add r1, r2");
+	thisplay("add r3, 44");
+	thisplay("sub r1, r2, 3");
+	thisplay("sub r3, 44");
+	thisplay("tst r3,r4");
+	thisplay("bx r3");
+	thisplay("b 33");
+	thisplay("b 0");
+	thisplay("bne 44");
+	thisplay("and r2,r3");
+#endif
+#if 0
+	thisplay("ldr r1, [pc, r2]");
+	thisplay("ldr r1, [pc, 12]");
+	thisplay("ldr r1, [sp, r2]");
+	thisplay("ldr r1, [sp, 24]");
+#endif
+	thisplay("ldr r1, [r2, r3]");
+#if 0
+	thisplay("str r1, [pc, r2]");
+	thisplay("str r1, [pc, 12]");
+	thisplay("str r1, [sp, r2]");
+	thisplay("str r1, [sp, 24]");
+	thisplay("str r1, [r2, r3]");
+#endif
+return 0;
 #if 0
 	display("mov r0, 33");
 	display("mov r1, 33");
@@ -356,5 +562,6 @@ main() {
 	display("bl 0x123");
 	display("blt 0x123"); // XXX: not supported
 #endif
+	return 0;
 }
 #endif
