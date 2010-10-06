@@ -12,8 +12,8 @@ func main() {
 		os.Exit(1)
 	}
 	b := r_bin.NewRBin()
-	b.Load(os.Args[1], "")
-	baddr := b.GetBaddr()
+	b.Load(os.Args[1], false)
+	baddr := b.Get_baddr()
 	fmt.Println("-> Sections")
 	fmt.Printf("baddr=%08x\n", baddr)
 	for _, s:= range b.Get_sections() {

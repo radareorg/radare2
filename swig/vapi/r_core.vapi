@@ -43,6 +43,7 @@ public class RCore {
 
 	/* asm */
 	public RList<RCore.AsmHit> asm_strsearch(string input, uint64 from, uint64 to);
+	public RList<RCore.AsmHit> asm_bwdisassemble(uint64 addr, int n, int len);
 
 	// XXX mode = Radare.Io.Mode
 	[Compact]

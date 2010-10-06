@@ -162,6 +162,7 @@ R_API int r_core_anal_ref_list(struct r_core_t *core, int rad);
 /* asm.c */
 typedef struct r_core_asm_hit {
 	char *code;
+	int len;
 	ut64 addr;
 } RCoreAsmHit;
 
@@ -170,6 +171,7 @@ R_API RList *r_core_asm_hit_list_new();
 R_API void r_core_asm_hit_free(void *_hit);
 R_API char* r_core_asm_search(RCore *core, const char *input, ut64 from, ut64 to);
 R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to);
+R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len);
 
 /* gdiff.c */
 R_API int r_core_gdiff(struct r_core_t *core, char *file1, char *file2, int va);

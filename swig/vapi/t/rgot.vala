@@ -21,7 +21,7 @@ void main(string[] args) {
 
 	string file = args[1];
 	var bin = new RBin ();
-	if (bin.load (file, null) != 1)
+	if (bin.load (file, false) != 1)
 		error ("Cannot open binary file\n");
 
 	uint64 baddr = bin.get_baddr();

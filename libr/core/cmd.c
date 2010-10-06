@@ -2641,7 +2641,8 @@ static int cmd_search(void *data, const char *input) {
 			int count = 0;
 			if ((hits = r_core_asm_strsearch (core, input+2, from, to))) {
 				r_list_foreach (hits, iter, hit) {
-					r_cons_printf ("f hit0_%i @ 0x%08"PFMT64x"   # %s\n", count, hit->addr, hit->code);
+					r_cons_printf ("f hit0_%i @ 0x%08"PFMT64x"   # %s (%i)\n",
+							count, hit->addr, hit->code, hit->len);
 					count++;
 				}
 				r_list_destroy (hits);

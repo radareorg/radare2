@@ -9,6 +9,7 @@ R_API RCoreAsmHit *r_core_asm_hit_new() {
 	RCoreAsmHit *hit = R_NEW (RCoreAsmHit);
 	if (hit) {
 		hit->code = NULL;
+		hit->len = 0;
 		hit->addr = -1;
 	}
 	return hit;
@@ -51,10 +52,22 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	int idx, tidx, ret, len; 
 	int tokcount, matchcount;
 
-	if (!(ptr = strdup (input)))
+	if (core->blocksize<=OPSZ) {
+		eprintf ("error: block size too small\n");
 		return NULL;
-	if (!(hits = r_core_asm_hit_list_new ()))
+	}
+	if (!(buf = (ut8 *)malloc (core->blocksize))){
 		return NULL;
+	}
+	if (!(ptr = strdup (input))) {
+		free (buf);
+		return NULL;
+	}
+	if (!(hits = r_core_asm_hit_list_new ())) {
+		free (buf);
+		free (ptr);
+		return NULL;
+	}
 	for (tokcount=0;;tokcount++) {
 		if (tokcount==0) tok = (char*)strtok (ptr, ";");
 		else tok = (char*)strtok (NULL, ";");
@@ -62,11 +75,6 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			break;
 		tokens[tokcount] = r_str_trim_head_tail (tok);
 	}
-	if (core->blocksize<=OPSZ) {
-		eprintf ("error: block size too small\n");
-		return R_FALSE;
-	}
-	buf = (ut8 *)malloc (core->blocksize);
 	for (at = from, matchcount = 0; at < to; at += core->blocksize-OPSZ) {
 		if (r_cons_singleton ()->breaked)
 			break;
@@ -90,9 +98,13 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 						tidx = idx;
 					if (!(hit = r_core_asm_hit_new ())) {
 						r_list_destroy (hits);
+						free (buf);
+						free (ptr);
+						free (code);
 						return NULL;
 					}
 					hit->addr = at+tidx;
+					hit->len = idx+len-tidx;
 					hit->code = strdup (code);
 					r_list_append (hits, hit);
 					R_FREE (code);
@@ -119,5 +131,59 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	free (buf);
 	free (ptr);
 	free (code);
+	return hits;
+}
+
+R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
+	RCoreAsmHit *hit;
+	RAsmAop aop;
+	RList *hits = NULL;
+	ut8 *buf;
+	ut64 at;
+	int instrlen, ni, idx;
+
+	if (!(hits = r_core_asm_hit_list_new ()))
+		return NULL;
+	buf = (ut8 *)malloc (len);
+	if (!buf) {
+		r_list_destroy (hits);
+		return NULL;
+	}
+	if (r_io_read_at (core->io, addr-len, buf, len) != len) {
+		r_list_destroy (hits);
+		free (buf);
+		return NULL;
+	}
+	for (idx = 1; idx < len; idx++) {
+		if (r_cons_singleton ()->breaked)
+			break;
+		at = addr - idx; ni = 1;
+		while (at < addr) {
+			r_asm_set_pc (core->assembler, at);
+			//XXX HACK We need another way to detect invalid disasm!!
+			if (!(instrlen = r_asm_disassemble (core->assembler, &aop, buf+(len-(addr-at)), addr-at)) || strstr (aop.buf_asm, "invalid")) {
+				break;
+			} else {
+				at += instrlen;
+				if (at == addr) {
+					if (ni == n) {
+						if (!(hit = r_core_asm_hit_new ())) {
+							r_list_destroy (hits);
+							free (buf);
+							return NULL;
+						}
+						hit->addr = addr-idx;
+						hit->len = idx;
+						hit->code = NULL;
+						r_list_append (hits, hit);
+					}
+				} else {
+					ni++;
+				}
+			}
+		}
+	}
+	r_asm_set_pc (core->assembler, addr);
+	free (buf);
 	return hits;
 }

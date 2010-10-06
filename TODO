@@ -29,9 +29,9 @@ TODO nibble
 -----------
 * r_anal
   - use r_anal_value everywhere
-* x86im
-  - make x86_x86im the default backend for x86 analysis
-  - implement analysis for more instructions
+  - x86im
+    - make x86_x86im the default backend for x86 analysis
+    - implement analysis for more instructions
 * r_bin
   - Better way to fix got_offset issue?
 * diff code analysis

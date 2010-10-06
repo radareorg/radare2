@@ -13,7 +13,6 @@
 static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len) {
 	t_disasm disasm_obj;
 
-	//lowercase=1;
 	aop->inst_len = Disasm_olly(buf, len, a->pc, &disasm_obj, DISASM_FILE);
 	snprintf(aop->buf_asm, R_ASM_BUFSIZE, "%s", disasm_obj.result);
 
