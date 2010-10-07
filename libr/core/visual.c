@@ -6,6 +6,7 @@
 static int printidx = 0;
 const char *printfmt[] = { "x", "pd", "f tmp&&sr sp&&x 64&&dr=&&s-&&s tmp&&f-tmp&&pd", "p8", "pc", "ps" };
 
+// XXX: use core->print->cur_enabled instead of curset/cursor/ocursor
 static int curset = 0, cursor = 0, ocursor=-1;
 static int color = 1;
 static int debug = 1;
@@ -987,7 +988,6 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	ut64 scrseek;
 	int ch;
 
-	core->print->cur_enabled = R_FALSE;
 	vi = r_config_get (core->config, "cmd.vprompt");
 	if (vi) r_core_cmd (core, vi, 0);
 
