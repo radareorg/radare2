@@ -27,7 +27,7 @@ static unsigned int disarm_branch_offset (unsigned int pc, unsigned int insoff) 
 #define IS_RETURN(x) \
 	((x&(ARM_DTM_I_MASK|ARM_DTM_LOAD|(1<<15))) == (ARM_DTM_I|ARM_DTM_LOAD|(1<<15)))
 
-	//if ( (inst & ( ARM_DTX_I_MASK | ARM_DTX_LOAD  | ( ARM_DTX_RD_MASK ) ) ) == ( ARM_DTX_LOAD | ARM_DTX_I | ( ARM_PC << 12 ) ) )
+//if ( (inst & ( ARM_DTX_I_MASK | ARM_DTX_LOAD  | ( ARM_DTX_RD_MASK ) ) ) == ( ARM_DTX_LOAD | ARM_DTX_I | ( ARM_PC << 12 ) ) )
 #define IS_UNKJMP(x) \
 	(( (( ARM_DTX_RD_MASK ) ) ) == ( ARM_DTX_LOAD | ARM_DTX_I | ( ARM_PC << 12 ) ))
 
@@ -40,10 +40,48 @@ static unsigned int disarm_branch_offset (unsigned int pc, unsigned int insoff) 
 #define IS_EXITPOINT(x) \
 	(IS_BRANCH (x) || IS_RETURN (x) || IS_UNKJMP (x))
 
+#define API static
+#include "../../asm/arch/arm/armthumb.c"
+
+static int aop_thumb(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
+	ut16 *_ins = (ut16*)data;
+	ut16 ins = *_ins;
+	aop->length = armthumb_length (ins);
+	// TODO: implement load/store analysis
+	if (ins == 0xbf) {
+		// TODO: add support for more NOP instructions
+		aop->type = R_ANAL_OP_TYPE_NOP;
+	} else
+        if ( (ins & _($1111,0,0,0)) == _($1101,0,0,0) ) {
+		// BNE..
+		int delta = (ins & _(0,0,$1111,$1111));
+		aop->type = R_ANAL_OP_TYPE_CJMP;
+		aop->jump = addr+8+(delta<<1);
+		aop->fail = addr+4;
+        } else if ( (ins & _($1110,$1000,0,0)) == _($1110,0,0,0) ) {
+		// B
+		int delta = (ins & _(0,0,$1111,$1111));
+		aop->type = R_ANAL_OP_TYPE_JMP;
+		aop->jump = addr+8+(delta<<1);
+		aop->fail = addr+4;
+        } else if ( (ins & _($1111,$1111,0,0)) == _($0100,$0111,0,0) ) {
+		// BLX
+		aop->type = R_ANAL_OP_TYPE_UJMP;
+		aop->jump = (ut32)(ins & _(0,0,$0111,$1000)) >> 3;
+		aop->fail = addr+4;
+        } else if ( (ins & _($1111,$1111,0,0)) == _($1011,$1110,0,0) ) {
+		aop->type = R_ANAL_OP_TYPE_TRAP;
+		aop->value = (ut64)(ins>>8);
+        } else if ( (ins & _($1111,$1111,0,0)) == _($1101,$1111,0,0)) {
+		aop->type = R_ANAL_OP_TYPE_SWI;
+		aop->value = (ut64)(ins>>8);
+	}
+	return aop->length;
+}
+
 static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
-	unsigned int i = 0;
-	unsigned int* code = (unsigned int *)data;
-	unsigned int branch_dst_addr;
+	ut32 branch_dst_addr, i = 0;
+	ut32* code = (ut32 *)data;
 	const ut8 *b = (ut8 *)data;
 
 	if (data == NULL)
@@ -52,14 +90,11 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	memset (aop, '\0', sizeof (RAnalOp));
 	aop->addr = addr;
 	aop->type = R_ANAL_OP_TYPE_UNK;
-	aop->length = (anal->bits==16)?2:4;
 	aop->jump = aop->fail = -1;
 	aop->ref = aop->value = -1;
-
-	if (aop == NULL)
-		return aop->length;
-	memset (aop, '\0', sizeof (RAnalOp));
-	aop->type = R_ANAL_OP_TYPE_UNK;
+	if (anal->bits==16)
+		return aop_thumb(anal, aop, addr, data, len);
+	aop->length = 4;
 #if 0
 	fprintf(stderr, "CODE %02x %02x %02x %02x\n",
 		codeA[0], codeA[1], codeA[2], codeA[3]);

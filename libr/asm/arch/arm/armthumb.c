@@ -28,6 +28,9 @@
 #define $0011 3
 #define $0010 2
 #define _(a,b,c,d) ((a<<12)|(b<<8)|(c<<4)|(d))
+#ifndef API
+#define API
+#endif
 
 #define regname(x) (x>=0&&x<16)?regNames[x]:"r?"
 static const char* regNames[] = {
@@ -78,14 +81,14 @@ static const char* compute_reg_list (unsigned list) {
         return tmpbuf;
 }
 
-int armthumb_length(unsigned int ins) {
+API int armthumb_length(unsigned int ins) {
         if ((ins & _($1110,$1000,0,0)) == _($1110,0,0,0))
                 if (ins & _(1,$1000,0,0))
 			return 4;
 	return 2;
 }
 
-int armthumb_disassemble(char *buf, unsigned long pc, unsigned int ins) {
+API int armthumb_disassemble(char *buf, unsigned long pc, unsigned int ins) {
 	unsigned int delta, imm, jump, op_code, instr2 = ins >> 16;
         const char* op;
 	pc += 4;

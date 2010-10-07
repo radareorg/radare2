@@ -5,12 +5,12 @@
 #include <stdlib.h>
 
 // TODO: only lo registers accessible in thumb arm
-// TODO: add support for ldrb, ldrh, strb, strh
 
 typedef struct {
 	unsigned long off;
 	int o;
 	char op[32];
+	char opstr[32];
 	char *a0, *a1, *a2;
 } ArmOpcode;
 
@@ -131,6 +131,23 @@ static int getreg(const char *str) {
 	return -1;
 }
 
+static int getlist(char *op) {
+	int reg, list = 0;
+	char *ptr = strchr (op, '{');
+	if (ptr) {
+		do {
+			ptr++;
+			while (*ptr && *ptr == ' ') ptr++;
+			reg = getreg (ptr);
+			if (reg == -1)
+				break;
+			list |= (1<<reg);
+			while (*ptr && *ptr!=',') ptr++;
+		} while (*ptr && *ptr==',');
+	}
+	return list;
+}
+
 static int getshift(const char *str) {
 	if (!str) return 0;
 	while (str && *str&&!atoi (str))
@@ -140,7 +157,8 @@ static int getshift(const char *str) {
 
 static void arm_opcode_parse(ArmOpcode *ao, const char *str) {
 	memset (ao, 0, sizeof (ArmOpcode));
-	strncpy (ao->op, str, sizeof (ao->op));
+	strncpy (ao->op, str, sizeof (ao->op)-1);
+	strcpy (ao->opstr, str);
 	ao->a0 = strchr (ao->op, ' ');
 	if (ao->a0) {
 		*ao->a0 = 0;
@@ -176,31 +194,34 @@ static inline int arm_opcode_cond(ArmOpcode *ao, int delta) {
 	return cond;
 }
 
-// str, ldr
 // TODO: group similar instructions like for non-thumb
 static int thumb_assemble(ArmOpcode *ao, const char *str) {
-	// TODO: Add thumb mode
-	// mov r, n = 2[r0-7][nn]
-	// mov r, r = 46[7bits,7bits]
-	// cmp r, n = 2[r(8-f)-8][nn]
-	// cmp r, r = 45[7bits,7bits]
-	// subs r, n = 3[r(8-f)-8][nn]
-	//
-	// and r, r = 40[7bits=r][7bits=r] 
-	//     asrs = 41
-	// tst r, r = 42[7bits,7bits]
-	//      orr = 43
-	//     
-	// b[cond] n = d[cond][nn]
-	// b.n = e0[nn] = 
-	// bx rN = 47[7bits(regidx)][7bits(ignored)]
-	// bl = 4 bytes = f0[nn][????]
-	// add r0, pc, n = a[r0-7][nn]
-	// add r0, sp, n = a[r(8-f)-8][nn]
-	// rasm2 -b 16 -a arm -e -d 2700 // movs r7, #0
-
+	if (!strcmp (ao->op, "ldmia")) {
+		ao->o = 0xc8 + getreg (ao->a0);
+		ao->o |= getlist(ao->opstr) << 8;
+	} else
+	if (!strcmp (ao->op, "stmia")) {
+		ao->o = 0xc0 + getreg (ao->a0);
+		ao->o |= getlist(ao->opstr) << 8;
+	} else
 	if (!strcmp (ao->op, "nop")) {
 		ao->o = 0xbf;
+	} else
+	if (!strcmp (ao->op, "yield")) {
+		ao->o = 0x10bf;
+	} else
+	if (!strcmp (ao->op, "wfe")) {
+		ao->o = 0x20bf;
+	} else
+	if (!strcmp (ao->op, "wfi")) {
+		ao->o = 0x30bf;
+	} else
+	if (!strcmp (ao->op, "sev")) {
+		ao->o = 0x40bf;
+	} else
+	if (!strcmp (ao->op, "bkpt")) {
+		ao->o = 0xbe;
+		ao->o |= (0xff & getnum (ao->a0))<<8;
 	} else
 	if (!strcmp (ao->op, "and")) {
 		ao->o = 0x40;
@@ -241,26 +262,32 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 		}
 	} else
 	if (!memcmp (ao->op, "ldr", 3)) {
+		getrange (ao->a1);
+		getrange (ao->a2);
 		if (ao->op[3]=='h') {
 			int a0 = getreg (ao->a0);
 			int a1 = getreg (ao->a1);
 			int a2 = getreg (ao->a2);
-			ao->o = 0x88; // | (8+(0xf & a0));
-			ao->o |= (7&a0)<<8;
-			ao->o |= (7&a1)<<11;
-			ao->o |= (7&a2); // XXX: handle limit
+			if (a2 ==-1) {
+				a2 = getnum (ao->a2)/8;
+				ao->o = 0x88; // | (8+(0xf & a0));
+				ao->o |= (7&a0)<<8;
+				ao->o |= (7&a1)<<11;
+				ao->o += (7&a2);
+			} else return 0;
 		} else
 		if (ao->op[3]=='b') {
 			int a0 = getreg (ao->a0);
 			int a1 = getreg (ao->a1);
 			int a2 = getreg (ao->a2);
-			ao->o = 0x78; // | (8+(0xf & a0));
-			ao->o |= (7&a0)<<8;
-			ao->o |= (7&a1)<<11;
-			ao->o |= (7&a2); // XXX: handle limit
+			if (a2 ==-1) {
+				a2 = getnum (ao->a2)/8;
+				ao->o = 0x78; // | (8+(0xf & a0));
+				ao->o |= (7&a0)<<8;
+				ao->o |= (7&a1)<<11;
+				ao->o |= (7&a2);
+			} else return 0;
 		} else {
-			getrange (ao->a1);
-			getrange (ao->a2);
 			if (!strcmp (ao->a1, "sp")) {
 				// ldr r0, [sp, n] = a[r0-7][nn]
 				if (getreg (ao->a2) == -1) {
@@ -285,39 +312,35 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 				ao->o |= (7&a1)<<11;
 				ao->o |= (7&a2)<<14;
 			}
-			// [0379] ldrb r3, [r0, #4]
-			// [0188] ldrh r1, [r0, #0]
 		}
 	} else
 	if (!memcmp (ao->op, "str", 3)) {
+		getrange (ao->a1);
+		getrange (ao->a2);
 		if (ao->op[3]=='h') {
 			int a0 = getreg (ao->a0);
 			int a1 = getreg (ao->a1);
 			int a2 = getreg (ao->a2);
-			ao->o = 0x80; // | (8+(0xf & a0));
-			ao->o |= (7&a0)<<8;
-			ao->o |= (7&a1)<<11;
-			ao->o |= (7&a2); // XXX: handle limit
+			if (a2 ==-1) {
+				a2 = getnum (ao->a2);
+				ao->o = 0x80; // | (8+(0xf & a0));
+				ao->o |= (7&a0)<<8;
+				ao->o |= (7&a1)<<11;
+				ao->o |= (7&(a2>>1));
+			} else return 0;
 		} else
 		if (ao->op[3]=='b') {
 			int a0 = getreg (ao->a0);
 			int a1 = getreg (ao->a1);
 			int a2 = getreg (ao->a2);
-			ao->o = 0x70; // | (8+(0xf & a0));
-			ao->o |= (7&a0)<<8;
-			ao->o |= (7&a1)<<11;
-			ao->o |= (7&a2); // XXX: handle limit
+			if (a2 ==-1) {
+				a2 = getnum (ao->a2);
+				ao->o = 0x70; // | (8+(0xf & a0));
+				ao->o |= (7&a0)<<8;
+				ao->o |= (7&a1)<<11;
+				ao->o |= (7&a2);
+			} else return 0;
 		} else {
-			// TODO
-			// str r0, [sp, n] = a[r(8-f)-8][nn]
-			//  " strh = 9
-			//  " strb = 8
-			// str r0, [rN, n] = 6[n*16][7bits:basereg + 7bits:destreg]
-			// str r0, [rN, rN] = 50[7bits:basereg + 7bits:destreg]
-//   0:   6191            str     r1, [r2, #24]
-//   2:   50d1            str     r1, [r2, r3]
-			getrange (ao->a1);
-			getrange (ao->a2);
 			if (!strcmp (ao->a1, "sp")) {
 				// ldr r0, [sp, n] = a[r0-7][nn]
 				if (getreg (ao->a2) == -1) {
@@ -333,22 +356,17 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 			if (!strcmp (ao->a1, "pc")) {
 				return 0;
 			} else {
-				// str
 				int a0 = getreg (ao->a0);
 				int a1 = getreg (ao->a1);
 				int a2 = getreg (ao->a2);
 				if (a2 == -1) {
-					a2 = getnum (ao->a2)>>1;
-					ao->o = 0x60; // | (8+(0xf & a0));
+					a2 = getnum (ao->a2);
+					ao->o = 0x60;
 					ao->o |= (7&a0)<<8;
 					ao->o |= (7&a1)<<11;
-					if (a2<0||a2>12) {
-						fprintf (stderr, "Invalid range in str\n");
-						return 0;
-					}
-					ao->o |= (3&(a2/4))<<14; // XXX: must limit delta in 12
+					ao->o |= (3&(a2/4))<<14;
 				} else {
-					ao->o = 0x50; // | (8+(0xf & a0));
+					ao->o = 0x50;
 					ao->o |= (7&a0)<<8;
 					ao->o |= (7&a1)<<11;
 					ao->o |= (3&a2)<<14;
@@ -389,13 +407,13 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 		}
 	} else
 	if (!strcmp (ao->op, "sub")) {
-		// TODO
 		int reg = getreg (ao->a1);
 		if (reg!=-1) {
+			int n = getnum (ao->a2); // TODO: add limit
 			ao->o = 0x1e;
 			ao->o |= (getreg (ao->a0))<<8;
 			ao->o |= reg<<11;
-			// TODO: ao->o |= getnum(ao->a2)<<11;
+			ao->o |= n/4 | ((n%4)<<14);
 		} else {
 			ao->o = 0x30;
 			ao->o |= 8+(getreg (ao->a0));
@@ -532,6 +550,16 @@ void display(const char *str) {
 }
 
 int main() {
+	thisplay ("ldmia r1!, {r3, r4, r5}");
+	thisplay ("stmia r1!, {r3, r4, r5}");
+	thisplay ("bkpt 12");
+return 0;
+	thisplay("sub r1, r2, 0");
+	thisplay("sub r1, r2, 4");
+	thisplay("sub r1, r2, 5");
+	thisplay("sub r1, r2, 7");
+	thisplay("sub r3, 44");
+return 0;
 #if 0
 	thisplay("mov r0, 11");
 	thisplay("mov r0, r2");
@@ -567,7 +595,10 @@ int main() {
    4:   8191            strh    r1, [r2, #12]
    6:   7311            strb    r1, [r2, #12]
 #endif
-	thisplay("ldrh r1, [r2, 20]"); // aligned to 4
+	thisplay("ldrh r1, [r2, 8]"); // aligned to 4
+	thisplay("ldrh r1, [r3, 8]"); // aligned to 4
+	thisplay("ldrh r1, [r4, 16]"); // aligned to 4
+	thisplay("ldrh r1, [r2, 32]"); // aligned to 4
 	thisplay("ldrb r1, [r2, 20]"); // aligned to 4
 	thisplay("strh r1, [r2, 20]"); // aligned to 4
 	thisplay("strb r1, [r2, 20]"); // aligned to 4
