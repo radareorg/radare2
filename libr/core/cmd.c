@@ -33,7 +33,7 @@ static void printoffset(ut64 off, int show_color) {
 /* TODO: move to print/disasm.c */
 static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
 	RAnalFcn *fcn, *fcni = NULL;
-	int ret, idx, i, j, k, ostackptr, stackptr = 0;
+	int ret, idx, i, j, k, lines, ostackptr, stackptr = 0;
 	int counter = 0;
 	int middle = 0;
 	int nargs = 0;
@@ -119,7 +119,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	free (core->reflines2); // TODO: leak
 	core->reflines = r_anal_reflines_get (core->anal, addr, buf, len, -1, linesout, show_linescall);
 	core->reflines2 = r_anal_reflines_get (core->anal, addr, buf, len, -1, linesout, 1);
-	for (i=idx=ret=0; idx < len && i<l; idx+=ret,i++) {
+	for (lines=i=idx=ret=0; idx < len && lines < l; idx+=ret,i++, lines++) {
 		ut64 at = addr + idx;
 		r_asm_set_pc (core->assembler, at);
 		if (show_comments)
@@ -246,12 +246,12 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			free (line);
 			continue;
 		case R_META_DATA:
-			r_print_hexdump (core->print, at, buf+i, len-i, 16, 1);
+			r_print_hexdump (core->print, at, buf+idx, mi->size, 16, 1);
 			ret = (int)mi->size;
 			free (line);
 			continue;
 		case R_META_STRUCT:
-			r_print_format (core->print, at, buf+i, len-i, mi->str);
+			r_print_format (core->print, at, buf+idx, len-idx, mi->str);
 			ret = (int)mi->size;
 			free (line);
 			continue;

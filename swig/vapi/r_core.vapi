@@ -63,6 +63,7 @@ public class RCore {
 	[CCode (cname="RCoreAsmHit", free_function="", ref_function="", unref_function="")]
 	public class AsmHit {
 		public string code;
+		public int len;
 		public uint64 addr;
 	}
 
