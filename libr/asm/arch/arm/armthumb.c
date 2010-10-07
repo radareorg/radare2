@@ -78,6 +78,13 @@ static const char* compute_reg_list (unsigned list) {
         return tmpbuf;
 }
 
+int armthumb_length(unsigned int ins) {
+        if ((ins & _($1110,$1000,0,0)) == _($1110,0,0,0))
+                if (ins & _(1,$1000,0,0))
+			return 4;
+	return 2;
+}
+
 int armthumb_disassemble(char *buf, unsigned long pc, unsigned int ins) {
 	unsigned int delta, imm, jump, op_code, instr2 = ins >> 16;
         const char* op;

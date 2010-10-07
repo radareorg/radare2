@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+// TODO: only lo registers accessible in thumb arm
+// TODO: add support for ldrb, ldrh, strb, strh
 
 typedef struct {
 	unsigned long off;
@@ -175,6 +177,7 @@ static inline int arm_opcode_cond(ArmOpcode *ao, int delta) {
 }
 
 // str, ldr
+// TODO: group similar instructions like for non-thumb
 static int thumb_assemble(ArmOpcode *ao, const char *str) {
 	// TODO: Add thumb mode
 	// mov r, n = 2[r0-7][nn]
@@ -243,18 +246,17 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 		if (!strcmp (ao->a1, "sp")) {
 			// ldr r0, [sp, n] = a[r0-7][nn]
 			if (getreg (ao->a2) == -1) {
+				// ldr r0, [sp, n]
 				ao->o = 0x98 + (0xf & getreg (ao->a0));
 				ao->o |= (0xff & getnum (ao->a2)/4)<<8;
-			} else {
-				ao->o = 0x58;// + (0xf & getreg (ao->a0));
-				ao->o |= (0xff & getreg (ao->a2)/4)<<8;
-				printf("DUnno\n");
-			}
+			} else return 0;
 		} else
 		if (!strcmp (ao->a1, "pc")) {
 			// ldr r0, [pc, n] = 4[r0-8][nn*4]
-			ao->o = 0x40 | (0xf & getreg (ao->a0));
-			ao->o |= (0xff & getnum (ao->a2)/4)<<8;
+			if (getreg (ao->a2) == -1) {
+				ao->o = 0x40 | 8+(0xf & getreg (ao->a0));
+				ao->o |= (0xff & getnum (ao->a2)/4)<<8;
+			} else return 0;
 		} else {
 			// ldr r0, [rN, rN] = 58[7bits:basereg + 7bits:destreg]
 			int a0 = getreg (ao->a0);
@@ -276,15 +278,44 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 		//  " strb = 8
 		// str r0, [rN, n] = 6[n*16][7bits:basereg + 7bits:destreg]
 		// str r0, [rN, rN] = 50[7bits:basereg + 7bits:destreg]
+//   0:   6191            str     r1, [r2, #24]
+//   2:   50d1            str     r1, [r2, r3]
 		getrange (ao->a1);
 		getrange (ao->a2);
 		if (!strcmp (ao->a1, "sp")) {
 			// ldr r0, [sp, n] = a[r0-7][nn]
 			if (getreg (ao->a2) == -1) {
+				int ret = getnum (ao->a2);
+				if (ret%4) {
+					fprintf (stderr, "ldr index must be aligned to 4");
+					return 0;
+				}
 				ao->o = 0x90 + (0xf & getreg (ao->a0));
 				ao->o |= (0xff & getnum (ao->a2)/4)<<8;
+			} else return 0;
+		} else
+		if (!strcmp (ao->a1, "pc")) {
+			return 0;
+		} else {
+			// str
+			int a0 = getreg (ao->a0);
+			int a1 = getreg (ao->a1);
+			int a2 = getreg (ao->a2);
+			if (a2 == -1) {
+				a2 = getnum (ao->a2)>>1;
+				ao->o = 0x60; // | (8+(0xf & a0));
+				ao->o |= (7&a0)<<8;
+				ao->o |= (7&a1)<<11;
+				if (a2<0||a2>12) {
+					fprintf (stderr, "Invalid range in str\n");
+					return 0;
+				}
+				ao->o |= (3&(a2/4))<<14; // XXX: must limit delta in 12
 			} else {
-				printf ("DUnno\n");
+				ao->o = 0x50; // | (8+(0xf & a0));
+				ao->o |= (7&a0)<<8;
+				ao->o |= (7&a1)<<11;
+				ao->o |= (3&a2)<<14;
 			}
 		}
 	} else
@@ -483,20 +514,20 @@ int main() {
 	thisplay("bne 44");
 	thisplay("and r2,r3");
 #endif
+	// INVALID thisplay("ldr r1, [pc, r2]");
+	// INVALID thisplay("ldr r1, [sp, r2]");
 #if 0
-	thisplay("ldr r1, [pc, r2]");
 	thisplay("ldr r1, [pc, 12]");
-	thisplay("ldr r1, [sp, r2]");
 	thisplay("ldr r1, [sp, 24]");
-#endif
 	thisplay("ldr r1, [r2, r3]");
-#if 0
-	thisplay("str r1, [pc, r2]");
-	thisplay("str r1, [pc, 12]");
-	thisplay("str r1, [sp, r2]");
-	thisplay("str r1, [sp, 24]");
-	thisplay("str r1, [r2, r3]");
 #endif
+	// INVALID thisplay("str r1, [pc, 22]");
+	// INVALID thisplay("str r1, [pc, r2]");
+	// INVALID thisplay("str r1, [sp, r2]");
+
+	thisplay("str r1, [sp, 20]"); // aligned to 4
+	thisplay("str r1, [r2, 12]"); // OK
+	thisplay("str r1, [r2, r3]");
 return 0;
 #if 0
 	display("mov r0, 33");

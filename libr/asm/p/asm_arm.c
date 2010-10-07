@@ -3,14 +3,12 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-
-
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_asm.h>
-
 #include "dis-asm.h"
+#include "../arch/arm/arm.h"
 
 static int arm_mode = 0;
 static unsigned long Offset = 0;
@@ -81,7 +79,6 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	return aop->inst_len; //(a->bits/8); //aop->inst_len;
 }
 
-int armass_assemble(const char *str, unsigned long off, int thumb);
 static int assemble(RAsm *a, RAsmAop *aop, const char *buf) {
 	int op = armass_assemble(buf, a->pc, (a->bits==16)?1:0);
 	if (op==-1)
