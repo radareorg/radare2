@@ -8,7 +8,7 @@
 
 Questions
 =========
-* arm thumb supports some 32 bit instructions ADD.W ,...
+* fix colorize of selected bytes
 * Switch to 'arm' code analysis module
 * Add "pm ?" for bit print like in pb?
 * Only use uppercase KMG for Kilo,Mega,Giga in r_num?

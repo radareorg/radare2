@@ -30,6 +30,7 @@ static void printoffset(ut64 off, int show_color) {
 		r_cons_printf (Color_GREEN"0x%08"PFMT64x"  "Color_RESET, off);
 	else r_cons_printf ("0x%08"PFMT64x"  ", off);
 }
+
 /* TODO: move to print/disasm.c */
 static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
 	RAnalFcn *fcn, *fcni = NULL;
@@ -274,7 +275,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 				if (show_color) {
 					char *nstr;
 					p->cur_enabled = cursor!=-1;
-					p->cur = cursor;
+					//p->cur = cursor;
 					nstr = r_print_hexpair (p, str, idx);
 					free (str);
 					str = nstr;
@@ -305,7 +306,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 				r_cons_printf (Color_GREEN);
 				break;
 			case R_ANAL_OP_TYPE_CMP:
-				r_cons_printf (Color_YELLOW);
+				r_cons_printf (Color_BMAGENTA);
 				break;
 			case R_ANAL_OP_TYPE_CALL:
 				r_cons_printf (Color_BGREEN);

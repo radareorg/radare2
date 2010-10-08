@@ -80,6 +80,7 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 	/* XXX That's hacky as shit.. but partially works O:) */
 	int cur = R_MIN (p->cur, p->ocur);
 	int ocur = R_MAX (p->cur, p->ocur);
+	if (p->cur_enabled)
 	if (cur==-1) {
 		cur=ocur;
 		ocur++;
@@ -87,13 +88,15 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 
 	// XXX: overflow here
 	for (s=str,d=dst; *s; s+=2, d+=2, i++) {
-		if (i-1==(cur-n)) {
-			memcpy (d, "\x1b[0m", 4);
-			d += 4;
-		}
-		if (i>=(cur-n) && i<(ocur-n)) {
-			memcpy (d, "\x1b[7m", 4);
-			d += 4;
+		if (p->cur_enabled) {
+			if (i-1==(cur-n)) {
+				memcpy (d, "\x1b[0m", 4);
+				d += 4;
+			}
+			if (i>=(cur-n) && i<(ocur-n)) {
+				memcpy (d, "\x1b[7m", 4);
+				d += 4;
+			}
 		} else
 		if (s[0]=='0' && s[1]=='0') {
 			memcpy (d, "\x1b[31m", 5);
