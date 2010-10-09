@@ -13,6 +13,7 @@ public class RCore {
 	public RConfig config;
 	public RAsm assembler;
 	public RAnal anal;
+	public RBin bin;
 
 	public static unowned RCore cast(uint64 ptr);
 	public bool loadlibs();

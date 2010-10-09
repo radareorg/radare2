@@ -39,7 +39,7 @@ namespace Radare {
 		}
 
 		[CCode (cname="RBinSection", free_function="", ref_function="", unref_function="")]
-		public class Section  {
+		public class Section {
 			public string name;
 			public int32 size;
 			public int32 vsize;

@@ -66,6 +66,8 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	int show_bytes = r_config_get_i (core->config, "asm.bytes");
 	int show_comments = r_config_get_i (core->config, "asm.comments");
 	int show_stackptr = r_config_get_i (core->config, "asm.stackptr");
+	int show_xrefs = r_config_get_i (core->config, "asm.xrefs");
+	int show_functions = r_config_get_i (core->config, "asm.functions");
 	int cursor, nb, nbytes = r_config_get_i (core->config, "asm.nbytes");
 	int linesopts = 0;
 	nb = nbytes*2;
@@ -139,7 +141,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		}
 		r_anal_aop (core->anal, &analop, at, buf+idx, (int)(len-idx));
 		// Show xrefs
-		{
+		if (show_xrefs) {
 			RList *xrefs;
 			RAnalRef *refi;
 			RListIter *iter;
@@ -158,7 +160,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			middle = r_anal_reflines_middle (core->anal,
 					core->reflines, at, analop.length);
 		/* XXX: This is really cpu consuming.. need to be fixed */
-		{
+		if (show_functions) {
 			RAnalFcn *f = r_anal_fcn_find (core->anal, addr);
 			if (f && f->addr == at) {
 				char *sign = r_anal_fcn_to_string (core->anal, f);
@@ -396,6 +398,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			if((st64)esp<0) esp=-esp;
 			nargs = (esp)/4;
 #endif
+			if (show_functions)
 			if (analop.jump != UT64_MAX) {
 				fcn = r_anal_fcn_find (core->anal, analop.jump);
 				r_cons_printf("\n    ");
@@ -3971,6 +3974,7 @@ static int cmd_debug(void *data, const char *input) {
 	return 0;
 }
 
+//TODO: Fix disasm loop is mandatory
 R_API char *r_core_disassemble_instr(RCore *core, ut64 addr, int l) {
 	char *cmd, *ret = NULL;
 	cmd = r_str_dup_printf ("pd %i @ 0x%08"PFMT64x, l, addr);
