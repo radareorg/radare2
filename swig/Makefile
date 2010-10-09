@@ -40,7 +40,8 @@ lua:
 	@-[ "`grep lua supported.langs`" ] && cd lua && make
 
 go:
-	@-[ "`grep go supported.langs`" ] && cd go && make
+	@-[ -x "${GOBIN}/5g" -o -x "${GOBIN}/6g" -o -x "${GOBIN}/8g" ] && \
+	[ "`grep go supported.langs`" ] && cd go && make
 
 java:
 	@-[ "`grep java supported.langs`" ] && cd java && make
