@@ -37,6 +37,7 @@ static int main_version() {
 
 // Load the binary information from rabin2
 // TODO: use thread to load this, split contents line, per line and use global lock
+#if 0
 static int rabin_delegate(RThread *th) {
 	if (rabin_cmd && r_file_exist (r.file->filename)) {
 		char *nptr, *ptr, *cmd = r_sys_cmd_str (rabin_cmd, NULL, NULL);
@@ -57,6 +58,7 @@ static int rabin_delegate(RThread *th) {
 	if (th) eprintf ("rabin2: done\n");
 	return 0;
 }
+#endif
 
 int main(int argc, char **argv) {
 	RThreadLock *lock = NULL;
@@ -221,6 +223,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (!has_project && run_rc) {
+#if 0
 		rabin_cmd = r_str_dup_printf ("rabin2 -rSIeMzisR%s %s",
 			(debug||r.io->va)?"v":"", r.file->filename);
 		if (threaded) {
@@ -228,6 +231,7 @@ int main(int argc, char **argv) {
 			lock = r_th_lock_new ();
 			rabin_th = r_th_new (&rabin_delegate, lock, 0);
 		} else rabin_delegate (NULL);
+#endif
 	} else eprintf ("Metadata loaded from 'file.project'\n");
 
 	if (r_io_is_listener (r.io))

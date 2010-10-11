@@ -299,7 +299,7 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 			if (!strcmp (ao->a1, "pc")) {
 				// ldr r0, [pc, n] = 4[r0-8][nn*4]
 				if (getreg (ao->a2) == -1) {
-					ao->o = 0x40 | 8+(0xf & getreg (ao->a0));
+					ao->o = 0x40 | (8+(0xf & getreg (ao->a0)));
 					ao->o |= (0xff & getnum (ao->a2)/4)<<8;
 				} else return 0;
 			} else {
@@ -429,20 +429,21 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 		if (!memcmp(ao->op, ops[i].name, strlen (ops[i].name))) {
 			ao->o = ops[i].code;
 			arm_opcode_cond (ao, strlen(ops[i].name));
-			switch(ops[i].type) {
+			if (ao->a0)
+			switch (ops[i].type) {
 			case TYPE_MEM:
 				getrange (ao->a0);
 				getrange (ao->a1);
 				getrange (ao->a2);
 				//printf("a0(%s) a1(%s) a2(%s)\n", ao->a0, ao->a1, ao->a2);
-				ao->o |= getreg(ao->a0)<<20;
-				ao->o |= getreg(ao->a1)<<8; // delta
-				ret = getreg(ao->a2);
+				ao->o |= getreg (ao->a0)<<20;
+				ao->o |= getreg (ao->a1)<<8; // delta
+				ret = getreg (ao->a2);
 				if (ret != -1) {
-					ao->o |= (strstr(str,"],"))?6:7;
+					ao->o |= (strstr (str,"],"))?6:7;
 					ao->o |= (ret&0x0f)<<24;//(getreg(ao->a2)&0x0f);
 				} else {
-					ao->o |= (strstr(str,"],"))?4:5;
+					ao->o |= (strstr (str,"],"))?4:5;
 					ao->o |= (getnum (ao->a2)&0x7f)<<24; // delta
 				}
 				break;

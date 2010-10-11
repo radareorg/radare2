@@ -39,26 +39,158 @@ R_API void r_core_sysenv_update(RCore *core) {
 
 R_API int r_core_bin_load(RCore *r, const char *file) {
 	RBinObj *obj;
+	RListIter *iter;
+	ut64 baddr;
+	int va = r_config_get_i (r->config, "io.va");
+	int i = 0;
+	char str[R_FLAG_NAME_SIZE];
 
 	if (!r_bin_load (r->bin, file, 0))
 		return R_FALSE;
 	r->file->obj = obj = r_bin_get_object (r->bin, 0);
-#if 0
-	RListIter *iter;
+	baddr = r_bin_get_baddr (r->bin);
+
+	// I -> Binary info
+	RBinInfo *info;
+
+	if ((info = r_bin_get_info (r->bin)) != NULL) {
+		r_config_set (r->config, "file.type", info->rclass);
+		r_config_set (r->config, "cfg.bigendian", info->big_endian?"true":"false");
+		r_config_set (r->config, "asm.os", info->os);
+		r_config_set (r->config, "asm.arch", info->arch);
+		r_config_set (r->config, "anal.plugin", info->arch);
+		snprintf (str, R_FLAG_NAME_SIZE, "%i", info->bits);
+		r_config_set (r->config, "asm.bits", str);
+		r_config_set (r->config, "asm.dwarf", R_BIN_DBG_STRIPPED (info->dbg_info)?"false":"true");
+	}
+
+	r_flag_space_set (r->flags, "symbols");
+	// M -> Main
+	RBinAddr *binmain;
+
+	if ((binmain = r_bin_get_main (r->bin)) != NULL)
+		r_flag_set (r->flags, "main", va?baddr+binmain->rva:binmain->offset,
+				r->blocksize, 0);
+
+	// e -> Entrypoints
+	RList *entries;
+	RBinAddr *entry;
+	i = 0;
+
+	if ((entries = r_bin_get_entries (r->bin)) != NULL) {
+		r_list_foreach (entries, iter, entry) {
+			snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i++);
+			r_flag_set (r->flags, str, va?baddr+entry->rva:entry->offset,
+					r->blocksize, 0);
+		}
+		/* Seek to the last entry point */
+		r_core_seek (r, va?baddr+entry->rva:entry->offset, 0);
+	}
+
+	// s -> Symbols
+	RList *symbols;
+	RBinSymbol *symbol;
+
+	if ((symbols = r_bin_get_symbols (r->bin)) != NULL) {
+		r_list_foreach (symbols, iter, symbol) {
+			r_flag_name_filter (symbol->name);
+			snprintf (str, R_FLAG_NAME_SIZE, "fcn.sym.%s", symbol->name);
+			if (!strncmp (symbol->type,"FUNC", 4)) {
+				if (symbol->size)
+					if (!r_anal_fcn_add (r->anal, va?baddr+symbol->rva:symbol->offset,
+								symbol->size, symbol->name, R_ANAL_DIFF_NULL))
+						eprintf ("Cannot add function: %s (duplicated)\n", symbol->name);
+				r_flag_space_set (r->flags, "functions");
+				r_flag_set (r->flags, str, va?baddr+symbol->rva:symbol->offset,
+						symbol->size, 0);
+				r_flag_space_set (r->flags, "symbols");
+			} else if (!strncmp (symbol->type,"OBJECT", 6))
+				r_meta_add (r->meta, R_META_DATA, va?baddr+symbol->rva:symbol->offset,
+				(va?baddr+symbol->rva:symbol->offset)+symbol->size, symbol->name);
+			r_flag_set (r->flags, str+4, va?baddr+symbol->rva:symbol->offset,
+						symbol->size, 0);
+		}
+	}
+
+	r_flag_space_set (r->flags, "relocs");
+	// R -> Relocations
+	RList *relocs;
+	RBinReloc *reloc;
+
+	if ((relocs = r_bin_get_relocs (r->bin)) != NULL) {
+		r_list_foreach (relocs, iter, reloc) {
+			snprintf (str, R_FLAG_NAME_SIZE, "reloc.%s", reloc->name);
+			r_flag_set (r->flags, str, va?baddr+reloc->rva:reloc->offset,
+					r->blocksize, 0);
+		}
+	}
+
+	// z -> Strings
+	RList *strings;
+	RBinString *string;
+
+	r_flag_space_set (r->flags, "strings");
+	if ((strings = r_bin_get_strings (r->bin)) != NULL) {
+		r_list_foreach (strings, iter, string) {
+			r_flag_name_filter (string->string);
+			/* Jump the withespaces before the string */
+			for (i=0;*(string->string+i)==' ';i++);
+			snprintf (str, R_FLAG_NAME_SIZE, "str.%s", string->string+i);
+			r_flag_set (r->flags, str, va?baddr+string->rva:string->offset,
+					string->size, 0);
+			r_meta_add (r->meta, R_META_STRING, va?baddr+string->rva:string->offset,
+				(va?baddr+string->rva:string->offset)+string->size, string->string+i);
+		}
+	}
+
+	// i -> Imports
+	RList *imports;
 	RBinImport *import;
+
+	if ((imports = r_bin_get_imports (r->bin)) != NULL) {
+		r_list_foreach (imports, iter, import) {
+			r_flag_name_filter (import->name);
+			if (import->size)
+				if (!r_anal_fcn_add (r->anal, va?baddr+import->rva:import->offset,
+							import->size, import->name, R_ANAL_DIFF_NULL))
+					eprintf ("Cannot add function: %s (duplicated)\n", import->name);
+			snprintf (str, R_FLAG_NAME_SIZE, "fcn.imp.%s", import->name);
+			r_flag_space_set (r->flags, "functions");
+			r_flag_set (r->flags, str, va?baddr+import->rva:import->offset,
+					import->size, 0);
+			r_flag_space_set (r->flags, "imports");
+			r_flag_set (r->flags, str+4, va?baddr+import->rva:import->offset,
+					import->size, 0);
+		}
+	}
+
+	// S -> Sections
+	RList *sections;
 	RBinSection *section;
-	r_list_foreach (obj->sections, iter, section) {
-		printf ("ff %s\n", section->name);
-		//r_flag_set(r->flags, name, section->offset, section->size, 0);
+	i = 0;
+
+	if ((sections = r_bin_get_sections (r->bin)) != NULL) {
+		r_flag_space_set (r->flags, "sections");
+		r_list_foreach (sections, iter, section) {
+			r_flag_name_filter (section->name);
+			snprintf (str, R_FLAG_NAME_SIZE, "section.%s", section->name);
+			r_flag_set (r->flags, str, va?baddr+section->rva:section->offset,
+					section->size, 0);
+			r_io_section_add (r->io, section->offset, baddr+section->rva,
+					section->size, section->vsize, section->srwx, section->name);
+			snprintf (str, R_FLAG_NAME_SIZE, "va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"
+					PFMT64d" vsz=%"PFMT64d" rwx=%c%c%c%c %s",
+					baddr+section->rva, section->offset, section->size, section->vsize,
+					R_BIN_SCN_SHAREABLE (section->srwx)?'s':'-',
+					R_BIN_SCN_READABLE (section->srwx)?'r':'-',
+					R_BIN_SCN_WRITABLE (section->srwx)?'w':'-',
+					R_BIN_SCN_EXECUTABLE (section->srwx)?'x':'-',
+					section->name);
+			r_meta_add (r->meta, R_META_COMMENT, va?baddr+section->rva:section->offset,
+					va?baddr+section->rva:section->offset, str);
+		}
 	}
-	r_list_foreach (obj->imports, iter, import) {
-		printf ("ff %s\n", import->name);
-	}
-	r_list_foreach (obj->symbols, iter, symbol) {
-		printf ("ff %s\n", symbol->name);
-	}
-#endif
-	// TODO: moar
+
 	return R_TRUE;
 }
 
