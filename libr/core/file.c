@@ -132,14 +132,14 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	r_flag_space_set (r->flags, "strings");
 	if ((strings = r_bin_get_strings (r->bin)) != NULL) {
 		r_list_foreach (strings, iter, string) {
-			r_flag_name_filter (string->string);
 			/* Jump the withespaces before the string */
 			for (i=0;*(string->string+i)==' ';i++);
+			r_meta_add (r->meta, R_META_STRING, va?baddr+string->rva:string->offset,
+				(va?baddr+string->rva:string->offset)+string->size, string->string+i);
+			r_flag_name_filter (string->string);
 			snprintf (str, R_FLAG_NAME_SIZE, "str.%s", string->string+i);
 			r_flag_set (r->flags, str, va?baddr+string->rva:string->offset,
 					string->size, 0);
-			r_meta_add (r->meta, R_META_STRING, va?baddr+string->rva:string->offset,
-				(va?baddr+string->rva:string->offset)+string->size, string->string+i);
 		}
 	}
 
