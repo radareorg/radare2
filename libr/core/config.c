@@ -117,6 +117,7 @@ static int asm_profile(RConfig *cfg, const char *profile) {
 		r_config_set (cfg, "asm.flags", "true");
 		r_config_set (cfg, "asm.size", "false");
 		r_config_set (cfg, "asm.xrefs", "true");
+		r_config_set (cfg, "asm.functions", "true");
 		r_config_set (cfg, "scr.color", "true");
 	} else if (!strcmp(profile, "compact")) {
 		asm_profile (cfg, "simple");
