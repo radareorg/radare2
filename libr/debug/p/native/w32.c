@@ -317,7 +317,6 @@ static inline int CheckValidPE(unsigned char * PeHeader) {
 }
 
 static RList *w32_dbg_maps() {
-	RList *list;
 	SYSTEM_INFO SysInfo;
 	MEMORY_BASIC_INFORMATION mbi;
 	HANDLE hProcess = 0; // XXX NEEDS TO HAVE A VALUE
@@ -332,8 +331,7 @@ static RList *w32_dbg_maps() {
 	int NumSections, i;
 	DWORD ret_len;
 	RDebugMap *mr;
-
-	list = r_list_new ();
+	RList *list = r_list_new ();
 
 	memset (&SysInfo, 0, sizeof (SysInfo));
 	GetSystemInfo (&SysInfo); // TODO: check return value
@@ -349,8 +347,10 @@ static RList *w32_dbg_maps() {
 	for (page=(LPBYTE)SysInfo.lpMinimumApplicationAddress;
 			page<(LPBYTE)SysInfo.lpMaximumApplicationAddress;) {
 		if (!VirtualQueryEx (WIN32_PI (hProcess), page, &mbi, sizeof (mbi)))  {
-			eprintf ("VirtualQueryEx ERROR, address = 0x%08X\n", page );
-			return -1;
+	//		eprintf ("VirtualQueryEx ERROR, address = 0x%08X\n", page);
+			page += SysInfo.dwPageSize;
+			continue;
+			//return NULL;
 		}
 		if (mbi.Type == MEM_IMAGE) {
 			ReadProcessMemory (WIN32_PI (hProcess), (const void *)page,
@@ -373,7 +373,7 @@ static RList *w32_dbg_maps() {
 					mapname = (char *)malloc(MAX_PATH);
 					if (!mapname) {
 						perror (":map_reg alloc");
-						return -1;
+						return NULL;
 					}
 					gmbn (WIN32_PI(hProcess), (HMODULE) page,
 						(LPTSTR)mapname, MAX_PATH);
@@ -385,8 +385,8 @@ static RList *w32_dbg_maps() {
 								+ SectionHeader->Misc.VirtualSize,
 							SectionHeader->Characteristics, // XXX?
 							0);
-						if(mr == NULL)
-							return -1;
+						if (mr == NULL)
+							return NULL;
 						r_list_append (list, mr);
 						SectionHeader++;
 					}

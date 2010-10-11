@@ -222,7 +222,7 @@ static int __open(struct r_io_t *io, const char *file, int rw, int mode) {
 	if (__plugin_open (io, file)) {
 		int pid = atoi (file+6);
 		if (pid == 0) {
-			pid = fork_and_ptraceme(file+6);
+			pid = fork_and_ptraceme (file+6);
 			if (pid==-1)
 				return -1;
 #if __WINDOWS__

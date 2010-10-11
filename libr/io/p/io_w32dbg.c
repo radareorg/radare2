@@ -49,6 +49,8 @@ static int __plugin_open(struct r_io_t *io, const char *file) {
 static int __attach (int pid) {
 	eprintf ("---> attach to %d\n", pid);
 	pi.hProcess = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
+	if (pi.hProcess == NULL)
+		return -1;
 	return pid;
 }
 
@@ -58,7 +60,8 @@ static int __open(struct r_io_t *io, const char *file, int rw, int mode) {
 		int pid = atoi (file+9);
 		ret = __attach (pid);
 	}
-	fds[0] = ret;
+	if (ret != -1)
+		fds[0] = ret;
 	return ret;
 }
 

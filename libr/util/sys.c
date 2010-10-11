@@ -85,10 +85,10 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 #endif
 }
 
-// TODO: strdup?
 #if __WINDOWS__
-static char envbuf[1024];
 R_API const char *r_sys_getenv(const char *key) {
+	static const char envbuf[1024];
+	envbuf[0] = 0;
 	GetEnvironmentVariable (key, (LPSTR)&envbuf, sizeof (envbuf));
 	return envbuf;
 }
@@ -201,12 +201,13 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 #endif
 
 R_API int r_sys_cmdf (const char *fmt, ...) {
-	char *ret, cmd[4096];
+	int ret;
+	char cmd[4096];
 	va_list ap;
 	va_start(ap, fmt);
 	vsnprintf (cmd, sizeof (cmd), fmt, ap);
 	ret = r_sys_cmd (cmd);
-	va_end(ap);
+	va_end (ap);
 	return ret;
 }
 
@@ -216,7 +217,7 @@ R_API int r_sys_cmd (const char *str) {
 	/* freebsd system() is broken */
 	int fds[2];
 	int st,pid;
-	char *argv[] ={ "/bin/sh", "-c", input, NULL};
+	char *argv[] = { "/bin/sh", "-c", input, NULL};
 	pipe (fds);
 	/* not working ?? */
 	//pid = rfork(RFPROC|RFCFDG);
@@ -240,17 +241,21 @@ R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
 }
 
 R_API int r_sys_rmkdir(const char *dir) {
+	int ret = R_TRUE;
 	char *path = strdup (dir), *ptr = path;
 	// XXX: Wrong for w32 (/)
 	while ((ptr = strchr (ptr, '/'))) {
 		*ptr = 0;
-		r_sys_mkdir (path);
+		if (!r_sys_mkdir (path)) {
+			free (path);
+			return R_FALSE;
+		}
 		*ptr = '/';
 		ptr = ptr+1;
 	}
-	r_sys_mkdir (path);
+	ret = r_sys_mkdir (path);
 	free (path);
-	return R_TRUE;
+	return ret;
 }
 
 R_API void r_sys_perror(const char *fun) { 

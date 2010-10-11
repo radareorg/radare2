@@ -54,8 +54,10 @@ R_API char *r_sys_cmd_str_w32(const char *cmd) {
 			FILE_ATTRIBUTE_READONLY, 
 			NULL); 
 
-	if (in == INVALID_HANDLE_VALUE) 
+	if (in == INVALID_HANDLE_VALUE) {
+		eprintf ("CreateFile (%s)\n", argv0);
 		ErrorExit ("CreateFile"); 
+	}
 
 	// Close the write end of the pipe before reading from the 
 	// read end of the pipe, to control child process execution.

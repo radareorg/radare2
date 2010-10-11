@@ -775,6 +775,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 	RList *list = NULL;
 #if __WINDOWS__
 	list = w32_dbg_maps ();
+	
 	// TODO
 #else
 #if __sun

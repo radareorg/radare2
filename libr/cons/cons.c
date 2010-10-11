@@ -281,10 +281,8 @@ R_API int r_cons_get_size(int *rows) {
 	const char *str = r_sys_getenv ("COLUMNS");
 	I.columns = 80;
 	I.rows = 23;
-	if (str != NULL) {
+	if (str != NULL)
 		I.columns = atoi (str);
-		free (str);
-	}
 #endif
 	if (rows)
 		*rows = I.rows;

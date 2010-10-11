@@ -6,6 +6,13 @@
 
 <{include libr/TODO}>
 
+Windows
+=======
+r2 -d <pid>
+ > dh native
+ > dp=824
+ > ...
+
 Questions
 =========
 * fix colorize of selected bytes
