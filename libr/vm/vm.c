@@ -3,9 +3,6 @@
 #include "r_vm.h"
 #include "p/plugins.h"
 
-/* TODO: move into r_vm_t */
-int vm_arch = -1;
-
 static ut64 r_vm_get_value(RVm *vm, const char *str) {
 	ut64 ret = 0LL;
 	for (;*str&&*str==' ';str=str+1);
@@ -193,10 +190,6 @@ R_API int r_vm_set_arch(RVm *vm, const char *name, int bits) {
 
 // This is conceptually rotten
 R_API int r_vm_init(RVm *vm, int init) {
-#if 0
-	if (config.arch != vm_arch)
-		init = 1;
-#endif
 	if (init) {
 		vm->log = 0;
 		vm->use_mmu_cache = 0;

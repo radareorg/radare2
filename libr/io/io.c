@@ -79,7 +79,6 @@ R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode) {
 		for (;;) {
 			plugin = r_io_plugin_resolve (io, uri);
 			if (plugin) {
-printf("plugin %s\n", plugin->name);
 				fd = plugin->open (io, uri, flags, mode);
 				if (io->redirect) {
 					free ((void *)uri);

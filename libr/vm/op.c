@@ -20,8 +20,8 @@ R_API int r_vm_op_eval(struct r_vm_t *vm, const char *str) {
 
 	p = alloca(len);
 	s = alloca(len);
-	memcpy(p, str, len);
-	memcpy(s, str, len);
+	memcpy (p, str, len);
+	memcpy (s, str, len);
 	r_str_subchr (s, ',', 0);
 	r_str_subchr (s, '\t', 0);
 	r_str_subchr (s, '#', 0);

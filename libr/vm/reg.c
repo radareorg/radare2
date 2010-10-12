@@ -47,7 +47,7 @@ R_API int r_vm_reg_type_i(const char *str) {
 	return -1;
 }
 
-R_API int r_vm_reg_del(struct r_vm_t *vm, const char *name) {
+R_API int r_vm_reg_del(RVm *vm, const char *name) {
 	struct list_head *pos;
 
 	list_for_each(pos, &vm->regs) {
@@ -60,7 +60,7 @@ R_API int r_vm_reg_del(struct r_vm_t *vm, const char *name) {
 	return R_TRUE;
 }
 
-R_API int r_vm_reg_set(struct r_vm_t *vm, const char *name, ut64 value) {
+R_API int r_vm_reg_set(RVm *vm, const char *name, ut64 value) {
 	struct list_head *pos;
 	if (name)
 	list_for_each(pos, &vm->regs) {
@@ -78,7 +78,7 @@ R_API int r_vm_reg_set(struct r_vm_t *vm, const char *name, ut64 value) {
 	return R_FALSE;
 }
 
-R_API int r_vm_reg_alias_list(struct r_vm_t *vm) {
+R_API int r_vm_reg_alias_list(RVm *vm) {
 	struct r_vm_reg_t *reg;
 	struct list_head *pos;
 	int len,space;
@@ -100,7 +100,7 @@ R_API int r_vm_reg_alias_list(struct r_vm_t *vm) {
 	return 0;
 }
 
-R_API int r_vm_reg_alias(struct r_vm_t *vm, const char *name, const char *get, const char *set) {
+R_API int r_vm_reg_alias(RVm *vm, const char *name, const char *get, const char *set) {
 	struct r_vm_reg_t *reg;
 	struct list_head *pos;
 
@@ -129,20 +129,17 @@ R_API int r_vm_cmd_eval(RVm *vm, const char *cmd) {
 			*next=0;
 			next++;
 		}
-		if (strlen(cmd)>2 && !memcmp (cmd, "av", 2))
+		if (strlen (cmd)>2 && !memcmp (cmd, "av", 2))
 			r_vm_cmd_reg (vm, cmd+2);
 		cmd = next;
 	} while (next);
 	return R_TRUE;
 }
 
-R_API int r_vm_cmd_reg(struct r_vm_t *vm, const char *_str) {
-	char *str, *ptr;
-	int len;
-
-	len = strlen (_str)+1;
-	str = alloca (len);
-	memcpy (str, _str, len); // XXX: suboptimal
+R_API int r_vm_cmd_reg(RVm *vm, const char *_str) {
+	char *str, ostr[128], *ptr;
+	str = ostr;
+	strncpy (str, _str, sizeof (ostr)-1);
 
 	switch(*str) {
 	case '*':
@@ -175,31 +172,31 @@ R_API int r_vm_cmd_reg(struct r_vm_t *vm, const char *_str) {
 	case 'a':
 		if (str[1]==' ') {
 			char *get,*set;
-			get = strchr(str+2, ' ');
+			get = strchr (str+2, ' ');
 			if (get) {
 				get[0]='\0';
 				get = get+1;
-				set = strchr(get, ' ');
+				set = strchr (get, ' ');
 				if (set) {
-					set[0]='\0';
-					set = set +1;
-					r_vm_reg_alias(vm, str+2, get, set);
+					*set = '\0';
+					set++;
+					r_vm_reg_alias (vm, str+2, get, set);
 				}
 			}
-		} else r_vm_reg_alias_list(vm);
+		} else r_vm_reg_alias_list (vm);
 		break;
 	case 't':
-		r_vm_reg_type_list(vm);
+		r_vm_reg_type_list (vm);
 		break;
 	case '+':
 		// add register
 		// avr+ eax int32
-		for(str=str+1;str&&*str==' ';str=str+1);
+		for (str=str+1;str&&*str==' ';str=str+1);
 		ptr = strchr(str, ' ');
 		if (ptr) {
 			ptr[0]='\0';
-			r_vm_reg_add(vm, str, r_vm_reg_type_i(ptr+1), 0);
-		} else r_vm_reg_add(vm, str, R_VMREG_INT32, 0);
+			r_vm_reg_add (vm, str, r_vm_reg_type_i(ptr+1), 0);
+		} else r_vm_reg_add (vm, str, R_VMREG_INT32, 0);
 		break;
 	case '-':
 		// rm register
@@ -214,11 +211,11 @@ R_API int r_vm_cmd_reg(struct r_vm_t *vm, const char *_str) {
 		r_vm_setup_flags (vm, str+2);
 		break;
 	default:
-		for(;str&&*str==' ';str=str+1);
-		ptr = strchr(str, '=');
+		for (;str && *str==' '; str++);
+		ptr = strchr (str, '=');
 		if (ptr) {
 			//vm_eval(str);
-			r_vm_op_eval(vm, str);
+			r_vm_op_eval (vm, str);
 #if 0
 			/* set register value */
 			ptr[0]='\0';
@@ -226,18 +223,14 @@ R_API int r_vm_cmd_reg(struct r_vm_t *vm, const char *_str) {
 			ptr[0]='=';
 #endif
 		} else {
-			if (*str=='.') {
-				r_vm_print(vm, r_vm_reg_type_i(str+1));
-			} else {
-				/* show single registers */
-				eprintf("%s = 0x%08"PFMT64x"\n", str, r_vm_reg_get(vm, str));
-			}
+			if (*str=='.') r_vm_print (vm, r_vm_reg_type_i(str+1));
+			else eprintf ("%s = 0x%08"PFMT64x"\n", str, r_vm_reg_get(vm, str));
 		}
 	}
 	return 0;
 }
 
-R_API ut64 r_vm_reg_get(struct r_vm_t *vm, const char *name) {
+R_API ut64 r_vm_reg_get(RVm *vm, const char *name) {
 	struct list_head *pos;
 	int len;
 	if (!name)

@@ -756,11 +756,16 @@ static void          *gdbwrap_writememory(gdbwrap_t *desc, la32 linaddr,
 static void          *gdbwrap_writememory2(gdbwrap_t *desc, la32 linaddr,
 					   void *value, unsigned bytes)
 {
-  char               *rec;
-  char               *packet = alloca(2 * bytes + MSG_BUF);
+  char               *rec *packet;
   u_char             *val = value;
   u_short            i;
   u_int              len;
+
+  packet = malloc (2*bytes+MSG_BUF);
+  if (packet == NULL) {
+    eprintf ("Cannot allocate %d bytes\n", 2*bytes+MSG_BUF);
+    return;
+  }
 
   snprintf(packet, MSG_BUF, "%s%x%s%x%s", GDBWRAP_MEMWRITE2,
 	   linaddr, GDBWRAP_SEP_COMMA, bytes, GDBWRAP_SEP_COLON);
@@ -772,6 +777,8 @@ static void          *gdbwrap_writememory2(gdbwrap_t *desc, la32 linaddr,
       snprintf(packet + len, BYTE_IN_CHAR + 1, "%02x", (unsigned)val[i]);
     }
   rec = gdbwrap_send_data(desc, packet);
+
+  free (packet);
 
   return rec;
 }

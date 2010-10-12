@@ -6,7 +6,7 @@
 
 #if __linux__ || __NetBSD__ || __FreeBSD__ || __OpenBSD__ || __APPLE__ || __WINDOWS__
 
-#define MAGIC_EXIT 31337
+#define MAGIC_EXIT 123
 
 #include <signal.h>
 #if __UNIX__
@@ -81,7 +81,8 @@ static int fork_and_ptraceme(const char *cmd) {
         DEBUG_EVENT de;
 	int pid, tid;
 	HANDLE th = INVALID_HANDLE_VALUE;
-
+	if (!*cmd)
+		return -1;
 	setup_tokens ();
         /* TODO: with args */
         if (!CreateProcess (cmd, NULL,
@@ -154,6 +155,7 @@ err_fork:
 }
 #else
 
+#if 0
 static int __waitpid(int pid) {
 	int st = 0;
 	if (waitpid (pid, &st, 0) == -1)
@@ -166,6 +168,7 @@ static int __waitpid(int pid) {
 	}
 	return R_TRUE;
 }
+#endif
 
 static int fork_and_ptraceme(const char *cmd) {
 	char **argv;
@@ -202,17 +205,18 @@ static int fork_and_ptraceme(const char *cmd) {
                 wait (&status);
                 if (WIFSTOPPED (status))
                         eprintf ("Process with PID %d started...\n", (int)pid);
-		// XXX
-		//kill (pid, SIGSTOP);
+		if (WEXITSTATUS (status))
+			pid = -1;
+		// XXX kill (pid, SIGSTOP);
 		break;
 	}
-	printf ("PID = %d\n", pid);
+	eprintf ("PID = %d\n", pid);
 	return pid;
 }
 #endif
 
 static int __plugin_open(struct r_io_t *io, const char *file) {
-	if (!memcmp (file, "dbg://", 6))
+	if (!memcmp (file, "dbg://", 6) && file[6])
 		return R_TRUE;
 	return R_FALSE;
 }

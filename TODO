@@ -23,9 +23,7 @@ Questions
 * Add support for float/double in r_num :?
 * in Visual Debugger mode cursor mode also scrolls O_o
 * distribute 'spp' with 'rarc2' ? imho no
-* r2 -dls HANGS!!1
 * rarc2 allows to compile invalid code like calling puts() out of context
-* Add rabin2 .! calls into r_core api? r_core_rabin_import(core, "rIs") ?
 
 0.6 RELEASE
 ===========
@@ -57,6 +55,7 @@ TODO nibble
 
 TODO edu
 --------
+* remove all uses of alloca()
 * Implement more get_main()
 * typedef all function pointers, like in r_bp
 * Implement /A : search AES
