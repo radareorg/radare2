@@ -711,11 +711,11 @@ static int parsechar(char c) {
 static void showhelp() {
 	fprintf (stderr,
 		"Usage: r2rc [-alh] [files] > file.S\n"
-		"  -A      Show current architecture\n"
-		"  -l      List all supported architectures\n"
 		"  -s      use at&t syntax instead of intel\n"
 		"  -m      add 'call main prefix\n"
-		"  -h      Display this help\n"
+		"  -h      display this help\n"
+		"  -A      show default architecture\n"
+		"  -a      list all supported architectures\n"
 		"  -ax86  use x86-32\n"
 		"  -ax64  use x86-64\n"
 		"  -aarm  use ARM\n");
@@ -725,16 +725,22 @@ static void parseflag(const char *arg) {
 	int i;
 	switch (*arg) {
 	case 'a':
-		emit = NULL;
-		for (i=0; emits[i]; i++)
-			if (!strcmp (emits[i]->arch, arg+1)) {
-				emit = emits[i];
-				syscallbody = emit->syscall ();
-				break;
+		if (arg[1]) {
+			emit = NULL;
+			for (i=0; emits[i]; i++)
+				if (!strcmp (emits[i]->arch, arg+1)) {
+					emit = emits[i];
+					syscallbody = emit->syscall ();
+					break;
+				}
+			if (emit == NULL) {
+				eprintf ("Invalid architecture: '%s'\n", arg+1);
+				exit (1);
 			}
-		if (emit == NULL) {
-			eprintf ("Invalid architecture: '%s'\n", arg+1);
-			exit (1);
+		} else {
+			for (i=0; emits[i]; i++)
+				printf ("%s\n", emits[i]->arch);
+			exit (0);
 		}
 		break;
 	case 'm':
@@ -745,10 +751,6 @@ static void parseflag(const char *arg) {
 		break;
 	case 'A':
 		printf ("%s\n", emit->arch);
-		exit (0);
-	case 'l':
-		for (i=0; emits[i]; i++)
-			printf ("%s\n", emits[i]->arch);
 		exit (0);
 	case 'h':
 		showhelp ();
