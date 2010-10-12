@@ -41,7 +41,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	RBinObj *obj;
 	RListIter *iter;
 	ut64 baddr;
-	int va = r_config_get_i (r->config, "io.va");
+	int va = r->io->va || r->io->debug;
 	int i = 0;
 	char str[R_FLAG_NAME_SIZE];
 

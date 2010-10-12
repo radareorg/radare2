@@ -133,6 +133,7 @@ int main(int argc, char **argv) {
 	if (debug) {
 		char file[1024];
 		r_config_set (r.config, "io.va", "false");
+		r_config_set (r.config, "cfg.debug", "true");
 		r.io->va = R_FALSE;
 		strcpy (file, "dbg://");
 		if (optind < argc) {
@@ -152,7 +153,6 @@ int main(int argc, char **argv) {
 
 		fh = r_core_file_open (&r, file, perms);
 		// TODO: move into if (debug) ..
-		r_config_set (r.config, "cfg.debug", "true");
 		r_debug_use (r.dbg, "native");
 	} else {
 		if (optind<argc) {
