@@ -205,7 +205,7 @@ static int fork_and_ptraceme(const char *cmd) {
                 wait (&status);
                 if (WIFSTOPPED (status))
                         eprintf ("Process with PID %d started...\n", (int)pid);
-		if (WEXITSTATUS (status))
+		if (WEXITSTATUS (status) == MAGIC_EXIT)
 			pid = -1;
 		// XXX kill (pid, SIGSTOP);
 		break;
