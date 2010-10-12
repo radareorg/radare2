@@ -5,7 +5,8 @@ namespace Radare {
 	[CCode (cheader_filename="r_bin.h,r_list.h,r_types_base.h", cname="struct r_bin_t", free_function="r_bin_free", cprefix="r_bin_")]
 	public class RBin {
 		public const string file;
-		public int size;
+		public int narch;
+		public RBin.Arch curarch;
 
 		public RBin();
 
@@ -32,6 +33,13 @@ namespace Radare {
 		public int meta_get_line(uint64 addr, ref string file, int len, out int line);
 		public string meta_get_source_line(uint64 addr);
 	
+		[CCode (cname="RBinArch", free_function="", ref_function="", unref_function="")]
+		public struct Arch {
+			public unowned string file;
+			public int size;
+			public RBuffer buf;
+		}
+
 		[CCode (cname="RBinAddr", free_function="", ref_function="", unref_function="")]
 		public class Addr {
 			public uint64 rva;
@@ -89,6 +97,7 @@ namespace Radare {
 			public string machine;
 			public string os;
 			public string subsystem;
+			public int bits;
 			public int big_endian;
 			public uint32 dbg_info;
 		}

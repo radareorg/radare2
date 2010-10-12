@@ -35,6 +35,7 @@ public static class Radare.RHex {
 	public static class RFile {
 		public static string slurp(string file, out int osz=0);
 		public static string slurp_range(string file, uint64 off, int sz, out int osz=0);
+		public static int dump(string file, uint8 *buf, int len);
 	}
 	[CCode (cheader_filename="r_util.h", cprefix="r_log_", free_function="")]
 	public static class RLog {
@@ -77,6 +78,7 @@ public static class Radare.RHex {
 	[CCode (cname="RBuffer", cheader_filename="r_util.h", cprefix="r_buf_", free_function="r_buf_free")]
 	public static class RBuffer {
 		public RBuffer();
+		public uint8 *buf;
 		public int read_at(uint64 addr, uint8 *buf, int len);
 		public int write_at(uint64 addr, uint8 *buf, int len);
 		public bool set_bytes(uint8 *buf, int len);

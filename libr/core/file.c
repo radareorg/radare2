@@ -112,11 +112,11 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 		}
 	}
 
-	r_flag_space_set (r->flags, "relocs");
 	// R -> Relocations
 	RList *relocs;
 	RBinReloc *reloc;
 
+	r_flag_space_set (r->flags, "relocs");
 	if ((relocs = r_bin_get_relocs (r->bin)) != NULL) {
 		r_list_foreach (relocs, iter, reloc) {
 			snprintf (str, R_FLAG_NAME_SIZE, "reloc.%s", reloc->name);
