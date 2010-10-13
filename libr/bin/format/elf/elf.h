@@ -38,6 +38,7 @@ typedef struct r_bin_elf_reloc_t {
 	int sym;
 	int type;
 	ut64 offset;
+	ut64 rva;
 	int last;
 	char name[ELF_STRING_LENGTH];
 } RBinElfReloc;

@@ -491,10 +491,14 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 	Elf_(Shdr) *strtab_section;
 	Elf_(Sym) *sym;
 	Elf_(Rel) *rel;
+	ut64 got_addr, got_offset;
 	char *strtab;
 	int i, j, nrel, tsize, len, nsym, idx;
 	
 	if (!bin->shdr || !bin->strtab)
+		return NULL;
+	if ((got_addr = Elf_ (r_bin_elf_get_section_offset) (bin, ".got")) == -1 &&
+		(got_addr = Elf_ (r_bin_elf_get_section_offset) (bin, ".got.plt")) == -1)
 		return NULL;
 	for (i = 0, nsym = 0; i < bin->ehdr.e_shnum; i++)
 		if (bin->shdr[i].sh_type == (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM)) {
@@ -546,6 +550,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 				return NULL;
 			}
 		}
+		got_offset = (rel[0].r_offset - bin->baddr - got_addr) & ELF_GOTOFF_MASK;
 		if ((ret = (struct r_bin_elf_reloc_t *)malloc ((nrel+1) * sizeof (struct r_bin_elf_reloc_t))) == NULL) {
 			perror ("malloc (reloc)");
 			return NULL;
@@ -558,7 +563,8 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 			} else strncpy (ret[j].name, "unknown", ELF_STRING_LENGTH);
 			ret[j].sym = ELF_R_SYM (rel[j].r_info);
 			ret[j].type = ELF_R_TYPE (rel[j].r_info);
-			ret[j].offset = rel[j].r_offset - bin->baddr;
+			ret[j].offset = rel[j].r_offset - got_offset - bin->baddr;
+			ret[j].rva = rel[j].r_offset - bin->baddr;
 			ret[j].last = 0;
 		}
 		ret[j].last = 1;

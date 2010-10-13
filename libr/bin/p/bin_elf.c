@@ -168,7 +168,7 @@ static RList* relocs(RBinArch *arch) {
 		if (!(ptr = R_NEW (RBinReloc)))
 			break;
 		strncpy (ptr->name, relocs[i].name, R_BIN_SIZEOF_STRINGS);
-		ptr->rva = relocs[i].offset;
+		ptr->rva = relocs[i].rva;
 		ptr->offset = relocs[i].offset;
 		ptr->type = relocs[i].type;
 		ptr->sym = relocs[i].sym;
