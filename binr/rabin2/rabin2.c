@@ -292,9 +292,6 @@ static int rabin_show_symbols() {
 			if (rad) {
 				r_flag_name_filter (symbol->name);
 				if (!strncmp (symbol->type,"FUNC", 4)) {
-					if (symbol->size) 
-						printf ("af+ 0x%08"PFMT64x" %"PFMT64d" fcn.sym.%s\n",
-								va?baddr+symbol->rva:symbol->offset, symbol->size, symbol->name);
 					printf ("fs functions\n");
 					printf ("f fcn.sym.%s %"PFMT64d" 0x%08"PFMT64x"\n",
 							symbol->name, symbol->size,

@@ -12,6 +12,7 @@
 static ut32 gdiff_get_prime(char* mnemonic) {
 	int i;
 
+	if (mnemonic)
 	for (i=0; i < 442; i++)
 		if (!strcmp (mnemonic, mnemonics[i]))
 			return primes[i];
@@ -196,7 +197,7 @@ R_API int r_core_gdiff(RCore *core, char *file1, char *file2, int va) {
 	RAnalBlock *bb;
 	RList *fcns[2], *bbs[2];
 	RListIter *iter;
-	char cmd[1024], *files[2] = {file1, file2};
+	char *files[2] = {file1, file2};
 	int i;
 
 	/* Init resources  */
@@ -204,16 +205,13 @@ R_API int r_core_gdiff(RCore *core, char *file1, char *file2, int va) {
 
 	for (i = 0; i < 2; i++) {
 		/* Load and analyze bin*/
+		r_config_set_i (core2->config, "io.va", va);
 		if (!r_core_file_open (core2, files[i], 0)) {
 			fprintf (stderr, "Cannot open file '%s'\n", files[i]);
 			return R_FALSE;
 		}
-		r_config_set_i (core2->config, "io.va", va);
+		r_config_set (core2->config, "anal.plugin", "x86_x86im");
 		r_config_set_i (core2->config, "anal.split", 0);
-		sprintf (cmd, ".!rabin2 -rSIeMis%s %s", va?"v":"", files[i]);
-		r_core_cmd0 (core2, cmd);
-		/* XXX Select correct analysis plugin */
-		r_core_cmd0 (core2, "ah x86_x86im");
 		r_core_cmd0 (core2, "fs *");
 		r_core_cmd0 (core2, "af @ entry0");
 		r_core_cmd0 (core2, "af @ main");

@@ -96,10 +96,6 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 			r_flag_name_filter (symbol->name);
 			snprintf (str, R_FLAG_NAME_SIZE, "fcn.sym.%s", symbol->name);
 			if (!strncmp (symbol->type,"FUNC", 4)) {
-				if (symbol->size)
-					if (!r_anal_fcn_add (r->anal, va?baddr+symbol->rva:symbol->offset,
-								symbol->size, symbol->name, R_ANAL_DIFF_NULL))
-						eprintf ("Cannot add function: %s (duplicated)\n", symbol->name);
 				r_flag_space_set (r->flags, "functions");
 				r_flag_set (r->flags, str, va?baddr+symbol->rva:symbol->offset,
 						symbol->size, 0);
