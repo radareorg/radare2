@@ -52,8 +52,10 @@ static ut64 r_vm_get_math(struct r_vm_t *vm, const char *str) {
 	}
 	a = strchr (p,'/');
 	if (a) {
+		ut64 d = r_vm_get_value(vm, a+1);
+		ut64 n = r_vm_get_value(vm, p);
 		*a='\0';
-		return r_vm_get_value (vm, p) / r_vm_get_value(vm, a+1);
+		return d?n/d:0;
 	}
 	a = strchr (p,'&');
 	if (a) {
@@ -72,8 +74,10 @@ static ut64 r_vm_get_math(struct r_vm_t *vm, const char *str) {
 	}
 	a = strchr (p,'%');
 	if (a) {
+		ut64 d = r_vm_get_value(vm, a+1);
+		ut64 n = r_vm_get_value(vm, p);
 		*a='\0';
-		return r_vm_get_value (vm, p) % r_vm_get_value(vm, a+1);
+		return d?n%d:0;
 	}
 	a = strchr (p,'>');
 	if (a) {

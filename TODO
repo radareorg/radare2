@@ -15,6 +15,7 @@ r2 -d <pid>
 
 Questions
 =========
+* Support more than 16 columns 'px'
 * fix colorize of selected bytes
 * Switch to 'arm' code analysis module
 * Add "pm ?" for bit print like in pb?

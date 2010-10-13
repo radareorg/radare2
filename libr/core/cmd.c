@@ -362,7 +362,15 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			ret -= middle;
 			r_cons_printf (" ;  *middle* %d", ret);
 		}
-		r_vm_op_eval (core->vm, asmop.buf_asm);
+		if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
+			RAsmAop ao; /* disassemble for the vm .. */
+			int os = core->assembler->syntax;
+			r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
+			ret = r_asm_disassemble (core->assembler, &ao, buf+idx, len-idx);
+			if (ret>0)
+				r_vm_op_eval (core->vm, ao.buf_asm);
+			r_asm_set_syntax (core->assembler, os);
+		} else r_vm_op_eval (core->vm, asmop.buf_asm);
 		switch (analop.type) {
 		case R_ANAL_OP_TYPE_PUSH:
 		case R_ANAL_OP_TYPE_UPUSH:
