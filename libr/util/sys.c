@@ -87,7 +87,7 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 
 #if __WINDOWS__
 R_API const char *r_sys_getenv(const char *key) {
-	static const char envbuf[1024];
+	static char envbuf[1024];
 	envbuf[0] = 0;
 	GetEnvironmentVariable (key, (LPSTR)&envbuf, sizeof (envbuf));
 	return envbuf;

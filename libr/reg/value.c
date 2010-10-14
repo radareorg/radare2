@@ -10,8 +10,11 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	ut32 v32;
 	ut16 v16;
 	ut8 v8;
+	int off;
 	ut64 ret = 0LL;
-	int off = BITS2BYTES(item->offset);
+	if (reg == NULL || item == NULL)
+		return 0LL;
+	off = BITS2BYTES (item->offset);
 	regset = &reg->regset[item->type];
 	if (item)
 	switch (item->size) {

@@ -725,8 +725,7 @@ static void cmd_reg(RCore *core, const char *str) {
 		// TODO: 'drs' to swap register arenas and display old register valuez
 		break;
 	case 'p':
-		if (str[1]) {
-			eprintf ("profile: \n");
+		if (!str[1]) {
 			if (core->dbg->reg_profile)
 				r_cons_printf ("%s\n", core->dbg->reg_profile);
 			else eprintf ("No register profile defined. Try 'dr.'\n");

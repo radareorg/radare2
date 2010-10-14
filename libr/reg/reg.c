@@ -228,7 +228,7 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 	RListIter *iter;
 	RRegItem *r;
 	int i, e;
-	if (!reg)
+	if (!reg || !name)
 		return NULL;
 	if (type == -1) {
 		i = 0;

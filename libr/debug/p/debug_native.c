@@ -899,6 +899,7 @@ static int r_debug_native_bp_read(int pid, ut64 addr, int hw, int rwx) {
 #if __i386__
 /* TODO: Can I use this as in a coroutine? */
 static RList *r_debug_native_frames(RDebug *dbg) {
+	RRegItem *ri;
 	RReg *reg = dbg->reg;
 	ut32 i, _esp, esp, ebp2;
 	RList *list = r_list_new ();
@@ -906,22 +907,25 @@ static RList *r_debug_native_frames(RDebug *dbg) {
 	ut8 buf[4];
 
 	list->free = free;
-	_esp = r_reg_get_value (reg, r_reg_get (reg, "esp", R_REG_TYPE_GPR));
-	// TODO: implement [stack] map uptrace method too
-	esp = _esp;
-	for (i=0; i<MAXBT; i++) {
-		bio->read_at (bio->io, esp, (void *)&ebp2, 4);
-		*buf = '\0';
-		bio->read_at (bio->io, (ebp2-5)-(ebp2-5)%4, (void *)&buf, 4);
+	ri = r_reg_get (reg, "esp", R_REG_TYPE_GPR);
+	if (ri != NULL) {
+		_esp = r_reg_get_value (reg, ri);
+		// TODO: implement [stack] map uptrace method too
+		esp = _esp;
+		for (i=0; i<MAXBT; i++) {
+			bio->read_at (bio->io, esp, (void *)&ebp2, 4);
+			*buf = '\0';
+			bio->read_at (bio->io, (ebp2-5)-(ebp2-5)%4, (void *)&buf, 4);
 
-		// TODO: arch_is_call() here and this fun will be portable
-		if (buf[(ebp2-5)%4]==0xe8) {
-			RDebugFrame *frame = R_NEW (RDebugFrame);
-			frame->addr = ebp2;
-			frame->size = esp-_esp;
-			r_list_append (list, frame);
+			// TODO: arch_is_call() here and this fun will be portable
+			if (buf[(ebp2-5)%4]==0xe8) {
+				RDebugFrame *frame = R_NEW (RDebugFrame);
+				frame->addr = ebp2;
+				frame->size = esp-_esp;
+				r_list_append (list, frame);
+			}
+			esp += 4;
 		}
-		esp += 4;
 	}
 	return list;
 }
