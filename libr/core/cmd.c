@@ -1678,6 +1678,10 @@ static void cmd_syscall_do(RCore *core, int num) {
 	int i;
 	char str[64];
 	RSyscallItem *item = r_syscall_get (core->syscall, num, -1);
+	if (item == NULL) {
+		r_cons_printf ("%d = unknown ()", num);
+		return;
+	}
 	r_cons_printf ("%d = %s (", item->num, item->name);
 	// TODO: move this to r_syscall
 	for (i=0; i<item->args; i++) {
