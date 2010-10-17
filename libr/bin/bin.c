@@ -15,7 +15,7 @@
 static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS };
 static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS };
 
-static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, ut64 to) {
+static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, ut64 to, ut64 scnrva) {
 	char str[R_BIN_SIZEOF_STRINGS];
 	int i, matches = 0, ctr = 0;
 	RBinString *ptr = NULL;
@@ -32,7 +32,8 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 					break;
 				}
 				str[matches] = '\0';
-				ptr->rva = ptr->offset = i-matches;
+				ptr->offset = i-matches;
+				ptr->rva = ptr->offset-from+scnrva;
 				ptr->size = matches;
 				ptr->ordinal = ctr;
 				// copying so many bytes here..
@@ -63,15 +64,16 @@ static RList* get_strings(RBinArch *arch, int min) {
 		r_list_foreach (arch->sections, iter, section) {
 			// XXX: DIRTY HACK! should we check sections srwx to be READ ONLY and NONEXEC?
 			if ((strstr (arch->info->bclass, "MACH0") && strstr (section->name, "_cstring")) || // OSX
-				(strstr (arch->info->bclass, "ELF") && strstr (section->name, "data"))) { // LINUX
+				(strstr (arch->info->bclass, "ELF") && strstr (section->name, "data")) || // LINUX
+				(strstr (arch->info->bclass, "PE"))) { // WIN
 				count ++;
 				get_strings_range (arch, ret, min, 
-					section->offset, section->offset+section->size);
+					section->offset, section->offset+section->size, section->rva);
 			}
 		}	
 	}
 	if (count == 0)
-		get_strings_range (arch, ret, min, 0, arch->size);
+		get_strings_range (arch, ret, min, 0, arch->size, 0);
 	return ret;
 }
 
