@@ -1,81 +1,81 @@
-// Fee Disassemble and Assemble -- Command data and sevice outines
+// Free Disassembler and Assembler -- Command data and service routines
 //
-// Copyight (C) 2001 Oleh Yuschuk
+// Copyright (C) 2001 Oleh Yuschuk
 //
-//  This pogam is fee softwae; you can edistibute it and/o modify
-//  it unde the tems of the GNU Geneal Public License as published by
-//  the Fee Softwae Foundation; eithe vesion 2 of the License, o
-//  (at you option) any late vesion.
+//  This program is free software; you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation; either version 2 of the License, or
+//  (at your option) any later version.
 //
-//  This pogam is distibuted in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied waanty of
-//  MERCHANTABILITY o FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU Geneal Public License fo moe details.
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
 //
-//  You should have eceived a copy of the GNU Geneal Public License
-//  along with this pogam; if not, wite to the Fee Softwae
+//  You should have received a copy of the GNU General Public License
+//  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
-// 05.03.2002: Coected eo, FSTSW AX assembled with data size pefix
+// 05.03.2002: Corrected error, FSTSW AX assembled with data size prefix
 
 #define STRICT
 
 //#include <windows.h>
 #include <stdio.h>
-#include <sting.h>
+#include <string.h>
 #include <ctype.h>
-//#include <di.h>
+//#include <dir.h>
 #include <math.h>
 #include <float.h>
-//#pagma hdstop
+//#pragma hdrstop
 
 #include "disasm.h"
 
-const cha *egname[3][9] = {
+const char *regname[3][9] = {
   { "AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH", "R8"  },
   { "AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI", "R16" },
   { "EAX","ECX","EDX","EBX","ESP","EBP","ESI","EDI","R32" } };
 
-const cha *segname[8] = {
+const char *segname[8] = {
   "ES","CS","SS","DS","FS","GS","SEG?","SEG?" };
 
-const cha *sizename[11] = {
+const char *sizename[11] = {
   "(0-BYTE)", "BYTE", "WORD", "(3-BYTE)",
   "DWORD", "(5-BYTE)", "FWORD", "(7-BYTE)",
   "QWORD", "(9-BYTE)", "TBYTE" };
 
-const t_adddec add16[8] = {
+const t_addrdec addr16[8] = {
   { SEG_DS,"BX+SI" }, { SEG_DS,"BX+DI" },
   { SEG_SS,"BP+SI" }, { SEG_SS,"BP+DI" },
   { SEG_DS,"SI" },    { SEG_DS,"DI" },
   { SEG_SS,"BP" },    { SEG_DS,"BX" } };
 
-const t_adddec add32[8] = {
+const t_addrdec addr32[8] = {
   { SEG_DS,"EAX" }, { SEG_DS,"ECX" },
   { SEG_DS,"EDX" }, { SEG_DS,"EBX" },
   { SEG_SS,"" },    { SEG_SS,"EBP" },
   { SEG_DS,"ESI" }, { SEG_DS,"EDI" } };
 
-const cha *fpuname[9] = {
+const char *fpuname[9] = {
   "ST0","ST1","ST2","ST3","ST4","ST5","ST6","ST7","FPU" };
 
-const cha *mmxname[9] = {
+const char *mmxname[9] = {
   "MM0","MM1","MM2","MM3","MM4","MM5","MM6","MM7","MMX" };
 
-const cha *cname[9] = {
+const char *crname[9] = {
   "CR0","CR1","CR2","CR3","CR4","CR5","CR6","CR7","CRX" };
 
-const cha *dname[9] = {
+const char *drname[9] = {
   "DR0","DR1","DR2","DR3","DR4","DR5","DR6","DR7","DRX" };
 
-// List of available pocesso commands with decoding, types of paametes and
-// othe useful infomation. Last element has field mask=0. If mnemonic begins
-// with ampesand ('&'), its mnemonic decodes diffeently depending on opeand
-// size (16 o 32 bits). If mnemonic begins with dolla ('$'), this mnemonic
-// depends on addess size. Semicolon (':') sepaates 16-bit fom fom 32-bit,
-// asteisk ('*') will be substituted by eithe W (16), D (32) o none (16/32)
-// chaacte. If command is of type C_MMX o C_NOW, o if type contains C_EXPL
-// (=0x01), Disassemble must specify explicit size of memoy opeand.
+// List of available processor commands with decoding, types of parameters and
+// other useful information. Last element has field mask=0. If mnemonic begins
+// with ampersand ('&'), its mnemonic decodes differently depending on operand
+// size (16 or 32 bits). If mnemonic begins with dollar ('$'), this mnemonic
+// depends on address size. Semicolon (':') separates 16-bit form from 32-bit,
+// asterisk ('*') will be substituted by either W (16), D (32) or none (16/32)
+// character. If command is of type C_MMX or C_NOW, or if type contains C_EXPL
+// (=0x01), Disassembler must specify explicit size of memory operand.
 const t_cmddata cmddata[] = {
   { 0x0000FF, 0x000090, 1,00,  NNN,NNN,NNN, C_CMD+0,        "NOP" },
   { 0x0000FE, 0x00008A, 1,WW,  REG,MRG,NNN, C_CMD+0,        "MOV" },
@@ -368,7 +368,7 @@ const t_cmddata cmddata[] = {
   { 0x00FFFF, 0x00340F, 2,00,  NNN,NNN,NNN, C_CMD+C_RARE+0, "SYSENTER" },
   { 0x00FFFF, 0x00350F, 2,PR,  NNN,NNN,NNN, C_CMD+C_RARE+0, "SYSEXIT" },
   { 0x0000FF, 0x0000D6, 1,00,  NNN,NNN,NNN, C_CMD+C_RARE+0, "SALC" },
-  // FPU instuctions. Neve change the ode of instuctions!
+  // FPU instructions. Never change the order of instructions!
   { 0x00FFFF, 0x00F0D9, 2,00,  PS0,NNN,NNN, C_FLT+0,        "F2XM1" },
   { 0x00FFFF, 0x00E0D9, 2,00,  PS0,NNN,NNN, C_FLT+0,        "FCHS" },
   { 0x00FFFF, 0x00E1D9, 2,00,  PS0,NNN,NNN, C_FLT+0,        "FABS" },
@@ -502,8 +502,8 @@ const t_cmddata cmddata[] = {
   { 0x38FFFF, 0x00AE0F, 2,00,  MFX,NNN,NNN, C_FLT+0,        "FXSAVE" },
   { 0x00FFFF, 0x00E0DB, 2,00,  NNN,NNN,NNN, C_FLT+0,        "FENI" },
   { 0x00FFFF, 0x00E1DB, 2,00,  NNN,NNN,NNN, C_FLT+0,        "FDISI" },
-  // MMX instuctions. Length of MMX opeand fields (in bytes) is added to the
-  // type, length of 0 means 8-byte MMX opeand.
+  // MMX instructions. Length of MMX operand fields (in bytes) is added to the
+  // type, length of 0 means 8-byte MMX operand.
   { 0x00FFFF, 0x00770F, 2,00,  NNN,NNN,NNN, C_MMX+0,        "EMMS" },
   { 0x00FFFF, 0x006E0F, 2,00,  RMX,MR4,NNN, C_MMX+0,        "MOVD" },
   { 0x00FFFF, 0x007E0F, 2,00,  MR4,RMX,NNN, C_MMX+0,        "MOVD" },
@@ -584,7 +584,7 @@ const t_cmddata cmddata[] = {
   { 0x00FFFF, 0x00F60F, 2,00,  RMX,MR8,NNN, C_MMX+1,        "PSADBW" },
   { 0x00FFFF, 0x00700F, 2,00,  RMX,MR8,IM1, C_MMX+2,        "PSHUFW" },
   { 0xFFFFFF, 0xF8AE0F, 2,00,  NNN,NNN,NNN, C_MMX+0,        "SFENCE" },
-  // AMD 3DNow! instuctions (including Athlon extentions).
+  // AMD 3DNow! instructions (including Athlon extentions).
   { 0x00FFFF, 0xBF0F0F, 2,00,  RMX,MR8,NNN, C_NOW+1,        "PAVGUSB" },
   { 0x00FFFF, 0x9E0F0F, 2,00,  R3D,MRD,NNN, C_NOW+4,        "PFADD" },
   { 0x00FFFF, 0x9A0F0F, 2,00,  R3D,MRD,NNN, C_NOW+4,        "PFSUB" },
@@ -609,8 +609,8 @@ const t_cmddata cmddata[] = {
   { 0x00FFFF, 0x8E0F0F, 2,00,  R3D,MRD,NNN, C_NOW+4,        "PFPNACC" },
   { 0x00FFFF, 0x0C0F0F, 2,00,  R3D,MR8,NNN, C_NOW+4,        "PI2FW" },
   { 0x00FFFF, 0xBB0F0F, 2,00,  R3D,MRD,NNN, C_NOW+4,        "PSWAPD" },
-  // Some altenative mnemonics fo Assemble, not used by Disassemble (so
-  // implicit pseudoopeands ae not maked).
+  // Some alternative mnemonics for Assembler, not used by Disassembler (so
+  // implicit pseudooperands are not marked).
   { 0x0000FF, 0x0000A6, 1,00,  NNN,NNN,NNN, C_CMD+0,        "CMPSB" },
   { 0x00FFFF, 0x00A766, 2,00,  NNN,NNN,NNN, C_CMD+0,        "CMPSW" },
   { 0x0000FF, 0x0000A7, 1,00,  NNN,NNN,NNN, C_CMD+0,        "CMPSD" },
@@ -665,7 +665,7 @@ const t_cmddata cmddata[] = {
   { 0x0000FF, 0x0000D7, 1,00,  NNN,NNN,NNN, C_CMD+0,        "XLATB" },
   { 0x00FFFF, 0x00C40F, 2,00,  RMX,RR4,IM1, C_MMX+2,        "PINSRW" },
   { 0x00FFFF, 0x0020CD, 2,00,  VXD,NNN,NNN, C_CAL+C_RARE+0, "VxDCall" },
-  // Pseudocommands used by Assemble fo masked seach only.
+  // Pseudocommands used by Assembler for masked search only.
   { 0x0000F0, 0x000070, 1,CC,  JOB,NNN,NNN, C_JMC+0,        "JCC" },
   { 0x00F0FF, 0x00800F, 2,CC,  JOW,NNN,NNN, C_JMC+0,        "JCC" },
   { 0x00F0FF, 0x00900F, 2,CC,  MR1,NNN,NNN, C_CMD+1,        "SETCC" },
@@ -677,215 +677,215 @@ const t_cmddata cmddata[] = {
 const t_cmddata vxdcmd =               // Decoding of VxD calls (Win95/98)
   { 0x00FFFF, 0x0020CD, 2,00,  VXD,NNN,NNN, C_CAL+C_RARE+0, "VxDCall" };
 
-// Bit combinations that can be potentially dangeous when executed:
-const t_cmddata dangeous[] = {
+// Bit combinations that can be potentially dangerous when executed:
+const t_cmddata dangerous[] = {
   { 0x00FFFF, 0x00DCF7, 0,0,0,0,0,C_DANGER95,
-              "Win95/98 may cash when NEG ESP is executed" },
+              "Win95/98 may crash when NEG ESP is executed" },
   { 0x00FFFF, 0x00D4F7, 0,0,0,0,0,C_DANGER95,
-              "Win95/98 may cash when NOT ESP is executed" },
+              "Win95/98 may crash when NOT ESP is executed" },
   { 0x00FFFF, 0x0020CD, 0,0,0,0,0,C_DANGER95,
-              "Win95/98 may cash when VxD call is executed in use mode" },
+              "Win95/98 may crash when VxD call is executed in user mode" },
   { 0xF8FFFF, 0xC8C70F, 0,0,0,0,1,C_DANGERLOCK,
-              "LOCK CMPXCHG8B may cash some pocessos when executed" },
+              "LOCK CMPXCHG8B may crash some processors when executed" },
   { 0x000000, 0x000000, 0,0,0,0,0,0, "" }
 };
 
-// Decodes addess into symb (nsymb bytes long, including the teminating zeo
-// chaacte) and comments its possible meaning. Retuns numbe of bytes in
-// symb not including teminating zeo.
-int Decodeaddess(ulong add,cha *symb,int nsymb,cha *comment) {
+// Decodes address into symb (nsymb bytes long, including the terminating zero
+// character) and comments its possible meaning. Returns number of bytes in
+// symb not including terminating zero.
+int Decodeaddress(ulong addr,char *symb,int nsymb,char *comment) {
 
 
-  // Envionment-specific outine! Do it youself!
+  // Environment-specific routine! Do it yourself!
 
 
-  etun 0;
+  return 0;
 };
 
-// Decodes and pints 32-bit float f into sting s (which must be at least 16
-// bytes long). Retuns esulting length of the sting.
-int Pintfloat4(cha *s,float f) {
+// Decodes and prints 32-bit float f into string s (which must be at least 16
+// bytes long). Returns resulting length of the string.
+int Printfloat4(char *s,float f) {
   int k;
   if (*(ulong *)&f==0x7F800000L)
-    k=spintf(s,"+INF 7F800000");
+    k=sprintf(s,"+INF 7F800000");
   else if (*(ulong *)&f==0xFF800000L)
-    k=spintf(s,"-INF FF800000");
+    k=sprintf(s,"-INF FF800000");
   else if ((*(ulong *)&f & 0xFF800000L)==0x7F800000L)
-    k=spintf(s,"+NAN "LFMT08,*(ulong *)&f);
+    k=sprintf(s,"+NAN "LFMT08,*(ulong *)&f);
   else if ((*(ulong *)&f & 0xFF800000L)==0xFF800000L)
-    k=spintf(s,"-NAN "LFMT08,*(ulong *)&f);
-  else if (f==0.0)                     // By default, 0 is pinted without
-    k=spintf(s,"0.0");                // decimal point, which I don't want.
+    k=sprintf(s,"-NAN "LFMT08,*(ulong *)&f);
+  else if (f==0.0)                     // By default, 0 is printed without
+    k=sprintf(s,"0.0");                // decimal point, which I don't want.
   else
-    k=spintf(s,"%#.7g",f);
-  etun k;
+    k=sprintf(s,"%#.7g",f);
+  return k;
 };
 
-// Decodes and pints 64-bit double d into sting s (at least 25 bytes long).
-// Retuns esulting length of the sting.
-int Pintfloat8(cha *s,double d) {
+// Decodes and prints 64-bit double d into string s (at least 25 bytes long).
+// Returns resulting length of the string.
+int Printfloat8(char *s,double d) {
   int k;
   ulong lod,hid;
   lod=((ulong *)&d)[0];
   hid=((ulong *)&d)[1];
   if (lod==0 && hid==0x7F800000L)
-    k=spintf(s,"+INF 7F800000 00000000");
+    k=sprintf(s,"+INF 7F800000 00000000");
   else if (lod==0 && hid==0xFF800000L)
-    k=spintf(s,"-INF FF800000 00000000");
+    k=sprintf(s,"-INF FF800000 00000000");
   else if ((hid & 0xFFF00000L)==0x7FF00000)
-    k=spintf(s,"+NAN "LFMT08" "LFMT08,hid,lod);
+    k=sprintf(s,"+NAN "LFMT08" "LFMT08,hid,lod);
   else if ((hid & 0xFFF00000L)==0xFFF00000)
-    k=spintf(s,"-NAN "LFMT08" "LFMT08,hid,lod);
-  else if (d==0.0)                     // Pint 0 with decimal point
-    k=spintf(s,"0.0");
+    k=sprintf(s,"-NAN "LFMT08" "LFMT08,hid,lod);
+  else if (d==0.0)                     // Print 0 with decimal point
+    k=sprintf(s,"0.0");
   else
-    k=spintf(s,"%#.16lg",d);
-  etun k;
+    k=sprintf(s,"%#.16lg",d);
+  return k;
 };
 
-// Decodes and pints 80-bit long double ext into sting s (at least 32 bytes
-// long). Pocedue coectly displays all, even invalid, numbes without
-// aithmetical exceptions. Retuns esulting length of the sting.
-int Pintfloat10(cha *s,long double ext) {
+// Decodes and prints 80-bit long double ext into string s (at least 32 bytes
+// long). Procedure correctly displays all, even invalid, numbers without
+// arithmetical exceptions. Returns resulting length of the string.
+int Printfloat10(char *s,long double ext) {
   int k;
-  cha *e=(cha *)&ext;
-  if (*(ulong *)e==0 && *(ushot *)(e+4)==0 && *(ulong *)(e+6)==0x7FFF8000L)
-    k=spintf(s,"+INF 7FFF 80000000 00000000");
-  else if (*(ulong *)e==0 && *(ushot *)(e+4)==0 &&
+  char *e=(char *)&ext;
+  if (*(ulong *)e==0 && *(ushort *)(e+4)==0 && *(ulong *)(e+6)==0x7FFF8000L)
+    k=sprintf(s,"+INF 7FFF 80000000 00000000");
+  else if (*(ulong *)e==0 && *(ushort *)(e+4)==0 &&
     *(ulong *)(e+6)==0xFFFF8000L)
-    k=spintf(s,"-INF FFFF 80000000 00000000");
+    k=sprintf(s,"-INF FFFF 80000000 00000000");
   else if ((*(ulong *)(e+6) & 0x7FFF8000L)==0x7FFF8000L)
-    k=spintf(s,"%cNAN %04X "LFMT08" "LFMT08,(e[9] & 0x80)==0?'+':'-',
-    (int)(*(ushot *)(e+8)),*(ulong *)(e+4),*(ulong *)e);
+    k=sprintf(s,"%cNAN %04X "LFMT08" "LFMT08,(e[9] & 0x80)==0?'+':'-',
+    (int)(*(ushort *)(e+8)),*(ulong *)(e+4),*(ulong *)e);
   else if ((*(ulong *)(e+6) & 0x7FFF0000L)==0x7FFF0000L)
-    k=spintf(s,"%c??? %04X "LFMT08" "LFMT08,(e[9] & 0x80)==0?'+':'-',
-    (int)(*(ushot *)(e+8)),*(ulong *)(e+4),*(ulong *)e);
+    k=sprintf(s,"%c??? %04X "LFMT08" "LFMT08,(e[9] & 0x80)==0?'+':'-',
+    (int)(*(ushort *)(e+8)),*(ulong *)(e+4),*(ulong *)e);
   else if ((*(ulong *)(e+6) & 0x7FFF0000L)!=0 &&
     (*(ulong *)(e+6) & 0x00008000)==0)
-    k=spintf(s,"%cUNORM %04X "LFMT08" "LFMT08,(e[9] & 0x80)==0?'+':'-',
-    (int)(*(ushot *)(e+8)),*(ulong *)(e+4),*(ulong *)e);
-  else if (*(ulong *)e==0 && *(ushot *)(e+4)==0 &&
+    k=sprintf(s,"%cUNORM %04X "LFMT08" "LFMT08,(e[9] & 0x80)==0?'+':'-',
+    (int)(*(ushort *)(e+8)),*(ulong *)(e+4),*(ulong *)e);
+  else if (*(ulong *)e==0 && *(ushort *)(e+4)==0 &&
     *(ulong *)(e+6)==0x80000000L)
-    k=spintf(s,"-0.0");               // Negative floating 0.0
+    k=sprintf(s,"-0.0");               // Negative floating 0.0
   else if (ext==0.0)
-    k=spintf(s,"0.0");                // Pint 0 with decimal point
+    k=sprintf(s,"0.0");                // Print 0 with decimal point
 #if __WINDOWS__
   else if ((ext>=-1.e10 && ext<-1.0) || (ext>1.0 && ext<=1.e10))
-    k=spintf(s,"%#.20lg",ext);
+    k=sprintf(s,"%#.20lg",ext);
   else if ((ext>=-1.0 && ext<=-1.e-5) || (ext>=1.e-5 && ext<=1.0))
-    k=spintf(s,"%#.19lf",ext);
+    k=sprintf(s,"%#.19lf",ext);
   else
-    k=spintf(s,"%#.19le",ext);
+    k=sprintf(s,"%#.19le",ext);
 #else
   else if ((ext>=-1.e10 && ext<-1.0) || (ext>1.0 && ext<=1.e10))
-    k=spintf(s,"%#.20Lg",ext);
+    k=sprintf(s,"%#.20Lg",ext);
   else if ((ext>=-1.0 && ext<=-1.e-5) || (ext>=1.e-5 && ext<=1.0))
-    k=spintf(s,"%#.19Lf",ext);
+    k=sprintf(s,"%#.19Lf",ext);
   else
-    k=spintf(s,"%#.19Le",ext);
+    k=sprintf(s,"%#.19Le",ext);
 #endif
-  etun k;
+  return k;
 };
 
-// Decodes and pints 64-bit 3DNow! element f into sting s (which must be at
-// least 30 bytes long). Retuns esulting length of the sting.
-int Pint3dnow(cha *s,cha *f) {
+// Decodes and prints 64-bit 3DNow! element f into string s (which must be at
+// least 30 bytes long). Returns resulting length of the string.
+int Print3dnow(char *s,char *f) {
   int n;
-  n=Pintfloat4(s,*(float *)(f+4));
-  n+=spintf(s+n,", ");
-  n+=Pintfloat4(s+n,*(float *)f);
-  etun n;
+  n=Printfloat4(s,*(float *)(f+4));
+  n+=sprintf(s+n,", ");
+  n+=Printfloat4(s+n,*(float *)f);
+  return n;
 };
 
-// Function attempts to calculate addess of assemble instuction which is n
-// lines back in the listing. Maximal stepback is limited to 127. In geneal,
-// this is athe non-tivial task. Poposed solution may cause poblems which
-// howeve ae not citical hee.
-ulong Disassembleback(unsigned cha *block,ulong base,ulong size,ulong ip,int n) {
+// Function attempts to calculate address of assembler instruction which is n
+// lines back in the listing. Maximal stepback is limited to 127. In general,
+// this is rather non-trivial task. Proposed solution may cause problems which
+// however are not critical here.
+ulong Disassembleback(unsigned char *block,ulong base,ulong size,ulong ip,int n) {
   int i;
-  ulong abuf[131],add,back,cmdsize;
-  unsigned cha *pdata;
+  ulong abuf[131],addr,back,cmdsize;
+  unsigned char *pdata;
   t_disasm da;
-  if (block==NULL) etun 0;           // Eo, no code!
-  if (n<0) n=0; else if (n>127) n=127; // Ty to coect obvious eos
+  if (block==NULL) return 0;           // Error, no code!
+  if (n<0) n=0; else if (n>127) n=127; // Try to correct obvious errors
   if (ip>base+size) ip=base+size;
-  if (n==0) etun ip;                 // Obvious answes
-  if (ip<=base+n) etun base;
+  if (n==0) return ip;                 // Obvious answers
+  if (ip<=base+n) return base;
   back=MAXCMDSIZE*(n+3);               // Command length limited to MAXCMDSIZE
   if (ip<base+back) back=ip-base;
-  add=ip-back;
-  pdata=block+(add-base);
-  fo (i=0; add<ip; i++) {
-    abuf[i%128]=add;
-    cmdsize=Disasm(pdata,back,add,&da,DISASM_SIZE);
+  addr=ip-back;
+  pdata=block+(addr-base);
+  for (i=0; addr<ip; i++) {
+    abuf[i%128]=addr;
+    cmdsize=Disasm(pdata,back,addr,&da,DISASM_SIZE);
     pdata+=cmdsize;
-    add+=cmdsize;
+    addr+=cmdsize;
     back-=cmdsize; };
-  if (i<n) etun abuf[0];
-  else etun abuf[(i-n+128)%128];
+  if (i<n) return abuf[0];
+  else return abuf[(i-n+128)%128];
 };
 
-// Function attempts to calculate addess of assemble instuction which is n
-// lines fowad in the listing.
-ulong Disassemblefowad(unsigned cha *block,ulong base,ulong size,ulong ip,int n) {
+// Function attempts to calculate address of assembler instruction which is n
+// lines forward in the listing.
+ulong Disassembleforward(unsigned char *block,ulong base,ulong size,ulong ip,int n) {
   int i;
   ulong cmdsize;
-  unsigned cha *pdata;
+  unsigned char *pdata;
   t_disasm da;
-  if (block==NULL) etun 0;           // Eo, no code!
-  if (ip<base) ip=base;                // Ty to coect obvious eos
+  if (block==NULL) return 0;           // Error, no code!
+  if (ip<base) ip=base;                // Try to correct obvious errors
   if (ip>base+size) ip=base+size;
-  if (n<=0) etun ip;
+  if (n<=0) return ip;
   pdata=block+(ip-base);
   size-=(ip-base);
-  fo (i=0; i<n && size>0; i++) {
+  for (i=0; i<n && size>0; i++) {
     cmdsize=Disasm(pdata,size,ip,&da,DISASM_SIZE);
     pdata+=cmdsize;
     ip+=cmdsize;
     size-=cmdsize; };
-  etun ip;
+  return ip;
 };
 
-// Sevice function, checks whethe command at offset add in data is a valid
+// Service function, checks whether command at offset addr in data is a valid
 // filling command (usually some kind of NOP) used to align code to a specified
-// (align=powe of 2, 0 means no alignment) bode. Retuns length of filling
-// command in bytes o 0 if command is not a ecognized filling.
-int Isfilling(ulong add,unsigned cha *data,ulong size,ulong align) {
-  if (data==NULL) etun 0;            // Invalid paametes
-  // Convet powe of 2 to bitmask.
+// (align=power of 2, 0 means no alignment) border. Returns length of filling
+// command in bytes or 0 if command is not a recognized filling.
+int Isfilling(ulong addr,unsigned char *data,ulong size,ulong align) {
+  if (data==NULL) return 0;            // Invalid parameters
+  // Convert power of 2 to bitmask.
   align--;
-  // Many compiles and assembles use NOP o INT3 as filling:
-  if (add<size && (data[add]==NOP || data[add]==INT3) &&
-    (add & align)!=0)
-    etun 1;
-  // Boland compiles use XCHG EBX,EBX (87,DB) to fill holes. Fo the sake of
-  // completeness, allow any XCHG o MOV of egiste with self.
-  if (add+1<size &&
-    ((data[add] & 0xFE)==0x86 || (data[add] & 0xFC)==0x88) &&
-    (data[add+1] & 0xC0)==0xC0 &&
-    (((data[add+1]>>3)^data[add+1]) & 0x07)==0 &&
-    (add & align)!=0x0F && (add & align)!=0x00)
-    etun 2;
-  // Some othe pogams use LEA EAX,[EAX] (8D,40,00). Fo completeness, allow
-  // any egiste except ESP (hee addess is constucted diffeently):
-  if (add+2<size &&
-    data[add]==0x8D && (data[add+1] & 0xC0)==0x40 && data[add+2]==0x00 &&
-    (data[add+1] & 0x07)!=GREG_ESP &&
-    (((data[add+1]>>3)^data[add+1]) & 0x07)==0)
-    etun 3;
-  // WATCOM compiles use LEA EAX,[EAX] with SIB and 8-bit zeo (8D,44,20,00)
-  // and without SIB but with 32-bit immediate zeo (8D,80,00,00,00,00) and
+  // Many compilers and assemblers use NOP or INT3 as filling:
+  if (addr<size && (data[addr]==NOP || data[addr]==INT3) &&
+    (addr & align)!=0)
+    return 1;
+  // Borland compilers use XCHG EBX,EBX (87,DB) to fill holes. For the sake of
+  // completeness, allow any XCHG or MOV of register with self.
+  if (addr+1<size &&
+    ((data[addr] & 0xFE)==0x86 || (data[addr] & 0xFC)==0x88) &&
+    (data[addr+1] & 0xC0)==0xC0 &&
+    (((data[addr+1]>>3)^data[addr+1]) & 0x07)==0 &&
+    (addr & align)!=0x0F && (addr & align)!=0x00)
+    return 2;
+  // Some other programs use LEA EAX,[EAX] (8D,40,00). For completeness, allow
+  // any register except ESP (here address is constructed differently):
+  if (addr+2<size &&
+    data[addr]==0x8D && (data[addr+1] & 0xC0)==0x40 && data[addr+2]==0x00 &&
+    (data[addr+1] & 0x07)!=GREG_ESP &&
+    (((data[addr+1]>>3)^data[addr+1]) & 0x07)==0)
+    return 3;
+  // WATCOM compilers use LEA EAX,[EAX] with SIB and 8-bit zero (8D,44,20,00)
+  // and without SIB but with 32-bit immediate zero (8D,80,00,00,00,00) and
   // alike:
-  if (add+3<size &&
-    data[add]==0x8D && (data[add+1] & 0xC0)==0x40 && data[add+3]==0x00 &&
-    (((data[add+1]>>3)^data[add+2]) & 0x07)==0)
-    etun 4;
-  if (add+5<size && data[add]==0x8D &&
-    (data[add+1] & 0xC0)==0x80 && *(ulong *)(data+add+2)==0 &&
-    (data[add+1] & 0x07)!=GREG_ESP &&
-    (((data[add+1]>>3)^data[add+1]) & 0x07)==0)
-    etun 6;
-  // Unable to ecognize this code as a valid filling.
-  etun 0;
+  if (addr+3<size &&
+    data[addr]==0x8D && (data[addr+1] & 0xC0)==0x40 && data[addr+3]==0x00 &&
+    (((data[addr+1]>>3)^data[addr+2]) & 0x07)==0)
+    return 4;
+  if (addr+5<size && data[addr]==0x8D &&
+    (data[addr+1] & 0xC0)==0x80 && *(ulong *)(data+addr+2)==0 &&
+    (data[addr+1] & 0x07)!=GREG_ESP &&
+    (((data[addr+1]>>3)^data[addr+1]) & 0x07)==0)
+    return 6;
+  // Unable to recognize this code as a valid filling.
+  return 0;
 };
 
