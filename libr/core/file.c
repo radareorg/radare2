@@ -39,6 +39,7 @@ R_API void r_core_sysenv_update(RCore *core) {
 
 R_API int r_core_bin_load(RCore *r, const char *file) {
 	RBinObj *obj;
+	RList *list;
 	RListIter *iter;
 	ut64 baddr;
 	int va = r->io->va || r->io->debug;
@@ -73,12 +74,11 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 				r->blocksize, 0);
 
 	// e -> Entrypoints
-	RList *entries;
 	RBinAddr *entry;
 	i = 0;
 
-	if ((entries = r_bin_get_entries (r->bin)) != NULL) {
-		r_list_foreach (entries, iter, entry) {
+	if ((list = r_bin_get_entries (r->bin)) != NULL) {
+		r_list_foreach (list, iter, entry) {
 			snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i++);
 			r_flag_set (r->flags, str, va?baddr+entry->rva:entry->offset,
 					r->blocksize, 0);
@@ -88,11 +88,10 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	}
 
 	// s -> Symbols
-	RList *symbols;
 	RBinSymbol *symbol;
 
-	if ((symbols = r_bin_get_symbols (r->bin)) != NULL) {
-		r_list_foreach (symbols, iter, symbol) {
+	if ((list = r_bin_get_symbols (r->bin)) != NULL) {
+		r_list_foreach (list, iter, symbol) {
 			r_flag_name_filter (symbol->name);
 			snprintf (str, R_FLAG_NAME_SIZE, "fcn.sym.%s", symbol->name);
 			if (!strncmp (symbol->type,"FUNC", 4)) {
@@ -109,12 +108,11 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	}
 
 	// R -> Relocations
-	RList *relocs;
 	RBinReloc *reloc;
 
 	r_flag_space_set (r->flags, "relocs");
-	if ((relocs = r_bin_get_relocs (r->bin)) != NULL) {
-		r_list_foreach (relocs, iter, reloc) {
+	if ((list = r_bin_get_relocs (r->bin)) != NULL) {
+		r_list_foreach (list, iter, reloc) {
 			snprintf (str, R_FLAG_NAME_SIZE, "reloc.%s", reloc->name);
 			r_flag_set (r->flags, str, va?baddr+reloc->rva:reloc->offset,
 					r->blocksize, 0);
@@ -122,12 +120,11 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	}
 
 	// z -> Strings
-	RList *strings;
 	RBinString *string;
 
 	r_flag_space_set (r->flags, "strings");
-	if ((strings = r_bin_get_strings (r->bin)) != NULL) {
-		r_list_foreach (strings, iter, string) {
+	if ((list = r_bin_get_strings (r->bin)) != NULL) {
+		r_list_foreach (list, iter, string) {
 			/* Jump the withespaces before the string */
 			for (i=0;*(string->string+i)==' ';i++);
 			r_meta_add (r->meta, R_META_STRING, va?baddr+string->rva:string->offset,
@@ -140,11 +137,10 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	}
 
 	// i -> Imports
-	RList *imports;
 	RBinImport *import;
 
-	if ((imports = r_bin_get_imports (r->bin)) != NULL) {
-		r_list_foreach (imports, iter, import) {
+	if ((list = r_bin_get_imports (r->bin)) != NULL) {
+		r_list_foreach (list, iter, import) {
 			r_flag_name_filter (import->name);
 			if (import->size)
 				if (!r_anal_fcn_add (r->anal, va?baddr+import->rva:import->offset,
@@ -161,13 +157,12 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	}
 
 	// S -> Sections
-	RList *sections;
 	RBinSection *section;
 	i = 0;
 
-	if ((sections = r_bin_get_sections (r->bin)) != NULL) {
+	if ((list = r_bin_get_sections (r->bin)) != NULL) {
 		r_flag_space_set (r->flags, "sections");
-		r_list_foreach (sections, iter, section) {
+		r_list_foreach (list, iter, section) {
 			r_flag_name_filter (section->name);
 			snprintf (str, R_FLAG_NAME_SIZE, "section.%s", section->name);
 			r_flag_set (r->flags, str, va?baddr+section->rva:section->offset,

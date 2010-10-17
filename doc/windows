@@ -19,3 +19,9 @@ Crosscompilation
   ./configure --without-gmp --without-openssl --with-compiler=i586-mingw32msvc-gcc  --with-ostype=windows --host=i586-unknown-windows
   make
   make w32dist
+
+
+Python bindings:
+----------------
+  wget http://www.python.org/ftp/python/2.7/python-2.7.msi
+  msiexec /i python-2.7.msi

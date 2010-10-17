@@ -7,6 +7,7 @@
 #undef _GNU_SOURCE
 #undef _XOPEN_SOURCE
 #undef _POSIX_C_SOURCE
+#undef PREFIX
 #include <Python.h>
 #include <structmember.h>
 

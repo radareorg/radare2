@@ -18,6 +18,13 @@ endif
 all: ${LANGS}
 	@true
 
+ifeq ($(OSTYPE),windows)
+lang_python.${EXT_SO}:
+	${CC} ${CFLAGS} -I${HOME}/.wine/drive_c/Python27/include \
+	-L${HOME}/.wine/drive_c/Python27/libs \
+	-L../../core/ -lr_core \
+	${LDFLAGS_LIB} -shared -o lang_python.${EXT_SO} python.c -lpython27
+else
 lang_python.${EXT_SO}:
 	-gcc -lpython >/dev/null 2>&1 ; \
 	if [ $$? = 0 ]; then \
@@ -28,6 +35,7 @@ lang_python.${EXT_SO}:
 		-fPIC ${LDFLAGS_LIB} -o lang_python.${EXT_SO} python.c \
 		-I/usr/include/python2.6/ -lpython2.6 ; \
 	fi
+endif
 
 ifeq ($(HAVE_LIB_TCC),1)
 lang_tcc.${EXT_SO}: tcc.o
