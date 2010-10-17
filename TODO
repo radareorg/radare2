@@ -9,13 +9,11 @@
 TODO 0.6
 ========
 pancake
-* remove \r in asmserv.c and look for others
 * cursor mode in visual breaks flags too (r2 -d ls ; Vcjjj)
 * fix colorize of selected bytes
 * fix eflags string and str_bits
 * fix arm assembler issue reported via twitter (umf :/)
 nibble
-* I think i broke r_sys_rmkdir.. can u chk? ktxby!
 * r_bin - Better way to fix got_offset issue?
 * in Visual Debugger mode cursor mode also scrolls O_o
 * Switch to 'arm' code analysis module :?
