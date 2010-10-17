@@ -2,8 +2,27 @@
 
 all: supported.langs ruby perl python lua go
 
+check:
+	rm -f supported.langs
+	${MAKE} supported.langs
+
 supported.langs:
-	sh check-langs.sh
+	CC=${CC} CXX=${CXX} sh check-langs.sh
+
+W32PY="${HOME}/.wine/drive_c/Python27/"
+
+check-w32:
+	if [ ! -d "${W32PY}/libs" ]; then \
+		wget http://www.python.org/ftp/python/2.7/python-2.7.msi ; \
+		msiexec /i python-2.7.msi ; \
+	fi
+
+.PHONY: w32
+w32:
+	cd python && ${MAKE} w32
+
+w32dist:
+	cp python/*.dll ../radare2-w32-${VERSION}
 
 dist:
 	PKG=radare2-swig-${VERSION} ; \

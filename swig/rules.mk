@@ -1,9 +1,20 @@
+include ../config.mk
+
 LIBS=r_util.so r_bp.so r_asm.so r_diff.so r_core.so r_bin.so r_cons.so r_anal.so r_cmd.so
 LIBS+=r_debug.so r_config.so r_io.so r_syscall.so r_search.so r_lib.so libr.so r_flags.so
 
 .SUFFIXES: .so
 
 all: ${LIBS}
+
+w32:
+	# TODO: add support for debian
+	CC=i486-mingw32-gcc \
+	CXX=i486-mingw32-g++ \
+	LDFLAGS="-L${W32PY}/libs ${LDFLAGS}" \
+	CFLAGS="-Wl,--enable-auto-import -L../../radare2-w32-${VERSION} ${CFLAGS}" \
+	export CC CXX CFLAGS LDFLAGS ; \
+	${MAKE}
 
 %.so:
 	@-test ../../libr/vapi/`echo $@|sed -e s,.so,.vapi,` -nt ${LIBS_PFX}$@ ; \

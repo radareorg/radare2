@@ -7,5 +7,5 @@ Name: r_bp
 Description: radare foundation libraries
 Version: 0.2
 Requires:
-Libs: -L${libdir} -lr_bp
+Libs: -L${libdir} -lr_util -lr_bp
 Cflags: -I${includedir}/libr

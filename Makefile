@@ -12,6 +12,11 @@ libr:
 binr:
 	cd binr && ${MAKE} all
 
+w32:
+	# TODO: add support for debian
+	./configure --without-gmp --without-openssl --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows
+	make
+
 w32dist:
 	rm -rf radare2-w32-${VERSION} w32dist
 	mkdir w32dist

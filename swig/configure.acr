@@ -7,6 +7,9 @@ LANG_CXX!
 CHKPRG! VALASWIG valaswig
 CHKPRG! SWIG swig
 
+ARG_WITH USERCC=gcc cc Define C compiler to use (gcc by default) ;
+ARG_WITH USERCXX=g++ cxx Define C++ compiler to use (g++ by default) ;
+
 PKGCFG! FOO FOO libr
 
 SUBDIRS ./config.mk ;

@@ -3,7 +3,7 @@ SUP_LANGS=""
 LANGS="python perl ruby lua go java"
 for a in ${LANGS}; do
   printf "Checking $a support for valaswig... "
-  valaswig-cc --test $a
+  CC=${CC} CXX=${CXX} valaswig-cc --test $a
   if [ $? = 0 ]; then
     echo yes
     SUP_LANGS="$a ${SUP_LANGS}"

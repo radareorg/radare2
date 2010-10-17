@@ -12,6 +12,16 @@ Crosscompilation
   ./configure --without-gmp --without-openssl --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows
   make
   make w32dist
+
+  cd swig
+  export CC=i486-mingw32-gcc
+  export CXX=i486-mingw32-g++
+  unset CFLAGS
+  unset LDFLAGS
+  export LDFLAGS="-L${HOME}/.wine/drive_c/Python27/libs ${LDFLAGS}"
+  export CFLAGS="-Wl,--enable-auto-import -L../../radare2-w32-0.5 ${CFLAGS}"
+  ./configure --with-ostype=windows --host=i486-unknown-windows --with-cc=i486-mingw32-gcc --with-cxx=i486-mingw32-g++
+
   
   Ubuntu
   ------
@@ -21,7 +31,8 @@ Crosscompilation
   make w32dist
 
 
+
 Python bindings:
-----------------
+================
   wget http://www.python.org/ftp/python/2.7/python-2.7.msi
   msiexec /i python-2.7.msi
