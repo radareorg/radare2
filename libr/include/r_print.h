@@ -21,6 +21,7 @@ typedef struct r_print_t {
 	int limit;
 	int cur_enabled;
 	int cur;
+	int cols;
 	int ocur;
 	int flags;
 	int addrmod;

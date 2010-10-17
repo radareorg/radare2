@@ -705,6 +705,7 @@ R_API void r_core_visual_define (RCore *core) {
 /* TODO: use r_cmd here in core->vcmd..optimize over 255 table */ 
 R_API int r_core_visual_cmd(RCore *core, int ch) {
 	char buf[1024];
+	int cols = core->print->cols;
 	ch = r_cons_arrow_to_hjkl (ch);
 
 	// do we need hotkeys for data references? not only calls?
@@ -785,7 +786,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'J':
 		if (curset) {
 			if (ocursor==-1) ocursor = cursor;
-			cursor += 16;
+			cursor += cols;
 		} else r_core_cmd (core, "s++", 0);
 		break;
 	case 'g':
@@ -799,7 +800,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'K':
 		if (curset) {
 			if (ocursor==-1) ocursor=cursor;
-			cursor -= 16;
+			cursor -= cols;
 		} else r_core_cmd (core, "s--", 0);
 		break;
 	case 'L':
@@ -831,19 +832,15 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'j':
 		if (curset) {
-			cursor+=16;
-			ocursor=-1;
-		} else {
-			if (printidx==1)
-				r_core_cmd (core, "s+ 8", 0);
-			else r_core_cmd (core, "s+ 16", 0);
-		}
+			cursor += cols;
+			ocursor = -1;
+		} else r_core_seek (core, core->offset + (printidx==1?8:16), 0);
 		break;
 	case 'k':
 		if (curset) {
-			cursor-=16;
-			ocursor=-1;
-		} else r_core_cmd (core, (printidx==1)?"s- 8":"s- 16", 0);
+			cursor -= cols;
+			ocursor = -1;
+		} else r_core_seek (core, core->offset - (printidx==1?8:16), 0);
 		break;
 	case 's':
 		r_core_cmd (core, "ds", 0);
@@ -900,10 +897,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		} else r_core_block_size (core, core->blocksize+1);
 		break;
 	case '/':
-		r_core_block_size (core, core->blocksize-16);
+		r_core_block_size (core, core->blocksize-cols);
 		break;
 	case '*':
-		r_core_block_size (core, core->blocksize+16);
+		r_core_block_size (core, core->blocksize+cols);
 		break;
 	case '>':
 		r_core_seek_align (core, core->blocksize, 1);

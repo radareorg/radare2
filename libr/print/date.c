@@ -42,10 +42,10 @@ R_API int r_print_date_unix(struct r_print_t *p, const ut8 *buf, int len) {
 			if (time) {
 				ret = strftime (datestr, 256, p->datefmt, time);
 				if (ret) {
-					p->printf("%s\n", datestr);
+					p->printf ("%s\n", datestr);
 					ret = sizeof(time_t);
 				}
-			} else r_cons_printf("Invalid time\n");
+			} else p->printf ("Invalid time\n");
 		}
 	}
 	return ret;

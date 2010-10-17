@@ -348,14 +348,20 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			char *sl = r_bin_meta_get_source_line (core->bin, at);
 			int len = strlen (opstr);
 			if (len<30) len = 30-len;
-			if (sl && (!osl || (osl && strcmp (sl, osl)))) {
-				while (len--)
-					r_cons_strcat (" ");
-				if (show_color)
-					r_cons_printf (Color_TURQOISE"  ; %s"Color_RESET, sl);
-				else r_cons_printf ("  ; %s\n", sl);
-				free (osl);
-				osl = sl;
+			if (sl) {
+				if ((!osl || (osl && strcmp (sl, osl)))) {
+					while (len--)
+						r_cons_strcat (" ");
+					if (show_color)
+						r_cons_printf (Color_TURQOISE"  ; %s"Color_RESET, sl);
+					else r_cons_printf ("  ; %s\n", sl);
+					free (osl);
+					osl = sl;
+				}
+			} else {
+				eprintf ("Warning: Forced asm.dwarf=false because of error\n");
+				show_dwarf = R_FALSE;
+				r_config_set (core->config, "asm.dwarf", "false");
 			}
 		}
 		if (middle != 0) {

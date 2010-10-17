@@ -43,14 +43,17 @@ static void print_address(bfd_vma address, struct disassemble_info *info) {
 static int buf_fprintf(void *stream, const char *format, ...) {
 	va_list ap;
 	char *tmp;
-	if (buf_global == NULL)
-		return 0;
+	if (buf_global == NULL || format == NULL)
+		return R_FALSE;
 	va_start (ap, format);
- 	tmp = alloca (strlen(format)+strlen(buf_global)+2);
+ 	tmp = malloc (strlen(format)+strlen(buf_global)+2);
+	if (tmp == NULL)
+		return R_FALSE;
 	sprintf (tmp, "%s%s", buf_global, format);
 	vsprintf (buf_global, tmp, ap);
 	va_end (ap);
-	return 0;
+	free (tmp);
+	return R_TRUE;
 }
 
 static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len) {
@@ -75,7 +78,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	disasm_obj.fprintf_func = &buf_fprintf;
 	disasm_obj.stream = stdout;
 
-	aop->buf_asm[0]='\0';
+	aop->buf_asm[0] = '\0';
 	if (a->big_endian)
 		aop->inst_len = print_insn_big_mips ((bfd_vma)Offset, &disasm_obj);
 	else aop->inst_len = print_insn_little_mips ((bfd_vma)Offset, &disasm_obj);

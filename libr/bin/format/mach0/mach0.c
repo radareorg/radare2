@@ -276,9 +276,9 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 	int i, len;
 
 	for (i = 0, off = sizeof (struct MACH0_(mach_header)); i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
-		len = r_buf_fread_at(bin->b, off, (ut8*)&lc, bin->endian?"2I":"2i", 1);
+		len = r_buf_fread_at (bin->b, off, (ut8*)&lc, bin->endian?"2I":"2i", 1);
 		if (len == -1) {
-			eprintf ("Error: read (lc) at 0x%08llx\n", off);
+			eprintf ("Error: read (lc) at 0x%08"PFMT64x"\n", off);
 			return R_FALSE;
 		}
 		switch (lc.cmd) {

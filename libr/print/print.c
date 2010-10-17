@@ -196,7 +196,7 @@ R_API void r_print_hexpairs(RPrint *p, ut64 addr, ut8 *buf, int len) {
 
 // XXX: step is borken
 R_API void r_print_hexdump(RPrint *p, ut64 addr, ut8 *buf, int len, int base, int step) {
-	int i,j,k,inc;
+	int i, j, k, inc;
 	const char *fmt = "%02x";
 	const char *pre = "";
 
@@ -215,6 +215,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, ut8 *buf, int len, int base, in
 	inc = 2 + (int)((p->width-14)/4);
 	if (inc%2) inc++;
 	inc = 16;
+inc = p->cols;
 
 	if (p->flags & R_PRINT_FLAGS_HEADER) {
 		// only for color..too many options .. brbr

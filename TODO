@@ -6,30 +6,26 @@
 
 <{include libr/TODO}>
 
-Windows
-=======
-r2 -d <pid>
- > dh native
- > dp=824
- > ...
+TODO 0.6
+========
+pancake
+* remove \r in asmserv.c and look for others
+* cursor mode in visual breaks flags too (r2 -d ls ; Vcjjj)
+* fix colorize of selected bytes
+* fix eflags string and str_bits
+* fix arm assembler issue reported via twitter (umf :/)
+nibble
+* I think i broke r_sys_rmkdir.. can u chk? ktxby!
+* r_bin - Better way to fix got_offset issue?
+* in Visual Debugger mode cursor mode also scrolls O_o
+* Switch to 'arm' code analysis module :?
+* mach0 armthumb bin detect
 
 Questions
 =========
-* Support more than 16 columns 'px'
-* fix colorize of selected bytes
-* Switch to 'arm' code analysis module
 * Add "pm ?" for bit print like in pb?
-* Only use uppercase KMG for Kilo,Mega,Giga in r_num?
-  - 'g' is for double
-* Add support for float/double in r_num :?
-* in Visual Debugger mode cursor mode also scrolls O_o
+* Only use uppercase KMG for Kilo,Mega,Giga in r_num? - 'g' is for double
 * distribute 'spp' with 'rarc2' ? imho no
-* rarc2 allows to compile invalid code like calling puts() out of context
-
-0.6 RELEASE
-===========
-* Create radare2-testsuite project
-  - tests for ired, rax2, radare2, rabin2 ...
 
 TODO nibble
 -----------
@@ -37,9 +33,6 @@ TODO nibble
   - use r_anal_value everywhere
   - x86im
     - make x86_x86im the default backend for x86 analysis
-    - implement analysis for more instructions
-* r_bin
-  - Better way to fix got_offset issue?
 * diff code analysis
   - diff two programs
      1st level:
@@ -67,9 +60,9 @@ TODO edu
 
 TODO pancake
 ------------
-* Fix eflags string and str_bits
+* rarc2 allows to compile invalid code like calling puts() out of context
 * Implement DRX support
- * Implement RAnalCall (analyze function arguments, return values, propagate types..)
+* Implement RAnalCall (analyze function arguments, return values, propagate types..)
   - define number of arguments for given function
   - warn if signature and analysis differs in number of args or so..
   - when calling a function
@@ -77,13 +70,6 @@ TODO pancake
     - if they do not match: we need to warn/ask user/store multiple options
        - function signature comparsion if they dont match
        r_anal_fcn_cmp (anal, f1, f2);
-
-unassigned TODO pointz
-----------------------
-* Implement minimalist 'ar' and add support for .a archive libs? (not necessary in this life)
-* Realign flags when using project in debug mode
-* FileDescriptors: dd -- copy from !fd in r1
-* Initial analysis looking for xrefs to strings and so? ax? ./a@@entry0 - Launched at startup
 
 Bindings
 ========
@@ -100,12 +86,12 @@ Refactoring
   - r_vm must use mmu cache when emulating code
     - use the one from r_io? and deprecate vm->mmu_cache?
 * Review the r_flags api
-* add pipe_to_buffer..not only file descriptors
+* Add pipe_to_buffer..not only file descriptors
 * r_config set_int and so..simplify
   - find/use more common cases for char* or &int maps
     - automatic callbacks for most common usecases
+* What do we have to do with r_th, r_vm ?
 * Merge r_vm into r_anal ?
-* Merge r_vm into r_parse ?
 * Merge r_socket inside r_util ?
 * Add SSL support to r_socket ?
 * Discuss missing r_core_sysenv_update in core/file.c:33
@@ -115,7 +101,6 @@ Refactoring
 * Move 'r_syscall_t' stuff into r_debug (sync r_core)
 * Implement r_bind api to link multiple pointers
   core->asm = r_bind_set (core->asm->bind, r_asm_new ());
-* what do we have to do with r_th, r_parse and r_vm ?
 * Find a better name for r_buf_fread (really?)
 * Review r_io and r_reg API
 * semi-ok state (R_TRUFAE), implement r_errno and r_errstr in r_util?
@@ -124,9 +109,12 @@ Refactoring
 
 0.7
 ===
+* r2 -d <pid> > dh native > dp=824 > ... -- not really :) for 0.6
+* Create radare2-testsuite project
+  - tests for ired, rax2, radare2, rabin2 ...
 * Record trace of register status for each function when running
   - r_reg_arena_copy();
-* Add lua and dalvik disassembler
+* Add lua and dalvik disassembler (volunteers?)
 * Reimplement or fix the delta diffing in C
   - first we need to do it for ired..
 * Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
@@ -140,15 +128,17 @@ Refactoring
   - Add support for STATIC_PLUGINS in r_lang
   - dlerror(/usr/lib/radare2/lang_perl.so): libperl.so: cannot open shared object file: No such file or directory
     This issue is fixed by setting LD_LIBRARY_PATH...looks like dlopen ignores rpath
-
-Build system:
--------------
-* Store version information in libraries ? debian claims for it
-* install.sh (to track installed files ..)
-* acr -ldl check must be fixed for kfreebsd
  
 Future
 ======
+* Implement minimalist 'ar' and add support for .a archive libs? (not necessary in this life)
+* Realign flags when using project in debug mode
+* FileDescriptors: dd -- copy from !fd in r1
+* Initial analysis looking for xrefs to strings and so? ax? ./a@@entry0 - Launched at startup
+* Store version information in libraries ? debian claims for it
+* install.sh (to track installed files ..)
+* acr -ldl check must be fixed for kfreebsd
+* Add support for float/double in r_num :?
 * radare2 -e dbg.engine=vm -d ls
   - load the program using r_bin in virtual space
   - initialize vm and set regs

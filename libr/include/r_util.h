@@ -267,9 +267,11 @@ R_API char *r_file_slurp_line(const char *file, int line, int context);
 R_API ut64 r_sys_now();
 R_API void r_sys_perror(const char *fun);
 #if __WINDOWS__
-#define r_sys_mkdir(x) (mkdir(x)!=-1)
+#define r_sys_mkdir(x) (CreateDirectory(x,NULL)!=0)
+#define r_sys_mkdir_failed() (GetLastError () != ERROR_ALREADY_EXISTS)
 #else
 #define r_sys_mkdir(x) (mkdir(x,0755)!=-1)
+#define r_sys_mkdir_failed() (errno != EEXIST)
 #endif
 R_API int r_sys_rmkdir(const char *dir);
 R_API int r_sys_sleep(int secs);

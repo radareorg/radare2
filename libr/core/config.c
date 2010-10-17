@@ -2,6 +2,12 @@
 
 #include <r_core.h>
 
+static int config_scrcols_callback(void *user, void *data) {
+	int c = R_MIN (128, R_MAX (((RConfigNode*)data)->i_value, 0));
+	((RCore *)user)->print->cols = c & ~1;
+	return R_TRUE;
+}
+
 static int config_scrhtml_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton()->is_html = node->i_value;
@@ -333,6 +339,7 @@ R_API int r_core_config_init(RCore *core) {
 		(core->print->flags&R_PRINT_FLAGS_COLOR)?"true":"false",
 		&config_color_callback);
 	r_config_set (cfg, "scr.seek", "");
+	r_config_set_i_cb (cfg, "scr.cols", 16, &config_scrcols_callback);
 	r_config_set_i (cfg, "search.from", 0);
 	r_config_set_i (cfg, "search.to", 0);
 	r_config_set_i (cfg, "search.distance", 0); // TODO: use i_cb here and remove code in cmd.c

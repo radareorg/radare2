@@ -4,14 +4,16 @@
 #include <r_util.h>
 #if __UNIX__
 #include <sys/wait.h>
+#include <sys/stat.h>
+#include <errno.h>
 #include <signal.h>
 #include <execinfo.h>
 #elif __WINDOWS__
 #include <io.h>
 #endif
 #include <sys/types.h>
-/* TODO: import stuff fron bininfo/p/bininfo_addr2line */
 
+/* TODO: import stuff fron bininfo/p/bininfo_addr2line */
 /* TODO: check endianness issues here */
 R_API ut64 r_sys_now(void) {
 	ut64 ret;
@@ -243,17 +245,22 @@ R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
 R_API int r_sys_rmkdir(const char *dir) {
 	int ret = R_TRUE;
 	char *path = strdup (dir), *ptr = path;
-	// XXX: Wrong for w32 (/)
+	// XXX: Wrong for w32 (/).. and no errno ?
 	while ((ptr = strchr (ptr, '/'))) {
 		*ptr = 0;
 		if (!r_sys_mkdir (path)) {
-			free (path);
-			return R_FALSE;
+			if (r_sys_mkdir_failed ()) {
+				eprintf ("r_sys_rmkdir: fail %s\n", dir);
+				free (path);
+				return R_FALSE;
+			}
 		}
 		*ptr = '/';
-		ptr = ptr+1;
+		ptr++;
 	}
 	ret = r_sys_mkdir (path);
+	if (r_sys_mkdir_failed ())
+		ret = R_TRUE;
 	free (path);
 	return ret;
 }
