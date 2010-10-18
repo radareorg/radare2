@@ -189,7 +189,6 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 #endif
 		}
 		if (fcni) {
-
 #if 0
 			if (f && f->addr == at) {
 				r_cons_printf ("/* function: %s (%d) */\n",
@@ -382,9 +381,8 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		case R_ANAL_OP_TYPE_UPUSH:
 			nargs++;
 			// setarg(nargs);
-			if (nargs<sizeof(args)) {
+			if (nargs<sizeof (args))
 				args[nargs] = analop.ref;
-			}
 			//r_cons_printf(" ; setarg(%d)=%llx\n", nargs, analop.ref);
 			break;
 		case R_ANAL_OP_TYPE_SWI:
@@ -466,7 +464,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 				if (strchr (line, '>'))
 					memset (line, ' ', strlen (line));
 				r_cons_strcat (line);
-				r_cons_strcat ("/* ------------ */\n");
+				r_cons_strcat ("; ------------\n");
 			}
 			free (line);
 		}

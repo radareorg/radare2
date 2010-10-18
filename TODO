@@ -6,23 +6,23 @@
 
 <{include libr/TODO}>
 
-* static lang plugins
-
 TODO 0.6
 ========
 pancake
-* cursor mode in visual breaks flags too (r2 -d ls ; Vcjjj)
 * fix colorize of selected bytes
 * fix eflags string and str_bits
 * fix arm assembler issue reported via twitter (umf :/)
 nibble
 * r_bin - Better way to fix got_offset issue?
 * in Visual Debugger mode cursor mode also scrolls O_o
+  - cursor mode in visual breaks flags too (r2 -d ls ; Vcjjj)
+  - visual cursor mode and then :f jeje @ addr <- fails!
 * Switch to 'arm' code analysis module :?
 * mach0 armthumb bin detect
 
 Questions
 =========
+* deltified offset in PC? +10, +30 ... asm.reladdr
 * Add "pm ?" for bit print like in pb?
 * Only use uppercase KMG for Kilo,Mega,Giga in r_num? - 'g' is for double
 * distribute 'spp' with 'rarc2' ? imho no

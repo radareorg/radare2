@@ -72,53 +72,50 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 	} else r_cons_printf ("0x%08"PFMT64x"%c ", addr, ch);
 }
 
-// XXX: bad designed function :)
+#define CURDBG 0
+// XXX: redesign ? :)
 R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 	const char *s;
 	char *d, *dst = (char *)malloc ((strlen (str)+2)*6);
-	int i = 0;
+	int ch, i = 0;
 	/* XXX That's hacky as shit.. but partially works O:) */
 	int cur = R_MIN (p->cur, p->ocur);
 	int ocur = R_MAX (p->cur, p->ocur);
-	if (p->cur_enabled)
-	if (cur==-1) {
-		cur=ocur;
+
+	if (p->cur_enabled && cur==-1) {
+		cur = ocur;
 		ocur++;
 	}
-
+#if CURDBG
+sprintf(dst, "(%d/%d/%d/%d)", p->cur_enabled, cur, ocur, n);
+d = dst+ strlen(dst);
+#else
+d = dst;
+#endif
 	// XXX: overflow here
-	for (s=str,d=dst; *s; s+=2, d+=2, i++) {
+#define memcat(x,y) { memcpy(x,y,strlen(y));x+=strlen(y); }
+	//for (s=str, d=dst; *s; s+=2, d+=2, i++) {
+	for (s=str ; *s; s+=2, d+=2, i++) {
 		if (p->cur_enabled) {
-			if (i-1==(cur-n)) {
-				memcpy (d, "\x1b[0m", 4);
-				d += 4;
-			}
-			if (i>=(cur-n) && i<(ocur-n)) {
-				memcpy (d, "\x1b[7m", 4);
-				d += 4;
-			}
+			if (i-1==(cur-n))
+				memcat (d, "\x1b[0m");
+			if (i>=(cur-n) && i<(ocur-n))
+				memcat (d, "\x1b[7m");
 		} else
 		if (s[0]=='0' && s[1]=='0') {
-			memcpy (d, "\x1b[31m", 5);
-			d += 5;
+			memcat (d, "\x1b[31m");
 		} else
 		if (s[0]=='f' && s[1]=='f') {
-			memcpy (d, "\x1b[32m", 5);
-			d += 5;
+			memcat (d, "\x1b[32m");
 		} else
 		if (s[0]=='7' && s[1]=='f') {
-			memcpy (d, "\x1b[33m", 5);
-			d += 5;
+			memcat (d, "\x1b[33m");
 		} else {
-			int ch;
 			sscanf (s, "%02x", &ch);
-			if (IS_PRINTABLE (ch)) {
-				memcpy (d, "\x1b[35m", 5);
-				d += 5;
-			}
+			if (IS_PRINTABLE (ch))
+				memcat (d, "\x1b[35m");
 		}
-		d[0] = s[0];
-		d[1] = s[1];
+		memcpy (d, s, 2);
 	}
 	memcpy (d, "\x1b[0m", 5);
 	return dst;

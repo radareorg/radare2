@@ -1026,6 +1026,5 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	if (color)
 		r_cons_printf (Color_RESET);
 	core->print->cur_enabled = R_FALSE;
-
 	return 0;
 }
