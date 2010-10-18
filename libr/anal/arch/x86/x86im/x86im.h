@@ -10,7 +10,7 @@
 #define __X86IM_H__
 
 #if __UNIX__
-# define __stdcall 
+# define __stdcall
 # define WORD unsigned short
 # define DWORD unsigned int
 # define BOOL int
@@ -18,8 +18,8 @@
 # define FALSE 0
 #endif
 # define __inout
-# define __in 
-# define __out 
+# define __in
+# define __out
 
 #include "x86im_io.h"
 #ifdef __X86IM_USE_FMT__

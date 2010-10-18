@@ -329,7 +329,7 @@ static void Scanasm(int mode) {
     if (*asmcmd=='\'') {
       asmerror="Empty character constant"; scan=SCAN_ERR; return; };
     if (*asmcmd=='\\') asmcmd++;
-    idata=*asmcmd++; 
+    idata=*asmcmd++;
     if (*asmcmd!='\'')  {
       asmerror="Unterminated character constant"; scan=SCAN_ERR; return; };
     asmcmd++;

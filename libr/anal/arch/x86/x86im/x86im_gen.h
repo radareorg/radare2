@@ -81,7 +81,7 @@
 #define X86IM_GEN_AM_BASE_SIB1( af, b )                     ( unsigned long )( ( ( ( unsigned char )(b) & 0xF ) << 16 ) | ( unsigned short )( (af) | X86IM_IO_MOP_AMC_BASE | X86IM_IO_MOP_AMC_SIB1 ) ), (0)
 #define X86IM_GEN_AM_BASE_SIB2( af, b )                     ( unsigned long )( ( ( ( unsigned char )(b) & 0xF ) << 16 ) | ( unsigned short )( (af) | X86IM_IO_MOP_AMC_BASE | X86IM_IO_MOP_AMC_SIB2 ) ), (0)
 #define X86IM_GEN_AM_BASE_SIB3( af, b )                     ( unsigned long )( ( ( ( unsigned char )(b) & 0xF ) << 16 ) | ( unsigned short )( (af) | X86IM_IO_MOP_AMC_BASE | X86IM_IO_MOP_AMC_SIB3 ) ), (0)
-#define X86IM_GEN_AM_BASE_SIB4( af, b )                     ( unsigned long )( ( ( ( unsigned char )(b) & 0xF ) << 16 ) | ( unsigned short )( (af) | X86IM_IO_MOP_AMC_BASE | X86IM_IO_MOP_AMC_SIB4 ) ), (0)   
+#define X86IM_GEN_AM_BASE_SIB4( af, b )                     ( unsigned long )( ( ( ( unsigned char )(b) & 0xF ) << 16 ) | ( unsigned short )( (af) | X86IM_IO_MOP_AMC_BASE | X86IM_IO_MOP_AMC_SIB4 ) ), (0)
 
 #define X86IM_GEN_AM_BASE_DISP8( af, b, d8 )                ( unsigned long )( ( ( ( unsigned char )(b) & 0xF ) << 16 ) | ( unsigned short )( (af) | X86IM_IO_MOP_AMC_BASE | X86IM_IO_MOP_AMC_DISP8 ) ), (d8)
 #define X86IM_GEN_AM_BASE_DISP8_SIB1( af, b, d8 )           ( unsigned long )( ( ( ( unsigned char )(b) & 0xF ) << 16 ) | ( unsigned short )( (af) | X86IM_IO_MOP_AMC_BASE | X86IM_IO_MOP_AMC_DISP8 | X86IM_IO_MOP_AMC_SIB1 ) ), (d8)
@@ -136,7 +136,7 @@
 #define X86IM_GEN_CMC( io, mode )                           x86im_gen( io, mode, X86IM_GEN_CODE_CMC, 0, 0, 0, 0 )
 
 #define X86IM_GEN_CODE_CPUID                                0x0000A20F
-#define X86IM_GEN_CPUID( io, mode )                         x86im_gen( io, mode, X86IM_GEN_CODE_CPUID, 0, 0, 0, 0 )               
+#define X86IM_GEN_CPUID( io, mode )                         x86im_gen( io, mode, X86IM_GEN_CODE_CPUID, 0, 0, 0, 0 )
 
 #define X86IM_GEN_CODE_DAA                                  0x00000027
 #define X86IM_GEN_DAA( io )                                 x86im_gen( io, X86IM_IO_MODE_32BIT, X86IM_GEN_CODE_DAA, 0, 0, 0, 0 )
@@ -185,7 +185,7 @@
 
 #define X86IM_GEN_CODE_SIDT                                 0x0008010F
 #define X86IM_GEN_SIDT( io, mode, mm )                      x86im_gen( io, mode, X86IM_GEN_CODE_SIDT, 0, mm, 0 )
-                   
+
 #define X86IM_GEN_CODE_STC                                  0x000000F9
 #define X86IM_GEN_STC( io, mode )                           x86im_gen( io, mode, X86IM_GEN_CODE_STC, 0, 0, 0, 0 )
 
@@ -194,7 +194,7 @@
 
 #define X86IM_GEN_CODE_STI                                  0x000000FB
 #define X86IM_GEN_STI( io, mode )                           x86im_gen( io, mode, X86IM_GEN_CODE_STI, 0, 0, 0, 0 )
-    
+
 #define X86IM_GEN_CODE_UD2                                  0x00000B0F
 #define X86IM_GEN_UD2( io, mode )                           x86im_gen( io, mode, X86IM_GEN_CODE_UD2, 0, 0, 0, 0 )
 
@@ -239,7 +239,7 @@
 
 #define X86IM_GEN_CODE_BSWAP                                0x0000C80F
 
-#define X86IM_GEN_BSWAP_DWORD( io, mode, rg )               x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_BSWAP, rg, 0, 0, 0 ) 
+#define X86IM_GEN_BSWAP_DWORD( io, mode, rg )               x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_BSWAP, rg, 0, 0, 0 )
 #define X86IM_GEN_BSWAP_QWORD( io, rg )                     x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_BSWAP, rg, 0, 0, 0 )
 
 #define X86IM_GEN_CODE_CMPSX                                0x000000A6
@@ -278,7 +278,7 @@
 
 #define X86IM_GEN_CODE_LFS                                  0x0000B40F
 
-#define X86IM_GEN_LFS_WORD( io, mode, rg, mm )              x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_LFS, X86IM_GEN_RG_MM( rg ), mm, 0 )                 
+#define X86IM_GEN_LFS_WORD( io, mode, rg, mm )              x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_LFS, X86IM_GEN_RG_MM( rg ), mm, 0 )
 #define X86IM_GEN_LFS_DWORD( io, mode, rg, mm )             x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_LFS, X86IM_GEN_RG_MM( rg ), mm, 0 )
 #define X86IM_GEN_LFS_QWORD( io, rg, mm )                   x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_LFS, X86IM_GEN_RG_MM( rg ), mm, 0 )
 
@@ -384,7 +384,7 @@
 #define X86IM_GEN_ADC_RG_MM_DWORD( io, mode, rg, mm )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_ADC_RG_MM, X86IM_GEN_RG_MM( rg ), mm, 0 )
 #define X86IM_GEN_ADC_RG_MM_QWORD( io, rg, mm )             x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_ADC_RG_MM, X86IM_GEN_RG_MM( rg ), mm, 0 )
 
-#define X86IM_GEN_ADC_R1_R2_BYTE( io, mode, r1, r2 )        x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_ADC_R1_R2, X86IM_GEN_R1_R2( r1, r2 ), 0, 0, 0 )  
+#define X86IM_GEN_ADC_R1_R2_BYTE( io, mode, r1, r2 )        x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_ADC_R1_R2, X86IM_GEN_R1_R2( r1, r2 ), 0, 0, 0 )
 #define X86IM_GEN_ADC_R1_R2_WORD( io, mode, r1, r2 )        x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_ADC_R1_R2, X86IM_GEN_R1_R2( r1, r2 ), 0, 0, 0 )
 #define X86IM_GEN_ADC_R1_R2_DWORD( io, mode, r1, r2 )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_ADC_R1_R2, X86IM_GEN_R1_R2( r1, r2 ), 0, 0, 0 )
 #define X86IM_GEN_ADC_R1_R2_QWORD( io, r1, r2 )             x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_ADC_R1_R2, X86IM_GEN_R1_R2( r1, r2 ), 0, 0, 0 )
@@ -407,7 +407,7 @@
 #define X86IM_GEN_ADC_RG_IM_SBYTE( io, mode, rg8, imm8 )    x86im_gen( io, X86IM_IO_MODE_32BIT|X86IM_GEN_OAT_NPO_B|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_ADC_RG_IM, X86IM_GEN_RG_IM( rg8 ), 0, 0, imm8 )
 #define X86IM_GEN_ADC_RG_IM_SWORD( io, mode, rg, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_ADC_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_ADC_RG_IM_SDWORD( io, mode, rg, imm8 )    x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_ADC_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
-#define X86IM_GEN_ADC_RG_IM_SQWORD( io, rg, imm8 )          x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_ADC_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )  
+#define X86IM_GEN_ADC_RG_IM_SQWORD( io, rg, imm8 )          x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_ADC_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 
 #define X86IM_GEN_ADC_AC_IM_BYTE( io, mode, imm )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_ADC_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_ADC_AC_IM_WORD( io, mode, imm )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_ADC_AC_IM, 0, 0, 0, imm )
@@ -442,7 +442,7 @@
 #define X86IM_GEN_ADD_R1_R2_DWORD( io, mode, r1, r2 )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_ADD_R1_R2, X86IM_GEN_R1_R2( r1, r2 ), 0, 0, 0 )
 #define X86IM_GEN_ADD_R1_R2_QWORD( io, r1, r2 )             x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_ADD_R1_R2, X86IM_GEN_R1_R2( r1, r2 ), 0, 0, 0 )
 
-#define X86IM_GEN_ADD_MM_IM_BYTE( io, mode, mm, imm )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_ADD_MM_IM, 0, mm, imm ) 
+#define X86IM_GEN_ADD_MM_IM_BYTE( io, mode, mm, imm )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_ADD_MM_IM, 0, mm, imm )
 #define X86IM_GEN_ADD_MM_IM_WORD( io, mode, mm, imm )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_ADD_MM_IM, 0, mm, imm )
 #define X86IM_GEN_ADD_MM_IM_DWORD( io, mode, mm, imm )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_ADD_MM_IM, 0, mm, imm )
 #define X86IM_GEN_ADD_MM_IM_QWORD( io, mm, imm )            x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_ADD_MM_IM, 0, mm, imm )
@@ -460,9 +460,9 @@
 #define X86IM_GEN_ADD_RG_IM_SBYTE( io, mode, rg8, imm8 )    x86im_gen( io, X86IM_IO_MODE_32BIT|X86IM_GEN_OAT_NPO_B|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_ADD_RG_IM, X86IM_GEN_RG_IM( rg8 ), 0, 0, imm8 )
 #define X86IM_GEN_ADD_RG_IM_SWORD( io, mode, rg, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_ADD_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_ADD_RG_IM_SDWORD( io, mode, rg, imm8 )    x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_ADD_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
-#define X86IM_GEN_ADD_RG_IM_SQWORD( io, rg, imm8 )          x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_ADD_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )  
+#define X86IM_GEN_ADD_RG_IM_SQWORD( io, rg, imm8 )          x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_ADD_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 
-#define X86IM_GEN_ADD_AC_IM_BYTE( io, mode, imm )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_ADD_AC_IM, 0, 0, 0, imm )     
+#define X86IM_GEN_ADD_AC_IM_BYTE( io, mode, imm )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_ADD_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_ADD_AC_IM_WORD( io, mode, imm )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_ADD_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_ADD_AC_IM_DWORD( io, mode, imm )          x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_ADD_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_ADD_AC_IM_QWORD( io, imm )                x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_ADD_AC_IM, 0, 0, 0, imm )
@@ -474,7 +474,7 @@
 #define X86IM_GEN_CODE_AND_MM_IM                            0x00002080
 #define X86IM_GEN_CODE_AND_RG_IM                            0x0000E080
 #define X86IM_GEN_CODE_AND_AC_IM                            0x00000024
-       
+
 #define X86IM_GEN_AND_MM_RG_BYTE( io, mode, mm, rg )        x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_AND_MM_RG, X86IM_GEN_MM_RG( rg ), mm, 0 )
 #define X86IM_GEN_AND_MM_RG_WORD( io, mode, mm, rg )        x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_AND_MM_RG, X86IM_GEN_MM_RG( rg ), mm, 0 )
 #define X86IM_GEN_AND_MM_RG_DWORD( io, mode, mm, rg )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_AND_MM_RG, X86IM_GEN_MM_RG( rg ), mm, 0 )
@@ -495,7 +495,7 @@
 #define X86IM_GEN_AND_R1_R2_DWORD( io, mode, r1, r2 )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_AND_R1_R2, X86IM_GEN_R1_R2( r1, r2 ), 0, 0, 0 )
 #define X86IM_GEN_AND_R1_R2_QWORD( io, r1, r2 )             x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_AND_R1_R2, X86IM_GEN_R1_R2( r1, r2 ), 0, 0, 0 )
 
-#define X86IM_GEN_AND_MM_IM_BYTE( io, mode, mm, imm )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_AND_MM_IM, 0, mm, imm ) 
+#define X86IM_GEN_AND_MM_IM_BYTE( io, mode, mm, imm )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_AND_MM_IM, 0, mm, imm )
 #define X86IM_GEN_AND_MM_IM_WORD( io, mode, mm, imm )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_AND_MM_IM, 0, mm, imm )
 #define X86IM_GEN_AND_MM_IM_DWORD( io, mode, mm, imm )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_AND_MM_IM, 0, mm, imm )
 #define X86IM_GEN_AND_MM_IM_QWORD( io, mm, imm )            x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_AND_MM_IM, 0, mm, imm )
@@ -511,11 +511,11 @@
 #define X86IM_GEN_AND_RG_IM_QWORD( io, rg, imm32 )          x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_AND_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm32 )
 
 #define X86IM_GEN_AND_RG_IM_SBYTE( io, mode, rg8, imm8 )    x86im_gen( io, X86IM_IO_MODE_32BIT|X86IM_GEN_OAT_NPO_B|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_AND_RG_IM, X86IM_GEN_RG_IM( rg8 ), 0, 0, imm8 )
-#define X86IM_GEN_AND_RG_IM_SWORD( io, mode, rg, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_AND_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )  
+#define X86IM_GEN_AND_RG_IM_SWORD( io, mode, rg, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_AND_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_AND_RG_IM_SDWORD( io, mode, rg, imm8 )    x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_AND_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
-#define X86IM_GEN_AND_RG_IM_SQWORD( io, rg, imm8 )          x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_AND_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )  
+#define X86IM_GEN_AND_RG_IM_SQWORD( io, rg, imm8 )          x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_AND_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 
-#define X86IM_GEN_AND_AC_IM_BYTE( io, mode, imm )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_AND_AC_IM, 0, 0, 0, imm )     
+#define X86IM_GEN_AND_AC_IM_BYTE( io, mode, imm )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_AND_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_AND_AC_IM_WORD( io, mode, imm )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_AND_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_AND_AC_IM_DWORD( io, mode, imm )          x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_AND_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_AND_AC_IM_QWORD( io, imm )                x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_AND_AC_IM, 0, 0, 0, imm )
@@ -585,7 +585,7 @@
 #define X86IM_GEN_BTC_RG_IM_DWORD( io, mode, rg, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_BTC_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_BTC_RG_IM_QWORD( io, rg, imm8 )           x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_BTC_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 
-#define X86IM_GEN_BTC_MM_RG_WORD( io, mode, mm, rg )        x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_BTC_MM_RG, X86IM_GEN_MM_RG( rg ), mm, 0 ) 
+#define X86IM_GEN_BTC_MM_RG_WORD( io, mode, mm, rg )        x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_BTC_MM_RG, X86IM_GEN_MM_RG( rg ), mm, 0 )
 #define X86IM_GEN_BTC_MM_RG_DWORD( io, mode, mm, rg )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_BTC_MM_RG, X86IM_GEN_MM_RG( rg ), mm, 0 )
 #define X86IM_GEN_BTC_MM_RG_QWORD( io, mm, rg )             x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_BTC_MM_RG, X86IM_GEN_MM_RG( rg ), mm, 0 )
 
@@ -715,7 +715,7 @@
 
 #define X86IM_GEN_CODE_CMPXCHG_MM_RG                        0x0000B00F
 #define X86IM_GEN_CODE_CMPXCHG_R1_R2                        0x00C0B00F
-    
+
 #define X86IM_GEN_CMPXCHG_MM_RG_BYTE( io, mode, mm, rg )    x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_CMPXCHG_MM_RG, X86IM_GEN_MM_RG( rg ), mm, 0 )
 #define X86IM_GEN_CMPXCHG_MM_RG_WORD( io, mode, mm, rg )    x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_CMPXCHG_MM_RG, X86IM_GEN_MM_RG( rg ), mm, 0 )
 #define X86IM_GEN_CMPXCHG_MM_RG_DWORD( io, mode, mm, rg )   x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_CMPXCHG_MM_RG, X86IM_GEN_MM_RG( rg ), mm, 0 )
@@ -822,7 +822,7 @@
 #define X86IM_GEN_CODE_IN_AC_IM                             0x000000E4
 #define X86IM_GEN_CODE_IN_AC_RG                             0x000000EC
 
-#define X86IM_GEN_IN_AC_IM_BYTE( io, mode, imm8 )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_IN_AC_IM, 0, 0, 0, imm8 )          
+#define X86IM_GEN_IN_AC_IM_BYTE( io, mode, imm8 )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_IN_AC_IM, 0, 0, 0, imm8 )
 #define X86IM_GEN_IN_AC_IM_WORD( io, mode, imm8 )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_IN_AC_IM, 0, 0, 0, imm8 )
 #define X86IM_GEN_IN_AC_IM_DWORD( io, mode, imm8 )          x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_IN_AC_IM, 0, 0, 0, imm8 )
 #define X86IM_GEN_IN_AC_IM_QWORD( io, imm8 )                x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_IN_AC_IM, 0, 0, 0, imm8 )
@@ -862,7 +862,7 @@
 #define X86IM_GEN_JGE_SHORT( io, mode, rel8 )               x86im_gen( io, mode, X86IM_GEN_CODE_JCC_SHORT, X86IM_GEN_TTTN( X86IM_IO_TN_GE ), 0, 0, rel8 )
 #define X86IM_GEN_JL_SHORT( io, mode, rel8 )                x86im_gen( io, mode, X86IM_GEN_CODE_JCC_SHORT, X86IM_GEN_TTTN( X86IM_IO_TN_L ), 0, 0, rel8 )
 #define X86IM_GEN_JLE_SHORT( io, mode, rel8 )               x86im_gen( io, mode, X86IM_GEN_CODE_JCC_SHORT, X86IM_GEN_TTTN( X86IM_IO_TN_LE ), 0, 0, rel8 )
-#define X86IM_GEN_JNA_SHORT( io, mode, rel8 )               x86im_gen( io, mode, X86IM_GEN_CODE_JCC_SHORT, X86IM_GEN_TTTN( X86IM_IO_TN_NA ), 0, 0, rel8 )    
+#define X86IM_GEN_JNA_SHORT( io, mode, rel8 )               x86im_gen( io, mode, X86IM_GEN_CODE_JCC_SHORT, X86IM_GEN_TTTN( X86IM_IO_TN_NA ), 0, 0, rel8 )
 #define X86IM_GEN_JNAE_SHORT( io, mode, rel8 )              x86im_gen( io, mode, X86IM_GEN_CODE_JCC_SHORT, X86IM_GEN_TTTN( X86IM_IO_TN_NAE ), 0, 0, rel8 )
 #define X86IM_GEN_JNB_SHORT( io, mode, rel8 )               x86im_gen( io, mode, X86IM_GEN_CODE_JCC_SHORT, X86IM_GEN_TTTN( X86IM_IO_TN_NB ), 0, 0, rel8 )
 #define X86IM_GEN_JNBE_SHORT( io, mode, rel8 )              x86im_gen( io, mode, X86IM_GEN_CODE_JCC_SHORT, X86IM_GEN_TTTN( X86IM_IO_TN_NBE ), 0, 0, rel8 )
@@ -891,7 +891,7 @@
 #define X86IM_GEN_JE_NEAR16( io, rel16 )                    x86im_gen( io, X86IM_IO_MODE_32BIT|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_E ), 0, 0, rel16 )
 #define X86IM_GEN_JG_NEAR16( io, rel16 )                    x86im_gen( io, X86IM_IO_MODE_32BIT|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_G ), 0, 0, rel16 )
 #define X86IM_GEN_JGE_NEAR16( io, rel16 )                   x86im_gen( io, X86IM_IO_MODE_32BIT|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_GE ), 0, 0, rel16 )
-#define X86IM_GEN_JL_NEAR16( io, rel16 )                    x86im_gen( io, X86IM_IO_MODE_32BIT|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_L ), 0, 0, rel16 )    
+#define X86IM_GEN_JL_NEAR16( io, rel16 )                    x86im_gen( io, X86IM_IO_MODE_32BIT|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_L ), 0, 0, rel16 )
 #define X86IM_GEN_JLE_NEAR16( io, rel16 )                   x86im_gen( io, X86IM_IO_MODE_32BIT|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_LE ), 0, 0, rel16 )
 #define X86IM_GEN_JNA_NEAR16( io, rel16 )                   x86im_gen( io, X86IM_IO_MODE_32BIT|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_NA ), 0, 0, rel16 )
 #define X86IM_GEN_JNAE_NEAR16( io, rel16 )                  x86im_gen( io, X86IM_IO_MODE_32BIT|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_NAE ), 0, 0, rel16 )
@@ -926,7 +926,7 @@
 #define X86IM_GEN_JLE( io, mode, rel32 )                    x86im_gen( io, mode, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_LE ), 0, 0, rel32 )
 #define X86IM_GEN_JNA( io, mode, rel32 )                    x86im_gen( io, mode, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_NA ), 0, 0, rel32 )
 #define X86IM_GEN_JNAE( io, mode, rel32 )                   x86im_gen( io, mode, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_NAE ), 0, 0, rel32 )
-#define X86IM_GEN_JNB( io, mode, rel32 )                    x86im_gen( io, mode, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_NB ), 0, 0, rel32 )       
+#define X86IM_GEN_JNB( io, mode, rel32 )                    x86im_gen( io, mode, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_NB ), 0, 0, rel32 )
 #define X86IM_GEN_JNBE( io, mode, rel32 )                   x86im_gen( io, mode, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_NBE ), 0, 0, rel32 )
 #define X86IM_GEN_JNC( io, mode, rel32 )                    x86im_gen( io, mode, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_NC ), 0, 0, rel32 )
 #define X86IM_GEN_JNE( io, mode, rel32 )                    x86im_gen( io, mode, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_NE ), 0, 0, rel32 )
@@ -937,9 +937,9 @@
 #define X86IM_GEN_JNO( io, mode, rel32 )                    x86im_gen( io, mode, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_NO ), 0, 0, rel32 )
 #define X86IM_GEN_JNP( io, mode, rel32 )                    x86im_gen( io, mode, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_NP ), 0, 0, rel32 )
 #define X86IM_GEN_JNS( io, mode, rel32 )                    x86im_gen( io, mode, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_NS ), 0, 0, rel32 )
-#define X86IM_GEN_JNZ( io, mode, rel32 )                    x86im_gen( io, mode, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_NZ ), 0, 0, rel32 )      
+#define X86IM_GEN_JNZ( io, mode, rel32 )                    x86im_gen( io, mode, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_NZ ), 0, 0, rel32 )
 #define X86IM_GEN_JO( io, mode, rel32 )                     x86im_gen( io, mode, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_O ), 0, 0, rel32 )
-#define X86IM_GEN_JP( io, mode, rel32 )                     x86im_gen( io, mode, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_P ), 0, 0, rel32 )      
+#define X86IM_GEN_JP( io, mode, rel32 )                     x86im_gen( io, mode, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_P ), 0, 0, rel32 )
 #define X86IM_GEN_JPE( io, mode, rel32 )                    x86im_gen( io, mode, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_PE ), 0, 0, rel32 )
 #define X86IM_GEN_JPO( io, mode, rel32 )                    x86im_gen( io, mode, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_PO ), 0, 0, rel32 )
 #define X86IM_GEN_JS( io, mode, rel32 )                     x86im_gen( io, mode, X86IM_GEN_CODE_JCC_NEAR, X86IM_GEN_TTTN( X86IM_IO_TN_S ), 0, 0, rel32 )
@@ -965,7 +965,7 @@
 #define X86IM_GEN_JMP_N_AI_MM_DWORD( io, mm )               x86im_gen( io, X86IM_IO_MODE_32BIT|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_JMP_N_AI_MM, 0, mm, 0 )
 #define X86IM_GEN_JMP_N_AI_MM_QWORD( io, mm )               x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_JMP_N_AI_MM, 0, mm, 0 )
 
-#define X86IM_GEN_JMP_F_A_WORD( io, addr, sel )             x86im_gen( io, X86IM_IO_MODE_32BIT|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_JMP_F_A, 0, 0, sel, addr ) 
+#define X86IM_GEN_JMP_F_A_WORD( io, addr, sel )             x86im_gen( io, X86IM_IO_MODE_32BIT|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_JMP_F_A, 0, 0, sel, addr )
 #define X86IM_GEN_JMP_F_A_DWORD( io, addr, sel )            x86im_gen( io, X86IM_IO_MODE_32BIT|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_JMP_F_A, 0, 0, sel, addr )
 
 #define X86IM_GEN_JMP_F_AI_MM_WORD( io, mode, mm )          x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_JMP_F_AI_MM, 0, mm, 0 )
@@ -1010,7 +1010,7 @@
 #define X86IM_GEN_CODE_LTR_RG                               0x00D8000F
 
 #define X86IM_GEN_LTR_MM( io, mode, mm )                    x86im_gen( io, mode, X86IM_GEN_CODE_LTR_MM, 0, mm, 0 )
-#define X86IM_GEN_LTR_RG( io, mode, rg )                    x86im_gen( io, mode, X86IM_GEN_CODE_LTR_RG, rg, 0, 0, 0 )                         
+#define X86IM_GEN_LTR_RG( io, mode, rg )                    x86im_gen( io, mode, X86IM_GEN_CODE_LTR_RG, rg, 0, 0, 0 )
 
 #define X86IM_GEN_CODE_MOV_MM_RG                            0x00000088
 #define X86IM_GEN_CODE_MOV_R2_R1                            0x0000C088
@@ -1198,7 +1198,7 @@
 #define X86IM_GEN_OR_R1_R2_DWORD( io, mode, r1, r2 )        x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_OR_R1_R2, X86IM_GEN_R1_R2( r1, r2 ), 0, 0, 0 )
 #define X86IM_GEN_OR_R1_R2_QWORD( io, r1, r2 )              x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_OR_R1_R2, X86IM_GEN_R1_R2( r1, r2 ), 0, 0, 0 )
 
-#define X86IM_GEN_OR_MM_IM_BYTE( io, mode, mm, imm )        x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_OR_MM_IM, 0, mm, imm ) 
+#define X86IM_GEN_OR_MM_IM_BYTE( io, mode, mm, imm )        x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_OR_MM_IM, 0, mm, imm )
 #define X86IM_GEN_OR_MM_IM_WORD( io, mode, mm, imm )        x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_OR_MM_IM, 0, mm, imm )
 #define X86IM_GEN_OR_MM_IM_DWORD( io, mode, mm, imm )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_OR_MM_IM, 0, mm, imm )
 #define X86IM_GEN_OR_MM_IM_QWORD( io, mm, imm )             x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_OR_MM_IM, 0, mm, imm )
@@ -1214,11 +1214,11 @@
 #define X86IM_GEN_OR_RG_IM_QWORD( io, rg, imm )             x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_OR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm )
 
 #define X86IM_GEN_OR_RG_IM_SBYTE( io, rg8, imm8 )            x86im_gen( io, X86IM_IO_MODE_32BIT|X86IM_GEN_OAT_NPO_B|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_OR_RG_IM, X86IM_GEN_RG_IM( rg8 ), 0, 0, imm8 )
-#define X86IM_GEN_OR_RG_IM_SWORD( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_OR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )  
+#define X86IM_GEN_OR_RG_IM_SWORD( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_OR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_OR_RG_IM_SDWORD( io, mode, rg, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_OR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
-#define X86IM_GEN_OR_RG_IM_SQWORD( io, rg, imm8 )           x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_OR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )  
+#define X86IM_GEN_OR_RG_IM_SQWORD( io, rg, imm8 )           x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_OR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 
-#define X86IM_GEN_OR_AC_IM_BYTE( io, mode, imm )            x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_OR_AC_IM, 0, 0, 0, imm )     
+#define X86IM_GEN_OR_AC_IM_BYTE( io, mode, imm )            x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_OR_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_OR_AC_IM_WORD( io, mode, imm )            x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_OR_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_OR_AC_IM_DWORD( io, mode, imm )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_OR_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_OR_AC_IM_QWORD( io, imm )                 x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_OR_AC_IM, 0, 0, 0, imm )
@@ -1263,7 +1263,7 @@
 #define X86IM_GEN_POP_FS( io, mode )                        x86im_gen( io, mode, X86IM_GEN_CODE_POP_SR2|X86IM_GEN_SREG3( X86IM_IO_ROP_ID_FS ), 0, 0, 0, 0 )
 #define X86IM_GEN_POP_GS( io, mode )                        x86im_gen( io, mode, X86IM_GEN_CODE_POP_SR2|X86IM_GEN_SREG3( X86IM_IO_ROP_ID_GS ), 0, 0, 0, 0 )
 
-#define X86IM_GEN_POPAD( io )                               x86im_gen( io, X86IM_IO_MODE_32BIT, X86IM_GEN_CODE_POPAD, 0, 0, 0, 0 ) 
+#define X86IM_GEN_POPAD( io )                               x86im_gen( io, X86IM_IO_MODE_32BIT, X86IM_GEN_CODE_POPAD, 0, 0, 0, 0 )
 #define X86IM_GEN_POPF( io )                                x86im_gen( io, X86IM_IO_MODE_32BIT, X86IM_GEN_CODE_POPF, 0, 0, 0, 0 )
 #define X86IM_GEN_POPFD( io )                               x86im_gen( io, X86IM_IO_MODE_32BIT, X86IM_GEN_CODE_POPF, 0, 0, 0, 0 )
 #define X86IM_GEN_POPFQ( io )                               x86im_gen( io, X86IM_IO_MODE_64BIT, X86IM_GEN_CODE_POPF, 0, 0, 0, 0 )
@@ -1307,9 +1307,9 @@
 
 #define X86IM_GEN_PUSHAD( io )                              x86im_gen( io, X86IM_IO_MODE_32BIT, X86IM_GEN_CODE_PUSHAD, 0, 0, 0, 0 )
 
-#define X86IM_GEN_PUSHF( io, mode )                         x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_PUSHF, 0, 0, 0, 0 )  
-#define X86IM_GEN_PUSHFD( io )                              x86im_gen( io, X86IM_IO_MODE_32BIT, X86IM_GEN_CODE_PUSHF, 0, 0, 0, 0 )     
-#define X86IM_GEN_PUSHFQ( io )                              x86im_gen( io, X86IM_IO_MODE_64BIT, X86IM_GEN_CODE_PUSHF, 0, 0, 0, 0 ) 
+#define X86IM_GEN_PUSHF( io, mode )                         x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_PUSHF, 0, 0, 0, 0 )
+#define X86IM_GEN_PUSHFD( io )                              x86im_gen( io, X86IM_IO_MODE_32BIT, X86IM_GEN_CODE_PUSHF, 0, 0, 0, 0 )
+#define X86IM_GEN_PUSHFQ( io )                              x86im_gen( io, X86IM_IO_MODE_64BIT, X86IM_GEN_CODE_PUSHF, 0, 0, 0, 0 )
 
 #define X86IM_GEN_CODE_RCL_MM_1                             0x000010D0
 #define X86IM_GEN_CODE_RCL_RG_1                             0x0000D0D0
@@ -1343,7 +1343,7 @@
 #define X86IM_GEN_RCL_MM_IM_DWORD( io, mode, mm, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_RCL_MM_IM, 0, mm, imm8 )
 #define X86IM_GEN_RCL_MM_IM_QWORD( io, mm, imm8 )           x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_RCL_MM_IM, 0, mm, imm8 )
 
-#define X86IM_GEN_RCL_RG_IM_BYTE( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_RCL_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )    
+#define X86IM_GEN_RCL_RG_IM_BYTE( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_RCL_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_RCL_RG_IM_WORD( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_RCL_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_RCL_RG_IM_DWORD( io, mode, rg, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_RCL_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_RCL_RG_IM_QWORD( io, rg, imm8 )           x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_RCL_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
@@ -1380,7 +1380,7 @@
 #define X86IM_GEN_RCR_MM_IM_DWORD( io, mode, mm, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_RCR_MM_IM, 0, mm, imm8 )
 #define X86IM_GEN_RCR_MM_IM_QWORD( io, mm, imm8 )           x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_RCR_MM_IM, 0, mm, imm8 )
 
-#define X86IM_GEN_RCR_RG_IM_BYTE( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_RCR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )    
+#define X86IM_GEN_RCR_RG_IM_BYTE( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_RCR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_RCR_RG_IM_WORD( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_RCR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_RCR_RG_IM_DWORD( io, mode, rg, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_RCR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_RCR_RG_IM_QWORD( io, rg, imm8 )           x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_RCR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
@@ -1427,7 +1427,7 @@
 #define X86IM_GEN_ROL_MM_IM_DWORD( io, mode, mm, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_ROL_MM_IM, 0, mm, imm8 )
 #define X86IM_GEN_ROL_MM_IM_QWORD( io, mm, imm8 )           x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_ROL_MM_IM, 0, mm, imm8 )
 
-#define X86IM_GEN_ROL_RG_IM_BYTE( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_ROL_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )    
+#define X86IM_GEN_ROL_RG_IM_BYTE( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_ROL_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_ROL_RG_IM_WORD( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_ROL_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_ROL_RG_IM_DWORD( io, mode, rg, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_ROL_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_ROL_RG_IM_QWORD( io, rg, imm8 )           x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_ROL_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
@@ -1464,7 +1464,7 @@
 #define X86IM_GEN_ROR_MM_IM_DWORD( io, mode, mm, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_ROR_MM_IM, 0, mm, imm8 )
 #define X86IM_GEN_ROR_MM_IM_QWORD( io, mm, imm8 )           x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_ROR_MM_IM, 0, mm, imm8 )
 
-#define X86IM_GEN_ROR_RG_IM_BYTE( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_ROR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )    
+#define X86IM_GEN_ROR_RG_IM_BYTE( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_ROR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_ROR_RG_IM_WORD( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_ROR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_ROR_RG_IM_DWORD( io, mode, rg, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_ROR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_ROR_RG_IM_QWORD( io, rg, imm8 )           x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_ROR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
@@ -1501,7 +1501,7 @@
 #define X86IM_GEN_SAR_MM_IM_DWORD( io, mode, mm, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_SAR_MM_IM, 0, mm, imm8 )
 #define X86IM_GEN_SAR_MM_IM_QWORD( io, mm, imm8 )           x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_SAR_MM_IM, 0, mm, imm8 )
 
-#define X86IM_GEN_SAR_RG_IM_BYTE( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_SAR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )    
+#define X86IM_GEN_SAR_RG_IM_BYTE( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_SAR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_SAR_RG_IM_WORD( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_SAR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_SAR_RG_IM_DWORD( io, mode, rg, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_SAR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_SAR_RG_IM_QWORD( io, rg, imm8 )           x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_SAR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
@@ -1534,7 +1534,7 @@
 #define X86IM_GEN_SBB_R1_R2_DWORD( io, mode, r1, r2 )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_SBB_R1_R2, X86IM_GEN_R1_R2( r1, r2 ), 0, 0, 0 )
 #define X86IM_GEN_SBB_R1_R2_QWORD( io, r1, r2 )             x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_SBB_R1_R2, X86IM_GEN_R1_R2( r1, r2 ), 0, 0, 0 )
 
-#define X86IM_GEN_SBB_MM_IM_BYTE( io, mode, mm, imm )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_SBB_MM_IM, 0, mm, imm ) 
+#define X86IM_GEN_SBB_MM_IM_BYTE( io, mode, mm, imm )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_SBB_MM_IM, 0, mm, imm )
 #define X86IM_GEN_SBB_MM_IM_WORD( io, mode, mm, imm )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_SBB_MM_IM, 0, mm, imm )
 #define X86IM_GEN_SBB_MM_IM_DWORD( io, mode, mm, imm )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_SBB_MM_IM, 0, mm, imm )
 #define X86IM_GEN_SBB_MM_IM_QWORD( io, mm, imm )            x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_SBB_MM_IM, 0, mm, imm )
@@ -1550,11 +1550,11 @@
 #define X86IM_GEN_SBB_RG_IM_QWORD( io, rg, imm32 )          x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_SBB_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm32 )
 
 #define X86IM_GEN_SBB_RG_IM_SBYTE( io, rg8, imm8 )          x86im_gen( io, X86IM_IO_MODE_32BIT|X86IM_GEN_OAT_NPO_B|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_SBB_RG_IM, X86IM_GEN_RG_IM( rg8 ), 0, 0, imm8 )
-#define X86IM_GEN_SBB_RG_IM_SWORD( io, mode, rg, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_SBB_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )  
+#define X86IM_GEN_SBB_RG_IM_SWORD( io, mode, rg, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_SBB_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_SBB_RG_IM_SDWORD( io, mode, rg, imm8 )    x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_SBB_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
-#define X86IM_GEN_SBB_RG_IM_SQWORD( io, rg, imm8 )          x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_SBB_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )  
+#define X86IM_GEN_SBB_RG_IM_SQWORD( io, rg, imm8 )          x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_SBB_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 
-#define X86IM_GEN_SBB_AC_IM_BYTE( io, mode, imm )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_SBB_AC_IM, 0, 0, 0, imm )     
+#define X86IM_GEN_SBB_AC_IM_BYTE( io, mode, imm )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_SBB_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_SBB_AC_IM_WORD( io, mode, imm )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_SBB_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_SBB_AC_IM_DWORD( io, mode, imm )          x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_SBB_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_SBB_AC_IM_QWORD( io, imm )                x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_SBB_AC_IM, 0, 0, 0, imm )
@@ -1630,7 +1630,7 @@
 #define X86IM_GEN_CODE_SHL_RG_CL                            0x0000E0D2
 #define X86IM_GEN_CODE_SHL_MM_IM                            0x000020C0
 #define X86IM_GEN_CODE_SHL_RG_IM                            0x0000E0C0
-    
+
 #define X86IM_GEN_SHL_MM_1_BYTE( io, mode, mm )             x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_SHL_MM_1, 0, mm, 0 )
 #define X86IM_GEN_SHL_MM_1_WORD( io, mode, mm )             x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_SHL_MM_1, 0, mm, 0 )
 #define X86IM_GEN_SHL_MM_1_DWORD( io, mode, mm )            x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_SHL_MM_1, 0, mm, 0 )
@@ -1640,7 +1640,7 @@
 #define X86IM_GEN_SHL_RG_1_WORD( io, mode, rg )             x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_SHL_RG_1, X86IM_GEN_RG_IM( rg ), 0, 0, 0 )
 #define X86IM_GEN_SHL_RG_1_DWORD( io, mode, rg )            x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_SHL_RG_1, X86IM_GEN_RG_IM( rg ), 0, 0, 0 )
 #define X86IM_GEN_SHL_RG_1_QWORD( io, rg )                  x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_SHL_RG_1, X86IM_GEN_RG_IM( rg ), 0, 0, 0 )
-    
+
 #define X86IM_GEN_SHL_MM_CL_BYTE( io, mode, mm )            x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_SHL_MM_CL, 0, mm, 0 )
 #define X86IM_GEN_SHL_MM_CL_WORD( io, mode, mm )            x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_SHL_MM_CL, 0, mm, 0 )
 #define X86IM_GEN_SHL_MM_CL_DWORD( io, mode, mm )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_SHL_MM_CL, 0, mm, 0 )
@@ -1656,7 +1656,7 @@
 #define X86IM_GEN_SHL_MM_IM_DWORD( io, mode, mm, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_SHL_MM_IM, 0, mm, imm8 )
 #define X86IM_GEN_SHL_MM_IM_QWORD( io, mm, imm8 )           x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_SHL_MM_IM, 0, mm, imm8 )
 
-#define X86IM_GEN_SHL_RG_IM_BYTE( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_SHL_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )    
+#define X86IM_GEN_SHL_RG_IM_BYTE( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_SHL_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_SHL_RG_IM_WORD( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_SHL_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_SHL_RG_IM_DWORD( io, mode, rg, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_SHL_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_SHL_RG_IM_QWORD( io, rg, imm8 )           x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_SHL_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
@@ -1698,7 +1698,7 @@
 #define X86IM_GEN_SHR_RG_1_WORD( io, mode, rg )             x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_SHR_RG_1, X86IM_GEN_RG_IM( rg ), 0, 0, 0 )
 #define X86IM_GEN_SHR_RG_1_DWORD( io, mode, rg )            x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_SHR_RG_1, X86IM_GEN_RG_IM( rg ), 0, 0, 0 )
 #define X86IM_GEN_SHR_RG_1_QWORD( io, rg )                  x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_SHR_RG_1, X86IM_GEN_RG_IM( rg ), 0, 0, 0 )
-    
+
 #define X86IM_GEN_SHR_MM_CL_BYTE( io, mode, mm )            x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_SHR_MM_CL, 0, mm, 0 )
 #define X86IM_GEN_SHR_MM_CL_WORD( io, mode, mm )            x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_SHR_MM_CL, 0, mm, 0 )
 #define X86IM_GEN_SHR_MM_CL_DWORD( io, mode, mm )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_SHR_MM_CL, 0, mm, 0 )
@@ -1714,7 +1714,7 @@
 #define X86IM_GEN_SHR_MM_IM_DWORD( io, mode, mm, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_SHR_MM_IM, 0, mm, imm8 )
 #define X86IM_GEN_SHR_MM_IM_QWORD( io, mm, imm8 )           x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_SHR_MM_IM, 0, mm, imm8 )
 
-#define X86IM_GEN_SHR_RG_IM_BYTE( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_SHR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )    
+#define X86IM_GEN_SHR_RG_IM_BYTE( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_SHR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_SHR_RG_IM_WORD( io, mode, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_SHR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_SHR_RG_IM_DWORD( io, mode, rg, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_SHR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_SHR_RG_IM_QWORD( io, rg, imm8 )           x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_SHR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
@@ -1723,7 +1723,7 @@
 #define X86IM_GEN_CODE_SHRD_R1_R2_IM                                0x00C0AC0F
 #define X86IM_GEN_CODE_SHRD_MM_RG_CL                                0x0000AD0F
 #define X86IM_GEN_CODE_SHRD_R1_R2_CL                                0x00C0AD0F
-       
+
 #define X86IM_GEN_SHRD_MM_RG_IM_WORD( io, mode, mm, rg, imm8 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_SHRD_MM_RG_IM, X86IM_GEN_MM_RG( rg ), mm, imm8 )
 #define X86IM_GEN_SHRD_MM_RG_IM_DWORD( io, mode, mm, rg, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_SHRD_MM_RG_IM, X86IM_GEN_MM_RG( rg ), mm, imm8 )
 #define X86IM_GEN_SHRD_MM_RG_IM_QWORD( io, mm, rg, imm8 )           x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_SHRD_MM_RG_IM, X86IM_GEN_MM_RG( rg ), mm, imm8 )
@@ -1751,7 +1751,7 @@
 #define X86IM_GEN_CODE_SMSW_MM                              0x0020010F
 #define X86IM_GEN_CODE_SMSW_RG                              0x00E0010F
 
-#define X86IM_GEN_SMSW_MM( io, mode, mm )                   x86im_gen( io, mode, X86IM_GEN_CODE_SMSW_MM, 0, mm, 0 ) 
+#define X86IM_GEN_SMSW_MM( io, mode, mm )                   x86im_gen( io, mode, X86IM_GEN_CODE_SMSW_MM, 0, mm, 0 )
 #define X86IM_GEN_SMSW_RG_WORD( io, mode, rg )              x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_SMSW_RG, rg, 0, 0, 0 )
 #define X86IM_GEN_SMSW_RG_DWORD( io, mode, rg )             x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_SMSW_RG, rg, 0, 0, 0 )
 #define X86IM_GEN_SMSW_RG_QWORD( io, rg )                   x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_SMSW_RG, rg, 0, 0, 0 )
@@ -1792,7 +1792,7 @@
 #define X86IM_GEN_SUB_R1_R2_DWORD( io, mode, r1, r2 )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_SUB_R1_R2, X86IM_GEN_R1_R2( r1, r2 ), 0, 0, 0 )
 #define X86IM_GEN_SUB_R1_R2_QWORD( io, r1, r2 )             x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_SUB_R1_R2, X86IM_GEN_R1_R2( r1, r2 ), 0, 0, 0 )
 
-#define X86IM_GEN_SUB_MM_IM_BYTE( io, mode, mm, imm )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_SUB_MM_IM, 0, mm, imm ) 
+#define X86IM_GEN_SUB_MM_IM_BYTE( io, mode, mm, imm )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_SUB_MM_IM, 0, mm, imm )
 #define X86IM_GEN_SUB_MM_IM_WORD( io, mode, mm, imm )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_SUB_MM_IM, 0, mm, imm )
 #define X86IM_GEN_SUB_MM_IM_DWORD( io, mode, mm, imm )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_SUB_MM_IM, 0, mm, imm )
 #define X86IM_GEN_SUB_MM_IM_QWORD( io, mm, imm )            x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_SUB_MM_IM, 0, mm, imm )
@@ -1808,11 +1808,11 @@
 #define X86IM_GEN_SUB_RG_IM_QWORD( io, rg, imm )            x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_SUB_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm )
 
 #define X86IM_GEN_SUB_RG_IM_SBYTE( io, rg8, imm8 )          x86im_gen( io, X86IM_IO_MODE_32BIT|X86IM_GEN_OAT_NPO_B|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_SUB_RG_IM, X86IM_GEN_RG_IM( rg8 ), 0, 0, imm8 )
-#define X86IM_GEN_SUB_RG_IM_SWORD( io, mode, rg, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_SUB_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )  
+#define X86IM_GEN_SUB_RG_IM_SWORD( io, mode, rg, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_SUB_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_SUB_RG_IM_SDWORD( io, mode, rg, imm8 )    x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_SUB_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
-#define X86IM_GEN_SUB_RG_IM_SQWORD( io, rg, imm8 )          x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_SUB_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )  
+#define X86IM_GEN_SUB_RG_IM_SQWORD( io, rg, imm8 )          x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_SUB_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 
-#define X86IM_GEN_SUB_AC_IM_BYTE( io, mode, imm )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_SUB_AC_IM, 0, 0, 0, imm )     
+#define X86IM_GEN_SUB_AC_IM_BYTE( io, mode, imm )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_SUB_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_SUB_AC_IM_WORD( io, mode, imm )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_SUB_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_SUB_AC_IM_DWORD( io, mode, imm )          x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_SUB_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_SUB_AC_IM_QWORD( io, imm )                x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_SUB_AC_IM, 0, 0, 0, imm )
@@ -1833,7 +1833,7 @@
 #define X86IM_GEN_TEST_R1_R2_DWORD( io, mode, r1, r2 )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_TEST_R1_R2, X86IM_GEN_R1_R2( r1, r2 ), 0, 0, 0 )
 #define X86IM_GEN_TEST_R1_R2_QWORD( io, r1, r2 )            x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_TEST_R1_R2, X86IM_GEN_R1_R2( r1, r2 ), 0, 0, 0 )
 
-#define X86IM_GEN_TEST_MM_IM_BYTE( io, mode, mm, imm )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_TEST_MM_IM, 0, mm, imm ) 
+#define X86IM_GEN_TEST_MM_IM_BYTE( io, mode, mm, imm )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_TEST_MM_IM, 0, mm, imm )
 #define X86IM_GEN_TEST_MM_IM_WORD( io, mode, mm, imm )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_TEST_MM_IM, 0, mm, imm )
 #define X86IM_GEN_TEST_MM_IM_DWORD( io, mode, mm, imm )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_TEST_MM_IM, 0, mm, imm )
 #define X86IM_GEN_TEST_MM_IM_QWORD( io, mm, imm )           x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_TEST_MM_IM, 0, mm, imm )
@@ -1843,7 +1843,7 @@
 #define X86IM_GEN_TEST_RG_IM_DWORD( io, mode, rg, imm32 )   x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_TEST_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm32 )
 #define X86IM_GEN_TEST_RG_IM_QWORD( io, rg, imm32 )         x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_TEST_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm32 )
 
-#define X86IM_GEN_TEST_AC_IM_BYTE( io, mode, imm )          x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_TEST_AC_IM, 0, 0, 0, imm )     
+#define X86IM_GEN_TEST_AC_IM_BYTE( io, mode, imm )          x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_TEST_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_TEST_AC_IM_WORD( io, mode, imm )          x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_TEST_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_TEST_AC_IM_DWORD( io, mode, imm )         x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_TEST_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_TEST_AC_IM_QWORD( io, imm )               x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_TEST_AC_IM, 0, 0, 0, imm )
@@ -1919,7 +1919,7 @@
 #define X86IM_GEN_XOR_R1_R2_DWORD( io, mode, r1, r2 )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_XOR_R1_R2, X86IM_GEN_R1_R2( r1, r2 ), 0, 0, 0 )
 #define X86IM_GEN_XOR_R1_R2_QWORD( io, r1, r2 )             x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_XOR_R1_R2, X86IM_GEN_R1_R2( r1, r2 ), 0, 0, 0 )
 
-#define X86IM_GEN_XOR_MM_IM_BYTE( io, mode, mm, imm )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_XOR_MM_IM, 0, mm, imm ) 
+#define X86IM_GEN_XOR_MM_IM_BYTE( io, mode, mm, imm )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_XOR_MM_IM, 0, mm, imm )
 #define X86IM_GEN_XOR_MM_IM_WORD( io, mode, mm, imm )       x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_XOR_MM_IM, 0, mm, imm )
 #define X86IM_GEN_XOR_MM_IM_DWORD( io, mode, mm, imm )      x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_XOR_MM_IM, 0, mm, imm )
 #define X86IM_GEN_XOR_MM_IM_QWORD( io, mm, imm )            x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_XOR_MM_IM, 0, mm, imm )
@@ -1935,11 +1935,11 @@
 #define X86IM_GEN_XOR_RG_IM_QWORD( io, rg, imm )            x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_XOR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm )
 
 #define X86IM_GEN_XOR_RG_IM_SBYTE( io, rg8, imm8 )          x86im_gen( io, X86IM_IO_MODE_32BIT|X86IM_GEN_OAT_NPO_B|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_XOR_RG_IM, X86IM_GEN_RG_IM( rg8 ), 0, 0, imm8 )
-#define X86IM_GEN_XOR_RG_IM_SWORD( io, mode, rg, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_XOR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )  
+#define X86IM_GEN_XOR_RG_IM_SWORD( io, mode, rg, imm8 )     x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_XOR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 #define X86IM_GEN_XOR_RG_IM_SDWORD( io, mode, rg, imm8 )    x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_XOR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
-#define X86IM_GEN_XOR_RG_IM_SQWORD( io, rg, imm8 )          x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_XOR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )  
+#define X86IM_GEN_XOR_RG_IM_SQWORD( io, rg, imm8 )          x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q|X86IM_GEN_OAT_SIGN, X86IM_GEN_CODE_XOR_RG_IM, X86IM_GEN_RG_IM( rg ), 0, 0, imm8 )
 
-#define X86IM_GEN_XOR_AC_IM_BYTE( io, mode, imm )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_XOR_AC_IM, 0, 0, 0, imm )     
+#define X86IM_GEN_XOR_AC_IM_BYTE( io, mode, imm )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_B, X86IM_GEN_CODE_XOR_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_XOR_AC_IM_WORD( io, mode, imm )           x86im_gen( io, mode|X86IM_GEN_OAT_NPO_W, X86IM_GEN_CODE_XOR_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_XOR_AC_IM_DWORD( io, mode, imm )          x86im_gen( io, mode|X86IM_GEN_OAT_NPO_D, X86IM_GEN_CODE_XOR_AC_IM, 0, 0, 0, imm )
 #define X86IM_GEN_XOR_AC_IM_QWORD( io, imm )                x86im_gen( io, X86IM_IO_MODE_64BIT|X86IM_GEN_OAT_NPO_Q, X86IM_GEN_CODE_XOR_AC_IM, 0, 0, 0, imm )
@@ -2187,7 +2187,7 @@
 
 #define X86IM_GEN_CODE_FLDLG2                           0x0000ECD9
 #define X86IM_GEN_FLDLG2( io, mode )                    x86im_gen( io, mode, X86IM_GEN_CODE_FLDLG2, 0, 0, 0, 0 )
-    
+
 #define X86IM_GEN_CODE_FLDLN2                           0x0000EDD9
 #define X86IM_GEN_FLDLN2( io, mode )                    x86im_gen( io, mode, X86IM_GEN_CODE_FLDLN2, 0, 0, 0, 0 )
 
@@ -2224,7 +2224,7 @@
 #define X86IM_GEN_CODE_FSCALE                           0x0000FDD9
 #define X86IM_GEN_FSCALE( io, mode )                    x86im_gen( io, mode, X86IM_GEN_CODE_FSCALE, 0, 0, 0, 0 )
 
-#define X86IM_GEN_CODE_FSIN                             0x0000FED9        
+#define X86IM_GEN_CODE_FSIN                             0x0000FED9
 #define X86IM_GEN_FSIN( io, mode )                      x86im_gen( io, mode, X86IM_GEN_CODE_FSIN, 0, 0, 0, 0 )
 
 #define X86IM_GEN_CODE_FSINCOS                          0x0000FBD9
@@ -2239,37 +2239,37 @@
 #define X86IM_GEN_CODE_FNSTENV                          0x000030D9
 #define X86IM_GEN_FNSTENV( io, mode, mm )               x86im_gen( io, mode, X86IM_GEN_CODE_FNSTENV, 0, mm, 0 )
 
-#define X86IM_GEN_CODE_FTST                             0x0000E4D9          
+#define X86IM_GEN_CODE_FTST                             0x0000E4D9
 #define X86IM_GEN_FTST( io, mode )                      x86im_gen( io, mode, X86IM_GEN_CODE_FTST, 0, 0, 0, 0 )
 
-#define X86IM_GEN_CODE_FUCOM_STX                        0x0000E0DD    
+#define X86IM_GEN_CODE_FUCOM_STX                        0x0000E0DD
 #define X86IM_GEN_FUCOM_STX( io, mode, stx )            x86im_gen( io, mode, X86IM_GEN_CODE_FUCOM_STX, X86IM_GEN_STX( stx ), 0, 0, 0 )
 
-#define X86IM_GEN_CODE_FUCOMP_STX                       0x0000E8DD   
+#define X86IM_GEN_CODE_FUCOMP_STX                       0x0000E8DD
 #define X86IM_GEN_FUCOMP_STX( io, mode, stx )           x86im_gen( io, mode, X86IM_GEN_CODE_FUCOMP_STX, X86IM_GEN_STX( stx ), 0, 0, 0 )
 
-#define X86IM_GEN_CODE_FUCOMPP                          0x0000E9DA       
+#define X86IM_GEN_CODE_FUCOMPP                          0x0000E9DA
 #define X86IM_GEN_FUCOMPP( io, mode )                   x86im_gen( io, mode, X86IM_GEN_CODE_FUCOMPP, 0, 0, 0, 0 )
 
 #define X86IM_GEN_CODE_FUCOMI_ST0_STX                   0x0000E8DB
 #define X86IM_GEN_FUCOMI_ST0_STX( io, mode, stx )       x86im_gen( io, mode, X86IM_GEN_CODE_FUCOMI_ST0_STX, X86IM_GEN_ST0_STX( stx ), 0, 0, 0 )
 
-#define X86IM_GEN_CODE_FUCOMIP                          0x0000E8DF       
+#define X86IM_GEN_CODE_FUCOMIP                          0x0000E8DF
 #define X86IM_GEN_FUCOMIP( io, mode, stx )              x86im_gen( io, mode, X86IM_GEN_CODE_FUCOMIP, X86IM_GEN_STX( stx ), 0, 0, 0 )
 
-#define X86IM_GEN_CODE_FXAM                             0x0000E5D9         
+#define X86IM_GEN_CODE_FXAM                             0x0000E5D9
 #define X86IM_GEN_FXAM( io, mode )                      x86im_gen( io, mode, X86IM_GEN_CODE_FXAM, 0, 0, 0, 0 )
 
-#define X86IM_GEN_CODE_FXCH                             0x0000C8D9                            
+#define X86IM_GEN_CODE_FXCH                             0x0000C8D9
 #define X86IM_GEN_FXCH( io, mode, stx )                 x86im_gen( io, mode, X86IM_GEN_CODE_FXCH, X86IM_GEN_STX( stx ), 0, 0, 0 )
 
-#define X86IM_GEN_CODE_FXTRACT                          0x0000F4D9                         
+#define X86IM_GEN_CODE_FXTRACT                          0x0000F4D9
 #define X86IM_GEN_FXTRACT( io, mode )                   x86im_gen( io, mode, X86IM_GEN_CODE_FXTRACT, 0, 0, 0, 0 )
 
-#define X86IM_GEN_CODE_FYL2X                            0x0000F1D9                          
+#define X86IM_GEN_CODE_FYL2X                            0x0000F1D9
 #define X86IM_GEN_FYL2X( io, mode )                     x86im_gen( io, mode, X86IM_GEN_CODE_FYL2X, 0, 0, 0, 0 )
 
-#define X86IM_GEN_CODE_FYL2XP1                          0x0000F9D9                      
+#define X86IM_GEN_CODE_FYL2XP1                          0x0000F9D9
 #define X86IM_GEN_FYL2XP1( io, mode )                   x86im_gen( io, mode, X86IM_GEN_CODE_FYL2XP1, 0, 0, 0, 0 )
 
 #define X86IM_GEN_CODE_FXSAVE                           0x0000AE0F
@@ -2278,7 +2278,7 @@
 #define X86IM_GEN_CODE_FXRSTOR                          0x0008AE0F
 #define X86IM_GEN_FXRSTOR( io, mode, mm )               x86im_gen( io, mode, X86IM_GEN_CODE_FXRSTOR, 0, mm, 0 )
 
-#define X86IM_GEN_CODE_FFREEP                           0x0000C0DF                          
+#define X86IM_GEN_CODE_FFREEP                           0x0000C0DF
 #define X86IM_GEN_FFREEP( io, mode, stx )               x86im_gen( io, mode, X86IM_GEN_CODE_FFREEP, X86IM_GEN_STX( stx ), 0, 0, 0 )
 
 #define X86IM_GEN_CODE_FXCH4                            0x0000C8DD
@@ -2318,10 +2318,10 @@
 #define X86IM_GEN_FADD_ST0_STX( io, mode, stx )         x86im_gen( io, mode, X86IM_GEN_CODE_FADD_ST0_STX, X86IM_GEN_ST0_STX( stx ), 0, 0, 0 )
 #define X86IM_GEN_FADD_STX_ST0( io, mode, stx )         x86im_gen( io, mode, X86IM_GEN_CODE_FADD_STX_ST0, X86IM_GEN_STX_ST0( stx ), 0, 0, 0 )
 
-#define X86IM_GEN_CODE_FCOM_MM32FP                      0x000010D8                  
-#define X86IM_GEN_CODE_FCOM_MM64FP                      0x000010DC                  
-#define X86IM_GEN_CODE_FCOM_STX                         0x0000D0D8                
-#define X86IM_GEN_CODE_FCOM2_STX_ST0                    0x0000D0DC                      
+#define X86IM_GEN_CODE_FCOM_MM32FP                      0x000010D8
+#define X86IM_GEN_CODE_FCOM_MM64FP                      0x000010DC
+#define X86IM_GEN_CODE_FCOM_STX                         0x0000D0D8
+#define X86IM_GEN_CODE_FCOM2_STX_ST0                    0x0000D0DC
 
 #define X86IM_GEN_FCOM_MM32FP( io, mode, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_FCOM_MM32FP, 0, mm, 0 )
 #define X86IM_GEN_FCOM_MM64FP( io, mode, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_FCOM_MM64FP, 0, mm, 0 )
@@ -2340,9 +2340,9 @@
 #define X86IM_GEN_FCOMP3( io, mode, stx )               x86im_gen( io, mode, X86IM_GEN_CODE_FCOMP3, X86IM_GEN_STX( stx ), 0, 0, 0 )
 #define X86IM_GEN_FCOMP5( io, mode, stx )               x86im_gen( io, mode, X86IM_GEN_CODE_FCOMP5, X86IM_GEN_STX( stx ), 0, 0, 0 )
 
-#define X86IM_GEN_CODE_FDIV_MM32FP                      0x000030D8                
-#define X86IM_GEN_CODE_FDIV_MM64FP                      0x000030DC           
-#define X86IM_GEN_CODE_FDIV_ST0_STX                     0x0000F0D8              
+#define X86IM_GEN_CODE_FDIV_MM32FP                      0x000030D8
+#define X86IM_GEN_CODE_FDIV_MM64FP                      0x000030DC
+#define X86IM_GEN_CODE_FDIV_ST0_STX                     0x0000F0D8
 #define X86IM_GEN_CODE_FDIV_STX_ST0                     0x0000F8DC
 
 #define X86IM_GEN_FDIV_MM32FP( io, mode, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_FDIV_MM32FP, 0, mm, 0 )
@@ -2350,24 +2350,24 @@
 #define X86IM_GEN_FDIV_ST0_STX( io, mode, stx )         x86im_gen( io, mode, X86IM_GEN_CODE_FDIV_ST0_STX, X86IM_GEN_ST0_STX( stx ), 0, 0, 0 )
 #define X86IM_GEN_FDIV_STX_ST0( io, mode, stx )         x86im_gen( io, mode, X86IM_GEN_CODE_FDIV_STX_ST0, X86IM_GEN_STX_ST0( stx ), 0, 0, 0 )
 
-#define X86IM_GEN_CODE_FDIVR_MM32FP                     0x000038D8                    
-#define X86IM_GEN_CODE_FDIVR_MM64FP                     0x000038DC             
-#define X86IM_GEN_CODE_FDIVR_ST0_STX                    0x0000F8D8            
-#define X86IM_GEN_CODE_FDIVR_STX_ST0                    0x0000F0DC            
+#define X86IM_GEN_CODE_FDIVR_MM32FP                     0x000038D8
+#define X86IM_GEN_CODE_FDIVR_MM64FP                     0x000038DC
+#define X86IM_GEN_CODE_FDIVR_ST0_STX                    0x0000F8D8
+#define X86IM_GEN_CODE_FDIVR_STX_ST0                    0x0000F0DC
 
-#define X86IM_GEN_FDIVR_MM32FP( io, mode, mm )          x86im_gen( io, mode, X86IM_GEN_CODE_FDIVR_MM32FP, 0, mm, 0 )                    
+#define X86IM_GEN_FDIVR_MM32FP( io, mode, mm )          x86im_gen( io, mode, X86IM_GEN_CODE_FDIVR_MM32FP, 0, mm, 0 )
 #define X86IM_GEN_FDIVR_MM64FP( io, mode, mm )          x86im_gen( io, mode, X86IM_GEN_CODE_FDIVR_MM64FP, 0, mm, 0 )
-#define X86IM_GEN_FDIVR_ST0_STX( io, mode, stx )        x86im_gen( io, mode, X86IM_GEN_CODE_FDIVR_ST0_STX, X86IM_GEN_ST0_STX( stx ), 0, 0, 0 )               
+#define X86IM_GEN_FDIVR_ST0_STX( io, mode, stx )        x86im_gen( io, mode, X86IM_GEN_CODE_FDIVR_ST0_STX, X86IM_GEN_ST0_STX( stx ), 0, 0, 0 )
 #define X86IM_GEN_FDIVR_STX_ST0( io, mode, stx )        x86im_gen( io, mode, X86IM_GEN_CODE_FDIVR_STX_ST0, X86IM_GEN_STX_ST0( stx ), 0, 0, 0 )
-    
-#define X86IM_GEN_CODE_FIADD_MM16I                      0x000000DE           
-#define X86IM_GEN_CODE_FIADD_MM32I                      0x000000DA           
+
+#define X86IM_GEN_CODE_FIADD_MM16I                      0x000000DE
+#define X86IM_GEN_CODE_FIADD_MM32I                      0x000000DA
 
 #define X86IM_GEN_FIADD_MM16I( io, mode, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_FIADD_MM16I, 0, mm, 0 )
 #define X86IM_GEN_FIADD_MM32I( io, mode, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_FIADD_MM32I, 0, mm, 0 )
 
-#define X86IM_GEN_CODE_FICOM_MM16I                      0x000010DE                
-#define X86IM_GEN_CODE_FICOM_MM32I                      0x000010DA            
+#define X86IM_GEN_CODE_FICOM_MM16I                      0x000010DE
+#define X86IM_GEN_CODE_FICOM_MM32I                      0x000010DA
 
 #define X86IM_GEN_FICOM_MM16I( io, mode, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_FICOM_MM16I, 0, mm, 0 )
 #define X86IM_GEN_FICOM_MM32I( io, mode, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_FICOM_MM32I, 0, mm, 0 )
@@ -2378,23 +2378,23 @@
 #define X86IM_GEN_FICOMP_MM16I( io, mode, mm )          x86im_gen( io, mode, X86IM_GEN_CODE_FICOMP_MM16I, 0, mm, 0 )
 #define X86IM_GEN_FICOMP_MM32I( io, mode, mm )          x86im_gen( io, mode, X86IM_GEN_CODE_FICOMP_MM32I, 0, mm, 0 )
 
-#define X86IM_GEN_CODE_FIDIV_MM16I                      0x000030DE              
-#define X86IM_GEN_CODE_FIDIV_MM32I                      0x000030DA            
+#define X86IM_GEN_CODE_FIDIV_MM16I                      0x000030DE
+#define X86IM_GEN_CODE_FIDIV_MM32I                      0x000030DA
 
 #define X86IM_GEN_FIDIV_MM16I( io, mode, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_FIDIV_MM16I, 0, mm, 0 )
 #define X86IM_GEN_FIDIV_MM32I( io, mode, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_FIDIV_MM32I, 0, mm, 0 )
 
-#define X86IM_GEN_CODE_FIDIVR_MM16I                     0x000038DE          
-#define X86IM_GEN_CODE_FIDIVR_MM32I                     0x000038DA         
+#define X86IM_GEN_CODE_FIDIVR_MM16I                     0x000038DE
+#define X86IM_GEN_CODE_FIDIVR_MM32I                     0x000038DA
 
-#define X86IM_GEN_FIDIVR_MM16I( io, mode, mm )          x86im_gen( io, mode, X86IM_GEN_CODE_FIDIVR_MM16I, 0, mm, 0 )                    
+#define X86IM_GEN_FIDIVR_MM16I( io, mode, mm )          x86im_gen( io, mode, X86IM_GEN_CODE_FIDIVR_MM16I, 0, mm, 0 )
 #define X86IM_GEN_FIDIVR_MM32I( io, mode, mm )          x86im_gen( io, mode, X86IM_GEN_CODE_FIDIVR_MM32I, 0, mm, 0 )
 
 #define X86IM_GEN_CODE_FILD_MM16I                       0x000000DF
 #define X86IM_GEN_CODE_FILD_MM32I                       0x000000DB
 #define X86IM_GEN_CODE_FILD_MM64I                       0x000028DF
 
-#define X86IM_GEN_FILD_MM16I( io, mode, mm )            x86im_gen( io, mode, X86IM_GEN_CODE_FILD_MM16I, 0, mm, 0 )                
+#define X86IM_GEN_FILD_MM16I( io, mode, mm )            x86im_gen( io, mode, X86IM_GEN_CODE_FILD_MM16I, 0, mm, 0 )
 #define X86IM_GEN_FILD_MM32I( io, mode, mm )            x86im_gen( io, mode, X86IM_GEN_CODE_FILD_MM32I, 0, mm, 0 )
 #define X86IM_GEN_FILD_MM64I( io, mode, mm )            x86im_gen( io, mode, X86IM_GEN_CODE_FILD_MM64I, 0, mm, 0 )
 
@@ -2424,8 +2424,8 @@
 #define X86IM_GEN_FISUB_MM16I( io, mode, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_FISUB_MM16I, 0, mm, 0 )
 #define X86IM_GEN_FISUB_MM32I( io, mode, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_FISUB_MM32I, 0, mm, 0 )
 
-#define X86IM_GEN_CODE_FISUBR_MM16I                     0x000028DE                   
-#define X86IM_GEN_CODE_FISUBR_MM32I                     0x000028DA                 
+#define X86IM_GEN_CODE_FISUBR_MM16I                     0x000028DE
+#define X86IM_GEN_CODE_FISUBR_MM32I                     0x000028DA
 
 #define X86IM_GEN_FISUBR_MM16I( io, mode, mm )          x86im_gen( io, mode, X86IM_GEN_CODE_FISUBR_MM16I, 0, mm, 0 )
 #define X86IM_GEN_FISUBR_MM32I( io, mode, mm )          x86im_gen( io, mode, X86IM_GEN_CODE_FISUBR_MM32I, 0, mm, 0 )
@@ -2520,48 +2520,48 @@
 
 // MMX
 
-#define X86IM_GEN_CODE_EMMS                                         0x0000770F                    
+#define X86IM_GEN_CODE_EMMS                                         0x0000770F
 #define X86IM_GEN_EMMS( io, mode )                                  x86im_gen( io, mode, X86IM_GEN_CODE_EMMS, 0, 0, 0, 0 )
 
-#define X86IM_GEN_CODE_MOVD_MMXRG_RG                                0x00C06E0F   
-#define X86IM_GEN_CODE_MOVD_MMXRG_MM                                0x00006E0F   
-#define X86IM_GEN_CODE_MOVD_RG_MMXRG                                0x00C07E0F                      
-#define X86IM_GEN_CODE_MOVD_MM_MMXRG                                0x00007E0F   
+#define X86IM_GEN_CODE_MOVD_MMXRG_RG                                0x00C06E0F
+#define X86IM_GEN_CODE_MOVD_MMXRG_MM                                0x00006E0F
+#define X86IM_GEN_CODE_MOVD_RG_MMXRG                                0x00C07E0F
+#define X86IM_GEN_CODE_MOVD_MM_MMXRG                                0x00007E0F
 
 #define X86IM_GEN_MOVD_MMXRG_RG( io, mode, mxr1, r2 )               x86im_gen( io, mode, X86IM_GEN_CODE_MOVD_MMXRG_RG, X86IM_GEN_MXR1_R2( mxr1, r2 ), 0, 0, 0 )
 #define X86IM_GEN_MOVD_MMXRG_MM( io, mode, mxrg, mm )               x86im_gen( io, mode, X86IM_GEN_CODE_MOVD_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
-#define X86IM_GEN_MOVD_RG_MMXRG( io, mode, r1, mxr2 )               x86im_gen( io, mode, X86IM_GEN_CODE_MOVD_RG_MMXRG, X86IM_GEN_R1_MXR2( r1, mxr2 ), 0 , 0, 0 )                  
+#define X86IM_GEN_MOVD_RG_MMXRG( io, mode, r1, mxr2 )               x86im_gen( io, mode, X86IM_GEN_CODE_MOVD_RG_MMXRG, X86IM_GEN_R1_MXR2( r1, mxr2 ), 0 , 0, 0 )
 #define X86IM_GEN_MOVD_MM_MMXRG( io, mode, mm, mxrg )               x86im_gen( io, mode, X86IM_GEN_CODE_MOVD_MM_MMXRG, X86IM_GEN_MM_MXRG( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVQ_MMXR1_MMXR2                             0x00C06F0F  
-#define X86IM_GEN_CODE_MOVQ_MMXRG_MM                                0x00006F0F  
-#define X86IM_GEN_CODE_MOVQ_MMXR2_MMXR1                             0x00C07F0F            
-#define X86IM_GEN_CODE_MOVQ_MM_MMXRG                                0x00007F0F  
+#define X86IM_GEN_CODE_MOVQ_MMXR1_MMXR2                             0x00C06F0F
+#define X86IM_GEN_CODE_MOVQ_MMXRG_MM                                0x00006F0F
+#define X86IM_GEN_CODE_MOVQ_MMXR2_MMXR1                             0x00C07F0F
+#define X86IM_GEN_CODE_MOVQ_MM_MMXRG                                0x00007F0F
 
 #define X86IM_GEN_MOVQ_MMXR1_MMXR2( io, mode, mxr1, mxr2 )          x86im_gen( io, mode, X86IM_GEN_CODE_MOVQ_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_MOVQ_MMXRG_MM( io, mode, mxrg, mm )               x86im_gen( io, mode, X86IM_GEN_CODE_MOVQ_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 #define X86IM_GEN_MOVQ_MMXR2_MMXR1( io, mode, mxr1, mxr2 )          x86im_gen( io, mode, X86IM_GEN_CODE_MOVQ_MMXR2_MMXR1, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_MOVQ_MM_MMXRG( io, mode, mm, mxrg )               x86im_gen( io, mode, X86IM_GEN_CODE_MOVQ_MM_MMXRG, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PACKSSDW_MMXR1_MMXR2                         0x00C06B0F   
-#define X86IM_GEN_CODE_PACKSSDW_MMXRG_MM                            0x00006B0F   
+#define X86IM_GEN_CODE_PACKSSDW_MMXR1_MMXR2                         0x00C06B0F
+#define X86IM_GEN_CODE_PACKSSDW_MMXRG_MM                            0x00006B0F
 
 #define X86IM_GEN_PACKSSDW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )      x86im_gen( io, mode, X86IM_GEN_CODE_PACKSSDW_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PACKSSDW_MMXRG_MM( io, mode, mxrg, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_PACKSSDW_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PACKSSWB_MMXR1_MMXR2                         0x00C0630F    
-#define X86IM_GEN_CODE_PACKSSWB_MMXRG_MM                            0x0000630F    
+#define X86IM_GEN_CODE_PACKSSWB_MMXR1_MMXR2                         0x00C0630F
+#define X86IM_GEN_CODE_PACKSSWB_MMXRG_MM                            0x0000630F
 
 #define X86IM_GEN_PACKSSWB_MMXR1_MMXR2( io, mode, mxr1, mxr2 )      x86im_gen( io, mode, X86IM_GEN_CODE_PACKSSWB_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PACKSSWB_MMXRG_MM( io, mode, mxrg, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_PACKSSWB_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PACKUSWB_MMXR1_MMXR2                         0x00C0670F    
-#define X86IM_GEN_CODE_PACKUSWB_MMXRG_MM                            0x0000670F    
+#define X86IM_GEN_CODE_PACKUSWB_MMXR1_MMXR2                         0x00C0670F
+#define X86IM_GEN_CODE_PACKUSWB_MMXRG_MM                            0x0000670F
 
 #define X86IM_GEN_PACKUSWB_MMXR1_MMXR2( io, mode, mxr1, mxr2 )      x86im_gen( io, mode, X86IM_GEN_CODE_PACKUSWB_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PACKUSWB_MMXRG_MM( io, mode, mxrg, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_PACKUSWB_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PADDX_MMXR1_MMXR2                            0x00C0FC0F  
+#define X86IM_GEN_CODE_PADDX_MMXR1_MMXR2                            0x00C0FC0F
 #define X86IM_GEN_CODE_PADDX_MMXRG_MM                               0x0000FC0F
 
 #define X86IM_GEN_PADDB_MMXR1_MMXR2( io, mode, mxr1, mxr2 )         x86im_gen( io, mode|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PADDX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
@@ -2571,36 +2571,36 @@
 #define X86IM_GEN_PADDD_MMXR1_MMXR2( io, mode, mxr1, mxr2 )         x86im_gen( io, mode|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PADDX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PADDD_MMXRG_MM( io, mode, mxrg, mm  )             x86im_gen( io, mode|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PADDX_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PADDSX_MMXR1_MMXR2                           0x00C0EC0F  
-#define X86IM_GEN_CODE_PADDSX_MMXRG_MM                              0x0000EC0F      
+#define X86IM_GEN_CODE_PADDSX_MMXR1_MMXR2                           0x00C0EC0F
+#define X86IM_GEN_CODE_PADDSX_MMXRG_MM                              0x0000EC0F
 
 #define X86IM_GEN_PADDSB_MMXR1_MMXR2( io, mode, mxr1, mxr2 )        x86im_gen( io, mode|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PADDSX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PADDSB_MMXRG_MM( io, mode, mxrg, mm )             x86im_gen( io, mode|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PADDSX_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 #define X86IM_GEN_PADDSW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )        x86im_gen( io, mode|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PADDSX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PADDSW_MMXRG_MM( io, mode, mxrg, mm )             x86im_gen( io, mode|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PADDSX_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PADDUSB_MMXR1_MMXR2                          0x00C0DC0F   
-#define X86IM_GEN_CODE_PADDUSB_MMXRG_MM                             0x0000DC0F   
+#define X86IM_GEN_CODE_PADDUSB_MMXR1_MMXR2                          0x00C0DC0F
+#define X86IM_GEN_CODE_PADDUSB_MMXRG_MM                             0x0000DC0F
 
 #define X86IM_GEN_PADDUSB_MMXR1_MMXR2( io, mode, mxr1, mxr2 )       x86im_gen( io, mode|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PADDUSB_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PADDUSB_MMXRG_MM( io, mode, mxrg, mm )            x86im_gen( io, mode|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PADDUSB_MMXR1_MMXR2, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
-#define X86IM_GEN_PADDUSW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )       x86im_gen( io, mode|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PADDUSB_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 ) 
+#define X86IM_GEN_PADDUSW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )       x86im_gen( io, mode|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PADDUSB_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PADDUSW_MMXRG_MM( io, mode, mxrg, mm )            x86im_gen( io, mode|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PADDUSB_MMXR1_MMXR2, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PAND_MMXR1_MMXR2                             0x00C0DB0F    
-#define X86IM_GEN_CODE_PAND_MMXRG_MM                                0x0000DB0F    
+#define X86IM_GEN_CODE_PAND_MMXR1_MMXR2                             0x00C0DB0F
+#define X86IM_GEN_CODE_PAND_MMXRG_MM                                0x0000DB0F
 
-#define X86IM_GEN_PAND_MMXR1_MMXR2( io, mode, mxr1, mxr2 )          x86im_gen( io, mode, X86IM_GEN_CODE_PAND_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )       
+#define X86IM_GEN_PAND_MMXR1_MMXR2( io, mode, mxr1, mxr2 )          x86im_gen( io, mode, X86IM_GEN_CODE_PAND_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PAND_MMXRG_MM( io, mode, mxrg, mm )               x86im_gen( io, mode, X86IM_GEN_CODE_PAND_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PANDN_MMXR1_MMXR2                            0x00C0DF0F      
-#define X86IM_GEN_CODE_PANDN_MMXRG_MM                               0x0000DF0F   
+#define X86IM_GEN_CODE_PANDN_MMXR1_MMXR2                            0x00C0DF0F
+#define X86IM_GEN_CODE_PANDN_MMXRG_MM                               0x0000DF0F
 
 #define X86IM_GEN_PANDN_MMXR1_MMXR2( io, mode, mxr1, mxr2 )         x86im_gen( io, mode, X86IM_GEN_CODE_PANDN_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PANDN_MMXRG_MM( io, mode, mxrg, mm )              x86im_gen( io, mode, X86IM_GEN_CODE_PANDN_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PCMPEQX_MMXR1_MMXR2                          0x00C0740F              
-#define X86IM_GEN_CODE_PCMPEQX_MMXRG_MM                             0x0000740F          
+#define X86IM_GEN_CODE_PCMPEQX_MMXR1_MMXR2                          0x00C0740F
+#define X86IM_GEN_CODE_PCMPEQX_MMXRG_MM                             0x0000740F
 
 #define X86IM_GEN_PCMPEQB_MMXR1_MMXR2( io, mode, mxr1, mxr2 )       x86im_gen( io, mode|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PCMPEQX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PCMPEQB_MMXRG_MM( io, mode, mxrg, mm )            x86im_gen( io, mode|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PCMPEQX_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
@@ -2609,8 +2609,8 @@
 #define X86IM_GEN_PCMPEQD_MMXR1_MMXR2( io, mode, mxr1, mxr2 )       x86im_gen( io, mode|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PCMPEQX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PCMPEQD_MMXRG_MM( io, mode, mxrg, mm )            x86im_gen( io, mode|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PCMPEQX_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PCMPGTX_MMXR1_MMXR2                          0x00C0640F    
-#define X86IM_GEN_CODE_PCMPGTX_MMXRG_MM                             0x0000640F    
+#define X86IM_GEN_CODE_PCMPGTX_MMXR1_MMXR2                          0x00C0640F
+#define X86IM_GEN_CODE_PCMPGTX_MMXRG_MM                             0x0000640F
 
 #define X86IM_GEN_PCMPGTB_MMXR1_MMXR2( io, mode, mxr1, mxr2 )       x86im_gen( io, mode|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PCMPGTX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PCMPGTB_MMXRG_MM( io, mode, mxrg, mm )            x86im_gen( io, mode|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PCMPGTX_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
@@ -2619,96 +2619,96 @@
 #define X86IM_GEN_PCMPGTD_MMXR1_MMXR2( io, mode, mxr1, mxr2 )       x86im_gen( io, mode|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PCMPGTX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PCMPGTD_MMXRG_MM( io, mode, mxrg, mm )            x86im_gen( io, mode|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PCMPGTX_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PMADDWD_MMXR1_MMXR2                          0x00C0F50F      
-#define X86IM_GEN_CODE_PMADDWD_MMXRG_MM                             0x0000F50F    
+#define X86IM_GEN_CODE_PMADDWD_MMXR1_MMXR2                          0x00C0F50F
+#define X86IM_GEN_CODE_PMADDWD_MMXRG_MM                             0x0000F50F
 
 #define X86IM_GEN_PMADDWD_MMXR1_MMXR2( io, mode, mxr1, mxr2 )       x86im_gen( io, mode, X86IM_GEN_CODE_PMADDWD_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PMADDWD_MMXRG_MM( io, mode, mxrg, mm )            x86im_gen( io, mode, X86IM_GEN_CODE_PMADDWD_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PMULHW_MMXR1_MMXR2                           0x00C0E50F  
-#define X86IM_GEN_CODE_PMULHW_MMXRG_MM                              0x0000E50F  
+#define X86IM_GEN_CODE_PMULHW_MMXR1_MMXR2                           0x00C0E50F
+#define X86IM_GEN_CODE_PMULHW_MMXRG_MM                              0x0000E50F
 
 #define X86IM_GEN_PMULHW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )        x86im_gen( io, mode, X86IM_GEN_CODE_PMULHW_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PMULHW_MMXRG_MM( io, mode, mxrg, mm )             x86im_gen( io, mode, X86IM_GEN_CODE_PMULHW_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PMULLW_MMXR1_MMXR2                           0x00C0D50F         
-#define X86IM_GEN_CODE_PMULLW_MMXRG_MM                              0x0000D50F    
+#define X86IM_GEN_CODE_PMULLW_MMXR1_MMXR2                           0x00C0D50F
+#define X86IM_GEN_CODE_PMULLW_MMXRG_MM                              0x0000D50F
 
 #define X86IM_GEN_PMULLW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )        x86im_gen( io, mode, X86IM_GEN_CODE_PMULLW_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PMULLW_MMXRG_MM( io, mode, mxrg, mm )             x86im_gen( io, mode, X86IM_GEN_CODE_PMULLW_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_POR_MMXR1_MMXR2                              0x00C0EB0F         
-#define X86IM_GEN_CODE_POR_MMXRG_MM                                 0x0000EB0F    
+#define X86IM_GEN_CODE_POR_MMXR1_MMXR2                              0x00C0EB0F
+#define X86IM_GEN_CODE_POR_MMXRG_MM                                 0x0000EB0F
 
 #define X86IM_GEN_POR_MMXR1_MMXR2( io, mode, mxr1, mxr2 )           x86im_gen( io, mode, X86IM_GEN_CODE_POR_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_POR_MMXRG_MM( io, mode, mxrg, mm )                x86im_gen( io, mode, X86IM_GEN_CODE_POR_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PSLLW_MMXR1_MMXR2                            0x00C0F10F   
-#define X86IM_GEN_CODE_PSLLW_MMXRG_MM                               0x0000F10F   
-#define X86IM_GEN_CODE_PSLLW_MMXRG_IMM8                             0x0030710F   
+#define X86IM_GEN_CODE_PSLLW_MMXR1_MMXR2                            0x00C0F10F
+#define X86IM_GEN_CODE_PSLLW_MMXRG_MM                               0x0000F10F
+#define X86IM_GEN_CODE_PSLLW_MMXRG_IMM8                             0x0030710F
 
 #define X86IM_GEN_PSLLW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )         x86im_gen( io, mode, X86IM_GEN_CODE_PSLLW_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSLLW_MMXRG_MM( io, mode, mxrg, mm )              x86im_gen( io, mode, X86IM_GEN_CODE_PSLLW_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 #define X86IM_GEN_PSLLW_MMXRG_IMM8( io, mode, mxrg, imm8 )          x86im_gen( io, mode, X86IM_GEN_CODE_PSLLW_MMXRG_IMM8, mxrg, 0, 0, imm8 )
 
-#define X86IM_GEN_CODE_PSLLD_MMXR1_MMXR2                            0x00C0F20F    
-#define X86IM_GEN_CODE_PSLLD_MMXRG_MM                               0x0000F20F    
-#define X86IM_GEN_CODE_PSLLD_MMXRG_IMM8                             0x0030720F    
+#define X86IM_GEN_CODE_PSLLD_MMXR1_MMXR2                            0x00C0F20F
+#define X86IM_GEN_CODE_PSLLD_MMXRG_MM                               0x0000F20F
+#define X86IM_GEN_CODE_PSLLD_MMXRG_IMM8                             0x0030720F
 
 #define X86IM_GEN_PSLLD_MMXR1_MMXR2( io, mode, mxr1, mxr2 )         x86im_gen( io, mode, X86IM_GEN_CODE_PSLLD_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSLLD_MMXRG_MM( io, mode, mxrg, mm )              x86im_gen( io, mode, X86IM_GEN_CODE_PSLLD_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 #define X86IM_GEN_PSLLD_MMXRG_IMM8( io, mode, mxrg, imm8 )          x86im_gen( io, mode, X86IM_GEN_CODE_PSLLD_MMXRG_IMM8, mxrg, 0, 0, imm8 )
 
-#define X86IM_GEN_CODE_PSLLQ_MMXR1_MMXR2                            0x00C0F30F    
-#define X86IM_GEN_CODE_PSLLQ_MMXRG_MM                               0x0000F30F    
-#define X86IM_GEN_CODE_PSLLQ_MMXRG_IMM8                             0x00F0730F    
-                          
+#define X86IM_GEN_CODE_PSLLQ_MMXR1_MMXR2                            0x00C0F30F
+#define X86IM_GEN_CODE_PSLLQ_MMXRG_MM                               0x0000F30F
+#define X86IM_GEN_CODE_PSLLQ_MMXRG_IMM8                             0x00F0730F
+
 #define X86IM_GEN_PSLLQ_MMXR1_MMXR2( io, mode, mxr1, mxr2 )         x86im_gen( io, mode, X86IM_GEN_CODE_PSLLQ_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSLLQ_MMXRG_MM( io, mode, mxrg, mm )              x86im_gen( io, mode, X86IM_GEN_CODE_PSLLQ_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 #define X86IM_GEN_PSLLQ_MMXRG_IMM8( io, mode, mxrg, imm8 )          x86im_gen( io, mode, X86IM_GEN_CODE_PSLLQ_MMXRG_IMM8, mxrg, 0, 0, imm8 )
 
-#define X86IM_GEN_CODE_PSRAW_MMXR1_MMXR2                            0x00C0E10F    
-#define X86IM_GEN_CODE_PSRAW_MMXRG_MM                               0x0000E10F                 
-#define X86IM_GEN_CODE_PSRAW_MMXRG_IMM8                             0x0020710F    
+#define X86IM_GEN_CODE_PSRAW_MMXR1_MMXR2                            0x00C0E10F
+#define X86IM_GEN_CODE_PSRAW_MMXRG_MM                               0x0000E10F
+#define X86IM_GEN_CODE_PSRAW_MMXRG_IMM8                             0x0020710F
 
 #define X86IM_GEN_PSRAW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )         x86im_gen( io, mode, X86IM_GEN_CODE_PSRAW_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSRAW_MMXRG_MM( io, mode, mxrg, mm )              x86im_gen( io, mode, X86IM_GEN_CODE_PSRAW_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 #define X86IM_GEN_PSRAW_MMXRG_IMM8( io, mode, mxrg, imm8 )          x86im_gen( io, mode, X86IM_GEN_CODE_PSRAW_MMXRG_IMM8, mxrg, 0, 0, imm8 )
 
-#define X86IM_GEN_CODE_PSRAD_MMXR1_MMXR2                            0x00C0E20F    
-#define X86IM_GEN_CODE_PSRAD_MMXRG_MM                               0x0000E20F    
-#define X86IM_GEN_CODE_PSRAD_MMXRG_IMM8                             0x0020720F    
-             
+#define X86IM_GEN_CODE_PSRAD_MMXR1_MMXR2                            0x00C0E20F
+#define X86IM_GEN_CODE_PSRAD_MMXRG_MM                               0x0000E20F
+#define X86IM_GEN_CODE_PSRAD_MMXRG_IMM8                             0x0020720F
+
 #define X86IM_GEN_PSRAD_MMXR1_MMXR2( io, mode, mxr1, mxr2 )         x86im_gen( io, mode, X86IM_GEN_CODE_PSRAD_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSRAD_MMXRG_MM( io, mode, mxrg, mm )              x86im_gen( io, mode, X86IM_GEN_CODE_PSRAD_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 #define X86IM_GEN_PSRAD_MMXRG_IMM8( io, mode, mxrg, imm8 )          x86im_gen( io, mode, X86IM_GEN_CODE_PSRAD_MMXRG_IMM8, mxrg, 0, 0, imm8 )
 
-#define X86IM_GEN_CODE_PSRLW_MMXR1_MMXR2                            0x00C0D10F    
-#define X86IM_GEN_CODE_PSRLW_MMXRG_MM                               0x0000D10F    
-#define X86IM_GEN_CODE_PSRLW_MMXRG_IMM8                             0x0010710F    
+#define X86IM_GEN_CODE_PSRLW_MMXR1_MMXR2                            0x00C0D10F
+#define X86IM_GEN_CODE_PSRLW_MMXRG_MM                               0x0000D10F
+#define X86IM_GEN_CODE_PSRLW_MMXRG_IMM8                             0x0010710F
 
 #define X86IM_GEN_PSRLW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )         x86im_gen( io, mode, X86IM_GEN_CODE_PSRLW_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSRLW_MMXRG_MM( io, mode, mxrg, mm )              x86im_gen( io, mode, X86IM_GEN_CODE_PSRLW_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 #define X86IM_GEN_PSRLW_MMXRG_IMM8( io, mode, mxrg, imm8 )          x86im_gen( io, mode, X86IM_GEN_CODE_PSRLW_MMXRG_IMM8, mxrg, 0, 0, imm8 )
 
-#define X86IM_GEN_CODE_PSRLD_MMXR1_MMXR2                            0x00C0D20F    
-#define X86IM_GEN_CODE_PSRLD_MMXRG_MM                               0x0000D20F    
-#define X86IM_GEN_CODE_PSRLD_MMXRG_IMM8                             0x0010720F    
+#define X86IM_GEN_CODE_PSRLD_MMXR1_MMXR2                            0x00C0D20F
+#define X86IM_GEN_CODE_PSRLD_MMXRG_MM                               0x0000D20F
+#define X86IM_GEN_CODE_PSRLD_MMXRG_IMM8                             0x0010720F
 
 #define X86IM_GEN_PSRLD_MMXR1_MMXR2( io, mode, mxr1, mxr2 )         x86im_gen( io, mode, X86IM_GEN_CODE_PSRLD_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSRLD_MMXRG_MM( io, mode, mxrg, mm )              x86im_gen( io, mode, X86IM_GEN_CODE_PSRLD_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 #define X86IM_GEN_PSRLD_MMXRG_IMM8( io, mode, mxrg, imm8 )          x86im_gen( io, mode, X86IM_GEN_CODE_PSRLD_MMXRG_IMM8, mxrg, 0, 0, imm8 )
 
-#define X86IM_GEN_CODE_PSRLQ_MMXR1_MMXR2                            0x00C0D30F    
-#define X86IM_GEN_CODE_PSRLQ_MMXRG_MM                               0x0000D30F    
-#define X86IM_GEN_CODE_PSRLQ_MMXRG_IMM8                             0x00D0730F    
+#define X86IM_GEN_CODE_PSRLQ_MMXR1_MMXR2                            0x00C0D30F
+#define X86IM_GEN_CODE_PSRLQ_MMXRG_MM                               0x0000D30F
+#define X86IM_GEN_CODE_PSRLQ_MMXRG_IMM8                             0x00D0730F
 
 #define X86IM_GEN_PSRLQ_MMXR1_MMXR2( io, mode, mxr1, mxr2 )         x86im_gen( io, mode, X86IM_GEN_CODE_PSRLQ_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSRLQ_MMXRG_MM( io, mode, mxrg, mm )              x86im_gen( io, mode, X86IM_GEN_CODE_PSRLQ_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 #define X86IM_GEN_PSRLQ_MMXRG_IMM8( io, mode, mxrg, imm8 )          x86im_gen( io, mode, X86IM_GEN_CODE_PSRLQ_MMXRG_IMM8, mxrg, 0, 0, imm8 )
 
-#define X86IM_GEN_CODE_PSUBX_MMXR1_MMXR2                            0x00C0F80F    
-#define X86IM_GEN_CODE_PSUBX_MMXRG_MM                               0x0000F80F    
+#define X86IM_GEN_CODE_PSUBX_MMXR1_MMXR2                            0x00C0F80F
+#define X86IM_GEN_CODE_PSUBX_MMXRG_MM                               0x0000F80F
 
 #define X86IM_GEN_PSUBB_MMXR1_MMXR2( io, mode, mxr1, mxr2 )         x86im_gen( io, mode|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PSUBX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSUBB_MMXRG_MM( io, mode, mxrg, mm )              x86im_gen( io, mode|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PSUBX_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
@@ -2717,24 +2717,24 @@
 #define X86IM_GEN_PSUBD_MMXR1_MMXR2( io, mode, mxr1, mxr2 )         x86im_gen( io, mode|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PSUBX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSUBD_MMXRG_MM( io, mode, mxrg, mm )              x86im_gen( io, mode|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PSUBX_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PSUBSX_MMXR1_MMXR2                           0x00C0E80F    
-#define X86IM_GEN_CODE_PSUBSX_MMXRG_MM                              0x0000E80F    
+#define X86IM_GEN_CODE_PSUBSX_MMXR1_MMXR2                           0x00C0E80F
+#define X86IM_GEN_CODE_PSUBSX_MMXRG_MM                              0x0000E80F
 
 #define X86IM_GEN_PSUBSB_MMXR1_MMXR2( io, mode, mxr1, mxr2 )        x86im_gen( io, mode|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PSUBSX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSUBSB_MMXRG_MM( io, mode, mxrg, mm )             x86im_gen( io, mode|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PSUBSX_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 #define X86IM_GEN_PSUBSW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )        x86im_gen( io, mode|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PSUBSX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSUBSW_MMXRG_MM( io, mode, mxrg, mm )             x86im_gen( io, mode|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PSUBSX_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PSUBUSX_MMXR1_MMXR2                          0x00C0D80F   
-#define X86IM_GEN_CODE_PSUBUSX_MMXRG_MM                             0x0000D80F   
+#define X86IM_GEN_CODE_PSUBUSX_MMXR1_MMXR2                          0x00C0D80F
+#define X86IM_GEN_CODE_PSUBUSX_MMXRG_MM                             0x0000D80F
 
 #define X86IM_GEN_PSUBUSB_MMXR1_MMXR2( io, mode, mxr1, mxr2 )       x86im_gen( io, mode|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PSUBUSX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSUBUSB_MMXRG_MM( io, mode, mxrg, mm )            x86im_gen( io, mode|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PSUBUSX_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 #define X86IM_GEN_PSUBUSW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )       x86im_gen( io, mode|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PSUBUSX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSUBUSW_MMXRG_MM( io, mode, mxrg, mm )            x86im_gen( io, mode|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PSUBUSX_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PUNPCKHXX_MMXR1_MMXR2                        0x00C0680F   
-#define X86IM_GEN_CODE_PUNPCKHXX_MMXRG_MM                           0x0000680F   
+#define X86IM_GEN_CODE_PUNPCKHXX_MMXR1_MMXR2                        0x00C0680F
+#define X86IM_GEN_CODE_PUNPCKHXX_MMXRG_MM                           0x0000680F
 
 #define X86IM_GEN_PUNPCKHBW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )     x86im_gen( io, mode|X86IM_GEN_OAT_PO_BW, X86IM_GEN_CODE_PUNPCKHXX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PUNPCKHBW_MMXRG_MM( io, mode, mxrg, mm )          x86im_gen( io, mode|X86IM_GEN_OAT_PO_BW, X86IM_GEN_CODE_PUNPCKHXX_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
@@ -2743,8 +2743,8 @@
 #define X86IM_GEN_PUNPCKHDQ_MMXR1_MMXR2( io, mode, mxr1, mxr2 )     x86im_gen( io, mode|X86IM_GEN_OAT_PO_DQ, X86IM_GEN_CODE_PUNPCKHXX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PUNPCKHDQ_MMXRG_MM( io, mode, mxrg, mm )          x86im_gen( io, mode|X86IM_GEN_OAT_PO_DQ, X86IM_GEN_CODE_PUNPCKHXX_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PUNPCKLXX_MMXR1_MMXR2                        0x00C0600F    
-#define X86IM_GEN_CODE_PUNPCKLXX_MMXRG_MM32                         0x0000600F    
+#define X86IM_GEN_CODE_PUNPCKLXX_MMXR1_MMXR2                        0x00C0600F
+#define X86IM_GEN_CODE_PUNPCKLXX_MMXRG_MM32                         0x0000600F
 
 #define X86IM_GEN_PUNPCKLBW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )     x86im_gen( io, mode|X86IM_GEN_OAT_PO_BW, X86IM_GEN_CODE_PUNPCKLXX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PUNPCKLBW_MMXRG_MM32( io, mode, mxrg, mm )        x86im_gen( io, mode|X86IM_GEN_OAT_PO_BW, X86IM_GEN_CODE_PUNPCKLXX_MMXRG_MM32, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
@@ -2753,13 +2753,13 @@
 #define X86IM_GEN_PUNPCKLDQ_MMXR1_MMXR2( io, mode, mxr1, mxr2 )     x86im_gen( io, mode|X86IM_GEN_OAT_PO_DQ, X86IM_GEN_CODE_PUNPCKLXX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PUNPCKLDQ_MMXRG_MM32( io, mode, mxrg, mm )        x86im_gen( io, mode|X86IM_GEN_OAT_PO_DQ, X86IM_GEN_CODE_PUNPCKLXX_MMXRG_MM32, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PXOR_MMXR1_MMXR2                             0x00C0EF0F    
-#define X86IM_GEN_CODE_PXOR_MMXRG_MM                                0x0000EF0F    
+#define X86IM_GEN_CODE_PXOR_MMXR1_MMXR2                             0x00C0EF0F
+#define X86IM_GEN_CODE_PXOR_MMXRG_MM                                0x0000EF0F
 
 #define X86IM_GEN_PXOR_MMXR1_MMXR2( io, mode, mxr1, mxr2 )          x86im_gen( io, mode, X86IM_GEN_CODE_PXOR_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PXOR_MMXRG_MM( io, mode, mxrg, mm )               x86im_gen( io, mode, X86IM_GEN_CODE_PXOR_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-// 3DNOW                                
+// 3DNOW
 
 #define X86IM_GEN_CODE_PI2FW_MMXR1_MMXR2                        0x0CC00F0F
 #define X86IM_GEN_CODE_PI2FW_MMXRG_MM                           0x0C000F0F
@@ -2767,16 +2767,16 @@
 #define X86IM_GEN_PI2FW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )     x86im_gen( io, mode, X86IM_GEN_CODE_PI2FW_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PI2FW_MMXRG_MM( io, mode, mxrg, mm )          x86im_gen( io, mode, X86IM_GEN_CODE_PI2FW_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PI2FD_MMXR1_MMXR2                        0x0DC00F0F    
-#define X86IM_GEN_CODE_PI2FD_MMXRG_MM                           0x0D000F0F 
+#define X86IM_GEN_CODE_PI2FD_MMXR1_MMXR2                        0x0DC00F0F
+#define X86IM_GEN_CODE_PI2FD_MMXRG_MM                           0x0D000F0F
 
 #define X86IM_GEN_PI2FD_MMXR1_MMXR2( io, mode, mxr1, mxr2 )     x86im_gen( io, mode, X86IM_GEN_CODE_PI2FD_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PI2FD_MMXRG_MM( io, mode, mxrg, mm )          x86im_gen( io, mode, X86IM_GEN_CODE_PI2FD_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PF2IW_MMXR1_MMXR2                        0x1CC00F0F    
-#define X86IM_GEN_CODE_PF2IW_MMXRG_MM                           0x1C000F0F 
+#define X86IM_GEN_CODE_PF2IW_MMXR1_MMXR2                        0x1CC00F0F
+#define X86IM_GEN_CODE_PF2IW_MMXRG_MM                           0x1C000F0F
 
-#define X86IM_GEN_PF2IW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )     x86im_gen( io, mode, X86IM_GEN_CODE_PF2IW_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )  
+#define X86IM_GEN_PF2IW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )     x86im_gen( io, mode, X86IM_GEN_CODE_PF2IW_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PF2IW_MMXRG_MM( io, mode, mxrg, mm )          x86im_gen( io, mode, X86IM_GEN_CODE_PF2IW_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
 #define X86IM_GEN_CODE_PF2ID_MMXR1_MMXR2                        0x1DC00F0F
@@ -2801,7 +2801,7 @@
 #define X86IM_GEN_CODE_PFCMPGE_MMXRG_MM                         0x90000F0F
 
 #define X86IM_GEN_PFCMPGE_MMXR1_MMXR2( io, mode, mxr1, mxr2 )   x86im_gen( io, mode, X86IM_GEN_CODE_PFCMPGE_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
-#define X86IM_GEN_PFCMPGE_MMXRG_MM( io, mode, mxrg, mm )        x86im_gen( io, mode, X86IM_GEN_CODE_PFCMPGE_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )    
+#define X86IM_GEN_PFCMPGE_MMXRG_MM( io, mode, mxrg, mm )        x86im_gen( io, mode, X86IM_GEN_CODE_PFCMPGE_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
 #define X86IM_GEN_CODE_PFMIN_MMXR1_MMXR2                        0x94C00F0F
 #define X86IM_GEN_CODE_PFMIN_MMXRG_MM                           0x94000F0F
@@ -2869,7 +2869,7 @@
 #define X86IM_GEN_PFACC_MMXR1_MMXR2( io, mode, mxr1, mxr2 )     x86im_gen( io, mode, X86IM_GEN_CODE_PFACC_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PFACC_MMXRG_MM( io, mode, mxrg, mm )          x86im_gen( io, mode, X86IM_GEN_CODE_PFACC_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PFCMPEQ_MMXR1_MMXR2                      0xB0C00F0F 
+#define X86IM_GEN_CODE_PFCMPEQ_MMXR1_MMXR2                      0xB0C00F0F
 #define X86IM_GEN_CODE_PFCMPEQ_MMXRG_MM                         0xB0000F0F
 
 #define X86IM_GEN_PFCMPEQ_MMXR1_MMXR2( io, mode, mxr1, mxr2 )   x86im_gen( io, mode, X86IM_GEN_CODE_PFCMPEQ_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
@@ -2905,7 +2905,7 @@
 #define X86IM_GEN_PAVGUSB_MMXR1_MMXR2( io, mode, mxr1, mxr2 )   x86im_gen( io, mode, X86IM_GEN_CODE_PAVGUSB_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PAVGUSB_MMXRG_MM( io, mode, mxrg, mm )        x86im_gen( io, mode, X86IM_GEN_CODE_PAVGUSB_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-// SSE                                  
+// SSE
 
 #define X86IM_GEN_CODE_MOVMSKPS_R1_XMMR2                        0x00C0500F
 #define X86IM_GEN_MOVMSKPS_R1_XMMR2( io, mode, r1, xmr2 )       x86im_gen( io, mode, X86IM_GEN_CODE_MOVMSKPS_R1_XMMR2, X86IM_GEN_R1_XMR2( r1, xmr2 ), 0, 0, 0 )
@@ -2916,584 +2916,584 @@
 #define X86IM_GEN_CODE_STMXCSR_MM32 0x0018AE0F
 #define X86IM_GEN_STMXCSR_MM32( io, mode, mm )                  x86im_gen( io, mode, X86IM_GEN_CODE_STMXCSR_MM32, 0, mm, 0 )
 
-#define X86IM_GEN_CODE_MASKMOVQ_MMXR1_MMXR2                     0x0000F70F             
+#define X86IM_GEN_CODE_MASKMOVQ_MMXR1_MMXR2                     0x0000F70F
 #define X86IM_GEN_MASKMOVQ_MMXR1_MMXR2( io, mode, mxr1, mxr2 )  x86im_gen( io, mode, X86IM_GEN_CODE_MASKMOVQ_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 
-#define X86IM_GEN_CODE_MOVNTPS_MM_XMMRG                         0x00002B0F             
+#define X86IM_GEN_CODE_MOVNTPS_MM_XMMRG                         0x00002B0F
 #define X86IM_GEN_MOVNTPS_MM_XMMRG( io, mode, mm, xmrg )        x86im_gen( io, mode, X86IM_GEN_CODE_MOVNTPS_MM_XMMRG, X86IM_GEN_MM_XMRG( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVNTQ_MM_MMXRG                          0x0000E70F                
+#define X86IM_GEN_CODE_MOVNTQ_MM_MMXRG                          0x0000E70F
 #define X86IM_GEN_MOVNTQ_MM_MMXRG( io, mode, mm, mxrg )         x86im_gen( io, mode, X86IM_GEN_CODE_MOVNTQ_MM_MMXRG, X86IM_GEN_MM_MXRG( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PREFETCHT0                               0x0008180F                  
-#define X86IM_GEN_CODE_PREFETCHT1                               0x0010180F                  
-#define X86IM_GEN_CODE_PREFETCHT2                               0x0018180F                  
-#define X86IM_GEN_CODE_PREFETCHNTA                              0x0018180F                  
+#define X86IM_GEN_CODE_PREFETCHT0                               0x0008180F
+#define X86IM_GEN_CODE_PREFETCHT1                               0x0010180F
+#define X86IM_GEN_CODE_PREFETCHT2                               0x0018180F
+#define X86IM_GEN_CODE_PREFETCHNTA                              0x0018180F
 
-#define X86IM_GEN_CODE_SFENCE                                   0x00F8AE0F                    
+#define X86IM_GEN_CODE_SFENCE                                   0x00F8AE0F
 
-#define X86IM_GEN_CODE_ADDPS_XMMR1_XMMR2                        0x00C0580F    
-#define X86IM_GEN_CODE_ADDPS_XMMRG_MM                           0x0000580F    
+#define X86IM_GEN_CODE_ADDPS_XMMR1_XMMR2                        0x00C0580F
+#define X86IM_GEN_CODE_ADDPS_XMMRG_MM                           0x0000580F
 
-#define X86IM_GEN_ADDPS_XMMR1_XMMR2( io, mode, xmr1, mxr2 )     x86im_gen( io, mode, X86IM_GEN_CODE_ADDPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )    
+#define X86IM_GEN_ADDPS_XMMR1_XMMR2( io, mode, xmr1, mxr2 )     x86im_gen( io, mode, X86IM_GEN_CODE_ADDPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_ADDPS_XMMRG_MM( io, mode, xmrg, mm )          x86im_gen( io, mode, X86IM_GEN_CODE_ADDPS_XMMR1_XMMR2, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_ADDSS_XMMR1_XMMR2                        0x00C0580F                    
-#define X86IM_GEN_CODE_ADDSS_XMMRG_MM32                         0x0000580F         
+#define X86IM_GEN_CODE_ADDSS_XMMR1_XMMR2                        0x00C0580F
+#define X86IM_GEN_CODE_ADDSS_XMMRG_MM32                         0x0000580F
 
-#define X86IM_GEN_ADDSS_XMMR1_XMMR2( io, mode, xmr1, mxr2 )     x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_ADDPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )      
+#define X86IM_GEN_ADDSS_XMMR1_XMMR2( io, mode, xmr1, mxr2 )     x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_ADDPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_ADDSS_XMMRG_MM32( io, mode, xmrg, mm )        x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_ADDPS_XMMR1_XMMR2, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_ANDNPS_XMMR1_XMMR2                           0x0000550F              
+#define X86IM_GEN_CODE_ANDNPS_XMMR1_XMMR2                           0x0000550F
 #define X86IM_GEN_CODE_ANDNPS_XMMRG_MM                              0x0000550F
 
 #define X86IM_GEN_ANDNPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode, X86IM_GEN_CODE_ANDNPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_ANDNPS_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode, X86IM_GEN_CODE_ANDNPS_XMMRG_MM, xmrg, mm, 0 )
-    
-#define X86IM_GEN_CODE_ANDPS_XMMR1_XMMR2                            0x0000540F           
+
+#define X86IM_GEN_CODE_ANDPS_XMMR1_XMMR2                            0x0000540F
 #define X86IM_GEN_CODE_ANDPS_XMMRG_MM                               0x0000540F
 
-#define X86IM_GEN_ANDPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode, X86IM_GEN_CODE_ANDPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )                    
-#define X86IM_GEN_ANDPS_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode, X86IM_GEN_CODE_ANDPS_XMMRG_MM, xmrg, mm, 0 )   
+#define X86IM_GEN_ANDPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode, X86IM_GEN_CODE_ANDPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
+#define X86IM_GEN_ANDPS_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode, X86IM_GEN_CODE_ANDPS_XMMRG_MM, xmrg, mm, 0 )
 
-#define X86IM_GEN_CODE_CMPPS_XMMR1_XMMR2_IMM8                               0x00C0C20F    
-#define X86IM_GEN_CODE_CMPPS_XMMRG_MM_IMM8                                  0x0000C20F    
+#define X86IM_GEN_CODE_CMPPS_XMMR1_XMMR2_IMM8                               0x00C0C20F
+#define X86IM_GEN_CODE_CMPPS_XMMRG_MM_IMM8                                  0x0000C20F
 
-#define X86IM_GEN_CMPPS_XMMR1_XMMR2_IMM8( io, mode, xmr1, xmr2, imm8 )      x86im_gen( io, mode, X86IM_GEN_CODE_CMPPS_XMMR1_XMMR2_IMM8, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, imm8 )             
-#define X86IM_GEN_CMPPS_XMMRG_MM_IMM8( io, mode, xmrg, mm, imm8 )           x86im_gen( io, mode, X86IM_GEN_CODE_CMPPS_XMMRG_MM_IMM8, X86IM_GEN_XMRG_MM( xmrg ), mm, imm8 )    
+#define X86IM_GEN_CMPPS_XMMR1_XMMR2_IMM8( io, mode, xmr1, xmr2, imm8 )      x86im_gen( io, mode, X86IM_GEN_CODE_CMPPS_XMMR1_XMMR2_IMM8, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, imm8 )
+#define X86IM_GEN_CMPPS_XMMRG_MM_IMM8( io, mode, xmrg, mm, imm8 )           x86im_gen( io, mode, X86IM_GEN_CODE_CMPPS_XMMRG_MM_IMM8, X86IM_GEN_XMRG_MM( xmrg ), mm, imm8 )
 
-#define X86IM_GEN_CODE_CMPSS_XMMR1_XMMR2_IMM8                               0x00C0C20F    
-#define X86IM_GEN_CODE_CMPSS_XMMRG_MM32_IMM8                                0x0000C20F    
+#define X86IM_GEN_CODE_CMPSS_XMMR1_XMMR2_IMM8                               0x00C0C20F
+#define X86IM_GEN_CODE_CMPSS_XMMRG_MM32_IMM8                                0x0000C20F
 
-#define X86IM_GEN_CMPSS_XMMR1_XMMR2_IMM8( io, mode, xmr1, xmr2, imm8 )      x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_CMPSS_XMMR1_XMMR2_IMM8, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, imm8 ) 
+#define X86IM_GEN_CMPSS_XMMR1_XMMR2_IMM8( io, mode, xmr1, xmr2, imm8 )      x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_CMPSS_XMMR1_XMMR2_IMM8, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, imm8 )
 #define X86IM_GEN_CMPSS_XMMRG_MM32_IMM8( io, mode, xmrg, mm, imm8 )         x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_CMPSS_XMMRG_MM32_IMM8, X86IM_GEN_XMRG_MM( xmrg ), mm, imm8 )
 
-#define X86IM_GEN_CODE_COMISS_XMMR1_XMMR2                           0x0CC02F0F          
-#define X86IM_GEN_CODE_COMISS_XMMRG_MM32                            0x00C02F0F    
+#define X86IM_GEN_CODE_COMISS_XMMR1_XMMR2                           0x0CC02F0F
+#define X86IM_GEN_CODE_COMISS_XMMRG_MM32                            0x00C02F0F
 
-#define X86IM_GEN_COMISS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode, X86IM_GEN_CODE_COMISS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )              
+#define X86IM_GEN_COMISS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode, X86IM_GEN_CODE_COMISS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_COMISS_XMMRG_MM32( io, mode, xmrg, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_COMISS_XMMRG_MM32, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTPI2PS_XMMR1_MMXR2                         0x00C02A0F    
-#define X86IM_GEN_CODE_CVTPI2PS_XMMRG_MM64                          0x00002A0F       
+#define X86IM_GEN_CODE_CVTPI2PS_XMMR1_MMXR2                         0x00C02A0F
+#define X86IM_GEN_CODE_CVTPI2PS_XMMRG_MM64                          0x00002A0F
 
-#define X86IM_GEN_CVTPI2PS_XMMR1_MMXR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode, X86IM_GEN_CODE_CVTPI2PS_XMMR1_MMXR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )           
-#define X86IM_GEN_CVTPI2PS_XMMRG_MM64( io, mode, xmrg, mm )         x86im_gen( io, mode, X86IM_GEN_CODE_CVTPI2PS_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )   
+#define X86IM_GEN_CVTPI2PS_XMMR1_MMXR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode, X86IM_GEN_CODE_CVTPI2PS_XMMR1_MMXR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
+#define X86IM_GEN_CVTPI2PS_XMMRG_MM64( io, mode, xmrg, mm )         x86im_gen( io, mode, X86IM_GEN_CODE_CVTPI2PS_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTPS2PI_MMXR1_XMMR2                         0x00C02D0F    
-#define X86IM_GEN_CODE_CVTPS2PI_MMXRG_MM                            0x00002D0F    
+#define X86IM_GEN_CODE_CVTPS2PI_MMXR1_XMMR2                         0x00C02D0F
+#define X86IM_GEN_CODE_CVTPS2PI_MMXRG_MM                            0x00002D0F
 
 #define X86IM_GEN_CVTPS2PI_MMXR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode, X86IM_GEN_CODE_CVTPS2PI_MMXR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_CVTPS2PI_MMXRG_MM( io, mode, xmrg, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_CVTPS2PI_MMXRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTSI2SS_XMMR1_R2                            0x00C02A0F   
-#define X86IM_GEN_CODE_CVTSI2SS_XMMRG_MM                            0x00002A0F   
+#define X86IM_GEN_CODE_CVTSI2SS_XMMR1_R2                            0x00C02A0F
+#define X86IM_GEN_CODE_CVTSI2SS_XMMRG_MM                            0x00002A0F
 
-#define X86IM_GEN_CVTSI2SS_XMMR1_R2( io, mode, xmr1, r2 )           x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_CVTSI2SS_XMMR1_R2, X86IM_GEN_XMR1_R2( xmr1, xmr2 ), 0, 0, 0 ) 
+#define X86IM_GEN_CVTSI2SS_XMMR1_R2( io, mode, xmr1, r2 )           x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_CVTSI2SS_XMMR1_R2, X86IM_GEN_XMR1_R2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_CVTSI2SS_XMMRG_MM( io, mode, xmrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_CVTSI2SS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTSS2SI_R1_XMMR2                            0x00C02D0F    
-#define X86IM_GEN_CODE_CVTSS2SI_RG_MM32                             0x00002D0F    
+#define X86IM_GEN_CODE_CVTSS2SI_R1_XMMR2                            0x00C02D0F
+#define X86IM_GEN_CODE_CVTSS2SI_RG_MM32                             0x00002D0F
 
 #define X86IM_GEN_CVTSS2SI_R1_XMMR2( io, mode, r1, xmr2 )           x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_CVTSS2SI_R1_XMMR2, X86IM_GEN_R1_XMR2( r1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_CVTSS2SI_RG_MM32( io, mode, rg, mm )              x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_CVTSS2SI_RG_MM32, X86IM_GEN_RG_MM( rg, mm ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTTPS2PI_MMXR1_XMMR2                        0x00002C0F    
-#define X86IM_GEN_CODE_CVTTPS2PI_MMXRG_MM64                         0x00002C0F    
+#define X86IM_GEN_CODE_CVTTPS2PI_MMXR1_XMMR2                        0x00002C0F
+#define X86IM_GEN_CODE_CVTTPS2PI_MMXRG_MM64                         0x00002C0F
 
-#define X86IM_GEN_CVTTPS2PI_MMXR1_XMMR2( io, mode, xmr1, xmr2 )     x86im_gen( io, mode, X86IM_GEN_CODE_CVTTPS2PI_MMXR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 ) 
+#define X86IM_GEN_CVTTPS2PI_MMXR1_XMMR2( io, mode, xmr1, xmr2 )     x86im_gen( io, mode, X86IM_GEN_CODE_CVTTPS2PI_MMXR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_CVTTPS2PI_MMXRG_MM64( io, mode, xmrg, mm )        x86im_gen( io, mode, X86IM_GEN_CODE_CVTTPS2PI_MMXRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTTSS2SI_R1_XMMR2                           0x00C02C0F    
-#define X86IM_GEN_CODE_CVTTSS2SI_RG_MM32                            0x00002C0F    
+#define X86IM_GEN_CODE_CVTTSS2SI_R1_XMMR2                           0x00C02C0F
+#define X86IM_GEN_CODE_CVTTSS2SI_RG_MM32                            0x00002C0F
 
-#define X86IM_GEN_CVTTSS2SI_R1_XMMR2( io, mode, r1, xmr2 )          x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_CVTTSS2SI_R1_XMMR2, X86IM_GEN_R1_XMR2( r1, xmr2 ), 0, 0, 0 )            
+#define X86IM_GEN_CVTTSS2SI_R1_XMMR2( io, mode, r1, xmr2 )          x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_CVTTSS2SI_R1_XMMR2, X86IM_GEN_R1_XMR2( r1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_CVTTSS2SI_RG_MM32( io, mode, rg, mm )             x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_CVTTSS2SI_RG_MM32, X86IM_GEN_RG_MM( rg ), mm, 0 )
 
-#define X86IM_GEN_CODE_DIVPS_XMMR1_XMMR2                            0x00C05E0F              
-#define X86IM_GEN_CODE_DIVPS_XMMRG_MM                               0x00005E0F    
+#define X86IM_GEN_CODE_DIVPS_XMMR1_XMMR2                            0x00C05E0F
+#define X86IM_GEN_CODE_DIVPS_XMMRG_MM                               0x00005E0F
 
 #define X86IM_GEN_DIVPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode, X86IM_GEN_CODE_DIVPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_DIVPS_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode, X86IM_GEN_CODE_DIVPS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_DIVSS_XMMR1_XMMR2                            0x00C05E0F               
-#define X86IM_GEN_CODE_DIVSS_XMMRG_MM32                             0x00005E0F    
+#define X86IM_GEN_CODE_DIVSS_XMMR1_XMMR2                            0x00C05E0F
+#define X86IM_GEN_CODE_DIVSS_XMMRG_MM32                             0x00005E0F
 
 #define X86IM_GEN_DIVSS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_DIVSS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_DIVSS_XMMRG_MM32( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_DIVSS_XMMRG_MM32, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MAXPS_XMMR1_XMMR2                            0x00C05F0F               
-#define X86IM_GEN_CODE_MAXPS_XMMRG_MM                               0x00005F0F              
+#define X86IM_GEN_CODE_MAXPS_XMMR1_XMMR2                            0x00C05F0F
+#define X86IM_GEN_CODE_MAXPS_XMMRG_MM                               0x00005F0F
 
 #define X86IM_GEN_MAXPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode, X86IM_GEN_CODE_MAXPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MAXPS_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode, X86IM_GEN_CODE_MAXPS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MAXSS_XMMR1_XMMR2                            0x00C05F0F   
-#define X86IM_GEN_CODE_MAXSS_XMMRG_MM32                             0x00005F0F        
+#define X86IM_GEN_CODE_MAXSS_XMMR1_XMMR2                            0x00C05F0F
+#define X86IM_GEN_CODE_MAXSS_XMMRG_MM32                             0x00005F0F
 
 #define X86IM_GEN_MAXSS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MAXSS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MAXSS_XMMRG_MM32( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MAXSS_XMMRG_MM32, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MINPS_XMMR1_XMMR2                            0x00C05D0F    
-#define X86IM_GEN_CODE_MINPS_XMMRG_MM                               0x00005D0F    
+#define X86IM_GEN_CODE_MINPS_XMMR1_XMMR2                            0x00C05D0F
+#define X86IM_GEN_CODE_MINPS_XMMRG_MM                               0x00005D0F
 
 #define X86IM_GEN_MINPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode, X86IM_GEN_CODE_MINPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MINPS_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode, X86IM_GEN_CODE_MINPS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MINSS_XMMR1_XMMR2                            0x00C05D0F                 
-#define X86IM_GEN_CODE_MINSS_XMMRG_MM32                             0x00005D0F    
+#define X86IM_GEN_CODE_MINSS_XMMR1_XMMR2                            0x00C05D0F
+#define X86IM_GEN_CODE_MINSS_XMMRG_MM32                             0x00005D0F
 
 #define X86IM_GEN_MINSS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MINSS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2 ( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MINSS_XMMRG_MM32( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MINSS_XMMRG_MM32, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVAPS_XMMR1_XMMR2                           0x00C0280F                
-#define X86IM_GEN_CODE_MOVAPS_XMMRG_MM                              0x0000280F           
-#define X86IM_GEN_CODE_MOVAPS_XMMR2_XMMR1                           0x00C0290F              
-#define X86IM_GEN_CODE_MOVAPS_MM_XMMRG                              0x0000290F             
+#define X86IM_GEN_CODE_MOVAPS_XMMR1_XMMR2                           0x00C0280F
+#define X86IM_GEN_CODE_MOVAPS_XMMRG_MM                              0x0000280F
+#define X86IM_GEN_CODE_MOVAPS_XMMR2_XMMR1                           0x00C0290F
+#define X86IM_GEN_CODE_MOVAPS_MM_XMMRG                              0x0000290F
 
 #define X86IM_GEN_MOVAPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode, X86IM_GEN_CODE_MOVAPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MOVAPS_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode, X86IM_GEN_CODE_MOVAPS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 #define X86IM_GEN_MOVAPS_XMMR2_XMMR1( io, mode, xmr1, xmr2 )        x86im_gen( io, mode, X86IM_GEN_CODE_MOVAPS_XMMR2_XMMR1, X86IM_GEN_XMR2_XMR1( xmr2, xmr1 ), 0, 0, 0 )
 #define X86IM_GEN_MOVAPS_MM_XMMRG( io, mode, mm, xmrg )             x86im_gen( io, mode, X86IM_GEN_CODE_MOVAPS_MM_XMMRG, X86IM_GEN_MM_XMRG( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVLHPS_XMMR1_XMMR2                          0x00C0160F  
+#define X86IM_GEN_CODE_MOVLHPS_XMMR1_XMMR2                          0x00C0160F
 
 #define X86IM_GEN_MOVLHPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )       x86im_gen( io, mode, X86IM_GEN_CODE_MOVLHPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 
-#define X86IM_GEN_CODE_MOVHPS_XMMRG_MM64                            0x00C0160F              
-#define X86IM_GEN_CODE_MOVHPS_MM64_XMMRG                            0x0000170F   
+#define X86IM_GEN_CODE_MOVHPS_XMMRG_MM64                            0x00C0160F
+#define X86IM_GEN_CODE_MOVHPS_MM64_XMMRG                            0x0000170F
 
 #define X86IM_GEN_MOVHPS_XMMRG_MM64( io, mode, xmrg, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_MOVHPS_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 #define X86IM_GEN_MOVHPS_MM64_XMMRG( io, mode, mm, xmrg )           x86im_gen( io, mode, X86IM_GEN_CODE_MOVHPS_MM64_XMMRG, X86IM_GEN_MM_XMRG( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVHLPS_XMMR1_XMMR2                          0x00C0120F         
+#define X86IM_GEN_CODE_MOVHLPS_XMMR1_XMMR2                          0x00C0120F
 
-#define X86IM_GEN_CODE_MOVLPS_XMMRG_MM64                            0x0000120F    
-#define X86IM_GEN_CODE_MOVLPS_MM64_XMMRG                            0x0000130F    
+#define X86IM_GEN_CODE_MOVLPS_XMMRG_MM64                            0x0000120F
+#define X86IM_GEN_CODE_MOVLPS_MM64_XMMRG                            0x0000130F
 
 #define X86IM_GEN_MOVLPS_XMMRG_MM64( io, mode, xmrg, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_MOVLPS_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 #define X86IM_GEN_MOVLPS_MM64_XMMRG( io, mode, mm, xmrg )           x86im_gen( io, mode, X86IM_GEN_CODE_MOVLPS_MM64_XMMRG, X86IM_GEN_MM_XMRG( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVSS_XMMR1_XMMR2                            0x00C0100F       
-#define X86IM_GEN_CODE_MOVSS_XMMRG_MM                               0x0000100F                
-#define X86IM_GEN_CODE_MOVSS_XMMR2_XMMR1                            0x00C0110F       
-#define X86IM_GEN_CODE_MOVSS_MM_XMMRG                               0x0000110F    
+#define X86IM_GEN_CODE_MOVSS_XMMR1_XMMR2                            0x00C0100F
+#define X86IM_GEN_CODE_MOVSS_XMMRG_MM                               0x0000100F
+#define X86IM_GEN_CODE_MOVSS_XMMR2_XMMR1                            0x00C0110F
+#define X86IM_GEN_CODE_MOVSS_MM_XMMRG                               0x0000110F
 
 #define X86IM_GEN_MOVSS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MOVSS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MOVSS_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MOVSS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 #define X86IM_GEN_MOVSS_XMMR2_XMMR1( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MOVSS_XMMR2_XMMR1, X86IM_GEN_XMR2_XMR1( xmr2, xmr1 ), 0, 0, 0 )
 #define X86IM_GEN_MOVSS_MM_XMMRG( io, mode, mm, xmrg )              x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MOVSS_MM_XMMRG, X86IM_GEN_MM_XMRG( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVUPS_XMMR1_XMMR2                           0x00C0100F               
-#define X86IM_GEN_CODE_MOVUPS_XMMRG_MM                              0x0000100F                  
-#define X86IM_GEN_CODE_MOVUPS_XMMR2_XMMR1                           0x00C0110F             
-#define X86IM_GEN_CODE_MOVUPS_MM_XMMRG                              0x0000110F           
+#define X86IM_GEN_CODE_MOVUPS_XMMR1_XMMR2                           0x00C0100F
+#define X86IM_GEN_CODE_MOVUPS_XMMRG_MM                              0x0000100F
+#define X86IM_GEN_CODE_MOVUPS_XMMR2_XMMR1                           0x00C0110F
+#define X86IM_GEN_CODE_MOVUPS_MM_XMMRG                              0x0000110F
 
 #define X86IM_GEN_MOVUPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode, X86IM_GEN_CODE_MOVUPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MOVUPS_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode, X86IM_GEN_CODE_MOVUPS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 #define X86IM_GEN_MOVUPS_XMMR2_XMMR1( io, mode, xmr1, xmr2 )        x86im_gen( io, mode, X86IM_GEN_CODE_MOVUPS_XMMR2_XMMR1, X86IM_GEN_XMR2_XMR1( xmr2, xmr1 ), 0, 0, 0 )
 #define X86IM_GEN_MOVUPS_MM_XMMRG( io, mode, mm, xmrg )             x86im_gen( io, mode, X86IM_GEN_CODE_MOVUPS_MM_XMMRG, X86IM_GEN_MM_XMRG( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MULPS_XMMR1_XMMR2                            0x00C0590F           
-#define X86IM_GEN_CODE_MULPS_XMMRG_MM                               0x0000590F    
+#define X86IM_GEN_CODE_MULPS_XMMR1_XMMR2                            0x00C0590F
+#define X86IM_GEN_CODE_MULPS_XMMRG_MM                               0x0000590F
 
 #define X86IM_GEN_MULPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode, X86IM_GEN_CODE_MULPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MULPS_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode, X86IM_GEN_CODE_MULPS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MULSS_XMMR1_XMMR2                            0x00C0590F           
-#define X86IM_GEN_CODE_MULSS_XMMRG_MM                               0x0000590F    
+#define X86IM_GEN_CODE_MULSS_XMMR1_XMMR2                            0x00C0590F
+#define X86IM_GEN_CODE_MULSS_XMMRG_MM                               0x0000590F
 
 #define X86IM_GEN_MULSS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MULSS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MULSS_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MULSS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_ORPS_XMMR1_XMMR2                             0x0000560F        
-#define X86IM_GEN_CODE_ORPS_XMMRG_MM                                0x0000560F         
+#define X86IM_GEN_CODE_ORPS_XMMR1_XMMR2                             0x0000560F
+#define X86IM_GEN_CODE_ORPS_XMMRG_MM                                0x0000560F
 
 #define X86IM_GEN_ORPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )          x86im_gen( io, mode, X86IM_GEN_CODE_ORPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_ORPS_XMMRG_MM( io, mode, xmrg, mm )               x86im_gen( io, mode, X86IM_GEN_CODE_ORPS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_RCPPS_XMMR1_XMMR2                                    0x0000530F    
-#define X86IM_GEN_CODE_RCPPS_XMMRG_MM                                       0x0000530F    
+#define X86IM_GEN_CODE_RCPPS_XMMR1_XMMR2                                    0x0000530F
+#define X86IM_GEN_CODE_RCPPS_XMMRG_MM                                       0x0000530F
 
 #define X86IM_GEN_RCPPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )                 x86im_gen( io, mode, X86IM_GEN_CODE_RCPPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_RCPPS_XMMRG_MM( io, mode, xmrg, mm )                      x86im_gen( io, mode, X86IM_GEN_CODE_RCPPS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_RCPSS_XMMR1_XMMR2                                    0x00C0530F                 
-#define X86IM_GEN_CODE_RCPSS_XMMRG_MM32                                     0x0000530F   
+#define X86IM_GEN_CODE_RCPSS_XMMR1_XMMR2                                    0x00C0530F
+#define X86IM_GEN_CODE_RCPSS_XMMRG_MM32                                     0x0000530F
 
 #define X86IM_GEN_RCPSS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )                 x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_RCPSS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_RCPSS_XMMRG_MM32( io, mode, xmrg, mm )                    x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_RCPSS_XMMRG_MM32, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_RSQRTPS_XMMR1_XMMR2                                  0x00C0520F     
-#define X86IM_GEN_CODE_RSQRTPS_XMMRG_MM                                     0x0000520F   
+#define X86IM_GEN_CODE_RSQRTPS_XMMR1_XMMR2                                  0x00C0520F
+#define X86IM_GEN_CODE_RSQRTPS_XMMRG_MM                                     0x0000520F
 
 #define X86IM_GEN_RSQRTPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )               x86im_gen( io, mode, X86IM_GEN_CODE_RSQRTPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
-#define X86IM_GEN_RSQRTPS_XMMRG_MM( io, mode, xmrg, mm )                    x86im_gen( io, mode, X86IM_GEN_CODE_RSQRTPS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 ) 
+#define X86IM_GEN_RSQRTPS_XMMRG_MM( io, mode, xmrg, mm )                    x86im_gen( io, mode, X86IM_GEN_CODE_RSQRTPS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_RSQRTSS_XMMR1_XMMR2                                  0x0000520F           
-#define X86IM_GEN_CODE_RSQRTSS_XMMRG_MM32                                   0x0000520F    
+#define X86IM_GEN_CODE_RSQRTSS_XMMR1_XMMR2                                  0x0000520F
+#define X86IM_GEN_CODE_RSQRTSS_XMMRG_MM32                                   0x0000520F
 
-#define X86IM_GEN_RSQRTSS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )               x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_RSQRTSS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )      
-#define X86IM_GEN_RSQRTSS_XMMRG_MM32( io, mode, xmrg, mm )                  x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_RSQRTSS_XMMRG_MM32, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 ) 
+#define X86IM_GEN_RSQRTSS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )               x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_RSQRTSS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
+#define X86IM_GEN_RSQRTSS_XMMRG_MM32( io, mode, xmrg, mm )                  x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_RSQRTSS_XMMRG_MM32, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_SHUFPS_XMMR1_XMMR2_IMM8                              0x00C0C60F    
-#define X86IM_GEN_CODE_SHUFPS_XMMRG_MM_IMM8                                 0x0000C60F    
+#define X86IM_GEN_CODE_SHUFPS_XMMR1_XMMR2_IMM8                              0x00C0C60F
+#define X86IM_GEN_CODE_SHUFPS_XMMRG_MM_IMM8                                 0x0000C60F
 
 #define X86IM_GEN_SHUFPS_XMMR1_XMMR2_IMM8( io, mode, xmr1, xmr2, imm8 )     x86im_gen( io, mode, X86IM_GEN_CODE_SHUFPS_XMMR1_XMMR2_IMM8, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, imm8 )
 #define X86IM_GEN_SHUFPS_XMMRG_MM_IMM8( io, mode, xmrg, mm, imm8 )          x86im_gen( io, mode, X86IM_GEN_CODE_SHUFPS_XMMRG_MM_IMM8, X86IM_GEN_XMRG_MM( xmrg ), mm, imm8 )
 
-#define X86IM_GEN_CODE_SQRTPS_XMMR1_XMMR2                           0x00C0510F                
-#define X86IM_GEN_CODE_SQRTPS_XMMRG_MM                              0x0000510F    
+#define X86IM_GEN_CODE_SQRTPS_XMMR1_XMMR2                           0x00C0510F
+#define X86IM_GEN_CODE_SQRTPS_XMMRG_MM                              0x0000510F
 
 #define X86IM_GEN_SQRTPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode, X86IM_GEN_CODE_SQRTPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_SQRTPS_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode, X86IM_GEN_CODE_SQRTPS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_SQRTSS_XMMR1_XMMR2                           0x00C0510F                 
-#define X86IM_GEN_CODE_SQRTSS_XMMRG_MM32                            0x0000510F    
+#define X86IM_GEN_CODE_SQRTSS_XMMR1_XMMR2                           0x00C0510F
+#define X86IM_GEN_CODE_SQRTSS_XMMRG_MM32                            0x0000510F
 
-#define X86IM_GEN_SQRTSS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_SQRTSS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )               
+#define X86IM_GEN_SQRTSS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_SQRTSS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_SQRTSS_XMMRG_MM32( io, mode, xmrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_SQRTSS_XMMRG_MM32, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_SUBPS_XMMR1_XMMR2                            0x00C05C0F        
-#define X86IM_GEN_CODE_SUBPS_XMMRG_MM                               0x00005C0F   
+#define X86IM_GEN_CODE_SUBPS_XMMR1_XMMR2                            0x00C05C0F
+#define X86IM_GEN_CODE_SUBPS_XMMRG_MM                               0x00005C0F
 
-#define X86IM_GEN_SUBPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode, X86IM_GEN_CODE_SUBPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 ) 
+#define X86IM_GEN_SUBPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode, X86IM_GEN_CODE_SUBPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_SUBPS_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode, X86IM_GEN_CODE_SUBPS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_SUBSS_XMMR1_XMMR2                            0x00C05C0F               
-#define X86IM_GEN_CODE_SUBSS_XMMRG_MM32                             0x00005C0F    
+#define X86IM_GEN_CODE_SUBSS_XMMR1_XMMR2                            0x00C05C0F
+#define X86IM_GEN_CODE_SUBSS_XMMRG_MM32                             0x00005C0F
 
 #define X86IM_GEN_SUBSS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_SUBSS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_SUBSS_XMMRG_MM32( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_SUBSS_XMMRG_MM32, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_UCOMISS_XMMR1_XMMR2                          0x00C02E0F          
-#define X86IM_GEN_CODE_UCOMISS_XMMRG_MM32                           0x00002E0F    
+#define X86IM_GEN_CODE_UCOMISS_XMMR1_XMMR2                          0x00C02E0F
+#define X86IM_GEN_CODE_UCOMISS_XMMRG_MM32                           0x00002E0F
 
 #define X86IM_GEN_UCOMISS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )       x86im_gen( io, mode, X86IM_GEN_CODE_UCOMISS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_UCOMISS_XMMRG_MM32( io, mode, xmrg, mm )          x86im_gen( io, mode, X86IM_GEN_CODE_UCOMISS_XMMRG_MM32, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_UNPCKHPS_XMMR1_XMMR2                         0x00C0150F    
-#define X86IM_GEN_CODE_UNPCKHPS_XMMRG_MM                            0x0000150F    
+#define X86IM_GEN_CODE_UNPCKHPS_XMMR1_XMMR2                         0x00C0150F
+#define X86IM_GEN_CODE_UNPCKHPS_XMMRG_MM                            0x0000150F
 
 #define X86IM_GEN_UNPCKHPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode, X86IM_GEN_CODE_UNPCKHPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
-#define X86IM_GEN_UNPCKHPS_XMMRG_MM( io, mode, xmrg, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_UNPCKHPS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 ) 
+#define X86IM_GEN_UNPCKHPS_XMMRG_MM( io, mode, xmrg, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_UNPCKHPS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_UNPCKLPS_XMMR1_XMMR2                         0x00C0140F          
-#define X86IM_GEN_CODE_UNPCKLPS_XMMRG_MM                            0x0000140F    
+#define X86IM_GEN_CODE_UNPCKLPS_XMMR1_XMMR2                         0x00C0140F
+#define X86IM_GEN_CODE_UNPCKLPS_XMMRG_MM                            0x0000140F
 
 #define X86IM_GEN_UNPCKLPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode, X86IM_GEN_CODE_UNPCKLPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_UNPCKLPS_XMMRG_MM( io, mode, xmrg, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_UNPCKLPS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_XORPS_XMMR1_XMMR2                            0x00C0570F   
-#define X86IM_GEN_CODE_XORPS_XMMRG_MM                               0x0000570F   
+#define X86IM_GEN_CODE_XORPS_XMMR1_XMMR2                            0x00C0570F
+#define X86IM_GEN_CODE_XORPS_XMMRG_MM                               0x0000570F
 
 #define X86IM_GEN_XORPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode, X86IM_GEN_CODE_XORPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_XORPS_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode, X86IM_GEN_CODE_XORPS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PEXTRW_R1_MMXR2_IMM8                             0x0000C50F            
-#define X86IM_GEN_CODE_PMOVMSKB_R1_MMXR2                                0x0000D70F           
+#define X86IM_GEN_CODE_PEXTRW_R1_MMXR2_IMM8                             0x0000C50F
+#define X86IM_GEN_CODE_PMOVMSKB_R1_MMXR2                                0x0000D70F
 
 #define X86IM_GEN_PEXTRW_R1_MMXR2_IMM8( io, mode, r1, mxr2, imm8 )      x86im_gen( io, mode, X86IM_GEN_CODE_PEXTRW_R1_MMXR2_IMM8, X86IM_GEN_R1_MXR2( r1, mxr2 ), 0, 0, imm8 )
 #define X86IM_GEN_PMOVMSKB_R1_MMXR2( io, mode, r1, mxr2 )               x86im_gen( io, mode, X86IM_GEN_CODE_PMOVMSKB_R1_MMXR2, X86IM_GEN_R1_MXR2( r1, mxr2 ), 0, 0, 0 )
 
-#define X86IM_GEN_CODE_PAVGB_MMXR1_MMXR2                                0x00C0E00F    
-#define X86IM_GEN_CODE_PAVGB_MMXRG_MM64                                 0x0000E00F    
+#define X86IM_GEN_CODE_PAVGB_MMXR1_MMXR2                                0x00C0E00F
+#define X86IM_GEN_CODE_PAVGB_MMXRG_MM64                                 0x0000E00F
 
 #define X86IM_GEN_PAVGB_MMXR1_MMXR2( io, mode, mxr1, mxr2 )             x86im_gen( io, mode, X86IM_GEN_CODE_PAVGB_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PAVGB_MMXRG_MM64( io, mode, mxrg, mm )                x86im_gen( io, mode, X86IM_GEN_CODE_PAVGB_MMXRG_MM64, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PAVGW_MMXR1_MMXR2                                0x00C0E30F    
-#define X86IM_GEN_CODE_PAVGW_MMXRG_MM64                                 0x0000E30F    
+#define X86IM_GEN_CODE_PAVGW_MMXR1_MMXR2                                0x00C0E30F
+#define X86IM_GEN_CODE_PAVGW_MMXRG_MM64                                 0x0000E30F
 
 #define X86IM_GEN_PAVGW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )             x86im_gen( io, mode, X86IM_GEN_CODE_PAVGW_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PAVGW_MMXRG_MM64( io, mode, mxrg, mm )                x86im_gen( io, mode, X86IM_GEN_CODE_PAVGW_MMXRG_MM64, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PINSRW_MMXR1_R2_IMM8                             0x00C0C40F             
-#define X86IM_GEN_CODE_PINSRW_MMXRG_MM16_IMM8                           0x0000C40F    
+#define X86IM_GEN_CODE_PINSRW_MMXR1_R2_IMM8                             0x00C0C40F
+#define X86IM_GEN_CODE_PINSRW_MMXRG_MM16_IMM8                           0x0000C40F
 
-#define X86IM_GEN_PINSRW_MMXR1_R2_IMM8( io, mode, mxr1, r2, imm8 )      x86im_gen( io, mode, X86IM_GEN_CODE_PINSRW_MMXR1_R2_IMM8, X86IM_GEN_MXR1_R2( mxr1, r2 ), 0, 0, imm8 )    
+#define X86IM_GEN_PINSRW_MMXR1_R2_IMM8( io, mode, mxr1, r2, imm8 )      x86im_gen( io, mode, X86IM_GEN_CODE_PINSRW_MMXR1_R2_IMM8, X86IM_GEN_MXR1_R2( mxr1, r2 ), 0, 0, imm8 )
 #define X86IM_GEN_PINSRW_MMXRG_MM16_IMM8( io, mode, mxrg, mm, imm8 )    x86im_gen( io, mode, X86IM_GEN_CODE_PINSRW_MMXRG_MM16_IMM8, X86IM_GEN_MXRG_MM( mxrg ), mm, imm8 )
 
-#define X86IM_GEN_CODE_PMAXSW_MMXR1_MMXR2                               0x00C0EE0F    
-#define X86IM_GEN_CODE_PMAXSW_MMXRG_MM64                                0x0000EE0F    
+#define X86IM_GEN_CODE_PMAXSW_MMXR1_MMXR2                               0x00C0EE0F
+#define X86IM_GEN_CODE_PMAXSW_MMXRG_MM64                                0x0000EE0F
 
 #define X86IM_GEN_PMAXSW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )            x86im_gen( io, mode, X86IM_GEN_CODE_PMAXSW_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PMAXSW_MMXRG_MM64( io, mode, mxrg, mm )               x86im_gen( io, mode, X86IM_GEN_CODE_PMAXSW_MMXRG_MM64, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PMAXUB_MMXR1_MMXR2                               0x00C0DE0F  
-#define X86IM_GEN_CODE_PMAXUB_MMXRG_MM64                                0x0000DE0F  
+#define X86IM_GEN_CODE_PMAXUB_MMXR1_MMXR2                               0x00C0DE0F
+#define X86IM_GEN_CODE_PMAXUB_MMXRG_MM64                                0x0000DE0F
 
-#define X86IM_GEN_PMAXUB_MMXR1_MMXR2( io, mode, mxr1, mxr2 )            x86im_gen( io, mode, X86IM_GEN_CODE_PMAXUB_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )              
-#define X86IM_GEN_PMAXUB_MMXRG_MM64( io, mode, mxrg, mm )               x86im_gen( io, mode, X86IM_GEN_CODE_PMAXUB_MMXRG_MM64, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 ) 
+#define X86IM_GEN_PMAXUB_MMXR1_MMXR2( io, mode, mxr1, mxr2 )            x86im_gen( io, mode, X86IM_GEN_CODE_PMAXUB_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
+#define X86IM_GEN_PMAXUB_MMXRG_MM64( io, mode, mxrg, mm )               x86im_gen( io, mode, X86IM_GEN_CODE_PMAXUB_MMXRG_MM64, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PMINSW_MMXR1_MMXR2                               0x00C0EA0F      
-#define X86IM_GEN_CODE_PMINSW_MMXRG_MM64                                0x0000EA0F    
+#define X86IM_GEN_CODE_PMINSW_MMXR1_MMXR2                               0x00C0EA0F
+#define X86IM_GEN_CODE_PMINSW_MMXRG_MM64                                0x0000EA0F
 
-#define X86IM_GEN_PMINSW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )            x86im_gen( io, mode, X86IM_GEN_CODE_PMINSW_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )              
-#define X86IM_GEN_PMINSW_MMXRG_MM64( io, mode, mxrg, mm )               x86im_gen( io, mode, X86IM_GEN_CODE_PMINSW_MMXRG_MM64, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 ) 
+#define X86IM_GEN_PMINSW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )            x86im_gen( io, mode, X86IM_GEN_CODE_PMINSW_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
+#define X86IM_GEN_PMINSW_MMXRG_MM64( io, mode, mxrg, mm )               x86im_gen( io, mode, X86IM_GEN_CODE_PMINSW_MMXRG_MM64, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PMINUB_MMXR1_MMXR2                               0x0000DA0F      
-#define X86IM_GEN_CODE_PMINUB_MMXRG_MM64                                0x0000DA0F    
+#define X86IM_GEN_CODE_PMINUB_MMXR1_MMXR2                               0x0000DA0F
+#define X86IM_GEN_CODE_PMINUB_MMXRG_MM64                                0x0000DA0F
 
-#define X86IM_GEN_PMINUB_MMXR1_MMXR2( io, mode, mxr1, mxr2 )            x86im_gen( io, mode, X86IM_GEN_CODE_PMINUB_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )              
-#define X86IM_GEN_PMINUB_MMXRG_MM64( io, mode, mxrg, mm )               x86im_gen( io, mode, X86IM_GEN_CODE_PMINUB_MMXRG_MM64, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 ) 
+#define X86IM_GEN_PMINUB_MMXR1_MMXR2( io, mode, mxr1, mxr2 )            x86im_gen( io, mode, X86IM_GEN_CODE_PMINUB_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
+#define X86IM_GEN_PMINUB_MMXRG_MM64( io, mode, mxrg, mm )               x86im_gen( io, mode, X86IM_GEN_CODE_PMINUB_MMXRG_MM64, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PMULHUW_MMXR1_MMXR2                              0x0000E40F          
-#define X86IM_GEN_CODE_PMULHUW_MMXRG_MM64                               0x0000E40F    
+#define X86IM_GEN_CODE_PMULHUW_MMXR1_MMXR2                              0x0000E40F
+#define X86IM_GEN_CODE_PMULHUW_MMXRG_MM64                               0x0000E40F
 
 #define X86IM_GEN_PMULHUW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )           x86im_gen( io, mode, X86IM_GEN_CODE_PMULHUW_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
-#define X86IM_GEN_PMULHUW_MMXRG_MM64( io, mode, mxrg, mm )              x86im_gen( io, mode, X86IM_GEN_CODE_PMULHUW_MMXRG_MM64, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 ) 
+#define X86IM_GEN_PMULHUW_MMXRG_MM64( io, mode, mxrg, mm )              x86im_gen( io, mode, X86IM_GEN_CODE_PMULHUW_MMXRG_MM64, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PSADBW_MMXR1_MMXR2                               0x0000F60F         
-#define X86IM_GEN_CODE_PSADBW_MMXRG_MM64                                0x0000F60F    
+#define X86IM_GEN_CODE_PSADBW_MMXR1_MMXR2                               0x0000F60F
+#define X86IM_GEN_CODE_PSADBW_MMXRG_MM64                                0x0000F60F
 
-#define X86IM_GEN_PSADBW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )            x86im_gen( io, mode, X86IM_GEN_CODE_PSADBW_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )              
+#define X86IM_GEN_PSADBW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )            x86im_gen( io, mode, X86IM_GEN_CODE_PSADBW_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSADBW_MMXRG_MM64( io, mode, mxrg, mm )               x86im_gen( io, mode, X86IM_GEN_CODE_PSADBW_MMXRG_MM64, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PSHUFW_MMXR1_MMXR2_IMM8                              0x0000700F           
-#define X86IM_GEN_CODE_PSHUFW_MMXRG_MM64_IMM8                               0x0000700F    
+#define X86IM_GEN_CODE_PSHUFW_MMXR1_MMXR2_IMM8                              0x0000700F
+#define X86IM_GEN_CODE_PSHUFW_MMXRG_MM64_IMM8                               0x0000700F
 
-#define X86IM_GEN_PSHUFW_MMXR1_MMXR2_IMM8( io, mode, mxr1, mxr2, imm8 )     x86im_gen( io, mode, X86IM_GEN_CODE_PSHUFW_MMXR1_MMXR2_IMM8, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, imm8 )     
+#define X86IM_GEN_PSHUFW_MMXR1_MMXR2_IMM8( io, mode, mxr1, mxr2, imm8 )     x86im_gen( io, mode, X86IM_GEN_CODE_PSHUFW_MMXR1_MMXR2_IMM8, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, imm8 )
 #define X86IM_GEN_PSHUFW_MMXRG_MM64_IMM8( io, mode, mxrg, mm, imm8 )        x86im_gen( io, mode, X86IM_GEN_CODE_PSHUFW_MMXRG_MM64_IMM8, X86IM_GEN_MXRG_MM( mxrg ), mm, imm8 )
 
-// SSE2                                 
+// SSE2
 
-#define X86IM_GEN_CODE_MOVMSKPD_R1_XMMR2                            0x0000500F           
+#define X86IM_GEN_CODE_MOVMSKPD_R1_XMMR2                            0x0000500F
 #define X86IM_GEN_MOVMSKPD_R1_XMMR2( io, mode, r1, xmr2 )           x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVMSKPD_R1_XMMR2, X86IM_GEN_R1_XMR2( r1, xmr2 ), 0, 0, 0 )
 
-#define X86IM_GEN_CODE_MASKMOVDQU_XMMR1_XMMR2                       0x0000F70F        
-#define X86IM_GEN_MASKMOVDQU_XMMR1_XMMR2( io, mode, xmr1, xmr2 )    x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MASKMOVDQU_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )          
+#define X86IM_GEN_CODE_MASKMOVDQU_XMMR1_XMMR2                       0x0000F70F
+#define X86IM_GEN_MASKMOVDQU_XMMR1_XMMR2( io, mode, xmr1, xmr2 )    x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MASKMOVDQU_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 
-#define X86IM_GEN_CODE_CLFLUSH_MM8                                  0x0038AE0F                  
-#define X86IM_GEN_CLFLUSH_MM8( io, mode, mm )                       x86im_gen( io, mode, X86IM_GEN_CODE_CLFLUSH_MM8, 0, mm, 0 ) 
+#define X86IM_GEN_CODE_CLFLUSH_MM8                                  0x0038AE0F
+#define X86IM_GEN_CLFLUSH_MM8( io, mode, mm )                       x86im_gen( io, mode, X86IM_GEN_CODE_CLFLUSH_MM8, 0, mm, 0 )
 
-#define X86IM_GEN_CODE_MOVNTPD_MM_XMMRG                             0x00002B0F    
-#define X86IM_GEN_MOVNTPD_MM_XMMRG( io, mode, mm, xmrg )            x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVNTPD_MM_XMMRG, X86IM_GEN_MM_XMRG( xmrg ), mm, 0 )  
+#define X86IM_GEN_CODE_MOVNTPD_MM_XMMRG                             0x00002B0F
+#define X86IM_GEN_MOVNTPD_MM_XMMRG( io, mode, mm, xmrg )            x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVNTPD_MM_XMMRG, X86IM_GEN_MM_XMRG( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVNTDQ_MM_XMMRG                             0x0000E70F                  
+#define X86IM_GEN_CODE_MOVNTDQ_MM_XMMRG                             0x0000E70F
 #define X86IM_GEN_MOVNTDQ_MM_XMMRG( io, mode, mm, xmrg )            x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVNTDQ_MM_XMMRG, X86IM_GEN_MM_XMRG( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVNTI_MM_RG                                 0x0000C30F                   
+#define X86IM_GEN_CODE_MOVNTI_MM_RG                                 0x0000C30F
 #define X86IM_GEN_MOVNTI_MM_RG( io, mode, mm, rg )                  x86im_gen( io, mode, X86IM_GEN_CODE_MOVNTI_MM_RG, X86IM_GEN_MM_RG( rg ), mm, 0 )
 
 #define X86IM_GEN_CODE_PAUSE                                        0x00000090
 #define X86IM_GEN_PAUSE( io, mode )                                 x86im_gen( io, mode, X86IM_GEN_CODE_PAUSE, 0, 0, 0, 0 )
 
-#define X86IM_GEN_CODE_LFENCE                                       0x00E8AE0F                       
-#define X86IM_GEN_LFENCE( io, mode )                                x86im_gen( io, mode, X86IM_GEN_CODE_LFENCE, 0, 0, 0, 0 )         
+#define X86IM_GEN_CODE_LFENCE                                       0x00E8AE0F
+#define X86IM_GEN_LFENCE( io, mode )                                x86im_gen( io, mode, X86IM_GEN_CODE_LFENCE, 0, 0, 0, 0 )
 
-#define X86IM_GEN_CODE_MFENCE                                       0x00F0AE0F                        
-#define X86IM_GEN_MFENCE( io, mode )                                x86im_gen( io, mode, X86IM_GEN_CODE_MFENCE, 0, 0, 0, 0 ) 
+#define X86IM_GEN_CODE_MFENCE                                       0x00F0AE0F
+#define X86IM_GEN_MFENCE( io, mode )                                x86im_gen( io, mode, X86IM_GEN_CODE_MFENCE, 0, 0, 0, 0 )
 
-#define X86IM_GEN_CODE_ADDPD_XMMR1_XMMR2                            0x00C0580F    
-#define X86IM_GEN_CODE_ADDPD_XMMRG_MM                               0x0000580F    
+#define X86IM_GEN_CODE_ADDPD_XMMR1_XMMR2                            0x00C0580F
+#define X86IM_GEN_CODE_ADDPD_XMMRG_MM                               0x0000580F
 
 #define X86IM_GEN_ADDPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_ADDPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_ADDPD_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_ADDPD_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_ADDSD_XMMR1_XMMR2                            0x00C0580F                 
-#define X86IM_GEN_CODE_ADDSD_XMMRG_MM64                             0x0000580F       
+#define X86IM_GEN_CODE_ADDSD_XMMR1_XMMR2                            0x00C0580F
+#define X86IM_GEN_CODE_ADDSD_XMMRG_MM64                             0x0000580F
 
 #define X86IM_GEN_ADDSD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_ADDSD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_ADDSD_XMMRG_MM64( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_ADDSD_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_ANDNPD_XMMR1_XMMR2                           0x00C0550F    
-#define X86IM_GEN_CODE_ANDNPD_XMMRG_MM                              0x0000550F          
+#define X86IM_GEN_CODE_ANDNPD_XMMR1_XMMR2                           0x00C0550F
+#define X86IM_GEN_CODE_ANDNPD_XMMRG_MM                              0x0000550F
 
-#define X86IM_GEN_ANDNPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_ANDNPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )   
+#define X86IM_GEN_ANDNPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_ANDNPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_ANDNPD_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_ANDNPD_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_ANDPD_XMMR1_XMMR2                            0x00C0540F                 
-#define X86IM_GEN_CODE_ANDPD_XMMRG_MM                               0x0000540F        
+#define X86IM_GEN_CODE_ANDPD_XMMR1_XMMR2                            0x00C0540F
+#define X86IM_GEN_CODE_ANDPD_XMMRG_MM                               0x0000540F
 
 #define X86IM_GEN_ANDPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_ANDPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_ANDPD_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_ANDPD_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_CMPPD_XMMR1_XMMR2_IMM8                           0x00C0C20F       
-#define X86IM_GEN_CODE_CMPPD_XMMRG_MM_IMM8                              0x0000C20F      
+#define X86IM_GEN_CODE_CMPPD_XMMR1_XMMR2_IMM8                           0x00C0C20F
+#define X86IM_GEN_CODE_CMPPD_XMMRG_MM_IMM8                              0x0000C20F
 
 #define X86IM_GEN_CMPPD_XMMR1_XMMR2_IMM8( io, mode, xmr1, xmr2, imm8 )  x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_CMPPD_XMMR1_XMMR2_IMM8, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, imm8 )
 #define X86IM_GEN_CMPPD_XMMRG_MM_IMM8( io, mode, xmrg, mm, imm8 )       x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_CMPPD_XMMRG_MM_IMM8, X86IM_GEN_XMRG_MM( xmrg ), mm, imm8 )
 
-#define X86IM_GEN_CODE_CMPSD_XMMR1_XMMR2_IMM8                               0x00C0C20F         
-#define X86IM_GEN_CODE_CMPSD_XMMRG_MM64_IMM8                                0x0000C20F    
+#define X86IM_GEN_CODE_CMPSD_XMMR1_XMMR2_IMM8                               0x00C0C20F
+#define X86IM_GEN_CODE_CMPSD_XMMRG_MM64_IMM8                                0x0000C20F
 
 #define X86IM_GEN_CMPSD_XMMR1_XMMR2_IMM8( io, mode, xmr1, xmr2, imm8 )      x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_CMPSD_XMMR1_XMMR2_IMM8, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, imm8 )
 #define X86IM_GEN_CMPSD_XMMRG_MM64_IMM8( io, mode, xmrg, mm, imm8 )         x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_CMPSD_XMMRG_MM64_IMM8, X86IM_GEN_XMRG_MM( xmrg ), mm, imm8 )
 
-#define X86IM_GEN_CODE_COMISD_XMMR1_XMMR2                           0x00C02E0F               
-#define X86IM_GEN_CODE_COMISD_XMMRG_MM64                            0x00002E0F       
+#define X86IM_GEN_CODE_COMISD_XMMR1_XMMR2                           0x00C02E0F
+#define X86IM_GEN_CODE_COMISD_XMMRG_MM64                            0x00002E0F
 
 #define X86IM_GEN_COMISD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_COMISD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_COMISD_XMMRG_MM64( io, mode, xmrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_COMISD_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTPI2PD_XMMR1_MMXR2                         0x00C02A0F             
-#define X86IM_GEN_CODE_CVTPI2PD_XMMRG_MM64                          0x00002A0F     
+#define X86IM_GEN_CODE_CVTPI2PD_XMMR1_MMXR2                         0x00C02A0F
+#define X86IM_GEN_CODE_CVTPI2PD_XMMRG_MM64                          0x00002A0F
 
 #define X86IM_GEN_CVTPI2PD_XMMR1_MMXR2( io, mode, xmr1, mmxr2 )     x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_CVTPI2PD_XMMR1_MMXR2, X86IM_GEN_XMR1_MXR2( xmr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_CVTPI2PD_XMMRG_MM64( io, mode, xmrg, mm )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_CVTPI2PD_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTPD2PI_MMXR1_XMMR2                         0x00C02D0F            
-#define X86IM_GEN_CODE_CVTPD2PI_MMXRG_MM                            0x00002D0F         
+#define X86IM_GEN_CODE_CVTPD2PI_MMXR1_XMMR2                         0x00C02D0F
+#define X86IM_GEN_CODE_CVTPD2PI_MMXRG_MM                            0x00002D0F
 
 #define X86IM_GEN_CVTPD2PI_MMXR1_XMMR2( io, mode, mxr1, xmr2 )      x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_CVTPD2PI_MMXR1_XMMR2, X86IM_GEN_MXR1_XMR2( mxr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_CVTPD2PI_MMXRG_MM( io, mode, mxrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_CVTPD2PI_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTSI2SD_XMMR1_R2                            0x00C02A0F               
-#define X86IM_GEN_CODE_CVTSI2SD_XMMRG_MM                            0x00002A0F          
+#define X86IM_GEN_CODE_CVTSI2SD_XMMR1_R2                            0x00C02A0F
+#define X86IM_GEN_CODE_CVTSI2SD_XMMRG_MM                            0x00002A0F
 
 #define X86IM_GEN_CVTSI2SD_XMMR1_R2( io, mode, xmr1, r2 )           x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_CVTSI2SD_XMMR1_R2, X86IM_GEN_XMR1_R2( xmr1, r2 ), 0, 0, 0 )
 #define X86IM_GEN_CVTSI2SD_XMMRG_MM( io, mode, xmrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_CVTSI2SD_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTSD2SI_R1_XMMR2                            0x00C02D0F             
-#define X86IM_GEN_CODE_CVTSD2SI_RG_MM64                             0x00002D0F           
+#define X86IM_GEN_CODE_CVTSD2SI_R1_XMMR2                            0x00C02D0F
+#define X86IM_GEN_CODE_CVTSD2SI_RG_MM64                             0x00002D0F
 
 #define X86IM_GEN_CVTSD2SI_R1_XMMR2( io, mode, r1, xmr2 )           x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_CVTSD2SI_R1_XMMR2, X86IM_GEN_R1_XMR2( r1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_CVTSD2SI_RG_MM64( io, mode, rg, mm )              x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_CVTSD2SI_RG_MM64, X86IM_GEN_RG_MM( rg  ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTTPD2PI_MMXR1_XMMR2                        0x00C02C0F             
-#define X86IM_GEN_CODE_CVTTPD2PI_MMXRG_MM                           0x00002C0F        
+#define X86IM_GEN_CODE_CVTTPD2PI_MMXR1_XMMR2                        0x00C02C0F
+#define X86IM_GEN_CODE_CVTTPD2PI_MMXRG_MM                           0x00002C0F
 
 #define X86IM_GEN_CVTTPD2PI_MMXR1_XMMR2( io, mode, mxr1, xmr2 )     x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_CVTTPD2PI_MMXR1_XMMR2, X86IM_GEN_MXR1_XMR2( mxr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_CVTTPD2PI_MMXRG_MM( io, mode, mxrg, mm )          x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_CVTTPD2PI_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTTSD2SI_R1_XMMR2                           0x00C02C0F                
-#define X86IM_GEN_CODE_CVTTSD2SI_RG_MM64                            0x00002C0F            
+#define X86IM_GEN_CODE_CVTTSD2SI_R1_XMMR2                           0x00C02C0F
+#define X86IM_GEN_CODE_CVTTSD2SI_RG_MM64                            0x00002C0F
 
 #define X86IM_GEN_CVTTSD2SI_R1_XMMR2( io, mode, r1, xmr2 )          x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_CVTTSD2SI_R1_XMMR2, X86IM_GEN_R1_XMR2( r1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_CVTTSD2SI_RG_MM64( io, mode, rg, mm )             x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_CVTTSD2SI_RG_MM64, X86IM_GEN_RG_MM( rg ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTPD2PS_XMMR1_XMMR2                         0x00C05A0F        
-#define X86IM_GEN_CODE_CVTPD2PS_XMMRG_MM                            0x00005A0F    
+#define X86IM_GEN_CODE_CVTPD2PS_XMMR1_XMMR2                         0x00C05A0F
+#define X86IM_GEN_CODE_CVTPD2PS_XMMRG_MM                            0x00005A0F
 
 #define X86IM_GEN_CVTPD2PS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_CVTPD2PS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_CVTPD2PS_XMMRG_MM( io, mode, xmrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_CVTPD2PS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
- 
-#define X86IM_GEN_CODE_CVTPS2PD_XMMR1_XMMR2                         0x00C05A0F             
-#define X86IM_GEN_CODE_CVTPS2PD_XMMRG_MM64                          0x00005A0F        
+
+#define X86IM_GEN_CODE_CVTPS2PD_XMMR1_XMMR2                         0x00C05A0F
+#define X86IM_GEN_CODE_CVTPS2PD_XMMRG_MM64                          0x00005A0F
 
 #define X86IM_GEN_CVTPS2PD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode, X86IM_GEN_CODE_CVTPS2PD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_CVTPS2PD_XMMRG_MM64( io, mode, xmrg, mm )         x86im_gen( io, mode, X86IM_GEN_CODE_CVTPS2PD_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTSD2SS_XMMR1_XMMR2                         0x00C05A0F       
-#define X86IM_GEN_CODE_CVTSD2SS_XMMRG_MM64                          0x00005A0F         
+#define X86IM_GEN_CODE_CVTSD2SS_XMMR1_XMMR2                         0x00C05A0F
+#define X86IM_GEN_CODE_CVTSD2SS_XMMRG_MM64                          0x00005A0F
 
-#define X86IM_GEN_CVTSD2SS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_CVTSD2SS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 ) 
+#define X86IM_GEN_CVTSD2SS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_CVTSD2SS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_CVTSD2SS_XMMRG_MM64( io, mode, xmrg, mm )         x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_CVTSD2SS_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTSS2SD_XMMR1_XMMR2                         0x00C05A0F           
-#define X86IM_GEN_CODE_CVTSS2SD_XMMRG_MM32                          0x00005A0F        
+#define X86IM_GEN_CODE_CVTSS2SD_XMMR1_XMMR2                         0x00C05A0F
+#define X86IM_GEN_CODE_CVTSS2SD_XMMRG_MM32                          0x00005A0F
 
-#define X86IM_GEN_CVTSS2SD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_CVTSS2SD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 ) 
+#define X86IM_GEN_CVTSS2SD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_CVTSS2SD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_CVTSS2SD_XMMRG_MM32( io, mode, xmrg, mm )         x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_CVTSS2SD_XMMRG_MM32, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTPD2DQ_XMMR1_XMMR2                         0x00C0E60F     
-#define X86IM_GEN_CODE_CVTPD2DQ_XMMRG_MM                            0x0000E60F          
+#define X86IM_GEN_CODE_CVTPD2DQ_XMMR1_XMMR2                         0x00C0E60F
+#define X86IM_GEN_CODE_CVTPD2DQ_XMMRG_MM                            0x0000E60F
 
-#define X86IM_GENCVTPD2DQ_XMMR1_XMMR2( io, mode, xmr1, xmr2 )       x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_CVTPD2DQ_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 ) 
+#define X86IM_GENCVTPD2DQ_XMMR1_XMMR2( io, mode, xmr1, xmr2 )       x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_CVTPD2DQ_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GENCVTPD2DQ_XMMRG_MM( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_CVTPD2DQ_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTTPD2DQ_XMMR1_XMMR2                        0x00C0E60F        
-#define X86IM_GEN_CODE_CVTTPD2DQ_XMMRG_MM                           0x0000E60F   
+#define X86IM_GEN_CODE_CVTTPD2DQ_XMMR1_XMMR2                        0x00C0E60F
+#define X86IM_GEN_CODE_CVTTPD2DQ_XMMRG_MM                           0x0000E60F
 
-#define X86IM_GEN_CVTTPD2DQ_XMMR1_XMMR2( io, mode, xmr1, xmr2 )     x86im_gen( io, mode, X86IM_GEN_CODE_CVTTPD2DQ_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )  
+#define X86IM_GEN_CVTTPD2DQ_XMMR1_XMMR2( io, mode, xmr1, xmr2 )     x86im_gen( io, mode, X86IM_GEN_CODE_CVTTPD2DQ_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_CVTTPD2DQ_XMMRG_MM( io, mode, xmrg, mm )          x86im_gen( io, mode, X86IM_GEN_CODE_CVTTPD2DQ_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTDQ2PD_XMMR1_XMMR2                         0x00C0E60F             
-#define X86IM_GEN_CODE_CVTDQ2PD_XMMRG_MM64                          0x0000E60F        
+#define X86IM_GEN_CODE_CVTDQ2PD_XMMR1_XMMR2                         0x00C0E60F
+#define X86IM_GEN_CODE_CVTDQ2PD_XMMRG_MM64                          0x0000E60F
 
 #define X86IM_GEN_CVTDQ2PD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_CVTDQ2PD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_CVTDQ2PD_XMMRG_MM64( io, mode, xmrg, mm )         x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_CVTDQ2PD_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTPS2DQ_XMMR1_XMMR2                         0x00C05B0F        
-#define X86IM_GEN_CODE_CVTPS2DQ_XMMRG_MM                            0x00005B0F         
+#define X86IM_GEN_CODE_CVTPS2DQ_XMMR1_XMMR2                         0x00C05B0F
+#define X86IM_GEN_CODE_CVTPS2DQ_XMMRG_MM                            0x00005B0F
 
 #define X86IM_GEN_CVTPS2DQ_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_CVTPS2DQ_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_CVTPS2DQ_XMMRG_MM( io, mode, xmrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_CVTPS2DQ_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTTPS2DQ_XMMR1_XMMR2                        0x00C05B0F          
-#define X86IM_GEN_CODE_CVTTPS2DQ_XMMRG_MM                           0x00005B0F    
+#define X86IM_GEN_CODE_CVTTPS2DQ_XMMR1_XMMR2                        0x00C05B0F
+#define X86IM_GEN_CODE_CVTTPS2DQ_XMMRG_MM                           0x00005B0F
 
 #define X86IM_GEN_CVTTPS2DQ_XMMR1_XMMR2( io, mode, xmr1, xmr2 )     x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_CVTTPS2DQ_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_CVTTPS2DQ_XMMRG_MM( io, mode, xmrg, mm )          x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_CVTTPS2DQ_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_CVTDQ2PS_XMMR1_XMMR2                         0x00C05B0F             
-#define X86IM_GEN_CODE_CVTDQ2PS_XMMRG_MM                            0x00005B0F       
+#define X86IM_GEN_CODE_CVTDQ2PS_XMMR1_XMMR2                         0x00C05B0F
+#define X86IM_GEN_CODE_CVTDQ2PS_XMMRG_MM                            0x00005B0F
 
 #define X86IM_GEN_CVTDQ2PS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode, X86IM_GEN_CODE_CVTDQ2PS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_CVTDQ2PS_XMMRG_MM( io, mode, xmrg, mm )           x86im_gen( io, mode, X86IM_GEN_CODE_CVTDQ2PS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_DIVPD_XMMR1_XMMR2                            0x00C05E0F              
-#define X86IM_GEN_CODE_DIVPD_XMMRG_MM                               0x00005E0F        
+#define X86IM_GEN_CODE_DIVPD_XMMR1_XMMR2                            0x00C05E0F
+#define X86IM_GEN_CODE_DIVPD_XMMRG_MM                               0x00005E0F
 
 #define X86IM_GEN_DIVPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_DIVPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_DIVPD_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_DIVPD_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_DIVSD_XMMR1_XMMR2                            0x00C05E0F            
-#define X86IM_GEN_CODE_DIVSD_XMMRG_MM64                             0x00005E0F             
+#define X86IM_GEN_CODE_DIVSD_XMMR1_XMMR2                            0x00C05E0F
+#define X86IM_GEN_CODE_DIVSD_XMMRG_MM64                             0x00005E0F
 
 #define X86IM_GEN_DIVSD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_DIVSD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_DIVSD_XMMRG_MM64( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_DIVSD_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MAXPD_XMMR1_XMMR2                            0x00C05F0F               
-#define X86IM_GEN_CODE_MAXPD_XMMRG_MM                               0x00005F0F            
+#define X86IM_GEN_CODE_MAXPD_XMMR1_XMMR2                            0x00C05F0F
+#define X86IM_GEN_CODE_MAXPD_XMMRG_MM                               0x00005F0F
 
 #define X86IM_GEN_MAXPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MAXPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MAXPD_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MAXPD_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MAXSD_XMMR1_XMMR2                            0x00C05F0F             
-#define X86IM_GEN_CODE_MAXSD_XMMRG_MM64                             0x00005F0F        
+#define X86IM_GEN_CODE_MAXSD_XMMR1_XMMR2                            0x00C05F0F
+#define X86IM_GEN_CODE_MAXSD_XMMRG_MM64                             0x00005F0F
 
 #define X86IM_GEN_MAXSD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_MAXSD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MAXSD_XMMRG_MM64( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_MAXSD_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MINPD_XMMR1_XMMR2                            0x00C05D0F                 
-#define X86IM_GEN_CODE_MINPD_XMMRG_MM                               0x00005D0F            
+#define X86IM_GEN_CODE_MINPD_XMMR1_XMMR2                            0x00C05D0F
+#define X86IM_GEN_CODE_MINPD_XMMRG_MM                               0x00005D0F
 
-#define X86IM_GEN_MINPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MINPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 ) 
+#define X86IM_GEN_MINPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MINPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MINPD_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MINPD_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MINSD_XMMR1_XMMR2                            0x00C05D0F            
-#define X86IM_GEN_CODE_MINSD_XMMRG_MM64                             0x00005D0F        
+#define X86IM_GEN_CODE_MINSD_XMMR1_XMMR2                            0x00C05D0F
+#define X86IM_GEN_CODE_MINSD_XMMRG_MM64                             0x00005D0F
 
 #define X86IM_GEN_MINSD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_MINSD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MINSD_XMMRG_MM64( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_MINSD_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVAPD_XMMR1_XMMR2                           0x00C0280F         
-#define X86IM_GEN_CODE_MOVAPD_XMMRG_MM                              0x0000280F    
-#define X86IM_GEN_CODE_MOVAPD_XMMR2_XMMR1                           0x00C0290F          
-#define X86IM_GEN_CODE_MOVAPD_MM_XMMRG                              0x0000290F     
+#define X86IM_GEN_CODE_MOVAPD_XMMR1_XMMR2                           0x00C0280F
+#define X86IM_GEN_CODE_MOVAPD_XMMRG_MM                              0x0000280F
+#define X86IM_GEN_CODE_MOVAPD_XMMR2_XMMR1                           0x00C0290F
+#define X86IM_GEN_CODE_MOVAPD_MM_XMMRG                              0x0000290F
 
-#define X86IM_GEN_MOVAPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVAPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 ) 
+#define X86IM_GEN_MOVAPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVAPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MOVAPD_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVAPD_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 #define X86IM_GEN_MOVAPD_XMMR2_XMMR1( io, mode, xmr2, xmr1 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVAPD_XMMR2_XMMR1, X86IM_GEN_XMR2_XMR1( xmr2, xmr1 ), 0, 0, 0 )
 #define X86IM_GEN_MOVAPD_MM_XMMRG( io, mode, mm, xmrg )             x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVAPD_MM_XMMRG, X86IM_GEN_MM_XMRG( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVHPD_XMMRG_MM64                            0x0000160F              
-#define X86IM_GEN_CODE_MOVHPD_MM64_XMMRG                            0x0000170F              
+#define X86IM_GEN_CODE_MOVHPD_XMMRG_MM64                            0x0000160F
+#define X86IM_GEN_CODE_MOVHPD_MM64_XMMRG                            0x0000170F
 
 #define X86IM_GEN_MOVHPD_XMMRG_MM64( io, mode, xmrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVHPD_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 #define X86IM_GEN_MOVHPD_MM64_XMMRG( io, mode, mm, xmrg )           x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVHPD_MM64_XMMRG, X86IM_GEN_MM_XMRG( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVLPD_XMMRG_MM64                            0x0000120F              
-#define X86IM_GEN_CODE_MOVLPD_MM64_XMMRG                            0x0000130F            
+#define X86IM_GEN_CODE_MOVLPD_XMMRG_MM64                            0x0000120F
+#define X86IM_GEN_CODE_MOVLPD_MM64_XMMRG                            0x0000130F
 
-#define X86IM_GEN_MOVLPD_XMMRG_MM64( io, mode, xmrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVLPD_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 ) 
+#define X86IM_GEN_MOVLPD_XMMRG_MM64( io, mode, xmrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVLPD_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 #define X86IM_GEN_MOVLPD_MM64_XMMRG( io, mode, mm, xmrg )           x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVLPD_MM64_XMMRG, X86IM_GEN_MM_XMRG( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVSD_XMMR1_XMMR2                            0x00C0100F                 
-#define X86IM_GEN_CODE_MOVSD_XMMRG_MM64                             0x0000100F    
-#define X86IM_GEN_CODE_MOVSD_XMMR2_XMMR1                            0x00C0110F              
-#define X86IM_GEN_CODE_MOVSD_MM64_XMMRG                             0x0000110F         
+#define X86IM_GEN_CODE_MOVSD_XMMR1_XMMR2                            0x00C0100F
+#define X86IM_GEN_CODE_MOVSD_XMMRG_MM64                             0x0000100F
+#define X86IM_GEN_CODE_MOVSD_XMMR2_XMMR1                            0x00C0110F
+#define X86IM_GEN_CODE_MOVSD_MM64_XMMRG                             0x0000110F
 
 #define X86IM_GEN_MOVSD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_MOVSD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MOVSD_XMMRG_MM64( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_MOVSD_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 #define X86IM_GEN_MOVSD_XMMR2_XMMR1( io, mode, xmr2, xmr1 )         x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_MOVSD_XMMR2_XMMR1,  X86IM_GEN_XMR2_XMR1( xmr2, xmr1 ), 0, 0, 0 )
 #define X86IM_GEN_MOVSD_MM64_XMMRG( io, mode, mm, xmrg )            x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_MOVSD_MM64_XMMRG, X86IM_GEN_MM_XMRG( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVUPD_XMMR1_XMMR2                           0x00C0100F  
+#define X86IM_GEN_CODE_MOVUPD_XMMR1_XMMR2                           0x00C0100F
 #define X86IM_GEN_CODE_MOVUPD_XMMRG_MM                              0x0000100F
-#define X86IM_GEN_CODE_MOVUPD_XMMR2_XMMR1                           0x00C0110F  
+#define X86IM_GEN_CODE_MOVUPD_XMMR2_XMMR1                           0x00C0110F
 #define X86IM_GEN_CODE_MOVUPD_MM_XMMRG                              0x0000110F
 
 #define X86IM_GEN_MOVUPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVUPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
@@ -3501,99 +3501,99 @@
 #define X86IM_GEN_MOVUPD_XMMR2_XMMR1( io, mode, xmr2, xmr1 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVUPD_XMMR2_XMMR1, X86IM_GEN_XMR2_XMR1( xmr2, xmr1 ), 0, 0, 0 )
 #define X86IM_GEN_MOVUPD_MM_XMMRG( io, mode, mm, xmrg )             x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVUPD_MM_XMMRG, X86IM_GEN_MM_XMRG( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MULPD_XMMR1_XMMR2                            0x00C0590F                 
+#define X86IM_GEN_CODE_MULPD_XMMR1_XMMR2                            0x00C0590F
 #define X86IM_GEN_CODE_MULPD_XMMRG_MM                               0x0000590F
 
 #define X86IM_GEN_MULPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MULPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MULPD_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MULPD_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MULSD_XMMR1_XMMR2                            0x00C0590F    
+#define X86IM_GEN_CODE_MULSD_XMMR1_XMMR2                            0x00C0590F
 #define X86IM_GEN_CODE_MULSD_XMMRG_MM64                             0x0000590F
 
 #define X86IM_GEN_MULSD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_MULSD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MULSD_XMMRG_MM64( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_MULSD_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_ORPD_XMMR1_XMMR2                             0x00C0560F                 
-#define X86IM_GEN_CODE_ORPD_XMMRG_MM                                0x0000560F            
+#define X86IM_GEN_CODE_ORPD_XMMR1_XMMR2                             0x00C0560F
+#define X86IM_GEN_CODE_ORPD_XMMRG_MM                                0x0000560F
 
 #define X86IM_GEN_ORPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )          x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_ORPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_ORPD_XMMRG_MM( io, mode, xmrg, mm )               x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_ORPD_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_SHUFPD_XMMR1_XMMR2_IMM8                              0x00C0C60F 
-#define X86IM_GEN_CODE_SHUFPD_XMMRG_MM_IMM8                                 0x0000C60F    
+#define X86IM_GEN_CODE_SHUFPD_XMMR1_XMMR2_IMM8                              0x00C0C60F
+#define X86IM_GEN_CODE_SHUFPD_XMMRG_MM_IMM8                                 0x0000C60F
 
 #define X86IM_GEN_SHUFPD_XMMR1_XMMR2_IMM8( io, mode, xmr1, xmr2, imm8 )     x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_SHUFPD_XMMR1_XMMR2_IMM8, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, imm8 )
 #define X86IM_GEN_SHUFPD_XMMRG_MM_IMM8( io, mode, xmrg, mm, imm8 )          x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_SHUFPD_XMMRG_MM_IMM8, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_SQRTPD_XMMR1_XMMR2                           0x00C0510F               
+#define X86IM_GEN_CODE_SQRTPD_XMMR1_XMMR2                           0x00C0510F
 #define X86IM_GEN_CODE_SQRTPD_XMMRG_MM                              0x0000510F
 
 #define X86IM_GEN_SQRTPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_SQRTPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_SQRTPD_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_SQRTPD_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_SQRTSD_XMMR1_XMMR2                           0x00C0510F                
-#define X86IM_GEN_CODE_SQRTSD_XMMRG_MM64                            0x0000510F         
+#define X86IM_GEN_CODE_SQRTSD_XMMR1_XMMR2                           0x00C0510F
+#define X86IM_GEN_CODE_SQRTSD_XMMRG_MM64                            0x0000510F
 
 #define X86IM_GEN_SQRTSD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_SQRTSD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_SQRTSD_XMMRG_MM64( io, mode, xmrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_SQRTSD_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_SUBPD_XMMR1_XMMR2                            0x00C05C0F          
+#define X86IM_GEN_CODE_SUBPD_XMMR1_XMMR2                            0x00C05C0F
 #define X86IM_GEN_CODE_SUBPD_XMMRG_MM                               0x00005C0F
 
 #define X86IM_GEN_SUBPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_SUBPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_SUBPD_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_SUBPD_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_SUBSD_XMMR1_XMMR2                            0x00C05C0F                
+#define X86IM_GEN_CODE_SUBSD_XMMR1_XMMR2                            0x00C05C0F
 #define X86IM_GEN_CODE_SUBSD_XMMRG_MM64                             0x00005C0F
 
 #define X86IM_GEN_SUBSD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_SUBSD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_SUBSD_XMMRG_MM64( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_SUBSD_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_UCOMISD_XMMR1_XMMR2                          0x00C02E0F           
+#define X86IM_GEN_CODE_UCOMISD_XMMR1_XMMR2                          0x00C02E0F
 #define X86IM_GEN_CODE_UCOMISD_XMMRG_MM64                           0x00002E0F
 
 #define X86IM_GEN_UCOMISD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )       x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_UCOMISD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_UCOMISD_XMMRG_MM64( io, mode, xmrg, mm )          x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_UCOMISD_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_UNPCKHPD_XMMR1_XMMR2                         0x00C0150F            
+#define X86IM_GEN_CODE_UNPCKHPD_XMMR1_XMMR2                         0x00C0150F
 #define X86IM_GEN_CODE_UNPCKHPD_XMMRG_MM                            0x0000150F
 
 #define X86IM_GEN_UNPCKHPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_UNPCKHPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_UNPCKHPD_XMMRG_MM( io, mode, xmrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_UNPCKHPD_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_UNPCKLPD_XMMR1_XMMR2                         0x00C0140F             
+#define X86IM_GEN_CODE_UNPCKLPD_XMMR1_XMMR2                         0x00C0140F
 #define X86IM_GEN_CODE_UNPCKLPD_XMMRG_MM                            0x0000140F
 
 #define X86IM_GEN_UNPCKLPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_UNPCKLPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_UNPCKLPD_XMMRG_MM( io, mode, xmrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_UNPCKLPD_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_XORPD_XMMR1_XMMR2                            0x00C0570F              
+#define X86IM_GEN_CODE_XORPD_XMMR1_XMMR2                            0x00C0570F
 #define X86IM_GEN_CODE_XORPD_XMMRG_MM                               0x0000570F
 
 #define X86IM_GEN_XORPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_XORPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_XORPD_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_XORPD_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVQ2DQ_XMMR1_MMXR2                          0x0000D60F        
+#define X86IM_GEN_CODE_MOVQ2DQ_XMMR1_MMXR2                          0x0000D60F
 #define X86IM_GEN_MOVQ2DQ_XMMR1_MMXR2( io, mode, xmr1, mxr2 )       x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MOVQ2DQ_XMMR1_MMXR2, X86IM_GEN_XMR1_MXR2( xmr1, mxr2 ), 0, 0, 0 )
 
-#define X86IM_GEN_CODE_MOVDQ2Q_MMXR1_XMMR2                          0x0000D60F    
+#define X86IM_GEN_CODE_MOVDQ2Q_MMXR1_XMMR2                          0x0000D60F
 #define X86IM_GEN_MOVDQ2Q_MMXR1_XMMR2( io, mode, mxr1, xmr2 )       x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_MOVDQ2Q_MMXR1_XMMR2, X86IM_GEN_MXR1_XMR2( mxr1, xmr2 ), 0, 0, 0 )
 
-#define X86IM_GEN_CODE_PEXTRW_R1_XMMR2_IMM8                         0x0000C50F   
+#define X86IM_GEN_CODE_PEXTRW_R1_XMMR2_IMM8                         0x0000C50F
 #define X86IM_GEN_PEXTRW_R1_XMMR2_IMM8( io, mode, r1, xmr2, imm8 )  x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PEXTRW_R1_XMMR2_IMM8, X86IM_GEN_R1_XMR2( r1, xmr2 ), 0, 0, imm8 )
 
-#define X86IM_GEN_CODE_PMOVMSKB_R1_XMMR2                            0x0000D70F                
+#define X86IM_GEN_CODE_PMOVMSKB_R1_XMMR2                            0x0000D70F
 #define X86IM_GEN_PMOVMSKB_R1_XMMR2( io, mode, r1, xmr2 )           x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMOVMSKB_R1_XMMR2, X86IM_GEN_R1_XMR2( r1, xmr2 ), 0, 0, 0 )
 
-#define X86IM_GEN_CODE_PSLLDQ_XMMRG_IMM8                            0x00F8730F                
+#define X86IM_GEN_CODE_PSLLDQ_XMMRG_IMM8                            0x00F8730F
 #define X86IM_GEN_PSLLDQ_XMMRG_IMM8( io, mode, xmrg, imm8 )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSLLDQ_XMMRG_IMM8, xmrg, 0, 0, imm8 )
 
-#define X86IM_GEN_CODE_PSRLDQ_XMMRG_IMM8                            0x00D8730F    
+#define X86IM_GEN_CODE_PSRLDQ_XMMRG_IMM8                            0x00D8730F
 #define X86IM_GEN_PSRLDQ_XMMRG_IMM8( io, mode, xmrg, imm8 )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSRLDQ_XMMRG_IMM8, xmrg, 0, 0, imm8 )
 
-#define X86IM_GEN_CODE_MOVD_XMMRG_RG                                0x00C06E0F   
+#define X86IM_GEN_CODE_MOVD_XMMRG_RG                                0x00C06E0F
 #define X86IM_GEN_CODE_MOVD_XMMRG_MM                                0x00006E0F
-#define X86IM_GEN_CODE_MOVD_RG_XMMRG                                0x00C07E0F                
+#define X86IM_GEN_CODE_MOVD_RG_XMMRG                                0x00C07E0F
 #define X86IM_GEN_CODE_MOVD_MM_XMMRG                                0x00007E0F
 
 #define X86IM_GEN_MOVD_XMMR1_R2( io, mode, xmr1, r2 )               x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVD_XMMRG_RG, X86IM_GEN_XMR1_R2( xmr1, r2 ), 0, 0, 0 )
@@ -3601,9 +3601,9 @@
 #define X86IM_GEN_MOVD_R2_XMMR1( io, mode, r1, xmr2 )               x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVD_RG_XMMRG, X86IM_GEN_R1_XMR2( r1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MOVD_MM_XMMRG( io, mode, mm, xmrg )               x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVD_MM_XMMRG, X86IM_GEN_MM_XMRG( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVDQA_XMMR1_XMMR2                           0x00C06F0F               
-#define X86IM_GEN_CODE_MOVDQA_XMMRG_MM                              0x00006F0F    
-#define X86IM_GEN_CODE_MOVDQA_XMMR2_XMMR1                           0x00C07F0F              
+#define X86IM_GEN_CODE_MOVDQA_XMMR1_XMMR2                           0x00C06F0F
+#define X86IM_GEN_CODE_MOVDQA_XMMRG_MM                              0x00006F0F
+#define X86IM_GEN_CODE_MOVDQA_XMMR2_XMMR1                           0x00C07F0F
 #define X86IM_GEN_CODE_MOVDQA_MM_XMMRG                              0x00007F0F
 
 #define X86IM_GEN_MOVDQA_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVDQA_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
@@ -3611,47 +3611,47 @@
 #define X86IM_GEN_MOVDQA_XMMR2_XMMR1( io, mode, xmr2, xmr1 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVDQA_XMMR2_XMMR1, X86IM_GEN_XMR2_XMR1( xmr2, xmr1 ), 0, 0, 0 )
 #define X86IM_GEN_MOVDQA_MM_XMMRG( io, mode, mm, xmrg )             x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVDQA_MM_XMMRG, X86IM_GEN_MM_XMRG( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVDQU_XMMR1_XMMR2                           0x00C06F0F              
-#define X86IM_GEN_CODE_MOVDQU_XMMRG_MM                              0x00006F0F            
-#define X86IM_GEN_CODE_MOVDQU_XMMR2_XMMR1                           0x00C07F0F    
-#define X86IM_GEN_CODE_MOVDQU_MM_XMMRG                              0x00007F0F            
+#define X86IM_GEN_CODE_MOVDQU_XMMR1_XMMR2                           0x00C06F0F
+#define X86IM_GEN_CODE_MOVDQU_XMMRG_MM                              0x00006F0F
+#define X86IM_GEN_CODE_MOVDQU_XMMR2_XMMR1                           0x00C07F0F
+#define X86IM_GEN_CODE_MOVDQU_MM_XMMRG                              0x00007F0F
 
 #define X86IM_GEN_MOVDQU_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MOVDQU_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MOVDQU_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MOVDQU_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 #define X86IM_GEN_MOVDQU_XMMR2_XMMR1( io, mode, xmr2, xmr1 )        x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MOVDQU_XMMR2_XMMR1, X86IM_GEN_XMR2_XMR1( xmr2, xmr1 ), 0, 0, 0 )
 #define X86IM_GEN_MOVDQU_MM_XMMRG( io, mode, mm, xmrg )             x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MOVDQU_MM_XMMRG, X86IM_GEN_MM_XMRG( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVQ_XMMR1_XMMR2                             0x00C07E0F                   
-#define X86IM_GEN_CODE_MOVQ_XMMRG_MM64                              0x00007E0F    
-#define X86IM_GEN_CODE_MOVQ_XMMR2_XMMR1                             0x00C0D60F               
-#define X86IM_GEN_CODE_MOVQ_MM64_XMMRG                              0x0000D60F        
+#define X86IM_GEN_CODE_MOVQ_XMMR1_XMMR2                             0x00C07E0F
+#define X86IM_GEN_CODE_MOVQ_XMMRG_MM64                              0x00007E0F
+#define X86IM_GEN_CODE_MOVQ_XMMR2_XMMR1                             0x00C0D60F
+#define X86IM_GEN_CODE_MOVQ_MM64_XMMRG                              0x0000D60F
 
 #define X86IM_GEN_MOVQ_XMMR1_XMMR2( io, mode, xmr1, xmr2 )          x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MOVQ_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MOVQ_XMMRG_MM64( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MOVQ_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 #define X86IM_GEN_MOVQ_XMMR2_XMMR1( io, mode, xmr2, xmr1 )          x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVQ_XMMR2_XMMR1, X86IM_GEN_XMR2_XMR1( xmr2, xmr1 ), 0, 0, 0 )
 #define X86IM_GEN_MOVQ_MM64_XMMRG( io, mode, mm, xmrg )             x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_MOVQ_MM64_XMMRG, X86IM_GEN_MM_XMRG( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PACKSSDW_XMMR1_XMMR2                         0x00C06B0F             
-#define X86IM_GEN_CODE_PACKSSDW_XMMRG_MM                            0x00006B0F        
+#define X86IM_GEN_CODE_PACKSSDW_XMMR1_XMMR2                         0x00C06B0F
+#define X86IM_GEN_CODE_PACKSSDW_XMMRG_MM                            0x00006B0F
 
 #define X86IM_GEN_PACKSSDW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PACKSSDW_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PACKSSDW_XMMRG_MM( io, mode, xmrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PACKSSDW_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PACKSSWB_XMMR1_XMMR2                         0x00C0630F            
-#define X86IM_GEN_CODE_PACKSSWB_XMMRG_MM                            0x0000630F        
+#define X86IM_GEN_CODE_PACKSSWB_XMMR1_XMMR2                         0x00C0630F
+#define X86IM_GEN_CODE_PACKSSWB_XMMRG_MM                            0x0000630F
 
 #define X86IM_GEN_PACKSSWB_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PACKSSWB_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PACKSSWB_XMMRG_MM( io, mode, xmrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PACKSSWB_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PACKUSWB_XMMR1_XMMR2                         0x00C0670F    
-#define X86IM_GEN_CODE_PACKUSWB_XMMRG_MM                            0x0000670F 
+#define X86IM_GEN_CODE_PACKUSWB_XMMR1_XMMR2                         0x00C0670F
+#define X86IM_GEN_CODE_PACKUSWB_XMMRG_MM                            0x0000670F
 
 #define X86IM_GEN_PACKUSWB_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PACKUSWB_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PACKUSWB_XMMRG_MM( io, mode, xmrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PACKUSWB_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PADDQ_MMXR1_MMXR2                            0x00C0D40F                
-#define X86IM_GEN_CODE_PADDQ_MMXRG_MM64                             0x0000D40F        
-#define X86IM_GEN_CODE_PADDQ_XMMR1_XMMR2                            0x00C0D40F           
+#define X86IM_GEN_CODE_PADDQ_MMXR1_MMXR2                            0x00C0D40F
+#define X86IM_GEN_CODE_PADDQ_MMXRG_MM64                             0x0000D40F
+#define X86IM_GEN_CODE_PADDQ_XMMR1_XMMR2                            0x00C0D40F
 #define X86IM_GEN_CODE_PADDQ_XMMRG_MM                               0x0000D40F
 
 #define X86IM_GEN_PADDQ_MMXR1_MMXR2( io, mode, mxr1, mxr2 )         x86im_gen( io, mode, X86IM_GEN_CODE_PADDQ_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
@@ -3659,9 +3659,9 @@
 #define X86IM_GEN_PADDQ_XMMR1_XMMR2( io, mode, mxr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PADDQ_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PADDQ_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PADDQ_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PADDX_XMMR1_XMMR2                            0x00C0FC0F   
-#define X86IM_GEN_CODE_PADDX_XMMRG_MM                               0x0000FC0F         
-    
+#define X86IM_GEN_CODE_PADDX_XMMR1_XMMR2                            0x00C0FC0F
+#define X86IM_GEN_CODE_PADDX_XMMRG_MM                               0x0000FC0F
+
 #define X86IM_GEN_PADDB_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PADDX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PADDB_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PADDX_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 #define X86IM_GEN_PADDW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PADDX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
@@ -3669,7 +3669,7 @@
 #define X86IM_GEN_PADDD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PADDX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PADDD_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PADDX_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PADDSX_XMMR1_XMMR2                           0x00C0EC0F    
+#define X86IM_GEN_CODE_PADDSX_XMMR1_XMMR2                           0x00C0EC0F
 #define X86IM_GEN_CODE_PADDSX_XMMRG_MM                              0x0000EC0F
 
 #define X86IM_GEN_PADDSB_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PADDSX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
@@ -3677,7 +3677,7 @@
 #define X86IM_GEN_PADDSW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PADDSX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PADDSW_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PADDSX_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PADDUSX_XMMR1_XMMR2                          0x00C0DC0F    
+#define X86IM_GEN_CODE_PADDUSX_XMMR1_XMMR2                          0x00C0DC0F
 #define X86IM_GEN_CODE_PADDUSX_XMMRG_MM                             0x0000DC0F
 
 #define X86IM_GEN_PADDUSB_XMMR1_XMMR2( io, mode, xmr1, xmr2 )       x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PADDUSX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
@@ -3685,31 +3685,31 @@
 #define X86IM_GEN_PADDUSW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )       x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PADDUSX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PADDUSW_XMMRG_MM( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PADDUSX_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PAND_XMMR1_XMMR2                             0x00C0DB0F                
-#define X86IM_GEN_CODE_PAND_XMMRG_MM                                0x0000DB0F            
+#define X86IM_GEN_CODE_PAND_XMMR1_XMMR2                             0x00C0DB0F
+#define X86IM_GEN_CODE_PAND_XMMRG_MM                                0x0000DB0F
 
 #define X86IM_GEN_PAND_XMMR1_XMMR2( io, mode, xmr1, xmr2 )          x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PAND_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PAND_XMMRG_MM( io, mode, xmrg, mm )               x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PAND_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PANDN_XMMR1_XMMR2                            0x00C0DF0F                 
+#define X86IM_GEN_CODE_PANDN_XMMR1_XMMR2                            0x00C0DF0F
 #define X86IM_GEN_CODE_PANDN_XMMRG_MM                               0x0000DF0F
 
 #define X86IM_GEN_PANDN_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PANDN_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PANDN_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PANDN_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PAVGB_XMMR1_XMMR2                            0x00C0E00F    
+#define X86IM_GEN_CODE_PAVGB_XMMR1_XMMR2                            0x00C0E00F
 #define X86IM_GEN_CODE_PAVGB_XMMRG_MM                               0x0000E00F
 
 #define X86IM_GEN_PAVGB_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PAVGB_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PAVGB_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PAVGB_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PAVGW_XMMR1_XMMR2                            0x00C0E30F           
+#define X86IM_GEN_CODE_PAVGW_XMMR1_XMMR2                            0x00C0E30F
 #define X86IM_GEN_CODE_PAVGW_XMMRG_MM                               0x0000E30F
 
 #define X86IM_GEN_PAVGW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PAVGW_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PAVGW_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PAVGW_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PCMPEQX_XMMR1_XMMR2                          0x00C0740F             
+#define X86IM_GEN_CODE_PCMPEQX_XMMR1_XMMR2                          0x00C0740F
 #define X86IM_GEN_CODE_PCMPEQX_XMMRG_MM                             0x0000740F
 
 #define X86IM_GEN_PCMPEQB_XMMR1_XMMR2( io, mode, xmr1, xmr2 )       x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PCMPEQX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
@@ -3719,7 +3719,7 @@
 #define X86IM_GEN_PCMPEQD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )       x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PCMPEQX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PCMPEQD_XMMRG_MM( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PCMPEQX_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PCMPGTX_XMMR1_XMMR2                          0x00C0640F   
+#define X86IM_GEN_CODE_PCMPGTX_XMMR1_XMMR2                          0x00C0640F
 #define X86IM_GEN_CODE_PCMPGTX_XMMRG_MM                             0x0000640F
 
 #define X86IM_GEN_PCMPGTB_XMMR1_XMMR2( io, mode, xmr1, xmr2 )       x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PCMPGTX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
@@ -3729,63 +3729,63 @@
 #define X86IM_GEN_PCMPGTD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )       x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PCMPGTX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PCMPGTD_XMMRG_MM( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PCMPGTX_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PINSRW_XMMR1_R2_IMM8                             0x00C0C40F             
+#define X86IM_GEN_CODE_PINSRW_XMMR1_R2_IMM8                             0x00C0C40F
 #define X86IM_GEN_CODE_PINSRW_XMMRG_MM16_IMM8                           0x0000C40F
 
 #define X86IM_GEN_PINSRW_XMMR1_R2_IMM8( io, mode, xmr1, r2, imm8 )      x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PINSRW_XMMR1_R2_IMM8, X86IM_GEN_XMR1_R2( xmr1, r2 ), 0, 0, 0 )
 #define X86IM_GEN_PINSRW_XMMRG_MM16_IMM8( io, mode, xmrg, mm, imm8 )    x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PINSRW_XMMRG_MM16_IMM8, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PMADDWD_XMMR1_XMMR2                          0x00C0F50F   
-#define X86IM_GEN_CODE_PMADDWD_XMMRG_MM                             0x0000F50F 
+#define X86IM_GEN_CODE_PMADDWD_XMMR1_XMMR2                          0x00C0F50F
+#define X86IM_GEN_CODE_PMADDWD_XMMRG_MM                             0x0000F50F
 
 #define X86IM_GEN_PMADDWD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )       x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMADDWD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PMADDWD_XMMRG_MM( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMADDWD_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PMAXSW_XMMR1_XMMR2                           0x00C0EE0F    
-#define X86IM_GEN_CODE_PMAXSW_XMMRG_MM                              0x0000EE0F    
+#define X86IM_GEN_CODE_PMAXSW_XMMR1_XMMR2                           0x00C0EE0F
+#define X86IM_GEN_CODE_PMAXSW_XMMRG_MM                              0x0000EE0F
 
 #define X86IM_GEN_PMAXSW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMAXSW_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PMAXSW_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMAXSW_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PMAXUB_XMMR1_XMMR2                           0x00C0DE0F               
+#define X86IM_GEN_CODE_PMAXUB_XMMR1_XMMR2                           0x00C0DE0F
 #define X86IM_GEN_CODE_PMAXUB_XMMRG_MM                              0x0000DE0F
 
 #define X86IM_GEN_PMAXUB_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMAXUB_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PMAXUB_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMAXUB_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PMINSW_XMMR1_XMMR2                           0x00C0EA0F    
-#define X86IM_GEN_CODE_PMINSW_XMMRG_MM                              0x0000EA0F     
+#define X86IM_GEN_CODE_PMINSW_XMMR1_XMMR2                           0x00C0EA0F
+#define X86IM_GEN_CODE_PMINSW_XMMRG_MM                              0x0000EA0F
 
 #define X86IM_GEN_PMINSW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMINSW_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PMINSW_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMINSW_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PMINUB_XMMR1_XMMR2                           0x00C0DA0F   
+#define X86IM_GEN_CODE_PMINUB_XMMR1_XMMR2                           0x00C0DA0F
 #define X86IM_GEN_CODE_PMINUB_XMMRG_MM                              0x0000DA0F
 
 #define X86IM_GEN_PMINUB_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMINUB_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PMINUB_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMINUB_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PMULHUW_XMMR1_XMMR2                          0x00C0E40F    
+#define X86IM_GEN_CODE_PMULHUW_XMMR1_XMMR2                          0x00C0E40F
 #define X86IM_GEN_CODE_PMULHUW_XMMRG_MM                             0x0000E40F
 
 #define X86IM_GEN_PMULHUW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )       x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMULHUW_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PMULHUW_XMMRG_MM( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMULHUW_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PMULHW_XMMR1_XMMR2                           0x00C0E50F               
+#define X86IM_GEN_CODE_PMULHW_XMMR1_XMMR2                           0x00C0E50F
 #define X86IM_GEN_CODE_PMULHW_XMMRG_MM                              0x0000E50F
 
 #define X86IM_GEN_PMULHW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMULHW_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PMULHW_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMULHW_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PMULLW_XMMR1_XMMR2                           0x00C0D50F             
-#define X86IM_GEN_CODE_PMULLW_XMMRG_MM                              0x0000D50F        
+#define X86IM_GEN_CODE_PMULLW_XMMR1_XMMR2                           0x00C0D50F
+#define X86IM_GEN_CODE_PMULLW_XMMRG_MM                              0x0000D50F
 
 #define X86IM_GEN_PMULLW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMULLW_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PMULLW_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMULLW_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PMULUDQ_MMXR1_MMXR2                          0x00C0F40F     
+#define X86IM_GEN_CODE_PMULUDQ_MMXR1_MMXR2                          0x00C0F40F
 #define X86IM_GEN_CODE_PMULUDQ_MMXRG_MM64                           0x0000F40F
-#define X86IM_GEN_CODE_PMULUDQ_XMMR1_XMMR2                          0x00C0F40F               
+#define X86IM_GEN_CODE_PMULUDQ_XMMR1_XMMR2                          0x00C0F40F
 #define X86IM_GEN_CODE_PMULUDQ_XMMRG_MM                             0x0000F40F
 
 #define X86IM_GEN_PMULUDQ_MMXR1_MMXR2( io, mode, mxr1, mxr2 )       x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMULUDQ_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
@@ -3793,45 +3793,45 @@
 #define X86IM_GEN_PMULUDQ_XMMR1_XMMR2( io, mode, xmr1, xmr2 )       x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMULUDQ_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PMULUDQ_XMMRG_MM( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMULUDQ_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_POR_XMMR1_XMMR2                              0x00C0EB0F                  
-#define X86IM_GEN_CODE_POR_XMMRG_MM                                 0x0000EB0F            
+#define X86IM_GEN_CODE_POR_XMMR1_XMMR2                              0x00C0EB0F
+#define X86IM_GEN_CODE_POR_XMMRG_MM                                 0x0000EB0F
 
 #define X86IM_GEN_POR_XMMR1_XMMR2( io, mode, xmr1, xmr2 )           x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_POR_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_POR_XMMRG_MM( io, mode, xmrg, mm )                x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_POR_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PSADBW_XMMR1_XMMR2                           0x00C0F60F    
-#define X86IM_GEN_CODE_PSADBW_XMMRG_MM                              0x0000F60F           
+#define X86IM_GEN_CODE_PSADBW_XMMR1_XMMR2                           0x00C0F60F
+#define X86IM_GEN_CODE_PSADBW_XMMRG_MM                              0x0000F60F
 
 #define X86IM_GEN_PSADBW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSADBW_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSADBW_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSADBW_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PSHUFLW_XMMR1_XMMR2_IMM8                             0x00C0700F        
-#define X86IM_GEN_CODE_PSHUFLW_XMMRG_MM_IMM8                                0x0000700F    
+#define X86IM_GEN_CODE_PSHUFLW_XMMR1_XMMR2_IMM8                             0x00C0700F
+#define X86IM_GEN_CODE_PSHUFLW_XMMRG_MM_IMM8                                0x0000700F
 
 #define X86IM_GEN_PSHUFLW_XMMR1_XMMR2_IMM8( io, mode, xmr1, xmr2, imm8 )    x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_PSHUFLW_XMMR1_XMMR2_IMM8, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, imm8 )
 #define X86IM_GEN_PSHUFLW_XMMRG_MM_IMM8( io, mode, xmrg, mm, imm8 )         x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_PSHUFLW_XMMRG_MM_IMM8, X86IM_GEN_XMRG_MM( xmrg ), mm, imm8 )
 
-#define X86IM_GEN_CODE_PSHUFHW_XMMR1_XMMR2_IMM8                             0x00C0700F          
-#define X86IM_GEN_CODE_PSHUFHW_XMMRG_MM_IMM8                                0x0000700F    
+#define X86IM_GEN_CODE_PSHUFHW_XMMR1_XMMR2_IMM8                             0x00C0700F
+#define X86IM_GEN_CODE_PSHUFHW_XMMRG_MM_IMM8                                0x0000700F
 
 #define X86IM_GEN_PSHUFHW_XMMR1_XMMR2_IMM8( io, mode, xmr1, xmr2, imm8 )    x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_PSHUFHW_XMMR1_XMMR2_IMM8, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, imm8 )
 #define X86IM_GEN_PSHUFHW_XMMRG_MM_IMM8( io, mode, xmrg, mm, imm8 )         x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_PSHUFHW_XMMRG_MM_IMM8, X86IM_GEN_XMRG_MM( xmrg ), mm, imm8 )
 
-#define X86IM_GEN_CODE_PSHUFD_XMMR1_XMMR2_IMM8                              0x00C0700F          
+#define X86IM_GEN_CODE_PSHUFD_XMMR1_XMMR2_IMM8                              0x00C0700F
 #define X86IM_GEN_CODE_PSHUFD_XMMRG_MM_IMM8                                 0x0000700F
 
 #define X86IM_GEN_PSHUFD_XMMR1_XMMR2_IMM8( io, mode, xmr1, xmr2, imm8 )     x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSHUFD_XMMR1_XMMR2_IMM8, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, imm8 )
 #define X86IM_GEN_PSHUFD_XMMRG_MM_IMM8( io, mode, xmrg, mm, imm8 )          x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSHUFD_XMMRG_MM_IMM8, X86IM_GEN_XMRG_MM( xmrg ), mm, imm8 )
 
-#define X86IM_GEN_CODE_PSLLW_XMMR1_XMMR2                            0x00C0F10F                  
-#define X86IM_GEN_CODE_PSLLW_XMMRG_MM                               0x0000F10F    
-#define X86IM_GEN_CODE_PSLLD_XMMR1_XMMR2                            0x00C0F20F                
+#define X86IM_GEN_CODE_PSLLW_XMMR1_XMMR2                            0x00C0F10F
+#define X86IM_GEN_CODE_PSLLW_XMMRG_MM                               0x0000F10F
+#define X86IM_GEN_CODE_PSLLD_XMMR1_XMMR2                            0x00C0F20F
 #define X86IM_GEN_CODE_PSLLD_XMMRG_MM                               0x0000F20F
-#define X86IM_GEN_CODE_PSLLQ_XMMR1_XMMR2                            0x00C0F30F                
-#define X86IM_GEN_CODE_PSLLQ_XMMRG_MM                               0x0000F30F    
-#define X86IM_GEN_CODE_PSLLW_XMMRG_IMM8                             0x0030710F               
-#define X86IM_GEN_CODE_PSLLD_XMMRG_IMM8                             0x0030720F              
-#define X86IM_GEN_CODE_PSLLQ_XMMRG_IMM8                             0x00F0730F             
+#define X86IM_GEN_CODE_PSLLQ_XMMR1_XMMR2                            0x00C0F30F
+#define X86IM_GEN_CODE_PSLLQ_XMMRG_MM                               0x0000F30F
+#define X86IM_GEN_CODE_PSLLW_XMMRG_IMM8                             0x0030710F
+#define X86IM_GEN_CODE_PSLLD_XMMRG_IMM8                             0x0030720F
+#define X86IM_GEN_CODE_PSLLQ_XMMRG_IMM8                             0x00F0730F
 
 #define X86IM_GEN_PSLLW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSLLW_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSLLW_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSLLW_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
@@ -3843,12 +3843,12 @@
 #define X86IM_GEN_PSLLD_XMMRG_IMM8( io, mode, xmrg, imm8 )          x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSLLD_XMMRG_IMM8, xmrg, 0, 0, imm8 )
 #define X86IM_GEN_PSLLQ_XMMRG_IMM8( io, mode, xmrg, imm8 )          x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSLLQ_XMMRG_IMM8, xmrg, 0, 0, imm8 )
 
-#define X86IM_GEN_CODE_PSRAW_XMMR1_XMMR2                            0x00C0E10F                
+#define X86IM_GEN_CODE_PSRAW_XMMR1_XMMR2                            0x00C0E10F
 #define X86IM_GEN_CODE_PSRAW_XMMRG_MM                               0x0000E10F
-#define X86IM_GEN_CODE_PSRAD_XMMR1_XMMR2                            0x00C0E20F             
+#define X86IM_GEN_CODE_PSRAD_XMMR1_XMMR2                            0x00C0E20F
 #define X86IM_GEN_CODE_PSRAD_XMMRG_MM                               0x0000E20F
-#define X86IM_GEN_CODE_PSRAW_XMMRG_IMM8                             0x0020710F        
-#define X86IM_GEN_CODE_PSRAD_XMMRG_IMM8                             0x0020720F    
+#define X86IM_GEN_CODE_PSRAW_XMMRG_IMM8                             0x0020710F
+#define X86IM_GEN_CODE_PSRAD_XMMRG_IMM8                             0x0020720F
 
 #define X86IM_GEN_PSRAW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSRAW_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSRAW_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSRAW_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
@@ -3857,15 +3857,15 @@
 #define X86IM_GEN_PSRAW_XMMRG_IMM8( io, mode, xmrg, imm8 )          x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSRAW_XMMRG_IMM8, xmrg, 0, 0, imm8 )
 #define X86IM_GEN_PSRAD_XMMRG_IMM8( io, mode, xmrg, imm8 )          x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSRAD_XMMRG_IMM8, xmrg, 0, 0, imm8 )
 
-#define X86IM_GEN_CODE_PSRLW_XMMR1_XMMR2                            0x00C0D10F       
-#define X86IM_GEN_CODE_PSRLW_XMMRG_MM                               0x0000D10F 
-#define X86IM_GEN_CODE_PSRLD_XMMR1_XMMR2                            0x00C0D20F         
-#define X86IM_GEN_CODE_PSRLD_XMMRG_MM                               0x0000D20F 
-#define X86IM_GEN_CODE_PSRLQ_XMMR1_XMMR2                            0x00C0D30F          
+#define X86IM_GEN_CODE_PSRLW_XMMR1_XMMR2                            0x00C0D10F
+#define X86IM_GEN_CODE_PSRLW_XMMRG_MM                               0x0000D10F
+#define X86IM_GEN_CODE_PSRLD_XMMR1_XMMR2                            0x00C0D20F
+#define X86IM_GEN_CODE_PSRLD_XMMRG_MM                               0x0000D20F
+#define X86IM_GEN_CODE_PSRLQ_XMMR1_XMMR2                            0x00C0D30F
 #define X86IM_GEN_CODE_PSRLQ_XMMRG_MM                               0x0000D30F
-#define X86IM_GEN_CODE_PSRLW_XMMRG_IMM8                             0x0010710F        
-#define X86IM_GEN_CODE_PSRLD_XMMRG_IMM8                             0x0010720F           
-#define X86IM_GEN_CODE_PSRLQ_XMMRG_IMM8                             0x00D0730F          
+#define X86IM_GEN_CODE_PSRLW_XMMRG_IMM8                             0x0010710F
+#define X86IM_GEN_CODE_PSRLD_XMMRG_IMM8                             0x0010720F
+#define X86IM_GEN_CODE_PSRLQ_XMMRG_IMM8                             0x00D0730F
 
 #define X86IM_GEN_PSRLW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSRLW_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSRLW_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSRLW_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
@@ -3877,9 +3877,9 @@
 #define X86IM_GEN_PSRLD_XMMRG_IMM8( io, mode, xmrg, imm8 )          x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSRLD_XMMRG_IMM8, xmrg, 0, 0, imm8 )
 #define X86IM_GEN_PSRLQ_XMMRG_IMM8( io, mode, xmrg, imm8 )          x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSRLQ_XMMRG_IMM8, xmrg, 0, 0, imm8 )
 
-#define X86IM_GEN_CODE_PSUBQ_MMXR1_MMXR2                            0x00C0FB0F          
+#define X86IM_GEN_CODE_PSUBQ_MMXR1_MMXR2                            0x00C0FB0F
 #define X86IM_GEN_CODE_PSUBQ_MMXRG_MM64                             0x0000FB0F
-#define X86IM_GEN_CODE_PSUBQ_XMMR1_XMMR2                            0x00C0FB0F                 
+#define X86IM_GEN_CODE_PSUBQ_XMMR1_XMMR2                            0x00C0FB0F
 #define X86IM_GEN_CODE_PSUBQ_XMMRG_MM                               0x0000FB0F
 
 #define X86IM_GEN_PSUBQ_MMXR1_MMXR2( io, mode, mxr1, xmr2 )         x86im_gen( io, mode, X86IM_GEN_CODE_PSUBQ_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
@@ -3887,7 +3887,7 @@
 #define X86IM_GEN_PSUBQ_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSUBQ_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSUBQ_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSUBQ_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PSUBX_XMMR1_XMMR2                            0x00C0F80F    
+#define X86IM_GEN_CODE_PSUBX_XMMR1_XMMR2                            0x00C0F80F
 #define X86IM_GEN_CODE_PSUBX_XMMRG_MM                               0x0000F80F
 
 #define X86IM_GEN_PSUBB_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PSUBX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
@@ -3897,15 +3897,15 @@
 #define X86IM_GEN_PSUBD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PSUBX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSUBD_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PSUBX_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PSUBSX_XMMR1_XMMR2                           0x00C0E80F    
+#define X86IM_GEN_CODE_PSUBSX_XMMR1_XMMR2                           0x00C0E80F
 #define X86IM_GEN_CODE_PSUBSX_XMMRG_MM                              0x0000E80F
 
 #define X86IM_GEN_PSUBSB_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PSUBSX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSUBSB_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PSUBSX_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 #define X86IM_GEN_PSUBSW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PSUBSX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSUBSW_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PSUBSX_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
- 
-#define X86IM_GEN_CODE_PSUBUSX_XMMR1_XMMR2                          0x00C0D80F                 
+
+#define X86IM_GEN_CODE_PSUBUSX_XMMR1_XMMR2                          0x00C0D80F
 #define X86IM_GEN_CODE_PSUBUSX_XMMRG_MM                             0x0000D80F
 
 #define X86IM_GEN_PSUBUSB_XMMR1_XMMR2( io, mode, xmr1, xmr2 )       x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PSUBUSX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
@@ -3913,7 +3913,7 @@
 #define X86IM_GEN_PSUBUSW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )       x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PSUBUSX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSUBUSW_XMMRG_MM( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PSUBUSX_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PUNPCKHXX_XMMR1_XMMR2                        0x00C0680F  
+#define X86IM_GEN_CODE_PUNPCKHXX_XMMR1_XMMR2                        0x00C0680F
 #define X86IM_GEN_CODE_PUNPCKHXX_XMMRG_MM                           0x0000680F
 
 #define X86IM_GEN_PUNPCKHBW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )     x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_BW, X86IM_GEN_CODE_PUNPCKHXX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
@@ -3923,13 +3923,13 @@
 #define X86IM_GEN_PUNPCKHDQ_XMMR1_XMMR2( io, mode, xmr1, xmr2 )     x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_DQ, X86IM_GEN_CODE_PUNPCKHXX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PUNPCKHDQ_XMMRG_MM( io, mode, xmrg, mm )          x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_DQ, X86IM_GEN_CODE_PUNPCKHXX_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PUNPCKHQDQ_XMMR1_XMMR2                       0x00C06D0F          
+#define X86IM_GEN_CODE_PUNPCKHQDQ_XMMR1_XMMR2                       0x00C06D0F
 #define X86IM_GEN_CODE_PUNPCKHQDQ_XMMRG_MM                          0x00006D0F
 
 #define X86IM_GEN_PUNPCKHQDQ_XMMR1_XMMR2( io, mode, xmr1, xmr2 )    x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PUNPCKHQDQ_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PUNPCKHQDQ_XMMRG_MM( io, mode, xmrg, mm )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PUNPCKHQDQ_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PUNPCKLXX_XMMR1_XMMR2                        0x00C0600F            
+#define X86IM_GEN_CODE_PUNPCKLXX_XMMR1_XMMR2                        0x00C0600F
 #define X86IM_GEN_CODE_PUNPCKLXX_XMMRG_MM                           0x0000600F
 
 #define X86IM_GEN_PUNPCKLBW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )     x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_BW, X86IM_GEN_CODE_PUNPCKLXX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
@@ -3939,86 +3939,86 @@
 #define X86IM_GEN_PUNPCKLDQ_XMMR1_XMMR2( io, mode, xmr1, xmr2 )     x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_DQ, X86IM_GEN_CODE_PUNPCKLXX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PUNPCKLDQ_XMMRG_MM( io, mode, xmrg, mm )          x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_DQ, X86IM_GEN_CODE_PUNPCKLXX_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PUNPCKLQDQ_XMMR1_XMMR2                       0x00C06C0F           
+#define X86IM_GEN_CODE_PUNPCKLQDQ_XMMR1_XMMR2                       0x00C06C0F
 #define X86IM_GEN_CODE_PUNPCKLQDQ_XMMRG_MM                          0x00006C0F
 
 #define X86IM_GEN_PUNPCKLQDQ_XMMR1_XMMR2( io, mode, xmr1, xmr2 )    x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PUNPCKLQDQ_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PUNPCKLQDQ_XMMRG_MM( io, mode, xmrg, mm )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PUNPCKLQDQ_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PXOR_XMMR1_XMMR2                             0x00C0EF0F               
-#define X86IM_GEN_CODE_PXOR_XMMRG_MM                                0x0000EF0F   
+#define X86IM_GEN_CODE_PXOR_XMMR1_XMMR2                             0x00C0EF0F
+#define X86IM_GEN_CODE_PXOR_XMMRG_MM                                0x0000EF0F
 
-#define X86IM_GEN_PXOR_XMMR1_XMMR2( io, mode, xmr1, xmr2 )          x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PXOR_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 ) 
+#define X86IM_GEN_PXOR_XMMR1_XMMR2( io, mode, xmr1, xmr2 )          x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PXOR_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PXOR_XMMRG_MM( io, mode, xmrg, mm )               x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PXOR_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-// SSE3                                 
+// SSE3
 
-#define X86IM_GEN_CODE_MONITOR                                      0x00C8010F                  
+#define X86IM_GEN_CODE_MONITOR                                      0x00C8010F
 #define X86IM_GEN_MONITOR( io, mode )                               x86im_gen( io, mode, X86IM_GEN_CODE_MONITOR, 0, 0, 0, 0 )
 
-#define X86IM_GEN_CODE_MWAIT                                        0x00C9010F                  
+#define X86IM_GEN_CODE_MWAIT                                        0x00C9010F
 #define X86IM_GEN_MWAIT( io, mode )                                 x86im_gen( io, mode, X86IM_GEN_CODE_MWAIT, 0, 0, 0, 0 )
 
-#define X86IM_GEN_CODE_LDDQU_XMMRG_MM                               0x0000F00F               
+#define X86IM_GEN_CODE_LDDQU_XMMRG_MM                               0x0000F00F
 #define X86IM_GEN_LDDQU_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_LDDQU_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_ADDSUBPD_XMMR1_XMMR2                         0x00C0D00F        
+#define X86IM_GEN_CODE_ADDSUBPD_XMMR1_XMMR2                         0x00C0D00F
 #define X86IM_GEN_CODE_ADDSUBPD_XMMRG_MM                            0x0000D00F
 
 #define X86IM_GEN_ADDSUBPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_ADDSUBPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_ADDSUBPD_XMMRG_MM( io, mode, xmrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_ADDSUBPD_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_ADDSUBPS_XMMR1_XMMR2                         0x00C0D00F              
+#define X86IM_GEN_CODE_ADDSUBPS_XMMR1_XMMR2                         0x00C0D00F
 #define X86IM_GEN_CODE_ADDSUBPS_XMMRG_MM                            0x0000D00F
 
 #define X86IM_GEN_ADDSUBPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_ADDSUBPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_ADDSUBPS_XMMRG_MM( io, mode, xmrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_ADDSUBPS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_HADDPD_XMMR1_XMMR2                           0x00C07C0F                 
-#define X86IM_GEN_CODE_HADDPD_XMMRG_MM                              0x00007C0F 
+#define X86IM_GEN_CODE_HADDPD_XMMR1_XMMR2                           0x00C07C0F
+#define X86IM_GEN_CODE_HADDPD_XMMRG_MM                              0x00007C0F
 
 #define X86IM_GEN_HADDPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_HADDPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_HADDPD_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_HADDPD_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_HADDPS_XMMR1_XMMR2                           0x00C07C0F        
+#define X86IM_GEN_CODE_HADDPS_XMMR1_XMMR2                           0x00C07C0F
 #define X86IM_GEN_CODE_HADDPS_XMMRG_MM                              0x00007C0F
 
 #define X86IM_GEN_HADDPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_HADDPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_HADDPS_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_HADDPS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_HSUBPD_XMMR1_XMMR2                           0x00C07D0F                
+#define X86IM_GEN_CODE_HSUBPD_XMMR1_XMMR2                           0x00C07D0F
 #define X86IM_GEN_CODE_HSUBPD_XMMRG_MM                              0x00007D0F
 
 #define X86IM_GEN_HSUBPD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_HSUBPD_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_HSUBPD_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_HSUBPD_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_HSUBPS_XMMR1_XMMR2                           0x00C07D0F                
+#define X86IM_GEN_CODE_HSUBPS_XMMR1_XMMR2                           0x00C07D0F
 #define X86IM_GEN_CODE_HSUBPS_XMMRG_MM                              0x00007D0F
 
 #define X86IM_GEN_HSUBPS_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_HSUBPS_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_HSUBPS_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_HSUBPS_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVDDUP_XMMR1_XMMR2                          0x00C0120F             
+#define X86IM_GEN_CODE_MOVDDUP_XMMR1_XMMR2                          0x00C0120F
 #define X86IM_GEN_CODE_MOVDDUP_XMMRG_MM64                           0x0000120F
 
 #define X86IM_GEN_MOVDDUP_XMMR1_XMMR2( io, mode, xmr1, xmr2 )       x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_MOVDDUP_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MOVDDUP_XMMRG_MM64( io, mode, xmrg, mm )          x86im_gen( io, mode|X86IM_IO_IP_F2, X86IM_GEN_CODE_MOVDDUP_XMMRG_MM64, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVSHDUP_XMMR1_XMMR2                         0x00C0160F             
+#define X86IM_GEN_CODE_MOVSHDUP_XMMR1_XMMR2                         0x00C0160F
 #define X86IM_GEN_CODE_MOVSHDUP_XMMRG_MM                            0x0000160F
 
 #define X86IM_GEN_MOVSHDUP_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MOVSHDUP_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MOVSHDUP_XMMRG_MM( io, mode, xmrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MOVSHDUP_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_MOVSLDUP_XMMR1_XMMR2                         0x00C0120F    
+#define X86IM_GEN_CODE_MOVSLDUP_XMMR1_XMMR2                         0x00C0120F
 #define X86IM_GEN_CODE_MOVSLDUP_XMMRG_MM                            0x0000120F
 
 #define X86IM_GEN_MOVSLDUP_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MOVSLDUP_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_MOVSLDUP_XMMRG_MM( io, mode, xmrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_F3, X86IM_GEN_CODE_MOVSLDUP_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PABSB_MMXR1_MMXR2                            0xC01C380F              
+#define X86IM_GEN_CODE_PABSB_MMXR1_MMXR2                            0xC01C380F
 #define X86IM_GEN_CODE_PABSB_MMXRG_MM                               0x001C380F
-#define X86IM_GEN_CODE_PABSB_XMMR1_XMMR2                            0xC01C380F           
+#define X86IM_GEN_CODE_PABSB_XMMR1_XMMR2                            0xC01C380F
 #define X86IM_GEN_CODE_PABSB_XMMRG_MM                               0x001C380F
 
 #define X86IM_GEN_PABSB_MMXR1_MMXR2( io, mode, mxr1, xmr2 )         x86im_gen( io, mode|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PABSB_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
@@ -4035,9 +4035,9 @@
 #define X86IM_GEN_PABSD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )         x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PABSB_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PABSD_XMMRG_MM( io, mode, xmrg, mm )              x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PABSB_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PALIGNR_MMXR1_MMXR2_IMM8                             0xC00F3A0F        
+#define X86IM_GEN_CODE_PALIGNR_MMXR1_MMXR2_IMM8                             0xC00F3A0F
 #define X86IM_GEN_CODE_PALIGNR_MMXRG_MM_IMM8                                0x000F3A0F
-#define X86IM_GEN_CODE_PALIGNR_XMMR1_XMMR2_IMM8                             0xC00F3A0F  
+#define X86IM_GEN_CODE_PALIGNR_XMMR1_XMMR2_IMM8                             0xC00F3A0F
 #define X86IM_GEN_CODE_PALIGNR_XMMRG_MM_IMM8                                0x000F3A0F
 
 #define X86IM_GEN_PALIGNR_MMXR1_MMXR2_IMM8( io, mode, mxr1, mxr2, imm8 )    x86im_gen( io, mode, X86IM_GEN_CODE_PALIGNR_MMXR1_MMXR2_IMM8, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, imm8 )
@@ -4045,9 +4045,9 @@
 #define X86IM_GEN_PALIGNR_XMMR1_XMMR2_IMM8( io, mode, xmr1, xmr2, imm8 )    x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PALIGNR_XMMR1_XMMR2_IMM8, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, imm8 )
 #define X86IM_GEN_PALIGNR_XMMRG_MM_IMM8( io, mode, xmrg, mm, imm8 )         x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PALIGNR_XMMRG_MM_IMM8, X86IM_GEN_XMRG_MM( xmrg ), mm, imm8 )
 
-#define X86IM_GEN_CODE_PHADDSW_MMXR1_MMXR2                          0xC003380F          
-#define X86IM_GEN_CODE_PHADDSW_MMXRG_MM                             0x0003380F  
-#define X86IM_GEN_CODE_PHADDSW_XMMR1_XMMR2                          0xC003380F  
+#define X86IM_GEN_CODE_PHADDSW_MMXR1_MMXR2                          0xC003380F
+#define X86IM_GEN_CODE_PHADDSW_MMXRG_MM                             0x0003380F
+#define X86IM_GEN_CODE_PHADDSW_XMMR1_XMMR2                          0xC003380F
 #define X86IM_GEN_CODE_PHADDSW_XMMRG_MM                             0x0003380F
 
 #define X86IM_GEN_PHADDSW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )       x86im_gen( io, mode, X86IM_GEN_CODE_PHADDSW_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
@@ -4055,9 +4055,9 @@
 #define X86IM_GEN_PHADDSW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )       x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PHADDSW_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PHADDSW_XMMRG_MM( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PHADDSW_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PHSUBSW_MMXR1_MMXR2                          0xC007380F  
-#define X86IM_GEN_CODE_PHSUBSW_MMXRG_MM                             0x0007380F  
-#define X86IM_GEN_CODE_PHSUBSW_XMMR1_XMMR2                          0xC007380F  
+#define X86IM_GEN_CODE_PHSUBSW_MMXR1_MMXR2                          0xC007380F
+#define X86IM_GEN_CODE_PHSUBSW_MMXRG_MM                             0x0007380F
+#define X86IM_GEN_CODE_PHSUBSW_XMMR1_XMMR2                          0xC007380F
 #define X86IM_GEN_CODE_PHSUBSW_XMMRG_MM                             0x0007380F
 
 #define X86IM_GEN_PHSUBSW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )       x86im_gen( io, mode, X86IM_GEN_CODE_PHSUBSW_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
@@ -4065,9 +4065,9 @@
 #define X86IM_GEN_PHSUBSW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )       x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PHSUBSW_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PHSUBSW_XMMRG_MM( io, mode, xmrg, mm )            x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PHSUBSW_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PMADDUBSW_MMXR1_MMXR2                        0xC004380F        
+#define X86IM_GEN_CODE_PMADDUBSW_MMXR1_MMXR2                        0xC004380F
 #define X86IM_GEN_CODE_PMADDUBSW_MMXRG_MM                           0x0004380F
-#define X86IM_GEN_CODE_PMADDUBSW_XMMR1_XMMR2                        0xC004380F  
+#define X86IM_GEN_CODE_PMADDUBSW_XMMR1_XMMR2                        0xC004380F
 #define X86IM_GEN_CODE_PMADDUBSW_XMMRG_MM                           0x0004380F
 
 #define X86IM_GEN_PMADDUBSW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )     x86im_gen( io, mode, X86IM_GEN_CODE_PMADDUBSW_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
@@ -4075,9 +4075,9 @@
 #define X86IM_GEN_PMADDUBSW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )     x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMADDUBSW_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PMADDUBSW_XMMRG_MM( io, mode, xmrg, mm )          x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMADDUBSW_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PMULHRSW_MMXR1_MMXR2                         0xC00B380F           
-#define X86IM_GEN_CODE_PMULHRSW_MMXRG_MM                            0x000B380F  
-#define X86IM_GEN_CODE_PMULHRSW_XMMR1_XMMR2                         0xC00B380F      
+#define X86IM_GEN_CODE_PMULHRSW_MMXR1_MMXR2                         0xC00B380F
+#define X86IM_GEN_CODE_PMULHRSW_MMXRG_MM                            0x000B380F
+#define X86IM_GEN_CODE_PMULHRSW_XMMR1_XMMR2                         0xC00B380F
 #define X86IM_GEN_CODE_PMULHRSW_XMMRG_MM                            0x000B380F
 
 #define X86IM_GEN_PMULHRSW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )      x86im_gen( io, mode, X86IM_GEN_CODE_PMULHRSW_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
@@ -4085,9 +4085,9 @@
 #define X86IM_GEN_PMULHRSW_XMMR1_XMMR2( io, mode, xmr1, xmr2 )      x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMULHRSW_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PMULHRSW_XMMRG_MM( io, mode, xmrg, mm )           x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PMULHRSW_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PSHUFB_MMXR1_MMXR2                           0x00C0380F              
+#define X86IM_GEN_CODE_PSHUFB_MMXR1_MMXR2                           0x00C0380F
 #define X86IM_GEN_CODE_PSHUFB_MMXRG_MM                              0x0000380F
-#define X86IM_GEN_CODE_PSHUFB_XMMR1_XMMR2                           0x0C00380F  
+#define X86IM_GEN_CODE_PSHUFB_XMMR1_XMMR2                           0x0C00380F
 #define X86IM_GEN_CODE_PSHUFB_XMMRG_MM                              0x0000380F
 
 #define X86IM_GEN_PSHUFB_MMXR1_MMXR2( io, mode, mxr1, mxr2 )        x86im_gen( io, mode, X86IM_GEN_CODE_PSHUFB_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
@@ -4095,9 +4095,9 @@
 #define X86IM_GEN_PSHUFB_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSHUFB_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSHUFB_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_66, X86IM_GEN_CODE_PSHUFB_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PSIGNX_MMXR1_MMXR2                           0xC008380F  
+#define X86IM_GEN_CODE_PSIGNX_MMXR1_MMXR2                           0xC008380F
 #define X86IM_GEN_CODE_PSIGNX_MMXRG_MM                              0x0008380F
-#define X86IM_GEN_CODE_PSIGNX_XMMR1_XMMR2                           0xC008380F  
+#define X86IM_GEN_CODE_PSIGNX_XMMR1_XMMR2                           0xC008380F
 #define X86IM_GEN_CODE_PSIGNX_XMMRG_MM                              0x0008380F
 
 #define X86IM_GEN_PSIGNB_MMXR1_MMXR2( io, mode, mxr1, mxr2 )        x86im_gen( io, mode|X86IM_GEN_OAT_PO_B, X86IM_GEN_CODE_PSIGNX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
@@ -4114,10 +4114,10 @@
 #define X86IM_GEN_PSIGND_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PSIGNX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PSIGND_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PSIGNX_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PHADDX_MMXR1_MMXR2                           0x00C0380F           
-#define X86IM_GEN_CODE_PHADDX_MMXRG_MM                              0x0000380F  
-#define X86IM_GEN_CODE_PHADDX_XMMR1_XMMR2                           0x00C0380F         
-#define X86IM_GEN_CODE_PHADDX_XMMRG_MM                              0x0000380F              
+#define X86IM_GEN_CODE_PHADDX_MMXR1_MMXR2                           0x00C0380F
+#define X86IM_GEN_CODE_PHADDX_MMXRG_MM                              0x0000380F
+#define X86IM_GEN_CODE_PHADDX_XMMR1_XMMR2                           0x00C0380F
+#define X86IM_GEN_CODE_PHADDX_XMMRG_MM                              0x0000380F
 
 #define X86IM_GEN_PHADDW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )        x86im_gen( io, mode|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PHADDX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )
 #define X86IM_GEN_PHADDW_MMXRG_MM( io, mode, mxrg, mm )             x86im_gen( io, mode|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PHADDX_MMXRG_MM, X86IM_GEN_MXRG_MM( mxrg ), mm, 0 )
@@ -4129,9 +4129,9 @@
 #define X86IM_GEN_PHADDD_XMMR1_XMMR2( io, mode, xmr1, xmr2 )        x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PHADDX_XMMR1_XMMR2, X86IM_GEN_XMR1_XMR2( xmr1, xmr2 ), 0, 0, 0 )
 #define X86IM_GEN_PHADDD_XMMRG_MM( io, mode, xmrg, mm )             x86im_gen( io, mode|X86IM_IO_IP_66|X86IM_GEN_OAT_PO_D, X86IM_GEN_CODE_PHADDX_XMMRG_MM, X86IM_GEN_XMRG_MM( xmrg ), mm, 0 )
 
-#define X86IM_GEN_CODE_PHSUBX_MMXR1_MMXR2                           0xC004380F              
-#define X86IM_GEN_CODE_PHSUBX_MMXRG_MM                              0x0004380F  
-#define X86IM_GEN_CODE_PHSUBX_XMMR1_XMMR2                           0xC004380F           
+#define X86IM_GEN_CODE_PHSUBX_MMXR1_MMXR2                           0xC004380F
+#define X86IM_GEN_CODE_PHSUBX_MMXRG_MM                              0x0004380F
+#define X86IM_GEN_CODE_PHSUBX_XMMR1_XMMR2                           0xC004380F
 #define X86IM_GEN_CODE_PHSUBX_XMMRG_MM                              0x0004380F
 
 #define X86IM_GEN_PHSUBW_MMXR1_MMXR2( io, mode, mxr1, mxr2 )        x86im_gen( io, mode|X86IM_GEN_OAT_PO_W, X86IM_GEN_CODE_PHSUBX_MMXR1_MMXR2, X86IM_GEN_MXR1_MXR2( mxr1, mxr2 ), 0, 0, 0 )

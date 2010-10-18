@@ -111,7 +111,7 @@
 #define X86IM_IO_ID_AND_MM_IM                           0x0080+4
 #define X86IM_IO_ID_AND_RG_IM                           0x0080+5
 #define X86IM_IO_ID_AND_AC_IM                           0x0080+6
-                  
+
 #define X86IM_IO_IS_GPI_ARPL(x)                         ( ( (x)->id & 0xFFF0 ) == 0x0090 )
 #define X86IM_IO_ID_ARPL_MM_RG                          0x0090+0 // ARPL: MOVSXD_RG_MM en 64bit mode
 #define X86IM_IO_ID_ARPL_R1_R2                          0x0090+1 //       MOVSXD_R1_R2 en 64bit mode
@@ -215,30 +215,30 @@
 #define X86IM_IO_ID_JMP_F_AI_MM                         0x01A4+1
 
 #define X86IM_IO_IS_GPI_LAR(x)                          ( ( (x)->id & 0xFFF0 ) == 0x01B0 )
-#define X86IM_IO_ID_LAR_RG_MM                           0x01B0+0 
+#define X86IM_IO_ID_LAR_RG_MM                           0x01B0+0
 #define X86IM_IO_ID_LAR_R1_R2                           0x01B0+1
 
 #define X86IM_IO_IS_GPI_LLDT(x)                         ( ( (x)->id & 0xFFF0 ) == 0x01C0 )
-#define X86IM_IO_ID_LLDT_MM                             0x01C0+0 
+#define X86IM_IO_ID_LLDT_MM                             0x01C0+0
 #define X86IM_IO_ID_LLDT_RG                             0x01C0+1
 
 #define X86IM_IO_IS_GPI_LMSW(x)                         ( ( (x)->id & 0xFFF0 ) == 0x01D0 )
-#define X86IM_IO_ID_LMSW_MM                             0x01D0+0 
+#define X86IM_IO_ID_LMSW_MM                             0x01D0+0
 #define X86IM_IO_ID_LMSW_RG                             0x01D0+1
 
 #define X86IM_IO_IS_GPI_LSL(x)                          ( ( (x)->id & 0xFFF0 ) == 0x01E0 )
-#define X86IM_IO_ID_LSL_RG_MM                           0x01E0+0 
+#define X86IM_IO_ID_LSL_RG_MM                           0x01E0+0
 #define X86IM_IO_ID_LSL_R1_R2                           0x01E0+1
 
 #define X86IM_IO_IS_GPI_LTR(x)                          ( ( (x)->id & 0xFFF0 ) == 0x01F0 )
-#define X86IM_IO_ID_LTR_MM                              0x01F0+0 
+#define X86IM_IO_ID_LTR_MM                              0x01F0+0
 #define X86IM_IO_ID_LTR_RG                              0x01F0+1
 
 #define X86IM_IO_IS_GPI_MOV(x)                          ( ( (x)->id & 0xFFC0 ) == 0x0200 )
 #define X86IM_IO_IS_GPI_MOV_CRG(x)                      ( ( (x)->id & 0xFFF8 ) == 0x0210 )
 #define X86IM_IO_IS_GPI_MOV_DRG(x)                      ( ( (x)->id & 0xFFF8 ) == 0x0218 )
 #define X86IM_IO_IS_GPI_MOV_SRG(x)                      ( ( (x)->id & 0xFFF0 ) == 0x0220 )
-#define X86IM_IO_ID_MOV_MM_RG                           0x0200+0 
+#define X86IM_IO_ID_MOV_MM_RG                           0x0200+0
 #define X86IM_IO_ID_MOV_R2_R1                           0x0200+1
 #define X86IM_IO_ID_MOV_RG_MM                           0x0200+2
 #define X86IM_IO_ID_MOV_R1_R2                           0x0200+3
@@ -261,31 +261,31 @@
 #define X86IM_IO_ID_MOV_RG_SR                           0x0220+3
 
 #define X86IM_IO_IS_GPI_MOVSX(x)                        ( ( (x)->id & 0xFFF0 ) == 0x0230 )
-#define X86IM_IO_ID_MOVSX_RG_MM8                        0x0230+0 
+#define X86IM_IO_ID_MOVSX_RG_MM8                        0x0230+0
 #define X86IM_IO_ID_MOVSX_R1_R28                        0x0230+1
 #define X86IM_IO_ID_MOVSX_RG_MM16                       0x0230+2
 #define X86IM_IO_ID_MOVSX_R1_R216                       0x0230+3
 
 #define X86IM_IO_IS_GPI_MOVZX(x)                        ( ( (x)->id & 0xFFF0 ) == 0x0240 )
-#define X86IM_IO_ID_MOVZX_RG_MM8                        0x0240+0 
+#define X86IM_IO_ID_MOVZX_RG_MM8                        0x0240+0
 #define X86IM_IO_ID_MOVZX_R1_R28                        0x0240+1
 #define X86IM_IO_ID_MOVZX_RG_MM16                       0x0240+2
 #define X86IM_IO_ID_MOVZX_R1_R216                       0x0240+3
 
 #define X86IM_IO_IS_GPI_MUL(x)                          ( ( (x)->id & 0xFFF0 ) == 0x0250 )
-#define X86IM_IO_ID_MUL_AC_MM                           0x0250+0 
+#define X86IM_IO_ID_MUL_AC_MM                           0x0250+0
 #define X86IM_IO_ID_MUL_AC_RG                           0x0250+1
 
 #define X86IM_IO_IS_GPI_NEG(x)                          ( ( (x)->id & 0xFFF0 ) == 0x0260 )
-#define X86IM_IO_ID_NEG_MM                              0x0260+0 
+#define X86IM_IO_ID_NEG_MM                              0x0260+0
 #define X86IM_IO_ID_NEG_RG                              0x0260+1
 
 #define X86IM_IO_IS_GPI_NOT(x)                          ( ( (x)->id & 0xFFF0 ) == 0x0270 )
-#define X86IM_IO_ID_NOT_MM                              0x0270+0 
+#define X86IM_IO_ID_NOT_MM                              0x0270+0
 #define X86IM_IO_ID_NOT_RG                              0x0270+1
 
 #define X86IM_IO_IS_GPI_OR(x)                           ( ( (x)->id & 0xFFF0 ) == 0x0280 )
-#define X86IM_IO_ID_OR_MM_RG                            0x0280+0 
+#define X86IM_IO_ID_OR_MM_RG                            0x0280+0
 #define X86IM_IO_ID_OR_R2_R1                            0x0280+1
 #define X86IM_IO_ID_OR_RG_MM                            0x0280+2
 #define X86IM_IO_ID_OR_R1_R2                            0x0280+3
@@ -294,11 +294,11 @@
 #define X86IM_IO_ID_OR_AC_IM                            0x0280+6
 
 #define X86IM_IO_IS_GPI_OUT(x)                          ( ( (x)->id & 0xFFF0 ) == 0x0290 )
-#define X86IM_IO_ID_OUT_IM                              0x0290+0 
+#define X86IM_IO_ID_OUT_IM                              0x0290+0
 #define X86IM_IO_ID_OUT_RG                              0x0290+1
 
 #define X86IM_IO_IS_GPI_POP(x)                          ( ( (x)->id & 0xFFF0 ) == 0x02A0 )
-#define X86IM_IO_ID_POP_MM                              0x02A0+0 
+#define X86IM_IO_ID_POP_MM                              0x02A0+0
 #define X86IM_IO_ID_POP_RG1                             0x02A0+1
 #define X86IM_IO_ID_POP_RG2                             0x02A0+2
 #define X86IM_IO_ID_POP_SR2                             0x02A0+3
@@ -307,7 +307,7 @@
 #define X86IM_IO_ID_POPF                                0x02A0+6
 
 #define X86IM_IO_IS_GPI_PUSH(x)                         ( ( (x)->id & 0xFFF0 ) == 0x02B0 )
-#define X86IM_IO_ID_PUSH_MM                             0x02B0+0 
+#define X86IM_IO_ID_PUSH_MM                             0x02B0+0
 #define X86IM_IO_ID_PUSH_RG1                            0x02B0+1
 #define X86IM_IO_ID_PUSH_RG2                            0x02B0+2
 #define X86IM_IO_ID_PUSH_IM                             0x02B0+3
@@ -317,7 +317,7 @@
 #define X86IM_IO_ID_PUSHF                               0x02B0+7
 
 #define X86IM_IO_IS_GPI_RCL(x)                          ( ( (x)->id & 0xFFF0 ) == 0x02C0 )
-#define X86IM_IO_ID_RCL_MM_1                            0x02C0+0 
+#define X86IM_IO_ID_RCL_MM_1                            0x02C0+0
 #define X86IM_IO_ID_RCL_RG_1                            0x02C0+1
 #define X86IM_IO_ID_RCL_MM_CL                           0x02C0+2
 #define X86IM_IO_ID_RCL_RG_CL                           0x02C0+3
@@ -325,7 +325,7 @@
 #define X86IM_IO_ID_RCL_RG_IM                           0x02C0+5
 
 #define X86IM_IO_IS_GPI_RCR(x)                          ( ( (x)->id & 0xFFF0 ) == 0x02D0 )
-#define X86IM_IO_ID_RCR_MM_1                            0x02D0+0 
+#define X86IM_IO_ID_RCR_MM_1                            0x02D0+0
 #define X86IM_IO_ID_RCR_RG_1                            0x02D0+1
 #define X86IM_IO_ID_RCR_MM_CL                           0x02D0+2
 #define X86IM_IO_ID_RCR_RG_CL                           0x02D0+3
@@ -335,13 +335,13 @@
 #define X86IM_IO_IS_GPI_RET(x)                          ( ( (x)->id & 0xFFF0 ) == 0x02E0 )
 #define X86IM_IO_IS_GPI_RET_NEAR(x)                     ( ( (x)->id & 0xFFFC ) == 0x02E0 )
 #define X86IM_IO_IS_GPI_RET_FAR(x)                      ( ( (x)->id & 0xFFFC ) == 0x02E4 )
-#define X86IM_IO_ID_RET_N                               0x02E0+0 
+#define X86IM_IO_ID_RET_N                               0x02E0+0
 #define X86IM_IO_ID_RET_N_IM                            0x02E0+1
 #define X86IM_IO_ID_RET_F                               0x02E4+0
 #define X86IM_IO_ID_RET_F_IM                            0x02E4+1
 
 #define X86IM_IO_IS_GPI_ROL(x)                          ( ( (x)->id & 0xFFF0 ) == 0x02F0 )
-#define X86IM_IO_ID_ROL_MM_1                            0x02F0+0 
+#define X86IM_IO_ID_ROL_MM_1                            0x02F0+0
 #define X86IM_IO_ID_ROL_RG_1                            0x02F0+1
 #define X86IM_IO_ID_ROL_MM_CL                           0x02F0+2
 #define X86IM_IO_ID_ROL_RG_CL                           0x02F0+3
@@ -349,7 +349,7 @@
 #define X86IM_IO_ID_ROL_RG_IM                           0x02F0+5
 
 #define X86IM_IO_IS_GPI_ROR(x)                          ( ( (x)->id & 0xFFF0 ) == 0x0300 )
-#define X86IM_IO_ID_ROR_MM_1                            0x0300+0 
+#define X86IM_IO_ID_ROR_MM_1                            0x0300+0
 #define X86IM_IO_ID_ROR_RG_1                            0x0300+1
 #define X86IM_IO_ID_ROR_MM_CL                           0x0300+2
 #define X86IM_IO_ID_ROR_RG_CL                           0x0300+3
@@ -366,7 +366,7 @@
 #define X86IM_IO_ID_SAR_RG_IM                           0x0310+5
 
 #define X86IM_IO_IS_GPI_SBB(x)                          ( ( (x)->id & 0xFFF0 ) == 0x0320 )
-#define X86IM_IO_ID_SBB_MM_RG                           0x0320+0 
+#define X86IM_IO_ID_SBB_MM_RG                           0x0320+0
 #define X86IM_IO_ID_SBB_R2_R1                           0x0320+1
 #define X86IM_IO_ID_SBB_RG_MM                           0x0320+2
 #define X86IM_IO_ID_SBB_R1_R2                           0x0320+3
@@ -375,25 +375,25 @@
 #define X86IM_IO_ID_SBB_AC_IM                           0x0320+6
 
 #define X86IM_IO_IS_GPI_SETCC(x)                        ( ( (x)->id & 0xFFF0 ) == 0x0330 )
-#define X86IM_IO_ID_SETCC_MM                            0x0330+0 
+#define X86IM_IO_ID_SETCC_MM                            0x0330+0
 #define X86IM_IO_ID_SETCC_RG                            0x0330+1
 
 #define X86IM_IO_IS_GPI_SHL(x)                          ( ( (x)->id & 0xFFF0 ) == 0x0340 )
-#define X86IM_IO_ID_SHL_MM_1                            0x0340+0 
+#define X86IM_IO_ID_SHL_MM_1                            0x0340+0
 #define X86IM_IO_ID_SHL_RG_1                            0x0340+1
 #define X86IM_IO_ID_SHL_MM_CL                           0x0340+2
 #define X86IM_IO_ID_SHL_RG_CL                           0x0340+3
 #define X86IM_IO_ID_SHL_MM_IM                           0x0340+4
 #define X86IM_IO_ID_SHL_RG_IM                           0x0340+5
-    
+
 #define X86IM_IO_IS_GPI_SHLD(x)                         ( ( (x)->id & 0xFFF0 ) == 0x0350 )
-#define X86IM_IO_ID_SHLD_MM_RG_IM                       0x0350+0 
+#define X86IM_IO_ID_SHLD_MM_RG_IM                       0x0350+0
 #define X86IM_IO_ID_SHLD_R1_R2_IM                       0x0350+1
 #define X86IM_IO_ID_SHLD_MM_RG_CL                       0x0350+2
 #define X86IM_IO_ID_SHLD_R1_R2_CL                       0x0350+3
 
 #define X86IM_IO_IS_GPI_SHR(x)                          ( ( (x)->id & 0xFFF0 ) == 0x0360 )
-#define X86IM_IO_ID_SHR_MM_1                            0x0360+0 
+#define X86IM_IO_ID_SHR_MM_1                            0x0360+0
 #define X86IM_IO_ID_SHR_RG_1                            0x0360+1
 #define X86IM_IO_ID_SHR_MM_CL                           0x0360+2
 #define X86IM_IO_ID_SHR_RG_CL                           0x0360+3
@@ -401,21 +401,21 @@
 #define X86IM_IO_ID_SHR_RG_IM                           0x0360+5
 
 #define X86IM_IO_IS_GPI_SHRD(x)                         ( ( (x)->id & 0xFFF0 ) == 0x0370 )
-#define X86IM_IO_ID_SHRD_MM_RG_IM                       0x0370+0 
+#define X86IM_IO_ID_SHRD_MM_RG_IM                       0x0370+0
 #define X86IM_IO_ID_SHRD_R1_R2_IM                       0x0370+1
 #define X86IM_IO_ID_SHRD_MM_RG_CL                       0x0370+2
 #define X86IM_IO_ID_SHRD_R1_R2_CL                       0x0370+3
 
 #define X86IM_IO_IS_GPI_SLDT(x)                         ( ( (x)->id & 0xFFF0 ) == 0x0380 )
-#define X86IM_IO_ID_SLDT_MM                             0x0380+0 
+#define X86IM_IO_ID_SLDT_MM                             0x0380+0
 #define X86IM_IO_ID_SLDT_RG                             0x0380+1
 
 #define X86IM_IO_IS_GPI_SMSW(x)                         ( ( (x)->id & 0xFFF0 ) == 0x0390 )
-#define X86IM_IO_ID_SMSW_MM                             0x0390+0 
+#define X86IM_IO_ID_SMSW_MM                             0x0390+0
 #define X86IM_IO_ID_SMSW_RG                             0x0390+1
 
 #define X86IM_IO_IS_GPI_STR(x)                          ( ( (x)->id & 0xFFF0 ) == 0x03A0 )
-#define X86IM_IO_ID_STR_MM                              0x03A0+0 
+#define X86IM_IO_ID_STR_MM                              0x03A0+0
 #define X86IM_IO_ID_STR_RG                              0x03A0+1
 
 #define X86IM_IO_IS_GPI_SUB(x)                          ( ( (x)->id & 0xFFF0 ) == 0x03B0 )
@@ -428,31 +428,31 @@
 #define X86IM_IO_ID_SUB_AC_IM                           0x03B0+6
 
 #define X86IM_IO_IS_GPI_TEST(x)                         ( ( (x)->id & 0xFFF0 ) == 0x03C0 )
-#define X86IM_IO_ID_TEST_MM_R1                          0x03C0+0 
+#define X86IM_IO_ID_TEST_MM_R1                          0x03C0+0
 #define X86IM_IO_ID_TEST_R1_R2                          0x03C0+1
 #define X86IM_IO_ID_TEST_MM_IM                          0x03C0+2
 #define X86IM_IO_ID_TEST_RG_IM                          0x03C0+3
 #define X86IM_IO_ID_TEST_AC_IM                          0x03C0+4
 
 #define X86IM_IO_IS_GPI_VERR(x)                         ( ( (x)->id & 0xFFF0 ) == 0x03D0 )
-#define X86IM_IO_ID_VERR_MM                             0x03D0+0 
+#define X86IM_IO_ID_VERR_MM                             0x03D0+0
 #define X86IM_IO_ID_VERR_RG                             0x03D0+1
 
 #define X86IM_IO_IS_GPI_VERW(x)                         ( ( (x)->id & 0xFFF0 ) == 0x03E0 )
-#define X86IM_IO_ID_VERW_MM                             0x03E0+0 
+#define X86IM_IO_ID_VERW_MM                             0x03E0+0
 #define X86IM_IO_ID_VERW_RG                             0x03E0+1
 
 #define X86IM_IO_IS_GPI_XADD(x)                         ( ( (x)->id & 0xFFF0 ) == 0x03F0 )
-#define X86IM_IO_ID_XADD_MM_RG                          0x03F0+0 
+#define X86IM_IO_ID_XADD_MM_RG                          0x03F0+0
 #define X86IM_IO_ID_XADD_R1_R2                          0x03F0+1
 
 #define X86IM_IO_IS_GPI_XCHG(x)                         ( ( (x)->id & 0xFFF0 ) == 0x0400 )
-#define X86IM_IO_ID_XCHG_MM_RG                          0x0400+0 
+#define X86IM_IO_ID_XCHG_MM_RG                          0x0400+0
 #define X86IM_IO_ID_XCHG_R1_R2                          0x0400+1
 #define X86IM_IO_ID_XCHG_AC_RG                          0x0400+2
 
 #define X86IM_IO_IS_GPI_XOR(x)                          ( ( (x)->id & 0xFFF0 ) == 0x0410 )
-#define X86IM_IO_ID_XOR_MM_RG                           0x0410+0 
+#define X86IM_IO_ID_XOR_MM_RG                           0x0410+0
 #define X86IM_IO_ID_XOR_R2_R1                           0x0410+1
 #define X86IM_IO_ID_XOR_RG_MM                           0x0410+2
 #define X86IM_IO_ID_XOR_R1_R2                           0x0410+3
@@ -474,7 +474,7 @@
 #define X86IM_IO_ID_FNCLEX                              0x1005
 #define X86IM_IO_ID_FCOMPP                              0x1006
 #define X86IM_IO_ID_FCOMIP                              0x1007
-#define X86IM_IO_ID_FCOS                                0x1008   
+#define X86IM_IO_ID_FCOS                                0x1008
 #define X86IM_IO_ID_FDECSTP                             0x1009
 #define X86IM_IO_ID_FFREE                               0x100A
 #define X86IM_IO_ID_FINCSTP                             0x100B
@@ -516,8 +516,8 @@
 #define X86IM_IO_ID_FXSAVE                              0x11C0
 #define X86IM_IO_ID_FXRSTOR                             0x11C1
 #define X86IM_IO_ID_FFREEP                              0x11C2
-#define X86IM_IO_ID_FXCH4                               0x11C3  
-#define X86IM_IO_ID_FXCH7                               0x11C5  
+#define X86IM_IO_ID_FXCH4                               0x11C3
+#define X86IM_IO_ID_FXCH7                               0x11C5
 
 #define X86IM_IO_ID_FADDP_STX_ST0                       0x1030
 #define X86IM_IO_ID_FDIVP_STX_ST0                       0x1031
@@ -528,120 +528,120 @@
 #define X86IM_IO_ID_FCOMI_ST0_STX                       0x1036
 
 #define X86IM_IO_IS_FPU_FADD(x)                         ( ( (x)->id & 0xFFF0 ) == 0x1040 )
-#define X86IM_IO_ID_FADD_MM32FP                         0x1040+0 
+#define X86IM_IO_ID_FADD_MM32FP                         0x1040+0
 #define X86IM_IO_ID_FADD_MM64FP                         0x1040+1
 #define X86IM_IO_ID_FADD_ST0_STX                        0x1040+2
 #define X86IM_IO_ID_FADD_STX_ST0                        0x1040+3
 
 #define X86IM_IO_IS_FPU_FCOM(x)                         ( ( (x)->id & 0xFFF0 ) == 0x1050 )
-#define X86IM_IO_ID_FCOM_MM32FP                         0x1050+0 
+#define X86IM_IO_ID_FCOM_MM32FP                         0x1050+0
 #define X86IM_IO_ID_FCOM_MM64FP                         0x1050+1
 #define X86IM_IO_ID_FCOM_STX                            0x1050+2
-#define X86IM_IO_ID_FCOM2_STX_ST0                       0x1050+3 
+#define X86IM_IO_ID_FCOM2_STX_ST0                       0x1050+3
 
 #define X86IM_IO_IS_FPU_FCOMP(x)                        ( ( (x)->id & 0xFFF0 ) == 0x1060 )
 #define X86IM_IO_ID_FCOMP_MM32FP                        0x1060+0
 #define X86IM_IO_ID_FCOMP_MM64FP                        0x1060+1
 #define X86IM_IO_ID_FCOMP_STX                           0x1060+2
-#define X86IM_IO_ID_FCOMP3                              0x1060+3 
-#define X86IM_IO_ID_FCOMP5                              0x1060+4 
+#define X86IM_IO_ID_FCOMP3                              0x1060+3
+#define X86IM_IO_ID_FCOMP5                              0x1060+4
 
 #define X86IM_IO_IS_FPU_FDIV(x)                         ( ( (x)->id & 0xFFF0 ) == 0x1070 )
-#define X86IM_IO_ID_FDIV_MM32FP                         0x1070+0 
+#define X86IM_IO_ID_FDIV_MM32FP                         0x1070+0
 #define X86IM_IO_ID_FDIV_MM64FP                         0x1070+1
 #define X86IM_IO_ID_FDIV_ST0_STX                        0x1070+2
 #define X86IM_IO_ID_FDIV_STX_ST0                        0x1070+3
 
 #define X86IM_IO_IS_FPU_FDIVR(x)                        ( ( (x)->id & 0xFFF0 ) == 0x1080 )
-#define X86IM_IO_ID_FDIVR_MM32FP                        0x1080+0 
+#define X86IM_IO_ID_FDIVR_MM32FP                        0x1080+0
 #define X86IM_IO_ID_FDIVR_MM64FP                        0x1080+1
 #define X86IM_IO_ID_FDIVR_ST0_STX                       0x1080+2
 #define X86IM_IO_ID_FDIVR_STX_ST0                       0x1080+3
 
 #define X86IM_IO_IS_FPU_FIADD(x)                        ( ( (x)->id & 0xFFF0 ) == 0x1090 )
-#define X86IM_IO_ID_FIADD_MM16I                         0x1090+0 
+#define X86IM_IO_ID_FIADD_MM16I                         0x1090+0
 #define X86IM_IO_ID_FIADD_MM32I                         0x1090+1
 
 #define X86IM_IO_IS_FPU_FICOM(x)                        ( ( (x)->id & 0xFFF0 ) == 0x10A0 )
-#define X86IM_IO_ID_FICOM_MM16I                         0x10A0+0 
+#define X86IM_IO_ID_FICOM_MM16I                         0x10A0+0
 #define X86IM_IO_ID_FICOM_MM32I                         0x10A0+1
 
 #define X86IM_IO_IS_FPU_FICOMP(x)                       ( ( (x)->id & 0xFFF0 ) == 0x10B0 )
-#define X86IM_IO_ID_FICOMP_MM16I                        0x10B0+0 
+#define X86IM_IO_ID_FICOMP_MM16I                        0x10B0+0
 #define X86IM_IO_ID_FICOMP_MM32I                        0x10B0+1
 
 #define X86IM_IO_IS_FPU_FIDIV(x)                        ( ( (x)->id & 0xFFF0 ) == 0x10C0 )
-#define X86IM_IO_ID_FIDIV_MM16I                         0x10C0+0 
+#define X86IM_IO_ID_FIDIV_MM16I                         0x10C0+0
 #define X86IM_IO_ID_FIDIV_MM32I                         0x10C0+1
 
 #define X86IM_IO_IS_FPU_FIDIVR(x)                       ( ( (x)->id & 0xFFF0 ) == 0x10D0 )
-#define X86IM_IO_ID_FIDIVR_MM16I                        0x10D0+0 
+#define X86IM_IO_ID_FIDIVR_MM16I                        0x10D0+0
 #define X86IM_IO_ID_FIDIVR_MM32I                        0x10D0+1
 
 #define X86IM_IO_IS_FPU_FILD(x)                         ( ( (x)->id & 0xFFF0 ) == 0x10E0 )
-#define X86IM_IO_ID_FILD_MM16I                          0x10E0+0 
+#define X86IM_IO_ID_FILD_MM16I                          0x10E0+0
 #define X86IM_IO_ID_FILD_MM32I                          0x10E0+1
 #define X86IM_IO_ID_FILD_MM64I                          0x10E0+2
 
 #define X86IM_IO_IS_FPU_FIMUL(x)                        ( ( (x)->id & 0xFFF0 ) == 0x10F0 )
-#define X86IM_IO_ID_FIMUL_MM16I                         0x10F0+0 
+#define X86IM_IO_ID_FIMUL_MM16I                         0x10F0+0
 #define X86IM_IO_ID_FIMUL_MM32I                         0x10F0+1
 
 #define X86IM_IO_IS_FPU_FIST(x)                         ( ( (x)->id & 0xFFF0 ) == 0x1100 )
-#define X86IM_IO_ID_FIST_MM16I                          0x1100+0 
+#define X86IM_IO_ID_FIST_MM16I                          0x1100+0
 #define X86IM_IO_ID_FIST_MM32I                          0x1100+1
 
 #define X86IM_IO_IS_FPU_FISTP(x)                        ( ( (x)->id & 0xFFF0 ) == 0x1110 )
-#define X86IM_IO_ID_FISTP_MM16I                         0x1110+0 
+#define X86IM_IO_ID_FISTP_MM16I                         0x1110+0
 #define X86IM_IO_ID_FISTP_MM32I                         0x1110+1
 #define X86IM_IO_ID_FISTP_MM64I                         0x1110+2
 
 #define X86IM_IO_IS_FPU_FISUB(x)                        ( ( (x)->id & 0xFFF0 ) == 0x1120 )
-#define X86IM_IO_ID_FISUB_MM16I                         0x1120+0 
+#define X86IM_IO_ID_FISUB_MM16I                         0x1120+0
 #define X86IM_IO_ID_FISUB_MM32I                         0x1120+1
 
 #define X86IM_IO_IS_FPU_FISUBR(x)                       ( ( (x)->id & 0xFFF0 ) == 0x1130 )
-#define X86IM_IO_ID_FISUBR_MM16I                        0x1130+0 
+#define X86IM_IO_ID_FISUBR_MM16I                        0x1130+0
 #define X86IM_IO_ID_FISUBR_MM32I                        0x1130+1
 
 #define X86IM_IO_IS_FPU_FLD(x)                          ( ( (x)->id & 0xFFF0 ) == 0x1140 )
-#define X86IM_IO_ID_FLD_MM32FP                          0x1140+0 
+#define X86IM_IO_ID_FLD_MM32FP                          0x1140+0
 #define X86IM_IO_ID_FLD_MM64FP                          0x1140+1
 #define X86IM_IO_ID_FLD_MM80FP                          0x1140+2
 #define X86IM_IO_ID_FLD_STX                             0x1140+3
 
 #define X86IM_IO_IS_FPU_FMUL(x)                         ( ( (x)->id & 0xFFF0 ) == 0x1150 )
-#define X86IM_IO_ID_FMUL_MM32FP                         0x1150+0 
+#define X86IM_IO_ID_FMUL_MM32FP                         0x1150+0
 #define X86IM_IO_ID_FMUL_MM64FP                         0x1150+1
 #define X86IM_IO_ID_FMUL_ST0_STX                        0x1150+2
 #define X86IM_IO_ID_FMUL_STX_ST0                        0x1150+3
 
-#define X86IM_IO_IS_FPU_FST(x)                          ( ( (x)->id & 0xFFF0 ) == 0x1160 )  
-#define X86IM_IO_ID_FST_MM32FP                          0x1160+0 
+#define X86IM_IO_IS_FPU_FST(x)                          ( ( (x)->id & 0xFFF0 ) == 0x1160 )
+#define X86IM_IO_ID_FST_MM32FP                          0x1160+0
 #define X86IM_IO_ID_FST_MM64FP                          0x1160+1
 #define X86IM_IO_ID_FST_STX                             0x1160+2
 
 #define X86IM_IO_IS_FPU_FSTP(x)                         ( ( (x)->id & 0xFFF0 ) == 0x1170 )
-#define X86IM_IO_ID_FSTP_MM32FP                         0x1170+0 
+#define X86IM_IO_ID_FSTP_MM32FP                         0x1170+0
 #define X86IM_IO_ID_FSTP_MM64FP                         0x1170+1
 #define X86IM_IO_ID_FSTP_MM80FP                         0x1170+2
 #define X86IM_IO_ID_FSTP_STX                            0x1170+3
-#define X86IM_IO_ID_FSTP1                               0x1170+4 
-#define X86IM_IO_ID_FSTP8                               0x1170+5 
-#define X86IM_IO_ID_FSTP9                               0x1170+6 
+#define X86IM_IO_ID_FSTP1                               0x1170+4
+#define X86IM_IO_ID_FSTP8                               0x1170+5
+#define X86IM_IO_ID_FSTP9                               0x1170+6
 
 #define X86IM_IO_IS_FPU_FNSTSW(x)                       ( ( (x)->id & 0xFFF0 ) == 0x1180 )
-#define X86IM_IO_ID_FNSTSW_MB2                          0x1180+0 
+#define X86IM_IO_ID_FNSTSW_MB2                          0x1180+0
 #define X86IM_IO_ID_FNSTSW_AX                           0x1180+1
 
 #define X86IM_IO_IS_FPU_FSUB(x)                         ( ( (x)->id & 0xFFF0 ) == 0x1190 )
-#define X86IM_IO_ID_FSUB_MM32FP                         0x1190+0 
+#define X86IM_IO_ID_FSUB_MM32FP                         0x1190+0
 #define X86IM_IO_ID_FSUB_MM64FP                         0x1190+1
 #define X86IM_IO_ID_FSUB_ST0_STX                        0x1190+2
 #define X86IM_IO_ID_FSUB_STX_ST0                        0x1190+3
 
 #define X86IM_IO_IS_FPU_FSUBR(x)                        ( ( (x)->id & 0xFFF0 ) == 0x11A0 )
-#define X86IM_IO_ID_FSUBR_MM32FP                        0x11A0+0 
+#define X86IM_IO_ID_FSUBR_MM32FP                        0x11A0+0
 #define X86IM_IO_ID_FSUBR_MM64FP                        0x11A0+1
 #define X86IM_IO_ID_FSUBR_ST0_STX                       0x11A0+2
 #define X86IM_IO_ID_FSUBR_STX_ST0                       0x11A0+3
@@ -661,91 +661,91 @@
 #define X86IM_IO_ID_EMMS                                0x2000
 
 #define X86IM_IO_IS_MMX_MOVD(x)                         ( ( (x)->id & 0xFFF0 ) == 0x2010 )
-#define X86IM_IO_ID_MOVD_MMXRG_MM                       0x2010+0 
+#define X86IM_IO_ID_MOVD_MMXRG_MM                       0x2010+0
 #define X86IM_IO_ID_MOVD_MMXRG_RG                       0x2010+1
 #define X86IM_IO_ID_MOVD_MM_MMXRG                       0x2010+2
 #define X86IM_IO_ID_MOVD_RG_MMXRG                       0x2010+3
 
 #define X86IM_IO_IS_MMX_MOVQ(x)                         ( ( (x)->id & 0xFFF0 ) == 0x2020 )
-#define X86IM_IO_ID_MOVQ_MMXR1_MMXR2                    0x2020+0 
+#define X86IM_IO_ID_MOVQ_MMXR1_MMXR2                    0x2020+0
 #define X86IM_IO_ID_MOVQ_MMXRG_MM                       0x2020+1
 #define X86IM_IO_ID_MOVQ_MMXR2_MMXR1                    0x2020+2
 #define X86IM_IO_ID_MOVQ_MM_MMXRG                       0x2020+3
 
 #define X86IM_IO_IS_MMX_PACKSSDW(x)                     ( ( (x)->id & 0xFFF0 ) == 0x2030 )
-#define X86IM_IO_ID_PACKSSDW_MMXR1_MMXR2                0x2030+0 
+#define X86IM_IO_ID_PACKSSDW_MMXR1_MMXR2                0x2030+0
 #define X86IM_IO_ID_PACKSSDW_MMXRG_MM                   0x2030+1
 
 #define X86IM_IO_IS_MMX_PACKSSWB(x)                     ( ( (x)->id & 0xFFF0 ) == 0x2040 )
-#define X86IM_IO_ID_PACKSSWB_MMXR1_MMXR2                0x2040+0 
+#define X86IM_IO_ID_PACKSSWB_MMXR1_MMXR2                0x2040+0
 #define X86IM_IO_ID_PACKSSWB_MMXRG_MM                   0x2040+1
 
 #define X86IM_IO_IS_MMX_PACKUSWB(x)                     ( ( (x)->id & 0xFFF0 ) == 0x2050 )
-#define X86IM_IO_ID_PACKUSWB_MMXR1_MMXR2                0x2050+0 
+#define X86IM_IO_ID_PACKUSWB_MMXR1_MMXR2                0x2050+0
 #define X86IM_IO_ID_PACKUSWB_MMXRG_MM                   0x2050+1
 
 #define X86IM_IO_IS_MMX_PADD(x)                         ( ( (x)->id & 0xFFF0 ) == 0x2060 )
-#define X86IM_IO_ID_PADDB_MMXR1_MMXR2                   0x2060+0 
+#define X86IM_IO_ID_PADDB_MMXR1_MMXR2                   0x2060+0
 #define X86IM_IO_ID_PADDB_MMXRG_MM                      0x2060+1
-#define X86IM_IO_ID_PADDW_MMXR1_MMXR2                   0x2060+2 
+#define X86IM_IO_ID_PADDW_MMXR1_MMXR2                   0x2060+2
 #define X86IM_IO_ID_PADDW_MMXRG_MM                      0x2060+3
-#define X86IM_IO_ID_PADDD_MMXR1_MMXR2                   0x2060+4 
+#define X86IM_IO_ID_PADDD_MMXR1_MMXR2                   0x2060+4
 #define X86IM_IO_ID_PADDD_MMXRG_MM                      0x2060+5
 
 #define X86IM_IO_IS_MMX_PADDS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x2070 )
-#define X86IM_IO_ID_PADDSB_MMXR1_MMXR2                  0x2070+0 
+#define X86IM_IO_ID_PADDSB_MMXR1_MMXR2                  0x2070+0
 #define X86IM_IO_ID_PADDSB_MMXRG_MM                     0x2070+1
-#define X86IM_IO_ID_PADDSW_MMXR1_MMXR2                  0x2070+2 
+#define X86IM_IO_ID_PADDSW_MMXR1_MMXR2                  0x2070+2
 #define X86IM_IO_ID_PADDSW_MMXRG_MM                     0x2070+3
 
 #define X86IM_IO_IS_MMX_PADDUS(x)                       ( ( (x)->id & 0xFFF0 ) == 0x2080 )
-#define X86IM_IO_ID_PADDUSB_MMXR1_MMXR2                 0x2080+0 
+#define X86IM_IO_ID_PADDUSB_MMXR1_MMXR2                 0x2080+0
 #define X86IM_IO_ID_PADDUSB_MMXRG_MM                    0x2080+1
-#define X86IM_IO_ID_PADDUSW_MMXR1_MMXR2                 0x2080+2 
+#define X86IM_IO_ID_PADDUSW_MMXR1_MMXR2                 0x2080+2
 #define X86IM_IO_ID_PADDUSW_MMXRG_MM                    0x2080+3
 
 #define X86IM_IO_IS_MMX_PAND(x)                         ( ( (x)->id & 0xFFF0 ) == 0x2090 )
-#define X86IM_IO_ID_PAND_MMXR1_MMXR2                    0x2090+0 
+#define X86IM_IO_ID_PAND_MMXR1_MMXR2                    0x2090+0
 #define X86IM_IO_ID_PAND_MMXRG_MM                       0x2090+1
 
 #define X86IM_IO_IS_MMX_PANDN(x)                        ( ( (x)->id & 0xFFF0 ) == 0x20A0 )
-#define X86IM_IO_ID_PANDN_MMXR1_MMXR2                   0x20A0+0 
+#define X86IM_IO_ID_PANDN_MMXR1_MMXR2                   0x20A0+0
 #define X86IM_IO_ID_PANDN_MMXRG_MM                      0x20A0+1
 
 #define X86IM_IO_IS_MMX_PCMPEQ(x)                       ( ( (x)->id & 0xFFF0 ) == 0x20B0 )
-#define X86IM_IO_ID_PCMPEQB_MMXR1_MMXR2                 0x20B0+0 
+#define X86IM_IO_ID_PCMPEQB_MMXR1_MMXR2                 0x20B0+0
 #define X86IM_IO_ID_PCMPEQB_MMXRG_MM                    0x20B0+1
-#define X86IM_IO_ID_PCMPEQW_MMXR1_MMXR2                 0x20B0+2 
+#define X86IM_IO_ID_PCMPEQW_MMXR1_MMXR2                 0x20B0+2
 #define X86IM_IO_ID_PCMPEQW_MMXRG_MM                    0x20B0+3
-#define X86IM_IO_ID_PCMPEQD_MMXR1_MMXR2                 0x20B0+4 
+#define X86IM_IO_ID_PCMPEQD_MMXR1_MMXR2                 0x20B0+4
 #define X86IM_IO_ID_PCMPEQD_MMXRG_MM                    0x20B0+5
 
 #define X86IM_IO_IS_MMX_PCMPGT(x)                       ( ( (x)->id & 0xFFF0 ) == 0x20C0 )
-#define X86IM_IO_ID_PCMPGTB_MMXR1_MMXR2                 0x20C0+0 
+#define X86IM_IO_ID_PCMPGTB_MMXR1_MMXR2                 0x20C0+0
 #define X86IM_IO_ID_PCMPGTB_MMXRG_MM                    0x20C0+1
-#define X86IM_IO_ID_PCMPGTW_MMXR1_MMXR2                 0x20C0+2 
+#define X86IM_IO_ID_PCMPGTW_MMXR1_MMXR2                 0x20C0+2
 #define X86IM_IO_ID_PCMPGTW_MMXRG_MM                    0x20C0+3
-#define X86IM_IO_ID_PCMPGTD_MMXR1_MMXR2                 0x20C0+4 
+#define X86IM_IO_ID_PCMPGTD_MMXR1_MMXR2                 0x20C0+4
 #define X86IM_IO_ID_PCMPGTD_MMXRG_MM                    0x20C0+5
 
 #define X86IM_IO_IS_MMX_PMADDWD(x)                      ( ( (x)->id & 0xFFF0 ) == 0x20D0 )
-#define X86IM_IO_ID_PMADDWD_MMXR1_MMXR2                 0x20D0+0 
+#define X86IM_IO_ID_PMADDWD_MMXR1_MMXR2                 0x20D0+0
 #define X86IM_IO_ID_PMADDWD_MMXRG_MM                    0x20D0+1
 
 #define X86IM_IO_IS_MMX_PMULHW(x)                       ( ( (x)->id & 0xFFF0 ) == 0x20E0 )
-#define X86IM_IO_ID_PMULHW_MMXR1_MMXR2                  0x20E0+0 
+#define X86IM_IO_ID_PMULHW_MMXR1_MMXR2                  0x20E0+0
 #define X86IM_IO_ID_PMULHW_MMXRG_MM                     0x20E0+1
 
 #define X86IM_IO_IS_MMX_PMULLW(x)                       ( ( (x)->id & 0xFFF0 ) == 0x20F0 )
-#define X86IM_IO_ID_PMULLW_MMXR1_MMXR2                  0x20F0+0 
+#define X86IM_IO_ID_PMULLW_MMXR1_MMXR2                  0x20F0+0
 #define X86IM_IO_ID_PMULLW_MMXRG_MM                     0x20F0+1
 
 #define X86IM_IO_IS_MMX_POR(x)                          ( ( (x)->id & 0xFFF0 ) == 0x2100 )
-#define X86IM_IO_ID_POR_MMXR1_MMXR2                     0x2100+0 
+#define X86IM_IO_ID_POR_MMXR1_MMXR2                     0x2100+0
 #define X86IM_IO_ID_POR_MMXRG_MM                        0x2100+1
 
 #define X86IM_IO_IS_MMX_PSLL(x)                         ( ( (x)->id & 0xFFF0 ) == 0x2110 )
-#define X86IM_IO_ID_PSLLW_MMXR1_MMXR2                   0x2110+0 
+#define X86IM_IO_ID_PSLLW_MMXR1_MMXR2                   0x2110+0
 #define X86IM_IO_ID_PSLLW_MMXRG_MM                      0x2110+1
 #define X86IM_IO_ID_PSLLW_MMXRG_IMM8                    0x2110+2
 #define X86IM_IO_ID_PSLLD_MMXR1_MMXR2                   0x2110+3
@@ -756,7 +756,7 @@
 #define X86IM_IO_ID_PSLLQ_MMXRG_IMM8                    0x2110+8
 
 #define X86IM_IO_IS_MMX_PSRA(x)                         ( ( (x)->id & 0xFFF0 ) == 0x2120 )
-#define X86IM_IO_ID_PSRAW_MMXR1_MMXR2                   0x2120+0 
+#define X86IM_IO_ID_PSRAW_MMXR1_MMXR2                   0x2120+0
 #define X86IM_IO_ID_PSRAW_MMXRG_MM                      0x2120+1
 #define X86IM_IO_ID_PSRAW_MMXRG_IMM8                    0x2120+2
 #define X86IM_IO_ID_PSRAD_MMXR1_MMXR2                   0x2120+3
@@ -764,7 +764,7 @@
 #define X86IM_IO_ID_PSRAD_MMXRG_IMM8                    0x2120+5
 
 #define X86IM_IO_IS_MMX_PSRL(x)                         ( ( (x)->id & 0xFFF0 ) == 0x2130 )
-#define X86IM_IO_ID_PSRLW_MMXR1_MMXR2                   0x2130+0 
+#define X86IM_IO_ID_PSRLW_MMXR1_MMXR2                   0x2130+0
 #define X86IM_IO_ID_PSRLW_MMXRG_MM                      0x2130+1
 #define X86IM_IO_ID_PSRLW_MMXRG_IMM8                    0x2130+2
 #define X86IM_IO_ID_PSRLD_MMXR1_MMXR2                   0x2130+3
@@ -775,141 +775,141 @@
 #define X86IM_IO_ID_PSRLQ_MMXRG_IMM8                    0x2130+8
 
 #define X86IM_IO_IS_MMX_PSUB(x)                         ( ( (x)->id & 0xFFF0 ) == 0x2140 )
-#define X86IM_IO_ID_PSUBB_MMXR1_MMXR2                   0x2140+0 
+#define X86IM_IO_ID_PSUBB_MMXR1_MMXR2                   0x2140+0
 #define X86IM_IO_ID_PSUBB_MMXRG_MM                      0x2140+1
-#define X86IM_IO_ID_PSUBW_MMXR1_MMXR2                   0x2140+2 
+#define X86IM_IO_ID_PSUBW_MMXR1_MMXR2                   0x2140+2
 #define X86IM_IO_ID_PSUBW_MMXRG_MM                      0x2140+3
-#define X86IM_IO_ID_PSUBD_MMXR1_MMXR2                   0x2140+4 
+#define X86IM_IO_ID_PSUBD_MMXR1_MMXR2                   0x2140+4
 #define X86IM_IO_ID_PSUBD_MMXRG_MM                      0x2140+5
 
 #define X86IM_IO_IS_MMX_PSUBS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x2150 )
-#define X86IM_IO_ID_PSUBSB_MMXR1_MMXR2                  0x2150+0 
+#define X86IM_IO_ID_PSUBSB_MMXR1_MMXR2                  0x2150+0
 #define X86IM_IO_ID_PSUBSB_MMXRG_MM                     0x2150+1
-#define X86IM_IO_ID_PSUBSW_MMXR1_MMXR2                  0x2150+2 
+#define X86IM_IO_ID_PSUBSW_MMXR1_MMXR2                  0x2150+2
 #define X86IM_IO_ID_PSUBSW_MMXRG_MM                     0x2150+3
 
 #define X86IM_IO_IS_MMX_PSUBUS(x)                       ( ( (x)->id & 0xFFF0 ) == 0x2160 )
-#define X86IM_IO_ID_PSUBUSB_MMXR1_MMXR2                 0x2160+0 
+#define X86IM_IO_ID_PSUBUSB_MMXR1_MMXR2                 0x2160+0
 #define X86IM_IO_ID_PSUBUSB_MMXRG_MM                    0x2160+1
-#define X86IM_IO_ID_PSUBUSW_MMXR1_MMXR2                 0x2160+2 
+#define X86IM_IO_ID_PSUBUSW_MMXR1_MMXR2                 0x2160+2
 #define X86IM_IO_ID_PSUBUSW_MMXRG_MM                    0x2160+3
 
-#define X86IM_IO_IS_MMX_PUNPCKH(x)                      ( ( (x)->id & 0xFFF0 ) == 0x2170 )     
-#define X86IM_IO_ID_PUNPCKHBW_MMXR1_MMXR2               0x2170+0 
+#define X86IM_IO_IS_MMX_PUNPCKH(x)                      ( ( (x)->id & 0xFFF0 ) == 0x2170 )
+#define X86IM_IO_ID_PUNPCKHBW_MMXR1_MMXR2               0x2170+0
 #define X86IM_IO_ID_PUNPCKHBW_MMXRG_MM                  0x2170+1
-#define X86IM_IO_ID_PUNPCKHWD_MMXR1_MMXR2               0x2170+2 
+#define X86IM_IO_ID_PUNPCKHWD_MMXR1_MMXR2               0x2170+2
 #define X86IM_IO_ID_PUNPCKHWD_MMXRG_MM                  0x2170+3
-#define X86IM_IO_ID_PUNPCKHDQ_MMXR1_MMXR2               0x2170+4 
+#define X86IM_IO_ID_PUNPCKHDQ_MMXR1_MMXR2               0x2170+4
 #define X86IM_IO_ID_PUNPCKHDQ_MMXRG_MM                  0x2170+5
 
 #define X86IM_IO_IS_MMX_PUNPCKL(x)                      ( ( (x)->id & 0xFFF0 ) == 0x2180 )
-#define X86IM_IO_ID_PUNPCKLBW_MMXR1_MMXR2               0x2180+0 
+#define X86IM_IO_ID_PUNPCKLBW_MMXR1_MMXR2               0x2180+0
 #define X86IM_IO_ID_PUNPCKLBW_MMXRG_MM32                0x2180+1
-#define X86IM_IO_ID_PUNPCKLWD_MMXR1_MMXR2               0x2180+2 
+#define X86IM_IO_ID_PUNPCKLWD_MMXR1_MMXR2               0x2180+2
 #define X86IM_IO_ID_PUNPCKLWD_MMXRG_MM32                0x2180+3
-#define X86IM_IO_ID_PUNPCKLDQ_MMXR1_MMXR2               0x2180+4 
+#define X86IM_IO_ID_PUNPCKLDQ_MMXR1_MMXR2               0x2180+4
 #define X86IM_IO_ID_PUNPCKLDQ_MMXRG_MM32                0x2180+5
 
 #define X86IM_IO_IS_MMX_PXOR(x)                         ( ( (x)->id & 0xFFF0 ) == 0x2190 )
-#define X86IM_IO_ID_PXOR_MMXR1_MMXR2                    0x2190+0 
+#define X86IM_IO_ID_PXOR_MMXR1_MMXR2                    0x2190+0
 #define X86IM_IO_ID_PXOR_MMXRG_MM                       0x2190+1
 
 // 3DNOW
 
 #define X86IM_IO_IS_3DNOW_PI2FW(x)                      ( ( (x)->id & 0xFFF0 ) == 0x3000 )
-#define X86IM_IO_ID_PI2FW_MMXR1_MMXR2                   0x3000+0 
+#define X86IM_IO_ID_PI2FW_MMXR1_MMXR2                   0x3000+0
 #define X86IM_IO_ID_PI2FW_MMXRG_MM                      0x3000+1
 
 #define X86IM_IO_IS_3DNOW_PI2FD(x)                      ( ( (x)->id & 0xFFF0 ) == 0x3010 )
-#define X86IM_IO_ID_PI2FD_MMXR1_MMXR2                   0x3010+0 
+#define X86IM_IO_ID_PI2FD_MMXR1_MMXR2                   0x3010+0
 #define X86IM_IO_ID_PI2FD_MMXRG_MM                      0x3010+1
 
 #define X86IM_IO_IS_3DNOW_PF2IW(x)                      ( ( (x)->id & 0xFFF0 ) == 0x3020 )
-#define X86IM_IO_ID_PF2IW_MMXR1_MMXR2                   0x3020+0 
+#define X86IM_IO_ID_PF2IW_MMXR1_MMXR2                   0x3020+0
 #define X86IM_IO_ID_PF2IW_MMXRG_MM                      0x3020+1
 
 #define X86IM_IO_IS_3DNOW_PF2ID(x)                      ( ( (x)->id & 0xFFF0 ) == 0x3030 )
-#define X86IM_IO_ID_PF2ID_MMXR1_MMXR2                   0x3030+0 
+#define X86IM_IO_ID_PF2ID_MMXR1_MMXR2                   0x3030+0
 #define X86IM_IO_ID_PF2ID_MMXRG_MM                      0x3030+1
 
 #define X86IM_IO_IS_3DNOW_PFNACC(x)                     ( ( (x)->id & 0xFFF0 ) == 0x3040 )
-#define X86IM_IO_ID_PFNACC_MMXR1_MMXR2                  0x3040+0 
+#define X86IM_IO_ID_PFNACC_MMXR1_MMXR2                  0x3040+0
 #define X86IM_IO_ID_PFNACC_MMXRG_MM                     0x3040+1
 
 #define X86IM_IO_IS_3DNOW_PFPNACC(x)                    ( ( (x)->id & 0xFFF0 ) == 0x3050 )
-#define X86IM_IO_ID_PFPNACC_MMXR1_MMXR2                 0x3050+0 
+#define X86IM_IO_ID_PFPNACC_MMXR1_MMXR2                 0x3050+0
 #define X86IM_IO_ID_PFPNACC_MMXRG_MM                    0x3050+1
 
 #define X86IM_IO_IS_3DNOW_PFCMPGE(x)                    ( ( (x)->id & 0xFFF0 ) == 0x3060 )
-#define X86IM_IO_ID_PFCMPGE_MMXR1_MMXR2                 0x3060+0 
+#define X86IM_IO_ID_PFCMPGE_MMXR1_MMXR2                 0x3060+0
 #define X86IM_IO_ID_PFCMPGE_MMXRG_MM                    0x3060+1
 
 #define X86IM_IO_IS_3DNOW_PFMIN(x)                      ( ( (x)->id & 0xFFF0 ) == 0x3070 )
-#define X86IM_IO_ID_PFMIN_MMXR1_MMXR2                   0x3070+0 
+#define X86IM_IO_ID_PFMIN_MMXR1_MMXR2                   0x3070+0
 #define X86IM_IO_ID_PFMIN_MMXRG_MM                      0x3070+1
 
 #define X86IM_IO_IS_3DNOW_PFRCP(x)                      ( ( (x)->id & 0xFFF0 ) == 0x3080 )
-#define X86IM_IO_ID_PFRCP_MMXR1_MMXR2                   0x3080+0 
+#define X86IM_IO_ID_PFRCP_MMXR1_MMXR2                   0x3080+0
 #define X86IM_IO_ID_PFRCP_MMXRG_MM                      0x3080+1
 
 #define X86IM_IO_IS_3DNOW_PFRSQRT(x)                    ( ( (x)->id & 0xFFF0 ) == 0x3090 )
-#define X86IM_IO_ID_PFRSQRT_MMXR1_MMXR2                 0x3090+0 
+#define X86IM_IO_ID_PFRSQRT_MMXR1_MMXR2                 0x3090+0
 #define X86IM_IO_ID_PFRSQRT_MMXRG_MM                    0x3090+1
 
 #define X86IM_IO_IS_3DNOW_PFSUB(x)                      ( ( (x)->id & 0xFFF0 ) == 0x30A0 )
-#define X86IM_IO_ID_PFSUB_MMXR1_MMXR2                   0x30A0+0 
-#define X86IM_IO_ID_PFSUB_MMXRG_MM                      0x30A0+1   
+#define X86IM_IO_ID_PFSUB_MMXR1_MMXR2                   0x30A0+0
+#define X86IM_IO_ID_PFSUB_MMXRG_MM                      0x30A0+1
 
 #define X86IM_IO_IS_3DNOW_PFADD(x)                      ( ( (x)->id & 0xFFF0 ) == 0x30B0 )
-#define X86IM_IO_ID_PFADD_MMXR1_MMXR2                   0x30B0+0 
+#define X86IM_IO_ID_PFADD_MMXR1_MMXR2                   0x30B0+0
 #define X86IM_IO_ID_PFADD_MMXRG_MM                      0x30B0+1
 
 #define X86IM_IO_IS_3DNOW_PFCMPGT(x)                    ( ( (x)->id & 0xFFF0 ) == 0x30C0 )
-#define X86IM_IO_ID_PFCMPGT_MMXR1_MMXR2                 0x30C0+0 
+#define X86IM_IO_ID_PFCMPGT_MMXR1_MMXR2                 0x30C0+0
 #define X86IM_IO_ID_PFCMPGT_MMXRG_MM                    0x30C0+1
 
 #define X86IM_IO_IS_3DNOW_PFMAX(x)                      ( ( (x)->id & 0xFFF0 ) == 0x30D0 )
-#define X86IM_IO_ID_PFMAX_MMXR1_MMXR2                   0x30D0+0 
+#define X86IM_IO_ID_PFMAX_MMXR1_MMXR2                   0x30D0+0
 #define X86IM_IO_ID_PFMAX_MMXRG_MM                      0x30D0+1
 
 #define X86IM_IO_IS_3DNOW_PFRCPIT1(x)                   ( ( (x)->id & 0xFFF0 ) == 0x30E0 )
-#define X86IM_IO_ID_PFRCPIT1_MMXR1_MMXR2                0x30E0+0 
+#define X86IM_IO_ID_PFRCPIT1_MMXR1_MMXR2                0x30E0+0
 #define X86IM_IO_ID_PFRCPIT1_MMXRG_MM                   0x30E0+1
 
 #define X86IM_IO_IS_3DNOW_PFRSQIT1(x)                   ( ( (x)->id & 0xFFF0 ) == 0x30F0 )
-#define X86IM_IO_ID_PFRSQIT1_MMXR1_MMXR2                0x30F0+0 
+#define X86IM_IO_ID_PFRSQIT1_MMXR1_MMXR2                0x30F0+0
 #define X86IM_IO_ID_PFRSQIT1_MMXRG_MM                   0x30F0+1
 
 #define X86IM_IO_IS_3DNOW_PFSUBR(x)                     ( ( (x)->id & 0xFFF0 ) == 0x3100 )
-#define X86IM_IO_ID_PFSUBR_MMXR1_MMXR2                  0x3100+0 
+#define X86IM_IO_ID_PFSUBR_MMXR1_MMXR2                  0x3100+0
 #define X86IM_IO_ID_PFSUBR_MMXRG_MM                     0x3100+1
 
 #define X86IM_IO_IS_3DNOW_PFACC(x)                      ( ( (x)->id & 0xFFF0 ) == 0x3110 )
-#define X86IM_IO_ID_PFACC_MMXR1_MMXR2                   0x3110+0 
+#define X86IM_IO_ID_PFACC_MMXR1_MMXR2                   0x3110+0
 #define X86IM_IO_ID_PFACC_MMXRG_MM                      0x3110+1
 
 #define X86IM_IO_IS_3DNOW_PFCMPEQ(x)                    ( ( (x)->id & 0xFFF0 ) == 0x3120 )
-#define X86IM_IO_ID_PFCMPEQ_MMXR1_MMXR2                 0x3120+0 
+#define X86IM_IO_ID_PFCMPEQ_MMXR1_MMXR2                 0x3120+0
 #define X86IM_IO_ID_PFCMPEQ_MMXRG_MM                    0x3120+1
 
 #define X86IM_IO_IS_3DNOW_PFMUL(x)                      ( ( (x)->id & 0xFFF0 ) == 0x3130 )
-#define X86IM_IO_ID_PFMUL_MMXR1_MMXR2                   0x3130+0 
+#define X86IM_IO_ID_PFMUL_MMXR1_MMXR2                   0x3130+0
 #define X86IM_IO_ID_PFMUL_MMXRG_MM                      0x3130+1
 
 #define X86IM_IO_IS_3DNOW_PFRCPIT2(x)                   ( ( (x)->id & 0xFFF0 ) == 0x3140 )
-#define X86IM_IO_ID_PFRCPIT2_MMXR1_MMXR2                0x3140+0 
+#define X86IM_IO_ID_PFRCPIT2_MMXR1_MMXR2                0x3140+0
 #define X86IM_IO_ID_PFRCPIT2_MMXRG_MM                   0x3140+1
 
 #define X86IM_IO_IS_3DNOW_PMULHRW(x)                    ( ( (x)->id & 0xFFF0 ) == 0x3150 )
-#define X86IM_IO_ID_PMULHRW_MMXR1_MMXR2                 0x3150+0 
+#define X86IM_IO_ID_PMULHRW_MMXR1_MMXR2                 0x3150+0
 #define X86IM_IO_ID_PMULHRW_MMXRG_MM                    0x3150+1
 
 #define X86IM_IO_IS_3DNOW_PSWAPD(x)                     ( ( (x)->id & 0xFFF0 ) == 0x3160 )
-#define X86IM_IO_ID_PSWAPD_MMXR1_MMXR2                  0x3160+0 
+#define X86IM_IO_ID_PSWAPD_MMXR1_MMXR2                  0x3160+0
 #define X86IM_IO_ID_PSWAPD_MMXRG_MM                     0x3160+1
 
 #define X86IM_IO_IS_3DNOW_PAVGUSB(x)                    ( ( (x)->id & 0xFFF0 ) == 0x3170 )
-#define X86IM_IO_ID_PAVGUSB_MMXR1_MMXR2                 0x3170+0 
+#define X86IM_IO_ID_PAVGUSB_MMXR1_MMXR2                 0x3170+0
 #define X86IM_IO_ID_PAVGUSB_MMXRG_MM                    0x3170+1
 
 // SSE
@@ -927,84 +927,84 @@
 #define X86IM_IO_ID_SFENCE                              0x400A
 
 #define X86IM_IO_IS_SSE_ADDPS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x4010 )
-#define X86IM_IO_ID_ADDPS_XMMR1_XMMR2                   0x4010+0 
+#define X86IM_IO_ID_ADDPS_XMMR1_XMMR2                   0x4010+0
 #define X86IM_IO_ID_ADDPS_XMMRG_MM                      0x4010+1
 
 #define X86IM_IO_IS_SSE_ADDSS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x4020 )
-#define X86IM_IO_ID_ADDSS_XMMR1_XMMR2                   0x4020+0 
+#define X86IM_IO_ID_ADDSS_XMMR1_XMMR2                   0x4020+0
 #define X86IM_IO_ID_ADDSS_XMMRG_MM32                    0x4020+1
 
 #define X86IM_IO_IS_SSE_ANDNPS(x)                       ( ( (x)->id & 0xFFF0 ) == 0x4030 )
-#define X86IM_IO_ID_ANDNPS_XMMR1_XMMR2                  0x4030+0 
+#define X86IM_IO_ID_ANDNPS_XMMR1_XMMR2                  0x4030+0
 #define X86IM_IO_ID_ANDNPS_XMMRG_MM                     0x4030+1
 
 #define X86IM_IO_IS_SSE_ANDPS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x4040 )
-#define X86IM_IO_ID_ANDPS_XMMR1_XMMR2                   0x4040+0 
+#define X86IM_IO_ID_ANDPS_XMMR1_XMMR2                   0x4040+0
 #define X86IM_IO_ID_ANDPS_XMMRG_MM                      0x4040+1
 
 #define X86IM_IO_IS_SSE_CMPPS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x4050 )
-#define X86IM_IO_ID_CMPPS_XMMR1_XMMR2_IMM8              0x4050+0 
+#define X86IM_IO_ID_CMPPS_XMMR1_XMMR2_IMM8              0x4050+0
 #define X86IM_IO_ID_CMPPS_XMMRG_MM_IMM8                 0x4050+1
 
 #define X86IM_IO_IS_SSE_CMPSS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x4060 )
-#define X86IM_IO_ID_CMPSS_XMMR1_XMMR2_IMM8              0x4060+0 
+#define X86IM_IO_ID_CMPSS_XMMR1_XMMR2_IMM8              0x4060+0
 #define X86IM_IO_ID_CMPSS_XMMRG_MM32_IMM8               0x4060+1
 
 #define X86IM_IO_IS_SSE_COMISS(x)                       ( ( (x)->id & 0xFFF0 ) == 0x4070 )
-#define X86IM_IO_ID_COMISS_XMMR1_XMMR2                  0x4070+0 
+#define X86IM_IO_ID_COMISS_XMMR1_XMMR2                  0x4070+0
 #define X86IM_IO_ID_COMISS_XMMRG_MM32                   0x4070+1
 
 #define X86IM_IO_IS_SSE_CVTPI2PS(x)                     ( ( (x)->id & 0xFFF0 ) == 0x4080 )
-#define X86IM_IO_ID_CVTPI2PS_XMMR1_MMXR2                0x4080+0 
+#define X86IM_IO_ID_CVTPI2PS_XMMR1_MMXR2                0x4080+0
 #define X86IM_IO_ID_CVTPI2PS_XMMRG_MM64                 0x4080+1
 
 #define X86IM_IO_IS_SSE_CVTPS2PI(x)                     ( ( (x)->id & 0xFFF0 ) == 0x4090 )
-#define X86IM_IO_ID_CVTPS2PI_MMXR1_XMMR2                0x4090+0 
+#define X86IM_IO_ID_CVTPS2PI_MMXR1_XMMR2                0x4090+0
 #define X86IM_IO_ID_CVTPS2PI_MMXRG_MM                   0x4090+1
 
 #define X86IM_IO_IS_SSE_CVTSI2SS(x)                     ( ( (x)->id & 0xFFF0 ) == 0x40A0 )
-#define X86IM_IO_ID_CVTSI2SS_XMMR1_R2                   0x40A0+0 
+#define X86IM_IO_ID_CVTSI2SS_XMMR1_R2                   0x40A0+0
 #define X86IM_IO_ID_CVTSI2SS_XMMRG_MM                   0x40A0+1
 
 #define X86IM_IO_IS_SSE_CVTSS2SI(x)                     ( ( (x)->id & 0xFFF0 ) == 0x40B0 )
-#define X86IM_IO_ID_CVTSS2SI_R1_XMMR2                   0x40B0+0 
+#define X86IM_IO_ID_CVTSS2SI_R1_XMMR2                   0x40B0+0
 #define X86IM_IO_ID_CVTSS2SI_RG_MM32                    0x40B0+1
 
 #define X86IM_IO_IS_SSE_CVTTPS2PI(x)                    ( ( (x)->id & 0xFFF0 ) == 0x40C0 )
-#define X86IM_IO_ID_CVTTPS2PI_MMXR1_XMMR2               0x40C0+0 
+#define X86IM_IO_ID_CVTTPS2PI_MMXR1_XMMR2               0x40C0+0
 #define X86IM_IO_ID_CVTTPS2PI_MMXRG_MM64                0x40C0+1
 
 #define X86IM_IO_IS_SSE_CVTTSS2SI(x)                    ( ( (x)->id & 0xFFF0 ) == 0x40D0 )
-#define X86IM_IO_ID_CVTTSS2SI_R1_XMMR2                  0x40D0+0 
+#define X86IM_IO_ID_CVTTSS2SI_R1_XMMR2                  0x40D0+0
 #define X86IM_IO_ID_CVTTSS2SI_RG_MM32                   0x40D0+1
 
 #define X86IM_IO_IS_SSE_DIVPS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x40E0 )
-#define X86IM_IO_ID_DIVPS_XMMR1_XMMR2                   0x40E0+0 
+#define X86IM_IO_ID_DIVPS_XMMR1_XMMR2                   0x40E0+0
 #define X86IM_IO_ID_DIVPS_XMMRG_MM                      0x40E0+1
 
 #define X86IM_IO_IS_SSE_DIVSS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x40F0 )
-#define X86IM_IO_ID_DIVSS_XMMR1_XMMR2                   0x40F0+0 
+#define X86IM_IO_ID_DIVSS_XMMR1_XMMR2                   0x40F0+0
 #define X86IM_IO_ID_DIVSS_XMMRG_MM32                    0x40F0+1
 
 #define X86IM_IO_IS_SSE_MAXPS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x4100 )
-#define X86IM_IO_ID_MAXPS_XMMR1_XMMR2                   0x4100+0 
+#define X86IM_IO_ID_MAXPS_XMMR1_XMMR2                   0x4100+0
 #define X86IM_IO_ID_MAXPS_XMMRG_MM                      0x4100+1
 
 #define X86IM_IO_IS_SSE_MAXSS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x4110 )
-#define X86IM_IO_ID_MAXSS_XMMR1_XMMR2                   0x4110+0 
+#define X86IM_IO_ID_MAXSS_XMMR1_XMMR2                   0x4110+0
 #define X86IM_IO_ID_MAXSS_XMMRG_MM32                    0x4110+1
 
 #define X86IM_IO_IS_SSE_MINPS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x4120 )
-#define X86IM_IO_ID_MINPS_XMMR1_XMMR2                   0x4120+0 
+#define X86IM_IO_ID_MINPS_XMMR1_XMMR2                   0x4120+0
 #define X86IM_IO_ID_MINPS_XMMRG_MM                      0x4120+1
 
 #define X86IM_IO_IS_SSE_MINSS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x4130 )
-#define X86IM_IO_ID_MINSS_XMMR1_XMMR2                   0x4130+0 
+#define X86IM_IO_ID_MINSS_XMMR1_XMMR2                   0x4130+0
 #define X86IM_IO_ID_MINSS_XMMRG_MM32                    0x4130+1
 
 #define X86IM_IO_IS_SSE_MOVAPS(x)                       ( ( (x)->id & 0xFFF0 ) == 0x4140 )
-#define X86IM_IO_ID_MOVAPS_XMMR1_XMMR2                  0x4140+0 
-#define X86IM_IO_ID_MOVAPS_XMMRG_MM                     0x4140+1    
+#define X86IM_IO_ID_MOVAPS_XMMR1_XMMR2                  0x4140+0
+#define X86IM_IO_ID_MOVAPS_XMMRG_MM                     0x4140+1
 #define X86IM_IO_ID_MOVAPS_XMMR2_XMMR1                  0x4140+2
 #define X86IM_IO_ID_MOVAPS_MM_XMMRG                     0x4140+3
 
@@ -1012,28 +1012,28 @@
 
 #define X86IM_IO_ID_IS_SSE_MOVHPS(x)                    ( ( (x)->id & 0xFFF0 ) == 0x4160 )
 #define X86IM_IO_ID_MOVHPS_XMMRG_MM64                   0x4160+0 // MOVHPS (=MOVLHPS_XMMR1_XMMR2)
-#define X86IM_IO_ID_MOVHPS_MM64_XMMRG                   0x4160+1 
+#define X86IM_IO_ID_MOVHPS_MM64_XMMRG                   0x4160+1
 
 #define X86IM_IO_ID_MOVHLPS_XMMR1_XMMR2                 0x4170+0xF // MOVHLPS ( =MOVLPS special case )
 
 #define X86IM_IO_ID_IS_SSE_MOVLPS(x)                    ( ( (x)->id & 0xFFF0 ) == 0x4180 )
-#define X86IM_IO_ID_MOVLPS_XMMRG_MM64                   0x4180+0 
+#define X86IM_IO_ID_MOVLPS_XMMRG_MM64                   0x4180+0
 #define X86IM_IO_ID_MOVLPS_MM64_XMMRG                   0x4180+1
 
 #define X86IM_IO_IS_SSE_MOVSS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x4190 )
-#define X86IM_IO_ID_MOVSS_XMMR1_XMMR2                   0x4190+0 
+#define X86IM_IO_ID_MOVSS_XMMR1_XMMR2                   0x4190+0
 #define X86IM_IO_ID_MOVSS_XMMRG_MM                      0x4190+1
 #define X86IM_IO_ID_MOVSS_XMMR2_XMMR1                   0x4190+2
 #define X86IM_IO_ID_MOVSS_MM_XMMRG                      0x4190+3
 
 #define X86IM_IO_IS_SSE_MOVUPS(x)                       ( ( (x)->id & 0xFFF0 ) == 0x41A0 )
-#define X86IM_IO_ID_MOVUPS_XMMR1_XMMR2                  0x41A0+0 
+#define X86IM_IO_ID_MOVUPS_XMMR1_XMMR2                  0x41A0+0
 #define X86IM_IO_ID_MOVUPS_XMMRG_MM                     0x41A0+1
 #define X86IM_IO_ID_MOVUPS_XMMR2_XMMR1                  0x41A0+2
 #define X86IM_IO_ID_MOVUPS_MM_XMMRG                     0x41A0+3
 
 #define X86IM_IO_IS_SSE_MULPS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x41B0 )
-#define X86IM_IO_ID_MULPS_XMMR1_XMMR2                   0x41B0+0 
+#define X86IM_IO_ID_MULPS_XMMR1_XMMR2                   0x41B0+0
 #define X86IM_IO_ID_MULPS_XMMRG_MM                      0x41B0+1
 
 #define X86IM_IO_IS_SSE_MULSS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x41C0 )
@@ -1045,11 +1045,11 @@
 #define X86IM_IO_ID_ORPS_XMMRG_MM                       0x41D0+1
 
 #define X86IM_IO_IS_SSE_RCPPS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x41E0 )
-#define X86IM_IO_ID_RCPPS_XMMR1_XMMR2                   0x41E0+0 
+#define X86IM_IO_ID_RCPPS_XMMR1_XMMR2                   0x41E0+0
 #define X86IM_IO_ID_RCPPS_XMMRG_MM                      0x41E0+1
 
 #define X86IM_IO_IS_SSE_RCPSS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x41F0 )
-#define X86IM_IO_ID_RCPSS_XMMR1_XMMR2                   0x41F0+0 
+#define X86IM_IO_ID_RCPSS_XMMR1_XMMR2                   0x41F0+0
 #define X86IM_IO_ID_RCPSS_XMMRG_MM32                    0x41F0+1
 
 #define X86IM_IO_IS_SSE_RSQRTPS(x)                      ( ( (x)->id & 0xFFF0 ) == 0x4200 )
@@ -1061,39 +1061,39 @@
 #define X86IM_IO_ID_RSQRTSS_XMMRG_MM32                  0x4210+1
 
 #define X86IM_IO_IS_SSE_SHUFPS(x)                       ( ( (x)->id & 0xFFF0 ) == 0x4220 )
-#define X86IM_IO_ID_SHUFPS_XMMR1_XMMR2_IMM8             0x4220+0 
+#define X86IM_IO_ID_SHUFPS_XMMR1_XMMR2_IMM8             0x4220+0
 #define X86IM_IO_ID_SHUFPS_XMMRG_MM_IMM8                0x4220+1
 
 #define X86IM_IO_IS_SSE_SQRTPS(x)                       ( ( (x)->id & 0xFFF0 ) == 0x4230 )
-#define X86IM_IO_ID_SQRTPS_XMMR1_XMMR2                  0x4230+0 
+#define X86IM_IO_ID_SQRTPS_XMMR1_XMMR2                  0x4230+0
 #define X86IM_IO_ID_SQRTPS_XMMRG_MM                     0x4230+1
 
 #define X86IM_IO_IS_SSE_SQRTSS(x)                       ( ( (x)->id & 0xFFF0 ) == 0x4240 )
-#define X86IM_IO_ID_SQRTSS_XMMR1_XMMR2                  0x4240+0 
+#define X86IM_IO_ID_SQRTSS_XMMR1_XMMR2                  0x4240+0
 #define X86IM_IO_ID_SQRTSS_XMMRG_MM32                   0x4240+1
 
 #define X86IM_IO_IS_SSE_SUBPS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x4250 )
-#define X86IM_IO_ID_SUBPS_XMMR1_XMMR2                   0x4250+0 
+#define X86IM_IO_ID_SUBPS_XMMR1_XMMR2                   0x4250+0
 #define X86IM_IO_ID_SUBPS_XMMRG_MM                      0x4250+1
 
 #define X86IM_IO_IS_SSE_SUBSS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x4260 )
-#define X86IM_IO_ID_SUBSS_XMMR1_XMMR2                   0x4260+0 
+#define X86IM_IO_ID_SUBSS_XMMR1_XMMR2                   0x4260+0
 #define X86IM_IO_ID_SUBSS_XMMRG_MM32                    0x4260+1
 
 #define X86IM_IO_IS_SSE_UCOMISS(x)                      ( ( (x)->id & 0xFFF0 ) == 0x4270 )
-#define X86IM_IO_ID_UCOMISS_XMMR1_XMMR2                 0x4270+0 
+#define X86IM_IO_ID_UCOMISS_XMMR1_XMMR2                 0x4270+0
 #define X86IM_IO_ID_UCOMISS_XMMRG_MM32                  0x4270+1
 
 #define X86IM_IO_IS_SSE_UNPCKHPS(x)                     ( ( (x)->id & 0xFFF0 ) == 0x4280 )
-#define X86IM_IO_ID_UNPCKHPS_XMMR1_XMMR2                0x4280+0 
+#define X86IM_IO_ID_UNPCKHPS_XMMR1_XMMR2                0x4280+0
 #define X86IM_IO_ID_UNPCKHPS_XMMRG_MM                   0x4280+1
 
 #define X86IM_IO_IS_SSE_UNPCKLPS(x)                     ( ( (x)->id & 0xFFF0 ) == 0x4290 )
-#define X86IM_IO_ID_UNPCKLPS_XMMR1_XMMR2                0x4290+0 
+#define X86IM_IO_ID_UNPCKLPS_XMMR1_XMMR2                0x4290+0
 #define X86IM_IO_ID_UNPCKLPS_XMMRG_MM                   0x4290+1
 
 #define X86IM_IO_IS_SSE_XORPS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x42A0 )
-#define X86IM_IO_ID_XORPS_XMMR1_XMMR2                   0x42A0+0 
+#define X86IM_IO_ID_XORPS_XMMR1_XMMR2                   0x42A0+0
 #define X86IM_IO_ID_XORPS_XMMRG_MM                      0x42A0+1
 
 #define X86IM_IO_ID_PEXTRW_R1_MMXR2_IMM8                0x42B0
@@ -1106,15 +1106,15 @@
 #define X86IM_IO_ID_PAVGW_MMXRG_MM64                    0x42C0+3
 
 #define X86IM_IO_IS_SSE_PINSRW(x)                       ( ( (x)->id & 0xFFF0 ) == 0x42D0 )
-#define X86IM_IO_ID_PINSRW_MMXR1_R2_IMM8                0x42D0+0 
+#define X86IM_IO_ID_PINSRW_MMXR1_R2_IMM8                0x42D0+0
 #define X86IM_IO_ID_PINSRW_MMXRG_MM16_IMM8              0x42D0+1
 
 #define X86IM_IO_IS_SSE_PMAXSW(x)                       ( ( (x)->id & 0xFFF0 ) == 0x42E0 )
-#define X86IM_IO_ID_PMAXSW_MMXR1_MMXR2                  0x42E0+0 
+#define X86IM_IO_ID_PMAXSW_MMXR1_MMXR2                  0x42E0+0
 #define X86IM_IO_ID_PMAXSW_MMXRG_MM64                   0x42E0+1
 
 #define X86IM_IO_IS_SSE_PMAXUB(x)                       ( ( (x)->id & 0xFFF0 ) == 0x42F0 )
-#define X86IM_IO_ID_PMAXUB_MMXR1_MMXR2                  0x42F0+0 
+#define X86IM_IO_ID_PMAXUB_MMXR1_MMXR2                  0x42F0+0
 #define X86IM_IO_ID_PMAXUB_MMXRG_MM64                   0x42F0+1
 
 #define X86IM_IO_IS_SSE_PMINSW(x)                       ( ( (x)->id & 0xFFF0 ) == 0x4300 )
@@ -1122,19 +1122,19 @@
 #define X86IM_IO_ID_PMINSW_MMXRG_MM64                   0x4300+1
 
 #define X86IM_IO_IS_SSE_PMINUB(x)                       ( ( (x)->id & 0xFFF0 ) == 0x4310 )
-#define X86IM_IO_ID_PMINUB_MMXR1_MMXR2                  0x4310+0 
+#define X86IM_IO_ID_PMINUB_MMXR1_MMXR2                  0x4310+0
 #define X86IM_IO_ID_PMINUB_MMXRG_MM64                   0x4310+1
 
 #define X86IM_IO_IS_SSE_PMULHUW(x)                      ( ( (x)->id & 0xFFF0 ) == 0x4320 )
-#define X86IM_IO_ID_PMULHUW_MMXR1_MMXR2                 0x4320+0 
+#define X86IM_IO_ID_PMULHUW_MMXR1_MMXR2                 0x4320+0
 #define X86IM_IO_ID_PMULHUW_MMXRG_MM64                  0x4320+1
 
 #define X86IM_IO_IS_SSE_PSADBW(x)                       ( ( (x)->id & 0xFFF0 ) == 0x4330 )
-#define X86IM_IO_ID_PSADBW_MMXR1_MMXR2                  0x4330+0 
+#define X86IM_IO_ID_PSADBW_MMXR1_MMXR2                  0x4330+0
 #define X86IM_IO_ID_PSADBW_MMXRG_MM64                   0x4330+1
 
 #define X86IM_IO_IS_SSE_PSHUFW(x)                       ( ( (x)->id & 0xFFF0 ) == 0x4340 )
-#define X86IM_IO_ID_PSHUFW_MMXR1_MMXR2_IMM8             0x4340+0 
+#define X86IM_IO_ID_PSHUFW_MMXR1_MMXR2_IMM8             0x4340+0
 #define X86IM_IO_ID_PSHUFW_MMXRG_MM64_IMM8              0x4340+1
 
 // SSE2
@@ -1154,189 +1154,189 @@
 #define X86IM_IO_ID_ADDPD_XMMRG_MM                      0x5010+1
 
 #define X86IM_IO_IS_SSE2_ADDSD(x)                       ( ( (x)->id & 0xFFF0 ) == 0x5020 )
-#define X86IM_IO_ID_ADDSD_XMMR1_XMMR2                   0x5020+0 
+#define X86IM_IO_ID_ADDSD_XMMR1_XMMR2                   0x5020+0
 #define X86IM_IO_ID_ADDSD_XMMRG_MM64                    0x5020+1
 
 #define X86IM_IO_IS_SSE2_ANDNPD(x)                      ( ( (x)->id & 0xFFF0 ) == 0x5030 )
-#define X86IM_IO_ID_ANDNPD_XMMR1_XMMR2                  0x5030+0 
+#define X86IM_IO_ID_ANDNPD_XMMR1_XMMR2                  0x5030+0
 #define X86IM_IO_ID_ANDNPD_XMMRG_MM                     0x5030+1
 
 #define X86IM_IO_IS_SSE2_ANDPD(x)                       ( ( (x)->id & 0xFFF0 ) == 0x5040 )
-#define X86IM_IO_ID_ANDPD_XMMR1_XMMR2                   0x5040+0 
+#define X86IM_IO_ID_ANDPD_XMMR1_XMMR2                   0x5040+0
 #define X86IM_IO_ID_ANDPD_XMMRG_MM                      0x5040+1
 
 #define X86IM_IO_IS_SSE2_CMPPD(x)                       ( ( (x)->id & 0xFFF0 ) == 0x5050 )
-#define X86IM_IO_ID_CMPPD_XMMR1_XMMR2_IMM8              0x5050+0 
+#define X86IM_IO_ID_CMPPD_XMMR1_XMMR2_IMM8              0x5050+0
 #define X86IM_IO_ID_CMPPD_XMMRG_MM_IMM8                 0x5050+1
 
 #define X86IM_IO_IS_SSE2_CMPSD(x)                       ( ( (x)->id & 0xFFF0 ) == 0x5060 )
-#define X86IM_IO_ID_CMPSD_XMMR1_XMMR2_IMM8              0x5060+0 
+#define X86IM_IO_ID_CMPSD_XMMR1_XMMR2_IMM8              0x5060+0
 #define X86IM_IO_ID_CMPSD_XMMRG_MM64_IMM8               0x5060+1
 
 #define X86IM_IO_IS_SSE2_COMISD(x)                      ( ( (x)->id & 0xFFF0 ) == 0x5070 )
-#define X86IM_IO_ID_COMISD_XMMR1_XMMR2                  0x5070+0 
+#define X86IM_IO_ID_COMISD_XMMR1_XMMR2                  0x5070+0
 #define X86IM_IO_ID_COMISD_XMMRG_MM64                   0x5070+1
 
 #define X86IM_IO_IS_SSE2_CVTPI2PD(x)                    ( ( (x)->id & 0xFFF0 ) == 0x5080 )
-#define X86IM_IO_ID_CVTPI2PD_XMMR1_MMXR2                0x5080+0 
+#define X86IM_IO_ID_CVTPI2PD_XMMR1_MMXR2                0x5080+0
 #define X86IM_IO_ID_CVTPI2PD_XMMRG_MM64                 0x5080+1
 
 #define X86IM_IO_IS_SSE2_CVTPD2PI(x)                    ( ( (x)->id & 0xFFF0 ) == 0x5090 )
-#define X86IM_IO_ID_CVTPD2PI_MMXR1_XMMR2                0x5090+0 
+#define X86IM_IO_ID_CVTPD2PI_MMXR1_XMMR2                0x5090+0
 #define X86IM_IO_ID_CVTPD2PI_MMXRG_MM                   0x5090+1
 
 #define X86IM_IO_IS_SSE2_CVTSI2SD(x)                    ( ( (x)->id & 0xFFF0 ) == 0x50A0 )
-#define X86IM_IO_ID_CVTSI2SD_XMMR1_R2                   0x50A0+0 
+#define X86IM_IO_ID_CVTSI2SD_XMMR1_R2                   0x50A0+0
 #define X86IM_IO_ID_CVTSI2SD_XMMRG_MM                   0x50A0+1
 
 #define X86IM_IO_IS_SSE2_CVTSD2SI(x)                    ( ( (x)->id & 0xFFF0 ) == 0x50B0 )
-#define X86IM_IO_ID_CVTSD2SI_R1_XMMR2                   0x50B0+0 
+#define X86IM_IO_ID_CVTSD2SI_R1_XMMR2                   0x50B0+0
 #define X86IM_IO_ID_CVTSD2SI_RG_MM64                    0x50B0+1
 
 #define X86IM_IO_IS_SSE2_CVTTPD2PI(x)                   ( ( (x)->id & 0xFFF0 ) == 0x50C0 )
-#define X86IM_IO_ID_CVTTPD2PI_MMXR1_XMMR2               0x50C0+0 
+#define X86IM_IO_ID_CVTTPD2PI_MMXR1_XMMR2               0x50C0+0
 #define X86IM_IO_ID_CVTTPD2PI_MMXRG_MM                  0x50C0+1
 
 #define X86IM_IO_IS_SSE2_CVTTSD2SI(x)                   ( ( (x)->id & 0xFFF0 ) == 0x50D0 )
-#define X86IM_IO_ID_CVTTSD2SI_R1_XMMR2                  0x50D0+0 
+#define X86IM_IO_ID_CVTTSD2SI_R1_XMMR2                  0x50D0+0
 #define X86IM_IO_ID_CVTTSD2SI_RG_MM64                   0x50D0+1
 
 #define X86IM_IO_IS_SSE2_CVTPD2PS(x)                    ( ( (x)->id & 0xFFF0 ) == 0x50E0 )
-#define X86IM_IO_ID_CVTPD2PS_XMMR1_XMMR2                0x50E0+0 
+#define X86IM_IO_ID_CVTPD2PS_XMMR1_XMMR2                0x50E0+0
 #define X86IM_IO_ID_CVTPD2PS_XMMRG_MM                   0x50E0+1
 
 #define X86IM_IO_IS_SSE2_CVTPS2PD(x)                    ( ( (x)->id & 0xFFF0 ) == 0x50F0 )
-#define X86IM_IO_ID_CVTPS2PD_XMMR1_XMMR2                0x50F0+0 
+#define X86IM_IO_ID_CVTPS2PD_XMMR1_XMMR2                0x50F0+0
 #define X86IM_IO_ID_CVTPS2PD_XMMRG_MM64                 0x50F0+1
 
 #define X86IM_IO_IS_SSE2_CVTSD2SS(x)                    ( ( (x)->id & 0xFFF0 ) == 0x5100 )
-#define X86IM_IO_ID_CVTSD2SS_XMMR1_XMMR2                0x5100+0 
+#define X86IM_IO_ID_CVTSD2SS_XMMR1_XMMR2                0x5100+0
 #define X86IM_IO_ID_CVTSD2SS_XMMRG_MM64                 0x5100+1
 
 #define X86IM_IO_IS_SSE2_CVTSS2SD(x)                    ( ( (x)->id & 0xFFF0 ) == 0x5110 )
-#define X86IM_IO_ID_CVTSS2SD_XMMR1_XMMR2                0x5110+0 
+#define X86IM_IO_ID_CVTSS2SD_XMMR1_XMMR2                0x5110+0
 #define X86IM_IO_ID_CVTSS2SD_XMMRG_MM32                 0x5110+1
 
 #define X86IM_IO_IS_SSE2_CVTPD2DQ(x)                    ( ( (x)->id & 0xFFF0 ) == 0x5120 )
-#define X86IM_IO_ID_CVTPD2DQ_XMMR1_XMMR2                0x5120+0 
+#define X86IM_IO_ID_CVTPD2DQ_XMMR1_XMMR2                0x5120+0
 #define X86IM_IO_ID_CVTPD2DQ_XMMRG_MM                   0x5120+1
 
 #define X86IM_IO_IS_SSE2_CVTTPD2DQ(x)                   ( ( (x)->id & 0xFFF0 ) == 0x5130 )
-#define X86IM_IO_ID_CVTTPD2DQ_XMMR1_XMMR2               0x5130+0 
+#define X86IM_IO_ID_CVTTPD2DQ_XMMR1_XMMR2               0x5130+0
 #define X86IM_IO_ID_CVTTPD2DQ_XMMRG_MM                  0x5130+1
 
 #define X86IM_IO_IS_SSE2_CVTDQ2PD(x)                    ( ( (x)->id & 0xFFF0 ) == 0x5140 )
-#define X86IM_IO_ID_CVTDQ2PD_XMMR1_XMMR2                0x5140+0 
+#define X86IM_IO_ID_CVTDQ2PD_XMMR1_XMMR2                0x5140+0
 #define X86IM_IO_ID_CVTDQ2PD_XMMRG_MM64                 0x5140+1
 
 #define X86IM_IO_IS_SSE2_CVTPS2DQ(x)                    ( ( (x)->id & 0xFFF0 ) == 0x5150 )
-#define X86IM_IO_ID_CVTPS2DQ_XMMR1_XMMR2                0x5150+0 
+#define X86IM_IO_ID_CVTPS2DQ_XMMR1_XMMR2                0x5150+0
 #define X86IM_IO_ID_CVTPS2DQ_XMMRG_MM                   0x5150+1
 
 #define X86IM_IO_IS_SSE2_CVTTPS2DQ(x)                   ( ( (x)->id & 0xFFF0 ) == 0x5160 )
-#define X86IM_IO_ID_CVTTPS2DQ_XMMR1_XMMR2               0x5160+0 
+#define X86IM_IO_ID_CVTTPS2DQ_XMMR1_XMMR2               0x5160+0
 #define X86IM_IO_ID_CVTTPS2DQ_XMMRG_MM                  0x5160+1
 
 #define X86IM_IO_IS_SSE2_CVTDQ2PS(x)                    ( ( (x)->id & 0xFFF0 ) == 0x5170 )
-#define X86IM_IO_ID_CVTDQ2PS_XMMR1_XMMR2                0x5170+0 
+#define X86IM_IO_ID_CVTDQ2PS_XMMR1_XMMR2                0x5170+0
 #define X86IM_IO_ID_CVTDQ2PS_XMMRG_MM                   0x5170+1
 
 #define X86IM_IO_IS_SSE2_DIVPD(x)                       ( ( (x)->id & 0xFFF0 ) == 0x5180 )
-#define X86IM_IO_ID_DIVPD_XMMR1_XMMR2                   0x5180+0 
+#define X86IM_IO_ID_DIVPD_XMMR1_XMMR2                   0x5180+0
 #define X86IM_IO_ID_DIVPD_XMMRG_MM                      0x5180+1
 
 #define X86IM_IO_IS_SSE2_DIVSD(x)                       ( ( (x)->id & 0xFFF0 ) == 0x5190 )
-#define X86IM_IO_ID_DIVSD_XMMR1_XMMR2                   0x5190+0 
+#define X86IM_IO_ID_DIVSD_XMMR1_XMMR2                   0x5190+0
 #define X86IM_IO_ID_DIVSD_XMMRG_MM64                    0x5190+1
 
 #define X86IM_IO_IS_SSE2_MAXPD(x)                       ( ( (x)->id & 0xFFF0 ) == 0x51A0 )
-#define X86IM_IO_ID_MAXPD_XMMR1_XMMR2                   0x51A0+0 
+#define X86IM_IO_ID_MAXPD_XMMR1_XMMR2                   0x51A0+0
 #define X86IM_IO_ID_MAXPD_XMMRG_MM                      0x51A0+1
 
 #define X86IM_IO_IS_SSE2_MAXSD(x)                       ( ( (x)->id & 0xFFF0 ) == 0x51B0 )
-#define X86IM_IO_ID_MAXSD_XMMR1_XMMR2                   0x51B0+0 
+#define X86IM_IO_ID_MAXSD_XMMR1_XMMR2                   0x51B0+0
 #define X86IM_IO_ID_MAXSD_XMMRG_MM64                    0x51B0+1
 
 #define X86IM_IO_IS_SSE2_MINPD(x)                       ( ( (x)->id & 0xFFF0 ) == 0x51C0 )
-#define X86IM_IO_ID_MINPD_XMMR1_XMMR2                   0x51C0+0 
+#define X86IM_IO_ID_MINPD_XMMR1_XMMR2                   0x51C0+0
 #define X86IM_IO_ID_MINPD_XMMRG_MM                      0x51C0+1
 
 #define X86IM_IO_IS_SSE2_MINSD(x)                       ( ( (x)->id & 0xFFF0 ) == 0x51D0 )
-#define X86IM_IO_ID_MINSD_XMMR1_XMMR2                   0x51D0+0 
+#define X86IM_IO_ID_MINSD_XMMR1_XMMR2                   0x51D0+0
 #define X86IM_IO_ID_MINSD_XMMRG_MM64                    0x51D0+1
 
 #define X86IM_IO_IS_SSE2_MOVAPD(x)                      ( ( (x)->id & 0xFFF0 ) == 0x51E0 )
-#define X86IM_IO_ID_MOVAPD_XMMR1_XMMR2                  0x51E0+0 
+#define X86IM_IO_ID_MOVAPD_XMMR1_XMMR2                  0x51E0+0
 #define X86IM_IO_ID_MOVAPD_XMMRG_MM                     0x51E0+1
 #define X86IM_IO_ID_MOVAPD_XMMR2_XMMR1                  0x51E0+2
 #define X86IM_IO_ID_MOVAPD_MM_XMMRG                     0x51E0+3
 
 #define X86IM_IO_IS_SSE2_MOVHPD(x)                      ( ( (x)->id & 0xFFF0 ) == 0x51F0 )
-#define X86IM_IO_ID_MOVHPD_XMMRG_MM64                   0x51F0+0 
+#define X86IM_IO_ID_MOVHPD_XMMRG_MM64                   0x51F0+0
 #define X86IM_IO_ID_MOVHPD_MM64_XMMRG                   0x51F0+1
 
 #define X86IM_IO_IS_SSE2_MOVLPD(x)                      ( ( (x)->id & 0xFFF0 ) == 0x5200 )
-#define X86IM_IO_ID_MOVLPD_XMMRG_MM64                   0x5200+0 
+#define X86IM_IO_ID_MOVLPD_XMMRG_MM64                   0x5200+0
 #define X86IM_IO_ID_MOVLPD_MM64_XMMRG                   0x5200+1
 
 #define X86IM_IO_IS_SSE2_MOVSD(x)                       ( ( (x)->id & 0xFFF0 ) == 0x5210 )
-#define X86IM_IO_ID_MOVSD_XMMR1_XMMR2                   0x5210+0 
+#define X86IM_IO_ID_MOVSD_XMMR1_XMMR2                   0x5210+0
 #define X86IM_IO_ID_MOVSD_XMMRG_MM64                    0x5210+1
 #define X86IM_IO_ID_MOVSD_XMMR2_XMMR1                   0x5210+2
 #define X86IM_IO_ID_MOVSD_MM64_XMMRG                    0x5210+3
 
 #define X86IM_IO_IS_SSE2_MOVUPD(x)                      ( ( (x)->id & 0xFFF0 ) == 0x5220 )
-#define X86IM_IO_ID_MOVUPD_XMMR1_XMMR2                  0x5220+0 
+#define X86IM_IO_ID_MOVUPD_XMMR1_XMMR2                  0x5220+0
 #define X86IM_IO_ID_MOVUPD_XMMRG_MM                     0x5220+1
 #define X86IM_IO_ID_MOVUPD_XMMR2_XMMR1                  0x5220+2
 #define X86IM_IO_ID_MOVUPD_MM_XMMRG                     0x5220+3
 
-#define X86IM_IO_IS_SSE2_MULPD(x)                       ( ( (x)->id & 0xFFF0 ) == 0x5230 )    
-#define X86IM_IO_ID_MULPD_XMMR1_XMMR2                   0x5230+0 
+#define X86IM_IO_IS_SSE2_MULPD(x)                       ( ( (x)->id & 0xFFF0 ) == 0x5230 )
+#define X86IM_IO_ID_MULPD_XMMR1_XMMR2                   0x5230+0
 #define X86IM_IO_ID_MULPD_XMMRG_MM                      0x5230+1
 
 #define X86IM_IO_IS_SSE2_MULSD(x)                       ( ( (x)->id & 0xFFF0 ) == 0x5240 )
-#define X86IM_IO_ID_MULSD_XMMR1_XMMR2                   0x5240+0 
+#define X86IM_IO_ID_MULSD_XMMR1_XMMR2                   0x5240+0
 #define X86IM_IO_ID_MULSD_XMMRG_MM64                    0x5240+1
 
 #define X86IM_IO_IS_SSE2_ORPD(x)                        ( ( (x)->id & 0xFFF0 ) == 0x5250 )
-#define X86IM_IO_ID_ORPD_XMMR1_XMMR2                    0x5250+0 
+#define X86IM_IO_ID_ORPD_XMMR1_XMMR2                    0x5250+0
 #define X86IM_IO_ID_ORPD_XMMRG_MM                       0x5250+1
 
 #define X86IM_IO_IS_SSE2_SHUFPD(x)                      ( ( (x)->id & 0xFFF0 ) == 0x5260 )
-#define X86IM_IO_ID_SHUFPD_XMMR1_XMMR2_IMM8             0x5260+0 
+#define X86IM_IO_ID_SHUFPD_XMMR1_XMMR2_IMM8             0x5260+0
 #define X86IM_IO_ID_SHUFPD_XMMRG_MM_IMM8                0x5260+1
 
 #define X86IM_IO_IS_SSE2_SQRTPD(x)                      ( ( (x)->id & 0xFFF0 ) == 0x5270 )
-#define X86IM_IO_ID_SQRTPD_XMMR1_XMMR2                  0x5270+0 
+#define X86IM_IO_ID_SQRTPD_XMMR1_XMMR2                  0x5270+0
 #define X86IM_IO_ID_SQRTPD_XMMRG_MM                     0x5270+1
 
 #define X86IM_IO_IS_SSE2_SQRTSD(x)                      ( ( (x)->id & 0xFFF0 ) == 0x5280 )
-#define X86IM_IO_ID_SQRTSD_XMMR1_XMMR2                  0x5280+0 
+#define X86IM_IO_ID_SQRTSD_XMMR1_XMMR2                  0x5280+0
 #define X86IM_IO_ID_SQRTSD_XMMRG_MM64                   0x5280+1
 
 #define X86IM_IO_IS_SSE2_SUBPD(x)                       ( ( (x)->id & 0xFFF0 ) == 0x5290 )
-#define X86IM_IO_ID_SUBPD_XMMR1_XMMR2                   0x5290+0 
+#define X86IM_IO_ID_SUBPD_XMMR1_XMMR2                   0x5290+0
 #define X86IM_IO_ID_SUBPD_XMMRG_MM                      0x5290+1
 
 #define X86IM_IO_IS_SSE2_SUBSD(x)                       ( ( (x)->id & 0xFFF0 ) == 0x52A0 )
-#define X86IM_IO_ID_SUBSD_XMMR1_XMMR2                   0x52A0+0 
+#define X86IM_IO_ID_SUBSD_XMMR1_XMMR2                   0x52A0+0
 #define X86IM_IO_ID_SUBSD_XMMRG_MM64                    0x52A0+1
 
 #define X86IM_IO_IS_SSE2_UCOMISD(x)                     ( ( (x)->id & 0xFFF0 ) == 0x52B0 )
-#define X86IM_IO_ID_UCOMISD_XMMR1_XMMR2                 0x52B0+0 
+#define X86IM_IO_ID_UCOMISD_XMMR1_XMMR2                 0x52B0+0
 #define X86IM_IO_ID_UCOMISD_XMMRG_MM64                  0x52B0+1
 
 #define X86IM_IO_IS_SSE2_UNPCKHPD(x)                    ( ( (x)->id & 0xFFF0 ) == 0x52C0 )
-#define X86IM_IO_ID_UNPCKHPD_XMMR1_XMMR2                0x52C0+0 
+#define X86IM_IO_ID_UNPCKHPD_XMMR1_XMMR2                0x52C0+0
 #define X86IM_IO_ID_UNPCKHPD_XMMRG_MM                   0x52C0+1
 
-#define X86IM_IO_IS_SSE2_UNPCKLPD(x)                    ( ( (x)->id & 0xFFF0 ) == 0x52D0 )    
-#define X86IM_IO_ID_UNPCKLPD_XMMR1_XMMR2                0x52D0+0 
+#define X86IM_IO_IS_SSE2_UNPCKLPD(x)                    ( ( (x)->id & 0xFFF0 ) == 0x52D0 )
+#define X86IM_IO_ID_UNPCKLPD_XMMR1_XMMR2                0x52D0+0
 #define X86IM_IO_ID_UNPCKLPD_XMMRG_MM                   0x52D0+1
 
 #define X86IM_IO_IS_SSE2_XORPD(x)                       ( ( (x)->id & 0xFFF0 ) == 0x52E0 )
-#define X86IM_IO_ID_XORPD_XMMR1_XMMR2                   0x52E0+0 
+#define X86IM_IO_ID_XORPD_XMMR1_XMMR2                   0x52E0+0
 #define X86IM_IO_ID_XORPD_XMMRG_MM                      0x52E0+1
 
 #define X86IM_IO_ID_MOVQ2DQ_XMMR1_MMXR2                 0x52F0
@@ -1347,101 +1347,101 @@
 #define X86IM_IO_ID_PSRLDQ_XMMRG_IMM8                   0x52F5
 
 #define X86IM_IO_IS_SSE2_MOVD(x)                        ( ( (x)->id & 0xFFF0 ) == 0x5300 )
-#define X86IM_IO_ID_MOVD_XMMRG_RG                       0x5300+0 
+#define X86IM_IO_ID_MOVD_XMMRG_RG                       0x5300+0
 #define X86IM_IO_ID_MOVD_XMMRG_MM                       0x5300+1
 #define X86IM_IO_ID_MOVD_RG_XMMRG                       0x5300+2
 #define X86IM_IO_ID_MOVD_MM_XMMRG                       0x5300+3
 
-#define X86IM_IO_IS_SSE2_MOVDQA(x)                      ( ( (x)->id & 0xFFF0 ) == 0x5310 )    
-#define X86IM_IO_ID_MOVDQA_XMMR1_XMMR2                  0x5310+0 
+#define X86IM_IO_IS_SSE2_MOVDQA(x)                      ( ( (x)->id & 0xFFF0 ) == 0x5310 )
+#define X86IM_IO_ID_MOVDQA_XMMR1_XMMR2                  0x5310+0
 #define X86IM_IO_ID_MOVDQA_XMMRG_MM                     0x5310+1
 #define X86IM_IO_ID_MOVDQA_XMMR2_XMMR1                  0x5310+2
 #define X86IM_IO_ID_MOVDQA_MM_XMMRG                     0x5310+3
 
 #define X86IM_IO_IS_SSE2_MOVDQU(x)                      ( ( (x)->id & 0xFFF0 ) == 0x5320 )
-#define X86IM_IO_ID_MOVDQU_XMMR1_XMMR2                  0x5320+0 
+#define X86IM_IO_ID_MOVDQU_XMMR1_XMMR2                  0x5320+0
 #define X86IM_IO_ID_MOVDQU_XMMRG_MM                     0x5320+1
 #define X86IM_IO_ID_MOVDQU_XMMR2_XMMR1                  0x5320+2
 #define X86IM_IO_ID_MOVDQU_MM_XMMRG                     0x5320+3
-   
+
 #define X86IM_IO_IS_SSE2_MOVQ(x)                        ( ( (x)->id & 0xFFF0 ) == 0x5330 )
-#define X86IM_IO_ID_MOVQ_XMMR1_XMMR2                    0x5330+0 
+#define X86IM_IO_ID_MOVQ_XMMR1_XMMR2                    0x5330+0
 #define X86IM_IO_ID_MOVQ_XMMRG_MM64                     0x5330+1
 #define X86IM_IO_ID_MOVQ_XMMR2_XMMR1                    0x5330+2
 #define X86IM_IO_ID_MOVQ_MM64_XMMRG                     0x5330+3
 
 #define X86IM_IO_IS_SSE2_PACKSSDW(x)                    ( ( (x)->id & 0xFFF0 ) == 0x5340 )
-#define X86IM_IO_ID_PACKSSDW_XMMR1_XMMR2                0x5340+0 
+#define X86IM_IO_ID_PACKSSDW_XMMR1_XMMR2                0x5340+0
 #define X86IM_IO_ID_PACKSSDW_XMMRG_MM                   0x5340+1
 
 #define X86IM_IO_IS_SSE2_PACKSSWB(x)                    ( ( (x)->id & 0xFFF0 ) == 0x5350 )
-#define X86IM_IO_ID_PACKSSWB_XMMR1_XMMR2                0x5350+0 
+#define X86IM_IO_ID_PACKSSWB_XMMR1_XMMR2                0x5350+0
 #define X86IM_IO_ID_PACKSSWB_XMMRG_MM                   0x5350+1
 
 #define X86IM_IO_IS_SSE2_PACKUSWB(x)                    ( ( (x)->id & 0xFFF0 ) == 0x5360 )
-#define X86IM_IO_ID_PACKUSWB_XMMR1_XMMR2                0x5360+0 
+#define X86IM_IO_ID_PACKUSWB_XMMR1_XMMR2                0x5360+0
 #define X86IM_IO_ID_PACKUSWB_XMMRG_MM                   0x5360+1
 
 #define X86IM_IO_IS_SSE2_PADDQ(x)                       ( ( (x)->id & 0xFFF0 ) == 0x5370 )
-#define X86IM_IO_ID_PADDQ_MMXR1_MMXR2                   0x5370+0 
+#define X86IM_IO_ID_PADDQ_MMXR1_MMXR2                   0x5370+0
 #define X86IM_IO_ID_PADDQ_MMXRG_MM64                    0x5370+1
 #define X86IM_IO_ID_PADDQ_XMMR1_XMMR2                   0x5370+2
 #define X86IM_IO_ID_PADDQ_XMMRG_MM                      0x5370+3
 
 #define X86IM_IO_IS_SSE2_PADD(x)                        ( ( (x)->id & 0xFFF0 ) == 0x5380 )
-#define X86IM_IO_ID_PADDB_XMMR1_XMMR2                   0x5380+0 
+#define X86IM_IO_ID_PADDB_XMMR1_XMMR2                   0x5380+0
 #define X86IM_IO_ID_PADDB_XMMRG_MM                      0x5380+1
-#define X86IM_IO_ID_PADDW_XMMR1_XMMR2                   0x5380+2 
+#define X86IM_IO_ID_PADDW_XMMR1_XMMR2                   0x5380+2
 #define X86IM_IO_ID_PADDW_XMMRG_MM                      0x5380+3
-#define X86IM_IO_ID_PADDD_XMMR1_XMMR2                   0x5380+4 
+#define X86IM_IO_ID_PADDD_XMMR1_XMMR2                   0x5380+4
 #define X86IM_IO_ID_PADDD_XMMRG_MM                      0x5380+5
 
 #define X86IM_IO_IS_SSE2_PADDS(x)                       ( ( (x)->id & 0xFFF0 ) == 0x5390 )
-#define X86IM_IO_ID_PADDSB_XMMR1_XMMR2                  0x5390+0 
+#define X86IM_IO_ID_PADDSB_XMMR1_XMMR2                  0x5390+0
 #define X86IM_IO_ID_PADDSB_XMMRG_MM                     0x5390+1
-#define X86IM_IO_ID_PADDSW_XMMR1_XMMR2                  0x5390+2 
+#define X86IM_IO_ID_PADDSW_XMMR1_XMMR2                  0x5390+2
 #define X86IM_IO_ID_PADDSW_XMMRG_MM                     0x5390+3
 
 #define X86IM_IO_IS_SSE2_PADDUS(x)                      ( ( (x)->id & 0xFFF0 ) == 0x53A0 )
-#define X86IM_IO_ID_PADDUSB_XMMR1_XMMR2                 0x53A0+0 
+#define X86IM_IO_ID_PADDUSB_XMMR1_XMMR2                 0x53A0+0
 #define X86IM_IO_ID_PADDUSB_XMMRG_MM                    0x53A0+1
-#define X86IM_IO_ID_PADDUSW_XMMR1_XMMR2                 0x53A0+2 
+#define X86IM_IO_ID_PADDUSW_XMMR1_XMMR2                 0x53A0+2
 #define X86IM_IO_ID_PADDUSW_XMMRG_MM                    0x53A0+3
 
 #define X86IM_IO_IS_SSE2_PAND(x)                        ( ( (x)->id & 0xFFF0 ) == 0x53B0 )
-#define X86IM_IO_ID_PAND_XMMR1_XMMR2                    0x53B0+0 
+#define X86IM_IO_ID_PAND_XMMR1_XMMR2                    0x53B0+0
 #define X86IM_IO_ID_PAND_XMMRG_MM                       0x53B0+1
 
-#define X86IM_IO_IS_SSE2_PANDN(x)                       ( ( (x)->id & 0xFFF0 ) == 0x53C0 )    
+#define X86IM_IO_IS_SSE2_PANDN(x)                       ( ( (x)->id & 0xFFF0 ) == 0x53C0 )
 #define X86IM_IO_ID_PANDN_XMMR1_XMMR2                   0x53C0+0
 #define X86IM_IO_ID_PANDN_XMMRG_MM                      0x53C0+1
 
 #define X86IM_IO_IS_SSE2_PAVGB(x)                       ( ( (x)->id & 0xFFF0 ) == 0x53D0 )
-#define X86IM_IO_ID_PAVGB_XMMR1_XMMR2                   0x53D0+0 
+#define X86IM_IO_ID_PAVGB_XMMR1_XMMR2                   0x53D0+0
 #define X86IM_IO_ID_PAVGB_XMMRG_MM                      0x53D0+1
 
 #define X86IM_IO_IS_SSE2_PAVGW(x)                       ( ( (x)->id & 0xFFF0 ) == 0x53E0 )
-#define X86IM_IO_ID_PAVGW_XMMR1_XMMR2                   0x53E0+0 
+#define X86IM_IO_ID_PAVGW_XMMR1_XMMR2                   0x53E0+0
 #define X86IM_IO_ID_PAVGW_XMMRG_MM                      0x53E0+1
 
 #define X86IM_IO_IS_SSE2_PCMPEQ(x)                      ( ( (x)->id & 0xFFF0 ) == 0x53F0 )
-#define X86IM_IO_ID_PCMPEQB_XMMR1_XMMR2                 0x53F0+0 
+#define X86IM_IO_ID_PCMPEQB_XMMR1_XMMR2                 0x53F0+0
 #define X86IM_IO_ID_PCMPEQB_XMMRG_MM                    0x53F0+1
-#define X86IM_IO_ID_PCMPEQW_XMMR1_XMMR2                 0x53F0+2 
+#define X86IM_IO_ID_PCMPEQW_XMMR1_XMMR2                 0x53F0+2
 #define X86IM_IO_ID_PCMPEQW_XMMRG_MM                    0x53F0+3
-#define X86IM_IO_ID_PCMPEQD_XMMR1_XMMR2                 0x53F0+4 
+#define X86IM_IO_ID_PCMPEQD_XMMR1_XMMR2                 0x53F0+4
 #define X86IM_IO_ID_PCMPEQD_XMMRG_MM                    0x53F0+5
 
 #define X86IM_IO_IS_SSE2_PCMPGT(x)                      ( ( (x)->id & 0xFFF0 ) == 0x5400 )
-#define X86IM_IO_ID_PCMPGTB_XMMR1_XMMR2                 0x5400+0 
+#define X86IM_IO_ID_PCMPGTB_XMMR1_XMMR2                 0x5400+0
 #define X86IM_IO_ID_PCMPGTB_XMMRG_MM                    0x5400+1
-#define X86IM_IO_ID_PCMPGTW_XMMR1_XMMR2                 0x5400+2 
+#define X86IM_IO_ID_PCMPGTW_XMMR1_XMMR2                 0x5400+2
 #define X86IM_IO_ID_PCMPGTW_XMMRG_MM                    0x5400+3
-#define X86IM_IO_ID_PCMPGTD_XMMR1_XMMR2                 0x5400+4 
+#define X86IM_IO_ID_PCMPGTD_XMMR1_XMMR2                 0x5400+4
 #define X86IM_IO_ID_PCMPGTD_XMMRG_MM                    0x5400+5
 
 #define X86IM_IO_IS_SSE2_PINSRW(x)                      ( ( (x)->id & 0xFFF0 ) == 0x5410 )
-#define X86IM_IO_ID_PINSRW_XMMR1_R2_IMM8                0x5410+0 
+#define X86IM_IO_ID_PINSRW_XMMR1_R2_IMM8                0x5410+0
 #define X86IM_IO_ID_PINSRW_XMMRG_MM16_IMM8              0x5410+1
 
 #define X86IM_IO_IS_SSE2_PMADDWD(x)                     ( ( (x)->id & 0xFFF0 ) == 0x5420 )
@@ -1449,11 +1449,11 @@
 #define X86IM_IO_ID_PMADDWD_XMMRG_MM                    0x5420+1
 
 #define X86IM_IO_IS_SSE2_PMAXSW(x)                      ( ( (x)->id & 0xFFF0 ) == 0x5430 )
-#define X86IM_IO_ID_PMAXSW_XMMR1_XMMR2                  0x5430+0 
-#define X86IM_IO_ID_PMAXSW_XMMRG_MM                     0x5430+1    
+#define X86IM_IO_ID_PMAXSW_XMMR1_XMMR2                  0x5430+0
+#define X86IM_IO_ID_PMAXSW_XMMRG_MM                     0x5430+1
 
 #define X86IM_IO_IS_SSE2_PMAXUB(x)                      ( ( (x)->id & 0xFFF0 ) == 0x5440 )
-#define X86IM_IO_ID_PMAXUB_XMMR1_XMMR2                  0x5440+0 
+#define X86IM_IO_ID_PMAXUB_XMMR1_XMMR2                  0x5440+0
 #define X86IM_IO_ID_PMAXUB_XMMRG_MM                     0x5440+1
 
 #define X86IM_IO_IS_SSE2_PMINSW(x)                      ( ( (x)->id & 0xFFF0 ) == 0x5450 )
@@ -1461,29 +1461,29 @@
 #define X86IM_IO_ID_PMINSW_XMMRG_MM                     0x5450+1
 
 #define X86IM_IO_IS_SSE2_PMINUB(x)                      ( ( (x)->id & 0xFFF0 ) == 0x5460 )
-#define X86IM_IO_ID_PMINUB_XMMR1_XMMR2                  0x5460+0 
+#define X86IM_IO_ID_PMINUB_XMMR1_XMMR2                  0x5460+0
 #define X86IM_IO_ID_PMINUB_XMMRG_MM                     0x5460+1
 
 #define X86IM_IO_IS_SSE2_PMULHUW(x)                     ( ( (x)->id & 0xFFF0 ) == 0x5470 )
-#define X86IM_IO_ID_PMULHUW_XMMR1_XMMR2                 0x5470+0 
+#define X86IM_IO_ID_PMULHUW_XMMR1_XMMR2                 0x5470+0
 #define X86IM_IO_ID_PMULHUW_XMMRG_MM                    0x5470+1
 
 #define X86IM_IO_IS_SSE2_PMULHW(x)                      ( ( (x)->id & 0xFFF0 ) == 0x5480 )
-#define X86IM_IO_ID_PMULHW_XMMR1_XMMR2                  0x5480+0 
+#define X86IM_IO_ID_PMULHW_XMMR1_XMMR2                  0x5480+0
 #define X86IM_IO_ID_PMULHW_XMMRG_MM                     0x5480+1
 
 #define X86IM_IO_IS_SSE2_PMULLW(x)                      ( ( (x)->id & 0xFFF0 ) == 0x5490 )
-#define X86IM_IO_ID_PMULLW_XMMR1_XMMR2                  0x5490+0 
+#define X86IM_IO_ID_PMULLW_XMMR1_XMMR2                  0x5490+0
 #define X86IM_IO_ID_PMULLW_XMMRG_MM                     0x5490+1
 
 #define X86IM_IO_IS_SSE2_PMULUDQ(x)                     ( ( (x)->id & 0xFFF0 ) == 0x54A0 )
-#define X86IM_IO_ID_PMULUDQ_MMXR1_MMXR2                 0x54A0+0 
+#define X86IM_IO_ID_PMULUDQ_MMXR1_MMXR2                 0x54A0+0
 #define X86IM_IO_ID_PMULUDQ_MMXRG_MM64                  0x54A0+1
 #define X86IM_IO_ID_PMULUDQ_XMMR1_XMMR2                 0x54A0+2
 #define X86IM_IO_ID_PMULUDQ_XMMRG_MM                    0x54A0+3
 
 #define X86IM_IO_IS_SSE2_POR(x)                         ( ( (x)->id & 0xFFF0 ) == 0x54B0 )
-#define X86IM_IO_ID_POR_XMMR1_XMMR2                     0x54B0+0 
+#define X86IM_IO_ID_POR_XMMR1_XMMR2                     0x54B0+0
 #define X86IM_IO_ID_POR_XMMRG_MM                        0x54B0+1
 
 #define X86IM_IO_IS_SSE2_PSADBW(x)                      ( ( (x)->id & 0xFFF0 ) == 0x54C0 )
@@ -1491,19 +1491,19 @@
 #define X86IM_IO_ID_PSADBW_XMMRG_MM                     0x54C0+1
 
 #define X86IM_IO_IS_SSE2_PSHUFLW(x)                     ( ( (x)->id & 0xFFF0 ) == 0x54D0 )
-#define X86IM_IO_ID_PSHUFLW_XMMR1_XMMR2_IMM8            0x54D0+0 
+#define X86IM_IO_ID_PSHUFLW_XMMR1_XMMR2_IMM8            0x54D0+0
 #define X86IM_IO_ID_PSHUFLW_XMMRG_MM_IMM8               0x54D0+1
 
-#define X86IM_IO_IS_SSE2_PSHUFHW(x)                     ( ( (x)->id & 0xFFF0 ) == 0x54E0 )    
-#define X86IM_IO_ID_PSHUFHW_XMMR1_XMMR2_IMM8            0x54E0+0 
+#define X86IM_IO_IS_SSE2_PSHUFHW(x)                     ( ( (x)->id & 0xFFF0 ) == 0x54E0 )
+#define X86IM_IO_ID_PSHUFHW_XMMR1_XMMR2_IMM8            0x54E0+0
 #define X86IM_IO_ID_PSHUFHW_XMMRG_MM_IMM8               0x54E0+1
 
 #define X86IM_IO_IS_SSE2_PSHUFD(x)                      ( ( (x)->id & 0xFFF0 ) == 0x54F0 )
-#define X86IM_IO_ID_PSHUFD_XMMR1_XMMR2_IMM8             0x54F0+0 
+#define X86IM_IO_ID_PSHUFD_XMMR1_XMMR2_IMM8             0x54F0+0
 #define X86IM_IO_ID_PSHUFD_XMMRG_MM_IMM8                0x54F0+1
 
-#define X86IM_IO_IS_SSE2_PSLL(x)                        ( ( (x)->id & 0xFFF0 ) == 0x5500 )    
-#define X86IM_IO_ID_PSLLW_XMMR1_XMMR2                   0x5500+0 
+#define X86IM_IO_IS_SSE2_PSLL(x)                        ( ( (x)->id & 0xFFF0 ) == 0x5500 )
+#define X86IM_IO_ID_PSLLW_XMMR1_XMMR2                   0x5500+0
 #define X86IM_IO_ID_PSLLW_XMMRG_MM                      0x5500+1
 #define X86IM_IO_ID_PSLLD_XMMR1_XMMR2                   0x5500+2
 #define X86IM_IO_ID_PSLLD_XMMRG_MM                      0x5500+3
@@ -1514,7 +1514,7 @@
 #define X86IM_IO_ID_PSLLQ_XMMRG_IMM8                    0x5500+8
 
 #define X86IM_IO_IS_SSE2_PSRA(x)                        ( ( (x)->id & 0xFFF0 ) == 0x5510 )
-#define X86IM_IO_ID_PSRAW_XMMR1_XMMR2                   0x5510+0 
+#define X86IM_IO_ID_PSRAW_XMMR1_XMMR2                   0x5510+0
 #define X86IM_IO_ID_PSRAW_XMMRG_MM                      0x5510+1
 #define X86IM_IO_ID_PSRAD_XMMR1_XMMR2                   0x5510+2
 #define X86IM_IO_ID_PSRAD_XMMRG_MM                      0x5510+3
@@ -1522,7 +1522,7 @@
 #define X86IM_IO_ID_PSRAD_XMMRG_IMM8                    0x5510+5
 
 #define X86IM_IO_IS_SSE2_PSRL(x)                        ( ( (x)->id & 0xFFF0 ) == 0x5520 )
-#define X86IM_IO_ID_PSRLW_XMMR1_XMMR2                   0x5520+0 
+#define X86IM_IO_ID_PSRLW_XMMR1_XMMR2                   0x5520+0
 #define X86IM_IO_ID_PSRLW_XMMRG_MM                      0x5520+1
 #define X86IM_IO_ID_PSRLD_XMMR1_XMMR2                   0x5520+2
 #define X86IM_IO_ID_PSRLD_XMMRG_MM                      0x5520+3
@@ -1533,58 +1533,58 @@
 #define X86IM_IO_ID_PSRLQ_XMMRG_IMM8                    0x5520+8
 
 #define X86IM_IO_IS_SSE2_PSUBQ(x)                       ( ( (x)->id & 0xFFF0 ) == 0x5530 )
-#define X86IM_IO_ID_PSUBQ_MMXR1_MMXR2                   0x5530+0 
+#define X86IM_IO_ID_PSUBQ_MMXR1_MMXR2                   0x5530+0
 #define X86IM_IO_ID_PSUBQ_MMXRG_MM64                    0x5530+1
 #define X86IM_IO_ID_PSUBQ_XMMR1_XMMR2                   0x5530+2
 #define X86IM_IO_ID_PSUBQ_XMMRG_MM                      0x5530+3
 
 #define X86IM_IO_IS_SSE2_PSUB(x)                        ( ( (x)->id & 0xFFF0 ) == 0x5540 )
-#define X86IM_IO_ID_PSUBB_XMMR1_XMMR2                   0x5540+0 
+#define X86IM_IO_ID_PSUBB_XMMR1_XMMR2                   0x5540+0
 #define X86IM_IO_ID_PSUBB_XMMRG_MM                      0x5540+1
-#define X86IM_IO_ID_PSUBW_XMMR1_XMMR2                   0x5540+2 
+#define X86IM_IO_ID_PSUBW_XMMR1_XMMR2                   0x5540+2
 #define X86IM_IO_ID_PSUBW_XMMRG_MM                      0x5540+3
-#define X86IM_IO_ID_PSUBD_XMMR1_XMMR2                   0x5540+4 
+#define X86IM_IO_ID_PSUBD_XMMR1_XMMR2                   0x5540+4
 #define X86IM_IO_ID_PSUBD_XMMRG_MM                      0x5540+5
 
 #define X86IM_IO_IS_SSE2_PSUBS(x)                       ( ( (x)->id & 0xFFF0 ) == 0x5550 )
-#define X86IM_IO_ID_PSUBSB_XMMR1_XMMR2                  0x5550+0 
+#define X86IM_IO_ID_PSUBSB_XMMR1_XMMR2                  0x5550+0
 #define X86IM_IO_ID_PSUBSB_XMMRG_MM                     0x5550+1
-#define X86IM_IO_ID_PSUBSW_XMMR1_XMMR2                  0x5550+2 
+#define X86IM_IO_ID_PSUBSW_XMMR1_XMMR2                  0x5550+2
 #define X86IM_IO_ID_PSUBSW_XMMRG_MM                     0x5550+3
 
 #define X86IM_IO_IS_SSE2_PSUBUS(x)                      ( ( (x)->id & 0xFFF0 ) == 0x5560 )
-#define X86IM_IO_ID_PSUBUSB_XMMR1_XMMR2                 0x5560+0 
-#define X86IM_IO_ID_PSUBUSB_XMMRG_MM                    0x5560+1 
-#define X86IM_IO_ID_PSUBUSW_XMMR1_XMMR2                 0x5560+2 
+#define X86IM_IO_ID_PSUBUSB_XMMR1_XMMR2                 0x5560+0
+#define X86IM_IO_ID_PSUBUSB_XMMRG_MM                    0x5560+1
+#define X86IM_IO_ID_PSUBUSW_XMMR1_XMMR2                 0x5560+2
 #define X86IM_IO_ID_PSUBUSW_XMMRG_MM                    0x5560+3
 
 #define X86IM_IO_IS_SSE2_PUNPCKH(x)                     ( ( (x)->id & 0xFFF0 ) == 0x5570 )
-#define X86IM_IO_ID_PUNPCKHBW_XMMR1_XMMR2               0x5570+0 
+#define X86IM_IO_ID_PUNPCKHBW_XMMR1_XMMR2               0x5570+0
 #define X86IM_IO_ID_PUNPCKHBW_XMMRG_MM                  0x5570+1
-#define X86IM_IO_ID_PUNPCKHWD_XMMR1_XMMR2               0x5570+2 
+#define X86IM_IO_ID_PUNPCKHWD_XMMR1_XMMR2               0x5570+2
 #define X86IM_IO_ID_PUNPCKHWD_XMMRG_MM                  0x5570+3
-#define X86IM_IO_ID_PUNPCKHDQ_XMMR1_XMMR2               0x5570+4 
+#define X86IM_IO_ID_PUNPCKHDQ_XMMR1_XMMR2               0x5570+4
 #define X86IM_IO_ID_PUNPCKHDQ_XMMRG_MM                  0x5570+5
 
 #define X86IM_IO_IS_SSE2_PUNPCKHQDQ(x)                  ( ( (x)->id & 0xFFF0 ) == 0x5580 )
-#define X86IM_IO_ID_PUNPCKHQDQ_XMMR1_XMMR2              0x5580+0 
+#define X86IM_IO_ID_PUNPCKHQDQ_XMMR1_XMMR2              0x5580+0
 #define X86IM_IO_ID_PUNPCKHQDQ_XMMRG_MM                 0x5580+1
 
 #define X86IM_IO_IS_SSE2_PUNPCKL(x)                     ( ( (x)->id & 0xFFF0 ) == 0x5590 )
-#define X86IM_IO_ID_PUNPCKLBW_XMMR1_XMMR2               0x5590+0 
+#define X86IM_IO_ID_PUNPCKLBW_XMMR1_XMMR2               0x5590+0
 #define X86IM_IO_ID_PUNPCKLBW_XMMRG_MM                  0x5590+1
-#define X86IM_IO_ID_PUNPCKLWD_XMMR1_XMMR2               0x5590+2 
+#define X86IM_IO_ID_PUNPCKLWD_XMMR1_XMMR2               0x5590+2
 #define X86IM_IO_ID_PUNPCKLWD_XMMRG_MM                  0x5590+3
-#define X86IM_IO_ID_PUNPCKLDQ_XMMR1_XMMR2               0x5590+4 
+#define X86IM_IO_ID_PUNPCKLDQ_XMMR1_XMMR2               0x5590+4
 #define X86IM_IO_ID_PUNPCKLDQ_XMMRG_MM                  0x5590+5
 
 #define X86IM_IO_IS_SSE2_PUNPCKLQDQ(x)                  ( ( (x)->id & 0xFFF0 ) == 0x55A0 )
-#define X86IM_IO_ID_PUNPCKLQDQ_XMMR1_XMMR2              0x55A0+0 
+#define X86IM_IO_ID_PUNPCKLQDQ_XMMR1_XMMR2              0x55A0+0
 #define X86IM_IO_ID_PUNPCKLQDQ_XMMRG_MM                 0x55A0+1
 
 #define X86IM_IO_IS_SSE2_PXOR(x)                        ( ( (x)->id & 0xFFF0 ) == 0x55B0 )
 #define X86IM_IO_ID_PXOR_XMMR1_XMMR2                    0x55B0+0
-#define X86IM_IO_ID_PXOR_XMMRG_MM                       0x55B0+1  
+#define X86IM_IO_ID_PXOR_XMMRG_MM                       0x55B0+1
 
 // SSE3
 
@@ -1593,19 +1593,19 @@
 #define X86IM_IO_ID_LDDQU_XMMRG_MM                      0x6002
 
 #define X86IM_IO_IS_SSE3_ADDSUBPD(x)                    ( ( (x)->id & 0xFFF0 ) == 0x6010 )
-#define X86IM_IO_ID_ADDSUBPD_XMMR1_XMMR2                0x6010+0 
+#define X86IM_IO_ID_ADDSUBPD_XMMR1_XMMR2                0x6010+0
 #define X86IM_IO_ID_ADDSUBPD_XMMRG_MM                   0x6010+1
 
-#define X86IM_IO_IS_SSE3_ADDSUBPS(x)                    ( ( (x)->id & 0xFFF0 ) == 0x6020 )     
-#define X86IM_IO_ID_ADDSUBPS_XMMR1_XMMR2                0x6020+0 
+#define X86IM_IO_IS_SSE3_ADDSUBPS(x)                    ( ( (x)->id & 0xFFF0 ) == 0x6020 )
+#define X86IM_IO_ID_ADDSUBPS_XMMR1_XMMR2                0x6020+0
 #define X86IM_IO_ID_ADDSUBPS_XMMRG_MM                   0x6020+1
 
 #define X86IM_IO_IS_SSE3_HADDPD(x)                      ( ( (x)->id & 0xFFF0 ) == 0x6030 )
-#define X86IM_IO_ID_HADDPD_XMMR1_XMMR2                  0x6030+0 
+#define X86IM_IO_ID_HADDPD_XMMR1_XMMR2                  0x6030+0
 #define X86IM_IO_ID_HADDPD_XMMRG_MM                     0x6030+1
 
 #define X86IM_IO_IS_SSE3_HADDPS(x)                      ( ( (x)->id & 0xFFF0 ) == 0x6040 )
-#define X86IM_IO_ID_HADDPS_XMMR1_XMMR2                  0x6040+0 
+#define X86IM_IO_ID_HADDPS_XMMR1_XMMR2                  0x6040+0
 #define X86IM_IO_ID_HADDPS_XMMRG_MM                     0x6040+1
 
 #define X86IM_IO_IS_SSE3_HSUBPD(x)                      ( ( (x)->id & 0xFFF0 ) == 0x6050 )
@@ -1613,24 +1613,24 @@
 #define X86IM_IO_ID_HSUBPD_XMMRG_MM                     0x6050+1
 
 #define X86IM_IO_IS_SSE3_HSUBPS(x)                      ( ( (x)->id & 0xFFF0 ) == 0x6060 )
-#define X86IM_IO_ID_HSUBPS_XMMR1_XMMR2                  0x6060+0 
+#define X86IM_IO_ID_HSUBPS_XMMR1_XMMR2                  0x6060+0
 #define X86IM_IO_ID_HSUBPS_XMMRG_MM                     0x6060+1
 
 #define X86IM_IO_IS_SSE3_FISTTP(x)                      ( ( (x)->id & 0xFFF0 ) == 0x6070 )
-#define X86IM_IO_ID_FISTTP_MM16I                        0x6070+0 
+#define X86IM_IO_ID_FISTTP_MM16I                        0x6070+0
 #define X86IM_IO_ID_FISTTP_MM32I                        0x6070+1
 #define X86IM_IO_ID_FISTTP_MM64I                        0x6070+2
 
 #define X86IM_IO_IS_SSE3_MOVDDUP(x)                     ( ( (x)->id & 0xFFF0 ) == 0x6080 )
-#define X86IM_IO_ID_MOVDDUP_XMMR1_XMMR2                 0x6080+0 
+#define X86IM_IO_ID_MOVDDUP_XMMR1_XMMR2                 0x6080+0
 #define X86IM_IO_ID_MOVDDUP_XMMRG_MM64                  0x6080+1
 
 #define X86IM_IO_IS_SSE3_MOVSHDUP(x)                    ( ( (x)->id & 0xFFF0 ) == 0x6090 )
-#define X86IM_IO_ID_MOVSHDUP_XMMR1_XMMR2                0x6090+0 
+#define X86IM_IO_ID_MOVSHDUP_XMMR1_XMMR2                0x6090+0
 #define X86IM_IO_ID_MOVSHDUP_XMMRG_MM                   0x6090+1
 
 #define X86IM_IO_IS_SSE3_MOVSLDUP(x)                    ( ( (x)->id & 0xFFF0 ) == 0x60A0 )
-#define X86IM_IO_ID_MOVSLDUP_XMMR1_XMMR2                0x60A0+0 
+#define X86IM_IO_ID_MOVSLDUP_XMMR1_XMMR2                0x60A0+0
 #define X86IM_IO_ID_MOVSLDUP_XMMRG_MM                   0x60A0+1
 
 #define X86IM_IO_IS_SSE3_PABS(x)                        ( ( (x)->id & 0xFFF0 ) == 0x60B0 )
@@ -1644,77 +1644,77 @@
 #define X86IM_IO_ID_PABSB_XMMRG_MM                      0x60B0+7
 #define X86IM_IO_ID_PABSW_XMMR1_XMMR2                   0x60B0+8
 #define X86IM_IO_ID_PABSW_XMMRG_MM                      0x60B0+9
-#define X86IM_IO_ID_PABSD_XMMR1_XMMR2                   0x60B0+0xA 
+#define X86IM_IO_ID_PABSD_XMMR1_XMMR2                   0x60B0+0xA
 #define X86IM_IO_ID_PABSD_XMMRG_MM                      0x60B0+0xB
 
 #define X86IM_IO_IS_SSE3_PALIGNR(x)                     ( ( (x)->id & 0xFFF0 ) == 0x60C0 )
-#define X86IM_IO_ID_PALIGNR_MMXR1_MMXR2_IMM8            0x60C0+0 
+#define X86IM_IO_ID_PALIGNR_MMXR1_MMXR2_IMM8            0x60C0+0
 #define X86IM_IO_ID_PALIGNR_MMXRG_MM_IMM8               0x60C0+1
 #define X86IM_IO_ID_PALIGNR_XMMR1_XMMR2_IMM8            0x60C0+2
 #define X86IM_IO_ID_PALIGNR_XMMRG_MM_IMM8               0x60C0+3
 
 #define X86IM_IO_IS_SSE3_PHADDSW(x)                     ( ( (x)->id & 0xFFF0 ) == 0x60D0 )
-#define X86IM_IO_ID_PHADDSW_MMXR1_MMXR2                 0x60D0+0 
+#define X86IM_IO_ID_PHADDSW_MMXR1_MMXR2                 0x60D0+0
 #define X86IM_IO_ID_PHADDSW_MMXRG_MM                    0x60D0+1
 #define X86IM_IO_ID_PHADDSW_XMMR1_XMMR2                 0x60D0+2
 #define X86IM_IO_ID_PHADDSW_XMMRG_MM                    0x60D0+3
 
 #define X86IM_IO_IS_SSE3_PHSUBSW(x)                     ( ( (x)->id & 0xFFF0 ) == 0x60E0 )
-#define X86IM_IO_ID_PHSUBSW_MMXR1_MMXR2                 0x60E0+0 
+#define X86IM_IO_ID_PHSUBSW_MMXR1_MMXR2                 0x60E0+0
 #define X86IM_IO_ID_PHSUBSW_MMXRG_MM                    0x60E0+1
 #define X86IM_IO_ID_PHSUBSW_XMMR1_XMMR2                 0x60E0+2
 #define X86IM_IO_ID_PHSUBSW_XMMRG_MM                    0x60E0+3
 
 #define X86IM_IO_IS_SSE3_PMADDUBSW(x)                   ( ( (x)->id & 0xFFF0 ) == 0x60F0 )
-#define X86IM_IO_ID_PMADDUBSW_MMXR1_MMXR2               0x60F0+0 
+#define X86IM_IO_ID_PMADDUBSW_MMXR1_MMXR2               0x60F0+0
 #define X86IM_IO_ID_PMADDUBSW_MMXRG_MM                  0x60F0+1
 #define X86IM_IO_ID_PMADDUBSW_XMMR1_XMMR2               0x60F0+2
 #define X86IM_IO_ID_PMADDUBSW_XMMRG_MM                  0x60F0+3
 
 #define X86IM_IO_IS_SSE3_PMULHRSW(x)                    ( ( (x)->id & 0xFFF0 ) == 0x6100 )
-#define X86IM_IO_ID_PMULHRSW_MMXR1_MMXR2                0x6100+0 
+#define X86IM_IO_ID_PMULHRSW_MMXR1_MMXR2                0x6100+0
 #define X86IM_IO_ID_PMULHRSW_MMXRG_MM                   0x6100+1
 #define X86IM_IO_ID_PMULHRSW_XMMR1_XMMR2                0x6100+2
 #define X86IM_IO_ID_PMULHRSW_XMMRG_MM                   0x6100+3
 
 #define X86IM_IO_IS_SSE3_PSHUFB(x)                      ( ( (x)->id & 0xFFF0 ) == 0x6110 )
-#define X86IM_IO_ID_PSHUFB_MMXR1_MMXR2                  0x6110+0 
+#define X86IM_IO_ID_PSHUFB_MMXR1_MMXR2                  0x6110+0
 #define X86IM_IO_ID_PSHUFB_MMXRG_MM                     0x6110+1
 #define X86IM_IO_ID_PSHUFB_XMMR1_XMMR2                  0x6110+2
 #define X86IM_IO_ID_PSHUFB_XMMRG_MM                     0x6110+3
 
 #define X86IM_IO_IS_SSE3_PSIGN(x)                       ( ( (x)->id & 0xFFF0 ) == 0x6120 )
-#define X86IM_IO_ID_PSIGNB_MMXR1_MMXR2                  0x6120+0 
+#define X86IM_IO_ID_PSIGNB_MMXR1_MMXR2                  0x6120+0
 #define X86IM_IO_ID_PSIGNB_MMXRG_MM                     0x6120+1
-#define X86IM_IO_ID_PSIGNW_MMXR1_MMXR2                  0x6120+2 
-#define X86IM_IO_ID_PSIGNW_MMXRG_MM                     0x6120+3    
-#define X86IM_IO_ID_PSIGND_MMXR1_MMXR2                  0x6120+4 
-#define X86IM_IO_ID_PSIGND_MMXRG_MM                     0x6120+5    
-#define X86IM_IO_ID_PSIGNB_XMMR1_XMMR2                  0x6120+6 
+#define X86IM_IO_ID_PSIGNW_MMXR1_MMXR2                  0x6120+2
+#define X86IM_IO_ID_PSIGNW_MMXRG_MM                     0x6120+3
+#define X86IM_IO_ID_PSIGND_MMXR1_MMXR2                  0x6120+4
+#define X86IM_IO_ID_PSIGND_MMXRG_MM                     0x6120+5
+#define X86IM_IO_ID_PSIGNB_XMMR1_XMMR2                  0x6120+6
 #define X86IM_IO_ID_PSIGNB_XMMRG_MM                     0x6120+7
-#define X86IM_IO_ID_PSIGNW_XMMR1_XMMR2                  0x6120+8 
+#define X86IM_IO_ID_PSIGNW_XMMR1_XMMR2                  0x6120+8
 #define X86IM_IO_ID_PSIGNW_XMMRG_MM                     0x6120+9
-#define X86IM_IO_ID_PSIGND_XMMR1_XMMR2                  0x6120+0xA 
+#define X86IM_IO_ID_PSIGND_XMMR1_XMMR2                  0x6120+0xA
 #define X86IM_IO_ID_PSIGND_XMMRG_MM                     0x6120+0xB
 
 #define X86IM_IO_IS_SSE3_PHADD(x)                       ( ( (x)->id & 0xFFF0 ) == 0x6130 )
-#define X86IM_IO_ID_PHADDW_MMXR1_MMXR2                  0x6130+2 
+#define X86IM_IO_ID_PHADDW_MMXR1_MMXR2                  0x6130+2
 #define X86IM_IO_ID_PHADDW_MMXRG_MM                     0x6130+3
-#define X86IM_IO_ID_PHADDD_MMXR1_MMXR2                  0x6130+4 
+#define X86IM_IO_ID_PHADDD_MMXR1_MMXR2                  0x6130+4
 #define X86IM_IO_ID_PHADDD_MMXRG_MM                     0x6130+5
-#define X86IM_IO_ID_PHADDW_XMMR1_XMMR2                  0x6130+8 
+#define X86IM_IO_ID_PHADDW_XMMR1_XMMR2                  0x6130+8
 #define X86IM_IO_ID_PHADDW_XMMRG_MM                     0x6130+9
-#define X86IM_IO_ID_PHADDD_XMMR1_XMMR2                  0x6130+0xA 
+#define X86IM_IO_ID_PHADDD_XMMR1_XMMR2                  0x6130+0xA
 #define X86IM_IO_ID_PHADDD_XMMRG_MM                     0x6130+0xB
 
 #define X86IM_IO_IS_SSE3_PHSUB(x)                       ( ( (x)->id & 0xFFF0 ) == 0x6140 )
-#define X86IM_IO_ID_PHSUBW_MMXR1_MMXR2                  0x6140+2 
+#define X86IM_IO_ID_PHSUBW_MMXR1_MMXR2                  0x6140+2
 #define X86IM_IO_ID_PHSUBW_MMXRG_MM                     0x6140+3
-#define X86IM_IO_ID_PHSUBD_MMXR1_MMXR2                  0x6140+4 
+#define X86IM_IO_ID_PHSUBD_MMXR1_MMXR2                  0x6140+4
 #define X86IM_IO_ID_PHSUBD_MMXRG_MM                     0x6140+5
 #define X86IM_IO_ID_PHSUBW_XMMR1_XMMR2                  0x6140+8
 #define X86IM_IO_ID_PHSUBW_XMMRG_MM                     0x6140+9
-#define X86IM_IO_ID_PHSUBD_XMMR1_XMMR2                  0x6140+0xA 
+#define X86IM_IO_ID_PHSUBD_XMMR1_XMMR2                  0x6140+0xA
 #define X86IM_IO_ID_PHSUBD_XMMRG_MM                     0x6140+0xB
 
 // instr grp & subgrp ( io.grp )
@@ -1736,7 +1736,7 @@
 #define X86IM_IO_SGR_GPI_FCTL                           X86IM_IO_GR_GPI+0xA     // flag control instructions
 #define X86IM_IO_SGR_GPI_SEGM                           X86IM_IO_GR_GPI+0xB     // segment instructions
 #define X86IM_IO_SGR_GPI_STACK                          X86IM_IO_GR_GPI+0xC     // stack instructions
-#define X86IM_IO_SGR_GPI_SYSTEM                         X86IM_IO_GR_GPI+0xD     // system/privileged instructions 
+#define X86IM_IO_SGR_GPI_SYSTEM                         X86IM_IO_GR_GPI+0xD     // system/privileged instructions
 #define X86IM_IO_SGR_GPI_MISC                           X86IM_IO_GR_GPI+0xE     // miscellaneous instructions
 #define X86IM_IO_IS_IG_GPI(x)                           ( X86IM_IO_GET_GR(x) == X86IM_IO_GR_GPI )
 
@@ -1788,7 +1788,7 @@
 #define X86IM_IO_SGR_SSE2_CONV                          X86IM_IO_GR_SSE2+0x6    // conversion instructions
 #define X86IM_IO_SGR_SSE2_SSEEXT                        X86IM_IO_GR_SSE2+0x7    // packed single-precision floating-point instructions - SSE extension
 #define X86IM_IO_SGR_SSE2_MISC                          X86IM_IO_GR_SSE2+0x8    // cacheability control and ordering instructions
-#define X86IM_IO_SGR_SSE2_MMXEXT                        X86IM_IO_GR_SSE2+0x9    // 
+#define X86IM_IO_SGR_SSE2_MMXEXT                        X86IM_IO_GR_SSE2+0x9    //
 #define X86IM_IO_IS_IG_SSE2(x)                          ( X86IM_IO_GET_GR(x) == X86IM_IO_GR_SSE2 )
 
 #define X86IM_IO_GR_SSE3                                0x60
@@ -2043,13 +2043,13 @@
 #define X86IM_IO_IMN_PACKSSDW                           X86IM_IO_IMNG_MMX+3
 #define X86IM_IO_IMN_PACKSSWB                           X86IM_IO_IMNG_MMX+4
 #define X86IM_IO_IMN_PACKUSWB                           X86IM_IO_IMNG_MMX+5
-#define X86IM_IO_IMN_PADD                               X86IM_IO_IMNG_MMX+6      
+#define X86IM_IO_IMN_PADD                               X86IM_IO_IMNG_MMX+6
 #define X86IM_IO_IMN_PADDS                              X86IM_IO_IMNG_MMX+7
-#define X86IM_IO_IMN_PADDUS                             X86IM_IO_IMNG_MMX+8      
+#define X86IM_IO_IMN_PADDUS                             X86IM_IO_IMNG_MMX+8
 #define X86IM_IO_IMN_PAND                               X86IM_IO_IMNG_MMX+9
 #define X86IM_IO_IMN_PANDN                              X86IM_IO_IMNG_MMX+10
-#define X86IM_IO_IMN_PCMPEQ                             X86IM_IO_IMNG_MMX+11     
-#define X86IM_IO_IMN_PCMPGT                             X86IM_IO_IMNG_MMX+12     
+#define X86IM_IO_IMN_PCMPEQ                             X86IM_IO_IMNG_MMX+11
+#define X86IM_IO_IMN_PCMPGT                             X86IM_IO_IMNG_MMX+12
 #define X86IM_IO_IMN_PMADDWD                            X86IM_IO_IMNG_MMX+13
 #define X86IM_IO_IMN_PMULHW                             X86IM_IO_IMNG_MMX+14
 #define X86IM_IO_IMN_PMULLW                             X86IM_IO_IMNG_MMX+15
@@ -2062,11 +2062,11 @@
 #define X86IM_IO_IMN_PSRLW                              X86IM_IO_IMNG_MMX+22
 #define X86IM_IO_IMN_PSRLD                              X86IM_IO_IMNG_MMX+23
 #define X86IM_IO_IMN_PSRLQ                              X86IM_IO_IMNG_MMX+24
-#define X86IM_IO_IMN_PSUB                               X86IM_IO_IMNG_MMX+25     
+#define X86IM_IO_IMN_PSUB                               X86IM_IO_IMNG_MMX+25
 #define X86IM_IO_IMN_PSUBS                              X86IM_IO_IMNG_MMX+26
-#define X86IM_IO_IMN_PSUBUS                             X86IM_IO_IMNG_MMX+27     
-#define X86IM_IO_IMN_PUNPCKH                            X86IM_IO_IMNG_MMX+28     
-#define X86IM_IO_IMN_PUNPCKL                            X86IM_IO_IMNG_MMX+29     
+#define X86IM_IO_IMN_PSUBUS                             X86IM_IO_IMNG_MMX+27
+#define X86IM_IO_IMN_PUNPCKH                            X86IM_IO_IMNG_MMX+28
+#define X86IM_IO_IMN_PUNPCKL                            X86IM_IO_IMNG_MMX+29
 #define X86IM_IO_IMN_PXOR                               X86IM_IO_IMNG_MMX+30
 
 #define X86IM_IO_IMNG_3DN                               0x0300
@@ -2248,16 +2248,16 @@
 #define X86IM_IO_IMN_MOVDDUP                            X86IM_IO_IMNG_SSE3+10
 #define X86IM_IO_IMN_MOVSHDUP                           X86IM_IO_IMNG_SSE3+11
 #define X86IM_IO_IMN_MOVSLDUP                           X86IM_IO_IMNG_SSE3+12
-#define X86IM_IO_IMN_PABS                               X86IM_IO_IMNG_SSE3+13    
+#define X86IM_IO_IMN_PABS                               X86IM_IO_IMNG_SSE3+13
 #define X86IM_IO_IMN_PALIGNR                            X86IM_IO_IMNG_SSE3+14
 #define X86IM_IO_IMN_PHADDSW                            X86IM_IO_IMNG_SSE3+15
 #define X86IM_IO_IMN_PHSUBSW                            X86IM_IO_IMNG_SSE3+16
 #define X86IM_IO_IMN_PMADDUBSW                          X86IM_IO_IMNG_SSE3+17
 #define X86IM_IO_IMN_PMULHRSW                           X86IM_IO_IMNG_SSE3+18
 #define X86IM_IO_IMN_PSHUFB                             X86IM_IO_IMNG_SSE3+19
-#define X86IM_IO_IMN_PSIGN                              X86IM_IO_IMNG_SSE3+20    
-#define X86IM_IO_IMN_PHADD                              X86IM_IO_IMNG_SSE3+21    
-#define X86IM_IO_IMN_PHSUB                              X86IM_IO_IMNG_SSE3+22    
+#define X86IM_IO_IMN_PSIGN                              X86IM_IO_IMNG_SSE3+20
+#define X86IM_IO_IMN_PHADD                              X86IM_IO_IMNG_SSE3+21
+#define X86IM_IO_IMN_PHSUB                              X86IM_IO_IMNG_SSE3+22
 
 #define X86IM_IO_TN_CONDITION(x)                        ( ( (x)->tttn_fld >> 1 ) & 0x7 )
 #define X86IM_IO_TN_USE(x)                              ( (x)->tttn_fld & 0x1 )
@@ -2890,7 +2890,7 @@
 #define X86IM_IO_IP_SET_LOCK_POS(x,p)                   ( (x)->prefix_order |= ( (p) & 0x7 ) )
 #define X86IM_IO_IP_SET_REP_POS(x,p)                    ( (x)->prefix_order |= ( ( (p) & 0x7 ) << 6 ) )
 #define X86IM_IO_IP_SET_OPSZ_POS(x,p)                   ( (x)->prefix_order |= ( ( (p) & 0x7 ) << 12 ) )
-#define X86IM_IO_IP_SET_ADSZ_POS(x,p)                   ( (x)->prefix_order |= ( ( (p) & 0x7 ) << 18 ) )    
+#define X86IM_IO_IP_SET_ADSZ_POS(x,p)                   ( (x)->prefix_order |= ( ( (p) & 0x7 ) << 18 ) )
 #define X86IM_IO_IP_SET_SGXS_POS(x,p)                   ( (x)->prefix_order |= ( ( (p) & 0x7 ) << 24 ) )
 
 // instruction flags

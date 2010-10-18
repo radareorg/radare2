@@ -42,7 +42,7 @@ typedef struct _core_opdata
 		{
 			unsigned long value;
 		};
-		
+
 		struct
 		{
 			unsigned long mode: 16;
@@ -216,7 +216,7 @@ unsigned char x86im_process_reg_op( __in core_opdata *opd,
 
     if ( X86IM_CORE_OP_IS_DEC( opd ) )
     {
-        if ( ( flags & ( X86IM_IO_ROP_LOCATION_MODRM_FLD_MRM | 
+        if ( ( flags & ( X86IM_IO_ROP_LOCATION_MODRM_FLD_MRM |
                          X86IM_IO_ROP_LOCATION_MODRM_FLD_MRG ) ) &&
              !X86IM_IO_IF_HAS_MODRM( io ) &&
              save )
@@ -225,15 +225,15 @@ unsigned char x86im_process_reg_op( __in core_opdata *opd,
             io->modrm = rbyte;
         }
 
-        if ( X86IM_IO_ROP_IS_IMP( flags ) || 
-             ( flags & ( X86IM_IO_ROP_LOCATION_MODRM_FLD_MRM | 
-                         X86IM_IO_ROP_LOCATION_SIB_FLD_SBS | 
+        if ( X86IM_IO_ROP_IS_IMP( flags ) ||
+             ( flags & ( X86IM_IO_ROP_LOCATION_MODRM_FLD_MRM |
+                         X86IM_IO_ROP_LOCATION_SIB_FLD_SBS |
                          X86IM_IO_ROP_LOCATION_OPCODE_OP3 ) ) )
         {
             r = rbyte & 0x7;
         }
         else if ( flags & ( X86IM_IO_ROP_LOCATION_MODRM_FLD_MRG |
-                            X86IM_IO_ROP_LOCATION_SIB_FLD_SDX | 
+                            X86IM_IO_ROP_LOCATION_SIB_FLD_SDX |
                             X86IM_IO_ROP_LOCATION_OPCODE_OPS3 ) )
         {
             r = ( rbyte >> 3 ) & 0x7;
@@ -244,12 +244,12 @@ unsigned char x86im_process_reg_op( __in core_opdata *opd,
         }
 
         if ( X86IM_IO_IS_MODE_64BIT( io ) && X86IM_IO_IP_HAS_REX( io ) &&
-             ( ( flags & X86IM_IO_ROP_EXP ) || ( save == FALSE ) ) ) 
+             ( ( flags & X86IM_IO_ROP_EXP ) || ( save == FALSE ) ) )
         {
             if ( grp < X86IM_IO_ROP_GR_MXR )
             {
-                if ( flags & ( X86IM_IO_ROP_LOCATION_MODRM_FLD_MRM | 
-                               X86IM_IO_ROP_LOCATION_SIB_FLD_SBS | 
+                if ( flags & ( X86IM_IO_ROP_LOCATION_MODRM_FLD_MRM |
+                               X86IM_IO_ROP_LOCATION_SIB_FLD_SBS |
                                X86IM_IO_ROP_LOCATION_OPCODE_OP3 ) )
                 {
                     r |= ( ITE_REX_B( itbl_ent ) & X86IM_IO_IP_HAS_REX_B( io ) ) << 3;
@@ -275,7 +275,7 @@ unsigned char x86im_process_reg_op( __in core_opdata *opd,
     }
     else
     {
-        if ( ( flags & ( X86IM_IO_ROP_LOCATION_MODRM_FLD_MRM | 
+        if ( ( flags & ( X86IM_IO_ROP_LOCATION_MODRM_FLD_MRM |
                          X86IM_IO_ROP_LOCATION_MODRM_FLD_MRG ) ) &&
              !X86IM_IO_IF_HAS_MODRM( io ) &&
              save )
@@ -294,13 +294,13 @@ unsigned char x86im_process_reg_op( __in core_opdata *opd,
         }
 
         if ( X86IM_IO_ROP_IS_IMP( flags ) ||
-             ( flags & ( X86IM_IO_ROP_LOCATION_MODRM_FLD_MRM | 
-                         X86IM_IO_ROP_LOCATION_SIB_FLD_SBS | 
+             ( flags & ( X86IM_IO_ROP_LOCATION_MODRM_FLD_MRM |
+                         X86IM_IO_ROP_LOCATION_SIB_FLD_SBS |
                          X86IM_IO_ROP_LOCATION_OPCODE_OP3 ) ) )
         {
             r = rbyte & 0xF;
         }
-        else if ( flags & ( X86IM_IO_ROP_LOCATION_SIB_FLD_SDX | 
+        else if ( flags & ( X86IM_IO_ROP_LOCATION_SIB_FLD_SDX |
                             X86IM_IO_ROP_LOCATION_MODRM_FLD_MRG ) )
         {
             r = ( rbyte >> 4 ) & 0xF;
@@ -337,15 +337,15 @@ unsigned char x86im_process_reg_op( __in core_opdata *opd,
 
         if ( X86IM_IO_IS_MODE_64BIT( io ) && ( r & 0x8 ) )
         {
-            if ( flags & ( X86IM_IO_ROP_LOCATION_MODRM_FLD_MRM | 
-                           X86IM_IO_ROP_LOCATION_SIB_FLD_SBS | 
+            if ( flags & ( X86IM_IO_ROP_LOCATION_MODRM_FLD_MRM |
+                           X86IM_IO_ROP_LOCATION_SIB_FLD_SBS |
                            X86IM_IO_ROP_LOCATION_OPCODE_OP3 ) )
             {
                 io->rexp |= 1;
             }
             else if ( flags & X86IM_IO_ROP_LOCATION_SIB_FLD_SDX )
             {
-                io->rexp |= 1 << 1; 
+                io->rexp |= 1 << 1;
             }
             else if ( flags & X86IM_IO_ROP_LOCATION_MODRM_FLD_MRG )
             {
@@ -563,7 +563,7 @@ void x86im_process_mem_op( __in core_opdata *opd,
                 else if ( ( n & 0x7 ) == 0x4 )
                 {
                     x86im_process_mem_disp( opd,
-                                            i + 2, 
+                                            i + 2,
                                             modrm_mod * modrm_mod );
 
                     X86IM_IO_IF_SET_SIB( io );
@@ -588,7 +588,7 @@ void x86im_process_mem_op( __in core_opdata *opd,
                     io->mem_base = x86im_process_reg_op( opd,
                                                          io->modrm,
                                                          mem_reg,
-                                                         X86IM_IO_ROP_LOCATION_MODRM_FLD_MRM, 
+                                                         X86IM_IO_ROP_LOCATION_MODRM_FLD_MRM,
                                                          FALSE );
                     if ( io->disp_size == 1 )
                     {
@@ -630,8 +630,8 @@ void x86im_process_mem_op( __in core_opdata *opd,
                     if ( sib_base != 0x5 )
                     {
                         io->mem_base = x86im_process_reg_op( opd,
-                                                             io->sib, 
-                                                             mem_reg, 
+                                                             io->sib,
+                                                             mem_reg,
                                                              X86IM_IO_ROP_LOCATION_SIB_FLD_SBS,
                                                              FALSE );
 
@@ -696,7 +696,7 @@ void x86im_process_mem_op( __in core_opdata *opd,
                 {
                     io->sib = 0x60;
                     X86IM_IO_MOP_AMC_SET_SIB2( io );
-                } 
+                }
                 else if ( opd->mm.mode & X86IM_IO_MOP_AMC_SIB3 )
                 {
                     io->sib = 0xA0;
@@ -718,7 +718,7 @@ void x86im_process_mem_op( __in core_opdata *opd,
 
                 io->sib |= ( ( io->mem_scale >> 2 ) + 1 ) << 6;
 
-                if ( ( opd->mm.mode & X86IM_IO_MOP_AMC_SIB ) || 
+                if ( ( opd->mm.mode & X86IM_IO_MOP_AMC_SIB ) ||
                      !( opd->mm.mode & X86IM_IO_MOP_AMC_INDEX ) )
                 {
                      io->status = X86IM_STATUS_INVALID_ARGUMENTS;
@@ -736,7 +736,7 @@ void x86im_process_mem_op( __in core_opdata *opd,
                                                       X86IM_IO_ROP_LOCATION_SIB_FLD_SDX,
                                                       FALSE );
 
-                if ( ( X86IM_IO_ROP_GET_ID( io->mem_index ) == X86IM_IO_ROP_ID_ESP ) || 
+                if ( ( X86IM_IO_ROP_GET_ID( io->mem_index ) == X86IM_IO_ROP_ID_ESP ) ||
                      ( opd->mm.mode & X86IM_IO_MOP_AMC_SIB ) )
                 {
                     io->status = X86IM_STATUS_INVALID_ARGUMENTS;
@@ -755,7 +755,7 @@ void x86im_process_mem_op( __in core_opdata *opd,
                                                           X86IM_IO_ROP_LOCATION_SIB_FLD_SBS,
                                                           FALSE );
 
-                     if ( !( opd->mm.mode & X86IM_IO_MOP_AMC_DISP ) && 
+                     if ( !( opd->mm.mode & X86IM_IO_MOP_AMC_DISP ) &&
                            ( X86IM_IO_ROP_GET_ID32( io->mem_base ) == X86IM_IO_ROP_ID_EBP ) )
                      {
                         io->status = X86IM_STATUS_INVALID_ARGUMENTS;
@@ -816,7 +816,7 @@ void x86im_process_mem_op( __in core_opdata *opd,
                     io->modrm |= 2 << 6;
                 }
             }
-            else 
+            else
             {
                 io->modrm |= 0 << 6;
             }
@@ -871,7 +871,7 @@ void x86im_core_process_op( __in core_opdata *opd,
                                       TRUE );
                 break;
 
-            case ITE_EO_MRRMS8: 
+            case ITE_EO_MRRMS8:
                 x86im_process_reg_op( opd, i[1],
                                       X86IM_IO_ROP_SGR_GPR_8,
                                       X86IM_IO_ROP_SRC|X86IM_IO_ROP_EXP|X86IM_IO_ROP_LOCATION_MODRM_FLD_MRM,
@@ -905,7 +905,7 @@ void x86im_core_process_op( __in core_opdata *opd,
                                       ( io->d_bit ? X86IM_IO_ROP_DST: X86IM_IO_ROP_SRC ) | X86IM_IO_ROP_EXP | X86IM_IO_ROP_LOCATION_MODRM_FLD_MRG,
                                       TRUE );
                 break;
-          
+
             case ITE_EO_MRDX:
                 x86im_process_reg_op( opd, i[1],
                                       X86IM_IO_ROP_GR_DRG,
@@ -1541,7 +1541,7 @@ void x86im_core_process_op( __in core_opdata *opd,
 
                 if ( X86IM_CORE_OP_IS_DEC( opd ) )
                 {
-                    io->tttn_fld  = ( char )*i & 0xF; 
+                    io->tttn_fld  = ( char )*i & 0xF;
                 }
                 else
                 {
@@ -1562,7 +1562,7 @@ void x86im_core_process_op( __in core_opdata *opd,
                     val = opd->mm.value;
                 }
 
-                if ( val == 0 || X86IM_IO_IS_MODE_64BIT( io ) ) 
+                if ( val == 0 || X86IM_IO_IS_MODE_64BIT( io ) )
                 {
                     x86im_process_reg_op( opd, i[1],
                                           X86IM_IO_IS_MODE_64BIT( io )? X86IM_IO_ROP_GR_GPR:
@@ -1588,7 +1588,7 @@ void x86im_core_process_op( __in core_opdata *opd,
                 {
                     val = opd->mm.value;
                 }
-    
+
                 if ( val == 0 || X86IM_IO_IS_MODE_32BIT( io ) )
                 {
                     x86im_process_reg_op( opd, i[1],
@@ -1687,7 +1687,7 @@ x86im_itbl_entry *x86im_search_cmd( __in unsigned char *i,
         prefix = io->prefix & 0xE;
 
         table = NULL;
-        
+
         if ( index == 0x38 )
         {
             index = io->opcode[2] = *( i + 2 );
@@ -1953,7 +1953,7 @@ int x86im_core( __in int core_op,
         i = opd->instr;
 
         for ( a = 0; a < 4; a++ )
-        {   
+        {
             val = *i;
 
             if ( ( val == X86IM_IO_IP_VALUE_LOCK ) &&
@@ -1979,7 +1979,7 @@ int x86im_core( __in int core_op,
                 io->prefix_values[ a ] = val;
                 ++io->prefix_count;
             }
-            else if ( ( val == X86IM_IO_IP_VALUE_OPSZ ) && 
+            else if ( ( val == X86IM_IO_IP_VALUE_OPSZ ) &&
                       !X86IM_IO_IP_HAS_OPSZ( io ) )
             {
                 X86IM_IO_IP_SET_OPSZ( io );
@@ -2085,7 +2085,7 @@ int x86im_core( __in int core_op,
             }
             else if ( ( ( ( opd->options & X86IM_GEN_OAT_NON_PACKED ) &&
                           ( opd->options & X86IM_GEN_OAT_WORD ) ) ||
-                        ( opd->options & X86IM_IO_IP_OPSZ ) ) && 
+                        ( opd->options & X86IM_IO_IP_OPSZ ) ) &&
                       !X86IM_IO_IP_HAS_OPSZ( io ) )
             {
                 X86IM_IO_IP_SET_OPSZ( io );
@@ -2146,7 +2146,7 @@ int x86im_core( __in int core_op,
         if ( X86IM_IO_IS_MODE_64BIT( io ) &&
             ( ( opd->options & X86IM_GEN_OAT_QWORD ) ||
               ( opd->options & X86IM_IO_IP_REX ) ||
-              ( opd->reg & 0x88 ) || 
+              ( opd->reg & 0x88 ) ||
               ( opd->mm.value & 0x880000 ) ) )
         {
             io->rexp = 0x40;
@@ -2197,12 +2197,12 @@ int x86im_core( __in int core_op,
         }
         if ( ITE_BIT_SB( itbl_ent ) )
         {
-            X86IM_IO_IF_SET_SBIT( io ); 
+            X86IM_IO_IF_SET_SBIT( io );
             io->s_bit = ( *i & 0x2 ) >> 1;
         }
         if ( ITE_BIT_DB( itbl_ent ) )
         {
-            X86IM_IO_IF_SET_DBIT( io ); 
+            X86IM_IO_IF_SET_DBIT( io );
             io->d_bit = ( *i & 0x2 ) >> 1;
         }
         if ( ITE_BIT_GG( itbl_ent ) )
@@ -2252,7 +2252,7 @@ int x86im_core( __in int core_op,
         {
             io->def_opsz = 4;
         }
-        else 
+        else
         {
             if ( X86IM_IO_IS_MODE_64BIT( io ) )
             {
@@ -2367,7 +2367,7 @@ int __stdcall x86im_gen ( __inout x86im_instr_object *io,
     }
 
     opd.io         = io;
-    opd.options    = options; 
+    opd.options    = options;
     opd.code       = code;
 
     opd.reg        = reg;

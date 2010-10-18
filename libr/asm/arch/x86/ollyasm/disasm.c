@@ -249,7 +249,7 @@ static void DecodeMR(int type) {
         break;
       case MRJ:                        // Memory/reg in ModRM as JUMP target
         if (datasize!=2 && inmemory)
-          da->memtype=DEC_DWORD; 
+          da->memtype=DEC_DWORD;
         if (mode>=DISASM_FILE && shownear!=0)
           nresult+=sprintf(da->result+nresult,"%s ",(lowercase?"near":"NEAR"));
         break;
@@ -332,7 +332,7 @@ static void DecodeMR(int type) {
       DecodeMX(c);                     // MMX register
     else if (type==MRD || type==RRD)
       DecodeNR(c);                     // 3DNow! register
-    else  
+    else
       DecodeRG(c,regsize,type);        // General-purpose register
     if (memonly!=0)
       softerror=DAE_MEMORY;            // Register where only memory allowed

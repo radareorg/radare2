@@ -716,15 +716,15 @@ char **tbl_reg[]=
     tbl_reg_gpr8,
     tbl_reg_gpr16,
     tbl_reg_gpr8B,
-    tbl_reg_gpr32,   
+    tbl_reg_gpr32,
     tbl_reg_xmr,
     tbl_reg_crg,
     tbl_reg_drg,
     tbl_reg_gpr64,
     NULL,   // rip = FIX this
     tbl_reg_mxr,
-    tbl_reg_srg,    
-    tbl_reg_str,    
+    tbl_reg_srg,
+    tbl_reg_str,
 };
 
 char *tbl_tttn[]=
@@ -784,7 +784,7 @@ void x86im_fmt_format_prefix( __in x86im_instr_object *io,
 void x86im_fmt_format_name( __in x86im_instr_object *io,
                    __in char *name )
 {
-    char size[6]= {"BWDQER"}; 
+    char size[6]= {"BWDQER"};
     unsigned int i;
     char *tbl_conv[]=
     {
@@ -863,7 +863,7 @@ void x86im_fmt_format_name( __in x86im_instr_object *io,
                 --i;
             }
             if ( io->mnm == X86IM_IO_IMN_CONVERT_B )
-            {   
+            {
                 i += 3;
             }
 
