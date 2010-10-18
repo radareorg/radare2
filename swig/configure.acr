@@ -9,6 +9,7 @@ CHKPRG! SWIG swig
 
 ARG_WITH USERCC=gcc cc Define C compiler to use (gcc by default) ;
 ARG_WITH USERCXX=g++ cxx Define C++ compiler to use (g++ by default) ;
+ARG_WITH USEROSTYPE=auto ostype Choose OS type ( gnulinux windows darwin ) ;
 
 PKGCFG! FOO FOO libr
 

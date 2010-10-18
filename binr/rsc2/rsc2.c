@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006, 2007, 2008
+ * Copyright (C) 2006-2010
  *       pancake <youterm.com>
  *
  * radare is free software; you can redistribute it and/or modify
@@ -25,29 +25,26 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include "../../global.h"
 
 //#define DATADIR "/usr/share/"
 #define RSCDATADIR LIBDIR"/radare/bin"
 
-static void rsc_help()
-{
-	printf("Usage: rsc [-l] [script] [-h]\n");
+static void rsc_help() {
+	printf ("Usage: rsc [-l] [script] [-h]\n");
 }
 
-static void rsc_show_at(const char *dir)
-{
+static void rsc_show_at(const char *dir) {
 	DIR *dh;
 	struct dirent *de;
 
 	if (dir == NULL)
 		return;
 
-	dh = opendir(dir);
+	dh = opendir (dir);
 	if (dh != NULL) {
-		while((de = readdir(dh))) {
+		while ((de = readdir (dh))) {
 			if (de->d_name[0] != '.')
-				printf("%s\n", de->d_name);
+				printf ("%s\n", de->d_name);
 		}
 		closedir(dh);
 	}
@@ -55,31 +52,28 @@ static void rsc_show_at(const char *dir)
 
 static char gbuf[1024];
 
-static const char *get_home_dir()
-{
+static const char *get_home_dir() {
 	const char *home = getenv("HOME");
 	gbuf[0]='\0';
 	if (home != NULL)
-		snprintf(gbuf, 1023, "%s/.radare/rsc", home);
+		snprintf (gbuf, 1023, "%s/.radare/rsc", home);
 	return gbuf;
 }
 
-static void rsc_show()
-{
-	rsc_show_at(get_home_dir());
-	rsc_show_at(RSCDATADIR);
+static void rsc_show() {
+	rsc_show_at (get_home_dir ());
+	rsc_show_at (RSCDATADIR);
 }
 
-static const char *get_path_for(const char *name)
-{
+static const char *get_path_for(const char *name) {
 	struct stat st;
 	char path[1024];
 	char pathfile[1024];
 
-	sprintf(path, "%s", get_home_dir());
-	sprintf(pathfile, "%s/%s", path, name);
-	if (stat(pathfile, &st) == 0) {
-		strcpy(gbuf,path);
+	sprintf (path, "%s", get_home_dir ());
+	sprintf (pathfile, "%s/%s", path, name);
+	if (!stat (pathfile, &st)) {
+		strcpy (gbuf, path);
 		return gbuf;
 	}
 
@@ -92,43 +86,41 @@ static const char *get_path_for(const char *name)
 	return NULL;
 }
 
-static int rsc_run(int argc, const char **argv)
-{
+static int rsc_run(int argc, const char **argv) {
 	const char *path = get_path_for(argv[1]);
 	char buf[4096]; // TODO: use strfoo functions
 	int i;
 
 	if (path == NULL) {
-		fprintf(stderr, "rsc: Cannot find '%s'\n", argv[1]);
+		fprintf (stderr, "rsc2: Cannot find '%s'\n", argv[1]);
 		return 1;
 	}
 
-	snprintf(buf, 4098, "\"%s/%s\" ", path, argv[1]);
+	snprintf (buf, sizeof (buf), "\"%s/%s\" ", path, argv[1]);
 
-	for(i=2;i<argc;i++) {
-		strcat(buf, "\"");
-		strcat(buf, argv[i]);
-		strcat(buf, "\" ");
+	for (i=2;i<argc;i++) {
+		strcat (buf, "\"");
+		strcat (buf, argv[i]);
+		strcat (buf, "\" ");
 	}
 	// printf("system('%s')\n", buf);
-	return system(buf);
+	return system (buf);
 }
 
-int main(int argc, const char **argv)
-{
+int main(int argc, const char **argv) {
 	if (argc<2) {
-		rsc_help();
+		rsc_help ();
 		return 1;
 	}
 
 	if (argv[1][0] == '-') {
 		if (argv[1][1]=='l')
-			rsc_show();
-		else	rsc_help();
+			rsc_show ();
+		else rsc_help ();
 		return 0;
 	}
 
-	rsc_run(argc, argv);
+	rsc_run (argc, argv);
 
 	return 0;
 }

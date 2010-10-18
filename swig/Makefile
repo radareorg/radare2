@@ -80,7 +80,7 @@ install-python:
 	echo "Installing $$a r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/r2" ; \
 	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/r2 ; \
 	touch ${DESTDIR}${PREFIX}/lib/$$a/r2/__init__.py ; \
-	cp -rf python/* ${DESTDIR}${PREFIX}/lib/$$a/r2 ; \
+	cp -rf python/*.${SOEXT} python/r_*.py python/libr.py ${DESTDIR}${PREFIX}/lib/$$a/r2 ; \
 	done ; \
 	fi
 

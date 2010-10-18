@@ -107,15 +107,14 @@ static int rabin_show_main() {
 
 	if ((binmain = r_bin_get_main (bin)) == NULL)
 		return R_FALSE;
-
-	if (rad) printf ("fs symbols\n");
-	else eprintf ("[Main]\n");
-
 	if (rad) {
+		printf ("fs symbols\n");
 		printf ("f main @ 0x%08"PFMT64x"\n", va?baddr+binmain->rva:binmain->offset);
-	} else printf ("address=0x%08"PFMT64x" offset=0x%08"PFMT64x"\n",
+	} else {
+		eprintf ("[Main]\n");
+		printf ("address=0x%08"PFMT64x" offset=0x%08"PFMT64x"\n",
 			baddr+binmain->rva, binmain->offset);
-
+	}
 	return R_TRUE;
 }
 
@@ -178,12 +177,10 @@ static int rabin_show_libs() {
 		return R_FALSE;
 
 	eprintf ("[Linked libraries]\n");
-
 	r_list_foreach (libs, iter, lib) {
 		printf ("%s\n", lib);
 		i++;
 	}
-
 	if (!rad) eprintf ("\n%i libraries\n", i);
 	
 	return R_TRUE;

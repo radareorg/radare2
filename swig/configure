@@ -19,6 +19,7 @@ control_c() {
 trap control_c 2
 [ -z "${USERCC}" ] && USERCC="gcc"
 [ -z "${USERCXX}" ] && USERCXX="g++"
+[ -z "${USEROSTYPE}" ] && USEROSTYPE="auto"
 split_host() {
 S="$"
 while : ; do
@@ -139,7 +140,8 @@ EOF2
 
 printf "\nOptional Features:
   --with-cc              Define C compiler to use (gcc by default)  (USERCC=gcc)
-  --with-cxx             Define C++ compiler to use (g++ by default)  (USERCXX=g++)\n"
+  --with-cxx             Define C++ compiler to use (g++ by default)  (USERCXX=g++)
+  --with-ostype          Choose OS type ( gnulinux windows darwin )  (USEROSTYPE=auto)\n"
 printf "\nSome influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
@@ -186,7 +188,7 @@ echo "PKGNAME:   radare2-swig"
 echo "VERSION:   0.5"
 echo "LANGS:     c c++"
 echo "PKG-CONFIG:  libr"
-echo "FLAGS:     --with-cc=gcc --with-cxx=g++"
+echo "FLAGS:     --with-cc=gcc --with-cxx=g++ --with-ostype=auto"
 	exit 0
 	;;
 "--cache-file") 
@@ -230,6 +232,7 @@ echo "FLAGS:     --with-cc=gcc --with-cxx=g++"
 
 --with-cc) if [ -z "${value}" ]; then USERCC="gcc"; else USERCC="${value}" ; fi ;;
 --with-cxx) if [ -z "${value}" ]; then USERCXX="g++"; else USERCXX="${value}" ; fi ;;
+--with-ostype) if [ -z "${value}" ]; then USEROSTYPE="auto"; else USEROSTYPE="${value}" ; fi ;;
 *) if [ "$value" ]; then eval "`echo $flag2=$value`" ; 
 else echo ; echo "WARNING: Unknown flag '$flag'." >&2 ; echo ; fi ;;
 esac
@@ -247,7 +250,7 @@ parse_options $1
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C CXX CXXFLAGS HAVE_LANG_CXX HAVE_VALASWIG VALASWIG HAVE_SWIG SWIG USERCC USERCXX FOO HAVE_PKGCFG_LIBR"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C CXX CXXFLAGS HAVE_LANG_CXX HAVE_VALASWIG VALASWIG HAVE_SWIG SWIG USERCC USERCXX USEROSTYPE FOO HAVE_PKGCFG_LIBR"
 
 create_environ
 

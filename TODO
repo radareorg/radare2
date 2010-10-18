@@ -1,19 +1,19 @@
- ____  ___ ____  ___ ____  ___  ______   ____
-|  _ \/   \'   \/   \  _ \/ _ \ \__   | /    \
-|    <  V  . T  . V      <   _/ .-' _/ |  ()  |
-|_|\__|_|__|___/|_|_|_|\__\___/ |_____(_)____/
-
+ ____  ___  ___  ___ ____  ___  _____   ____
+|  _ \/   \|   \/   \  _ \/ _ \ \__  \ /    \
+|    <  V  . |  . V  .   <   _/ .-' _/|  ()  |
+|__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
 <{include libr/TODO}>
 
 TODO 0.6
 ========
 pancake
-* fix colorize of selected bytes
+* update build.sh to build python for w32
 * fix eflags string and str_bits
 * fix arm assembler issue reported via twitter (umf :/)
 nibble
 * r_bin - Better way to fix got_offset issue?
+* fix colorize of cursor selected bytes
 * in Visual Debugger mode cursor mode also scrolls O_o
   - cursor mode in visual breaks flags too (r2 -d ls ; Vcjjj)
   - visual cursor mode and then :f jeje @ addr <- fails!
@@ -22,10 +22,22 @@ nibble
 
 Questions
 =========
-* deltified offset in PC? +10, +30 ... asm.reladdr
+* What about rsc2 ? deprecate, maintain? cleanup from 1? build? install?
+* Add deltified offset in PC? +10, +30 ... asm.reladdr
 * Add "pm ?" for bit print like in pb?
+* regio not implemented // it is really necessary? imho no..
 * Only use uppercase KMG for Kilo,Mega,Giga in r_num? - 'g' is for double
 * distribute 'spp' with 'rarc2' ? imho no
+
+Debugger
+========
+* Breakpoints are ignored in some situations.. we must check
+  for them and toggle a .dbg variable to break
+* stepover waits for one unknown event
+* ALL threads must be stopped when a breakpoint is handled..
+* Floating point registers
+* MMX/XMM/DRX control
+* Implement dump+restore as macros (dump,)
 
 TODO nibble
 -----------

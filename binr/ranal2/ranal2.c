@@ -5,14 +5,16 @@
 #include <getopt.h>
 
 /* anal callback */
-static int __lib_anal_cb(struct r_lib_plugin_t *pl, void *user, void *data)
-{
+static int __lib_anal_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 	RAnal *anal = (RAnal *)user;
 	RAnalPlugin *plugin = (RAnalPlugin *)data;
 	r_anal_add (anal, plugin);
 	return R_TRUE;
 }
-static int __lib_anal_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
+
+static int __lib_anal_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
+	return R_TRUE;
+}
 
 static char *stackop2str(int type) {
 	switch (type) {
