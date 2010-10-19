@@ -1,4 +1,5 @@
 include ../../config-user.mk
+include ../../libr/config.mk
 
 CFLAGS+=-g -Wall
 PFX=${DESTDIR}${PREFIX}
