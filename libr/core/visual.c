@@ -834,13 +834,13 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (curset) {
 			cursor += cols;
 			ocursor = -1;
-		} else r_core_cmd (core, (printidx==1)?"s+ 8":"s+ 16", 0);
+		} else r_core_seek (core, core->offset+cols, 1);
 		break;
 	case 'k':
 		if (curset) {
 			cursor -= cols;
 			ocursor = -1;
-		} else r_core_cmd (core, (printidx==1)?"s- 8":"s- 16", 0);
+		} else r_core_seek (core, core->offset-cols, 1);
 		break;
 	case 's':
 		r_core_cmd (core, "ds", 0);
@@ -869,12 +869,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		else r_core_yank (core, core->offset+((ocursor<cursor)?ocursor:cursor), R_ABS (cursor-ocursor)+1);
 		break;
 	case 'Y':
-		if (core->yank) r_core_yank_paste (core, core->offset+cursor, 0);
-		else {
-			r_cons_printf ("Can't paste, clipboard is empty.\n");
+		if (!core->yank) {
+			r_cons_strcat ("Can't paste, clipboard is empty.\n");
 			r_cons_flush ();
 			r_cons_any_key ();
-		}
+		} else r_core_yank_paste (core, core->offset+cursor, 0);
 		break;
 	case '-':
 		if (core->print->cur_enabled) {
