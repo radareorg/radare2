@@ -140,6 +140,16 @@ static ut64 Elf_(r_bin_elf_get_section_offset)(struct Elf_(r_bin_elf_obj_t) *bin
 	return -1;
 }
 
+static ut64 Elf_(r_bin_elf_get_section_addr)(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name) {
+	int i;
+	if (!bin->shdr || !bin->strtab)
+		return -1;
+	for (i = 0; i < bin->ehdr.e_shnum; i++)
+		if (!strcmp (&bin->strtab[bin->shdr[i].sh_name], section_name))
+			return (ut64)bin->shdr[i].sh_addr;
+	return -1;
+}
+
 static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 	Elf_(Rel) *rel;
 	Elf_(Addr) plt_sym_addr;
@@ -148,8 +158,11 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 	
 	if (!bin->shdr || !bin->strtab)
 		return -1;
-	if ((got_addr = Elf_ (r_bin_elf_get_section_offset) (bin, ".got")) == -1 &&
-		(got_addr = Elf_ (r_bin_elf_get_section_offset) (bin, ".got.plt")) == -1)
+	if ((got_offset = Elf_ (r_bin_elf_get_section_offset) (bin, ".got")) == -1 &&
+		(got_offset = Elf_ (r_bin_elf_get_section_offset) (bin, ".got.plt")) == -1)
+		return -1;
+	if ((got_addr = Elf_ (r_bin_elf_get_section_addr) (bin, ".got")) == -1 &&
+		(got_addr = Elf_ (r_bin_elf_get_section_addr) (bin, ".got.plt")) == -1)
 		return -1;
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
 		if (!strcmp (&bin->strtab[bin->shdr[i].sh_name], ".rel.plt"))
@@ -175,10 +188,9 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 				return -1;
 			}
 		}
-		got_offset = (rel[0].r_offset - bin->baddr - got_addr) & ELF_GOTOFF_MASK;
 		for (j = k = 0; j < bin->shdr[i].sh_size; j += tsize, k++) {
 			if (ELF_R_SYM (rel[k].r_info) == sym) {
-				if (r_buf_read_at (bin->b, rel[k].r_offset-bin->baddr-got_offset,
+				if (r_buf_read_at (bin->b, rel[k].r_offset-got_addr+got_offset,
 							(ut8*)&plt_sym_addr, sizeof (Elf_(Addr))) == -1) {
 					eprintf ("Error: read (got)\n");
 					return -1;
@@ -497,8 +509,11 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 	
 	if (!bin->shdr || !bin->strtab)
 		return NULL;
-	if ((got_addr = Elf_ (r_bin_elf_get_section_offset) (bin, ".got")) == -1 &&
-		(got_addr = Elf_ (r_bin_elf_get_section_offset) (bin, ".got.plt")) == -1)
+	if ((got_offset = Elf_ (r_bin_elf_get_section_offset) (bin, ".got")) == -1 &&
+		(got_offset = Elf_ (r_bin_elf_get_section_offset) (bin, ".got.plt")) == -1)
+		return NULL;
+	if ((got_addr = Elf_ (r_bin_elf_get_section_addr) (bin, ".got")) == -1 &&
+		(got_addr = Elf_ (r_bin_elf_get_section_addr) (bin, ".got.plt")) == -1)
 		return NULL;
 	for (i = 0, nsym = 0; i < bin->ehdr.e_shnum; i++)
 		if (bin->shdr[i].sh_type == (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM)) {
@@ -550,7 +565,6 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 				return NULL;
 			}
 		}
-		got_offset = (rel[0].r_offset - bin->baddr - got_addr) & ELF_GOTOFF_MASK;
 		if ((ret = (struct r_bin_elf_reloc_t *)malloc ((nrel+1) * sizeof (struct r_bin_elf_reloc_t))) == NULL) {
 			perror ("malloc (reloc)");
 			return NULL;
@@ -563,7 +577,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 			} else strncpy (ret[j].name, "unknown", ELF_STRING_LENGTH);
 			ret[j].sym = ELF_R_SYM (rel[j].r_info);
 			ret[j].type = ELF_R_TYPE (rel[j].r_info);
-			ret[j].offset = rel[j].r_offset - got_offset - bin->baddr;
+			ret[j].offset = rel[j].r_offset-got_addr+got_offset,
 			ret[j].rva = rel[j].r_offset - bin->baddr;
 			ret[j].last = 0;
 		}
@@ -646,7 +660,8 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 		return NULL;
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
 		ret[i].offset = bin->shdr[i].sh_offset;
-		ret[i].rva = bin->shdr[i].sh_addr-bin->baddr;
+		ret[i].rva = bin->shdr[i].sh_addr > bin->baddr?
+			bin->shdr[i].sh_addr-bin->baddr:bin->shdr[i].sh_addr;
 		ret[i].size = bin->shdr[i].sh_size;
 		ret[i].align = bin->shdr[i].sh_addralign;
 		ret[i].flags = bin->shdr[i].sh_flags;

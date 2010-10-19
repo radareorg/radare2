@@ -834,13 +834,13 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (curset) {
 			cursor += cols;
 			ocursor = -1;
-		} else r_core_seek (core, core->offset + (printidx==1?8:16), 0);
+		} else r_core_cmd (core, (printidx==1)?"s+ 8":"s+ 16", 0);
 		break;
 	case 'k':
 		if (curset) {
 			cursor -= cols;
 			ocursor = -1;
-		} else r_core_seek (core, core->offset - (printidx==1?8:16), 0);
+		} else r_core_cmd (core, (printidx==1)?"s- 8":"s- 16", 0);
 		break;
 	case 's':
 		r_core_cmd (core, "ds", 0);

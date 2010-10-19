@@ -12,7 +12,6 @@ pancake
 * fix eflags string and str_bits
 * fix arm assembler issue reported via twitter (umf :/)
 nibble
-* r_bin - Better way to fix got_offset issue?
 * fix colorize of cursor selected bytes
 * in Visual Debugger mode cursor mode also scrolls O_o
   - cursor mode in visual breaks flags too (r2 -d ls ; Vcjjj)
