@@ -8,8 +8,6 @@
 TODO 0.6
 ========
 pancake
-* make symstall in swig/
-* update build.sh to build python for w32
 * fix eflags string and str_bits
 * fix arm assembler issue reported via twitter (umf :/)
 nibble
@@ -22,6 +20,7 @@ nibble
 
 Questions
 =========
+* make symstall in swig/ ?
 * What about rsc2 ? deprecate, maintain? cleanup from 1? build? install?
 * Add deltified offset in PC? +10, +30 ... asm.reladdr
 * Add "pm ?" for bit print like in pb?

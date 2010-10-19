@@ -17,12 +17,14 @@ check-w32:
 		msiexec /i python-2.7.msi ; \
 	fi
 
-.PHONY: w32
 w32:
 	cd python && ${MAKE} w32
 
 w32dist:
-	cp python/*.dll ../radare2-w32-${VERSION}
+	mkdir -p ../radare2-w32-${VERSION}/Python27/Lib/r2
+	cp -f python/*.dll ../radare2-w32-${VERSION}/Python27/Lib/r2
+	cp -f python/r_*.py ../radare2-w32-${VERSION}/Python27/Lib/r2
+	cp -f python/libr.py ../radare2-w32-${VERSION}/Python27/Lib/r2
 
 dist:
 	PKG=radare2-swig-${VERSION} ; \
@@ -45,7 +47,7 @@ vdoc_pkg:
 	valadoc -o vdoc vapi/*.vapi
 	# rsync -avz vdoc/* pancake@radare.org:/srv/http/radareorg/vdoc/
 
-# TODO: make it less spaguetti
+# TODO: unspaguetti this targets
 perl:
 	@-[ "`grep perl supported.langs`" ] && cd perl && make
 
@@ -153,4 +155,4 @@ clean:
 	cd java && make clean
 	cd vapi/t && ${MAKE} clean
 
-.PHONY: ruby lua go java python perl clean oldtest test all vdoc
+.PHONY: ruby lua go java python perl clean oldtest test all vdoc dist w32 w32dist

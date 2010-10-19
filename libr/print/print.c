@@ -185,14 +185,14 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int wide
 }
 
 static const char hex[16] = "0123456789ABCDEF";
-R_API void r_print_hexpairs(RPrint *p, ut64 addr, ut8 *buf, int len) {
+R_API void r_print_hexpairs(RPrint *p, ut64 addr, const ut8 *buf, int len) {
 	int i;
 	for (i=0;i<len;i++)
 		p->printf ("%02x ", buf[i]);
 }
 
 // XXX: step is borken
-R_API void r_print_hexdump(RPrint *p, ut64 addr, ut8 *buf, int len, int base, int step) {
+R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step) {
 	int i, j, k, inc;
 	const char *fmt = "%02x";
 	const char *pre = "";

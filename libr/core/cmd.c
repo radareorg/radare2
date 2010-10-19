@@ -717,6 +717,7 @@ static void cmd_reg(RCore *core, const char *str) {
 			" .dr-       unflag all registers\n"
 			" drp [file] load register metadata file\n"
 			" drp        display current register profile\n"
+			" drb [type] display hexdump of gpr arena (WIP)\n"
 			" dr         show 'gpr' registers\n"
 			" drt        show all register types\n"
 			" drn [pc]   get register name for pc,sp,bp,a0-3\n"
@@ -727,6 +728,13 @@ static void cmd_reg(RCore *core, const char *str) {
 			" dr 32      show 32 bit registers\n"
 			" dr eax=33  set register value. eax = 33\n");
 		// TODO: 'drs' to swap register arenas and display old register valuez
+		break;
+	case 'b':
+		{ // WORK IN PROGRESS // DEBUG COMMAND
+		int len;
+		const ut8 *buf = r_reg_get_bytes (core->dbg->reg, R_REG_TYPE_GPR, &len);
+		r_print_hexdump (core->print, 0LL, buf, len, 16, 16);
+		}
 		break;
 	case 'p':
 		if (!str[1]) {

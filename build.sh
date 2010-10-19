@@ -304,6 +304,17 @@ if [ -n "$cc" ]; then
 	log "[==] mingw32 w32dist"
 	logcmd ${MAKE} w32dist
 	cp radare2-w32*.zip ${WD}
+
+	# build bindings
+	cd swig
+	log "[==] mingw32 swig: configure"
+	logcmd ./configure --without-gmp --with-ostype=windows --with-compiler=$cc --host=i586-unknown-windows
+	log "[==] mingw32 swig: make"
+	logcmd ${MAKE} ${MAKEFLAGS} w32
+	log "[==] mingw32 swig: w32dist"
+	logcmd ${MAKE} w32dist
+	cd ..
+	
 else
 	log "[==] Cannot find any compatible w32 crosscompiler. Report if not true"
 fi
