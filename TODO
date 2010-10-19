@@ -8,6 +8,7 @@
 TODO 0.6
 ========
 pancake
+* make symstall in swig/
 * update build.sh to build python for w32
 * fix eflags string and str_bits
 * fix arm assembler issue reported via twitter (umf :/)
