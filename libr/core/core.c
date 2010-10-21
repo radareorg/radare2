@@ -16,7 +16,12 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		/* analyze opcode */
 		switch (str[1]) {
 		case '$': 
-			return (str[2]=='$')? aop.length:core->offset;
+			if (str[2]=='$') {
+				r_anal_aop (core->anal, &aop, core->offset,
+					core->block, core->blocksize);
+				return aop.length;
+			}
+			return core->offset;
 		case 'e':
 		case 'j':
 		case 'f':

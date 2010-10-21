@@ -7,7 +7,6 @@
 #include <getopt.h>
 
 static struct r_core_t r;
-static char *rabin_cmd = NULL;
 
 static int main_help(int line) {
 	printf ("Usage: radare2 [-dwntLV] [-p prj] [-s addr] [-b bsz] [-e k=v] [file]\n");
@@ -132,9 +131,8 @@ int main(int argc, char **argv) {
 	}
 	if (debug) {
 		char file[1024];
-		r_config_set (r.config, "io.va", "false");
+		r_config_set (r.config, "io.va", "false"); // implicit?
 		r_config_set (r.config, "cfg.debug", "true");
-		r.io->va = R_FALSE;
 		strcpy (file, "dbg://");
 		if (optind < argc) {
 			char *ptr = r_file_path (argv[optind]);
