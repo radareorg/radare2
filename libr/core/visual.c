@@ -914,7 +914,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case ':': {
 		ut64 oseek = core->offset;
-		if (curset) r_core_seek (core, core->offset+cursor, 0);
+		if (curset) r_core_seek (core, core->offset+cursor, 1);
 		r_cons_fgets (buf, 1023, 0, NULL);
 		r_core_cmd (core, buf, 0);
 		r_cons_any_key ();

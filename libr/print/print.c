@@ -98,10 +98,10 @@ d = dst;
 	for (s=str ; *s; s+=2, d+=2, i++) {
 		if (p->cur_enabled) {
 			if (i-1==(cur-n))
-				memcat (d, "\x1b[0m");
+				memcat (d, "\x1b[27m");
 			if (i>=(cur-n) && i<(ocur-n))
 				memcat (d, "\x1b[7m");
-		} else
+		}
 		if (s[0]=='0' && s[1]=='0') {
 			memcat (d, "\x1b[31m");
 		} else

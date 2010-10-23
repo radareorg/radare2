@@ -11,7 +11,6 @@ pancake
 * fix eflags string and str_bits
 * fix arm assembler issue reported via twitter (umf :/)
 nibble
-* fix colorize of cursor selected bytes
 * mach0 armthumb bin detect
 
 Questions
