@@ -248,19 +248,16 @@ R_API int r_sys_rmkdir(const char *dir) {
 	// XXX: Wrong for w32 (/).. and no errno ?
 	while ((ptr = strchr (ptr, '/'))) {
 		*ptr = 0;
-		if (!r_sys_mkdir (path)) {
-			if (r_sys_mkdir_failed ()) {
-				eprintf ("r_sys_rmkdir: fail %s\n", dir);
-				free (path);
-				return R_FALSE;
-			}
+		if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
+			eprintf ("r_sys_rmkdir: fail %s\n", dir);
+			free (path);
+			return R_FALSE;
 		}
 		*ptr = '/';
 		ptr++;
 	}
-	ret = r_sys_mkdir (path);
-	if (r_sys_mkdir_failed ())
-		ret = R_TRUE;
+	if (!r_sys_mkdir (path) && r_sys_mkdir_failed ())
+		ret = R_FALSE;
 	free (path);
 	return ret;
 }

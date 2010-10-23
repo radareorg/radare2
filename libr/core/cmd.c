@@ -1593,8 +1593,6 @@ static int cmd_flag(void *data, const char *input) {
 	int len = strlen (input)+1;
 	char *str = alloca (len);
 	ut64 off = core->offset;
-	if (core->print->cur_enabled)
-		off += core->print->cur;
 	memcpy (str, input+1, len);
 
 	switch (input[0]) {

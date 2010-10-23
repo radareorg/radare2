@@ -65,10 +65,10 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 		r_config_set (r->config, "asm.dwarf", R_BIN_DBG_STRIPPED (info->dbg_info)?"false":"true");
 	}
 
-	r_flag_space_set (r->flags, "symbols");
 	// M -> Main
 	RBinAddr *binmain;
 
+	r_flag_space_set (r->flags, "symbols");
 	if ((binmain = r_bin_get_main (r->bin)) != NULL)
 		r_flag_set (r->flags, "main", va?baddr+binmain->rva:binmain->offset,
 				r->blocksize, 0);
@@ -130,7 +130,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 			r_meta_add (r->meta, R_META_STRING, va?baddr+string->rva:string->offset,
 				(va?baddr+string->rva:string->offset)+string->size, string->string+i);
 			r_flag_name_filter (string->string);
-			snprintf (str, R_FLAG_NAME_SIZE, "str.%s", string->string+i);
+			snprintf (str, R_FLAG_NAME_SIZE, "str.%s", string->string);
 			r_flag_set (r->flags, str, va?baddr+string->rva:string->offset,
 					string->size, 0);
 		}
