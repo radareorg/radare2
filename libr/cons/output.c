@@ -40,7 +40,7 @@ R_API int r_cons_w32_print(ut8 *ptr) {
 			} else
 			if (ptr[0]=='0'&&ptr[1]==';'&&ptr[2]=='0') {
 				ptr = ptr + 4;
-				r_cons_gotoxy(0,0);
+				r_cons_gotoxy (0,0);
 				esc = 0;
 				str = ptr;
 				continue;

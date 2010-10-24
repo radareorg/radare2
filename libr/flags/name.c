@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_flags.h>
+#include <r_util.h>
 
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')
 

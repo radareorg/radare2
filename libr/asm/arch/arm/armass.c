@@ -9,9 +9,9 @@
 typedef struct {
 	unsigned long off;
 	int o;
-	char op[32];
-	char opstr[32];
-	char *a0, *a1, *a2;
+	char op[128];
+	char opstr[128];
+	char *a[16];
 } ArmOpcode;
 
 typedef struct {
@@ -156,25 +156,25 @@ static int getshift(const char *str) {
 }
 
 static void arm_opcode_parse(ArmOpcode *ao, const char *str) {
+	int i;
+
 	memset (ao, 0, sizeof (ArmOpcode));
 	strncpy (ao->op, str, sizeof (ao->op)-1);
 	strcpy (ao->opstr, str);
-	ao->a0 = strchr (ao->op, ' ');
-	if (ao->a0) {
-		*ao->a0 = 0;
-		ao->a1 = strchr (++ao->a0, ',');
-		if (ao->a1) {
-			*ao->a1 = 0;
-			ao->a2 = strchr (++ao->a1, ',');
-			if (ao->a2) {
-				*ao->a2 = 0;
-				ao->a2++;
-			}
-		}
+	ao->a[0] = strchr (ao->op, ' ');
+	for (i=0; i<16; i++) {
+		if (ao->a[i]) {
+			*ao->a[i] = 0;
+			ao->a[i+1] = strchr (++ao->a[i], ',');
+		} else break;
 	}
-	while (ao->a0&&*ao->a0==' ') ao->a0++;
-	while (ao->a1&&*ao->a1==' ') ao->a1++;
-	while (ao->a2&&*ao->a2==' ') ao->a2++;
+	if (ao->a[i]) {
+		*ao->a[i] = 0;
+		ao->a[i]++;
+	}
+	for (i=0; i<16; i++)
+		while (ao->a[i]&&*ao->a[i]==' ')
+			ao->a[i]++;
 }
 
 static inline int arm_opcode_cond(ArmOpcode *ao, int delta) {
@@ -186,7 +186,7 @@ static inline int arm_opcode_cond(ArmOpcode *ao, int delta) {
 	char *c = ao->op+delta;
 	for (i=0; conds[i]; i++) {
 		if (!strcmp (c, conds[i])) {
-			cond = i; 
+			cond = i;
 			break;
 		}
 	}
@@ -197,11 +197,11 @@ static inline int arm_opcode_cond(ArmOpcode *ao, int delta) {
 // TODO: group similar instructions like for non-thumb
 static int thumb_assemble(ArmOpcode *ao, const char *str) {
 	if (!strcmp (ao->op, "ldmia")) {
-		ao->o = 0xc8 + getreg (ao->a0);
+		ao->o = 0xc8 + getreg (ao->a[0]);
 		ao->o |= getlist(ao->opstr) << 8;
 	} else
 	if (!strcmp (ao->op, "stmia")) {
-		ao->o = 0xc0 + getreg (ao->a0);
+		ao->o = 0xc0 + getreg (ao->a[0]);
 		ao->o |= getlist(ao->opstr) << 8;
 	} else
 	if (!strcmp (ao->op, "nop")) {
@@ -221,55 +221,55 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 	} else
 	if (!strcmp (ao->op, "bkpt")) {
 		ao->o = 0xbe;
-		ao->o |= (0xff & getnum (ao->a0))<<8;
+		ao->o |= (0xff & getnum (ao->a[0]))<<8;
 	} else
 	if (!strcmp (ao->op, "and")) {
 		ao->o = 0x40;
-		ao->o |= (0xff & getreg (ao->a0)) << 8;
-		ao->o |= (0xff & getreg (ao->a1)) << 11;
+		ao->o |= (0xff & getreg (ao->a[0])) << 8;
+		ao->o |= (0xff & getreg (ao->a[1])) << 11;
 	} else
 	if (!strcmp (ao->op, "svc")) {
 		ao->o = 0xdf;
-		ao->o |= (0xff & getnum (ao->a0)) << 8;
+		ao->o |= (0xff & getnum (ao->a[0])) << 8;
 	} else
 	if (!strcmp (ao->op, "b") || !strcmp (ao->op, "b.n")) {
 		ao->o = 0xe0;
-		ao->o |= getnum (ao->a0)<<8;
+		ao->o |= getnum (ao->a[0])<<8;
 	} else
 	if (!strcmp (ao->op, "bx")) {
 		ao->o = 0x47;
-		ao->o |= getreg (ao->a0)<<11;
+		ao->o |= getreg (ao->a[0])<<11;
 	} else
 	if (!strcmp (ao->op, "bl")) {
 		ao->o = 0x47;
-		ao->o |= getnum (ao->a0)<<8;
+		ao->o |= getnum (ao->a[0])<<8;
 		// XXX: length = 4
 	} else
 	if (*ao->op == 'b') { // conditional branch
 		ao->o = 0xd0 | arm_opcode_cond (ao, 1);
-		ao->o |= getnum (ao->a0)<<8;
+		ao->o |= getnum (ao->a[0])<<8;
 	} else
 	if (!strcmp (ao->op, "mov")) {
-		int reg = getreg (ao->a1);
+		int reg = getreg (ao->a[1]);
 		if (reg!=-1) {
 			ao->o = 0x46;
-			ao->o |= (getreg (ao->a0))<<8;
+			ao->o |= (getreg (ao->a[0]))<<8;
 			ao->o |= reg<<11;
 		} else {
 			ao->o = 0x20;
-			ao->o |= (getreg (ao->a0));
-			ao->o |= (getnum (ao->a1)&0xff)<<8;
+			ao->o |= (getreg (ao->a[0]));
+			ao->o |= (getnum (ao->a[1])&0xff)<<8;
 		}
 	} else
 	if (!memcmp (ao->op, "ldr", 3)) {
-		getrange (ao->a1);
-		getrange (ao->a2);
+		getrange (ao->a[1]);
+		getrange (ao->a[2]);
 		if (ao->op[3]=='h') {
-			int a0 = getreg (ao->a0);
-			int a1 = getreg (ao->a1);
-			int a2 = getreg (ao->a2);
+			int a0 = getreg (ao->a[0]);
+			int a1 = getreg (ao->a[1]);
+			int a2 = getreg (ao->a[2]);
 			if (a2 ==-1) {
-				a2 = getnum (ao->a2)/8;
+				a2 = getnum (ao->a[2])/8;
 				ao->o = 0x88; // | (8+(0xf & a0));
 				ao->o |= (7&a0)<<8;
 				ao->o |= (7&a1)<<11;
@@ -277,36 +277,36 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 			} else return 0;
 		} else
 		if (ao->op[3]=='b') {
-			int a0 = getreg (ao->a0);
-			int a1 = getreg (ao->a1);
-			int a2 = getreg (ao->a2);
+			int a0 = getreg (ao->a[0]);
+			int a1 = getreg (ao->a[1]);
+			int a2 = getreg (ao->a[2]);
 			if (a2 ==-1) {
-				a2 = getnum (ao->a2)/8;
+				a2 = getnum (ao->a[2])/8;
 				ao->o = 0x78; // | (8+(0xf & a0));
 				ao->o |= (7&a0)<<8;
 				ao->o |= (7&a1)<<11;
 				ao->o |= (7&a2);
 			} else return 0;
 		} else {
-			if (!strcmp (ao->a1, "sp")) {
+			if (!strcmp (ao->a[1], "sp")) {
 				// ldr r0, [sp, n] = a[r0-7][nn]
-				if (getreg (ao->a2) == -1) {
+				if (getreg (ao->a[2]) == -1) {
 					// ldr r0, [sp, n]
-					ao->o = 0x98 + (0xf & getreg (ao->a0));
-					ao->o |= (0xff & getnum (ao->a2)/4)<<8;
+					ao->o = 0x98 + (0xf & getreg (ao->a[0]));
+					ao->o |= (0xff & getnum (ao->a[2])/4)<<8;
 				} else return 0;
 			} else
-			if (!strcmp (ao->a1, "pc")) {
+			if (!strcmp (ao->a[1], "pc")) {
 				// ldr r0, [pc, n] = 4[r0-8][nn*4]
-				if (getreg (ao->a2) == -1) {
-					ao->o = 0x40 | (8+(0xf & getreg (ao->a0)));
-					ao->o |= (0xff & getnum (ao->a2)/4)<<8;
+				if (getreg (ao->a[2]) == -1) {
+					ao->o = 0x40 | (8+(0xf & getreg (ao->a[0])));
+					ao->o |= (0xff & getnum (ao->a[2])/4)<<8;
 				} else return 0;
 			} else {
 				// ldr r0, [rN, rN] = 58[7bits:basereg + 7bits:destreg]
-				int a0 = getreg (ao->a0);
-				int a1 = getreg (ao->a1);
-				int a2 = getreg (ao->a2);
+				int a0 = getreg (ao->a[0]);
+				int a1 = getreg (ao->a[1]);
+				int a2 = getreg (ao->a[2]);
 				ao->o = 0x58; // | (8+(0xf & a0));
 				ao->o |= (7&a0)<<8;
 				ao->o |= (7&a1)<<11;
@@ -315,14 +315,14 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 		}
 	} else
 	if (!memcmp (ao->op, "str", 3)) {
-		getrange (ao->a1);
-		getrange (ao->a2);
+		getrange (ao->a[1]);
+		getrange (ao->a[2]);
 		if (ao->op[3]=='h') {
-			int a0 = getreg (ao->a0);
-			int a1 = getreg (ao->a1);
-			int a2 = getreg (ao->a2);
+			int a0 = getreg (ao->a[0]);
+			int a1 = getreg (ao->a[1]);
+			int a2 = getreg (ao->a[2]);
 			if (a2 ==-1) {
-				a2 = getnum (ao->a2);
+				a2 = getnum (ao->a[2]);
 				ao->o = 0x80; // | (8+(0xf & a0));
 				ao->o |= (7&a0)<<8;
 				ao->o |= (7&a1)<<11;
@@ -330,37 +330,37 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 			} else return 0;
 		} else
 		if (ao->op[3]=='b') {
-			int a0 = getreg (ao->a0);
-			int a1 = getreg (ao->a1);
-			int a2 = getreg (ao->a2);
+			int a0 = getreg (ao->a[0]);
+			int a1 = getreg (ao->a[1]);
+			int a2 = getreg (ao->a[2]);
 			if (a2 ==-1) {
-				a2 = getnum (ao->a2);
+				a2 = getnum (ao->a[2]);
 				ao->o = 0x70; // | (8+(0xf & a0));
 				ao->o |= (7&a0)<<8;
 				ao->o |= (7&a1)<<11;
 				ao->o |= (7&a2);
 			} else return 0;
 		} else {
-			if (!strcmp (ao->a1, "sp")) {
+			if (!strcmp (ao->a[1], "sp")) {
 				// ldr r0, [sp, n] = a[r0-7][nn]
-				if (getreg (ao->a2) == -1) {
-					int ret = getnum (ao->a2);
+				if (getreg (ao->a[2]) == -1) {
+					int ret = getnum (ao->a[2]);
 					if (ret%4) {
 						fprintf (stderr, "ldr index must be aligned to 4");
 						return 0;
 					}
-					ao->o = 0x90 + (0xf & getreg (ao->a0));
-					ao->o |= (0xff & getnum (ao->a2)/4)<<8;
+					ao->o = 0x90 + (0xf & getreg (ao->a[0]));
+					ao->o |= (0xff & getnum (ao->a[2])/4)<<8;
 				} else return 0;
 			} else
-			if (!strcmp (ao->a1, "pc")) {
+			if (!strcmp (ao->a[1], "pc")) {
 				return 0;
 			} else {
-				int a0 = getreg (ao->a0);
-				int a1 = getreg (ao->a1);
-				int a2 = getreg (ao->a2);
+				int a0 = getreg (ao->a[0]);
+				int a1 = getreg (ao->a[1]);
+				int a2 = getreg (ao->a[2]);
 				if (a2 == -1) {
-					a2 = getnum (ao->a2);
+					a2 = getnum (ao->a[2]);
 					ao->o = 0x60;
 					ao->o |= (7&a0)<<8;
 					ao->o |= (7&a1)<<11;
@@ -376,48 +376,48 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 	} else
 	if (!strcmp (ao->op, "tst")) {
 		ao->o = 0x42;
-		ao->o |= (getreg (ao->a0))<<8;
-		ao->o |= getreg (ao->a1)<<11;
+		ao->o |= (getreg (ao->a[0]))<<8;
+		ao->o |= getreg (ao->a[1])<<11;
 	} else
 	if (!strcmp (ao->op, "cmp")) {
-		int reg = getreg (ao->a1);
+		int reg = getreg (ao->a[1]);
 		if (reg!=-1) {
 			ao->o = 0x45;
-			ao->o |= (getreg (ao->a0))<<8;
+			ao->o |= (getreg (ao->a[0]))<<8;
 			ao->o |= reg<<11;
 		} else {
 			ao->o = 0x20;
-			ao->o |= 8+(getreg (ao->a0));
-			ao->o |= (getnum (ao->a1)&0xff)<<8;
+			ao->o |= 8+(getreg (ao->a[0]));
+			ao->o |= (getnum (ao->a[1])&0xff)<<8;
 		}
 	} else
 	if (!strcmp (ao->op, "add")) {
 		// XXX: signed unsigned ??
 		// add r, r = 44[7bits,7bits]
 		// adds r, n = 3[r0-7][nn]
-		int reg = getreg (ao->a1);
+		int reg = getreg (ao->a[1]);
 		if (reg!=-1) {
 			ao->o = 0x44;
-			ao->o |= (getreg (ao->a0))<<8;
+			ao->o |= (getreg (ao->a[0]))<<8;
 			ao->o |= reg<<11;
 		} else {
 			ao->o = 0x30;
-			ao->o |= (getreg (ao->a0));
-			ao->o |= (getnum (ao->a1)&0xff)<<8;
+			ao->o |= (getreg (ao->a[0]));
+			ao->o |= (getnum (ao->a[1])&0xff)<<8;
 		}
 	} else
 	if (!strcmp (ao->op, "sub")) {
-		int reg = getreg (ao->a1);
+		int reg = getreg (ao->a[1]);
 		if (reg!=-1) {
-			int n = getnum (ao->a2); // TODO: add limit
+			int n = getnum (ao->a[2]); // TODO: add limit
 			ao->o = 0x1e;
-			ao->o |= (getreg (ao->a0))<<8;
+			ao->o |= (getreg (ao->a[0]))<<8;
 			ao->o |= reg<<11;
 			ao->o |= n/4 | ((n%4)<<14);
 		} else {
 			ao->o = 0x30;
-			ao->o |= 8+(getreg (ao->a0));
-			ao->o |= (getnum (ao->a1)&0xff)<<8;
+			ao->o |= 8+(getreg (ao->a[0]));
+			ao->o |= (getnum (ao->a[1])&0xff)<<8;
 		}
 	} else return 0;
 	return 1;
@@ -429,48 +429,44 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 		if (!memcmp(ao->op, ops[i].name, strlen (ops[i].name))) {
 			ao->o = ops[i].code;
 			arm_opcode_cond (ao, strlen(ops[i].name));
-			if (ao->a0)
+			if (ao->a[0])
 			switch (ops[i].type) {
 			case TYPE_MEM:
-				getrange (ao->a0);
-				getrange (ao->a1);
-				getrange (ao->a2);
-				//printf("a0(%s) a1(%s) a2(%s)\n", ao->a0, ao->a1, ao->a2);
-				ao->o |= getreg (ao->a0)<<20;
-				ao->o |= getreg (ao->a1)<<8; // delta
-				ret = getreg (ao->a2);
+				getrange (ao->a[0]);
+				getrange (ao->a[1]);
+				getrange (ao->a[2]);
+				ao->o |= getreg (ao->a[0])<<20;
+				ao->o |= getreg (ao->a[1])<<8; // delta
+				ret = getreg (ao->a[2]);
 				if (ret != -1) {
 					ao->o |= (strstr (str,"],"))?6:7;
-					ao->o |= (ret&0x0f)<<24;//(getreg(ao->a2)&0x0f);
+					ao->o |= (ret&0x0f)<<24;//(getreg(ao->a[2])&0x0f);
 				} else {
 					ao->o |= (strstr (str,"],"))?4:5;
-					ao->o |= (getnum (ao->a2)&0x7f)<<24; // delta
+					ao->o |= (getnum (ao->a[2])&0x7f)<<24; // delta
 				}
 				break;
 			case TYPE_IMM:
-				if (*ao->a0=='{') {
-					int reg, regmask, reg2;
-					getrange (ao->a0+1); // XXX filter regname string
-					reg = getreg (ao->a0+1);
-					regmask = (reg>7)? 1<<(reg-8): 1<<(reg+8);
-					if (reg>=0 && reg<=0xf)
-						ao->o |= regmask<<16;
-					if (ao->a1 && *ao->a1) {
-						getrange (ao->a1);
-						reg2 = getreg (ao->a1);
-						if (reg2 != -1)
-							ao->o |= (reg2-reg+1)<<20;
+				if (*ao->a[0]++=='{') {
+					int j, reg;
+					for (j=0; j<16; j++) {
+						if (ao->a[j] && *ao->a[j]) {
+							getrange (ao->a[j]); // XXX filter regname string
+							reg = getreg (ao->a[j]);
+							if (reg != -1) {
+								if (reg<8)
+									ao->o |= 1<<(24+reg);
+								else
+									ao->o |= 1<<(8+reg);
+							}
+						}
 					}
-					if (ao->a2)
-						fprintf (stderr, "XXX: push/pop with more than 2 regs is broken\n");
-					// char *r1 = getrange (ao->a0+1); // XXX: its a bitmask?
-					//if (r1) ao->o |= getreg(r1)<<24;
-				} else ao->o |= getnum(ao->a0)<<24; // ???
+				} else ao->o |= getnum(ao->a[0])<<24; // ???
 				break;
 			case TYPE_BRA:
-				if ((ret = getreg(ao->a0)) == -1) {
+				if ((ret = getreg(ao->a[0])) == -1) {
 					// TODO: control if branch out of range
-					ret = (getnum(ao->a0)-ao->off-8)/4;
+					ret = (getnum(ao->a[0])-ao->off-8)/4;
 					ao->o |= ((ret>>8)&0xff)<<16;
 					ao->o |= ((ret)&0xff)<<24;
 				} else {
@@ -479,37 +475,37 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 				}
 				break;
 			case TYPE_BRR:
-				if ((ret = getreg(ao->a0)) == -1) {
+				if ((ret = getreg(ao->a[0])) == -1) {
 					printf("This branch does not accept off as arg\n");
 					return 0;
-				} else ao->o |= (getreg (ao->a0)<<24);
+				} else ao->o |= (getreg (ao->a[0])<<24);
 				break;
 			case TYPE_SWI:
-				ao->o |= (getnum (ao->a0)&0xff)<<24;
-				ao->o |= ((getnum (ao->a0)>>8)&0xff)<<16;
-				ao->o |= ((getnum (ao->a0)>>16)&0xff)<<8;
+				ao->o |= (getnum (ao->a[0])&0xff)<<24;
+				ao->o |= ((getnum (ao->a[0])>>8)&0xff)<<16;
+				ao->o |= ((getnum (ao->a[0])>>16)&0xff)<<8;
 				break;
 			case TYPE_ARI:
-				if (!ao->a2) {
-					ao->a2 = ao->a1;
-					ao->a1 = ao->a0;
+				if (!ao->a[2]) {
+					ao->a[2] = ao->a[1];
+					ao->a[1] = ao->a[0];
 				}
-				ao->o |= getreg (ao->a0)<<20;
-				ao->o |= getreg (ao->a1)<<8;
-				ret = getreg (ao->a2);
-				ao->o |= (ret!=-1)? ret<<24 : 2 | getnum(ao->a2)<<24;
+				ao->o |= getreg (ao->a[0])<<20;
+				ao->o |= getreg (ao->a[1])<<8;
+				ret = getreg (ao->a[2]);
+				ao->o |= (ret!=-1)? ret<<24 : 2 | getnum(ao->a[2])<<24;
 				break;
 			case TYPE_MOV:
-				ao->o |= getreg (ao->a0)<<20;
-				ret = getreg (ao->a1);
+				ao->o |= getreg (ao->a[0])<<20;
+				ret = getreg (ao->a[1]);
 				if (ret!=-1) ao->o |= ret<<24;
-				else ao->o |= 0xa003 | getnum (ao->a1)<<24;
+				else ao->o |= 0xa003 | getnum (ao->a[1])<<24;
 				break;
 			case TYPE_TST:
-				//ao->o |= getreg(ao->a0)<<20; // ??? 
-				ao->o |= getreg (ao->a0)<<8;
-				ao->o |= getreg (ao->a1)<<24;
-				ao->o |= getshift (ao->a2)<<16; // shift
+				//ao->o |= getreg(ao->a[0])<<20; // ???
+				ao->o |= getreg (ao->a[0])<<8;
+				ao->o |= getreg (ao->a[1])<<24;
+				ao->o |= getshift (ao->a[2])<<16; // shift
 				break;
 			}
 			return 1;
@@ -529,7 +525,6 @@ int armass_assemble(const char *str, unsigned long off, int thumb) {
 		printf ("armass: Unknown opcode (%s)\n", str);
 		return -1;
 	}
-	////printf ("PARSE (%s) (%s)(%s)(%s)\n", aop.op, aop.a0, aop.a1, aop.a2);
 	return aop.o;
 }
 
