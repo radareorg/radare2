@@ -60,7 +60,7 @@ if [ -e "${VPATH}/config.guess" ]; then
 	return
 fi
 CPU="`uname -m|sed -e 's, ,,g'`"
-OS="`uname -s|awk '{print(tolower($0))}'`"
+OS="`uname -s|tr '[A-Z]' '[a-z]'`"
 GNU="`uname --help 2>&1 | grep gnu`"
 [ "${GNU}" ] && OS="${OS}-gnu"
 [ "${CPU}" = ppc ] && CPU="powerpc"
@@ -146,7 +146,7 @@ printf "\nOptional Features:
   --without-debugger     disable native debugger features 
   --without-ewf          disable EWF dependency 
   --without-gmp          disable GMP dependency 
-  --without-openssl      disable openssl dependency 
+  --without-ssl          disable openssl dependency 
   --with-compiler        Define compiler to use (see mk/)  (USERCC=gcc)
   --with-ostype          Choose OS type ( gnulinux windows darwin )  (USEROSTYPE=auto)
   --without-pic          do not build libr as a program independent location \n"
@@ -193,7 +193,7 @@ echo "VERSION:   0.6"
 echo "LANGS:     c"
 echo "REQUIRED:  libdl"
 echo "OPTIONAL:  libewf"
-echo "FLAGS:     --without-debugger --without-ewf --without-gmp --without-openssl --with-compiler=gcc --with-ostype=auto --without-pic"
+echo "FLAGS:     --without-debugger --without-ewf --without-gmp --without-ssl --with-compiler=gcc --with-ostype=auto --without-pic"
 	exit 0
 	;;
 "--cache-file") 
@@ -238,7 +238,7 @@ echo "FLAGS:     --without-debugger --without-ewf --without-gmp --without-openss
 "--without-debugger") DEBUGGER="0"; ;;
 "--without-ewf") HAVE_EWF="0"; ;;
 "--without-gmp") HAVE_GMP="0"; ;;
-"--without-openssl") HAVE_OPENSSL="0"; ;;
+"--without-ssl") HAVE_OPENSSL="0"; ;;
 --with-compiler) if [ -z "${value}" ]; then USERCC="gcc"; else USERCC="${value}" ; fi ;;
 --with-ostype) if [ -z "${value}" ]; then USEROSTYPE="auto"; else USEROSTYPE="${value}" ; fi ;;
 "--without-pic") WITHPIC="0"; ;;
@@ -259,7 +259,7 @@ parse_options $1
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS LIL_ENDIAN BIG_ENDIAN BYTEORDER HAVE_LIB_EWF HAVE_EWF HAVE_LIB_GMP HAVE_GMP HAVE_LIB_OPENSSL HAVE_OPENSSL HAVE_LIB_LUA5_1 HAVE_LIB_TCC USERCC USEROSTYPE WITHPIC"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS LIL_ENDIAN BIG_ENDIAN BYTEORDER HAVE_LIB_EWF HAVE_EWF HAVE_LIB_GMP HAVE_GMP HAVE_LIB_SSL HAVE_OPENSSL HAVE_LIB_LUA5_1 HAVE_LIB_TCC USERCC USEROSTYPE WITHPIC"
 
 create_environ
 
@@ -306,8 +306,9 @@ else
 	echo "libc"
 fi
 printf "checking host endianness... "
-echo 'main(){int a=1;char *b=(char*)&a;printf("%d",b[0]);}' > test.c
-${CC} ${CFLAGS} ${LDFLAGS} -o a.out test.c >/dev/null 2>&1
+echo '#include <stdio.h>' > test.c
+echo 'main(){int a=1;char *b=(char*)&a;printf("%d",b[0]);}' >> test.c
+eval \$${COMPILER} ${CFLAGS} ${CXXFLAGS} ${LDFLAGS} -o a.out test.c >/dev/null 2>&1
 if [ ! $? = 0 ]; then
 	echo unexpected error
 	do_remove
@@ -333,7 +334,7 @@ _CHKLIB_NAME=$2
 _CHKLIB_LIBS=$(echo "-l${_CHKLIB_NAME}" | sed 's,\+, -l,g')
 printf "checking for lib${_CHKLIB_NAME} ... "
 echo "main(){ }" > test.c
-eval ${S}${COMPILER} ${CFLAGS} ${LDFLAGS} ${_CHKLIB_LIBS} test.c >/dev/null 2>&1
+eval ${S}${COMPILER} ${CFLAGS} ${CXXFLAGS} ${LDFLAGS} ${_CHKLIB_LIBS} test.c >/dev/null 2>&1
 if [ $? = 0 ]; then
 	eval ${VAR}=1
 	echo yes
@@ -346,9 +347,9 @@ HAVE_LIB_EWF="0"; fi
 check_library HAVE_LIB_GMP gmp 0 
 if [ "$HAVE_GMP" = "0" ]; then
 HAVE_LIB_GMP="0"; fi
-check_library HAVE_LIB_OPENSSL openssl 0 
+check_library HAVE_LIB_SSL ssl 0 
 if [ "$HAVE_OPENSSL" = "0" ]; then
-HAVE_LIB_OPENSSL="0"; fi
+HAVE_LIB_SSL="0"; fi
 check_library HAVE_LIB_LUA5_1 lua5.1 0 
 check_library HAVE_LIB_TCC tcc 0 
 if [ "$USEROSTYPE" = "auto" ]; then
@@ -412,7 +413,7 @@ done
 do_remove
 echo
 echo "Final report:"
-for A in  PREFIX HAVE_LIB_EWF HAVE_LIB_GMP HAVE_LIB_OPENSSL HAVE_LIB_TCC DEBUGGER USERCC USEROSTYPE ; do # REPORT
+for A in  PREFIX HAVE_LIB_EWF HAVE_LIB_GMP HAVE_LIB_SSL HAVE_LIB_TCC DEBUGGER USERCC USEROSTYPE ; do # REPORT
 eval VAL="\$${A}"
 [ -z "${VAL}" ] && VAL="(null)"
 echo " - ${A} = ${VAL}"

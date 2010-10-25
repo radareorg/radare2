@@ -18,9 +18,9 @@ CHKLIB gmp
 ARG_WITHOUT HAVE_GMP gmp disable GMP dependency ;
 IFNOT HAVE_GMP { HAVE_LIB_GMP = 0 ; }
 
-CHKLIB openssl
-ARG_WITHOUT HAVE_OPENSSL openssl disable openssl dependency ;
-IFNOT HAVE_OPENSSL { HAVE_LIB_OPENSSL = 0 ; }
+CHKLIB ssl
+ARG_WITHOUT HAVE_OPENSSL ssl disable openssl dependency ;
+IFNOT HAVE_OPENSSL { HAVE_LIB_SSL = 0 ; }
 
 CHKLIB lua5.1
 CHKLIB tcc
@@ -51,7 +51,7 @@ IFEQ USEROSTYPE auto ; {
 
 ARG_WITHOUT WITHPIC pic do not build libr as a program independent location ;
 
-REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_GMP HAVE_LIB_OPENSSL HAVE_LIB_TCC DEBUGGER USERCC USEROSTYPE ;
+REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_GMP HAVE_LIB_SSL HAVE_LIB_TCC DEBUGGER USERCC USEROSTYPE ;
 
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))
 SUBDIRS ./config-user.mk libr/include/r_userconf.h
