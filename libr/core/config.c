@@ -230,11 +230,17 @@ static int config_asmarch_callback(void *user, void *data) {
 	if (!r_syscall_setup (core->syscall, node->value,
 			r_config_get (core->config, "asm.os")))
 		eprintf ("asm.arch: Cannot setup syscall os/arch for '%s'\n", node->value);
+	return R_TRUE;
+}
+
+static int config_vmarch_callback(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
 	r_vm_set_arch (core->vm, node->value, core->assembler->bits);
 	return R_TRUE;
 }
 
-static int config_asm_parser_callback(void *user, void *data) {
+static int config_asmparser_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	// XXX this is wrong? snprintf(buf, 127, "parse_%s", node->value),
@@ -243,7 +249,7 @@ static int config_asm_parser_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
-static int config_asm_bits_callback(void *user, void *data) {
+static int config_asmbits_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	int ret = r_asm_set_bits (core->assembler, node->i_value);
@@ -283,7 +289,7 @@ R_API int r_core_config_init(RCore *core) {
 	// XXX: not portable
 	r_parse_use (core->parser, "x86.pseudo");
 	r_config_set_cb (cfg, "asm.parser", "x86.pseudo",
-		&config_asm_parser_callback);
+		&config_asmparser_callback);
 
 	r_config_set (cfg, "dir.plugins", LIBDIR"/radare2/");
 	/* anal */
@@ -293,7 +299,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "anal.plugin", "x86", &config_analplugin_callback);
 	/* asm */
 	r_config_set_i_cb (cfg, "asm.bits", 32,
-		&config_asm_bits_callback);
+		&config_asmbits_callback);
 	r_config_set (cfg, "asm.bytes", "true"); 
 	r_config_set (cfg, "asm.middle", "false"); // jump in the middle because of antidisasm tricks
 	r_config_set (cfg, "asm.comments", "true");
@@ -356,6 +362,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "file.sha1", "");
 	r_config_set (cfg, "file.type", "");
 	r_config_set (cfg, "rap.loop", "true");
+	/* vm */
+	r_config_set_cb (cfg, "vm.arch", "x86", &config_vmarch_callback);
 	/* TODO cmd */
 #if 0
 

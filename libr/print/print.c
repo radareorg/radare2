@@ -77,15 +77,15 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 	const char *s;
 	char *d, *dst = (char *)malloc ((strlen (str)+2)*6);
-	int ch, i = 0;
+	int ch, i;
 	/* XXX That's hacky as shit.. but partially works O:) */
+	/* TODO: Use r_print_set_cursor for win support */
 	int cur = R_MIN (p->cur, p->ocur);
 	int ocur = R_MAX (p->cur, p->ocur);
 
-	if (p->cur_enabled && cur==-1) {
+	if (p->cur_enabled && cur==-1)
 		cur = ocur;
-		ocur++;
-	}
+	ocur++;
 #if CURDBG
 sprintf(dst, "(%d/%d/%d/%d)", p->cur_enabled, cur, ocur, n);
 d = dst+ strlen(dst);
@@ -95,13 +95,13 @@ d = dst;
 	// XXX: overflow here
 #define memcat(x,y) { memcpy(x,y,strlen(y));x+=strlen(y); }
 	//for (s=str, d=dst; *s; s+=2, d+=2, i++) {
-	for (s=str ; *s; s+=2, d+=2, i++) {
+	for (s=str, i=0 ; *s; s+=2, d+=2, i++) {
 		if (p->cur_enabled) {
-			if (i-1==(cur-n))
-				memcat (d, "\x1b[0m");
-			if (i>=(cur-n) && i<(ocur-n))
+			if (i==ocur-n)
+				memcat (d, "\x1b[27m");
+			if (i>=cur-n && i<ocur-n)
 				memcat (d, "\x1b[7m");
-		} else
+		}
 		if (s[0]=='0' && s[1]=='0') {
 			memcat (d, "\x1b[31m");
 		} else

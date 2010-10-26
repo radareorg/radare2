@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 #include <r_flags.h>
+#include <r_util.h>
 
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')
 
@@ -50,8 +51,7 @@ R_API int r_flag_name_check(const char *name) {
 R_API int r_flag_name_filter(char *name) {
 	int i;
 	char *oname;
-	for(;*name==' ';name=name+1);
-	oname=name;
+	name = oname = r_str_trim (name);
 	for (i=0;*name!='\0'; name = name +1,i++) {
 		if (i>R_FLAG_NAME_SIZE) {
 			name[0] = '\0';
