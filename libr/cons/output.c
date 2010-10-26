@@ -6,7 +6,7 @@
 R_API int r_cons_w32_print(ut8 *ptr) {
 	HANDLE hConsole = GetStdHandle (STD_OUTPUT_HANDLE);
 	int esc = 0;
-	int bg = 0;
+	int bg = 0, fg = 1|2|4|8;
 	ut8 *str = ptr;
 	int len = 0;
 	int inv = 0;
@@ -14,8 +14,8 @@ R_API int r_cons_w32_print(ut8 *ptr) {
 	if (ptr && hConsole)
 	for (;ptr[0]; ptr = ptr + 1) {
 		if (ptr[0] == 0x1b) {
-			esc = 1;
 			write (1, str, ptr-str);
+			esc = 1;
 			str = ptr + 1;
 			continue;
 		}
@@ -32,73 +32,85 @@ R_API int r_cons_w32_print(ut8 *ptr) {
 		} else 
 		if (esc == 2) {
 			if (ptr[0]=='2'&&ptr[1]=='J') {
-				ptr = ptr +1;
 				r_cons_clear ();
 				esc = 0;
-				str = ptr;
+				ptr = ptr + 1;
+				str = ptr + 1;
 				continue;
 			} else
 			if (ptr[0]=='0'&&ptr[1]==';'&&ptr[2]=='0') {
-				ptr = ptr + 4;
 				r_cons_gotoxy (0,0);
 				esc = 0;
-				str = ptr;
+				ptr = ptr + 4;
+				str = ptr + 1;
 				continue;
 			} else
 			if (ptr[0]=='0'&&ptr[1]=='m') {
 				SetConsoleTextAttribute (hConsole, 1|2|4|8);
-				ptr = ptr + 1;
-				str = ptr + 1;
+				fg = 1|2|4|8;
+				bg = 0;
 				inv = 0;
 				esc = 0;
+				ptr = ptr + 1;
+				str = ptr + 1;
 				continue;
 				// reset color
 			} else
+			if (ptr[0]=='2'&&ptr[1]=='7'&&ptr[2]=='m') {
+				SetConsoleTextAttribute (hConsole, bg|fg);
+				inv = 0;
+				esc = 0;
+				ptr = ptr + 2;
+				str = ptr + 1;
+				continue;
+				// invert off
+			} else
 			if (ptr[0]=='7'&&ptr[1]=='m') {
-				SetConsoleTextAttribute (hConsole, 128);
+				SetConsoleTextAttribute (hConsole, bg|fg|128);
 				inv = 128;
+				esc = 0;
 				ptr = ptr + 1;
 				str = ptr + 1;
-				esc = 0;
 				continue;
-				// reset color
+				// invert
 			} else
 			if (ptr[0]=='3' && ptr[2]=='m') {
 				// http://www.betarun.com/Pages/ConsoleColor/
 				switch(ptr[1]) {
 				case '0': // BLACK
-					SetConsoleTextAttribute (hConsole, bg|0|inv);
+					fg = 0;
 					break;
 				case '1': // RED
-					SetConsoleTextAttribute (hConsole, bg|4|inv);
+					fg = 4;
 					break;
 				case '2': // GREEN
-					SetConsoleTextAttribute (hConsole, bg|2|inv);
+					fg = 2;
 					break;
 				case '3': // YELLOW
-					SetConsoleTextAttribute (hConsole, bg|2|4|inv);
+					fg = 2|4;
 					break;
 				case '4': // BLUE
-					SetConsoleTextAttribute (hConsole, bg|1|inv);
+					fg = 1;
 					break;
 				case '5': // MAGENTA
-					SetConsoleTextAttribute (hConsole, bg|1|4|inv);
+					fg = 1|4;
 					break;
 				case '6': // TURQOISE
-					SetConsoleTextAttribute (hConsole, bg|1|2|8|inv);
+					fg = 1|2|8;
 					break;
 				case '7': // WHITE
-					SetConsoleTextAttribute (hConsole, bg|1|2|4|inv);
+					fg = 1|2|4;
 					break;
 				case '8': // GRAY
-					SetConsoleTextAttribute (hConsole, bg|8|inv);
+					fg = 8;
 					break;
 				case '9': // ???
 					break;
 				}
-				ptr = ptr + 1;
-				str = ptr + 2;
+				SetConsoleTextAttribute (hConsole, bg|fg|inv);
 				esc = 0;
+				ptr = ptr + 2;
+				str = ptr + 1;
 				continue;
 			} else
 			if (ptr[0]=='4' && ptr[2]=='m') {
@@ -134,6 +146,10 @@ R_API int r_cons_w32_print(ut8 *ptr) {
 				case '9': // ???
 					break;
 				}
+				esc = 0;
+				ptr = ptr + 2;
+				str = ptr + 1;
+				continue;
 			}
 		} 
 		len++;
