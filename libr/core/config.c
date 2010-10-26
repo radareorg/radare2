@@ -291,7 +291,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "asm.parser", "x86.pseudo",
 		&config_asmparser_callback);
 
-	r_config_set (cfg, "dir.plugins", LIBDIR"/radare2/");
+	r_config_set (cfg, "dir.plugins", LIBDIR"/radare2/"R2_VERSION"/");
 	/* anal */
 	r_config_set_i (cfg, "anal.depth", 10);
 	r_config_set_i (cfg, "anal.ptrdepth", 3);

@@ -66,7 +66,7 @@ install-symlink:
 	mkdir -p ${PFX}/bin
 	mkdir -p ${PFX}/include
 	mkdir -p ${PFX}/lib/pkgconfig
-	mkdir -p ${PFX}/lib/radare2
+	mkdir -p ${PFX}/lib/radare2/${VERSION}
 	rm -f ${PFX}/include/libr && ln -fs ${PWD}/include ${PFX}/include/libr
 	cd ../pkgcfg && for a in *.pc ; do \
 		if [ -e ${PWD}/../pkgcfg/$${a} ] ; then \
@@ -78,7 +78,7 @@ install-symlink:
 		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_AR} ${PFX}/lib/libr_$${a}.${EXT_AR} ; \
 		for b in $${a}/p/*.${EXT_SO} ; do \
 			if [ -e ${PWD}/$${b} ] ; then \
-				ln -fs ${PWD}/$${b} ${PFX}/lib/radare2/ ; \
+				ln -fs ${PWD}/$${b} ${PFX}/lib/radare2/${VERSION}/ ; \
 			fi ; \
 		done ; \
 	done
@@ -93,14 +93,14 @@ install: install-includes install-pkgconfig
 	done
 	# object archives
 	@for a in `find * | grep -e '\.a$$'` ; do \
-	echo "$$a ${PFX}/lib"; ${INSTALL_DATA} $$a ${PFX}/lib ; done
+	  echo "$$a ${PFX}/lib"; ${INSTALL_DATA} $$a ${PFX}/lib ; done
 	# plugins
-	@${INSTALL_DIR} ${PFX}/lib/radare2
+	@${INSTALL_DIR} ${PFX}/lib/radare2/${VERSION}
 	@for a in `find */p -perm -u+x -type f | grep -v exe | grep -v dll`; \
-	do echo "$$a ${PFX}/lib/radare2"; \
-	${INSTALL_DATA} $$a ${PFX}/lib/radare2 ; done
-	${INSTALL_DATA} lang/p/radare.* ${PFX}/lib/radare2
-	echo "lang/p/radare.* ${PFX}/lib/radare2"
+	  do echo "$$a ${PFX}/lib/radare2/${VERSION}"; \
+	${INSTALL_DATA} $$a ${PFX}/lib/radare2/${VERSION} ; done
+	@echo "lang/p/radare.* ${PFX}/lib/radare2/${VERSION}"
+	${INSTALL_DATA} lang/p/radare.* ${PFX}/lib/radare2/${VERSION}
 
 deinstall uninstall:
 	# libraries
@@ -119,9 +119,9 @@ deinstall uninstall:
 	echo ${PFX}/bin/$$a ; rm -f ${PFX}/bin/$$a ; done
 	# plugins
 	-@for a in `find */p -perm -u+x -type f`; do \
-	a="${PFX}/lib/radare2/`echo $$a|awk -F / '{ print $$NF; }'`"; \
+	a="${PFX}/lib/radare2/${VERSION}`echo $$a|awk -F / '{ print $$NF; }'`"; \
 	echo $$a ; rm -f $$a ; done
-	rm -rf ${PFX}/lib/radare2
+	rm -rf ${PFX}/lib/radare2/${VERSION}
 	rm -f ${PFX}/lib/pkgconfig/libr.pc
 	rm -f ${PFX}/lib/pkgconfig/r_*.pc
 	# test programs
