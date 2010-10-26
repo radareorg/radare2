@@ -14,16 +14,5 @@ bis:
 	valaswig-cc python r_io -I../../libr/include r_io `pkg-config --libs r_io`
 
 mrproper:
-	rm -rf ${PREFIX}/lib/python2.5/r2
-	rm -rf ${PREFIX}/lib/python2.5/site-packages/r2
-	rm -rf ${PREFIX}/lib/python2.5/libr*
-	rm -rf ${PREFIX}/lib/python2.5/_libr*
-	rm -rf ${PREFIX}/lib/python2.5/site-packages/libr*
-	rm -rf ${PREFIX}/lib/python2.5/site-packages/_libr*
-	#
-	rm -rf ${PREFIX}/lib/python2.6/r2
-	rm -rf ${PREFIX}/lib/python2.6/site-packages/r2
-	rm -rf ${PREFIX}/lib/python2.6/libr*
-	rm -rf ${PREFIX}/lib/python2.6/_libr*
-	rm -rf ${PREFIX}/lib/python2.6/site-packages/libr*
-	rm -rf ${PREFIX}/lib/python2.6/site-packages/_libr*
+	a=python`python --version 2>&1 | cut -d ' ' -f 2 | cut -d . -f 1,2`/site-packages ; \
+	rm -rf ${PREFIX}/lib/$a/r2
