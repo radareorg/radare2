@@ -1174,8 +1174,33 @@ static int cmd_seek(void *data, const char *input) {
 
 static int cmd_help(void *data, const char *input) {
 	RCore *core = (RCore *)data;
+	char out[65];
 	ut64 n;
 	switch (input[0]) {
+	case 'b':
+		{
+		n = r_num_get (core->num, input+1);
+		r_num_to_bits (out, n);
+		r_cons_printf ("%s\n", out);
+		}
+		break;
+	case 'f':
+		if (input[1]==' ') {
+			char *q, *p = strdup (input+2);
+			if (!p) {
+				eprintf ("Cannot strdup\n");
+				return 0;
+			}
+			q = strchr (p, ' ');
+			if (q) {
+				*q = 0;
+				n = r_num_get (core->num, p);
+				r_str_bits (out, (const ut8*)&n, sizeof (n), q+1);
+				r_cons_printf ("%s\n", out);
+			} else eprintf ("Usage: \"?b value bitstring\"\n");
+			free (p);
+		} else eprintf ("Whitespace expected after '?b'\n");
+		break;
 	case ' ':
 		n = r_num_math (core->num, input+1);
 		r_cons_printf ("%"PFMT64d" 0x%"PFMT64x"\n", n,n);
@@ -1225,6 +1250,8 @@ static int cmd_help(void *data, const char *input) {
 			" ? eip-0x804800  ; calculate result for this math expr\n"
 			" ?= eip-0x804800 ; same as above without user feedback\n"
 			" ?? [cmd]        ; ? == 0  run command when math matches\n"
+			" ?b [num]        ; show binary value of number\n"
+			" ?f [num] [str]  ; map each bit of the number as flag string index\n"
 			" ?z str          ; returns the length of string (0 if null)\n"
 			" ?t cmd          ; returns the time to run a command\n"
 			" ?! [cmd]        ; ? != 0\n"

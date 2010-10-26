@@ -316,7 +316,7 @@ static const char *r_debug_native_reg_profile() {
 	"gpr	ebp	.32	172	0\n"
 	"gpr	eip	.32	176	0\n"
 	"seg	cs	.32	184	0\n"
-	"flg	eflags	.32	188	0	cpastidor0\n"
+	"gpr	eflags	.32	188	0	c1p.a.zstido.n.rv\n" // XXX must be flg
 	"seg	esp	.32	192	0\n"
 	"seg	ss	.32	196	0\n"
 	/* +512 bytes for maximum supoprted extension extended registers */
@@ -418,7 +418,7 @@ static const char *r_debug_native_reg_profile() {
 	"seg	xcs	.32	52	0\n"
 	"seg	cs	.16	52	0\n"
 	"seg	xss	.32	52	0\n"
-	"gpr	eflags	.32	56	0	cpazstidoinrvavvi\n"
+	"gpr	eflags	.32	56	0	c1p.a.zstido.n.rv\n"
 	"gpr	flags	.16	56	0\n"
 	"flg	carry	.1	.448	0\n"
 	"flg	flag_p	.1	.449	0\n"
@@ -468,7 +468,7 @@ static const char *r_debug_native_reg_profile() {
 	"gpr	rip	.64	128	0\n"
 	"seg	cs	.64	136	0\n"
 	//"flg	eflags	.64	144	0\n"
-	"flg	eflags	.32	144	0	cpastidor0\n"
+	"gpr	eflags	.32	144	0	c1p.a.zstido.n.rv\n"
 	"gpr	rsp	.64	152	0\n"
 	"seg	ss	.64	160	0\n"
 	"seg	fs_base	.64	168	0\n"
