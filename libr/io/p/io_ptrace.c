@@ -133,9 +133,9 @@ static int __system(struct r_io_t *io, int fd, const char *cmd) {
 		int pid = atoi (cmd+4);
 		if (pid != 0)
 			io->fd = pid;
-		//printf("PID=%d\n", io->fd);
+		io->printf ("%d\n", io->fd);
 		return io->fd;
-	} else eprintf ("Try: '|pid'\n");
+	} else eprintf ("Try: '=!pid'\n");
 	return R_TRUE;
 }
 

@@ -179,6 +179,7 @@ R_API int r_core_init(RCore *core) {
 	core->oobi_len = 0;
 	core->yank = NULL;
 	core->reflines = NULL;
+	core->reflines2 = NULL;
 	core->yank_len = 0;
 	core->yank_off = 0LL;
 	core->num = r_num_new (&num_callback, core);

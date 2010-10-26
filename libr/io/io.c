@@ -13,6 +13,7 @@ R_API struct r_io_t *r_io_new() {
 		io->write_mask_fd = -1;
 		io->redirect = NULL;
 		io->printf = (void*) printf;
+		io->plugin = NULL;
 		r_io_cache_init (io);
 		r_io_map_init (io);
 		r_io_section_init (io);

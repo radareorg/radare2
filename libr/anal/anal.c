@@ -82,7 +82,7 @@ R_API int r_anal_list(RAnal *anal) {
 
 R_API int r_anal_use(RAnal *anal, const char *name) {
 	struct list_head *pos;
-	list_for_each_prev (pos, &anal->anals) {
+	list_for_each (pos, &anal->anals) { // XXX: must be _prevmust be _prev
 		RAnalPlugin *h = list_entry(pos, RAnalPlugin, list);
 		if (!strcmp (h->name, name)) {
 			anal->cur = h;

@@ -10,6 +10,7 @@ TODO 0.6
 pancake
 * fix eflags string and str_bits
 * fix arm assembler issue reported via twitter (umf :/)
+* fix r_list_foreach_prev for 1 element lists
 
 Questions
 =========
