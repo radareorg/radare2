@@ -1,12 +1,12 @@
 include ../../config.mk
 
 CFLAGS+=-I ../arch -I../../include -D__UNIX__=1
-LDFLAGS=-L../../util -lr_util
+LDFLAGS=-L../../util -lr_util -L../../anal -lr_anal -L../../reg -lr_reg
 
 all: test_meta${EXT_EXE} test_x86im${EXT_EXE}
 
 test_meta${EXT_EXE}: test_meta.o
-	${CC} -lr_anal ${CFLAGS} ${LDFLAGS} test_meta.o -o test_meta${EXT_EXE}
+	${CC} ${CFLAGS} ${LDFLAGS} test_meta.o -o test_meta${EXT_EXE}
 
 test_x86im${EXT_EXE}: test_x86im.o ../arch/x86/x86im/x86im.o
 	${CC} ${CFLAGS} ${LDFLAGS} -o test_x86im${EXT_EXE} \
