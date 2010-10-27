@@ -92,7 +92,8 @@ install: install-includes install-pkgconfig
 	  b=`echo $$a|cut -d / -f 2`; \
 	  echo " ${PFX}/lib/$$b.${VERSION}"; \
 	  ${INSTALL_DATA} $$a ${PFX}/lib/$$b.${VERSION} ; \
-	  ln -sf ${PFX}/lib/$$b.${VERSION} ${PFX}/lib/$$b ; \
+	  ln -sf ${PFX}/lib/$$b.${VERSION} ${PFX}/lib/$$b.0 ; \
+	  ln -sf ${PFX}/lib/$$b.0 ${PFX}/lib/$$b ; \
 	done
 	# object archives
 	@for a in `find * | grep -e '\.a$$'` ; do \
@@ -132,6 +133,7 @@ deinstall uninstall:
 	# TODO: use for a in LIBLIST (like in binr/Makefile)
 	rm -rf ${PFX}/include/libr
 	rm -rf ${PFX}/lib/libr_*.so.${VERSION}
+	rm -rf ${PFX}/lib/libr_*.so.0
 	rm -rf ${PFX}/lib/libr_*.so
 	rm -rf ${PFX}/lib/libr_*.a
 	rm -rf ${PFX}/lib/libr2.so*

@@ -90,7 +90,7 @@ static int analyze(RAnal *anal, RAnalOp *aop, ut64 offset, ut8* buf, int len) {
 }
 
 static int usage() {
-	printf ("test_anal [opts] hexpairs|-\n"
+	printf ("ranal2 [opts] hexpairs|-\n"
 			" -a [arch]    Set architecture plugin\n"
 			" -b [bits]    Set architecture bits\n"
 			" -B           Binary input (-l is mandatory for binary input)\n"
