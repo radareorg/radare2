@@ -24,7 +24,10 @@ static inline void r_cons_write (char *buf, int len) {
 #if __WINDOWS__
 	r_cons_w32_print (buf);
 #else
-	write (I.fdout, buf, len);
+	if (write (I.fdout, buf, len) == -1) {
+		eprintf ("r_cons_write: write error\n");
+		exit (1);
+	}
 #endif
 }
 
@@ -193,7 +196,8 @@ R_API void r_cons_flush() {
 	if (tee&&tee[0]) {
 		FILE *d = fopen (tee, "a+");
 		if (d != NULL) {
-			fwrite (I.buffer, I.buffer_len, 1, d);
+			if (I.buffer_len != fwrite (I.buffer, I.buffer_len, 1, d))
+				eprintf ("r_cons_flush: fwrite: error\n");
 			fclose (d);
 		}
 	} else {

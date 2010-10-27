@@ -88,7 +88,7 @@ R_API int r_diff_buffers_radiff(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 		char op; // operation
 
 		oa = ob = 0LL;
-		fgets (buf, 63, fd);
+		(void *)fgets (buf, 63, fd); // TODO: handle ret value
 		if (feof(fd))
 			break;
 		str = buf;

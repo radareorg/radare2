@@ -118,9 +118,20 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 	int sh_in[2], sh_out[2], sh_err[2];
 
 	if (len) *len = 0;
-	pipe (sh_in);
-	pipe (sh_out);
-	pipe (sh_err);
+	if (pipe (sh_in)) 
+		return NULL;
+	if (pipe (sh_out)) {
+		close (sh_in[0]);
+		close (sh_in[1]);
+		return NULL;
+	}
+	if (pipe (sh_err)) {
+		close (sh_in[0]);
+		close (sh_in[1]);
+		close (sh_out[0]);
+		close (sh_out[1]);
+		return NULL;
+	}
 
 	switch ((pid=fork ())) {
 	case -1:

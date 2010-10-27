@@ -683,7 +683,7 @@ static void Parseasmoperand(t_asmoperand *op) {
 
 int Assemble(char *cmd,ulong ip,t_asmmodel *model,int attempt,
   int constsize,char *errtext) {
-  int i,j,k,namelen,nameok,arg,match,datasize,addrsize,bytesize,minop,maxop;
+  int i,j,k,namelen,nameok,arg,match = 0,datasize,addrsize,bytesize,minop,maxop;
   int rep,lock,segment,jmpsize,jmpmode,longjump;
   int hasrm,hassib,dispsize,immsize;
   int anydisp,anyimm,anyjmp;

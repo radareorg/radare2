@@ -200,7 +200,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 
 R_API int r_num_is_float(struct r_num_t *num, const char *str) {
 	// TODO: also support 'f' terminated strings
-	return (int) strchr (str, '.');
+	return (strchr (str, '.') != NULL)? R_TRUE:R_FALSE;
 }
 
 R_API double r_num_get_float(struct r_num_t *num, const char *str) {
@@ -210,7 +210,7 @@ R_API double r_num_get_float(struct r_num_t *num, const char *str) {
 }
 
 R_API int r_num_to_bits (char *out, ut64 num) {
-	int size, i;
+	int size = 0, i;
 
 	if (num&0xff000000) size = 64;
 	else if (num&0xff0000) size = 32;

@@ -148,14 +148,14 @@ R_API int r_lang_prompt(RLang *lang) {
 	for (;;) {
 		printf ("%s> ", lang->cur->name);
 		fflush (stdout);
-		fgets (buf, 1023, stdin);
+		fgets (buf, sizeof (buf)-1, stdin);
 		if (feof (stdin)) break;
 		buf[strlen (buf)-1]='\0';
 		if (!strcmp (buf, "q"))
 			return R_TRUE;
 		if (!strcmp (buf, "?")) {
 			if (lang->cur->help)
-				printf (*lang->cur->help);
+				printf ("%s", *lang->cur->help);
 		} else r_lang_run (lang, buf, strlen(buf));
 	}
 	clearerr (stdin);

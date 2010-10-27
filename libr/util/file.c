@@ -67,6 +67,7 @@ R_API char *r_file_path(const char *bin) {
 }
 
 R_API char *r_file_slurp(const char *str, int *usz) {
+	size_t foo;
         char *ret;
         FILE *fd;
         long sz;
@@ -79,9 +80,11 @@ R_API char *r_file_slurp(const char *str, int *usz) {
         sz = ftell (fd);
         fseek (fd, 0, SEEK_SET);
         ret = (char *)malloc (sz+1);
-        fread (ret, sz, 1, fd); // TODO: handle return value :?
-        ret[sz]='\0';
-        fclose (fd);
+        foo = fread (ret, sz, 1, fd); // TODO: handle return value :?
+	if (foo != sz)
+		eprintf ("r_file_slurp: fread: error\n");
+	fclose (fd);
+	ret[foo]='\0';
 	if (usz)
 		*usz = (ut32)sz;
         return ret;
@@ -194,14 +197,17 @@ R_API char *r_file_slurp_line(const char *file, int line, int context) {
 }
 
 R_API int r_file_dump(const char *file, const ut8 *buf, int len) {
+	int ret;
 	FILE *fd = fopen(file, "wb");
 	if (fd == NULL) {
-		fprintf(stderr, "Cannot open '%s' for writing\n", file);
+		eprintf ("Cannot open '%s' for writing\n", file);
 		return R_FALSE;
 	}
-	fwrite(buf, len, 1, fd);
-	fclose(fd);
-	return R_TRUE;
+	ret = fwrite (buf, len, 1, fd) == len;
+	if (!ret)
+		eprintf ("r_file_dump: fwrite: error\n");
+	fclose (fd);
+	return ret;
 }
 
 R_API int r_file_rm(const char *file) {

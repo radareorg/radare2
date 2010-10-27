@@ -34,7 +34,7 @@ R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int le
 	int endian = 0;
 	int i,j,idx;
 	int times, otimes;
-	char tmp, last;
+	char tmp, last = 0;
 	char *args, *bracket;
 	int nargs = 0;
 	const char *arg = fmt;

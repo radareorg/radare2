@@ -42,12 +42,13 @@ R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int 
 }
 
 R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits) {
+	ut8 srcmask, dstmask;
 	int bytes = (int)(bits/8);
 	bits = bits%8;
 	
 	memcpy (dst, src, bytes);
 	if (bits) {
-		ut8 srcmask, dstmask;
+		srcmask = dstmask = 0;
 		switch (bits) {
 		case 1: srcmask = 0x80; dstmask = 0x7f; break;
 		case 2: srcmask = 0xc0; dstmask = 0x3f; break;

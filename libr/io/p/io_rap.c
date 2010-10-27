@@ -14,18 +14,20 @@ static int endian = 0;
 static int rap__write(struct r_io_t *io, int fd, const ut8 *buf, int count) {
 	int ret;
 	unsigned int size = (int)count;
-	ut8 *tmp = (ut8 *)malloc(count+5);
+	ut8 *tmp = (ut8 *)malloc (count+5);
 
 	if (count>RMT_MAX)
 		count = RMT_MAX;
 	tmp[0] = RMT_WRITE;
-	r_mem_copyendian((ut8 *)tmp+1, (ut8*)&size, 4, endian);
-	memcpy(tmp+5, buf, size);
+	r_mem_copyendian ((ut8 *)tmp+1, (ut8*)&size, 4, endian);
+	memcpy (tmp+5, buf, size);
 
 	ret = r_socket_write (rap_fd, tmp, size+5);
-	read(rap_fd, tmp, 5);
-
-	free(tmp);
+	if (read (rap_fd, tmp, 5) != 5) { // TODO use while'd read here
+		eprintf ("rap__write: error\n");
+		ret = -1;
+	}
+	free (tmp);
 	// TODO: get reply
         return ret;
 }
@@ -54,7 +56,7 @@ static int rap__read(struct r_io_t *io, int fd, ut8 *buf, int count) {
 	} else r_socket_read_block (rap_fd, buf, i);
 	if (i>0&&i<RMT_MAX) {
 		eprintf ("READ %d\n" ,i);
-	} else i=0;
+	} else i = 0;
         return i;
 }
 

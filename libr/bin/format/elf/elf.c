@@ -446,7 +446,7 @@ int Elf_(r_bin_elf_is_big_endian)(struct Elf_(r_bin_elf_obj_t) *bin) {
 /* XXX Init dt_strtab? */
 char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	Elf_(Dyn) *dyn = NULL;
-	ut64 stroff;
+	ut64 stroff = 0;
 	char *ret = NULL;
 	int ndyn, i, j, len;
 
@@ -501,10 +501,10 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	struct r_bin_elf_reloc_t *ret = NULL;
 	Elf_(Shdr) *strtab_section;
-	Elf_(Sym) *sym;
+	Elf_(Sym) *sym = NULL;
 	Elf_(Rel) *rel;
 	ut64 got_addr, got_offset;
-	char *strtab;
+	char *strtab = NULL;
 	int i, j, nrel, tsize, len, nsym, idx;
 	
 	if (!bin->shdr || !bin->strtab)
@@ -590,7 +590,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	struct r_bin_elf_lib_t *ret = NULL;
 	Elf_(Dyn) *dyn = NULL;
-	ut64 stroff;
+	ut64 stroff = 0;
 	int ndyn, i, j, k, len;
 
 	if (!bin->phdr)

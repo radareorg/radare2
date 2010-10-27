@@ -178,7 +178,7 @@ R_API void r_line_autocomplete() {
 		I.completion.run (&I);
 		opt = argc = I.completion.argc;
 		argv = I.completion.argv;
-	}
+	} else opt = 0;
 
 	// TODO: implement partial autocompletion ?
 
