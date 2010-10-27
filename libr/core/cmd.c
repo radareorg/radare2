@@ -813,9 +813,8 @@ static void cmd_reg(RCore *core, const char *str) {
 }
 
 static void r_core_cmd_bp(RCore *core, const char *input) {
+	RBreakpointItem *bp;
 	int hwbp = r_config_get_i (core->config, "dbg.hwbp");
-	if (input[1]==' ')
-		input++;
 	switch (input[1]) {
 	case 't':
 		{
@@ -877,12 +876,12 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbt               ; debug backtrace\n");
 		break;
 	default:
-		if (hwbp)
-		r_bp_add_hw (core->dbg->bp, r_num_math (core->num, input+1),
-			1, R_BP_PROT_EXEC);
-		else
-		r_bp_add_sw (core->dbg->bp, r_num_math (core->num, input+1),
-			1, R_BP_PROT_EXEC);
+		{
+			ut64 addr = r_num_math (core->num, input+2);
+			if (hwbp) bp = r_bp_add_hw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
+			else bp = r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
+			if (!bp) eprintf ("Cannot set breakpoint (%s)\n", input+2);
+		}
 		break;
 	}
 }

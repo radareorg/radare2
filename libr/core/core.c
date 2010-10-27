@@ -277,8 +277,7 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	if (cmdprompt && cmdprompt[0])
 		ret = r_core_cmd (r, cmdprompt, 0);
 
-	/* XXX : ultraslow */
-	if (!r_config_get_i (r->config, "scr.prompt"))
+	if (!r_line_singleton()->echo)
 		*prompt = 0;
 #if __UNIX__
 	else if (r_config_get_i (r->config, "scr.color"))
