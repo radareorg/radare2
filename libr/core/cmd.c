@@ -1165,7 +1165,8 @@ static int cmd_seek(void *data, const char *input) {
 			" s+ 512     ; seek 512 bytes forward\n"
 			" s- 512     ; seek 512 bytes backward\n"
 			" sa [[+-]a] [asz] ; seek asz (or bsize) aligned to addr\n"
-			" sb         ; seek aligned to bb start\n");
+			" sb         ; seek aligned to bb start\n"
+			" sr pc      ; seek to register\n");
 			break;
 		}
 	} else r_cons_printf ("0x%"PFMT64x"\n", core->offset);

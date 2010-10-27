@@ -185,7 +185,7 @@ int main(int argc, char **argv) {
 		r_core_cmd (&r, "dh native", 0);
 		r_core_cmdf (&r, "dp=%d", r.file->fd);
 		r_core_cmd (&r, ".dr*", 0);
-		r_core_cmd (&r, "s eip", 0);
+		r_core_cmd (&r, "sr pc", 0);
 		r_config_set (r.config, "cmd.prompt", ".dr*");
 		r_config_set (r.config, "cmd.vprompt", ".dr*");
 	}

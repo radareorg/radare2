@@ -214,6 +214,13 @@ static int config_tracetag_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_scrprompt_callback(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	r_line_singleton()->echo = node->i_value;
+	return R_TRUE;
+}
+
 static int config_swstep_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -340,7 +347,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "cmd.prompt", ""); 
 	r_config_set (cfg, "cmd.vprompt", "");
 	r_config_set (cfg, "cmd.bp", "");
-	r_config_set (cfg, "scr.prompt", "true");
+	r_config_set_cb (cfg, "scr.prompt", "true", &config_scrprompt_callback);
 	r_config_set_cb (cfg, "scr.color",
 		(core->print->flags&R_PRINT_FLAGS_COLOR)?"true":"false",
 		&config_color_callback);

@@ -84,7 +84,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 					r->blocksize, 0);
 		}
 		/* Seek to the last entry point */
-		r_core_seek (r, va?baddr+entry->rva:entry->offset, 0);
+		r_core_seek (r, va?baddr+entry->rva:entry->offset, 1);
 	}
 
 	// s -> Symbols
