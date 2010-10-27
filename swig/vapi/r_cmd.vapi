@@ -10,10 +10,18 @@ namespace Radare {
 	}
 
 	[Compact]
-	[CCode (cheader_filename="r_cmd.h", cprefix="r_cmd_", cname="struct r_cmd_macro_t", free_function="")]
-	public class RCmdMacroItem {
+	[CCode (cheader_filename="r_cmd.h", cprefix="r_cmd_macro_", cname="struct r_cmd_macro_t", free_function="")]
+	public class RCmdMacro {
 		int counter;
+		uint64 *brk_value;
+		uint64 _brk_value;
+		int brk;
 		// TODO much moar
+		public int @add (string name);
+		public int rm (string name);
+		public int list ();
+		public int call (string name);
+		public int @break (string val);
 	}
 
 	[CCode (has_target=false, cname="RCmdCallback")]

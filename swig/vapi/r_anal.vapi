@@ -20,9 +20,8 @@ public class RAnal {
 	//public bool set_pc (uint64 addr);
 	public RList<RAnal.Block> fcn_bb_list(Fcn fun);
 
-/*
-	[CCode (cprefix="R_ANAL_OP_COND_")]
-	public enum OpCond {
+	[CCode (cprefix="R_ANAL_COND_")]
+	public enum Cond {
 		EQ,
 		NE,
 		GE,
@@ -30,7 +29,6 @@ public class RAnal {
 		LE,
 		LT
 	}
-*/
 
 	[CCode (cprefix="R_ANAL_VAR_TYPE_")]
 	public enum VarClass {
@@ -57,13 +55,11 @@ public class RAnal {
 		UNMATCH
 	}
 
-/* XXX JAM!
-	[CCode (cprefix="R_ANAL_REFLINE_")]
-	public enum Refline {
+	[CCode (cprefix="R_ANAL_REFLINE_TYPE_")]
+	public enum ReflineType {
 		STYLE,
 		WIDE
 	}
-*/
 
 	[CCode (cprefix="R_ANAL_RET_")]
 	public enum Ret {
@@ -76,6 +72,7 @@ public class RAnal {
 	[CCode (cprefix="R_ANAL_STACK_")]
 	public enum Stack {
 		NULL,
+		NOP,
 		INCSTACK,
 		GET,
 		SET
@@ -100,6 +97,13 @@ public class RAnal {
 		MMX,
 		PRIV,
 		LAST
+	}
+
+	[CCode (cprefix="R_ANAL_VAR_DIR_")]
+	public enum VarDir {
+		NONE
+		IN,
+		OUT
 	}
 
 	[CCode (cprefix="R_ANAL_OP_TYPE_")]

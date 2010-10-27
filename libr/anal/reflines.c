@@ -71,8 +71,8 @@ R_API char* r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *
 	struct list_head *pos;
 	int dir = 0;
 	char ch = ' ', *str = NULL;
-	int linestyle = opts & R_ANAL_REFLINE_STYLE;
-	int wide = opts & R_ANAL_REFLINE_WIDE;
+	int linestyle = opts & R_ANAL_REFLINE_TYPE_STYLE;
+	int wide = opts & R_ANAL_REFLINE_TYPE_WIDE;
 
 	if (!list)
 		return NULL;

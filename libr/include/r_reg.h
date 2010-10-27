@@ -65,13 +65,15 @@ R_API struct r_reg_t *r_reg_new();
 R_API int r_reg_set_profile_string(struct r_reg_t *reg, const char *profile);
 R_API int r_reg_set_profile(struct r_reg_t *reg, const char *profile);
 
-R_API int r_reg_get_name_idx(const char *type);
 R_API const char *r_reg_get_name(struct r_reg_t *reg, int kind);
 R_API int r_reg_set_name(struct r_reg_t *reg, int role, const char *name);
 
 R_API struct r_reg_item_t *r_reg_get(struct r_reg_t *reg, const char *name, int type);
 R_API RList *r_reg_get_list(struct r_reg_t *reg, int type);
+
+/* XXX: dupped ?? */
 R_API int r_reg_type_by_name(const char *str);
+R_API int r_reg_get_name_idx(const char *type);
 
 /* value */
 R_API ut64 r_reg_get_value(struct r_reg_t *reg, struct r_reg_item_t *item);

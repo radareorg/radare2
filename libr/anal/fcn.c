@@ -184,11 +184,11 @@ R_API RAnalVar *r_anal_fcn_get_var(RAnalFcn *fs, int num, int dir) {
 R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFcn* fs) {
 	int i;
 	char *sign;
-	RAnalVar *arg, *ret = r_anal_fcn_get_var (fs, 0, R_ANAL_VAR_OUT);
+	RAnalVar *arg, *ret = r_anal_fcn_get_var (fs, 0, R_ANAL_VAR_DIR_OUT);
 	if (ret) sign = r_str_newf ("%s %s (", ret->name, fs->name);
 	else sign = r_str_newf ("void %s (", fs->name);
 	for (i=0;;i++) {
-		if (!(arg = r_anal_fcn_get_var (fs, i, R_ANAL_VAR_IN)))
+		if (!(arg = r_anal_fcn_get_var (fs, i, R_ANAL_VAR_DIR_IN)))
 			break;
 		if (arg->array>1) {
 			if (i) sign = r_str_concatf (sign, ", %s %s[%d]", arg->vartype, arg->name, arg->array);
@@ -249,7 +249,7 @@ R_API int r_anal_fcn_from_string(RAnal *a, RAnalFcn *f, const char *_str) {
 		arg++;
 		p=q+1;
 	}
-	// r_anal_fcn_set_var (fs, 0, R_ANAL_VAR_OUT, );
+	// r_anal_fcn_set_var (fs, 0, R_ANAL_VAR_DIR_OUT, );
 	free (str);
 	return R_TRUE;
 

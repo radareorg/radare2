@@ -33,16 +33,23 @@ namespace Radare {
 		 */
 		public int open(string uri, int flags, int mode);
 		public int open_as(string urihandler, string path, int flags, int mode);
+		public int redirect(string uri);
+		public int set_fd(int fd);
 		public int read(out uint8 *buf, int len);
 		public int read_at(uint64 addr, uint8 *buf, int len);
 		public RBuffer *read_buf(uint64 addr, int len);
 		public int write(uint8 *buf, int len);
+		public int write_at(uint64 addr, uint8 *buf, int len);
 		public uint64 seek(uint64 addr, int whence);
 		public int system(string cmd);
 		public int close(int fd);
 		public uint64 size(int fd);
 
 
+		public void cache_commit ();
+		public void cache_init ();
+		public int cache_list (bool rad);
+		public void cache_reset (bool set);
 		public void cache_enable(bool rd, bool wr);
 		public void cache_write(uint64 addr, ref uint8 *buf, int len);
 		public void cache_read(uint64 addr, ref uint8 *buf, int len);
@@ -51,6 +58,18 @@ namespace Radare {
 		// TODO: Implement seek and write undo apis..they must be unified..
 		public bool undo_init();
 		public void undo_enable(bool set, bool write);
+
+/*
+		[Compact]
+		[CCode(cname="RIOUndo")]
+		public class Undo {
+			bool s_enable;
+			bool w_enable;
+			bool w_init;
+			int idx;
+			int limit;
+		}
+*/
 		//public uint64 undo_seek();
 		//public void undo_redo();
 		//public void undo_push();
@@ -75,6 +94,8 @@ namespace Radare {
 		[CCode (cname="RIOMap", cprefix="r_io_map_", free_function="")]
 		public class Map {
 			int fd;
+			int flags;
+			uint64 delta;
 			uint64 from;
 			uint64 to;
 		}
@@ -115,5 +136,8 @@ namespace Radare {
 		}
 		// int perms -> RIOPerm ?
 		public bool desc_add(int fd, string file, int perms, Plugin plugin);
+		public bool desc_del(int fd);
+		public RIO.Desc desc_get (int fd);
+		public int desc_generate();
 	}
 }

@@ -16,8 +16,24 @@ public class Radare.RBreakpoint {
 	public bool del (uint64 addr);
 	public bool del_cond (int idx);
 
+	public int get_bytes(out uint8 *buf, int len, bool bigendian, int idx);
+	public int set_trace (uint64 addr, int set);
+
+	public int restore (bool set);
+	public int recoil (uint64 addr);
+
 	/* TODO: deprecate the list() method.. language iterators should be enought */
 	public int list (bool rad);
+
+	public void traptrace_enable (bool enable);
+	public void traptrace_reset (bool hard);
+	public uint64 traptrace_next (uint64 addr);
+	public int traptrace_add (uint64 from, uint64 to);
+	public int traptrace_free_at (uint64 from);
+	public void traptrace_list (uint64 from);
+	public int traptrace_at (uint64 from, int len);
+	// XXX public void traptrace_new ();
+	public void traptrace_enable (bool enable);
 
 	[CCode (cprefix="R_BP_PROT_")]
 	public enum Protection {
@@ -42,8 +58,10 @@ public class Radare.RBreakpoint {
 		int hw;
 		int trace;
 		int enabled;
+		int recoil;
 		uint8* obytes;
 		uint8* bbytes;
+		char* data;
 		int[] pids;
 	}
 

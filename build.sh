@@ -60,7 +60,7 @@ r2deinstall() {
 }
 
 installdeps() {
-	VALA=vala-0.9.2
+	VALA=vala-0.10.1
 
 	echo "I am going to install ${VALA} and valaswig..."
 	sleep 2

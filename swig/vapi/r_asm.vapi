@@ -27,6 +27,24 @@ public class RAsm {
 		ATT
 	}
 
+	[CCode (cprefix="R_ASM_MOD_", cname="int")]
+	public enum Syntax {
+		RAWVALUE,
+		VALUE,
+		DSTREG,
+		SRCREG0,
+		SRCREG1,
+		SRCREG2
+	}
+
+/*
+	[Compact]
+	[CCode (cname="RAsmFastcall", destroy_function="", free_function="")]
+	public struct Fastcall {
+		string arg[16];
+	}
+*/
+
 	[Compact]
 	[CCode (cname="RAsmPlugin", destroy_function="", free_function="")]
 	public class Plugin {
@@ -48,12 +66,15 @@ public class RAsm {
 	}
 
 	[Compact]
-	[CCode (cname="RAsmCode", destroy_function="")]
-	public struct Code {
+	[CCode (cname="RAsmCode", cprefix="r_asm_code_", free_function="r_asm_code_free")]
+	public class Code {
 		public int len;
 		public uint8* buf;
 		public string buf_hex;
 		public string buf_asm;
+		public int set_equ (string key, string val);
+		public int equ_replace (string key);
+		//public void* free();
 	}
 
 	public int arch;

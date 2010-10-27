@@ -189,7 +189,7 @@ R_API int r_cons_get_size(int *rows);
 R_API int r_cons_arrow_to_hjkl(int ch);
 R_API int r_cons_html_print(const char *ptr);
 
-// MUST BE DEPRECATED
+// TODO: use gets() .. MUST BE DEPRECATED
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv);
 
 R_API const char *r_cons_get_buffer();

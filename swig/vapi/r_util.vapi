@@ -26,6 +26,12 @@ public static class Radare.RHex {
 		public RStr(string arg);
 		public static int hash(string str);
 		public static int write(int fd, string str);
+		public static int rwx(string str);
+		public static string rwx_i (int rwx);
+		public static void subchr(string str, int a, int b);
+		//public static string @bool(bool b);
+		public int int ansi_len(string str);
+		public int int ansi_filter(string str, int len);
 		//public static int writef(...);
 	}
 
@@ -36,6 +42,12 @@ public static class Radare.RHex {
 		public static string slurp(string file, out int osz=0);
 		public static string slurp_range(string file, uint64 off, int sz, out int osz=0);
 		public static int dump(string file, uint8 *buf, int len);
+		public static string basename (string path);
+		public static string abspath(string path);
+		public static bool rm (string file);
+		public static bool exist (string file);
+		public static bool slurp_line (string file, int line, int ctx);
+		
 	}
 	[CCode (cheader_filename="r_util.h", cprefix="r_log_", free_function="")]
 	public static class RLog {
@@ -59,10 +71,12 @@ public static class Radare.RHex {
 		public static int sleep (int secs);
 		public static int usleep (int usecs);
 		public static unowned string getenv (string key);
+		public static bool setenv (string key, string val);
 		//public static string cmd_str_full(string str, string input = "", out int len = null, out string sterr = null);
 		public static int cmd (string command);
 		//public static int cmdf (string command, ...);
 		public static string cmd_str (string command, string? input=null, out int len=null);
+		public static void backtrace();
 	}
 
 	[CCode (cname="RNum", cheader_filename="r_util.h", cprefix="r_num_", free_function="")]

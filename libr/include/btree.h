@@ -3,8 +3,7 @@
 
 #include "r_types.h"
 
-struct btree_node
-{
+struct btree_node {
 	void *data;
 	int hits; // profiling
 	struct btree_node *left;

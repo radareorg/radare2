@@ -8,6 +8,8 @@
 TODO 0.6
 ========
 * Link against versioned libraries
+* Review VAPIs
+  - xtract api for rbin?
 * fix continue when eip = breakpoint
 * r_list_foreach_prev is buggy, review and remove..
 

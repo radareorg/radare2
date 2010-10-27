@@ -10,6 +10,10 @@ namespace Radare {
 
 		public RBin();
 
+		public uint64 wr_scn_resize (string name, uint64 size);
+		public int wr_rpath_del ();
+		public int wr_output (string filename);
+
 		public int load(string file, bool dummy);
 		public int set_arch(string arch, int bits, string name);
 		public int set_archidx(int idx);

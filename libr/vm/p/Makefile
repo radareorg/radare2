@@ -6,7 +6,7 @@ plugins.h:
 	:> plugins.h
 	for a in ${PLUGINS} ; do \
 		echo "static const char *vmprofile_$${a} = \\" | sed -e 's,\.,_,g' > $${a}.h ; \
-		cat $${a}.vm | sed -e 's,^,\t",' -e 's,\.,_,g' -e 's,$$,\\n",g' >> $${a}.h ; \
+		cat $${a}.vm | sed -e 's,^,  ",' -e 's,\.,_,g' -e 's,$$,\\n",g' >> $${a}.h ; \
 		echo ";" >> $${a}.h ; \
 		echo "#include \"$${a}.h\"" >> plugins.h ; \
 	done

@@ -36,7 +36,8 @@ enum {
 	R_ASM_MOD_VALUE = 'v',
 	R_ASM_MOD_DSTREG = 'd',
 	R_ASM_MOD_SRCREG0 = '0',
-	R_ASM_MOD_SRCREG1 = '1'
+	R_ASM_MOD_SRCREG1 = '1',
+	R_ASM_MOD_SRCREG2 = '2'
 };
 
 typedef struct r_asm_fastcall_t {

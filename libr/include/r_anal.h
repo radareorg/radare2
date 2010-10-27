@@ -108,10 +108,10 @@ enum {
 	R_ANAL_STACK_SET,
 };
 
-enum {
-	R_ANAL_REFLINE_STYLE = 1,
-	R_ANAL_REFLINE_WIDE = 2,
-};
+typedef enum {
+	R_ANAL_REFLINE_TYPE_STYLE = 1,
+	R_ANAL_REFLINE_TYPE_WIDE = 2,
+} RAnalReflineType;
 
 enum {
 	R_ANAL_RET_ERROR = -1,
@@ -221,10 +221,11 @@ typedef struct r_anal_var_access_t {
 	int set;
 } RAnalVarAccess;
 
-enum {
-	R_ANAL_VAR_IN = 1,
-	R_ANAL_VAR_OUT = 2
-};
+typedef enum {
+	R_ANAL_VAR_DIR_NONE = 0,
+	R_ANAL_VAR_DIR_IN = 1,
+	R_ANAL_VAR_DIR_OUT = 2
+} RAnalVarDir;
 
 typedef struct r_anal_var_t {
 	char *name;    /* name of the variable */

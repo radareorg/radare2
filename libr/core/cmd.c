@@ -80,9 +80,9 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	} else cursor = -1;
 
 	if (r_config_get_i (core->config, "asm.linesstyle"))
-		linesopts |= R_ANAL_REFLINE_STYLE;
+		linesopts |= R_ANAL_REFLINE_TYPE_STYLE;
 	if (r_config_get_i (core->config, "asm.lineswide"))
-		linesopts |= R_ANAL_REFLINE_WIDE;
+		linesopts |= R_ANAL_REFLINE_TYPE_WIDE;
 
 	// uhm... is this necesary? imho can be removed
 	r_asm_set_pc (core->assembler, addr);
