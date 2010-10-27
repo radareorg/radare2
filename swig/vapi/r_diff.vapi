@@ -12,7 +12,7 @@ namespace Radare {
 		public int buffers_distance (uint8 *a, int la, uint8 *b, int lb, out uint32 distance, out double similarity);
 		//public static int lines (string file, string sa, int la, string file2, string sb, int lb);
 
-		public int lines(string a, int len, string b, int len);
+		//public int lines(string a, int len, string b, int len);
 		public static int gdiff(string file1, string file2, bool rad, bool va);
 		public bool set_delta(int delta);
 

@@ -127,9 +127,9 @@ namespace Radare {
 		public uint64 section_vaddr_to_offset(uint64 vaddr);
 		public uint64 section_offset_to_vaddr(uint64 offset);
 
-		/* desc */
+		[Compact]
 		[CCode (cname="RIODesc")]
-		public struct Desc {
+		public class Desc {
 			int fd;
 			int flags;
 			const string name;

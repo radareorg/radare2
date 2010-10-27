@@ -73,7 +73,7 @@ public class RAsm {
 		public string buf_hex;
 		public string buf_asm;
 		public int set_equ (string key, string val);
-		public int equ_replace (string key);
+		//public int equ_replace (string key);
 		//public void* free();
 	}
 

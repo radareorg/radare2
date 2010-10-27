@@ -52,7 +52,7 @@ namespace Radare {
 		public static void flush();
 		public static void filter();
 		public static void visual_flush();
-		public static void visual_write(string buf);
+		//public static void visual_write(weak string buf);
 
 		//public static int fgets(out string buf, int len, int argc, string argv[]);
 		/* input */
