@@ -67,27 +67,27 @@ R_API char *r_file_path(const char *bin) {
 }
 
 R_API char *r_file_slurp(const char *str, int *usz) {
-	size_t foo;
-        char *ret;
-        FILE *fd;
-        long sz;
+	size_t rsz;
+	char *ret;
+	FILE *fd;
+	long sz;
 	if (!r_file_exist (str))
 		return NULL;
 	fd = fopen (str, "rb");
-        if (fd == NULL)
-                return NULL;
-        fseek (fd, 0, SEEK_END);
-        sz = ftell (fd);
-        fseek (fd, 0, SEEK_SET);
-        ret = (char *)malloc (sz+1);
-        foo = fread (ret, sz, 1, fd); // TODO: handle return value :?
-	if (foo != sz)
+	if (fd == NULL)
+		return NULL;
+	fseek (fd, 0, SEEK_END);
+	sz = ftell (fd);
+	fseek (fd, 0, SEEK_SET);
+	ret = (char *)malloc (sz+1);
+	rsz = fread (ret, 1, sz, fd);
+	if (rsz != sz)
 		eprintf ("r_file_slurp: fread: error\n");
 	fclose (fd);
-	ret[foo]='\0';
+	ret[rsz]='\0';
 	if (usz)
 		*usz = (ut32)sz;
-        return ret;
+	return ret;
 }
 
 R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
