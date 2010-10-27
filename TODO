@@ -7,11 +7,8 @@
 
 TODO 0.6
 ========
-pancake
-* versionize libraries in debian
-  gcc -shared -Wl,-soname,libfoo.so.1 -o libfoo.so.1.0 libfoo_1.o libfoo_2.o
-  - install plugins in versioned directory
-    /usr/lib/radare2/0.6/ instead of /usr/lib/radare2
+* Link against versioned libraries
+* fix continue when eip = breakpoint
 * r_list_foreach_prev is buggy, review and remove..
 
 Questions

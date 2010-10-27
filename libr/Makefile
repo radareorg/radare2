@@ -50,7 +50,8 @@ endif
 	done
 
 pkgcfg:
-	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} pkgcfg ); done
+	@for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} pkgcfg ); done
+	# XXX
 	cd asm && ${MAKE} pkgcfg NAME=libr DEPS="r_`echo ${LIBLIST}|sed -e 's, , r_,g'`"
 	# TODO: Magically generate libr.pc.acr here using LIBLIST and so :)
 
@@ -88,16 +89,18 @@ install: install-includes install-pkgconfig
 	# libraries
 	@${INSTALL_DIR} ${PFX}/lib
 	@for a in `find * | grep -e '\.${EXT_SO}$$' | grep -v lib/t | grep lib` ; do \
-	  echo "$$a ${PFX}/lib"; \
-	  ${INSTALL_DATA} $$a ${PFX}/lib ; \
+	  b=`echo $$a|cut -d / -f 2`; \
+	  echo " ${PFX}/lib/$$b.${VERSION}"; \
+	  ${INSTALL_DATA} $$a ${PFX}/lib/$$b.${VERSION} ; \
+	  ln -sf ${PFX}/lib/$$b.${VERSION} ${PFX}/lib/$$b ; \
 	done
 	# object archives
 	@for a in `find * | grep -e '\.a$$'` ; do \
-	  echo "$$a ${PFX}/lib"; ${INSTALL_DATA} $$a ${PFX}/lib ; done
+	  echo " ${PFX}/lib/$$a"; ${INSTALL_DATA} $$a ${PFX}/lib ; done
 	# plugins
 	@${INSTALL_DIR} ${PFX}/lib/radare2/${VERSION}
 	@for a in `find */p -perm -u+x -type f | grep -v exe | grep -v dll`; \
-	  do echo "$$a ${PFX}/lib/radare2/${VERSION}"; \
+	  do echo " ${PFX}/lib/radare2/${VERSION}/$$a"; \
 	${INSTALL_DATA} $$a ${PFX}/lib/radare2/${VERSION} ; done
 	@echo "lang/p/radare.* ${PFX}/lib/radare2/${VERSION}"
 	${INSTALL_DATA} lang/p/radare.* ${PFX}/lib/radare2/${VERSION}
@@ -119,7 +122,7 @@ deinstall uninstall:
 	echo ${PFX}/bin/$$a ; rm -f ${PFX}/bin/$$a ; done
 	# plugins
 	-@for a in `find */p -perm -u+x -type f`; do \
-	a="${PFX}/lib/radare2/${VERSION}`echo $$a|awk -F / '{ print $$NF; }'`"; \
+	a="${PFX}/lib/radare2/${VERSION}/`echo $$a|awk -F / '{ print $$NF; }'`"; \
 	echo $$a ; rm -f $$a ; done
 	rm -rf ${PFX}/lib/radare2/${VERSION}
 	rm -f ${PFX}/lib/pkgconfig/libr.pc
@@ -128,9 +131,12 @@ deinstall uninstall:
 	rm -rf ${PFX}/bin/libr-test
 	# TODO: use for a in LIBLIST (like in binr/Makefile)
 	rm -rf ${PFX}/include/libr
+	rm -rf ${PFX}/lib/libr_*.so.${VERSION}
 	rm -rf ${PFX}/lib/libr_*.so
 	rm -rf ${PFX}/lib/libr_*.a
-	rm -rf ${PFX}/lib/libr.so
+	rm -rf ${PFX}/lib/libr2.so*
+	rm -rf ${PFX}/lib/libr2.a
+	rm -rf ${PFX}/lib/libr.so*
 	rm -rf ${PFX}/lib/libr.a
 	rm -rf ${PFX}/share/doc/radare2
 	@echo libr aka radare2 has been uninstalled from PREFIX=${PFX}

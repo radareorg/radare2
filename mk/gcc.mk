@@ -18,6 +18,7 @@ LDFLAGS_LIB=-dynamiclib
 LDFLAGS_SONAME=-Wl,-install_name,
 else
 LDFLAGS_LIB=-shared
+LDFLAGS_LIB+=-Wl,-soname,lib${NAME}.${EXT_SO}.${VERSION}
 LDFLAGS_SONAME=-Wl,-soname=
 endif
 
