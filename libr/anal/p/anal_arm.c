@@ -51,20 +51,20 @@ int op_code;
 	// TODO: handle 32bit instructions (branches are not correctly decoded //
 
 	/* CMP */
-	if (((ins & _($1110,0,0,0)) == _($0010,0,0,0) )
-                && (1 == (ins & _(1,$1000,0,0)) >> 11)) { // dp3
+	if (((ins & _(B1110,0,0,0)) == _(B0010,0,0,0) )
+                && (1 == (ins & _(1,B1000,0,0)) >> 11)) { // dp3
 		aop->type = R_ANAL_OP_TYPE_CMP;
 		return aop->length;
 	}
-        if ( (ins & _($1111,$1100,0,0)) == _($0100,0,0,0) ) {
-                op_code = (ins & _(0,$0011,$1100,0)) >> 6;
+        if ( (ins & _(B1111,B1100,0,0)) == _(B0100,0,0,0) ) {
+                op_code = (ins & _(0,B0011,B1100,0)) >> 6;
                 if (op_code == 8 || op_code == 10) { // dp5
 			aop->type = R_ANAL_OP_TYPE_CMP;
 			return aop->length;
 		}
 	}
-        if ( (ins & _($1111,$1100,0,0)) == _($0100,$0100,0,0) ) {
-                op_code = (ins & _(0,$0011,0,0)) >> 8; // dp8
+        if ( (ins & _(B1111,B1100,0,0)) == _(B0100,B0100,0,0) ) {
+                op_code = (ins & _(0,B0011,0,0)) >> 8; // dp8
 		if (op_code== 1) {
 			aop->type = R_ANAL_OP_TYPE_CMP;
 			return aop->length;
@@ -74,36 +74,36 @@ int op_code;
 	if (ins == 0xbf) {
 		// TODO: add support for more NOP instructions
 		aop->type = R_ANAL_OP_TYPE_NOP;
-        } else if ( ( (op_code = ((ins & _($1111,$1000,0,0)) >> 11)) >= 12 && op_code <= 17 )) {
+        } else if ( ( (op_code = ((ins & _(B1111,B1000,0,0)) >> 11)) >= 12 && op_code <= 17 )) {
 		if (op_code%2)
 			aop->type = R_ANAL_OP_TYPE_LOAD;
 		else aop->type = R_ANAL_OP_TYPE_STORE;
-        } else if ( (ins & _($1111,0,0,0)) == _($0101,0,0,0) ) {
-                op_code = (ins & _(0,$1110,0,0)) >> 9;
+        } else if ( (ins & _(B1111,0,0,0)) == _(B0101,0,0,0) ) {
+                op_code = (ins & _(0,B1110,0,0)) >> 9;
 		if (op_code%2)
 			aop->type = R_ANAL_OP_TYPE_LOAD;
 		else aop->type = R_ANAL_OP_TYPE_STORE;
-	} else if ( (ins & _($1111,0,0,0)) == _($1101,0,0,0) ) {
+	} else if ( (ins & _(B1111,0,0,0)) == _(B1101,0,0,0) ) {
 		// BNE..
-		int delta = (ins & _(0,0,$1111,$1111));
+		int delta = (ins & _(0,0,B1111,B1111));
 		aop->type = R_ANAL_OP_TYPE_CJMP;
 		aop->jump = addr+2+(delta<<1);
 		aop->fail = addr+2;
-        } else if ( (ins & _($1110,$1000,0,0)) == _($1110,0,0,0) ) {
+        } else if ( (ins & _(B1110,B1000,0,0)) == _(B1110,0,0,0) ) {
 		// B
-		int delta = (ins & _(0,0,$1111,$1111));
+		int delta = (ins & _(0,0,B1111,B1111));
 		aop->type = R_ANAL_OP_TYPE_JMP;
 		aop->jump = addr+2+(delta<<1);
 		aop->fail = addr+2;
-        } else if ( (ins & _($1111,$1111,0,0)) == _($0100,$0111,0,0) ) {
+        } else if ( (ins & _(B1111,B1111,0,0)) == _(B0100,B0111,0,0) ) {
 		// BLX
 		aop->type = R_ANAL_OP_TYPE_UJMP;
-		aop->jump = addr+2+(ut32)((ins & _(0,0,$0111,$1000)) >> 3);
+		aop->jump = addr+2+(ut32)((ins & _(0,0,B0111,B1000)) >> 3);
 		aop->fail = addr+2;
-        } else if ( (ins & _($1111,$1111,0,0)) == _($1011,$1110,0,0) ) {
+        } else if ( (ins & _(B1111,B1111,0,0)) == _(B1011,B1110,0,0) ) {
 		aop->type = R_ANAL_OP_TYPE_TRAP;
 		aop->value = (ut64)(ins>>8);
-        } else if ( (ins & _($1111,$1111,0,0)) == _($1101,$1111,0,0)) {
+        } else if ( (ins & _(B1111,B1111,0,0)) == _(B1101,B1111,0,0)) {
 		aop->type = R_ANAL_OP_TYPE_SWI;
 		aop->value = (ut64)(ins>>8);
 	}
