@@ -33,7 +33,8 @@ static int bypassbp(RCore *core) {
 	RBreakpointItem *bpi = r_bp_get (core->dbg->bp, addr);
 	if (!bpi)
 		return R_FALSE;
-	r_debug_step (core->dbg, 2);
+	/* XXX 2 if libr/debug/debug.c:226 is enabled */
+	r_debug_step (core->dbg, 1);
 	return R_TRUE;
 }
 
@@ -3920,6 +3921,7 @@ static int cmd_debug(void *data, const char *input) {
 			r_reg_arena_swap (core->dbg->reg, R_TRUE);
 			ptr = strchr (input+3, ' ');
 			if (ptr) {
+				bypassbp (core);
 				int old_pid = core->dbg->pid;
 				int pid = atoi (ptr+1);
 				*ptr = 0;
@@ -3941,6 +3943,7 @@ static int cmd_debug(void *data, const char *input) {
 			addr = r_num_math (core->num, input+2);
 			if (addr) {
 				eprintf ("Continue until 0x%08"PFMT64x"\n", addr);
+				bypassbp (core);
 				r_reg_arena_swap (core->dbg->reg, R_TRUE);
 				r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
 				r_debug_continue (core->dbg);
@@ -3952,6 +3955,7 @@ static int cmd_debug(void *data, const char *input) {
 			{
 				int old_pid = core->dbg->pid;
 				int pid = atoi (input+2);
+				bypassbp (core);
 				r_reg_arena_swap (core->dbg->reg, R_TRUE);
 				r_debug_select (core->dbg, pid, pid);
 				r_debug_continue (core->dbg);
