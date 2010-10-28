@@ -31,7 +31,7 @@ static int __waitpid(int pid) {
 static int debug_os_read_at(int pid, void *buf, int sz, ut64 addr) {
         unsigned long words = sz / sizeof (long);
         unsigned long last = sz % sizeof (long);
-        long x, lr;
+		long x, lr;
 
         if (sz<0 || addr==-1)
                 return -1; 
@@ -58,8 +58,8 @@ static int __read(struct r_io_t *io, int pid, ut8 *buf, int len) {
 
 static int ptrace_write_at(int pid, const ut8 *buf, int sz, ut64 addr) {
         long words = sz / sizeof(long);
-        long last = (sz % sizeof(long))*8;
-        int lr, x;
+        long last = (sz % sizeof(long))*sizeof(long);
+		long x, lr;
 
 	for (x=0;x<words;x++)
 		if (ptrace (PTRACE_POKEDATA, pid, &((long *)(long)addr)[x], ((long *)buf)[x]))

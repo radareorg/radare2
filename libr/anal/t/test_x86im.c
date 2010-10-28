@@ -11,11 +11,10 @@ static int anal_op (char *buf, int bits) {
 	
 	r_hex_str2bin (buf, data);
 
-	if ((ret = x86im_dec (&io,
-					bits == 32 ? X86IM_IO_MODE_32BIT : X86IM_IO_MODE_64BIT,
-					(unsigned char*)data)) == X86IM_STATUS_SUCCESS) {
+	if ((ret = x86im_dec (&io, bits == 32 ? X86IM_IO_MODE_32BIT : X86IM_IO_MODE_64BIT,
+			(unsigned char*)data)) == X86IM_STATUS_SUCCESS) {
 		printf ("X86IM io struct\n"
-				"---------------\n");
+			"---------------\n");
 		printf ("mode: 0x%lx\n", io.mode);
 		printf ("flags: 0x%lx\n", io.flags);
 		printf ("id: 0x%lx\n", io.id);
@@ -44,9 +43,9 @@ static int anal_op (char *buf, int bits) {
 		printf ("tttn_fld: 0x%x\n", io.tttn_fld);
 		printf ("selector: 0x%hx\n", io.selector);
 		printf ("imm_size: 0x%lx\n", io.imm_size);
-		printf ("imm: 0x%llx\n", io.imm);
+		printf ("imm: 0x%"PFMT64x"\n", io.imm);
 		printf ("disp_size: 0x%lx\n", io.disp_size);
-		printf ("disp: 0x%llx\n", io.disp);
+		printf ("disp: 0x%"PFMT64x"\n", io.disp);
 		printf ("mem_flags: 0x%x\n", io.mem_flags);
 		printf ("mem_am: 0x%hx\n", io.mem_am);
 		printf ("mem_size: 0x%hx\n", io.mem_size);
@@ -58,19 +57,16 @@ static int anal_op (char *buf, int bits) {
 		printf ("rop: 0x%lx 0x%lx 0x%lx 0x%lx \n",
 				io.rop[0], io.rop[1], io.rop[2], io.rop[3]);
 		printf ("rop_count: 0x%x\n", io.rop_count);
-	} else
-		eprintf ("Error: Unknown opcode\n");
+	} else eprintf ("Error: Unknown opcode\n");
 	return ret;
 }
 
 int main(int argc, char **argv) {
 	int bits = 32;
-
 	if (argc < 2) {
 		eprintf ("Usage: %s opcode [bits]\n", argv[0]);
 		return 1;
 	} else if (argc == 3)
 		bits = atoi (argv[2]);
-
 	return anal_op (argv[1], bits);
 }

@@ -25,6 +25,18 @@ static int checkbpcallback(RCore *core) {
 	return R_FALSE;
 }
 
+static int bypassbp(RCore *core) {
+	ut64 addr;
+
+	r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+	addr = r_debug_reg_get (core->dbg, "pc");
+	RBreakpointItem *bpi = r_bp_get (core->dbg->bp, addr);
+	if (!bpi)
+		return R_FALSE;
+	r_debug_step (core->dbg, 2);
+	return R_TRUE;
+}
+
 static void printoffset(ut64 off, int show_color) {
 	if (show_color)
 		r_cons_printf (Color_GREEN"0x%08"PFMT64x"  "Color_RESET, off);
@@ -3984,6 +3996,7 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		default:
+			bypassbp (core);
 			r_reg_arena_swap (core->dbg->reg, R_TRUE);
 			r_debug_continue (core->dbg);
 			checkbpcallback (core);
