@@ -76,6 +76,7 @@ install-symlink:
 	done
 	for a in ${LIBLIST} ; do \
 		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_SO} ${PFX}/lib/libr_$${a}.${EXT_SO} ; \
+		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_SO} ${PFX}/lib/libr_$${a}.${EXT_SO}.${VERSION} ; \
 		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_AR} ${PFX}/lib/libr_$${a}.${EXT_AR} ; \
 		for b in $${a}/p/*.${EXT_SO} ; do \
 			if [ -e ${PWD}/$${b} ] ; then \
