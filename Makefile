@@ -14,7 +14,7 @@ binr:
 
 w32:
 	# TODO: add support for debian
-	./configure --without-gmp --without-openssl --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows
+	./configure --without-ssl --without-gmp --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows
 	make
 
 w32dist:

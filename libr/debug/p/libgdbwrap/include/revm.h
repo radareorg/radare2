@@ -25,6 +25,7 @@
 #define FALSE 0
 #define ASSERT(x) //
 #define assert(x) //
+#undef LOBYTE
 #define LOBYTE(_w) ((_w) & 0xff)
 #define NEXT_CHAR(_x) (_x+1)
 #define PROFILER_IN(fd,fun,line) //

@@ -17,7 +17,11 @@ real_all all: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
 
 SRC=$(subst .o,.c,$(OBJ))
 
+ifeq (${OSTYPE},gnulinux)
 LIBNAME=${LDFLAGS_SONAME}${LIBSO}.${VERSION}
+else
+LIBNAME=${LDFLAGS_SONAME}${LIBSO}
+endif
 
 ifeq ($(WITHPIC),1)
 ${LIBSO}: ${OBJ}
