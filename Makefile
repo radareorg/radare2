@@ -65,6 +65,11 @@ deinstall: uninstall
 	cd libr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
+REMOTE=radare.org:/srv/http/radareorg/get/beta
+beta: dist swig-dist
+	scp ../radare2-${VERSION}.tar.gz ${REMOTE}
+	scp radare2-swig-${VERSION}.tar.gz ${REMOTE}
+
 swig-dist:
 	cd swig && ${MAKE} dist
 
@@ -74,8 +79,9 @@ dist:
 	cd .. && mv radare2 radare2-${VERSION} && \
 	tar czvf radare2-${VERSION}.tar.gz $${FILES} ;\
 	mv radare2-${VERSION} radare2
-	if [ ${RELEASE} = 1 ]; then \
-	scp ../radare2-${VERSION}.tar.gz radare.org:/srv/http/radareorg/get ; fi
+
+pub:
+	scp ../radare2-${VERSION}.tar.gz radare.org:/srv/http/radareorg/get
 
 shot:
 	DATE=`date '+%Y%m%d'` ; \
