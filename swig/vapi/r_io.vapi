@@ -139,6 +139,5 @@ namespace Radare {
 		public bool desc_del(int fd);
 		//public RIO.Desc desc_get (int fd);
 		public int desc_generate();
-*/
 	}
 }
