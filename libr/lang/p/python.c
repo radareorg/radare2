@@ -10,6 +10,9 @@
 #undef PREFIX
 #include <Python.h>
 #include <structmember.h>
+#if PY_MAJOR_VERSION>=3
+#define PyString_FromString PyUnicode_FromString
+#endif
 
 static RCore *core = NULL;
 
@@ -32,7 +35,6 @@ static int run_file(struct r_lang_t *lang, const char *file) {
 }
 
 /* init */
-static char *py_nullstr = "";
 typedef struct {
 	PyObject_HEAD
 		PyObject *first; /* first name */
@@ -40,10 +42,15 @@ typedef struct {
 	int number;
 } Radare;
 
+
+
+#if PY_MAJOR_VERSION<3
+static char *py_nullstr = "";
+
 static void Radare_dealloc(Radare* self) {
 	Py_XDECREF(self->first);
 	Py_XDECREF(self->last);
-	self->ob_type->tp_free((PyObject*)self);
+	//self->ob_type->tp_free((PyObject*)self);
 }
 
 static PyObject * Radare_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
@@ -172,11 +179,16 @@ static PyTypeObject RadareType = {
 
 static void init_radare_module(void) {
 	PyObject* m;
-	if (PyType_Ready(&RadareType) < 0)
+	if (PyType_Ready (&RadareType) < 0)
 		return;
-	m = Py_InitModule3("r", Radare_methods, //module_methods,
+	m = Py_InitModule3 ("r", Radare_methods, //module_methods,
 			"Example module that creates an extension type.");
 }
+#else
+static void init_radare_module(void) {
+	eprintf ("TODO: python>3.x instantiate 'r' object\n");
+}
+#endif
 /* -init- */
 
 static int prompt(void *user) {

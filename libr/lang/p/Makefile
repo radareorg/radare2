@@ -26,15 +26,8 @@ lang_python.${EXT_SO}:
 	${LDFLAGS_LIB} -shared -o lang_python.${EXT_SO} python.c -lpython27
 else
 lang_python.${EXT_SO}:
-	-gcc -lpython >/dev/null 2>&1 ; \
-	if [ $$? = 0 ]; then \
-		${CC} ${CFLAGS} -I/usr/include/python2.5 \
-		-fPIC ${LDFLAGS_LIB} -o lang_python.${EXT_SO} python.c -lpython ; \
-	else \
-		${CC} ${CFLAGS} -I/usr/include/python2.5 \
-		-fPIC ${LDFLAGS_LIB} -o lang_python.${EXT_SO} python.c \
-		-I/usr/include/python2.6/ -lpython2.6 ; \
-	fi
+	${CC} ${CFLAGS} ${LDFLAGS} `python-config --cflags` `python-config --ldflags` \
+	${LDFLAGS_LIB} -fPIC -o lang_python.${EXT_SO} python.c
 endif
 
 ifeq ($(HAVE_LIB_TCC),1)
