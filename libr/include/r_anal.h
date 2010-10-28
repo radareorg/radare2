@@ -90,7 +90,7 @@ typedef enum {
 	R_ANAL_DATA_FUN,      /* plain assembly code */
 	R_ANAL_DATA_STRUCT,   /* memory */
 	R_ANAL_DATA_LAST
-} RAnalData;
+} _RAnalData;
 
 typedef enum {
 	R_ANAL_BB_TYPE_NULL = 0,
@@ -98,7 +98,7 @@ typedef enum {
 	R_ANAL_BB_TYPE_BODY = 0x2,     /* conditional jump */
 	R_ANAL_BB_TYPE_LAST = 0x4,     /* ret */
 	R_ANAL_BB_TYPE_FOOT = 0x8      /* unknown jump */
-} RAnalBlockType;
+} _RAnalBlockType;
 
 enum {
 	R_ANAL_STACK_NULL = 0,
@@ -111,7 +111,7 @@ enum {
 typedef enum {
 	R_ANAL_REFLINE_TYPE_STYLE = 1,
 	R_ANAL_REFLINE_TYPE_WIDE = 2,
-} RAnalReflineType;
+} _RAnalReflineType;
 
 enum {
 	R_ANAL_RET_ERROR = -1,
@@ -225,7 +225,7 @@ typedef enum {
 	R_ANAL_VAR_DIR_NONE = 0,
 	R_ANAL_VAR_DIR_IN = 1,
 	R_ANAL_VAR_DIR_OUT = 2
-} RAnalVarDir;
+} _RAnalVarDir;
 
 typedef struct r_anal_var_t {
 	char *name;    /* name of the variable */

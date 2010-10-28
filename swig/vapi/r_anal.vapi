@@ -21,13 +21,27 @@ public class RAnal {
 	public RList<RAnal.Block> fcn_bb_list(Fcn fun);
 
 	[Compact]
-	[CCode (cname="RAnalCond")]
-	public class Cond {
-		int type;
-		RAnal.Value arg[2];
+	[CCode (cname="RAnalValue")]
+	public class Value {
+		public bool absolute;
+		public bool memref;
+		public uint64 @base;
+		public int64 delta;
+		public int64 imm;
+		public int mul;
+		//public uint16 sel;
+		public RReg.Item reg;
+		public RReg.Item regdelta;
 	}
 
-	[CCode (cprefix="R_ANAL_COND_")]
+	[Compact]
+	[CCode (cname="RAnalCond")]
+	public class Cond {
+		public int type;
+		public RAnal.Value arg[2];
+	}
+
+	[CCode (cname="int", cprefix="R_ANAL_COND_")]
 	public enum Cnd {
 		EQ,
 		NE,
@@ -37,7 +51,7 @@ public class RAnal {
 		LT
 	}
 
-	[CCode (cprefix="R_ANAL_VAR_TYPE_")]
+	[CCode (cname="int", cprefix="R_ANAL_VAR_TYPE_")]
 	public enum VarClass {
 		NULL,
 		GLOBAL,
@@ -46,7 +60,7 @@ public class RAnal {
 		ARGREG
 	}
 
-	[CCode (cprefix="R_ANAL_BB_TYPE_")]
+	[CCode (cname="int", cprefix="R_ANAL_BB_TYPE_")]
 	public enum BlockType {
 		NULL,
 		HEAD,
@@ -55,20 +69,20 @@ public class RAnal {
 		FOOT
 	}
 
-	[CCode (cprefix="R_ANAL_DIFF_")]
+	[CCode (cname="int", cprefix="R_ANAL_DIFF_")]
 	public enum BlockDiff {
 		NULL,
 		MATCH,
 		UNMATCH
 	}
 
-	[CCode (cprefix="R_ANAL_REFLINE_TYPE_")]
+	[CCode (cname="int", cprefix="R_ANAL_REFLINE_TYPE_")]
 	public enum ReflineType {
 		STYLE,
 		WIDE
 	}
 
-	[CCode (cprefix="R_ANAL_RET_")]
+	[CCode (cname="int", cprefix="R_ANAL_RET_")]
 	public enum Ret {
 		ERROR,
 		DUP,
@@ -76,7 +90,7 @@ public class RAnal {
 		END
 	}
 
-	[CCode (cprefix="R_ANAL_STACK_")]
+	[CCode (cname="int", cprefix="R_ANAL_STACK_")]
 	public enum Stack {
 		NULL,
 		NOP,
@@ -85,7 +99,7 @@ public class RAnal {
 		SET
 	}
 
-	[CCode (cprefix="R_ANAL_DATA")]
+	[CCode (cname="int", cprefix="R_ANAL_DATA_")]
 	public enum Data {
 		NULL,
 		HEX,
@@ -96,7 +110,7 @@ public class RAnal {
 		LAST
 	}
 
-	[CCode (cprefix="R_ANAL_OP_FAMILY_")]
+	[CCode (cname="int", cprefix="R_ANAL_OP_FAMILY_")]
 	public enum OpFamily {
 		UNKNOWN,
 		CPU,
@@ -106,14 +120,14 @@ public class RAnal {
 		LAST
 	}
 
-	[CCode (cprefix="R_ANAL_VAR_DIR_")]
+	[CCode (cname="int", cprefix="R_ANAL_VAR_DIR_")]
 	public enum VarDir {
 		NONE,
 		IN,
 		OUT
 	}
 
-	[CCode (cprefix="R_ANAL_OP_TYPE_")]
+	[CCode (cname="int", cprefix="R_ANAL_OP_TYPE_")]
 	public enum OpType {
 		NULL,
 		JMP,
@@ -218,9 +232,54 @@ public class RAnal {
 	[Compact]
 	[CCode (cname="RAnalRefline", free_function="")]
 	public class Refline {
-		uint64 from;
-		uint64 to;
-		int index;
+		public uint64 from;
+		public uint64 to;
+		public int index;
 	}
 }
+
+
+/* meta */
+	[Compact]
+	[CCode (cheader_filename="r_meta.h,r_list.h,r_types_base.h", cname="RMeta", free_function="r_meta_free", cprefix="r_meta_")]
+	public class RMeta {
+		[Compact]
+		[CCode (cname="RMetaItem")]
+		public class Item {
+			public uint64 from;
+			public uint64 to;
+			public uint64 size;
+			public int type;
+			public string str;
+		}
+		
+		public RList<RMeta.Item> data;
+
+		[CCode (cname="int", cprefix="R_META_WHERE_")]
+		public enum Where {
+			PREV,
+			HERE,
+			NEXT
+		}
+
+		[CCode (cname="int", cprefix="R_META_")]
+		public enum Type {
+			ANY,
+			DATA,
+			CODE,
+			STRING,
+			STRUCT,
+			COMMENT,
+			FOLDER
+		}
+
+		//public int count (RMeta.Type type, uint64 from, uint64 to, 
+		//public string get_string(RMeta.Type, uint64 addr);
+		public bool @add(RMeta.Type type, uint64 from, uint64 size, string str);
+		public bool del(RMeta.Type type, uint64 from, uint64 size, string str);
+		public RMeta.Item find(uint64 off, RMeta.Type type, RMeta.Where where);
+		public bool cleanup (uint64 from, uint64 to);
+		public static unowned string type_to_string(RMeta.Type type);
+		public int list (RMeta.Type type);
+	}
 }

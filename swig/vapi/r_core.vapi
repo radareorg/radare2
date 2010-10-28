@@ -20,7 +20,6 @@ public class RCore {
 	public RLang lang;
 	public RSearch search;
 	public RSign sign;
-	// TODO: public RMeta meta;
 	public RPrint print;
 	// TODO: public RVm vm;
 

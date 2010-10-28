@@ -9,7 +9,7 @@
 #include "gdiff.h"
 
 /* XXX NEED A HASH ALGO */
-static ut32 gdiff_get_prime(char* mnemonic) {
+static ut32 gdiff_get_prime(const char* mnemonic) {
 	int i;
 
 	if (mnemonic)
@@ -191,7 +191,7 @@ static void gdiff_diff_fcn(RList *fcns, RList *fcns2, RList *bbs, RList *bbs2) {
 	r_big_free (fingerprint2);
 }
 
-R_API int r_core_gdiff(RCore *core, char *file1, char *file2, int va) {
+R_API int r_core_gdiff(RCore *core, const char *file1, const char *file2, int va) {
 	RCore *core2;
 	RAnalFcn *fcn;
 	RAnalBlock *bb;

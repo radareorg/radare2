@@ -13,7 +13,7 @@ namespace Radare {
 		//public static int lines (string file, string sa, int la, string file2, string sb, int lb);
 
 		//public int lines(string a, int len, string b, int len);
-		//public static int gdiff(string file1, string file2, bool rad, bool va);
+		public static int gdiff(string file1, string file2, bool rad, bool va);
 		public bool set_delta(int delta);
 
 		[Compact]

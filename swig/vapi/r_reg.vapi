@@ -17,7 +17,7 @@ public class Radare.RReg {
 	}
 
 	[Compact]
-	[CCode (cname="struct r_reg_item_t", destroy_function="", free_function="" )]
+	[CCode (cname="RRegItem", destroy_function="", free_function="" )]
 	public class Item {
 		public string name;
 		public int size;
@@ -49,7 +49,7 @@ public class Radare.RReg {
 	//public KernelList<RReg.Item*> get_list(RReg.Type type);
 
 	public bool set_name(int role, string name);
-	public weak string get_name(int role);
+	public unowned string get_name(int role);
 	public static int get_name_idx(string type);
 	public static int type_by_name(string str);
 
