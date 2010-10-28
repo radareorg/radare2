@@ -264,9 +264,9 @@ R_API void r_print_raw(RPrint *p, const ut8* buf, int len) {
 	r_cons_memcat ((char *)buf, len);
 }
 
-R_API void r_print_c(RPrint *p, const char *str, int len) {
+R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
 	int i,j;
-	int inc= p->width/6;
+	int inc = p->width/6;
 	p->printf ("#define _BUFFER_SIZE %d\n"
 		"unsigned char buffer[_BUFFER_SIZE] = {\n", len);
 	p->interrupt = 0;

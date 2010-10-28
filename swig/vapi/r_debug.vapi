@@ -26,17 +26,17 @@ public class Radare.RDebug {
 	public bool step(int count);
 	public bool step_over(int count);
 	public bool @continue();
-	public bool continue_kill(uint64 addr, int sig);
+	public bool continue_kill(int sig);
 	public bool continue_until(uint64 addr);
 	public bool continue_until_optype(int type, int over);
 	public bool continue_until_nontraced();
 	public bool continue_syscall(int syscall);
 
-	public bool map_list(RDebug.Map map);
+	//public bool map_list(RDebug.Map map);
 	public bool map_alloc (RDebug.Map map);
 	public bool map_dealloc (RDebug.Map map);
-	public RList<RDebug.Map> map_list_new ();
-	public void map_list_free (RList<RDebug.Map> maps);
+	//public RList<RDebug.Map> map_list_new ();
+	//public void map_list_free (RList<RDebug.Map> maps);
 	public void map_list (uint64 addr);
 	public RDebug.Map map_get(uint64 addr);
 	public bool map_sync ();
@@ -46,7 +46,7 @@ public class Radare.RDebug {
 	public uint64 arg_get (int fast, int num);
 	public bool arg_set (int fast, int num, uint64 val);
 
-	public uint64 execute(string buf, int len); // XXX: uint8
+	public uint64 execute(uint8 *buf, int len); // XXX: uint8
 	public int desc_open (string path);
 	public int desc_close (int fd);
 	public int desc_dup (int fd, int newfd);
@@ -58,10 +58,10 @@ public class Radare.RDebug {
 	//public bool mmu_alloc(uint64 size, out uint64 size);
 	//public bool mmu_free(uint64 addr);
 
-	public bool reg_sync(bool set);
+	public bool reg_sync(RReg.Type type, bool set);
 	public bool reg_list(int type, int size, bool rad); // TODO must be depreacted
-	public bool reg_set(string name, uint64 num);
-	public uint64 reg_get(string name);
+	//public bool reg_set(string name, uint64 num);
+	//public uint64 reg_get(string name);
 	
 	public int pid_list (int pid);
 	public int thread_list (int pid);
@@ -69,9 +69,9 @@ public class Radare.RDebug {
 	public void trace_reset (bool liberate);
 	public int trace_pc ();
 	public void trace_at (string str);
-	public RDebug.Tracepoint trace_get(uint64 addr);
+	//public RDebug.Tracepoint trace_get(uint64 addr);
 	public void trace_list(int mode);
-	public RDebug.Tracepoint trace_add(uint64 addr, int size);
+	//public RDebug.Tracepoint trace_add(uint64 addr, int size);
 	public bool trace_tag (int tag);
 
 	[CCode (cname="RDebugPid", free_function="r_debug_pid_free", cprefix="r_debug_pid_")]
@@ -123,7 +123,7 @@ public class Radare.RDebug {
 		public int perm;
 		public int user;
 
-		public Map(string name, uint64 addr, uint64 addr_end, int perm, int user);
+		//public Map(string name, uint64 addr, uint64 addr_end, int perm, int user);
 	}
 
 	[CCode (cname="RDebugTrace")]
@@ -156,7 +156,7 @@ public class Radare.RDebug {
 	public RDebug.Trace trace;
 	public bool stop_all_threads;
 	public string reg_profile;
-	public RRegister reg;
+	public RReg reg;
 	public RAnal anal;
 
 	public RList<RDebug.Map> maps;

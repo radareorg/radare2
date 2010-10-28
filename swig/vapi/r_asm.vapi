@@ -28,7 +28,7 @@ public class RAsm {
 	}
 
 	[CCode (cprefix="R_ASM_MOD_", cname="int")]
-	public enum Syntax {
+	public enum Mod {
 		RAWVALUE,
 		VALUE,
 		DSTREG,

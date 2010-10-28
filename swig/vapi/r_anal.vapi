@@ -20,8 +20,15 @@ public class RAnal {
 	//public bool set_pc (uint64 addr);
 	public RList<RAnal.Block> fcn_bb_list(Fcn fun);
 
+	[Compact]
+	[CCode (cname="RAnalCond")]
+	public class Cond {
+		int type;
+		RAnal.Value arg[2];
+	}
+
 	[CCode (cprefix="R_ANAL_COND_")]
-	public enum Cond {
+	public enum Cnd {
 		EQ,
 		NE,
 		GE,
@@ -101,7 +108,7 @@ public class RAnal {
 
 	[CCode (cprefix="R_ANAL_VAR_DIR_")]
 	public enum VarDir {
-		NONE
+		NONE,
 		IN,
 		OUT
 	}

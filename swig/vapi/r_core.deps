@@ -13,3 +13,7 @@ r_syscall
 r_flags
 r_config
 r_asm
+r_bin
+r_parse
+r_lang
+r_sign

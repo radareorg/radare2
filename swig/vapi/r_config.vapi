@@ -8,7 +8,7 @@ namespace Radare {
 		public int last_notfound;
 		public int n_nodes;
 
-		public void @lock (bool enable);
+		//public void @lock (bool enable);
 		public int eval(string str);
 
 		public unowned string get(string name);

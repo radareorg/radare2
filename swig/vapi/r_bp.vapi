@@ -4,8 +4,8 @@
 [CCode (cheader_filename="r_bp.h,r_types_base.h,r_list.h", cname="struct r_bp_t", free_function="r_bp_free", cprefix="r_bp_")]
 public class Radare.RBreakpoint {
 	public RBreakpoint ();
-	public RList<Item> bps;
-	public RList<Trace> traces;
+	public RList<RBreakpoint.Item> bps;
+	public RList<RBreakpoint.Trace> traces;
 	public bool use (string arch);
 	public void enable (uint64 addr, bool enabled);
 	public unowned Item? at_addr (uint64 addr, int rwx);
@@ -16,7 +16,7 @@ public class Radare.RBreakpoint {
 	public bool del (uint64 addr);
 	public bool del_cond (int idx);
 
-	public int get_bytes(out uint8 *buf, int len, bool bigendian, int idx);
+	//public int get_bytes(out uint8 *buf, int len, bool bigendian, int idx);
 	public int set_trace (uint64 addr, int set);
 
 	public int restore (bool set);
@@ -30,10 +30,9 @@ public class Radare.RBreakpoint {
 	public uint64 traptrace_next (uint64 addr);
 	public int traptrace_add (uint64 from, uint64 to);
 	public int traptrace_free_at (uint64 from);
-	public void traptrace_list (uint64 from);
+	public void traptrace_list ();
 	public int traptrace_at (uint64 from, int len);
 	// XXX public void traptrace_new ();
-	public void traptrace_enable (bool enable);
 
 	[CCode (cprefix="R_BP_PROT_")]
 	public enum Protection {

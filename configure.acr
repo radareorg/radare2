@@ -81,4 +81,6 @@ SUBDIRS ./config-user.mk libr/include/r_userconf.h
  pkgcfg/r_bp.pc
  pkgcfg/r_db.pc
  pkgcfg/r_lib.pc
+ pkgcfg/r_parse.pc
+ pkgcfg/r_print.pc
 ;

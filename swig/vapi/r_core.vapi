@@ -2,7 +2,7 @@
 
 namespace Radare {
 [Compact]
-[CCode (cheader_filename="r_core.h,r_list.h,r_types_base.h", cname="RCore", free_function="r_core_free", cprefix="r_core_")]
+[CCode (cheader_filename="r_core.h,r_bin.h,r_parse.h,r_lang.h,r_sign.h,r_reg.h,r_list.h,r_types_base.h", cname="RCore", free_function="r_core_free", cprefix="r_core_")]
 public class RCore {
 	public RFlag flags;
 	public RNum num;
@@ -21,7 +21,7 @@ public class RCore {
 	public RSearch search;
 	public RSign sign;
 	// TODO: public RMeta meta;
-	// TODO: public RPrint print;
+	public RPrint print;
 	// TODO: public RVm vm;
 
 	public static unowned RCore cast(uint64 ptr);
@@ -35,7 +35,7 @@ public class RCore {
 	public int cmd0(string cmd);
 	public void cmd_init ();
 
-	public int cmd_foreach(string cmd, string each);
+	// XXX. must be const in .h public int cmd_foreach(string cmd, string each);
 	/**
 	 * Execute every line of the given file as radare commands
 	 */
@@ -57,14 +57,14 @@ public class RCore {
 	public int anal_fcn(uint64 at, uint64 from, int depth);
 	public int anal_fcn_list(string input, bool rad);
 	public int anal_graph(uint64 addr, int opts);
-	public int anal_graph_fcn(string input, int opts);
+	//public int anal_graph_fcn(string input, int opts);
 	public int anal_ref_list(bool rad);
 
 	public int project_open (string file);
 	public int project_save (string file);
 	public string project_info (string file);
 
-	public int gdiff(string file1, string file2, bool va);
+	//public int gdiff(string file1, string file2, bool va);
 
 	public void sysenv_update ();
 
@@ -78,7 +78,7 @@ public class RCore {
 	/* io */
 	public int read_at(uint64 addr, out uint8 *buf, int size);
 	public int write_at(uint64 addr, uint8 *buf, int size);
-	public int write_op(uint64 addr, string arg, char op);
+	//public int write_op(uint64 addr, string arg, char op);
 	public int block_read(bool next);
 	public int block_size(int size);
 	public int seek(uint64 addr, bool rb);
@@ -124,7 +124,7 @@ public class RCore {
 
 	/* files */
 	public RCore.File file_open(string file, int mode);
-	public bool file_close(RCoreFile cf);
+	public bool file_close(RCore.File cf);
 	public bool file_close_fd(int fd);
 	public bool file_list();
 

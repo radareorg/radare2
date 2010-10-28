@@ -84,9 +84,9 @@ namespace Radare {
 		}
 
 		/* TODO: make them methods of Plugin class ? */
-		public bool plugin_open(int fd, Plugin plugin);
-		public bool plugin_close(int fd, Plugin plugin);
-		public bool plugin_add(Plugin plugin);
+		public bool plugin_open(int fd, RIO.Plugin plugin);
+		public bool plugin_close(int fd, RIO.Plugin plugin);
+		public bool plugin_add(RIO.Plugin plugin);
 		public int plugin_generate();
 		public void plugin_list();
 
@@ -128,16 +128,17 @@ namespace Radare {
 		public uint64 section_offset_to_vaddr(uint64 offset);
 
 		[Compact]
-		[CCode (cname="RIODesc")]
+		[CCode (cname="RIODesc",free_function="")]
 		public class Desc {
-			int fd;
-			int flags;
-			const string name;
+			public int fd;
+			public int flags;
+			public string name;
 		}
 		// int perms -> RIOPerm ?
-		public bool desc_add(int fd, string file, int perms, Plugin plugin);
+		public bool desc_add(int fd, string file, int perms, RIO.Plugin plugin);
 		public bool desc_del(int fd);
-		public RIO.Desc desc_get (int fd);
+		//public RIO.Desc desc_get (int fd);
 		public int desc_generate();
+*/
 	}
 }

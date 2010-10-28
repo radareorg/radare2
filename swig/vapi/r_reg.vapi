@@ -49,7 +49,7 @@ public class Radare.RReg {
 	//public KernelList<RReg.Item*> get_list(RReg.Type type);
 
 	public bool set_name(int role, string name);
-	public string get_name(int role);
+	public weak string get_name(int role);
 	public static int get_name_idx(string type);
 	public static int type_by_name(string str);
 
@@ -71,5 +71,5 @@ public class Radare.RReg {
 	public void arena_set(int n, bool copy);
 	public bool arena_push ();
 	public void arena_pop();
-	public uint64 arena_cmp (RReg.Item item);
+	//public uint64 arena_cmp (RReg.Item item);
 }
