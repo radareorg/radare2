@@ -197,7 +197,7 @@ R_API int r_core_gdiff(RCore *core, const char *file1, const char *file2, int va
 	RAnalBlock *bb;
 	RList *fcns[2], *bbs[2];
 	RListIter *iter;
-	char *files[2] = {file1, file2};
+	const char *files[2] = {file1, file2};
 	int i;
 
 	/* Init resources  */
