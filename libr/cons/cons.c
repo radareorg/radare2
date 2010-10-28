@@ -22,7 +22,7 @@ static void break_signal(int sig) {
 
 static inline void r_cons_write (char *buf, int len) {
 #if __WINDOWS__
-	r_cons_w32_print (buf);
+	r_cons_w32_print ((unsigned char *)buf);
 #else
 	if (write (I.fdout, buf, len) == -1) {
 		eprintf ("r_cons_write: write error\n");
@@ -54,8 +54,11 @@ R_API void r_cons_break_end() {
 #if __WINDOWS__
 static HANDLE h;
 static BOOL __w32_control(DWORD type) {
-	if (type == CTRL_C_EVENT)
+	if (type == CTRL_C_EVENT) {
 		break_signal (2); // SIGINT
+		return R_TRUE;
+	}
+	return R_FALSE;
 }
 #endif
 
@@ -81,7 +84,7 @@ R_API RCons *r_cons_new () {
 	I.term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
 #elif __WINDOWS__
 	h = GetStdHandle (STD_INPUT_HANDLE);
-	GetConsoleMode (h, &I.term_buf);
+	GetConsoleMode (h, (PDWORD) &I.term_buf);
 	I.term_raw = 0;
 	if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)__w32_control, TRUE))
 		eprintf ("r_cons: Cannot set control console handler\n");
@@ -310,8 +313,8 @@ R_API void r_cons_set_raw(int is_raw) {
 	if (is_raw) tcsetattr (0, TCSANOW, &I.term_raw);
 	else tcsetattr (0, TCSANOW, &I.term_buf);
 #elif __WINDOWS__
-	if (is_raw) SetConsoleMode (h, I.term_raw);
-	else SetConsoleMode (h, I.term_buf);
+	if (is_raw) SetConsoleMode (h, (DWORD)I.term_raw);
+	else SetConsoleMode (h, (DWORD)I.term_buf);
 #else
 #warning No raw console supported for this platform
 #endif
