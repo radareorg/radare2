@@ -88,6 +88,7 @@ R_API int r_hash_calculate(struct r_hash_t *ctx, int algobit, const ut8 *input, 
 /* checksums */
 /* XXX : crc16 should use 0 as arg0 by default */
 /* static methods */
+R_API ut8 r_hash_deviation(const ut8 *b, ut64 len);
 R_API ut16 r_hash_crc16(ut16 crc, const ut8 *buffer, ut64 len);
 R_API ut32 r_hash_crc32(const ut8 *buf, ut64 len);
 R_API ut8 r_hash_xor(const ut8 *b, ut64 len);

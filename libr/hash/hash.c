@@ -50,6 +50,14 @@ R_API ut8 r_hash_mod255(const ut8 *b, ut64 len) {
 	return c%255;
 }
 
+R_API ut8 r_hash_deviation(const ut8 *b, ut64 len) {
+	int i, c = 0;
+	len--;
+	for (i = 0; i < len; i++)
+		c += R_ABS (b[i+1] - b[i]);
+	return c;
+}
+
 /* TODO: rewrite in a non-spaguetty way */
 R_API const char *r_hash_name(int bit) {
 	if (bit & R_HASH_MD4) return "md4";

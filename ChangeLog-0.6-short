@@ -1,0 +1,82 @@
+Compilation:
+* Add support for paralel builds (fix compile time dependencies)
+* Do not build the library archives by default
+* Lot of code cleanup, refactoring, bug fixes and various dewarnifications
+* Added 'symstall' makefile target to install using symlinks
+* Use versioned shared objects as reported by lintian
+* Install plugins in versioned directory ${PREFIX}/lib/radare2/${VERSION}
+
+Windows:
+* Add support for '^]27m' (invert off) in console
+* Python bindings are now working on w32
+
+Debugger:
+* Fixes in debugger software breakpoints on 32/64 bits
+* Added support for hw breakpoints
+* Display x86(32-64) eflags as text instead of hex value
+  - added ?f and ?b commands to parse bits and flags
+* Fix initial seek in debug mode to pc (use sr pc)
+* Added 'drb' command to show bytes of GPR
+* Implement stacked register storage
+* Added support for bit-collection registers
+  - Implement 'drd' command to show register diff
+* Initial support for the x86 debug registers implementation
+* Handle Hardware I/O ports
+* Add the possibility to import/export regs from vm to debugger
+* RVm api has an own architecture description file
+* Add support for flag symbols of a given lib in memory
+
+Scripting:
+* Most of the API is now exported to the language bindings
+* Initial support on python3
+* Added support for Java and Go (plus python, perl, lua, ruby, ..)
+
+Assembler/Disassembler:
+* Disable asm.dwarf when the plugin fails to init
+* Added arm/thumb assembler and disassembler
+* Add var asm.functions to show/hide function analysis in disasm
+  - Take into account asm.{xrefs, functions} in disasm
+* Added backward disassembler
+* Add search features for code (byte and disassemble string levels)
+* Show call decompilations under the opcode as a comment
+
+Analysis:
+* Optimize function analysis and bb splitting algorithms
+* Complete x86im analysis plugin
+* Analyze code in order to do syscall analysis
+* Some better code analysis on ARM
+* Analyze 'svc' opcode in ARM as software interrupt
+* Initial work on function_from_string parser
+* Added ranal2 for standalone analysis
+
+Binaries:
+* Added extract functionality to rabin2
+* Supports fat-mach0 as archive format
+* Add support for dyld cache archive files (extract, list)
+* Optimize big-file analysis
+* Add support for parsing relocs
+
+Core:
+* Initial import of rasc2
+* Load binary from core instead of .!rabin2 (2-3x start speedup)
+* Added 'e scr.cols=16' to set the width of hexdump
+* Added cut-like syntax to the built-in grep
+* Added 'pt' command for print times
+
+Search:
+* Add support for indirect references to '/a' command
+
+Patching:
+* Add support for ARM in rarc2
+* GAS can now compile att and intel syntax rarc2 output
+
+Communications:
+* Initial implementation of the rap:// IO plugin compatible with r1
+
+Documentation:
+* Added manpages for rarc2 rarc2-tool ranal2
+
+
+Thanks to: gadix, ash, sre, earada, astralia
+
+Main devs: pancake, nibble
