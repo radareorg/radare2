@@ -24,6 +24,7 @@ HAVE_OPENSSL=1
 [ -z "${USERCC}" ] && USERCC="gcc"
 [ -z "${USEROSTYPE}" ] && USEROSTYPE="auto"
 WITHPIC=1
+WITHNONPIC=0
 split_host() {
 S="$"
 while : ; do
@@ -149,7 +150,8 @@ printf "\nOptional Features:
   --without-ssl          disable openssl dependency 
   --with-compiler        Define compiler to use (see mk/)  (USERCC=gcc)
   --with-ostype          Choose OS type ( gnulinux windows darwin )  (USEROSTYPE=auto)
-  --without-pic          do not build libr as a program independent location \n"
+  --without-pic          do not build libr as a program independent location 
+  --with-nonpic          build the library archives .a \n"
 printf "\nSome influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
@@ -193,7 +195,7 @@ echo "VERSION:   0.6"
 echo "LANGS:     c"
 echo "REQUIRED:  libdl"
 echo "OPTIONAL:  libewf"
-echo "FLAGS:     --without-debugger --without-ewf --without-gmp --without-ssl --with-compiler=gcc --with-ostype=auto --without-pic"
+echo "FLAGS:     --without-debugger --without-ewf --without-gmp --without-ssl --with-compiler=gcc --with-ostype=auto --without-pic --with-nonpic"
 	exit 0
 	;;
 "--cache-file") 
@@ -242,6 +244,7 @@ echo "FLAGS:     --without-debugger --without-ewf --without-gmp --without-ssl --
 --with-compiler) if [ -z "${value}" ]; then USERCC="gcc"; else USERCC="${value}" ; fi ;;
 --with-ostype) if [ -z "${value}" ]; then USEROSTYPE="auto"; else USEROSTYPE="${value}" ; fi ;;
 "--without-pic") WITHPIC="0"; ;;
+"--with-nonpic") WITHNONPIC="1"; ;;
 *) if [ "$value" ]; then eval "`echo $flag2=$value`" ; 
 else echo ; echo "WARNING: Unknown flag '$flag'." >&2 ; echo ; fi ;;
 esac
@@ -259,7 +262,7 @@ parse_options $1
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS LIL_ENDIAN BIG_ENDIAN BYTEORDER HAVE_LIB_EWF HAVE_EWF HAVE_LIB_GMP HAVE_GMP HAVE_LIB_SSL HAVE_OPENSSL HAVE_LIB_LUA5_1 HAVE_LIB_TCC USERCC USEROSTYPE WITHPIC"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS LIL_ENDIAN BIG_ENDIAN BYTEORDER HAVE_LIB_EWF HAVE_EWF HAVE_LIB_GMP HAVE_GMP HAVE_LIB_SSL HAVE_OPENSSL HAVE_LIB_LUA5_1 HAVE_LIB_TCC USERCC USEROSTYPE WITHPIC WITHNONPIC"
 
 create_environ
 

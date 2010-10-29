@@ -50,6 +50,7 @@ IFEQ USEROSTYPE auto ; {
 }
 
 ARG_WITHOUT WITHPIC pic do not build libr as a program independent location ;
+ARG_WITH WITHNONPIC nonpic build the library archives .a ;
 
 REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_GMP HAVE_LIB_SSL HAVE_LIB_TCC DEBUGGER USERCC USEROSTYPE ;
 

@@ -215,7 +215,6 @@ static int config_tracetag_callback(void *user, void *data) {
 }
 
 static int config_scrprompt_callback(void *user, void *data) {
-	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	r_line_singleton()->echo = node->i_value;
 	return R_TRUE;

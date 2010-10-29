@@ -1,7 +1,9 @@
 include config-user.mk
 include global.mk
 
-all: plugins.cfg libr binr
+all: plugins.cfg
+	${MAKE} libr
+	${MAKE} binr
 
 plugins.cfg:
 	./configure-plugins

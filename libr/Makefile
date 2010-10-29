@@ -6,8 +6,8 @@ PFX=${DESTDIR}${PREFIX}
 #PREFIX=${PFX}
 
 # Libraries
-LIBLIST=util socket cons line lib io lang flags bin hash config syscall cmd reg
-LIBLIST+=asm anal print parse search diff bp sign vm th db crypto debug core
+LIBLIST=util vm socket cons line lib io lang flags bin hash config syscall cmd
+LIBLIST+=reg asm anal print parse search diff bp sign th db crypto debug core
 
 # TODO : generate single library linking against the rest
 #LIBSO=libr.so
@@ -20,13 +20,14 @@ libs:
 	@echo Build done for: ${LIBLIST}
 
 ifeq ($(ONELIB),1)
-libr: .objs libr2.${EXT_SO} libr2.${EXT_AR}
+libr: .objs
+	$(MAKE) libr2.${EXT_SO} libr2.${EXT_AR}
 else
 libr:
 endif
 
 ifeq ($(WITHPIC),1)
-libr2.${EXT_SO}:
+libr2.${EXT_SO}: .objs
 ifeq ($(OSTYPE),darwin)
 	@echo Linkage of libr2.dylib is broken on OSX because of dupped .o in .objs extraction
 else
@@ -38,12 +39,18 @@ libr2.${EXT_AR}:
 else
 libr2.${EXT_SO}:
 
+ifeq ($(WITHNONPIC),1)
 libr2.${EXT_AR}:
 	ar -r libr2.${EXT_AR} .objs/*.o
+else
+libr2.${EXT_AR}:
+	@# do nothing
+endif
 endif
 
 # XXX needs autodetection of deps to remake and so..
 .objs:
+	cd vm ; sh ../waitfordeps.sh r_`echo ${LIBLIST}|sed -e 's, , r_,g'`
 	mkdir -p .objs
 	-for a in ${LIBLIST} ; do \
 		(cd .objs && ar x ../$$a/libr_$$a.a) ; \

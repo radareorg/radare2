@@ -9,8 +9,13 @@ ifeq (${BINDEPS},)
 
 ifneq ($(NAME),)
 
+ALL?=
 CFLAGS+=-I../include
-real_all all: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
+
+all: $(ALL)
+	@$(MAKE) real_all
+
+real_all: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
 	@-if [ -e t/Makefile ]; then (cd t && ${MAKE} all) ; fi
 	@-if [ -e p/Makefile ]; then (cd p && ${MAKE} all) ; fi
 	@true
@@ -23,8 +28,12 @@ else
 LIBNAME=${LDFLAGS_SONAME}${LIBSO}
 endif
 
+# -j trick
+waitfordeps:
+	@sh ../waitfordeps.sh ${DEPS}
+
 ifeq ($(WITHPIC),1)
-${LIBSO}: ${OBJ}
+${LIBSO}: waitfordeps ${OBJ}
 	@for a in ${OBJ} ${SRC}; do \
 	  do=0 ; [ ! -e ${LIBSO} ] && do=1 ; \
 	  test $$a -nt ${LIBSO} && do=1 ; \
@@ -38,8 +47,12 @@ else
 ${LIBSO}:
 endif
 
-${LIBAR}: ${OBJ}
+ifeq ($(WITHNONPIC),1)
+$(LIBAR): ${OBJ}
 	${CC_AR} ${OBJ}
+else
+$(LIBAR):
+endif
 
 pkgcfg:
 	@echo Generating pkgconfig stub for ${NAME}
