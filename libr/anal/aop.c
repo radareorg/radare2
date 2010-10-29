@@ -72,15 +72,15 @@ R_API char *r_anal_aop_to_string(RAnal *anal, RAnalOp *op) {
 		// XXX: op->cond is not a valid pointer
 		//cstr = r_anal_cond_to_string (op->cond);
 		cstr = (char*)"";
-		snprintf (ret, retsz, "if (%s) goto 0x%08llx", cstr, op->jump);
+		snprintf (ret, retsz, "if (%s) goto 0x%"PFMT64x, cstr, op->jump);
 		//free (cstr);
 		break;
 	case R_ANAL_OP_TYPE_JMP:
-		snprintf (ret, retsz, "goto 0x%08llx", op->jump);
+		snprintf (ret, retsz, "goto 0x%"PFMT64x, op->jump);
 		break;
 	case R_ANAL_OP_TYPE_CALL:
 		// XXX: resolve flag name
-		snprintf (ret, retsz, "0x%08llx()", op->jump);
+		snprintf (ret, retsz, "0x%"PFMT64x"()", op->jump);
 		break;
 	case R_ANAL_OP_TYPE_SUB:
 		if (a1 == NULL || !strcmp (a0, a1))

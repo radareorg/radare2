@@ -1,6 +1,8 @@
 include config-user.mk
 include global.mk
 
+REMOTE=radare.org:/srv/http/radareorg/get/beta
+
 all: plugins.cfg
 	${MAKE} libr
 	${MAKE} binr
@@ -15,6 +17,7 @@ binr:
 	cd binr && ${MAKE} all
 
 w32:
+	make clean
 	# TODO: add support for debian
 	./configure --without-ssl --without-gmp --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows
 	make
@@ -26,6 +29,11 @@ w32dist:
 	rm w32dist/plugin.dll
 	mv w32dist radare2-w32-${VERSION}
 	zip -r radare2-w32-${VERSION}.zip radare2-w32-${VERSION}
+
+w32beta: w32dist
+	scp radare2-w32-${VERSION}.zip ${REMOTE}
+	cd swig ; $(MAKE) w32dist
+	scp radare2-swig-w32-${VERSION}.zip ${REMOTE}
 
 clean:
 	cd libr && ${MAKE} clean
@@ -67,7 +75,6 @@ deinstall: uninstall
 	cd libr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
-REMOTE=radare.org:/srv/http/radareorg/get/beta
 beta: dist swig-dist
 	scp ../radare2-${VERSION}.tar.gz ${REMOTE}
 	scp radare2-swig-${VERSION}.tar.gz ${REMOTE}

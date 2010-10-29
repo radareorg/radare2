@@ -1,4 +1,5 @@
 -include config.mk
+W32PY="${HOME}/.wine/drive_c/Python27/"
 
 all: supported.langs ruby perl python lua go
 
@@ -9,8 +10,6 @@ check:
 supported.langs:
 	CC=${CC} CXX=${CXX} sh check-langs.sh
 
-W32PY="${HOME}/.wine/drive_c/Python27/"
-
 check-w32:
 	if [ ! -d "${W32PY}/libs" ]; then \
 		wget http://www.python.org/ftp/python/2.7/python-2.7.msi ; \
@@ -20,11 +19,15 @@ check-w32:
 w32:
 	cd python && ${MAKE} w32
 
+DSTNAME=radare2-swig-w32-$(VERSION)
+DST=../$(DSTNAME)/Python27/Lib/r2
+
 w32dist:
-	mkdir -p ../radare2-w32-${VERSION}/Python27/Lib/r2
-	cp -f python/*.dll ../radare2-w32-${VERSION}/Python27/Lib/r2
-	cp -f python/r_*.py ../radare2-w32-${VERSION}/Python27/Lib/r2
-	cp -f python/libr.py ../radare2-w32-${VERSION}/Python27/Lib/r2
+	mkdir -p ${DST}
+	cp -f python/*.dll ${DST}
+	cp -f python/r_*.py ${DST}
+	cp -f python/libr.py ${DST}
+	cd .. ; zip -r $(DSTNAME).zip $(DSTNAME)
 
 dist:
 	PKG=radare2-swig-${VERSION} ; \
@@ -154,4 +157,4 @@ clean:
 	cd java && make clean
 	cd vapi/t && ${MAKE} clean
 
-.PHONY: ruby lua go java python perl clean oldtest test all vdoc dist w32 w32dist
+.PHONY: ruby lua go java python perl clean oldtest test all vdoc w32 w32dist check-w32
