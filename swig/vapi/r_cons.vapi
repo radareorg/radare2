@@ -63,7 +63,7 @@ namespace Radare {
 
 		public static int html_print (string ptr);
 		public static int arrow_to_hjkl (int ch);
-		public static weak string get_buffer ();
+		public static unowned string get_buffer ();
 		public static void grep (string str);
 		//public static int grep_line (string str, int len);
 		//public static int grepbuf (string str, int len);

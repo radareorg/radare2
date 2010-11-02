@@ -5,7 +5,6 @@ namespace Radare {
 	[Compact]
 	[CCode (cname="RVm", free_function="r_vm_free", cprefix="r_vm_")]
 	public class RVm {
-		public public RVm ();
 		public bool log;
 		public uint8* vm_stack;
 		public RVm();
@@ -28,7 +27,7 @@ namespace Radare {
 		public int op_cmd(string op);
 
 		public static void reg_type_list();
-		public int reg_add(string name, int type, uint64 val););
+		public int reg_add(string name, int type, uint64 val);
 		public uint64 reg_get(string name);
 		public int reg_alias_list();
 		public string reg_type(int type);
@@ -39,7 +38,7 @@ namespace Radare {
 
 		public void setup_flags(string zf);
 		public void setup_cpu(string pc, string sp, string bp);
-		public void setup_fastcall(string eax, strign ebx, string ecx, string edx);
+		public void setup_fastcall(string eax, string ebx, string ecx, string edx);
 		public void setup_ret(string eax);
 		public void setup_push(uint64 val);
 		public void setup_pop(string reg);
