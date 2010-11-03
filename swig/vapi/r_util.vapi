@@ -79,9 +79,9 @@ public static class Radare.RHex {
 		public static void backtrace();
 	}
 
-	[CCode (cname="RNum", cheader_filename="r_util.h", cprefix="r_num_", free_function="")]
+	[CCode (cname="RNum", cheader_filename="r_util.h", unref_function="", cprefix="r_num_", free_function="")]
 	public static class RNum {
-		public RNum(RNumCallback cb, void *user);
+		public RNum(RNumCallback? cb=null, void *user=null);
 		public uint64 get(string str);
 		public uint64 math(string str);
 	}
