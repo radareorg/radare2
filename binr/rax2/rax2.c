@@ -59,6 +59,8 @@ static int rax (char *str) {
 		" hex   ->  int           ;  rax 0xa\n"
 		" -int  ->  hex           ;  rax -77\n"
 		" -hex  ->  int           ;  rax 0xffffffb3\n"
+		" int   ->  bin           ;  rax b30\n"
+		" bin   ->  int           ;  rax 1010d\n"
 		" float ->  hex           ;  rax 3.33f\n"
 		" hex   ->  float         ;  rax Fx40551ed8\n"
 		" oct   ->  hex           ;  rax 35o\n"
@@ -71,7 +73,13 @@ static int rax (char *str) {
 		return R_TRUE;
 	}
 	if (str[0]=='0' && str[1]=='x') {
-		out_mode='I';
+		out_mode = 'I';
+	} else if (str[0]=='b') {
+		out_mode = 'B';
+		str++;
+	} else if (str[strlen(str)-1]=='d') {
+		out_mode = 'I';
+		str[strlen(str)-1] = 'b';
 	} else if (str[0]=='F' && str[1]=='x') {
 		out_mode = 'F';
 		*str = '0';
