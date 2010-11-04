@@ -22,6 +22,7 @@ public class RCore {
 	public RSign sign;
 	public RPrint print;
 	// TODO: public RVm vm;
+		public uint64 offset;
 
 	public static unowned RCore cast(uint64 ptr);
 	public bool loadlibs();
