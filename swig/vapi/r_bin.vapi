@@ -102,7 +102,7 @@ namespace Radare {
 			public string os;
 			public string subsystem;
 			public int bits;
-			public int big_endian;
+			public bool big_endian;
 			public uint32 dbg_info;
 		}
 
