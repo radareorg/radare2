@@ -20,6 +20,10 @@ public static class Radare.RHex {
 }
 #endif
 
+	[CCode (cheader_filename="r_util.h", cprefix="r_str_")]
+	public static class RStr {
+		public static unowned string rwx_i (int rwx);
+	}
 #if FAILFAIL
 	[CCode (cheader_filename="r_util.h", cprefix="r_str_")]
 	public static class RStr {
