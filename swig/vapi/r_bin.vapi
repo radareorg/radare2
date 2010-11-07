@@ -94,6 +94,7 @@ namespace Radare {
 
 		[CCode (cname="RBinInfo", free_function="", ref_function="", unref_function="")]
 		public class Info {
+			public string file;
 			public string type;
 			public string @class;
 			public string rclass;
