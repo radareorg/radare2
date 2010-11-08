@@ -2,7 +2,7 @@ BINDEPS=foo
 #include ../../../config-user.mk
 include ../../config.mk
 
-CFLAGS=-I../../include -Wall -DPREFIX=\"${PREFIX}\"
+CFLAGS+=-I../../include -Wall -DPREFIX=\"${PREFIX}\"
 BINDEPS=
 
 LANGS=lang_dummy.${EXT_SO} lang_python.${EXT_SO} lang_perl.${EXT_SO}

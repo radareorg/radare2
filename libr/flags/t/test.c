@@ -1,3 +1,4 @@
+#include <r_cons.h>
 #include <r_flags.h>
 
 int main()

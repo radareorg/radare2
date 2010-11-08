@@ -2,10 +2,10 @@ BINDEPS=foo
 include ../../config.mk
 ifeq ($(WITHPIC),1)
 # OSX
-FLAGS=-I../../include -L.. -lr_util -g -DVERSION=\"${VERSION}\"
+FLAGS=${CFLAGS} -I../../include -L.. -lr_util -g -DVERSION=\"${VERSION}\"
 EFLAGS=-L.. -lr_util
 else
-FLAGS=-I../../include -g -DVERSION=\"${VERSION}\"
+FLAGS=${CFLAGS} -I../../include -g -DVERSION=\"${VERSION}\"
 EFLAGS=../libr_util.a
 endif
 

@@ -27,6 +27,7 @@ while [ $a = 0 ] ; do
 	libs="$(echo $deps | sed -e s,r_,,g)"
 	for l in $libs ; do
 		if [ ! -f "../$l/libr_$l.$ext" ]; then
+			echo "NOT FOUND r_$l"
 			a=0
 		fi
 	done

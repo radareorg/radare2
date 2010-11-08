@@ -3,15 +3,10 @@
 
 #include <r_types.h>
 
-#ifndef __CYGWIN__
-typedef unsigned short uint16_t ; 
-typedef unsigned int uint32_t ;
-#endif
-
 #define __packed __attribute__((__packed__))
 
 struct instruction {
-	uint16_t	in_mode:2,
+	ut16	in_mode:2,
 			in_reg:2,
 			in_opcode:4,
 			in_operand:8;

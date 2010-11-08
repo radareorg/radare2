@@ -7,7 +7,9 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <signal.h>
+#if __linux__
 #include <execinfo.h>
+#endif
 #elif __WINDOWS__
 #include <io.h>
 #endif

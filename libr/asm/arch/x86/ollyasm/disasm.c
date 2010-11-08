@@ -345,7 +345,7 @@ static void DecodeMR(int type) {
       if (size<4)
         da->error=DAE_CROSS;           // Disp16 outside the memory block
       else if (mode>=DISASM_DATA) {
-        da->adrconst=addr=*(ushort *)(cmd+2);
+        da->adrconst=addr=*(unsigned short *)(cmd+2);
         if (addr==0) da->zeroconst=1;
         seg=SEG_DS;
         Memadr(seg,"",addr,dsize);
@@ -358,7 +358,7 @@ static void DecodeMR(int type) {
         dispsize=1; }
       else if ((c & 0xC0)==0x80) {     // 16-bit unsigned displacement
         if (size<4) da->error=DAE_CROSS;
-        else addr=*(ushort *)(cmd+2);
+        else addr=*(unsigned short *)(cmd+2);
         dispsize=2; };
       if (mode>=DISASM_DATA && da->error==DAE_NOERR) {
         da->adrconst=addr;
@@ -537,7 +537,7 @@ static void DecodeIM(int constsize,int sxt,int type) {
       da->cmdtype|=C_RARE;
     }; }
   else if (constsize==2) {
-    if (sxt==0) data=*(ushort *)(cmd+l);
+    if (sxt==0) data=*(unsigned short *)(cmd+l);
     else data=*(short *)(cmd+l); }
   else {
     data=*(long *)(cmd+l);
@@ -606,7 +606,7 @@ static void DecodeIA(void) {
   else if (datasize==2) da->memtype=DEC_WORD;
   else if (datasize==4) da->memtype=DEC_DWORD;
   if (addrsize==2)
-    addr=*(ushort *)(cmd+1);
+    addr=*(unsigned short *)(cmd+1);
   else {
     addr=*(ulong *)(cmd+1);
     if (pfixup==NULL) pfixup=cmd+1;
@@ -665,11 +665,11 @@ static void DecodeJF(void) {
   dispsize=addrsize; immsize=2;        // Non-trivial but allowed interpretation
   if (mode<DISASM_DATA) return;
   if (addrsize==2) {
-    addr=*(ushort *)(cmd+1);
-    seg=*(ushort *)(cmd+3); }
+    addr=*(unsigned short *)(cmd+1);
+    seg=*(unsigned short *)(cmd+3); }
   else {
     addr=*(ulong *)(cmd+1);
-    seg=*(ushort *)(cmd+5); };
+    seg=*(unsigned short *)(cmd+5); };
   da->jmpconst=addr;
   da->immconst=seg;
   if (addr==0 || seg==0) da->zeroconst=1;

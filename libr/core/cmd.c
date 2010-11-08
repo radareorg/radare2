@@ -417,8 +417,8 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			break;
 		case R_ANAL_OP_TYPE_CALL:
 			{
-			ut8 arg[64];
 #if 0
+			ut8 arg[64];
 			esp = resetesp(core)-esp;
 			if((st64)esp<0) esp=-esp;
 			nargs = (esp)/4;
@@ -430,7 +430,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 				if(fcn&&fcn->name) r_cons_printf ("; %s(", fcn->name);
 				else r_cons_printf ("; 0x%08"PFMT64x"(", analop.jump);
 				for(i=0;i<nargs;i++) {
-					if (arg[i]>1024) r_cons_printf("%d", args[nargs-i]);
+					if (args[i]>1024) r_cons_printf("%d", args[nargs-i]);
 					else r_cons_printf("0x%x", args[nargs-i]);
 					if (i<nargs-1) r_cons_printf(", ");
 				}

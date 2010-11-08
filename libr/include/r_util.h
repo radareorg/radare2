@@ -153,7 +153,7 @@ R_API struct r_mem_pool_t* r_mem_pool_deinit(struct r_mem_pool_t *pool);
 R_API struct r_mem_pool_t *r_mem_pool_new(int nodesize, int poolsize, int poolcount);
 R_API struct r_mem_pool_t *r_mem_pool_free(struct r_mem_pool_t *pool);
 R_API void* r_mem_pool_alloc(struct r_mem_pool_t *pool);
-R_API int r_mem_count(ut8 **addr);
+R_API int r_mem_count(const ut8 **addr);
 R_API RCache* r_cache_new();
 R_API void r_cache_free(struct r_cache_t *c);
 R_API char *r_cache_get(struct r_cache_t *c, ut64 addr);

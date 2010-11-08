@@ -7,11 +7,12 @@ void test(const char *s) {
 	printf("NUM: %d\n", n);
 }
 
-void main() {
+int main() {
 	test("1");
 	test("");
 	test("1 2 3");
 	test("1,2,3");
 	test("1, 2, 3");
 	test(" 1, 2, 3 ");
+	return 0;
 }

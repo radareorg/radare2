@@ -430,7 +430,7 @@ reaccept:
 				eprintf ("open (%d): ", cmd);
 				r_socket_read_block (c, &cmd, 1); // len
 				pipefd = -1;
-				if (cmd<RMT_MAX) {
+				//XXX cmd is ut8..so <256 if (cmd<RMT_MAX) {
 					ptr = malloc(cmd);
 					if (ptr == NULL) {
 						eprintf ("Cannot malloc in rmt-open len = %d\n", cmd);
@@ -442,7 +442,7 @@ reaccept:
 						eprintf("(flags: %hhd) len: %hhd filename: '%s'\n",
 							flg, cmd, ptr); //config.file);
 					}
-				}
+				//}
 				buf[0] = RMT_OPEN | RMT_REPLY;
 				r_mem_copyendian (buf+1, (ut8 *)&pipefd, 4, !endian);
 				r_socket_write (c, buf, 5);
@@ -477,7 +477,7 @@ reaccept:
 				/* read */
 				r_socket_read_block (c, (ut8*)&bufr, 4);
 				r_mem_copyendian ((ut8*)&i, (ut8 *)bufr, 4, endian);
-				if (i >0 && i<RMT_MAX) {
+				if (i>0 && i<RMT_MAX) {
 					if ((cmd=malloc(i))) {
 						r_socket_read_block (c, (ut8*)cmd, i);
 						cmd[i] = '\0';

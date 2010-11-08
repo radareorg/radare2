@@ -749,22 +749,22 @@ int Printfloat8(char *s,double d) {
 int Printfloat10(char *s,long double ext) {
   int k;
   char *e=(char *)&ext;
-  if (*(ulong *)e==0 && *(ushort *)(e+4)==0 && *(ulong *)(e+6)==0x7FFF8000L)
+  if (*(ulong *)e==0 && *(unsigned short *)(e+4)==0 && *(ulong *)(e+6)==0x7FFF8000L)
     k=sprintf(s,"+INF 7FFF 80000000 00000000");
-  else if (*(ulong *)e==0 && *(ushort *)(e+4)==0 &&
+  else if (*(ulong *)e==0 && *(unsigned short *)(e+4)==0 &&
     *(ulong *)(e+6)==0xFFFF8000L)
     k=sprintf(s,"-INF FFFF 80000000 00000000");
   else if ((*(ulong *)(e+6) & 0x7FFF8000L)==0x7FFF8000L)
     k=sprintf(s,"%cNAN %04X "LFMT08" "LFMT08,(e[9] & 0x80)==0?'+':'-',
-    (int)(*(ushort *)(e+8)),*(ulong *)(e+4),*(ulong *)e);
+    (int)(*(unsigned short *)(e+8)),*(ulong *)(e+4),*(ulong *)e);
   else if ((*(ulong *)(e+6) & 0x7FFF0000L)==0x7FFF0000L)
     k=sprintf(s,"%c??? %04X "LFMT08" "LFMT08,(e[9] & 0x80)==0?'+':'-',
-    (int)(*(ushort *)(e+8)),*(ulong *)(e+4),*(ulong *)e);
+    (int)(*(unsigned short *)(e+8)),*(ulong *)(e+4),*(ulong *)e);
   else if ((*(ulong *)(e+6) & 0x7FFF0000L)!=0 &&
     (*(ulong *)(e+6) & 0x00008000)==0)
     k=sprintf(s,"%cUNORM %04X "LFMT08" "LFMT08,(e[9] & 0x80)==0?'+':'-',
-    (int)(*(ushort *)(e+8)),*(ulong *)(e+4),*(ulong *)e);
-  else if (*(ulong *)e==0 && *(ushort *)(e+4)==0 &&
+    (int)(*(unsigned short *)(e+8)),*(ulong *)(e+4),*(ulong *)e);
+  else if (*(ulong *)e==0 && *(unsigned short *)(e+4)==0 &&
     *(ulong *)(e+6)==0x80000000L)
     k=sprintf(s,"-0.0");               // Negative floating 0.0
   else if (ext==0.0)

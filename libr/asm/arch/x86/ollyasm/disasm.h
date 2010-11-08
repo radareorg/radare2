@@ -158,7 +158,7 @@
 #define LFMT "%X"
 #define LFMT08 "%08X"
 //typedef unsigned char  uchar;          // Unsigned character (byte)
-typedef unsigned short ushort;         // Unsigned short
+//typedef unsigned short ushort;         // Unsigned short
 //typedef unsigned int   uint;           // Unsigned integer
 //typedef unsigned long  ulong;          // Unsigned long
 
