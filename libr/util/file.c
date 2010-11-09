@@ -203,7 +203,7 @@ R_API int r_file_dump(const char *file, const ut8 *buf, int len) {
 		eprintf ("Cannot open '%s' for writing\n", file);
 		return R_FALSE;
 	}
-	ret = fwrite (buf, len, 1, fd) == len;
+	ret = fwrite (buf, 1, len, fd) == len;
 	if (!ret)
 		eprintf ("r_file_dump: fwrite: error\n");
 	fclose (fd);
