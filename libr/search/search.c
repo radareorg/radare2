@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
 
 #include <r_search.h>
+#include <r_list.h>
 
 R_API RSearch *r_search_new(int mode) {
 	RSearch *s = R_NEW (RSearch);
@@ -189,6 +190,21 @@ R_API int r_search_update(RSearch *s, ut64 *from, const ut8 *buf, long len) {
 
 R_API int r_search_update_i(RSearch *s, ut64 from, const ut8 *buf, long len) {
 	return r_search_update (s, &from, buf, len);
+}
+
+static int listcb(RSearchKeyword *k, void *user, ut64 addr) {
+	RSearchHit *hit = R_NEW (RSearchHit);
+	hit->kw = k;
+	hit->addr = addr;
+	r_list_append (user, hit);
+	return R_TRUE;
+}
+
+R_API RList *r_search_find(RSearch *s, ut64 addr, const ut8 *buf, int len) {
+	RList *ret = r_list_new ();
+	r_search_set_callback (s, listcb, ret);
+	r_search_update (s, &addr, buf, len);
+	return ret;
 }
 
 /* --- keywords --- */

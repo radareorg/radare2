@@ -13,6 +13,7 @@ public class Radare.RSearch {
 	public void reset(int mode);
 	public bool update(out uint64 from, uint8 *buf, long len);
 	public bool update_i(uint64 from, uint8 *buf, long len);
+	public RList<RSearch.Hit> find(uint64 addr, uint8 *buf, int len);
 
 	public bool kw_add(Keyword kw);
 	public void kw_reset();
@@ -32,6 +33,13 @@ public class Radare.RSearch {
 		AES
 	}
 	public RList<Keyword> kws;
+
+	[Compact]
+	[CCode (cname="struct r_search_hit_t", free_function="free", cprefix="r_search_hit_")]
+	public class Hit {
+		public unowned Keyword k;
+		uint64 addr;
+	}
 
 	[Compact]
 	[CCode (cname="struct r_search_keyword_t", free_function="free", cprefix="r_search_keyword_")]
