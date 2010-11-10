@@ -6,5 +6,8 @@ BINDEPS+=r_sign r_print r_lang r_asm r_syscall r_hash r_line r_socket r_flags r_
 include ../binr.mk
 
 ifeq ($(WITHNONPIC),1)
-LDFLAGS+=${DL_LIBS} -lm -lgmp -lpthread
+LDFLAGS+=${DL_LIBS} -lm -lpthread
+ifeq ($(HAVE_LIB_GMP),1)
+LDFLAGS+=-lgmp
+endif
 endif

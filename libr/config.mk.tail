@@ -1,10 +1,5 @@
 # config.mk.tail
 
-ifneq (${BINDEPS},)
-include ../../../config-user.mk
-include ../../../global.mk
-include ../../../mk/${COMPILER}.mk
-else
 -include ../../config-user.mk
 -include ../../global.mk
 -include ../../mk/${COMPILER}.mk
@@ -12,8 +7,6 @@ else
 -include ../../../config-user.mk
 -include ../../../global.mk
 -include ../../../mk/${COMPILER}.mk
-endif
-
 
 CFLAGS+=-DUSE_RIO=${USE_RIO}
 CFLAGS+=${CFLAGS_APPEND}
@@ -27,10 +20,10 @@ CFLAGS+=${PIC_CFLAGS}
 LDFLAGS+=${PIC_CFLAGS}
 else
 # TODO: is there somebody brave enought to replace this perl oneliner?
-ifneq ($(DEPS), )
+ifneq ($(DEPS),)
 LDFLAGS+=`echo "${DEPS} " | perl -ne 's,r_([^ ]*),../$$1/libr_$$1.a,g; print'`
 endif
-ifneq ($(BINDEPS), )
+ifneq ($(BINDEPS),)
 LDFLAGS+=`echo "${BINDEPS} " | if [ -d ../../libr ]; then perl -ne 's,r_([^ ]*),../../libr/$$1/libr_$$1.a,g; print' ; else perl -ne 's,r_([^ ]*),../../$$1/libr_$$1.a,g; print' ; fi `
 endif
 endif
