@@ -31,7 +31,7 @@ ifneq ($(DEPS), )
 LDFLAGS+=`echo "${DEPS} " | perl -ne 's,r_([^ ]*),../$$1/libr_$$1.a,g; print'`
 endif
 ifneq ($(BINDEPS), )
-LDFLAGS+=`echo "${BINDEPS} " | perl -ne 's,r_([^ ]*),../../$$1/libr_$$1.a,g; print'`
+LDFLAGS+=`echo "${BINDEPS} " | if [ -d ../../libr ]; then perl -ne 's,r_([^ ]*),../../libr/$$1/libr_$$1.a,g; print' ; else perl -ne 's,r_([^ ]*),../../$$1/libr_$$1.a,g; print' ; fi `
 endif
 endif
 
