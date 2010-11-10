@@ -7,6 +7,15 @@
 
 TODO 0.7
 ========
+* rahash takes TOO long to load on big binaries
+[pancake@dazo ~]$ rax -
+jeje
+6a656a650a^C
+[pancake@dazo ~]$ rax2 -
+jeje
+0x0
+^C
+* search in which region there's rwx with matching hexpairs or string
 * merge asm.arch vm.arch
 * _ZN7WebCore11CounterNode7recountERKNS_12AtomicStringE
   - demangle c++ and objc names

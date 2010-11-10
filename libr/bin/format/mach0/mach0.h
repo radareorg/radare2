@@ -63,6 +63,7 @@ struct MACH0_(r_bin_mach0_obj_t) {
 	int nsects;
 	struct MACH0_(nlist)* symtab;
 	ut8* symstr;
+	int symstrlen;
 	int nsymtab;
 	ut32* indirectsyms;
 	int nindirectsyms;

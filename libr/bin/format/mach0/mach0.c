@@ -105,6 +105,7 @@ static int MACH0_(r_bin_mach0_parse_symtab)(struct MACH0_(r_bin_mach0_obj_t)* bi
 			perror("malloc (symstr)");
 			return R_FALSE;
 		}
+		bin->symstrlen = st.strsize;
 		if (r_buf_read_at(bin->b, st.stroff, (ut8*)bin->symstr, st.strsize) == -1) {
 			eprintf("Error: read (symstr)\n");
 			R_FREE (bin->symstr);
@@ -411,10 +412,10 @@ struct r_bin_mach0_section_t* MACH0_(r_bin_mach0_get_sections)(struct MACH0_(r_b
 	return sections;
 }
 
-struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin_mach0_obj_t)* bin)
-{
+struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
+	const char *symstr;
 	struct r_bin_mach0_symbol_t *symbols;
-	int from, to, i, j, s;
+	int from, to, i, j, s, stridx;
 
 	if (!bin->symtab || !bin->symstr)
 		return NULL;
@@ -435,7 +436,12 @@ struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin
 			if (bin->symtab[i].n_type & N_EXT)
 				symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
 			else symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
-			strncpy(symbols[j].name, (char*)bin->symstr+bin->symtab[i].n_un.n_strx, R_BIN_MACH0_STRING_LENGTH);
+			stridx = bin->symtab[i].n_un.n_strx;
+			if (stridx>=0 && stridx<bin->symstrlen)
+				symstr = (char*)bin->symstr+stridx;
+			else symstr = "???";
+			strncpy(symbols[j].name, symstr,
+R_BIN_MACH0_STRING_LENGTH);
 			symbols[j].last = 0;
 		}
 	}
@@ -446,7 +452,8 @@ struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin
 static void MACH0_(r_bin_mach0_parse_import)(struct MACH0_(r_bin_mach0_obj_t)* bin, struct r_bin_mach0_import_t *import, int idx, int lazy)
 {
 	char sectname[17];
-	int i, j, sym, nsyms, wordsize;
+	int i, j, sym, nsyms, wordsize, stridx;
+	const char *symstr;
 
 	import->offset = 0LL;
 	import->addr = 0LL;
@@ -487,8 +494,12 @@ static void MACH0_(r_bin_mach0_parse_import)(struct MACH0_(r_bin_mach0_obj_t)* b
 				import->type = R_BIN_MACH0_IMPORT_TYPE_OBJECT;
 				import->offset = sym == -1 ? 0 : bin->sects[i].offset + sym * wordsize;
 				import->addr = sym == -1 ? 0 : bin->sects[i].addr + sym * wordsize;
+				stridx = bin->symtab[idx].n_un.n_strx;
+				if (stridx>=0 && stridx<bin->symstrlen)
+					symstr = (char *)bin->symstr+stridx;
+				else symstr = "???";
 				snprintf (import->name, R_BIN_MACH0_STRING_LENGTH, "%s:%s",
-						sym == -1 ? "" : sectname, (char*)bin->symstr+bin->symtab[idx].n_un.n_strx);
+						sym == -1 ? "" : sectname, symstr);
 				break;
 			}
 		}
