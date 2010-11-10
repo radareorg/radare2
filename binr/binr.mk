@@ -11,7 +11,7 @@ LIBS+=$(subst r_,-L../../libr/,$(DEPS))
 all: ${BIN}${EXT_EXE}
 
 ${BIN}${EXT_EXE}: ${BIN}.o ${OBJS}
-	${CC} -o ${BIN}${EXT_EXE} ${LIBS} ${LDFLAGS} ${OBJS} ${BIN}.o
+	${CC} -o ${BIN}${EXT_EXE} ${OBJS} ${BIN}.o ${LIBS} ${LDFLAGS}
 
 clean:
 	-rm -f ${BIN} ${BIN}.o ${OBJS}

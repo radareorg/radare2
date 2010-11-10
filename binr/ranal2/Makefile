@@ -1,4 +1,8 @@
 BIN=ranal2
-DEPS=r_anal r_util r_lib r_reg
+BINDEPS=r_anal r_lib r_reg r_util
 
 include ../binr.mk
+
+ifeq ($(WITHNONPIC),1)
+LDFLAGS+=${DL_LIBS} -lm -lgmp -lpthread
+endif
