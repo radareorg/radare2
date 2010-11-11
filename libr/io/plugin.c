@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2008-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
 
 /* TODO: write li->fds setter/getter helpers */
+// TODO: return true/false everywhere,, not -1 or 0
 
 #include "r_io.h"
 #include "../config.h"

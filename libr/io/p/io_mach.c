@@ -51,11 +51,11 @@ static task_t pid_to_task(int pid) {
 
         err = task_for_pid (mach_task_self (), (pid_t)pid, &task);
         if ((err != KERN_SUCCESS) || !MACH_PORT_VALID(task)) {
-                fprintf(stderr, "Failed to get task %d for pid %d.\n", (int)task, (int)pid);
+                eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
                 eprintf ("Reason: 0x%x: %s\n", err, MACH_ERROR_STRING (err));
                 eprintf ("You probably need to add user to procmod group.\n"
                                 " Or chmod g+s radare && chown root:procmod radare\n");
-                fprintf(stderr, "FMI: http://developer.apple.com/documentation/Darwin/Reference/ManPages/man8/taskgated.8.html\n");
+                eprintf ("FMI: http://developer.apple.com/documentation/Darwin/Reference/ManPages/man8/taskgated.8.html\n");
                 return -1;
         }
         old_pid = pid;
@@ -138,6 +138,7 @@ static int debug_attach(int pid) {
 #endif
 	/* is this required for arm ? */
 #if EXCEPTION_PORT
+int exception_port;
         if (mach_port_allocate (mach_task_self(), MACH_PORT_RIGHT_RECEIVE,
 			&exception_port) != KERN_SUCCESS) {
                 eprintf ("Failed to create exception port.\n");
@@ -168,7 +169,7 @@ static int __open(struct r_io_t *io, const char *file, int rw, int mode) {
 				case EPERM:
 					ret = pid;
 					eprintf ("Operation not permitted\n");
-					break;
+					return -1;
 				case EINVAL:
 					perror ("ptrace: Cannot attach");
 					eprintf ("ERRNO: %d (EINVAL)\n", errno);

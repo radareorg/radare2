@@ -20,7 +20,7 @@ static int fds[3];
 
 static int __waitpid(int pid) {
 	int st = 0;
-	if (waitpid(pid, &st, 0) == -1)
+	if (waitpid (pid, &st, 0) == -1)
 		return R_FALSE;
 	return R_TRUE;
 }

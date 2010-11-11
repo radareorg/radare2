@@ -617,7 +617,8 @@ static RList *r_debug_native_threads(int pid) {
         }
         for (i = 0; i < inferior_thread_count; i++) {
                 tid = inferior_threads[i];
-                if ((err = thread_get_state (tid, ARM_THREAD_STATE,
+        	gp_count = sizeof (R_DEBUG_REG_T);
+                if ((err = thread_get_state (tid, THREAD_STATE,
 				(thread_state_t) &state, &gp_count)) != KERN_SUCCESS) {
                         // eprintf ("debug_list_threads: %s\n", MACH_ERROR_STRING(err));
 			OSX_PC = 0;
@@ -679,9 +680,13 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int ret; 
 	thread_array_t inferior_threads = NULL;
 	unsigned int inferior_thread_count = 0;
-	R_DEBUG_REG_T *regs = (R_DEBUG_REG_T *)buf;
+	R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
         unsigned int gp_count = sizeof (R_DEBUG_REG_T);
 
+	if (size<sizeof(R_DEBUG_REG_T)) {
+		eprintf ("Small buffer passed to r_debug_read\n");
+		return R_FALSE;
+	}
         ret = task_threads (pid_to_task (pid), &inferior_threads, &inferior_thread_count);
         if (ret != KERN_SUCCESS) {
                 eprintf ("debug_getregs\n");
@@ -690,7 +695,8 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 
         if (inferior_thread_count>0) {
                 /* TODO: allow to choose the thread */
-                if (thread_get_state (inferior_threads[0], R_DEBUG_STATE_T,
+        	gp_count = sizeof (R_DEBUG_REG_T)/sizeof(size_t);
+                if (thread_get_state (inferior_threads[0], ARM_THREAD_STATE,
 				(thread_state_t) regs, &gp_count) != KERN_SUCCESS) {
                         eprintf ("debug_getregs: Failed to get thread %d %d.error (%x). (%s)\n",
 				(int)pid, pid_to_task (pid), (int)ret, MACH_ERROR_STRING (ret));
@@ -698,7 +704,7 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
                         return R_FALSE;
                 }
         } else eprintf ("There are no threads!\n");
-        return R_TRUE; //gp_count;
+        return sizeof (R_DEBUG_REG_T);
 #elif __linux__ || __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
 	int ret; 
 	switch (type) {
