@@ -4,6 +4,8 @@
 #include <winbase.h>
 #include <psapi.h>
 
+static HANDLE tid2handler(int tid);
+
 // XXX remove
 #define WIN32_PI(x) x
 
@@ -425,3 +427,29 @@ static RList *w32_dbg_maps() {
 	}
 	return list;
 }
+
+static HANDLE tid2handler(int tid) {
+        HANDLE th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, tid);
+        THREADENTRY32 te32 = { .dwSize = sizeof (THREADENTRY32) };
+        int ret = -1;
+        if (th == INVALID_HANDLE_VALUE)
+		return NULL;
+	if (!Thread32First (th, &te32)) {
+		CloseHandle (th);
+                return NULL;
+	}
+        do {
+                if (te32.th32OwnerProcessID == tid) {
+		//	if (te32.th32ThreadID == tid) {
+			return w32_openthread (THREAD_ALL_ACCESS, 0,
+					te32.th32ThreadID);
+		//	}{
+                }
+		ret++;
+        } while (Thread32Next (th, &te32));
+        if (ret == -1)
+                print_lasterr ((char *)__FUNCTION__);
+	CloseHandle (th);
+        return NULL;
+}
+

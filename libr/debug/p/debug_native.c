@@ -19,31 +19,6 @@ static int r_debug_native_reg_write(int pid, int type, const ut8* buf, int size)
 #define R_DEBUG_REG_T CONTEXT
 #include "native/w32.c"
 
-static HANDLE tid2handler(int tid) {
-        HANDLE th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, tid);
-        THREADENTRY32 te32 = { .dwSize = sizeof (THREADENTRY32) };
-        int ret = -1;
-        if (th == INVALID_HANDLE_VALUE)
-		return NULL;
-	if (!Thread32First (th, &te32)) {
-		CloseHandle (th);
-                return NULL;
-	}
-        do {
-                if (te32.th32OwnerProcessID == tid) {
-		//	if (te32.th32ThreadID == tid) {
-			return w32_openthread (THREAD_ALL_ACCESS, 0,
-					te32.th32ThreadID);
-		//	}{
-                }
-		ret++;
-        } while (Thread32Next (th, &te32));
-        if (ret == -1)
-                print_lasterr ((char *)__FUNCTION__);
-	CloseHandle (th);
-        return NULL;
-}
-
 #elif __OpenBSD__ || __NetBSD__ || __FreeBSD__
 #include <sys/ptrace.h>
 #include <sys/types.h>
@@ -652,6 +627,9 @@ static RDebugPid *darwin_get_pid(int pid) {
 }
 #endif
 
+#undef MAXPID
+#define MAXPID 69999
+
 static RList *r_debug_native_pids(int pid) {
 	RList *list = r_list_new ();
 #if __WINDOWS__
@@ -662,7 +640,7 @@ static RList *r_debug_native_pids(int pid) {
 		if (p) r_list_append (list, p);
 	} else {
 		int i;
-		for(i=1; i<69999; i++) {
+		for(i=1; i<MAXPID; i++) {
 			RDebugPid *p = darwin_get_pid (i);
 			if (p) r_list_append (list, p);
 		}
@@ -708,7 +686,7 @@ static RList *r_debug_native_pids(int pid) {
 		}
 		closedir (dh);
 	} else
-	for (i=2; i<59999; i++) {
+	for (i=2; i<MAXPID; i++) {
 		if (!kill (i, 0)) {
 			// TODO: Use slurp!
 			snprintf (cmdline, sizeof (cmdline), "/proc/%d/cmdline", i);
@@ -773,7 +751,7 @@ static RList *r_debug_native_threads(int pid) {
 	
 	/* LOL! linux hides threads from /proc, but they are accessible!! HAHAHA */
 	//while ((de = readdir (dh))) {
-	for (i=pid; i<64320; i++) { // XXX
+	for (i=pid; i<MAXPID; i++) { // XXX
 		snprintf (cmdline, sizeof (cmdline), "/proc/%d/status", i);
 		fd = open (cmdline, O_RDONLY);
 		if (fd == -1)
@@ -1040,9 +1018,11 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 				|| (info.shared != prev_info.reserved)
 				|| (info.reserved != prev_info.reserved))
 			print = 1;
+
+		#define xwr2rwx(x) ((x&1)<<2) && (x&2) && ((x&4)>>2)
 		if (print) {
 			sprintf (buf, "%s %02x %s/%s/%s",
-					r_str_rwx_i (prev_info.max_protection), i,
+					r_str_rwx_i (xwr2rwx (prev_info.max_protection)), i,
 					unparse_inheritance (prev_info.inheritance),
 					prev_info.shared ? "shar" : "priv",
 					prev_info.reserved ? "reserved" : "not-reserved");
