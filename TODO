@@ -7,14 +7,16 @@
 
 TODO 0.7
 ========
+* dmi command must read from memory if no file path provided
+  - rabin from memory ftw
 * rahash takes TOO long to load on big binaries
-[pancake@dazo ~]$ rax -
-jeje
-6a656a650a^C
-[pancake@dazo ~]$ rax2 -
-jeje
-0x0
-^C
+	[pancake@dazo ~]$ rax -
+	jeje
+	6a656a650a^C
+	[pancake@dazo ~]$ rax2 -
+	jeje
+	0x0
+	^C
 * search in which region there's rwx with matching hexpairs or string
 * merge asm.arch vm.arch
 * _ZN7WebCore11CounterNode7recountERKNS_12AtomicStringE
@@ -24,7 +26,7 @@ jeje
   0-9+ = count of chars
   E = end of stream
   RKNS_ = start of arguments
-* Check if python plugin works from inside
+* Check if python plugin works from inside (IMHO no)
 
 Questions
 =========
