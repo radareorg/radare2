@@ -74,6 +74,10 @@ static HANDLE tid2handler(int tid) {
 #include <mach-o/loader.h>
 #include <mach-o/nlist.h>
 #include <errno.h>
+#include <unistd.h>
+#include <sys/sysctl.h>
+#include <sys/fcntl.h>
+#include <sys/proc.h>
 
 #if __POWERPC__
 #include <sys/ptrace.h>
@@ -530,12 +534,137 @@ static const char *r_debug_native_reg_profile() {
 #endif
 }
 
+/*
+	TODO: list all pids in linux and bsd.. osx seems to be strange
+	int i;
+	for (i=1; i<9999; i++) {
+		if (!kill (i, 0))
+			r_list_append (list, r_debug_pid_new ("???", i, 's', 0));
+	}
+*/
+
+// XXX
+static RDebugPid *darwin_get_pid(int pid) {
+	int foo, nargs, mib[3];
+	size_t size, argmax = 2048;
+	char *curr_arg, *start_args, *iter_args, *end_args;
+	char *procargs = NULL;
+	char psname[4096];
+#if 0
+	/* Get the maximum process arguments size. */
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_ARGMAX;
+	size = sizeof(argmax);
+	if (sysctl (mib, 2, &argmax, &size, NULL, 0) == -1) {
+		eprintf ("sysctl() error on getting argmax\n");
+		return NULL;
+	}   
+#endif
+	/* Allocate space for the arguments. */
+	procargs = (char *)malloc (argmax);
+	if (procargs == NULL) {
+		eprintf ("getcmdargs(): insufficient memory for procargs %p\n", argmax);
+		return NULL;
+	}   
+
+	/*  
+	 * Make a sysctl() call to get the raw argument space of the process.
+	 */  
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_PROCARGS2;
+	mib[2] = pid;
+
+	size = argmax;
+	procargs[0] = 0;
+	if (sysctl (mib, 3, procargs, &size, NULL, 0) == -1) {
+		if (EINVAL == errno) { // invalid == access denied for some reason
+			//eprintf("EINVAL returned fetching argument space\n");
+			free (procargs);
+			return NULL;
+		}   
+		eprintf ("sysctl(): unspecified sysctl error - %i\n", errno);
+		free (procargs);
+		return NULL;
+	}   
+
+	// copy the number of argument to nargs
+	memcpy (&nargs, procargs, sizeof(nargs));
+	iter_args =  procargs + sizeof(nargs);
+	end_args = &procargs[size-30]; // end of the argument space
+	if (iter_args >= end_args) {
+		eprintf ("getcmdargs(): argument length mismatch");
+		free (procargs);
+		return NULL;
+	}   
+
+	//TODO: save the environment variables to envlist as well
+	// Skip over the exec_path and '\0' characters.
+	// XXX: fix parsing
+#if 0
+	while (iter_args < end_args && *iter_args != '\0') { iter_args++; }
+	while (iter_args < end_args && *iter_args == '\0') { iter_args++; }
+#endif
+	if (iter_args == end_args) {
+		free (procargs);
+		return NULL;
+	}
+	/* Iterate through the '\0'-terminated strings and add each string
+	 * to the Python List arglist as a Python string.
+	 * Stop when nargs strings have been extracted.  That should be all 
+	 * the arguments.  The rest of the strings will be environment
+	 * strings for the command.
+	 */  
+	curr_arg = iter_args;
+	start_args = iter_args; //reset start position to beginning of cmdline
+	foo = 1;
+	psname[0] = 0;
+	while (iter_args < end_args && nargs > 0) {
+		if (*iter_args++ == '\0') {
+			if (foo) {
+				strcpy (psname, curr_arg);
+				foo = 0;
+			} else {
+				strcat (psname, " ");
+				strcat (psname, curr_arg);
+			}
+			//printf("arg[%i]: %s\n", iter_args, curr_arg);
+			/* Fetch next argument */
+			curr_arg = iter_args;
+			nargs--;
+		}   
+	}   
+
+#if 1
+	/*  
+	 * curr_arg position should be further than the start of the argspace
+	 * and number of arguments should be 0 after iterating above. Otherwise
+	 * we had an empty argument space or a missing terminating \0 etc.
+	 */  
+	if (curr_arg == start_args || nargs > 0) {
+		psname[0] = 0;
+//		eprintf ("getcmdargs(): argument parsing failed");
+		free (procargs);
+		return NULL;
+	}
+#endif
+	return r_debug_pid_new (psname, pid, 's', 0); // XXX 's' ??, 0?? must set correct values
+}
+
 static RList *r_debug_native_pids(int pid) {
 	RList *list = r_list_new ();
 #if __WINDOWS__
 	eprintf ("pids: TODO\n");
 #elif __APPLE__
-	eprintf ("pids: TODO\n");
+	if (pid) {
+		RDebugPid *p = darwin_get_pid (pid);
+		if (p) r_list_append (list, p);
+	} else {
+		int i;
+		for(i=1; i<69999; i++) {
+			RDebugPid *p = darwin_get_pid (i);
+			if (p) r_list_append (list, p);
+		}
+	}
 #else
 	int i, fd;
 	char *ptr, cmdline[1024];
@@ -543,7 +672,7 @@ static RList *r_debug_native_pids(int pid) {
 	list->free = (RListFree)&r_debug_pid_free;
 	/* TODO */
 	if (pid) {
-		r_list_append (list, r_debug_pid_new ("(current)", pid, 's'));
+		r_list_append (list, r_debug_pid_new ("(current)", pid, 's', 0));
 		/* list parents */
 		DIR *dh;
 		struct dirent *de;
@@ -577,7 +706,7 @@ static RList *r_debug_native_pids(int pid) {
 		}
 		closedir (dh);
 	} else
-	for (i=2; i<39999; i++) {
+	for (i=2; i<59999; i++) {
 		if (!kill (i, 0)) {
 			// TODO: Use slurp!
 			snprintf (cmdline, sizeof (cmdline), "/proc/%d/cmdline", i);
@@ -637,7 +766,7 @@ static RList *r_debug_native_threads(int pid) {
 
 	if (!pid)
 		return NULL;
-	r_list_append (list, r_debug_pid_new ("(current)", pid, 's'));
+	r_list_append (list, r_debug_pid_new ("(current)", pid, 's', 0));
 	/* list parents */
 	
 	/* LOL! linux hides threads from /proc, but they are accessible!! HAHAHA */
@@ -658,7 +787,7 @@ static RList *r_debug_native_threads(int pid) {
 			read (fd, cmdline, sizeof(cmdline)-1);
 			sprintf (cmdline, "thread_%d", thid++);
 			cmdline[sizeof(cmdline)-1] = '\0';
-			r_list_append (list, r_debug_pid_new (cmdline, i, 's'));
+			r_list_append (list, r_debug_pid_new (cmdline, i, 's', 0));
 		}
 	}
 #else

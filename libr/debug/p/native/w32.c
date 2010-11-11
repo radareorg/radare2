@@ -173,7 +173,7 @@ static int w32_dbg_threads(int pid) {
 		if (te32.th32OwnerProcessID == pid) {
 			const char *path = "unk";
 			RDebugPid *pid = r_debug_pid_new (
-				path, te32.th32ThreadID, 's');
+				path, te32.th32ThreadID, 's', 0); // TODO: add pc
 			eprintf ("THREAD: id=0x%08x flags=0x%08x\n",
 				te32.th32ThreadID, te32.dwFlags);
 			eprintf ("HANDLER: 0x%p\n", w32_openthread (
