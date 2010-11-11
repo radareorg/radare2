@@ -21,7 +21,10 @@ VERSION=@VERSION@
 # ./configure --with-ostype=[linux,osx,solaris,windows] # TODO: rename to w32, w64?
 OSTYPE=@USEROSTYPE@
 HOST_OS=@HOST_OS@
+# hack: must be fixed in acr
+ifneq($(OSTYPE),darwin)
 DL_LIBS=@DL_LIBS@
+endif
 WITHPIC=@WITHPIC@
 WITHNONPIC=@WITHNONPIC@
 

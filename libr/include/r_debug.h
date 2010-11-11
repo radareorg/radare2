@@ -14,7 +14,9 @@ enum {
 	R_DBG_PROC_STOP = 's',
 	R_DBG_PROC_RUN = 'r',
 	R_DBG_PROC_SLEEP = 'S',
-	R_DBG_PROC_ZOMBIE = 'z'
+	R_DBG_PROC_ZOMBIE = 'z',
+	R_DBG_PROC_DEAD = 'd',
+	R_DBG_PROC_RAISED = 'R' // has produced a signal, breakpoint, etc..
 };
 
 // signal handling must support application and debugger level options
@@ -152,9 +154,7 @@ typedef struct r_debug_pid_t {
 	char status; /* stopped, running, zombie, sleeping ,... */
 	int runnable; /* when using 'run', 'continue', .. this proc will be runnable */
 	const char *path;
-	//struct list_head threads;
-	//struct list_head childs;
-	//struct r_debug_pid_t *parent;
+	ut64 pc;
 } RDebugPid;
 
 #ifdef R_API
@@ -174,7 +174,7 @@ R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc);
 //R_API int r_debug_pid_del(struct r_debug_t *dbg);
 //R_API int r_debug_pid_del_thread(struct r_debug_t *dbg);
 R_API int r_debug_pid_list(RDebug *dbg, int pid);
-R_API RDebugPid *r_debug_pid_new(char *path, int pid, char status);
+R_API RDebugPid *r_debug_pid_new(char *path, int pid, char status, ut64 pc);
 R_API RDebugPid *r_debug_pid_free(RDebugPid *pid);
 
 R_API int r_debug_use(struct r_debug_t *dbg, const char *str);

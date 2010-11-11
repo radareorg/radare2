@@ -93,6 +93,7 @@ public class Radare.RDebug {
 		RUN,
 		SLEEP,
 		ZOMBIE,
+		DEAD
 	}
 
 	[CCode (cprefix="R_DBG_REASON_", cname="int")]

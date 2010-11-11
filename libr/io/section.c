@@ -24,7 +24,7 @@ R_API RIOSection *r_io_section_get_i(RIO *io, int idx) {
 	int i = 0;
 	struct list_head *pos;
 	list_for_each_prev (pos, &io->sections) {
-		RIOSection *s = (RIOSection *)list_entry(pos, RIOSection, list);
+		RIOSection *s = (RIOSection *)list_entry (pos, RIOSection, list);
 		if (i == idx)
 			return s;
 		i++;

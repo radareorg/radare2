@@ -5,6 +5,9 @@ BINDEPS+=r_sign r_print r_lang r_asm r_syscall r_hash r_line r_socket r_flags r_
 
 include ../binr.mk
 
+sign:
+	ldid -Sradare2.xml radare2
+
 ifeq ($(WITHNONPIC),1)
 LDFLAGS+=${DL_LIBS} -lm -lpthread
 ifeq ($(HAVE_LIB_GMP),1)

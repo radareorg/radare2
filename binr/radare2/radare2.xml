@@ -1,0 +1,17 @@
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+ <dict>
+  <key>app-identifier</key>
+  <true/>
+  <key>get-task-allow</key>
+  <true/>
+  <key>task_for_pid-allow</key>
+  <true/>
+ </dict>
+</plist>
+
+<!--
+  This file must be used to 'sign' the 'radare' binary
+  after compiling to permit debugging on the iphone-os
+    $ ldid -Sradare2.xml radare2
+-->

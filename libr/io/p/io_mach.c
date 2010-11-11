@@ -18,6 +18,7 @@
 #include <mach/mach_init.h>
 #include <mach/mach_port.h>
 #include <mach/mach_traps.h>
+#include <mach/mach_error.h>
 #include <mach/task.h>
 #include <mach/task_info.h>
 #include <mach/thread_act.h>
@@ -48,10 +49,10 @@ static task_t pid_to_task(int pid) {
         if (old_task!= -1) //old_pid != -1 && old_pid == pid)
                 return old_task;
 
-        err = task_for_pid(mach_task_self(), (pid_t)pid, &task);
+        err = task_for_pid (mach_task_self (), (pid_t)pid, &task);
         if ((err != KERN_SUCCESS) || !MACH_PORT_VALID(task)) {
                 fprintf(stderr, "Failed to get task %d for pid %d.\n", (int)task, (int)pid);
-                eprintf ("Reason: 0x%x: %s\n", err, MACH_ERROR_STRING(err));
+                eprintf ("Reason: 0x%x: %s\n", err, MACH_ERROR_STRING (err));
                 eprintf ("You probably need to add user to procmod group.\n"
                                 " Or chmod g+s radare && chown root:procmod radare\n");
                 fprintf(stderr, "FMI: http://developer.apple.com/documentation/Darwin/Reference/ManPages/man8/taskgated.8.html\n");
@@ -63,7 +64,7 @@ static task_t pid_to_task(int pid) {
         return task;
 }
 
-static int __read(RIO *io, int pid, void *buff, int len) {
+static int __read(RIO *io, int pid, ut8 *buff, int len) {
         unsigned int size = 0;
         int err = vm_read_overwrite (pid_to_task (pid),
 		(unsigned int)io->off, len, (pointer_t)buff, &size);
@@ -103,7 +104,7 @@ static int __write(struct r_io_t *io, int pid, const ut8 *buf, int len) {
 }
 
 static int __plugin_open(struct r_io_t *io, const char *file) {
-	if (!memcmp (file, "mach://", 7))
+	if (!memcmp (file, "attach://", 9) || !memcmp (file, "mach://", 7))
 		return R_TRUE;
 	return R_FALSE;
 }
@@ -159,7 +160,7 @@ static int debug_attach(int pid) {
 static int __open(struct r_io_t *io, const char *file, int rw, int mode) {
 	int ret = -1;
 	if (__plugin_open (io, file)) {
-		int pid = atoi(file+7);
+		int pid = atoi(file+(file[0]=='a'?9:7));
 		if (pid>0) {
 			ret = debug_attach (pid);
 			if (ret == -1) {
@@ -225,8 +226,8 @@ struct r_io_plugin_t r_io_plugin_mach = {
 #else
 
 struct r_io_plugin_t r_io_plugin_mach = {
-	.name = "io.ptrace",
-        .desc = "ptrace io (NOT SUPPORTED FOR THIS PLATFORM)",
+	.name = "io.mach ",
+        .desc = "mach debug io (unsupported in this platform)"
 };
 
 #endif

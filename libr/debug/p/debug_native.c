@@ -61,7 +61,11 @@ static HANDLE tid2handler(int tid) {
 #include <mach/exception_types.h>
 #include <mach/mach_init.h>
 #include <mach/mach_port.h>
+#include <mach/mach_interface.h>
 #include <mach/mach_traps.h>
+#include <mach/mach_types.h>
+#include <mach/mach_vm.h>
+#include <mach/mach_error.h>
 #include <mach/task.h>
 #include <mach/task_info.h>
 #include <mach/thread_act.h>
@@ -136,7 +140,7 @@ task_t pid_to_task(int pid) {
 	if (old_task!= -1) //old_pid != -1 && old_pid == pid)
 		return old_task;
 
-	err = task_for_pid(mach_task_self(), (pid_t)pid, &task);
+	err = task_for_pid (mach_task_self(), (pid_t)pid, &task);
 	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID(task)) {
 		eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
 		eprintf ("Reason: 0x%x: %s\n", err, (char *)MACH_ERROR_STRING (err));
@@ -225,7 +229,7 @@ static int r_debug_native_detach(int pid) {
 #if __WINDOWS__
 	return w32_detach (pid)? 0 : -1;
 #elif __APPLE__
-	return ptrace (PT_DETACH, pid, NULL, NULL);
+	return ptrace (PT_DETACH, pid, NULL, 0);
 #else
 	return ptrace (PTRACE_DETACH, pid, NULL, NULL);
 #endif
@@ -561,7 +565,7 @@ static RList *r_debug_native_pids(int pid) {
 					continue;
 				read (fd, cmdline, 1024);
 				cmdline[1023] = '\0';
-				r_list_append (list, r_debug_pid_new (cmdline, i, 's'));
+				r_list_append (list, r_debug_pid_new (cmdline, i, 's', 0));
 			}
 			close (fd);
 		}
@@ -578,7 +582,7 @@ static RList *r_debug_native_pids(int pid) {
 			read (fd, cmdline, sizeof (cmdline));
 			cmdline[sizeof (cmdline)-1] = '\0';
 			close (fd);
-			r_list_append (list, r_debug_pid_new (cmdline, i, 's'));
+			r_list_append (list, r_debug_pid_new (cmdline, i, 's', 0));
 		}
 	}
 #endif
@@ -591,7 +595,35 @@ static RList *r_debug_native_threads(int pid) {
 #if __WINDOWS__
 	eprintf ("pids: TODO\n");
 #elif __APPLE__
-	eprintf ("pids: TODO\n");
+#if __arm__                 
+	#define OSX_PC state.r15
+	#undef THREAD_STATE
+	#define THREAD_STATE ARM_THREAD_STATE
+#elif __POWERPC__
+	#define OSX_PC state.srr0
+#else
+	#define OSX_PC state.__eip
+#endif
+        int i, tid, err;
+	unsigned int gp_count;
+	static thread_array_t inferior_threads = NULL;
+	static unsigned int inferior_thread_count = 0;
+        R_DEBUG_REG_T state;
+
+        if (task_threads (pid_to_task (pid), &inferior_threads,
+			&inferior_thread_count) != KERN_SUCCESS) {
+                eprintf ("Failed to get list of task's threads.\n");
+                return list;
+        }
+        for (i = 0; i < inferior_thread_count; i++) {
+                tid = inferior_threads[i];
+                if ((err = thread_get_state (tid, ARM_THREAD_STATE,
+				(thread_state_t) &state, &gp_count)) != KERN_SUCCESS) {
+                        // eprintf ("debug_list_threads: %s\n", MACH_ERROR_STRING(err));
+			OSX_PC = 0;
+                }
+		r_list_append (list, r_debug_pid_new ("???", i, 's', OSX_PC));
+        }
 #elif __linux__
 	int i, fd, thid = 0;
 	char *ptr, cmdline[1024];
@@ -650,9 +682,6 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	R_DEBUG_REG_T *regs = (R_DEBUG_REG_T *)buf;
         unsigned int gp_count = sizeof (R_DEBUG_REG_T);
 
-        //thread_act_port_array_t thread_list;
-        //mach_msg_type_number_t thread_count;
-
         ret = task_threads (pid_to_task (pid), &inferior_threads, &inferior_thread_count);
         if (ret != KERN_SUCCESS) {
                 eprintf ("debug_getregs\n");
@@ -661,8 +690,8 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 
         if (inferior_thread_count>0) {
                 /* TODO: allow to choose the thread */
-                if ((ret = thread_get_state (inferior_threads[0], R_DEBUG_STATE_T,
-				(thread_state_t) regs, &gp_count)) != KERN_SUCCESS) {
+                if (thread_get_state (inferior_threads[0], R_DEBUG_STATE_T,
+				(thread_state_t) regs, &gp_count) != KERN_SUCCESS) {
                         eprintf ("debug_getregs: Failed to get thread %d %d.error (%x). (%s)\n",
 				(int)pid, pid_to_task (pid), (int)ret, MACH_ERROR_STRING (ret));
                         perror ("thread_get_state");
@@ -670,7 +699,6 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
                 }
         } else eprintf ("There are no threads!\n");
         return R_TRUE; //gp_count;
-
 #elif __linux__ || __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
 	int ret; 
 	switch (type) {
@@ -706,10 +734,8 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		R_DEBUG_REG_T regs;
 		memset (&regs, 0, sizeof (regs));
 		memset (buf, 0, size);
-
 #if __NetBSD__ || __FreeBSD__ || __OpenBSD__
 		ret = ptrace (PTRACE_GETREGS, pid, &regs, sizeof (regs));
-
 #elif __linux__ && __powerpc__
 		ret = ptrace (PTRACE_GETREGS, pid, &regs, NULL);
 #else
@@ -770,15 +796,168 @@ static int r_debug_native_reg_write(int pid, int type, const ut8* buf, int size)
 	return R_FALSE;
 }
 
+#if __APPLE__
+static const char * unparse_inheritance (vm_inherit_t i) {
+        switch (i) {
+        case VM_INHERIT_SHARE: return "share";
+        case VM_INHERIT_COPY: return "copy";
+        case VM_INHERIT_NONE: return "none";
+        default: return "???";
+        }
+}
+
+// TODO: move to p/native/darwin.c
+static RList *darwin_dbg_maps (RDebug *dbg) {
+	RDebugMap *mr;
+	RList *list = r_list_new ();
+
+	char buf[128];
+	int i;
+	kern_return_t kret;
+	vm_region_basic_info_data_64_t info, prev_info;
+	mach_vm_address_t prev_address;
+	mach_vm_size_t size, prev_size;
+	mach_port_t object_name;
+	mach_msg_type_number_t count;
+	int nsubregions = 0;
+	int num_printed = 0;
+	// XXX: wrong for 64bits
+	size_t address = 0;
+
+	int max = 100; // XXX
+	task_t task = pid_to_task (dbg->pid);
+/*
+	count = VM_REGION_BASIC_INFO_COUNT_64;
+	kret = mach_vm_region (pid_to_task (dbg->pid), &address, &size, VM_REGION_BASIC_INFO_64,
+			(vm_region_info_t) &info, &count, &object_name);
+	if (kret != KERN_SUCCESS) {
+		printf("No memory regions.\n");
+		return;
+	}
+	memcpy (&prev_info, &info, sizeof (vm_region_basic_info_data_64_t));
+*/
+	memset (&prev_info, 0, sizeof (prev_info));
+	prev_address = address;
+	prev_size = size;
+	nsubregions = 1;
+
+	for (i=0; ; i++) {
+		int print = 0;
+		int done = 0;
+
+		address = prev_address + prev_size;
+
+		/* Check to see if address space has wrapped around. */
+		if (address == 0)
+			print = done = 1;
+
+		if (!done) {
+			count = VM_REGION_BASIC_INFO_COUNT_64;
+			kret = mach_vm_region (task, (mach_vm_address_t *)&address,
+					&size, VM_REGION_BASIC_INFO_64,
+					(vm_region_info_t) &info, &count, &object_name);
+			if (kret != KERN_SUCCESS) {
+				size = 0;
+				print = done = 1;
+			}
+		}
+
+		if (address != prev_address + prev_size)
+			print = 1;
+
+		if ((info.protection != prev_info.protection)
+				|| (info.max_protection != prev_info.max_protection)
+				|| (info.inheritance != prev_info.inheritance)
+				|| (info.shared != prev_info.reserved)
+				|| (info.reserved != prev_info.reserved))
+			print = 1;
+
+#if 0
+		mr = malloc(sizeof(MAP_REG));
+		mr->ini = (ut32) prev_address;
+		mr->end = (ut32) (prev_address+ prev_size);
+		mr->size = (ut32) prev_size;
+
+		mr->bin = strdup(buf);
+		mr->perms = darwin_prot_to_unix(prev_info.protection); // XXX is this ok?
+		//mr->flags = // FLAG_NOPERM  // FLAG_USERCODE ...
+		//mr->perms = prev_info.max_protection;
+
+		add_regmap(mr);
+#endif
+		sprintf(buf, "unk%d-%s-%s-%s", i,
+				unparse_inheritance (prev_info.inheritance),
+				prev_info.shared ? "shar" : "priv",
+				prev_info.reserved ? "reserved" : "not-reserved");
+		// TODO: MAPS can have min and max protection rules
+		// :: prev_info.max_protection
+		mr = r_debug_map_new (buf, prev_address, prev_address+prev_size, prev_info.protection, 0);
+		if (mr == NULL) {
+			eprintf ("Cannot create r_debug_map_new\n");
+			break;
+		}
+		r_list_append (list, mr);
+
+#if 0
+		if (1==0 && rest) { /* XXX never pritn this info here */
+			addr = 0LL;
+			addr = (ut64) (ut32) prev_address;
+			if (num_printed == 0)
+				fprintf(stderr, "Region ");
+			else    fprintf(stderr, "   ... ");
+			fprintf(stderr, " 0x%08llx - 0x%08llx %s (%s) %s, %s, %s",
+					addr, addr + prev_size,
+					unparse_protection (prev_info.protection),
+					unparse_protection (prev_info.max_protection),
+					unparse_inheritance (prev_info.inheritance),
+					prev_info.shared ? "shared" : " private",
+					prev_info.reserved ? "reserved" : "not-reserved");
+
+			if (nsubregions > 1)
+				fprintf(stderr, " (%d sub-regions)", nsubregions);
+
+			fprintf(stderr, "\n");
+
+			prev_address = address;
+			prev_size = size;
+			memcpy (&prev_info, &info, sizeof (vm_region_basic_info_data_64_t));
+			nsubregions = 1;
+
+			num_printed++;
+		} else {
+#endif
+#if 0
+			prev_size += size;
+			nsubregions++;
+#else
+			prev_address = address;
+			prev_size = size;
+			memcpy (&prev_info, &info, sizeof (vm_region_basic_info_data_64_t));
+			nsubregions = 1;
+
+			num_printed++;
+#endif
+			//              }
+
+			if ((max > 0) && (num_printed >= max))
+				done = 1;
+
+			if (done)
+				break;
+	}
+	return list;
+}
+#endif
+
 static RList *r_debug_native_map_get(RDebug *dbg) {
-	char path[1024];
 	RList *list = NULL;
-#if __WINDOWS__
-	list = w32_dbg_maps ();
-	
-	// TODO
+#if __APPLE__
+	list = darwin_dbg_maps (dbg);
+#elif __WINDOWS__
+	list = w32_dbg_maps (); // TODO: moar?
 #else
 #if __sun
+	char path[1024];
 	/* TODO: On solaris parse /proc/%d/map */
 	sprintf (path, "pmap %d > /dev/stderr", ps.tid);
 	system (path);
@@ -786,8 +965,8 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 	RDebugMap *map;
 	int i, perm, unk = 0;
 	char *pos_c;
+	char path[1024], line[1024];
 	char region[100], region2[100], perms[5], null[16];
-	char line[1024];
 	FILE *fd;
 #if __FreeBSD__
 	sprintf (path, "/proc/%d/map", dbg->pid);
@@ -796,7 +975,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 #endif
 	fd = fopen (path, "r");
 	if (!fd) {
-		perror ("debug_init_maps");
+		perror ("debug_init_maps: /proc");
 		return NULL;
 	}
 
@@ -1018,8 +1197,8 @@ int drx_del(RDebug *dbg, ut64 addr, int rwx) {
 #endif
 
 static int r_debug_native_bp(void *user, int add, ut64 addr, int hw, int rwx) {
-	RDebug *dbg = user;
 #if __i386__ || __x86_64__
+	RDebug *dbg = user;
 	if (hw) {
 		if (add) return drx_add (dbg, addr, rwx);
 		return drx_del (dbg, addr, rwx);
