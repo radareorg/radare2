@@ -543,6 +543,7 @@ static const char *r_debug_native_reg_profile() {
 	}
 */
 
+#if __APPLE__
 // XXX
 static RDebugPid *darwin_get_pid(int pid) {
 	int foo, nargs, mib[3];
@@ -649,6 +650,7 @@ static RDebugPid *darwin_get_pid(int pid) {
 #endif
 	return r_debug_pid_new (psname, pid, 's', 0); // XXX 's' ??, 0?? must set correct values
 }
+#endif
 
 static RList *r_debug_native_pids(int pid) {
 	RList *list = r_list_new ();
