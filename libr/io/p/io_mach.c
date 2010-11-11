@@ -75,23 +75,17 @@ static int __read(RIO *io, int pid, ut8 *buff, int len) {
         return (int)size;
 }
 
-static int ptrace_write_at(int tid, const void *buff, int len, ut64 addr) {
+static int mach_write_at(int tid, const void *buff, int len, ut64 addr) {
         kern_return_t err;
+	task_t task = pid_to_task (tid);
         // XXX SHOULD RESTORE PERMS LATER!!!
-        err = vm_protect (pid_to_task (tid), addr+(addr%4096), 4096, 0,
-		VM_PROT_READ | VM_PROT_WRITE);
-        if (err != KERN_SUCCESS)
-                eprintf ("cant change page perms to rw\n");
-
-        err = vm_write( pid_to_task(tid),
-                (vm_address_t)(unsigned int)addr, // XXX not for 64 bits
-                (pointer_t)buff, (mach_msg_type_number_t)len);
-        if (err != KERN_SUCCESS)
+        //err = vm_protect (task, addr+(addr%4096), 4096, 0, VM_PROT_READ | VM_PROT_WRITE);
+        if (vm_protect (task, addr, len, 0, VM_PROT_READ | VM_PROT_WRITE) != KERN_SUCCESS)
+                eprintf ("cant change page perms to rw at 0x%"PFMT64x"\n", addr);
+        if (vm_write (task, (vm_address_t)(unsigned int)addr, // XXX not for 64 bits
+                	(pointer_t)buff, (mach_msg_type_number_t)len) != KERN_SUCCESS)
                 eprintf ("cant write on memory\n");
-
-        vm_protect (pid_to_task (tid), addr+(addr%4096), 4096, 0,
-		VM_PROT_READ | VM_PROT_EXECUTE);
-        if (err != KERN_SUCCESS) {
+        if (vm_protect (task, addr, len, 0, VM_PROT_READ | VM_PROT_EXECUTE) != KERN_SUCCESS) {
         	eprintf ("Oops (0x%"PFMT64x") error (%s)\n", addr,
 			MACH_ERROR_STRING (err));
                 eprintf ("cant change page perms to rx\n");
@@ -100,7 +94,7 @@ static int ptrace_write_at(int tid, const void *buff, int len, ut64 addr) {
 }
 
 static int __write(struct r_io_t *io, int pid, const ut8 *buf, int len) {
-	return ptrace_write_at (pid, buf, len, io->off);
+	return mach_write_at (pid, buf, len, io->off);
 }
 
 static int __plugin_open(struct r_io_t *io, const char *file) {
@@ -117,7 +111,6 @@ static int debug_attach(int pid) {
         inferior_task = pid_to_task (pid);
         if (inferior_task == -1)
                 return -1;
-
         task = inferior_task; // ugly global asignation
         eprintf ("; pid = %d\ntask= %d\n", pid, inferior_task);
 #if 0
@@ -138,7 +131,7 @@ static int debug_attach(int pid) {
 #endif
 	/* is this required for arm ? */
 #if EXCEPTION_PORT
-int exception_port;
+	int exception_port;
         if (mach_port_allocate (mach_task_self(), MACH_PORT_RIGHT_RECEIVE,
 			&exception_port) != KERN_SUCCESS) {
                 eprintf ("Failed to create exception port.\n");
@@ -225,12 +218,10 @@ struct r_io_plugin_t r_io_plugin_mach = {
 };
 
 #else
-
 struct r_io_plugin_t r_io_plugin_mach = {
-	.name = "io.mach ",
+	.name = "io.mach",
         .desc = "mach debug io (unsupported in this platform)"
 };
-
 #endif
 
 #ifndef CORELIB

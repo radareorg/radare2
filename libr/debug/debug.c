@@ -172,17 +172,43 @@ R_API int r_debug_wait(RDebug *dbg) {
 	return ret;
 }
 
+// XXX: very experimental
+R_API int r_debug_step_soft(RDebug *dbg) {
+	ut8 buf[32];
+	RAnalOp op;
+	ut64 pc0, pc1, pc2;
+	pc0 = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+	int ret = r_anal_aop (dbg->anal, &op, pc0, buf, sizeof (buf));
+	pc1 = pc0 + op.length;
+	// XXX: Does not works for 'ret'
+	pc2 = op.jump?op.jump:0;
+
+	r_bp_add_sw (dbg->bp, pc1, 4, R_BP_PROT_EXEC);
+	if (pc2) r_bp_add_sw (dbg->bp, pc2, 4, R_BP_PROT_EXEC);
+	r_debug_continue (dbg);
+	r_debug_wait (dbg);
+	r_bp_del (dbg->bp, pc1);
+	if (pc2) r_bp_del (dbg->bp, pc2);
+
+	return ret;
+}
+
+R_API int r_debug_step_hard(RDebug *dbg) {
+	if (!dbg->h->step (dbg, dbg->pid))
+		return R_FALSE;
+	return r_debug_wait (dbg);
+}
+
 // TODO: count number of steps done to check if no error??
 R_API int r_debug_step(RDebug *dbg, int steps) {
 	int i, ret = R_FALSE;
 	if (dbg && dbg->h && dbg->h->step) {
 		for (i=0;i<steps;i++) {
-			if (!(ret = dbg->h->step (dbg, dbg->pid)))
-				break;
-			r_debug_wait (dbg);
+			ret = (dbg->swstep)?r_debug_step_soft (dbg):r_debug_step_hard (dbg);
 			// TODO: create wrapper for dbg_wait
 			// TODO: check return value of wait and show error
-			dbg->steps++;
+			if (ret)
+				dbg->steps++;
 		}
 	}
 	return ret;

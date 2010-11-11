@@ -23,8 +23,10 @@ R_API void r_debug_map_list(struct r_debug_t *dbg, ut64 addr) {
 
 R_API RDebugMap *r_debug_map_new (char *name, ut64 addr, ut64 addr_end, int perm, int user) {
 	RDebugMap *map;
-	if (name == NULL || addr >= addr_end)
+	if (name == NULL || addr >= addr_end) {
+		eprintf ("r_debug_map_new: error assert(%"PFMT64x">=%"PFMT64x")\n", addr, addr_end);
 		return NULL;
+	}
 	map = R_NEW (RDebugMap);
 	if (map) {
 		map->name = strdup (name);

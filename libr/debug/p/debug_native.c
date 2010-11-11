@@ -186,16 +186,22 @@ static int r_debug_native_step(RDebug *dbg, int pid) {
 	r_debug_native_continue (pid, -1);
 #elif __APPLE__
 	debug_arch_x86_trap_set (dbg, 1);
+	// TODO: not supported in all platforms. need dbg.swstep=
+	#if __arm__
+	if (!dbg->swstep)
+		eprintf ("XXX hardware stepping is not supported in arm. set e dbg.swstep=true\n");
+	else eprintf ("XXX: software step is not implemented??\n");
+	return R_FALSE;
+	#endif
 	//eprintf ("stepping from pc = %08x\n", (ut32)get_offset("eip"));
 	//ret = ptrace (PT_STEP, ps.tid, (caddr_t)get_offset("eip"), SIGSTOP);
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, SIGTRAP); //SIGINT);
 	if (ret != 0) {
 		perror ("ptrace-step");
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
-		/* DO NOT WAIT FOR EVENTS !!! */
-		ret = R_FALSE;
+		ret = R_FALSE; /* do not wait for events */
 	} else ret = R_TRUE;
-#else // __APPLE__
+#else // linux
 	ut32 addr = 0; /* should be eip */
 	//ut32 data = 0;
 	//printf("NATIVE STEP over PID=%d\n", pid);
@@ -204,7 +210,7 @@ static int r_debug_native_step(RDebug *dbg, int pid) {
 		perror ("native-singlestep");
 		ret = R_FALSE;
 	} else ret = R_TRUE;
-#endif // __APPLE_
+#endif
 	return ret;
 }
 
@@ -795,10 +801,35 @@ static int r_debug_native_reg_write(int pid, int type, const ut8* buf, int size)
 		if (sizeof (R_DEBUG_REG_T) < size)
 			size = sizeof (R_DEBUG_REG_T);
 		return (ret != 0) ? R_FALSE: R_TRUE;
+#elif __APPLE__
+		int ret; 
+		thread_array_t inferior_threads = NULL;
+		unsigned int inferior_thread_count = 0;
+		R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
+		unsigned int gp_count = sizeof (R_DEBUG_REG_T);
+
+		ret = task_threads (pid_to_task (pid), &inferior_threads, &inferior_thread_count);
+		if (ret != KERN_SUCCESS) {
+			eprintf ("debug_getregs\n");
+			return R_FALSE;
+		}
+
+		if (inferior_thread_count>0) {
+			/* TODO: allow to choose the thread */
+			gp_count = sizeof (R_DEBUG_REG_T)/sizeof(size_t);
+			if (thread_set_state (inferior_threads[0], ARM_THREAD_STATE,
+					(thread_state_t) regs, gp_count) != KERN_SUCCESS) {
+				eprintf ("debug_getregs: Failed to get thread %d %d.error (%x). (%s)\n",
+					(int)pid, pid_to_task (pid), (int)ret, MACH_ERROR_STRING (ret));
+				perror ("thread_get_state");
+				return R_FALSE;
+			}
+		} else eprintf ("There are no threads!\n");
+		return sizeof (R_DEBUG_REG_T);
 #else
 #warning r_debug_native_reg_write not implemented
 #endif
-	} else eprintf("TODO: reg_write_non-gpr (%d)\n", type);
+	} else eprintf ("TODO: reg_write_non-gpr (%d)\n", type);
 	return R_FALSE;
 }
 
@@ -813,12 +844,13 @@ static const char * unparse_inheritance (vm_inherit_t i) {
 }
 
 // TODO: move to p/native/darwin.c
+// TODO: this loop MUST be cleaned up
 static RList *darwin_dbg_maps (RDebug *dbg) {
 	RDebugMap *mr;
 	RList *list = r_list_new ();
 
 	char buf[128];
-	int i;
+	int i, print;
 	kern_return_t kret;
 	vm_region_basic_info_data_64_t info, prev_info;
 	mach_vm_address_t prev_address;
@@ -829,8 +861,6 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 	int num_printed = 0;
 	// XXX: wrong for 64bits
 	size_t address = 0;
-
-	int max = 100; // XXX
 	task_t task = pid_to_task (dbg->pid);
 /*
 	count = VM_REGION_BASIC_INFO_COUNT_64;
@@ -842,20 +872,22 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 	}
 	memcpy (&prev_info, &info, sizeof (vm_region_basic_info_data_64_t));
 */
+	size = 4096;
 	memset (&prev_info, 0, sizeof (prev_info));
 	prev_address = address;
 	prev_size = size;
 	nsubregions = 1;
 
 	for (i=0; ; i++) {
-		int print = 0;
 		int done = 0;
 
 		address = prev_address + prev_size;
 
+		if (prev_size==0)
+			break;
 		/* Check to see if address space has wrapped around. */
 		if (address == 0)
-			print = done = 1;
+			done = 1;
 
 		if (!done) {
 			count = VM_REGION_BASIC_INFO_COUNT_64;
@@ -877,33 +909,21 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 				|| (info.shared != prev_info.reserved)
 				|| (info.reserved != prev_info.reserved))
 			print = 1;
-
-#if 0
-		mr = malloc(sizeof(MAP_REG));
-		mr->ini = (ut32) prev_address;
-		mr->end = (ut32) (prev_address+ prev_size);
-		mr->size = (ut32) prev_size;
-
-		mr->bin = strdup(buf);
-		mr->perms = darwin_prot_to_unix(prev_info.protection); // XXX is this ok?
-		//mr->flags = // FLAG_NOPERM  // FLAG_USERCODE ...
-		//mr->perms = prev_info.max_protection;
-
-		add_regmap(mr);
-#endif
-		sprintf(buf, "unk%d-%s-%s-%s", i,
-				unparse_inheritance (prev_info.inheritance),
-				prev_info.shared ? "shar" : "priv",
-				prev_info.reserved ? "reserved" : "not-reserved");
-		// TODO: MAPS can have min and max protection rules
-		// :: prev_info.max_protection
-		mr = r_debug_map_new (buf, prev_address, prev_address+prev_size, prev_info.protection, 0);
-		if (mr == NULL) {
-			eprintf ("Cannot create r_debug_map_new\n");
-			break;
+		if (print) {
+			sprintf (buf, "%s %02x %s/%s/%s",
+					r_str_rwx_i (prev_info.max_protection), i,
+					unparse_inheritance (prev_info.inheritance),
+					prev_info.shared ? "shar" : "priv",
+					prev_info.reserved ? "reserved" : "not-reserved");
+			// TODO: MAPS can have min and max protection rules
+			// :: prev_info.max_protection
+			mr = r_debug_map_new (buf, prev_address, prev_address+prev_size, prev_info.protection, 0);
+			if (mr == NULL) {
+				eprintf ("Cannot create r_debug_map_new\n");
+				break;
+			}
+			r_list_append (list, mr);
 		}
-		r_list_append (list, mr);
-
 #if 0
 		if (1==0 && rest) { /* XXX never pritn this info here */
 			addr = 0LL;
@@ -944,12 +964,6 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 			num_printed++;
 #endif
 			//              }
-
-			if ((max > 0) && (num_printed >= max))
-				done = 1;
-
-			if (done)
-				break;
 	}
 	return list;
 }
