@@ -176,14 +176,18 @@ R_API int r_socket_connect(char *host, int port) {
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = AF_INET;
 	he = (struct hostent *)gethostbyname( host );
-	if (he == (struct hostent*)0)
+	if (he == (struct hostent*)0) {
+		close (s);
 		return -1;
+	}
 
 	sa.sin_addr = *((struct in_addr *)he->h_addr);
 	sa.sin_port = htons( port );
 
-	if (connect(s, (const struct sockaddr*)&sa, sizeof(struct sockaddr)))
+	if (connect(s, (const struct sockaddr*)&sa, sizeof(struct sockaddr))) {
+		close (s);
 		return -1;
+	}
 	return s;
 }
 
@@ -325,14 +329,18 @@ R_API int r_socket_udp_connect(const char *host, int port) {
 	memset (&sa, 0, sizeof (sa));
 	sa.sin_family = AF_INET;
 	he = (struct hostent *)gethostbyname (host);
-	if (he == (struct hostent*)0)
+	if (he == (struct hostent*)0) {
+		close (s);
 		return -1;
+	}
 
 	sa.sin_addr = *((struct in_addr *)he->h_addr);
 	sa.sin_port = htons( port );
 
-	if (connect (s, (const struct sockaddr*)&sa, sizeof (struct sockaddr)))
+	if (connect (s, (const struct sockaddr*)&sa, sizeof (struct sockaddr))) {
+		close (s);
 		return -1;
+	}
 
 	return s;
 }
