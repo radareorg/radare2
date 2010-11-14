@@ -53,9 +53,7 @@ typedef struct r_search_t {
 	int distance;
 	int align;
 	RSearchUpdate update;
-	//struct r_search_binparse_t *bp;
 	RList *kws; // TODO: Use r_search_kw_new ()
-	//struct list_head kws; //r_search_hw_t kws;
 } RSearch;
 
 #ifdef R_API

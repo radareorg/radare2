@@ -55,7 +55,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case '?': return core->num->value;
 		}
 	}
-	if ( (flag = r_flag_get (core->flags, str)) ) {
+	if ((flag = r_flag_get (core->flags, str))) {
 		ret = flag->offset;
 		*ok = R_TRUE;
 	} else *ok = ret = 0;

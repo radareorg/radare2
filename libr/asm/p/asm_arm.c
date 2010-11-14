@@ -61,9 +61,10 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	memcpy (bytes, buf, 4); // TODO handle thumb
 
 	/* prepare disassembler */
-	memset(&disasm_obj,'\0', sizeof(struct disassemble_info));
+	memset (&disasm_obj,'\0', sizeof(struct disassemble_info));
 	arm_mode = a->bits;
-	//info.arch = ARM_EXT_V1|ARM_EXT_V4T|ARM_EXT_V5;
+	//disasm_obj.arch = ARM_EXT_V1|ARM_EXT_V4T|ARM_EXT_V5;
+	disasm_obj.arch = 1; //ARM_EXT_V1|ARM_EXT_V4T|ARM_EXT_V5;
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &arm_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
@@ -82,6 +83,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	return aop->inst_len; //(a->bits/8); //aop->inst_len;
 }
 
+// XXX: This is wrong, some opcodes are 32bit in thumb mode
 static int assemble(RAsm *a, RAsmAop *aop, const char *buf) {
 	int op = armass_assemble(buf, a->pc, (a->bits==16)?1:0);
 	if (op==-1)
