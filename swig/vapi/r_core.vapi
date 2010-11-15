@@ -22,7 +22,7 @@ public class RCore {
 	public RSign sign;
 	public RPrint print;
 	// TODO: public RVm vm;
-		public uint64 offset;
+	public uint64 offset;
 
 	public static unowned RCore cast(uint64 ptr);
 	public bool loadlibs();
@@ -121,6 +121,8 @@ public class RCore {
 		// public static RList<RCoreAsmHit> AsmHit.list();
 	}
 
+	public delegate int SearchCallback (uint64 from, uint8 *buf, int len);
+	public bool search_cb(uint64 from, uint64 to, SearchCallback cb);
 
 	/* files */
 	public RCore.File file_open(string file, int mode);

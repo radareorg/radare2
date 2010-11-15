@@ -7,6 +7,29 @@
 
 TODO 0.7
 ========
+* Refactor cursor stuff (already done?)imho yes
+* w32 is required this?? r2 -d <pid> > dh native > dp=824 > ... -- not really :) for 0.6
+* Create radare2-testsuite project
+  - tests for ired, rax2, radare2, rabin2 ...
+* Record trace of register status for each function when running
+  - r_reg_arena_copy();
+* Add lua and dalvik disassembler (volunteers?)
+* Reimplement or fix the delta diffing in C
+  - first we need to do it for ired..
+* Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
+* Add dex format support to rabin (android)
+* Is RCore->block and blocksize a RBuf ? refactor!11
+* add support for sign/unsigned registers..or at least a way to cast them
+* Implement rap:// upload/download protocol commands (maybe just system() with rsc2+wget?
+* Add support for STATIC_PLUGINS in r_lang
+  - r_lang_define is implemented in lang.c, but requires the collaboration
+    of the plugins to properly setup the environment for the script execution.
+  - Add support for STATIC_PLUGINS in r_lang
+  - dlerror(/usr/lib/radare2/lang_perl.so): libperl.so: cannot open shared object file: No such file or directory
+    This issue is fixed by setting LD_LIBRARY_PATH...looks like dlopen ignores rpath
+* merge asm.arch vm.arch
+* Define and use boolean type return type
+* Functions in r_util to get lil/big ut8,16,32 from ut8*
 * dmi command must read from memory if no file path provided
   - rabin from memory ftw
 * rahash takes TOO long to load on big binaries
@@ -17,9 +40,6 @@ TODO 0.7
 	jeje
 	0x0
 	^C
-* search in which region there's rwx with matching hexpairs or string
-  - Use RIO
-* merge asm.arch vm.arch
 * _ZN7WebCore11CounterNode7recountERKNS_12AtomicStringE
   - demangle c++ and objc names
     WebCore.CounterNode.recount(AtomicString)
@@ -42,9 +62,9 @@ Questions
 
 Debugger
 ========
-* Breakpoints are ignored in some situations.. we must check
-  for them and toggle a .dbg variable to break
-* stepover waits for one unknown event
+* stepover waits for one unknown event that cannot be stopped
+* Implement DRX support
+* Implement list threads on ALL supported platforms (win,lin,osx)
 * ALL threads must be stopped when a breakpoint is handled..
 * Floating point registers
 * MMX/XMM/DRX control
@@ -79,12 +99,12 @@ TODO edu
 * Implement case-insensitive search (e search.casematters ?) any better name? Use /i?
 * Implement /. to search using a file .. isnt zignatures about this?
 * Implement /p to search for patterns
+  - implement it in r_core ?? or add r_io_bind support
 * Implement search and replace /s
 
 TODO pancake
 ------------
 * rarc2 allows to compile invalid code like calling puts() out of context
-* Implement DRX support
 * Implement RAnalCall (analyze function arguments, return values, propagate types..)
   - define number of arguments for given function
   - warn if signature and analysis differs in number of args or so..
@@ -130,28 +150,6 @@ Refactoring
   - useful in r_sys_mkdir ?
 * Finish and import the spp's getopt owns implementation in r_util (like in p9)
 
-0.7
-===
-* Refactor cursor stuff
-* r2 -d <pid> > dh native > dp=824 > ... -- not really :) for 0.6
-* Create radare2-testsuite project
-  - tests for ired, rax2, radare2, rabin2 ...
-* Record trace of register status for each function when running
-  - r_reg_arena_copy();
-* Add lua and dalvik disassembler (volunteers?)
-* Reimplement or fix the delta diffing in C
-  - first we need to do it for ired..
-* Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
-* Add dex format support to rabin (android)
-* Is RCore->block and blocksize a RBuf ? refactor!11
-* add support for sign/unsigned registers..or at least a way to cast them
-* Implement rap:// upload/download protocol commands (maybe just system() with rsc2+wget?
-* Add support for STATIC_PLUGINS in r_lang
-  - r_lang_define is implemented in lang.c, but requires the collaboration
-    of the plugins to properly setup the environment for the script execution.
-  - Add support for STATIC_PLUGINS in r_lang
-  - dlerror(/usr/lib/radare2/lang_perl.so): libperl.so: cannot open shared object file: No such file or directory
-    This issue is fixed by setting LD_LIBRARY_PATH...looks like dlopen ignores rpath
  
 Future
 ======

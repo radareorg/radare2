@@ -101,6 +101,8 @@ typedef struct r_core_t {
 	RCoreRtrHost rtr_host[RTR_MAX_HOSTS];
 } RCore;
 
+typedef int (*RCoreSearchCallback)(RCore *core, ut64 from, ut8 *buf, int len);
+
 #ifdef R_API
 #define r_core_cast(x) (RCore*)(size_t)(x)
 R_API int r_core_init(struct r_core_t *core);
@@ -125,6 +127,7 @@ R_API int r_core_read_at(struct r_core_t *core, ut64 addr, ut8 *buf, int size);
 R_API int r_core_visual(struct r_core_t *core, const char *input);
 R_API int r_core_visual_cmd(struct r_core_t *core, int ch);
 
+R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb);
 R_API int r_core_serve(RCore *core, int fd);
 R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int mode);
 R_API struct r_core_file_t *r_core_file_get_fd(struct r_core_t *core, int fd);
