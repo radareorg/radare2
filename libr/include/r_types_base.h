@@ -8,8 +8,7 @@
 #define ut16 unsigned short
 #define ut8  unsigned char
 #define st8  char
-/* TODO: choose */
-#define bt1  int
+#undef boolt
 #define boolt int
 
 #define R_FAIL -1

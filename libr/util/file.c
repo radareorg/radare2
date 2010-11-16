@@ -11,24 +11,15 @@
 
 R_API const char *r_file_basename (const char *path) {
 	const char *ptr = strrchr (path, '/');
-	if (ptr)
-		path = ptr + 1;
+	if (ptr) path = ptr + 1;
 	return path;
 }
 
-R_API int r_file_mkdir(const char *path) {
-#if __WINDOWS__
-	return mkdir(path);
-#else
-	return mkdir(path, 0755);
-#endif
-}
-
-R_API int r_file_exist(const char *str) {
+R_API boolt r_file_exist(const char *str) {
 	struct stat buf;
 	if (stat (str, &buf)==-1)
 		return R_FALSE;
-	return (S_ISREG (buf.st_mode));
+	return (S_ISREG (buf.st_mode))?R_TRUE:R_FALSE;
 }
 
 R_API const char *r_file_abspath(const char *file) {
@@ -118,9 +109,7 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 
 	ret[bytes] = '\0';
 	fclose (fd);
-
-	if (usz)
-		*usz = bytes;
+	if (usz) *usz = bytes;
 	return ret;
 }
 
@@ -196,7 +185,7 @@ R_API char *r_file_slurp_line(const char *file, int line, int context) {
 	return ptr;
 }
 
-R_API int r_file_dump(const char *file, const ut8 *buf, int len) {
+R_API boolt r_file_dump(const char *file, const ut8 *buf, int len) {
 	int ret;
 	FILE *fd = fopen(file, "wb");
 	if (fd == NULL) {
@@ -210,7 +199,7 @@ R_API int r_file_dump(const char *file, const ut8 *buf, int len) {
 	return ret;
 }
 
-R_API int r_file_rm(const char *file) {
+R_API boolt r_file_rm(const char *file) {
 	// TODO: w32 unlink?
-	return unlink(file);
+	return (unlink (file)==0)? R_TRUE:R_FALSE;
 }

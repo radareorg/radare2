@@ -751,23 +751,37 @@ static RList *r_debug_native_threads(int pid) {
 	
 	/* LOL! linux hides threads from /proc, but they are accessible!! HAHAHA */
 	//while ((de = readdir (dh))) {
-	for (i=pid; i<MAXPID; i++) { // XXX
-		snprintf (cmdline, sizeof (cmdline), "/proc/%d/status", i);
-		fd = open (cmdline, O_RDONLY);
-		if (fd == -1)
-			continue;
-		read (fd, cmdline, 1024);
-		close (fd);
-		cmdline[sizeof(cmdline)-1] = '\0';
-		ptr = strstr (cmdline, "Tgid:");
-		if (ptr) {
-			int tgid = atoi (ptr+5);
-			if (tgid != pid)
+	snprintf (cmdline, sizeof (cmdline), "/proc/%d/task", pid);
+	if (r_file_exist (cmdline)) {
+		struct dirent *de;
+		DIR *dh = opendir (cmdline);
+		while ((de = readdir (dh))) {
+			int tid = atoi (de->d_name);
+			// TODO: get status, pc, etc..
+			r_list_append (list, r_debug_pid_new (cmdline, tid, 's', 0));
+		}
+		closedir (dh);
+	} else {
+		/* LOL! linux hides threads from /proc, but they are accessible!! HAHAHA */
+		//while ((de = readdir (dh))) {
+		for (i=pid; i<MAXPID; i++) { // XXX
+			snprintf (cmdline, sizeof (cmdline), "/proc/%d/status", i);
+			fd = open (cmdline, O_RDONLY);
+			if (fd == -1)
 				continue;
-			read (fd, cmdline, sizeof(cmdline)-1);
-			sprintf (cmdline, "thread_%d", thid++);
+			read (fd, cmdline, 1024);
+			close (fd);
 			cmdline[sizeof(cmdline)-1] = '\0';
-			r_list_append (list, r_debug_pid_new (cmdline, i, 's', 0));
+			ptr = strstr (cmdline, "Tgid:");
+			if (ptr) {
+				int tgid = atoi (ptr+5);
+				if (tgid != pid)
+					continue;
+				read (fd, cmdline, sizeof(cmdline)-1);
+				sprintf (cmdline, "thread_%d", thid++);
+				cmdline[sizeof(cmdline)-1] = '\0';
+				r_list_append (list, r_debug_pid_new (cmdline, i, 's', 0));
+			}
 		}
 	}
 #else
