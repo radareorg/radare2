@@ -4,10 +4,47 @@
 #include <winbase.h>
 #include <psapi.h>
 
-static HANDLE tid2handler(int tid);
+static HANDLE tid2handler(int pid, int tid);
 
 // XXX remove
 #define WIN32_PI(x) x
+#if 0
+// list windows.. required to get list of windows for current pid and send kill signals
+BOOL CALLBACK enumWindowsProc (HWND hwnd, LPARAM lParam) {
+
+DWORD procid;
+
+GetWindowThreadProcessId (hwnd, &procid);
+
+if ((HANDLE)procid == g_hProc) { staticchar module[1024];
+module[0] = 0;
+
+if (g_softPhoneTitle.Size() > 0) { int rc = GetWindowText (hwnd, module, 1023);
+module[rc] = 0;
+
+}
+
+if (IsWindow(hwnd) && ((g_appTitle.Size() == 0) || (g_appTitle.EqualsNoCase(module)))) {
+g_hWnd = hwnd;
+
+return (false);
+}
+
+}
+
+return (true);
+}
+
+int
+
+findApplicationWindow (void) {
+g_hWnd = NULL;
+
+EnumWindows (enumWindowsProc, 0);
+
+return (0);
+}
+#endif
 
 #if 0
 
@@ -226,6 +263,7 @@ static int w32_dbg_wait(int pid) {
 	DEBUG_EVENT de;
 	int tid, next_event = 0;
 	unsigned int code;
+	int ret = R_DBG_REASON_UNKNOWN;
 
 	do {
 		/* handle debug events */
@@ -254,33 +292,39 @@ static int w32_dbg_wait(int pid) {
 				 de.u.CreateProcessInfo.lpStartAddress);
 			r_debug_native_continue (pid, -1);
 			next_event = 1;
+			ret = R_DBG_REASON_NEW_PID;
 			break;
 		case EXIT_PROCESS_DEBUG_EVENT:
 			eprintf ("\n\n______________[ process finished ]_______________\n\n");
 			//debug_load();
 			next_event = 0;
+			ret = R_DBG_REASON_EXIT_PID;
 			break;
 		case CREATE_THREAD_DEBUG_EVENT:
 			eprintf ("(%d) created thread (0x%x)\n",
 			pid, de.u.CreateThread.lpStartAddress);
 			r_debug_native_continue (pid, -1);
+			ret = R_DBG_REASON_NEW_TID;
 			next_event = 1;
 			break;
 		case EXIT_THREAD_DEBUG_EVENT:
 			eprintf("EXIT_THREAD\n");
 			r_debug_native_continue (pid, -1);
 			next_event = 1;
+			ret = R_DBG_REASON_EXIT_TID;
 			break;
 		case LOAD_DLL_DEBUG_EVENT:
 			eprintf("(%d) Loading %s library at 0x%x\n",
 				pid, "", de.u.LoadDll.lpBaseOfDll);
 			r_debug_native_continue (pid, -1);
 			next_event = 1;
+			ret = R_DBG_REASON_NEW_LIB;
 			break;
 		case UNLOAD_DLL_DEBUG_EVENT:
 			eprintf ("UNLOAD_DLL\n");
 			r_debug_native_continue (pid, -1);
 			next_event = 1;
+			ret = R_DBG_REASON_EXIT_LIB;
 			break;
 		case OUTPUT_DEBUG_STRING_EVENT:
 			eprintf("OUTPUT_DBUG_STING\n");
@@ -291,10 +335,12 @@ static int w32_dbg_wait(int pid) {
 			eprintf("RIP_EVENT\n");
 			r_debug_native_continue (pid, -1);
 			next_event = 1;
+			// XXX unknown ret = R_DBG_REASON_TRAP;
 			break;
 		case EXCEPTION_DEBUG_EVENT:
 			next_event = debug_exception_event (
 				de.u.Exception.ExceptionRecord.ExceptionCode);
+			ret = R_DBG_REASON_TRAP;
 			break;
 		default:
 			eprintf ("Unknown event: %d\n", code);
@@ -302,7 +348,7 @@ static int w32_dbg_wait(int pid) {
 		}
 	} while (next_event);
 
-	return 0;
+	return ret;
 }
 
 static inline int CheckValidPE(unsigned char * PeHeader) {
@@ -428,8 +474,8 @@ static RList *w32_dbg_maps() {
 	return list;
 }
 
-static HANDLE tid2handler(int tid) {
-        HANDLE th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, tid);
+static HANDLE tid2handler(int pid, int tid) {
+        HANDLE th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, pid);
         THREADENTRY32 te32 = { .dwSize = sizeof (THREADENTRY32) };
         int ret = -1;
         if (th == INVALID_HANDLE_VALUE)
@@ -439,12 +485,11 @@ static HANDLE tid2handler(int tid) {
                 return NULL;
 	}
         do {
-                if (te32.th32OwnerProcessID == tid) {
-		//	if (te32.th32ThreadID == tid) {
+                if (te32.th32OwnerProcessID == pid && te32.th32ThreadID == tid) {
+			CloseHandle (th);
 			return w32_openthread (THREAD_ALL_ACCESS, 0,
 					te32.th32ThreadID);
-		//	}{
-                }
+		}
 		ret++;
         } while (Thread32Next (th, &te32));
         if (ret == -1)
@@ -453,3 +498,77 @@ static HANDLE tid2handler(int tid) {
         return NULL;
 }
 
+RList *w32_thread_list (int pid, RList *list) {
+        HANDLE th; 
+        HANDLE thid; 
+        THREADENTRY32 te32;
+        int ret;
+
+        ret = -1; 
+        te32.dwSize = sizeof(THREADENTRY32);
+
+	if (w32_openthread == NULL) {
+		eprintf("w32_thread_list: no w32_openthread?\n");
+		return list;
+	}
+        th = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, pid); 
+        if(th == INVALID_HANDLE_VALUE || !Thread32First (th, &te32))
+                goto err_load_th;
+        do {
+                /* get all threads of process */
+                if (te32.th32OwnerProcessID == pid) {
+			//te32.dwFlags);
+                        /* open a new handler */
+			// XXX: fd leak?
+#if 0
+ 75 typedef struct tagTHREADENTRY32 {
+ 76         DWORD dwSize;
+ 77         DWORD cntUsage;
+ 78         DWORD th32ThreadID;
+ 79         DWORD th32OwnerProcessID;
+ 80         LONG tpBasePri;
+ 81         LONG tpDeltaPri;
+ 82         DWORD dwFlags;
+#endif
+			thid = w32_openthread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
+			if (thid == NULL)
+                                goto err_load_th;
+                        ret = te32.th32ThreadID;
+			//eprintf("Thread: %x %x\n", thid, te32.th32ThreadID);
+			r_list_append (list, r_debug_pid_new ("???", te32.th32ThreadID, 's', 0));
+                }
+        } while (Thread32Next (th, &te32));
+err_load_th:    
+        if(ret == -1) 
+                print_lasterr ((char *)__FUNCTION__);
+        if(th != INVALID_HANDLE_VALUE)
+                CloseHandle (th);
+	return list;
+}
+
+// XXX hacky
+RList *w32_pids (int pid, RList *list) {
+        HANDLE th; 
+        HANDLE thid; 
+        THREADENTRY32 te32;
+        int ret = -1; 
+        te32.dwSize = sizeof (THREADENTRY32);
+	if (w32_openthread == NULL) {
+		eprintf ("w32_thread_list: no w32_openthread?\n");
+		return list;
+	}
+        th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, pid); 
+        if(th == INVALID_HANDLE_VALUE || !Thread32First (th, &te32))
+                goto err_load_th;
+        do {
+		if (ret != te32.th32OwnerProcessID)
+			r_list_append (list, r_debug_pid_new ("???", te32.th32OwnerProcessID, 's', 0));
+		ret = te32.th32OwnerProcessID;
+        } while (Thread32Next (th, &te32));
+err_load_th:    
+        if(ret == -1) 
+                print_lasterr ((char *)__FUNCTION__);
+        if(th != INVALID_HANDLE_VALUE)
+                CloseHandle (th);
+	return list;
+}

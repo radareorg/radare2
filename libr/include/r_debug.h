@@ -29,14 +29,20 @@ enum {
 };
 
 enum { // TODO: not yet used by r_debug
-	R_DBG_REASON_NEWPROC,
+	R_DBG_REASON_UNKNOWN,
+	R_DBG_REASON_NEW_PID,
+	R_DBG_REASON_NEW_TID,
+	R_DBG_REASON_NEW_LIB,
+	R_DBG_REASON_EXIT_PID,
+	R_DBG_REASON_EXIT_TID,
+	R_DBG_REASON_EXIT_LIB,
 	R_DBG_REASON_TRAP,
 	R_DBG_REASON_ILL,
 	R_DBG_REASON_INT,
 	R_DBG_REASON_SIGNAL,
 	R_DBG_REASON_FPU,
 	R_DBG_REASON_BP,
-	R_DBG_REASON_UNKNOWN,
+	R_DBG_REASON_DEAD
 };
 
 /* TODO: move to r_anal */
@@ -82,6 +88,7 @@ typedef struct r_debug_t {
 	int swstep; /* steps with software traps */
 	int steps;  /* counter of steps done */
 	int newstate;
+	int reason; /* stop reason */
 	RDebugTrace *trace;
 	int stop_all_threads;
 	char *reg_profile;
@@ -131,13 +138,14 @@ typedef struct r_debug_plugin_t {
 	int (*step)(RDebug *dbg, int pid); // if step() is NULL; reimplement it with traps
 	int (*cont)(int pid, int sig);
 	int (*wait)(int pid);
-	int (*kill)(RDebug *dbg, int sig);
+	int (*kill)(RDebug *dbg, boolt thread, int sig);
 	int (*contsc)(int pid, int sc);
 	RList* (*frames)(RDebug *dbg);
 	RBreakpointCallback breakpoint;
+// XXX: specify, pid, tid, or RDebug ?
 	int (*reg_read)(struct r_debug_t *dbg, int type, ut8 *buf, int size);
+	int (*reg_write)(int pid, int tid, int type, const ut8 *buf, int size); //XXX struct r_regset_t regs);
 	char* (*reg_profile)();
-	int (*reg_write)(int pid, int type, const ut8 *buf, int size); //XXX struct r_regset_t regs);
 	/* memory */
 	RList *(*map_get)(RDebug *dbg);
 	ut64 (*map_alloc)(RDebug *dbg, RDebugMap *map);
@@ -186,7 +194,7 @@ R_API struct r_debug_t *r_debug_new(int hard);
 R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg);
 
 /* send signals */
-R_API int r_debug_kill(struct r_debug_t *dbg, int sig);
+R_API int r_debug_kill(struct r_debug_t *dbg, boolt thread, int sig);
 // XXX: must be uint64 action
 R_API int r_debug_kill_setup(struct r_debug_t *dbg, int sig, int action);
 R_API int r_debug_step(struct r_debug_t *dbg, int steps);

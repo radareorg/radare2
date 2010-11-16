@@ -43,6 +43,8 @@ static int __write(struct r_io_t *io, int pid, const ut8 *buf, int len) {
 }
 
 static int __plugin_open(struct r_io_t *io, const char *file) {
+	if (!memcmp (file, "attach://", 9))
+		return R_TRUE;
 	return (!memcmp (file, "w32dbg://", 9))? R_TRUE: R_FALSE;
 }
 

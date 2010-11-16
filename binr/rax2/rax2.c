@@ -101,12 +101,16 @@ static int rax (char *str) {
 
 int use_stdin () {
 	char buf[1024];
-
 	while (!feof (stdin)) {
 		fgets (buf, sizeof (buf)-1, stdin);
 		if (feof (stdin)) break;
 		buf[strlen (buf)-1] = '\0';
-		if (!rax (buf)) break;
+		if (!flags) {
+			int i;
+			for (i=0; buf[i]; i++)
+				printf ("%02x", buf[i]);
+			printf ("\n");
+		} else if (!rax (buf)) break;
 	}
 	return 0;
 }

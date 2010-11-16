@@ -15,6 +15,7 @@ static int r_debug_recoil(RDebug *dbg) {
 		recoil = r_bp_recoil (dbg->bp, addr);
 		eprintf ("Recoil at 0x%"PFMT64x" = %d\n", addr, recoil);
 		if (recoil) {
+			dbg->reason = R_DBG_REASON_BP;
 			r_reg_set_value (dbg->reg, ri, addr-recoil);
 			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_TRUE);
 			ret = R_TRUE;
@@ -31,6 +32,7 @@ R_API RDebug *r_debug_new(int hard) {
 		dbg->tid = -1;
 		dbg->swstep = 0;
 		dbg->newstate = 0;
+		dbg->reason = R_DBG_REASON_UNKNOWN;
 		dbg->stop_all_threads = R_FALSE;
 		dbg->trace = r_debug_trace_new ();
 		dbg->printf = (void *)printf;
@@ -156,14 +158,16 @@ R_API int r_debug_stop_reason(RDebug *dbg) {
 	// - illegal instruction
 	// - fpu exception
 	// return dbg->reason
-	return R_DBG_REASON_UNKNOWN;
+	return dbg->reason;
 }
 
 /* Returns PID */
 R_API int r_debug_wait(RDebug *dbg) {
 	int ret = 0;
 	if (dbg && dbg->h && dbg->h->wait) {
+		dbg->reason = R_DBG_REASON_UNKNOWN;
 		ret = dbg->h->wait (dbg->pid);
+		dbg->reason = ret;
 		dbg->newstate = 1;
 		eprintf ("wait = %d\n", ret);
 		if (dbg->trace->enabled)
@@ -345,10 +349,10 @@ R_API int r_debug_syscall(struct r_debug_t *dbg, int num) {
 	return ret;
 }
 
-R_API int r_debug_kill(struct r_debug_t *dbg, int sig) {
+R_API int r_debug_kill(struct r_debug_t *dbg, boolt thread, int sig) {
 	int ret = R_FALSE;
 	if (dbg->h && dbg->h->kill)
-		ret = dbg->h->kill (dbg, sig);
+		ret = dbg->h->kill (dbg, thread, sig);
 	else eprintf ("Backend does not implements kill()\n");
 	return ret;
 }

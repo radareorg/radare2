@@ -9,7 +9,7 @@
 
 static int r_debug_native_continue(int pid, int sig);
 static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
-static int r_debug_native_reg_write(int pid, int type, const ut8* buf, int size);
+static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, int size);
 
 #define DEBUGGER 1
 #define MAXBT 128
@@ -143,7 +143,7 @@ static inline void debug_arch_x86_trap_set(RDebug *dbg, int foo) {
         eprintf ("trap flag: %d\n", (regs.__eflags&0x100));
         if (foo) regs.__eflags |= EFLAGS_TRAP_FLAG;
         else regs.__eflags &= ~EFLAGS_TRAP_FLAG;
-	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, &regs, sizeof (regs));
+	r_debug_native_reg_write (dbg->pid, dbg->tid, R_REG_TYPE_GPR, &regs, sizeof (regs));
 #endif
 }
 #endif // __APPLE__
@@ -160,7 +160,7 @@ static int r_debug_native_step(RDebug *dbg, int pid) {
 	/* up TRAP flag */
 	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR, &regs, sizeof (regs));
 	regs.EFlags |= 0x100;
-	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, &regs, sizeof (regs));
+	r_debug_native_reg_write (dbg->pid, dbg->tid, R_REG_TYPE_GPR, &regs, sizeof (regs));
 	//single_step = pid;
 	r_debug_native_continue (pid, -1);
 #elif __APPLE__
@@ -270,6 +270,8 @@ static int r_debug_native_wait(int pid) {
 	//printf ("prewait\n");
 	ret = waitpid (pid, &status, 0);
 	//printf ("status=%d (return=%d)\n", status, ret);
+	// TODO: switch status and handle reasons here
+	status = R_DBG_REASON_UNKNOWN;
 	return status;
 #endif
 }
@@ -296,18 +298,21 @@ static const char *r_debug_native_reg_profile() {
 	"seg	fs	.32	136	0\n"
 	"seg	es	.32	140	0\n"
 	"seg	ds	.32	144	0\n"
-	"gpr	edi	.32	148	0\n"
-	"gpr	esi	.32	152	0\n"
-	"gpr	ebx	.32	156	0\n"
-	"gpr	edx	.32	160	0\n"
-	"gpr	ecx	.32	164	0\n"
-	"gpr	eax	.32	168	0\n"
-	"gpr	ebp	.32	172	0\n"
-	"gpr	eip	.32	176	0\n"
+	"gpr	edi	.32	156	0\n"
+	"gpr	esi	.32	160	0\n"
+	"gpr	ebx	.32	164	0\n"
+	"gpr	edx	.32	168	0\n"
+	"gpr	ecx	.32	172	0\n"
+	"gpr	eax	.32	176	0\n"
+	"gpr	ebp	.32	180	0\n"
+	"gpr	esp	.32	196	0\n"
+	"gpr	eip	.32	184	0\n"
 	"seg	cs	.32	184	0\n"
-	"gpr	eflags	.32	188	0	c1p.a.zstido.n.rv\n" // XXX must be flg
-	"seg	esp	.32	192	0\n"
-	"seg	ss	.32	196	0\n"
+	"seg	ds	.32	152	0\n"
+	"seg	gs	.32	140	0\n"
+	"seg	fs	.32	144	0\n"
+	"gpr	eflags	.32	192	0	c1p.a.zstido.n.rv\n" // XXX must be flg
+	"seg	ss	.32	200	0\n"
 	/* +512 bytes for maximum supoprted extension extended registers */
 	);
 #elif __POWERPC__ && __APPLE__
@@ -633,7 +638,7 @@ static RDebugPid *darwin_get_pid(int pid) {
 static RList *r_debug_native_pids(int pid) {
 	RList *list = r_list_new ();
 #if __WINDOWS__
-	eprintf ("pids: TODO\n");
+	return w32_pids (pid, list);
 #elif __APPLE__
 	if (pid) {
 		RDebugPid *p = darwin_get_pid (pid);
@@ -708,7 +713,7 @@ static RList *r_debug_native_threads(int pid) {
 	RList *list = r_list_new ();
 	/* TODO */
 #if __WINDOWS__
-	eprintf ("pids: TODO\n");
+	return w32_thread_list (pid, list);
 #elif __APPLE__
 #if __arm__                 
 	#define OSX_PC state.r15
@@ -794,14 +799,33 @@ static RList *r_debug_native_threads(int pid) {
 static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int pid = dbg->pid;
 #if __WINDOWS__
-	CONTEXT ctx;
+	CONTEXT ctx __attribute__ ((aligned (16)));
 	ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-	if (!GetThreadContext (tid2handler (pid), &ctx)) {
+	if (!GetThreadContext (tid2handler (dbg->pid, dbg->tid), &ctx)) {
 		eprintf ("GetThreadContext: %x\n", (int)GetLastError());
 		return R_FALSE;
 	}
 	if (sizeof (CONTEXT) < size)
 		size = sizeof (CONTEXT);
+#if 0
+// TODO: fix missing regs deltas in profile (DRX+..)
+#include <r_util.h>
+eprintf ("++ EAX = 0x%08x  %d\n", ctx.Eax, r_offsetof (CONTEXT, Eax));
+eprintf ("++ EBX = 0x%08x  %d\n", ctx.Ebx, r_offsetof (CONTEXT, Ebx));
+eprintf ("++ ECX = 0x%08x  %d\n", ctx.Ecx, r_offsetof (CONTEXT, Ecx));
+eprintf ("++ EDX = 0x%08x  %d\n", ctx.Edx, r_offsetof (CONTEXT, Edx));
+eprintf ("++ EIP = 0x%08x  %d\n", ctx.Eip, r_offsetof (CONTEXT, Eip));
+eprintf ("++ EDI = 0x%08x  %d\n", ctx.Edi, r_offsetof (CONTEXT, Edi));
+eprintf ("++ ESI = 0x%08x  %d\n", ctx.Esi, r_offsetof (CONTEXT, Esi));
+eprintf ("++ ESP = 0x%08x  %d\n", ctx.Esp, r_offsetof (CONTEXT, Esp));
+eprintf ("++ EBP = 0x%08x  %d\n", ctx.Ebp, r_offsetof (CONTEXT, Ebp));
+eprintf ("++ CS = 0x%08x  %d\n", ctx.SegCs, r_offsetof (CONTEXT, SegCs));
+eprintf ("++ DS = 0x%08x  %d\n", ctx.SegDs, r_offsetof (CONTEXT, SegDs));
+eprintf ("++ GS = 0x%08x  %d\n", ctx.SegGs, r_offsetof (CONTEXT, SegGs));
+eprintf ("++ FS = 0x%08x  %d\n", ctx.SegFs, r_offsetof (CONTEXT, SegFs));
+eprintf ("++ SS = 0x%08x  %d\n", ctx.SegSs, r_offsetof (CONTEXT, SegSs));
+eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
+#endif
 	memcpy (buf, &ctx, size);
 	return size;
 // XXX this must be defined somewhere else
@@ -893,11 +917,11 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 #endif
 }
 
-static int r_debug_native_reg_write(int pid, int type, const ut8* buf, int size) {
+static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, int size) {
 	// XXX use switch or so
 	if (type == R_REG_TYPE_DRX) {
 #ifdef __FreeBSD__
-		return (0 == ptrace (PTRACE_SETDBREGS, pid, buf, sizeof (struct dbreg)));
+		return (0 == ptrace (PTRACE_SETDBREGS, dbg->pid, buf, sizeof (struct dbreg)));
 #elif __linux__
 		{
 		int i;
@@ -918,7 +942,7 @@ static int r_debug_native_reg_write(int pid, int type, const ut8* buf, int size)
 #if __WINDOWS__
 		CONTEXT ctx;
 		ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-		return SetThreadContext (tid2handler (pid), &ctx)? 0: -1;
+		return SetThreadContext (tid2handler (pid, tid), &ctx)? 0: -1;
 #elif __linux__ || __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
 		int ret = ptrace (PTRACE_SETREGS, pid, 0, buf);
 		if (sizeof (R_DEBUG_REG_T) < size)
@@ -1306,16 +1330,37 @@ static RList *r_debug_native_frames(RDebug *dbg) {
 }
 #endif
 
-static int r_debug_native_kill(RDebug *dbg, int sig) {
+// TODO: implement own-defined signals
+static int r_debug_native_kill(RDebug *dbg, boolt thread, int sig) {
 #if __WINDOWS__
+	// TODO: implement thread support signaling here
 	HANDLE hProcess; // XXX
+#if 0
+    static uint WM_CLOSE = 0x10;
+    static bool CloseWindow(IntPtr hWnd) {
+	hWnd = FindWindowByCaption (0, "explorer");
+        SendMessage(hWnd, WM_CLOSE, NULL, NULL);
+	CloseWindow(hWnd);
+        return true;
+    }
+#endif
 	TerminateProcess (hProcess, 1);
 	return R_FALSE;
 #else
 	int ret = R_FALSE;
-	if (dbg->pid>0 && (ret = kill (dbg->pid, sig))) {
-		if (ret != -1)
-			ret = R_TRUE;
+	if (thread) {
+#if 0
+// XXX this is linux>2.5 specific..ugly
+		if (dbg->tid>0 && (ret = tgkill (dbg->pid, dbg->tid, sig))) {
+			if (ret != -1)
+				ret = R_TRUE;
+		}
+#endif
+	} else {
+		if (dbg->pid>0 && (ret = kill (dbg->pid, sig))) {
+			if (ret != -1)
+				ret = R_TRUE;
+		}
 	}
 	return ret;
 #endif

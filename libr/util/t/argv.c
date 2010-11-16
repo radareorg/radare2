@@ -9,11 +9,12 @@ static void test(const char *str) {
 	r_str_argv_free (argv);
 }
 
-main () {
+int main () {
 	test ("  hello world  ");
 	test ("hello world");
 	test ("hello   \"world\"");
 	test ("'hello world'");
 	test ("/bin/ls -l 'food is pure bar' \"barra cow is low\"");
 	test ("'hello'   \"world\"");
+	return 0;
 }

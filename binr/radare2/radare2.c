@@ -119,8 +119,9 @@ int main(int argc, char **argv) {
 			seek = r_num_math (r.num, optarg);
 			break;
 		case 'L':
+			eprintf ("TODO: list IO plugins and handler only, not lib list\n");
 			r_lib_list (r.lib);
-			//r_io_plugin_list (&r.io);
+			//r_io_plugin_list (r.io);
 			return 0;
 		case 'u':
 			eprintf ("TODO\n");
@@ -255,7 +256,7 @@ int main(int argc, char **argv) {
 		if (debug) {
 			if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
 				if (r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
-					r_debug_kill (r.dbg, 9); // KILL
+					r_debug_kill (r.dbg, R_FALSE, 9); // KILL
 			} else continue;
 		}
 		const char *prj = r_config_get (r.config, "file.project");

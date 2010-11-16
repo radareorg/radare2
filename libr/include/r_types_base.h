@@ -8,8 +8,11 @@
 #define ut16 unsigned short
 #define ut8  unsigned char
 #define st8  char
+typedef int boolt;
+/*
 #undef boolt
 #define boolt int
+*/
 
 #define R_FAIL -1
 #define R_FALSE 0

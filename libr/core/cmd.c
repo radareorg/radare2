@@ -3742,13 +3742,12 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		if (pid > 0) {
 			eprintf ("Sending signal '%d' to pid '%d'\n",
 				sig, pid);
-			r_debug_kill (core->dbg, sig);
+			r_debug_kill (core->dbg, R_FALSE, sig);
 		} else eprintf ("Invalid arguments\n");
 		break;
 	case 't':
 		if (input[2]=='=' || input[2]==' ')
-			r_debug_select (core->dbg,
-				(int) r_num_math (core->num, input+3),
+			r_debug_select (core->dbg, core->dbg->pid,
 				(int) r_num_math (core->num, input+3));
 		else r_debug_thread_list (core->dbg, core->dbg->pid);
 		break;
@@ -3776,8 +3775,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		break;
 	case '=':
 		r_debug_select (core->dbg,
-			(int) r_num_math (core->num, input+2),
-			(int) r_num_math (core->num, input+2));
+			(int) r_num_math (core->num, input+2), core->dbg->tid);
 		break;
 	case '*':
 		r_debug_pid_list (core->dbg, 0);

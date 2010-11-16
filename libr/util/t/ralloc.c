@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2010 pancake<nopcode.org> */
 
 /* simple example testing the r_alloca api */
 #include <r_util.h>
@@ -6,8 +6,7 @@
 
 #define TIMES 299999
 
-int afun(const char *str, int iters)
-{
+int afun(const char *str, int iters) {
 	int ret;
 	char *ptr;
 	if (iters == 0) return 0;
@@ -17,8 +16,7 @@ int afun(const char *str, int iters)
 	return afun(str, iters-1);
 }
 
-int fun(const char *str, int iters)
-{
+int fun(const char *str, int iters) {
 	int ret;
 	char *ptr;
 	if (iters == 0) return 0;
@@ -28,8 +26,7 @@ int fun(const char *str, int iters)
 }
 
 /* malloc */
-int mfun(const char *str, int iters)
-{
+int mfun(const char *str, int iters) {
 	int ret;
 	char *ptr;
 	if (iters == 0) return 0;
@@ -39,10 +36,8 @@ int mfun(const char *str, int iters)
 	return ret;
 }
 
-
 /* main */
-int main()
-{
+int main() {
 	int i;
 	printf("Running r_alloca performance test...\n");
 	fflush(stdout);
@@ -68,4 +63,5 @@ int main()
 	system("date");
 
 	fflush(stdout);
+	return 0;
 }
