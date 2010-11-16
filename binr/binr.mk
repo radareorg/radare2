@@ -6,7 +6,7 @@ CFLAGS+=-I../../libr/include
 CFLAGS+=-DLIBDIR=\"${PREFIX}/lib\"
 
 #LIBS=$(subst r_,-lr_,$(DEPS))
-LIBS+=$(subst r_,-L../../libr/,$(DEPS))
+LIBS+=$(subst r_,-L../../libr/,$(BINDEPS))
 
 all: ${BIN}${EXT_EXE}
 

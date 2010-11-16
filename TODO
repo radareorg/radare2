@@ -69,6 +69,7 @@ Debugger
 * Floating point registers
 * MMX/XMM/DRX control
 * Implement dump+restore as macros (dump,)
+* Add support for windbg+virtualkd
 
 TODO nibble
 -----------
