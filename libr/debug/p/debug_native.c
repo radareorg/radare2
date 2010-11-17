@@ -7,7 +7,7 @@
 #include <r_lib.h>
 #include <signal.h>
 
-static int r_debug_native_continue(int pid, int sig);
+static int r_debug_native_continue(int pid, int tid, int sig);
 static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
 static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, int size);
 
@@ -148,21 +148,18 @@ static inline void debug_arch_x86_trap_set(RDebug *dbg, int foo) {
 }
 #endif // __APPLE__
 
-static int r_debug_native_step(RDebug *dbg, int pid) {
+static int r_debug_native_step(RDebug *dbg) {
 	int ret = R_FALSE;
+	int pid = dbg->pid;
 #if __WINDOWS__
-	CONTEXT regs;
-	//R_DEBUG_REG_T regs;
-
-	regs.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-//	GetTheadContext (tid2hnd
-// XXX TODO CONTINUE h
-	/* up TRAP flag */
+	CONTEXT regs __attribute__((aligned (16)));
+	/* set TRAP flag */
+/*
 	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR, &regs, sizeof (regs));
 	regs.EFlags |= 0x100;
-	r_debug_native_reg_write (dbg->pid, dbg->tid, R_REG_TYPE_GPR, &regs, sizeof (regs));
-	//single_step = pid;
-	r_debug_native_continue (pid, -1);
+	r_debug_native_reg_write (pid, dbg->tid, R_REG_TYPE_GPR, &regs, sizeof (regs));
+*/
+	r_debug_native_continue (pid, dbg->tid, -1);
 #elif __APPLE__
 	debug_arch_x86_trap_set (dbg, 1);
 	// TODO: not supported in all platforms. need dbg.swstep=
@@ -193,21 +190,25 @@ static int r_debug_native_step(RDebug *dbg, int pid) {
 	return ret;
 }
 
+// return thread id
 static int r_debug_native_attach(int pid) {
 	int ret = -1;
 #if __WINDOWS__
 	HANDLE hProcess = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
 	if (hProcess != (HANDLE)NULL && DebugActiveProcess (pid)) {
-		w32_dbg_threads (pid);
-		ret = 0;
+		ret = w32_first_thread (pid);
 	} else ret = -1;
+	ret = w32_first_thread (pid);
 #elif __APPLE__
 	ret = ptrace (PT_ATTACH, pid, 0, 0);
+	if (ret!=-1)
+		ret = pid;
 #else
 	ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
-	eprintf ("attach=%d\n", ret);
+	if (ret!=-1)
+		ret = pid;
 #endif
-	return (ret != -1)?R_TRUE:R_FALSE;
+	return ret;
 }
 
 static int r_debug_native_detach(int pid) {
@@ -234,12 +235,13 @@ static int r_debug_native_continue_syscall(int pid, int num) {
 
 /* TODO: specify thread? */
 /* TODO: must return true/false */
-static int r_debug_native_continue(int pid, int sig) {
+static int r_debug_native_continue(int pid, int tid, int sig) {
 	void *data = NULL;
 	if (sig != -1)
 		data = (void*)(size_t)sig;
 #if __WINDOWS__
-	if (ContinueDebugEvent (pid, pid, DBG_CONTINUE) == 0) {
+	if (ContinueDebugEvent (pid, tid, DBG_CONTINUE) == 0) {
+		print_lasterr ((char *)__FUNCTION__);
 		eprintf ("debug_contp: error\n");
 		return -1;
 	}
@@ -940,9 +942,11 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 	} else
 	if (type == R_REG_TYPE_GPR) {
 #if __WINDOWS__
-		CONTEXT ctx;
+		CONTEXT ctx __attribute__((aligned(16)));
+		memcpy (&ctx, buf, sizeof (CONTEXT));
 		ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-		return SetThreadContext (tid2handler (pid, tid), &ctx)? 0: -1;
+	//	eprintf ("EFLAGS =%x\n", ctx.EFlags);
+		return SetThreadContext (tid2handler (pid, tid), &ctx)? R_TRUE: R_FALSE;
 #elif __linux__ || __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
 		int ret = ptrace (PTRACE_SETREGS, pid, 0, buf);
 		if (sizeof (R_DEBUG_REG_T) < size)

@@ -3766,12 +3766,10 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	case 'a':
 		r_debug_attach (core->dbg,
 			(int) r_num_math (core->num, input+2));
-		r_debug_select (core->dbg,
-			(int) r_num_math (core->num, input+2),
-			(int) r_num_math (core->num, input+2));
+		r_debug_select (core->dbg, core->dbg->pid, core->dbg->tid);
 		break;
 	case 'f':
-		r_debug_select (core->dbg, core->file->fd, core->file->fd);
+		r_debug_select (core->dbg, core->file->fd, core->dbg->tid);
 		break;
 	case '=':
 		r_debug_select (core->dbg,
@@ -3921,11 +3919,13 @@ static int cmd_debug(void *data, const char *input) {
 			if (ptr) {
 				bypassbp (core);
 				int old_pid = core->dbg->pid;
+				int old_tid = core->dbg->tid;
 				int pid = atoi (ptr+1);
+				int tid = pid; // XXX
 				*ptr = 0;
-				r_debug_select (core->dbg, pid, pid);
+				r_debug_select (core->dbg, pid, tid);
 				r_debug_continue_kill (core->dbg, atoi (input+2));
-				r_debug_select (core->dbg, old_pid, old_pid);
+				r_debug_select (core->dbg, old_pid, old_tid);
 			} else r_debug_continue_kill (core->dbg, atoi (input+2));
 			checkbpcallback (core);
 			break;
@@ -3955,9 +3955,9 @@ static int cmd_debug(void *data, const char *input) {
 				int pid = atoi (input+2);
 				bypassbp (core);
 				r_reg_arena_swap (core->dbg->reg, R_TRUE);
-				r_debug_select (core->dbg, pid, pid);
+				r_debug_select (core->dbg, pid, core->dbg->tid);
 				r_debug_continue (core->dbg);
-				r_debug_select (core->dbg, old_pid, old_pid);
+				r_debug_select (core->dbg, old_pid, core->dbg->tid);
 				checkbpcallback (core);
 			}
 			break;

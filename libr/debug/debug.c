@@ -63,13 +63,15 @@ R_API int r_debug_attach(struct r_debug_t *dbg, int pid) {
 	int ret = R_FALSE;
 	if (dbg && dbg->h && dbg->h->attach) {
 		ret = dbg->h->attach (pid);
-		if (ret) {
+		if (ret != -1) {
+			eprintf ("pid = %d tid = %d\n", pid, ret);
 			// TODO: get arch and set io pid
 			//int arch = dbg->h->arch;
 			//r_reg_set(dbg->reg->nregs, arch); //R_DBG_ARCH_X86);
 			// dbg->bp->iob->system("pid %d", pid);
-			dbg->pid = pid;
-			dbg->tid = pid;
+			//dbg->pid = pid;
+			//dbg->tid = ret;
+			r_debug_select (dbg, pid, ret); //dbg->pid, dbg->tid);
 		} else eprintf ("Cannot attach to this pid\n");
 	} else eprintf ("dbg->attach = NULL\n");
 	return ret;
@@ -198,7 +200,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 }
 
 R_API int r_debug_step_hard(RDebug *dbg) {
-	if (!dbg->h->step (dbg, dbg->pid))
+	if (!dbg->h->step (dbg))
 		return R_FALSE;
 	return r_debug_wait (dbg);
 }
@@ -245,7 +247,7 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	int ret = R_FALSE;
 	if (dbg && dbg->h && dbg->h->cont) {
 		r_bp_restore (dbg->bp, R_FALSE); // set sw breakpoints
-		ret = dbg->h->cont (dbg->pid, sig);
+		ret = dbg->h->cont (dbg->pid, dbg->tid, sig);
 		if (dbg->h->wait)
 			ret = dbg->h->wait (dbg->pid);
 		r_bp_restore (dbg->bp, R_TRUE); // unset sw breakpoints

@@ -135,8 +135,8 @@ typedef struct r_debug_plugin_t {
 	RList *(*pids)(int pid);
 	RFList (*backtrace)(int count);
 	/* flow */
-	int (*step)(RDebug *dbg, int pid); // if step() is NULL; reimplement it with traps
-	int (*cont)(int pid, int sig);
+	int (*step)(RDebug *dbg);
+	int (*cont)(int pid, int tid, int sig);
 	int (*wait)(int pid);
 	int (*kill)(RDebug *dbg, boolt thread, int sig);
 	int (*contsc)(int pid, int sc);

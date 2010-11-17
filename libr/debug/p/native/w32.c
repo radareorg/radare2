@@ -113,7 +113,7 @@ static void print_lasterr(const char *str) {
 				0,  // ignored
 				0,  // ignored
 				(LPTSTR)&buffer,
-				size,
+				size-1,
 				(va_list*)pArgs)) {
 		eprintf ("(%s): Format message failed with 0x%x\n",
 			r_str_get (str), GetLastError());
@@ -194,47 +194,43 @@ static inline int w32_h2p(HANDLE h) {
 }
 
 // TODO: not yet used !!!
-static int w32_dbg_threads(int pid) {
-#if 0
-	HANDLE th;
-	THREADENTRY32 te32;
-	TH_INFO *th_i;
-	int ret = -1;
-	te32.dwSize = sizeof (THREADENTRY32);
+static int w32_first_thread(int pid) {
+        HANDLE th; 
+        HANDLE thid; 
+        THREADENTRY32 te32;
+        int ret = -1;
 
-	th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, ps.pid); 
-	if (th == INVALID_HANDLE_VALUE || !Thread32First(th, &te32))
-		goto err_load_th;
+        te32.dwSize = sizeof(THREADENTRY32);
 
-	//free_th ();
-	do {
-		/* get all threads of process */
-		if (te32.th32OwnerProcessID == pid) {
-			const char *path = "unk";
-			RDebugPid *pid = r_debug_pid_new (
-				path, te32.th32ThreadID, 's', 0); // TODO: add pc
-			eprintf ("THREAD: id=0x%08x flags=0x%08x\n",
-				te32.th32ThreadID, te32.dwFlags);
-			eprintf ("HANDLER: 0x%p\n", w32_openthread (
-				THREAD_ALL_ACCESS, 0, te32.th32ThreadID));
-			/* open a new handler */
-			//th_i->ht = w32_openthread(THREAD_ALL_ACCESS, 0,
-			//		te32.th32ThreadID);
-			ret = te32.th32ThreadID;
-			//r_list_append (list, thread);
-		}
-	} while (Thread32Next (th, &te32));
-
-err_load_th:
-	if (ret == -1) 
+	if (w32_openthread == NULL) {
+		eprintf("w32_thread_list: no w32_openthread?\n");
 		return -1;
-		//print_lasterr((char *)__FUNCTION__);
-
-	if (th != INVALID_HANDLE_VALUE)
-		ClosePlugin (th);
-	return ret;
-#endif
-	return 0;
+	}
+        th = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, pid); 
+        if (th == INVALID_HANDLE_VALUE) {
+		eprintf ("w32_thread_list: invalid handle\n");
+		return -1;
+	}
+	if (!Thread32First (th, &te32)) {
+                CloseHandle (th);
+		eprintf ("w32_thread_list: no thread first\n");
+		return -1;
+	}
+        do {
+                /* get all threads of process */
+                if (te32.th32OwnerProcessID == pid) {
+			thid = w32_openthread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
+			if (thid == NULL)
+                                goto err_load_th;
+			CloseHandle (th);
+			return te32.th32ThreadID;
+		}
+        } while (Thread32Next (th, &te32));
+err_load_th:    
+        if (ret == -1) 
+                print_lasterr ((char *)__FUNCTION__);
+eprintf ("w32thread: Oops\n");
+	return pid; // -1 ?
 }
 
 static int debug_exception_event (unsigned long code) {
@@ -290,7 +286,7 @@ static int w32_dbg_wait(int pid) {
 				    pid, w32_h2t (de.u.CreateProcessInfo.
 					    hProcess),
 				 de.u.CreateProcessInfo.lpStartAddress);
-			r_debug_native_continue (pid, -1);
+			r_debug_native_continue (pid, tid, -1);
 			next_event = 1;
 			ret = R_DBG_REASON_NEW_PID;
 			break;
@@ -303,45 +299,44 @@ static int w32_dbg_wait(int pid) {
 		case CREATE_THREAD_DEBUG_EVENT:
 			eprintf ("(%d) created thread (0x%x)\n",
 			pid, de.u.CreateThread.lpStartAddress);
-			r_debug_native_continue (pid, -1);
+			r_debug_native_continue (pid, tid, -1);
 			ret = R_DBG_REASON_NEW_TID;
 			next_event = 1;
 			break;
 		case EXIT_THREAD_DEBUG_EVENT:
 			eprintf("EXIT_THREAD\n");
-			r_debug_native_continue (pid, -1);
+			r_debug_native_continue (pid, tid, -1);
 			next_event = 1;
 			ret = R_DBG_REASON_EXIT_TID;
 			break;
 		case LOAD_DLL_DEBUG_EVENT:
 			eprintf("(%d) Loading %s library at 0x%x\n",
 				pid, "", de.u.LoadDll.lpBaseOfDll);
-			r_debug_native_continue (pid, -1);
+			r_debug_native_continue (pid, tid, -1);
 			next_event = 1;
 			ret = R_DBG_REASON_NEW_LIB;
 			break;
 		case UNLOAD_DLL_DEBUG_EVENT:
 			eprintf ("UNLOAD_DLL\n");
-			r_debug_native_continue (pid, -1);
+			r_debug_native_continue (pid, tid, -1);
 			next_event = 1;
 			ret = R_DBG_REASON_EXIT_LIB;
 			break;
 		case OUTPUT_DEBUG_STRING_EVENT:
 			eprintf("OUTPUT_DBUG_STING\n");
-			r_debug_native_continue (pid, -1);
+			r_debug_native_continue (pid, tid, -1);
 			next_event = 1;
 			break;
 		case RIP_EVENT:
 			eprintf("RIP_EVENT\n");
-			r_debug_native_continue (pid, -1);
+			r_debug_native_continue (pid, tid, -1);
 			next_event = 1;
 			// XXX unknown ret = R_DBG_REASON_TRAP;
 			break;
 		case EXCEPTION_DEBUG_EVENT:
 			next_event = debug_exception_event (
 				de.u.Exception.ExceptionRecord.ExceptionCode);
-			ret = R_DBG_REASON_TRAP;
-			break;
+			return R_DBG_REASON_TRAP;
 		default:
 			eprintf ("Unknown event: %d\n", code);
 			return -1;

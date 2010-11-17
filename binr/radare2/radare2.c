@@ -192,6 +192,7 @@ int main(int argc, char **argv) {
 	if (debug) {
 		r_core_cmd (&r, "e io.ffio=true", 0);
 		r_core_cmd (&r, "dh native", 0);
+		r_core_cmdf (&r, "dpa %d", r.file->fd);
 		r_core_cmdf (&r, "dp=%d", r.file->fd);
 		r_core_cmd (&r, ".dr*", 0);
 		r_core_cmd (&r, "sr pc", 0);
