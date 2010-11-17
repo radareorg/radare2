@@ -7,6 +7,12 @@
 
 TODO 0.7
 ========
+* fork/clone child . inject code to create new threads or pids
+  - dpn dptn
+* dmi command must read from memory if no file path provided
+  - rabin from memory ftw
+  - to get libnames of dll, so..
+* inject code someway?
 * Refactor cursor stuff (already done?)imho yes
 * w32 is required this?? r2 -d <pid> > dh native > dp=824 > ... -- not really :) for 0.6
 * Create radare2-testsuite project
@@ -28,10 +34,7 @@ TODO 0.7
   - dlerror(/usr/lib/radare2/lang_perl.so): libperl.so: cannot open shared object file: No such file or directory
     This issue is fixed by setting LD_LIBRARY_PATH...looks like dlopen ignores rpath
 * merge asm.arch vm.arch
-* Define and use boolean type return type
 * Functions in r_util to get lil/big ut8,16,32 from ut8*
-* dmi command must read from memory if no file path provided
-  - rabin from memory ftw
 * rahash takes TOO long to load on big binaries
 	[pancake@dazo ~]$ rax -
 	jeje
