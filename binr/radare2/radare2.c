@@ -34,6 +34,16 @@ static int main_version() {
 	return 0;
 }
 
+static int list_io_plugins(RIO *io) {
+	struct list_head *pos;
+	printf ("IO plugins:\n");
+	list_for_each_prev(pos, &io->io_list) {
+		struct r_io_list_t *il = list_entry(pos, struct r_io_list_t, list);
+		printf("  %-10s %s\n", il->plugin->name, il->plugin->desc);
+	}
+	return 0;
+}
+
 // Load the binary information from rabin2
 // TODO: use thread to load this, split contents line, per line and use global lock
 #if 0
@@ -119,9 +129,7 @@ int main(int argc, char **argv) {
 			seek = r_num_math (r.num, optarg);
 			break;
 		case 'L':
-			eprintf ("TODO: list IO plugins and handler only, not lib list\n");
-			r_lib_list (r.lib);
-			//r_io_plugin_list (r.io);
+			list_io_plugins (r.io);
 			return 0;
 		case 'u':
 			eprintf ("TODO\n");
