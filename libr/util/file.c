@@ -8,6 +8,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#if __UNIX__
+#include <sys/mman.h>
+#endif
 
 R_API const char *r_file_basename (const char *path) {
 	const char *ptr = strrchr (path, '/');
@@ -22,7 +25,7 @@ R_API boolt r_file_exist(const char *str) {
 	return (S_ISREG (buf.st_mode))?R_TRUE:R_FALSE;
 }
 
-R_API const char *r_file_abspath(const char *file) {
+R_API char *r_file_abspath(const char *file) {
 #if __UNIX__
 	if (file[0] != '/')
 		return r_str_dup_printf ("%s/%s", r_sys_getcwd (), file);
@@ -30,7 +33,7 @@ R_API const char *r_file_abspath(const char *file) {
 	if (!strchr (file, ':'))
 		return r_str_dup_printf ("%s/%s", r_sys_getcwd (), file);
 #endif
-	return file;
+	return strdup (file);
 }
 
 R_API char *r_file_path(const char *bin) {
@@ -202,4 +205,36 @@ R_API boolt r_file_dump(const char *file, const ut8 *buf, int len) {
 R_API boolt r_file_rm(const char *file) {
 	// TODO: w32 unlink?
 	return (unlink (file)==0)? R_TRUE:R_FALSE;
+}
+
+R_API RMmap *r_file_mmap (const char *file) {
+	RMmap *m = NULL;
+	int fd = open (file, O_RDONLY);
+	if (fd != -1) {
+		m = R_NEW (RMmap);
+		m->fd = fd;
+		m->len = lseek (fd, (off_t)0, SEEK_END);
+#if __UNIX__
+  		m->buf = mmap (NULL, m->len, PROT_READ, MAP_SHARED, fd, (off_t)0);
+#else
+  		m->buf = malloc (m->len);
+		if (m->buf) {
+			lseek (fd, (off_t)0, SEEK_SET);
+			read (fd, m->buf, m->len);
+		} else {
+			free (m);
+			m = NULL;
+		}
+#endif
+	}
+	return m;
+}
+
+R_API void r_file_mmap_free (RMmap *m) {
+#if __UNIX__
+	munmap (m->buf, m->len);
+// TODO: Implement Mumap in w32
+#endif
+	close (m->fd);
+	free (m);
 }

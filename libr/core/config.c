@@ -338,6 +338,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "cfg.datefmt", "%d:%m:%Y %H:%M:%S %z", &config_cfgdatefmt_callback);
 	r_config_set (cfg, "cfg.fortunes", "true");
 	r_config_set (cfg, "dbg.backend", "native");
+	config_set("dbg.bep", "loader"); // loader, entry, constructor, main
 	r_config_set_cb (cfg, "dbg.stopthreads", "true", &config_stopthreads_callback);
 	r_config_set_cb (cfg, "dbg.swstep", "false", &config_swstep_callback);
 	r_config_set_cb (cfg, "dbg.trace", "true", &config_trace_callback);
@@ -526,7 +527,6 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	config_set("dbg.hwbp", "true"); // hardware breakpoints by default // ALSO BSD
 #endif
-	config_set("dbg.bep", "loader"); // loader, main
 	config_set("dir.home", getenv("HOME"));
 
 	/* dir.monitor */

@@ -22,6 +22,14 @@
 #define R_BIN_SIZEOF_STRINGS 256
 #define R_BIN_MAX_ARCH 1024
 
+// TODO: rename getmain() bin.getsym(RBin.SYM_ENTRY)
+enum {
+	R_BIN_SYM_ENTRY,
+	R_BIN_SYM_INIT,
+	R_BIN_SYM_MAIN,
+	R_BIN_SYM_FINI
+};
+
 typedef struct r_bin_arch_t {
 	char *file;
 	int size;
@@ -194,7 +202,6 @@ typedef struct r_bin_obj_t {
 } RBinObj;
 
 #ifdef R_API
-
 /* bin.c */
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo);
 R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
@@ -225,16 +232,13 @@ R_API int r_bin_set_arch(RBin *bin, const char *arch, int bits, const char *name
 R_API int r_bin_set_archidx(RBin *bin, int idx);
 R_API void r_bin_list_archs(RBin *bin);
 R_API void r_bin_set_user_ptr(RBin *bin, void *user);
-
 /* bin_meta.c */
 R_API int r_bin_meta_get_line(RBin *bin, ut64 addr, char *file, int len, int *line);
 R_API char *r_bin_meta_get_source_line(RBin *bin, ut64 addr);
-
 /* bin_write.c */
 R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size);
 R_API int r_bin_wr_rpath_del(RBin *bin);
 R_API int r_bin_wr_output(RBin *bin, const char *filename);
-
 /* plugin pointers */
 extern RBinPlugin r_bin_plugin_elf;
 extern RBinPlugin r_bin_plugin_elf64;
@@ -246,6 +250,5 @@ extern RBinPlugin r_bin_plugin_java;
 extern RBinPlugin r_bin_plugin_dummy;
 extern RBinXtrPlugin r_bin_xtr_plugin_fatmach0;
 extern RBinXtrPlugin r_bin_xtr_plugin_dyldcache;
-
 #endif
 #endif

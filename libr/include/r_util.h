@@ -78,7 +78,12 @@ typedef struct r_range_t {
 	RList *ranges;
 } RRange;
 
-#ifdef R_API
+typedef struct r_mmap_t {
+	ut8 *buf;
+	int len;
+	int fd;
+} RMmap;
+
 /* bitsize */
 enum {
 	R_SYS_BITS_8 = 1,
@@ -86,6 +91,11 @@ enum {
 	R_SYS_BITS_32 = 4,
 	R_SYS_BITS_64 = 8,
 };
+
+#ifdef R_API
+
+R_API RMmap *r_file_mmap (const char *file);
+R_API void r_file_mmap_free (RMmap *m);
 
 /* arch */
 // TODO: This must deprecate DEFAULT_ARCH??
@@ -262,7 +272,7 @@ R_API st64 r_hex_bin_truncate (ut64 in, int n);
 
 R_API char *r_file_path(const char *bin);
 R_API const char *r_file_basename (const char *path);
-R_API const char *r_file_abspath(const char *file);
+R_API char *r_file_abspath(const char *file);
 R_API char *r_file_slurp(const char *str, int *usz);
 //R_API char *r_file_slurp_range(const char *str, ut64 off, ut64 sz);
 R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz);

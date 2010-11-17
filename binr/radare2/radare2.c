@@ -211,10 +211,13 @@ int main(int argc, char **argv) {
 		r_cons_flush ();
 	}
 
+	/* XXX: find better solution.. files > 10MB does not hash */
+	#define SLURP_LIMIT (10*1024*1024)
 	/* check if file.sha1 has changed */
-	if (!strstr(r.file->filename,"://")) {
-		char *path = strdup (r_config_get (r.config, "file.path"));
+	if (r.file->size < SLURP_LIMIT) // TODO: configure this in cfg.hashlimit // 
+	if (!strstr (r.file->filename,"://")) {
 		const char *npath, *nsha1;
+		char *path = strdup (r_config_get (r.config, "file.path"));
 		char *sha1 = strdup (r_config_get (r.config, "file.sha1"));
 		char *cmd = r_str_dup_printf (".!rahash2 -r %s", r.file->filename);
 		has_project = r_core_project_open (&r, r_config_get (r.config, "file.project"));

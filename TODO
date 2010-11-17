@@ -5,68 +5,10 @@
 
 <{include libr/TODO}>
 
-TODO 0.7
-========
-* fork/clone child . inject code to create new threads or pids
-  - dpn dptn
-* dmi command must read from memory if no file path provided
-  - rabin from memory ftw
-  - to get libnames of dll, so..
-* inject code someway?
-* Refactor cursor stuff (already done?)imho yes
-* w32 is required this?? r2 -d <pid> > dh native > dp=824 > ... -- not really :) for 0.6
-* Create radare2-testsuite project
-  - tests for ired, rax2, radare2, rabin2 ...
-* Record trace of register status for each function when running
-  - r_reg_arena_copy();
-* Add lua and dalvik disassembler (volunteers?)
-* Reimplement or fix the delta diffing in C
-  - first we need to do it for ired..
-* Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
-* Add dex format support to rabin (android)
-* Is RCore->block and blocksize a RBuf ? refactor!11
-* add support for sign/unsigned registers..or at least a way to cast them
-* Implement rap:// upload/download protocol commands (maybe just system() with rsc2+wget?
-* Add support for STATIC_PLUGINS in r_lang
-  - r_lang_define is implemented in lang.c, but requires the collaboration
-    of the plugins to properly setup the environment for the script execution.
-  - Add support for STATIC_PLUGINS in r_lang
-  - dlerror(/usr/lib/radare2/lang_perl.so): libperl.so: cannot open shared object file: No such file or directory
-    This issue is fixed by setting LD_LIBRARY_PATH...looks like dlopen ignores rpath
-* merge asm.arch vm.arch
-* Functions in r_util to get lil/big ut8,16,32 from ut8*
-* rahash takes TOO long to load on big binaries
-	[pancake@dazo ~]$ rax -
-	jeje
-	6a656a650a^C
-	[pancake@dazo ~]$ rax2 -
-	jeje
-	0x0
-	^C
-* _ZN7WebCore11CounterNode7recountERKNS_12AtomicStringE
-  - demangle c++ and objc names
-    WebCore.CounterNode.recount(AtomicString)
-  _ZN = begin of stream
-  0-9+ = count of chars
-  E = end of stream
-  RKNS_ = start of arguments
-* Check if python plugin works from inside (IMHO no)
-
-Questions
-=========
-* r_list_foreach_prev is buggy, review and remove..
-* make symstall in swig/ ?
-* What about rsc2 ? deprecate, maintain? cleanup from 1? build? install?
-* Add deltified offset in PC? +10, +30 ... asm.reladdr
-* Add "pm ?" for bit print like in pb?
-* regio not implemented // it is really necessary? imho no..
-* Only use uppercase KMG for Kilo,Mega,Giga in r_num? - 'g' is for double
-* distribute 'spp' with 'rarc2' ? imho no
-
 Debugger
 ========
-* stepover waits for one unknown event that cannot be stopped
 * Implement DRX support
+* stepover waits for one unknown event that cannot be stopped
 * Implement list threads on ALL supported platforms (win,lin,osx)
 * ALL threads must be stopped when a breakpoint is handled..
 * Floating point registers
@@ -74,8 +16,44 @@ Debugger
 * Implement dump+restore as macros (dump,)
 * Add support for windbg+virtualkd
 
-TODO nibble
------------
+pancake
+-------
+* fork/clone child . inject code to create new threads or pids
+  - dpn dptn
+* Functions in r_util to get lil/big ut8,16,32 from ut8*
+  - already done..must find better names probably
+* merge asm.arch vm.arch
+* _ZN7WebCore11CounterNode7recountERKNS_12AtomicStringE
+  - demangle c++ and objc names
+    WebCore.CounterNode.recount(AtomicString)
+  _ZN = begin of stream
+  0-9+ = count of chars
+  E = end of stream
+  RKNS_ = start of arguments
+* Implement rap:// upload/download protocol commands (maybe just system() with rsc2+wget?
+* support for macro scripting
+* better debugger support for OSX and iOS
+* rarc2 allows to compile invalid code like calling puts() out of context
+* Implement RAnalCall (analyze function arguments, return values, propagate types..)
+  - define number of arguments for given function
+  - warn if signature and analysis differs in number of args or so..
+  - when calling a function
+    - identify arguments passed and compare with arguments required
+    - if they do not match: we need to warn/ask user/store multiple options
+       - function signature comparsion if they dont match
+       r_anal_fcn_cmp (anal, f1, f2);
+
+nibble
+------
+* implement getsym() in r_bin , replace getmain()
+* Check if python plugin works from inside
+  - write tuto, how to call py code from shell or r2
+* dmi command must read from memory if no file path provided
+  - rabin from memory ftw
+  - to get libnames of dll, so..
+* Refactor cursor stuff 
+  - isnt this already done? -- imho yes
+-- from 0.6
 * r_anal
   - use r_anal_value everywhere
   - x86im
@@ -94,10 +72,15 @@ TODO nibble
   - implement GMP in util/big.c
     - http://etutorials.org/Programming/secure+programming/Chapter+7.+Public+Key+Cryptography/7.5+Generating+a+Prime+Number+Testing+for+Primality/
 
-TODO edu
---------
-* remove all uses of alloca()
-* Implement more get_main()
+@earada
+-------
+* sha1 checksum of files is not correct
+* r_file_slurp should work fine for big files
+  - mmap if supported
+  - add r_file_mmap ?
+  - read file in blocks instead of the whole file in a single syscall
+* remove all uses of alloca() // mingw and grep reports them all :)
+* Only use uppercase KMG for Kilo,Mega,Giga in r_num? - 'g' is for double
 * typedef all function pointers, like in r_bp
 * Implement /A : search AES
 * Implement case-insensitive search (e search.casematters ?) any better name? Use /i?
@@ -105,22 +88,44 @@ TODO edu
 * Implement /p to search for patterns
   - implement it in r_core ?? or add r_io_bind support
 * Implement search and replace /s
+  - insert or append? (see r1 cfg vars)
 
-TODO pancake
-------------
-* rarc2 allows to compile invalid code like calling puts() out of context
-* Implement RAnalCall (analyze function arguments, return values, propagate types..)
-  - define number of arguments for given function
-  - warn if signature and analysis differs in number of args or so..
-  - when calling a function
-    - identify arguments passed and compare with arguments required
-    - if they do not match: we need to warn/ask user/store multiple options
-       - function signature comparsion if they dont match
-       r_anal_fcn_cmp (anal, f1, f2);
+TODO 0.7
+========
+* inject code someway?
+* Create radare2-testsuite project
+  - tests for ired, rax2, radare2, rabin2 ...
+* Record trace of register status for each function when running
+  - r_reg_arena_copy();
+* Add lua and dalvik disassembler (volunteers?)
+  - Add dex format support to rabin (android)
+* Reimplement or fix the delta diffing in C
+  - first we need to do it for ired..
+* Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
+* Is RCore->block and blocksize a RBuf ? refactor!11
+* add support for sign/unsigned registers..or at least a way to cast them
+* Add support for STATIC_PLUGINS in r_lang
+  - r_lang_define is implemented in lang.c, but requires the collaboration
+    of the plugins to properly setup the environment for the script execution.
+  - Add support for STATIC_PLUGINS in r_lang
+  - dlerror(/usr/lib/radare2/lang_perl.so): libperl.so: cannot open shared object file: No such file or directory
+    This issue is fixed by setting LD_LIBRARY_PATH...looks like dlopen ignores rpath
+
+Questions
+=========
+* radare2.c:217 . find name for maxfilesize to hash
+* r_list_foreach_prev is buggy, review and remove..
+* make symstall in swig/ ?
+* What about rsc2 ? deprecate, maintain? cleanup from 1? build? install?
+* Add deltified offset in PC? +10, +30 ... asm.reladdr
+* Add "pm ?" for bit print like in pb?
+* regio not implemented // it is really necessary? imho no..
+* distribute 'spp' with 'rarc2' ? imho no
+
 
 Bindings
 ========
-* generate accessors from valaswig
+* generate accessors from valaswig ? why?
 * Script plugins
  - We should enable r_lib to implement plugins in any
    scripting language, so we can for example prepare
@@ -182,28 +187,6 @@ Flags
 	   - hooks r_flag_del to recalculate too.
 	 - the r_flag_get by string should have another construction with btree
 	   for the string of the name
-
-Transaction notes
-=================
-Loading big binaries results on broken interaction.
-  - Optimize bottlenecks
-    - Index flags by name and offset
-    - Dont walk all the entries all the time
-    - Use RDB or RHashMap
-  - Cache
-    - We can just cache the last N used pointers to resolve them faster
-    - Should work fine for disassembling and others
-  - Transactions and threads
-    - BIGLOCK is enought i think
-    - A background thread can load rabin info
-    - r_th is required
-    - We need a way to get 'status' info from thread (msg passing?)
-      - r_th_msg
-    - We can lock the loading thread when a shell command is going to be executed
-      |
-      |--- (while (prompt,lock,run,unlock))
-      \
-       `-- (while (lock,load,unlock))
 
 
 .------------------------.

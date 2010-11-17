@@ -61,7 +61,6 @@ int main(int argc, char **argv) {
 	int c, buf_len = 0;
 	int bsize = 0;
 	int rad = 0;
-	int ret = 0;
 
 	while ((c = getopt (argc, argv, "rVa:s:b:h")) != -1) {
 		switch (c) {
@@ -88,7 +87,6 @@ int main(int argc, char **argv) {
 	if (optind<argc)
 		buf = (const ut8*)r_file_slurp (argv[optind], &buf_len);
 	if (buf == NULL)
-		return 1;
-	else ret = do_hash (algo, buf, buf_len, bsize, rad);
-	return ret;
+		return do_help (1);
+	return do_hash (algo, buf, buf_len, bsize, rad);
 }
