@@ -408,7 +408,7 @@ R_API char *r_line_readline() {
 			if (I.buffer.index < I.buffer.length) {
 				if (I.buffer.index>0) {
 					I.buffer.index--;
-					memcpy (I.buffer.data+I.buffer.index,
+					memmove (I.buffer.data+I.buffer.index,
 						I.buffer.data+I.buffer.index+1,
 						strlen (I.buffer.data+I.buffer.index));
 				}

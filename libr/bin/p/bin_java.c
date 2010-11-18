@@ -118,7 +118,7 @@ static int check(RBinArch *arch) {
 		memcpy (&off, arch->buf->buf+4*sizeof(int), sizeof(int));
 		r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
 		if (off > 0 && off < arch->buf->length) {
-			memcpy (arch->buf->buf, arch->buf->buf+off, 4);
+			memmove (arch->buf->buf, arch->buf->buf+off, 4);
 			if (!memcmp (arch->buf->buf, "\xce\xfa\xed\xfe", 4) ||
 				!memcmp (arch->buf->buf, "\xfe\xed\xfa\xce", 4) ||
 				!memcmp (arch->buf->buf, "\xfe\xed\xfa\xcf", 4) ||
