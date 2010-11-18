@@ -2099,7 +2099,8 @@ static int cmd_anal(void *data, const char *input) {
 			" agfl [fcn name] ; Output graphviz code of function using meta-data\n");
 			break;
 		default:
-			r_core_anal_graph (core, r_num_math (core->num, input+2), R_CORE_ANAL_GRAPHBODY);
+			r_core_anal_graph (core, r_num_math (core->num, input+1),
+				R_CORE_ANAL_GRAPHBODY);
 		}
 		break;
 	case 't':

@@ -60,7 +60,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	return ret;
 }
 
-R_API int r_core_seek(RCore *core, ut64 addr, int rb) {
+R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
 	ut64 old = core->offset;
 	int ret;
 

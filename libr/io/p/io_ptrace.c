@@ -27,11 +27,10 @@ static int __waitpid(int pid) {
 
 #define debug_read_raw(x,y) ptrace(PTRACE_PEEKTEXT, x, y, 0)
 
-// FIX: the goto 'err' is buggy
 static int debug_os_read_at(int pid, void *buf, int sz, ut64 addr) {
         unsigned long words = sz / sizeof (long);
         unsigned long last = sz % sizeof (long);
-		long x, lr;
+	long x, lr, s = 0;
 
         if (sz<0 || addr==-1)
                 return -1; 
@@ -39,12 +38,13 @@ static int debug_os_read_at(int pid, void *buf, int sz, ut64 addr) {
                 ((long *)buf)[x] = debug_read_raw (pid,
 			(void *)(&((long*)(long)addr)[x]));
                 if (((long *)buf)[x] == -1) // && errno)
-                        return -1;
+                        return s;
+		s += 4;
         }
         if (last) {
                 lr = debug_read_raw (pid, &((long*)(long)addr)[x]);
                 if (lr == -1) // && errno)
-                        return -1;
+                        return s;
                 memcpy (&((long *)buf)[x], &lr, last) ;
         }
         return sz; 

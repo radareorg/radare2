@@ -21,9 +21,10 @@ static char *r_core_anal_graph_label(RCore *core, struct r_anal_bb_t *bb, int op
 				if (filestr) {
 					cmdstr = realloc (cmdstr, idx + strlen (filestr) + 3);
 					cmdstr[idx] = 0;
+					// TODO: optimize all this strcat stuff
 					strcat (cmdstr, filestr);
 					strcat (cmdstr, "\\l");
-					idx+=strlen (filestr);
+					idx += strlen (filestr);
 					free (filestr);
 				}
 			}
@@ -221,7 +222,7 @@ R_API int r_core_anal_bb_list(RCore *core, int rad) {
 				r_cons_printf (" cond=\"%s\" match=%d\n",
 					r_anal_cond_to_string (bbi->cond),
 					r_anal_cond_eval (core->anal, bbi->cond));
-			else r_cons_newline();
+			else r_cons_newline ();
 		}
 	}
 	r_cons_flush ();

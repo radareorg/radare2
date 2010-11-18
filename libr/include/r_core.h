@@ -119,7 +119,7 @@ R_API void r_core_cmd_init(struct r_core_t *core);
 R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd);
 R_API int r_core_cmd_file(struct r_core_t *core, const char *file);
 R_API int r_core_cmd_command(struct r_core_t *core, const char *command);
-R_API int r_core_seek(struct r_core_t *core, ut64 addr, int rb);
+R_API boolt r_core_seek(struct r_core_t *core, ut64 addr, boolt rb);
 R_API int r_core_seek_align(struct r_core_t *core, ut64 align, int count);
 R_API int r_core_block_read(struct r_core_t *core, int next);
 R_API int r_core_block_size(struct r_core_t *core, ut32 bsize);
