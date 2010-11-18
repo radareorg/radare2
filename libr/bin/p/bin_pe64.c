@@ -4,9 +4,8 @@
 #include "bin_pe.c"
 
 static int check(RBinArch *arch) {
-	int idx, ret = R_FALSE;
-
-	idx = arch->buf->buf[0x3c]|(arch->buf->buf[0x3d]<<8);
+	int ret = R_FALSE;
+	int idx = arch->buf->buf[0x3c]|(arch->buf->buf[0x3d]<<8);
 	if (arch->buf->length>=idx+0x20)
 		if (!memcmp (arch->buf->buf, "\x4d\x5a", 2) &&
 			!memcmp (arch->buf->buf+idx, "\x50\x45", 2) && 
@@ -24,7 +23,7 @@ struct r_bin_plugin_t r_bin_plugin_pe64 = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
-	.main = &binmain,
+	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,

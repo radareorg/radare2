@@ -21,13 +21,16 @@ static ut64 baddr(RBinArch *arch) {
 	return PE_(r_bin_pe_get_image_base) (arch->bin_obj);
 }
 
-static RBinAddr* binmain(RBinArch *arch) {
+static RBinAddr* binsym(RBinArch *arch, int type) {
 	RBinAddr *ret = NULL;
-
-	if (!(ret = R_NEW (RBinAddr)))
-		return NULL;
-	memset (ret, '\0', sizeof (RBinAddr));
-	ret->offset = ret->rva = PE_(r_bin_pe_get_main_offset) (arch->bin_obj);
+	switch (type) {
+	case R_BIN_SYM_MAIN:
+		if (!(ret = R_NEW (RBinAddr)))
+			return NULL;
+		memset (ret, '\0', sizeof (RBinAddr));
+		ret->offset = ret->rva = PE_(r_bin_pe_get_main_offset) (arch->bin_obj);
+		break;
+	}
 	return ret;
 }
 
@@ -227,7 +230,7 @@ struct r_bin_plugin_t r_bin_plugin_pe = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
-	.main = &binmain,
+	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,

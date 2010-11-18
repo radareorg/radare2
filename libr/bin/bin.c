@@ -78,6 +78,7 @@ static RList* get_strings(RBinArch *arch, int min) {
 }
 
 static int r_bin_init_items(RBin *bin, int dummy) {
+	int i;
 	struct list_head *pos;
 	RBinArch *arch = &bin->curarch;
 
@@ -95,8 +96,9 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 		return R_FALSE;
 	if (arch->curplugin->baddr)
 		arch->baddr = arch->curplugin->baddr (arch);
-	if (arch->curplugin->main)
-		arch->main = arch->curplugin->main (arch);
+	if (arch->curplugin->binsym)
+		for (i=0; i<R_BIN_SYM_LAST; i++)
+			arch->binsym[i] = arch->curplugin->binsym (arch, i);
 	if (arch->curplugin->entries)
 		arch->entries = arch->curplugin->entries (arch);
 	if (arch->curplugin->fields)
@@ -121,8 +123,8 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 
 /* TODO: Free plugins */
 static void r_bin_free_items(RBin *bin) {
+	int i;
 	RBinArch *arch = &bin->curarch;
-
 	if (arch->entries)
 		r_list_free (arch->entries);
 	if (arch->fields)
@@ -141,8 +143,9 @@ static void r_bin_free_items(RBin *bin) {
 		r_list_free (arch->strings);
 	if (arch->symbols)
 		r_list_free (arch->symbols);
-	if (arch->main)
-		free (arch->main);
+	if (arch->binsym)
+		for (i=0; i<R_BIN_SYM_LAST; i++)
+			free (arch->binsym[i]);
 	if (arch->file)
 		free (arch->file);
 	if (arch->curplugin && arch->curplugin->destroy)
@@ -252,8 +255,10 @@ R_API ut64 r_bin_get_baddr(RBin *bin) {
 	return bin->curarch.baddr;
 }
 
-R_API RBinAddr* r_bin_get_main(RBin *bin) {
-	return bin->curarch.main;
+R_API RBinAddr* r_bin_get_sym(RBin *bin, int sym) {
+	if (sym<0 || sym>=R_BIN_SYM_LAST)
+		return NULL;
+	return bin->curarch.binsym[sym];
 }
 
 R_API RList* r_bin_get_entries(RBin *bin) {
@@ -395,12 +400,14 @@ R_API void r_bin_set_user_ptr(RBin *bin, void *user) {
 }
 
 R_API RBinObj *r_bin_get_object(RBin *bin, int flags) {
+	int i;
 	RBinObj *obj = R_NEW (RBinObj);
 	if (obj) {
 		obj->symbols = r_bin_get_symbols (bin);
 		obj->imports = r_bin_get_imports (bin);
 		obj->entries = r_bin_get_entries (bin);
-		obj->main = r_bin_get_main (bin);
+		for (i=0; i<R_BIN_SYM_LAST; i++)
+			obj->binsym[i] = r_bin_get_sym (bin, i);
 		obj->baddr = r_bin_get_baddr (bin);
 	}
 	return obj;

@@ -18,6 +18,9 @@ Debugger
 
 pancake
 -------
+* Implement software stepping (with code analysis+ breakpoints)
+* Implement dbg.bep
+  - in r_core? in r_debug after attach? maybe only in r2 binr?
 * fork/clone child . inject code to create new threads or pids
   - dpn dptn
 * Functions in r_util to get lil/big ut8,16,32 from ut8*
@@ -45,7 +48,7 @@ pancake
 
 nibble
 ------
-* implement getsym() in r_bin , replace getmain()
+* Display getsym() stuff in rabin2, not only legit syms
 * Check if python plugin works from inside
   - write tuto, how to call py code from shell or r2
 * dmi command must read from memory if no file path provided

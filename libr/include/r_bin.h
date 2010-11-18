@@ -22,19 +22,19 @@
 #define R_BIN_SIZEOF_STRINGS 256
 #define R_BIN_MAX_ARCH 1024
 
-// TODO: rename getmain() bin.getsym(RBin.SYM_ENTRY)
 enum {
 	R_BIN_SYM_ENTRY,
 	R_BIN_SYM_INIT,
 	R_BIN_SYM_MAIN,
-	R_BIN_SYM_FINI
+	R_BIN_SYM_FINI,
+	R_BIN_SYM_LAST
 };
 
 typedef struct r_bin_arch_t {
 	char *file;
 	int size;
 	ut64 baddr;
-	struct r_bin_addr_t *main;
+	struct r_bin_addr_t *binsym[R_BIN_SYM_LAST];
 	struct r_bin_info_t *info;
 	RList* entries;
 	RList* sections;
@@ -81,7 +81,7 @@ typedef struct r_bin_plugin_t {
 	int (*destroy)(RBinArch *arch);
 	int (*check)(RBinArch *arch);
 	ut64 (*baddr)(RBinArch *arch);
-	struct r_bin_addr_t* (*main)(RBinArch *arch);
+	struct r_bin_addr_t* (*binsym)(RBinArch *arch, int num);
 	RList* (*entries)(RBinArch *arch);
 	RList* (*sections)(RBinArch *arch);
 	RList* (*symbols)(RBinArch *arch);
@@ -195,7 +195,7 @@ typedef struct r_bin_obj_t {
 	RList/*<??>*/ *relocs;
 	RList/*<??>*/ *strings;
 	RBinInfo *info;
-	RBinAddr *main;
+	RBinAddr *binsym[R_BIN_SYM_LAST];
 // TODO: deprecate r_bin_is_big_endian
 // TODO: r_bin_is_stripped .. wrapped inside rbinobj?
 // TODO: has_dbg_syms... maybe flags?
@@ -210,7 +210,7 @@ R_API int r_bin_list(RBin *bin);
 R_API int r_bin_load(RBin *bin, const char *file, int dummy);
 R_API RBinObj *r_bin_get_object(RBin *bin, int flags);
 R_API ut64 r_bin_get_baddr(RBin *bin);
-R_API RBinAddr* r_bin_get_main(RBin *bin);
+R_API RBinAddr* r_bin_get_sym(RBin *bin, int sym);
 R_API RList* r_bin_get_entries(RBin *bin);
 R_API RList* r_bin_get_fields(RBin *bin);
 R_API RList* r_bin_get_imports(RBin *bin);

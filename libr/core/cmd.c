@@ -3745,7 +3745,13 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			r_debug_kill (core->dbg, R_FALSE, sig);
 		} else eprintf ("Invalid arguments\n");
 		break;
+	case 'n':
+		eprintf ("TODO: debug_fork: %d\n", r_debug_fork (core->dbg));
+		break;
 	case 't':
+		if (input[2] == 'n') {
+			eprintf ("TODO: debug_clone: %d\n", r_debug_clone (core->dbg));
+		} else
 		if (input[2]=='=' || input[2]==' ')
 			r_debug_select (core->dbg, core->dbg->pid,
 				(int) r_num_math (core->num, input+3));
@@ -3758,6 +3764,8 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			" dp*     list all attachable pids\n"
 			" dpa 377 attach and select this pid\n"
 			" dp=748  select this pid\n"
+			" dpn     Create new process (fork)\n"
+			" dpnt    Create new thread (clone)\n"
 			" dpt     List threads of current pid\n"
 			" dpt 74  List threads of given process\n"
 			" dpt=64  Attach to thread\n"

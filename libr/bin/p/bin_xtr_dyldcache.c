@@ -7,10 +7,8 @@
 #include "mach0/dyldcache.h"
 
 static int check(RBin *bin) {
-	ut8 *filebuf;
 	int size, ret = R_FALSE;
-
-	filebuf = (ut8*)r_file_slurp_range (bin->file, 0, 4, &size);
+	ut8 *filebuf = (ut8*)r_file_slurp_range (bin->file, 0, 4, &size);
 	if (filebuf && size == 4) {
 		if (!memcmp (filebuf, "\x64\x79\x6c\x64", 4))
 			ret = R_TRUE;
@@ -19,28 +17,26 @@ static int check(RBin *bin) {
 	return ret;
 }
 
+// TODO: destroy must be void?
 static int destroy(RBin *bin) {
 	r_bin_dyldcache_free ((struct r_bin_dyldcache_obj_t*)bin->bin_obj);
 	return R_TRUE;
 }
 
 static int load(RBin *bin) {
-	if((bin->bin_obj = r_bin_dyldcache_new (bin->file)))
-		return R_TRUE;
-	return R_FALSE;
+	return ((bin->bin_obj = r_bin_dyldcache_new (bin->file)))? R_TRUE: R_FALSE;
 }
 
 static int extract(RBin *bin, int idx) {
-	struct r_bin_dyldcache_lib_t *lib;
-	int nlib;
-
-	lib = r_bin_dyldcache_extract ((struct r_bin_dyldcache_obj_t*)bin->bin_obj, idx, &nlib);
-	if (!lib)
-		return 0;
-	bin->curarch.file = strdup (lib->path);
-	bin->curarch.buf = lib->b;
-	bin->curarch.size = lib->size;
-	free (lib);
+	int nlib = 0;
+	struct r_bin_dyldcache_lib_t *lib = r_bin_dyldcache_extract (
+		(struct r_bin_dyldcache_obj_t*)bin->bin_obj, idx, &nlib);
+	if (lib) {
+		bin->curarch.file = strdup (lib->path);
+		bin->curarch.buf = lib->b;
+		bin->curarch.size = lib->size;
+		free (lib);
+	}
 	return nlib;
 }
 

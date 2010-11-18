@@ -364,3 +364,16 @@ R_API RList *r_debug_frames (RDebug *dbg) {
 		return dbg->h->frames (dbg);
 	return NULL;
 }
+
+/* TODO: Implement fork and clone */
+R_API int r_debug_fork (RDebug *dbg) {
+	//if (dbg && dbg->h && dbg->h->frames)
+		//return dbg->h->frames (dbg);
+	return 0;
+}
+
+R_API int r_debug_clone (RDebug *dbg) {
+	//if (dbg && dbg->h && dbg->h->frames)
+		//return dbg->h->frames (dbg);
+	return 0;
+}

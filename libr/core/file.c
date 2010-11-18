@@ -69,7 +69,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	RBinAddr *binmain;
 
 	r_flag_space_set (r->flags, "symbols");
-	if ((binmain = r_bin_get_main (r->bin)) != NULL)
+	if ((binmain = r_bin_get_sym (r->bin, R_BIN_SYM_MAIN)) != NULL)
 		r_flag_set (r->flags, "main", va?baddr+binmain->rva:binmain->offset,
 				r->blocksize, 0);
 

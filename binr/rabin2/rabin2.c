@@ -105,7 +105,7 @@ static int rabin_show_main() {
 	RBinAddr *binmain;
 	ut64 baddr = gbaddr?gbaddr:r_bin_get_baddr (bin);
 
-	if ((binmain = r_bin_get_main (bin)) == NULL)
+	if ((binmain = r_bin_get_sym (bin, R_BIN_SYM_MAIN)) == NULL)
 		return R_FALSE;
 	if (rad) {
 		printf ("fs symbols\n");
