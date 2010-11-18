@@ -195,6 +195,23 @@ int main(int argc, char **argv) {
 		r_core_cmdf (&r, "dpa %d", r.file->fd);
 		r_core_cmdf (&r, "dp=%d", r.file->fd);
 		r_core_cmd (&r, ".dr*", 0);
+		/* honor dbg.bep */
+		{
+			const char *bep = r_config_get (r.config, "dbg.bep");
+			if (bep) {
+				// TODO: add support for init, fini, ..
+				// TODO: maybe use "dcu %s".printf (bep);
+				if (!strcmp (bep, "loader")) {
+					/* do nothing here */
+				} else
+				if (!strcmp (bep, "main")) {
+					r_core_cmd (&r, "dcu main", 0);
+				} else
+				if (!strcmp (bep, "entry")) {
+					r_core_cmd (&r, "dcu entry0", 0);
+				}
+			}
+		}
 		r_core_cmd (&r, "sr pc", 0);
 		r_config_set (r.config, "cmd.prompt", ".dr*");
 		r_config_set (r.config, "cmd.vprompt", ".dr*");

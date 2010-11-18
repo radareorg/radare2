@@ -19,10 +19,9 @@ Debugger
 pancake
 -------
 * Implement software stepping (with code analysis+ breakpoints)
-* Implement dbg.bep
-  - in r_core? in r_debug after attach? maybe only in r2 binr?
+* Implement dbg.bep - in r_core? in r_debug after attach? maybe only in r2 binr?
+  - must be refined.. and look for better names
 * fork/clone child . inject code to create new threads or pids
-  - dpn dptn
 * Functions in r_util to get lil/big ut8,16,32 from ut8*
   - already done..must find better names probably
 * merge asm.arch vm.arch

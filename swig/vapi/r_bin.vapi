@@ -4,6 +4,14 @@ namespace Radare {
 	[Compact]
 	[CCode (cheader_filename="r_bin.h,r_list.h,r_types_base.h", cname="struct r_bin_t", free_function="r_bin_free", cprefix="r_bin_")]
 	public class RBin {
+		[CCode (cprefix="R_BIN_SYM_")]
+		public enum Sym {
+			ENTRY,
+			INIT,
+			MAIN,
+			FINI,
+			LAST
+		}
 		public const string file;
 		public int narch;
 		public RBin.Arch curarch;
@@ -19,7 +27,7 @@ namespace Radare {
 		public int set_archidx(int idx);
 		public int list();
 		public uint64 get_baddr();
-		public RBin.Addr get_main();
+		public RBin.Addr get_sym(int sym); // XXX: use RBin.Sym here ?
 		public RList<RBin.Addr> get_entries();
 		public RList<RBin.Field> get_fields();
 		public RList<RBin.Import> get_imports();
