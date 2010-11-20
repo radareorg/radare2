@@ -123,6 +123,7 @@ enum {
 typedef struct r_anal_t {
 	int bits;
 	int big_endian;
+	int split;
 	void *user;
 	RList *bbs;
 	RList *fcns;
@@ -382,7 +383,7 @@ R_API int r_anal_var_list(RAnal *anal, RAnalFcn *fcn, ut64 addr, int delta);
 extern RAnalPlugin r_anal_plugin_csr;
 extern RAnalPlugin r_anal_plugin_arm;
 extern RAnalPlugin r_anal_plugin_x86;
-extern RAnalPlugin r_anal_plugin_x86_x86im;
+extern RAnalPlugin r_anal_plugin_x86_simple;
 extern RAnalPlugin r_anal_plugin_ppc;
 extern RAnalPlugin r_anal_plugin_java;
 extern RAnalPlugin r_anal_plugin_mips;

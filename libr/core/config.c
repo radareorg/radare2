@@ -85,6 +85,13 @@ static int config_analplugin_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_analsplit_callback(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->split = node->i_value;
+	return R_TRUE;
+}
+
 static int config_asmos_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -300,9 +307,9 @@ R_API int r_core_config_init(RCore *core) {
 
 	r_config_set (cfg, "dir.plugins", LIBDIR"/radare2/"R2_VERSION"/");
 	/* anal */
-	r_config_set_i (cfg, "anal.depth", 10);
+	r_config_set_i (cfg, "anal.depth", 100);
 	r_config_set_i (cfg, "anal.ptrdepth", 3);
-	r_config_set (cfg, "anal.split", "false");
+	r_config_set_cb (cfg, "anal.split", "false", &config_analsplit_callback);
 	r_config_set_cb (cfg, "anal.plugin", "x86", &config_analplugin_callback);
 	/* asm */
 	r_config_set_i_cb (cfg, "asm.bits", 32,

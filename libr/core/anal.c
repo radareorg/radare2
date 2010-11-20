@@ -122,7 +122,7 @@ R_API int r_core_anal_bb(RCore *core, ut64 at, int depth, int head) {
 	ut64 jump, fail;
 	ut8 *buf;
 	int ret = R_ANAL_RET_NEW, buflen, bblen = 0;
-	int split = r_config_get_i (core->config, "anal.split");
+	int split = core->anal->split;
 
 	if (depth < 0)
 		return R_FALSE;
@@ -286,6 +286,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int depth) {
 				r_flag_space_set (core->flags, "functions");
 				r_flag_set (core->flags, fcn->name, at, fcn->size, 0);
 			}
+			/* New function: Add initial xref */
 			if (from != -1) {
 				if (!(ref = r_anal_ref_new ())) {
 					eprintf ("Error: new (xref)\n");
@@ -296,10 +297,9 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int depth) {
 				r_list_append (fcn->xrefs, ref);
 			}
 			r_list_append (core->anal->fcns, fcn);
-			r_list_foreach (fcn->refs, iter, refi) {
-				if (refi->addr != -1 && (refi->addr < fcn->addr || refi->addr > fcn->addr+fcn->size))
+			r_list_foreach (fcn->refs, iter, refi)
+				if (refi->addr != -1)
 					r_core_anal_fcn (core, refi->addr, refi->at, depth-1);
-			}
 		}
 	} while (fcnlen != R_ANAL_RET_END);
 	free (buf);
