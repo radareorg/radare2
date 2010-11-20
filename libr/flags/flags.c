@@ -281,8 +281,10 @@ R_API int r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size, int dup)
 }
 
 R_API void r_flag_item_rename(RFlagItem *item, const char *name) {
+	int len;
 	strncpy (item->name, name, R_FLAG_NAME_SIZE);
-	strncpy (item->name, r_str_chop (item->name), R_FLAG_NAME_SIZE);
+	len = R_MIN (R_FLAG_NAME_SIZE, strlen (r_str_chop (item->name)) + 1);
+	memmove (item->name, r_str_chop (item->name), len);
 	item->name[R_FLAG_NAME_SIZE-1]='\0';
 	item->namehash = r_str_hash64 (item->name);
 }

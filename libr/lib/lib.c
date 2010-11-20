@@ -129,16 +129,22 @@ static int samefile(const char *a, const char *b) {
 	char *sa = strdup(a);
 	char *sb = strdup(b);
 	char *ptr;
-	int ret;
+	int ret, len;
 
 	if (sa != NULL && sb != NULL) {
 		do {
 			ptr = strstr(sa, "//");
-			if (ptr) strcpy(ptr, ptr+1);	
+			if (ptr) {
+				len = strlen (ptr+1) + 1;
+				memmove (ptr, ptr+1, len);
+			}
 		} while(ptr);
 		do {
 			ptr = strstr(sb, "//");
-			if (ptr) strcpy(ptr, ptr+1);	
+			if (ptr) {
+				len = strlen (ptr+1) + 1;
+				memmove (ptr, ptr+1, len);
+			}
 		} while(ptr);
 		ret = strcmp(sa,sb)?R_FALSE:R_TRUE;
 	}
