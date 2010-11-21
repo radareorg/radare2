@@ -142,11 +142,11 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	if ((list = r_bin_get_imports (r->bin)) != NULL) {
 		r_list_foreach (list, iter, import) {
 			r_flag_name_filter (import->name);
+			snprintf (str, R_FLAG_NAME_SIZE, "fcn.imp.%s", import->name);
 			if (import->size)
 				if (!r_anal_fcn_add (r->anal, va?baddr+import->rva:import->offset,
-							import->size, import->name, R_ANAL_DIFF_NULL))
+							import->size, str, R_ANAL_DIFF_NULL))
 					eprintf ("Cannot add function: %s (duplicated)\n", import->name);
-			snprintf (str, R_FLAG_NAME_SIZE, "fcn.imp.%s", import->name);
 			r_flag_space_set (r->flags, "functions");
 			r_flag_set (r->flags, str, va?baddr+import->rva:import->offset,
 					import->size, 0);

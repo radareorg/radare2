@@ -520,7 +520,7 @@ static int cmd_zign(void *data, const char *input) {
 			ptr = strchr (input+2, ' ');
 			if (ptr) {
 				*ptr = '\0';
-				fd = open (ptr+1, O_RDWR|O_CREAT, 0644);
+				fd = open (ptr+1, O_RDWR|O_CREAT|O_TRUNC, 0644);
 				if (fd == -1) {
 					eprintf ("Cannot open %s in read-write\n", ptr+1);
 					return R_FALSE;

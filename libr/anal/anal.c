@@ -130,8 +130,10 @@ R_API char *r_anal_strmask (RAnal *anal, const char *data) {
 			break;
 		switch (aop->type) {
 		case R_ANAL_OP_TYPE_CALL:
+		case R_ANAL_OP_TYPE_UCALL:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_JMP:
+		case R_ANAL_OP_TYPE_UJMP:
 			if (aop->nopcode != 0)
 				memset (ret+(idx+aop->nopcode)*2, '.', (oplen-aop->nopcode)*2);
 		}
