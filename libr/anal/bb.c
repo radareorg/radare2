@@ -16,7 +16,6 @@ R_API RAnalBlock *r_anal_bb_new() {
 		bb->type = R_ANAL_BB_TYPE_NULL;
 		bb->diff = R_ANAL_DIFF_NULL;
 		bb->aops = r_anal_aop_list_new();
-		bb->traced = 0;
 		bb->fingerprint = r_big_new (NULL);
 		bb->cond = NULL;
 	}
@@ -26,7 +25,7 @@ R_API RAnalBlock *r_anal_bb_new() {
 R_API void r_anal_bb_trace(RAnal *anal, ut64 addr) {
 	RAnalBlock *bbi;
 	RListIter *iter;
-eprintf("bbtraced\n");
+	eprintf("bbtraced\n"); // XXX Debug msg
 	r_list_foreach (anal->bbs, iter, bbi) {
 		if (addr>=bbi->addr && addr<(bbi->addr+bbi->size)) {
 			bbi->traced = R_TRUE;
@@ -78,6 +77,10 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 		r_list_append (bb->aops, aop);
 		if (head) bb->type = R_ANAL_BB_TYPE_HEAD;
 		switch (aop->type) {
+		case R_ANAL_OP_TYPE_CALL:
+		case R_ANAL_OP_TYPE_UCALL:
+			bb->ncalls++;
+			break;
 		case R_ANAL_OP_TYPE_CMP:
 			bb->cond = r_anal_cond_new_from_aop (aop);
 			break;
@@ -86,6 +89,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 				// TODO: get values from anal backend
 				bb->cond->type = R_ANAL_COND_EQ;
 			} else eprintf ("Unknown conditional for block 0x%"PFMT64x"\n", bb->addr);
+			bb->conditional = 1;
 			bb->fail = aop->fail;
 			bb->jump = aop->jump;
 			bb->type |= R_ANAL_BB_TYPE_BODY;
@@ -99,6 +103,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			return R_ANAL_RET_END;
 		case R_ANAL_OP_TYPE_RET:
 			bb->type |= R_ANAL_BB_TYPE_LAST;
+			bb->ncalls++;
 			return R_ANAL_RET_END;
 		}
 	}

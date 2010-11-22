@@ -116,6 +116,47 @@ static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts
 	}
 }
 
+static int fcn_cc(RCore *core, RList *pbb, ut64 addr) {
+	struct r_anal_bb_t *bbi, *bbc;
+	RListIter *iter;
+	int ret = -1, jcalls = 0, fcalls = 0;
+
+	if (!pbb)
+		return -1;
+
+	/* Test if the bb has been analyzed before */
+	r_list_foreach (pbb, iter, bbi)
+		if (addr == bbi->addr)
+			return 0;
+
+	r_list_foreach (core->anal->bbs, iter, bbi)
+		if (addr == bbi->addr) {
+			/* Copy BB and append to the list of printed bbs */
+			bbc = R_NEW (RAnalBlock);
+			if (!bbc)
+				return -1;
+			memcpy (bbc, bbi, sizeof (RAnalBlock));
+			/* We don't want to free this refs when the temporary list is destroyed */
+			bbc->aops = NULL;
+			bbc->fingerprint = NULL;
+			bbc->cond = NULL;
+			r_list_append (pbb, bbc);
+			if (bbi->jump != -1) {
+				jcalls = fcn_cc (core, pbb, bbi->jump);
+				if (jcalls == -1)
+					return -1;
+			}
+			if (bbi->fail != -1) {
+				fcalls = fcn_cc (core, pbb, bbi->fail);
+				if (fcalls == -1)
+					return -1;
+			}
+			ret = bbi->conditional + bbi->ncalls + jcalls + fcalls;
+			break;
+		}
+	return ret;
+}
+
 R_API int r_core_anal_bb(RCore *core, ut64 at, int depth, int head) {
 	struct r_anal_bb_t *bb, *bbi;
 	RListIter *iter;
@@ -529,3 +570,14 @@ R_API int r_core_anal_ref_list(RCore *core, int rad) {
 	return R_TRUE;
 }
 
+R_API int r_core_anal_fcn_cc(RCore *core, ut64 addr) {
+	RList *pbb;
+	int ret;
+
+	pbb = r_anal_bb_list_new ();
+	if (!pbb)
+		return -1;
+	ret = fcn_cc (core, pbb, addr);
+	r_list_free (pbb);
+	return ret;
+}

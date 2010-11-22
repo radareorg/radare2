@@ -160,6 +160,7 @@ R_API int r_core_anal_bb_list(struct r_core_t *core, int rad);
 R_API int r_core_anal_bb_seek(struct r_core_t *core, ut64 addr);
 R_API int r_core_anal_fcn(struct r_core_t *core, ut64 at, ut64 from, int depth);
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad);
+R_API int r_core_anal_fcn_cc(RCore *core, ut64 addr);
 R_API int r_core_anal_graph(struct r_core_t *core, ut64 addr, int opts);
 R_API int r_core_anal_graph_fcn(struct r_core_t *core, char *input, int opts);
 R_API int r_core_anal_ref_list(struct r_core_t *core, int rad);

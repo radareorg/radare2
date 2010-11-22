@@ -128,7 +128,7 @@ static int asm_profile(RConfig *cfg, const char *profile) {
 		r_config_set (cfg, "asm.flagsline", "false");
 		r_config_set (cfg, "asm.section", "false");
 		r_config_set (cfg, "asm.trace", "false");
-		r_config_set (cfg, "asm.split", "true");
+		r_config_set (cfg, "anal.split", "true");
 		r_config_set (cfg, "asm.flags", "true");
 		r_config_set (cfg, "asm.size", "false");
 		r_config_set (cfg, "asm.xrefs", "true");
@@ -185,7 +185,7 @@ static int asm_profile(RConfig *cfg, const char *profile) {
 		r_config_set (cfg, "asm.bytes", "false");
 		r_config_set (cfg, "asm.lines", "false");
 		r_config_set (cfg, "asm.comments", "true");
-		r_config_set (cfg, "asm.split", "false");
+		r_config_set (cfg, "anal.split", "false");
 		r_config_set (cfg, "asm.flags", "false");
 		r_config_set (cfg, "asm.flagsline", "true");
 		r_config_set (cfg, "asm.xrefs", "false");
@@ -309,7 +309,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* anal */
 	r_config_set_i (cfg, "anal.depth", 100);
 	r_config_set_i (cfg, "anal.ptrdepth", 3);
-	r_config_set_cb (cfg, "anal.split", "false", &config_analsplit_callback);
+	r_config_set_cb (cfg, "anal.split", "true", &config_analsplit_callback);
 	r_config_set_cb (cfg, "anal.plugin", "x86", &config_analplugin_callback);
 	/* asm */
 	r_config_set_i_cb (cfg, "asm.bits", 32,

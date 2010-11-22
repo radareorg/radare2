@@ -2057,6 +2057,12 @@ static int cmd_anal(void *data, const char *input) {
 		case 'v':
 			var_cmd (core, input+1);
 			break;
+		case 'c':
+			{
+			int cc = r_core_anal_fcn_cc (core, core->offset);
+			r_cons_printf ("Cyclomatic Complexity at 0x%08"PFMT64x" = %i\n", core->offset, cc);
+			}
+			break;
 		case '?':
 			r_cons_printf (
 			"Usage: af[?+-l*]\n"
@@ -2066,6 +2072,7 @@ static int cmd_anal(void *data, const char *input) {
 			" afl [fcn name]            ; List functions\n"
 			" afs [addr] [fcnsign]      ; Get/set function signature at current address\n"
 			" af[aAv][?] [arg]          ; Manipulate args, fastargs and variables in function\n"
+			" afc @ [addr]              ; Calculate the Cyclomatic Complexity (starting at addr)\n"
 			" af*                       ; Output radare commands\n");
 			break;
 		default:

@@ -184,6 +184,8 @@ typedef struct r_anal_bb_t {
 	int type;
 	int diff;
 	int ninstr;
+	int ncalls;
+	int conditional;
 	int traced;
 	RNumBig *fingerprint;
 	RList *aops;
