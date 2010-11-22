@@ -96,7 +96,10 @@ R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
 }
 
 R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
-	int ret = r_io_set_fd (core->io, core->file->fd);
+	int ret;
+	if (!core->io || !core->file || size<1)
+		return R_FALSE;
+	ret = r_io_set_fd (core->io, core->file->fd);
 	if (ret != -1) {
 		ret = r_io_write_at (core->io, addr, buf, size);
 		if (addr >= core->offset && addr <= core->offset+core->blocksize)
@@ -114,7 +117,10 @@ R_API int r_core_block_read(RCore *core, int next) {
 }
 
 R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
-	int ret = r_io_set_fd (core->io, core->file->fd);
+	int ret;
+	if (!core->io || !core->file || size<1)
+		return R_FALSE;
+	r_io_set_fd (core->io, core->file->fd); // XXX ignore ret?
 	ret = r_io_read_at (core->io, addr, buf, size);
 	if (addr>=core->offset && addr<=core->offset+core->blocksize)
 		r_core_block_read (core, 0);
