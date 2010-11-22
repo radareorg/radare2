@@ -18,6 +18,7 @@ Debugger
 
 pancake
 -------
+* Implement PTRACE_BLOCK
 * Implement software stepping (with code analysis+ breakpoints)
 * Implement dbg.bep - in r_core? in r_debug after attach? maybe only in r2 binr?
   - must be refined.. and look for better names

@@ -76,7 +76,7 @@ public class RCore {
 	public void rtr_session(string input);
 	public void rtr_cmd(string input);
 	/* io */
-	public int read_at(uint64 addr, out uint8 *buf, int size);
+	public int read_at(uint64 addr, uint8 *buf, int size);
 	public int write_at(uint64 addr, uint8 *buf, int size);
 	//public int write_op(uint64 addr, string arg, char op);
 	public int block_read(bool next);

@@ -147,6 +147,7 @@ typedef struct r_bin_reloc_t {
 } RBinReloc;
 
 typedef struct r_bin_string_t {
+	// TODO: rename string->name (avoid colisions)
 	char string[R_BIN_SIZEOF_STRINGS];
 	ut64 rva;
 	ut64 offset;
