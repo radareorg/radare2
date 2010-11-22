@@ -719,8 +719,6 @@ static RList *r_debug_native_threads(int pid) {
 #elif __APPLE__
 #if __arm__                 
 	#define OSX_PC state.r15
-	#undef THREAD_STATE
-	#define THREAD_STATE ARM_THREAD_STATE
 #elif __POWERPC__
 	#define OSX_PC state.srr0
 #else
@@ -740,7 +738,7 @@ static RList *r_debug_native_threads(int pid) {
         for (i = 0; i < inferior_thread_count; i++) {
                 tid = inferior_threads[i];
         	gp_count = sizeof (R_DEBUG_REG_T);
-                if ((err = thread_get_state (tid, THREAD_STATE,
+                if ((err = thread_get_state (tid, R_DEBUG_STATE_T,
 				(thread_state_t) &state, &gp_count)) != KERN_SUCCESS) {
                         // eprintf ("debug_list_threads: %s\n", MACH_ERROR_STRING(err));
 			OSX_PC = 0;
@@ -851,7 +849,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
         if (inferior_thread_count>0) {
                 /* TODO: allow to choose the thread */
         	gp_count = sizeof (R_DEBUG_REG_T)/sizeof(size_t);
-                if (thread_get_state (inferior_threads[0], ARM_THREAD_STATE,
+                if (thread_get_state (inferior_threads[0], R_DEBUG_STATE_T,
 				(thread_state_t) regs, &gp_count) != KERN_SUCCESS) {
                         eprintf ("debug_getregs: Failed to get thread %d %d.error (%x). (%s)\n",
 				(int)pid, pid_to_task (pid), (int)ret, MACH_ERROR_STRING (ret));
@@ -968,7 +966,7 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 		if (inferior_thread_count>0) {
 			/* TODO: allow to choose the thread */
 			gp_count = sizeof (R_DEBUG_REG_T)/sizeof(size_t);
-			if (thread_set_state (inferior_threads[0], ARM_THREAD_STATE,
+			if (thread_set_state (inferior_threads[0], R_DEBUG_STATE_T,
 					(thread_state_t) regs, gp_count) != KERN_SUCCESS) {
 				eprintf ("debug_getregs: Failed to get thread %d %d.error (%x). (%s)\n",
 					(int)pid, pid_to_task (pid), (int)ret, MACH_ERROR_STRING (ret));
