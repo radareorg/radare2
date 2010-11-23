@@ -164,14 +164,16 @@ R_API RList *r_anal_fcn_bb_list(RAnal *anal, RAnalFcn *fcn) {
 	return list;
 }
 
-R_API RAnalFcn *r_anal_fcn_find(RAnal *anal, ut64 addr) {
-	RAnalFcn *fcn;
+R_API RAnalFcn *r_anal_fcn_find(RAnal *anal, ut64 addr, int type) {
+	RAnalFcn *fcn, *ret = NULL;
 	RListIter *iter;
 	r_list_foreach (anal->fcns, iter, fcn) {
-		if (addr >= fcn->addr && addr < fcn->addr+fcn->size)
-			return fcn;
+		if (type == R_ANAL_FCN_TYPE_NULL || fcn->type == type)
+		if (addr == fcn->addr ||
+			(ret == NULL && (addr > fcn->addr && addr < fcn->addr+fcn->size)))
+			ret = fcn; 
 	}
-	return NULL;
+	return ret;
 }
 
 R_API RAnalVar *r_anal_fcn_get_var(RAnalFcn *fs, int num, int dir) {
@@ -190,6 +192,8 @@ R_API RAnalVar *r_anal_fcn_get_var(RAnalFcn *fs, int num, int dir) {
 R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFcn* fs) {
 	int i;
 	char *sign;
+	if (fs->type != R_ANAL_FCN_TYPE_FCN)
+		return NULL;
 	RAnalVar *arg, *ret = r_anal_fcn_get_var (fs, 0, R_ANAL_VAR_DIR_OUT);
 	if (ret) sign = r_str_newf ("%s %s (", ret->name, fs->name);
 	else sign = r_str_newf ("void %s (", fs->name);

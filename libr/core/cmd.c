@@ -161,7 +161,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			RAnalFcn *f;
 			if ((xrefs = r_anal_xref_get (core->anal, at))) {
 				r_list_foreach (xrefs, iter, refi) {
-					f = r_anal_fcn_find (core->anal, refi->addr);
+					f = r_anal_fcn_find (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
 					r_cons_printf (Color_TURQOISE"; %s XREF 0x%08"PFMT64x" (%s)"Color_RESET"\n",
 							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
 							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
@@ -175,11 +175,11 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 					core->reflines, at, analop.length);
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		if (show_functions) {
-			RAnalFcn *f = r_anal_fcn_find (core->anal, addr);
+			RAnalFcn *f = r_anal_fcn_find (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 			if (f && f->addr == at) {
 				char *sign = r_anal_fcn_to_string (core->anal, f);
-				r_cons_printf ("/* function: %s (%d) */\n",
-					f->name, f->size);
+				r_cons_printf ("/* %s: %s (%d) */\n", 
+						f->type == R_ANAL_FCN_TYPE_FCN?"function":"loc", f->name, f->size);
 				if (sign) r_cons_printf ("// %s\n", sign);
 				free (sign);
 				stackptr = 0;
@@ -426,7 +426,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 #endif
 			if (show_functions)
 			if (analop.jump != UT64_MAX) {
-				fcn = r_anal_fcn_find (core->anal, analop.jump);
+				fcn = r_anal_fcn_find (core->anal, analop.jump, R_ANAL_FCN_TYPE_FCN);
 				r_cons_printf("\n    ");
 				if(fcn&&fcn->name) r_cons_printf ("; %s(", fcn->name);
 				else r_cons_printf ("; 0x%08"PFMT64x"(", analop.jump);
@@ -1520,7 +1520,7 @@ static int cmd_print(void *data, const char *input) {
 	case 'D':
 	case 'd':
 		if (input[1]=='f') {
-			RAnalFcn *f = r_anal_fcn_find (core->anal, core->offset);
+			RAnalFcn *f = r_anal_fcn_find (core->anal, core->offset, R_ANAL_FCN_TYPE_FCN);
 			if (f) {
 				ut8 *block = malloc (f->size+1);
 				if (block) {
@@ -1778,7 +1778,7 @@ static void var_help() {
 }
 
 static int var_cmd(RCore *core, const char *str) {
-	RAnalFcn *fcn = r_anal_fcn_find (core->anal, core->offset);
+	RAnalFcn *fcn = r_anal_fcn_find (core->anal, core->offset, R_ANAL_FCN_TYPE_FCN);
 	char *p,*p2,*p3;
 	int type, delta, len = strlen(str)+1;
 
@@ -2052,7 +2052,7 @@ static int cmd_anal(void *data, const char *input) {
 				arg = strchr (arg, ' ');
 				if (arg) arg++;
 			} else addr = core->offset;
-			if ((f = r_anal_fcn_find (core->anal, addr))) {
+			if ((f = r_anal_fcn_find (core->anal, addr, R_ANAL_FCN_TYPE_NULL))) {
 				if (arg && *arg) {
 					r_anal_fcn_from_string (core->anal, f, arg);
 				} else {
@@ -3125,7 +3125,7 @@ static int cmd_meta(void *data, const char *input) {
 		break;
 	case 'F':
 		{
-		RAnalFcn *f = r_anal_fcn_find (core->anal, core->offset);
+		RAnalFcn *f = r_anal_fcn_find (core->anal, core->offset, R_ANAL_FCN_TYPE_FCN);
 		r_anal_fcn_from_string (core->anal, f, input+2);
 		}
 		break;

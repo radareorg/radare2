@@ -537,7 +537,7 @@ R_API void r_core_visual_anal(RCore *core) {
 	char old[1024];
 	ut64 size, addr = core->offset;
 	old[0]='\0';
-	RAnalFcn *fcn = r_anal_fcn_find (core->anal, core->offset);
+	RAnalFcn *fcn = r_anal_fcn_find (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 
 	for(;;) {
 		r_cons_gotoxy(0,0);
