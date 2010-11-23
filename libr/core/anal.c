@@ -306,8 +306,6 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			}
 			return R_TRUE;
 		}
-	if (reftype != R_ANAL_REF_TYPE_NULL && reftype != R_ANAL_REF_TYPE_CALL) /* Not come from call */
-		return R_TRUE;
 	if (!(fcn = r_anal_fcn_new())) {
 		eprintf ("Error: new (fcn)\n");
 		return R_FALSE;
@@ -319,7 +317,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	do {
 		if ((buflen = r_io_read_at (core->io, at+fcnlen, buf, core->blocksize)) != core->blocksize)
 			return R_FALSE;
-		fcnlen = r_anal_fcn (core->anal, fcn, at+fcnlen, buf, buflen); 
+		fcnlen = r_anal_fcn (core->anal, fcn, at+fcnlen, buf, buflen, reftype); 
 		if (fcnlen == R_ANAL_RET_ERROR) { /* Error analyzing function */
 			r_anal_fcn_free (fcn);
 			return R_FALSE;
@@ -328,7 +326,8 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			if (f) { /* Check if it's already flagged */
 				fcn->name = strdup (f->name);
 			} else {
-				fcn->name = r_str_dup_printf ("fcn.%08"PFMT64x"", at);
+				fcn->name = r_str_dup_printf ("%s.%08"PFMT64x,
+						fcn->type == R_ANAL_FCN_TYPE_LOC?"loc":"fcn", at);
 				/* Add flag */
 				r_flag_space_set (core->flags, "functions");
 				r_flag_set (core->flags, fcn->name, at, fcn->size, 0);
@@ -341,7 +340,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				}
 				ref->addr = from;
 				ref->at = at;
-				ref->type = R_ANAL_REF_TYPE_CALL;
+				ref->type = reftype;
 				r_list_append (fcn->xrefs, ref);
 			}
 			r_list_append (core->anal->fcns, fcn);
@@ -406,6 +405,8 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 			if (!rad) {
 				r_cons_printf ("[0x%08"PFMT64x"] size=%"PFMT64d" name=%s",
 						fcni->addr, fcni->size, fcni->name);
+				r_cons_printf (" type=%s",
+						fcni->type==R_ANAL_FCN_TYPE_LOC?"loc":"fcn");
 				r_cons_printf (" diff=%s",
 						fcni->diff=='m'?"match":fcni->diff=='u'?"unmatch":"new");
 
@@ -413,7 +414,8 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 				r_list_foreach (fcni->refs, iter2, refi)
 					if (refi->type == R_ANAL_REF_TYPE_CODE ||
 						refi->type == R_ANAL_REF_TYPE_CALL)
-						r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
+						r_cons_printf ("0x%08"PFMT64x"(%c) ", refi->addr,
+								refi->type==R_ANAL_REF_TYPE_CALL?'C':'J');
 
 				r_cons_printf ("\n  DATA refs: ");
 				r_list_foreach (fcni->refs, iter2, refi)
@@ -424,7 +426,8 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 				r_list_foreach (fcni->xrefs, iter2, refi)
 					if (refi->type == R_ANAL_REF_TYPE_CODE ||
 						refi->type == R_ANAL_REF_TYPE_CALL)
-						r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
+						r_cons_printf ("0x%08"PFMT64x"(%c) ", refi->addr,
+								refi->type==R_ANAL_REF_TYPE_CALL?'C':'J');
 
 				r_cons_printf ("\n  DATA xrefs: ");
 				r_list_foreach (fcni->xrefs, iter2, refi)
@@ -436,8 +439,10 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 					r_cons_printf ("  %-10s delta=0x%02x type=%s\n", vari->name,
 						vari->delta, r_anal_var_type_to_str (core->anal, vari->type));
 				r_cons_newline ();
-			} else r_cons_printf ("af+ 0x%08"PFMT64x" %"PFMT64d" %s (%c)\n",
-						fcni->addr, fcni->size, fcni->name, fcni->diff?fcni->diff:'n');
+			} else r_cons_printf ("af+ 0x%08"PFMT64x" %"PFMT64d" %s %c %c\n",
+						fcni->addr, fcni->size, fcni->name,
+						fcni->type==R_ANAL_FCN_TYPE_LOC?'l':'f',
+						fcni->diff==R_ANAL_DIFF_MATCH?'m':'n');
 		}
 	r_cons_flush ();
 	return R_TRUE;

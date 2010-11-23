@@ -163,7 +163,8 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 				r_list_foreach (xrefs, iter, refi) {
 					f = r_anal_fcn_find (core->anal, refi->addr);
 					r_cons_printf (Color_TURQOISE"; %s XREF 0x%08"PFMT64x" (%s)"Color_RESET"\n",
-							refi->type==R_ANAL_REF_TYPE_CODE?"CODE":"DATA", refi->addr,
+							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
+							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
 							f?f->name:"unk");
 				}
 				r_list_destroy (xrefs);
@@ -2009,19 +2010,29 @@ static int cmd_anal(void *data, const char *input) {
 			ut64 addr = -1LL;
 			ut64 size = 0LL;
 			int diff = R_ANAL_DIFF_NULL;
+			int type = R_ANAL_FCN_TYPE_FCN;
 			
 			if (n > 2) {
-				if (n == 4) {
-					ptr2 = r_str_word_get0 (ptr, 3);
+				switch(n) {
+				case 5:
+					ptr2 = r_str_word_get0 (ptr, 4);
 					if (ptr2[0] == 'm')
 						diff = R_ANAL_DIFF_MATCH;
 					else if (ptr2[0] == 'u')
 						diff = R_ANAL_DIFF_UNMATCH;
+				case 4:
+					ptr2 = r_str_word_get0 (ptr, 3);
+					if (strchr (ptr2, 'l'))
+						type = R_ANAL_FCN_TYPE_LOC;
+					else type = R_ANAL_FCN_TYPE_FCN;
+				case 3:
+					name = r_str_word_get0 (ptr, 2);
+				case 2:
+					size = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+				case 1:
+					addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 				}
-				name = r_str_word_get0 (ptr, 2);
-				size = r_num_math (core->num, r_str_word_get0 (ptr, 1));
-				addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
-				if (!r_anal_fcn_add (core->anal, addr, size, name, diff))
+				if (!r_anal_fcn_add (core->anal, addr, size, name, type, diff))
 					eprintf ("Cannot add function (duplicated)\n");
 			}
 			free (ptr);
@@ -2067,7 +2078,7 @@ static int cmd_anal(void *data, const char *input) {
 			r_cons_printf (
 			"Usage: af[?+-l*]\n"
 			" af @ [addr]               ; Analyze functions (start at addr)\n"
-			" af+ addr size name [diff] ; Add function\n"
+			" af+ addr size name [type] [diff] ; Add function\n"
 			" af- [addr]                ; Clean all function analysis data (or function at addr)\n"
 			" afl [fcn name]            ; List functions\n"
 			" afs [addr] [fcnsign]      ; Get/set function signature at current address\n"

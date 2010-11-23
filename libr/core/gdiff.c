@@ -258,7 +258,7 @@ R_API int r_core_gdiff(RCore *core, const char *file1, const char *file2, int va
 	iter = r_list_iterator (fcns[0]);
 	while (r_list_iter_next (iter)) {
 		fcn = r_list_iter_get (iter);
-		r_anal_fcn_add (core->anal, fcn->addr, fcn->size, fcn->name, fcn->diff);
+		r_anal_fcn_add (core->anal, fcn->addr, fcn->size, fcn->name, fcn->diff, fcn->type);
 	}
 
 	/* Free resources */

@@ -97,7 +97,8 @@ typedef enum {
 	R_ANAL_BB_TYPE_HEAD = 0x1,     /* first block */
 	R_ANAL_BB_TYPE_BODY = 0x2,     /* conditional jump */
 	R_ANAL_BB_TYPE_LAST = 0x4,     /* ret */
-	R_ANAL_BB_TYPE_FOOT = 0x8      /* unknown jump */
+	R_ANAL_BB_TYPE_FOOT = 0x8,     /* unknown jump */
+	R_ANAL_BB_TYPE_SWITCH = 0x10   /* TODO: switch */
 } _RAnalBlockType;
 
 enum {
@@ -205,10 +206,17 @@ typedef struct r_anal_call_t {
 } RAnalCall;
 #endif
 
+enum {
+	R_ANAL_FCN_TYPE_NULL = 0,
+	R_ANAL_FCN_TYPE_FCN,
+	R_ANAL_FCN_TYPE_LOC
+} RAnalFcnType;
+
 typedef struct r_anal_fcn_t {
 	char *name;
 	ut64 addr;
 	ut64 size;
+	int type;
 	int fastcall; // non-zero if following fastcall convention
 	int stack;
 	int diff;
@@ -312,16 +320,18 @@ R_API RAnalOp *r_anal_aop_new();
 R_API char *r_anal_aop_to_string(RAnal *anal, RAnalOp *op);
 R_API void r_anal_aop_free(void *aop);
 R_API RList *r_anal_aop_list_new();
-R_API int r_anal_aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len);
+R_API int r_anal_aop(RAnal *anal, RAnalOp *aop, ut64 addr,
+		const ut8 *data, int len);
 
 /* fcn.c */
 R_API RAnalFcn *r_anal_fcn_new();
 R_API RAnalFcn *r_anal_fcn_find(RAnal *anal, ut64 addr);
 R_API RList *r_anal_fcn_list_new();
 R_API void r_anal_fcn_free(void *fcn);
-R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len);
+R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr,
+		ut8 *buf, ut64 len, int reftype);
 R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size,
-		const char *name, int diff);
+		const char *name, int type, int diff);
 R_API int r_anal_fcn_del(RAnal *anal, ut64 addr);
 R_API RList *r_anal_fcn_bb_list(RAnal *anal, RAnalFcn *fcn);
 R_API RAnalVar *r_anal_fcn_get_var(RAnalFcn *fs, int num, int dir);

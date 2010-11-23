@@ -43,13 +43,16 @@ R_API void r_anal_fcn_free(void *fcn) {
 	free (fcn);
 }
 
-R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len) {
+R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
 	RAnalOp aop;
 	RAnalRef *ref;
 	char *varname;
 	int oplen, idx = 0;
 	if (fcn->addr == -1)
 		fcn->addr = addr;
+	if (reftype == R_ANAL_REF_TYPE_CODE)
+		fcn->type = R_ANAL_FCN_TYPE_LOC;
+	else fcn->type = R_ANAL_FCN_TYPE_FCN;
 	while (idx < len) {
 		if ((oplen = r_anal_aop (anal, &aop, addr+idx, buf+idx, len-idx)) == 0) {
 			if (idx == 0) {
@@ -94,6 +97,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len) 
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
+			/* TODO: loc's should end with jmp too? */
 			if (!(ref = r_anal_ref_new ())) {
 				eprintf ("Error: new (ref)\n");
 				return R_ANAL_RET_ERROR;
@@ -112,7 +116,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len) 
 	return fcn->size;
 }
 
-R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size, const char *name, int diff) {
+R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size, const char *name, int type, int diff) {
 	RAnalFcn *fcn = NULL, *fcni;
 	RListIter *iter;
 	int append = 0;
@@ -130,6 +134,7 @@ R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size, const char *name, in
 	fcn->size = size;
 	free (fcn->name);
 	fcn->name = strdup (name);
+	fcn->type = type;
 	fcn->diff = diff;
 	if (append) r_list_append (anal->fcns, fcn);
 	return R_TRUE;
