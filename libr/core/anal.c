@@ -279,7 +279,7 @@ R_API int r_core_anal_bb_seek(RCore *core, ut64 addr) {
 	return r_core_seek (core, addr, R_FALSE);
 }
 
-R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int depth) {
+R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	RAnalFcn *fcn, *fcni;
 	struct r_anal_ref_t *refi;
 	RListIter *iter, *iter2;
@@ -290,26 +290,32 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int depth) {
 	if (depth < 0)
 		return R_FALSE;
 	r_list_foreach (core->anal->fcns, iter, fcni)
-		if (at == fcni->addr) {
+		if (at == fcni->addr) { /* Function already analyzed */
 			if (from != -1) {
-				r_list_foreach (fcni->xrefs, iter2, refi) {
+				r_list_foreach (fcni->xrefs, iter2, refi) /* If the xref is new, add it */
 					if (from == refi->addr)
-						return R_FALSE;
-				}
+						return R_TRUE;
 				if (!(ref = r_anal_ref_new ())) {
 					eprintf ("Error: new (xref)\n");
-					return R_ANAL_RET_ERROR;
+					return R_FALSE;
 				}
 				ref->addr = from;
 				ref->at = at;
+				ref->type = reftype;
 				r_list_append (fcni->xrefs, ref);
 			}
-			return R_FALSE;
+			return R_TRUE;
 		}
-	if (!(fcn = r_anal_fcn_new()))
+	if (reftype != R_ANAL_REF_TYPE_NULL && reftype != R_ANAL_REF_TYPE_CALL) /* Not come from call */
+		return R_TRUE;
+	if (!(fcn = r_anal_fcn_new())) {
+		eprintf ("Error: new (fcn)\n");
 		return R_FALSE;
-	if (!(buf = malloc (core->blocksize)))
+	}
+	if (!(buf = malloc (core->blocksize))) {
+		eprintf ("Error: malloc (buf)\n");
 		return R_FALSE;
+	}
 	do {
 		if ((buflen = r_io_read_at (core->io, at+fcnlen, buf, core->blocksize)) != core->blocksize)
 			return R_FALSE;
@@ -317,7 +323,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int depth) {
 		if (fcnlen == R_ANAL_RET_ERROR) { /* Error analyzing function */
 			r_anal_fcn_free (fcn);
 			return R_FALSE;
-		} else if (fcnlen == R_ANAL_RET_END) { /* function analysis complete */
+		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
 			RFlagItem *f = r_flag_get_i (core->flags, at);
 			if (f) { /* Check if it's already flagged */
 				fcn->name = strdup (f->name);
@@ -331,16 +337,17 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int depth) {
 			if (from != -1) {
 				if (!(ref = r_anal_ref_new ())) {
 					eprintf ("Error: new (xref)\n");
-					return R_ANAL_RET_ERROR;
+					return R_FALSE;
 				}
 				ref->addr = from;
 				ref->at = at;
+				ref->type = R_ANAL_REF_TYPE_CALL;
 				r_list_append (fcn->xrefs, ref);
 			}
 			r_list_append (core->anal->fcns, fcn);
 			r_list_foreach (fcn->refs, iter, refi)
 				if (refi->addr != -1)
-					r_core_anal_fcn (core, refi->addr, refi->at, depth-1);
+					r_core_anal_fcn (core, refi->addr, refi->at, refi->type, depth-1);
 		}
 	} while (fcnlen != R_ANAL_RET_END);
 	free (buf);
@@ -380,7 +387,8 @@ R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv) {
 			if (gv) r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
 					"[label=\"%s\" color=\"%s\"];\n",
 				fcni->addr, fcnr->addr, flag?flag->name:"",
-				(fcnr->type==R_ANAL_REF_TYPE_CODE)?"green":"red");
+				(fcnr->type==R_ANAL_REF_TYPE_CODE ||
+				 fcnr->type==R_ANAL_REF_TYPE_CALL)?"green":"red");
 			else r_cons_printf (" - 0x%08"PFMT64x" (%c)\n", fcnr->addr, fcnr->type);
 		}
 	}
@@ -403,7 +411,8 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 
 				r_cons_printf ("\n  CODE refs: ");
 				r_list_foreach (fcni->refs, iter2, refi)
-					if (refi->type == R_ANAL_REF_TYPE_CODE)
+					if (refi->type == R_ANAL_REF_TYPE_CODE ||
+						refi->type == R_ANAL_REF_TYPE_CALL)
 						r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
 
 				r_cons_printf ("\n  DATA refs: ");
@@ -413,7 +422,8 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 
 				r_cons_printf ("\n  CODE xrefs: ");
 				r_list_foreach (fcni->xrefs, iter2, refi)
-					if (refi->type == R_ANAL_REF_TYPE_CODE)
+					if (refi->type == R_ANAL_REF_TYPE_CODE ||
+						refi->type == R_ANAL_REF_TYPE_CALL)
 						r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
 
 				r_cons_printf ("\n  DATA xrefs: ");

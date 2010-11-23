@@ -251,7 +251,9 @@ typedef struct r_anal_var_type_t {
 } RAnalVarType;
 
 enum {
+	R_ANAL_REF_TYPE_NULL = 0,
 	R_ANAL_REF_TYPE_CODE = 'c', // code ref
+	R_ANAL_REF_TYPE_CALL = 'C', // code ref (call)
 	R_ANAL_REF_TYPE_DATA = 'd'  // mem ref
 } RAnalRefType;
 

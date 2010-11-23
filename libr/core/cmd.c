@@ -2076,7 +2076,7 @@ static int cmd_anal(void *data, const char *input) {
 			" af*                       ; Output radare commands\n");
 			break;
 		default:
-			r_core_anal_fcn (core, core->offset, -1,
+			r_core_anal_fcn (core, core->offset, -1, R_ANAL_REF_TYPE_NULL,
 					r_config_get_i (core->config, "anal.depth"));
 		}
 		break;

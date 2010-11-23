@@ -99,7 +99,8 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len) 
 				return R_ANAL_RET_ERROR;
 			}
 			ref = R_NEW (RAnalRef);
-			ref->type = R_ANAL_REF_TYPE_CODE;
+			ref->type = aop.type == R_ANAL_OP_TYPE_CALL?
+				R_ANAL_REF_TYPE_CALL : R_ANAL_REF_TYPE_CODE;
 			ref->at = aop.addr;
 			ref->addr = aop.jump;
 			r_list_append (fcn->refs, ref);
