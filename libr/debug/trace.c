@@ -115,3 +115,10 @@ R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
 	} else tp->times++;
 	return tp;
 }
+
+R_API void r_debug_trace_reset (RDebug *dbg) {
+	RDebugTrace *t = dbg->trace;
+	r_list_destroy (t->traces);
+	t->traces = r_list_new ();
+	t->traces->free = free;
+}

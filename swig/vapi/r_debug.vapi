@@ -20,7 +20,7 @@ public class Radare.RDebug {
 	[CCode (cname="r_debug_wait")]
 	public bool hold();
 
-	public bool kill(int sig);
+	public bool kill(bool thread, int sig);
 	public bool kill_setup(int sig, int action); // XXX must be uint64 action
 	public bool select (int pid, int tid);
 	public bool step(int count);
@@ -41,7 +41,7 @@ public class Radare.RDebug {
 	public RDebug.Map map_get(uint64 addr);
 	public bool map_sync ();
 
-	public RList<RDebug.Frame> frames ();
+	// TODO: public RList<RDebug.Frame> frames ();
 
 	public uint64 arg_get (int fast, int num);
 	public bool arg_set (int fast, int num, uint64 val);
@@ -66,7 +66,7 @@ public class Radare.RDebug {
 	public int pid_list (int pid);
 	public int thread_list (int pid);
 
-	public void trace_reset (bool liberate);
+	public void trace_reset ();
 	public int trace_pc ();
 	public void trace_at (string str);
 	//public RDebug.Tracepoint trace_get(uint64 addr);
@@ -87,7 +87,7 @@ public class Radare.RDebug {
 	}
 
 // XXX cname=int must be deprecated by valaswig
-	[CCode (cprefix="R_DBG_PROC_", cname="int")]
+	[CCode (cname="int", cprefix="R_DBG_PROC_")]
 	public enum ProcessStatus {
 		STOP,
 		RUN,
@@ -96,9 +96,14 @@ public class Radare.RDebug {
 		DEAD
 	}
 
-	[CCode (cprefix="R_DBG_REASON_", cname="int")]
+	[CCode (cname="int", cprefix="R_DBG_REASON_")]
 	public enum Reason {
-		NEWPROC,
+		NEW_PID,
+		NEW_TID,
+		NEW_LIB,
+		EXIT_PID,
+		EXIT_TID,
+		EXIT_LIB,
 		TRAP,
 		ILL,
 		SIGNAL,

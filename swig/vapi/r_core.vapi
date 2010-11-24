@@ -54,7 +54,7 @@ public class RCore {
 	public int anal_bb(uint64 at, int depth, int head);
 	public int anal_bb_list(bool rad);
 	public int anal_bb_seek(uint64 addr);
-	public int anal_fcn(uint64 at, uint64 from, int depth);
+	public int anal_fcn(uint64 at, uint64 from, int reftype, int depth);
 	public int anal_fcn_list(string input, bool rad);
 	public int anal_graph(uint64 addr, int opts);
 	//public int anal_graph_fcn(string input, int opts);

@@ -243,6 +243,11 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	return ret;
 }
 
+R_API int r_debug_kill_setup(RDebug *dbg, int sig, int action) {
+	// TODO: implement r_debug_kill_setup
+	return R_FALSE;
+}
+
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	int ret = R_FALSE;
 	if (dbg && dbg->h && dbg->h->cont) {

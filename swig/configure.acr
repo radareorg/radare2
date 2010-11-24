@@ -1,5 +1,5 @@
 PKGNAME radare2-swig
-VERSION 0.6
+VERSION 0.6.1
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
@@ -10,6 +10,23 @@ CHKPRG! SWIG swig
 ARG_WITH USERCC=gcc cc Define C compiler to use (gcc by default) ;
 ARG_WITH USERCXX=g++ cxx Define C++ compiler to use (g++ by default) ;
 ARG_WITH USEROSTYPE=auto ostype Choose OS type ( gnulinux windows darwin ) ;
+IFEQ USEROSTYPE auto ; {
+	IFEQ HOST_OS linux ; {
+		USEROSTYPE = gnulinux ;
+	}{
+	IFEQ HOST_OS netbsd ; {
+		USEROSTYPE = gnulinux ;
+	}{
+	IFEQ HOST_OS freebsd ; {
+		USEROSTYPE = gnulinux ;
+	}{
+	IFEQ HOST_OS openbsd ; {
+		USEROSTYPE = gnulinux ;
+	}{
+	IFEQ HOST_OS darwin ; {
+		USEROSTYPE = darwin ;
+	} } } } }
+}
 
 PKGCFG! FOO FOO libr
 

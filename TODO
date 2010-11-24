@@ -7,7 +7,7 @@
 
 Bindings
 ========
-* Fix segfaults in valaswig
+* Remove libr/pkgconfig ... already used?
 * Distribute generated .i files or cxx files.. so build is faster
 
 Debugger

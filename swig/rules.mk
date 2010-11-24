@@ -1,10 +1,12 @@
 include ../config.mk
 
-LIBS=r_util.so r_bp.so r_asm.so r_diff.so r_core.so r_bin.so r_cons.so r_anal.so r_cmd.so
-LIBS+=r_debug.so r_config.so r_io.so r_syscall.so r_search.so r_lib.so libr.so r_flags.so
-LIBS+=r_parse.so r_lang.so
+LIBS=r_util.${SOEXT} r_bp.${SOEXT} r_asm.${SOEXT} r_diff.${SOEXT}
+LIBS+=r_bin.${SOEXT} r_cons.${SOEXT} r_anal.${SOEXT} r_cmd.${SOEXT}
+LIBS+=r_debug.${SOEXT} r_config.${SOEXT} r_io.${SOEXT} r_syscall.${SOEXT}
+LIBS+=r_search.${SOEXT} r_lib.${SOEXT} libr.${SOEXT} r_flags.${SOEXT}
+LIBS+=r_parse.${SOEXT} r_lang.${SOEXT} r_core.${SOEXT}
 
-.SUFFIXES: .so
+.SUFFIXES: .so .dylib .dll
 
 all: ${LIBS}
 
@@ -17,8 +19,8 @@ w32:
 	export CC CXX CFLAGS LDFLAGS ; \
 	${MAKE}
 
-%.so:
-	@-test ../../libr/vapi/`echo $@|sed -e s,.so,.vapi,` -nt ${LIBS_PFX}$@ ; \
+%.${SOEXT}:
+	@-test ../../libr/vapi/`echo $@|sed -e s,.${SOEXT},.vapi,` -nt ${LIBS_PFX}$@ ; \
 	if [ ! $$? = 0 ]; then \
 	  if [ ! -e ${LIBS_PFX}$@ ]; then \
             true ; \
@@ -27,7 +29,7 @@ w32:
           fi ; \
 	fi ; \
 	if [ $$? = 0 ]; then \
-	  (cd .. && sh do-swig.sh ${LANG} `echo $@ | sed -e s,.so,,`) ; \
+	  (cd .. && sh do-swig.sh ${LANG} `echo $@ | sed -e s,.${SOEXT},,`) ; \
 	fi
 
 test:

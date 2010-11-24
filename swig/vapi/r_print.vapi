@@ -3,10 +3,22 @@
 [Compact]
 [CCode (cheader_filename="r_print.h", cprefix="r_print_", cname="struct r_print_t", free_function="r_print_free")]
 public class Radare.RPrint {
+	/* constructor */
 	public RPrint();
+
+	/* fields */
+	public int width;
+	public bool interrupt;
+	public int limit;
+	public bool cur_enabled;
+	public int cur;
+	public int ocur;
+	public int flags;
+	//public string datefmt;
+
+	/* methods */
 	public string hexpair (string str, int idx);
 	public void set_flags (int flags);
-	public void set_width (int width);
 	public void hexdump(uint64 addr, uint8* buf, int len, int baddr, int step);
 	public void hexpairs(uint64 addr, uint8 *buf, int len);
 	public void bytes(uint8* buf, int len, string fmt);
