@@ -1,7 +1,7 @@
 using Radare;
 
 void main() {
-	var reg = new RRegister();
+	var reg = new RReg();
 	reg.set_profile_string (
 		"gpr	eip	.32	0	0\n" +
 		"gpr	eax	.32	4	0\n"

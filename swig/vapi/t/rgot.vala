@@ -9,11 +9,13 @@ struct Rel {
 	uint16 r_info;
 }
 
+#if 0
 // not used
 struct Rel64 {
 	uint64 r_offset;
 	uint16 r_info;
 }
+#endif
 
 void main(string[] args) {
 	if (args.length != 2)

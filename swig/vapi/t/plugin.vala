@@ -4,7 +4,7 @@ using Radare;
 [CCode (has_target = false)]
 private bool mycall(void *user, string cmd) {
 	if (cmd.has_prefix (":bc")) {
-		if (cmd.len () == 3) {
+		if (cmd.length == 3) {
 			print ( "BinCrowd radare2 plugin help:\n"+
 				":bc pull       retrieve signatures from server\n"+
 				":bc push       upload signatures to server\n"+

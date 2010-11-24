@@ -5,6 +5,11 @@
 
 <{include libr/TODO}>
 
+Bindings
+========
+* Fix segfaults in valaswig
+* Distribute generated .i files or cxx files.. so build is faster
+
 Debugger
 ========
 * Implement DRX support

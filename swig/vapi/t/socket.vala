@@ -7,8 +7,8 @@ using Radare;
 public static void main(string[] args)
 {
 	string str = (string) new char[4096];
-	unowned GLib.FileStream stdin = GLib.stdin;
-	unowned GLib.FileStream stdout = GLib.stdout;
+	//unowned GLib.FileStream stdin = GLib.stdin;
+	//unowned GLib.FileStream stdout = GLib.stdout;
 
 	RSocket fd;
 	if (args.length>2)
