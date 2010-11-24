@@ -6,11 +6,13 @@ OSTYPE=@USEROSTYPE@
 
 ifeq ($(OSTYPE),windows)
 SOEXT=dll
-elif ($(OSTYPE),darwin)
+else
+if ($(OSTYPE),darwin)
 SOEXT=dylib
 else
 # linux, bsd, ...
 SOEXT=so
+endif
 endif
 
 INSTALL_DIR=@INSTALL_DIR@
