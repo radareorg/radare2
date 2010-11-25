@@ -68,7 +68,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			r_anal_aop_free (aop);
 			if (idx == 0) {
 				eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
-				return R_ANAL_RET_ERROR;
+				return R_ANAL_RET_END;
 			} else break;
 		}
 		idx += oplen;
