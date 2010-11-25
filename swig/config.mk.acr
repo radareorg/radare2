@@ -7,7 +7,7 @@ OSTYPE=@USEROSTYPE@
 ifeq ($(OSTYPE),windows)
 SOEXT=dll
 else
-if ($(OSTYPE),darwin)
+ifeq ($(OSTYPE),darwin)
 SOEXT=dylib
 else
 # linux, bsd, ...
