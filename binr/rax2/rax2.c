@@ -37,22 +37,26 @@ static int format_output (char mode, ut64 n) {
 static int rax (char *str) {
 	float f;
 	char *buf, out_mode = '0';
+	int i;
 
-	if (flags & 1) {
-		ut64 n = (strlen (str)) >> 4;
-		buf = malloc (sizeof (char) * n);
-		memset (buf, '\0', n);
-		n = r_hex_str2bin (str, (ut8*)buf);
-		printf ("%s\n", buf);
-		free (buf);
+	if (!strcmp (str, "-s")) {
+		flags ^= 1;
 		return R_TRUE;
 	}
+
+	if (!strcmp (str, "-S")) {
+		flags ^= 4;
+		return R_TRUE;
+	}
+
 	if (!strcmp (str, "-e")) {
 		flags ^= 2;
 		return R_TRUE;
 	}
+
 	if (*str=='q')
 		return R_FALSE;
+
 	if (*str=='h' || *str=='?') {
 		printf(
 		" int   ->  hex           ;  rax 10\n"
@@ -69,9 +73,28 @@ static int rax (char *str) {
 		" hex   ->  bin           ;  rax Bx63\n"
 		" -e    swap endianness   ;  rax -e 0x33\n"
 		" -s    swap hex to bin   ;  rax -s 43 4a 50\n"
+		" -S    swap bin to hex   ;  rax -S C  J  P\n"
 		" -     read data from stdin until eof\n");
 		return R_TRUE;
 	}
+
+	if (flags & 1) {
+		ut64 n = (strlen (str)) >> 4;
+		buf = malloc (sizeof (char) * n);
+		memset (buf, '\0', n);
+		n = r_hex_str2bin (str, (ut8*)buf);
+		printf ("%s\n", buf);
+		free (buf);
+		return R_TRUE;
+	}
+
+	if (flags & 4) {
+		for (i=0; str[i]; i++)
+			printf ("%02x", str[i]);
+		printf ("\n");
+		return R_TRUE;
+	}
+
 	if (str[0]=='0' && str[1]=='x') {
 		out_mode = 'I';
 	} else if (str[0]=='b') {
@@ -105,12 +128,7 @@ int use_stdin () {
 		fgets (buf, sizeof (buf)-1, stdin);
 		if (feof (stdin)) break;
 		buf[strlen (buf)-1] = '\0';
-		if (!flags) {
-			int i;
-			for (i=0; buf[i]; i++)
-				printf ("%02x", buf[i]);
-			printf ("\n");
-		} else if (!rax (buf)) break;
+		if (!rax (buf)) break;
 	}
 	return 0;
 }
@@ -133,6 +151,8 @@ int main (int argc, char **argv) {
 			case 's':
 				flags |= 1;
 				break;
+			case 'S':
+				flags |= 4;
 			case 'e':
 				flags |= 2;
 				break;
