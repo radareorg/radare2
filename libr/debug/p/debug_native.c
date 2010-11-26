@@ -72,11 +72,13 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 #include <mach/i386/_structs.h>
 
 #if __x86_64__
-#define R_DEBUG_STATE_T x86_THREAD_STATE64
+#define R_DEBUG_STATE_T x86_THREAD_STATE
 #define R_DEBUG_REG_T _STRUCT_X86_THREAD_STATE64
+#define R_DEBUG_STATE_SZ x86_THREAD_STATE_COUNT
 #else
 #define R_DEBUG_REG_T _STRUCT_X86_THREAD_STATE32
 #define R_DEBUG_STATE_T i386_THREAD_STATE
+#define R_DEBUG_STATE_SZ i386_THREAD_STATE_COUNT
 #endif
 #endif
 
@@ -451,6 +453,46 @@ static const char *r_debug_native_reg_profile() {
 	"drx	dr6	.32	24	0\n"
 	"drx	dr7	.32	28	0\n"
 	);
+#elif __x86_64__ && __APPLE__
+	return strdup (
+	"=pc	rip\n"
+	"=sp	rsp\n"
+	"=bp	rbp\n"
+	"=a0	rax\n"
+	"=a1	rbx\n"
+	"=a2	rcx\n"
+	"=a3	rdx\n"
+	"# no profile defined for x86-64\n"
+	"gpr	rax	.64	0	0\n"
+	"gpr	rbx	.64	8	0\n"
+	"gpr	rcx	.64	16	0\n"
+	"gpr	rdx	.64	24	0\n"
+	"gpr	rdi	.64	32	0\n"
+	"gpr	rsi	.64	40	0\n"
+	"gpr	rbp	.64	48	0\n"
+	"gpr	rsp	.64	56	0\n"
+	"gpr	r8	.64	64	0\n"
+	"gpr	r9	.64	72	0\n"
+	"gpr	r10	.64	80	0\n"
+	"gpr	r11	.64	88	0\n"
+	"gpr	r12	.64	96	0\n"
+	"gpr	r13	.64	104	0\n"
+	"gpr	r14	.64	112	0\n"
+	"gpr	r15	.64	120	0\n"
+	"gpr	rip	.64	128	0\n"
+	"gpr	rflags	.64	136	0	c1p.a.zstido.n.rv\n"
+	"seg	cs	.64	144	0\n"
+	"seg	fs	.64	152	0\n"
+	"seg	gs	.64	160	0\n"
+#if 0
+	"drx	dr0	.32	0	0\n"
+	"drx	dr1	.32	4	0\n"
+	"drx	dr2	.32	8	0\n"
+	"drx	dr3	.32	12	0\n"
+	"drx	dr6	.32	24	0\n"
+	"drx	dr7	.32	28	0\n"
+#endif
+	);
 #elif __x86_64__
 	return strdup (
 	"=pc	rip\n"
@@ -758,13 +800,16 @@ static RList *r_debug_native_threads(int pid) {
         }
         for (i = 0; i < inferior_thread_count; i++) {
                 tid = inferior_threads[i];
-        	gp_count = sizeof (R_DEBUG_REG_T);
+/*
+		XXX overflow here
+        	gp_count = R_DEBUG_STATE_SZ; //sizeof (R_DEBUG_REG_T);
                 if ((err = thread_get_state (tid, R_DEBUG_STATE_T,
 				(thread_state_t) &state, &gp_count)) != KERN_SUCCESS) {
                         // eprintf ("debug_list_threads: %s\n", MACH_ERROR_STRING(err));
 			OSX_PC = 0;
                 }
-		r_list_append (list, r_debug_pid_new ("???", i, 's', OSX_PC));
+*/
+		r_list_append (list, r_debug_pid_new ("???", tid, 's', OSX_PC));
         }
 #elif __linux__
 	int i, fd, thid = 0;
@@ -855,7 +900,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 	thread_array_t inferior_threads = NULL;
 	unsigned int inferior_thread_count = 0;
 	R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
-        unsigned int gp_count = sizeof (R_DEBUG_REG_T);
+        unsigned int gp_count = R_DEBUG_STATE_SZ; //sizeof (R_DEBUG_REG_T);
 
 	if (size<sizeof(R_DEBUG_REG_T)) {
 		eprintf ("Small buffer passed to r_debug_read\n");
@@ -869,7 +914,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 
         if (inferior_thread_count>0) {
                 /* TODO: allow to choose the thread */
-        	gp_count = sizeof (R_DEBUG_REG_T)/sizeof(size_t);
+		gp_count = R_DEBUG_STATE_SZ;
                 if (thread_get_state (inferior_threads[0], R_DEBUG_STATE_T,
 				(thread_state_t) regs, &gp_count) != KERN_SUCCESS) {
                         eprintf ("debug_getregs: Failed to get thread %d %d.error (%x). (%s)\n",
@@ -976,7 +1021,7 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 		thread_array_t inferior_threads = NULL;
 		unsigned int inferior_thread_count = 0;
 		R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
-		unsigned int gp_count = sizeof (R_DEBUG_REG_T);
+		unsigned int gp_count = R_DEBUG_STATE_SZ;
 
 		ret = task_threads (pid_to_task (pid), &inferior_threads, &inferior_thread_count);
 		if (ret != KERN_SUCCESS) {
@@ -986,7 +1031,7 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 
 		if (inferior_thread_count>0) {
 			/* TODO: allow to choose the thread */
-			gp_count = sizeof (R_DEBUG_REG_T)/sizeof(size_t);
+			gp_count = R_DEBUG_STATE_SZ; //sizeof (R_DEBUG_REG_T)/sizeof(size_t);
 			if (thread_set_state (inferior_threads[0], R_DEBUG_STATE_T,
 					(thread_state_t) regs, gp_count) != KERN_SUCCESS) {
 				eprintf ("debug_getregs: Failed to get thread %d %d.error (%x). (%s)\n",
