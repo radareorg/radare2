@@ -8,6 +8,10 @@ include ../binr.mk
 sign:
 	ldid -Sradare2.xml radare2
 
+osxsign:
+	${CC} radare2.o ${CFLAGS} ${LDFLAGS} -sectcreate __TEXT __info_plist ./Info.plist -o radare2 -framework Security -framework CoreFoundation
+	codesign -dvvv -s radare2 ./radare2
+
 ifeq ($(WITHNONPIC),1)
 LDFLAGS+=${DL_LIBS} -lm -lpthread
 ifeq ($(HAVE_LIB_GMP),1)

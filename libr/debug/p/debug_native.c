@@ -69,9 +69,15 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 #else
 #include <mach/i386/thread_status.h>
 #include <sys/ucontext.h>
-#define R_DEBUG_REG_T _STRUCT_X86_THREAD_STATE32
 #include <mach/i386/_structs.h>
+
+#if __x86_64__
+#define R_DEBUG_STATE_T x86_THREAD_STATE64
+#define R_DEBUG_REG_T _STRUCT_X86_THREAD_STATE64
+#else
+#define R_DEBUG_REG_T _STRUCT_X86_THREAD_STATE32
 #define R_DEBUG_STATE_T i386_THREAD_STATE
+#endif
 #endif
 
 #elif __sun
@@ -139,11 +145,17 @@ task_t pid_to_task(int pid) {
 static inline void debug_arch_x86_trap_set(RDebug *dbg, int foo) {
 #if __i386__ || __x86_64__
         R_DEBUG_REG_T regs;
-	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR, &regs, sizeof (regs));
+	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR, (ut8*)&regs, sizeof (regs));
+#if __x86_64__
+        eprintf ("trap flag: %lld\n", (regs.__rflags&0x100));
+        if (foo) regs.__rflags |= EFLAGS_TRAP_FLAG;
+        else regs.__rflags &= ~EFLAGS_TRAP_FLAG;
+#else
         eprintf ("trap flag: %d\n", (regs.__eflags&0x100));
         if (foo) regs.__eflags |= EFLAGS_TRAP_FLAG;
         else regs.__eflags &= ~EFLAGS_TRAP_FLAG;
-	r_debug_native_reg_write (dbg->pid, dbg->tid, R_REG_TYPE_GPR, &regs, sizeof (regs));
+#endif
+	r_debug_native_reg_write (dbg->pid, dbg->tid, R_REG_TYPE_GPR, (const ut8*)&regs, sizeof (regs));
 #endif
 }
 #endif // __APPLE__
@@ -200,9 +212,13 @@ static int r_debug_native_attach(int pid) {
 	} else ret = -1;
 	ret = w32_first_thread (pid);
 #elif __APPLE__
+	// XXX: not necessary in X86??
 	ret = ptrace (PT_ATTACH, pid, 0, 0);
-	if (ret!=-1)
+	if (ret!=-1) {
+		perror ("ptrace(PT_ATTACH)");
 		ret = pid;
+	}
+	ret = pid;
 #else
 	ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
 	if (ret!=-1)
@@ -546,7 +562,7 @@ static RDebugPid *darwin_get_pid(int pid) {
 	/* Allocate space for the arguments. */
 	procargs = (char *)malloc (argmax);
 	if (procargs == NULL) {
-		eprintf ("getcmdargs(): insufficient memory for procargs %p\n", argmax);
+		eprintf ("getcmdargs(): insufficient memory for procargs %d\n", (int)(size_t)argmax);
 		return NULL;
 	}   
 
@@ -713,7 +729,10 @@ static RList *r_debug_native_pids(int pid) {
 
 static RList *r_debug_native_threads(int pid) {
 	RList *list = r_list_new ();
-	/* TODO */
+	if (list == NULL) {
+		eprintf ("No list?\n");
+		return NULL;
+	}
 #if __WINDOWS__
 	return w32_thread_list (pid, list);
 #elif __APPLE__
@@ -721,6 +740,8 @@ static RList *r_debug_native_threads(int pid) {
 	#define OSX_PC state.r15
 #elif __POWERPC__
 	#define OSX_PC state.srr0
+#elif __x86_64__
+	#define OSX_PC state.__rip
 #else
 	#define OSX_PC state.__eip
 #endif
@@ -1296,11 +1317,11 @@ static RList *r_debug_native_frames(RDebug *dbg) {
 
 	list = r_list_new ();
 	list->free = free;
-	bio->read_at (bio->io, _rip, &buf, 4);
+	bio->read_at (bio->io, _rip, (ut8*)&buf, 4);
 	/* %rbp=old rbp, %rbp+4 points to ret */
 	/* Plugin before function prelude: push %rbp ; mov %rsp, %rbp */
 	if (!memcmp (buf, "\x55\x89\xe5", 3) || !memcmp (buf, "\x89\xe5\x57", 3)) {
-		if (bio->read_at (bio->io, _rsp, &ptr, 4) != 4) {
+		if (bio->read_at (bio->io, _rsp, (ut8*)&ptr, 4) != 4) {
 			eprintf ("read error at 0x%08"PFMT64x"\n", _rsp);
 			return R_FALSE;
 		}
@@ -1313,11 +1334,12 @@ static RList *r_debug_native_frames(RDebug *dbg) {
 
 	for (i=1; i<MAXBT; i++) {
 		// TODO: make those two reads in a shot
-		bio->read_at (bio->io, _rbp, &ebp2, 4);
-		bio->read_at (bio->io, _rbp+4, &ptr, 4);
+		RDebugFrame *frame;
+		bio->read_at (bio->io, _rbp, (ut8*)&ebp2, 4);
+		bio->read_at (bio->io, _rbp+4, (ut8*)&ptr, 4);
 		if (!ptr || !_rbp)
 			break;
-		RDebugFrame *frame = R_NEW (RDebugFrame);
+		frame = R_NEW (RDebugFrame);
 		frame->addr = ptr;
 		frame->size = 0; // TODO ?
 		r_list_append (list, frame);
