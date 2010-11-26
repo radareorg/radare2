@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleIdentifier</key>
+	<string>net.radare.radare2</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>radare2</string>
+	<key>CFBundleVersion</key>
+	<string>1.0</string>
+        <key>SecTaskAccess</key>
+        <array>
+		<string>allowed</string>
+	</array>
+</dict>
+</plist>
+<!--
+To use the debugger in OSX>10.6 you have to create a self-signed certificate
+using the "KeyChain Access" utility. Then do the following:
+
+Menu -> CertificateAssistant -> Create Certificate
+  -> certificate type: code signing
+
+Use organization: radare.org
+Name: radare2
+
+When created:
+
+Right click on certificate -> Trust options -> Always trust
+
+$ make osxsign
+
+-->
