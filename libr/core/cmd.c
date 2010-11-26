@@ -2339,9 +2339,10 @@ static int cmd_anal(void *data, const char *input) {
 			}
 		}
 		break;
-	default:
+	case '?':
 		r_cons_printf (
 		"Usage: a[?obfrgtv]\n"
+		" a [@ addr]      ; Analyze functions and basic blocks\n"
 		" as [num]        ; Analyze syscall using dbg.reg\n"
 		" ao [len]        ; Analyze raw bytes as Opcodes\n"
 		" ab[?+-l*]       ; Analyze Basic blocks\n"
@@ -2350,6 +2351,13 @@ static int cmd_anal(void *data, const char *input) {
 		" ag[?f]          ; Output Graphviz code\n"
 		" at[trd+-*?] [.] ; Analyze execution Traces\n"
 		" av[?] [arg]     ; Analyze code with virtual machine\n");
+		break;
+	default:
+		{
+		int depth =r_config_get_i (core->config, "anal.depth"); 
+		r_core_anal_fcn (core, core->offset, -1, R_ANAL_REF_TYPE_NULL, depth);
+		r_core_anal_bb (core, core->offset, depth, R_TRUE);
+		}
 		break;
 	}
 	if (tbs != core->blocksize)
