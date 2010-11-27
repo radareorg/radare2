@@ -596,3 +596,39 @@ R_API int r_core_anal_fcn_cc(RCore *core, ut64 addr) {
 	r_list_free (pbb);
 	return ret;
 }
+
+R_API int r_core_anal_all(RCore *core) {
+	RList *list;
+	RListIter *iter;
+	RBinAddr *binmain;
+	RBinAddr *entry;
+	RBinSymbol *symbol;
+	RAnalFcn *fcn;
+	ut64 baddr;
+	int depth =r_config_get_i (core->config, "anal.depth"); 
+	int va = core->io->va || core->io->debug;
+
+	baddr = r_bin_get_baddr (core->bin);
+	/* Analyze Functions */
+	/* Main */
+	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN)) != NULL)
+		r_core_anal_fcn (core, va?baddr+binmain->rva:binmain->offset, -1,
+				R_ANAL_REF_TYPE_NULL, depth);
+	/* Entries */
+	if ((list = r_bin_get_entries (core->bin)) != NULL)
+		r_list_foreach (list, iter, entry)
+			r_core_anal_fcn (core, va?baddr+entry->rva:entry->offset, -1,
+					R_ANAL_REF_TYPE_NULL, depth);
+	/* Symbols (Imports are already analized by rabin2 on init) */
+	if ((list = r_bin_get_symbols (core->bin)) != NULL)
+		r_list_foreach (list, iter, symbol)
+			if (!strncmp (symbol->type,"FUNC", 4))
+				r_core_anal_fcn (core, va?baddr+symbol->rva:symbol->offset, -1,
+						R_ANAL_REF_TYPE_NULL, depth);
+	/* Analyze Basic blocks */
+	r_list_foreach (core->anal->fcns, iter, fcn)
+		if (fcn->type == R_ANAL_FCN_TYPE_FCN)
+			r_core_anal_bb (core, fcn->addr, depth, R_TRUE);
+
+	return R_TRUE;
+}
