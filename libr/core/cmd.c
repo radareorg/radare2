@@ -2339,10 +2339,13 @@ static int cmd_anal(void *data, const char *input) {
 			}
 		}
 		break;
-	case '?':
+	case 'a':
+		r_core_anal_all (core);
+		break;
+	default:
 		r_cons_printf (
 		"Usage: a[?obfrgtv]\n"
-		" a               ; Analyze bin (fcns + bbs)\n"
+		" aa              ; Analyze all (fcns + bbs)\n"
 		" as [num]        ; Analyze syscall using dbg.reg\n"
 		" ao [len]        ; Analyze raw bytes as Opcodes\n"
 		" ab[?+-l*]       ; Analyze Basic blocks\n"
@@ -2351,9 +2354,6 @@ static int cmd_anal(void *data, const char *input) {
 		" ag[?f]          ; Output Graphviz code\n"
 		" at[trd+-*?] [.] ; Analyze execution Traces\n"
 		" av[?] [arg]     ; Analyze code with virtual machine\n");
-		break;
-	default:
-		r_core_anal_all (core);
 		break;
 	}
 	if (tbs != core->blocksize)
