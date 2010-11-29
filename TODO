@@ -7,7 +7,6 @@
 
 Bindings
 ========
-* Remove libr/pkgconfig ... already used?
 * Distribute generated .i files or cxx files.. so build is faster
 
 Debugger
@@ -23,8 +22,8 @@ Debugger
 
 pancake
 -------
-* Implement PTRACE_BLOCK
-* Implement software stepping (with code analysis+ breakpoints)
+* Implement PTRACE_BLOCK on Linux
+* Implement software stepping (with code analysis+breakpoints)
 * Implement dbg.bep - in r_core? in r_debug after attach? maybe only in r2 binr?
   - must be refined.. and look for better names
 * fork/clone child . inject code to create new threads or pids
