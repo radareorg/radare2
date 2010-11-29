@@ -4,6 +4,11 @@
 
 static int flags = 0;
 
+static int format_output (char mode, ut64 n);
+static int help ();
+static int rax (char *str);
+static int use_stdin ();
+
 static int format_output (char mode, ut64 n) {
 	char *str = (char*) &n;
 
@@ -34,48 +39,59 @@ static int format_output (char mode, ut64 n) {
 	return R_TRUE;
 }
 
+static int help () {
+	printf ("  int   ->  hex           ;  rax2 10\n"
+			"  hex   ->  int           ;  rax2 0xa\n"
+			"  -int  ->  hex           ;  rax2 -77\n"
+			"  -hex  ->  int           ;  rax2 0xffffffb3\n"
+			"  int   ->  bin           ;  rax2 b30\n"
+			"  bin   ->  int           ;  rax2 1010d\n"
+			"  float ->  hex           ;  rax2 3.33f\n"
+			"  hex   ->  float         ;  rax2 Fx40551ed8\n"
+			"  oct   ->  hex           ;  rax2 35o\n"
+			"  hex   ->  oct           ;  rax2 Ox12 (O is a letter)\n"
+			"  bin   ->  hex           ;  rax2 1100011b\n"
+			"  hex   ->  bin           ;  rax2 Bx63\n"
+			"  -e    swap endianness   ;  rax2 -e 0x33\n"
+			"  -s    swap hex to bin   ;  rax2 -s 43 4a 50\n"
+			"  -S    swap bin to hex   ;  rax2 -S C  J  P\n"
+			"  -V    version           ;  rax2 -V\n"
+			"  -h    help              ;  rax2 -h\n");
+	return R_TRUE;
+}
+
 static int rax (char *str) {
 	float f;
 	char *buf, out_mode = '0';
 	int i;
 
-	if (!strcmp (str, "-s")) {
-		flags ^= 1;
+	if (*str=='-') {
+		switch (str[1]) {
+		case 's':
+			flags ^= 1;
+			break;
+		case 'S':
+			flags ^= 4;
+			break;
+		case 'e':
+			flags ^= 2;
+			break;
+		case 'V':
+			printf ("rax2 v"R2_VERSION"\n");
+			break;
+		case '\0':
+			return use_stdin ();
+		default:
+			printf ("Usage: rax2 [options] [expression]\n");
+			return help ();
+		}
 		return R_TRUE;
-	}
-
-	if (!strcmp (str, "-S")) {
-		flags ^= 4;
-		return R_TRUE;
-	}
-
-	if (!strcmp (str, "-e")) {
-		flags ^= 2;
-		return R_TRUE;
-	}
-
+	} else
 	if (*str=='q')
 		return R_FALSE;
-
+	else
 	if (*str=='h' || *str=='?') {
-		printf(
-		" int   ->  hex           ;  rax 10\n"
-		" hex   ->  int           ;  rax 0xa\n"
-		" -int  ->  hex           ;  rax -77\n"
-		" -hex  ->  int           ;  rax 0xffffffb3\n"
-		" int   ->  bin           ;  rax b30\n"
-		" bin   ->  int           ;  rax 1010d\n"
-		" float ->  hex           ;  rax 3.33f\n"
-		" hex   ->  float         ;  rax Fx40551ed8\n"
-		" oct   ->  hex           ;  rax 35o\n"
-		" hex   ->  oct           ;  rax Ox12 (O is a letter)\n"
-		" bin   ->  hex           ;  rax 1100011b\n"
-		" hex   ->  bin           ;  rax Bx63\n"
-		" -e    swap endianness   ;  rax -e 0x33\n"
-		" -s    swap hex to bin   ;  rax -s 43 4a 50\n"
-		" -S    swap bin to hex   ;  rax -S C  J  P\n"
-		" -     read data from stdin until eof\n");
-		return R_TRUE;
+		return help ();
 	}
 
 	if (flags & 1) {
@@ -87,7 +103,6 @@ static int rax (char *str) {
 		free (buf);
 		return R_TRUE;
 	}
-
 	if (flags & 4) {
 		for (i=0; str[i]; i++)
 			printf ("%02x", str[i]);
@@ -122,7 +137,7 @@ static int rax (char *str) {
 	return format_output (out_mode, r_num_math (NULL, str));
 }
 
-int use_stdin () {
+static int use_stdin () {
 	char buf[1024];
 	while (!feof (stdin)) {
 		fgets (buf, sizeof (buf)-1, stdin);
@@ -138,34 +153,6 @@ int main (int argc, char **argv) {
 
 	if (argc == 1)
 		return use_stdin ();
-
-	//XXX: Use a better way to parse. Maybe getopt??
-	for (i=1;i<argc;i++) {
-		if (argv[i][0]=='-') {
-			if (argv[i][1]=='\0') {
-				if (i==argc-1)
-					return use_stdin ();
-				break;
-			}
-			switch (argv[i][1]) {
-			case 's':
-				flags |= 1;
-				break;
-			case 'S':
-				flags |= 4;
-			case 'e':
-				flags |= 2;
-				break;
-			case 'h':
-				printf ("Usage: rax2 [-hV] [expression]\n");
-				return 0;
-			case 'V':
-				printf ("rax2 v"R2_VERSION"\n");
-				return 0;
-			}
-		} else break;
-	}
-
 	for (;i<argc; i++)
 		rax (argv[i]);
 	return 0;
