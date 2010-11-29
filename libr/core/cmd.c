@@ -3097,7 +3097,7 @@ static int cmd_meta(void *data, const char *input) {
 			default:
 				{
 				RFlagItem *fi = r_flag_get_i (core->flags, addr);
-				if (fi) snprintf (name, sizeof (name), fi->name);
+				if (fi) strncpy (name, fi->name, sizeof (name));
 				else sprintf (name, "ptr_%08"PFMT64x"", addr);
 				}
 			}

@@ -240,10 +240,9 @@ R_API char *r_str_chop(char *str) {
 }
 
 R_API char *r_str_trim_head(char *str) {
-	if (str == NULL)
-		return NULL;
-	while (*str && iswhitechar(*str)) 
-		str++;
+	if (str)
+		while (*str && iswhitechar(*str)) 
+			str++;
 	return str;
 }
 
