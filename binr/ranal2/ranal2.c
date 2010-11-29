@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
 			eprintf ("Invalid plugin\n");
 			return 1;
 		}
-	} else r_anal_use (anal, "x86_x86im");
+	} else r_anal_use (anal, "x86");
 	if (!r_anal_set_bits (anal, bits))
 		r_anal_set_bits (anal, 32);
 	/* Get input & convert to bin if necessary */

@@ -111,7 +111,7 @@ static int cmpdelta(RAnalVar *a, RAnalVar *b) {
 	return (a->delta - b->delta);
 }
 
-R_API int r_anal_var_add(RAnal *anal, RAnalFcn *fcn, ut64 from, int delta, int type, const char *vartype, const char *name, int set) {
+R_API int r_anal_var_add(RAnal *anal, RAnalFcn *fcn, ut64 from, int delta, int type, int dir, const char *vartype, const char *name, int set) {
 	RAnalVar *var, *vari;
 	RListIter *iter;
 	if (from != 0LL)
@@ -125,6 +125,7 @@ R_API int r_anal_var_add(RAnal *anal, RAnalFcn *fcn, ut64 from, int delta, int t
 	if (vartype)
 		var->vartype = strdup (vartype);
 	var->type = type;
+	var->dir = dir;
 	var->delta = delta;
 	if (from != 0LL)
 		r_anal_var_access_add (anal, var, from, set);

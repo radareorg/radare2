@@ -360,7 +360,7 @@ R_API int r_anal_var_type_add(RAnal *anal, const char *name, int size, const cha
 R_API int r_anal_var_type_del(RAnal *anal, const char *name);
 R_API RAnalVarType *r_anal_var_type_get(RAnal *anal, const char *name);
 R_API int r_anal_var_add(RAnal *anal, RAnalFcn *fcn, ut64 from, int delta, int type,
-		const char *vartype, const char *name, int set);
+		int dir, const char *vartype, const char *name, int set);
 R_API int r_anal_var_del(RAnal *anal, RAnalFcn *fcn, int delta, int type);
 R_API RAnalVar *r_anal_var_get(RAnal *anal, RAnalFcn *fcn, int delta, int type);
 R_API const char *r_anal_var_type_to_str (RAnal *anal, int type);

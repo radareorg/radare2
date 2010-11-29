@@ -72,11 +72,11 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, 
 			if (aop.ref > 0) {
 				varname = r_str_dup_printf ("arg_%x", aop.ref);
 				r_anal_var_add (anal, fcn, aop.addr, aop.ref, R_ANAL_VAR_TYPE_ARG,
-						NULL, varname, 1);
+						R_ANAL_VAR_DIR_IN, NULL, varname, 1);
 			} else {
 				varname = r_str_dup_printf ("local_%x", -aop.ref);
 				r_anal_var_add (anal, fcn, aop.addr, -aop.ref, R_ANAL_VAR_TYPE_LOCAL,
-						NULL, varname, 1);
+						R_ANAL_VAR_DIR_NONE, NULL, varname, 1);
 			}
 			free (varname);
 			break;
@@ -84,11 +84,11 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, 
 			if (aop.ref > 0) {
 				varname = r_str_dup_printf ("arg_%x", aop.ref);
 				r_anal_var_add (anal, fcn, aop.addr, aop.ref, R_ANAL_VAR_TYPE_ARG,
-						NULL, varname, 0);
+						R_ANAL_VAR_DIR_IN, NULL, varname, 0);
 			} else {
 				varname = r_str_dup_printf ("local_%x", -aop.ref);
 				r_anal_var_add (anal, fcn, aop.addr, -aop.ref, R_ANAL_VAR_TYPE_LOCAL,
-						NULL, varname, 0);
+						R_ANAL_VAR_DIR_NONE, NULL, varname, 0);
 			}
 			free (varname);
 			break;
@@ -238,7 +238,8 @@ R_API int r_anal_fcn_from_string(RAnal *a, RAnalFcn *f, const char *_str) {
 	f->name = strdup (q+1);
 	/* set return value */
 	// TODO: simplify this complex api usage
-	r_anal_var_add (a, f, 0LL, 0, R_ANAL_VAR_TYPE_RET, str, "ret", 1);
+	r_anal_var_add (a, f, 0LL, 0, R_ANAL_VAR_TYPE_RET,
+			R_ANAL_VAR_DIR_OUT, str, "ret", 1);
 
 	/* parse arguments */
 	for (arg=0,p++;;) {
@@ -255,7 +256,8 @@ R_API int r_anal_fcn_from_string(RAnal *a, RAnalFcn *f, const char *_str) {
 		r = r_str_chop (r+1);
 		printf ("VAR %d=(%s)(%s)\n", arg, p, r);
 		// TODO : increment arg by var size
-		r_anal_var_add (a, f, 0LL, arg, R_ANAL_VAR_TYPE_RET, p, r, 1);
+		r_anal_var_add (a, f, 0LL, arg, R_ANAL_VAR_TYPE_ARG,
+				R_ANAL_VAR_DIR_IN, p, r, 1);
 		arg++;
 		p=q+1;
 	}
