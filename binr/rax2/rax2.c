@@ -79,7 +79,7 @@ static int rax (char *str) {
 	}
 
 	if (flags & 1) {
-		ut64 n = (strlen (str)) >> 4;
+		ut64 n = ((strlen (str))>>1)+1;
 		buf = malloc (sizeof (char) * n);
 		memset (buf, '\0', n);
 		n = r_hex_str2bin (str, (ut8*)buf);
