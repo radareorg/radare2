@@ -29,15 +29,15 @@
 R_API int r_socket_write(int fd, void *buf, int len) {
 	int ret, delta = 0;
 	for (;;) {
-		ret = send(fd, buf+delta, len, 0);
+		ret = send (fd, buf+delta, len, 0);
 		if (ret == 0)
 			return -1;
 		if (ret == len)
 			return len;
 		if (ret<0)
 			break;
-		delta+=ret;
-		len-=ret;
+		delta += ret;
+		len -= ret;
 	}
 	if (ret == -1)
 		return -1;
@@ -45,8 +45,7 @@ R_API int r_socket_write(int fd, void *buf, int len) {
 }
 
 R_API int r_socket_puts(int fd, char *buf) {
-	int len = strlen (buf);
-	return r_socket_write (fd, buf, len);
+	return r_socket_write (fd, buf, strlen (buf));
 }
 
 // XXX: rewrite it to use select //
@@ -67,18 +66,15 @@ R_API int r_socket_ready(int fd, int secs, int usecs) {
 	int retval;
 	if (fd==-1)
 		return -1;
-
 	FD_ZERO(&rfds);
 	FD_SET(fd, &rfds);
 	tv.tv_sec = secs;
 	tv.tv_usec = usecs;
-
-	retval = select (1, &rfds, NULL, NULL, &tv);
-	if (retval==-1)
+	if (select (1, &rfds, NULL, NULL, &tv) == -1)
 		return -1;
-	return FD_ISSET(0, &rfds);
+	return FD_ISSET (0, &rfds);
 #else
-	return 1; /* always ready if unknown */
+	return R_TRUE; /* always ready if unknown */
 #endif
 }
 
@@ -93,42 +89,34 @@ R_API void r_socket_block(int fd, int block) {
 R_API void r_socket_printf(int fd, const char *fmt, ...) {
 	char buf[BUFFER_SIZE];
 	va_list ap;
-
-	if (fd < 0)
-		return;
-
-	va_start(ap, fmt);
-	vsnprintf(buf, BUFFER_SIZE, fmt, ap); 
-	r_socket_write(fd, buf, strlen(buf));
-
-	va_end(ap);
+	if (fd >= 0) {
+		va_start (ap, fmt);
+		vsnprintf (buf, BUFFER_SIZE, fmt, ap); 
+		r_socket_write (fd, buf, strlen(buf));
+		va_end (ap);
+	}
 }
 
 #if __UNIX__
 R_API int r_socket_unix_connect(const char *file) {
 	struct sockaddr_un addr;
-	int sock;
-
-	sock = socket (PF_UNIX, SOCK_STREAM, 0);
+	int sock = socket (PF_UNIX, SOCK_STREAM, 0);
 	if (sock <0)
 		return -1;
 	// TODO: set socket options
 	addr.sun_family = AF_UNIX;
 	strncpy (addr.sun_path, file, sizeof(addr.sun_path));
 
-	if (connect(sock, (struct sockaddr *)&addr, sizeof(addr))==-1) {
-		close(sock);
+	if (connect (sock, (struct sockaddr *)&addr, sizeof(addr))==-1) {
+		close (sock);
 		return -1;
 	}
-
 	return sock;
 }
 
 R_API int r_socket_unix_listen(const char *file) {
 	struct sockaddr_un unix_name;
-	int sock;
-
-	sock = socket(PF_UNIX, SOCK_STREAM, 0);
+	int sock = socket (PF_UNIX, SOCK_STREAM, 0);
 	if (sock <0)
 		return -1;
 	// TODO: set socket options
@@ -138,17 +126,21 @@ R_API int r_socket_unix_listen(const char *file) {
 	/* just to make sure there is no other socket file */
 	unlink (unix_name.sun_path);
 
-	if (bind (sock, (struct sockaddr *) &unix_name, sizeof (unix_name)) < 0)
+	if (bind (sock, (struct sockaddr *) &unix_name, sizeof (unix_name)) < 0) {
+		close (sock);
 		return -1;
-	signal(SIGPIPE, SIG_IGN);
+	}
+	signal (SIGPIPE, SIG_IGN);
 
 	/* change permissions */
-	if (chmod (unix_name.sun_path, 0777) != 0)
+	if (chmod (unix_name.sun_path, 0777) != 0) {
+		close (sock);
 		return -1;
-
-	if (listen(sock, 1))
+	}
+	if (listen (sock, 1)) {
+		close (sock);
 		return -1;
-	
+	}
 	return sock;
 }
 #endif
@@ -157,25 +149,22 @@ R_API int r_socket_connect(char *host, int port) {
 	struct sockaddr_in sa;
 	struct hostent *he;
 	int s;
-
 #if __WINDOWS__
 	WSADATA wsadata;
-	if (WSAStartup(MAKEWORD(1,1), &wsadata) == SOCKET_ERROR) {
-		eprintf("Error creating socket.");
+	if (WSAStartup (MAKEWORD(1,1), &wsadata) == SOCKET_ERROR) {
+		eprintf ("Error creating socket.");
 		return -1;
 	}
+#elif __UNIX__
+	signal (SIGPIPE, SIG_IGN);
 #endif
-
-#if __UNIX__
-	signal(SIGPIPE, SIG_IGN);
-#endif
-	s = socket(AF_INET, SOCK_STREAM, 0);
+	s = socket (AF_INET, SOCK_STREAM, 0);
 	if (s == -1)
 		return -1;
 
-	memset(&sa, 0, sizeof(sa));
+	memset (&sa, 0, sizeof(sa));
 	sa.sin_family = AF_INET;
-	he = (struct hostent *)gethostbyname( host );
+	he = (struct hostent *)gethostbyname (host);
 	if (he == (struct hostent*)0) {
 		close (s);
 		return -1;
@@ -184,7 +173,7 @@ R_API int r_socket_connect(char *host, int port) {
 	sa.sin_addr = *((struct in_addr *)he->h_addr);
 	sa.sin_port = htons( port );
 
-	if (connect(s, (const struct sockaddr*)&sa, sizeof(struct sockaddr))) {
+	if (connect (s, (const struct sockaddr*)&sa, sizeof (struct sockaddr))) {
 		close (s);
 		return -1;
 	}
@@ -192,41 +181,38 @@ R_API int r_socket_connect(char *host, int port) {
 }
 
 R_API int r_socket_listen(int port) {
-	int ret, s;
+	int s;
 	struct sockaddr_in sa;
 	struct linger linger = { 0 };
+
+ 	if ((s = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP))<0)
+		return -1;
 	linger.l_onoff = 1;
 	linger.l_linger = 1;
-
- 	s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (s <0)
-		return -1;
-
-	setsockopt(s, 
-		SOL_SOCKET, SO_LINGER, (const char *) &linger, sizeof(linger));
-
-	memset(&sa, 0, sizeof(sa));
+	setsockopt (s, SOL_SOCKET, SO_LINGER, (const char *) &linger, sizeof (linger));
+	memset (&sa, 0, sizeof(sa));
 	sa.sin_family = AF_INET;
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
-	sa.sin_port = htons( port );
+	sa.sin_port = htons (port);
 
-	ret = bind(s, (struct sockaddr *)&sa, sizeof(sa));
-	if (ret < 0)
+	if (bind (s, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
+		close (s);
 		return -1;
-
-	ret = listen(s, 1);
-	if (ret < 0)
+	}
+	if (listen (s, 1) < 0) {
+		close (s);
 		return -1;
+	}
 	return s;
 }
 
 R_API int r_socket_close(int fd) {
-#if __UNIX__
-	shutdown(fd, SHUT_RDWR);
-	return close(fd);
+#if __WINDOWS__
+	WSACleanup ();
+	return closesocket (fd);
 #else
-	WSACleanup();
-	return closesocket(fd);
+	shutdown (fd, SHUT_RDWR);
+	return close (fd);
 #endif
 }
 
@@ -265,13 +251,13 @@ R_API int r_socket_gets(int fd, char *buf,  int size) {
 	if (fd == -1)
 		return -1;
 
-	while(i<size) {
-		ret = r_socket_read(fd, (ut8 *)buf+i, 1);
+	while (i<size) {
+		ret = r_socket_read (fd, (ut8 *)buf+i, 1);
 		if (ret==0)
 			break;
 		if (ret<0) {
-			r_socket_close(fd);
-			return -1;
+			r_socket_close (fd);
+			return i;
 		}
 		if (buf[i]=='\r'||buf[i]=='\n') {
 			buf[i]='\0';
@@ -289,21 +275,21 @@ R_API char *r_socket_to_string(int fd) {
 	char *str = malloc (32);
 	snprintf (str, sizeof (str), "fd%d", fd);
 	return str;
-#else
+#elif __UNIX__
 	char *str = NULL;
-#if __UNIX__
 	struct sockaddr sa;
 	socklen_t sl = sizeof (sa);
 	memset (&sa, 0, sizeof (sa));
 	if (!getpeername (fd, &sa, &sl)) {
 		struct sockaddr_in *sain = (struct sockaddr_in*) &sa;
 		ut8 *a = (ut8*) &(sain->sin_addr);
-		if ((str = malloc(32)))
+		if ((str = malloc (32)))
 			sprintf (str, "%d.%d.%d.%d:%d",
 				a[0],a[1],a[2],a[3], ntohs (sain->sin_port));
 	} else eprintf ("getperrname: failed\n"); //r_sys_perror ("getpeername");
-#endif
 	return str;
+#else
+	return NULL;
 #endif
 }
 
@@ -318,8 +304,7 @@ R_API int r_socket_udp_connect(const char *host, int port) {
 		eprintf ("Error creating socket.");
 		return -1;
 	}
-#endif
-#if __UNIX__
+#elif __UNIX__
 	signal (SIGPIPE, SIG_IGN);
 #endif
 	s = socket (AF_INET, SOCK_DGRAM, 0);
