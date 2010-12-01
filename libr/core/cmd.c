@@ -162,7 +162,13 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			if ((xrefs = r_anal_xref_get (core->anal, at))) {
 				r_list_foreach (xrefs, iter, refi) {
 					f = r_anal_fcn_find (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
+					if (show_color)
 					r_cons_printf (Color_TURQOISE"; %s XREF 0x%08"PFMT64x" (%s)"Color_RESET"\n",
+							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
+							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
+							f?f->name:"unk");
+					else
+					r_cons_printf ("; %s XREF 0x%08"PFMT64x" (%s)\n",
 							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
 							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
 							f?f->name:"unk");
@@ -222,7 +228,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			if (show_lines && line)
 				r_cons_strcat (line);
 			if (show_offset)
-				printoffset(at, show_color);
+				printoffset (at, show_color);
 			r_cons_printf ("%s:\n", flag->name);
 		}
 		if (show_lines && line)
