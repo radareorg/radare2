@@ -34,7 +34,7 @@ R_API void r_hash_free(struct r_hash_t *ctx)
 R_API const ut8 *r_hash_do_md5(struct r_hash_t *ctx, const ut8 *input, ut32 len)
 {
 	if (ctx->rst)
-		MD5Init(&ctx->sha256);
+		MD5Init(&ctx->md5);
 	MD5Update(&ctx->md5, input, len);
 	if (ctx->rst || len == 0)
 		MD5Final(&ctx->digest, &ctx->md5);

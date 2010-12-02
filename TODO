@@ -81,7 +81,6 @@ nibble
 
 @earada
 -------
-* sha1 checksum of files is not correct
 * r_file_slurp should work fine for big files
   - mmap if supported
   - add r_file_mmap ?

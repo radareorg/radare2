@@ -45,7 +45,7 @@ typedef struct r_hash_t {
 
 #define R_HASH_SIZE_MD4 16
 #define R_HASH_SIZE_MD5 16
-#define R_HASH_SIZE_SHA1 16
+#define R_HASH_SIZE_SHA1 20
 #define R_HASH_SIZE_SHA256 32
 #define R_HASH_SIZE_SHA384 64
 #define R_HASH_SIZE_SHA512 64
