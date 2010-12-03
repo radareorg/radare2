@@ -129,6 +129,11 @@ static int check(RBinArch *arch) {
 	return ret;
 }
 
+static char *demangle (const char *str) {
+	// TODO: implement java symbol demangler code here
+	return strdup (str);
+}
+
 struct r_bin_plugin_t r_bin_plugin_java = {
 	.name = "java",
 	.desc = "java bin plugin",
@@ -150,6 +155,7 @@ struct r_bin_plugin_t r_bin_plugin_java = {
 	.relocs = NULL,
 	.meta = NULL,
 	.write = NULL,
+	.demangle = demangle,
 };
 
 #ifndef CORELIB

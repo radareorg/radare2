@@ -417,3 +417,9 @@ R_API void r_bin_object_free(RBinObj *obj) {
 	// XXX: leak
 	free (obj);
 }
+
+R_API char *r_bin_demangle (RBin *bin, const char *str) {
+	if (bin && bin->curarch.curplugin && bin->curarch.curplugin->demangle)
+		return bin->curarch.curplugin->demangle (str);
+	return NULL;
+}
