@@ -63,7 +63,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, 
 		fcn->ninstr++;
 		idx += oplen;
 		fcn->size += oplen;
-		/* TODO: Parse fastargs (R_ANAL_VAR_ARGREG), check negative ref meaning */
+		/* TODO: Parse fastargs (R_ANAL_VAR_ARGREG) */
 		switch (aop.stackop) {
 		case R_ANAL_STACK_INCSTACK:
 			fcn->stack += aop.value;
@@ -71,24 +71,24 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, 
 		case R_ANAL_STACK_SET:
 			if (aop.ref > 0) {
 				varname = r_str_dup_printf ("arg_%x", aop.ref);
-				r_anal_var_add (anal, fcn, aop.addr, aop.ref, R_ANAL_VAR_TYPE_ARG,
-						R_ANAL_VAR_DIR_IN, NULL, varname, 1);
+				r_anal_var_add (anal, fcn, aop.addr, aop.ref,
+						R_ANAL_VAR_TYPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 1);
 			} else {
 				varname = r_str_dup_printf ("local_%x", -aop.ref);
-				r_anal_var_add (anal, fcn, aop.addr, -aop.ref, R_ANAL_VAR_TYPE_LOCAL,
-						R_ANAL_VAR_DIR_NONE, NULL, varname, 1);
+				r_anal_var_add (anal, fcn, aop.addr, -aop.ref,
+						R_ANAL_VAR_TYPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 1);
 			}
 			free (varname);
 			break;
 		case R_ANAL_STACK_GET:
 			if (aop.ref > 0) {
 				varname = r_str_dup_printf ("arg_%x", aop.ref);
-				r_anal_var_add (anal, fcn, aop.addr, aop.ref, R_ANAL_VAR_TYPE_ARG,
-						R_ANAL_VAR_DIR_IN, NULL, varname, 0);
+				r_anal_var_add (anal, fcn, aop.addr, aop.ref,
+						R_ANAL_VAR_TYPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 0);
 			} else {
 				varname = r_str_dup_printf ("local_%x", -aop.ref);
-				r_anal_var_add (anal, fcn, aop.addr, -aop.ref, R_ANAL_VAR_TYPE_LOCAL,
-						R_ANAL_VAR_DIR_NONE, NULL, varname, 0);
+				r_anal_var_add (anal, fcn, aop.addr, -aop.ref,
+						R_ANAL_VAR_TYPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 0);
 			}
 			free (varname);
 			break;
@@ -176,13 +176,13 @@ R_API RAnalFcn *r_anal_fcn_find(RAnal *anal, ut64 addr, int type) {
 	return ret;
 }
 
-R_API RAnalVar *r_anal_fcn_get_var(RAnalFcn *fs, int num, int dir) {
+R_API RAnalVar *r_anal_fcn_get_var(RAnalFcn *fs, int num, int type) {
 	RAnalVar *var;
 	RListIter *iter;
 	int count = 0;
 	// vars are sorted by delta in r_anal_var_add()
 	r_list_foreach (fs->vars, iter, var) {
-		if (dir & var->dir)
+		if (type & var->type)
 			if (count++ == num)
 				return var;
 	}
@@ -194,27 +194,29 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFcn* fs) {
 	char *sign;
 	if (fs->type != R_ANAL_FCN_TYPE_FCN)
 		return NULL;
-	RAnalVar *arg, *ret = r_anal_fcn_get_var (fs, 0, R_ANAL_VAR_DIR_OUT);
+	RAnalVar *arg, *ret = r_anal_fcn_get_var (fs, 0, R_ANAL_VAR_TYPE_RET);
 	if (ret) sign = r_str_newf ("%s %s (", ret->name, fs->name);
 	else sign = r_str_newf ("void %s (", fs->name);
 	for (i=0;;i++) {
-		if (!(arg = r_anal_fcn_get_var (fs, i, R_ANAL_VAR_DIR_IN)))
+		if (!(arg = r_anal_fcn_get_var (fs, i,
+						R_ANAL_VAR_TYPE_ARG|R_ANAL_VAR_TYPE_ARGREG)))
 			break;
 		if (arg->array>1) {
-			if (i) sign = r_str_concatf (sign, ", %s %s[%d]", arg->vartype, arg->name, arg->array);
-			else sign = r_str_concatf (sign, "%s %s[%d]", arg->vartype, arg->name, arg->array);
+			if (i) sign = r_str_concatf (sign, ", %s %s:%02x[%d]", arg->vartype, arg->name, arg->delta, arg->array);
+			else sign = r_str_concatf (sign, "%s %s:%02x[%d]", arg->vartype, arg->name, arg->delta, arg->array);
 		} else {
-			if (i) sign = r_str_concatf (sign, ", %s %s", arg->vartype, arg->name);
-			else sign = r_str_concatf (sign, "%s %s", arg->vartype, arg->name);
+			if (i) sign = r_str_concatf (sign, ", %s %s:%02x", arg->vartype, arg->name, arg->delta);
+			else sign = r_str_concatf (sign, "%s %s:%02x", arg->vartype, arg->name, arg->delta);
 		}
 	}
 	return (sign = r_str_concatf (sign, ");"));
 }
 
 R_API int r_anal_fcn_from_string(RAnal *a, RAnalFcn *f, const char *_str) {
+	RAnalVar *var;
 	char *str = strdup (_str);
 	char *p, *q, *r;
-	int arg;
+	int i, arg;
 // TODO: This function is not fully implemented
 	if (!a || !f) {
 		eprintf ("r_anal_fcn_from_string: No function received\n");
@@ -238,11 +240,11 @@ R_API int r_anal_fcn_from_string(RAnal *a, RAnalFcn *f, const char *_str) {
 	f->name = strdup (q+1);
 	/* set return value */
 	// TODO: simplify this complex api usage
-	r_anal_var_add (a, f, 0LL, 0, R_ANAL_VAR_TYPE_RET,
-			R_ANAL_VAR_DIR_OUT, str, "ret", 1);
+	r_anal_var_add (a, f, 0LL, 0,
+			R_ANAL_VAR_TYPE_RET|R_ANAL_VAR_DIR_OUT, str, "ret", 1);
 
 	/* parse arguments */
-	for (arg=0,p++;;) {
+	for (i=arg=0,p++;;p=q+1,i++) {
 		q = strchr (p, ',');
 		if (!q) {
 			q = strchr (p, ')');
@@ -256,10 +258,11 @@ R_API int r_anal_fcn_from_string(RAnal *a, RAnalFcn *f, const char *_str) {
 		r = r_str_chop (r+1);
 		printf ("VAR %d=(%s)(%s)\n", arg, p, r);
 		// TODO : increment arg by var size
-		r_anal_var_add (a, f, 0LL, arg, R_ANAL_VAR_TYPE_ARG,
-				R_ANAL_VAR_DIR_IN, p, r, 1);
+		if ((var = r_anal_fcn_get_var (f, i, R_ANAL_VAR_TYPE_ARG|R_ANAL_VAR_TYPE_ARGREG))) {
+			free (var->name); var->name = strdup (r);
+			free (var->vartype); var->vartype = strdup (p);
+		} else r_anal_var_add (a, f, 0LL, arg, R_ANAL_VAR_TYPE_ARG|R_ANAL_VAR_DIR_IN, p, r, 0);
 		arg++;
-		p=q+1;
 	}
 	// r_anal_fcn_set_var (fs, 0, R_ANAL_VAR_DIR_OUT, );
 	free (str);

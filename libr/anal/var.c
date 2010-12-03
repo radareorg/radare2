@@ -111,7 +111,7 @@ static int cmpdelta(RAnalVar *a, RAnalVar *b) {
 	return (a->delta - b->delta);
 }
 
-R_API int r_anal_var_add(RAnal *anal, RAnalFcn *fcn, ut64 from, int delta, int type, int dir, const char *vartype, const char *name, int set) {
+R_API int r_anal_var_add(RAnal *anal, RAnalFcn *fcn, ut64 from, int delta, int type, const char *vartype, const char *name, int set) {
 	RAnalVar *var, *vari;
 	RListIter *iter;
 	if (from != 0LL)
@@ -125,7 +125,8 @@ R_API int r_anal_var_add(RAnal *anal, RAnalFcn *fcn, ut64 from, int delta, int t
 	if (vartype)
 		var->vartype = strdup (vartype);
 	var->type = type;
-	var->dir = dir;
+	if ((type & R_ANAL_VAR_TYPE_ARG) || (type & R_ANAL_VAR_TYPE_ARGREG))
+		fcn->nargs++;
 	var->delta = delta;
 	if (from != 0LL)
 		r_anal_var_access_add (anal, var, from, set);
@@ -155,12 +156,16 @@ R_API RAnalVar *r_anal_var_get(RAnal *anal, RAnalFcn *fcn, int delta, int type) 
 
 // XXX: rename function type? i think this is 'scope' 
 R_API const char *r_anal_var_type_to_str (RAnal *anal, int type) {
-	switch(type) {
-	case R_ANAL_VAR_TYPE_GLOBAL: return "global";
-	case R_ANAL_VAR_TYPE_LOCAL:  return "local";
-	case R_ANAL_VAR_TYPE_ARG:    return "arg";
-	case R_ANAL_VAR_TYPE_ARGREG: return "fastarg";
-	}
+	if (type & R_ANAL_VAR_TYPE_GLOBAL)
+		return "global";
+	else if (type & R_ANAL_VAR_TYPE_LOCAL)
+		return "local";
+	else if (type & R_ANAL_VAR_TYPE_ARG)
+		return "arg";
+	else if (type & R_ANAL_VAR_TYPE_ARGREG)
+		return "fastarg";
+	else if (type & R_ANAL_VAR_TYPE_RET)
+		return "ret";
 	return "(?)";
 }
 

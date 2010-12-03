@@ -74,13 +74,18 @@ enum {
 };
 
 enum {
-	R_ANAL_VAR_TYPE_NULL = 0,
-	R_ANAL_VAR_TYPE_GLOBAL,
-	R_ANAL_VAR_TYPE_LOCAL,
-	R_ANAL_VAR_TYPE_ARG,
-	R_ANAL_VAR_TYPE_ARGREG,
-	R_ANAL_VAR_TYPE_RET,
+	R_ANAL_VAR_TYPE_NULL   = 0,
+	R_ANAL_VAR_TYPE_GLOBAL = 0x01,
+	R_ANAL_VAR_TYPE_LOCAL  = 0x02,
+	R_ANAL_VAR_TYPE_ARG    = 0x04,
+	R_ANAL_VAR_TYPE_ARGREG = 0x08,
+	R_ANAL_VAR_TYPE_RET    = 0x10,
 };
+typedef enum {
+	R_ANAL_VAR_DIR_NONE = 0,
+	R_ANAL_VAR_DIR_IN   = 0x100,
+	R_ANAL_VAR_DIR_OUT  = 0x200
+} _RAnalVarDir;
 
 typedef enum {
 	R_ANAL_DATA_NULL = 0,
@@ -221,6 +226,7 @@ typedef struct r_anal_fcn_t {
 	int stack;
 	int diff;
 	int ninstr;
+	int nargs;
 	RNumBig *fingerprint;
 	RList *vars;
 	RList *refs;
@@ -232,19 +238,12 @@ typedef struct r_anal_var_access_t {
 	int set;
 } RAnalVarAccess;
 
-typedef enum {
-	R_ANAL_VAR_DIR_NONE = 0,
-	R_ANAL_VAR_DIR_IN = 1,
-	R_ANAL_VAR_DIR_OUT = 2
-} _RAnalVarDir;
-
 typedef struct r_anal_var_t {
 	char *name;    /* name of the variable */
 	ut64 addr; // not used correctly?
 	ut64 eaddr; // not used correctly?
 	int delta;     /* delta offset inside stack frame */
-	int dir;       /* direction (in, out) */
-	int type;      /* global, local... */
+	int type;      /* global, local... | in, out... */
 	int array;     /* array size */
 	char *vartype; /* float, int... */
 	/* probably dupped or so */
@@ -360,7 +359,7 @@ R_API int r_anal_var_type_add(RAnal *anal, const char *name, int size, const cha
 R_API int r_anal_var_type_del(RAnal *anal, const char *name);
 R_API RAnalVarType *r_anal_var_type_get(RAnal *anal, const char *name);
 R_API int r_anal_var_add(RAnal *anal, RAnalFcn *fcn, ut64 from, int delta, int type,
-		int dir, const char *vartype, const char *name, int set);
+		const char *vartype, const char *name, int set);
 R_API int r_anal_var_del(RAnal *anal, RAnalFcn *fcn, int delta, int type);
 R_API RAnalVar *r_anal_var_get(RAnal *anal, RAnalFcn *fcn, int delta, int type);
 R_API const char *r_anal_var_type_to_str (RAnal *anal, int type);

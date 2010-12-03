@@ -436,6 +436,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 				r_cons_printf("\n    ");
 				if(fcn&&fcn->name) r_cons_printf ("; %s(", fcn->name);
 				else r_cons_printf ("; 0x%08"PFMT64x"(", analop.jump);
+				if(fcn) nargs = (fcn->nargs>nargs?nargs:fcn->nargs);
 				for(i=0;i<nargs;i++) {
 					if (args[i]>1024) r_cons_printf("%d", args[nargs-i]);
 					else r_cons_printf("0x%x", args[nargs-i]);
@@ -1786,7 +1787,7 @@ static void var_help() {
 static int var_cmd(RCore *core, const char *str) {
 	RAnalFcn *fcn = r_anal_fcn_find (core->anal, core->offset, R_ANAL_FCN_TYPE_FCN);
 	char *p,*p2,*p3;
-	int type, dir, delta, len = strlen(str)+1;
+	int type, delta, len = strlen(str)+1;
 
 	p = alloca(len);
 	memcpy(p, str, len);
@@ -1803,9 +1804,9 @@ static int var_cmd(RCore *core, const char *str) {
 	case 'A': // fastcall arg
 		// XXX nested dup
 		switch (*str) {
-		case 'v': type = R_ANAL_VAR_TYPE_LOCAL; dir = R_ANAL_VAR_DIR_NONE; break;
-		case 'a': type = R_ANAL_VAR_TYPE_ARG; dir = R_ANAL_VAR_DIR_IN; break;
-		case 'A': type = R_ANAL_VAR_TYPE_ARGREG; dir = R_ANAL_VAR_DIR_IN; break;
+		case 'v': type = R_ANAL_VAR_TYPE_LOCAL|R_ANAL_VAR_DIR_NONE; break;
+		case 'a': type = R_ANAL_VAR_TYPE_ARG|R_ANAL_VAR_DIR_IN; break;
+		case 'A': type = R_ANAL_VAR_TYPE_ARGREG|R_ANAL_VAR_DIR_IN; break;
 		default:
 			eprintf ("Unknown type\n");
 			return 0;
@@ -1841,7 +1842,7 @@ static int var_cmd(RCore *core, const char *str) {
 				p3[0]='\0';
 				p3=p3+1;
 			}
-			r_anal_var_add (core->anal, fcn, core->offset, delta, type, dir, p, p2, p3?atoi(p3):0);
+			r_anal_var_add (core->anal, fcn, core->offset, delta, type, p, p2, p3?atoi(p3):0);
 		} else var_help();
 		break;
 	default:
