@@ -36,8 +36,8 @@ static int show_help(int line) {
 		"  -r     radare commands\n"
 		"  -d     use delta diffing\n"
 		"  -g     graph diff\n"
-		"  -v     Use vaddr"
-		"  -V     show version information\n");;
+		"  -v     Use vaddr\n"
+		"  -V     show version information\n");
 	return 1;
 }
 

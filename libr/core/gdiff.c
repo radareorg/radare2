@@ -43,8 +43,9 @@ static void gdiff_diff_bb(RAnalFcn *mfcn, RAnalFcn *mfcn2, RList *bbs, RList *bb
 	iter = r_list_iterator (bbs);
 	while (r_list_iter_next (iter)) {
 		bb = r_list_iter_get (iter);
-		if (bb->diff == R_ANAL_DIFF_NULL &&
-				bb->addr >= mfcn->addr && bb->addr < mfcn->addr + mfcn->size) {
+		if (bb->diff != R_ANAL_DIFF_NULL)
+			continue;
+		if (bb->addr >= mfcn->addr && bb->addr < mfcn->addr + mfcn->size) {
 			ot = 0;
 			mbb = mbb2 = NULL;
 			iter2 = r_list_iterator (bbs2);
@@ -55,7 +56,7 @@ static void gdiff_diff_bb(RAnalFcn *mfcn, RAnalFcn *mfcn2, RList *bbs, RList *bb
 					r_diff_buffers_distance(NULL, bb->fingerprint, bb->size,
 							bb2->fingerprint, bb2->size, &d, &t);
 #if 0 
-					printf ("BB: %llx - %llx => %i - %i - %i => %f\n", bb->addr, bb2->addr,
+					eprintf ("BB: %llx - %llx => %i - %i - %i => %f\n", bb->addr, bb2->addr,
 							bb->ninstr, bb2->ninstr, p, t);
 #endif 
 					if (t > THRESHOLDBB && t > ot) {
@@ -91,12 +92,12 @@ static void gdiff_diff_fcn(RList *fcns, RList *fcns2, RList *bbs, RList *bbs2) {
 		iter2 = r_list_iterator (fcns2);
 		while (r_list_iter_next (iter2)) {
 			fcn2 = r_list_iter_get (iter2);
-			if (fcn2->type != R_ANAL_FCN_TYPE_FCN)
+			if (fcn2->type != R_ANAL_FCN_TYPE_FCN || fcn2->diff != R_ANAL_DIFF_NULL)
 				continue;
 			r_diff_buffers_distance(NULL, fcn->fingerprint, fcn->size,
 					fcn2->fingerprint, fcn2->size, &d, &t);
-#if 0
-			printf ("FCN: %s - %s => %lli - %lli => %f\n", fcn->name, fcn2->name,
+#if 1
+			eprintf ("FCN: %s - %s => %lli - %lli => %f\n", fcn->name, fcn2->name,
 					fcn->size, fcn2->size, t);
 #endif 
 			if (t > THRESHOLDFCN && t > ot) {
@@ -107,7 +108,7 @@ static void gdiff_diff_fcn(RList *fcns, RList *fcns2, RList *bbs, RList *bbs2) {
 		}
 		if (mfcn != NULL && mfcn2 != NULL) {
 #if 0
-			printf ("Match => %s - %s\n", mfcn->name, mfcn2->name);
+			eprintf ("Match => %s - %s\n", mfcn->name, mfcn2->name);
 #endif
 			/* Set flag in matched functions */
 			if (ot == 1)
@@ -136,7 +137,7 @@ R_API int r_core_gdiff(RCore *c, const char *file1, const char *file2, int va) {
 		/* Load and analyze bin*/
 		r_config_set_i (core2->config, "io.va", va);
 		if (!r_core_file_open (core2, files[i], 0)) {
-			fprintf (stderr, "Cannot open file '%s'\n", files[i]);
+			eprintf ("Cannot open file '%s'\n", files[i]);
 			return R_FALSE;
 		}
 		r_config_set_i (core2->config, "anal.split", 0);

@@ -45,10 +45,10 @@ R_API void r_anal_bb_free(void *_bb) {
 	if (bb) {
 		if (bb->cond)
 			free (bb->cond);
-		if (((RAnalBlock*)bb)->aops)
-			r_list_free (((RAnalBlock*)bb)->aops);
-		if (((RAnalBlock*)bb)->fingerprint)
-			free (((RAnalBlock*)bb)->fingerprint);
+		if (bb->aops)
+			r_list_free (bb->aops);
+		if (bb->fingerprint)
+			free (bb->fingerprint);
 		free (bb);
 	}
 }

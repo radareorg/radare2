@@ -27,18 +27,19 @@ R_API RList *r_anal_fcn_list_new() {
 	return list;
 }
 
-R_API void r_anal_fcn_free(void *fcn) {
+R_API void r_anal_fcn_free(void *_fcn) {
+	RAnalFcn *fcn = _fcn;
 	if (fcn) {
-		if (((RAnalFcn*)fcn)->name)
-			free (((RAnalFcn*)fcn)->name);
-		if (((RAnalFcn*)fcn)->refs)
-			r_list_free (((RAnalFcn*)fcn)->refs);
-		if (((RAnalFcn*)fcn)->xrefs)
-			r_list_free (((RAnalFcn*)fcn)->xrefs);
-		if (((RAnalFcn*)fcn)->vars)
-			r_list_free (((RAnalFcn*)fcn)->vars);
-		if (((RAnalFcn*)fcn)->fingerprint)
-			free (((RAnalFcn*)fcn)->fingerprint);
+		if (fcn->name)
+			free (fcn->name);
+		if (fcn->refs)
+			r_list_free (fcn->refs);
+		if (fcn->xrefs)
+			r_list_free (fcn->xrefs);
+		if (fcn->vars)
+			r_list_free (fcn->vars);
+		if (fcn->fingerprint)
+			free (fcn->fingerprint);
 	}
 	free (fcn);
 }
