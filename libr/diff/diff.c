@@ -216,8 +216,12 @@ R_API int r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b,
 	
 	if (distance != NULL)
 		*distance = m[la][lb];
-	if (similarity != NULL)
-		*similarity = 1.0/(1.0+m[la][lb]);
+	if (similarity != NULL) {
+		if (la == 0 || lb == 0)
+			*similarity = 0;
+		else
+			*similarity = (double)1 - (double)(m[la][lb])/(double)(R_MAX(la, lb));
+	}
 
 	for(i = 0; i <= la; i++)
 		free (m[i]);

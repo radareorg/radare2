@@ -16,8 +16,8 @@ R_API RAnalBlock *r_anal_bb_new() {
 		bb->type = R_ANAL_BB_TYPE_NULL;
 		bb->diff = R_ANAL_DIFF_NULL;
 		bb->aops = r_anal_aop_list_new();
-		bb->fingerprint = r_big_new (NULL);
 		bb->cond = NULL;
+		bb->fingerprint = NULL;
 	}
 	return bb;
 }
@@ -48,7 +48,7 @@ R_API void r_anal_bb_free(void *_bb) {
 		if (((RAnalBlock*)bb)->aops)
 			r_list_free (((RAnalBlock*)bb)->aops);
 		if (((RAnalBlock*)bb)->fingerprint)
-			r_big_free (((RAnalBlock*)bb)->fingerprint);
+			free (((RAnalBlock*)bb)->fingerprint);
 		free (bb);
 	}
 }

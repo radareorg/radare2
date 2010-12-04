@@ -193,7 +193,7 @@ typedef struct r_anal_bb_t {
 	int ncalls;
 	int conditional;
 	int traced;
-	RNumBig *fingerprint;
+	ut8 *fingerprint;
 	RList *aops;
 	RAnalCond *cond;
 } RAnalBlock;
@@ -222,12 +222,12 @@ typedef struct r_anal_fcn_t {
 	ut64 addr;
 	ut64 size;
 	int type;
-	int fastcall; // non-zero if following fastcall convention
+	int fastcall; /* non-zero if following fastcall convention */
 	int stack;
 	int diff;
 	int ninstr;
 	int nargs;
-	RNumBig *fingerprint;
+	ut8 *fingerprint;
 	RList *vars;
 	RList *refs;
 	RList *xrefs;
