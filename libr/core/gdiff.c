@@ -71,6 +71,8 @@ static void gdiff_diff_bb(RAnalFcn *mfcn, RAnalFcn *mfcn2, RList *bbs, RList *bb
 					mbb->diff = mbb2->diff = R_ANAL_DIFF_MATCH;
 				else
 					mbb->diff = mbb2->diff = R_ANAL_DIFF_UNMATCH;
+				R_FREE (mbb->fingerprint);
+				R_FREE (mbb2->fingerprint);
 			}
 		}
 	}
@@ -115,6 +117,8 @@ static void gdiff_diff_fcn(RList *fcns, RList *fcns2, RList *bbs, RList *bbs2) {
 				mfcn->diff = mfcn2->diff = R_ANAL_DIFF_MATCH;
 			else
 				mfcn->diff = mfcn2->diff = R_ANAL_DIFF_UNMATCH;
+			R_FREE (mfcn->fingerprint);
+			R_FREE (mfcn2->fingerprint);
 			gdiff_diff_bb (mfcn, mfcn2, bbs, bbs2);
 		}
 	}
