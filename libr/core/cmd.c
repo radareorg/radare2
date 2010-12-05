@@ -1951,15 +1951,20 @@ static int cmd_anal(void *data, const char *input) {
 			ut64 jump = -1LL;
 			ut64 fail = -1LL;
 			int type = R_ANAL_BB_TYPE_NULL;
-			int diff = R_ANAL_DIFF_NULL;
+			RAnalDiff *diff = NULL;
 			
 			switch(r_str_word_set0 (ptr)) {
 			case 6:
 				ptr2 = r_str_word_get0 (ptr, 5);
+				if (!(diff = r_anal_diff_new ())) {
+					eprintf ("error: Cannot init RAnalDiff\n");
+					free (ptr);
+					return R_FALSE;
+				}
 				if (ptr2[0] == 'm')
-					diff = R_ANAL_DIFF_MATCH;
+					diff->type = R_ANAL_DIFF_TYPE_MATCH;
 				else if (ptr2[0] == 'u')
-					diff = R_ANAL_DIFF_UNMATCH;
+					diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
 			case 5:
 				ptr2 = r_str_word_get0 (ptr, 4);
 				if (strchr (ptr2, 'h'))
@@ -1981,6 +1986,7 @@ static int cmd_anal(void *data, const char *input) {
 			}
 			if (!r_anal_bb_add (core->anal, addr, size, jump, fail, type, diff))
 				eprintf ("Cannot add bb (duplicated or overlaped)\n");
+			r_anal_diff_free (diff);
 			free (ptr);
 			}
 			break;
@@ -2016,17 +2022,22 @@ static int cmd_anal(void *data, const char *input) {
 			const char *name = NULL;
 			ut64 addr = -1LL;
 			ut64 size = 0LL;
-			int diff = R_ANAL_DIFF_NULL;
+			RAnalDiff *diff = NULL;
 			int type = R_ANAL_FCN_TYPE_FCN;
 			
 			if (n > 2) {
 				switch(n) {
 				case 5:
 					ptr2 = r_str_word_get0 (ptr, 4);
+					if (!(diff = r_anal_diff_new ())) {
+						eprintf ("error: Cannot init RAnalDiff\n");
+						free (ptr);
+						return R_FALSE;
+					}
 					if (ptr2[0] == 'm')
-						diff = R_ANAL_DIFF_MATCH;
+						diff->type = R_ANAL_DIFF_TYPE_MATCH;
 					else if (ptr2[0] == 'u')
-						diff = R_ANAL_DIFF_UNMATCH;
+						diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
 				case 4:
 					ptr2 = r_str_word_get0 (ptr, 3);
 					if (strchr (ptr2, 'l'))
@@ -2042,6 +2053,7 @@ static int cmd_anal(void *data, const char *input) {
 				if (!r_anal_fcn_add (core->anal, addr, size, name, type, diff))
 					eprintf ("Cannot add function (duplicated)\n");
 			}
+			r_anal_diff_free (diff);
 			free (ptr);
 			}
 			break;

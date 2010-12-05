@@ -43,7 +43,7 @@ static void gdiff_diff_bb(RAnalFcn *mfcn, RAnalFcn *mfcn2, RList *bbs, RList *bb
 	iter = r_list_iterator (bbs);
 	while (r_list_iter_next (iter)) {
 		bb = r_list_iter_get (iter);
-		if (bb->diff != R_ANAL_DIFF_NULL)
+		if (bb->diff->type != R_ANAL_DIFF_TYPE_NULL)
 			continue;
 		if (bb->addr >= mfcn->addr && bb->addr < mfcn->addr + mfcn->size) {
 			ot = 0;
@@ -51,7 +51,7 @@ static void gdiff_diff_bb(RAnalFcn *mfcn, RAnalFcn *mfcn2, RList *bbs, RList *bb
 			iter2 = r_list_iterator (bbs2);
 			while (r_list_iter_next (iter2)) {
 				bb2 = r_list_iter_get (iter2);
-				if (bb2->diff == R_ANAL_DIFF_NULL &&
+				if (bb2->diff->type == R_ANAL_DIFF_TYPE_NULL &&
 						bb2->addr >= mfcn2->addr && bb2->addr < mfcn2->addr + mfcn2->size) {
 					r_diff_buffers_distance(NULL, bb->fingerprint, bb->size,
 							bb2->fingerprint, bb2->size, &d, &t);
@@ -68,9 +68,10 @@ static void gdiff_diff_bb(RAnalFcn *mfcn, RAnalFcn *mfcn2, RList *bbs, RList *bb
 			}
 			if (mbb != NULL && mbb2 != NULL) {
 				if (ot == 1)
-					mbb->diff = mbb2->diff = R_ANAL_DIFF_MATCH;
+					mbb->diff->type = mbb2->diff->type = R_ANAL_DIFF_TYPE_MATCH;
 				else
-					mbb->diff = mbb2->diff = R_ANAL_DIFF_UNMATCH;
+					mbb->diff->type = mbb2->diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
+				mbb->diff->addr = mbb2->addr;
 				R_FREE (mbb->fingerprint);
 				R_FREE (mbb2->fingerprint);
 			}
@@ -94,7 +95,7 @@ static void gdiff_diff_fcn(RList *fcns, RList *fcns2, RList *bbs, RList *bbs2) {
 		iter2 = r_list_iterator (fcns2);
 		while (r_list_iter_next (iter2)) {
 			fcn2 = r_list_iter_get (iter2);
-			if (fcn2->type != R_ANAL_FCN_TYPE_FCN || fcn2->diff != R_ANAL_DIFF_NULL)
+			if (fcn2->type != R_ANAL_FCN_TYPE_FCN || fcn2->diff->type != R_ANAL_DIFF_TYPE_NULL)
 				continue;
 			r_diff_buffers_distance(NULL, fcn->fingerprint, fcn->size,
 					fcn2->fingerprint, fcn2->size, &d, &t);
@@ -114,11 +115,14 @@ static void gdiff_diff_fcn(RList *fcns, RList *fcns2, RList *bbs, RList *bbs2) {
 #endif
 			/* Set flag in matched functions */
 			if (ot == 1)
-				mfcn->diff = mfcn2->diff = R_ANAL_DIFF_MATCH;
+				mfcn->diff->type = mfcn2->diff->type = R_ANAL_DIFF_TYPE_MATCH;
 			else
-				mfcn->diff = mfcn2->diff = R_ANAL_DIFF_UNMATCH;
+				mfcn->diff->type = mfcn2->diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
 			R_FREE (mfcn->fingerprint);
 			R_FREE (mfcn2->fingerprint);
+			mfcn->diff->addr = mfcn2->addr;
+			if (mfcn2->name)
+				mfcn->diff->name = strdup (mfcn2->name);
 			gdiff_diff_bb (mfcn, mfcn2, bbs, bbs2);
 		}
 	}

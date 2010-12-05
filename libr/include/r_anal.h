@@ -68,12 +68,6 @@ enum {
 };
 
 enum {
-	R_ANAL_DIFF_NULL = 0,
-	R_ANAL_DIFF_MATCH = 'm',
-	R_ANAL_DIFF_UNMATCH = 'u'
-};
-
-enum {
 	R_ANAL_VAR_TYPE_NULL   = 0,
 	R_ANAL_VAR_TYPE_GLOBAL = 0x01,
 	R_ANAL_VAR_TYPE_LOCAL  = 0x02,
@@ -182,18 +176,30 @@ typedef struct r_anal_cond_t {
 	RAnalValue *arg[2]; // filled by CMP opcode
 } RAnalCond;
 
+enum {
+	R_ANAL_DIFF_TYPE_NULL = 0,
+	R_ANAL_DIFF_TYPE_MATCH = 'm',
+	R_ANAL_DIFF_TYPE_UNMATCH = 'u'
+};
+
+typedef struct r_anal_diff_t {
+	int type;
+	ut64 addr;
+	char *name;
+} RAnalDiff;
+
 typedef struct r_anal_bb_t {
 	ut64 addr;
 	ut64 size;
 	ut64 jump;
 	ut64 fail;
 	int type;
-	int diff;
 	int ninstr;
 	int ncalls;
 	int conditional;
 	int traced;
 	ut8 *fingerprint;
+	RAnalDiff *diff;
 	RList *aops;
 	RAnalCond *cond;
 } RAnalBlock;
@@ -224,10 +230,10 @@ typedef struct r_anal_fcn_t {
 	int type;
 	int fastcall; /* non-zero if following fastcall convention */
 	int stack;
-	int diff;
 	int ninstr;
 	int nargs;
 	ut8 *fingerprint;
+	RAnalDiff *diff;
 	RList *vars;
 	RList *refs;
 	RList *xrefs;
@@ -311,7 +317,7 @@ R_API int r_anal_bb_split(RAnal *anal, RAnalBlock *bb,
 		RList *bbs, ut64 addr);
 R_API int r_anal_bb_overlap(RAnal *anal, RAnalBlock *bb, RList *bbs);
 R_API int r_anal_bb_add(RAnal *anal, ut64 addr,
-		ut64 size, ut64 jump, ut64 fail, int type, int diff);
+		ut64 size, ut64 jump, ut64 fail, int type, RAnalDiff *diff);
 R_API int r_anal_bb_del(RAnal *anal, ut64 addr);
 
 /* aop.c */
@@ -330,7 +336,7 @@ R_API void r_anal_fcn_free(void *fcn);
 R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr,
 		ut8 *buf, ut64 len, int reftype);
 R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size,
-		const char *name, int type, int diff);
+		const char *name, int type, RAnalDiff *diff);
 R_API int r_anal_fcn_del(RAnal *anal, ut64 addr);
 R_API RList *r_anal_fcn_bb_list(RAnal *anal, RAnalFcn *fcn);
 R_API RAnalVar *r_anal_fcn_get_var(RAnalFcn *fs, int num, int dir);
@@ -366,6 +372,10 @@ R_API const char *r_anal_var_type_to_str (RAnal *anal, int type);
 R_API int r_anal_var_access_add(RAnal *anal, RAnalVar *var, ut64 from, int set);
 R_API int r_anal_var_access_del(RAnal *anal, RAnalVar *var, ut64 from);
 R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 from);
+
+/* diff.c */
+R_API RAnalDiff *r_anal_diff_new();
+R_API void* r_anal_diff_free(RAnalDiff *diff);
 
 R_API RAnalValue *r_anal_value_new();
 R_API RAnalValue *r_anal_value_new_from_string(const char *str);

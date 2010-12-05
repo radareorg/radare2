@@ -82,8 +82,9 @@ static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts
 					memcpy (bbc, bbi, sizeof (RAnalBlock));
 					/* We don't want to free this refs when the temporary list is destroyed */
 					bbc->aops = NULL;
-					bbc->fingerprint = NULL;
 					bbc->cond = NULL;
+					bbc->diff = NULL;
+					bbc->fingerprint = NULL;
 					r_list_append (pbb, bbc);
 				}
 			}
@@ -103,8 +104,8 @@ static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts
 			if ((str = r_core_anal_graph_label (core, bbi, opts))) {
 				if (opts & R_CORE_ANAL_GRAPHDIFF) {
 					r_cons_printf (" \"0x%08"PFMT64x"\" [color=\"%s\", label=\"%s\"]\n", bbi->addr, 
-						bbi->diff==R_ANAL_DIFF_MATCH?"green":
-						bbi->diff==R_ANAL_DIFF_UNMATCH?"red":"lightgray",str);
+						bbi->diff->type==R_ANAL_DIFF_TYPE_MATCH?"lightgray":
+						bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"yellow":"red",str);
 				} else {
 					r_cons_printf (" \"0x%08"PFMT64x"\" [color=\"%s\", label=\"%s\"]\n", bbi->addr,
 						bbi->traced?"yellow":"lightgray",str);
@@ -138,8 +139,9 @@ static int fcn_cc(RCore *core, RList *pbb, ut64 addr) {
 			memcpy (bbc, bbi, sizeof (RAnalBlock));
 			/* We don't want to free this refs when the temporary list is destroyed */
 			bbc->aops = NULL;
-			bbc->fingerprint = NULL;
 			bbc->cond = NULL;
+			bbc->diff = NULL;
+			bbc->fingerprint = NULL;
 			r_list_append (pbb, bbc);
 			if (bbi->jump != -1) {
 				jcalls = fcn_cc (core, pbb, bbi->jump);
@@ -226,9 +228,9 @@ R_API int r_core_anal_bb_list(RCore *core, int rad) {
 					r_cons_printf ("l");
 			} else r_cons_printf ("n");
 
-			if ((bbi->diff == R_ANAL_DIFF_MATCH))
+			if ((bbi->diff->type == R_ANAL_DIFF_TYPE_MATCH))
 				r_cons_printf (" m");
-			else if ((bbi->diff == R_ANAL_DIFF_UNMATCH))
+			else if ((bbi->diff->type == R_ANAL_DIFF_TYPE_UNMATCH))
 				r_cons_printf (" u");
 			else r_cons_printf (" n");
 			r_cons_printf ("\n");
@@ -252,9 +254,9 @@ R_API int r_core_anal_bb_list(RCore *core, int rad) {
 			} else r_cons_printf ("null ");
 
 			r_cons_printf ("diff=");
-			if ((bbi->diff == R_ANAL_DIFF_MATCH))
+			if ((bbi->diff->type == R_ANAL_DIFF_TYPE_MATCH))
 				r_cons_printf ("match");
-			else if ((bbi->diff == R_ANAL_DIFF_UNMATCH))
+			else if ((bbi->diff->type == R_ANAL_DIFF_TYPE_UNMATCH))
 				r_cons_printf ("unmatch");
 			else r_cons_printf ("new");
 
@@ -407,8 +409,9 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 						fcni->addr, fcni->size, fcni->name);
 				r_cons_printf (" type=%s",
 						fcni->type==R_ANAL_FCN_TYPE_LOC?"loc":"fcn");
-				r_cons_printf (" diff=%s",
-						fcni->diff=='m'?"match":fcni->diff=='u'?"unmatch":"new");
+				r_cons_printf (" [%s]",
+						fcni->diff->type==R_ANAL_DIFF_TYPE_MATCH?"MATCH":
+						fcni->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
 
 				r_cons_printf ("\n  CODE refs: ");
 				r_list_foreach (fcni->refs, iter2, refi)
@@ -434,15 +437,23 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 					if (refi->type == R_ANAL_REF_TYPE_DATA)
 						r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
 
-				r_cons_printf ("\n  vars:\n");
+				r_cons_printf ("\n  vars:");
 				r_list_foreach (fcni->vars, iter2, vari)
-					r_cons_printf ("  %-10s delta=0x%02x type=%s\n", vari->name,
+					r_cons_printf ("\n  %-10s delta=0x%02x type=%s", vari->name,
 						vari->delta, r_anal_var_type_to_str (core->anal, vari->type));
+				r_cons_printf ("\n  diff: type=%s",
+						fcni->diff->type==R_ANAL_DIFF_TYPE_MATCH?"match":
+						fcni->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"unmatch":"new");
+				if (fcni->diff->addr != -1)
+					r_cons_printf (" addr=0x%"PFMT64x, fcni->diff->addr);
+				if (fcni->diff->name != NULL)
+					r_cons_printf (" function=%s",
+						fcni->diff->name);
 				r_cons_newline ();
 			} else r_cons_printf ("af+ 0x%08"PFMT64x" %"PFMT64d" %s %c %c\n",
 						fcni->addr, fcni->size, fcni->name,
 						fcni->type==R_ANAL_FCN_TYPE_LOC?'l':'f',
-						fcni->diff==R_ANAL_DIFF_MATCH?'m':'n');
+						fcni->diff->type==R_ANAL_DIFF_TYPE_MATCH?'m':'n');
 		}
 	r_cons_flush ();
 	return R_TRUE;
