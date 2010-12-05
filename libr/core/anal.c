@@ -453,7 +453,8 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 			} else r_cons_printf ("af+ 0x%08"PFMT64x" %"PFMT64d" %s %c %c\n",
 						fcni->addr, fcni->size, fcni->name,
 						fcni->type==R_ANAL_FCN_TYPE_LOC?'l':'f',
-						fcni->diff->type==R_ANAL_DIFF_TYPE_MATCH?'m':'n');
+						fcni->diff->type==R_ANAL_DIFF_TYPE_MATCH?'m':
+						fcni->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?'u':'n');
 		}
 	r_cons_flush ();
 	return R_TRUE;
