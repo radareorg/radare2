@@ -54,9 +54,9 @@ static void gdiff_diff_bb(RAnalFcn *mfcn, RAnalFcn *mfcn2, RList *bbs, RList *bb
 					bb2->addr >= mfcn2->addr && bb2->addr < mfcn2->addr + mfcn2->size) {
 					r_diff_buffers_distance (NULL, bb->fingerprint, bb->size,
 							bb2->fingerprint, bb2->size, NULL, &t);
-#if 0 
-					eprintf ("BB: %llx - %llx => %i - %i - %i => %f\n", bb->addr, bb2->addr,
-							bb->ninstr, bb2->ninstr, p, t);
+#if 0
+					eprintf ("BB: %llx - %llx => %lli - %lli => %f\n", bb->addr, bb2->addr,
+							bb->size, bb->size, t);
 #endif 
 					if (t > THRESHOLDBB && t > ot) {
 						ot = t;
@@ -82,6 +82,7 @@ static void gdiff_diff_bb(RAnalFcn *mfcn, RAnalFcn *mfcn2, RList *bbs, RList *bb
 static void gdiff_diff_fcn(RList *fcns, RList *fcns2, RList *bbs, RList *bbs2) {
 	RAnalFcn *fcn, *fcn2, *mfcn, *mfcn2;
 	RListIter *iter, *iter2;
+	ut64 maxsize, minsize;
 	double t, ot;
 
 	iter = r_list_iterator (fcns);
@@ -94,7 +95,15 @@ static void gdiff_diff_fcn(RList *fcns, RList *fcns2, RList *bbs, RList *bbs2) {
 		iter2 = r_list_iterator (fcns2);
 		while (r_list_iter_next (iter2)) {
 			fcn2 = r_list_iter_get (iter2);
-			if (fcn2->type != R_ANAL_FCN_TYPE_FCN || fcn2->diff->type != R_ANAL_DIFF_TYPE_NULL)
+			if (fcn->size > fcn2->size) {
+				maxsize = fcn->size;
+				minsize = fcn2->size;
+			} else {
+				maxsize = fcn2->size;
+				minsize = fcn->size;
+			}
+			if (fcn2->type != R_ANAL_FCN_TYPE_FCN || fcn2->diff->type != R_ANAL_DIFF_TYPE_NULL ||
+				(maxsize * THRESHOLDFCN > minsize))
 				continue;
 			r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->size,
 					fcn2->fingerprint, fcn2->size, NULL, &t);
