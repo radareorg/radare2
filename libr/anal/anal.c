@@ -143,3 +143,9 @@ R_API char *r_anal_strmask (RAnal *anal, const char *data) {
 	free (buf);
 	return ret;
 }
+
+R_API RList *r_anal_get_fcns (RAnal *anal) {
+	if (anal)
+		return anal->fcns;
+	return NULL;
+}

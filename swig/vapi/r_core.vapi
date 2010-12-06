@@ -2,7 +2,7 @@
 
 namespace Radare {
 [Compact]
-[CCode (cheader_filename="r_core.h,r_bin.h,r_parse.h,r_lang.h,r_sign.h,r_reg.h,r_list.h,r_types_base.h", cname="RCore", free_function="r_core_free", cprefix="r_core_")]
+[CCode (cheader_filename="r_anal.h,r_core.h,r_bin.h,r_parse.h,r_lang.h,r_sign.h,r_reg.h,r_list.h,r_types_base.h", cname="RCore", free_function="r_core_free", cprefix="r_core_")]
 public class RCore {
 	public RFlag flags;
 	public RNum num;
@@ -64,7 +64,7 @@ public class RCore {
 	public int project_save (string file);
 	public string project_info (string file);
 
-	//public int gdiff(string file1, string file2, bool va);
+	public int gdiff(RCore *c2);
 
 	public void sysenv_update ();
 

@@ -75,6 +75,7 @@ enum {
 	R_ANAL_VAR_TYPE_ARGREG = 0x08,
 	R_ANAL_VAR_TYPE_RET    = 0x10,
 };
+
 typedef enum {
 	R_ANAL_VAR_DIR_NONE = 0,
 	R_ANAL_VAR_DIR_IN   = 0x100,
@@ -221,7 +222,7 @@ enum {
 	R_ANAL_FCN_TYPE_NULL = 0,
 	R_ANAL_FCN_TYPE_FCN,
 	R_ANAL_FCN_TYPE_LOC
-} RAnalFcnType;
+};
 
 typedef struct r_anal_fcn_t {
 	char *name;
@@ -305,6 +306,7 @@ R_API int r_anal_use(RAnal *anal, const char *name);
 R_API int r_anal_set_bits(RAnal *anal, int bits);
 R_API int r_anal_set_big_endian(RAnal *anal, int boolean);
 R_API char *r_anal_strmask (RAnal *anal, const char *data);
+R_API RList *r_anal_get_fcns (RAnal *anal);
 
 /* bb.c */
 R_API RAnalBlock *r_anal_bb_new();

@@ -19,6 +19,7 @@ public class RAnal {
 	public bool set_big_endian (bool big);
 	//public bool set_pc (uint64 addr);
 	public RList<RAnal.Block> fcn_bb_list(Fcn fun);
+	public RList<RAnal.Fcn> get_fcns();
 
 	[Compact]
 	[CCode (cname="RAnalValue")]
@@ -60,6 +61,13 @@ public class RAnal {
 		ARGREG
 	}
 
+	[CCode (cname="int", cprefix="R_ANAL_FCN_TYPE_")]
+	public enum FcnType {
+		NULL,
+		FCN,
+		LOC
+	}
+
 	[CCode (cname="int", cprefix="R_ANAL_BB_TYPE_")]
 	public enum BlockType {
 		NULL,
@@ -69,7 +77,7 @@ public class RAnal {
 		FOOT
 	}
 
-	[CCode (cname="int", cprefix="R_ANAL_DIFF_")]
+	[CCode (cname="int", cprefix="R_ANAL_DIFF_TYPE_")]
 	public enum BlockDiff {
 		NULL,
 		MATCH,
@@ -193,11 +201,20 @@ public class RAnal {
 	}
 
 	[Compact]
-	[CCode (cprefix="r_anal_fcn_", cname="RAnalFcn")]
+	[CCode (cprefix="r_anal_diff_", cname="RAnalDiff")]
+	public class Diff {
+		public BlockDiff type;
+		public string name;
+		public uint64 addr;
+	}
+
+	[CCode (cname="RAnalFcn", free_function="", ref_function="", unref_function="")]
 	public class Fcn {
 		public string name;
 		public uint64 addr;
 		public uint64 size;
+		public Diff diff;
+		public FcnType type;
 		public RList<RAnal.Var> vars;
 		public RList<uint64> refs;
 		public RList<uint64> xrefs;

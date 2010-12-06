@@ -81,11 +81,15 @@ test:
 install-python:
 	@# py2.6 in debian uses dist-packages, but site-packages in arch..
 	@if [ "`grep python supported.langs`" ]; then \
-	a=python`python --version 2>&1 | cut -d ' ' -f 2 | cut -d . -f 1,2`/site-packages ; \
-	echo "Installing $$a r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/r2" ; \
-	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/r2 ; \
-	touch ${DESTDIR}${PREFIX}/lib/$$a/r2/__init__.py ; \
-	cp -rf python/*.${SOEXT} python/r_*.py python/libr.py ${DESTDIR}${PREFIX}/lib/$$a/r2 ; \
+	a=python`python --version 2>&1 | cut -d ' ' -f 2 | cut -d . -f 1,2` ; \
+	echo "Installing $$a/site-packages r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2" ; \
+	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2 ; \
+	touch ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2/__init__.py ; \
+	cp -rf python/*.${SOEXT} python/r_*.py python/libr.py ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2 ; \
+	echo "Installing $$a/dist-packages r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2" ; \
+	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2 ; \
+	touch ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2/__init__.py ; \
+	cp -rf python/*.${SOEXT} python/r_*.py python/libr.py ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2 ; \
 	fi
 
 install-lua:

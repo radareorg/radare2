@@ -108,7 +108,7 @@ static void gdiff_diff_fcn(RList *fcns, RList *fcns2, RList *bbs, RList *bbs2) {
 				continue;
 			r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->size,
 					fcn2->fingerprint, fcn2->size, NULL, &t);
-#if 0
+#if 1
 			eprintf ("FCN: %s - %s => %lli - %lli => %f\n", fcn->name, fcn2->name,
 					fcn->size, fcn2->size, t);
 #endif 

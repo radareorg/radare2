@@ -63,8 +63,8 @@ namespace Radare {
 			public string name;
 			public int32 size;
 			public int32 vsize;
-			public int64 rva;
-			public int64 offset;
+			public uint64 rva;
+			public uint64 offset;
 			public int32 srwx;
 		}
 

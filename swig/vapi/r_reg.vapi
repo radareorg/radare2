@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2010 pancake<@nopcode.org> */
 
 [Compact]
-[CCode (cheader_filename="r_reg.h", cname="struct r_reg_t", free_function="r_reg_free", cprefix="r_reg_")]
+[CCode (cheader_filename="r_reg.h,r_list.h,r_types_base.h", cname="struct r_reg_t", free_function="r_reg_free", cprefix="r_reg_")]
 public class Radare.RReg {
 	[CCode (cprefix="R_REG_TYPE_", cname="int")]
 	public enum Type {
