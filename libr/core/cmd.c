@@ -1450,7 +1450,24 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 #endif
 	case 'g':
-		r_core_gdiff (core, core->file->filename, (char*)r_str_chop_ro (input+1), core->io->va);
+		{
+		RCore *core2;
+		char *file2 = (char*)r_str_chop_ro (input+1);
+
+		if (!(core2 = r_core_new ())) {
+			eprintf ("Cannot init diff core\n");
+			return R_FALSE;
+		}
+		core2->io->va = core->io->va;
+		core2->anal->split = core->anal->split;
+		if (!r_core_file_open (core2, file2, 0)) {
+			eprintf ("Cannot open diff file '%s'\n", file2);
+			r_core_free (core2);
+			return R_FALSE;
+		}
+		r_core_gdiff (core, core2);
+		r_core_free (core2);
+		}
 		break;
 	case '?':
 		r_cons_strcat (

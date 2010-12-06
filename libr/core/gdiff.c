@@ -71,9 +71,10 @@ static void gdiff_diff_bb(RAnalFcn *mfcn, RAnalFcn *mfcn2, RList *bbs, RList *bb
 					mbb->diff->type = mbb2->diff->type = R_ANAL_DIFF_TYPE_MATCH;
 				else
 					mbb->diff->type = mbb2->diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
-				mbb->diff->addr = mbb2->addr;
 				R_FREE (mbb->fingerprint);
 				R_FREE (mbb2->fingerprint);
+				mbb->diff->addr = mbb2->addr;
+				mbb2->diff->addr = mbb->addr;
 			}
 		}
 	}
@@ -130,86 +131,52 @@ static void gdiff_diff_fcn(RList *fcns, RList *fcns2, RList *bbs, RList *bbs2) {
 			R_FREE (mfcn->fingerprint);
 			R_FREE (mfcn2->fingerprint);
 			mfcn->diff->addr = mfcn2->addr;
+			mfcn2->diff->addr = mfcn->addr;
+			R_FREE (mfcn->diff->name);
 			if (mfcn2->name)
 				mfcn->diff->name = strdup (mfcn2->name);
+			R_FREE (mfcn2->diff->name);
+			if (mfcn->name)
+				mfcn2->diff->name = strdup (mfcn->name);
 			gdiff_diff_bb (mfcn, mfcn2, bbs, bbs2);
 		}
 	}
 }
 
-R_API int r_core_gdiff(RCore *c, const char *file1, const char *file2, int va) {
-	RCore *core2;
+R_API int r_core_gdiff(RCore *c, RCore *c2) {
+	RCore *cores[2] = {c, c2};
 	RAnalFcn *fcn;
 	RAnalBlock *bb;
-	RList *fcns[2], *bbs[2];
 	RListIter *iter;
 	ut8 *buf;
-	const char *files[2] = {file1, file2};
 	int i;
 
-	/* Init resources  */
-	core2 = r_core_new ();
-
 	for (i = 0; i < 2; i++) {
-		/* Load and analyze bin*/
-		r_config_set_i (core2->config, "io.va", va);
-		if (!r_core_file_open (core2, files[i], 0)) {
-			eprintf ("Cannot open file '%s'\n", files[i]);
-			return R_FALSE;
-		}
-		r_config_set_i (core2->config, "anal.split", 0);
-		r_core_cmd0 (core2, "aa");
-		/* Copy fcn's */
-		fcns[i] = r_list_new ();
-		fcns[i]->free = &r_anal_fcn_free;
-		iter = r_list_iterator (core2->anal->fcns);
+		r_core_anal_all (cores[i]);
+		/* Fingerprint fcn's */
+		iter = r_list_iterator (cores[i]->anal->fcns);
 		while (r_list_iter_next (iter)) {
 			fcn = r_list_iter_get (iter);
-			/* Fingerprint fcn */
 			if ((buf = malloc (fcn->size))) {
-				if (r_io_read_at (core2->io, fcn->addr, buf, fcn->size) == fcn->size)
-					fcn->fingerprint = gdiff_fingerprint (core2->anal, buf, fcn->size);
+				if (r_io_read_at (cores[i]->io, fcn->addr, buf, fcn->size) == fcn->size)
+					fcn->fingerprint = gdiff_fingerprint (cores[i]->anal, buf, fcn->size);
 				free (buf);
 			}
-			r_list_split (core2->anal->fcns, fcn);
-			r_list_append (fcns[i], fcn);
 		}
-		/* Copy bb's */
-		bbs[i] = r_list_new ();
-		bbs[i]->free = &r_anal_bb_free;
-		iter = r_list_iterator (core2->anal->bbs);
+		/* Fingerprint bb's */
+		iter = r_list_iterator (cores[i]->anal->bbs);
 		while (r_list_iter_next (iter)) {
 			bb = r_list_iter_get (iter);
-			/* Fingerprint bb */
 			if ((buf = malloc (bb->size))) {
-				if (r_io_read_at (core2->io, bb->addr, buf, bb->size) == bb->size)
-					bb->fingerprint = gdiff_fingerprint (core2->anal, buf, bb->size);
+				if (r_io_read_at (cores[i]->io, bb->addr, buf, bb->size) == bb->size)
+					bb->fingerprint = gdiff_fingerprint (cores[i]->anal, buf, bb->size);
 				free (buf);
 			}
-			r_list_split (core2->anal->bbs, bb);
-			r_list_append (bbs[i], bb);
 		}
-		/* Remove flags and analysis info */
-		r_core_cmd0 (core2, "af-");
-		r_core_cmd0 (core2, "ab-");
-		r_core_cmd0 (core2, "f-*");
 	}
 
 	/* Diff functions */
-	gdiff_diff_fcn (fcns[0], fcns[1], bbs[0], bbs[1]);
-
-	/* Fill analysis info in core */
-	r_list_foreach (bbs[0], iter, bb)
-		r_anal_bb_add (c->anal, bb->addr, bb->size, bb->jump, bb->fail, bb->type, bb->diff);
-	r_list_foreach (fcns[0], iter, fcn)
-		r_anal_fcn_add (c->anal, fcn->addr, fcn->size, fcn->name, fcn->type, fcn->diff);
-
-	/* Free resources */
-	r_core_free (core2);
-	for (i=0;i<2;i++) {
-		r_list_free (bbs[i]);
-		r_list_free (fcns[i]);
-	}
+	gdiff_diff_fcn (cores[0]->anal->fcns, cores[1]->anal->fcns, cores[0]->anal->bbs, cores[1]->anal->bbs);
 
 	return R_TRUE;
 }

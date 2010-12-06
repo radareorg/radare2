@@ -124,21 +124,39 @@ int main(int argc, char **argv) {
 //		break;
 	case MODE_GRAPH:
 		{
-		RCore *core;
-		if (!(core = r_core_new ()))
-				return 1;
-		r_config_set_i (core->config, "io.va", va);
-		if (!r_core_file_open (core, file, 0)) {
-			fprintf (stderr, "Cannot open file '%s'\n", file);
+		RCore *core, *core2;
+		if (!(core = r_core_new ())) {
+			eprintf ("Cannot init main core\n");
 			return 1;
 		}
-		r_core_gdiff (core, file, file2, va);
+		core->anal->split = R_FALSE;
+		core->io->va = va;
+		if (!r_core_file_open (core, file, 0)) {
+			eprintf ("Cannot open main file '%s'\n", file);
+			r_core_free (core);
+			return 1;
+		}
+		if (!(core2 = r_core_new ())) {
+			eprintf ("Cannot init diff core\n");
+			r_core_free (core);
+			return 1;
+		}
+		core2->anal->split = R_FALSE;
+		core2->io->va = va;
+		if (!r_core_file_open (core2, file2, 0)) {
+			eprintf ("Cannot open diff file '%s'\n", file2);
+			r_core_free (core);
+			r_core_free (core2);
+			return 1;
+		}
+		r_core_gdiff (core, core2);
 		if (rad) {
 			r_core_anal_bb_list (core, R_TRUE);
 			r_core_anal_fcn_list (core, NULL, R_TRUE);
 		} else
 			r_core_anal_graph (core, 0, R_CORE_ANAL_GRAPHBODY|R_CORE_ANAL_GRAPHDIFF);
 		r_core_free (core);
+		r_core_free (core2);
 		}
 		break;
 	}

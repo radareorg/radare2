@@ -409,9 +409,10 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 						fcni->addr, fcni->size, fcni->name);
 				r_cons_printf (" type=%s",
 						fcni->type==R_ANAL_FCN_TYPE_LOC?"loc":"fcn");
-				r_cons_printf (" [%s]",
-						fcni->diff->type==R_ANAL_DIFF_TYPE_MATCH?"MATCH":
-						fcni->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
+				if (fcni->type==R_ANAL_FCN_TYPE_FCN)
+					r_cons_printf (" [%s]",
+							fcni->diff->type==R_ANAL_DIFF_TYPE_MATCH?"MATCH":
+							fcni->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
 
 				r_cons_printf ("\n  CODE refs: ");
 				r_list_foreach (fcni->refs, iter2, refi)
@@ -437,18 +438,20 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 					if (refi->type == R_ANAL_REF_TYPE_DATA)
 						r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
 
-				r_cons_printf ("\n  vars:");
-				r_list_foreach (fcni->vars, iter2, vari)
-					r_cons_printf ("\n  %-10s delta=0x%02x type=%s", vari->name,
-						vari->delta, r_anal_var_type_to_str (core->anal, vari->type));
-				r_cons_printf ("\n  diff: type=%s",
-						fcni->diff->type==R_ANAL_DIFF_TYPE_MATCH?"match":
-						fcni->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"unmatch":"new");
-				if (fcni->diff->addr != -1)
-					r_cons_printf (" addr=0x%"PFMT64x, fcni->diff->addr);
-				if (fcni->diff->name != NULL)
-					r_cons_printf (" function=%s",
-						fcni->diff->name);
+				if (fcni->type==R_ANAL_FCN_TYPE_FCN) {
+					r_cons_printf ("\n  vars:");
+					r_list_foreach (fcni->vars, iter2, vari)
+						r_cons_printf ("\n  %-10s delta=0x%02x type=%s", vari->name,
+							vari->delta, r_anal_var_type_to_str (core->anal, vari->type));
+					r_cons_printf ("\n  diff: type=%s",
+							fcni->diff->type==R_ANAL_DIFF_TYPE_MATCH?"match":
+							fcni->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"unmatch":"new");
+					if (fcni->diff->addr != -1)
+						r_cons_printf (" addr=0x%"PFMT64x, fcni->diff->addr);
+					if (fcni->diff->name != NULL)
+						r_cons_printf (" function=%s",
+							fcni->diff->name);
+				}
 				r_cons_newline ();
 			} else r_cons_printf ("af+ 0x%08"PFMT64x" %"PFMT64d" %s %c %c\n",
 						fcni->addr, fcni->size, fcni->name,
