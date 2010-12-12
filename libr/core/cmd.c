@@ -83,6 +83,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	int show_functions = r_config_get_i (core->config, "asm.functions");
 	int cursor, nb, nbytes = r_config_get_i (core->config, "asm.nbytes");
 	int linesopts = 0;
+	const char *pre = "";
 	nb = nbytes*2;
 
 	r_vm_reset (core->vm);
@@ -208,6 +209,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 				fcni = f;
 #endif
 		}
+		pre = "";
 		if (fcni) {
 #if 0
 			if (f && f->addr == at) {
@@ -220,16 +222,18 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 				r_cons_printf ("\\*");
 				fcni = NULL;
 			} else
-			if (at >= fcni->addr)
+			if (at >= fcni->addr) {
 				r_cons_printf (": ");
+				pre = ": ";
+			}
 		}
 		flag = r_flag_get_i (core->flags, at);
 		if (flag && !show_bytes) {
 			if (show_lines && line)
 				r_cons_strcat (line);
-			if (show_offset)
-				printoffset (at, show_color);
-			r_cons_printf ("%s:\n", flag->name);
+			//if (show_offset)
+			//	printoffset (at, show_color);
+			r_cons_printf ("%s:\n%s", flag->name, pre);
 		}
 		if (show_lines && line)
 			r_cons_strcat (line);
@@ -261,7 +265,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			// TODO: filter string (r_str_unscape)
 			{
 			char *out = r_str_unscape (mi->str);
-			r_cons_printf ("string(%"PFMT64d"): \"%s\"\n", mi->size, out);
+			r_cons_printf ("string(%"PFMT64d"): \"%s\"\n%s", mi->size, out, pre);
 			free (out);
 			}
 			ret = (int)mi->size;
@@ -372,8 +376,8 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 					while (len--)
 						r_cons_strcat (" ");
 					if (show_color)
-						r_cons_printf (Color_TURQOISE"  ; %s"Color_RESET, sl);
-					else r_cons_printf ("  ; %s\n", sl);
+						r_cons_printf (Color_TURQOISE"  ; %s"Color_RESET"%s", sl, pre);
+					else r_cons_printf ("  ; %s\n%s", sl, pre);
 					free (osl);
 					osl = sl;
 				}
@@ -433,14 +437,14 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			if (show_functions)
 			if (analop.jump != UT64_MAX) {
 				fcn = r_anal_fcn_find (core->anal, analop.jump, R_ANAL_FCN_TYPE_FCN);
-				r_cons_printf("\n    ");
+				r_cons_printf ("\n%s    ", pre);
 				if(fcn&&fcn->name) r_cons_printf ("; %s(", fcn->name);
 				else r_cons_printf ("; 0x%08"PFMT64x"(", analop.jump);
 				if(fcn) nargs = (fcn->nargs>nargs?nargs:fcn->nargs);
 				for(i=0;i<nargs;i++) {
-					if (args[i]>1024) r_cons_printf("%d", args[nargs-i]);
+					if (args[i]>1024) r_cons_printf ("%d", args[nargs-i]);
 					else r_cons_printf("0x%x", args[nargs-i]);
-					if (i<nargs-1) r_cons_printf(", ");
+					if (i<nargs-1) r_cons_printf (", ");
 				}
 				//r_cons_printf("args=%d (%d)", nargs, esp);
 				r_cons_printf (")");
@@ -484,8 +488,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			if (show_lines && analop.type == R_ANAL_OP_TYPE_RET) {
 				if (strchr (line, '>'))
 					memset (line, ' ', strlen (line));
-				r_cons_strcat (line);
-				r_cons_strcat ("; ------------\n");
+				r_cons_printf ("%s; ------------\n%s", line, pre);
 			}
 			free (line);
 		}
