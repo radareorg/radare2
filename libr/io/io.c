@@ -10,6 +10,7 @@
 R_API struct r_io_t *r_io_new() {
 	RIO *io = R_NEW (struct r_io_t);
 	if (io) {
+		io->fd = -1;
 		io->write_mask_fd = -1;
 		io->redirect = NULL;
 		io->printf = (void*) printf;

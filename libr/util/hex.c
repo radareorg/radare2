@@ -71,11 +71,9 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 			continue;
 
 		if (j==2) {
-			if (j>0) {
-				out[len] = c;
-				len++;
-				c = j = 0;
-			}
+			out[len] = c;
+			len++;
+			c = j = 0;
 			if (ptr[0]==' ')
 				continue;
 		}

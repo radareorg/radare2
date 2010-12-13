@@ -271,6 +271,7 @@ extern struct r_io_plugin_t r_io_plugin_debug;
 extern struct r_io_plugin_t r_io_plugin_shm;
 extern struct r_io_plugin_t r_io_plugin_gdb;
 extern struct r_io_plugin_t r_io_plugin_rap;
+extern struct r_io_plugin_t r_io_plugin_haret;
 #endif
 
 #if 0
