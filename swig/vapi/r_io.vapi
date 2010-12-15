@@ -4,6 +4,14 @@ namespace Radare {
 	[Compact]
 	[CCode (cheader_filename="r_io.h", cname="RIO", free_function="r_io_free", cprefix="r_io_")]
 	public class RIO {
+		public int fd;
+		public bool cached;
+		public bool cached_read;
+		public bool enforce_rwx;
+		public bool enforce_seek;
+		public uint64 off;
+		public bool debug;
+
 		[CCode (cprefix="R_IO_")]
 		public enum Perm {
 			READ = 0,
