@@ -134,8 +134,7 @@ static int fork_and_ptraceme(const char *cmd) {
 
         /* check if is a create process debug event */
         if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {
-                eprintf ("exception code %d\n",
-                                de.dwDebugEventCode);
+                eprintf ("exception code 0x%04x\n", (ut32)de.dwDebugEventCode);
                 goto err_fork;
         }
 

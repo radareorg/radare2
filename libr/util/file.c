@@ -209,7 +209,11 @@ R_API boolt r_file_rm(const char *file) {
 
 R_API RMmap *r_file_mmap (const char *file) {
 	RMmap *m = NULL;
+#if __WINDOWS__
+	int fd = open (file, 0);
+#else
 	int fd = open (file, O_RDONLY);
+#endif
 	if (fd != -1) {
 		m = R_NEW (RMmap);
 		m->fd = fd;
