@@ -185,8 +185,30 @@ static void init_radare_module(void) {
 			"Example module that creates an extension type.");
 }
 #else
-static void init_radare_module(void) {
-	eprintf ("TODO: python>3.x instantiate 'r' object\n");
+
+/*
+SEE 
+static PyMethodDef EmbMethods[] = {
+    {"numargs", emb_numargs, METH_VARARGS,
+     "Return the number of arguments received by the process."},
+    {NULL, NULL, 0, NULL}
+};
+*/
+
+static PyModuleDef EmbModule = {
+    PyModuleDef_HEAD_INIT, "radare", NULL, -1, NULL, //EmbMethods,
+    NULL, NULL, NULL, NULL
+};
+
+static int init_radare_module(void) {
+	// TODO import r2-swig api
+	//eprintf ("TODO: python>3.x instantiate 'r' object\n");
+	PyObject *m = PyModule_Create (&EmbModule);
+	if (m == NULL) {
+		eprintf ("Cannot create python3 r2 module\n");
+		return R_FALSE;
+	}
+	return R_TRUE;
 }
 #endif
 /* -init- */
@@ -221,11 +243,7 @@ static int setup(RLang *lang) {
 static int init(RLang *lang) {
 	core = lang->user;
 	Py_Initialize ();
-	init_radare_module ();
-	//Py_InitModule3("radare", Radare_methods, NULL);
-//	PyRun_SimpleString("import radare");
-//	PyRun_SimpleString("from radare import *");
-	return R_TRUE;
+	return init_radare_module ();
 }
 
 static int fini(void *user) {
