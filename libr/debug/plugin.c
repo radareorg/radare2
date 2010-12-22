@@ -35,10 +35,10 @@ R_API int r_debug_use(RDebug *dbg, const char *str) {
 			if (h->reg_profile) {
 				free (dbg->reg_profile);
 				dbg->reg_profile = dbg->h->reg_profile ();
-				dbg->anal->reg = dbg->reg;
-				if (h->init) {
+				if (dbg->anal)
+					dbg->anal->reg = dbg->reg;
+				if (h->init)
 					h->init (dbg);
-				}
 				r_reg_set_profile_string (dbg->reg, dbg->reg_profile);
 			}
 			return R_TRUE;

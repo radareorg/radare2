@@ -9,8 +9,7 @@ R_API const char *r_flag_space_get(struct r_flag_t *f, int idx) {
 }
 
 #if 0
-void flag_space_init(struct r_flag_t *f)
-{
+void flag_space_init(struct r_flag_t *f) {
 	static int init = 0;
 	int i;
 	if (init)
@@ -21,7 +20,7 @@ void flag_space_init(struct r_flag_t *f)
 }
 #endif
 
-R_API void r_flag_space_set(struct r_flag_t *f, const char *name) {
+R_API void r_flag_space_set(RFlag *f, const char *name) {
 	int i;
 	if (name == NULL || *name == '*') {
 		f->space_idx = -1;
@@ -45,8 +44,7 @@ R_API void r_flag_space_set(struct r_flag_t *f, const char *name) {
 	}
 }
 
-R_API void r_flag_space_list(struct r_flag_t *f)
-{
+R_API void r_flag_space_list(RFlag *f) {
 	int i,j = 0;
 	for(i=0;i<R_FLAG_SPACES_MAX;i++) {
 		if (f->space[i])

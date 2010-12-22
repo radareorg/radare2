@@ -18,6 +18,13 @@ R_API RDebugPid *r_debug_pid_free(RDebugPid *pid) {
 	return NULL;
 }
 
+R_API RList *r_debug_pids(RDebug *dbg, int pid) {
+	if (dbg && dbg->h && dbg->h->pids)
+		return dbg->h->pids (pid);
+	return NULL;
+}
+
+// TODO: deprecate? iterating in api? wtf?
 R_API int r_debug_pid_list(struct r_debug_t *dbg, int pid) {
 	RList *list;
 	RListIter *iter;

@@ -10,7 +10,7 @@ public class RCore {
 	public RCore();
 	public RIO io;
 	public RCons cons;
-	public RDebug debug;
+	public RDebug dbg;
 	public RConfig config;
 	public RAsm assembler;
 	public RAnal anal;

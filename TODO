@@ -5,6 +5,15 @@
 
 <{include libr/TODO}>
 
+* Use r_list in r_flags !!!1 URGENT!!
+/a ??? deprecated analyze code? srsly?
+
+Asm
+===
+* Embed bits/arch/endian in a separated structure
+  - So one can change from one arch to another with a pointer
+  - Cool for defining ranges of memory
+
 Bindings
 ========
 * Distribute generated .i files or cxx files.. so build is faster

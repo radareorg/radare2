@@ -63,6 +63,8 @@ public class Radare.RDebug {
 	//public bool reg_set(string name, uint64 num);
 	//public uint64 reg_get(string name);
 	
+	public RList<RDebug.Pid> pids (int pid);
+	// must deprecate //
 	public int pid_list (int pid);
 	public int thread_list (int pid);
 
@@ -75,7 +77,7 @@ public class Radare.RDebug {
 	public bool trace_tag (int tag);
 
 	[CCode (cname="RDebugPid", free_function="r_debug_pid_free", cprefix="r_debug_pid_")]
-	public struct Pid {
+	public class Pid {
 		public int pid;
 		public int status;
 		public int runnable;

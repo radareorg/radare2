@@ -28,10 +28,8 @@ namespace Radare {
 		public bool unset_i(uint64 addr);
 		public void set(string name, uint64 addr, int size=1, bool dup=false);
 
-/*
 		public void space_list();
-		public string space_get(int idx);
+		public unowned string? space_get(int idx);
 		public void space_set(string name);
-*/
 	}
 }
