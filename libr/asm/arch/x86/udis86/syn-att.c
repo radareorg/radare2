@@ -109,16 +109,19 @@ gen_operand(struct ud* u, struct ud_operand* op)
 		break;
     }
 
+	/* Fix bug with 32 bits operand + 64 bits pc */
 	case UD_OP_JIMM:
 		switch (op->size) {
 			case  8:
 				mkasm(u, "0x" FMT64 "x", u->pc + op->lval.sbyte); 
 				break;
 			case 16:
-				mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sword ) & 0xffff );
+				//mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sword ) & 0xffff );
+				mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sword ));
 				break;
 			case 32:
-				mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sdword ) & 0xfffffffful );
+				//mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sdword ) & 0xfffffffful );
+				mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sdword ));
 				break;
 			default:break;
 		}
