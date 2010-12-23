@@ -8,22 +8,21 @@
 #endif
 
 #include <r_types.h>
-#include "list.h"
+#include <r_list.h>
 
 #define R_FLAG_NAME_SIZE 128
 #define R_FLAG_BUF_SIZE 128
-#define R_FLAG_SPACES_MAX 128 
+#define R_FLAG_SPACES_MAX 128
 
 typedef struct r_flag_item_t {
 	char name[R_FLAG_NAME_SIZE];
 	ut64 namehash;
 	ut64 offset;
 	ut64 size;
-	int format; // ??? 
+	int format; // ???
 	int space;
 	char *cmd;
 	unsigned char data[R_FLAG_BUF_SIZE]; // only take a minor part of the data
-	struct list_head list;
 } RFlagItem;
 
 typedef struct r_flag_t {
@@ -34,7 +33,7 @@ typedef struct r_flag_t {
 	struct btree_node *tree; /* index by offset */
 	struct btree_node *ntree; /* index by name */
 #endif
-	struct list_head flags;
+	RList *flags;
 } RFlag;
 
 #ifdef R_API

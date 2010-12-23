@@ -136,7 +136,8 @@ static int assemble(struct r_parse_t *p, void *data, char *str) {
 }
 
 static int filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str, int len) {
-	struct list_head *pos;
+	RListIter *iter;
+	RFlagItem *flag;
 	char *ptr, *ptr2;
 	ut64 off;
 	ptr = data;
@@ -147,8 +148,7 @@ static int filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str
 			ptr=ptr2;
 			continue;
 		}
-		list_for_each_prev (pos, &f->flags) {
-			RFlagItem *flag = list_entry (pos, RFlagItem, list);
+		r_list_foreach (f->flags, iter, flag) {
 			if (flag->offset == off) {
 				*ptr = 0;
 				snprintf (str, len, "%s%s%s", data, flag->name, ptr2!=ptr?ptr2:"");

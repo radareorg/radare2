@@ -83,6 +83,8 @@ static const char *tmp_argv[TMP_ARGV_SZ];
 static int autocomplete(RLine *line) {
 	RCore *core = line->user;
 	struct list_head *pos;
+	RListIter *iter;
+	RFlagItem *flag;
 	if (core) {
 		if ((!memcmp (line->buffer.data, "s ", 2)) ||
 		    (!memcmp (line->buffer.data, "f ", 2)) ||
@@ -92,8 +94,7 @@ static int autocomplete(RLine *line) {
 			int n, i = 0;
 			int sdelta = (line->buffer.data[1]==' ')?2:3;
 			n = strlen (line->buffer.data+sdelta);
-			list_for_each_prev (pos, &core->flags->flags) {
-				RFlagItem *flag = list_entry (pos, RFlagItem, list);
+			r_list_foreach (core->flags->flags, iter, flag) {
 				if (!memcmp (flag->name, line->buffer.data+sdelta, n)) {
 					tmp_argv[i++] = flag->name;
 					if (i==TMP_ARGV_SZ)

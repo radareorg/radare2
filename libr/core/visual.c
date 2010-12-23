@@ -38,7 +38,8 @@ static void r_core_visual_mark_seek(RCore *core, ut8 ch) {
 
 R_API int r_core_visual_trackflags(RCore *core) {
 	char cmd[1024];
-	struct list_head *pos;
+	RListIter *iter;
+	RFlagItem *flag;
 #define MAX_FORMAT 2
 	int format = 0;
 	const char *ptr;
@@ -64,8 +65,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			(core->flags->space_idx==-1)?"*":core->flags->space[core->flags->space_idx]);
 			hit = 0;
 			i = j = 0;
-			list_for_each_prev (pos, &core->flags->flags) {
-				RFlagItem *flag = (RFlagItem*) list_entry(pos, RFlagItem, list);
+			r_list_foreach (core->flags->flags, iter, flag) {
 				/* filter per flag spaces */
 				if ((core->flags->space_idx != -1) && 
 					(flag->space != core->flags->space_idx))

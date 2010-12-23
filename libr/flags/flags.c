@@ -35,44 +35,42 @@ static int cmp(const void *a, const void *b) {
 R_API int r_flag_sort(RFlag *f, int namesort) {
 	int ret = R_FALSE;
 	int changes;
-	RFlagItem *fi = NULL;
-	struct list_head *n, *pos, tmp;
+	RFlagItem *flag, *fi = NULL;
+	RListIter *iter, *it_elem;
+	RList *tmp;
 
-	INIT_LIST_HEAD (&tmp);
+	tmp = r_list_new ();
 	// find bigger ones after this
 	do {
 		changes = 0;
 		fi = NULL;
-		list_for_each_safe (pos, n, &f->flags) {
-			RFlagItem *flag = list_entry (pos, RFlagItem, list);
+		r_list_foreach (f->flags, iter, flag) {
 			if (fi == NULL) {
 				fi = flag;
+				it_elem = iter;
 				changes = 1;
-			//} else if (flag->offset >= fi->offset) {
 			} else if (((namesort)? ncmp (fi, flag): cmp (fi, flag)) <= 0) {
 				fi = flag;
+				it_elem = iter;
 				changes = 1;
 			}
 		}
 		if (fi && changes) {
 			ret = R_TRUE;
-			list_del (&fi->list);
-			list_add_tail (&fi->list, &tmp);
+			r_list_split_iter (f->flags, it_elem);
+			free (it_elem);
+			r_list_append (tmp, fi);
 		}
 	} while (changes);
 
-	INIT_LIST_HEAD (&f->flags);
-	list_for_each_safe (pos, n, &tmp) {
-		RFlagItem *flag = list_entry (pos, RFlagItem, list);
-		list_add_tail (&flag->list, &f->flags);
-	}
-	INIT_LIST_HEAD (&tmp);
-
+	free (f->flags);
+	f->flags = tmp;
+	f->flags->free = free;
 	return ret;
 }
 
 R_API RFlag * r_flag_free(RFlag *f) {
-	// XXX leaks
+	r_list_free (f->flags);
 	free (f);
 	return NULL;
 }
@@ -83,7 +81,8 @@ R_API RFlag * r_flag_new() {
 
 	f = R_NEW (RFlag);
 	if (f) {
-		INIT_LIST_HEAD (&f->flags);
+		f->flags = r_list_new ();
+		f->flags->free = free;
 		f->space_idx = -1;
 		f->space_idx2 = -1;
 #if USE_BTREE
@@ -96,11 +95,13 @@ R_API RFlag * r_flag_new() {
 	return f;
 }
 
+// Deprecated??
 R_API void r_flag_list(RFlag *f, int rad) {
 	int fs = -1;
-	struct list_head *pos;
-	list_for_each_prev (pos, &f->flags) {
-		RFlagItem *flag = list_entry (pos, RFlagItem, list);
+	RListIter *iter;
+	RFlagItem *flag;
+
+	r_list_foreach_prev (f->flags, iter, flag) {
 		if ((f->space_idx != -1) && (flag->space != f->space_idx))
 			continue;
 		if (rad) {
@@ -120,7 +121,7 @@ R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 	RFlagItem tmp;
 #else
 	RFlagItem *flag;
-	struct list_head *pos;
+	RListIter *iter;
 #endif
 	if (name==NULL || name[0]=='\0' || (name[0]>='0'&& name[0]<='9'))
 		return NULL;
@@ -129,8 +130,7 @@ R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 	return btree_get (f->ntree, &tmp, ncmp);
 #else
 	ut64 hash = r_str_hash64 (name);
-	list_for_each_prev (pos, &f->flags) {
-		flag = list_entry (pos, RFlagItem, list);
+	r_list_foreach_prev (f->flags, iter, flag) {
 		//if (!strcmp (name, flag->name))
 		if (hash == flag->namehash)
 			return flag;
@@ -140,18 +140,17 @@ R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 }
 
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
-#if USE_BTREE
 	RFlagItem *i;
+#if USE_BTREE
 	RFlagItem tmp = { .offset = off };
 	i = btree_get (f->tree, &tmp, cmp);
 	return i;
 #else
 	/* slow workaround */
-	struct list_head *pos;
-	list_for_each_prev (pos, &f->flags) {
-		RFlagItem *flag = list_entry (pos, RFlagItem, list);
-		if (off == flag->offset)
-			return flag;
+	RListIter *iter;
+	r_list_foreach_prev (f->flags, iter, i) {
+		if (off == i->offset)
+			return i;
 	}
 	return NULL;
 #endif
@@ -159,14 +158,11 @@ R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 
 R_API int r_flag_unset_i(RFlag *f, ut64 addr) {
 	RFlagItem *item;
-	struct list_head *pos, *tmp;
+	RListIter *iter;
 
-	list_for_each_safe (pos, tmp, &f->flags) {
-		item = list_entry (pos, RFlagItem, list);
+	r_list_foreach (f->flags, iter, item) {
 		if (item->offset == addr) {
-		// TODO: free item!!
-			list_del (&item->list);
-//TODO: segfaults !! r_flag_item_free (item);
+			r_list_unlink (f->flags, item);
 			return R_TRUE;
 		}
 	}
@@ -181,12 +177,11 @@ R_API int r_flag_unset_i(RFlag *f, ut64 addr) {
 
 R_API int r_flag_unset(RFlag *f, const char *name) {
 	RFlagItem *item;
-	struct list_head *pos, *tmp;
+	RListIter *iter;
 
 	if (name[0] == '*') {
-		list_for_each_safe (pos, tmp, &f->flags) {
-			item = list_entry (pos, RFlagItem, list);
-			list_del (&item->list);
+		r_list_foreach (f->flags, iter, item) {
+			r_list_unlink (f->flags, item);
 		}
 	} else {
 		item = r_flag_get (f, name);
@@ -196,7 +191,7 @@ R_API int r_flag_unset(RFlag *f, const char *name) {
 			btree_del (f->tree, item, cmp, NULL);
 			btree_del (f->ntree, item, ncmp, NULL);
 #endif
-			list_del (&item->list);
+			r_list_unlink (f->flags, item);
 		}
 	}
 	return 0;
@@ -205,7 +200,7 @@ R_API int r_flag_unset(RFlag *f, const char *name) {
 R_API int r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size, int dup) {
 	RFlagItem *flag = NULL;
 #if !USE_BTREE
-	struct list_head *pos;
+	RListIter *iter;
 #endif
 	if (!dup && !r_flag_name_check (name)) {
 		eprintf ("r_flag_set: invalid flag name '%s'.\n", name);
@@ -236,10 +231,9 @@ R_API int r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size, int dup)
 //		else eprintf("NOT REGISTERED(%s)\n", name);
 	}
 #else
+	RFlagItem *f; // Move to !BTREE section?
 	ut64 hash = r_str_hash64 (name);
-	list_for_each (pos, &fo->flags) {
-		RFlagItem *f = (RFlagItem *)
-			list_entry(pos, RFlagItem, list);
+	r_list_foreach (fo->flags, iter, f) {
 		//if (!strcmp(f->name, name)) {
 		if (hash == f->namehash) {
 			if (dup) {
@@ -266,7 +260,7 @@ R_API int r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size, int dup)
 		btree_add (&fo->tree, flag, cmp);
 		btree_add (&fo->ntree, flag, ncmp);
 #endif
-		list_add_tail (&(flag->list), &fo->flags);
+		r_list_append (fo->flags, flag);
 		if (flag==NULL)
 			return R_TRUE;
 	}

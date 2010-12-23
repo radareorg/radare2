@@ -3431,7 +3431,8 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	char ch;
 	char *word = NULL;
 	char *str, *ostr;
-	struct list_head *pos;
+	RListIter *iter;
+	RFlagItem *flag;
 	ut64 oseek, addr;
 
 	for (; *each==' '; each++);
@@ -3543,9 +3544,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 #endif
 			} else {
 				/* for all flags in current flagspace */
-				list_for_each (pos, &core->flags->flags) {
-					RFlagItem *flag = (RFlagItem *)list_entry(pos, RFlagItem, list);
-
+				r_list_foreach (core->flags->flags, iter, flag) {
 					if (r_cons_singleton()->breaked)
 						break;
 					/* filter per flag spaces */
