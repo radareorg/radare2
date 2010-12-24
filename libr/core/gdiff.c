@@ -34,55 +34,67 @@ static ut8* gdiff_fingerprint(RAnal *a, ut8* buf, int len) {
 	return ret;
 }
 
-static void gdiff_diff_bb(RAnalFcn *mfcn, RAnalFcn *mfcn2, RList *bbs, RList *bbs2) {
+static int concat_fcn_fp(RCore *c, RAnalFcn *fcn) {
+	RAnalBlock *bb;
+	RListIter *iter;
+	int len = 0;
+	
+	iter = r_list_iterator (fcn->bbs), fcn->fingerprint = NULL;
+	while (r_list_iter_next (iter)) {
+		bb = r_list_iter_get (iter);
+		len += bb->size;
+		fcn->fingerprint = realloc (fcn->fingerprint, len);
+		if (!fcn->fingerprint)
+			return 0;
+		memcpy (fcn->fingerprint+len-bb->size, bb->fingerprint, bb->size);
+	}
+	return len;
+}
+
+static void gdiff_diff_bb(RAnalFcn *mfcn, RAnalFcn *mfcn2) {
 	RAnalBlock *bb, *bb2, *mbb, *mbb2;
 	RListIter *iter, *iter2;
 	double t, ot;
 
-	iter = r_list_iterator (bbs);
+	iter = r_list_iterator (mfcn->bbs);
 	while (r_list_iter_next (iter)) {
 		bb = r_list_iter_get (iter);
 		if (bb->diff->type != R_ANAL_DIFF_TYPE_NULL)
 			continue;
-		if (bb->addr >= mfcn->addr && bb->addr < mfcn->addr + mfcn->size) {
-			ot = 0;
-			mbb = mbb2 = NULL;
-			iter2 = r_list_iterator (bbs2);
-			while (r_list_iter_next (iter2)) {
-				bb2 = r_list_iter_get (iter2);
-				if (bb2->diff->type == R_ANAL_DIFF_TYPE_NULL &&
-					bb2->addr >= mfcn2->addr && bb2->addr < mfcn2->addr + mfcn2->size) {
-					r_diff_buffers_distance (NULL, bb->fingerprint, bb->size,
-							bb2->fingerprint, bb2->size, NULL, &t);
+		ot = 0;
+		mbb = mbb2 = NULL;
+		iter2 = r_list_iterator (mfcn2->bbs);
+		while (r_list_iter_next (iter2)) {
+			bb2 = r_list_iter_get (iter2);
+			if (bb2->diff->type == R_ANAL_DIFF_TYPE_NULL) {
+				r_diff_buffers_distance (NULL, bb->fingerprint, bb->size,
+						bb2->fingerprint, bb2->size, NULL, &t);
 #if 0
-					eprintf ("BB: %llx - %llx => %lli - %lli => %f\n", bb->addr, bb2->addr,
-							bb->size, bb->size, t);
+				eprintf ("BB: %llx - %llx => %lli - %lli => %f\n", bb->addr, bb2->addr,
+						bb->size, bb->size, t);
 #endif 
-					if (t > THRESHOLDBB && t > ot) {
-						ot = t;
-						mbb = bb;
-						mbb2 = bb2;
-						if (t == 1) break;
-					}
+				if (t > THRESHOLDBB && t > ot) {
+					ot = t;
+					mbb = bb;
+					mbb2 = bb2;
+					if (t == 1) break;
 				}
 			}
-			if (mbb != NULL && mbb2 != NULL) {
-				if (ot == 1)
-					mbb->diff->type = mbb2->diff->type = R_ANAL_DIFF_TYPE_MATCH;
-				else
-					mbb->diff->type = mbb2->diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
-				R_FREE (mbb->fingerprint);
-				R_FREE (mbb2->fingerprint);
-				mbb->diff->addr = mbb2->addr;
-				mbb2->diff->addr = mbb->addr;
-			}
+		}
+		if (mbb != NULL && mbb2 != NULL) {
+			if (ot == 1)
+				mbb->diff->type = mbb2->diff->type = R_ANAL_DIFF_TYPE_MATCH;
+			else
+				mbb->diff->type = mbb2->diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
+			R_FREE (mbb->fingerprint);
+			R_FREE (mbb2->fingerprint);
+			mbb->diff->addr = mbb2->addr;
+			mbb2->diff->addr = mbb->addr;
 		}
 	}
 }
 
-/* XXX Follow basic blocks instead of diffing
- *     fcn->addr+fcn->size vs fcn2->addr+fcn2->size */
-static void gdiff_diff_fcn(RList *fcns, RList *fcns2, RList *bbs, RList *bbs2) {
+static void gdiff_diff_fcn(RList *fcns, RList *fcns2) {
 	RAnalFcn *fcn, *fcn2, *mfcn, *mfcn2;
 	RListIter *iter, *iter2;
 	ut64 maxsize, minsize;
@@ -125,7 +137,7 @@ static void gdiff_diff_fcn(RList *fcns, RList *fcns2, RList *bbs, RList *bbs2) {
 			R_FREE (fcn2->diff->name);
 			if (fcn->name)
 				fcn2->diff->name = strdup (fcn->name);
-			gdiff_diff_bb (fcn, fcn2, bbs, bbs2);
+			gdiff_diff_bb (fcn, fcn2);
 			break;
 		}
 	}
@@ -182,7 +194,7 @@ static void gdiff_diff_fcn(RList *fcns, RList *fcns2, RList *bbs, RList *bbs2) {
 			R_FREE (mfcn2->diff->name);
 			if (mfcn->name)
 				mfcn2->diff->name = strdup (mfcn->name);
-			gdiff_diff_bb (mfcn, mfcn2, bbs, bbs2);
+			gdiff_diff_bb (mfcn, mfcn2);
 		}
 	}
 }
@@ -191,36 +203,37 @@ R_API int r_core_gdiff(RCore *c, RCore *c2) {
 	RCore *cores[2] = {c, c2};
 	RAnalFcn *fcn;
 	RAnalBlock *bb;
-	RListIter *iter;
+	RListIter *iter, *iter2;
 	ut8 *buf;
 	int i;
 
 	for (i = 0; i < 2; i++) {
 		r_core_anal_all (cores[i]);
-		/* Fingerprint fcn's */
+		/* Fingerprint fcn bbs */
 		iter = r_list_iterator (cores[i]->anal->fcns);
 		while (r_list_iter_next (iter)) {
 			fcn = r_list_iter_get (iter);
-			if ((buf = malloc (fcn->size))) {
-				if (r_io_read_at (cores[i]->io, fcn->addr, buf, fcn->size) == fcn->size)
-					fcn->fingerprint = gdiff_fingerprint (cores[i]->anal, buf, fcn->size);
-				free (buf);
+			iter2 = r_list_iterator (fcn->bbs);
+			while (r_list_iter_next (iter2)) {
+				bb = r_list_iter_get (iter2);
+				if ((buf = malloc (bb->size))) {
+					if (r_io_read_at (cores[i]->io, bb->addr, buf, bb->size) == bb->size) {
+						bb->fingerprint = gdiff_fingerprint (cores[i]->anal, buf, bb->size);
+					}
+					free (buf);
+				}
 			}
 		}
-		/* Fingerprint bb's */
-		iter = r_list_iterator (cores[i]->anal->bbs);
+		/* Concat bb fingerprints per fcn */
+		iter = r_list_iterator (cores[i]->anal->fcns);
 		while (r_list_iter_next (iter)) {
-			bb = r_list_iter_get (iter);
-			if ((buf = malloc (bb->size))) {
-				if (r_io_read_at (cores[i]->io, bb->addr, buf, bb->size) == bb->size)
-					bb->fingerprint = gdiff_fingerprint (cores[i]->anal, buf, bb->size);
-				free (buf);
-			}
+			fcn = r_list_iter_get (iter);
+			fcn->size = concat_fcn_fp (cores[i], fcn);
 		}
 	}
 
 	/* Diff functions */
-	gdiff_diff_fcn (cores[0]->anal->fcns, cores[1]->anal->fcns, cores[0]->anal->bbs, cores[1]->anal->bbs);
+	gdiff_diff_fcn (cores[0]->anal->fcns, cores[1]->anal->fcns);
 
 	return R_TRUE;
 }

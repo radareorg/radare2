@@ -491,15 +491,6 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	return R_TRUE;
 }
 
-R_API int r_core_anal_graph_fcn(RCore *core, char *fname, int opts) {
-	RListIter *iter;
-	RAnalFcn *fcni;
-	r_list_foreach (core->anal->fcns, iter, fcni)
-		if (!strcmp (fname, fcni->name))
-			return r_core_anal_graph (core, fcni->addr, opts);
-	return R_FALSE;
-}
-
 static int r_core_anal_followptr(RCore *core, ut64 at, ut64 ptr, ut64 ref, int code, int depth) {
 	ut64 dataptr;
 	int wordsize, endian;

@@ -2012,10 +2012,10 @@ static int cmd_anal(void *data, const char *input) {
 			}
 			break;
 		case 'l':
-			r_core_anal_bb_list (core, core->anal->bbs, R_FALSE);
+			r_core_anal_bb_list (core, R_FALSE);
 			break;
 		case '*':
-			r_core_anal_bb_list (core, core->anal->bbs, R_TRUE);
+			r_core_anal_bb_list (core, R_TRUE);
 			break;
 		case '?':
 			r_cons_printf (
