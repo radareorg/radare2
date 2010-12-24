@@ -2754,7 +2754,7 @@ struct ud_lookup_table_list_entry ud_lookup_table_list[] = {
 
 
 const char * ud_mnemonics_str[] = {
-"invalid",
+    "invalid",
     "3dnow",
     "none",
     "db",
