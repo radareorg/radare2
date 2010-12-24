@@ -67,8 +67,6 @@ nibble
 * dmi command must read from memory if no file path provided
   - rabin from memory ftw
   - to get libnames of dll, so..
-* Refactor cursor stuff 
-  - isnt this already done? -- imho yes
 -- from 0.6
 * r_anal
   - use r_anal_value everywhere

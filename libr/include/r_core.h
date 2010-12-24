@@ -155,8 +155,8 @@ R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b);
 /* anal.c */
 R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref);
 R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv);
-R_API int r_core_anal_bb(RCore *core, ut64 at, int depth, int head);
-R_API int r_core_anal_bb_list(struct r_core_t *core, int rad);
+R_API int r_core_anal_bb(RCore *core, RList *bbs, ut64 at, int depth, int head);
+R_API int r_core_anal_bb_list(RCore *core, int rad);
 R_API int r_core_anal_bb_seek(struct r_core_t *core, ut64 addr);
 R_API int r_core_anal_fcn(struct r_core_t *core, ut64 at, ut64 from, int reftype, int depth);
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad);

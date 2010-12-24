@@ -2012,10 +2012,10 @@ static int cmd_anal(void *data, const char *input) {
 			}
 			break;
 		case 'l':
-			r_core_anal_bb_list (core, 0);
+			r_core_anal_bb_list (core, core->anal->bbs, R_FALSE);
 			break;
 		case '*':
-			r_core_anal_bb_list (core, 1);
+			r_core_anal_bb_list (core, core->anal->bbs, R_TRUE);
 			break;
 		case '?':
 			r_cons_printf (
@@ -2027,7 +2027,7 @@ static int cmd_anal(void *data, const char *input) {
 			" ab*             ; Output radare commands\n");
 			break;
 		default:
-			r_core_anal_bb (core, core->offset,
+			r_core_anal_bb (core, core->anal->bbs, core->offset,
 					r_config_get_i (core->config, "anal.depth"), R_TRUE);
 		}
 		break;

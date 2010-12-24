@@ -235,6 +235,7 @@ typedef struct r_anal_fcn_t {
 	int nargs;
 	ut8 *fingerprint;
 	RAnalDiff *diff;
+	RList *bbs;
 	RList *vars;
 	RList *refs;
 	RList *xrefs;

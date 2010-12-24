@@ -15,6 +15,7 @@ R_API RAnalFcn *r_anal_fcn_new() {
 		fcn->vars = r_anal_var_list_new ();
 		fcn->refs = r_anal_ref_list_new ();
 		fcn->xrefs = r_anal_ref_list_new ();
+		fcn->bbs = r_anal_bb_list_new ();
 		fcn->fingerprint = NULL;
 		fcn->diff = r_anal_diff_new ();
 	}
@@ -38,6 +39,8 @@ R_API void r_anal_fcn_free(void *_fcn) {
 			r_list_free (fcn->xrefs);
 		if (fcn->vars)
 			r_list_free (fcn->vars);
+		if (fcn->bbs)
+			r_list_free (fcn->bbs);
 		if (fcn->fingerprint)
 			free (fcn->fingerprint);
 		if (fcn->diff)

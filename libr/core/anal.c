@@ -159,7 +159,7 @@ static int fcn_cc(RCore *core, RList *pbb, ut64 addr) {
 	return ret;
 }
 
-R_API int r_core_anal_bb(RCore *core, ut64 at, int depth, int head) {
+R_API int r_core_anal_bb(RCore *core, RList *bbs, ut64 at, int depth, int head) {
 	struct r_anal_bb_t *bb, *bbi;
 	RListIter *iter;
 	ut64 jump, fail;
@@ -171,8 +171,8 @@ R_API int r_core_anal_bb(RCore *core, ut64 at, int depth, int head) {
 		return R_FALSE;
 	if (!(bb = r_anal_bb_new()))
 		return R_FALSE;
-	if (split) ret = r_anal_bb_split (core->anal, bb, core->anal->bbs, at);
-	else r_list_foreach (core->anal->bbs, iter, bbi)
+	if (split) ret = r_anal_bb_split (core->anal, bb, bbs, at);
+	else r_list_foreach (bbs, iter, bbi)
 		if (at == bbi->addr)
 			ret = R_ANAL_RET_DUP;
 	if (ret == R_ANAL_RET_DUP) { /* Dupped bb */
@@ -190,15 +190,15 @@ R_API int r_core_anal_bb(RCore *core, ut64 at, int depth, int head) {
 				return R_FALSE;
 			} else if (bblen == R_ANAL_RET_END) { /* bb analysis complete */
 				if (split)
-					ret = r_anal_bb_overlap (core->anal, bb, core->anal->bbs);
+					ret = r_anal_bb_overlap (core->anal, bb, bbs);
 				if (ret == R_ANAL_RET_NEW) {
-					r_list_append (core->anal->bbs, bb);
+					r_list_append (bbs, bb);
 					fail = bb->fail;
 					jump = bb->jump;
 					if (fail != -1)
-						r_core_anal_bb (core, fail, depth-1, R_FALSE);
+						r_core_anal_bb (core, bbs, fail, depth-1, R_FALSE);
 					if (jump != -1)
-						r_core_anal_bb (core, jump, depth-1, R_FALSE);
+						r_core_anal_bb (core, bbs, jump, depth-1, R_FALSE);
 				}
 			}
 		} while (bblen != R_ANAL_RET_END);
@@ -316,6 +316,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		eprintf ("Error: malloc (buf)\n");
 		return R_FALSE;
 	}
+
 	do {
 		if ((buflen = r_io_read_at (core->io, at+fcnlen, buf, core->blocksize)) != core->blocksize)
 			return R_FALSE;
@@ -334,6 +335,8 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				r_flag_space_set (core->flags, "functions");
 				r_flag_set (core->flags, fcn->name, at, fcn->size, 0);
 			}
+			/* TODO: Dupped analysis, needs more optimization */
+			r_core_anal_bb (core, fcn->bbs, fcn->addr, depth, R_TRUE);
 			/* New function: Add initial xref */
 			if (from != -1) {
 				if (!(ref = r_anal_ref_new ())) {
@@ -643,7 +646,7 @@ R_API int r_core_anal_all(RCore *core) {
 	/* Analyze Basic blocks */
 	r_list_foreach (core->anal->fcns, iter, fcn)
 		if (fcn->type == R_ANAL_FCN_TYPE_FCN)
-			r_core_anal_bb (core, fcn->addr, depth, R_TRUE);
+			r_core_anal_bb (core, core->anal->bbs, fcn->addr, depth, R_TRUE);
 
 	return R_TRUE;
 }
