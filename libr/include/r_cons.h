@@ -146,7 +146,7 @@ enum {
 
 R_API RCons *r_cons_new ();
 R_API RCons *r_cons_singleton ();
-R_API RCons *r_cons_free (RCons *foo);
+R_API RCons *r_cons_free ();
 
 R_API void r_cons_break(void (*cb)(void *u), void *user);
 R_API void r_cons_break_end();

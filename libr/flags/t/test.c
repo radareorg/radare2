@@ -36,6 +36,7 @@ int main()
 	r_flag_list (flags, 1);
 	r_cons_flush ();
 	r_flag_free (flags);
+	r_cons_free ();
 
 	return 0;
 }
