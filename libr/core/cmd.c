@@ -46,7 +46,7 @@ static void printoffset(ut64 off, int show_color) {
 
 /* TODO: move to print/disasm.c */
 static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
-	RAnalFcn *fcn, *fcni = NULL;
+	RAnalFcn *fcn, *f = NULL;
 	int ret, idx, i, j, k, lines, ostackptr, stackptr = 0;
 	int counter = 0;
 	int middle = 0;
@@ -159,7 +159,6 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			RList *xrefs;
 			RAnalRef *refi;
 			RListIter *iter;
-			RAnalFcn *f;
 			if ((xrefs = r_anal_xref_get (core->anal, at))) {
 				r_list_foreach (xrefs, iter, refi) {
 					f = r_anal_fcn_find (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
@@ -183,49 +182,25 @@ r_cons_printf ("%s                             ", pre);
 					core->reflines, at, analop.length);
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		if (show_functions) {
-			RAnalFcn *f = r_anal_fcn_find (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-			if (f && f->addr == at) {
-				char *sign = r_anal_fcn_to_string (core->anal, f);
-				r_cons_printf ("/* %s: %s (%d) */\n", 
-						f->type == R_ANAL_FCN_TYPE_FCN?"function":"loc", f->name, f->size);
-				if (sign) r_cons_printf ("// %s\n", sign);
-				free (sign);
-				stackptr = 0;
-				fcni = f;
-			}
-#if 0
-			int found = 0;
-			RListIter *iter;
-			RAnalFcn *f = fcni;
-			r_list_foreach (core->anal->fcns, iter, fcni) {
-				if (at == fcni->addr) {
-					r_cons_printf ("/* function: %s (%d) */\n",
-						fcni->name, fcni->size);
+			f = r_anal_fcn_find (core->anal, at, R_ANAL_FCN_TYPE_NULL);
+			if (f) {
+				pre = "";
+				if (f->addr == at) {
+					char *sign = r_anal_fcn_to_string (core->anal, f);
+					r_cons_printf ("/* %s: %s (%d) */\n",
+							f->type == R_ANAL_FCN_TYPE_FCN?"function":"loc", f->name, f->size);
+					if (sign) r_cons_printf ("// %s\n", sign);
+					free (sign);
 					stackptr = 0;
-					found = 1;
-					break;
+				} else if (f->addr+f->size-1 == at) {
+					r_cons_printf ("\\*");
+				} else if (at > f->addr && at < f->addr+f->size-1) {
+					r_cons_printf (": ");
+					pre = ": ";
+				} else {
+					f = NULL; // Rly necesary??
 				}
-			}
-			if (!found)
-				fcni = f;
-#endif
-		}
-		pre = "";
-		if (fcni) {
-#if 0
-			if (f && f->addr == at) {
-				r_cons_printf ("/* function: %s (%d) */\n",
-					fcni->name, fcni->size);
-				stackptr = 0;
-				fcni = f;
-#endif
-			if (at >= fcni->addr+fcni->size-1) {
-				r_cons_printf ("\\*");
-				fcni = NULL;
-			} else
-			if (at >= fcni->addr) {
-				r_cons_printf (": ");
-				pre = ": ";
+
 			}
 		}
 		flag = r_flag_get_i (core->flags, at);
@@ -259,7 +234,7 @@ r_cons_printf ("%s                             ", pre);
 				stackptr = 0;
 		}
 		// TODO: implement ranged meta find (if not at the begging of function..
- 		mi = r_meta_find (core->meta, at, R_META_ANY, R_META_WHERE_HERE);
+		mi = r_meta_find (core->meta, at, R_META_ANY, R_META_WHERE_HERE);
 		if (mi)
 		switch (mi->type) {
 		case R_META_STRING:
@@ -473,7 +448,6 @@ r_cons_printf ("%s                             ", pre);
 						char *str = r_str_unscape (mi2->str);
 						r_cons_printf (" (at=0x%08"PFMT64x") (len=%"PFMT64d") \"%s\" ", analop.ref, mi2->size, str);
 						free (str);
-						
 					} else r_cons_printf ("; => 0x%08x ", word);
 				} else {
 					if (mi2->type == R_META_STRING) {
@@ -481,7 +455,7 @@ r_cons_printf ("%s                             ", pre);
 						r_cons_printf (" (at=0x%08x) (len=%"PFMT64d") \"%s\" ", word, mi2->size, str);
 						free (str);
 					} else r_cons_printf ("unknown type '%c'\n", mi2->type);
-				} 
+				}
 			} else r_cons_printf ("; err [0x%"PFMT64x"]", analop.ref);
 		}
 		r_cons_newline ();
@@ -632,7 +606,7 @@ static int cmd_zign(void *data, const char *input) {
 					for (idx=0; idx<len; idx++) {
 						si = r_sign_check (core->sign, buf+idx, len-idx);
 						if (si) {
-							if (si->type == 'f') 
+							if (si->type == 'f')
 								r_cons_printf ("f sign.fun_%s_%d @ 0x%08"PFMT64x"\n",
 									si->name, idx, ini+idx); //core->offset);
 							else r_cons_printf ("f sign.%s @ 0x%08"PFMT64x"\n",
@@ -1084,7 +1058,7 @@ static int cmd_section(void *data, const char *input) {
 			ut64 offset = 0LL;
 			ut64 size = 0LL;
 			ut64 vsize = 0LL;
-			
+
 			i = r_str_word_set0 (ptr);
 			switch (i) {
 			case 6: // get rwx
@@ -1121,7 +1095,7 @@ static int cmd_section(void *data, const char *input) {
 
 static int cmd_seek(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	char *cmd, *p; 
+	char *cmd, *p;
 	ut64 off;
 
 	if (input[0]=='r') {
@@ -1133,7 +1107,7 @@ static int cmd_seek(void *data, const char *input) {
 	} else
 	if (input[0]) { // && input[1]) {
 		st32 delta = (input[1]==' ')?2:1;
-		off = r_num_math (core->num, input + delta); 
+		off = r_num_math (core->num, input + delta);
 		if (input[0]==' ' && (input[1]=='+'||input[1]=='-'))
 			input = input+1;
 		switch (input[0]) {
@@ -1838,7 +1812,7 @@ static int var_cmd(RCore *core, const char *str) {
 		case '\0': return r_anal_var_list (core->anal, fcn, 0, 0);
 		case '?': var_help(); return 0;
 		case '.':  return r_anal_var_list (core->anal, fcn, core->offset, 0);
-		case 's':  
+		case 's':
 		case 'g':
 			if (str[2]!='\0') {
 				RAnalVar *var = r_anal_var_get (core->anal, fcn, atoi (str+2), R_ANAL_VAR_TYPE_LOCAL);
@@ -1930,14 +1904,14 @@ static int cmd_anal(void *data, const char *input) {
 			len = l;
 		}
 	}
-	
+
 	switch (input[0]) {
 	case 'o':
 		{
-			int ret, idx; 
+			int ret, idx;
 			ut8 *buf = core->block;
 			struct r_anal_aop_t aop;
-			
+
 			for (idx=ret=0; idx<len; idx+=ret) {
 				ret = r_anal_aop (core->anal, &aop,
 					core->offset+idx, buf + idx, (len-idx));
@@ -1973,7 +1947,7 @@ static int cmd_anal(void *data, const char *input) {
 			ut64 fail = -1LL;
 			int type = R_ANAL_BB_TYPE_NULL;
 			RAnalDiff *diff = NULL;
-			
+
 			switch(r_str_word_set0 (ptr)) {
 			case 6:
 				ptr2 = r_str_word_get0 (ptr, 5);

@@ -95,7 +95,7 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 	sz = ftell (fd);
 	fseek (fd, 0, SEEK_SET);
 	ret = (ut8*)malloc ((sz>>1)+1);
-	if (!ret) 
+	if (!ret)
 		return NULL;
 	for (;;) {
 		if (fscanf (fd, " #%*[^\n]") == 1)
@@ -103,7 +103,7 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 		if (fscanf (fd, "%02x", &c) == 1) {
 			ret[bytes++] = c;
 			continue;
-		} 
+		}
 		if (feof (fd))
 			break;
 		free (ret);
@@ -203,8 +203,11 @@ R_API boolt r_file_dump(const char *file, const ut8 *buf, int len) {
 }
 
 R_API boolt r_file_rm(const char *file) {
-	// TODO: w32 unlink?
+#if __WINDOWS__
+	return (DeleteFile (file)==0)? R_TRUE:R_FALSE;
+#else
 	return (unlink (file)==0)? R_TRUE:R_FALSE;
+#endif
 }
 
 R_API RMmap *r_file_mmap (const char *file) {
@@ -219,9 +222,22 @@ R_API RMmap *r_file_mmap (const char *file) {
 		m->fd = fd;
 		m->len = lseek (fd, (off_t)0, SEEK_END);
 #if __UNIX__
-  		m->buf = mmap (NULL, m->len, PROT_READ, MAP_SHARED, fd, (off_t)0);
+		m->buf = mmap (NULL, m->len, PROT_READ, MAP_SHARED, fd, (off_t)0);
+		if (!m->buff) {
+			free (m);
+			m = NULL;
+		}
+#elif __WINDOWS__
+		HANDLE h;
+		h = CreateFileMapping (fd, NTJLL, PAGE_READONLY, 0, 0, NULL);
+		if (h != INVALID_HANDLE_AVLUE) {
+			m->buff = MapViewOfFile (h, FILE_MAP_READ, 0, 0, 0);
+		} else {
+			free (m);
+			m = NULL;
+		}
 #else
-  		m->buf = malloc (m->len);
+		m->buf = malloc (m->len);
 		if (m->buf) {
 			lseek (fd, (off_t)0, SEEK_SET);
 			read (fd, m->buf, m->len);
@@ -237,7 +253,8 @@ R_API RMmap *r_file_mmap (const char *file) {
 R_API void r_file_mmap_free (RMmap *m) {
 #if __UNIX__
 	munmap (m->buf, m->len);
-// TODO: Implement Mumap in w32
+#elif __WINDOWS__
+	UnmapViewOfFile (m->buf);
 #endif
 	close (m->fd);
 	free (m);
