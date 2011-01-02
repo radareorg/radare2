@@ -223,7 +223,7 @@ R_API RMmap *r_file_mmap (const char *file) {
 		m->len = lseek (fd, (off_t)0, SEEK_END);
 #if __UNIX__
 		m->buf = mmap (NULL, m->len, PROT_READ, MAP_SHARED, fd, (off_t)0);
-		if (!m->buff) {
+		if (!m->buf) {
 			free (m);
 			m = NULL;
 		}
@@ -231,7 +231,7 @@ R_API RMmap *r_file_mmap (const char *file) {
 		HANDLE h;
 		h = CreateFileMapping (fd, NTJLL, PAGE_READONLY, 0, 0, NULL);
 		if (h != INVALID_HANDLE_AVLUE) {
-			m->buff = MapViewOfFile (h, FILE_MAP_READ, 0, 0, 0);
+			m->buf = MapViewOfFile (h, FILE_MAP_READ, 0, 0, 0);
 		} else {
 			free (m);
 			m = NULL;
