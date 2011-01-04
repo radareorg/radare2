@@ -62,10 +62,12 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 #include <mach/ppc/thread_status.h>
 #define R_DEBUG_REG_T ppc_thread_state_t
 #define R_DEBUG_STATE_T PPC_THREAD_STATE
+#define R_DEBUG_STATE_SZ PPC_THREAD_STATE_COUNT
 #elif __arm
 #include <mach/arm/thread_status.h>
 #define R_DEBUG_REG_T arm_thread_state_t
 #define R_DEBUG_STATE_T ARM_THREAD_STATE
+#define R_DEBUG_STATE_SZ ARM_THREAD_STATE_COUNT
 #else
 #include <mach/i386/thread_status.h>
 #include <sys/ucontext.h>
