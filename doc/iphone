@@ -10,6 +10,7 @@ Setup SDK
   dpkg -i libgcc_4.2-20080410-1-6_iphoneos-arm.deb
   apt-get install com.bigboss.20toolchain
   cp libSystem.dylib /usr/lib
+  cd /usr/lib ; ln -sf  libSystem.dylib libm.dylib
   apt-get install make vim gawk
 
 4) /var/include/sys/stat.h is broken.
