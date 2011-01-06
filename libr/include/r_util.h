@@ -82,6 +82,11 @@ typedef struct r_mmap_t {
 	ut8 *buf;
 	int len;
 	int fd;
+	int rw;
+#if __WINDOWS__
+	HANDLE fh;
+	HANDLE fm;
+#endif
 } RMmap;
 
 /* bitsize */
@@ -94,7 +99,7 @@ enum {
 
 #ifdef R_API
 
-R_API RMmap *r_file_mmap (const char *file);
+R_API RMmap *r_file_mmap (const char *file, boolt rw);
 R_API void r_file_mmap_free (RMmap *m);
 
 /* arch */

@@ -98,7 +98,12 @@ R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode) {
 	}
 	if (fd == -2) {
 #if __WINDOWS__
-		fd = open (file, 0);
+		if (flags & R_IO_WRITE) {
+			fd = open (file, 1);
+			if (fd == -1)
+				creat (file, 0);
+			fd = open (file, 1);
+		} else fd = open (file, 0);
 #else
 		if (flags & R_IO_WRITE)
 			fd = open (file, O_RDWR, mode);

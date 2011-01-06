@@ -210,29 +210,48 @@ R_API boolt r_file_rm(const char *file) {
 #endif
 }
 
-R_API RMmap *r_file_mmap (const char *file) {
+// TODO: add rwx support?
+R_API RMmap *r_file_mmap (const char *file, boolt rw) {
 	RMmap *m = NULL;
 #if __WINDOWS__
 	int fd = open (file, 0);
 #else
-	int fd = open (file, O_RDONLY);
+	int fd = open (file, rw?O_RDWR:O_RDONLY);
 #endif
 	if (fd != -1) {
 		m = R_NEW (RMmap);
+		if (!m) {
+			close (fd);
+			return NULL;
+		}
+		m->rw = rw;
 		m->fd = fd;
 		m->len = lseek (fd, (off_t)0, SEEK_END);
 #if __UNIX__
-		m->buf = mmap (NULL, m->len, PROT_READ, MAP_SHARED, fd, (off_t)0);
+		m->buf = mmap (NULL, m->len, rw?PROT_READ|PROT_WRITE:PROT_READ,
+				MAP_SHARED, fd, (off_t)0);
 		if (!m->buf) {
 			free (m);
 			m = NULL;
 		}
 #elif __WINDOWS__
-		HANDLE h;
-		h = CreateFileMapping (fd, NTJLL, PAGE_READONLY, 0, 0, NULL);
-		if (h != INVALID_HANDLE_AVLUE) {
-			m->buf = MapViewOfFile (h, FILE_MAP_READ, 0, 0, 0);
+		close (fd);
+		m->fh = CreateFile (file, rw?GENERIC_WRITE:GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
+		if (m->fh == NULL) {
+			free (m);
+			return NULL;
+		}
+		m->fm = CreateFileMapping (m->fh, NULL,
+			rw?PAGE_READWRITE:PAGE_READONLY, 0, 0, NULL);
+		if (m->fm == NULL) {
+			CloseHandle (m->fh);
+			free (m);
+			return NULL;
+		}
+		if (m->fm != INVALID_HANDLE_VALUE) {
+			m->buf = MapViewOfFile (m->fm, rw?FILE_MAP_READ|FILE_MAP_WRITE:FILE_MAP_READ, 0, 0, 0);
 		} else {
+			CloseHandle (m->fh);
 			free (m);
 			m = NULL;
 		}
@@ -254,6 +273,8 @@ R_API void r_file_mmap_free (RMmap *m) {
 #if __UNIX__
 	munmap (m->buf, m->len);
 #elif __WINDOWS__
+	CloseHandle (m->fm);
+	CloseHandle (m->fh);
 	UnmapViewOfFile (m->buf);
 #endif
 	close (m->fd);
