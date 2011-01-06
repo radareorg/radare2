@@ -17,6 +17,7 @@ namespace Radare {
 	[Compact]
 	[CCode (cname="struct r_flag_t", free_function="r_flag_free", cprefix="r_flag_")]
 	public class RFlag {
+		public int space_idx;
 		public RFlag();
 		public RList<RFlagItem> flags;
 		public void list(bool rad);
@@ -31,6 +32,7 @@ namespace Radare {
 
 		public void space_list();
 		public unowned string? space_get(int idx);
+		public int space_get_i(string fsname);
 		public void space_set(string name);
 	}
 }
