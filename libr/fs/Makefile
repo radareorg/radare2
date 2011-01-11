@@ -6,9 +6,9 @@ include ../config.mk
 
 foo: pre ${LIBSO} ${LIBAR} plugins
 
-include ${STATIC_ASM_PLUGINS}
+include ${STATIC_FS_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst fs_,p/fs_,$(STATIC_OBJ)))
-OBJ=${STATIC_OBJS} fs.o code.o
+OBJ=${STATIC_OBJS} fs.o file.o
 
 pre:
 	@if [ ! -e libr_fs.${EXT_SO} ]; then if [ ! -e libr_fs.${EXT_AR} ]; then rm -f ${STATIC_OBJS} ; fi ; fi

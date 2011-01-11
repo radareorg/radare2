@@ -1,0 +1,3 @@
+* Reduce the number of needed include files
+* Add a sync method
+* Use libtrum (from netbsd?)

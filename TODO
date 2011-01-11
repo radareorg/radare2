@@ -5,6 +5,10 @@
 
 <{include libr/TODO}>
 
+* Add support for aout binaries?
+* eprintf should be modified to log into a file
+  - eprintf_open() -- start log to file
+  - eprintf_close() -- stop log to file
 /a ??? deprecated analyze code? srsly?
 * Search for wide strings /Z or so?
 

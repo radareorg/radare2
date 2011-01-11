@@ -3,6 +3,7 @@
 
 #include "r_types.h"
 #include "r_io.h"
+#include "r_fs.h"
 #include "r_lib.h"
 #include "r_lang.h"
 #include "r_asm.h"
@@ -96,6 +97,7 @@ typedef struct r_core_t {
 	RSearch *search;
 	RSign *sign;
 	RVm *vm;
+	RFS *fs;
 	char *cmdqueue;
 	int rtr_n;
 	RCoreRtrHost rtr_host[RTR_MAX_HOSTS];

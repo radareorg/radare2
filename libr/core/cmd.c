@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 */
+/* radare - LGPL - Copyright 2009-2011 */
 /*   nibble<.ds@gmail.com> */
 /*   pancake<nopcode.org> */
 
@@ -886,6 +886,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 }
 
 /* TODO: this should be moved to the core->yank api */
+// TODO: arg must be const !!! use strdup here
 static int cmd_yank_to(RCore *core, char *arg) {
 	ut64 src = core->offset;
 	ut64 len = 0;
@@ -915,10 +916,98 @@ static int cmd_yank_to(RCore *core, char *arg) {
 	buf = (ut8*)malloc (len);
 	r_core_read_at (core, src, buf, len);
 	r_core_write_at (core, pos, buf, len);
-	free(buf);
+	free (buf);
 
 	core->offset = src;
 	r_core_block_read (core, 0);
+	return 0;
+}
+
+static int cmd_mount(void *data, const char *_input) {
+	char *input, *oinput, *ptr;
+	RList *list;
+	RListIter *iter;
+	RFSFile *file;
+	RFSRoot *root;
+	RFSPlugin *plug;
+	RCore *core = (RCore *)data;
+	input = oinput = strdup (_input);
+
+	switch (input[0]) {
+	case ' ':
+		input++;
+		if (input[0]==' ')
+			input++;
+		ptr = strchr (input, ' ');
+		if (ptr) {
+			*ptr = 0;
+			r_fs_mount (core->fs, input, ptr+1);
+		} else eprintf ("Usage: m ext2 /mnt");
+		break;
+	case '-':
+		r_fs_umount (core->fs, input+1);
+		break;
+	case '*':
+		eprintf ("List commands in radare format\n");
+		r_list_foreach (core->fs->roots, iter, root) {
+			r_cons_printf ("m %s 0x%"PFMT64x" %s\n", root->fs->name, root->delta, root->path);
+		}
+		break;
+	case '\0':
+		r_list_foreach (core->fs->roots, iter, root) {
+			r_cons_printf ("%s\t0x%"PFMT64x"\t%s\n", root->fs->name, root->delta, root->path);
+		}
+		break;
+	case 'l': // list of plugins
+		r_list_foreach (core->fs->plugins, iter, plug) {
+			r_cons_printf ("%s\t%s\n", plug->name, plug->desc);
+		}
+		break;
+	case 'd':
+		input++;
+		if (input[0]==' ')
+			input++;
+		list = r_fs_dir (core->fs, input);
+		if (list) {
+			r_list_foreach (list, iter, file) {
+				r_cons_printf ("%c %s\n", file->type, file->name);
+			}
+			r_list_free (list);
+		} else eprintf ("Cannot open '%s' directory\n", input);
+		break;
+	case 'g':
+		input++;
+		if (input[0]==' ')
+			input++;
+		file = r_fs_open (core->fs, input);
+		if (file) {
+			// XXX: dump to file or just pipe?
+			r_fs_read (core->fs, file, 0, file->size);
+			write (1, file->data, file->size);
+			r_fs_close (core->fs, file);
+		} else eprintf ("Cannot open file\n");
+		break;
+	case 'y':
+		eprintf ("TODO\n");
+		break;
+	case '?':
+		r_cons_printf (
+		"Usage: m[-?*dgy] [...]\n"
+		" m        ; list all mountpoints in human readable format\n"
+		" m /mnt   ; list all mountpoints from a given path\n"
+		" m*       ; same as above, but in r2 commands\n"
+		" ml       ; list filesystem plugins\n"
+		" m-/      ; umount given path (/)\n"
+		" m?       ; display this help\n"
+		" my       ; yank contents of file into clipboard\n"
+		" mg /foo  ; get contents of file dumped to disk (XXX?)\n"
+		" md /     ; list directory contents for path\n"
+		" m?       ; show this help\n"
+		"TODO: support multiple mountpoints and RFile IO's (need io+core refactor)\n"
+		);
+		break;
+	}
+	free (oinput);
 	return 0;
 }
 
@@ -4155,6 +4244,7 @@ void r_core_cmd_init(RCore *core) {
 	core->cmd->macro.cmd = r_core_cmd0;
 	r_cmd_set_data (core->cmd, core);
 	r_cmd_add (core->cmd, "x",        "alias for px", &cmd_hexdump);
+	r_cmd_add (core->cmd, "mount",    "mount filesystem", &cmd_mount);
 	r_cmd_add (core->cmd, "analysis", "analysis", &cmd_anal);
 	r_cmd_add (core->cmd, "flag",     "get/set flags", &cmd_flag);
 	r_cmd_add (core->cmd, "debug",    "debugger operations", &cmd_debug);

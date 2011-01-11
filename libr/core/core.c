@@ -203,6 +203,8 @@ R_API int r_core_init(RCore *core) {
 	core->print = r_print_new ();
 	core->print->printf = (void *)r_cons_printf;
 	core->lang = r_lang_new ();
+	core->fs = r_fs_new ();
+	r_io_bind (core->io, &(core->fs->iob));
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);
 	core->anal = r_anal_new ();
