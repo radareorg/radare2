@@ -41,7 +41,7 @@ typedef struct r_fs_root_t {
 typedef struct r_fs_plugin_t {
 	const char *name;
 	const char *desc;
-	RFSFile* (*load)(RFSRoot *root, const char *path);
+	RFSFile* (*slurp)(RFSRoot *root, const char *path);
 	RFSFile* (*open)(RFSRoot *root, const char *path);
 	boolt (*read)(RFSFile *fs, ut64 addr, int len);
 	void (*close)(RFSFile *fs);
@@ -67,7 +67,7 @@ R_API RFSRoot *r_fs_root (RFS *fs, const char *path);
 R_API RFSFile *r_fs_open (RFS* fs, const char *path);
 R_API void r_fs_close (RFS* fs, RFSFile *file);
 R_API int r_fs_read (RFS* fs, RFSFile *file, ut64 addr, int len);
-R_API RFSFile *r_fs_load(RFS* fs, const char *path);
+R_API RFSFile *r_fs_slurp(RFS* fs, const char *path);
 R_API RList *r_fs_dir(RFS* fs, const char *path);
 
 /* file.c */

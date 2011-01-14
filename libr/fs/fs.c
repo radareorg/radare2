@@ -147,7 +147,7 @@ R_API RList *r_fs_dir(RFS* fs, const char *path) {
 	return NULL;
 }
 
-R_API RFSFile *r_fs_load(RFS* fs, const char *path) {
+R_API RFSFile *r_fs_slurp(RFS* fs, const char *path) {
 	RFSFile *file = NULL;
 	RFSRoot *root = r_fs_root (fs, path);
 	if (root && root->p) {
@@ -155,11 +155,11 @@ R_API RFSFile *r_fs_load(RFS* fs, const char *path) {
 			file = root->p->open (root, path);
 			if (file) {
 				root->p->read (file, 0, file->size); //file->data, file->size);
-			} else eprintf ("r_fs_load: cannot open file\n");
+			} else eprintf ("r_fs_slurp: cannot open file\n");
 		} else {
-			if (root->p->load)
-				return root->p->load (root, path);
-			else eprintf ("r_fs_load: null root->p->load\n");
+			if (root->p->slurp)
+				return root->p->slurp (root, path);
+			else eprintf ("r_fs_slurp: null root->p->slurp\n");
 		}
 	}
 	return file;
