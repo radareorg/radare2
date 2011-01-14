@@ -113,7 +113,7 @@ grub_btrfs_uuid (grub_device_t device, char **uuid)
   return grub_errno;
 }
 
-static struct grub_fs grub_btrfs_fs =
+struct grub_fs grub_btrfs_fs =
   {
     .name = "btrfs",
     .dir = grub_btrfs_dir,

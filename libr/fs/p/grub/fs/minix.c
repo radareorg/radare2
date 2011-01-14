@@ -554,7 +554,7 @@ grub_minix_close (grub_file_t file)
 
 
 
-static struct grub_fs grub_minix_fs =
+struct grub_fs grub_minix_fs =
   {
 #ifdef MODE_MINIX2
     .name = "minix2",

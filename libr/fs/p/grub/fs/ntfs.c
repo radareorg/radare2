@@ -1088,7 +1088,7 @@ grub_ntfs_uuid (grub_device_t device, char **uuid)
   return grub_errno;
 }
 
-static struct grub_fs grub_ntfs_fs =
+struct grub_fs grub_ntfs_fs =
   {
     .name = "ntfs",
     .dir = grub_ntfs_dir,

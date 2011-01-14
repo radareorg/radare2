@@ -1157,7 +1157,7 @@ grub_nilfs2_mtime (grub_device_t device, grub_int32_t * tm)
 
 
 
-static struct grub_fs grub_nilfs2_fs = {
+struct grub_fs grub_nilfs2_fs = {
   .name = "nilfs2",
   .dir = grub_nilfs2_dir,
   .open = grub_nilfs2_open,

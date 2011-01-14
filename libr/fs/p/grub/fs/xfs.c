@@ -799,7 +799,7 @@ grub_xfs_uuid (grub_device_t device, char **uuid)
 
 
 
-static struct grub_fs grub_xfs_fs =
+struct grub_fs grub_xfs_fs =
   {
     .name = "xfs",
     .dir = grub_xfs_dir,
@@ -813,14 +813,3 @@ static struct grub_fs grub_xfs_fs =
 #endif
     .next = 0
   };
-
-GRUB_MOD_INIT(xfs)
-{
-  grub_fs_register (&grub_xfs_fs);
-  my_mod = mod;
-}
-
-GRUB_MOD_FINI(xfs)
-{
-  grub_fs_unregister (&grub_xfs_fs);
-}

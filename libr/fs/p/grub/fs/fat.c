@@ -848,7 +848,7 @@ grub_fat_uuid (grub_device_t device, char **uuid)
   return grub_errno;
 }
 
-static struct grub_fs grub_fat_fs =
+struct grub_fs grub_fat_fs =
   {
     .name = "fat",
     .dir = grub_fat_dir,

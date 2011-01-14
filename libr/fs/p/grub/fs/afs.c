@@ -680,7 +680,7 @@ grub_afs_label (grub_device_t device, char **label)
 }
 
 
-static struct grub_fs grub_afs_fs = {
+struct grub_fs grub_afs_fs = {
   .name = GRUB_AFS_FSNAME,
   .dir = grub_afs_dir,
   .open = grub_afs_open,

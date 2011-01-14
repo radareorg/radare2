@@ -571,7 +571,7 @@ grub_sfs_label (grub_device_t device, char **label)
 }
 
 
-static struct grub_fs grub_sfs_fs =
+struct grub_fs grub_sfs_fs =
   {
     .name = "sfs",
     .dir = grub_sfs_dir,

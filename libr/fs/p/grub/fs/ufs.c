@@ -770,7 +770,7 @@ grub_ufs_mtime (grub_device_t device, grub_int32_t *tm)
 
 
 
-static struct grub_fs grub_ufs_fs =
+struct grub_fs grub_ufs_fs =
   {
 #ifdef MODE_UFS2
     .name = "ufs2",

@@ -344,10 +344,11 @@ grub_cpio_close (grub_file_t file)
   return grub_errno;
 }
 
-static struct grub_fs grub_cpio_fs = {
 #ifdef MODE_USTAR
+struct grub_fs grub_tar_fs = {
   .name = "tarfs",
 #else
+struct grub_fs grub_cpio_fs = {
   .name = "cpiofs",
 #endif
   .dir = grub_cpio_dir,
@@ -358,22 +359,3 @@ static struct grub_fs grub_cpio_fs = {
   .reserved_first_sector = 0,
 #endif
 };
-
-#ifdef MODE_USTAR
-GRUB_MOD_INIT (tar)
-#else
-GRUB_MOD_INIT (cpio)
-#endif
-{
-  grub_fs_register (&grub_cpio_fs);
-  my_mod = mod;
-}
-
-#ifdef MODE_USTAR
-GRUB_MOD_FINI (tar)
-#else
-GRUB_MOD_FINI (cpio)
-#endif
-{
-  grub_fs_unregister (&grub_cpio_fs);
-}

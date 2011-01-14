@@ -875,7 +875,7 @@ grub_jfs_label (grub_device_t device, char **label)
 }
 
 
-static struct grub_fs grub_jfs_fs =
+struct grub_fs grub_jfs_fs =
   {
     .name = "jfs",
     .dir = grub_jfs_dir,

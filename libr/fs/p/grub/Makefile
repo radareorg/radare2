@@ -7,7 +7,13 @@ KERNFILES+=kern/env.c kern/disk.c
 KERNFILES+=kern/fs.c kern/misc.c
 KERNFILES+=kern/time.c
 KERNFILES+=kern/list.c kern/partition.c
-KERNFILES+=fs/fshelp.c fs/ext2.c
+KERNFILES+=fs/fshelp.c
+KERNFILES+=fs/reiserfs.c fs/ext2.c
+KERNFILES+=fs/fat.c fs/ntfs.c
+KERNFILES+=fs/hfs.c fs/hfsplus.c
+KERNFILES+=fs/udf.c fs/iso9660.c
+KERNFILES+=fs/cpio.c fs/tar.c
+KERNFILES+=fs/xfs.c fs/jfs.c
 #KERNFILES+=main.c
 KERNFILES+=grubfs.c
 

@@ -527,7 +527,7 @@ grub_affs_label (grub_device_t device, char **label)
 }
 
 
-static struct grub_fs grub_affs_fs =
+struct grub_fs grub_affs_fs =
   {
     .name = "affs",
     .dir = grub_affs_dir,

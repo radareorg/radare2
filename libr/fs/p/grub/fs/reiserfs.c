@@ -1358,7 +1358,7 @@ grub_reiserfs_uuid (grub_device_t device, char **uuid)
   return grub_errno;
 }
 
-static struct grub_fs grub_reiserfs_fs =
+struct grub_fs grub_reiserfs_fs =
   {
     .name = "reiserfs",
     .dir = grub_reiserfs_dir,

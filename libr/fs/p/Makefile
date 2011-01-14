@@ -6,15 +6,12 @@ LDFLAGS+=${LINK}
 
 foo: all
 
-ALL_TARGETS=
-# TODO: rename to enabled plugins
-FSS=ext2.mk
-include $(FSS)
+FILESYSTEMS= ext2.mk fat.mk hfs.mk hfsplus.mk iso9660.mk jfs.mk
+FILESYSTEMS+= ntfs.mk reiserfs.mk  tar.mk  udf.mk  ufs2.mk ufs.mk xfs.mk
 
-all: grublib ${ALL_TARGETS}
-	@true
+include $(FILESYSTEMS)
 
-grublib:
+all:
 	cd grub && ${MAKE} lib
 
 clean:

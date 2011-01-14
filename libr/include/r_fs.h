@@ -62,7 +62,7 @@ R_API void r_fs_free (RFS* fs);
 R_API void r_fs_add (RFS *fs, RFSPlugin *p);
 R_API void r_fs_del (RFS *fs, RFSPlugin *p);
 R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path, ut64 delta);
-R_API int r_fs_umount (RFS* fs, const char *path);
+R_API boolt r_fs_umount (RFS* fs, const char *path);
 R_API RFSRoot *r_fs_root (RFS *fs, const char *path);
 R_API RFSFile *r_fs_open (RFS* fs, const char *path);
 R_API void r_fs_close (RFS* fs, RFSFile *file);
@@ -78,6 +78,24 @@ R_API void r_fs_root_free (RFSRoot *root);
 
 /* plugins */
 extern RFSPlugin r_fs_plugin_ext2;
+extern RFSPlugin r_fs_plugin_fat;
+extern RFSPlugin r_fs_plugin_ntfs;
+extern RFSPlugin r_fs_plugin_hfs;
+extern RFSPlugin r_fs_plugin_hfsplus;
+extern RFSPlugin r_fs_plugin_reiserfs;
+extern RFSPlugin r_fs_plugin_tar;
+extern RFSPlugin r_fs_plugin_iso9660;
+extern RFSPlugin r_fs_plugin_udf;
+extern RFSPlugin r_fs_plugin_ufs;
+extern RFSPlugin r_fs_plugin_ufs2;
+extern RFSPlugin r_fs_plugin_sfs;
+extern RFSPlugin r_fs_plugin_tar;
+extern RFSPlugin r_fs_plugin_btrfs;
+extern RFSPlugin r_fs_plugin_jfs;
+extern RFSPlugin r_fs_plugin_afs;
+extern RFSPlugin r_fs_plugin_affs;
+extern RFSPlugin r_fs_plugin_cpio;
+extern RFSPlugin r_fs_plugin_xfs;
 #endif
 
 #endif

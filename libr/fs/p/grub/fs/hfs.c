@@ -1098,7 +1098,7 @@ grub_hfs_uuid (grub_device_t device, char **uuid)
 
 
 
-static struct grub_fs grub_hfs_fs =
+struct grub_fs grub_hfs_fs =
   {
     .name = "hfs",
     .dir = grub_hfs_dir,

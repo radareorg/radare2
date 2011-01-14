@@ -14,5 +14,21 @@ void grubfs_free (GrubFS *gf);
 void grubfs_bind_io (RIOBind *iob, ut64 _delta);
 
 extern struct grub_fs grub_ext2_fs;
+extern struct grub_fs grub_fat_fs;
+extern struct grub_fs grub_ntfs_fs;
+extern struct grub_fs grub_reiserfs_fs;
+extern struct grub_fs grub_hfs_fs;
+extern struct grub_fs grub_hfsplus_fs;
+extern struct grub_fs grub_ufs_fs;
+extern struct grub_fs grub_ufs2_fs;
+extern struct grub_fs grub_udf_fs;
+extern struct grub_fs grub_iso9660_fs;
+extern struct grub_fs grub_jfs_fs;
+extern struct grub_fs grub_sfs_fs;
+extern struct grub_fs grub_btrfs_fs;
+extern struct grub_fs grub_xfs_fs;
+extern struct grub_fs grub_tar_fs;
+extern struct grub_fs grub_cpio_fs;
+extern struct grub_fs grub_udf_fs;
 
 #endif
