@@ -1,6 +1,7 @@
 #include <grub/file.h>
 #include <grub/disk.h>
 #include <string.h>
+#include <unistd.h>
 #include <stdio.h>
 
 extern struct grub_fs grub_ext2_fs;

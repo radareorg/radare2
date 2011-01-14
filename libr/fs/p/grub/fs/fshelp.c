@@ -23,67 +23,20 @@
 #include <grub/disk.h>
 #include <grub/fshelp.h>
 
+#define free_node(x) {if (x!=rootnode && x!=currroot)grub_free(x);}
 
-/* Lookup the node PATH.  The node ROOTNODE describes the root of the
-   directory tree.  The node found is returned in FOUNDNODE, which is
-   either a ROOTNODE or a new malloc'ed node.  ITERATE_DIR is used to
-   iterate over all directory entries in the current node.
-   READ_SYMLINK is used to read the symlink if a node is a symlink.
-   EXPECTTYPE is the type node that is expected by the called, an
-   error is generated if the node is not of the expected type.  Make
-   sure you use the NESTED_FUNC_ATTR macro for HOOK, this is required
-   because GCC has a nasty bug when using regparm=3.  */
-grub_err_t
-grub_fshelp_find_file (const char *path, grub_fshelp_node_t rootnode,
-		       grub_fshelp_node_t *foundnode,
-		       int (*iterate_dir) (grub_fshelp_node_t dir,
-					   int NESTED_FUNC_ATTR (*hook)
-					   (const char *filename,
-					    enum grub_fshelp_filetype filetype,
-					    grub_fshelp_node_t node)),
-		       char *(*read_symlink) (grub_fshelp_node_t node),
-		       enum grub_fshelp_filetype expecttype)
-{
-  grub_err_t err;
-  enum grub_fshelp_filetype foundtype = GRUB_FSHELP_DIR;
-  int symlinknest = 0;
+static grub_fshelp_node_t currnode;
+static grub_fshelp_node_t oldnode;
+static enum grub_fshelp_filetype foundtype = GRUB_FSHELP_DIR;
+static int symlinknest = 0;
+static grub_fshelp_node_t rootnode;
+static enum grub_fshelp_filetype type = GRUB_FSHELP_DIR;
+static char fpath[4096]; //grub_strlen (currpath) + 1];
+static char *name;
 
-  auto grub_err_t NESTED_FUNC_ATTR find_file (const char *currpath,
-					      grub_fshelp_node_t currroot,
-					      grub_fshelp_node_t *currfound);
-
-  grub_err_t NESTED_FUNC_ATTR find_file (const char *currpath,
-					 grub_fshelp_node_t currroot,
-					 grub_fshelp_node_t *currfound)
-    {
-      char fpath[grub_strlen (currpath) + 1];
-      char *name = fpath;
-      char *next;
-      //  unsigned int pos = 0;
-      enum grub_fshelp_filetype type = GRUB_FSHELP_DIR;
-      grub_fshelp_node_t currnode = currroot;
-      grub_fshelp_node_t oldnode = currroot;
-
-      auto int NESTED_FUNC_ATTR iterate (const char *filename,
-					 enum grub_fshelp_filetype filetype,
-					 grub_fshelp_node_t node);
-
-      auto void free_node (grub_fshelp_node_t node);
-
-      void free_node (grub_fshelp_node_t node)
-	{
-          if (node != rootnode && node != currroot)
-	    grub_free (node);
-	}
-
-      int NESTED_FUNC_ATTR iterate (const char *filename,
-				    enum grub_fshelp_filetype filetype,
-				    grub_fshelp_node_t node)
-	{
-	  if (filetype == GRUB_FSHELP_UNKNOWN ||
-              (grub_strcmp (name, filename) &&
-               (! (filetype & GRUB_FSHELP_CASE_INSENSITIVE) ||
-                grub_strncasecmp (name, filename, GRUB_LONG_MAX))))
+static inline int iterate (const char *filename, enum grub_fshelp_filetype filetype, grub_fshelp_node_t node) {
+	  if (filetype == GRUB_FSHELP_UNKNOWN || (grub_strcmp (name, filename) &&
+               (! (filetype & GRUB_FSHELP_CASE_INSENSITIVE) || grub_strncasecmp (name, filename, GRUB_LONG_MAX))))
 	    {
 	      grub_free (node);
 	      return 0;
@@ -95,7 +48,19 @@ grub_fshelp_find_file (const char *path, grub_fshelp_node_t rootnode,
 	  currnode = node;
 
 	  return 1;
-	}
+}
+
+static char *(*read_symlink) (grub_fshelp_node_t node);
+static int (*iterate_dir) (grub_fshelp_node_t dir, int NESTED_FUNC_ATTR (*hook)
+	   (const char *filename, enum grub_fshelp_filetype filetype, grub_fshelp_node_t node));
+
+static grub_err_t find_file (const char *currpath, grub_fshelp_node_t currroot, grub_fshelp_node_t *currfound) {
+	name = fpath;
+      char *next;
+      //  unsigned int pos = 0;
+type = GRUB_FSHELP_DIR;
+      currnode = currroot;
+      oldnode = currroot;
 
       grub_strncpy (fpath, currpath, grub_strlen (currpath) + 1);
 
@@ -115,8 +80,7 @@ grub_fshelp_find_file (const char *path, grub_fshelp_node_t rootnode,
 
 	  /* Extract the actual part from the pathname.  */
 	  next = grub_strchr (name, '/');
-	  if (next)
-	    {
+	  if (next) {
 	      /* Remove all leading slashes.  */
 	      while (*next == '/')
 		*(next++) = '\0';
@@ -124,8 +88,7 @@ grub_fshelp_find_file (const char *path, grub_fshelp_node_t rootnode,
 
 	  /* At this point it is expected that the current node is a
 	     directory, check if this is true.  */
-	  if (type != GRUB_FSHELP_DIR)
-	    {
+	  if (type != GRUB_FSHELP_DIR) {
 	      free_node (currnode);
 	      return grub_error (GRUB_ERR_BAD_FILE_TYPE, "not a directory");
 	    }
@@ -197,6 +160,34 @@ grub_fshelp_find_file (const char *path, grub_fshelp_node_t rootnode,
 
       return grub_error (GRUB_ERR_FILE_NOT_FOUND, "file not found");
     }
+
+/* Lookup the node PATH.  The node ROOTNODE describes the root of the
+   directory tree.  The node found is returned in FOUNDNODE, which is
+   either a ROOTNODE or a new malloc'ed node.  ITERATE_DIR is used to
+   iterate over all directory entries in the current node.
+   READ_SYMLINK is used to read the symlink if a node is a symlink.
+   EXPECTTYPE is the type node that is expected by the called, an
+   error is generated if the node is not of the expected type.  Make
+   sure you use the NESTED_FUNC_ATTR macro for HOOK, this is required
+   because GCC has a nasty bug when using regparm=3.  */
+grub_err_t
+grub_fshelp_find_file (const char *path, grub_fshelp_node_t _rootnode,
+		       grub_fshelp_node_t *foundnode,
+		       int (*_iterate_dir) (grub_fshelp_node_t dir,
+					   int NESTED_FUNC_ATTR (*hook)
+					   (const char *filename,
+					    enum grub_fshelp_filetype filetype,
+					    grub_fshelp_node_t node)),
+		       char *(*_read_symlink) (grub_fshelp_node_t node),
+		       enum grub_fshelp_filetype expecttype)
+{
+  grub_err_t err;
+  symlinknest = 0;
+rootnode = _rootnode;
+iterate_dir = _iterate_dir;
+       read_symlink = _read_symlink;
+
+foundtype = GRUB_FSHELP_DIR;
 
   if (!path || path[0] != '/')
     {
@@ -293,23 +284,20 @@ grub_fshelp_read_file (grub_disk_t disk, grub_fshelp_node_t node,
   return len;
 }
 
-unsigned int
-grub_fshelp_log2blksize (unsigned int blksize, unsigned int *pow)
-{
-  int mod;
+unsigned int grub_fshelp_log2blksize (unsigned int blksize, unsigned int *pow) {
+	int mod;
 
-  *pow = 0;
-  while (blksize > 1)
-    {
-      mod = blksize - ((blksize >> 1) << 1);
-      blksize >>= 1;
+	*pow = 0;
+	while (blksize > 1) {
+		mod = blksize - ((blksize >> 1) << 1);
+		blksize >>= 1;
 
-      /* Check if it really is a power of two.  */
-      if (mod)
-	return grub_error (GRUB_ERR_BAD_NUMBER,
-			   "the blocksize is not a power of two");
-      (*pow)++;
-    }
+		/* Check if it really is a power of two.  */
+		if (mod)
+			return grub_error (GRUB_ERR_BAD_NUMBER,
+					"the blocksize is not a power of two");
+		(*pow)++;
+	}
 
-  return GRUB_ERR_NONE;
+	return GRUB_ERR_NONE;
 }

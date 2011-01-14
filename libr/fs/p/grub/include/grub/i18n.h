@@ -22,19 +22,7 @@
 #include <config.h>
 #include <grub/symbol.h>
 
-/* NLS can be disabled through the configure --disable-nls option.  */
-#if (defined(ENABLE_NLS) && ENABLE_NLS) || !defined (GRUB_UTIL)
-
 extern const char *(*EXPORT_VAR(grub_gettext)) (const char *s);
-
-# ifdef GRUB_UTIL
-
-#  include <locale.h>
-#  include <libintl.h>
-
-# endif /* GRUB_UTIL */
-
-#else /* ! (defined(ENABLE_NLS) && ENABLE_NLS) */
 
 /* Disabled NLS.
    The casts to 'const char *' serve the purpose of producing warnings
@@ -42,27 +30,8 @@ extern const char *(*EXPORT_VAR(grub_gettext)) (const char *s);
    On pre-ANSI systems without 'const', the config.h file is supposed to
    contain "#define const".  */
 static inline const char * __attribute__ ((always_inline))
-gettext (const char *str)
-{
+gettext (const char *str) {
   return str;
 }
 
-#endif /* (defined(ENABLE_NLS) && ENABLE_NLS) */
-
-#ifdef GRUB_UTIL
-static inline const char * __attribute__ ((always_inline))
-_ (const char *str)
-{
-  return gettext(str);
-}
-#else
-static inline const char * __attribute__ ((always_inline))
-_ (const char *str)
-{
-  return grub_gettext(str);
-}
-#endif /* GRUB_UTIL */
-
-#define N_(str) str
-
-#endif /* GRUB_I18N_H */
+#endif

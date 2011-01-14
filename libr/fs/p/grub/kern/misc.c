@@ -21,103 +21,66 @@
 #include <grub/err.h>
 #include <grub/mm.h>
 #include <stdarg.h>
+#include <string.h>
 #include <grub/term.h>
 #include <grub/env.h>
 #include <grub/i18n.h>
 
-static int
-grub_vsnprintf_real (char *str, grub_size_t n, const char *fmt, va_list args);
-
-static int
-grub_iswordseparator (int c)
-{
-  return (grub_isspace (c) || c == ',' || c == ';' || c == '|' || c == '&');
+static int grub_iswordseparator (int c) {
+	return (grub_isspace (c) || c == ',' || c == ';' || c == '|' || c == '&');
 }
 
-/* grub_gettext_dummy is not translating anything.  */
-static const char *
-grub_gettext_dummy (const char *s)
-{
-  return s;
+#define grub_gettext(x) (x)
+
+void * grub_memmove (void *dest, const void *src, grub_size_t n) {
+	char *d = (char *) dest;
+	const char *s = (const char *) src;
+
+	if (d < s) {
+		while (n--)
+			*d++ = *s++;
+	} else {
+		d += n;
+		s += n;
+		while (n--)
+			*--d = *--s;
+	}
+	return dest;
 }
 
-const char* (*grub_gettext) (const char *s) = grub_gettext_dummy;
-
-void *
-grub_memmove (void *dest, const void *src, grub_size_t n)
-{
-  char *d = (char *) dest;
-  const char *s = (const char *) src;
-
-  if (d < s)
-    while (n--)
-      *d++ = *s++;
-  else
-    {
-      d += n;
-      s += n;
-
-      while (n--)
-	*--d = *--s;
-    }
-
-  return dest;
-}
-
-#ifndef APPLE_CC
-void *memmove (void *dest, const void *src, grub_size_t n)
-  __attribute__ ((alias ("grub_memmove")));
-/* GCC emits references to memcpy() for struct copies etc.  */
-void *memcpy (void *dest, const void *src, grub_size_t n)
-  __attribute__ ((alias ("grub_memmove")));
-#else
-void *memcpy (void *dest, const void *src, grub_size_t n)
-{
-	return grub_memmove (dest, src, n);
-}
-void *memmove (void *dest, const void *src, grub_size_t n)
-{
-	return grub_memmove (dest, src, n);
-}
-#endif
-
-char *
-grub_strcpy (char *dest, const char *src)
-{
+char * grub_strcpy (char *dest, const char *src) {
   char *p = dest;
-
-  while ((*p++ = *src++) != '\0')
-    ;
-
+  while ((*p++ = *src++) != '\0') ;
   return dest;
 }
 
-char *
-grub_strncpy (char *dest, const char *src, int c)
-{
+char * grub_strncpy (char *dest, const char *src, int c) {
   char *p = dest;
-
-  while ((*p++ = *src++) != '\0' && --c)
-    ;
-
+  while ((*p++ = *src++) != '\0' && --c) ;
   return dest;
 }
 
-char *
-grub_stpcpy (char *dest, const char *src)
-{
+char * grub_stpcpy (char *dest, const char *src) {
   char *d = dest;
   const char *s = src;
 
-  do
-    *d++ = *s;
-  while (*s++ != '\0');
+  do *d++ = *s; while (*s++ != '\0');
 
   return d - 1;
 }
 
-int
-grub_printf (const char *fmt, ...)
+int grub_printf (const char *fmt, ...) {
+  va_list ap;
+  int ret;
+
+  va_start (ap, fmt);
+  ret = grub_vprintf (fmt, ap);
+  va_end (ap);
+
+  return ret;
+}
+
+int grub_printf_ (const char *fmt, ...)
 {
   va_list ap;
   int ret;
@@ -129,44 +92,9 @@ grub_printf (const char *fmt, ...)
   return ret;
 }
 
-int
-grub_printf_ (const char *fmt, ...)
-{
-  va_list ap;
-  int ret;
-
-  va_start (ap, fmt);
-  ret = grub_vprintf (_(fmt), ap);
-  va_end (ap);
-
-  return ret;
+int grub_puts_ (const char *s) {
+  return grub_puts (s);
 }
-
-int
-grub_puts_ (const char *s)
-{
-  return grub_puts (_(s));
-}
-
-#if defined (APPLE_CC) && ! defined (GRUB_UTIL)
-int
-grub_err_printf (const char *fmt, ...)
-{
-	va_list ap;
-	int ret;
-
-	va_start (ap, fmt);
-	ret = grub_vprintf (fmt, ap);
-	va_end (ap);
-
-	return ret;
-}
-#endif
-
-#if ! defined (APPLE_CC) && ! defined (GRUB_UTIL)
-int grub_err_printf (const char *fmt, ...)
-__attribute__ ((alias("grub_printf")));
-#endif
 
 void
 grub_real_dprintf (const char *file, const int line, const char *condition,
@@ -190,8 +118,7 @@ grub_real_dprintf (const char *file, const int line, const char *condition,
 
 #define PREALLOC_SIZE 255
 
-int
-grub_vprintf (const char *fmt, va_list args)
+int grub_vprintf (const char *fmt, va_list args)
 {
   grub_size_t s;
   static char buf[PREALLOC_SIZE + 1];
@@ -223,46 +150,30 @@ grub_vprintf (const char *fmt, va_list args)
   return s;
 }
 
-int
-grub_memcmp (const void *s1, const void *s2, grub_size_t n)
-{
-  const char *t1 = s1;
-  const char *t2 = s2;
+int grub_memcmp (const void *s1, const void *s2, grub_size_t n) {
+	const char *t1 = s1;
+	const char *t2 = s2;
 
-  while (n--)
-    {
-      if (*t1 != *t2)
-	return (int) *t1 - (int) *t2;
+	while (n--) {
+		if (*t1 != *t2)
+			return (int) *t1 - (int) *t2;
+		t1++;
+		t2++;
+	}
 
-      t1++;
-      t2++;
-    }
-
-  return 0;
+	return 0;
 }
-#ifndef APPLE_CC
-int memcmp (const void *s1, const void *s2, grub_size_t n)
-  __attribute__ ((alias ("grub_memcmp")));
-#else
-int memcmp (const void *s1, const void *s2, grub_size_t n)
-{
-  return grub_memcmp (s1, s2, n);
-}
-#endif
 
-int
-grub_strcmp (const char *s1, const char *s2)
-{
-  while (*s1 && *s2)
-    {
-      if (*s1 != *s2)
-	break;
+int grub_strcmp (const char *s1, const char *s2) {
+	while (*s1 && *s2) {
+		if (*s1 != *s2)
+			break;
 
-      s1++;
-      s2++;
-    }
+		s1++;
+		s2++;
+	}
 
-  return (int) *s1 - (int) *s2;
+	return (int) *s1 - (int) *s2;
 }
 
 int
@@ -283,32 +194,23 @@ grub_strncmp (const char *s1, const char *s2, grub_size_t n)
   return (int) *s1 - (int) *s2;
 }
 
-char *
-grub_strchr (const char *s, int c)
-{
-  do
-    {
-      if (*s == c)
-	return (char *) s;
-    }
-  while (*s++);
-
-  return 0;
+char * grub_strchr (const char *s, int c) {
+	do {
+		if (*s == c)
+			return (char *) s;
+	} while (*s++);
+	return 0;
 }
 
-char *
-grub_strrchr (const char *s, int c)
-{
-  char *p = NULL;
+char * grub_strrchr (const char *s, int c) {
+	char *p = NULL;
 
-  do
-    {
-      if (*s == c)
-	p = (char *) s;
-    }
-  while (*s++);
+	do {
+		if (*s == c)
+			p = (char *) s;
+	} while (*s++);
 
-  return p;
+	return p;
 }
 
 /* Copied from gnulib.
@@ -523,6 +425,8 @@ grub_strndup (const char *s, grub_size_t n)
 void *
 grub_memset (void *s, int c, grub_size_t len)
 {
+  return memset(s,c,len);
+#if 0
   void *p = s;
   grub_uint8_t pattern8 = c;
 
@@ -534,7 +438,7 @@ grub_memset (void *s, int c, grub_size_t len)
       for (i = 0; i < sizeof (unsigned long); i++)
 	patternl |= ((unsigned long) pattern8) << (8 * i);
 
-      while (len > 0 && (((grub_addr_t) p) & (sizeof (unsigned long) - 1)))
+      while (len > 0 && (((grub_addr_t) p) & (sizeof (void *) - 1)))
 	{
 	  *(grub_uint8_t *) p = pattern8;
 	  p = (grub_uint8_t *) p + 1;
@@ -556,16 +460,8 @@ grub_memset (void *s, int c, grub_size_t len)
     }
 
   return s;
-}
-#ifndef APPLE_CC
-void *memset (void *s, int c, grub_size_t n)
-  __attribute__ ((alias ("grub_memset")));
-#else
-void *memset (void *s, int c, grub_size_t n)
-{
-  return grub_memset (s, c, n);
-}
 #endif
+}
 
 grub_size_t
 grub_strlen (const char *s)
@@ -679,42 +575,29 @@ grub_lltoa (char *str, int c, unsigned long long n)
   return p;
 }
 
-static int
-grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt, va_list args)
-{
+#if 1
+static grub_size_t count, max_len;
+static char *str;
+
+static void write_char(char ch) {
+	if (count++<max_len) *str++ = ch;
+}
+//#define write_str(s) { while(*s) { write_char (*s); s++; } }
+static int write_str(char *s) {
+	write_char (*s);s++;
+}
+#define write_fill(ch,n) {int i;for(i=0;i<n;i++)write_char(ch); }
+
+int grub_vsnprintf_real (char *_str, grub_size_t _max_len, const char *fmt, va_list args) {
   char c;
-  grub_size_t count = 0;
-  auto void write_char (unsigned char ch);
-  auto void write_str (const char *s);
-  auto void write_fill (const char ch, int n);
+str = _str;
+max_len = _max_len;
+count = 0;
 
-  void write_char (unsigned char ch)
-    {
-      if (count < max_len)
-	*str++ = ch;
-
-      count++;
-    }
-
-  void write_str (const char *s)
-    {
-      while (*s)
-	write_char (*s++);
-    }
-
-  void write_fill (const char ch, int n)
-    {
-      int i;
-      for (i = 0; i < n; i++)
-	write_char (ch);
-    }
-
-  while ((c = *fmt++) != 0)
-    {
-      if (c != '%')
+  while ((c = *fmt++) != 0) {
+      if (c != '%') {
 	write_char (c);
-      else
-	{
+      } else {
 	  char tmp[32];
 	  char *p;
 	  unsigned int format1 = 0;
@@ -737,8 +620,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt, va_list ar
 	  while (*p && grub_isdigit (*p))
 	    p++;
 
-	  if (p > fmt)
-	    {
+	  if (p > fmt) {
 	      char s[p - fmt + 1];
 	      grub_strncpy (s, fmt, p - fmt);
 	      s[p - fmt] = 0;
@@ -748,15 +630,13 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt, va_list ar
 	      fmt = p;
 	    }
 
-	  if (*p && *p == '.')
-	    {
+	  if (*p && *p == '.') {
 	      p++;
 	      fmt++;
 	      while (*p && grub_isdigit (*p))
 		p++;
 
-	      if (p > fmt)
-		{
+	      if (p > fmt) {
 		  char fstr[p - fmt + 1];
 		  grub_strncpy (fstr, fmt, p - fmt);
 		  fstr[p - fmt] = 0;
@@ -777,58 +657,47 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt, va_list ar
 		}
 	    }
 
-	  switch (c)
-	    {
-	    case 'p':
-	      write_str ("0x");
-	      c = 'x';
-	      longlongfmt |= (sizeof (void *) == sizeof (long long));
-	      /* Fall through. */
-	    case 'x':
-	    case 'u':
-	      unsig = 1;
-	      /* Fall through. */
-	    case 'd':
-	      if (longlongfmt)
-		{
-		  long long ll;
+	  switch (c) {
+	  case 'p':
+		  write_str ("0x");
+		  c = 'x';
+		  longlongfmt |= (sizeof (void *) == sizeof (long long));
+		  /* Fall through. */
+	  case 'x':
+	  case 'u':
+		  unsig = 1;
+		  /* Fall through. */
+	  case 'd':
+		  if (longlongfmt) {
+			  long long ll;
 
-		  ll = va_arg (args, long long);
-		  grub_lltoa (tmp, c, ll);
-		}
-	      else if (longfmt && unsig)
-		{
-		  unsigned long l = va_arg (args, unsigned long);
-		  grub_lltoa (tmp, c, l);
-		}
-	      else if (longfmt)
-		{
-		  long l = va_arg (args, long);
-		  grub_lltoa (tmp, c, l);
-		}
-	      else if (unsig)
-		{
-		  unsigned u = va_arg (args, unsigned);
-		  grub_lltoa (tmp, c, u);
-		}
-	      else
-		{
+			  ll = va_arg (args, long long);
+			  grub_lltoa (tmp, c, ll);
+		  } else if (longfmt && unsig) {
+			  unsigned long l = va_arg (args, unsigned long);
+			  grub_lltoa (tmp, c, l);
+		  } else if (longfmt) {
+			  long l = va_arg (args, long);
+			  grub_lltoa (tmp, c, l);
+		  } else if (unsig) {
+			  unsigned u = va_arg (args, unsigned);
+			  grub_lltoa (tmp, c, u);
+		  } else {
+			  n = va_arg (args, int);
+			  grub_lltoa (tmp, c, n);
+		  }
+		  if (! rightfill && grub_strlen (tmp) < format1)
+			  write_fill (zerofill, format1 - grub_strlen (tmp));
+		  write_str (tmp);
+		  if (rightfill && grub_strlen (tmp) < format1)
+			  write_fill (zerofill, format1 - grub_strlen (tmp));
+		  break;
+	  case 'c':
 		  n = va_arg (args, int);
-		  grub_lltoa (tmp, c, n);
-		}
-	      if (! rightfill && grub_strlen (tmp) < format1)
-		write_fill (zerofill, format1 - grub_strlen (tmp));
-	      write_str (tmp);
-	      if (rightfill && grub_strlen (tmp) < format1)
-		write_fill (zerofill, format1 - grub_strlen (tmp));
-	      break;
+		  write_char (n & 0xff);
+		  break;
 
-	    case 'c':
-	      n = va_arg (args, int);
-	      write_char (n & 0xff);
-	      break;
-
-	    case 'C':
+	  case 'C':
 	      {
 		grub_uint32_t code = va_arg (args, grub_uint32_t);
 		int shift;
@@ -912,6 +781,7 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt, va_list ar
 
   return count;
 }
+#endif
 
 int
 grub_vsnprintf (char *str, grub_size_t n, const char *fmt, va_list ap)
@@ -983,29 +853,3 @@ grub_abort (void)
 {
   grub_printf ("\nAborted.");
 }
-
-#if 0
-#if ! defined (APPLE_CC) && !defined (GRUB_UTIL)
-/* GCC emits references to abort().  */
-void abort (void) __attribute__ ((alias ("grub_abort")));
-#endif
-#endif
-
-#if NEED_ENABLE_EXECUTE_STACK && !defined(GRUB_UTIL) && !defined(GRUB_MACHINE_EMU)
-/* Some gcc versions generate a call to this function
-   in trampolines for nested functions.  */
-void __enable_execute_stack (void *addr __attribute__ ((unused)))
-{
-}
-#endif
-
-#if NEED_REGISTER_FRAME_INFO && !defined(GRUB_UTIL)
-void __register_frame_info (void)
-{
-}
-
-void __deregister_frame_info (void)
-{
-}
-#endif
-

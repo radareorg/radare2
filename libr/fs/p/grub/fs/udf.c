@@ -910,29 +910,25 @@ grub_udf_iterate_dir (grub_fshelp_node_t dir,
   return 0;
 }
 
+
+
+static int (*hook) (const char *filename, const struct grub_dirhook_info *info);
+static int iterate (const char *filename, enum grub_fshelp_filetype filetype, grub_fshelp_node_t node) {
+	struct grub_dirhook_info info;
+	grub_memset (&info, 0, sizeof (info));
+	info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
+	grub_free (node);
+	return hook (filename, &info);
+}
+
 static grub_err_t
 grub_udf_dir (grub_device_t device, const char *path,
-	      int (*hook) (const char *filename,
-			   const struct grub_dirhook_info *info))
+      int (*_hook) (const char *filename, const struct grub_dirhook_info *info))
 {
   struct grub_udf_data *data = 0;
   struct grub_fshelp_node rootnode;
   struct grub_fshelp_node *foundnode;
-
-  auto int NESTED_FUNC_ATTR iterate (const char *filename,
-				     enum grub_fshelp_filetype filetype,
-				     grub_fshelp_node_t node);
-
-  int NESTED_FUNC_ATTR iterate (const char *filename,
-				enum grub_fshelp_filetype filetype,
-				grub_fshelp_node_t node)
-  {
-      struct grub_dirhook_info info;
-      grub_memset (&info, 0, sizeof (info));
-      info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
-      grub_free (node);
-      return hook (filename, &info);
-  }
+hook = _hook;
 
   grub_dl_ref (my_mod);
 

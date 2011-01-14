@@ -805,42 +805,22 @@ grub_ext2_open (struct grub_file *file, const char *name)
   return err;
 }
 
-static grub_err_t
-grub_ext2_close (grub_file_t file)
-{
+static grub_err_t grub_ext2_close (grub_file_t file) {
   grub_free (file->data);
-
   grub_dl_unref (my_mod);
-
   return GRUB_ERR_NONE;
 }
 
 /* Read LEN bytes data from FILE into BUF.  */
 static grub_ssize_t
-grub_ext2_read (grub_file_t file, char *buf, grub_size_t len)
-{
+grub_ext2_read (grub_file_t file, char *buf, grub_size_t len) {
   struct grub_ext2_data *data = (struct grub_ext2_data *) file->data;
-
-  return grub_ext2_read_file (&data->diropen, file->read_hook,
-			      file->offset, len, buf);
+  return grub_ext2_read_file (&data->diropen, file->read_hook, file->offset, len, buf);
 }
 
-
-static grub_err_t
-grub_ext2_dir (grub_device_t device, const char *path,
-	       int (*hook) (const char *filename,
-			    const struct grub_dirhook_info *info))
-{
-  struct grub_ext2_data *data = 0;
-  struct grub_fshelp_node *fdiro = 0;
-
-  auto int NESTED_FUNC_ATTR iterate (const char *filename,
-				     enum grub_fshelp_filetype filetype,
-				     grub_fshelp_node_t node);
-
-  int NESTED_FUNC_ATTR iterate (const char *filename,
-				enum grub_fshelp_filetype filetype,
-				grub_fshelp_node_t node)
+static struct grub_ext2_data *data = 0;
+static int (*hook) (const char *filename, const struct grub_dirhook_info *info);
+static int iterate (const char *filename, enum grub_fshelp_filetype filetype, grub_fshelp_node_t node)
     {
       struct grub_dirhook_info info;
       grub_memset (&info, 0, sizeof (info));
@@ -861,6 +841,16 @@ grub_ext2_dir (grub_device_t device, const char *path,
       grub_free (node);
       return hook (filename, &info);
     }
+
+
+static grub_err_t
+grub_ext2_dir (grub_device_t device, const char *path,
+	       int (*_hook) (const char *filename,
+			    const struct grub_dirhook_info *info))
+{
+  data = 0;
+hook = _hook;
+  struct grub_fshelp_node *fdiro = 0;
 
   grub_dl_ref (my_mod);
 

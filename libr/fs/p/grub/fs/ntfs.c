@@ -861,64 +861,47 @@ fail:
   return 0;
 }
 
-static grub_err_t
-grub_ntfs_dir (grub_device_t device, const char *path,
-	       int (*hook) (const char *filename,
-			    const struct grub_dirhook_info *info))
-{
-  struct grub_ntfs_data *data = 0;
-  struct grub_fshelp_node *fdiro = 0;
+static int (*hook) (const char *filename, const struct grub_dirhook_info *info);
 
-  auto int NESTED_FUNC_ATTR iterate (const char *filename,
-				     enum grub_fshelp_filetype filetype,
-				     grub_fshelp_node_t node);
-
-  int NESTED_FUNC_ATTR iterate (const char *filename,
-				enum grub_fshelp_filetype filetype,
-				grub_fshelp_node_t node)
-  {
-      struct grub_dirhook_info info;
-      grub_memset (&info, 0, sizeof (info));
-      info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
-      grub_free (node);
-      return hook (filename, &info);
-  }
-
-  grub_dl_ref (my_mod);
-
-  data = grub_ntfs_mount (device->disk);
-  if (!data)
-    goto fail;
-
-  grub_fshelp_find_file (path, &data->cmft, &fdiro, grub_ntfs_iterate_dir,
-			 0, GRUB_FSHELP_DIR);
-
-  if (grub_errno)
-    goto fail;
-
-  grub_ntfs_iterate_dir (fdiro, iterate);
-
-fail:
-  if ((fdiro) && (fdiro != &data->cmft))
-    {
-      free_file (fdiro);
-      grub_free (fdiro);
-    }
-  if (data)
-    {
-      free_file (&data->mmft);
-      free_file (&data->cmft);
-      grub_free (data);
-    }
-
-  grub_dl_unref (my_mod);
-
-  return grub_errno;
+static int iterate (const char *filename, enum grub_fshelp_filetype filetype, grub_fshelp_node_t node) {
+	struct grub_dirhook_info info;
+	grub_memset (&info, 0, sizeof (info));
+	info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
+	grub_free (node);
+	return hook (filename, &info);
 }
 
-static grub_err_t
-grub_ntfs_open (grub_file_t file, const char *name)
+static grub_err_t grub_ntfs_dir (grub_device_t device, const char *path,
+	       int (*_hook) (const char *filename, const struct grub_dirhook_info *info))
 {
+	struct grub_ntfs_data *data = 0;
+	struct grub_fshelp_node *fdiro = 0;
+
+	hook = _hook;
+	grub_dl_ref (my_mod);
+	data = grub_ntfs_mount (device->disk);
+	if (!data)
+		goto fail;
+	grub_fshelp_find_file (path, &data->cmft, &fdiro, grub_ntfs_iterate_dir,
+			0, GRUB_FSHELP_DIR);
+	if (grub_errno)
+		goto fail;
+	grub_ntfs_iterate_dir (fdiro, iterate);
+fail:
+	if ((fdiro) && (fdiro != &data->cmft)) {
+		free_file (fdiro);
+		grub_free (fdiro);
+	}
+	if (data) {
+		free_file (&data->mmft);
+		free_file (&data->cmft);
+		grub_free (data);
+	}
+	grub_dl_unref (my_mod);
+	return grub_errno;
+}
+
+static grub_err_t grub_ntfs_open (grub_file_t file, const char *name) {
   struct grub_ntfs_data *data = 0;
   struct grub_fshelp_node *mft = 0;
 

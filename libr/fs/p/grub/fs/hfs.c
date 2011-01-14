@@ -20,6 +20,7 @@
 /* HFS is documented at
    http://developer.apple.com/documentation/mac/Files/Files-2.html */
 
+#include <string.h>
 #include <grub/err.h>
 #include <grub/file.h>
 #include <grub/mm.h>
@@ -723,50 +724,37 @@ static int
 grub_hfs_find_node (struct grub_hfs_data *data, char *key,
 		    grub_uint32_t idx, int type, char *datar, int datalen)
 {
-  int found = -1;
-  int isleaf = 0;
-  int done = 0;
+int found = -1;
+int isleaf = 0;
+int done = 0;
 
-  auto int node_found (struct grub_hfs_node *, struct grub_hfs_record *);
+int node_found (struct grub_hfs_node *hnd, struct grub_hfs_record *rec) {
+	int cmp;
+	if (type == 0)
+		cmp = grub_hfs_cmp_catkeys (rec->key, (void *) key);
+	else cmp = grub_hfs_cmp_extkeys (rec->key, (void *) key);
 
-  int node_found (struct grub_hfs_node *hnd, struct grub_hfs_record *rec)
-    {
-      int cmp = 1;
+	/* If the key is smaller or equal to the current node, mark the
+	   entry.  In case of a non-leaf mode it will be used to lookup
+	   the rest of the tree.  */
+	if (cmp <= 0) {
+		grub_uint32_t *node = (grub_uint32_t *) rec->data;
+		found = grub_be_to_cpu32 (*node);
+	} else return 1; /* The key can not be found in the tree. */
 
-      if (type == 0)
-	cmp = grub_hfs_cmp_catkeys (rec->key, (void *) key);
-      else
-	cmp = grub_hfs_cmp_extkeys (rec->key, (void *) key);
-
-      /* If the key is smaller or equal to the current node, mark the
-	 entry.  In case of a non-leaf mode it will be used to lookup
-	 the rest of the tree.  */
-      if (cmp <= 0)
-	{
-	  grub_uint32_t *node = (grub_uint32_t *) rec->data;
-	  found = grub_be_to_cpu32 (*node);
+	/* Check if this node is a leaf node.  */
+	if (hnd->type == GRUB_HFS_NODE_LEAF) {
+		isleaf = 1;
+		/* Found it!!!!  */
+		if (cmp == 0) {
+			done = 1;
+			memmove (datar, rec->data,
+				rec->datalen < datalen ? rec->datalen : datalen);
+			return 1;
+		}
 	}
-      else /* The key can not be found in the tree. */
-	return 1;
-
-      /* Check if this node is a leaf node.  */
-      if (hnd->type == GRUB_HFS_NODE_LEAF)
-	{
-	  isleaf = 1;
-
-	  /* Found it!!!!  */
-	  if (cmp == 0)
-	    {
-              done = 1;
-
-	      grub_memcpy (datar, rec->data,
-			   rec->datalen < datalen ? rec->datalen : datalen);
-	      return 1;
-	    }
-	}
-
       return 0;
-    }
+}
 
   do
     {

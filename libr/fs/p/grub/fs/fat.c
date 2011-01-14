@@ -465,17 +465,18 @@ grub_fat_read_data (grub_disk_t disk, struct grub_fat_data *data,
   return ret;
 }
 
+static int (*hook) (const char *filename, struct grub_fat_dir_entry *dir);
 static grub_err_t
 grub_fat_iterate_dir (grub_disk_t disk, struct grub_fat_data *data,
-		      int (*hook) (const char *filename,
-				   struct grub_fat_dir_entry *dir))
+      int (*_hook) (const char *filename, struct grub_fat_dir_entry *dir))
 {
   struct grub_fat_dir_entry dir;
   char *filename, *filep = 0;
   grub_uint16_t *unibuf;
   int slot = -1, slots = -1;
   int checksum = -1;
-  grub_ssize_t offset = -sizeof(dir);
+  grub_ssize_t offset;
+hook = _hook;
 
   if (! (data->attr & GRUB_FAT_ATTR_DIRECTORY))
     return grub_error (GRUB_ERR_BAD_FILE_TYPE, "not a directory");
@@ -483,19 +484,17 @@ grub_fat_iterate_dir (grub_disk_t disk, struct grub_fat_data *data,
   /* Allocate space enough to hold a long name.  */
   filename = grub_malloc (0x40 * 13 * 4 + 1);
   unibuf = (grub_uint16_t *) grub_malloc (0x40 * 13 * 2);
-  if (! filename || ! unibuf)
-    {
+  if (! filename || ! unibuf) {
       grub_free (filename);
       grub_free (unibuf);
       return 0;
     }
 
-  while (1)
-    {
-      unsigned i;
+for (offset = 0;;offset+= sizeof (dir)) {
+      unsigned int i;
 
       /* Adjust the offset.  */
-      offset += sizeof (dir);
+      //offset += sizeof (dir);
 
       /* Read a directory entry.  */
       if ((grub_fat_read_data (disk, data, 0,
@@ -597,23 +596,12 @@ grub_fat_iterate_dir (grub_disk_t disk, struct grub_fat_data *data,
   return grub_errno;
 }
 
+static struct grub_fat_data *data;
+  static char *dirname, *dirp;
+  static int call_hook;
+  static int found = 0;
 
-/* Find the underlying directory or file in PATH and return the
-   next path. If there is no next path or an error occurs, return NULL.
-   If HOOK is specified, call it with each file name.  */
-static char *
-grub_fat_find_dir (grub_disk_t disk, struct grub_fat_data *data,
-		   const char *path,
-		   int (*hook) (const char *filename,
-				const struct grub_dirhook_info *info))
-{
-  char *dirname, *dirp;
-  int call_hook;
-  int found = 0;
-
-  auto int iter_hook (const char *filename, struct grub_fat_dir_entry *dir);
-  int iter_hook (const char *filename, struct grub_fat_dir_entry *dir)
-  {
+  static int iter_hook (const char *filename, struct grub_fat_dir_entry *dir) {
     struct grub_dirhook_info info;
     grub_memset (&info, 0, sizeof (info));
 
@@ -641,6 +629,18 @@ grub_fat_find_dir (grub_disk_t disk, struct grub_fat_data *data,
       }
     return 0;
   }
+
+/* Find the underlying directory or file in PATH and return the
+   next path. If there is no next path or an error occurs, return NULL.
+   If HOOK is specified, call it with each file name.  */
+static char *
+grub_fat_find_dir (grub_disk_t disk, struct grub_fat_data *_data,
+		   const char *path,
+		   int (*hook) (const char *filename,
+				const struct grub_dirhook_info *info))
+{
+  found = 0;
+data = _data;
 
   if (! (data->attr & GRUB_FAT_ATTR_DIRECTORY))
     {
@@ -781,14 +781,8 @@ grub_fat_close (grub_file_t file)
   return grub_errno;
 }
 
-static grub_err_t
-grub_fat_label (grub_device_t device, char **label)
-{
-  struct grub_fat_data *data;
-  grub_disk_t disk = device->disk;
-
-  auto int iter_hook (const char *filename, struct grub_fat_dir_entry *dir);
-  int iter_hook (const char *filename, struct grub_fat_dir_entry *dir)
+static char **label;
+  static int iter_hook2 (const char *filename, struct grub_fat_dir_entry *dir)
   {
     if (dir->attr == GRUB_FAT_ATTR_VOLUME_ID)
       {
@@ -797,6 +791,12 @@ grub_fat_label (grub_device_t device, char **label)
       }
     return 0;
   }
+static grub_err_t
+grub_fat_label (grub_device_t device, char **_label)
+{
+  struct grub_fat_data *data;
+  grub_disk_t disk = device->disk;
+label = _label;
 
   grub_dl_ref (my_mod);
 
@@ -812,7 +812,7 @@ grub_fat_label (grub_device_t device, char **label)
 
   *label = 0;
 
-  grub_fat_iterate_dir (disk, data, iter_hook);
+  grub_fat_iterate_dir (disk, data, iter_hook2);
 
  fail:
 
