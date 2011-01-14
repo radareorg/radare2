@@ -596,39 +596,30 @@ grub_hfsplus_read_symlink (grub_fshelp_node_t node)
   return symlink;
 }
 
-static int
-grub_hfsplus_btree_iterate_node (struct grub_hfsplus_btree *btree,
-				 struct grub_hfsplus_btnode *first_node,
-				 int first_rec,
-				 int (*hook) (void *record))
+static int grub_hfsplus_btree_iterate_node (struct grub_hfsplus_btree *btree,
+	 struct grub_hfsplus_btnode *first_node, int first_rec, int (*hook) (void *record),
+	grub_fshelp_node_t *dir)
 {
-  int rec;
+	int rec;
+	for (;;) {
+		char *cnode = (char *) first_node;
 
-  for (;;)
-    {
-      char *cnode = (char *) first_node;
+		/* Iterate over all records in this node.  */
+		for (rec = first_rec; rec < grub_be_to_cpu16 (first_node->count); rec++) {
+			if (hook (grub_hfsplus_btree_recptr (btree, first_node, rec)))
+				return 1;
+		}
+		if (! first_node->next)
+			break;
+		if (grub_hfsplus_read_file (&btree->file, 0,
+			(grub_be_to_cpu32 (first_node->next) * btree->nodesize),
+			btree->nodesize, cnode) <= 0)
+			return 1;
 
-      /* Iterate over all records in this node.  */
-      for (rec = first_rec; rec < grub_be_to_cpu16 (first_node->count); rec++)
-	{
-	  if (hook (grub_hfsplus_btree_recptr (btree, first_node, rec)))
-	    return 1;
+		/* Don't skip any record in the next iteration.  */
+		first_rec = 0;
 	}
-
-      if (! first_node->next)
-	break;
-
-      if (grub_hfsplus_read_file (&btree->file, 0,
-				  (grub_be_to_cpu32 (first_node->next)
-				   * btree->nodesize),
-				  btree->nodesize, cnode) <= 0)
-	return 1;
-
-      /* Don't skip any record in the next iteration.  */
-      first_rec = 0;
-    }
-
-  return 0;
+	return 0;
 }
 
 /* Lookup the node described by KEY in the B+ Tree BTREE.  Compare
@@ -718,76 +709,55 @@ grub_hfsplus_btree_search (struct grub_hfsplus_btree *btree,
     }
 }
 
-static int
-grub_hfsplus_iterate_dir (grub_fshelp_node_t dir,
-			  int NESTED_FUNC_ATTR
-			  (*hook) (const char *filename,
-				   enum grub_fshelp_filetype filetype,
-				   grub_fshelp_node_t node))
-{
-  int ret = 0;
-
-  auto int list_nodes (void *record);
-  int list_nodes (void *record)
-    {
+static int list_nodes (grub_fshelp_node_t dir, void *record) {
       struct grub_hfsplus_catkey *catkey;
       char *filename;
-      int i;
+      int i, ret = 0;
       struct grub_fshelp_node *node;
       struct grub_hfsplus_catfile *fileinfo;
       enum grub_fshelp_filetype type = GRUB_FSHELP_UNKNOWN;
 
       catkey = (struct grub_hfsplus_catkey *) record;
-
-      fileinfo =
-	(struct grub_hfsplus_catfile *) ((char *) record
-					 + grub_be_to_cpu16 (catkey->keylen)
-					 + 2 + (grub_be_to_cpu16(catkey->keylen)
-						% 2));
+      fileinfo = (struct grub_hfsplus_catfile *) ((char *) record
+		      + grub_be_to_cpu16 (catkey->keylen) + 2
+		      + (grub_be_to_cpu16(catkey->keylen) % 2));
 
       /* Stop iterating when the last directory entry is found.  */
       if (grub_be_to_cpu32 (catkey->parent) != dir->fileid)
 	return 1;
 
       /* Determine the type of the node that is found.  */
-      if (grub_be_to_cpu16 (fileinfo->type) == GRUB_HFSPLUS_FILETYPE_REG)
-	{
-	  int mode = (grub_be_to_cpu16 (fileinfo->mode)
-		      & GRUB_HFSPLUS_FILEMODE_MASK);
+      if (grub_be_to_cpu16 (fileinfo->type) == GRUB_HFSPLUS_FILETYPE_REG) {
+	      int mode = (grub_be_to_cpu16 (fileinfo->mode) & GRUB_HFSPLUS_FILEMODE_MASK);
 
-	  if (mode == GRUB_HFSPLUS_FILEMODE_REG)
-	    type = GRUB_FSHELP_REG;
-	  else if (mode == GRUB_HFSPLUS_FILEMODE_SYMLINK)
-	    type = GRUB_FSHELP_SYMLINK;
-	  else
-	    type = GRUB_FSHELP_UNKNOWN;
-	}
-      else if (grub_be_to_cpu16 (fileinfo->type) == GRUB_HFSPLUS_FILETYPE_DIR)
-	type = GRUB_FSHELP_DIR;
+	      if (mode == GRUB_HFSPLUS_FILEMODE_REG)
+		      type = GRUB_FSHELP_REG;
+	      else if (mode == GRUB_HFSPLUS_FILEMODE_SYMLINK)
+		      type = GRUB_FSHELP_SYMLINK;
+	      else type = GRUB_FSHELP_UNKNOWN;
+      } else if (grub_be_to_cpu16 (fileinfo->type) == GRUB_HFSPLUS_FILETYPE_DIR)
+	      type = GRUB_FSHELP_DIR;
 
       if (type == GRUB_FSHELP_UNKNOWN)
-	return 0;
+	      return 0;
 
       /* Make sure the byte order of the UTF16 string is correct.  */
-      for (i = 0; i < grub_be_to_cpu16 (catkey->namelen); i++)
-	{
-	  catkey->name[i] = grub_be_to_cpu16 (catkey->name[i]);
+      for (i = 0; i < grub_be_to_cpu16 (catkey->namelen); i++) {
+	      catkey->name[i] = grub_be_to_cpu16 (catkey->name[i]);
 
-	  /* If the name is obviously invalid, skip this node.  */
-	  if (catkey->name[i] == 0)
-	    return 0;
-	}
+	      /* If the name is obviously invalid, skip this node.  */
+	      if (catkey->name[i] == 0)
+		      return 0;
+      }
 
       filename = grub_malloc (grub_be_to_cpu16 (catkey->namelen) + 1);
       if (! filename)
 	return 0;
 
-      if (! grub_utf16_to_utf8 ((grub_uint8_t *) filename, catkey->name,
-				grub_be_to_cpu16 (catkey->namelen)))
-	{
-	  grub_free (filename);
-	  return 0;
-	}
+      if (! grub_utf16_to_utf8 ((grub_uint8_t *) filename, catkey->name, grub_be_to_cpu16 (catkey->namelen))) {
+	      grub_free (filename);
+	      return 0;
+      }
 
       filename[grub_be_to_cpu16 (catkey->namelen)] = '\0';
 
@@ -821,148 +791,115 @@ grub_hfsplus_iterate_dir (grub_fshelp_node_t dir,
       return ret;
     }
 
-  struct grub_hfsplus_key_internal intern;
-  struct grub_hfsplus_btnode *node;
-  int ptr;
+static int grub_hfsplus_iterate_dir (grub_fshelp_node_t dir, int
+	(*hook) (const char *filename, enum grub_fshelp_filetype filetype, grub_fshelp_node_t node))
+{
+	struct grub_hfsplus_key_internal intern;
+	struct grub_hfsplus_btnode *node;
+	int ptr;
 
-  /* Create a key that points to the first entry in the directory.  */
-  intern.catkey.parent = dir->fileid;
-  intern.catkey.name = "";
+	/* Create a key that points to the first entry in the directory.  */
+	intern.catkey.parent = dir->fileid;
+	intern.catkey.name = "";
 
-  /* First lookup the first entry.  */
-  if (grub_hfsplus_btree_search (&dir->data->catalog_tree, &intern,
-				 grub_hfsplus_cmp_catkey, &node, &ptr))
-    return 0;
+	/* First lookup the first entry.  */
+	if (grub_hfsplus_btree_search (&dir->data->catalog_tree, &intern,
+				grub_hfsplus_cmp_catkey, &node, &ptr))
+		return 0;
 
-  /* Iterate over all entries in this directory.  */
-  grub_hfsplus_btree_iterate_node (&dir->data->catalog_tree, node, ptr,
-				   list_nodes);
-
-  grub_free (node);
-
-  return ret;
+	/* Iterate over all entries in this directory.  */
+	grub_hfsplus_btree_iterate_node (&dir->data->catalog_tree, node, ptr, list_nodes, dir);
+	grub_free (node);
+	return 0;
 }
 
 /* Open a file named NAME and initialize FILE.  */
-static grub_err_t
-grub_hfsplus_open (struct grub_file *file, const char *name)
-{
-  struct grub_hfsplus_data *data;
-  struct grub_fshelp_node *fdiro = 0;
+static grub_err_t grub_hfsplus_open (struct grub_file *file, const char *name) {
+	struct grub_hfsplus_data *data;
+	struct grub_fshelp_node *fdiro = 0;
 
-  grub_dl_ref (my_mod);
+	grub_dl_ref (my_mod);
 
-  data = grub_hfsplus_mount (file->device->disk);
-  if (!data)
-    goto fail;
+	data = grub_hfsplus_mount (file->device->disk);
+	if (!data)
+		goto fail;
 
-  grub_fshelp_find_file (name, &data->dirroot, &fdiro,
-			 grub_hfsplus_iterate_dir,
-			 grub_hfsplus_read_symlink, GRUB_FSHELP_REG);
-  if (grub_errno)
-    goto fail;
+	grub_fshelp_find_file (name, &data->dirroot, &fdiro,
+			grub_hfsplus_iterate_dir, grub_hfsplus_read_symlink, GRUB_FSHELP_REG);
+	if (grub_errno)
+		goto fail;
 
-  file->size = fdiro->size;
-  data->opened_file = *fdiro;
-  grub_free (fdiro);
+	file->size = fdiro->size;
+	data->opened_file = *fdiro;
+	grub_free (fdiro);
 
-  file->data = data;
-  file->offset = 0;
-
-  return 0;
-
- fail:
-  if (data && fdiro != &data->dirroot)
-    grub_free (fdiro);
-  grub_free (data);
-
-  grub_dl_unref (my_mod);
-
-  return grub_errno;
+	file->data = data;
+	file->offset = 0;
+	return 0;
+fail:
+	if (data && fdiro != &data->dirroot)
+		grub_free (fdiro);
+	grub_free (data);
+	grub_dl_unref (my_mod);
+	return grub_errno;
 }
 
 
-static grub_err_t
-grub_hfsplus_close (grub_file_t file)
-{
-  grub_free (file->data);
-
-  grub_dl_unref (my_mod);
-
-  return GRUB_ERR_NONE;
+static grub_err_t grub_hfsplus_close (grub_file_t file) {
+	grub_free (file->data);
+	grub_dl_unref (my_mod);
+	return GRUB_ERR_NONE;
 }
 
 
 /* Read LEN bytes data from FILE into BUF.  */
-static grub_ssize_t
-grub_hfsplus_read (grub_file_t file, char *buf, grub_size_t len)
-{
-  struct grub_hfsplus_data *data =
-    (struct grub_hfsplus_data *) file->data;
-
-  int size = grub_hfsplus_read_file (&data->opened_file, file->read_hook,
-				     file->offset, len, buf);
-
-  return size;
+static grub_ssize_t grub_hfsplus_read (grub_file_t file, char *buf, grub_size_t len) {
+	struct grub_hfsplus_data *data = (struct grub_hfsplus_data *) file->data;
+	return grub_hfsplus_read_file (&data->opened_file, file->read_hook, file->offset, len, buf);
 }
 
-
-static grub_err_t
-grub_hfsplus_dir (grub_device_t device, const char *path,
-		  int (*hook) (const char *filename,
-			       const struct grub_dirhook_info *info))
-{
-  struct grub_hfsplus_data *data = 0;
-  struct grub_fshelp_node *fdiro = 0;
-
-  auto int NESTED_FUNC_ATTR iterate (const char *filename,
-				     enum grub_fshelp_filetype filetype,
-				     grub_fshelp_node_t node);
-
-  int NESTED_FUNC_ATTR iterate (const char *filename,
-				enum grub_fshelp_filetype filetype,
-				grub_fshelp_node_t node)
-    {
-      struct grub_dirhook_info info;
-      grub_memset (&info, 0, sizeof (info));
-      info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
-      info.mtimeset = 1;
-      info.mtime = node->mtime;
-      info.case_insensitive = !! (filetype & GRUB_FSHELP_CASE_INSENSITIVE);
-      grub_free (node);
-      return hook (filename, &info);
-    }
-
-  grub_dl_ref (my_mod);
-
-  data = grub_hfsplus_mount (device->disk);
-  if (!data)
-    goto fail;
-
-  /* Find the directory that should be opened.  */
-  grub_fshelp_find_file (path, &data->dirroot, &fdiro,
-			 grub_hfsplus_iterate_dir,
-			 grub_hfsplus_read_symlink, GRUB_FSHELP_DIR);
-  if (grub_errno)
-    goto fail;
-
-  /* Iterate over all entries in this directory.  */
-  grub_hfsplus_iterate_dir (fdiro, iterate);
-
- fail:
-  if (data && fdiro != &data->dirroot)
-    grub_free (fdiro);
-  grub_free (data);
-
-  grub_dl_unref (my_mod);
-
-  return grub_errno;
+static int iterate (const char *filename, enum grub_fshelp_filetype filetype, grub_fshelp_node_t node) {
+	struct grub_dirhook_info info;
+	grub_memset (&info, 0, sizeof (info));
+	info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
+	info.mtimeset = 1;
+	info.mtime = node->mtime;
+	info.case_insensitive = !! (filetype & GRUB_FSHELP_CASE_INSENSITIVE);
+	grub_free (node);
+	return hook (filename, &info);
 }
 
+static grub_err_t grub_hfsplus_dir (grub_device_t device, const char *path,
+	  int (*hook) (const char *filename, const struct grub_dirhook_info *info))
+{
+	struct grub_hfsplus_data *data = 0;
+	struct grub_fshelp_node *fdiro = 0;
+
+	grub_dl_ref (my_mod);
+	data = grub_hfsplus_mount (device->disk);
+	if (!data)
+		goto fail;
+
+	/* Find the directory that should be opened.  */
+	grub_fshelp_find_file (path, &data->dirroot, &fdiro,
+		grub_hfsplus_iterate_dir, grub_hfsplus_read_symlink, GRUB_FSHELP_DIR);
+	if (grub_errno)
+		goto fail;
+
+	/* Iterate over all entries in this directory.  */
+	grub_hfsplus_iterate_dir (fdiro, iterate);
+fail:
+	if (data && fdiro != &data->dirroot)
+		grub_free (fdiro);
+	grub_free (data);
+	grub_dl_unref (my_mod);
+
+	return grub_errno;
+}
 
 static grub_err_t
-grub_hfsplus_label (grub_device_t device __attribute__((unused))
-		    , char **label __attribute__((unused)))
+grub_hfsplus_label (grub_device_t device __attribute__((unused)),
+	    char **label __attribute__((unused)))
 {
   /* XXX: It's not documented how to read a label.  */
   return grub_error (GRUB_ERR_NOT_IMPLEMENTED_YET,
@@ -971,78 +908,48 @@ grub_hfsplus_label (grub_device_t device __attribute__((unused))
 }
 
 /* Get mtime.  */
-static grub_err_t
-grub_hfsplus_mtime (grub_device_t device, grub_int32_t *tm)
-{
-  struct grub_hfsplus_data *data;
-  grub_disk_t disk = device->disk;
+static grub_err_t grub_hfsplus_mtime (grub_device_t device, grub_int32_t *tm) {
+	struct grub_hfsplus_data *data;
+	grub_disk_t disk = device->disk;
 
-  grub_dl_ref (my_mod);
+	grub_dl_ref (my_mod);
+	data = grub_hfsplus_mount (disk);
+	if (!data)
+		*tm = 0;
+	else *tm = grub_be_to_cpu32 (data->volheader.utime) - 2082844800;
 
-  data = grub_hfsplus_mount (disk);
-  if (!data)
-    *tm = 0;
-  else
-    *tm = grub_be_to_cpu32 (data->volheader.utime) - 2082844800;
-
-  grub_dl_unref (my_mod);
-
-  grub_free (data);
-
-  return grub_errno;
-
+	grub_dl_unref (my_mod);
+	grub_free (data);
+	return grub_errno;
 }
 
-static grub_err_t
-grub_hfsplus_uuid (grub_device_t device, char **uuid)
-{
-  struct grub_hfsplus_data *data;
-  grub_disk_t disk = device->disk;
+static grub_err_t grub_hfsplus_uuid (grub_device_t device, char **uuid) {
+	struct grub_hfsplus_data *data;
+	grub_disk_t disk = device->disk;
 
-  grub_dl_ref (my_mod);
+	grub_dl_ref (my_mod);
 
-  data = grub_hfsplus_mount (disk);
-  if (data)
-    {
-      *uuid = grub_xasprintf ("%016llx",
-			     (unsigned long long)
-			     grub_be_to_cpu64 (data->volheader.num_serial));
-    }
-  else
-    *uuid = NULL;
+	data = grub_hfsplus_mount (disk);
+	if (data) {
+		*uuid = grub_xasprintf ("%016llx", (unsigned long long)
+				grub_be_to_cpu64 (data->volheader.num_serial));
+	} else *uuid = NULL;
 
-  grub_dl_unref (my_mod);
+	grub_dl_unref (my_mod);
 
-  grub_free (data);
+	grub_free (data);
 
-  return grub_errno;
+	return grub_errno;
 }
 
-
-
-struct grub_fs grub_hfsplus_fs =
-  {
-    .name = "hfsplus",
-    .dir = grub_hfsplus_dir,
-    .open = grub_hfsplus_open,
-    .read = grub_hfsplus_read,
-    .close = grub_hfsplus_close,
-    .label = grub_hfsplus_label,
-    .mtime = grub_hfsplus_mtime,
-    .uuid = grub_hfsplus_uuid,
-#ifdef GRUB_UTIL
-    .reserved_first_sector = 1,
-#endif
-    .next = 0
-  };
-
-GRUB_MOD_INIT(hfsplus)
-{
-  grub_fs_register (&grub_hfsplus_fs);
-  my_mod = mod;
-}
-
-GRUB_MOD_FINI(hfsplus)
-{
-  grub_fs_unregister (&grub_hfsplus_fs);
-}
+struct grub_fs grub_hfsplus_fs = {
+	.name = "hfsplus",
+	.dir = grub_hfsplus_dir,
+	.open = grub_hfsplus_open,
+	.read = grub_hfsplus_read,
+	.close = grub_hfsplus_close,
+	.label = grub_hfsplus_label,
+	.mtime = grub_hfsplus_mtime,
+	.uuid = grub_hfsplus_uuid,
+	.next = 0
+};

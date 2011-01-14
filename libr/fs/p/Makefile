@@ -6,9 +6,9 @@ LDFLAGS+=${LINK}
 
 foo: all
 
-FILESYSTEMS=hfs.mk hfsplus.mk iso9660.mk
-FILESYSTEMS+= ext2.mk fat.mk jfs.mk
-FILESYSTEMS+= ntfs.mk reiserfs.mk tar.mk udf.mk ufs2.mk ufs.mk xfs.mk
+#FILESYSTEMS=hfs.mk iso9660.mk jfs.mk
+#FILESYSTEMS=hfsplus.mk
+FILESYSTEMS=ext2.mk fat.mk ntfs.mk reiserfs.mk tar.mk udf.mk ufs2.mk ufs.mk xfs.mk
 
 include $(FILESYSTEMS)
 

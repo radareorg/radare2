@@ -10,10 +10,13 @@ KERNFILES+=kern/list.c kern/partition.c
 KERNFILES+=fs/fshelp.c
 KERNFILES+=fs/reiserfs.c fs/ext2.c
 KERNFILES+=fs/fat.c fs/ntfs.c
-#KERNFILES+=fs/hfs.c fs/hfsplus.c
-#KERNFILES+=fs/udf.c fs/iso9660.c
 KERNFILES+=fs/cpio.c fs/tar.c
 KERNFILES+=fs/xfs.c 
+# TODO: remove nested functions from the following .c
+#KERNFILES+=fs/hfs.c 
+#KERNFILES+=fs/hfsplus.c 
+#KERNFILES+=fs/udf.c 
+#KERNFILES+=fs/iso9660.c
 #fs/jfs.c
 #KERNFILES+=main.c
 KERNFILES+=grubfs.c
@@ -21,7 +24,7 @@ KERNFILES+=grubfs.c
 KERNFILES+=partmap/msdos.c
 
 KERNOBJS=$(subst .c,.o,${KERNFILES})
-CFLAGS=-Iinclude -g
+CFLAGS=-Iinclude -g -fPIC
 CFLAGS+=-I../../../include
 #CFLAGS+=-fnested-functions
 BIN=test${EXT_EXE}
