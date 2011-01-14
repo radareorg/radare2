@@ -25,25 +25,31 @@ typedef struct r_fs_file_t {
 	void *ctx;
 	char type;
 	ut64 time;
-	struct r_fs_plugin_t *fs;
-	void *ptr;
+	struct r_fs_plugin_t *p;
+	struct r_fs_root_t *root;
+	void *ptr; // pointer to internal
 } RFSFile;
 
 typedef struct r_fs_root_t {
 	char *path;
 	ut64 delta;
-	struct r_fs_plugin_t *fs;
+	struct r_fs_plugin_t *p;
 	void *ptr;
+	RIOBind iob;
 } RFSRoot;
 
 typedef struct r_fs_plugin_t {
 	const char *name;
 	const char *desc;
-	RFSFile* (*open)(const char *path);
+	RFSFile* (*load)(RFSRoot *root, const char *path);
+	RFSFile* (*open)(RFSRoot *root, const char *path);
 	boolt (*read)(RFSFile *fs, ut64 addr, int len);
 	void (*close)(RFSFile *fs);
 	RList *(*dir)(RFSRoot *root, const char *path);
 	void (*init)();
+	void (*fini)();
+	void (*mount)(RFSRoot *root);
+	void (*umount)(RFSRoot *root);
 } RFSPlugin;
 
 #define R_FS_FILE_TYPE_DIRECTORY 'd'
@@ -55,16 +61,17 @@ R_API RFS *r_fs_new ();
 R_API void r_fs_free (RFS* fs);
 R_API void r_fs_add (RFS *fs, RFSPlugin *p);
 R_API void r_fs_del (RFS *fs, RFSPlugin *p);
-R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path);
+R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path, ut64 delta);
 R_API int r_fs_umount (RFS* fs, const char *path);
 R_API RFSRoot *r_fs_root (RFS *fs, const char *path);
 R_API RFSFile *r_fs_open (RFS* fs, const char *path);
 R_API void r_fs_close (RFS* fs, RFSFile *file);
 R_API int r_fs_read (RFS* fs, RFSFile *file, ut64 addr, int len);
+R_API RFSFile *r_fs_load(RFS* fs, const char *path);
 R_API RList *r_fs_dir(RFS* fs, const char *path);
 
 /* file.c */
-R_API RFSFile *r_fs_file_new (const char *path);
+R_API RFSFile *r_fs_file_new (RFSRoot *root, const char *path);
 R_API void r_fs_file_free (RFSFile *file);
 R_API RFSRoot *r_fs_root_new (const char *path, ut64 delta);
 R_API void r_fs_root_free (RFSRoot *root);

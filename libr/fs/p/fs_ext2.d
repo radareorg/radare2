@@ -1,6 +1,6 @@
-p/fs_ext2.o: p/fs_ext2.c ../include/r_fs.h ../include/r_types.h \
- ../include/r_userconf.h ../include/r_types_base.h /usr/include/stdio.h \
- /usr/include/features.h /usr/include/sys/cdefs.h \
+fs_ext2.o: fs_ext2.c ../../include/r_fs.h ../../include/r_types.h \
+ ../../include/r_userconf.h ../../include/r_types_base.h \
+ /usr/include/stdio.h /usr/include/features.h /usr/include/sys/cdefs.h \
  /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h \
  /usr/include/gnu/stubs-32.h \
  /usr/lib/gcc/i686-pc-linux-gnu/4.5.2/include/stddef.h \
@@ -21,7 +21,13 @@ p/fs_ext2.o: p/fs_ext2.c ../include/r_fs.h ../include/r_types.h \
  /usr/include/bits/posix1_lim.h /usr/include/bits/local_lim.h \
  /usr/include/linux/limits.h /usr/include/unistd.h \
  /usr/include/bits/posix_opt.h /usr/include/bits/environments.h \
- /usr/include/bits/confname.h /usr/include/getopt.h ../include/r_list.h \
- ../include/r_flist.h ../include/r_io.h ../include/r_util.h \
- ../include/btree.h ../include/r_types.h ../include/list.h \
- /usr/include/gmp.h
+ /usr/include/bits/confname.h /usr/include/getopt.h \
+ ../../include/r_list.h ../../include/r_flist.h ../../include/r_io.h \
+ ../../include/r_util.h ../../include/btree.h ../../include/r_types.h \
+ ../../include/list.h /usr/include/gmp.h grub/include/grubfs.h \
+ grub/include/grub/file.h grub/include/grub/types.h grub/include/config.h \
+ grub/include/config-util.h grub/include/grub/cpu/types.h \
+ grub/include/grub/err.h grub/include/grub/symbol.h \
+ grub/include/grub/device.h grub/include/grub/fs.h \
+ grub/include/grub/list.h grub/include/grub/misc.h \
+ grub/include/grub/disk.h

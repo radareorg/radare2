@@ -2,10 +2,12 @@
 
 #include <r_fs.h>
 
-R_API RFSFile *r_fs_file_new (const char *path) {
+R_API RFSFile *r_fs_file_new (RFSRoot *root, const char *path) {
 	RFSFile *file = R_NEW (RFSFile);
 	memset (file, 0, sizeof (RFSFile));
+	file->root = root;
 	file->name = strdup (path);
+	// TODO: concat path?
 	return file;
 }
 
@@ -24,6 +26,10 @@ R_API RFSRoot *r_fs_root_new (const char *path, ut64 delta) {
 }
 
 R_API void r_fs_root_free (RFSRoot *root) {
-	free (root->path);
-	free (root);
+	if (root) {
+		if (root->p && root->p->umount)
+			root->p->umount (root);
+		free (root->path);
+		free (root);
+	}
 }

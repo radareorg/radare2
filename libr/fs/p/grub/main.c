@@ -17,7 +17,7 @@ void read_foo (struct grub_disk *disk, grub_disk_addr_t sector, grub_size_t size
 	//printf ("==> land: %p\n", buf);
 	size=512;
 	{
-		FILE *fd = fopen ("test.fs.img", "rb");
+		FILE *fd = fopen ("/tmp/test.fs.img", "rb");
 		fseek (fd, (512*sector), SEEK_SET);
 		fread (buf, 1, size, fd);
 		//printf ("\nBUF: %x %x %x %x\n", buf[0], buf[1], buf[2], buf[3]);
@@ -30,7 +30,7 @@ void read_hook (grub_disk_addr_t sector, unsigned long offset, unsigned long len
 	//printf ("[hook]==> last %p\n", buf);
 	{
 		int size=length;
-		FILE *fd = fopen("test.fs.img", "rb");
+		FILE *fd = fopen("/tmp/test.fs.img", "rb");
 		fseek (fd, (512*sector)+offset, SEEK_SET);
 		fread (buf, 1, size, fd);
 		//write (1, buf, size);
@@ -41,25 +41,25 @@ void read_hook (grub_disk_addr_t sector, unsigned long offset, unsigned long len
 
 grub_file_t openimage(grub_fs_t fs, const char *str) {
 	grub_file_t file = malloc (1024);
-	file->device = malloc(1024);
+	file->device = malloc (1024);
 	memset (file->device, 0, 1024);
-	file->device->disk = malloc(1024);
-	file->device->disk->name = strdup ("disk0");
+	file->device->disk = malloc (1024);
+	memset (file->device->disk, 0, 1024);
+	//file->device->disk->name = "disk0"; //strdup ("disk0");
 	file->device->disk->dev = file->device;
 	//file->device->disk->dev->read = read_hook; //file->device;
 	file->device->disk->dev->read = read_foo; //file->device;
-	file->device->disk->read_hook = read_hook; //read_hook;
+	//file->device->disk->read_hook = read_hook; //read_hook;
 	//file->device->read = read_hook;
-	//file->device->read = read_hook;
+	//file->read_hook = read_hook;
 	//&device; // HACK to avoid segfault
 	file->fs = fs;
 #if 0
 	file->offset = 0;
 	file->size = 12190208;
 	file->data = malloc (file->size);
-#endif
 	{
-		FILE *fd = fopen("test.fs.img", "rb");
+		FILE *fd = fopen("/tmp/test.fs.img", "rb");
 		if (fd == NULL) {
 			printf ("Cannot open fs image\n");
 			return NULL;
@@ -67,7 +67,7 @@ grub_file_t openimage(grub_fs_t fs, const char *str) {
 		fread (file->data, file->size, 1, fd);
 		fclose (fd);
 	}
-	file->read_hook = read_hook;
+#endif
 	return file;
 }
 
@@ -86,7 +86,7 @@ int do_main() {
 	struct grub_disk disk;
 
 	e2 = &grub_ext2_fs;
-	file = openimage (e2, "test.fs.img");
+	file = openimage (e2, "/tmp/test.fs.img");
 	if (file == NULL) {
 		printf ("oops\n");
 		return 0;
@@ -112,8 +112,25 @@ int do_main() {
 	return 1;
 }
 
-main() {
-	printf ("Hello grubfs!\n");
+#include "grubfs.h"
+int foo_main() {
+	char buf[1024];
+	GrubFS *gfs = grubfs_new (&grub_ext2_fs, NULL);
+	gfs->file->fs->open (gfs->file, "/test");
+	gfs->file->fs->read (gfs->file, buf, gfs->file->size);
+printf ("fs = %d\n", gfs->file->size);
+	write (1, buf, gfs->file->size);
+	gfs->file->fs->close (gfs->file);
+	gfs->file->fs->dir (gfs->file->device, "/", dirhook);
+	grubfs_free (gfs);
+}
+
+int main(int argc, char **argv) {
+	if (argc>1) {
+		printf ("grubfs api\n");
+		return foo_main ();
+	}
+	printf ("grub internal api\n");
 	if (do_main()) {
 		printf ("\n** worked!\n");
 	} else {

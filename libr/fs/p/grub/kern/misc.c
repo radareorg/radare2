@@ -982,9 +982,6 @@ void
 grub_abort (void)
 {
   grub_printf ("\nAborted.");
-  
-
-  grub_exit ();
 }
 
 #if ! defined (APPLE_CC) && !defined (GRUB_UTIL)

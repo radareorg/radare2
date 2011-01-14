@@ -924,7 +924,7 @@ static int cmd_yank_to(RCore *core, char *arg) {
 }
 
 static int cmd_mount(void *data, const char *_input) {
-	char *input, *oinput, *ptr;
+	char *input, *oinput, *ptr, *ptr2;
 	RList *list;
 	RListIter *iter;
 	RFSFile *file;
@@ -940,8 +940,16 @@ static int cmd_mount(void *data, const char *_input) {
 			input++;
 		ptr = strchr (input, ' ');
 		if (ptr) {
+			ut64 delta = 0;
 			*ptr = 0;
-			r_fs_mount (core->fs, input, ptr+1);
+			ptr++;
+			ptr2 = strchr (ptr, ' ');
+			if (ptr2) {
+				*ptr2 = 0;
+				delta = r_num_math (core->num, ptr2+1);
+			}
+			//r_io_bind (core->io, &(core->fs->iob));
+			r_fs_mount (core->fs, input, ptr, delta);
 		} else eprintf ("Usage: m ext2 /mnt");
 		break;
 	case '-':
@@ -950,12 +958,12 @@ static int cmd_mount(void *data, const char *_input) {
 	case '*':
 		eprintf ("List commands in radare format\n");
 		r_list_foreach (core->fs->roots, iter, root) {
-			r_cons_printf ("m %s 0x%"PFMT64x" %s\n", root->fs->name, root->delta, root->path);
+			r_cons_printf ("m %s 0x%"PFMT64x" %s\n", root->p->name, root->delta, root->path);
 		}
 		break;
 	case '\0':
 		r_list_foreach (core->fs->roots, iter, root) {
-			r_cons_printf ("%s\t0x%"PFMT64x"\t%s\n", root->fs->name, root->delta, root->path);
+			r_cons_printf ("%s\t0x%"PFMT64x"\t%s\n", root->p->name, root->delta, root->path);
 		}
 		break;
 	case 'l': // list of plugins
@@ -994,7 +1002,7 @@ static int cmd_mount(void *data, const char *_input) {
 		r_cons_printf (
 		"Usage: m[-?*dgy] [...]\n"
 		" m        ; list all mountpoints in human readable format\n"
-		" m /mnt   ; list all mountpoints from a given path\n"
+		" m ext2 /mnt 0  ; mount ext2 fs at /mnt with delta 0 on IO\n"
 		" m*       ; same as above, but in r2 commands\n"
 		" ml       ; list filesystem plugins\n"
 		" m-/      ; umount given path (/)\n"

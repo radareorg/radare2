@@ -203,8 +203,6 @@ R_API int r_core_init(RCore *core) {
 	core->print = r_print_new ();
 	core->print->printf = (void *)r_cons_printf;
 	core->lang = r_lang_new ();
-	core->fs = r_fs_new ();
-	r_io_bind (core->io, &(core->fs->iob));
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);
 	core->anal = r_anal_new ();
@@ -221,6 +219,8 @@ R_API int r_core_init(RCore *core) {
 	core->sign = r_sign_new ();
 	core->search = r_search_new (R_SEARCH_KEYWORD);
 	r_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
+	core->fs = r_fs_new ();
+	r_io_bind (core->io, &(core->fs->iob));
 	//r_cmd_macro_init (&core->macro);
 	core->file = NULL;
 	INIT_LIST_HEAD (&core->files);

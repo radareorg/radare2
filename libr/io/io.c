@@ -130,6 +130,8 @@ R_API int r_io_set_fd(RIO *io, int fd) {
 
 R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len) {
 	int ret;
+	if (io==NULL)
+		return -1;
 	/* check section permissions */
 	if (io->enforce_rwx && !(r_io_section_get_rwx (io, io->off) & R_IO_READ))
 		return -1;
@@ -269,7 +271,8 @@ R_API int r_io_write_at(struct r_io_t *io, ut64 addr, const ut8 *buf, int len) {
 R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 	int posix_whence = SEEK_SET;
 	ut64 ret = -1;
-
+	if (io == NULL)
+		return offset; // XXX
 	switch(whence) {
 	case R_IO_SEEK_SET:
 		posix_whence = SEEK_SET;

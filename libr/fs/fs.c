@@ -3,8 +3,7 @@
 #include <r_fs.h>
 #include "../config.h"
 
-static RFSPlugin *fs_static_plugins[] = 
-	{ R_FS_STATIC_PLUGINS };
+static RFSPlugin *fs_static_plugins[] = { R_FS_STATIC_PLUGINS };
 
 /* lifecycle */
 // TODO: needs much more love
@@ -59,18 +58,20 @@ R_API void r_fs_del (RFS *fs, RFSPlugin *p) {
 
 /* mountpoint */
 
-R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path) {
+R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path, ut64 delta) {
 	RFSPlugin *p;
-	RFSRoot * root;
+	RFSRoot *root;
 	if (path[0] != '/') {
 		eprintf ("r_fs_mount: invalid mountpoint\n");
 		return NULL;
 	}
-	//r_fs
 	p = r_fs_plugin_get (fs, fstype);
 	if (p != NULL) {
-		root = r_fs_root_new (path, 0); // XXX hardcoded offset
-		root->fs = p;
+		root = r_fs_root_new (path, delta);
+		root->p = p;
+		//memcpy (&root->iob, &fs->iob, sizeof (root->iob));
+		root->iob = fs->iob;
+		p->mount (root);
 		r_list_append (fs->roots, root);
 		eprintf ("Mounted %s on %s at 0x%llx\n", fstype, path, 0LL);
 	} else eprintf ("r_fs_mount: Invalid filesystem type\n");
@@ -107,21 +108,29 @@ R_API RFSRoot *r_fs_root (RFS *fs, const char *path) {
 
 R_API RFSFile *r_fs_open (RFS* fs, const char *path) {
 	RFSRoot *root = r_fs_root (fs, path);
-	if (root)
-		return root->fs->open (path);
+	if (root && root->p && root->p->open)
+		return root->p->open (root, path+strlen (root->path));
+	else eprintf ("r_fs_open: null root->p->open\n");
         return NULL;
 }
 
+// TODO: close or free?
 R_API void r_fs_close (RFS* fs, RFSFile *file) {
-	if (fs && file)
-		file->fs->close (file);
+	if (fs && file && file->p && file->p->close)
+		file->p->close (file);
 }
 
 R_API int r_fs_read (RFS* fs, RFSFile *file, ut64 addr, int len) {
+	if (len<1) {
+		eprintf ("r_fs_read: too short read\n");
+	} else
 	if (fs && file) {
 		free (file->data);
-		file->data = malloc (file->size);
-		file->fs->read (file, addr, len);
+		file->data = malloc (len+1);
+		if (file->p && file->p->read) {
+			file->p->read (file, addr, len);
+			return R_TRUE;
+		} else eprintf ("r_fs_read: file->p->read is null\n");
 	}
 	return R_FALSE;
 }
@@ -129,9 +138,29 @@ R_API int r_fs_read (RFS* fs, RFSFile *file, ut64 addr, int len) {
 R_API RList *r_fs_dir(RFS* fs, const char *path) {
 	if (fs) {
 		RFSRoot *root = r_fs_root (fs, path);
+		const char *dir = path + strlen (root->path);
+		if (!*dir) dir = "/";
 		if (root)
-			return root->fs->dir (root, path);
+			return root->p->dir (root, dir);
 		eprintf ("r_fs_dir: error, path %s is not mounted\n", path);
 	}
 	return NULL;
+}
+
+R_API RFSFile *r_fs_load(RFS* fs, const char *path) {
+	RFSFile *file = NULL;
+	RFSRoot *root = r_fs_root (fs, path);
+	if (root && root->p) {
+		if (root->p->open && root->p->read && root->p->close) {
+			file = root->p->open (root, path);
+			if (file) {
+				root->p->read (file, 0, file->size); //file->data, file->size);
+			} else eprintf ("r_fs_load: cannot open file\n");
+		} else {
+			if (root->p->load)
+				return root->p->load (root, path);
+			else eprintf ("r_fs_load: null root->p->load\n");
+		}
+	}
+	return file;
 }

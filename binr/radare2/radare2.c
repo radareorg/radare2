@@ -81,6 +81,7 @@ int main(int argc, char **argv) {
 	int fullfile = 0;
 	ut32 bsize = 0;
 	ut64 seek = 0;
+	char *cmdfile = NULL;
 
 	if (argc<2)
 		return main_help (1);
@@ -98,7 +99,7 @@ int main(int argc, char **argv) {
 			r_config_set (r.config, "file.project", optarg);
 			break;
 		case 'i':
-			r_core_cmd_file (&r, optarg);
+			cmdfile = optarg;
 			break;
 		case 'l':
 			r_lib_open (r.lib, optarg);
@@ -261,6 +262,9 @@ int main(int argc, char **argv) {
 		} else rabin_delegate (NULL);
 #endif
 	} else eprintf ("Metadata loaded from 'file.project'\n");
+
+	if (cmdfile)
+		r_core_cmd_file (&r, cmdfile);
 
 	if (r_io_is_listener (r.io))
 		r_core_serve (&r, r.io->fd);
