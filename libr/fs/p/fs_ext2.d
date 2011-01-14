@@ -30,4 +30,5 @@ p/fs_ext2.o: p/fs_ext2.c p/fs_grub_base.c ../include/r_fs.h \
  p/grub/include/grub/err.h p/grub/include/grub/symbol.h \
  p/grub/include/grub/device.h p/grub/include/grub/fs.h \
  p/grub/include/grub/list.h p/grub/include/grub/misc.h \
- p/grub/include/grub/disk.h
+ p/grub/include/grub/disk.h p/grub/include/grub/partition.h \
+ p/grub/include/grub/dl.h

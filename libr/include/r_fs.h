@@ -52,6 +52,14 @@ typedef struct r_fs_plugin_t {
 	void (*umount)(RFSRoot *root);
 } RFSPlugin;
 
+typedef struct r_fs_partition_t {
+	int number;	
+	ut64 start;
+	ut64 length;
+	int index;
+	int type;
+} RFSPartition;
+
 #define R_FS_FILE_TYPE_DIRECTORY 'd'
 #define R_FS_FILE_TYPE_REGULAR 'r'
 
@@ -69,12 +77,15 @@ R_API void r_fs_close (RFS* fs, RFSFile *file);
 R_API int r_fs_read (RFS* fs, RFSFile *file, ut64 addr, int len);
 R_API RFSFile *r_fs_slurp(RFS* fs, const char *path);
 R_API RList *r_fs_dir(RFS* fs, const char *path);
+R_API RList *r_fs_partitions(RFS* fs, const char *ptype, ut64 delta);
 
 /* file.c */
 R_API RFSFile *r_fs_file_new (RFSRoot *root, const char *path);
 R_API void r_fs_file_free (RFSFile *file);
 R_API RFSRoot *r_fs_root_new (const char *path, ut64 delta);
 R_API void r_fs_root_free (RFSRoot *root);
+R_API RFSPartition *r_fs_partition_new(int num, ut64 start, ut64 length);
+R_API void r_fs_partition_free (RFSPartition *p);
 
 /* plugins */
 extern RFSPlugin r_fs_plugin_ext2;
@@ -96,6 +107,7 @@ extern RFSPlugin r_fs_plugin_afs;
 extern RFSPlugin r_fs_plugin_affs;
 extern RFSPlugin r_fs_plugin_cpio;
 extern RFSPlugin r_fs_plugin_xfs;
+
 #endif
 
 #endif

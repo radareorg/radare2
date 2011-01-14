@@ -33,3 +33,16 @@ R_API void r_fs_root_free (RFSRoot *root) {
 		free (root);
 	}
 }
+
+R_API RFSPartition *r_fs_partition_new(int num, ut64 start, ut64 length) {
+	RFSPartition *p = R_NEW (RFSPartition);
+	memset (p, 0, sizeof (RFSPartition));
+	p->number = num;
+	p->start = start;
+	p->length = length;
+	return p;
+}
+
+R_API void r_fs_partition_free (RFSPartition *p) {
+	free (p);
+}

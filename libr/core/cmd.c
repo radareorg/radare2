@@ -924,12 +924,14 @@ static int cmd_yank_to(RCore *core, char *arg) {
 }
 
 static int cmd_mount(void *data, const char *_input) {
+	ut64 off = 0;
 	char *input, *oinput, *ptr, *ptr2;
 	RList *list;
 	RListIter *iter;
 	RFSFile *file;
 	RFSRoot *root;
 	RFSPlugin *plug;
+	RFSPartition *part;
 	RCore *core = (RCore *)data;
 	input = oinput = strdup (_input);
 
@@ -940,16 +942,15 @@ static int cmd_mount(void *data, const char *_input) {
 			input++;
 		ptr = strchr (input, ' ');
 		if (ptr) {
-			ut64 delta = 0;
 			*ptr = 0;
 			ptr++;
 			ptr2 = strchr (ptr, ' ');
 			if (ptr2) {
 				*ptr2 = 0;
-				delta = r_num_math (core->num, ptr2+1);
+				off = r_num_math (core->num, ptr2+1);
 			}
 			//r_io_bind (core->io, &(core->fs->iob));
-			r_fs_mount (core->fs, input, ptr, delta);
+			r_fs_mount (core->fs, input, ptr, off);
 		} else eprintf ("Usage: m ext2 /mnt");
 		break;
 	case '-':
@@ -983,6 +984,28 @@ static int cmd_mount(void *data, const char *_input) {
 			r_list_free (list);
 		} else eprintf ("Cannot open '%s' directory\n", input);
 		break;
+	case 'p':
+		input++;
+		if (*input == ' ') {
+			input++;
+			ptr = strchr (input, ' ');
+			if (ptr) {
+				*ptr = 0;
+				off = r_num_math (core->num, ptr+1);
+			}
+			list = r_fs_partitions (core->fs, input, off);
+			if (list) {
+				r_list_foreach (list, iter, part) {
+					r_cons_printf ("%d %02x 0x08%"PFMT64x" 0x08%"PFMT64x"\n", part->number,
+						part->type, part->start, part->start+part->length);
+				}
+				r_list_free (list);
+			} else eprintf ("Cannot read partition\n");
+		} else {
+			// TODO: XXX: hardcoded list of partition plugins
+			r_cons_printf ("msdos\n");
+		}
+		break;
 	case 'g':
 		input++;
 		if (input[0]==' ')
@@ -1001,16 +1024,18 @@ static int cmd_mount(void *data, const char *_input) {
 	case '?':
 		r_cons_printf (
 		"Usage: m[-?*dgy] [...]\n"
-		" m        ; list all mountpoints in human readable format\n"
+		" m              ; list all mountpoints in human readable format\n"
 		" m ext2 /mnt 0  ; mount ext2 fs at /mnt with delta 0 on IO\n"
-		" m*       ; same as above, but in r2 commands\n"
-		" ml       ; list filesystem plugins\n"
-		" m-/      ; umount given path (/)\n"
-		" m?       ; display this help\n"
-		" my       ; yank contents of file into clipboard\n"
-		" mg /foo  ; get contents of file dumped to disk (XXX?)\n"
-		" md /     ; list directory contents for path\n"
-		" m?       ; show this help\n"
+		" m*             ; same as above, but in r2 commands\n"
+		" ml             ; list filesystem plugins\n"
+		" m-/            ; umount given path (/)\n"
+		" m?             ; display this help\n"
+		" my             ; yank contents of file into clipboard\n"
+		" mg /foo        ; get contents of file dumped to disk (XXX?)\n"
+		" md /           ; list directory contents for path\n"
+		" mp             ; list all supported partition types\n"
+		" mp msdos 0     ; show partitions in msdos format at offset 0\n"
+		" m?             ; show this help\n"
 		"TODO: support multiple mountpoints and RFile IO's (need io+core refactor)\n"
 		);
 		break;

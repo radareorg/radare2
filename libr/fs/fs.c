@@ -164,3 +164,28 @@ R_API RFSFile *r_fs_slurp(RFS* fs, const char *path) {
 	}
 	return file;
 }
+
+// TODO: move into grubfs
+#include "p/grub/include/grubfs.h"
+RList *list = NULL;
+static int parhook (struct grub_disk *disk, struct grub_partition *par) {
+	RFSPartition *p = r_fs_partition_new (r_list_length (list), par->start*512, 512*par->len);
+	p->type = par->msdostype;
+	r_list_append (list, p);
+	return 0;
+}
+
+R_API RList *r_fs_partitions(RFS *fs, const char *ptype, ut64 delta) {
+	list = r_list_new ();
+	list->free = r_fs_partition_free;
+	if (!strcmp (ptype, "msdos")) {
+		struct grub_disk *disk = grubfs_disk (&fs->iob);
+		struct grub_partition_map *gpm = &grub_msdos_partition_map;
+		gpm->iterate (disk, parhook);
+	} else {
+		eprintf ("Unknown partition type '%s'. Try 'msdos'", ptype);
+		r_list_free (list);
+		list = NULL;
+	}
+	return list;
+}

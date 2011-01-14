@@ -17,6 +17,8 @@ KERNFILES+=fs/xfs.c fs/jfs.c
 #KERNFILES+=main.c
 KERNFILES+=grubfs.c
 
+KERNFILES+=partmap/msdos.c
+
 KERNOBJS=$(subst .c,.o,${KERNFILES})
 CFLAGS=-Iinclude -g
 CFLAGS+=-I../../../include

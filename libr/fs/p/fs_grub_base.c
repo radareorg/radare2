@@ -37,8 +37,7 @@ static int dirhook (const char *filename, const struct grub_dirhook_info *info) 
 	r_list_append (list, fsf);
 	//info->mtimeset
 	//info->case_insensitive
-	printf ("DIRFILE: %c (%d) %s\n", info->dir?'d':'f',
-			info->mtime, filename);
+	//printf ("DIRFILE: %c (%d) %s\n", info->dir?'d':'f', info->mtime, filename);
 	return 0;
 }
 

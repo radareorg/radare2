@@ -500,7 +500,7 @@ grub_iso9660_iterate_dir (grub_fshelp_node_t dir,
 	      if (filename)
 		{
 		  size += grub_strlen (filename);
-		  grub_realloc (filename,
+		  filename = grub_realloc (filename,
 				grub_strlen (filename)
 				+ entry->len);
 		}

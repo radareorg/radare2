@@ -16,7 +16,7 @@ static void* empty (int sz) {
 	return p;
 }
 
-static int read_foo (struct grub_disk *disk, grub_disk_addr_t sector, grub_size_t size, unsigned char *buf) {
+static grub_err_t read_foo (struct grub_disk *disk, grub_disk_addr_t sector, grub_size_t size, unsigned char *buf) {
 	if (disk != NULL) {
 		int ret;
 		RIOBind *iob = disk->data;
@@ -53,6 +53,15 @@ GrubFS *grubfs_new (struct grub_fs *myfs, void *data) {
 	//file->device->disk->read_hook = read_foo; //read_hook;
 	file->fs = myfs;
 	return gfs;
+}
+
+grub_disk_t *grubfs_disk (void *data) {
+	struct grub_disk *disk = empty (sizeof (struct grub_disk));
+	disk = empty (sizeof (struct grub_disk));
+	disk->dev = empty (sizeof (struct grub_disk_dev));
+	disk->dev->read = read_foo; // grub_disk_dev
+	disk->data = data;
+	return disk;
 }
 
 void grubfs_free (GrubFS *gf) {

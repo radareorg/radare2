@@ -285,8 +285,8 @@ int EXPORT_FUNC(grub_vsnprintf) (char *str, grub_size_t n, const char *fmt,
 char *EXPORT_FUNC(grub_xasprintf) (const char *fmt, ...)
      __attribute__ ((format (printf, 1, 2))) __attribute__ ((warn_unused_result));
 char *EXPORT_FUNC(grub_xvasprintf) (const char *fmt, va_list args) __attribute__ ((warn_unused_result));
-void EXPORT_FUNC(grub_exit) (void) __attribute__ ((noreturn));
-void EXPORT_FUNC(grub_abort) (void) __attribute__ ((noreturn));
+void EXPORT_FUNC(grub_exit) (void);// __attribute__ ((noreturn));
+void EXPORT_FUNC(grub_abort) (void);// __attribute__ ((noreturn));
 grub_uint64_t EXPORT_FUNC(grub_divmod64) (grub_uint64_t n,
 					  grub_uint32_t d, grub_uint32_t *r);
 
