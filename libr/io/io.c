@@ -189,19 +189,11 @@ R_API ut64 r_io_read_i(struct r_io_t *io, ut64 addr, int sz, int endian) {
 	return ret;
 }
 
-R_API int r_io_resize(struct r_io_t *io, const char *file, int flags, int mode) {
-	// XXX not implemented
-#if 0
-	/* TODO */
-	struct r_io_plugin_t *plugin = r_io_plugin_resolve(file);
-	if (plugin && io->plugin->resize) {
-		int fd = plugin->resize(file, flags, mode);
-		if (fd != -1)
-			r_io_plugin_open(fd, plugin);
-		return fd;
-	}
-#endif
-	return -1;
+R_API int r_io_resize(struct r_io_t *io, ut64 newsize) {
+	if (io->plugin && io->plugin->resize)
+		return io->plugin->resize (io, io->fd, newsize);
+	else ftruncate (io->fd, newsize);
+	return R_FALSE;
 }
 
 R_API int r_io_set_write_mask(struct r_io_t *io, const ut8 *buf, int len) {

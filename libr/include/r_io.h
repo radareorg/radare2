@@ -193,6 +193,7 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence);
 R_API int r_io_system(RIO *io,  const char *cmd);
 R_API int r_io_close(RIO *io, int fd);
 R_API ut64 r_io_size(RIO *io, int fd);
+R_API int r_io_resize(struct r_io_t *io, ut64 newsize);
 
 /* io/cache.c */
 R_API void r_io_cache_commit(RIO *io);
