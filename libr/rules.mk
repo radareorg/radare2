@@ -15,7 +15,7 @@ CFLAGS+=-I../include
 all: $(ALL)
 	@$(MAKE) real_all
 
-real_all: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
+real_all: ${EXTRA_TARGETS} ${LIBSO} ${LIBAR}
 	@-if [ -e t/Makefile ]; then (cd t && ${MAKE} all) ; fi
 	@-if [ -e p/Makefile ]; then (cd p && ${MAKE} all) ; fi
 	@true

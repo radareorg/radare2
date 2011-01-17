@@ -7,6 +7,7 @@ LDFLAGS+=p/grub/libgrubfs.a
 
 include ../config.mk
 
+EXTRA_TARGETS=plugins
 foo: pre plugins ${LIBSO} ${LIBAR}
 
 include ${STATIC_FS_PLUGINS}
