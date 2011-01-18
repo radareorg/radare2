@@ -7,7 +7,7 @@
 #include <list.h>
 #include <r_util.h>
 
-#define R_ASM_BUFSIZE 1024
+#define R_ASM_BUFSIZE 3128
 #define R_ASM_FASTCALL_ARGS 6
 
 enum {
@@ -137,6 +137,7 @@ extern RAsmPlugin r_asm_plugin_ppc;
 extern RAsmPlugin r_asm_plugin_sparc;
 extern RAsmPlugin r_asm_plugin_psosvm;
 extern RAsmPlugin r_asm_plugin_avr;
+extern RAsmPlugin r_asm_plugin_dalvik;
 #endif
 
 #endif
