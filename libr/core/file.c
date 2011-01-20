@@ -38,22 +38,30 @@ R_API void r_core_sysenv_update(RCore *core) {
 }
 
 R_API int r_core_bin_load(RCore *r, const char *file) {
+	RBinInfo *info;
+	RBinAddr *binmain;
 	RBinObj *obj;
 	RList *list;
 	RListIter *iter;
+	RBinAddr *entry;
+	RBinSymbol *symbol;
+	RBinReloc *reloc;
+	RBinString *string;
+	RBinImport *import;
+	RBinSection *section;
 	ut64 baddr;
 	int va = r->io->va || r->io->debug;
 	int i = 0;
 	char str[R_FLAG_NAME_SIZE];
 
+	if (file == NULL)
+		file = r->file->filename;
 	if (!r_bin_load (r->bin, file, 0))
 		return R_FALSE;
 	r->file->obj = obj = r_bin_get_object (r->bin, 0);
 	baddr = r_bin_get_baddr (r->bin);
 
 	// I -> Binary info
-	RBinInfo *info;
-
 	if ((info = r_bin_get_info (r->bin)) != NULL) {
 		r_config_set (r->config, "file.type", info->rclass);
 		r_config_set (r->config, "cfg.bigendian", info->big_endian?"true":"false");
@@ -66,15 +74,12 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	}
 
 	// M -> Main
-	RBinAddr *binmain;
-
 	r_flag_space_set (r->flags, "symbols");
 	if ((binmain = r_bin_get_sym (r->bin, R_BIN_SYM_MAIN)) != NULL)
 		r_flag_set (r->flags, "main", va?baddr+binmain->rva:binmain->offset,
 				r->blocksize, 0);
 
 	// e -> Entrypoints
-	RBinAddr *entry;
 	i = 0;
 
 	if ((list = r_bin_get_entries (r->bin)) != NULL) {
@@ -88,8 +93,6 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	}
 
 	// s -> Symbols
-	RBinSymbol *symbol;
-
 	if ((list = r_bin_get_symbols (r->bin)) != NULL) {
 		r_list_foreach (list, iter, symbol) {
 			r_flag_name_filter (symbol->name);
@@ -108,8 +111,6 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	}
 
 	// R -> Relocations
-	RBinReloc *reloc;
-
 	r_flag_space_set (r->flags, "relocs");
 	if ((list = r_bin_get_relocs (r->bin)) != NULL) {
 		r_list_foreach (list, iter, reloc) {
@@ -120,8 +121,6 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	}
 
 	// z -> Strings
-	RBinString *string;
-
 	r_flag_space_set (r->flags, "strings");
 	if ((list = r_bin_get_strings (r->bin)) != NULL) {
 		r_list_foreach (list, iter, string) {
@@ -137,8 +136,6 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	}
 
 	// i -> Imports
-	RBinImport *import;
-
 	if ((list = r_bin_get_imports (r->bin)) != NULL) {
 		r_list_foreach (list, iter, import) {
 			r_flag_name_filter (import->name);
@@ -157,7 +154,6 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	}
 
 	// S -> Sections
-	RBinSection *section;
 	i = 0;
 
 	if ((list = r_bin_get_sections (r->bin)) != NULL) {
@@ -202,10 +198,10 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode) {
 		fh->filename = p+3;
 	fh->rwx = mode;
 	r->file = fh;
-	fh->size = r_io_size (r->io, fd);
+	fh->size = r_io_size (r->io, fd->fd);
 	list_add (&(fh->list), &r->files);
 
-	r_core_bin_load (r, fh->filename);
+//	r_core_bin_load (r, fh->filename);
 	r_core_block_read (r, 0);
 
 	cp = r_config_get (r->config, "cmd.open");
@@ -245,8 +241,10 @@ R_API int r_core_file_list(struct r_core_t *core) {
 }
 
 R_API int r_core_file_close_fd(struct r_core_t *core, int fd) {
-	int ret = r_io_close (core->io, fd);
-	struct r_core_file_t *fh = r_core_file_get_fd (core, fd);
+	int ret;
+	struct r_core_file_t *fh;
+	fh = r_core_file_get_fd (core, fd);
+	ret = r_io_close (core->io, fh->fd);
 	if (fh != NULL)
 		list_del (&(fh->list));
 	return ret;

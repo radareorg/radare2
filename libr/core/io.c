@@ -62,12 +62,12 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 
 R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
 	ut64 old = core->offset;
-	int ret;
+	ut64 ret;
 
 	/* XXX unnecesary call */
 	r_io_set_fd (core->io, core->file->fd);
 	ret = r_io_seek (core->io, addr, R_IO_SEEK_SET);
-	if (ret == -1) {
+	if (ret == UT64_MAX) {
 //eprintf ("RET =%d %llx\n", ret, addr);
 /*
 	XXX handle read errors correctly
@@ -75,7 +75,7 @@ R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
 			core->offset = addr;
 		} else return R_FALSE;
 */
-		core->offset = addr;
+		//core->offset = addr;
 	} else core->offset = addr;
 	if (rb) {
 		ret = r_core_block_read (core, 0);

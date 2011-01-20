@@ -182,6 +182,8 @@ R_API char* r_core_asm_search(RCore *core, const char *input, ut64 from, ut64 to
 R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to);
 R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len);
 
+R_API int r_core_bin_load(RCore *r, const char *file);
+
 /* gdiff.c */
 R_API int r_core_gdiff(RCore *c, RCore *c2);
 

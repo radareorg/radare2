@@ -59,7 +59,7 @@ static int config_cfgdebug_callback(void *user, void *data) {
 	if (core->dbg && node->i_value) {
 		r_debug_use (core->dbg, r_config_get (core->config, "dbg.backend"));
 		if (core->file)
-			r_debug_select (core->dbg, core->file->fd, core->file->fd);
+			r_debug_select (core->dbg, core->file->fd->fd, core->file->fd->fd);
 	}
 	return R_TRUE;
 }

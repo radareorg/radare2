@@ -9,7 +9,7 @@
 static struct r_core_t r;
 
 static int main_help(int line) {
-	printf ("Usage: radare2 [-dwntLV] [-p prj] [-s addr] [-b bsz] [-e k=v] [file]\n");
+	printf ("Usage: radare2 [-dwnLV] [-p prj] [-s addr] [-b bsz] [-e k=v] [file]\n");
 	if (!line) printf (
 		" -d        use 'file' as a program to debug\n"
 		" -w        open file in write mode\n"
@@ -22,7 +22,7 @@ static int main_help(int line) {
 		" -i [file] run script file\n"
 		" -V        show radare2 version\n"
 		" -l [lib]  load plugin file\n"
-		" -t        load rabin2 info in thread\n"
+		//" -t        load rabin2 info in thread\n"
 		" -L        list supported IO plugins\n"
 		" -u        unknown file size\n"
 		" -e k=v    evaluate config var\n");
@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
 	RThreadLock *lock = NULL;
 	RThread *rabin_th = NULL;
 	RCoreFile *fh = NULL;
-	int threaded = R_FALSE;
+	//int threaded = R_FALSE;
 	int has_project = R_FALSE;
  	int ret, c, perms = R_IO_READ;
 	int run_rc = 1;
@@ -81,17 +81,20 @@ int main(int argc, char **argv) {
 	int fullfile = 0;
 	ut32 bsize = 0;
 	ut64 seek = 0;
+	char file[1024];
 	char *cmdfile = NULL;
 
 	if (argc<2)
 		return main_help (1);
 	r_core_init (&r);
 
-	while ((c = getopt (argc, argv, "wtfhe:ndvVs:p:b:Lui:l:"))!=-1) {
+	while ((c = getopt (argc, argv, "wfhe:ndvVs:p:b:Lui:l:"))!=-1) {
 		switch (c) {
+#if 0
 		case 't':
 			threaded = R_TRUE;
 			break;
+#endif
 		case 'v':
 			r_config_set (r.config, "scr.prompt", "false");
 			break;
@@ -140,7 +143,6 @@ int main(int argc, char **argv) {
 		}
 	}
 	if (debug) {
-		char file[1024];
 		r_config_set (r.config, "io.va", "false"); // implicit?
 		r_config_set (r.config, "cfg.debug", "true");
 		strcpy (file, "dbg://");
@@ -181,9 +183,22 @@ int main(int argc, char **argv) {
 	}
 	if (r.file == NULL) // no given file
 		return 1;
+	//if (!has_project && run_rc) {
+#if 0
+	if (run_rc) {
+		rabin_cmd = r_str_dup_printf ("rabin2 -rSIeMzisR%s %s",
+			(debug||r.io->va)?"v":"", r.file->filename);
+		if (threaded) {
+			/* TODO: only load data if no project is used */
+			lock = r_th_lock_new ();
+			rabin_th = r_th_new (&rabin_delegate, lock, 0);
+		} else rabin_delegate (NULL);
+	} else eprintf ("Metadata loaded from 'file.project'\n");
+#endif
 
 	if (run_rc) {
 		char *homerc = r_str_home (".radare2rc");
+		r_core_bin_load (&r, NULL);
 		if (homerc) {
 			r_core_cmd_file (&r, homerc);
 			free (homerc);
@@ -251,23 +266,11 @@ int main(int argc, char **argv) {
 		free (path);
 	}
 
-	if (!has_project && run_rc) {
-#if 0
-		rabin_cmd = r_str_dup_printf ("rabin2 -rSIeMzisR%s %s",
-			(debug||r.io->va)?"v":"", r.file->filename);
-		if (threaded) {
-			/* TODO: only load data if no project is used */
-			lock = r_th_lock_new ();
-			rabin_th = r_th_new (&rabin_delegate, lock, 0);
-		} else rabin_delegate (NULL);
-#endif
-	} else eprintf ("Metadata loaded from 'file.project'\n");
-
 	if (cmdfile)
 		r_core_cmd_file (&r, cmdfile);
 
 	if (r_io_is_listener (r.io))
-		r_core_serve (&r, r.io->fd);
+		r_core_serve (&r, r.io->fd->fd);
 	else
 	for (;;) {
 		do { 

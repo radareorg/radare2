@@ -280,21 +280,24 @@ R_API int r_io_write_at(struct r_io_t *io, ut64 addr, const ut8 *buf, int len) {
 R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 	int posix_whence = SEEK_SET;
 	ut64 ret = -1;
-	if (io == NULL)
-		return offset; // XXX
 	switch(whence) {
 	case R_IO_SEEK_SET:
 		posix_whence = SEEK_SET;
+ret=offset;
 		break;
 	case R_IO_SEEK_CUR:
 //		offset += io->off;
 		posix_whence = SEEK_CUR;
+ret=offset+io->off;
 		break;
 	case R_IO_SEEK_END:
 		//offset = UT64_MAX; // XXX: depending on io bits?
+ret = UT64_MAX;
 		posix_whence = SEEK_END;
 		break;
 	}
+	if (io == NULL)
+		return ret;
 	// XXX: list_empty trick must be done in r_io_set_va();
 	offset = (!io->debug && io->va && !list_empty (&io->sections))? 
 		r_io_section_vaddr_to_offset (io, offset) : offset;
