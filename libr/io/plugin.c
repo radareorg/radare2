@@ -12,7 +12,6 @@ static struct r_io_plugin_t *io_static_plugins[] =
 	{ R_IO_STATIC_PLUGINS };
 
 R_API int r_io_plugin_add(struct r_io_t *io, struct r_io_plugin_t *plugin) {
-	int i;
 	struct r_io_list_t *li;
 	if (plugin == NULL)
 		return R_FALSE;
@@ -20,8 +19,6 @@ R_API int r_io_plugin_add(struct r_io_t *io, struct r_io_plugin_t *plugin) {
 	if (li == NULL)
 		return R_FALSE;
 	li->plugin = plugin;
-	for(i=0;i<R_IO_NFDS;i++)
-		li->plugin->fds[i] = -1;
 	list_add_tail(&(li->list), &(io->io_list));
 	return R_TRUE;
 }
@@ -53,20 +50,16 @@ R_API struct r_io_plugin_t *r_io_plugin_resolve(struct r_io_t *io, const char *f
 	return NULL;
 }
 
+/*
+DEPRECATED
 R_API struct r_io_plugin_t *r_io_plugin_resolve_fd(struct r_io_t *io, int fd) {
 	int i;
-	struct list_head *pos;
-	list_for_each_prev(pos, &io->io_list) {
-		struct r_io_list_t *il = list_entry(pos, struct r_io_list_t, list);
-		for(i=0;i<R_IO_NFDS;i++) {
-			if (il->plugin->fds[i] == fd)
-				return il->plugin;
-		}
-	}
 	return NULL;
 }
+*/
 
 R_API int r_io_plugin_open(struct r_io_t *io, int fd, struct r_io_plugin_t *plugin) {
+#if 0
 	int i=0;
 	struct list_head *pos;
 	list_for_each_prev(pos, &io->io_list) {
@@ -82,24 +75,12 @@ R_API int r_io_plugin_open(struct r_io_t *io, int fd, struct r_io_plugin_t *plug
 		}
 	}
 	return -1;
+#endif
+	return 0;
 }
 
 R_API int r_io_plugin_close(struct r_io_t *io, int fd, struct r_io_plugin_t *plugin) {
-	int i=0;
-	struct list_head *pos;
-	list_for_each_prev (pos, &io->io_list) {
-		struct r_io_list_t *il = list_entry (pos, struct r_io_list_t, list);
-		if (plugin == il->plugin) {
-			for (i=0;i<R_IO_NFDS;i++) {
-				if (il->plugin->fds[i] == fd) {
-					il->plugin->fds[i] = -1;
-					return 0;
-				}
-			}
-			return -1;
-		}
-	}
-	return -1;
+	return 0;
 }
 
 // TODO: must return an r_iter ator

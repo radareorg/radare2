@@ -56,7 +56,7 @@ typedef struct r_core_file_t {
 	ut64 seek;
 	ut64 size;
 	int rwx;
-	int fd;
+	RIODesc *fd;
 	int dbg;
 	RBinObj *obj;
 	struct list_head list;

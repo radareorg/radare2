@@ -442,7 +442,7 @@ reaccept:
 						r_socket_read_block (c, ptr, cmd); //filename
 						ptr[cmd] = 0;
 						r_core_file_open (core, (const char *)ptr, R_IO_READ); // XXX: mode write?
-						pipefd = core->file->fd;
+						pipefd = core->file->fd->fd;
 						eprintf("(flags: %hhd) len: %hhd filename: '%s'\n",
 							flg, cmd, ptr); //config.file);
 					}

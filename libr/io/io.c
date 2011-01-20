@@ -10,7 +10,7 @@
 R_API struct r_io_t *r_io_new() {
 	RIO *io = R_NEW (struct r_io_t);
 	if (io) {
-		io->fd = -1;
+		io->fd = NULL;
 		io->write_mask_fd = -1;
 		io->redirect = NULL;
 		io->printf = (void*) printf;
@@ -27,7 +27,7 @@ R_API struct r_io_t *r_io_new() {
 
 R_API int r_io_is_listener(RIO *io) {
 	if (io && io->plugin && io->plugin->listener)
-		return io->plugin->listener (io);
+		return io->plugin->listener (io->fd);
 	return R_FALSE;
 }
 
@@ -57,13 +57,13 @@ R_API int r_io_redirect(struct r_io_t *io, const char *file) {
 	return 0;
 }
 
-R_API int r_io_open_as(struct r_io_t *io, const char *urihandler, const char *file, int flags, int mode) {
-	int ret;
+R_API RIODesc *r_io_open_as(struct r_io_t *io, const char *urihandler, const char *file, int flags, int mode) {
+	RIODesc *ret;
 	char *uri;
 	int urilen = strlen (urihandler);
 	uri = malloc (strlen (urihandler)+strlen (file)+5);
 	if (uri == NULL)
-		return -1;
+		return NULL;
 	if (urilen>0)
 		sprintf (uri, "%s://", urihandler);
 	else *uri = '\0';
@@ -73,25 +73,30 @@ R_API int r_io_open_as(struct r_io_t *io, const char *urihandler, const char *fi
 	return ret;
 }
 
-R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode) {
+R_API RIODesc *r_io_open(struct r_io_t *io, const char *file, int flags, int mode) {
+	RIODesc *desc = NULL;
 	int fd = -2;
 	char *uri = strdup (file);
 	struct r_io_plugin_t *plugin;
 	if (io != NULL) {
 		for (;;) {
 			plugin = r_io_plugin_resolve (io, uri);
-			if (plugin) {
-				fd = plugin->open (io, uri, flags, mode);
-				if (io->redirect) {
-					free ((void *)uri);
-					uri = strdup (io->redirect);
-					r_io_redirect (io, NULL);
-					continue;
+			if (plugin && plugin->open) {
+				desc = plugin->open (io, uri, flags, mode);
+				if (desc != NULL) {
+					r_io_desc_add (io, desc);
+					fd = desc->fd;
+					if (io->redirect) {
+						free ((void *)uri);
+						uri = strdup (io->redirect);
+						r_io_redirect (io, NULL);
+						continue;
+					}
+					if (fd != -1)
+						r_io_plugin_open (io, fd, plugin);
+					if (desc != io->fd)
+						io->plugin = plugin;
 				}
-				if (fd != -1)
-					r_io_plugin_open (io, fd, plugin);
-				if (fd != io->fd)
-					io->plugin = plugin;
 			}
 			break;
 		}
@@ -111,26 +116,38 @@ R_API int r_io_open(struct r_io_t *io, const char *file, int flags, int mode) {
 #endif
 	}
 	if (fd >= 0) {
-		r_io_set_fd (io, fd);
-		r_io_desc_add (io, fd, file, flags, io->plugin);
-	} else fd = -1;
-
+		desc = r_io_desc_new (io->plugin, fd, file, flags, mode, io->plugin);
+		r_io_desc_add (io, desc);
+		r_io_set_fd (io, desc);
+	}
 	free ((void *)uri);
-	return fd;
+	return desc;
 }
 
-// TODO: Rename to use_fd ?
-R_API int r_io_set_fd(RIO *io, int fd) {
-	if (fd != -1 && fd != io->fd) {
-		io->plugin = r_io_plugin_resolve_fd (io, fd);
+R_API int r_io_set_fd(RIO *io, RIODesc *fd) {
+	if (fd != NULL) {
 		io->fd = fd;
+		io->plugin = fd->plugin;
+		return R_TRUE;
 	}
-	return io->fd;
+	return R_FALSE;
+}
+
+R_API int r_io_set_fdn(RIO *io, int fd) {
+	if (fd != -1 && io->fd != NULL && fd != io->fd->fd) {
+		RIODesc *desc = r_io_desc_get (io, fd);
+		if (desc) {
+			io->fd = desc;
+			io->plugin = desc->plugin;
+			return R_TRUE;
+		}
+	}
+	return R_FALSE;
 }
 
 R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len) {
 	int ret;
-	if (io==NULL)
+	if (io==NULL || io->fd == NULL)
 		return -1;
 	/* check section permissions */
 	if (io->enforce_rwx && !(r_io_section_get_rwx (io, io->off) & R_IO_READ))
@@ -160,9 +177,9 @@ R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len) {
 		}
 		if (io->plugin && io->plugin->read) {
 			if (io->plugin->read != NULL)
-				ret = io->plugin->read(io, io->fd, buf, len);
-			else eprintf ("IO plugin for fd=%d has no read()\n", io->fd);
-		} else ret = read (io->fd, buf, len);
+				ret = io->plugin->read (io, io->fd, buf, len);
+			else eprintf ("IO plugin for fd=%d has no read()\n", io->fd->fd);
+		} else ret = read (io->fd->fd, buf, len);
 		if (ret>0 && ret<len)
 			memset (buf+ret, 0xff, len-ret);
 	}
@@ -192,14 +209,14 @@ R_API ut64 r_io_read_i(struct r_io_t *io, ut64 addr, int sz, int endian) {
 R_API int r_io_resize(struct r_io_t *io, ut64 newsize) {
 	if (io->plugin && io->plugin->resize)
 		return io->plugin->resize (io, io->fd, newsize);
-	else ftruncate (io->fd, newsize);
+	else ftruncate (io->fd->fd, newsize);
 	return R_FALSE;
 }
 
 R_API int r_io_set_write_mask(struct r_io_t *io, const ut8 *buf, int len) {
 	int ret = R_FALSE;
 	if (len) {
-		io->write_mask_fd = io->fd;
+		io->write_mask_fd = io->fd->fd;
 		io->write_mask_buf = (ut8 *)malloc (len);
 		memcpy (io->write_mask_buf, buf, len);
 		io->write_mask_len = len;
@@ -245,9 +262,9 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len) {
 			if (io->plugin->write)
 				ret = io->plugin->write (io, io->fd, buf, len);
 			else eprintf ("r_io_write: io handler with no write callback\n");
-		} else ret = write (io->fd, buf, len);
+		} else ret = write (io->fd->fd, buf, len);
 		if (ret == -1)
-			eprintf ("r_io_write: cannot write on fd %d\n", io->fd);
+			eprintf ("r_io_write: cannot write on fd %d\n", io->fd->fd);
 	} else ret = len;
 	if (data)
 		free (data);
@@ -270,7 +287,7 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 		posix_whence = SEEK_SET;
 		break;
 	case R_IO_SEEK_CUR:
-		offset += io->off;
+//		offset += io->off;
 		posix_whence = SEEK_CUR;
 		break;
 	case R_IO_SEEK_END:
@@ -282,23 +299,25 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 	offset = (!io->debug && io->va && !list_empty (&io->sections))? 
 		r_io_section_vaddr_to_offset (io, offset) : offset;
 	// TODO: implement io->enforce_seek here!
-	if (io->plugin && io->plugin->lseek)
-		ret = io->plugin->lseek (io, io->fd, offset, whence);
-	// XXX can be problematic on w32..so no 64 bit offset?
-	else ret = lseek (io->fd, offset, posix_whence);
-	if (ret != -1) {
-		io->off = ret;
-		// XXX this can be tricky.. better not to use this .. must be deprecated 
-		// r_io_sundo_push (io);
-		ret = (!io->debug && io->va && !list_empty (&io->sections))?
-			r_io_section_offset_to_vaddr (io, io->off) : io->off;
-	}
+	if (io->fd != NULL) {
+		if (io->plugin && io->plugin->lseek)
+			ret = io->plugin->lseek (io, io->fd, offset, whence);
+		// XXX can be problematic on w32..so no 64 bit offset?
+		else ret = lseek (io->fd->fd, offset, posix_whence);
+		if (ret != -1) {
+			io->off = ret;
+			// XXX this can be tricky.. better not to use this .. must be deprecated 
+			// r_io_sundo_push (io);
+			ret = (!io->debug && io->va && !list_empty (&io->sections))?
+				r_io_section_offset_to_vaddr (io, io->off) : io->off;
+		} else eprintf ("r_io_seek: cannot seek to %"PFMT64x"\n", offset);
+	} else eprintf ("r_io_seek: null fd\n");
 	return ret;
 }
 
 R_API ut64 r_io_size(RIO *io, int fd) {
 	ut64 size, here;
-	r_io_set_fd (io, fd);
+	r_io_set_fdn (io, fd);
 	here = r_io_seek (io, 0, R_IO_SEEK_CUR);
 	size = r_io_seek (io, 0, R_IO_SEEK_END);
 	r_io_seek (io, here, R_IO_SEEK_SET);
@@ -313,17 +332,20 @@ R_API int r_io_system(RIO *io, const char *cmd) {
 }
 
 // TODO: remove int fd here???
-R_API int r_io_close(struct r_io_t *io, int fd) {
-	fd = r_io_set_fd (io, fd);
-	if (fd != -1 && io->plugin) {
-		r_io_desc_del (io, fd);
-		r_io_map_del (io, fd);
-		r_io_plugin_close (io, fd, io->plugin);
-		if (io->plugin->close)
-			return io->plugin->close (io, fd);
+R_API int r_io_close(struct r_io_t *io, RIODesc *fd) {
+	if (io == NULL || fd == NULL)
+		return -1;
+	int nfd = fd->fd;
+	if (r_io_set_fd (io, fd)) {
+		RIODesc *desc = r_io_desc_get (io, fd->fd);
+		r_io_map_del (io, fd->fd);
+		r_io_plugin_close (io, fd->fd, io->plugin);
+		if (io->plugin && io->plugin->close)
+			return io->plugin->close (desc);
+		r_io_desc_del (io, desc->fd);
 	}
-	io->fd = -1; // unset current fd
-	return close (fd);
+	io->fd = NULL; // unset current fd
+	return close (nfd);
 }
 
 R_API int r_io_bind(RIO *io, RIOBind *bnd) {

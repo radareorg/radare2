@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include "r_core.h"
 
@@ -120,7 +120,7 @@ R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 	int ret;
 	if (!core->io || !core->file || size<1)
 		return R_FALSE;
-	r_io_set_fd (core->io, core->file->fd); // XXX ignore ret?
+	r_io_set_fd (core->io, core->file->fd); // XXX ignore ret? -- ultra slow method.. inverse resolution of io plugin brbrb
 	ret = r_io_read_at (core->io, addr, buf, size);
 	if (addr>=core->offset && addr<=core->offset+core->blocksize)
 		r_core_block_read (core, 0);

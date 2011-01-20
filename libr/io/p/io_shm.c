@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
 
 #if __UNIX__
 
@@ -8,44 +8,60 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-static int shm_fd = -1;
-static unsigned char *shm_buf = NULL;
-static unsigned int shm_bufsz = 32*1024*1024; /* 32MB */
+typedef struct {
+	int fd;
+	int id;
+	ut8 *buf;
+	ut32 size;
+} RIOShm;
+#define RIOSHM_FD(x) (((RIOShm*)x)->fd)
 
-static int shm__write(struct r_io_t *io, int fd, const ut8 *buf, int count)
-{
-	if (shm_buf != NULL)
-        	return (ssize_t)memcpy(shm_buf+io->off, buf, count);
+#define SHMATSZ 32*1024*1024; /* 32MB : XXX not used correctly? */
+
+static int shm__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+	RIOShm *shm;
+	if (fd == NULL || fd->data == NULL)
+		return -1;
+	shm = fd->data;
+	if (shm->buf != NULL) {
+        	(void)memcpy (shm->buf+io->off, buf, count);
+		return count;
+	}
 	return -1;
 }
 
-static int shm__read(struct r_io_t *io, int fd, ut8 *buf, int count)
-{
-	if (shm_buf == NULL)
+static int shm__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+	RIOShm *shm;
+	if (fd == NULL || fd->data == NULL)
 		return -1;
-	if (io->off > shm_bufsz)
-		io->off = shm_bufsz;
-	memcpy(buf, shm_buf+io->off , count);
-        return 0;
+	shm = fd->data;
+	if (io->off > shm->size)
+		io->off = shm->size;
+	memcpy (buf, shm->buf+io->off , count);
+        return count;
 }
 
-static int shm__close(struct r_io_t *io, int fd)
-{
-	if (shm_buf == NULL)
+static int shm__close(RIODesc *fd) {
+	int ret;
+	if (fd == NULL || fd->data == NULL)
 		return -1;
-	return shmdt(shm_buf);
+	ret = shmdt (((RIOShm*)(fd->data))->buf);
+	free (fd->data);
+	fd->data = NULL;
+	return ret;
 }
 
-static ut64 shm__lseek(struct r_io_t *io, int fildes, ut64 offset, int whence)
-{
-	if (shm_buf == NULL)
+static ut64 shm__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
+	RIOShm *shm;
+	if (fd == NULL || fd->data == NULL)
 		return -1;
-	switch(whence) {
+	shm = fd->data;
+	switch (whence) {
 	case SEEK_SET:
 		return offset;
 	case SEEK_CUR:
-		if (io->off+offset>shm_bufsz)
-			return shm_bufsz;
+		if (io->off+offset>shm->size)
+			return shm->size;
 		return io->off + offset;
 	case SEEK_END:
 		return 0xffffffff;
@@ -53,37 +69,37 @@ static ut64 shm__lseek(struct r_io_t *io, int fildes, ut64 offset, int whence)
 	return io->off;
 }
 
-static int shm__plugin_open(struct r_io_t *io, const char *pathname)
-{
-	return (!memcmp(pathname, "shm://", 6));
+static int shm__plugin_open(RIO *io, const char *pathname) {
+	return (!memcmp (pathname, "shm://", 6));
 }
 
-static int shm__open(struct r_io_t *io, const char *pathname, int flags, int mode)
-{
-	char buf[1024];
-	char *ptr = buf;
+static inline int getshmid (const char *str) {
+	return atoi (str);
+}
 
-	strncpy(buf, pathname, 1000);
+static inline int getshmfd (RIOShm *shm) {
+	return (int)(size_t)shm->buf;
+}
 
-	if (!memcmp(ptr , "shm://", 6)) {
-		ptr= ptr+6;
-		// connect
-		shm_buf= shmat(atoi(ptr), 0, 0);
-
-		if (((int)(size_t)(shm_buf)) != -1) {
-			printf("Connected to shared memory 0x%08x\n", atoi(ptr));
-			shm_fd = (int)(size_t)&shm_buf;
-		} else	{
-			printf("Cannot connect to shared memory (%d)\n", atoi(ptr));
-			shm_buf = NULL;
-			shm_fd = -1;
+static RIODesc *shm__open(RIO *io, const char *pathname, int rw, int mode) {
+	if (!memcmp (pathname, "shm://", 6)) {
+		RIOShm *shm = R_NEW (RIOShm);
+		const char *ptr = pathname+6;
+		shm->id = getshmid (ptr);
+		shm->buf = shmat (shm->id, 0, 0);
+		shm->fd = getshmfd (shm);
+		shm->size = SHMATSZ;
+		if (shm->fd != -1) {
+			eprintf ("Connected to shared memory 0x%08x\n", shm->id);
+			return r_io_desc_new (&r_io_plugin_shm, shm->fd, pathname, rw, mode, shm);
 		}
+		eprintf ("Cannot connect to shared memory (%d)\n", shm->id);
+		free (shm);
 	}
-	return shm_fd;
+	return NULL;
 }
 
-static int shm__init(struct r_io_t *io)
-{
+static int shm__init(RIO *io) {
 	return R_TRUE;
 }
 

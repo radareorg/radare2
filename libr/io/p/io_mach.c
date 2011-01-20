@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include <r_userconf.h>
 
@@ -7,6 +7,7 @@
 #include <r_cons.h>
 
 #if __APPLE__
+
 //#define USE_PTRACE 0
 // EXPERIMENTAL
 #define EXCEPTION_PORT 0
@@ -34,23 +35,21 @@
 #define MACH_ERROR_STRING(ret) \
 	(mach_error_string (ret) ? mach_error_string (ret) : "(unknown)")
 
+typedef struct {
+	int pid;
+	task_t task;
+} RIOMach;
+#define RIOMACH_PID(x) (((RIOMach*)(x))->pid)
+#define RIOMACH_TASK(x) (((RIOMach*)(x))->task)
+
 #undef R_IO_NFDS
 #define R_IO_NFDS 2
 extern int errno;
-static int fds[3];
 
 static task_t pid_to_task(int pid) {
-        static task_t old_pid  = -1;
-        static task_t old_task = -1;
         task_t task = 0;
-        int err;
-
-        /* xlr8! */
-        if (old_task!= -1) //old_pid != -1 && old_pid == pid)
-                return old_task;
-
-        err = task_for_pid (mach_task_self (), (pid_t)pid, &task);
-        if ((err != KERN_SUCCESS) || !MACH_PORT_VALID(task)) {
+        int err = task_for_pid (mach_task_self (), (pid_t)pid, &task);
+        if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
                 eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
                 eprintf ("Reason: 0x%x: %s\n", err, MACH_ERROR_STRING (err));
                 eprintf ("You probably need to add user to procmod group.\n"
@@ -58,16 +57,13 @@ static task_t pid_to_task(int pid) {
                 eprintf ("FMI: http://developer.apple.com/documentation/Darwin/Reference/ManPages/man8/taskgated.8.html\n");
                 return -1;
         }
-        old_pid = pid;
-        old_task = task;
-
         return task;
 }
 
-static int __read(RIO *io, int pid, ut8 *buff, int len) {
-        unsigned int size = 0;
-        int err = vm_read_overwrite (pid_to_task (pid),
-		(unsigned int)io->off, len, (pointer_t)buff, &size);
+static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
+	vm_size_t size = 0;
+        int err = vm_read_overwrite (RIOMACH_TASK (fd),
+		(unsigned int)io->off, len, (pointer_t)buf, &size);
         if (err == -1) {
                 eprintf ("Cannot read\n");
                 return -1;
@@ -75,9 +71,9 @@ static int __read(RIO *io, int pid, ut8 *buff, int len) {
         return (int)size;
 }
 
-static int mach_write_at(int tid, const void *buff, int len, ut64 addr) {
+static int mach_write_at(RIOMach *riom, const void *buff, int len, ut64 addr) {
         kern_return_t err;
-	task_t task = pid_to_task (tid);
+	task_t task = riom->task;
         // XXX SHOULD RESTORE PERMS LATER!!!
         //err = vm_protect (task, addr+(addr%4096), 4096, 0, VM_PROT_READ | VM_PROT_WRITE);
         if (vm_protect (task, addr, len, 0, VM_PROT_READ | VM_PROT_WRITE) != KERN_SUCCESS)
@@ -93,26 +89,23 @@ static int mach_write_at(int tid, const void *buff, int len, ut64 addr) {
 	return len;
 }
 
-static int __write(struct r_io_t *io, int pid, const ut8 *buf, int len) {
-	return mach_write_at (pid, buf, len, io->off);
+static int __write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int len) {
+	return mach_write_at ((RIOMach*)fd->data, buf, len, io->off);
 }
 
 static int __plugin_open(struct r_io_t *io, const char *file) {
-	if (!memcmp (file, "attach://", 9) || !memcmp (file, "mach://", 7))
-		return R_TRUE;
-	return R_FALSE;
+	return (!memcmp (file, "attach://", 9) || !memcmp (file, "mach://", 7));
 }
 
-static task_t inferior_task = 0;
-static int task = 0;
+//static task_t inferior_task = 0;
+//static int task = 0;
 
 // s/inferior_task/port/
 static int debug_attach(int pid) {
-        inferior_task = pid_to_task (pid);
-        if (inferior_task == -1)
+        task_t task = pid_to_task (pid);
+        if (task == -1)
                 return -1;
-        task = inferior_task; // ugly global asignation
-        eprintf ("; pid = %d\ntask= %d\n", pid, inferior_task);
+        eprintf ("; pid = %d\ntask= %d\n", pid, task);
 #if 0
 	// TODO : move this code into debug
         if (task_threads (task, &inferior_threads, &inferior_thread_count)
@@ -132,7 +125,7 @@ static int debug_attach(int pid) {
 	/* is this required for arm ? */
 #if EXCEPTION_PORT
 	int exception_port;
-        if (mach_port_allocate (mach_task_self(), MACH_PORT_RIGHT_RECEIVE,
+        if (mach_port_allocate (mach_task_self (), MACH_PORT_RIGHT_RECEIVE,
 			&exception_port) != KERN_SUCCESS) {
                 eprintf ("Failed to create exception port.\n");
                 return -1;
@@ -148,62 +141,75 @@ static int debug_attach(int pid) {
                 return -1;
         }
 #endif
-        return 0;
+        return task;
 }
 
-static int __open(struct r_io_t *io, const char *file, int rw, int mode) {
-	int ret = -1;
-	if (__plugin_open (io, file)) {
-		int pid = atoi(file+(file[0]=='a'?9:7));
-		if (pid>0) {
-			ret = debug_attach (pid);
-			if (ret == -1) {
-				switch (errno) {
-				case EPERM:
-					ret = pid;
-					eprintf ("Operation not permitted\n");
-					return -1;
-				case EINVAL:
-					perror ("ptrace: Cannot attach");
-					eprintf ("ERRNO: %d (EINVAL)\n", errno);
-					break;
-				}
-			} ret = pid;
-		} else ret = pid;
+static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
+	RIOMach *riom;
+	int pid;
+	task_t task;
+	if (!__plugin_open (io, file))
+		return NULL;
+ 	pid = atoi (file+(file[0]=='a'?9:7));
+	if (pid<1)
+		return NULL;
+	task = debug_attach (pid);
+	if ((int)task == -1) {
+		switch (errno) {
+		case EPERM:
+			eprintf ("Operation not permitted\n");
+			break;
+		case EINVAL:
+			perror ("ptrace: Cannot attach");
+			eprintf ("ERRNO: %d (EINVAL)\n", errno);
+			break;
+		default:
+			eprintf ("unknown error in debug_attach\n");
+			break;
+		}
+		return NULL;
 	}
-	fds[0] = ret;
-	return ret;
+	riom = R_NEW (RIOMach);
+	riom->pid = pid;
+	riom->task = task;
+	return r_io_desc_new (&r_io_plugin_mach, riom->pid, file, rw, mode, riom);
 }
 
-static ut64 __lseek(struct r_io_t *io, int fildes, ut64 offset, int whence) {
+static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static int __close(struct r_io_t *io, int pid) {
+static int __close(RIODesc *fd) {
+	int pid = RIOMACH_PID (fd);
+	R_FREE (fd->data);
 	return ptrace (PT_DETACH, pid, 0, 0);
 }
 
-static int __system(struct r_io_t *io, int fd, const char *cmd) {
+static int __system(struct r_io_t *io, RIODesc *fd, const char *cmd) {
+	RIOMach *riom = (RIOMach*)fd->data;
 	//printf("ptrace io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
 	if (!strcmp (cmd, "pid")) {
 		int pid = atoi (cmd+4);
-		if (pid != 0)
-			io->fd = pid;
-		//printf("PID=%d\n", io->fd);
-		return io->fd;
+		if (pid != 0) {
+			task_t task = pid_to_task (pid);
+			if (task != -1) {
+				eprintf ("PID=%d\n", pid);
+				riom->pid = pid;
+				riom->task = task;
+				return 0;
+			}
+			eprintf ("io_mach_system: Invalid pid\n");
+			return 1;
+		}
+		eprintf ("io_mach_system: Invalid pid\n");
+		return 1;
 	} else eprintf ("Try: '|pid'\n");
-	return R_TRUE;
-}
-
-static int __init(struct r_io_t *io) {
-	eprintf ("mach init\n");
 	return R_TRUE;
 }
 
 // TODO: rename ptrace to io_mach .. err io.ptrace ??
 struct r_io_plugin_t r_io_plugin_mach = {
-        //void *plugin;
 	.name = "mach",
         .desc = "mach debug io",
         .open = __open,
@@ -212,7 +218,6 @@ struct r_io_plugin_t r_io_plugin_mach = {
         .plugin_open = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
-	.init = __init,
 	.write = __write,
 	// .debug ?
 };

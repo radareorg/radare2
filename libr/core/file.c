@@ -189,8 +189,8 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode) {
 	RCoreFile *fh;
 	const char *cp;
 	char *p;
-	int fd = r_io_open (r->io, file, mode, 0644);
-	if (fd == -1)
+	RIODesc *fd = r_io_open (r->io, file, mode, 0644);
+	if (fd == NULL)
 		return NULL;
 
 	fh = R_NEW (RCoreFile);
@@ -227,7 +227,7 @@ R_API struct r_core_file_t *r_core_file_get_fd(struct r_core_t *core, int fd) {
 	struct list_head *pos;
 	list_for_each_prev (pos, &core->files) {
 		RCoreFile *file = list_entry (pos, RCoreFile, list);
-		if (file->fd == fd)
+		if (file->fd->fd == fd)
 			return file;
 	}
 	return NULL;
@@ -238,7 +238,7 @@ R_API int r_core_file_list(struct r_core_t *core) {
 	struct list_head *pos;
 	list_for_each_prev (pos, &core->files) {
 		RCoreFile *f = list_entry (pos, RCoreFile, list);
-		eprintf ("%d %s\n", f->fd, f->uri);
+		eprintf ("%d %s\n", f->fd->fd, f->uri);
 		count++;
 	}
 	return count;

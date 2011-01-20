@@ -5,6 +5,8 @@
 
 <{include libr/TODO}>
 
+* jk in visual mode for disassembly print format must scroll by opcodes, not bytes
+
 * Add support for aout binaries?
 * eprintf should be modified to log into a file
   - eprintf_open() -- start log to file

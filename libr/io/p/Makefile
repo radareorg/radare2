@@ -13,8 +13,9 @@ endif
 foo: all
 
 ALL_TARGETS=
-DEBUGS=ptrace.mk debug.mk gdb.mk malloc.mk shm.mk mach.mk w32dbg.mk procpid.mk
-include ${DEBUGS}
+PLUGINS=ptrace.mk debug.mk gdb.mk malloc.mk shm.mk mach.mk w32dbg.mk procpid.mk
+#PLUGINS=ptrace.mk debug.mk gdb.mk malloc.mk mach.mk w32dbg.mk procpid.mk
+include ${PLUGINS}
 
 #ALL_TARGETS+=io_ewf.so
 

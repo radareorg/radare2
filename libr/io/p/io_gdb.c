@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2011 pancake<nopcode.org> */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -7,53 +7,55 @@
 #include "../../debug/p/libgdbwrap/gdbwrapper.c"
 #include "../../debug/p/libgdbwrap/interface.c"
 
-// XXX: is str2bin ok? do reads match reality?
-// XXX: This is an ugly singleton!!1
-static gdbwrap_t *desc = NULL;
-static int _fd = -1;
-
+typedef struct {
+	int fd;
+	gdbwrap_t *desc;
+} RIOGdb;
+#define RIOGDB_FD(x) (((RIOGdb*)(x))->fd)
+#define RIOGDB_DESC(x) (((RIOGdb*)(x))->desc)
+#define RIOGDB_IS_VALID(x) (x && x->plugin==&r_io_plugin_gdb && x->data)
 
 static int __plugin_open(RIO *io, const char *file) {
-	if (!memcmp (file, "gdb://", 6))
-		return R_TRUE;
-	return R_FALSE;
+	return (!memcmp (file, "gdb://", 6));
 }
 
-static int __open(RIO *io, const char *file, int rw, int mode) {
-	if (__plugin_open (io, file)) {
-		char *host = strdup (file+6);
-		char *port = strchr (host , ':');
-		_fd = -1;
-		if (port) {
-			*port = '\0';
-			_fd = r_socket_connect (host, atoi (port+1));
-			if (_fd != -1) desc = gdbwrap_init (_fd);
-			else eprintf ("Cannot connect to host.\n");
-			//return gdbwrapper ...();
-		} else eprintf ("Port not specified. Please use gdb://[host]:[port]\n");
-		free (host);
-		return _fd;
+static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
+	char host[128], *port;
+	int _fd;
+	RIOGdb *riog;
+	if (!__plugin_open (io, file))
+		return NULL;
+	strncpy (host, file+6, sizeof (host)-1);
+	port = strchr (host , ':');
+	if (!port) {
+		eprintf ("Port not specified. Please use gdb://[host]:[port]\n");
+		return NULL;
 	}
-	return -1;
+	*port = '\0';
+	_fd = r_socket_connect (host, atoi (port+1));
+	if (_fd == -1) {
+		eprintf ("Cannot connect to host.\n");
+		return NULL;
+	}
+	riog = R_NEW (RIOGdb);
+	riog->fd = _fd;
+	riog->desc = gdbwrap_init (_fd);
+	return r_io_desc_new (&r_io_plugin_shm, _fd, file, rw, mode, riog);
 }
 
-static int __init(RIO *io) {
-	return R_TRUE;
-}
-
-static int __write(RIO *io, int fd, const ut8 *buf, int count) {
-	gdbwrap_writemem (desc, io->off, (void *)buf, count);
+static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+	gdbwrap_writemem (RIOGDB_DESC (fd), io->off, (void *)buf, count);
 	return count;
 }
 
-static ut64 __lseek(RIO *io, int fildes, ut64 offset, int whence) {
+static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
         return offset;
 }
 
-static int __read(RIO *io, int fd, ut8 *buf, int count) {
+static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	memset (buf, 0xff, count);
-	if (fd == _fd) {
-		char *ptr = gdbwrap_readmem (desc, (la32)io->off, count);
+	if (RIOGDB_IS_VALID (fd)) {
+		char *ptr = gdbwrap_readmem (RIOGDB_DESC (fd), (la32)io->off, count);
 		if (ptr == NULL)
 			return -1;
 		//eprintf ("READ %llx (%s)\n", (ut64)io->off, ptr);
@@ -62,7 +64,7 @@ static int __read(RIO *io, int fd, ut8 *buf, int count) {
 	return -1;
 }
 
-static int __close(RIO *io, int fd) {
+static int __close(RIODesc *fd) {
 	return -1;
 }
 
@@ -78,11 +80,4 @@ struct r_io_plugin_t r_io_plugin_gdb = {
 	.lseek = __lseek,
 	.system = NULL,
 	.debug = (void *)1,
-	.init = __init,
-        //void *widget;
-/*
-        struct gdb_t *gdb;
-        ut32 (*write)(int fd, const ut8 *buf, ut32 count);
-	int fds[R_IO_NFDS];
-*/
 };
