@@ -3125,7 +3125,7 @@ static int cmd_open(void *data, const char *input) {
 		if (file) {
 			if (ptr) {
 				addr = r_num_math (core->num, ptr+1);
-				size = r_io_size (core->io, file->fd->fd);
+				size = r_io_size (core->io);
 				r_io_map_add (core->io, file->fd->fd, R_IO_READ, 0, addr, size);
 				eprintf ("Map '%s' in 0x%08"PFMT64x" with size 0x%"PFMT64x"\n",
 					input+1, addr, size);

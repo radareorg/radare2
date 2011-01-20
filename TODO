@@ -5,7 +5,9 @@
 
 <{include libr/TODO}>
 
+* mount /mnt/ must chop last '/'
 * jk in visual mode for disassembly print format must scroll by opcodes, not bytes
+* "wx jeje" does not says "invalid hexpair string" (must report error)
 
 * Add support for aout binaries?
 * eprintf should be modified to log into a file

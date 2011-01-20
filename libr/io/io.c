@@ -116,7 +116,8 @@ R_API RIODesc *r_io_open(struct r_io_t *io, const char *file, int flags, int mod
 #endif
 	}
 	if (fd >= 0) {
-		desc = r_io_desc_new (io->plugin, fd, file, flags, mode, io->plugin);
+		if (desc == NULL)
+			desc = r_io_desc_new (io->plugin, fd, file, flags, mode, NULL);
 		r_io_desc_add (io, desc);
 		r_io_set_fd (io, desc);
 	}
@@ -283,16 +284,16 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 	switch(whence) {
 	case R_IO_SEEK_SET:
 		posix_whence = SEEK_SET;
-ret=offset;
+		ret=offset;
 		break;
 	case R_IO_SEEK_CUR:
 //		offset += io->off;
 		posix_whence = SEEK_CUR;
-ret=offset+io->off;
+		ret=offset+io->off;
 		break;
 	case R_IO_SEEK_END:
 		//offset = UT64_MAX; // XXX: depending on io bits?
-ret = UT64_MAX;
+		ret = UT64_MAX;
 		posix_whence = SEEK_END;
 		break;
 	}
@@ -314,13 +315,13 @@ ret = UT64_MAX;
 			ret = (!io->debug && io->va && !list_empty (&io->sections))?
 				r_io_section_offset_to_vaddr (io, io->off) : io->off;
 		} else eprintf ("r_io_seek: cannot seek to %"PFMT64x"\n", offset);
-	} else eprintf ("r_io_seek: null fd\n");
+	} else { eprintf ("r_io_seek: null fd\n"); asm("int3"); }
 	return ret;
 }
 
-R_API ut64 r_io_size(RIO *io, int fd) {
+R_API ut64 r_io_size(RIO *io) {
 	ut64 size, here;
-	r_io_set_fdn (io, fd);
+	//r_io_set_fdn (io, fd);
 	here = r_io_seek (io, 0, R_IO_SEEK_CUR);
 	size = r_io_seek (io, 0, R_IO_SEEK_END);
 	r_io_seek (io, here, R_IO_SEEK_SET);

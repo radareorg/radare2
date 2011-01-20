@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include <r_core.h>
 
@@ -198,7 +198,8 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode) {
 		fh->filename = p+3;
 	fh->rwx = mode;
 	r->file = fh;
-	fh->size = r_io_size (r->io, fd->fd);
+	r->io->plugin = fd->plugin;
+	fh->size = r_io_size (r->io);
 	list_add (&(fh->list), &r->files);
 
 //	r_core_bin_load (r, fh->filename);

@@ -243,6 +243,8 @@ int main(int argc, char **argv) {
 		r_core_cmd (&r, "fo", 0);
 		r_cons_flush ();
 	}
+	// read current block
+	r_core_seek (&r, r.offset, 1);
 
 	/* XXX: find better solution.. files > 10MB does not hash */
 	#define SLURP_LIMIT (10*1024*1024)

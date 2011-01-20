@@ -12,9 +12,9 @@ typedef struct {
 	ut32 size;
 } RIOMalloc;
 
-#define RIOMALLOC_FD(x) (((RIOMalloc*)x)->fd)
-#define RIOMALLOC_SZ(x) (((RIOMalloc*)x)->size)
-#define RIOMALLOC_BUF(x) (((RIOMalloc*)x)->buf)
+#define RIOMALLOC_FD(x) (((RIOMalloc*)x->data)->fd)
+#define RIOMALLOC_SZ(x) (((RIOMalloc*)x->data)->size)
+#define RIOMALLOC_BUF(x) (((RIOMalloc*)x->data)->buf)
 
 static int __write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (fd == NULL || fd->data == NULL)
@@ -35,9 +35,12 @@ static int __read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
 }
 
 static int __close(RIODesc *fd) {
+	RIOMalloc *riom;
 	if (fd == NULL || fd->data == NULL)
 		return -1;
-	free (RIOMALLOC_BUF (fd));
+	riom = fd->data;
+	free (riom->buf);
+	riom->buf = NULL;
 	free (fd->data);
 	fd->data = NULL;
 	fd->state = R_IO_DESC_TYPE_CLOSED;
@@ -58,18 +61,20 @@ static int __plugin_open(struct r_io_t *io, const char *pathname) {
 }
 
 static inline int getmalfd (RIOMalloc *mal) {
-	return (int)(size_t)mal->buf;
+	return 0xfffffff & (int)(size_t)mal->buf;
 }
 
 static RIODesc *__open(struct r_io_t *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname)) {
 		RIOMalloc *mal = R_NEW (RIOMalloc);
 		mal->fd = getmalfd (mal);
-		mal->size = atoi (pathname+9) +1;
-		mal->buf = malloc (mal->size);
-		if (mal->buf != NULL) {
-			memset (mal->buf, '\0', mal->size);
-			return r_io_desc_new (&r_io_plugin_malloc, mal->fd, pathname, rw, mode, mal);
+		mal->size = atoi (pathname+9);
+		if ((mal->size)>0) {
+			mal->buf = malloc (mal->size);
+			if (mal->buf != NULL) {
+				memset (mal->buf, '\0', mal->size);
+				return r_io_desc_new (&r_io_plugin_malloc, mal->fd, pathname, rw, mode, mal);
+			}
 		}
 		eprintf ("Cannot allocate (%s) %d bytes\n", pathname+9, mal->size);
 		free (mal);

@@ -138,10 +138,12 @@ R_API int r_fs_read (RFS* fs, RFSFile *file, ut64 addr, int len) {
 R_API RList *r_fs_dir(RFS* fs, const char *path) {
 	if (fs) {
 		RFSRoot *root = r_fs_root (fs, path);
-		const char *dir = path + strlen (root->path);
-		if (!*dir) dir = "/";
-		if (root)
-			return root->p->dir (root, dir);
+		if (root) {
+			const char *dir = path + strlen (root->path);
+			if (!*dir) dir = "/";
+			if (root)
+				return root->p->dir (root, dir);
+		}
 		eprintf ("r_fs_dir: error, path %s is not mounted\n", path);
 	}
 	return NULL;
