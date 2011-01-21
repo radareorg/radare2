@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
 
 // XXX This has been stolen from r_vm !!! we must adapt this
 // XXX to work with r_io correctly

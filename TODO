@@ -5,6 +5,14 @@
 
 <{include libr/TODO}>
 
+* Enhace code analysis
+  - calculate multiple execution paths to give branch prediction results
+    - get/set register status of the vm
+    - analyze from various parent functions and resolve ranged values
+    - a ranged value can be:
+      - ut64 from, to
+      - limit : %2 (module)
+      - ...
 * mount /mnt/ must chop last '/'
 * jk in visual mode for disassembly print format must scroll by opcodes, not bytes
 * "wx jeje" does not says "invalid hexpair string" (must report error)

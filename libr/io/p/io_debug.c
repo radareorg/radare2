@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -249,10 +249,6 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 	return NULL;
 }
 
-static int __init(struct r_io_t *io) {
-	return R_TRUE;
-}
-
 struct r_io_plugin_t r_io_plugin_debug = {
         //void *plugin;
 	.name = "debug",
@@ -262,7 +258,6 @@ struct r_io_plugin_t r_io_plugin_debug = {
 	.lseek = NULL,
 	.system = NULL,
 	.debug = (void *)1,
-	.init = __init,
         //void *widget;
 /*
         struct debug_t *debug;

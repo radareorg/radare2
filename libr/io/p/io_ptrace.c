@@ -42,7 +42,7 @@ static int debug_os_read_at(int pid, void *buf, int sz, ut64 addr) {
 			(void *)(&((long*)(long)addr)[x]));
                 if (((long *)buf)[x] == -1) // && errno)
                         return s;
-		s += sizeof (long);
+		s += sizeof (s);
         }
         if (last) {
                 lr = debug_read_raw (pid, &((long*)(long)addr)[x]);
@@ -98,24 +98,25 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 	int ret = -1;
 	if (__plugin_open (io, file)) {
 		int pid = atoi (file+9);
-		if (file[0]=='a') {
-			ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
-			if (ret == -1) {
-				switch (errno) {
-				case EPERM:
-					ret = pid;
-					eprintf ("Operation not permitted\n");
-					break;
-				case EINVAL:
-					perror ("ptrace: Cannot attach");
-					eprintf ("ERRNO: %d (EINVAL)\n", errno);
-					break;
-				}
-			} else
-			if (__waitpid (pid))
+		ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
+		if (file[0]=='p')  //ptrace
+			ret = 0;
+		else
+		if (ret == -1) {
+			switch (errno) {
+			case EPERM:
 				ret = pid;
-			else eprintf ("Error in waitpid\n");
-		} else ret = pid;
+				eprintf ("ptrace_attach: Operation not permitted\n");
+				break;
+			case EINVAL:
+				perror ("ptrace: Cannot attach");
+				eprintf ("ERRNO: %d (EINVAL)\n", errno);
+				break;
+			}
+		} else
+		if (__waitpid (pid))
+			ret = pid;
+		else eprintf ("Error in waitpid\n");
 		if (ret != -1) {
 			RIOPtrace *riop = R_NEW (RIOPtrace);
 			riop->pid = riop->tid = pid;
@@ -140,6 +141,12 @@ static int __system(struct r_io_t *io, RIODesc *fd, const char *cmd) {
 	RIOPtrace *iop = (RIOPtrace*)fd->data;
 	//printf("ptrace io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
+	if (!strcmp (cmd, "mem")) {
+		char b[128];
+		int ret = debug_os_read_at (iop->pid, b, 128, 0x8048500);
+		printf ("ret = %d , pid = %d\n", ret, iop->pid);
+		printf ("%x %x %x %x\n", b[0], b[1], b[2], b[3]);
+	} else
 	if (!strcmp (cmd, "pid")) {
 		int pid = atoi (cmd+4);
 		if (pid != 0)

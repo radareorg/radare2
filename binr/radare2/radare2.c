@@ -206,10 +206,12 @@ int main(int argc, char **argv) {
 	}
 
 	if (debug) {
+		int *p = r.file->fd->data;
+		int pid = *p; // 1st element in debugger's struct must be int
 		r_core_cmd (&r, "e io.ffio=true", 0);
 		r_core_cmd (&r, "dh native", 0);
-		r_core_cmdf (&r, "dpa %d", r.file->fd);
-		r_core_cmdf (&r, "dp=%d", r.file->fd);
+		r_core_cmdf (&r, "dpa %d", pid);
+		r_core_cmdf (&r, "dp=%d", pid);
 		r_core_cmd (&r, ".dr*", 0);
 		/* honor dbg.bep */
 		{

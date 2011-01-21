@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
 
 #include "r_io.h"
 #include "r_util.h"
@@ -83,15 +83,15 @@ R_API RIODesc *r_io_open(struct r_io_t *io, const char *file, int flags, int mod
 			plugin = r_io_plugin_resolve (io, uri);
 			if (plugin && plugin->open) {
 				desc = plugin->open (io, uri, flags, mode);
+				if (io->redirect) {
+					free ((void *)uri);
+					uri = strdup (io->redirect);
+					r_io_redirect (io, NULL);
+					continue;
+				}
 				if (desc != NULL) {
 					r_io_desc_add (io, desc);
 					fd = desc->fd;
-					if (io->redirect) {
-						free ((void *)uri);
-						uri = strdup (io->redirect);
-						r_io_redirect (io, NULL);
-						continue;
-					}
 					if (fd != -1)
 						r_io_plugin_open (io, fd, plugin);
 					if (desc != io->fd)
