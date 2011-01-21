@@ -88,7 +88,7 @@ static int rafind_open(char *file) {
 	}
 	r_search_set_callback (rs, &hit, buffer);
 	if (to == -1)
-		to = r_io_size(io, fd);
+		to = r_io_size(io);
 	if (mode == R_SEARCH_KEYWORD) {
 		list_for_each(pos, &(kws_head)) {
 			BoxedString *kw = list_entry(pos, BoxedString, list);
