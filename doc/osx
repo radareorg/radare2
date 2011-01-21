@@ -11,3 +11,21 @@ And then..
 	$ sudo make install
 
 To install r2-swig you will need to install r2, valac, valaswig
+
+On OSX>=10.6 you need to sign the binary to debug
+
+To use the debugger in OSX>10.6 you have to create a self-signed certificate
+using the "KeyChain Access" utility. Then do the following:
+
+Menu -> CertificateAssistant -> Create Certificate
+  -> certificate type: code signing
+
+Use organization: radare.org
+Name: radare2
+
+When created:
+
+Right click on certificate -> Trust options -> Always trust
+
+$ cd binr/radare2
+$ make osxsign

@@ -250,7 +250,7 @@ int main(int argc, char **argv) {
 	#define SLURP_LIMIT (10*1024*1024)
 	/* check if file.sha1 has changed */
 	if (r.file->size < SLURP_LIMIT) // TODO: configure this in cfg.hashlimit // 
-	if (!strstr (r.file->filename,"://")) {
+	if (!strstr (r.file->uri, "://")) {
 		const char *npath, *nsha1;
 		char *path = strdup (r_config_get (r.config, "file.path"));
 		char *sha1 = strdup (r_config_get (r.config, "file.sha1"));

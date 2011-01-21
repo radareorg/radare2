@@ -1,12 +1,12 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include <r_io.h>
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
 	struct r_io_t *io;
 	char buf[4096];
-	int fd, ret;
+	int ret;
+	RIODesc *fd;
 
 	io = r_io_new();
 	if (io == NULL)

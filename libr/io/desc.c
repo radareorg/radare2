@@ -5,7 +5,7 @@
 
 R_API void r_io_desc_init(RIO *io) {
 	io->desc = r_list_new ();
-	io->desc->free = r_io_desc_free;
+	io->desc->free = (RListFree)r_io_desc_free;
 }
 
 R_API void r_io_desc_fini(RIO *io) {

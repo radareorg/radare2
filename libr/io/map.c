@@ -51,7 +51,7 @@ R_API int r_io_map_read_at(struct r_io_t *io, ut64 off, ut8 *buf, int len) {
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, im) { // _prev?
 		if (im && off >= im->from && off < im->to) {
-			r_io_set_fd (io, im->fd);
+			r_io_set_fdn (io, im->fd);
 			return r_io_read_at (io, off-im->from + im->delta, buf, len);
 		}
 	}
@@ -64,7 +64,7 @@ R_API int r_io_map_write_at(struct r_io_t *io, ut64 off, const ut8 *buf, int len
 	r_list_foreach (io->maps, iter, im) {
 		if (im && off >= im->from && off < im->to) {
 			if (im->flags & R_IO_WRITE) {
-				r_io_set_fd (io, im->fd);
+				r_io_set_fdn (io, im->fd);
 				return r_io_write_at (io, off-im->from + im->delta, buf, len);
 			} else return -1;
 		}

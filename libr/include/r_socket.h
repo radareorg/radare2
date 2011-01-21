@@ -21,7 +21,7 @@ R_API int r_socket_read(int fd, unsigned char *read, int len);
 R_API int r_socket_read_block(int fd, unsigned char *buf, int len);
 R_API int r_socket_puts(int fd, char *buf);
 R_API int r_socket_write(int fd, void *buf, int len);
-R_API int r_socket_connect(char *host, int port);
+R_API int r_socket_connect(const char *host, int port);
 R_API int r_socket_listen(int port);
 R_API int r_socket_accept(int fd);
 R_API int r_socket_gets(int fd, char *buf, int size);

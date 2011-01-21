@@ -3,7 +3,8 @@
 #include <r_io.h>
 
 int main () {
-	int ret, fd;
+	int ret;
+	RIODesc *fd;
 	char buf[1024];
 	struct r_io_t *io;
 
@@ -15,7 +16,7 @@ int main () {
 	r_io_set_fd(io, fd);
 
 	//r_io_map_add(io, fd, R_IO_READ, 0, 0xf00000, 0xffff);
-	r_io_map_add(io, fd, R_IO_READ, 0x8048000, 0, 0xffff);
+	r_io_map_add(io, fd->fd, R_IO_READ, 0x8048000, 0, 0xffff);
 
 	memset(buf, 0, 1024);
 	//ret = r_io_read_at(io, 0xf00000, buf, 1024);

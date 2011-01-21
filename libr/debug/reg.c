@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include <r_debug.h>
 #include <r_reg.h>
@@ -6,7 +6,7 @@
 R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write) {
 	ut8 buf[4096]; // XXX hacky!
 	int size, ret = R_FALSE;
-	if (!dbg || !dbg->reg)
+	if (!dbg || !dbg->reg || dbg->pid == -1)
 		return R_FALSE;
 	if (write) {
 		if (dbg && dbg->h && dbg->h->reg_write) {
@@ -20,7 +20,7 @@ R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write) {
 			size = dbg->h->reg_read (dbg, type, buf, sizeof (buf));
 			if (size == 0)
 				eprintf ("r_debug_reg: error reading registers pid=%d\n", dbg->pid);
-			ret = r_reg_set_bytes (dbg->reg, type, buf, size);
+			else ret = r_reg_set_bytes (dbg->reg, type, buf, size);
 		} else eprintf ("r_debug_reg: cannot read registers\n");
 	}
 	return ret;

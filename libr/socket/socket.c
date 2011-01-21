@@ -145,7 +145,7 @@ R_API int r_socket_unix_listen(const char *file) {
 }
 #endif
 
-R_API int r_socket_connect(char *host, int port) {
+R_API int r_socket_connect(const char *host, int port) {
 	struct sockaddr_in sa;
 	struct hostent *he;
 	int s;

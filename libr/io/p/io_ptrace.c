@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
 
 #include <r_userconf.h>
 
@@ -13,16 +13,19 @@
 #include <sys/wait.h>
 #include <errno.h>
 
+typedef struct {
+	int pid;
+	int tid;
+} RIOPtrace;
+#define RIOPTRACE_PID(x) (((RIOPtrace*)x->data)->pid)
+
 #undef R_IO_NFDS
 #define R_IO_NFDS 2
 extern int errno;
-static int fds[3];
 
 static int __waitpid(int pid) {
 	int st = 0;
-	if (waitpid (pid, &st, 0) == -1)
-		return R_FALSE;
-	return R_TRUE;
+	return (waitpid (pid, &st, 0) != -1);
 }
 
 #define debug_read_raw(x,y) ptrace(PTRACE_PEEKTEXT, x, y, 0)
@@ -50,16 +53,16 @@ static int debug_os_read_at(int pid, void *buf, int sz, ut64 addr) {
         return sz; 
 }
 
-static int __read(struct r_io_t *io, int pid, ut8 *buf, int len) {
+static int __read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int len) {
 	ut64 addr = io->off;
 	memset (buf, '\xff', len); // TODO: only memset the non-readed bytes
-	return debug_os_read_at (pid, buf, len, addr);
+	return debug_os_read_at (RIOPTRACE_PID (fd), buf, len, addr);
 }
 
 static int ptrace_write_at(int pid, const ut8 *buf, int sz, ut64 addr) {
         long words = sz / sizeof(long);
         long last = (sz % sizeof(long))*sizeof(long);
-		long x, lr;
+	long x, lr;
 
 	for (x=0;x<words;x++)
 		if (ptrace (PTRACE_POKEDATA, pid, &((long *)(long)addr)[x], ((long *)buf)[x]))
@@ -79,8 +82,8 @@ err:
 	return --x * sizeof(long) ;
 }
 
-static int __write(struct r_io_t *io, int pid, const ut8 *buf, int len) {
-	return ptrace_write_at(pid, buf, len, io->off);
+static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
+	return ptrace_write_at (RIOPTRACE_PID (fd), buf, len, io->off);
 }
 
 static int __plugin_open(struct r_io_t *io, const char *file) {
@@ -91,7 +94,7 @@ static int __plugin_open(struct r_io_t *io, const char *file) {
 	return R_FALSE;
 }
 
-static int __open(struct r_io_t *io, const char *file, int rw, int mode) {
+static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 	int ret = -1;
 	if (__plugin_open (io, file)) {
 		int pid = atoi (file+9);
@@ -109,38 +112,41 @@ static int __open(struct r_io_t *io, const char *file, int rw, int mode) {
 					break;
 				}
 			} else
-			if (__waitpid(pid))
+			if (__waitpid (pid))
 				ret = pid;
 			else eprintf ("Error in waitpid\n");
 		} else ret = pid;
+		if (ret != -1) {
+			RIOPtrace *riop = R_NEW (RIOPtrace);
+			riop->pid = riop->tid = pid;
+			return r_io_desc_new (&r_io_plugin_ptrace, -1, file, R_TRUE, 0, riop);
+		}
 	}
-	fds[0] = ret;
-	return ret;
+	return NULL;
 }
 
-static ut64 __lseek(struct r_io_t *io, int fildes, ut64 offset, int whence) {
-	return offset;
+static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
+	return (!whence)?offset:whence==1?io->off+offset:UT64_MAX;
 }
 
-static int __close(struct r_io_t *io, int pid) {
+static int __close(RIODesc *fd) {
+	int pid = RIOPTRACE_PID (fd);
+	free (fd->data);
+	fd->data = NULL;
 	return ptrace (PTRACE_DETACH, pid, 0, 0);
 }
 
-static int __system(struct r_io_t *io, int fd, const char *cmd) {
+static int __system(struct r_io_t *io, RIODesc *fd, const char *cmd) {
+	RIOPtrace *iop = (RIOPtrace*)fd->data;
 	//printf("ptrace io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
 	if (!strcmp (cmd, "pid")) {
 		int pid = atoi (cmd+4);
 		if (pid != 0)
-			io->fd = pid;
-		io->printf ("%d\n", io->fd);
-		return io->fd;
+			iop->pid = iop->tid = pid;
+		io->printf ("%d\n", iop->pid);
+		return 0;
 	} else eprintf ("Try: '=!pid'\n");
-	return R_TRUE;
-}
-
-static int __init(struct r_io_t *io) {
-	eprintf ("ptrace init\n");
 	return R_TRUE;
 }
 
@@ -155,14 +161,7 @@ struct r_io_plugin_t r_io_plugin_ptrace = {
         .plugin_open = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
-	.init = __init,
 	.write = __write,
-        //void *widget;
-/*
-        struct debug_t *debug;
-        ut32 (*write)(int fd, const ut8 *buf, ut32 count);
-	int fds[R_IO_NFDS];
-*/
 };
 #else
 struct r_io_plugin_t r_io_plugin_ptrace = {

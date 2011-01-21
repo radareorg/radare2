@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2011 pancake<nopcode.org> */
 
 #include <r_userconf.h>
 
@@ -14,46 +14,49 @@
 #include <sys/wait.h>
 #include <errno.h>
 
-static int fd;
-static int pid;
+//static int fd;
+//static int pid;
+
+typedef struct {
+	int fd;
+	int pid;
+} RIOProcpid;
+
+#define RIOPROCPID_PID(x) (((RIOProcpid*)x->data)->pid)
+#define RIOPROCPID_FD(x) (((RIOProcpid*)x->data)->fd)
 
 static int __waitpid(int pid) {
 	int st = 0;
-	if (waitpid(pid, &st, 0) == -1)
-		return R_FALSE;
-	return R_TRUE;
+	return (waitpid(pid, &st, 0) != -1);
 }
 
-static int debug_os_read_at(int pid, void *buf, int sz, ut64 addr) {
-	// TODO: use map pid/fd
-	lseek (fd, addr, 0);
-	return read (fd, buf, sz);
+static int debug_os_read_at(int fdn, void *buf, int sz, ut64 addr) {
+	lseek (fdn, addr, 0);
+	return read (fdn, buf, sz);
 }
 
-static int __read(struct r_io_t *io, int pid, ut8 *buf, int len) {
+static int __read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int len) {
 	ut64 addr = io->off;
 	memset (buf, '\xff', len); // TODO: only memset the non-readed bytes
-	return debug_os_read_at (pid, buf, len, addr);
+	return debug_os_read_at (RIOPROCPID_FD (fd), buf, len, addr);
 }
 
-static int procpid_write_at(int pid, const ut8 *buf, int sz, ut64 addr) {
+static int procpid_write_at(int fd, const ut8 *buf, int sz, ut64 addr) {
 	lseek (fd, addr, 0);
 	return write (fd, buf, sz);
 }
 
-static int __write(struct r_io_t *io, int pid, const ut8 *buf, int len) {
-	return procpid_write_at (pid, buf, len, io->off);
+static int __write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int len) {
+	return procpid_write_at (RIOPROCPID_FD (fd), buf, len, io->off);
 }
 
 static int __plugin_open(struct r_io_t *io, const char *file) {
-	if (!memcmp (file, "procpid://", 10))
-		return R_TRUE;
-	return R_FALSE;
+	return (!memcmp (file, "procpid://", 10));
 }
 
-static int __open(struct r_io_t *io, const char *file, int rw, int mode) {
+static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 	char procpidpath[64];
-	int ret = -1;
+	int fd, ret = -1;
 	if (__plugin_open (io, file)) {
 		int pid = atoi (file+10);
 		if (file[0]=='a') {
@@ -74,36 +77,44 @@ static int __open(struct r_io_t *io, const char *file, int rw, int mode) {
 				ret = pid;
 			else eprintf ("Error in waitpid\n");
 		} else ret = pid;
-	}
-	fd = ret;//TODO: use r_io_fd api
-	snprintf (procpidpath, sizeof (procpidpath), "/proc/%d/mem", pid);
-	fd = open (procpidpath, O_RDWR);
-	if (fd == -1) {
+		fd = ret;//TODO: use r_io_fd api
+		snprintf (procpidpath, sizeof (procpidpath), "/proc/%d/mem", pid);
+		fd = open (procpidpath, O_RDWR);
+		if (fd != -1) {
+			RIOProcpid *riop = R_NEW (RIOProcpid);
+			riop->pid = pid;
+			riop->fd = fd;
+			return r_io_desc_new (&r_io_plugin_procpid, -1, file, R_TRUE, 0, riop);
+		}
 		/* kill children */
 		eprintf ("Cannot open /proc/%d/mem of already attached process\n", pid);
 		ptrace (PTRACE_DETACH, pid, 0, 0);
 	}
-	return ret;
+	return NULL;
 }
 
-static ut64 __lseek(struct r_io_t *io, int fildes, ut64 offset, int whence) {
+static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static int __close(struct r_io_t *io, int pid) {
-	return ptrace (PTRACE_DETACH, pid, 0, 0);
+static int __close(RIODesc *fd) {
+	int ret = ptrace (PTRACE_DETACH, RIOPROCPID_PID (fd), 0, 0);
+	free (fd->data);
+	fd->data = NULL;
+	return ret;
 }
 
-static int __system(struct r_io_t *io, int fd, const char *cmd) {
+static int __system(struct r_io_t *io, RIODesc *fd, const char *cmd) {
+	RIOProcpid *iop = (RIOProcpid*)fd->data;
 	//printf("ptrace io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
 	if (!strcmp (cmd, "pid")) {
 		int pid = atoi (cmd+4);
 		if (pid != 0)
-			io->fd = pid;
-		//printf("PID=%d\n", io->fd);
-		return io->fd;
-	} else eprintf ("Try: '|pid'\n");
+			iop->pid = pid;
+		io->printf ("%d\n", iop->pid);
+		return 0;
+	} else eprintf ("Try: '=!pid'\n");
 	return R_TRUE;
 }
 

@@ -762,19 +762,22 @@ static void cmd_reg(RCore *core, const char *str) {
 		r_reg_arena_swap (core->dbg->reg, R_FALSE);
 		break;
 	case '=':
-		r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 32, 2); // XXX detect which one is current usage
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 64, 2);
+		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 32, 2); // XXX detect which one is current usage
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 64, 2);
+		} else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 		break;
 	case '*':
-		r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 32, 1); // XXX detect which one is current usage
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 64, 1);
+		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 32, 1); // XXX detect which one is current usage
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 64, 1);
+		} else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 		break;
 	case '\0':
-		r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 32, 0);
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 64, 0);
+		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 32, 0);
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 64, 0);
+		} else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 		break;
 	case ' ':
 		arg = strchr (str+1, '=');

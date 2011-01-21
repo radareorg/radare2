@@ -1207,6 +1207,11 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 	char path[1024], line[1024];
 	char region[100], region2[100], perms[5], null[16];
 	FILE *fd;
+	if (dbg->pid == -1) {
+		eprintf ("r_debug_native_map_get: No selected pid (-1)\n");
+		return NULL;
+	}
+
 #if __FreeBSD__
 	sprintf (path, "/proc/%d/map", dbg->pid);
 #else

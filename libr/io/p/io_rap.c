@@ -110,13 +110,14 @@ static int rap__plugin_open(struct r_io_t *io, const char *pathname) {
 
 static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int mode) {
 	RIORap *rior;
-	char *file, *port, *ptr;
+	const char *ptr;
+	char *file, *port;
 	char buf[1024];
 	int i, p, listenmode, rap_fd;
 
 	if (!rap__plugin_open (io, pathname))
 		return NULL;
-	ptr += 6;
+	ptr = pathname + 6;
 	if (!(port = strchr (ptr, ':'))) {
 		eprintf ("rap: wrong uri\n");
 		return NULL;
@@ -140,7 +141,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		rior->fd = r_socket_listen (p);
 		return r_io_desc_new (&r_io_plugin_rap, rior->fd, pathname, rw, mode, rior);
 	}
-	if ((rap_fd=r_socket_connect (ptr, p))==-1) {
+	if ((rap_fd = r_socket_connect (ptr, p))==-1) {
 		eprintf ("Cannot connect to '%s' (%d)\n", ptr, p);
 		return NULL;
 	}
