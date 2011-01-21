@@ -1,22 +1,22 @@
 #include <r_io.h>
 
-int main(int argc, char **argv)
-{
-	struct r_io_t *io;
+int main(int argc, char **argv) {
 	char buf[1024], *file;
-	int fd, ret;
+	struct r_io_t *io;
+	RIODesc *fd;
+	int ret;
 
 	io = r_io_new();
 	if (io == NULL)
 		return 1;
 	file = argc>1?argv[1]:"/bin/ls";
 	fd = r_io_open(io, file, R_IO_READ, 0);
-	if (fd == -1) {
+	if (fd == NULL) {
 		printf("Cannot open file '%s'\n", file);
 		r_io_free (io);
 		return 1;
 	}
-	printf("FD = %d\n", fd);
+	printf("FD = %d\n", fd->fd);
 	r_io_seek(io, 1, R_IO_SEEK_SET);
 	memset(buf, '\0', sizeof(buf));
 	r_io_read (io, (ut8 *)buf, 4);

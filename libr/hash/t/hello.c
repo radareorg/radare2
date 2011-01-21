@@ -3,9 +3,8 @@
 #include "r_io.h"
 #include "r_hash.h"
 
-int main(int argc, char **argv)
-{
-	int fd;
+int main(int argc, char **argv) {
+	RIODesc *fd;
 	ut8 *buf;
 	ut64 size;
 	struct r_io_t *io;
@@ -18,19 +17,19 @@ int main(int argc, char **argv)
 	io = r_io_new();
 
 	fd = r_io_open(io, argv[1], R_IO_READ, 0);
-	if (fd == -1) {
-		printf("Cannot open file\n");
+	if (fd == NULL) {
+		eprintf ("Cannot open file\n");
 		return 1;
 	}
 
 	/* get file size */
-	size = r_io_size(io, fd);
+	size = r_io_size (io);
 
 	/* read bytes */
 	buf = (ut8*) malloc(size);
 	if (buf == NULL) {
-		printf("Too big file\n");
-		r_io_close(io, fd);
+		printf ("Too big file\n");
+		r_io_close (io, fd);
 		r_io_free (io);
 		return 1;
 	}
