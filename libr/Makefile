@@ -99,7 +99,7 @@ install: install-includes install-pkgconfig
 	@for a in `find * | grep -e '\.${EXT_SO}$$' | grep -v lib/t | grep lib` ; do \
 	  b=`echo $$a|cut -d / -f 2`; \
 	  echo " ${PFX}/lib/$$b.${VERSION}"; \
-	  ${INSTALL_DATA} $$a ${PFX}/lib/$$b.${VERSION} ; \
+	  ${INSTALL_LIB} $$a ${PFX}/lib/$$b.${VERSION} ; \
 	  ( cd ${PFX}/lib ; ln -fs $$b.${VERSION} $$b.0 ; ln -fs $$b.0 $$b ); \
 	done
 	# object archives
