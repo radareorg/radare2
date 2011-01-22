@@ -13,6 +13,8 @@
       - ut64 from, to
       - limit : %2 (module)
       - ...
+
+* Add ewf.mk
 * mount /mnt/ must chop last '/'
 * jk in visual mode for disassembly print format must scroll by opcodes, not bytes
 * "wx jeje" does not says "invalid hexpair string" (must report error)

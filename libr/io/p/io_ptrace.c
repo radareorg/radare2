@@ -152,7 +152,7 @@ static int __system(struct r_io_t *io, RIODesc *fd, const char *cmd) {
 		if (pid != 0)
 			iop->pid = iop->tid = pid;
 		io->printf ("%d\n", iop->pid);
-		return 0;
+		return pid;
 	} else eprintf ("Try: '=!pid'\n");
 	return R_TRUE;
 }
