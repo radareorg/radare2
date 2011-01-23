@@ -284,6 +284,10 @@ char* Elf_(r_bin_elf_get_data_encoding)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	switch (bin->ehdr.e_machine) {
+	case EM_AVR:
+		return strdup ("avr");
+	case EM_68K:
+		return strdup ("m68k");
 	case EM_MIPS:
 	case EM_MIPS_RS3_LE:
 	case EM_MIPS_X:
@@ -296,7 +300,7 @@ char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return strdup ("sparc");
 	case EM_PPC:
 	case EM_PPC64:
-		return strdup ("powerpc");
+		return strdup ("ppc");
 	case EM_68K:
 		return strdup ("m68k");
 	default:
