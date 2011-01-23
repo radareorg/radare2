@@ -212,7 +212,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	inc = 2 + (int)((p->width-14)/4);
 	if (inc%2) inc++;
 	inc = 16;
-inc = p->cols;
+	inc = p->cols;
 
 	if (p->flags & R_PRINT_FLAGS_HEADER) {
 		// only for color..too many options .. brbr

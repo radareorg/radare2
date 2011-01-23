@@ -13,7 +13,7 @@
 #include <r_io.h>
 
 static struct r_io_t *io;
-static int fd = -1;
+static RIODesc *fd = NULL;
 static int rad = 0;
 struct r_search_t *rs;
 static ut64 from = 0LL, to = -1;
@@ -72,9 +72,9 @@ static int rafind_open(char *file) {
 	int ret, last = 0;
 	struct list_head *pos;
 
-	io = r_io_new();
-	fd = r_io_open(io, file, R_IO_READ, 0);
-	if (fd == -1) {
+	io = r_io_new ();
+	fd = r_io_open (io, file, R_IO_READ, 0);
+	if (fd == NULL) {
 		eprintf ("Cannot open file '%s'\n", file);
 		return 1;
 	}

@@ -39,6 +39,8 @@ typedef struct r_cons_grep_t {
 	int neg;
 } RConsGrep;
 
+typedef void (*RConsEvent)(void *);
+
 typedef struct r_cons_t {
 	RConsGrep grep;
 	char *buffer;
@@ -56,21 +58,16 @@ typedef struct r_cons_t {
 	FILE *fdin; // FILE? and then int ??
 	int fdout; // only used in pipe.c :?? remove?
 	char *teefile;
-	void (*break_cb)(void *user); // TODO: use RConsBreakCallback here
-	void *break_user;
-	/* TODO: rewrite as in typedef */
 	int (*user_fgets)(char *buf, int len);
+	RConsEvent event_interrupt;
+	RConsEvent event_resize;
+	void *data;
 #if __UNIX__
 	struct termios term_raw, term_buf;
 #elif __WINDOWS__
 	LPDWORD term_raw, term_buf;
 #endif
 } RCons;
-//extern RCons r_cons_instance;
-
-// TODO: pass instance ?
-typedef void (*RConsBreakCallback)(void *user);
-//--
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
 /* XXX : global variables? or a struct with a singleton? */
@@ -143,7 +140,6 @@ enum {
 #endif
 
 #ifdef R_API
-
 R_API RCons *r_cons_new ();
 R_API RCons *r_cons_singleton ();
 R_API RCons *r_cons_free ();

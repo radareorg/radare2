@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
 
 #include <r_cons.h>
 #include <r_types.h>
@@ -16,8 +16,8 @@ static RCons r_cons_instance;
 
 static void break_signal(int sig) {
 	I.breaked = R_TRUE;
-	if (I.break_cb)
-		I.break_cb (I.break_user);
+	if (I.event_interrupt)
+		I.event_interrupt (I.data);
 }
 
 static inline void r_cons_write (char *buf, int len) {
@@ -37,8 +37,8 @@ R_API RCons *r_cons_singleton () {
 
 R_API void r_cons_break(void (*cb)(void *u), void *user) {
 	I.breaked = R_FALSE;
-	I.break_cb = cb;
-	I.break_user = user;
+	I.event_interrupt = cb;
+	I.data = user;
 #if __UNIX__
 	signal (SIGINT, break_signal);
 #endif
@@ -62,9 +62,18 @@ static BOOL __w32_control(DWORD type) {
 }
 #endif
 
+#if __UNIX__
+static void resize (int sig) {
+	if (I.event_resize)
+		I.event_resize (I.data);
+}
+#endif
+
 R_API RCons *r_cons_new () {
+	I.event_interrupt = NULL;
+	I.event_resize = NULL;
+	I.data = NULL;
 	I.is_interactive = R_TRUE;
-	I.breaked = R_FALSE;
 	I.noflush = R_FALSE;
 	I.fdin = stdin;
 	I.fdout = 1;
@@ -82,6 +91,7 @@ R_API RCons *r_cons_new () {
 	I.term_raw.c_cflag &= ~(CSIZE|PARENB);
 	I.term_raw.c_cflag |= CS8;
 	I.term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
+	signal (SIGWINCH, resize);
 #elif __WINDOWS__
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, (PDWORD) &I.term_buf);
@@ -267,23 +277,15 @@ R_API void r_cons_newline() {
 	else r_cons_strcat ("\n");
 }
 
-static void sig_winch(int i) {
-	r_cons_get_size (NULL);
-}
-
 R_API int r_cons_get_size(int *rows) {
 #if __UNIX__
 	struct winsize win;
-	struct sigaction sa;
-	signal (SIGWINCH, sig_winch);
-	sigaction (SIGWINCH, (struct sigaction *)0, &sa);
-	sa.sa_flags &= ~ SA_RESTART;
-	sigaction (SIGWINCH, &sa, (struct sigaction *)0);
-	I.columns = 80;
-	I.rows = 23;
 	if (ioctl (1, TIOCGWINSZ, &win) == 0) {
 		I.columns = win.ws_col;
 		I.rows = win.ws_row;
+	} else {
+		I.columns = 80;
+		I.rows = 23;
 	}
 #else
 	const char *str = r_sys_getenv ("COLUMNS");

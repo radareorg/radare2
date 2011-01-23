@@ -8,6 +8,7 @@
 Things to improve in r2 (from radare.org/pad)
 =======================
 
+- Implement print Zoom mode (copypasta from r1)
 - allow to hook r_asm_disassemble and assemble with custom callbacks
   - extend a disassembler with own instructions.
 - code analysis must resolve jump tables
@@ -17,7 +18,6 @@ Things to improve in r2 (from radare.org/pad)
 - focus in single arch (beat ida) mips, ppc64 or arm?
 - display filesize info instead of virtual space address limit
 - cursor can move outside screen (visual broken)
-- documentate 't' key in visual help (make navigation simpler)
 - fix instruction navigation (earada)
   - do not allow to disassemble unaligned addresses (toggle)
   - use 'jk' with bwdisasm to go up to previous opcode.

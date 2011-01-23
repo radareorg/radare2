@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include "r_core.h"
 
 #define NPF 6
 static int printidx = 0;
-const char *printfmt[] = { "x", "pd", "f tmp&&sr sp&&x 64&&dr=&&s-&&s tmp&&f-tmp&&pd", "p8", "pc", "ps" };
+static const char *printfmt[] = { "x", "pd", "f tmp&&sr sp&&x 64&&dr=&&s-&&s tmp&&f-tmp&&pd", "p8", "pc", "ps" };
 
 // XXX: use core->print->cur_enabled instead of curset/cursor/ocursor
 static int curset = 0, cursor = 0, ocursor=-1;
@@ -74,7 +74,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 					fs2 = flag->name;
 					hit = 1;
 				}
-				if ((i >=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+				if ((i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
 					r_cons_printf (" %c  %03d 0x%08"PFMT64x" %4"PFMT64d" %s\n",
 						(option==i)?'>':' ',
 						i, flag->offset, flag->size, flag->name);
@@ -529,6 +529,7 @@ static ut64 var_functions_show(RCore *core, int idx) {
 	}
 	return addr;
 }
+
 /* Like emenu but for real */
 R_API void r_core_visual_anal(RCore *core) {
 	int option = 0;
@@ -656,7 +657,6 @@ R_API void r_core_visual_anal(RCore *core) {
 }
 #endif
 
-
 R_API void r_core_visual_define (RCore *core) {
 	int ch;
 	ut64 off = core->offset;
@@ -704,7 +704,7 @@ R_API void r_core_visual_define (RCore *core) {
 
 /* TODO: use r_cmd here in core->vcmd..optimize over 255 table */ 
 R_API int r_core_visual_cmd(RCore *core, int ch) {
-	RAsmAop *aop;
+	RAsmAop aop;
 	char buf[1024];
 	int cols = core->print->cols;
 	ch = r_cons_arrow_to_hjkl (ch);
@@ -947,22 +947,23 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_cons_clear00 ();
 		r_cons_printf (
 		"\nVisual mode help:\n\n"
-		" >||<    -  seek aligned to block size\n"
-		" hjkl    -  move around\n"
-		" HJKL    -  move around faster\n"
-		" pP      -  rotate print modes\n"
-		" /*+-    -  change block size\n"
-		" cC      -  toggle cursor and colors\n"
-		" d[f?]   -  define function, data, code, ..\n"
-		" x       -  find xrefs for current offset\n"
-		" sS      -  step / step over\n"
-		" uU      -  undo/redo seek\n"
-		" yY      -  copy and paste selection\n"
-		" mK/'K   -  mark/go to Key (any key)\n"
-		" :cmd    -  run radare command\n"
-		" ;[-]cmt -  add/remove comment\n"
-		" .       -  seek to program counter\n"
-		" q       -  back to radare shell\n");
+		" >||<    - seek aligned to block size\n"
+		" hjkl    - move around\n"
+		" HJKL    - move around faster\n"
+		" pP      - rotate print modes\n"
+		" /*+-    - change block size\n"
+		" cC      - toggle cursor and colors\n"
+		" d[f?]   - define function, data, code, ..\n"
+		" x       - find xrefs for current offset\n"
+		" sS      - step / step over\n"
+		" t       - track flags (browse symbols, functions..\n"
+		" uU      - undo/redo seek\n"
+		" yY      - copy and paste selection\n"
+		" mK/'K   - mark/go to Key (any key)\n"
+		" :cmd    - run radare command\n"
+		" ;[-]cmt - add/remove comment\n"
+		" .       - seek to program counter\n"
+		" q       - back to radare shell\n");
 		r_cons_flush ();
 		r_cons_any_key ();
 		break;
@@ -983,11 +984,23 @@ R_API void r_core_visual_prompt(RCore *core, int color) {
 	if (color) r_cons_strcat (Color_RESET);
 }
 
+static void r_core_visual_refresh (RCore *core) {
+	r_cons_get_size (NULL);
+	r_cons_clear00 ();
+	r_print_set_cursor (core->print, curset, ocursor, cursor);
+	r_core_visual_prompt (core, color);
+	r_core_cmd (core, printfmt[R_ABS (printidx%NPF)], 0);
+	r_cons_visual_flush ();
+}
+
 R_API int r_core_visual(RCore *core, const char *input) {
 	const char *cmdprompt;
 	const char *vi;
 	ut64 scrseek;
 	int ch;
+
+	r_cons_singleton ()->data = core;
+	r_cons_singleton ()->event_resize = (RConsEvent)r_core_visual_refresh;
 
 	vi = r_config_get (core->config, "cmd.vprompt");
 	if (vi) r_core_cmd (core, vi, 0);
@@ -1000,7 +1013,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 			r_cons_any_key ();
 			return 0;
 		}
-		input = input + 1;
+		input++;
 	}
 
 	color = r_config_get_i (core->config, "scr.color");
@@ -1010,20 +1023,14 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	do {
 		scrseek = r_num_math (core->num, 
 			r_config_get (core->config, "scr.seek"));
-		if (scrseek != 0LL) {
+		if (scrseek != 0LL)
 			r_core_seek (core, scrseek, 1);
-			// TODO: read?
-		}
 		if (debug)
 			r_core_cmd (core, ".dr*", 0);
 		cmdprompt = r_config_get (core->config, "cmd.vprompt");
 		if (cmdprompt && *cmdprompt)
 			r_core_cmd (core, cmdprompt, 0);
-		r_cons_clear00 ();
-		r_print_set_cursor (core->print, curset, ocursor, cursor);
-		r_core_visual_prompt (core, color);
-		r_core_cmd (core, printfmt[R_ABS (printidx%NPF)], 0);
-		r_cons_visual_flush ();
+		r_core_visual_refresh (core);
 		ch = r_cons_readchar ();
 	} while (r_core_visual_cmd (core, ch));
 
