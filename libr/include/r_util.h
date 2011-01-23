@@ -111,7 +111,7 @@ R_API void r_file_mmap_free (RMmap *m);
 #define R_SYS_ARCH "x86"
 #define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
 #elif __POWERPC__
-#define R_SYS_ARCH "powerpc"
+#define R_SYS_ARCH "ppc"
 #define R_SYS_BITS R_SYS_BITS_32
 #elif __arm__
 #define R_SYS_ARCH "arm"

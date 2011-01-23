@@ -301,8 +301,6 @@ char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case EM_PPC:
 	case EM_PPC64:
 		return strdup ("ppc");
-	case EM_68K:
-		return strdup ("m68k");
 	default:
 		return strdup ("x86");
 	}
