@@ -858,10 +858,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		//r_core_cmd(core, "s eip", 0);
 		break;
 	case 'p':
-		printidx++;
+		printidx = (printidx+1)%NPF;
 		break;
 	case 'P':
-		printidx--;
+		printidx = (printidx-1)%NPF;
 		break;
 	case 'm':
 		r_core_visual_mark (core, r_cons_readchar());
@@ -976,11 +976,25 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 
 // TODO: simplify R_ABS(printidx%NPF) into a macro, or just control negative values..
 R_API void r_core_visual_prompt(RCore *core, int color) {
+	/* automatic block size */
+	switch (printidx) {
+	case 0:
+		r_core_block_size (core, core->cons->rows * 16);
+		break;
+	case 1: // pd
+	case 2: // pd+dbg
+		r_core_block_size (core, core->cons->rows * 5);
+		break;
+	}
+
 	if (cursor<0) cursor = 0;
 	if (color) r_cons_strcat (Color_YELLOW);
-	if (curset) r_cons_printf ("[0x%08"PFMT64x" %s(%d:%d=%d)]> %s\n", core->offset, core->file->filename,
-		cursor, ocursor, ocursor==-1?1:R_ABS (cursor-ocursor)+1, printfmt[R_ABS (printidx%NPF)]);
-	else r_cons_printf ("[0x%08"PFMT64x" %s]> %s\n", core->offset, core->file->filename, printfmt[R_ABS (printidx%NPF)]);
+	if (curset) r_cons_printf ("[0x%08"PFMT64x" %d %s(%d:%d=%d)]> %s\n", core->offset,
+		core->blocksize, core->file->filename, cursor, ocursor,
+		ocursor==-1?1:R_ABS (cursor-ocursor)+1, printfmt[R_ABS (printidx%NPF)]);
+	else r_cons_printf ("[0x%08"PFMT64x" %d %s]> %s\n", core->offset, core->blocksize,
+		core->file->filename, printfmt[R_ABS (printidx%NPF)]);
+	//r_cons_printf (" %d %d %d\n", printidx, core->cons->rows, core->blocksize);
 	if (color) r_cons_strcat (Color_RESET);
 }
 
@@ -997,7 +1011,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	const char *cmdprompt;
 	const char *vi;
 	ut64 scrseek;
-	int ch;
+	int ch, obs = core->blocksize;
 
 	r_cons_singleton ()->data = core;
 	r_cons_singleton ()->event_resize = (RConsEvent)r_core_visual_refresh;
@@ -1037,5 +1051,6 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	if (color)
 		r_cons_printf (Color_RESET);
 	core->print->cur_enabled = R_FALSE;
+	r_core_block_size (core, obs);
 	return 0;
 }

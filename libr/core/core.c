@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include <r_core.h>
 #include <r_socket.h>
@@ -317,6 +317,8 @@ R_API int r_core_prompt_exec(RCore *r) {
 
 R_API int r_core_block_size(RCore *core, ut32 bsize) {
 	int ret = R_FALSE;
+	if (bsize == core->blocksize)
+		return R_FALSE;
 	if (bsize<1)
 		bsize = R_TRUE;
 	else if (bsize> R_CORE_BLOCKSIZE_MAX)

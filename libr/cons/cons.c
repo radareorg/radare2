@@ -134,7 +134,7 @@ R_API void r_cons_gotoxy(int x, int y) {
         coord.Y = y;
         if (!hStdout)
                 hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
-        SetConsoleCursorPosition (hStdout,coord);
+        SetConsoleCursorPosition (hStdout, coord);
 #else
 	r_cons_printf ("\x1b[%d;%dH", y, x);
 #endif
@@ -289,10 +289,13 @@ R_API int r_cons_get_size(int *rows) {
 	}
 #else
 	const char *str = r_sys_getenv ("COLUMNS");
-	I.columns = 80;
-	I.rows = 23;
 	if (str != NULL)
 		I.columns = atoi (str);
+		I.rows = 23; // XXX. windows must get console size
+	} else {
+		I.columns = 80;
+		I.rows = 23;
+	}
 #endif
 	if (rows)
 		*rows = I.rows;
