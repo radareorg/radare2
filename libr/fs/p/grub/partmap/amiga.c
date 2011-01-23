@@ -67,7 +67,7 @@ struct grub_amiga_partition
   grub_uint32_t firstcyl;
 } __attribute__ ((packed));
 
-static struct grub_partition_map grub_amiga_partition_map;
+struct grub_partition_map grub_amiga_partition_map;
 
 
 

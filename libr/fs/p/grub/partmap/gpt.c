@@ -39,7 +39,7 @@ static const grub_gpt_part_type_t grub_gpt_partition_type_bios_boot = GRUB_GPT_P
 /* 512 << 7 = 65536 byte sectors.  */
 #define MAX_SECTOR_LOG 7
 
-static struct grub_partition_map grub_gpt_partition_map;
+struct grub_partition_map grub_gpt_partition_map;
 
 
 

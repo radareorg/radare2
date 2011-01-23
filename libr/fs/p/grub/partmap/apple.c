@@ -94,7 +94,7 @@ struct grub_apple_part
   grub_uint16_t pad[187];
 };
 
-static struct grub_partition_map grub_apple_partition_map;
+struct grub_partition_map grub_apple_partition_map;
 
 
 static grub_err_t

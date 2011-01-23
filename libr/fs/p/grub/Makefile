@@ -22,6 +22,13 @@ KERNFILES+=fs/xfs.c
 KERNFILES+=grubfs.c
 
 KERNFILES+=partmap/msdos.c
+#KERNFILES+=partmap/acorn.c
+KERNFILES+=partmap/gpt.c
+KERNFILES+=partmap/apple.c
+KERNFILES+=partmap/amiga.c
+KERNFILES+=partmap/sun.c
+KERNFILES+=partmap/bsdlabel.c
+KERNFILES+=partmap/sunpc.c
 
 KERNOBJS=$(subst .c,.o,${KERNFILES})
 CFLAGS=-Iinclude -g -fPIC

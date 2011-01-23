@@ -186,13 +186,17 @@ R_API RList *r_fs_partitions(RFS *fs, const char *ptype, ut64 delta) {
 	else if (!strcmp (ptype, "sun"))
 		gpm = &grub_sun_partition_map;
 	else if (!strcmp (ptype, "sunpc"))
-		gpm = &grub_sunpc_partition_map;
+		gpm = &grub_sun_pc_partition_map;
 	else if (!strcmp (ptype, "amiga"))
 		gpm = &grub_amiga_partition_map;
 	else if (!strcmp (ptype, "bsdlabel"))
 		gpm = &grub_bsdlabel_partition_map;
-	else if (!strcmp (ptype, "acorn"))
-		gpm = &grub_acorn_partition_map;
+	else if (!strcmp (ptype, "openbsdlabel"))
+		gpm = &grub_openbsdlabel_partition_map;
+	else if (!strcmp (ptype, "netbsdlabel"))
+		gpm = &grub_netbsdlabel_partition_map;
+//	else if (!strcmp (ptype, "acorn"))
+//		gpm = &grub_acorn_partition_map;
 	else if (!strcmp (ptype, "gpt"))
 		gpm = &grub_gpt_partition_map;
 

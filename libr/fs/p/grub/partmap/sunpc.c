@@ -47,7 +47,7 @@ struct grub_sun_pc_block
   grub_uint16_t  csum;          /* Label xor'd checksum.  */
 } __attribute__ ((packed));
 
-static struct grub_partition_map grub_sun_pc_partition_map;
+struct grub_partition_map grub_sun_pc_partition_map;
 
 /* Verify checksum (true=ok).  */
 static int
