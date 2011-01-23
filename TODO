@@ -3,42 +3,100 @@
 |    <  V  . |  . V  .   <   _/ .-' _/|  ()  |
 |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
-<{include libr/TODO}>
+0.7 release
+===========
+	* GMP
+	  - big-ssl.c big-gmp.c ...
+	  - implement GMP in util/big.c
+	    - http://etutorials.org/Programming/secure+programming/Chapter+7.+Public+Key+Cryptography/7.5+Generating+a+Prime+Number+Testing+for+Primality/
 
-Things to improve in r2 (from radare.org/pad)
+	DEBUGGER: (pancake)
+	---------
+	* Implement DRX support
+	* Implement dump+restore as macros (dump,)
+	* Implement software stepping (with code analysis+breakpoints)
+	* Implement dbg.bep - in r_core? in r_debug after attach? maybe only in r2 binr?
+	  - must be refined.. and look for better names
+
+	DIFFING
+	-------
+	* Reimplement or fix the delta diffing in C
+	  - first we need to do it for ired..
+
+	CORE
+	----
+	* Implement 'r' command in r2 (contrib?)
+	* Add "pm ?" for bit print like in pb? bit level binary memory printage
+	- add support for PDB files
+	- Handle ^C in searches (at least)
+	- Add support for DEX file format
+	- display filesize info instead of virtual space address limit
+	- mount /mnt/ must chop last '/'
+	- "wx jeje" does not says "invalid hexpair string" (must report error)
+	- allow to hook r_asm_disassemble and assemble with custom callbacks
+	  - extend a disassembler with own instructions.
+	- fix instruction navigation (earada)
+	  - do not allow to disassemble unaligned addresses (toggle)
+	  - use 'jk' with bwdisasm to go up to previous opcode.
+	    - r_asm can reduce cpu without disasm on fixed size ops archs.
+	- Implement print Zoom mode (copypasta from r1)
+	- r_bin_demangle ();
+		* _ZN7WebCore11CounterNode7recountERKNS_12AtomicStringE
+		  - demangle c++ and objc names
+		    WebCore.CounterNode.recount(AtomicString)
+		  _ZN = begin of stream
+		  0-9+ = count of chars
+		  E = end of stream
+		  RKNS_ = start of arguments
+
+	SWIG
+	----
+	- swigBindings : Distribute generated .i files or cxx files.. so build is faster
+
+	Visual mode
+	-----------
+	- visual mode with screen sizes not block size
+	- cursor mode by default?
+	- cursor can move outside screen (visual broken)
+
+	Assembler
+	---------
+	* add ppc64 disassembler (earada)
+	* Embed bits/arch/endian in a separated structure
+	  - So one can change from one arch to another with a pointer
+	  - Cool for defining ranges of memory
+
+0.8
+===
+* add support for .a files (r_fs supports cpio and ar archives...)
+* Implement rap:// upload/download protocol commands (maybe just system() with rsc2+wget?
+* register renaming (per-instruction or ranges)
+* code injection facilities? (wtf? insert,execute, restore)
+* Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
+* Record trace of register status for each function when running
+  - r_reg_arena_copy();
+* Create radare2-testsuite project
+  - tests for ired, rax2, radare2, rabin2 ...
+* Is RCore->block and blocksize a RBuf ? refactor!11
+* Add support for STATIC_PLUGINS in r_lang
+  - r_lang_define is implemented in lang.c, but requires the collaboration
+    of the plugins to properly setup the environment for the script execution.
+  - Add support for STATIC_PLUGINS in r_lang
+  - dlerror(/usr/lib/radare2/lang_perl.so): libperl.so: cannot open shared object file: No such file or directory
+    This issue is fixed by setting LD_LIBRARY_PATH...looks like dlopen ignores rpath
+
+Things to improve in r2
 =======================
-
-- Implement print Zoom mode (copypasta from r1)
-- allow to hook r_asm_disassemble and assemble with custom callbacks
-  - extend a disassembler with own instructions.
-- code analysis must resolve jump tables
-- register renaming (per-instruction or ranges)
-- visual mode with screen sizes not block size
-- cursor mode by default?
 - focus in single arch (beat ida) mips, ppc64 or arm?
-- display filesize info instead of virtual space address limit
-- cursor can move outside screen (visual broken)
-- fix instruction navigation (earada)
-  - do not allow to disassemble unaligned addresses (toggle)
-  - use 'jk' with bwdisasm to go up to previous opcode.
-    - r_asm can reduce cpu without disasm on fixed size ops archs.
-
----
-
+- code analysis must resolve jump tables
 * Enhace code analysis
   - calculate multiple execution paths to give branch prediction results
     - get/set register status of the vm
     - analyze from various parent functions and resolve ranged values
     - a ranged value can be:
       - ut64 from, to
-      - limit : %2 (module)
+      - restrict : %2 (module)
       - ...
-
-* Add ewf.mk
-* mount /mnt/ must chop last '/'
-* jk in visual mode for disassembly print format must scroll by opcodes, not bytes
-* "wx jeje" does not says "invalid hexpair string" (must report error)
-
 * Add support for aout binaries?
 * eprintf should be modified to log into a file
   - eprintf_open() -- start log to file
@@ -46,45 +104,23 @@ Things to improve in r2 (from radare.org/pad)
 /a ??? deprecated analyze code? srsly?
 * Search for wide strings /Z or so?
 
-Asm
-===
-* Embed bits/arch/endian in a separated structure
-  - So one can change from one arch to another with a pointer
-  - Cool for defining ranges of memory
-
-Bindings
-========
-* Distribute generated .i files or cxx files.. so build is faster
-
 Debugger
 ========
-* Implement DRX support
 * stepover waits for one unknown event that cannot be stopped
 * Implement list threads on ALL supported platforms (win,lin,osx)
 * ALL threads must be stopped when a breakpoint is handled..
+* Add support for windbg+virtualkd
 * Floating point registers
 * MMX/XMM/DRX control
-* Implement dump+restore as macros (dump,)
-* Add support for windbg+virtualkd
 
 pancake
 -------
+* Add SSL support to r_socket
 * Implement PTRACE_BLOCK on Linux
-* Implement software stepping (with code analysis+breakpoints)
-* Implement dbg.bep - in r_core? in r_debug after attach? maybe only in r2 binr?
-  - must be refined.. and look for better names
 * fork/clone child . inject code to create new threads or pids
 * Functions in r_util to get lil/big ut8,16,32 from ut8*
   - already done..must find better names probably
 * merge asm.arch vm.arch
-* _ZN7WebCore11CounterNode7recountERKNS_12AtomicStringE
-  - demangle c++ and objc names
-    WebCore.CounterNode.recount(AtomicString)
-  _ZN = begin of stream
-  0-9+ = count of chars
-  E = end of stream
-  RKNS_ = start of arguments
-* Implement rap:// upload/download protocol commands (maybe just system() with rsc2+wget?
 * support for macro scripting
 * better debugger support for OSX and iOS
 * rarc2 allows to compile invalid code like calling puts() out of context
@@ -105,7 +141,7 @@ nibble
 * dmi command must read from memory if no file path provided
   - rabin from memory ftw
   - to get libnames of dll, so..
--- from 0.6
+* add support for sign/unsigned registers..or at least a way to cast them
 * r_anal
   - use r_anal_value everywhere
   - x86im
@@ -119,19 +155,14 @@ nibble
         - check all strings
      2nd level:
         - basic block level diffing (output in graph mode)
-* GMP
-  - big-ssl.c big-gmp.c ...
-  - implement GMP in util/big.c
-    - http://etutorials.org/Programming/secure+programming/Chapter+7.+Public+Key+Cryptography/7.5+Generating+a+Prime+Number+Testing+for+Primality/
 
-@earada
--------
-* r_file_slurp should work fine for big files
+earada
+------
+* r_file_slurp should work fine for big files (not prio) r_file_slurp_buf?
   - mmap if supported
   - add r_file_mmap ?
   - read file in blocks instead of the whole file in a single syscall
 * remove all uses of alloca() // mingw and grep reports them all :)
-* Only use uppercase KMG for Kilo,Mega,Giga in r_num? - 'g' is for double
 * typedef all function pointers, like in r_bp
 * Implement /A : search AES
 * Implement case-insensitive search (e search.casematters ?) any better name? Use /i?
@@ -141,35 +172,15 @@ nibble
 * Implement search and replace /s
   - insert or append? (see r1 cfg vars)
 
-TODO 0.7
-========
-* inject code someway?
-* Create radare2-testsuite project
-  - tests for ired, rax2, radare2, rabin2 ...
-* Record trace of register status for each function when running
-  - r_reg_arena_copy();
-* Add lua and dalvik disassembler (volunteers?)
-  - Add dex format support to rabin (android)
-* Reimplement or fix the delta diffing in C
-  - first we need to do it for ired..
-* Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
-* Is RCore->block and blocksize a RBuf ? refactor!11
-* add support for sign/unsigned registers..or at least a way to cast them
-* Add support for STATIC_PLUGINS in r_lang
-  - r_lang_define is implemented in lang.c, but requires the collaboration
-    of the plugins to properly setup the environment for the script execution.
-  - Add support for STATIC_PLUGINS in r_lang
-  - dlerror(/usr/lib/radare2/lang_perl.so): libperl.so: cannot open shared object file: No such file or directory
-    This issue is fixed by setting LD_LIBRARY_PATH...looks like dlopen ignores rpath
 
 Questions
 =========
+* Only use uppercase KMG for Kilo,Mega,Giga in r_num? - 'g' is for double
 * radare2.c:217 . find name for maxfilesize to hash
 * r_list_foreach_prev is buggy, review and remove..
 * make symstall in swig/ ?
 * What about rsc2 ? deprecate, maintain? cleanup from 1? build? install?
 * Add deltified offset in PC? +10, +30 ... asm.reladdr
-* Add "pm ?" for bit print like in pb?
 * regio not implemented // it is really necessary? imho no..
 * distribute 'spp' with 'rarc2' ? imho no
 
@@ -196,7 +207,6 @@ Refactoring
 * What do we have to do with r_th, r_vm ?
 * Merge r_vm into r_anal ?
 * Merge r_socket inside r_util ?
-* Add SSL support to r_socket ?
 * Discuss missing r_core_sysenv_update in core/file.c:33
 * Add RLog API.. pipeable to disk and stderr..also hookable ..cool for ui (partially done)
 * Move disasm loop into r_print (r_print should depend on r_asm)
@@ -213,11 +223,9 @@ Refactoring
  
 Future
 ======
-* Implement minimalist 'ar' and add support for .a archive libs? (not necessary in this life)
 * Realign flags when using project in debug mode
 * FileDescriptors: dd -- copy from !fd in r1
 * Initial analysis looking for xrefs to strings and so? ax? ./a@@entry0 - Launched at startup
-* Store version information in libraries ? debian claims for it
 * install.sh (to track installed files ..)
 * acr -ldl check must be fixed for kfreebsd
 * Add support for float/double in r_num :?
@@ -225,10 +233,7 @@ Future
   - load the program using r_bin in virtual space
   - initialize vm and set regs
   - debug backend should use the vm
-
-Flags
-=====
-  - metaflags? support to define relations between flags
+* metaflags? support to define relations between flags
     (flag hirearchies)
 	r_flagtree
 	 - r_flags should have a tree construction to access to them faster
