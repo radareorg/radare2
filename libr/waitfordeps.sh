@@ -20,8 +20,9 @@ getext() {
 	esac
 }; ext=$(getext)
 
-cur=$(basename `pwd`)
 a=0
+count=3
+cur=$(basename `pwd`)
 while [ $a = 0 ] ; do
 	a=1
 	libs="$(echo $deps | sed -e s,r_,,g)"
@@ -33,6 +34,11 @@ while [ $a = 0 ] ; do
 	done
 	if [ $a = 0 ]; then
 		echo "[$cur] waiting for $libs"
+		count=$(($count-1))
+		if [ $count = 0 ]; then
+			echo "[$cur] Compilation failed"
+			#exit 1
+		fi
 		sleep 1
 	fi
 done

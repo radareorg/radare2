@@ -55,7 +55,7 @@ GrubFS *grubfs_new (struct grub_fs *myfs, void *data) {
 	return gfs;
 }
 
-grub_disk_t *grubfs_disk (void *data) {
+grub_disk_t grubfs_disk (void *data) {
 	struct grub_disk *disk = empty (sizeof (struct grub_disk));
 	disk = empty (sizeof (struct grub_disk));
 	disk->dev = empty (sizeof (struct grub_disk_dev));

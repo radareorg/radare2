@@ -19,8 +19,11 @@ R_API void r_fs_file_free (RFSFile *file) {
 
 // TODO: Use RFSRoot and pass it in the stack instead of heap? problematic with bindings
 R_API RFSRoot *r_fs_root_new (const char *path, ut64 delta) {
+	char *p;
 	RFSRoot *root = R_NEW (RFSRoot);
 	root->path = strdup (path);
+	p = root->path + strlen (path);
+	if (*p == '/') *p = 0; // chop tailing slash
 	root->delta = delta;
 	return root;
 }

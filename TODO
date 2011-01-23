@@ -5,7 +5,15 @@
 
 pancake
 -------
+* Support multiple partition formats
+- visual mode (default screen must be)
+  - unkknown file: hexdump
+  - known binary: disasm
+  - debugger: debugview
+* Fix ppc code analysis
+* keys per modificar flags i funcions
 - mount /mnt/ must chop last '/'
+* Fix not found infinite loop issue in -j 4
 
 
 earada

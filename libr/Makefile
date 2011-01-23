@@ -16,7 +16,8 @@ LIBLIST+=reg asm anal print parse search diff bp sign th db crypto debug fs core
 all: libs libr
 
 libs:
-	@for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} all ); done
+	@for lib in ${LIBLIST}; do \
+		cd $${lib} && ${MAKE} all || exit 1 ; cd .. ; done
 	@echo Build done for: ${LIBLIST}
 
 ifeq ($(ONELIB),1)

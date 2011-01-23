@@ -178,16 +178,32 @@ static int parhook (struct grub_disk *disk, struct grub_partition *par) {
 }
 
 R_API RList *r_fs_partitions(RFS *fs, const char *ptype, ut64 delta) {
-	list = r_list_new ();
-	list->free = r_fs_partition_free;
-	if (!strcmp (ptype, "msdos")) {
+	struct grub_partition_map *gpm = NULL;
+	if (!strcmp (ptype, "msdos"))
+		gpm = &grub_msdos_partition_map;
+	else if (!strcmp (ptype, "apple"))
+		gpm = &grub_apple_partition_map;
+	else if (!strcmp (ptype, "sun"))
+		gpm = &grub_sun_partition_map;
+	else if (!strcmp (ptype, "sunpc"))
+		gpm = &grub_sunpc_partition_map;
+	else if (!strcmp (ptype, "amiga"))
+		gpm = &grub_amiga_partition_map;
+	else if (!strcmp (ptype, "bsdlabel"))
+		gpm = &grub_bsdlabel_partition_map;
+	else if (!strcmp (ptype, "acorn"))
+		gpm = &grub_acorn_partition_map;
+	else if (!strcmp (ptype, "gpt"))
+		gpm = &grub_gpt_partition_map;
+
+	if (gpm) {
+		list = r_list_new ();
+		list->free = (RListFree)r_fs_partition_free;
 		struct grub_disk *disk = grubfs_disk (&fs->iob);
-		struct grub_partition_map *gpm = &grub_msdos_partition_map;
 		gpm->iterate (disk, parhook);
-	} else {
-		eprintf ("Unknown partition type '%s'. Try 'msdos'", ptype);
-		r_list_free (list);
-		list = NULL;
+		return list;
 	}
-	return list;
+	eprintf ("Unknown partition type '%s'. Supported types:\n"
+		"  msdos, apple, sun, sunpc, amiga, bsdlabel, acorn, gpt", ptype);
+	return NULL;
 }
