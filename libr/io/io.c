@@ -314,8 +314,8 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 			// r_io_sundo_push (io);
 			ret = (!io->debug && io->va && !list_empty (&io->sections))?
 				r_io_section_offset_to_vaddr (io, io->off) : io->off;
-		} else eprintf ("r_io_seek: cannot seek to %"PFMT64x"\n", offset);
-	} else { eprintf ("r_io_seek: null fd\n"); asm("int3"); }
+		} //else eprintf ("r_io_seek: cannot seek to %"PFMT64x"\n", offset);
+	} //else { eprintf ("r_io_seek: null fd\n"); }
 	return ret;
 }
 

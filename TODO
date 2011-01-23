@@ -7,12 +7,17 @@ pancake
 -------
 - mount /mnt/ must chop last '/'
 
+
 earada
 ------
 - fix instruction navigation (earada)
   - do not allow to disassemble unaligned addresses (toggle)
   - use 'jk' with bwdisasm to go up to previous opcode.
     - r_asm can reduce cpu without disasm on fixed size ops archs.
+
+nibble
+------
+- not identified as cmp instruction by analysis. (85f6  test esi, esi)
 
 0.7 release
 ===========

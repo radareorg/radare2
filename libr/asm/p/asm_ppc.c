@@ -12,7 +12,6 @@
 #include "dis-asm.h"
 
 
-static int ppc_mode = 0;
 static unsigned long Offset = 0;
 static char *buf_global = NULL;
 static unsigned char bytes[4];
@@ -44,11 +43,11 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	char *tmp;
 	if (buf_global == NULL)
 		return 0;
-	va_start(ap, format);
- 	tmp = alloca(strlen(format)+strlen(buf_global)+2);
-	sprintf(tmp, "%s%s", buf_global, format);
-	vsprintf(buf_global, tmp, ap);
-	va_end(ap);
+	va_start (ap, format);
+ 	tmp = alloca (strlen (format)+strlen (buf_global)+2);
+	sprintf (tmp, "%s%s", buf_global, format);
+	vsprintf (buf_global, tmp, ap);
+	va_end (ap);
 	return 0;
 }
 
@@ -60,8 +59,8 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	memcpy (bytes, buf, 4); // TODO handle thumb
 
 	/* prepare disassembler */
-	memset (&disasm_obj, '\0', sizeof(struct disassemble_info));
-	ppc_mode = a->bits;
+	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
+	disasm_obj.disassembler_options=(a->bits==64)?"64":"";
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &ppc_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
@@ -85,7 +84,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 RAsmPlugin r_asm_plugin_ppc = {
 	.name = "ppc",
 	.arch = "ppc",
-	.bits = (int[]){ 32, 0 },
+	.bits = (int[]){ 32, 64, 0 },
 	.desc = "PPC disassembly plugin",
 	.init = NULL,
 	.fini = NULL,
