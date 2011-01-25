@@ -58,12 +58,12 @@ R_API struct r_socket_proc_t *r_socket_proc_open(char *const argv[]) {
 R_API int r_socket_proc_close(struct r_socket_proc_t *sp) {
 #if __UNIX__
 	/* this is wrong */
-	kill(sp->pid, 9);
-	waitpid(sp->pid, NULL, 0); //WNOHANG);
-	close(sp->fd0[0]);
-	close(sp->fd0[1]);
+	kill (sp->pid, 9);
+	waitpid (sp->pid, NULL, 0); //WNOHANG);
+	close (sp->fd0[0]);
+	close (sp->fd0[1]);
 	//close(sp->fd1[0]);
-	close(sp->fd1[1]);
+	close (sp->fd1[1]);
 	//sp->fd[0] = -1;
 	//sp->fd[1] = -1;
 #endif
