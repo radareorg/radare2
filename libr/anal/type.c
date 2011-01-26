@@ -1,3 +1,4 @@
+/* radare - LGPL - Copyright 2010 -- pancake@nopcode.org */
 /* WORK IN PROGRESS */
 
 // cast can be done via string serialization
@@ -5,6 +6,7 @@
 // ..to_string (meta, type);
 // ..from_string()
 
+#if 0
 Ct char* 4 z
 Ct void 0
 Ct int 4 d
@@ -18,19 +20,13 @@ CFv [arraysize] [type] [name]
 CFa [arraysize] [type] [name]
 CFf 320 @ fun -> framesize for function
 CF 20 
+#endif
 
 // how to define a function pointer?
 // how to define a structure or complex types?
 // how to define arrays?
 
 #include <r_meta.h>
-
-typedef struct r_meta_function_t {
-	int stackframe;
-	RMetaType ret;
-	RMetaType *arg[16]; // Just references to already registered data types
-	// when we remove a type, we must ensure no function meta signature claims for it
-} RMetaFunction;
 
 typedef struct r_meta_type_t {
 	char name[32];
@@ -39,6 +35,13 @@ typedef struct r_meta_type_t {
 	int array; // real size = size * array
 	char format[16]; // print format
 } RMetaType;
+
+typedef struct r_meta_function_t {
+	int stackframe;
+	RMetaType ret;
+	RMetaType *arg[16]; // Just references to already registered data types
+	// when we remove a type, we must ensure no function meta signature claims for it
+} RMetaFunction;
 
 #if 0
 Types must allow casting between them

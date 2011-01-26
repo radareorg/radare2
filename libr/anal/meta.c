@@ -53,7 +53,7 @@ R_API char *r_meta_get_string(RMeta *m, int type, ut64 addr) {
 		/* we should remove overlapped types and so on.. */
 		return "(Unsupported meta type)";
 	default:
-		eprintf ("Unhandled\n");
+		eprintf ("r_meta_get_string: unhandled meta type\n");
 		return "(Unhandled meta type)";
 	}
 	r_list_foreach (m->data, iter, d) {

@@ -1,6 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 */
-/*   nibble<.ds@gmail.com> */
-/*   pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 // nibble<.ds@gmail.com>, pancake<nopcode.org> */
 
 #include "r_core.h"
 #include "r_io.h"
@@ -414,10 +412,10 @@ r_cons_printf ("%s                             ", pre);
 			if (analop.jump != UT64_MAX) {
 				fcn = r_anal_fcn_find (core->anal, analop.jump, R_ANAL_FCN_TYPE_FCN);
 				r_cons_printf ("\n%s    ", pre);
-				if(fcn&&fcn->name) r_cons_printf ("; %s(", fcn->name);
+				if (fcn&&fcn->name) r_cons_printf ("; %s(", fcn->name);
 				else r_cons_printf ("; 0x%08"PFMT64x"(", analop.jump);
-				if(fcn) nargs = (fcn->nargs>nargs?nargs:fcn->nargs);
-				for(i=0;i<nargs;i++) {
+				if (fcn) nargs = (fcn->nargs>nargs?nargs:fcn->nargs);
+				for (i=0;i<nargs;i++) {
 					if (args[i]>1024) r_cons_printf ("%d", args[nargs-i]);
 					else r_cons_printf("0x%x", args[nargs-i]);
 					if (i<nargs-1) r_cons_printf (", ");
@@ -430,8 +428,7 @@ r_cons_printf ("%s                             ", pre);
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
 			counter++;
-			if (counter>9)
-				r_cons_printf (" [?]");
+			if (counter>9) r_cons_strcat (" [?]");
 			else r_cons_printf (" [%d]", counter);
 			break;
 		}

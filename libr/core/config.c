@@ -240,7 +240,8 @@ static int config_asmarch_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	// TODO: control error and restore old value (return false?) show errormsg?
 	if (!r_asm_use (core->assembler, node->value))
-		eprintf ("asm.arch: Cannot set this arch (%s)\n", node->value);
+		eprintf ("asm.arch: cannot find (%s)\n", node->value);
+	r_config_set (core->config, "anal.plugin", node->value);
 	if (!r_syscall_setup (core->syscall, node->value,
 			r_config_get (core->config, "asm.os")))
 		eprintf ("asm.arch: Cannot setup syscall os/arch for '%s'\n", node->value);

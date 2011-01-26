@@ -5,26 +5,23 @@
 
 pancake
 -------
-* Support multiple partition formats
-- visual mode (default screen must be)
-  - unkknown file: hexdump
-  - known binary: disasm
-  - debugger: debugview
-* Fix ppc code analysis
-* keys per modificar flags i funcions
-- mount /mnt/ must chop last '/'
-* Fix not found infinite loop issue in -j 4
-
+* '+' key in visual cursor mode only increments lower nibble!
+  - only in debugger mode :/
+* Fix macros
+* Fix ppc code analysis // fix or use or what? :)
+* keys to modify flags and functions
 
 earada
 ------
-- fix instruction navigation (earada)
-  - do not allow to disassemble unaligned addresses (toggle)
-  - use 'jk' with bwdisasm to go up to previous opcode.
-    - r_asm can reduce cpu without disasm on fixed size ops archs.
+- mount /mnt/ must chop last '/'
+- test 
 
 nibble
 ------
+- fix instruction navigatiog
+  - do not allow to disassemble unaligned addresses (toggle)
+  - use 'jk' with bwdisasm to go up to previous opcode.
+    - r_asm can reduce cpu without disasm on fixed size ops archs.
 - not identified as cmp instruction by analysis. (85f6  test esi, esi)
 
 0.7 release

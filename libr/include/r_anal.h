@@ -1,6 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 */
-/*   nibble<.ds@gmail.com> */
-/*   pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 // nibble<.ds@gmail.com> + pancake<nopcode.org> */
 
 #ifndef _INCLUDE_R_ANAL_H_
 #define _INCLUDE_R_ANAL_H_
@@ -217,6 +215,33 @@ typedef struct r_anal_call_t {
 	RAnalValue *args[16]; // XXX
 } RAnalCall;
 #endif
+enum {
+	R_ANAL_CC_TYPE_CDECL,
+	R_ANAL_CC_TYPE_STDCALL,
+	R_ANAL_CC_TYPE_FASTCALL,
+	R_ANAL_CC_TYPE_PASCAL,
+	R_ANAL_CC_TYPE_MSFASTCALL, // microsoft fastcall
+	R_ANAL_CC_TYPE_BOFASTCALL, // borland fastcall
+	R_ANAL_CC_TYPE_WAFASTCALL, // wacom fastcall
+	R_ANAL_CC_TYPE_CLARION,
+	R_ANAL_CC_TYPE_SYSV,
+};
+
+typedef struct r_anal_cc_t {
+	int type;
+	int bits;
+	int rel; // relative or absolute?
+	ut64 off; // offset of the call instruction (caller)
+	RAnalValue *args[16]; // no more than 16 args per call? enought imho
+	// TODO: Store arguments someway
+} RAnalCC;
+
+typedef struct r_anal_cc_type_t {
+	int rtl; // right-to-left? if false use left-to-right
+	int alignstack;
+	// 
+	//const char **reglist; //
+} RAnalCCType;
 
 enum {
 	R_ANAL_FCN_TYPE_NULL = 0,
@@ -229,7 +254,7 @@ typedef struct r_anal_fcn_t {
 	ut64 addr;
 	ut64 size;
 	int type;
-	int fastcall; /* non-zero if following fastcall convention */
+	int calltype; /* See R_ANAL_CC_TYPE_ */
 	int stack;
 	int ninstr;
 	int nargs;
@@ -407,6 +432,7 @@ R_API int r_anal_var_list(RAnal *anal, RAnalFcn *fcn, ut64 addr, int delta);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_csr;
+extern RAnalPlugin r_anal_plugin_avr;
 extern RAnalPlugin r_anal_plugin_arm;
 extern RAnalPlugin r_anal_plugin_x86;
 extern RAnalPlugin r_anal_plugin_x86_simple;

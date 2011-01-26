@@ -9,9 +9,8 @@ LDFLAGS+=${BN_LIBS}
 foo: pre libr_anal.${EXT_SO} libr_anal.${EXT_AR} plugins
 
 include ${STATIC_ANAL_PLUGINS}
-#STATIC_OBJS=$(subst ..,p/..,$(subst anal_,p/anal_,$(STATIC_OBJ)))
 STATIC_OBJS=$(subst ../ar,p/../ar,$(subst anal_,p/anal_,$(STATIC_OBJ)))
-OBJLIBS=ctx.o meta.o reflines.o ref.o aop.o fcn.o bb.o var.o anal.o cond.o value.o call.o diff.o
+OBJLIBS=meta.o reflines.o ref.o aop.o fcn.o bb.o var.o anal.o cond.o value.o cc.o diff.o type.o
 OBJ=${STATIC_OBJS} ${OBJLIBS}
 
 pre:
