@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
 
 #include <stdio.h>
 #include "r_cmd.h"
@@ -12,7 +12,7 @@ int macro_counter = 0;
 static struct list_head macros;
 #endif
 
-void r_cmd_macro_init(RCmdMacro *mac) {
+R_API void r_cmd_macro_init(RCmdMacro *mac) {
 	mac->counter = 0;
 	mac->_brk_value = 0;
 	mac->brk_value = &mac->_brk_value;
@@ -25,7 +25,7 @@ void r_cmd_macro_init(RCmdMacro *mac) {
 
 // XXX add support single line function definitions
 // XXX add support for single name multiple nargs macros
-int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
+R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	struct list_head *pos;
 	struct r_cmd_macro_item_t *macro;
 	char buf[1024];
@@ -36,8 +36,10 @@ int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	int macro_update;
 	char *name, *args = NULL;
 
-	if (oname[0]=='\0')
-		return r_cmd_macro_list(mac);
+	if (oname[0]=='\0') {
+		r_cmd_macro_list(mac);
+		return 0;
+	}
 
 	name = alloca (strlen(oname)+1);
 	strcpy (name, oname);
@@ -126,7 +128,7 @@ int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	return 0;
 }
 
-int r_cmd_macro_rm(struct r_cmd_macro_t *mac, const char *_name) {
+R_API int r_cmd_macro_rm(struct r_cmd_macro_t *mac, const char *_name) {
 	char *name = alloca (strlen(_name));
 	struct list_head *pos;
 	char *ptr = strchr (name, ')');
@@ -139,14 +141,14 @@ int r_cmd_macro_rm(struct r_cmd_macro_t *mac, const char *_name) {
 			list_del (&(mac->list));
 			free (mac);
 			eprintf ("Macro '%s' removed.\n", name);
-			return 1;
+			return R_TRUE;
 		}
 	}
-	return 0;
+	return R_FALSE;
 }
 
 // TODO: use mac->printf which is r_cons_printf at the end
-int r_cmd_macro_list(RCmdMacro *mac) {
+R_API void r_cmd_macro_list(RCmdMacro *mac) {
 	int j, idx = 0;
 	struct list_head *pos;
 	list_for_each_prev (pos, &mac->macros) {
@@ -160,7 +162,6 @@ int r_cmd_macro_list(RCmdMacro *mac) {
 		/* mac->*/ printf (")\n");
 		idx++;
 	}
-	return 0;
 }
 #if 0
 (define name value
@@ -176,7 +177,7 @@ int r_cmd_macro_list(RCmdMacro *mac) {
 .(define patata 3)
 #endif
 
-int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args, int nargs) {
+R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args, int nargs) {
 	int i,j;
 	char *cmd = alloca(strlen(ptr)+1024);
 	char *arg = args?strdup(args):strdup("");
@@ -213,7 +214,7 @@ int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args, int 
 	return (*cmd==')')?0:mac->cmd(mac->user, cmd);
 }
 
-char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, int *labels_n, char *ptr) {
+R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, int *labels_n, char *ptr) {
 	int i;
 	for (;ptr[0]==' ';ptr=ptr+1);
 	if (ptr[strlen(ptr)-1]==':') {
@@ -278,7 +279,7 @@ char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, int *lab
 }
 
 /* TODO: add support for spaced arguments */
-int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
+R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 	char *args;
 	int nargs = 0;
 	char *str, *ptr, *ptr2;
@@ -366,7 +367,7 @@ int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 	return R_TRUE;
 }
 
-int r_cmd_macro_break(RCmdMacro *mac, const char *value) {
+R_API int r_cmd_macro_break(RCmdMacro *mac, const char *value) {
 	mac->brk = 1;
 	mac->brk_value= NULL;
 	mac->_brk_value = (ut64)r_num_math (mac->num, value);

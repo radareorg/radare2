@@ -70,14 +70,6 @@ typedef struct r_cmd_plugin_t {
 } RCmdPlugin;
 
 #ifdef R_API
-
-R_API void r_cmd_macro_init(struct r_cmd_macro_t *mac);
-R_API int r_cmd_macro_add(struct r_cmd_macro_t *mac, const char *name);
-R_API int r_cmd_macro_rm(struct r_cmd_macro_t *mac, const char *_name);
-R_API int r_cmd_macro_list(struct r_cmd_macro_t *mac);
-R_API int r_cmd_macro_call(struct r_cmd_macro_t *mac, const char *name);
-R_API int r_cmd_macro_break(struct r_cmd_macro_t *mac, const char *value);
-
 R_API RCmd *r_cmd_new();
 R_API RCmd *r_cmd_free(RCmd *cmd);
 R_API int r_cmd_set_data(struct r_cmd_t *cmd, void *data);
@@ -99,9 +91,8 @@ extern struct r_cmd_plugin_t r_cmd_plugin_dummy;
 R_API void r_cmd_macro_init(struct r_cmd_macro_t *mac);
 R_API int r_cmd_macro_add(struct r_cmd_macro_t *mac, const char *name);
 R_API int r_cmd_macro_rm(struct r_cmd_macro_t *mac, const char *_name);
-R_API int r_cmd_macro_list(struct r_cmd_macro_t *mac);
+R_API void r_cmd_macro_list(struct r_cmd_macro_t *mac);
 R_API int r_cmd_macro_call(struct r_cmd_macro_t *mac, const char *name);
 R_API int r_cmd_macro_break(struct r_cmd_macro_t *mac, const char *value);
-
 #endif
 #endif
