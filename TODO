@@ -9,7 +9,6 @@ pancake
 * hex between code is visually wrong, make it unusable
 * '+' key in visual cursor mode only increments lower nibble!
   - only in debugger mode :/
-* Fix macros
 * Fix ppc code analysis // fix or use or what? :)
 * keys to modify flags and functions
 

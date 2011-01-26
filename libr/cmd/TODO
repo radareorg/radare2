@@ -1,3 +1,5 @@
+* remove alloca() !!!
+* Use RList
 * Support callback for null command (why?)
 * Show help of commands
   - long commands not yet tested at all

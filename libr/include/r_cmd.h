@@ -5,7 +5,7 @@
 #include <r_util.h>
 #include "list.h"
 
-#define MACRO_LIMIT 4096
+#define MACRO_LIMIT 1024
 #define MACRO_LABELS 20
 
 #define r_cmd_callback(x) int (*x)(void *data, const char *input)
