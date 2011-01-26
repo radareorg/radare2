@@ -99,6 +99,7 @@ typedef struct r_core_t {
 	RVm *vm;
 	RFS *fs;
 	char *cmdqueue;
+	ut64 inc;
 	int rtr_n;
 	RCoreRtrHost rtr_host[RTR_MAX_HOSTS];
 } RCore;

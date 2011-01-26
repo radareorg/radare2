@@ -83,6 +83,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	int linesopts = 0;
 	const char *pre = "";
 	nb = nbytes*2;
+core->inc = 0;
 
 	r_vm_reset (core->vm);
 	if (core->print->cur_enabled) {
@@ -151,6 +152,8 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 				core->assembler->pc + ret);
 			continue;
 		}
+if (core->inc == 0)
+	core->inc = ret;
 		r_anal_aop (core->anal, &analop, at, buf+idx, (int)(len-idx));
 		// Show xrefs
 		if (show_xrefs) {
@@ -246,12 +249,16 @@ r_cons_printf ("%s                             ", pre);
 			free (line);
 			continue;
 		case R_META_DATA:
+{
+int delta = at-mi->from;
 			core->print->flags &= ~R_PRINT_FLAGS_HEADER;
-			r_cons_printf ("hex %d\n", mi->size);
-			r_print_hexdump (core->print, at, buf+idx, mi->size, 16, 1);
+			r_cons_printf ("hex length=%lld delta=%d\n", mi->size , delta);
+			r_print_hexdump (core->print, at, buf+idx, mi->size-delta, 16, 1);
+core->inc = 16;
 			core->print->flags |= R_PRINT_FLAGS_HEADER;
-			ret = (int)mi->size;
+			ret = (int)mi->size-delta;
 			free (line);
+}
 			continue;
 		case R_META_STRUCT:
 			r_print_format (core->print, at, buf+idx, len-idx, mi->str);

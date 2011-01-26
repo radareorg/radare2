@@ -833,15 +833,18 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'j':
 		if (printidx == 1)
-			cols = r_asm_disassemble (core->assembler, &aop, core->block, 32);
+			cols = core->inc;
+// r_asm_disassemble (core->assembler, &aop, core->block, 32);
 		if (curset) {
 			cursor += cols;
 			ocursor = -1;
 		} else r_core_seek (core, core->offset+cols, 1);
 		break;
 	case 'k':
+		// XXX: read overflow with blocksize small?
 		if (printidx == 1)
-			cols = r_asm_disassemble (core->assembler, &aop, core->block, 32);
+			cols = core->inc;
+		//	cols = r_asm_disassemble (core->assembler, &aop, core->block, 32);
 		if (curset) {
 			cursor -= cols;
 			ocursor = -1;
@@ -983,7 +986,7 @@ R_API void r_core_visual_prompt(RCore *core, int color) {
 		break;
 	case 1: // pd
 	case 2: // pd+dbg
-		r_core_block_size (core, core->cons->rows * 5);
+		r_core_block_size (core, core->cons->rows * 15);
 		break;
 	}
 
