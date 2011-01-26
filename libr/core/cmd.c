@@ -246,7 +246,10 @@ r_cons_printf ("%s                             ", pre);
 			free (line);
 			continue;
 		case R_META_DATA:
+			core->print->flags &= ~R_PRINT_FLAGS_HEADER;
+			r_cons_printf ("hex %d\n", mi->size);
 			r_print_hexdump (core->print, at, buf+idx, mi->size, 16, 1);
+			core->print->flags |= R_PRINT_FLAGS_HEADER;
 			ret = (int)mi->size;
 			free (line);
 			continue;
@@ -3487,7 +3490,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	} else r_cons_grep (NULL);
 
 	/* seek commands */
-	ptr = strchr (cmd, '@');
+	if (cmd[0]!='('&& cmd[0]!='"')
+		ptr = strchr (cmd, '@');
+	else ptr = NULL;
 	if (ptr) {
 		ut64 tmpoff, tmpbsz;
 		char *ptr2 = strchr (ptr+1, ':');

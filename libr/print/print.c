@@ -196,6 +196,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	int i, j, k, inc;
 	const char *fmt = "%02x";
 	const char *pre = "";
+	if (step<1) step = 1;
 
 	switch(base) {
 	case 8: fmt = "%03x"; pre = " "; break;

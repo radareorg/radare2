@@ -5,6 +5,8 @@
 
 pancake
 -------
+* Fix <tab> in console (if entered 'a<tab> and flags are: 'aburo' and 'abuelo', must autocomplete to 'abu'
+* hex between code is visually wrong, make it unusable
 * '+' key in visual cursor mode only increments lower nibble!
   - only in debugger mode :/
 * Fix macros

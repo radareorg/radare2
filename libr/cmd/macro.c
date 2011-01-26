@@ -50,8 +50,8 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		pbody = pbody + 1;
 	}
 
-	if (name[strlen(name)-1]==')') {
-		eprintf("No body?\n");
+	if (name[strlen (name)-1]==')') {
+		eprintf ("No body?\n");
 		return -1;
 	}
 
@@ -63,8 +63,8 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		args = ptr +1;
 	}
 	list_for_each_prev (pos, &mac->macros) {
-		RCmdMacroItem *m = list_entry(pos, struct r_cmd_macro_item_t, list);
-		if (!strcmp(name, m->name)) {
+		RCmdMacroItem *m = list_entry (pos, struct r_cmd_macro_item_t, list);
+		if (!strcmp (name, m->name)) {
 			macro = m;
 	//		free(macro->name);
 			free(macro->code);
@@ -73,33 +73,35 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 			break;
 		}
 	}
+	if (ptr)
+		*ptr=' ';
 	if (macro == NULL) {
-		macro = (struct r_cmd_macro_item_t *)malloc(sizeof(struct r_cmd_macro_item_t));
-		macro->name = strdup(name);
+		macro = (struct r_cmd_macro_item_t *)malloc (sizeof(struct r_cmd_macro_item_t));
+		macro->name = strdup (name);
 	}
-	if (pbody) macro->code = (char *)malloc(strlen(pbody)+2);
-	else macro->code = (char *)malloc(4096);
+	if (pbody) macro->code = (char *)malloc (strlen (pbody)+2);
+	else macro->code = (char *)malloc (4096);
 	macro->code[0]='\0';
 	macro->nargs = 0;
 	if (args == NULL)
 		args = "";
-	macro->args = strdup(args);
-	ptr = strchr(macro->name, ' ');
+	macro->args = strdup (args);
+	ptr = strchr (macro->name, ' ');
 	if (ptr != NULL) {
 		*ptr='\0';
-		macro->nargs = r_str_word_set0(ptr+1);
+		macro->nargs = r_str_word_set0 (ptr+1);
 	}
 
 	if (pbody) {
-		for(lidx=0;pbody[lidx];lidx++) {
+		for (lidx=0; pbody[lidx]; lidx++) {
 			if (pbody[lidx]==',')
 				pbody[lidx]='\n';
 			else
 			if (pbody[lidx]==')') // && pbody[lidx-1]=='\n')
 				pbody[lidx]='\0';
 		}
-		strcpy(macro->code, pbody);
-		strcat(macro->code, ",");
+		strcpy (macro->code, pbody);
+		strcat (macro->code, ",");
 	} else {
 		while(1) { // XXX input from mac->fd
 #if 0
@@ -123,6 +125,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 				strcat (macro->code, bufp);
 		}
 	}
+eprintf ("BODY: %s\n", macro->code);
 	if (macro_update == 0)
 		list_add_tail (&(macro->list), &(mac->macros));
 	return 0;
@@ -183,15 +186,13 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 	char *arg = args?strdup(args):strdup("");
 	cmd[0]='\0';
 
-//	eprintf("call(%s)\n", ptr);
-	for(i=j=0;ptr[j];i++,j++) {
+	for (i=j=0; ptr[j]; i++,j++) {
 		if (ptr[j]=='$') {
 			if (ptr[j+1]>='0' && ptr[j+1]<='9') {
-				char *word = r_str_word_get0(arg, ptr[j+1]-'0');
-// TODO: use r_str_concat ??
-				strcat(cmd, word);
+				char *word = r_str_word_get0 (arg, ptr[j+1]-'0');
+				 strcat (cmd, word);
 				j++;
-				i = strlen(cmd)-1;
+				i = strlen (cmd)-1;
 			} else
 			if (ptr[j+1]=='@') {
 				char off[32];
@@ -210,8 +211,8 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 	}
 	while(*cmd==' '||*cmd=='\t')
 		cmd = cmd + 1;
-	free(arg);
-	return (*cmd==')')?0:mac->cmd(mac->user, cmd);
+	free (arg);
+	return (*cmd==')')?0:mac->cmd (mac->user, cmd);
 }
 
 R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, int *labels_n, char *ptr) {
@@ -299,15 +300,15 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 
 	args = strchr (str, ' ');
 	if (args) {
-		*args='\0';
-		args = args+1;
+		*args = '\0';
+		args++;
 		nargs = r_str_word_set0 (args);
 	}
 
-	macro_level ++;
+	macro_level++;
 	if (macro_level > MACRO_LIMIT) {
 		eprintf ("Maximum macro recursivity reached.\n");
-		macro_level --;
+		macro_level--;
 		return 0;
 	}
 
@@ -319,7 +320,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 			char *end = strchr (ptr, '\n');
 
 			if (m->nargs != 0 && nargs != m->nargs) {
-				eprintf ("Macro '%s' expects %d args\n", m->name, m->nargs);
+				eprintf ("Macro '%s' expects %d args, not %d\n", m->name, m->nargs, nargs);
 				macro_level --;
 				return R_FALSE;
 			}
@@ -340,7 +341,6 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 					end = strchr(ptr, '\n');
 					continue;
 				}
-
 				/* Command execution */
 				if (*ptr)
 					r_cmd_macro_cmd_args (mac, ptr, args, nargs);
