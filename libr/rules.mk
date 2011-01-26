@@ -33,7 +33,7 @@ waitfordeps:
 	@sh ../waitfordeps.sh ${DEPS}
 
 ifeq ($(WITHPIC),1)
-${LIBSO}: waitfordeps ${OBJ}
+${LIBSO}: $(EXTRA_TARGETS) waitfordeps ${OBJ}
 	@for a in ${OBJ} ${SRC}; do \
 	  do=0 ; [ ! -e ${LIBSO} ] && do=1 ; \
 	  test $$a -nt ${LIBSO} && do=1 ; \
