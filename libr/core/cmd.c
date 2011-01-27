@@ -301,7 +301,11 @@ core->inc = 16;
 				if (show_color)
 					r_cons_printf (Color_BWHITE"*[ %s%s]  "Color_RESET, pad, str);
 				else r_cons_printf ("*[ %s%s]  ", pad, str);
-			} else r_cons_printf (" %s %s %s", pad, str, extra);
+			} else {
+				if (show_color)
+					r_cons_printf (" %s %s %s"Color_RESET, pad, str, extra);
+				else r_cons_printf (" %s %s %s", pad, str, extra);
+			}
 			free (str);
 		}
 		if (show_color) {

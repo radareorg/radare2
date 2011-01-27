@@ -5,16 +5,6 @@
 
 pancake
 -------
-* hex between code is visually wrong, make it unusable
-  - automatic blocksize fails here :(
-    0x080498d0    0+  *[  section..text]  xor ebp, ebp
-    0x080498d2    0                   5e  pop esi
-    0x080498d3   -4-                89e1  mov ecx, esp
-    0x080498d5   -4               83e4f0  and esp, 0xfffffff0
-    0x080498d8   -4                   50  push eax
-    0x080498d9    0+                  54  push esp
-    0x080498da    4+                  52  push edx
-
 * Fix <tab> in console (if entered 'a<tab> and flags are: 'aburo' and 'abuelo', must autocomplete to 'abu'
 * '+' key in visual cursor mode only increments lower nibble!
   - only in debugger mode :/
