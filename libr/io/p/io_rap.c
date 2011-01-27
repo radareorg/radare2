@@ -139,6 +139,8 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		rior = R_NEW (RIORap);
 		rior->listener = R_TRUE;
 		rior->fd = r_socket_listen (p);
+// TODO: listen mode is broken.. here must go the root loop!!
+#warning TODO: implement rap:/:9999 listen mode
 		return r_io_desc_new (&r_io_plugin_rap, rior->fd, pathname, rw, mode, rior);
 	}
 	if ((rap_fd = r_socket_connect (ptr, p))==-1) {

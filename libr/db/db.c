@@ -59,6 +59,7 @@ static int _r_db_add_internal(struct r_db_t *db, int key, void *b) {
 	}
 	if (block) {
 		if (block->data == NULL) {
+			// TODO: use slices.. much faster alloc+free
 			block->data = malloc(sizeof(void *)*2);
 			block->data[0] = b;
 			block->data[1] = NULL;

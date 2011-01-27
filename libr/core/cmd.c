@@ -1413,7 +1413,7 @@ static int cmd_help(void *data, const char *input) {
 	case '\0':
 	default:
 		r_cons_printf (
-		"Usage:\n"
+		"Usage: (%s)\n"
 		" a                 ; perform analysis of code\n"
 		" b [bsz]           ; get or change block size\n"
 		" c[dqxXfg] [arg]   ; compare block with given data\n"
@@ -1441,7 +1441,7 @@ static int cmd_help(void *data, const char *input) {
 		" q [ret]           ; quit program with a return value\n"
 		"Use '?$' to get help for the variables\n"
 		"Use '?""?""?' for extra help about '?' subcommands.\n"
-		"Append '?' to any char command to get detailed help\n");
+		"Append '?' to any char command to get detailed help\n", input);
 		break;
 	}
 	return 0;
@@ -3288,8 +3288,10 @@ static int cmd_meta(void *data, const char *input) {
 }
 
 static int cmd_macro(void *data, const char *input) {
+	char *buf = NULL;
+	char *p, *ptr = (char *)input;
 	RCore *core = (RCore*)data;
-	switch (input[0]) {
+	switch (*input) {
 	case ')':
 		r_cmd_macro_break (&core->cmd->macro, input+1);
 		break;
@@ -3303,20 +3305,38 @@ static int cmd_macro(void *data, const char *input) {
 		eprintf (
 		"Usage: (foo\\n..cmds..\\n)\n"
 		" Record macros grouping commands\n"
-		" (foo args\\n ..)  ; define a macro\n"
-		" (-foo)            ; remove a macro\n"
-		" .(foo)            ; to call it\n"
-		" ()                ; break inside macro\n"
+		" (foo args\\n ..)     ; define a macro\n"
+		" (-foo)              ; remove a macro\n"
+		" .(foo)              ; to call it\n"
+		" ()                  ; break inside macro\n"
+		" (                   ; list all defined macros\n"
 		"Argument support:\n"
-		" (foo x y\\n$1 @ $2) ; define fun with args\n"
+		" (foo x y\\n$1 @ $2)  ; define fun with args\n"
 		" .(foo 128 0x804800) ; call it with args\n"
 		"Iterations:\n"
-		" .(foo\\n() $@)      ; define iterator returning iter index\n"
+		" .(foo\\n() $@)       ; define iterator returning iter index\n"
 		" x @@ .(foo)         ; iterate over them\n"
 		);
 		break;
 	default:
-		r_cmd_macro_add (&core->cmd->macro, input);
+		if (input[strlen (input)-1] != ')') {
+			buf = malloc (4096); // XXX: possible heap overflow here
+			strcpy (buf, input);
+			do {
+				ptr = buf + strlen (buf);
+				strcpy (ptr, ",");
+				ptr++;
+				fgets (ptr, 1024, stdin); // XXX: possible overflow // TODO: use r_cons here
+				p = strchr (ptr, '#');
+				if (p) *p = 0;
+				else ptr[strlen (ptr)-1] = 0; // chop \n
+				if (feof (stdin))
+					break;
+			} while (ptr[strlen (ptr)-1] != ')');
+			ptr = buf;
+		}
+		r_cmd_macro_add (&core->cmd->macro, ptr);
+		free (buf);
 		break;
 	}
 	return 0;

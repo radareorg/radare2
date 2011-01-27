@@ -5,6 +5,11 @@
 
 pancake
 -------
+* comparisions doesnt works
+* Fix iterators for r_macro (test only?)
+* Fix help of ? command, and add ?! and check ??
+* register renaming (per-instruction or ranges)
+  - r_parser fun? a specific asm.parser plugin that does all this tricks?
 * Fix <tab> in console (if entered 'a<tab> and flags are: 'aburo' and 'abuelo', must autocomplete to 'abu'
 * '+' key in visual cursor mode only increments lower nibble!
   - only in debugger mode :/
@@ -83,7 +88,6 @@ nibble
 ===
 * add support for .a files (r_fs supports cpio and ar archives...)
 * Implement rap:// upload/download protocol commands (maybe just system() with rsc2+wget?
-* register renaming (per-instruction or ranges)
 * code injection facilities? (wtf? insert,execute, restore)
 * Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
 * Record trace of register status for each function when running
