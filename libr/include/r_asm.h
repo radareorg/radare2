@@ -7,7 +7,7 @@
 #include <list.h>
 #include <r_util.h>
 
-#define R_ASM_BUFSIZE 3128
+#define R_ASM_BUFSIZE 1024
 #define R_ASM_FASTCALL_ARGS 6
 
 enum {

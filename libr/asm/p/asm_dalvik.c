@@ -109,7 +109,7 @@ static int disassemble(RAsm *a, RAsmAop *aop, ut8 *buf, ut64 len) {
 				sprintf (str, " %i", vA);
 				strcat (aop->buf_asm, str);
 				break;
-			case fmtopvAApBBBB:
+			case fmtopvAApBBBB: //FIXME: pc increments each disas.
 				vA = pc + (int) buf[1];
 				vB = pc + (int) (buf[3] <<8 | buf[2]);
 				sprintf (str, " v%i, %i", vA, vB);
@@ -163,15 +163,7 @@ static int disassemble(RAsm *a, RAsmAop *aop, ut8 *buf, ut64 len) {
 				vA = (int) buf[1];
 				vB = (buf[3]<<8) | buf[2];
 				vC = (buf[5]<<8) | buf[4];
-				strcat (aop->buf_asm, " {");
-				while (vA) {
-					sprintf (str, "v%i, ", vC);
-					strcat (aop->buf_asm, str);
-					vA--;
-					vC++;
-				}
-				aop->buf_asm[strlen (aop->buf_asm)-2] = 0;
-				sprintf (str, "}, [%04x]", vB);
+				sprintf (str, " {v%i..v%i}, [%04x]", vC, vC+vA-1, vB);
 				strcat (aop->buf_asm, str);
 				break;
 			case fmtoptinvokeVS:
@@ -245,18 +237,10 @@ static int disassemble(RAsm *a, RAsmAop *aop, ut8 *buf, ut64 len) {
 				vA = (int) buf[1];
 				vB = (buf[3]<<8) | buf[2];
 				vC = (buf[5]<<8) | buf[4];
-				strcat (aop->buf_asm, " {");
-				while (vA) {
-					sprintf (str, "v%i, ", vC);
-					strcat (aop->buf_asm, str);
-					vA--;
-					vC++;
-				}
-				aop->buf_asm[strlen (aop->buf_asm)-2] = 0;
 				if (buf[0] == 0x25) // filled-new-array/range
-					sprintf (str, "}, class+%i", vB);
+					sprintf (str, " {v%i..v%i}, class+%i", vC, vC+vA-1, vB);
 				else
-					sprintf (str, "}, method+%i", vB);
+					sprintf (str, " {v%i..v%i}, method+%i", vC, vC+vA-1, vB);
 				strcat (aop->buf_asm, str);
 				break;
 			case fmtopvXtBBBB: //FIXME: class & method must be a dex(r_bin) section
@@ -290,9 +274,10 @@ static int disassemble(RAsm *a, RAsmAop *aop, ut8 *buf, ut64 len) {
 			case fmtoptinvokeI: // Any opcode has this formats
 			case fmtoptinvokeIR:
 			case fmt00:
-			default: break;
+			default:
+				strcpy (aop->buf_asm, "invalid ");
+				size = 2;
 		}
-
 		aop->inst_len = size;
 	} else {
 		strcpy (aop->buf_asm, "invalid ");
