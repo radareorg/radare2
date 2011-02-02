@@ -82,7 +82,6 @@ typedef struct r_core_t {
 	RLib *lib;
 	RCmd *cmd;
 	RAnal *anal;
-	RSyscall *syscall;
 	RAsm *assembler;
 	RAnalRefline *reflines;
 	RAnalRefline *reflines2;

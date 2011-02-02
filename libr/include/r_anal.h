@@ -8,6 +8,7 @@
 #include <r_reg.h>
 #include <r_list.h>
 #include <r_util.h>
+#include <r_syscall.h>
 
 //TODO: use RList
 // deprecate this macro?
@@ -129,6 +130,7 @@ typedef struct r_anal_t {
 	RList *refs;
 	RList *vartypes;
 	RReg *reg;
+	RSyscall *syscall;
 	struct r_anal_ctx_t *ctx;
 	struct r_anal_plugin_t *cur;
 	struct list_head anals;
@@ -232,7 +234,9 @@ typedef struct r_anal_cc_t {
 	int bits;
 	int rel; // relative or absolute?
 	ut64 off; // offset of the call instruction (caller)
-	RAnalValue *args[16]; // no more than 16 args per call? enought imho
+	ut64 jump; // offset of the call instruction (caller)
+	int nargs;
+	ut64 args[16]; // no more than 16 args per call? enought imho
 	// TODO: Store arguments someway
 } RAnalCC;
 
@@ -429,6 +433,17 @@ R_API int r_anal_reflines_middle(RAnal *anal, RAnalRefline *list, ut64 addr, int
 /* TO MOVE into r_core */
 R_API int r_anal_var_list_show(RAnal *anal, RAnalFcn *fcn, ut64 addr);
 R_API int r_anal_var_list(RAnal *anal, RAnalFcn *fcn, ut64 addr, int delta);
+
+// calling conventions API
+R_API RAnalCC* r_anal_cc_new ();
+R_API void r_anal_cc_init (RAnalCC *cc);
+R_API RAnalCC* r_anal_cc_new_from_string (const char *str, int type);
+R_API void r_anal_cc_free (RAnalCC* cc);
+R_API void r_anal_cc_reset (RAnalCC *cc);
+R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc);
+R_API boolt r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op);
+//R_API int r_anal_cc_register (RAnal *anal, RAnalCC *cc);
+//R_API int r_anal_cc_unregister (RAnal *anal, RAnalCC *cc);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_csr;

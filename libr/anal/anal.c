@@ -24,6 +24,7 @@ R_API RAnal *r_anal_new() {
 	RAnalPlugin *static_plugin;
 	RAnal *anal = R_NEW (RAnal);
 	if (anal) {
+		anal->syscall = r_syscall_new ();
 		memset (anal, 0, sizeof (RAnal));
 		anal->reg = NULL;
 		anal->bbs = r_anal_bb_list_new ();

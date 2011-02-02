@@ -6,8 +6,12 @@
 
 R_API RAnalCC* r_anal_cc_new () {
 	RAnalCC *cc = R_NEW (RAnalCC);
-	//
+	r_anal_cc_init (cc);
 	return cc;
+}
+
+R_API void r_anal_cc_init (RAnalCC *cc) {
+	memset (cc, 0, sizeof (RAnalCC));
 }
 
 R_API RAnalCC* r_anal_cc_new_from_string (const char *str, int type) {
@@ -15,30 +19,85 @@ R_API RAnalCC* r_anal_cc_new_from_string (const char *str, int type) {
 	return NULL;
 }
 
-R_API char *r_anal_cc_to_string (RAnalCC* cc) {
-	char str[1024];
-	str[0] = 0;
-	return strdup (str);
-}
-
 R_API void r_anal_cc_free (RAnalCC* cc) {
 	free (cc);
 }
 
-R_API void r_anal_reset (RAnalCC *cc) {
+R_API void r_anal_cc_reset (RAnalCC *cc) {
+	cc->nargs = 0;
+	cc->jump = 0;
+}
+
+// XXX: RSyscall must be inside RAnal ??? merge APIS
+// XXX: RVM must be inside RAnal ???? imho no. rsyscall must provide ret reg info
+//XXX: may overflow. this is vulnerable. needs fix
+R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
+	RSyscallItem *si;
+	RAnalFcn *fcn;
+	char str[1024], buf[32];
+	int i;
+
+	str[0] = 0;
+	switch (cc->type) {
+	case R_ANAL_CC_TYPE_FASTCALL: // INT
+#if 0
+		int eax = 0; // eax = arg0
+		//int eax = (int)r_vm_reg_get (core->vm, core->vm->cpu.ret); //"eax");
+		si = r_syscall_get (core->syscall, eax, (int)cc->jump);
+		if (si) {
+			//DEBUG r_cons_printf (" ; sc[0x%x][%d]=%s(", (int)analop.value, eax, si->name);
+			snprintf (str, "%s (", si->name);
+			for (i=0; i<si->args; i++) {
+				//const char *reg = r_asm_fastcall (core->assembler, i+1, si->args);
+				sprintf (buf, "0x%"PFMT64x, r_vm_reg_get (core->vm, reg));
+				strcat (str, buf);
+				if (i<si->args-1)
+					strcat (str, ",");
+			}
+			r_cons_printf (")");
+		} else snprintf (str, sizeof (str), "syscall[0x%x][%d]=?", (int)cc->jump, eax);
+#endif
+		strcpy (str, "syscall(TODO)\n");
+		break;
+	case R_ANAL_CC_TYPE_STDCALL: // CALL
+		//	if (analop.jump != UT64_MAX) {
+		fcn = r_anal_fcn_find (anal, cc->off, R_ANAL_FCN_TYPE_FCN);
+		if (fcn && fcn->name) snprintf (str, sizeof (str), "%s(", fcn->name);
+		else snprintf (str, sizeof (str), "0x%08"PFMT64x"(", cc->jump);
+		if (fcn) cc->nargs = (fcn->nargs>cc->nargs?cc->nargs:fcn->nargs);
+		for (i=0; i<cc->nargs; i++) {
+			snprintf (buf, sizeof (buf),
+				(cc->args[i]<1024)?"%"PFMT64d:"0x%"PFMT64x,
+				cc->args[cc->nargs-i]);
+			strcat (str, buf);
+			if (i<cc->nargs-1) strcat (str, ", ");
+		}
+		strcat (str, ")");
+		break;
+	}
+	return strdup (str);
 }
 
 R_API boolt r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op) {
+	cc->off = op->addr;
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_CALL:
 	case R_ANAL_OP_TYPE_UCALL:
-		cc->off = 0;
+		cc->type = R_ANAL_CC_TYPE_STDCALL;
 		// TODO: check if next instruction after call is restoring stack
+		cc->jump = op->jump;
+		return R_FALSE;
+	case R_ANAL_OP_TYPE_SWI: // syscall
+		cc->type = R_ANAL_CC_TYPE_FASTCALL;
+		cc->off = op->jump;
+		cc->jump = op->value; // syscall number
 		return R_FALSE;
 	//case R_ANAL_OP_TYPE_MOV:
 	case R_ANAL_OP_TYPE_PUSH:
-	case R_ANAL_OP_TYPE_UPUSH:
-		// add argument
+	case R_ANAL_OP_TYPE_UPUSH: // add argument
+		cc->nargs ++;
+		if (cc->nargs<sizeof (cc->args))
+			cc->args[cc->nargs] = op->ref;
 		return R_TRUE;
 	}
 	// must update internal stuff to recognize parm
@@ -63,6 +122,46 @@ R_API int r_anal_cc_unregister (RAnal *anal, RAnalCC *cc) {
 | - list of regs used for args
 | - register args, stack args (int, ptr, fpu)
 \\\\
+typedef struct {
+	int type;
+	int idx;
+	const char *name;
+} RAnalCCArg;
+
+typedef struct {
+	int order = (rtl/ltr)
+	int caller = caller or callee realign the stack
+	RAnalCCAarg args[16];
+} RAnalCCType;
+
+#define R_ANAL_CC_TYPE_RTL 0 // right to left if lower bit is unset
+#define R_ANAL_CC_TYPE_LTR 1 // left to right if lower bit is set
+#define R_ANAL_CC_TYPE_CAS 2 // caller aligns stack?
+// return stuff
+  - type of value , register
+    fpu
+#define R_ANAL_CC_TYPE_ { INT, PTR, FLT, ANY } .. what for 64bit regs (composed regs, r0+r1<<32)
+  - type of value (int, ptr, flt)
+  - name of reg ("eax", ..)
+  - index of arg (0, 1, 2)
+  - 
+
+RTL = push 3; push 2; push 1; call foo == foo(1,2,3)
+LTR = push 1; push 2; push 3; call foo == foo(1,2,3)
+
+stdcall ___________ rtl
+syscall ___________ rtl
+fastcall __________
+pascal ____________
+ms fastcall _______ rtl
+borland fastcall __ ltr
+watcom fastcall ___ ltr
+topspeed/clarion __
+intelabi __________
+arm _______________
+mips ______________
+sparc _____________
+
 
 Calling conventions:
 ====================
@@ -96,7 +195,7 @@ fastcall: (borland)
 
 stdcall:
   like cdecl, but the callee is responsible to realign the stack
-  - the one ised by microsoft and watcom
+  - the one used by microsoft and watcom
   - return value in EAX
 
 fastcall:
@@ -152,6 +251,5 @@ mips:
   return value in $v0 and $v1
 
 sparc:
-  
 
 #endif

@@ -1,5 +1,5 @@
 NAME=r_anal
-DEPS=r_util r_lib r_reg
+DEPS=r_util r_lib r_reg r_syscall
 CFLAGS+=-DCORELIB -Iarch
 
 include ../config.mk

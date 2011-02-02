@@ -25,7 +25,6 @@ static int checkbpcallback(RCore *core) {
 
 static int bypassbp(RCore *core) {
 	ut64 addr;
-
 	r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
 	addr = r_debug_reg_get (core->dbg, "pc");
 	RBreakpointItem *bpi = r_bp_get (core->dbg->bp, addr);
@@ -44,6 +43,7 @@ static void printoffset(ut64 off, int show_color) {
 
 /* TODO: move to print/disasm.c */
 static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
+	RAnalCC cc = {0};
 	RAnalFcn *fcn, *f = NULL;
 	int ret, idx, i, j, k, lines, ostackptr, stackptr = 0;
 	int counter = 0;
@@ -388,64 +388,26 @@ core->inc = 16;
 				r_vm_op_eval (core->vm, ao.buf_asm);
 			r_asm_set_syntax (core->assembler, os);
 		} else r_vm_op_eval (core->vm, asmop.buf_asm);
-		switch (analop.type) {
-		case R_ANAL_OP_TYPE_PUSH:
-		case R_ANAL_OP_TYPE_UPUSH:
-			nargs++;
-			// setarg(nargs);
-			if (nargs<sizeof (args))
-				args[nargs] = analop.ref;
-			//r_cons_printf(" ; setarg(%d)=%llx\n", nargs, analop.ref);
-			break;
-		case R_ANAL_OP_TYPE_SWI:
-			{
-			int eax = (int)r_vm_reg_get (core->vm, core->vm->cpu.ret); //"eax");
-			RSyscallItem *si = r_syscall_get (core->syscall, eax, (int)analop.value);
-			if (si) {
-				//DEBUG r_cons_printf (" ; sc[0x%x][%d]=%s(", (int)analop.value, eax, si->name);
-				r_cons_printf (" ; %s(", si->name);
-				for (i=0; i<si->args; i++) {
-					const char *reg = r_asm_fastcall (core->assembler, i+1, si->args);
-					r_cons_printf ("0x%"PFMT64x, r_vm_reg_get (core->vm, reg));
-					if (i<si->args-1)
-						r_cons_printf (",");
-				}
-				r_cons_printf (")");
-			} else r_cons_printf (" ; sc[0x%x][%d]=?", (int)analop.value, eax);
+
+		if (!r_anal_cc_update (core->anal, &cc, &analop)) {
+			if (show_functions) {
+				char *ccstr = r_anal_cc_to_string (core->anal, &cc);
+				r_cons_printf ("\n%s    ; %s", pre, ccstr);
+				free (ccstr);
 			}
-			break;
-		case R_ANAL_OP_TYPE_CALL:
-			{
-#if 0
-			ut8 arg[64];
-			esp = resetesp(core)-esp;
-			if((st64)esp<0) esp=-esp;
-			nargs = (esp)/4;
-#endif
-			if (show_functions)
-			if (analop.jump != UT64_MAX) {
-				fcn = r_anal_fcn_find (core->anal, analop.jump, R_ANAL_FCN_TYPE_FCN);
-				r_cons_printf ("\n%s    ", pre);
-				if (fcn&&fcn->name) r_cons_printf ("; %s(", fcn->name);
-				else r_cons_printf ("; 0x%08"PFMT64x"(", analop.jump);
-				if (fcn) nargs = (fcn->nargs>nargs?nargs:fcn->nargs);
-				for (i=0;i<nargs;i++) {
-					if (args[i]>1024) r_cons_printf ("%d", args[nargs-i]);
-					else r_cons_printf("0x%x", args[nargs-i]);
-					if (i<nargs-1) r_cons_printf (", ");
-				}
-				//r_cons_printf("args=%d (%d)", nargs, esp);
-				r_cons_printf (")");
-				nargs = 0;
-			} }
-			break;
+			r_anal_cc_reset (&cc);
+		}
+
+		switch (analop.type) {
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
+		case R_ANAL_OP_TYPE_CALL:
 			counter++;
 			if (counter>9) r_cons_strcat (" [?]");
 			else r_cons_printf (" [%d]", counter);
 			break;
 		}
+
 		if (analop.refptr) {
 			ut32 word = 0;
 			int ret = r_io_read_at (core->io, analop.ref, (void *)&word, sizeof (word));
@@ -1865,7 +1827,7 @@ static int cmd_flag(void *data, const char *input) {
 static void cmd_syscall_do(RCore *core, int num) {
 	int i;
 	char str[64];
-	RSyscallItem *item = r_syscall_get (core->syscall, num, -1);
+	RSyscallItem *item = r_syscall_get (core->anal->syscall, num, -1);
 	if (item == NULL) {
 		r_cons_printf ("%d = unknown ()", num);
 		return;
@@ -2349,7 +2311,7 @@ static int cmd_anal(void *data, const char *input) {
 	case 's':
 		switch (input[1]) {
 		case 'l':
-			r_syscall_list (core->syscall);
+			r_syscall_list (core->anal->syscall);
 			break;
 		case '\0': {
 			int a0 = (int)r_debug_reg_get (core->dbg, "oeax"); //XXX

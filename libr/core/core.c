@@ -198,7 +198,6 @@ R_API int r_core_init(RCore *core) {
 		r_line_hist_load (".radare2_history");
 		singleton = R_FALSE;
 	}
-	core->syscall = r_syscall_new ();
 	core->vm = r_vm_new ();
 	core->print = r_print_new ();
 	core->print->printf = (void *)r_cons_printf;
