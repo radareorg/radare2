@@ -36,28 +36,26 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 	RAnalFcn *fcn;
 	char str[1024], buf[32];
 	int i;
+	int eax = 0; // eax = arg0
 
 	str[0] = 0;
 	switch (cc->type) {
 	case R_ANAL_CC_TYPE_FASTCALL: // INT
-#if 0
-		int eax = 0; // eax = arg0
 		//int eax = (int)r_vm_reg_get (core->vm, core->vm->cpu.ret); //"eax");
-		si = r_syscall_get (core->syscall, eax, (int)cc->jump);
+		si = r_syscall_get (anal->syscall, eax, (int)cc->jump);
 		if (si) {
 			//DEBUG r_cons_printf (" ; sc[0x%x][%d]=%s(", (int)analop.value, eax, si->name);
-			snprintf (str, "%s (", si->name);
+			snprintf (str, sizeof (str), "%s (", si->name);
 			for (i=0; i<si->args; i++) {
-				//const char *reg = r_asm_fastcall (core->assembler, i+1, si->args);
-				sprintf (buf, "0x%"PFMT64x, r_vm_reg_get (core->vm, reg));
+				const char *reg = r_syscall_reg (anal->syscall, i+1, si->args);
+				sprintf (buf, "(%s)", reg);
+				//TODO sprintf (buf, "0x%"PFMT64x, 0LL); //r_vm_reg_get (core->vm, reg));
 				strcat (str, buf);
 				if (i<si->args-1)
 					strcat (str, ",");
 			}
-			r_cons_printf (")");
+			strcat (str, ")");
 		} else snprintf (str, sizeof (str), "syscall[0x%x][%d]=?", (int)cc->jump, eax);
-#endif
-		strcpy (str, "syscall(TODO)\n");
 		break;
 	case R_ANAL_CC_TYPE_STDCALL: // CALL
 		//	if (analop.jump != UT64_MAX) {
@@ -67,7 +65,7 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 		if (fcn) cc->nargs = (fcn->nargs>cc->nargs?cc->nargs:fcn->nargs);
 		for (i=0; i<cc->nargs; i++) {
 			snprintf (buf, sizeof (buf),
-				(cc->args[i]<1024)?"%"PFMT64d:"0x%"PFMT64x,
+				(cc->args[cc->nargs-i]>1024)?"%"PFMT64d:"0x%"PFMT64x,
 				cc->args[cc->nargs-i]);
 			strcat (str, buf);
 			if (i<cc->nargs-1) strcat (str, ", ");

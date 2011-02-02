@@ -44,12 +44,10 @@ static void printoffset(ut64 off, int show_color) {
 /* TODO: move to print/disasm.c */
 static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
 	RAnalCC cc = {0};
-	RAnalFcn *fcn, *f = NULL;
+	RAnalFcn *f = NULL;
 	int ret, idx, i, j, k, lines, ostackptr, stackptr = 0;
 	int counter = 0;
 	int middle = 0;
-	int nargs = 0;
-	ut64 args[32];
 	char str[128];
 	char *line, *comment, *opstr, *osl = NULL; // old source line
 	RAsmAop asmop;
