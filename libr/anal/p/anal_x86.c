@@ -567,6 +567,15 @@ static int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	aop->jump = aop->fail = -1;
 	aop->ref = aop->value = -1;
 
+	// TODO: not implemented in x86im
+	if (data[0] == 0xcd) {
+		aop->type = R_ANAL_OP_TYPE_SWI;
+		aop->ref = data[1];
+	} else
+	if (data[0] == 0xcc) {
+		aop->type = R_ANAL_OP_TYPE_SWI;
+		aop->ref = 3;
+	} else
 	if ((x86im_dec (&io,
 			anal->bits == 32 ? X86IM_IO_MODE_32BIT : X86IM_IO_MODE_64BIT,
 			(unsigned char*)data)) == X86IM_STATUS_SUCCESS) {

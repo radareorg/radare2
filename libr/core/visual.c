@@ -5,6 +5,8 @@
 #define NPF 6
 static int printidx = 0;
 static const char *printfmt[] = { "x", "pd", "f tmp&&sr sp&&x 64&&dr=&&s-&&s tmp&&f-tmp&&pd", "p8", "pc", "ps" };
+static int autoblocksize = 1;
+static int obs = 0;
 
 // XXX: use core->print->cur_enabled instead of curset/cursor/ocursor
 static int curset = 0, cursor = 0, ocursor=-1;
@@ -949,6 +951,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		r_cons_set_raw (1);
 		break;
+	case 'B':
+		autoblocksize = autoblocksize?0:1;
+		if (autoblocksize)
+			obs = core->blocksize;
+		else r_core_block_size (core, obs);
+		break;
 	case 'x':
 		r_core_cmdf (core, "./a 0x%08llx @ entry0", core->offset);
 		break;
@@ -966,6 +974,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" x       - find xrefs for current offset\n"
 		" sS      - step / step over\n"
 		" t       - track flags (browse symbols, functions..\n"
+		" B       - toggle automatic block size\n"
 		" uU      - undo/redo seek\n"
 		" yY      - copy and paste selection\n"
 		" mK/'K   - mark/go to Key (any key)\n"
@@ -986,6 +995,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 // TODO: simplify R_ABS(printidx%NPF) into a macro, or just control negative values..
 R_API void r_core_visual_prompt(RCore *core, int color) {
 	/* automatic block size */
+	if (autoblocksize)
 	switch (printidx) {
 	case 0:
 		r_core_block_size (core, core->cons->rows * 16);
@@ -1020,7 +1030,8 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	const char *cmdprompt;
 	const char *vi;
 	ut64 scrseek;
-	int ch, obs = core->blocksize;
+	int ch;
+	obs = core->blocksize;
 
 	r_cons_singleton ()->data = core;
 	r_cons_singleton ()->event_resize = (RConsEvent)r_core_visual_refresh;
@@ -1060,6 +1071,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	if (color)
 		r_cons_printf (Color_RESET);
 	core->print->cur_enabled = R_FALSE;
-	r_core_block_size (core, obs);
+	if (autoblocksize)
+		r_core_block_size (core, obs);
 	return 0;
 }

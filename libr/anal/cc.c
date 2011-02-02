@@ -46,21 +46,32 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 	str[0] = 0;
 	switch (cc->type) {
 	case R_ANAL_CC_TYPE_FASTCALL: // INT
-		//int eax = (int)r_vm_reg_get (core->vm, core->vm->cpu.ret); //"eax");
+		{
+		RRegItem *item;
+		const char *a0 = r_reg_get_name (anal->reg, R_REG_NAME_A0); // A0 or RET ??
+		item = r_reg_get (anal->reg, a0, R_REG_TYPE_GPR);
+		if (!item) {
+			eprintf ("cannot get reg a0\n");
+			return R_FALSE;
+		}
+		eax = (int)r_reg_get_value (anal->reg, item);
 		si = r_syscall_get (anal->syscall, eax, (int)cc->jump);
 		if (si) {
 			//DEBUG r_cons_printf (" ; sc[0x%x][%d]=%s(", (int)analop.value, eax, si->name);
 			snprintf (str, sizeof (str), "%s (", si->name);
 			for (i=0; i<si->args; i++) {
 				const char *reg = r_syscall_reg (anal->syscall, i+1, si->args);
-				sprintf (buf, "(%s)", reg);
-				//TODO sprintf (buf, "0x%"PFMT64x, 0LL); //r_vm_reg_get (core->vm, reg));
-				strcat (str, buf);
+				item = r_reg_get (anal->reg, reg, R_REG_TYPE_GPR);
+				if (item) {
+					sprintf (buf, "0x%"PFMT64x, r_reg_get_value (anal->reg, item));
+					strcat (str, buf);
+				} else eprintf ("Unknown reg '%s'\n", reg);
 				if (i<si->args-1)
 					strcat (str, ",");
 			}
 			strcat (str, ")");
 		} else snprintf (str, sizeof (str), "syscall[0x%x][%d]=?", (int)cc->jump, eax);
+		}
 		break;
 	case R_ANAL_CC_TYPE_STDCALL: // CALL
 		//	if (analop.jump != UT64_MAX) {

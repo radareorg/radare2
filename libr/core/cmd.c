@@ -322,6 +322,7 @@ core->inc = 16;
 			case R_ANAL_OP_TYPE_CMP:
 				r_cons_printf (Color_BMAGENTA);
 				break;
+			case R_ANAL_OP_TYPE_UCALL:
 			case R_ANAL_OP_TYPE_CALL:
 				r_cons_printf (Color_BGREEN);
 				break;

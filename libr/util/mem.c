@@ -105,6 +105,7 @@ src |__________|_________|
 	r_mem_copybits (dst, src, nbits);
 }
 
+// TODO: SEE: R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) { .. dupped code?
 R_API int r_mem_set_num (ut8 *dest, int dest_size, ut64 num, int endian) {
 	int num4;
 	short num2;

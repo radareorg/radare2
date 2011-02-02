@@ -5,6 +5,7 @@
 
 pancake
 -------
+* Fixed width for reflines !! (max width)
 * Implement /v with r_mem_set_num()
 * comparisions doesnt works
 * Fix iterators for r_macro (test only?)

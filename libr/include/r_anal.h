@@ -203,18 +203,6 @@ typedef struct r_anal_bb_t {
 	RAnalCond *cond;
 } RAnalBlock;
 
-#if 0
-// TODO: add other call convections here
-enum {
-	R_ANAL_CALL_FAST='f',
-	R_ANAL_CALL_SLOW='s',
-};
-// XXX: must be defined by the function signature!!11
-typedef struct r_anal_call_t {
-	int type; // fast, stack/slow
-	RAnalValue *args[16]; // XXX
-} RAnalCall;
-#endif
 enum {
 	R_ANAL_CC_TYPE_CDECL,
 	R_ANAL_CC_TYPE_STDCALL,
