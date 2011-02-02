@@ -5,14 +5,11 @@
 
 #include <r_types.h>
 #include <list.h>
+#include <r_io.h>
 #include <r_reg.h>
 #include <r_list.h>
 #include <r_util.h>
 #include <r_syscall.h>
-
-//TODO: use RList
-// deprecate this macro?
-#define R_ANAL_MAXREG 16
 
 enum {
 	R_ANAL_OP_FAMILY_UNKNOWN = 0,
@@ -131,6 +128,7 @@ typedef struct r_anal_t {
 	RList *vartypes;
 	RReg *reg;
 	RSyscall *syscall;
+	RIOBind iob;
 	struct r_anal_ctx_t *ctx;
 	struct r_anal_plugin_t *cur;
 	struct list_head anals;
@@ -229,6 +227,7 @@ enum {
 	R_ANAL_CC_TYPE_SYSV,
 };
 
+#define R_ANAL_CC_ARGS 16
 typedef struct r_anal_cc_t {
 	int type;
 	int bits;
@@ -236,7 +235,7 @@ typedef struct r_anal_cc_t {
 	ut64 off; // offset of the call instruction (caller)
 	ut64 jump; // offset of the call instruction (caller)
 	int nargs;
-	ut64 args[16]; // no more than 16 args per call? enought imho
+	ut64 args[R_ANAL_CC_ARGS];
 	// TODO: Store arguments someway
 } RAnalCC;
 
@@ -414,6 +413,7 @@ R_API RAnalValue *r_anal_value_new_from_string(const char *str);
 R_API st64 r_anal_value_eval(RAnalValue *value);
 R_API char *r_anal_value_to_string (RAnalValue *value);
 R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val);
+R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num);
 R_API void r_anal_value_free(RAnalValue *value);
 
 R_API RAnalCond *r_anal_cond_new();

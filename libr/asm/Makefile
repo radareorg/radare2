@@ -18,7 +18,6 @@ re:
 	${MAKE}
 	rm -f t/fastcall.o
 	sudo ${MAKE} install
-	cd t && ${MAKE}
 
 plugins:
 	cd p && ${MAKE} all

@@ -105,6 +105,26 @@ src |__________|_________|
 	r_mem_copybits (dst, src, nbits);
 }
 
+R_API int r_mem_set_num (ut8 *dest, int dest_size, ut64 num, int endian) {
+	int num4;
+	short num2;
+	switch (dest_size) {
+	case 1: dest[0] = (ut8) num;
+		break;
+	case 2: num2 = (short)num;
+		r_mem_copyendian (dest, (const ut8*)&num2, 2, endian);
+		break;
+	case 4: num4 = (int)num;
+		r_mem_copyendian (dest, (const ut8*)&num4, 4, endian);
+		break;
+	case 8: r_mem_copyendian (dest, (const ut8*)&num, 8, endian);
+		break;
+	default:
+		return R_FALSE;
+	}
+	return R_TRUE;
+}
+
 /* XXX TODO check and use system endian */
 R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian) {
 	ut8 buffer[8];

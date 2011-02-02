@@ -42,6 +42,26 @@ R_API int r_anal_aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int 
 	return 0;
 }
 
+// TODO: return RAnalException *
+R_API int r_anal_aop_execute (RAnal *anal, RAnalOp *aop) {
+	switch (aop->type) {
+	case R_ANAL_OP_TYPE_ADD:
+		// dst = src[0] + src[1] + src[2]
+		break;
+	case R_ANAL_OP_TYPE_SUB:
+		// dst = src[0] + src[1] + src[2]
+		break;
+	case R_ANAL_OP_TYPE_DIV:
+	case R_ANAL_OP_TYPE_MUL:
+		// not yet implemented
+		break;
+	case R_ANAL_OP_TYPE_NOP:
+		// do nothing
+		break;
+	}
+	return R_TRUE;
+}
+
 R_API char *r_anal_aop_to_string(RAnal *anal, RAnalOp *op) {
 	int retsz = 128;
 	char *cstr, *ret = malloc (128);

@@ -1,10 +1,11 @@
-/* radare 2008-2010 GPL -- pancake <youterm.com> */
+/* radare 2008-2011 LGPL -- pancake <youterm.com> */
 
 #include <r_types.h>
 #include <r_util.h>
 #include <r_syscall.h>
 #include <stdio.h>
 #include <string.h>
+#include "fastcall.h"
 
 extern RSyscallItem syscalls_netbsd_x86[];
 extern RSyscallItem syscalls_linux_x86[];
@@ -17,19 +18,27 @@ extern RSyscallItem syscalls_win7_x86[];
 extern RSyscallPort sysport_x86[];
 
 R_API RSyscall* r_syscall_new() {
-	RSyscall *ctx;
-	ctx = (RSyscall*) malloc (sizeof (RSyscall));
-	if (ctx == NULL)
-		return NULL;
-	ctx->fd = NULL;
-	ctx->sysptr = syscalls_linux_x86;
-	ctx->sysport = sysport_x86;
-	ctx->printf = (PrintfCallback)printf;
-	return ctx;
+	RSyscall *rs = R_NEW (RSyscall);
+	if (rs) {
+		rs->fd = NULL;
+		rs->sysptr = syscalls_linux_x86;
+		rs->sysport = sysport_x86;
+		rs->printf = (PrintfCallback)printf;
+		rs->regs = fastcall_x86;
+	}
+	return rs;
 }
 
 R_API void r_syscall_free(RSyscall *ctx) {
 	free (ctx);
+}
+
+/* return fastcall register argument 'idx' for a syscall with 'num' args */
+R_API const char *r_syscall_reg(RSyscall *s, int idx, int num) {
+	num--; idx--; // arg 1 = index 0
+	if (num<0 || num>=R_SYSCALL_ARGS || idx<0 || idx>=R_SYSCALL_ARGS)
+		return NULL;
+	return s->regs[num].arg[idx];
 }
 
 R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
@@ -39,6 +48,7 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
 		arch = R_SYS_ARCH;
 	/// XXX: spaghetti here
 	if (!strcmp (arch, "mips")) {
+		ctx->regs = fastcall_mips;
 		if (!strcmp (os, "linux"))
 			ctx->sysptr = syscalls_linux_mips;
 		else {
@@ -47,6 +57,7 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
 		}
 	} else
 	if (!strcmp (arch, "arm")) {
+		ctx->regs = fastcall_arm;
 		if (!strcmp (os, "linux"))
 			ctx->sysptr = syscalls_linux_arm;
 		else
@@ -58,6 +69,7 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
 		}
 	} else
 	if (!strcmp (arch, "x86")) {
+		ctx->regs = fastcall_x86;
 		if (!strcmp (os, "linux"))
 			ctx->sysptr = syscalls_linux_x86;
 		else if (!strcmp (os, "netbsd"))

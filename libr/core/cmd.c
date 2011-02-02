@@ -49,7 +49,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	int counter = 0;
 	int middle = 0;
 	char str[128];
-	char *line, *comment, *opstr, *osl = NULL; // old source line
+	char *line = NULL, *comment, *opstr, *osl = NULL; // old source line
 	RAsmAop asmop;
 	RAnalOp analop;
 	RFlagItem *flag;
@@ -256,12 +256,14 @@ core->inc = 16;
 			core->print->flags |= R_PRINT_FLAGS_HEADER;
 			ret = (int)mi->size-delta;
 			free (line);
+			line = NULL;
 }
 			continue;
 		case R_META_STRUCT:
 			r_print_format (core->print, at, buf+idx, len-idx, mi->str);
 			ret = (int)mi->size;
 			free (line);
+			line = NULL;
 			continue;
 		}
 		if (show_bytes) {
@@ -306,6 +308,7 @@ core->inc = 16;
 			}
 			free (str);
 		}
+
 		if (show_color) {
 			switch (analop.type) {
 			case R_ANAL_OP_TYPE_NOP:

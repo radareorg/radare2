@@ -88,12 +88,13 @@ R_API int r_diff_buffers_radiff(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 		char op; // operation
 
 		oa = ob = 0LL;
-		(void *)fgets (buf, 63, fd); // TODO: handle ret value
-		if (feof(fd))
+		if (!fgets (buf, 63, fd))
+			break;
+		if (feof (fd))
 			break;
 		str = buf;
 
-		ptr = strchr(buf, ' ');
+		ptr = strchr (buf, ' ');
 		if (!ptr) continue;
 		*ptr='\0';
 		sscanf (str, "0x%08"PFMT64x"", &oa);

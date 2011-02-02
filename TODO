@@ -5,6 +5,7 @@
 
 pancake
 -------
+* Implement /v with r_mem_set_num()
 * comparisions doesnt works
 * Fix iterators for r_macro (test only?)
 * Fix help of ? command, and add ?! and check ??

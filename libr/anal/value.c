@@ -18,6 +18,7 @@ R_API void r_anal_value_free(RAnalValue *value) {
 	free (value);
 }
 
+// mul*value+regbase+regidx+delta
 R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val) {
 	ut64 num;
 	if (val==NULL)
@@ -37,6 +38,22 @@ R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val) {
 		break;
 	}
 	return num;
+}
+
+R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num) {
+	if (val->memref) {
+		if (anal->iob.io) {
+			ut8 data[8];
+			ut64 addr = r_anal_value_to_ut64 (anal, val);
+			r_mem_set_num (data, val->memref, num, anal->big_endian);
+			anal->iob.write_at (anal->iob.io, addr, data, val->memref);
+		} else eprintf ("No IO binded to r_anal\n");
+	} else {
+		RRegItem *item = val->reg;
+		if (item)
+			r_reg_set_value (anal->reg, item, num);
+	}
+	return R_FALSE;
 }
 
 R_API char *r_anal_value_to_string (RAnalValue *value) {

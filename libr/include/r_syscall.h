@@ -9,7 +9,7 @@
 #define R_SYSCALL_ARGS 6
 
 typedef struct r_syscall_regs_t {
-	const char *arg[16];
+	const char *arg[R_SYSCALL_ARGS];
 } RSyscallRegs;
 
 typedef struct r_syscall_item_t {

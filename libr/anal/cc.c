@@ -1,6 +1,13 @@
 /* radare - LGPL - Copyright 2011 -- pancake@nopcode.org */
 
 // moved from core/cmd.c // the loop that does the funny trick ..
+#if 0
+NOTES
+=====
+- RAnalCC must be defined in every function.. maybe in xrefs? or per-opcode cache?
+  - hashtable with offset-opcode must be faster to index than to recalc every time
+- Interrupts (SWI) will use always a predefined type.. this must be rethinked
+#endif
 
 #include <r_anal.h>
 
@@ -28,15 +35,13 @@ R_API void r_anal_cc_reset (RAnalCC *cc) {
 	cc->jump = 0;
 }
 
-// XXX: RSyscall must be inside RAnal ??? merge APIS
 // XXX: RVM must be inside RAnal ???? imho no. rsyscall must provide ret reg info
 //XXX: may overflow. this is vulnerable. needs fix
 R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 	RSyscallItem *si;
 	RAnalFcn *fcn;
 	char str[1024], buf[32];
-	int i;
-	int eax = 0; // eax = arg0
+	int i, eax = 0; // eax = arg0
 
 	str[0] = 0;
 	switch (cc->type) {
@@ -94,7 +99,7 @@ R_API boolt r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op) {
 	case R_ANAL_OP_TYPE_PUSH:
 	case R_ANAL_OP_TYPE_UPUSH: // add argument
 		cc->nargs ++;
-		if (cc->nargs<sizeof (cc->args))
+		if (cc->nargs>0 && cc->nargs < R_ANAL_CC_ARGS)
 			cc->args[cc->nargs] = op->ref;
 		return R_TRUE;
 	}

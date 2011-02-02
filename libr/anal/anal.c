@@ -26,6 +26,7 @@ R_API RAnal *r_anal_new() {
 	if (anal) {
 		memset (anal, 0, sizeof (RAnal));
 		anal->syscall = r_syscall_new ();
+		r_io_bind_init (anal->iob);
 		anal->reg = NULL;
 		anal->bbs = r_anal_bb_list_new ();
 		anal->fcns = r_anal_fcn_list_new ();
