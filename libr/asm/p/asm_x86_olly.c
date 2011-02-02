@@ -1,4 +1,4 @@
-/* radare - GPL3 - Copyright 2009-2010 pancake<nopcode.org> nibble<.ds@gmail.com> */
+/* radare - LGPL3 - Copyright 2009-2011 pancake<nopcode.org> nibble<.ds@gmail.com> */
 
 #include <stdio.h>
 #include <string.h>
@@ -7,7 +7,6 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
-#include "fastcall_x86.h"
 #include "x86/ollyasm/disasm.h"
 
 static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len) {
@@ -50,7 +49,6 @@ RAsmPlugin r_asm_plugin_x86_olly = {
 	.fini = NULL,
 	.disassemble = &disassemble,
 	.assemble = &assemble,
-	.fastcall = (void *)fastcall,
 };
 
 #ifndef CORELIB

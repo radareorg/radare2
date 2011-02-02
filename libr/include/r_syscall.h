@@ -1,8 +1,16 @@
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+
 #ifndef _INCLUDE_R_SYSCALL_H_
 #define _INCLUDE_R_SYSCALL_H_
 
 #include <r_types.h>
 #include <list.h>
+
+#define R_SYSCALL_ARGS 6
+
+typedef struct r_syscall_regs_t {
+	const char *arg[16];
+} RSyscallRegs;
 
 typedef struct r_syscall_item_t {
 	const char *name;
@@ -21,6 +29,7 @@ typedef struct r_syscall_t {
 	FILE *fd;
 	// TODO char *arch;
 	// TODO char *os;
+	RSyscallRegs *regs;
 	RSyscallItem *sysptr;
 	RSyscallPort *sysport;
 	PrintfCallback printf;

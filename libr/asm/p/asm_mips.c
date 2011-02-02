@@ -12,8 +12,6 @@
 #include "dis-asm.h"
 #include "opcode/mips.h"
 
-#include "fastcall_mips.h"
-
 static int mips_mode = 0;
 static unsigned long Offset = 0;
 static char *buf_global = NULL;
@@ -96,7 +94,6 @@ RAsmPlugin r_asm_plugin_mips = {
 	.fini = NULL,
 	.disassemble = &disassemble,
 	.assemble = NULL,
-	.fastcall = fastcall
 };
 
 #ifndef CORELIB

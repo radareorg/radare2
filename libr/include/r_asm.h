@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com> */
 
 #ifndef _INCLUDE_R_ASM_H_
 #define _INCLUDE_R_ASM_H_
@@ -8,7 +8,6 @@
 #include <r_util.h>
 
 #define R_ASM_BUFSIZE 1024
-#define R_ASM_FASTCALL_ARGS 6
 
 enum {
 	R_ASM_ARCH_NONE = 0,
@@ -40,10 +39,6 @@ enum {
 	R_ASM_MOD_SRCREG2 = '2'
 };
 
-typedef struct r_asm_fastcall_t {
-	const char *arg[16];
-} RAsmFastcall;
-
 typedef struct r_asm_aop_t {
 	int  inst_len;
 	ut8  buf[R_ASM_BUFSIZE];
@@ -73,7 +68,6 @@ typedef struct r_asm_t {
 	ut64 pc;
 	void *user;
 	struct r_asm_plugin_t *cur;
-	RAsmFastcall *fastcall;
 	RList *plugins;
 } RAsm;
 
@@ -92,7 +86,6 @@ typedef struct r_asm_plugin_t {
 	int (*assemble)(RAsm *a, struct r_asm_aop_t *aop, const char *buf);
 	RAsmModifyCallback modify;
 	int (*set_subarch)(RAsm *a, const char *buf);
-	struct r_asm_fastcall_t *fastcall[R_ASM_FASTCALL_ARGS];
 } RAsmPlugin;
 
 #ifdef R_API

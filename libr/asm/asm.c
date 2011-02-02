@@ -108,17 +108,6 @@ R_API void r_asm_free(RAsm *a) {
 	free (a);
 }
 
-/* return fastcall register argument 'idx' for a syscall with 'num' args */
-R_API const char *r_asm_fastcall(RAsm *a, int idx, int num) {
-	struct r_asm_fastcall_t *fastcall;
-	const char *ret = NULL;
-	if (a && a->cur && a->cur->fastcall)
-		fastcall = *a->cur->fastcall;
-	if (fastcall && idx<=num)
-		ret = fastcall[num].arg[idx];
-	return ret;
-}
-
 R_API void r_asm_set_user_ptr(RAsm *a, void *user) {
 	a->user = user;
 }

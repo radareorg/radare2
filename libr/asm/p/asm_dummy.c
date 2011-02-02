@@ -4,11 +4,8 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
-
-static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len)
-{
+static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len) {
 	printf ("Dummy (dis)assembly plugin");
-
 	return R_FALSE;
 }
 
@@ -21,7 +18,6 @@ RAsmPlugin r_asm_plugin_dummy = {
 	.fini = NULL,
 	.disassemble = &disassemble,
 	.assemble = NULL,
-	.fastcall = NULL,
 };
 
 #ifndef CORELIB

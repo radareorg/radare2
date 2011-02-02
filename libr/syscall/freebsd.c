@@ -1,4 +1,4 @@
-#include "r_syscall.h"
+#include <r_syscall.h>
 
 /* there are LOT of magic syscalls in freebsd...ill really have to look on it */
 /* jail, jail_attach, utrace, kqueue->EV_FILTER_PROC->NOTE_FORK, nfsclnt */

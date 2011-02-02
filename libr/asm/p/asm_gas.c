@@ -1,17 +1,9 @@
-/* radare - LGPL - Copyright 2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2011 pancake<nopcode.org> */
 
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_asm.h>
-
-#include "fastcall_x86.h"
-
-#if 0
-static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len)
-{
-}
-#endif
 
 // XXX: TODO Implement
 static int assemble(struct r_asm_t *a, struct r_asm_aop_t *aop, const char *buf) {
@@ -37,7 +29,6 @@ RAsmPlugin r_asm_plugin_x86_nasm = {
 	.fini = NULL,
 	.disassemble = NULL, /*&disassemble,*/
 	.assemble = &assemble, 
-	.fastcall = fastcall,
 };
 
 #ifndef CORELIB

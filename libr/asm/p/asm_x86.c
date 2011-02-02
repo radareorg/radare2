@@ -1,11 +1,10 @@
-/* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com> */
 
 #include <stdio.h>
 #include <string.h>
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
-#include "fastcall_x86.h"
 #include "x86/udis86/types.h"
 #include "x86/udis86/extern.h"
 
@@ -71,7 +70,6 @@ RAsmPlugin r_asm_plugin_x86 = {
 	.disassemble = &disassemble,
 	.modify = &modify,
 	.assemble = NULL,
-	.fastcall = fastcall,
 };
 
 #ifndef CORELIB

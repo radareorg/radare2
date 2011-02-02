@@ -1,11 +1,9 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_asm.h>
-
-#include "fastcall_x86.h"
 
 #if 0
 static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len) {
@@ -44,7 +42,6 @@ RAsmPlugin r_asm_plugin_x86_nasm = {
 	.fini = NULL,
 	.disassemble = NULL, /*&disassemble,*/
 	.assemble = &assemble, 
-	.fastcall = &fastcall,
 };
 
 #ifndef CORELIB
@@ -52,17 +49,4 @@ struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_x86_nasm
 };
-#endif
-
-#if TEST
-main() {
-	struct r_asm_fastcall_t *f;
-	//f = r_asm_plugin_x86_nasm.fastcall;
-	printf ("fastcall=%p\n", *r_asm_plugin_x86_nasm.fastcall);
-	printf ("fastcall=%p\n", fastcall);
-	f = fastcall;//r_asm_plugin_x86_nasm.fastcall;
-	printf ("f=%p (%s)\n", f, f);
-	printf ("f[0]=%p (%s)\n", f[0], f[0]);
-	printf ("f[3].arg[1]=%s\n", f[3].arg[1]);
-}
 #endif

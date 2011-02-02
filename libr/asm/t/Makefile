@@ -7,7 +7,10 @@ LDPATH=-L.. -L../../util -L../../lib
 LDPATH+=-lr_util -lr_lib
 CFLAGS+=-DVERSION=\"${VERSION}\"
 
-all: fastcall${EXT_EXE}
+all:
+
+# XXX: remove fastcall program here , it has been moved into RSyscall
+# fastcall${EXT_EXE}
 
 fastcall${EXT_EXE}: fastcall.o
 	${CC} fastcall.o ${LDPATH} ${LDFLAGS} -o fastcall${EXT_EXE} 
