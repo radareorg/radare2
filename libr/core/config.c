@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include <r_core.h>
 
@@ -10,7 +10,7 @@ static int config_scrcols_callback(void *user, void *data) {
 
 static int config_scrhtml_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton()->is_html = node->i_value;
+	r_cons_singleton ()->is_html = node->i_value;
 // TODO: control error and restore old value (return false?) show errormsg?
 	return R_TRUE;
 }
@@ -235,6 +235,13 @@ static int config_swstep_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_asmlineswidth_callback(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->anal->lineswidth = node->i_value;
+	return R_TRUE;
+}
+
 static int config_asmarch_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -313,8 +320,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "anal.split", "true", &config_analsplit_callback);
 	r_config_set_cb (cfg, "anal.plugin", "x86", &config_analplugin_callback);
 	/* asm */
-	r_config_set_i_cb (cfg, "asm.bits", 32,
-		&config_asmbits_callback);
+	r_config_set_i_cb (cfg, "asm.bits", 32, &config_asmbits_callback);
 	r_config_set (cfg, "asm.bytes", "true"); 
 	r_config_set (cfg, "asm.middle", "false"); // jump in the middle because of antidisasm tricks
 	r_config_set (cfg, "asm.comments", "true");
@@ -331,6 +337,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "asm.linesout", "true");
 	r_config_set (cfg, "asm.linesstyle", "false");
 	r_config_set (cfg, "asm.lineswide", "false");
+	r_config_set_i_cb (cfg, "asm.lineswidth", 0, &config_asmlineswidth_callback);
 	r_config_set (cfg, "asm.linescall", "false");
 	r_config_set (cfg, "asm.offset", "true"); 
 	r_config_set_cb (cfg, "asm.os", R_SYS_OS, &config_asmos_callback);

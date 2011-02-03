@@ -2007,10 +2007,19 @@ static int cmd_anal(void *data, const char *input) {
 
 	switch (input[0]) {
 	case 'o':
-		{
+		if (input[1] == '?') {
+			r_cons_printf (
+			"Usage: ao[e?] [len]\n"
+			" aoe      ; emulate opcode at current offset\n"
+			" aoe 4    ; emulate 4 opcodes starting at current offset\n"
+			" ao 5     ; display opcode analysis of 5 opcodes\n");
+		} else
+		if (input[1] == 'e') {
+			eprintf ("TODO: r_anal_aop_execute\n");
+		} else {
 			int ret, idx;
 			ut8 *buf = core->block;
-			struct r_anal_aop_t aop;
+			RAnalAop aop;
 
 			for (idx=ret=0; idx<len; idx+=ret) {
 				ret = r_anal_aop (core->anal, &aop,
@@ -2461,7 +2470,7 @@ static int cmd_anal(void *data, const char *input) {
 		"Usage: a[?obfrgtv]\n"
 		" aa              ; Analyze all (fcns + bbs)\n"
 		" as [num]        ; Analyze syscall using dbg.reg\n"
-		" ao [len]        ; Analyze raw bytes as Opcodes\n"
+		" ao[e?] [len]    ; Analyze Opcodes (or emulate it)\n"
 		" ab[?+-l*]       ; Analyze Basic blocks\n"
 		" af[?+-l*]       ; Analyze Functions\n"
 		" ar[?d-l*]       ; Manage refs/xrefs\n"
@@ -2791,7 +2800,8 @@ static int cmd_search(void *data, const char *input) {
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
-		n32 = r_num_math (core->num, input+1);
+		n32 = (ut32)r_num_math (core->num, input+1);
+// TODO: Add support for /v4 /v8 /v2
 		r_search_kw_add (core->search, 
 			r_search_keyword_new ((const ut8*)&n32, 4, NULL, 0, NULL));
 		r_search_begin (core->search);
@@ -2876,18 +2886,19 @@ static int cmd_search(void *data, const char *input) {
 	default:
 		r_cons_printf (
 		"Usage: /[amx/] [arg]\n"
-		" / foo           # search for string 'foo'\n"
-		" /m /E.F/i       # match regular expression\n"
-		" /x ff0033       # search for hex string\n"
-		" /c jmp [esp]    # search for asm code\n"
-		" /a sym.printf   # analyze code referencing an offset\n"
-		" //              # repeat last search\n"
+		" / foo           ; search for string 'foo'\n"
+		" /m /E.F/i       ; match regular expression\n"
+		" /x ff0033       ; search for hex string\n"
+		" /c jmp [esp]    ; search for asm code\n"
+		" /a sym.printf   ; analyze code referencing an offset\n"
+		" /v num          ; look for a asm.bigendian 32bit value\n"
+		" //              ; repeat last search\n"
 		"Configuration:\n"
-		" e search.distance = 0 # search string distance\n"
-		" e search.align = 4    # only catch aligned search hits\n"
-		" e search.from = 0     # start address\n"
-		" e search.to = 0       # end address\n"
-		" e search.asmstr = 0   # search string instead of assembly\n");
+		" e search.distance = 0 ; search string distance\n"
+		" e search.align = 4    ; only catch aligned search hits\n"
+		" e search.from = 0     ; start address\n"
+		" e search.to = 0       ; end address\n"
+		" e search.asmstr = 0   ; search string instead of assembly\n");
 		break;
 	}
 	if (dosearch) {

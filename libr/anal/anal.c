@@ -23,27 +23,28 @@ R_API RAnal *r_anal_new() {
 	int i;
 	RAnalPlugin *static_plugin;
 	RAnal *anal = R_NEW (RAnal);
-	if (anal) {
-		memset (anal, 0, sizeof (RAnal));
-		anal->syscall = r_syscall_new ();
-		r_io_bind_init (anal->iob);
-		anal->reg = NULL;
-		anal->bbs = r_anal_bb_list_new ();
-		anal->fcns = r_anal_fcn_list_new ();
-		anal->refs = r_anal_ref_list_new ();
-		anal->vartypes = r_anal_var_type_list_new ();
-		r_anal_set_bits (anal, 32);
-		r_anal_set_big_endian (anal, R_FALSE);
-		INIT_LIST_HEAD (&anal->anals);
-		for (i=0; anal_static_plugins[i]; i++) {
-			static_plugin = R_NEW (RAnalPlugin);
-			memcpy (static_plugin, anal_static_plugins[i], sizeof (RAnalPlugin));
-			r_anal_add (anal, static_plugin);
-		}
-		for (i=0; anal_default_vartypes[i].name; i++)
-			r_anal_var_type_add (anal, anal_default_vartypes[i].name,
-					anal_default_vartypes[i].size, anal_default_vartypes[i].fmt);
+	if (!anal)
+		return NULL;
+	memset (anal, 0, sizeof (RAnal));
+	anal->syscall = r_syscall_new ();
+	r_io_bind_init (anal->iob);
+	anal->reg = NULL;
+	anal->lineswidth = 0;
+	anal->bbs = r_anal_bb_list_new ();
+	anal->fcns = r_anal_fcn_list_new ();
+	anal->refs = r_anal_ref_list_new ();
+	anal->vartypes = r_anal_var_type_list_new ();
+	r_anal_set_bits (anal, 32);
+	r_anal_set_big_endian (anal, R_FALSE);
+	INIT_LIST_HEAD (&anal->anals);
+	for (i=0; anal_static_plugins[i]; i++) {
+		static_plugin = R_NEW (RAnalPlugin);
+		memcpy (static_plugin, anal_static_plugins[i], sizeof (RAnalPlugin));
+		r_anal_add (anal, static_plugin);
 	}
+	for (i=0; anal_default_vartypes[i].name; i++)
+		r_anal_var_type_add (anal, anal_default_vartypes[i].name,
+				anal_default_vartypes[i].size, anal_default_vartypes[i].fmt);
 	return anal;
 }
 

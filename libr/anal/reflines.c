@@ -64,9 +64,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 }
 
 /* umf..this should probably be outside this file */
-R_API char* r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list,
-	ut64 addr, int opts)
-{
+R_API char* r_anal_reflines_str(RAnal *anal, RAnalRefline *list, ut64 addr, int opts) {
 	struct r_anal_refline_t *ref;
 	struct list_head *pos;
 	int dir = 0;
@@ -82,25 +80,20 @@ R_API char* r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *
 		ref = list_entry (pos, RAnalRefline, list);
 
 		if (addr == ref->to) dir = 1;
-		// TODO: use else here
-		if (addr == ref->from) dir = 2;
+		else if (addr == ref->from) dir = 2;
 
 		// TODO: if dir==1
 		if (addr == ref->to) {
-			if (ref->from > ref->to)
-				str = r_str_concat (str, ".");
-			else str = r_str_concat (str, "`");
+			str = r_str_concat (str, (ref->from>ref->to)?".":"`");
 			ch = '-';
 		} else if (addr == ref->from) {
-			if (ref->from > ref->to)
-				str = r_str_concat (str, "`");
-			else str = r_str_concat (str, ".");
+			str = r_str_concat (str, (ref->from>ref->to)?"`":".");
 			ch = '=';
 		} else if (ref->from < ref->to) { /* down */
 			if (addr > ref->from && addr < ref->to) {
 				if (ch=='-'||ch=='=')
 					str = r_str_concatch (str, ch);
-				else str = r_str_concat(str, "|");
+				else str = r_str_concat (str, "|");
 			} else str = r_str_concatch (str, ch);
 		} else { /* up */
 			if (addr < ref->from && addr > ref->to) {
@@ -109,13 +102,15 @@ R_API char* r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *
 				else str = r_str_concat (str, "|");
 			} else str = r_str_concatch (str, ch);
 		}
-		if (wide) {
-			if (ch == '=' || ch == '-')
-				str = r_str_concatch (str, ch);
-			else str = r_str_concat (str, " ");
-		}
+		if (wide)
+			str = r_str_concatch (str, (ch=='='||ch=='-')?ch:' ');
 	}
 	str = r_str_concat (str, (dir==1)?"-> ":(dir==2)?"=< ":"   ");
+	if (anal->lineswidth>0) {
+		int len = strlen (str);
+		if (len>anal->lineswidth)
+			strcpy (str, str+len-anal->lineswidth);
+	}
 	return str;
 }
 

@@ -1,35 +1,48 @@
- ____  ___  ___  ___ ____  ___  _____   ____
-|  _ \/   \|   \/   \  _ \/ _ \ \__  \ /    \
-|    <  V  . |  . V  .   <   _/ .-' _/|  ()  |
-|__\__|_|__|___/__|__|_\__\___/ |____(_)____/
+   ____  ___  ___  ___ ____  ___  _____   ____
+  |  _ \/   \|   \/   \  _ \/ _ \ \__  \ /    \
+  |    <  V  . |  . V  .   <   _/ .-' _/|  ()  |
+  |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
+
+
+Visual mode
+-----------
+- cursor mode by default? (imho no)
+- cursor can move outside screen (visual broken)
+- scrollup by bwdisasm not yet implemented
+
+aoe = anal op exec
+/a ??? deprecated analyze code? srsly?
+* Search for wide strings /Z or so? /w maybe?
 
 pancake
 -------
-* Fixed width for reflines !! (max width)
-* Implement /v with r_mem_set_num()
-* comparisions doesnt works
+* Fix r2 rap://:9999 and c2s comms
+* r2-swig : Distribute generated .i files and cxx files.. so build is faster
+* comparisions doesnt works (RAnalCond)
 * Fix iterators for r_macro (test only?)
 * Fix help of ? command, and add ?! and check ??
-* register renaming (per-instruction or ranges)
-  - r_parser fun? a specific asm.parser plugin that does all this tricks?
 * Fix <tab> in console (if entered 'a<tab> and flags are: 'aburo' and 'abuelo', must autocomplete to 'abu'
-* '+' key in visual cursor mode only increments lower nibble!
-  - only in debugger mode :/
-* Fix ppc code analysis // fix or use or what? :)
 * keys to modify flags and functions
 
 earada
 ------
-- mount /mnt/ must chop last '/'
-- test fatfs and others
+* Fix avr/ppc code analysis // fix or use or what? :)
+* Implement print Zoom mode (copypasta from r1) (useful for forensics) <-- MUST
+* mount /mnt/ must chop last '/'
+* test fatfs and others
 
 nibble
 ------
+* '+' key in visual cursor mode only increments lower nibble!
+  - only in debugger mode :/
+* register renaming (per-instruction or ranges)
+  - r_parser fun? a specific asm.parser plugin that does all this tricks?
 - fix instruction navigation
   - do not allow to disassemble unaligned addresses (toggle)
   - use 'jk' with bwdisasm to go up to previous opcode.
     - r_asm can reduce cpu without disasm on fixed size ops archs.
-- not identified as cmp instruction by analysis. (85f6  test esi, esi)
+* not identified as cmp instruction by analysis. (85f6  test esi, esi)
+* x86im plugin does not detects int instructions (i have workaround it, but hacks sucks here)
 
 0.7 release
 ===========
@@ -46,11 +59,6 @@ nibble
 	* Implement dbg.bep - in r_core? in r_debug after attach? maybe only in r2 binr?
 	  - must be refined.. and look for better names
 
-	DIFFING
-	-------
-	* Reimplement or fix the delta diffing in C
-	  - first we need to do it for ired..
-
 	CORE
 	----
 	* Add "pm ?" for bit print like in pb? bit level binary memory printage
@@ -61,7 +69,6 @@ nibble
 	- "wx jeje" does not says "invalid hexpair string" (must report error)
 	- allow to hook r_asm_disassemble and assemble with custom callbacks
 	  - extend a disassembler with own instructions.
-	- Implement print Zoom mode (copypasta from r1)
 	- r_bin_demangle ();
 		* _ZN7WebCore11CounterNode7recountERKNS_12AtomicStringE
 		  - demangle c++ and objc names
@@ -71,14 +78,6 @@ nibble
 		  E = end of stream
 		  RKNS_ = start of arguments
 
-	SWIG
-	----
-	- swigBindings : Distribute generated .i files or cxx files.. so build is faster
-
-	Visual mode
-	-----------
-	- cursor mode by default?
-	- cursor can move outside screen (visual broken)
 
 	Assembler
 	---------
@@ -88,6 +87,7 @@ nibble
 
 0.8
 ===
+* Reimplement or fix the delta diffing in C - first we need to do it for ired..
 * add support for .a files (r_fs supports cpio and ar archives...)
 * Implement rap:// upload/download protocol commands (maybe just system() with rsc2+wget?
 * code injection facilities? (wtf? insert,execute, restore)
@@ -106,8 +106,8 @@ nibble
 
 Things to improve in r2
 =======================
-- focus in single arch (beat ida) mips, ppc64 or arm?
-- code analysis must resolve jump tables
+* focus in single arch (rock allover) mips, ppc64 or arm?
+* code analysis must resolve jump tables
 * Enhace code analysis
   - calculate multiple execution paths to give branch prediction results
     - get/set register status of the vm
@@ -120,8 +120,6 @@ Things to improve in r2
 * eprintf should be modified to log into a file
   - eprintf_open() -- start log to file
   - eprintf_close() -- stop log to file
-/a ??? deprecated analyze code? srsly?
-* Search for wide strings /Z or so?
 
 Debugger
 ========

@@ -7,6 +7,8 @@
 #include "r_socket.h"
 #include <sys/types.h>
 
+// XXX: if in listener mode we need to use fd or fdlistener to listen or accept
+// go fruit yourself
 #define ENDIAN (0)
 typedef struct {
 	int fd;
@@ -191,9 +193,8 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 
 	// read
 	ret = r_socket_read_block (RIORAP_FD (fd), buf, 5);
-	if (ret != 5) {
+	if (ret != 5)
 		return -1;
-	}
 	if (buf[0] != (RMT_SYSTEM | RMT_REPLY)) {
 		eprintf ("Unexpected system reply\n");
 		return -1;

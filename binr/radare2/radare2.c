@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include <r_core.h>
 #include <r_th.h>
@@ -11,21 +11,21 @@ static struct r_core_t r;
 static int main_help(int line) {
 	printf ("Usage: radare2 [-dwnLV] [-p prj] [-s addr] [-b bsz] [-e k=v] [file]\n");
 	if (!line) printf (
-		" -d        use 'file' as a program to debug\n"
-		" -w        open file in write mode\n"
-		" -n        do not run ~/.radare2rc\n"
-		" -v        nonverbose mode (no prompt)\n"
-		" -f        block size = file size\n"
-		" -p [prj]  set project file\n"
-		" -s [addr] initial seek\n"
-		" -b [size] initial block size\n"
-		" -i [file] run script file\n"
-		" -V        show radare2 version\n"
-		" -l [lib]  load plugin file\n"
+		" -d          use 'file' as a program to debug\n"
+		" -w          open file in write mode\n"
+		" -n          do not run ~/.radare2rc\n"
+		" -v          nonverbose mode (no prompt)\n"
+		" -f          block size = file size\n"
+		" -p [prj]    set project file\n"
+		" -s [addr]   initial seek\n"
+		" -b [size]   initial block size\n"
+		" -i [file]   run script file\n"
+		" -V          show radare2 version\n"
+		" -l [lib]    load plugin file\n"
 		//" -t        load rabin2 info in thread\n"
-		" -L        list supported IO plugins\n"
-		" -u        unknown file size\n"
-		" -e k=v    evaluate config var\n");
+		" -L          list supported IO plugins\n"
+		" -u          unknown file size\n"
+		" -e k=v      evaluate config var\n");
 	return 0;
 }
 
@@ -142,6 +142,7 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 	}
+
 	if (debug) {
 		r_config_set (r.config, "io.va", "false"); // implicit?
 		r_config_set (r.config, "cfg.debug", "true");
@@ -177,6 +178,7 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
+
 	if (fh == NULL) {
 		eprintf ("Cannot open file.\n");
 		return 1;
@@ -273,9 +275,9 @@ int main(int argc, char **argv) {
 	if (cmdfile)
 		r_core_cmd_file (&r, cmdfile);
 
-	if (r_io_is_listener (r.io))
+	if (r_io_is_listener (r.io)) {
 		r_core_serve (&r, r.io->fd->fd);
-	else
+	} else
 	for (;;) {
 		do { 
 			if (r_core_prompt (&r, R_FALSE)<1)

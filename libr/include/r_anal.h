@@ -119,6 +119,7 @@ enum {
 
 typedef struct r_anal_t {
 	int bits;
+	int lineswidth;
 	int big_endian;
 	int split;
 	void *user;
@@ -131,7 +132,7 @@ typedef struct r_anal_t {
 	RIOBind iob;
 	struct r_anal_ctx_t *ctx;
 	struct r_anal_plugin_t *cur;
-	struct list_head anals;
+	struct list_head anals; // TODO: Reimplement with RList
 } RAnal;
 
 // mul*value+regbase+regidx+delta
