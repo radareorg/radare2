@@ -873,26 +873,33 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (printidx == 1)
 				cols = r_asm_disassemble (core->assembler, &aop, core->block, 32);
 			cursor -= cols;
-			if (cursor<0 && cols<core->offset) {
-				r_core_seek (core, core->offset-cols, 1);
+			ocursor = -1;
+			if (cursor<0) {
+				if (core->offset>=cols)
+					r_core_seek (core, core->offset-cols, 1);
 				cursor += cols;
 			}
-			ocursor = -1;
 		} else {
 			if (printidx == 1)
 				cols = core->inc;
-			if (cols>core->offset)
-			r_core_seek (core, core->offset-cols, 1);
+			if (core->offset >= cols)
+				r_core_seek (core, core->offset-cols, 1);
+			else r_core_seek (core, 0, 1);
 		}
 		break;
 	case 'K':
 		if (curset) {
 			if (ocursor==-1) ocursor=cursor;
 			cursor -= cols;
-			if (cursor<0 && cols<core->offset) {
-				r_core_seek (core, core->offset-cols, 1);
-				cursor += cols;
-				ocursor += cols;
+			if (cursor<0) {
+				if (core->offset>=cols) {
+					r_core_seek (core, core->offset-cols, 1);
+					ocursor += cols;
+					cursor += cols;
+				} else {
+					r_core_seek (core, 0, 1);
+					cursor = 0;
+				}
 			}
 		} else r_core_cmd (core, "s--", 0);
 		break;
