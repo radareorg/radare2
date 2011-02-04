@@ -130,7 +130,7 @@ R_API int r_core_visual(struct r_core_t *core, const char *input);
 R_API int r_core_visual_cmd(struct r_core_t *core, int ch);
 
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb);
-R_API int r_core_serve(RCore *core, int fd);
+R_API int r_core_serve(RCore *core, RIODesc *fd);
 R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int mode);
 R_API struct r_core_file_t *r_core_file_get_fd(struct r_core_t *core, int fd);
 R_API int r_core_file_close(struct r_core_t *r, RCoreFile *fh);
@@ -190,7 +190,9 @@ R_API int r_core_gdiff(RCore *c, RCore *c2);
 R_API int r_core_project_open(RCore *core, const char *file);
 R_API int r_core_project_save(RCore *core, const char *file);
 R_API char *r_core_project_info(RCore *core, const char *file);
-R_API void r_core_sysenv_update(RCore *core);
+R_API char *r_core_sysenv_begin(RCore *core, const char *cmd);
+R_API void r_core_sysenv_end(RCore *core, const char *cmd);
+R_API void r_core_sysenv_help();
 
 /* rtr */
 R_API void r_core_rtr_help(RCore *core);

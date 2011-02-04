@@ -10,19 +10,22 @@ Visual mode
 - cursor can move outside screen (visual broken)
 - scrollup by bwdisasm not yet implemented
 
-aoe = anal op exec
+* RAsmOp RAnalOp // Aop->Op
+* implement aoe = anal op exec
+  - sync regs or what?
 /a ??? deprecated analyze code? srsly?
 * Search for wide strings /Z or so? /w maybe?
 
 pancake
 -------
+* Implement BLOCK in r_core_sysenv_begin|end ()
 * Fix r2 rap://:9999 and c2s comms
 * r2-swig : Distribute generated .i files and cxx files.. so build is faster
+  - ./configure --without-valaswig # compile without generating cxx files
+  - build with swig/
 * comparisions doesnt works (RAnalCond)
 * Fix iterators for r_macro (test only?)
-* Fix help of ? command, and add ?! and check ??
 * Fix <tab> in console (if entered 'a<tab> and flags are: 'aburo' and 'abuelo', must autocomplete to 'abu'
-* keys to modify flags and functions
 
 earada
 ------
@@ -69,7 +72,7 @@ nibble
 	- "wx jeje" does not says "invalid hexpair string" (must report error)
 	- allow to hook r_asm_disassemble and assemble with custom callbacks
 	  - extend a disassembler with own instructions.
-	- r_bin_demangle ();
+	- r_bin_demangle (); // r_util maybe?
 		* _ZN7WebCore11CounterNode7recountERKNS_12AtomicStringE
 		  - demangle c++ and objc names
 		    WebCore.CounterNode.recount(AtomicString)
@@ -132,7 +135,6 @@ Debugger
 
 pancake
 -------
-* Add SSL support to r_socket
 * Implement PTRACE_BLOCK on Linux
 * fork/clone child . inject code to create new threads or pids
 * Functions in r_util to get lil/big ut8,16,32 from ut8*
@@ -175,6 +177,7 @@ nibble
 
 earada
 ------
+* Add SSL support to r_socket
 * r_file_slurp should work fine for big files (not prio) r_file_slurp_buf?
   - mmap if supported
   - add r_file_mmap ?

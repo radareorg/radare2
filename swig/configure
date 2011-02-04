@@ -95,12 +95,12 @@ done
 : ${INSTALL_PROGRAM:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
 : ${INSTALL_LIB:=${INSTALL} -c}
- PKGNAME='radare2-swig' ; VERSION='0.6.1' ; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
+ PKGNAME='radare2-swig' ; VERSION='0.6.9' ; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
 }
                 
 show_usage() {
 cat <<EOF2
-'configure' configures radare2-swig-0.6.1 to adapt to many kinds of systems.
+'configure' configures radare2-swig-0.6.9 to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -138,14 +138,11 @@ System types:
   --target=TARGET        configure for building compilers for TARGET [HOST]
 EOF2
 
-printf "
-Optional Features:
+printf "\nOptional Features:
   --with-cc              Define C compiler to use (gcc by default)  (USERCC=gcc)
   --with-cxx             Define C++ compiler to use (g++ by default)  (USERCXX=g++)
-  --with-ostype          Choose OS type ( gnulinux windows darwin )  (USEROSTYPE=auto)
-"
-printf "
-Some influential environment variables:
+  --with-ostype          Choose OS type ( gnulinux windows darwin )  (USEROSTYPE=auto)\n"
+printf "\nSome influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
@@ -154,10 +151,8 @@ Some influential environment variables:
               headers in a nonstandard directory <include dir>
   CPP         C preprocessor
   CXX         C++ compiler command
-  CXXFLAGS    C++ compiler flags
-"
-printf "
-Report bugs to: pancake <pancake@nopcode.org>"
+  CXXFLAGS    C++ compiler flags\n"
+printf "\nReport bugs to: pancake <pancake@nopcode.org>"
 echo ""
 exit 0
 }
@@ -172,7 +167,7 @@ take_environ() {
 }
 
 show_version() {
-echo "radare2-swig-0.6.1 configuration script done with acr v0.8.4.
+echo "radare2-swig-0.6.9 configuration script done with acr v0.8.4.
 The 'Free Software Foundation' message is only for autodetection.
 Originally written by pancake <youterm.com>."
 exit 0
@@ -190,7 +185,7 @@ case $flag in
 	show_version ; ;;
 "-r"|"--r"|"--report")
 echo "PKGNAME:   radare2-swig"
-echo "VERSION:   0.6.1"
+echo "VERSION:   0.6.9"
 echo "LANGS:     c c++"
 echo "PKG-CONFIG:  libr"
 echo "FLAGS:     --with-cc=gcc --with-cxx=g++ --with-ostype=auto"
