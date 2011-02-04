@@ -276,7 +276,7 @@ int main(int argc, char **argv) {
 		r_core_cmd_file (&r, cmdfile);
 
 	if (r_io_is_listener (r.io)) {
-		r_core_serve (&r, r.io->fd->fd);
+		r_core_serve (&r, r.io->fd);
 	} else
 	for (;;) {
 		do { 

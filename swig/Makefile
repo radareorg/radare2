@@ -1,4 +1,5 @@
 -include config.mk
+LANGS=python perl ruby lua go java vapi
 W32PY="${HOME}/.wine/drive_c/Python27/"
 
 all: supported.langs ruby perl python lua go
@@ -153,12 +154,13 @@ oldtest:
 	python test.py
 
 clean:
-	cd python && make clean
-	cd perl && make clean
-	cd ruby && make clean
-	cd lua && make clean
-	cd go && make clean
-	cd java && make clean
-	cd vapi/t && ${MAKE} clean
+	for a in $(LANGS); do \
+		cd $$a ; ${MAKE} clean ; cd .. ; \
+	done
 
-.PHONY: ruby lua go java python perl clean oldtest test all vdoc w32 w32dist check-w32
+mrproper:
+	for a in $(LANGS); do \
+		cd $$a ; ${MAKE} mrproper; cd .. ; \
+	done
+
+.PHONY: $(LANGS) clean oldtest test all vdoc w32 w32dist check-w32

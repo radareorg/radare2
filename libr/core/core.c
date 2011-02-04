@@ -394,12 +394,13 @@ R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr) {
 	return aop;
 }
 
-// TODO: move into core/io? */
-R_API int r_core_serve(RCore *core, int fd) {
+// TODO: move into core/io/rap? */
+R_API int r_core_serve(RCore *core, RIODesc *file) {
 	ut8 cmd, flg, *ptr, buf[1024];
-	int i, c, pipefd;
+	int i, c, pipefd, fd;
 	ut64 x;
 
+	fd = file->fd;
 	if (fd == -1) {
 		eprintf ("rap: cannot listen.\n");
 		return -1;
@@ -553,7 +554,7 @@ reaccept:
 					//pipe_stdout_to_tmp_file((char*)&buf, (char*)ptr+5);
 					strcpy((char*)buf, "/tmp/.out");
 					pipefd = r_cons_pipe_open ((const char *)buf, 0);
-//eprintf("SYSTEM(%s)\n", ptr+6);
+					//eprintf("SYSTEM(%s)\n", ptr+6);
 					system((const char*)ptr+6);
 					r_cons_pipe_close (pipefd);
 					{
@@ -576,7 +577,7 @@ reaccept:
 					{
 					char *out = r_file_slurp ((char*)buf, &i);
 					free(ptr);
-//eprintf("PIPE(%s)\n", out);
+					//eprintf("PIPE(%s)\n", out);
 					ptr = (ut8 *) malloc(i+5);
 					if (ptr) {
 						memcpy (ptr+5, out, i);

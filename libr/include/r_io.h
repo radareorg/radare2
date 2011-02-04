@@ -63,7 +63,7 @@ typedef struct r_io_undo_t {
 	int w_init;
 	/* seek stuff */
 	ut64 seek[R_IO_UNDOS];
-	int fd[R_IO_UNDOS];
+	int fd[R_IO_UNDOS]; // XXX: Must be RIODesc*
 	int idx;
 	int limit;
 } RIOUndo;

@@ -1403,7 +1403,6 @@ static int cmd_help(void *data, const char *input) {
 		" :command          ; list or execute a plugin command\n"
 		" (macro arg0 arg1) ; define scripting macros\n"
 		" q [ret]           ; quit program with a return value\n"
-		"Use '?$' to get help for the variables\n"
 		"Use '?""?""?' for extra help about '?' subcommands.\n"
 		"Append '?' to any char command to get detailed help\n", input);
 		break;
@@ -2019,7 +2018,7 @@ static int cmd_anal(void *data, const char *input) {
 		} else {
 			int ret, idx;
 			ut8 *buf = core->block;
-			RAnalAop aop;
+			RAnalOp aop;
 
 			for (idx=ret=0; idx<len; idx+=ret) {
 				ret = r_anal_aop (core->anal, &aop,
@@ -3085,8 +3084,16 @@ static int cmd_visual(void *data, const char *input) {
 }
 
 static int cmd_system(void *data, const char *input) {
-	r_core_sysenv_update ((RCore*)data);
-	return r_sys_cmd (input);
+	int ret = 0;
+	if (*input!='?') {
+		char *cmd = r_core_sysenv_begin ((RCore*)data, input);
+		if (cmd) {
+			ret = r_sys_cmd (cmd);
+			r_core_sysenv_end ((RCore*)data, input);
+			free (cmd);
+		} else eprintf ("Error setting up system environment\n");
+	} else r_core_sysenv_help ();
+	return ret;
 }
 
 static int cmd_open(void *data, const char *input) {
