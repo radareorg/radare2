@@ -56,6 +56,7 @@ static void gdiff_diff_bb(RAnalFcn *mfcn, RAnalFcn *mfcn2) {
 	RListIter *iter, *iter2;
 	double t, ot;
 
+	mfcn->diff->type = mfcn2->diff->type = R_ANAL_DIFF_TYPE_MATCH;
 	iter = r_list_iterator (mfcn->bbs);
 	while (r_list_iter_next (iter)) {
 		bb = r_list_iter_get (iter);
@@ -84,13 +85,16 @@ static void gdiff_diff_bb(RAnalFcn *mfcn, RAnalFcn *mfcn2) {
 		if (mbb != NULL && mbb2 != NULL) {
 			if (ot == 1)
 				mbb->diff->type = mbb2->diff->type = R_ANAL_DIFF_TYPE_MATCH;
-			else
+			else {
 				mbb->diff->type = mbb2->diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
+				mfcn->diff->type = mfcn2->diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
+			}
 			R_FREE (mbb->fingerprint);
 			R_FREE (mbb2->fingerprint);
 			mbb->diff->addr = mbb2->addr;
 			mbb2->diff->addr = mbb->addr;
-		}
+		} else
+			mfcn->diff->type = mfcn2->diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
 	}
 }
 
@@ -119,7 +123,7 @@ static void gdiff_diff_fcn(RList *fcns, RList *fcns2) {
 			r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->size,
 					fcn2->fingerprint, fcn2->size, NULL, &t);
 #if 1
-			eprintf ("FCN NAME: %s - %s => %lli - %lli => %f\n", fcn->name, fcn2->name,
+			eprintf ("FCN NAME (NAME): %s - %s => %lli - %lli => %f\n", fcn->name, fcn2->name,
 					fcn->size, fcn2->size, t);
 #endif 
 			/* Set flag in matched functions */
@@ -231,7 +235,6 @@ R_API int r_core_gdiff(RCore *c, RCore *c2) {
 			fcn->size = concat_fcn_fp (cores[i], fcn);
 		}
 	}
-
 	/* Diff functions */
 	gdiff_diff_fcn (cores[0]->anal->fcns, cores[1]->anal->fcns);
 

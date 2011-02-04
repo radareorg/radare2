@@ -1,5 +1,5 @@
 BIN=ranal2
-BINDEPS=r_anal r_lib r_reg r_util
+BINDEPS=r_anal r_lib r_reg r_util r_syscall
 
 include ../binr.mk
 

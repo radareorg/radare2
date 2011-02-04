@@ -63,56 +63,49 @@ static char *r_core_anal_graph_label(RCore *core, struct r_anal_bb_t *bb, int op
 	return str;
 }
 
-static void r_core_anal_graph_nodes(RCore *core, RList *pbb, ut64 addr, int opts) {
-	struct r_anal_bb_t *bbi, *bbc;
-	RListIter *iter;
+static void r_core_anal_graph_nodes(RCore *core, RAnalFcn *fcn, RList *pbb, int opts) {
+	struct r_anal_bb_t *bbi, *bbi2, *bbc;
+	RListIter *iter, *iter2;
 	char *str;
 
-	/* In partial graphs test if the bb is already printed */
-	if (pbb)
-		r_list_foreach (pbb, iter, bbi)
-			if (addr == bbi->addr)
-				return;
+	r_list_foreach (fcn->bbs, iter, bbi) {
+		/* In partial graphs test if the bb is already printed */
+		r_list_foreach (pbb, iter2, bbi2)
+			if (bbi2->addr == bbi->addr)
+				continue;
+		bbc = R_NEW (RAnalBlock);
+		if (bbc) {
+			memcpy (bbc, bbi, sizeof (RAnalBlock));
+			/* We don't want to free this refs when the temporary list is destroyed */
+			bbc->aops = NULL;
+			bbc->cond = NULL;
+			bbc->diff = NULL;
+			bbc->fingerprint = NULL;
+			r_list_append (pbb, bbc);
+		}
 
-	r_list_foreach (core->anal->bbs, iter, bbi) {
-		if (addr == 0 || addr == bbi->addr) {
-			if (pbb) { /* Copy BB and append to the list of printed bbs */
-				bbc = R_NEW (RAnalBlock);
-				if (bbc) {
-					memcpy (bbc, bbi, sizeof (RAnalBlock));
-					/* We don't want to free this refs when the temporary list is destroyed */
-					bbc->aops = NULL;
-					bbc->cond = NULL;
-					bbc->diff = NULL;
-					bbc->fingerprint = NULL;
-					r_list_append (pbb, bbc);
-				}
+		if (bbi->jump != -1) {
+			r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
+					"[color=\"%s\"];\n", bbi->addr, bbi->jump,
+					bbi->fail != -1 ? "green" : "blue");
+			r_cons_flush ();
+		}
+		if (bbi->fail != -1) {
+			r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
+				"[color=\"red\"];\n", bbi->addr, bbi->fail);
+			r_cons_flush ();
+		}
+		if ((str = r_core_anal_graph_label (core, bbi, opts))) {
+			if (opts & R_CORE_ANAL_GRAPHDIFF) {
+				r_cons_printf (" \"0x%08"PFMT64x"\" [color=\"%s\", label=\"%s\"]\n", bbi->addr, 
+					bbi->diff->type==R_ANAL_DIFF_TYPE_MATCH?"lightgray":
+					bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"yellow":"red",str);
+			} else {
+				r_cons_printf (" \"0x%08"PFMT64x"\" [color=\"%s\", label=\"%s\"]\n", bbi->addr,
+					bbi->traced?"yellow":"lightgray",str);
 			}
-			if (bbi->jump != -1) {
-				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
-						"[color=\"%s\"];\n", bbi->addr, bbi->jump,
-						bbi->fail != -1 ? "green" : "blue");
-				r_cons_flush ();
-				if (addr != 0) r_core_anal_graph_nodes (core, pbb, bbi->jump, opts);
-			}
-			if (bbi->fail != -1) {
-				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
-					"[color=\"red\"];\n", bbi->addr, bbi->fail);
-				r_cons_flush ();
-				if (addr != 0) r_core_anal_graph_nodes (core, pbb, bbi->fail, opts);
-			}
-			if ((str = r_core_anal_graph_label (core, bbi, opts))) {
-				if (opts & R_CORE_ANAL_GRAPHDIFF) {
-					r_cons_printf (" \"0x%08"PFMT64x"\" [color=\"%s\", label=\"%s\"]\n", bbi->addr, 
-						bbi->diff->type==R_ANAL_DIFF_TYPE_MATCH?"lightgray":
-						bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"yellow":"red",str);
-				} else {
-					r_cons_printf (" \"0x%08"PFMT64x"\" [color=\"%s\", label=\"%s\"]\n", bbi->addr,
-						bbi->traced?"yellow":"lightgray",str);
-				}
-				r_cons_flush ();
-				free (str);
-			}
+			r_cons_flush ();
+			free (str);
 		}
 	}
 }
@@ -467,6 +460,8 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 }
 
 R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
+	RAnalFcn *fcni;
+	RListIter *iter;
 	RList *pbb = NULL;
 	int reflines = r_config_get_i (core->config, "asm.lines");
 	int bytes = r_config_get_i (core->config, "asm.bytes");
@@ -480,9 +475,12 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		"\tnode [color=lightgray, style=filled shape=box"
 		" fontname=\"Courier\" fontsize=\"8\"];\n");
 	r_cons_flush ();
-	if (addr != 0) pbb = r_anal_bb_list_new (); /* In partial graphs define printed bb list */
-	r_core_anal_graph_nodes (core, pbb, addr, opts);
-	if (pbb) r_list_free (pbb);
+	if (!(pbb = r_anal_bb_list_new ()))
+		return R_FALSE;
+	r_list_foreach (core->anal->fcns, iter, fcni)
+		if (addr == 0 || addr == fcni->addr)
+			r_core_anal_graph_nodes (core, fcni, pbb, opts);
+	r_list_free (pbb);
 	r_cons_printf ("}\n");
 	r_cons_flush ();
 	r_config_set_i (core->config, "asm.lines", reflines);
@@ -634,10 +632,12 @@ R_API int r_core_anal_all(RCore *core) {
 			if (!strncmp (symbol->type,"FUNC", 4))
 				r_core_anal_fcn (core, va?baddr+symbol->rva:symbol->offset, -1,
 						R_ANAL_REF_TYPE_NULL, depth);
+#if 0 /* Done during fcn analysis */
 	/* Analyze Basic blocks */
 	r_list_foreach (core->anal->fcns, iter, fcn)
 		if (fcn->type == R_ANAL_FCN_TYPE_FCN)
 			r_core_anal_bb (core, core->anal->bbs, fcn->addr, depth, R_TRUE);
+#endif 
 
 	return R_TRUE;
 }

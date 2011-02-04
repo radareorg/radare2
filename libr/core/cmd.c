@@ -2019,7 +2019,7 @@ static int cmd_anal(void *data, const char *input) {
 		} else {
 			int ret, idx;
 			ut8 *buf = core->block;
-			RAnalAop aop;
+			RAnalOp aop;
 
 			for (idx=ret=0; idx<len; idx+=ret) {
 				ret = r_anal_aop (core->anal, &aop,
