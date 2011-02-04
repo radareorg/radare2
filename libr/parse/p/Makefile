@@ -9,7 +9,7 @@ CFLAGS+=-DCORELIB
 foo: all
 
 ALL_TARGETS=
-ARCHS=dummy.mk x86_pseudo.mk mreplace.mk
+ARCHS=x86_pseudo.mk mreplace.mk
 include $(ARCHS)
 
 all: ${ALL_TARGETS}

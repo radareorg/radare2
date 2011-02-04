@@ -5,7 +5,7 @@ include ../../config.mk
 CFLAGS+=-I../../include -Wall -DPREFIX=\"${PREFIX}\"
 BINDEPS=
 
-LANGS=lang_dummy.${EXT_SO} lang_python.${EXT_SO} lang_perl.${EXT_SO}
+LANGS=lang_python.${EXT_SO} lang_perl.${EXT_SO}
 #LANGS+=lang_ruby.so
 ifeq ($(HAVE_LIB_TCC),1)
 LANGS+=lang_tcc.${EXT_SO}
@@ -48,10 +48,6 @@ lang_perl.${EXT_SO}:
 		-fPIC ${LDFLAGS_LIB} -o lang_perl.${EXT_SO} perl.c ${LDFLAGS_LINKPATH}.. \
 		`perl -MExtUtils::Embed -e ccopts` \
 		`perl -MExtUtils::Embed -e ldopts` -lncurses
-
-lang_dummy.${EXT_SO}: dummy.o
-	${CC} ${CFLAGS} -shared -fPIC ${LDFLAGS_LIB} -o lang_dummy.${EXT_SO} dummy.c ${LDFLAGS_LINKPATH}.. -L..
-	@#strip -s lua.so
 
 clean:
 	-rm -f *.${EXT_SO} *.${EXT_AR} *.o
