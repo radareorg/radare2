@@ -406,13 +406,14 @@ R_API int r_core_serve(RCore *core, RIODesc *file) {
 		return -1;
 	}
 
-	eprintf ("RAP Server running\n");
+	eprintf ("RAP Server started (rap.loop=%s)\n", r_config_get (core->config, "rap.loop"));
 #if __UNIX__
 	// XXX: ugly workaround
 	signal (SIGINT, SIG_DFL);
 	signal (SIGPIPE, SIG_DFL);
 #endif
 reaccept:
+	core->io->plugin = NULL;
 	while ((c = r_socket_accept (fd))) {
 		if (c == -1) {
 			eprintf ("rap: cannot accept\n");
@@ -421,13 +422,15 @@ reaccept:
 		}
 
 		eprintf ("rap: client connected\n");
-		
+		r_io_accept (core->io, c);
 		for (;;) {
 			i = r_socket_read (c, &cmd, 1);
 			if (i==0) {
 				eprintf ("rap: connection closed\n");
-				if (r_config_get_i (core->config, "rap.loop"))
+				if (r_config_get_i (core->config, "rap.loop")) {
+					eprintf ("rap: waiting for new connection\n");
 					goto reaccept;
+				}
 				return -1;
 			}
 

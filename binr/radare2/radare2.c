@@ -173,8 +173,9 @@ int main(int argc, char **argv) {
 			const char *prj = r_config_get (r.config, "file.project");
 			if (prj && *prj) {
 				char *file = r_core_project_info (&r, prj);
-				if (file) fh = r_core_file_open (&r, file, perms);
-				else eprintf ("No file\n");
+				if (file) {
+					fh = r_core_file_open (&r, file, perms);
+				} else eprintf ("No file\n");
 			}
 		}
 	}
@@ -247,8 +248,7 @@ int main(int argc, char **argv) {
 		r_core_cmd (&r, "fo", 0);
 		r_cons_flush ();
 	}
-	// read current block
-	r_core_seek (&r, r.offset, 1);
+	r_core_seek (&r, r.offset, 1); // read current block
 
 	/* XXX: find better solution.. files > 10MB does not hash */
 	#define SLURP_LIMIT (10*1024*1024)
@@ -275,9 +275,6 @@ int main(int argc, char **argv) {
 	if (cmdfile)
 		r_core_cmd_file (&r, cmdfile);
 
-	if (r_io_is_listener (r.io)) {
-		r_core_serve (&r, r.io->fd);
-	} else
 	for (;;) {
 		do { 
 			if (r_core_prompt (&r, R_FALSE)<1)

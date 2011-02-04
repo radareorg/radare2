@@ -770,13 +770,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		r_cons_set_raw(1);
 		break;
-	/* select */
-	case 'H':
-		if (curset) {
-			if (ocursor==-1) ocursor=cursor;
-			cursor--;
-		} else r_core_cmd (core, "s-2", 0);
-		break;
 	case 'e':
 		r_core_visual_config (core);
 		break;
@@ -786,12 +779,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'v':
 		r_core_visual_anal (core);
 		break;
-	case 'J':
-		if (curset) {
-			if (ocursor==-1) ocursor = cursor;
-			cursor += cols;
-		} else r_core_cmd (core, "s++", 0);
-		break;
 	case 'g':
 		r_core_cmd (core, "s 0", 0);
 		break;
@@ -800,62 +787,127 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_io_sundo_push (core->io);
 		//r_core_cmd(core, "s 0", 0);
 		break;
-	case 'K':
-		if (curset) {
-			if (ocursor==-1) ocursor=cursor;
-			cursor -= cols;
-		} else r_core_cmd (core, "s--", 0);
-		break;
-	case 'L':
-		if (curset) {
-			if (ocursor==-1) ocursor=cursor;
-			cursor++;
-		} else r_core_cmd (core, "s+2", 0);
-		break;
-	/* move */
 	case 'h':
 		if (curset) {
 			cursor--;
 			ocursor=-1;
+			if (cursor<0) {
+				r_core_seek (core, core->offset-cols, 1);
+				cursor ++;
+			}
 		} else r_core_cmd (core, "s-1", 0);
+		break;
+	case 'H':
+		if (curset) {
+			if (ocursor==-1) ocursor=cursor;
+			cursor--;
+			if (cursor<0) {
+				r_core_seek (core, core->offset-cols, 1);
+				cursor += cols;
+				ocursor += cols;
+			}
+		} else r_core_cmd (core, "s-2", 0);
 		break;
 	case 'l':
 		if (curset) {
 			cursor++;
 			ocursor=-1;
+			{
+				int offscreen = (core->cons->rows-3)*cols;
+				if (cursor>=offscreen) {
+					r_core_seek (core, core->offset+cols, 1);
+					cursor-=cols;
+				}
+			}
 		} else r_core_cmd (core, "s+1", 0);
 		break;
-	case 'u':
-		if (r_io_sundo (core->io))
-			r_core_seek (core, core->io->off, 1);
-		break;
-	case 'U':
-		if (r_io_sundo_redo (core->io))
-			r_core_seek (core, core->io->off, 1);
+	case 'L':
+		if (curset) {
+			if (ocursor==-1) ocursor=cursor;
+			cursor++;
+			{
+				int offscreen = (core->cons->rows-3)*cols;
+				if (cursor>=offscreen) {
+					r_core_seek (core, core->offset+cols, 1);
+					cursor-=cols;
+					ocursor-=cols;
+				}
+			}
+		} else r_core_cmd (core, "s+2", 0);
 		break;
 	case 'j':
-// r_asm_disassemble (core->assembler, &aop, core->block, 32);
 		if (curset) {
 			if (printidx == 1)
 				cols = r_asm_disassemble (core->assembler, &aop, core->block, 32);
 			cursor += cols;
 			ocursor = -1;
+			{
+				int offscreen = (core->cons->rows-3)*cols;
+				if (cursor>=offscreen) {
+					r_core_seek (core, core->offset+cols, 1);
+					cursor-=cols;
+				}
+			}
 		} else {
 			if (printidx == 1)
 				cols = core->inc;
 			r_core_seek (core, core->offset+cols, 1);
 		}
 		break;
+	case 'J':
+		if (curset) {
+			if (ocursor==-1) ocursor = cursor;
+			cursor += cols;
+			{
+				int offscreen = (core->cons->rows-3)*cols;
+				if (cursor>=offscreen) {
+					r_core_seek (core, core->offset+cols, 1);
+					cursor-=cols;
+					ocursor-=cols;
+				}
+			}
+		} else r_core_cmd (core, "s++", 0);
+		break;
 	case 'k':
 		if (curset) {
 			if (printidx == 1)
 				cols = r_asm_disassemble (core->assembler, &aop, core->block, 32);
 			cursor -= cols;
+			if (cursor<0 && cols<core->offset) {
+				r_core_seek (core, core->offset-cols, 1);
+				cursor += cols;
+			}
 			ocursor = -1;
 		} else {
 			if (printidx == 1)
 				cols = core->inc;
+			if (cols>core->offset)
 			r_core_seek (core, core->offset-cols, 1);
+		}
+		break;
+	case 'K':
+		if (curset) {
+			if (ocursor==-1) ocursor=cursor;
+			cursor -= cols;
+			if (cursor<0 && cols<core->offset) {
+				r_core_seek (core, core->offset-cols, 1);
+				cursor += cols;
+				ocursor += cols;
+			}
+		} else r_core_cmd (core, "s--", 0);
+		break;
+	case '[':
+		{
+			int scrcols = r_config_get_i (core->config, "scr.cols");
+			if (scrcols>2)
+				r_config_set_i (core->config, "scr.cols", scrcols-2);
+		}
+		break;
+	case ']':
+		{
+			int scrcols = r_config_get_i (core->config, "scr.cols");
+			//if (scrcols<32)
+				r_config_set_i (core->config, "scr.cols", scrcols+2);
 		}
 		break;
 	case 's':
@@ -957,6 +1009,14 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			obs = core->blocksize;
 		else r_core_block_size (core, obs);
 		break;
+	case 'u':
+		if (r_io_sundo (core->io))
+			r_core_seek (core, core->io->off, 1);
+		break;
+	case 'U':
+		if (r_io_sundo_redo (core->io))
+			r_core_seek (core, core->io->off, 1);
+		break;
 	case 'x':
 		r_core_cmdf (core, "./a 0x%08llx @ entry0", core->offset);
 		break;
@@ -998,7 +1058,10 @@ R_API void r_core_visual_prompt(RCore *core, int color) {
 	if (autoblocksize)
 	switch (printidx) {
 	case 0:
-		r_core_block_size (core, core->cons->rows * 16);
+		{
+		int scrcols = r_config_get_i (core->config, "scr.cols");
+		r_core_block_size (core, core->cons->rows * scrcols);
+		}
 		break;
 	case 1: // pd
 	case 2: // pd+dbg

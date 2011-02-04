@@ -110,9 +110,7 @@ R_API RIODesc *r_io_open(struct r_io_t *io, const char *file, int flags, int mod
 			fd = open (file, 1);
 		} else fd = open (file, 0);
 #else
-		if (flags & R_IO_WRITE)
-			fd = open (file, O_RDWR, mode);
-		else fd = open (file, O_RDONLY, mode);
+		fd = open (file, (flags&R_IO_WRITE)?O_RDWR:O_RDONLY, mode);
 #endif
 	}
 	if (fd >= 0) {
@@ -321,6 +319,8 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 
 R_API ut64 r_io_size(RIO *io) {
 	ut64 size, here;
+	if (r_io_is_listener (io))
+		return UT64_MAX;
 	//r_io_set_fdn (io, fd);
 	here = r_io_seek (io, 0, R_IO_SEEK_CUR);
 	size = r_io_seek (io, 0, R_IO_SEEK_END);
@@ -359,4 +359,12 @@ R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->write_at = r_io_write_at;
 	//bnd->fd = io->fd;// do we need to store ptr to fd??
 	return R_TRUE;
+}
+
+R_API int r_io_accept(RIO *io, int fd) {
+	if (r_io_is_listener (io)) {
+		if (io->plugin->accept)
+			return io->plugin->accept (io, io->fd, fd);
+	}
+	return R_FALSE;
 }

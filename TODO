@@ -6,9 +6,20 @@
 
 Visual mode
 -----------
-- cursor mode by default? (imho no)
-- cursor can move outside screen (visual broken)
-- scrollup by bwdisasm not yet implemented
+* Add print support for bitfields (pb, pm b...)
+* For each "call" or "push offset"+"ret" create a function.
+  - And, if deep code analysis is enabled:
+  - Search every possible function by searching typical prologs and put them in a queue.
+  - Perform the same actions as in the previous steps with the entry points.
+* Stolen from pyew
+  - e anal.ops = true
+  INT num: Interruptions. Typically used as antiemulation (INT 4) and antidebugging tricks (INT 3).
+  UD2: Undefined instruction. Found in some packers/protectors as an antiemulation tricks.
+  RDTSC: Widely used in malware to check if the software is being traced. A typical way to detect binary instrumentation (PIN, DynamoRIO, etc...).
+  SIDT/SGDT: Store Interrupt/Global Descriptor Table. Trick used to detect some Virtual Machines (known as the red pill trick).
+  CPUID: Used to detect Virtual Machines and emulators.
+  // NOP args: NOP with arguments are typical antiemulation tricks.
+  SYSENTER: Direct system calls. Commonly, used as antiemulation tricks.
 
 * RAsmOp RAnalOp // Aop->Op
 * implement aoe = anal op exec
@@ -19,7 +30,6 @@ Visual mode
 pancake
 -------
 * Implement BLOCK in r_core_sysenv_begin|end ()
-* Fix r2 rap://:9999 and c2s comms
 * r2-swig : Distribute generated .i files and cxx files.. so build is faster
   - ./configure --without-valaswig # compile without generating cxx files
   - build with swig/
@@ -33,9 +43,20 @@ earada
 * Implement print Zoom mode (copypasta from r1) (useful for forensics) <-- MUST
 * mount /mnt/ must chop last '/'
 * test fatfs and others
+* Add SSL support to r_socket
+* remove all uses of alloca() // mingw and grep reports them all :)
+* typedef all function pointers, like in r_bp
+* Implement /A : search AES
+* Implement case-insensitive search (e search.casematters ?) any better name? Use /i?
+* Implement /. to search using a file .. isnt zignatures about this?
+* Implement /p to search for patterns
+  - implement it in r_core ?? or add r_io_bind support
+* Implement search and replace /s
+  - insert or append? (see r1 cfg vars)
 
 nibble
 ------
+* scrollup by bwdisasm not yet implemented
 * '+' key in visual cursor mode only increments lower nibble!
   - only in debugger mode :/
 * register renaming (per-instruction or ranges)
@@ -175,23 +196,6 @@ nibble
      2nd level:
         - basic block level diffing (output in graph mode)
 
-earada
-------
-* Add SSL support to r_socket
-* r_file_slurp should work fine for big files (not prio) r_file_slurp_buf?
-  - mmap if supported
-  - add r_file_mmap ?
-  - read file in blocks instead of the whole file in a single syscall
-* remove all uses of alloca() // mingw and grep reports them all :)
-* typedef all function pointers, like in r_bp
-* Implement /A : search AES
-* Implement case-insensitive search (e search.casematters ?) any better name? Use /i?
-* Implement /. to search using a file .. isnt zignatures about this?
-* Implement /p to search for patterns
-  - implement it in r_core ?? or add r_io_bind support
-* Implement search and replace /s
-  - insert or append? (see r1 cfg vars)
-
 
 Questions
 =========
@@ -243,6 +247,8 @@ Refactoring
  
 Future
 ======
+* r_file_slurp should work fine for big files (not prio) r_file_slurp_buf?
+  - mmap if supported - add r_file_mmap ?  - read file in blocks instead of the whole file in a single syscall
 * Realign flags when using project in debug mode
 * FileDescriptors: dd -- copy from !fd in r1
 * Initial analysis looking for xrefs to strings and so? ax? ./a@@entry0 - Launched at startup

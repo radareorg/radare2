@@ -12,9 +12,10 @@
 #define ENDIAN (0)
 typedef struct {
 	int fd;
+	int client;
 	int listener;
 } RIORap;
-#define RIORAP_FD(x) (((RIORap*)(x->data))->fd)
+#define RIORAP_FD(x) ((x->data)?(((RIORap*)(x->data))->client):-1)
 #define RIORAP_IS_LISTEN(x) (((RIORap*)(x->data))->listener)
 #define RIORAP_IS_VALID(x) ((x) && (x->data) && (x->plugin == &r_io_plugin_rap))
 
@@ -42,6 +43,15 @@ static int rap__write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int count)
         return ret;
 }
 
+static int rap__accept(RIO *io, RIODesc *desc, int fd) {
+	RIORap *rap = desc->data;
+	if (rap) {
+		rap->client = fd;
+		return R_TRUE;
+	}
+	return R_FALSE;
+}
+
 static int rap__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
 	int ret;
 	int i = (int)count;
@@ -57,7 +67,8 @@ static int rap__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
 	// recv
 	ret = r_socket_read (RIORAP_FD (fd), tmp, 5);
 	if (ret != 5 || tmp[0] != (RMT_READ|RMT_REPLY)) {
-		eprintf ("rap__read: Unexpected rap read reply (0x%02x)\n", tmp[0]);
+		eprintf ("rap__read: Unexpected rap read reply (%d=0x%02x) expected (%d=0x%02x)\n",
+			ret, tmp[0], 2, (RMT_READ|RMT_REPLY));
 		return -1;
 	}
 	r_mem_copyendian ((ut8*)&i, tmp+1, 4, ENDIAN);
@@ -66,9 +77,9 @@ static int rap__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
 		return -1;
 	} 
 	r_socket_read_block (RIORAP_FD (fd), buf, i);
-	if (count>0 && count<RMT_MAX)
-		eprintf ("READ %d\n" ,i);
-	else count = 0;
+	if (count>0 && count<RMT_MAX) {
+		//eprintf ("READ %d\n" ,i);
+	} else count = 0;
         return count;
 }
 
@@ -140,7 +151,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		eprintf ("rap: listening at port %d\n", p);
 		rior = R_NEW (RIORap);
 		rior->listener = R_TRUE;
-		rior->fd = r_socket_listen (p);
+		rior->client = rior->fd = r_socket_listen (p);
 // TODO: listen mode is broken.. here must go the root loop!!
 #warning TODO: implement rap:/:9999 listen mode
 		return r_io_desc_new (&r_io_plugin_rap, rior->fd, pathname, rw, mode, rior);
@@ -152,7 +163,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 	eprintf ("Connected to: %s at port %d\n", ptr, p);
 	rior = R_NEW (RIORap);
 	rior->listener = R_FALSE;
-	rior->fd = rap_fd;
+	rior->client = rior->fd = rap_fd;
 	if (file && *file) {
 		// send
 		buf[0] = RMT_OPEN;
@@ -224,6 +235,7 @@ struct r_io_plugin_t r_io_plugin_rap = {
 	.lseek = rap__lseek,
 	.system = rap__system,
 	.write = rap__write,
+	.accept = rap__accept,
 };
 
 #ifndef CORELIB

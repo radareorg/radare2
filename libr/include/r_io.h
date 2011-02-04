@@ -122,6 +122,7 @@ typedef struct r_io_plugin_t {
         int (*write)(RIO *io, RIODesc *fd, const ut8 *buf, int count);
         int (*close)(RIODesc *desc);
         int (*resize)(RIO *io, RIODesc *fd, ut64 size);
+        int (*accept)(RIO *io, RIODesc *desc, int fd);
         int (*plugin_open)(RIO *io, const char *);
         //int (*plugin_fd)(RIO *, int);
 } RIOPlugin;
@@ -199,6 +200,7 @@ R_API int r_io_system(RIO *io,  const char *cmd);
 R_API int r_io_close(RIO *io, RIODesc *fd);
 R_API ut64 r_io_size(RIO *io); //, int fd);
 R_API int r_io_resize(struct r_io_t *io, ut64 newsize);
+R_API int r_io_accept(RIO *io, int fd);
 
 /* io/cache.c */
 R_API void r_io_cache_commit(RIO *io);

@@ -225,6 +225,10 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode) {
 	RIODesc *fd = r_io_open (r->io, file, mode, 0644);
 	if (fd == NULL)
 		return NULL;
+	if (r_io_is_listener (r->io)) {
+		r_core_serve (r, r->io->fd);
+		return NULL;
+	}
 
 	fh = R_NEW (RCoreFile);
 	fh->fd = fd;

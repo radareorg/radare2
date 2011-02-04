@@ -337,7 +337,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "asm.linesout", "true");
 	r_config_set (cfg, "asm.linesstyle", "false");
 	r_config_set (cfg, "asm.lineswide", "false");
-	r_config_set_i_cb (cfg, "asm.lineswidth", 0, &config_asmlineswidth_callback);
+	r_config_set_i_cb (cfg, "asm.lineswidth", 10, &config_asmlineswidth_callback);
 	r_config_set (cfg, "asm.linescall", "false");
 	r_config_set (cfg, "asm.offset", "true"); 
 	r_config_set_cb (cfg, "asm.os", R_SYS_OS, &config_asmos_callback);

@@ -58,7 +58,7 @@ R_API const char *r_config_get(RConfig *cfg, const char *name) {
 			return (const char *)
 				(((!strcmp("true", node->value))
 				  || (!strcmp("1", node->value)))?
-				  (char *)1:NULL); // XXX (char*)1 is ugly
+				  (const char *)"true":"false"); // XXX (char*)1 is ugly
 		return node->value;
 	}
 	cfg->last_notfound = 1;
