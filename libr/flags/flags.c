@@ -90,7 +90,7 @@ R_API RFlag * r_flag_new() {
 		btree_init (&f->ntree);
 #endif
 		for (i=0;i<R_FLAG_SPACES_MAX;i++)
-			f->space[i] = NULL;
+			f->spaces[i] = NULL;
 	}
 	return f;
 }

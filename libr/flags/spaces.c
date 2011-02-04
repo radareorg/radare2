@@ -3,9 +3,9 @@
 #include <r_flags.h>
 
 R_API const char *r_flag_space_get(struct r_flag_t *f, int idx) {
-	if (idx==-1 || idx>255 || f->space[idx]=='\0')
+	if (idx==-1 || idx>255 || f->spaces[idx]=='\0')
 		return "";
-	return f->space[idx];
+	return f->spaces[idx];
 }
 
 #if 0
@@ -28,16 +28,16 @@ R_API void r_flag_space_set(RFlag *f, const char *name) {
 	}
 
 	for (i=0;i<R_FLAG_SPACES_MAX;i++) {
-		if (f->space[i] != NULL)
-		if (!strcmp (name, f->space[i])) {
+		if (f->spaces[i] != NULL)
+		if (!strcmp (name, f->spaces[i])) {
 			f->space_idx = i; //flag_space_idx = i;
 			return;
 		}
 	}
 	/* not found */
 	for(i=0;i<R_FLAG_SPACES_MAX;i++) {
-		if (f->space[i] == NULL) {
-			f->space[i] = strdup (name);
+		if (f->spaces[i] == NULL) {
+			f->spaces[i] = strdup (name);
 			f->space_idx = i;
 			break;
 		}
@@ -47,8 +47,8 @@ R_API void r_flag_space_set(RFlag *f, const char *name) {
 R_API void r_flag_space_list(RFlag *f) {
 	int i,j = 0;
 	for(i=0;i<R_FLAG_SPACES_MAX;i++) {
-		if (f->space[i])
+		if (f->spaces[i])
 			printf("%02d %c %s\n", j++,
-			(i==f->space_idx)?'*':' ', f->space[i]);
+			(i==f->space_idx)?'*':' ', f->spaces[i]);
 	}
 }

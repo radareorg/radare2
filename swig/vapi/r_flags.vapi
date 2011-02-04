@@ -32,7 +32,7 @@ namespace Radare {
 
 		public void space_list();
 		public unowned string? space_get(int idx);
-		public int space_get_i(string fsname);
+		//public int space_get_i(string fsname);
 		public void space_set(string name);
 	}
 }

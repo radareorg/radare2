@@ -39,10 +39,10 @@ namespace Radare {
 		 * flags: See Radare.Io.Flags
 		 * mode: ...
 		 */
-		public int open(string uri, int flags, int mode);
-		public int open_as(string urihandler, string path, int flags, int mode);
+		public RIO.Desc open(string uri, int flags, int mode);
+		public RIO.Desc open_as(string urihandler, string path, int flags, int mode);
 		public int redirect(string uri);
-		public int set_fd(int fd);
+		public int set_fd(RIO.Desc fd);
 		public int read(out uint8 *buf, int len);
 		public int read_at(uint64 addr, uint8 *buf, int len);
 		public RBuffer *read_buf(uint64 addr, int len);
@@ -50,8 +50,8 @@ namespace Radare {
 		public int write_at(uint64 addr, uint8 *buf, int len);
 		public uint64 seek(uint64 addr, int whence);
 		public int system(string cmd);
-		public int close(int fd);
-		public uint64 size(int fd);
+		public int close(RIO.Desc fd);
+		public uint64 size();
 
 
 		public void cache_commit ();
@@ -143,9 +143,9 @@ namespace Radare {
 			public string name;
 		}
 		// int perms -> RIOPerm ?
-		public bool desc_add(int fd, string file, int perms, RIO.Plugin plugin);
+		public void desc_add(RIO.Desc *desc);
 		public bool desc_del(int fd);
 		//public RIO.Desc desc_get (int fd);
-		public int desc_generate();
+		//public int desc_generate();
 	}
 }

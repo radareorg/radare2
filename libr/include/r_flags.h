@@ -28,7 +28,7 @@ typedef struct r_flag_item_t {
 typedef struct r_flag_t {
 	int space_idx;
 	int space_idx2;
-	const char *space[R_FLAG_SPACES_MAX];
+	const char *spaces[R_FLAG_SPACES_MAX];
 #if USE_BTREE
 	struct btree_node *tree; /* index by offset */
 	struct btree_node *ntree; /* index by name */
@@ -52,7 +52,7 @@ R_API void r_flag_item_rename(RFlagItem *item, const char *name);
 
 /* spaces */
 R_API const char *r_flag_space_get(RFlag *f, int idx);
-R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off);
+//R_API RFlagItem *r_flag_space_get_i(RFlag *f, ut64 off);
 R_API void r_flag_space_set(RFlag *f, const char *name);
 R_API void r_flag_space_list(RFlag *f);
 #endif

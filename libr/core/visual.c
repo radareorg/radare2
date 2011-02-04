@@ -64,7 +64,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 
 		if (menu) {
 			r_cons_printf ("\n Flags in flagspace '%s'. Press '?' for help.\n\n",
-			(core->flags->space_idx==-1)?"*":core->flags->space[core->flags->space_idx]);
+			(core->flags->space_idx==-1)?"*":core->flags->spaces[core->flags->space_idx]);
 			hit = 0;
 			i = j = 0;
 			r_list_foreach (core->flags->flags, iter, flag) {
@@ -101,9 +101,9 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			r_cons_printf ("\n Flag spaces:\n\n");
 			hit = 0;
 			for (j=i=0;i<R_FLAG_SPACES_MAX;i++) {
-				if (core->flags->space[i]) {
+				if (core->flags->spaces[i]) {
 					if (option==i) {
-						fs = core->flags->space[i];
+						fs = core->flags->spaces[i];
 						hit = 1;
 					}
 					if ((i >=option-delta) && ((i<option+delta)|| \
@@ -111,7 +111,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 						r_cons_printf(" %c %02d %c %s\n",
 							(option==i)?'>':' ', j, 
 							(i==core->flags->space_idx)?'*':' ',
-							core->flags->space[i]);
+							core->flags->spaces[i]);
 						j++;
 					}
 				}

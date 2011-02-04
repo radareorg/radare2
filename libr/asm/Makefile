@@ -16,7 +16,6 @@ pre:
 re:
 	rm -f asm.o libr_asm.so
 	${MAKE}
-	rm -f t/fastcall.o
 	sudo ${MAKE} install
 
 plugins:

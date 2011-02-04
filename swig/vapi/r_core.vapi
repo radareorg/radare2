@@ -2,7 +2,7 @@
 
 namespace Radare {
 [Compact]
-[CCode (cheader_filename="r_anal.h,r_core.h,r_bin.h,r_parse.h,r_lang.h,r_sign.h,r_reg.h,r_list.h,r_types_base.h", cname="RCore", free_function="r_core_free", cprefix="r_core_")]
+[CCode (cheader_filename="r_flags.h,r_anal.h,r_core.h,r_bin.h,r_parse.h,r_lang.h,r_sign.h,r_reg.h,r_list.h,r_types_base.h", cname="RCore", free_function="r_core_free", cprefix="r_core_")]
 public class RCore {
 	public RFlag flags;
 	public RNum num;
@@ -51,7 +51,7 @@ public class RCore {
 
 	public int anal_search (uint64 from, uint64 to, uint64 ref);
 	public void anal_refs(uint64 addr, int gv);
-	public int anal_bb(uint64 at, int depth, int head);
+	public int anal_bb(RList<RAnal.Block> bbs, uint64 at, int depth, int head);
 	public int anal_bb_list(bool rad);
 	public int anal_bb_seek(uint64 addr);
 	public int anal_fcn(uint64 at, uint64 from, int reftype, int depth);
@@ -65,8 +65,6 @@ public class RCore {
 	public string project_info (string file);
 
 	public int gdiff(RCore *c2);
-
-	public void sysenv_update ();
 
 	public void rtr_help();
 	public void rtr_pushout(string input);
@@ -90,7 +88,7 @@ public class RCore {
 	public int visual(string input);
 	public int visual_cmd(int ch);
 
-	public int serve(int fd);
+	public int serve(RIO.Desc fd);
 
 	/* asm */
 	//public static RCore.AsmHit asm_hit_new();

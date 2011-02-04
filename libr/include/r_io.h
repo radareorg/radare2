@@ -269,7 +269,7 @@ R_API RIODesc *r_io_desc_get(RIO *io, int fd);
 R_API void r_io_desc_add(RIO *io, RIODesc *desc); //int fd, const char *file, int flags, struct r_io_plugin_t *plugin);
 R_API int r_io_desc_del(RIO *io, int fd);
 R_API struct r_io_desc_t *r_io_desc_get(RIO *io, int fd);
-R_API int r_io_desc_generate(RIO *io);
+//R_API int r_io_desc_generate(RIO *io);
 
 /* plugins */
 extern struct r_io_plugin_t r_io_plugin_procpid;

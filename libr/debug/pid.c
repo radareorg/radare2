@@ -2,7 +2,7 @@
 
 #include <r_debug.h>
 
-R_API RDebugPid *r_debug_pid_new(char *path, int pid, char status, ut64 pc) {
+R_API RDebugPid *r_debug_pid_new(const char *path, int pid, char status, ut64 pc) {
 	RDebugPid *p = R_NEW (RDebugPid);
 	p->path = strdup (path);
 	p->pid = pid;

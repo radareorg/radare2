@@ -37,14 +37,6 @@ public class RAsm {
 		SRCREG2
 	}
 
-/*
-	[Compact]
-	[CCode (cname="RAsmFastcall", destroy_function="", free_function="")]
-	public struct Fastcall {
-		string arg[16];
-	}
-*/
-
 	[Compact]
 	[CCode (cname="RAsmPlugin", destroy_function="", free_function="")]
 	public class Plugin {
@@ -101,7 +93,6 @@ public class RAsm {
 	public Code? mdisassemble(uint8 *buf, uint64 length);
 	public Code? mdisassemble_hexstr(string hexstr);
 	public Code? massemble(string buf);
-	public unowned string fastcall(int idx, int num);
 
 	/* TODO: not directy defined here */
 	public void free();
