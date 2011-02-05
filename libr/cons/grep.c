@@ -20,11 +20,11 @@ R_API void r_cons_grep(const char *str) {
 
 	if (*str == '!') { // neg
 		cons->grep.neg = 1;
-		str = str + 1;
+		str++;
 	}
 	if (*str == '?') { // counter
 		cons->grep.counter = 1;
-		str = str + 1;
+		str++;
 	}
 
 	strncpy (buf, str, sizeof (buf));
@@ -51,6 +51,7 @@ R_API void r_cons_grep(const char *str) {
 		if (cons->grep.line<0)
 			cons->grep.line = -1;
 	}
+	free (cons->grep.str);
 	if (*ptr) {
 		cons->grep.str = (char *)strdup (ptr);
 		do {
@@ -64,6 +65,10 @@ R_API void r_cons_grep(const char *str) {
 			strncpy (cons->grep.strings[cons->grep.nstrings], optr, 63);
 			cons->grep.nstrings++;
 		} while (ptr);
+	} else {
+		cons->grep.str = strdup (ptr);
+		cons->grep.nstrings++;
+		cons->grep.strings[0][0] = 0;
 	}
 }
 
@@ -110,6 +115,10 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	cons->buffer_len = buffer_len;
 	free (tbuf);
 	free (tline);
+	if (cons->grep.counter) {
+		sprintf (cons->buffer, "%d\n", cons->lines);
+		cons->buffer_len = strlen (cons->buffer);;
+	}
 	return cons->lines;
 }
 

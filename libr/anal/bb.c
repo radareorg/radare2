@@ -6,6 +6,8 @@
 #include <r_util.h>
 #include <r_list.h>
 
+#define VERBOSE if(0)
+
 R_API RAnalBlock *r_anal_bb_new() {
 	RAnalBlock *bb = R_NEW (RAnalBlock);
 	if (bb) {
@@ -25,7 +27,7 @@ R_API RAnalBlock *r_anal_bb_new() {
 R_API void r_anal_bb_trace(RAnal *anal, ut64 addr) {
 	RAnalBlock *bbi;
 	RListIter *iter;
-	eprintf("bbtraced\n"); // XXX Debug msg
+	VERBOSE eprintf("bbtraced\n"); // XXX Debug msg
 	r_list_foreach (anal->bbs, iter, bbi) {
 		if (addr>=bbi->addr && addr<(bbi->addr+bbi->size)) {
 			bbi->traced = R_TRUE;
@@ -69,7 +71,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 		if ((oplen = r_anal_aop (anal, aop, addr+idx, buf+idx, len-idx)) == 0) {
 			r_anal_aop_free (aop);
 			if (idx == 0) {
-				eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
+				VERBOSE eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
 				return R_ANAL_RET_END;
 			} else break;
 		}
@@ -90,7 +92,8 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			if (bb->cond) {
 				// TODO: get values from anal backend
 				bb->cond->type = R_ANAL_COND_EQ;
-			} else eprintf ("Unknown conditional for block 0x%"PFMT64x"\n", bb->addr);
+			} else VERBOSE
+				eprintf ("Unknown conditional for block 0x%"PFMT64x"\n", bb->addr);
 			bb->conditional = 1;
 			bb->fail = aop->fail;
 			bb->jump = aop->jump;
