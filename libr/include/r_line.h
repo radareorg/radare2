@@ -5,7 +5,7 @@
 #include <r_cons.h>
 #include <r_util.h>
 
-#define R_LINE_BUFSIZE 1024
+#define R_LINE_BUFSIZE 4096
 #define R_LINE_HISTSIZE 256
 
 typedef struct r_line_hist_t {

@@ -35,7 +35,6 @@ pancake
   - build with swig/
 * comparisions doesnt works (RAnalCond)
 * Fix iterators for r_macro (test only?)
-* Fix <tab> in console (if entered 'a<tab> and flags are: 'aburo' and 'abuelo', must autocomplete to 'abu'
 
 earada
 ------

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
 /* dietline is a lighweight and portable library similar to GNU readline */
 
 #include <r_line.h>
@@ -171,7 +171,7 @@ R_API int r_line_hist_chop(const char *file, int limit) {
 R_API void r_line_autocomplete() {
 	int argc = 0;
 	const char **argv = NULL;
-	int i, opt, len = 0;
+	int i, j, opt, len = 0;
 
 	/* prepare argc and argv */
 	if (I.completion.run != NULL) {
@@ -182,6 +182,7 @@ R_API void r_line_autocomplete() {
 
 	// TODO: implement partial autocompletion ?
 
+eprintf ("\nDATA (%s)\n", I.buffer.data);
 	/* autocomplete */
 	if (argc==1) {
 		char *p = strchr (I.buffer.data, ' ');
@@ -190,6 +191,25 @@ R_API void r_line_autocomplete() {
 		I.buffer.index = I.buffer.length = strlen (I.buffer.data) + 1;
 		strcat (p, " ");
 		I.buffer.length = strlen (I.buffer.data);
+	} else {
+		char *p = strchr (I.buffer.data, ' ');
+		if (p) p++; else p = I.buffer.data;
+
+		if (*p) {
+			char *root = strdup (argv[0]);
+			// try to autocomplete argument
+			for (i=0;i<argc;i++) {
+				j = 0;
+				while (argv[i][j]==root[j]) j++;
+				free (root);
+				root = strdup (argv[i]);
+				if (j<strlen (root))
+					root[j] = 0;
+			}
+			strcpy (p, root);
+			I.buffer.index = I.buffer.length = strlen (I.buffer.data);
+			free (root);
+		}
 	}
 
 #define COLS 70
