@@ -181,8 +181,6 @@ R_API void r_line_autocomplete() {
 	} else opt = 0;
 
 	// TODO: implement partial autocompletion ?
-
-eprintf ("\nDATA (%s)\n", I.buffer.data);
 	/* autocomplete */
 	if (argc==1) {
 		char *p = strchr (I.buffer.data, ' ');
@@ -191,7 +189,8 @@ eprintf ("\nDATA (%s)\n", I.buffer.data);
 		I.buffer.index = I.buffer.length = strlen (I.buffer.data) + 1;
 		strcat (p, " ");
 		I.buffer.length = strlen (I.buffer.data);
-	} else {
+	} else
+	if (argc>0) {
 		char *p = strchr (I.buffer.data, ' ');
 		if (p) p++; else p = I.buffer.data;
 

@@ -4,6 +4,10 @@
   |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
 
+Autocomplete
+------------
+ - autocomplete flags for +- and @ chars
+
 Visual mode
 -----------
 * Add print support for bitfields (pb, pm b...)
