@@ -362,9 +362,34 @@ R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 }
 
 R_API int r_io_accept(RIO *io, int fd) {
-	if (r_io_is_listener (io)) {
-		if (io->plugin->accept)
-			return io->plugin->accept (io, io->fd, fd);
-	}
+	if (r_io_is_listener (io) && (io->plugin->accept))
+		return io->plugin->accept (io, io->fd, fd);
 	return R_FALSE;
+}
+
+/* moves bytes up (+) or down (-) within the specified range */
+R_API int r_io_shift(RIO *io, ut64 start, ut64 end, st64 move) {
+	ut8 *buf;
+	ut64 chunksize=0x10000;
+	ut64 rest, src, shiftsize = r_num_abs (move);
+	if (!shiftsize || (end-start) <= shiftsize) return R_FALSE;
+	rest = (end-start) - shiftsize;
+
+	if (!(buf = malloc (chunksize))) return R_FALSE;
+
+	if (move>0) src = end-shiftsize;
+	else src = start+shiftsize;
+
+	while (rest>0) {
+		if (chunksize>rest) chunksize=rest;
+		if (move>0) src -= chunksize;
+
+		r_io_read_at (io, src, buf, chunksize);
+		r_io_write_at (io, src+move, buf, chunksize);
+
+		if (move<0) src += chunksize;
+		rest -= chunksize;
+	}
+	free (buf);
+	return R_TRUE;
 }

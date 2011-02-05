@@ -36,9 +36,9 @@ CFLAGS+=-I../../../include
 #CFLAGS+=-fnested-functions
 BIN=test${EXT_EXE}
 
-all: ${KERNOBJS} main.o ${BIN}
+all: ${BIN}
 
-${BIN}:
+${BIN}: ${KERNOBJS} main.o
 	${CC} -o ${BIN} main.o ${CFLAGS} ${KERNOBJS}
 
 lib: all libgrubfs.a

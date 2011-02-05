@@ -1393,6 +1393,7 @@ static int cmd_help(void *data, const char *input) {
 		" w[mode] [arg]     ; multiple write operations\n"
 		" x [len]           ; alias for 'px' (print hexadecimal)\n"
 		" y [len] [off]     ; yank/paste bytes from/to memory\n"
+		" r[+- ][len]       ; resize file\n"
 		" ? [expr]          ; help or evaluate math expression\n"
 		" /[xmp/]           ; search for bytes, regexps, patterns, ..\n"
 		" ![cmd]            ; run given command as in system(3)\n"
@@ -2747,6 +2748,55 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	}
 	return 0;
+}
+
+static int cmd_resize(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+	st64 delta=0;
+	int grow;
+	ut64 oldsize,newsize;
+
+	oldsize = core->file->size;
+
+	switch (input[0]) {
+	case ' ':
+		newsize = r_num_math(core->num, input+1);
+		break;
+	case '+':
+	case '-':
+		delta = (st64)r_num_math(NULL, input);
+		newsize = oldsize + delta;
+		break;
+	case '?':
+	default:
+		r_cons_printf (
+			"Usage: r[ size|+insert|-remove]\n"
+			" r size   set filesize to size, extending or truncating\n"
+			" r-num    remove num bytes, move following data down\n"
+			" r+num    insert num bytes, move following data up\n");
+		return R_TRUE;
+	}
+
+	grow = (newsize > oldsize);
+
+	if (grow) {
+		r_io_resize (core->io, newsize);
+		core->file->size = newsize;
+	}
+
+	if (delta && core->offset < newsize)
+		r_io_shift (core->io, core->offset, grow?newsize:oldsize, delta);
+
+	if (!grow) {
+		r_io_resize (core->io, newsize);
+		core->file->size = newsize;
+	}
+
+	if (newsize < core->offset+core->blocksize ||
+			oldsize < core->offset+core->blocksize)
+		r_core_block_read (core, 0);
+
+	return R_TRUE;
 }
 
 static const char *cmdhit = NULL;
@@ -4316,6 +4366,7 @@ void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->cmd, "Project",  "project", &cmd_project);
 	r_cmd_add (core->cmd, "open",     "open or map file", &cmd_open);
 	r_cmd_add (core->cmd, "yank",     "yank bytes", &cmd_yank);
+	r_cmd_add (core->cmd, "resize",   "change file size", &cmd_resize);
 	r_cmd_add (core->cmd, "Visual",   "enter visual mode", &cmd_visual);
 	r_cmd_add (core->cmd, "!",        "run system command", &cmd_system);
 	r_cmd_add (core->cmd, "=",        "io pipe", &cmd_rap); 

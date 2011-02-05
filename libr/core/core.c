@@ -86,6 +86,7 @@ static const char *radare_argv[] = {
 	"f", "fr", "f-", "f*", "fs", "fS", "fr", "f?",
 	"m", "m*", "ml", "m-", "my", "mg", "md", "mp", "m?",
 	"x",
+	"r", "r+", "r-",
 	"b", "bf", "b?",
 	"/", "//", "/a", "/c", "/m", "/x", "/v",
 	"y", "yy", "y?",

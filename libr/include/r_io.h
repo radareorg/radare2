@@ -201,6 +201,7 @@ R_API int r_io_close(RIO *io, RIODesc *fd);
 R_API ut64 r_io_size(RIO *io); //, int fd);
 R_API int r_io_resize(struct r_io_t *io, ut64 newsize);
 R_API int r_io_accept(RIO *io, int fd);
+R_API int r_io_shift(RIO *io, ut64 start, ut64 end, st64 move);
 
 /* io/cache.c */
 R_API void r_io_cache_commit(RIO *io);
