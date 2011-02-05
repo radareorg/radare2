@@ -69,13 +69,29 @@ R_API RCore *r_core_new() {
 }
 
 /*-----------------------------------*/
-#define CMDS 54
-static const char *radare_argv[CMDS] ={
-	"?", "ds", "dso", "dc", "dd", "dm", "db", "S", "s",
-	"!", "!!", "#md5", "#sha1", "#crc32", "V", "ad", "ac",
-	"ag", "ag", "e", "i", "m", "q", "f", "fr", "x", "b", "/", "/a", "/x",
-	"y", "yy", "y?", "wx", "ww", "wf", "w?", "pD", "pG", "pb", "px",
-	"pX", "po", "pm", "pz", "pr >", "p?", NULL
+#define CMDS (sizeof (radare_argv)/sizeof(const char*))
+static const char *radare_argv[] = {
+	"?", 
+	"dH", "ds", "dso", "dsl", "dc", "dd", "dm", "db", "dp", "dr", 
+	"S", 
+	"s", "s+", "s++", "s-", "s--", "s*", "sa", "sb", "sr",
+	"!", "!!", 
+	"#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5", 
+	"#!python",
+	"V",
+	"aa", "ab", "af", "ar", "ag", "at", "av", "a?", 
+	"e", "e-", "e*", "e!",
+	"i", "ii", "iI", "is", "iS", "iz",
+	"q", 
+	"f", "fr", "f-", "f*", "fs", "fS", "fr", "f?",
+	"m", "m*", "ml", "m-", "my", "mg", "md", "mp", "m?",
+	"x",
+	"b", "bf", "b?",
+	"/", "//", "/a", "/c", "/m", "/x", "/v",
+	"y", "yy", "y?",
+	"wx", "ww", "wf", "w?",
+	"pc", "pD", "px", "pX", "po", "pm", "pr", "pt", "ps", "pz", "pr >", "pu", "pU", "p?",
+	NULL
 };
 
 #define TMP_ARGV_SZ 256
@@ -86,7 +102,11 @@ static int autocomplete(RLine *line) {
 	RListIter *iter;
 	RFlagItem *flag;
 	if (core) {
+// TODO: add support for fs (flagspaces)
+// TODO: add support for m (mount point list), file system walk
 		if ((!memcmp (line->buffer.data, "s ", 2)) ||
+		    (!memcmp (line->buffer.data, "b ", 2)) ||
+		    (!memcmp (line->buffer.data, "/v ", 3)) ||
 		    (!memcmp (line->buffer.data, "f ", 2)) ||
 		    (!memcmp (line->buffer.data, "fr ", 3)) ||
 		    (!memcmp (line->buffer.data, "/a ", 3)) ||

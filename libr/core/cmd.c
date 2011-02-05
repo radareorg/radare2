@@ -1377,7 +1377,6 @@ static int cmd_help(void *data, const char *input) {
 	case '\0':
 	default:
 		r_cons_printf (
-		"Usage: (%s)\n"
 		" a                 ; perform analysis of code\n"
 		" b [bsz]           ; get or change block size\n"
 		" c[dqxXfg] [arg]   ; compare block with given data\n"
@@ -1403,8 +1402,11 @@ static int cmd_help(void *data, const char *input) {
 		" :command          ; list or execute a plugin command\n"
 		" (macro arg0 arg1) ; define scripting macros\n"
 		" q [ret]           ; quit program with a return value\n"
-		"Use '?""?""?' for extra help about '?' subcommands.\n"
-		"Append '?' to any char command to get detailed help\n", input);
+		"Use '?""?""?' evaluation, special vars and scripting facilities\n"
+		"Append '?' to any char command to get detailed help\n"
+		"Suffix '@ addr[:bsize]' for a temporary seek and/or bsize\n"
+		"Suffix '~string:linenumber[column]' to filter output\n"
+		);
 		break;
 	}
 	return 0;
@@ -2748,10 +2750,11 @@ static int cmd_write(void *data, const char *input) {
 }
 
 static const char *cmdhit = NULL;
+static const char *searchprefix = NULL;
 static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
 
-	r_cons_printf ("f hit%d_%d %d 0x%08"PFMT64x"\n",
+	r_cons_printf ("f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,
 		kw->kwidx, kw->count, kw->keyword_length, addr);
 
 	if (!strnull (cmdhit)) {
@@ -2784,6 +2787,7 @@ static int cmd_search(void *data, const char *input) {
 		//fin = ini + s->size;
 	}
 */
+	searchprefix = r_config_get (core->config, "search.prefix");
 	/* XXX: Think how to get the section ranges here */
 	if (from == 0LL)
 		from = core->offset;
@@ -2850,13 +2854,13 @@ static int cmd_search(void *data, const char *input) {
 		int asmstr = r_config_get_i (core->config, "search.asmstr");
 		if (asmstr) {
 			RCoreAsmHit *hit;
-			RList *hits;
 			RListIter *iter;
 			int count = 0;
+			RList *hits;
 			if ((hits = r_core_asm_strsearch (core, input+2, from, to))) {
 				r_list_foreach (hits, iter, hit) {
-					r_cons_printf ("f hit0_%i @ 0x%08"PFMT64x"   # %s (%i)\n",
-							count, hit->addr, hit->code, hit->len);
+					r_cons_printf ("f %s_%i @ 0x%08"PFMT64x"   # %s (%i)\n",
+						searchprefix, count, hit->addr, hit->code, hit->len);
 					count++;
 				}
 				r_list_destroy (hits);
@@ -2888,7 +2892,7 @@ static int cmd_search(void *data, const char *input) {
 		" / foo           ; search for string 'foo'\n"
 		" /m /E.F/i       ; match regular expression\n"
 		" /x ff0033       ; search for hex string\n"
-		" /c jmp [esp]    ; search for asm code\n"
+		" /c jmp [esp]    ; search for asm code (see search.asmstr)\n"
 		" /a sym.printf   ; analyze code referencing an offset\n"
 		" /v num          ; look for a asm.bigendian 32bit value\n"
 		" //              ; repeat last search\n"

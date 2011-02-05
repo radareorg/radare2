@@ -172,6 +172,7 @@ R_API void r_line_autocomplete() {
 	int argc = 0;
 	const char **argv = NULL;
 	int i, j, opt, len = 0;
+	int cols = r_cons_get_size (NULL)*0.82;
 
 	/* prepare argc and argv */
 	if (I.completion.run != NULL) {
@@ -180,7 +181,6 @@ R_API void r_line_autocomplete() {
 		argv = I.completion.argv;
 	} else opt = 0;
 
-	// TODO: implement partial autocompletion ?
 	/* autocomplete */
 	if (argc==1) {
 		char *p = strchr (I.buffer.data, ' ');
@@ -211,24 +211,20 @@ R_API void r_line_autocomplete() {
 		}
 	}
 
-#define COLS 70
 	/* show options */
-	if (opt>1) {
-		if (I.echo)
-			printf ("%s%s\n", I.prompt, I.buffer.data);
-		for (len=i=0; i<argc; i++) {
-			if (argv[i] == NULL)
-				break;
-			len += strlen (argv[i]) + 4;
-			if (len>0 && len>COLS) {
+	if (opt>1 && I.echo) {
+		int slen;
+		printf ("%s%s\n", I.prompt, I.buffer.data);
+		for (len=i=0; i<argc && argv[i]; i++) {
+			slen = strlen (argv[i]);
+			len += (slen>10)?(slen+3):13;
+			if (len>cols) {
 				printf ("\n");
 				len = 0;
 			}
-			if (I.echo)
-				printf ("%s\t", argv[i]);
+			printf ("%-10s   ", argv[i]);
 		}
-		if (I.echo)
-			printf ("\n");
+		printf ("\n");
 	}
 	fflush (stdout);
 }
