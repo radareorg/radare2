@@ -24,7 +24,7 @@ static int r_vala_file(RLang *lang, const char *file) {
 		return R_FALSE;
 	p = strstr (name, ".vala"); if (p) *p=0;
 	p = strstr (name, ".gs"); if (p) *p=0;
-	sprintf (buf, "gcc -shared %s.c -o lib%s."R_LIB_EXT
+	sprintf (buf, "gcc -fPIC -shared %s.c -o lib%s."R_LIB_EXT
 		" $(pkg-config --cflags --libs r_core gobject-2.0)", name, name);
 	if (system (buf) != 0)
 		return R_FALSE;
