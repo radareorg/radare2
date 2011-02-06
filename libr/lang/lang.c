@@ -1,22 +1,26 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include <r_lang.h>
 #include <r_util.h>
 
+#include "p/vala.c" // hardcoded
+
 R_API RLang *r_lang_new() {
-	RLang *lang;
-	
-	lang = R_NEW (RLang);
+	RLang *lang = R_NEW (RLang);
 	if (lang) {
 		lang->user = NULL;
-		INIT_LIST_HEAD (&lang->langs);
-		INIT_LIST_HEAD (&lang->defs);
+		lang->langs = r_list_new ();
+		lang->langs->free = (RListFree)r_lang_plugin_free;
+		lang->defs = r_list_new ();
+		lang->defs->free = (RListFree)r_lang_def_free;
 	}
 	return lang;
 }
 
 R_API void *r_lang_free(RLang *lang) {
-	r_lang_undef (lang);
+	r_lang_undef (lang, NULL);
+	r_list_free (lang->langs);
+	r_list_free (lang->defs);
 	// TODO: remove langs plugins
 	free (lang);
 	return NULL;
@@ -31,74 +35,84 @@ R_API void r_lang_set_user_ptr(RLang *lang, void *user) {
 }
 
 R_API int r_lang_define(RLang *lang, const char *type, const char *name, void *value) {
-	int ret = R_FALSE;
-	RLangDef *def = NULL;
-	struct list_head *pos;
-	list_for_each_prev (pos, &lang->defs) {
-		def = list_entry (pos, RLangDef, list);
+	RLangDef *def;
+	RListIter *iter;
+	r_list_foreach (lang->defs, iter, def) {
 		if (!strcmp (name, def->name)) {
 			def->value = value;
-			ret = R_TRUE;
-			break;
+			return  R_TRUE;
 		}
 	}
-	if (!ret) {
-		def = R_NEW (RLangDef);
-		if (def != NULL) {
-			def->type = strdup (type);
-			def->name = strdup (name);
-			def->value = value;
-			list_add_tail (&(def->list), &lang->defs);
-			ret = R_TRUE;
-		}
+	def = R_NEW (RLangDef);
+	if (def != NULL) {
+		def->type = strdup (type);
+		def->name = strdup (name);
+		def->value = value;
+		r_list_append (lang->defs, def);
+		return R_TRUE;
 	}
-	return ret;
+	return R_FALSE;
 }
 
-R_API void r_lang_undef(RLang *lang) {
-	struct list_head *pos, *n;
-	list_for_each_safe (pos, n, &lang->defs) {
-		RLangDef *def = list_entry (pos, RLangDef, list);
-		list_del (&def->list);
-		free (def->name);
-		free (def->type);
-		free (def);
-	}
+R_API void r_lang_def_free (RLangDef *def) {
+	free (def->name);
+	free (def->type);
+	free (def);
+}
+
+R_API void r_lang_undef(RLang *lang, const char *name) {
+	if (name != NULL && *name) {
+		RLangDef *def;
+		RListIter *iter;
+		r_list_foreach (lang->defs, iter, def) {
+			if (!strcmp (name, def->name)) {
+				r_list_delete (lang->defs, iter);
+				break;
+			}
+		}
+	} else r_list_destroy (lang->defs);
 }
 
 R_API int r_lang_setup(RLang *lang) {
-	int ret = R_FALSE;
 	if (lang->cur && lang->cur->setup)
-		ret = lang->cur->setup (lang);
-	return ret;
+		return lang->cur->setup (lang);
+	return R_FALSE;
 }
 
-R_API int r_lang_add(RLang *lang, struct r_lang_plugin_t *foo) {
-	if (foo->init)
-		foo->init (lang->user);
-	list_add_tail (&(foo->list), &(lang->langs));
+R_API void r_lang_plugin_free (RLang *lang, RLangPlugin *p) {
+	if (p && p->fini)
+		p->fini (lang->user);
+}
+
+R_API int r_lang_add(RLang *lang, RLangPlugin *foo) {
+	if (foo) {
+		if (foo->init)
+			foo->init (lang->user);
+		r_list_append (lang->langs, foo);
+	}
 	return R_TRUE;
 }
 
 /* TODO: deprecate all list methods */
 R_API int r_lang_list(RLang *lang) {
-	struct list_head *pos;
-	list_for_each_prev (pos, &lang->langs) {
-		RLangPlugin *h = list_entry (pos, RLangPlugin, list);
+	RListIter *iter;
+	RLangPlugin *h;
+	r_list_foreach (lang->langs, iter, h) {
 		printf (" %s: %s\n", h->name, h->desc);
 	}
 	return R_FALSE;
 }
 
 R_API int r_lang_use(RLang *lang, const char *name) {
-	struct list_head *pos;
-	list_for_each_prev(pos, &lang->langs) {
-		struct r_lang_plugin_t *h = list_entry (pos, struct r_lang_plugin_t, list);
+	RListIter *iter;
+	RLangPlugin *h;
+	r_list_foreach (lang->langs, iter, h) {
 		if (!strcmp (h->name, name)) {
 			lang->cur = h;
 			return R_TRUE;
 		}
 	}
+	lang->cur = NULL;
 	return R_FALSE;
 }
 
@@ -108,7 +122,6 @@ R_API int r_lang_set_argv(RLang *lang, int argc, char **argv) {
 		return lang->cur->set_argv (lang, argc, argv);
 	return R_FALSE;
 }
-
 
 R_API int r_lang_run(RLang *lang, const char *code, int len) { 
 	if (lang->cur && lang->cur->run)
@@ -125,11 +138,11 @@ R_API int r_lang_run_file(RLang *lang, const char *file) {
 	if (lang->cur) {
 		if (lang->cur->run_file == NULL) {
 			if (lang->cur->run != NULL) {
-				char *code = r_file_slurp(file, &len);
-				ret = lang->cur->run(lang, code, len);
-				free(code);
+				char *code = r_file_slurp (file, &len);
+				ret = lang->cur->run (lang, code, len);
+				free (code);
 			}
-		} else ret = lang->cur->run_file(lang, file);
+		} else ret = lang->cur->run_file (lang, file);
 	}
 	return ret;
 }
@@ -144,7 +157,6 @@ R_API int r_lang_prompt(RLang *lang) {
 	if (lang->cur->prompt)
 		if (lang->cur->prompt(lang) == R_TRUE)
 			return R_TRUE;
-
 	for (;;) {
 		printf ("%s> ", lang->cur->name);
 		fflush (stdout);
@@ -154,9 +166,14 @@ R_API int r_lang_prompt(RLang *lang) {
 		if (!strcmp (buf, "q"))
 			return R_TRUE;
 		if (!strcmp (buf, "?")) {
-			if (lang->cur->help)
-				printf ("%s", *lang->cur->help);
-		} else r_lang_run (lang, buf, strlen(buf));
+			if (lang->cur) {
+				printf ("Help for %s scripting prompt:\n", lang->cur->name);
+				if (lang->cur->help)
+					printf ("%s", *lang->cur->help);
+			} else printf ("no selected r_lang plugin\n");
+			printf ("  ?    - show this help message\n"
+				"  q    - quit\n");
+		} else r_lang_run (lang, buf, strlen (buf));
 	}
 	clearerr (stdin);
 	printf ("\n");

@@ -11,7 +11,7 @@
 
 static lua_State *L;
 
-struct r_core_t *core = NULL;
+static struct r_core_t *core = NULL;
 
 static int r_lang_lua_report (lua_State *L, int status) {
 	const char *msg;

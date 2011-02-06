@@ -196,10 +196,7 @@ r_cons_printf ("%s                             ", pre);
 				} else if (at > f->addr && at < f->addr+f->size-1) {
 					r_cons_printf (": ");
 					pre = ": ";
-				} else {
-					f = NULL; // Rly necesary??
-				}
-
+				} else f = NULL;
 			}
 		}
 		flag = r_flag_get_i (core->flags, at);
@@ -247,17 +244,17 @@ r_cons_printf ("%s                             ", pre);
 			free (line);
 			continue;
 		case R_META_DATA:
-{
-int delta = at-mi->from;
-			core->print->flags &= ~R_PRINT_FLAGS_HEADER;
-			r_cons_printf ("hex length=%lld delta=%d\n", mi->size , delta);
-			r_print_hexdump (core->print, at, buf+idx, mi->size-delta, 16, 1);
-core->inc = 16;
-			core->print->flags |= R_PRINT_FLAGS_HEADER;
-			ret = (int)mi->size-delta;
-			free (line);
-			line = NULL;
-}
+			{
+			int delta = at-mi->from;
+				core->print->flags &= ~R_PRINT_FLAGS_HEADER;
+				r_cons_printf ("hex length=%lld delta=%d\n", mi->size , delta);
+				r_print_hexdump (core->print, at, buf+idx, mi->size-delta, 16, 1);
+			core->inc = 16;
+				core->print->flags |= R_PRINT_FLAGS_HEADER;
+				ret = (int)mi->size-delta;
+				free (line);
+				line = NULL;
+			}
 			continue;
 		case R_META_STRUCT:
 			r_print_format (core->print, at, buf+idx, len-idx, mi->str);
@@ -3022,7 +3019,7 @@ static int cmd_eval(void *data, const char *input) {
 }
 
 static int cmd_hash(void *data, const char *input) {
-	char algo[32];
+	char *p, algo[32];
 	RCore *core = (RCore *)data;
 	ut32 i, len = core->blocksize;
 	const char *ptr;
@@ -3034,16 +3031,18 @@ static int cmd_hash(void *data, const char *input) {
 		#!lua
 		#!lua foo bar
 #endif
-		if (input[1]=='\0') {
+		if (input[1]=='?' || input[1]=='*' || input[1]=='\0') {
 			r_lang_list (core->lang);
 			return R_TRUE;
 		}
+		p = strchr (input+1, ' ');
+		if (p) *p=0;
 		// TODO: set argv here
 		r_lang_use (core->lang, input+1);
 		r_lang_setup (core->lang);
-		if (core->oobi)
-			r_lang_run (core->lang,(const char *)
-				core->oobi, core->oobi_len);
+		if (p) r_lang_run_file (core->lang, p+1);
+			//r_lang_run (core->lang, p+1, strlen (p+1));
+				//core->oobi, core->oobi_len);
 		else r_lang_prompt (core->lang);
 		return R_TRUE;
 	}

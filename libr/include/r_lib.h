@@ -75,7 +75,6 @@ typedef struct r_lib_t {
 } RLib;
 
 #ifdef R_API
-
 /* low level api */
 R_API void *r_lib_dl_open(const char *libname);
 R_API void *r_lib_dl_sym(void *handler, const char *name);

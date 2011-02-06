@@ -9,7 +9,7 @@
 static struct r_core_t r;
 
 static int main_help(int line) {
-	printf ("Usage: radare2 [-dwnLV] [-p prj] [-s addr] [-b bsz] [-e k=v] [file]\n");
+	printf ("Usage: radare2 [-dwnLuvV] [-p prj] [-s addr] [-b bsz] [-e k=v] [file]\n");
 	if (!line) printf (
 		" -d          use 'file' as a program to debug\n"
 		" -w          open file in write mode\n"

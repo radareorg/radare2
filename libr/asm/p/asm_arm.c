@@ -94,7 +94,7 @@ static int assemble(RAsm *a, RAsmAop *aop, const char *buf) {
 	return (a->bits/8);
 }
 
-RAsmPlugin r_asm_plugin_arm = {
+static RAsmPlugin r_asm_plugin_arm = {
 	.name = "arm",
 	.arch = "arm",
 	.bits = (int[]){ 16, 32, 0 },
