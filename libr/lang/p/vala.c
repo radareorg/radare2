@@ -56,7 +56,7 @@ static int vala_run(RLang *lang, const char *code, int len) {
 		fputs (code, fd);
 		fputs (";\n}\n", fd);
 		fclose (fd);
-		r_vala_file (lang->user, ".tmp.vala");
+		r_vala_file (lang, ".tmp.vala");
 		r_file_rm (".tmp.vala");
 	} else eprintf ("Cannot open .tmp.vala\n");
 	return R_TRUE;
