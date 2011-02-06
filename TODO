@@ -43,6 +43,14 @@ pancake
 
 earada
 ------
+- r_bin_demangle (); // r_util maybe?
+	* _ZN7WebCore11CounterNode7recountERKNS_12AtomicStringE
+	  - demangle c++ and objc names
+	    WebCore.CounterNode.recount(AtomicString)
+	  _ZN = begin of stream
+	  0-9+ = count of chars
+	  E = end of stream
+	  RKNS_ = start of arguments
 * Fix avr/ppc code analysis // fix or use or what? :)
 * Implement print Zoom mode (copypasta from r1) (useful for forensics) <-- MUST
 * mount /mnt/ must chop last '/'
@@ -97,14 +105,6 @@ nibble
 	- "wx jeje" does not says "invalid hexpair string" (must report error)
 	- allow to hook r_asm_disassemble and assemble with custom callbacks
 	  - extend a disassembler with own instructions.
-	- r_bin_demangle (); // r_util maybe?
-		* _ZN7WebCore11CounterNode7recountERKNS_12AtomicStringE
-		  - demangle c++ and objc names
-		    WebCore.CounterNode.recount(AtomicString)
-		  _ZN = begin of stream
-		  0-9+ = count of chars
-		  E = end of stream
-		  RKNS_ = start of arguments
 
 
 	Assembler

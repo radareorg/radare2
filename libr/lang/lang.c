@@ -13,6 +13,7 @@ R_API RLang *r_lang_new() {
 		lang->langs->free = (RListFree)r_lang_plugin_free;
 		lang->defs = r_list_new ();
 		lang->defs->free = (RListFree)r_lang_def_free;
+		r_lang_add (lang, &r_lang_plugin_vala);
 	}
 	return lang;
 }
@@ -85,7 +86,7 @@ R_API void r_lang_plugin_free (RLang *lang, RLangPlugin *p) {
 }
 
 R_API int r_lang_add(RLang *lang, RLangPlugin *foo) {
-	if (foo) {
+	if (foo && (!r_lang_get (lang, foo->name))) {
 		if (foo->init)
 			foo->init (lang->user);
 		r_list_append (lang->langs, foo);
@@ -103,16 +104,23 @@ R_API int r_lang_list(RLang *lang) {
 	return R_FALSE;
 }
 
-R_API int r_lang_use(RLang *lang, const char *name) {
+R_API RLangPlugin *r_lang_get (RLang *lang, const char *name) {
 	RListIter *iter;
 	RLangPlugin *h;
 	r_list_foreach (lang->langs, iter, h) {
 		if (!strcmp (h->name, name)) {
-			lang->cur = h;
-			return R_TRUE;
+			return h;
 		}
 	}
-	lang->cur = NULL;
+	return NULL;
+}
+
+R_API int r_lang_use(RLang *lang, const char *name) {
+	RLangPlugin *h = r_lang_get (lang, name);
+	if (h) {
+		lang->cur = h;
+		return R_TRUE;
+	}
 	return R_FALSE;
 }
 

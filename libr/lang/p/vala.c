@@ -1,17 +1,15 @@
 /* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
 /* vala extension for libr (radare2) */
 // TODO: add support for Genie
+// TODO: add cache directory (~/.r2/cache)
 
 #include "r_lib.h"
 #include "r_core.h"
 #include "r_lang.h"
 
-#define LIBDIR PREFIX"/lib"
-
 static int r_vala_file(RLang *lang, const char *file) {
 	void *lib;
-	char *p, name[512];
-	char buf[512];
+	char *p, name[512], buf[512];
 
 	if (!strstr (file, ".vala"))
 		sprintf (name, "%s.vala", file);
@@ -58,8 +56,8 @@ static int vala_run(RLang *lang, const char *code, int len) {
 		fputs (code, fd);
 		fputs (";\n}\n", fd);
 		fclose (fd);
-		r_vala_file (lang->user, ".tmp.vala");
-		r_file_rm (".tmp.vala");
+//		r_vala_file (lang->user, ".tmp.vala");
+//		r_file_rm (".tmp.vala");
 	} else eprintf ("Cannot open .tmp.vala\n");
 	return R_TRUE;
 }
