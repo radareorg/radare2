@@ -108,16 +108,12 @@ static void gdiff_diff_fcn(RList *fcns, RList *fcns2) {
 	iter = r_list_iterator (fcns);
 	while (r_list_iter_next (iter)) {
 		fcn = r_list_iter_get (iter);
-		if (fcn->type != R_ANAL_FCN_TYPE_FCN || fcn->name == NULL ||
-			(strncmp (fcn->name, "sym.", 4) && strncmp (fcn->name, "fcn.sym.", 8) &&
-			strncmp (fcn->name, "imp.", 4) && strncmp (fcn->name, "fcn.imp.", 8)))
+		if (fcn->type != R_ANAL_FCN_TYPE_SYM || fcn->name == NULL)
 			continue;
 		iter2 = r_list_iterator (fcns2);
 		while (r_list_iter_next (iter2)) {
 			fcn2 = r_list_iter_get (iter2);
-			if (fcn2->type != R_ANAL_FCN_TYPE_FCN || fcn2->name == NULL || 
-				(strncmp (fcn->name, "sym.", 4) && strncmp (fcn->name, "fcn.sym.", 8) &&
-				strncmp (fcn->name, "imp.", 4) && strncmp (fcn->name, "fcn.imp.", 8)) ||
+			if (fcn2->type != R_ANAL_FCN_TYPE_SYM || fcn2->name == NULL ||
 				strcmp (fcn->name, fcn2->name))
 				continue;
 			r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->size,

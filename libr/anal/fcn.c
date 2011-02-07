@@ -60,6 +60,8 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, 
 		fcn->addr = addr;
 	if (reftype == R_ANAL_REF_TYPE_CODE)
 		fcn->type = R_ANAL_FCN_TYPE_LOC;
+	else if (reftype == R_ANAL_REF_TYPE_SYM)
+		fcn->type = R_ANAL_FCN_TYPE_SYM;
 	else fcn->type = R_ANAL_FCN_TYPE_FCN;
 	while (idx < len) {
 		if ((oplen = r_anal_aop (anal, &aop, addr+idx, buf+idx, len-idx)) == 0) {
@@ -182,7 +184,7 @@ R_API RAnalFcn *r_anal_fcn_find(RAnal *anal, ut64 addr, int type) {
 	RAnalFcn *fcn, *ret = NULL;
 	RListIter *iter;
 	r_list_foreach (anal->fcns, iter, fcn) {
-		if (type == R_ANAL_FCN_TYPE_NULL || fcn->type == type)
+		if (type == R_ANAL_FCN_TYPE_NULL || fcn->type & type)
 		if (addr == fcn->addr ||
 			(ret == NULL && (addr > fcn->addr && addr < fcn->addr+fcn->size)))
 			ret = fcn; 
@@ -206,7 +208,7 @@ R_API RAnalVar *r_anal_fcn_get_var(RAnalFcn *fs, int num, int type) {
 R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFcn* fs) {
 	int i;
 	char *sign;
-	if (fs->type != R_ANAL_FCN_TYPE_FCN)
+	if (fs->type != R_ANAL_FCN_TYPE_FCN || fs->type != R_ANAL_FCN_TYPE_SYM)
 		return NULL;
 	RAnalVar *arg, *ret = r_anal_fcn_get_var (fs, 0, R_ANAL_VAR_TYPE_RET);
 	if (ret) sign = r_str_newf ("%s %s (", ret->name, fs->name);

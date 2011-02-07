@@ -65,7 +65,9 @@ public class RAnal {
 	public enum FcnType {
 		NULL,
 		FCN,
-		LOC
+		LOC,
+		SYM,
+		IMP
 	}
 
 	[CCode (cname="int", cprefix="R_ANAL_BB_TYPE_")]

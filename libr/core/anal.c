@@ -178,7 +178,8 @@ R_API int r_core_anal_bb(RCore *core, RList *bbs, ut64 at, int depth, int head) 
 			if ((buflen = r_io_read_at (core->io, at+bblen, buf, core->blocksize)) != core->blocksize)
 				return R_FALSE;
 			bblen = r_anal_bb (core->anal, bb, at+bblen, buf, buflen, head); 
-			if (bblen == R_ANAL_RET_ERROR) { /* Error analyzing bb */
+			if (bblen == R_ANAL_RET_ERROR ||
+				(bblen == R_ANAL_RET_END && bb->size < 1)) { /* Error analyzing bb */
 				r_anal_bb_free (bb);
 				return R_FALSE;
 			} else if (bblen == R_ANAL_RET_END) { /* bb analysis complete */
@@ -314,7 +315,8 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		if ((buflen = r_io_read_at (core->io, at+fcnlen, buf, core->blocksize)) != core->blocksize)
 			return R_FALSE;
 		fcnlen = r_anal_fcn (core->anal, fcn, at+fcnlen, buf, buflen, reftype); 
-		if (fcnlen == R_ANAL_RET_ERROR) { /* Error analyzing function */
+		if (fcnlen == R_ANAL_RET_ERROR ||
+			(fcnlen == R_ANAL_RET_END && fcn->size < 1)) { /* Error analyzing function */
 			r_anal_fcn_free (fcn);
 			return R_FALSE;
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
@@ -323,7 +325,9 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				fcn->name = strdup (f->name);
 			} else {
 				fcn->name = r_str_dup_printf ("%s.%08"PFMT64x,
-						fcn->type == R_ANAL_FCN_TYPE_LOC?"loc":"fcn", at);
+						fcn->type == R_ANAL_FCN_TYPE_LOC?"loc":
+						fcn->type == R_ANAL_FCN_TYPE_SYM?"sym":
+						fcn->type == R_ANAL_FCN_TYPE_IMP?"imp":"fcn", at);
 				/* Add flag */
 				r_flag_space_set (core->flags, "functions");
 				r_flag_set (core->flags, fcn->name, at, fcn->size, 0);
@@ -404,8 +408,10 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 				r_cons_printf ("[0x%08"PFMT64x"] size=%"PFMT64d" name=%s",
 						fcni->addr, fcni->size, fcni->name);
 				r_cons_printf (" type=%s",
-						fcni->type==R_ANAL_FCN_TYPE_LOC?"loc":"fcn");
-				if (fcni->type==R_ANAL_FCN_TYPE_FCN)
+						fcni->type==R_ANAL_FCN_TYPE_LOC?"loc":
+						fcni->type==R_ANAL_FCN_TYPE_SYM?"sym":
+						fcni->type==R_ANAL_FCN_TYPE_IMP?"imp":"fcn");
+				if (fcni->type==R_ANAL_FCN_TYPE_FCN || fcni->type==R_ANAL_FCN_TYPE_SYM)
 					r_cons_printf (" [%s]",
 							fcni->diff->type==R_ANAL_DIFF_TYPE_MATCH?"MATCH":
 							fcni->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
@@ -434,7 +440,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 					if (refi->type == R_ANAL_REF_TYPE_DATA)
 						r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
 
-				if (fcni->type==R_ANAL_FCN_TYPE_FCN) {
+				if (fcni->type==R_ANAL_FCN_TYPE_FCN || fcni->type==R_ANAL_FCN_TYPE_SYM) {
 					r_cons_printf ("\n  vars:");
 					r_list_foreach (fcni->vars, iter2, vari)
 						r_cons_printf ("\n  %-10s delta=0x%02x type=%s", vari->name,
@@ -451,7 +457,9 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 				r_cons_newline ();
 			} else r_cons_printf ("af+ 0x%08"PFMT64x" %"PFMT64d" %s %c %c\n",
 						fcni->addr, fcni->size, fcni->name,
-						fcni->type==R_ANAL_FCN_TYPE_LOC?'l':'f',
+						fcni->type==R_ANAL_FCN_TYPE_LOC?'l':
+						fcni->type==R_ANAL_FCN_TYPE_SYM?'s':
+						fcni->type==R_ANAL_FCN_TYPE_IMP?'i':'f',
 						fcni->diff->type==R_ANAL_DIFF_TYPE_MATCH?'m':
 						fcni->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?'u':'n');
 		}
@@ -610,7 +618,6 @@ R_API int r_core_anal_all(RCore *core) {
 	RBinAddr *binmain;
 	RBinAddr *entry;
 	RBinSymbol *symbol;
-	//RAnalFcn *fcn;
 	ut64 baddr;
 	int depth =r_config_get_i (core->config, "anal.depth"); 
 	int va = core->io->va || core->io->debug;
@@ -620,24 +627,18 @@ R_API int r_core_anal_all(RCore *core) {
 	/* Main */
 	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN)) != NULL)
 		r_core_anal_fcn (core, va?baddr+binmain->rva:binmain->offset, -1,
-				R_ANAL_REF_TYPE_NULL, depth);
+				R_ANAL_REF_TYPE_SYM, depth);
 	/* Entries */
 	if ((list = r_bin_get_entries (core->bin)) != NULL)
 		r_list_foreach (list, iter, entry)
 			r_core_anal_fcn (core, va?baddr+entry->rva:entry->offset, -1,
-					R_ANAL_REF_TYPE_NULL, depth);
+					R_ANAL_REF_TYPE_SYM, depth);
 	/* Symbols (Imports are already analized by rabin2 on init) */
 	if ((list = r_bin_get_symbols (core->bin)) != NULL)
 		r_list_foreach (list, iter, symbol)
 			if (!strncmp (symbol->type,"FUNC", 4))
 				r_core_anal_fcn (core, va?baddr+symbol->rva:symbol->offset, -1,
-						R_ANAL_REF_TYPE_NULL, depth);
-#if 0 /* Done during fcn analysis */
-	/* Analyze Basic blocks */
-	r_list_foreach (core->anal->fcns, iter, fcn)
-		if (fcn->type == R_ANAL_FCN_TYPE_FCN)
-			r_core_anal_bb (core, core->anal->bbs, fcn->addr, depth, R_TRUE);
-#endif 
+						R_ANAL_REF_TYPE_SYM, depth);
 
 	return R_TRUE;
 }

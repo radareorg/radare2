@@ -1624,7 +1624,8 @@ static int cmd_print(void *data, const char *input) {
 	case 'D':
 	case 'd':
 		if (input[1]=='f') {
-			RAnalFcn *f = r_anal_fcn_find (core->anal, core->offset, R_ANAL_FCN_TYPE_FCN);
+			RAnalFcn *f = r_anal_fcn_find (core->anal, core->offset,
+					R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 			if (f) {
 				ut8 *block = malloc (f->size+1);
 				if (block) {
@@ -1882,7 +1883,8 @@ static void var_help() {
 }
 
 static int var_cmd(RCore *core, const char *str) {
-	RAnalFcn *fcn = r_anal_fcn_find (core->anal, core->offset, R_ANAL_FCN_TYPE_FCN);
+	RAnalFcn *fcn = r_anal_fcn_find (core->anal, core->offset,
+			R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 	char *p,*p2,*p3;
 	int type, delta, len = strlen(str)+1;
 
@@ -2148,6 +2150,10 @@ static int cmd_anal(void *data, const char *input) {
 					ptr2 = r_str_word_get0 (ptr, 3);
 					if (strchr (ptr2, 'l'))
 						type = R_ANAL_FCN_TYPE_LOC;
+					else if (strchr (ptr2, 'i'))
+						type = R_ANAL_FCN_TYPE_IMP;
+					else if (strchr (ptr2, 's'))
+						type = R_ANAL_FCN_TYPE_SYM;
 					else type = R_ANAL_FCN_TYPE_FCN;
 				case 3:
 					name = r_str_word_get0 (ptr, 2);
@@ -3318,7 +3324,8 @@ static int cmd_meta(void *data, const char *input) {
 		break;
 	case 'F':
 		{
-		RAnalFcn *f = r_anal_fcn_find (core->anal, core->offset, R_ANAL_FCN_TYPE_FCN);
+		RAnalFcn *f = r_anal_fcn_find (core->anal, core->offset,
+				R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 		r_anal_fcn_from_string (core->anal, f, input+2);
 		}
 		break;

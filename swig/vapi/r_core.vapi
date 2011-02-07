@@ -130,6 +130,8 @@ public class RCore {
 
 	public int seek_delta(int64 addr);
 
+	public bool bin_load(string file);
+
 	public RCore.File file;
 }
 }

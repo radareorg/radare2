@@ -237,8 +237,10 @@ typedef struct r_anal_cc_type_t {
 
 enum {
 	R_ANAL_FCN_TYPE_NULL = 0,
-	R_ANAL_FCN_TYPE_FCN,
-	R_ANAL_FCN_TYPE_LOC
+	R_ANAL_FCN_TYPE_FCN = 1,
+	R_ANAL_FCN_TYPE_LOC = 2,
+	R_ANAL_FCN_TYPE_SYM = 4,
+	R_ANAL_FCN_TYPE_IMP = 8
 };
 
 typedef struct r_anal_fcn_t {
@@ -279,14 +281,16 @@ typedef struct r_anal_var_t {
 typedef struct r_anal_var_type_t {
 	char *name;
 	char *fmt;
-	unsigned int size;
+	ut32 size;
 } RAnalVarType;
 
 enum {
 	R_ANAL_REF_TYPE_NULL = 0,
 	R_ANAL_REF_TYPE_CODE = 'c', // code ref
 	R_ANAL_REF_TYPE_CALL = 'C', // code ref (call)
-	R_ANAL_REF_TYPE_DATA = 'd'  // mem ref
+	R_ANAL_REF_TYPE_DATA = 'd', // mem ref
+	R_ANAL_REF_TYPE_SYM = 's',  // sym
+	R_ANAL_REF_TYPE_IMP = 'i'   // imp
 } RAnalRefType;
 
 typedef struct r_anal_ref_t {

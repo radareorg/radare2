@@ -75,7 +75,7 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 		break;
 	case R_ANAL_CC_TYPE_STDCALL: // CALL
 		//	if (analop.jump != UT64_MAX) {
-		fcn = r_anal_fcn_find (anal, cc->off, R_ANAL_FCN_TYPE_FCN);
+		fcn = r_anal_fcn_find (anal, cc->off, R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 		if (fcn && fcn->name) snprintf (str, sizeof (str), "%s(", fcn->name);
 		else snprintf (str, sizeof (str), "0x%08"PFMT64x"(", cc->jump);
 		if (fcn) cc->nargs = (fcn->nargs>cc->nargs?cc->nargs:fcn->nargs);
