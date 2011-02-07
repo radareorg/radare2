@@ -1594,9 +1594,12 @@ static int cmd_info(void *data, const char *input) {
 	case '*':
 		break;
 	default:
-		r_cons_printf ("uri: %s\n", core->file->uri);
-		r_cons_printf ("filesize: 0x%x\n", core->file->size);
-		r_cons_printf ("blocksize: 0x%x\n", core->blocksize);
+		if (core->file) {
+			r_cons_printf ("uri: %s\n", core->file->uri);
+			r_cons_printf ("fd: %d\n", core->file->fd->fd);
+			r_cons_printf ("filesize: 0x%x\n", core->file->size);
+			r_cons_printf ("blocksize: 0x%x\n", core->blocksize);
+		} else eprintf ("No selected file\n");
 	}
 	return 0;
 }
@@ -3026,10 +3029,13 @@ static int cmd_hash(void *data, const char *input) {
 
 	if (input[0]=='!') {
 #if 0
+	TODO: Honor OOBI
 		#!lua < file
 		#!lua <<EOF
 		#!lua
 		#!lua foo bar
+                        //r_lang_run (core->lang, p+1, strlen (p+1));
+                                //core->oobi, core->oobi_len);
 #endif
 		if (input[1]=='?' || input[1]=='*' || input[1]=='\0') {
 			r_lang_list (core->lang);
@@ -3038,12 +3044,11 @@ static int cmd_hash(void *data, const char *input) {
 		p = strchr (input+1, ' ');
 		if (p) *p=0;
 		// TODO: set argv here
-		r_lang_use (core->lang, input+1);
-		r_lang_setup (core->lang);
-		if (p) r_lang_run_file (core->lang, p+1);
-			//r_lang_run (core->lang, p+1, strlen (p+1));
-				//core->oobi, core->oobi_len);
-		else r_lang_prompt (core->lang);
+		if (r_lang_use (core->lang, input+1)) {
+			r_lang_setup (core->lang);
+			if (p) r_lang_run_file (core->lang, p+1);
+			else r_lang_prompt (core->lang);
+		} else eprintf ("Invalid hashbang plugin name. Try '#!'\n");
 		return R_TRUE;
 	}
 
@@ -3159,14 +3164,6 @@ static int cmd_open(void *data, const char *input) {
 	case '\0':
 		r_core_file_list (core);
 		break;
-	default:
-	case '?':
-		eprintf ("Usage: o [file] ([offset])\n"
-		" o                   ; list opened files\n"
-		" o /bin/ls           ; open /bin/ls file\n"
-		" o /bin/ls 0x8048000 ; map file\n"
-		" o-1                 ; close file index 1\n");
-		break;
 	case ' ':
 		ptr = strchr (input+1, ' ');
 		if (ptr) *ptr = '\0';
@@ -3175,16 +3172,23 @@ static int cmd_open(void *data, const char *input) {
 			if (ptr) {
 				addr = r_num_math (core->num, ptr+1);
 				size = r_io_size (core->io);
-				r_io_map_add (core->io, file->fd->fd, R_IO_READ, 0, addr, size);
+				file->map = r_io_map_add (core->io, file->fd->fd, R_IO_READ, 0, addr, size);
 				eprintf ("Map '%s' in 0x%08"PFMT64x" with size 0x%"PFMT64x"\n",
-					input+1, addr, size);
+					input+1, addr, file->size);
 			}
 		} else eprintf ("Cannot open file '%s'\n", input+1);
 		break;
 	case '-':
-		file = r_core_file_get_fd (core, atoi (input+1));
-		if (file) r_core_file_close (core, file);
-		else eprintf ("Unable to find filedescriptor %d\n", atoi (input+1));
+		if (!r_core_file_close_fd (core, atoi (input+1)))
+			eprintf ("Unable to find filedescriptor %d\n", atoi (input+1));
+		break;
+	case '?':
+	default:
+		eprintf ("Usage: o [file] ([offset])\n"
+		" o                   ; list opened files\n"
+		" o /bin/ls           ; open /bin/ls file\n"
+		" o /bin/ls 0x8048000 ; map file\n"
+		" o-1                 ; close file index 1\n");
 		break;
 	}
 	return 0;

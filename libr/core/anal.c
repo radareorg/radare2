@@ -610,7 +610,7 @@ R_API int r_core_anal_all(RCore *core) {
 	RBinAddr *binmain;
 	RBinAddr *entry;
 	RBinSymbol *symbol;
-	RAnalFcn *fcn;
+	//RAnalFcn *fcn;
 	ut64 baddr;
 	int depth =r_config_get_i (core->config, "anal.depth"); 
 	int va = core->io->va || core->io->debug;

@@ -342,11 +342,13 @@ R_API int r_io_close(struct r_io_t *io, RIODesc *fd) {
 	int nfd = fd->fd;
 	if (r_io_set_fd (io, fd)) {
 		RIODesc *desc = r_io_desc_get (io, fd->fd);
-		r_io_map_del (io, fd->fd);
-		r_io_plugin_close (io, fd->fd, io->plugin);
-		if (io->plugin && io->plugin->close)
-			return io->plugin->close (desc);
-		r_io_desc_del (io, desc->fd);
+		if (desc) {
+			r_io_map_del (io, fd->fd);
+			r_io_plugin_close (io, fd->fd, io->plugin);
+			if (io->plugin && io->plugin->close)
+				return io->plugin->close (desc);
+			r_io_desc_del (io, desc->fd);
+		}
 	}
 	io->fd = NULL; // unset current fd
 	return close (nfd);
@@ -370,7 +372,7 @@ R_API int r_io_accept(RIO *io, int fd) {
 /* moves bytes up (+) or down (-) within the specified range */
 R_API int r_io_shift(RIO *io, ut64 start, ut64 end, st64 move) {
 	ut8 *buf;
-	ut64 chunksize=0x10000;
+	ut64 chunksize = 0x10000;
 	ut64 rest, src, shiftsize = r_num_abs (move);
 	if (!shiftsize || (end-start) <= shiftsize) return R_FALSE;
 	rest = (end-start) - shiftsize;

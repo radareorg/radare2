@@ -8,6 +8,7 @@ Autocomplete
 ------------
  - autocomplete flags for +- and @ chars
  - if console width > X place comments there (ash)
+* Fix all that shitty r_io maps bugs
 
 Visual mode
 -----------

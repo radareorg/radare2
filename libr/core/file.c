@@ -232,8 +232,9 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode) {
 
 	fh = R_NEW (RCoreFile);
 	fh->fd = fd;
+	fh->map = NULL;
 	fh->uri = strdup (file);
-	fh->filename = fh->uri;
+	fh->filename = strdup (fh->uri);
 	p = strstr (fh->filename, "://");
 	if (p != NULL)
 		fh->filename = p+3;
@@ -241,11 +242,10 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode) {
 	r->file = fh;
 	r->io->plugin = fd->plugin;
 	fh->size = r_io_size (r->io);
-	list_add (&(fh->list), &r->files);
+	r_list_append (r->files, fh);
 
 //	r_core_bin_load (r, fh->filename);
 	r_core_block_read (r, 0);
-
 	cp = r_config_get (r->config, "cmd.open");
 	if (cp && *cp)
 		r_core_cmd (r, cp, 0);
@@ -253,18 +253,27 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode) {
 	return fh;
 }
 
+R_API void r_core_file_free(RCoreFile *cf) {
+	free (cf->uri);
+	cf->uri = NULL;
+	free (cf->filename);
+	cf->filename = NULL;
+	cf->fd = NULL;
+}
+
 R_API int r_core_file_close(struct r_core_t *r, struct r_core_file_t *fh) {
 	int ret = r_io_close (r->io, fh->fd);
 	// TODO: free fh->obj
-	list_del (&(fh->list));
+	//r_list_delete (fh);
+	//list_del (&(fh->list));
 	// TODO: set previous opened file as current one
 	return ret;
 }
 
-R_API struct r_core_file_t *r_core_file_get_fd(struct r_core_t *core, int fd) {
-	struct list_head *pos;
-	list_for_each_prev (pos, &core->files) {
-		RCoreFile *file = list_entry (pos, RCoreFile, list);
+R_API RCoreFile *r_core_file_get_fd(RCore *core, int fd) {
+	RCoreFile *file;
+	RListIter *iter;
+	r_list_foreach (core->files, iter, file) {
 		if (file->fd->fd == fd)
 			return file;
 	}
@@ -273,21 +282,28 @@ R_API struct r_core_file_t *r_core_file_get_fd(struct r_core_t *core, int fd) {
 
 R_API int r_core_file_list(struct r_core_t *core) {
 	int count = 0;
-	struct list_head *pos;
-	list_for_each_prev (pos, &core->files) {
-		RCoreFile *f = list_entry (pos, RCoreFile, list);
-		eprintf ("%d %s\n", f->fd->fd, f->uri);
+	RCoreFile *f;
+	RListIter *iter;
+	r_list_foreach (core->files, iter, f) {
+		if (f->map)
+			eprintf ("%d %s 0x%"PFMT64x"\n", f->fd->fd, f->uri, f->map->from);
+		else eprintf ("%d %s\n", f->fd->fd, f->uri);
 		count++;
 	}
 	return count;
 }
 
-R_API int r_core_file_close_fd(struct r_core_t *core, int fd) {
-	int ret;
-	struct r_core_file_t *fh;
-	fh = r_core_file_get_fd (core, fd);
-	ret = r_io_close (core->io, fh->fd);
-	if (fh != NULL)
-		list_del (&(fh->list));
-	return ret;
+R_API int r_core_file_close_fd(RCore *core, int fd) {
+	RCoreFile *file;
+	RListIter *iter;
+	r_list_foreach (core->files, iter, file) {
+		if (file->fd->fd == fd) {
+			r_io_close (core->io, file->fd);
+			r_list_delete (core->files, iter);
+			if (r_list_empty (core->files))
+				core->file = NULL;
+			return R_TRUE;
+		}
+	}
+	return R_FALSE;
 }

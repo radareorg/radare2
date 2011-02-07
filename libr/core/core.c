@@ -244,7 +244,8 @@ R_API int r_core_init(RCore *core) {
 	r_io_bind (core->io, &(core->fs->iob));
 	//r_cmd_macro_init (&core->macro);
 	core->file = NULL;
-	INIT_LIST_HEAD (&core->files);
+	core->files = r_list_new ();
+	core->files->free = r_core_file_free;
 	core->offset = 0LL;
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8*)malloc (R_CORE_BLOCKSIZE);

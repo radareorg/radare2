@@ -55,11 +55,11 @@ typedef struct r_core_file_t {
 	char *filename;
 	ut64 seek;
 	ut64 size;
+	RIOMap *map;
 	int rwx;
-	RIODesc *fd;
 	int dbg;
+	RIODesc *fd;
 	RBinObj *obj;
-	struct list_head list;
 } RCoreFile;
 
 typedef struct r_core_t {
@@ -77,7 +77,7 @@ typedef struct r_core_t {
 	RCons *cons;
 	RIO *io;
 	RCoreFile *file;
-	struct list_head files;
+	RList *files;
 	RNum *num;
 	RLib *lib;
 	RCmd *cmd;
@@ -131,6 +131,7 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch);
 
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb);
 R_API int r_core_serve(RCore *core, RIODesc *fd);
+R_API void r_core_file_free(RCoreFile *cf);
 R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int mode);
 R_API struct r_core_file_t *r_core_file_get_fd(struct r_core_t *core, int fd);
 R_API int r_core_file_close(struct r_core_t *r, RCoreFile *fh);

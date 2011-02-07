@@ -217,7 +217,7 @@ R_API int r_io_bind(RIO *io, struct r_io_bind_t *bnd);
 
 /* io/map.c */
 R_API void r_io_map_init(RIO *io);
-R_API int r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 offset, ut64 size);
+R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 offset, ut64 size);
 R_API int r_io_map_del(RIO *io, int fd);
 R_API int r_io_map(RIO *io, const char *file, ut64 offset);
 R_API int r_io_map_read_at(RIO *io, ut64 off, ut8 *buf, int len);

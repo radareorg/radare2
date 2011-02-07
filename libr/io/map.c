@@ -33,25 +33,28 @@ R_API int r_io_map_del(struct r_io_t *io, int fd) {
 	return ret;
 }
 
-R_API int r_io_map_add(struct r_io_t *io, int fd, int flags, ut64 delta, ut64 offset, ut64 size) {
+R_API RIOMap *r_io_map_add(struct r_io_t *io, int fd, int flags, ut64 delta, ut64 offset, ut64 size) {
 	RIOMap *im = R_NEW (RIOMap);
-	if (im == NULL)
-		return R_FALSE;
-	im->fd = fd;
-	im->flags = flags;
-	im->delta = delta;
-	im->from = offset;
-	im->to = offset + size;
-	r_list_append (io->maps, im);
-	return R_TRUE;
+	if (im) {
+		im->fd = fd;
+		im->flags = flags;
+		im->delta = delta;
+		im->from = offset;
+		im->to = offset + size;
+		r_list_append (io->maps, im);
+	}
+	return im;
 }
 
-R_API int r_io_map_read_at(struct r_io_t *io, ut64 off, ut8 *buf, int len) {
+R_API int r_io_map_read_at(RIO *io, ut64 off, ut8 *buf, int len) {
 	RIOMap *im;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, im) { // _prev?
 		if (im && off >= im->from && off < im->to) {
 			r_io_set_fdn (io, im->fd);
+			// XXX: Detect loop
+			if (im->from == 0) // wtf
+				return -1;
 			return r_io_read_at (io, off-im->from + im->delta, buf, len);
 		}
 	}
