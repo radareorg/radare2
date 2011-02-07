@@ -145,7 +145,8 @@ static void gdiff_diff_fcn(RList *fcns, RList *fcns2) {
 	iter = r_list_iterator (fcns);
 	while (r_list_iter_next (iter)) {
 		fcn = r_list_iter_get (iter);
-		if (fcn->type != R_ANAL_FCN_TYPE_FCN || fcn->diff->type != R_ANAL_DIFF_TYPE_NULL)
+		if ((fcn->type != R_ANAL_FCN_TYPE_FCN && fcn->type != R_ANAL_FCN_TYPE_SYM) ||
+			fcn->diff->type != R_ANAL_DIFF_TYPE_NULL)
 			continue;
 		ot = 0;
 		mfcn = mfcn2 = NULL;
@@ -159,8 +160,8 @@ static void gdiff_diff_fcn(RList *fcns, RList *fcns2) {
 				maxsize = fcn2->size;
 				minsize = fcn->size;
 			}
-			if (fcn2->type != R_ANAL_FCN_TYPE_FCN || fcn2->diff->type != R_ANAL_DIFF_TYPE_NULL ||
-				(maxsize * THRESHOLDFCN > minsize))
+			if ((fcn2->type != R_ANAL_FCN_TYPE_FCN && fcn2->type != R_ANAL_FCN_TYPE_SYM) ||
+				fcn2->diff->type != R_ANAL_DIFF_TYPE_NULL || (maxsize * THRESHOLDFCN > minsize))
 				continue;
 			r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->size,
 					fcn2->fingerprint, fcn2->size, NULL, &t);

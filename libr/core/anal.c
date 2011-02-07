@@ -615,6 +615,7 @@ R_API int r_core_anal_fcn_cc(RCore *core, ut64 addr) {
 R_API int r_core_anal_all(RCore *core) {
 	RList *list;
 	RListIter *iter;
+	RAnalFcn *fcni;
 	RBinAddr *binmain;
 	RBinAddr *entry;
 	RBinSymbol *symbol;
@@ -627,18 +628,22 @@ R_API int r_core_anal_all(RCore *core) {
 	/* Main */
 	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN)) != NULL)
 		r_core_anal_fcn (core, va?baddr+binmain->rva:binmain->offset, -1,
-				R_ANAL_REF_TYPE_SYM, depth);
+				R_ANAL_REF_TYPE_NULL, depth);
 	/* Entries */
 	if ((list = r_bin_get_entries (core->bin)) != NULL)
 		r_list_foreach (list, iter, entry)
 			r_core_anal_fcn (core, va?baddr+entry->rva:entry->offset, -1,
-					R_ANAL_REF_TYPE_SYM, depth);
+					R_ANAL_REF_TYPE_NULL, depth);
 	/* Symbols (Imports are already analized by rabin2 on init) */
 	if ((list = r_bin_get_symbols (core->bin)) != NULL)
 		r_list_foreach (list, iter, symbol)
 			if (!strncmp (symbol->type,"FUNC", 4))
 				r_core_anal_fcn (core, va?baddr+symbol->rva:symbol->offset, -1,
-						R_ANAL_REF_TYPE_SYM, depth);
+						R_ANAL_REF_TYPE_NULL, depth);
+	/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
+	r_list_foreach (core->anal->fcns, iter, fcni)
+		if (!memcmp (fcni->name, "fcn.sym.", 8) || !memcmp (fcni->name, "sym.", 4))
+			fcni->type = R_ANAL_FCN_TYPE_SYM;
 
 	return R_TRUE;
 }

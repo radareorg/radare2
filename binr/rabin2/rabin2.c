@@ -237,7 +237,7 @@ static int rabin_show_imports() {
 			if (rad) {
 				r_flag_name_filter (import->name);
 				if (import->size) 
-					printf ("af+ 0x%08"PFMT64x" %"PFMT64d" fcn.imp.%s\n",
+					printf ("af+ 0x%08"PFMT64x" %"PFMT64d" fcn.imp.%s i\n",
 							va?baddr+import->rva:import->offset, import->size, import->name);
 				printf ("fs imports\n");
 				printf ("f imp.%s @ 0x%08"PFMT64x"\n",

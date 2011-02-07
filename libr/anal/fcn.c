@@ -60,8 +60,6 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, 
 		fcn->addr = addr;
 	if (reftype == R_ANAL_REF_TYPE_CODE)
 		fcn->type = R_ANAL_FCN_TYPE_LOC;
-	else if (reftype == R_ANAL_REF_TYPE_SYM)
-		fcn->type = R_ANAL_FCN_TYPE_SYM;
 	else fcn->type = R_ANAL_FCN_TYPE_FCN;
 	while (idx < len) {
 		if ((oplen = r_anal_aop (anal, &aop, addr+idx, buf+idx, len-idx)) == 0) {
