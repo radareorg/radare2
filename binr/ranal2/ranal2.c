@@ -44,7 +44,7 @@ static char *optype2str(int type) {
 		case R_ANAL_OP_TYPE_UPUSH: return strdup ("upush");
 		case R_ANAL_OP_TYPE_PUSH:  return strdup ("push");
 		case R_ANAL_OP_TYPE_POP:   return strdup ("pop");
-		case R_ANAL_OP_TYPE_CMP:   return strdup ("cmd");
+		case R_ANAL_OP_TYPE_CMP:   return strdup ("cmp");
 		case R_ANAL_OP_TYPE_ADD:   return strdup ("add");
 		case R_ANAL_OP_TYPE_SUB:   return strdup ("sub");
 		case R_ANAL_OP_TYPE_MUL:   return strdup ("mul");
