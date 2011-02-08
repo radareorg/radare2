@@ -71,17 +71,19 @@ static int analyze(RAnal *anal, RAnalOp *aop, ut64 offset, ut8* buf, int len) {
 		stackop = stackop2str (aop->stackop);
 		optype = optype2str (aop->type);
 		bytes = r_hex_bin2strdup (buf, ret);
-		eprintf ("bytes:    %s\n"
-				 "type:     %s\n"
-				 "jump:     0x%08"PFMT64x"\n"
-				 "fail:     0x%08"PFMT64x"\n"
-				 "ref:      0x%08"PFMT64x"\n"
-				 "value:    0x%08"PFMT64x"\n"
-				 "stackop:  %s\n"
-				 "stackptr: %"PFMT64d"\n"
-				 "--\n",
-				 bytes, optype, aop->jump, aop->fail, aop->ref,
-				 aop->value, stackop, aop->stackptr);
+		printf ("bytes:    %s\n", bytes);
+		printf ("type:     %s\n", optype);
+		if (aop->jump != -1LL)
+			printf ("jump:     0x%08"PFMT64x"\n", aop->jump);
+		if (aop->fail != -1LL)
+			printf ("fail:     0x%08"PFMT64x"\n", aop->fail);
+		if (aop->ref != -1LL)
+			printf ("ref:      0x%08"PFMT64x"\n", aop->ref);
+		if (aop->value != -1LL)
+			printf ("value:    0x%08"PFMT64x"\n", aop->value);
+		printf ("stackop:  %s\n", stackop);
+		printf ("stackptr: %"PFMT64d"\n", aop->stackptr);
+		printf ("--\n");
 		free (optype);
 		free (stackop);
 		free (bytes);
