@@ -275,6 +275,11 @@ R_API int r_core_anal_bb_seek(RCore *core, ut64 addr) {
 	return r_core_seek (core, addr, R_FALSE);
 }
 
+static int cmpaddr (void *_a, void *_b) {
+	RAnalBlock *a = _a, *b = _b;
+	return (a->addr > b->addr);
+}
+
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	RAnalFcn *fcn, *fcni;
 	struct r_anal_ref_t *refi;
@@ -334,6 +339,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			}
 			/* TODO: Dupped analysis, needs more optimization */
 			r_core_anal_bb (core, fcn->bbs, fcn->addr, depth, R_TRUE);
+			r_list_sort (fcn->bbs, &cmpaddr);
 			/* New function: Add initial xref */
 			if (from != -1) {
 				if (!(ref = r_anal_ref_new ())) {
