@@ -26,7 +26,7 @@ struct r_line_t; // ugly forward declaration
 typedef int (*RLineCallback)(struct r_line_t *line);
 
 typedef struct r_line_comp_t {
-	int argc; // TODO: Deprecate
+	int argc;
 	const char **argv;
 	RLineCallback run;
 } RLineCompletion;
@@ -39,10 +39,9 @@ typedef struct r_line_t {
 	int has_echo;
 	const char *prompt;
 	char *clipboard;
-	int disable; // NOT YET USED
+	int disable;
 	void *user;
 } RLine;
-
 
 #ifdef R_API
 // XXX : Kill extern variables

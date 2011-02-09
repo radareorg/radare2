@@ -91,7 +91,7 @@ static const char *radare_argv[] = {
 	"/", "//", "/a", "/c", "/m", "/x", "/v",
 	"y", "yy", "y?",
 	"wx", "ww", "wf", "w?",
-	"pc", "pD", "px", "pX", "po", "pm", "pr", "pt", "ps", "pz", "pr >", "pu", "pU", "p?",
+	"pc", "pd", "pD", "px", "pX", "po", "pm", "pr", "pt", "ps", "pz", "pr >", "pu", "pU", "p?",
 	NULL
 };
 
@@ -103,20 +103,12 @@ static int autocomplete(RLine *line) {
 	RListIter *iter;
 	RFlagItem *flag;
 	if (core) {
-		int idx;
 		char *ptr = strchr (line->buffer.data, '@');
 		if (ptr && line->buffer.data+line->buffer.index >= ptr) {
-			int n, i = 0;
-			int sdelta = 4; // = (line->buffer.data[1]==' ')?2:3;
-			if (ptr[1]!=' ') {
-				ptr[1]=' ';
-				line->buffer.index++;
-				line->buffer.length++;
-				ptr++;
-			}
-			ptr = r_str_chop_ro (ptr+1);
+			int sdelta, n, i = 0;
+			ptr = (char *)r_str_chop_ro (ptr+1);
 			n = strlen (ptr);//(line->buffer.data+sdelta);
-			sdelta = (int)(size_t)(ptr-line->buffer.data);
+			sdelta = (int)(size_t)(ptr - line->buffer.data);
 			r_list_foreach (core->flags->flags, iter, flag) {
 				if (!memcmp (flag->name, line->buffer.data+sdelta, n)) {
 					tmp_argv[i++] = flag->name;
@@ -268,7 +260,7 @@ R_API int r_core_init(RCore *core) {
 	//r_cmd_macro_init (&core->macro);
 	core->file = NULL;
 	core->files = r_list_new ();
-	core->files->free = r_core_file_free;
+	core->files->free = (RListFree)r_core_file_free;
 	core->offset = 0LL;
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8*)malloc (R_CORE_BLOCKSIZE);
