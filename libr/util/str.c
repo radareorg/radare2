@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -168,13 +168,12 @@ R_API int r_str_word_count(const char *string) {
 }
 
 R_API char *r_str_ichr(char *str, char chr) {
-	while (*str==chr)
-		str = str+1;
+	while (*str==chr) str++;
 	return str;
 }
 
 R_API char *r_str_lchr(char *str, char chr) {
-	int len = strlen(str)+1;
+	int len = strlen (str)+1;
 	for (;len>=0;len--)
 		if (str[len]==chr)
 			return str+len;

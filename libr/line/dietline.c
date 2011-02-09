@@ -170,6 +170,7 @@ R_API int r_line_hist_chop(const char *file, int limit) {
 
 R_API void r_line_autocomplete() {
 	int argc = 0;
+	char *p;
 	const char **argv = NULL;
 	int i, j, opt, len = 0;
 	int cols = r_cons_get_size (NULL)*0.82;
@@ -181,23 +182,20 @@ R_API void r_line_autocomplete() {
 		argv = I.completion.argv;
 	} else opt = 0;
 
+	p = r_str_lchr (I.buffer.data, ' ');
+	p = p? p+1: I.buffer.data+I.buffer.length;
 	/* autocomplete */
 	if (argc==1) {
-		char *p = strchr (I.buffer.data, ' ');
-		if (p) p++; else p = I.buffer.data;
 		strcpy (p, argv[0]);
 		I.buffer.index = I.buffer.length = strlen (I.buffer.data) + 1;
 		strcat (p, " ");
-		I.buffer.length = strlen (I.buffer.data);
+		I.buffer.length = strlen (I.buffer.data); // XXX: already calculated ?? wtf
 	} else
 	if (argc>0) {
-		char *p = strchr (I.buffer.data, ' ');
-		if (p) p++; else p = I.buffer.data;
-
 		if (*p) {
 			char *root = strdup (argv[0]);
 			// try to autocomplete argument
-			for (i=0;i<argc;i++) {
+			for (i=0; i<argc; i++) {
 				j = 0;
 				while (argv[i][j]==root[j]) j++;
 				free (root);

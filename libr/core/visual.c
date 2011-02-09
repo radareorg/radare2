@@ -1061,6 +1061,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 
 // TODO: simplify R_ABS(printidx%NPF) into a macro, or just control negative values..
 R_API void r_core_visual_prompt(RCore *core, int color) {
+	const char *filename;
 	/* automatic block size */
 	if (autoblocksize)
 	switch (printidx) {
@@ -1076,13 +1077,17 @@ R_API void r_core_visual_prompt(RCore *core, int color) {
 		break;
 	}
 
+	if (core->file && core->file->filename) {
+		filename = core->file->filename;
+	} else filename = "";
+
 	if (cursor<0) cursor = 0;
 	if (color) r_cons_strcat (Color_YELLOW);
 	if (curset) r_cons_printf ("[0x%08"PFMT64x" %d %s(%d:%d=%d)]> %s\n", core->offset,
 		core->blocksize, core->file->filename, cursor, ocursor,
 		ocursor==-1?1:R_ABS (cursor-ocursor)+1, printfmt[R_ABS (printidx%NPF)]);
 	else r_cons_printf ("[0x%08"PFMT64x" %d %s]> %s\n", core->offset, core->blocksize,
-		core->file->filename, printfmt[R_ABS (printidx%NPF)]);
+		filename, printfmt[R_ABS (printidx%NPF)]);
 	//r_cons_printf (" %d %d %d\n", printidx, core->cons->rows, core->blocksize);
 	if (color) r_cons_strcat (Color_RESET);
 }

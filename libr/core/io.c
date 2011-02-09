@@ -65,7 +65,7 @@ R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
 	ut64 ret;
 
 	/* XXX unnecesary call */
-	r_io_set_fd (core->io, core->file->fd);
+	//r_io_set_fd (core->io, core->file->fd);
 	ret = r_io_seek (core->io, addr, R_IO_SEEK_SET);
 	if (ret == UT64_MAX) {
 //eprintf ("RET =%d %llx\n", ret, addr);

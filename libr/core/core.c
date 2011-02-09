@@ -103,8 +103,31 @@ static int autocomplete(RLine *line) {
 	RListIter *iter;
 	RFlagItem *flag;
 	if (core) {
-// TODO: add support for fs (flagspaces)
-// TODO: add support for m (mount point list), file system walk
+		int idx;
+		char *ptr = strchr (line->buffer.data, '@');
+		if (ptr && line->buffer.data+line->buffer.index >= ptr) {
+			int n, i = 0;
+			int sdelta = 4; // = (line->buffer.data[1]==' ')?2:3;
+			if (ptr[1]!=' ') {
+				ptr[1]=' ';
+				line->buffer.index++;
+				line->buffer.length++;
+				ptr++;
+			}
+			ptr = r_str_chop_ro (ptr+1);
+			n = strlen (ptr);//(line->buffer.data+sdelta);
+			sdelta = (int)(size_t)(ptr-line->buffer.data);
+			r_list_foreach (core->flags->flags, iter, flag) {
+				if (!memcmp (flag->name, line->buffer.data+sdelta, n)) {
+					tmp_argv[i++] = flag->name;
+					if (i==TMP_ARGV_SZ)
+						break;
+				}
+			}
+			tmp_argv[i] = NULL;
+			line->completion.argc = i;
+			line->completion.argv = tmp_argv;
+		} else
 		if ((!memcmp (line->buffer.data, "s ", 2)) ||
 		    (!memcmp (line->buffer.data, "b ", 2)) ||
 		    (!memcmp (line->buffer.data, "/v ", 3)) ||
@@ -140,7 +163,7 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else {
-			int i,j;
+			int i, j;
 			for (i=j=0; radare_argv[i] && i<CMDS; i++)
 				if (!memcmp (radare_argv[i], line->buffer.data, line->buffer.index))
 					tmp_argv[j++] = radare_argv[i];
