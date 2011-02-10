@@ -163,4 +163,4 @@ mrproper:
 		cd $$a ; ${MAKE} mrproper; cd .. ; \
 	done
 
-.PHONY: $(LANGS) clean oldtest test all vdoc w32 w32dist check-w32
+.PHONY: $(LANGS) clean mrproper oldtest test all vdoc w32 w32dist check check-w32 deinstall uninstall install

@@ -6,7 +6,7 @@ LIBS+=r_debug.${SOEXT} r_config.${SOEXT} r_io.${SOEXT} r_syscall.${SOEXT}
 LIBS+=r_search.${SOEXT} r_lib.${SOEXT} libr.${SOEXT} r_flags.${SOEXT}
 LIBS+=r_parse.${SOEXT} r_lang.${SOEXT} r_core.${SOEXT}
 
-.SUFFIXES: .so .dylib .dll
+.SUFFIXES: .$(SOEXT)
 
 all: ${LIBS}
 
@@ -28,9 +28,9 @@ w32:
             false ; \
           fi ; \
 	fi ; \
-	if [ $$? = 0 ]; then \
-	  (cd .. && sh do-swig.sh ${LANG} `echo $@ | sed -e s,.${SOEXT},,`) ; \
-	fi
+	[ $$? = 0 ] && \
+	  (cd .. && sh RELEASE=$(RELEASE) ; \
+		do-swig.sh ${LANG} `echo $@ | sed -e s,.${SOEXT},,`)
 
 test:
 	-${LANG} test-r_bp.${LANG_EXT}

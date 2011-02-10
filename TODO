@@ -3,12 +3,11 @@
   |    <  V  . |  . V  .   <   _/ .-' _/|  ()  |
   |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
-
-Autocomplete
-------------
- - autocomplete flags for +- and @ chars
- - if console width > X place comments there (ash)
-* Fix all that shitty r_io maps bugs
+UNDER DEVELOPMENT
+=================
+* r2-swig : Distribute generated .i files and cxx files.. so build is faster
+  - ./configure --without-valaswig # compile without generating cxx files
+  - build with swig/
 
 Visual mode
 -----------
@@ -27,7 +26,6 @@ Visual mode
   // NOP args: NOP with arguments are typical antiemulation tricks.
   SYSENTER: Direct system calls. Commonly, used as antiemulation tricks.
 
-* RAsmOp RAnalOp // Aop->Op
 * implement aoe = anal op exec
   - sync regs or what?
 /a ??? deprecated analyze code? srsly?
@@ -35,10 +33,9 @@ Visual mode
 
 pancake
 -------
+* if console width > X place comments there (ash)
+* Fix all that shitty r_io maps bugs
 * Implement BLOCK in r_core_sysenv_begin|end ()
-* r2-swig : Distribute generated .i files and cxx files.. so build is faster
-  - ./configure --without-valaswig # compile without generating cxx files
-  - build with swig/
 * comparisions doesnt works (RAnalCond)
 * Fix iterators for r_macro (test only?)
 
