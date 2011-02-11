@@ -157,7 +157,6 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 		}
 	}
 
-#if 0
 	// z -> Strings
 	r_flag_space_set (r->flags, "strings");
 	if ((list = r_bin_get_strings (r->bin)) != NULL) {
@@ -172,7 +171,6 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 					string->size, 0);
 		}
 	}
-#endif
 
 	// i -> Imports
 	if ((list = r_bin_get_imports (r->bin)) != NULL) {
