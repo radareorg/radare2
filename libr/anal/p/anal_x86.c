@@ -270,7 +270,8 @@ static void anal_mov(RAnal *anal, RAnalOp *aop, x86im_instr_object io) {
 		break;
 	case X86IM_IO_ID_MOV_RG_IM: /* mov reg, 0x1 */
 	case X86IM_IO_ID_MOV_AC_IM:
-		/* io.imm = 0x1 & io.rop[0] = reg */
+		aop->dst = anal_fill_ai_rg (anal, io, 0);
+		aop->src[0] = anal_fill_im (anal, io);
 		break;
 	case X86IM_IO_ID_MOV_CR0_RG: /* mov cr0, reg */
 	case X86IM_IO_ID_MOV_CR2_RG: /* mov cr2, reg */

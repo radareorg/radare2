@@ -10,7 +10,6 @@ public class RAnal {
 	public int bits;
 	public bool big_endian;
 	public void *user;
-	public RList<RAnal.Block> bbs;
 	public RList<RAnal.Fcn> fcns;
 	public RList<RAnal.VarType> vartypes;
 
@@ -18,7 +17,6 @@ public class RAnal {
 	public bool set_bits (int bits);
 	public bool set_big_endian (bool big);
 	//public bool set_pc (uint64 addr);
-	public RList<RAnal.Block> fcn_bb_list(Fcn fun);
 	public RList<RAnal.Fcn> get_fcns();
 
 	[Compact]
@@ -217,6 +215,7 @@ public class RAnal {
 		public uint64 size;
 		public Diff diff;
 		public FcnType type;
+		public RList<RAnal.Block> bbs;
 		public RList<RAnal.Var> vars;
 		public RList<uint64> refs;
 		public RList<uint64> xrefs;

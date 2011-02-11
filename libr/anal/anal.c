@@ -30,7 +30,6 @@ R_API RAnal *r_anal_new() {
 	r_io_bind_init (anal->iob);
 	anal->reg = NULL;
 	anal->lineswidth = 0;
-	anal->bbs = r_anal_bb_list_new ();
 	anal->fcns = r_anal_fcn_list_new ();
 	anal->refs = r_anal_ref_list_new ();
 	anal->vartypes = r_anal_var_type_list_new ();
@@ -51,8 +50,6 @@ R_API RAnal *r_anal_new() {
 R_API RAnal *r_anal_free(RAnal *anal) {
 	if (anal) {
 		/* TODO: Free a->anals here */
-		if (anal->bbs)
-			r_list_free (anal->bbs);
 		if (anal->fcns)
 			r_list_free (anal->fcns);
 		if (anal->vartypes)
@@ -147,8 +144,29 @@ R_API char *r_anal_strmask (RAnal *anal, const char *data) {
 	return ret;
 }
 
-R_API RList *r_anal_get_fcns (RAnal *anal) {
-	if (anal)
-		return anal->fcns;
+R_API RList *r_anal_get_fcns(RAnal *anal) {
+	return anal->fcns;
+}
+
+R_API RAnalFcn *r_anal_get_fcn_at(RAnal *anal, ut64 addr) {
+	RAnalFcn *fcni;
+	RListIter *iter;
+	r_list_foreach (anal->fcns, iter, fcni)
+		if (fcni->addr == addr)
+			return fcni;
 	return NULL;
+}
+
+R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
+	RAnalBlock *bbi;
+	RAnalFcn *fcni;
+	RListIter *iter, *iter2;
+	VERBOSE_ANAL eprintf("bbtraced\n"); // XXX Debug msg
+	r_list_foreach (anal->fcns, iter, fcni)
+		r_list_foreach (fcni->bbs, iter2, bbi) {
+			if (addr>=bbi->addr && addr<(bbi->addr+bbi->size)) {
+				bbi->traced = R_TRUE;
+				break;
+			}
+		}
 }

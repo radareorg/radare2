@@ -100,7 +100,7 @@ R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
 	int tag = dbg->trace->tag;
 	if (!r_debug_trace_is_traceable (dbg, addr))
 		return NULL;
-	r_anal_bb_trace (dbg->anal, addr);
+	r_anal_trace_bb (dbg->anal, addr);
 	tp = r_debug_trace_get (dbg, addr);
 	if (!tp) {
 		tp = R_NEW (RDebugTracepoint);

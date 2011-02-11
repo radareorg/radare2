@@ -11,6 +11,8 @@
 #include <r_util.h>
 #include <r_syscall.h>
 
+#define VERBOSE_ANAL if(0)
+
 enum {
 	R_ANAL_OP_FAMILY_UNKNOWN = 0,
 	R_ANAL_OP_FAMILY_CPU,  /* normal cpu insturction */
@@ -123,7 +125,6 @@ typedef struct r_anal_t {
 	int big_endian;
 	int split;
 	void *user;
-	RList *bbs;
 	RList *fcns;
 	RList *refs;
 	RList *vartypes;
@@ -195,7 +196,7 @@ typedef struct r_anal_bb_t {
 	ut64 fail;
 	int type;
 	int ninstr;
-	int ncalls;
+	int returnbb;
 	int conditional;
 	int traced;
 	ut8 *fingerprint;
@@ -326,29 +327,24 @@ R_API int r_anal_use(RAnal *anal, const char *name);
 R_API int r_anal_set_bits(RAnal *anal, int bits);
 R_API int r_anal_set_big_endian(RAnal *anal, int boolean);
 R_API char *r_anal_strmask (RAnal *anal, const char *data);
-R_API RList *r_anal_get_fcns (RAnal *anal);
+R_API void r_anal_trace_bb(RAnal *anal, ut64 addr);
+R_API RAnalFcn *r_anal_get_fcn_at(RAnal *anal, ut64 addr);
+R_API RList *r_anal_get_fcns(RAnal *anal);
 
 /* bb.c */
 R_API RAnalBlock *r_anal_bb_new();
 R_API RList *r_anal_bb_list_new();
 R_API void r_anal_bb_free(void *bb);
-R_API void r_anal_bb_trace(RAnal *anal, ut64 addr);
 R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb,
 		ut64 addr, ut8 *buf, ut64 len, int head);
-R_API int r_anal_bb_split(RAnal *anal, RAnalBlock *bb,
-		RList *bbs, ut64 addr);
-R_API int r_anal_bb_overlap(RAnal *anal, RAnalBlock *bb, RList *bbs);
-R_API int r_anal_bb_add(RAnal *anal, ut64 addr,
-		ut64 size, ut64 jump, ut64 fail, int type, RAnalDiff *diff);
-R_API int r_anal_bb_del(RAnal *anal, ut64 addr);
 
 /* aop.c */
 R_API RAnalOp *r_anal_aop_new();
-R_API char *r_anal_aop_to_string(RAnal *anal, RAnalOp *op);
 R_API void r_anal_aop_free(void *aop);
 R_API RList *r_anal_aop_list_new();
 R_API int r_anal_aop(RAnal *anal, RAnalOp *aop, ut64 addr,
 		const ut8 *data, int len);
+R_API char *r_anal_aop_to_string(RAnal *anal, RAnalOp *op);
 
 /* fcn.c */
 R_API RAnalFcn *r_anal_fcn_new();
@@ -360,7 +356,11 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr,
 R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size,
 		const char *name, int type, RAnalDiff *diff);
 R_API int r_anal_fcn_del(RAnal *anal, ut64 addr);
-R_API RList *r_anal_fcn_bb_list(RAnal *anal, RAnalFcn *fcn);
+R_API int r_anal_fcn_add_bb(RAnalFcn *fcn, ut64 addr, ut64 size,
+		ut64 jump, ut64 fail, int type, RAnalDiff *diff);
+R_API int r_anal_fcn_cc(RAnalFcn *fcn);
+R_API int r_anal_fcn_split_bb(RAnalFcn *fcn, RAnalBlock *bb, ut64 addr);
+R_API int r_anal_fcn_overlap_bb(RAnalFcn *fcn, RAnalBlock *bb);
 R_API RAnalVar *r_anal_fcn_get_var(RAnalFcn *fs, int num, int dir);
 R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFcn* fs);
 R_API int r_anal_fcn_from_string(RAnal *a, RAnalFcn *f, const char *_str);

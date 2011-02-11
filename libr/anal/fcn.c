@@ -167,17 +167,6 @@ R_API int r_anal_fcn_del(RAnal *anal, ut64 addr) {
 	return R_TRUE;
 }
 
-R_API RList *r_anal_fcn_bb_list(RAnal *anal, RAnalFcn *fcn) {
-	RAnalBlock *bbi;
-	RListIter *iter;
-	RList *list = r_list_new ();
-	r_list_foreach (anal->bbs, iter, bbi) {
-		if (bbi->addr>=fcn->addr && bbi->addr<(fcn->addr+fcn->size))
-			r_list_append (list, bbi);
-	}
-	return list;
-}
-
 R_API RAnalFcn *r_anal_fcn_find(RAnal *anal, ut64 addr, int type) {
 	RAnalFcn *fcn, *ret = NULL;
 	RListIter *iter;
@@ -186,6 +175,121 @@ R_API RAnalFcn *r_anal_fcn_find(RAnal *anal, ut64 addr, int type) {
 		if (addr == fcn->addr ||
 			(ret == NULL && (addr > fcn->addr && addr < fcn->addr+fcn->size)))
 			ret = fcn; 
+	}
+	return ret;
+}
+
+R_API int r_anal_fcn_add_bb(RAnalFcn *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, int type, RAnalDiff *diff) {
+	RAnalBlock *bb = NULL, *bbi;
+	RListIter *iter;
+	int append = 0, mid = 0;
+
+	r_list_foreach (fcn->bbs, iter, bbi) {
+		if (addr == bbi->addr) {
+			bb = bbi;
+			mid = 0;
+			break;
+		} else if (addr > bbi->addr && addr < bbi->addr+bbi->size)
+			mid = 1;
+	}
+	if (mid)
+		return R_FALSE;
+	if (bb == NULL) {
+		if (!(bb = r_anal_bb_new ()))
+			return R_FALSE;
+		append = 1;
+	}
+	bb->addr = addr;
+	bb->size = size;
+	bb->jump = jump;
+	bb->fail = fail;
+	bb->type = type;
+	if (diff) {
+		bb->diff->type = diff->type;
+		bb->diff->addr = diff->addr;
+		R_FREE (bb->diff->name);
+		if (diff->name)
+			bb->diff->name = strdup (diff->name);
+	}
+	if (append) r_list_append (fcn->bbs, bb);
+	return R_TRUE;
+}
+
+R_API int r_anal_fcn_split_bb(RAnalFcn *fcn, RAnalBlock *bb, ut64 addr) {
+	RAnalBlock *bbi;
+	RAnalOp *aopi;
+	RListIter *iter;
+
+	r_list_foreach (fcn->bbs, iter, bbi)
+		if (addr == bbi->addr)
+			return R_ANAL_RET_DUP;
+		else if (addr > bbi->addr && addr < bbi->addr + bbi->size) {
+			r_list_append (fcn->bbs, bb);
+			bb->addr = addr;
+			bb->size = bbi->addr + bbi->size - addr;
+			bb->jump = bbi->jump;
+			bb->fail = bbi->fail;
+			bb->conditional = bbi->conditional;
+			bbi->size = addr - bbi->addr;
+			bbi->jump = addr;
+			bbi->fail = -1;
+			bbi->conditional = R_FALSE;
+			if (bbi->type&R_ANAL_BB_TYPE_HEAD) {
+				bb->type = bbi->type^R_ANAL_BB_TYPE_HEAD;
+				bbi->type = R_ANAL_BB_TYPE_HEAD;
+			} else {
+				bb->type = bbi->type;
+				bbi->type = R_ANAL_BB_TYPE_BODY;
+			}
+			iter = r_list_iterator (bbi->aops);
+			while (r_list_iter_next (iter)) {
+				aopi = r_list_iter_get (iter);
+				if (aopi->addr >= addr) {
+					r_list_split (bbi->aops, aopi);
+					bbi->ninstr--;
+					r_list_append (bb->aops, aopi);
+					bb->ninstr++;
+				}
+			}
+			return R_ANAL_RET_END;
+		}
+	return R_ANAL_RET_NEW;
+}
+
+R_API int r_anal_fcn_overlap_bb(RAnalFcn *fcn, RAnalBlock *bb) {
+	RAnalBlock *bbi;
+	RAnalOp *aopi;
+	RListIter *iter;
+
+	r_list_foreach (fcn->bbs, iter, bbi)
+		if (bb->addr+bb->size > bbi->addr && bb->addr+bb->size <= bbi->addr+bbi->size) {
+			bb->size = bbi->addr - bb->addr;
+			bb->jump = bbi->addr;
+			bb->fail = -1;
+			bb->conditional = R_FALSE;
+			if (bbi->type&R_ANAL_BB_TYPE_HEAD) {
+				bb->type = R_ANAL_BB_TYPE_HEAD;
+				bbi->type = bbi->type^R_ANAL_BB_TYPE_HEAD;
+			} else bb->type = R_ANAL_BB_TYPE_BODY;
+			r_list_foreach (bb->aops, iter, aopi)
+				if (aopi->addr >= bbi->addr)
+					r_list_unlink (bb->aops, aopi);
+			r_list_append (fcn->bbs, bb);
+			return R_ANAL_RET_END;
+		}
+	return R_ANAL_RET_NEW;
+}
+
+R_API int r_anal_fcn_cc(RAnalFcn *fcn) {
+	struct r_anal_bb_t *bbi;
+	RListIter *iter;
+	int ret = 0, retbb;
+
+	r_list_foreach (fcn->bbs, iter, bbi) {
+		if ((bbi->type & R_ANAL_BB_TYPE_LAST))
+			retbb = 1;
+		else retbb = 0;
+		ret += bbi->conditional + retbb;
 	}
 	return ret;
 }

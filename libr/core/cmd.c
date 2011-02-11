@@ -2046,78 +2046,6 @@ static int cmd_anal(void *data, const char *input) {
 			}
 		}
 		break;
-	case 'b':
-		switch (input[1]) {
-		case '-':
-			r_anal_bb_del (core->anal, r_num_math (core->num, input+2));
-			break;
-		case '+':
-			{
-			char *ptr = strdup(input+3), *ptr2 = NULL;
-			ut64 addr = -1LL;
-			ut64 size = 0LL;
-			ut64 jump = -1LL;
-			ut64 fail = -1LL;
-			int type = R_ANAL_BB_TYPE_NULL;
-			RAnalDiff *diff = NULL;
-
-			switch(r_str_word_set0 (ptr)) {
-			case 6:
-				ptr2 = r_str_word_get0 (ptr, 5);
-				if (!(diff = r_anal_diff_new ())) {
-					eprintf ("error: Cannot init RAnalDiff\n");
-					free (ptr);
-					return R_FALSE;
-				}
-				if (ptr2[0] == 'm')
-					diff->type = R_ANAL_DIFF_TYPE_MATCH;
-				else if (ptr2[0] == 'u')
-					diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
-			case 5:
-				ptr2 = r_str_word_get0 (ptr, 4);
-				if (strchr (ptr2, 'h'))
-					type |= R_ANAL_BB_TYPE_HEAD;
-				if (strchr (ptr2, 'b'))
-					type |= R_ANAL_BB_TYPE_BODY;
-				if (strchr (ptr2, 'l'))
-					type |= R_ANAL_BB_TYPE_LAST;
-				if (strchr (ptr2, 'f'))
-					type |= R_ANAL_BB_TYPE_FOOT;
-			case 4: // get fail
-				fail = r_num_math (core->num, r_str_word_get0 (ptr, 3));
-			case 3: // get jump
-				jump = r_num_math (core->num, r_str_word_get0 (ptr, 2));
-			case 2: // get size
-				size = r_num_math (core->num, r_str_word_get0 (ptr, 1));
-			case 1: // get addr
-				addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
-			}
-			if (!r_anal_bb_add (core->anal, addr, size, jump, fail, type, diff))
-				eprintf ("Cannot add bb (duplicated or overlaped)\n");
-			r_anal_diff_free (diff);
-			free (ptr);
-			}
-			break;
-		case 'l':
-			r_core_anal_bb_list (core, R_FALSE);
-			break;
-		case '*':
-			r_core_anal_bb_list (core, R_TRUE);
-			break;
-		case '?':
-			r_cons_printf (
-			"Usage: ab[?+-l*]\n"
-			" ab @ [addr]     ; Analyze basic blocks (start at addr)\n"
-			" ab+ addr size [jump] [fail] [type] [diff] ; Add basic block\n"
-			" ab- [addr]      ; Clean all basic block data (or bb at addr and childs)\n"
-			" abl             ; List basic blocks\n"
-			" ab*             ; Output radare commands\n");
-			break;
-		default:
-			r_core_anal_bb (core, core->anal->bbs, core->offset,
-					r_config_get_i (core->config, "anal.depth"), R_TRUE);
-		}
-		break;
 	case 'f':
 		switch (input[1]) {
 		case '-':
@@ -2201,8 +2129,63 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		case 'c':
 			{
-			int cc = r_core_anal_fcn_cc (core, core->offset);
-			r_cons_printf ("Cyclomatic Complexity at 0x%08"PFMT64x" = %i\n", core->offset, cc);
+			RAnalFcn *fcn;
+			int cc;
+			if ((fcn = r_anal_get_fcn_at (core->anal, core->offset)) != NULL) {
+				cc = r_anal_fcn_cc (fcn);
+				r_cons_printf ("Cyclomatic Complexity at 0x%08"PFMT64x" = %i\n", core->offset, cc);
+			} else r_cons_printf ("Error: function not found\n");
+			}
+			break;
+		case 'b':
+			{
+			char *ptr = strdup(input+3), *ptr2 = NULL;
+			ut64 fcnaddr = -1LL, addr = -1LL;
+			ut64 size = 0LL;
+			ut64 jump = -1LL;
+			ut64 fail = -1LL;
+			int type = R_ANAL_BB_TYPE_NULL;
+			RAnalFcn *fcn = NULL;
+			RAnalDiff *diff = NULL;
+
+			switch(r_str_word_set0 (ptr)) {
+			case 7:
+				ptr2 = r_str_word_get0 (ptr, 6);
+				if (!(diff = r_anal_diff_new ())) {
+					eprintf ("error: Cannot init RAnalDiff\n");
+					free (ptr);
+					return R_FALSE;
+				}
+				if (ptr2[0] == 'm')
+					diff->type = R_ANAL_DIFF_TYPE_MATCH;
+				else if (ptr2[0] == 'u')
+					diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
+			case 6:
+				ptr2 = r_str_word_get0 (ptr, 5);
+				if (strchr (ptr2, 'h'))
+					type |= R_ANAL_BB_TYPE_HEAD;
+				if (strchr (ptr2, 'b'))
+					type |= R_ANAL_BB_TYPE_BODY;
+				if (strchr (ptr2, 'l'))
+					type |= R_ANAL_BB_TYPE_LAST;
+				if (strchr (ptr2, 'f'))
+					type |= R_ANAL_BB_TYPE_FOOT;
+			case 5: // get fail
+				fail = r_num_math (core->num, r_str_word_get0 (ptr, 4));
+			case 4: // get jump
+				jump = r_num_math (core->num, r_str_word_get0 (ptr, 3));
+			case 3: // get size
+				size = r_num_math (core->num, r_str_word_get0 (ptr, 2));
+			case 2: // get addr
+				addr = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+			case 1: // get fcnaddr
+				fcnaddr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
+			}
+			if ((fcn = r_anal_get_fcn_at (core->anal, fcnaddr)) == NULL ||
+				!r_anal_fcn_add_bb (fcn, addr, size, jump, fail, type, diff))
+				eprintf ("Error: Cannot add bb\n");
+			r_anal_diff_free (diff);
+			free (ptr);
 			}
 			break;
 		case '?':
@@ -2210,6 +2193,7 @@ static int cmd_anal(void *data, const char *input) {
 			"Usage: af[?+-l*]\n"
 			" af @ [addr]               ; Analyze functions (start at addr)\n"
 			" af+ addr size name [type] [diff] ; Add function\n"
+			" afb fcnaddr addr size name [type] [diff] ; Add bb to function @ fcnaddr\n"
 			" af- [addr]                ; Clean all function analysis data (or function at addr)\n"
 			" afl [fcn name]            ; List functions\n"
 			" afs [addr] [fcnsign]      ; Get/set function signature at current address\n"
@@ -2296,7 +2280,7 @@ static int cmd_anal(void *data, const char *input) {
 					//trace_set_times(addr, atoi(ptr+1));
 					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, aop->length);
 					tp->count = atoi (ptr+1);
-					r_anal_bb_trace (core->anal, addr);
+					r_anal_trace_bb (core->anal, addr);
 					r_anal_aop_free (aop);
 				} else eprintf ("Cannot analyze opcode at 0x%"PFMT64x"\n", addr);
 			}

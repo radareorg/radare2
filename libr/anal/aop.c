@@ -14,6 +14,8 @@ R_API RAnalOp *r_anal_aop_new() {
 		aop->addr = -1;
 		aop->jump = -1;
 		aop->fail = -1;
+		aop->ref = -1;
+		aop->value = -1;
 	}
 	return aop;
 }
