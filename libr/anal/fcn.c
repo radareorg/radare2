@@ -171,7 +171,7 @@ R_API RAnalFcn *r_anal_fcn_find(RAnal *anal, ut64 addr, int type) {
 	RAnalFcn *fcn, *ret = NULL;
 	RListIter *iter;
 	r_list_foreach (anal->fcns, iter, fcn) {
-		if (type == R_ANAL_FCN_TYPE_NULL || fcn->type & type)
+		if (type == R_ANAL_FCN_TYPE_NULL || (fcn->type & type))
 		if (addr == fcn->addr ||
 			(ret == NULL && (addr > fcn->addr && addr < fcn->addr+fcn->size)))
 			ret = fcn; 

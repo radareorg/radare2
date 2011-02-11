@@ -63,46 +63,32 @@ static char *r_core_anal_graph_label(RCore *core, struct r_anal_bb_t *bb, int op
 	return str;
 }
 
-static void r_core_anal_graph_nodes(RCore *core, RAnalFcn *fcn, RList *pbb, int opts) {
-	struct r_anal_bb_t *bbi, *bbi2, *bbc;
-	RListIter *iter, *iter2;
+static void r_core_anal_graph_nodes(RCore *core, RAnalFcn *fcn, int opts) {
+	struct r_anal_bb_t *bbi;
+	RListIter *iter;
 	char *str;
 
 	r_list_foreach (fcn->bbs, iter, bbi) {
-		/* In partial graphs test if the bb is already printed */
-		r_list_foreach (pbb, iter2, bbi2)
-			if (bbi2->addr == bbi->addr)
-				continue;
-		bbc = R_NEW (RAnalBlock);
-		if (bbc) {
-			memcpy (bbc, bbi, sizeof (RAnalBlock));
-			/* We don't want to free this refs when the temporary list is destroyed */
-			bbc->aops = NULL;
-			bbc->cond = NULL;
-			bbc->diff = NULL;
-			bbc->fingerprint = NULL;
-			r_list_append (pbb, bbc);
-		}
-
 		if (bbi->jump != -1) {
-			r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
-					"[color=\"%s\"];\n", bbi->addr, bbi->jump,
+			r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
+					"[color=\"%s\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->jump,
 					bbi->fail != -1 ? "green" : "blue");
 			r_cons_flush ();
 		}
 		if (bbi->fail != -1) {
-			r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
-				"[color=\"red\"];\n", bbi->addr, bbi->fail);
+			r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
+				"[color=\"red\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->fail);
 			r_cons_flush ();
 		}
 		if ((str = r_core_anal_graph_label (core, bbi, opts))) {
 			if (opts & R_CORE_ANAL_GRAPHDIFF) {
-				r_cons_printf (" \"0x%08"PFMT64x"\" [color=\"%s\", label=\"%s\"]\n", bbi->addr, 
+				r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" [color=\"%s\", label=\"%s\"]\n",
+					fcn->addr, bbi->addr, 
 					bbi->diff->type==R_ANAL_DIFF_TYPE_MATCH?"lightgray":
 					bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"yellow":"red",str);
 			} else {
-				r_cons_printf (" \"0x%08"PFMT64x"\" [color=\"%s\", label=\"%s\"]\n", bbi->addr,
-					bbi->traced?"yellow":"lightgray",str);
+				r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" [color=\"%s\", label=\"%s\"]\n",
+					fcn->addr, bbi->addr, bbi->traced?"yellow":"lightgray",str);
 			}
 			r_cons_flush ();
 			free (str);
@@ -404,7 +390,6 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	RAnalFcn *fcni;
 	RListIter *iter;
-	RList *pbb = NULL;
 	int reflines = r_config_get_i (core->config, "asm.lines");
 	int bytes = r_config_get_i (core->config, "asm.bytes");
 	int dwarf = r_config_get_i (core->config, "asm.dwarf");
@@ -417,12 +402,9 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		"\tnode [color=lightgray, style=filled shape=box"
 		" fontname=\"Courier\" fontsize=\"8\"];\n");
 	r_cons_flush ();
-	if (!(pbb = r_anal_bb_list_new ()))
-		return R_FALSE;
 	r_list_foreach (core->anal->fcns, iter, fcni)
-		if (addr == 0 || addr == fcni->addr)
-			r_core_anal_graph_nodes (core, fcni, pbb, opts);
-	r_list_free (pbb);
+		if (fcni->type == R_ANAL_FCN_TYPE_FCN && (addr == 0 || addr == fcni->addr))
+			r_core_anal_graph_nodes (core, fcni, opts);
 	r_cons_printf ("}\n");
 	r_cons_flush ();
 	r_config_set_i (core->config, "asm.lines", reflines);
