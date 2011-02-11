@@ -1542,6 +1542,7 @@ static int cmd_cmp(void *data, const char *input) {
 			r_core_free (core2);
 			return R_FALSE;
 		}
+		r_core_bin_load (core2, file2);
 		r_core_gdiff (core, core2);
 		r_core_free (core2);
 		}

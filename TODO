@@ -75,8 +75,6 @@ nibble
   - do not allow to disassemble unaligned addresses (toggle)
   - use 'jk' with bwdisasm to go up to previous opcode.
     - r_asm can reduce cpu without disasm on fixed size ops archs.
-* not identified as cmp instruction by analysis. (85f6  test esi, esi)
-* x86im plugin does not detects int instructions (i have workaround it, but hacks sucks here)
 
 0.7 release
 ===========
