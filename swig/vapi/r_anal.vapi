@@ -181,8 +181,6 @@ public class RAnal {
 		public BlockDiff diff;
 		public RList<RAnal.Op> aops;
 	}
-	public bool bb_split(Block bb, RList<RAnal.Block> bbs, uint64 addr);
-	public bool bb_overlap(Block bb, RList<RAnal.Block> bbs);
 
 	[Compact]
 	[CCode (cprefix="r_anal_aop_", cname="RAnalOp")]

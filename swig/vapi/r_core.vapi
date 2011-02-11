@@ -51,7 +51,7 @@ public class RCore {
 
 	public int anal_search (uint64 from, uint64 to, uint64 ref);
 	public void anal_refs(uint64 addr, int gv);
-	public int anal_bb(RList<RAnal.Block> bbs, uint64 at, int depth, int head);
+	public int anal_bb(RAnal.Fcn fcn, uint64 at, int depth, int head);
 	public int anal_bb_seek(uint64 addr);
 	public int anal_fcn(uint64 at, uint64 from, int reftype, int depth);
 	public int anal_fcn_list(string input, bool rad);

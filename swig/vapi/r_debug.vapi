@@ -63,7 +63,7 @@ public class Radare.RDebug {
 	//public bool reg_set(string name, uint64 num);
 	//public uint64 reg_get(string name);
 	
-	public RList<RDebug.Pid> pids (int pid);
+	//public RList<RDebug.Pid> pids (int pid);
 	// must deprecate //
 	public int pid_list (int pid);
 	public int thread_list (int pid);
