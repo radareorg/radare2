@@ -184,6 +184,7 @@ R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc);
 R_API int r_debug_pid_list(RDebug *dbg, int pid);
 R_API RDebugPid *r_debug_pid_new(const char *path, int pid, char status, ut64 pc);
 R_API RDebugPid *r_debug_pid_free(RDebugPid *pid);
+R_API RList *r_debug_pids(RDebug *dbg, int pid);
 
 R_API int r_debug_use(struct r_debug_t *dbg, const char *str);
 R_API int r_debug_plugin_add(struct r_debug_t *dbg, struct r_debug_plugin_t *foo);
