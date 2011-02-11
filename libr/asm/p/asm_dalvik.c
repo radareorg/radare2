@@ -9,18 +9,16 @@
 
 #include <dalvik/opcode.h>
 
-static int pc;
-
-static int disassemble(RAsm *a, RAsmAop *aop, ut8 *buf, ut64 len) {
+static int dalvik_disassemble (RAsm *a, RAsmAop *aop, ut8 *buf, ut64 len) {
 	int i = (int) buf[0];
 	int size = 0;
 	int vA, vB, vC;
 	char str[1024];
 
-	if (opcodes[i].len <= len) {
-		strcpy (aop->buf_asm, opcodes[i].name);
-		size = opcodes[i].len;
-		switch (opcodes[i].fmt) {
+	if (dalvik_opcodes[i].len <= len) {
+		strcpy (aop->buf_asm, dalvik_opcodes[i].name);
+		size = dalvik_opcodes[i].len;
+		switch (dalvik_opcodes[i].fmt) {
 		case fmtop: break;
 		case fmtopvAvB:
 			vA = buf[1] & 0x0f;
@@ -100,30 +98,30 @@ static int disassemble(RAsm *a, RAsmAop *aop, ut8 *buf, ut64 len) {
 			strcat (aop->buf_asm, str);
 			break;
 		case fmtoppAA:
-			vA = pc + (int) buf[1];
+			vA = (int) buf[1];
 			sprintf (str, " %i", vA);
 			strcat (aop->buf_asm, str);
 			break;
 		case fmtoppAAAA:
-			vA = pc + (int) (buf[3] <<8 | buf[2]);
+			vA = (int) (buf[3] <<8 | buf[2]);
 			sprintf (str, " %i", vA);
 			strcat (aop->buf_asm, str);
 			break;
-		case fmtopvAApBBBB: //FIXME: pc increments each disas.
-			vA = pc + (int) buf[1];
-			vB = pc + (int) (buf[3] <<8 | buf[2]);
+		case fmtopvAApBBBB:
+			vA = (int) buf[1];
+			vB = (int) (buf[3] <<8 | buf[2]);
 			sprintf (str, " v%i, %i", vA, vB);
 			strcat (aop->buf_asm, str);
 			break;
-		case fmtoppAAAAAAAA: //FIXME: Remove pc use
-			vA = pc + (int) (buf[5]|(buf[4]<<8)|(buf[3]<<16)|(buf[2]<<24));
+		case fmtoppAAAAAAAA:
+			vA = (int) (buf[5]|(buf[4]<<8)|(buf[3]<<16)|(buf[2]<<24));
 			sprintf (str, " %#08x", vA);
 			strcat (aop->buf_asm, str);
 			break;
-		case fmtopvAvBpCCCC:
+		case fmtopvAvBpCCCC: //TEST without pc
 			vA = buf[1] & 0x0f;
 			vB = (buf[1] & 0xf0)>>4;
-			vC = pc + (int) (buf[3] <<8 | buf[2]);
+			vC = (int) (buf[3] <<8 | buf[2]);
 			sprintf (str, " v%i, v%i, %i", vA, vB, vC);
 			strcat (aop->buf_asm, str);
 			break;
@@ -284,26 +282,24 @@ static int disassemble(RAsm *a, RAsmAop *aop, ut8 *buf, ut64 len) {
 		aop->inst_len = len;
 		size = len;
 	}
-	if (size) pc++;
 	return size;
 }
 
 //TODO
-static int assemble(RAsm *a, RAsmAop *aop, const char *buf) {
+static int dalvik_assemble(RAsm *a, RAsmAop *aop, const char *buf) {
 	int i;
 	char *p = strchr (buf,' ');
 	if (p) *p = 0;
 	for (i=0; i<256; i++)
-		if (!strcmp (opcodes[i].name, buf)) {
+		if (!strcmp (dalvik_opcodes[i].name, buf)) {
 			r_mem_copyendian (aop->buf, (void*)&i, 4, a->big_endian);
-			aop->inst_len = opcodes[i].len;
+			aop->inst_len = dalvik_opcodes[i].len;
 			return aop->inst_len;
 		}
 	return 0;
 }
 
 static int init (void *user) {
-	pc = 0;
 	return R_TRUE;
 }
 
@@ -314,8 +310,8 @@ RAsmPlugin r_asm_plugin_dalvik = {
 	.bits = (int[]){ 32, 64, 0 },
 	.init = &init,
 	.fini = NULL,
-	.disassemble = &disassemble,
-	.assemble = &assemble
+	.disassemble = &dalvik_disassemble,
+	.assemble = &dalvik_assemble
 };
 
 #ifndef CORELIB

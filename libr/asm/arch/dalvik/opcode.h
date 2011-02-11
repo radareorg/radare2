@@ -42,7 +42,7 @@ struct dalvik_opcodes_t {
 	int fmt;
 };
 
-const struct dalvik_opcodes_t opcodes[256] = {
+const struct dalvik_opcodes_t dalvik_opcodes[256] = {
 	{"nop", 2, fmtop}, /* 0x00 */
 	{"move", 2, fmtopvAvB},
 	{"move/from16", 4, fmtopvAAvBBBB},
