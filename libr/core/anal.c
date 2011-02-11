@@ -403,7 +403,8 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		" fontname=\"Courier\" fontsize=\"8\"];\n");
 	r_cons_flush ();
 	r_list_foreach (core->anal->fcns, iter, fcni)
-		if (fcni->type == R_ANAL_FCN_TYPE_FCN && (addr == 0 || addr == fcni->addr))
+		if (fcni->type & (R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_FCN) &&
+			(addr == 0 || addr == fcni->addr))
 			r_core_anal_graph_nodes (core, fcni, opts);
 	r_cons_printf ("}\n");
 	r_cons_flush ();
