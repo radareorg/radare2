@@ -12,7 +12,7 @@ static const char *nullstr_c = "(null)";
 
 R_API void r_str_subchr (char *s, int a, int b) {
 	while (*s) {
-		if(*s==a) {
+		if (*s==a) {
 			if (b) *s = b;
 			else strcpy (s, s+1);
 		}
@@ -21,11 +21,21 @@ R_API void r_str_subchr (char *s, int a, int b) {
 }
 
 // TODO: do not use toupper.. must support modes to also append lowercase chars like in r1
+// TODO: this functions needs some stabilization
 R_API int r_str_bits (char *strout, const ut8 *buf, int len, const char *bitz) {
-	int i, j, *p = (int*)buf;
-	for (i=j=0; i<len && bitz[i]; i++) {
-		if (*p&(1<<i))
-			strout[j++] = toupper (bitz[i]);
+	int i, j;
+	if (bitz) {
+		for (i=j=0; i<len && (!bitz||bitz[i]); i++)
+			if (i>0 && (i%8)==0)
+				buf++;
+	                if (*buf&(1<<i))
+				strout[j++] = toupper (bitz[i]);
+	} else {
+		for (i=j=0; i<len; i++) {
+			if (i>0 && (i%8)==0)
+				buf++;
+			strout[j++] = (*buf&(1<<(7-(i%8))))?'1':'0';
+		}
 	}
 	strout[j] = 0;
 	return j;
@@ -640,7 +650,6 @@ R_API void r_str_argv_free(char **argv) {
 	free (argv);
 }
 
-
 #if 0
 /* XXX this is necessary ??? */
 // TODO: make it dynamic
@@ -648,8 +657,7 @@ static int bprintf_init = 0;
 static char bprintf_buf[4096];
 
 // XXX overflow
-R_API int r_bprintf(const char *fmt, ...)
-{
+R_API int r_bprintf(const char *fmt, ...) {
 	va_list ap;
 	if (bprintf_init==0)
 		*bprintf_buf = 0;
@@ -659,8 +667,7 @@ R_API int r_bprintf(const char *fmt, ...)
 	return strlen(bprintf_buf);
 }
 
-R_API char *r_bprintf_get()
-{
+R_API char *r_bprintf_get() {
 	char *s;
 	if (bprintf_init==0)
 		*bprintf_buf = 0;

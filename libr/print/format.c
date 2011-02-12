@@ -13,7 +13,7 @@ static void print_mem_help(RPrint *p) {
 	//" D - double (8 bytes)\n"
 	" f - float value\n"
 	" b - one byte \n"
-	" B - show 10 first bytes of buffer\n"
+	" B - show 10 first bytes of buffer\n" // B must be for binary ??
 	" i - %%i integer value (4 bytes)\n"
 	" w - word (16 bit hexa)\n"
 	" q - quadword (8 bytes)\n"

@@ -10,6 +10,10 @@ static void test(const char *str) {
 }
 
 int main () {
+	char buf[256];
+	int len = r_str_bits (buf, (const ut8*)"012345", 7*8, NULL);
+	printf ("%d: %s\n", len, buf);
+
 	test ("  hello world  ");
 	test ("hello world");
 	test ("hello   \"world\"");

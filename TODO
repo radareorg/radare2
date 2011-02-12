@@ -6,10 +6,9 @@
 BINARY INFORMATION
 ==================
 dwarf, pdb, def, lib
-
-load symbols from .lib or .def (find signatures)
-  .def -> .idt
-  .lib -> ar2idt
+- from file, from section, ...
+- load symbols from .lib or .def (find signatures)
+  .def -> .idt , .lib -> ar2idt
 
 UNDER DEVELOPMENT
 =================
@@ -17,9 +16,8 @@ UNDER DEVELOPMENT
   - ./configure --without-valaswig # compile without generating cxx files
   - build with swig/
 
-Visual mode
+Random stuff
 -----------
-* Add print support for bitfields (pb, pm b...)
 * For each "call" or "push offset"+"ret" create a function.
   - And, if deep code analysis is enabled:
   - Search every possible function by searching typical prologs and put them in a queue.
@@ -33,22 +31,26 @@ Visual mode
   CPUID: Used to detect Virtual Machines and emulators.
   // NOP args: NOP with arguments are typical antiemulation tricks.
   SYSENTER: Direct system calls. Commonly, used as antiemulation tricks.
-
 * implement aoe = anal op exec
   - sync regs or what?
-/a ??? deprecated analyze code? srsly?
 * Search for wide strings /Z or so? /w maybe?
 
 pancake
 -------
 * if console width > X place comments there (ash)
-* Fix all that shitty r_io maps bugs
 * Implement BLOCK in r_core_sysenv_begin|end ()
 * comparisions doesnt works (RAnalCond)
 * Fix iterators for r_macro (test only?)
+* Add support for STATIC_PLUGINS in r_lang
+  - r_lang_define is implemented in lang.c, but requires the collaboration
+    of the plugins to properly setup the environment for the script execution.
+  - Add support for STATIC_PLUGINS in r_lang
+  - dlerror(/usr/lib/radare2/lang_perl.so): libperl.so: cannot open shared object file: No such file or directory
+    This issue is fixed by setting LD_LIBRARY_PATH...looks like dlopen ignores rpath
 
 earada
 ------
+* Add print support for bitfields (pm b...)
 - r_bin_demangle (); // r_util maybe?
 	* _ZN7WebCore11CounterNode7recountERKNS_12AtomicStringE
 	  - demangle c++ and objc names
@@ -83,6 +85,23 @@ nibble
   - do not allow to disassemble unaligned addresses (toggle)
   - use 'jk' with bwdisasm to go up to previous opcode.
     - r_asm can reduce cpu without disasm on fixed size ops archs.
+* Display getsym() stuff in rabin2, not only legit syms
+* Check if python plugin works from inside
+  - write tuto, how to call py code from shell or r2
+* dmi command must read from memory if no file path provided
+  - rabin from memory ftw, to get libnames of dll, so..
+* add support for sign/unsigned registers..or at least a way to cast them
+* use r_anal_value everywhere
+* diff code analysis
+  - diff two programs
+     1st level:
+        - check all functions EQUAL, DIFFERENT, REMOVED, ADDED
+        - check all symbols
+        - check all imports
+        - check all strings
+     2nd level:
+        - basic block level diffing (output in graph mode)
+
 
 0.7 release
 ===========
@@ -110,7 +129,6 @@ nibble
 	- allow to hook r_asm_disassemble and assemble with custom callbacks
 	  - extend a disassembler with own instructions.
 
-
 	Assembler
 	---------
 	* Embed bits/arch/endian in a separated structure
@@ -129,12 +147,6 @@ nibble
 * Create radare2-testsuite project
   - tests for ired, rax2, radare2, rabin2 ...
 * Is RCore->block and blocksize a RBuf ? refactor!11
-* Add support for STATIC_PLUGINS in r_lang
-  - r_lang_define is implemented in lang.c, but requires the collaboration
-    of the plugins to properly setup the environment for the script execution.
-  - Add support for STATIC_PLUGINS in r_lang
-  - dlerror(/usr/lib/radare2/lang_perl.so): libperl.so: cannot open shared object file: No such file or directory
-    This issue is fixed by setting LD_LIBRARY_PATH...looks like dlopen ignores rpath
 
 Things to improve in r2
 =======================
@@ -157,7 +169,7 @@ Debugger
 ========
 * stepover waits for one unknown event that cannot be stopped
 * Implement list threads on ALL supported platforms (win,lin,osx)
-* ALL threads must be stopped when a breakpoint is handled..
+* All threads must be stopped when a breakpoint is handled..
 * Add support for windbg+virtualkd
 * Floating point registers
 * MMX/XMM/DRX control
@@ -180,30 +192,6 @@ pancake
     - if they do not match: we need to warn/ask user/store multiple options
        - function signature comparsion if they dont match
        r_anal_fcn_cmp (anal, f1, f2);
-
-nibble
-------
-* Display getsym() stuff in rabin2, not only legit syms
-* Check if python plugin works from inside
-  - write tuto, how to call py code from shell or r2
-* dmi command must read from memory if no file path provided
-  - rabin from memory ftw
-  - to get libnames of dll, so..
-* add support for sign/unsigned registers..or at least a way to cast them
-* r_anal
-  - use r_anal_value everywhere
-  - x86im
-    - make x86_x86im the default backend for x86 analysis
-* diff code analysis
-  - diff two programs
-     1st level:
-        - check all functions EQUAL, DIFFERENT, REMOVED, ADDED
-        - check all symbols
-        - check all imports
-        - check all strings
-     2nd level:
-        - basic block level diffing (output in graph mode)
-
 
 Questions
 =========

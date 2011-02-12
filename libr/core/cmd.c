@@ -1622,6 +1622,18 @@ static int cmd_print(void *data, const char *input) {
 	} else l = len;
 
 	switch (input[0]) {
+	case 'b':
+		{
+		char *buf;
+		int size = core->blocksize * 8;
+		buf = malloc (size);
+		if (buf) {
+			r_str_bits (buf, core->block, size, NULL);
+			r_cons_printf ("%s\n", buf);
+			free (buf);
+		} else eprintf ("ERROR: Cannot malloc %d bytes\n", size);
+		}
+		break;
 	case 'D':
 	case 'd':
 		if (input[1]=='f') {
@@ -2458,6 +2470,18 @@ static int cmd_anal(void *data, const char *input) {
 	case 'a':
 		r_core_anal_all (core);
 		break;
+	case 'p':
+		{
+			// TODO: this is x86 only
+			// TODO: allow interruptible search
+			char *o = strdup (r_config_get (core->config, "search.prefix"));
+			r_config_set (core->config, "search.prefix", "pre.");
+			r_core_cmd0 (core, "fs preludes");
+			r_core_cmd0 (core, "./x 5589e5 && af @@ pre.");
+			r_config_set (core->config, "search.prefix", o);
+			free (o);
+		}
+		break;
 	default:
 		r_cons_printf (
 		"Usage: a[?obfrgtv]\n"
@@ -2649,7 +2673,7 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case 'v':
 		{
-		ut64 off = r_num_math(core->num, input+1);
+		ut64 off = r_num_math (core->num, input+1);
 		r_io_set_fd (core->io, core->file->fd);
 		r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
 		if (off&UT64_32U) {
@@ -3148,7 +3172,7 @@ static int cmd_system(void *data, const char *input) {
 static int cmd_open(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	RCoreFile *file;
-	ut64 addr, size;
+	ut64 addr;
 	char *ptr;
 
 	switch (*input) {
