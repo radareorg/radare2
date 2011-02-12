@@ -160,6 +160,9 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	// z -> Strings
 	r_flag_space_set (r->flags, "strings");
 	if ((list = r_bin_get_strings (r->bin)) != NULL) {
+		if (r_list_length (list) > 1024) {
+			eprintf ("rabin2: too many strings. not importing string info\n");
+		} else
 		r_list_foreach (list, iter, string) {
 			/* Jump the withespaces before the string */
 			for (i=0;*(string->string+i)==' ';i++);
@@ -218,7 +221,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	return R_TRUE;
 }
 
-R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode) {
+R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loadaddr) {
 	RCoreFile *fh;
 	const char *cp;
 	char *p;
@@ -250,6 +253,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode) {
 	if (cp && *cp)
 		r_core_cmd (r, cp, 0);
 	r_config_set (r->config, "file.path", file);
+	fh->map = r_io_map_add (r->io, fh->fd->fd, mode, 0, loadaddr, fh->size);
 	return fh;
 }
 

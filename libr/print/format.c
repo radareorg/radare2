@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
 
 #include "r_cons.h"
 #include "r_util.h"
@@ -31,23 +31,19 @@ static void print_mem_help(RPrint *p) {
 /* TODO: needs refactoring */
 R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int len, const char *fmt) {
 	unsigned char buffer[256];
-	int endian = 0;
-	int i,j,idx;
-	int times, otimes;
-	char tmp, last = 0;
-	char *args, *bracket;
-	int nargs = 0;
+	int nargs, i, j, idx, times, otimes, endian;
+	char *args, *bracket, tmp, last = 0;
 	const char *arg = fmt;
 	const char *argend = arg+strlen(fmt);
 	ut64 addr = 0;
 	char namefmt[8];
-	i = j = 0;
+	nargs = endian = i = j = 0;
 
-	while (*arg && *arg==' ') arg = arg +1;
+	while (*arg && *arg==' ') arg++;
 	/* get times */
-	otimes = times = atoi(arg);
+	otimes = times = atoi (arg);
 	if (times > 0)
-		while ((*arg>='0'&&*arg<='9')) arg = arg +1;
+		while ((*arg>='0'&&*arg<='9')) arg++;
 	bracket = strchr (arg,'{');
 	if (bracket) {
 		char *end = strchr (arg,'}');
@@ -148,36 +144,34 @@ R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int le
 #endif
 			case 'e': {
 				double doub;
-				memcpy(&doub, buf+i, sizeof(double));
-				p->printf("%e = ", doub);
-				p->printf("(double)");
+				memcpy (&doub, buf+i, sizeof (double));
+				p->printf ("%e = ", doub);
+				p->printf ("(double)");
 				i+=8;
 				}
 				break;
 			case 'q':
-				p->printf("0x%08x = ", seek+i);
-				p->printf("(qword)");
+				p->printf ("0x%08x = ", seek+i);
+				p->printf ("(qword)");
 				i+=8;
 				break;
 			case 'b':
-				p->printf("0x%08x = ", seek+i);
-				p->printf("%d ; 0x%02x ; '%c' ", 
+				p->printf ("0x%08x = ", seek+i);
+				p->printf ("%d ; 0x%02x ; '%c' ", 
 					buf[i], buf[i], IS_PRINTABLE(buf[i])?buf[i]:0);
 				i++;
 				break;
 			case 'B':
 				memset(buffer, '\0', 255);
-				if (p->read_at)
-					p->read_at((ut64)addr, buffer, 248, p->user);
-				else {
-					printf("(cannot read memory)\n");
+				if (!p->read_at) {
+					printf ("(cannot read memory)\n");
 					break;
-				}
-				p->printf("0x%08x = ", seek+i);
-				for(j=0;j<10;j++) p->printf("%02x ", buf[j]);
+				} else p->read_at ((ut64)addr, buffer, 248, p->user);
+				p->printf ("0x%08x = ", seek+i);
+				for (j=0;j<10;j++) p->printf ("%02x ", buf[j]);
 				p->printf(" ... (");
-				for(j=0;j<10;j++)
-					if (IS_PRINTABLE(buf[j]))
+				for (j=0;j<10;j++)
+					if (IS_PRINTABLE (buf[j]))
 						p->printf("%c", buf[j]);
 				p->printf(")");
 				i+=4;
@@ -195,59 +189,59 @@ R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int le
 			case 'X': {
 				ut32 addr32 = (ut32)addr;
 				//char buf[128];
-				p->printf("0x%08x = ", seek+i);
-				p->printf("0x%08"PFMT64x" ", addr32);
+				p->printf ("0x%08x = ", seek+i);
+				p->printf ("0x%08"PFMT64x" ", addr32);
 				//if (string_flag_offset(buf, (ut64)addr32, -1))
 				//	p->printf("; %s", buf);
 				i+=4;
 				} break;
 			case 'w':
 			case '1': // word (16 bits)
-				p->printf("0x%08x = ", seek+i);
+				p->printf ("0x%08x = ", seek+i);
 				if (endian)
 					 addr = (*(buf+i))<<8  | (*(buf+i+1));
 				else     addr = (*(buf+i+1))<<8 | (*(buf+i));
-				p->printf("0x%04x ", addr);
+				p->printf ("0x%04x ", addr);
 				break;
 			case 'z': // zero terminated string
-				p->printf("0x%08x = ", seek+i);
-				for(;buf[i]&&i<len;i++) {
-					if (IS_PRINTABLE(buf[i]))
-						p->printf("%c", buf[i]);
-					else p->printf(".");
+				p->printf ("0x%08x = ", seek+i);
+				for (;buf[i]&&i<len; i++) {
+					if (IS_PRINTABLE (buf[i]))
+						p->printf ("%c", buf[i]);
+					else p->printf (".");
 				}
 				break;
 			case 'Z': // zero terminated wide string
-				p->printf("0x%08x = ", seek+i);
-				for(;buf[i]&&i<len;i+=2) {
-					if (IS_PRINTABLE(buf[i]))
-						p->printf("%c", buf[i]);
-					else p->printf(".");
+				p->printf ("0x%08x = ", seek+i);
+				for (;buf[i]&&i<len; i+=2) {
+					if (IS_PRINTABLE (buf[i]))
+						p->printf ("%c", buf[i]);
+					else p->printf (".");
 				}
-				p->printf(" ");
+				p->printf (" ");
 				break;
 			case 's':
-				p->printf("0x%08x = ", seek+i);
-				memset(buffer, '\0', 255);
+				p->printf ("0x%08x = ", seek+i);
+				memset (buffer, '\0', 255);
 				if (p->read_at)
-					p->read_at((ut64)addr, buffer, 248, p->user);
+					p->read_at ((ut64)addr, buffer, 248, p->user);
 				else {
-					printf("(cannot read memory)\n");
+					printf ("(cannot read memory)\n");
 					break;
 				}
-				p->printf("0x%08x -> 0x%08x ", seek+i, addr);
-				p->printf("%s ", buffer);
+				p->printf ("0x%08x -> 0x%08x ", seek+i, addr);
+				p->printf ("%s ", buffer);
 				i+=4;
 				break;
 			default:
 				/* ignore unknown chars */
 				break;
 			}
-		p->printf("\n");
+		p->printf ("\n");
 		last = tmp;
 		}
 		if (otimes>1)
-			p->printf("}\n");
+			p->printf ("}\n");
 		arg = orig;
 		idx = 0;
 	}

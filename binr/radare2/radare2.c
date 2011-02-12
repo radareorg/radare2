@@ -162,20 +162,19 @@ int main(int argc, char **argv) {
 				strcat (file, " ");
 		}
 
-		fh = r_core_file_open (&r, file, perms);
+		fh = r_core_file_open (&r, file, perms, 0LL);
 		// TODO: move into if (debug) ..
 		r_debug_use (r.dbg, "native");
 	} else {
 		if (optind<argc) {
 			while (optind < argc)
-				fh = r_core_file_open (&r, argv[optind++], perms);
+				fh = r_core_file_open (&r, argv[optind++], perms, 0);
 		} else {
 			const char *prj = r_config_get (r.config, "file.project");
 			if (prj && *prj) {
 				char *file = r_core_project_info (&r, prj);
-				if (file) {
-					fh = r_core_file_open (&r, file, perms);
-				} else eprintf ("No file\n");
+				if (file) fh = r_core_file_open (&r, file, perms, 0);
+				else eprintf ("No file\n");
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
 
 #include "r_cons.h"
 #include "r_print.h"
@@ -42,7 +42,7 @@ R_API RPrint *r_print_free(RPrint *p) {
 R_API void r_print_set_cursor(RPrint *p, int enable, int ocursor, int cursor) {
 	p->cur_enabled = enable;
 	p->ocur = ocursor;
-	if (cursor<0) cursor=0;
+	if (cursor<0) cursor = 0;
 	p->cur = cursor;
 }
 
@@ -52,7 +52,7 @@ R_API void r_print_cursor(RPrint *p, int cur, int set) {
 	if (p->ocur != -1) {
 		int from = p->ocur;
 		int to = p->cur;
-		r_num_minmax_swap_i(&from, &to);
+		r_num_minmax_swap_i (&from, &to);
 		if (cur>=from&&cur<=to)
 			r_cons_invert (set, p->flags&R_PRINT_FLAGS_COLOR);
 	} else
@@ -68,7 +68,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 		p->printf("%s0x%08"PFMT64x""Color_RESET"%c ",
 			r_cons_singleton ()->palette[PAL_ADDRESS], addr, ch);
 #endif
-		p->printf("0x%08"PFMT64x"%c ", addr, ch);
+		p->printf ("0x%08"PFMT64x"%c ", addr, ch);
 	} else r_cons_printf ("0x%08"PFMT64x"%c ", addr, ch);
 }
 
@@ -87,10 +87,10 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 		cur = ocur;
 	ocur++;
 #if CURDBG
-sprintf(dst, "(%d/%d/%d/%d)", p->cur_enabled, cur, ocur, n);
-d = dst+ strlen(dst);
+	sprintf(dst, "(%d/%d/%d/%d)", p->cur_enabled, cur, ocur, n);
+	d = dst+ strlen(dst);
 #else
-d = dst;
+	d = dst;
 #endif
 	// XXX: overflow here
 #define memcat(x,y) { memcpy(x,y,strlen(y));x+=strlen(y); }
@@ -102,15 +102,10 @@ d = dst;
 			if (i>=cur-n && i<ocur-n)
 				memcat (d, "\x1b[7m");
 		}
-		if (s[0]=='0' && s[1]=='0') {
-			memcat (d, "\x1b[31m");
-		} else
-		if (s[0]=='f' && s[1]=='f') {
-			memcat (d, "\x1b[32m");
-		} else
-		if (s[0]=='7' && s[1]=='f') {
-			memcat (d, "\x1b[33m");
-		} else {
+		if (s[0]=='0' && s[1]=='0') { memcat (d, "\x1b[32m"); }
+		else if (s[0]=='7' && s[1]=='f') { memcat (d, "\x1b[33m"); }
+		else if (s[0]=='f' && s[1]=='f') { memcat (d, "\x1b[31m"); }
+		else {
 			sscanf (s, "%02x", &ch);
 			if (IS_PRINTABLE (ch))
 				memcat (d, "\x1b[35m");
@@ -129,10 +124,10 @@ R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 	//if (p->flags & R_PRINT_FLAGS_CURSOR && idx == p->cur) {
 	if (p->flags & R_PRINT_FLAGS_COLOR) {
 		char *pre = NULL;
-		switch(ch) {
-		case 0x00: pre = "\x1b[31m"; break;
-		case 0xFF: pre = "\x1b[32m"; break;
+		switch (ch) {
+		case 0x00: pre = "\x1b[32m"; break;
 		case 0x7F: pre = "\x1b[33m"; break;
+		case 0xFF: pre = "\x1b[31m"; break;
 		default:
 			if (IS_PRINTABLE (ch))
 				pre = "\x1b[35m";
@@ -255,7 +250,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 
 R_API void r_print_bytes(RPrint *p, const ut8* buf, int len, const char *fmt) {
 	int i;
-	for (i=0;i<len;i++)
+	for (i=0; i<len; i++)
 		p->printf (fmt, buf[i]);
 	p->printf ("\n");
 }
@@ -325,17 +320,14 @@ void lsb_stego_process (FILE *fd, int length, bool forward, bool downward, int o
         char dbyte;     /* Destination byte (decrypted msg) */
 
 
-        for ( byte = offset ; byte < length ; ) 
-        {
+        for ( byte = offset ; byte < length ; ) {
                 dbyte = 0;
 
-                for (bit = 0; bit <= 7; bit++, byte++)
-                {
+                for (bit = 0; bit <= 7; bit++, byte++) {
                         /* Set position at the beginning or eof */
                         if (forward)
                                 fseek(fd, byte, SEEK_SET);
-                        else
-                                fseek(fd, -(byte+1), SEEK_END);
+                        else fseek(fd, -(byte+1), SEEK_END);
 
                         /* Read one byte */
                         fread(&sbyte, sizeof(sbyte), 1, fd);
@@ -344,14 +336,9 @@ void lsb_stego_process (FILE *fd, int length, bool forward, bool downward, int o
                         lsb = sbyte & 1;
 
                         /* Add lsb to decrypted message */
-                        if (downward)
-                                dbyte = dbyte | lsb << (7-bit) ;
-                        else
-                                dbyte = dbyte | lsb << bit ;
+			dbyte = dbyte | lsb << ((downward)?(7-bit):bit);
                 }
-
                 printf ("%c", dbyte);
         }
 }
-
 #endif

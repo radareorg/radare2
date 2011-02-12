@@ -109,8 +109,10 @@ R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 }
 
 R_API int r_core_block_read(RCore *core, int next) {
-	if (core->file == NULL)
+	if (core->file == NULL) {
+		memset (core->block, 0xff, core->blocksize);
 		return -1;
+	}
 	r_io_set_fd (core->io, core->file->fd);
 	r_io_seek (core->io, core->offset+((next)?core->blocksize:0), R_IO_SEEK_SET);
 	return r_io_read (core->io, core->block, core->blocksize);

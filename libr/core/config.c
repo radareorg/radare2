@@ -376,7 +376,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_i_cb (cfg, "search.align", 0, &config_searchalign_callback);
 	r_config_set (cfg, "search.asmstr", "true");
 	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
-	r_config_set_cb (cfg, "io.ffio", "false", &config_ioffio_callback);
+	r_config_set_cb (cfg, "io.ffio", "true", &config_ioffio_callback);
 	r_config_set_cb (cfg, "io.va", "true", &config_iova_callback);
 	r_config_set_cb (cfg, "io.cache", "false", &config_iocache_callback);
 	r_config_set (cfg, "file.path", "");

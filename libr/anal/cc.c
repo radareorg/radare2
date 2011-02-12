@@ -51,7 +51,7 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 		const char *a0 = r_reg_get_name (anal->reg, R_REG_NAME_A0); // A0 or RET ??
 		item = r_reg_get (anal->reg, a0, R_REG_TYPE_GPR);
 		if (!item) {
-			eprintf ("cannot get reg a0\n");
+			//eprintf ("cannot get reg a0\n");
 			return R_FALSE;
 		}
 		eax = (int)r_reg_get_value (anal->reg, item);

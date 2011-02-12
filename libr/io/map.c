@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
 
 #include <stdio.h>
 #include <string.h>
@@ -10,7 +10,7 @@ R_API void r_io_map_init(struct r_io_t *io) {
 	io->maps = r_list_new ();
 }
 
-R_API struct r_io_map_t *r_io_map_resolve(struct r_io_t *io, int fd) {
+R_API RIOMap *r_io_map_resolve(struct r_io_t *io, int fd) {
 	RIOMap *map;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, map) {
@@ -35,51 +35,31 @@ R_API int r_io_map_del(struct r_io_t *io, int fd) {
 
 R_API RIOMap *r_io_map_add(struct r_io_t *io, int fd, int flags, ut64 delta, ut64 offset, ut64 size) {
 	RIOMap *im = R_NEW (RIOMap);
-	if (im) {
-		im->fd = fd;
-		im->flags = flags;
-		im->delta = delta;
-		im->from = offset;
-		im->to = offset + size;
-		r_list_append (io->maps, im);
-	}
+	if (!im) return NULL;
+	im->fd = fd;
+	im->flags = flags;
+	im->delta = delta;
+	im->from = offset;
+	im->to = offset + size;
+	r_list_append (io->maps, im);
 	return im;
 }
 
-R_API int r_io_map_read_at(RIO *io, ut64 off, ut8 *buf, int len) {
+R_API int r_io_map_select(RIO *io, ut64 off) {
 	RIOMap *im;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, im) { // _prev?
 		if (im && off >= im->from && off < im->to) {
 			r_io_set_fdn (io, im->fd);
-			// XXX: Detect loop
-			if (im->from == 0) // wtf
-				return -1;
-			return r_io_read_at (io, off-im->from + im->delta, buf, len);
+			r_io_seek (io, off-im->from+im->delta, R_IO_SEEK_SET);
+			return R_TRUE;
 		}
 	}
-	return -1;
+	return R_FALSE;
 }
-
-R_API int r_io_map_write_at(struct r_io_t *io, ut64 off, const ut8 *buf, int len) {
-	RIOMap *im;
-	RListIter *iter;
-	r_list_foreach (io->maps, iter, im) {
-		if (im && off >= im->from && off < im->to) {
-			if (im->flags & R_IO_WRITE) {
-				r_io_set_fdn (io, im->fd);
-				return r_io_write_at (io, off-im->from + im->delta, buf, len);
-			} else return -1;
-		}
-	}
-	return 0;
-}
-
-// DEPRECATE ??? DEPREACATE
 
 #if 0
-int r_io_map_read_rest(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len)
-{
+int r_io_map_read_rest(struct r_io_t *io, ut64 off, ut8 *buf, ut64 len) {
 	struct list_head *pos;
 	list_for_each_prev(pos, &io->maps) {
 		struct r_io_map_t *im = list_entry(pos, struct r_io_map_t, list);

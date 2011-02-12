@@ -132,7 +132,7 @@ R_API int r_core_visual_cmd(struct r_core_t *core, int ch);
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb);
 R_API int r_core_serve(RCore *core, RIODesc *fd);
 R_API void r_core_file_free(RCoreFile *cf);
-R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int mode);
+R_API struct r_core_file_t *r_core_file_open(struct r_core_t *r, const char *file, int mode, ut64 loadaddr);
 R_API struct r_core_file_t *r_core_file_get_fd(struct r_core_t *core, int fd);
 R_API int r_core_file_close(struct r_core_t *r, RCoreFile *fh);
 R_API int r_core_file_close_fd(struct r_core_t *core, int fd);

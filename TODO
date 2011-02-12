@@ -3,6 +3,14 @@
   |    <  V  . |  . V  .   <   _/ .-' _/|  ()  |
   |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
+BINARY INFORMATION
+==================
+dwarf, pdb, def, lib
+
+load symbols from .lib or .def (find signatures)
+  .def -> .idt
+  .lib -> ar2idt
+
 UNDER DEVELOPMENT
 =================
 * r2-swig : Distribute generated .i files and cxx files.. so build is faster

@@ -1537,7 +1537,7 @@ static int cmd_cmp(void *data, const char *input) {
 		}
 		core2->io->va = core->io->va;
 		core2->anal->split = core->anal->split;
-		if (!r_core_file_open (core2, file2, 0)) {
+		if (!r_core_file_open (core2, file2, 0, 0LL)) {
 			eprintf ("Cannot open diff file '%s'\n", file2);
 			r_core_free (core2);
 			return R_FALSE;
@@ -3158,20 +3158,18 @@ static int cmd_open(void *data, const char *input) {
 	case ' ':
 		ptr = strchr (input+1, ' ');
 		if (ptr) *ptr = '\0';
-		file = r_core_file_open (core, input+1, R_IO_READ);
+		addr = ptr?r_num_math (core->num, ptr+1):0LL;
+		file = r_core_file_open (core, input+1, R_IO_READ, addr);
 		if (file) {
-			if (ptr) {
-				addr = r_num_math (core->num, ptr+1);
-				size = r_io_size (core->io);
-				file->map = r_io_map_add (core->io, file->fd->fd, R_IO_READ, 0, addr, size);
-				eprintf ("Map '%s' in 0x%08"PFMT64x" with size 0x%"PFMT64x"\n",
-					input+1, addr, file->size);
-			}
+			//eprintf ("Map '%s' in 0x%08"PFMT64x" with size 0x%"PFMT64x"\n",
+			//	input+1, addr, file->size);
 		} else eprintf ("Cannot open file '%s'\n", input+1);
+		r_core_block_read (core, 0);
 		break;
 	case '-':
 		if (!r_core_file_close_fd (core, atoi (input+1)))
 			eprintf ("Unable to find filedescriptor %d\n", atoi (input+1));
+		r_core_block_read (core, 0);
 		break;
 	case '?':
 	default:

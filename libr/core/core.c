@@ -30,7 +30,6 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				core->block, core->blocksize);
 			break;
 		}
-		
 		/* return value */
 		switch (str[1]) {
 		case '{':
@@ -477,19 +476,25 @@ reaccept:
 				eprintf ("open (%d): ", cmd);
 				r_socket_read_block (c, &cmd, 1); // len
 				pipefd = -1;
+				ptr = malloc (cmd);
 				//XXX cmd is ut8..so <256 if (cmd<RMT_MAX) {
-					ptr = malloc(cmd);
-					if (ptr == NULL) {
-						eprintf ("Cannot malloc in rmt-open len = %d\n", cmd);
-					} else {
-						r_socket_read_block (c, ptr, cmd); //filename
-						ptr[cmd] = 0;
-						r_core_file_open (core, (const char *)ptr, R_IO_READ); // XXX: mode write?
+				if (ptr == NULL) {
+					eprintf ("Cannot malloc in rmt-open len = %d\n", cmd);
+				} else {
+					RCoreFile *file;
+					r_socket_read_block (c, ptr, cmd); //filename
+					ptr[cmd] = 0;
+					file = r_core_file_open (core, (const char *)ptr, R_IO_READ, 0); // XXX: write mode?
+					if (file) {
+						file->map = r_io_map_add (core->io, file->fd->fd, R_IO_READ, 0, 0, file->size);
 						pipefd = core->file->fd->fd;
-						eprintf("(flags: %hhd) len: %hhd filename: '%s'\n",
+						eprintf ("(flags: %hhd) len: %hhd filename: '%s'\n",
 							flg, cmd, ptr); //config.file);
+					} else {
+						pipefd = -1;
+						eprintf ("Cannot open file (%s)\n", ptr);
 					}
-				//}
+				}
 				buf[0] = RMT_OPEN | RMT_REPLY;
 				r_mem_copyendian (buf+1, (ut8 *)&pipefd, 4, !endian);
 				r_socket_write (c, buf, 5);

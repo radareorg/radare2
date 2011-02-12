@@ -35,8 +35,7 @@ R_API RBuffer *r_io_read_buf(struct r_io_t *io, ut64 addr, int len) {
 	RBuffer *b = R_NEW (RBuffer);
 	b->buf = malloc (len);
 	len = r_io_read_at (io, addr, b->buf, len);
-	if (len<0) len = 0;
-	b->length = len;
+	b->length = (len<0)?0:len;
 	return b;
 }
 
@@ -144,14 +143,14 @@ R_API int r_io_set_fdn(RIO *io, int fd) {
 	return R_FALSE;
 }
 
-R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len) {
+R_API int r_io_read(RIO *io, ut8 *buf, int len) {
+	ut64 off;
 	int ret;
 	if (io==NULL || io->fd == NULL)
 		return -1;
 	/* check section permissions */
 	if (io->enforce_rwx && !(r_io_section_get_rwx (io, io->off) & R_IO_READ))
 		return -1;
-
 #if 0
 	if (io->cached) {
 		ret = r_io_cache_read (io, io->off, buf, len);
@@ -166,14 +165,8 @@ R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len) {
 			return len;
 	}
 #endif
-	ret = r_io_map_read_at (io, io->off, buf, len);
-
-	// partial reads
-	if (ret != len) {
-		if (ret != -1) {
-			len -= ret;
-			buf += len;
-		}
+	off = io->off;
+	if (r_io_map_select (io, io->off)) {
 		if (io->plugin && io->plugin->read) {
 			if (io->plugin->read != NULL)
 				ret = io->plugin->read (io, io->fd, buf, len);
@@ -182,7 +175,8 @@ R_API int r_io_read(struct r_io_t *io, ut8 *buf, int len) {
 		if (ret>0 && ret<len)
 			memset (buf+ret, 0xff, len-ret);
 	}
-	r_io_cache_read (io, io->off, buf, len);
+	// this must be before?? r_io_cache_read (io, io->off, buf, len);
+	r_io_seek (io, off, R_IO_SEEK_SET);
 	return ret;
 }
 
@@ -256,7 +250,7 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len) {
 		buf = data;
 	}
 
-	if (!r_io_map_write_at (io, io->off, buf, len)) {
+	if (r_io_map_select (io, io->off)) {
 		if (io->plugin) {
 			if (io->plugin->write)
 				ret = io->plugin->write (io, io->fd, buf, len);
@@ -279,7 +273,7 @@ R_API int r_io_write_at(struct r_io_t *io, ut64 addr, const ut8 *buf, int len) {
 R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 	int posix_whence = SEEK_SET;
 	ut64 ret = -1;
-	switch(whence) {
+	switch (whence) {
 	case R_IO_SEEK_SET:
 		posix_whence = SEEK_SET;
 		ret=offset;
@@ -287,7 +281,7 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 	case R_IO_SEEK_CUR:
 //		offset += io->off;
 		posix_whence = SEEK_CUR;
-		ret=offset+io->off;
+		ret = offset+io->off;
 		break;
 	case R_IO_SEEK_END:
 		//offset = UT64_MAX; // XXX: depending on io bits?
