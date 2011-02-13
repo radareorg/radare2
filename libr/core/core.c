@@ -84,7 +84,9 @@ static const char *radare_argv[] = {
 	"q", 
 	"f", "fr", "f-", "f*", "fs", "fS", "fr", "f?",
 	"m", "m*", "ml", "m-", "my", "mg", "md", "mp", "m?",
+	"o", "o-",
 	"x",
+	".",
 	"r", "r+", "r-",
 	"b", "bf", "b?",
 	"/", "//", "/a", "/c", "/m", "/x", "/v",
@@ -118,6 +120,54 @@ static int autocomplete(RLine *line) {
 			tmp_argv[i] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
+		} else
+		if ((!memcmp (line->buffer.data, "o ", 2)) ||
+		     !memcmp (line->buffer.data, ". ", 2)) {
+			// XXX: SO MANY FUCKING MEMORY LEAKS
+			char *str, *p, *path;
+			RList *list;
+			int n, i = 0;
+			int sdelta = 2; //(line->buffer.data[1]==' ')?2:3;
+			if (!line->buffer.data[sdelta]) {
+				path = r_sys_getcwd ();
+			} else {
+				path = strdup (line->buffer.data+sdelta);
+			}
+			p = r_str_lchr (path, '/');
+			if (p) {
+				if (p==path) {
+					path = "/"; // path[1]=0;
+				} else *p = 0;
+				p++;
+			}
+			if (p && !*p)
+				p = "";
+			n = strlen (p);
+#if 0
+printf ("DIR(%s)\n", path);
+printf ("FILE(%s)\n", p);
+printf ("FILEN %d\n", n);
+#endif
+ 			list = r_sys_dir (path);
+			if (list) {
+				char buf[4096];
+				r_list_foreach (list, iter, str) {
+					if (*str == '.')
+						continue;
+					if (!*p || !memcmp (str, p, n)) {
+						snprintf (buf, sizeof (buf), "%s%s%s",
+							path, strlen(path)>1?"/":"", str);
+						tmp_argv[i++] = strdup (buf);
+						if (i==TMP_ARGV_SZ)
+							break;
+					}
+				}
+				// XXX LEAK r_list_destroy (list);
+			} else eprintf ("\nInvalid directory\n");
+			tmp_argv[i] = NULL;
+			line->completion.argc = i;
+			line->completion.argv = tmp_argv;
+			//free (path);
 		} else
 		if ((!memcmp (line->buffer.data, "s ", 2)) ||
 		    (!memcmp (line->buffer.data, "b ", 2)) ||

@@ -28,6 +28,23 @@ R_API ut64 r_sys_now(void) {
 	return ret;
 }
 
+R_API RList *r_sys_dir(const char *path) {
+	DIR *dir = opendir (path);
+	struct dirent *entry;
+	if (dir) {
+		RList *list = r_list_new ();
+		if (list) {
+			list->free = free;
+			while ((entry = readdir (dir))) {
+				r_list_append (list, strdup (entry->d_name));
+			}
+			closedir (dir);
+			return list;
+		}
+	}
+	return NULL;
+}
+
 R_API char *r_sys_cmd_strf(const char *fmt, ...) {
 	char *ret, cmd[4096];
 	va_list ap;

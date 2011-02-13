@@ -290,6 +290,7 @@ R_API boolt r_file_exist(const char *str);
 R_API char *r_file_slurp_line(const char *file, int line, int context);
 
 R_API ut64 r_sys_now();
+R_API RList *r_sys_dir(const char *path);
 R_API void r_sys_perror(const char *fun);
 #if __WINDOWS__
 #define r_sys_mkdir(x) (CreateDirectory(x,NULL)!=0)
