@@ -26,7 +26,7 @@ static int format_output (char mode, ut64 n) {
 		break;
 	case 'B':
 		if (n) {
-			str = malloc (sizeof (ut64));
+			str = malloc (64);
 			r_num_to_bits (str, n);
 			printf ("%sb\n", str);
 			free (str);
