@@ -1647,6 +1647,24 @@ static int cmd_print(void *data, const char *input) {
 					free (block);
 				}
 			} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
+		} if (l<0) {
+			RList *bwdhits;
+			RListIter *iter;
+			RCoreAsmHit *hit;
+			ut8 *block = malloc (core->blocksize);
+			if (block) {
+				l = -l;
+				bwdhits = r_core_asm_bwdisassemble (core, core->offset, l, core->blocksize);
+				if (bwdhits) {
+					r_list_foreach (bwdhits, iter, hit) {
+						r_core_read_at (core, hit->addr, block, core->blocksize);
+						r_print_disasm (core->print, core, hit->addr, block, core->blocksize, l);
+						r_cons_printf ("------\n");
+					}
+					r_list_free (bwdhits);
+				}
+				free (block);
+			}
 		} else r_print_disasm (core->print, core, core->offset, core->block, len, l);
 		break;
 	case 's':

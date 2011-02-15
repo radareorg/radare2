@@ -880,11 +880,18 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				cursor += cols;
 			}
 		} else {
-			if (printidx == 1)
-				cols = core->inc;
-			if (core->offset >= cols)
-				r_core_seek (core, core->offset-cols, 1);
-			else r_core_seek (core, 0, 1);
+			ut64 addr = core->offset - 8;
+			if (printidx == 1) {
+				RList *bwdhits;
+				RCoreAsmHit *hit;
+				bwdhits = r_core_asm_bwdisassemble (core, core->offset, 1, core->blocksize);
+				if (bwdhits) {
+					if ((hit = r_list_get_n (bwdhits, 0)) != NULL)
+						addr = hit->addr;
+					r_list_free (bwdhits);
+				}
+			}
+			r_core_seek (core, addr, 1);
 		}
 		break;
 	case 'K':
