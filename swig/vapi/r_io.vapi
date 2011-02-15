@@ -110,8 +110,6 @@ namespace Radare {
 		public Map map_resolve(int fd);
 		public bool map_add(int fd, int flags, uint64 delta, uint64 addr, uint64 size);
 		public bool map_del(int fd);
-		public int map_read_at(uint64 addr, uint8 *buf, uint64 len);
-		public int map_write_at(uint64 addr, uint8 *buf, uint64 len);
 
 		/* sections */
 		[Compact]
