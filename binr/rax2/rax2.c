@@ -11,6 +11,7 @@ static int use_stdin ();
 
 static int format_output (char mode, ut64 n) {
 	char *str = (char*) &n;
+	char strbits[65];
 
 	if (flags & 2)
 		r_mem_copyendian ((ut8*) str, (ut8*) str, 4, 0);
@@ -26,10 +27,8 @@ static int format_output (char mode, ut64 n) {
 		break;
 	case 'B':
 		if (n) {
-			str = malloc (64);
-			r_num_to_bits (str, n);
-			printf ("%sb\n", str);
-			free (str);
+			r_num_to_bits (strbits, n);
+			printf ("%sb\n", strbits);
 		} else printf ("0b\n");
 		break;
 	case 'O':
