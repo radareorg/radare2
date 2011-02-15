@@ -62,6 +62,12 @@ typedef struct r_core_file_t {
 	RBinObj *obj;
 } RCoreFile;
 
+#define R_CORE_ASMSTEPS 128
+typedef struct r_core_asmsteps_t {
+	ut64 offset;
+	int cols;
+} RCoreAsmsteps;
+
 typedef struct r_core_t {
 	ut64 offset;
 	ut32 blocksize;
@@ -101,6 +107,8 @@ typedef struct r_core_t {
 	ut64 inc;
 	int rtr_n;
 	RCoreRtrHost rtr_host[RTR_MAX_HOSTS];
+	int curasmstep;
+	RCoreAsmsteps asmsteps[R_CORE_ASMSTEPS];
 } RCore;
 
 typedef int (*RCoreSearchCallback)(RCore *core, ut64 from, ut8 *buf, int len);

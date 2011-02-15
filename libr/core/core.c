@@ -272,6 +272,7 @@ R_API int r_core_init(RCore *core) {
 	//core->num->callback = &num_callback;
 	//core->num->userptr = core;
 	core->cons = r_cons_singleton ();
+	core->curasmstep = 0;
 
 	/* initialize libraries */
 	if (singleton) {

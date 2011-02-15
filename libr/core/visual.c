@@ -837,7 +837,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'j':
 		if (curset) {
-			if (printidx == 1)
+			if (printidx == 1 || printidx == 2)
 				cols = r_asm_disassemble (core->assembler, &aop, core->block, 32);
 			cursor += cols;
 			ocursor = -1;
@@ -849,8 +849,14 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				}
 			}
 		} else {
-			if (printidx == 1)
+			if (printidx == 1 || printidx == 2) {
 				cols = core->inc;
+				core->asmsteps[core->curasmstep].offset = core->offset+cols;
+				core->asmsteps[core->curasmstep].cols = cols;
+				if (core->curasmstep < R_CORE_ASMSTEPS-1)
+					core->curasmstep++;
+				else core->curasmstep = 0;
+			}
 			r_core_seek (core, core->offset+cols, 1);
 		}
 		break;
@@ -870,7 +876,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'k':
 		if (curset) {
-			if (printidx == 1)
+			if (printidx == 1 || printidx == 2)
 				cols = r_asm_disassemble (core->assembler, &aop, core->block, 32);
 			cursor -= cols;
 			ocursor = -1;
@@ -880,18 +886,16 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				cursor += cols;
 			}
 		} else {
-			ut64 addr = core->offset - 8;
-			if (printidx == 1) {
-				RList *bwdhits;
-				RCoreAsmHit *hit;
-				bwdhits = r_core_asm_bwdisassemble (core, core->offset, 1, core->blocksize);
-				if (bwdhits) {
-					if ((hit = r_list_get_n (bwdhits, 0)) != NULL)
-						addr = hit->addr;
-					r_list_free (bwdhits);
-				}
+			if (printidx == 1 || printidx == 2) {
+				int i;
+				cols = core->inc;
+				for (i = 0; i < R_CORE_ASMSTEPS; i++)
+					if (core->offset == core->asmsteps[i].offset)
+						cols = core->asmsteps[i].cols;
 			}
-			r_core_seek (core, addr, 1);
+			if (core->offset >= cols)
+				r_core_seek (core, core->offset-cols, 1);
+			else r_core_seek (core, 0, 1);
 		}
 		break;
 	case 'K':
