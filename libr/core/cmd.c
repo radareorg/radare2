@@ -12,6 +12,49 @@
 #include <sys/types.h>
 #include <stdarg.h>
 
+static int printzoomcallback(void *user, char *mode, ut64 addr, ut8 *bufz, ut64 size) {
+	RCore *core = (RCore *) user;
+	int j, ret = 0;
+	RListIter *iter;
+	RFlagItem *flag;
+
+	switch (mode[0]) {
+		case 'p':
+			for (j=0; j<size; j++)
+				if (IS_PRINTABLE(bufz[j]))
+					ret++;
+			break;
+		case 'f':
+			r_list_foreach (core->flags->flags, iter, flag)
+				if (flag->offset <= addr  && addr < flag->offset+flag->size)
+					ret++;
+			break;
+		case 's':
+			j = r_flag_space_get (core->flags, "strings");
+			r_list_foreach (core->flags->flags, iter, flag) {
+				if (flag->space == j && ((addr <= flag->offset
+								&& flag->offset < addr+size) ||
+							(addr <= flag->offset+flag->size  &&
+							 flag->offset+flag->size < addr+size)))
+					ret++;
+			}
+			break;
+		case 'F': // 0xFF
+			for (j=0; j<size; j++)
+				if (bufz[j] == 0xff)
+					ret++;
+			break;
+		case 'e': // entropy
+			ret = (unsigned char) r_hash_entropy (bufz, size);
+			break;
+		case 'h': //head
+		default:
+			ret = bufz[0];
+
+	}
+	return ret;
+}
+
 static int checkbpcallback(RCore *core) {
 	ut64 pc = r_debug_reg_get (core->dbg, "pc");
 	RBreakpointItem *bpi = r_bp_get (core->dbg->bp, pc);
@@ -40,6 +83,8 @@ static void printoffset(ut64 off, int show_color) {
 		r_cons_printf (Color_GREEN"0x%08"PFMT64x"  "Color_RESET, off);
 	else r_cons_printf ("0x%08"PFMT64x"  ", off);
 }
+
+
 
 /* TODO: move to print/disasm.c */
 static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
@@ -1738,6 +1783,14 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		}
 		break;
+	case 'Z':
+		{
+			char *mode = r_config_get (core->config, "zoom.byte");
+			ut64 from = r_config_get_i (core->config, "zoom.from");
+			ut64 to = r_config_get_i (core->config, "zoom.to");
+			r_print_zoom (core->print, core, printzoomcallback, from, to, mode, core->blocksize);
+		}
+		break;
 	default:
 		r_cons_printf (
 		"Usage: p[fmt] [len]\n"
@@ -1753,7 +1806,8 @@ static int cmd_print(void *data, const char *input) {
 		" pD [len]    disassemble N bytes\n"
 		" pr [len]    print N raw bytes\n"
 		" pu [len]    print N url encoded bytes\n"
-		" pU [len]    print N wide url encoded bytes\n");
+		" pU [len]    print N wide url encoded bytes\n",
+		" pZ [len]    print zoom view\n");
 		break;
 	}
 	if (tbs != core->blocksize)

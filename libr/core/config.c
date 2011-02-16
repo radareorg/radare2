@@ -358,9 +358,9 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "dbg.swstep", "false", &config_swstep_callback);
 	r_config_set_cb (cfg, "dbg.trace", "true", &config_trace_callback);
 	r_config_set_cb (cfg, "dbg.trace.tag", "0xff", &config_tracetag_callback);
-	r_config_set (cfg, "cmd.hit", ""); 
-	r_config_set (cfg, "cmd.open", ""); 
-	r_config_set (cfg, "cmd.prompt", ""); 
+	r_config_set (cfg, "cmd.hit", "");
+	r_config_set (cfg, "cmd.open", "");
+	r_config_set (cfg, "cmd.prompt", "");
 	r_config_set (cfg, "cmd.vprompt", "");
 	r_config_set (cfg, "cmd.bp", "");
 	r_config_set_cb (cfg, "scr.prompt", "true", &config_scrprompt_callback);
@@ -388,6 +388,10 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "rap.loop", "true");
 	/* vm */
 	r_config_set_cb (cfg, "vm.arch", "x86", &config_vmarch_callback);
+	/* zoom */
+	r_config_set_i (cfg, "zoom.from", 0);
+	r_config_set_i (cfg, "zoom.to", 0);
+	r_config_set (cfg, "zoom.byte", "h");
 	/* TODO cmd */
 #if 0
 
@@ -582,10 +586,6 @@ R_API int r_core_config_init(RCore *core) {
 	config_set("gui.right", "gtk-hello");  // graphviz
 	config_set("gui.bottom", "gtk-hello");  // graphviz
 
-	node = config_set_i("zoom.from", 0);
-	node = config_set_i("zoom.to", config.size);
-	node = config_set("zoom.byte", "head");
-	node->callback = &config_zoombyte_callback;
 
 	node = config_set("scr.palette", cons_palette_default);
 	node->callback = &config_palette_callback;

@@ -9,7 +9,7 @@ R_API RPrint *r_print_new() {
 	if (p) {
 		strcpy (p->datefmt, "%d:%m:%Y %H:%M:%S %z");
 		p->user = NULL;
-		p->read_at = NULL;
+		r_io_bind_init (p->iob);
 		p->printf = printf;
 		p->interrupt = 0;
 		p->bigendian = 0;
@@ -284,6 +284,35 @@ R_API void r_print_progressbar(RPrint *pr, int pc) {
         for(tmp=cols-(cols*pc/100);tmp;tmp--) fprintf(stderr,"-");
         fprintf (stderr, "]\r");
         fflush (stderr);
+}
+
+R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, char *mode, int len) {
+	ut64 size;
+	ut8 *bufz, *bufz2;
+	int i, j = 0;
+
+	if (!mode) {
+		eprintf("Error: Invalid zoom mode");
+		return;
+	}
+
+	size = (to-from)/len;
+	if (size < 1)
+		size = 1;
+	bufz = (ut8 *) malloc (len);
+	bufz2 = (ut8 *) malloc (size);
+	memset (bufz, 0, len);
+
+	for (i=0; i<len; i++) {
+		p->iob.read_at (p->iob.io, from+j, bufz2, size);
+		bufz[i] = cb (user, mode, from+j, bufz2, size);
+		j += size;
+	}
+	p->flags &= ~R_PRINT_FLAGS_HEADER;
+	r_print_hexdump (p, from, bufz, len, 16, size);
+	p->flags |= R_PRINT_FLAGS_HEADER;
+	free (bufz);
+	free (bufz2);
 }
 
 #if 0

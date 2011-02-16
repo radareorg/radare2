@@ -13,6 +13,7 @@ static int curset = 0, cursor = 0, ocursor=-1;
 static int color = 1;
 static int debug = 1;
 static int flags = R_PRINT_FLAGS_ADDRMOD;
+static int zoom = 0;
 
 static int marks_init = 0;
 static ut64 marks[UT8_MAX+1];
@@ -1038,6 +1039,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'x':
 		r_core_cmdf (core, "./a 0x%08llx @ entry0", core->offset);
 		break;
+	case 'z':
+		zoom = !zoom;
+		break;
 	case '?':
 		r_cons_clear00 ();
 		r_cons_printf (
@@ -1059,6 +1063,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" :cmd    - run radare command\n"
 		" ;[-]cmt - add/remove comment\n"
 		" .       - seek to program counter\n"
+		" z       - toggle zoom mode\n"
 		" q       - back to radare shell\n");
 		r_cons_flush ();
 		r_cons_any_key ();
@@ -1108,7 +1113,10 @@ static void r_core_visual_refresh (RCore *core) {
 	r_cons_clear00 ();
 	r_print_set_cursor (core->print, curset, ocursor, cursor);
 	r_core_visual_prompt (core, color);
-	r_core_cmd (core, printfmt[R_ABS (printidx%NPF)], 0);
+	if (zoom)
+		r_core_cmd (core, "pZ", 0);
+	else
+		r_core_cmd (core, printfmt[R_ABS (printidx%NPF)], 0);
 	r_cons_visual_flush ();
 }
 

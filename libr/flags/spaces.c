@@ -2,7 +2,18 @@
 
 #include <r_flags.h>
 
-R_API const char *r_flag_space_get(struct r_flag_t *f, int idx) {
+R_API int r_flag_space_get(struct r_flag_t *f, char *name) {
+	int i;
+
+	for (i=0;i<R_FLAG_SPACES_MAX;i++) {
+		if (f->spaces[i] != NULL)
+			if (!strcmp (name, f->spaces[i]))
+				return i;
+	}
+	return -1;
+}
+
+R_API const char *r_flag_space_get_i (struct r_flag_t *f, int idx) {
 	if (idx==-1 || idx>255 || f->spaces[idx]=='\0')
 		return "";
 	return f->spaces[idx];

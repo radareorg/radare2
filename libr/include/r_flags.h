@@ -51,8 +51,8 @@ R_API int r_flag_name_filter(char *name);
 R_API void r_flag_item_rename(RFlagItem *item, const char *name);
 
 /* spaces */
-R_API const char *r_flag_space_get(RFlag *f, int idx);
-//R_API RFlagItem *r_flag_space_get_i(RFlag *f, ut64 off);
+R_API int r_flag_space_get(RFlag *f, char *name);
+R_API const char *r_flag_space_get_i(RFlag *f, int idx);
 R_API void r_flag_space_set(RFlag *f, const char *name);
 R_API void r_flag_space_list(RFlag *f);
 #endif

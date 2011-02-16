@@ -163,10 +163,10 @@ R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int le
 				break;
 			case 'B':
 				memset(buffer, '\0', 255);
-				if (!p->read_at) {
+				if (!p->iob.read_at) {
 					printf ("(cannot read memory)\n");
 					break;
-				} else p->read_at ((ut64)addr, buffer, 248, p->user);
+				} else p->iob.read_at (p->iob.io, (ut64)addr, buffer, 248);
 				p->printf ("0x%08x = ", seek+i);
 				for (j=0;j<10;j++) p->printf ("%02x ", buf[j]);
 				p->printf(" ... (");
@@ -223,8 +223,8 @@ R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int le
 			case 's':
 				p->printf ("0x%08x = ", seek+i);
 				memset (buffer, '\0', 255);
-				if (p->read_at)
-					p->read_at ((ut64)addr, buffer, 248, p->user);
+				if (p->iob.read_at)
+					p->iob.read_at (p->iob.io, (ut64)addr, buffer, 248);
 				else {
 					printf ("(cannot read memory)\n");
 					break;
