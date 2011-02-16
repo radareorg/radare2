@@ -7,10 +7,10 @@ LANG_CXX!
 CHKPRG VALASWIG valaswig
 CHKPRG SWIG swig
 
-ARG_WITHOUT USE_VALASWIG valaswig Compile without using valaswig ;
+ARG_ENABLE DEVEL_MODE devel Enable development mode (use valaswig and swig) ;
 ARG_WITH USERCC=gcc cc Define C compiler to use (gcc by default) ;
 ARG_WITH USERCXX=g++ cxx Define C++ compiler to use (g++ by default) ;
-ARG_WITH USEROSTYPE=auto ostype Choose OS type ( gnulinux windows darwin ) ;
+ARG_WITH USEROSTYPE=auto ostype Choose OS type (gnulinux windows darwin) ;
 IFEQ USEROSTYPE auto ; {
 	IFEQ HOST_OS linux ; {
 		USEROSTYPE = gnulinux ;
@@ -33,4 +33,4 @@ PKGCFG! FOO FOO libr
 
 SUBDIRS ./config.mk ;
 
-REPORT PREFIX HAVE_SWIG HAVE_VALASWIG ;
+REPORT PREFIX HAVE_SWIG HAVE_VALASWIG DEVEL_MODE ;

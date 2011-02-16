@@ -19,7 +19,7 @@ namespace Radare {
 		// TODO much moar
 		public int @add (string name);
 		public int rm (string name);
-		public int list ();
+		public void list ();
 		public int call (string name);
 		public int @break (string val);
 	}

@@ -19,9 +19,9 @@ w32:
 	export CC CXX CFLAGS LDFLAGS ; \
 	${MAKE}
 
-ifeq ($(HAVE_VALASWIG),1)
+ifeq ($(DEVEL_MODE),1)
 %.${SOEXT}:
-	@-test ../../libr/vapi/`echo $@|sed -e s,.${SOEXT},.vapi,` -nt ${LIBS_PFX}$@ ; \
+	@-test ../vapi/`echo $@|sed -e s,.${SOEXT},.vapi,` -nt ${LIBS_PFX}$@ ; \
 	if [ ! $$? = 0 ]; then \
 	  if [ ! -e ${LIBS_PFX}$@ ]; then \
             true ; \
@@ -30,11 +30,20 @@ ifeq ($(HAVE_VALASWIG),1)
           fi ; \
 	fi ; \
 	[ $$? = 0 ] && \
-	  (cd .. && sh RELEASE=$(RELEASE) ; \
-		do-swig.sh ${LANG} `echo $@ | sed -e s,.${SOEXT},,`)
+	  (cd .. && RELEASE=$(RELEASE) \
+		sh do-swig.sh ${LANG} `echo $@ | sed -e s,.${SOEXT},,`)
 else
 %.${SOEXT}:
-	@echo " - ${LANG} $@"
+	@-test ../vapi/`echo $@|sed -e s,.${SOEXT},.vapi,` -nt ${LIBS_PFX}$@ ; \
+	if [ $$? = 0 ]; then \
+	echo " - ${LANG} $@" ; \
+	LIB=`echo $@ | sed -e s,.${SOEXT},,` ; \
+	${CXX} -fPIC -shared $${LIB}_wrap.cxx \
+		`python-config --cflags --libs 2>/dev/null` \
+		`python2-config --cflags --libs 2>/dev/null` \
+		`pkg-config --cflags --libs $${LIB}` \
+		${CFLAGS} ${LDFLAGS} -o ${LIBS_PFX}$@ ; \
+	fi
 endif
 
 test:

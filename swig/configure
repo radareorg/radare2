@@ -17,7 +17,7 @@ control_c() {
   exit 1
 }
 trap control_c 2
-USE_VALASWIG=1
+DEVEL_MODE=0
 [ -z "${USERCC}" ] && USERCC="gcc"
 [ -z "${USERCXX}" ] && USERCXX="g++"
 [ -z "${USEROSTYPE}" ] && USEROSTYPE="auto"
@@ -140,10 +140,10 @@ System types:
 EOF2
 
 printf "\nOptional Features:
-  --without-valaswig     Compile without using valaswig 
+  --enable-devel         Enable development mode (use valaswig and swig) 
   --with-cc              Define C compiler to use (gcc by default)  (USERCC=gcc)
   --with-cxx             Define C++ compiler to use (g++ by default)  (USERCXX=g++)
-  --with-ostype          Choose OS type ( gnulinux windows darwin )  (USEROSTYPE=auto)\n"
+  --with-ostype          Choose OS type (gnulinux windows darwin)  (USEROSTYPE=auto)\n"
 printf "\nSome influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
@@ -190,7 +190,7 @@ echo "PKGNAME:   radare2-swig"
 echo "VERSION:   0.6.9"
 echo "LANGS:     c c++"
 echo "PKG-CONFIG:  libr"
-echo "FLAGS:     --without-valaswig --with-cc=gcc --with-cxx=g++ --with-ostype=auto"
+echo "FLAGS:     --enable-devel --with-cc=gcc --with-cxx=g++ --with-ostype=auto"
 	exit 0
 	;;
 "--cache-file") 
@@ -232,7 +232,7 @@ echo "FLAGS:     --without-valaswig --with-cc=gcc --with-cxx=g++ --with-ostype=a
 "--mandir")
 	MANDIR="$value"; ;;
 
-"--without-valaswig") USE_VALASWIG="0"; ;;
+"--enable-devel") DEVEL_MODE="1"; ;;
 --with-cc) if [ -z "${value}" ]; then USERCC="gcc"; else USERCC="${value}" ; fi ;;
 --with-cxx) if [ -z "${value}" ]; then USERCXX="g++"; else USERCXX="${value}" ; fi ;;
 --with-ostype) if [ -z "${value}" ]; then USEROSTYPE="auto"; else USEROSTYPE="${value}" ; fi ;;
@@ -253,7 +253,7 @@ parse_options $1
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C CXX CXXFLAGS HAVE_LANG_CXX HAVE_VALASWIG VALASWIG HAVE_SWIG SWIG USE_VALASWIG USERCC USERCXX USEROSTYPE FOO HAVE_PKGCFG_LIBR"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C CXX CXXFLAGS HAVE_LANG_CXX HAVE_VALASWIG VALASWIG HAVE_SWIG SWIG DEVEL_MODE USERCC USERCXX USEROSTYPE FOO HAVE_PKGCFG_LIBR"
 
 create_environ
 
@@ -414,7 +414,7 @@ done
 do_remove
 echo
 echo "Final report:"
-for A in  PREFIX HAVE_SWIG HAVE_VALASWIG ; do # REPORT
+for A in  PREFIX HAVE_SWIG HAVE_VALASWIG DEVEL_MODE ; do # REPORT
 eval VAL="\$${A}"
 [ -z "${VAL}" ] && VAL="(null)"
 echo " - ${A} = ${VAL}"

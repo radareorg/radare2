@@ -1,26 +1,26 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<@nopcode.org> */
 
 namespace Radare {
 #if 0
-[Compact]
-[CCode (cheader_filename="r_util.h", cprefix="r_hex_")]
-public static class Radare.RHex {
-	//public static int str2bin (string input, uint8 *buf);
-	//public static int hex_str2bin (string input, uint8 *buf);
-	//public static int hex_bin2str (uint8 *buf, int len, out string str);
-	//public static string hex_bin2strdup (uint8 *buf, int len);
-	/* mem */
-	//public static uint8 *mem_mem (uint8 *a, int al, uint8 *b, int bl);
-	//public static void mem_copyendian (uint8 *dest, uint8 *orig, int size, int endian);
-	//public static void mem_copyloop (uint8 *dest, uint8 *orig, int dsize, int osize);
-	//public static void mem_cmp_mask (uint8 *dest, uint8 *orig, uint8 *mask, int len);
-	/* num */
-	//public static uint64 num_get(void *num, string str); // XXX void *
-	//public static int offsetof(void *type, void *member);
-}
+	[Compact]
+	[CCode (cheader_filename="r_util.h", cprefix="r_hex_")]
+	public static class Radare.RHex {
+		//public static int str2bin (string input, uint8 *buf);
+		//public static int hex_str2bin (string input, uint8 *buf);
+		//public static int hex_bin2str (uint8 *buf, int len, out string str);
+		//public static string hex_bin2strdup (uint8 *buf, int len);
+		/* mem */
+		//public static uint8 *mem_mem (uint8 *a, int al, uint8 *b, int bl);
+		//public static void mem_copyendian (uint8 *dest, uint8 *orig, int size, int endian);
+		//public static void mem_copyloop (uint8 *dest, uint8 *orig, int dsize, int osize);
+		//public static void mem_cmp_mask (uint8 *dest, uint8 *orig, uint8 *mask, int len);
+		/* num */
+		//public static uint64 num_get(void *num, string str); // XXX void *
+		//public static int offsetof(void *type, void *member);
+	}
 #endif
 
-	[CCode (cheader_filename="r_util.h", cprefix="r_str_")]
+	[CCode (cheader_filename="r_util.h", cprefix="r_str_", unref_function="")]
 	public static class RStr {
 		public static unowned string rwx_i (int rwx);
 	}

@@ -2,19 +2,20 @@
 LANGS=python perl ruby lua go java vapi
 W32PY="${HOME}/.wine/drive_c/Python27/"
 
+ifeq ($(DEVEL_MODE),1)
 all: supported.langs ruby perl python lua go
-
-check:
-	rm -f supported.langs
-	${MAKE} supported.langs
-
-ifeq ($(HAVE_VALASWIG),1)
 supported.langs:
 	CC=${CC} CXX=${CXX} sh check-langs.sh
 else
+# compile more
+all: supported.langs python
 supported.langs:
 	CC=${CC} CXX=${CXX} sh check-langs.sh force-all
 endif
+
+chect:
+	rm -f supported.langs
+	${MAKE} supported.langs
 
 check-w32:
 	if [ ! -d "${W32PY}/libs" ]; then \
@@ -37,10 +38,11 @@ w32dist:
 
 dist:
 	PKG=radare2-swig-${VERSION} ; \
-	FILES=`cd .. && hg st -mac . | grep swig | sed -e "s,swig/,$${PKG}/," | cut -c 3-` ; \
+	FILES=`cd .. ; hg st -mac . | grep swig | sed -e "s,swig/,$${PKG}/," | cut -c 3-` ; \
+	CXXFILES=`cd .. ; find swig | grep -e cxx$ -e py$ | sed -e "s,swig/,$${PKG}/,"` ; \
 	cd .. && mv swig $${PKG} && \
 	echo $$FILES ; \
-	tar czvf $${PKG}.tar.gz $${FILES} ; \
+	tar czvf $${PKG}.tar.gz $${FILES} $${CXXFILES} ; \
 	mv $${PKG} swig
 
 # TODO: valadoc

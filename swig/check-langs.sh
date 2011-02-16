@@ -6,7 +6,14 @@ SUP_LANGS=""
 LANGS="python perl ruby lua go java"
 
 if [ "$1" = "force-all" ]; then
-  echo ${LANGS} >> supported.langs
+  :> supported.langs
+  for a in python-config python2-config ; do
+    $a --help >/dev/null 2>&1
+    if [ $? = 0 ]; then
+      echo "check-langs.sh: Detected python-dev"
+      echo python >> supported.langs
+    fi
+  done
   exit 0
 fi
 
