@@ -56,7 +56,7 @@ static int do_help(int line) {
 }
 
 int main(int argc, char **argv) {
-	char *algo = "md5,sha1"; /* default hashing algorithm */
+	const char *algo = "md5,sha1"; /* default hashing algorithm */
 	const ut8 *buf = NULL;
 	int c, buf_len = 0;
 	int bsize = 0;

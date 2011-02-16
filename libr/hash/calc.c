@@ -46,6 +46,10 @@ R_API int r_hash_calculate(struct r_hash_t *ctx, int algobit, const ut8 *buf, ut
 		ctx->digest[0] = r_hash_parity(buf, len);
 		return 1;
 	}
+	if (algobit & R_HASH_ENTROPY) {
+		ctx->digest[0] = (ut8)r_hash_entropy (buf, len);
+		return 1;
+	}
 	if (algobit & R_HASH_XOR) {
 		ctx->digest[0] = r_hash_xor(buf, len);
 		return 1;

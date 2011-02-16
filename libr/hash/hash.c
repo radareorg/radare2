@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2010 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2007-2011 pancake<@nopcode.org> */
 
 #include "r_hash.h"
 
@@ -6,11 +6,9 @@
 R_API int r_hash_pcprint(const ut8 *buffer, ut64 len) {
 	const ut8 *end = buffer + len;
 	int n;
-
 	for(n=0; buffer<end; buffer = buffer + 1)
 		if (IS_PRINTABLE(buffer[0]))
 			n++;
-
 	return ((100*n)/len);
 }
 
@@ -30,7 +28,7 @@ R_API int r_hash_parity(const ut8 *buf, ut64 len) {
 R_API ut16 r_hash_xorpair(const ut8 *a, ut64 len) {
 	ut16 *b = (ut16 *)a;
 	ut16 result = 0;
-	for(len>>=1;len--;b=b+1)
+	for (len>>=1;len--;b=b+1)
 		result^=b[0];
 	return result;
 }
@@ -51,9 +49,8 @@ R_API ut8 r_hash_mod255(const ut8 *b, ut64 len) {
 }
 
 R_API ut8 r_hash_deviation(const ut8 *b, ut64 len) {
-	int i, c = 0;
-	len--;
-	for (i = 0; i < len; i++)
+	int i, c;
+	for (c = i = 0, --len; i < len; i++)
 		c += R_ABS (b[i+1] - b[i]);
 	return c;
 }
@@ -67,6 +64,7 @@ R_API const char *r_hash_name(int bit) {
 	if (bit & R_HASH_SHA384) return "sha384";
 	if (bit & R_HASH_SHA512) return "sha512";
 	if (bit & R_HASH_PARITY) return "parity";
+	if (bit & R_HASH_ENTROPY) return "entropy";
 	if (bit & R_HASH_XOR) return "xor";
 	if (bit & R_HASH_XORPAIR) return "xorpair";
 	if (bit & R_HASH_MOD255) return "mod255";
