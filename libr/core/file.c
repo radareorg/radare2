@@ -284,14 +284,16 @@ R_API RCoreFile *r_core_file_get_fd(RCore *core, int fd) {
 	return NULL;
 }
 
-R_API int r_core_file_list(struct r_core_t *core) {
+R_API int r_core_file_list(RCore *core) {
 	int count = 0;
 	RCoreFile *f;
 	RListIter *iter;
 	r_list_foreach (core->files, iter, f) {
 		if (f->map)
-			eprintf ("%d %s 0x%"PFMT64x"\n", f->fd->fd, f->uri, f->map->from);
-		else eprintf ("%d %s\n", f->fd->fd, f->uri);
+			eprintf ("%c %d %s 0x%"PFMT64x"\n",
+				core->io->raised == f->fd->fd?'*':' ',
+				f->fd->fd, f->uri, f->map->from);
+		else eprintf ("  %d %s\n", f->fd->fd, f->uri);
 		count++;
 	}
 	return count;

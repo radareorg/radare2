@@ -8,8 +8,13 @@ check:
 	rm -f supported.langs
 	${MAKE} supported.langs
 
+ifeq ($(HAVE_VALASWIG),1)
 supported.langs:
 	CC=${CC} CXX=${CXX} sh check-langs.sh
+else
+supported.langs:
+	CC=${CC} CXX=${CXX} sh check-langs.sh force-all
+endif
 
 check-w32:
 	if [ ! -d "${W32PY}/libs" ]; then \

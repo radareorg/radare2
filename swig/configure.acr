@@ -4,9 +4,10 @@ CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
 LANG_CXX!
-CHKPRG! VALASWIG valaswig
-CHKPRG! SWIG swig
+CHKPRG VALASWIG valaswig
+CHKPRG SWIG swig
 
+ARG_WITHOUT USE_VALASWIG valaswig Compile without using valaswig ;
 ARG_WITH USERCC=gcc cc Define C compiler to use (gcc by default) ;
 ARG_WITH USERCXX=g++ cxx Define C++ compiler to use (g++ by default) ;
 ARG_WITH USEROSTYPE=auto ostype Choose OS type ( gnulinux windows darwin ) ;
@@ -32,4 +33,4 @@ PKGCFG! FOO FOO libr
 
 SUBDIRS ./config.mk ;
 
-REPORT PREFIX HAVE_VALASWIG ;
+REPORT PREFIX HAVE_SWIG HAVE_VALASWIG ;

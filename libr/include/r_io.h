@@ -84,6 +84,7 @@ typedef struct r_io_t {
 	int cached_read;
 	ut64 off;
 	int debug;
+	int raised;
 	int va;
 	char *redirect;
 	/* write mask */
@@ -171,6 +172,7 @@ typedef struct r_io_cache_t {
 R_API RIO *r_io_new();
 R_API RIO *r_io_free(RIO *io);
 R_API int r_io_plugin_init(RIO *io);
+R_API void r_io_raise (RIO *io, int fd);
 R_API int r_io_plugin_open(RIO *io, int fd, struct r_io_plugin_t *plugin);
 R_API int r_io_plugin_close(RIO *io, int fd, struct r_io_plugin_t *plugin);
 R_API int r_io_plugin_generate(RIO *io);

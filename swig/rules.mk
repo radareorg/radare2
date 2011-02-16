@@ -19,6 +19,7 @@ w32:
 	export CC CXX CFLAGS LDFLAGS ; \
 	${MAKE}
 
+ifeq ($(HAVE_VALASWIG),1)
 %.${SOEXT}:
 	@-test ../../libr/vapi/`echo $@|sed -e s,.${SOEXT},.vapi,` -nt ${LIBS_PFX}$@ ; \
 	if [ ! $$? = 0 ]; then \
@@ -31,6 +32,10 @@ w32:
 	[ $$? = 0 ] && \
 	  (cd .. && sh RELEASE=$(RELEASE) ; \
 		do-swig.sh ${LANG} `echo $@ | sed -e s,.${SOEXT},,`)
+else
+%.${SOEXT}:
+	@echo " - ${LANG} $@"
+endif
 
 test:
 	-${LANG} test-r_bp.${LANG_EXT}
@@ -41,3 +46,4 @@ clean:
 	rm -f *.so r_* libr*
 
 .PHONY: all test clean
+

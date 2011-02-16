@@ -3192,6 +3192,7 @@ static int cmd_open(void *data, const char *input) {
 	RCoreFile *file;
 	ut64 addr;
 	char *ptr;
+	int num;
 
 	switch (*input) {
 	case '\0':
@@ -3199,13 +3200,20 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case ' ':
 		ptr = strchr (input+1, ' ');
-		if (ptr) *ptr = '\0';
-		addr = ptr?r_num_math (core->num, ptr+1):0LL;
-		file = r_core_file_open (core, input+1, R_IO_READ, addr);
-		if (file) {
-			//eprintf ("Map '%s' in 0x%08"PFMT64x" with size 0x%"PFMT64x"\n",
-			//	input+1, addr, file->size);
-		} else eprintf ("Cannot open file '%s'\n", input+1);
+		if (ptr) {
+			*ptr = '\0';
+			addr = r_num_math (core->num, ptr+1);
+		} else {
+			num = atoi (input+1);
+			addr = 0LL;
+		}
+		if (num<=0) {
+			file = r_core_file_open (core, input+1, R_IO_READ, addr);
+			if (file) {
+				//eprintf ("Map '%s' in 0x%08"PFMT64x" with size 0x%"PFMT64x"\n",
+				//	input+1, addr, file->size);
+			} else eprintf ("Cannot open file '%s'\n", input+1);
+		} else r_io_raise (core->io, num);
 		r_core_block_read (core, 0);
 		break;
 	case '-':
@@ -3219,6 +3227,7 @@ static int cmd_open(void *data, const char *input) {
 		" o                   ; list opened files\n"
 		" o /bin/ls           ; open /bin/ls file\n"
 		" o /bin/ls 0x8048000 ; map file\n"
+		" o 4                 ; priorize io on fd 4 (bring to front)\n"
 		" o-1                 ; close file index 1\n");
 		break;
 	}

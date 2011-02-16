@@ -25,6 +25,10 @@ R_API struct r_io_t *r_io_new() {
 	return io;
 }
 
+R_API void r_io_raise(RIO *io, int fd) {
+	io->raised = fd;
+}
+
 R_API int r_io_is_listener(RIO *io) {
 	if (io && io->plugin && io->plugin->listener)
 		return io->plugin->listener (io->fd);
