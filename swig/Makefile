@@ -60,20 +60,20 @@ vdoc_pkg:
 
 # TODO: unspaguetti this targets
 perl:
-	@-[ "`grep perl supported.langs`" ] && cd perl && make
+	@-[ "`grep perl supported.langs`" ] && cd perl && make ; true
 
 python:
-	@-[ "`grep python supported.langs`" ] && cd python && make
+	@-[ "`grep python supported.langs`" ] && cd python && make ; true
 
 ruby:
-	@-[ "`grep ruby supported.langs`" ] && cd ruby && make
+	@-[ "`grep ruby supported.langs`" ] && cd ruby && make ; true
 
 lua:
-	@-[ "`grep lua supported.langs`" ] && cd lua && make
+	@-[ "`grep lua supported.langs`" ] && cd lua && make ; true
 
 go:
 	@-[ -x "${GOBIN}/5g" -o -x "${GOBIN}/6g" -o -x "${GOBIN}/8g" ] && \
-	[ "`grep go supported.langs`" ] && cd go && make
+	[ "`grep go supported.langs`" ] && cd go && make ; true
 
 java:
 	@-[ "`grep java supported.langs`" ] && cd java && make

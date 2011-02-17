@@ -31,7 +31,7 @@ ifeq ($(DEVEL_MODE),1)
 	fi ; \
 	[ $$? = 0 ] && \
 	  (cd .. && RELEASE=$(RELEASE) \
-		sh do-swig.sh ${LANG} `echo $@ | sed -e s,.${SOEXT},,`)
+		sh do-swig.sh ${LANG} `echo $@ | sed -e s,.${SOEXT},,`) ; true
 else
 %.${SOEXT}:
 	@-test ../vapi/`echo $@|sed -e s,.${SOEXT},.vapi,` -nt ${LIBS_PFX}$@ ; \
@@ -43,7 +43,7 @@ else
 		`python2-config --cflags --libs 2>/dev/null` \
 		`pkg-config --cflags --libs $${LIB}` \
 		${CFLAGS} ${LDFLAGS} -o ${LIBS_PFX}$@ ; \
-	fi
+	fi ; true
 endif
 
 test:
