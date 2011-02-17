@@ -286,15 +286,10 @@ R_API void r_print_progressbar(RPrint *pr, int pc) {
         fflush (stderr);
 }
 
-R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, char *mode, int len) {
+R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int mode, int len) {
 	ut64 size;
 	ut8 *bufz, *bufz2;
 	int i, j = 0;
-
-	if (!mode) {
-		eprintf("Error: Invalid zoom mode");
-		return;
-	}
 
 	size = (to-from)/len;
 	if (size < 1)
