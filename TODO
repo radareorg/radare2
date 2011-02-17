@@ -3,12 +3,6 @@
   |    <  V  . |  . V  .   <   _/ .-' _/|  ()  |
   |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
-BINARY INFORMATION
-==================
-dwarf, pdb, def, lib
-- from file, from section, ...
-- load symbols from .lib or .def (find signatures)
-  .def -> .idt , .lib -> ar2idt
 
 UNDER DEVELOPMENT
 =================
@@ -147,6 +141,12 @@ nibble
 * Create radare2-testsuite project
   - tests for ired, rax2, radare2, rabin2 ...
 * Is RCore->block and blocksize a RBuf ? refactor!11
+BINARY INFORMATION
+==================
+dwarf, pdb, def, lib
+- from file, from section, ...
+- load symbols from .lib or .def (find signatures)
+  .def -> .idt , .lib -> ar2idt
 
 Things to improve in r2
 =======================
