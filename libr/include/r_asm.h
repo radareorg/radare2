@@ -41,6 +41,7 @@ enum {
 
 typedef struct r_asm_aop_t {
 	int  inst_len;
+	// But this is pretty slow..so maybe we should add some accessors
 	ut8  buf[R_ASM_BUFSIZE];
 	char buf_asm[R_ASM_BUFSIZE];
 	char buf_hex[R_ASM_BUFSIZE];
@@ -112,6 +113,10 @@ R_API RAsmCode *r_asm_code_new();
 R_API void* r_asm_code_free(struct r_asm_code_t *acode);
 R_API int r_asm_code_set_equ (RAsmCode *code, const char *key, const char *value);
 R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str);
+
+// accessors, to make bindings happy
+R_API char *r_asm_aop_get_hex(RAsmAop *aop);
+R_API char *r_asm_aop_get_asm(RAsmAop *aop);
 
 /* plugin pointers */
 extern RAsmPlugin r_asm_plugin_dummy;

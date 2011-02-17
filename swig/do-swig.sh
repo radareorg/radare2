@@ -15,8 +15,7 @@ cd ${LNG}
 
 #valaswig-cc ${LNG} ${MOD} -I../../libr/include ../../libr/vapi/${MOD}.vapi -l${MOD} -L../../libr/$(echo ${MOD} | sed -e s,r_,,)
 
-echo "CFLAGS = $CFLAGS"
-echo "LIBS = `pkg-config --libs ${MOD}`"
+echo "Build ${MOD} `pkg-config --libs ${MOD}`"
 
 valaswig-cc ${LNG} ${MOD} ${VALASWIGFLAGS} \
 	-x --vapidir=../vapi ../vapi/${MOD} \

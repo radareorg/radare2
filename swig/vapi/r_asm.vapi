@@ -49,12 +49,15 @@ public class RAsm {
 
 	[Compact]
 	[CCode (cname="RAsmAop", destroy_function="")]
-	public struct Aop {
+	public class Aop {
 		public int inst_len;
 		public uint8 *buf;
 		public string buf_asm;
 		public string buf_hex;
 		public string buf_err;
+		// accessors for bindings
+		public string get_hex();
+		public string get_asm();
 	}
 
 	[Compact]

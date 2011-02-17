@@ -411,3 +411,11 @@ R_API int r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val) {
 		ret = a->cur->modify (a, buf, field, val);
 	return ret;
 }
+
+R_API char *r_asm_aop_get_hex(RAsmAop *aop) {
+	return strdup (aop->buf_hex);
+}
+
+R_API char *r_asm_aop_get_asm(RAsmAop *aop) {
+	return strdup (aop->buf_asm);
+}

@@ -3,13 +3,6 @@
   |    <  V  . |  . V  .   <   _/ .-' _/|  ()  |
   |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
-
-UNDER DEVELOPMENT
-=================
-* r2-swig : Distribute generated .i files and cxx files.. so build is faster
-  - ./configure --without-valaswig # compile without generating cxx files
-  - build with swig/
-
 Random stuff
 -----------
 * For each "call" or "push offset"+"ret" create a function.
