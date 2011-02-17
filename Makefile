@@ -58,13 +58,19 @@ install-man-symlink:
 	cd man && for a in *.1 ; do ln -fs `pwd`/$$a ${DESTDIR}/${PREFIX}/share/man/man1/$$a ; done
 	cd ${DESTDIR}/${PREFIX}/share/man/man1 && ln -fs radare2.1 r2.1
 
-install: install-man
+install-doc:
 	${INSTALL_DIR} ${DESTDIR}${PREFIX}/share/doc/radare2
 	for a in doc/* ; do ${INSTALL_DATA} $$a ${DESTDIR}/${PREFIX}/share/doc/radare2 ; done
+
+install-doc-symlink:
+	${INSTALL_DIR} ${DESTDIR}${PREFIX}/share/doc/radare2
+	cd doc ; for a in * ; do ln -fs `pwd`/$$a ${DESTDIR}/${PREFIX}/share/doc/radare2 ; done
+
+install: install-doc install-man
 	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
-symstall install-symlink: install-man-symlink
+symstall install-symlink: install-man-symlink install-doc-symlink
 	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 

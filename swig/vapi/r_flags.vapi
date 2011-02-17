@@ -31,7 +31,8 @@ namespace Radare {
 		public void set(string name, uint64 addr, int size=1, bool dup=false);
 
 		public void space_list();
-		public unowned string? space_get(int idx);
+		public unowned string? space_get_i(int idx);
+		public int space_get(string name);
 		//public int space_get_i(string fsname);
 		public void space_set(string name);
 	}

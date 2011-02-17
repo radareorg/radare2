@@ -12,45 +12,44 @@
 #include <sys/types.h>
 #include <stdarg.h>
 
-static int printzoomcallback(void *user, char *mode, ut64 addr, ut8 *bufz, ut64 size) {
+static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size) {
 	RCore *core = (RCore *) user;
 	int j, ret = 0;
 	RListIter *iter;
 	RFlagItem *flag;
 
-	switch (mode[0]) {
-		case 'p':
-			for (j=0; j<size; j++)
-				if (IS_PRINTABLE(bufz[j]))
-					ret++;
-			break;
-		case 'f':
-			r_list_foreach (core->flags->flags, iter, flag)
-				if (flag->offset <= addr  && addr < flag->offset+flag->size)
-					ret++;
-			break;
-		case 's':
-			j = r_flag_space_get (core->flags, "strings");
-			r_list_foreach (core->flags->flags, iter, flag) {
-				if (flag->space == j && ((addr <= flag->offset
-								&& flag->offset < addr+size) ||
-							(addr <= flag->offset+flag->size  &&
-							 flag->offset+flag->size < addr+size)))
-					ret++;
-			}
-			break;
-		case 'F': // 0xFF
-			for (j=0; j<size; j++)
-				if (bufz[j] == 0xff)
-					ret++;
-			break;
-		case 'e': // entropy
-			ret = (unsigned char) r_hash_entropy (bufz, size);
-			break;
-		case 'h': //head
-		default:
-			ret = bufz[0];
-
+	switch (mode) {
+	case 'p':
+		for (j=0; j<size; j++)
+			if (IS_PRINTABLE(bufz[j]))
+				ret++;
+		break;
+	case 'f':
+		r_list_foreach (core->flags->flags, iter, flag)
+			if (flag->offset <= addr  && addr < flag->offset+flag->size)
+				ret++;
+		break;
+	case 's':
+		j = r_flag_space_get (core->flags, "strings");
+		r_list_foreach (core->flags->flags, iter, flag) {
+			if (flag->space == j && ((addr <= flag->offset
+					&& flag->offset < addr+size)
+					|| (addr <= flag->offset+flag->size
+					&& flag->offset+flag->size < addr+size)))
+				ret++;
+		}
+		break;
+	case 'F': // 0xFF
+		for (j=0; j<size; j++)
+			if (bufz[j] == 0xff)
+				ret++;
+		break;
+	case 'e': // entropy
+		ret = (unsigned char) r_hash_entropy (bufz, size);
+		break;
+	case 'h': //head
+	default:
+		ret = *bufz;
 	}
 	return ret;
 }
@@ -1785,10 +1784,12 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'Z':
 		{
-			char *mode = r_config_get (core->config, "zoom.byte");
+			const char *mode = r_config_get (core->config, "zoom.byte");
 			ut64 from = r_config_get_i (core->config, "zoom.from");
 			ut64 to = r_config_get_i (core->config, "zoom.to");
-			r_print_zoom (core->print, core, printzoomcallback, from, to, mode, core->blocksize);
+			if (mode) r_print_zoom (core->print, core, printzoomcallback,
+				from, to, *mode, core->blocksize);
+			else eprintf ("No zoom.byte defined\n");
 		}
 		break;
 	default:

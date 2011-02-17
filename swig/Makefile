@@ -39,7 +39,7 @@ w32dist:
 dist:
 	PKG=radare2-swig-${VERSION} ; \
 	FILES=`cd .. ; hg st -mac . | grep swig | sed -e "s,swig/,$${PKG}/," | cut -c 3-` ; \
-	CXXFILES=`cd .. ; find swig | grep -e cxx$ -e py$ | sed -e "s,swig/,$${PKG}/,"` ; \
+	CXXFILES=`cd .. ; find swig | grep -e cxx$$ -e py$$ | sed -e "s,swig/,$${PKG}/,"` ; \
 	cd .. && mv swig $${PKG} && \
 	echo $$FILES ; \
 	tar czvf $${PKG}.tar.gz $${FILES} $${CXXFILES} ; \
@@ -150,11 +150,23 @@ install-vapi:
 	@${INSTALL_DIR} ${DESTDIR}${PREFIX}/share/vala/vapi
 	${INSTALL_DATA} vapi/*.vapi vapi/*.deps ${DESTDIR}${PREFIX}/share/vala/vapi
 
-install: install-python install-ruby install-perl install-lua install-go install-java install-vapi
+EXAMPLEDIR=${DESTDIR}${PREFIX}/share/radare2-swig
+install-examples: install-examples-python
+	mkdir -p ${EXAMPLEDIR}/vala
+	cp -rf vapi/t/*.vala vapi/t/*.gs ${EXAMPLEDIR}/vala
+
+install-examples-python:
+	if [ "`grep python supported.langs`" ]; then \
+		mkdir -p ${EXAMPLEDIR}/python ; \
+		cp -rf python/test-*.py ${EXAMPLEDIR}/python ; \
+	fi
+
+install: install-python install-ruby install-perl install-lua install-go install-java install-vapi install-examples
 
 deinstall: uninstall
 uninstall:
 	cd vapi/ ; for a in *.vapi *.deps ; do rm -f ${DESTDIR}${PREFIX}/share/vala/vapi/$$a ; done
+	rm -rf ${EXAMPLEDIR}
 
 oldtest:
 	sh do-swig.sh r_bp
