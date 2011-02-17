@@ -26,7 +26,9 @@ lang_python.${EXT_SO}:
 	${LDFLAGS_LIB} -shared -o lang_python.${EXT_SO} python.c -lpython27
 else
 lang_python.${EXT_SO}:
-	${CC} ${CFLAGS} ${LDFLAGS} `python-config --cflags` `python-config --ldflags` \
+	${CC} ${CFLAGS} ${LDFLAGS} \
+		`python-config --cflags --ldflags 2>/dev/null` \
+		`python2-config --cflags --ldflags 2>/dev/null` \
 	${LDFLAGS_LIB} -fPIC -o lang_python.${EXT_SO} python.c
 endif
 

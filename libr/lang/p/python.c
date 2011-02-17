@@ -222,11 +222,11 @@ static int prompt(void *user) {
 }
 
 static int setup(RLang *lang) {
+	RListIter *iter;
+	RLangDef *def;
 	char cmd[128];
-	struct list_head *pos;
 	PyRun_SimpleString ("from r2.r_core import RCore");
-	list_for_each (pos, &lang->defs) {
-		RLangDef *def = list_entry (pos, RLangDef, list);
+	r_list_foreach (lang->defs, iter, def) {
 		if (!def->type || !def->name)
 			continue;
 		if (!strcmp (def->type, "int"))
@@ -243,7 +243,8 @@ static int setup(RLang *lang) {
 static int init(RLang *lang) {
 	core = lang->user;
 	Py_Initialize ();
-	return init_radare_module ();
+	init_radare_module ();
+	return R_TRUE;
 }
 
 static int fini(void *user) {
