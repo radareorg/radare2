@@ -421,9 +421,9 @@ R_API char* r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *
 	ut64 addr, int opts);
 R_API int r_anal_reflines_middle(RAnal *anal, RAnalRefline *list, ut64 addr, int len);
 
-/* TO MOVE into r_core */
-R_API int r_anal_var_list_show(RAnal *anal, RAnalFcn *fcn, ut64 addr);
-R_API int r_anal_var_list(RAnal *anal, RAnalFcn *fcn, ut64 addr, int delta);
+/* TODO move to r_core */
+R_API void r_anal_var_list_show(RAnal *anal, RAnalFcn *fcn, ut64 addr);
+R_API void r_anal_var_list(RAnal *anal, RAnalFcn *fcn, ut64 addr, int delta);
 
 // calling conventions API
 R_API RAnalCC* r_anal_cc_new ();

@@ -1,6 +1,5 @@
-/* radare - LGPL - Copyright 2010 */
-/*   nibble<.ds@gmail.com> */
-/*   pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2011 */
+/*   nibble<.ds@gmail.com> + pancake<nopcode.org> */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -41,7 +40,7 @@ R_API void r_anal_aop_free(void *_aop) {
 R_API int r_anal_aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
 	if (anal && aop && anal->cur && anal->cur->aop)
 		return anal->cur->aop (anal, aop, addr, data, len);
-	return 0;
+	return R_FALSE;
 }
 
 // TODO: return RAnalException *

@@ -1,6 +1,5 @@
-/* radare - LGPL - Copyright 2009-2010 */
-/*   nibble<.ds@gmail.com> */
-/*   pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 */
+/* - nibble<.ds@gmail.com> + pancake<nopcode.org> */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -35,7 +34,7 @@ R_API RAnal *r_anal_new() {
 	anal->vartypes = r_anal_var_type_list_new ();
 	r_anal_set_bits (anal, 32);
 	r_anal_set_big_endian (anal, R_FALSE);
-	INIT_LIST_HEAD (&anal->anals);
+	INIT_LIST_HEAD (&anal->anals); // TODO: use RList here
 	for (i=0; anal_static_plugins[i]; i++) {
 		static_plugin = R_NEW (RAnalPlugin);
 		memcpy (static_plugin, anal_static_plugins[i], sizeof (RAnalPlugin));

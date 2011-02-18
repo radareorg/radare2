@@ -169,7 +169,7 @@ R_API int r_meta_add(RMeta *m, int type, ut64 from, ut64 to, const char *str) {
 		r_list_append (m->data, mi);
 		break;
 	default:
-		eprintf ("Unsupported type '%c'\n", type);
+		eprintf ("r_meta_add: Unsupported type '%c'\n", type);
 		return R_FALSE;
 	}
 	return R_TRUE;
@@ -273,7 +273,6 @@ R_API int r_meta_list(RMeta *m, int type) {
 	int count = 0;
 	RListIter *iter;
 	RMetaItem *d;
-
 	r_list_foreach (m->data, iter, d) {
 		if (d->type == type || type == R_META_ANY) {
 			printmetaitem (m, d);

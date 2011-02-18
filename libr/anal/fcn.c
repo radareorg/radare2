@@ -1,6 +1,5 @@
-/* radare - LGPL - Copyright 2010 */
-/*   nibble<.ds@gmail.com> */
-/*   pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2011 */
+/*   nibble<.ds@gmail.com> + pancake<nopcode.org> */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -32,22 +31,14 @@ R_API RList *r_anal_fcn_list_new() {
 
 R_API void r_anal_fcn_free(void *_fcn) {
 	RAnalFcn *fcn = _fcn;
-	if (fcn) {
-		if (fcn->name)
-			free (fcn->name);
-		if (fcn->refs)
-			r_list_free (fcn->refs);
-		if (fcn->xrefs)
-			r_list_free (fcn->xrefs);
-		if (fcn->vars)
-			r_list_free (fcn->vars);
-		if (fcn->bbs)
-			r_list_free (fcn->bbs);
-		if (fcn->fingerprint)
-			free (fcn->fingerprint);
-		if (fcn->diff)
-			r_anal_diff_free (fcn->diff);
-	}
+	if (!_fcn) return;
+	free (fcn->name);
+	r_list_free (fcn->refs);
+	r_list_free (fcn->xrefs);
+	r_list_free (fcn->vars);
+	r_list_free (fcn->bbs);
+	free (fcn->fingerprint);
+	r_anal_diff_free (fcn->diff);
 	free (fcn);
 }
 
@@ -58,9 +49,8 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, 
 	int oplen, idx = 0;
 	if (fcn->addr == -1)
 		fcn->addr = addr;
-	if (reftype == R_ANAL_REF_TYPE_CODE)
-		fcn->type = R_ANAL_FCN_TYPE_LOC;
-	else fcn->type = R_ANAL_FCN_TYPE_FCN;
+	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
+		R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
 	while (idx < len) {
 		if ((oplen = r_anal_aop (anal, &aop, addr+idx, buf+idx, len-idx)) == 0) {
 			if (idx == 0) {
@@ -330,21 +320,22 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFcn* fs) {
 	return (sign = r_str_concatf (sign, ");"));
 }
 
-R_API int r_anal_fcn_from_string(RAnal *a, RAnalFcn *f, const char *_str) {
-	RAnalVar *var;
-	char *str = strdup (_str);
-	char *p, *q, *r;
-	int i, arg;
 // TODO: This function is not fully implemented
+R_API int r_anal_fcn_from_string(RAnal *a, RAnalFcn *f, const char *_str) {
+	char *p, *q, *r, *str;
+	RAnalVar *var;
+	int i, arg;
+
 	if (!a || !f) {
 		eprintf ("r_anal_fcn_from_string: No function received\n");
 		return R_FALSE;
 	}
+	str = strdup (_str);
 	/* TODO : implement parser */
 	//r_list_destroy (fs->vars);
 	//set: fs->vars = r_list_new ();
 	//set: fs->name
-	printf("ORIG=(%s)\n", _str);
+	eprintf ("ORIG=(%s)\n", _str);
 	p = strchr (str, '(');
 	if (!p) goto parsefail;
 	*p = 0;
