@@ -1037,6 +1037,12 @@ static int cmd_mount(void *data, const char *_input) {
 			r_fs_close (core->fs, file);
 		} else eprintf ("Cannot open file\n");
 		break;
+	case 's':
+		input++;
+		if (input[0]==' ')
+			input++;
+		r_fs_prompt (core->fs, input);
+		break;
 	case 'y':
 		eprintf ("TODO\n");
 		break;
@@ -1053,6 +1059,7 @@ static int cmd_mount(void *data, const char *_input) {
 		" md /           ; list directory contents for path\n"
 		" mp             ; list all supported partition types\n"
 		" mp msdos 0     ; show partitions in msdos format at offset 0\n"
+		" ms /mnt        ; open filesystem prompt at /mnt\n"
 		" m?             ; show this help\n"
 		"TODO: support multiple mountpoints and RFile IO's (need io+core refactor)\n"
 		);

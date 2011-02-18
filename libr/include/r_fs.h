@@ -4,6 +4,7 @@
 #include <r_types.h>
 #include <r_list.h>
 #include <r_io.h>
+#include <r_cons.h>
 
 struct r_fs_plugin_t;
 struct r_fs_root_t;
@@ -78,6 +79,7 @@ R_API int r_fs_read (RFS* fs, RFSFile *file, ut64 addr, int len);
 R_API RFSFile *r_fs_slurp(RFS* fs, const char *path);
 R_API RList *r_fs_dir(RFS* fs, const char *path);
 R_API RList *r_fs_partitions(RFS* fs, const char *ptype, ut64 delta);
+R_API int r_fs_prompt (RFS *fs, char *root);
 
 /* file.c */
 R_API RFSFile *r_fs_file_new (RFSRoot *root, const char *path);

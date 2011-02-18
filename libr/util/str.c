@@ -11,12 +11,31 @@ static const char *nullstr = "";
 static const char *nullstr_c = "(null)";
 
 R_API void r_str_chop_path (char *s) {
-	char *src, *dst;
+	char *src, *dst, *p;
+	int i = 0;
 
 	src = s+1;
 	dst = s+1;
 	while (*src) {
-		if (*src != '/' || *(src-1) != '/') {
+		if (*(src-1) == '/' && *src == '.' && *(src+1) == '.') {
+			if (*(src+2) == '/' || *(src+2) == '\0') {
+				p = dst-1;
+				while (s != p) {
+					if (*p == '/') {
+						if (i) {
+							dst = p+1;
+							i = 0;
+							break;
+						} i++;
+					}
+					p--;
+				}
+				src = src+2;
+			} else {
+				*dst = *src;
+				dst++;
+			}
+		} else if (*src != '/' || *(src-1) != '/') {
 			*dst = *src;
 			dst++;
 		}

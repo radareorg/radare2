@@ -181,7 +181,7 @@ static int parhook (struct grub_disk *disk, struct grub_partition *par) {
 	return 0;
 }
 
-R_API RList *r_fs_partitions(RFS *fs, const char *ptype, ut64 delta) {
+R_API RList *r_fs_partitions (RFS *fs, const char *ptype, ut64 delta) {
 	struct grub_partition_map *gpm = NULL;
 	if (!strcmp (ptype, "msdos"))
 		gpm = &grub_msdos_partition_map;
@@ -214,4 +214,95 @@ R_API RList *r_fs_partitions(RFS *fs, const char *ptype, ut64 delta) {
 	eprintf ("Unknown partition type '%s'. Supported types:\n"
 		"  msdos, apple, sun, sunpc, amiga, bsdlabel, acorn, gpt", ptype);
 	return NULL;
+}
+
+R_API int r_fs_prompt (RFS *fs, char *root) {
+	char buf[1024];
+	char path[1024];
+	char str[2048];
+	char *input;
+	RList *list;
+	RListIter *iter;
+	RFSFile *file;
+
+	strncpy (path, root, sizeof (path)-1);
+
+	for (;;) {
+		printf (Color_MAGENTA"%s> "Color_RESET, path);
+		fflush (stdout);
+		fgets (buf, sizeof (buf)-1, stdin);
+		if (feof (stdin)) break;
+		buf[strlen (buf)-1] = '\0';
+		if (!strcmp (buf, "q") || !strcmp (buf, "exit"))
+			return R_TRUE;
+		else if (!strcmp (buf, "ls")) {
+			list = r_fs_dir (fs, path);
+			if (list) {
+				r_list_foreach (list, iter, file)
+					printf ("%c %s\n", file->type, file->name);
+				r_list_free (list);
+			} else printf ("Unknown path\n");
+		} else if (!strncmp (buf, "cd ", 3)) {
+			input = buf+3;
+			while (input[0] == ' ')
+				input++;
+			strncpy (str, path, sizeof(str)-1);
+			if (input[0] == '/')
+				strncpy (path, root, sizeof (path)-1);
+			strcat (path, "/");
+			strcat (path, input);
+			r_str_chop_path (path);
+			list = r_fs_dir (fs, path);
+			if (!r_list_empty (list))
+				r_list_free (list);
+			else {
+				strncpy (path, str, sizeof (path)-1);
+				printf ("Unknown path\n");
+			}
+		} else if (!strncmp (buf, "cat ", 4)) {
+			input = buf+3;
+			while (input[0] == ' ')
+				input++;
+			if (input[0] == '/')
+				strncpy (str, root, sizeof (str)-1);
+			else
+				strncpy (str, path, sizeof (str)-1);
+			strcat (str, "/");
+			strcat (str, input);
+			file = r_fs_open (fs, str);
+			if (file) {
+				r_fs_read (fs, file, 0, file->size);
+				write (1, file->data, file->size);
+				r_fs_close (fs, file);
+			} else printf ("Cannot open file\n");
+		} else if (!strncmp (buf, "get ",4)){
+			input = buf+3;
+			while (input[0] == ' ')
+				input++;
+			if (input[0] == '/')
+				strncpy (str, root, sizeof (str)-1);
+			else
+				strncpy (str, path, sizeof (str)-1);
+			strcat (str, "/");
+			strcat (str, input);
+			file = r_fs_open (fs, str);
+			if (file) {
+				r_fs_read (fs, file, 0, file->size);
+				r_file_dump (input, file->data, file->size);
+				r_fs_close (fs, file);
+			} else printf ("Cannot open file\n");
+		} else if (!strcmp (buf, "help") || !strcmp (buf, "?")) {
+			printf(
+			"Commands:\n"
+			" ls          ; list current directory\n"
+			" cd path     ; change current directory\n"
+			" cat file    ; print contents of file\n"
+			" q/exit      ; leave prompt mode\n"
+			" ?/help      ; show this help\n"
+			);
+		}
+	}
+	clearerr (stdin);
+	printf ("\n");
+	return R_TRUE;
 }
