@@ -20,7 +20,7 @@ namespace Radare {
 	public class RFSFile {
 		public string name;
 		public string path;
-		public uint64 path;
+		public uint64 off;
 		public uint32 size;
 		public uint64 time;
 		public void *ptr;

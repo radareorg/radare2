@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
 
 #include <r_flags.h>
 
@@ -12,7 +12,7 @@ R_API int r_flag_space_get(struct r_flag_t *f, const char *name) {
 	return -1;
 }
 
-R_API const char *r_flag_space_get_i (struct r_flag_t *f, int idx) {
+R_API const char *r_flag_space_get_i (RFlag *f, int idx) {
 	if (idx==-1 || idx>255 || f->spaces[idx]=='\0')
 		return "";
 	return f->spaces[idx];

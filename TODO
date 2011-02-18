@@ -37,6 +37,7 @@ pancake
 
 earada
 ------
+* Implement /A : search AES + RSA (see sync.in/r2)
 * Add print support for bitfields (pm b...)
 - r_bin_demangle (); // r_util maybe?
 	* _ZN7WebCore11CounterNode7recountERKNS_12AtomicStringE
@@ -48,12 +49,9 @@ earada
 	  RKNS_ = start of arguments
 * Fix avr/ppc code analysis // fix or use or what? :)
 * Implement print Zoom mode (copypasta from r1) (useful for forensics) <-- MUST
-* mount /mnt/ must chop last '/'
-* test fatfs and others
 * Add SSL support to r_socket
 * remove all uses of alloca() // mingw and grep reports them all :)
 * typedef all function pointers, like in r_bp
-* Implement /A : search AES
 * Implement case-insensitive search (e search.casematters ?) any better name? Use /i?
 * Implement /. to search using a file .. isnt zignatures about this?
 * Implement /p to search for patterns
