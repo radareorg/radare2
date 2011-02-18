@@ -517,7 +517,8 @@ struct r_anal_plugin_t r_anal_plugin_x86_simple = {
 	.desc = "X86 analysis plugin",
 	.init = NULL,
 	.fini = NULL,
-	.aop = &myaop
+	.aop = &myaop,
+	.set_reg_profile = NULL
 };
 
 #ifndef CORELIB

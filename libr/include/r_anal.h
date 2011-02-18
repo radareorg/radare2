@@ -305,14 +305,16 @@ typedef struct r_anal_refline_t {
 	struct list_head list;
 } RAnalRefline;
 
-typedef int (*RAnalCallback)(RAnal *a, RAnalOp *aop, ut64 addr, const ut8 *data, int len);
+typedef int (*RAnalAopCallback)(RAnal *a, RAnalOp *aop, ut64 addr, const ut8 *data, int len);
+typedef int (*RAnalRegProfCallback)(RAnal *a);
 
 typedef struct r_anal_plugin_t {
 	char *name;
 	char *desc;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-	RAnalCallback aop;
+	RAnalAopCallback aop;
+	RAnalRegProfCallback set_reg_profile;
 	struct list_head list;
 } RAnalPlugin;
 
@@ -324,6 +326,7 @@ R_API void r_anal_set_user_ptr(RAnal *anal, void *user);
 R_API int r_anal_add(RAnal *anal, struct r_anal_plugin_t *foo);
 R_API int r_anal_list(RAnal *anal);
 R_API int r_anal_use(RAnal *anal, const char *name);
+R_API int r_anal_set_reg_profile(RAnal *anal);
 R_API int r_anal_set_bits(RAnal *anal, int bits);
 R_API int r_anal_set_big_endian(RAnal *anal, int boolean);
 R_API char *r_anal_strmask (RAnal *anal, const char *data);

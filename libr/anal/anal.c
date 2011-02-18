@@ -27,7 +27,7 @@ R_API RAnal *r_anal_new() {
 	memset (anal, 0, sizeof (RAnal));
 	anal->syscall = r_syscall_new ();
 	r_io_bind_init (anal->iob);
-	anal->reg = NULL;
+	anal->reg = r_reg_new ();
 	anal->lineswidth = 0;
 	anal->fcns = r_anal_fcn_list_new ();
 	anal->refs = r_anal_ref_list_new ();
@@ -85,9 +85,17 @@ R_API int r_anal_use(RAnal *anal, const char *name) {
 		RAnalPlugin *h = list_entry(pos, RAnalPlugin, list);
 		if (!strcmp (h->name, name)) {
 			anal->cur = h;
+			r_anal_set_reg_profile (anal);
 			return R_TRUE;
 		}
 	}
+	return R_FALSE;
+}
+
+R_API int r_anal_set_reg_profile(RAnal *anal) {
+	if (anal)
+	if (anal->cur && anal->cur->set_reg_profile)
+		return anal->cur->set_reg_profile (anal);
 	return R_FALSE;
 }
 
@@ -98,6 +106,7 @@ R_API int r_anal_set_bits(RAnal *anal, int bits) {
 	case 32:
 	case 64:
 		anal->bits = bits;
+		r_anal_set_reg_profile (anal);
 		return R_TRUE;
 	}
 	return R_FALSE;

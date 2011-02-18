@@ -106,7 +106,16 @@ R_API boolt r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op) {
 		cc->off = op->jump;
 		cc->jump = op->value; // syscall number
 		return R_FALSE;
-	//case R_ANAL_OP_TYPE_MOV:
+	case R_ANAL_OP_TYPE_MOV:
+		{
+		RRegItem *it;
+		if (op->dst && op->dst->reg) {
+			it = r_reg_get (anal->reg, op->dst->reg->name, R_REG_TYPE_GPR);
+			if (it && op->src[0])
+				r_reg_set_value (anal-> reg, it, op->src[0]->imm);
+		}
+		return R_TRUE;
+		}
 	case R_ANAL_OP_TYPE_PUSH:
 	case R_ANAL_OP_TYPE_UPUSH: // add argument
 		cc->nargs ++;

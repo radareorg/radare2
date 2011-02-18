@@ -227,7 +227,8 @@ struct r_anal_plugin_t r_anal_plugin_csr = {
 	.desc = "CSR code analysis plugin",
 	.init = NULL,
 	.fini = NULL,
-	.aop = &aop
+	.aop = &aop,
+	.set_reg_profile = NULL
 };
 
 #ifndef CORELIB

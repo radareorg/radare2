@@ -45,7 +45,8 @@ struct r_anal_plugin_t r_anal_plugin_avr = {
 	.desc = "AVR code analysis plugin",
 	.init = NULL,
 	.fini = NULL,
-	.aop = &aop
+	.aop = &aop,
+	.set_reg_profile = NULL
 };
 
 #ifndef CORELIB
