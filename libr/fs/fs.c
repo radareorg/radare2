@@ -225,6 +225,7 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 	RListIter *iter;
 	RFSFile *file;
 
+	r_str_chop_path (root);
 	strncpy (path, root, sizeof (path)-1);
 
 	for (;;) {
@@ -252,6 +253,8 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 			strcat (path, "/");
 			strcat (path, input);
 			r_str_chop_path (path);
+			if (strlen (path) < strlen (root))
+				strncpy (path, root, sizeof (path)-1);
 			list = r_fs_dir (fs, path);
 			if (!r_list_empty (list))
 				r_list_free (list);
@@ -300,6 +303,8 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 			" q/exit      ; leave prompt mode\n"
 			" ?/help      ; show this help\n"
 			);
+		} else {
+			printf ("Unknown command %s\n", buf);
 		}
 	}
 	clearerr (stdin);
