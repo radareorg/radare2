@@ -68,13 +68,16 @@ R_API RList *r_list_new() {
 }
 
 R_API void r_list_destroy (RList *list) {
-	RListIter *it = list->head;
-	while (it) {
-		RListIter *next = it->n;
-		r_list_delete (list, it);
-		it = next;
+	RListIter *it;
+	if (list) {
+		it = list->head;
+		while (it) {
+			RListIter *next = it->n;
+			r_list_delete (list, it);
+			it = next;
+		}
+		list->head = list->tail = NULL;
 	}
-	list->head = list->tail = NULL;
 }
 
 R_API void r_list_free (RList *list) {

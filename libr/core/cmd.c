@@ -1979,7 +1979,8 @@ static int var_cmd(RCore *core, const char *str) {
 
 	switch(*str) {
 	case 'V': // show vars in human readable format
-		return r_anal_var_list_show(core->anal, fcn, core->offset);
+		r_anal_var_list_show(core->anal, fcn, core->offset);
+		return 0;
 	case '?':
 		var_help();
 		return 0;
@@ -1998,9 +1999,9 @@ static int var_cmd(RCore *core, const char *str) {
 
 		/* Variable access CFvs = set fun var */
 		switch(str[1]) {
-		case '\0': return r_anal_var_list (core->anal, fcn, 0, 0);
+		case '\0': r_anal_var_list (core->anal, fcn, 0, 0); return 0;
 		case '?': var_help(); return 0;
-		case '.':  return r_anal_var_list (core->anal, fcn, core->offset, 0);
+		case '.':  r_anal_var_list (core->anal, fcn, core->offset, 0); return 0;
 		case 's':
 		case 'g':
 			if (str[2]!='\0') {

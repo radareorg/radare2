@@ -15,10 +15,8 @@ R_API RAnalDiff *r_anal_diff_new() {
 
 
 R_API void* r_anal_diff_free(RAnalDiff *diff) {
-	if (diff) {
-		if (diff->name)
-			free (diff->name);
-	}
+	if (diff && diff->name)
+		free (diff->name);
 	free (diff);
 	return NULL;
 }
