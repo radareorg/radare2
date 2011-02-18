@@ -1044,11 +1044,10 @@ static int cmd_mount(void *data, const char *_input) {
 		r_cons_printf (
 		"Usage: m[-?*dgy] [...]\n"
 		" m              ; list all mountpoints in human readable format\n"
-		" m ext2 /mnt 0  ; mount ext2 fs at /mnt with delta 0 on IO\n"
 		" m*             ; same as above, but in r2 commands\n"
 		" ml             ; list filesystem plugins\n"
+		" m ext2 /mnt 0  ; mount ext2 fs at /mnt with delta 0 on IO\n"
 		" m-/            ; umount given path (/)\n"
-		" m?             ; display this help\n"
 		" my             ; yank contents of file into clipboard\n"
 		" mg /foo        ; get contents of file dumped to disk (XXX?)\n"
 		" md /           ; list directory contents for path\n"

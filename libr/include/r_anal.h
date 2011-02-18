@@ -445,6 +445,7 @@ extern RAnalPlugin r_anal_plugin_x86_simple;
 extern RAnalPlugin r_anal_plugin_ppc;
 extern RAnalPlugin r_anal_plugin_java;
 extern RAnalPlugin r_anal_plugin_mips;
+extern RAnalPlugin r_anal_plugin_dalvik;
 
 #endif
 #endif

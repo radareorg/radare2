@@ -61,12 +61,14 @@ R_API void r_fs_del (RFS *fs, RFSPlugin *p) {
 R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path, ut64 delta) {
 	RFSPlugin *p;
 	RFSRoot *root;
+
 	if (path[0] != '/') {
 		eprintf ("r_fs_mount: invalid mountpoint\n");
 		return NULL;
 	}
 	p = r_fs_plugin_get (fs, fstype);
 	if (p != NULL) {
+		r_str_chop_path (path);
 		root = r_fs_root_new (path, delta);
 		root->p = p;
 		//memcpy (&root->iob, &fs->iob, sizeof (root->iob));
@@ -107,6 +109,7 @@ R_API RFSRoot *r_fs_root (RFS *fs, const char *path) {
 /* filez */
 
 R_API RFSFile *r_fs_open (RFS* fs, const char *path) {
+	r_str_chop_path (path);
 	RFSRoot *root = r_fs_root (fs, path);
 	if (root && root->p && root->p->open)
 		return root->p->open (root, path+strlen (root->path));
@@ -137,6 +140,7 @@ R_API int r_fs_read (RFS* fs, RFSFile *file, ut64 addr, int len) {
 
 R_API RList *r_fs_dir(RFS* fs, const char *path) {
 	if (fs) {
+		r_str_chop_path (path);
 		RFSRoot *root = r_fs_root (fs, path);
 		if (root) {
 			const char *dir = path + strlen (root->path);

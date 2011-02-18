@@ -267,6 +267,7 @@ R_API char *r_str_concat(char *ptr, const char *string);
 R_API char *r_str_concatf(char *ptr, const char *fmt, ...);
 R_API char *r_str_concatch(char *x, char y);
 R_API void r_str_case(char *str, int up);
+R_API void r_str_chop_path (char *s);
 
 R_API int r_hex_pair2bin(const char *arg);
 R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask);

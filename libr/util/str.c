@@ -10,6 +10,24 @@
 static const char *nullstr = "";
 static const char *nullstr_c = "(null)";
 
+R_API void r_str_chop_path (char *s) {
+	char *src, *dst;
+
+	src = s+1;
+	dst = s+1;
+	while (*src) {
+		if (*src != '/' || *(src-1) != '/') {
+			*dst = *src;
+			dst++;
+		}
+		src++;
+	}
+	if (*(dst-1) == '/')
+		*(dst-1) = 0;
+	else
+		*dst = 0;
+}
+
 R_API void r_str_subchr (char *s, int a, int b) {
 	while (*s) {
 		if (*s==a) {
