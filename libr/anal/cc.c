@@ -75,14 +75,13 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 		break;
 	case R_ANAL_CC_TYPE_STDCALL: // CALL
 		//	if (analop.jump != UT64_MAX) {
-		fcn = r_anal_fcn_find (anal, cc->off, R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+		fcn = r_anal_fcn_find (anal, cc->jump,
+				R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM|R_ANAL_FCN_TYPE_IMP);
 		if (fcn && fcn->name) snprintf (str, sizeof (str), "%s(", fcn->name);
 		else snprintf (str, sizeof (str), "0x%08"PFMT64x"(", cc->jump);
 		if (fcn) cc->nargs = (fcn->nargs>cc->nargs?cc->nargs:fcn->nargs);
 		for (i=0; i<cc->nargs; i++) {
-			snprintf (buf, sizeof (buf),
-				(cc->args[cc->nargs-i]>1024)?"%"PFMT64d:"0x%"PFMT64x,
-				cc->args[cc->nargs-i]);
+			snprintf (buf, sizeof (buf), "0x%"PFMT64x, cc->args[cc->nargs-i]);
 			strcat (str, buf);
 			if (i<cc->nargs-1) strcat (str, ", ");
 		}
@@ -120,7 +119,7 @@ R_API boolt r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op) {
 	case R_ANAL_OP_TYPE_UPUSH: // add argument
 		cc->nargs ++;
 		if (cc->nargs>0 && cc->nargs < R_ANAL_CC_ARGS)
-			cc->args[cc->nargs] = op->ref;
+			cc->args[cc->nargs] = op->value;
 		return R_TRUE;
 	}
 	// must update internal stuff to recognize parm
