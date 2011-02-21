@@ -912,7 +912,7 @@ grub_iso9660_uuid (grub_device_t device, char **uuid)
 
 
 
-static struct grub_fs grub_iso9660_fs =
+struct grub_fs grub_iso9660_fs =
   {
     .name = "iso9660",
     .dir = grub_iso9660_dir,

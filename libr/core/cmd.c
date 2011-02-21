@@ -1021,8 +1021,15 @@ static int cmd_mount(void *data, const char *_input) {
 				r_list_free (list);
 			} else eprintf ("Cannot read partition\n");
 		} else {
-			// TODO: XXX: hardcoded list of partition plugins
-			r_cons_printf ("msdos\n");
+			// TODO: XXX: hardcoded list of partition plugins. move to r_fs
+			r_cons_printf (
+				"msdos\n"
+				"apple\n"
+				"sun\n"
+				"sunpc\n"
+				"bsdlabel\n"
+				"gpt\n"
+			);
 		}
 		break;
 	case 'g':

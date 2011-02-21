@@ -86,6 +86,7 @@ pc_partition_map_iterate (grub_disk_t disk,
 	  p.start = p.offset + grub_le_to_cpu32 (e->start);
 	  p.len = grub_le_to_cpu32 (e->length);
 
+          p.msdostype = e->type;
 	  grub_dprintf ("partition",
 			"partition %d: flag 0x%x, type 0x%x, start 0x%llx, len 0x%llx\n",
 			p.index, e->flag, e->type,

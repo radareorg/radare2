@@ -932,7 +932,7 @@ grub_udf_label (grub_device_t device, char **label)
   return grub_errno;
 }
 
-static struct grub_fs grub_udf_fs = {
+struct grub_fs grub_udf_fs = {
   .name = "udf",
   .dir = grub_udf_dir,
   .open = grub_udf_open,
