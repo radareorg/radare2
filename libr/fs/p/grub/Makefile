@@ -21,6 +21,8 @@ KERNFILES+=fs/ntfs.c
 KERNFILES+=fs/cpio.c
 KERNFILES+=fs/tar.c
 KERNFILES+=fs/xfs.c 
+KERNFILES+=fs/ufs.c 
+#KERNFILES+=fs/ufs2.c 
 # All nested functions are removed from the following .c with a lot of tobacco :-)
 KERNFILES+=fs/hfs.c 
 KERNFILES+=fs/hfsplus.c 

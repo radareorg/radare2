@@ -21,14 +21,16 @@ all: ${LANGS}
 ifeq ($(OSTYPE),windows)
 lang_python.${EXT_SO}:
 	${CC} ${CFLAGS} -I${HOME}/.wine/drive_c/Python27/include \
-	-L${HOME}/.wine/drive_c/Python27/libs \
-	-L../../core/ -lr_core \
+	-L${HOME}/.wine/drive_c/Python27/libs -L../../core/ -lr_core \
 	${LDFLAGS_LIB} -shared -o lang_python.${EXT_SO} python.c -lpython27
 else
 lang_python.${EXT_SO}:
-	${CC} ${CFLAGS} ${LDFLAGS} \
-		`python-config --cflags --ldflags 2>/dev/null` \
-		`python2-config --cflags --ldflags 2>/dev/null` \
+	${CC} ${CFLAGS} \
+		`python-config --cflags 2>/dev/null | sed -e 's,-arch .*,,g'` \
+		`python2-config --cflags 2>/dev/null | sed -e 's,-arch .*,,g'` \
+	      ${LDFLAGS} \
+		`python-config --ldflags 2>/dev/null | sed -e 's,-arch .*,,g'` \
+		`python2-config --ldflags 2>/dev/null | sed -e 's,-arch .*,,g'` \
 	${LDFLAGS_LIB} -fPIC -o lang_python.${EXT_SO} python.c
 endif
 

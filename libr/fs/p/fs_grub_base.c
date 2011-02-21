@@ -44,7 +44,7 @@ static int dirhook (const char *filename, const struct grub_dirhook_info *info, 
 static RList *FSP(_dir)(RFSRoot *root, const char *path) {
 	GrubFS *gfs = root->ptr;
 	list = r_list_new ();
-	eprintf ("r_fs_???_dir: %s\n", path);
+//	eprintf ("r_fs_???_dir: %s\n", path);
 	//gfs->file->device->data = &root->iob;
 	grubfs_bind_io (&root->iob, root->delta);
 	gfs->file->fs->dir (gfs->file->device, path, dirhook, 0);

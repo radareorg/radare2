@@ -154,7 +154,7 @@ R_API RList *r_fs_dir(RFS* fs, const char *p) {
 			}
 		}
 		free (path);
-		eprintf ("r_fs_dir: error, path %s is not mounted\n", path);
+		eprintf ("r_fs_dir: not mounted '%s'\n", path);
 	}
 	return NULL;
 }
@@ -232,25 +232,32 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 	RListIter *iter;
 	RFSFile *file;
 
-	r_str_chop_path (root);
-	strncpy (path, root, sizeof (path)-1);
+	if (root && *root) {
+		r_str_chop_path (root);
+		strncpy (path, root, sizeof (path)-1);
+	} else strcpy (path, "/");
 
 	for (;;) {
-		printf (Color_MAGENTA"%s> "Color_RESET, path);
+		printf (Color_MAGENTA"[%s]> "Color_RESET, path);
 		fflush (stdout);
 		fgets (buf, sizeof (buf)-1, stdin);
 		if (feof (stdin)) break;
 		buf[strlen (buf)-1] = '\0';
 		if (!strcmp (buf, "q") || !strcmp (buf, "exit"))
 			return R_TRUE;
-		else if (!strcmp (buf, "ls")) {
+		if (buf[0]=='!') {
+			system (buf+1);
+		} else
+		if (!strcmp (buf, "ls")) {
 			list = r_fs_dir (fs, path);
 			if (list) {
 				r_list_foreach (list, iter, file)
 					printf ("%c %s\n", file->type, file->name);
 				r_list_free (list);
 			} else printf ("Unknown path\n");
-		} else if (!strncmp (buf, "cd ", 3)) {
+		} else if (!strncmp (buf, "pwd", 3)) {
+			eprintf ("%s\n", path);
+		} else if (!memcmp (buf, "cd ", 3)) {
 			input = buf+3;
 			while (input[0] == ' ')
 				input++;
@@ -269,14 +276,13 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 				strncpy (path, str, sizeof (path)-1);
 				printf ("Unknown path\n");
 			}
-		} else if (!strncmp (buf, "cat ", 4)) {
+		} else if (!memcmp (buf, "cat ", 4)) {
 			input = buf+3;
 			while (input[0] == ' ')
 				input++;
 			if (input[0] == '/')
 				strncpy (str, root, sizeof (str)-1);
-			else
-				strncpy (str, path, sizeof (str)-1);
+			else strncpy (str, path, sizeof (str)-1);
 			strcat (str, "/");
 			strcat (str, input);
 			file = r_fs_open (fs, str);
@@ -284,15 +290,19 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 				r_fs_read (fs, file, 0, file->size);
 				write (1, file->data, file->size);
 				r_fs_close (fs, file);
-			} else printf ("Cannot open file\n");
-		} else if (!strncmp (buf, "get ",4)){
+			} else eprintf ("Cannot open file\n");
+		} else if (!memcmp (buf, "mount", 5)) {
+			RFSRoot *root;
+			r_list_foreach (fs->roots, iter, root) {
+				eprintf ("%s %s\n", root->path, root->p->name);
+			}
+		} else if (!memcmp (buf, "get ",4)) {
 			input = buf+3;
 			while (input[0] == ' ')
 				input++;
 			if (input[0] == '/')
 				strncpy (str, root, sizeof (str)-1);
-			else
-				strncpy (str, path, sizeof (str)-1);
+			else strncpy (str, path, sizeof (str)-1);
 			strcat (str, "/");
 			strcat (str, input);
 			file = r_fs_open (fs, str);
@@ -301,12 +311,15 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 				r_file_dump (input, file->data, file->size);
 				r_fs_close (fs, file);
 			} else printf ("Cannot open file\n");
-		} else if (!strcmp (buf, "help") || !strcmp (buf, "?")) {
-			printf(
+		} else if (!memcmp (buf, "help", 4) || !strcmp (buf, "?")) {
+			printf (
 			"Commands:\n"
+			" !cmd        ; escape to system\n"
 			" ls          ; list current directory\n"
 			" cd path     ; change current directory\n"
 			" cat file    ; print contents of file\n"
+			" get file    ; dump file to disk\n"
+			" mount       ; list mount points\n"
 			" q/exit      ; leave prompt mode\n"
 			" ?/help      ; show this help\n"
 			);
