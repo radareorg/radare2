@@ -24,7 +24,22 @@
 #include <grub/misc.h>
 #include <grub/time.h>
 #include <grub/file.h>
-#include <stdio.h>
+
+GRUB_EXPORT(grub_disk_dev_register);
+GRUB_EXPORT(grub_disk_dev_unregister);
+GRUB_EXPORT(grub_disk_dev_iterate);
+
+GRUB_EXPORT(grub_disk_open);
+GRUB_EXPORT(grub_disk_close);
+GRUB_EXPORT(grub_disk_read);
+GRUB_EXPORT(grub_disk_read_ex);
+GRUB_EXPORT(grub_disk_write);
+
+GRUB_EXPORT(grub_disk_get_size);
+GRUB_EXPORT(grub_disk_firmware_fini);
+GRUB_EXPORT(grub_disk_firmware_is_tainted);
+
+GRUB_EXPORT(grub_disk_ata_pass_through);
 
 #define	GRUB_CACHE_TIMEOUT	2
 
@@ -205,12 +220,13 @@ grub_disk_dev_unregister (grub_disk_dev_t dev)
 }
 
 int
-grub_disk_dev_iterate (int (*hook) (const char *name))
+grub_disk_dev_iterate (int (*hook) (const char *name, void *closure),
+		       void *closure)
 {
   grub_disk_dev_t p;
 
   for (p = grub_disk_dev_list; p; p = p->next)
-    if (p->iterate && (p->iterate) (hook))
+    if (p->iterate && (p->iterate) (hook, closure))
       return 1;
 
   return 0;
@@ -249,6 +265,10 @@ grub_disk_open (const char *name)
   if (! disk)
     return 0;
 
+  disk->name = grub_strdup (name);
+  if (! disk->name)
+    goto fail;
+
   p = find_part_sep (name);
   if (p)
     {
@@ -260,13 +280,7 @@ grub_disk_open (const char *name)
 
       grub_memcpy (raw, name, len);
       raw[len] = '\0';
-      disk->name = grub_strdup (raw);
     }
-  else
-    disk->name = grub_strdup (name);
-  if (! disk->name)
-    goto fail;
-
 
   for (dev = grub_disk_dev_list; dev; dev = dev->next)
     {
@@ -281,6 +295,12 @@ grub_disk_open (const char *name)
   if (! dev)
     {
       grub_error (GRUB_ERR_UNKNOWN_DEVICE, "no such disk");
+      goto fail;
+    }
+
+  if (p && ! disk->has_partitions)
+    {
+      grub_error (GRUB_ERR_BAD_DEVICE, "no partition on this disk");
       goto fail;
     }
 
@@ -357,9 +377,7 @@ grub_disk_adjust_range (grub_disk_t disk, grub_disk_addr_t *sector,
   grub_partition_t part;
   *sector += *offset >> GRUB_DISK_SECTOR_BITS;
   *offset &= GRUB_DISK_SECTOR_SIZE - 1;
-
-// XXX HACK
-return GRUB_ERR_NONE;
+/*
   for (part = disk->partition; part; part = part->parent)
     {
       grub_disk_addr_t start;
@@ -380,8 +398,9 @@ return GRUB_ERR_NONE;
       || ((*offset + size + GRUB_DISK_SECTOR_SIZE - 1)
 	  >> GRUB_DISK_SECTOR_BITS) > disk->total_sectors - *sector)
     return grub_error (GRUB_ERR_OUT_OF_RANGE, "out of disk");
-
+*/
   return GRUB_ERR_NONE;
+
 }
 
 /* Read data from the disk.  */
@@ -396,7 +415,7 @@ grub_disk_read (grub_disk_t disk, grub_disk_addr_t sector,
   if (grub_disk_adjust_range (disk, &sector, &offset, size) != GRUB_ERR_NONE)
     {
       grub_error_push ();
-      printf ("disk: Read out of range: sector 0x%llx (%s).\n",
+      grub_dprintf ("disk", "Read out of range: sector 0x%llx (%s).\n",
 		    (unsigned long long) sector, grub_errmsg);
       grub_error_pop ();
       return grub_errno;
@@ -406,9 +425,8 @@ grub_disk_read (grub_disk_t disk, grub_disk_addr_t sector,
 
   /* Allocate a temporary buffer.  */
   tmp_buf = grub_malloc (GRUB_DISK_SECTOR_SIZE << GRUB_DISK_CACHE_BITS);
-  if (! tmp_buf) {
+  if (! tmp_buf)
     return grub_errno;
-	}
 
   /* Until SIZE is zero...  */
   while (size)
@@ -431,7 +449,8 @@ grub_disk_read (grub_disk_t disk, grub_disk_addr_t sector,
       if (data)
 	{
 	  /* Just copy it!  */
-	  grub_memcpy (buf, data + pos + real_offset, len);
+	  if (buf)
+	    grub_memcpy (buf, data + pos + real_offset, len);
 	  grub_disk_cache_unlock (disk->dev->id, disk->id, start_sector);
 	}
       else
@@ -452,34 +471,38 @@ grub_disk_read (grub_disk_t disk, grub_disk_addr_t sector,
 		     >> GRUB_DISK_SECTOR_BITS);
 
 	      p = grub_realloc (tmp_buf, num << GRUB_DISK_SECTOR_BITS);
-	      if (!p) {
+	      if (!p)
 		goto finish;
-	}
 
 	      tmp_buf = p;
 
 	      if ((disk->dev->read) (disk, sector, num, tmp_buf))
 		{
 		  grub_error_push ();
-		  printf ("disk: %s read failed\n", disk->name);
+		  grub_dprintf ("disk", "%s read failed\n", disk->name);
 		  grub_error_pop ();
 		  goto finish;
 		}
 
-	      grub_memcpy (buf, tmp_buf + real_offset, size);
+	      if (buf)
+		grub_memcpy (buf, tmp_buf + real_offset, size);
 
 	      /* Call the read hook, if any.  */
 	      if (disk->read_hook)
 		while (size)
 		  {
-		    grub_size_t to_read = (size > GRUB_DISK_SECTOR_SIZE) ? GRUB_DISK_SECTOR_SIZE : size;
+		    grub_size_t to_read;
+
+		    to_read = size;
+		    if (real_offset + to_read > GRUB_DISK_SECTOR_SIZE)
+		      to_read = GRUB_DISK_SECTOR_SIZE - real_offset;
 		    (disk->read_hook) (sector, real_offset,
-				       to_read);
+				       to_read, disk->closure);
 		    if (grub_errno != GRUB_ERR_NONE)
 		      goto finish;
 
 		    sector++;
-		    size -= to_read - real_offset;
+		    size -= to_read;
 		    real_offset = 0;
 		  }
 
@@ -488,7 +511,8 @@ grub_disk_read (grub_disk_t disk, grub_disk_addr_t sector,
 	    }
 
 	  /* Copy it and store it in the disk cache.  */
-	  grub_memcpy (buf, tmp_buf + pos + real_offset, len);
+	  if (buf)
+	    grub_memcpy (buf, tmp_buf + pos + real_offset, len);
 	  grub_disk_cache_store (disk->dev->id, disk->id,
 				 start_sector, tmp_buf);
 	}
@@ -504,7 +528,7 @@ grub_disk_read (grub_disk_t disk, grub_disk_addr_t sector,
 	      (disk->read_hook) (s, real_offset,
 				 ((l > GRUB_DISK_SECTOR_SIZE)
 				  ? GRUB_DISK_SECTOR_SIZE
-				  : l));
+				  : l), disk->closure);
 
 	      if (l < GRUB_DISK_SECTOR_SIZE - real_offset)
 		break;
@@ -516,7 +540,8 @@ grub_disk_read (grub_disk_t disk, grub_disk_addr_t sector,
 	}
 
       sector = start_sector + GRUB_DISK_CACHE_SIZE;
-      buf = (char *) buf + len;
+      if (buf)
+	buf = (char *) buf + len;
       size -= len;
       real_offset = 0;
     }
@@ -524,7 +549,75 @@ grub_disk_read (grub_disk_t disk, grub_disk_addr_t sector,
  finish:
 
   grub_free (tmp_buf);
-//printf("ERRONO=%d\n", grub_errno);
+
+  return grub_errno;
+}
+
+grub_err_t
+grub_disk_read_ex (grub_disk_t disk, grub_disk_addr_t sector,
+		   grub_off_t offset, grub_size_t size, void *buf, int flags)
+{
+  unsigned real_offset;
+
+  if (! flags)
+    return grub_disk_read (disk, sector, offset, size, buf);
+
+  if (grub_disk_adjust_range (disk, &sector, &offset, size) != GRUB_ERR_NONE)
+    return grub_errno;
+
+  real_offset = offset;
+  while (size)
+    {
+      char tmp_buf[GRUB_DISK_SECTOR_SIZE];
+      grub_size_t len;
+
+      if ((real_offset != 0) || (size < GRUB_DISK_SECTOR_SIZE))
+	{
+	  len = GRUB_DISK_SECTOR_SIZE - real_offset;
+	  if (len > size)
+	    len = size;
+
+	  if (buf)
+	    {
+	      if ((disk->dev->read) (disk, sector, 1, tmp_buf) != GRUB_ERR_NONE)
+		break;
+	      grub_memcpy (buf, tmp_buf + real_offset, len);
+	    }
+
+	  if (disk->read_hook)
+	    (disk->read_hook) (sector, real_offset, len, disk->closure);
+
+	  sector++;
+	  real_offset = 0;
+	}
+      else
+	{
+	  grub_size_t n;
+
+	  len = size & ~(GRUB_DISK_SECTOR_SIZE - 1);
+	  n = size >> GRUB_DISK_SECTOR_BITS;
+
+	  if ((buf) &&
+	      ((disk->dev->read) (disk, sector, n, buf) != GRUB_ERR_NONE))
+	    break;
+
+	  if (disk->read_hook)
+	    {
+	      while (n)
+		{
+		  (disk->read_hook) (sector++, 0, GRUB_DISK_SECTOR_SIZE,
+				     disk->closure);
+		  n--;
+		}
+	    }
+	  else
+	    sector += n;
+	}
+
+      if (buf)
+	buf = (char *) buf + len;
+      size -= len;
+    }
 
   return grub_errno;
 }
@@ -538,7 +631,7 @@ grub_disk_write (grub_disk_t disk, grub_disk_addr_t sector,
   grub_dprintf ("disk", "Writing `%s'...\n", disk->name);
 
   if (grub_disk_adjust_range (disk, &sector, &offset, size) != GRUB_ERR_NONE)
-    return -1;
+    return grub_errno;
 
   real_offset = offset;
 

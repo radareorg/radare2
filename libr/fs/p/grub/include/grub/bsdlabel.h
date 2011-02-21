@@ -63,8 +63,6 @@
 #define	GRUB_PC_PARTITION_OPENBSD_TYPE_NTFS	18
 #define	GRUB_PC_PARTITION_OPENBSD_TYPE_RAID	19
 
-#define GRUB_PC_PARTITION_BSD_LABEL_WHOLE_DISK_PARTITION 2
-
 /* The BSD partition entry.  */
 struct grub_partition_bsd_entry
 {

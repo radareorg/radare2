@@ -65,7 +65,9 @@
 #include <grub/types.h>
 #include <grub/disk.h>
 #include <grub/dl.h>
-#include <grub/mm_private.h>
+
+#include <strings.h>
+#include <stdlib.h>
 
 #ifdef MM_DEBUG
 # undef grub_malloc
@@ -73,11 +75,62 @@
 # undef grub_realloc
 # undef grub_free
 # undef grub_memalign
+
+GRUB_EXPORT(grub_mm_debug);
+GRUB_EXPORT(grub_debug_malloc);
+GRUB_EXPORT(grub_debug_zalloc);
+GRUB_EXPORT(grub_debug_free);
+GRUB_EXPORT(grub_debug_realloc);
+GRUB_EXPORT(grub_debug_memalign);
+GRUB_EXPORT(grub_mm_get_free);
+
 #endif
+
+GRUB_EXPORT(grub_malloc);
+GRUB_EXPORT(grub_zalloc);
+GRUB_EXPORT(grub_free);
+GRUB_EXPORT(grub_realloc);
+GRUB_EXPORT(grub_memalign);
+
+/* Magic words.  */
+#define GRUB_MM_FREE_MAGIC	0x2d3c2808
+#define GRUB_MM_ALLOC_MAGIC	0x6db08fa4
+
+typedef struct grub_mm_header
+{
+  struct grub_mm_header *next;
+  grub_size_t size;
+  grub_size_t magic;
+#if GRUB_CPU_SIZEOF_VOID_P == 4
+  char padding[4];
+#elif GRUB_CPU_SIZEOF_VOID_P == 8
+  char padding[8];
+#else
+# error "unknown word size"
+#endif
+}
+*grub_mm_header_t;
+
+#if GRUB_CPU_SIZEOF_VOID_P == 4
+# define GRUB_MM_ALIGN_LOG2	4
+#elif GRUB_CPU_SIZEOF_VOID_P == 8
+# define GRUB_MM_ALIGN_LOG2	5
+#endif
+
+#define GRUB_MM_ALIGN	(1 << GRUB_MM_ALIGN_LOG2)
+
+typedef struct grub_mm_region
+{
+  struct grub_mm_header *first;
+  struct grub_mm_region *next;
+  grub_addr_t addr;
+  grub_size_t size;
+}
+*grub_mm_region_t;
 
 
 
-grub_mm_region_t grub_mm_base;
+static grub_mm_region_t base;
 
 /* Get a header from the pointer PTR, and set *P and *R to a pointer
    to the header and a pointer to its region, respectively. PTR must
@@ -85,12 +138,12 @@ grub_mm_region_t grub_mm_base;
 static void
 get_header_from_pointer (void *ptr, grub_mm_header_t *p, grub_mm_region_t *r)
 {
-  if ((grub_addr_t) ptr & (GRUB_MM_ALIGN - 1))
+  if ((int)(size_t) ptr & (GRUB_MM_ALIGN - 1))
     grub_fatal ("unaligned pointer %p", ptr);
 
-  for (*r = grub_mm_base; *r; *r = (*r)->next)
-    if ((grub_addr_t) ptr > (grub_addr_t) ((*r) + 1)
-	&& (grub_addr_t) ptr <= (grub_addr_t) ((*r) + 1) + (*r)->size)
+  for (*r = base; *r; *r = (*r)->next)
+    if ((grub_addr_t) ptr > (*r)->addr
+	&& (grub_addr_t) ptr <= (*r)->addr + (*r)->size)
       break;
 
   if (! *r)
@@ -121,18 +174,18 @@ grub_mm_init_region (void *addr, grub_size_t size)
   if (size < GRUB_MM_ALIGN)
     return;
 
-  h = (grub_mm_header_t) (r + 1);
+  h = (grub_mm_header_t) ((char *) r + GRUB_MM_ALIGN);
   h->next = h;
   h->magic = GRUB_MM_FREE_MAGIC;
   h->size = (size >> GRUB_MM_ALIGN_LOG2);
 
   r->first = h;
-  r->pre_size = (grub_addr_t) r - (grub_addr_t) addr;
+  r->addr = (grub_addr_t) h;
   r->size = (h->size << GRUB_MM_ALIGN_LOG2);
 
   /* Find where to insert this region. Put a smaller one before bigger ones,
      to prevent fragmentation.  */
-  for (p = &grub_mm_base, q = *p; q; p = &(q->next), q = *p)
+  for (p = &base, q = *p; q; p = &(q->next), q = *p)
     if (q->size > r->size)
       break;
 
@@ -171,7 +224,6 @@ grub_real_malloc (grub_mm_header_t *first, grub_size_t n, grub_size_t align)
 
       if (p->size >= n + extra)
 	{
-	  extra += (p->size - extra - n) & (~(align - 1));
 	  if (extra == 0 && p->size == n)
 	    {
 	      /* There is no special alignment requirement and memory block
@@ -211,7 +263,7 @@ grub_real_malloc (grub_mm_header_t *first, grub_size_t n, grub_size_t align)
 	  else if (extra == 0)
 	    {
 	      grub_mm_header_t r;
-	      
+
 	      r = p + extra + n;
 	      r->magic = GRUB_MM_FREE_MAGIC;
 	      r->size = p->size - extra - n;
@@ -250,10 +302,10 @@ grub_real_malloc (grub_mm_header_t *first, grub_size_t n, grub_size_t align)
 	      r = p + extra + n;
 	      r->magic = GRUB_MM_FREE_MAGIC;
 	      r->size = p->size - extra - n;
-	      r->next = p;
+	      r->next = p->next;
 
 	      p->size = extra;
-	      q->next = r;
+	      p->next = r;
 	      p += extra;
 	    }
 
@@ -284,16 +336,13 @@ grub_memalign (grub_size_t align, grub_size_t size)
   grub_size_t n = ((size + GRUB_MM_ALIGN - 1) >> GRUB_MM_ALIGN_LOG2) + 1;
   int count = 0;
 
-  if (!grub_mm_base)
-    goto fail;
-
   align = (align >> GRUB_MM_ALIGN_LOG2);
   if (align == 0)
     align = 1;
 
  again:
 
-  for (r = grub_mm_base; r; r = r->next)
+  for (r = base; r; r = r->next)
     {
       void *p;
 
@@ -321,7 +370,6 @@ grub_memalign (grub_size_t align, grub_size_t size)
       break;
     }
 
- fail:
   grub_error (GRUB_ERR_OUT_OF_MEMORY, "out of memory");
   return 0;
 }
@@ -330,12 +378,22 @@ grub_memalign (grub_size_t align, grub_size_t size)
 void *
 grub_malloc (grub_size_t size)
 {
-  return grub_memalign (0, size);
+//  return grub_memalign (0, size);
+  return malloc(size);
+}
+
+void *grub_zalloc (grub_size_t size)
+{
+    void *ret;
+    ret = malloc(size);
+    bzero(ret,size);
+
+    return ret;
 }
 
 /* Allocate SIZE bytes, clear them and return the pointer.  */
 void *
-grub_zalloc (grub_size_t size)
+grub_zalloc_orig (grub_size_t size)
 {
   void *ret;
 
@@ -346,10 +404,15 @@ grub_zalloc (grub_size_t size)
   return ret;
 }
 
+void grub_free (void *ptr) {
+    free(ptr);
+}
+
 /* Deallocate the pointer PTR.  */
 void
-grub_free (void *ptr)
+grub_free_orig (void *ptr)
 {
+    
   grub_mm_header_t p;
   grub_mm_region_t r;
 
@@ -412,10 +475,16 @@ grub_free (void *ptr)
     }
 }
 
+void * grub_realloc (void *ptr, grub_size_t size) {
+    realloc(ptr, size);
+    return ptr;
+}
+
 /* Reallocate SIZE bytes and return the pointer. The contents will be
    the same as that of PTR.  */
+   
 void *
-grub_realloc (void *ptr, grub_size_t size)
+grub_realloc_orig (void *ptr, grub_size_t size)
 {
   grub_mm_header_t p;
   grub_mm_region_t r;
@@ -455,7 +524,7 @@ grub_mm_dump_free (void)
 {
   grub_mm_region_t r;
 
-  for (r = grub_mm_base; r; r = r->next)
+  for (r = base; r; r = r->next)
     {
       grub_mm_header_t p;
 
@@ -482,13 +551,13 @@ grub_mm_dump (unsigned lineno)
   grub_mm_region_t r;
 
   grub_printf ("called at line %u\n", lineno);
-  for (r = grub_mm_base; r; r = r->next)
+  for (r = base; r; r = r->next)
     {
       grub_mm_header_t p;
 
-      for (p = (grub_mm_header_t) ALIGN_UP ((grub_addr_t) (r + 1),
-					    GRUB_MM_ALIGN);
-	   (grub_addr_t) p < (grub_addr_t) (r+1) + r->size;
+      for (p = (grub_mm_header_t) ((r->addr + GRUB_MM_ALIGN - 1)
+				   & (~(GRUB_MM_ALIGN - 1)));
+	   (grub_addr_t) p < r->addr + r->size;
 	   p++)
 	{
 	  switch (p->magic)

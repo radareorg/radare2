@@ -30,10 +30,16 @@ struct grub_list
 };
 typedef struct grub_list *grub_list_t;
 
-void EXPORT_FUNC(grub_list_push) (grub_list_t *head, grub_list_t item);
-void EXPORT_FUNC(grub_list_remove) (grub_list_t *head, grub_list_t item);
+typedef int (*grub_list_hook_t) (grub_list_t item, void *closure);
+typedef int (*grub_list_test_t) (grub_list_t new_item, grub_list_t item,
+				 void *closure);
 
-#define FOR_LIST_ELEMENTS(var, list) for ((var) = (list); (var); (var) = (var)->next)
+void grub_list_push (grub_list_t *head, grub_list_t item);
+void * grub_list_pop (grub_list_t *head);
+void grub_list_remove (grub_list_t *head, grub_list_t item);
+int grub_list_iterate (grub_list_t head, grub_list_hook_t hook, void *closure);
+void grub_list_insert (grub_list_t *head, grub_list_t item,
+		       grub_list_test_t test, void *closure);
 
 static inline void *
 grub_bad_type_cast_real (int line, const char *file)
@@ -67,8 +73,8 @@ struct grub_named_list
 };
 typedef struct grub_named_list *grub_named_list_t;
 
-void * EXPORT_FUNC(grub_named_list_find) (grub_named_list_t head,
-					  const char *name);
+void * grub_named_list_find (grub_named_list_t head,
+			     const char *name);
 
 #define GRUB_AS_NAMED_LIST(ptr) \
   ((GRUB_FIELD_MATCH (ptr, grub_named_list_t, next) && \
@@ -91,8 +97,8 @@ struct grub_prio_list
 };
 typedef struct grub_prio_list *grub_prio_list_t;
 
-void EXPORT_FUNC(grub_prio_list_insert) (grub_prio_list_t *head,
-					 grub_prio_list_t item);
+void grub_prio_list_insert (grub_prio_list_t *head,
+			    grub_prio_list_t item);
 
 static inline void
 grub_prio_list_remove (grub_prio_list_t *head, grub_prio_list_t item)

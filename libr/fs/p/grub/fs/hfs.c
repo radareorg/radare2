@@ -20,7 +20,6 @@
 /* HFS is documented at
    http://developer.apple.com/documentation/mac/Files/Files-2.html */
 
-#include <string.h>
 #include <grub/err.h>
 #include <grub/file.h>
 #include <grub/mm.h>
@@ -237,9 +236,11 @@ grub_hfs_block (struct grub_hfs_data *data, grub_hfs_datarecord_t dat,
    POS.  Return the amount of read bytes in READ.  */
 static grub_ssize_t
 grub_hfs_read_file (struct grub_hfs_data *data,
-		    void NESTED_FUNC_ATTR (*read_hook) (grub_disk_addr_t sector,
-				       unsigned offset, unsigned length),
-		     int pos, grub_size_t len, char *buf)
+		    void (*read_hook) (grub_disk_addr_t sector,
+				       unsigned offset, unsigned length,
+				       void *closure),
+		    void *closure,
+		    int pos, grub_size_t len, char *buf)
 {
   int i;
   int blockcnt;
@@ -281,6 +282,7 @@ grub_hfs_read_file (struct grub_hfs_data *data,
       if (blknr)
 	{
 	  data->disk->read_hook = read_hook;
+	  data->disk->closure = closure;
 	  grub_disk_read (data->disk, blknr, skipfirst,
 			  blockend, buf);
 	  data->disk->read_hook = 0;
@@ -649,9 +651,11 @@ grub_hfs_cmp_extkeys (struct grub_hfs_extent_key *k1,
    catalog node, 1 = extent overflow node).  If this is set, continue
    iterating to the next node.  For every records, call NODE_HOOK.  */
 static grub_err_t
-grub_hfs_iterate_records (struct grub_hfs_data *data, int type, int idx,
-			  int this, int (*node_hook) (struct grub_hfs_node *hnd,
-						      struct grub_hfs_record *))
+grub_hfs_iterate_records (struct grub_hfs_data *data, int type, int idx, int this,
+			  int (*node_hook) (struct grub_hfs_node *hnd,
+					    struct grub_hfs_record *,
+					    void *closure),
+			  void *closure)
 {
   int nodesize = type == 0 ? data->cat_size : data->ext_size;
 
@@ -705,7 +709,7 @@ grub_hfs_iterate_records (struct grub_hfs_data *data, int type, int idx,
 	      - pnt->keylen - 1
 	    };
 
-	  if (node_hook (&node.node, &rec))
+	  if (node_hook (&node.node, &rec, closure))
 	    return 0;
 	}
 
@@ -715,6 +719,59 @@ grub_hfs_iterate_records (struct grub_hfs_data *data, int type, int idx,
   return 0;
 }
 
+struct grub_hfs_find_node_closure
+{
+  char *key;
+  int type;
+  char *datar;
+  int datalen;
+  int found;
+  int isleaf;
+  int done;
+};
+
+static int
+grub_hfs_find_node_node_found (struct grub_hfs_node *hnd,
+			       struct grub_hfs_record *rec,
+			       void *closure)
+{
+  struct grub_hfs_find_node_closure *c = closure;
+  int cmp = 1;
+
+  if (c->type == 0)
+    cmp = grub_hfs_cmp_catkeys (rec->key, (void *) c->key);
+  else
+    cmp = grub_hfs_cmp_extkeys (rec->key, (void *) c->key);
+
+  /* If the key is smaller or equal to the current node, mark the
+     entry.  In case of a non-leaf mode it will be used to lookup
+     the rest of the tree.  */
+  if (cmp <= 0)
+    {
+      grub_uint32_t *node = (grub_uint32_t *) rec->data;
+      c->found = grub_be_to_cpu32 (*node);
+    }
+  else /* The key can not be found in the tree. */
+    return 1;
+
+  /* Check if this node is a leaf node.  */
+  if (hnd->type == GRUB_HFS_NODE_LEAF)
+    {
+      c->isleaf = 1;
+
+      /* Found it!!!!  */
+      if (cmp == 0)
+	{
+	  c->done = 1;
+
+	  grub_memcpy (c->datar, rec->data,
+		       rec->datalen < c->datalen ? rec->datalen : c->datalen);
+	  return 1;
+	}
+    }
+
+  return 0;
+}
 
 /* Lookup a record in the mounted filesystem DATA using the key KEY.
    The index of the node on top of the tree is IDX.  The tree is of
@@ -724,124 +781,119 @@ static int
 grub_hfs_find_node (struct grub_hfs_data *data, char *key,
 		    grub_uint32_t idx, int type, char *datar, int datalen)
 {
-int found = -1;
-int isleaf = 0;
-int done = 0;
+  struct grub_hfs_find_node_closure c;
 
-int node_found (struct grub_hfs_node *hnd, struct grub_hfs_record *rec) {
-	int cmp;
-	if (type == 0)
-		cmp = grub_hfs_cmp_catkeys (rec->key, (void *) key);
-	else cmp = grub_hfs_cmp_extkeys (rec->key, (void *) key);
-
-	/* If the key is smaller or equal to the current node, mark the
-	   entry.  In case of a non-leaf mode it will be used to lookup
-	   the rest of the tree.  */
-	if (cmp <= 0) {
-		grub_uint32_t *node = (grub_uint32_t *) rec->data;
-		found = grub_be_to_cpu32 (*node);
-	} else return 1; /* The key can not be found in the tree. */
-
-	/* Check if this node is a leaf node.  */
-	if (hnd->type == GRUB_HFS_NODE_LEAF) {
-		isleaf = 1;
-		/* Found it!!!!  */
-		if (cmp == 0) {
-			done = 1;
-			memmove (datar, rec->data,
-				rec->datalen < datalen ? rec->datalen : datalen);
-			return 1;
-		}
-	}
-      return 0;
-}
-
+  c.key = key;
+  c.type = type;
+  c.datar = datar;
+  c.datalen = datalen;
+  c.isleaf = 0;
+  c.done = 0;
   do
     {
-      found = -1;
+      c.found = -1;
 
-      if (grub_hfs_iterate_records (data, type, idx, 0, node_found))
+      if (grub_hfs_iterate_records (data, type, idx, 0,
+				    grub_hfs_find_node_node_found, &c))
         return 0;
 
-      if (found == -1)
+      if (c.found == -1)
         return 0;
 
-      idx = found;
-    } while (! isleaf);
+      idx = c.found;
+    } while (! c.isleaf);
 
-  return done;
+  return c.done;
 }
 
+struct grub_hfs_iterate_dir_closure
+{
+  unsigned int dir;
+  int (*hook) (struct grub_hfs_record *, void *closure);
+  void *closure;
+  struct grub_hfs_catalog_key *key;
+  int found;
+  int isleaf;
+  int next;
+};
+
+static int
+grub_hfs_iterate_dir_node_found (struct grub_hfs_node *hnd,
+				 struct grub_hfs_record *rec,
+				 void *closure)
+{
+  struct grub_hfs_iterate_dir_closure *c = closure;
+  struct grub_hfs_catalog_key *ckey = rec->key;
+
+  if (grub_hfs_cmp_catkeys (rec->key, (void *) c->key) <= 0)
+    c->found = grub_be_to_cpu32 (*(grub_uint32_t *) rec->data);
+
+  if (hnd->type == 0xFF && ckey->strlen > 0)
+    {
+      c->isleaf = 1;
+      c->next = grub_be_to_cpu32 (hnd->next);
+
+      /* An entry was found.  */
+      if (grub_be_to_cpu32 (ckey->parent_dir) == c->dir)
+	return c->hook (rec, c->closure);
+    }
+
+  return 0;
+}
+
+static int
+grub_hfs_iterate_dir_it_dir (struct grub_hfs_node *hnd __attribute ((unused)),
+			     struct grub_hfs_record *rec,
+			     void *closure)
+{
+  struct grub_hfs_iterate_dir_closure *c = closure;
+  struct grub_hfs_catalog_key *ckey = rec->key;
+  struct grub_hfs_catalog_key *origkey = c->key;
+
+  /* Stop when the entries do not match anymore.  */
+  if (grub_be_to_cpu32 (ckey->parent_dir)
+      != grub_be_to_cpu32 ((origkey)->parent_dir))
+    return 1;
+
+  return c->hook (rec, c->closure);
+}
 
 /* Iterate over the directory with the id DIR.  The tree is searched
    starting with the node ROOT_IDX.  For every entry in this directory
    call HOOK.  */
 static grub_err_t
 grub_hfs_iterate_dir (struct grub_hfs_data *data, grub_uint32_t root_idx,
-		      unsigned int dir, int (*hook) (struct grub_hfs_record *))
+		      unsigned int dir,
+		      int (*hook) (struct grub_hfs_record *, void *closure),
+		      void *closure)
 {
-  int found = -1;
-  int isleaf = 0;
-  int next = 0;
-
   /* The lowest key possible with DIR as root directory.  */
   struct grub_hfs_catalog_key key = {0, grub_cpu_to_be32 (dir), 0, ""};
+  struct grub_hfs_iterate_dir_closure c;
 
-  auto int node_found (struct grub_hfs_node *, struct grub_hfs_record *);
-  auto int it_dir (struct grub_hfs_node * __attribute ((unused)),
-		   struct grub_hfs_record *);
-
-
-  int node_found (struct grub_hfs_node *hnd, struct grub_hfs_record *rec)
-    {
-      struct grub_hfs_catalog_key *ckey = rec->key;
-
-      if (grub_hfs_cmp_catkeys (rec->key, (void *) &key) <= 0)
-	found = grub_be_to_cpu32 (*(grub_uint32_t *) rec->data);
-
-      if (hnd->type == 0xFF && ckey->strlen > 0)
-	{
-	  isleaf = 1;
-	  next = grub_be_to_cpu32 (hnd->next);
-
-	  /* An entry was found.  */
-	  if (grub_be_to_cpu32 (ckey->parent_dir) == dir)
-	    return hook (rec);
-	}
-
-      return 0;
-    }
-
-  int it_dir (struct grub_hfs_node *hnd __attribute ((unused)),
-	      struct grub_hfs_record *rec)
-    {
-      struct grub_hfs_catalog_key *ckey = rec->key;
-      struct grub_hfs_catalog_key *origkey = &key;
-
-      /* Stop when the entries do not match anymore.  */
-      if (grub_be_to_cpu32 (ckey->parent_dir)
-	  != grub_be_to_cpu32 ((origkey)->parent_dir))
-	return 1;
-
-      return hook (rec);
-    }
-
+  c.key = &key;
+  c.dir = dir;
+  c.hook = hook;
+  c.closure = closure;
+  c.isleaf = 0;
+  c.next = 0;
   do
     {
-      found = -1;
+      c.found = -1;
 
-      if (grub_hfs_iterate_records (data, 0, root_idx, 0, node_found))
+      if (grub_hfs_iterate_records (data, 0, root_idx, 0,
+				    grub_hfs_iterate_dir_node_found, &c))
         return grub_errno;
 
-      if (found == -1)
+      if (c.found == -1)
         return 0;
 
-      root_idx = found;
-    } while (! isleaf);
+      root_idx = c.found;
+    } while (! c.isleaf);
 
   /* If there was a matching record in this leaf node, continue the
      iteration until the last record was found.  */
-  grub_hfs_iterate_records (data, 0, next, 1, it_dir);
+  grub_hfs_iterate_records (data, 0, c.next, 1, grub_hfs_iterate_dir_it_dir, &c);
   return grub_errno;
 }
 
@@ -925,38 +977,45 @@ grub_hfs_find_dir (struct grub_hfs_data *data, const char *path,
   return grub_errno;
 }
 
+struct grub_hfs_dir_closure
+{
+  int (*hook) (const char *filename,
+	       const struct grub_dirhook_info *info, void *closure);
+  void *closure;
+};
+
+static int
+grub_hfs_dir_hook (struct grub_hfs_record *rec, void *closure)
+{
+  struct grub_hfs_dir_closure *c = closure;
+  char fname[32] = { 0 };
+  char *filetype = rec->data;
+  struct grub_hfs_catalog_key *ckey = rec->key;
+  struct grub_dirhook_info info;
+  grub_memset (&info, 0, sizeof (info));
+
+  grub_strncpy (fname, (char *) (ckey->str), ckey->strlen);
+
+  if (*filetype == GRUB_HFS_FILETYPE_DIR
+      || *filetype == GRUB_HFS_FILETYPE_FILE)
+    {
+      info.dir = (*filetype == GRUB_HFS_FILETYPE_DIR);
+      return c->hook (fname, &info, c->closure);
+    }
+  return 0;
+}
 
 
 static grub_err_t
 grub_hfs_dir (grub_device_t device, const char *path,
-		  int (*hook) (const char *filename,
-			       const struct grub_dirhook_info *info))
+	      int (*hook) (const char *filename,
+			   const struct grub_dirhook_info *info, void *closure),
+	      void *closure)
 {
   int inode;
-
-  auto int dir_hook (struct grub_hfs_record *rec);
-
-  int dir_hook (struct grub_hfs_record *rec)
-    {
-      char fname[32] = { 0 };
-      char *filetype = rec->data;
-      struct grub_hfs_catalog_key *ckey = rec->key;
-      struct grub_dirhook_info info;
-      grub_memset (&info, 0, sizeof (info));
-
-      grub_strncpy (fname, (char *) (ckey->str), ckey->strlen);
-
-      if (*filetype == GRUB_HFS_FILETYPE_DIR
-	  || *filetype == GRUB_HFS_FILETYPE_FILE)
-	{
-	  info.dir = (*filetype == GRUB_HFS_FILETYPE_DIR);
-	  return hook (fname, &info);
-	}
-      return 0;
-    }
-
   struct grub_hfs_data *data;
   struct grub_hfs_filerec frec;
+  struct grub_hfs_dir_closure c;
 
   grub_dl_ref (my_mod);
 
@@ -974,7 +1033,9 @@ grub_hfs_dir (grub_device_t device, const char *path,
       goto fail;
     }
 
-  grub_hfs_iterate_dir (data, data->cat_root, inode, dir_hook);
+  c.hook = hook;
+  c.closure = closure;
+  grub_hfs_iterate_dir (data, data->cat_root, inode, grub_hfs_dir_hook, &c);
 
  fail:
   grub_free (data);
@@ -1028,7 +1089,8 @@ grub_hfs_read (grub_file_t file, char *buf, grub_size_t len)
   struct grub_hfs_data *data =
     (struct grub_hfs_data *) file->data;
 
-  return grub_hfs_read_file (data, file->read_hook, file->offset, len, buf);
+  return grub_hfs_read_file (data, file->read_hook, file->closure,
+			     file->offset, len, buf);
 }
 
 

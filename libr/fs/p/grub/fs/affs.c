@@ -148,12 +148,14 @@ grub_affs_read_block (grub_fshelp_node_t node, grub_disk_addr_t fileblock)
    POS.  Return the amount of read bytes in READ.  */
 static grub_ssize_t
 grub_affs_read_file (grub_fshelp_node_t node,
-		     void NESTED_FUNC_ATTR (*read_hook) (grub_disk_addr_t sector,
-					unsigned offset, unsigned length),
+		     void (*read_hook) (grub_disk_addr_t sector,
+					unsigned offset, unsigned length,
+					void *closure),
+		     void *closure, int flags,
 		     int pos, grub_size_t len, char *buf)
 {
-  return grub_fshelp_read_file (node->data->disk, node, read_hook,
-				pos, len, buf, grub_affs_read_block,
+  return grub_fshelp_read_file (node->data->disk, node, read_hook, closure,
+				flags, pos, len, buf, grub_affs_read_block,
 				node->size, 0);
 }
 
@@ -208,7 +210,7 @@ grub_affs_mount (grub_disk_t disk)
   rblock = (struct grub_affs_rblock *) rootblock;
 
   /* Read the rootblock.  */
-  grub_disk_read (disk, grub_be_to_cpu32 (data->bblock.rootblock), 0,
+  grub_disk_read (disk, (disk->total_sectors >> 1) + blocksize, 0,
 		  GRUB_DISK_SECTOR_SIZE * 16, rootblock);
   if (grub_errno)
     goto fail;
@@ -240,7 +242,7 @@ grub_affs_mount (grub_disk_t disk)
   data->disk = disk;
   data->htsize = grub_be_to_cpu32 (rblock->htsize);
   data->diropen.data = data;
-  data->diropen.block = grub_be_to_cpu32 (data->bblock.rootblock);
+  data->diropen.block = (disk->total_sectors >> 1);
 
   grub_free (rootblock);
 
@@ -277,47 +279,67 @@ grub_affs_read_symlink (grub_fshelp_node_t node)
   return symlink;
 }
 
+struct grub_affs_iterate_dir_closure
+{
+  int (*hook) (const char *filename,
+	       enum grub_fshelp_filetype filetype,
+	       grub_fshelp_node_t node, void *closure);
+  void *closure;
+  struct grub_fshelp_node *node;
+  struct grub_affs_data *data;
+  struct grub_affs_file *file;
+  grub_uint32_t *hashtable;
+};
+
+static int
+grub_affs_create_node (const char *name, int block,
+		       int size, int type,
+		       struct grub_affs_iterate_dir_closure *c)
+{
+  struct grub_fshelp_node *node;
+
+  node = grub_malloc (sizeof (*node));
+  c->node = node;
+  if (!node)
+    {
+      grub_free (c->hashtable);
+      return 1;
+    }
+
+  node->data = c->data;
+  node->size = size;
+  node->block = block;
+  node->parent = grub_be_to_cpu32 (c->file->parent);
+
+  if (c->hook (name, type, node, c->closure))
+    {
+      grub_free (c->hashtable);
+      return 1;
+    }
+  return 0;
+}
 
 static int
 grub_affs_iterate_dir (grub_fshelp_node_t dir,
-		       int NESTED_FUNC_ATTR
-		       (*hook) (const char *filename,
-				enum grub_fshelp_filetype filetype,
-				grub_fshelp_node_t node))
+		       int (*hook) (const char *filename,
+				    enum grub_fshelp_filetype filetype,
+				    grub_fshelp_node_t node, void *closure),
+		       void *closure)
 {
   int i;
   struct grub_affs_file file;
-  struct grub_fshelp_node *node = 0;
   struct grub_affs_data *data = dir->data;
   grub_uint32_t *hashtable;
+  struct grub_affs_iterate_dir_closure c;
 
-  auto int NESTED_FUNC_ATTR grub_affs_create_node (const char *name, int block,
-						   int size, int type);
-
-  int NESTED_FUNC_ATTR grub_affs_create_node (const char *name, int block,
-					      int size, int type)
-    {
-      node = grub_malloc (sizeof (*node));
-      if (!node)
-	{
-	  grub_free (hashtable);
-	  return 1;
-	}
-
-      node->data = data;
-      node->size = size;
-      node->block = block;
-      node->parent = grub_be_to_cpu32 (file.parent);
-
-      if (hook (name, type, node))
-	{
-	  grub_free (hashtable);
-	  return 1;
-	}
-      return 0;
-    }
+  c.hook = hook;
+  c.closure = closure;
+  c.node = 0;
+  c.data = data;
+  c.file = &file;
 
   hashtable = grub_malloc (data->htsize * sizeof (*hashtable));
+  c.hashtable = hashtable;
   if (!hashtable)
     return 1;
 
@@ -327,10 +349,10 @@ grub_affs_iterate_dir (grub_fshelp_node_t dir,
     goto fail;
 
   /* Create the directory entries for `.' and `..'.  */
-  if (grub_affs_create_node (".", dir->block, dir->size, GRUB_FSHELP_DIR))
+  if (grub_affs_create_node (".", dir->block, dir->size, GRUB_FSHELP_DIR, &c))
     return 1;
   if (grub_affs_create_node ("..", dir->parent ? dir->parent : dir->block,
-			     dir->size, GRUB_FSHELP_DIR))
+			     dir->size, GRUB_FSHELP_DIR, &c))
     return 1;
 
   for (i = 0; i < data->htsize; i++)
@@ -366,7 +388,7 @@ grub_affs_iterate_dir (grub_fshelp_node_t dir,
 	    type = GRUB_FSHELP_UNKNOWN;
 
 	  if (grub_affs_create_node ((char *) (file.name), next,
-				     grub_be_to_cpu32 (file.size), type))
+				     grub_be_to_cpu32 (file.size), type, &c))
 	    return 1;
 
 	  next = grub_be_to_cpu32 (file.next);
@@ -377,7 +399,7 @@ grub_affs_iterate_dir (grub_fshelp_node_t dir,
   return 0;
 
  fail:
-  grub_free (node);
+  grub_free (c.node);
   grub_free (hashtable);
   return 0;
 }
@@ -396,7 +418,7 @@ grub_affs_open (struct grub_file *file, const char *name)
   if (!data)
     goto fail;
 
-  grub_fshelp_find_file (name, &data->diropen, &fdiro, grub_affs_iterate_dir,
+  grub_fshelp_find_file (name, &data->diropen, &fdiro, grub_affs_iterate_dir, 0,
 			 grub_affs_read_symlink, GRUB_FSHELP_REG);
   if (grub_errno)
     goto fail;
@@ -440,34 +462,42 @@ grub_affs_read (grub_file_t file, char *buf, grub_size_t len)
     (struct grub_affs_data *) file->data;
 
   int size = grub_affs_read_file (&data->diropen, file->read_hook,
-			      file->offset, len, buf);
+				  file->closure, file->flags,
+				  file->offset, len, buf);
 
   return size;
 }
 
+struct grub_affs_dir_closure
+{
+  int (*hook) (const char *filename,
+	       const struct grub_dirhook_info *info, void *closure);
+  void *closure;
+};
+
+static int
+iterate (const char *filename,
+	 enum grub_fshelp_filetype filetype,
+	 grub_fshelp_node_t node,
+	 void *closure)
+{
+  struct grub_affs_dir_closure *c = closure;
+  struct grub_dirhook_info info;
+  grub_memset (&info, 0, sizeof (info));
+  info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
+  grub_free (node);
+  return c->hook (filename, &info, c->closure);
+}
 
 static grub_err_t
 grub_affs_dir (grub_device_t device, const char *path,
 	       int (*hook) (const char *filename,
-			    const struct grub_dirhook_info *info))
+			    const struct grub_dirhook_info *info, void *closure),
+	       void *closure)
 {
   struct grub_affs_data *data = 0;
   struct grub_fshelp_node *fdiro = 0;
-
-  auto int NESTED_FUNC_ATTR iterate (const char *filename,
-				     enum grub_fshelp_filetype filetype,
-				     grub_fshelp_node_t node);
-
-  int NESTED_FUNC_ATTR iterate (const char *filename,
-				enum grub_fshelp_filetype filetype,
-				grub_fshelp_node_t node)
-    {
-      struct grub_dirhook_info info;
-      grub_memset (&info, 0, sizeof (info));
-      info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
-      grub_free (node);
-      return hook (filename, &info);
-    }
+  struct grub_affs_dir_closure c;
 
   grub_dl_ref (my_mod);
 
@@ -475,12 +505,14 @@ grub_affs_dir (grub_device_t device, const char *path,
   if (!data)
     goto fail;
 
-  grub_fshelp_find_file (path, &data->diropen, &fdiro, grub_affs_iterate_dir,
+  grub_fshelp_find_file (path, &data->diropen, &fdiro, grub_affs_iterate_dir, 0,
 			 grub_affs_read_symlink, GRUB_FSHELP_DIR);
   if (grub_errno)
     goto fail;
 
-  grub_affs_iterate_dir (fdiro, iterate);
+  c.hook = hook;
+  c.closure = closure;
+  grub_affs_iterate_dir (fdiro, iterate, &c);
 
  fail:
   if (data && fdiro != &data->diropen)
@@ -507,7 +539,7 @@ grub_affs_label (grub_device_t device, char **label)
     {
       /* The rootblock maps quite well on a file header block, it's
 	 something we can use here.  */
-      grub_disk_read (data->disk, grub_be_to_cpu32 (data->bblock.rootblock),
+      grub_disk_read (data->disk, disk->total_sectors >> 1,
 		      data->blocksize * (GRUB_DISK_SECTOR_SIZE
 					 - GRUB_AFFS_FILE_LOCATION),
 		      sizeof (file), &file);
@@ -527,7 +559,7 @@ grub_affs_label (grub_device_t device, char **label)
 }
 
 
-struct grub_fs grub_affs_fs =
+static struct grub_fs grub_affs_fs =
   {
     .name = "affs",
     .dir = grub_affs_dir,
@@ -535,9 +567,6 @@ struct grub_fs grub_affs_fs =
     .read = grub_affs_read,
     .close = grub_affs_close,
     .label = grub_affs_label,
-#ifdef GRUB_UTIL
-    .reserved_first_sector = 0,
-#endif
     .next = 0
   };
 

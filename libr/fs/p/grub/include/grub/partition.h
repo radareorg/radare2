@@ -26,13 +26,6 @@ struct grub_disk;
 
 typedef struct grub_partition *grub_partition_t;
 
-#ifdef GRUB_UTIL
-typedef enum
-{
-  GRUB_EMBED_PCBIOS
-} grub_embed_type_t;
-#endif
-
 /* Partition map type.  */
 struct grub_partition_map
 {
@@ -45,13 +38,9 @@ struct grub_partition_map
   /* Call HOOK with each partition, until HOOK returns non-zero.  */
   grub_err_t (*iterate) (struct grub_disk *disk,
 			 int (*hook) (struct grub_disk *disk,
-				      const grub_partition_t partition));
-#ifdef GRUB_UTIL
-  /* Determine sectors available for embedding.  */
-  grub_err_t (*embed) (struct grub_disk *disk, unsigned int *nsectors,
-		       grub_embed_type_t embed_type,
-		       grub_disk_addr_t **sectors);
-#endif
+				      const grub_partition_t partition,
+				      void *closure),
+			 void *closure);
 };
 typedef struct grub_partition_map *grub_partition_map_t;
 
@@ -61,7 +50,7 @@ struct grub_partition
   /* The partition number.  */
   int number;
 
-  /* The start sector (relative to parent).  */
+  /* The start sector.  */
   grub_disk_addr_t start;
 
   /* The length in sector units.  */
@@ -73,35 +62,36 @@ struct grub_partition
   /* The index of this partition in the partition table.  */
   int index;
 
-  /* Parent partition (physically contains this partition).  */
+  /* Parent partition map.  */
   struct grub_partition *parent;
 
   /* The type partition map.  */
   grub_partition_map_t partmap;
 
   /* The type of partition when it's on MSDOS.
-     Used for embedding detection.  */
+   * Used for embedding detection.  */
   grub_uint8_t msdostype;
 };
 
-grub_partition_t EXPORT_FUNC(grub_partition_probe) (struct grub_disk *disk,
-						    const char *str);
-int EXPORT_FUNC(grub_partition_iterate) (struct grub_disk *disk,
-					 int (*hook) (struct grub_disk *disk,
-						      const grub_partition_t partition));
-char *EXPORT_FUNC(grub_partition_get_name) (const grub_partition_t partition);
+grub_partition_t grub_partition_probe (struct grub_disk *disk,
+				       const char *str);
+int grub_partition_iterate (struct grub_disk *disk,
+			    int (*hook) (struct grub_disk *disk,
+					 const grub_partition_t partition,
+					 void *closure),
+			    void *closure);
+char * grub_partition_get_name (const grub_partition_t partition);
 
 
-extern grub_partition_map_t EXPORT_VAR(grub_partition_map_list);
+extern grub_partition_map_t grub_partition_map_list;
 
-#ifndef GRUB_LST_GENERATOR
 static inline void
 grub_partition_map_register (grub_partition_map_t partmap)
 {
   grub_list_push (GRUB_AS_LIST_P (&grub_partition_map_list),
 		  GRUB_AS_LIST (partmap));
+  GRUB_MODATTR ("partmap", "");
 }
-#endif
 
 static inline void
 grub_partition_map_unregister (grub_partition_map_t partmap)
@@ -110,7 +100,7 @@ grub_partition_map_unregister (grub_partition_map_t partmap)
 		    GRUB_AS_LIST (partmap));
 }
 
-#define FOR_PARTITION_MAPS(var) FOR_LIST_ELEMENTS((var), (grub_partition_map_list))
+#define FOR_PARTITION_MAPS(var) for (var = grub_partition_map_list; var; var = var->next)
 
 
 static inline grub_disk_addr_t

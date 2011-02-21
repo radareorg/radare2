@@ -17,18 +17,26 @@
  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
 #include <grub/err.h>
 #include <grub/misc.h>
 #include <stdarg.h>
 #include <grub/i18n.h>
+
+GRUB_EXPORT(grub_errno);
+GRUB_EXPORT(grub_errmsg);
+
+GRUB_EXPORT(grub_error);
+GRUB_EXPORT(grub_fatal);
+GRUB_EXPORT(grub_error_push);
+GRUB_EXPORT(grub_error_pop);
+GRUB_EXPORT(grub_print_error);
+GRUB_EXPORT(grub_err_printf);
 
 #define GRUB_MAX_ERRMSG		256
 #define GRUB_ERROR_STACK_SIZE	10
 
 grub_err_t grub_errno;
 char grub_errmsg[GRUB_MAX_ERRMSG];
-int grub_err_printed_errors;
 
 static struct
 {
@@ -47,7 +55,7 @@ grub_error (grub_err_t n, const char *fmt, ...)
   grub_errno = n;
 
   va_start (ap, fmt);
-  grub_vsnprintf (grub_errmsg, sizeof (grub_errmsg), fmt, ap);
+  grub_vsnprintf (grub_errmsg, sizeof (grub_errmsg), _(fmt), ap);
   va_end (ap);
 
   return n;
@@ -59,7 +67,7 @@ grub_fatal (const char *fmt, ...)
   va_list ap;
 
   va_start (ap, fmt);
-  grub_vprintf (fmt, ap);
+  grub_vprintf (_(fmt), ap);
   va_end (ap);
 
   grub_abort ();
@@ -124,17 +132,14 @@ grub_print_error (void)
   do
     {
       if (grub_errno != GRUB_ERR_NONE)
-	{
-	  fprintf (stderr, "error: %s.\n", grub_errmsg);
-	  grub_err_printed_errors++;
-	}
+        grub_err_printf (_("error: %s.\n"), grub_errmsg);
     }
   while (grub_error_pop ());
 
   /* If there was an assert while using error stack, report about it.  */
   if (grub_error_stack_assert)
     {
-      fprintf (stderr, "assert: error stack overflow detected!\n");
+      grub_err_printf ("assert: error stack overflow detected!\n");
       grub_error_stack_assert = 0;
     }
 }

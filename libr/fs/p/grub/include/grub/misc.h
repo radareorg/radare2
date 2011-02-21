@@ -43,8 +43,6 @@
 
 #define ALIGN_UP(addr, align) \
 	((addr + (typeof (addr)) align - 1) & ~((typeof (addr)) align - 1))
-#define ALIGN_DOWN(addr, align) \
-	((addr) & ~((typeof (addr)) align - 1))
 #define ARRAY_SIZE(array) (sizeof (array) / sizeof (array[0]))
 #define COMPILE_TIME_ASSERT(cond) switch (0) { case 1: case !(cond): ; }
 
@@ -52,10 +50,10 @@
 /* XXX: If grub_memmove is too slow, we must implement grub_memcpy.  */
 #define grub_memcpy(d,s,n)	grub_memmove ((d), (s), (n))
 
-void *EXPORT_FUNC(grub_memmove) (void *dest, const void *src, grub_size_t n);
-char *EXPORT_FUNC(grub_strcpy) (char *dest, const char *src);
-char *EXPORT_FUNC(grub_strncpy) (char *dest, const char *src, int c);
-char *EXPORT_FUNC(grub_stpcpy) (char *dest, const char *src);
+void *grub_memmove (void *dest, const void *src, grub_size_t n);
+char *grub_strcpy (char *dest, const char *src);
+char *grub_strncpy (char *dest, const char *src, int c);
+char *grub_stpcpy (char *dest, const char *src);
 
 static inline char *
 grub_strcat (char *dest, const char *src)
@@ -93,24 +91,16 @@ grub_strncat (char *dest, const char *src, int c)
   return dest;
 }
 
-/* Prototypes for aliases.  */
-#ifndef GRUB_UTIL
-int EXPORT_FUNC(memcmp) (const void *s1, const void *s2, grub_size_t n);
-void *EXPORT_FUNC(memmove) (void *dest, const void *src, grub_size_t n);
-void *EXPORT_FUNC(memcpy) (void *dest, const void *src, grub_size_t n);
-void *EXPORT_FUNC(memset) (void *s, int c, grub_size_t n);
-#endif
+int grub_memcmp (const void *s1, const void *s2, grub_size_t n);
+int grub_strcmp (const char *s1, const char *s2);
+int grub_strncmp (const char *s1, const char *s2, grub_size_t n);
 
-int EXPORT_FUNC(grub_memcmp) (const void *s1, const void *s2, grub_size_t n);
-int EXPORT_FUNC(grub_strcmp) (const char *s1, const char *s2);
-int EXPORT_FUNC(grub_strncmp) (const char *s1, const char *s2, grub_size_t n);
-
-char *EXPORT_FUNC(grub_strchr) (const char *s, int c);
-char *EXPORT_FUNC(grub_strrchr) (const char *s, int c);
-int EXPORT_FUNC(grub_strword) (const char *s, const char *w);
-char *EXPORT_FUNC(grub_strstr) (const char *haystack, const char *needle);
-int EXPORT_FUNC(grub_isspace) (int c);
-int EXPORT_FUNC(grub_isprint) (int c);
+char *grub_strchr (const char *s, int c);
+char *grub_strrchr (const char *s, int c);
+int grub_strword (const char *s, const char *w);
+char *grub_strstr (const char *haystack, const char *needle);
+int grub_isspace (int c);
+int grub_isprint (int c);
 
 static inline int
 grub_iscntrl (int c)
@@ -193,29 +183,8 @@ grub_strncasecmp (const char *s1, const char *s2, grub_size_t n)
   return (int) grub_tolower (*s1) - (int) grub_tolower (*s2);
 }
 
-/* Replace all `ch' characters of `input' with `with' and copy the
-   result into `output'; return EOS address of `output'. */
-static inline char *
-grub_strchrsub (char *output, const char *input, char ch, const char *with)
-{
-  grub_size_t grub_strlen (const char *s);
-  while (*input)
-    {
-      if (*input == ch)
-	{
-	  grub_strcpy (output, with);
-	  output += grub_strlen (with);
-	  input++;
-	  continue;
-	}
-      *output++ = *input++;
-    }
-  *output = '\0';
-  return output;
-}
-
-unsigned long EXPORT_FUNC(grub_strtoul) (const char *str, char **end, int base);
-unsigned long long EXPORT_FUNC(grub_strtoull) (const char *str, char **end, int base);
+unsigned long grub_strtoul (const char *str, char **end, int base);
+unsigned long long grub_strtoull (const char *str, char **end, int base);
 
 static inline long
 grub_strtol (const char *str, char **end, int base)
@@ -253,50 +222,40 @@ grub_strtol (const char *str, char **end, int base)
     }
 }
 
-char *EXPORT_FUNC(grub_strdup) (const char *s) __attribute__ ((warn_unused_result));
-char *EXPORT_FUNC(grub_strndup) (const char *s, grub_size_t n) __attribute__ ((warn_unused_result));
-void *EXPORT_FUNC(grub_memset) (void *s, int c, grub_size_t n);
-grub_size_t EXPORT_FUNC(grub_strlen) (const char *s) __attribute__ ((warn_unused_result));
-int EXPORT_FUNC(grub_printf) (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
-int EXPORT_FUNC(grub_printf_) (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
-
-extern void (*EXPORT_VAR (grub_xputs)) (const char *str);
-
-static inline int
-grub_puts (const char *s)
-{
-  const char nl[2] = "\n";
-  grub_xputs (s);
-  grub_xputs (nl);
-
-  return 1;	/* Cannot fail.  */
-}
-
-int EXPORT_FUNC(grub_puts_) (const char *s);
-void EXPORT_FUNC(grub_real_dprintf) (const char *file,
-                                     const int line,
-                                     const char *condition,
-                                     const char *fmt, ...) __attribute__ ((format (printf, 4, 5)));
-int EXPORT_FUNC(grub_vprintf) (const char *fmt, va_list args);
-int EXPORT_FUNC(grub_snprintf) (char *str, grub_size_t n, const char *fmt, ...)
+char *grub_strdup (const char *s);
+char *grub_strndup (const char *s, grub_size_t n);
+void *grub_memset (void *s, int c, grub_size_t n);
+grub_size_t grub_strlen (const char *s);
+int grub_printf (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+int grub_printf_ (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+int grub_puts (const char *s);
+int grub_puts_ (const char *s);
+void grub_real_dprintf (const char *file,
+			const int line,
+			const char *condition,
+			const char *fmt, ...) __attribute__ ((format (printf, 4, 5)));
+int grub_vprintf (const char *fmt, va_list args);
+int grub_snprintf (char *str, grub_size_t n, const char *fmt, ...)
      __attribute__ ((format (printf, 3, 4)));
-int EXPORT_FUNC(grub_vsnprintf) (char *str, grub_size_t n, const char *fmt,
-				 va_list args);
-char *EXPORT_FUNC(grub_xasprintf) (const char *fmt, ...)
-     __attribute__ ((format (printf, 1, 2))) __attribute__ ((warn_unused_result));
-char *EXPORT_FUNC(grub_xvasprintf) (const char *fmt, va_list args) __attribute__ ((warn_unused_result));
-void EXPORT_FUNC(grub_exit) (void);// __attribute__ ((noreturn));
-void EXPORT_FUNC(grub_abort) (void);// __attribute__ ((noreturn));
-grub_uint64_t EXPORT_FUNC(grub_divmod64) (grub_uint64_t n,
-					  grub_uint32_t d, grub_uint32_t *r);
+int grub_vsnprintf (char *str, grub_size_t n, const char *fmt, va_list args);
+char *grub_xasprintf (const char *fmt, ...)
+     __attribute__ ((format (printf, 1, 2)));
+char *grub_xvasprintf (const char *fmt, va_list args);
+grub_size_t grub_utf8_to_ucs4 (grub_uint32_t *dest,
+			       grub_size_t destsize,
+			       const grub_uint8_t *src,
+			       grub_size_t srcsize,
+			       const grub_uint8_t **srcend);
+grub_uint64_t grub_divmod64 (grub_uint64_t n,
+			     grub_uint32_t d, grub_uint32_t *r);
 
-#if NEED_ENABLE_EXECUTE_STACK && !defined(GRUB_UTIL)
-void EXPORT_FUNC(__enable_execute_stack) (void *addr);
+#if defined(NEED_ENABLE_EXECUTE_STACK) && !defined(GRUB_UTIL)
+void __enable_execute_stack (void *addr);
 #endif
 
-#if NEED_REGISTER_FRAME_INFO && !defined(GRUB_UTIL)
-void EXPORT_FUNC (__register_frame_info) (void);
-void EXPORT_FUNC (__deregister_frame_info) (void);
+#if defined (NEED_REGISTER_FRAME_INFO) && !defined(GRUB_UTIL)
+void __register_frame_info (void);
+void __deregister_frame_info (void);
 #endif
 
 /* Inline functions.  */
@@ -308,15 +267,6 @@ grub_abs (int x)
     return (unsigned int) (-x);
   else
     return (unsigned int) x;
-}
-
-static inline long
-grub_min (long x, long y)
-{
-  if (x < y)
-    return x;
-  else
-    return y;
 }
 
 static inline long
@@ -336,21 +286,14 @@ grub_div_roundup (unsigned int x, unsigned int y)
 }
 
 /* Reboot the machine.  */
-void EXPORT_FUNC (grub_reboot) (void) __attribute__ ((noreturn));
+void EXPORT_FUNC (grub_reboot) (void);
 
 #ifdef GRUB_MACHINE_PCBIOS
 /* Halt the system, using APM if possible. If NO_APM is true, don't
  * use APM even if it is available.  */
-void grub_halt (int no_apm) __attribute__ ((noreturn));
+void EXPORT_FUNC (grub_halt) (int no_apm);
 #else
-void grub_halt (void) __attribute__ ((noreturn));
-#endif
-
-#ifdef GRUB_MACHINE_EMU
-/* Flag to control module autoloading in normal mode.  */
-extern int EXPORT_VAR(grub_no_autoload);
-#else
-#define grub_no_autoload 0
+void EXPORT_FUNC (grub_halt) (void);
 #endif
 
 #endif /* ! GRUB_MISC_HEADER */

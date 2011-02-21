@@ -68,7 +68,6 @@ R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path, ut64 d
 	}
 	p = r_fs_plugin_get (fs, fstype);
 	if (p != NULL) {
-		r_str_chop_path (path);
 		root = r_fs_root_new (path, delta);
 		root->p = p;
 		//memcpy (&root->iob, &fs->iob, sizeof (root->iob));
@@ -107,13 +106,16 @@ R_API RFSRoot *r_fs_root (RFS *fs, const char *path) {
 }
 
 /* filez */
-
-R_API RFSFile *r_fs_open (RFS* fs, const char *path) {
+R_API RFSFile *r_fs_open (RFS* fs, const char *p) {
+	char *path = strdup (p);
 	r_str_chop_path (path);
 	RFSRoot *root = r_fs_root (fs, path);
-	if (root && root->p && root->p->open)
-		return root->p->open (root, path+strlen (root->path));
-	else eprintf ("r_fs_open: null root->p->open\n");
+	if (root && root->p && root->p->open) {
+		RFSFile *f = root->p->open (root, path+strlen (root->path));
+		free (path);
+		return f;
+	} else eprintf ("r_fs_open: null root->p->open\n");
+	free (path);
         return NULL;
 }
 
@@ -138,16 +140,20 @@ R_API int r_fs_read (RFS* fs, RFSFile *file, ut64 addr, int len) {
 	return R_FALSE;
 }
 
-R_API RList *r_fs_dir(RFS* fs, const char *path) {
+R_API RList *r_fs_dir(RFS* fs, const char *p) {
 	if (fs) {
+		char *path = strdup (p);
 		r_str_chop_path (path);
 		RFSRoot *root = r_fs_root (fs, path);
 		if (root) {
 			const char *dir = path + strlen (root->path);
 			if (!*dir) dir = "/";
-			if (root)
+			if (root) {
+				free (path);
 				return root->p->dir (root, dir);
+			}
 		}
+		free (path);
 		eprintf ("r_fs_dir: error, path %s is not mounted\n", path);
 	}
 	return NULL;
@@ -195,10 +201,11 @@ R_API RList *r_fs_partitions (RFS *fs, const char *ptype, ut64 delta) {
 		gpm = &grub_amiga_partition_map;
 	else if (!strcmp (ptype, "bsdlabel"))
 		gpm = &grub_bsdlabel_partition_map;
-	else if (!strcmp (ptype, "openbsdlabel"))
-		gpm = &grub_openbsdlabel_partition_map;
-	else if (!strcmp (ptype, "netbsdlabel"))
-		gpm = &grub_netbsdlabel_partition_map;
+// XXX: In BURG all bsd partition map are in bsdlabel
+//	else if (!strcmp (ptype, "openbsdlabel"))
+//		gpm = &grub_openbsdlabel_partition_map;
+//	else if (!strcmp (ptype, "netbsdlabel"))
+//		gpm = &grub_netbsdlabel_partition_map;
 //	else if (!strcmp (ptype, "acorn"))
 //		gpm = &grub_acorn_partition_map;
 	else if (!strcmp (ptype, "gpt"))
@@ -208,7 +215,7 @@ R_API RList *r_fs_partitions (RFS *fs, const char *ptype, ut64 delta) {
 		list = r_list_new ();
 		list->free = (RListFree)r_fs_partition_free;
 		struct grub_disk *disk = grubfs_disk (&fs->iob);
-		gpm->iterate (disk, parhook);
+		gpm->iterate (disk, parhook, 0);
 		return list;
 	}
 	eprintf ("Unknown partition type '%s'. Supported types:\n"

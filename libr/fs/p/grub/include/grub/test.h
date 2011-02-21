@@ -72,14 +72,14 @@ void grub_test_nonzero (int cond, const char *file,
 
 /* Macro to define a functional test.  */
 #define GRUB_FUNCTIONAL_TEST(name, funp)	\
-  GRUB_MOD_INIT(name)				\
+  GRUB_MOD_INIT(functional_test_##funp)		\
   {						\
-    grub_test_register (#name, funp);		\
+    grub_test_register (name, funp);		\
   }						\
 						\
-  GRUB_MOD_FINI(name)				\
+  GRUB_MOD_FINI(functional_test_##funp)		\
   {						\
-    grub_test_unregister (#name);		\
+    grub_test_unregister (name);		\
   }
 
 #endif /* ! GRUB_TEST_HEADER */

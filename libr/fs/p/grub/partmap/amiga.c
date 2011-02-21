@@ -27,7 +27,6 @@ struct grub_amiga_rdsk
 {
   /* "RDSK".  */
   grub_uint8_t magic[4];
-#define GRUB_AMIGA_RDSK_MAGIC "RDSK"
   grub_uint32_t size;
   grub_int32_t checksum;
   grub_uint32_t scsihost;
@@ -44,7 +43,6 @@ struct grub_amiga_partition
 {
   /* "PART".  */
   grub_uint8_t magic[4];
-#define GRUB_AMIGA_PART_MAGIC "PART"
   grub_int32_t size;
   grub_int32_t checksum;
   grub_uint32_t scsihost;
@@ -74,7 +72,9 @@ struct grub_partition_map grub_amiga_partition_map;
 static grub_err_t
 amiga_partition_map_iterate (grub_disk_t disk,
 			     int (*hook) (grub_disk_t disk,
-					  const grub_partition_t partition))
+					  const grub_partition_t partition,
+					  void *closure),
+			     void *closure)
 {
   struct grub_partition part;
   struct grub_amiga_rdsk rdsk;
@@ -89,8 +89,7 @@ amiga_partition_map_iterate (grub_disk_t disk,
       if (grub_disk_read (disk, pos, 0, sizeof (rdsk), &rdsk))
 	return grub_errno;
 
-      if (grub_memcmp (rdsk.magic, GRUB_AMIGA_RDSK_MAGIC,
-		       sizeof (rdsk.magic)) == 0)
+      if (grub_strcmp ((char *) rdsk.magic, "RDSK") == 0)
 	{
 	  /* Found the first PART block.  */
 	  next = grub_be_to_cpu32 (rdsk.partitionlst);
@@ -111,9 +110,6 @@ amiga_partition_map_iterate (grub_disk_t disk,
       if (grub_disk_read (disk, next, 0, sizeof (apart), &apart))
 	return grub_errno;
 
-      if (grub_memcmp (apart.magic, GRUB_AMIGA_PART_MAGIC,
-		       sizeof (apart.magic)) == 0)
-
       /* Calculate the first block and the size of the partition.  */
       part.start = (grub_be_to_cpu32 (apart.lowcyl)
 		    * grub_be_to_cpu32 (apart.heads)
@@ -128,7 +124,7 @@ amiga_partition_map_iterate (grub_disk_t disk,
       part.index = 0;
       part.partmap = &grub_amiga_partition_map;
 
-      if (hook (disk, &part))
+      if (hook (disk, &part, closure))
 	return grub_errno;
 
       next = grub_be_to_cpu32 (apart.next);
@@ -140,7 +136,18 @@ amiga_partition_map_iterate (grub_disk_t disk,
 
 
 /* Partition map type.  */
-struct grub_partition_map grub_amiga_partition_map = {
-	.name = "amiga",
-	.iterate = amiga_partition_map_iterate,
-};
+struct grub_partition_map grub_amiga_partition_map =
+  {
+    .name = "amiga",
+    .iterate = amiga_partition_map_iterate,
+  };
+
+GRUB_MOD_INIT(part_amiga)
+{
+  grub_partition_map_register (&grub_amiga_partition_map);
+}
+
+GRUB_MOD_FINI(part_amiga)
+{
+  grub_partition_map_unregister (&grub_amiga_partition_map);
+}

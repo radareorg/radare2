@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
 
-#define FSP(x) hfs_##x
+#define FSP(x) grub_hfs##x
 #define FSS(x) x##_hfs
 #define FSNAME "hfs"
 #define FSDESC "HFS filesystem"

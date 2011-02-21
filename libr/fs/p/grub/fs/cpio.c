@@ -76,6 +76,22 @@ struct grub_cpio_data
 
 static grub_dl_t my_mod;
 
+#ifndef MODE_USTAR
+
+static void
+grub_cpio_convert_header (struct head *head)
+{
+  if (head->magic != MAGIC_BCPIO)
+    {
+      head->magic = grub_swap_bytes16 (head->magic);
+      head->namesize = grub_swap_bytes16 (head->namesize);
+      head->filesize_1 = grub_swap_bytes16 (head->filesize_1);
+      head->filesize_2 = grub_swap_bytes16 (head->filesize_2);
+    }
+}
+
+#endif
+
 static grub_err_t
 grub_cpio_find_file (struct grub_cpio_data *data, char **name,
 		     grub_uint32_t * ofs)
@@ -86,6 +102,7 @@ grub_cpio_find_file (struct grub_cpio_data *data, char **name,
       if (grub_disk_read
 	  (data->disk, 0, data->hofs, sizeof (hd), &hd))
 	return grub_errno;
+      grub_cpio_convert_header (&hd);
 
       if (hd.magic != MAGIC_BCPIO)
 	return grub_error (GRUB_ERR_BAD_FS, "invalid cpio archive");
@@ -153,6 +170,7 @@ grub_cpio_mount (grub_disk_t disk)
     goto fail;
 
 #ifndef MODE_USTAR
+  grub_cpio_convert_header (&hd);
   if (hd.magic != MAGIC_BCPIO)
 #else
   if (grub_memcmp (hd.magic, MAGIC_USTAR,
@@ -182,7 +200,9 @@ fail:
 static grub_err_t
 grub_cpio_dir (grub_device_t device, const char *path,
 	       int (*hook) (const char *filename,
-			    const struct grub_dirhook_info *info))
+			    const struct grub_dirhook_info *info,
+			    void *closure),
+	       void *closure)
 {
   struct grub_cpio_data *data;
   grub_uint32_t ofs;
@@ -228,7 +248,7 @@ grub_cpio_dir (grub_device_t device, const char *path,
 	      grub_memset (&info, 0, sizeof (info));
 	      info.dir = (p != NULL);
 
-	      hook (name + len, &info);
+	      hook (name + len, &info, closure);
 	      if (prev)
 		grub_free (prev);
 	      prev = name;
@@ -344,18 +364,46 @@ grub_cpio_close (grub_file_t file)
   return grub_errno;
 }
 
-#ifdef MODE_USTAR
-struct grub_fs grub_tar_fs = {
-  .name = "tarfs",
-#else
-struct grub_fs grub_cpio_fs = {
+#ifndef MODE_USTAR
+struct grub_fs grub_cpio_fs = { 
   .name = "cpiofs",
-#endif
   .dir = grub_cpio_dir,
   .open = grub_cpio_open,
   .read = grub_cpio_read,
   .close = grub_cpio_close,
-#ifdef GRUB_UTIL
-  .reserved_first_sector = 0,
-#endif
 };
+#else
+struct grub_fs grub_tar_fs = {
+  .name = "tarfs",
+  .dir = grub_cpio_dir,
+  .open = grub_cpio_open,
+  .read = grub_cpio_read,
+  .close = grub_cpio_close,
+};
+#endif
+
+#ifdef MODE_USTAR
+GRUB_MOD_INIT (tar)
+{
+    grub_fs_register (&grub_tar_fs);
+    my_mod = mod;
+}
+#else
+GRUB_MOD_INIT (cpio)
+{
+    grub_fs_register (&grub_cpio_fs);
+    my_mod = mod;
+}
+#endif
+
+#ifdef MODE_USTAR
+GRUB_MOD_FINI (tar)
+{
+    grub_fs_unregister (&grub_tar_fs);
+}
+#else
+GRUB_MOD_FINI (cpio)
+{
+    grub_fs_unregister (&grub_cpio_fs);
+}
+#endif

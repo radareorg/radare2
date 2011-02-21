@@ -27,25 +27,18 @@
 struct grub_partition_map grub_msdos_partition_map;
 
 
-grub_err_t
-grub_partition_msdos_iterate (grub_disk_t disk,
-			      int (*hook) (grub_disk_t disk,
-					   const grub_partition_t partition))
+static grub_err_t
+pc_partition_map_iterate (grub_disk_t disk,
+			  int (*hook) (grub_disk_t disk,
+				       const grub_partition_t partition,
+				       void *closure),
+			  void *closure)
 {
   struct grub_partition p;
   struct grub_msdos_partition_mbr mbr;
   int labeln = 0;
   grub_disk_addr_t lastaddr;
   grub_disk_addr_t ext_offset;
-  grub_disk_addr_t delta = 0;
-
-  if (disk->partition && disk->partition->partmap == &grub_msdos_partition_map)
-    {
-      if (disk->partition->msdostype == GRUB_PC_PARTITION_TYPE_LINUX_MINIX)
-	delta = disk->partition->start;
-      else
-	return grub_error (GRUB_ERR_BAD_PART_TABLE, "no embedding supported");
-    }
 
   p.offset = 0;
   ext_offset = 0;
@@ -90,9 +83,8 @@ grub_partition_msdos_iterate (grub_disk_t disk,
 	{
 	  e = mbr.entries + p.index;
 
-	  p.start = p.offset + grub_le_to_cpu32 (e->start) - delta;
+	  p.start = p.offset + grub_le_to_cpu32 (e->start);
 	  p.len = grub_le_to_cpu32 (e->length);
-	  p.msdostype = e->type;
 
 	  grub_dprintf ("partition",
 			"partition %d: flag 0x%x, type 0x%x, start 0x%llx, len 0x%llx\n",
@@ -110,7 +102,7 @@ grub_partition_msdos_iterate (grub_disk_t disk,
 	    {
 	      p.number++;
 
-	      if (hook (disk, &p))
+	      if (hook (disk, &p, closure))
 		return grub_errno;
 	    }
 	  else if (p.number < 4)
@@ -143,129 +135,20 @@ grub_partition_msdos_iterate (grub_disk_t disk,
   return grub_errno;
 }
 
-#ifdef GRUB_UTIL
-static grub_err_t
-pc_partition_map_embed (struct grub_disk *disk, unsigned int *nsectors,
-			grub_embed_type_t embed_type,
-			grub_disk_addr_t **sectors)
-{
-  grub_disk_addr_t end = ~0ULL;
-  struct grub_msdos_partition_mbr mbr;
-  int labeln = 0;
-  /* Any value different than `p.offset' will satisfy the check during
-     first loop.  */
-  grub_disk_addr_t lastaddr = 1;
-  grub_disk_addr_t ext_offset = 0;
-  grub_disk_addr_t offset = 0;
-
-  if (embed_type != GRUB_EMBED_PCBIOS)
-    return grub_error (GRUB_ERR_NOT_IMPLEMENTED_YET,
-		       "PC-style partitions curently support "
-		       "only PC-BIOS embedding");
-
-  if (disk->partition)
-    return grub_error (GRUB_ERR_OUT_OF_RANGE,
-		       "Embedding on MSDOS subpartition isn't supported");
-
-  while (1)
-    {
-      int i;
-      struct grub_msdos_partition_entry *e;
-      grub_err_t err;
-
-      /* Read the MBR.  */
-      err = grub_disk_read (disk, offset, 0, sizeof (mbr), &mbr);
-      if (err)
-	return err;
-
-      /* This is our loop-detection algorithm. It works the following way:
-	 It saves last position which was a power of two. Then it compares the
-	 saved value with a current one. This way it's guaranteed that the loop
-	 will be broken by at most third walk.
-       */
-      if (labeln && lastaddr == offset)
-	return grub_error (GRUB_ERR_BAD_PART_TABLE, "loop detected");
-
-      labeln++;
-      if ((labeln & (labeln - 1)) == 0)
-	lastaddr = offset;
-
-      /* Check if it is valid.  */
-      if (mbr.signature != grub_cpu_to_le16 (GRUB_PC_PARTITION_SIGNATURE))
-	return grub_error (GRUB_ERR_BAD_PART_TABLE, "no signature");
-
-      for (i = 0; i < 4; i++)
-	if (mbr.entries[i].flag & 0x7f)
-	  return grub_error (GRUB_ERR_BAD_PART_TABLE, "bad boot flag");
-
-      /* Analyze DOS partitions.  */
-      for (i = 0; i < 4; i++)
-	{
-	  e = mbr.entries + i;
-
-	  if (!grub_msdos_partition_is_empty (e->type)
-	      && end > offset + grub_le_to_cpu32 (e->start))
-	    end = offset + grub_le_to_cpu32 (e->start);
-
-	  /* If this is a GPT partition, this MBR is just a dummy.  */
-	  if (e->type == GRUB_PC_PARTITION_TYPE_GPT_DISK && i == 0)
-	    return grub_error (GRUB_ERR_BAD_PART_TABLE, "dummy mbr");
-	}
-
-      /* Find an extended partition.  */
-      for (i = 0; i < 4; i++)
-	{
-	  e = mbr.entries + i;
-
-	  if (grub_msdos_partition_is_extended (e->type))
-	    {
-	      offset = ext_offset + grub_le_to_cpu32 (e->start);
-	      if (! ext_offset)
-		ext_offset = offset;
-
-	      break;
-	    }
-	}
-
-      /* If no extended partition, the end.  */
-      if (i == 4)
-	break;
-    }
-
-  if (end >= *nsectors + 1)
-    {
-      int i;
-      *nsectors = end - 1;
-      *sectors = grub_malloc (*nsectors * sizeof (**sectors));
-      if (!*sectors)
-	return grub_errno;
-      for (i = 0; i < *nsectors; i++)
-	(*sectors)[i] = 1 + i;
-      return GRUB_ERR_NONE;
-    }
-
-  if (end <= 1)
-    return grub_error (GRUB_ERR_FILE_NOT_FOUND,
-		       "This msdos-style partition label has no "
-		       "post-MBR gap; embedding won't be possible!");
-
-  if (*nsectors > 62)
-    return grub_error (GRUB_ERR_OUT_OF_RANGE,
-		       "Your core.img is unusually large.  "
-		       "It won't fit in the embedding area.");
-
-  return grub_error (GRUB_ERR_OUT_OF_RANGE,
-		     "Your embedding area is unusually small.  "
-		     "core.img won't fit in it.");
-}
-#endif
-
 
 /* Partition map type.  */
-struct grub_partition_map grub_msdos_partition_map = {
+struct grub_partition_map grub_msdos_partition_map =
+  {
     .name = "msdos",
-    .iterate = grub_partition_msdos_iterate,
-#ifdef GRUB_UTIL
-    .embed = pc_partition_map_embed
-#endif
-};
+    .iterate = pc_partition_map_iterate,
+  };
+
+GRUB_MOD_INIT(part_msdos)
+{
+  grub_partition_map_register (&grub_msdos_partition_map);
+}
+
+GRUB_MOD_FINI(part_msdos)
+{
+  grub_partition_map_unregister (&grub_msdos_partition_map);
+}

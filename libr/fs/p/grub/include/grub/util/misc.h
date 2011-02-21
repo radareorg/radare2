@@ -28,7 +28,30 @@
 #include <config.h>
 #include <grub/types.h>
 #include <grub/symbol.h>
-#include <grub/emu/misc.h>
+#include <grub/list.h>
+
+#ifdef __NetBSD__
+/* NetBSD uses /boot for its boot block.  */
+# define DEFAULT_DIRECTORY	"/burg"
+#else
+# define DEFAULT_DIRECTORY	"/boot/burg"
+#endif
+
+#define DEFAULT_DEVICE_MAP	DEFAULT_DIRECTORY "/device.map"
+
+extern char *progname;
+extern int verbosity;
+
+void EXPORT_FUNC(grub_util_warn) (const char *fmt, ...);
+void EXPORT_FUNC(grub_util_info) (const char *fmt, ...);
+void EXPORT_FUNC(grub_util_error) (const char *fmt, ...) __attribute__ ((noreturn));
+
+void *xmalloc (size_t size);
+void *xrealloc (void *ptr, size_t size);
+char *xstrdup (const char *str);
+void *xmalloc_zero (size_t size);
+
+void * grub_list_reverse (grub_list_t head);
 
 char *grub_util_get_path (const char *dir, const char *file);
 size_t grub_util_get_fp_size (FILE *fp);
@@ -39,6 +62,22 @@ void grub_util_load_image (const char *path, char *buf);
 void grub_util_write_image (const char *img, size_t size, FILE *out);
 void grub_util_write_image_at (const void *img, size_t size, off_t offset,
 			       FILE *out);
+char * grub_util_get_module_name (const char *str);
+char * grub_util_get_module_path (const char *prefix, const char *str);
+
+#ifndef HAVE_VASPRINTF
+
+int vasprintf (char **buf, const char *fmt, va_list ap);
+
+#endif
+
+#ifndef  HAVE_ASPRINTF
+
+int asprintf (char **buf, const char *fmt, ...);
+
+#endif
+
+char *xasprintf (const char *fmt, ...);
 
 #ifdef __MINGW32__
 
@@ -49,7 +88,9 @@ void sync (void);
 int fsync (int fno);
 void sleep(int s);
 
-grub_int64_t grub_util_get_disk_size (char *name);
+grub_int64_t grub_util_get_disk_size (const char *name);
+
+#define realpath(a, b)	(char *) a
 
 #endif
 

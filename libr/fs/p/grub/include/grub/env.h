@@ -42,28 +42,43 @@ struct grub_env_var
   int global;
 };
 
-grub_err_t EXPORT_FUNC(grub_env_set) (const char *name, const char *val);
-char *EXPORT_FUNC(grub_env_get) (const char *name);
-void EXPORT_FUNC(grub_env_unset) (const char *name);
-void EXPORT_FUNC(grub_env_iterate) (int (*func) (struct grub_env_var *var));
-struct grub_env_var *EXPORT_FUNC(grub_env_find) (const char *name);
-grub_err_t EXPORT_FUNC(grub_register_variable_hook) (const char *name,
-						     grub_env_read_hook_t read_hook,
-						     grub_env_write_hook_t write_hook);
+grub_err_t grub_env_set (const char *name, const char *val);
+char *grub_env_get (const char *name);
+void grub_env_unset (const char *name);
+void grub_env_iterate (int (*func) (struct grub_env_var *var, void *), void *);
+struct grub_env_var *grub_env_find (const char *name);
+grub_err_t grub_register_variable_hook (const char *name,
+					grub_env_read_hook_t read_hook,
+					grub_env_write_hook_t write_hook);
 
-grub_err_t grub_env_context_open (void);
+grub_err_t grub_env_context_open (int export);
 grub_err_t grub_env_context_close (void);
 grub_err_t grub_env_export (const char *name);
 
-void grub_env_unset_menu (void);
-grub_menu_t grub_env_get_menu (void);
-void grub_env_set_menu (grub_menu_t nmenu);
+struct menu_pointer
+{
+  grub_menu_t menu;
+  struct menu_pointer *prev;
+};
 
-grub_err_t
-grub_env_extractor_open (int source);
+extern struct menu_pointer *grub_current_menu;
 
-grub_err_t
-grub_env_extractor_close (int source);
+static inline void
+grub_env_unset_menu (void)
+{
+  grub_current_menu->menu = 0;
+}
 
+static inline grub_menu_t
+grub_env_get_menu (void)
+{
+  return grub_current_menu->menu;
+}
+
+static inline void
+grub_env_set_menu (grub_menu_t nmenu)
+{
+  grub_current_menu->menu = nmenu;
+}
 
 #endif /* ! GRUB_ENV_HEADER */

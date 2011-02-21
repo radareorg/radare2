@@ -12,7 +12,8 @@ foo: pre plugins ${LIBSO} ${LIBAR}
 
 include ${STATIC_FS_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst fs_,p/fs_,$(STATIC_OBJ)))
-OBJ=${STATIC_OBJS} fs.o file.o
+OBJ=${STATIC_OBJS} fs.o file.o 
+#p/grub/main.o
 
 pre:
 	@if [ ! -e libr_fs.${EXT_SO} ]; then if [ ! -e libr_fs.${EXT_AR} ]; then rm -f ${STATIC_OBJS} ; fi ; fi

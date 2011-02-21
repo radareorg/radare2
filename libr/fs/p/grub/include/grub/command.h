@@ -23,21 +23,20 @@
 #include <grub/err.h>
 #include <grub/list.h>
 
-typedef enum grub_command_flags
-  {
-    /* This is an extended command.  */
-    GRUB_COMMAND_FLAG_EXTCMD = 0x10,
-    /* This is an dynamic command.  */
-    GRUB_COMMAND_FLAG_DYNCMD = 0x20,
-    /* This command accepts block arguments.  */
-    GRUB_COMMAND_FLAG_BLOCKS = 0x40,
-    /* This command accepts unknown arguments as direct parameters.  */
-    GRUB_COMMAND_ACCEPT_DASH = 0x80,
-    /* This command accepts only options preceding direct arguments.  */
-    GRUB_COMMAND_OPTIONS_AT_START = 0x100,
-    /* Can be executed in an entries extractor.  */
-    GRUB_COMMAND_FLAG_EXTRACTOR = 0x200
-  } grub_command_flags_t;
+/* Can be run in the command-line.  */
+#define GRUB_COMMAND_FLAG_CMDLINE	0x1
+/* Can be run in the menu.  */
+#define GRUB_COMMAND_FLAG_MENU		0x2
+/* Can be run in both interfaces.  */
+#define GRUB_COMMAND_FLAG_BOTH		0x3
+/* Only for the command title.  */
+#define GRUB_COMMAND_FLAG_TITLE		0x4
+/* Don't print the command on booting.  */
+#define GRUB_COMMAND_FLAG_NO_ECHO	0x8
+/* This is an extended command.  */
+#define GRUB_COMMAND_FLAG_EXTCMD	0x10
+/* This is an dynamic command.  */
+#define GRUB_COMMAND_FLAG_DYNCMD	0x20
 
 struct grub_command;
 
@@ -60,7 +59,7 @@ struct grub_command
   grub_command_func_t func;
 
   /* The flags.  */
-  grub_command_flags_t flags;
+  unsigned flags;
 
   /* The summary of the command usage.  */
   const char *summary;
@@ -73,33 +72,22 @@ struct grub_command
 };
 typedef struct grub_command *grub_command_t;
 
-extern grub_command_t EXPORT_VAR(grub_command_list);
+extern grub_command_t grub_command_list;
 
-grub_command_t
-EXPORT_FUNC(grub_register_command_prio) (const char *name,
-					 grub_command_func_t func,
-					 const char *summary,
-					 const char *description,
-					 int prio);
-void EXPORT_FUNC(grub_unregister_command) (grub_command_t cmd);
+grub_command_t grub_reg_cmd (const char *name,
+			     grub_command_func_t func,
+			     const char *summary,
+			     const char *description,
+			     int prio);
+void grub_unregister_command (grub_command_t cmd);
 
-static inline grub_command_t
-grub_register_command (const char *name,
-		       grub_command_func_t func,
-		       const char *summary,
-		       const char *description)
-{
-  return grub_register_command_prio (name, func, summary, description, 0);
-}
+#define grub_register_command(name, func, summary, description) \
+  grub_reg_cmd (name, func, summary, description, 0); \
+  GRUB_MODATTR ("command", name);
 
-static inline grub_command_t
-grub_register_command_p1 (const char *name,
-			  grub_command_func_t func,
-			  const char *summary,
-			  const char *description)
-{
-  return grub_register_command_prio (name, func, summary, description, 1);
-}
+#define grub_register_command_p1(name, func, summary, description) \
+  grub_reg_cmd (name, func, summary, description, 1); \
+  GRUB_MODATTR ("command", "*" name);
 
 static inline grub_command_t
 grub_command_find (const char *name)
@@ -116,7 +104,13 @@ grub_command_execute (const char *name, int argc, char **argv)
   return (cmd) ? cmd->func (cmd, argc, argv) : GRUB_ERR_FILE_NOT_FOUND;
 }
 
-#define FOR_COMMANDS(var) FOR_LIST_ELEMENTS((var), grub_command_list)
+static inline int
+grub_command_iterate (int (*func) (grub_command_t, void *closure),
+		      void *closure)
+{
+  return grub_list_iterate (GRUB_AS_LIST (grub_command_list),
+			    (grub_list_hook_t) func, closure);
+}
 
 void grub_register_core_commands (void);
 

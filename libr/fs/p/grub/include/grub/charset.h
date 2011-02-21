@@ -97,16 +97,9 @@ grub_utf16_to_utf8 (grub_uint8_t *dest, grub_uint16_t *src,
 	      /* Error... */
 	      *dest++ = '?';
 	    }
-	  else if (code < 0x10000)
-	    {
-	      *dest++ = (code >> 12) | 0xE0;
-	      *dest++ = ((code >> 6) & 0x3F) | 0x80;
-	      *dest++ = (code & 0x3F) | 0x80;
-	    }
 	  else
 	    {
-	      *dest++ = (code >> 18) | 0xF0;
-	      *dest++ = ((code >> 12) & 0x3F) | 0x80;
+	      *dest++ = (code >> 12) | 0xE0;
 	      *dest++ = ((code >> 6) & 0x3F) | 0x80;
 	      *dest++ = (code & 0x3F) | 0x80;
 	    }
@@ -124,11 +117,5 @@ grub_is_valid_utf8 (const grub_uint8_t *src, grub_size_t srcsize);
 
 int grub_utf8_to_ucs4_alloc (const char *msg, grub_uint32_t **unicode_msg,
 			     grub_uint32_t **last_position);
-void
-grub_ucs4_to_utf8 (grub_uint32_t *src, grub_size_t size,
-		   grub_uint8_t *dest, grub_size_t destsize);
-grub_size_t grub_utf8_to_ucs4 (grub_uint32_t *dest, grub_size_t destsize,
-			       const grub_uint8_t *src, grub_size_t srcsize,
-			       const grub_uint8_t **srcend);
 
 #endif

@@ -21,8 +21,8 @@
 #define GRUB_TARGET_WORDSIZE (8 * GRUB_CPU_SIZEOF_VOID_P)
 
 #include <config.h>
-#include <grub/elf.h>
 #include <grub/dl.h>
+#include <grub/obj.h>
 #include <grub/misc.h>
 #include <grub/mm.h>
 #include <grub/err.h>
@@ -32,6 +32,17 @@
 #include <grub/env.h>
 #include <grub/cache.h>
 
+GRUB_EXPORT(grub_dl_load_file);
+GRUB_EXPORT(grub_dl_load);
+GRUB_EXPORT(grub_dl_unload);
+#ifndef GRUB_UTIL
+GRUB_EXPORT(grub_dl_ref);
+GRUB_EXPORT(grub_dl_unref);
+#endif
+GRUB_EXPORT(grub_dl_iterate);
+GRUB_EXPORT(grub_dl_get);
+GRUB_EXPORT(grub_dl_register_symbol);
+
 /* Platforms where modules are in a readonly area of memory.  */
 #if defined(GRUB_MACHINE_QEMU)
 #define GRUB_MODULES_MACHINE_READONLY
@@ -39,17 +50,31 @@
 
 
 
-grub_dl_t grub_dl_head = 0;
+struct grub_dl_list
+{
+  struct grub_dl_list *next;
+  grub_dl_t mod;
+};
+typedef struct grub_dl_list *grub_dl_list_t;
 
-static grub_err_t
+static grub_dl_list_t grub_dl_head;
+
+grub_err_t
 grub_dl_add (grub_dl_t mod)
 {
+  grub_dl_list_t l;
+
   if (grub_dl_get (mod->name))
     return grub_error (GRUB_ERR_BAD_MODULE,
 		       "`%s' is already loaded", mod->name);
 
-  mod->next = grub_dl_head;
-  grub_dl_head = mod;
+  l = (grub_dl_list_t) grub_malloc (sizeof (*l));
+  if (! l)
+    return grub_errno;
+
+  l->mod = mod;
+  l->next = grub_dl_head;
+  grub_dl_head = l;
 
   return GRUB_ERR_NONE;
 }
@@ -57,12 +82,13 @@ grub_dl_add (grub_dl_t mod)
 static void
 grub_dl_remove (grub_dl_t mod)
 {
-  grub_dl_t *p, q;
+  grub_dl_list_t *p, q;
 
   for (p = &grub_dl_head, q = *p; q; p = &q->next, q = *p)
-    if (q == mod)
+    if (q->mod == mod)
       {
 	*p = q->next;
+	grub_free (q);
 	return;
       }
 }
@@ -70,13 +96,23 @@ grub_dl_remove (grub_dl_t mod)
 grub_dl_t
 grub_dl_get (const char *name)
 {
-  grub_dl_t l;
+  grub_dl_list_t l;
 
   for (l = grub_dl_head; l; l = l->next)
-    if (grub_strcmp (name, l->name) == 0)
-      return l;
+    if (grub_strcmp (name, l->mod->name) == 0)
+      return l->mod;
 
   return 0;
+}
+
+void
+grub_dl_iterate (int (*hook) (grub_dl_t mod))
+{
+  grub_dl_list_t l;
+
+  for (l = grub_dl_head; l; l = l->next)
+    if (hook (l->mod))
+      break;
 }
 
 
@@ -196,78 +232,46 @@ grub_dl_get_section_addr (grub_dl_t mod, unsigned n)
   return 0;
 }
 
-/* Check if EHDR is a valid ELF header.  */
-static grub_err_t
-grub_dl_check_header (void *ehdr, grub_size_t size)
-{
-  Elf_Ehdr *e = ehdr;
-
-  /* Check the header size.  */
-  if (size < sizeof (Elf_Ehdr))
-    return grub_error (GRUB_ERR_BAD_OS, "ELF header smaller than expected");
-
-  /* Check the magic numbers.  */
-  if (grub_arch_dl_check_header (ehdr)
-      || e->e_ident[EI_MAG0] != ELFMAG0
-      || e->e_ident[EI_MAG1] != ELFMAG1
-      || e->e_ident[EI_MAG2] != ELFMAG2
-      || e->e_ident[EI_MAG3] != ELFMAG3
-      || e->e_ident[EI_VERSION] != EV_CURRENT
-      || e->e_version != EV_CURRENT)
-    return grub_error (GRUB_ERR_BAD_OS, "invalid arch independent ELF magic");
-
-  return GRUB_ERR_NONE;
-}
-
 /* Load all segments from memory specified by E.  */
 static grub_err_t
-grub_dl_load_segments (grub_dl_t mod, const Elf_Ehdr *e)
+grub_dl_load_segments (grub_dl_t mod, struct grub_obj_header *e)
 {
   unsigned i;
-  Elf_Shdr *s;
+  struct grub_obj_segment *s;
 
-  for (i = 0, s = (Elf_Shdr *)((char *) e + e->e_shoff);
-       i < e->e_shnum;
-       i++, s = (Elf_Shdr *)((char *) s + e->e_shentsize))
+  for (i = 0, s = &e->segments[0]; s->type != GRUB_OBJ_SEGMENT_END; i++, s++)
     {
-      if (s->sh_flags & SHF_ALLOC)
+      grub_dl_segment_t seg;
+      void *addr;
+
+      seg = (grub_dl_segment_t) grub_malloc (sizeof (*seg));
+      if (! seg)
+	return grub_errno;
+
+      addr = grub_memalign (s->align, s->size);
+      if (! addr)
 	{
-	  grub_dl_segment_t seg;
+	  grub_free (seg);
+	  return grub_errno;
+	}
 
-	  seg = (grub_dl_segment_t) grub_malloc (sizeof (*seg));
-	  if (! seg)
-	    return grub_errno;
+      grub_memset (addr, 0, s->size);
+      grub_memcpy (addr, (char *) e + s->offset,
+		   (s + 1)->offset - s->offset);
+      seg->addr = addr;
 
-	  if (s->sh_size)
-	    {
-	      void *addr;
+      seg->size = s->size;
+      seg->section = i;
+      seg->next = mod->segment;
+      mod->segment = seg;
 
-	      addr = grub_memalign (s->sh_addralign, s->sh_size);
-	      if (! addr)
-		{
-		  grub_free (seg);
-		  return grub_errno;
-		}
+      if (! i)
+	{
+	  if (e->init_func != GRUB_OBJ_FUNC_NONE)
+	    mod->init = (void (*) (grub_dl_t)) ((char *) addr + e->init_func);
 
-	      switch (s->sh_type)
-		{
-		case SHT_PROGBITS:
-		  grub_memcpy (addr, (char *) e + s->sh_offset, s->sh_size);
-		  break;
-		case SHT_NOBITS:
-		  grub_memset (addr, 0, s->sh_size);
-		  break;
-		}
-
-	      seg->addr = addr;
-	    }
-	  else
-	    seg->addr = 0;
-
-	  seg->size = s->sh_size;
-	  seg->section = i;
-	  seg->next = mod->segment;
-	  mod->segment = seg;
+	  if (e->fini_func != GRUB_OBJ_FUNC_NONE)
+	    mod->fini = (void (*) (void)) ((char *) addr + e->fini_func);
 	}
     }
 
@@ -275,91 +279,171 @@ grub_dl_load_segments (grub_dl_t mod, const Elf_Ehdr *e)
 }
 
 static grub_err_t
-grub_dl_resolve_symbols (grub_dl_t mod, Elf_Ehdr *e)
+grub_dl_resolve_symbols (grub_dl_t mod, struct grub_obj_header *e)
 {
-  unsigned i;
-  Elf_Shdr *s;
-  Elf_Sym *sym;
-  const char *str;
-  Elf_Word size, entsize;
+  char *strtab;
+  struct grub_obj_symbol *sym;
+  struct grub_obj_reloc_extern *rel;
 
-  for (i = 0, s = (Elf_Shdr *) ((char *) e + e->e_shoff);
-       i < e->e_shnum;
-       i++, s = (Elf_Shdr *) ((char *) s + e->e_shentsize))
-    if (s->sh_type == SHT_SYMTAB)
-      break;
+  strtab = (char *) e + e->string_table;
 
-  if (i == e->e_shnum)
-    return grub_error (GRUB_ERR_BAD_MODULE, "no symbol table");
-
-#ifdef GRUB_MODULES_MACHINE_READONLY
-  mod->symtab = grub_malloc (s->sh_size);
-  memcpy (mod->symtab, (char *) e + s->sh_offset, s->sh_size);
-#else
-  mod->symtab = (Elf_Sym *) ((char *) e + s->sh_offset);
-#endif
-  sym = mod->symtab;
-  size = s->sh_size;
-  entsize = s->sh_entsize;
-
-  s = (Elf_Shdr *) ((char *) e + e->e_shoff + e->e_shentsize * s->sh_link);
-  str = (char *) e + s->sh_offset;
-
-  for (i = 0;
-       i < size / entsize;
-       i++, sym = (Elf_Sym *) ((char *) sym + entsize))
+  for (sym = (struct grub_obj_symbol *) ((char *) e + e->symbol_table);
+       sym->segment != GRUB_OBJ_SEGMENT_END; sym++)
     {
-      unsigned char type = ELF_ST_TYPE (sym->st_info);
-      unsigned char bind = ELF_ST_BIND (sym->st_info);
-      const char *name = str + sym->st_name;
+      char *addr;
 
+      addr = grub_dl_get_section_addr (mod, sym->segment);
+      addr += sym->offset;
+
+      if (grub_dl_register_symbol (strtab + sym->name, addr, mod))
+	return grub_errno;
+    }
+
+  for (rel = (struct grub_obj_reloc_extern *) ((char *) e + e->reloc_table);
+       rel->segment != GRUB_OBJ_SEGMENT_END;)
+    {
+      char *addr, *symbol_addr;
+      grub_addr_t addend;
+      int type;
+
+      addr = grub_dl_get_section_addr (mod, rel->segment);
+      addr += rel->offset;
+      type = rel->type;
+
+#if defined(GRUB_TARGET_USE_ADDEND)
+      addend = rel->addend;
+#else
+      addend = *((grub_addr_t *) addr);
+#endif
+
+      if (rel->symbol_segment == GRUB_OBJ_SEGMENT_END)
+	{
+	  char *name;
+
+	  name = strtab + rel->symbol_name;
+	  symbol_addr = grub_dl_resolve_symbol (name);
+	  if (! symbol_addr)
+	    return grub_error (GRUB_ERR_BAD_MODULE,
+			       "symbol not found: `%s'", name);
+	  rel++;
+	}
+      else
+	{
+	  symbol_addr = grub_dl_get_section_addr (mod, rel->symbol_segment);
+	  rel = (struct grub_obj_reloc_extern *)
+	    ((char *) rel + sizeof (struct grub_obj_reloc));
+	}
+
+      addend += (grub_addr_t) symbol_addr;
+      if (type & GRUB_OBJ_REL_FLAG_REL)
+	addend -= (grub_addr_t) addr;
+
+      type &= GRUB_OBJ_REL_TYPE_MASK;
       switch (type)
 	{
-	case STT_NOTYPE:
-	case STT_OBJECT:
-	  /* Resolve a global symbol.  */
-	  if (sym->st_name != 0 && sym->st_shndx == 0)
-	    {
-	      sym->st_value = (Elf_Addr) grub_dl_resolve_symbol (name);
-	      if (! sym->st_value)
-		return grub_error (GRUB_ERR_BAD_MODULE,
-				   "symbol not found: `%s'", name);
-	    }
-	  else
-	    {
-	      sym->st_value += (Elf_Addr) grub_dl_get_section_addr (mod,
-								    sym->st_shndx);
-	      if (bind != STB_LOCAL)
-		if (grub_dl_register_symbol (name, (void *) sym->st_value, mod))
-		  return grub_errno;
-	    }
+	case GRUB_OBJ_REL_TYPE_32:
+	  *((grub_uint32_t *) addr) = addend;
 	  break;
 
-	case STT_FUNC:
-	  sym->st_value += (Elf_Addr) grub_dl_get_section_addr (mod,
-								sym->st_shndx);
-	  if (bind != STB_LOCAL)
-	    if (grub_dl_register_symbol (name, (void *) sym->st_value, mod))
-	      return grub_errno;
+#if GRUB_TARGET_SIZEOF_VOID_P == 8
+	case GRUB_OBJ_REL_TYPE_64:
+	  *((grub_uint64_t *) addr) = addend;
+	  break;
+#endif
 
-	  if (grub_strcmp (name, "grub_mod_init") == 0)
-	    mod->init = (void (*) (grub_dl_t)) sym->st_value;
-	  else if (grub_strcmp (name, "grub_mod_fini") == 0)
-	    mod->fini = (void (*) (void)) sym->st_value;
+#if defined(GRUB_TARGET_POWERPC)
+	case GRUB_OBJ_REL_TYPE_16:
+	  *((grub_uint16_t *) addr) = addend;
 	  break;
 
-	case STT_SECTION:
-	  sym->st_value = (Elf_Addr) grub_dl_get_section_addr (mod,
-							       sym->st_shndx);
+	case GRUB_OBJ_REL_TYPE_16HI:
+	  *((grub_uint16_t *) addr) = addend >> 16;
 	  break;
 
-	case STT_FILE:
-	  sym->st_value = 0;
+	case GRUB_OBJ_REL_TYPE_16HA:
+	  *((grub_uint16_t *) addr) = (addend + 0x8000) >> 16;
 	  break;
+
+	case GRUB_OBJ_REL_TYPE_24:
+	  {
+	    grub_uint32_t v;
+	    grub_int32_t a;
+
+	    v = *((grub_uint32_t *) addr);
+	    a = addend;
+
+	    if (a << 6 >> 6 != a)
+	      return grub_error (GRUB_ERR_BAD_MODULE, "relocation overflow");
+
+	    v = (v & 0xfc000003) | (addend & 0x3fffffc);
+	    *((grub_uint32_t *) addr) = v;
+	    break;
+	  }
+#endif
+
+#if defined(GRUB_TARGET_SPARC64)
+	case GRUB_OBJ_REL_TYPE_LO10:
+	  {
+	    grub_uint32_t v;
+
+	    v = *((grub_uint32_t *) addr);
+	    v = (v & ~0x3ff) | (addend & 0x3ff);
+	    *((grub_uint32_t *) addr) = v;
+	    break;
+	  }
+
+	case GRUB_OBJ_REL_TYPE_HI22:
+	  {
+	    grub_uint32_t v;
+
+	    v = *((grub_uint32_t *) addr);
+	    v = (v & ~0x3fffff) | ((addend >> 10) & 0x3fffff);
+	    *((grub_uint32_t *) addr) = v;
+	    break;
+	  }
+
+#if GRUB_TARGET_SIZEOF_VOID_P == 8
+	case GRUB_OBJ_REL_TYPE_HM10:
+	  {
+	    grub_uint32_t v;
+
+	    v = *((grub_uint32_t *) addr);
+	    v = (v & ~0x3ff) | ((addend >> 32) & 0x3ff);
+	    *((grub_uint32_t *) addr) = v;
+	    break;
+	  }
+
+	case GRUB_OBJ_REL_TYPE_HH22:
+	  {
+	    grub_uint32_t v;
+
+	    v = *((grub_uint32_t *) addr);
+	    v = (v & ~0x3fffff) | ((addend >> 42) & 0x3fffff);
+	    *((grub_uint32_t *) addr) = v;
+	    break;
+	  }
+#endif
+
+	case GRUB_OBJ_REL_TYPE_30:
+	  {
+	    grub_uint32_t v;
+	    grub_int32_t a;
+
+	    v = *((grub_uint32_t *) addr);
+	    a = addend;
+
+	    if (a << 2 >> 2 != a)
+	      return grub_error (GRUB_ERR_BAD_MODULE, "relocation overflow");
+
+	    v = (v & 0xc0000000) | ((addend >> 2) & 0x3fffffff);
+	    *((grub_uint32_t *) addr) = v;
+	    break;
+	  }
+#endif
 
 	default:
 	  return grub_error (GRUB_ERR_BAD_MODULE,
-			     "unknown symbol type `%d'", (int) type);
+			     "unknown reloc type %d", type);
 	}
     }
 
@@ -373,84 +457,39 @@ grub_dl_call_init (grub_dl_t mod)
     (mod->init) (mod);
 }
 
-static grub_err_t
-grub_dl_resolve_name (grub_dl_t mod, Elf_Ehdr *e)
+grub_err_t
+grub_dl_resolve_dependencies (grub_dl_t mod, char *name)
 {
-  Elf_Shdr *s;
-  const char *str;
-  unsigned i;
+  while (1)
+    {
+      grub_dl_t m;
+      grub_dl_dep_t dep;
 
-  s = (Elf_Shdr *) ((char *) e + e->e_shoff + e->e_shstrndx * e->e_shentsize);
-  str = (char *) e + s->sh_offset;
+      name += grub_strlen (name) + 1;
+      if (! *name)
+	return GRUB_ERR_NONE;
 
-  for (i = 0, s = (Elf_Shdr *) ((char *) e + e->e_shoff);
-       i < e->e_shnum;
-       i++, s = (Elf_Shdr *) ((char *) s + e->e_shentsize))
-    if (grub_strcmp (str + s->sh_name, ".modname") == 0)
-      {
-	mod->name = grub_strdup ((char *) e + s->sh_offset);
-	if (! mod->name)
-	  return grub_errno;
-	break;
-      }
+      m = grub_dl_load (name);
+      if (! m)
+	return grub_errno;
 
-  if (i == e->e_shnum)
-    return grub_error (GRUB_ERR_BAD_MODULE, "no module name found");
+      grub_dl_ref (m);
 
-  return GRUB_ERR_NONE;
+      dep = (grub_dl_dep_t) grub_malloc (sizeof (*dep));
+      if (! dep)
+	return grub_errno;
+
+      dep->mod = m;
+      dep->next = mod->dep;
+      mod->dep = dep;
+    }
 }
 
-static grub_err_t
-grub_dl_resolve_dependencies (grub_dl_t mod, Elf_Ehdr *e)
-{
-  Elf_Shdr *s;
-  const char *str;
-  unsigned i;
-
-  s = (Elf_Shdr *) ((char *) e + e->e_shoff + e->e_shstrndx * e->e_shentsize);
-  str = (char *) e + s->sh_offset;
-
-  for (i = 0, s = (Elf_Shdr *) ((char *) e + e->e_shoff);
-       i < e->e_shnum;
-       i++, s = (Elf_Shdr *) ((char *) s + e->e_shentsize))
-    if (grub_strcmp (str + s->sh_name, ".moddeps") == 0)
-      {
-	const char *name = (char *) e + s->sh_offset;
-	const char *max = name + s->sh_size;
-
-	while ((name < max) && (*name))
-	  {
-	    grub_dl_t m;
-	    grub_dl_dep_t dep;
-
-	    m = grub_dl_load (name);
-	    if (! m)
-	      return grub_errno;
-
-	    grub_dl_ref (m);
-
-	    dep = (grub_dl_dep_t) grub_malloc (sizeof (*dep));
-	    if (! dep)
-	      return grub_errno;
-
-	    dep->mod = m;
-	    dep->next = mod->dep;
-	    mod->dep = dep;
-
-	    name += grub_strlen (name) + 1;
-	  }
-      }
-
-  return GRUB_ERR_NONE;
-}
-
+#if !GRUB_NO_MODULES
 int
 grub_dl_ref (grub_dl_t mod)
 {
   grub_dl_dep_t dep;
-
-  if (!mod)
-    return 0;
 
   for (dep = mod->dep; dep; dep = dep->next)
     grub_dl_ref (dep->mod);
@@ -463,14 +502,12 @@ grub_dl_unref (grub_dl_t mod)
 {
   grub_dl_dep_t dep;
 
-  if (!mod)
-    return 0;
-
   for (dep = mod->dep; dep; dep = dep->next)
     grub_dl_unref (dep->mod);
 
   return --mod->ref_count;
 }
+#endif
 
 static void
 grub_dl_flush_cache (grub_dl_t mod)
@@ -490,40 +527,38 @@ grub_dl_flush_cache (grub_dl_t mod)
 grub_dl_t
 grub_dl_load_core (void *addr, grub_size_t size)
 {
-  Elf_Ehdr *e;
+  struct grub_obj_header *e;
   grub_dl_t mod;
+  char *name;
 
   grub_dprintf ("modules", "module at %p, size 0x%lx\n", addr,
 		(unsigned long) size);
+
   e = addr;
-  if (grub_dl_check_header (e, size))
-    return 0;
-
-  if (e->e_type != ET_REL)
+  if ((e->magic != GRUB_OBJ_HEADER_MAGIC) ||
+      (e->version != GRUB_OBJ_HEADER_VERSION))
     {
-      grub_error (GRUB_ERR_BAD_MODULE, "invalid ELF file type");
+      grub_error (GRUB_ERR_BAD_OS, "invalid object file");
       return 0;
     }
 
-  /* Make sure that every section is within the core.  */
-  if (size < e->e_shoff + e->e_shentsize * e->e_shnum)
-    {
-      grub_error (GRUB_ERR_BAD_OS, "ELF sections outside core");
-      return 0;
-    }
-
-  mod = (grub_dl_t) grub_zalloc (sizeof (*mod));
+  mod = (grub_dl_t) grub_malloc (sizeof (*mod));
   if (! mod)
     return 0;
 
+  name = (char *) addr + e->mod_deps;
+
+  mod->name = grub_strdup (name);
   mod->ref_count = 1;
+  mod->dep = 0;
+  mod->segment = 0;
+  mod->init = 0;
+  mod->fini = 0;
 
   grub_dprintf ("modules", "relocating to %p\n", mod);
-  if (grub_dl_resolve_name (mod, e)
-      || grub_dl_resolve_dependencies (mod, e)
+  if (grub_dl_resolve_dependencies (mod, name)
       || grub_dl_load_segments (mod, e)
-      || grub_dl_resolve_symbols (mod, e)
-      || grub_arch_dl_relocate_symbols (mod, e))
+      || grub_dl_resolve_symbols (mod, e))
     {
       mod->fini = 0;
       grub_dl_unload (mod);
@@ -593,6 +628,10 @@ grub_dl_load_file (const char *filename)
 grub_dl_t
 grub_dl_load (const char *name)
 {
+#if GRUB_NO_MODULES
+  (void) name;
+  return 0;
+#else
   char *filename;
   grub_dl_t mod;
   char *grub_dl_dir = grub_env_get ("prefix");
@@ -620,6 +659,7 @@ grub_dl_load (const char *name)
     grub_error (GRUB_ERR_BAD_MODULE, "mismatched names");
 
   return mod;
+#endif
 }
 
 /* Unload the module MOD.  */
@@ -669,16 +709,33 @@ grub_dl_unload_unneeded (void)
 {
   /* Because grub_dl_remove modifies the list of modules, this
      implementation is tricky.  */
-  grub_dl_t p = grub_dl_head;
+  grub_dl_list_t p = grub_dl_head;
 
   while (p)
     {
-      if (grub_dl_unload (p))
+      if (grub_dl_unload (p->mod))
 	{
 	  p = grub_dl_head;
 	  continue;
 	}
 
       p = p->next;
+    }
+}
+
+/* Unload all modules.  */
+void
+grub_dl_unload_all (void)
+{
+  while (grub_dl_head)
+    {
+      grub_dl_list_t p;
+
+      grub_dl_unload_unneeded ();
+
+      /* Force to decrement the ref count. This will purge pre-loaded
+	 modules and manually inserted modules.  */
+      for (p = grub_dl_head; p; p = p->next)
+	p->mod->ref_count--;
     }
 }

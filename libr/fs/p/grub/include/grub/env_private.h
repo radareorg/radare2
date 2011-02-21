@@ -41,6 +41,6 @@ struct grub_env_sorted_var
   struct grub_env_sorted_var *next;
 };
 
-extern struct grub_env_context *EXPORT_VAR(grub_current_context);
+extern struct grub_env_context *grub_current_context;
 
 #endif /* ! GRUB_ENV_PRIVATE_HEADER */

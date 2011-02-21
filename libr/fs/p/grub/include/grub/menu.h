@@ -47,13 +47,9 @@ struct grub_menu_entry
   /* The sourcecode of the menu entry, used by the editor.  */
   const char *sourcecode;
 
-  /* Parameters to be passed to menu definition.  */
-  int argc;
-  char **args;
-
   int hotkey;
 
-  int submenu;
+  const char *group;
 
   /* The next element.  */
   struct grub_menu_entry *next;
@@ -71,38 +67,10 @@ struct grub_menu
 };
 typedef struct grub_menu *grub_menu_t;
 
-/* Callback structure menu viewers can use to provide user feedback when
-   default entries are executed, possibly including fallback entries.  */
-typedef struct grub_menu_execute_callback
-{
-  /* Called immediately before ENTRY is booted.  */
-  void (*notify_booting) (grub_menu_entry_t entry, void *userdata);
-
-  /* Called when executing one entry has failed, and another entry, ENTRY, will
-     be executed as a fallback.  The implementation of this function should
-     delay for a period of at least 2 seconds before returning in order to
-     allow the user time to read the information before it can be lost by
-     executing ENTRY.  */
-  void (*notify_fallback) (grub_menu_entry_t entry, void *userdata);
-
-  /* Called when an entry has failed to execute and there is no remaining
-     fallback entry to attempt.  */
-  void (*notify_failure) (void *userdata);
-}
-*grub_menu_execute_callback_t;
-
-grub_menu_entry_t grub_menu_get_entry (grub_menu_t menu, int no);
-int grub_menu_get_timeout (void);
-void grub_menu_set_timeout (int timeout);
-void grub_menu_execute_entry (grub_menu_entry_t entry);
-void grub_menu_execute_with_fallback (grub_menu_t menu,
-				      grub_menu_entry_t entry,
-				      grub_menu_execute_callback_t callback,
-				      void *callback_data);
-void grub_menu_entry_run (grub_menu_entry_t entry);
-int grub_menu_get_default_entry_index (grub_menu_t menu);
-
-void grub_menu_init (void);
-void grub_menu_fini (void);
+grub_err_t grub_menu_entry_add (int argc, const char **args,
+				const char *sourcecode);
+void grub_menu_execute (const char *config, int nested, int batch);
+const char *grub_menu_key2name (int key);
+int grub_menu_name2key (const char *name);
 
 #endif /* GRUB_MENU_HEADER */

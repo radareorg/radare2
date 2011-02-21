@@ -1,7 +1,7 @@
 /* raid.h - On disk structures for RAID. */
 /*
  *  GRUB  --  GRand Unified Bootloader
- *  Copyright (C) 2006,2007,2008,2010  Free Software Foundation, Inc.
+ *  Copyright (C) 2006,2007,2008  Free Software Foundation, Inc.
  *
  *  GRUB is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@
 
 #include <grub/types.h>
 
+#define GRUB_RAID_MAX_DEVICES	32
+
 #define GRUB_RAID_LAYOUT_LEFT_ASYMMETRIC	0
 #define GRUB_RAID_LAYOUT_RIGHT_ASYMMETRIC	1
 #define GRUB_RAID_LAYOUT_LEFT_SYMMETRIC		2
@@ -29,13 +31,6 @@
 
 #define GRUB_RAID_LAYOUT_RIGHT_MASK		1
 #define GRUB_RAID_LAYOUT_SYMMETRIC_MASK		2
-
-struct grub_raid_member
-{
-  grub_disk_t device;  /* Array of total_devs devices. */
-  grub_disk_addr_t start_sector;
-  /* Start of each device, in 512 byte sectors. */
-};
 
 struct grub_raid_array
 {
@@ -48,28 +43,25 @@ struct grub_raid_array
   grub_size_t chunk_size;  /* The size of a chunk, in 512 byte sectors. */
   grub_uint64_t disk_size; /* Size of an individual disk, in 512 byte
 			      sectors. */
-  unsigned int index;               /* Index of current device.  */
+  grub_uint64_t disk_offset;
+  int index;               /* Index of current device.  */
   int uuid_len;            /* The length of uuid.  */
   char *uuid;              /* The UUID of the device. */
 
   /* The following field is setup by the caller.  */
   char *name;              /* That will be "md<number>". */
   unsigned int nr_devs;    /* The number of devices we've found so far. */
-  unsigned int allocated_devs;
-  struct grub_raid_member *members;
-  struct grub_raid_array *next;
+  grub_disk_t device[GRUB_RAID_MAX_DEVICES];  /* Array of total_devs devices. */
+  grub_uint64_t offset[GRUB_RAID_MAX_DEVICES];
 
-#ifdef GRUB_UTIL
-  struct grub_raid *driver;
-#endif
+  struct grub_raid_array *next;
 };
 
 struct grub_raid
 {
   const char *name;
 
-  grub_err_t (*detect) (grub_disk_t disk, struct grub_raid_array *array,
-                        grub_disk_addr_t *start_sector);
+  grub_err_t (*detect) (grub_disk_t disk, struct grub_raid_array *array);
 
   struct grub_raid *next;
 };

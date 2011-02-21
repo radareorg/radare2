@@ -117,11 +117,11 @@ union grub_aout_header
 
 #ifndef GRUB_UTIL
 
-int EXPORT_FUNC(grub_aout_get_type) (union grub_aout_header *header);
+int grub_aout_get_type (union grub_aout_header *header);
 
-grub_err_t EXPORT_FUNC(grub_aout_load) (grub_file_t file, int offset,
-                                        void *load_addr, int load_size,
-                                        grub_size_t bss_size);
+grub_err_t grub_aout_load (grub_file_t file, int offset,
+  grub_addr_t load_addr, int load_size,
+  grub_addr_t bss_end_addr);
 
 #endif
 

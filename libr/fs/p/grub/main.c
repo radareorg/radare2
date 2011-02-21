@@ -12,30 +12,30 @@ void grub_exit () {
 }
 
 void read_foo (struct grub_disk *disk, grub_disk_addr_t sector, grub_size_t size, unsigned char *buf) {
-	//printf ("==> DISK %x\n", disk);
-	//printf ("==> OFFSET %x\n", offset);
-	//printf ("[foo]==> Reading hook %x %x\n", sector, size);
-	//printf ("==> land: %p\n", buf);
+//	printf ("==> DISK %x\n", disk);
+//	printf ("==> OFFSET %x\n", offset);
+//	printf ("[foo]==> Reading hook %x %x\n", sector, size);
+//	printf ("==> land: %p\n", buf);
 	size=512;
 	{
 		FILE *fd = fopen ("/tmp/test.fs.img", "rb");
 		fseek (fd, (512*sector), SEEK_SET);
 		fread (buf, 1, size, fd);
-		//printf ("\nBUF: %x %x %x %x\n", buf[0], buf[1], buf[2], buf[3]);
+//		printf ("\nBUF: %x %x %x %x\n", buf[0], buf[1], buf[2], buf[3]);
 		fclose (fd);
 	}
 }
 
 void read_hook (grub_disk_addr_t sector, unsigned long offset, unsigned long length, unsigned char *buf) {
-	//printf ("[hook]==> Reading hook sector=%x offset=%x %x\n", sector, offset, length);
-	//printf ("[hook]==> last %p\n", buf);
+//	printf ("[hook]==> Reading hook sector=%x offset=%x %x\n", sector, offset, length);
+//	printf ("[hook]==> last %p\n", buf);
 	{
 		int size=length;
 		FILE *fd = fopen("/tmp/test.fs.img", "rb");
 		fseek (fd, (512*sector)+offset, SEEK_SET);
 		fread (buf, 1, size, fd);
-		//write (1, buf, size);
-		//printf ("BUF: %x %x %x %x\n", buf[0], buf[1], buf[2], buf[3]);
+//		write (1, buf, size);
+//		printf ("BUF: %x %x %x %x\n", buf[0], buf[1], buf[2], buf[3]);
 		fclose (fd);
 	}
 }
@@ -102,7 +102,7 @@ int do_main() {
 		e2->close (file);
 
 		// Root directory list
-		err = e2->dir (file->device, "/", dirhook);
+		err = e2->dir (file->device, "/", dirhook, 0);
 		if (err != 0)
 			grub_print_error ();
 	} else {
@@ -122,7 +122,7 @@ int foo_main() {
 printf ("fs = %d\n", gfs->file->size);
 	write (1, buf, gfs->file->size);
 	gfs->file->fs->close (gfs->file);
-	gfs->file->fs->dir (gfs->file->device, "/", dirhook);
+	gfs->file->fs->dir (gfs->file->device, "/", dirhook, 0);
 	grubfs_free (gfs);
 }
 

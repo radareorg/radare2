@@ -23,7 +23,6 @@
 #include <grub/device.h>
 #include <grub/symbol.h>
 #include <grub/types.h>
-
 #include <grub/list.h>
 
 /* Forward declaration is required, because of mutual reference.  */
@@ -49,7 +48,9 @@ struct grub_fs
   /* Call HOOK with each file under DIR.  */
   grub_err_t (*dir) (grub_device_t device, const char *path,
 		     int (*hook) (const char *filename,
-				  const struct grub_dirhook_info *info));
+				  const struct grub_dirhook_info *info,
+				  void *closure),
+		     void *closure);
 
   /* Open a file named NAME and initialize FILE.  */
   grub_err_t (*open) (struct grub_file *file, const char *name);
@@ -88,16 +89,15 @@ extern struct grub_fs grub_fs_blocklist;
    The newly loaded filesystem is assumed to be inserted into the head of
    the linked list GRUB_FS_LIST through the function grub_fs_register.  */
 typedef int (*grub_fs_autoload_hook_t) (void);
-extern grub_fs_autoload_hook_t EXPORT_VAR(grub_fs_autoload_hook);
-extern grub_fs_t EXPORT_VAR (grub_fs_list);
+extern grub_fs_autoload_hook_t grub_fs_autoload_hook;
+extern grub_fs_t grub_fs_list;
 
-#ifndef GRUB_LST_GENERATOR
 static inline void
 grub_fs_register (grub_fs_t fs)
 {
   grub_list_push (GRUB_AS_LIST_P (&grub_fs_list), GRUB_AS_LIST (fs));
+  GRUB_MODATTR ("fs", "");
 }
-#endif
 
 static inline void
 grub_fs_unregister (grub_fs_t fs)
@@ -105,8 +105,14 @@ grub_fs_unregister (grub_fs_t fs)
   grub_list_remove (GRUB_AS_LIST_P (&grub_fs_list), GRUB_AS_LIST (fs));
 }
 
-#define FOR_FILESYSTEMS(var) FOR_LIST_ELEMENTS((var), (grub_fs_list))
+static inline void
+grub_fs_iterate (int (*hook) (const grub_fs_t fs, void *closure),
+		 void *closure)
+{
+  grub_list_iterate (GRUB_AS_LIST (grub_fs_list), (grub_list_hook_t) hook,
+		     closure);
+}
 
-grub_fs_t EXPORT_FUNC(grub_fs_probe) (grub_device_t device);
+grub_fs_t grub_fs_probe (grub_device_t device);
 
 #endif /* ! GRUB_FS_HEADER */

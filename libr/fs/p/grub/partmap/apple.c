@@ -100,7 +100,9 @@ struct grub_partition_map grub_apple_partition_map;
 static grub_err_t
 apple_partition_map_iterate (grub_disk_t disk,
 			     int (*hook) (grub_disk_t disk,
-					  const grub_partition_t partition))
+					  const grub_partition_t partition,
+					  void *closure),
+			     void *closure)
 {
   struct grub_partition part;
   struct grub_apple_header aheader;
@@ -161,7 +163,7 @@ apple_partition_map_iterate (grub_disk_t disk,
 		    grub_be_to_cpu32 (apart.first_phys_block),
 		    grub_be_to_cpu32 (apart.blockcnt));
 
-      if (hook (disk, &part))
+      if (hook (disk, &part, closure))
 	return grub_errno;
 
       pos += grub_be_to_cpu16 (aheader.blocksize);
@@ -179,7 +181,19 @@ apple_partition_map_iterate (grub_disk_t disk,
 
 
 /* Partition map type.  */
-struct grub_partition_map grub_apple_partition_map = {
+struct grub_partition_map grub_apple_partition_map =
+  {
     .name = "apple",
     .iterate = apple_partition_map_iterate,
-};
+  };
+
+GRUB_MOD_INIT(part_apple)
+{
+  grub_partition_map_register (&grub_apple_partition_map);
+}
+
+GRUB_MOD_FINI(part_apple)
+{
+  grub_partition_map_unregister (&grub_apple_partition_map);
+}
+

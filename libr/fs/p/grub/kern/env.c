@@ -22,6 +22,18 @@
 #include <grub/misc.h>
 #include <grub/mm.h>
 
+GRUB_EXPORT(grub_env_set);
+GRUB_EXPORT(grub_env_get);
+GRUB_EXPORT(grub_env_unset);
+GRUB_EXPORT(grub_env_iterate);
+GRUB_EXPORT(grub_env_find);
+GRUB_EXPORT(grub_register_variable_hook);
+GRUB_EXPORT(grub_current_menu);
+GRUB_EXPORT(grub_current_context);
+
+static struct menu_pointer initial_menu;
+struct menu_pointer *grub_current_menu = &initial_menu;
+
 /* The initial context.  */
 static struct grub_env_context initial_context;
 
@@ -170,7 +182,8 @@ grub_env_unset (const char *name)
 }
 
 void
-grub_env_iterate (int (*func) (struct grub_env_var *var))
+grub_env_iterate (int (*func) (struct grub_env_var *var, void *closure),
+		  void *closure)
 {
   struct grub_env_sorted_var *sorted_list = 0;
   struct grub_env_sorted_var *sorted_var;
@@ -204,7 +217,7 @@ grub_env_iterate (int (*func) (struct grub_env_var *var))
 
   /* Iterate FUNC on the sorted list.  */
   for (sorted_var = sorted_list; sorted_var; sorted_var = sorted_var->next)
-    if (func (sorted_var->var))
+    if (func (sorted_var->var, closure))
       break;
 
  fail:

@@ -46,7 +46,7 @@ struct linux_part
   grub_uint32_t size;
 };
 
-static struct grub_partition_map grub_acorn_partition_map;
+struct grub_partition_map grub_acorn_partition_map;
 
 static grub_err_t
 acorn_partition_map_find (grub_disk_t disk, struct linux_part *m,
@@ -93,7 +93,9 @@ fail:
 static grub_err_t
 acorn_partition_map_iterate (grub_disk_t disk,
 			     int (*hook) (grub_disk_t disk,
-					  const grub_partition_t partition))
+					  const grub_partition_t partition,
+					  void *closure),
+			     void *closure)
 {
   struct grub_partition part;
   struct linux_part map[LINUX_MAP_ENTRIES];
@@ -118,7 +120,7 @@ acorn_partition_map_iterate (grub_disk_t disk,
       part.offset = 6;
       part.number = part.index = i;
 
-      if (hook (disk, &part))
+      if (hook (disk, &part, closure))
 	return grub_errno;
     }
 
@@ -128,7 +130,18 @@ acorn_partition_map_iterate (grub_disk_t disk,
 
 
 /* Partition map type.  */
-struct grub_partition_map grub_acorn_partition_map = {
+struct grub_partition_map grub_acorn_partition_map =
+{
   .name = "acorn",
   .iterate = acorn_partition_map_iterate,
 };
+
+GRUB_MOD_INIT(part_acorn)
+{
+  grub_partition_map_register (&grub_acorn_partition_map);
+}
+
+GRUB_MOD_FINI(part_acorn)
+{
+  grub_partition_map_unregister (&grub_acorn_partition_map);
+}

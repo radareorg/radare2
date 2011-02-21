@@ -22,6 +22,7 @@
 
 #include <grub/types.h>
 #include <grub/err.h>
+#include <grub/handler.h>
 #include <grub/reader.h>
 
 /* All the states for the command line.  */
@@ -56,14 +57,12 @@ struct grub_parser_state_transition
 };
 
 /* Determines the state following STATE, determined by C.  */
-grub_parser_state_t
-EXPORT_FUNC (grub_parser_cmdline_state) (grub_parser_state_t state,
-					 char c, char *result);
+grub_parser_state_t grub_parser_cmdline_state (grub_parser_state_t state,
+					       char c, char *result);
 
-grub_err_t
-EXPORT_FUNC (grub_parser_split_cmdline) (const char *cmdline,
-					 grub_reader_getline_t getline,
-					 int *argc, char ***argv);
+grub_err_t grub_parser_split_cmdline (const char *cmdline,
+				      grub_reader_getline_t getline,
+				      void *closure, int *argc, char ***argv);
 
 struct grub_parser
 {
@@ -79,13 +78,43 @@ struct grub_parser
   /* Clean up the parser.  */
   grub_err_t (*fini) (void);
 
-  grub_err_t (*parse_line) (char *line, grub_reader_getline_t getline);
+  grub_err_t (*parse_line) (char *line, grub_reader_getline_t getline,
+			    void *closure);
 };
 typedef struct grub_parser *grub_parser_t;
 
+extern struct grub_handler_class grub_parser_class;
 grub_err_t grub_parser_execute (char *source);
 
-grub_err_t
-grub_rescue_parse_line (char *line, grub_reader_getline_t getline);
+#define grub_parser_register(name, parser) \
+  grub_parser_register_internal (parser); \
+  GRUB_MODATTR ("handler", "parser." name);
+
+static inline void
+grub_parser_register_internal (grub_parser_t parser)
+{
+  grub_handler_register (&grub_parser_class, GRUB_AS_HANDLER (parser));
+}
+
+static inline void
+grub_parser_unregister (grub_parser_t parser)
+{
+  grub_handler_unregister (&grub_parser_class, GRUB_AS_HANDLER (parser));
+}
+
+static inline grub_parser_t
+grub_parser_get_current (void)
+{
+  return (grub_parser_t) grub_parser_class.cur_handler;
+}
+
+static inline grub_err_t
+grub_parser_set_current (grub_parser_t parser)
+{
+  return grub_handler_set_current (&grub_parser_class,
+				   GRUB_AS_HANDLER (parser));
+}
+
+void grub_register_rescue_parser (void);
 
 #endif /* ! GRUB_PARSER_HEADER */

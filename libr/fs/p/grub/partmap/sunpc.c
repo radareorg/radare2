@@ -67,7 +67,9 @@ grub_sun_is_valid (struct grub_sun_pc_block *label)
 static grub_err_t
 sun_pc_partition_map_iterate (grub_disk_t disk,
 			      int (*hook) (grub_disk_t disk,
-					   const grub_partition_t partition))
+					   const grub_partition_t partition,
+					   void *closure),
+			      void *closure)
 {
   grub_partition_t p;
   struct grub_sun_pc_block block;
@@ -85,11 +87,11 @@ sun_pc_partition_map_iterate (grub_disk_t disk,
       grub_free (p);
       return err;
     }
-  
+
   if (GRUB_PARTMAP_SUN_PC_MAGIC != grub_le_to_cpu16 (block.magic))
     {
       grub_free (p);
-      return grub_error (GRUB_ERR_BAD_PART_TABLE, 
+      return grub_error (GRUB_ERR_BAD_PART_TABLE,
 			 "not a sun_pc partition table");
     }
 
@@ -115,7 +117,7 @@ sun_pc_partition_map_iterate (grub_disk_t disk,
       p->number = partnum;
       if (p->len)
 	{
-	  if (hook (disk, p))
+	  if (hook (disk, p, closure))
 	    partnum = GRUB_PARTMAP_SUN_PC_MAX_PARTS;
 	}
     }
@@ -126,7 +128,19 @@ sun_pc_partition_map_iterate (grub_disk_t disk,
 }
 
 /* Partition map type.  */
-struct grub_partition_map grub_sun_pc_partition_map = {
+struct grub_partition_map grub_sun_pc_partition_map =
+  {
     .name = "sunpc",
     .iterate = sun_pc_partition_map_iterate,
-};
+  };
+
+GRUB_MOD_INIT(part_sunpc)
+{
+  grub_partition_map_register (&grub_sun_pc_partition_map);
+}
+
+GRUB_MOD_FINI(part_sunpc)
+{
+  grub_partition_map_unregister (&grub_sun_pc_partition_map);
+}
+

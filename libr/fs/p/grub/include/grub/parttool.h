@@ -19,6 +19,8 @@
 #ifndef GRUB_PARTTOOL_HEADER
 #define GRUB_PARTTOOL_HEADER	1
 
+#include <grub/symbol.h>
+
 struct grub_parttool_argdesc
 {
   char *name;
@@ -50,9 +52,13 @@ struct grub_parttool
   grub_parttool_function_t func;
 };
 
-int grub_parttool_register(const char *part_name,
-			   const grub_parttool_function_t func,
-			   const struct grub_parttool_argdesc *args);
+#define grub_parttool_register(name, func, args) \
+  grub_parttool_reg (name, func, args); \
+  GRUB_MODATTR ("parttool", name);
+
+int grub_parttool_reg (const char *part_name,
+		       const grub_parttool_function_t func,
+		       const struct grub_parttool_argdesc *args);
 void grub_parttool_unregister (int handle);
 
 #endif /* ! GRUB_PARTTOOL_HEADER*/

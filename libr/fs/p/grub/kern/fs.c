@@ -26,26 +26,40 @@
 #include <grub/types.h>
 #include <grub/mm.h>
 #include <grub/term.h>
+#include <grub/partition.h>
 
-grub_fs_t grub_fs_list = 0;
+GRUB_EXPORT(grub_fs_autoload_hook);
+GRUB_EXPORT(grub_fs_list);
+GRUB_EXPORT(grub_fs_probe);
+GRUB_EXPORT(grub_blocklist_convert);
+GRUB_EXPORT(grub_blocklist_write);
+
+grub_fs_t grub_fs_list;
+
 grub_fs_autoload_hook_t grub_fs_autoload_hook = 0;
 
-static int dummy_func (const char *filename __attribute__ ((unused)),
-		  const struct grub_dirhook_info *info  __attribute__ ((unused))) {
-	return 1;
+static int
+dummy_func (const char *filename __attribute__ ((unused)),
+	    const struct grub_dirhook_info *info  __attribute__ ((unused)),
+	    void *closure __attribute__ ((unused)))
+{
+  return 1;
 }
 
-grub_fs_t grub_fs_probe (grub_device_t device) {
+grub_fs_t
+grub_fs_probe (grub_device_t device)
+{
   grub_fs_t p;
 
-  if (device->disk) {
+  if (device->disk)
+    {
       /* Make it sure not to have an infinite recursive calls.  */
       static int count = 0;
 
       for (p = grub_fs_list; p; p = p->next)
 	{
 	  grub_dprintf ("fs", "Detecting %s...\n", p->name);
-	  (p->dir) (device, "/", dummy_func);
+	  (p->dir) (device, "/", dummy_func, 0);
 	  if (grub_errno == GRUB_ERR_NONE)
 	    return p;
 
@@ -68,7 +82,7 @@ grub_fs_t grub_fs_probe (grub_device_t device) {
 	    {
 	      p = grub_fs_list;
 
-	      (p->dir) (device, "/", dummy_func);
+	      (p->dir) (device, "/", dummy_func, 0);
 	      if (grub_errno == GRUB_ERR_NONE)
 		{
 		  count--;
@@ -130,7 +144,14 @@ grub_fs_blocklist_open (grub_file_t file, const char *name)
 
   file->size = 0;
   p = (char *) name;
-  for (i = 0; i < num; i++)
+  if (! *p)
+    {
+      blocks[0].offset = 0;
+      blocks[0].length = (disk->total_sectors == GRUB_ULONG_MAX) ?
+	GRUB_ULONG_MAX : (disk->total_sectors << 9);
+      file->size = blocks[0].length;
+    }
+  else for (i = 0; i < num; i++)
     {
       if (*p != '+')
 	{
@@ -160,7 +181,9 @@ grub_fs_blocklist_open (grub_file_t file, const char *name)
 	  goto fail;
 	}
 
-      file->size += (blocks[i].length << GRUB_DISK_SECTOR_BITS);
+      blocks[i].offset <<= GRUB_DISK_SECTOR_BITS;
+      blocks[i].length <<= GRUB_DISK_SECTOR_BITS;
+      file->size += blocks[i].length;
       p++;
     }
 
@@ -173,44 +196,146 @@ grub_fs_blocklist_open (grub_file_t file, const char *name)
   return grub_errno;
 }
 
+static grub_err_t
+grub_fs_blocklist_close (grub_file_t file)
+{
+  grub_free (file->data);
+  return grub_errno;
+}
+
 static grub_ssize_t
-grub_fs_blocklist_read (grub_file_t file, char *buf, grub_size_t len)
+grub_fs_blocklist_rw (int write, grub_file_t file, char *buf, grub_size_t len)
 {
   struct grub_fs_block *p;
-  grub_disk_addr_t sector;
   grub_off_t offset;
   grub_ssize_t ret = 0;
 
   if (len > file->size - file->offset)
     len = file->size - file->offset;
 
-  sector = (file->offset >> GRUB_DISK_SECTOR_BITS);
-  offset = (file->offset & (GRUB_DISK_SECTOR_SIZE - 1));
+  offset = file->offset;
   for (p = file->data; p->length && len > 0; p++)
     {
-      if (sector < p->length)
+      if (offset < p->length)
 	{
 	  grub_size_t size;
 
 	  size = len;
-	  if (((size + offset + GRUB_DISK_SECTOR_SIZE - 1)
-	       >> GRUB_DISK_SECTOR_BITS) > p->length - sector)
-	    size = ((p->length - sector) << GRUB_DISK_SECTOR_BITS) - offset;
+	  if (offset + size > p->length)
+	    size = p->length - offset;
 
-	  if (grub_disk_read (file->device->disk, p->offset + sector, offset,
-			      size, buf) != GRUB_ERR_NONE)
+	  if ((write) ?
+	       grub_disk_write (file->device->disk, 0, p->offset + offset,
+				size, buf) :
+	       grub_disk_read_ex (file->device->disk, 0, p->offset + offset,
+				  size, buf, file->flags) != GRUB_ERR_NONE)
 	    return -1;
 
 	  ret += size;
 	  len -= size;
-	  sector -= ((size + offset) >> GRUB_DISK_SECTOR_BITS);
-	  offset = ((size + offset) & (GRUB_DISK_SECTOR_SIZE - 1));
+	  if (buf)
+	    buf += size;
+	  offset += size;
 	}
-      else
-	sector -= p->length;
+      offset -= p->length;
     }
 
   return ret;
+}
+
+static grub_ssize_t
+grub_fs_blocklist_read (grub_file_t file, char *buf, grub_size_t len)
+{
+  grub_ssize_t ret;
+  file->device->disk->read_hook = file->read_hook;
+  file->device->disk->closure = file->closure;
+  ret = grub_fs_blocklist_rw (0, file, buf, len);
+  file->device->disk->read_hook = 0;
+  return ret;
+}
+
+grub_ssize_t
+grub_blocklist_write (grub_file_t file, const char *buf, grub_size_t len)
+{
+  return (file->fs != &grub_fs_blocklist) ? -1 :
+    grub_fs_blocklist_rw (1, file, (char *) buf, len);
+}
+
+#define BLOCKLIST_INC_STEP	8
+
+struct read_blocklist_closure
+{
+  int num;
+  struct grub_fs_block *blocks;
+  grub_off_t total_size;
+  grub_disk_addr_t part_start;
+};
+
+static void
+read_blocklist (grub_disk_addr_t sector, unsigned offset,
+		unsigned length, void *closure)
+{
+  struct read_blocklist_closure *c = closure;
+
+  sector = ((sector - c->part_start) << GRUB_DISK_SECTOR_BITS) + offset;
+
+  if ((c->num) &&
+      (c->blocks[c->num - 1].offset + c->blocks[c->num - 1].length == sector))
+    {
+      c->blocks[c->num - 1].length += length;
+      goto quit;
+    }
+
+  if ((c->num & (BLOCKLIST_INC_STEP - 1)) == 0)
+    {
+      c->blocks = grub_realloc (c->blocks, (c->num + BLOCKLIST_INC_STEP) *
+				sizeof (struct grub_fs_block));
+      if (! c->blocks)
+	return;
+    }
+
+  c->blocks[c->num].offset = sector;
+  c->blocks[c->num].length = length;
+  c->num++;
+
+ quit:
+  c->total_size += length;
+}
+
+void
+grub_blocklist_convert (grub_file_t file)
+{
+  struct read_blocklist_closure c;
+
+  if ((file->fs == &grub_fs_blocklist) || (! file->device->disk) ||
+      (! file->size))
+    return;
+
+  file->offset = 0;
+  file->flags = 1;
+
+  c.num = 0;
+  c.blocks = 0;
+  c.total_size = 0;
+  c.part_start = grub_partition_get_start (file->device->disk->partition);
+  file->read_hook = read_blocklist;
+  file->closure = &c;
+  grub_file_read (file, 0, file->size);
+  file->read_hook = 0;
+  if ((grub_errno) || (c.total_size != file->size))
+    {
+      grub_errno = 0;
+      grub_free (c.blocks);
+    }
+  else
+    {
+      if (file->fs->close)
+	(file->fs->close) (file);
+      file->fs = &grub_fs_blocklist;
+      file->data = c.blocks;
+    }
+
+  file->offset = 0;
 }
 
 struct grub_fs grub_fs_blocklist =
@@ -219,6 +344,6 @@ struct grub_fs grub_fs_blocklist =
     .dir = 0,
     .open = grub_fs_blocklist_open,
     .read = grub_fs_blocklist_read,
-    .close = 0,
+    .close = grub_fs_blocklist_close,
     .next = 0
   };

@@ -153,6 +153,25 @@ struct grub_fshelp_node
 static grub_dl_t my_mod;
 
 
+static char *
+load_sua (struct grub_iso9660_data *data, int sua_block, int sua_pos,
+	  int sua_size)
+{
+  char *sua;
+
+  sua = grub_malloc (sua_size);
+  if (!sua)
+    return 0;
+
+  if (grub_disk_read (data->disk, sua_block, sua_pos, sua_size, sua))
+    {
+      grub_free (sua);
+      return 0;
+    }
+
+  return sua;
+}
+
 /* Iterate over the susp entries, starting with block SUA_BLOCK on the
    offset SUA_POS with a size of SUA_SIZE bytes.  Hook is called for
    every entry.  */
@@ -160,30 +179,18 @@ static grub_err_t
 grub_iso9660_susp_iterate (struct grub_iso9660_data *data,
 			   int sua_block, int sua_pos, int sua_size,
 			   grub_err_t (*hook)
-			   (struct grub_iso9660_susp_entry *entry))
+			   (struct grub_iso9660_susp_entry *entry,
+			    void *closure),
+			   void *closure)
 {
   char *sua;
   struct grub_iso9660_susp_entry *entry;
 
-  auto grub_err_t load_sua (void);
-
   /* Load a part of the System Usage Area.  */
-  grub_err_t load_sua (void)
-    {
-      sua = grub_malloc (sua_size);
-      if (!sua)
-	return grub_errno;
-
-      if (grub_disk_read (data->disk, sua_block, sua_pos,
-			  sua_size, sua))
-	return grub_errno;
-
-      entry = (struct grub_iso9660_susp_entry *) sua;
-      return 0;
-    }
-
-  if (load_sua ())
+  sua = load_sua (data, sua_block, sua_pos, sua_size);
+  if (!sua)
     return grub_errno;
+  entry = (struct grub_iso9660_susp_entry *) sua;
 
   for (; (char *) entry < (char *) sua + sua_size - 1;
        entry = (struct grub_iso9660_susp_entry *)
@@ -204,11 +211,13 @@ grub_iso9660_susp_iterate (struct grub_iso9660_data *data,
 	  sua_block = grub_le_to_cpu32 (ce->blk) << GRUB_ISO9660_LOG2_BLKSZ;
 
 	  grub_free (sua);
-	  if (load_sua ())
+	  sua = load_sua (data, sua_block, sua_pos, sua_size);
+	  if (!sua)
 	    return grub_errno;
+	  entry = (struct grub_iso9660_susp_entry *) sua;
 	}
 
-      if (hook (entry))
+      if (hook (entry, closure))
 	{
 	  grub_free (sua);
 	  return 0;
@@ -237,6 +246,21 @@ grub_iso9660_convert_string (grub_uint16_t *us, int len)
   return p;
 }
 
+static grub_err_t
+susp_iterate (struct grub_iso9660_susp_entry *susp_entry,
+	      void *closure)
+{
+  struct grub_iso9660_data *data = closure;
+  /* The "ER" entry is used to detect extensions.  The
+     `IEEE_P1285' extension means Rock ridge.  */
+  if (grub_strncmp ((char *) susp_entry->sig, "ER", 2) == 0)
+    {
+      data->rockridge = 1;
+      return 1;
+    }
+  return 0;
+}
+
 static struct grub_iso9660_data *
 grub_iso9660_mount (grub_disk_t disk)
 {
@@ -248,20 +272,6 @@ grub_iso9660_mount (grub_disk_t disk)
   struct grub_iso9660_susp_entry *entry;
   struct grub_iso9660_primary_voldesc voldesc;
   int block;
-
-  auto grub_err_t susp_iterate (struct grub_iso9660_susp_entry *);
-
-  grub_err_t susp_iterate (struct grub_iso9660_susp_entry *susp_entry)
-    {
-      /* The "ER" entry is used to detect extensions.  The
-	 `IEEE_P1285' extension means Rock ridge.  */
-      if (grub_strncmp ((char *) susp_entry->sig, "ER", 2) == 0)
-	{
-	  data->rockridge = 1;
-	  return 1;
-	}
-      return 0;
-    }
 
   data = grub_zalloc (sizeof (struct grub_iso9660_data));
   if (! data)
@@ -310,8 +320,9 @@ grub_iso9660_mount (grub_disk_t disk)
 
   /* Read the system use area and test it to see if SUSP is
      supported.  */
-  if (grub_disk_read (disk, (grub_le_to_cpu32 (data->voldesc.rootdir.first_sector)
-			     << GRUB_ISO9660_LOG2_BLKSZ), 0,
+  if (grub_disk_read (disk,
+		      (grub_le_to_cpu32 (data->voldesc.rootdir.first_sector)
+		       << GRUB_ISO9660_LOG2_BLKSZ), 0,
 		      sizeof (rootdir), (char *) &rootdir))
     {
       grub_error (GRUB_ERR_BAD_FS, "not a ISO9660 filesystem");
@@ -326,8 +337,9 @@ grub_iso9660_mount (grub_disk_t disk)
   if (! sua)
     goto fail;
 
-  if (grub_disk_read (disk, (grub_le_to_cpu32 (data->voldesc.rootdir.first_sector)
-			     << GRUB_ISO9660_LOG2_BLKSZ), sua_pos,
+  if (grub_disk_read (disk,
+		      (grub_le_to_cpu32 (data->voldesc.rootdir.first_sector)
+		       << GRUB_ISO9660_LOG2_BLKSZ), sua_pos,
 		      sua_size, sua))
     {
       grub_error (GRUB_ERR_BAD_FS, "not a ISO9660 filesystem");
@@ -349,7 +361,7 @@ grub_iso9660_mount (grub_disk_t disk)
       if (grub_iso9660_susp_iterate (data,
 				     (grub_le_to_cpu32 (data->voldesc.rootdir.first_sector)
 				      << GRUB_ISO9660_LOG2_BLKSZ),
-				     sua_pos, sua_size, susp_iterate))
+				     sua_pos, sua_size, susp_iterate, data))
 	goto fail;
     }
 
@@ -360,6 +372,85 @@ grub_iso9660_mount (grub_disk_t disk)
   return 0;
 }
 
+struct grub_iso9660_read_symlink_closure
+{
+  char *symlink;
+  int addslash;
+};
+
+/* Extend the symlink.  */
+static void
+add_part (const char *part, int len,
+	  struct grub_iso9660_read_symlink_closure *c)
+{
+  int size = grub_strlen (c->symlink);
+
+  c->symlink = grub_realloc (c->symlink, size + len + 1);
+  if (! c->symlink)
+    return;
+
+  grub_strncat (c->symlink, part, len);
+}
+
+/* Read in a symlink.  */
+static grub_err_t
+susp_iterate_sl (struct grub_iso9660_susp_entry *entry, void *closure)
+{
+  struct grub_iso9660_read_symlink_closure *c = closure;
+
+  if (grub_strncmp ("SL", (char *) entry->sig, 2) == 0)
+    {
+      unsigned int pos = 1;
+
+      /* The symlink is not stored as a POSIX symlink, translate it.  */
+      while (pos < grub_le_to_cpu32 (entry->len))
+	{
+	  if (c->addslash)
+	    {
+	      add_part ("/", 1, c);
+	      c->addslash = 0;
+	    }
+
+	  /* The current position is the `Component Flag'.  */
+	  switch (entry->data[pos] & 30)
+	    {
+	    case 0:
+	      {
+		/* The data on pos + 2 is the actual data, pos + 1
+		   is the length.  Both are part of the `Component
+		   Record'.  */
+		add_part ((char *) &entry->data[pos + 2],
+			  entry->data[pos + 1], c);
+		if ((entry->data[pos] & 1))
+		  c->addslash = 1;
+
+		break;
+	      }
+
+	    case 2:
+	      add_part ("./", 2, c);
+	      break;
+
+	    case 4:
+	      add_part ("../", 3, c);
+	      break;
+
+	    case 8:
+	      add_part ("/", 1, c);
+	      break;
+	    }
+	  /* In pos + 1 the length of the `Component Record' is
+	     stored.  */
+	  pos += entry->data[pos + 1] + 2;
+	}
+
+      /* Check if `grub_realloc' failed.  */
+      if (grub_errno)
+	return grub_errno;
+    }
+
+  return 0;
+}
 
 static char *
 grub_iso9660_read_symlink (grub_fshelp_node_t node)
@@ -367,80 +458,7 @@ grub_iso9660_read_symlink (grub_fshelp_node_t node)
   struct grub_iso9660_dir dirent;
   int sua_off;
   int sua_size;
-  char *symlink = 0;
-  int addslash = 0;
-
-  auto void add_part (const char *part, int len);
-  auto grub_err_t susp_iterate_sl (struct grub_iso9660_susp_entry *);
-
-  /* Extend the symlink.  */
-  void add_part (const char *part, int len)
-    {
-      int size = grub_strlen (symlink);
-
-      symlink = grub_realloc (symlink, size + len + 1);
-      if (! symlink)
-	return;
-
-      grub_strncat (symlink, part, len);
-    }
-
-  /* Read in a symlink.  */
-  grub_err_t susp_iterate_sl (struct grub_iso9660_susp_entry *entry)
-    {
-      if (grub_strncmp ("SL", (char *) entry->sig, 2) == 0)
-	{
-	  unsigned int pos = 1;
-
-	  /* The symlink is not stored as a POSIX symlink, translate it.  */
-	  while (pos < grub_le_to_cpu32 (entry->len))
-	    {
-	      if (addslash)
-		{
-		  add_part ("/", 1);
-		  addslash = 0;
-		}
-
-	      /* The current position is the `Component Flag'.  */
-	      switch (entry->data[pos] & 30)
-		{
-		case 0:
-		  {
-		    /* The data on pos + 2 is the actual data, pos + 1
-		       is the length.  Both are part of the `Component
-		       Record'.  */
-		    add_part ((char *) &entry->data[pos + 2],
-			      entry->data[pos + 1]);
-		    if ((entry->data[pos] & 1))
-		      addslash = 1;
-
-		    break;
-		  }
-
-		case 2:
-		  add_part ("./", 2);
-		  break;
-
-		case 4:
-		  add_part ("../", 3);
-		  break;
-
-		case 8:
-		  add_part ("/", 1);
-		  break;
-		}
-	      /* In pos + 1 the length of the `Component Record' is
-		 stored.  */
-	      pos += entry->data[pos + 1] + 2;
-	    }
-
-	  /* Check if `grub_realloc' failed.  */
-	  if (grub_errno)
-	    return grub_errno;
-	}
-
-      return 0;
-    }
+  struct grub_iso9660_read_symlink_closure c;
 
   if (grub_disk_read (node->data->disk, node->dir_blk, node->dir_off,
 		      sizeof (dirent), (char *) &dirent))
@@ -450,96 +468,105 @@ grub_iso9660_read_symlink (grub_fshelp_node_t node)
 	     + node->data->susp_skip);
   sua_size = dirent.len - sua_off;
 
-  symlink = grub_malloc (1);
-  if (!symlink)
+  c.symlink = grub_malloc (1);
+  if (!c.symlink)
     return 0;
 
-  *symlink = '\0';
+  *c.symlink = '\0';
 
+  c.addslash = 0;
   if (grub_iso9660_susp_iterate (node->data, node->dir_blk,
 				 node->dir_off + sua_off,
-				 sua_size, susp_iterate_sl))
+				 sua_size, susp_iterate_sl, &c))
     {
-      grub_free (symlink);
+      grub_free (c.symlink);
       return 0;
     }
 
-  return symlink;
+  return c.symlink;
 }
 
+struct grub_iso9660_iterate_dir_closure
+{
+  char **filename;
+  int filename_alloc;
+  enum grub_fshelp_filetype type;
+};
+
+static grub_err_t
+susp_iterate_dir (struct grub_iso9660_susp_entry *entry, void *closure)
+{
+  struct grub_iso9660_iterate_dir_closure *c = closure;
+  char *filename = *(c->filename);
+
+  /* The filename in the rock ridge entry.  */
+  if (grub_strncmp ("NM", (char *) entry->sig, 2) == 0)
+    {
+      /* The flags are stored at the data position 0, here the
+	 filename type is stored.  */
+      if (entry->data[0] & GRUB_ISO9660_RR_DOT)
+	filename = ".";
+      else if (entry->data[0] & GRUB_ISO9660_RR_DOTDOT)
+	filename = "..";
+      else
+	{
+	  int size = 1;
+	  if (filename)
+	    {
+	      size += grub_strlen (filename);
+	      grub_realloc (filename,
+			    grub_strlen (filename)
+			    + entry->len);
+	    }
+	  else
+	    {
+	      size = entry->len - 5;
+	      filename = grub_zalloc (size + 1);
+	    }
+	  c->filename_alloc = 1;
+	  grub_strncpy (filename, (char *) &entry->data[1], size);
+	  filename[size] = '\0';
+	}
+    }
+  /* The mode information (st_mode).  */
+  else if (grub_strncmp ((char *) entry->sig, "PX", 2) == 0)
+    {
+      /* At position 0 of the PX record the st_mode information is
+	 stored (little-endian).  */
+      grub_uint32_t mode = ((entry->data[0] + (entry->data[1] << 8))
+			    & GRUB_ISO9660_FSTYPE_MASK);
+
+      switch (mode)
+	{
+	case GRUB_ISO9660_FSTYPE_DIR:
+	  c->type = GRUB_FSHELP_DIR;
+	  break;
+	case GRUB_ISO9660_FSTYPE_REG:
+	  c->type = GRUB_FSHELP_REG;
+	  break;
+	case GRUB_ISO9660_FSTYPE_SYMLINK:
+	  c->type = GRUB_FSHELP_SYMLINK;
+	  break;
+	default:
+	  c->type = GRUB_FSHELP_UNKNOWN;
+	}
+    }
+
+  *(c->filename) = filename;
+  return 0;
+}
 
 static int
 grub_iso9660_iterate_dir (grub_fshelp_node_t dir,
-			  int NESTED_FUNC_ATTR
-			  (*hook) (const char *filename,
-				   enum grub_fshelp_filetype filetype,
-				   grub_fshelp_node_t node))
+			  int (*hook) (const char *filename,
+				       enum grub_fshelp_filetype filetype,
+				       grub_fshelp_node_t node,
+				       void *closure),
+			  void *closure)
 {
   struct grub_iso9660_dir dirent;
   unsigned int offset = 0;
   char *filename;
-  int filename_alloc = 0;
-  enum grub_fshelp_filetype type;
-
-  auto grub_err_t susp_iterate_dir (struct grub_iso9660_susp_entry *);
-
-  grub_err_t susp_iterate_dir (struct grub_iso9660_susp_entry *entry)
-    {
-      /* The filename in the rock ridge entry.  */
-      if (grub_strncmp ("NM", (char *) entry->sig, 2) == 0)
-	{
-	  /* The flags are stored at the data position 0, here the
-	     filename type is stored.  */
-	  if (entry->data[0] & GRUB_ISO9660_RR_DOT)
-	    filename = ".";
-	  else if (entry->data[0] & GRUB_ISO9660_RR_DOTDOT)
-	    filename = "..";
-	  else
-	    {
-	      int size = 1;
-	      if (filename)
-		{
-		  size += grub_strlen (filename);
-		  filename = grub_realloc (filename,
-				grub_strlen (filename)
-				+ entry->len);
-		}
-	      else
-		{
-		  size = entry->len - 5;
-		  filename = grub_zalloc (size + 1);
-		}
-	      filename_alloc = 1;
-	      grub_strncpy (filename, (char *) &entry->data[1], size);
-	      filename[size] = '\0';
-	    }
-	}
-      /* The mode information (st_mode).  */
-      else if (grub_strncmp ((char *) entry->sig, "PX", 2) == 0)
-	{
-	  /* At position 0 of the PX record the st_mode information is
-	     stored (little-endian).  */
-	  grub_uint32_t mode = ((entry->data[0] + (entry->data[1] << 8))
-				& GRUB_ISO9660_FSTYPE_MASK);
-
-	  switch (mode)
-	    {
-	    case GRUB_ISO9660_FSTYPE_DIR:
-	      type = GRUB_FSHELP_DIR;
-	      break;
-	    case GRUB_ISO9660_FSTYPE_REG:
-	      type = GRUB_FSHELP_REG;
-	      break;
-	    case GRUB_ISO9660_FSTYPE_SYMLINK:
-	      type = GRUB_FSHELP_SYMLINK;
-	      break;
-	    default:
-	      type = GRUB_FSHELP_UNKNOWN;
-	    }
-	}
-
-      return 0;
-    }
 
   while (offset < dir->size)
     {
@@ -564,20 +591,21 @@ grub_iso9660_iterate_dir (grub_fshelp_node_t dir,
 	int sua_off = (sizeof (dirent) + dirent.namelen + 1
 		       - (dirent.namelen % 2));
 	int sua_size = dirent.len - sua_off;
+	struct grub_iso9660_iterate_dir_closure c;
 
 	sua_off += offset + dir->data->susp_skip;
 
 	filename = 0;
-	filename_alloc = 0;
-	type = GRUB_FSHELP_UNKNOWN;
-
+	c.filename = &filename;
+	c.filename_alloc = 0;
+	c.type = GRUB_FSHELP_UNKNOWN;
 	if (dir->data->rockridge
 	    && grub_iso9660_susp_iterate (dir->data,
 					  (dir->blk << GRUB_ISO9660_LOG2_BLKSZ)
 					  + (sua_off
 					     / GRUB_DISK_SECTOR_SIZE),
 					  sua_off % GRUB_DISK_SECTOR_SIZE,
-					  sua_size, susp_iterate_dir))
+					  sua_size, susp_iterate_dir, &c))
 	  return 0;
 
 	/* Read the name.  */
@@ -602,12 +630,12 @@ grub_iso9660_iterate_dir (grub_fshelp_node_t dir,
 
 	/* If the filetype was not stored using rockridge, use
 	   whatever is stored in the iso9660 filesystem.  */
-	if (type == GRUB_FSHELP_UNKNOWN)
+	if (c.type == GRUB_FSHELP_UNKNOWN)
 	  {
 	    if ((dirent.flags & 3) == 2)
-	      type = GRUB_FSHELP_DIR;
+	      c.type = GRUB_FSHELP_DIR;
 	    else
-	      type = GRUB_FSHELP_REG;
+	      c.type = GRUB_FSHELP_REG;
 	  }
 
 	/* The filename was not stored in a rock ridge entry.  Read it
@@ -639,19 +667,19 @@ grub_iso9660_iterate_dir (grub_fshelp_node_t dir,
 	    if (semicolon)
 	      *semicolon = '\0';
 
-            if (filename_alloc)
+            if (c.filename_alloc)
               grub_free (oldname);
 
-            filename_alloc = 1;
+            c.filename_alloc = 1;
           }
 
-	if (hook (filename, type, node))
+	if (hook (filename, c.type, node, closure))
 	  {
-	    if (filename_alloc)
+	    if (c.filename_alloc)
 	      grub_free (filename);
 	    return 1;
 	  }
-	if (filename_alloc)
+	if (c.filename_alloc)
 	  grub_free (filename);
       }
 
@@ -661,31 +689,39 @@ grub_iso9660_iterate_dir (grub_fshelp_node_t dir,
   return 0;
 }
 
+struct grub_iso9660_dir_closure
+{
+  int (*hook) (const char *filename,
+	       const struct grub_dirhook_info *info,
+	       void *closure);
+  void *closure;
+};
+
+static int
+iterate (const char *filename,
+	 enum grub_fshelp_filetype filetype,
+	 grub_fshelp_node_t node, void *closure)
+{
+  struct grub_iso9660_dir_closure *c = closure;
+  struct grub_dirhook_info info;
+  grub_memset (&info, 0, sizeof (info));
+  info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
+  grub_free (node);
+  return c->hook (filename, &info, c->closure);
+}
 
 
 static grub_err_t
 grub_iso9660_dir (grub_device_t device, const char *path,
 		  int (*hook) (const char *filename,
-			       const struct grub_dirhook_info *info))
+			       const struct grub_dirhook_info *info,
+			       void *closure),
+		  void *closure)
 {
   struct grub_iso9660_data *data = 0;
   struct grub_fshelp_node rootnode;
   struct grub_fshelp_node *foundnode;
-
-  auto int NESTED_FUNC_ATTR iterate (const char *filename,
-				     enum grub_fshelp_filetype filetype,
-				     grub_fshelp_node_t node);
-
-  int NESTED_FUNC_ATTR iterate (const char *filename,
-				enum grub_fshelp_filetype filetype,
-				grub_fshelp_node_t node)
-    {
-      struct grub_dirhook_info info;
-      grub_memset (&info, 0, sizeof (info));
-      info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
-      grub_free (node);
-      return hook (filename, &info);
-    }
+  struct grub_iso9660_dir_closure c;
 
   grub_dl_ref (my_mod);
 
@@ -700,13 +736,15 @@ grub_iso9660_dir (grub_device_t device, const char *path,
   /* Use the fshelp function to traverse the path.  */
   if (grub_fshelp_find_file (path, &rootnode,
 			     &foundnode,
-			     grub_iso9660_iterate_dir,
+			     grub_iso9660_iterate_dir, 0,
 			     grub_iso9660_read_symlink,
 			     GRUB_FSHELP_DIR))
     goto fail;
 
+  c.hook = hook;
+  c.closure = closure;
   /* List the files in the directory.  */
-  grub_iso9660_iterate_dir (foundnode, iterate);
+  grub_iso9660_iterate_dir (foundnode, iterate, &c);
 
   if (foundnode != &rootnode)
     grub_free (foundnode);
@@ -741,7 +779,7 @@ grub_iso9660_open (struct grub_file *file, const char *name)
   /* Use the fshelp function to traverse the path.  */
   if (grub_fshelp_find_file (name, &rootnode,
 			     &foundnode,
-			     grub_iso9660_iterate_dir,
+			     grub_iso9660_iterate_dir, 0,
 			     grub_iso9660_read_symlink,
 			     GRUB_FSHELP_REG))
     goto fail;
@@ -771,10 +809,11 @@ grub_iso9660_read (grub_file_t file, char *buf, grub_size_t len)
 
   /* XXX: The file is stored in as a single extent.  */
   data->disk->read_hook = file->read_hook;
-  grub_disk_read (data->disk,
-		  data->first_sector << GRUB_ISO9660_LOG2_BLKSZ,
-		  file->offset,
-		  len, buf);
+  data->disk->closure = file->closure;
+  grub_disk_read_ex (data->disk,
+		     data->first_sector << GRUB_ISO9660_LOG2_BLKSZ,
+		     file->offset,
+		     len, buf, file->flags);
   data->disk->read_hook = NULL;
 
   if (grub_errno)
@@ -873,7 +912,7 @@ grub_iso9660_uuid (grub_device_t device, char **uuid)
 
 
 
-struct grub_fs grub_iso9660_fs =
+static struct grub_fs grub_iso9660_fs =
   {
     .name = "iso9660",
     .dir = grub_iso9660_dir,

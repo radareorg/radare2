@@ -28,22 +28,18 @@
 # define NULL	((void *) 0)
 #endif
 
-#if 0
 void grub_mm_init_region (void *addr, grub_size_t size);
-void *EXPORT_FUNC(grub_malloc) (grub_size_t size);
-void *EXPORT_FUNC(grub_zalloc) (grub_size_t size);
-void EXPORT_FUNC(grub_free) (void *ptr);
-void *EXPORT_FUNC(grub_realloc) (void *ptr, grub_size_t size);
-void *EXPORT_FUNC(grub_memalign) (grub_size_t align, grub_size_t size);
-#endif
-
-void grub_mm_check_real (char *file, int line);
-#define GRUB_MM_CHECK grub_mm_check_real (__FILE__, __LINE__);
+void *grub_malloc (grub_size_t size);
+void *grub_zalloc (grub_size_t size);
+void grub_free (void *ptr);
+void *grub_realloc (void *ptr, grub_size_t size);
+void *grub_memalign (grub_size_t align, grub_size_t size);
+grub_size_t grub_mm_get_free (void);
 
 /* For debugging.  */
 #if defined(MM_DEBUG) && !defined(GRUB_UTIL) && !defined (GRUB_MACHINE_EMU)
 /* Set this variable to 1 when you want to trace all memory function calls.  */
-extern int EXPORT_VAR(grub_mm_debug);
+extern int grub_mm_debug;
 
 void grub_mm_dump_free (void);
 void grub_mm_dump (unsigned lineno);
@@ -63,15 +59,15 @@ void grub_mm_dump (unsigned lineno);
 #define grub_free(ptr)	\
   grub_debug_free (GRUB_FILE, __LINE__, ptr)
 
-void *EXPORT_FUNC(grub_debug_malloc) (const char *file, int line,
-				      grub_size_t size);
-void *EXPORT_FUNC(grub_debug_zalloc) (const char *file, int line,
-				       grub_size_t size);
-void EXPORT_FUNC(grub_debug_free) (const char *file, int line, void *ptr);
-void *EXPORT_FUNC(grub_debug_realloc) (const char *file, int line, void *ptr,
-				       grub_size_t size);
-void *EXPORT_FUNC(grub_debug_memalign) (const char *file, int line,
-					grub_size_t align, grub_size_t size);
+void *grub_debug_malloc (const char *file, int line,
+			 grub_size_t size);
+void *grub_debug_zalloc (const char *file, int line,
+			 grub_size_t size);
+void grub_debug_free (const char *file, int line, void *ptr);
+void *grub_debug_realloc (const char *file, int line, void *ptr,
+			  grub_size_t size);
+void *grub_debug_memalign (const char *file, int line,
+			   grub_size_t align, grub_size_t size);
 #endif /* MM_DEBUG && ! GRUB_UTIL */
 
 #endif /* ! GRUB_MM_H */

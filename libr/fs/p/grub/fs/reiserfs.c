@@ -30,7 +30,6 @@
 # define GRUB_HEXDUMP
 #endif
 
-#include <string.h>
 #include <grub/err.h>
 #include <grub/file.h>
 #include <grub/mm.h>
@@ -710,10 +709,11 @@ grub_reiserfs_mount (grub_disk_t disk)
 /* Call HOOK for each file in directory ITEM.  */
 static int
 grub_reiserfs_iterate_dir (grub_fshelp_node_t item,
-                           int NESTED_FUNC_ATTR
-                           (*hook) (const char *filename,
-                                    enum grub_fshelp_filetype filetype,
-                                    grub_fshelp_node_t node))
+                           int (*hook) (const char *filename,
+					enum grub_fshelp_filetype filetype,
+					grub_fshelp_node_t node,
+					void *closure),
+			   void *closure)
 {
   struct grub_reiserfs_data *data = item->data;
   struct grub_reiserfs_block_header *block_header = 0;
@@ -930,10 +930,10 @@ grub_reiserfs_iterate_dir (grub_fshelp_node_t item,
                                       "Warning : %s has no stat block !\n",
                                       entry_name);
                       grub_free (entry_item);
-                      goto next;
+                      continue;
                     }
                 }
-              if (hook (entry_name, entry_type, entry_item))
+              if (hook (entry_name, entry_type, entry_item, closure))
                 {
                   grub_dprintf ("reiserfs", "Found : %s, type=%d\n",
                                 entry_name, entry_type);
@@ -941,7 +941,6 @@ grub_reiserfs_iterate_dir (grub_fshelp_node_t item,
                   goto found;
                 }
 
-next:
               *entry_name = 0; /* Make sure next entry name (which is just
                                   before this one in disk order) stops before
                                   the current one.  */
@@ -1004,7 +1003,7 @@ grub_reiserfs_open (struct grub_file *file, const char *name)
       goto fail; /* Should never happen since checked at mount.  */
     }
   grub_fshelp_find_file (name, &root, &found,
-                         grub_reiserfs_iterate_dir,
+                         grub_reiserfs_iterate_dir, 0,
                          grub_reiserfs_read_symlink, GRUB_FSHELP_REG);
   if (grub_errno)
     goto fail;
@@ -1116,6 +1115,7 @@ grub_reiserfs_read (grub_file_t file, char *buf, grub_size_t len)
                             (unsigned) block, (unsigned) offset,
                             (unsigned) (offset + length));
               found.data->disk->read_hook = file->read_hook;
+	      found.data->disk->closure = file->closure;
               grub_disk_read (found.data->disk,
                               block,
                               offset
@@ -1256,26 +1256,40 @@ grub_reiserfs_close (grub_file_t file)
   return GRUB_ERR_NONE;
 }
 
-static int (*hook) (const char *filename, const struct grub_dirhook_info *info);
-static int iterate (const char *filename,
-		enum grub_fshelp_filetype filetype, grub_fshelp_node_t node)
+struct grub_reiserfs_dir_closure
 {
-	struct grub_dirhook_info info;
-	memset (&info, 0, sizeof (info));
-	info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
-	grub_free (node);
-	return hook (filename, &info);
+  int (*hook) (const char *filename,
+	       const struct grub_dirhook_info *info,
+	       void *closure);
+  void *closure;
+};
+
+static int
+iterate (const char *filename,
+	 enum grub_fshelp_filetype filetype,
+	 grub_fshelp_node_t node,
+	 void *closure)
+{
+  struct grub_reiserfs_dir_closure *c = closure;
+  struct grub_dirhook_info info;
+  grub_memset (&info, 0, sizeof (info));
+  info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
+  grub_free (node);
+  return c->hook (filename, &info, c->closure);
 }
 
 /* Call HOOK with each file under DIR.  */
 static grub_err_t
 grub_reiserfs_dir (grub_device_t device, const char *path,
-                   int (*_hook) (const char *filename, const struct grub_dirhook_info *info))
+                   int (*hook) (const char *filename,
+				const struct grub_dirhook_info *info,
+				void *closure),
+		   void *closure)
 {
   struct grub_reiserfs_data *data = 0;
   struct grub_fshelp_node root, *found;
   struct grub_reiserfs_key root_key;
-hook = _hook;
+  struct grub_reiserfs_dir_closure c;
 
   grub_dl_ref (my_mod);
   data = grub_reiserfs_mount (device->disk);
@@ -1293,11 +1307,13 @@ hook = _hook;
       grub_error(GRUB_ERR_BAD_FS, "root not found");
       goto fail;
     }
-  grub_fshelp_find_file (path, &root, &found, grub_reiserfs_iterate_dir,
+  grub_fshelp_find_file (path, &root, &found, grub_reiserfs_iterate_dir, 0,
                          grub_reiserfs_read_symlink, GRUB_FSHELP_DIR);
   if (grub_errno)
     goto fail;
-  grub_reiserfs_iterate_dir (found, iterate);
+  c.hook = hook;
+  c.closure = closure;
+  grub_reiserfs_iterate_dir (found, iterate, &c);
   grub_free (data);
   grub_dl_unref (my_mod);
   return GRUB_ERR_NONE;

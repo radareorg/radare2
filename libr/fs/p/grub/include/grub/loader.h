@@ -26,16 +26,16 @@
 #include <grub/types.h>
 
 /* Check if a loader is loaded.  */
-int EXPORT_FUNC (grub_loader_is_loaded) (void);
+int grub_loader_is_loaded (void);
 
 /* Set loader functions. NORETURN must be set to true, if BOOT won't return
    to the original state.  */
-void EXPORT_FUNC (grub_loader_set) (grub_err_t (*boot) (void),
-					 grub_err_t (*unload) (void),
-					 int noreturn);
+void grub_loader_set (grub_err_t (*boot) (void),
+		      grub_err_t (*unload) (void),
+		      int noreturn);
 
 /* Unset current loader, if any.  */
-void EXPORT_FUNC (grub_loader_unset) (void);
+void grub_loader_unset (void);
 
 /* Call the boot hook in current loader. This may or may not return,
    depending on the setting by grub_loader_set.  */
@@ -56,7 +56,7 @@ typedef enum {
 } grub_loader_preboot_hook_prio_t;
 
 /* Register a preboot hook. */
-void *EXPORT_FUNC(grub_loader_register_preboot_hook) (grub_err_t (*preboot_func) (int noret),
+void *grub_loader_register_preboot_hook (grub_err_t (*preboot_func) (int noret),
 					 grub_err_t (*preboot_rest_func) (void),
 					 grub_loader_preboot_hook_prio_t prio);
 

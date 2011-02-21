@@ -31,8 +31,8 @@ grub_uint32_t EXPORT_FUNC (grub_get_rtc) (void);
 #include <grub/machine/time.h>
 #endif
 
-void EXPORT_FUNC(grub_millisleep) (grub_uint32_t ms);
-grub_uint64_t EXPORT_FUNC(grub_get_time_ms) (void);
+void grub_millisleep (grub_uint32_t ms);
+grub_uint64_t grub_get_time_ms (void);
 
 grub_uint64_t grub_rtc_get_time_ms (void);
 

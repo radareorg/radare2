@@ -19,6 +19,8 @@
 
 #include <grub/time.h>
 
+GRUB_EXPORT(grub_get_time_ms);
+
 typedef grub_uint64_t (*get_time_ms_func_t) (void);
 
 /* Function pointer to the implementation in use.  */
