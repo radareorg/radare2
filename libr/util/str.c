@@ -10,12 +10,11 @@
 static const char *nullstr = "";
 static const char *nullstr_c = "(null)";
 
+// TODO: simplify this horrible loop
 R_API void r_str_chop_path (char *s) {
 	char *src, *dst, *p;
 	int i = 0;
-
-	src = s+1;
-	dst = s+1;
+	dst = src = s+1;
 	while (*src) {
 		if (*(src-1) == '/' && *src == '.' && *(src+1) == '.') {
 			if (*(src+2) == '/' || *(src+2) == '\0') {
@@ -41,11 +40,29 @@ R_API void r_str_chop_path (char *s) {
 		}
 		src++;
 	}
-	if (*(dst-1) == '/')
+	if (dst>s+1 && *(dst-1) == '/')
 		*(dst-1) = 0;
-	else
-		*dst = 0;
+	else *dst = 0;
 }
+
+#if 0
+// TEST CASE FOR r_str_chop_path
+main () {
+	char buf[1024];
+	strcpy (buf, "/foo/boo/");
+	r_str_chop_path (buf);
+	printf ("%d %s\n", strcmp ("/foo/boo", buf), buf);
+	strcpy (buf, "/foo/boo");
+	r_str_chop_path (buf);
+	printf ("%d %s\n", strcmp ("/foo/boo", buf), buf);
+	strcpy (buf, "/foo");
+	r_str_chop_path (buf);
+	printf ("%d %s\n", strcmp ("/foo", buf), buf);
+	strcpy (buf, "/");
+	r_str_chop_path (buf);
+	printf ("%d %s\n", strcmp ("/", buf), buf);
+}
+#endif
 
 R_API void r_str_subchr (char *s, int a, int b) {
 	while (*s) {

@@ -254,7 +254,7 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 				r_list_foreach (list, iter, file)
 					printf ("%c %s\n", file->type, file->name);
 				r_list_free (list);
-			} else printf ("Unknown path\n");
+			} else printf ("Unknown path (%s)\n", path);
 		} else if (!strncmp (buf, "pwd", 3)) {
 			eprintf ("%s\n", path);
 		} else if (!memcmp (buf, "cd ", 3)) {

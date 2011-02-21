@@ -16,12 +16,17 @@ static RFSFile* fs_posix_open(RFSRoot *root, const char *path) {
 	} else file->size = gfs->file->size;
 	return file;
 #endif
-	eprintf ("TODO\n");
+	eprintf ("TODO: fs_posix_open\n");
 	return NULL;
 }
 
 static boolt fs_posix_read(RFSFile *file, ut64 addr, int len) {
-	eprintf ("TODO\n");
+	file->data = malloc (len);
+	if (file->data) {
+		eprintf ("TODO: fs_posix_read\n");
+		free (file->data);
+		file->data = NULL;
+	}
 	return R_FALSE;
 }
 
@@ -30,18 +35,25 @@ static void fs_posix_close(RFSFile *file) {
 }
 
 static RList *fs_posix_dir(RFSRoot *root, const char *path) {
+	char fullpath[4096];
 	RList *list;
-	struct direct *de;
+	struct stat st;
+	struct dirent *de;
 	DIR *dir = opendir (path);
-	if (dir) return NULL;
+	if (!dir) return NULL;
 	list = r_list_new ();
 	while ((de = readdir (dir))) {
-#if 0
 		RFSFile *fsf = r_fs_file_new (NULL, de->d_name);
-		fsf->type = 'f'; //info->dir? 'd':'f';
-		fsf->time = 0; // TODO: get info from stat(1)
+		fsf->type = 'f';
+		snprintf (fullpath, sizeof (fullpath)-1, "%s/%s", path, de->d_name);
+		if (!stat (fullpath, &st)) {
+			fsf->type = S_ISDIR (st.st_mode)?'d':'f';
+			fsf->time = st.st_atime;
+		} else {
+			fsf->type = 'f';
+			fsf->time = 0;
+		}
 		r_list_append (list, fsf);
-#endif
 	}
 	return list;
 }

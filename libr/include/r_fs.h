@@ -28,7 +28,7 @@ typedef struct r_fs_file_t {
 	ut64 time;
 	struct r_fs_plugin_t *p;
 	struct r_fs_root_t *root;
-	void *ptr; // pointer to internal
+	void *ptr; // internal pointer
 } RFSFile;
 
 typedef struct r_fs_root_t {
