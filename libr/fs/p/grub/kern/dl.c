@@ -22,7 +22,7 @@
 
 #include <config.h>
 #include <grub/dl.h>
-#include <grub/obj.h>
+//#include <grub/obj.h>
 #include <grub/misc.h>
 #include <grub/mm.h>
 #include <grub/err.h>
@@ -30,7 +30,6 @@
 #include <grub/symbol.h>
 #include <grub/file.h>
 #include <grub/env.h>
-#include <grub/cache.h>
 
 GRUB_EXPORT(grub_dl_load_file);
 GRUB_EXPORT(grub_dl_load);

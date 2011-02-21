@@ -23,7 +23,7 @@
 #include <grub/symbol.h>
 #include <grub/err.h>
 #include <grub/types.h>
-#include <grub/elf.h>
+//#include <grub/elf.h>
 
 #define GRUB_MOD_INIT(name)	\
 static void grub_mod_init (grub_dl_t mod __attribute__ ((unused))) __attribute__ ((used)); \
@@ -85,7 +85,7 @@ struct grub_dl
   int ref_count;
   grub_dl_dep_t dep;
   grub_dl_segment_t segment;
-  Elf_Sym *symtab;
+  void *symtab;
   void (*init) (struct grub_dl *mod);
   void (*fini) (void);
 };

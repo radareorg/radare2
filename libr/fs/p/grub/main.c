@@ -2,14 +2,12 @@
 #include <grub/disk.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <stdio.h>
 
-extern struct grub_fs grub_ext2_fs;
 
-void grub_exit () {
-	printf ("GTFO!\n");
-	exit (0);
-}
+#define IMGFILE "/tmp/test.fs.img"
+extern struct grub_fs grub_ext2_fs;
 
 void read_foo (struct grub_disk *disk, grub_disk_addr_t sector, grub_size_t size, unsigned char *buf) {
 //	printf ("==> DISK %x\n", disk);
@@ -18,11 +16,13 @@ void read_foo (struct grub_disk *disk, grub_disk_addr_t sector, grub_size_t size
 //	printf ("==> land: %p\n", buf);
 	size=512;
 	{
-		FILE *fd = fopen ("/tmp/test.fs.img", "rb");
-		fseek (fd, (512*sector), SEEK_SET);
-		fread (buf, 1, size, fd);
-//		printf ("\nBUF: %x %x %x %x\n", buf[0], buf[1], buf[2], buf[3]);
-		fclose (fd);
+		FILE *fd = fopen (IMGFILE, "rb");
+		if (fd) {
+			fseek (fd, (512*sector), SEEK_SET);
+			fread (buf, 1, size, fd);
+	//		printf ("\nBUF: %x %x %x %x\n", buf[0], buf[1], buf[2], buf[3]);
+			fclose (fd);
+		} else printf ("Cannot open "IMGFILE"\n");
 	}
 }
 
@@ -31,12 +31,14 @@ void read_hook (grub_disk_addr_t sector, unsigned long offset, unsigned long len
 //	printf ("[hook]==> last %p\n", buf);
 	{
 		int size=length;
-		FILE *fd = fopen("/tmp/test.fs.img", "rb");
-		fseek (fd, (512*sector)+offset, SEEK_SET);
-		fread (buf, 1, size, fd);
-//		write (1, buf, size);
-//		printf ("BUF: %x %x %x %x\n", buf[0], buf[1], buf[2], buf[3]);
-		fclose (fd);
+		FILE *fd = fopen(IMGFILE, "rb");
+		if (fd) {
+			fseek (fd, (512*sector)+offset, SEEK_SET);
+			fread (buf, 1, size, fd);
+	//		write (1, buf, size);
+	//		printf ("BUF: %x %x %x %x\n", buf[0], buf[1], buf[2], buf[3]);
+			fclose (fd);
+		} else printf ("Cannot open "IMGFILE"\n");
 	}
 }
 
@@ -60,7 +62,7 @@ grub_file_t openimage(grub_fs_t fs, const char *str) {
 	file->size = 12190208;
 	file->data = malloc (file->size);
 	{
-		FILE *fd = fopen("/tmp/test.fs.img", "rb");
+		FILE *fd = fopen(IMGFILE, "rb");
 		if (fd == NULL) {
 			printf ("Cannot open fs image\n");
 			return NULL;
@@ -72,7 +74,7 @@ grub_file_t openimage(grub_fs_t fs, const char *str) {
 	return file;
 }
 
-int dirhook (const char *filename, const struct grub_dirhook_info *info) {
+int dirhook (const char *filename, const struct grub_dirhook_info *info, void *closure) {
 	//info->mtimeset
 	//info->case_insensitive
 	printf ("DIRFILE: %c (%d) %s\n", info->dir?'d':'f', 
@@ -87,7 +89,7 @@ int do_main() {
 	struct grub_disk disk;
 
 	e2 = &grub_ext2_fs;
-	file = openimage (e2, "/tmp/test.fs.img");
+	file = openimage (e2, IMGFILE);
 	if (file == NULL) {
 		printf ("oops\n");
 		return 0;

@@ -362,7 +362,7 @@ grub_memalign (grub_size_t align, grub_size_t size)
 
     case 1:
       /* Unload unneeded modules.  */
-      grub_dl_unload_unneeded ();
+      //grub_dl_unload_unneeded ();
       count++;
       goto again;
 
@@ -476,8 +476,7 @@ grub_free_orig (void *ptr)
 }
 
 void * grub_realloc (void *ptr, grub_size_t size) {
-    realloc(ptr, size);
-    return ptr;
+    return realloc(ptr, size);
 }
 
 /* Reallocate SIZE bytes and return the pointer. The contents will be

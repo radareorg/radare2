@@ -77,7 +77,7 @@
 #include <grub/err.h>
 #include <grub/symbol.h>
 #include <grub/types.h>
-#include <grub/handler.h>
+//#include <grub/handler.h>
 
 /* These are used to represent the various color states we use.  */
 typedef enum

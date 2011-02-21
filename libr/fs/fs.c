@@ -180,7 +180,7 @@ R_API RFSFile *r_fs_slurp(RFS* fs, const char *path) {
 // TODO: move into grubfs
 #include "p/grub/include/grubfs.h"
 RList *list = NULL;
-static int parhook (struct grub_disk *disk, struct grub_partition *par) {
+static int parhook (struct grub_disk *disk, struct grub_partition *par, void *closure) {
 	RFSPartition *p = r_fs_partition_new (r_list_length (list), par->start*512, 512*par->len);
 	p->type = par->msdostype;
 	r_list_append (list, p);

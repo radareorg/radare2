@@ -23,12 +23,14 @@
 #include <grub/symbol.h>
 #include <grub/cpu/time.h>
 
+#if 0
 #if defined (GRUB_MACHINE_EMU) || defined (GRUB_UTIL)
 #define GRUB_TICKS_PER_SECOND 100000
 /* Return the real time in ticks.  */
 grub_uint32_t EXPORT_FUNC (grub_get_rtc) (void);
 #else
 #include <grub/machine/time.h>
+#endif
 #endif
 
 void grub_millisleep (grub_uint32_t ms);
