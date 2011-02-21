@@ -5,6 +5,8 @@
 
 Random stuff
 -----------
+* missing filesystems: 
+  - ntfscomp, minix, nilfs2, sfs, gb, afs, affs, zfs, ...
 * For each "call" or "push offset"+"ret" create a function.
   - And, if deep code analysis is enabled:
   - Search every possible function by searching typical prologs and put them in a queue.

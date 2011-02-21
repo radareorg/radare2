@@ -941,14 +941,3 @@ struct grub_fs grub_udf_fs = {
   .label = grub_udf_label,
   .next = 0
 };
-
-GRUB_MOD_INIT (udf)
-{
-  grub_fs_register (&grub_udf_fs);
-  my_mod = mod;
-}
-
-GRUB_MOD_FINI (udf)
-{
-  grub_fs_unregister (&grub_udf_fs);
-}

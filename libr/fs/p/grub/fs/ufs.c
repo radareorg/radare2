@@ -826,23 +826,3 @@ struct grub_fs grub_ufs_fs =
     .mtime = grub_ufs_mtime,
     .next = 0
   };
-
-#ifdef MODE_UFS2
-GRUB_MOD_INIT(ufs2)
-#else
-GRUB_MOD_INIT(ufs1)
-#endif
-{
-  grub_fs_register (&grub_ufs_fs);
-  my_mod = mod;
-}
-
-#ifdef MODE_UFS2
-GRUB_MOD_FINI(ufs2)
-#else
-GRUB_MOD_FINI(ufs1)
-#endif
-{
-  grub_fs_unregister (&grub_ufs_fs);
-}
-

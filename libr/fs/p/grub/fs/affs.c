@@ -559,7 +559,7 @@ grub_affs_label (grub_device_t device, char **label)
 }
 
 
-static struct grub_fs grub_affs_fs =
+struct grub_fs grub_affs_fs =
   {
     .name = "affs",
     .dir = grub_affs_dir,
@@ -569,14 +569,3 @@ static struct grub_fs grub_affs_fs =
     .label = grub_affs_label,
     .next = 0
   };
-
-GRUB_MOD_INIT(affs)
-{
-  grub_fs_register (&grub_affs_fs);
-  my_mod = mod;
-}
-
-GRUB_MOD_FINI(affs)
-{
-  grub_fs_unregister (&grub_affs_fs);
-}

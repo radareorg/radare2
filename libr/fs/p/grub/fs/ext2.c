@@ -964,14 +964,3 @@ struct grub_fs grub_ext2_fs =
 #endif
     .next = 0
   };
-
-GRUB_MOD_INIT(ext2)
-{
-  grub_fs_register (&grub_ext2_fs);
-  my_mod = mod;
-}
-
-GRUB_MOD_FINI(ext2)
-{
-  grub_fs_unregister (&grub_ext2_fs);
-}

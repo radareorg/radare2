@@ -362,13 +362,3 @@ quit:
     grub_free (ctx->comp.cbuf);
   return ret;
 }
-
-GRUB_MOD_INIT (ntfscomp)
-{
-  grub_ntfscomp_func = ntfscomp;
-}
-
-GRUB_MOD_FINI (ntfscomp)
-{
-  grub_ntfscomp_func = NULL;
-}

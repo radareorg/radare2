@@ -597,7 +597,7 @@ grub_minix_label (grub_device_t device __attribute ((unused)),
 }
 
 
-static struct grub_fs grub_minix_fs =
+struct grub_fs grub_minix_fs =
   {
     .name = "minix",
     .dir = grub_minix_dir,
@@ -607,14 +607,3 @@ static struct grub_fs grub_minix_fs =
     .label = grub_minix_label,
     .next = 0
   };
-
-GRUB_MOD_INIT(minix)
-{
-  grub_fs_register (&grub_minix_fs);
-  my_mod = mod;
-}
-
-GRUB_MOD_FINI(minix)
-{
-  grub_fs_unregister (&grub_minix_fs);
-}

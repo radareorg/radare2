@@ -1055,14 +1055,3 @@ struct grub_fs grub_hfsplus_fs =
 #endif
     .next = 0
   };
-
-GRUB_MOD_INIT(hfsplus)
-{
-  grub_fs_register (&grub_hfsplus_fs);
-  my_mod = mod;
-}
-
-GRUB_MOD_FINI(hfsplus)
-{
-  grub_fs_unregister (&grub_hfsplus_fs);
-}

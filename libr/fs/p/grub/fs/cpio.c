@@ -381,29 +381,3 @@ struct grub_fs grub_tar_fs = {
   .close = grub_cpio_close,
 };
 #endif
-
-#ifdef MODE_USTAR
-GRUB_MOD_INIT (tar)
-{
-    grub_fs_register (&grub_tar_fs);
-    my_mod = mod;
-}
-#else
-GRUB_MOD_INIT (cpio)
-{
-    grub_fs_register (&grub_cpio_fs);
-    my_mod = mod;
-}
-#endif
-
-#ifdef MODE_USTAR
-GRUB_MOD_FINI (tar)
-{
-    grub_fs_unregister (&grub_tar_fs);
-}
-#else
-GRUB_MOD_FINI (cpio)
-{
-    grub_fs_unregister (&grub_cpio_fs);
-}
-#endif

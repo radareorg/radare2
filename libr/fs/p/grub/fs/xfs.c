@@ -839,14 +839,3 @@ struct grub_fs grub_xfs_fs =
     .uuid = grub_xfs_uuid,
     .next = 0
   };
-
-GRUB_MOD_INIT(xfs)
-{
-  grub_fs_register (&grub_xfs_fs);
-  my_mod = mod;
-}
-
-GRUB_MOD_FINI(xfs)
-{
-  grub_fs_unregister (&grub_xfs_fs);
-}

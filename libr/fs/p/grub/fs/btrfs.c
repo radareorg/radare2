@@ -120,13 +120,3 @@ struct grub_fs grub_btrfs_fs =
     .open = grub_btrfs_open,
     .uuid = grub_btrfs_uuid,
   };
-
-GRUB_MOD_INIT(btrfs)
-{
-  grub_fs_register (&grub_btrfs_fs);
-}
-
-GRUB_MOD_FINI(btrfs)
-{
-  grub_fs_unregister (&grub_btrfs_fs);
-}

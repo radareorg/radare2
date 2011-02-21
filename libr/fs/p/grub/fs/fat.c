@@ -893,15 +893,3 @@ struct grub_fs grub_fat_fs =
 #endif
     .next = 0
   };
-
-GRUB_MOD_INIT(fat)
-{
-  grub_fs_register (&grub_fat_fs);
-  my_mod = mod;
-}
-
-GRUB_MOD_FINI(fat)
-{
-  grub_fs_unregister (&grub_fat_fs);
-}
-

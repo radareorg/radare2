@@ -1122,8 +1122,7 @@ grub_nilfs2_mtime (grub_device_t device, grub_int32_t * tm)
 }
 
 
-
-static struct grub_fs grub_nilfs2_fs = {
+struct grub_fs grub_nilfs2_fs = {
   .name = "nilfs2",
   .dir = grub_nilfs2_dir,
   .open = grub_nilfs2_open,
@@ -1137,14 +1136,3 @@ static struct grub_fs grub_nilfs2_fs = {
 #endif
   .next = 0
 };
-
-GRUB_MOD_INIT (nilfs2)
-{
-  grub_fs_register (&grub_nilfs2_fs);
-  my_mod = mod;
-}
-
-GRUB_MOD_FINI (nilfs2)
-{
-  grub_fs_unregister (&grub_nilfs2_fs);
-}

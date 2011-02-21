@@ -1383,14 +1383,3 @@ struct grub_fs grub_reiserfs_fs =
     .uuid = grub_reiserfs_uuid,
     .next = 0
   };
-
-GRUB_MOD_INIT(reiserfs)
-{
-  grub_fs_register (&grub_reiserfs_fs);
-  my_mod = mod;
-}
-
-GRUB_MOD_FINI(reiserfs)
-{
-  grub_fs_unregister (&grub_reiserfs_fs);
-}

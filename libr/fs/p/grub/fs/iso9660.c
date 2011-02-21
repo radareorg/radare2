@@ -923,14 +923,3 @@ struct grub_fs grub_iso9660_fs =
     .uuid = grub_iso9660_uuid,
     .next = 0
   };
-
-GRUB_MOD_INIT(iso9660)
-{
-  grub_fs_register (&grub_iso9660_fs);
-  my_mod = mod;
-}
-
-GRUB_MOD_FINI(iso9660)
-{
-  grub_fs_unregister (&grub_iso9660_fs);
-}

@@ -700,30 +700,3 @@ static struct grub_fs grub_afs_fs = {
   .label = grub_afs_label,
   .next = 0
 };
-
-#if defined (MODE_BIGENDIAN) && defined (MODE_BFS)
-GRUB_MOD_INIT (befs_be)
-#elif defined (MODE_BFS)
-GRUB_MOD_INIT (befs)
-#elif defined (MODE_BIGENDIAN)
-GRUB_MOD_INIT (afs_be)
-#else
-GRUB_MOD_INIT (afs)
-#endif
-{
-  grub_fs_register (&grub_afs_fs);
-  my_mod = mod;
-}
-
-#if defined (MODE_BIGENDIAN) && defined (MODE_BFS)
-GRUB_MOD_FINI (befs_be)
-#elif defined (MODE_BFS)
-GRUB_MOD_FINI (befs)
-#elif defined (MODE_BIGENDIAN)
-GRUB_MOD_FINI (afs_be)
-#else
-GRUB_MOD_FINI (afs)
-#endif
-{
-  grub_fs_unregister (&grub_afs_fs);
-}

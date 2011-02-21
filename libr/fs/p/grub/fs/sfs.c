@@ -602,14 +602,3 @@ static struct grub_fs grub_sfs_fs =
     .label = grub_sfs_label,
     .next = 0
   };
-
-GRUB_MOD_INIT(sfs)
-{
-  grub_fs_register (&grub_sfs_fs);
-  my_mod = mod;
-}
-
-GRUB_MOD_FINI(sfs)
-{
-  grub_fs_unregister (&grub_sfs_fs);
-}
