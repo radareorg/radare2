@@ -254,6 +254,7 @@ grub_fshelp_find_file (const char *path, grub_fshelp_node_t rootnode,
 
   return 0;
 }
+unsigned long long grub_hack_lastoff = 0;
 
 /* Read LEN bytes from the file NODE on disk DISK into the buffer BUF,
    beginning with the block POS.  READ_HOOK should be set before
@@ -320,6 +321,8 @@ grub_fshelp_read_file (grub_disk_t disk, grub_fshelp_node_t node,
 	  disk->read_hook = read_hook;
 	  disk->closure = closure;
 
+//printf ("blknr: %d\n", blknr);
+grub_hack_lastoff = blknr * 512;
 	  grub_disk_read_ex (disk, blknr, skipfirst, blockend, buf, flags);
 	  disk->read_hook = 0;
 	  if (grub_errno)

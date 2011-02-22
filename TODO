@@ -5,8 +5,6 @@
 
 Random stuff
 -----------
-* missing filesystems: 
-  - ntfscomp, minix, nilfs2, sfs, gb, afs, affs, zfs, ...
 * For each "call" or "push offset"+"ret" create a function.
   - And, if deep code analysis is enabled:
   - Search every possible function by searching typical prologs and put them in a queue.
@@ -39,7 +37,6 @@ pancake
 
 earada
 ------
-* Implement /A : search AES + RSA (see sync.in/r2)
 * Add print support for bitfields (pm b...)
 - r_bin_demangle (); // r_util maybe?
 	* _ZN7WebCore11CounterNode7recountERKNS_12AtomicStringE
@@ -50,7 +47,6 @@ earada
 	  E = end of stream
 	  RKNS_ = start of arguments
 * Fix avr/ppc code analysis // fix or use or what? :)
-* Implement print Zoom mode (copypasta from r1) (useful for forensics) <-- MUST
 * Add SSL support to r_socket
 * remove all uses of alloca() // mingw and grep reports them all :)
 * typedef all function pointers, like in r_bp

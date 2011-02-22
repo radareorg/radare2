@@ -12,7 +12,10 @@ static RFSFile* FSP(_open)(RFSRoot *root, const char *path) {
 		r_fs_file_free (file);
 		grubfs_free (gfs);
 		file = NULL;
-	} else file->size = gfs->file->size;
+	} else {
+		file->size = gfs->file->size;
+		file->off = gfs->file->offset;
+	}
 	return file;
 }
 
@@ -20,6 +23,7 @@ static boolt FSP(_read)(RFSFile *file, ut64 addr, int len) {
 	GrubFS *gfs = file->ptr;
 	grubfs_bind_io (NULL, file->root->delta);
 	gfs->file->fs->read (gfs->file, (char*)file->data, len);
+	file->off = grub_hack_lastoff; //gfs->file->offset;
 	return R_FALSE;
 }
 

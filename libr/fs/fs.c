@@ -42,13 +42,10 @@ R_API void r_fs_free (RFS* fs) {
 }
 
 /* plugins */
-
 R_API void r_fs_add (RFS *fs, RFSPlugin *p) {
-	// find coliding plugin name
-	if (p) {
-		if (p->init)
-			p->init ();
-	}
+	// TODO: find coliding plugin name
+	if (p && p->init)
+		p->init ();
 	r_list_append (fs->plugins, p);
 }
 
@@ -107,9 +104,10 @@ R_API RFSRoot *r_fs_root (RFS *fs, const char *path) {
 
 /* filez */
 R_API RFSFile *r_fs_open (RFS* fs, const char *p) {
+	RFSRoot *root;
 	char *path = strdup (p);
 	r_str_chop_path (path);
-	RFSRoot *root = r_fs_root (fs, path);
+	root = r_fs_root (fs, path);
 	if (root && root->p && root->p->open) {
 		RFSFile *f = root->p->open (root, path+strlen (root->path));
 		free (path);
@@ -128,7 +126,8 @@ R_API void r_fs_close (RFS* fs, RFSFile *file) {
 R_API int r_fs_read (RFS* fs, RFSFile *file, ut64 addr, int len) {
 	if (len<1) {
 		eprintf ("r_fs_read: too short read\n");
-	} else
+		return R_FALSE;
+	}
 	if (fs && file) {
 		free (file->data);
 		file->data = malloc (len+1);
@@ -165,12 +164,10 @@ R_API RFSFile *r_fs_slurp(RFS* fs, const char *path) {
 	if (root && root->p) {
 		if (root->p->open && root->p->read && root->p->close) {
 			file = root->p->open (root, path);
-			if (file) {
-				root->p->read (file, 0, file->size); //file->data, file->size);
-			} else eprintf ("r_fs_slurp: cannot open file\n");
+			if (file) root->p->read (file, 0, file->size); //file->data
+			else eprintf ("r_fs_slurp: cannot open file\n");
 		} else {
-			if (root->p->slurp)
-				return root->p->slurp (root, path);
+			if (root->p->slurp) return root->p->slurp (root, path);
 			else eprintf ("r_fs_slurp: null root->p->slurp\n");
 		}
 	}
@@ -218,8 +215,10 @@ R_API RList *r_fs_partitions (RFS *fs, const char *ptype, ut64 delta) {
 		gpm->iterate (disk, parhook, 0);
 		return list;
 	}
-	eprintf ("Unknown partition type '%s'. Supported types:\n"
-		"  msdos, apple, sun, sunpc, amiga, bsdlabel, acorn, gpt", ptype);
+	if (ptype&&*ptype)
+		eprintf ("Unknown partition type '%s'.\n", ptype);
+	eprintf ("Supported types:\n"
+		"  msdos, apple, sun, sunpc, amiga, bsdlabel, acorn, gpt");
 	return NULL;
 }
 

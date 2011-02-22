@@ -954,7 +954,7 @@ static int cmd_mount(void *data, const char *_input) {
 	RCore *core = (RCore *)data;
 	input = oinput = strdup (_input);
 
-	switch (input[0]) {
+	switch (*input) {
 	case ' ':
 		input++;
 		if (input[0]==' ')
@@ -1005,32 +1005,34 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'p':
 		input++;
-		if (*input == ' ') {
+		if (*input == ' ')
 			input++;
-			ptr = strchr (input, ' ');
-			if (ptr) {
-				*ptr = 0;
-				off = r_num_math (core->num, ptr+1);
-			}
-			list = r_fs_partitions (core->fs, input, off);
-			if (list) {
-				r_list_foreach (list, iter, part) {
-					r_cons_printf ("%d %02x 0x08%"PFMT64x" 0x08%"PFMT64x"\n", part->number,
-						part->type, part->start, part->start+part->length);
-				}
-				r_list_free (list);
-			} else eprintf ("Cannot read partition\n");
-		} else {
-			// TODO: XXX: hardcoded list of partition plugins. move to r_fs
-			r_cons_printf (
-				"msdos\n"
-				"apple\n"
-				"sun\n"
-				"sunpc\n"
-				"bsdlabel\n"
-				"gpt\n"
-			);
+		ptr = strchr (input, ' ');
+		if (ptr) {
+			*ptr = 0;
+			off = r_num_math (core->num, ptr+1);
 		}
+		list = r_fs_partitions (core->fs, input, off);
+		if (list) {
+			r_list_foreach (list, iter, part) {
+				r_cons_printf ("%d %02x 0x08%"PFMT64x" 0x08%"PFMT64x"\n", part->number,
+					part->type, part->start, part->start+part->length);
+			}
+			r_list_free (list);
+		} else eprintf ("Cannot read partition\n");
+		break;
+	case 'o':
+		input++;
+		if (input[0]==' ')
+			input++;
+		file = r_fs_open (core->fs, input);
+		if (file) {
+			// XXX: dump to file or just pipe?
+			r_fs_read (core->fs, file, 0, file->size);
+			r_cons_printf ("offset = 0x%08"PFMT64x"\n", file->off);
+			r_cons_printf ("size = %d\n", file->size);
+			r_fs_close (core->fs, file);
+		} else eprintf ("Cannot open file\n");
 		break;
 	case 'g':
 		input++;
@@ -1042,6 +1044,7 @@ static int cmd_mount(void *data, const char *_input) {
 			r_fs_read (core->fs, file, 0, file->size);
 			write (1, file->data, file->size);
 			r_fs_close (core->fs, file);
+			write (1, "\n", 1);
 		} else eprintf ("Cannot open file\n");
 		break;
 	case 's':
@@ -1062,6 +1065,7 @@ static int cmd_mount(void *data, const char *_input) {
 		" m ext2 /mnt 0  ; mount ext2 fs at /mnt with delta 0 on IO\n"
 		" m-/            ; umount given path (/)\n"
 		" my             ; yank contents of file into clipboard\n"
+		" mo /foo        ; get offset and size of given file\n"
 		" mg /foo        ; get contents of file dumped to disk (XXX?)\n"
 		" md /           ; list directory contents for path\n"
 		" mp             ; list all supported partition types\n"
@@ -2862,11 +2866,11 @@ static int cmd_resize(void *data, const char *input) {
 
 	switch (input[0]) {
 	case ' ':
-		newsize = r_num_math(core->num, input+1);
+		newsize = r_num_math (core->num, input+1);
 		break;
 	case '+':
 	case '-':
-		delta = (st64)r_num_math(NULL, input);
+		delta = (st64)r_num_math (NULL, input);
 		newsize = oldsize + delta;
 		break;
 	case '?':
@@ -2903,19 +2907,17 @@ static int cmd_resize(void *data, const char *input) {
 
 static const char *cmdhit = NULL;
 static const char *searchprefix = NULL;
+
 static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
-
 	r_cons_printf ("f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,
 		kw->kwidx, kw->count, kw->keyword_length, addr);
-
 	if (!strnull (cmdhit)) {
 		ut64 here = core->offset;
 		r_core_seek (core, addr, R_FALSE);
 		r_core_cmd (core, cmdhit, 0);
 		r_core_seek (core, here, R_TRUE);
 	}
-
 	return R_TRUE;
 }
 
@@ -2923,7 +2925,8 @@ static int cmd_search(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	ut64 at, from, to;
 	//RIOSection *section;
-	int ret, dosearch = 0;
+	int ret, dosearch = R_FALSE;
+	int aes_search = R_FALSE;
 	ut32 n32;
 	ut8 *buf;
 
@@ -2947,9 +2950,17 @@ static int cmd_search(void *data, const char *input) {
 		to = 0xFFFFFFFF; //core->file->size+0x8048000;
 
 	switch (input[0]) {
+	case 'a':
+		if (input[1]==' ')
+			r_core_anal_search (core, from, to, r_num_math (core->num, input+2));
+		else r_core_anal_search (core, from, to, core->offset);
+		break;
+	case 'A':
+		dosearch = aes_search = R_TRUE;
+		break;
 	case '/':
 		r_search_begin (core->search);
-		dosearch = 1;
+		dosearch = R_TRUE;
 		break;
 	case 'v':
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
@@ -2961,6 +2972,24 @@ static int cmd_search(void *data, const char *input) {
 			r_search_keyword_new ((const ut8*)&n32, 4, NULL, 0, NULL));
 		r_search_begin (core->search);
 		dosearch = 1;
+		break;
+	case 'w': /* search wide string */
+		if (input[1]==' ') {
+			int len = strlen (input+2);
+			const char *p2;
+			char *p, *str = malloc ((len+1)*2);
+			for (p2=input+2,p=str; *p2; p+=2, p2++) {
+				p[0] = *p2;
+				p[1] = 0;
+			}
+			r_search_reset (core->search, R_SEARCH_KEYWORD);
+			r_search_set_distance (core->search, (int)
+				r_config_get_i (core->config, "search.distance"));
+			r_search_kw_add (core->search, 
+				r_search_keyword_new ((const ut8*)str, len*2, NULL, 0, NULL));
+			r_search_begin (core->search);
+			dosearch = 1;
+		}
 		break;
 	case ' ': /* search string */
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
@@ -3033,21 +3062,19 @@ static int cmd_search(void *data, const char *input) {
 		}
 		}
 		break;
-	case 'a':
-		if (input[1]==' ')
-			r_core_anal_search (core, from, to, r_num_math (core->num, input+2));
-		else r_core_anal_search (core, from, to, core->offset);
-		break;
 	default:
 		r_cons_printf (
 		"Usage: /[amx/] [arg]\n"
 		" / foo           ; search for string 'foo'\n"
+		" /w foo          ; search for wide string 'f\\0o\\0o'\n"
 		" /m /E.F/i       ; match regular expression\n"
 		" /x ff0033       ; search for hex string\n"
 		" /c jmp [esp]    ; search for asm code (see search.asmstr)\n"
+		" /A              ; search for AES expanded keys\n"
 		" /a sym.printf   ; analyze code referencing an offset\n"
 		" /v num          ; look for a asm.bigendian 32bit value\n"
 		" //              ; repeat last search\n"
+		" ./ hello        ; search 'hello string' and import flags\n"
 		"Configuration:\n"
 		" e search.distance = 0 ; search string distance\n"
 		" e search.align = 4    ; only catch aligned search hits\n"
@@ -3057,7 +3084,12 @@ static int cmd_search(void *data, const char *input) {
 		break;
 	}
 	if (dosearch) {
-		if (core->search->n_kws>0) {
+		if (core->search->n_kws>0 || aes_search) {
+			RSearchKeyword aeskw;
+			if (aes_search) {
+				memset (&aeskw, 0, sizeof (aeskw));
+				aeskw.keyword_length = 31;
+			}
 			/* set callback */
 			/* TODO: handle last block of data */
 			/* TODO: handle ^C */
@@ -3066,20 +3098,27 @@ static int cmd_search(void *data, const char *input) {
 			r_search_set_callback (core->search, &__cb_hit, core);
 			cmdhit = r_config_get (core->config, "cmd.hit");
 			r_cons_break (NULL, NULL);
-			// ??? needed?
-			r_io_set_fd (core->io, core->file->fd);
+			// XXX required? imho nor_io_set_fd (core->io, core->file->fd);
 			for (at = from; at < to; at += core->blocksize) {
 				if (r_cons_singleton ()->breaked)
 					break;
 				ret = r_io_read_at (core->io, at, buf, core->blocksize);
 				if (ret != core->blocksize)
 					break;
+				if (aes_search) {
+					int delta = r_search_aes_update (core->search, at, buf, ret);
+					if (delta != -1) {
+						r_search_hit_new (core->search, &aeskw, at+delta);
+						aeskw.count++;
+					}
+				} else
 				if (r_search_update (core->search, &at, buf, ret) == -1) {
 					eprintf ("search: update read error\n");
 					break;
 				}
 			}
 			r_cons_break_end ();
+			free (buf);
 		} else eprintf ("No keywords defined\n");
 	}
 	return R_TRUE;

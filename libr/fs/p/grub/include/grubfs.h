@@ -1,5 +1,6 @@
 #ifndef _INCLUDE_GRUBFS_H_
 #define _INCLUDE_GRUBFS_H_
+extern unsigned long long grub_hack_lastoff;
 
 #include <r_io.h>
 #include <grub/file.h>

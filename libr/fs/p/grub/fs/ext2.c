@@ -391,8 +391,8 @@ grub_ext2_read_block (grub_fshelp_node_t node, grub_disk_addr_t fileblock)
       int i;
 
       leaf = grub_ext4_find_leaf (data, buf,
-                                  (struct grub_ext4_extent_header *) inode->blocks.dir_blocks,
-                                  fileblock);
+		  (struct grub_ext4_extent_header *) inode->blocks.dir_blocks,
+		  fileblock);
       if (! leaf)
         {
           grub_error (GRUB_ERR_BAD_FS, "invalid extent");
@@ -492,17 +492,14 @@ grub_ext2_read_block (grub_fshelp_node_t node, grub_disk_addr_t fileblock)
    POS.  Return the amount of read bytes in READ.  */
 static grub_ssize_t
 grub_ext2_read_file (grub_fshelp_node_t node,
-		     void (*read_hook) (grub_disk_addr_t sector,
-					unsigned offset, unsigned length,
-					void *closure),
-		     void *closure, int flags,
-		     int pos, grub_size_t len, char *buf)
+     void (*read_hook) (grub_disk_addr_t sector,
+		unsigned offset, unsigned length, void *closure),
+     void *closure, int flags, int pos, grub_size_t len, char *buf)
 {
-  return grub_fshelp_read_file (node->data->disk, node, read_hook, closure,
-				flags, pos, len, buf, grub_ext2_read_block,
-				node->inode.size,
-				LOG2_EXT2_BLOCK_SIZE (node->data));
-
+	return grub_fshelp_read_file (node->data->disk, node, read_hook, closure,
+		flags, pos, len, buf, grub_ext2_read_block,
+		node->inode.size,
+		LOG2_EXT2_BLOCK_SIZE (node->data));
 }
 
 
@@ -794,7 +791,6 @@ static grub_ssize_t
 grub_ext2_read (grub_file_t file, char *buf, grub_size_t len)
 {
   struct grub_ext2_data *data = (struct grub_ext2_data *) file->data;
-
   return grub_ext2_read_file (&data->diropen, file->read_hook, file->closure,
 			      file->flags, file->offset, len, buf);
 }
