@@ -3,6 +3,10 @@ BINDEPS=foo
 include ../../config.mk
 
 CFLAGS+=-I../../include -Wall -DPREFIX=\"${PREFIX}\"
+ifeq ($(OSTYPE),darwin)
+CFLAGS+=-undefined dynamic_lookup
+endif
+
 BINDEPS=
 
 LANGS=lang_python.${EXT_SO} lang_perl.${EXT_SO}
@@ -26,11 +30,11 @@ lang_python.${EXT_SO}:
 else
 lang_python.${EXT_SO}:
 	${CC} ${CFLAGS} \
-		`python-config --cflags 2>/dev/null | sed -e 's,-arch .*,,g'` \
-		`python2-config --cflags 2>/dev/null | sed -e 's,-arch .*,,g'` \
+		`python-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]* //g'` \
+		`python2-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]* //g'` \
 	      ${LDFLAGS} \
-		`python-config --ldflags 2>/dev/null | sed -e 's,-arch .*,,g'` \
-		`python2-config --ldflags 2>/dev/null | sed -e 's,-arch .*,,g'` \
+		`python-config --ldflags 2>/dev/null | sed -e 's/-arch [^\s]* //g'` \
+		`python2-config --ldflags 2>/dev/null | sed -e 's/-arch [^\s]* //g'` \
 	${LDFLAGS_LIB} -fPIC -o lang_python.${EXT_SO} python.c
 endif
 
@@ -50,8 +54,8 @@ lang_ruby.${EXT_SO}:
 lang_perl.${EXT_SO}:
 	-${CC} ${CFLAGS} -I/usr/lib/perl/5.10/CORE/ \
 		-fPIC ${LDFLAGS_LIB} -o lang_perl.${EXT_SO} perl.c ${LDFLAGS_LINKPATH}.. \
-		`perl -MExtUtils::Embed -e ccopts` \
-		`perl -MExtUtils::Embed -e ldopts` -lncurses
+		`perl -MExtUtils::Embed -e ccopts | sed -e 's/-arch [^\s]* //g'` \
+		`perl -MExtUtils::Embed -e ldopts | sed -e 's/-arch [^\s]* //g'` -lncurses
 
 clean:
 	-rm -f *.${EXT_SO} *.${EXT_AR} *.o

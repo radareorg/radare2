@@ -597,8 +597,9 @@ grub_minix_label (grub_device_t device __attribute ((unused)),
 }
 
 
+
 struct grub_fs grub_minix_fs =
-  {
+{
     .name = "minix",
     .dir = grub_minix_dir,
     .open = grub_minix_open,
@@ -606,4 +607,5 @@ struct grub_fs grub_minix_fs =
     .close = grub_minix_close,
     .label = grub_minix_label,
     .next = 0
-  };
+};
+

@@ -18,17 +18,22 @@ KERNFILES+=fs/reiserfs.c
 KERNFILES+=fs/ext2.c
 KERNFILES+=fs/fat.c
 KERNFILES+=fs/ntfs.c
+KERNFILES+=fs/ntfscomp.c
 KERNFILES+=fs/cpio.c
 KERNFILES+=fs/tar.c
 KERNFILES+=fs/xfs.c 
 KERNFILES+=fs/ufs.c 
-#KERNFILES+=fs/ufs2.c 
+KERNFILES+=fs/ufs2.c 
 # All nested functions are removed from the following .c with a lot of tobacco :-)
 KERNFILES+=fs/hfs.c 
 KERNFILES+=fs/hfsplus.c 
 KERNFILES+=fs/udf.c 
 KERNFILES+=fs/iso9660.c
+KERNFILES+=fs/minix.c
+#KERNFILES+=fs/minix2.c #XXX: Are minix2 and minix the same?
 KERNFILES+=fs/jfs.c
+KERNFILES+=fs/fb.c
+KERNFILES+=fs/sfs.c
 KERNFILES+=grubfs.c
 
 KERNFILES+=partmap/msdos.c

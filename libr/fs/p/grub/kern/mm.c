@@ -142,8 +142,8 @@ get_header_from_pointer (void *ptr, grub_mm_header_t *p, grub_mm_region_t *r)
     grub_fatal ("unaligned pointer %p", ptr);
 
   for (*r = base; *r; *r = (*r)->next)
-    if ((grub_addr_t) ptr > (*r)->addr
-	&& (grub_addr_t) ptr <= (*r)->addr + (*r)->size)
+    if ((long) ptr > (*r)->addr
+	&& (long)ptr <= (*r)->addr + (*r)->size)
       break;
 
   if (! *r)
@@ -167,7 +167,7 @@ grub_mm_init_region (void *addr, grub_size_t size)
 #endif
 
   /* Allocate a region from the head.  */
-  r = (grub_mm_region_t) ALIGN_UP ((grub_addr_t) addr, GRUB_MM_ALIGN);
+  r = (grub_mm_region_t) ALIGN_UP ((long) addr, GRUB_MM_ALIGN);
   size -= (char *) r - (char *) addr + sizeof (*r);
 
   /* If this region is too small, ignore it.  */
@@ -180,7 +180,7 @@ grub_mm_init_region (void *addr, grub_size_t size)
   h->size = (size >> GRUB_MM_ALIGN_LOG2);
 
   r->first = h;
-  r->addr = (grub_addr_t) h;
+  r->addr = (long) h;
   r->size = (h->size << GRUB_MM_ALIGN_LOG2);
 
   /* Find where to insert this region. Put a smaller one before bigger ones,
@@ -212,7 +212,7 @@ grub_real_malloc (grub_mm_header_t *first, grub_size_t n, grub_size_t align)
     {
       grub_off_t extra;
 
-      extra = ((grub_addr_t) (p + 1) >> GRUB_MM_ALIGN_LOG2) % align;
+      extra = ((long) (p + 1) >> GRUB_MM_ALIGN_LOG2) % align;
       if (extra)
 	extra = align - extra;
 

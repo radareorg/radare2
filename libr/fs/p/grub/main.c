@@ -121,7 +121,7 @@ int foo_main() {
 	GrubFS *gfs = grubfs_new (&grub_ext2_fs, NULL);
 	gfs->file->fs->open (gfs->file, "/test");
 	gfs->file->fs->read (gfs->file, buf, gfs->file->size);
-printf ("fs = %d\n", gfs->file->size);
+printf ("fs = %d\n", (int)gfs->file->size);
 	write (1, buf, gfs->file->size);
 	gfs->file->fs->close (gfs->file);
 	gfs->file->fs->dir (gfs->file->device, "/", dirhook, 0);

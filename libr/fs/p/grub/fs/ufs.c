@@ -806,23 +806,29 @@ grub_ufs_mtime (grub_device_t device, grub_int32_t *tm)
   return grub_errno;
 }
 
-
-
-struct grub_fs grub_ufs_fs =
-  {
 #ifdef MODE_UFS2
+struct grub_fs grub_ufs2_fs =
+{
     .name = "ufs2",
-#else
-    .name = "ufs1",
-#endif
     .dir = grub_ufs_dir,
     .open = grub_ufs_open,
     .read = grub_ufs_read,
     .close = grub_ufs_close,
-#ifdef MODE_UFS2
     .label = grub_ufs_label,
-#endif
     .uuid = grub_ufs_uuid,
     .mtime = grub_ufs_mtime,
     .next = 0
-  };
+};
+#else
+struct grub_fs grub_ufs_fs =
+{
+    .name = "ufs1",
+    .dir = grub_ufs_dir,
+    .open = grub_ufs_open,
+    .read = grub_ufs_read,
+    .close = grub_ufs_close,
+    .uuid = grub_ufs_uuid,
+    .mtime = grub_ufs_mtime,
+    .next = 0
+};
+#endif

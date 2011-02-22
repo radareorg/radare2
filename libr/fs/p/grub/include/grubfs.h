@@ -19,6 +19,7 @@ void grubfs_disk_free (struct grub_disk *gd);
 extern struct grub_fs grub_ext2_fs;
 extern struct grub_fs grub_fat_fs;
 extern struct grub_fs grub_ntfs_fs;
+extern struct grub_fs grub_ntfscomp_fs;
 extern struct grub_fs grub_reiserfs_fs;
 extern struct grub_fs grub_hfs_fs;
 extern struct grub_fs grub_hfsplus_fs;
@@ -33,6 +34,8 @@ extern struct grub_fs grub_xfs_fs;
 extern struct grub_fs grub_tar_fs;
 extern struct grub_fs grub_cpio_fs;
 extern struct grub_fs grub_udf_fs;
+extern struct grub_fs grub_minix_fs;
+extern struct grub_fs grub_fb_fs;
 
 extern struct grub_partition_map grub_msdos_partition_map;
 extern struct grub_partition_map grub_apple_partition_map;
