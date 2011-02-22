@@ -30,11 +30,11 @@ lang_python.${EXT_SO}:
 else
 lang_python.${EXT_SO}:
 	${CC} ${CFLAGS} \
-		`python-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]* //g'` \
-		`python2-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]* //g'` \
+		`python-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]*//g'` \
+		`python2-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]*//g'` \
 	      ${LDFLAGS} \
-		`python-config --ldflags 2>/dev/null | sed -e 's/-arch [^\s]* //g'` \
-		`python2-config --ldflags 2>/dev/null | sed -e 's/-arch [^\s]* //g'` \
+		`python-config --ldflags 2>/dev/null | sed -e 's/-arch [^\s]*//g'` \
+		`python2-config --ldflags 2>/dev/null | sed -e 's/-arch [^\s]*//g'` \
 	${LDFLAGS_LIB} -fPIC -o lang_python.${EXT_SO} python.c
 endif
 
