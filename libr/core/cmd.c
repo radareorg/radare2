@@ -90,7 +90,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	int ret, idx, i, j, k, lines, ostackptr, stackptr = 0;
 	int counter = 0;
 	int middle = 0;
-	char str[128];
+	char str[128], strsub[128];
 	char *line = NULL, *comment, *opstr, *osl = NULL; // old source line
 	RAsmAop asmop;
 	RAnalOp analop;
@@ -107,6 +107,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	int decode = r_config_get_i (core->config, "asm.decode");
 	int pseudo = r_config_get_i (core->config, "asm.pseudo");
 	int filter = r_config_get_i (core->config, "asm.filter");
+	int varsub = r_config_get_i (core->config, "asm.varsub");
 	int show_lines = r_config_get_i (core->config, "asm.lines");
 	int show_dwarf = r_config_get_i (core->config, "asm.dwarf");
 	int show_linescall = r_config_get_i (core->config, "asm.linescall");
@@ -391,6 +392,13 @@ r_cons_printf ("%s                             ", pre);
 			r_parse_filter (core->parser, core->flags, asmop.buf_asm, str, sizeof (str));
 			opstr = str;
 		} else opstr = asmop.buf_asm;
+		if (varsub) {
+			RAnalFcn *f = r_anal_fcn_find (core->anal, at, R_ANAL_FCN_TYPE_NULL);
+			if (f) {
+				r_parse_varsub (core->parser, f, opstr, strsub, sizeof (strsub));
+				opstr = strsub;
+			}
+		}
 		r_cons_strcat (opstr);
 		if (decode)
 			free (opstr);
@@ -3485,6 +3493,34 @@ static int cmd_meta(void *data, const char *input) {
 			}
 		}
 		break;
+	case 'v':
+		{
+			RAnalFcn *f;
+			char *ptr = strdup(input+2), *varname, *varsub;
+			ut64 offset = -1LL;
+			int n = r_str_word_set0 (ptr), i;
+			
+			if (n > 2) {
+				switch(n) {
+				case 3:
+					varsub = r_str_word_get0 (ptr, 2);
+				case 2:
+					varname = r_str_word_get0 (ptr, 1);
+				case 1:
+					offset = r_num_math (core->num, r_str_word_get0 (ptr, 0));
+				}
+				if ((f = r_anal_fcn_find (core->anal, offset, R_ANAL_FCN_TYPE_NULL)) != NULL) {
+					for (i = 0; i < R_ANAL_MAX_VARSUB; i++)
+						if (f->varnames[i][0] == '\0') {
+							strncpy (f->varnames[i], varname, 1024);
+							strncpy (f->varsubs[i], varsub, 1024);
+							break;
+						}
+				} else eprintf ("Error: Function not found\n");
+			}
+			free (ptr);
+		}
+		break;
 	case '-':
 		if (input[1]!='*') {
 			if (input[1]==' ')
@@ -3500,6 +3536,7 @@ static int cmd_meta(void *data, const char *input) {
 		" C-[@][ addr]           # delete metadata at given address\n"
 		" CL[-] [addr]           # show 'code line' information (bininfo)\n"
 		" CC [string]            # add comment\n"
+		" Cv[-] offset reg name  # add var substitution\n"
 		" Cs[-] [size] [[addr]]  # add string\n"
 		" CS[-] [size]           # ...\n"
 		" Cd[-] [fmt] [..]       # hexdump data\n"

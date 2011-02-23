@@ -90,14 +90,20 @@ R_API int r_parse_assemble(struct r_parse_t *p, char *data, char *str) {
 	return ret;
 }
 
+R_API int r_parse_parse(struct r_parse_t *p, void *data, char *str) {
+	if (p->cur && p->cur->parse)
+		return p->cur->parse(p, data, str);
+	return R_FALSE;
+}
+
 R_API int r_parse_filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str, int len) {
 	if (p->cur && p->cur->filter)
 		return p->cur->filter(p, f, data, str, len);
 	return R_FALSE;
 }
 
-R_API int r_parse_parse(struct r_parse_t *p, void *data, char *str) {
-	if (p->cur && p->cur->parse)
-		return p->cur->parse(p, data, str);
+R_API int r_parse_varsub(struct r_parse_t *p, struct r_anal_fcn_t *f, char *data, char *str, int len) {
+	if (p->cur && p->cur->varsub)
+		return p->cur->varsub(p, f, data, str, len);
 	return R_FALSE;
 }

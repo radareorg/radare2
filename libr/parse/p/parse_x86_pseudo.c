@@ -7,6 +7,7 @@
 #include <r_lib.h>
 #include <r_util.h>
 #include <r_flags.h>
+#include <r_anal.h>
 #include <r_parse.h>
 
 static int replace(int argc, const char *argv[], char *newstr) {
@@ -157,8 +158,23 @@ static int filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str
 		}
 		ptr = ptr2;
 	}
-	strcpy (str, data);
+	strncpy (str, data, len);
 	return R_FALSE;
+}
+
+static int varsub(struct r_parse_t *p, struct r_anal_fcn_t *f, char *data, char *str, int len) {
+	char *ptr, *ptr2;
+	int i;
+
+	strncpy (str, data, len);
+	for (i = 0; i < R_ANAL_MAX_VARSUB; i++)
+		if (f->varnames[i][0] != '\0' && f->varsubs[i][0] != '\0' &&
+			(ptr = strstr (data, f->varnames[i]))) {
+				*ptr = '\0';
+				ptr2 = ptr + strlen (f->varnames[i]);
+				snprintf (str, len, "%s%s%s", data, f->varsubs[i], ptr2);
+		}
+	return R_TRUE;
 }
 
 struct r_parse_plugin_t r_parse_plugin_x86_pseudo = {
@@ -169,6 +185,7 @@ struct r_parse_plugin_t r_parse_plugin_x86_pseudo = {
 	.parse = &parse,
 	.assemble = &assemble,
 	.filter = &filter,
+	.varsub = &varsub,
 };
 
 struct r_lib_struct_t radare_plugin = {

@@ -320,7 +320,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	RListIter *iter, *iter2;
 
 	r_list_foreach (core->anal->fcns, iter, fcni)
-		if ((input == NULL || input[0] == '\0' && fcni->type!=R_ANAL_FCN_TYPE_LOC) ||
+		if (((input == NULL || input[0] == '\0') && fcni->type!=R_ANAL_FCN_TYPE_LOC) ||
 			!strcmp (fcni->name, input+1)) {
 			if (!rad) {
 				r_cons_printf ("[0x%08"PFMT64x"] size=%"PFMT64d" name=%s",

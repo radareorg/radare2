@@ -5,6 +5,7 @@
 
 #include <r_types.h>
 #include <r_flags.h>
+#include <r_anal.h>
 #include <list.h>
 
 // XXX : remove this define???
@@ -24,6 +25,7 @@ typedef struct r_parse_plugin_t {
 	int (*parse)(struct r_parse_t *p, void *data, char *str);
 	int (*assemble)(struct r_parse_t *p, char *data, char *str);
 	int (*filter)(RParse *p, struct r_flag_t *f, char *data, char *str, int len);
+	int (*varsub)(RParse *p, struct r_anal_fcn_t *f, char *data, char *str, int len);
 	struct list_head list;
 } RParsePlugin;
 
@@ -37,6 +39,7 @@ R_API int r_parse_use(RParse *p, const char *name);
 R_API int r_parse_parse(RParse *p, void *data, char *str);
 R_API int r_parse_assemble(RParse *p, char *data, char *str);
 R_API int r_parse_filter(RParse *p, RFlag *f, char *data, char *str, int len);
+R_API int r_parse_varsub(RParse *p, RAnalFcn *f, char *data, char *str, int len);
 
 /* plugin pointers */
 extern struct r_parse_plugin_t r_parse_plugin_dummy;

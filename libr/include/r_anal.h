@@ -244,6 +244,8 @@ enum {
 	R_ANAL_FCN_TYPE_IMP = 8
 };
 
+#define R_ANAL_MAX_VARSUB 32
+
 typedef struct r_anal_fcn_t {
 	char *name;
 	ut64 addr;
@@ -253,6 +255,8 @@ typedef struct r_anal_fcn_t {
 	int stack;
 	int ninstr;
 	int nargs;
+	char varnames[R_ANAL_MAX_VARSUB][1024];
+	char varsubs[R_ANAL_MAX_VARSUB][1024];
 	ut8 *fingerprint;
 	RAnalDiff *diff;
 	RList *bbs;
