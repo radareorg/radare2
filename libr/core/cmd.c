@@ -2508,8 +2508,7 @@ static int cmd_anal(void *data, const char *input) {
 		" af[?+-l*]       ; Analyze Functions\n"
 		" ar[?d-l*]       ; Manage refs/xrefs\n"
 		" ag[?f]          ; Output Graphviz code\n"
-		" at[trd+-*?] [.] ; Analyze execution Traces\n"
-		" av[?] [arg]     ; Analyze code with virtual machine\n");
+		" at[trd+-*?] [.] ; Analyze execution Traces\n");
 		break;
 	}
 	if (tbs != core->blocksize)
