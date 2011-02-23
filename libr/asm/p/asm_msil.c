@@ -1,0 +1,44 @@
+/* radare - GPL3 - Copyright 2011 capi_x <capi_x@badchecksum.net> */
+
+#include <stdio.h>
+
+#include <r_types.h>
+#include <r_lib.h>
+#include <r_util.h>
+#include <r_asm.h>
+#include "msil/demsil.c"
+
+static int arch_msil_disasm(char *str, unsigned char *buf, ut64 seek) {
+    int n;
+
+    DISASMSIL_OFFSET CodeBase = seek;
+    ILOPCODE_STRUCT ilopar[8];
+    DisasMSIL(buf, 16, CodeBase, ilopar, 8, &n);
+
+    sprintf(str,"%s",ilopar[0].Mnemonic);
+
+    return 0;
+}
+
+static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len) {
+	arch_msil_disasm (aop->buf_asm, buf, a->pc);
+	return (aop->inst_len=2);
+}
+
+RAsmPlugin r_asm_plugin_msil = {
+	.name = "msil",
+	.arch = "msil",
+	.bits = (int[]){ 16, 32, 64, 0 },
+	.desc = "MSIL disassembly plugin",
+	.init = NULL,
+	.fini = NULL,
+	.disassemble = &disassemble,
+	.assemble = NULL
+};
+
+#ifndef CORELIB
+struct r_lib_struct_t radare_plugin = {
+	.type = R_LIB_TYPE_ASM,
+	.data = &r_asm_plugin_msil
+};
+#endif

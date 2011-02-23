@@ -135,6 +135,7 @@ extern RAsmPlugin r_asm_plugin_sparc;
 extern RAsmPlugin r_asm_plugin_psosvm;
 extern RAsmPlugin r_asm_plugin_avr;
 extern RAsmPlugin r_asm_plugin_dalvik;
+extern RAsmPlugin r_asm_plugin_msil;
 #endif
 
 #endif
