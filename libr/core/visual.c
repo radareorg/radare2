@@ -1040,6 +1040,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_core_cmdf (core, "./a 0x%08llx @ entry0", core->offset);
 		break;
 	case 'z':
+		if (zoom && cursor) {
+			ut64 from = r_config_get_i (core->config, "zoom.from");
+			ut64 to = r_config_get_i (core->config, "zoom.to");
+			r_core_seek (core, from + ((to-from)/core->blocksize)*cursor, 1);
+			cursor = 0;
+		}
 		zoom = !zoom;
 		break;
 	case '?':

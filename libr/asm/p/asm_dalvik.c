@@ -98,12 +98,12 @@ static int dalvik_disassemble (RAsm *a, RAsmAop *aop, ut8 *buf, ut64 len) {
 			strcat (aop->buf_asm, str);
 			break;
 		case fmtoppAA:
-			vA = (int) buf[1];
+			vA = (char) buf[1];
 			sprintf (str, " %i", vA);
 			strcat (aop->buf_asm, str);
 			break;
 		case fmtoppAAAA:
-			vA = (int) (buf[3] <<8 | buf[2]);
+			vA = (short) (buf[3] <<8 | buf[2]);
 			sprintf (str, " %i", vA);
 			strcat (aop->buf_asm, str);
 			break;
@@ -114,7 +114,7 @@ static int dalvik_disassemble (RAsm *a, RAsmAop *aop, ut8 *buf, ut64 len) {
 			strcat (aop->buf_asm, str);
 			break;
 		case fmtoppAAAAAAAA:
-			vA = (int) (buf[5]|(buf[4]<<8)|(buf[3]<<16)|(buf[2]<<24));
+			vA = (int) (buf[2]|(buf[3]<<8)|(buf[4]<<16)|(buf[5]<<24));
 			sprintf (str, " %#08x", vA);
 			strcat (aop->buf_asm, str);
 			break;

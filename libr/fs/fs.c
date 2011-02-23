@@ -233,6 +233,10 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 
 	if (root && *root) {
 		r_str_chop_path (root);
+		if (!r_fs_root (fs, root)) {
+			printf ("Unknown root\n");
+			return R_FALSE;
+		}
 		strncpy (path, root, sizeof (path)-1);
 	} else strcpy (path, "/");
 
