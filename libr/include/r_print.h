@@ -53,6 +53,7 @@ R_API int r_print_date_dos(struct r_print_t *p, ut8 *buf, int len);
 R_API int r_print_date_w32(struct r_print_t *p, const ut8 *buf, int len);
 R_API int r_print_date_unix(struct r_print_t *p, const ut8 *buf, int len);
 R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int mode, int len);
+R_API void r_print_progressbar(RPrint *pr, int pc, int _cols);
 #endif
 
 #endif

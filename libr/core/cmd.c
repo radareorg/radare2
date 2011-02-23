@@ -1672,7 +1672,7 @@ static int cmd_info(void *data, const char *input) {
 
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	int l, len = core->blocksize;
+	int i, l, len = core->blocksize;
 	ut32 tbs = core->blocksize;
 
 	/* TODO: Change also blocksize for 'pd'.. */
@@ -1687,6 +1687,18 @@ static int cmd_print(void *data, const char *input) {
 	} else l = len;
 
 	switch (input[0]) {
+	case '%':
+		eprintf ("TODO\n");
+		break;
+	case '=':
+		for (i=0; i<core->blocksize; i++) {
+			int pc = (core->block[i]*100)/255;
+			r_print_addr (core->print, core->offset+i);
+			r_cons_printf ("%02x", core->block[i]);
+			r_print_progressbar (core->print, pc, 70);
+			r_cons_newline ();
+		}
+		break;
 	case 'b':
 		{
 		char *buf;
@@ -1838,6 +1850,7 @@ static int cmd_print(void *data, const char *input) {
 	default:
 		r_cons_printf (
 		"Usage: p[fmt] [len]\n"
+		" p= [len]     print byte percentage bars\n"
 		" p6[de] [len] base64 decode/encode\n"
 		" p8 [len]     8bit hexpair list of bytes\n"
 		" pb [len]     bitstream of N bytes\n"

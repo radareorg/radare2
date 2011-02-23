@@ -275,15 +275,15 @@ R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
 }
 
 /* TODO: handle screen width */
-R_API void r_print_progressbar(RPrint *pr, int pc) {
-        int tmp, cols = 78;
+// TODO: use stderr here?
+R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
+        int tmp, cols = (_cols==-1)?78:_cols;
         (pc<0)?pc=0:(pc>100)?pc=100:0;
-        fprintf (stderr, "\x1b[K  %3d%% [", pc);
-        cols-=15;
-        for(tmp=cols*pc/100;tmp;tmp--) fprintf(stderr,"#");
-        for(tmp=cols-(cols*pc/100);tmp;tmp--) fprintf(stderr,"-");
-        fprintf (stderr, "]\r");
-        fflush (stderr);
+        p->printf ("%4d%% [", pc);
+        cols -= 15;
+        for(tmp=cols*pc/100;tmp;tmp--) p->printf ("#");
+        for(tmp=cols-(cols*pc/100);tmp;tmp--) p->printf ("-");
+        p->printf ("]");
 }
 
 R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int mode, int len) {
