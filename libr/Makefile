@@ -6,7 +6,7 @@ PFX=${DESTDIR}${PREFIX}
 #PREFIX=${PFX}
 
 # Libraries
-LIBLIST=util vm socket cons line lib io lang flags bin hash config syscall cmd
+LIBLIST=util socket cons line lib io lang flags bin hash config syscall cmd
 LIBLIST+=reg asm anal print parse search diff bp sign th db crypto debug fs core
 # sysproxy ... common wat du?
 
@@ -52,7 +52,7 @@ endif
 
 # XXX needs autodetection of deps to remake and so..
 .objs:
-	cd vm ; sh ../waitfordeps.sh r_`echo ${LIBLIST}|sed -e 's, , r_,g'`
+	sh ../waitfordeps.sh r_`echo ${LIBLIST}|sed -e 's, , r_,g'`
 	mkdir -p .objs
 	-for a in ${LIBLIST} ; do \
 		(cd .objs && ar x ../$$a/libr_$$a.a) ; \

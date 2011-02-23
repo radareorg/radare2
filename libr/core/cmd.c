@@ -126,7 +126,6 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	nb = nbytes*2;
 core->inc = 0;
 
-	r_vm_reset (core->vm);
 	if (core->print->cur_enabled) {
 		if (core->print->cur<0)
 			core->print->cur = 0;
@@ -433,10 +432,8 @@ r_cons_printf ("%s                             ", pre);
 			int os = core->assembler->syntax;
 			r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
 			ret = r_asm_disassemble (core->assembler, &ao, buf+idx, len-idx);
-			if (ret>0)
-				r_vm_op_eval (core->vm, ao.buf_asm);
 			r_asm_set_syntax (core->assembler, os);
-		} else r_vm_op_eval (core->vm, asmop.buf_asm);
+		}
 
 		if (!r_anal_cc_update (core->anal, &cc, &analop)) {
 			if (show_functions) {
@@ -2105,47 +2102,6 @@ static int var_cmd(RCore *core, const char *str) {
 }
 #endif
 
-#if 0
- -- function boundaries are used to limit variables life-cycle --
- // global vars are handled as flags??
- // "CV 0x8049200 x global_counter
- // local vars
- // types: glar: g=global, l=local, a=arg, r=argreg
-  Cv l d i @ 0x8048200
-   /* using code analysis we can identify local var accesses */
-
- f.ex:
- ; Set var0 
-  0x4a13c014,  mov [ebp-0x34], eax
-
- ; set name for variable accessed.
- Cvn counter @ 0x4a13c014
-
- stack frame {
-   var1 { offset, size, type, name }
-   var2 { offset, size, type, name }
- }
-
-// how to track a variable 
-
-#endif
-
-// dir=0: import, dir=1: export
-static void vmimport(RCore *core, int dir) {
-	struct list_head *pos;
-	list_for_each(pos, &core->vm->regs) {
-		RVmReg *r = list_entry(pos, RVmReg, list);
-		if (dir) {
-			r_cons_printf ("ave %s=0x%"PFMT64x"\n", r->name, r->value);
-			r_cons_printf ("f vm.%s=0x%"PFMT64x"\n", r->name, r->value);
-		} else {
-			//ut64 value = r_num_math (core->num, r->name);
-			ut64 value = r_debug_reg_get (core->dbg, r->name);
-			r_cons_printf ("ave %s=0x%"PFMT64x"\n", r->name, value);
-		}
-	}
-}
-
 static int cmd_anal(void *data, const char *input) {
 	const char *ptr;
 	RCore *core = (RCore *)data;
@@ -2483,86 +2439,6 @@ static int cmd_anal(void *data, const char *input) {
 			" as       Display syscall and arguments\n"
 			" as 4     Show syscall 4 based on asm.os\n"
 			" asl      List of syscalls by asm.os and asm.arch\n");
-			break;
-		}
-		break;
-	case 'v':
-		switch(input[1]) {
-		case 'e':
-			if (input[2]=='\0')
-				r_cons_printf ("Usage: \"ave [expression]\n"
-				"Note: The prefix '\"' quotes the command and does not parses pipes and so\n");
-			else r_vm_eval (core->vm, input+2);
-			break;
-		case 'f':
-			if (input[2]=='\0')
-				r_cons_printf ("Usage: avf [file]\n");
-			else r_vm_eval_file(core->vm, input+2);
-			break;
-		case 'r':
-			if (input[2]=='?')
-				r_cons_printf (
-				"Usage: avr [reg|type]\n"
-				" avr+ eax int32  ; add register\n"
-				" avr- eax        ; remove register\n"
-				" \"avra al al=eax&0xff al=al&0xff,eax=eax>16,eax=eax<16,eax=eax|al\n"
-				"                 ; set register alias\n"
-				" avr eax         ; view register\n"
-				" avr eax=33      ; set register value\n"
-				" avr*            ; show registers as in flags\n"
-				" avrt            ; list valid register types\n"
-				"Note: The prefix '\"' quotes the command and does not parses pipes and so\n");
-			else r_vm_cmd_reg (core->vm, input+2);
-			break;
-		case 'I':
-			vmimport (core, 1);
-			break;
-		case 'i':
-			vmimport (core, 0);
-			break;
-		case '-':
-			r_vm_init (core->vm, 1);
-			break;
-		case 'o':
-			if (input[2]=='\0')
-				r_vm_op_list (core->vm);
-			else if (input[2]=='?')
-				r_vm_cmd_op_help ();
-			else r_vm_cmd_op (core->vm, input+2);
-			break;
-		case '\0':
-		case '?':
-			r_cons_printf("Usage: av[ier] [arg]\n"
-			" ave eax=33   ; evaluate expression in vm\n"
-			" avf file     ; evaluate expressions from file\n"
-			" avi          ; import register values from flags (eax, ..)\n"
-			" avI          ; import register values from vm flags (vm.eax, ..)\n"
-			" avm          ; select MMU (default current one)\n"
-			" avo op expr  ; define new opcode (avo? for help)\n"
-			" avr          ; show registers\n"
-			" avx N        ; execute N instructions from cur seek\n"
-			" av-          ; restart vm using asm.arch\n"
-			" av*          ; show registers as in flags\n"
-			" avr eax      ; show register eax\n"
-			" avrr eax     ; set return register\n" // TODO .merge avrr and avrc
-			" avrc eip esp ebp ; set basic cpu registers PC, SP, BP\n"
-			" avra         ; show register aliases\n"
-			" avra al eax=0xff ; define 'get' alias for register 'al'\n"
-			" avrt         ; list valid register types\n"
-			" e vm.realio  ; if true enables real write changes\n"
-			"Note: The prefix '\"' quotes the command and does not parses pipes and so\n");
-			break;
-		case 'm':
-			eprintf("TODO\n");
-			break;
-		case 'x':
-			r_vm_emulate (core->vm, atoi (input+2));
-			break;
-		case '*':
-			r_vm_print(core->vm, -2);
-			break;
-		default:
-			r_vm_print(core->vm, 0);
 			break;
 		}
 		break;

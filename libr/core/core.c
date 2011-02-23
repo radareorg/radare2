@@ -273,7 +273,6 @@ R_API int r_core_init(RCore *core) {
 		r_line_hist_load (".radare2_history");
 		singleton = R_FALSE;
 	}
-	core->vm = r_vm_new ();
 	core->print = r_print_new ();
 	core->print->printf = (void *)r_cons_printf;
 	core->lang = r_lang_new ();
@@ -321,7 +320,6 @@ R_API int r_core_init(RCore *core) {
 	core->dbg->printf = r_cons_printf;
 	core->dbg->bp->printf = r_cons_printf;
 	r_debug_io_bind (core->dbg, core->io);
-	r_io_bind (core->io, &(core->vm->iob));
 	r_core_config_init (core);
 	// XXX fix path here
 
