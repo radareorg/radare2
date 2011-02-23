@@ -11,3 +11,7 @@ CFLAGS+=-DPREFIX=\"${PREFIX}\"
 LDFLAGS+=${DL_LIBS}
 
 include ../rules.mk
+
+ifeq ($(HAVE_LIB_MAGIC),1)
+LDFLAGS+=-lmagic
+endif

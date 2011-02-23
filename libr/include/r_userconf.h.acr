@@ -12,6 +12,7 @@
 #define PREFIX "@PREFIX@"
 
 #define R2_VERSION "@VERSION@"
+#define HAVE_LIB_MAGIC @HAVE_LIB_MAGIC@
 
 #define CPU_ENDIAN @BIG_ENDIAN@
 
