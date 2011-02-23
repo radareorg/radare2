@@ -3494,7 +3494,34 @@ static int cmd_meta(void *data, const char *input) {
 		}
 		break;
 	case 'v':
-		{
+		switch (input[1]) {
+		case '-':
+			{
+			RAnalFcn *f;
+			ut64 offset;
+			if (input[2]==' ')
+				offset = r_num_math (core->num, input+3);
+			if ((f = r_anal_fcn_find (core->anal, offset, R_ANAL_FCN_TYPE_NULL)) != NULL) {
+				memset (f->varnames, 0, sizeof(f->varnames));
+				memset (f->varnames, 0, sizeof(f->varnames));
+			}
+			}
+			break;
+		case '*':
+			{
+			RAnalFcn *f;
+			RListIter *iter;
+			r_list_foreach (core->anal->fcns, iter, f) {
+				for (i = 0; i < R_ANAL_MAX_VARSUB; i++) {
+					if (f->varnames[i][0] != '\0')
+						r_cons_printf ("Cv 0x%08llx %s %s\n", f->addr, f->varnames[i], f->varsubs[i]);
+					else break;
+				}
+			}
+			}
+			break;
+		default:
+			{
 			RAnalFcn *f;
 			char *ptr = strdup(input+2), *varname, *varsub;
 			ut64 offset = -1LL;
@@ -3511,7 +3538,7 @@ static int cmd_meta(void *data, const char *input) {
 				}
 				if ((f = r_anal_fcn_find (core->anal, offset, R_ANAL_FCN_TYPE_NULL)) != NULL) {
 					for (i = 0; i < R_ANAL_MAX_VARSUB; i++)
-						if (f->varnames[i][0] == '\0') {
+						if (f->varnames[i][0] == '\0' || !strcmp (f->varnames[i], varname)) {
 							strncpy (f->varnames[i], varname, 1024);
 							strncpy (f->varsubs[i], varsub, 1024);
 							break;
@@ -3519,8 +3546,9 @@ static int cmd_meta(void *data, const char *input) {
 				} else eprintf ("Error: Function not found\n");
 			}
 			free (ptr);
-		}
+			}
 		break;
+		}
 	case '-':
 		if (input[1]!='*') {
 			if (input[1]==' ')
