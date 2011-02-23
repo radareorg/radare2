@@ -3,12 +3,13 @@
   |    <  V  . |  . V  .   <   _/ .-' _/|  ()  |
   |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
-Random stuff
------------
-* For each "call" or "push offset"+"ret" create a function.
-  - And, if deep code analysis is enabled:
-  - Search every possible function by searching typical prologs and put them in a queue.
-  - Perform the same actions as in the previous steps with the entry points.
+
+pancake
+-------
+* mount in / results problematic sometimes.. :/
+* if console width > X place comments there (ash)
+* Implement BLOCK in r_core_sysenv_begin|end ()
+* Fix iterators for r_macro (test only?)
 * Stolen from pyew
   - e anal.ops = true
   INT num: Interruptions. Typically used as antiemulation (INT 4) and antidebugging tricks (INT 3).
@@ -18,21 +19,10 @@ Random stuff
   CPUID: Used to detect Virtual Machines and emulators.
   // NOP args: NOP with arguments are typical antiemulation tricks.
   SYSENTER: Direct system calls. Commonly, used as antiemulation tricks.
-* implement aoe = anal op exec
-  - sync regs or what?
 
-pancake
--------
-* mount in / results problematic sometimes.. :/
-* if console width > X place comments there (ash)
-* Implement BLOCK in r_core_sysenv_begin|end ()
-* Fix iterators for r_macro (test only?)
-* Add support for STATIC_PLUGINS in r_lang
-  - r_lang_define is implemented in lang.c, but requires the collaboration
-    of the plugins to properly setup the environment for the script execution.
-  - Add support for STATIC_PLUGINS in r_lang
-  - dlerror(/usr/lib/radare2/lang_perl.so): libperl.so: cannot open shared object file: No such file or directory
-    This issue is fixed by setting LD_LIBRARY_PATH...looks like dlopen ignores rpath
+capi_x
+------
+* Fix avr/ppc code analysis // fix or use or what? :)
 
 earada
 ------
@@ -45,7 +35,6 @@ earada
 	  0-9+ = count of chars
 	  E = end of stream
 	  RKNS_ = start of arguments
-* Fix avr/ppc code analysis // fix or use or what? :)
 * Add SSL support to r_socket
 * remove all uses of alloca() // mingw and grep reports them all :)
 * typedef all function pointers, like in r_bp
@@ -58,6 +47,13 @@ earada
 
 nibble
 ------
+* For each "call" or "push offset"+"ret" create a function.
+  - And, if deep code analysis is enabled:
+  - Search every possible function by searching typical prologs and put them in a queue.
+  - Perform the same actions as in the previous steps with the entry points.
+* detect strings in code analysis
+* implement aoe = anal op exec
+  - sync regs or what?
 * comparisions doesnt works (RAnalCond)
 * register renaming (per-instruction or ranges)
   - r_parser fun? a specific asm.parser plugin that does all this tricks?
@@ -84,14 +80,6 @@ nibble
 	  - implement GMP in util/big.c
 	    - http://etutorials.org/Programming/secure+programming/Chapter+7.+Public+Key+Cryptography/7.5+Generating+a+Prime+Number+Testing+for+Primality/
 
-	DEBUGGER: (pancake)
-	---------
-	* Implement DRX support
-	* Implement dump+restore as macros (dump,)
-	* Implement software stepping (with code analysis+breakpoints)
-	* Implement dbg.bep - in r_core? in r_debug after attach? maybe only in r2 binr?
-	  - must be refined.. and look for better names
-
 	CORE
 	----
 	* Add "pm ?" for bit print like in pb? bit level binary memory printage
@@ -109,8 +97,8 @@ nibble
 	  - So one can change from one arch to another with a pointer
 	  - Cool for defining ranges of memory
 
-0.8
-===
+0.8: focus on debugger and UI
+=============================
 * Reimplement or fix the delta diffing in C - first we need to do it for ired..
 * add support for .a files (r_fs supports cpio and ar archives...)
 * Implement rap:// upload/download protocol commands (maybe just system() with rsc2+wget?
@@ -121,6 +109,21 @@ nibble
 * Create radare2-testsuite project
   - tests for ired, rax2, radare2, rabin2 ...
 * Is RCore->block and blocksize a RBuf ? refactor!11
+* Add support for STATIC_PLUGINS in r_lang
+  - r_lang_define is implemented in lang.c, but requires the collaboration
+    of the plugins to properly setup the environment for the script execution.
+  - Add support for STATIC_PLUGINS in r_lang
+  - dlerror(/usr/lib/radare2/lang_perl.so): libperl.so: cannot open shared object file: No such file or directory
+    This issue is fixed by setting LD_LIBRARY_PATH...looks like dlopen ignores rpath
+
+	DEBUGGER: (pancake)
+	---------
+	* Implement DRX support
+	* Implement dump+restore as macros (dump,)
+	* Implement software stepping (with code analysis+breakpoints)
+	* Implement dbg.bep - in r_core? in r_debug after attach? maybe only in r2 binr?
+	  - must be refined.. and look for better names
+
 
 BINARY INFORMATION
 ==================
@@ -196,16 +199,12 @@ Bindings
 
 Refactoring
 ===========
-* Import r_vm register values from flags or from r_debug->r_reg
-  - r_vm must use mmu cache when emulating code
-    - use the one from r_io? and deprecate vm->mmu_cache?
 * Review the r_flags api
 * Add pipe_to_buffer..not only file descriptors
 * r_config set_int and so..simplify
   - find/use more common cases for char* or &int maps
     - automatic callbacks for most common usecases
-* What do we have to do with r_th, r_vm ?
-* Merge r_vm into r_anal ?
+* What do we have to do with r_th
 * Merge r_socket inside r_util ?
 * Discuss missing r_core_sysenv_update in core/file.c:33
 * Add RLog API.. pipeable to disk and stderr..also hookable ..cool for ui (partially done)
@@ -231,10 +230,6 @@ Future
 * install.sh (to track installed files ..)
 * acr -ldl check must be fixed for kfreebsd
 * Add support for float/double in r_num :?
-* radare2 -e dbg.engine=vm -d ls
-  - load the program using r_bin in virtual space
-  - initialize vm and set regs
-  - debug backend should use the vm
 * metaflags? support to define relations between flags
     (flag hirearchies)
 	r_flagtree

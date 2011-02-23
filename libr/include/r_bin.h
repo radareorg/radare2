@@ -30,6 +30,12 @@ enum {
 	R_BIN_SYM_LAST
 };
 
+// name mangling types
+enum {
+	R_BIN_NM_JAVA,
+	R_BIN_NM_CXX,
+};
+
 // XXX: isnt this a copy of Obj ?
 typedef struct r_bin_arch_t {
 	char *file;
@@ -214,7 +220,9 @@ R_API int r_bin_load(RBin *bin, const char *file, int dummy);
 R_API RBinObj *r_bin_get_object(RBin *bin, int flags);
 R_API ut64 r_bin_get_baddr(RBin *bin);
 R_API RBinAddr* r_bin_get_sym(RBin *bin, int sym);
-R_API char* r_bin_demangle(RBin *bin, const char *str);
+R_API char* r_bin_demangle(RBin *bin, const char *str, int type);
+R_API char *r_bin_demangle_java(const char *str);
+R_API char *r_bin_demangle_cxx(const char *str);
 R_API RList* r_bin_get_entries(RBin *bin);
 R_API RList* r_bin_get_fields(RBin *bin);
 R_API RList* r_bin_get_imports(RBin *bin);
@@ -243,6 +251,7 @@ R_API char *r_bin_meta_get_source_line(RBin *bin, ut64 addr);
 R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size);
 R_API int r_bin_wr_rpath_del(RBin *bin);
 R_API int r_bin_wr_output(RBin *bin, const char *filename);
+
 /* plugin pointers */
 extern RBinPlugin r_bin_plugin_elf;
 extern RBinPlugin r_bin_plugin_elf64;

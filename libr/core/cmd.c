@@ -1710,7 +1710,23 @@ static int cmd_print(void *data, const char *input) {
 
 	switch (input[0]) {
 	case '%':
-		eprintf ("TODO\n");
+		{
+			ut64 off = core->offset;
+			ut64 s = core->file?core->file->size:0;
+			ut64 piece = 0;
+			int w = core->print->cols * 4;
+			piece = s/w;
+			r_cons_strcat ("  [");
+			for (i=0; i<w; i++) {
+				ut64 from = (piece*i);
+				ut64 to = from+piece;
+				if (off>=from && off<to)
+					r_cons_memcat ("#", 1);
+				else r_cons_memcat (".", 1);
+				// TODO: print where flags are.. code, ..
+			}
+			r_cons_strcat ("]\n");
+		}
 		break;
 	case '=':
 		for (i=0; i<core->blocksize; i++) {
@@ -2514,12 +2530,25 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'p':
 		{
+			const char *arch = r_config_get (core->config, "asm.arch");
+			int bits = r_config_get_i (core->config, "asm.bits");
 			// TODO: this is x86 only
 			// TODO: allow interruptible search
 			char *o = strdup (r_config_get (core->config, "search.prefix"));
 			r_config_set (core->config, "search.prefix", "pre.");
 			r_core_cmd0 (core, "fs preludes");
-			r_core_cmd0 (core, "./x 5589e5 && af @@ pre.");
+			if (!strstr (arch, "x86")) {
+				switch (bits) {
+				case 32:
+					r_core_cmd0 (core, "./x 5589e5 && af @@ pre.");
+					break;
+				case 64:
+					r_core_cmd0 (core, "./x 554989e5 && af @@ pre.");
+					break;
+				}
+			} else {
+				eprintf ("ap: Unsupported asm.arch and asm.bits\n");
+			}
 			r_config_set (core->config, "search.prefix", o);
 			free (o);
 		}
@@ -2528,6 +2557,7 @@ static int cmd_anal(void *data, const char *input) {
 		r_cons_printf (
 		"Usage: a[?obfrgtv]\n"
 		" aa              ; Analyze all (fcns + bbs)\n"
+		" ap              ; Find and analyze function preludes\n"
 		" as [num]        ; Analyze syscall using dbg.reg\n"
 		" ao[e?] [len]    ; Analyze Opcodes (or emulate it)\n"
 		" ab[?+-l*]       ; Analyze Basic blocks\n"

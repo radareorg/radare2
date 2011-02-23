@@ -45,7 +45,6 @@ R_API int r_core_visual_trackflags(RCore *core) {
 	RFlagItem *flag;
 #define MAX_FORMAT 2
 	int format = 0;
-	const char *ptr;
 	const char *fs = NULL;
 	char *fs2 = NULL;
 	int option = 0;
@@ -58,10 +57,6 @@ R_API int r_core_visual_trackflags(RCore *core) {
 	for (;;) {
 		r_cons_gotoxy (0,0);
 		r_cons_clear ();
-		/* Execute visual prompt */
-		ptr = r_config_get (core->config, "cmd.vprompt");
-		if (ptr&&ptr[0])
-			r_core_cmd (core, ptr, 0);
 
 		if (menu) {
 			r_cons_printf ("\n Flags in flagspace '%s'. Press '?' for help.\n\n",
@@ -276,20 +271,20 @@ static void config_visual_hit(RCore *core, const char *name) {
 	char buf[1024];
 	RConfigNode *node;
 
-	if (!(node = r_config_node_get(core->config, name)))
+	if (!(node = r_config_node_get (core->config, name)))
 		return;
 	if (node->flags & CN_BOOL) {
 		/* TOGGLE */
 		node->i_value = !node->i_value;
-		node->value = r_str_dup(node->value, node->i_value?"true":"false");
+		node->value = r_str_dup (node->value, node->i_value?"true":"false");
 	} else {
 		// FGETS AND SO
-		r_cons_printf("New value (old=%s): ", node->value);
-		r_cons_flush();
-		r_cons_set_raw(0);
-		r_cons_fgets(buf, 1023, 0, 0);
-		r_cons_set_raw(1);
-		node->value = r_str_dup(node->value, buf);
+		r_cons_printf ("New value (old=%s): ", node->value);
+		r_cons_flush ();
+		r_cons_set_raw (0);
+		r_cons_fgets (buf, sizeof (buf)-1, 0, 0);
+		r_cons_set_raw (1);
+		node->value = r_str_dup (node->value, buf);
 	}
 }
 
@@ -297,7 +292,6 @@ R_API void r_core_visual_config(RCore *core) {
 	char cmd[1024];
 	struct list_head *pos;
 #define MAX_FORMAT 2
-	const char *ptr;
 	char *fs = NULL;
 	char *fs2 = NULL;
 	int option = 0;
@@ -313,14 +307,6 @@ R_API void r_core_visual_config(RCore *core) {
 	for (;;) {
 		r_cons_gotoxy (0,0);
 		r_cons_clear ();
-
-		/* Execute visual prompt */
-		ptr = r_config_get (core->config, "cmd.vprompt");
-		if (ptr&&ptr[0]) {
-//			int tmp = last_print_format;
-			r_core_cmd (core, ptr, 0);
-//			last_print_format = tmp;
-		}
 
 		if (fs&&!memcmp (fs, "asm.", 4))
 			r_core_cmd (core, "pd 5", 0);
@@ -1115,10 +1101,15 @@ R_API void r_core_visual_prompt(RCore *core, int color) {
 }
 
 static void r_core_visual_refresh (RCore *core) {
+	const char *vi;
 	r_cons_get_size (NULL);
 	r_cons_clear00 ();
 	r_print_set_cursor (core->print, curset, ocursor, cursor);
 	r_core_visual_prompt (core, color);
+
+	vi = r_config_get (core->config, "cmd.vprompt");
+	if (vi) r_core_cmd (core, vi, 0);
+
 	if (zoom)
 		r_core_cmd (core, "pZ", 0);
 	else
@@ -1128,16 +1119,12 @@ static void r_core_visual_refresh (RCore *core) {
 
 R_API int r_core_visual(RCore *core, const char *input) {
 	const char *cmdprompt;
-	const char *vi;
 	ut64 scrseek;
 	int ch;
 	obs = core->blocksize;
 
 	r_cons_singleton ()->data = core;
 	r_cons_singleton ()->event_resize = (RConsEvent)r_core_visual_refresh;
-
-	vi = r_config_get (core->config, "cmd.vprompt");
-	if (vi) r_core_cmd (core, vi, 0);
 
 	while (input[0]) {
 		if (!r_core_visual_cmd (core, input[0])) {
