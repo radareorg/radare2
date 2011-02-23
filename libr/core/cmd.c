@@ -83,8 +83,6 @@ static void printoffset(ut64 off, int show_color) {
 	else r_cons_printf ("0x%08"PFMT64x"  ", off);
 }
 
-
-
 /* TODO: move to print/disasm.c */
 static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
 	RAnalCC cc = {0};
@@ -1081,6 +1079,7 @@ static int cmd_mount(void *data, const char *_input) {
 }
 
 static int cmd_yank(void *data, const char *input) {
+	int i;
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case ' ':
@@ -1088,6 +1087,10 @@ static int cmd_yank(void *data, const char *input) {
 		break;
 	case 'y':
 		r_core_yank_paste (core, r_num_math(core->num, input+2), 0);
+		break;
+	case 'p':
+		r_cons_memcat (core->yank, core->yank_len);
+		r_cons_newline ();
 		break;
 	case 't':
 		{ /* hacky implementation */
@@ -1098,10 +1101,9 @@ static int cmd_yank(void *data, const char *input) {
 		break;
 	case '\0':
 		if (core->yank) {
-			int i;
 			r_cons_printf ("0x%08"PFMT64x" %d ",
 				core->yank_off, core->yank_len);
-			for (i=0;i<core->yank_len;i++)
+			for (i=0; i<core->yank_len; i++)
 				r_cons_printf ("%02x", core->yank[i]);
 			r_cons_newline ();
 		} else eprintf ("No buffer yanked already\n");
@@ -1113,6 +1115,8 @@ static int cmd_yank(void *data, const char *input) {
 		" y 16         ; copy 16 bytes into clipboard\n"
 		" y 16 0x200   ; copy 16 bytes into clipboard from 0x200\n"
 		" y 16 @ 0x200 ; copy 16 bytes into clipboard from 0x200\n"
+		" yp           ; print contents of clipboard\n"
+		" yt 0x200     ; paste clipboard to 0x200\n"
 		" yy 0x3344    ; paste clipboard\n");
 		break;
 	}
@@ -1752,6 +1756,28 @@ static int cmd_print(void *data, const char *input) {
 	case 'x':
 		r_print_hexdump (core->print, core->offset, core->block, len, 16, 1); //, 78, !(input[1]=='-'));
 		break;
+	case '6':
+		{
+		int malen = (core->blocksize*4)+1;
+		ut8 *buf = malloc (malen);
+		memset (buf, 0, malen);
+		switch (input[1]) {
+		case 'e':
+			r_base64_encode (buf, core->block, core->blocksize);
+			printf ("%s\n", buf);
+			break;
+		case 'd':
+			if (r_base64_decode (buf, core->block, core->blocksize))
+				printf ("%s\n", buf);
+			else eprintf ("r_base64_decode: invalid stream\n");
+			break;
+		default:
+			eprintf ("Usage: p6[ed] [len]  ; base 64 encode/decode\n");
+			break;
+		}
+		free (buf);
+		}
+		break;
 	case '8':
 		r_print_bytes (core->print, core->block, len, "%02x");
 		break;
@@ -1778,16 +1804,16 @@ static int cmd_print(void *data, const char *input) {
 		switch (input[1]) {
 			case ' ':
 			case '\0':
-				for (l=0; l<len; l+=sizeof(time_t))
-					r_print_date_unix (core->print, core->block+l, sizeof(time_t));
+				for (l=0; l<len; l+=sizeof (time_t))
+					r_print_date_unix (core->print, core->block+l, sizeof (time_t));
 				break;
 			case 'd':
 				for (l=0; l<len; l+=4)
 					r_print_date_dos (core->print, core->block+l, 4);
 				break;
 			case 'n':
-				for (l=0; l<len; l+=sizeof(ut64))
-					r_print_date_w32 (core->print, core->block+l, sizeof(ut64));
+				for (l=0; l<len; l+=sizeof (ut64))
+					r_print_date_w32 (core->print, core->block+l, sizeof (ut64));
 				break;
 		case '?':
 			r_cons_printf (
@@ -1812,20 +1838,22 @@ static int cmd_print(void *data, const char *input) {
 	default:
 		r_cons_printf (
 		"Usage: p[fmt] [len]\n"
-		" p8 [len]    8bit hexpair list of bytes\n"
-		" px [len]    hexdump of N bytes\n"
-		" po [len]    octal dump of N bytes\n"
-		" pc [len]    output C format\n"
-		" ps [len]    print string\n"
-		" pm [fmt]    print formatted memory\n" // TODO: rename to pf??
-		" pS [len]    print wide string\n"
-		" pt [len]    print diferent timestamps\n"
-		" pd [len]    disassemble N opcodes\n"
-		" pD [len]    disassemble N bytes\n"
-		" pr [len]    print N raw bytes\n"
-		" pu [len]    print N url encoded bytes\n"
-		" pU [len]    print N wide url encoded bytes\n",
-		" pZ [len]    print zoom view\n");
+		" p6[de] [len] base64 decode/encode\n"
+		" p8 [len]     8bit hexpair list of bytes\n"
+		" pb [len]     bitstream of N bytes\n"
+		" pd [len]     disassemble N opcodes\n"
+		" pD [len]     disassemble N bytes\n"
+		" po [len]     octal dump of N bytes\n"
+		" pc [len]     output C format\n"
+		" pm [fmt]     print formatted memory\n" // TODO: rename to pf??
+		" ps [len]     print string\n"
+		" pS [len]     print wide string\n"
+		" pt [len]     print diferent timestamps\n"
+		" pr [len]     print N raw bytes\n"
+		" pu [len]     print N url encoded bytes\n"
+		" pU [len]     print N wide url encoded bytes\n",
+		" px [len]     hexdump of N bytes\n"
+		" pZ [len]     print zoom view\n");
 		break;
 	}
 	if (tbs != core->blocksize)

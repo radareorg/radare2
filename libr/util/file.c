@@ -124,7 +124,9 @@ R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz) {
 	fseek (fd, off, SEEK_SET);
 	ret = (char *)malloc (sz+1);
 	if (ret != NULL) {
-		*osz = (int)(size_t)fread (ret, 1, sz, fd);
+		if (osz)
+			*osz = (int)(size_t)fread (ret, 1, sz, fd);
+		else fread (ret, 1, sz, fd);
 		ret[sz] = '\0';
 	}
 	fclose (fd);

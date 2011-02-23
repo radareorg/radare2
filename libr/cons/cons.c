@@ -261,9 +261,11 @@ R_API void r_cons_printf(const char *format, ...) {
 
 /* final entrypoint for adding stuff in the buffer screen */
 R_API void r_cons_memcat(const char *str, int len) {
-	palloc (len+1);
-	memcpy (I.buffer+I.buffer_len, str, len+1);
-	I.buffer_len += len;
+	if (len>0) {
+		palloc (len+1);
+		memcpy (I.buffer+I.buffer_len, str, len+1);
+		I.buffer_len += len;
+	}
 }
 
 R_API void r_cons_strcat(const char *str) {

@@ -10,32 +10,17 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RCore *core = (RCore *)userptr; // XXX ?
 	RFlagItem *flag;
 	RAnalOp aop;
-	ut64 ret;
-	
+	ut64 ret = 0;
+	*ok = 0;
 	if (str[0]=='$') {
-		/* analyze opcode */
-		switch (str[1]) {
-		case '$': 
-			if (str[2]=='$') {
-				r_anal_aop (core->anal, &aop, core->offset,
-					core->block, core->blocksize);
-				return aop.length;
-			}
-			return core->offset;
-		case 'e':
-		case 'j':
-		case 'f':
-		case 'r':
-			r_anal_aop (core->anal, &aop, core->offset,
-				core->block, core->blocksize);
-			break;
-		}
-		/* return value */
+		*ok = 1;
+		r_anal_aop (core->anal, &aop, core->offset,
+			core->block, core->blocksize);
 		switch (str[1]) {
 		case '{':
 			{
-				char *ptr, *bptr = strdup(str+2);
-				ptr = strchr(bptr, '}');
+				char *ptr, *bptr = strdup (str+2);
+				ptr = strchr (bptr, '}');
 				if (ptr != NULL) {
 					ut64 ret;
 					ptr[0]='\0';
@@ -52,12 +37,15 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'b': return core->blocksize;
 		case 's': return core->file->size;
 		case '?': return core->num->value;
+		case '$': return core->offset;
 		}
 	}
-	if ((flag = r_flag_get (core->flags, str))) {
-		ret = flag->offset;
-		*ok = R_TRUE;
-	} else *ok = ret = 0;
+	if (str[0]>'A') {
+		if ((flag = r_flag_get (core->flags, str))) {
+			ret = flag->offset;
+			*ok = R_TRUE;
+		} else *ok = ret = 0;
+	}
 	return ret;
 }
 
@@ -92,7 +80,8 @@ static const char *radare_argv[] = {
 	"/", "//", "/a", "/c", "/m", "/x", "/v",
 	"y", "yy", "y?",
 	"wx", "ww", "wf", "w?",
-	"pc", "pd", "pD", "px", "pX", "po", "pm", "pr", "pt", "ps", "pz", "pr >", "pu", "pU", "p?",
+	"p6d", "p6e", "p8", "pb", "pc", "pd", "pD", "px", "pX", "po",
+	"pm", "pr", "pt", "ps", "pz", "pr >", "pu", "pU", "p?",
 	NULL
 };
 

@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include <r_core.h>
+#define HAVE_VM 0
 
 static int config_scrcols_callback(void *user, void *data) {
 	int c = R_MIN (128, R_MAX (((RConfigNode*)data)->i_value, 0));
@@ -255,12 +256,14 @@ static int config_asmarch_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+#if HAVE_VM
 static int config_vmarch_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	r_vm_set_arch (core->vm, node->value, core->assembler->bits);
 	return R_TRUE;
 }
+#endif
 
 static int config_asmparser_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
@@ -287,8 +290,10 @@ static int config_asmbits_callback(void *user, void *data) {
 	}
 	if (!r_anal_set_bits (core->anal, node->i_value))
 		eprintf ("asm.arch: Cannot setup '%i' bits analysis engine\n", (int)node->i_value);
+#if HAVE_VM
 	if (core->assembler->cur)
 	r_vm_set_arch (core->vm, core->assembler->cur->name, node->i_value);
+#endif
 	// TODO: change debugger backend bit profile here
 	return ret;
 }
@@ -387,7 +392,9 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "file.type", "");
 	r_config_set (cfg, "rap.loop", "true");
 	/* vm */
+#if HAVE_VM
 	r_config_set_cb (cfg, "vm.arch", "x86", &config_vmarch_callback);
+#endif
 	/* zoom */
 	r_config_set_i (cfg, "zoom.from", 0);
 	r_config_set_i (cfg, "zoom.to", 0);

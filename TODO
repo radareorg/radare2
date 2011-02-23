@@ -20,13 +20,12 @@ Random stuff
   SYSENTER: Direct system calls. Commonly, used as antiemulation tricks.
 * implement aoe = anal op exec
   - sync regs or what?
-* Search for wide strings /Z or so? /w maybe?
 
 pancake
 -------
+* mount in / results problematic sometimes.. :/
 * if console width > X place comments there (ash)
 * Implement BLOCK in r_core_sysenv_begin|end ()
-* comparisions doesnt works (RAnalCond)
 * Fix iterators for r_macro (test only?)
 * Add support for STATIC_PLUGINS in r_lang
   - r_lang_define is implemented in lang.c, but requires the collaboration
@@ -59,18 +58,10 @@ earada
 
 nibble
 ------
-* scrollup by bwdisasm not yet implemented
-* '+' key in visual cursor mode only increments lower nibble!
-  - only in debugger mode :/
+* comparisions doesnt works (RAnalCond)
 * register renaming (per-instruction or ranges)
   - r_parser fun? a specific asm.parser plugin that does all this tricks?
-- fix instruction navigation
-  - do not allow to disassemble unaligned addresses (toggle)
-  - use 'jk' with bwdisasm to go up to previous opcode.
-    - r_asm can reduce cpu without disasm on fixed size ops archs.
 * Display getsym() stuff in rabin2, not only legit syms
-* Check if python plugin works from inside
-  - write tuto, how to call py code from shell or r2
 * dmi command must read from memory if no file path provided
   - rabin from memory ftw, to get libnames of dll, so..
 * add support for sign/unsigned registers..or at least a way to cast them
@@ -130,6 +121,7 @@ nibble
 * Create radare2-testsuite project
   - tests for ired, rax2, radare2, rabin2 ...
 * Is RCore->block and blocksize a RBuf ? refactor!11
+
 BINARY INFORMATION
 ==================
 dwarf, pdb, def, lib
@@ -169,7 +161,6 @@ pancake
 * fork/clone child . inject code to create new threads or pids
 * Functions in r_util to get lil/big ut8,16,32 from ut8*
   - already done..must find better names probably
-* merge asm.arch vm.arch
 * support for macro scripting
 * better debugger support for OSX and iOS
 * rarc2 allows to compile invalid code like calling puts() out of context

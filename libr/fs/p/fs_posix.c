@@ -4,29 +4,25 @@
 #include <dirent.h>
 
 static RFSFile* fs_posix_open(RFSRoot *root, const char *path) {
-#if 0
+	FILE *fd;
 	RFSFile *file = r_fs_file_new (root, path);
-	GrubFS *gfs = grubfs_new (&FSIPTR, &root->iob);
-	file->ptr = gfs;
+	file->ptr = NULL;
 	file->p = root->p;
-	if (gfs->file->fs->open (gfs->file, path)) {
+	fd = fopen (path, "r");
+	if (fd) {
+		fseek (fd, 0, SEEK_END);
+		file->size = ftell (fd);
+		fclose (fd);
+	} else {
 		r_fs_file_free (file);
-		grubfs_free (gfs);
 		file = NULL;
-	} else file->size = gfs->file->size;
+	}
 	return file;
-#endif
-	eprintf ("TODO: fs_posix_open\n");
-	return NULL;
 }
 
 static boolt fs_posix_read(RFSFile *file, ut64 addr, int len) {
-	file->data = malloc (len);
-	if (file->data) {
-		eprintf ("TODO: fs_posix_read\n");
-		free (file->data);
-		file->data = NULL;
-	}
+	free (file->data);
+	file->data = r_file_slurp_range (file->name, 0, len, NULL);
 	return R_FALSE;
 }
 

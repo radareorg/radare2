@@ -213,6 +213,8 @@ R_API int r_num_to_bits(char *out, ut64 num);
 	x==','||x==';'||x==':'||x=='['||x==']'||x=='('||x==')'||x=='{'||x=='}')
 #define ishexchar(x) ((x>='0'&&x<='9') ||  (x>='a'&&x<='f') ||  (x>='A'&&x<='F')) {
 
+R_API void r_base64_encode(ut8 *bout, const ut8 *bin, int len);
+R_API int r_base64_decode(ut8 *bout, const ut8 *bin, int len);
 /* strings */
 #define r_str_write(x,y) write (x, y, strlen(y))
 R_API int r_str_bits (char *strout, const ut8 *buf, int len, const char *bitz);
