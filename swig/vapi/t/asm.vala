@@ -20,7 +20,7 @@ public class RAsmExample
 			}, pseudo);
 */
 
-		RAsm.Aop op;
+		RAsm.Op op;
 		uint8 *buf = "\x83\xe4\xf0";
 		string buf2 = "jmp _foo;nop;nop;nop;_foo:push eax";
 		if (st.disassemble(out op, buf, 3) <1) {

@@ -10,7 +10,7 @@ init
 	st.set_pc(0x8048000)
 
 	/* Disassembler test */
-	op : RAsm.Aop
+	op : RAsm.Op
 	var buf = "\x83\xe4\xf0"
 	st.disassemble(out op, buf, 3)
 	print "opcode: %s", op.buf_asm
