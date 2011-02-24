@@ -82,7 +82,7 @@ R_API char *r_anal_cond_to_string(RAnalCond *cond) {
 	return out;
 }
 
-R_API RAnalCond *r_anal_cond_new_from_aop(RAnalOp *op) {
+R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op) {
 	RAnalCond *cond;
 	if (!(cond = r_anal_cond_new()))
 		return NULL;

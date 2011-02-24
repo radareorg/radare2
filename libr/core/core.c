@@ -14,7 +14,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	*ok = 0;
 	if (str[0]=='$') {
 		*ok = 1;
-		r_anal_aop (core->anal, &aop, core->offset,
+		r_anal_op (core->anal, &aop, core->offset,
 			core->block, core->blocksize);
 		switch (str[1]) {
 		case '{':
@@ -465,7 +465,7 @@ R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr) {
 	ut8 buf[64];
 	RAnalOp *aop = R_NEW (RAnalOp);
 	r_core_read_at (core, addr, buf, sizeof (buf));
-	r_anal_aop (core->anal, aop, addr, buf, sizeof (buf));
+	r_anal_op (core->anal, aop, addr, buf, sizeof (buf));
 	return aop;
 }
 

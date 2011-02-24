@@ -149,7 +149,7 @@ typedef struct r_anal_value_t {
 	RRegItem *regdelta; // register index used (-1 if no reg)
 } RAnalValue;
 
-typedef struct r_anal_aop_t {
+typedef struct r_anal_op_t {
 	char *mnemonic; /* mnemonic */
 	ut64 addr;      /* address */
 	int type;       /* type of opcode */
@@ -201,7 +201,7 @@ typedef struct r_anal_bb_t {
 	int traced;
 	ut8 *fingerprint;
 	RAnalDiff *diff;
-	RList *aops;
+	RList *ops;
 	RAnalCond *cond;
 } RAnalBlock;
 
@@ -309,7 +309,7 @@ typedef struct r_anal_refline_t {
 	struct list_head list;
 } RAnalRefline;
 
-typedef int (*RAnalAopCallback)(RAnal *a, RAnalOp *aop, ut64 addr, const ut8 *data, int len);
+typedef int (*RAnalOpCallback)(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len);
 typedef int (*RAnalRegProfCallback)(RAnal *a);
 
 typedef struct r_anal_plugin_t {
@@ -317,7 +317,7 @@ typedef struct r_anal_plugin_t {
 	char *desc;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-	RAnalAopCallback aop;
+	RAnalOpCallback op;
 	RAnalRegProfCallback set_reg_profile;
 	struct list_head list;
 } RAnalPlugin;
@@ -345,13 +345,13 @@ R_API void r_anal_bb_free(void *bb);
 R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb,
 		ut64 addr, ut8 *buf, ut64 len, int head);
 
-/* aop.c */
-R_API RAnalOp *r_anal_aop_new();
-R_API void r_anal_aop_free(void *aop);
-R_API RList *r_anal_aop_list_new();
-R_API int r_anal_aop(RAnal *anal, RAnalOp *aop, ut64 addr,
+/* op.c */
+R_API RAnalOp *r_anal_op_new();
+R_API void r_anal_op_free(void *op);
+R_API RList *r_anal_op_list_new();
+R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr,
 		const ut8 *data, int len);
-R_API char *r_anal_aop_to_string(RAnal *anal, RAnalOp *op);
+R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);
 
 /* fcn.c */
 R_API RAnalFcn *r_anal_fcn_new();
@@ -415,7 +415,7 @@ R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num);
 R_API void r_anal_value_free(RAnalValue *value);
 
 R_API RAnalCond *r_anal_cond_new();
-R_API RAnalCond *r_anal_cond_new_from_aop(RAnalOp *op);
+R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op);
 #define r_anal_cond_free(x) free(x);
 R_API char *r_anal_cond_to_string(RAnalCond *cond);
 R_API int r_anal_cond_eval (RAnal *anal, RAnalCond *cond);

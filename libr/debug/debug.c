@@ -184,7 +184,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	RAnalOp op;
 	ut64 pc0, pc1, pc2;
 	pc0 = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-	int ret = r_anal_aop (dbg->anal, &op, pc0, buf, sizeof (buf));
+	int ret = r_anal_op (dbg->anal, &op, pc0, buf, sizeof (buf));
 	pc1 = pc0 + op.length;
 	// XXX: Does not works for 'ret'
 	pc2 = op.jump?op.jump:0;
@@ -232,7 +232,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	if (dbg->anal && dbg->reg) {
 		ut64 pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-		r_anal_aop (dbg->anal, &op, pc, buf, sizeof (buf));
+		r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
 		if (op.type & R_ANAL_OP_TYPE_CALL) {
 			ut64 bpaddr = pc + op.length;
 			r_bp_add_sw (dbg->bp, bpaddr, 1, R_BP_PROT_EXEC);
@@ -293,7 +293,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 			}
 			pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 			dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-			r_anal_aop (dbg->anal, &op, pc, buf, sizeof (buf));
+			r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
 			n++;
 		} while (!(op.type&type));
 	} else eprintf ("Undefined pointer at dbg->anal\n");

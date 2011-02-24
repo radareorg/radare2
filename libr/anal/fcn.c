@@ -43,7 +43,7 @@ R_API void r_anal_fcn_free(void *_fcn) {
 }
 
 R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
-	RAnalOp aop;
+	RAnalOp op;
 	RAnalRef *ref;
 	char *varname;
 	int oplen, idx = 0;
@@ -52,7 +52,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, 
 	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
 		R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
 	while (idx < len) {
-		if ((oplen = r_anal_aop (anal, &aop, addr+idx, buf+idx, len-idx)) == 0) {
+		if ((oplen = r_anal_op (anal, &op, addr+idx, buf+idx, len-idx)) == 0) {
 			if (idx == 0) {
 				VERBOSE eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
 				return R_ANAL_RET_END;
@@ -62,36 +62,36 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, 
 		idx += oplen;
 		fcn->size += oplen;
 		/* TODO: Parse fastargs (R_ANAL_VAR_ARGREG) */
-		switch (aop.stackop) {
+		switch (op.stackop) {
 		case R_ANAL_STACK_INCSTACK:
-			fcn->stack += aop.value;
+			fcn->stack += op.value;
 			break;
 		case R_ANAL_STACK_SET:
-			if (aop.ref > 0) {
-				varname = r_str_dup_printf ("arg_%x", aop.ref);
-				r_anal_var_add (anal, fcn, aop.addr, aop.ref,
+			if (op.ref > 0) {
+				varname = r_str_dup_printf ("arg_%x", op.ref);
+				r_anal_var_add (anal, fcn, op.addr, op.ref,
 						R_ANAL_VAR_TYPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 1);
 			} else {
-				varname = r_str_dup_printf ("local_%x", -aop.ref);
-				r_anal_var_add (anal, fcn, aop.addr, -aop.ref,
+				varname = r_str_dup_printf ("local_%x", -op.ref);
+				r_anal_var_add (anal, fcn, op.addr, -op.ref,
 						R_ANAL_VAR_TYPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 1);
 			}
 			free (varname);
 			break;
 		case R_ANAL_STACK_GET:
-			if (aop.ref > 0) {
-				varname = r_str_dup_printf ("arg_%x", aop.ref);
-				r_anal_var_add (anal, fcn, aop.addr, aop.ref,
+			if (op.ref > 0) {
+				varname = r_str_dup_printf ("arg_%x", op.ref);
+				r_anal_var_add (anal, fcn, op.addr, op.ref,
 						R_ANAL_VAR_TYPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 0);
 			} else {
-				varname = r_str_dup_printf ("local_%x", -aop.ref);
-				r_anal_var_add (anal, fcn, aop.addr, -aop.ref,
+				varname = r_str_dup_printf ("local_%x", -op.ref);
+				r_anal_var_add (anal, fcn, op.addr, -op.ref,
 						R_ANAL_VAR_TYPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 0);
 			}
 			free (varname);
 			break;
 		}
-		switch (aop.type) {
+		switch (op.type) {
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
@@ -101,10 +101,10 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, 
 				return R_ANAL_RET_ERROR;
 			}
 			ref = R_NEW (RAnalRef);
-			ref->type = aop.type == R_ANAL_OP_TYPE_CALL?
+			ref->type = op.type == R_ANAL_OP_TYPE_CALL?
 				R_ANAL_REF_TYPE_CALL : R_ANAL_REF_TYPE_CODE;
-			ref->at = aop.addr;
-			ref->addr = aop.jump;
+			ref->at = op.addr;
+			ref->addr = op.jump;
 			r_list_append (fcn->refs, ref);
 			break;
 		case R_ANAL_OP_TYPE_RET:
@@ -207,7 +207,7 @@ R_API int r_anal_fcn_add_bb(RAnalFcn *fcn, ut64 addr, ut64 size, ut64 jump, ut64
 
 R_API int r_anal_fcn_split_bb(RAnalFcn *fcn, RAnalBlock *bb, ut64 addr) {
 	RAnalBlock *bbi;
-	RAnalOp *aopi;
+	RAnalOp *opi;
 	RListIter *iter;
 
 	r_list_foreach (fcn->bbs, iter, bbi)
@@ -231,13 +231,13 @@ R_API int r_anal_fcn_split_bb(RAnalFcn *fcn, RAnalBlock *bb, ut64 addr) {
 				bb->type = bbi->type;
 				bbi->type = R_ANAL_BB_TYPE_BODY;
 			}
-			iter = r_list_iterator (bbi->aops);
+			iter = r_list_iterator (bbi->ops);
 			while (r_list_iter_next (iter)) {
-				aopi = r_list_iter_get (iter);
-				if (aopi->addr >= addr) {
-					r_list_split (bbi->aops, aopi);
+				opi = r_list_iter_get (iter);
+				if (opi->addr >= addr) {
+					r_list_split (bbi->ops, opi);
 					bbi->ninstr--;
-					r_list_append (bb->aops, aopi);
+					r_list_append (bb->ops, opi);
 					bb->ninstr++;
 				}
 			}
@@ -248,7 +248,7 @@ R_API int r_anal_fcn_split_bb(RAnalFcn *fcn, RAnalBlock *bb, ut64 addr) {
 
 R_API int r_anal_fcn_overlap_bb(RAnalFcn *fcn, RAnalBlock *bb) {
 	RAnalBlock *bbi;
-	RAnalOp *aopi;
+	RAnalOp *opi;
 	RListIter *iter;
 
 	r_list_foreach (fcn->bbs, iter, bbi)
@@ -261,9 +261,9 @@ R_API int r_anal_fcn_overlap_bb(RAnalFcn *fcn, RAnalBlock *bb) {
 				bb->type = R_ANAL_BB_TYPE_HEAD;
 				bbi->type = bbi->type^R_ANAL_BB_TYPE_HEAD;
 			} else bb->type = R_ANAL_BB_TYPE_BODY;
-			r_list_foreach (bb->aops, iter, aopi)
-				if (aopi->addr >= bbi->addr)
-					r_list_unlink (bb->aops, aopi);
+			r_list_foreach (bb->ops, iter, opi)
+				if (opi->addr >= bbi->addr)
+					r_list_unlink (bb->ops, opi);
 			r_list_append (fcn->bbs, bb);
 			return R_ANAL_RET_END;
 		}

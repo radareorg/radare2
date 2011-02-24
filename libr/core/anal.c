@@ -8,14 +8,14 @@
 #include <r_core.h>
 
 static char *r_core_anal_graph_label(RCore *core, struct r_anal_bb_t *bb, int opts) {
-	RAnalOp *aopi;
+	RAnalOp *opi;
 	RListIter *iter;
 	char cmd[1024], file[1024], *cmdstr = NULL, *filestr = NULL, *str = NULL;
 	int i, j, line = 0, oline = 0, idx = 0;
 
 	if (opts & R_CORE_ANAL_GRAPHLINES) {
-		r_list_foreach (bb->aops, iter, aopi) {
-			r_bin_meta_get_line (core->bin, aopi->addr, file, sizeof (file)-1, &line);
+		r_list_foreach (bb->ops, iter, opi) {
+			r_bin_meta_get_line (core->bin, opi->addr, file, sizeof (file)-1, &line);
 			if (line != 0 && line != oline && strcmp (file, "??")) {
 				filestr = r_file_slurp_line (file, line, 0);
 				if (filestr) {
@@ -464,7 +464,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 			if (ret != core->blocksize)
 				break;
 			for (i=0; i<core->blocksize-OPSZ; i++) {
-				if (!r_anal_aop (core->anal, &op, at+i, buf+i, core->blocksize-i))
+				if (!r_anal_op (core->anal, &op, at+i, buf+i, core->blocksize-i))
 					continue;
 				if (op.type == R_ANAL_OP_TYPE_JMP || op.type == R_ANAL_OP_TYPE_CJMP ||
 					op.type == R_ANAL_OP_TYPE_CALL) {

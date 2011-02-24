@@ -118,36 +118,36 @@ R_API int r_anal_set_big_endian(RAnal *anal, int bigend) {
 }
 
 R_API char *r_anal_strmask (RAnal *anal, const char *data) {
-	RAnalOp *aop;
+	RAnalOp *op;
 	ut8 *buf;
 	char *ret = NULL;
 	int oplen, len, idx = 0;
 
 	ret = strdup (data);
 	buf = malloc (strlen (data));
-	aop = r_anal_aop_new ();
-	if (aop == NULL || ret == NULL || buf == NULL) {
-		free (aop);
+	op = r_anal_op_new ();
+	if (op == NULL || ret == NULL || buf == NULL) {
+		free (op);
 		free (buf);
 		free (ret);
 		return NULL;
 	}
 	len = r_hex_str2bin (data, buf);
 	while (idx < len) {
-		if ((oplen = r_anal_aop (anal, aop, 0, buf+idx, len-idx)) == 0)
+		if ((oplen = r_anal_op (anal, op, 0, buf+idx, len-idx)) == 0)
 			break;
-		switch (aop->type) {
+		switch (op->type) {
 		case R_ANAL_OP_TYPE_CALL:
 		case R_ANAL_OP_TYPE_UCALL:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_UJMP:
-			if (aop->nopcode != 0)
-				memset (ret+(idx+aop->nopcode)*2, '.', (oplen-aop->nopcode)*2);
+			if (op->nopcode != 0)
+				memset (ret+(idx+op->nopcode)*2, '.', (oplen-op->nopcode)*2);
 		}
 		idx += oplen;
 	}
-	free (aop);
+	free (op);
 	free (buf);
 	return ret;
 }

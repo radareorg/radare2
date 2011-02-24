@@ -179,11 +179,11 @@ public class RAnal {
 		public uint64 fail;
 		public BlockType type;
 		public BlockDiff diff;
-		public RList<RAnal.Op> aops;
+		public RList<RAnal.Op> ops;
 	}
 
 	[Compact]
-	[CCode (cprefix="r_anal_aop_", cname="RAnalOp")]
+	[CCode (cprefix="r_anal_op_", cname="RAnalOp")]
 	public class Op {
 		public uint64 addr;
 		public int type;

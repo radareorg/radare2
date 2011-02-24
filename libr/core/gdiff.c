@@ -12,25 +12,25 @@
 #define THRESHOLDBB 0.7F
 
 static ut8* gdiff_fingerprint(RAnal *a, ut8* buf, int len) {
-	RAnalOp *aop;
+	RAnalOp *op;
 	ut8 *ret = NULL;
 	int oplen, idx = 0;
 
 	if (!(ret = malloc (len)))
 		return NULL;
 	memcpy (ret, buf, len);
-	if (!(aop = r_anal_aop_new ())) {
+	if (!(op = r_anal_op_new ())) {
 		free (ret);
 		return NULL;
 	}
 	while (idx < len) {
-		if ((oplen = r_anal_aop (a, aop, 0, buf+idx, len-idx)) == 0)
+		if ((oplen = r_anal_op (a, op, 0, buf+idx, len-idx)) == 0)
 			break;
-		if (aop->nopcode != 0)
-			memset (ret+idx+aop->nopcode, 0, oplen-aop->nopcode);
+		if (op->nopcode != 0)
+			memset (ret+idx+op->nopcode, 0, oplen-op->nopcode);
 		idx += oplen;
 	}
-	free (aop);
+	free (op);
 	return ret;
 }
 

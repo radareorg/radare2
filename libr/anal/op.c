@@ -5,47 +5,47 @@
 #include <r_util.h>
 #include <r_list.h>
 
-R_API RAnalOp *r_anal_aop_new() {
-	RAnalOp *aop = R_NEW (RAnalOp);
-	if (aop) {
-		memset (aop, 0, sizeof (RAnalOp));
-		aop->mnemonic = NULL;
-		aop->addr = -1;
-		aop->jump = -1;
-		aop->fail = -1;
-		aop->ref = -1;
-		aop->value = -1;
+R_API RAnalOp *r_anal_op_new() {
+	RAnalOp *op = R_NEW (RAnalOp);
+	if (op) {
+		memset (op, 0, sizeof (RAnalOp));
+		op->mnemonic = NULL;
+		op->addr = -1;
+		op->jump = -1;
+		op->fail = -1;
+		op->ref = -1;
+		op->value = -1;
 	}
-	return aop;
+	return op;
 }
 
-R_API RList *r_anal_aop_list_new() {
+R_API RList *r_anal_op_list_new() {
 	RList *list = r_list_new ();
-	list->free = &r_anal_aop_free;
+	list->free = &r_anal_op_free;
 	return list;
 }
 
-R_API void r_anal_aop_free(void *_aop) {
-	if (_aop) {
-		RAnalOp *aop = _aop;
-		r_anal_value_free (aop->src[0]);
-		r_anal_value_free (aop->src[1]);
-		r_anal_value_free (aop->src[2]);
-		r_anal_value_free (aop->dst);
-		free (aop->mnemonic);
-		free (aop);
+R_API void r_anal_op_free(void *_op) {
+	if (_op) {
+		RAnalOp *op = _op;
+		r_anal_value_free (op->src[0]);
+		r_anal_value_free (op->src[1]);
+		r_anal_value_free (op->src[2]);
+		r_anal_value_free (op->dst);
+		free (op->mnemonic);
+		free (op);
 	}
 }
 
-R_API int r_anal_aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *data, int len) {
-	if (anal && aop && anal->cur && anal->cur->aop)
-		return anal->cur->aop (anal, aop, addr, data, len);
+R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+	if (anal && op && anal->cur && anal->cur->op)
+		return anal->cur->op (anal, op, addr, data, len);
 	return R_FALSE;
 }
 
 // TODO: return RAnalException *
-R_API int r_anal_aop_execute (RAnal *anal, RAnalOp *aop) {
-	switch (aop->type) {
+R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
+	switch (op->type) {
 	case R_ANAL_OP_TYPE_ADD:
 		// dst = src[0] + src[1] + src[2]
 		break;
@@ -63,7 +63,7 @@ R_API int r_anal_aop_execute (RAnal *anal, RAnalOp *aop) {
 	return R_TRUE;
 }
 
-R_API char *r_anal_aop_to_string(RAnal *anal, RAnalOp *op) {
+R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	int retsz = 128;
 	char *cstr, *ret = malloc (128);
 	char *r0 = r_anal_value_to_string (op->dst);

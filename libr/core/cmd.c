@@ -185,7 +185,7 @@ core->inc = 0;
 #endif
 	if (core->print->cur_enabled) {
 		// TODO: support in-the-middle-of-instruction too
-		if (r_anal_aop (core->anal, &analop, core->offset+core->print->cur,
+		if (r_anal_op (core->anal, &analop, core->offset+core->print->cur,
 			buf+core->print->cur, (int)(len-core->print->cur))) {
 			// TODO: check for analop.type and ret
 			dest = analop.jump;
@@ -223,7 +223,7 @@ core->inc = 0;
 		}
 if (core->inc == 0)
 	core->inc = ret;
-		r_anal_aop (core->anal, &analop, at, buf+idx, (int)(len-idx));
+		r_anal_op (core->anal, &analop, at, buf+idx, (int)(len-idx));
 		// Show xrefs
 		if (show_xrefs) {
 			RList *xrefs;
@@ -411,7 +411,7 @@ r_cons_printf ("%s                             ", pre);
 		if (decode) {
 			// TODO: Use data from code analysis..not raw analop here
 			// if we want to get more information
-			opstr = r_anal_aop_to_string (core->anal, &analop);
+			opstr = r_anal_op_to_string (core->anal, &analop);
 		} else
 		if (pseudo) {
 			r_parse_parse (core->parser, asmop.buf_asm, str);
@@ -2202,7 +2202,7 @@ static int cmd_anal(void *data, const char *input) {
 			RAnalOp aop;
 
 			for (idx=ret=0; idx<len; idx+=ret) {
-				ret = r_anal_aop (core->anal, &aop,
+				ret = r_anal_op (core->anal, &aop,
 					core->offset+idx, buf + idx, (len-idx));
 				if (ret<1) {
 					eprintf ("Oops at 0x%08"PFMT64x"\n", core->offset+idx);
@@ -2457,7 +2457,7 @@ static int cmd_anal(void *data, const char *input) {
 					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, aop->length);
 					tp->count = atoi (ptr+1);
 					r_anal_trace_bb (core->anal, addr);
-					r_anal_aop_free (aop);
+					r_anal_op_free (aop);
 				} else eprintf ("Cannot analyze opcode at 0x%"PFMT64x"\n", addr);
 			}
 			break;
@@ -4242,7 +4242,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 
 static int cmd_debug(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	struct r_anal_aop_t analop;
+	struct r_anal_op_t analop;
 	int len, times, sig;
 	ut64 addr;
 	char *ptr;
@@ -4444,7 +4444,7 @@ static int cmd_debug(void *data, const char *input) {
 					/* XXX Bottleneck..we need to reuse the bytes read by traptrace */
 					// XXX Do asm.arch should define the max size of opcode?
 					r_core_read_at (core, addr, buf, 32); // XXX longer opcodes?
-					r_anal_aop (core->anal, &analop, addr, buf, sizeof (buf));
+					r_anal_op (core->anal, &analop, addr, buf, sizeof (buf));
 				} while (r_bp_traptrace_at (core->dbg->bp, addr, analop.length));
 				r_bp_traptrace_enable (core->dbg->bp, R_FALSE);
 			}

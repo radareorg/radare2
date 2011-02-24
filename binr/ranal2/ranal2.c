@@ -62,27 +62,27 @@ static char *optype2str(int type) {
 
 }
 
-static int analyze(RAnal *anal, RAnalOp *aop, ut64 offset, ut8* buf, int len) {
+static int analyze(RAnal *anal, RAnalOp *op, ut64 offset, ut8* buf, int len) {
 	char *bytes, *optype = NULL, *stackop = NULL;
 	int ret;
 
-	ret = r_anal_aop (anal, aop, offset, buf, len);
+	ret = r_anal_op (anal, op, offset, buf, len);
 	if (ret) {
-		stackop = stackop2str (aop->stackop);
-		optype = optype2str (aop->type);
+		stackop = stackop2str (op->stackop);
+		optype = optype2str (op->type);
 		bytes = r_hex_bin2strdup (buf, ret);
 		printf ("bytes:    %s\n", bytes);
 		printf ("type:     %s\n", optype);
-		if (aop->jump != -1LL)
-			printf ("jump:     0x%08"PFMT64x"\n", aop->jump);
-		if (aop->fail != -1LL)
-			printf ("fail:     0x%08"PFMT64x"\n", aop->fail);
-		if (aop->ref != -1LL)
-			printf ("ref:      0x%08"PFMT64x"\n", aop->ref);
-		if (aop->value != -1LL)
-			printf ("value:    0x%08"PFMT64x"\n", aop->value);
+		if (op->jump != -1LL)
+			printf ("jump:     0x%08"PFMT64x"\n", op->jump);
+		if (op->fail != -1LL)
+			printf ("fail:     0x%08"PFMT64x"\n", op->fail);
+		if (op->ref != -1LL)
+			printf ("ref:      0x%08"PFMT64x"\n", op->ref);
+		if (op->value != -1LL)
+			printf ("value:    0x%08"PFMT64x"\n", op->value);
 		printf ("stackop:  %s\n", stackop);
-		printf ("stackptr: %"PFMT64d"\n", aop->stackptr);
+		printf ("stackptr: %"PFMT64d"\n", op->stackptr);
 		printf ("--\n");
 		free (optype);
 		free (stackop);
@@ -107,7 +107,7 @@ static int usage() {
 int main(int argc, char **argv) {
 	RLib *lib;
 	RAnal *anal = r_anal_new ();
-	RAnalOp *aop = r_anal_aop_new ();
+	RAnalOp *op = r_anal_op_new ();
 	ut8 *ptr, *buf = NULL, *data = NULL;
 	ut64 offset = 0x8048000LL;
 	char *arch = NULL;
@@ -184,16 +184,16 @@ int main(int argc, char **argv) {
 	}
 	/* Analyze */
 	for (idx=ret=0; idx<len; idx+=ret) {
-		if (!(ret = analyze (anal, aop, offset+idx, data+idx, len-idx))) {
+		if (!(ret = analyze (anal, op, offset+idx, data+idx, len-idx))) {
 			eprintf ("Ooops\n");
 			free (data);
 			r_anal_free (anal);
-			r_anal_aop_free (aop);
+			r_anal_op_free (op);
 			return 1;
 		}
 	}
 	free (data);
 	r_anal_free (anal);
-	r_anal_aop_free (aop);
+	r_anal_op_free (op);
 	return 0;
 }

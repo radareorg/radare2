@@ -7,8 +7,8 @@
 
 // NOTE: buf should be at least 16 bytes!
 // XXX addr should be off_t for 64 love
-int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *bytes, int len) {
-//int arch_ppc_aop(ut64 addr, const u8 *bytes, struct aop_t *aop)
+int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len) {
+//int arch_ppc_op(ut64 addr, const u8 *bytes, struct op_t *op)
 // TODO swap endian here??
 	int opcode = (bytes[0] & 0xf8) >> 3; // bytes 0-5
 	short baddr  = ((bytes[2]<<8) | (bytes[3]&0xfc));// 16-29
@@ -17,61 +17,61 @@ int aop(RAnal *anal, RAnalOp *aop, ut64 addr, const ut8 *bytes, int len) {
 	//if (baddr>0x7fff)
 	//      baddr = -baddr;
 
-	memset (aop, '\0', sizeof (RAnalOp));
-	aop->addr = addr;
-	aop->type = R_ANAL_OP_TYPE_NOP;
-	aop->length = 4;
+	memset (op, '\0', sizeof (RAnalOp));
+	op->addr = addr;
+	op->type = R_ANAL_OP_TYPE_NOP;
+	op->length = 4;
 
 	//printf("OPCODE IS %08x : %02x (opcode=%d) baddr = %d\n", addr, bytes[0], opcode, baddr);
 
 	switch(opcode) {
 	case 11: // cmpi
-		aop->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ANAL_OP_TYPE_CMP;
 		break;
 	case 9: // pure branch
 		if (bytes[0] == 0x4e) {
 			// bctr
 		} else {
-			aop->jump = (aa)?(baddr):(addr+baddr);
-			if (lk) aop->fail = addr+4;
+			op->jump = (aa)?(baddr):(addr+baddr);
+			if (lk) op->fail = addr+4;
 		}
-		aop->eob = 1;
+		op->eob = 1;
 		break;
 	case 6: // bc // conditional jump
-		aop->type = R_ANAL_OP_TYPE_JMP;
-		aop->jump = (aa)?(baddr):(addr+baddr+4);
-		aop->eob = 1;
+		op->type = R_ANAL_OP_TYPE_JMP;
+		op->jump = (aa)?(baddr):(addr+baddr+4);
+		op->eob = 1;
 		break;
 	case 7: // sc/svc
-		aop->type = R_ANAL_OP_TYPE_SWI;
+		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
 #if 0
 	case 15: // bl
 		// OK
-		aop->type = R_ANAL_OP_TYPE_CJMP;
-		aop->jump = (aa)?(baddr):(addr+baddr);
-		aop->fail = addr+4;
-		aop->eob = 1;
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = (aa)?(baddr):(addr+baddr);
+		op->fail = addr+4;
+		op->eob = 1;
 		break;
 #endif
 	case 8: // bne i tal
 		// OK
-		aop->type = R_ANAL_OP_TYPE_CJMP;
-		aop->jump = (aa)?(baddr):(addr+baddr+4);
-		aop->fail = addr+4;
-		aop->eob = 1;
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = (aa)?(baddr):(addr+baddr+4);
+		op->fail = addr+4;
+		op->eob = 1;
 		break;
 	case 19: // bclr/bcr/bcctr/bcc
-		aop->type = R_ANAL_OP_TYPE_RET; // jump to LR
+		op->type = R_ANAL_OP_TYPE_RET; // jump to LR
 		if (lk) {
-			aop->jump = 0xFFFFFFFF; // LR ?!?
-			aop->fail = addr+4;
+			op->jump = 0xFFFFFFFF; // LR ?!?
+			op->fail = addr+4;
 		}
-		aop->eob = 1;
+		op->eob = 1;
 		break;
 	}
-	aop->length = 4;
-	return aop->length;
+	op->length = 4;
+	return op->length;
 }
 
 static int set_reg_profile(RAnal *anal) {
@@ -137,7 +137,7 @@ struct r_anal_plugin_t r_anal_plugin_ppc = {
 	.desc = "PowerPC analysis plugin",
 	.init = NULL,
 	.fini = NULL,
-	.aop = &aop,
+	.op = &ppc_op,
 	.set_reg_profile = &set_reg_profile
 };
 
