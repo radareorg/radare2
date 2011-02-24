@@ -11,8 +11,8 @@
 
 #include "../arch/avr/disasm.c"
 
-static int disassemble(RAsm *a, RAsmAop *aop, ut8 *buf, ut64 len) {
-	return aop->inst_len = avrdis (aop->buf_asm, a->pc, buf, len);
+static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
+	return op->inst_len = avrdis (op->buf_asm, a->pc, buf, len);
 }
 
 RAsmPlugin r_asm_plugin_avr = {

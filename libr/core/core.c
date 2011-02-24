@@ -9,12 +9,12 @@ static int endian = 1; // XXX HACK
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RCore *core = (RCore *)userptr; // XXX ?
 	RFlagItem *flag;
-	RAnalOp aop;
+	RAnalOp op;
 	ut64 ret = 0;
 	*ok = 0;
 	if (str[0]=='$') {
 		*ok = 1;
-		r_anal_op (core->anal, &aop, core->offset,
+		r_anal_op (core->anal, &op, core->offset,
 			core->block, core->blocksize);
 		switch (str[1]) {
 		case '{':
@@ -30,10 +30,10 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				}
 			}
 			return 0;
-		case 'e': return aop.eob;
-		case 'j': return aop.jump;
-		case 'f': return aop.fail;
-		case 'r': return aop.ref;
+		case 'e': return op.eob;
+		case 'j': return op.jump;
+		case 'f': return op.fail;
+		case 'r': return op.ref;
 		case 'b': return core->blocksize;
 		case 's': return core->file->size;
 		case '?': return core->num->value;
@@ -452,21 +452,21 @@ R_API int r_core_seek_delta(RCore *core, st64 addr) {
 }
 
 R_API char *r_core_op_str(RCore *core, ut64 addr) {
-	RAsmAop aop;
+	RAsmOp op;
 	ut8 buf[64];
 	int ret;
 	r_asm_set_pc (core->assembler, addr);
 	r_core_read_at (core, addr, buf, sizeof (buf));
-	ret = r_asm_disassemble (core->assembler, &aop, buf, sizeof (buf));
-	return (ret>0)?strdup (aop.buf_asm): NULL;
+	ret = r_asm_disassemble (core->assembler, &op, buf, sizeof (buf));
+	return (ret>0)?strdup (op.buf_asm): NULL;
 }
 
 R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr) {
 	ut8 buf[64];
-	RAnalOp *aop = R_NEW (RAnalOp);
+	RAnalOp *op = R_NEW (RAnalOp);
 	r_core_read_at (core, addr, buf, sizeof (buf));
-	r_anal_op (core->anal, aop, addr, buf, sizeof (buf));
-	return aop;
+	r_anal_op (core->anal, op, addr, buf, sizeof (buf));
+	return op;
 }
 
 // TODO: move into core/io/rap? */

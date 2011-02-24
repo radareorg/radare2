@@ -44,7 +44,7 @@ R_API char* r_core_asm_search(RCore *core, const char *input, ut64 from, ut64 to
 #define OPSZ 8
 R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to) {
 	RCoreAsmHit *hit;
-	RAsmAop aop;
+	RAsmOp op;
 	RList *hits;
 	ut64 at, toff = core->offset;
 	ut8 *buf;
@@ -84,15 +84,15 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		idx = 0, matchcount = 0;
 		while (idx<core->blocksize) {
 			r_asm_set_pc (core->assembler, at+idx);
-			if (!(len = r_asm_disassemble (core->assembler, &aop, buf+idx, core->blocksize-idx))) {
+			if (!(len = r_asm_disassemble (core->assembler, &op, buf+idx, core->blocksize-idx))) {
 				if (matchcount != 0)
 					idx = tidx+1;
 				else idx++;
 				matchcount = 0;
 				continue;
 			}
-			if (strstr (aop.buf_asm, tokens[matchcount])) {
-				code = r_str_concatf (code, "%s; ", aop.buf_asm);
+			if (strstr (op.buf_asm, tokens[matchcount])) {
+				code = r_str_concatf (code, "%s; ", op.buf_asm);
 				if (matchcount == tokcount-1) {
 					if (tokcount == 1)
 						tidx = idx;
@@ -136,7 +136,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 
 R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 	RCoreAsmHit *hit;
-	RAsmAop aop;
+	RAsmOp op;
 	RList *hits = NULL;
 	ut8 *buf;
 	ut64 at;
@@ -161,7 +161,7 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 		while (at < addr) {
 			r_asm_set_pc (core->assembler, at);
 			//XXX HACK We need another way to detect invalid disasm!!
-			if (!(instrlen = r_asm_disassemble (core->assembler, &aop, buf+(len-(addr-at)), addr-at)) || strstr (aop.buf_asm, "invalid")) {
+			if (!(instrlen = r_asm_disassemble (core->assembler, &op, buf+(len-(addr-at)), addr-at)) || strstr (op.buf_asm, "invalid")) {
 				break;
 			} else {
 				at += instrlen;

@@ -91,7 +91,7 @@ static void print_buf(char *str) {
 
 static int rasm_asm(char *buf, ut64 offset, ut64 len, int bin) {
 	struct r_asm_code_t *acode;
-	struct r_asm_aop_t aop;
+	struct r_asm_op_t op;
 	int ret, idx, i;
 
 	r_asm_set_pc (a, offset);
@@ -102,12 +102,12 @@ static int rasm_asm(char *buf, ut64 offset, ut64 len, int bin) {
 			printf ("%c", acode->buf[i]);
 	else print_buf (acode->buf_hex);
 	for (ret = 0, idx = acode->len; idx < len; idx+=ret) {
-		if (!(ret = r_asm_assemble (a, &aop, "nop")))
+		if (!(ret = r_asm_assemble (a, &op, "nop")))
 			return 0;
 		if (bin)
 			for (i = 0; i < ret; i++)
-				printf ("%c", aop.buf[i]);
-		else print_buf (aop.buf_hex);
+				printf ("%c", op.buf[i]);
+		else print_buf (op.buf_hex);
 	}
 	if (!bin && len && idx == len) printf ("\n");
 	r_asm_code_free (acode);

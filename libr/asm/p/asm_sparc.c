@@ -56,11 +56,11 @@ static int buf_fprintf(void *stream, const char *format, ...)
 	return 0;
 }
 
-static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len)
+static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, ut8 *buf, ut64 len)
 {
 	static struct disassemble_info disasm_obj;
 
-	buf_global = aop->buf_asm;
+	buf_global = op->buf_asm;
 	Offset = a->pc;
 	memcpy(bytes, buf, 4); // TODO handle thumb
 
@@ -76,13 +76,13 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 	disasm_obj.fprintf_func = &buf_fprintf;
 	disasm_obj.stream = stdout;
 
-	aop->buf_asm[0]='\0';
-	aop->inst_len = print_insn_sparc((bfd_vma)Offset, &disasm_obj);
+	op->buf_asm[0]='\0';
+	op->inst_len = print_insn_sparc((bfd_vma)Offset, &disasm_obj);
 
-	if (aop->inst_len == -1)
-		strncpy(aop->buf_asm, " (data)", R_ASM_BUFSIZE);
+	if (op->inst_len == -1)
+		strncpy(op->buf_asm, " (data)", R_ASM_BUFSIZE);
 
-	return aop->inst_len;
+	return op->inst_len;
 }
 
 RAsmPlugin r_asm_plugin_sparc = {

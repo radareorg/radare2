@@ -8,7 +8,7 @@
 #include <r_asm.h>
 
 
-static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len) {
+static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, ut8 *buf, ut64 len) {
 	char *buf_cp, *b;
 	int i;
 
@@ -21,42 +21,42 @@ static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut6
 
 	switch(buf[0]) {
 	case '[':
-		strcpy (aop->buf_asm, "[ loop {");
+		strcpy (op->buf_asm, "[ loop {");
 		break;
 	case ']':
-		strcpy (aop->buf_asm, "] }"); // TODO: detect clause and put label name
+		strcpy (op->buf_asm, "] }"); // TODO: detect clause and put label name
 		break;
 	case '>':
-		if (i>1) strcpy (aop->buf_asm, "> add [ptr]");
-		else strcpy (aop->buf_asm, "> inc [ptr]");
+		if (i>1) strcpy (op->buf_asm, "> add [ptr]");
+		else strcpy (op->buf_asm, "> inc [ptr]");
 		break;
 	case '<':
-		if (i>1) strcpy (aop->buf_asm, "< sub [ptr]");
-		else strcpy (aop->buf_asm, "< dec [ptr]");
+		if (i>1) strcpy (op->buf_asm, "< sub [ptr]");
+		else strcpy (op->buf_asm, "< dec [ptr]");
 		break;
 	case '+':
-		if (i>1) strcpy (aop->buf_asm, "+ add [ptr]");
-		else strcpy (aop->buf_asm, "+ inc [ptr]");
+		if (i>1) strcpy (op->buf_asm, "+ add [ptr]");
+		else strcpy (op->buf_asm, "+ inc [ptr]");
 		break;
 	case '-':
-		if (i>1) strcpy (aop->buf_asm, "- sub [ptr]");
-		else strcpy (aop->buf_asm, "- dec [ptr]");
+		if (i>1) strcpy (op->buf_asm, "- sub [ptr]");
+		else strcpy (op->buf_asm, "- dec [ptr]");
 		break;
 	case ',':
-		strcpy (aop->buf_asm, ", [ptr] = getch()");
+		strcpy (op->buf_asm, ", [ptr] = getch()");
 		break;
 	case '.':
-		strcpy (aop->buf_asm, ". print( [ptr] )");
+		strcpy (op->buf_asm, ". print( [ptr] )");
 		break;
 	case '\x00':
-		strcpy (aop->buf_asm, "  trap");
+		strcpy (op->buf_asm, "  trap");
 		break;
 	default:
-		strcpy (aop->buf_asm, "  nop");
+		strcpy (op->buf_asm, "  nop");
 		break;
 	}
 
-	if (i>0) sprintf (aop->buf_asm, "%s, %d", aop->buf_asm, i+1);
+	if (i>0) sprintf (op->buf_asm, "%s, %d", op->buf_asm, i+1);
 	if (i<1) i=1; else i++;
 
 	free (buf_cp);

@@ -87,10 +87,10 @@ static void printoffset(ut64 off, int show_color) {
 }
 
 // TODO: move somewhere else
-R_API RAsmAop *r_core_disassemble (RCore *core, ut64 addr) {
+R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 	ut8 buf[4096];
 	static RBuffer *b = NULL; // XXX: never freed and non-thread safe. move to RCore
-	RAsmAop *aop = R_NEW (RAsmAop);
+	RAsmOp *op = R_NEW (RAsmOp);
 	if (b == NULL) {
 		b = r_buf_new ();
 		if (r_core_read_at (core, addr, buf, sizeof (buf))) {
@@ -105,11 +105,11 @@ R_API RAsmAop *r_core_disassemble (RCore *core, ut64 addr) {
 			} else return NULL;
 		}
 	}
-	if (r_asm_disassemble (core->assembler, aop, b->buf, b->length)<1) {
-		free (aop);
+	if (r_asm_disassemble (core->assembler, op, b->buf, b->length)<1) {
+		free (op);
 		return NULL;
 	}
-	return aop;
+	return op;
 }
 
 /* TODO: move to print/disasm.c */
@@ -121,7 +121,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	int middle = 0;
 	char str[128], strsub[128];
 	char *line = NULL, *comment, *opstr, *osl = NULL; // old source line
-	RAsmAop asmop;
+	RAsmOp asmop;
 	RAnalOp analop;
 	RFlagItem *flag;
 	RMetaItem *mi;
@@ -296,7 +296,7 @@ r_cons_printf ("%s                             ", pre);
 			ostackptr = stackptr;
 			stackptr += analop.stackptr;
 			/* XXX if we reset the stackptr 'ret 0x4' has not effect.
-			 * Use RAnalFcn->RAnalAop->stackptr? */
+			 * Use RAnalFcn->RAnalOp->stackptr? */
 			if (analop.type == R_ANAL_OP_TYPE_RET)
 				stackptr = 0;
 		}
@@ -457,7 +457,7 @@ r_cons_printf ("%s                             ", pre);
 			r_cons_printf (" ;  *middle* %d", ret);
 		}
 		if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
-			RAsmAop ao; /* disassemble for the vm .. */
+			RAsmOp ao; /* disassemble for the vm .. */
 			int os = core->assembler->syntax;
 			r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
 			ret = r_asm_disassemble (core->assembler, &ao, buf+idx, len-idx);
@@ -2195,28 +2195,28 @@ static int cmd_anal(void *data, const char *input) {
 			" ao 5     ; display opcode analysis of 5 opcodes\n");
 		} else
 		if (input[1] == 'e') {
-			eprintf ("TODO: r_anal_aop_execute\n");
+			eprintf ("TODO: r_anal_op_execute\n");
 		} else {
 			int ret, idx;
 			ut8 *buf = core->block;
-			RAnalOp aop;
+			RAnalOp op;
 
 			for (idx=ret=0; idx<len; idx+=ret) {
-				ret = r_anal_op (core->anal, &aop,
+				ret = r_anal_op (core->anal, &op,
 					core->offset+idx, buf + idx, (len-idx));
 				if (ret<1) {
 					eprintf ("Oops at 0x%08"PFMT64x"\n", core->offset+idx);
 					break;
 				}
 				r_cons_printf ("addr: 0x%08"PFMT64x"\n", core->offset+idx);
-				r_cons_printf ("size: %d\n", aop.length);
-				r_cons_printf ("type: %d\n", aop.type); // TODO: string
-				r_cons_printf ("eob: %d\n", aop.eob);
-				r_cons_printf ("jump: 0x%08"PFMT64x"\n", aop.jump);
-				r_cons_printf ("fail: 0x%08"PFMT64x"\n", aop.fail);
-				r_cons_printf ("stack: %d\n", aop.stackop); // TODO: string
-				r_cons_printf ("cond: %d\n", aop.cond); // TODO: string
-				r_cons_printf ("family: %d\n", aop.family);
+				r_cons_printf ("size: %d\n", op.length);
+				r_cons_printf ("type: %d\n", op.type); // TODO: string
+				r_cons_printf ("eob: %d\n", op.eob);
+				r_cons_printf ("jump: 0x%08"PFMT64x"\n", op.jump);
+				r_cons_printf ("fail: 0x%08"PFMT64x"\n", op.fail);
+				r_cons_printf ("stack: %d\n", op.stackop); // TODO: string
+				r_cons_printf ("cond: %d\n", op.cond); // TODO: string
+				r_cons_printf ("family: %d\n", op.family);
 				r_cons_printf ("\n");
 				//r_cons_printf ("false: 0x%08"PFMT64x"\n", core->offset+idx);
 			}
@@ -2450,14 +2450,14 @@ static int cmd_anal(void *data, const char *input) {
 			addr = r_num_math (core->num, ptr);
 			ptr = strchr (ptr, ' ');
 			if (ptr != NULL) {
-				RAnalOp *aop = r_core_op_anal (core, addr);
-				if (aop != NULL) {
+				RAnalOp *op = r_core_op_anal (core, addr);
+				if (op != NULL) {
 					//eprintf("at(0x%08llx)=%d (%s)\n", addr, atoi(ptr+1), ptr+1);
 					//trace_set_times(addr, atoi(ptr+1));
-					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, aop->length);
+					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->length);
 					tp->count = atoi (ptr+1);
 					r_anal_trace_bb (core->anal, addr);
-					r_anal_op_free (aop);
+					r_anal_op_free (op);
 				} else eprintf ("Cannot analyze opcode at 0x%"PFMT64x"\n", addr);
 			}
 			break;

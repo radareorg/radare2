@@ -39,14 +39,14 @@ enum {
 	R_ASM_MOD_SRCREG2 = '2'
 };
 
-typedef struct r_asm_aop_t {
+typedef struct r_asm_op_t {
 	int  inst_len;
 	// But this is pretty slow..so maybe we should add some accessors
 	ut8  buf[R_ASM_BUFSIZE];
 	char buf_asm[R_ASM_BUFSIZE];
 	char buf_hex[R_ASM_BUFSIZE];
 	char buf_err[R_ASM_BUFSIZE];
-} RAsmAop;
+} RAsmOp;
 
 typedef struct r_asm_code_t {
 	int  len;
@@ -83,8 +83,8 @@ typedef struct r_asm_plugin_t {
 	int *bits;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-	int (*disassemble)(RAsm *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len);
-	int (*assemble)(RAsm *a, struct r_asm_aop_t *aop, const char *buf);
+	int (*disassemble)(RAsm *a, struct r_asm_op_t *op, ut8 *buf, ut64 len);
+	int (*assemble)(RAsm *a, struct r_asm_op_t *op, const char *buf);
 	RAsmModifyCallback modify;
 	int (*set_subarch)(RAsm *a, const char *buf);
 } RAsmPlugin;
@@ -102,8 +102,8 @@ R_API int r_asm_set_bits(RAsm *a, int bits);
 R_API int r_asm_set_big_endian(RAsm *a, int boolean);
 R_API int r_asm_set_syntax(RAsm *a, int syntax);
 R_API int r_asm_set_pc(RAsm *a, ut64 pc);
-R_API int r_asm_disassemble(RAsm *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len);
-R_API int r_asm_assemble(RAsm *a, struct r_asm_aop_t *aop, const char *buf);
+R_API int r_asm_disassemble(RAsm *a, struct r_asm_op_t *op, ut8 *buf, ut64 len);
+R_API int r_asm_assemble(RAsm *a, struct r_asm_op_t *op, const char *buf);
 R_API struct r_asm_code_t* r_asm_mdisassemble(RAsm *a, ut8 *buf, ut64 len);
 R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, const char *hexstr);
 R_API struct r_asm_code_t* r_asm_massemble(RAsm *a, const char *buf);
@@ -115,8 +115,8 @@ R_API int r_asm_code_set_equ (RAsmCode *code, const char *key, const char *value
 R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str);
 
 // accessors, to make bindings happy
-R_API char *r_asm_aop_get_hex(RAsmAop *aop);
-R_API char *r_asm_aop_get_asm(RAsmAop *aop);
+R_API char *r_asm_op_get_hex(RAsmOp *op);
+R_API char *r_asm_op_get_asm(RAsmOp *op);
 
 /* plugin pointers */
 extern RAsmPlugin r_asm_plugin_dummy;

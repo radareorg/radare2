@@ -693,7 +693,7 @@ R_API void r_core_visual_define (RCore *core) {
 
 /* TODO: use r_cmd here in core->vcmd..optimize over 255 table */ 
 R_API int r_core_visual_cmd(RCore *core, int ch) {
-	RAsmAop aop;
+	RAsmOp op;
 	char buf[1024];
 	int cols = core->print->cols;
 	ch = r_cons_arrow_to_hjkl (ch);
@@ -825,7 +825,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'j':
 		if (curset) {
 			if (printidx == 1 || printidx == 2)
-				cols = r_asm_disassemble (core->assembler, &aop, core->block, 32);
+				cols = r_asm_disassemble (core->assembler, &op, core->block, 32);
 			cursor += cols;
 			ocursor = -1;
 			{
@@ -864,7 +864,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'k':
 		if (curset) {
 			if (printidx == 1 || printidx == 2)
-				cols = r_asm_disassemble (core->assembler, &aop, core->block, 32);
+				cols = r_asm_disassemble (core->assembler, &op, core->block, 32);
 			cursor -= cols;
 			ocursor = -1;
 			if (cursor<0) {

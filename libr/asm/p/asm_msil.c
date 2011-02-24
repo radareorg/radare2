@@ -9,7 +9,7 @@
 #include "msil/demsil.c"
 
 static int arch_msil_disasm(char *str, unsigned char *buf, ut64 seek) {
-    int n;
+    ut32 n;
 
     DISASMSIL_OFFSET CodeBase = seek;
     ILOPCODE_STRUCT ilopar[8];
@@ -20,9 +20,9 @@ static int arch_msil_disasm(char *str, unsigned char *buf, ut64 seek) {
     return 0;
 }
 
-static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len) {
-	arch_msil_disasm (aop->buf_asm, buf, a->pc);
-	return (aop->inst_len=2);
+static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, ut8 *buf, ut64 len) {
+	arch_msil_disasm (op->buf_asm, buf, a->pc);
+	return (op->inst_len=2);
 }
 
 RAsmPlugin r_asm_plugin_msil = {

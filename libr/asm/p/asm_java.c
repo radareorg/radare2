@@ -9,18 +9,18 @@
 
 #include <r_core.h>
 static const char *lastfile = NULL;
-static int disassemble(RAsm *a, RAsmAop *aop, ut8 *buf, ut64 len) {
+static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	// XXX: crossmodule dependency
 	RCore *core = (RCore*)a->user;
 	if (core && core->file && lastfile != core->file->filename) {
 		lastfile = core->file->filename;
 		java_classdump (lastfile, 0);
 	} else javasm_init ();
-	return aop->inst_len = java_disasm (buf, aop->buf_asm);
+	return op->inst_len = java_disasm (buf, op->buf_asm);
 }
 
-static int assemble(RAsm *a, RAsmAop *aop, const char *buf) {
-	return aop->inst_len = java_assemble (aop->buf, buf);
+static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+	return op->inst_len = java_assemble (op->buf, buf);
 }
 
 RAsmPlugin r_asm_plugin_java = {

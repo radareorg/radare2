@@ -9,21 +9,21 @@
 #include <r_asm.h>
 #include "../arch/arm/arm.h"
 
-static int disassemble(RAsm *a, RAsmAop *aop, ut8 *buf, ut64 len) {
+static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	int *p = (int*)buf; // TODO : endian
-	aop->buf_asm[0]='\0';
-	aop->inst_len = armthumb_disassemble (aop->buf_asm, (ut32)a->pc, *p);
-	if (!aop->inst_len)
-		strncpy (aop->buf_asm, " (data)", R_ASM_BUFSIZE);
-	return aop->inst_len;
+	op->buf_asm[0]='\0';
+	op->inst_len = armthumb_disassemble (op->buf_asm, (ut32)a->pc, *p);
+	if (!op->inst_len)
+		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
+	return op->inst_len;
 }
 
-static int assemble(RAsm *a, RAsmAop *aop, const char *buf) {
-	int op = armass_assemble (buf, a->pc, R_TRUE);
-	if (op==-1)
+static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+	int opcode = armass_assemble (buf, a->pc, R_TRUE);
+	if (opcode==-1)
 		return -1;
-	r_mem_copyendian (aop->buf, (void *)&op, 2, a->big_endian);
-	return armthumb_length (op);
+	r_mem_copyendian (op->buf, (void *)&opcode, 2, a->big_endian);
+	return armthumb_length (opcode);
 }
 
 RAsmPlugin r_asm_plugin_armthumb = {

@@ -43,7 +43,7 @@ static int modify(RAsm *a, ut8 *buf, int field, ut64 val) {
 	return ret;
 }
 
-static int disassemble(RAsm *a, RAsmAop *aop, ut8 *buf, ut64 len) {
+static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	static ud_t disasm_obj;
 
 	ud_init (&disasm_obj);
@@ -54,10 +54,10 @@ static int disassemble(RAsm *a, RAsmAop *aop, ut8 *buf, ut64 len) {
 	ud_set_pc (&disasm_obj, a->pc);
 	ud_set_input_buffer (&disasm_obj, buf, len);
 	ud_disassemble (&disasm_obj);
-	aop->inst_len = ud_insn_len (&disasm_obj);
-	snprintf (aop->buf_asm, R_ASM_BUFSIZE, "%s", ud_insn_asm (&disasm_obj));
+	op->inst_len = ud_insn_len (&disasm_obj);
+	snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s", ud_insn_asm (&disasm_obj));
 
-	return aop->inst_len;
+	return op->inst_len;
 }
 
 RAsmPlugin r_asm_plugin_x86 = {

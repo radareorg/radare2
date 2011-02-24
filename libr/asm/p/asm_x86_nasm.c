@@ -6,11 +6,11 @@
 #include <r_asm.h>
 
 #if 0
-static int disassemble(struct r_asm_t *a, struct r_asm_aop_t *aop, ut8 *buf, ut64 len) {
+static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, ut8 *buf, ut64 len) {
 }
 #endif
 
-static int assemble(RAsm *a, RAsmAop *aop, const char *buf) {
+static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	char cmd[R_ASM_BUFSIZE];
 	ut8 *out;
 	int len = 0;
@@ -23,13 +23,13 @@ static int assemble(RAsm *a, RAsmAop *aop, const char *buf) {
 		"BITS %i\nORG 0x%"PFMT64x"\n%s\n__", a->bits, a->pc, buf);
 	out = (ut8 *)r_sys_cmd_str (cmd, "", &len);
 	if (out && memcmp (out, "/dev/stdin:", len>11?11:len)) {
-		memcpy (aop->buf, out, len<=R_ASM_BUFSIZE?len:R_ASM_BUFSIZE);
+		memcpy (op->buf, out, len<=R_ASM_BUFSIZE?len:R_ASM_BUFSIZE);
 	} else {
 		eprintf ("Error running 'nasm'\n");
 		len = 0;
 	}
 	if (out) free (out);
-	aop->inst_len = len;
+	op->inst_len = len;
 	return len;
 }
 
