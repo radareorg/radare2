@@ -61,22 +61,18 @@ static int __read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int len) {
 
 static int ptrace_write_at(int pid, const ut8 *buf, int sz, ut64 addr) {
         long words = sz / sizeof(long);
-        long last = (sz % sizeof(long))*sizeof(long);
+        long last = (sz % sizeof(long))*sizeof(long)*2;
 	long x, lr;
 
-	for (x=0;x<words;x++)
+	for (x=0; x<words; x++)
 		if (ptrace (PTRACE_POKEDATA, pid, &((long *)(long)addr)[x], ((long *)buf)[x]))
 			goto err;
 	if (last) {
-		lr = ptrace (PTRACE_PEEKTEXT, pid, &((long *)(long)addr)[x], 0);
-
-		/* Y despues me quejo que lisp tiene muchos parentesis... */
-		if ((lr == -1 && errno) || (ptrace (PTRACE_POKEDATA, pid,
-			&((long *)(long)addr)[x], // WTF IS THIS LISPY-C?
-			((lr&(-1L<<last))|(((long *)buf)[x]&(~(-1L<<last)))))))
-                goto err;
+		lr = ptrace (PTRACE_PEEKDATA, pid, &((long *)(long)addr)[x], 0);
+		lr = ((lr&(-1L<<last))|(((long *)buf)[x]&(~(-1L<<last))));
+		if (ptrace (PTRACE_POKETEXT, pid, (void*)((long)addr+(x*4)), (void*)lr))
+			goto err;
 	}
-
 	return sz;
 err:
 	return --x * sizeof(long) ;

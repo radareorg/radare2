@@ -377,6 +377,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "file.md5", "");
 	r_config_set (cfg, "file.sha1", "");
 	r_config_set (cfg, "file.type", "");
+	r_config_set_i (cfg, "magic.depth", 100);
 	r_config_set (cfg, "rap.loop", "true");
 	/* zoom */
 	r_config_set_i (cfg, "zoom.from", 0);

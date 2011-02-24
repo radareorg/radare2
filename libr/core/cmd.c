@@ -1703,18 +1703,63 @@ static int cmd_info(void *data, const char *input) {
 	return 0;
 }
 
-static void do_magic_here(RCore *core, const char *file) {
+static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth) {
 #if HAVE_LIB_MAGIC
+	const char *str;
 	magic_t ck;
+
+	if (depth--<0)
+		return;
+	if (addr != core->offset)
+		r_core_seek (core, addr, R_TRUE);
 	if (*file == ' ') file++;
 	if (!*file) file = NULL;
 	ck = magic_open (0);
-	magic_load (ck, file);
-	r_cons_printf ("%s\n", magic_buffer (ck, core->block, core->blocksize));
+	if (magic_load (ck, file) == -1) {
+		eprintf ("r_core_magic(\"%s\") %s\n", file, magic_error (ck));
+		return;
+	}
+	r_cons_printf ("# pm %s @ 0x%"PFMT64x"\n", file, addr);
+	str = magic_buffer (ck, core->block, core->blocksize);
+	if (str) {
+		ut64 addr;
+		char *fmt, *q, *p = strdup (str);
+		// processing newlinez
+		for (q=p; *q; q++)
+			if (q[0]=='\\' && q[1]=='n') {
+				*q = '\n';
+				strcpy (q+1, q+((q[2]==' ')?3:2));
+			}
+		r_cons_printf ("%s\n", p);
+		// walking childs
+		for (q=p; *q; q++) {
+			switch (*q) {
+			case ' ':
+				fmt = q+1;
+				break;
+			case '@':
+				*q = 0;
+				if (!memcmp (q+1, "0x", 2))
+					sscanf (q+3, "%"PFMT64x, &addr);
+				else sscanf (q+1, "%"PFMT64d, &addr);
+				r_core_magic_at (core, fmt, addr, depth);
+				*q = '@';
+			}
+		}
+		free (p);
+	}
 	magic_close (ck);
 #else
-	eprintf ("Compiled without magic :(\n");
+	eprintf ("r_core_magic: Compiled without magic :(\n");
 #endif
+}
+
+static void r_core_magic(RCore *core, const char *file) {
+	int depth = r_config_get_i (core->config, "magic.depth");
+	ut64 addr = core->offset;
+	r_core_magic_at (core, file, addr, depth);
+	if (addr != core->offset)
+		r_core_seek (core, addr, R_TRUE);
 }
 
 static int cmd_print(void *data, const char *input) {
@@ -1818,7 +1863,7 @@ static int cmd_print(void *data, const char *input) {
 		r_print_string (core->print, core->offset, core->block, len, 1, 1, 0); //, 78, 1);
 		break;
 	case 'm':
-		do_magic_here (core, input+1);
+		r_core_magic (core, input+1);
 		break;
 	case 'u':
 		r_print_string (core->print, core->offset, core->block, len, 0, 1, 1); //, 78, 1);
