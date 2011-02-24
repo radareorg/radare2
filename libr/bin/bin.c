@@ -174,14 +174,14 @@ static int r_bin_extract(RBin *bin, int idx) {
 		return bin->curxtr->extract (bin, idx);
 	bin->curarch.file = strdup (bin->file);
 	if (!(buf = (ut8*)r_file_slurp (bin->file, &bin->curarch.size))) 
-		return R_FALSE;
+		return 0;
 	bin->curarch.buf = r_buf_new ();
 	if (!r_buf_set_bytes (bin->curarch.buf, buf, bin->curarch.size)) {
 		free (buf);
-		return R_FALSE;
+		return 0;
 	}
 	free (buf);
-	return R_TRUE;
+	return 1;
 }
 
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo) {
