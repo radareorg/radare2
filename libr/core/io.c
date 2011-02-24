@@ -126,5 +126,5 @@ R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 	ret = r_io_read_at (core->io, addr, buf, size);
 	if (addr>=core->offset && addr<=core->offset+core->blocksize)
 		r_core_block_read (core, 0);
-	return (ret==-1)?R_FALSE:R_TRUE;
+	return (ret!=-1);
 }

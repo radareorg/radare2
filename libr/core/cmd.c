@@ -24,7 +24,7 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 	switch (mode) {
 	case 'p':
 		for (j=0; j<size; j++)
-			if (IS_PRINTABLE(bufz[j]))
+			if (IS_PRINTABLE (bufz[j]))
 				ret++;
 		break;
 	case 'f':
@@ -84,6 +84,32 @@ static void printoffset(ut64 off, int show_color) {
 	if (show_color)
 		r_cons_printf (Color_GREEN"0x%08"PFMT64x"  "Color_RESET, off);
 	else r_cons_printf ("0x%08"PFMT64x"  ", off);
+}
+
+// TODO: move somewhere else
+R_API RAsmAop *r_core_disassemble (RCore *core, ut64 addr) {
+	ut8 buf[4096];
+	static RBuffer *b = NULL; // XXX: never freed and non-thread safe. move to RCore
+	RAsmAop *aop = R_NEW (RAsmAop);
+	if (b == NULL) {
+		b = r_buf_new ();
+		if (r_core_read_at (core, addr, buf, sizeof (buf))) {
+			b->base = addr;
+			r_buf_set_bytes (b, buf, 4096);
+		} else return NULL;
+	} else {
+		if (addr < b->base || addr > b->base+b->length-32) {
+			if (r_core_read_at (core, addr, buf, sizeof (buf))) {
+				b->base = addr;
+				r_buf_set_bytes (b, buf, 4096);
+			} else return NULL;
+		}
+	}
+	if (r_asm_disassemble (core->assembler, aop, b->buf, b->length)<1) {
+		free (aop);
+		return NULL;
+	}
+	return aop;
 }
 
 /* TODO: move to print/disasm.c */
@@ -1035,8 +1061,7 @@ static int cmd_mount(void *data, const char *_input) {
 		if (file) {
 			// XXX: dump to file or just pipe?
 			r_fs_read (core->fs, file, 0, file->size);
-			r_cons_printf ("offset = 0x%08"PFMT64x"\n", file->off);
-			r_cons_printf ("size = %d\n", file->size);
+			r_cons_printf ("f file %d 0x%08"PFMT64x"\n", file->size, file->off);
 			r_fs_close (core->fs, file);
 		} else eprintf ("Cannot open file\n");
 		break;
@@ -1398,7 +1423,7 @@ static int cmd_help(void *data, const char *input) {
 	case '$':
 		return cmd_help (data, " $?");
 	case 'V':
-		r_cons_printf (R2_VERSION"\n");
+		r_cons_printf ("r2-%s\n", R2_VERSION);
 		break;
 	case 'z':
 		for (input=input+1; input[0]==' '; input=input+1);

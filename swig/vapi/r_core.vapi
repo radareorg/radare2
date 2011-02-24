@@ -45,6 +45,7 @@ public class RCore {
 
 	public string op_str(uint64 addr);
 	public RAnal.Op op_anal(uint64 addr);
+	public RAsm.Aop disassemble(uint64 addr);
 
 	public unowned string disassemble_instr(uint64 addr, int l);
 	public unowned string disassemble_bytes(uint64 addr, int b);

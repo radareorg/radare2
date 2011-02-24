@@ -113,6 +113,7 @@ typedef int (*RCoreSearchCallback)(RCore *core, ut64 from, ut8 *buf, int len);
 
 #ifdef R_API
 #define r_core_cast(x) (RCore*)(size_t)(x)
+R_API RAsmAop *r_core_disassemble (RCore *core, ut64 addr);
 R_API int r_core_init(struct r_core_t *core);
 R_API struct r_core_t *r_core_new();
 R_API struct r_core_t *r_core_free(struct r_core_t *c);
