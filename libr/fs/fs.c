@@ -76,37 +76,47 @@ R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path, ut64 d
 	return root;
 }
 
-static inline int r_fs_match (const char *root, const char *path) {
-	return (!strncmp (path, root, strlen (path)));
+static inline int r_fs_match (const char *root, const char *path, int len, int olen) {
+	return ((len>olen) && (!strncmp (path, root, len)));
 }
 
 R_API int r_fs_umount (RFS* fs, const char *path) {
+	int olen = 0;
         RFSRoot *root;
-	RListIter *iter;
+	RListIter *iter, *riter = NULL;
         r_list_foreach (fs->roots, iter, root) {
-		if (r_fs_match (path, root->path)) {
-			r_list_delete (fs->roots, iter);
-			return R_TRUE;
+		int len = strlen (root->path);
+		if (r_fs_match (path, root->path, len, olen)) {
+			olen = len;
+			riter = iter;
 		}
         }
+	if (riter) {
+		r_list_delete (fs->roots, riter);
+		return R_TRUE;
+	}
         return R_FALSE;
 }
 
 R_API RFSRoot *r_fs_root (RFS *fs, const char *path) {
-        RFSRoot *root;
+	int olen = 0;
 	RListIter *iter;
+        RFSRoot *root, *oroot = NULL;
         r_list_foreach (fs->roots, iter, root) {
-		if (r_fs_match (path, root->path))
-			return root;
+		int len = strlen (root->path);
+		if (r_fs_match (path, root->path, len, olen)) {
+			olen = len;
+			oroot = root;
+		}
         }
-	return NULL;
+	return oroot;
 }
 
 /* filez */
 R_API RFSFile *r_fs_open (RFS* fs, const char *p) {
 	RFSRoot *root;
 	char *path = strdup (p);
-	r_str_chop_path (path);
+	//r_str_chop_path (path);
 	root = r_fs_root (fs, path);
 	if (root && root->p && root->p->open) {
 		RFSFile *f = root->p->open (root, path+strlen (root->path));
@@ -142,18 +152,19 @@ R_API int r_fs_read (RFS* fs, RFSFile *file, ut64 addr, int len) {
 R_API RList *r_fs_dir(RFS* fs, const char *p) {
 	if (fs) {
 		char *path = strdup (p);
-		r_str_chop_path (path);
+		r_str_chop (path);
 		RFSRoot *root = r_fs_root (fs, path);
 		if (root) {
-			const char *dir = path + strlen (root->path);
+			const char *dir = path + strlen (root->path)-1;
 			if (!*dir) dir = "/";
 			if (root) {
+				RList *ret = root->p->dir (root, dir);
 				free (path);
-				return root->p->dir (root, dir);
+				return ret;
 			}
 		}
-		free (path);
 		eprintf ("r_fs_dir: not mounted '%s'\n", path);
+		free (path);
 	}
 	return NULL;
 }
@@ -218,7 +229,7 @@ R_API RList *r_fs_partitions (RFS *fs, const char *ptype, ut64 delta) {
 	if (ptype&&*ptype)
 		eprintf ("Unknown partition type '%s'.\n", ptype);
 	eprintf ("Supported types:\n"
-		"  msdos, apple, sun, sunpc, amiga, bsdlabel, acorn, gpt");
+		"  msdos, apple, sun, sunpc, amiga, bsdlabel, acorn, gpt\n");
 	return NULL;
 }
 
@@ -251,34 +262,36 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 		if (buf[0]=='!') {
 			system (buf+1);
 		} else
-		if (!strcmp (buf, "ls")) {
-			list = r_fs_dir (fs, path);
+		if (!memcmp (buf, "ls", 2)) {
+			if (buf[2]==' ') {
+				list = r_fs_dir (fs, buf+3);
+			} else list = r_fs_dir (fs, path);
 			if (list) {
 				r_list_foreach (list, iter, file)
 					printf ("%c %s\n", file->type, file->name);
 				r_list_free (list);
-			} else printf ("Unknown path (%s)\n", path);
+			} else eprintf ("Unknown path: %s\n", path);
 		} else if (!strncmp (buf, "pwd", 3)) {
 			eprintf ("%s\n", path);
 		} else if (!memcmp (buf, "cd ", 3)) {
+			char opath[4096];
+			strcpy (opath, path);
 			input = buf+3;
-			while (input[0] == ' ')
+			while (*input == ' ')
 				input++;
-			strncpy (str, path, sizeof(str)-1);
-			if (input[0] == '/')
-				strncpy (path, root, sizeof (path)-1);
-			strcat (path, "/");
-			strcat (path, input);
-			r_str_chop_path (path);
-			if (strlen (path) < strlen (root))
-				strncpy (path, root, sizeof (path)-1);
-			list = r_fs_dir (fs, path);
-			if (!r_list_empty (list))
-				r_list_free (list);
-			else {
-				strncpy (path, str, sizeof (path)-1);
-				printf ("Unknown path\n");
+			if (!strcmp (input, "..")) {
+				char *p = r_str_lchr (path, '/');
+				if (p) p[(p==path)?1:0]=0;
+			} else {
+				if (*input=='/')
+					strcpy (path, input);
+				else strcat (path, input);
 			}
+			list = r_fs_dir (fs, path);
+			if (r_list_empty (list)) {
+				strcpy (path, opath);
+				eprintf ("cd: unknown path: %s\n", path);
+			} else r_list_free (list);
 		} else if (!memcmp (buf, "cat ", 4)) {
 			input = buf+3;
 			while (input[0] == ' ')

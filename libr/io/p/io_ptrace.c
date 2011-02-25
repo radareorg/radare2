@@ -70,7 +70,7 @@ static int ptrace_write_at(int pid, const ut8 *buf, int sz, ut64 addr) {
 	if (last) {
 		lr = ptrace (PTRACE_PEEKDATA, pid, &((long *)(long)addr)[x], 0);
 		lr = ((lr&(-1L<<last))|(((long *)buf)[x]&(~(-1L<<last))));
-		if (ptrace (PTRACE_POKETEXT, pid, (void*)((long)addr+(x*4)), (void*)lr))
+		if (ptrace (PTRACE_POKETEXT, pid, (void*)((long)addr+(x*sizeof(void*))), (void*)lr))
 			goto err;
 	}
 	return sz;
