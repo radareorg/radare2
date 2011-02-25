@@ -210,14 +210,16 @@ R_API double r_num_get_float(struct r_num_t *num, const char *str) {
 }
 
 R_API int r_num_to_bits (char *out, ut64 num) {
-	int size = 0, i;
+	int size = 64, i;
 
-	if (num&0xff000000) size = 64;
-	else if (num&0xff0000) size = 32;
+	if (num&0xff000000) size = 32;
+	else if (num&0xff0000) size = 24;
 	else if (num&0xff00) size = 16;
 	else if (num&0xff) size = 8;
-	for(i=0;i<size;i++)
-		out[size-1-i]=(num>>i&1)?'1':'0';
-	out[size]='\0'; //Maybe not nesesary?
+	if (out) {
+		for (i=0;i<size;i++)
+			out[size-1-i]=(num>>i&1)?'1':'0';
+		out[size]='\0'; //Maybe not nesesary?
+	}
 	return size;
 }

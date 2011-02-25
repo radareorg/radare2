@@ -1216,7 +1216,7 @@ static int cmd_interpret(void *data, const char *input) {
 		" . foo.rs          ; interpret r script\n"
 		" .!rabin -ri $FILE ; interpret output of command\n"
 		" .(foo 1 2 3)      ; run macro 'foo' with args 1, 2, 3\n"
-		" ./m ELF           ; interpret output of command /m ELF as r. commands\n");
+		" ./ ELF            ; interpret output of command /m ELF as r. commands\n");
 		break;
 	default:
 		ptr = str = r_core_cmd_str (core, input);
@@ -1374,6 +1374,7 @@ static int cmd_seek(void *data, const char *input) {
 }
 
 static int cmd_help(void *data, const char *input) {
+	int i;
 	RCore *core = (RCore *)data;
 	char out[65];
 	ut64 n;
@@ -1433,8 +1434,63 @@ static int cmd_help(void *data, const char *input) {
 		r_cons_printf ("r2-%s\n", R2_VERSION);
 		break;
 	case 'z':
-		for (input=input+1; input[0]==' '; input=input+1);
+		for (input++; input[0]==' '; input++);
 		core->num->value = strlen (input);
+		break;
+	case 'X':
+		{
+			for (input++; input[0]==' '; input++);
+			ut64 n = r_num_math (core->num, input);
+			r_cons_printf ("%"PFMT64x"\n", n);
+		}
+		break;
+	case 'x':
+		for (input++; input[0]==' '; input++);
+		if (!memcmp (input, "0x", 2) || (*input>='0' && *input<='9')) {
+			ut64 n = r_num_math (core->num, input);
+			int bits = r_num_to_bits (NULL, n) / 8;
+			for (i=0; i<bits; i++)
+				r_cons_printf ("%02x", (ut8)((n>>(i*8)) &0xff));
+			r_cons_newline ();
+		} else {
+			for (i=0; input[i]; i++)
+				r_cons_printf ("%02x", input[i]);
+			r_cons_newline ();
+		}
+		break;
+	case 'e': // echo
+		for (input++; *input==' '; input++);
+		r_cons_printf ("%s\n", input);
+		break;
+	case 's': // sequence from to step
+		{
+		ut64 from, to, step;
+		char *p, *p2;
+		for (input++; *input==' '; input++);
+		p = strchr (input, ' ');
+		if (p) {
+			*p='\0';
+			from = r_num_math (core->num, input);
+			p2 = strchr (p+1, ' ');
+			if (p2) {
+				*p2='\0';
+				step = r_num_math (core->num, p2+1);
+			} else step = 1;
+			to = r_num_math (core->num, p+1);
+			for (;from<=to;from+=step)
+				r_cons_printf ("%"PFMT64d" ", from);
+			r_cons_newline();
+		}
+		}
+		break;
+	case 'i': // input num
+		{
+		char foo[1024];
+		for (input++; *input==' '; input++);
+		eprintf ("%s: ", input);
+		fgets (foo, sizeof (foo)-1, stdin);
+		core->num->value = r_num_math (core->num, foo);
+		}
 		break;
 	case 't': {
 		struct r_prof_t prof;
@@ -1451,8 +1507,13 @@ static int cmd_help(void *data, const char *input) {
 			" ? eip-0x804800  ; calculate result for this math expr\n"
 			" ?= eip-0x804800 ; same as above without user feedback\n"
 			" ?? [cmd]        ; ? == 0  run command when math matches\n"
+			" ?i prompt       ; prompt for number and store in $$?\n"
+			" ?e string       ; echo string\n"
 			" ?b [num]        ; show binary value of number\n"
 			" ?f [num] [str]  ; map each bit of the number as flag string index\n"
+			" ?s from to step ; sequence of numbers from to by steps\n"
+			" ?x num|0xnum|str; returns the hexpair of number or string\n"
+			" ?X num|expr     ; returns the hexadecimal value numeric expr\n"
 			" ?z str          ; returns the length of string (0 if null)\n"
 			" ?t cmd          ; returns the time to run a command\n"
 			" ?! [cmd]        ; ? != 0\n"
@@ -3058,6 +3119,9 @@ static int cmd_search(void *data, const char *input) {
 		dosearch = 1;
 		break;
 	case 'm': /* match regexp */
+		eprintf ("TODO: magic search\n");
+		break;
+	case 'e': /* match regexp */
 		{
 		char *inp = strdup (input+2);
 		char *res = r_str_lchr (inp+1, inp[0]);
@@ -3124,7 +3188,7 @@ static int cmd_search(void *data, const char *input) {
 		"Usage: /[amx/] [arg]\n"
 		" / foo           ; search for string 'foo'\n"
 		" /w foo          ; search for wide string 'f\\0o\\0o'\n"
-		" /m /E.F/i       ; match regular expression\n"
+		" /e /E.F/i       ; match regular expression\n"
 		" /x ff0033       ; search for hex string\n"
 		" /c jmp [esp]    ; search for asm code (see search.asmstr)\n"
 		" /A              ; search for AES expanded keys\n"
