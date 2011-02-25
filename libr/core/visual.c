@@ -680,10 +680,11 @@ R_API void r_core_visual_define (RCore *core) {
 	case 'u':
 		r_meta_del (core->meta, R_META_ANY, off, 1, "");
 		r_flag_unset_i (core->flags, off);
+		r_anal_fcn_del (core->anal, off);
 		break;
 	case 'f':
-		r_core_cmd (core, "af", 0);
-		r_core_cmd (core, "ab", 0);
+		r_core_anal_fcn (core, off, -1, R_ANAL_REF_TYPE_NULL,
+				r_config_get_i (core->config, "anal.depth"));
 		break;
 	case 'q':
 	default:
