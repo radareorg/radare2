@@ -96,7 +96,7 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFcn *fcn, int opts) {
 	}
 }
 
-R_API int r_core_anal_bb(RCore *core, RAnalFcn *fcn, ut64 at, int depth, int head) {
+R_API int r_core_anal_bb(RCore *core, RAnalFcn *fcn, ut64 at, int head) {
 	struct r_anal_bb_t *bb, *bbi;
 	RListIter *iter;
 	ut64 jump, fail;
@@ -104,8 +104,6 @@ R_API int r_core_anal_bb(RCore *core, RAnalFcn *fcn, ut64 at, int depth, int hea
 	int ret = R_ANAL_RET_NEW, buflen, bblen = 0;
 	int split = core->anal->split;
 
-	if (depth < 0)
-		return R_FALSE;
 	if (!(bb = r_anal_bb_new()))
 		return R_FALSE;
 	if (split) ret = r_anal_fcn_split_bb (fcn, bb, at);
@@ -134,9 +132,9 @@ R_API int r_core_anal_bb(RCore *core, RAnalFcn *fcn, ut64 at, int depth, int hea
 					fail = bb->fail;
 					jump = bb->jump;
 					if (fail != -1)
-						r_core_anal_bb (core, fcn, fail, depth-1, R_FALSE);
+						r_core_anal_bb (core, fcn, fail, R_FALSE);
 					if (jump != -1)
-						r_core_anal_bb (core, fcn, jump, depth-1, R_FALSE);
+						r_core_anal_bb (core, fcn, jump, R_FALSE);
 				}
 			}
 		} while (bblen != R_ANAL_RET_END);
@@ -219,7 +217,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				r_flag_set (core->flags, fcn->name, at, fcn->size, 0);
 			}
 			/* TODO: Dupped analysis, needs more optimization */
-			r_core_anal_bb (core, fcn, fcn->addr, depth, R_TRUE);
+			r_core_anal_bb (core, fcn, fcn->addr, R_TRUE);
 			r_list_sort (fcn->bbs, &cmpaddr);
 			/* New function: Add initial xref */
 			if (from != -1) {
