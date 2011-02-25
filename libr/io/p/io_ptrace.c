@@ -31,26 +31,26 @@ static int __waitpid(int pid) {
 #define debug_read_raw(x,y) ptrace(PTRACE_PEEKTEXT, x, y, 0)
 
 static int debug_os_read_at(int pid, void *buf, int sz, ut64 addr) {
-        unsigned long words = sz / sizeof (long);
-        unsigned long last = sz % sizeof (long);
+	unsigned long words = sz / sizeof (long);
+	unsigned long last = sz % sizeof (long);
 	long x, lr, s = 0;
 
-        if (sz<0 || addr==-1)
-                return -1; 
-        for (x=0; x<words; x++) {
-                ((long *)buf)[x] = debug_read_raw (pid,
+	if (sz<0 || addr==-1)
+		return -1; 
+	for (x=0; x<words; x++) {
+		((long *)buf)[x] = debug_read_raw (pid,
 			(void *)(&((long*)(long)addr)[x]));
-                if (((long *)buf)[x] == -1) // && errno)
-                        return s;
+		if (((long *)buf)[x] == -1) // && errno)
+			return s;
 		s += sizeof (s);
-        }
-        if (last) {
-                lr = debug_read_raw (pid, &((long*)(long)addr)[x]);
-                if (lr == -1) // && errno)
-                        return s;
-                memcpy (&((long *)buf)[x], &lr, last) ;
-        }
-        return sz; 
+	}
+	if (last) {
+		lr = debug_read_raw (pid, &((long*)(long)addr)[x]);
+		if (lr == -1) // && errno)
+			return s;
+		memcpy (&((long *)buf)[x], &lr, last) ;
+	}
+	return sz; 
 }
 
 static int __read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int len) {
@@ -60,8 +60,8 @@ static int __read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int len) {
 }
 
 static int ptrace_write_at(int pid, const ut8 *buf, int sz, ut64 addr) {
-        long words = sz / sizeof(long);
-        long last = (sz % sizeof(long))*sizeof(long)*2;
+	long words = sz / sizeof(long);
+	long last = (sz - words*sizeof(long)) * 8;
 	long x, lr;
 
 	for (x=0; x<words; x++)
@@ -157,11 +157,11 @@ static int __system(struct r_io_t *io, RIODesc *fd, const char *cmd) {
 struct r_io_plugin_t r_io_plugin_ptrace = {
         //void *plugin;
 	.name = "io_ptrace",
-        .desc = "ptrace io",
-        .open = __open,
-        .close = __close,
+	.desc = "ptrace io",
+	.open = __open,
+	.close = __close,
 	.read = __read,
-        .plugin_open = __plugin_open,
+	.plugin_open = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
 	.write = __write,
@@ -169,7 +169,7 @@ struct r_io_plugin_t r_io_plugin_ptrace = {
 #else
 struct r_io_plugin_t r_io_plugin_ptrace = {
 	.name = "ptrace",
-        .desc = "ptrace io (NOT SUPPORTED FOR THIS PLATFORM)",
+	.desc = "ptrace io (NOT SUPPORTED FOR THIS PLATFORM)",
 };
 #endif
 
