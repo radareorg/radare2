@@ -298,12 +298,6 @@ R_API int r_core_config_init(RCore *core) {
 	RConfig *cfg = cfg = core->config = r_config_new (core);
 	cfg->printf = r_cons_printf;
 
-	r_config_set_cb (cfg, "asm.arch", R_SYS_ARCH, &config_asmarch_callback);
-	// XXX: not portable
-	r_parse_use (core->parser, "x86.pseudo");
-	r_config_set_cb (cfg, "asm.parser", "x86.pseudo",
-		&config_asmparser_callback);
-
 	r_config_set (cfg, "dir.plugins", LIBDIR"/radare2/"R2_VERSION"/");
 	/* anal */
 	r_config_set_i (cfg, "anal.depth", 100);
@@ -311,8 +305,14 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "anal.split", "true", &config_analsplit_callback);
 	r_config_set_cb (cfg, "anal.plugin", "x86", &config_analplugin_callback);
 	/* asm */
+	r_config_set_cb (cfg, "asm.arch", R_SYS_ARCH, &config_asmarch_callback);
+	// XXX: not portable
+	r_parse_use (core->parser, "x86.pseudo");
+	r_config_set_cb (cfg, "asm.parser", "x86.pseudo",
+		&config_asmparser_callback);
 	r_config_set_i_cb (cfg, "asm.bits", 32, &config_asmbits_callback);
 	r_config_set (cfg, "asm.bytes", "true"); 
+	r_config_set_i (cfg, "asm.lbytes", "true"); 
 	r_config_set (cfg, "asm.middle", "false"); // jump in the middle because of antidisasm tricks
 	r_config_set (cfg, "asm.comments", "true");
 	r_config_set (cfg, "asm.stackptr", "true");
@@ -323,7 +323,6 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "asm.varsub", "true");
 	r_config_set (cfg, "asm.trace", "true");
 	r_config_set (cfg, "asm.decode", "false"); 
-	r_config_set (cfg, "asm.bytes", "true"); 
 	r_config_set (cfg, "asm.offset", "true"); 
 	r_config_set (cfg, "asm.lines", "true");
 	r_config_set (cfg, "asm.linesout", "true");

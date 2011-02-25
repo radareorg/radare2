@@ -150,6 +150,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	int show_xrefs = r_config_get_i (core->config, "asm.xrefs");
 	int show_functions = r_config_get_i (core->config, "asm.functions");
 	int cursor, nb, nbytes = r_config_get_i (core->config, "asm.nbytes");
+	int lbytes = r_config_get_i (core->config, "asm.lbytes");
 	int linesopts = 0;
 	const char *pre = "";
 	nb = nbytes*2;
@@ -257,13 +258,13 @@ r_cons_printf ("%s                             ", pre);
 				pre = "";
 				if (f->addr == at) {
 					char *sign = r_anal_fcn_to_string (core->anal, f);
-					r_cons_printf ("/* %s: %s (%d) */\n",
-							f->type == R_ANAL_FCN_TYPE_FCN?"function":"loc", f->name, f->size);
+					r_cons_printf ("/ %s: %s (%d)\n: ",
+						f->type == R_ANAL_FCN_TYPE_FCN?"function":"loc", f->name, f->size);
 					if (sign) r_cons_printf ("// %s\n", sign);
 					free (sign);
 					stackptr = 0;
 				} else if (f->addr+f->size-1 == at) {
-					r_cons_printf ("\\*");
+					r_cons_printf ("\\ ");
 				} else if (at > f->addr && at < f->addr+f->size-1) {
 					r_cons_printf (": ");
 					pre = ": ";
@@ -336,19 +337,25 @@ r_cons_printf ("%s                             ", pre);
 		}
 		if (show_bytes) {
 			char *str, pad[64];
-			const char *extra = " ";
+			char extra[64];
+			strcpy (extra, " ");
 			if (!flag) {
 				str = strdup (asmop.buf_hex);
 				if (strlen (str) > nb) {
 					str[nb] = '.';
 					str[nb+1] = '\0';
-					extra = "";
+					*extra = 0;
 				}
 				k = nb-strlen (str);
 				if (k<0) k = 0;
 				for (j=0; j<k; j++)
 					pad[j] = ' ';
 				pad[j] = '\0';
+if (lbytes) {
+// hack to align bytes left
+strcpy (extra, pad);
+*pad=0;
+}
 				if (show_color) {
 					char *nstr;
 					p->cur_enabled = cursor!=-1;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com> */
 
 /* TODO:
  * -L [lib]  dlopen library and show address
@@ -287,6 +287,11 @@ static int rabin_show_symbols() {
 				printf("%s\n", symbol->name);
 		} else {
 			if (rad) {
+				char *mn = r_bin_demangle (bin, symbol->name, R_BIN_NM_ANY);
+				if (mn) {
+					printf ("CC %s@0x%08"PFMT64x"\n", mn, symbol->offset);
+					free (mn);
+				}
 				r_flag_name_filter (symbol->name);
 				if (!strncmp (symbol->type,"FUNC", 4)) {
 					printf ("fs functions\n");

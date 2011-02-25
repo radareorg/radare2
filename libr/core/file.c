@@ -131,6 +131,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 
 	// s -> Symbols
 	if ((list = r_bin_get_symbols (r->bin)) != NULL) {
+		char *name;
 		r_list_foreach (list, iter, symbol) {
 			r_flag_name_filter (symbol->name);
 			snprintf (str, R_FLAG_NAME_SIZE, "fcn.sym.%s", symbol->name);
@@ -144,6 +145,12 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 				(va?baddr+symbol->rva:symbol->offset)+symbol->size, symbol->name);
 			r_flag_set (r->flags, str+4, va?baddr+symbol->rva:symbol->offset,
 						symbol->size, 0);
+			name = r_bin_demangle (r->bin, symbol->name, R_BIN_NM_ANY);
+			if (name) {
+				r_meta_add (r->meta, R_META_COMMENT, va?baddr+symbol->rva:symbol->offset,
+					symbol->size, name);
+				free (name);
+			}
 		}
 	}
 

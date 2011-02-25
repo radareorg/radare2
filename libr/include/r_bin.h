@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2010 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2008-2011 nibble<.ds@gmail.com> */
 
 #ifndef _INCLUDE_R_BIN_H_
 #define _INCLUDE_R_BIN_H_
@@ -34,6 +34,7 @@ enum {
 enum {
 	R_BIN_NM_JAVA,
 	R_BIN_NM_CXX,
+	R_BIN_NM_ANY=-1,
 };
 
 // XXX: isnt this a copy of Obj ?

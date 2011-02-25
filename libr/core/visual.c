@@ -87,9 +87,9 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			r_cons_printf ("\n Selected: %s\n\n", fs2);
 
 			switch (format) {
-			case 0: sprintf (cmd, "px @ %s", fs2); printidx = 0; break;
-			case 1: sprintf (cmd, "pd 12 @ %s", fs2); printidx = 1; break;
-			case 2: sprintf (cmd, "ps @ %s", fs2); printidx = 5; break;
+			case 0: sprintf (cmd, "px @ %s:128", fs2); printidx = 0; break;
+			case 1: sprintf (cmd, "pd 12 @ %s:128", fs2); printidx = 1; break;
+			case 2: sprintf (cmd, "ps @ %s:128", fs2); printidx = 5; break;
 			default: format = 0; continue;
 			}
 			if (*cmd) r_core_cmd (core, cmd, 0);
@@ -308,9 +308,6 @@ R_API void r_core_visual_config(RCore *core) {
 		r_cons_gotoxy (0,0);
 		r_cons_clear ();
 
-		if (fs&&!memcmp (fs, "asm.", 4))
-			r_core_cmd (core, "pd 5", 0);
-
 		switch (menu) {
 		case 0: // flag space
 			r_cons_printf ("\n Eval spaces:\n\n");
@@ -350,13 +347,13 @@ R_API void r_core_visual_config(RCore *core) {
 			j = i = 0;
 			// TODO: cut -d '.' -f 1 | sort | uniq !!!
 			list_for_each (pos, &(core->config->nodes)) {
-				RConfigNode *bt = list_entry(pos, RConfigNode, list);
+				RConfigNode *bt = list_entry (pos, RConfigNode, list);
 				if (option==i) {
 					fs2 = bt->name;
 					hit = 1;
 				}
-				if (!r_str_ccmp(bt->name, fs, '.')) {
-					if( (i >=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+				if (!r_str_ccmp (bt->name, fs, '.')) {
+					if ( (i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
 						// TODO: Better align
 						r_cons_printf (" %c  %s = %s\n", (option==i)?'>':' ', bt->name, bt->value);
 						j++;
@@ -371,6 +368,9 @@ R_API void r_core_visual_config(RCore *core) {
 			if (fs2 != NULL)
 				r_cons_printf("\n Selected: %s\n\n", fs2);
 		}
+
+		if (fs&&!memcmp (fs, "asm.", 4))
+			r_core_cmd (core, "pd 5", 0);
 		r_cons_flush();
 		ch = r_cons_readchar();
 		ch = r_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char

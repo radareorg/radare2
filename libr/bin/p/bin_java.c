@@ -1,4 +1,5 @@
-/* radare - GPL3 - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare - GPL3 - Copyright 2009-2011 */
+/* authors: pancake, nibble */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -129,11 +130,6 @@ static int check(RBinArch *arch) {
 	return ret;
 }
 
-static char *demangle (const char *str) {
-	// TODO: implement java symbol demangler code here
-	return strdup (str);
-}
-
 struct r_bin_plugin_t r_bin_plugin_java = {
 	.name = "java",
 	.desc = "java bin plugin",
@@ -155,7 +151,7 @@ struct r_bin_plugin_t r_bin_plugin_java = {
 	.relocs = NULL,
 	.meta = NULL,
 	.write = NULL,
-	.demangle = demangle,
+	.demangle = r_bin_demangle_java,
 };
 
 #ifndef CORELIB

@@ -252,7 +252,7 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 	} else strcpy (path, "/");
 
 	for (;;) {
-		printf (Color_MAGENTA"[%s]> "Color_RESET, path);
+		printf ("[%s]> ", path);
 		fflush (stdout);
 		fgets (buf, sizeof (buf)-1, stdin);
 		if (feof (stdin)) break;
@@ -312,7 +312,7 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 			r_list_foreach (fs->roots, iter, root) {
 				eprintf ("%s %s\n", root->path, root->p->name);
 			}
-		} else if (!memcmp (buf, "get ",4)) {
+		} else if (!memcmp (buf, "get ", 4)) {
 			input = buf+3;
 			while (input[0] == ' ')
 				input++;
@@ -328,10 +328,10 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 				r_fs_close (fs, file);
 			} else printf ("Cannot open file\n");
 		} else if (!memcmp (buf, "help", 4) || !strcmp (buf, "?")) {
-			printf (
+			eprintf (
 			"Commands:\n"
 			" !cmd        ; escape to system\n"
-			" ls          ; list current directory\n"
+			" ls [path]   ; list current directory\n"
 			" cd path     ; change current directory\n"
 			" cat file    ; print contents of file\n"
 			" get file    ; dump file to disk\n"
@@ -339,9 +339,7 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 			" q/exit      ; leave prompt mode\n"
 			" ?/help      ; show this help\n"
 			);
-		} else {
-			printf ("Unknown command %s\n", buf);
-		}
+		} else eprintf ("Unknown command %s\n", buf);
 	}
 	clearerr (stdin);
 	printf ("\n");

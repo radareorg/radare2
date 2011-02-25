@@ -4,7 +4,6 @@
 #include <r_types.h>
 #include <r_list.h>
 #include <r_io.h>
-#include <r_cons.h>
 
 struct r_fs_plugin_t;
 struct r_fs_root_t;

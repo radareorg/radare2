@@ -408,13 +408,3 @@ R_API void r_bin_object_free(RBinObj *obj) {
 	// XXX: leak
 	free (obj);
 }
-
-R_API char *r_bin_demangle (RBin *bin, const char *str, int type) {
-	if (bin && bin->curarch.curplugin && bin->curarch.curplugin->demangle)
-		return bin->curarch.curplugin->demangle (str);
-	switch (type) {
-	case R_BIN_NM_JAVA: return r_bin_demangle_java (str);
-	case R_BIN_NM_CXX: return r_bin_demangle_cxx (str);
-	}
-	return NULL;
-}
