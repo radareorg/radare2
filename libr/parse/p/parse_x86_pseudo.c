@@ -168,11 +168,11 @@ static int varsub(struct r_parse_t *p, struct r_anal_fcn_t *f, char *data, char 
 
 	strncpy (str, data, len);
 	for (i = 0; i < R_ANAL_MAX_VARSUB; i++)
-		if (f->varnames[i][0] != '\0' && f->varsubs[i][0] != '\0' &&
-			(ptr = strstr (data, f->varnames[i]))) {
+		if (f->varsubs[i].pat[0] != '\0' && f->varsubs[i].sub[0] != '\0' &&
+			(ptr = strstr (data, f->varsubs[i].pat))) {
 				*ptr = '\0';
-				ptr2 = ptr + strlen (f->varnames[i]);
-				snprintf (str, len, "%s%s%s", data, f->varsubs[i], ptr2);
+				ptr2 = ptr + strlen (f->varsubs[i].pat);
+				snprintf (str, len, "%s%s%s", data, f->varsubs[i].sub, ptr2);
 		}
 	return R_TRUE;
 }

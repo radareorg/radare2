@@ -245,6 +245,10 @@ enum {
 };
 
 #define R_ANAL_MAX_VARSUB 32
+typedef struct r_anal_varsub_t {
+	char pat[1024];
+	char sub[1024];
+} RAnalVarSub;
 
 typedef struct r_anal_fcn_t {
 	char *name;
@@ -255,8 +259,7 @@ typedef struct r_anal_fcn_t {
 	int stack;
 	int ninstr;
 	int nargs;
-	char varnames[R_ANAL_MAX_VARSUB][1024];
-	char varsubs[R_ANAL_MAX_VARSUB][1024];
+	RAnalVarSub varsubs[R_ANAL_MAX_VARSUB];
 	ut8 *fingerprint;
 	RAnalDiff *diff;
 	RList *bbs;

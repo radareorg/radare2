@@ -3570,14 +3570,17 @@ static int cmd_meta(void *data, const char *input) {
 		case '-':
 			{
 			RAnalFcn *f;
+			RListIter *iter;
 			ut64 offset;
-			if (input[2]==' ')
+			if (input[2]==' ') {
 				offset = r_num_math (core->num, input+3);
-			if ((f = r_anal_fcn_find (core->anal, offset, R_ANAL_FCN_TYPE_NULL)) != NULL) {
-				memset (f->varnames, 0, sizeof(f->varnames));
-				memset (f->varnames, 0, sizeof(f->varnames));
+				if ((f = r_anal_fcn_find (core->anal, offset, R_ANAL_FCN_TYPE_NULL)) != NULL)
+					memset (f->varsubs, 0, sizeof(f->varsubs));
+			} else if (input[2]=='*') {
+				r_list_foreach (core->anal->fcns, iter, f)
+					memset (f->varsubs, 0, sizeof(f->varsubs));
 			}
-			}
+}
 			break;
 		case '*':
 			{
@@ -3585,8 +3588,8 @@ static int cmd_meta(void *data, const char *input) {
 			RListIter *iter;
 			r_list_foreach (core->anal->fcns, iter, f) {
 				for (i = 0; i < R_ANAL_MAX_VARSUB; i++) {
-					if (f->varnames[i][0] != '\0')
-						r_cons_printf ("Cv 0x%08llx %s %s\n", f->addr, f->varnames[i], f->varsubs[i]);
+					if (f->varsubs[i].pat[0] != '\0')
+						r_cons_printf ("Cv 0x%08llx %s %s\n", f->addr, f->varsubs[i].pat, f->varsubs[i].sub);
 					else break;
 				}
 			}
@@ -3595,7 +3598,7 @@ static int cmd_meta(void *data, const char *input) {
 		default:
 			{
 			RAnalFcn *f;
-			char *ptr = strdup(input+2), *varname, *varsub;
+			char *ptr = strdup(input+2), *pattern, *varsub;
 			ut64 offset = -1LL;
 			int n = r_str_word_set0 (ptr), i;
 			
@@ -3604,15 +3607,15 @@ static int cmd_meta(void *data, const char *input) {
 				case 3:
 					varsub = r_str_word_get0 (ptr, 2);
 				case 2:
-					varname = r_str_word_get0 (ptr, 1);
+					pattern = r_str_word_get0 (ptr, 1);
 				case 1:
 					offset = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 				}
 				if ((f = r_anal_fcn_find (core->anal, offset, R_ANAL_FCN_TYPE_NULL)) != NULL) {
 					for (i = 0; i < R_ANAL_MAX_VARSUB; i++)
-						if (f->varnames[i][0] == '\0' || !strcmp (f->varnames[i], varname)) {
-							strncpy (f->varnames[i], varname, 1024);
-							strncpy (f->varsubs[i], varsub, 1024);
+						if (f->varsubs[i].pat[0] == '\0' || !strcmp (f->varsubs[i].pat, pattern)) {
+							strncpy (f->varsubs[i].pat, pattern, 1024);
+							strncpy (f->varsubs[i].sub, varsub, 1024);
 							break;
 						}
 				} else eprintf ("Error: Function not found\n");

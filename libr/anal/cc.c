@@ -74,14 +74,18 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 		}
 		break;
 	case R_ANAL_CC_TYPE_STDCALL: // CALL
-		//	if (analop.jump != UT64_MAX) {
 		fcn = r_anal_fcn_find (anal, cc->jump,
 				R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM|R_ANAL_FCN_TYPE_IMP);
-		if (fcn && fcn->name) snprintf (str, sizeof (str), "%s(", fcn->name);
-		else snprintf (str, sizeof (str), "0x%08"PFMT64x"(", cc->jump);
+		if (fcn && fcn->name)
+			snprintf (str, sizeof (str), "%s(", fcn->name);
+		else if (cc->jump != -1LL)
+			snprintf (str, sizeof (str), "0x%08"PFMT64x"(", cc->jump);
+		else strncpy (str, "unk(", sizeof (str));
 		if (fcn) cc->nargs = (fcn->nargs>cc->nargs?cc->nargs:fcn->nargs);
 		for (i=0; i<cc->nargs; i++) {
-			snprintf (buf, sizeof (buf), "0x%"PFMT64x, cc->args[cc->nargs-i]);
+			if (cc->args[cc->nargs-i] != -1LL)
+				 snprintf (buf, sizeof (buf), "0x%"PFMT64x, cc->args[cc->nargs-i]);
+			else strncpy (buf, "unk", sizeof (buf));
 			strcat (str, buf);
 			if (i<cc->nargs-1) strcat (str, ", ");
 		}
