@@ -8,8 +8,6 @@ pancake
 -------
 * idc2rdb !!! important 
 * check search multiple keywords and signatures
-* "wx jeje" does not says "invalid hexpair string" (must report error)
-* Vdu -> does not undefine a function
 * Visual disassembly cursor does not displays on scr.color=0
 * if console width > X place comments there (ash)
 * Implement BLOCK in r_core_sysenv_begin|end ()

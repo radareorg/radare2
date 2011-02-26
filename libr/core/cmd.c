@@ -2823,8 +2823,10 @@ static int cmd_write(void *data, const char *input) {
 		int len = strlen (input);
 		ut8 *buf = alloca (len);
 		len = r_hex_str2bin (input+1, buf);
-		r_core_write_at (core, core->offset, buf, len);
-		r_core_block_read (core, 0);
+		if (len != -1) {
+			r_core_write_at (core, core->offset, buf, len);
+			r_core_block_read (core, 0);
+		} else eprintf ("Error: invalid hexpair string\n");
 		}
 		break;
 	case 'a':
@@ -3587,7 +3589,7 @@ static int cmd_meta(void *data, const char *input) {
 			RAnalFcn *f;
 			RListIter *iter;
 			r_list_foreach (core->anal->fcns, iter, f) {
-				for (i = 0; i < R_ANAL_MAX_VARSUB; i++) {
+				for (i = 0; i < R_ANAL_VARSUBS; i++) {
 					if (f->varsubs[i].pat[0] != '\0')
 						r_cons_printf ("Cv 0x%08llx %s %s\n", f->addr, f->varsubs[i].pat, f->varsubs[i].sub);
 					else break;
@@ -3612,7 +3614,7 @@ static int cmd_meta(void *data, const char *input) {
 					offset = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 				}
 				if ((f = r_anal_fcn_find (core->anal, offset, R_ANAL_FCN_TYPE_NULL)) != NULL) {
-					for (i = 0; i < R_ANAL_MAX_VARSUB; i++)
+					for (i = 0; i < R_ANAL_VARSUBS; i++)
 						if (f->varsubs[i].pat[0] == '\0' || !strcmp (f->varsubs[i].pat, pattern)) {
 							strncpy (f->varsubs[i].pat, pattern, 1024);
 							strncpy (f->varsubs[i].sub, varsub, 1024);

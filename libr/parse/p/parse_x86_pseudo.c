@@ -167,7 +167,7 @@ static int varsub(struct r_parse_t *p, struct r_anal_fcn_t *f, char *data, char 
 	int i;
 
 	strncpy (str, data, len);
-	for (i = 0; i < R_ANAL_MAX_VARSUB; i++)
+	for (i = 0; i < R_ANAL_VARSUBS; i++)
 		if (f->varsubs[i].pat[0] != '\0' && f->varsubs[i].sub[0] != '\0' &&
 			(ptr = strstr (data, f->varsubs[i].pat))) {
 				*ptr = '\0';
