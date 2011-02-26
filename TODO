@@ -4,6 +4,8 @@
   |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
 
+* Move the content of libr/*/TODO here
+
 pancake
 -------
 * idc2rdb !!! important 
@@ -12,9 +14,20 @@ pancake
 * if console width > X place comments there (ash)
 * Implement BLOCK in r_core_sysenv_begin|end ()
 * Fix iterators for r_macro (test only?)
+* print format for libmagic
+* search for antidebug/disasm tricks opcodes
+  - allows to find interesting points to analyze
+* AES/RSA Key finding
+  http://citp.princeton.edu/memory/code/ <- implement this stuff in r2
 
 nibble
 ------
+* r_anal
+  - Code analysis (detect when an argument is a flagmask or enum and display text format) (ollydbg)
+* r_bin
+  - PE: native subsystem? http://radare.org/get/w32/mrxnet.tgz
+* rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
+* Fix RAnalCond
 * code analysis must resolve jump tables
 * allow to hook r_asm_disassemble and assemble with custom callbacks
   - extend a disassembler with own instructions.
@@ -25,7 +38,6 @@ nibble
 * detect strings in code analysis
 * implement aoe = anal op exec
   - sync regs or what?
-* comparisions doesnt works (RAnalCond)
 * register renaming (per-instruction or ranges)
   - r_parser fun? a specific asm.parser plugin that does all this tricks?
 * Display getsym() stuff in rabin2, not only legit syms
@@ -50,16 +62,23 @@ capi_x
 
 earada
 ------
+* p7 : 7bit encoding (sms)
 * Add print support for bitfields (pm b...)
-- r_bin_demangle (); // r_util maybe?
-	* _ZN7WebCore11CounterNode7recountERKNS_12AtomicStringE
+* r_bin_demangle ()
+	- _ZN7WebCore11CounterNode7recountERKNS_12AtomicStringE
 	  - demangle c++ and objc names
 	    WebCore.CounterNode.recount(AtomicString)
 	  _ZN = begin of stream
 	  0-9+ = count of chars
 	  E = end of stream
 	  RKNS_ = start of arguments
-* Add SSL support to r_socket
+    - http://www.codesourcery.com/public/cxx-abi/abi.html#mangling
+    - c++filt
+    - http://code.google.com/p/smali/wiki/TypesMethodsAndFields
+* r_socket
+  - Add SSL support
+  - http API in r_socket module
+    - allow to get/post data/files with continue on plain/ssl
 * remove all uses of alloca() // mingw and grep reports them all :)
 * typedef all function pointers, like in r_bp
 * Implement case-insensitive search (e search.casematters ?) any better name? Use /i?
@@ -106,15 +125,54 @@ earada
   - Add support for STATIC_PLUGINS in r_lang
   - dlerror(/usr/lib/radare2/lang_perl.so): libperl.so: cannot open shared object file: No such file or directory
     This issue is fixed by setting LD_LIBRARY_PATH...looks like dlopen ignores rpath
-
-
+* p7 - print 7bit encoded strings (SMS)
+  - variant for stego print? LSB, MSB, ...
+* r_asm
+  - Add support for CELL
+* r_bin
+  - Take into account LOAD info for bin allocation
+* r_anal
+  - Analysis API must support 'delay slots' when emulating (MIPS)
+  - split r_anal API functions (too much args) _new, _add...
+* REFACTORING of disasm loop XDDDDD -1 (r2-0.8 plzz)
+  - arch dependent anal code must be removed from disasm loop +1
+* gdiff  
+  - graph based fingerprints? (cyclomatic complexity...)
+* rcore
+  - do not allow to disassemble unaligned addresses (toggle)
+  - r_asm can reduce cpu without disasm on fixed size ops archs.
+* Add support for templates -- like in 010
+  http://www.sweetscape.com/010editor/templates.html
+* templates #!template peheader.template
+  - pT template.foo #   r_print_template
+  translate into c code and gets compiled. use rcc+rasm?
+  it is like a extended regular expression engine
 
 BINARY INFORMATION
 ==================
-dwarf, pdb, def, lib
-- from file, from section, ...
-- load symbols from .lib or .def (find signatures)
-  .def -> .idt , .lib -> ar2idt
+* dwarf, pdb, def, lib
+  - from file, from section, ...
+  - load symbols from .lib or .def (find signatures)
+    .def -> .idt , .lib -> ar2idt
+* Useful information in the PDB format
+  - programming language used (dwarf only?)
+  - offset - file:line
+  - elements { position, type, name, length, offset, delta }
+  - types // using the r_anal vartype API (not yet implemented)
+  - position = { inlined, global, local } enum
+  - function = { visibility, position, type, calltype (cc), arglist, return }
+  - visibility = { local, exported, qualified }
+  Types {
+  	// element types
+  	array, bitfield, class, struct, union, enum, pointer
+  	procedure, function, arglist, vtshape, fieldlist
+  	
+  	// data types
+  	float, char, signed short, bool, address, ..
+  }
+  Type {
+  	char, short, ushort, long, ulong, 
+  }
 
 Things to improve in r2
 =======================
