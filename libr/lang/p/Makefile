@@ -28,14 +28,14 @@ lang_python.${EXT_SO}:
 	-L${HOME}/.wine/drive_c/Python27/libs -L../../core/ -lr_core \
 	${LDFLAGS_LIB} -shared -o lang_python.${EXT_SO} python.c -lpython27
 else
+PYCFLAGS=`python-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]*//g' | sed s,-Wstrict-prototypes,,g`
+PYCFLAGS+=`python2-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]*//g' | sed s,-Wstrict-prototypes,,g`
+PYLDFLAGS=`python-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]*//g' | sed s,-Wstrict-prototypes,,g`
+PYLDFLAGS+=`python2-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]*//g' | sed s,-Wstrict-prototypes,,g`
+
 lang_python.${EXT_SO}:
-	${CC} ${CFLAGS} \
-		`python-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]*//g'` \
-		`python2-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]*//g'` \
-	      ${LDFLAGS} \
-		`python-config --ldflags 2>/dev/null | sed -e 's/-arch [^\s]*//g'` \
-		`python2-config --ldflags 2>/dev/null | sed -e 's/-arch [^\s]*//g'` \
-	${LDFLAGS_LIB} -fPIC -o lang_python.${EXT_SO} python.c
+	${CC} ${CFLAGS} ${PYCFLAGS} ${PYLDFLAGS} \
+	${LDFLAGS} ${LDFLAGS_LIB} -fPIC -o lang_python.${EXT_SO} python.c
 endif
 
 ifeq ($(HAVE_LIB_TCC),1)

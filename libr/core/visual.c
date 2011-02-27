@@ -132,7 +132,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'J':
-			option+=10;
+			option += 10;
 			break;
 		case 'o':
 			r_flag_sort (core->flags, 0);

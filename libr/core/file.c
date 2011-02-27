@@ -118,7 +118,6 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 
 	// e -> Entrypoints
 	i = 0;
-
 	if ((list = r_bin_get_entries (r->bin)) != NULL) {
 		r_list_foreach (list, iter, entry) {
 			snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i++);
@@ -131,10 +130,11 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 
 	// s -> Symbols
 	if ((list = r_bin_get_symbols (r->bin)) != NULL) {
-		char *name;
+		char *name, *dname;
 		r_list_foreach (list, iter, symbol) {
-			r_flag_name_filter (symbol->name);
-			snprintf (str, R_FLAG_NAME_SIZE, "fcn.sym.%s", symbol->name);
+			name = strdup (symbol->name);
+			r_flag_name_filter (name);
+			snprintf (str, R_FLAG_NAME_SIZE, "fcn.sym.%s", name);
 			if (!strncmp (symbol->type,"FUNC", 4)) {
 				r_flag_space_set (r->flags, "functions");
 				r_flag_set (r->flags, str, va?baddr+symbol->rva:symbol->offset,
@@ -142,15 +142,16 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 				r_flag_space_set (r->flags, "symbols");
 			} else if (!strncmp (symbol->type,"OBJECT", 6))
 				r_meta_add (r->meta, R_META_DATA, va?baddr+symbol->rva:symbol->offset,
-				(va?baddr+symbol->rva:symbol->offset)+symbol->size, symbol->name);
+				(va?baddr+symbol->rva:symbol->offset)+symbol->size, name);
 			r_flag_set (r->flags, str+4, va?baddr+symbol->rva:symbol->offset,
 						symbol->size, 0);
-			name = r_bin_demangle (r->bin, symbol->name, R_BIN_NM_ANY);
-			if (name) {
+			dname = r_bin_demangle (r->bin, symbol->name);
+			if (dname) {
 				r_meta_add (r->meta, R_META_COMMENT, va?baddr+symbol->rva:symbol->offset,
-					symbol->size, name);
-				free (name);
+					symbol->size, dname);
+				free (dname);
 			}
+			free (name);
 		}
 	}
 
@@ -165,20 +166,21 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	}
 
 	// z -> Strings
-	r_flag_space_set (r->flags, "strings");
 	if ((list = r_bin_get_strings (r->bin)) != NULL) {
 		if (r_list_length (list) > 1024) {
 			eprintf ("rabin2: too many strings. not importing string info\n");
-		} else
-		r_list_foreach (list, iter, string) {
-			/* Jump the withespaces before the string */
-			for (i=0;*(string->string+i)==' ';i++);
-			r_meta_add (r->meta, R_META_STRING, va?baddr+string->rva:string->offset,
-				(va?baddr+string->rva:string->offset)+string->size, string->string+i);
-			r_flag_name_filter (string->string);
-			snprintf (str, R_FLAG_NAME_SIZE, "str.%s", string->string);
-			r_flag_set (r->flags, str, va?baddr+string->rva:string->offset,
-					string->size, 0);
+		} else {
+			r_flag_space_set (r->flags, "strings");
+			r_list_foreach (list, iter, string) {
+				/* Jump the withespaces before the string */
+				for (i=0;*(string->string+i)==' ';i++);
+				r_meta_add (r->meta, R_META_STRING, va?baddr+string->rva:string->offset,
+					(va?baddr+string->rva:string->offset)+string->size, string->string+i);
+				r_flag_name_filter (string->string);
+				snprintf (str, R_FLAG_NAME_SIZE, "str.%s", string->string);
+				r_flag_set (r->flags, str, va?baddr+string->rva:string->offset,
+						string->size, 0);
+			}
 		}
 	}
 
@@ -202,7 +204,6 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 
 	// S -> Sections
 	i = 0;
-
 	if ((list = r_bin_get_sections (r->bin)) != NULL) {
 		r_flag_space_set (r->flags, "sections");
 		r_list_foreach (list, iter, section) {

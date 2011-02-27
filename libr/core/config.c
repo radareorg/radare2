@@ -312,7 +312,7 @@ R_API int r_core_config_init(RCore *core) {
 		&config_asmparser_callback);
 	r_config_set_i_cb (cfg, "asm.bits", 32, &config_asmbits_callback);
 	r_config_set (cfg, "asm.bytes", "true"); 
-	r_config_set_i (cfg, "asm.lbytes", "true"); 
+	r_config_set (cfg, "asm.lbytes", "true"); 
 	r_config_set (cfg, "asm.middle", "false"); // jump in the middle because of antidisasm tricks
 	r_config_set (cfg, "asm.comments", "true");
 	r_config_set (cfg, "asm.stackptr", "true");

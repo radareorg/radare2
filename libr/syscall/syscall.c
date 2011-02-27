@@ -47,6 +47,10 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
 	if (arch == NULL)
 		arch = R_SYS_ARCH;
 	/// XXX: spaghetti here
+	if (!strcmp (os, "any")) {
+		// ignored
+		return R_TRUE;
+	}
 	if (!strcmp (arch, "mips")) {
 		ctx->regs = fastcall_mips;
 		if (!strcmp (os, "linux"))

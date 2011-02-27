@@ -82,6 +82,7 @@ static RList* strings(RBinArch *arch) {
 		ptr->rva = ptr->offset = strings[i].offset;
 		ptr->size = strings[i].size;
 		ptr->ordinal = strings[i].ordinal;
+		r_list_append (ret, ptr);
 	}
 	free (strings);
 	return ret;
@@ -130,6 +131,10 @@ static int check(RBinArch *arch) {
 	return ret;
 }
 
+static int retdemangle(const char *str) {
+	return R_BIN_NM_JAVA;
+}
+
 struct r_bin_plugin_t r_bin_plugin_java = {
 	.name = "java",
 	.desc = "java bin plugin",
@@ -151,7 +156,7 @@ struct r_bin_plugin_t r_bin_plugin_java = {
 	.relocs = NULL,
 	.meta = NULL,
 	.write = NULL,
-	.demangle = r_bin_demangle_java,
+	.demangle_type = retdemangle
 };
 
 #ifndef CORELIB

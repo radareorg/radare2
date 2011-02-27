@@ -287,9 +287,9 @@ static int rabin_show_symbols() {
 				printf("%s\n", symbol->name);
 		} else {
 			if (rad) {
-				char *mn = r_bin_demangle (bin, symbol->name, R_BIN_NM_ANY);
+				char *mn = r_bin_demangle (bin, symbol->name);
 				if (mn) {
-					printf ("CC %s@0x%08"PFMT64x"\n", mn, symbol->offset);
+					printf ("s 0x%08"PFMT64x"\n\"CC %s\"\n", symbol->offset, mn);
 					free (mn);
 				}
 				r_flag_name_filter (symbol->name);

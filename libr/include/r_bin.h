@@ -99,7 +99,7 @@ typedef struct r_bin_plugin_t {
 	RList* (*fields)(RBinArch *arch);
 	RList* (*libs)(RBinArch *arch);
 	RList* (*relocs)(RBinArch *arch);
-	char* (*demangle)(const char *str);
+	int (*demangle_type)(const char *str);
 	struct r_bin_meta_t *meta;
 	struct r_bin_write_t *write;
 	struct list_head list;
@@ -221,7 +221,8 @@ R_API int r_bin_load(RBin *bin, const char *file, int dummy);
 R_API RBinObj *r_bin_get_object(RBin *bin, int flags);
 R_API ut64 r_bin_get_baddr(RBin *bin);
 R_API RBinAddr* r_bin_get_sym(RBin *bin, int sym);
-R_API char* r_bin_demangle(RBin *bin, const char *str, int type);
+R_API char* r_bin_demangle(RBin *bin, const char *str);
+R_API int r_bin_demangle_type (const char *str);
 R_API char *r_bin_demangle_java(const char *str);
 R_API char *r_bin_demangle_cxx(const char *str);
 R_API RList* r_bin_get_entries(RBin *bin);

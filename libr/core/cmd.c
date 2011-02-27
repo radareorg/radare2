@@ -210,6 +210,7 @@ core->inc = 0;
 		r_asm_set_pc (core->assembler, at);
 		if (show_comments)
 		if ((comment = r_meta_get_string (core->meta, R_META_COMMENT, at))) {
+			r_cons_strcat ("        ");
 			r_cons_strcat (comment);
 			free (comment);
 		}
@@ -218,8 +219,8 @@ core->inc = 0;
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx);
 		if (ret<1) {
 			ret = 1;
-			eprintf ("** invalid opcode at 0x%08"PFMT64x" **\n",
-				core->assembler->pc + ret);
+			//eprintf ("** invalid opcode at 0x%08"PFMT64x" **\n",
+			//	core->assembler->pc + ret);
 			continue;
 		}
 if (core->inc == 0)
@@ -272,11 +273,12 @@ r_cons_printf ("%s                             ", pre);
 			}
 		}
 		flag = r_flag_get_i (core->flags, at);
-		if (flag && !show_bytes) {
+		//if (flag && !show_bytes) {
+		if (flag) {
 			if (show_lines && line)
 				r_cons_strcat (line);
-			//if (show_offset)
-			//	printoffset (at, show_color);
+			if (show_offset)
+				printoffset (at, show_color);
 			r_cons_printf ("%s:\n%s", flag->name, pre);
 		}
 		if (show_lines && line)
@@ -309,7 +311,7 @@ r_cons_printf ("%s                             ", pre);
 			// TODO: filter string (r_str_unscape)
 			{
 			char *out = r_str_unscape (mi->str);
-			r_cons_printf ("string(%"PFMT64d"): \"%s\"\n%s", mi->size, out, pre);
+			r_cons_printf ("string (%"PFMT64d"): \"%s\"\n%s", mi->size, out, pre);
 			free (out);
 			}
 			ret = (int)mi->size;
@@ -339,6 +341,7 @@ r_cons_printf ("%s                             ", pre);
 			char *str, pad[64];
 			char extra[64];
 			strcpy (extra, " ");
+flag =NULL; // HACK
 			if (!flag) {
 				str = strdup (asmop.buf_hex);
 				if (strlen (str) > nb) {
@@ -372,7 +375,7 @@ strcpy (extra, pad);
 					pad[j] = ' ';
 				pad[j] = '\0';
 			}
-			if (flag) {
+			if (0) { // if (flag)
 				if (show_color)
 					r_cons_printf (Color_BWHITE"*[ %s%s]  "Color_RESET, pad, str);
 				else r_cons_printf ("*[ %s%s]  ", pad, str);

@@ -1,6 +1,6 @@
 // XXX: dupped in rasm, rbin.. rasm must use rbin callback to do it
 /*
- * Copyright (C) 2007-2010
+ * Copyright (C) 2007-2011
  *       pancake <youterm.com>
  *
  * radare is free software; you can redistribute it and/or modify
@@ -220,12 +220,10 @@ static int attributes_walk(FILE *fd, int sz2, int fields, int verbose) {
 				printf("      Exception table length: %d\n", sz);
 				for(k=0;k<sz;k++) {
 					fread(buf, 8, 1, fd);
-
 					V printf("       start_pc:   0x%04x\n", USHORT(buf,0));
 					V printf("       end_pc:     0x%04x\n", USHORT(buf,2));
 					V printf("       handler_pc: 0x%04x\n", USHORT(buf,4));
 					V printf("       catch_type: %d\n", USHORT(buf,6));
-
 				}
 				sz = (int)read_short(fd);
 				V printf("      code Attributes_count: %d\n", sz);
@@ -242,6 +240,10 @@ static int attributes_walk(FILE *fd, int sz2, int fields, int verbose) {
 					V printf("         line_number: %d\n", USHORT(buf, 2));
 				}
 			} else
+			if (!strcmp(name, "StackMapTable")) {
+				fread (buf, 2, 1, fd);
+				V printf("     StackMapTable: %d\n", USHORT(buf, 0));
+			} else
 			if (!strcmp(name, "ConstantValue")) {
 				fread(buf, 2, 1, fd);
 	#if 0
@@ -250,7 +252,7 @@ static int attributes_walk(FILE *fd, int sz2, int fields, int verbose) {
 	#endif
 				V printf("     ConstValueIndex: %d\n", USHORT(buf, 0));
 			} else {
-				fprintf(stderr, "** ERROR ** Unknown section '%s'\n", name);
+				fprintf (stderr, "** ERROR ** Unknown section '%s'\n", name);
 				return 1;
 			}
 		}
@@ -298,7 +300,6 @@ int java_classdump(const char *file, int verbose) {
 	cp_items = malloc(sizeof(struct cp_item)*(cf.cp_count+1));
 	for(i=0;i<cf.cp_count;i++) {
 		struct constant_t *c;
-
 		fread(buf, 1, 1, fd);
 
 		c = NULL;

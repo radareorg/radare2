@@ -5,6 +5,17 @@
 
 
 * Move the content of libr/*/TODO here
+* Honor string metadata for asmsteps ('jk' in visual)
+* Dupped javasm bin/asm
+* r_bin_demangle ()
+	- _ZN7WebCore11CounterNode7recountERKNS_12AtomicStringE
+	  - demangle c++ and objc names
+	    WebCore.CounterNode.recount(AtomicString)
+	  _ZN = begin of stream
+	  0-9+ = count of chars
+	  E = end of stream
+	  RKNS_ = start of arguments
+    - http://www.codesourcery.com/public/cxx-abi/abi.html#mangling
 
 pancake
 -------
@@ -64,17 +75,6 @@ earada
 ------
 * p7 : 7bit encoding (sms)
 * Add print support for bitfields (pm b...)
-* r_bin_demangle ()
-	- _ZN7WebCore11CounterNode7recountERKNS_12AtomicStringE
-	  - demangle c++ and objc names
-	    WebCore.CounterNode.recount(AtomicString)
-	  _ZN = begin of stream
-	  0-9+ = count of chars
-	  E = end of stream
-	  RKNS_ = start of arguments
-    - http://www.codesourcery.com/public/cxx-abi/abi.html#mangling
-    - c++filt
-    - http://code.google.com/p/smali/wiki/TypesMethodsAndFields
 * r_socket
   - Add SSL support
   - http API in r_socket module

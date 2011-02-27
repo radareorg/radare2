@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 */
+/* radare - LGPL - Copyright 2009-2011 */
 /*   pancake<nopcode.org> */
 /*   nibble.ds<gmail.com> */
 /* perl extension for libr (radare2) */
@@ -20,8 +20,7 @@ static struct r_core_t *core = NULL;
 
 static PerlInterpreter *my_perl = NULL;
 
-static void perl_radare_cmd(pTHX_ CV* cv)
-{
+static void perl_radare_cmd(pTHX_ CV* cv) {
 	char *cmd;
 	char *str;
 	dXSARGS;
@@ -30,7 +29,7 @@ static void perl_radare_cmd(pTHX_ CV* cv)
 	ST(0) = newSVpvn(str, strlen(str));
 	free(str);
 	XSRETURN(1);
-	str = (char *)items; /* dummy unreachable code */
+	str = (char *)(size_t)items; /* dummy unreachable code */
 }
 
 static void xs_init(pTHX)

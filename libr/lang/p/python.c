@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 /* python extension for libr (radare2) */
 
-#include "r_lib.h"
-#include "r_lang.h"
-#include "r_core.h"
+#include <r_lib.h>
+#include <r_lang.h>
+#include <r_core.h>
 #undef _GNU_SOURCE
 #undef _XOPEN_SOURCE
 #undef _POSIX_C_SOURCE
@@ -41,8 +41,6 @@ typedef struct {
 	PyObject *last;  /* last name */
 	int number;
 } Radare;
-
-
 
 #if PY_MAJOR_VERSION<3
 static char *py_nullstr = "";

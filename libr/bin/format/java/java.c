@@ -1,23 +1,7 @@
 // XXX this is dupped in r_asm and r_bin :O
-
 /*
- * Copyright (C) 2007, 2008, 2009, 2010
+ * Copyright (C) 2007, 2008, 2009, 2010-2011
  *       pancake <youterm.com>, nibble <develsec.org>
- *
- * radare is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * radare is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with radare; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- *
  */
 
 #include <stdio.h>
@@ -29,7 +13,6 @@
 #include "java.h"
 #include <r_types.h>
 #include <r_util.h>
-
 
 static struct constant_t {
 	char *name;
@@ -59,7 +42,7 @@ static unsigned short read_short(struct r_bin_java_obj_t *bin) {
 	return R_BIN_JAVA_SWAPUSHORT(sh);
 }
 
-static struct r_bin_java_cp_item_t* get_cp(struct r_bin_java_obj_t *bin, unsigned short i) {
+static struct r_bin_java_cp_item_t* get_cp(struct r_bin_java_obj_t *bin, int i) {
 	if (i<0||i>bin->cf.cp_count)
 		return &cp_null_item;
 	return &bin->cp_items[i];
@@ -140,6 +123,10 @@ static int attributes_walk(struct r_bin_java_obj_t *bin, struct r_bin_java_attr_
 					IFDBG printf("         line_number: %d\n", attr->info.linenum.line_number);
 				}
 			} else
+			if (!strcmp(name, "StackMapTable")) {
+				r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)buf, 2); // XXX: this is probably wrong
+				//printf("     StackMapTable: %d\n", USHORT(buf, 0));
+			} else
 			if (!strcmp(name, "ConstantValue")) {
 				attr->type = R_BIN_JAVA_TYPE_CONST;
 				r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)buf, 2);
@@ -158,8 +145,7 @@ static int attributes_walk(struct r_bin_java_obj_t *bin, struct r_bin_java_attr_
 	return R_TRUE;
 }
 
-static int javasm_init(struct r_bin_java_obj_t *bin)
-{
+static int javasm_init(struct r_bin_java_obj_t *bin) {
 	unsigned short sz, sz2;
 	char buf[0x9999];
 	int i,j;
@@ -319,7 +305,14 @@ static int javasm_init(struct r_bin_java_obj_t *bin)
 			bin->methods[i].flags = R_BIN_JAVA_USHORT(buf, 0);
 			IFDBG printf("%2d: Access Flags: %d\n", i, bin->methods[i].flags);
 			bin->methods[i].name_idx = R_BIN_JAVA_USHORT(buf, 2);
+#if OLD
 			bin->methods[i].name = strdup((get_cp(bin, R_BIN_JAVA_USHORT(buf, 2)-1))->value);
+#else
+			bin->methods[i].name = malloc (1024);
+			sprintf (bin->methods[i].name, "%s%s",
+				(get_cp(bin, R_BIN_JAVA_USHORT(buf, 2)-1))->value,
+				(get_cp(bin, R_BIN_JAVA_USHORT(buf, 2)))->value);
+#endif
 			IFDBG printf("    Name Index: %d (%s)\n", bin->methods[i].name_idx, bin->methods[i].name);
 			bin->methods[i].descriptor_idx = R_BIN_JAVA_USHORT(buf, 4);
 			bin->methods[i].descriptor = strdup((get_cp(bin, R_BIN_JAVA_USHORT(buf, 4)-1))->value);
@@ -388,7 +381,7 @@ struct r_bin_java_str_t* r_bin_java_get_strings(struct r_bin_java_obj_t* bin) {
 			strings[ctr].offset = (ut64)bin->cp_items[i].off;
 			strings[ctr].ordinal = (ut64)bin->cp_items[i].ord;
 			strings[ctr].size = (ut64)bin->cp_items[i].length;
-			memcpy(strings[ctr].str, bin->cp_items[i].value, R_BIN_JAVA_MAXSTR);
+			memcpy (strings[ctr].str, bin->cp_items[i].value, R_BIN_JAVA_MAXSTR);
 			strings[ctr].last = 0;
 			ctr++;
 		}
