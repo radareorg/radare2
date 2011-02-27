@@ -57,24 +57,31 @@ R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num) {
 }
 
 R_API char *r_anal_value_to_string (RAnalValue *value) {
-	char *out = r_str_new ("");
+	char *out = NULL;
 	if (value) {
-		if (value->memref) {
-			switch (value->memref) {
-			case 1: out = r_str_concat (out, "(char)"); break;
-			case 2: out = r_str_concat (out, "(short)"); break;
-			case 4: out = r_str_concat (out, "(word)"); break;
-			case 8: out = r_str_concat (out, "(dword)"); break;
+		out = r_str_new ("");
+		if (value->imm) {
+			if (value->imm != -1LL)
+				out = r_str_concatf (out, "0x%"PFMT64x, value->imm);
+			else out = r_str_concat (out, "-1");
+		} else {
+			if (value->memref) {
+				switch (value->memref) {
+				case 1: out = r_str_concat (out, "(char)"); break;
+				case 2: out = r_str_concat (out, "(short)"); break;
+				case 4: out = r_str_concat (out, "(word)"); break;
+				case 8: out = r_str_concat (out, "(dword)"); break;
+				}
+				out = r_str_concat (out, "[");
 			}
-			out = r_str_concat (out, "[");
+			if (value->mul) out = r_str_concatf (out, "%d*", value->mul);
+			if (value->reg) out = r_str_concatf (out, "%s", value->reg->name);
+			if (value->regdelta) out = r_str_concatf (out, "+%s", value->regdelta->name);
+			if (value->base!=0) out = r_str_concatf (out, "0x%"PFMT64x, value->base);
+			if (value->delta>0) out = r_str_concatf (out, "+%d", value->delta);
+			else if (value->delta<0) out = r_str_concatf (out, "%d", value->delta);
+			if (value->memref) out = r_str_concat (out, "]");
 		}
-		if (value->mul) out = r_str_concatf (out, "%d*", value->mul);
-		if (value->reg) out = r_str_concatf (out, "%s", value->reg->name);
-		if (value->regdelta) out = r_str_concatf (out, "+%s", value->regdelta->name);
-		if (value->base!=0) out = r_str_concatf (out, "0x%"PFMT64x, value->base);
-		if (value->delta>0) out = r_str_concatf (out, "+%d", value->delta);
-		else if (value->delta<0) out = r_str_concatf (out, "%d", value->delta);
-		if (value->memref) out = r_str_concat (out, "]");
 	}
 	return out;
 }

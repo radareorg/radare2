@@ -419,8 +419,7 @@ strcpy (extra, pad);
 			// TODO: Use data from code analysis..not raw analop here
 			// if we want to get more information
 			opstr = r_anal_op_to_string (core->anal, &analop);
-		} else
-		if (pseudo) {
+		} else if (pseudo) {
 			r_parse_parse (core->parser, asmop.buf_asm, str);
 			opstr = str;
 		} else if (filter) {

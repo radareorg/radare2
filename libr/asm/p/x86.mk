@@ -1,6 +1,5 @@
 OBJ_X86=asm_x86.o
 # udis86
-OBJ_X86=asm_x86.o
 OBJ_X86+=../arch/x86/udis86/syn.o
 OBJ_X86+=../arch/x86/udis86/input.o
 OBJ_X86+=../arch/x86/udis86/udis86.o

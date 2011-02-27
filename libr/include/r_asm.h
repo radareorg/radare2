@@ -119,7 +119,6 @@ R_API char *r_asm_op_get_hex(RAsmOp *op);
 R_API char *r_asm_op_get_asm(RAsmOp *op);
 
 /* plugin pointers */
-extern RAsmPlugin r_asm_plugin_dummy;
 extern RAsmPlugin r_asm_plugin_bf;
 extern RAsmPlugin r_asm_plugin_java;
 extern RAsmPlugin r_asm_plugin_mips;
