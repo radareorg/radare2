@@ -314,8 +314,8 @@ static void anal_cmp(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 	op->type = R_ANAL_OP_TYPE_CMP;
 	switch (io.id) {
 	case X86IM_IO_ID_CMP_MM_RG: /* cmp [0x0ff | reg1+reg2+0x0ff], reg */
-		op->dst = anal_fill_ai_mm (anal, io);
-		op->src[0] = anal_fill_ai_rg (anal, io, 0);
+		op->src[0] = anal_fill_ai_mm (anal, io);
+		op->src[1] = anal_fill_ai_rg (anal, io, 0);
 		/* TODO: Deprecate */
 		if (io.mem_base == 0) { /* cmp [0x0ff], reg */
 			op->ref = disp;
@@ -323,20 +323,20 @@ static void anal_cmp(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 		break;
 	case X86IM_IO_ID_CMP_R1_R2: /* cmp reg2, reg1 */
 	case X86IM_IO_ID_CMP_R2_R1:
-		op->dst = anal_fill_ai_rg (anal, io, 0);
-		op->src[0] = anal_fill_ai_rg (anal, io, 1);
+		op->src[0] = anal_fill_ai_rg (anal, io, 0);
+		op->src[1] = anal_fill_ai_rg (anal, io, 1);
 		break;
 	case X86IM_IO_ID_CMP_RG_MM: /* cmp reg, [0x0ff | reg1+reg2+0x0ff] */
-		op->dst = anal_fill_ai_rg (anal, io, 0);
-		op->src[0] = anal_fill_ai_mm (anal, io);
+		op->src[0] = anal_fill_ai_rg (anal, io, 0);
+		op->src[1] = anal_fill_ai_mm (anal, io);
 		/* TODO: Deprecate */
 		if (io.mem_base == 0) { /* cmp reg, [0x0ff] */
 			op->ref = disp;
 		}
 		break;
 	case X86IM_IO_ID_CMP_MM_IM: /* cmp [0x0ff | reg1+reg2+0x0ff], 0x1 */
-		op->dst = anal_fill_ai_mm (anal, io);
-		op->src[0] = anal_fill_im (anal, io);
+		op->src[0] = anal_fill_ai_mm (anal, io);
+		op->src[1] = anal_fill_im (anal, io);
 		/* TODO: Deprecate */
 		if (io.mem_base == 0) { /* cmp [0x0ff], 0x1 */
 			op->ref = disp;
@@ -349,8 +349,8 @@ static void anal_cmp(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 		break;
 	case X86IM_IO_ID_CMP_RG_IM: /* cmp reg, 0x1 */
 	case X86IM_IO_ID_CMP_AC_IM:
-		op->dst = anal_fill_ai_rg (anal, io, 0);
-		op->src[0] = anal_fill_im (anal, io);
+		op->src[0] = anal_fill_ai_rg (anal, io, 0);
+		op->src[1] = anal_fill_im (anal, io);
 		break;
 	}
 }
@@ -363,20 +363,20 @@ static void anal_test(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 	op->type = R_ANAL_OP_TYPE_CMP;
 	switch (io.id) {
 	case X86IM_IO_ID_TEST_MM_R1: /* test [0x0ff | reg1+reg2+0x0ff], reg */
-		op->dst = anal_fill_ai_mm (anal, io);
-		op->src[0] = anal_fill_ai_rg (anal, io, 0);
+		op->src[0] = anal_fill_ai_mm (anal, io);
+		op->src[1] = anal_fill_ai_rg (anal, io, 0);
 		/* TODO: Deprecate */
 		if (io.mem_base == 0) { /* test [0x0ff], reg */
 			op->ref = disp;
 		}
 		break;
 	case X86IM_IO_ID_TEST_R1_R2: /* test reg2, reg1 */
-		op->dst = anal_fill_ai_rg (anal, io, 0);
-		op->src[0] = anal_fill_ai_rg (anal, io, 1);
+		op->src[0] = anal_fill_ai_rg (anal, io, 0);
+		op->src[1] = anal_fill_ai_rg (anal, io, 1);
 		break;
 	case X86IM_IO_ID_TEST_MM_IM: /* test [0x0ff | reg1+reg2+0x0ff], 0x1 */
-		op->dst = anal_fill_ai_mm (anal, io);
-		op->src[0] = anal_fill_im (anal, io);
+		op->src[0] = anal_fill_ai_mm (anal, io);
+		op->src[1] = anal_fill_im (anal, io);
 		/* TODO: Deprecate */
 		if (io.mem_base == 0) { /* test [0x0ff], 0x1 */
 			op->ref = disp;
@@ -389,8 +389,8 @@ static void anal_test(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 		break;
 	case X86IM_IO_ID_TEST_RG_IM: /* test reg, 0x1 */
 	case X86IM_IO_ID_TEST_AC_IM:
-		op->dst = anal_fill_ai_rg (anal, io, 0);
-		op->src[0] = anal_fill_im (anal, io);
+		op->src[0] = anal_fill_ai_rg (anal, io, 0);
+		op->src[1] = anal_fill_im (anal, io);
 		break;
 	}
 }

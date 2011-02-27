@@ -65,8 +65,8 @@ R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
 R_API char *r_anal_cond_to_string(RAnalCond *cond) {
 	char *val0, *val1, *out = NULL;
 	const char *cnd;
-	if (cond == NULL)
-		return "?=";
+	if (!cond)
+		return NULL;
 	cnd = condstring (cond);
 	val0 = r_anal_value_to_string (cond->arg[0]);
 	val1 = r_anal_value_to_string (cond->arg[1]);
