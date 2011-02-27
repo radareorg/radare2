@@ -1118,7 +1118,7 @@ static void r_core_visual_refresh (RCore *core) {
 }
 
 R_API int r_core_visual(RCore *core, const char *input) {
-	const char *cmdprompt;
+	const char *cmdprompt, *teefile;
 	ut64 scrseek;
 	int ch;
 	obs = core->blocksize;
@@ -1136,6 +1136,10 @@ R_API int r_core_visual(RCore *core, const char *input) {
 		}
 		input++;
 	}
+
+	// disable tee in cons
+	teefile = r_cons_singleton ()->teefile;
+	r_cons_singleton ()->teefile = "";
 
 	color = r_config_get_i (core->config, "scr.color");
 	debug = r_config_get_i (core->config, "cfg.debug");
@@ -1160,5 +1164,6 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	core->print->cur_enabled = R_FALSE;
 	if (autoblocksize)
 		r_core_block_size (core, obs);
+	r_cons_singleton ()->teefile = teefile;
 	return 0;
 }

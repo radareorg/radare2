@@ -112,6 +112,20 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 	return op;
 }
 
+static char *filter_refline(const char *str) {
+	char *p, *s = strdup (str);
+	p = strstr (s, "->");
+	if (p) p[0]=p[1]=' ';
+	p = strstr (s, "=<");
+	if (p) p[0]=p[1]=' ';
+	for(p=s;*p;p++) {
+		if (*p=='`') *p = '|';
+		if (*p=='-') *p = '|';
+		if (*p=='=') *p = '|';
+	}
+	return s;
+}
+
 /* TODO: move to print/disasm.c */
 static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
 	RAnalCC cc = {0};
@@ -121,6 +135,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	int middle = 0;
 	char str[128], strsub[128];
 	char *line = NULL, *comment, *opstr, *osl = NULL; // old source line
+	char *refline = NULL;
 	RAsmOp asmop;
 	RAnalOp analop;
 	RFlagItem *flag;
@@ -208,14 +223,17 @@ core->inc = 0;
 	for (lines=i=idx=ret=0; idx < len && lines < l; idx+=ret,i++, lines++) {
 		ut64 at = addr + idx;
 		r_asm_set_pc (core->assembler, at);
+		line = r_anal_reflines_str (core->anal, core->reflines, at, linesopts);
+		refline = filter_refline (line);
+
 		if (show_comments)
 		if ((comment = r_meta_get_string (core->meta, R_META_COMMENT, at))) {
+			r_cons_strcat (refline);
 			r_cons_strcat ("        ");
 			r_cons_strcat (comment);
 			free (comment);
 		}
 		// TODO : line analysis must respect data types! shouldnt be interpreted as code
-		line = r_anal_reflines_str (core->anal, core->reflines, at, linesopts);
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx);
 		if (ret<1) {
 			ret = 1;
@@ -234,14 +252,14 @@ if (core->inc == 0)
 			if ((xrefs = r_anal_xref_get (core->anal, at))) {
 				r_list_foreach (xrefs, iter, refi) {
 					f = r_anal_fcn_find (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
-r_cons_printf ("%s                             ", pre);
+//r_cons_printf ("%s                             ", pre);
+					r_cons_printf ("%s%s", pre, refline);
 					if (show_color)
 					r_cons_printf (Color_TURQOISE"; %s XREF 0x%08"PFMT64x" (%s)"Color_RESET"\n",
 							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
 							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
 							f?f->name:"unk");
-					else
-					r_cons_printf ("; %s XREF 0x%08"PFMT64x" (%s)\n",
+					else r_cons_printf ("; %s XREF 0x%08"PFMT64x" (%s)\n",
 							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
 							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
 							f?f->name:"unk");
@@ -259,24 +277,25 @@ r_cons_printf ("%s                             ", pre);
 				pre = "";
 				if (f->addr == at) {
 					char *sign = r_anal_fcn_to_string (core->anal, f);
-					r_cons_printf ("/ %s: %s (%d)\n: ",
+					r_cons_printf ("/ %s: %s (%d)\n| ",
 						f->type == R_ANAL_FCN_TYPE_FCN?"function":"loc", f->name, f->size);
 					if (sign) r_cons_printf ("// %s\n", sign);
 					free (sign);
+					pre = "| ";
 					stackptr = 0;
 				} else if (f->addr+f->size-1 == at) {
 					r_cons_printf ("\\ ");
 				} else if (at > f->addr && at < f->addr+f->size-1) {
-					r_cons_printf (": ");
-					pre = ": ";
+					r_cons_printf ("| ");
+					pre = "| ";
 				} else f = NULL;
 			}
 		}
 		flag = r_flag_get_i (core->flags, at);
 		//if (flag && !show_bytes) {
 		if (flag) {
-			if (show_lines && line)
-				r_cons_strcat (line);
+			if (show_lines && refline)
+				r_cons_strcat (refline);
 			if (show_offset)
 				printoffset (at, show_color);
 			r_cons_printf ("%s:\n%s", flag->name, pre);
@@ -316,6 +335,8 @@ r_cons_printf ("%s                             ", pre);
 			}
 			ret = (int)mi->size;
 			free (line);
+			free (refline);
+			line = refline = NULL;
 			continue;
 		case R_META_DATA:
 			{
@@ -327,14 +348,16 @@ r_cons_printf ("%s                             ", pre);
 				core->print->flags |= R_PRINT_FLAGS_HEADER;
 				ret = (int)mi->size-delta;
 				free (line);
-				line = NULL;
+				free (refline);
+				line = refline = NULL;
 			}
 			continue;
 		case R_META_STRUCT:
 			r_print_format (core->print, at, buf+idx, len-idx, mi->str);
 			ret = (int)mi->size;
 			free (line);
-			line = NULL;
+			free (refline);
+			line = refline = NULL;
 			continue;
 		}
 		if (show_bytes) {
@@ -476,7 +499,7 @@ strcpy (extra, pad);
 		if (!r_anal_cc_update (core->anal, &cc, &analop)) {
 			if (show_functions) {
 				char *ccstr = r_anal_cc_to_string (core->anal, &cc);
-				r_cons_printf ("\n%s    ; %s", pre, ccstr);
+				r_cons_printf ("\n%s%s    ; %s", line, pre, ccstr);
 				free (ccstr);
 			}
 			r_anal_cc_reset (&cc);
@@ -523,6 +546,8 @@ strcpy (extra, pad);
 				r_cons_printf ("%s; ------------\n%s", line, pre);
 			}
 			free (line);
+			free (refline);
+			line = refline = NULL;
 		}
 	}
 	free (osl);

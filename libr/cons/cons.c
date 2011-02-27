@@ -207,18 +207,18 @@ R_API void r_cons_flush() {
 			}
 		}
 	}
-	if (tee&&tee[0]) {
+	if (tee&&*tee) {
 		FILE *d = fopen (tee, "a+");
 		if (d != NULL) {
-			if (I.buffer_len != fwrite (I.buffer, I.buffer_len, 1, d))
-				eprintf ("r_cons_flush: fwrite: error\n");
+			if (I.buffer_len != fwrite (I.buffer, 1, I.buffer_len, d)) {
+				eprintf ("r_cons_flush: fwrite: error (%s)\n", tee);
+			}
 			fclose (d);
 		}
-	} else {
-		// is_html must be a filter, not a write endpoint
-		if (I.is_html) r_cons_html_print (I.buffer);
-		else r_cons_write (I.buffer, I.buffer_len);
 	}
+	// is_html must be a filter, not a write endpoint
+	if (I.is_html) r_cons_html_print (I.buffer);
+	else r_cons_write (I.buffer, I.buffer_len);
 	r_cons_reset ();
 }
 

@@ -228,6 +228,12 @@ static int config_scrprompt_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_teefile_callback(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_cons_singleton()->teefile = node->value;
+	return R_TRUE;
+}
+
 static int config_swstep_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -354,6 +360,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "cmd.prompt", "");
 	r_config_set (cfg, "cmd.vprompt", "");
 	r_config_set (cfg, "cmd.bp", "");
+	r_config_set_cb (cfg, "scr.tee", "", config_teefile_callback);
 	r_config_set_cb (cfg, "scr.prompt", "true", &config_scrprompt_callback);
 	r_config_set_cb (cfg, "scr.color",
 		(core->print->flags&R_PRINT_FLAGS_COLOR)?"true":"false",
@@ -606,8 +613,6 @@ R_API int r_core_config_init(RCore *core) {
 		config_set_scr_pal("7f","magenta")
 
 	config_set("scr.grephigh", "");
-	node = config_set("scr.tee", "");
-	node->callback = &config_teefile_callback;
 	node = config_set("scr.buf", "false");
 	node->callback = &config_scrbuf_callback;
 	node = config_set_i("scr.width", config.width);

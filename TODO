@@ -4,6 +4,9 @@
   |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
 
+* If [0-9] keybindings in visual point to same address use same reference
+* Remove linestyle
+  - lines are not removed..
 * Move the content of libr/*/TODO here
 * Honor string metadata for asmsteps ('jk' in visual)
 * Dupped javasm bin/asm

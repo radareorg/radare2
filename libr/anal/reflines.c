@@ -93,13 +93,13 @@ R_API char* r_anal_reflines_str(RAnal *anal, RAnalRefline *list, ut64 addr, int 
 			if (addr > ref->from && addr < ref->to) {
 				if (ch=='-'||ch=='=')
 					str = r_str_concatch (str, ch);
-				else str = r_str_concat (str, "|");
+				else str = r_str_concatch (str, '|');
 			} else str = r_str_concatch (str, ch);
 		} else { /* up */
 			if (addr < ref->from && addr > ref->to) {
 				if (ch=='-'||ch=='=')
 					str = r_str_concatch (str, ch);
-				else str = r_str_concat (str, "|");
+				else str = r_str_concatch (str, '|');
 			} else str = r_str_concatch (str, ch);
 		}
 		if (wide)
