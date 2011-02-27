@@ -148,7 +148,9 @@ install-perl:
 
 install-vapi:
 	@${INSTALL_DIR} ${DESTDIR}${PREFIX}/share/vala/vapi
+	#@${INSTALL_DIR} ${DESTDIR}${PREFIX}/share/vala/vapi-0.12
 	${INSTALL_DATA} vapi/*.vapi vapi/*.deps ${DESTDIR}${PREFIX}/share/vala/vapi
+	#${INSTALL_DATA} vapi/*.vapi vapi/*.deps ${DESTDIR}${PREFIX}/share/vala/vapi-0.12
 
 EXAMPLEDIR=${DESTDIR}${PREFIX}/share/radare2-swig
 install-examples: install-examples-python

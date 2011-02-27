@@ -92,7 +92,7 @@ typedef struct r_asm_plugin_t {
 #ifdef R_API
 /* asm.c */
 R_API RAsm *r_asm_new();
-
+#define r_asm_op_free free
 R_API void r_asm_free(RAsm *a);
 R_API int r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val);
 R_API void r_asm_set_user_ptr(RAsm *a, void *user);

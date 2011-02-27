@@ -70,7 +70,11 @@ install: install-doc install-man
 	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
-symstall install-symlink: install-man-symlink install-doc-symlink
+install-pkgconfig-symlink:
+	@${INSTALL_DIR} ${PFX}/lib/pkgconfig
+	cd pkgcfg ; for a in *.pc ; do ln -fs $$a ${DESTDIR}/${PREFIX}/lib/pkgconfig/$$a ; done
+
+symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink
 	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
