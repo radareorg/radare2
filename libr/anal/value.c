@@ -78,8 +78,8 @@ R_API char *r_anal_value_to_string (RAnalValue *value) {
 			if (value->reg) out = r_str_concatf (out, "%s", value->reg->name);
 			if (value->regdelta) out = r_str_concatf (out, "+%s", value->regdelta->name);
 			if (value->base!=0) out = r_str_concatf (out, "0x%"PFMT64x, value->base);
-			if (value->delta>0) out = r_str_concatf (out, "+%d", value->delta);
-			else if (value->delta<0) out = r_str_concatf (out, "%d", value->delta);
+			if (value->delta>0) out = r_str_concatf (out, "+0x%"PFMT64x, value->delta);
+			else if (value->delta<0) out = r_str_concatf (out, "-0x%"PFMT64x, -value->delta);
 			if (value->memref) out = r_str_concat (out, "]");
 		}
 	}
