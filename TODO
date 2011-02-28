@@ -5,8 +5,7 @@
 
 
 * If [0-9] keybindings in visual point to same address use same reference
-* Remove linestyle
-  - lines are not removed..
+* Remove linestyle???
 * Move the content of libr/*/TODO here
 * Honor string metadata for asmsteps ('jk' in visual)
 * Dupped javasm bin/asm
@@ -22,17 +21,14 @@
 
 pancake
 -------
-* idc2rdb !!! important 
+* print format for libmagic
 * check search multiple keywords and signatures
 * Visual disassembly cursor does not displays on scr.color=0
 * if console width > X place comments there (ash)
 * Implement BLOCK in r_core_sysenv_begin|end ()
 * Fix iterators for r_macro (test only?)
-* print format for libmagic
 * search for antidebug/disasm tricks opcodes
   - allows to find interesting points to analyze
-* AES/RSA Key finding
-  http://citp.princeton.edu/memory/code/ <- implement this stuff in r2
 
 nibble
 ------
@@ -112,6 +108,8 @@ earada
 
 0.8: focus on debugger and UI
 =============================
+* AES/RSA Key finding
+  http://citp.princeton.edu/memory/code/ <- implement this stuff in r2
 * Reimplement or fix the delta diffing in C - first we need to do it for ired..
 * add support for .a files (r_fs supports cpio and ar archives...)
 * Implement rap:// upload/download protocol commands (maybe just system() with rsc2+wget?

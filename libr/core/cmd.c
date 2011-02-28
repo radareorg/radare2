@@ -48,7 +48,7 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 				ret++;
 		break;
 	case 'e': // entropy
-		ret = (unsigned char) r_hash_entropy (bufz, size);
+		ret = (unsigned char) (r_hash_entropy (bufz, size)*255)/8;
 		break;
 	case 'h': //head
 	default:
@@ -500,7 +500,7 @@ strcpy (extra, pad);
 		if (!r_anal_cc_update (core->anal, &cc, &analop)) {
 			if (show_functions) {
 				char *ccstr = r_anal_cc_to_string (core->anal, &cc);
-				r_cons_printf ("\n%s%s    ; %s", line, pre, ccstr);
+				r_cons_printf ("\n%s%s    ; %s", pre, refline, ccstr);
 				free (ccstr);
 			}
 			r_anal_cc_reset (&cc);
@@ -2077,7 +2077,7 @@ static int cmd_print(void *data, const char *input) {
 		" pt [len]     print diferent timestamps\n"
 		" pr [len]     print N raw bytes\n"
 		" pu [len]     print N url encoded bytes\n"
-		" pU [len]     print N wide url encoded bytes\n",
+		" pU [len]     print N wide url encoded bytes\n"
 		" px [len]     hexdump of N bytes\n"
 		" pZ [len]     print zoom view\n");
 		break;
@@ -3217,7 +3217,7 @@ static int cmd_search(void *data, const char *input) {
 		r_cons_printf (
 		"Usage: /[amx/] [arg]\n"
 		" / foo           ; search for string 'foo'\n"
-		" /w foo          ; search for wide string 'f\\0o\\0o'\n"
+		" /w foo          ; search for wide string 'f\\0o\\0o\\0'\n"
 		" /e /E.F/i       ; match regular expression\n"
 		" /x ff0033       ; search for hex string\n"
 		" /c jmp [esp]    ; search for asm code (see search.asmstr)\n"

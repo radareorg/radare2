@@ -19,10 +19,10 @@ static double get_px(ut8 x, const ut8 *data, ut64 size) {
 
 R_API double r_hash_entropy(const ut8 *data, ut64 size) {
         double h = 0, px, log2;
-        unsigned char x;
+        unsigned int x;
 
-        log2 = logf ((double)2);
-        for (x = 0; x < 255; x++) {
+        log2 = log ((double)2);
+        for (x = 0; x <= 255; x++) {
                 px = get_px (x, data, size);
                 if (px > 0)
                         h += -px * (log (px)/log2);

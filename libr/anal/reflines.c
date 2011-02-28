@@ -81,13 +81,12 @@ R_API char* r_anal_reflines_str(RAnal *anal, RAnalRefline *list, ut64 addr, int 
 
 		if (addr == ref->to) dir = 1;
 		else if (addr == ref->from) dir = 2;
-
 		// TODO: if dir==1
 		if (addr == ref->to) {
 			str = r_str_concat (str, (ref->from>ref->to)?".":"`");
 			ch = '-';
 		} else if (addr == ref->from) {
-			str = r_str_concat (str, (ref->from>ref->to)?"`":".");
+			str = r_str_concat (str, (ref->from>ref->to)?"`":",");
 			ch = '=';
 		} else if (ref->from < ref->to) { /* down */
 			if (addr > ref->from && addr < ref->to) {

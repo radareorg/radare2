@@ -220,6 +220,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			p->printf (" %c", hex[(i+k)%16]);
 			if (i&1) p->printf (" ");
 		}
+		p->printf (" ");
 		for (i=0; i<inc; i++)
 			p->printf ("%c", hex[(i+k)%16]);
 		p->printf ("\n");
