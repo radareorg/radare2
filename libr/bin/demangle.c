@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2011 pancake<@nopcode.org> */
 
 #include <r_bin.h>
+#include <cxx/demangle.h>
 
 // http://code.google.com/p/smali/wiki/TypesMethodsAndFields
 R_API char *r_bin_demangle_java(const char *str) {
@@ -72,7 +73,10 @@ R_API char *r_bin_demangle_java(const char *str) {
 }
 
 R_API char *r_bin_demangle_cxx(const char *str) {
-	return NULL;
+	char *out;
+	int flags = DMGL_PARAMS | DMGL_ANSI | DMGL_VERBOSE; // | DMGL_RET_POSTFIX | DMGL_TYPES;
+	out = cplus_demangle_v3 (str, flags);
+	return out;
 }
 
 R_API int r_bin_demangle_type (const char *str) {
