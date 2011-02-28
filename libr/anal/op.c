@@ -75,9 +75,14 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		snprintf (ret, retsz, "%s = %s", r0, a0);
 		break;
 	case R_ANAL_OP_TYPE_CJMP:
-		cstr = r_anal_cond_to_string (op->cond);
-		snprintf (ret, retsz, "if (%s) goto 0x%"PFMT64x, cstr, op->jump);
-		free (cstr);
+		{
+		RAnalBlock *bb = r_anal_bb_from_offset (anal, op->addr);
+		if (bb) {
+			cstr = r_anal_cond_to_string (bb->cond);
+			snprintf (ret, retsz, "if (%s) goto 0x%"PFMT64x, cstr, op->jump);
+			free (cstr);
+		} else snprintf (ret, retsz, "if (%s) goto 0x%"PFMT64x, "unk", op->jump);
+		}
 		break;
 	case R_ANAL_OP_TYPE_JMP:
 		snprintf (ret, retsz, "goto 0x%"PFMT64x, op->jump);
@@ -128,8 +133,14 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 			snprintf (ret, retsz, "%s ^= %s", r0, a0);
 		else snprintf (ret, retsz, "%s = %s ^ %s", r0, a0, a1);
 		break;
+	case R_ANAL_OP_TYPE_CMP:
+		ret[0] = '\0';
+		break;
 	case R_ANAL_OP_TYPE_NOP:
 		sprintf (ret, "nop");
+		break;
+	case R_ANAL_OP_TYPE_RET:
+		sprintf (ret, "ret");
 		break;
 	default:
 		sprintf (ret, "// ?");

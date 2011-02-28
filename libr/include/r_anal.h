@@ -347,6 +347,7 @@ R_API RList *r_anal_bb_list_new();
 R_API void r_anal_bb_free(void *bb);
 R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb,
 		ut64 addr, ut8 *buf, ut64 len, int head);
+R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off);
 
 /* op.c */
 R_API RAnalOp *r_anal_op_new();

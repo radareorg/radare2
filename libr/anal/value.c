@@ -60,7 +60,7 @@ R_API char *r_anal_value_to_string (RAnalValue *value) {
 	char *out = NULL;
 	if (value) {
 		out = r_str_new ("");
-		if (value->imm) {
+		if (!value->base && !value->reg) {
 			if (value->imm != -1LL)
 				out = r_str_concatf (out, "0x%"PFMT64x, value->imm);
 			else out = r_str_concat (out, "-1");
