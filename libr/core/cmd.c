@@ -456,11 +456,12 @@ strcpy (extra, pad);
 			RAnalFcn *f = r_anal_fcn_find (core->anal, at, R_ANAL_FCN_TYPE_NULL);
 			if (f) {
 				r_parse_varsub (core->parser, f, opstr, strsub, sizeof (strsub));
+				if (decode) free (opstr);
 				opstr = strsub;
 			}
 		}
 		r_cons_strcat (opstr);
-		if (decode)
+		if (decode && !varsub)
 			free (opstr);
 		if (show_color)
 			r_cons_strcat (Color_RESET);
