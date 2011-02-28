@@ -4865,7 +4865,6 @@ d_demangle (const char *mangled, int options, size_t *palc)
     {
       free (dgs.buf);
       *palc = 0;
-printf ("PENIs\n");
       return NULL;
     }
 

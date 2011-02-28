@@ -81,7 +81,7 @@ R_API char *r_bin_demangle_cxx(const char *str) {
 
 R_API int r_bin_demangle_type (const char *str) {
 	// XXX: add
-	return R_BIN_NM_JAVA;
+	return R_BIN_NM_CXX;
 }
 
 R_API char *r_bin_demangle (RBin *bin, const char *str) {
