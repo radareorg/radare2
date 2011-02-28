@@ -224,8 +224,10 @@ static int rabin_show_imports() {
 	if ((imports = r_bin_get_imports (bin)) == NULL)
 		return R_FALSE;
 
-	if (!at && !rad)
-		eprintf ("[Imports]\n");
+	if (!at) {
+		if (rad) printf ("fs imports\n");
+		else eprintf ("[Imports]\n");
+	}
 
 	r_list_foreach (imports, iter, import) {
 		if (name && strcmp (import->name, name))
@@ -237,13 +239,9 @@ static int rabin_show_imports() {
 			if (rad) {
 				r_flag_name_filter (import->name);
 				if (import->size) 
-					printf ("af+ 0x%08"PFMT64x" %"PFMT64d" fcn.imp.%s i\n",
+					printf ("af+ 0x%08"PFMT64x" %"PFMT64d" imp.%s i\n",
 							va?baddr+import->rva:import->offset, import->size, import->name);
-				printf ("fs imports\n");
 				printf ("f imp.%s @ 0x%08"PFMT64x"\n",
-						import->name, va?baddr+import->rva:import->offset);
-				printf ("fs functions\n");
-				printf ("f fcn.imp.%s @ 0x%08"PFMT64x"\n",
 						import->name, va?baddr+import->rva:import->offset);
 			} else printf ("address=0x%08"PFMT64x" offset=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
 						   "hint=%03"PFMT64d" bind=%s type=%s name=%s\n",
@@ -293,13 +291,7 @@ static int rabin_show_symbols() {
 					free (mn);
 				}
 				r_flag_name_filter (symbol->name);
-				if (!strncmp (symbol->type,"FUNC", 4)) {
-					printf ("fs functions\n");
-					printf ("f fcn.sym.%s %"PFMT64d" 0x%08"PFMT64x"\n",
-							symbol->name, symbol->size,
-							va?baddr+symbol->rva:symbol->offset);
-					printf ("fs symbols\n");
-				} else if (!strncmp (symbol->type,"OBJECT", 6))
+				if (!strncmp (symbol->type,"OBJECT", 6))
 					printf ("Cd %"PFMT64d" @ 0x%08"PFMT64x"\n",
 							symbol->size, va?baddr+symbol->rva:symbol->offset);
 				printf ("f sym.%s %"PFMT64d" 0x%08"PFMT64x"\n",

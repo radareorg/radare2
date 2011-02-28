@@ -131,19 +131,15 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	// s -> Symbols
 	if ((list = r_bin_get_symbols (r->bin)) != NULL) {
 		char *name, *dname;
+		r_flag_space_set (r->flags, "symbols");
 		r_list_foreach (list, iter, symbol) {
 			name = strdup (symbol->name);
 			r_flag_name_filter (name);
-			snprintf (str, R_FLAG_NAME_SIZE, "fcn.sym.%s", name);
-			if (!strncmp (symbol->type,"FUNC", 4)) {
-				r_flag_space_set (r->flags, "functions");
-				r_flag_set (r->flags, str, va?baddr+symbol->rva:symbol->offset,
-						symbol->size, 0);
-				r_flag_space_set (r->flags, "symbols");
-			} else if (!strncmp (symbol->type,"OBJECT", 6))
+			snprintf (str, R_FLAG_NAME_SIZE, "sym.%s", name);
+			if (!strncmp (symbol->type,"OBJECT", 6))
 				r_meta_add (r->meta, R_META_DATA, va?baddr+symbol->rva:symbol->offset,
 				(va?baddr+symbol->rva:symbol->offset)+symbol->size, name);
-			r_flag_set (r->flags, str+4, va?baddr+symbol->rva:symbol->offset,
+			r_flag_set (r->flags, str, va?baddr+symbol->rva:symbol->offset,
 						symbol->size, 0);
 			dname = r_bin_demangle (r->bin, symbol->name);
 			if (dname) {
@@ -156,8 +152,8 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	}
 
 	// R -> Relocations
-	r_flag_space_set (r->flags, "relocs");
 	if ((list = r_bin_get_relocs (r->bin)) != NULL) {
+		r_flag_space_set (r->flags, "relocs");
 		r_list_foreach (list, iter, reloc) {
 			snprintf (str, R_FLAG_NAME_SIZE, "reloc.%s", reloc->name);
 			r_flag_set (r->flags, str, va?baddr+reloc->rva:reloc->offset,
@@ -186,18 +182,15 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 
 	// i -> Imports
 	if ((list = r_bin_get_imports (r->bin)) != NULL) {
+		r_flag_space_set (r->flags, "imports");
 		r_list_foreach (list, iter, import) {
 			r_flag_name_filter (import->name);
-			snprintf (str, R_FLAG_NAME_SIZE, "fcn.imp.%s", import->name);
+			snprintf (str, R_FLAG_NAME_SIZE, "imp.%s", import->name);
 			if (import->size)
 				if (!r_anal_fcn_add (r->anal, va?baddr+import->rva:import->offset,
 						import->size, str, R_ANAL_FCN_TYPE_IMP, NULL))
 					eprintf ("Cannot add function: %s (duplicated)\n", import->name);
-			r_flag_space_set (r->flags, "functions");
 			r_flag_set (r->flags, str, va?baddr+import->rva:import->offset,
-					import->size, 0);
-			r_flag_space_set (r->flags, "imports");
-			r_flag_set (r->flags, str+4, va?baddr+import->rva:import->offset,
 					import->size, 0);
 		}
 	}
@@ -213,9 +206,9 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 					section->size, 0);
 			r_io_section_add (r->io, section->offset, baddr+section->rva,
 					section->size, section->vsize, section->srwx, section->name);
-			snprintf (str, R_FLAG_NAME_SIZE, "va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"
+			snprintf (str, R_FLAG_NAME_SIZE, "[%i] va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"
 					PFMT64d" vsz=%"PFMT64d" rwx=%c%c%c%c %s",
-					baddr+section->rva, section->offset, section->size, section->vsize,
+					i++, baddr+section->rva, section->offset, section->size, section->vsize,
 					R_BIN_SCN_SHAREABLE (section->srwx)?'s':'-',
 					R_BIN_SCN_READABLE (section->srwx)?'r':'-',
 					R_BIN_SCN_WRITABLE (section->srwx)?'w':'-',

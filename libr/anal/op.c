@@ -64,6 +64,7 @@ R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
 }
 
 R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
+	RAnalFcn *f;
 	int retsz = 128;
 	char *cstr, *ret = malloc (128);
 	char *r0 = r_anal_value_to_string (op->dst);
@@ -94,9 +95,13 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	case R_ANAL_OP_TYPE_POP:
 		snprintf (ret, retsz, "pop %s", r0);
 		break;
+	case R_ANAL_OP_TYPE_UCALL:
+		snprintf (ret, retsz, "%s()", r0);
+		break;
 	case R_ANAL_OP_TYPE_CALL:
-		// XXX: resolve flag name
-		snprintf (ret, retsz, "0x%"PFMT64x"()", op->jump);
+		f = r_anal_fcn_find (anal, op->jump, R_ANAL_FCN_TYPE_NULL);
+		if (f) snprintf (ret, retsz, "%s()", f->name);
+		else  snprintf (ret, retsz, "0x%"PFMT64x"()", op->jump);
 		break;
 	case R_ANAL_OP_TYPE_ADD:
 		if (a1 == NULL || !strcmp (a0, a1))
