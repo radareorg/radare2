@@ -227,7 +227,7 @@ core->inc = 0;
 		refline = filter_refline (line);
 
 		if (show_comments)
-		if ((comment = r_meta_get_string (core->meta, R_META_COMMENT, at))) {
+		if ((comment = r_meta_get_string (core->meta, R_META_TYPE_COMMENT, at))) {
 			r_cons_strcat (refline);
 			r_cons_strcat ("        ");
 			r_cons_strcat (comment);
@@ -323,10 +323,10 @@ if (core->inc == 0)
 				stackptr = 0;
 		}
 		// TODO: implement ranged meta find (if not at the begging of function..
-		mi = r_meta_find (core->meta, at, R_META_ANY, R_META_WHERE_HERE);
+		mi = r_meta_find (core->meta, at, R_META_TYPE_ANY, R_META_WHERE_HERE);
 		if (mi)
 		switch (mi->type) {
-		case R_META_STRING:
+		case R_META_TYPE_STRING:
 			// TODO: filter string (r_str_unscape)
 			{
 			char *out = r_str_unscape (mi->str);
@@ -338,7 +338,7 @@ if (core->inc == 0)
 			free (refline);
 			line = refline = NULL;
 			continue;
-		case R_META_DATA:
+		case R_META_TYPE_DATA:
 			{
 			int delta = at-mi->from;
 				core->print->flags &= ~R_PRINT_FLAGS_HEADER;
@@ -352,7 +352,7 @@ if (core->inc == 0)
 				line = refline = NULL;
 			}
 			continue;
-		case R_META_STRUCT:
+		case R_META_TYPE_FORMAT:
 			r_print_format (core->print, at, buf+idx, len-idx, mi->str);
 			ret = (int)mi->size;
 			free (line);
@@ -521,17 +521,17 @@ strcpy (extra, pad);
 			int ret = r_io_read_at (core->io, analop.ref, (void *)&word, sizeof (word));
 			if (ret == sizeof (word)) {
 				RMetaItem *mi2 = r_meta_find (core->meta, (ut64)word,
-					R_META_ANY, R_META_WHERE_HERE);
+					R_META_TYPE_ANY, R_META_WHERE_HERE);
 				if (!mi2) {
 					mi2 = r_meta_find (core->meta, (ut64)analop.ref,
-						R_META_ANY, R_META_WHERE_HERE);
+						R_META_TYPE_ANY, R_META_WHERE_HERE);
 					if (mi2) {
 						char *str = r_str_unscape (mi2->str);
 						r_cons_printf (" (at=0x%08"PFMT64x") (len=%"PFMT64d") \"%s\" ", analop.ref, mi2->size, str);
 						free (str);
 					} else r_cons_printf ("; => 0x%08x ", word);
 				} else {
-					if (mi2->type == R_META_STRING) {
+					if (mi2->type == R_META_TYPE_STRING) {
 						char *str = r_str_unscape (mi2->str);
 						r_cons_printf (" (at=0x%08x) (len=%"PFMT64d") \"%s\" ", word, mi2->size, str);
 						free (str);
@@ -3504,7 +3504,7 @@ static int cmd_meta(void *data, const char *input) {
 	char file[1024];
 	switch (*input) {
 	case '*':
-		r_meta_list (core->meta, R_META_ANY);
+		r_meta_list (core->meta, R_META_TYPE_ANY);
 		break;
 	case 't':
 		switch (input[1]) {
@@ -3553,11 +3553,12 @@ static int cmd_meta(void *data, const char *input) {
 			}
 		} else eprintf ("Cannot find meta information at 0x%08"PFMT64x"\n", core->offset);
 		break;
-	case 'C':
-	case 'S':
-	case 's':
+	// XXX: use R_META_TYPE_XXX here
+	case 'C': /* comment */
+	case 's': /* string */
 	case 'd': /* data */
-	case 'm': /* struct */
+	case 'm': /* magic */
+	case 'f': /* formatted */
 		switch (input[1]) {
 		case '-':
 			if (input[2]==' ')
@@ -3658,28 +3659,29 @@ static int cmd_meta(void *data, const char *input) {
 		if (input[1]!='*') {
 			if (input[1]==' ')
 				addr = r_num_math (core->num, input+2);
-			r_meta_del (core->meta, R_META_ANY, addr, 1, "");
+			r_meta_del (core->meta, R_META_TYPE_ANY, addr, 1, "");
 		} else r_meta_cleanup (core->meta, 0LL, UT64_MAX);
 		break;
 	case '\0':
 	case '?':
 		eprintf (
-		"Usage: C[-LCsSmxX?] [...]\n"
+		"Usage: C[-LCvsdfm?] [...]\n"
 		" C*                     # List meta info in r2 commands\n"
 		" C-[@][ addr]           # delete metadata at given address\n"
 		" CL[-] [addr]           # show 'code line' information (bininfo)\n"
 		" CC [string]            # add comment\n"
 		" Cv[-] offset reg name  # add var substitution\n"
 		" Cs[-] [size] [[addr]]  # add string\n"
-		" CS[-] [size]           # ...\n"
-		" Cd[-] [fmt] [..]       # hexdump data\n"
-		" Cm[-] [fmt] [..]       # format memory\n");
+		" Cd[-] [size]           # hexdump data\n"
+		" Cf[-] [sz] [fmt..]     # format memory (see pf?)\n"
+		" Cm[-] [sz] [fmt..]     # magic parse (see pm?)\n");
 		break;
 	case 'F':
 		{
 		RAnalFcn *f = r_anal_fcn_find (core->anal, core->offset,
 				R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
-		r_anal_fcn_from_string (core->anal, f, input+2);
+		if (f) r_anal_fcn_from_string (core->anal, f, input+2);
+		else eprintf ("Cannot find function here\n");
 		}
 		break;
 	}
@@ -3750,8 +3752,8 @@ static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	pipe (fds);
 	radare_cmd = r_str_trim_head (radare_cmd);
 	shell_cmd = r_str_trim_head (shell_cmd);
-	if (fork()) {
-		dup2(fds[1], 1);
+	if (fork ()) {
+		dup2 (fds[1], 1);
 		close (fds[1]);
 		close (fds[0]);
 		r_core_cmd (core, radare_cmd, 0);
@@ -3776,7 +3778,7 @@ static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 
 static int r_core_cmd_subst(RCore *core, char *cmd) {
 	char *ptr, *ptr2, *str;
-	int i, len = strlen(cmd), pipefd, ret;
+	int i, len = strlen (cmd), pipefd, ret;
 
 	if (!*cmd || cmd[0]=='\0')
 		return 0;
@@ -3855,7 +3857,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			for (;;) {
 				char buf[1024];
 				int ret;
-				printf ("> "); fflush (stdout);
+				write (1, "> ", 2);
 				fgets (buf, sizeof (buf)-1, stdin); // XXX use r_line ??
 				if (feof (stdin))
 					break;

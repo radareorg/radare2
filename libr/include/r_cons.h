@@ -57,7 +57,7 @@ typedef struct r_cons_t {
 	int noflush;
 	FILE *fdin; // FILE? and then int ??
 	int fdout; // only used in pipe.c :?? remove?
-	char *teefile;
+	const char *teefile;
 	int (*user_fgets)(char *buf, int len);
 	RConsEvent event_interrupt;
 	RConsEvent event_resize;

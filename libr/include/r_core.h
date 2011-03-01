@@ -10,7 +10,6 @@
 #include "r_parse.h"
 #include "r_anal.h"
 #include "r_cmd.h"
-#include "r_meta.h"
 #include "r_cons.h"
 #include "r_line.h"
 #include "r_print.h"

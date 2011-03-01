@@ -26,7 +26,7 @@ CF 20
 // how to define a structure or complex types?
 // how to define arrays?
 
-#include <r_meta.h>
+#include <r_anal.h>
 
 typedef struct r_meta_type_t {
 	char name[32];
