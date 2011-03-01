@@ -48,7 +48,7 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 				ret++;
 		break;
 	case 'e': // entropy
-		ret = (unsigned char) (r_hash_entropy (bufz, size)*255)/8;
+		ret = (ut8) ((r_hash_entropy (bufz, size)*255)/8);
 		break;
 	case 'h': //head
 	default:
@@ -227,7 +227,7 @@ core->inc = 0;
 		refline = filter_refline (line);
 
 		if (show_comments)
-		if ((comment = r_meta_get_string (core->meta, R_META_TYPE_COMMENT, at))) {
+		if ((comment = r_meta_get_string (core->anal->meta, R_META_TYPE_COMMENT, at))) {
 			r_cons_strcat (refline);
 			r_cons_strcat ("        ");
 			r_cons_strcat (comment);
@@ -290,7 +290,7 @@ if (core->inc == 0)
 					r_cons_printf ("| ");
 					pre = "| ";
 				} else f = NULL;
-			}
+			} else r_cons_printf ("  ");
 		}
 		flag = r_flag_get_i (core->flags, at);
 		//if (flag && !show_bytes) {
@@ -299,7 +299,9 @@ if (core->inc == 0)
 				r_cons_strcat (refline);
 			if (show_offset)
 				printoffset (at, show_color);
-			r_cons_printf ("%s:\n%s", flag->name, pre);
+			if (show_functions)
+				r_cons_printf ("%s:\n%s%s", flag->name, f?"":"  ", pre);
+			else r_cons_printf ("%s:\n%s", flag->name, pre);
 		}
 		if (show_lines && line)
 			r_cons_strcat (line);
@@ -324,7 +326,7 @@ if (core->inc == 0)
 				stackptr = 0;
 		}
 		// TODO: implement ranged meta find (if not at the begging of function..
-		mi = r_meta_find (core->meta, at, R_META_TYPE_ANY, R_META_WHERE_HERE);
+		mi = r_meta_find (core->anal->meta, at, R_META_TYPE_ANY, R_META_WHERE_HERE);
 		if (mi)
 		switch (mi->type) {
 		case R_META_TYPE_STRING:
@@ -521,10 +523,10 @@ strcpy (extra, pad);
 			ut32 word = 0;
 			int ret = r_io_read_at (core->io, analop.ref, (void *)&word, sizeof (word));
 			if (ret == sizeof (word)) {
-				RMetaItem *mi2 = r_meta_find (core->meta, (ut64)word,
+				RMetaItem *mi2 = r_meta_find (core->anal->meta, (ut64)word,
 					R_META_TYPE_ANY, R_META_WHERE_HERE);
 				if (!mi2) {
-					mi2 = r_meta_find (core->meta, (ut64)analop.ref,
+					mi2 = r_meta_find (core->anal->meta, (ut64)analop.ref,
 						R_META_TYPE_ANY, R_META_WHERE_HERE);
 					if (mi2) {
 						char *str = r_str_unscape (mi2->str);
@@ -3506,7 +3508,7 @@ static int cmd_meta(void *data, const char *input) {
 	char file[1024];
 	switch (*input) {
 	case '*':
-		r_meta_list (core->meta, R_META_TYPE_ANY);
+		r_meta_list (core->anal->meta, R_META_TYPE_ANY);
 		break;
 	case 't':
 		switch (input[1]) {
@@ -3565,11 +3567,11 @@ static int cmd_meta(void *data, const char *input) {
 		case '-':
 			if (input[2]==' ')
 				addr = r_num_math (core->num, input+3);
-			r_meta_del (core->meta, input[0], addr, addr+1, NULL);
+			r_meta_del (core->anal->meta, input[0], addr, addr+1, NULL);
 			break;
 		case '\0':
 		case '*':
-			r_meta_list (core->meta, input[0]);
+			r_meta_list (core->anal->meta, input[0]);
 			break;
 		default: {
 			char *t, *p, name[128];
@@ -3594,7 +3596,7 @@ static int cmd_meta(void *data, const char *input) {
 			}
 			addr_end = addr + atoi (input+1);
 			free (t);
-			r_meta_add (core->meta, type, addr, addr_end, name);
+			r_meta_add (core->anal->meta, type, addr, addr_end, name);
 			}
 		}
 		break;
@@ -3661,8 +3663,8 @@ static int cmd_meta(void *data, const char *input) {
 		if (input[1]!='*') {
 			if (input[1]==' ')
 				addr = r_num_math (core->num, input+2);
-			r_meta_del (core->meta, R_META_TYPE_ANY, addr, 1, "");
-		} else r_meta_cleanup (core->meta, 0LL, UT64_MAX);
+			r_meta_del (core->anal->meta, R_META_TYPE_ANY, addr, 1, "");
+		} else r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
 		break;
 	case '\0':
 	case '?':

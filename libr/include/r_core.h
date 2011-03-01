@@ -92,7 +92,6 @@ typedef struct r_core_t {
 	RParse *parser;
 	RPrint *print;
 	RBin *bin;
-	RMeta *meta;
 	RLang *lang;
 	RDebug *dbg;
 	RFlag *flags;

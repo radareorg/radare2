@@ -13,6 +13,37 @@
 
 #define VERBOSE_ANAL if(0)
 
+/* meta */
+typedef struct r_meta_item_t {
+	ut64 from;
+	ut64 to;
+	ut64 size;
+	int type;
+	char *str;
+} RMetaItem;
+
+typedef struct r_meta_t {
+	RList *data;
+	PrintfCallback printf;
+} RMeta;
+
+enum {
+	R_META_WHERE_PREV = -1,
+	R_META_WHERE_HERE = 0,
+	R_META_WHERE_NEXT = 1,
+};
+
+enum {
+	R_META_TYPE_ANY = -1,
+	R_META_TYPE_DATA = 'd',
+	R_META_TYPE_CODE = 'c',
+	R_META_TYPE_STRING = 's',
+	R_META_TYPE_FORMAT = 'f',
+	R_META_TYPE_MAGIC = 'm',
+	R_META_TYPE_COMMENT = 'C',
+};
+
+// anal
 enum {
 	R_ANAL_OP_FAMILY_UNKNOWN = 0,
 	R_ANAL_OP_FAMILY_CPU,  /* normal cpu insturction */
@@ -130,6 +161,7 @@ typedef struct r_anal_t {
 	RList *fcns;
 	RList *refs;
 	RList *vartypes;
+	RMeta *meta;
 	RReg *reg;
 	RSyscall *syscall;
 	RIOBind iob;
@@ -448,36 +480,6 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc);
 R_API boolt r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op);
 //R_API int r_anal_cc_register (RAnal *anal, RAnalCC *cc);
 //R_API int r_anal_cc_unregister (RAnal *anal, RAnalCC *cc);
-
-/* meta */
-typedef struct r_meta_item_t {
-	ut64 from;
-	ut64 to;
-	ut64 size;
-	int type;
-	char *str;
-} RMetaItem;
-
-typedef struct r_meta_t {
-	RList *data;
-	PrintfCallback printf;
-} RMeta;
-
-enum {
-	R_META_WHERE_PREV = -1,
-	R_META_WHERE_HERE = 0,
-	R_META_WHERE_NEXT = 1,
-};
-
-enum {
-	R_META_TYPE_ANY = -1,
-	R_META_TYPE_DATA = 'd',
-	R_META_TYPE_CODE = 'c',
-	R_META_TYPE_STRING = 's',
-	R_META_TYPE_FORMAT = 'f',
-	R_META_TYPE_MAGIC = 'm',
-	R_META_TYPE_COMMENT = 'C',
-};
 
 R_API RMeta *r_meta_new();
 R_API void r_meta_free(RMeta *m);

@@ -441,8 +441,7 @@ R_API void r_core_visual_config(RCore *core) {
 			}
 			}
 #else
-			cmd[0]='\0';
-			//dl_prompt = ":> ";
+			*cmd = '\0';
 			if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) <0)
 				cmd[0]='\0';
 			//line[strlen(line)-1]='\0';
@@ -646,6 +645,66 @@ R_API void r_core_visual_anal(RCore *core) {
 }
 #endif
 
+static void visual_next_foo (RCore *core) {
+	RListIter *iter;
+	ut64 next = UT64_MAX;
+	const char *type = r_config_get (core->config, "scr.fkey");
+	if (strstr (type, "fun")) {
+		RAnalFcn *fcni;
+		r_list_foreach (core->anal->fcns, iter, fcni) {
+			if (fcni->addr < next && fcni->addr > core->offset)
+				next = fcni->addr;
+		}
+	} else
+	if (strstr (type, "hit")) {
+		const char *pfx = r_config_get (core->config, "search.prefix");
+		RFlagItem *flag;
+		r_list_foreach (core->flags->flags, iter, flag) {
+			if (!memcmp (flag->name, pfx, strlen (pfx)))
+				if (flag->offset < next && flag->offset > core->offset)
+					next = flag->offset;
+		}
+	} else { // flags
+		RFlagItem *flag;
+		r_list_foreach (core->flags->flags, iter, flag) {
+			if (flag->offset < next && flag->offset > core->offset)
+				next = flag->offset;
+		}
+	}
+	if (next!=UT64_MAX)
+		r_core_seek (core, next, 1);
+}
+
+static void visual_previous_foo (RCore *core) {
+	RListIter *iter;
+	ut64 next = 0;
+	const char *type = r_config_get (core->config, "scr.fkey");
+	if (strstr (type, "fun")) {
+		RAnalFcn *fcni;
+		r_list_foreach (core->anal->fcns, iter, fcni) {
+			if (fcni->addr > next && fcni->addr < core->offset)
+				next = fcni->addr;
+		}
+	} else
+	if (strstr (type, "hit")) {
+		RFlagItem *flag;
+		const char *pfx = r_config_get (core->config, "search.prefix");
+		r_list_foreach (core->flags->flags, iter, flag) {
+			if (!memcmp (flag->name, pfx, strlen (pfx)))
+				if (flag->offset > next && flag->offset< core->offset)
+					next = flag->offset;
+		}
+	} else { // flags
+		RFlagItem *flag;
+		r_list_foreach (core->flags->flags, iter, flag) {
+			if (flag->offset > next && flag->offset < core->offset)
+				next = flag->offset;
+		}
+	}
+	if (next!=0)
+		r_core_seek (core, next, 1);
+}
+
 R_API void r_core_visual_define (RCore *core) {
 	int ch;
 	ut64 off = core->offset;
@@ -669,16 +728,16 @@ R_API void r_core_visual_define (RCore *core) {
 		// detect type of string
 		// find EOS
 		// capture string value
-		r_meta_add (core->meta, R_META_TYPE_STRING, off, off+core->blocksize, "");
+		r_meta_add (core->anal->meta, R_META_TYPE_STRING, off, off+core->blocksize, "");
 		break;
 	case 'd': // TODO: check
-		r_meta_add (core->meta, R_META_TYPE_DATA, off, off+core->blocksize, "");
+		r_meta_add (core->anal->meta, R_META_TYPE_DATA, off, off+core->blocksize, "");
 		break;
 	case 'c': // TODO: check 
-		r_meta_add (core->meta, R_META_TYPE_CODE, off, off+core->blocksize, "");
+		r_meta_add (core->anal->meta, R_META_TYPE_CODE, off, off+core->blocksize, "");
 		break;
 	case 'u':
-		r_meta_del (core->meta, R_META_TYPE_ANY, off, 1, "");
+		r_meta_del (core->anal->meta, R_META_TYPE_ANY, off, 1, "");
 		r_flag_unset_i (core->flags, off);
 		r_anal_fcn_del (core->anal, off);
 		break;
@@ -695,7 +754,7 @@ R_API void r_core_visual_define (RCore *core) {
 /* TODO: use r_cmd here in core->vcmd..optimize over 255 table */ 
 R_API int r_core_visual_cmd(RCore *core, int ch) {
 	RAsmOp op;
-	char buf[1024];
+	char buf[4096];
 	int cols = core->print->cols;
 	ch = r_cons_arrow_to_hjkl (ch);
 
@@ -731,6 +790,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		else flags &= ~(flags&R_PRINT_FLAGS_COLOR);
 		r_config_set_i (core->config, "scr.color", color);
 		r_print_set_flags (core->print, flags);
+		break;
+	case 'f':
+		visual_next_foo (core);
+		break;
+	case 'F':
+		visual_previous_foo (core);
 		break;
 	case 'a':
 		r_cons_printf ("Enter assembler opcodes separated with ';':\n");
@@ -988,8 +1053,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case ':': {
 		ut64 oseek = core->offset;
-		if (curset) r_core_seek (core, core->offset+cursor, 1);
-		r_cons_fgets (buf, 1023, 0, NULL);
+		r_line_set_prompt (":> ");
+		r_cons_fgets (buf, sizeof (buf), 0, NULL);
 		r_core_cmd (core, buf, 0);
 		r_cons_any_key ();
 		if (curset) r_core_seek (core, oseek, 1);
@@ -1048,6 +1113,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" x       - find xrefs for current offset\n"
 		" sS      - step / step over\n"
 		" t       - track flags (browse symbols, functions..\n"
+		" fF      - seek next/prev function/flag/hit (scr.fkey)\n"
 		" B       - toggle automatic block size\n"
 		" uU      - undo/redo seek\n"
 		" yY      - copy and paste selection\n"
@@ -1126,7 +1192,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	r_cons_singleton ()->data = core;
 	r_cons_singleton ()->event_resize = (RConsEvent)r_core_visual_refresh;
 
-	while (input[0]) {
+	while (*input) {
 		if (!r_core_visual_cmd (core, input[0])) {
 			r_cons_clear00 ();
 			r_core_cmd (core, printfmt[R_ABS (printidx%NPF)], 0);

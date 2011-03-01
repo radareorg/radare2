@@ -27,4 +27,9 @@ R_API void r_line_free () {
 	r_line_hist_free ();
 }
 
+// handle const or dynamic prompts?
+R_API void r_line_set_prompt (const char *prompt) {
+	I.prompt = prompt;
+}
+
 #include "dietline.c"

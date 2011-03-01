@@ -281,14 +281,13 @@ R_API int r_core_init(RCore *core) {
 	r_lang_set_user_ptr (core->lang, core);
 	core->anal = r_anal_new ();
 	r_anal_set_user_ptr (core->anal, core);
+	core->anal->meta->printf = (void *) r_cons_printf;
 	core->assembler = r_asm_new ();
 	r_asm_set_user_ptr (core->assembler, core);
 	core->parser = r_parse_new ();
 	r_parse_set_user_ptr (core->parser, core);
 	core->bin = r_bin_new ();
 	r_bin_set_user_ptr (core->bin, core);
-	core->meta = r_meta_new ();
-	core->meta->printf = (void *) r_cons_printf;
 	core->io = r_io_new ();
 	core->sign = r_sign_new ();
 	core->search = r_search_new (R_SEARCH_KEYWORD);

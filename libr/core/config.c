@@ -365,6 +365,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "scr.color",
 		(core->print->flags&R_PRINT_FLAGS_COLOR)?"true":"false",
 		&config_color_callback);
+	r_config_set (cfg, "scr.fkey", "function");
 	r_config_set (cfg, "scr.seek", "");
 	r_config_set_i_cb (cfg, "scr.cols", 16, &config_scrcols_callback);
 	r_config_set (cfg, "search.prefix", "hit");

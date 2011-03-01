@@ -90,7 +90,7 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		r_io_section_list (core->io, core->offset, 1);
 		r_cons_flush ();
 		r_str_write (fd, "# meta\n");
-		r_meta_list (core->meta, R_META_TYPE_ANY);
+		r_meta_list (core->anal->meta, R_META_TYPE_ANY);
 		r_cons_flush ();
 		r_str_write (fd, "# seek\n");
 		r_str_writef (fd, "s 0x%08"PFMT64x, core->offset);
