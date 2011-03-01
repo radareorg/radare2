@@ -257,7 +257,7 @@ public class RAnal {
 
 /* meta */
 	[Compact]
-	[CCode (cheader_filename="r_meta.h,r_list.h,r_types_base.h", cname="RMeta", free_function="r_meta_free", cprefix="r_meta_")]
+	[CCode (cname="RMeta", free_function="r_meta_free", cprefix="r_meta_")]
 	public class RMeta {
 		[Compact]
 		[CCode (cname="RMetaItem")]
@@ -278,15 +278,13 @@ public class RAnal {
 			NEXT
 		}
 
-		[CCode (cname="int", cprefix="R_META_")]
+		[CCode (cname="int", cprefix="R_META_TYPE_")]
 		public enum Type {
 			ANY,
 			DATA,
 			CODE,
 			STRING,
-			STRUCT,
-			COMMENT,
-			FOLDER
+			COMMENT
 		}
 
 		//public int count (RMeta.Type type, uint64 from, uint64 to, 
