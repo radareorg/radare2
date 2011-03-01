@@ -38,6 +38,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 's': return core->file->size;
 		case '?': return core->num->value;
 		case '$': return core->offset;
+		case 'o': return core->io->off;
 		}
 	}
 	if (str[0]>'A') {

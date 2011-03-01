@@ -753,6 +753,17 @@ static void anal_xor(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 	}
 }
 
+static void anal_lea(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
+	st64 imm, disp;
+	imm = r_hex_bin_truncate (io.imm, io.imm_size);
+	disp = r_hex_bin_truncate (io.disp, io.disp_size);
+
+	op->type = R_ANAL_OP_TYPE_LEA;
+	/* lea reg, [0x0ff | reg1+reg2+0x0ff] */
+	op->dst = anal_fill_ai_rg (anal, io, 0);
+	op->src[0] = anal_fill_ai_mm (anal, io);
+}
+
 static void anal_int(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 	op->type = R_ANAL_OP_TYPE_SWI;
 	switch (io.id) {
@@ -860,6 +871,12 @@ static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		} else
 		if (io.id == X86IM_IO_ID_NOP) /* nop */
 			op->type = R_ANAL_OP_TYPE_NOP;
+		else
+		if (io.id == X86IM_IO_ID_LEA) /* lea */
+			anal_lea (anal, op, io);
+		else
+		if (io.id == X86IM_IO_ID_LEAVE) /* leave */
+			op->type = R_ANAL_OP_TYPE_LEAVE;
 		op->length = io.len;
 		op->nopcode = io.opcode_count;
 	}

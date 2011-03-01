@@ -53,6 +53,8 @@ enum {
 	R_ANAL_OP_TYPE_NOT   = 0x8000000,
 	R_ANAL_OP_TYPE_STORE = 0x10000000,  /* store from register to memory */
 	R_ANAL_OP_TYPE_LOAD  = 0x20000000,  /* load from memory to register */
+	R_ANAL_OP_TYPE_LEA   = 0x40000000, 
+	R_ANAL_OP_TYPE_LEAVE = 0x80000000, 
 };
 
 /* TODO: what to do with signed/unsigned conditionals? */

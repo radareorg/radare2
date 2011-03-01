@@ -88,6 +88,9 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	case R_ANAL_OP_TYPE_JMP:
 		snprintf (ret, retsz, "goto 0x%"PFMT64x, op->jump);
 		break;
+	case R_ANAL_OP_TYPE_UJMP:
+		snprintf (ret, retsz, "goto %s", r0);
+		break;
 	case R_ANAL_OP_TYPE_PUSH:
 	case R_ANAL_OP_TYPE_UPUSH:
 		snprintf (ret, retsz, "push %s", a0);
@@ -138,6 +141,9 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 			snprintf (ret, retsz, "%s ^= %s", r0, a0);
 		else snprintf (ret, retsz, "%s = %s ^ %s", r0, a0, a1);
 		break;
+	case R_ANAL_OP_TYPE_LEA:
+		snprintf (ret, retsz, "%s -> %s", r0, a0);
+		break;
 	case R_ANAL_OP_TYPE_CMP:
 		ret[0] = '\0';
 		break;
@@ -146,6 +152,9 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		break;
 	case R_ANAL_OP_TYPE_RET:
 		sprintf (ret, "ret");
+		break;
+	case R_ANAL_OP_TYPE_LEAVE:
+		sprintf (ret, "leave");
 		break;
 	default:
 		sprintf (ret, "// ?");

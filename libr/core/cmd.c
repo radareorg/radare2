@@ -278,7 +278,8 @@ if (core->inc == 0)
 				if (f->addr == at) {
 					char *sign = r_anal_fcn_to_string (core->anal, f);
 					r_cons_printf ("/ %s: %s (%d)\n| ",
-						f->type == R_ANAL_FCN_TYPE_FCN?"function":"loc", f->name, f->size);
+						(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"function":"loc",
+						f->name, f->size);
 					if (sign) r_cons_printf ("// %s\n", sign);
 					free (sign);
 					pre = "| ";
@@ -1550,6 +1551,7 @@ static int cmd_help(void *data, const char *input) {
 			" ???             ; show this help\n"
 			"$variables:\n"
 			" $$  = here (current seek)\n"
+			" $o  = here (current io offset)\n"
 			" $s  = file size\n"
 			" $b  = block size\n"
 			" $j  = jump address\n"
@@ -1877,7 +1879,7 @@ static int cmd_print(void *data, const char *input) {
 	switch (input[0]) {
 	case '%':
 		{
-			ut64 off = core->offset;
+			ut64 off = core->io->off;
 			ut64 s = core->file?core->file->size:0;
 			ut64 piece = 0;
 			int w = core->print->cols * 4;
