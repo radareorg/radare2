@@ -49,6 +49,7 @@ typedef struct r_line_t {
 R_API RLine *r_line_new ();
 R_API RLine *r_line_singleton ();
 R_API void r_line_free ();
+R_API void r_line_set_prompt (const char *prompt);
 
 R_API int r_line_hist_load(const char *file);
 R_API char *r_line_readline();

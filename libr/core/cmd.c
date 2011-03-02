@@ -1803,8 +1803,10 @@ static int cmd_info(void *data, const char *input) {
 	return 0;
 }
 
-static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth) {
+static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, int v) {
 #if HAVE_LIB_MAGIC
+	ut64 addr;
+	char *fmt, *q, *p;
 	const char *str;
 	magic_t ck;
 
@@ -1819,11 +1821,12 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth)
 		eprintf ("r_core_magic(\"%s\") %s\n", file, magic_error (ck));
 		return;
 	}
-	r_cons_printf ("# pm %s @ 0x%"PFMT64x"\n", file, addr);
+	if (v) r_cons_printf ("# pm %s @ 0x%"PFMT64x"\n", file?file:"", addr);
 	str = magic_buffer (ck, core->block, core->blocksize);
 	if (str) {
-		ut64 addr;
-		char *fmt, *q, *p = strdup (str);
+		if (!v && !strcmp (str, "data"))
+			return;
+		p = strdup (str);
 		// processing newlinez
 		for (q=p; *q; q++)
 			if (q[0]=='\\' && q[1]=='n') {
@@ -1854,10 +1857,10 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth)
 #endif
 }
 
-static void r_core_magic(RCore *core, const char *file) {
+static void r_core_magic(RCore *core, const char *file, int v) {
 	int depth = r_config_get_i (core->config, "magic.depth");
 	ut64 addr = core->offset;
-	r_core_magic_at (core, file, addr, depth);
+	r_core_magic_at (core, file, addr, depth, v);
 	if (addr != core->offset)
 		r_core_seek (core, addr, R_TRUE);
 }
@@ -1963,7 +1966,7 @@ static int cmd_print(void *data, const char *input) {
 		r_print_string (core->print, core->offset, core->block, len, 1, 1, 0); //, 78, 1);
 		break;
 	case 'm':
-		r_core_magic (core, input+1);
+		r_core_magic (core, input+1, R_TRUE);
 		break;
 	case 'u':
 		r_print_string (core->print, core->offset, core->block, len, 0, 1, 1); //, 78, 1);
@@ -3101,7 +3104,7 @@ static int cmd_search(void *data, const char *input) {
 	if (to == 0LL)
 		to = 0xFFFFFFFF; //core->file->size+0x8048000;
 
-	switch (input[0]) {
+	switch (*input) {
 	case 'a':
 		if (input[1]==' ')
 			r_core_anal_search (core, from, to, r_num_math (core->num, input+2));
@@ -3113,6 +3116,31 @@ static int cmd_search(void *data, const char *input) {
 	case '/':
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
+		break;
+	case 'm':
+#if HAVE_LIB_MAGIC
+		/* XXX: This is pretty sloow */
+		dosearch = R_FALSE;
+		if (input[1]==' ') {
+			const char *file = input+2;
+			ut64 addr = from;
+			for (; addr<to; addr++) {
+				r_core_seek (core, addr, R_TRUE);
+				r_core_magic (core, file, R_FALSE);
+			}
+		} else eprintf ("Usage: /m [file]\n");
+#else
+		eprintf ("r_core_magic: Compiled without magic :(\n");
+#endif
+		break;
+	case 'p':
+		{
+			int ps = atoi (input+1);
+			if (ps>1) {
+				r_search_pattern_size (core->search, ps);
+				r_search_pattern (core->search, from, to);
+			} else eprintf ("Invalid pattern size (must be >0)\n");
+		}
 		break;
 	case 'v':
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
@@ -3151,9 +3179,6 @@ static int cmd_search(void *data, const char *input) {
 			r_search_keyword_new_str (input+1, "", NULL));
 		r_search_begin (core->search);
 		dosearch = 1;
-		break;
-	case 'm': /* match regexp */
-		eprintf ("TODO: magic search\n");
 		break;
 	case 'e': /* match regexp */
 		{
@@ -3227,6 +3252,8 @@ static int cmd_search(void *data, const char *input) {
 		" /c jmp [esp]    ; search for asm code (see search.asmstr)\n"
 		" /A              ; search for AES expanded keys\n"
 		" /a sym.printf   ; analyze code referencing an offset\n"
+		" /m magicfile    ; search for matching magic file (use blocksize)\n"
+		" /p patternsize  ; search for pattern of given size\n"
 		" /v num          ; look for a asm.bigendian 32bit value\n"
 		" //              ; repeat last search\n"
 		" ./ hello        ; search 'hello string' and import flags\n"

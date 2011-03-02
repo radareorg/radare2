@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
 
 #include <r_search.h>
 #include <r_list.h>
@@ -63,11 +63,8 @@ R_API int r_search_set_mode(RSearch *s, int mode) {
 	case R_SEARCH_STRING:
 		s->update = r_search_strings_update;
 		break;
-	case R_SEARCH_PATTERN:
-		//ret += r_search_pattern_update(buf, s->pattern_size
-		break;
 	}
-	if (s->update) {
+	if (s->update || mode == R_SEARCH_PATTERN) {
 		s->mode = mode;
 		ret = R_TRUE;
 	} else ret = R_FALSE;
@@ -80,7 +77,7 @@ R_API int r_search_begin(RSearch *s) {
 	r_list_foreach (s->kws, iter, kw) {
 		kw->count = 0;
 		kw->idx[0] = 0;
-		kw->distance = 0;//s->distance;
+		kw->distance = 0; //s->distance;
 	}
 #if 0
 	/* TODO: compile regexpes */
@@ -164,7 +161,7 @@ R_API void r_search_set_distance(RSearch *s, int dist) {
 }
 
 // deprecate? or standarize with ->align ??
-R_API void r_search_set_pattern_size(RSearch *s, int size) {
+R_API void r_search_pattern_size(RSearch *s, int size) {
 	s->pattern_size = size;
 }
 
