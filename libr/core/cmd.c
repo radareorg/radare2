@@ -253,7 +253,7 @@ if (core->inc == 0)
 				r_list_foreach (xrefs, iter, refi) {
 					f = r_anal_fcn_find (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
 //r_cons_printf ("%s                             ", pre);
-					r_cons_printf ("%s%s", pre, refline);
+					r_cons_printf ("%s%s%s", show_functions?"  ":"", pre, refline);
 					if (show_color)
 					r_cons_printf (Color_TURQOISE"; %s XREF 0x%08"PFMT64x" (%s)"Color_RESET"\n",
 							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
@@ -547,7 +547,7 @@ strcpy (extra, pad);
 			if (show_lines && analop.type == R_ANAL_OP_TYPE_RET) {
 				if (strchr (line, '>'))
 					memset (line, ' ', strlen (line));
-				r_cons_printf ("%s; ------------\n%s", line, pre);
+				r_cons_printf ("%s%s; ------------\n%s", show_functions?"  ":"", line, pre);
 			}
 			free (line);
 			free (refline);
@@ -1805,7 +1805,6 @@ static int cmd_info(void *data, const char *input) {
 
 static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, int v) {
 #if HAVE_LIB_MAGIC
-	ut64 addr;
 	char *fmt, *q, *p;
 	const char *str;
 	magic_t ck;
@@ -1845,7 +1844,7 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth,
 				if (!memcmp (q+1, "0x", 2))
 					sscanf (q+3, "%"PFMT64x, &addr);
 				else sscanf (q+1, "%"PFMT64d, &addr);
-				r_core_magic_at (core, fmt, addr, depth);
+				r_core_magic_at (core, fmt, addr, depth, v);
 				*q = '@';
 			}
 		}

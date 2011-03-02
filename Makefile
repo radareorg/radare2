@@ -45,6 +45,9 @@ mrproper:
 	rm -f config-user.mk plugins.cfg libr/config.h libr/include/r_userconf.h libr/config.mk
 	rm -f pkgcfg/*.pc
 
+mrpopper:
+	@echo 8====================D
+
 pkgcfg:
 	cd libr && ${MAKE} pkgcfg
 
