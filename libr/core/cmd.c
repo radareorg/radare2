@@ -167,7 +167,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	int cursor, nb, nbytes = r_config_get_i (core->config, "asm.nbytes");
 	int lbytes = r_config_get_i (core->config, "asm.lbytes");
 	int linesopts = 0;
-	const char *pre = "";
+	const char *pre = "  ";
 	nb = nbytes*2;
 core->inc = 0;
 
@@ -226,6 +226,9 @@ core->inc = 0;
 		line = r_anal_reflines_str (core->anal, core->reflines, at, linesopts);
 		refline = filter_refline (line);
 
+		if (show_functions)
+			f = r_anal_fcn_find (core->anal, at, R_ANAL_FCN_TYPE_NULL);
+		else f = NULL;
 		if (show_comments)
 		if ((comment = r_meta_get_string (core->anal->meta, R_META_TYPE_COMMENT, at))) {
 			r_cons_strcat (refline);
@@ -251,18 +254,17 @@ if (core->inc == 0)
 			RListIter *iter;
 			if ((xrefs = r_anal_xref_get (core->anal, at))) {
 				r_list_foreach (xrefs, iter, refi) {
-					f = r_anal_fcn_find (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
-//r_cons_printf ("%s                             ", pre);
-					r_cons_printf ("%s%s%s", show_functions?"  ":"", pre, refline);
+					RAnalFcn *fun = r_anal_fcn_find (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
+					r_cons_printf ("%s%s", pre, refline);
 					if (show_color)
 					r_cons_printf (Color_TURQOISE"; %s XREF 0x%08"PFMT64x" (%s)"Color_RESET"\n",
 							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
 							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
-							f?f->name:"unk");
+							fun?fun->name:"unk");
 					else r_cons_printf ("; %s XREF 0x%08"PFMT64x" (%s)\n",
 							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
 							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
-							f?f->name:"unk");
+							fun?fun->name:"unk");
 				}
 				r_list_destroy (xrefs);
 			}
@@ -272,9 +274,8 @@ if (core->inc == 0)
 					core->reflines, at, analop.length);
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		if (show_functions) {
-			f = r_anal_fcn_find (core->anal, at, R_ANAL_FCN_TYPE_NULL);
 			if (f) {
-				pre = "";
+				pre = "  ";
 				if (f->addr == at) {
 					char *sign = r_anal_fcn_to_string (core->anal, f);
 					r_cons_printf ("/ %s: %s (%d)\n| ",
@@ -300,8 +301,8 @@ if (core->inc == 0)
 			if (show_offset)
 				printoffset (at, show_color);
 			if (show_functions)
-				r_cons_printf ("%s:\n%s%s", flag->name, f?"":"  ", pre);
-			else r_cons_printf ("%s:\n%s", flag->name, pre);
+				r_cons_printf ("%s:\n%s", flag->name, f?"| ":"  ");
+			else r_cons_printf ("%s:\n", flag->name);
 		}
 		if (show_lines && line)
 			r_cons_strcat (line);
@@ -547,7 +548,7 @@ strcpy (extra, pad);
 			if (show_lines && analop.type == R_ANAL_OP_TYPE_RET) {
 				if (strchr (line, '>'))
 					memset (line, ' ', strlen (line));
-				r_cons_printf ("%s%s; ------------\n%s", show_functions?"  ":"", line, pre);
+				r_cons_printf ("%s%s; ------------\n", show_functions?"  ":"", line);
 			}
 			free (line);
 			free (refline);

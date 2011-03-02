@@ -925,7 +925,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 					ocursor-=cols;
 				}
 			}
-		} else r_core_cmd (core, "s++", 0);
+		} else r_core_seek (core, core->offset+obs, 1);
 		break;
 	case 'k':
 		if (curset) {
@@ -965,7 +965,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 					cursor = 0;
 				}
 			}
-		} else r_core_cmd (core, "s--", 0);
+		} else {
+			ut64 at = (core->offset>obs)?core->offset-obs:0;
+			r_core_seek (core, at, 1);
+		}
 		break;
 	case '[':
 		{
@@ -1045,6 +1048,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_io_sundo_push (core->io);
 		break;
 	case '<':
+		r_core_seek_align (core, core->blocksize, -1);
 		r_core_seek_align (core, core->blocksize, -1);
 		r_io_sundo_push (core->io);
 		break;
