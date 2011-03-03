@@ -2747,18 +2747,17 @@ static int cmd_anal(void *data, const char *input) {
 
 /* TODO: simplify using r_write */
 static int cmd_write(void *data, const char *input) {
-	int size;
-	const char *arg;
 	ut8 *buf;
-	int i, len = strlen (input);
+	const char *arg;
+	int i, size, len = strlen (input);
 	char *tmp, *str = alloca (len)+1;
 	RCore *core = (RCore *)data;
 	memcpy (str, input+1, len);
-	switch (input[0]) {
+	switch (*input) {
 	case 'A':
 		switch (input[1]) {
 		case ' ':
-			if (input[2]&&input[3]==' ') {
+			if (input[2] && input[3]==' ') {
 				r_asm_set_pc (core->assembler, core->offset);
 				eprintf ("modify (%c)=%s\n", input[2], input+4);
 				len = r_asm_modify (core->assembler, core->block, input[2],
@@ -2776,7 +2775,7 @@ static int cmd_write(void *data, const char *input) {
 			" r   raw write value\n"
 			" v   set value (taking care of current address)\n"
 			" d   destination register\n"
-			" 0   1st src register \n"
+			" 0   1st src register\n"
 			" 1   2nd src register\n"
 			"Example: wA r 0 # e800000000\n");
 			break;

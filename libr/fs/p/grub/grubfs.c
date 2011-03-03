@@ -16,7 +16,7 @@ static void* empty (int sz) {
 	return p;
 }
 
-static grub_err_t read_foo (struct grub_disk *disk, grub_disk_addr_t sector, grub_size_t size, unsigned char *buf) {
+static grub_err_t read_foo (struct grub_disk *disk, grub_disk_addr_t sector, grub_size_t size, char *buf) {
 	if (disk != NULL) {
 		const int blocksize = 512; // unhardcode 512
 		int ret;
@@ -25,7 +25,7 @@ static grub_err_t read_foo (struct grub_disk *disk, grub_disk_addr_t sector, gru
 			iob = bio;
 		//printf ("io %p\n", file->root->iob.io);
 		ret = iob->read_at (iob->io, delta+(blocksize*sector),
-			buf, size*blocksize);
+			(ut8*)buf, size*blocksize);
 		if (ret == -1)
 			return 1;
 		//printf ("DISK PTR = %p\n", disk->data);
@@ -41,7 +41,7 @@ GrubFS *grubfs_new (struct grub_fs *myfs, void *data) {
 	gfs->file = file = empty (sizeof (struct grub_file));
 	file->device = empty (sizeof (struct grub_device)+1024);
 	file->device->disk = empty (sizeof (struct grub_disk));
-	file->device->disk->dev = file->device;
+	file->device->disk->dev = (grub_disk_dev_t)file->device; // hack!
 	file->device->disk->dev->read = read_foo; // grub_disk_dev
 	file->device->disk->data = data;
 	//file->device->disk->read_hook = read_foo; //read_hook;

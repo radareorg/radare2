@@ -9,7 +9,7 @@
 #define IMGFILE "/tmp/test.fs.img"
 extern struct grub_fs grub_ext2_fs;
 
-void read_foo (struct grub_disk *disk, grub_disk_addr_t sector, grub_size_t size, unsigned char *buf) {
+grub_err_t read_foo (struct grub_disk *disk, grub_disk_addr_t sector, grub_size_t size, char *buf) {
 //	printf ("==> DISK %x\n", disk);
 //	printf ("==> OFFSET %x\n", offset);
 //	printf ("[foo]==> Reading hook %x %x\n", sector, size);
@@ -24,6 +24,7 @@ void read_foo (struct grub_disk *disk, grub_disk_addr_t sector, grub_size_t size
 			fclose (fd);
 		} else printf ("Cannot open "IMGFILE"\n");
 	}
+	return 0;
 }
 
 void read_hook (grub_disk_addr_t sector, unsigned long offset, unsigned long length, unsigned char *buf) {
@@ -49,7 +50,7 @@ grub_file_t openimage(grub_fs_t fs, const char *str) {
 	file->device->disk = malloc (1024);
 	memset (file->device->disk, 0, 1024);
 	//file->device->disk->name = "disk0"; //strdup ("disk0");
-	file->device->disk->dev = file->device;
+	file->device->disk->dev = (grub_disk_dev_t)file->device;
 	//file->device->disk->dev->read = read_hook; //file->device;
 	file->device->disk->dev->read = read_foo; //file->device;
 	//file->device->disk->read_hook = read_hook; //read_hook;
