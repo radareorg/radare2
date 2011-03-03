@@ -29,7 +29,7 @@ IFEQ USEROSTYPE auto ; {
 	} } } } }
 }
 
-PKGCFG! FOO FOO libr
+PKGCFG! FOO FOO r_core
 
 SUBDIRS ./config.mk ;
 
