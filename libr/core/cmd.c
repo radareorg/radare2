@@ -279,7 +279,8 @@ if (core->inc == 0)
 				if (f->addr == at) {
 					char *sign = r_anal_fcn_to_string (core->anal, f);
 					r_cons_printf ("/ %s: %s (%d)\n| ",
-						(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"function":"loc",
+						(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"function":
+						(f->type==R_ANAL_FCN_TYPE_IMP)?"import":"loc",
 						f->name, f->size);
 					if (sign) r_cons_printf ("// %s\n", sign);
 					free (sign);
@@ -515,8 +516,10 @@ strcpy (extra, pad);
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
 			counter++;
-			if (counter>9) r_cons_strcat (" [?]");
-			else r_cons_printf (" [%d]", counter);
+			if (counter<10){
+				core->asmqjmps[counter] = analop.jump;
+				r_cons_printf (" [%d]", counter);
+			} else r_cons_strcat (" [?]");
 			break;
 		}
 

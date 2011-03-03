@@ -105,6 +105,7 @@ typedef struct r_core_t {
 	RCoreRtrHost rtr_host[RTR_MAX_HOSTS];
 	int curasmstep;
 	RCoreAsmsteps asmsteps[R_CORE_ASMSTEPS];
+	ut64 asmqjmps[10];
 } RCore;
 
 typedef int (*RCoreSearchCallback)(RCore *core, ut64 from, ut8 *buf, int len);

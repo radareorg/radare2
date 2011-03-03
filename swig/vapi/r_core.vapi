@@ -123,7 +123,7 @@ public class RCore {
 	public bool search_cb(uint64 from, uint64 to, SearchCallback cb);
 
 	/* files */
-	public RCore.File file_open(string file, int mode, uint64 loadaddr);
+	public RCore.File file_open(string file, int mode, uint64 loadaddr=0);
 	public bool file_close(RCore.File cf);
 	public bool file_close_fd(int fd);
 	public bool file_list();

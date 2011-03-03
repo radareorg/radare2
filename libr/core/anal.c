@@ -545,7 +545,7 @@ R_API int r_core_anal_all(RCore *core) {
 						R_ANAL_REF_TYPE_NULL, depth);
 	/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
 	r_list_foreach (core->anal->fcns, iter, fcni)
-		if (!memcmp (fcni->name, "sym.", 4))
+		if (!memcmp (fcni->name, "sym.", 4) || !memcmp (fcni->name, "main", 4))
 			fcni->type = R_ANAL_FCN_TYPE_SYM;
 
 	return R_TRUE;
