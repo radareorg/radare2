@@ -5,8 +5,6 @@
 
 static RFSPlugin *fs_static_plugins[] = { R_FS_STATIC_PLUGINS };
 
-/* lifecycle */
-// TODO: needs much more love
 R_API RFS *r_fs_new () {
 	int i;
 	RFSPlugin *static_plugin;
@@ -50,14 +48,14 @@ R_API void r_fs_add (RFS *fs, RFSPlugin *p) {
 }
 
 R_API void r_fs_del (RFS *fs, RFSPlugin *p) {
-	// TODO: implement
+	// TODO: implement r_fs_del
 }
 
 /* mountpoint */
-
 R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path, ut64 delta) {
 	RFSPlugin *p;
 	RFSRoot *root;
+	char *str;
 
 	if (path[0] != '/') {
 		eprintf ("r_fs_mount: invalid mountpoint\n");
@@ -65,13 +63,16 @@ R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path, ut64 d
 	}
 	p = r_fs_plugin_get (fs, fstype);
 	if (p != NULL) {
-		root = r_fs_root_new (path, delta);
+		str = strdup (path);
+		r_str_chop_path (str);
+		root = r_fs_root_new (str, delta);
 		root->p = p;
 		//memcpy (&root->iob, &fs->iob, sizeof (root->iob));
 		root->iob = fs->iob;
 		p->mount (root);
 		r_list_append (fs->roots, root);
-		eprintf ("Mounted %s on %s at 0x%llx\n", fstype, path, 0LL);
+		eprintf ("Mounted %s on %s at 0x%llx\n", fstype, str, 0LL);
+		free (str);
 	} else eprintf ("r_fs_mount: Invalid filesystem type\n");
 	return root;
 }
@@ -98,17 +99,22 @@ R_API int r_fs_umount (RFS* fs, const char *path) {
         return R_FALSE;
 }
 
-R_API RFSRoot *r_fs_root (RFS *fs, const char *path) {
+R_API RFSRoot *r_fs_root (RFS *fs, const char *p) {
 	int olen = 0;
+	char *path;
+
 	RListIter *iter;
-        RFSRoot *root, *oroot = NULL;
-        r_list_foreach (fs->roots, iter, root) {
+	RFSRoot *root, *oroot = NULL;
+	path = strdup (p);
+	r_str_chop_path (path);
+	r_list_foreach (fs->roots, iter, root) {
 		int len = strlen (root->path);
 		if (r_fs_match (path, root->path, len, olen)) {
 			olen = len;
 			oroot = root;
 		}
-        }
+	}
+	free (path);
 	return oroot;
 }
 
@@ -152,10 +158,10 @@ R_API int r_fs_read (RFS* fs, RFSFile *file, ut64 addr, int len) {
 R_API RList *r_fs_dir(RFS* fs, const char *p) {
 	if (fs) {
 		char *path = strdup (p);
-		r_str_chop (path);
+		r_str_chop_path (path);
 		RFSRoot *root = r_fs_root (fs, path);
 		if (root) {
-			const char *dir = path + strlen (root->path)-1;
+			const char *dir = path + strlen (root->path);
 			if (!*dir) dir = "/";
 			if (root) {
 				RList *ret = root->p->dir (root, dir);
@@ -264,7 +270,13 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 		} else
 		if (!memcmp (buf, "ls", 2)) {
 			if (buf[2]==' ') {
-				list = r_fs_dir (fs, buf+3);
+				if (buf[3] != '/') {
+					strncpy (str, path, sizeof (str)-1);
+					strcat (str, "/");
+					strncat (str, buf+3, sizeof (buf)-1);
+					list = r_fs_dir (fs, str);
+				} else
+					list = r_fs_dir (fs, buf+3);
 			} else list = r_fs_dir (fs, path);
 			if (list) {
 				r_list_foreach (list, iter, file)
@@ -275,7 +287,7 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 			eprintf ("%s\n", path);
 		} else if (!memcmp (buf, "cd ", 3)) {
 			char opath[4096];
-			strcpy (opath, path);
+			strncpy (opath, path, sizeof (opath));
 			input = buf+3;
 			while (*input == ' ')
 				input++;
@@ -283,10 +295,12 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 				char *p = r_str_lchr (path, '/');
 				if (p) p[(p==path)?1:0]=0;
 			} else {
+				strcat (path, "/");
 				if (*input=='/')
 					strcpy (path, input);
 				else strcat (path, input);
 			}
+			r_str_chop_path (path);
 			list = r_fs_dir (fs, path);
 			if (r_list_empty (list)) {
 				strcpy (path, opath);
