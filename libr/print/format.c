@@ -4,11 +4,11 @@
 #include "r_util.h"
 #include "r_print.h"
 
-static void print_mem_help(RPrint *p) {
+static void print_format_help(RPrint *p) {
 	p->printf (
-	"Usage: pm [times][format] [arg0 arg1]\n"
-	"Example: pm 10xiz pointer length string\n"
-	"Example: pm {array_size}b @ array_base\n"
+	"Usage: pf [times][format] [arg0 arg1]\n"
+	"Example: pf 10xiz pointer length string\n"
+	"Example: pf {array_size}b @ array_base\n"
 	" e - temporally swap endian\n"
 	//" D - double (8 bytes)\n"
 	" f - float value\n"
@@ -57,7 +57,7 @@ R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int le
 	}
 
 	if (arg[0]=='\0') {
-		print_mem_help (p);
+		print_format_help (p);
 		return;
 	}
 	/* get args */
@@ -112,7 +112,7 @@ R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int le
 				idx--;
 				continue;
 			case '?': // help
-				print_mem_help (p);
+				print_format_help (p);
 				idx--;
 				i=len; // exit
 				continue;
@@ -120,7 +120,7 @@ R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int le
 			if (idx<nargs)
 				p->printf (namefmt, r_str_word_get0(args, idx));
 			/* cmt chars */
-			switch(tmp) {
+			switch (tmp) {
 	#if 0
 			case 'n': // enable newline
 				j ^= 1;
