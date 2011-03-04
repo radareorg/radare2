@@ -76,7 +76,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 // XXX: redesign ? :)
 R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 	const char *s;
-	char *d, *dst = (char *)malloc ((strlen (str)+2)*6);
+	char *d, *dst = (char *)malloc ((strlen (str)+2)*32);
 	int ch, i;
 	/* XXX That's hacky as shit.. but partially works O:) */
 	/* TODO: Use r_print_set_cursor for win support */

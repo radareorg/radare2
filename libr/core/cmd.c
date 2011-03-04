@@ -168,8 +168,9 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	int lbytes = r_config_get_i (core->config, "asm.lbytes");
 	int linesopts = 0;
 	const char *pre = "  ";
-	nb = nbytes*2;
-core->inc = 0;
+	
+	nb = (nbytes*2);
+	core->inc = 0;
 
 	if (core->print->cur_enabled) {
 		if (core->print->cur<0)
@@ -372,21 +373,25 @@ if (core->inc == 0)
 flag =NULL; // HACK
 			if (!flag) {
 				str = strdup (asmop.buf_hex);
-				if (strlen (str) > nb) {
-					str[nb] = '.';
-					str[nb+1] = '\0';
+				if (r_str_ansi_len (str) > nb) {
+					char *p = r_str_ansi_chrn (str, nb);
+					if (p)  {
+						p[0] = '.';
+						p[1] = '\0';
+					}
 					*extra = 0;
 				}
-				k = nb-strlen (str);
+				k = nb-r_str_ansi_len (str);
 				if (k<0) k = 0;
+				if (lbytes && str[strlen(str)-1]!='.') k = k + 1;
 				for (j=0; j<k; j++)
 					pad[j] = ' ';
 				pad[j] = '\0';
-if (lbytes) {
-// hack to align bytes left
-strcpy (extra, pad);
-*pad=0;
-}
+				if (lbytes) {
+					// hack to align bytes left
+					strcpy (extra, pad);
+					*pad=0;
+				}
 				if (show_color) {
 					char *nstr;
 					p->cur_enabled = cursor!=-1;
@@ -412,7 +417,7 @@ strcpy (extra, pad);
 					r_cons_printf (" %s %s %s"Color_RESET, pad, str, extra);
 				else r_cons_printf (" %s %s %s", pad, str, extra);
 			}
-			free (str);
+			if (!show_color) free (str);
 		}
 
 		if (show_color) {
