@@ -1,8 +1,7 @@
 include ../../../config.mk
 #CC?=gcc
 
-RFSARCH=$(shell uname -m)
-RFSOS=$(shell uname -s)
+OSTYPE=$(shell uname -s)
 
 KERNFILES=kern/file.c 
 KERNFILES+=kern/term.c kern/device.c
@@ -49,7 +48,7 @@ KERNOBJS=$(subst .c,.o,${KERNFILES})
 CFLAGS=-Iinclude -g -fPIC 
 CFLAGS+=-I../../../include -DGRUB_TARGET_NO_MODULES
 
-ifeq ($(RFSOS),Darwin)
+ifeq ($(OSTYPE),Darwin)
 CFLAGS+=-DAPPLE_CC
 endif
 

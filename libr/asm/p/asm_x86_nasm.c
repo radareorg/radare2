@@ -5,12 +5,12 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
-#if 0
-static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, ut8 *buf, ut64 len) {
-}
-#endif
-
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+#if __APPLE__
+	char path_r_nasm[] = "/tmp/r_nasm-XXXXXX";
+	int fd_r_nasm;
+	char asm_buf[R_ASM_BUFSIZE];
+#endif
 	char cmd[R_ASM_BUFSIZE];
 	ut8 *out;
 	int len = 0;
@@ -18,10 +18,23 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		eprintf ("asm.x86.nasm does not support non-intel syntax\n");
 		return -1;
 	}
+#if __APPLE__
+	fd_r_nasm = mkstemp (path_r_nasm);
+	snprintf (asm_buf, sizeof (asm_buf),
+			"BITS %i\nORG 0x%"PFMT64x"\n%s\n__", a->bits, a->pc, buf);
+	write (fd_r_nasm, asm_buf, sizeof (asm_buf));
+	close (fd_r_nasm);
+	snprintf (cmd, sizeof (cmd), "nasm %s -o /dev/stdout\n", path_r_nasm);
+#elif
 	snprintf (cmd, sizeof (cmd),
-		"nasm /dev/stdin -o /dev/stdout <<__\n"
-		"BITS %i\nORG 0x%"PFMT64x"\n%s\n__", a->bits, a->pc, buf);
+			"nasm /dev/stdin -o /dev/stdout <<__\n"
+			"BITS %i\nORG 0x%"PFMT64x"\n%s\n__", a->bits, a->pc, buf);
+#endif
 	out = (ut8 *)r_sys_cmd_str (cmd, "", &len);
+
+#if __APPLE__
+	unlink (path_r_nasm);
+#endif
 	if (out && memcmp (out, "/dev/stdin:", len>11?11:len)) {
 		memcpy (op->buf, out, len<=R_ASM_BUFSIZE?len:R_ASM_BUFSIZE);
 	} else {
@@ -40,7 +53,7 @@ RAsmPlugin r_asm_plugin_x86_nasm = {
 	.bits = (int[]){ 16, 32, 64, 0 },
 	.init = NULL,
 	.fini = NULL,
-	.disassemble = NULL, /*&disassemble,*/
+	.disassemble = NULL,
 	.assemble = &assemble, 
 };
 
