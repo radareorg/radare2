@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 0.6.9
+VERSION 0.7
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
@@ -58,7 +58,6 @@ REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_GMP HAVE_LIB_SSL HAVE_LIB_TCC DEBUGGER USERC
 
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))
 SUBDIRS ./config-user.mk libr/include/r_userconf.h
- pkgcfg/libr.pc
  pkgcfg/r_io.pc
  pkgcfg/r_asm.pc
  pkgcfg/r_bin.pc
