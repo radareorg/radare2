@@ -25,7 +25,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	write (fd_r_nasm, asm_buf, sizeof (asm_buf));
 	close (fd_r_nasm);
 	snprintf (cmd, sizeof (cmd), "nasm %s -o /dev/stdout\n", path_r_nasm);
-#elif
+#else
 	snprintf (cmd, sizeof (cmd),
 			"nasm /dev/stdin -o /dev/stdout <<__\n"
 			"BITS %i\nORG 0x%"PFMT64x"\n%s\n__", a->bits, a->pc, buf);
