@@ -118,9 +118,9 @@ static char *filter_refline(const char *str) {
 	if (p) p[0]=p[1]=' ';
 	p = strstr (s, "=<");
 	if (p) p[0]=p[1]=' ';
-	for(p=s;*p;p++) {
+	for (p=s;*p;p++) {
 		if (*p=='`') *p = '|';
-		if (*p=='-') *p = '|';
+		if (*p=='-') *p = ' ';
 		if (*p=='=') *p = '|';
 	}
 	return s;
@@ -370,11 +370,11 @@ if (core->inc == 0)
 			char *str, pad[64];
 			char extra[64];
 			strcpy (extra, " ");
-flag =NULL; // HACK
+flag = NULL; // HACK
 			if (!flag) {
 				str = strdup (asmop.buf_hex);
 				if (r_str_ansi_len (str) > nb) {
-					char *p = r_str_ansi_chrn (str, nb);
+					char *p = (char *)r_str_ansi_chrn (str, nb);
 					if (p)  {
 						p[0] = '.';
 						p[1] = '\0';

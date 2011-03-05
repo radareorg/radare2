@@ -1,6 +1,10 @@
 Setup SDK
 =========
-1) Install 'apt7' package from cydia.
+1) Install 'APT 0.7 Strict' package from cydia.
+   Extras: 
+     apt-get install wget inetutils rsync
+   Mercurial:
+     apt-get install python setuptools
 
 2) Download missing packages from lolcathost:
   wget http://lolcathost.org/b/libgcc_4.2-20080410-1-6_iphoneos-arm.deb

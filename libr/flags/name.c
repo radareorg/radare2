@@ -13,6 +13,7 @@ static int r_flag_name_validate_char(const char ch) {
 	case '|':
 	case '&':
 	case ';':
+	case ':':
 	case '>':
 	case '<':
 	case '"':
