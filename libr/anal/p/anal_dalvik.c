@@ -181,7 +181,13 @@ struct r_anal_plugin_t r_anal_plugin_dalvik = {
 	.desc = "Dalvik (Android VM) bytecode analysis plugin",
 	.init = NULL,
 	.fini = NULL,
-	.op = &dalvik_op
+	.op = &dalvik_op,
+	.set_reg_profile = NULL,
+	.fingerprint_bb = NULL,
+	.fingerprint_fcn = NULL,
+	.diff_bb = NULL,
+	.diff_fcn = NULL,
+	.diff_eval = NULL
 };
 
 #ifndef CORELIB

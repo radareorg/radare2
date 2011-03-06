@@ -348,6 +348,11 @@ typedef struct r_anal_refline_t {
 
 typedef int (*RAnalOpCallback)(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len);
 typedef int (*RAnalRegProfCallback)(RAnal *a);
+typedef int (*RAnalFPBBCallback)(RAnal *a, RAnalBlock *bb);
+typedef int (*RAnalFPFcnCallback)(RAnal *a, RAnalFcn *fcn);
+typedef int (*RAnalDiffBBCallback)(RAnal *anal, RAnalFcn *fcn, RAnalFcn *fcn2);
+typedef int (*RAnalDiffFcnCallback)(RAnal *anal, RList *fcns, RList *fcns2);
+typedef int (*RAnalDiffEvalCallback)(RAnal *anal);
 
 typedef struct r_anal_plugin_t {
 	char *name;
@@ -356,6 +361,11 @@ typedef struct r_anal_plugin_t {
 	int (*fini)(void *user);
 	RAnalOpCallback op;
 	RAnalRegProfCallback set_reg_profile;
+	RAnalFPBBCallback fingerprint_bb;
+	RAnalFPFcnCallback fingerprint_fcn;
+	RAnalDiffBBCallback diff_bb;
+	RAnalDiffFcnCallback diff_fcn;
+	RAnalDiffEvalCallback diff_eval;
 	struct list_head list;
 } RAnalPlugin;
 
@@ -440,10 +450,18 @@ R_API int r_anal_var_access_add(RAnal *anal, RAnalVar *var, ut64 from, int set);
 R_API int r_anal_var_access_del(RAnal *anal, RAnalVar *var, ut64 from);
 R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 from);
 
+#define R_ANAL_THRESHOLDFCN 0.7F
+#define R_ANAL_THRESHOLDBB 0.7F
 /* diff.c */
 R_API RAnalDiff *r_anal_diff_new();
 R_API void* r_anal_diff_free(RAnalDiff *diff);
+R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb);
+R_API int r_anal_diff_fingerprint_fcn(RAnal *anal, RAnalFcn *fcn);
+R_API int r_anal_diff_bb(RAnal *anal, RAnalFcn *fcn, RAnalFcn *fcn2);
+R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2);
+R_API int r_anal_diff_eval(RAnal *anal);
 
+/* value.c */
 R_API RAnalValue *r_anal_value_new();
 R_API RAnalValue *r_anal_value_new_from_string(const char *str);
 R_API st64 r_anal_value_eval(RAnalValue *value);

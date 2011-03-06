@@ -1044,7 +1044,12 @@ struct r_anal_plugin_t r_anal_plugin_x86 = {
 	.init = NULL,
 	.fini = NULL,
 	.op = &x86_op,
-	.set_reg_profile = &set_reg_profile
+	.set_reg_profile = &set_reg_profile,
+	.fingerprint_bb = NULL,
+	.fingerprint_fcn = NULL,
+	.diff_bb = NULL,
+	.diff_fcn = NULL,
+	.diff_eval = NULL
 };
 
 #ifndef CORELIB

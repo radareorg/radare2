@@ -3901,7 +3901,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 					break;
 				buf[strlen (buf)-1]='\0';
 				ret = strlen (buf);
-				core->oobi_len+=ret;
+				core->oobi_len += ret;
 				core->oobi = realloc (core->oobi, core->oobi_len+1);
 				if (!strcmp (buf, str))
 					break;

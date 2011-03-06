@@ -108,11 +108,17 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int le
 }
 
 struct r_anal_plugin_t r_anal_plugin_mips = {
-        .name = "mips",
-        .desc = "MIPS code analysis plugin",
-        .init = NULL,
-        .fini = NULL,
-        .op = &mips_op
+	.name = "mips",
+	.desc = "MIPS code analysis plugin",
+	.init = NULL,
+	.fini = NULL,
+	.op = &mips_op,
+	.set_reg_profile = NULL,
+	.fingerprint_bb = NULL,
+	.fingerprint_fcn = NULL,
+	.diff_bb = NULL,
+	.diff_fcn = NULL,
+	.diff_eval = NULL
 };
 
 #ifndef CORELIB

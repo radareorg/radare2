@@ -178,7 +178,13 @@ struct r_anal_plugin_t r_anal_plugin_java = {
 	.desc = "Java bytecode analysis plugin",
 	.init = NULL,
 	.fini = NULL,
-	.op = &java_op
+	.op = &java_op,
+	.set_reg_profile = NULL,
+	.fingerprint_bb = NULL,
+	.fingerprint_fcn = NULL,
+	.diff_bb = NULL,
+	.diff_fcn = NULL,
+	.diff_eval = NULL
 };
 
 #ifndef CORELIB

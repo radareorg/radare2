@@ -274,7 +274,13 @@ struct r_anal_plugin_t r_anal_plugin_arm = {
 	.desc = "ARM code analysis plugin",
 	.init = NULL,
 	.fini = NULL,
-	.op = &arm_op
+	.op = &arm_op,
+	.set_reg_profile = NULL,
+	.fingerprint_bb = NULL,
+	.fingerprint_fcn = NULL,
+	.diff_bb = NULL,
+	.diff_fcn = NULL,
+	.diff_eval = NULL
 };
 
 #ifndef CORELIB
