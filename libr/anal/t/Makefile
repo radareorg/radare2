@@ -2,6 +2,7 @@ include ../../config.mk
 
 CFLAGS+=-I ../arch -I../../include -D__UNIX__=1
 LDFLAGS=-L../../util -lr_util -L../../anal -lr_anal -L../../reg -lr_reg -L../../syscall -lr_syscall
+LDFLAGS+=-L../../diff -lr_diff
 
 all: test_x86im${EXT_EXE}
 
