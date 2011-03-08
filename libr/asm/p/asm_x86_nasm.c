@@ -24,10 +24,10 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			"BITS %i\nORG 0x%"PFMT64x"\n%s\n__", a->bits, a->pc, buf);
 	write (fd_r_nasm, asm_buf, sizeof (asm_buf));
 	close (fd_r_nasm);
-	snprintf (cmd, sizeof (cmd), "nasm %s -o /dev/stdout\n", path_r_nasm);
+	snprintf (cmd, sizeof (cmd), "nasm %s -o /dev/stdout 2>/dev/null\n", path_r_nasm);
 #else
 	snprintf (cmd, sizeof (cmd),
-			"nasm /dev/stdin -o /dev/stdout <<__\n"
+			"nasm /dev/stdin -o /dev/stdout 2>/dev/null <<__\n"
 			"BITS %i\nORG 0x%"PFMT64x"\n%s\n__", a->bits, a->pc, buf);
 #endif
 	out = (ut8 *)r_sys_cmd_str (cmd, "", &len);
