@@ -1,2270 +1,2697 @@
--=== RELEASE 0.6 ===-
+-=== RELEASE 0.7 ===-
 
-changeset:   1053:25c25460bca7
+changeset:   1342:cdee9488daa7
 tag:         tip
-user:        pancake<nopcode.org>
-date:        Fri Oct 29 03:45:26 2010 +0200
-files:       README
-description:
-* Beautify ascii art in README
-
-
-changeset:   1052:599e7b293a1b
-user:        pancake<nopcode.org>
-date:        Fri Oct 29 03:38:43 2010 +0200
-files:       Makefile libr/anal/aop.c swig/Makefile
-description:
-* Added 'w32beta' make target
-  - Distributes the build of r2 and r2-swig
-* Fix some warnings on w32
-
-
-changeset:   1051:828235ba5313
-user:        pancake
-date:        Fri Oct 29 03:10:10 2010 +0200
-files:       Makefile config-user.mk.acr configure configure.acr libr/Makefile libr/core/config.c libr/rules.mk libr/vm/Makefile libr/waitfordeps.sh mk/gcc.mk mk/tcc.mk
-description:
-* Fix make -j for paralel builds
-  - use hacky 'waitfordeps.sh' helper script
-  - speed up the build process
-* Do not build libr2.so by default
-  - Do not generate library archives (.a)
-  - Fix build dependencies in vm/p/plugins.h
-* Added --with-nonpic
-  - Enable the .a generation
-
-
-changeset:   1050:df983123b470
-user:        nibble
-date:        Thu Oct 28 21:20:44 2010 +0200
-files:       libr/core/cmd.c libr/debug/debug.c
-description:
-* Bypass bp in the remainder continues
-* Disable stop_all_threads temporarilly
-  - Only step once in bypassbp()
-
-
-changeset:   1049:cca9e4bc6df0
-parent:      1046:cc614bbf9a6a
-parent:      1048:3ea8519de17c
-user:        nibble
-date:        Thu Oct 28 20:48:01 2010 +0200
-description:
-* merge
-
-
-changeset:   1048:3ea8519de17c
 user:        pancake<@nopcode.org>
-date:        Thu Oct 28 14:17:40 2010 +0200
-files:       libr/cons/cons.c libr/debug/p/libgdbwrap/include/revm.h
+date:        Tue Mar 08 13:02:02 2011 +0100
+files:       TODO libr/core/cmd.c libr/hash/entropy.c libr/include/r_hash.h
 description:
-* Clean up some warns on w32
+* Apply Glyn patch fixing entropy fraction calculation
+  - Added documentation for pZ?
 
 
-changeset:   1047:215633ae7b86
-parent:      1045:f3eceb72978a
-user:        pancake<@nopcode.org>
-date:        Thu Oct 28 14:11:19 2010 +0200
-files:       Makefile libr/rules.mk
-description:
-* Fix build on w32
-
-
-changeset:   1046:cc614bbf9a6a
+changeset:   1341:6bd01b4815fd
 user:        nibble
-date:        Thu Oct 28 20:47:21 2010 +0200
-files:       TODO libr/anal/t/test_x86im.c libr/core/cmd.c libr/debug/debug.c libr/io/p/io_ptrace.c
+date:        Mon Mar 07 20:50:10 2011 +0100
+files:       binr/rafind2/Makefile binr/ranal2/Makefile libr/anal/t/Makefile libr/debug/t/Makefile libr/sign/t/Makefile
 description:
-* Initial work on fixing bp&&dc&&dc
-* Fix bug in io_ptrace when it writes to mem in 64bits
-* Minor cosmetic changes in test_x86im
-* Update TODO
+* Fix build when compiling in a clean system (thx @esanfelix!)
 
 
-changeset:   1045:f3eceb72978a
-user:        pancake<@nopcode.org>
-date:        Thu Oct 28 13:16:58 2010 +0200
+changeset:   1340:4c354db0eedb
+user:        nibble
+date:        Sun Mar 06 15:27:14 2011 +0100
 files:       libr/Makefile
 description:
-* Fix symstall with versioned libs
-
-
-changeset:   1044:06cf646445bc
-user:        pancake<@nopcode.org>
-date:        Thu Oct 28 13:12:14 2010 +0200
-files:       libr/Makefile libr/core/gdiff.c libr/include/r_core.h
-description:
 * Fix build
-* Fix soname for libr2.so
+  - Compile r_diff before r_anal
 
 
-changeset:   1043:14b2f5292f33
-user:        pancake
-date:        Thu Oct 28 12:10:21 2010 +0200
-files:       TODO libr/Makefile libr/core/gdiff.c libr/include/r_anal.h libr/include/r_diff.h libr/rules.mk swig/rules.mk swig/vapi/r_anal.deps swig/vapi/r_anal.vapi swig/vapi/r_core.vapi swig/vapi/r_diff.vapi swig/vapi/r_reg.vapi
-description:
-* Use relative symlinks in versioned libs
-* Add r_meta stuff inside r_anal api
-
-
-changeset:   1042:78b02b1702e2
-user:        pancake
-date:        Thu Oct 28 03:30:15 2010 +0200
-files:       Makefile
-description:
-* Add 'beta' and 'pub' make targets
-
-
-changeset:   1041:7d9916a81485
-user:        pancake
-date:        Thu Oct 28 03:23:42 2010 +0200
-files:       TODO libr/Makefile libr/include/r_io.h libr/lang/p/Makefile libr/lang/p/python.c
-description:
-* Use --soname with version number
-* Fix redefinition symbol build issue with r_io-desc_free
-* Fix compilation of python lang plugin for py>3
-
-
-changeset:   1040:a1d9ed41bcf9
-user:        pancake
-date:        Thu Oct 28 02:52:40 2010 +0200
-files:       swig/vapi/r_io.vapi
-description:
-* Fix r_io bindings
-
-
-changeset:   1039:c08162b9be50
-user:        pancake
-date:        Thu Oct 28 02:51:01 2010 +0200
-files:       configure configure.acr libr/include/r_io.h libr/include/r_parse.h libr/include/r_print.h libr/print/print.c pkgcfg/r_parse.pc.acr swig/rules.mk swig/vapi/r_anal.vapi swig/vapi/r_asm.vapi swig/vapi/r_bp.vapi swig/vapi/r_config.vapi swig/vapi/r_cons.vapi swig/vapi/r_core.deps swig/vapi/r_core.vapi swig/vapi/r_debug.vapi swig/vapi/r_diff.vapi swig/vapi/r_flags.vapi swig/vapi/r_io.vapi swig/vapi/r_lang.vapi swig/vapi/r_meta.vapi swig/vapi/r_parse.deps swig/vapi/r_parse.vapi swig/vapi/r_print.vapi swig/vapi/r_reg.vapi swig/vapi/r_sign.vapi
-description:
-* Added r_parse and r_print pkgconfig and vapis
-* Fix all compilation problems of swig/
-  - Many new APIs are now exposed to the bindings
-
-
-changeset:   1038:9111631a76b5
-user:        pancake
-date:        Thu Oct 28 01:15:00 2010 +0200
-files:       swig/vapi/r_asm.vapi swig/vapi/r_cons.vapi swig/vapi/r_diff.vapi swig/vapi/r_flags.vapi swig/vapi/r_io.vapi
-description:
-* Some fixes for the vapis
-
-
-changeset:   1037:709bf2cf56c0
-user:        pancake
-date:        Thu Oct 28 00:55:07 2010 +0200
-files:       TODO build.sh libr/anal/fcn.c libr/anal/reflines.c libr/core/cmd.c libr/include/btree.h libr/include/r_anal.h libr/include/r_asm.h libr/include/r_bp.h libr/include/r_cons.h libr/include/r_debug.h libr/include/r_diff.h libr/include/r_parse.h libr/include/r_reg.h libr/vm/p/Makefile swig/vapi/r_anal.vapi swig/vapi/r_asm.vapi swig/vapi/r_bin.vapi swig/vapi/r_bp.vapi swig/vapi/r_cmd.vapi swig/vapi/r_config.vapi swig/vapi/r_cons.vapi swig/vapi/r_core.vapi swig/vapi/r_debug.vapi swig/vapi/r_diff.vapi swig/vapi/r_flags.vapi swig/vapi/r_io.vapi swig/vapi/r_meta.vapi swig/vapi/r_parse.vapi swig/vapi/r_print.vapi swig/vapi/r_reg.vapi swig/vapi/r_sign.vapi swig/vapi/r_util.vapi swig/vapi/r_vm.vapi
-description:
-* Added much more detailed vapis
-  - Enhaces API support for valaswig bindings
-  - I'm probably breaking the build
-
-
-changeset:   1036:979a702b67e4
+changeset:   1339:05bf11262f82
 user:        nibble
-date:        Thu Oct 28 00:19:10 2010 +0200
-files:       libr/core/file.c
+date:        Sun Mar 06 15:21:13 2011 +0100
+files:       libr/anal/Makefile libr/anal/diff.c libr/anal/p/anal_arm.c libr/anal/p/anal_avr.c libr/anal/p/anal_csr.c libr/anal/p/anal_dalvik.c libr/anal/p/anal_java.c libr/anal/p/anal_mips.c libr/anal/p/anal_ppc.c libr/anal/p/anal_x86.c libr/anal/p/anal_x86_simple.c libr/core/cmd.c libr/core/gdiff.c libr/include/r_anal.h
 description:
-* Fix r2 initial seek in non-debug mode
+* Move gdiff stuff to r_anal_diff
+* Make r_anal_diff customizable by plugins
+* Refactor r_anal and redesign API
+* Add dummy methods for security patches evaluation in r_anal_diff
+* Add functions:
+  - r_anal_diff_fingerprint_bb
+  - r_anal_diff_fingerprint_fcn
+  - r_anal_diff_bb
+  - r_anal_diff_fcn
+  - r_anal_diff_eval
 
 
-changeset:   1035:4a1b4ae4197f
-user:        pancake
-date:        Wed Oct 27 22:17:55 2010 +0200
-files:       binr/ranal2/ranal2.c libr/Makefile man/rabin2.1 man/radare2.1 man/radiff2.1 man/rafind2.1 man/rahash2.1 man/ranal2.1 man/rarc2-tool.1 man/rarc2.1 man/rasc2.1 man/rasm2.1 man/rax2.1
+changeset:   1338:aebae54e444c
+user:        pancake@pair
+date:        Sat Mar 05 19:09:38 2011 +0100
+files:       TODO doc/iphone libr/core/cmd.c libr/core/visual.c libr/flags/name.c
 description:
-* Add manpages for rarc2 rarc2-tool ranal2
-* Use the library symlinking layout as reported by Debian
+* Some fixes in the filtered reflines
+* Implement 'Vta' keys to add flagspaces and flags
+* Various r_line_set_prompt fixes in visual.c
+* Add ':' as an invalid char for flags
 
 
-changeset:   1034:4c291adcb870
-user:        pancake@n900
-date:        Wed Oct 27 20:09:29 2010 +0200
-files:       libr/anal/p/anal_arm.c libr/asm/arch/arm/armthumb.c
+changeset:   1337:f8ba179edb5a
+user:        pancake@pair
+date:        Fri Mar 04 13:08:40 2011 +0100
+files:       libr/print/format.c
 description:
-* Fix build for maemo (native arm/linux)
-  - This is a compiler issue, not arch related
+* Fix 'pf' help
 
 
-changeset:   1033:c5dcac5604ea
+changeset:   1336:b5f716b59999
+user:        pancake@pairch
+date:        Fri Mar 04 11:24:28 2011 +0100
+files:       libr/asm/p/asm_x86_nasm.c
+description:
+* Oops. Fix build O:)
+
+
+changeset:   1335:74e30d77e9db
+user:        pancake@pair
+date:        Fri Mar 04 11:32:10 2011 +0100
+files:       libr/asm/p/asm_x86_nasm.c libr/fs/p/grub/Makefile
+description:
+* Import @capi_x patch fixing support for x86.nasm on OSX
+
+
+changeset:   1334:4bb7e1b0153e
 user:        nibble
-date:        Wed Oct 27 19:00:45 2010 +0200
-files:       libr/core/cmd.c libr/core/core.c
+date:        Fri Mar 04 02:36:25 2011 +0100
+files:       configure configure.acr swig/configure swig/configure.acr
 description:
-* Minor optimization in r_core_prompt()
-  - Avoid the use of r_config_get_i
-* Apply pancake's patch
-  - fix cmd 'bp' with flags
+* Change VERSION to 0.7
 
 
-changeset:   1032:1780a992c99c
+changeset:   1333:dcf8cf6c198d
 user:        nibble
-date:        Wed Oct 27 17:45:53 2010 +0200
-files:       binr/radare2/radare2.c libr/core/cmd.c libr/core/config.c libr/core/file.c
+date:        Fri Mar 04 02:10:25 2011 +0100
+files:       libr/core/cmd.c libr/print/print.c
 description:
-* Fix initial seek in debug mode to pc (use sr pc)
-* Complete 's' help
-* Fix dietline echo in 'r2 -v' mode
-  - Add cb for scr.prompt
+* Fix asm.nbytes
+* Fix overflow in r_print_hexpair()
+* Fix bytes alignment
 
 
-changeset:   1031:4dc6cf8d018e
+changeset:   1332:763a3e082aff
 user:        nibble
-date:        Wed Oct 27 16:53:06 2010 +0200
-files:       libr/util/file.c
+date:        Thu Mar 03 19:32:07 2011 +0100
+files:       swig/configure swig/configure.acr
 description:
-* Fix r_file_slurp()
-  - handle correctly fread return value
+* Fix bindings build
+  - Use r_core instead of libr
 
 
-changeset:   1030:d1e73f212f54
-user:        pancake<@nopcode.org>
-date:        Wed Oct 27 16:31:51 2010 +0200
-files:       libr/asm/arch/x86/ollyasm/assembl.c libr/bin/format/elf/elf.c libr/cons/cons.c libr/cons/grep.c libr/diff/diff.c libr/io/p/io_rap.c libr/lang/lang.c libr/line/dietline.c libr/print/format.c libr/util/file.c libr/util/mem.c libr/util/num.c libr/util/sys.c
-description:
-* Many warnings fixed thanks to gentoo build and @astralia
-
-
-changeset:   1029:57335a625983
+changeset:   1331:0b7a2c64d4b2
 user:        nibble
-date:        Wed Oct 27 16:24:56 2010 +0200
-files:       libr/anal/t/Makefile
+date:        Thu Mar 03 16:52:51 2011 +0100
+files:       TODO configure libr/Makefile libr/core/anal.c libr/core/cmd.c libr/core/visual.c libr/include/r_core.h pkgcfg/libr.pc.acr swig/vapi/r_core.vapi
 description:
-* Fix build
-
-
-changeset:   1028:1a1e78591a14
-parent:      1027:943e639d9617
-parent:      1026:7b37d4709e7e
-user:        pancake
-date:        Wed Oct 27 10:57:25 2010 +0200
-description:
-* merge
-
-
-changeset:   1027:943e639d9617
-parent:      1025:e66a0380c951
-user:        pancake
-date:        Wed Oct 27 10:56:18 2010 +0200
-files:       TODO libr/Makefile mk/gcc.mk
-description:
-* Initial work on the versioned libraries support
-
-
-changeset:   1026:7b37d4709e7e
-user:        nibble
-date:        Wed Oct 27 01:53:40 2010 +0200
-files:       libr/cons/output.c
-description:
-* Refactoring and fix of r_cons_w32_print()
-* Add support for '^]27m' (invert off) in win32 console
-
-
-changeset:   1025:e66a0380c951
-user:        pancake
-date:        Tue Oct 26 23:19:08 2010 +0200
-files:       TODO libr/Makefile libr/core/config.c
-description:
-* Install plugins in versioned directory
-  ${PREFIX}/lib/radare2/${VERSION}
-
-
-changeset:   1024:dd5e932bdec5
-user:        pancake
-date:        Tue Oct 26 21:00:54 2010 +0200
-files:       libr/core/cmd.c libr/debug/p/debug_native.c libr/include/r_util.h libr/util/str.c
-description:
-* Fix eflags parsing for x86-32/64 debugger
-  - added ?f and ?b commands to parse bits and flags
-
-
-changeset:   1023:663d6e7e93d4
-user:        pancake<@nopcode.org>
-date:        Tue Oct 26 18:24:14 2010 +0200
-files:       TODO libr/anal/anal.c libr/core/core.c libr/io/io.c libr/io/p/io_ptrace.c
-description:
-* Some fixes, null pointers and other beasts
-  found thanks to the python bindings
-
-
-changeset:   1022:5fbeb482bd8d
-parent:      1021:e09466fd42f3
-parent:      1019:042832ca3cc5
-user:        pancake<@nopcode.org>
-date:        Tue Oct 26 17:32:34 2010 +0200
-description:
-* merge heads
-
-
-changeset:   1021:e09466fd42f3
-user:        pancake<@nopcode.org>
-date:        Tue Oct 26 17:30:21 2010 +0200
-files:       swig/Makefile swig/python/Makefile swig/vapi/r_core.vapi
-description:
-* Fix python build for python3
-* Add RDebug instance in RCore class
-
-
-changeset:   1020:13abdc584fb8
-parent:      1014:0928b1a74522
-user:        pancake<@nopcode.org>
-date:        Mon Oct 25 13:20:26 2010 +0200
-files:       configure configure.acr
-description:
-* s/openssl/ssl/g in acr
-
-
-changeset:   1019:042832ca3cc5
-user:        pancake
-date:        Mon Oct 25 00:57:03 2010 +0200
-files:       libr/asm/arch/arm/armass.c libr/cons/output.c libr/flags/name.c
-description:
-* Apply patch from @earada
-  - Fixed the push/pop arm compile. Thanks @vytis0 for report!!
-  - Use 128 bytes in opcode length.
-  - Use an array for store all registers parsed.
-  - Now can use more than 2 regs.
-* Fix warnings in flags/name.c
-
-
-changeset:   1018:d8777340ac00
-user:        nibble
-date:        Sun Oct 24 23:09:07 2010 +0200
-files:       TODO libr/print/print.c
-description:
-* Fix byte selection in cursor mode (pd view)
-
-
-changeset:   1017:503490fffc7f
-user:        nibble
-date:        Sat Oct 23 21:40:58 2010 +0200
-files:       TODO libr/cons/color.c libr/core/visual.c libr/print/print.c
-description:
-* Use '[27m' (invert off) instead of '[0m' in r_cons_invert
-* Fix colorize in visual mode (pd view) when cursor is enabled
-
-
-changeset:   1016:29fb449abfc8
-user:        nibble
-date:        Sat Oct 23 14:27:13 2010 +0200
-files:       TODO binr/rabin2/rabin2.c libr/core/cmd.c libr/core/config.c libr/core/file.c libr/core/visual.c libr/flags/name.c libr/util/sys.c
-description:
-* Add var vm.arch
-* Fix vm arch setup at startup
-* Fix flag set in visual mode when cursor is enabled
-* Filter string names before adding flags in r_bin_load
-* Fix r_flag_name_filter (do trim)
-* Fix r_sys_rmkdir
+* Fix quick jumps in Visual mode using chache
+* Clean up build & remove libr.so target
 * Update TODO
 
 
-changeset:   1015:03b7cc6cfb3e
-user:        pancake
-date:        Fri Oct 22 01:16:32 2010 +0200
-files:       binr/radare2/radare2.c libr/core/core.c
+changeset:   1330:687339f3c88d
+user:        pancake@pairch
+date:        Thu Mar 03 11:02:35 2011 +0100
+files:       libr/fs/fs.c
 description:
-* Fix $$$ variable
-* Do not set io.va twice
+* Apply fix for r_fs (thanks @earada)
 
 
-changeset:   1014:0928b1a74522
-user:        pancake
-date:        Tue Oct 19 22:17:58 2010 +0200
-files:       TODO build.sh doc/windows libr/core/cmd.c libr/include/r_print.h libr/print/print.c libr/reg/t/test.c swig/Makefile
+changeset:   1329:134ef3caae03
+user:        pancake@pair
+date:        Thu Mar 03 10:42:45 2011 +0100
+files:       libr/core/cmd.c libr/fs/p/fs_posix.c libr/fs/p/grub/grubfs.c libr/fs/p/grub/main.c
 description:
-* Build w32 python bindings in build.sh
-* Added 'drb' command to show bytes of GPR
-* Fix signature of r_print_hexdump and _hexpairs
-* Enhace r_reg test case
-* Fix swig/Makefile w32dist target
+* Fix some warnings
 
 
-changeset:   1013:b37175918e3a
-user:        pancake
-date:        Tue Oct 19 19:53:29 2010 +0200
-files:       TODO configure configure.acr libr/asm/arch/arm/Makefile libr/asm/arch/arm/armass.c swig/configure swig/configure.acr
-description:
-* Bump revision to beta 0.6
-* Fix bug in armass noticed by @earada
-
-
-changeset:   1012:422af36e4fca
-user:        pancake<nopcode.org>
-date:        Tue Oct 19 13:57:00 2010 +0200
-files:       binr/rarc2/Makefile
-description:
-* Fix build of rarc2 on w32
-
-
-changeset:   1011:fa354824caac
+changeset:   1328:c9dfcd92e312
 user:        pancake<@nopcode.org>
-date:        Tue Oct 19 13:17:25 2010 +0200
-files:       libr/core/visual.c
+date:        Wed Mar 02 14:11:34 2011 +0100
+files:       doc/dospart libr/core/cmd.c libr/core/visual.c
 description:
-* Honor print->cols in visual {j,k}
+* Added doc/dospart with list of partition types (mp)
+* Use 'obs' instead of blocksize for JK visual keys
+  - fixes scrolling issue in visual disasm
+* Some more glitches fixed in visual disasm
 
 
-changeset:   1010:253fd8691929
+changeset:   1327:b0d47f1062f9
+user:        pancake<@nopcode.org>
+date:        Wed Mar 02 12:33:28 2011 +0100
+files:       Makefile libr/core/cmd.c
+description:
+* Fix build and some glitches in visual disasm
+
+
+changeset:   1326:959e55498088
+user:        pancake@pair
+date:        Wed Mar 02 11:45:20 2011 +0100
+files:       libr/core/cmd.c libr/core/core.c libr/include/r_line.h libr/include/r_search.h libr/search/bytepat.c libr/search/search.c
+description:
+* Make r_core_magic be verbose or not
+* Initial implementation of /p and /m search methods
+  - Cleanup some code (-110LOC)
+
+
+changeset:   1325:750470106493
+user:        pancake@pair
+date:        Wed Mar 02 00:02:50 2011 +0100
+files:       libr/anal/anal.c libr/core/cmd.c libr/core/config.c libr/core/core.c libr/core/file.c libr/core/project.c libr/core/visual.c libr/include/r_anal.h libr/include/r_core.h libr/line/line.c
+description:
+* Move RMeta inside RAnal
+  - Get out of RCore! - rebuild required
+* Fix cast after scaling entropy (Thanks Glyn)
+* Fix indentation of function/nonfunction code
+* Add 'f' and 'F' keys in visual mode to seek next/prev
+  - between functions, flags and search hits
+  - Use 'e scr.fkey' to configure the mode
+* Fix prompt in visual mode for ':' key
+
+
+changeset:   1324:75d1a73e63e8
 user:        nibble
-date:        Tue Oct 19 12:57:28 2010 +0200
-files:       TODO libr/bin/format/elf/elf.c libr/bin/format/elf/elf_specs.h libr/bin/format/elf/elf_write.c libr/core/visual.c
+date:        Tue Mar 01 19:27:04 2011 +0100
+files:       libr/anal/t/Makefile libr/anal/t/test_meta.c swig/vapi/r_anal.vapi
 description:
-* Fix block read in visual mode
-* Use a more reliable way for fixing the got_offset issues
-* Remove ELF_GOTOFF_MASK
+* Remove remaining test app for r_meta and fix build
+* Update r_anal vapi
 
 
-changeset:   1009:d0c63391727a
-user:        pancake
-date:        Mon Oct 18 20:47:13 2010 +0200
-files:       README TODO binr/rabin2/rabin2.c binr/ranal2/ranal2.c binr/rsc2/Makefile binr/rsc2/rsc2.c binr/rsc2/scripts/intel2att libr/debug/README libr/debug/TODO rsc2/rsc2.c rsc2/scripts/intel2att swig/Makefile swig/config.mk.acr swig/configure swig/configure.acr
-description:
-* Fixes in swig/ for OS type selection
-* Move rsc2 into binr/
-
-
-changeset:   1008:f01b220d9ea0
-user:        pancake<@nopcode.org>
-date:        Mon Oct 18 18:31:39 2010 +0200
-files:       swig/python/remote.py
-description:
-* Copy client/server python implementation of rap://
-  - Same as in r1 :)
-
-
-changeset:   1007:e27e48380d51
-user:        pancake<@nopcode.org>
-date:        Mon Oct 18 11:54:12 2010 +0200
-files:       libr/anal/arch/x86/x86im/x86im.c libr/anal/arch/x86/x86im/x86im.h libr/anal/arch/x86/x86im/x86im_fmt.c libr/anal/arch/x86/x86im/x86im_fmt.h libr/anal/arch/x86/x86im/x86im_gen.h libr/anal/arch/x86/x86im/x86im_io.h libr/anal/arch/x86/x86im/x86im_itbl.h libr/asm/arch/x86/ollyasm/asmserv.c libr/asm/arch/x86/ollyasm/assembl.c libr/asm/arch/x86/ollyasm/disasm.c libr/asm/arch/x86/ollyasm/disasm.h
-description:
-* Remove \r (thanks @earada)
-
-
-changeset:   1006:03128af4e697
-user:        pancake
-date:        Mon Oct 18 11:38:52 2010 +0200
-files:       TODO libr/core/cmd.c libr/core/visual.c libr/print/print.c
-description:
-* Some work on the analysis of the cursor bug
-
-
-changeset:   1005:e5c44ee02b45
-user:        pancake
-date:        Mon Oct 18 01:52:44 2010 +0200
-files:       libr/asm/arch/x86/ollyasm/asmserv.c
-description:
-* Restore old asmserv.c
-  - Fix build
-
-
-changeset:   1004:c61807427aaf
-user:        pancake<nopcode.org>
-date:        Mon Oct 18 01:51:00 2010 +0200
-files:       Makefile doc/windows pkgcfg/r_bp.pc.acr pkgcfg/r_core.pc.acr pkgcfg/r_debug.pc.acr swig/Makefile swig/check-langs.sh swig/config.mk.acr swig/configure swig/configure.acr swig/do-swig.sh swig/rules.mk
-description:
-* Add support for python 2.7 API bindings on Windows
-  - Fixes some pkgconfig issues
-  - Depends on newer valaswig
-* Added new target 'w32' and 'w32dist' in swig/
-  - Already documented in doc/windows
-  - Only works on archlinux. debian support is next
-
-
-changeset:   1003:da7fad4c5d3f
-user:        pancake<nopcode.org>
-date:        Mon Oct 18 00:00:17 2010 +0200
-files:       TODO doc/windows libr/core/file.c libr/lang/p/Makefile libr/lang/p/python.c
-description:
-* Added compilation support for python bindings on Windows
-  - Documented in doc/windows
-* Use single linked list pointer in rbin->rcore
-  - Thanks @earada :)
-
-
-changeset:   1002:79423e032eee
-user:        pancake
-date:        Sun Oct 17 23:33:58 2010 +0200
-files:       TODO libr/asm/arch/x86/ollyasm/asmserv.c libr/debug/p/debug_native.c
-description:
-* Fix w32 debugger register profile
-* Remove \r in asmserv.c
-
-
-changeset:   1001:ef5aea9e1213
-user:        pancake
-date:        Sun Oct 17 23:03:54 2010 +0200
-files:       TODO libr/asm/arch/x86/ollyasm/asmserv.c libr/asm/p/asm_arm.c libr/asm/p/asm_mips.c libr/bin/format/mach0/mach0.c libr/core/cmd.c libr/core/config.c libr/core/visual.c libr/include/r_print.h libr/include/r_util.h libr/print/date.c libr/print/print.c libr/util/sys.c
-description:
-* Fix warnings in asmserv on windows
-* Some alloca->malloc fixes for w32
-* More error checking in r_sys_rmkdir
-  - Uses the new r_sys_mkdir_failed() api
-  - works on windows and posix
-* Disable asm.dwarf when the plugin fails to init
-  - Displays a warning message
-* Added 'e scr.cols=16'
-  - Determines the width of the hexdump (px, x)
-  - Used also by Visual mode hjkl dimensions
-
-
-changeset:   1000:d96e7960a63a
+changeset:   1323:04793ec447c0
 user:        nibble
-date:        Sun Oct 17 20:38:19 2010 +0200
-files:       libr/anal/p/Makefile libr/bin/bin.c
+date:        Tue Mar 01 19:16:29 2011 +0100
+files:       libr/anal/op.c libr/anal/p/anal_x86.c libr/core/cmd.c libr/core/core.c libr/include/r_anal.h
 description:
-* Fix build for win
-* Fix string rva in r_bin
+* Add support for more opcodes in anal_x86
+  - lea, leave...
+* Update asm.decode with these changes
+* Add var $o for core->io->offset
+* Fix "function"|"loc" comments in disasm
+* Fix p%
 
 
-changeset:   999:6e2fffab3142
-user:        pancake<@nopcode.org>
-date:        Thu Oct 14 19:01:14 2010 +0200
-files:       libr/core/cmd.c libr/debug/p/debug_native.c libr/reg/reg.c libr/reg/value.c libr/util/sys.c
+changeset:   1322:7ee858f01355
+user:        pancake@pair
+date:        Tue Mar 01 19:06:22 2011 +0100
+files:       libr/anal/meta.c libr/anal/type.c libr/core/cmd.c libr/core/file.c libr/core/project.c libr/core/visual.c libr/include/r_anal.h libr/include/r_cons.h libr/include/r_core.h libr/include/r_meta.h libr/meta/Makefile libr/meta/t/Makefile libr/meta/tmp/data.c
 description:
-* Apply some fixes for w32
-* More nullptr checks
-  - Fix 'drp'
-* Fix build
+* Remove all references to r_meta as a separated library
+  - Initial merge into r_anal
+  - Prefix R_META_* as R_META_TYPE_
+  - Deprecate folder type and rename Cm->Cf (like in p cmd)
 
 
-changeset:   998:b7e8dea3cdbb
+changeset:   1321:4f88e0acadc9
+user:        nibble
+date:        Mon Feb 28 17:27:08 2011 +0100
+files:       binr/rabin2/rabin2.c doc/fortunes libr/anal/op.c libr/core/anal.c libr/core/file.c
+description:
+* Don't flag imports/symbols twice (also for functions)
+* Remove unnecessary calls to r_flag_space_set()
+* Show calls nicer in decode mode
+
+
+changeset:   1320:d8a7822b0131
 user:        pancake<@nopcode.org>
-date:        Thu Oct 14 17:06:09 2010 +0200
+date:        Mon Feb 28 13:29:04 2011 +0100
+files:       Makefile TODO libr/anal/reflines.c libr/core/cmd.c libr/hash/entropy.c libr/print/print.c
+description:
+* Fix entropy range 0-8 (Thanks Glyn)
+  - Use 0-255 in pZ
+* Fix symstall for pkgconfig
+
+
+changeset:   1319:e518c9ac79f8
+user:        nibble
+date:        Mon Feb 28 13:21:38 2011 +0100
+files:       libr/anal/value.c
+description:
+* Show deltas in hex in decode mode
+
+
+changeset:   1318:7f8b22ac71ba
+user:        nibble
+date:        Mon Feb 28 13:07:41 2011 +0100
+files:       libr/anal/bb.c libr/anal/op.c libr/anal/p/anal_x86.c libr/anal/value.c libr/include/r_anal.h
+description:
+* Show conditions in decode mode
+* Fix bug with imm=0 in r_anal_value_to_string()
+* Add 32bits regs to the anal_x86 profile
+* Add r_anal_bb_from_offset()
+
+
+changeset:   1317:5781fb079707
+user:        nibble
+date:        Mon Feb 28 10:22:40 2011 +0100
+files:       libr/bin/demangle.c libr/bin/mangling/cxx/cp-demangle.c
+description:
+* Use cxx demangle if the type is not detected
+* Remove debug msg
+
+
+changeset:   1316:75d74ef54c3c
+user:        nibble
+date:        Mon Feb 28 09:45:29 2011 +0100
+files:       libr/bin/Makefile libr/bin/demangle.c libr/bin/mangling/cxx/ansidecl.h libr/bin/mangling/cxx/cp-demangle.c libr/bin/mangling/cxx/cp-demangle.h libr/bin/mangling/cxx/demangle.h libr/bin/mangling/cxx/libiberty.h
+description:
+* Initial integration of GNU cxx demangle in r_bin
+
+
+changeset:   1315:eff9ffdf3904
+user:        nibble
+date:        Mon Feb 28 09:21:58 2011 +0100
 files:       libr/core/cmd.c
 description:
-* Fix null pointer issue related to r_syscall and r_core
+* Fix segfault in decode after 'aa' is executed
 
 
-changeset:   997:a22adbabd4cd
+changeset:   1314:c053532f20f3
+user:        pancake@pair
+date:        Mon Feb 28 00:03:26 2011 +0100
+files:       TODO libr/anal/reflines.c libr/cons/cons.c libr/core/cmd.c libr/core/config.c libr/core/file.c libr/core/visual.c
+description:
+* Some fixes in r_anal_reflines
+* Implement r_cons->teefile (e scr.tee)
+* Use filtered refline for comments and flags prefixes
+* Many visual fixes in functions and reflines in 'pd'
+
+
+changeset:   1313:fefcb997a809
+user:        pancake@pair
+date:        Sun Feb 27 21:56:13 2011 +0100
+files:       Makefile libr/include/r_asm.h swig/Makefile
+description:
+* Add install-pkgconfig-symlink target
+* Add dummy r_asm_op_free
+
+
+changeset:   1312:ee6f52853915
+user:        pancake@pair
+date:        Sun Feb 27 20:30:41 2011 +0100
+files:       TODO binr/rabin2/rabin2.c libr/asm/arch/java/javasm/javasm.c libr/asm/p/asm_java.c libr/bin/demangle.c libr/bin/format/java/java.c libr/bin/p/bin_java.c libr/core/cmd.c libr/core/config.c libr/core/file.c libr/core/visual.c libr/include/r_bin.h libr/include/r_list.h libr/include/r_util.h libr/lang/p/Makefile libr/lang/p/perl.c libr/lang/p/python.c libr/syscall/syscall.c libr/util/buf.c
+description:
+* Initial implementation of the java name mangling
+  - Added as comments before the method names
+* Some fixes in r_bin_java
+* Added r_buf(append/prepend)
+* Show flags always in new lines
+
+
+changeset:   1311:284421981d55
 user:        nibble
-date:        Wed Oct 13 18:51:10 2010 +0200
-files:       binr/rabin2/rabin2.c binr/radiff2/radiff2.c libr/core/file.c libr/core/gdiff.c
+date:        Sun Feb 27 16:17:05 2011 +0100
+files:       libr/anal/op.c libr/anal/p/anal_x86.c libr/anal/value.c libr/asm/p/x86.mk libr/core/cmd.c libr/include/r_asm.h
 description:
-* Don't add symbols as functions before analyze them
-* Update and simplify gdiff
+* Complete analysis for more opcodes in anal_x86
+* Decode more opcodes in r_anal_op_to_string
+* Complete r_anal_value_to_string()
+  - Output imm values
+  - Fix segfault
+* Remove dupped line from x86.mk
+* Remove ref to "dummy plugin" from r_asm.h
 
 
-changeset:   996:83d20bf12d5c
-user:        pancake<@nopcode.org>
-date:        Wed Oct 13 18:07:55 2010 +0200
-files:       TODO libr/core/cmd.c libr/vm/vm.c
-description:
-* Fix division by zero in VM code when using ATT syntax
-  - use intel syntax when running VM code from disasm loop
-
-
-changeset:   995:98abb909eada
+changeset:   1310:49c3b83ebed8
 user:        nibble
-date:        Wed Oct 13 04:00:32 2010 +0200
-files:       libr/bin/format/elf/elf.c libr/bin/format/elf/elf.h libr/bin/p/bin_elf.c
+date:        Sun Feb 27 03:39:27 2011 +0100
+files:       libr/anal/cond.c libr/anal/op.c libr/anal/p/anal_x86.c
 description:
-* Fix reloc offset resolution in r_bin_elf
+* Fix segfault with asm.decode = true
+* Add push/pop to decode
+* Minor fixups in anal_x86
 
 
-changeset:   994:27b1313ccf64
+changeset:   1309:ca20e101c158
 user:        nibble
-date:        Wed Oct 13 01:23:27 2010 +0200
-files:       binr/radare2/radare2.c libr/core/file.c
+date:        Sat Feb 26 19:48:01 2011 +0100
+files:       TODO
 description:
-* Fix va issue in dbg mode
+* Sync TODO with pad
 
 
-changeset:   993:18e1bdb03f12
-user:        pancake
-date:        Wed Oct 13 01:00:39 2010 +0200
-files:       libr/io/p/io_debug.c
-description:
-* Oops. fix debugger attach
-
-
-changeset:   992:62c6a1b3acad
-user:        pancake
-date:        Wed Oct 13 00:43:02 2010 +0200
-files:       binr/rarc2/rarc2.c binr/rarc2/t/hi.r libr/debug/p/libgdbwrap/gdbwrapper.c
-description:
-* Remove -l flag in rarc2
-  - Replaced by rarc2 -a
-* Fix build
-
-
-changeset:   991:1aaecb89bc6b
-user:        pancake
-date:        Tue Oct 12 13:22:19 2010 +0200
-files:       TODO libr/asm/p/asm_bf.c libr/debug/p/libgdbwrap/gdbwrapper.c libr/io/io.c libr/io/p/io_debug.c libr/vm/op.c libr/vm/reg.c libr/vm/vm.c
-description:
-* Remove some use of alloca()
-* Fix lock when using 'r2 -d'
-* Invalid program name results in error, not warning
-
-
-changeset:   990:b96b13546cce
+changeset:   1308:37abaa2b1689
 user:        nibble
-date:        Tue Oct 12 07:08:03 2010 +0200
-files:       libr/core/file.c swig/vapi/r_bin.vapi swig/vapi/r_util.vapi
+date:        Sat Feb 26 19:16:08 2011 +0100
+files:       TODO libr/core/cmd.c libr/include/r_anal.h libr/parse/p/parse_x86_pseudo.c
 description:
-* More work on r_bin and r_util vapi's
-* Minor aesthetic fix in core/file.c
+* Output error when 'wx' tries to write an invalid hexpair
+* Rename R_ANAL_MAX_VARSUB to R_ANAL_VARSUBS
+* Update TODO
 
 
-changeset:   989:e818178116c0
-user:        pancake<nopcode.org>
-date:        Tue Oct 12 01:18:17 2010 +0200
-files:       TODO libr/cons/cons.c libr/core/config.c libr/debug/p/debug_native.c libr/debug/p/native/w32.c libr/io/io.c libr/io/p/io_debug.c libr/io/p/io_w32dbg.c libr/util/sys.c libr/util/w32-sys.c
-description:
-* Apply patching fixing various bugs on w32
-  - Some segfaults resolved and bugs identified
-  - Thanks @mrgadix :)
-
-
-changeset:   988:b81ccc2bb3a0
-user:        pancake
-date:        Tue Oct 12 01:16:39 2010 +0200
-files:       libr/core/file.c
-description:
-* Apply fix in rbin->core integration from @earada
-
-
-changeset:   987:0f950272d5a5
-parent:      986:51bc95dbafa6
-parent:      985:d6ca20ec2a1d
-user:        pancake
-date:        Mon Oct 11 17:12:08 2010 +0200
-description:
-* merge
-
-
-changeset:   986:51bc95dbafa6
-parent:      984:78920f232751
-user:        pancake
-date:        Mon Oct 11 17:11:43 2010 +0200
-files:       binr/radare2/radare2.c libr/asm/arch/arm/armass.c libr/core/file.c
-description:
-* Do not run .!rabin2 from r_core
-  - Use internal APIs to load binary information
-  - Startup time reduced about 2-3 times
-  - Thanks @earada for this patch!
-
-
-changeset:   985:d6ca20ec2a1d
+changeset:   1307:3178ecb19300
 user:        nibble
-date:        Sat Oct 09 19:13:10 2010 +0200
-files:       libr/core/cmd.c libr/core/config.c swig/vapi/r_bin.vapi swig/vapi/r_core.vapi
+date:        Sat Feb 26 14:58:54 2011 +0100
+files:       libr/anal/cc.c libr/core/cmd.c libr/include/r_anal.h libr/parse/p/parse_x86_pseudo.c
 description:
-* r_core
-  - Add var asm.functions to show/hide function analysis in disasm
-  - Take into account asm.{xrefs, functions} in disasm
-* vapi's
-  - Add bin to RCore in r_core.vapi
+* Little refactoring of 'Cv'
+* Show 'unk' instead of 0xff...ff for unkwnown calls/args
 
 
-changeset:   984:78920f232751
+changeset:   1306:8a1b56d3307b
 user:        nibble
-date:        Sat Oct 09 13:54:08 2010 +0200
-files:       libr/core/cmd.c libr/include/r_core.h swig/Makefile swig/vapi/r_core.vapi
+date:        Fri Feb 25 20:38:55 2011 +0100
+files:       libr/core/visual.c
 description:
-* r_core
-  - Add helpers r_core_disassemble_instr() and r_core_disassemble_bytes()
-* bindings
-  - Fix go detection
-  - Update r_core.vapi
+* Undefine functions with Vdu
+* Remove unnecessary calls to r_core_cmd in Vdf
+* Remove call to deprecated 'ab'
 
 
-changeset:   983:5eda99a2e3d2
-user:        pancake
-date:        Fri Oct 08 11:10:25 2010 +0200
-files:       TODO libr/anal/p/anal_arm.c libr/core/cmd.c libr/print/print.c
-description:
-* Analyze cmp/ldr/str opcodes in arm thumb
-* Minor work to fix the cursor issues
-
-
-changeset:   982:6e5db2dde6c4
-user:        pancake
-date:        Fri Oct 08 00:48:07 2010 +0200
-files:       libr/core/cmd.c libr/core/visual.c
-description:
-* Do not show cursor in visual mode when cursor is disabled
-
-
-changeset:   981:139f9e667bfb
-user:        pancake
-date:        Fri Oct 08 00:27:38 2010 +0200
-files:       libr/anal/p/anal_arm.c libr/asm/arch/arm/armass.c libr/asm/arch/arm/armthumb.c
-description:
-* Implement ldmia/stmia in armthumb_assemble
-  - added also: yield, wfe, wfi, sev, bkpt
-  - fix ldr{bh} and str{bh}
-* Initial implementation of the arm-thumb code analysis module
-
-
-changeset:   980:e0c34b98ab93
-user:        pancake<@nopcode.org>
-date:        Thu Oct 07 19:16:16 2010 +0200
-files:       libr/asm/arch/arm/armass.c
-description:
-* Added partially supported ldr{hb} and str{hb} opcodes for armthumb
-  - needs more parse checking
-
-
-changeset:   979:1693b50a8546
+changeset:   1305:97b9695980f4
 user:        nibble
-date:        Thu Oct 07 13:02:07 2010 +0200
-files:       libr/core/cmd.c swig/vapi/r_core.vapi
+date:        Fri Feb 25 20:23:07 2011 +0100
+files:       libr/core/anal.c libr/include/r_core.h swig/vapi/r_core.vapi
 description:
-* r_core
-  - Fix DATA in disasm
-  - Correct the number of lines showed with 'pd n'
+* Fix bb analysis
+  - Remove depth checks, it makes sense only for fcns
 * Update r_core vapi
 
 
-changeset:   978:c8167b9598f3
-user:        pancake
-date:        Thu Oct 07 11:20:12 2010 +0200
-files:       libr/asm/arch/arm/arm.h libr/asm/arch/arm/armass.c libr/asm/arch/arm/armthumb.c libr/asm/p/asm_arm.c libr/asm/p/asm_armthumb.c
-description:
-* More opcodes supported by the arm thumb assembler
-  - Just missing ldr{b,h} and str{b,h}
-* Added armthumb_length() function to retrieve opcode length
-
-
-changeset:   977:8ceff6bbc2f9
-user:        pancake
-date:        Wed Oct 06 21:22:56 2010 +0200
-files:       libr/asm/arch/arm/armass.c libr/asm/p/asm_arm.c
-description:
-* Initial import of the ARM thumb assembler
-  - Not all opcodes are supported, partially done
-
-
-changeset:   976:3f9ec124a479
+changeset:   1304:504bcd044654
 user:        nibble
-date:        Wed Oct 06 18:04:47 2010 +0200
-files:       TODO libr/asm/p/asm_x86_olly.c libr/core/asm.c libr/core/cmd.c libr/include/r_core.h libr/include/r_list.h swig/go/test-r_bin.go swig/vapi/r_core.vapi swig/vapi/t/Makefile swig/vapi/t/asm.gs swig/vapi/t/bintest.vala swig/vapi/t/bwdisassemble.vala swig/vapi/t/rgot.vala
+date:        Fri Feb 25 13:13:35 2011 +0100
+files:       libr/io/p/io_ptrace.c
 description:
-* Add r_core_asm_bwdisassemble for backward disassemble resolution
-* Add example using bwdisassemble in swig/vapi/t/bwdisassemble.vala
-* Add field len to RCoreAsmHit
-* Update vapi's
-* Fix memory leak in r_core_asm_strsearch()
-* Fix several vala examples
-* Fix r_list_iterator warning in vala
+* Fix io_ptrace write in 64bits
+* Fix indentation of io_ptrace.c
 
 
-changeset:   975:f843cb340578
+changeset:   1303:e977c26068b2
+user:        pancake@pairch
+date:        Fri Feb 25 11:45:05 2011 +0100
+files:       libr/core/cmd.c libr/util/num.c
+description:
+* /e is the new /m
+* /m is for magic search
+* Added ?x ?X ?s ?i and ?e
+
+
+changeset:   1302:c153a7933016
+user:        pancake@pairch
+date:        Fri Feb 25 04:19:30 2011 +0100
+files:       TODO binr/rabin2/rabin2.c doc/idc2rdb.idc doc/idc2rdb.pl libr/asm/asm.c libr/bin/bin.c libr/bin/bin_write.c libr/bin/demangle.c libr/bin/p/bin_java.c libr/core/cmd.c libr/core/config.c libr/core/file.c libr/core/visual.c libr/fs/fs.c libr/include/r_bin.h libr/include/r_fs.h
+description:
+* Drop 'r_cons.h' from r_fs
+* Fix visual glitch in Vej and Vt
+* Handle demangled names as comments
+  - in rabin2 and core->bin_load
+  - Needs to be a RAnalCall at some point
+  - bin_java calls the dummy r_bin_demangle_java
+  - Add R_BIN_NM_ANY enum
+* Add asm.lbytes config to align disasm bytes to left
+* Fix visual glitch in function boundaries
+* Import upgraded versions of the idc2rdb scripts in doc/
+
+
+changeset:   1301:1fd20669b815
+user:        pancake@pairch
+date:        Fri Feb 25 03:17:20 2011 +0100
+files:       libr/fs/fs.c libr/fs/t/script libr/fs/t/test.rsc libr/io/p/io_ptrace.c
+description:
+* Fix io-ptrace on 64bits
+* ls command in ms shell now support path arguments
+* cd now accepts .. as argument
+* Fix access to subdirectories
+* Fix nested mount directory resolution
+* Added test scripts for r_fs
+
+
+changeset:   1300:611809fe2357
+user:        pancake@pairch
+date:        Fri Feb 25 00:23:58 2011 +0100
+files:       libr/core/cmd.c libr/core/config.c libr/io/p/io_ptrace.c
+description:
+* Fix io->ptrace->write for !=4 lengths
+* Add support for recursive and multiline magics
+  - e magic.depth = 100
+
+
+changeset:   1299:b808df15add5
+user:        nibble
+date:        Thu Feb 24 16:56:55 2011 +0100
+files:       swig/vapi/t/asm.gs swig/vapi/t/asm.vala
+description:
+* Update some testcases in vapi/t
+
+
+changeset:   1298:4f228984d355
+user:        nibble
+date:        Thu Feb 24 16:50:29 2011 +0100
+files:       binr/rasm2/rasm2.c libr/asm/asm.c libr/asm/p/asm_arm.c libr/asm/p/asm_armthumb.c libr/asm/p/asm_avr.c libr/asm/p/asm_bf.c libr/asm/p/asm_csr.c libr/asm/p/asm_dalvik.c libr/asm/p/asm_gas.c libr/asm/p/asm_java.c libr/asm/p/asm_mips.c libr/asm/p/asm_msil.c libr/asm/p/asm_ppc.c libr/asm/p/asm_psosvm.c libr/asm/p/asm_sparc.c libr/asm/p/asm_x86.c libr/asm/p/asm_x86_nasm.c libr/asm/p/asm_x86_olly.c libr/core/asm.c libr/core/cmd.c libr/core/core.c libr/core/visual.c libr/include/r_asm.h libr/include/r_core.h swig/vapi/r_asm.vapi swig/vapi/r_core.vapi
+description:
+* Rename r_asm_aop_* to r_asm_op_*
+* Rename remaining r_anal_aop_*
+
+
+changeset:   1297:e0d5808ba21f
+user:        nibble
+date:        Thu Feb 24 14:06:49 2011 +0100
+files:       binr/ranal2/ranal2.c libr/anal/Makefile libr/anal/anal.c libr/anal/aop.c libr/anal/bb.c libr/anal/cond.c libr/anal/fcn.c libr/anal/op.c libr/anal/p/anal_arm.c libr/anal/p/anal_avr.c libr/anal/p/anal_csr.c libr/anal/p/anal_dalvik.c libr/anal/p/anal_java.c libr/anal/p/anal_mips.c libr/anal/p/anal_ppc.c libr/anal/p/anal_x86.c libr/anal/p/anal_x86_simple.c libr/anal/reflines.c libr/core/anal.c libr/core/cmd.c libr/core/core.c libr/core/gdiff.c libr/debug/debug.c libr/debug/trace.c libr/include/r_anal.h swig/vapi/r_anal.vapi
+description:
+* Rename r_anal_aop_* to r_anal_op_*
+
+
+changeset:   1296:2c89431c128c
+user:        nibble
+date:        Thu Feb 24 10:07:29 2011 +0100
+files:       libr/bin/bin.c pkgcfg/libr.pc.acr
+description:
+* Remove remaining r_vm references
+* Minor changes in r_bin simplification
+
+
+changeset:   1295:48886e449ac1
+user:        pancake@pairch
+date:        Thu Feb 24 09:40:19 2011 +0100
+files:       TODO libr/core/cmd.c libr/core/io.c libr/core/visual.c libr/include/r_core.h libr/include/r_vm.h swig/vapi/r_core.vapi swig/vapi/t/findops.vala
+description:
+* mo is now flag friendly
+* Added vala test script to find special ops
+* Add r_core_disassemble helper
+* Remove r_vm.h
+* Do not reset cursor when quitting visual zoom mode
+
+
+changeset:   1294:971bdcf7260e
+user:        pancake@pairch
+date:        Wed Feb 23 20:53:56 2011 +0100
+files:       TODO libr/bin/Makefile libr/bin/bin.c libr/bin/demangle.c libr/core/cmd.c libr/core/visual.c libr/include/r_bin.h
+description:
+* Fix cmd.vprompt
+* Simplify some functions in r_bin
+* Added support for x86-64 for the 'ap' command
+* Added dummy function calls for r_bin_demangle()
+
+
+changeset:   1293:19b35f4177f7
+user:        pancake@pairch
+date:        Wed Feb 23 19:17:52 2011 +0100
+files:       configure configure.acr pkgcfg/r_vm.pc.acr swig/vapi/r_vm.vapi
+description:
+* Remove last references to r_vm
+
+
+changeset:   1292:e40df2d2bcdc
+user:        pancake<@nopcode.org>
+date:        Wed Feb 23 19:11:39 2011 +0100
+files:       config-user.mk.acr configure configure.acr libr/core/Makefile libr/core/cmd.c libr/include/r_userconf.h.acr
+description:
+* Rename 'pm' as 'pf' (print formatted data)
+* pm is the print magic command
+  - uses libmagic .. used for templatting data
+* Added 'psp' command to print pascal strings
+
+
+changeset:   1291:3c006b7fc90c
+user:        nibble
+date:        Wed Feb 23 17:39:24 2011 +0100
+files:       libr/core/cmd.c libr/fs/p/grub/fs/zfs/zfs.c libr/fs/p/grub/fs/zfs/zfs_fletcher.c libr/fs/p/grub/fs/zfs/zfs_lzjb.c libr/fs/p/grub/fs/zfs/zfs_sha256.c libr/fs/p/grub/fs/zfs/zfsinfo.c libr/fs/p/grub/include/grub/util/libzfs.h libr/fs/p/grub/include/grub/zfs/dmu.h libr/fs/p/grub/include/grub/zfs/dmu_objset.h libr/fs/p/grub/include/grub/zfs/dnode.h libr/fs/p/grub/include/grub/zfs/dsl_dataset.h libr/fs/p/grub/include/grub/zfs/dsl_dir.h libr/fs/p/grub/include/grub/zfs/sa_impl.h libr/fs/p/grub/include/grub/zfs/spa.h libr/fs/p/grub/include/grub/zfs/uberblock_impl.h libr/fs/p/grub/include/grub/zfs/vdev_impl.h libr/fs/p/grub/include/grub/zfs/zap_impl.h libr/fs/p/grub/include/grub/zfs/zap_leaf.h libr/fs/p/grub/include/grub/zfs/zfs.h libr/fs/p/grub/include/grub/zfs/zfs_acl.h libr/fs/p/grub/include/grub/zfs/zfs_znode.h libr/fs/p/grub/include/grub/zfs/zil.h libr/fs/p/grub/include/grub/zfs/zio.h libr/fs/p/grub/include/grub/zfs/zio_checksum.h
+description:
+* Remove zfs from r_fs
+
+
+changeset:   1290:796b65a5714d
+user:        nibble
+date:        Wed Feb 23 17:27:59 2011 +0100
+files:       binr/radare2/Makefile binr/radiff2/Makefile libr/Makefile libr/core/Makefile libr/core/cmd.c libr/core/config.c libr/core/core.c libr/include/r_core.h
+description:
+* Remove references to r_vm
+* Don't build r_vm
+* Deprecate cmd 'av'
+
+
+changeset:   1289:4d9a414ee473
+user:        nibble
+date:        Wed Feb 23 15:38:23 2011 +0100
+files:       libr/core/cmd.c
+description:
+* Add commands:
+  - 'Cv-' 0x0ff for deleting var renames
+  - 'Cv*' for listing var renames in rad mode
+
+
+changeset:   1288:014777f32b8f
+user:        nibble
+date:        Wed Feb 23 15:17:06 2011 +0100
+files:       libr/core/anal.c libr/core/cmd.c libr/core/config.c libr/include/r_anal.h libr/include/r_parse.h libr/parse/Makefile libr/parse/p/parse_x86_pseudo.c libr/parse/parse.c
+description:
+* Initial implementation of cmd 'Cv' for renaming vars
+* Add r_parse_varsub() to r_parse
+* Add config variable 'asm.varsub'
+* Minor fixup in core/anal.c
+
+
+changeset:   1287:3967fb77834d
+user:        capi_x
+date:        Wed Feb 23 13:00:24 2011 +0100
+files:       libr/asm/arch/msil/demsil.c libr/asm/arch/msil/demsil.h libr/asm/p/Makefile libr/asm/p/asm_msil.c libr/asm/p/msil.mk libr/include/r_asm.h plugins.def.cfg
+description:
+* Add msil support to r_asm
+
+
+changeset:   1286:6b11f842076e
+user:        pancake<@nopcode.org>
+date:        Wed Feb 23 13:25:41 2011 +0100
+files:       libr/bin/p/Makefile libr/core/cmd.c libr/include/r_print.h libr/print/print.c
+description:
+* Add 'p=' command
+
+
+changeset:   1285:8c1bfbfd9f60
+user:        earada
+date:        Wed Feb 23 03:01:26 2011 +0100
+files:       libr/anal/p/Makefile libr/anal/p/anal_dalvik.c libr/anal/p/dalvik.mk libr/asm/p/asm_dalvik.c libr/bin/p/Makefile libr/core/visual.c libr/fs/fs.c plugins.def.cfg
+description:
+* Zoom out in cursor mode
+* Fix dalvik goto opcodes
+* Initial import of the dalvik anal plugin
+* Fix 'ms' mount a non-exist root
+
+
+changeset:   1284:3080a777bf0e
+user:        pancake@pairch
+date:        Wed Feb 23 02:10:28 2011 +0100
+files:       TODO libr/cmd/cmd.c libr/cons/cons.c libr/core/cmd.c libr/core/config.c libr/core/core.c libr/fs/p/fs_posix.c libr/include/r_util.h libr/util/Makefile libr/util/base64.c libr/util/file.c
+description:
+* Fix segfault in r_cons_memcat
+* Add yp command and document yt
+* Add p6d and p6e to decode and encode base64 strings
+* Remove vm.* config vars
+* Fix RNum evaulation for $ variables
+* Implement r_fs_posix
+
+
+changeset:   1283:1a6c920cd4cf
+user:        pancake@pairch
+date:        Wed Feb 23 00:54:40 2011 +0100
+files:       TODO libr/core/cmd.c libr/fs/fs.c libr/fs/p/fs_grub_base.c libr/fs/p/grub/Makefile libr/fs/p/grub/fs/ext2.c libr/fs/p/grub/fs/fshelp.c libr/fs/p/grub/grubfs.c libr/fs/p/grub/include/grub/cpu/i386 libr/fs/p/grub/include/grubfs.h libr/search/aes-find.c libr/search/search.c
+description:
+* Implement /A - search for AES expanded keys
+* Added /w command to search for wide strings
+* Add 'mo' command to show offset and size of given file
+  - cd libr/fs/p/grub ; make fs  # to test
+* Drop hardcoded list of partition types in cmd_mount
+* Fix r_fs_read for files bigger than 512 bytes
+
+
+changeset:   1282:0aadbc690b39
+user:        capi_x
+date:        Tue Feb 22 10:58:00 2011 +0100
+files:       libr/lang/p/Makefile
+description:
+* oops in r_lang Makefile for OSX
+
+
+changeset:   1281:3c379bca4e00
+user:        capi_x
+date:        Tue Feb 22 10:49:45 2011 +0100
+files:       libr/fs/p/fb.mk libr/fs/p/fs_fb.c libr/fs/p/fs_minix.c libr/fs/p/fs_sfs.c libr/fs/p/grub/Makefile libr/fs/p/grub/fs/fb.c libr/fs/p/grub/fs/minix.c libr/fs/p/grub/fs/ntfscomp.c libr/fs/p/grub/fs/sfs.c libr/fs/p/grub/fs/ufs.c libr/fs/p/grub/include/grub/fbfs.h libr/fs/p/grub/include/grub/fs.h libr/fs/p/grub/include/grubfs.h libr/fs/p/grub/kern/mm.c libr/fs/p/grub/main.c libr/fs/p/minix.mk libr/fs/p/sfs.mk libr/include/r_fs.h libr/lang/p/Makefile plugins.def.cfg
+description:
+* Fix some warnings in r_fs
+* Add new filesystems to r_fs
+* Fix r_lang Makefile for OSX
+
+
+changeset:   1280:b8929a204fbb
+user:        pancake<@nopcode.org>
+date:        Mon Feb 21 19:07:57 2011 +0100
+files:       libr/fs/fs.c libr/fs/p/fs_posix.c libr/include/r_fs.h libr/util/str.c
+description:
+* Fix r_fs_dir() for r_fs_plugin_posix
+* Fix r_str_chop_path() for "/"
+  - Allows to mount filesystems in /
+  - Added test program
+
+
+changeset:   1279:16270d37fae0
+user:        pancake@pair
+date:        Mon Feb 21 18:33:52 2011 +0100
+files:       TODO libr/fs/p/grub/fs/affs.c libr/fs/p/grub/fs/afs.c libr/fs/p/grub/fs/btrfs.c libr/fs/p/grub/fs/cpio.c libr/fs/p/grub/fs/ext2.c libr/fs/p/grub/fs/fat.c libr/fs/p/grub/fs/hfs.c libr/fs/p/grub/fs/hfsplus.c libr/fs/p/grub/fs/iso9660.c libr/fs/p/grub/fs/jfs.c libr/fs/p/grub/fs/minix.c libr/fs/p/grub/fs/nilfs2.c libr/fs/p/grub/fs/ntfs.c libr/fs/p/grub/fs/ntfscomp.c libr/fs/p/grub/fs/reiserfs.c libr/fs/p/grub/fs/sfs.c libr/fs/p/grub/fs/udf.c libr/fs/p/grub/fs/ufs.c libr/fs/p/grub/fs/xfs.c
+description:
+* Fix build of r_fs in OSX
+
+
+changeset:   1278:20a7f4468ea1
+user:        pancake<@nopcode.org>
+date:        Mon Feb 21 18:17:50 2011 +0100
+files:       libr/fs/p/posix.mk
+description:
+* Oops. add missing posix.mk
+
+
+changeset:   1277:51c733798e2e
+user:        pancake<@nopcode.org>
+date:        Mon Feb 21 18:10:22 2011 +0100
+files:       libr/fs/fs.c libr/fs/p/fs_grub_base.c libr/fs/p/fs_posix.c libr/fs/p/grub/Makefile libr/fs/p/grub/fs/jfs.c libr/fs/p/grub/fs/ufs.c libr/include/r_fs.h libr/include/r_list.h libr/lang/p/Makefile plugins.def.cfg
+description:
+* Fix build for python plugin in osx
+* Added UFS JFS and POSIX filesystems
+* Many fixes in the 'ms' command
+* Fix segfault in r_list_empty()
+
+
+changeset:   1276:64fa12bf88f1
+user:        pancake<@nopcode.org>
+date:        Mon Feb 21 15:32:42 2011 +0100
+files:       libr/core/cmd.c libr/fs/p/grub/fs/iso9660.c libr/fs/p/grub/fs/udf.c libr/fs/p/grub/partmap/msdos.c plugins.def.cfg
+description:
+* Added udf and iso9660 filesystems
+* Fix msdos partition type info
+* Show all supported partition types in 'mp' command
+
+
+changeset:   1275:854297ee71db
+user:        pancake<@nopcode.org>
+date:        Mon Feb 21 15:20:33 2011 +0100
+files:       libr/fs/fs.c libr/fs/p/grub/Makefile libr/fs/p/grub/include/grub/dl.h libr/fs/p/grub/include/grub/term.h libr/fs/p/grub/include/grub/time.h libr/fs/p/grub/kern/dl.c libr/fs/p/grub/kern/mm.c libr/fs/p/grub/main.c plugins.def.cfg
+description:
+* Add hfs and hfsplus as default r_fs plugins
+* Fix build and fix some implicits security bugs from GRUB
+
+
+changeset:   1274:3eb79588d012
 user:        pancake
-date:        Wed Oct 06 00:35:33 2010 +0200
-files:       libr/asm/arch/arm/armthumb.c libr/asm/p/armthumb.mk libr/asm/p/asm_armthumb.c libr/include/r_asm.h plugins.def.cfg
+date:        Mon Feb 21 09:26:32 2011 +0100
+files:       AUTHORS libr/fs/Makefile libr/fs/fs.c libr/fs/p/Makefile libr/fs/p/fs_grub_base.c libr/fs/p/fs_hfs.c libr/fs/p/grub/Makefile libr/fs/p/grub/fs/affs.c libr/fs/p/grub/fs/afs.c libr/fs/p/grub/fs/cpio.c libr/fs/p/grub/fs/ext2.c libr/fs/p/grub/fs/fat.c libr/fs/p/grub/fs/fshelp.c libr/fs/p/grub/fs/hfs.c libr/fs/p/grub/fs/hfsplus.c libr/fs/p/grub/fs/iso9660.c libr/fs/p/grub/fs/jfs.c libr/fs/p/grub/fs/minix.c libr/fs/p/grub/fs/nilfs2.c libr/fs/p/grub/fs/ntfs.c libr/fs/p/grub/fs/reiserfs.c libr/fs/p/grub/fs/sfs.c libr/fs/p/grub/fs/udf.c libr/fs/p/grub/fs/ufs.c libr/fs/p/grub/fs/xfs.c libr/fs/p/grub/include/config.h libr/fs/p/grub/include/grub/aout.h libr/fs/p/grub/include/grub/bsdlabel.h libr/fs/p/grub/include/grub/charset.h libr/fs/p/grub/include/grub/command.h libr/fs/p/grub/include/grub/cpu/time.h libr/fs/p/grub/include/grub/cpu/types.h libr/fs/p/grub/include/grub/device.h libr/fs/p/grub/include/grub/disk.h libr/fs/p/grub/include/grub/dl.h libr/fs/p/grub/include/grub/env.h libr/fs/p/grub/include/grub/env_private.h libr/fs/p/grub/include/grub/err.h libr/fs/p/grub/include/grub/extcmd.h libr/fs/p/grub/include/grub/file.h libr/fs/p/grub/include/grub/fs.h libr/fs/p/grub/include/grub/fshelp.h libr/fs/p/grub/include/grub/gpt_partition.h libr/fs/p/grub/include/grub/i18n.h libr/fs/p/grub/include/grub/list.h libr/fs/p/grub/include/grub/loader.h libr/fs/p/grub/include/grub/memory.h libr/fs/p/grub/include/grub/menu.h libr/fs/p/grub/include/grub/menu_viewer.h libr/fs/p/grub/include/grub/misc.h libr/fs/p/grub/include/grub/mm.h libr/fs/p/grub/include/grub/msdos_partition.h libr/fs/p/grub/include/grub/normal.h libr/fs/p/grub/include/grub/ntfs.h libr/fs/p/grub/include/grub/parser.h libr/fs/p/grub/include/grub/partition.h libr/fs/p/grub/include/grub/parttool.h libr/fs/p/grub/include/grub/pci.h libr/fs/p/grub/include/grub/raid.h libr/fs/p/grub/include/grub/reader.h libr/fs/p/grub/include/grub/search.h libr/fs/p/grub/include/grub/serial.h libr/fs/p/grub/include/grub/symbol.h libr/fs/p/grub/include/grub/term.h libr/fs/p/grub/include/grub/terminfo.h libr/fs/p/grub/include/grub/test.h libr/fs/p/grub/include/grub/time.h libr/fs/p/grub/include/grub/types.h libr/fs/p/grub/include/grub/util/deviceiter.h libr/fs/p/grub/include/grub/util/misc.h libr/fs/p/grub/kern/device.c libr/fs/p/grub/kern/disk.c libr/fs/p/grub/kern/dl.c libr/fs/p/grub/kern/env.c libr/fs/p/grub/kern/err.c libr/fs/p/grub/kern/file.c libr/fs/p/grub/kern/fs.c libr/fs/p/grub/kern/list.c libr/fs/p/grub/kern/misc.c libr/fs/p/grub/kern/mm.c libr/fs/p/grub/kern/partition.c libr/fs/p/grub/kern/term.c libr/fs/p/grub/kern/time.c libr/fs/p/grub/main.c libr/fs/p/grub/partmap/acorn.c libr/fs/p/grub/partmap/amiga.c libr/fs/p/grub/partmap/apple.c libr/fs/p/grub/partmap/bsdlabel.c libr/fs/p/grub/partmap/gpt.c libr/fs/p/grub/partmap/msdos.c libr/fs/p/grub/partmap/sun.c libr/fs/p/grub/partmap/sunpc.c
 description:
-* Initial import of the thumb arm disassembler
-  - based in C++ code of KennyTM in networkpx.googlecode.com
-  - Added 'armthumb' r_asm plugin (16 bit mode)
+* Some C90 fixes in r_fs using r_str_chop_path
+* Apply patch from @capi_x using burg code instead of grub one
+  - Fixes build in OSX and opens the door to new filesystems
 
 
-changeset:   974:5eef59df2797
-user:        nibble
-date:        Tue Oct 05 21:43:14 2010 +0200
-files:       libr/include/r_io.h swig/vapi/r_io.vapi
+changeset:   1273:4b53af30c4f4
+user:        earada
+date:        Fri Feb 18 22:34:50 2011 +0100
+files:       libr/fs/fs.c
 description:
-* r_io
-  - Remove r_io_map_list from r_io.h (deprecated)
-* vapi's
-  - Update r_io.vapi
+* Fix fs prompt:
+- Added Unknown command
+- Chop root path
 
 
-changeset:   973:bc6104e30c24
+changeset:   1272:433f1ce6f0f4
+user:        earada
+date:        Fri Feb 18 18:22:51 2011 +0100
+files:       libr/core/cmd.c libr/fs/fs.c libr/include/r_fs.h libr/util/str.c
+description:
+* Add filesystem prompt using ms command (Thanks Adriana)
+* Add r_str_chop_path support for ../
+
+
+changeset:   1271:8c91d0a153ca
 user:        nibble
-date:        Tue Oct 05 21:28:11 2010 +0200
-files:       swig/python/test-r_asm.py swig/vapi/r_asm.vapi
+date:        Fri Feb 18 18:13:26 2011 +0100
+files:       libr/anal/cc.c
+description:
+* Some fixes on resolution of fcns+args
+
+
+changeset:   1270:6e3c627b97c7
+user:        nibble
+date:        Fri Feb 18 13:38:37 2011 +0100
+files:       libr/core/anal.c
+description:
+* Filter loc's in 'afl' output
+
+
+changeset:   1269:22d0f9578d99
+user:        nibble
+date:        Fri Feb 18 13:08:09 2011 +0100
+files:       libr/anal/anal.c libr/anal/cc.c libr/anal/p/anal_arm.c libr/anal/p/anal_avr.c libr/anal/p/anal_csr.c libr/anal/p/anal_ppc.c libr/anal/p/anal_x86.c libr/anal/p/anal_x86_simple.c libr/include/r_anal.h
+description:
+* Add more vm features to r_anal
+* Fix syscall recognition
+
+
+changeset:   1268:3f48b6fddf07
+user:        nibble
+date:        Fri Feb 18 10:58:17 2011 +0100
+files:       libr/anal/diff.c libr/core/cmd.c libr/util/list.c
+description:
+* Fix segfault in r_list_destroy()
+* Fix Build
+
+
+changeset:   1267:93f4bd5a0ebb
+user:        pancake@pairch
+date:        Fri Feb 18 10:08:24 2011 +0100
+files:       libr/anal/anal.c libr/anal/aop.c libr/anal/bb.c libr/anal/cond.c libr/anal/fcn.c libr/anal/meta.c libr/anal/var.c libr/include/r_anal.h
+description:
+* Code cleanup in r_anal (-30LOC)
+
+
+changeset:   1266:4820111c686f
+user:        earada
+date:        Fri Feb 18 01:43:31 2011 +0100
+files:       libr/core/cmd.c libr/fs/fs.c libr/include/r_anal.h libr/include/r_util.h libr/util/str.c
+description:
+* Fix chop in r_fs mount, dir and open
+
+
+changeset:   1265:da64e92e4547
+user:        pancake@pairch
+date:        Fri Feb 18 01:16:56 2011 +0100
+files:       TODO libr/flags/spaces.c swig/vapi/r_core.vapi swig/vapi/r_fs.vapi
+description:
+* Fixes in vapis
+
+
+changeset:   1264:036055c57c87
+user:        pancake@pairch
+date:        Thu Feb 17 22:03:30 2011 +0100
+files:       TODO libr/asm/asm.c libr/include/r_asm.h swig/do-swig.sh swig/guile/Makefile swig/guile/test-asm.scm swig/guile/test-util.scm swig/guile/vapi.patch swig/vapi/r_asm.vapi
+description:
+* Fixes for the GUILE bindings
+  - Added accessors for RAsmAop-buf-hex and RAsmAop-buf-asm
+  - Added test case for r_asm API
+
+
+changeset:   1263:5dd73dc3dbf1
+user:        pancake@pairch
+date:        Thu Feb 17 16:14:27 2011 +0100
+files:       TODO swig/guile/Makefile swig/guile/test-util.scm
+description:
+* Added initial support for GUILE bindings with valaswig
+
+
+changeset:   1262:b8ef399593e6
+user:        pancake@pairch
+date:        Thu Feb 17 01:36:28 2011 +0100
+files:       libr/flags/spaces.c
+description:
+* Fix build. Oops
+
+
+changeset:   1261:691027c17434
+user:        pancake@pairch
+date:        Thu Feb 17 01:34:29 2011 +0100
+files:       libr/include/r_flags.h swig/Makefile swig/rules.mk
+description:
+* Remove silly (ignored) messages in swig/ when target already built
+* Fix r_flag_space_get signature
+
+
+changeset:   1260:58304b8388d0
+user:        pancake@pairch
+date:        Thu Feb 17 01:25:23 2011 +0100
+files:       libr/lang/p/Makefile libr/lang/p/python.c
+description:
+* Fix r_lang_python plugin build
+
+
+changeset:   1259:b608555953bf
+user:        pancake@pairch
+date:        Thu Feb 17 01:23:36 2011 +0100
+files:       libr/print/print.c
+description:
+* Oops. fix signature
+
+
+changeset:   1258:c06060ef9b7d
+user:        pancake@pairch
+date:        Thu Feb 17 01:22:15 2011 +0100
+files:       Makefile libr/core/cmd.c libr/include/r_print.h swig/Makefile swig/vapi/r_flags.vapi
+description:
+* Add install-doc-symlink (install fortunes!)
+  - thanks ash for reporting
+* Some indentation fixes in printzoomcallback
+* Fix r_flags.vapi
+
+
+changeset:   1257:17b471a14c98
+user:        earada
+date:        Thu Feb 17 00:58:54 2011 +0100
+files:       libr/core/cmd.c libr/core/config.c libr/core/core.c libr/core/file.c libr/core/visual.c libr/flags/flags.c libr/flags/spaces.c libr/include/r_flags.h libr/include/r_print.h libr/print/format.c libr/print/print.c
+description:
+* Add print zoom mode 'pZ'
+* Visual zoom mode 'z'
+* r_print now uses RIOBind
+* Add r_flag_space_get
+
+
+changeset:   1256:ca12de1f02ed
+user:        pancake@pairch
+date:        Thu Feb 17 00:47:18 2011 +0100
+files:       swig/Makefile swig/check-langs.sh swig/config.mk.acr swig/configure swig/configure.acr swig/cxx/Makefile swig/rules.mk swig/vapi/r_cmd.vapi swig/vapi/r_search.vapi swig/vapi/r_util.vapi
+description:
+* Use DEVEL_MODE variable to use valaswig or not
+  - Dist releases does not depend on valaswig
+  - Use --enable-devel to generate .cxx and .py files
+* Some more work on the cxx support, still not yet usable
+* Fix r_cmd.vapi
+
+
+changeset:   1255:1207a9f8f583
+user:        pancake<@nopcode.org>
+date:        Wed Feb 16 14:18:31 2011 +0100
+files:       binr/rahash2/rahash2.c libr/hash/calc.c libr/hash/hash.c
+description:
+* Handle entropy hash type from rahash2
+
+
+changeset:   1254:c2dd2003a7cc
+user:        pancake@pairch
+date:        Wed Feb 16 09:29:09 2011 +0100
+files:       libr/core/cmd.c libr/core/file.c libr/include/r_io.h libr/io/io.c libr/io/map.c swig/Makefile swig/check-langs.sh swig/config.mk.acr swig/configure swig/configure.acr swig/rules.mk
+description:
+* Make r2-swig happy without valaswig
+* Add r_io_raise() and use it in the 'o' command
+  - Allow to raise the file handle priority
+
+
+changeset:   1253:543821b7be3c
+user:        nibble
+date:        Tue Feb 15 23:51:05 2011 +0100
+files:       binr/rax2/rax2.c
+description:
+* rax2
+  - Fix another bug in format_output()
+  - Remove unnecessary malloc+free
+
+
+changeset:   1252:b7e29e971832
+user:        nibble
+date:        Tue Feb 15 18:38:18 2011 +0100
+files:       binr/rax2/rax2.c
+description:
+* Fix bug in rax2 related to bin conversion (thx Jan Lieven!)
+
+
+changeset:   1251:a38f5f4634c5
+user:        nibble
+date:        Tue Feb 15 16:19:18 2011 +0100
+files:       libr/core/core.c libr/core/visual.c libr/include/r_core.h
+description:
+* Speed up 'k' in visual
+  - Use cache instead of bwdisasm
+
+
+changeset:   1250:1072b14792cc
+user:        nibble
+date:        Tue Feb 15 12:31:32 2011 +0100
+files:       libr/core/cmd.c libr/core/visual.c
+description:
+* Implement 'pd -n' for backward disassembly
+* Use bwdisasm in visual.c for 'k'
+
+
+changeset:   1249:449df2c32e07
+user:        nibble
+date:        Tue Feb 15 10:16:39 2011 +0100
+files:       swig/vapi/r_core.vapi swig/vapi/r_io.vapi
 description:
 * Fix bindings build
 
 
-changeset:   972:c742aa1db890
+changeset:   1248:7940d73b0d8f
+user:        pancake@pairch
+date:        Sun Feb 13 01:37:02 2011 +0100
+files:       libr/core/core.c libr/include/r_util.h libr/util/sys.c
+description:
+* Autocomplete 'o' and '.' with filename in filesystem
+  - Leaks a lot.. but mostly works :)
+
+
+changeset:   1247:2f5257e443c3
+user:        pancake@pairch
+date:        Sat Feb 12 12:54:26 2011 +0100
+files:       AUTHORS TODO libr/core/cmd.c libr/print/format.c libr/util/str.c libr/util/t/argv.c
+description:
+* Added 'pb' command to print in binary form
+* Added 'ap' command to search and analyze function preludes
+  - x86 only atm.. just as a PoC
+
+
+changeset:   1246:d8bd124a5777
+user:        pancake@pairch
+date:        Sat Feb 12 01:52:41 2011 +0100
+files:       TODO binr/radare2/radare2.c libr/anal/cc.c libr/core/cmd.c libr/core/config.c libr/core/core.c libr/core/file.c libr/core/io.c libr/include/r_core.h libr/include/r_io.h libr/io/io.c libr/io/map.c libr/io/t/test/Makefile libr/io/t/test/a libr/io/t/test/b libr/io/t/test/script libr/lang/Makefile libr/print/format.c libr/print/print.c
+description:
+* Add RIOMap in r_core_file_open
+  - RCore.file_open() now accepts one more arg for offset
+  - Fix RIO api issues related to RIOMap and opening multiple files
+  - Fix infinite loop and simplify design
+  - Added test case to ensure it does not breaks
+* Fix build of r_lang in OSX (thanks @capri_x)
+* Remove debugging printfs
+* io.ffio is now true by default
+
+
+changeset:   1245:0849f251c745
+user:        earada
+date:        Fri Feb 11 20:07:24 2011 +0100
+files:       libr/asm/arch/dalvik/opcode.h libr/asm/p/asm_dalvik.c
+description:
+* Fix offset dalvik opcodes problem
+* Rename plugin functions
+
+
+changeset:   1244:ad2144a901be
 user:        nibble
-date:        Tue Oct 05 20:30:05 2010 +0200
-files:       libr/include/r_asm.h swig/vapi/r_asm.vapi swig/vapi/r_bin.vapi swig/vapi/r_util.vapi
+date:        Fri Feb 11 17:29:31 2011 +0100
+files:       libr/include/r_debug.h swig/vapi/r_debug.vapi
 description:
-* r_asm
-  - Remove dupped function signature from r_asm.h
-* vapi's
-  - Fix {r_asm, r_bin, r_util}.vapi
-  - Update r_bin.vapi
+* Add r_debug_pids to r_debug.h
+* Update r_debug vapi
 
 
-changeset:   971:5779fb490d1f
+changeset:   1243:b9591b38fb7e
 user:        nibble
-date:        Mon Oct 04 23:05:30 2010 +0200
-files:       libr/bin/format/mach0/dyldcache.c libr/bin/p/Makefile swig/vapi/t/reloc.vala
-description:
-* De-warn dyldcache in 32bits
-* Add dyldcache.mk to libr/bin/p/Makefile
-* Update reloc.vala
-
-
-changeset:   970:393ef7ce38f2
-user:        pancake<@nopcode.org>
-date:        Mon Oct 04 19:43:40 2010 +0200
-files:       binr/Makefile binr/binr.mk binr/rasc2/Makefile binr/rasc2/rasc.h binr/rasc2/rasc2.c binr/rasc2/shellcodes.c binr/rasc2/test.c binr/rax2/b2a.pl libr/core/file.c
-description:
-* Initial import of rasc2 (copypasta from r1)
-
-
-changeset:   969:2805d0d631af
-user:        nibble
-date:        Mon Oct 04 13:57:48 2010 +0200
-files:       binr/rabin2/rabin2.c libr/include/r_util.h libr/util/sys.c
-description:
-* r_util
-  - Fix r_sys_rmkdir
-* rabin2
-  - Generate folder structure on extract operations
-
-
-changeset:   968:b7f0f9ed0233
-user:        nibble
-date:        Mon Oct 04 12:46:27 2010 +0200
-files:       libr/bin/p/bin_elf.c
-description:
-* Fix build
-
-
-changeset:   967:140c40582cdd
-user:        pancake
-date:        Mon Oct 04 10:55:43 2010 +0200
-files:       TODO binr/rabin2/rabin2.c libr/bin/bin.c libr/bin/p/bin_elf.c libr/core/file.c libr/include/r_bin.h libr/include/r_core.h
-description:
-* Added r_bin_get_object() to cache binary information
-* Initial work in r_core_bin_load()
-  - Integrating rabin2 inside core
-
-
-changeset:   966:e62ae5ef3ab1
-user:        nibble
-date:        Mon Oct 04 04:20:19 2010 +0200
-files:       TODO libr/bin/bin.c libr/bin/format/mach0/mach0.c
-description:
-* Fix memory leak in bin_mach0
-
-
-changeset:   965:a47093cb89c0
-user:        nibble
-date:        Mon Oct 04 04:01:25 2010 +0200
-files:       binr/rabin2/rabin2.c libr/core/anal.c
-description:
-* Fix build (update core/anal.c with the last changes in r_bin)
-* Implement extract in rabin2
-
-
-changeset:   964:e9f8aa54ae8b
-user:        nibble
-date:        Mon Oct 04 03:46:58 2010 +0200
-files:       binr/rabin2/rabin2.c libr/bin/bin.c libr/bin/bin_meta.c libr/bin/bin_write.c libr/bin/format/mach0/dyldcache.c libr/bin/format/mach0/dyldcache.h libr/bin/format/mach0/fatmach0.c libr/bin/format/mach0/fatmach0.h libr/bin/p/bin_xtr_dyldcache.c libr/bin/p/bin_xtr_fatmach0.c libr/bin/t/rpathdel.c libr/bin/t/test_meta.c libr/include/r_bin.h
-description:
-* r_bin
-  - Refactor r_bin to work better with big fatbins
-  - Don't load all sub-bins in memory
-    Only load the fatbin and the selected sub-bin
-  - Add r_bin_set_archidx() and r_bin_list_archs()
-  - Update t/{rpathdel.c, test_meta.c}
-* rabin2
-  - Use '-f str' to select sub-bin by name
-
-
-changeset:   963:76c1a046524b
-user:        pancake
-date:        Mon Oct 04 00:42:11 2010 +0200
-files:       TODO binr/rabin2/rabin2.c doc/fortunes libr/anal/p/anal_arm.c libr/asm/arch/arm/gnu/arm-dis.c libr/asm/p/asm_arm.c libr/core/config.c libr/debug/p/drx.c libr/include/r_types.h libr/vm/vm.c
-description:
-* Add 'FS' #define for w32 and *nix
-* Add support for thumb mode ARM disassembler
-  - Workaround a warning in r_vm for arm-16
-* More work on drx.c, but still not integrated
-
-
-changeset:   962:a6180666bcfd
-user:        nibble
-date:        Sat Oct 02 18:20:46 2010 +0200
-files:       libr/bin/format/mach0/dyldcache.c
-description:
-* Fix segfault in dyldcache
-
-
-changeset:   961:ba9fdaf40d3a
-user:        nibble
-date:        Sat Oct 02 17:21:51 2010 +0200
-files:       TODO libr/bin/format/mach0/dyldcache.c libr/bin/format/mach0/mach0_specs.h libr/include/r_util.h libr/util/buf.c libr/util/sys.c
-description:
-* r_bin
-  - More work on dyld cache plugin
-  - Rewrite headers, commands and segments
-  - Fix offset for syms, imports, sections...
-* r_util
-  - Add r_buf_append_bytes
-  - fix r_sys_rmkdir
-* Update TODO
-
-
-changeset:   960:da03ea1debe0
-user:        pancake<@nopcode.org>
-date:        Fri Oct 01 19:05:07 2010 +0200
-files:       libr/include/r_util.h libr/util/sys.c
-description:
-* Add r_sys_rmkdir and make r_sys_mkdir a define
-
-
-changeset:   959:1365e4d0baff
-user:        nibble
-date:        Fri Oct 01 13:22:37 2010 +0200
-files:       libr/bin/format/mach0/dyldcache.c
-description:
-* Detect bin sizes in dyld cache plugin
-
-
-changeset:   958:e6f0571fb0da
-parent:      956:7c554fb77794
-parent:      957:1012944d7604
-user:        nibble
-date:        Fri Oct 01 11:58:11 2010 +0200
-files:       binr/rabin2/rabin2.c libr/bin/bin.c
-description:
-* Merge
-* Minor fixes in r_bin
-
-
-changeset:   957:1012944d7604
-parent:      955:d4b878942adf
-user:        pancake
-date:        Fri Oct 01 11:10:59 2010 +0200
-files:       TODO binr/rabin2/rabin2.c libr/bin/bin.c libr/bin/format/mach0/dyldcache.c libr/bin/p/bin_xtr_dyldcache.c libr/core/cmd.c libr/debug/p/drx.c libr/vm/reg.c libr/vm/vm.c swig/python/test-r_cons.py
-description:
-* Fix uninitialized variable in rabin2
-* Fix null pointer handling in rbin when no xtr plugin found
-* Initial draft code for the x86 debug registers implementation
-* Fix avr* command
-
-
-changeset:   956:7c554fb77794
-user:        nibble
-date:        Fri Oct 01 10:09:50 2010 +0200
-files:       binr/rabin2/rabin2.c libr/bin/bin.c libr/include/r_bin.h
-description:
-* rabin2
-  - Show filesize in '-x' output
-  - Select "sub-bin" using '-a arch_bits' and '-n filename'
-* r_bin
-  - Add argument "name" to r_bin_set_arch
-
-
-changeset:   955:d4b878942adf
-user:        nibble
-date:        Fri Oct 01 08:12:43 2010 +0200
-files:       binr/rabin2/rabin2.c libr/bin/format/mach0/dyldcache.c
-description:
-* rabin2 -x uses filename.arch_bits as output file
-* store full path in dyld cache filenames
-
-
-changeset:   954:c764b92fcc6c
-user:        nibble
-date:        Fri Oct 01 04:26:52 2010 +0200
-files:       binr/rabin2/rabin2.c libr/bin/bin.c libr/bin/format/mach0/dyldcache.c libr/bin/format/mach0/dyldcache.h libr/bin/format/mach0/fatmach0.c libr/bin/format/mach0/mach0_specs.h libr/bin/p/bin_xtr_dyldcache.c libr/bin/p/bin_xtr_fatmach0.c libr/bin/p/dyldcache.mk libr/include/r_bin.h plugins.def.cfg
-description:
-* Initial implementation of the RBin extractor for dyld cache
-* Add bin_xtr_dyldcache to plugins.def.cfg
-* Show bin name in the output of 'rabin2 -A'
-* Minor fix in rabin_list_archs() in rabin2
-
-
-changeset:   953:6bbd1ed6ca85
-user:        nibble
-date:        Thu Sep 30 20:55:20 2010 +0200
-files:       libr/core/asm.c swig/vapi/r_bin.vapi swig/vapi/r_config.vapi swig/vapi/r_core.vapi swig/vapi/t/Makefile swig/vapi/t/asmsearch.vala swig/vapi/t/bin.vala
-description:
-* r_core
-  - Minor fixup in r_core_asm_strsearch
-* vapi
-  - Add asmsearch.vala
-  - Some updates
-
-
-changeset:   952:8ed594904987
-user:        nibble
-date:        Thu Sep 30 19:25:47 2010 +0200
-files:       libr/core/asm.c libr/core/cmd.c libr/include/r_core.h swig/vapi/r_core.vapi
-description:
-* Make r_core_asm_strsearch more API-friendly
-  - return RList of RCoreAsmHit's
-  - Add helpers for list handling
-* Add type RCoreAsmHit
-* Show hit code as comment with '/c', eg:
-    [0x00402350]> "/c jmp e; ret"
-    f hit0_0 @ 0x004078e8   # jmp eax; ret 0xffbc;
-    f hit0_1 @ 0x00409416   # jmp ebx; ret 0x8b48;
-    f hit0_2 @ 0x0040ded4   # jmp ecx; retf ;
-* Update r_core vapi
-
-
-changeset:   951:745eab6de609
-user:        nibble
-date:        Tue Sep 28 19:57:02 2010 +0200
-files:       libr/core/anal.c libr/core/cmd.c
-description:
-* Fix typo in printf
-
-
-changeset:   950:6a1e0486bb83
-user:        nibble
-date:        Tue Sep 28 18:52:46 2010 +0200
-files:       libr/anal/bb.c libr/anal/fcn.c libr/anal/p/anal_x86_x86im.c libr/core/anal.c libr/core/cmd.c
-description:
-* r_anal
-  - Fix segfault in anal_x86_x86im (64bits)
-  - always show analysis warnings
-* r_core
-  - Fix /a output
-
-
-changeset:   949:fd6c7f748edf
-user:        nibble
-date:        Tue Sep 28 18:05:31 2010 +0200
-files:       TODO libr/anal/anal.c libr/anal/ref.c libr/core/anal.c libr/core/cmd.c libr/include/r_anal.h libr/include/r_core.h
-description:
-* r_core
-  - Implement 'ar' commands
-  - Show XREFS in disassembly
-* r_anal
-  - Add r_anal_xref_get
-
-
-changeset:   948:bda1815846c9
-user:        nibble
-date:        Tue Sep 28 13:58:03 2010 +0200
-files:       binr/rabin2/rabin2.c libr/anal/meta.c libr/anal/ref.c libr/core/anal.c libr/core/cmd.c libr/core/config.c libr/core/visual.c libr/include/r_anal.h libr/include/r_meta.h
-description:
-* r_core
-  - Deprecate ah and add anal.plugin
-  - e anal.plugin=? list available plugins
-  - Add the command 'ar' to handle refs/xrefs
-  - Remove old CX and Cx stuff
-  - Remove afg (done by af)
-* r_anal (& r_meta)
-  - Remove refs/xrefs stuff from r_meta
-  - Handle refs from r_anal
-  - Add r_anal_ref_{add, del}
-* rabin2
-  - Add 'e anal.plugin' to the output of rabin2 -Ir
-
-
-changeset:   947:9299c1adc056
-user:        pancake
-date:        Sun Sep 26 03:18:04 2010 +0200
-files:       binr/rax2/rax2.c swig/python/test-r_cons.py swig/python/test-r_flags.py swig/python/test-r_num.py swig/vapi/r_bin.vapi
-description:
-* Indentation fixes in rax2 as discused in chat
-* Fix compilation of vapi/r_bin
-* Some mods in test programs for swig/python
-
-
-changeset:   946:1c8d31359c76
-user:        nibble
-date:        Sat Sep 25 12:33:30 2010 +0200
-files:       TODO binr/rabin2/rabin2.c
-description:
-* rabin2
-  - Make -A output more verbose
-  - Dump all archs with -x when no one is specified using -a
-* cleanup TODO
-
-
-changeset:   945:c2aba4f94e81
-user:        nibble
-date:        Sat Sep 25 03:45:03 2010 +0200
-files:       TODO binr/rabin2/rabin2.c
-description:
-* rabin2
-  - Set arch with 'rabin2 -a arch_bits filename'
-  - Remove flag -B
-  - Implement extract (-x)
-
-
-changeset:   944:474ad698dfdf
-user:        nibble
-date:        Fri Sep 24 21:30:33 2010 +0200
+date:        Fri Feb 11 17:11:31 2011 +0100
 files:       libr/core/anal.c
 description:
-* Update r_anal with the changes introduced in r_bin
+* Minor fixup in 'ag' (print also syms)
 
 
-changeset:   943:0ba1a1a54c28
+changeset:   1242:321bbdff7f1b
 user:        nibble
-date:        Fri Sep 24 21:25:23 2010 +0200
-files:       binr/rax2/rax2.c libr/include/r_util.h libr/util/num.c
+date:        Fri Feb 11 16:56:38 2011 +0100
+files:       libr/anal/fcn.c libr/core/anal.c
 description:
-Apply @earada's patch (thx!)
-* Improving rax2
-  - Support for many bases.
-  - Add -s flag for transform byte to bin (ej: "48454c4c4f" to "HELLO")
-  - Add -e flag for endian swap.
-* New r_num_to_bits converts nums into binary representation.
+* More refactoring of r_core_anal_*
+  - Remove ugly pbb
+* Add support for global diff graphs
+* Fix global graphs
 
 
-changeset:   942:1dff9a578f8f
+changeset:   1241:74361aa7bf2e
 user:        nibble
-date:        Fri Sep 24 21:23:13 2010 +0200
-files:       TODO binr/rabin2/rabin2.c libr/bin/Makefile libr/bin/bin.c libr/bin/bin_meta.c libr/bin/bin_write.c libr/bin/format/elf/elf.c libr/bin/format/elf/elf.h libr/bin/format/java/java.c libr/bin/format/java/java.h libr/bin/format/mach0/fatmach0.c libr/bin/format/mach0/fatmach0.h libr/bin/format/mach0/mach0.c libr/bin/format/mach0/mach0.h libr/bin/format/pe/pe.c libr/bin/format/pe/pe.h libr/bin/p/bin_dummy.c libr/bin/p/bin_elf.c libr/bin/p/bin_elf64.c libr/bin/p/bin_fatmach0.c libr/bin/p/bin_java.c libr/bin/p/bin_mach0.c libr/bin/p/bin_mach064.c libr/bin/p/bin_meta_elf.c libr/bin/p/bin_pe.c libr/bin/p/bin_pe64.c libr/bin/p/bin_write_elf.c libr/bin/p/bin_xtr_fatmach0.c libr/bin/p/fatmach0.mk libr/include/r_bin.h libr/include/r_lib.h plugins.def.cfg
+date:        Fri Feb 11 15:42:38 2011 +0100
+files:       TODO libr/core/cmd.c
 description:
-* Massive refactoring of r_bin
-  - Add support for fatbins (currently only fatmach0)
-  - Minimize creation of r_buffers
-* rabin2
-  - Add flag -A for listing archs
-  - Add flags -a and -B for selecting arch
-  - In the next commit -A and -B will be removed and -a will work
-    with the following format:
-    [-a arch bits] for selecting arch
-	[-a] for listing them
+* Fix command 'cg'
 
 
-changeset:   941:89a2ef899173
-user:        pancake
-date:        Fri Sep 24 19:04:33 2010 +0200
-files:       libr/core/cmd.c libr/core/core.c libr/debug/p/native/w32.c libr/io/p/io_rap.c libr/symgraph.pl
-description:
-* Do not show color prompt in windows
-* Fix build on w32
-* Finish the symgraph script
-
-
-changeset:   940:51c601171e65
-user:        pancake
-date:        Fri Sep 24 16:45:56 2010 +0200
-files:       TODO binr/rarc2/rarc2-tool libr/TODO libr/core/cmd.c libr/debug/reg.c libr/include/r_list.h libr/include/r_reg.h libr/include/r_syscall.h libr/reg/reg.c libr/reg/value.c libr/symgraph.pl libr/syscall/Makefile libr/syscall/TODO libr/syscall/ioports.c libr/syscall/netbsd.c libr/syscall/syscall.c libr/util/Makefile libr/util/alloca.c libr/util/btree.c libr/util/float.c libr/util/list.c libr/util/mem.c libr/util/num.c libr/util/prof.c libr/util/re.c
-description:
-* Added 'drd' command to show only modified regs
-* Added r_list_foreach_prev()
-* Add RSyscallPort to handle Hardware I/O ports
-* Remove libr/TODO and refactor /TODO
-* Link with 'ld' in rarc2-tool for nasm
-
-
-changeset:   939:bfc05734a8fd
-user:        pancake
-date:        Fri Sep 24 06:10:20 2010 +0200
-files:       TODO binr/rarc2/README binr/rarc2/rarc2-tool
-description:
-* Added support for 'nasm' in rarc2 (-n)
-
-
-changeset:   938:7ba9a73d4cbf
-user:        pancake
-date:        Fri Sep 24 05:41:54 2010 +0200
-files:       TODO libr/bp/io.c libr/core/cmd.c libr/debug/p/debug_native.c libr/debug/plugin.c libr/include/r_bp.h libr/include/r_debug.h
-description:
-* Initial draft implementation of hardware breakpoints
-  - use specific ptrace() calls in linux/freebsd to change regs
-  - hwbp are not yet working, just basic DRX get/set
-  - generic interface to handle hw bps in x86-32/64
-  - needs to import DR# handling code from r1
-
-
-changeset:   937:4567462d5db9
-user:        pancake
-date:        Fri Sep 24 04:09:39 2010 +0200
-files:       TODO libr/core/cmd.c libr/debug/p/debug_native.c libr/debug/reg.c libr/include/r_reg.h libr/include/r_util.h libr/reg/arena.c libr/reg/p/x86-linux.regs libr/reg/reg.c libr/reg/value.c libr/util/str.c
-description:
-* Add 'bf' command to change block size based on flag size
-  - Added help in 'b?'
-* Added support for bit-collection registers
-  - eflags is now displayed as a string
-  - debug/p/debug_native.c needs a correct x86 flag string
-* Fix segfault when listing empty register sets
-
-
-changeset:   936:4ebf5eea5ca8
-user:        pancake
-date:        Thu Sep 23 20:42:35 2010 +0200
-files:       TODO libr/core/cmd.c libr/core/core.c libr/debug/debug.c libr/debug/p/debug_native.c libr/debug/reg.c libr/include/r_debug.h libr/include/r_reg.h libr/reg/arena.c libr/reg/reg.c libr/reg/t/test.c libr/reg/value.c libr/util/list.c
-description:
-* Implement stacked register storage
-  - Add support for register diffing
-  - Colorize modified registers are step/cont
-  - Add command 'dro' to show old register values
-  - requires make clean
-
-
-changeset:   935:cc70ebfaec98
+changeset:   1240:be09845be1e3
 user:        nibble
-date:        Thu Sep 23 13:56:08 2010 +0200
-files:       libr/anal/p/anal_x86_x86im.c
+date:        Fri Feb 11 11:38:47 2011 +0100
+files:       libr/core/file.c
 description:
-* Minor fixup in anal_x86_x86im
-  - swapped dst src in *_MM_RG
+* Enable string analysis on init
 
 
-changeset:   934:e13b74c2d67d
+changeset:   1239:39702f260437
 user:        nibble
-date:        Thu Sep 23 13:25:46 2010 +0200
-files:       libr/anal/p/anal_x86_x86im.c libr/include/r_anal.h
+date:        Fri Feb 11 11:37:28 2011 +0100
+files:       libr/core/file.c swig/vapi/r_anal.vapi swig/vapi/r_core.vapi swig/vapi/r_debug.vapi
 description:
-* Huge refactoring of x86_x86im using r_anal_value
-  - next step is integrate it in the analysis engine and deprecate old stuff
-* Add field "imm" (immediate value) to RAnalValue
+* Update vapi's to the new changes in r_anal
 
 
-changeset:   933:16af58eca1c3
-user:        pancake<@nopcode.org>
-date:        Thu Sep 23 12:59:54 2010 +0200
-files:       libr/core/cmd.c libr/core/config.c libr/include/r_print.h libr/print/date.c libr/print/print.c
-description:
-* Add pt command for print times (Thanks @earada for the patch)
-  - pt prints times in unix format
-  - ptd prints times in dos format
-  - ptn prints times in ntfs format
-* Add cfg.datefmt in global config to define the format output of 'pt'
-
-
-changeset:   932:6864a299be81
+changeset:   1238:0be8fce95997
 user:        nibble
-date:        Wed Sep 22 18:31:15 2010 +0200
-files:       libr/anal/p/anal_x86_x86im.c libr/include/r_anal.h
+date:        Fri Feb 11 11:22:43 2011 +0100
+files:       libr/anal/anal.c libr/anal/aop.c libr/anal/bb.c libr/anal/fcn.c libr/anal/p/anal_x86.c libr/core/anal.c libr/core/cmd.c libr/debug/trace.c libr/include/r_anal.h libr/include/r_core.h swig/vapi/r_anal.vapi swig/vapi/r_core.vapi
 description:
-* More work on anal_x86_x86im refactoring
+* Huge refactoring of r_anal code and API
 
 
-changeset:   931:fb2390efba4b
-user:        pancake
-date:        Mon Sep 20 14:02:45 2010 +0200
-files:       libr/debug/debug.c libr/debug/reg.c libr/include/r_debug.h libr/include/r_reg.h libr/reg/reg.c
+changeset:   1237:2cfa4fc2ea36
+user:        pancake@pairch
+date:        Thu Feb 10 14:19:58 2011 +0100
+files:       TODO swig/Makefile swig/config.mk.acr swig/do-swig.sh swig/python/Makefile swig/rules.mk swig/vapi/r_debug.vapi
 description:
-* Added r_reg_arena_set and r_reg_cmp in order to implement regdiffing
-* Added R_DBG_REASON enums
+* Some minor work on r2-swig
 
 
-changeset:   930:d7ca1d4a67dd
-user:        pancake
-date:        Sat Sep 18 02:51:17 2010 +0200
-files:       AUTHORS TODO libr/core/cmd.c libr/debug/debug.c libr/debug/p/debug_native.c libr/debug/p/native/w32.c libr/debug/reg.c libr/debug/trace.c libr/include/r_anal.h libr/include/r_reg.h libr/reg/arena.c libr/reg/p/x86-linux.regs libr/reg/reg.c libr/reg/t/test.c
+changeset:   1236:da08c07d4054
+user:        pancake@pairch
+date:        Thu Feb 10 00:55:30 2011 +0100
+files:       libr/core/core.c libr/include/r_line.h libr/line/dietline.c
 description:
-* Highlight destination offset when cursor on jmp/call in visual
-* Show call decompilations under the opcode as a comment
-* Rename RRegister as RReg
-  - Deprecate r_reg_init and use r_reg_new
-  - Rewrite the list.h dependency in r_reg in order to use r_list
-  - Fix some memory leaks
-* Implement push/pop methods in RReg class
-  - add test case using it
-  - will be used for register diffing and tracing
+* Autodetect required column width to fit in screen
+* Add 'pd' in autocomplete and clean some warnings
 
 
-changeset:   929:02ea1ff8116e
-user:        pancake
-date:        Thu Sep 16 20:44:22 2010 +0200
-files:       binr/rarc2/README binr/rarc2/emit_arm.c binr/rarc2/emit_x86.c binr/rarc2/rarc2.c binr/rarc2/t/Makefile binr/rarc2/t/hi.r
+changeset:   1235:2a434d63c581
+user:        pancake@pairch
+date:        Thu Feb 10 00:21:05 2011 +0100
+files:       libr/core/core.c libr/core/io.c libr/core/visual.c libr/line/dietline.c libr/util/str.c
 description:
-* Initial support for multiple arguments in rarc2 for ARM
-  - Some more fixes in the ARM emitter backend
-  - Single quoted strings are now supported, not filtered
-  - Fix math opcode names for ARM
-  - Added support for /**/ and // comments
-* Fix makefile for test programs in rarc2/t
-  - Added simple hello world for tests in rarc2/t
+* Autocomplete flags after '@'
+* Fix some segfaults when core->file is NULL
+* Some simplifications in dietline
 
 
-changeset:   928:be0eea5a6b9d
+changeset:   1234:d988bc98bbac
 user:        nibble
-date:        Thu Sep 16 13:20:35 2010 +0200
-files:       libr/include/r_types_base.h swig/go/fixgoswig.sh
+date:        Wed Feb 09 22:51:25 2011 +0100
+files:       libr/core/anal.c
 description:
-* Fix define types in r_types_base.h
-  - now swig assigns const types correctly in go bindings
-  - simplify fixgoswig.sh while the patch I've done for
-    swig adding iterators support is not commited
+* Sort basic blocks after analysis
+  - Make diffs more accurate if split is enabled
 
 
-changeset:   927:fa5b38e64ef8
+changeset:   1233:d79cf21a83cb
 user:        nibble
-date:        Wed Sep 15 19:25:14 2010 +0200
-files:       swig/go/Makefile swig/go/fixgoswig.sh swig/go/test-r_bin.go
+date:        Tue Feb 08 14:07:51 2011 +0100
+files:       binr/ranal2/ranal2.c
 description:
-* Add swig/go/fixgoswig.sh script
-  - Add iterators
-  - Fix bug with ut64 consts
-  - These issues must be fixed in swig
+* Clean up ranal2 output
+  - Avoid ugly 0xffff...
 
 
-changeset:   926:1803563a5e3e
-user:        pancake<@nopcode.org>
-date:        Wed Sep 15 13:10:10 2010 +0200
-files:       binr/rarc2/rarc2-tool binr/rarc2/rarc2.c libr/Makefile libr/asm/asm.c libr/util/str.c
-description:
-* Simplify and fix rarc2-tool script
-* Add support for /**/ style comments in rarc2
-* Fix libr2.a warning message
-* Fix .string "" directive in rasm2
-  - Now works like in GAS. escape chars are handled
-  - and quotes are stripped
-
-
-changeset:   925:fa6c4577082a
-user:        pancake
-date:        Wed Sep 15 10:50:43 2010 +0200
-files:       binr/rafind2/rafind2.c binr/rahash2/rahash2.c binr/rarc2/README binr/rarc2/emit_arm.c binr/rarc2/rarc2.c binr/rarc2/rarc2.h binr/rasm2/rasm2.c binr/rax2/rax2.c libr/asm/asm.c
-description:
-* Initial hello world for rarc2 in ARM with GAS working
-  - Few changes needed to work with rasm
-* Cleanup some warnings
-* Handle foo() as a function definition, so emit frame in rarc
-
-
-changeset:   924:37b2ce8bf087
-user:        pancake
-date:        Tue Sep 14 11:22:31 2010 +0200
-files:       TODO binr/rarc2/README binr/rarc2/emit_arm.c libr/asm/arch/arm/armass.c libr/asm/asm.c libr/core/config.c libr/util/buf.c libr/util/str.c
-description:
-* Support for some push/pop arm opcodes with 2 regs
-* More fixes for rarc2 on ARM
-* Implement .fill directive in r_asm
-* Added asm.profile in r_core
-* Added r_str_bits as a helper to display register flags
-
-
-changeset:   923:2396be991270
-user:        pancake
-date:        Tue Sep 14 01:29:09 2010 +0200
-files:       binr/rarc2/emit_arm.c binr/rarc2/rarc2.c libr/asm/arch/arm/armass.c libr/asm/asm.c libr/asm/p/asm_arm.c libr/util/str.c libr/util/t/Makefile libr/util/t/array.c libr/util/t/set0.c
-description:
-* Many fixes in ARM assembler and rarc2 support for ARM
-  - Still not yet usable, but
-* Add .byte and .hex in r_asm as directives
-* Add test case for r_word api
-  - Fix r_word_count()
-* Also handle .globl (and .global) to keep GAS compatibility
-  - TODO: add .word .fill .align and others
-
-
-changeset:   922:59723258f982
+changeset:   1232:4d7b48d43d05
 user:        nibble
-date:        Mon Sep 13 21:16:25 2010 +0200
-files:       swig/go/Makefile
+date:        Tue Feb 08 13:59:50 2011 +0100
+files:       binr/ranal2/ranal2.c
 description:
-* Minor fixup in go Makefile
-  - Fix build for x86
-  - Add support for arm
+* Fix typo in ranal2
 
 
-changeset:   921:ae549411cf8d
+changeset:   1231:49c4158ea94d
 user:        nibble
-date:        Sun Sep 12 13:33:20 2010 +0200
-files:       swig/Makefile swig/go/test-r_bin.go
+date:        Tue Feb 08 13:57:48 2011 +0100
+files:       libr/anal/p/anal_x86.c
 description:
-* Make test-r_bin.go more generic
-* Fix typo in swig/Makefile
+* Implement in x86im test and int opcodes
+* Remove hacky code
 
 
-changeset:   920:856a301e5178
+changeset:   1230:2120c7e06168
 user:        nibble
-date:        Sun Sep 12 12:47:13 2010 +0200
-files:       swig/go/Makefile
+date:        Tue Feb 08 00:15:12 2011 +0100
+files:       binr/rabin2/rabin2.c libr/anal/fcn.c libr/core/anal.c libr/core/gdiff.c libr/include/r_anal.h
 description:
-* Minor fixup in swig/go/Makefile
+* Simplify type assignment in r_anal
+* Include fcn type in 'rabin2 -r' output
 
 
-changeset:   919:b1195b6b60b2
+changeset:   1229:ab169bc6f8b5
 user:        nibble
-date:        Sun Sep 12 12:31:18 2010 +0200
-files:       TODO binr/radare2/radare2.c libr/bin/bin.c swig/Makefile swig/check-langs.sh swig/go/Makefile swig/go/test-r_bin.go swig/vapi/r_anal.vapi swig/vapi/r_bp.deps swig/vapi/r_bp.vapi swig/vapi/r_search.deps swig/vapi/r_search.vapi
+date:        Mon Feb 07 17:43:50 2011 +0100
+files:       libr/anal/cc.c libr/anal/fcn.c libr/core/anal.c libr/core/cmd.c libr/core/file.c libr/core/gdiff.c libr/include/r_anal.h swig/vapi/r_anal.vapi swig/vapi/r_core.vapi swig/vapi/r_lang.vapi
 description:
-* Add bindings for go
-* Add swig/go/test-r_bin.go for testing r_bin from go
-* Fix build for r_bp and r_search bindings
-* Rename enum VarType to VarClass in r_anal.vapi to avoid conflicts
-* Add flag -R to rabin_cmd in r2 start up
+* Some refactoring of r_anal
+  - Add fcn types for syms and imports
+  - Filter bindiff matches by type (speed up analysis)
+  - Assign the right fcn type in bin_load
+* Fix segfault in r_anal
+  - Solve bug with unknown opcodes + graph splitting
+* Update more vapi's
 
 
-changeset:   918:3c2383f8b817
-user:        pancake<@nopcode.org>
-date:        Fri Sep 10 13:17:24 2010 +0200
-files:       binr/rarc2/emit_x86.c binr/rarc2/rarc2.c libr/asm/arch/x86/ollyasm/assembl.c libr/asm/asm.c
+changeset:   1228:bad97651d28f
+user:        pancake@pairch
+date:        Mon Feb 07 09:46:01 2011 +0100
+files:       TODO libr/core/anal.c libr/core/cmd.c libr/core/core.c libr/core/file.c libr/include/r_core.h libr/include/r_io.h libr/io/io.c libr/io/map.c libr/util/bitmap.c
 description:
-* Handle numeric values as radix=10 by default in ollyasm
-  - Fixes rarc ATT output format for x86
-* Fix commandline flags parsing in rarc2
-  - Honor intel syntax with ".intel_syntax noprefix" header
-    - GAS can now compile att and intel syntax rarc2 output
-* Handle .intel_syntax and .att_syntax directives in rasm2
+* Many bugfixes in RIOMap handling and 'o' command
+* Added util/bitmap (hashmap of bits)
 
 
-changeset:   917:79fa4bb55854
+changeset:   1227:fdfa06c524e6
+user:        pancake@pairch
+date:        Sun Feb 06 21:10:57 2011 +0100
+files:       libr/lang/p/vala.c
+description:
+* Fix repl with vala
+
+
+changeset:   1226:8e148e47a7a1
+user:        pancake@pairch
+date:        Sun Feb 06 20:52:27 2011 +0100
+files:       libr/lang/p/vala.c
+description:
+* Use '-fPIC' for gcc in r_lang_vala (thanks earada)
+
+
+changeset:   1225:64cab5143384
+user:        pancake@pairch
+date:        Sun Feb 06 20:43:06 2011 +0100
+files:       libr/lang/p/vala.c
+description:
+* Oops. uncomment two lines :)
+
+
+changeset:   1224:7b64939536f3
+user:        pancake@pairch
+date:        Sun Feb 06 18:44:56 2011 +0100
+files:       TODO libr/include/r_lang.h libr/lang/lang.c libr/lang/p/vala.c
+description:
+* Avoid dupped langs plugins in queue
+* Hardcode vala plugin by default
+
+
+changeset:   1223:93b91c10edd2
+user:        pancake@pairch
+date:        Sun Feb 06 16:30:56 2011 +0100
+files:       libr/asm/p/asm_arm.c
+description:
+* Oops. unstatic r_asm_arm plugin
+
+
+changeset:   1222:d83219b10636
+user:        pancake@pairch
+date:        Sun Feb 06 14:10:16 2011 +0100
+files:       TODO binr/radare2/radare2.c libr/asm/p/asm_arm.c libr/core/cmd.c libr/include/r_lang.h libr/include/r_lib.h libr/lang/lang.c libr/lang/p/lua.c libr/lang/p/vala.c
+description:
+* Fix various bugs in r_lang api
+  - Use RList instead of kernel's list.h
+* Initial import of 'vala' plugin
+  - Allows to write Vala/Genie scripts
+
+
+changeset:   1221:c78c1a061635
+user:        pancake@pairch
+date:        Sat Feb 05 12:51:37 2011 +0100
+files:       AUTHORS libr/core/cmd.c libr/core/core.c libr/fs/p/grub/Makefile libr/include/r_io.h libr/io/io.c
+description:
+* Apply patchsets from Glyn Kennington (Thanks!)
+  - Added new method r_io_shift (start, end, move)
+  - Added 'r' command (like in r1)
+  - Fix parallel builds with -j>1
+
+
+changeset:   1220:c695dc6194fe
+user:        pancake@pairch
+date:        Sat Feb 05 02:55:50 2011 +0100
+files:       libr/anal/bb.c libr/anal/fcn.c libr/cons/grep.c
+description:
+* Hide verbose messages of "unknown cond, opcode" in anal
+  - #define VERBOSE in bb.c and fcn.c
+* Fix memory leak in cons_grep
+  - Fix grepping for null strings
+  - Fixes count of lines x~?
+
+
+changeset:   1219:9145cbc157d9
+user:        pancake@pairch
+date:        Sat Feb 05 02:21:40 2011 +0100
+files:       libr/core/cmd.c libr/core/config.c libr/core/core.c libr/line/dietline.c
+description:
+* Enhace some help messages (.?)
+* Added search.prefix "hit" by default.
+* search.asmstr is now boolean and true by default
+  - Affects /c opcode search command
+* Add much more autocompletion hints for commands
+* Fix tabulation of list of available options in r_line
+
+
+changeset:   1218:edf1881bc2d4
+user:        pancake@pairch
+date:        Sat Feb 05 01:18:58 2011 +0100
+files:       TODO libr/line/dietline.c
+description:
+* Fix segfault in dietline (thanks ash)
+
+
+changeset:   1217:bef756ef8aae
+user:        pancake@pairch
+date:        Sat Feb 05 01:07:43 2011 +0100
+files:       TODO libr/include/r_line.h libr/line/dietline.c libr/line/line.c
+description:
+* Fix tab autocompletion in r_line
+
+
+changeset:   1216:65a78d00d380
+user:        pancake@pairch
+date:        Sat Feb 05 00:36:51 2011 +0100
+files:       libr/core/visual.c
+description:
+* Fix offscreen cursor with <0 seeks in Visual mode
+
+
+changeset:   1215:018b70e26153
+user:        pancake@pairch
+date:        Sat Feb 05 00:20:28 2011 +0100
+files:       TODO binr/radare2/radare2.c libr/config/config.c libr/core/config.c libr/core/core.c libr/core/file.c libr/core/visual.c libr/include/r_io.h libr/io/desc.c libr/io/io.c libr/io/p/io_rap.c
+description:
+* Implement rap:// remote radare protocol support
+  - Fully compatible with radare1
+  - Server  $ r2 rap://:9999
+  - Client  $ r2 rap://127.0.0.1:9999//etc/fstab
+* r_io has been refactorized to support client/server io plugins
+  - Requires make clean
+* Enhacements in Visual mode:
+  - [] keys change scr.cols eval variable (hex columns)
+  - Handle offscreen cursor and selection
+  - Handle <0 seeking in visual mode
+
+
+changeset:   1214:ef3b4c82b495
 user:        nibble
-date:        Fri Sep 10 11:46:30 2010 +0200
-files:       libr/bin/format/elf/elf.c
+date:        Fri Feb 04 18:34:20 2011 +0100
+files:       libr/asm/Makefile libr/core/visual.c libr/debug/pid.c libr/flags/flags.c libr/flags/spaces.c libr/include/r_asm.h libr/include/r_debug.h libr/include/r_flags.h libr/include/r_io.h swig/vapi/r_asm.vapi swig/vapi/r_cons.vapi swig/vapi/r_core.vapi swig/vapi/r_debug.vapi swig/vapi/r_flags.vapi swig/vapi/r_io.vapi
 description:
-* Minor fixup in r_bin_elf
+* Remove remaining fastcall stuff from r_asm
+* Fix build for bindings
 
 
-changeset:   916:8489b58f9b17
+changeset:   1213:1f18e490675c
 user:        nibble
-date:        Fri Sep 10 11:32:49 2010 +0200
-files:       TODO libr/bin/format/elf/elf.c swig/vapi/r_bin.vapi swig/vapi/t/Makefile swig/vapi/t/reloc.vala
+date:        Fri Feb 04 14:20:30 2011 +0100
+files:       libr/anal/p/Makefile libr/anal/p/anal_dummy.c libr/anal/p/dummy.mk libr/asm/p/Makefile libr/asm/p/asm_dummy.c libr/asm/p/dummy.mk libr/bin/p/Makefile libr/bin/p/bin_dummy.c libr/bin/p/dummy.mk libr/lang/p/Makefile libr/lang/p/dummy.c libr/parse/p/Makefile libr/parse/p/dummy.mk libr/parse/p/parse_dummy.c plugins.def.cfg
 description:
-* Add vapi/t/reloc.vala
-  - Print address for each relocation entry
-* Update r_bin.vapi
-* Minor fixup in r_bin_elf_get_relocs()
-* Update TODO
+* Remove all dummy plugins (speed up build)
 
 
-changeset:   915:7254d77418d3
+changeset:   1212:234016d9ba55
+parent:      1211:9e854f477746
+parent:      1210:5f64f3509436
 user:        nibble
-date:        Fri Sep 10 11:11:38 2010 +0200
-files:       TODO binr/rabin2/rabin2.c libr/bin/bin.c libr/bin/format/elf/elf.c libr/bin/format/elf/elf.h libr/bin/format/java/java.c libr/bin/format/pe/pe.c libr/bin/p/bin_dummy.c libr/bin/p/bin_elf.c libr/bin/p/bin_elf64.c libr/bin/p/bin_fatmach0.c libr/bin/p/bin_java.c libr/bin/p/bin_mach0.c libr/bin/p/bin_mach064.c libr/bin/p/bin_pe.c libr/bin/p/bin_pe64.c libr/include/r_bin.h
-description:
-* Add support for parsing relocs to r_bin
-* Add flag -R to rabin2 to list relocs
-* Implement reloc resolution in r_bin_elf for 32 & 64 bits
-
-
-changeset:   914:34246754092e
-user:        pancake
-date:        Fri Sep 10 10:50:53 2010 +0200
-files:       binr/rasm2/rasm2.c libr/asm/arch/arm/armass.c
-description:
-* Error on invalid hexpair strings in rasm2
-* Fix assemble of str/ldr opcodes in ARM assembler
-  - add more opcodes: nop, push, pop
-
-
-changeset:   913:e6a6d026865a
-user:        nibble
-date:        Fri Sep 10 01:17:55 2010 +0200
-files:       TODO libr/bin/format/mach0/mach0.c libr/bin/format/mach0/mach0.h libr/bin/format/mach0/mach0_specs.h libr/bin/p/bin_mach0.c
-description:
-* More work on r_bin_mach0
-  - Parse local symbols
-  - Resolve non-lazy symbol pointers
-  - Set import type to FUNC or OBJECT
-  - Refactoring of get_imports
-  - Add field type to r_bin_mach0_{import, symbol}
-
-
-changeset:   912:98882ba47ef4
-user:        pancake
-date:        Fri Sep 10 00:08:53 2010 +0200
-files:       libr/include/r_util.h libr/util/sys.c swig/vapi/r_util.vapi
-description:
-* Add r_sys_cmdf
-
-
-changeset:   911:4a87d1bf1093
-user:        pancake
-date:        Thu Sep 09 23:54:56 2010 +0200
-files:       libr/asm/arch/arm/armass.c libr/asm/p/asm_arm.c
-description:
-* Many fixes and more opcodes supported for the ARM assembler
-
-
-changeset:   910:ae5576a815a4
-user:        pancake
-date:        Thu Sep 09 01:39:15 2010 +0200
-files:       TODO binr/rarc2/rarc2.c libr/asm/arch/arm/armass.c
-description:
-* More work on the arm assembler
-
-
-changeset:   909:9b3e879b015e
-user:        pancake
-date:        Wed Sep 08 19:49:34 2010 +0200
-files:       TODO binr/rasm2/rasm2.c doc/fortunes libr/anal/p/anal_x86.c libr/asm/arch/arm/armass.c libr/asm/p/arm.mk libr/asm/p/asm_arm.c libr/asm/p/asm_bf.c libr/asm/p/asm_x86_olly.c libr/core/cmd.c libr/core/core.c libr/core/rtr.c libr/syscall/syscall.c
-description:
-* Fix push immediate opcode analysis in basic x86 analysis
-* Import simple arm assembler
-* Some fixes for the brainfuck disassembler plugin
-
-
-changeset:   908:29b5b8d22d79
-user:        nibble
-date:        Wed Sep 08 12:35:38 2010 +0200
-files:       binr/rasm2/rasm2.c
-description:
-* Fix -e in rasm2
-
-
-changeset:   907:8daef6a8a1ec
-user:        nibble
-date:        Wed Sep 08 11:52:10 2010 +0200
-files:       TODO libr/anal/p/anal_x86_x86im.c libr/core/anal.c
-description:
-* Refactoring of /a
-* ptrdepth works right with code and data refs
-* More work in x86im plugin
-  - Fill op.refs for more opcodes
-  - Next step is a massive refactoring using r_anal_value
-
-
-changeset:   906:e571a1173ed7
-user:        nibble
-date:        Tue Sep 07 21:38:54 2010 +0200
-files:       libr/bin/bin.c libr/bin/format/mach0/mach0.c
-description:
-* Fix segfault parsing mach-o
-
-
-changeset:   905:b8e45a07089e
-user:        pancake<@nopcode.org>
-date:        Mon Sep 06 16:14:37 2010 +0200
-files:       binr/ranal2/Makefile
-description:
-* Missing build dependency
-
-
-changeset:   904:230595406cb0
-user:        nibble
-date:        Sun Sep 05 21:20:56 2010 +0200
-files:       TODO binr/ranal2/ranal2.c libr/anal/p/anal_mips.c libr/anal/p/anal_x86_x86im.c libr/include/r_anal.h swig/vapi/r_anal.vapi
-description:
-* Huge refactoring of anal_x86_x86im
-* Add comments in anal_x86_x86im explaining how x86im parse the opcodes
-* Implement analysis for more opcodes
-* Rename R_ANAL_OP_TYPE_RCALL into R_ANAL_OP_TYPE_UCALL (more generic)
-* Update anal_mips.c and r_anal.vapi
-* Update TODO
-
-
-changeset:   903:9d49ef25a97b
-user:        pancake
-date:        Wed Sep 01 20:32:24 2010 +0200
-files:       libr/include/r_bin.h libr/include/r_list.h libr/include/r_util.h libr/util/list.c
-description:
-* Add hash-like access to linked lists
-* Add R_BETWEEN macro
-
-
-changeset:   902:b6aa704bf0b7
-user:        pancake
-date:        Mon Aug 30 00:49:43 2010 +0200
-files:       pkgcfg/libr.pc.acr pkgcfg/r_core.pc.acr swig/Makefile swig/vapi/r_util.vapi
-description:
-* Apply edu's patch with some fixes for swig and vala support (thanks!)
-
-
-changeset:   901:245b6e019c3b
-user:        nibble
-date:        Fri Aug 27 18:38:51 2010 +0200
-files:       libr/anal/p/Makefile libr/anal/p/anal_x86_x86im.c libr/anal/p/x86_x86im.mk
-description:
-* Fix build of anal_x86_x86im
-
-
-changeset:   900:fe4c2eae426b
-user:        pancake
-date:        Thu Aug 26 12:18:30 2010 +0200
-files:       TODO libr/core/cmd.c libr/core/core.c libr/db/TODO libr/io/README libr/lang/README libr/print/date.c libr/reg/README libr/sign/README
-description:
-* Cleanups in many TODO/READMEs
-
-
-changeset:   899:535bc02d183c
-user:        pancake
-date:        Thu Aug 26 04:19:12 2010 +0200
-files:       libr/anal/meta.c libr/core/cmd.c libr/core/project.c libr/core/visual.c
-description:
-* Apply edu's project patch
-  - CC now ask for size, like the rest of r_meta_add commands
-  - Project tracks meta, xrefs and sections information and actual offset
-  - Visual add comment patched to use new r_meta_add comment with size
-  - Documented C* in r_meta help.
-
-
-changeset:   898:31b6f8de041f
-user:        pancake
-date:        Thu Aug 26 01:35:32 2010 +0200
-files:       libr/core/cmd.c libr/vm/reg.c
-description:
-* Try to fix r_io_bind segfault in 64bit boxes
-
-
-changeset:   897:4a82ed944e05
-user:        pancake
-date:        Wed Aug 25 12:35:08 2010 +0200
-files:       libr/core/cmd.c libr/vm/reg.c libr/vm/vm.c
-description:
-* Initial hacky implementation of RAnalCall in 'pd'
-
-
-changeset:   896:f022ba8bb1b4
-user:        nibble
-date:        Wed Aug 25 02:27:42 2010 +0200
-files:       TODO binr/ranal2/ranal2.c libr/anal/bb.c libr/anal/fcn.c libr/anal/t/test_anal.sh libr/core/anal.c
-description:
-* ranal2
-  - Add stackop2str() and optype2str()
-  - Output op type
-* r_anal
-  - Fix fcn analysis
-  - Remove test_anal.sh
-
-
-changeset:   895:82611837d5cd
-user:        nibble
-date:        Tue Aug 24 22:16:03 2010 +0200
-files:       binr/Makefile binr/ranal2/Makefile binr/ranal2/ranal2.c binr/rasm2/rasm2.c libr/anal/anal.c libr/anal/t/Makefile libr/anal/t/test_anal.c
-description:
-* ranal2
-  - Move t/test_anal to binr/ranal2
-  - Add support for static/dynamic plugins
-  - Add flag '-B' for binary input
-  - Add support for ascci hexpairs
-  - Now input can be given through argv or stdin
-  - Output analyzed bytes
-* r_asm & r_anal
-  - Improve output of r_*_list
-
-
-changeset:   894:1cdccf40ab00
-user:        nibble
-date:        Tue Aug 24 19:59:19 2010 +0200
-files:       libr/anal/t/test_anal.c libr/asm/arch/x86/udis86/LICENSE libr/asm/arch/x86/udis86/README libr/asm/arch/x86/udis86/decode.c libr/asm/arch/x86/udis86/decode.h libr/asm/arch/x86/udis86/extern.h libr/asm/arch/x86/udis86/input.c libr/asm/arch/x86/udis86/input.h libr/asm/arch/x86/udis86/itab.c libr/asm/arch/x86/udis86/itab.h libr/asm/arch/x86/udis86/syn-att.c libr/asm/arch/x86/udis86/syn-intel.c libr/asm/arch/x86/udis86/syn.c libr/asm/arch/x86/udis86/syn.h libr/asm/arch/x86/udis86/types.h libr/asm/arch/x86/udis86/udis86.c libr/core/Makefile libr/socket/socket.c
-description:
-* r_asm
-  - Update udis86 to git head
-* r_anal
-  - Print more fields in test_anal
-* r_socket
-  - Rename socket_udp_connect to r_socket_udp_connect
-* Fix build
-
-
-changeset:   893:8e37db35766d
-user:        pancake
-date:        Tue Aug 24 11:58:09 2010 +0200
-files:       TODO libr/core/Makefile libr/core/cmd.c libr/core/core.c libr/core/rtr.c libr/include/r_core.h libr/include/r_socket.h libr/socket/socket.c
-description:
-* Import 'rtr.c' from r1 in order to implement '=' command
-* Add missing r_socket_udp_connect()
-
-
-changeset:   892:b64f9cac0217
-user:        pancake
-date:        Tue Aug 24 04:09:12 2010 +0200
-files:       TODO libr/core/cmd.c man/rafind2.1
-description:
-* Apply patches from edu (Thanks)
-  - Fix '#' command
-
-
-changeset:   891:ed1bafafc06c
-user:        pancake<@nopcode.org>
-date:        Mon Aug 23 19:13:19 2010 +0200
-files:       libr/core/cmd.c libr/line/dietline.c
-description:
-* '|' at the beggining of command is an io pipe instead of console pipe
-* r_line uses ansi code to clean line instead of drawing spaces
-
-
-changeset:   890:6fdd9dc47cfe
-user:        pancake<@nopcode.org>
-date:        Mon Aug 23 12:50:19 2010 +0200
-files:       binr/radare2/Makefile
-description:
-* Fix build
-
-
-changeset:   889:7cdbf281486b
-user:        pancake<@nopcode.org>
-date:        Mon Aug 23 12:39:00 2010 +0200
-files:       binr/radiff2/Makefile libr/anal/t/Makefile libr/core/Makefile libr/core/visual.c libr/vm/vm.c
-description:
-* Swap file-offset order in visual prompt
-* Fix build
-
-
-changeset:   888:5e944178fc97
-user:        pancake
-date:        Mon Aug 23 12:08:23 2010 +0200
-files:       TODO libr/core/cmd.c libr/io/p/io_rap.c libr/vm/p/x86.32.vm libr/vm/reg.c libr/vm/vm.c
-description:
-* Add the possibility to import/export regs from vm to debugger
-* Parse rap:// in a different way, so we can now connect without
-  opening any file. code is hardly simplified
-
-
-changeset:   887:42722b553357
-user:        pancake
-date:        Mon Aug 23 06:39:23 2010 +0200
-files:       TODO binr/rahash2/rahash2.c libr/cons/pipe.c libr/core/cmd.c libr/core/config.c libr/core/core.c libr/include/r_io.h libr/io/p/io_rap.c libr/socket/socket.c
-description:
-* Initial implementation of '=' command
-  - Deprecate the useless '|' one
-* Added rap.loop config var to wait for connections in loop
-* All data operations in rap are now bounded to RMT_MAX
-* Protocol implementation compatible with r1
-  - Many endian hacks.. must take care of
-* Use blocking operations for reading network packets
-
-
-changeset:   886:9ecbf5d01b16
-user:        pancake
-date:        Mon Aug 23 00:48:44 2010 +0200
-files:       TODO libr/core/cmd.c libr/core/config.c libr/include/r_asm.h libr/include/r_vm.h libr/io/io.c libr/syscall/syscall.c libr/vm/Makefile libr/vm/op.c libr/vm/p/Makefile libr/vm/p/arm.32.vm libr/vm/p/x86.16.vm libr/vm/p/x86.32.vm libr/vm/p/x86.64.vm libr/vm/reg.c libr/vm/vm.c
-description:
-* Add 'avrr' and 'avrc' commands to setup vm regs
-* Many minor random fixes
-* RVm api has an own architecture description file
-  - r_vm_set_arch(vm, arch, bits);
-  - add x86-16, x86-32, x86-64, arm-32
-
-
-changeset:   885:e84482a913cf
-user:        pancake
-date:        Sun Aug 22 21:42:08 2010 +0200
-files:       TODO binr/radare2/radare2.c libr/anal/var.c libr/cmd/cmd.c libr/core/core.c libr/include/r_asm.h libr/include/r_core.h libr/include/r_io.h libr/include/r_socket.h libr/io/io.c libr/io/p/io_rap.c libr/io/p/rap.mk libr/socket/socket.c libr/vm/vm.c plugins.def.cfg
-description:
-* Initial implementation of the rap:// IO plugin
-  - RMT packet descriptions are in r_io
-  - io.rap plugin is now compiled by default.
-    $ rm -f plugins.cfg
-    $ ./configure-plugins
-* Some syntax fixes in r_vm
-* RCore.r_core_server() method uses r_io_is_listener() to wait for connections
-* Some minor fixes in r_socket
-  - Add r_socket_read_block() fixes SIGPIPE and network issues
-
-
-changeset:   884:891ed6f3bed3
-user:        pancake
-date:        Sun Aug 22 19:07:03 2010 +0200
-files:       TODO libr/core/cmd.c libr/core/visual.c
-description:
-* Import Vv command to visually analyze functions from r1
-
-
-changeset:   883:1353a1185f20
-user:        pancake
-date:        Sun Aug 22 18:41:57 2010 +0200
-files:       TODO libr/anal/var.c libr/core/cmd.c libr/include/r_anal.h
-description:
-* Import more r_anal_var stuff from r1
-  - Implemented 'af[aAv]' command.
-  - In r1 this command is 'CF[aAv]'
-  - Variable contents are not displayed yet
-
-
-changeset:   882:93670e6203dd
-user:        pancake
-date:        Sun Aug 22 17:56:50 2010 +0200
-files:       TODO libr/TODO libr/core/Makefile libr/core/cmd.c libr/core/core.c libr/include/r_core.h libr/include/r_util.h libr/include/r_vm.h libr/util/str.c libr/vm/extra.c libr/vm/mmu.c libr/vm/op.c libr/vm/reg.c libr/vm/stack.c libr/vm/t/test.c libr/vm/vm.c
-description:
-* Integrate r_vm into r_core
-  - Analyze code in order to do syscall analysis
-  - Some fixes in r_vm to make it work
-  - Add 'av' command to interact with the virtual machine
-  - added r_str_subchr helper func in r_util
-
-
-changeset:   881:faf79a7006e0
-user:        nibble
-date:        Fri Aug 20 21:47:58 2010 +0200
-files:       libr/anal/t/Makefile libr/anal/t/test_anal.c libr/anal/t/test_anal.sh libr/core/cmd.c
-description:
-* r_anal
-  - Add test_anal (to speed up the development of analysis plugins)
-  - Add test_anal.sh (helper)
-* r_core
-  - Remove debug msg from the output of cmd 'i'
-
-
-changeset:   880:5dd79ab738ec
-user:        pancake
-date:        Fri Aug 20 00:36:22 2010 +0200
-files:       TODO binr/radare2/Makefile binr/radiff2/Makefile libr/Makefile libr/anal/Makefile libr/anal/README.meta libr/anal/meta.c libr/anal/t/Makefile libr/anal/t/test_meta.c libr/anal/type.c libr/core/visual.c libr/libr.pc.acr libr/meta/README libr/meta/meta.c libr/meta/t/test.c libr/meta/type.c libr/pkgconfig/libr.pc.acr
-description:
-* Merge r_meta inside r_anal
-* Display filename in title line of Visual mode
-
-
-changeset:   879:601272e671c3
-user:        pancake
-date:        Thu Aug 19 20:28:25 2010 +0200
-files:       TODO libr/core/cmd.c libr/core/file.c libr/include/r_core.h
-description:
-* Implement r_core_sysenv_update()
-* Simplify some functions in core/cmd
-* Move CF -> afs
-  - Add documentation for 'afs' command
-  - Accept numeric argument
-  - Add support for 'get' and 'set'
-
-
-changeset:   878:c57c123a26bf
-user:        nibble
-date:        Thu Aug 19 02:30:12 2010 +0200
-files:       TODO libr/anal/p/anal_arm.c libr/anal/p/anal_x86.c libr/anal/p/anal_x86_x86im.c libr/core/anal.c libr/core/asm.c libr/core/config.c libr/io/io.c
-description:
-* r_core
-  - Add cfg var anal.ptrdepth to define analysis depth for indirect references
-  - Add support for indirect references to /a (needs more testing)
-* r_io
-  - Remove perror msg from r_io_read_i()
-* r_anal
-  - Minor fixups in arm and x86 plugins
-
-
-changeset:   877:8389d4c9c037
-user:        nibble
-date:        Tue Aug 17 13:15:18 2010 +0200
-files:       binr/rabin2/rabin2.c libr/core/cmd.c
-description:
-* rabin2
-  - Add flag -n to filter by {symbol, import, section} name
-* r_core
-  - dmi accepts argument symname
-  - more work on cmd parsing
-
-
-changeset:   876:a861f1f0a138
-user:        nibble
-date:        Tue Aug 17 01:56:49 2010 +0200
+date:        Fri Feb 04 14:07:56 2011 +0100
 files:       libr/core/cmd.c
-description:
-* Minor fixup O:)
-
-
-changeset:   875:a9ab91c474f1
-user:        nibble
-date:        Tue Aug 17 01:27:24 2010 +0200
-files:       libr/cons/cons.c libr/core/cmd.c libr/include/r_cons.h
-description:
-* r_core
-  - Fix ."raw cmd" to interpret raw cmd output
-  - Fix .cmd~str to interpret grepped output
-* r_cons
-  - Add r_cons_filter() to apply cons filters (grep, html...)
-* Update TODO
-
-
-changeset:   874:40ac470ca157
-user:        pancake<nopcode.org>
-date:        Mon Aug 16 17:48:47 2010 +0200
-files:       TODO libr/anal/fcn.c libr/anal/var.c libr/cons/color.c libr/db/db.c libr/debug/desc.c libr/include/r_util.h libr/line/t/hello.c libr/meta/meta.c libr/util/pool.c libr/util/sys.c libr/util/t/test.c
-description:
-* Clean many warnings
-* Reasign TODO points
-
-
-changeset:   873:1a32b4f8ab5f
-user:        nibble
-date:        Mon Aug 16 16:07:45 2010 +0200
-files:       libr/core/cmd.c
-description:
-* r_core
-  - More work on dmi
-  - Don't flag symbols without any output
-  - Output human readable format with 'dmi'
-  - Output radare commands with 'dmi*'
-
-
-changeset:   872:95f705e67161
-user:        pancake<nopcode.org>
-date:        Mon Aug 16 14:58:10 2010 +0200
-files:       binr/rabin2/rabin2.c libr/bin/bin.c libr/core/cmd.c libr/flags/name.c swig/vapi/t/rgot.vala
-description:
-* Filter string to avoid escaped commands execution (r_str_unscape)
-* More chars filtered in rabin2 -z (flag ..)
-* Parse PLT in order to find matching ordinal in rgot.vala
-
-
-changeset:   871:6bb55560d3d2
-user:        nibble
-date:        Mon Aug 16 14:35:15 2010 +0200
-files:       binr/rabin2/rabin2.c libr/core/cmd.c
-description:
-* rabin2
-  - Add flag -b to set a custom baddr
-* r_core
-  - Add command 'dmi' to flag the symbols of a given lib in memory
-
-
-changeset:   870:df50902db20e
-user:        pancake<nopcode.org>
-date:        Mon Aug 16 13:59:48 2010 +0200
-files:       libr/anal/p/anal_x86.c libr/core/cmd.c libr/core/visual.c
-description:
-* Implement 0x2e and 0x64-0x67 conditional jmp opcodes on x86
-* Stop parsing commands at '#' char (comment)
-* strclean command strings before executing them (fixes some issues with spaces..)
-* V: is now honoring cursor position in cursor mode
-
-
-changeset:   869:74ba812217b6
-user:        pancake
-date:        Mon Aug 16 11:24:13 2010 +0200
-files:       libr/anal/p/anal_x86.c libr/core/visual.c libr/include/r_io.h libr/include/r_list.h libr/io/map.c libr/io/plugin.c
-description:
-* initial parsing of 'jns' in anal_x86.c
-* Use RList in RIOMap
-  - deprecate _list
-
-
-changeset:   868:9621023e5c98
-user:        pancake
-date:        Mon Aug 16 09:46:11 2010 +0200
-files:       swig/vapi/r_bp.vapi swig/vapi/r_search.vapi swig/vapi/t/Makefile swig/vapi/t/rgot.vala
-description:
-* Fix build of vala test programs
-  - minor fixes in vapi files
-
-
-changeset:   867:1339977f072d
-parent:      865:3174abe1a720
-parent:      866:39e85a9270bf
-user:        nibble
-date:        Mon Aug 16 01:50:38 2010 +0200
 description:
 * Merge
 
 
-changeset:   866:39e85a9270bf
-parent:      864:a87277fd37aa
-user:        pancake
-date:        Mon Aug 16 01:24:42 2010 +0200
-files:       swig/vapi/r_util.vapi swig/vapi/t/Makefile swig/vapi/t/bin.vala swig/vapi/t/rgot.vala
-description:
-* Added rgot.vala test example
-* Enrich r_util vapi
-
-
-changeset:   865:3174abe1a720
+changeset:   1211:9e854f477746
+parent:      1209:8200bf6c9370
 user:        nibble
-date:        Mon Aug 16 01:50:01 2010 +0200
-files:       libr/core/config.c libr/include/r_io.h libr/io/io.c libr/io/section.c
+date:        Fri Feb 04 14:03:59 2011 +0100
+files:       binr/rafind2/Makefile binr/ranal2/Makefile libr/anal/t/Makefile libr/core/anal.c libr/core/cmd.c libr/core/gdiff.c libr/debug/t/Makefile libr/sign/t/Makefile swig/vapi/r_flags.deps swig/vapi/r_flags.vapi
 description:
-* r_core
-  - Fix 'S' and 'S='
-* r_io
-  - Add field 'debug' to r_io_t
-  - More refactoring of io.va code
+* Some optimizations in r_anal
+  - bb's are included in fcn struct
+  - analyze bb's and fcn's all together
+* Update some vapis
+* Fix build
 
 
-changeset:   864:a87277fd37aa
+changeset:   1210:5f64f3509436
+user:        pancake@pairch
+date:        Fri Feb 04 11:30:08 2011 +0100
+files:       TODO binr/radare2/radare2.c libr/bp/bp.c libr/core/cmd.c libr/core/core.c libr/core/file.c libr/include/r_core.h libr/include/r_io.h swig/Makefile swig/configure swig/configure.acr
+description:
+* Some more work on r_core_sysenv*
+  - fix api, but still not using BLOCK or so
+* Fix help for ??? and !?
+* Upgrade swig/configure.acr to 0.6.9
+
+
+changeset:   1209:8200bf6c9370
+user:        pancake@pairch
+date:        Thu Feb 03 09:31:50 2011 +0100
+files:       TODO binr/radare2/radare2.c libr/anal/anal.c libr/anal/reflines.c libr/core/cmd.c libr/core/config.c libr/include/r_anal.h libr/io/p/io_rap.c libr/socket/socket.c
+description:
+* Some better help messages
+* Added asm.lineswidth (fixed width for reflines)
+* Added 'aoe' stub command
+
+
+changeset:   1208:b25935267043
+user:        pancake@pairch
+date:        Thu Feb 03 01:07:51 2011 +0100
+files:       configure configure.acr
+description:
+* Bump revision to 0.6.9
+  - release will not happen until 0.7
+  - scheduled for March
+
+
+changeset:   1207:725ef563a329
+user:        pancake@pairch
+date:        Thu Feb 03 00:57:29 2011 +0100
+files:       TODO libr/anal/cc.c libr/anal/p/anal_x86.c libr/core/cmd.c libr/core/visual.c libr/include/r_anal.h libr/util/mem.c
+description:
+* Use r_reg API from r_anal in order to retrieve info for r_syscall
+* Hacky support for software interrupts in anal.x86im plugin
+* Added 'B' key to toggle automatic blocksize
+
+
+changeset:   1206:390d26a75c1b
+user:        pancake@pairch
+date:        Thu Feb 03 00:20:39 2011 +0100
+files:       TODO libr/Makefile libr/anal/anal.c libr/anal/aop.c libr/anal/cc.c libr/anal/value.c libr/asm/Makefile libr/asm/t/Makefile libr/asm/t/fastcall.c libr/asm/t/hello.asm libr/asm/t/test.asm libr/core/cmd.c libr/core/core.c libr/diff/diff.c libr/include/r_anal.h libr/include/r_syscall.h libr/include/r_util.h libr/syscall/fastcall.h libr/syscall/regs.c libr/syscall/syscall.c libr/syscall/t/hello.c libr/util/mem.c
+description:
+* Initial implementation of the r_anal_aop_execute api
+  - It's like r_vm, but using r_anal
+  - r_vm is going to be deprecated
+* Added r_mem_set_num()
+* Remove deprecated asm/t/fastcall example
+* Fix warnings in r_syscall_regs
+  - Integrated with r_syscall_use()
+  - Fix r_syscall_reg() out of bound bug
+
+
+changeset:   1205:4c244f86444b
+user:        pancake<@nopcode.org>
+date:        Wed Feb 02 13:23:44 2011 +0100
+files:       libr/anal/anal.c libr/anal/cc.c libr/core/cmd.c libr/include/r_syscall.h
+description:
+* Fix build
+
+
+changeset:   1204:69927fdd683f
+user:        pancake@pairch
+date:        Wed Feb 02 13:05:48 2011 +0100
+files:       libr/anal/Makefile libr/anal/anal.c libr/anal/cc.c libr/asm/p/asm_dalvik.c libr/core/cmd.c libr/core/config.c libr/core/core.c libr/include/r_anal.h libr/include/r_core.h
+description:
+* More work on the r_anal/r_syscall refactoring for calling conventions
+
+
+changeset:   1203:84a40093574b
+user:        pancake<@nopcode.org>
+date:        Wed Feb 02 13:02:20 2011 +0100
+files:       libr/asm/asm.c libr/asm/p/asm_dummy.c libr/asm/p/asm_gas.c libr/asm/p/asm_mips.c libr/asm/p/asm_x86.c libr/asm/p/asm_x86_nasm.c libr/asm/p/asm_x86_olly.c libr/asm/p/fastcall_mips.h libr/asm/p/fastcall_x86.h libr/asm/t/Makefile libr/include/r_asm.h libr/include/r_syscall.h libr/syscall/freebsd.c libr/syscall/regs.c
+description:
+* Move r_asm_fastcall into r_syscall_regs (-42LOC)
+
+
+changeset:   1202:2e8b282e060e
+user:        earada
+date:        Mon Jan 31 00:26:07 2011 +0100
+files:       libr/asm/p/asm_dalvik.c libr/include/r_asm.h
+description:
+* Fix dalvik big opcodes
+* Asm bufsize is 1024 again
+
+
+changeset:   1201:203cdb5f252a
+user:        pancake@pairch
+date:        Thu Jan 27 09:31:52 2011 +0100
+files:       TODO libr/core/cmd.c libr/db/db.c libr/io/p/io_rap.c
+description:
+* Add support for multiline macro definitions
+
+
+changeset:   1200:8022bc988f93
+user:        pancake@pairch
+date:        Thu Jan 27 01:12:02 2011 +0100
+files:       TODO libr/core/cmd.c libr/core/visual.c libr/search/t/test-regexp.c libr/search/t/test-str.c
+description:
+* Nicer inc method for visual key
+* Clean warnings in r_search test programs
+
+
+changeset:   1199:8c122d8d9dca
+user:        pancake@pairch
+date:        Thu Jan 27 00:45:16 2011 +0100
+files:       TODO libr/core/cmd.c libr/core/visual.c libr/include/r_core.h
+description:
+* Fix visual glitches when hexdump and code are mixed
+  - Fix scrollup/scrolldown using new core->inc var (yay)
+
+
+changeset:   1198:cb1b39cc2307
+user:        pancake@pairch
+date:        Thu Jan 27 00:05:49 2011 +0100
+files:       TODO libr/cmd/TODO libr/cmd/macro.c libr/include/r_cmd.h
+description:
+* Reduce r_macro recursivity limit to 1024
+  - fixes stack exhaustion segfault
+
+
+changeset:   1197:476c0083e2ab
+user:        pancake@pairch
+date:        Wed Jan 26 23:40:16 2011 +0100
+files:       TODO libr/cmd/macro.c libr/core/cmd.c libr/print/print.c
+description:
+* Fix r_cmd_macro '(' command now works
+
+
+changeset:   1196:50505b4f728c
+user:        earada
+date:        Wed Jan 26 23:31:15 2011 +0100
+files:       libr/line/dietline.c
+description:
+* Fix home/end keys in gnu screen (Tnxs rvalles)
+
+
+changeset:   1195:4993b5a98a9b
+user:        pancake@pairch
+date:        Wed Jan 26 22:10:35 2011 +0100
+files:       libr/rules.mk libr/search/t/test-str.c
+description:
+* Fix build of r_fs
+
+
+changeset:   1194:12d84a241b8a
+user:        pancake@pairch
+date:        Wed Jan 26 22:01:38 2011 +0100
+files:       libr/anal/cc.c libr/cmd/macro.c libr/include/r_cmd.h
+description:
+* Add missing cc.c
+
+
+changeset:   1193:816f4446a56b
+user:        pancake@pairch
+date:        Wed Jan 26 21:54:39 2011 +0100
+files:       TODO libr/anal/Makefile libr/anal/bb.c libr/anal/call.c libr/anal/ctx.c libr/anal/meta.c libr/anal/p/Makefile libr/anal/p/anal_avr.c libr/anal/p/avr.mk libr/anal/type.c libr/anal/value.c libr/core/cmd.c libr/core/config.c libr/core/visual.c libr/include/r_anal.h plugins.def.cfg
+description:
+* Initial api for r_anal_cc (calling conventions)
+  - Not yet implemented, just a draft
+* Added initial AVR cpu code analysis plugin
+
+
+changeset:   1192:bb5eb361dd42
+user:        pancake<@nopcode.org>
+date:        Tue Jan 25 16:29:59 2011 +0100
+files:       libr/asm/p/Makefile libr/socket/proc.c
+description:
+* Add missing dalvik.mk
+
+
+changeset:   1191:59972e2053ab
+user:        pancake@pairch
+date:        Sun Jan 23 23:58:46 2011 +0100
+files:       libr/fs/fs.c libr/fs/p/grub/Makefile libr/fs/p/grub/include/grubfs.h libr/fs/p/grub/partmap/amiga.c libr/fs/p/grub/partmap/apple.c libr/fs/p/grub/partmap/bsdlabel.c libr/fs/p/grub/partmap/gpt.c libr/fs/p/grub/partmap/sun.c libr/fs/p/grub/partmap/sunpc.c
+description:
+* Fix build for r_fs partmaps
+
+
+changeset:   1190:cd58a63faa00
+user:        pancake@pairch
+date:        Sun Jan 23 21:54:18 2011 +0100
+files:       TODO libr/Makefile libr/fs/file.c libr/fs/fs.c libr/fs/p/grub/grubfs.c libr/fs/p/grub/include/grubfs.h libr/waitfordeps.sh
+description:
+* Chop last '/' in r_fs_mount
+* Add support for other partition types:
+  - msdos, acorn, bsdlabel, amiga, sun, sunpc, apple, gpt
+* Honour make return values
+
+
+changeset:   1189:c40595d517c2
+user:        pancake@pairch
+date:        Sun Jan 23 18:44:38 2011 +0100
+files:       libr/bin/format/elf/elf.c libr/include/r_util.h
+description:
+* Fix previous commit (oops)
+
+
+changeset:   1188:ba5d8089eb1f
+user:        pancake@pairch
+date:        Sun Jan 23 18:32:58 2011 +0100
+files:       TODO libr/bin/format/elf/elf.c libr/bin/p/bin_elf.c
+description:
+* Fix r_bin_elf for ppc, avr and 68k binaries
+
+
+changeset:   1187:fbc4b83111df
+user:        pancake@pairch
+date:        Sun Jan 23 18:19:03 2011 +0100
+files:       TODO libr/asm/code.c libr/asm/p/asm_ppc.c libr/io/io.c
+description:
+* Add support for ppc64 disassembler
+
+
+changeset:   1186:3af79c3c36f7
+user:        pancake@pairch
+date:        Sun Jan 23 17:48:31 2011 +0100
+files:       TODO libr/cons/cons.c libr/core/core.c libr/core/visual.c
+description:
+* Use adaptative blocksize as reported by rvalles
+  - Only affects disasm and hexdump in visual mode
+
+
+changeset:   1185:b2c99afb7540
+user:        pancake@pairch
+date:        Sun Jan 23 13:54:17 2011 +0100
+files:       TODO
+description:
+* Refactor TODO file
+
+
+changeset:   1184:53f6523ee98c
+user:        pancake@pairch
+date:        Sun Jan 23 13:12:16 2011 +0100
+files:       TODO binr/rafind2/rafind2.c libr/cons/cons.c libr/core/visual.c libr/include/r_cons.h libr/print/print.c
+description:
+* Added r_cons_resize() and _interrupt() RConsEvent callbacks
+  - Use _resize() from visual mode, so redrawing is now cleaner
+* Minor bug fixes
+
+
+changeset:   1183:309cf0d1a2c6
+user:        pancake@pair
+date:        Sun Jan 23 00:53:09 2011 +0100
+files:       TODO
+description:
+* Add TODO stuff after discussion (thanks roc and pelican)
+
+
+changeset:   1182:96a589f2d5e3
+user:        pancake@pair
+date:        Sun Jan 23 00:18:26 2011 +0100
+files:       TODO libr/io/p/io_ewf.c libr/io/p/io_ptrace.c libr/io/p/io_w32dbg.c libr/io/p/w32.mk
+description:
+* Add ewf plugin using the new r_io plugin abi
+* Fix io ptrace |pid and fix w32dbg for new r_io
+
+
+changeset:   1181:5f575f58fbcf
+user:        pancake@pairch
+date:        Sat Jan 22 23:52:37 2011 +0100
+files:       config-user.mk.acr libr/Makefile
+description:
+* Use INSTALL_LIB to install libraries
+
+
+changeset:   1180:3fb9e19f8ce2
+user:        pancake@pairch
+date:        Sat Jan 22 00:57:43 2011 +0100
+files:       TODO binr/radare2/radare2.c libr/io/cache.c libr/io/io.c libr/io/p/io_debug.c libr/io/p/io_ptrace.c
+description:
+* Fix r_io_redirect and debugger IO
+  - Get PID from inner struct instead of aliased by fd
+
+
+changeset:   1179:4744bf806659
+user:        pancake<@nopcode.org>
+date:        Fri Jan 21 15:05:55 2011 +0100
+files:       libr/hash/t/hello.c libr/io/t/read4.c libr/parse/p/parse_x86_pseudo.c
+description:
+* Fix some warnings thanks to toys/makewarn :D
+
+
+changeset:   1178:482fe7057ca7
+user:        earada
+date:        Fri Jan 21 10:21:04 2011 +0100
+files:       binr/rafind2/rafind2.c libr/core/visual.c
+description:
+* Fix rafind2 build
+* jk visual commands seeks an opcode size
+
+
+changeset:   1177:da51c2f7b927
+user:        pancake@pairch
+date:        Fri Jan 21 09:17:14 2011 +0100
+files:       binr/radare2/radare2.c doc/osx libr/core/cmd.c libr/debug/p/debug_native.c libr/debug/reg.c libr/include/r_socket.h libr/io/desc.c libr/io/map.c libr/io/p/io_debug.c libr/io/p/io_procpid.c libr/io/p/io_ptrace.c libr/io/p/io_rap.c libr/io/t/cat.c libr/io/t/map.c libr/socket/socket.c
+description:
+* Do not show registers if sync fails
+* More work on the io refactoring
+
+
+changeset:   1176:ad326c8c3a0b
+user:        pancake@pairch
+date:        Fri Jan 21 00:21:32 2011 +0100
+files:       TODO binr/radare2/radare2.c libr/core/cmd.c libr/core/file.c libr/fs/fs.c libr/include/r_io.h libr/io/io.c libr/io/p/io_malloc.c
+description:
+* Much more fixes for the new r_io
+  - r_io_malloc plugin is now working
+  - r_io_size now accepts only one argument
+* Fix nullptr bug in r_fs
+
+
+changeset:   1175:f82d813e499e
+user:        pancake@pairch
+date:        Thu Jan 20 23:28:20 2011 +0100
+files:       binr/radare2/Makefile binr/radare2/radare2.c binr/radiff2/Makefile libr/core/cmd.c libr/core/config.c libr/core/file.c libr/core/io.c libr/include/r_core.h libr/io/io.c
+description:
+* Fix r2 -n, remove r2 -t
+  - Some more fixes related to r_io. still more stuff to do
+
+
+changeset:   1174:b5cc646e2999
+user:        pancake@pair
+date:        Thu Jan 20 22:52:16 2011 +0100
+files:       TODO libr/core/core.c libr/core/file.c libr/core/io.c libr/include/r_core.h libr/include/r_io.h libr/include/r_types.h libr/io/desc.c libr/io/io.c libr/io/p/Makefile libr/io/p/io_gdb.c libr/io/p/io_haret.c libr/io/p/io_mach.c libr/io/p/io_malloc.c libr/io/p/io_rap.c libr/io/p/io_shm.c libr/io/p/mach.mk libr/io/p/malloc.mk libr/io/p/shm.mk libr/io/plugin.c plugins.def.cfg
+description:
+* Huge r_io refactoring
+  - Many things are broken in this commit
+
+
+changeset:   1173:6307d533fe84
+user:        earada
+date:        Wed Jan 19 00:39:28 2011 +0100
+files:       libr/asm/arch/dalvik/opcode.h libr/asm/p/asm_dalvik.c libr/asm/p/dalvik.mk libr/include/r_asm.h plugins.def.cfg
+description:
+* Initial import of Dalvik (Android VM) disassemble plugin
+* Change opcode buffer size to 3218 (need refactor)
+
+
+changeset:   1172:021abb87d03b
+user:        pancake<@nopcode.org>
+date:        Mon Jan 17 15:28:40 2011 +0100
+files:       libr/include/r_io.h libr/io/io.c
+description:
+* Fix for r_io_resize -- needs merge with refactor
+
+
+changeset:   1171:7e2ab4f687e4
+user:        pancake@pairch
+date:        Mon Jan 17 08:35:57 2011 +0100
+files:       libr/fs/Makefile libr/rules.mk
+description:
+* Fix build order for r_fs
+
+
+changeset:   1170:8d449a854326
+user:        pancake@pair
+date:        Fri Jan 14 20:53:36 2011 +0100
+files:       libr/fs/p/Makefile libr/fs/p/fs_ext2.d libr/fs/p/grub/Makefile libr/fs/p/grub/fs/fat.c libr/fs/p/grub/fs/hfsplus.c plugins.def.cfg
+description:
+* Fix libr_fs on OSX, restrict FS plugins to the only ones
+  that compile fine everywhere. Need more work and testing
+
+
+changeset:   1169:a76c96a37f42
+user:        pancake@pairch
+date:        Fri Jan 14 19:38:22 2011 +0100
+files:       libr/fs/p/Makefile libr/fs/p/grub/Makefile libr/fs/p/grub/fs/ext2.c libr/fs/p/grub/fs/fat.c libr/fs/p/grub/fs/fshelp.c libr/fs/p/grub/fs/hfs.c libr/fs/p/grub/fs/ntfs.c libr/fs/p/grub/fs/reiserfs.c libr/fs/p/grub/fs/udf.c libr/fs/p/grub/fs/xfs.c libr/fs/p/grub/include/grub/i18n.h libr/fs/p/grub/kern/device.c libr/fs/p/grub/kern/err.c libr/fs/p/grub/kern/fs.c libr/fs/p/grub/kern/misc.c libr/fs/p/grub/kern/partition.c libr/fs/p/grub/main.c
+description:
+* Transitional commit removing some nested functions and
+  simplifying/cleaningup grub code. Still needs more cleanup for OSX
+
+
+changeset:   1168:1f2211990280
+user:        pancake<@nopcode.org>
+date:        Fri Jan 14 14:41:56 2011 +0100
+files:       libr/core/cmd.c libr/fs/file.c libr/fs/fs.c libr/fs/p/fs_ext2.d libr/fs/p/fs_grub_base.c libr/fs/p/grub/Makefile libr/fs/p/grub/fs/iso9660.c libr/fs/p/grub/grubfs.c libr/fs/p/grub/include/grub/err.h libr/fs/p/grub/include/grub/misc.h libr/fs/p/grub/include/grub/partition.h libr/fs/p/grub/include/grubfs.h libr/fs/p/grub/partmap/acorn.c libr/fs/p/grub/partmap/amiga.c libr/fs/p/grub/partmap/apple.c libr/fs/p/grub/partmap/bsdlabel.c libr/fs/p/grub/partmap/gpt.c libr/fs/p/grub/partmap/msdos.c libr/fs/p/grub/partmap/sun.c libr/fs/p/grub/partmap/sunpc.c libr/include/r_fs.h
+description:
+* Added support for listing MSDOS partitions
+  - Other partition types (leeched from GRUB) will be added soon.
+  - Added 'mp' command to display partitions
+* Clean warns and fix some bugs in the grub code
+
+
+changeset:   1167:d3af62163cc4
+user:        pancake@pairch
+date:        Fri Jan 14 09:45:33 2011 +0100
+files:       libr/fs/p/Makefile libr/fs/p/cpio.mk libr/fs/p/fat.mk libr/fs/p/fs_cpio.c libr/fs/p/fs_ext2.c libr/fs/p/fs_ext2.d libr/fs/p/fs_fat.c libr/fs/p/fs_grub_base.c libr/fs/p/fs_hfs.c libr/fs/p/fs_hfsplus.c libr/fs/p/fs_iso9660.c libr/fs/p/fs_jfs.c libr/fs/p/fs_ntfs.c libr/fs/p/fs_reiserfs.c libr/fs/p/fs_tar.c libr/fs/p/fs_udf.c libr/fs/p/fs_ufs.c libr/fs/p/fs_ufs2.c libr/fs/p/fs_xfs.c libr/fs/p/grub/Makefile libr/fs/p/grub/fs/affs.c libr/fs/p/grub/fs/afs.c libr/fs/p/grub/fs/btrfs.c libr/fs/p/grub/fs/cpio.c libr/fs/p/grub/fs/fat.c libr/fs/p/grub/fs/hfs.c libr/fs/p/grub/fs/hfsplus.c libr/fs/p/grub/fs/iso9660.c libr/fs/p/grub/fs/jfs.c libr/fs/p/grub/fs/minix.c libr/fs/p/grub/fs/nilfs2.c libr/fs/p/grub/fs/ntfs.c libr/fs/p/grub/fs/reiserfs.c libr/fs/p/grub/fs/sfs.c libr/fs/p/grub/fs/udf.c libr/fs/p/grub/fs/ufs.c libr/fs/p/grub/fs/xfs.c libr/fs/p/grub/include/grubfs.h libr/fs/p/hfs.mk libr/fs/p/hfsplus.mk libr/fs/p/iso9660.mk libr/fs/p/jfs.mk libr/fs/p/makeplugin.sh libr/fs/p/ntfs.mk libr/fs/p/reiserfs.mk libr/fs/p/tar.mk libr/fs/p/udf.mk libr/fs/p/ufs.mk libr/fs/p/ufs2.mk libr/fs/p/xfs.mk libr/include/r_fs.h plugins.def.cfg swig/vapi/r_fs.deps swig/vapi/r_fs.vapi
+description:
+* Added r_fs support for the following filesystems:
+  fat, ntfs, cpio, tar, hfs, hfsplus, udf, iso9660,
+  reiserfs, ufs, ufs2, xfs and jfs
+* Added vapi files for r_fs
+
+
+changeset:   1166:77d0570bd8e7
+user:        pancake@pairch
+date:        Fri Jan 14 01:05:23 2011 +0100
+files:       libr/fs/fs.c libr/fs/p/grub/kern/misc.c libr/include/r_fs.h
+description:
+* Rename r_fs_load to r_fs_slurp
+
+
+changeset:   1165:28e204db17ba
+user:        pancake@pairch
+date:        Fri Jan 14 01:02:20 2011 +0100
+files:       binr/radare2/radare2.c libr/Makefile libr/core/cmd.c libr/core/core.c libr/fs/Makefile libr/fs/file.c libr/fs/fs.c libr/fs/p/Makefile libr/fs/p/ext2.mk libr/fs/p/fs_ext2.c libr/fs/p/fs_ext2.d libr/fs/p/grub/Makefile libr/fs/p/grub/grubfs.c libr/fs/p/grub/include/grubfs.h libr/fs/p/grub/kern/misc.c libr/fs/p/grub/main.c libr/fs/test.rsc libr/include/r_fs.h libr/io/io.c
+description:
+* Initial working r_fs API with ext2 fs
+  - Support file reading and directory listing
+* Fix build
+
+
+changeset:   1164:a0ea0c3d7e29
+user:        pancake@pairch
+date:        Wed Jan 12 00:01:06 2011 +0100
+files:       TODO doc/plugins libr/Makefile libr/core/Makefile libr/core/cmd.c libr/core/core.c libr/fs/Makefile libr/fs/file.c libr/fs/fs.c libr/fs/p/Makefile libr/fs/p/ext2.mk libr/fs/p/fs_ext2.c libr/fs/p/fs_ext2.d libr/fs/p/grub/Makefile libr/fs/p/grub/TODO libr/fs/p/grub/fs/.ext2.c.swo libr/fs/p/grub/fs/affs.c libr/fs/p/grub/fs/afs.c libr/fs/p/grub/fs/afs_be.c libr/fs/p/grub/fs/befs.c libr/fs/p/grub/fs/befs_be.c libr/fs/p/grub/fs/btrfs.c libr/fs/p/grub/fs/cpio.c libr/fs/p/grub/fs/ext2.c libr/fs/p/grub/fs/fat.c libr/fs/p/grub/fs/fshelp.c libr/fs/p/grub/fs/hfs.c libr/fs/p/grub/fs/hfsplus.c libr/fs/p/grub/fs/iso9660.c libr/fs/p/grub/fs/jfs.c libr/fs/p/grub/fs/minix.c libr/fs/p/grub/fs/minix2.c libr/fs/p/grub/fs/nilfs2.c libr/fs/p/grub/fs/ntfs.c libr/fs/p/grub/fs/ntfscomp.c libr/fs/p/grub/fs/reiserfs.c libr/fs/p/grub/fs/sfs.c libr/fs/p/grub/fs/tar.c libr/fs/p/grub/fs/udf.c libr/fs/p/grub/fs/ufs.c libr/fs/p/grub/fs/ufs2.c libr/fs/p/grub/fs/xfs.c libr/fs/p/grub/fs/zfs/zfs.c libr/fs/p/grub/fs/zfs/zfs_fletcher.c libr/fs/p/grub/fs/zfs/zfs_lzjb.c libr/fs/p/grub/fs/zfs/zfs_sha256.c libr/fs/p/grub/fs/zfs/zfsinfo.c libr/fs/p/grub/include/config-util.h libr/fs/p/grub/include/config.h libr/fs/p/grub/include/grub/.fs.h.swo libr/fs/p/grub/include/grub/aout.h libr/fs/p/grub/include/grub/bsdlabel.h libr/fs/p/grub/include/grub/bufio.h libr/fs/p/grub/include/grub/charset.h libr/fs/p/grub/include/grub/command.h libr/fs/p/grub/include/grub/cpu/i386 libr/fs/p/grub/include/grub/cpu/time.h libr/fs/p/grub/include/grub/cpu/types.h libr/fs/p/grub/include/grub/cs5536.h libr/fs/p/grub/include/grub/datetime.h libr/fs/p/grub/include/grub/decompressor.h libr/fs/p/grub/include/grub/device.h libr/fs/p/grub/include/grub/disk.h libr/fs/p/grub/include/grub/dl.h libr/fs/p/grub/include/grub/emu/console.h libr/fs/p/grub/include/grub/emu/getroot.h libr/fs/p/grub/include/grub/emu/hostdisk.h libr/fs/p/grub/include/grub/emu/misc.h libr/fs/p/grub/include/grub/env.h libr/fs/p/grub/include/grub/env_private.h libr/fs/p/grub/include/grub/err.h libr/fs/p/grub/include/grub/extcmd.h libr/fs/p/grub/include/grub/file.h libr/fs/p/grub/include/grub/fs.h libr/fs/p/grub/include/grub/fshelp.h libr/fs/p/grub/include/grub/gpt_partition.h libr/fs/p/grub/include/grub/hfs.h libr/fs/p/grub/include/grub/i18n.h libr/fs/p/grub/include/grub/list.h libr/fs/p/grub/include/grub/loader.h libr/fs/p/grub/include/grub/lvm.h libr/fs/p/grub/include/grub/memory.h libr/fs/p/grub/include/grub/menu.h libr/fs/p/grub/include/grub/menu_viewer.h libr/fs/p/grub/include/grub/misc.h libr/fs/p/grub/include/grub/mm.h libr/fs/p/grub/include/grub/mm_private.h libr/fs/p/grub/include/grub/msdos_partition.h libr/fs/p/grub/include/grub/net.h libr/fs/p/grub/include/grub/normal.h libr/fs/p/grub/include/grub/ntfs.h libr/fs/p/grub/include/grub/offsets.h libr/fs/p/grub/include/grub/parser.h libr/fs/p/grub/include/grub/partition.h libr/fs/p/grub/include/grub/parttool.h libr/fs/p/grub/include/grub/pci.h libr/fs/p/grub/include/grub/pciutils.h libr/fs/p/grub/include/grub/raid.h libr/fs/p/grub/include/grub/reader.h libr/fs/p/grub/include/grub/reed_solomon.h libr/fs/p/grub/include/grub/relocator.h libr/fs/p/grub/include/grub/relocator_private.h libr/fs/p/grub/include/grub/search.h libr/fs/p/grub/include/grub/serial.h libr/fs/p/grub/include/grub/setjmp.h libr/fs/p/grub/include/grub/symbol.h libr/fs/p/grub/include/grub/term.h libr/fs/p/grub/include/grub/terminfo.h libr/fs/p/grub/include/grub/test.h libr/fs/p/grub/include/grub/time.h libr/fs/p/grub/include/grub/tparm.h libr/fs/p/grub/include/grub/trig.h libr/fs/p/grub/include/grub/types.h libr/fs/p/grub/include/grub/unicode.h libr/fs/p/grub/include/grub/util/deviceiter.h libr/fs/p/grub/include/grub/util/libnvpair.h libr/fs/p/grub/include/grub/util/libzfs.h libr/fs/p/grub/include/grub/util/lvm.h libr/fs/p/grub/include/grub/util/misc.h libr/fs/p/grub/include/grub/util/ofpath.h libr/fs/p/grub/include/grub/util/raid.h libr/fs/p/grub/include/grub/util/resolve.h libr/fs/p/grub/include/grub/zfs/dmu.h libr/fs/p/grub/include/grub/zfs/dmu_objset.h libr/fs/p/grub/include/grub/zfs/dnode.h libr/fs/p/grub/include/grub/zfs/dsl_dataset.h libr/fs/p/grub/include/grub/zfs/dsl_dir.h libr/fs/p/grub/include/grub/zfs/sa_impl.h libr/fs/p/grub/include/grub/zfs/spa.h libr/fs/p/grub/include/grub/zfs/uberblock_impl.h libr/fs/p/grub/include/grub/zfs/vdev_impl.h libr/fs/p/grub/include/grub/zfs/zap_impl.h libr/fs/p/grub/include/grub/zfs/zap_leaf.h libr/fs/p/grub/include/grub/zfs/zfs.h libr/fs/p/grub/include/grub/zfs/zfs_acl.h libr/fs/p/grub/include/grub/zfs/zfs_znode.h libr/fs/p/grub/include/grub/zfs/zil.h libr/fs/p/grub/include/grub/zfs/zio.h libr/fs/p/grub/include/grub/zfs/zio_checksum.h libr/fs/p/grub/kern/device.c libr/fs/p/grub/kern/disk.c libr/fs/p/grub/kern/dl.c libr/fs/p/grub/kern/env.c libr/fs/p/grub/kern/err.c libr/fs/p/grub/kern/file.c libr/fs/p/grub/kern/fs.c libr/fs/p/grub/kern/list.c libr/fs/p/grub/kern/misc.c libr/fs/p/grub/kern/mm.c libr/fs/p/grub/kern/partition.c libr/fs/p/grub/kern/term.c libr/fs/p/grub/kern/time.c libr/fs/p/grub/main.c libr/include/r_core.h libr/include/r_fs.h plugins.def.cfg
+description:
+* Initial import of the 'r_fs' API
+  - Allows to mount filesystems in virtual IO
+  - Only dummy ext2 plugin ATM
+  - Added 'm' command in r2 to manage mountpoints,
+    list directories and retrieve files
+  - Bonus: hacky version of grub/fs code to use it
+    as a standalone API. Plugins will use it
+  - API is quite simple and limited, read-only access
+
+
+changeset:   1163:a7188990ddd7
+user:        pancake<@nopcode.org>
+date:        Fri Jan 07 18:22:02 2011 +0100
+files:       libr/fs/Makefile libr/fs/fs.c libr/include/r_fs.h
+description:
+* Initial draft of the r_fs api
+
+
+changeset:   1162:e1b0abed6d2f
+user:        pancake@u904
+date:        Fri Jan 07 00:42:27 2011 +0100
+files:       libr/include/r_util.h libr/io/io.c libr/util/file.c
+description:
+* Fix w32 mmap implementation for r_mmap api
+
+
+changeset:   1161:876d0b6851d6
+user:        pancake@pair
+date:        Thu Jan 06 23:20:18 2011 +0100
+files:       libr/include/r_flags.h swig/vapi/r_flags.vapi
+description:
+* Add missing method definitions in r_flags vapi
+
+
+changeset:   1160:a7574243847d
+user:        pancake@pair
+date:        Wed Jan 05 19:31:22 2011 +0100
+files:       doc/iphone
+description:
+* Add symlink notes for libpthread fix on iOS
+
+
+changeset:   1159:90e32a1b6a30
+user:        pancake<@nopcode.org>
+date:        Tue Jan 04 17:30:10 2011 +0100
+files:       libr/debug/p/debug_native.c
+description:
+* Add missing define for osx debugger on arm and powerpc
+
+
+changeset:   1158:cb6c19f83f47
+user:        earada
+date:        Sun Jan 02 14:45:36 2011 +0100
+files:       libr/util/file.c
+description:
+* Oops, type error un r_util
+
+
+changeset:   1157:8a0ebcadccaa
+user:        earada
+date:        Sun Jan 02 14:39:25 2011 +0100
+files:       libr/core/cmd.c libr/util/file.c
+description:
+* Fix function asciiart in r_print_disas
+* Add mmap & mmap_free windows support
+
+
+changeset:   1156:0a41b5ef6af7
+user:        earada
+date:        Sun Dec 26 23:38:53 2010 +0100
+files:       libr/cons/cons.c libr/flags/t/test.c libr/include/r_cons.h
+description:
+* Use r_cons_free to free the cons buffer.
+
+
+changeset:   1155:dd5545bd9e1f
 user:        nibble
-date:        Mon Aug 16 01:14:54 2010 +0200
-files:       binr/rabin2/rabin2.c libr/bin/format/elf/elf.c libr/bin/format/elf/elf.h libr/bin/p/bin_elf.c
+date:        Fri Dec 24 16:58:27 2010 +0100
+files:       libr/core/anal.c libr/core/cmd.c libr/core/gdiff.c
 description:
-* Fill field 'ordinal' in elf symbols
+* More work on gdiff
+  - Follow basic blocks instead of diffing fcn->addr+fcn->size
+    vs fcn2->addr+fcn2->size
+* Remove unused r_core_anal_graph_fcn
+* Fix build
 
 
-changeset:   863:1320828d5377
-user:        pancake
-date:        Sun Aug 15 21:30:59 2010 +0200
-files:       binr/rabin2/rabin2.c binr/rarc2/t/Makefile libr/io/section.c
-description:
-* Display '*' in S= where you are
-* Add note about the bug in io.va/-d/rabin2-r{v}S
-* Fix rarc2/t
-
-
-changeset:   862:af6afd1d2680
+changeset:   1154:20f2d6f780c8
 user:        nibble
-date:        Fri Aug 13 15:58:11 2010 +0200
-files:       libr/bin/format/elf/elf.c
+date:        Fri Dec 24 13:27:20 2010 +0100
+files:       TODO binr/radiff2/radiff2.c libr/anal/fcn.c libr/core/anal.c libr/core/cmd.c libr/include/r_anal.h libr/include/r_core.h
 description:
-* fix get_main for x86 elf64
-
-
-changeset:   861:3f6ac14dd36e
-user:        nibble
-date:        Fri Aug 13 08:38:00 2010 +0200
-files:       libr/util/str.c
-description:
-* Refactoring of r_str_ansi_filter()
-
-
-changeset:   860:049ec5322ea8
-user:        nibble
-date:        Fri Aug 13 01:18:06 2010 +0200
-files:       libr/cons/grep.c libr/core/cmd.c libr/include/r_util.h libr/util/str.c
-description:
-* r_util
-  - Add r_str_ansi_filter() for removing ansi codes
-    in a given string
-* r_cons
-  - Remove ansi codes before doing grep, avoid problems
-    with colors
-
-
-changeset:   859:f16e1fb63f5d
-user:        nibble
-date:        Thu Aug 12 17:32:23 2010 +0200
-files:       libr/bin/format/elf/elf.c
-description:
-* r_bin_elf
-  - Fix resolution of imports in bins without section ".got"
-
-
-changeset:   858:954866d4f0e9
-user:        pancake<nopcode.org>
-date:        Thu Aug 12 15:52:07 2010 +0200
-files:       libr/core/visual.c
-description:
-* Apply edu's patch implementing V[yY] and +- for blocks using woa/wos
-
-
-changeset:   857:8ef65b77cf78
-user:        nibble
-date:        Thu Aug 12 14:54:24 2010 +0200
-files:       libr/core/Makefile libr/core/anal.c libr/core/asm.c libr/core/cmd.c libr/include/r_core.h
-description:
-* r_core
-  - Add support to '/c' for "multiple instructions" search
-    with search.asmstr=1
-  - Move r_core_asm_search functions to core/asm.c
-  - Fix typo in r_core_anal_search()
-
-
-changeset:   856:7480927ffbef
-user:        pancake<nopcode.org>
-date:        Thu Aug 12 12:48:15 2010 +0200
-files:       swig/Makefile
-description:
-* Some workarounds in radare2-swig/perl for slpm
-
-
-changeset:   855:a91fc868d439
-user:        pancake
-date:        Thu Aug 12 12:19:25 2010 +0200
-files:       libr/anal/fcn.c libr/anal/var.c libr/core/cmd.c libr/include/r_anal.h libr/util/str.c
-description:
-* Initial work on function_from_string parser for r_anal
-  - CF? for testing
-
-
-changeset:   854:756e2f7d0250
-user:        nibble
-date:        Wed Aug 11 19:10:47 2010 +0200
-files:       libr/core/cmd.c
-description:
-* Implement '/c' for 'search.asmstr=1'
-
-
-changeset:   853:8fbef8f62dff
-user:        nibble
-date:        Wed Aug 11 18:29:15 2010 +0200
-files:       libr/asm/p/asm_x86_nasm.c libr/core/cmd.c
-description:
-* r_asm
-  - Handle errors in x86_nasm plugin
-* r_core
-  - Minor fixup in debug message in '/c'
-
-
-changeset:   852:e72d896fb19f
-user:        nibble
-date:        Wed Aug 11 17:48:02 2010 +0200
-files:       libr/anal/t/Makefile libr/core/cmd.c libr/core/config.c libr/search/t/Makefile
-description:
-* r_core
-  - Add cmd '/c' for searching asm code
-  - Add config var search.asmstr
-* build
-  - Minor fixups in "make mrproper"
-
-
-changeset:   851:65994072a847
-user:        pancake
-date:        Tue Aug 10 12:34:10 2010 +0200
-files:       TODO libr/TODO libr/anal/README libr/anal/fcn.c libr/core/cmd.c
-description:
-* Implement @:blocksize syntax for commands
-* Some reordering of the TODO
-
-
-changeset:   850:07c74d54d8ea
-user:        pancake
-date:        Mon Aug 09 23:38:32 2010 +0200
-files:       TODO libr/anal/p/anal_arm.c libr/anal/p/anal_x86.c libr/bin/bin.c libr/syscall/darwin.c libr/syscall/syscall.c
-description:
-* Analyze 'svc' opcode in ARM as software interrupt
-  - Interrupt number is stored in aop->value
-  - Add dummy syscall table for osx/arm
-  - Fix identification of syscall table on iOS bins
-* Fix rabin2 -z on MACH0 binaries
-
-
-changeset:   849:4152a767660a
-user:        pancake
-date:        Sun Aug 08 19:03:51 2010 +0200
-files:       doc/windows libr/core/cmd.c libr/debug/p/gdb.mk libr/include/r_search.h libr/io/Makefile libr/io/p/gdb.mk libr/search/regexp.c libr/search/search.c libr/socket/proc.c libr/socket/socket.c swig/vapi/r_search.vapi
-description:
-* Merge old w32 build fix
-* Add 'c' in '?' help message
-* Import edu's RList-ification of RSearch patch
-* Deprecate r_search_kw_list() method
-* Fix build of r_socket_to_string() method on w32
-
-
-changeset:   848:74046afc2809
-user:        nibble
-date:        Fri Aug 06 17:19:09 2010 +0200
-files:       libr/core/anal.c libr/core/cmd.c libr/core/visual.c
-description:
-* visual mode
-  - Fix flickering while keeping pressed s or S (step, step over)
-  - Prompt "Press any key" after using ':'
-* r_core
-  - Group refs under CODE & DATA in afl output
-  - Remove command CF (use af+ instead)
-
-
-changeset:   847:5c2fb2b7b8aa
-user:        nibble
-date:        Tue Aug 03 13:30:58 2010 +0200
-files:       libr/cons/grep.c
-description:
-* Minor fixups in grep-cut
-
-
-changeset:   846:972ac0d73d9d
-user:        nibble
-date:        Tue Aug 03 11:36:41 2010 +0200
-files:       libr/cons/cons.c libr/cons/grep.c libr/include/r_cons.h
-description:
-* Add cut-like syntax to the built-in grep
-  - f~str[1]    prints the column 1
-  - f~str[-2]   prints the columns from the first one to column 2
-  - f~str[1-]   prints columns from column 1 to the last one
-  - It can be used with ':', so
-    f~str:2[1]  prints the column 1 of the line 2
-
-
-changeset:   845:ea175e867912
-user:        nibble
-date:        Mon Aug 02 19:34:23 2010 +0200
-files:       libr/core/cmd.c libr/include/r_parse.h libr/parse/p/parse_x86_pseudo.c libr/parse/parse.c
-description:
-* Fix bug in r_parse_filter (thx edu!)
-
-
-changeset:   844:71615371a1d8
-user:        nibble
-date:        Mon Aug 02 12:42:59 2010 +0200
-files:       binr/radiff2/radiff2.c libr/anal/fcn.c libr/anal/ref.c libr/core/anal.c libr/core/cmd.c libr/include/r_anal.h libr/include/r_core.h
-description:
-* r_anal
-  - Add field at to RAnalRef
-  - Set ref->at to the addrees of the opcode which does the
-    jump/call
-  - Set correctly the xrefs "from" address
-* r_core
-  - Modify afl to accept an optional argument [fcn name] to
-    filter output by function
-  - Change afl output to group xrefs by type (code and data)
-
-
-changeset:   843:aa3ac9d170a0
-user:        nibble
-date:        Mon Aug 02 09:54:50 2010 +0200
-files:       libr/anal/bb.c libr/bin/t/Makefile
-description:
-* r_anal
-  - Fix bb split algoritm
-* build
-  - Fix "make clean" in bin/t
-
-
-changeset:   842:c8f2781fe735
-user:        nibble
-date:        Sun Aug 01 11:02:55 2010 +0200
-files:       TODO binr/rabin2/rabin2.c libr/bin/format/elf/elf.c libr/bin/p/bin_elf.c libr/bin/p/bin_mach0.c libr/bin/p/bin_pe.c libr/core/cmd.c libr/include/r_bin.h
-description:
-* r_bin
-  - Fill RBinImport->size within bin plugins
-  - Add field size to RBinImport
-* r_bin_elf
-  - Correct value of r_bin_elf_symbol_t->size for imports
-* rabin2
-  - Output af+ command in radare mode
+* Add bb list into RAnalFcn structure
+* Analyze bbs per function
+* Remove gdiff from radiff2 temporary (deprecate?)
+  - Meanwhile ragdiff2 should be used
 * Update TODO
 
 
-changeset:   841:2b182fbf3ea2
-user:        nibble
-date:        Sat Jul 31 20:00:54 2010 +0200
-files:       TODO libr/core/anal.c
+changeset:   1153:1e1ac16ceffe
+user:        earada
+date:        Fri Dec 24 01:52:51 2010 +0100
+files:       swig/vapi/r_util.vapi
 description:
-* Fix bug analyzing fcns
-* Update TODO
-  - stackptr is correctly handled in 'ret n' instructions
+* Fix r_util.vapi, use null as default value.
 
 
-changeset:   840:847967fa1eae
-user:        nibble
-date:        Thu Jul 29 19:56:07 2010 +0200
-files:       libr/bin/p/bin_fatmach0.c libr/bin/p/bin_java.c
+changeset:   1152:5761a6a06288
+user:        pancake@pair
+date:        Fri Dec 24 01:43:34 2010 +0100
+files:       TODO libr/asm/arch/x86/udis86/itab.c swig/vapi/r_flags.vapi swig/vapi/r_util.vapi
 description:
-* Fix class & fat mach-o detection in big endian machines
+* Sync r_flag vapi
+* Fix r_util vapi for latest vala
+  (no default values for out parameters)
 
 
-changeset:   839:3d101cc5d4af
-user:        nibble
-date:        Thu Jul 29 19:52:13 2010 +0200
-files:       libr/bin/p/bin_fatmach0.c libr/bin/p/bin_java.c
+changeset:   1151:6b1d59d001eb
+user:        earada
+date:        Fri Dec 24 00:51:01 2010 +0100
+files:       libr/core/cmd.c libr/core/core.c libr/core/visual.c libr/flags/flags.c libr/flags/t/test.c libr/include/r_flags.h libr/parse/p/parse_x86_pseudo.c
 description:
-* r_bin
-  - Fix bug in autodetection with class and fat mach-o files
+* Use RList in RFLags
 
 
-changeset:   838:055de8a175d9
+changeset:   1150:82d6181565ba
 user:        nibble
-date:        Thu Jul 29 18:15:02 2010 +0200
-files:       binr/rabin2/rabin2.c libr/bin/format/mach0/fatmach0.c libr/bin/format/mach0/fatmach0.h libr/bin/p/bin_fatmach0.c
+date:        Thu Dec 23 02:11:28 2010 +0100
+files:       libr/asm/arch/x86/udis86/syn-att.c libr/asm/arch/x86/udis86/syn-intel.c
 description:
-* r_bin_fatmach0
-  - Huge refactoring of r_bin_fatmach0
-* rabin2
-  - Don't print msg "n bins extracted" in radare mode
+* Fix bug in udis86 with calls in 64bits (need more testing)
+  - 32bits operator + 64bits pc = 64bits address
 
 
-changeset:   837:675cc49a4c84
+changeset:   1149:11f591cd7b71
+user:        pancake@pair
+date:        Wed Dec 22 03:05:14 2010 +0100
+files:       swig/vapi/r_search.vapi
+description:
+* Fix signatures for update().. this needs some rethinking
+
+
+changeset:   1148:079e91d1ec27
+user:        pancake@pair
+date:        Wed Dec 22 01:23:35 2010 +0100
+files:       TODO libr/core/core.c libr/debug/pid.c libr/debug/plugin.c libr/flags/spaces.c swig/vapi/r_core.vapi swig/vapi/r_debug.vapi swig/vapi/r_flags.vapi
+description:
+* Use 'native' debugger backend by default
+  - Fixes 'dp*' when not running as debugger mode
+  - Added r_debug_pids () (sync vapi)
+  - Fix possible segfault if no anal given to dbg
+* Some cosmetic fixups
+
+
+changeset:   1147:c0e870d81857
+user:        pancake@pair
+date:        Fri Dec 17 10:58:38 2010 +0100
+files:       libr/include/r_list.h libr/lang/p/python.c
+description:
+* Fix segfault in r_list for null pointers
+
+
+changeset:   1146:7ef27f892fa7
+user:        pancake@u904
+date:        Thu Dec 16 13:55:20 2010 +0100
+files:       libr/debug/p/libgdbwrap/gdbwrapper.c libr/io/p/io_debug.c libr/util/file.c
+description:
+* Fix build for w32
+
+
+changeset:   1145:db23ce7e48f3
+user:        pancake@pair
+date:        Wed Dec 15 11:32:39 2010 +0100
+files:       libr/core/cmd.c swig/vapi/r_io.vapi
+description:
+* Minor cosmetic sugar fixes in CODE XREFs
+* Some more fields into r_io vapi
+
+
+changeset:   1144:a00ae5679b5c
+user:        pancake@pair
+date:        Mon Dec 13 10:41:28 2010 +0100
+files:       libr/include/r_io.h libr/io/io.c libr/io/p/haret.mk libr/io/p/io_haret.c libr/util/hex.c plugins.def.cfg
+description:
+* Apply @earada patch
+  - Fixed redundant check in r_hex_str2bin
+  - Initialize fd in r_io_new
+  - Added Haret IO (WinCE app) plugin
+
+
+changeset:   1143:56faae8cfa7f
+user:        pancake@pair
+date:        Mon Dec 13 00:49:33 2010 +0100
+files:       libr/core/cmd.c libr/th/task.c
+description:
+* Some cosmetic fixes in 'pd'
+
+
+changeset:   1142:ba42b0cf63c6
 user:        nibble
-date:        Thu Jul 29 16:04:18 2010 +0200
-files:       binr/rabin2/rabin2.c libr/Makefile libr/bin/bin.c libr/bin/format/mach0/fatmach0.c libr/bin/format/mach0/fatmach0.h libr/bin/format/mach0/mach0_specs.h libr/bin/p/Makefile libr/bin/p/bin_dummy.c libr/bin/p/bin_elf.c libr/bin/p/bin_elf64.c libr/bin/p/bin_fatmach0.c libr/bin/p/bin_java.c libr/bin/p/bin_mach0.c libr/bin/p/bin_mach064.c libr/bin/p/bin_pe.c libr/bin/p/bin_pe64.c libr/bin/p/fatmach0.mk libr/bin/t/Makefile libr/bin/t/mach-ex.c libr/include/r_bin.h plugins.def.cfg
+date:        Thu Dec 09 16:04:55 2010 +0100
+files:       libr/core/gdiff.c
 description:
-* r_bin
-  - Add function r_bin_extract()
-  - Add lib r_bin_fatmach0 into format/mach0/
-  - Complete mach0_specs with fat mach-o stuff
-  - Add plugin bin_fatmach0
-  - Initial import of mach-ex into r_bin
-  - Remove mach-ex
-* rabin2
-  - Add flag -x for extracting bins from file
-* Build
-  - Update plugins.def.cfg
-  - Remove mach-ex stuff from libr/Makefile
+* Only compare fcns by name if it begins with "imp.", "sym.", "fcn.imp." or "fcn.sym."
+  - Avoid problems with functions named fcn_offset
 
 
-changeset:   836:028d25142e2c
+changeset:   1141:06559b8420ac
 user:        nibble
-date:        Sun Jul 25 13:29:16 2010 +0200
-files:       libr/Makefile
+date:        Tue Dec 07 16:52:33 2010 +0100
+files:       libr/core/gdiff.c
 description:
-* Fix bug installing mach-ex
+* Compare fcns with the same name first in gdiff
 
 
-changeset:   835:62a6213a5ff1
+changeset:   1140:c47a4ff40b7c
 user:        nibble
-date:        Sat Jul 24 12:44:19 2010 +0200
-files:       doc/windows libr/anal/arch/x86/x86im/x86im.h libr/anal/p/Makefile libr/anal/t/Makefile libr/asm/arch/psosvm/vmas/vmas.c libr/asm/p/Makefile libr/bin/format/mach0/mach0_specs.h libr/bin/t/Makefile libr/cmd/p/Makefile libr/core/visual.c libr/crypto/p/Makefile libr/debug/p/libgdbwrap/include/gdbwrapper.h libr/io/Makefile libr/io/p/Makefile libr/io/p/gdb.mk libr/th/t/Makefile libr/th/t/test.c swig/configure swig/configure.acr
+date:        Mon Dec 06 16:26:21 2010 +0100
+files:       libr/anal/anal.c libr/core/gdiff.c libr/include/r_anal.h swig/Makefile swig/vapi/r_anal.vapi swig/vapi/r_bin.vapi swig/vapi/r_core.vapi swig/vapi/r_reg.deps swig/vapi/r_reg.vapi
 description:
-* More fixes on mingw32 build
-* Update VERSION in swig configure script
-* Update doc/windows
+* Add getter r_anal_get_fcns()
+* Install python bindings also in dist-packages
+* Update and fix some vapis
 
 
-changeset:   834:e49e1885e5cf
-user:        pancake<nopcode.org>
-date:        Fri Jul 23 15:44:40 2010 +0200
+changeset:   1139:7154ea1042c3
+user:        nibble
+date:        Mon Dec 06 03:34:44 2010 +0100
+files:       binr/radiff2/radiff2.c libr/core/anal.c libr/core/cmd.c libr/core/gdiff.c libr/include/r_core.h
+description:
+* Change gdiff API so it takes 2 core's as args
+* Don't output diff info and vars in 'afl' for loc's
+* More refactoring of gdiff
+
+
+changeset:   1138:3b8afc14a1b7
+user:        nibble
+date:        Sun Dec 05 19:43:12 2010 +0100
+files:       libr/core/gdiff.c
+description:
+* Add optimization in gdiff based on function size boundaries
+  - Makes bin diffing 5 times faster
+
+
+changeset:   1137:1ac46de29614
+user:        nibble
+date:        Sun Dec 05 10:44:27 2010 +0100
+files:       libr/core/anal.c libr/core/gdiff.c
+description:
+* More optimizations in gdiff
+* Fix af* output
+
+
+changeset:   1136:bd12c01dbe12
+user:        nibble
+date:        Sun Dec 05 08:46:56 2010 +0100
+files:       libr/anal/Makefile libr/anal/bb.c libr/anal/diff.c libr/anal/fcn.c libr/core/anal.c libr/core/cmd.c libr/core/file.c libr/core/gdiff.c libr/include/r_anal.h
+description:
+* Show detailed info for diffing in afl output
+* Create struct RAnalDiff and move diff related fields inside
+* Move {RAnalFcn, RAnalBlock}.diff from int to RAnalDiff*
+* Add r_anal_diff API
+
+
+changeset:   1135:0932355a5cef
+user:        nibble
+date:        Sat Dec 04 19:49:13 2010 +0100
+files:       libr/core/gdiff.c
+description:
+* Free fingerprints in gdiff when they have been used
+
+
+changeset:   1134:88361461ac59
+user:        nibble
+date:        Sat Dec 04 15:25:45 2010 +0100
+files:       libr/core/gdiff.c
+description:
+* Remove DEBUG messages from gdiff
+
+
+changeset:   1133:085d1139f26e
+user:        nibble
+date:        Sat Dec 04 15:24:39 2010 +0100
+files:       binr/radiff2/radiff2.c libr/anal/bb.c libr/anal/fcn.c libr/core/gdiff.c
+description:
+* More optimizations in gdiff
+* Fix the usage message of radiff2
+
+
+changeset:   1132:58bd4a38077d
+user:        nibble
+date:        Sat Dec 04 15:14:53 2010 +0100
+files:       libr/anal/bb.c libr/anal/fcn.c libr/core/gdiff.c libr/core/gdiff.h libr/diff/diff.c libr/include/r_anal.h
+description:
+* Huge refactoring of gdiff using Levenshtein distance and binmasks
+
+
+changeset:   1131:6b30421fe316
+user:        pancake<@nopcode.org>
+date:        Fri Dec 03 14:53:06 2010 +0100
+files:       libr/bin/bin.c libr/bin/p/bin_java.c libr/include/r_bin.h
+description:
+* Added dummy r_bin_demangle
+
+
+changeset:   1130:d9cdab717d60
+user:        nibble
+date:        Fri Dec 03 13:52:11 2010 +0100
+files:       libr/anal/fcn.c libr/anal/var.c libr/core/cmd.c libr/include/r_anal.h
+description:
+* More work in var analysis
+* Put RAnalVar->type and RAnalVar->dir together
+
+
+changeset:   1129:a6908244be2a
+user:        pancake@pair
+date:        Thu Dec 02 22:32:49 2010 +0100
+files:       TODO libr/hash/md5.h libr/hash/state.c libr/include/r_hash.h
+description:
+* Apply patch from @earada
+  - Fixes sha1 and md5 issues on 64bit
+
+
+changeset:   1128:3bf9ab7fee11
+user:        pancake@pair
+date:        Wed Dec 01 23:30:00 2010 +0100
+files:       libr/core/anal.c libr/core/cmd.c
+description:
+* Fix XREFs and xdot graph output
+
+
+changeset:   1127:3232f0b634ad
+user:        pancake<@nopcode.org>
+date:        Tue Nov 30 13:54:07 2010 +0100
 files:       libr/socket/socket.c
 description:
-* Fix build of r_socket on mingw32
+* Fix some fd leaks in r_socket library
+
+
+changeset:   1126:97c837108f31
+user:        nibble
+date:        Mon Nov 29 20:11:49 2010 +0100
+files:       libr/core/cmd.c
+description:
+* Fix r_anal_var_add() call in cmd.c
+
+
+changeset:   1125:7a9cb56744cb
+user:        nibble
+date:        Mon Nov 29 20:06:11 2010 +0100
+files:       binr/ranal2/ranal2.c libr/anal/fcn.c libr/anal/p/anal_x86.c libr/anal/var.c libr/include/r_anal.h
+description:
+* Set variable direction during function analysis
+* Add argument "dir" to r_anal_var_add()
+* Fix reg handling in x86im plugin
+* Fix variable analysis in r_anal
+* Use plugin "x86" in ranal2 by default
+
+
+changeset:   1124:a4f65eeb09fc
+user:        nibble
+date:        Mon Nov 29 13:20:44 2010 +0100
+files:       binr/rax2/rax2.c
+description:
+* Little refactoring of rax2
+
+
+changeset:   1123:0eba69739dd9
+user:        pancake@pair
+date:        Mon Nov 29 10:27:11 2010 +0100
+files:       TODO binr/radare2/Makefile libr/pkgconfig/libr.pc.acr
+description:
+* Remove unused libr.pc.acr
+* Set procmod group in osx make target of r2 bin
+
+
+changeset:   1122:c7a2fd595fde
+user:        pancake@pair
+date:        Mon Nov 29 10:22:38 2010 +0100
+files:       libr/core/cmd.c libr/util/str.c swig/vapi/t/Makefile swig/vapi/t/plugin.vala swig/vapi/t/pluginwrap.c
+description:
+* Added C stub for plugin.vala
+  - Major cleanup in vapi/t Makefile
+* Fix a format string bug in flags
+
+
+changeset:   1121:0a9430c49178
+user:        pancake@pair
+date:        Mon Nov 29 01:29:21 2010 +0100
+files:       binr/rax2/rax2.c
+description:
+* Fix overflow (Thanks Adriana for the patch!)
+
+
+changeset:   1120:d1118132ad46
+user:        pancake@pair
+date:        Mon Nov 29 01:28:17 2010 +0100
+files:       binr/rasc2/shellcodes.c
+description:
+* Apply Adriana patch with some new shellcodes for rasc2
+
+
+changeset:   1119:787be00752d1
+user:        nibble
+date:        Sat Nov 27 15:03:00 2010 +0100
+files:       libr/core/cmd.c
+description:
+* Rename cmd 'a' to 'aa' (analyze all)
+
+
+changeset:   1118:88dd8c06eca4
+user:        nibble
+date:        Sat Nov 27 04:20:19 2010 +0100
+files:       libr/core/anal.c libr/core/cmd.c libr/include/r_core.h
+description:
+* Modify cmd 'a' to analyze all the fcn's and bb's of the bin
+
+
+changeset:   1117:77e15dc3a924
+user:        pancake@pair
+date:        Fri Nov 26 17:16:06 2010 +0100
+files:       libr/debug/p/debug_native.c
+description:
+* Add initial support for OSX on 64bits
+
+
+changeset:   1116:879054e1e551
+parent:      1113:133a1d24a840
+parent:      1115:a253992c168f
+user:        pancake<@nopcode.org>
+date:        Fri Nov 26 14:49:32 2010 +0100
+description:
+* merge
+
+
+changeset:   1115:a253992c168f
+user:        pancake@pair
+date:        Fri Nov 26 14:41:47 2010 +0100
+files:       libr/debug/p/debug_native.c
+description:
+* merge
+
+
+changeset:   1114:e2342d3a0d39
+parent:      1112:09c2012aa25b
+user:        pancake@pair
+date:        Fri Nov 26 13:11:11 2010 +0100
+files:       binr/radare2/Info.plist binr/radare2/Makefile
+description:
+* Add codesign makefile target for OSX 10.6
+
+
+changeset:   1113:133a1d24a840
+user:        nibble
+date:        Fri Nov 26 13:13:45 2010 +0100
+files:       libr/core/cmd.c
+description:
+* Add cmd 'a [@ addr]'
+  - Helper for af+ab (analyze functions and basic blocks)
+* 'a?' shows analysis help
+
+
+changeset:   1112:09c2012aa25b
+user:        nibble
+date:        Fri Nov 26 00:44:47 2010 +0100
+files:       configure libr/anal/bb.c libr/anal/fcn.c
+description:
+* return r_anal_ret_end in fcn and bb analysis if an unknown opcode is found
+* re-autogen using acr 0.8.4
+
+
+changeset:   1111:06e866898058
+user:        pancake@pair
+date:        Thu Nov 25 14:48:07 2010 +0100
+files:       swig/config.mk.acr
+description:
+* Fix config.mk syntax
+
+
+changeset:   1110:a3863e39b187
+user:        pancake@pair
+date:        Thu Nov 25 01:27:27 2010 +0100
+files:       binr/rax2/rax2.c
+description:
+* Apply patch from @astralia
+  - Adds -S and -s flags to rax2
+
+
+changeset:   1109:f2415d21beb3
+user:        pancake@pair
+date:        Wed Nov 24 23:55:38 2010 +0100
+files:       swig/config.mk.acr swig/configure
+description:
+* Added USEROSTYPE in configure, like in parent .acr
+  - Use acr 0.8.4
+  - Bump revision to 0.6.1
+
+
+changeset:   1108:fef12f32da9a
+user:        pancake@pair
+date:        Wed Nov 24 23:19:17 2010 +0100
+files:       TODO libr/debug/debug.c libr/debug/trace.c libr/include/r_debug.h libr/include/r_print.h pkgcfg/r_anal.pc.acr pkgcfg/r_debug.pc.acr swig/configure.acr swig/rules.mk swig/vapi/r_core.vapi swig/vapi/r_debug.deps swig/vapi/r_debug.vapi swig/vapi/r_diff.vapi swig/vapi/r_print.vapi swig/vapi/t/core.vala
+description:
+* Fix all vapi files fixing valaswig bindings
+  - Implement missing methods
+
+
+changeset:   1107:e64ca55d45a5
+user:        pancake@pair
+date:        Wed Nov 24 13:41:58 2010 +0100
+files:       TODO swig/vapi/t/Makefile swig/vapi/t/bin.vala swig/vapi/t/plugin.vala swig/vapi/t/regs.vala swig/vapi/t/rgot.vala swig/vapi/t/search.gs swig/vapi/t/search.vala swig/vapi/t/socket.vala
+description:
+Fix all vala test programs
+
+
+changeset:   1106:3ab8f949981a
+user:        nibble
+date:        Tue Nov 23 20:16:43 2010 +0100
+files:       libr/core/file.c libr/core/gdiff.c
+description:
+* Fix bug calling r_anal_fcn_add()
+
+
+changeset:   1105:09e999acf669
+user:        nibble
+date:        Tue Nov 23 19:55:31 2010 +0100
+files:       libr/anal/fcn.c libr/core/cmd.c libr/core/visual.c libr/include/r_anal.h
+description:
+* Show /* func: */ or /* loc: */ in disassemble
+* Filter fcn searchs by type (reduce pd time)
+* Add arg 'type' to r_anal_fcn_find()
+
+
+changeset:   1104:d3997934bb7d
+user:        nibble
+date:        Tue Nov 23 17:15:33 2010 +0100
+files:       libr/anal/fcn.c libr/core/anal.c libr/core/cmd.c libr/core/file.c libr/core/gdiff.c libr/include/r_anal.h
+description:
+* Distinguish betwen fcn's (call refs) and loc's (jmp refs)
+* Show fcn type and code xref type in 'afl' output
+  - C for calls, J for jmps
+* Add optional argument 'type' to command 'af+'
+  - l for loc's, f for fcn's (default)
+* Add argument 'type' to r_anal_fcn_add()
+* Add field type to RAnalFcn and enum RAnalFcnType
+
+
+changeset:   1103:f0f56ede41ad
+user:        nibble
+date:        Tue Nov 23 14:05:23 2010 +0100
+files:       libr/anal/fcn.c libr/core/anal.c libr/core/cmd.c libr/include/r_anal.h libr/include/r_core.h
+description:
+* Add arg reftype to r_core_anal_fcn()
+* Add R_ANAL_REF_TYPE_CALL and R_ANAL_REF_TYPE_NULL to RAnalRefType enum
+* Set type R_ANAL_REF_TYPE_CALL to call refs during opcode analysis
+* Fix bug in r_core_anal_fcn() increasing performance
+
+
+changeset:   1102:0933e8b9f0d4
+user:        pancake@pair
+date:        Mon Nov 22 18:40:54 2010 +0100
+files:       libr/debug/p/debug_native.c
+description:
+* Fix build on OSX-32/64
+
+
+changeset:   1101:960a2339639e
+user:        nibble
+date:        Mon Nov 22 15:14:54 2010 +0100
+files:       libr/anal/bb.c libr/core/anal.c libr/core/cmd.c libr/core/config.c libr/include/r_anal.h libr/include/r_core.h
+description:
+* Add r_core_anal_fcn_cc() in r_core for Cyclomatic Complexity calc
+* Add command 'afc'
+* Add fields 'ncalls' (number of calls) and 'conditinal' to RAnalBlock
+* Set anal.split=true by default
+
+
+changeset:   1100:b61c9e458049
+user:        pancake
+date:        Mon Nov 22 01:27:20 2010 +0100
+files:       libr/core/io.c
+description:
+* Fix segfault in r_core_read_at
+
+
+changeset:   1099:401199bdceb4
+user:        pancake
+date:        Mon Nov 22 01:22:27 2010 +0100
+files:       TODO libr/include/r_bin.h swig/vapi/r_core.vapi
+description:
+* Fix signature of RCore.read_at in r_core.vapi
+
+
+changeset:   1098:66b544998926
+user:        nibble
+date:        Sun Nov 21 19:01:41 2010 +0100
+files:       libr/anal/anal.c libr/core/cmd.c libr/core/file.c
+description:
+* Zero out UCALL and UJMP opcodes in r_anal_strmask()
+* Add imports to functions with name fcn.imp.* in r_core_bin_load()
+* Fix bug in cmd 'zg', truncate ouput file
+
+
+changeset:   1097:7a4eaa535c7e
+user:        nibble
+date:        Sat Nov 20 18:35:40 2010 +0100
+files:       libr/flags/flags.c libr/lib/lib.c
+description:
+* Fix some overlapping strcpy's (thx @earada!)
+
+
+changeset:   1096:7a02e5404635
+user:        nibble
+date:        Sat Nov 20 16:47:15 2010 +0100
+files:       libr/anal/p/Makefile libr/anal/p/anal_x86.c libr/anal/p/anal_x86_simple.c libr/anal/p/anal_x86_x86im.c libr/anal/p/x86.mk libr/anal/p/x86_simple.mk libr/anal/p/x86_x86im.mk libr/core/anal.c libr/core/config.c libr/include/r_anal.h plugins.def.cfg
+description:
+* More optimization on the analysis loop
+* Add config_analsplit_callback() in anal/config.c to set RAnal->split
+* Add field split to RAnal struct
+  - Avoid unnecessary call during BB analysis
+* Set the default anal depth to 100
+* Take into account internal calls in xref analysis
+* Rename anal_x86_x86im to anal_x86 and make it the default anal plugin
+* Rename anal_x86 to anal_x86_simple (x86.simple)
+
+
+changeset:   1095:0fabe2699972
+user:        nibble
+date:        Fri Nov 19 11:09:49 2010 +0100
+files:       libr/io/p/io_ptrace.c
+description:
+* Fix io_ptrace read in 64bits
+
+
+changeset:   1094:299ad8e9fc14
+user:        pancake
+date:        Fri Nov 19 00:49:05 2010 +0100
+files:       libr/core/anal.c libr/core/cmd.c libr/core/io.c libr/include/r_core.h libr/io/p/io_ptrace.c
+description:
+* Fix io_ptrace_read when memory error occurs
+  - Fixes graphs in debugger mode
+
+
+changeset:   1093:1714fbe10b43
+user:        pancake
+date:        Thu Nov 18 22:57:28 2010 +0100
+files:       TODO binr/radare2/radare2.c swig/vapi/r_bin.vapi
+description:
+* Implement dbg.bep in r2
+* Sync r_bin vapi with changes in r_bin.h
+
+
+changeset:   1092:8b3641d1dba0
+user:        pancake<@nopcode.org>
+date:        Thu Nov 18 12:17:55 2010 +0100
+files:       libr/bin/p/bin_java.c libr/line/dietline.c
+description:
+* Use memmove where needed (thanks @earada for the patch)
+  - Fixes probably segfaults in latest GLIBC
+
+
+changeset:   1091:8dfd2d7b324e
+user:        pancake
+date:        Thu Nov 18 11:41:17 2010 +0100
+files:       TODO binr/rabin2/rabin2.c libr/bin/bin.c libr/bin/format/elf/elf.c libr/bin/p/bin_dummy.c libr/bin/p/bin_elf.c libr/bin/p/bin_elf64.c libr/bin/p/bin_java.c libr/bin/p/bin_mach0.c libr/bin/p/bin_mach064.c libr/bin/p/bin_pe.c libr/bin/p/bin_pe64.c libr/bin/p/bin_xtr_dyldcache.c libr/core/cmd.c libr/core/file.c libr/debug/debug.c libr/include/r_bin.h libr/include/r_debug.h
+description:
+* Replace main for binsym in r_bin
+* Added dummy commands for r_debug_fork/clone
+
+
+changeset:   1090:4a075e732d32
+user:        pancake
+date:        Wed Nov 17 21:40:55 2010 +0100
+files:       libr/core/config.c
+description:
+* Fix build (thanks @earada)
+
+
+changeset:   1089:fde1b0c08778
+user:        pancake
+date:        Wed Nov 17 21:15:34 2010 +0100
+files:       TODO binr/radare2/radare2.c binr/rahash2/rahash2.c libr/core/config.c libr/include/r_bin.h libr/include/r_util.h libr/util/file.c
+description:
+* Update and reorder TODO tasks
+* Added r_file_mmap() functions in r_util
+* Do not hash files bigger than 10MB
+* Fix abspath() return value and signature
+
+
+changeset:   1088:8e09c3e91a10
+user:        pancake
+date:        Wed Nov 17 02:47:19 2010 +0100
+files:       TODO
+description:
+* Update todo
+
+
+changeset:   1087:7329e5c4ff54
+user:        pancake
+date:        Wed Nov 17 02:31:56 2010 +0100
+files:       binr/radare2/radare2.c libr/core/cmd.c libr/debug/debug.c libr/debug/p/debug_native.c libr/debug/p/native/w32.c libr/debug/pid.c libr/include/r_debug.h
+description:
+* Step now accepts pid+tid
+* Fix attach in w32 debugger
+  - use dpa and get first thread by default
+* Mark with asterisks the selected pid/thread (dp/dpt)
+* Fix reg_write in w32
+
+
+changeset:   1086:60e0082266f0
+user:        nibble
+date:        Wed Nov 17 01:29:33 2010 +0100
+files:       binr/radare2/radare2.c
+description:
+* List IO plugins with r2 -L
+
+
+changeset:   1085:361207747514
+user:        pancake
+date:        Wed Nov 17 00:56:48 2010 +0100
+files:       Makefile binr/radare2/radare2.c binr/rax2/rax2.c doc/windows libr/core/cmd.c libr/core/config.c libr/debug/debug.c libr/debug/p/debug_native.c libr/debug/p/native/w32.c libr/debug/reg.c libr/include/r_debug.h libr/include/r_types_base.h libr/io/p/io_w32dbg.c libr/util/t/argv.c libr/util/t/ralloc.c
+description:
+* Fix w32dist find command
+* Display TODO message in r2 -L
+* Implement rax2 -s - and rax2 -
+* Honor dbg->tid in many places
+* Implement basic stuff for dbg->reason
+  - Only w32 and *nix atm
+  - Not yet displayed or used
+  - Added many new reason types in enum
+* Fix w32 register map
+* Handle attach:// in io_w32dbg plugin
+* Implement w32 process and thread list
+  - You can now select the thread
+  > dp      # list pids
+  > dp=1424 # attach to pid
+  > dpt     # list threads
+  > dpt=580 # select thread
+* Added dummy code to list windows
+
+
+changeset:   1084:7fc2cb9a36b4
+user:        nibble
+date:        Tue Nov 16 19:43:26 2010 +0100
+files:       TODO binr/binr.mk
+description:
+* Fix binr build
+
+
+changeset:   1083:e7838a1d4f0e
+user:        pancake<@nopcode.org>
+date:        Tue Nov 16 18:19:51 2010 +0100
+files:       libr/debug/p/debug_native.c libr/include/r_types_base.h libr/include/r_util.h libr/util/file.c
+description:
+* Added /proc/pid/task support to get thread list in Linux
+* Initial work on boolt typedefinition
+
+
+changeset:   1082:1274c3acb731
+user:        pancake
+date:        Mon Nov 15 11:06:10 2010 +0100
+files:       TODO libr/core/core.c libr/include/r_core.h libr/include/r_types_base.h libr/include/r_util.h swig/vapi/r_core.vapi
+description:
+* Implement r_core_search_cb() method
+* Added boolt and ut8p macros (looking for better names)
+
+
+changeset:   1081:20f43aecdf4d
+user:        pancake
+date:        Sun Nov 14 16:38:17 2010 +0100
+files:       TODO libr/anal/p/anal_arm.c libr/asm/p/asm_arm.c libr/core/core.c libr/include/r_search.h
+description:
+* Fix branch analysis in arm thumb
+* Various unnecessary syntax changes
+
+
+changeset:   1080:81303faa7b04
+user:        pancake
+date:        Fri Nov 12 13:26:58 2010 +0100
+files:       libr/socket/socket.c
+description:
+* Fix fd leak bug
+
+
+changeset:   1079:1f87e900b4e2
+user:        pancake<nopcode.org>
+date:        Thu Nov 11 17:53:49 2010 +0100
+files:       libr/debug/p/debug_native.c libr/debug/p/native/w32.c
+description:
+* Fix permission parsing in OSX
+
+
+changeset:   1078:3b22d4525ff6
+user:        pancake<@nopcode.org>
+date:        Thu Nov 11 12:00:17 2010 +0100
+files:       libr/debug/p/debug_native.c
+description:
+* Fix build in non-darwin
+
+
+changeset:   1077:83a7f261c62e
+user:        pancake
+date:        Thu Nov 11 04:22:38 2010 +0100
+files:       TODO config-user.mk.acr
+description:
+* Fix build (thanks @earada)
+
+
+changeset:   1076:be67d7614c62
+user:        pancake<nopcode.org>
+date:        Thu Nov 11 04:12:09 2010 +0100
+files:       libr/debug/p/debug_native.c libr/debug/p/native/w32.c libr/debug/pid.c
+description:
+* Initial implementation of process name listing on darwin/osx
+* Fix build (r_debug_pid_new signature change)
+
+
+changeset:   1075:31a1ca70876b
+user:        pancake<nopcode.org>
+date:        Thu Nov 11 03:13:44 2010 +0100
+files:       libr/debug/debug.c libr/debug/map.c libr/debug/p/debug_native.c libr/io/p/io_mach.c
+description:
+* Initial implementation of r_debug_step_soft and _hard
+  - arm-darwin seems to not support stepping, mips follows
+  - Delegate swstep responsability to r_debug api
+* Implement set registers in arm-darwin
+  - write in memory is not yet working
+* Some fixes in memory regions list in arm-darwin
+
+
+changeset:   1074:b1b8bd22f6b6
+user:        pancake<nopcode.org>
+date:        Thu Nov 11 02:00:10 2010 +0100
+files:       libr/debug/p/debug_native.c libr/io/p/io_mach.c libr/io/p/io_ptrace.c libr/io/plugin.c
+description:
+* Fix read registers in darwin-arm
+
+
+changeset:   1073:6affdf74a6c1
+user:        pancake<nopcode.org>
+date:        Thu Nov 11 01:09:27 2010 +0100
+files:       binr/radare2/Makefile binr/radare2/radare2.xml config-user.mk.acr libr/debug/p/debug_native.c libr/debug/p/gdb.mk libr/debug/p/native/darwin.c libr/include/r_debug.h libr/io/p/io_mach.c libr/io/section.c swig/vapi/r_debug.vapi
+description:
+* Add XML to ldid r2 debugger for iOS
+* Fix build of the r2 debugger on darwin-arm
+* Implement list of threads and memory regions on darwin-arm
+  - just a draft, needs more work
+* Add attach:// IO handler to mach plugin
+* darwin does not needs -ldl
+
+
+changeset:   1072:d85ccae01b6f
+user:        pancake
+date:        Wed Nov 10 23:50:08 2010 +0100
+files:       configure configure.acr
+description:
+* Bump to 0.6.1, update acr
+
+
+changeset:   1071:b1dd60863ee9
+user:        pancake@n900
+date:        Wed Nov 10 10:45:47 2010 +0100
+files:       binr/radare2/Makefile binr/radiff2/Makefile binr/ranal2/Makefile libr/config.mk.tail
+description:
+* Fix static and nonpic build with no gmp
+* Needs to rerun configur-plugins
+
+
+changeset:   1070:69a071859014
+user:        pancake
+date:        Wed Nov 10 04:00:49 2010 +0100
+files:       binr/rabin2/Makefile
+description:
+* Another fix for nonpic build
+
+
+changeset:   1069:248dda04ca10
+user:        pancake
+date:        Wed Nov 10 03:59:56 2010 +0100
+files:       libr/config.mk.tail
+description:
+* Oops. add missing fix for previous commit
+
+
+changeset:   1068:224f7288c9da
+user:        pancake
+date:        Wed Nov 10 03:55:27 2010 +0100
+files:       binr/binr.mk binr/rabin2/Makefile binr/radare2/Makefile binr/radiff2/Makefile binr/rafind2/Makefile binr/rahash2/Makefile binr/ranal2/Makefile binr/rasm2/Makefile binr/rax2/Makefile libr/asm/Makefile libr/lib/t/Makefile libr/rules.mk mk/gcc.mk
+description:
+* Fix static compilation on Linux systems
+  - Not really portable, needs some work to fix w32 build
+
+
+changeset:   1067:39e7ad156924
+user:        pancake
+date:        Wed Nov 10 02:19:05 2010 +0100
+files:       TODO libr/bin/format/mach0/mach0.c libr/bin/format/mach0/mach0.h
+description:
+* Fix segfault in mach0 parser
+
+
+changeset:   1066:329c13cfc180
+user:        pancake@n900
+date:        Tue Nov 09 21:18:39 2010 +0100
+files:       libr/include/r_search.h libr/search/search.c swig/vapi/r_search.vapi
+description:
+* Implement search.find as proposed by @earada
+  - this commit has been done in my phone..needs testing
+
+
+changeset:   1065:a5e20fbbae43
+user:        nibble
+date:        Tue Nov 09 18:09:37 2010 +0100
+files:       libr/util/file.c
+description:
+* Fix ret value in r_file_dump()
+
+
+changeset:   1064:b34b98064535
+user:        pancake<nopcode.org>
+date:        Tue Nov 09 18:08:07 2010 +0100
+files:       libr/bin/format/elf/elf.c
+description:
+* Fix warning noticed by iphone-gcc
+  - Bug in the compiler?
+
+
+changeset:   1063:a16d3c697d7f
+user:        pancake<nopcode.org>
+date:        Mon Nov 08 19:30:25 2010 +0100
+files:       doc/iphone libr/anal/p/Makefile libr/asm/arch/csr/dis.h libr/asm/arch/x86/ollyasm/asmserv.c libr/asm/arch/x86/ollyasm/disasm.c libr/asm/arch/x86/ollyasm/disasm.h libr/asm/p/Makefile libr/bin/format/mach0/mach0_specs.h libr/config/t/Makefile libr/core/cmd.c libr/core/core.c libr/debug/p/Makefile libr/flags/t/Makefile libr/flags/t/test.c libr/hash/Makefile libr/include/r_util.h libr/io/p/Makefile libr/lang/p/Makefile libr/lib/t/Makefile libr/search/t/Makefile libr/util/mem.c libr/util/sys.c libr/util/t/Makefile libr/util/t/pool.c libr/util/t/set0.c libr/waitfordeps.sh
+description:
+* Fix build in iOS 4.1 (darwin-arm)
+  - Honor CFLAGS everywhere
+  - Use ut?? instead of uint??_t
+* Add build instructions in doc/iphone
+* Fix some out-of-range conditionals
+
+
+changeset:   1062:b234f985690f
+user:        pancake
+date:        Sun Nov 07 23:11:44 2010 +0100
+files:       TODO swig/vapi/r_bin.vapi
+description:
+* Another minor fix in r_bin
+
+
+changeset:   1061:bb6cfaab763c
+user:        nibble
+date:        Sat Nov 06 22:39:13 2010 +0100
+files:       ChangeLog-0.6-short swig/vapi/r_util.vapi
+description:
+* Add RStr.rwx_i to r_util.vapi
+* Remove ChangeLog-0.6-short
+
+
+changeset:   1060:b5faa81680d8
+user:        pancake
+date:        Fri Nov 05 02:18:53 2010 +0100
+files:       swig/vapi/r_bin.vapi
+description:
+* big_endian is bool
+
+
+changeset:   1059:32ce1ececfcf
+user:        pancake
+date:        Fri Nov 05 00:59:05 2010 +0100
+files:       libr/pkgconfig/libr.pc.acr swig/vapi/r_core.vapi
+description:
+* Add missing offset in RCore vapi and r_print in .pc
+
+
+changeset:   1058:472d1df3ef83
+user:        pancake<@nopcode.org>
+date:        Thu Nov 04 13:19:36 2010 +0100
+files:       binr/rax2/rax2.c libr/pkgconfig/libr.pc.acr swig/vapi/r_core.deps
+description:
+* Fixes for pkgconfig and vapi deps
+* Apply patch from @astralia for rax2
+  - support int->bin and bin->int
+
+
+changeset:   1057:aa9f6d860bbb
+user:        pancake
+date:        Wed Nov 03 20:46:53 2010 +0100
+files:       TODO swig/vapi/r_util.vapi
+description:
+* Some random fixes for the r_util vapi
+
+
+changeset:   1056:ef0a6151f6db
+user:        pancake<@nopcode.org>
+date:        Tue Nov 02 12:37:46 2010 +0100
+files:       swig/vapi/r_cons.vapi swig/vapi/r_vm.vapi
+description:
+* Fix typos in vapis
