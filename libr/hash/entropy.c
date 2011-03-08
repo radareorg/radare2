@@ -29,3 +29,13 @@ R_API double r_hash_entropy(const ut8 *data, ut64 size) {
         }
         return h;
 }
+
+R_API double r_hash_entropy_fraction(const ut8 *data, ut64 size) {
+	double h = r_hash_entropy(data,size);
+
+	if (size>255) return h/8;
+	else {
+		double log2 = log((double)2);
+		return h*log2/log(size);
+	}
+}

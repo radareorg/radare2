@@ -42,13 +42,18 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 				ret++;
 		}
 		break;
+	case '0': // 0xFF
+		for (j=0; j<size; j++)
+			if (bufz[j] == 0)
+				ret++;
+		break;
 	case 'F': // 0xFF
 		for (j=0; j<size; j++)
 			if (bufz[j] == 0xff)
 				ret++;
 		break;
 	case 'e': // entropy
-		ret = (ut8) ((r_hash_entropy (bufz, size)*255)/8);
+		ret = (ut8) (r_hash_entropy_fraction (bufz, size)*255);
 		break;
 	case 'h': //head
 	default:
@@ -2064,7 +2069,24 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case 'Z':
-		{
+		if (input[1]=='?') {
+			r_cons_printf (
+			"Usage: pZ [len]\n"
+			" print N bytes where each byte represents a block of filesize/N\n"
+			"Configuration:\n"
+			" zoom.from  : start address\n"
+			" zoom.to    : end address\n"
+			" zoom.byte  : specify how to calculate each byte\n"
+			"   p : number of printable chars\n"
+			"   f : count of flags in block\n"
+			"   s : strings in range\n"
+			"   0 : number of bytes with value '0'\n"
+			"   F : number of bytes with value 0xFF\n"
+			"   e : calculate entropy and expand to 0-255 range\n"
+			"   h : head (first byte value)\n"
+			"WARNING: On big files, use 'zoom.byte=h' or restrict ranges\n"
+			);
+		} else {
 			const char *mode = r_config_get (core->config, "zoom.byte");
 			ut64 from = r_config_get_i (core->config, "zoom.from");
 			ut64 to = r_config_get_i (core->config, "zoom.to");
@@ -2094,7 +2116,7 @@ static int cmd_print(void *data, const char *input) {
 		" pu [len]     print N url encoded bytes\n"
 		" pU [len]     print N wide url encoded bytes\n"
 		" px [len]     hexdump of N bytes\n"
-		" pZ [len]     print zoom view\n");
+		" pZ [len]     print zoom view (see pZ? for help)\n");
 		break;
 	}
 	if (tbs != core->blocksize)
