@@ -8,7 +8,7 @@ supported.langs:
 	CC=${CC} CXX=${CXX} sh check-langs.sh
 else
 # compile more
-all: supported.langs python
+all: supported.langs python lua
 supported.langs:
 	CC=${CC} CXX=${CXX} sh check-langs.sh force-all
 endif
@@ -100,9 +100,9 @@ install-python:
 install-lua:
 	@if [ "`grep lua supported.langs`" ]; then \
 	for a in 5.1 ; do \
-	mkdir -p ${DESTDIR}${PREFIX}/lib/lua/$$a/r2 ; \
+	mkdir -p ${DESTDIR}${PREFIX}/lib/lua/$$a ; \
 	echo "Installing lua$$a r2 modules..." ; \
-	cp -rf lua/*.so ${DESTDIR}${PREFIX}/lib/lua/$$a/r2 ; \
+	cp -rf lua/*.so ${DESTDIR}${PREFIX}/lib/lua/$$a ; \
 	done ; \
 	fi
 
