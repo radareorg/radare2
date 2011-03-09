@@ -1,0 +1,24 @@
+#!/bin/sh
+# python-config wrapper trying to fix the python versioning hell
+# -- pancake
+
+# order matters here
+PCS="	python2-config
+	python25-config
+	python26-config
+	python27-config
+	python28-config
+	python-config"
+PYTHONCONFIG=""
+
+for a in ${PCS} ; do
+	$a --help 2>/dev/null
+	if [ $? = 0 ]; then
+		PYTHONCONFIG=$a
+		break
+	fi
+done
+
+[ -z "${PYTHONCONFIG}" ] && exit 1
+
+${PYTHONCONFIG} $@ | sed -e s,-Wstrict-prototypes,,g 2>/dev/null

@@ -3,7 +3,7 @@ include ../config.mk
 LIBS=r_util.${SOEXT} r_bp.${SOEXT} r_asm.${SOEXT} r_diff.${SOEXT}
 LIBS+=r_bin.${SOEXT} r_cons.${SOEXT} r_anal.${SOEXT} r_cmd.${SOEXT}
 LIBS+=r_debug.${SOEXT} r_config.${SOEXT} r_io.${SOEXT} r_syscall.${SOEXT}
-LIBS+=r_search.${SOEXT} r_lib.${SOEXT} libr.${SOEXT} r_flags.${SOEXT}
+LIBS+=r_search.${SOEXT} r_lib.${SOEXT} r_flags.${SOEXT}
 LIBS+=r_parse.${SOEXT} r_lang.${SOEXT} r_core.${SOEXT}
 
 .SUFFIXES: .$(SOEXT)
@@ -32,18 +32,21 @@ ifeq ($(DEVEL_MODE),1)
 	[ $$? = 0 ] && \
 	  (cd .. && RELEASE=$(RELEASE) \
 		sh do-swig.sh ${LANG} `echo $@ | sed -e s,.${SOEXT},,`) ; true
+
+clean:
+	rm -f *.${SOEXT} r_*
 else
 %.${SOEXT}:
-	@-test ../vapi/`echo $@|sed -e s,.${SOEXT},.vapi,` -nt ${LIBS_PFX}$@ ; \
-	if [ $$? = 0 ]; then \
-	echo " - ${LANG} $@" ; \
+	@VAPI=`echo $@|sed -e s,.${SOEXT},.vapi,` ; \
+	test ../vapi/$${VAPI} -nt ${LIBS_PFX}$@ -o ! -e ${LIBS_PFX}$@ ; \
+	if [ $$? = 0 ]; then echo " - ${LANG} $@" ; \
 	LIB=`echo $@ | sed -e s,.${SOEXT},,` ; \
-	${CXX} -fPIC -shared $${LIB}_wrap.cxx \
-		`python-config --cflags --libs 2>/dev/null` \
-		`python2-config --cflags --libs 2>/dev/null` \
-		`pkg-config --cflags --libs $${LIB}` \
-		${CFLAGS} ${LDFLAGS} -o ${LIBS_PFX}$@ ; \
+	${CXX} -fPIC -shared $${LIB}_wrap.cxx `../python-config-wrapper --cflags --libs` \
+		`pkg-config --cflags --libs $${LIB}` ${CFLAGS} ${LDFLAGS} -o ${LIBS_PFX}$@ ; \
 	fi ; true
+
+clean:
+	rm -f *.${SOEXT}
 endif
 
 test:
@@ -51,8 +54,4 @@ test:
 	-${LANG} test-r_asm.${LANG_EXT}
 	-${LANG} test-r_hash.${LANG_EXT}
 
-clean:
-	rm -f *.so r_* libr*
-
-.PHONY: all test clean
-
+.PHONY: all test clean w32
