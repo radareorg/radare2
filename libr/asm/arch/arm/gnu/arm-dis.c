@@ -24,7 +24,7 @@
 
 /* Start of qemu specific additions.  Mostly this is stub definitions
    for things we don't care about.  */
-#include "bfd.h"
+#include "mybfd.h"
 
 #define bfd_mach_arm_iWMMXt2 0xffffff
 #define _ //printf
