@@ -22,6 +22,8 @@
 #ifndef BFDLINK_H
 #define BFDLINK_H
 
+#include <bfd.h>
+
 /* Which symbols to strip during a link.  */
 enum bfd_link_strip
 {

@@ -15,7 +15,10 @@ STATIC_OBJS=$(subst ..,p/..,$(subst fs_,p/fs_,$(STATIC_OBJ)))
 OBJ=${STATIC_OBJS} fs.o file.o 
 #p/grub/main.o
 
-pre:
+p/grub/libgrubfs.a:
+	cd p/grub && ${MAKE} libgrubfs.a
+
+pre: 
 	@if [ ! -e libr_fs.${EXT_SO} ]; then if [ ! -e libr_fs.${EXT_AR} ]; then rm -f ${STATIC_OBJS} ; fi ; fi
 
 re:
@@ -30,6 +33,7 @@ test:
 	gdb --args r2 -i test.rsc /tmp/test.fs.img
 
 plugins:
+	cd p/grub && ${MAKE} libgrubfs.a
 	cd p && ${MAKE} all
 
 include ../rules.mk

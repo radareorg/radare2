@@ -540,8 +540,6 @@ enum action_discarded
     COMPLAIN = 1,
     PRETEND = 2
   };
-// copypasta from bfd.h // yeah gnu sucks
-typedef void (*bfd_error_plugin_type) (const char *, ...);
 
 typedef asection * (*elf_gc_mark_hook_fn)
   (asection *, struct bfd_link_info *, Elf_Internal_Rela *,

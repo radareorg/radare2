@@ -61,7 +61,7 @@ ${BIN}: ${KERNOBJS} main.o
 
 lib: all libgrubfs.a
 
-libgrubfs.a:
+libgrubfs.a: ${KERNOBJS}
 	rm -f libgrubfs.a
 	ar -q libgrubfs.a ${KERNOBJS}
 
