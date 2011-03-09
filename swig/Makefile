@@ -86,14 +86,16 @@ test:
 	cd java && make test
 
 install-python:
-	@# py2.6 in debian uses dist-packages, but site-packages in arch..
+	@# py2.6 in debian uses dist-packages, but site-packages in arch and osx..
 	@if [ "`grep python supported.langs`" ]; then \
 	a=python`python --version 2>&1 | cut -d ' ' -f 2 | cut -d . -f 1,2` ; \
 	echo "Installing $$a/site-packages r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2" ; \
 	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2 ; \
 	touch ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2/__init__.py ; \
+	cp -rf python/r_*.py python/*.${SOEXT} ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2/ ; \
 	echo "Installing $$a/dist-packages r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2" ; \
 	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2 ; \
+	cp -rf python/r_*.py python/*.${SOEXT} ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2/ ; \
 	touch ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2/__init__.py ; \
 	fi
 
@@ -102,14 +104,14 @@ install-lua:
 	for a in 5.1 ; do \
 	mkdir -p ${DESTDIR}${PREFIX}/lib/lua/$$a ; \
 	echo "Installing lua$$a r2 modules..." ; \
-	cp -rf lua/*.so ${DESTDIR}${PREFIX}/lib/lua/$$a ; \
+	cp -rf lua/*.${SOEXT} ${DESTDIR}${PREFIX}/lib/lua/$$a ; \
 	done ; \
 	fi
 
 install-go:
 	@if [ -n "${GOROOT}" -a -n "${GOOS}" -a -n "${GOARCH}" ]; then \
 	echo "Installing r2 modules in ${GOROOT}/pkg/${GOOS}_${GOARCH}" ; \
-	cp -f go/*.a go/*.so ${GOROOT}/pkg/${GOOS}_${GOARCH} ; \
+	cp -f go/*.a go/*.${SOEXT} ${GOROOT}/pkg/${GOOS}_${GOARCH} ; \
 	else \
 	echo "You have to set the following vars: GOROOT, GOOS and GOARCH" ; \
 	fi
