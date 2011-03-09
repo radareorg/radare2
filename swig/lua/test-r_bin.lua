@@ -3,7 +3,7 @@ require "r_bin"
 
 file = arg[1] or "/bin/ls"
 b = r_bin.RBin ()
-b:load (file, "")
+b:load (file, false)
 baddr = b:get_baddr ()
 s = b:get_sections ()
 nsects = s:size() - 1

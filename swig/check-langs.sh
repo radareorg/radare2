@@ -7,13 +7,18 @@ LANGS="python perl ruby lua go java"
 
 if [ "$1" = "force-all" ]; then
   :> supported.langs
-  for a in python-config python2-config ; do
-    $a --help >/dev/null 2>&1
-    if [ $? = 0 ]; then
-      echo "check-langs.sh: Detected python-dev"
+  PYTHONCONFIG=`./python-config-wrapper -n`
+  if [ -n "${PYTHONCONFIG}" ]; then
+      echo "check-langs.sh: Detected python"
       echo python >> supported.langs
-    fi
-  done
+  fi
+  echo "#include <lua.h>" > .test.c
+  ${CC} -c .test.c
+  if [ -f .test.o ]; then
+      echo "check-langs.sh: Detected lua"
+      echo lua >> supported.langs
+  fi
+  rm -f .test.c
   exit 0
 fi
 

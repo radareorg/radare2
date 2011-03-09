@@ -20,5 +20,9 @@ for a in ${PCS} ; do
 done
 
 [ -z "${PYTHONCONFIG}" ] && exit 1
+if [ "$1" = "-n" ]; then
+	echo ${PYTHONCONFIG}
+	exit 0
+fi
 
 ${PYTHONCONFIG} $@ | sed -e s,-Wstrict-prototypes,,g 2>/dev/null

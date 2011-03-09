@@ -33,7 +33,6 @@ w32dist:
 	mkdir -p ${DST}
 	cp -f python/*.dll ${DST}
 	cp -f python/r_*.py ${DST}
-	cp -f python/libr.py ${DST}
 	cd .. ; zip -r $(DSTNAME).zip $(DSTNAME)
 
 dist:
@@ -93,11 +92,9 @@ install-python:
 	echo "Installing $$a/site-packages r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2" ; \
 	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2 ; \
 	touch ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2/__init__.py ; \
-	cp -rf python/*.${SOEXT} python/r_*.py python/libr.py ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2 ; \
 	echo "Installing $$a/dist-packages r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2" ; \
 	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2 ; \
 	touch ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2/__init__.py ; \
-	cp -rf python/*.${SOEXT} python/r_*.py python/libr.py ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2 ; \
 	fi
 
 install-lua:
@@ -106,7 +103,6 @@ install-lua:
 	mkdir -p ${DESTDIR}${PREFIX}/lib/lua/$$a/r2 ; \
 	echo "Installing lua$$a r2 modules..." ; \
 	cp -rf lua/*.so ${DESTDIR}${PREFIX}/lib/lua/$$a/r2 ; \
-	cp -rf lua/*libr* ${DESTDIR}${PREFIX}/lib/lua/$$a ; \
 	done ; \
 	fi
 
@@ -127,7 +123,6 @@ install-ruby:
 	mkdir -p ${DESTDIR}${PREFIX}/lib/ruby/$$a/r2 ; \
 	echo "Installing ruby$$a r2 modules..." ; \
 	cp -rf ruby/* ${DESTDIR}${PREFIX}/lib/ruby/$$a/r2 ; \
-	cp -rf ruby/*libr* ${DESTDIR}${PREFIX}/lib/ruby/$$a ; \
 	done ; \
 	fi
 
@@ -143,7 +138,6 @@ install-perl:
 	echo "Installing perl r2 modules..." ; \
 	cp -rf perl/*.so $$target/r2 ; \
 	cp -rf perl/*.pm $$target/r2 ; \
-	cp -rf perl/*libr* $$target/ ; \
 	fi
 
 install-vapi:
