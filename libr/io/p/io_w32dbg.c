@@ -23,7 +23,7 @@ typedef struct {
 extern int errno;
 
 static int debug_os_read_at(RIOW32Dbg *dbg, void *buf, int len, ut64 addr) {
-	PDWORD ret;
+	DWORD ret;
         ReadProcessMemory (dbg->pi.hProcess, (PCVOID)(ULONG)addr, buf, len, &ret);
 //	if (len != ret)
 //		eprintf ("Cannot read 0x%08llx\n", addr);
@@ -37,9 +37,9 @@ static int __read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int len) {
 }
 
 static int w32dbg_write_at(RIODesc *fd, const ut8 *buf, int len, ut64 addr) {
-	PDWORD ret;
+	DWORD ret;
 	RIOW32Dbg *dbg = fd->data;
-        WriteProcessMemory (dbg->pi.hProcess, (PCVOID)(ULONG)addr, buf, len, &ret);
+        WriteProcessMemory (dbg->pi.hProcess, (LPVOID)(ULONG)addr, buf, len, &ret);
 	return (int)ret;
 }
 
@@ -55,14 +55,13 @@ static int __plugin_open(struct r_io_t *io, const char *file) {
 
 static int __attach (RIOW32Dbg *dbg) {
 	eprintf ("---> attach to %d\n", dbg->pid);
-	dbg->pi.hProcess = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
+	dbg->pi.hProcess = OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
 	if (dbg->pi.hProcess == NULL)
 		return -1;
 	return dbg->pid;
 }
 
 static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
-	int ret = -1;
 	if (__plugin_open (io, file)) {
 		RIOW32Dbg *dbg = R_NEW (RIOW32Dbg);
 		if (dbg == NULL)

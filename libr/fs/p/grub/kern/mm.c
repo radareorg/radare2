@@ -386,7 +386,7 @@ void *grub_zalloc (grub_size_t size)
 {
     void *ret;
     ret = malloc(size);
-    bzero(ret,size);
+    memset (ret, 0, size);
 
     return ret;
 }

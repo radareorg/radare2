@@ -291,7 +291,7 @@ R_API int r_cons_get_size(int *rows) {
 	}
 #else
 	const char *str = r_sys_getenv ("COLUMNS");
-	if (str != NULL)
+	if (str != NULL) {
 		I.columns = atoi (str);
 		I.rows = 23; // XXX. windows must get console size
 	} else {

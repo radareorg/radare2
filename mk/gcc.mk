@@ -1,5 +1,6 @@
 CC?=gcc
 LINK=
+RANLIB=ranlib
 ONELIB=0
 CC_AR=ar qf ${LIBAR}
 PIC_CFLAGS=-fPIC

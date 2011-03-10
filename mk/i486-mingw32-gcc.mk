@@ -1,4 +1,5 @@
 CC=i486-mingw32-gcc
+RANLIB=i486-mingw32-ranlib
 OSTYPE=windows
 ONELIB=0
 LINK=-shared

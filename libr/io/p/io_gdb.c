@@ -40,7 +40,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	riog = R_NEW (RIOGdb);
 	riog->fd = _fd;
 	riog->desc = gdbwrap_init (_fd);
-	return r_io_desc_new (&r_io_plugin_shm, _fd, file, rw, mode, riog);
+	return r_io_desc_new (&r_io_plugin_gdb, _fd, file, rw, mode, riog);
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {

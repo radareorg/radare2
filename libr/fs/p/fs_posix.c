@@ -2,6 +2,7 @@
 
 #include <r_fs.h>
 #include <dirent.h>
+#include <sys/stat.h>
 
 static RFSFile* fs_posix_open(RFSRoot *root, const char *path) {
 	FILE *fd;

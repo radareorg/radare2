@@ -1,4 +1,5 @@
 CC=tcc
+RANLIB=ranlib
 LINK=
 ONELIB=0
 CC_AR=ar -r ${LIBAR}

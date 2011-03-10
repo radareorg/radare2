@@ -1,5 +1,7 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
+#include <sys/types.h>
+#include <dirent.h>
 #include <r_types.h>
 #include <r_util.h>
 #if __UNIX__
@@ -13,7 +15,6 @@
 #elif __WINDOWS__
 #include <io.h>
 #endif
-#include <sys/types.h>
 
 /* TODO: import stuff fron bininfo/p/bininfo_addr2line */
 /* TODO: check endianness issues here */

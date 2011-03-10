@@ -199,7 +199,9 @@ R_API int r_socket_listen(int port) {
 		close (s);
 		return -1;
 	}
+#if __UNIX_
 	signal (SIGPIPE, SIG_IGN);
+#endif
 	if (listen (s, 1) < 0) {
 		close (s);
 		return -1;

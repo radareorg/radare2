@@ -1,4 +1,5 @@
 CC=i586-mingw32msvc-gcc
+RANLIB=i586-mingw32msvc-gcc
 ONELIB=0
 OSTYPE=windows
 LINK=

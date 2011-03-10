@@ -1,10 +1,10 @@
 /* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
 
-#if __UNIX__
-
 #include "r_io.h"
 #include "r_lib.h"
 #include <sys/types.h>
+
+#if __UNIX__
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
@@ -117,11 +117,17 @@ struct r_io_plugin_t r_io_plugin_shm = {
 	.write = shm__write,
 };
 
+#else
+struct r_io_plugin_t r_io_plugin_shm = {
+        //void *plugin;
+	.name = "shm",
+        .desc = "shared memory resources (not for w32)",
+};
+#endif
+
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_shm
 };
-#endif
-
 #endif

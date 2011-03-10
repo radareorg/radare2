@@ -1,7 +1,5 @@
 /* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
 
-#if __UNIX__
-
 #include "r_io.h"
 #include "r_lib.h"
 #include "r_socket.h"
@@ -135,6 +133,4 @@ struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_haret
 };
-#endif
-
 #endif

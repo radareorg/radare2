@@ -39,7 +39,7 @@ ${LIBSO}: $(EXTRA_TARGETS) waitfordeps ${OBJ}
 	  test $$a -nt ${LIBSO} && do=1 ; \
 	  if [ $$do = 1 ]; then \
 	    echo "${CC_LIB} ${LIBNAME} ${OBJ} ${LDFLAGS} ${LINK}" ; \
-	    ${CC_LIB} ${LIBNAME} ${OBJ} ${LDFLAGS} ${LINK} ; \
+	    ${CC_LIB} ${LIBNAME} ${OBJ} ${LDFLAGS} ${LINK}; \
 	    if [ -f "../stripsyms.sh" ]; then sh ../stripsyms.sh ${LIBSO} ${NAME} ; fi ; \
 	  break ; \
 	fi ; done
