@@ -1,6 +1,12 @@
 //   
 //    Copyright (c) 2008 Daniel Pistelli.
 // 
+/*
+DisasMSIL
+http://www.ntcore.com/utilities.php
+Date: 30/04/2008  Author: Daniel Pistelli
+DisasMSIL is a free/open disasm engine for the Microsoft Intermediate Language (MSIL). You can use it any context you wish. There are no license restrictions. The only thing I ask you to do is to send me your bug fixes (if any). For more information about this project, read the article.
+*/
 
 #include <stdio.h>
 #include "demsil.h"

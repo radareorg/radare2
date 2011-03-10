@@ -97,7 +97,7 @@ swig-dist:
 
 dist:
 	VERSION=${VERSION} ; \
-	FILES=`hg st -mc .| cut -c 3-|sed -e s,^,radare2-${VERSION}/, | grep -v swig` ; \
+	FILES=`hg st -mc .| cut -c 3-|sed -e s,^,radare2-${VERSION}/, | grep -v swig | grep -v '/\.'` ; \
 	cd .. && mv radare2 radare2-${VERSION} && \
 	tar czvf radare2-${VERSION}.tar.gz $${FILES} ;\
 	mv radare2-${VERSION} radare2

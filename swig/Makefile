@@ -37,7 +37,7 @@ w32dist:
 
 dist:
 	PKG=radare2-swig-${VERSION} ; \
-	FILES=`cd .. ; hg st -mac . | grep swig | sed -e "s,swig/,$${PKG}/," | cut -c 3-` ; \
+	FILES=`cd .. ; hg st -mac . | grep swig | grep -v '/\.' | sed -e "s,swig/,$${PKG}/," | cut -c 3-` ; \
 	CXXFILES=`cd .. ; find swig | grep -e cxx$$ -e py$$ | sed -e "s,swig/,$${PKG}/,"` ; \
 	cd .. && mv swig $${PKG} && \
 	echo $$FILES ; \

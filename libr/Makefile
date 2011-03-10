@@ -57,18 +57,18 @@ install: install-includes install-pkgconfig
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
 	# libraries
 	@${INSTALL_DIR} ${PFX}/lib
-	@for a in `find * | grep -e '\.${EXT_SO}$$' | grep -v lib/t | grep lib` ; do \
+	@for a in `find * -type f | grep -e '\.${EXT_SO}$$' | grep -v lib/t | grep lib | grep -v /p/` ; do \
 	  b=`echo $$a|cut -d / -f 2`; \
 	  echo " ${PFX}/lib/$$b.${VERSION}"; \
 	  ${INSTALL_LIB} $$a ${PFX}/lib/$$b.${VERSION} ; \
 	  ( cd ${PFX}/lib ; ln -fs $$b.${VERSION} $$b.0 ; ln -fs $$b.0 $$b ); \
 	done
 	# object archives
-	@for a in `find * | grep -e '\.a$$'` ; do \
+	@for a in `find * -type f | grep -e '\.a$$' | grep -v fs/p` ; do \
 	  echo " ${PFX}/lib/$$a"; ${INSTALL_DATA} $$a ${PFX}/lib ; done
 	# plugins
 	@${INSTALL_DIR} ${PFX}/lib/radare2/${VERSION}
-	@for a in `find */p -perm -u+x -type f | grep -v exe | grep -v dll`; \
+	@for a in `find */p -perm -u+x -type f | grep -v exe | grep -v dll | grep ${EXT_SO}`; \
 	  do echo " ${PFX}/lib/radare2/${VERSION}/$$a"; \
 	${INSTALL_DATA} $$a ${PFX}/lib/radare2/${VERSION} ; done
 	@echo "lang/p/radare.* ${PFX}/lib/radare2/${VERSION}"
