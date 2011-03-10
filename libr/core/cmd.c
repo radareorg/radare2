@@ -2282,16 +2282,16 @@ static int var_cmd(RCore *core, const char *str) {
 	char *p,*p2,*p3;
 	int type, delta, len = strlen(str)+1;
 
-	p = alloca(len);
-	memcpy(p, str, len);
+	p = alloca (len); // XXX: remove this alloca
+	memcpy (p, str, len);
 	str = p;
 
-	switch(*str) {
+	switch (*str) {
 	case 'V': // show vars in human readable format
-		r_anal_var_list_show(core->anal, fcn, core->offset);
+		r_anal_var_list_show (core->anal, fcn, core->offset);
 		return 0;
 	case '?':
-		var_help();
+		var_help ();
 		return 0;
 	case 'v': // frame variable
 	case 'a': // stack arg
@@ -2310,18 +2310,18 @@ static int var_cmd(RCore *core, const char *str) {
 		switch(str[1]) {
 		case '\0': r_anal_var_list (core->anal, fcn, 0, 0); return 0;
 		case '?': var_help(); return 0;
-		case '.':  r_anal_var_list (core->anal, fcn, core->offset, 0); return 0;
+		case '.': r_anal_var_list (core->anal, fcn, core->offset, 0); return 0;
 		case 's':
 		case 'g':
 			if (str[2]!='\0') {
-                if ( fcn != NULL ) {
-    				RAnalVar *var = r_anal_var_get (core->anal, fcn, atoi (str+2), R_ANAL_VAR_TYPE_LOCAL);
-    				return r_anal_var_access_add (core->anal, var, atoi (str+2), (str[1]=='g')?0:1);
-                } else {
-                    eprintf("Unknown variable in: '%s'\n", str);
-                    return R_FALSE;
-                }
-			}
+				if (fcn != NULL) {
+					RAnalVar *var = r_anal_var_get (core->anal, fcn, atoi (str+2), R_ANAL_VAR_TYPE_LOCAL);
+					if (var != NULL)
+						return r_anal_var_access_add (core->anal, var, atoi (str+2), (str[1]=='g')?0:1);
+					eprintf ("Can not find variable in: '%s'\n", str);
+				} else eprintf ("Unknown variable in: '%s'\n", str);
+				return R_FALSE;
+			} else eprintf ("Missing argument for a%c\n");
 			break;
 		}
 		str++;
@@ -2342,10 +2342,10 @@ static int var_cmd(RCore *core, const char *str) {
 				p3=p3+1;
 			}
 			r_anal_var_add (core->anal, fcn, core->offset, delta, type, p, p2, p3?atoi(p3):0);
-		} else var_help();
+		} else var_help ();
 		break;
 	default:
-		var_help();
+		var_help ();
 		break;
 	}
 	return 0;
