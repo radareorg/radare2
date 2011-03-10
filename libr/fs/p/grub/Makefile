@@ -1,7 +1,7 @@
 include ../../../config.mk
 
-CC?=i486-mingw32-gcc
-RANLIB?=i486-mingw32-ranlib 
+CC?=gcc
+RANLIB?=ranlib
 #CC?=gcc
 
 OSTYPE=$(shell uname -s)

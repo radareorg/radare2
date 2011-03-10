@@ -2314,8 +2314,13 @@ static int var_cmd(RCore *core, const char *str) {
 		case 's':
 		case 'g':
 			if (str[2]!='\0') {
-				RAnalVar *var = r_anal_var_get (core->anal, fcn, atoi (str+2), R_ANAL_VAR_TYPE_LOCAL);
-				return r_anal_var_access_add (core->anal, var, atoi (str+2), (str[1]=='g')?0:1);
+                if ( fcn != NULL ) {
+    				RAnalVar *var = r_anal_var_get (core->anal, fcn, atoi (str+2), R_ANAL_VAR_TYPE_LOCAL);
+    				return r_anal_var_access_add (core->anal, var, atoi (str+2), (str[1]=='g')?0:1);
+                } else {
+                    eprintf("Unknown variable in: '%s'\n", str);
+                    return R_FALSE;
+                }
 			}
 			break;
 		}

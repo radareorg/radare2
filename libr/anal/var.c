@@ -147,10 +147,12 @@ R_API int r_anal_var_del(RAnal *anal, RAnalFcn *fcn, int delta, int type) {
 R_API RAnalVar *r_anal_var_get(RAnal *anal, RAnalFcn *fcn, int delta, int type) {
 	RAnalVar *vari;
 	RListIter *iter;
-	r_list_foreach (fcn->vars, iter, vari)
-		if ((type==-1||vari->type == type) && vari->delta == delta)
-			return vari;
-	return NULL;
+
+    r_list_foreach (fcn->vars, iter, vari)
+        if ((type==-1||vari->type == type) && vari->delta == delta)
+            return vari;
+
+    return NULL;
 }
 
 // XXX: rename function type? i think this is 'scope' 
@@ -171,15 +173,18 @@ R_API const char *r_anal_var_type_to_str (RAnal *anal, int type) {
 R_API int r_anal_var_access_add(RAnal *anal, RAnalVar *var, ut64 from, int set) {
 	RAnalVarAccess *acc, *acci;
 	RListIter *iter;
-	r_list_foreach(var->accesses, iter, acci)
-		if (acci->addr == from)
-			return R_TRUE;
-	if (!(acc = r_anal_var_access_new ()))
-		return R_FALSE;
-	acc->addr = from;
-	acc->set = set;
-	r_list_append (var->accesses, acc);
-	return R_TRUE;
+
+    r_list_foreach(var->accesses, iter, acci)
+        if (acci->addr == from)
+            return R_TRUE;
+        if (!(acc = r_anal_var_access_new ()))
+            return R_FALSE;
+
+    acc->addr = from;
+    acc->set = set;
+    r_list_append (var->accesses, acc);
+
+    return R_TRUE;
 }
 
 R_API int r_anal_var_access_del(RAnal *anal, RAnalVar *var, ut64 from) {
