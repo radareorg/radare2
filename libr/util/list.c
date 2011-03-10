@@ -120,6 +120,23 @@ R_API RListIter *r_list_prepend(RList *list, void *data) {
 	return new;
 }
 
+R_API void *r_list_pop(RList *list) {
+	void *data = NULL;
+	RListIter *iter;
+	if (list->tail) {
+		iter = list->tail;
+		if (list->head == list->tail) {
+			list->head = list->tail = NULL;
+		} else {
+			list->tail = iter->p;
+			list->tail->n = NULL;
+		}
+		data = iter->data;
+		free (iter);
+	}
+	return data;
+}
+
 R_API void r_list_sort(RList *list, RListComparator cmp) {
 	RListIter *it;
 	RListIter *it2;

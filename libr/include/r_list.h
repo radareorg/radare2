@@ -57,6 +57,9 @@ R_API void r_list_unlink (RList *list, void *ptr);
 R_API void r_list_split (RList *list, void *ptr);
 R_API void r_list_split_iter (RList *list, RListIter *iter);
 R_API void *r_list_get_n(RList *list, int n);
+#define r_list_get_top(x) (r_list_empty(x))?NULL:r_list_get_n(x,r_list_length (x)-1)
+#define r_list_push(x,y) r_list_append(x,y)
+R_API void *r_list_pop(RList *list);
 
 /* hashlike api */
 R_API void *r_list_get_by_int(RList *list, int off, int n);
