@@ -2321,7 +2321,7 @@ static int var_cmd(RCore *core, const char *str) {
 					eprintf ("Can not find variable in: '%s'\n", str);
 				} else eprintf ("Unknown variable in: '%s'\n", str);
 				return R_FALSE;
-			} else eprintf ("Missing argument for a%c\n");
+			} else eprintf ("Missing argument\n");
 			break;
 		}
 		str++;

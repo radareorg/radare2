@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2011 pancake<nopcode.org> */
 
 #include <r_types.h>
 #include <r_list.h>
@@ -7,8 +7,11 @@
 
 static char *r_core_project_file(const char *file) {
 	char buf[128];
-	snprintf (buf, sizeof (buf), ".radare2/rdb/%s", file);
-	return r_str_home (buf);
+	if (!strchr (file, '/')) {
+		snprintf (buf, sizeof (buf), ".radare2/rdb/%s", file);
+		return r_str_home (buf);
+	}
+	return strdup (file);
 }
 
 //TODO: Don't try mkdir rdb if mdkir .radare2 fails. (Maybe R_TRUFAE??)
