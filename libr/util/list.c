@@ -137,6 +137,65 @@ R_API void *r_list_pop(RList *list) {
 	return data;
 }
 
+R_API int r_list_del_n(RList *list, int n) {
+	RListIter *it;
+	int i;
+
+	if (list)
+		for (it = list->head, i = 0; it && it->data; it = it->n, i++)
+			if (i == n) {
+				if (it->p == NULL && it->n == NULL) {
+					list->head = list->tail = NULL;
+				} else if (it->p == NULL) {
+					it->n->p = NULL;
+					list->head = it->n;
+				} else if (it->n == NULL) {
+					it->p->n = NULL;
+					list->tail = it->p;
+				} else {
+					it->p->n = it->n;
+					it->n->p = it->p;
+				}
+				free (it);
+				return R_TRUE;
+			}
+	return R_FALSE;
+}
+
+R_API void *r_list_get_top(RList *list) {
+	if (list && list->tail)
+		return list->tail->data;
+	return NULL;
+}
+
+R_API void r_list_reverse(RList *list) {
+	RListIter *it, *tmp;
+	if (list) {
+		for (it = list->head; it && it->data; it = it->p) {
+			tmp = it->p;
+			it->p = it->n;
+			it->n = tmp;
+		}
+		tmp = list->head;
+		list->head = list->tail;
+		list->tail = tmp;
+	}
+}
+
+R_API RList *r_list_clone (RList *list) {
+	RList *l = NULL;
+	RListIter *iter;
+	void *data;
+
+	if (list) {
+		l = r_list_new ();
+		l->free = NULL;
+		r_list_foreach (list, iter, data)
+			r_list_append (l, data);
+	}
+	return l;
+}
+
 R_API void r_list_sort(RList *list, RListComparator cmp) {
 	RListIter *it;
 	RListIter *it2;
@@ -277,6 +336,33 @@ int main () {
 	}
 
 	r_list_free (l);
+
+	l = r_list_new ();
+	l->free = free;
+
+	r_list_append (l, strdup ("one"));
+	r_list_append (l, strdup ("two"));
+	r_list_append (l, strdup ("tri"));
+
+	{
+		char *str;
+		r_list_foreach (l, it, str)
+			printf (" - %s\n", str);
+
+		RList *list;
+		list = r_list_clone (l);
+
+		r_list_foreach (list, it, str)
+			printf (" - %s\n", str);
+
+		r_list_reverse (l);
+
+		r_list_foreach (l, it, str)
+			printf (" * %s\n", str);
+	}
+
+	r_list_free (l);
+	r_list_free (list);
 
 	return 0;
 }

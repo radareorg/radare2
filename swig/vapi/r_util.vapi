@@ -124,6 +124,10 @@ public class RList<G> {
 	public uint length();
 	public bool next();
 	public unowned G @get();
+	public bool del_n(int n);
+	public bool get_top();
+	public void push(owned G foo);
+	public unowned G pop();
 }
 
 //[Compact]
