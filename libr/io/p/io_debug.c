@@ -4,7 +4,9 @@
 #include <r_lib.h>
 #include <r_util.h>
 
-#if __linux__ || __NetBSD__ || __FreeBSD__ || __OpenBSD__ || __APPLE__ || __WINDOWS__
+#if DEBUGGER && \
+	(__linux__ ||  __APPLE__ || __WINDOWS__ || \
+	__NetBSD__ || __FreeBSD__ || __OpenBSD__)
 
 #define MAGIC_EXIT 123
 

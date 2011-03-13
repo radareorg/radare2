@@ -68,6 +68,22 @@ R_API void r_sys_backtrace(void) {
         for (i = 0; i < size; i++)
                 printf ("%s\n", strings[i]);
         free (strings);
+#elif __APPLE__
+	void **fp = (void **) __builtin_frame_address (0);
+	void *saved_pc = __builtin_return_address (0);
+	void *saved_fp = __builtin_frame_address (1);
+	int depth = 0;
+
+	printf ("[%d] pc == %p fp == %p\n", depth++, saved_pc, saved_fp);
+	fp = saved_fp;
+	while (fp != NULL) {
+		saved_fp = *fp;
+		fp = saved_fp;
+		if (*fp == NULL)
+			break;
+		saved_pc = *(fp + 2);
+		printf ("[%d] pc == %p fp == %p\n", depth++, saved_pc, saved_fp);
+	}
 #else
 #warning TODO: r_sys_bt : unimplemented
 #endif

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #if __UNIX__
+#include <fcntl.h>
 #include <sys/mman.h>
 #endif
 
