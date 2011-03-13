@@ -1894,6 +1894,12 @@ static int cmd_print(void *data, const char *input) {
 		}
 	} else l = len;
 
+	i = r_config_get_i (core->config, "cfg.maxbsize");
+	if (i && l > i) {
+		eprintf ("This block size is too big. Did you mean 'p%c @ %s' instead?\n",
+				*input, input+2);
+		return R_FALSE;
+	}
 	switch (input[0]) {
 	case '%':
 		{

@@ -17,6 +17,8 @@ PREFIX=${PWD}/prefix
 VERSION=`date '+%Y%m%d'`
 endif
 
+PFX=${DESTDIR}${PREFIX}
+
 LIBDIR=${PREFIX}/lib
 
 -include config-user.mk

@@ -52,22 +52,22 @@ pkgcfg:
 	cd libr && ${MAKE} pkgcfg
 
 install-man:
-	mkdir -p ${DESTDIR}/${PREFIX}/share/man/man1
-	for a in man/*.1 ; do ${INSTALL_MAN} $$a ${DESTDIR}/${PREFIX}/share/man/man1 ; done
-	cd ${DESTDIR}/${PREFIX}/share/man/man1 && ln -fs radare2.1 r2.1
+	mkdir -p ${PFX}/share/man/man1
+	for a in man/*.1 ; do ${INSTALL_MAN} $$a ${PFX}/share/man/man1 ; done
+	cd ${PFX}/share/man/man1 && ln -fs radare2.1 r2.1
 
 install-man-symlink:
-	mkdir -p ${DESTDIR}/${PREFIX}/share/man/man1
-	cd man && for a in *.1 ; do ln -fs `pwd`/$$a ${DESTDIR}/${PREFIX}/share/man/man1/$$a ; done
-	cd ${DESTDIR}/${PREFIX}/share/man/man1 && ln -fs radare2.1 r2.1
+	mkdir -p ${PFX}/share/man/man1
+	cd man && for a in *.1 ; do ln -fs `pwd`/$$a ${PFX}/share/man/man1/$$a ; done
+	cd ${PFX}/share/man/man1 && ln -fs radare2.1 r2.1
 
 install-doc:
-	${INSTALL_DIR} ${DESTDIR}${PREFIX}/share/doc/radare2
-	for a in doc/* ; do ${INSTALL_DATA} $$a ${DESTDIR}/${PREFIX}/share/doc/radare2 ; done
+	${INSTALL_DIR} ${PFX}/share/doc/radare2
+	for a in doc/* ; do ${INSTALL_DATA} $$a ${PFX}/share/doc/radare2 ; done
 
 install-doc-symlink:
-	${INSTALL_DIR} ${DESTDIR}${PREFIX}/share/doc/radare2
-	cd doc ; for a in * ; do ln -fs `pwd`/$$a ${DESTDIR}/${PREFIX}/share/doc/radare2 ; done
+	${INSTALL_DIR} ${PFX}/share/doc/radare2
+	cd doc ; for a in * ; do ln -fs `pwd`/$$a ${PFX}/share/doc/radare2 ; done
 
 install: install-doc install-man
 	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
@@ -75,7 +75,7 @@ install: install-doc install-man
 
 install-pkgconfig-symlink:
 	@${INSTALL_DIR} ${PFX}/lib/pkgconfig
-	cd pkgcfg ; for a in *.pc ; do ln -fs $${PWD}/$$a ${DESTDIR}/${PREFIX}/lib/pkgconfig/$$a ; done
+	cd pkgcfg ; for a in *.pc ; do ln -fs $${PWD}/$$a ${PFX}/lib/pkgconfig/$$a ; done
 
 symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink
 	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
