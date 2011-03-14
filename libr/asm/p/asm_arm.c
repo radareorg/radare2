@@ -1,4 +1,4 @@
-/* radare - GPL3 - Copyright 2009-2010 nibble<.ds@gmail.com> */
+/* radare - GPL3 - Copyright 2009-2011 nibble<.ds@gmail.com> */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -56,6 +56,8 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, ut8 *buf, ut64 len) {
 	static struct disassemble_info disasm_obj;
 
+	/* fetching is 4 byte aligned */
+	if (len<4) return -1;
 	buf_global = op->buf_asm;
 	Offset = a->pc;
 	memcpy (bytes, buf, 4); // TODO handle thumb
@@ -77,9 +79,9 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, ut8 *buf, ut64 
 	disasm_obj.bytes_per_line = (a->bits/8);
 
 	op->buf_asm[0]='\0';
-	op->inst_len = print_insn_arm((bfd_vma)Offset, &disasm_obj);
+	op->inst_len = print_insn_arm ((bfd_vma)Offset, &disasm_obj);
 	if (op->inst_len == -1)
-		strncpy(op->buf_asm, " (data)", R_ASM_BUFSIZE);
+		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
 	return op->inst_len; //(a->bits/8); //op->inst_len;
 }
 

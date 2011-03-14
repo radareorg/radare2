@@ -56,13 +56,13 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 
 static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, ut8 *buf, ut64 len) {
 	static struct disassemble_info disasm_obj;
-
+	if (len<4) return -1;
 	buf_global = op->buf_asm;
 	Offset = a->pc;
 	memcpy (bytes, buf, 4); // TODO handle thumb
 
 	/* prepare disassembler */
-	memset(&disasm_obj,'\0', sizeof(struct disassemble_info));
+	memset (&disasm_obj,'\0', sizeof(struct disassemble_info));
 	mips_mode = a->bits;
 	disasm_obj.arch = CPU_LOONGSON_2F;
 	disasm_obj.buffer = bytes;
