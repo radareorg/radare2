@@ -303,8 +303,9 @@ static void config_visual_hit(RCore *core, const char *name) {
 }
 
 R_API void r_core_visual_config(RCore *core) {
+	RListIter *iter;
+	RConfigNode *bt;
 	char cmd[1024];
-	struct list_head *pos;
 #define MAX_FORMAT 2
 	char *fs = NULL;
 	char *fs2 = NULL;
@@ -327,8 +328,7 @@ R_API void r_core_visual_config(RCore *core) {
 			r_cons_printf ("\n Eval spaces:\n\n");
 			hit = 0;
 			j = i = 0;
-			list_for_each(pos, &(core->config->nodes)) {
-				struct r_config_node_t *bt = list_entry(pos, struct r_config_node_t, list);
+			r_list_foreach (core->config->nodes, iter, bt) {
 				if (option==i) {
 					fs = bt->name;
 					hit = 1;
@@ -360,8 +360,7 @@ R_API void r_core_visual_config(RCore *core) {
 			hit = 0;
 			j = i = 0;
 			// TODO: cut -d '.' -f 1 | sort | uniq !!!
-			list_for_each (pos, &(core->config->nodes)) {
-				RConfigNode *bt = list_entry (pos, RConfigNode, list);
+			r_list_foreach (core->config->nodes, iter, bt) {
 				if (option==i) {
 					fs2 = bt->name;
 					hit = 1;

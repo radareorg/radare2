@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
+
 #include "r_util.h"
 
 R_API void r_list_init(RList *list) {
@@ -42,14 +44,22 @@ R_API void r_list_split (RList *list, void *ptr) {
 }
 
 R_API void r_list_split_iter (RList *list, RListIter *iter) {
-	if (list->head == iter)
-		list->head = iter->n;
-	if (list->tail == iter)
-		list->tail = iter->p;
-	if (iter->p)
-		iter->p->n = iter->n;
-	if (iter->n)
-		iter->n->p = iter->p;
+	if (list->head == iter) list->head = iter->n;
+	if (list->tail == iter) list->tail = iter->p;
+	if (iter->p) iter->p->n = iter->n;
+	if (iter->n) iter->n->p = iter->p;
+}
+
+R_API boolt r_list_delete_data (RList *list, void *ptr) {
+	void *p;
+	RListIter *iter;
+	r_list_foreach (list, iter, p) {
+		if (ptr == p) {
+			r_list_delete (list, iter);
+			return R_TRUE;
+		}
+	}
+	return R_FALSE;
 }
 
 R_API void r_list_delete (RList *list, RListIter *iter) {
@@ -75,12 +85,15 @@ R_API void r_list_destroy (RList *list) {
 			RListIter *next = it->n;
 			r_list_delete (list, it);
 			it = next;
+		//	free (it);
 		}
 		list->head = list->tail = NULL;
 	}
+	//free (list);
 }
 
 R_API void r_list_free (RList *list) {
+	list->free = NULL;
 	r_list_destroy (list);
 	free (list);
 }
@@ -362,7 +375,7 @@ int main () {
 	}
 
 	r_list_free (l);
-	r_list_free (list);
+	//r_list_free (l);
 
 	return 0;
 }

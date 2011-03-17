@@ -16,7 +16,7 @@ typedef int (*RConfigCallback)(void *user, void *data);
 
 typedef struct r_config_node_t {
 	char *name;
-	int hash;
+	ut32 hash;
 	int flags;
 	char *value;
 	ut64 i_value;
@@ -24,7 +24,6 @@ typedef struct r_config_node_t {
 	int *cb_ptr_i;
 	char **cb_ptr_s;
 	RConfigCallback callback;
-	struct list_head list;
 } RConfigNode;
 
 typedef struct r_config_t {
@@ -32,8 +31,9 @@ typedef struct r_config_t {
 	int last_notfound;
 	int n_nodes;
 	void *user;
-	void (*printf)(const char *str, ...);
-	struct list_head nodes;
+	PrintfCallback printf;
+	RList *nodes;
+	RHashTable *ht;
 } RConfig;
 
 #ifdef R_API

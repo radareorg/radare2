@@ -174,8 +174,8 @@ R_API ut64 r_str_hash64(const char *str) {
 	return ret;
 }
 
-R_API int r_str_hash(const char *str) {
-	int ret = 0;
+R_API ut32 r_str_hash(const char *str) {
+	ut32 ret = 0;
 	for (;*str; str++)
 		ret ^= (ret<<7 | *str);
 	return ret;

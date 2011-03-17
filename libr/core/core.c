@@ -90,7 +90,6 @@ static const char *radare_argv[] = {
 static const char *tmp_argv[TMP_ARGV_SZ];
 static int autocomplete(RLine *line) {
 	RCore *core = line->user;
-	struct list_head *pos;
 	RListIter *iter;
 	RFlagItem *flag;
 	if (core) {
@@ -181,9 +180,10 @@ printf ("FILEN %d\n", n);
 			line->completion.argv = tmp_argv;
 		} else
 		if (!memcmp (line->buffer.data, "e ", 2)) {
+			RConfigNode *bt;
+			RListIter *iter;
 			int i = 0, n = strlen (line->buffer.data+2);
-			list_for_each_prev (pos, &core->config->nodes) {
-				RConfigNode *bt = list_entry(pos, RConfigNode, list);
+			r_list_foreach (core->config->nodes, iter, bt) {
 				if (!memcmp (bt->name, line->buffer.data+2, n)) {
 					tmp_argv[i++] = bt->name;
 					if (i==TMP_ARGV_SZ)

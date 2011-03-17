@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010 - nibble<develsec.org> */
+/* radare - LGPL - Copyright 2010-2011 - nibble<develsec.org> */
 
 #include <stdio.h>
 #include <string.h>
@@ -12,7 +12,6 @@ R_API int r_core_gdiff(RCore *c, RCore *c2) {
 	RAnalFcn *fcn;
 	RAnalBlock *bb;
 	RListIter *iter, *iter2;
-	ut8 *buf;
 	int i;
 
 	for (i = 0; i < 2; i++) {

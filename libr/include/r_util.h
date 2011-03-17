@@ -243,7 +243,7 @@ R_API char *r_str_trim(char *str);
 R_API char *r_str_trim_head(char *str);
 R_API char *r_str_trim_tail(char *str);
 R_API char *r_str_trim_head_tail(char *str);
-R_API int r_str_hash(const char *str);
+R_API ut32 r_str_hash(const char *str);
 R_API ut64 r_str_hash64(const char *str);
 R_API char *r_str_clean(char *str);
 R_API int r_str_nstr(char *from, char *to, int size);
@@ -383,6 +383,50 @@ R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b);
 R_API void r_big_div_ut(RNumBig *a, RNumBig *b, ut32 c);
 R_API int r_big_divisible_ut(RNumBig *n, ut32 v);
 R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b);
+
+/** hashtable **/
+typedef struct r_hashtable_entry_t {
+	ut32 hash;
+	void *data;
+} RHashTableEntry;
+
+typedef struct r_hashtable_t {
+	RHashTableEntry *table;
+	ut32 size;
+	ut32 rehash;
+	ut32 max_entries;
+	ut32 size_index;
+	ut32 entries;
+	ut32 deleted_entries;
+} RHashTable;
+
+typedef struct r_hashtable64_entry_t {
+	ut64 hash;
+	void *data;
+} RHashTable64Entry;
+
+typedef struct r_hashtable64_t {
+	RHashTable64Entry *table;
+	ut64 size;
+	ut64 rehash;
+	ut64 max_entries;
+	ut64 size_index;
+	ut64 entries;
+	ut64 deleted_entries;
+} RHashTable64;
+
+
+R_API RHashTable* r_hashtable_new(void);
+R_API void r_hashtable_free(RHashTable *ht);
+R_API void *r_hashtable_lookup(RHashTable *ht, ut32 hash);
+R_API boolt r_hashtable_insert(RHashTable *ht, ut32 hash, void *data);
+R_API void r_hashtable_remove(RHashTable *ht, ut32 hash);
+
+R_API RHashTable64* r_hashtable64_new(void);
+R_API void r_hashtable64_free(RHashTable64 *ht);
+R_API void *r_hashtable64_lookup(RHashTable64 *ht, ut64 hash);
+R_API boolt r_hashtable64_insert(RHashTable64 *ht, ut64 hash, void *data);
+R_API void r_hashtable64_remove(RHashTable64 *ht, ut64 hash);
 #endif
 
 #endif

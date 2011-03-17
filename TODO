@@ -25,6 +25,7 @@ pancake
 
 nibble
 ------
+* Do not show XREF info if in the same function?
 * r_anal
   - Code analysis (detect when an argument is a flagmask or enum and display text format) (ollydbg)
 * r_bin

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include "r_db.h"
 
@@ -10,7 +10,7 @@ Configurable options:
 R_API RDatabase *r_db_new() {
 	RDatabase *db = R_NEW (RDatabase);
 	if (db) {
-		memset(&db->blocks, '\0', sizeof(db->blocks));
+		memset (&db->blocks, '\0', sizeof (db->blocks));
 		db->id_min = -1;
 		db->id_max = -1;
 	}
@@ -20,7 +20,7 @@ R_API RDatabase *r_db_new() {
 R_API RDatabaseBlock *r_db_block_new() {
 	RDatabaseBlock *ptr = R_NEW (RDatabaseBlock);
 	ptr->data = NULL;
-	memset(&ptr->childs, '\0', sizeof(ptr->childs));
+	memset (&ptr->childs, '\0', sizeof (ptr->childs));
 	return ptr;
 }
 
@@ -35,7 +35,7 @@ R_API int r_db_add_id(struct r_db_t *db, int key, int size) {
 		db->id_max = key;
 	if (key < db->id_min)
 		db->id_min = key;
-	db->blocks[key] = r_db_block_new();
+	db->blocks[key] = r_db_block_new ();
 	db->blocks_sz[key] = size;
 	return R_TRUE;
 }
@@ -48,7 +48,7 @@ static int _r_db_add_internal(struct r_db_t *db, int key, void *b) {
 	size = db->blocks_sz[key];
 	block = db->blocks[key];
 	if (block == NULL) {
-		block = r_db_block_new();
+		block = r_db_block_new ();
 		db->blocks[key] = block;
 	}
 	for (i=0;i<size;i++) {
@@ -112,7 +112,7 @@ UNNECESSARY LOOPZ
 	}
 	size = db->blocks_sz[key];
 	block = db->blocks[key];
-	for (i=0;block&&i<size;i++)
+	for (i=0; block && i<size; i++)
 		block = block->childs[b[key+i]];
 	if (block)
 		return block->data;
@@ -138,13 +138,13 @@ static int _r_db_delete_internal(struct r_db_t *db, int key, const ut8 *b) {
 		block = block->childs[b[key+i]];
 
 	if (block && block->data) {
-		for(i=0;block->data[i]; i++) {
+		for (i=0;block->data[i]; i++) {
 			if (block->data[i] == b)
-				for(j=i;block->data[j]; j++)
+				for (j=i;block->data[j]; j++)
 					block->data[j] = block->data[j+1];
 		}
 		if (block->data[0] == NULL) {
-			free(block->data);
+			free (block->data);
 			block->data = NULL;
 		}
 		return R_TRUE;
@@ -154,13 +154,13 @@ static int _r_db_delete_internal(struct r_db_t *db, int key, const ut8 *b) {
 
 R_API int r_db_delete(struct r_db_t *db, const void *ptr) {
 	int i;
-	for(i=db->id_min;i<=db->id_max;i++)
+	for (i=db->id_min; i<=db->id_max; i++)
 		if (db->blocks[i])
-			if (!_r_db_delete_internal(db, i, ptr))
+			if (!_r_db_delete_internal (db, i, ptr))
 				eprintf ("failed to delete internal pointer\n");
 	/* TODO */
 	if (db->cb_free && ptr)
-		return db->cb_free(db, ptr, db->cb_user);
+		return db->cb_free (db, ptr, db->cb_user);
 	return (ptr != NULL);
 }
 
@@ -175,7 +175,7 @@ R_API RDatabaseIter *r_db_iter_new(RDatabase *db, int key) {
 	iter->db = db;
 	iter->key = key;
 	iter->size = db->blocks_sz[key];
-	memset(&iter->path, 0, sizeof(iter->path));
+	memset (&iter->path, 0, sizeof (iter->path));
 	/* TODO: detect when no keys are found and return NULL */
 	iter->ptr = 0;
 	iter->cur = NULL;
@@ -235,7 +235,7 @@ R_API int r_db_iter_next(RDatabaseIter *iter) {
 	// if (something) return 1;
 	// depth = iter->size
 	// 
-	for (i=iter->ptr;i<iter->size;i++) {
+	for (i=iter->ptr; i<iter->size; i++) {
 		//block = block->childs[b[key+i]];
 	}
 	iter->ptr = i; // update pointer
@@ -257,7 +257,7 @@ R_API void *r_db_iter_prev(struct r_db_iter_t *iter) {
 }
 
 R_API struct r_db_iter_t *r_db_iter_free(struct r_db_iter_t *iter) {
-	free(iter);
+	free (iter);
 	return NULL;
 }
 

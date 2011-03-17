@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+
 #include "r_db.h"
 #include "r_util.h"
 /*
@@ -14,20 +16,20 @@ sizes['i'] = 4;
 struct r_db_table_t *r_db_table_new(const char *name, const char *fmt, const char *fields) {
 	int i;
 	int offset = 0;
-	struct r_db_table_t *table = R_NEW(struct r_db_table_t);
-	table->args = strdup(fields);
-	table->nelems = r_str_word_set0(table->args);
-	if (table->nelems != strlen(fmt)) {
+	struct r_db_table_t *table = R_NEW (RDatabaseTable);
+	table->args = strdup (fields);
+	table->nelems = r_str_word_set0 (table->args);
+	if (table->nelems != strlen (fmt)) {
 		fprintf(stderr, "Invalid arguments\n");
 		/* XXX: refactor */
-		free(table->args);
-		free(table);
+		free (table->args);
+		free (table);
 		table = NULL;
 	} else {
-		table->fmt = strdup(fmt);
-		table->name = strdup(name);
-		table->offset = (int*)malloc(sizeof(int)*table->nelems);
-		for(i=0;i<table->nelems;i++) {
+		table->fmt = strdup (fmt);
+		table->name = strdup (name);
+		table->offset = (int*)malloc (sizeof (int)*table->nelems);
+		for (i=0; i<table->nelems; i++) {
 			table->offset[i] = offset;
 			offset += 4;
 		}

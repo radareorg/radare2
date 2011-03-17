@@ -23,3 +23,9 @@ DROP TABLE flags
 INSERT INTO flags (name, offset) VALUES ("patata", 33)
 
 UPDATE flags SET offset=33 WHERE offset==20
+
+STORE
+  - ut32
+  - ut64
+  - Endianness matterz
+  - RList *get_range (0, 4096)
