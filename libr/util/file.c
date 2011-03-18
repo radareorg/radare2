@@ -8,8 +8,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#if __UNIX__
 #include <fcntl.h>
+#if __UNIX__
 #include <sys/mman.h>
 #endif
 
@@ -282,4 +282,28 @@ R_API void r_file_mmap_free (RMmap *m) {
 #endif
 	close (m->fd);
 	free (m);
+}
+
+R_API int r_file_mkstemp (const char *prefix, char **oname) {
+	int h;
+	const char *path;
+	char *name = malloc (1024);
+#if __WINDOWS__
+	path = r_sys_getenv ("TEMP");
+	if (GetTempFileName (path, prefix, 0, name))
+		h = open (name, O_RDWR|O_EXCL);
+	else h = -1;
+#else
+	path = r_sys_getenv ("TMPDIR");
+	if (path==NULL)
+		path = "/tmp";
+	h = snprintf (name, 1024, "%s/%sXXXXXX", path, prefix);
+	if (h<1024)
+		h = mkstemp (name);
+	else h = -1;
+#endif
+	if (oname && h!=-1) *oname = name;
+	else free (name);
+
+	return h;
 }

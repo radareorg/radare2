@@ -6,42 +6,38 @@
 #include <r_asm.h>
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
-#if __APPLE__
-	char path_r_nasm[] = "/tmp/r_nasm-XXXXXX";
-	int fd_r_nasm;
+	char *ipath, *opath;
+	int ifd, ofd;
 	char asm_buf[R_ASM_BUFSIZE];
-#endif
-	char cmd[R_ASM_BUFSIZE];
-	ut8 *out;
 	int len = 0;
 	if (a->syntax != R_ASM_SYNTAX_INTEL) {
 		eprintf ("asm.x86.nasm does not support non-intel syntax\n");
 		return -1;
 	}
-#if __APPLE__
-	fd_r_nasm = mkstemp (path_r_nasm);
-	snprintf (asm_buf, sizeof (asm_buf),
-			"BITS %i\nORG 0x%"PFMT64x"\n%s\n__", a->bits, a->pc, buf);
-	write (fd_r_nasm, asm_buf, sizeof (asm_buf));
-	close (fd_r_nasm);
-	snprintf (cmd, sizeof (cmd), "nasm %s -o /dev/stdout 2>/dev/null\n", path_r_nasm);
-#else
-	snprintf (cmd, sizeof (cmd),
-			"nasm /dev/stdin -o /dev/stdout 2>/dev/null <<__\n"
-			"BITS %i\nORG 0x%"PFMT64x"\n%s\n__", a->bits, a->pc, buf);
-#endif
-	out = (ut8 *)r_sys_cmd_str (cmd, "", &len);
 
-#if __APPLE__
-	unlink (path_r_nasm);
-#endif
-	if (out && memcmp (out, "/dev/stdin:", len>11?11:len)) {
-		memcpy (op->buf, out, len<=R_ASM_BUFSIZE?len:R_ASM_BUFSIZE);
+	ifd = r_file_mkstemp ("r_nasm", &ipath);
+	ofd = r_file_mkstemp ("r_nasm", &opath);
+
+	len = snprintf (asm_buf, sizeof (asm_buf),
+			"BITS %i\nORG 0x%"PFMT64x"\n%s", a->bits, a->pc, buf);
+	write (ifd, asm_buf, len);
+
+	close (ifd);
+
+	if ( !r_sys_cmdf ("nasm %s -o %s", ipath, opath)) {
+		len = read (ofd, op->buf, R_ASM_BUFSIZE);
 	} else {
 		eprintf ("Error running 'nasm'\n");
 		len = 0;
 	}
-	if (out) free (out);
+
+	close (ofd);
+
+	unlink (ipath);
+	unlink (opath);
+	free (ipath);
+	free (opath);
+
 	op->inst_len = len;
 	return len;
 }
