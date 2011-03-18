@@ -3,7 +3,7 @@ include ../config.mk
 NAME=r_util
 OBJ=mem.o pool.o num.o str.o re.o hex.o file.o alloca.o range.o log.o
 OBJ+=prof.o cache.o sys.o btree.o buf.o list.o flist.o w32-sys.o base64.o
-OBJ+=ht.o ht64.o
+OBJ+=ht.o ht64.o mixed.o
 ifeq (${HAVE_LIB_GMP},1)
   OBJ+=big-gmp.o
 else
@@ -23,4 +23,8 @@ ht64:
 	#cat ht.c ht64.c | sed -e 's,) {,);,'
 m:
 	gcc mixed.c -I ../include/ -DTEST=1 -lr_util -g
-	./a.out
+	#valgrind ./a.out
+
+h:
+	gcc ht.c -I ../include/ -DTEST=1 -lr_util -g
+	#valgrind ./a.out

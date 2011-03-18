@@ -114,7 +114,7 @@ static void r_hashtable64_rehash(RHashTable64 *ht, int new_size_index) {
 	if (new_size_index >= ARRAY_SIZE (hash_sizes))
 		return;
 	// XXX: This code is redupped! fuck't
-	ht->table = malloc (hash_sizes[new_size_index].size * sizeof (*ht->table));
+	ht->table = calloc (hash_sizes[new_size_index].size, sizeof (*ht->table));
 	if (!ht->table)
 		return;
 	ht->size_index = new_size_index;
@@ -131,11 +131,11 @@ static void r_hashtable64_rehash(RHashTable64 *ht, int new_size_index) {
 }
 
 R_API RHashTable64* r_hashtable64_new(void) {
-	RHashTable64 *ht = malloc (sizeof (*ht));
-	if (!ht)
-		return NULL;
+	RHashTable64 *ht = R_NEW (RHashTable64);
+	if (!ht) return NULL;
 	// TODO: use slices here
-	ht->table = malloc (ht->size * sizeof (*ht->table));
+	ht->size = hash_sizes[0].size;
+	ht->table = calloc (ht->size, sizeof (*ht->table));
 	if (!ht->table) {
 		free (ht);
 		return NULL;
@@ -143,7 +143,6 @@ R_API RHashTable64* r_hashtable64_new(void) {
 	ht->size_index = 0;
 	ht->entries = 0;
 	ht->deleted_entries = 0;
-	ht->size = hash_sizes[ht->size_index].size;
 	ht->rehash = hash_sizes[ht->size_index].rehash;
 	ht->max_entries = hash_sizes[ht->size_index].max_entries;
 	return ht;
@@ -212,22 +211,23 @@ int main () {
 	const char *str;
 	int ret;
 	RHashTable64 *ht = r_hashtable64_new ();
+#define HASH 268453705
 
-	ret = r_hashtable64_insert (ht, 33, "patata");
+	ret = r_hashtable64_insert (ht, HASH, "patata");
 	if (!ret)
 		printf ("Cannot reinsert !!1\n");
 
-	str = r_hashtable64_lookup (ht, 33);
+	str = r_hashtable64_lookup (ht, HASH);
 	if (str) printf ("String is (%s)\n", str);
 	else printf ("Cannot find string\n");
 
-	r_hashtable64_remove (ht, 33);
+	r_hashtable64_remove (ht, HASH);
 
-	str = r_hashtable64_lookup (ht, 33);
+	str = r_hashtable64_lookup (ht, HASH);
 	if (str) printf ("String is (%s)\n", str);
-	else printf("Cannot find string\n");
+	else printf("Cannot find string which is ok :)\n");
 
-	r_hashtable64_search (ht, 33);
+	r_hashtable64_search (ht, HASH);
 
 	r_hashtable64_free (ht);
 }

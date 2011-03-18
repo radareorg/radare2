@@ -82,7 +82,7 @@ static const struct {
     { 2147483648ul,	2362232233ul,	2362232231ul}
 };
 
-#define entry_is_free(x) (!x->data)
+#define entry_is_free(x) (!x || !x->data)
 #define entry_is_deleted(x) (x->data==&deleted_data)
 #define entry_is_present(x) (x->data && x->data != &deleted_data)
 
@@ -114,7 +114,7 @@ static void r_hashtable_rehash(RHashTable *ht, int new_size_index) {
 	if (new_size_index >= ARRAY_SIZE (hash_sizes))
 		return;
 	// XXX: This code is redupped! fuck't
-	ht->table = malloc (hash_sizes[new_size_index].size * sizeof (*ht->table));
+	ht->table = calloc (hash_sizes[new_size_index].size, sizeof (*ht->table));
 	if (!ht->table)
 		return;
 	ht->size_index = new_size_index;
@@ -131,11 +131,11 @@ static void r_hashtable_rehash(RHashTable *ht, int new_size_index) {
 }
 
 R_API RHashTable* r_hashtable_new(void) {
-	RHashTable *ht = malloc (sizeof (*ht));
-	if (!ht)
-		return NULL;
+	RHashTable *ht = R_NEW (RHashTable);
+	if (!ht) return NULL;
 	// TODO: use slices here
-	ht->table = malloc (ht->size * sizeof (*ht->table));
+	ht->size = hash_sizes[0].size;
+	ht->table = calloc (ht->size, sizeof (*ht->table));
 	if (!ht->table) {
 		free (ht);
 		return NULL;
@@ -143,7 +143,6 @@ R_API RHashTable* r_hashtable_new(void) {
 	ht->size_index = 0;
 	ht->entries = 0;
 	ht->deleted_entries = 0;
-	ht->size = hash_sizes[ht->size_index].size;
 	ht->rehash = hash_sizes[ht->size_index].rehash;
 	ht->max_entries = hash_sizes[ht->size_index].max_entries;
 	return ht;

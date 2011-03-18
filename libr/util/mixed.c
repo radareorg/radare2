@@ -69,10 +69,8 @@ R_API int r_mixed_key(RMixed *m, int key, int size) {
 			switch (size) {
 			case 1: case 2: case 4:
 				m->keys[key]->hash.ht = r_hashtable_new ();
-eprintf ("new hash %d = %p\n", key, m->keys[key]->hash.ht);
 				return R_TRUE;
 			case 8: m->keys[key]->hash.ht64 = r_hashtable64_new ();
-eprintf ("---new hash %d\n", key);
 				return R_TRUE;
 			}
 		}
@@ -96,7 +94,6 @@ R_API RList *r_mixed_get (RMixed *m, int key, ut64 value) {
 	if (m->keys[key])
 	switch (m->keys[key]->size) {
 	case 1: case 2: case 4:
-eprintf ("sz = %d   ht=%p\n", m->keys[key]->size, m->keys[key]->hash.ht);
 		return r_hashtable_lookup (m->keys[key]->hash.ht, (ut32)value);
 	case 8: return r_hashtable64_lookup (m->keys[key]->hash.ht64, value);
 	}
@@ -105,11 +102,6 @@ eprintf ("sz = %d   ht=%p\n", m->keys[key]->size, m->keys[key]->hash.ht);
 
 R_API void *r_mixed_get0 (RMixed *m, int key, ut64 value) {
 	RList *list = r_mixed_get (m, key, value);
-printf ("LURKITAPP %d = %p\n", key, r_hashtable_lookup (m->keys[key]->hash.ht, (ut32)value));
-eprintf ("lookup for %llx\n", value);
-eprintf ("LIST = %p\n", list);
-//eprintf ("HEAD = %p\n", r_list_head (list));
-//eprintf ("DATA = %p\n", r_list_head (list)->data);
 	if (list && !r_list_empty (list))
 		return r_list_head (list)->data;
 	return NULL;
@@ -120,7 +112,7 @@ R_API int r_mixed_add (RMixed *m, void *p) {
 	RHashTable64 *ht64;
 	RList *list = NULL;
 	ut64 value;
-	int i, size;
+	int i, size, ret = R_FALSE;;
 	r_list_append (m->list, p);
 	for (i=0; i<RMIXED_MAXKEYS; i++) {
 		if (!m->keys[i])
@@ -134,10 +126,9 @@ R_API int r_mixed_add (RMixed *m, void *p) {
 			if (!list) {
 				list = r_list_new ();
 				r_hashtable_insert (ht, (ut32)value, list);
-	printf ("INSERTING NEWTABLE AT %d PWND = %p\n", i, r_hashtable_lookup (ht, (ut32)value));
 			}
-eprintf ("key=%d  newlist=%p  value=%llx   p=%p\n", i, list, value, p);
 			r_list_append (list, p);
+			ret = R_TRUE;
 			break;
 		case 8:
 			ht64 = m->keys[i]->hash.ht64;
@@ -146,21 +137,26 @@ eprintf ("key=%d  newlist=%p  value=%llx   p=%p\n", i, list, value, p);
 				list = r_list_new ();
 				r_hashtable64_insert (ht64, value, list);
 			}
-eprintf ("key64=%d  newlist=%p  value=%llx   p=%p\n", i, list, value, p);
 			r_list_append (list, p);
+			ret = R_TRUE;
 			break;
 		}
 	}
+	return ret;
 }
 
-R_API int r_mixed_del (RMixed *m, const void *p) {
+R_API int r_mixed_del (RMixed *m, void *p) {
 	int i;
 	r_list_delete_data (m->list, p);
 	// TODO delete indexed hashtables
 	for (i=0; i<RMIXED_MAXKEYS; i++) {
+		if (!m->keys[i]) continue;
+		// TODO: remove that key ptr from everywhere
 	}
+	return R_FALSE;
 }
 
+#if TEST
 typedef struct {
 	char *name;
 	ut32 hashname;
@@ -174,7 +170,6 @@ TestStruct *test_struct_new(const char *name, int length, ut64 offset) {
 	ts->hashname = r_str_hash (name);
 	ts->length = length;
 	ts->offset = offset;
-eprintf ("name : %s\n", name);
 	return ts;
 }
 
@@ -184,6 +179,8 @@ void test_struct_free(TestStruct *ts) {
 }
 
 int main () {
+	RList *list;
+	RListIter *iter;
 	TestStruct *ts;
 	RMixed *mx = r_mixed_new ();
 	R_MIXED_KEY (mx, TestStruct, ts, hashname);
@@ -203,5 +200,14 @@ int main () {
 		printf ("OFF: %llx\n", ts->offset);
 	} else eprintf ("oops. cannot find 'food'\n");
 
+	eprintf ("--\n");
+	list = r_mixed_get (mx, r_offsetof (TestStruct, offset), 0x224944);
+	r_list_foreach (list, iter, ts) {
+		printf ("NAM: %s\n", ts->name);
+		printf ("LEN: %d\n", ts->length);
+		printf ("OFF: %llx\n", ts->offset);
+	}
+
 	r_mixed_free (mx);
 }
+#endif
