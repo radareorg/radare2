@@ -21,3 +21,6 @@ include ../rules.mk
 ht64:
 	cat ht.c | sed -e s,hashtable,hashtable64,g -e s,HashTable,HashTable64,g -e s,ut32,ut64,g > ht64.c
 	#cat ht.c ht64.c | sed -e 's,) {,);,'
+m:
+	gcc mixed.c -I ../include/ -DTEST=1 -lr_util -g
+	./a.out

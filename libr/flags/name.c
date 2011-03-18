@@ -33,27 +33,27 @@ static int r_flag_name_validate_char(const char ch) {
 		return 0;
 	default:
 		if (((ch >= '0') && (ch <= '9')))
-			return 1;
+			return R_TRUE;
 		if (!IS_PRINTABLE (ch))
-			return 0;
+			return R_FALSE;
 	}
-	return 1;
+	return R_TRUE;
 }
 
 R_API int r_flag_name_check(const char *name) {
 	if (name[0]=='\0')
-		return 0;
+		return R_FALSE;
 	for (;*name!='\0'; name++)
 		if (!r_flag_name_validate_char (*name))
-			return 0;
-	return 1;
+			return R_FALSE;
+	return R_TRUE;
 }
 
 R_API int r_flag_name_filter(char *name) {
 	int i;
 	char *oname;
 	name = oname = r_str_trim (name);
-	for (i=0;*name!='\0'; name = name +1,i++) {
+	for (i=0; *name!='\0'; name = name +1,i++) {
 		if (i>R_FLAG_NAME_SIZE) {
 			name[0] = '\0';
 			break;

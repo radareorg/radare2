@@ -25,3 +25,5 @@ R_API int r_str_re_replace(const char *str, const char *reg, const char *sub) {
 	/* TODO: not yet implemented */
 	return -1;
 }
+
+/* Added glob stuff here */

@@ -45,7 +45,7 @@ R_API void r_flag_space_set(RFlag *f, const char *name) {
 		}
 	}
 	/* not found */
-	for(i=0;i<R_FLAG_SPACES_MAX;i++) {
+	for (i=0;i<R_FLAG_SPACES_MAX;i++) {
 		if (f->spaces[i] == NULL) {
 			f->spaces[i] = strdup (name);
 			f->space_idx = i;
@@ -56,9 +56,9 @@ R_API void r_flag_space_set(RFlag *f, const char *name) {
 
 R_API void r_flag_space_list(RFlag *f) {
 	int i,j = 0;
-	for(i=0;i<R_FLAG_SPACES_MAX;i++) {
+	for (i=0;i<R_FLAG_SPACES_MAX;i++) {
 		if (f->spaces[i])
-			printf("%02d %c %s\n", j++,
+			printf ("%02d %c %s\n", j++,
 			(i==f->space_idx)?'*':' ', f->spaces[i]);
 	}
 }
