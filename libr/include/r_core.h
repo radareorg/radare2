@@ -19,6 +19,7 @@
 #include "r_flags.h"
 #include "r_config.h"
 #include "r_bin.h"
+#include "r_socket.h"
 
 #define R_CORE_CMD_EXIT -2
 #define R_CORE_BLOCKSIZE 64
@@ -44,7 +45,7 @@ typedef struct r_core_rtr_host_t {
 	char host[512];
 	int port;
 	char file[1024];
-	int fd;
+	RSocket *fd;
 } RCoreRtrHost;
 /* rtr */
 

@@ -42,6 +42,6 @@ typedef struct {
 } SHA_CTX;
 #endif
 
-void SHA1_Init(SHA_CTX *ctx);
-void SHA1_Update(SHA_CTX *ctx, const void *dataIn, int len);
-void SHA1_Final(unsigned char hashout[20], SHA_CTX *ctx);
+void SHA1_Init(R_SHA_CTX *ctx);
+void SHA1_Update(R_SHA_CTX *ctx, const void *dataIn, int len);
+void SHA1_Final(unsigned char hashout[20], R_SHA_CTX *ctx);

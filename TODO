@@ -68,10 +68,12 @@ earada
 ------
 * p7 : 7bit encoding (sms)
 * Add print support for bitfields (pm b...)
+* Fix io_haret memory dump
 * r_socket
   - Add SSL support
   - http API in r_socket module
     - allow to get/post data/files with continue on plain/ssl
+* refactor rap and raps
 * remove all uses of alloca() // mingw and grep reports them all :)
 * typedef all function pointers, like in r_bp
 * Implement case-insensitive search (e search.casematters ?) any better name? Use /i?

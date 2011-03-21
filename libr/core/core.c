@@ -473,11 +473,12 @@ R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr) {
 // TODO: move into core/io/rap? */
 R_API int r_core_serve(RCore *core, RIODesc *file) {
 	ut8 cmd, flg, *ptr, buf[1024];
-	int i, c, pipefd, fd;
+	int i, pipefd;
 	ut64 x;
+	RSocket *c, *fd;
 
-	fd = file->fd;
-	if (fd == -1) {
+	fd = (RSocket *)file->data;
+	if (fd == NULL) {
 		eprintf ("rap: cannot listen.\n");
 		return -1;
 	}
@@ -491,14 +492,14 @@ R_API int r_core_serve(RCore *core, RIODesc *file) {
 reaccept:
 	core->io->plugin = NULL;
 	while ((c = r_socket_accept (fd))) {
-		if (c == -1) {
+		if (c == NULL) {
 			eprintf ("rap: cannot accept\n");
 			r_socket_close (c);
 			return -1;
 		}
 
 		eprintf ("rap: client connected\n");
-		r_io_accept (core->io, c);
+		r_io_accept (core->io, c->fd);
 		for (;;) {
 			i = r_socket_read (c, &cmd, 1);
 			if (i==0) {
@@ -557,7 +558,7 @@ reaccept:
 						r_core_block_size (core, i);
 					r_mem_copyendian (ptr+1, (ut8 *)&i, 4, !endian);
 					memcpy (ptr+5, core->block, i); //core->blocksize);
-					write (c, ptr, i+5);
+					r_socket_write (c, ptr, i+5);
 				}
 				break;
 			case RMT_CMD:
@@ -596,10 +597,10 @@ reaccept:
 				break;
 				}
 			case RMT_WRITE:
-				read (c, buf, 5);
+				r_socket_read (c, buf, 5);
 				r_mem_copyendian((ut8 *)&x, buf+1, 4, endian);
 				ptr = malloc (x);
-				read (c, ptr, x);
+				r_socket_read (c, ptr, x);
 				r_core_write_at (core, core->offset, ptr, x);
 				free (ptr);
 				break;
@@ -620,7 +621,8 @@ reaccept:
 				r_socket_read_block (c, buf, 4);
 				r_mem_copyendian ((ut8*)&i, buf, 4, endian);
 				{
-				int ret = r_socket_close (i);
+				//FIXME: Use r_socket_close
+				int ret = close (i);
 				r_mem_copyendian (buf+1, (ut8*)&ret, 4, !endian);
 				buf[0] = RMT_CLOSE | RMT_REPLY;
 				r_socket_write (c, buf, 5);

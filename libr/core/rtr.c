@@ -23,7 +23,7 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 	const char *cmd = NULL;
 	char *str = NULL;
 	if (fd) {
-		for (rtr_n = 0; rtr_host[rtr_n].fd != fd \
+		for (rtr_n = 0; rtr_host[rtr_n].fd->fd != fd \
 			&& rtr_n < RTR_MAX_HOSTS; rtr_n++);
 		if (!(cmd = strchr (input, ' '))) {
 			eprintf ("Error\n");
@@ -31,7 +31,7 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 		}
 	} else cmd = input;
 
-	if (!rtr_host[rtr_n].fd) {
+	if (!rtr_host[rtr_n].fd->fd) {
 		eprintf("Error: Unknown host\n");
 		return;
 	}
@@ -58,7 +58,7 @@ R_API void r_core_rtr_list(RCore *core) {
 	int i;
 	for (i = 0; i < RTR_MAX_HOSTS; i++)
 		if (rtr_host[i].fd) {
-			r_cons_printf("%i - ", rtr_host[i].fd);
+			r_cons_printf("%i - ", rtr_host[i].fd->fd);
 			if (rtr_host[i].proto == RTR_PROT_TCP)
 				r_cons_printf("tcp://");
 			else if (rtr_host[i].proto == RTR_PROT_UDP)
@@ -71,7 +71,8 @@ R_API void r_core_rtr_list(RCore *core) {
 		
 R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	char input[1024], *host = NULL, *file = NULL, *ptr = NULL, buf[1024];
-	int proto, port, fd, i;
+	int proto, port, i;
+	RSocket *fd;
 
 	strncpy (input, _input, sizeof (input)-4);
 	/* Parse uri */
@@ -108,8 +109,8 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 
 	switch (proto) {
 	case RTR_PROT_RAP:
-		fd = r_socket_connect (host, port);
-		if (fd == -1) {
+		fd = r_socket_new (host, port, R_FALSE); //TODO: Use rap.ssl
+		if (fd == NULL) {
 			eprintf ("Error: Cannot connect to '%s' (%d)\n", host, port);
 			return;
 		}
@@ -131,16 +132,16 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		eprintf ("ok\n");
 		break;
 	case RTR_PROT_TCP:
-		fd = r_socket_connect (host, port);
-		if (fd == -1) {
+		fd = r_socket_new (host, port, R_FALSE); //TODO: Use rap.ssl
+		if (fd == NULL) {
 			eprintf ("Error: Cannot connect to '%s' (%d)\n", host, port);
 			return;
 		}
 		eprintf ("Connected to: %s at port %d\n", host, port);
 		break;
 	case RTR_PROT_UDP:
-		fd = r_socket_udp_connect (host, port);
-		if (fd == -1) {
+		fd = r_socket_udp_connect (host, port, R_FALSE); //TODO: Use rap.ssl
+		if (fd == NULL) {
 			eprintf("Error: Cannot connect to '%s' (%d)\n", host, port);
 			return;
 		}
@@ -168,9 +169,9 @@ R_API void r_core_rtr_remove(RCore *core, const char *input) {
 	if (input[0] >= '0' && input[0] <= '9') {
 		fd = r_num_math (core->num, input);
 		for (i = 0; i < RTR_MAX_HOSTS; i++)
-			if (rtr_host[i].fd == fd) {
-				r_socket_close (rtr_host[i].fd);
-				rtr_host[i].fd = 0;
+			if (rtr_host[i].fd->fd == fd) {
+				r_socket_free (rtr_host[i].fd);
+				rtr_host[i].fd = NULL;
 				if (rtr_n == i)
 					for (rtr_n = 0; !rtr_host[rtr_n].fd && rtr_n < RTR_MAX_HOSTS; rtr_n++);
 				break;
@@ -178,7 +179,7 @@ R_API void r_core_rtr_remove(RCore *core, const char *input) {
 	} else {
 		for (i = 0; i < RTR_MAX_HOSTS; i++)
 			if (rtr_host[i].fd)
-				r_socket_close (rtr_host[i].fd);
+				r_socket_free (rtr_host[i].fd);
 		memset (rtr_host, '\0', RTR_MAX_HOSTS * sizeof(RCoreRtrHost));
 		rtr_n = 0;
 	}
@@ -190,11 +191,11 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 
 	if (input[0] >= '0' && input[0] <= '9') {
 		fd = r_num_math (core->num, input);
-		for (rtr_n = 0; rtr_host[rtr_n].fd != fd && rtr_n < RTR_MAX_HOSTS; rtr_n++);
+		for (rtr_n = 0; rtr_host[rtr_n].fd->fd != fd && rtr_n < RTR_MAX_HOSTS; rtr_n++);
 	}
 
 	for (;;) {
-		snprintf (prompt, sizeof (prompt), "fd:%d> ", rtr_host[rtr_n].fd);
+		snprintf (prompt, sizeof (prompt), "fd:%d> ", rtr_host[rtr_n].fd->fd);
 		r_line_singleton ()->prompt = prompt;
 		if ((r_cons_fgets (buf, sizeof (buf), 0, NULL))) {
 			if (*buf == 'q')
@@ -215,7 +216,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	int i, cmd_len, fd = atoi (input);
 
 	if (fd != 0) {
-		for (rtr_n = 0; rtr_host[rtr_n].fd != fd && rtr_n < RTR_MAX_HOSTS; rtr_n++);
+		for (rtr_n = 0; rtr_host[rtr_n].fd->fd != fd && rtr_n < RTR_MAX_HOSTS; rtr_n++);
 		if (!(cmd = strchr (input, ' '))) {
 			eprintf("Error\n");
 			return;

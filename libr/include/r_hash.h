@@ -15,14 +15,14 @@ typedef struct {
 	unsigned int W[80];
 	int lenW;
 	unsigned int sizeHi, sizeLo;
-} SHA_CTX;
+} R_SHA_CTX;
 
 #define SHA256_BLOCK_LENGTH 64
 typedef struct _SHA256_CTX {
 	ut32 state[8];
 	ut64 bitcount;
 	ut8 buffer[SHA256_BLOCK_LENGTH];
-} SHA256_CTX;
+} R_SHA256_CTX;
 
 #define SHA384_BLOCK_LENGTH 128
 #define SHA512_BLOCK_LENGTH 128
@@ -30,15 +30,15 @@ typedef struct _SHA512_CTX {
 	ut64 state[8];
 	ut64 bitcount[2];
 	ut8 buffer[SHA512_BLOCK_LENGTH];
-} SHA512_CTX;
-typedef SHA512_CTX SHA384_CTX;
+} R_SHA512_CTX;
+typedef R_SHA512_CTX R_SHA384_CTX;
 
 typedef struct r_hash_t {
 	MD5_CTX md5;
-	SHA_CTX sha1;
-	SHA256_CTX sha256;
-	SHA384_CTX sha384;
-	SHA512_CTX sha512;
+	R_SHA_CTX sha1;
+	R_SHA256_CTX sha256;
+	R_SHA384_CTX sha384;
+	R_SHA512_CTX sha512;
 	int rst;
 	ut8 digest[128];
 } RHash;

@@ -5,7 +5,7 @@
 #include "r_socket.h"
 #include <sys/types.h>
 
-#define HARET_FD(x) ((int)((size_t)x->data))
+#define HARET_FD(x) ((RSocket*)(x->data))
 
 //#if (sizeof(int)) > (sizeof(void*))
 //#error WTF int>ptr? wrong compiler or architecture?
@@ -18,11 +18,11 @@ static int haret__write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int coun
 	return 0;
 }
 
-static void haret_wait_until_prompt(int ufd) {
+static void haret_wait_until_prompt(RSocket *s) {
 	unsigned char buf;
 	int off = 0;
 	for (;;) {
-		if (r_socket_read (ufd, &buf, 1) != 1) {
+		if (r_socket_read (s, &buf, 1) != 1) {
 			eprintf ("haret_wait_until_prompt: Unexpected eof in socket\n");
 			return;
 		}
@@ -37,32 +37,32 @@ static int haret__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
 	char tmp[1024];
 	int i = 0;
 	ut64 off, j;
-	int ufd = HARET_FD (fd);
+	RSocket *s = HARET_FD (fd);
 
 	off = io->off & -4;
 	sprintf (tmp, "pdump 0x%"PFMT64x" %i\r\n", off, count+4);
-	r_socket_write (ufd, tmp, strlen (tmp));
-	r_socket_read_block (ufd, (unsigned char *) tmp, strlen (tmp)+1);
+	r_socket_write (s, tmp, strlen (tmp));
+	r_socket_read_block (s, (unsigned char *) tmp, strlen (tmp)+1);
 	j = (io->off - off)*2;
 	while (i<count && j >= 0) {
-		r_socket_read_block (ufd, (ut8*) tmp, 11);
-		r_socket_read_block (ufd, (ut8*) tmp, 35);
+		r_socket_read_block (s, (ut8*) tmp, 11);
+		r_socket_read_block (s, (ut8*) tmp, 35);
 		if (i+16 < count || (io->off-off) == 0) {
 			tmp[35] = 0;
 			i += r_hex_str2bin (tmp+j, buf+i);
-			r_socket_read_block (ufd, (unsigned char *) tmp, 21);
+			r_socket_read_block (s, (unsigned char *) tmp, 21);
 		} else {
 			tmp[(io->off - off)*2] = 0;
 			i += r_hex_str2bin (tmp+j, buf+i);
 		}
 		j=0;
 	}
-	haret_wait_until_prompt (ufd);
+	haret_wait_until_prompt (s);
 	return i;
 }
 
 static int haret__close(RIODesc *fd) {
-	if (!fd || HARET_FD (fd)==-1)
+	if (!fd || HARET_FD (fd)->fd==-1)
 		return -1;
 	return r_socket_close (HARET_FD (fd));
 }
@@ -73,7 +73,8 @@ static int haret__plugin_open(struct r_io_t *io, const char *pathname) {
 
 static RIODesc *haret__open(struct r_io_t *io, const char *pathname, int rw, int mode) {
 	char *port, *ptr, buf[1024];
-	int p, ufd;
+	int p;
+	RSocket *s;
 
 	strncpy (buf, pathname, sizeof (buf)-1);
 	if (haret__plugin_open (io, pathname)) {
@@ -84,12 +85,12 @@ static RIODesc *haret__open(struct r_io_t *io, const char *pathname, int rw, int
 		}
 		*port = 0;
 		p = atoi (port+1);
-		if ((ufd = r_socket_connect (ptr, p)) == -1) {
+		if ((s = r_socket_new (ptr, p, R_FALSE)) == NULL) {
 			eprintf ("Cannot connect to '%s' (%d)\n", ptr, p);
 			return NULL;
 		} else eprintf ("Connected to: %s at port %d\n", ptr, p);
-		haret_wait_until_prompt (ufd);
-		return r_io_desc_new (&r_io_plugin_haret, ufd, pathname, rw, mode, (void*)(size_t)ufd);
+		haret_wait_until_prompt (s);
+		return r_io_desc_new (&r_io_plugin_haret, s->fd, pathname, rw, mode, (void*)s);
 	}
 	return NULL;
 }
