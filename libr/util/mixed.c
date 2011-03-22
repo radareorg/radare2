@@ -148,10 +148,16 @@ R_API int r_mixed_add (RMixed *m, void *p) {
 R_API int r_mixed_del (RMixed *m, void *p) {
 	int i;
 	r_list_delete_data (m->list, p);
-	// TODO delete indexed hashtables
 	for (i=0; i<RMIXED_MAXKEYS; i++) {
+		ut64 value = r_mixed_get_value (i, m->keys[i]->size, p);
 		if (!m->keys[i]) continue;
-		// TODO: remove that key ptr from everywhere
+		switch (m->keys[i]->size) {
+		case 1: case 2: case 4:
+			r_hashtable_remove (m->keys[i]->hash.ht, (ut32)value);
+			break;
+		case 8: r_hashtable64_remove (m->keys[i]->hash.ht64, value);
+			break;
+		}
 	}
 	return R_FALSE;
 }
@@ -207,7 +213,6 @@ int main () {
 		printf ("LEN: %d\n", ts->length);
 		printf ("OFF: %llx\n", ts->offset);
 	}
-
 	r_mixed_free (mx);
 }
 #endif
