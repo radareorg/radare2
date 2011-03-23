@@ -388,6 +388,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_i (cfg, "magic.depth", 100);
 	r_config_set (cfg, "rap.loop", "true");
 	/* zoom */
+	r_config_set_i (cfg, "zoom.maxsz", 512);
 	r_config_set_i (cfg, "zoom.from", 0);
 	r_config_set_i (cfg, "zoom.to", 0);
 	r_config_set (cfg, "zoom.byte", "h");

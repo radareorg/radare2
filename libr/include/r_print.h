@@ -12,6 +12,13 @@
 
 typedef int (*RPrintZoomCallback)(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 
+typedef struct r_print_zoom_t {
+	ut8 *buf;
+	ut64 from;
+	ut64 to;
+	int size;
+} RPrintZoom;
+
 typedef struct r_print_t {
 	void *user;
 	RIOBind iob;
@@ -28,6 +35,7 @@ typedef struct r_print_t {
 	int ocur;
 	int flags;
 	int addrmod;
+	RPrintZoom *zoom;
 } RPrint;
 
 #ifdef R_API
@@ -52,7 +60,7 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *str, int len, int wide
 R_API int r_print_date_dos(struct r_print_t *p, ut8 *buf, int len);
 R_API int r_print_date_w32(struct r_print_t *p, const ut8 *buf, int len);
 R_API int r_print_date_unix(struct r_print_t *p, const ut8 *buf, int len);
-R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int mode, int len);
+R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int mode, int len, int maxlen);
 R_API void r_print_progressbar(RPrint *pr, int pc, int _cols);
 #endif
 

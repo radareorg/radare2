@@ -8,7 +8,7 @@ int main()
 
 	r_cons_new();
 	p = r_print_new();
-	r_print_hexdump(p, (ut64)(main), buf, 128, 16, 1);
+	r_print_hexdump(p, (ut64)(size_t)(main), buf, 128, 16, 1);
 	r_cons_flush();
 
 	return 0;

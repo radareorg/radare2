@@ -57,6 +57,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define ZERO_FILL(x) memset (x, 0, sizeof (x))
 #define R_NEWS(x,y) (x*)malloc(sizeof(x)*y)
 #define R_NEW(x) (x*)malloc(sizeof(x))
+#define R_NEW0(x) (x*)calloc(1,sizeof(x))
 // TODO: Make R_NEW_COPY be 1 arg, not two
 #define R_NEW_COPY(x,y) x=(y*)malloc(sizeof(y));memcpy(x,y,sizeof(y))
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')

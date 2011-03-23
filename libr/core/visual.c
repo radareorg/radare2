@@ -1113,7 +1113,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" hjkl    - move around\n"
 		" HJKL    - move around faster\n"
 		" pP      - rotate print modes\n"
-		" /*+-    - change block size\n"
+		" /*+-[]  - change block size, [] = resize scr.cols\n"
 		" cC      - toggle cursor and colors\n"
 		" d[f?]   - define function, data, code, ..\n"
 		" x       - find xrefs for current offset\n"

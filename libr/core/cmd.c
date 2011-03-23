@@ -2080,6 +2080,7 @@ static int cmd_print(void *data, const char *input) {
 			"Usage: pZ [len]\n"
 			" print N bytes where each byte represents a block of filesize/N\n"
 			"Configuration:\n"
+			" zoom.maxsz : max size of block\n"
 			" zoom.from  : start address\n"
 			" zoom.to    : end address\n"
 			" zoom.byte  : specify how to calculate each byte\n"
@@ -2094,10 +2095,11 @@ static int cmd_print(void *data, const char *input) {
 			);
 		} else {
 			const char *mode = r_config_get (core->config, "zoom.byte");
+			ut64 maxsize = r_config_get_i (core->config, "zoom.maxsz");
 			ut64 from = r_config_get_i (core->config, "zoom.from");
 			ut64 to = r_config_get_i (core->config, "zoom.to");
 			if (mode) r_print_zoom (core->print, core, printzoomcallback,
-				from, to, *mode, core->blocksize);
+				from, to, *mode, core->blocksize, (int)maxsize);
 			else eprintf ("No zoom.byte defined\n");
 		}
 		break;

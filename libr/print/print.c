@@ -21,8 +21,19 @@ R_API RPrint *r_print_new() {
 			   R_PRINT_FLAGS_COLOR |
 			   R_PRINT_FLAGS_HEADER |
 			   R_PRINT_FLAGS_ADDRMOD;
+		p->zoom = R_NEW0 (RPrintZoom);
 	}
 	return p;
+}
+
+R_API RPrint *r_print_free(RPrint *p) {
+	if (p->zoom) {
+		free (p->zoom->buf);
+		free (p->zoom);
+		p->zoom = NULL;
+	}
+	free (p);
+	return NULL;
 }
 
 // dummy setter can be removed
@@ -32,11 +43,6 @@ R_API void r_print_set_flags(RPrint *p, int _flags) {
 
 R_API void r_print_unset_flags(RPrint *p, int flags) {
 	p->flags = p->flags & (p->flags^flags);
-}
-
-R_API RPrint *r_print_free(RPrint *p) {
-	free(p);
-	return NULL;
 }
 
 R_API void r_print_set_cursor(RPrint *p, int enable, int ocursor, int cursor) {
@@ -282,33 +288,52 @@ R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
         (pc<0)?pc=0:(pc>100)?pc=100:0;
         p->printf ("%4d%% [", pc);
         cols -= 15;
-        for(tmp=cols*pc/100;tmp;tmp--) p->printf ("#");
-        for(tmp=cols-(cols*pc/100);tmp;tmp--) p->printf ("-");
+        for (tmp=cols*pc/100;tmp;tmp--) p->printf ("#");
+        for (tmp=cols-(cols*pc/100);tmp;tmp--) p->printf ("-");
         p->printf ("]");
 }
 
-R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int mode, int len) {
-	ut64 size;
+
+R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int mode, int len, int maxlen) {
 	ut8 *bufz, *bufz2;
 	int i, j = 0;
+	ut64 size = (to-from)/len;
 
-	size = (to-from)/len;
-	if (size < 1)
-		size = 1;
-	bufz = (ut8 *) malloc (len);
-	bufz2 = (ut8 *) malloc (size);
-	memset (bufz, 0, len);
+	bufz = bufz2 = NULL;
+	if (maxlen<2) maxlen = 1024*1024;
+	if (size>maxlen) size = maxlen;
+	if (size<1) size = 1;
+	if (from == p->zoom->from && to == p->zoom->to && size==p->zoom->size) {
+		// get from cache
+		bufz = p->zoom->buf;
+		size = p->zoom->size;
+	} else {
+		bufz = (ut8 *) malloc (len);
+		if (bufz == NULL) return;
+		bufz2 = (ut8 *) malloc (size);
+		if (bufz2 == NULL) {
+			free (bufz);
+			return;
+		}
+		memset (bufz, 0, len);
 
-	for (i=0; i<len; i++) {
-		p->iob.read_at (p->iob.io, from+j, bufz2, size);
-		bufz[i] = cb (user, mode, from+j, bufz2, size);
-		j += size;
+		// TODO: memoize blocks or gtfo
+		for (i=0; i<len; i++) {
+			p->iob.read_at (p->iob.io, from+j, bufz2, size);
+			bufz[i] = cb (user, mode, from+j, bufz2, size);
+			j += size;
+		}
+		free (bufz2);
+		// memoize
+		free (p->zoom->buf);
+		p->zoom->buf = bufz;
+		p->zoom->from = from;
+		p->zoom->to = to;
+		p->zoom->size = size;
 	}
 	p->flags &= ~R_PRINT_FLAGS_HEADER;
 	r_print_hexdump (p, from, bufz, len, 16, size);
 	p->flags |= R_PRINT_FLAGS_HEADER;
-	free (bufz);
-	free (bufz2);
 }
 
 #if 0
