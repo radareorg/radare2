@@ -5,9 +5,13 @@
 # order matters here
 PCS="	python2-config
 	python25-config
+	python2.5-config
 	python26-config
+	python2.6-config
 	python27-config
+	python2.7-config
 	python28-config
+	python2.8-config
 	python-config"
 PYTHONCONFIG=""
 

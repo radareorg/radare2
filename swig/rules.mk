@@ -41,9 +41,15 @@ else
 	test ../vapi/$${VAPI} -nt ${LIBS_PFX}$@ -o ! -e ${LIBS_PFX}$@ ; \
 	if [ $$? = 0 ]; then echo " - ${LANG} $@" ; \
 	LIB=`echo $@ | sed -e s,.${SOEXT},,` ; \
-	${CXX} -fPIC -shared $${LIB}_wrap.cxx `../python-config-wrapper --cflags --libs` \
-		`pkg-config --cflags --libs $${LIB}` ${CFLAGS} ${LDFLAGS} -o ${LIBS_PFX}$@ ; \
-	fi ; true
+	case "${LANG}" in \
+	"python") \
+		${CXX} -fPIC -shared $${LIB}_wrap.cxx `../python-config-wrapper --cflags --libs` \
+			`pkg-config --cflags --libs $${LIB}` ${CFLAGS} ${LDFLAGS} -o ${LIBS_PFX}$@ ; \
+		;; \
+	"lua") \
+		${CXX} -fPIC -shared $${LIB}_wrap.cxx -I/usr/include/lua5.1 ${CFLAGS} ${LDFLAGS} -o ${LIBS_PFX}$@ ; \
+		;; \
+	esac ; fi ; true
 
 clean:
 	rm -f *.${SOEXT}

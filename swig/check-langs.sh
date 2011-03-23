@@ -4,6 +4,8 @@
 
 SUP_LANGS=""
 LANGS="python perl ruby lua go java"
+[ -z "${CC}" ] && CC=gcc
+[ -z "${CXX}" ] && CXX=g++
 
 if [ "$1" = "force-all" ]; then
   :> supported.langs
@@ -13,7 +15,7 @@ if [ "$1" = "force-all" ]; then
       echo python >> supported.langs
   fi
   echo "#include <lua.h>" > .test.c
-  ${CC} -c .test.c
+  ${CC} -I/usr/include/lua5.1 ${CFLAGS} -c .test.c
   if [ -f .test.o ]; then
       echo "check-langs.sh: Detected lua"
       echo lua >> supported.langs
