@@ -837,9 +837,11 @@ static void cmd_reg(RCore *core, const char *str) {
 		break;
 	case 'p':
 		if (!str[1]) {
-			if (core->dbg->reg_profile)
-				r_cons_printf ("%s\n", core->dbg->reg_profile);
-			else eprintf ("No register profile defined. Try 'dr.'\n");
+			if (core->dbg->reg->reg_profile) {
+				//core->anal->reg = core->dbg->reg;
+				r_cons_printf ("%s\n", core->dbg->reg->reg_profile);
+				//r_cons_printf ("%s\n", core->anal->reg->reg_profile);
+			} else eprintf ("No register profile defined. Try 'dr.'\n");
 		} else r_reg_set_profile (core->dbg->reg, str+2);
 		core->anal->reg = core->dbg->reg;
 		break;

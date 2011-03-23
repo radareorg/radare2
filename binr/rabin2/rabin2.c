@@ -419,10 +419,9 @@ static int rabin_show_info() {
 				"e asm.arch=%s\n"
 				"e anal.plugin=%s\n"
 				"e asm.bits=%i\n"
-				"e vm.arch=%s\n"
 				"e asm.dwarf=%s\n",
 				info->rclass, info->big_endian?"true":"false", info->os,
-				info->arch, info->arch, info->bits, info->arch,
+				info->arch, info->arch, info->bits,
 				R_BIN_DBG_STRIPPED (info->dbg_info)?"false":"true");
 	} else {
 		eprintf ("[File info]\n");

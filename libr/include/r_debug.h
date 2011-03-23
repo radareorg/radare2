@@ -91,7 +91,6 @@ typedef struct r_debug_t {
 	int reason; /* stop reason */
 	RDebugTrace *trace;
 	int stop_all_threads;
-	char *reg_profile;
 	struct r_reg_t *reg;
 	RBreakpoint *bp;
 	void *user;

@@ -77,8 +77,7 @@ static int config_analplugin_callback(void *user, void *data) {
 	if (node->value[0] == '?') {
 		r_anal_list (core->anal);
 		return R_FALSE;
-	}
-	else if (!r_anal_use (core->anal, node->value)) {
+	} else if (!r_anal_use (core->anal, node->value)) {
 		eprintf ("Cannot use '%s' anal plugin.\n", node->value);
 		return R_FALSE;
 	}
@@ -309,7 +308,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_i (cfg, "anal.depth", 100);
 	r_config_set_i (cfg, "anal.ptrdepth", 3);
 	r_config_set_cb (cfg, "anal.split", "true", &config_analsplit_callback);
-	r_config_set_cb (cfg, "anal.plugin", "x86", &config_analplugin_callback);
+	r_config_set_cb (cfg, "anal.plugin", R_SYS_ARCH, &config_analplugin_callback);
 	/* asm */
 	r_config_set_cb (cfg, "asm.arch", R_SYS_ARCH, &config_asmarch_callback);
 	// XXX: not portable

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2010 */
+/* radare - LGPL - Copyright 2007-2011 */
 /*   pancake<nopcode.org> */
 
 #include <string.h>
@@ -275,7 +275,7 @@ struct r_anal_plugin_t r_anal_plugin_arm = {
 	.init = NULL,
 	.fini = NULL,
 	.op = &arm_op,
-	.set_reg_profile = NULL,
+	.set_reg_profile = set_reg_profile,
 	.fingerprint_bb = NULL,
 	.fingerprint_fcn = NULL,
 	.diff_bb = NULL,

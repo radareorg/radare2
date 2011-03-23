@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -34,7 +34,6 @@ R_API int r_reg_get_name_idx(const char *type) {
 	}
 	return -1;
 }
-
 
 R_API int r_reg_set_name(RReg *reg, int role, const char *name) {
 	if (role>=0 && role<R_REG_NAME_LAST) {
@@ -151,6 +150,8 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 
 	if (!str||!reg)
 		return R_FALSE;
+	free (reg->reg_profile);
+	reg->reg_profile = strdup (str);
 	buf[0] = '\0';
 	/* format file is: 'type name size offset packedsize' */
 	r_reg_free_internal (reg);
@@ -183,15 +184,17 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 				r_reg_set_word (item, word, buf);
 				if (item->name != NULL) {
 					r_list_append (reg->regset[item->type].regs, item);
-					item = r_reg_item_new();
+					item = r_reg_item_new ();
 				}
 			}
 			chidx = word = 0;
 			setname = -1;
 			break;
 		default:
-			if (chidx>128) // WTF!!
+			if (chidx>128) {// WTF!!
+				eprintf ("PARSE FAILED\n");
 				return R_FALSE;
+			}
 			buf[chidx++] = *str;
 			buf[chidx] = 0;
 			break;

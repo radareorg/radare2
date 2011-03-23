@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include <r_debug.h>
 #include "../config.h"
@@ -14,7 +14,6 @@ R_API int r_debug_plugin_init(RDebug *dbg) {
 	RDebugPlugin *static_plugin;
 	int i;
 
-	dbg->reg_profile = NULL;
 	INIT_LIST_HEAD (&dbg->plugins);
 	for (i=0; debug_static_plugins[i]; i++) {
 		static_plugin = R_NEW (RDebugPlugin);
@@ -33,13 +32,13 @@ R_API int r_debug_use(RDebug *dbg, const char *str) {
 			dbg->bp->breakpoint = dbg->h->breakpoint;
 			dbg->bp->user = dbg;
 			if (h->reg_profile) {
-				free (dbg->reg_profile);
-				dbg->reg_profile = dbg->h->reg_profile ();
+				free (dbg->reg->reg_profile);
+				dbg->reg->reg_profile = dbg->h->reg_profile ();
 				if (dbg->anal)
 					dbg->anal->reg = dbg->reg;
 				if (h->init)
 					h->init (dbg);
-				r_reg_set_profile_string (dbg->reg, dbg->reg_profile);
+				r_reg_set_profile_string (dbg->reg, dbg->reg->reg_profile);
 			}
 			return R_TRUE;
 		}
