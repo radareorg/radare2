@@ -1,0 +1,11 @@
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: r_fs
+Description: radare foundation libraries
+Version: 
+Requires:
+Libs: -L${libdir} -lr_fs -lr_util
+Cflags: -I${includedir}/libr

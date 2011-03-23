@@ -3,7 +3,7 @@
 // TODO: Use nested classes instead of this wide class layout
 namespace Radare {
 	[Compact]
-	[CCode (cheader_filename="r_asm.h", cname="struct r_asm_t", free_function="r_asm_free", cprefix="r_asm_")]
+	[CCode (cheader_filename="r_fs.h", cname="struct r_fs_t", free_function="r_fs_free", cprefix="r_fs_")]
 	public class RFS {
 		public RFS();
 		public RFSRoot mount (string fstype, string path, uint64 delta);
@@ -17,6 +17,7 @@ namespace Radare {
 	}
 
 	[Compact]
+	[CCode (cheader_filename="r_fs.h", cname="struct r_fs_file_t", free_function="r_fs_file_free", cprefix="r_fs_file_")]
 	public class RFSFile {
 		public string name;
 		public string path;
@@ -27,12 +28,14 @@ namespace Radare {
 	}
 
 	[Compact]
+	[CCode (cheader_filename="r_fs.h", cname="struct r_fs_plugin_t", free_function="r_fs_plugin_free", cprefix="r_fs_plugin_")]
 	public class RFSPlugin {
 		public string name;
 		public string desc;
 	}
 
 	[Compact]
+	[CCode (cheader_filename="r_fs.h", cname="struct r_fs_root_t", free_function="r_fs_root_free", cprefix="r_fs_root_")]
 	public class RFSRoot {
 		public string path;
 		public uint64 delta;
