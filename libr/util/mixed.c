@@ -1,27 +1,6 @@
-/*
- * mixed data type
- */
-
-// we need to store information in this way:
-// indexed by strings, ut32, ut64 .. r_hashtable
-// iterate over them
-// get subset 
+/* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
 
 #include <r_util.h>
-
-#define RMIXED_MAXKEYS 256
-typedef struct r_mixed_data_t {
-	int size;
-	union {
-		RHashTable *ht;
-		RHashTable64 *ht64;
-	} hash;
-} RMixedData;
-
-typedef struct r_mixed_t {
-	RList *list;
-	RMixedData *keys[RMIXED_MAXKEYS];
-} RMixed;
 
 R_API RMixed *r_mixed_new () {
 	RMixed *m = R_NEW (RMixed);
@@ -78,7 +57,7 @@ R_API int r_mixed_key(RMixed *m, int key, int size) {
 	return R_FALSE;
 }
 
-// static
+// static?
 R_API ut64 r_mixed_get_value(int key, int sz, const void *p) {
 	switch (sz) {
 	case 1: return (ut64) *((ut8*)((ut8*)p+key));
@@ -106,6 +85,7 @@ R_API void *r_mixed_get0 (RMixed *m, int key, ut64 value) {
 		return r_list_head (list)->data;
 	return NULL;
 }
+
 
 R_API int r_mixed_add (RMixed *m, void *p) {
 	RHashTable *ht;
@@ -162,6 +142,72 @@ R_API int r_mixed_del (RMixed *m, void *p) {
 	return R_FALSE;
 }
 
+R_API void r_mixed_change_begin(RMixed *m, void *p) {
+	int i;
+	for (i=0; i<RMIXED_MAXKEYS; i++)
+		if (m->keys[i]) {
+			m->state[i] = r_mixed_get_value (i, m->keys[i]->size, p);
+			eprintf ("store state %d (%llx)\n", i, m->state[i]);
+		}
+}
+
+R_API boolt r_mixed_change_end(RMixed *m, void *p) {
+	int i;
+	void *q;
+	for (i=0; i<RMIXED_MAXKEYS; i++) {
+		if (m->keys[i]) {
+			RHashTable *ht = m->keys[i]->hash.ht;
+			RHashTable64 *ht64 = m->keys[i]->hash.ht64;
+			ut64 newstate = r_mixed_get_value (i, m->keys[i]->size, p);
+			if (newstate != m->state[i]) {
+				// rehash this pointer
+				RListIter *iter;
+				RList *list = r_mixed_get (m, i, m->state[i]);
+				if (list == NULL) {
+					eprintf ("RMixed internal corruption?\n");
+					return R_FALSE;
+				}
+				r_list_foreach (list, iter, q) {
+					if (q == p) {
+						r_list_delete (list, iter);
+						break;
+					}
+				}
+				if (r_list_empty (list)) {
+					// delete hash entry
+					r_list_free (list);
+					switch (m->keys[i]->size) {
+					case 1: case 2: case 4:
+						r_hashtable_remove (ht, m->state[i]);
+						break;
+					case 8: r_hashtable64_remove (ht64, m->state[i]);
+						break;
+					}
+				}
+				switch (m->keys[i]->size) {
+				case 1: case 2: case 4:
+					list = r_hashtable_lookup (ht, (ut32)newstate);
+					if (!list) {
+						list = r_list_new ();
+						r_hashtable_insert (ht, (ut32)newstate, list);
+					}
+					r_list_append (list, p);
+					break;
+				case 8:
+					list = r_hashtable64_lookup (ht64, newstate);
+					if (!list) {
+						list = r_list_new ();
+						r_hashtable64_insert (ht64, newstate, list);
+					}
+					r_list_append (list, p);
+					break;
+				}
+			}
+		}
+	}
+	return R_TRUE;
+}
+
 #if TEST
 typedef struct {
 	char *name;
@@ -187,10 +233,14 @@ void test_struct_free(TestStruct *ts) {
 int main () {
 	RList *list;
 	RListIter *iter;
-	TestStruct *ts;
+	TestStruct *ts, *ts2;
 	RMixed *mx = r_mixed_new ();
 	R_MIXED_KEY (mx, TestStruct, ts, hashname);
+	R_MIXED_KEY (mx, TestStruct, ts, length);
 	R_MIXED_KEY (mx, TestStruct, ts, offset);
+
+	ts2 = test_struct_new ("FOOD", 444, 0x123456789);
+	r_mixed_add (mx, ts2);
 
 	r_mixed_add (mx, test_struct_new ("food", 12, 0x839481222000));
 	r_mixed_add (mx, test_struct_new ("food", 12, 0x839481222000));
@@ -212,6 +262,12 @@ int main () {
 		printf ("NAM: %s\n", ts->name);
 		printf ("LEN: %d\n", ts->length);
 		printf ("OFF: %llx\n", ts->offset);
+	}
+
+	r_mixed_change_begin (mx, ts2);
+	ts2->length = 666;
+	if (!r_mixed_change_end (mx, ts2)) {
+		eprintf ("MixedChange failed\n");
 	}
 	r_mixed_free (mx);
 }

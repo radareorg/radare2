@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include <btree.h>
 
@@ -25,7 +25,7 @@ R_API struct btree_node *btree_remove(struct btree_node *p, BTREE_DEL(del)) {
 		} else rp = p->right;
 	} else rp = p->left;
 	if (del) del (p->data);
-	free(p);
+	free (p);
 	return(rp);
 }
 

@@ -104,7 +104,7 @@ R_API RListIter *r_list_item_new (void *data) {
 	return new;
 }
 
-R_API RListIter *r_list_append(RList *list, const void *data) {
+R_API RListIter *r_list_append(RList *list, void *data) {
 	RListIter *new = NULL;
 	if (data) {
 		new = R_NEW (RListIter);
@@ -120,7 +120,7 @@ R_API RListIter *r_list_append(RList *list, const void *data) {
 	return new;
 }
 
-R_API RListIter *r_list_prepend(RList *list, const void *data) {
+R_API RListIter *r_list_prepend(RList *list, void *data) {
 	RListIter *new = R_NEW (RListIter);
 	if (list->head)
 		list->head->p = new;
@@ -268,6 +268,16 @@ R_API void *r_list_get_by_string(RList *list, int off, const char *str) {
 			return p;
 	}
 	return NULL;
+}
+
+R_API boolt r_list_contains (RList *list, void *p) {
+	void *q;
+	RListIter *iter;
+	r_list_foreach (list, iter, q) {
+		if (p == q)
+			return R_TRUE;
+	}
+	return R_FALSE;
 }
 
 #if TEST

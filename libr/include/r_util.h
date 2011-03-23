@@ -97,6 +97,56 @@ enum {
 	R_SYS_BITS_64 = 8,
 };
 
+
+/** hashtable **/
+typedef struct r_hashtable_entry_t {
+	ut32 hash;
+	void *data;
+} RHashTableEntry;
+
+typedef struct r_hashtable_t {
+	RHashTableEntry *table;
+	ut32 size;
+	ut32 rehash;
+	ut32 max_entries;
+	ut32 size_index;
+	ut32 entries;
+	ut32 deleted_entries;
+} RHashTable;
+
+typedef struct r_hashtable64_entry_t {
+	ut64 hash;
+	void *data;
+} RHashTable64Entry;
+
+typedef struct r_hashtable64_t {
+	RHashTable64Entry *table;
+	ut64 size;
+	ut64 rehash;
+	ut64 max_entries;
+	ut64 size_index;
+	ut64 entries;
+	ut64 deleted_entries;
+} RHashTable64;
+
+/* r_mixed */
+
+#define RMIXED_MAXKEYS 256
+typedef struct r_mixed_data_t {
+	int size;
+	union {
+		RHashTable *ht;
+		RHashTable64 *ht64;
+	} hash;
+} RMixedData;
+
+typedef struct r_mixed_t {
+	RList *list;
+	RMixedData *keys[RMIXED_MAXKEYS];
+	ut64 state[RMIXED_MAXKEYS]; // used by change_(begin|end)
+} RMixed;
+
+
 #ifdef R_API
 
 R_API RMmap *r_file_mmap (const char *file, boolt rw);
@@ -384,37 +434,6 @@ R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b);
 R_API void r_big_div_ut(RNumBig *a, RNumBig *b, ut32 c);
 R_API int r_big_divisible_ut(RNumBig *n, ut32 v);
 R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b);
-
-/** hashtable **/
-typedef struct r_hashtable_entry_t {
-	ut32 hash;
-	void *data;
-} RHashTableEntry;
-
-typedef struct r_hashtable_t {
-	RHashTableEntry *table;
-	ut32 size;
-	ut32 rehash;
-	ut32 max_entries;
-	ut32 size_index;
-	ut32 entries;
-	ut32 deleted_entries;
-} RHashTable;
-
-typedef struct r_hashtable64_entry_t {
-	ut64 hash;
-	void *data;
-} RHashTable64Entry;
-
-typedef struct r_hashtable64_t {
-	RHashTable64Entry *table;
-	ut64 size;
-	ut64 rehash;
-	ut64 max_entries;
-	ut64 size_index;
-	ut64 entries;
-	ut64 deleted_entries;
-} RHashTable64;
 
 
 R_API RHashTable* r_hashtable_new(void);

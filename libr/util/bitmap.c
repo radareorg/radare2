@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
