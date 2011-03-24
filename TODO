@@ -6,6 +6,7 @@
 
 * Ranged/scrollable zoom mode
 * Add r_cons_prompt () ... calling set_prompt + fgets -- this api needs cleanup
+  - strict width in visual
 * If [0-9] keybindings in visual point to same address use same reference
 * Remove linestyle???
 * Move the content of libr/*/TODO here

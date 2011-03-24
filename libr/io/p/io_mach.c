@@ -204,7 +204,7 @@ static int __system(struct r_io_t *io, RIODesc *fd, const char *cmd) {
 		}
 		eprintf ("io_mach_system: Invalid pid\n");
 		return 1;
-	} else eprintf ("Try: '|pid'\n");
+	} else eprintf ("Try: '=!pid'\n");
 	return R_TRUE;
 }
 

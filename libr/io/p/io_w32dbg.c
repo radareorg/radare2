@@ -96,7 +96,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		io->printf ("\n");
 		//printf("PID=%d\n", io->fd);
 		return pid;
-	} else eprintf ("Try: '|pid'\n");
+	} else eprintf ("Try: '=!pid'\n");
 	return R_TRUE;
 }
 

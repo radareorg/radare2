@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include <r_userconf.h>
 #include <r_debug.h>
@@ -1008,7 +1008,7 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 	} else
 	if (type == R_REG_TYPE_GPR) {
 #if __WINDOWS__
-		CONTEXT ctx __attribute__((aligned(16)));
+		CONTEXT ctx __attribute__((aligned (16)));
 		memcpy (&ctx, buf, sizeof (CONTEXT));
 		ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
 	//	eprintf ("EFLAGS =%x\n", ctx.EFlags);
