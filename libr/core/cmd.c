@@ -4442,6 +4442,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			" dpk P S send signal S to P process id\n");
 		break;
 	case 'a':
+		r_debug_use (core->dbg, NULL);
 		r_debug_attach (core->dbg,
 			(int) r_num_math (core->num, input+2));
 		r_debug_select (core->dbg, core->dbg->pid, core->dbg->tid);

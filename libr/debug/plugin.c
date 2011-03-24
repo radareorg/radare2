@@ -25,25 +25,25 @@ R_API int r_debug_plugin_init(RDebug *dbg) {
 
 R_API int r_debug_use(RDebug *dbg, const char *str) {
 	struct list_head *pos;
+	if (str)
 	list_for_each_prev (pos, &dbg->plugins) {
 		RDebugPlugin *h = list_entry (pos, RDebugPlugin, list);
 		if (h->name && !strcmp (str, h->name)) {
 			dbg->h = h;
 			dbg->bp->breakpoint = dbg->h->breakpoint;
 			dbg->bp->user = dbg;
-			if (h->reg_profile) {
-				free (dbg->reg->reg_profile);
-				dbg->reg->reg_profile = dbg->h->reg_profile ();
-				if (dbg->anal)
-					dbg->anal->reg = dbg->reg;
-				if (h->init)
-					h->init (dbg);
-				r_reg_set_profile_string (dbg->reg, dbg->reg->reg_profile);
-			}
-			return R_TRUE;
 		}
 	}
-	return R_FALSE;
+	if (dbg->h && dbg->h->reg_profile) {
+		free (dbg->reg->reg_profile);
+		dbg->reg->reg_profile = dbg->h->reg_profile ();
+		if (dbg->anal)
+			dbg->anal->reg = dbg->reg;
+		if (dbg->h->init)
+			dbg->h->init (dbg);
+		r_reg_set_profile_string (dbg->reg, dbg->reg->reg_profile);
+	}
+	return (dbg->h != NULL);
 }
 
 R_API int r_debug_plugin_list(RDebug *dbg) {

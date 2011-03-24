@@ -105,7 +105,7 @@ R_API int r_reg_type_by_name(const char *str) {
 /* TODO: make this parser better and cleaner */
 static int r_reg_set_word(RRegItem *item, int idx, char *word) {
 	int ret = R_TRUE;
-	switch(idx) {
+	switch (idx) {
 	case 0:
 		item->type = r_reg_type_by_name (word);
 		break;
@@ -152,7 +152,7 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 		return R_FALSE;
 	free (reg->reg_profile);
 	reg->reg_profile = strdup (str);
-	buf[0] = '\0';
+	*buf = '\0';
 	/* format file is: 'type name size offset packedsize' */
 	r_reg_free_internal (reg);
 	item = r_reg_item_new ();
@@ -188,6 +188,7 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 				}
 			}
 			chidx = word = 0;
+			*buf = 0;
 			setname = -1;
 			break;
 		default:
