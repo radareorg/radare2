@@ -44,6 +44,26 @@ static int config_iova_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_zoombyte_callback(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	switch (*node->value) {
+	case 'p':
+	case 'f':
+	case 's':
+	case '0':
+	case 'F':
+	case 'e':
+	case 'h':
+		core->print->zoom->mode = *node->value;
+		break;
+	default:
+		eprintf ("Invalid zoom.byte value. See pZ? for help\n");
+		break;
+	}
+	return R_TRUE;
+}
+
 static int config_iocache_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -390,7 +410,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_i (cfg, "zoom.maxsz", 512);
 	r_config_set_i (cfg, "zoom.from", 0);
 	r_config_set_i (cfg, "zoom.to", 0);
-	r_config_set (cfg, "zoom.byte", "h");
+	r_config_set_cb (cfg, "zoom.byte", "h", &config_zoombyte_callback);
 	/* TODO cmd */
 #if 0
 

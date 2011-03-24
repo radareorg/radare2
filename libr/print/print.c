@@ -294,7 +294,7 @@ R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
 }
 
 
-R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int mode, int len, int maxlen) {
+R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
 	ut8 *bufz, *bufz2;
 	int i, j = 0;
 	ut64 size = (to-from)/len;
@@ -320,7 +320,7 @@ R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from
 		// TODO: memoize blocks or gtfo
 		for (i=0; i<len; i++) {
 			p->iob.read_at (p->iob.io, from+j, bufz2, size);
-			bufz[i] = cb (user, mode, from+j, bufz2, size);
+			bufz[i] = cb (user, p->zoom->mode, from+j, bufz2, size);
 			j += size;
 		}
 		free (bufz2);

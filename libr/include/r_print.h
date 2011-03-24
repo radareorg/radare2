@@ -17,6 +17,7 @@ typedef struct r_print_zoom_t {
 	ut64 from;
 	ut64 to;
 	int size;
+	int mode;
 } RPrintZoom;
 
 typedef struct r_print_t {
@@ -60,7 +61,7 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *str, int len, int wide
 R_API int r_print_date_dos(struct r_print_t *p, ut8 *buf, int len);
 R_API int r_print_date_w32(struct r_print_t *p, const ut8 *buf, int len);
 R_API int r_print_date_unix(struct r_print_t *p, const ut8 *buf, int len);
-R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int mode, int len, int maxlen);
+R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen);
 R_API void r_print_progressbar(RPrint *pr, int pc, int _cols);
 #endif
 

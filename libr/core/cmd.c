@@ -2096,13 +2096,11 @@ static int cmd_print(void *data, const char *input) {
 			"WARNING: On big files, use 'zoom.byte=h' or restrict ranges\n"
 			);
 		} else {
-			const char *mode = r_config_get (core->config, "zoom.byte");
 			ut64 maxsize = r_config_get_i (core->config, "zoom.maxsz");
 			ut64 from = r_config_get_i (core->config, "zoom.from");
 			ut64 to = r_config_get_i (core->config, "zoom.to");
-			if (mode) r_print_zoom (core->print, core, printzoomcallback,
-				from, to, *mode, core->blocksize, (int)maxsize);
-			else eprintf ("No zoom.byte defined\n");
+			r_print_zoom (core->print, core, printzoomcallback,
+				from, to, core->blocksize, (int)maxsize);
 		}
 		break;
 	default:
