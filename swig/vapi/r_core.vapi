@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 namespace Radare {
 [Compact]
@@ -15,6 +15,7 @@ public class RCore {
 	public RAsm assembler;
 	public RAnal anal;
 	public RBin bin;
+	public RFS fs;
 	public RSyscall syscall;
 	public RParse parser;
 	public RLang lang;
