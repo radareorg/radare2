@@ -789,8 +789,8 @@ static RList *r_debug_native_threads(int pid) {
 #else
 	#define OSX_PC state.__eip
 #endif
-        int i, tid, err;
-	unsigned int gp_count;
+        int i, tid; //, err;
+	//unsigned int gp_count;
 	static thread_array_t inferior_threads = NULL;
 	static unsigned int inferior_thread_count = 0;
         R_DEBUG_REG_T state;

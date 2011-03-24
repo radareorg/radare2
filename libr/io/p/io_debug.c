@@ -4,9 +4,14 @@
 #include <r_lib.h>
 #include <r_util.h>
 
-#if DEBUGGER && \
-	(__linux__ ||  __APPLE__ || __WINDOWS__ || \
-	__NetBSD__ || __FreeBSD__ || __OpenBSD__)
+#if __linux__ ||  __APPLE__ || __WINDOWS__ || \
+	__NetBSD__ || __FreeBSD__ || __OpenBSD__
+#define DEBUGGER_SUPPORTED 1
+#else
+#define DEBUGGER_SUPPORTED 0
+#endif
+
+#if DEBUGGER && DEBUGGER_SUPPORTED
 
 #define MAGIC_EXIT 123
 
