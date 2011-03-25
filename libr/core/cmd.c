@@ -250,8 +250,8 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			//	core->assembler->pc + ret);
 			continue;
 		}
-if (core->inc == 0)
-	core->inc = ret;
+		if (core->inc == 0)
+			core->inc = ret;
 		r_anal_op (core->anal, &analop, at, buf+idx, (int)(len-idx));
 		// Show xrefs
 		if (show_xrefs) {
@@ -317,6 +317,8 @@ if (core->inc == 0)
 			if (at == dest)
 				r_cons_invert (R_TRUE, R_TRUE);
 			printoffset (at, show_color);
+			if (at == dest)
+				r_cons_printf (Color_RESET);
 		}
 		if (show_trace) {
 			RDebugTracepoint *tp = r_debug_trace_get (core->dbg, at);
@@ -371,6 +373,11 @@ if (core->inc == 0)
 			line = refline = NULL;
 			continue;
 		}
+		/* show cursor */
+		if (core->print->cur_enabled && 
+				cursor >= idx && cursor < (idx+asmop.inst_len))
+			r_cons_printf ("* ");
+		else r_cons_printf ("  ");
 		if (show_bytes) {
 			char *str, pad[64];
 			char extra[64];

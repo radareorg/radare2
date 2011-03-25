@@ -3,19 +3,24 @@
   |    <  V  . |  . V  .   <   _/ .-' _/|  ()  |
   |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
+To wipe:
+========
+ - Move the content of libr/*/TODO here
+ - linestyle?? for disassembly lines
+ - remove libr/vm
 
+To do:
+======
+* libmagic internal :?
 * Ranged/scrollable zoom mode
 * Add r_cons_prompt () ... calling set_prompt + fgets -- this api needs cleanup
   - strict width in visual
 * If [0-9] keybindings in visual point to same address use same reference
-* Remove linestyle???
-* Move the content of libr/*/TODO here
 * Honor string metadata for asmsteps ('jk' in visual)
 * Dupped javasm bin/asm
 
 pancake
 -------
-* print format for libmagic
 * check search multiple keywords and signatures
 * Visual disassembly cursor does not displays on scr.color=0
 * if console width > X place comments there (ash)
