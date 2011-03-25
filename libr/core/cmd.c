@@ -2796,13 +2796,31 @@ static int cmd_anal(void *data, const char *input) {
 
 /* TODO: simplify using r_write */
 static int cmd_write(void *data, const char *input) {
+	ut64 off;
 	ut8 *buf;
 	const char *arg;
-	int i, size, len = strlen (input);
+	int wseek, i, size, len = strlen (input);
 	char *tmp, *str = alloca (len)+1;
 	RCore *core = (RCore *)data;
+	#define WSEEK(x,y) if(wseek)r_core_seek_delta(x,y)
+	wseek = r_config_get_i (core->config, "cfg.wseek");
 	memcpy (str, input+1, len);
 	switch (*input) {
+	case 'r':
+		off = r_num_math (core->num, input+1);
+		len = (int)off;
+		if (len>0) {
+			buf = malloc (len);
+			if (buf != NULL) {
+				r_num_irand ();
+				for (i=0; i<len; i++)
+					buf[i] = r_num_rand (256);
+				r_core_write_at (core, core->offset, buf, len);
+				WSEEK (core, len);
+				free (buf);
+			} else eprintf ("Cannot allocate %d bytes\n", len);
+		}
+		break;
 	case 'A':
 		switch (input[1]) {
 		case ' ':
@@ -2812,9 +2830,10 @@ static int cmd_write(void *data, const char *input) {
 				len = r_asm_modify (core->assembler, core->block, input[2],
 					r_num_math (core->num, input+4));
 				eprintf ("len=%d\n", len);
-				if (len>0)
+				if (len>0) {
 					r_core_write_at (core, core->offset, core->block, len);
-				else eprintf ("r_asm_modify = %d\n", len);
+					WSEEK (core, len);
+				} else eprintf ("r_asm_modify = %d\n", len);
 			} else eprintf ("Usage: wA [type] [value]\n");
 			break;
 		case '?':
@@ -2860,6 +2879,7 @@ static int cmd_write(void *data, const char *input) {
 		len = r_str_escape (str);
 		r_io_set_fd (core->io, core->file->fd);
 		r_io_write_at (core->io, core->offset, (const ut8*)str, len);
+		WSEEK (core, len);
 		r_core_block_read (core, 0);
 		break;
 	case 't':
@@ -2875,6 +2895,7 @@ static int cmd_write(void *data, const char *input) {
 		if ((buf = (ut8*) r_file_slurp (arg, &size))) {
 			r_io_set_fd (core->io, core->file->fd);
 			r_io_write_at (core->io, core->offset, buf, size);
+			WSEEK (core, size);
 			free(buf);
 			r_core_block_read (core, 0);
 		} else eprintf ("Cannot open file '%s'\n", arg);
@@ -2884,6 +2905,7 @@ static int cmd_write(void *data, const char *input) {
 		if ((buf = r_file_slurp_hexpairs (arg, &size))) {
 			r_io_set_fd (core->io, core->file->fd);
 			r_io_write_at (core->io, core->offset, buf, size);
+			WSEEK (core, size);
 			free (buf);
 			r_core_block_read (core, 0);
 		} else eprintf ("Cannot open file '%s'\n", arg);
@@ -2899,6 +2921,7 @@ static int cmd_write(void *data, const char *input) {
 		str = tmp;
 		r_io_set_fd (core->io, core->file->fd);
 		r_io_write_at (core->io, core->offset, (const ut8*)str, len);
+		WSEEK (core, len);
 		r_core_block_read (core, 0);
 		break;
 	case 'x':
@@ -2908,6 +2931,7 @@ static int cmd_write(void *data, const char *input) {
 		len = r_hex_str2bin (input+1, buf);
 		if (len != -1) {
 			r_core_write_at (core, core->offset, buf, len);
+			WSEEK (core, len);
 			r_core_block_read (core, 0);
 		} else eprintf ("Error: invalid hexpair string\n");
 		}
@@ -2923,6 +2947,7 @@ static int cmd_write(void *data, const char *input) {
 		if (acode) {
 			eprintf ("Written %d bytes (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
 			r_core_write_at (core, core->offset, acode->buf, acode->len);
+			WSEEK (core, acode->len);
 			r_asm_code_free (acode);
 			r_core_block_read (core, 0);
 			r_asm_use (core->assembler, "x86"); /* XXX */
@@ -2937,6 +2962,7 @@ static int cmd_write(void *data, const char *input) {
 		len = r_hex_str2bin (input+1, buf);
 		r_mem_copyloop (core->block, buf, core->blocksize, len);
 		r_core_write_at (core, core->offset, core->block, core->blocksize);
+		WSEEK (core, core->blocksize);
 		r_core_block_read (core, 0);
 		}
 		break;
@@ -2957,8 +2983,9 @@ static int cmd_write(void *data, const char *input) {
 			if (size>0) {
 				r_io_set_fd (core->io, core->file->fd);
 				r_io_set_write_mask (core->io, (const ut8*)str, size);
+				WSEEK (core, size);
 				eprintf ("Write mask set to '");
-				for (i=0;i<size;i++)
+				for (i=0; i<size; i++)
 					eprintf ("%02x", str[i]);
 				eprintf ("'\n");
 			} else eprintf ("Invalid string\n");
@@ -2966,8 +2993,7 @@ static int cmd_write(void *data, const char *input) {
 		}
 		break;
 	case 'v':
-		{
-		ut64 off = r_num_math (core->num, input+1);
+		off = r_num_math (core->num, input+1);
 		r_io_set_fd (core->io, core->file->fd);
 		r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
 		if (off&UT64_32U) {
@@ -2976,6 +3002,7 @@ static int cmd_write(void *data, const char *input) {
 			memcpy((ut8*)&addr8, (ut8*)&off, 8); // XXX needs endian here
 		//	endian_memcpy((ut8*)&addr8, (ut8*)&off, 8);
 			r_io_write(core->io, (const ut8 *)&addr8, 8);
+			WSEEK (core, 8);
 		} else {
 			/* 4 byte addr */
 			ut32 addr4, addr4_ = (ut32)off;
@@ -2983,9 +3010,9 @@ static int cmd_write(void *data, const char *input) {
 			//endian_memcpy((ut8*)&addr4, (ut8*)&addr4_, 4); /* addr4 = addr4_ */
 			memcpy ((ut8*)&addr4, (ut8*)&addr4_, 4); // XXX needs endian here too
 			r_io_write (core->io, (const ut8 *)&addr4, 4);
+			WSEEK (core, 4);
 		}
 		r_core_block_read (core, 0);
-		}
 		break;
 	case 'o':
                 switch (input[1]) {
@@ -3036,10 +3063,12 @@ static int cmd_write(void *data, const char *input) {
 			eprintf ("Writing oobi buffer!\n");
 			r_io_set_fd (core->io, core->file->fd);
 			r_io_write (core->io, core->oobi, core->oobi_len);
+			WSEEK (core, core->oobi_len);
 			r_core_block_read (core, 0);
 		} else r_cons_printf (
 			"Usage: w[x] [str] [<file] [<<EOF] [@addr]\n"
 			" w foobar     write string 'foobar'\n"
+			" wr 10        Write 10 random bytes\n"
 			" ww foobar    write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'\n"
 			" wa push ebp  write opcode, separated by ';' (use '\"' around the command)\n"
 			" wA r 0       alter/modify opcode at current seek (see wA?)\n"

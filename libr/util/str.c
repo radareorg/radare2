@@ -612,13 +612,16 @@ R_API int r_str_ansi_len(const char *str) {
 }
 
 R_API const char *r_str_ansi_chrn(const char *str, int n) {
-	int len, i;
-	for (i=len=0; str[i] && (n!=len); i++) {
-		if (str[i]==0x1b && str[i+1]=='[')
+	int len, i, li;
+	for (li=i=len=0; str[i] && (n!=len); i++) {
+		if (str[i]==0x1b && str[i+1]=='[') {
 			for (++i;str[i]&&str[i]!='J'&&str[i]!='m'&&str[i]!='H';i++);
-		else len++;
+		} else {
+			len++;
+			li = i;
+		}
 	}
-	return str+i;
+	return str+li;
 }
 
 R_API int r_str_ansi_filter(char *str, int len) {

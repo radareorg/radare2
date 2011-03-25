@@ -60,10 +60,10 @@ R_API void r_print_cursor(RPrint *p, int cur, int set) {
 		int to = p->cur;
 		r_num_minmax_swap_i (&from, &to);
 		if (cur>=from&&cur<=to)
-			r_cons_invert (set, p->flags&R_PRINT_FLAGS_COLOR);
+			r_cons_invert (set, 1); //p->flags&R_PRINT_FLAGS_COLOR);
 	} else
 	if (cur==p->cur)
-		r_cons_invert (set, p->flags & R_PRINT_FLAGS_COLOR);
+		r_cons_invert (set, 1); //p->flags & R_PRINT_FLAGS_COLOR);
 }
 
 R_API void r_print_addr(RPrint *p, ut64 addr) {
@@ -235,17 +235,16 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	p->interrupt = 0;
 	for (i=0; !p->interrupt && i<len; i+=inc) {
 		r_print_addr (p, addr+(i*step));
-
 		for (j=i;j<i+inc;j++) {
 			if (j>=len) {
 				if (j%2) p->printf ("   ");
-				else p->printf("  ");
+				else p->printf ("  ");
 				continue;
 			}
-			r_print_byte(p, fmt, j, buf[j]);
-			if (j%2) p->printf(" ");
+			r_print_byte (p, fmt, j, buf[j]);
+			if (j%2) p->printf (" ");
 		}
-
+		p->printf (" ");
 		for (j=i; j<i+inc; j++) {
 			if (j >= len) p->printf (" ");
 			else r_print_byte (p, "%c", j, buf[j]);

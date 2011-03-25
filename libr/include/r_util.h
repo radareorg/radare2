@@ -254,6 +254,8 @@ R_API void r_num_minmax_swap_i(int *a, int *b); // XXX this can be a cpp macro :
 R_API ut64 r_num_math(struct r_num_t *num, const char *str);
 R_API ut64 r_num_get(struct r_num_t *num, const char *str);
 R_API int r_num_to_bits(char *out, ut64 num);
+R_API int r_num_rand(int max);
+R_API void r_num_irand();
 
 /* TODO ..use as uppercase maybe? they are macros! */
 #define R_BETWEEN(x,y,z) (((x)>=(y)) && ((x)<=(z)))

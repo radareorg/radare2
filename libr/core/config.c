@@ -369,6 +369,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "cfg.datefmt", "%d:%m:%Y %H:%M:%S %z", &config_cfgdatefmt_callback);
 	r_config_set (cfg, "cfg.fortunes", "true");
 	r_config_set_i (cfg, "cfg.maxbsize", 524288);
+	r_config_set (cfg, "cfg.wseek", "false");
+
 	r_config_set (cfg, "dbg.backend", "native");
 	r_config_set (cfg, "dbg.bep", "loader"); // loader, entry, constructor, main
 	r_config_set_cb (cfg, "dbg.stopthreads", "true", &config_stopthreads_callback);

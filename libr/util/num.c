@@ -20,6 +20,10 @@ R_API ut64 r_num_htonq(ut64 value) {
         return ret;
 }
 
+R_API void r_num_irand() {
+	srand (rand () % r_sys_now ());
+}
+
 R_API int r_num_rand(int max) {
 	// TODO: add srand here for security and so on
 	return rand()%max;
