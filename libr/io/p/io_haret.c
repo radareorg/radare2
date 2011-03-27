@@ -73,7 +73,6 @@ static int haret__plugin_open(struct r_io_t *io, const char *pathname) {
 
 static RIODesc *haret__open(struct r_io_t *io, const char *pathname, int rw, int mode) {
 	char *port, *ptr, buf[1024];
-	int p;
 	RSocket *s;
 
 	strncpy (buf, pathname, sizeof (buf)-1);
@@ -83,12 +82,11 @@ static RIODesc *haret__open(struct r_io_t *io, const char *pathname, int rw, int
 			eprintf ("haret: wrong url\n");
 			return NULL;
 		}
-		*port = 0;
-		p = atoi (port+1);
-		if ((s = r_socket_new (ptr, p, R_FALSE)) == NULL) {
-			eprintf ("Cannot connect to '%s' (%d)\n", ptr, p);
+		*port++ = 0;
+		if ((s = r_socket_new (ptr, port, R_FALSE)) == NULL) {
+			eprintf ("Cannot connect to '%s' (%s)\n", ptr, port);
 			return NULL;
-		} else eprintf ("Connected to: %s at port %d\n", ptr, p);
+		} else eprintf ("Connected to: %s at port %s\n", ptr, port);
 		haret_wait_until_prompt (s);
 		return r_io_desc_new (&r_io_plugin_haret, s->fd, pathname, rw, mode, (void*)s);
 	}

@@ -1,7 +1,7 @@
 include ../../config.mk
 
-OBJ=testssl.o
-BIN=testssl
+OBJ=serverssl.o
+BIN=serverssl
 BINDEPS=r_socket
 
 include ../../rules.mk

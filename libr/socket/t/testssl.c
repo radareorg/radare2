@@ -1,7 +1,8 @@
 #include <r_socket.h>
 #define MAX_LINE 2048
-#define SERVER "www.openssl.org"
-#define PORT 443
+//#define SERVER "www.openssl.org"
+#define PORT "4433"
+#define SERVER "127.0.0.1"
 
 int main (int argc, char ** argv) {
 	ut8 buf [MAX_LINE+1];

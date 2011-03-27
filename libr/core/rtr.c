@@ -70,8 +70,8 @@ R_API void r_core_rtr_list(RCore *core) {
 }
 		
 R_API void r_core_rtr_add(RCore *core, const char *_input) {
-	char input[1024], *host = NULL, *file = NULL, *ptr = NULL, buf[1024];
-	int proto, port, i;
+	char *port, input[1024], *host = NULL, *file = NULL, *ptr = NULL, buf[1024];
+	int proto, i;
 	RSocket *fd;
 
 	strncpy (input, _input, sizeof (input)-4);
@@ -105,16 +105,16 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	}
 	file[0] = '\0';
 	file = file+1;
-	port = r_num_math (core->num, ptr);
+	port = ptr;
 
 	switch (proto) {
 	case RTR_PROT_RAP:
 		fd = r_socket_new (host, port, R_FALSE); //TODO: Use rap.ssl
 		if (fd == NULL) {
-			eprintf ("Error: Cannot connect to '%s' (%d)\n", host, port);
+			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
 			return;
 		}
-		eprintf ("Connected to: %s at port %d\n", host, port);
+		eprintf ("Connected to: %s at port %s\n", host, port);
 		/* send */
 		buf[0] = RTR_RAP_OPEN;
 		buf[1] = 0;
@@ -134,18 +134,18 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	case RTR_PROT_TCP:
 		fd = r_socket_new (host, port, R_FALSE); //TODO: Use rap.ssl
 		if (fd == NULL) {
-			eprintf ("Error: Cannot connect to '%s' (%d)\n", host, port);
+			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
 			return;
 		}
-		eprintf ("Connected to: %s at port %d\n", host, port);
+		eprintf ("Connected to: %s at port %s\n", host, port);
 		break;
 	case RTR_PROT_UDP:
 		fd = r_socket_udp_connect (host, port, R_FALSE); //TODO: Use rap.ssl
 		if (fd == NULL) {
-			eprintf("Error: Cannot connect to '%s' (%d)\n", host, port);
+			eprintf("Error: Cannot connect to '%s' (%s)\n", host, port);
 			return;
 		}
-		eprintf("Connected to: %s at port %d\n", host, port);
+		eprintf("Connected to: %s at port %s\n", host, port);
 		break;
 	}
 
@@ -153,7 +153,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		if (!rtr_host[i].fd) {
 			rtr_host[i].proto = proto;
 			memcpy (rtr_host[i].host, host, 512);
-			rtr_host[i].port = port;
+			rtr_host[i].port = atoi(port);
 			memcpy (rtr_host[i].file, file, 1024);
 			rtr_host[i].fd = fd;
 			rtr_n = i;

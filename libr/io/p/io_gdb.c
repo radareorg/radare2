@@ -32,7 +32,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	*port = '\0';
-	_fd = r_socket_connect (host, atoi (port+1));
+	_fd = r_socket_connect (host, port+1);
 	if (_fd == -1) {
 		eprintf ("Cannot connect to host.\n");
 		return NULL;

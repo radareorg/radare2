@@ -136,8 +136,8 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		return NULL;
 	}
 	listenmode = (*ptr==':');
-	*port = 0;
-	p = atoi (port+1);
+	*port++ = 0;
+	p = atoi (port);
 	if ((file = strchr (port+1, '/'))) {
 		*file = 0;
 		file++;
@@ -148,19 +148,19 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 			return NULL;
 		}
 		//TODO: Handle ^C signal (SIGINT, exit); // ???
-		eprintf ("rap: listening at port %d\n", p);
+		eprintf ("rap: listening at port %s\n", port);
 		rior = R_NEW (RIORap);
 		rior->listener = R_TRUE;
-		rior->client = rior->fd = r_socket_listen (p);
+		rior->client = rior->fd = r_socket_listen (port, R_FALSE, NULL);
 // TODO: listen mode is broken.. here must go the root loop!!
 #warning TODO: implement rap:/:9999 listen mode
 		return r_io_desc_new (&r_io_plugin_rap, rior->fd, pathname, rw, mode, rior);
 	}
-	if ((rap_fd = r_socket_connect (ptr, p))==-1) {
+	if ((rap_fd = r_socket_new (ptr, port, R_FALSE))==-1) {
 		eprintf ("Cannot connect to '%s' (%d)\n", ptr, p);
 		return NULL;
 	}
-	eprintf ("Connected to: %s at port %d\n", ptr, p);
+	eprintf ("Connected to: %s at port %s\n", ptr, port);
 	rior = R_NEW (RIORap);
 	rior->listener = R_FALSE;
 	rior->client = rior->fd = rap_fd;
