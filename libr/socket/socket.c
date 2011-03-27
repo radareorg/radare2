@@ -27,26 +27,34 @@
 
 #define BUFFER_SIZE 4096
 
-R_API RSocket *r_socket_new (const char *host, char *port, int is_ssl) {
+R_API RSocket *r_socket_new (const char *host, const char *port, int is_ssl) {
 	RSocket *s = R_NEW (RSocket);
 	s->is_ssl = is_ssl;
-	if ((s->fd = r_socket_connect (host, port)) < 0)
+	if ((s->fd = r_socket_connect (host, port)) < 0) {
+		free (s);
 		return NULL;
+	}
 #ifdef HAVE_LIB_SSL
 	if (is_ssl) {
 		s->sfd = NULL;
 		s->ctx = NULL;
 		s->bio = NULL;
-		if (!SSL_library_init ())
+		if (!SSL_library_init ()) {
+			r_socket_free (s);
 			return NULL;
+		}
 		SSL_load_error_strings ();
 		s->ctx = SSL_CTX_new (SSLv23_client_method ());
-		if (s->ctx == NULL)
+		if (s->ctx == NULL) {
+			r_socket_free (s);
 			return NULL;
+		}
 		s->sfd = SSL_new (s->ctx);
 		SSL_set_fd (s->sfd, s->fd);
-		if (SSL_connect (s->sfd) != 1)
+		if (SSL_connect (s->sfd) != 1) {
+			r_socket_free (s);
 			return NULL;
+		}
 	}
 #endif
 	return s;
@@ -62,14 +70,17 @@ R_API RSocket *r_socket_unix_connect(const char *file) {
 	RSocket *s = R_NEW (RSocket);
 	struct sockaddr_un addr;
 	int sock = socket (PF_UNIX, SOCK_STREAM, 0);
-	if (sock < 0)
+	if (sock < 0) {
+		free (s);
 		return NULL;
+	}
 	// TODO: set socket options
 	addr.sun_family = AF_UNIX;
 	strncpy (addr.sun_path, file, sizeof(addr.sun_path));
 
 	if (connect (sock, (struct sockaddr *)&addr, sizeof(addr))==-1) {
 		close (sock);
+		free (s);
 		return NULL;
 	}
 	s->fd =sock;
@@ -108,7 +119,7 @@ R_API int r_socket_unix_listen(const char *file) {
 }
 #endif
 
-R_API int r_socket_connect(const char *host, char *port) {
+R_API int r_socket_connect(const char *host, const char *port) {
 	struct addrinfo *res, *rp;
 	int s, gai;
 #if __WINDOWS__
@@ -142,7 +153,7 @@ R_API int r_socket_connect(const char *host, char *port) {
 	return s;
 }
 
-R_API RSocket *r_socket_listen(char *port, int is_ssl, char *certfile) {
+R_API RSocket *r_socket_listen(const char *port, int is_ssl, const char *certfile) {
 	RSocket *s;
 	int fd;
 	struct sockaddr_in sa;
@@ -177,20 +188,27 @@ R_API RSocket *r_socket_listen(char *port, int is_ssl, char *certfile) {
 		s->sfd = NULL;
 		s->ctx = NULL;
 		s->bio = NULL;
-		if (!SSL_library_init ())
+		if (!SSL_library_init ()) {
+			r_socket_free (s);
 			return NULL;
+		}
 		SSL_load_error_strings ();
 		s->ctx = SSL_CTX_new (SSLv23_method ());
-		if (s->ctx == NULL)
+		if (s->ctx == NULL) {
+			r_socket_free (s);
 			return NULL;
-		if (!SSL_CTX_use_certificate_chain_file (s->ctx, certfile))
+		}
+		if (!SSL_CTX_use_certificate_chain_file (s->ctx, certfile)) {
+			r_socket_free (s);
 			return NULL;
-		if (!SSL_CTX_use_PrivateKey_file (s->ctx, certfile, SSL_FILETYPE_PEM))
+		}
+		if (!SSL_CTX_use_PrivateKey_file (s->ctx, certfile, SSL_FILETYPE_PEM)) {
+			r_socket_free (s);
 			return NULL;
+		}
 		SSL_CTX_set_verify_depth (s->ctx, 1);
 	}
 #endif
-
 	return s;
 }
 
@@ -198,8 +216,10 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 	RSocket *sock = R_NEW (RSocket);
 	sock->is_ssl = s->is_ssl;
 	sock->fd = accept (s->fd, NULL, NULL);
-	if (sock->fd == -1)
+	if (sock->fd == -1) {
+		free (sock);
 		return NULL;
+	}
 #ifdef HAVE_LIB_SSL
 	if (sock->is_ssl) {
 		sock->sfd = NULL;
@@ -208,8 +228,10 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 		BIO *sbio = BIO_new_socket (sock->fd, BIO_NOCLOSE);
 		sock->sfd = SSL_new (s->ctx);
 		SSL_set_bio (sock->sfd, sbio, sbio);
-		if (SSL_accept (sock->sfd) <= 0)
+		if (SSL_accept (sock->sfd) <= 0) {
+			r_socket_free (sock);
 			return NULL;
+		}
 		sock->bio = BIO_new (BIO_f_buffer ());
 		sbio = BIO_new (BIO_f_ssl ());
 		BIO_set_ssl (sbio, sock->sfd, BIO_CLOSE);
@@ -310,7 +332,7 @@ R_API char *r_socket_to_string(RSocket *s) {
 }
 
 //XXX: Merge with r_new
-R_API RSocket *r_socket_udp_connect(const char *host, char *port, int is_ssl) {
+R_API RSocket *r_socket_udp_connect(const char *host, const char *port, int is_ssl) {
 	struct addrinfo *res, *rp;
 	int s, gai;
 	RSocket *sock;
@@ -324,10 +346,6 @@ R_API RSocket *r_socket_udp_connect(const char *host, char *port, int is_ssl) {
 #elif __UNIX__
 	signal (SIGPIPE, SIG_IGN);
 #endif
-	s = socket (AF_INET, SOCK_DGRAM, 0);
-	if (s == -1)
-		return NULL;
-
 	gai = getaddrinfo (host, port, NULL, &res);
 	if (gai != 0) {
 		eprintf ("Error in getaddrinfo: %s\n", gai_strerror (gai));
@@ -344,7 +362,7 @@ R_API RSocket *r_socket_udp_connect(const char *host, char *port, int is_ssl) {
 	}
 	if (rp == NULL) {
 		eprintf ("Could not connect\n");
-		return -1;
+		return NULL;
 	}
 	freeaddrinfo (res);
 	sock = R_NEW (RSocket);
@@ -355,16 +373,22 @@ R_API RSocket *r_socket_udp_connect(const char *host, char *port, int is_ssl) {
 		sock->sfd = NULL;
 		sock->ctx = NULL;
 		sock->bio = NULL;
-		if (!SSL_library_init ())
+		if (!SSL_library_init ()) {
+			r_socket_free (sock);
 			return NULL;
+		}
 		SSL_load_error_strings ();
 		sock->ctx = SSL_CTX_new (SSLv23_client_method ());
-		if (sock->ctx == NULL)
+		if (sock->ctx == NULL) {
+			r_socket_free (sock);
 			return NULL;
+		}
 		sock->sfd = SSL_new (sock->ctx);
 		SSL_set_fd (sock->sfd, sock->fd);
-		if (SSL_connect (sock->sfd) != 1)
+		if (SSL_connect (sock->sfd) != 1) {
+			r_socket_free (sock);
 			return NULL;
+		}
 	}
 #endif
 	return sock;
