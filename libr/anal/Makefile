@@ -14,9 +14,9 @@ OBJLIBS=meta.o reflines.o ref.o op.o fcn.o bb.o var.o anal.o cond.o value.o cc.o
 OBJ=${STATIC_OBJS} ${OBJLIBS}
 
 pre:
-	if [ ! -e libr_anal.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi
+	@if [ ! -e libr_anal.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi
 
 plugins:
-	cd p && ${MAKE} all
+	${MAKE} -C p all
 
 include ../rules.mk

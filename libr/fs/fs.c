@@ -100,12 +100,10 @@ R_API int r_fs_umount (RFS* fs, const char *path) {
 }
 
 R_API RFSRoot *r_fs_root (RFS *fs, const char *p) {
-	int olen = 0;
-	char *path;
-
-	RListIter *iter;
 	RFSRoot *root, *oroot = NULL;
-	path = strdup (p);
+	RListIter *iter;
+	int olen = 0;
+	char *path = strdup (p);
 	r_str_chop_path (path);
 	r_list_foreach (fs->roots, iter, root) {
 		int len = strlen (root->path);
@@ -156,23 +154,20 @@ R_API int r_fs_read (RFS* fs, RFSFile *file, ut64 addr, int len) {
 }
 
 R_API RList *r_fs_dir(RFS* fs, const char *p) {
+	RList *ret = NULL;
+	RFSRoot *root;
 	if (fs) {
 		char *path = strdup (p);
 		r_str_chop_path (path);
-		RFSRoot *root = r_fs_root (fs, path);
+		root = r_fs_root (fs, path);
 		if (root) {
 			const char *dir = path + strlen (root->path);
 			if (!*dir) dir = "/";
-			if (root) {
-				RList *ret = root->p->dir (root, dir);
-				free (path);
-				return ret;
-			}
-		}
-		eprintf ("r_fs_dir: not mounted '%s'\n", path);
+			ret = root->p->dir (root, dir);
+		} else eprintf ("r_fs_dir: not mounted '%s'\n", path);
 		free (path);
 	}
-	return NULL;
+	return ret;
 }
 
 R_API RFSFile *r_fs_slurp(RFS* fs, const char *path) {

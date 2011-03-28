@@ -81,12 +81,17 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
-uninstall:
-	rm -rf prefix
-
-deinstall: uninstall
+deinstall uninstall:
 	cd libr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	@echo
+	@echo "Run 'make purge' to also remove installed files from previous versions of r2"
+	@echo
+
+purge:
+	rm -rf ${DESTDIR}/${PREFIX}/lib/libr_*
+	rm -rf ${DESTDIR}/${PREFIX}/lib/radare2
+	rm -rf ${DESTDIR}/${PREFIX}/include/libr
 
 beta: dist swig-dist
 	scp ../radare2-${VERSION}.tar.gz ${REMOTE}

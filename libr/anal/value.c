@@ -13,6 +13,13 @@ R_API RAnalValue *r_anal_value_new_from_string(const char *str) {
 	return NULL;
 }
 
+R_API RAnalValue *r_anal_value_copy (RAnalValue *ov) {
+	RAnalValue *v = R_NEW (RAnalValue);
+	memcpy (v, ov, sizeof (RAnalValue));
+	// reference to reg and regdelta should be kept
+	return v;
+}
+
 // TODO: move into .h as #define free
 R_API void r_anal_value_free(RAnalValue *value) {
 	free (value);

@@ -164,6 +164,7 @@ typedef struct r_anal_t {
 	RMeta *meta;
 	RReg *reg;
 	RSyscall *syscall;
+	struct r_anal_op_t *queued;
 	RIOBind iob;
 	struct r_anal_ctx_t *ctx;
 	struct r_anal_plugin_t *cur;
@@ -193,6 +194,8 @@ typedef struct r_anal_op_t {
 	int nopcode;    /* number of bytes representing the opcode (not the arguments) */
 	int family;     /* family of opcode */
 	int eob;        /* end of block (boolean) */
+	/* Run N instructions before executing the current one */
+	int delay;      /* delay N slots (mips, ..)*/
 	ut64 jump;      /* true jmp */
 	ut64 fail;      /* false jmp */
 	ut32 selector;  /* segment selector */
@@ -202,6 +205,7 @@ typedef struct r_anal_op_t {
 	RAnalValue *src[3];
 	RAnalValue *dst;
 	int refptr;
+	struct r_anal_op_t *next;
 } RAnalOp;
 
 #define R_ANAL_COND_SINGLE(x) (!x->arg[1] || x->arg[0]==x->arg[1])
@@ -463,6 +467,7 @@ R_API int r_anal_diff_eval(RAnal *anal);
 
 /* value.c */
 R_API RAnalValue *r_anal_value_new();
+R_API RAnalValue *r_anal_value_copy (RAnalValue *ov);
 R_API RAnalValue *r_anal_value_new_from_string(const char *str);
 R_API st64 r_anal_value_eval(RAnalValue *value);
 R_API char *r_anal_value_to_string (RAnalValue *value);

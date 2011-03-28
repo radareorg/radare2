@@ -15,6 +15,7 @@ R_API RAnalOp *r_anal_op_new() {
 		op->fail = -1;
 		op->ref = -1;
 		op->value = -1;
+		op->next = NULL;
 	}
 	return op;
 }
@@ -43,22 +44,82 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	return R_FALSE;
 }
 
+R_API RAnalOp *r_anal_op_copy (RAnalOp *op) {
+	RAnalOp *nop = R_NEW (RAnalOp);
+	memcpy (nop, op, sizeof (RAnalOp));
+	nop->mnemonic = strdup (op->mnemonic);
+	nop->src[0] = r_anal_value_copy (op->src[0]);
+	nop->src[1] = r_anal_value_copy (op->src[1]);
+	nop->src[2] = r_anal_value_copy (op->src[2]);
+	nop->dst = r_anal_value_copy (op->dst);
+	return nop;
+}
+
 // TODO: return RAnalException *
 R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
-	switch (op->type) {
-	case R_ANAL_OP_TYPE_ADD:
-		// dst = src[0] + src[1] + src[2]
-		break;
-	case R_ANAL_OP_TYPE_SUB:
-		// dst = src[0] + src[1] + src[2]
-		break;
-	case R_ANAL_OP_TYPE_DIV:
-	case R_ANAL_OP_TYPE_MUL:
-		// not yet implemented
-		break;
-	case R_ANAL_OP_TYPE_NOP:
-		// do nothing
-		break;
+	while (op) {
+		if (op->delay>0) {
+			anal->queued = r_anal_op_copy (op);
+			return R_FALSE;
+		}
+		switch (op->type) {
+		case R_ANAL_OP_TYPE_JMP:
+		case R_ANAL_OP_TYPE_UJMP:
+		case R_ANAL_OP_TYPE_CALL:
+			break;
+		case R_ANAL_OP_TYPE_ADD:
+			// dst = src[0] + src[1] + src[2]
+			r_anal_value_set_ut64 (anal, op->dst, 
+				r_anal_value_to_ut64 (anal, op->src[0])+
+				r_anal_value_to_ut64 (anal, op->src[1])+
+				r_anal_value_to_ut64 (anal, op->src[2]));
+			break;
+		case R_ANAL_OP_TYPE_SUB:
+			// dst = src[0] + src[1] + src[2]
+			r_anal_value_set_ut64 (anal, op->dst, 
+				r_anal_value_to_ut64 (anal, op->src[0])-
+				r_anal_value_to_ut64 (anal, op->src[1])-
+				r_anal_value_to_ut64 (anal, op->src[2]));
+			break;
+		case R_ANAL_OP_TYPE_DIV:
+			{
+			ut64 div = r_anal_value_to_ut64 (anal, op->src[1]);
+			if (div == 0) {
+				eprintf ("r_anal_op_execute: division by zero\n");
+				eprintf ("TODO: throw RAnalException\n");
+			}
+			r_anal_value_set_ut64 (anal, op->dst, 
+				r_anal_value_to_ut64 (anal, op->src[0])/div);
+			}
+			break;
+		case R_ANAL_OP_TYPE_MUL:
+			r_anal_value_set_ut64 (anal, op->dst, 
+				r_anal_value_to_ut64 (anal, op->src[0])*
+				r_anal_value_to_ut64 (anal, op->src[1]));
+			break;
+		case R_ANAL_OP_TYPE_MOV:
+			// dst = src[0]
+			r_anal_value_set_ut64 (anal, op->dst, 
+				r_anal_value_to_ut64 (anal, op->src[0]));
+			break;
+		case R_ANAL_OP_TYPE_NOP:
+			// do nothing
+			break;
+		}
+		op = op->next;
+	}
+
+	if (anal->queued) {
+		if (op->delay>0) {
+			eprintf ("Exception! two consecutive delayed instructions\n");
+			return R_FALSE;
+		}
+		anal->queued->delay--;
+		if (anal->queued->delay == 0) {
+			r_anal_op_execute (anal, anal->queued);
+			r_anal_op_free (anal->queued);
+			anal->queued = NULL;
+		}
 	}
 	return R_TRUE;
 }

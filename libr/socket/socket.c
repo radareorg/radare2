@@ -1,6 +1,4 @@
-/* radare - LGPL - Copyright 2006-2010 pancake<nopcode.org> */
-
-#define USE_SOCKETS
+/* radare - LGPL - Copyright 2006-2011 pancake<nopcode.org> */
 
 #include <errno.h>
 #include <r_types.h>
@@ -13,7 +11,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-
 
 #if __UNIX__
 #include <sys/un.h>
@@ -257,7 +254,6 @@ R_API int r_socket_flush(RSocket *s) {
 
 R_API int r_socket_close(RSocket *s) {
 	int ret;
-
 #if __WINDOWS__
 	WSACleanup ();
 	ret = closesocket (s->fd);

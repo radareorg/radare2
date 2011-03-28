@@ -7,11 +7,11 @@ To wipe:
 ========
  - Move the content of libr/*/TODO here
  - linestyle?? for disassembly lines
- - remove libr/vm
+ - remove libr/vm and libr/db
 
 To do:
 ======
-* libmagic internal :?
+* libmagic internal :? -- find a decent implementation and adopt it
 * Ranged/scrollable zoom mode
 * Add r_cons_prompt () ... calling set_prompt + fgets -- this api needs cleanup
   - strict width in visual
