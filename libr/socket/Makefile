@@ -3,7 +3,7 @@ include ../config.mk
 NAME=r_socket
 #DEPS=r_util
 OBJ=socket.o proc.o
-LDFLAGS+=-lssl
+LDFLAGS+=-lssl -lcrypto
 
 # on solaris only
 ifeq (${OSTYPE},solaris)
