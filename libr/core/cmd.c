@@ -2771,7 +2771,7 @@ static int cmd_anal(void *data, const char *input) {
 			char *o = strdup (r_config_get (core->config, "search.prefix"));
 			r_config_set (core->config, "search.prefix", "pre.");
 			r_core_cmd0 (core, "fs preludes");
-			if (!strstr (arch, "x86")) {
+			if (strstr (arch, "x86")) {
 				switch (bits) {
 				case 32:
 					r_core_cmd0 (core, "./x 5589e5 && af @@ pre.");
