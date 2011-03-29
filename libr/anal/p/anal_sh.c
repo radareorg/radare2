@@ -76,22 +76,19 @@
 
 #define PC_IDX 16
 
-static RAnalValue *anal_fill_12bit_offset (RAnalOp *op, unsigned int insoff) {
-	unsigned int add = insoff;
-	RAnalValue *ret = r_anal_value_new();
-	
+static ut64 disarm_12bit_offset (RAnalOp *op, unsigned int insoff) {
+	ut64 off = insoff;
 	/* sign extend if higher bit is 1 (0x0800) */
-	if ((add & 0x0800) == 0x0800)
-		add |= 0xFFFFF000;
-	ret->base = (add<<1) + op->addr + 4;
-	return ret;
+	if ((off & 0x0800) == 0x0800)
+		off |= ~0xFFF;
+	return (op->addr<<1) + off + 4;
 }
 
-static unsigned int disarm_8bit_offset (unsigned int pc, unsigned int insoff) {
-	unsigned int add = insoff;
+static ut64 disarm_8bit_offset (unsigned int pc, unsigned int insoff) {
+	ut64 add = insoff;
 	/* sign extend if higher bit is 1 (0x08) */
 	if ((add & 0x80) == 0x80)
-		add |= 0xFFFFFF00;
+		add |= 0x00;
 	return (add<<1) + pc + 4; //2*sign_extend(displacement) + 4
 }
 static char *regs[]={"r0","r1","r2","r3","r4","r5","r6","r7","r8","r9","r10","r11","r12","r13","r14","r15","pc"};
@@ -155,7 +152,7 @@ static RAnalValue *anal_regrel_jump(RAnal* anal,RAnalOp* op, ut8 reg){
 
 
 /* 16 decoder routines, based on 1st nibble value */
-int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code){
+static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code){
 	if(IS_BSRF(code)){
 		/* Call 'far' subroutine Rn+PC+4 */
 		op->type = R_ANAL_OP_TYPE_UCALL;
@@ -207,7 +204,7 @@ int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code){
 	return op->length;
 }
 
-int movl_reg_rdisp(RAnal* anal, RAnalOp* op, ut16 code){
+static int movl_reg_rdisp(RAnal* anal, RAnalOp* op, ut16 code){
 	op->type = R_ANAL_OP_TYPE_MOV;
 	op->src[0] = anal_fill_ai_rg(anal,GET_SOURCE_REG(code));
 	op->dst = anal_fill_reg_disp_mem(anal,GET_TARGET_REG(code),code&0x0F,LONG_SIZE);
@@ -216,7 +213,7 @@ int movl_reg_rdisp(RAnal* anal, RAnalOp* op, ut16 code){
 
 
 
-int first_nibble_is_2(RAnal* anal, RAnalOp* op, ut16 code){
+static int first_nibble_is_2(RAnal* anal, RAnalOp* op, ut16 code){
 	//TODO handle mov.x Rm, @Rn, (X)OR/AND regs, 
 	if (IS_MOVB_REG_TO_REGREF(code)){
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -249,7 +246,7 @@ int first_nibble_is_2(RAnal* anal, RAnalOp* op, ut16 code){
 }
 
 
-int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code){
+static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code){
 	//TODO Handle carry/overflow , CMP/xx?
 	if( IS_ADD(code) || IS_ADDC(code) || IS_ADDV(code) ){
 		op->type = R_ANAL_OP_TYPE_ADD;
@@ -263,7 +260,7 @@ int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code){
 	return op->length;
 }
 
-int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code){
+static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code){
 	if(IS_JSR(code)){
 		op->type = R_ANAL_OP_TYPE_UCALL; //call to reg 
 		op->delay = 1;
@@ -278,7 +275,7 @@ int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code){
 	return op->length;
 }
 
-int movl_rdisp_reg(RAnal* anal, RAnalOp* op, ut16 code){
+static int movl_rdisp_reg(RAnal* anal, RAnalOp* op, ut16 code){
 	op->type = R_ANAL_OP_TYPE_MOV;
 	op->dst = anal_fill_ai_rg(anal,GET_TARGET_REG(code));
 	op->src[0] = anal_fill_reg_disp_mem(anal,GET_SOURCE_REG(code),code&0x0F,LONG_SIZE);
@@ -286,7 +283,7 @@ int movl_rdisp_reg(RAnal* anal, RAnalOp* op, ut16 code){
 }
 
 
-int first_nibble_is_6(RAnal* anal, RAnalOp* op, ut16 code){
+static int first_nibble_is_6(RAnal* anal, RAnalOp* op, ut16 code){
 	if(IS_MOV_REGS(code)){
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->src[0] = anal_fill_ai_rg(anal,GET_SOURCE_REG(code));
@@ -309,17 +306,17 @@ int first_nibble_is_6(RAnal* anal, RAnalOp* op, ut16 code){
 }
 
 
-int add_imm(RAnal* anal, RAnalOp* op, ut16 code){
+static int add_imm(RAnal* anal, RAnalOp* op, ut16 code){
 	op->type = R_ANAL_OP_TYPE_ADD;
 	op->src[0] = anal_fill_im(anal, (st8)(code&0xFF)); //Casting to (st8) forces sign-extension.
 	op->dst = anal_fill_ai_rg(anal,GET_TARGET_REG(code));
 	return op->length;
 }
 
-int first_nibble_is_8(RAnal* anal, RAnalOp* op, ut16 code){
+static int first_nibble_is_8(RAnal* anal, RAnalOp* op, ut16 code){
 	if (IS_BT_OR_BF(code)){
 		op->type = R_ANAL_OP_TYPE_CJMP; //Jump if true or jump if false insns
-		op->jump = disarm_8bit_offset(op->addr,GET_BTF_OFFSET(code));
+		op->jump = (op->addr << 1) +4 + (st8)GET_BTF_OFFSET(code);
 		op->fail = op->addr + 2 ;
 		op->eob  = R_TRUE;
 		if (IS_BTS(code) || IS_BFS(code))
@@ -337,32 +334,32 @@ int first_nibble_is_8(RAnal* anal, RAnalOp* op, ut16 code){
 	return op->length;
 }
 
-int movw_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code){
+static int movw_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code){
 	op->type = R_ANAL_OP_TYPE_MOV;
 	op->dst = anal_fill_ai_rg(anal, GET_TARGET_REG(code));
 	op->src[0] = anal_fill_reg_disp_mem(anal,PC_IDX,code&0xFF,WORD_SIZE);
 	return op->length;
 }
 
-int bra(RAnal* anal, RAnalOp* op, ut16 code){
+static int bra(RAnal* anal, RAnalOp* op, ut16 code){
 	/* Unconditional branch, relative to PC */
 	op->type = R_ANAL_OP_TYPE_JMP;
 	op->delay = 1;
-	op->dst = anal_fill_12bit_offset(op,GET_BRA_OFFSET(code));
+	op->jump = disarm_12bit_offset(op,GET_BRA_OFFSET(code));
 	op->eob  = R_TRUE;
 	return op->length;
 }
 
-int bsr(RAnal* anal, RAnalOp* op, ut16 code){
+static int bsr(RAnal* anal, RAnalOp* op, ut16 code){
 	/* Subroutine call, relative to PC */
 	op->type = R_ANAL_OP_TYPE_CALL;
-	op->dst = anal_fill_12bit_offset(op,GET_BRA_OFFSET(code));
+	op->jump = disarm_12bit_offset(op,GET_BRA_OFFSET(code));
 	op->delay = 1;
 	return op->length;
 }
 
 
-int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code){
+static int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code){
 	if (IS_TRAP(code)){
 		op->type = R_ANAL_OP_TYPE_SWI;
 		op->value = (ut8)(code&0xFF);
@@ -387,28 +384,28 @@ int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code){
 	return op->length;
 }
 
-int movl_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code){
+static int movl_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code){
 	op->type = R_ANAL_OP_TYPE_MOV;
 	op->src[0] = anal_pcrel_disp_mov(anal,op,code&0x0F);
 	op->dst = anal_fill_ai_rg(anal,GET_TARGET_REG(code));
 	return op->length;
 }
 
-int mov_imm_reg(RAnal* anal, RAnalOp* op, ut16 code){
+static int mov_imm_reg(RAnal* anal, RAnalOp* op, ut16 code){
 	op->type = R_ANAL_OP_TYPE_MOV;
 	op->dst = anal_fill_ai_rg(anal,GET_TARGET_REG(code)); 
 	op->src[0] = anal_fill_im(anal,(st8)(code & 0xFF));
 	return op->length;
 }
 
-int fpu_insn(RAnal* anal, RAnalOp* op, ut16 code){
+static int fpu_insn(RAnal* anal, RAnalOp* op, ut16 code){
 	//Not interested on FPU stuff for now
 	op->family = R_ANAL_OP_FAMILY_FPU;
 	return op->length;
 }
 
 /* Table of routines for further analysis based on 1st nibble */
-int (*first_nibble_decode[])(RAnal*,RAnalOp*,ut16) = {
+static int (*first_nibble_decode[])(RAnal*,RAnalOp*,ut16) = {
 	first_nibble_is_0,
 	movl_reg_rdisp,
 	first_nibble_is_2,
