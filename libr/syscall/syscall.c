@@ -7,6 +7,7 @@
 #include <string.h>
 #include "fastcall.h"
 
+extern RSyscallItem syscalls_linux_sh[];
 extern RSyscallItem syscalls_netbsd_x86[];
 extern RSyscallItem syscalls_linux_x86[];
 extern RSyscallItem syscalls_linux_mips[];
@@ -90,6 +91,16 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
 			eprintf ("r_syscall_setup: Unknown os '%s'\n", os);
 			return R_FALSE;
 		}
+	} else
+	if (!strcmp (arch,"sh")){
+		ctx->regs = fastcall_sh;
+		if (!strcmp (os, "linux"))
+			ctx->sysptr = syscalls_linux_sh;
+		else {
+			eprintf ("r_syscall_setup: Unknown os '%s'\n",os);
+			return R_FALSE;
+		}
+	
 	} else {
 		eprintf ("r_syscall_setup: Unknown os/arch '%s'/'%s'\n", os, arch);
 		return R_FALSE;

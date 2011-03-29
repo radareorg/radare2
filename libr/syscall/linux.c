@@ -44,6 +44,7 @@ RSyscallItem syscalls_linux_x86[] = {
 	{ NULL, 0, 0, 0 }
 };
 
+RSyscallItem syscalls_linux_sh[] = {{NULL,0,0,0} };
 // http://lxr.oss.org.cn/source/include/asm-arm/unistd.h
 /* syscall-linux */
 // XXX: same as in linux-x86 ?
