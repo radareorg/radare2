@@ -2099,14 +2099,26 @@ static int cmd_print(void *data, const char *input) {
 			"   F : number of bytes with value 0xFF\n"
 			"   e : calculate entropy and expand to 0-255 range\n"
 			"   h : head (first byte value)\n"
-			"WARNING: On big files, use 'zoom.byte=h' or restrict ranges\n"
-			);
+			"WARNING: On big files, use 'zoom.byte=h' or restrict ranges\n");
 		} else {
+			char *oldzoom = NULL;
 			ut64 maxsize = r_config_get_i (core->config, "zoom.maxsz");
 			ut64 from = r_config_get_i (core->config, "zoom.from");
 			ut64 to = r_config_get_i (core->config, "zoom.to");
+			if (input[1] != '\0' && input[1] != ' ') {
+				oldzoom = strdup (r_config_get (core->config, "zoom.byte"));
+				if (!r_config_set (core->config, "zoom.byte", input+1)) {
+					eprintf ("Invalid zoom.byte mode (%s)\n", input+1);
+					free (oldzoom);
+					return R_FALSE;
+				}
+			}
 			r_print_zoom (core->print, core, printzoomcallback,
 				from, to, core->blocksize, (int)maxsize);
+			if (oldzoom) {
+				r_config_set (core->config, "zoom.byte", oldzoom);
+				free (oldzoom);
+			}
 		}
 		break;
 	default:

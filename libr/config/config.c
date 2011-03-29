@@ -76,14 +76,16 @@ R_API ut64 r_config_get_i(RConfig *cfg, const char *name) {
 R_API RConfigNode *r_config_set_cb(RConfig *cfg, const char *name, const char *value, RConfigCallback cb) {
 	RConfigNode *node = r_config_set (cfg, name, value);
 	if ((node->callback = cb))
-		cb (cfg->user, node);
+		if (!cb (cfg->user, node))
+			return NULL;
 	return node;
 }
 
 R_API RConfigNode *r_config_set_i_cb(RConfig *cfg, const char *name, int ivalue, RConfigCallback cb) {
 	RConfigNode *node = r_config_set_i (cfg, name, ivalue);
 	if ((node->callback = cb))
-		node->callback (cfg->user, node);
+		if (!node->callback (cfg->user, node))
+			return NULL;
 	return node;
 }
 
@@ -141,6 +143,7 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 			node->i_value = oi;
 			free (node->value);
 			node->value = strdup (ov);
+			return NULL;
 		}
 	}
 	free (ov);

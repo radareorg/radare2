@@ -59,7 +59,7 @@ static int config_zoombyte_callback(void *user, void *data) {
 		break;
 	default:
 		eprintf ("Invalid zoom.byte value. See pZ? for help\n");
-		break;
+		return R_FALSE;
 	}
 	return R_TRUE;
 }
