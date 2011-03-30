@@ -99,6 +99,7 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 	d = dst;
 #endif
 	// XXX: overflow here
+// TODO: Use r_cons primitives here
 #define memcat(x,y) { memcpy(x,y,strlen(y));x+=strlen(y); }
 	//for (s=str, d=dst; *s; s+=2, d+=2, i++) {
 	for (s=str, i=0 ; *s; s+=2, d+=2, i++) {
@@ -108,13 +109,15 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 			if (i>=cur-n && i<ocur-n)
 				memcat (d, "\x1b[7m");
 		}
-		if (s[0]=='0' && s[1]=='0') { memcat (d, "\x1b[32m"); }
-		else if (s[0]=='7' && s[1]=='f') { memcat (d, "\x1b[33m"); }
-		else if (s[0]=='f' && s[1]=='f') { memcat (d, "\x1b[31m"); }
-		else {
-			sscanf (s, "%02x", &ch);
-			if (IS_PRINTABLE (ch))
-				memcat (d, "\x1b[35m");
+		if ((p->flags & R_PRINT_FLAGS_COLOR)) {
+			if (s[0]=='0' && s[1]=='0') { memcat (d, "\x1b[32m"); }
+			else if (s[0]=='7' && s[1]=='f') { memcat (d, "\x1b[33m"); }
+			else if (s[0]=='f' && s[1]=='f') { memcat (d, "\x1b[31m"); }
+			else {
+				sscanf (s, "%02x", &ch);
+				if (IS_PRINTABLE (ch))
+					memcat (d, "\x1b[35m");
+			}
 		}
 		memcpy (d, s, 2);
 	}

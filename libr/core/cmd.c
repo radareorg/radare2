@@ -395,23 +395,23 @@ flag = NULL; // HACK
 				}
 				k = nb-r_str_ansi_len (str);
 				if (k<0) k = 0;
-				if (lbytes && str[strlen(str)-1]!='.') k = k + 1;
+				if (lbytes && str[strlen (str)-1]!='.') k++;
 				for (j=0; j<k; j++)
 					pad[j] = ' ';
-				pad[j] = '\0';
+				pad[j] = 0;
 				if (lbytes) {
 					// hack to align bytes left
 					strcpy (extra, pad);
-					*pad=0;
+					*pad = 0;
 				}
-				if (show_color) {
+			//	if (show_color) {
 					char *nstr;
 					p->cur_enabled = cursor!=-1;
 					//p->cur = cursor;
 					nstr = r_print_hexpair (p, str, idx);
 					free (str);
 					str = nstr;
-				}
+			//	}
 			} else {
 				str = strdup (flag->name);
 				k = nb-strlen (str)-2;
