@@ -27,3 +27,13 @@ static struct r_syscall_regs_t fastcall_x86 [R_SYSCALL_ARGS] = {
 	{{ "eax", "ebx", "ecx", "edx", NULL }},
 	{{ NULL }}
 };
+
+
+
+static struct r_syscall_regs_t fastcall_sh [R_SYSCALL_ARGS] = {
+	{{ "r4", NULL }},
+	{{ "r4", "r5", NULL }},
+	{{ "r4", "r5", "r6", NULL }},
+	{{ "r4", "r5", "r6", "r7", NULL }},
+	{{ NULL }}
+};
