@@ -3,6 +3,9 @@
 #include <r_core.h>
 #include <r_socket.h>
 #include "../config.h"
+#if __UNIX__
+#include <signal.h>
+#endif
 
 static int endian = 1; // XXX HACK
 

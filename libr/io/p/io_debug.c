@@ -37,7 +37,9 @@
 #include <mach/vm_map.h>
 #include <mach-o/loader.h>
 #include <mach-o/nlist.h>
+#endif
 
+#if __APPLE__ || __BSD__
 static void inferior_abort_handler(int pid) {
         eprintf ("Inferior received signal SIGABRT. Executing BKPT.\n");
 }
@@ -186,7 +188,7 @@ static int fork_and_ptraceme(const char *cmd) {
 		perror ("fork_and_ptraceme");
 		break;
 	case 0:
-#if __APPLE__
+#if __APPLE__ || __BSD__
 		signal (SIGTRAP, SIG_IGN); // SINO NO FUNCIONA EL STEP
 		signal (SIGABRT, inferior_abort_handler);
 		if (ptrace (PT_TRACE_ME, 0, 0, 0) != 0) {
