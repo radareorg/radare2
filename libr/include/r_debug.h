@@ -10,6 +10,24 @@
 #include <r_syscall.h>
 #include "list.h"
 
+/* hack to fix compilation of debugger on BSD systems */
+/* This needs some testing (netbsd, freebsd, openbsd, kfreebsd) */
+#if __BSD__
+#include <machine/reg.h>
+
+#define PTRACE_PEEKTEXT PT_READ_I
+#define PTRACE_POKETEXT PT_WRITE_I
+#define PTRACE_PEEKDATA PT_READ_D
+#define PTRACE_POKEDATA PT_WRITE_D
+#define PTRACE_ATTACH PT_ATTACH
+#define PTRACE_DETACH PT_DETACH
+#define PTRACE_SINGLESTEP PT_STEP
+#define PTRACE_CONT PT_CONTINUE
+#define PTRACE_GETREGS PT_GETREGS
+#define PTRACE_SETREGS PT_SETREGS
+#define PTRACE_SYSCALL PT_STEP
+#endif
+
 enum {
 	R_DBG_PROC_STOP = 's',
 	R_DBG_PROC_RUN = 'r',
