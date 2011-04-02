@@ -1,6 +1,7 @@
 include config-user.mk
 include global.mk
 
+PWD=`pwd`
 REMOTE=radare.org:/srv/http/radareorg/get/beta
 
 all: plugins.cfg

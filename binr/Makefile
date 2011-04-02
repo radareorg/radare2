@@ -1,4 +1,5 @@
 include ../config-user.mk
+PWD=`pwd`
 
 .PHONY: all clean install install-symlink deinstall uninstall mrproper
 
@@ -20,6 +21,8 @@ install:
 
 install-symlink:
 	mkdir -p ${PFX}/bin
+	echo ${PWD}
+	echo ${PFX}
 	for a in ${BINS} ; do ln -fs ${PWD}/$$a/$$a ${PFX}/bin/$$a ; done
 	ln -fs ${PWD}/rarc2/rarc2-tool ${PFX}/bin/rarc2-tool
 	-ln -fs ${PFX}/bin/radare2 ${PFX}/bin/r2

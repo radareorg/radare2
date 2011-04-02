@@ -3,6 +3,7 @@ include config.mk
 
 PREFIX?=${PWD}/../prefix
 PFX=${DESTDIR}${PREFIX}
+PWD=`pwd`
 #PREFIX=${PFX}
 
 # Libraries

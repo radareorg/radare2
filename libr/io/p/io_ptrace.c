@@ -5,8 +5,9 @@
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_cons.h>
+#include <r_debug.h>
 
-#if __linux__ || __NetBSD__ || __FreeBSD__ || __OpenBSD__
+#if __linux__ || __BSD__
 
 #include <sys/ptrace.h>
 #include <sys/types.h>

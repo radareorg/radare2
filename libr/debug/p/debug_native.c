@@ -197,6 +197,7 @@ static int r_debug_native_step(RDebug *dbg) {
 	ut32 addr = 0; /* should be eip */
 	//ut32 data = 0;
 	//printf("NATIVE STEP over PID=%d\n", pid);
+	addr = r_debug_reg_get (dbg, "pc");
 	ret = ptrace (PTRACE_SINGLESTEP, pid, addr, 0); //addr, data);
 	if (ret == -1) {
 		perror ("native-singlestep");
@@ -392,6 +393,35 @@ static const char *r_debug_native_reg_profile() {
 	"gpr	ctr	.32	148	0\n"
 	"gpr	mq	.32	152	0\n"
 	"gpr	vrsave	.32	156	0\n"
+	);
+#elif __i386__ && __OpenBSD__
+	return strdup (
+	"=pc	eip\n"
+	"=sp	esp\n"
+	"=bp	ebp\n"
+	"=a0	eax\n"
+	"=a1	ebx\n"
+	"=a2	ecx\n"
+	"=a3	edi\n"
+// TODO: add ax, al, ah, ...
+	"gpr	eax	.32	0	0\n"
+	"gpr	ecx	.32	4	0\n"
+	"gpr	edx	.32	8	0\n"
+	"gpr	ebx	.32	12	0\n"
+	"gpr	esp	.32	16	0\n"
+	"gpr	ebp	.32	20	0\n"
+	"gpr	esi	.32	24	0\n"
+	"gpr	edi	.32	28	0\n"
+	"gpr	eip	.32	32	0\n"
+	"gpr	eflags	.32	36	0	c1p.a.zstido.n.rv\n"
+	"seg	cs	.32	40	0\n"
+	"seg	ss	.32	44	0\n"
+	"seg	ds	.32	48	0\n"
+	"seg	es	.32	52	0\n"
+	"seg	fs	.32	56	0\n"
+	"seg	gs	.32	60	0\n"
+// TODO: implement flags like in linux --those flags are wrong
+
 	);
 #elif __i386__
 	return strdup (
