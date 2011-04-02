@@ -6,6 +6,7 @@
 
 int main(int argc, char **argv) {
 	int ret, i;
+	RIODesc *fd;
 	int tid, pid;
 	struct r_io_t *io;
 	struct r_debug_t *dbg;
@@ -14,13 +15,13 @@ int main(int argc, char **argv) {
 	printf ("Supported IO pluggins:\n");
 	r_io_plugin_list (io);
 
-	ret = r_io_open (io, "dbg:///bin/ls", 0, 0);
-//	r_io_set_fd(io, ret);
-	printf("r_io_open dbg:///bin/ls' = %s\n", r_str_bool(ret));
-	if (!ret) {
+	fd = r_io_open (io, "dbg:///bin/ls", 0, 0);
+	if (!fd) {
 		printf("Cannot open dbg:///bin/ls\n");
 		goto beach;
 	}
+//	r_io_set_fd(io, ret);
+	printf ("r_io_open dbg:///bin/ls' = %d\n", io->fd->fd);
 
 	{
 		/* dump process memory */

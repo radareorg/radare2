@@ -67,10 +67,11 @@ R_API RReg *r_reg_free(RReg *reg) {
 }
 
 R_API RReg *r_reg_new() {
-	RReg *reg = R_NEW (RReg);
 	int i;
+	RReg *reg = R_NEW (RReg);
 	reg->iters = 0;
 	reg->profile = NULL;
+	reg->reg_profile_str = NULL;
 	for (i=0; i<R_REG_NAME_LAST; i++)
 		reg->name[i] = NULL;
 	for (i=0; i<R_REG_TYPE_LAST; i++) {
@@ -146,12 +147,12 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 	int lastchar = 0;
 	int chidx = 0;
 	int word = 0;
-	char buf[256];
+	char buf[512];
 
 	if (!str||!reg)
 		return R_FALSE;
-	free (reg->reg_profile);
-	reg->reg_profile = strdup (str);
+	// XXX double free // free (reg->reg_profile_str);
+	reg->reg_profile_str = strdup (str);
 	*buf = '\0';
 	/* format file is: 'type name size offset packedsize' */
 	r_reg_free_internal (reg);

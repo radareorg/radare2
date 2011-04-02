@@ -51,7 +51,7 @@ typedef struct r_reg_set_t {
 
 typedef struct r_reg_t {
 	char *profile;
-	char *reg_profile;
+	char *reg_profile_str;
 	char *name[R_REG_NAME_LAST];
 	RRegSet regset[R_REG_TYPE_LAST];
 	int iters;

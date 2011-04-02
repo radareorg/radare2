@@ -35,13 +35,18 @@ R_API int r_debug_use(RDebug *dbg, const char *str) {
 		}
 	}
 	if (dbg->h && dbg->h->reg_profile) {
-		free (dbg->reg->reg_profile);
-		dbg->reg->reg_profile = dbg->h->reg_profile ();
-		if (dbg->anal)
-			dbg->anal->reg = dbg->reg;
-		if (dbg->h->init)
-			dbg->h->init (dbg);
-		r_reg_set_profile_string (dbg->reg, dbg->reg->reg_profile);
+		char *p = dbg->h->reg_profile ();
+		if (p == NULL) {
+			eprintf ("Cannot retrieve reg profile from debug plugin\n");
+		} else {
+			free (dbg->reg->reg_profile_str);
+			dbg->reg->reg_profile_str = p;
+			if (dbg->anal)
+				dbg->anal->reg = dbg->reg;
+			if (dbg->h->init)
+				dbg->h->init (dbg);
+			r_reg_set_profile_string (dbg->reg, p);
+		}
 	}
 	return (dbg->h != NULL);
 }
