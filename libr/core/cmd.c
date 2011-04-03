@@ -3900,7 +3900,7 @@ static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		close (fds[1]);
 		dup2 (fds[0], 0);
 		dup2 (2, 1);
-		execl ("/bin/sh", "sh", "-c", shell_cmd, NULL);
+		execl ("/bin/sh", "sh", "-c", shell_cmd, (char*)NULL);
 	}
 	return status;
 #else

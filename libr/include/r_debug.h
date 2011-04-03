@@ -140,7 +140,7 @@ typedef struct r_debug_desc_plugin_t {
 /* TODO: pass dbg and user data pointer everywhere */
 typedef struct r_debug_plugin_t {
 	const char *name;
-	const char **archs; // MUST BE DEPREACTED!!!!
+	//const char **archs; // MUST BE DEPREACTED!!!!
 	ut32 bits;
 	ut64 arch;
 	/* life */
@@ -153,10 +153,10 @@ typedef struct r_debug_plugin_t {
 	RFList (*backtrace)(int count);
 	/* flow */
 	int (*step)(RDebug *dbg);
-	int (*cont)(int pid, int tid, int sig);
+	int (*cont)(RDebug *dbg, int pid, int tid, int sig);
 	int (*wait)(int pid);
 	int (*kill)(RDebug *dbg, boolt thread, int sig);
-	int (*contsc)(int pid, int sc);
+	int (*contsc)(RDebug *dbg, int pid, int sc);
 	RList* (*frames)(RDebug *dbg);
 	RBreakpointCallback breakpoint;
 // XXX: specify, pid, tid, or RDebug ?

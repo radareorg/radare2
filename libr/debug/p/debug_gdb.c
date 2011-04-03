@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
+#include <r_asm.h>
 #include <r_debug.h>
 #include "libgdbwrap/include/gdbwrapper.h"
 
@@ -9,12 +10,12 @@
 /* TODO: rename to gdbwrap? */
 static gdbwrap_t *desc = NULL;
 
-static int r_debug_gdb_step(int pid) {
+static int r_debug_gdb_step(RDebug *dbg) {
 	gdbwrap_stepi (desc);
 	return R_TRUE;
 }
 
-struct r_debug_regset_t * r_debug_gdb_reg_read(int pid) {
+static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 #if 0
 	struct r_debug_regset *r = NULL;
 	/* only for x86-32 */
@@ -34,13 +35,13 @@ struct r_debug_regset_t * r_debug_gdb_reg_read(int pid) {
 	return NULL;
 }
 
-static int r_debug_gdb_reg_write(int pid, int type, const ut8 *buf, int size) {
+static int r_debug_gdb_reg_write(int pid, int tid, int type, const ut8 *buf, int size) {
 	/* TODO */
 	return R_TRUE;
 }
 
-static int r_debug_gdb_continue(int pid, int sig) {
-	gdbwrap_continue(desc);
+static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
+	gdbwrap_continue (desc);
 	return R_TRUE;
 }
 
@@ -63,10 +64,10 @@ static int r_debug_gdb_detach(int pid) {
 
 struct r_debug_plugin_t r_dbg_plugin_gdb = {
 	.name = "gdb",
-	// XXX this must be a bitmask
-	.archs = { "x86", 0 }, //"x86-64", "arm", "powerpc", 0 },
-	.step = &r_debug_gdb_step,
-	.cont = &r_debug_gdb_continue,
+	.arch = R_ASM_ARCH_X86, // TODO: add bitmask for ARM and SH4
+	.bits = R_SYS_BITS_32,
+	.step = r_debug_gdb_step,
+	.cont = r_debug_gdb_continue,
 	.attach = &r_debug_gdb_attach,
 	.detach = &r_debug_gdb_detach,
 	.wait = &r_debug_gdb_wait,

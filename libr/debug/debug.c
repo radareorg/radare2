@@ -252,7 +252,7 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	int ret = R_FALSE;
 	if (dbg && dbg->h && dbg->h->cont) {
 		r_bp_restore (dbg->bp, R_FALSE); // set sw breakpoints
-		ret = dbg->h->cont (dbg->pid, dbg->tid, sig);
+		ret = dbg->h->cont (dbg, dbg->pid, dbg->tid, sig);
 		if (dbg->h->wait)
 			ret = dbg->h->wait (dbg->pid);
 		r_bp_restore (dbg->bp, R_TRUE); // unset sw breakpoints
@@ -322,7 +322,7 @@ R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc) {
 	if (dbg && dbg->h) {
 		if (dbg->h->contsc) {
 			do {
-				ret = dbg->h->contsc (dbg->pid, sc);
+				ret = dbg->h->contsc (dbg, dbg->pid, sc);
 				if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE)) {
 					eprintf ("--> eol\n");
 					break;
@@ -346,7 +346,7 @@ R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc) {
 R_API int r_debug_syscall(struct r_debug_t *dbg, int num) {
 	int ret = R_FALSE;
 	if (dbg->h->contsc) {
-		ret = dbg->h->contsc (dbg->pid, num);
+		ret = dbg->h->contsc (dbg, dbg->pid, num);
 	} else {
 		ret = R_TRUE;
 		// TODO.check for num

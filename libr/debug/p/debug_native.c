@@ -8,7 +8,7 @@
 #include <signal.h>
 
 #if DEBUGGER
-static int r_debug_native_continue(int pid, int tid, int sig);
+static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig);
 static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
 static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, int size);
 
@@ -172,7 +172,7 @@ static int r_debug_native_step(RDebug *dbg) {
 	int ret = R_FALSE;
 	int pid = dbg->pid;
 #if __WINDOWS__
-	CONTEXT regs __attribute__((aligned (16)));
+	CONTEXT regs __attribute__ ((aligned (16)));
 	/* set TRAP flag */
 /*
 	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR, &regs, sizeof (regs));
@@ -246,11 +246,11 @@ static int r_debug_native_detach(int pid) {
 #endif
 }
 
-static int r_debug_native_continue_syscall(int pid, int num) {
+static int r_debug_native_continue_syscall(RDebug *dbg, int pid, int num) {
 #if __linux__
 	return ptrace (PTRACE_SYSCALL, pid, 0, 0);
 #elif __BSD__
-	ut64 pc = 0LL; // XXX
+	ut64 pc = r_debug_reg_get (dbg, "pc");
 	return ptrace (PTRACE_SYSCALL, pid, pc, 0);
 #else
 	eprintf ("TODO: continue syscall not implemented yet\n");
@@ -260,7 +260,7 @@ static int r_debug_native_continue_syscall(int pid, int num) {
 
 /* TODO: specify thread? */
 /* TODO: must return true/false */
-static int r_debug_native_continue(int pid, int tid, int sig) {
+static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	void *data = NULL;
 	if (sig != -1)
 		data = (void*)(size_t)sig;
@@ -283,9 +283,11 @@ static int r_debug_native_continue(int pid, int tid, int sig) {
 	thread_resume (inferior_threads[0]);
 	#endif
         return 0;
+#elif __BSD__
+	ut64 pc = r_debug_reg_get (dbg, "pc");
+	return ptrace (PTRACE_CONT, pid, (void*)(size_t)pc, data);
 #else
-	void *addr = NULL; // eip for BSD
-	return ptrace (PTRACE_CONT, pid, addr, data);
+	return ptrace (PTRACE_CONT, pid, NULL, data);
 #endif
 }
 
@@ -1047,8 +1049,13 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 		ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
 	//	eprintf ("EFLAGS =%x\n", ctx.EFlags);
 		return SetThreadContext (tid2handler (pid, tid), &ctx)? R_TRUE: R_FALSE;
-#elif __linux__ || __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
+#elif __linux__
 		int ret = ptrace (PTRACE_SETREGS, pid, 0, buf);
+		if (sizeof (R_DEBUG_REG_T) < size)
+			size = sizeof (R_DEBUG_REG_T);
+		return (ret != 0) ? R_FALSE: R_TRUE;
+#elif __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
+		int ret = ptrace (PTRACE_SETREGS, pid, buf, sizeof (R_DEBUG_REG_T));
 		if (sizeof (R_DEBUG_REG_T) < size)
 			size = sizeof (R_DEBUG_REG_T);
 		return (ret != 0) ? R_FALSE: R_TRUE;
