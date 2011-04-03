@@ -29,7 +29,13 @@ static int __waitpid(int pid) {
 	return (waitpid (pid, &st, 0) != -1);
 }
 
+#if __OpenBSD__
+#define debug_read_raw(x,y) ptrace(PTRACE_PEEKTEXT, (pid_t)(x), (caddr_t)(y), 0)
+#define debug_write_raw(x,y,z) ptrace(PTRACE_POKEDATA, (pid_t)(x), (caddr_t)(y), (int)(size_t)(z))
+#else
 #define debug_read_raw(x,y) ptrace(PTRACE_PEEKTEXT, x, y, 0)
+#define debug_write_raw(x,y,z) ptrace(PTRACE_POKEDATA, x, y, z)
+#endif
 
 static int debug_os_read_at(int pid, void *buf, int sz, ut64 addr) {
 	unsigned long words = sz / sizeof (long);
@@ -66,12 +72,12 @@ static int ptrace_write_at(int pid, const ut8 *buf, int sz, ut64 addr) {
 	long x, lr;
 
 	for (x=0; x<words; x++)
-		if (ptrace (PTRACE_POKEDATA, pid, &((long *)(long)addr)[x], ((long *)buf)[x]))
+		if (debug_write_raw (pid, &((long *)(long)addr)[x], ((long *)buf)[x]))
 			goto err;
 	if (last) {
-		lr = ptrace (PTRACE_PEEKDATA, pid, &((long *)(long)addr)[x], 0);
+		lr = debug_read_raw (pid, &((long *)(long)addr)[x]);
 		lr = ((lr&(-1L<<last))|(((long *)buf)[x]&(~(-1L<<last))));
-		if (ptrace (PTRACE_POKETEXT, pid, (void*)((long)addr+(x*sizeof(void*))), (void*)lr))
+		if (debug_write_raw (pid, (void*)((long)addr+(x*sizeof(void*))), (void*)lr))
 			goto err;
 	}
 	return sz;

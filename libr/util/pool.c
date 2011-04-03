@@ -42,7 +42,9 @@ R_API RMemoryPool *r_mem_pool_new(int nodesize, int poolsize, int poolcount) {
 }
 
 R_API RMemoryPool *r_mem_pool_free(RMemoryPool *pool) {
-	return (r_mem_pool_deinit (pool), free (pool), NULL);
+	r_mem_pool_deinit (pool);
+	free (pool);
+	return NULL;
 }
 
 R_API void* r_mem_pool_alloc(RMemoryPool *pool) {

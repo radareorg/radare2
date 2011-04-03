@@ -13,7 +13,7 @@ R_API RAnalBlock *r_anal_bb_new() {
 	bb->jump = -1;
 	bb->fail = -1;
 	bb->type = R_ANAL_BB_TYPE_NULL;
-	bb->ops = r_anal_op_list_new();
+	bb->ops = r_anal_op_list_new ();
 	bb->cond = NULL;
 	bb->fingerprint = NULL;
 	bb->diff = r_anal_diff_new ();
@@ -45,6 +45,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 
 	if (bb->addr == -1)
 		bb->addr = addr;
+	len -= 16; // XXX: hack to avoid segfault by x86im
 	while (idx < len) {
 		if (!(op = r_anal_op_new ())) {
 			eprintf ("Error: new (op)\n");

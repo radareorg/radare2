@@ -337,5 +337,6 @@ extern void init_disassemble_info (struct disassemble_info *info, void *stream,
 #ifdef __cplusplus
 }
 #endif
+int print_insn_shl (bfd_vma memaddr, struct disassemble_info *info);
 
 #endif /* ! defined (DIS_ASM_H) */

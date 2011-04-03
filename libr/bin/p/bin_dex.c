@@ -55,7 +55,8 @@ static RList* strings(RBinArch *arch) {
 	RBinString *ptr = NULL;
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->bin_obj;
 	ut32 i, *string;
-	char len, buf[6];
+	char buf[6];
+	int len;
 
 	string = (ut32 *) malloc (bin->header.strings_size * sizeof (ut32));
 	r_buf_read_at(bin->b, bin->header.strings_offset, (ut8*)string,
@@ -68,14 +69,15 @@ static RList* strings(RBinArch *arch) {
 			break;
 		r_buf_read_at (bin->b, string[i], (ut8*)&buf, 6);
 		len = dex_read_uleb128 (buf);
-		if (len >= R_BIN_SIZEOF_STRINGS)
-			len = R_BIN_SIZEOF_STRINGS-1;
-		r_buf_read_at(bin->b, string[i]+1, (ut8*)&ptr->string, len);
-		ptr->string[(int) len]='\0';
-		ptr->rva = ptr->offset = string[i]+1;
-		ptr->size = len;
-		ptr->ordinal = i+1;
-		r_list_append (ret, ptr);
+		//	len = R_BIN_SIZEOF_STRINGS-1;
+		if (len>0 && len < R_BIN_SIZEOF_STRINGS) {
+			r_buf_read_at(bin->b, string[i]+1, (ut8*)&ptr->string, len);
+			ptr->string[(int) len]='\0';
+			ptr->rva = ptr->offset = string[i]+1;
+			ptr->size = len;
+			ptr->ordinal = i+1;
+			r_list_append (ret, ptr);
+		} else eprintf ("dex_read_uleb128: invalid read\n");
 	}
 	free (string);
 	return ret;
@@ -84,7 +86,6 @@ static RList* strings(RBinArch *arch) {
 //TODO
 static RList* classes (RBinArch *arch) {
 	RList *ret = NULL;
-	RBinAddr *ptr = NULL;
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->bin_obj;
 	struct dex_class_t entry;
 	int i;

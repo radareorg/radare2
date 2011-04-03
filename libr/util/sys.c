@@ -177,7 +177,7 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 		dup2 (sh_out[1], 1); close (sh_out[0]); close (sh_out[1]);
 		if (sterr) dup2 (sh_err[1], 2); else close (2);
 		close (sh_err[0]); close (sh_err[1]); 
-		execl ("/bin/sh", "sh", "-c", cmd, NULL);
+		execl ("/bin/sh", "sh", "-c", cmd, (char*)NULL);
 		exit (1);
 	default:
 		{

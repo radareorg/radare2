@@ -29,6 +29,7 @@
 #include <stdarg.h>
 #include "javasm.h"
 #if __UNIX__
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #endif
 

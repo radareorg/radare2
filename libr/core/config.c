@@ -325,7 +325,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	r_config_set (cfg, "dir.plugins", LIBDIR"/radare2/"R2_VERSION"/");
 	/* anal */
-	r_config_set_i (cfg, "anal.depth", 100);
+	r_config_set_i (cfg, "anal.depth", 50); // XXX: warn if depth is > 50 .. can be problematic
 	r_config_set_i (cfg, "anal.ptrdepth", 3);
 	r_config_set_cb (cfg, "anal.split", "true", &config_analsplit_callback);
 	r_config_set_cb (cfg, "anal.plugin", R_SYS_ARCH, &config_analplugin_callback);

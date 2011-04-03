@@ -47,8 +47,8 @@ out.write("RSyscallItem syscalls_openbsd_x86[] = {\n")
 
 keys = recs.keys()
 for call in keys:
-    out.write("  { \"%s\", 0x80, \"%d\", \"%d\" },\n" % 
+    out.write("  { \"%s\", 0x80, %d, %d },\n" % 
             (recs[call]["name"], call, recs[call]["args"]))
 
-out.write("};")
+out.write("};\n")
 out.close()

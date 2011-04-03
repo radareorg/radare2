@@ -17,7 +17,7 @@ static struct state _state;
 #include <r_types.h>
 
 static inline struct state *get_state(void) {
-	memcpy (&_state, sizeof (struct state), 0);
+	memset (&_state, 0, sizeof (struct state));
 	return &_state;
 }
 

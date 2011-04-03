@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009
+ * Copyright (C) 2009-2011
  *       skurz0 <gmail.com>
  *
  * radare is free software; you can redistribute it and/or modify
@@ -23,6 +23,7 @@
 #include <r_types.h>
 #include <ctype.h>
 #if __UNIX__
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #elif __WINDOWS__
 typedef unsigned short uint16_t;
