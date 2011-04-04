@@ -47,8 +47,6 @@ static int debug_os_read_at(int pid, void *buf, int sz, ut64 addr) {
 	for (x=0; x<words; x++) {
 		((long *)buf)[x] = debug_read_raw (pid,
 			(void *)(&((long*)(long)addr)[x]));
-		if (((long *)buf)[x] == -1) // && errno)
-			return s;
 		s += sizeof (s);
 	}
 	if (last) {
