@@ -8,7 +8,7 @@ PWD=`pwd`
 
 # Libraries
 LIBLIST=util socket cons line lib io lang flags bin hash config syscall cmd
-LIBLIST+=reg asm diff anal print parse search bp sign th db crypto debug fs core
+LIBLIST+=reg asm diff anal print parse search bp sign db crypto debug fs core
 # sysproxy ... common wat du?
 
 all: libs

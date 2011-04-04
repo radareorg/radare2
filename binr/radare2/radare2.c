@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include <r_core.h>
-#include <r_th.h>
+//#include <r_th.h>
 #include <r_io.h>
 #include <stdio.h>
 #include <getopt.h>
@@ -70,8 +70,10 @@ static int rabin_delegate(RThread *th) {
 #endif
 
 int main(int argc, char **argv) {
+/*
 	RThreadLock *lock = NULL;
 	RThread *rabin_th = NULL;
+*/
 	RCoreFile *fh = NULL;
 	//int threaded = R_FALSE;
 	int has_project = R_FALSE;
@@ -278,10 +280,10 @@ int main(int argc, char **argv) {
 		do { 
 			if (r_core_prompt (&r, R_FALSE)<1)
 				break;
-			if (lock) r_th_lock_enter (lock);
+//			if (lock) r_th_lock_enter (lock);
 			if ((ret = r_core_prompt_exec (&r))==-1)
 				eprintf ("Invalid command\n");
-			if (lock) r_th_lock_leave (lock);
+/*			if (lock) r_th_lock_leave (lock);
 			if (rabin_th && !r_th_wait_async (rabin_th)) {
 				eprintf ("rabin thread end \n");
 				r_th_free (rabin_th);
@@ -289,6 +291,7 @@ int main(int argc, char **argv) {
 				lock = NULL;
 				rabin_th = NULL;
 			}
+*/
 		} while (ret != R_CORE_CMD_EXIT);
 
 		if (debug) {

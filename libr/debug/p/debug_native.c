@@ -1481,12 +1481,12 @@ static int r_debug_native_init(RDebug *dbg) {
 }
 
 #if __i386__ || __x86_64__
-int drx_add(RDebug *dbg, ut64 addr, int rwx) {
+static int drx_add(RDebug *dbg, ut64 addr, int rwx) {
 	// TODO
 	return R_FALSE;
 }
 
-int drx_del(RDebug *dbg, ut64 addr, int rwx) {
+static int drx_del(RDebug *dbg, ut64 addr, int rwx) {
 	// TODO
 	return R_FALSE;
 }
