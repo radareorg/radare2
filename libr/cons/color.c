@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
 
+// XXX: deprecate this stuff
+
 #include <r_cons.h>
 #include <string.h>
 

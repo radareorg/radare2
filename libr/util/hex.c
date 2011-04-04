@@ -39,8 +39,8 @@ R_API int r_hex_bin2str(const ut8 *in, int len, char *out) {
 	int i;
 	char tmp[5];
 	out[0]='\0';
-	for (i=0;i<len;i++)  {
-		sprintf (tmp, "%02x", in[i]);
+	for (i=0; i<len; i++)  {
+		snprintf (tmp, sizeof (tmp), "%02x", in[i]);
 		strcat (out, tmp);
 	}
 	return len;
@@ -50,8 +50,8 @@ R_API char *r_hex_bin2strdup(const ut8 *in, int len) {
 	int i;
 	char tmp[5], *out = malloc ((len+1)*2);
 	out[0]='\0';
-	for (i=0;i<len;i++)  {
-		sprintf (tmp, "%02x", in[i]);
+	for (i=0; i<len; i++)  {
+		snprintf (tmp, sizeof (tmp), "%02x", in[i]);
 		strcat (out, tmp);
 	}
 	return out;

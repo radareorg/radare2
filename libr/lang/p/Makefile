@@ -30,8 +30,10 @@ lang_python.${EXT_SO}:
 else
 PYCFLAGS=`python-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]*//g' | sed s,-Wstrict-prototypes,,g`
 PYCFLAGS+=`python2-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]*//g' | sed s,-Wstrict-prototypes,,g`
+PYCFLAGS+=`python2.5-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]*//g' | sed s,-Wstrict-prototypes,,g`
 PYLDFLAGS=`python-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]*//g' | sed s,-Wstrict-prototypes,,g`
 PYLDFLAGS+=`python2-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]*//g' | sed s,-Wstrict-prototypes,,g`
+PYLDFLAGS+=`python2.5-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]*//g' | sed s,-Wstrict-prototypes,,g`
 
 lang_python.${EXT_SO}:
 	${CC} ${CFLAGS} ${PYCFLAGS} ${PYLDFLAGS} \
