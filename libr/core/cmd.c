@@ -135,7 +135,7 @@ static char *filter_refline(const char *str) {
 static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
 	RAnalCC cc = {0};
 	RAnalFcn *f = NULL;
-	int ret, idx, i, j, k, lines, ostackptr, stackptr = 0;
+	int ret, idx, i, j, k, lines, ostackptr = 0, stackptr = 0;
 	int counter = 0;
 	int middle = 0;
 	char str[128], strsub[128];
@@ -4238,12 +4238,12 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	return R_TRUE;
 }
 
-R_API int r_core_cmd(RCore *core, const char *command, int log) {
+R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	int len, rep, ret = R_FALSE;
 	char *cmd, *ocmd;
-	if (command != NULL) {
-		/* list command plugins */
-		if (!strcmp (command, ":")) {
+	if (cstr && *cstr) {
+		/* list cstr plugins */
+		if (!strcmp (cstr, ":")) {
 			RListIter *iter = r_list_iterator (core->cmd->plist);
 			while (r_list_iter_next (iter)) {
 				RCmdPlugin *cp = (RCmdPlugin*) r_list_iter_get (iter);
@@ -4251,11 +4251,11 @@ R_API int r_core_cmd(RCore *core, const char *command, int log) {
 			}
 			return 0;
 		}
-		len = strlen (command)+1;
+		len = strlen (cstr)+1;
 		ocmd = cmd = malloc (len+8192);
 		if (ocmd == NULL)
 			return R_FALSE;
-		memcpy (cmd, command, len);
+		strcpy (cmd, cstr);
 		cmd = r_str_trim_head_tail (cmd);
 
 		rep = atoi (cmd);
@@ -4271,7 +4271,7 @@ R_API int r_core_cmd(RCore *core, const char *command, int log) {
 			}
 		}
 
-		if (log) r_line_hist_add (command);
+		if (log) r_line_hist_add (cstr);
 
 		free (core->oobi);
 		free (ocmd);

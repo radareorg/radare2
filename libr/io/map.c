@@ -21,16 +21,15 @@ R_API RIOMap *r_io_map_resolve(struct r_io_t *io, int fd) {
 }
 
 R_API int r_io_map_del(struct r_io_t *io, int fd) {
-	int ret = R_FALSE;
 	RIOMap *map;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, map) {
 		if (fd==-1 || map->fd==fd) {
 			r_list_delete (io->maps, iter);
-			ret = R_TRUE;
+			return R_TRUE;
 		}
 	}
-	return ret;
+	return R_FALSE;
 }
 
 R_API RIOMap *r_io_map_add(struct r_io_t *io, int fd, int flags, ut64 delta, ut64 offset, ut64 size) {

@@ -59,7 +59,7 @@ R_API int r_flag_name_filter(char *name) {
 			break;
 		}
 		if (!r_flag_name_validate_char (*name)) {
-			strcpy (name, name+1);
+			r_str_ccpy (name, name+1, 0);
 			name = name -1;
 		}
 	}
