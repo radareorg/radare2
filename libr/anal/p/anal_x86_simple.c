@@ -137,6 +137,7 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 		break;
 	case 0x85:
 		op->type = R_ANAL_OP_TYPE_CMP;
+		// TODO: use bit test here?
 		if (buf[1]>=0xc0 && buf[1]<=0xff) { // test eax, eax
 			int src = buf[1]&7;
 			int dst = (buf[1]&0x38)>>3;

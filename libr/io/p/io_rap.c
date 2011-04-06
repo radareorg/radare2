@@ -11,15 +11,16 @@
 // go fruit yourself
 #define ENDIAN (0)
 typedef struct {
-	int fd;
-	int client;
+	RSocket *fd;
+	RSocket *client;
 	int listener;
 } RIORap;
-#define RIORAP_FD(x) ((x->data)?(((RIORap*)(x->data))->client):-1)
+#define RIORAP_FD(x) ((x->data)?(((RIORap*)(x->data))->client):NULL)
 #define RIORAP_IS_LISTEN(x) (((RIORap*)(x->data))->listener)
 #define RIORAP_IS_VALID(x) ((x) && (x->data) && (x->plugin == &r_io_plugin_rap))
 
 static int rap__write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int count) {
+	RSocket *s = RIORAP_FD (fd);
 	int ret;
 	ut8 *tmp;
 	if (count>RMT_MAX)
@@ -32,9 +33,8 @@ static int rap__write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int count)
 	r_mem_copyendian ((ut8 *)tmp+1, (ut8*)&count, 4, ENDIAN);
 	memcpy (tmp+5, buf, count);
 
-	ret = r_socket_write (RIORAP_FD (fd), tmp, count+5);
-	// TODO: use r_socket_read here ??
-	if (read (RIORAP_FD (fd), tmp, 5) != 5) { // TODO use while'd read here
+	ret = r_socket_write (s, tmp, count+5);
+	if (r_socket_read (s, tmp, 5) != 5) { // TODO read_block?
 		eprintf ("rap__write: error\n");
 		ret = -1;
 	}
@@ -43,16 +43,17 @@ static int rap__write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int count)
         return ret;
 }
 
-static int rap__accept(RIO *io, RIODesc *desc, int fd) {
+static boolt rap__accept(RIO *io, RIODesc *desc, int fd) {
 	RIORap *rap = desc->data;
 	if (rap) {
-		rap->client = fd;
+		rap->client = r_socket_new_from_fd (fd);
 		return R_TRUE;
 	}
 	return R_FALSE;
 }
 
 static int rap__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
+	RSocket *s = RIORAP_FD (fd);
 	int ret;
 	int i = (int)count;
 	ut8 tmp[5];
@@ -62,10 +63,10 @@ static int rap__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
 	// send
 	tmp[0] = RMT_READ;
 	r_mem_copyendian (tmp+1, (ut8*)&count, 4, ENDIAN);
-	r_socket_write (RIORAP_FD (fd), tmp, 5);
+	r_socket_write (s, tmp, 5);
 
 	// recv
-	ret = r_socket_read (RIORAP_FD (fd), tmp, 5);
+	ret = r_socket_read (s, tmp, 5);
 	if (ret != 5 || tmp[0] != (RMT_READ|RMT_REPLY)) {
 		eprintf ("rap__read: Unexpected rap read reply (%d=0x%02x) expected (%d=0x%02x)\n",
 			ret, tmp[0], 2, (RMT_READ|RMT_REPLY));
@@ -76,7 +77,7 @@ static int rap__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
 		eprintf ("rap__read: Unexpected data size %d\n", i);
 		return -1;
 	} 
-	r_socket_read_block (RIORAP_FD (fd), buf, i);
+	r_socket_read_block (s, buf, i);
 	if (count>0 && count<RMT_MAX) {
 		//eprintf ("READ %d\n" ,i);
 	} else count = 0;
@@ -86,10 +87,12 @@ static int rap__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
 static int rap__close(RIODesc *fd) {
 	int ret = -1;
 	if (RIORAP_IS_VALID (fd)) {
-		if (RIORAP_FD (fd) != -1) {
+		if (RIORAP_FD (fd) != NULL) {
 			RIORap *r = fd->data;
 			fd->state = R_IO_DESC_TYPE_CLOSED;
 			ret = r_socket_close (r->fd);
+			ret = r_socket_close (r->client);
+			//ret = r_socket_close (r->client);
 			free (fd->data);
 			fd->data = NULL;
 		}
@@ -98,15 +101,16 @@ static int rap__close(RIODesc *fd) {
 }
 
 static ut64 rap__lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
+	RSocket *s = RIORAP_FD (fd);
 	int ret;
 	ut8 tmp[10];
 	// query
 	tmp[0] = RMT_SEEK;
 	tmp[1] = (ut8)whence;
 	r_mem_copyendian (tmp+2, (ut8*)&offset, 8, ENDIAN);
-	write (RIORAP_FD (fd), &tmp, 10);
+	r_socket_write (s, &tmp, 10);
 	// get reply
-	ret = r_socket_read_block (RIORAP_FD (fd), (ut8*)&tmp, 9);
+	ret = r_socket_read_block (s, (ut8*)&tmp, 9);
 	if (ret!=9)
 		return -1;
 	if (tmp[0] != (RMT_SEEK | RMT_REPLY)) {
@@ -122,11 +126,12 @@ static int rap__plugin_open(struct r_io_t *io, const char *pathname) {
 }
 
 static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int mode) {
+	RSocket *rap_fd;
 	RIORap *rior;
 	const char *ptr;
 	char *file, *port;
 	char buf[1024];
-	int i, p, listenmode, rap_fd;
+	int i, p, listenmode;
 
 	if (!rap__plugin_open (io, pathname))
 		return NULL;
@@ -154,7 +159,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		rior->client = rior->fd = r_socket_listen (port, R_FALSE, NULL);
 // TODO: listen mode is broken.. here must go the root loop!!
 #warning TODO: implement rap:/:9999 listen mode
-		return r_io_desc_new (&r_io_plugin_rap, rior->fd, pathname, rw, mode, rior);
+		return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd, pathname, rw, mode, rior);
 	}
 	if ((rap_fd = r_socket_new (ptr, port, R_FALSE))==-1) {
 		eprintf ("Cannot connect to '%s' (%d)\n", ptr, p);
@@ -173,7 +178,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		r_socket_write (rap_fd, buf, 3+buf[2]);
 		// read
 		eprintf ("waiting... ");
-		read (rap_fd, (ut8*)buf, 5);
+		r_socket_read (rap_fd, (ut8*)buf, 5);
 		if (buf[0] != (char)(RMT_OPEN|RMT_REPLY)) {
 			free (rior);
 			return NULL;
@@ -181,7 +186,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		r_mem_copyendian ((ut8 *)&i, (ut8*)buf+1, 4, ENDIAN);
 		if (i>0) eprintf ("ok\n");
 	}
-	return r_io_desc_new (&r_io_plugin_rap, rior->fd, pathname, rw, mode, rior);
+	return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd, pathname, rw, mode, rior);
 }
 
 static int rap__listener(RIODesc *fd) {
@@ -191,6 +196,7 @@ static int rap__listener(RIODesc *fd) {
 }
 
 static int rap__system(RIO *io, RIODesc *fd, const char *command) {
+	RSocket *s = RIORAP_FD (fd);
 	ut8 buf[1024];
 	char *ptr;
 	int ret, i, j;
@@ -200,10 +206,10 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	i = strlen (command);
 	r_mem_copyendian (buf+1, (ut8*)&i, 4, ENDIAN);
 	memcpy (buf+5, command, i);
-	r_socket_write (RIORAP_FD (fd), buf, i+5);
+	r_socket_write (s, buf, i+5);
 
 	// read
-	ret = r_socket_read_block (RIORAP_FD (fd), buf, 5);
+	ret = r_socket_read_block (s, buf, 5);
 	if (ret != 5)
 		return -1;
 	if (buf[0] != (RMT_SYSTEM | RMT_REPLY)) {
@@ -217,7 +223,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 		i = RMT_MAX;
 	ptr = (char *)malloc (i);
 	if (ptr) {
-		r_socket_read_block (RIORAP_FD (fd), (ut8*)ptr, i);
+		r_socket_read_block (s, (ut8*)ptr, i);
 		j = write (1, ptr, i);
 		free (ptr);
 	}

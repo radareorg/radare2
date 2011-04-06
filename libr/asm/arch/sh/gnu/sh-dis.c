@@ -16,11 +16,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
 
 #include <stdio.h>
+#include <string.h>
 #define STATIC_TABLE
 #define DEFINE_TABLE
 
 #include "sh-opc.h"
 #include "dis-asm.h"
+#include "mybfd.h"
 
 #define LITTLE_BIT 2
 
@@ -142,7 +144,8 @@ print_insn_shx (memaddr, info)
 	      rb = nibs[n] & 0x07;
 	      break;	
 	    default:
-	      abort();
+	      fprintf(stderr, "sh-dis: abort");
+	      return 0;
 	    }
 	}
 
@@ -294,7 +297,8 @@ print_insn_shx (memaddr, info)
 	      fprintf_fn (stream, "xmtrx");
 	      break;
 	    default:
-	      abort();
+	      fprintf(stderr, "sh-dis: abort");
+	      return 0;
 	    }
 	}
 

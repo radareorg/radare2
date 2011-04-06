@@ -20,7 +20,7 @@ static void break_signal(int sig) {
 		I.event_interrupt (I.data);
 }
 
-static inline void r_cons_write (char *buf, int len) {
+static inline void r_cons_write (const char *buf, int len) {
 #if __WINDOWS__
 	r_cons_w32_print ((unsigned char *)buf);
 #else
@@ -238,7 +238,7 @@ R_API void r_cons_visual_flush() {
 R_API void r_cons_visual_write (char *buffer) {
 	int cols = I.columns;
 	int alen, lines = I.rows-1;
-	char *endptr;
+	const char *endptr;
 	char *nl, *ptr = buffer;
 	while (lines && (nl = strchr (ptr, '\n'))) {
 		int clen, len = ((int)(size_t)(nl-ptr))+1;

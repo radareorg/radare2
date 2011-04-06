@@ -84,6 +84,7 @@ static ut64 disarm_12bit_offset (RAnalOp *op, unsigned int insoff) {
 	return (op->addr<<1) + off + 4;
 }
 
+#if unused
 static ut64 disarm_8bit_offset (unsigned int pc, unsigned int insoff) {
 	ut64 add = insoff;
 	/* sign extend if higher bit is 1 (0x08) */
@@ -91,6 +92,7 @@ static ut64 disarm_8bit_offset (unsigned int pc, unsigned int insoff) {
 		add |= 0x00;
 	return (add<<1) + pc + 4; //2*sign_extend(displacement) + 4
 }
+#endif
 static char *regs[]={"r0","r1","r2","r3","r4","r5","r6","r7","r8","r9","r10","r11","r12","r13","r14","r15","pc"};
 
 static RAnalValue *anal_fill_ai_rg(RAnal *anal, int idx) {
@@ -127,12 +129,14 @@ static RAnalValue *anal_fill_r0_reg_ref(RAnal *anal, int reg,st64 size){
 	return ret;
 }
 
+#if unused
 static st32 sign_extend_12b(st32 v){
 	if( v & 0x800 ){
 		v |= 0xFFFFF000;
 	}
 	return v;
 }
+#endif
 
 static RAnalValue *anal_pcrel_disp_mov(RAnal* anal,RAnalOp* op,st8 disp){
 	RAnalValue *ret = r_anal_value_new ();

@@ -550,12 +550,14 @@ bfd_uint64_t bfd_getb64 (const void *);
 bfd_uint64_t bfd_getl64 (const void *);
 bfd_int64_t bfd_getb_signed_64 (const void *);
 bfd_int64_t bfd_getl_signed_64 (const void *);
-bfd_vma bfd_getb32 (const void *);
-bfd_vma bfd_getl32 (const void *);
 bfd_signed_vma bfd_getb_signed_32 (const void *);
 bfd_signed_vma bfd_getl_signed_32 (const void *);
+#if 0
 bfd_vma bfd_getb16 (const void *);
 bfd_vma bfd_getl16 (const void *);
+bfd_vma bfd_getb32 (const void *);
+bfd_vma bfd_getl32 (const void *);
+#endif
 bfd_signed_vma bfd_getb_signed_16 (const void *);
 bfd_signed_vma bfd_getl_signed_16 (const void *);
 void bfd_putb64 (bfd_uint64_t, void *);
@@ -5151,4 +5153,39 @@ bfd_byte *bfd_simple_get_relocated_section_contents
 #ifdef __cplusplus
 }
 #endif
+/** -- **/
+
+
+static inline bfd_vma bfd_getl16 (const void *p) {
+  const bfd_byte *addr = p;
+  return (addr[1] << 8) | addr[0];
+}
+
+static inline bfd_vma bfd_getb16 (const void *p) {
+  const bfd_byte *addr = p;
+  return (addr[0] << 8) | addr[1];
+}
+
+
+static inline bfd_vma bfd_getb32 (const void *p) {
+  const bfd_byte *addr = p;
+  unsigned long v;
+
+  v = (unsigned long) addr[0] << 24;
+  v |= (unsigned long) addr[1] << 16;
+  v |= (unsigned long) addr[2] << 8;
+  v |= (unsigned long) addr[3];
+  return v;
+}
+
+static inline bfd_vma bfd_getl32 (const void *p) {
+  const bfd_byte *addr = p;
+  unsigned long v;
+
+  v = (unsigned long) addr[0];
+  v |= (unsigned long) addr[1] << 8;
+  v |= (unsigned long) addr[2] << 16;
+  v |= (unsigned long) addr[3] << 24;
+  return v;
+}
 #endif

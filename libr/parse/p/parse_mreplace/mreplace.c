@@ -27,17 +27,13 @@
 #define CHECKS_CHUNCK_SIZE  1024
 #define CHECKS_CHUNCK_COUNT 6
 
-int matchs(const char *string, char *pattern)
-{
-    int    status;
-    regex_t    re;
-
-    if (regcomp(&re, pattern, REG_EXTENDED|REG_NOSUB) != 0) return(0); 
-    status = regexec(&re, string, (size_t) 0, NULL, 0);
-    regfree(&re);
-    if (status != 0) return(0);
- 
-    return(1);
+int matchs(const char *string, char *pattern) {
+	int    status;
+	regex_t    re;
+	if (regcomp(&re, pattern, REG_EXTENDED|REG_NOSUB) != 0) return(0); 
+	status = regexec(&re, string, (size_t) 0, NULL, 0);
+	regfree(&re);
+	return status?0:1;
 }
 
 void sreplace(char *s,char *orig,char *rep,char multi,long dsize){
@@ -62,8 +58,7 @@ void sreplace(char *s,char *orig,char *rep,char multi,long dsize){
 	memFree(buffer);
 }
 
-char *mreplace(char *string, char *se,char *rep)
-{
+char *mreplace(char *string, char *se,char *rep) {
     	int    		status,i;
 	char		noMatch=0;
     	regex_t    	re;
@@ -106,7 +101,8 @@ char *mreplace(char *string, char *se,char *rep)
 	ffound = memReserve(INPUTLINE_BUFFER_REPLACE_SIZE);
 	while(!status){
 		offset=strlen(temp->address)-strlen(string);
-		snprintf(found->address,INPUTLINE_BUFFER_REPLACE_SIZE,"%.*s",pm[0].rm_eo - pm[0].rm_so, &string[pm[0].rm_so]);//,&string[pm[0].rm_so]);
+		snprintf(found->address, INPUTLINE_BUFFER_REPLACE_SIZE, "%.*s",
+			(int)(size_t)(pm[0].rm_eo - pm[0].rm_so), &string[pm[0].rm_so]);//,&string[pm[0].rm_so]);
 #if MDEBUG3
 		printf("------->> found \"%s\" length => %d offset[%d]\n",
 			found->address,
@@ -114,7 +110,8 @@ char *mreplace(char *string, char *se,char *rep)
 #endif
 		sreplace(temp->address+offset,found->address,rep,0,INPUTLINE_BUFFER_REPLACE_SIZE-offset);
 		for(i=1;i<nmatch;i++){
-			snprintf(ffound->address,INPUTLINE_BUFFER_REPLACE_SIZE,"%.*s",pm[i].rm_eo - pm[i].rm_so, &string[pm[i].rm_so]);//,&string[pm[i].rm_so]);
+			snprintf(ffound->address,INPUTLINE_BUFFER_REPLACE_SIZE, "%.*s",
+				(int)(size_t)(pm[i].rm_eo - pm[i].rm_so), &string[pm[i].rm_so]);//,&string[pm[i].rm_so]);
 			snprintf(field,sizeof(field),"\\%d",i);
 			if(strlen(ffound->address)) {
 				sreplace(temp->address,field,ffound->address,1,INPUTLINE_BUFFER_REPLACE_SIZE);

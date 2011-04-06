@@ -484,3 +484,10 @@ R_API int r_socket_gets(RSocket *s, char *buf,  int size) {
 
 	return i;
 }
+
+R_API RSocket *r_socket_new_from_fd (int fd) {
+	RSocket *s = R_NEW (RSocket);
+	s->is_ssl = 0;
+	s->fd = fd;
+	return s;
+}

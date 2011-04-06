@@ -19,6 +19,7 @@ typedef struct r_socket_t {
 } RSocket;
 
 #ifdef R_API
+R_API RSocket *r_socket_new_from_fd (int fd);
 R_API RSocket *r_socket_new (const char *host, const char *port, int is_ssl);
 R_API void r_socket_free (RSocket *s);
 #if __UNIX__
@@ -37,7 +38,7 @@ R_API RSocket *r_socket_udp_connect (const char *host, const char *port, int is_
 R_API int r_socket_write (RSocket *s, void *buf, int len);
 R_API int r_socket_puts (RSocket *s, char *buf);
 R_API void r_socket_printf (RSocket *s, const char *fmt, ...);
-R_API int r_socket_read (RSocket *s, unsigned char *read, int len);
+R_API int r_socket_read (RSocket *s, ut8 *read, int len);
 R_API int r_socket_read_block (RSocket *s, unsigned char *buf, int len);
 R_API int r_socket_gets (RSocket *s, char *buf, int size);
 
