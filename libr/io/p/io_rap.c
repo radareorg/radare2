@@ -161,7 +161,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 #warning TODO: implement rap:/:9999 listen mode
 		return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd, pathname, rw, mode, rior);
 	}
-	if ((rap_fd = r_socket_new (ptr, port, R_FALSE))==-1) {
+	if ((rap_fd = r_socket_new (ptr, port, R_FALSE))==NULL) {
 		eprintf ("Cannot connect to '%s' (%d)\n", ptr, p);
 		return NULL;
 	}
@@ -199,7 +199,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	RSocket *s = RIORAP_FD (fd);
 	ut8 buf[1024];
 	char *ptr;
-	int ret, i, j;
+	int ret, i, j = 0;
 
 	// send
 	buf[0] = RMT_SYSTEM;

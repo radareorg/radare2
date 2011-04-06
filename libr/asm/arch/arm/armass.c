@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2010-2011 pancake<@nopcode.org> */
 
 #include <stdio.h>
 #include <string.h>
@@ -150,14 +150,13 @@ static int getlist(char *op) {
 
 static int getshift(const char *str) {
 	if (!str) return 0;
-	while (str && *str&&!atoi (str))
+	while (str && *str && !atoi (str))
 		str++;
-	return atoi(str)/2;
+	return atoi (str)>>1;
 }
 
 static void arm_opcode_parse(ArmOpcode *ao, const char *str) {
 	int i;
-
 	memset (ao, 0, sizeof (ArmOpcode));
 	strncpy (ao->op, str, sizeof (ao->op)-1);
 	strcpy (ao->opstr, str);
@@ -173,7 +172,7 @@ static void arm_opcode_parse(ArmOpcode *ao, const char *str) {
 		ao->a[i]++;
 	}
 	for (i=0; i<16; i++)
-		while (ao->a[i]&&*ao->a[i]==' ')
+		while (ao->a[i] && *ao->a[i]==' ')
 			ao->a[i]++;
 }
 

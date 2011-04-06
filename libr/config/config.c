@@ -125,6 +125,7 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 			}
 		}
 	} else {
+		oi = UT64_MAX;
 		if (!cfg->lock) {
 			node = r_config_node_new (name, value);
 			if (value && (!strcmp(value,"true")||!strcmp(value,"false"))) {
@@ -140,7 +141,8 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 	if (node && node->callback) {
 		int ret = node->callback (cfg->user, node);
 		if (ret == R_FALSE) {
-			node->i_value = oi;
+			if (oi != UT64_MAX)
+				node->i_value = oi;
 			free (node->value);
 			node->value = strdup (ov);
 			return NULL;

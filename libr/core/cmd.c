@@ -604,7 +604,7 @@ static int cmd_zign(void *data, const char *input) {
 	RAnalFcn *fcni;
 	RListIter *iter;
 	RSignItem *item;
-	int i, fd, len;
+	int i, fd = -1, len;
 	char *ptr, *name;
 
 	switch (input[0]) {
@@ -1848,6 +1848,7 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth,
 		if (!v && !strcmp (str, "data"))
 			return;
 		p = strdup (str);
+		fmt = p;
 		// processing newlinez
 		for (q=p; *q; q++)
 			if (q[0]=='\\' && q[1]=='n') {
@@ -3571,7 +3572,7 @@ static int cmd_open(void *data, const char *input) {
 	RCoreFile *file;
 	ut64 addr;
 	char *ptr;
-	int num;
+	int num = -1;
 
 	switch (*input) {
 	case '\0':
@@ -3749,20 +3750,17 @@ static int cmd_meta(void *data, const char *input) {
 		default:
 			{
 			RAnalFcn *f;
-			char *ptr = strdup(input+2), *pattern, *varsub;
+			char *ptr = strdup(input+2), *pattern = NULL, *varsub = NULL;
 			ut64 offset = -1LL;
-			int n = r_str_word_set0 (ptr), i;
-			
+			int i, n = r_str_word_set0 (ptr);
 			if (n > 2) {
 				switch(n) {
-				case 3:
-					varsub = r_str_word_get0 (ptr, 2);
-				case 2:
-					pattern = r_str_word_get0 (ptr, 1);
-				case 1:
-					offset = r_num_math (core->num, r_str_word_get0 (ptr, 0));
+				case 3: varsub = r_str_word_get0 (ptr, 2);
+				case 2: pattern = r_str_word_get0 (ptr, 1);
+				case 1: offset = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 				}
 				if ((f = r_anal_fcn_find (core->anal, offset, R_ANAL_FCN_TYPE_NULL)) != NULL) {
+					if (pattern && varsub)
 					for (i = 0; i < R_ANAL_VARSUBS; i++)
 						if (f->varsubs[i].pat[0] == '\0' || !strcmp (f->varsubs[i].pat, pattern)) {
 							strncpy (f->varsubs[i].pat, pattern, 1024);

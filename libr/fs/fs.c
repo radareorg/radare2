@@ -54,7 +54,7 @@ R_API void r_fs_del (RFS *fs, RFSPlugin *p) {
 /* mountpoint */
 R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path, ut64 delta) {
 	RFSPlugin *p;
-	RFSRoot *root;
+	RFSRoot *root = NULL;
 	char *str;
 
 	if (path[0] != '/') {

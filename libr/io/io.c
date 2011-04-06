@@ -171,15 +171,14 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	}
 #endif
 	off = io->off;
-	if (r_io_map_select (io, io->off)) {
-		if (io->plugin && io->plugin->read) {
-			if (io->plugin->read != NULL)
-				ret = io->plugin->read (io, io->fd, buf, len);
-			else eprintf ("IO plugin for fd=%d has no read()\n", io->fd->fd);
-		} else ret = read (io->fd->fd, buf, len);
-		if (ret>0 && ret<len)
-			memset (buf+ret, 0xff, len-ret);
-	}
+	r_io_map_select (io, io->off);
+	if (io->plugin && io->plugin->read) {
+		if (io->plugin->read != NULL)
+			ret = io->plugin->read (io, io->fd, buf, len);
+		else eprintf ("IO plugin for fd=%d has no read()\n", io->fd->fd);
+	} else ret = read (io->fd->fd, buf, len);
+	if (ret>0 && ret<len)
+		memset (buf+ret, 0xff, len-ret);
 	// this must be before?? r_io_cache_read (io, io->off, buf, len);
 	r_io_seek (io, off, R_IO_SEEK_SET);
 	return ret;
