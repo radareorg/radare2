@@ -45,7 +45,9 @@ typedef struct gdbwrap_t
   char             *packet;
   int              fd;
   unsigned         max_packet_size;
-  gdbwrap_gdbreg32 reg32;
+  ut8 		   *regs;
+  unsigned	   num_registers;
+  unsigned 	   reg_size;
   Bool             is_active;
   Bool             erroroccured;
   Bool             interrupted;
@@ -80,13 +82,13 @@ unsigned         gdbwrap_lastsignal(gdbwrap_t *desc);
 Bool             gdbwrap_is_active(gdbwrap_t *desc);
 gdbwrapworld_t   gdbwrap_current_set(gdbwrap_t *world);
 gdbwrap_t        *gdbwrap_current_get(void);
-gdbwrap_t        *gdbwrap_init(int fd);
+gdbwrap_t        *gdbwrap_init(int fd, ut32 num, ut32 size);
 void             gdbwrap_close(gdbwrap_t *desc);
 void             gdbwrap_hello(gdbwrap_t *desc);
 void             gdbwrap_bye(gdbwrap_t *desc);
 void             gdbwrap_reason_halted(gdbwrap_t *desc);
 char             *gdbwrap_own_command(gdbwrap_t *desc, char *command);
-gdbwrap_gdbreg32 *gdbwrap_readgenreg(gdbwrap_t *desc);
+ut8		 *gdbwrap_readgenreg(gdbwrap_t *desc);
 void             gdbwrap_continue(gdbwrap_t *desc);
 void             gdbwrap_setbp(gdbwrap_t *desc, la32 linaddr, void *datasaved);
 void             gdbwrap_simplesetbp(gdbwrap_t *desc, la32 linaddr);
@@ -103,5 +105,7 @@ void             gdbwrap_stepi(gdbwrap_t *desc);
 char             *gdbwrap_remotecmd(gdbwrap_t *desc, char *cmd);
 u_char           gdbwrap_lasterror(gdbwrap_t *desc);
 gdbmemap_t       gdbwrap_memorymap_get();
+ut64		 gdbwrap_getreg(gdbwrap_t *desc, ut32 idx);
+void		 gdbwrap_setreg(gdbwrap_t *desc, ut32 idx, ut64 value);
 
 #endif
