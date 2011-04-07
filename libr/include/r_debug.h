@@ -142,7 +142,7 @@ typedef struct r_debug_plugin_t {
 	const char *name;
 	const char **archs; // MUST BE DEPREACTED!!!!
 	ut32 bits;
-	ut32 arch;
+	ut64 arch;
 	/* life */
 	int (*startv)(int argc, char **argv);
 	int (*attach)(int pid);
