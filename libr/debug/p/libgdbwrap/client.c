@@ -15,8 +15,10 @@ static void dumpreg(gdbwrap_t *desc)
 {
   unsigned i;
 
-  for (i = 0; i < sizeof(gdbwrap_gdbreg32) / sizeof(ureg32); i++)
-    printf("Reg %d - %#x\n", i, *(&desc->reg32.eax + i));
+  for (i = 0; i < desc->num_registers; i++){
+    ut32 v = gdbwrap_getreg(desc,i) & 0xFFFFFFFF;
+    printf("Reg %d - %#x\n", i, v);
+  }
 }
 
 int main( int argc, char **argv )
@@ -99,7 +101,8 @@ int main( int argc, char **argv )
    * whatever banner the server sends us and sending it to stdout.
    */
 
-  desc = gdbwrap_init(sd);
+  // 28 registers of 4 bytes for sh4
+  desc = gdbwrap_init(sd,28,4);
   do
     {
       char * ret;

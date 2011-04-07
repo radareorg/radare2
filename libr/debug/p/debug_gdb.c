@@ -51,7 +51,7 @@ static int r_debug_gdb_wait(int pid) {
 
 static int r_debug_gdb_attach(int pid) {
 // XXX TODO PID must be a socket here !!1
-	desc = gdbwrap_init (pid);
+	desc = gdbwrap_init (pid , 9, 4); //Only x86
 	return R_TRUE;
 }
 

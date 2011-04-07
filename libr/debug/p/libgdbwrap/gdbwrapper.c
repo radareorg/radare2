@@ -24,6 +24,53 @@ static gdbwrapworld_t       gdbwrapworld;
 
 /******************** Internal functions ********************/
 
+
+void gdbwrap_setreg(gdbwrap_t *desc, ut32 idx, ut64 value){
+	if ( idx >= desc->num_registers){
+		fprintf(stderr, "Wrong register index %d\n",idx);
+		return;
+	}
+	switch( desc->reg_size ) {
+		case 1:
+			*(desc->regs+idx) = value & 0xFF;
+			break;
+		case 2:
+			*(ut16 *)(desc->regs+idx*2) = value & 0xFFFF;
+			break;
+		case 4:
+			*(ut32 *)(desc->regs + idx*4 ) = value &0xFFFFFFFF;
+			break;
+		case 8:
+			*(ut64 *)(desc->regs + idx*8 ) = value;
+			break;
+		default:
+			fprintf(stderr,"Unsupported register size!");
+	}
+}
+ut64 gdbwrap_getreg(gdbwrap_t *desc, ut32 idx){
+	ut64 ret=-1;
+	if ( idx >= desc->num_registers){
+		fprintf(stderr, "Wrong register index %d\n",idx);
+	}
+	switch( desc->reg_size ) {
+		case 1:
+			ret = *(desc->regs+idx);
+			break;
+		case 2:
+			ret = *(ut16 *)(desc->regs+idx*2);
+			break;
+		case 4:
+			ret = *(ut32 *)(desc->regs + idx*4 );
+			break;
+		case 8:
+			ret = *(ut64 *)(desc->regs + idx*8 );
+			break;
+		default:
+			fprintf(stderr,"Unsupported register size!");
+	}
+	return ret;
+}
+
 static char          *gdbwrap_lastmsg(gdbwrap_t *desc)
 {
   return desc->packet;
@@ -301,10 +348,11 @@ static void         gdbwrap_populate_reg(gdbwrap_t *desc, char *packet)
 						    GDBWRAP_SEP_COLON, NULL,
 						    sizeof(packetcolon));
 	  ASSERT(nextupacket != NULL);
+	  //TODO Size-dependent atoh
 	  regvalue = gdbwrap_atoh(nextupacket, strlen(nextupacket));
 	  regvalue = gdbwrap_little_endian(regvalue);
-
-	  *(&desc->reg32.eax + regnumber) =  regvalue;
+	  gdbwrap_setreg(desc,regnumber, regvalue);
+	  //*(ut32 *)(desc->regs + desc->reg_size*regnumber) =  regvalue;
 	}
       /* We add 1 in order not to take the right limit. In the worst
 	 case, we should get the NULL char. */
@@ -537,11 +585,13 @@ gdbwrap_t            *gdbwrap_current_get(void)
  * the string that get the replies from server.
  *
  */
-gdbwrap_t            *gdbwrap_init(int fd)
+gdbwrap_t            *gdbwrap_init(int fd, ut32 num_regs, ut32 reg_size)
 {
   gdbwrap_t          *desc = malloc(sizeof(gdbwrap_t));
-
-  ASSERT(fd && desc != NULL);
+  desc->reg_size = reg_size;
+  desc->num_registers = num_regs;
+  desc->regs = malloc(4*desc->reg_size*desc->num_registers);
+  ASSERT(fd && desc != NULL && desc->regs !=NULL);
   desc->max_packet_size   = 2500;
   desc->packet            = malloc((desc->max_packet_size + 1) * sizeof(char));
   desc->fd                = fd;
@@ -557,6 +607,7 @@ void                gdbwrap_close(gdbwrap_t *desc)
 {
   ASSERT(desc != NULL && desc->packet != NULL);
   free(desc->packet);
+  free(desc->regs);
   free(desc);
 }
 
@@ -632,7 +683,7 @@ void                gdbwrap_reason_halted(gdbwrap_t *desc)
  * cannot reuse the gdbwrap_populate_reg. We receive a poorly
  * documented bulk message when sending the "g" query.
  */
-gdbwrap_gdbreg32     *gdbwrap_readgenreg(gdbwrap_t *desc)
+ut8     *gdbwrap_readgenreg(gdbwrap_t *desc)
 {
   char               *rec;
   unsigned           i;
@@ -641,16 +692,17 @@ gdbwrap_gdbreg32     *gdbwrap_readgenreg(gdbwrap_t *desc)
   rec = gdbwrap_send_data(desc, GDBWRAP_GENPURPREG);
   if (gdbwrap_is_active(desc))
     {
-      for (i = 0; i < sizeof(gdbwrap_gdbreg32) / sizeof(ureg32); i++)
+      for (i = 0; i < desc->num_registers; i++)
 	{
 	  /* 1B = 2 characters */
 	  regvalue = gdbwrap_atoh(rec, 2 * DWORD_IN_BYTE);
 	  regvalue = gdbwrap_little_endian(regvalue);
-	  *(&desc->reg32.eax + i) = regvalue;
+	  gdbwrap_setreg(desc,i,regvalue);
+	  //*(ut32 *)(desc->regs + desc->reg_size*i) = regvalue;
 	  rec += 2 * DWORD_IN_BYTE;
 	}
 
-      return &desc->reg32;
+      return desc->regs;
     }
   else
     return NULL;
@@ -689,14 +741,39 @@ void                 gdbwrap_setbp(gdbwrap_t *desc, la32 linaddr, void *datasave
   gdbwrap_writemem(desc, linaddr, &bp, sizeof(u_char));
 }
 
-
+/**
+ * this should be preferred over gdbwrap_setbp as it's arch independent. 
+ * It is possible that some gdb servers do not implement it, and we could
+ * fall back to arch-specific methods then. 
+ */
 void                 gdbwrap_simplesetbp(gdbwrap_t *desc, la32 linaddr)
 {
+  char *ret;
   char               packet[MSG_BUF];
 
   snprintf(packet, sizeof(packet), "%s%s%x%s%x", GDBWRAP_INSERTBP,
 	   GDBWRAP_SEP_COMMA, linaddr, GDBWRAP_SEP_COMMA, 0x1);
-  gdbwrap_send_data(desc, packet);
+  ret = gdbwrap_send_data(desc, packet);
+  fprintf(stderr,"Received from gdb server: %s\n",ret); 
+  if ( !strncmp(ret,"$#00",4) ){
+	fprintf( stderr, "Breakpoint command not supported by gdb stub. Consider manually adding trap instructions instead.\n");
+  }
+
+}
+
+void                 gdbwrap_simplesethwbp(gdbwrap_t *desc, la32 linaddr)
+{
+  char *ret;
+  char               packet[MSG_BUF];
+
+  snprintf(packet, sizeof(packet), "%s%s%x%s%x", GDBWRAP_INSERTHWBP,
+	   GDBWRAP_SEP_COMMA, linaddr, GDBWRAP_SEP_COMMA, 0x1);
+  ret = gdbwrap_send_data(desc, packet);
+  
+  if ( !strncmp(ret,"$#00",4) ){
+	fprintf( stderr, "HW breakpoint command not supported by gdb stub. Consider manually adding trap instructions instead.\n");
+  }
+
 }
 
 
@@ -715,6 +792,14 @@ void                 gdbwrap_simpledelbp(gdbwrap_t *desc, la32 linaddr)
   gdbwrap_send_data(desc, packet);
 }
 
+void                 gdbwrap_simpledelhwbp(gdbwrap_t *desc, la32 linaddr)
+{
+  char               packet[MSG_BUF];
+
+  snprintf(packet, sizeof(packet), "%s%s%x%s%x", GDBWRAP_REMOVEHWBP,
+	   GDBWRAP_SEP_COMMA, linaddr, GDBWRAP_SEP_COMMA, 0x1);
+  gdbwrap_send_data(desc, packet);
+}
 
 char                 *gdbwrap_readmem(gdbwrap_t *desc, la32 linaddr,
 				      unsigned bytes)
@@ -836,7 +921,7 @@ static void          gdbwrap_writeregister2(gdbwrap_t *desc, ureg32 regNum,
 					    la32 val)
 {
   char               *ret;
-  gdbwrap_gdbreg32   *reg;
+  ut8 		     *reg;
   unsigned           offset;
   char               locreg[700];
 
@@ -882,7 +967,8 @@ void                 gdbwrap_writereg(gdbwrap_t *desc, ureg32 regnum, la32 val)
     } while (gdbwrap_cmdnotsup(desc) && choice < 2);
 
   if (choice < 2)
-    *(&desc->reg32.eax + regnum) = val;
+	gdbwrap_setreg(desc,regnum,val);
+//    *(ut32 *)(desc->regs + desc->reg_size*regnum) = val;
 }
 
 
@@ -892,13 +978,13 @@ void                 gdbwrap_writereg(gdbwrap_t *desc, ureg32 regnum, la32 val)
  */
 char                 *gdbwrap_shipallreg(gdbwrap_t *desc)
 {
-  gdbwrap_gdbreg32   savedregs;
+  ut8		     savedregs[sizeof(gdbwrap_gdbreg32)];
   char               *ret;
   char               locreg[700];
   uint8_t            i;
 
   ASSERT(desc != NULL);
-  memcpy(&savedregs, &desc->reg32, sizeof(gdbwrap_gdbreg32));
+  memcpy(savedregs, desc->regs, sizeof(gdbwrap_gdbreg32));
 
   gdbwrap_readgenreg(desc);
   ret = gdbwrap_lastmsg(desc);
@@ -907,7 +993,7 @@ char                 *gdbwrap_shipallreg(gdbwrap_t *desc)
      request. */
   for (i = 0; i < 9; i++)
     snprintf(locreg + i * 2 * sizeof(ureg32), 2 * sizeof(ureg32) + 1,
-	     "%08x", gdbwrap_little_endian(*(&savedregs.eax + i)));
+	     "%08x", gdbwrap_little_endian(*(ut32 *)(savedregs + desc->reg_size*i)));
   ASSERT(strlen(locreg) < desc->max_packet_size);
   memcpy(ret, locreg, strlen(locreg));
   snprintf(locreg, sizeof(locreg), "%s%s", GDBWRAP_WGENPURPREG, ret);
