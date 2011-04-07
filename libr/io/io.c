@@ -253,16 +253,19 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len) {
 				io->write_mask_buf[i%io->write_mask_len];
 		buf = data;
 	}
+	
 
-	if (r_io_map_select (io, io->off)) {
-		if (io->plugin) {
-			if (io->plugin->write)
-				ret = io->plugin->write (io, io->fd, buf, len);
-			else eprintf ("r_io_write: io handler with no write callback\n");
-		} else ret = write (io->fd->fd, buf, len);
-		if (ret == -1)
-			eprintf ("r_io_write: cannot write on fd %d\n", io->fd->fd);
-	} else ret = len;
+	r_io_map_select(io,io->off);
+
+	if (io->plugin) {
+		if (io->plugin->write)
+			ret = io->plugin->write (io, io->fd, buf, len);
+		else eprintf ("r_io_write: io handler with no write callback\n");
+	} else ret = write (io->fd->fd, buf, len);
+
+	if (ret == -1)
+		eprintf ("r_io_write: cannot write on fd %d\n", io->fd->fd);
+
 	if (data)
 		free (data);
 	return ret;
