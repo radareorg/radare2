@@ -221,7 +221,7 @@ static void Memadr(int defseg,const char *descr,slong offset,int dsize) {
 // Disassemble memory/register from the ModRM/SIB bytes and, if available, dump
 // address and contents of memory.
 static void DecodeMR(int type) {
-  int j,memonly,inmemory,seg;
+  int j,memonly,inmemory,seg = -1;
   int c,sib;
   ulong dsize,regsize,addr;
   char s[TEXTLEN];
@@ -448,7 +448,8 @@ static void DecodeMR(int type) {
           strcat(s,"*8");
         };
       };
-      Memadr(seg,s,addr,dsize);
+      if (seg!=-1)
+        Memadr(seg,s,addr,dsize);
     };
   }
   // Last possibility: 32-bit address without SIB byte.

@@ -7,11 +7,11 @@
 #include <r_lib.h>
 #include <signal.h>
 
+#if DEBUGGER
 static int r_debug_native_continue(int pid, int tid, int sig);
 static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
 static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, int size);
 
-#define DEBUGGER 1
 #define MAXBT 128
 
 #if __WINDOWS__
@@ -115,6 +115,10 @@ typedef unsigned long mips64_regs_t [4096];
 #define DEBUGGER 0
 #endif // ARCH
 
+#endif /* IF DEBUGGER */
+
+
+/* begin of debugger code */
 #if DEBUGGER
 
 #if __APPLE__

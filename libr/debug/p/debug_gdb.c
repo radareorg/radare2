@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include <r_debug.h>
-#include <r_lib.h>
 #include "libgdbwrap/include/gdbwrapper.h"
 
 /* TODO: The IO stuff must be communicated with the r_dbg */
@@ -64,6 +63,7 @@ static int r_debug_gdb_detach(int pid) {
 
 struct r_debug_plugin_t r_dbg_plugin_gdb = {
 	.name = "gdb",
+	// XXX this must be a bitmask
 	.archs = { "x86", 0 }, //"x86-64", "arm", "powerpc", 0 },
 	.step = &r_debug_gdb_step,
 	.cont = &r_debug_gdb_continue,

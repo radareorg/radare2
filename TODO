@@ -5,6 +5,7 @@
 
 To wipe:
 ========
+* check iowrite
  - Move the content of libr/*/TODO here
  - linestyle?? for disassembly lines
  - remove libr/vm and libr/db
