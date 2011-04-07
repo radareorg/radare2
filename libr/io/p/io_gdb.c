@@ -45,7 +45,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	eprintf("Executing gdbwrap_writemem(fd, %x,%x,%d)\n",io->off, buf, count);
 	gdbwrap_writemem (RIOGDB_DESC (fd), io->off, (void *)buf, count);
 	return count;
 }
@@ -72,7 +71,6 @@ static int __close(RIODesc *fd) {
 }
 
 static int __system(RIO *io, RIODesc *fd, const char *cmd) {
-	eprintf(" [GDB IO cmd] %s\n " , cmd);
 	/* XXX: test only for x86-32 */
 	if(!strcmp(cmd,"regs")){
 		int i;
@@ -86,13 +84,10 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	} else if ( !strcmp(cmd,"cont") ){
 		gdbwrap_continue(RIOGDB_DESC(fd));
 	} else if ( !strncmp(cmd,"bp",2) && r_str_word_count(cmd)==2 ){
-		eprintf("Parsing breakpoing...\n");
 		char *saddr = strrchr(cmd,' '); //Assuming only spaces as separator, get last space
-		printf(" saddr: %s \n", saddr);
 		if(saddr){
 			int addr;
-			r_hex_str2bin(saddr,(char *)&addr); //TODO handle endianness local machine
-			eprintf( "Break point added at address %#x \n " , addr,saddr);
+			r_hex_str2bin(saddr,(unsigned char *)&addr); //TODO handle endianness local machine
 			gdbwrap_simplesetbp( RIOGDB_DESC(fd), addr);
 		}
 	}
