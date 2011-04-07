@@ -5,6 +5,8 @@ STATIC_OBJ+=${OBJ_X86_SIMPLE}
 TARGET_X86_SIMPLE=anal_x86_simple.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_X86_SIMPLE}
+LIBS_X86_SIMPLE=r_anal r_reg r_lib r_syscall r_diff
+MYLIBS=$(subst r_,-L../../,$(LIBS_X86_SIMPLE))
 
 ${TARGET_X86_SIMPLE}: ${OBJ_X86_SIMPLE}
-	${CC} -L../../reg -lr_reg -L.. -lr_anal ${LDFLAGS} ${CFLAGS} -o anal_x86_simple.${EXT_SO} ${OBJ_X86_SIMPLE}
+	${CC} ${MYLIBS} ${LDFLAGS} ${CFLAGS} -o anal_x86_simple.${EXT_SO} ${OBJ_X86_SIMPLE}

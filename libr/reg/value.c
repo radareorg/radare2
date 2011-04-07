@@ -52,12 +52,11 @@ R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 
 	if (!item)
 		return R_FALSE;
-
 	switch (item->size) {
 	case 64: v64 = (ut64)value; src = (ut8*)&v64; break;
 	case 32: v32 = (ut32)value; src = (ut8*)&v32; break;
 	case 16: v16 = (ut16)value; src = (ut8*)&v16; break;
-	case 8:  v8 = (ut8)value; src = (ut8*)&v8; break;
+	case 8:  v8  = (ut8)value;  src = (ut8*)&v8;  break;
 	case 1: 
 		if (value) {
 			ut8 * buf = reg->regset[item->type].arena->bytes + (item->offset/8);
@@ -70,10 +69,10 @@ R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 			ut8 mask = 0xff^(1<<bit);
 			buf[0] = (buf[0] & mask) | 0;
 		}
-		break;
+		return R_TRUE;
 	default: 
 		eprintf ("r_reg_set_value: Bit size %d not supported\n", item->size);
-		break;
+		return R_FALSE;
 	}
 	r_mem_copybits (reg->regset[item->type].arena->bytes+
 		BITS2BYTES (item->offset), src, item->size);

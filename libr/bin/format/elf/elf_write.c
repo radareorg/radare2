@@ -17,7 +17,7 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 	Elf_(Shdr) *shdr = bin->shdr, *shdrp;
 	const char *strtab = bin->strtab;
 	ut8 *buf;
-	ut64 off, got_offset, got_addr = 0, rsz_offset, delta = 0;
+	ut64 off, got_offset = 0, got_addr = 0, rsz_offset = 0, delta = 0;
 	ut64 rsz_osize = 0, rsz_size = size, rest_size = 0;
 	int i, j, done = 0;
 
@@ -171,35 +171,36 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 /* XXX Endianness? */
 int Elf_(r_bin_elf_del_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	Elf_(Dyn) *dyn = NULL;
-	ut64 stroff;
+	ut64 stroff = 0LL;
 	int ndyn, i, j;
 
 	for (i = 0; i < bin->ehdr.e_phnum; i++)
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
 			if (!(dyn = malloc (bin->phdr[i].p_filesz))) {
-				perror("malloc (dyn)");
+				perror ("malloc (dyn)");
 				return R_FALSE;
 			}
 			if (r_buf_read_at (bin->b, bin->phdr[i].p_offset, (ut8*)dyn, bin->phdr[i].p_filesz) == -1) {
-				eprintf("Error: read (dyn)\n");
+				eprintf ("Error: read (dyn)\n");
 				free (dyn);
 				return R_FALSE;
 			}
-			ndyn = (int)(bin->phdr[i].p_filesz / sizeof(Elf_(Dyn)));
-			for (j = 0; j < ndyn; j++)
-				if (dyn[j].d_tag == DT_STRTAB) {
-					stroff = (ut64)(dyn[j].d_un.d_ptr - bin->baddr);
-					break;
-				}
-			for (j = 0; j < ndyn; j++)
-				if (dyn[j].d_tag == DT_RPATH || dyn[j].d_tag == DT_RUNPATH) {
-					if (r_buf_write_at (bin->b, stroff + dyn[j].d_un.d_val,
-								(ut8*)"", 1) == -1) {
-						eprintf("Error: write (rpath)\n");
-						free (dyn);
-						return R_FALSE;
+			if ((ndyn = (int)(bin->phdr[i].p_filesz / sizeof(Elf_(Dyn)))) > 0) {
+				for (j = 0; j < ndyn; j++)
+					if (dyn[j].d_tag == DT_STRTAB) {
+						stroff = (ut64)(dyn[j].d_un.d_ptr - bin->baddr);
+						break;
 					}
-				}
+				for (j = 0; j < ndyn; j++)
+					if (dyn[j].d_tag == DT_RPATH || dyn[j].d_tag == DT_RUNPATH) {
+						if (r_buf_write_at (bin->b, stroff + dyn[j].d_un.d_val,
+									(ut8*)"", 1) == -1) {
+							eprintf ("Error: write (rpath)\n");
+							free (dyn);
+							return R_FALSE;
+						}
+					}
+			}
 			free (dyn);
 			break;
 		}

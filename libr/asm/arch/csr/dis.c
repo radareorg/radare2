@@ -17,6 +17,7 @@ static struct state _state;
 #include <r_types.h>
 
 static inline struct state *get_state(void) {
+	memcpy (&_state, sizeof (struct state), 0);
 	return &_state;
 }
 
@@ -438,18 +439,16 @@ static int decode_known(struct state *s, struct directive *d) {
 	return 1;
 }
 
-static void csr_decode(struct state *s, struct directive *d)
-{
+static void csr_decode(struct state *s, struct directive *d) {
 	int prefix = s->s_prefix;
-	if (!decode_fixed(s, d))
-		if (!decode_known(s, d))
-			decode_unknown(s, d);
+	if (!decode_fixed (s, d))
+		if (!decode_known (s, d))
+			decode_unknown (s, d);
 	if (s->s_prefix == prefix)
 		s->s_prefix_val = s->s_prefix = 0;
 }
 
-static int read_bin(struct state *s, struct directive *d)
-{
+static int read_bin(struct state *s, struct directive *d) {
 	memcpy(&d->d_inst, s->s_buf, sizeof(d->d_inst));
 	d->d_off = s->s_off++;
 	return 1;
@@ -565,8 +564,7 @@ static void own(struct state *s)
 }
 #endif
 
-static int arch_csr_disasm(char *str, unsigned char *buf, ut64 seek)
-{
+static int arch_csr_disasm(char *str, unsigned char *buf, ut64 seek) {
 	struct state *s = get_state();
 	struct directive *d;
 	memset(s, 0, sizeof(*s));
