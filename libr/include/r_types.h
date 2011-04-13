@@ -72,7 +72,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #undef __UNIX__
 #undef __WINDOWS__
 
-#if defined(__linux__) || defined(__APPLE__) 
+#if defined(__linux__) || defined(__APPLE__) || defined(__GNU__)
   #define __BSD__ 0
   #define __UNIX__ 1
 #endif

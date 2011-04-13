@@ -39,6 +39,9 @@ IFEQ USEROSTYPE auto ; {
 	IFEQ HOST_OS linux ; {
 		USEROSTYPE = gnulinux ;
 	}{
+	IFEQ HOST_OS gnu ; {
+		USEROSTYPE = gnulinux ;
+	}{
 	IFEQ HOST_OS gnu/kfreebsd ; {
 		USEROSTYPE = gnulinux ;
 	}{
@@ -53,7 +56,7 @@ IFEQ USEROSTYPE auto ; {
 	}{
 	IFEQ HOST_OS darwin ; {
 		USEROSTYPE = darwin ;
-	} } } } } }
+	} } } } } } }
 }
 
 ARG_WITHOUT WITHPIC pic do not build libr as a program independent location ;

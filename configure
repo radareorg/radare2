@@ -298,7 +298,7 @@ echo "ERROR: ${CC} cannot create executables" >&2 ;
 exit 1 ; fi
 printf "checking for dynamic library... "
 HAVE_LIB_DL=0
-for OS in linux syllable sunos darwin beos solaris gnu/kfreebsd ; do
+for OS in linux syllable sunos darwin beos solaris ; do
 if [ "${HOST_OS}" = "${OS}" ]; then
 	HAVE_LIB_DL=1
 	break;
@@ -365,6 +365,9 @@ if [ "$USEROSTYPE" = "auto" ]; then
 if [ "$HOST_OS" = "linux" ]; then
 USEROSTYPE="gnulinux"
 else
+if [ "$HOST_OS" = "gnu" ]; then
+USEROSTYPE="gnulinux"
+else
 if [ "$HOST_OS" = "gnu/kfreebsd" ]; then
 USEROSTYPE="gnulinux"
 else
@@ -378,7 +381,7 @@ if [ "$HOST_OS" = "openbsd" ]; then
 USEROSTYPE="gnulinux"
 else
 if [ "$HOST_OS" = "darwin" ]; then
-USEROSTYPE="darwin"; fi; fi; fi; fi; fi; fi; fi
+USEROSTYPE="darwin"; fi; fi; fi; fi; fi; fi; fi; fi
 SEDFLAGS=" -e '"
 COUNT=0
 for A in ${ENVWORDS} ; do
