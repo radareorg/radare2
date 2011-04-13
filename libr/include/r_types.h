@@ -72,8 +72,11 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #undef __UNIX__
 #undef __WINDOWS__
 
-#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD_kernel__) || \
-    defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#if defined(__linux__) || defined(__APPLE__) 
+  #define __BSD__ 0
+  #define __UNIX__ 1
+#endif
+#if defined(__FreeBSD_kernel__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
   #define __BSD__ 1
   #define __UNIX__ 1
 #endif
