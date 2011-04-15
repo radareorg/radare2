@@ -8,7 +8,7 @@ typedef struct {
 	ut32 state[4];
 	ut32 count[2];
 	ut8 buffer[64];
-} MD5_CTX;
+} R_MD5_CTX;
 
 typedef struct {
 	unsigned int H[5];
@@ -34,7 +34,7 @@ typedef struct _SHA512_CTX {
 typedef R_SHA512_CTX R_SHA384_CTX;
 
 typedef struct r_hash_t {
-	MD5_CTX md5;
+	R_MD5_CTX md5;
 	R_SHA_CTX sha1;
 	R_SHA256_CTX sha256;
 	R_SHA384_CTX sha384;

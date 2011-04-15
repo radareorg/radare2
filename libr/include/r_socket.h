@@ -3,7 +3,7 @@
 
 #include "r_types.h"
 
-#ifdef HAVE_LIB_SSL
+#if HAVE_LIB_SSL
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #endif
@@ -11,7 +11,7 @@
 typedef struct r_socket_t {
 	int fd;
 	int is_ssl;
-#ifdef HAVE_LIB_SSL
+#if HAVE_LIB_SSL
 	SSL_CTX *ctx;
 	SSL *sfd;
 	BIO *bio;

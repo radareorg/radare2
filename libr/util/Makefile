@@ -7,7 +7,7 @@ OBJ+=list.o flist.o ht.o ht64.o mixed.o btree.o
 ifeq (${HAVE_LIB_GMP},1)
   OBJ+=big-gmp.o
 else
-  ifeq (${HAVE_LIB_OPENSSL},1)
+  ifeq (${HAVE_LIB_SSL},1)
     OBJ+=big-ssl.o
   else
     OBJ+=big.o

@@ -20,6 +20,9 @@ Setup SDK
 4) /var/include/sys/stat.h is broken.
   Solution: add 'int foo[3];' after 'st_rdev' at line 178
 
+5) install mercurial
+   easy_install mercurial
+
 Compilation
 ===========
   export CC=gcc

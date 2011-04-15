@@ -31,7 +31,7 @@ R_API RSocket *r_socket_new (const char *host, const char *port, int is_ssl) {
 		free (s);
 		return NULL;
 	}
-#ifdef HAVE_LIB_SSL
+#if HAVE_LIB_SSL
 	if (is_ssl) {
 		s->sfd = NULL;
 		s->ctx = NULL;
@@ -180,7 +180,7 @@ R_API RSocket *r_socket_listen(const char *port, int is_ssl, const char *certfil
 	s = R_NEW (RSocket);
 	s->fd = fd;
 	s->is_ssl = is_ssl;
-#ifdef HAVE_LIB_SSL
+#if HAVE_LIB_SSL
 	if (is_ssl) {
 		s->sfd = NULL;
 		s->ctx = NULL;
@@ -217,7 +217,7 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 		free (sock);
 		return NULL;
 	}
-#ifdef HAVE_LIB_SSL
+#if HAVE_LIB_SSL
 	if (sock->is_ssl) {
 		sock->sfd = NULL;
 		sock->ctx = NULL;
@@ -247,8 +247,10 @@ R_API void r_socket_block(RSocket *s, int block) {
 }
 
 R_API int r_socket_flush(RSocket *s) {
+#if HAVE_LIB_SSL
 	if (s->is_ssl && s->bio)
 		return BIO_flush(s->bio);
+#endif
 	return R_TRUE;
 }
 
@@ -261,7 +263,7 @@ R_API int r_socket_close(RSocket *s) {
 	shutdown (s->fd, SHUT_RDWR);
 	ret = close (s->fd);
 #endif
-#ifdef HAVE_LIB_SSL
+#if HAVE_LIB_SSL
 	if (s->is_ssl) {
 		if (s->sfd) {
 			SSL_shutdown (s->sfd);
@@ -364,7 +366,7 @@ R_API RSocket *r_socket_udp_connect(const char *host, const char *port, int is_s
 	sock = R_NEW (RSocket);
 	sock->fd = s;
 	sock->is_ssl = is_ssl;
-#ifdef HAVE_LIB_SSL
+#if HAVE_LIB_SSL
 	if (is_ssl) {
 		sock->sfd = NULL;
 		sock->ctx = NULL;
@@ -394,7 +396,7 @@ R_API RSocket *r_socket_udp_connect(const char *host, const char *port, int is_s
 R_API int r_socket_write(RSocket *s, void *buf, int len) {
 	int ret, delta = 0;
 	for (;;) {
-#ifdef HAVE_LIB_SSL
+#if HAVE_LIB_SSL
 		if (s->is_ssl)
 			if (s->bio)
 				ret = BIO_write (s->bio, buf+delta, len);
@@ -433,7 +435,7 @@ R_API void r_socket_printf(RSocket *s, const char *fmt, ...) {
 }
 
 R_API int r_socket_read(RSocket *s, unsigned char *buf, int len) {
-#ifdef HAVE_LIB_SSL
+#if HAVE_LIB_SSL
 	if (s->is_ssl)
 		if (s->bio)
 			return BIO_read (s->bio, buf, len);

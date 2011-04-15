@@ -11,7 +11,7 @@
 #ifdef HAVE_LIB_GMP
 #include <gmp.h>
 #endif
-#ifdef HAVE_LIB_OPENSSL
+#if HAVE_LIB_SSL
 #include <openssl/bn.h>
 #endif
 
@@ -403,10 +403,9 @@ R_API RRange *r_range_inverse(RRange *rgs, ut64 from, ut64 to, int flags);
 R_API int r_range_overlap(ut64 a0, ut64 a1, ut64 b0, ut64 b1, int *d);
 
 /* big */
-#ifdef HAVE_LIB_GMP
+#if HAVE_LIB_GMP
 #define RNumBig mpz_t
-#else
-#ifdef HAVE_LIB_OPENSSL
+#elif HAVE_LIB_SSL
 #define RNumBig BIGNUM
 #else
 #define	R_BIG_SIZE 10000
@@ -414,7 +413,6 @@ typedef struct r_num_big_t {
 	char dgts[R_BIG_SIZE];
 	int sign, last;
 } RNumBig;
-#endif
 #endif
 
 R_API RNumBig *r_big_new(RNumBig *b);
