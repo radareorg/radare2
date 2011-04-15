@@ -1,0 +1,25 @@
+Bindiffing with r2
+==================
+
+Graph diffing:
+--------------
+To find functions that are different from one to another binary:
+
+  radiff2 -C a b  -> show report of all analyzed functions and say if they match or not
+
+  # get graphs with colorized basic blocks of unmatching function 0x8034804
+  radiff2 -g 0x8034804 a b > a.dot
+  radiff2 -g 0x8034804 b a > b.dot
+  xdot a.dot & xdot b.dot
+
+  TODO: loading information from previous analysis
+
+Byte diffing:
+-------------
+  radiff2 /bin/true /bin/false
+
+Delta byte diffing:
+-------------------
+  radiff2 -d /bin/true /bin/false
+
+TODO: explain more modes and examples here...
