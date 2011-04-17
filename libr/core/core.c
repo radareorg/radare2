@@ -479,12 +479,14 @@ R_API int r_core_serve(RCore *core, RIODesc *file) {
 	int i, pipefd;
 	ut64 x;
 	RSocket *c, *fd;
+	RIORap *rior;
 
-	fd = (RSocket *)file->data;
-	if (fd == NULL) {
+	rior = (RIORap *)file->data;
+	if (rior == NULL|| rior->fd == NULL) {
 		eprintf ("rap: cannot listen.\n");
 		return -1;
 	}
+	fd = rior->fd;
 
 	eprintf ("RAP Server started (rap.loop=%s)\n", r_config_get (core->config, "rap.loop"));
 #if __UNIX__
@@ -502,7 +504,7 @@ reaccept:
 		}
 
 		eprintf ("rap: client connected\n");
-		r_io_accept (core->io, c->fd);
+		//r_io_accept (core->io, c->fd); //FIXME: Useless ??
 		for (;;) {
 			i = r_socket_read (c, &cmd, 1);
 			if (i==0) {
@@ -537,6 +539,7 @@ reaccept:
 					} else {
 						pipefd = -1;
 						eprintf ("Cannot open file (%s)\n", ptr);
+						return NULL; //XXX: Close conection and goto accept
 					}
 				}
 				buf[0] = RMT_OPEN | RMT_REPLY;

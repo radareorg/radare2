@@ -10,11 +10,6 @@
 // XXX: if in listener mode we need to use fd or fdlistener to listen or accept
 // go fruit yourself
 #define ENDIAN (0)
-typedef struct {
-	RSocket *fd;
-	RSocket *client;
-	int listener;
-} RIORap;
 #define RIORAP_FD(x) ((x->data)?(((RIORap*)(x->data))->client):NULL)
 #define RIORAP_IS_LISTEN(x) (((RIORap*)(x->data))->listener)
 #define RIORAP_IS_VALID(x) ((x) && (x->data) && (x->plugin == &r_io_plugin_rap))
@@ -25,7 +20,7 @@ static int rap__write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int count)
 	ut8 *tmp;
 	if (count>RMT_MAX)
 		count = RMT_MAX;
- 	if ((tmp = (ut8 *)malloc (count+5))) {
+	if ((tmp = (ut8 *)malloc (count+5))) {
 		eprintf ("rap__write: malloc failed\n");
 		return -1;
 	}
@@ -76,7 +71,7 @@ static int rap__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
 	if (i>count) {
 		eprintf ("rap__read: Unexpected data size %d\n", i);
 		return -1;
-	} 
+	}
 	r_socket_read_block (s, buf, i);
 	if (count>0 && count<RMT_MAX) {
 		//eprintf ("READ %d\n" ,i);
@@ -157,6 +152,8 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		rior = R_NEW (RIORap);
 		rior->listener = R_TRUE;
 		rior->client = rior->fd = r_socket_listen (port, R_FALSE, NULL);
+		if (rior->fd == NULL)
+			return NULL;
 // TODO: listen mode is broken.. here must go the root loop!!
 #warning TODO: implement rap:/:9999 listen mode
 		return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd, pathname, rw, mode, rior);
@@ -185,7 +182,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		}
 		r_mem_copyendian ((ut8 *)&i, (ut8*)buf+1, 4, ENDIAN);
 		if (i>0) eprintf ("ok\n");
-	}
+	} else return NULL;
 	return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd, pathname, rw, mode, rior);
 }
 

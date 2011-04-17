@@ -3,6 +3,7 @@
 
 #include <r_types.h>
 #include <r_util.h>
+#include <r_socket.h>
 #include <list.h>
 
 #define R_IO_READ  4
@@ -47,6 +48,12 @@ typedef struct r_io_desc_t {
 	void *data;
 	struct r_io_plugin_t *plugin;
 } RIODesc;
+
+typedef struct {
+	RSocket *fd;
+	RSocket *client;
+	int listener;
+} RIORap;
 
 // enum?
 #define R_IO_DESC_TYPE_OPENED 1

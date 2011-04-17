@@ -230,7 +230,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	if (fd == NULL)
 		return NULL;
 	if (r_io_is_listener (r->io)) {
-		r_core_serve (r, r->io->fd);
+		r_core_serve (r, fd);
 		return NULL;
 	}
 
