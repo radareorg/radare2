@@ -4,6 +4,9 @@ NAME=r_util
 OBJ=mem.o pool.o num.o str.o re.o hex.o file.o alloca.o range.o log.o
 OBJ+=prof.o cache.o sys.o buf.o w32-sys.o base64.o
 OBJ+=list.o flist.o ht.o ht64.o mixed.o btree.o
+
+# DO NOT BUILD r_big api (not yet used and its buggy)
+ifeq (1,0)
 ifeq (${HAVE_LIB_GMP},1)
   OBJ+=big-gmp.o
 else
@@ -12,6 +15,7 @@ else
   else
     OBJ+=big.o
   endif
+endif
 endif
 
 LDFLAGS+=${BN_LIBS}

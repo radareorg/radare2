@@ -402,6 +402,7 @@ R_API int r_range_get_n(RRange *rgs, int n, ut64 *from, ut64 *to);
 R_API RRange *r_range_inverse(RRange *rgs, ut64 from, ut64 to, int flags);
 R_API int r_range_overlap(ut64 a0, ut64 a1, ut64 b0, ut64 b1, int *d);
 
+#if 0
 /* big */
 #if HAVE_LIB_GMP
 #define RNumBig mpz_t
@@ -434,6 +435,7 @@ R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b);
 R_API void r_big_div_ut(RNumBig *a, RNumBig *b, ut32 c);
 R_API int r_big_divisible_ut(RNumBig *n, ut32 v);
 R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b);
+#endif
 
 
 R_API RHashTable* r_hashtable_new(void);

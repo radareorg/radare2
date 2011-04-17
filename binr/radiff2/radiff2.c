@@ -158,7 +158,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	
-	if (argc<3 || optind+2<argc)
+	if (argc<3 || optind+2>argc)
 		return show_help (R_FALSE);
 
 	file = argv[optind];
