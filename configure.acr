@@ -40,6 +40,7 @@ IFEQ USEROSTYPE auto ; {
 		USEROSTYPE = gnulinux ;
 	}{
 	IFEQ HOST_OS gnu ; {
+		(( GNU / HURD ))
 		USEROSTYPE = gnulinux ;
 	}{
 	IFEQ HOST_OS gnu/kfreebsd ; {

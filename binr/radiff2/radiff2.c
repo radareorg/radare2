@@ -5,9 +5,7 @@
 
 static ut32 count = 0;
 
-static int cb(struct r_diff_t *d, void *user,
-	struct r_diff_op_t *op)
-{
+static int cb(RDiff *d, void *user, RDiffOp *op) {
 	int i, rad = (int)(size_t)user;
 	if (count) {
 		count++;
@@ -88,14 +86,14 @@ static void diff_bins(RCore *c, RCore *c2) {
 static int show_help(int line) {
 	printf ("Usage: radiff2 [-nsdl] [file] [file]\n");
 	if (!line) printf (
-//		"  -l     diff lines of text\n"
-		"  -s     calculate text distance\n"
-		"  -c     count of changes\n"
-		"  -r     radare commands\n"
-		"  -d     use delta diffing\n"
-		"  -g     graph diff\n"
-		"  -v     Use vaddr\n"
-		"  -V     show version information\n");
+//		"  -l        diff lines of text\n"
+		"  -s        calculate text distance\n"
+		"  -c        count of changes\n"
+		"  -r        radare commands\n"
+		"  -d        use delta diffing\n"
+		"  -g [sym]  graph diff\n"
+		"  -v        use vaddr\n"
+		"  -V        show version information\n");
 	return 1;
 }
 

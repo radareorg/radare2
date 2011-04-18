@@ -10,6 +10,10 @@ To wipe:
  - linestyle?? for disassembly lines
  - remove libr/vm and libr/db
 
+To fix:
+=======
+* reading with io.va=true on out of foo results in shitty buffers
+
 To do:
 ======
 * libmagic internal :? -- find a decent implementation and adopt it
