@@ -9,20 +9,19 @@
 
 R_API struct r_io_t *r_io_new() {
 	RIO *io = R_NEW (struct r_io_t);
-	if (io) {
-		io->fd = NULL;
-		io->write_mask_fd = -1;
-		io->redirect = NULL;
-		io->printf = (void*) printf;
-		io->plugin = NULL;
-		io->raised = -1;
-		r_io_cache_init (io);
-		r_io_map_init (io);
-		r_io_section_init (io);
-		r_io_plugin_init (io);
-		r_io_desc_init (io);
-		r_io_undo_init (io);
-	}
+	if (!io) return NULL;
+	io->fd = NULL;
+	io->write_mask_fd = -1;
+	io->redirect = NULL;
+	io->printf = (void*) printf;
+	io->plugin = NULL;
+	io->raised = -1;
+	r_io_cache_init (io);
+	r_io_map_init (io);
+	r_io_section_init (io);
+	r_io_plugin_init (io);
+	r_io_desc_init (io);
+	r_io_undo_init (io);
 	return io;
 }
 
@@ -171,7 +170,7 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	}
 #endif
 	off = io->off;
-	r_io_map_select (io, io->off);
+	ret = -1;
 	if (io->plugin && io->plugin->read) {
 		if (io->plugin->read != NULL)
 			ret = io->plugin->read (io, io->fd, buf, len);
@@ -180,13 +179,16 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	if (ret>0 && ret<len)
 		memset (buf+ret, 0xff, len-ret);
 	// this must be before?? r_io_cache_read (io, io->off, buf, len);
-	r_io_seek (io, off, R_IO_SEEK_SET);
+//	eprintf ("--RET-- %llx\n", r_io_seek (io, off, R_IO_SEEK_SET));
+
 	return ret;
 }
 
 R_API int r_io_read_at(struct r_io_t *io, ut64 addr, ut8 *buf, int len) {
-	if (r_io_seek (io, addr, R_IO_SEEK_SET)==-1)
+	if (r_io_seek (io, addr, R_IO_SEEK_SET)==UT64_MAX) {
+		memset (buf, 0xff, len);
 		return -1;
+	}
 	return r_io_read (io, buf, len);
 }
 
@@ -283,7 +285,7 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 	switch (whence) {
 	case R_IO_SEEK_SET:
 		posix_whence = SEEK_SET;
-		ret=offset;
+		ret = offset;
 		break;
 	case R_IO_SEEK_CUR:
 //		offset += io->off;
@@ -301,6 +303,9 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 	// XXX: list_empty trick must be done in r_io_set_va();
 	offset = (!io->debug && io->va && !list_empty (&io->sections))? 
 		r_io_section_vaddr_to_offset (io, offset) : offset;
+	// if resolution fails... just return as invalid address
+	if (offset==UT64_MAX)
+		return UT64_MAX;
 	// TODO: implement io->enforce_seek here!
 	if (io->fd != NULL) {
 		if (io->plugin && io->plugin->lseek)

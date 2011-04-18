@@ -1295,7 +1295,20 @@ static int cmd_section(void *data, const char *input) {
 		" S*               ; list sections (in radare commands)\n"
 		" S=               ; list sections (in nice ascii-art bars)\n"
 		" S [offset] [vaddr] [size] [vsize] [name] [rwx] ; adds new section\n"
-		" S -[offset]      ; remove this section definition\n");
+		" S-[id|0xoff|*]   ; remove this section definition\n");
+		break;
+	case '-':
+		if (input[1] == '*') {
+			// remove all sections
+			r_io_section_init (core->io);
+		} else
+		if (input[1] == '0' && input[2]=='x') {
+			RIOSection *s = r_io_section_get (core->io, r_num_get (NULL, input+1));
+			// use offset
+			r_io_section_rm (core->io, s->id);
+		} else {
+			r_io_section_rm (core->io, atoi (input+1));
+		}
 		break;
 	case ' ':
 		switch (input[1]) {
@@ -1368,6 +1381,7 @@ static int cmd_seek(void *data, const char *input) {
 		switch (input[0]) {
 		case ' ':
 			r_core_seek (core, off, 1);
+			r_core_block_read (core, 0);
 			r_io_sundo_push (core->io);
 			break;
 		case '*':

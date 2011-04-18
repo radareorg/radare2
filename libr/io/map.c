@@ -47,7 +47,7 @@ R_API RIOMap *r_io_map_add(struct r_io_t *io, int fd, int flags, ut64 delta, ut6
 R_API int r_io_map_select(RIO *io, ut64 off) {
 	ut64 delta = 0;
 	ut64 fd = -1;//io->fd;
-	RIOMap *im;
+	RIOMap *im = NULL;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, im) { // _prev?
 		if (im && off >= im->from && off < im->to) {
@@ -59,7 +59,8 @@ R_API int r_io_map_select(RIO *io, ut64 off) {
 	}
 	if (fd != -1) {
 		r_io_set_fdn (io, fd);
-		r_io_seek (io, delta, R_IO_SEEK_SET);
+	//	eprintf ("seek ret = %llx\n", 
+	//	r_io_seek (io, delta, R_IO_SEEK_SET));
 		return R_TRUE;
 	}
 	return R_FALSE;

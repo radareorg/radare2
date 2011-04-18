@@ -103,6 +103,7 @@ typedef struct r_io_t {
 	struct r_io_undo_t undo;
 	struct list_head io_list;
 	struct list_head sections;
+	int next_section_id;
 	/* maps */
 	RList *maps; /*<RIOMap>*/
 	RList *desc;
@@ -161,6 +162,7 @@ typedef struct r_io_section_t {
 	ut64 size;
 	ut64 vsize;
 	int rwx;
+	int id;
 	struct list_head list;
 } RIOSection;
 

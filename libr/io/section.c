@@ -1,8 +1,9 @@
-/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> nibble <.ds@gmail.com> */
+/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> nibble <.ds@gmail.com> */
 
 #include "r_io.h"
 
 R_API void r_io_section_init(RIO *io) {
+	io->next_section_id = 0;
 	io->enforce_rwx = 0; // do not enforce RWX section permissions by default
 	io->enforce_seek = 0; // do not limit seeks out of the file by default
 	INIT_LIST_HEAD (&(io->sections));
@@ -11,6 +12,7 @@ R_API void r_io_section_init(RIO *io) {
 R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name) {
 	RIOSection *s = R_NEW (RIOSection);
 	s->offset = offset;
+	s->id = io->next_section_id++;
 	s->vaddr = vaddr;
 	s->size = size;
 	s->vsize = vsize;
@@ -21,13 +23,11 @@ R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vs
 }
 
 R_API RIOSection *r_io_section_get_i(RIO *io, int idx) {
-	int i = 0;
 	struct list_head *pos;
 	list_for_each_prev (pos, &io->sections) {
 		RIOSection *s = (RIOSection *)list_entry (pos, RIOSection, list);
-		if (i == idx)
+		if (s->id == idx)
 			return s;
-		i++;
 	}
 	return NULL;
 }
@@ -53,8 +53,8 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 		RIOSection *s = (RIOSection *)list_entry(pos, RIOSection, list);
 		if (rad) io->printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d\n",
 			s->offset, s->vaddr, s->size, s->vsize, s->name, s->rwx);
-		else io->printf ("[%02d] %c 0x%08"PFMT64x" %s va=0x%08"PFMT64x" sz=0x%08"PFMT64x" vsz=%08"PFMT64x" %s\n",
-			i, (offset>=s->offset && offset<s->offset+s->size)?'*':'.', 
+		else io->printf ("[%.2d] %c 0x%08"PFMT64x" %s va=0x%08"PFMT64x" sz=0x%08"PFMT64x" vsz=%08"PFMT64x" %s\n",
+			s->id, (offset>=s->offset && offset<s->offset+s->size)?'*':'.', 
 			s->offset, r_str_rwx_i (s->rwx), s->vaddr, s->size, s->vsize, s->name);
 		i++;
 	}

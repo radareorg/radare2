@@ -3,6 +3,9 @@
   |    <  V  . |  . V  .   <   _/ .-' _/|  ()  |
   |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
+
+* Make r_io happy with RList
+
 To wipe:
 ========
 * check iowrite

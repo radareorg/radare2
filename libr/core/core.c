@@ -450,8 +450,9 @@ R_API int r_core_seek_delta(RCore *core, st64 addr) {
 	}
 	core->offset = addr;
 	ret = r_core_block_read (core, 0);
-	if (ret == -1)
-		core->offset = tmp;
+	//if (ret == -1)
+	//	memset (core->block, 0xff, core->blocksize);
+	//	core->offset = tmp;
 	return ret;
 }
 

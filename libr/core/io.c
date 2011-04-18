@@ -76,6 +76,9 @@ R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
 		} else return R_FALSE;
 */
 		//core->offset = addr;
+		if (!core->io->va)
+			return R_FALSE;
+		memset (core->block, 0xff, core->blocksize);
 	} else core->offset = addr;
 	if (rb) {
 		ret = r_core_block_read (core, 0);
@@ -109,13 +112,18 @@ R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 }
 
 R_API int r_core_block_read(RCore *core, int next) {
+	ut64 off;
 	if (core->file == NULL) {
 		memset (core->block, 0xff, core->blocksize);
 		return -1;
 	}
 	r_io_set_fd (core->io, core->file->fd);
-	r_io_seek (core->io, core->offset+((next)?core->blocksize:0), R_IO_SEEK_SET);
-	return r_io_read (core->io, core->block, core->blocksize);
+	off = r_io_seek (core->io, core->offset+((next)?core->blocksize:0), R_IO_SEEK_SET);
+	if (off == UT64_MAX) {
+		memset (core->block, 0xff, core->blocksize);
+		return -1;
+	}
+	return (int)r_io_read (core->io, core->block, core->blocksize);
 }
 
 R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
@@ -126,5 +134,6 @@ R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 	ret = r_io_read_at (core->io, addr, buf, size);
 	if (addr>=core->offset && addr<=core->offset+core->blocksize)
 		r_core_block_read (core, 0);
-	return (ret!=-1);
+	else memset (buf, 0xff, size);
+	return (ret!=UT64_MAX);
 }
