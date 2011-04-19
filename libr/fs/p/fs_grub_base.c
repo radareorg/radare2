@@ -59,8 +59,10 @@ static RList *FSP(_dir)(RFSRoot *root, const char *path) {
 	return list;
 }
 
-static void FSP(_mount)(RFSRoot *root) {
-	root->ptr = grubfs_new (&FSIPTR, &root->iob);
+static int FSP(_mount)(RFSRoot *root) {
+	GrubFS *gfs = grubfs_new (&FSIPTR, &root->iob);
+	root->ptr = gfs;
+	return gfs->file->fs->dir (gfs->file->device, "/", NULL, 0)? R_FALSE:R_TRUE;
 }
 
 static void FSP(_umount)(RFSRoot *root) {

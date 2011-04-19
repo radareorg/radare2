@@ -69,7 +69,12 @@ R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path, ut64 d
 		root->p = p;
 		//memcpy (&root->iob, &fs->iob, sizeof (root->iob));
 		root->iob = fs->iob;
-		p->mount (root);
+		if (!p->mount (root)) {
+			eprintf ("r_fs_mount: Cannot mount partition\n");
+			free (str);
+			r_fs_root_free (root);
+			return NULL;
+		}
 		r_list_append (fs->roots, root);
 		eprintf ("Mounted %s on %s at 0x%llx\n", fstype, str, 0LL);
 		free (str);
@@ -156,17 +161,15 @@ R_API int r_fs_read (RFS* fs, RFSFile *file, ut64 addr, int len) {
 R_API RList *r_fs_dir(RFS* fs, const char *p) {
 	RList *ret = NULL;
 	RFSRoot *root;
-	if (fs) {
-		char *path = strdup (p);
-		r_str_chop_path (path);
-		root = r_fs_root (fs, path);
-		if (root) {
-			const char *dir = path + strlen (root->path);
-			if (!*dir) dir = "/";
-			ret = root->p->dir (root, dir);
-		} else eprintf ("r_fs_dir: not mounted '%s'\n", path);
-		free (path);
-	}
+	char *path = strdup (p);
+	r_str_chop_path (path);
+	root = r_fs_root (fs, path);
+	if (root) {
+		const char *dir = path + strlen (root->path);
+		if (!*dir) dir = "/";
+		ret = root->p->dir (root, dir);
+	} else eprintf ("r_fs_dir: not mounted '%s'\n", path);
+	free (path);
 	return ret;
 }
 

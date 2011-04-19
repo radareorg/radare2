@@ -14,6 +14,7 @@ namespace Radare {
 		public int read(RFSFile file, uint64 addr, int len);
 		public RFSFile slurp(string path);
 		public RList<RFSFile> dir(string path);
+		public RList<RFSRoot> roots;
 	}
 
 	[Compact]

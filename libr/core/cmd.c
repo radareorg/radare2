@@ -1061,7 +1061,8 @@ static int cmd_mount(void *data, const char *_input) {
 				off = r_num_math (core->num, ptr2+1);
 			}
 			//r_io_bind (core->io, &(core->fs->iob));
-			r_fs_mount (core->fs, input, ptr, off);
+			if (!r_fs_mount (core->fs, input, ptr, off))
+				eprintf ("Cannot mount %s\n", input);
 		} else eprintf ("Usage: m ext2 /mnt");
 		break;
 	case '-':
