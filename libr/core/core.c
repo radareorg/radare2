@@ -540,7 +540,7 @@ reaccept:
 					} else {
 						pipefd = -1;
 						eprintf ("Cannot open file (%s)\n", ptr);
-						return NULL; //XXX: Close conection and goto accept
+						return -1; //XXX: Close conection and goto accept
 					}
 				}
 				buf[0] = RMT_OPEN | RMT_REPLY;

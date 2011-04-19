@@ -301,7 +301,7 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 	if (io == NULL)
 		return ret;
 	// XXX: list_empty trick must be done in r_io_set_va();
-	offset = (!io->debug && io->va && !list_empty (&io->sections))? 
+	offset = (!io->debug && io->va && !r_list_empty (io->sections))?
 		r_io_section_vaddr_to_offset (io, offset) : offset;
 	// if resolution fails... just return as invalid address
 	if (offset==UT64_MAX)
@@ -314,9 +314,9 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 		else ret = lseek (io->fd->fd, offset, posix_whence);
 		if (ret != -1) {
 			io->off = ret;
-			// XXX this can be tricky.. better not to use this .. must be deprecated 
+			// XXX this can be tricky.. better not to use this .. must be deprecated
 			// r_io_sundo_push (io);
-			ret = (!io->debug && io->va && !list_empty (&io->sections))?
+			ret = (!io->debug && io->va && !r_list_empty (io->sections))?
 				r_io_section_offset_to_vaddr (io, io->off) : io->off;
 		} //else eprintf ("r_io_seek: cannot seek to %"PFMT64x"\n", offset);
 	} //else { eprintf ("r_io_seek: null fd\n"); }

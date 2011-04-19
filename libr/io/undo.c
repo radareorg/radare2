@@ -52,7 +52,7 @@ R_API int r_io_sundo_redo(struct r_io_t *io) {
 }
 
 R_API void r_io_sundo_push(RIO *io) {
-	ut64 off = (io->va && !list_empty (&io->sections))? 
+	ut64 off = (io->va && !r_list_empty (io->sections))?
 		r_io_section_offset_to_vaddr (io, io->off) : io->off;
 	if (!io->undo.s_enable)
 		return;
