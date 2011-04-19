@@ -25,4 +25,7 @@ public struct Radare.RSocket : int
 	/* UNIX ONLY */
 	public static int unix_connect(string file);
 	public static int unix_listen(string file);
+
+	public static string http_get(string uri, out int code);
+	public static string http_post(string uri, string data, out int code);
 }

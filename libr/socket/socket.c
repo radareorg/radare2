@@ -117,7 +117,7 @@ R_API int r_socket_unix_listen(const char *file) {
 #endif
 
 R_API int r_socket_connect(const char *host, const char *port) {
-	struct addrinfo *res, *rp;
+	struct addrinfo hints, *res, *rp;
 	int s, gai;
 #if __WINDOWS__
 	WSADATA wsadata;
@@ -129,7 +129,10 @@ R_API int r_socket_connect(const char *host, const char *port) {
 	signal (SIGPIPE, SIG_IGN);
 #endif
 
-	gai = getaddrinfo (host, port, NULL, &res);
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+	hints.ai_protocol = IPPROTO_TCP;          /* Any protocol */
+	gai = getaddrinfo (host, port, &hints, &res);
 	if (gai != 0) {
 		eprintf ("Error in getaddrinfo: %s\n", gai_strerror (gai));
 		return -1;
@@ -331,7 +334,7 @@ R_API char *r_socket_to_string(RSocket *s) {
 
 //XXX: Merge with r_new
 R_API RSocket *r_socket_udp_connect(const char *host, const char *port, int is_ssl) {
-	struct addrinfo *res, *rp;
+	struct addrinfo hints, *res, *rp;
 	int s, gai;
 	RSocket *sock;
 
@@ -344,7 +347,10 @@ R_API RSocket *r_socket_udp_connect(const char *host, const char *port, int is_s
 #elif __UNIX__
 	signal (SIGPIPE, SIG_IGN);
 #endif
-	gai = getaddrinfo (host, port, NULL, &res);
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+	hints.ai_protocol = IPPROTO_UDP;          /* Any protocol */
+	gai = getaddrinfo (host, port, &hints, &res);
 	if (gai != 0) {
 		eprintf ("Error in getaddrinfo: %s\n", gai_strerror (gai));
 		return NULL;

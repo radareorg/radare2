@@ -2,7 +2,7 @@ include ../config.mk
 
 NAME=r_socket
 #DEPS=r_util
-OBJ=socket.o proc.o
+OBJ=socket.o proc.o http.o
 LDFLAGS+=-lssl -lcrypto
 
 # on solaris only
