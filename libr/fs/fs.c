@@ -61,24 +61,25 @@ R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path, ut64 d
 		eprintf ("r_fs_mount: invalid mountpoint\n");
 		return NULL;
 	}
-	p = r_fs_plugin_get (fs, fstype);
-	if (p != NULL) {
-		str = strdup (path);
-		r_str_chop_path (str);
-		root = r_fs_root_new (str, delta);
-		root->p = p;
-		//memcpy (&root->iob, &fs->iob, sizeof (root->iob));
-		root->iob = fs->iob;
-		if (!p->mount (root)) {
-			eprintf ("r_fs_mount: Cannot mount partition\n");
-			free (str);
-			r_fs_root_free (root);
-			return NULL;
-		}
-		r_list_append (fs->roots, root);
-		eprintf ("Mounted %s on %s at 0x%llx\n", fstype, str, 0LL);
+	if (!(p = r_fs_plugin_get (fs, fstype))) {
+		eprintf ("r_fs_mount: Invalid filesystem type\n");
+		return NULL;
+	}
+	str = strdup (path);
+	r_str_chop_path (str);
+	root = r_fs_root_new (str, delta);
+	root->p = p;
+	//memcpy (&root->iob, &fs->iob, sizeof (root->iob));
+	root->iob = fs->iob;
+	if (!p->mount (root)) {
+		eprintf ("r_fs_mount: Cannot mount partition\n");
 		free (str);
-	} else eprintf ("r_fs_mount: Invalid filesystem type\n");
+		r_fs_root_free (root);
+		return NULL;
+	}
+	r_list_append (fs->roots, root);
+	eprintf ("Mounted %s on %s at 0x%llx\n", fstype, str, 0LL);
+	free (str);
 	return root;
 }
 

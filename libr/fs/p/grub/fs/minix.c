@@ -491,6 +491,7 @@ grub_minix_dir (grub_device_t device, const char *path,
       goto fail;
     }
 
+  if (hook)
   while (pos < GRUB_MINIX_INODE_SIZE (data))
     {
       grub_uint16_t ino;

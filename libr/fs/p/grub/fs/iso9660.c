@@ -192,6 +192,7 @@ grub_iso9660_susp_iterate (struct grub_iso9660_data *data,
     return grub_errno;
   entry = (struct grub_iso9660_susp_entry *) sua;
 
+  if (hook)
   for (; (char *) entry < (char *) sua + sua_size - 1;
        entry = (struct grub_iso9660_susp_entry *)
 	 ((char *) entry + entry->len))

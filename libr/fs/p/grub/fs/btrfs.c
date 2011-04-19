@@ -81,7 +81,7 @@ grub_btrfs_dir (grub_device_t device,
   struct grub_btrfs_data *data = grub_btrfs_mount (device->disk);
   if (grub_errno)
     return grub_errno;
-
+// TODO: no hook here? wtf?
   grub_free (data);
 
   return GRUB_ERR_NONE;

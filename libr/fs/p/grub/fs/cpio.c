@@ -222,6 +222,7 @@ grub_cpio_dir (grub_device_t device, const char *path,
   len = grub_strlen (path) - 1;
 
   data->hofs = 0;
+  if (hook)
   while (1)
     {
       if (grub_cpio_find_file (data, &name, &ofs))

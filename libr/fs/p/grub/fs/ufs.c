@@ -630,6 +630,7 @@ grub_ufs_dir (grub_device_t device, const char *path,
       goto fail;
     }
 
+  if (hook)
   while (pos < INODE_SIZE (data))
     {
       struct grub_ufs_dirent dirent;

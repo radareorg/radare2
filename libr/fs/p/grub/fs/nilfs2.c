@@ -825,6 +825,7 @@ grub_nilfs2_iterate_dir (grub_fshelp_node_t dir,
     }
 
   /* Iterate files.  */
+  if (hook)
   while (fpos < grub_le_to_cpu64 (diro->inode.i_size))
     {
       struct grub_nilfs2_dir_entry dirent;

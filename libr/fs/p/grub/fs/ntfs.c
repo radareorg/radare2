@@ -613,7 +613,8 @@ list_file (struct grub_ntfs_file *diro, char *pos,
   char *np;
   int ns;
 
-  while (1)
+  if (hook)
+  for (;;)
     {
       char *ustr, namespace;
 

@@ -6,7 +6,7 @@ namespace Radare {
 	[CCode (cheader_filename="r_fs.h", cname="struct r_fs_t", free_function="r_fs_free", cprefix="r_fs_")]
 	public class RFS {
 		public RFS();
-		public RFSRoot mount (string fstype, string path, uint64 delta);
+		public unowned RFSRoot? mount (string fstype, string path, uint64 delta);
 		public bool umount (string path);
 		public RFSRoot root (string path);
 		public RFSFile open (string path);

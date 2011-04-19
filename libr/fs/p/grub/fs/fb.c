@@ -118,6 +118,8 @@ grub_fbfs_dir (grub_device_t device, const char *path,
   data = grub_fbfs_mount (device->disk);
   if (! data)
     return grub_errno;
+  if (! hook)
+    return GRUB_ERR_NONE;
 
   while (*path == '/')
     path++;

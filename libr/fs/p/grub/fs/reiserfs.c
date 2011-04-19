@@ -735,6 +735,8 @@ grub_reiserfs_iterate_dir (grub_fshelp_node_t item,
   block_number = item->block_number;
   block_position = item->block_position;
   grub_dprintf ("reiserfs", "Iterating directory...\n");
+  if (!hook)
+    return GRUB_ERR_NONE;
   do
     {
       struct grub_reiserfs_directory_header *directory_headers;

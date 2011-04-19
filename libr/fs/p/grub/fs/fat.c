@@ -497,7 +497,8 @@ grub_fat_iterate_dir (grub_disk_t disk, struct grub_fat_data *data,
     }
 
   //while (1)
-for (offset = 0;;offset+= sizeof (dir)) {
+    if (hook)
+    for (offset = 0; ; offset += sizeof (dir)) {
       unsigned i;
 
       /* Adjust the offset.  */

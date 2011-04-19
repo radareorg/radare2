@@ -416,9 +416,11 @@ call_hook (grub_uint64_t ino, char *filename,
   fdiro->data = c->diro->data;
   grub_xfs_read_inode (fdiro->data, ino, &fdiro->inode);
 
-  return c->hook (filename,
+  if (c->hook)
+    return c->hook (filename,
 		  grub_xfs_mode_to_filetype (fdiro->inode.mode),
 		  fdiro, c->closure);
+  return NULL;
 }
 
 static int

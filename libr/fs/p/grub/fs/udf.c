@@ -840,9 +840,11 @@ grub_udf_dir (grub_device_t device, const char *path,
 			     grub_udf_iterate_dir, 0, 0, GRUB_FSHELP_DIR))
     goto fail;
 
-  c.hook = hook;
-  c.closure = closure;
-  grub_udf_iterate_dir (foundnode, iterate, &c);
+  if (hook) {
+    c.hook = hook;
+    c.closure = closure;
+    grub_udf_iterate_dir (foundnode, iterate, &c);
+  }
 
   if (foundnode != &rootnode)
     grub_free (foundnode);

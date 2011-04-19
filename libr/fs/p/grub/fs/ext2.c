@@ -652,6 +652,7 @@ grub_ext2_iterate_dir (grub_fshelp_node_t dir,
     }
 
   /* Search the file.  */
+  if (hook)
   while (fpos < grub_le_to_cpu32 (diro->inode.size))
     {
       struct ext2_dirent dirent;
@@ -828,7 +829,7 @@ iterate (const char *filename,
 
   info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
   grub_free (node);
-  return c->hook (filename, &info, c->closure);
+  return c->hook?c->hook (filename, &info, c->closure):NULL;
 }
 
 static grub_err_t

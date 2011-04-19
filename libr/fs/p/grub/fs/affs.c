@@ -486,7 +486,7 @@ iterate (const char *filename,
   grub_memset (&info, 0, sizeof (info));
   info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
   grub_free (node);
-  return c->hook (filename, &info, c->closure);
+  return c->hook?c->hook (filename, &info, c->closure):NULL;
 }
 
 static grub_err_t

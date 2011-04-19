@@ -756,6 +756,7 @@ grub_jfs_dir (grub_device_t device, const char *path,
     goto fail;
 
   /* Iterate over the dirents in the directory that was found.  */
+  if (hook)
   while (grub_jfs_getent (diro) != GRUB_ERR_OUT_OF_RANGE)
     {
       struct grub_jfs_inode inode;

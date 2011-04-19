@@ -654,9 +654,11 @@ grub_afs_dir (grub_device_t device, const char *path,
   if (grub_errno)
     goto fail;
 
-  c.hook = hook;
-  c.closure = closure;
-  grub_afs_iterate_dir (fdiro, iterate, &c);
+  if (hook) {
+    c.hook = hook;
+    c.closure = closure;
+    grub_afs_iterate_dir (fdiro, iterate, &c);
+  }
 
   if (fdiro != &data->diropen)
     grub_free (fdiro);
