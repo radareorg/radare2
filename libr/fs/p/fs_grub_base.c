@@ -23,7 +23,6 @@ static RFSFile* FSP(_open)(RFSRoot *root, const char *path) {
 static boolt FSP(_read)(RFSFile *file, ut64 addr, int len) {
 	GrubFS *gfs = file->ptr;
 	grubfs_bind_io (NULL, file->root->delta);
-eprintf ("DELTA IS = %llx\n", file->root->delta);
 	gfs->file->fs->read (gfs->file, (char*)file->data, len);
 	file->off = grub_hack_lastoff; //gfs->file->offset;
 	return R_FALSE;
@@ -61,11 +60,15 @@ static RList *FSP(_dir)(RFSRoot *root, const char *path) {
 	return list;
 }
 
+static void do_nothing() { }
+
 static int FSP(_mount)(RFSRoot *root) {
 	GrubFS *gfs = grubfs_new (&FSIPTR, &root->iob);
 	root->ptr = gfs;
 	grubfs_bind_io (&root->iob, root->delta);
-	return gfs->file->fs->dir (gfs->file->device, "/", NULL, 0)? R_FALSE:R_TRUE;
+	// XXX: null hook seems to be problematic on some filesystems
+	//return gfs->file->fs->dir (gfs->file->device, "/", NULL, 0)? R_FALSE:R_TRUE;
+	return gfs->file->fs->dir (gfs->file->device, "", do_nothing, 0)? R_FALSE:R_TRUE;
 }
 
 static void FSP(_umount)(RFSRoot *root) {

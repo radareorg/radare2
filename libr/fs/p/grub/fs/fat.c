@@ -497,7 +497,6 @@ grub_fat_iterate_dir (grub_disk_t disk, struct grub_fat_data *data,
     }
 
   //while (1)
-    if (hook)
     for (offset = 0; ; offset += sizeof (dir)) {
       unsigned i;
 
@@ -561,7 +560,7 @@ grub_fat_iterate_dir (grub_disk_t disk, struct grub_fat_data *data,
 	      *grub_utf16_to_utf8 ((grub_uint8_t *) filename, unibuf,
 				   slots * 13) = '\0';
 
-	      if (hook (filename, &dir, closure))
+	      if (hook && hook (filename, &dir, closure))
 		break;
 
 	      checksum = -1;
