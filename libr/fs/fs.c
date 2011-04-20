@@ -78,7 +78,7 @@ R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path, ut64 d
 		return NULL;
 	}
 	r_list_append (fs->roots, root);
-	eprintf ("Mounted %s on %s at 0x%llx\n", fstype, str, 0LL);
+	eprintf ("Mounted %s on %s at 0x%llx\n", fstype, str, delta);
 	free (str);
 	return root;
 }

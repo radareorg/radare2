@@ -8,6 +8,7 @@ static RFSFile* FSP(_open)(RFSRoot *root, const char *path) {
 	GrubFS *gfs = grubfs_new (&FSIPTR, &root->iob);
 	file->ptr = gfs;
 	file->p = root->p;
+	grubfs_bind_io (NULL, file->root->delta);
 	if (gfs->file->fs->open (gfs->file, path)) {
 		r_fs_file_free (file);
 		grubfs_free (gfs);
@@ -22,6 +23,7 @@ static RFSFile* FSP(_open)(RFSRoot *root, const char *path) {
 static boolt FSP(_read)(RFSFile *file, ut64 addr, int len) {
 	GrubFS *gfs = file->ptr;
 	grubfs_bind_io (NULL, file->root->delta);
+eprintf ("DELTA IS = %llx\n", file->root->delta);
 	gfs->file->fs->read (gfs->file, (char*)file->data, len);
 	file->off = grub_hack_lastoff; //gfs->file->offset;
 	return R_FALSE;
@@ -62,6 +64,7 @@ static RList *FSP(_dir)(RFSRoot *root, const char *path) {
 static int FSP(_mount)(RFSRoot *root) {
 	GrubFS *gfs = grubfs_new (&FSIPTR, &root->iob);
 	root->ptr = gfs;
+	grubfs_bind_io (&root->iob, root->delta);
 	return gfs->file->fs->dir (gfs->file->device, "/", NULL, 0)? R_FALSE:R_TRUE;
 }
 

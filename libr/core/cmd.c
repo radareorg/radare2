@@ -1108,8 +1108,9 @@ static int cmd_mount(void *data, const char *_input) {
 		list = r_fs_partitions (core->fs, input, off);
 		if (list) {
 			r_list_foreach (list, iter, part) {
-				r_cons_printf ("%d %02x 0x08%"PFMT64x" 0x08%"PFMT64x"\n", part->number,
-					part->type, part->start, part->start+part->length);
+				r_cons_printf ("%d %02x 0x%010"PFMT64x" 0x%010"PFMT64x"\n",
+					part->number, part->type,
+					part->start, part->start+part->length);
 			}
 			r_list_free (list);
 		} else eprintf ("Cannot read partition\n");
