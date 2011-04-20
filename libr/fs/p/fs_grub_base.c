@@ -68,7 +68,7 @@ static int FSP(_mount)(RFSRoot *root) {
 	grubfs_bind_io (&root->iob, root->delta);
 	// XXX: null hook seems to be problematic on some filesystems
 	//return gfs->file->fs->dir (gfs->file->device, "/", NULL, 0)? R_FALSE:R_TRUE;
-	return gfs->file->fs->dir (gfs->file->device, "", do_nothing, 0)? R_FALSE:R_TRUE;
+	return gfs->file->fs->dir (gfs->file->device, "/", do_nothing, 0)? R_FALSE:R_TRUE;
 }
 
 static void FSP(_umount)(RFSRoot *root) {

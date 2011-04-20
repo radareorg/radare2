@@ -188,7 +188,7 @@ R_API void r_file_mmap_free (RMmap *m);
 #define R_SYS_OS "netbsd"
 #elif __OpenBSD__
 #define R_SYS_OS "openbsd"
-#elif __FreeBSD__
+#elif __FreeBSD__ || __FreeBSD_kernel__
 #define R_SYS_OS "freebsd"
 #else
 #define R_SYS_OS "unknown"

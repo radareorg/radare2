@@ -42,6 +42,8 @@ IFEQ USEROSTYPE auto ; {
 	IFEQ HOST_OS gnu ; {
 		(( GNU / HURD ))
 		USEROSTYPE = gnulinux ;
+		HAVE_LIB_DL = 1 ;
+		DL_LIBS = -ldl ;
 	}{
 	IFEQ HOST_OS gnu/kfreebsd ; {
 		USEROSTYPE = gnulinux ;
@@ -62,8 +64,14 @@ IFEQ USEROSTYPE auto ; {
 
 ARG_WITHOUT WITHPIC pic do not build libr as a program independent location ;
 ARG_WITH WITHNONPIC nonpic build the library archives .a ;
+ARG_WITH LIBVERSION=? libversion specify different libversion ;
 
-REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_GMP HAVE_LIB_SSL HAVE_LIB_TCC DEBUGGER USERCC USEROSTYPE ;
+IFEQ LIBVERSION ? ; {
+	LIBVERSION = $VERSION ;
+}
+
+REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_GMP HAVE_LIB_SSL HAVE_LIB_TCC
+	DEBUGGER USERCC USEROSTYPE VERSION LIBVERSION ;
 
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))
 SUBDIRS ./config-user.mk libr/include/r_userconf.h

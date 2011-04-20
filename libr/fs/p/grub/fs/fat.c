@@ -730,7 +730,7 @@ grub_fat_dir (grub_device_t device, const char *path,
     goto fail;
   grub_memcpy (dirname, path, len);
   p = dirname + len;
-  if (path[len - 1] != '/')
+  if (len>0 && path[len - 1] != '/')
     *p++ = '/';
   *p = '\0';
   p = dirname;

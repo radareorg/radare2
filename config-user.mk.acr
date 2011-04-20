@@ -19,6 +19,8 @@ INSTALL_MAN=@INSTALL_MAN@
 INSTALL_LIB=@INSTALL_LIB@
 
 VERSION=@VERSION@
+LIBVERSION=@LIBVERSION@
+
 # ./configure --with-ostype=[linux,osx,solaris,windows] # TODO: rename to w32, w64?
 OSTYPE=@USEROSTYPE@
 HOST_OS=@HOST_OS@

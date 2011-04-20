@@ -46,7 +46,7 @@ install-symlink:
 	done
 	for a in ${LIBLIST} ; do \
 		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_SO} ${PFX}/lib/libr_$${a}.${EXT_SO} ; \
-		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_SO} ${PFX}/lib/libr_$${a}.${EXT_SO}.${VERSION} ; \
+		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_SO} ${PFX}/lib/libr_$${a}.${EXT_SO}.${LIBVERSION} ; \
 		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_AR} ${PFX}/lib/libr_$${a}.${EXT_AR} ; \
 		for b in $${a}/p/*.${EXT_SO} ; do \
 			if [ -e ${PWD}/$${b} ] ; then \
@@ -61,9 +61,9 @@ install: install-includes install-pkgconfig
 	@${INSTALL_DIR} ${PFX}/lib
 	@for a in `find * -type f | grep -e '\.${EXT_SO}$$' | grep -v lib/t | grep lib | grep -v /p/` ; do \
 	  b=`echo $$a|cut -d / -f 2`; \
-	  echo " ${PFX}/lib/$$b.${VERSION}"; \
-	  ${INSTALL_LIB} $$a ${PFX}/lib/$$b.${VERSION} ; \
-	  ( cd ${PFX}/lib ; ln -fs $$b.${VERSION} $$b.0 ; ln -fs $$b.0 $$b ); \
+	  echo " ${PFX}/lib/$$b.${LIBVERSION}"; \
+	  ${INSTALL_LIB} $$a ${PFX}/lib/$$b.${LIBVERSION} ; \
+	  ( cd ${PFX}/lib ; ln -fs $$b.${LIBVERSION} $$b.0 ; ln -fs $$b.0 $$b ); \
 	done
 	# object archives
 	@for a in `find * -type f | grep -e '\.a$$' | grep -v fs/p` ; do \
@@ -102,7 +102,7 @@ deinstall uninstall:
 	rm -rf ${PFX}/bin/libr-test
 	# TODO: use for a in LIBLIST (like in binr/Makefile)
 	rm -rf ${PFX}/include/libr
-	rm -rf ${PFX}/lib/libr_*.so.${VERSION}
+	rm -rf ${PFX}/lib/libr_*.so.${LIBVERSION}
 	rm -rf ${PFX}/lib/libr_*.so.0
 	rm -rf ${PFX}/lib/libr_*.so
 	rm -rf ${PFX}/lib/libr_*.a
