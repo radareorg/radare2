@@ -1,5 +1,5 @@
 PKGNAME radare2-swig
-VERSION 0.7
+VERSION 0.7.1
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!

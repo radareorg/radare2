@@ -13,10 +13,6 @@ To wipe:
  - linestyle?? for disassembly lines
  - remove libr/vm and libr/db
 
-To fix:
-=======
-* reading with io.va=true on out of foo results in shitty buffers
-
 To do:
 ======
 * libmagic internal :? -- find a decent implementation and adopt it
@@ -26,6 +22,8 @@ To do:
 * If [0-9] keybindings in visual point to same address use same reference
 * Honor string metadata for asmsteps ('jk' in visual)
 * Dupped javasm bin/asm
+* REFACTORING of disasm loop XDDDDD -1 (r2-0.8 plzz)
+  - arch dependent anal code must be removed from disasm loop +1
 
 pancake
 -------
@@ -138,15 +136,10 @@ earada
     This issue is fixed by setting LD_LIBRARY_PATH...looks like dlopen ignores rpath
 * p7 - print 7bit encoded strings (SMS)
   - variant for stego print? LSB, MSB, ...
-* r_asm
-  - Add support for CELL
 * r_bin
   - Take into account LOAD info for bin allocation
 * r_anal
-  - Analysis API must support 'delay slots' when emulating (MIPS)
   - split r_anal API functions (too much args) _new, _add...
-* REFACTORING of disasm loop XDDDDD -1 (r2-0.8 plzz)
-  - arch dependent anal code must be removed from disasm loop +1
 * gdiff  
   - graph based fingerprints? (cyclomatic complexity...)
 * rcore
@@ -258,7 +251,6 @@ Refactoring
 * r_config set_int and so..simplify
   - find/use more common cases for char* or &int maps
     - automatic callbacks for most common usecases
-* What do we have to do with r_th
 * Merge r_socket inside r_util ?
 * Discuss missing r_core_sysenv_update in core/file.c:33
 * Add RLog API.. pipeable to disk and stderr..also hookable ..cool for ui (partially done)

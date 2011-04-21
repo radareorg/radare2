@@ -25,6 +25,7 @@ namespace Radare {
 		public uint64 off;
 		public uint32 size;
 		public uint64 time;
+		public int type;
 		public void *ptr;
 	}
 
