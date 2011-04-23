@@ -21,10 +21,12 @@ LDFLAGS+=${PIC_CFLAGS}
 else
 # TODO: is there somebody brave enought to replace this perl oneliner?
 ifneq ($(DEPS),)
-LDFLAGS+=`echo "${DEPS} " | perl -ne 's,r_([^ ]*),../$$1/libr_$$1.a,g; print'`
+#LDFLAGS+=`echo "${DEPS} " | perl -ne 's,r_([^ ]*),../$$1/libr_$$1.a,g; print'`
+LDFLAGS+=`echo $DEPS | awk '{gsub(/r_([^ ]*)/,"../&/lib&.a");gsub(/\/r_/,"\/");print}'`
 endif
 ifneq ($(BINDEPS),)
-LDFLAGS+=`echo "${BINDEPS} " | if [ -d ../../libr ]; then perl -ne 's,r_([^ ]*),../../libr/$$1/libr_$$1.a,g; print' ; else perl -ne 's,r_([^ ]*),../../$$1/libr_$$1.a,g; print' ; fi `
+#LDFLAGS+=`echo "${BINDEPS} " | if [ -d ../../libr ]; then perl -ne 's,r_([^ ]*),../../libr/$$1/libr_$$1.a,g; print' ; else perl -ne 's,r_([^ ]*),../../$$1/libr_$$1.a,g; print' ; fi `
+LDFLAGS+=`echo "${BINDEPS} " | if [ -d ../../libr ]; then echo $BINDEPS | awk '{gsub(/r_([^ ]*)/,"../../libr/&/lib&.a");gsub(/\/r_/,"\/");print}' ; else awk '{gsub(/r_([^ ]*)/,"../../&/lib&.a");gsub(/\/r_/,"\/");print}'; fi`
 endif
 endif
 

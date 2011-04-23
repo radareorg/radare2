@@ -90,7 +90,9 @@ static struct r_lang_plugin_t r_lang_plugin_perl = {
 	.set_argv = (void *)setargv,
 };
 
+#ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_LANG,
 	.data = &r_lang_plugin_perl,
 };
+#endif
