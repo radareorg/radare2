@@ -57,7 +57,7 @@ R_API char *r_sys_cmd_strf(const char *fmt, ...) {
 }
 
 R_API void r_sys_backtrace(void) {
-#if __linux__
+#if __linux__ && __GNU_LIBRARY__
         void *array[10];
         size_t size;
         char **strings;
