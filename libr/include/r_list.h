@@ -57,6 +57,7 @@ R_API RListIter *r_list_item_new (void *data);
 R_API void r_list_unlink (RList *list, void *ptr);
 R_API void r_list_split (RList *list, void *ptr);
 R_API void r_list_split_iter (RList *list, RListIter *iter);
+R_API void r_list_join (RList *list1, RList *list2);
 R_API void *r_list_get_n (RList *list, int n);
 R_API int r_list_del_n (RList *list, int n);
 R_API void *r_list_get_top (RList *list);

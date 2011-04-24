@@ -24,8 +24,12 @@ namespace Radare {
 		public string path;
 		public uint64 off;
 		public uint32 size;
+		public uint8 *data;
+		public void *ctx;
+		public char type;
 		public uint64 time;
-		public int type;
+		public RFSPlugin p;
+		public RFSRoot root;
 		public void *ptr;
 	}
 

@@ -125,11 +125,16 @@ R_API RFSRoot *r_fs_root (RFS *fs, const char *p) {
 /* filez */
 R_API RFSFile *r_fs_open (RFS* fs, const char *p) {
 	RFSRoot *root;
+	const char *dir;
 	char *path = strdup (p);
 	//r_str_chop_path (path);
 	root = r_fs_root (fs, path);
 	if (root && root->p && root->p->open) {
-		RFSFile *f = root->p->open (root, path+strlen (root->path));
+		if (strlen (root->path) == 1)
+			dir = path;
+		else
+			dir = path + strlen (root->path);
+		RFSFile *f = root->p->open (root, dir);
 		free (path);
 		return f;
 	} else eprintf ("r_fs_open: null root->p->open\n");
@@ -162,11 +167,15 @@ R_API int r_fs_read (RFS* fs, RFSFile *file, ut64 addr, int len) {
 R_API RList *r_fs_dir(RFS* fs, const char *p) {
 	RList *ret = NULL;
 	RFSRoot *root;
+	const char *dir;
 	char *path = strdup (p);
 	r_str_chop_path (path);
 	root = r_fs_root (fs, path);
 	if (root) {
-		const char *dir = path + strlen (root->path);
+		if (strlen (root->path) == 1)
+			dir = path;
+		else
+			dir = path + strlen (root->path);
 		if (!*dir) dir = "/";
 		ret = root->p->dir (root, dir);
 	} else eprintf ("r_fs_dir: not mounted '%s'\n", path);

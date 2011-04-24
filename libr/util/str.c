@@ -25,10 +25,13 @@ R_API void r_str_chop_path (char *s) {
 							dst = p+1;
 							i = 0;
 							break;
-						} i++;
+						}
+						i = 1;
 					}
 					p--;
 				}
+				if (s == p && *p == '/')
+					dst = p+1;
 				src = src+2;
 			} else {
 				*dst = *src;

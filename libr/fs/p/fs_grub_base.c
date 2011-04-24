@@ -60,7 +60,7 @@ static RList *FSP(_dir)(RFSRoot *root, const char *path) {
 	return list;
 }
 
-static void do_nothing() { }
+static int do_nothing (const char *a, const struct grub_dirhook_info *b, void *c) { return 0; }
 
 static int FSP(_mount)(RFSRoot *root) {
 	GrubFS *gfs = grubfs_new (&FSIPTR, &root->iob);

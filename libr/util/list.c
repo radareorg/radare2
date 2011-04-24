@@ -50,6 +50,16 @@ R_API void r_list_split_iter (RList *list, RListIter *iter) {
 	if (iter->n) iter->n->p = iter->p;
 }
 
+//Warning: free functions must be compatible
+R_API void r_list_join (RList *list1, RList *list2) {
+	if (list1->tail == NULL) {
+		list1->tail = list2->head;
+	} else if (list2->head != NULL) {
+		list1->tail->n = list2->head;
+		list2->head->p = list1->tail;
+	}
+}
+
 R_API boolt r_list_delete_data (RList *list, void *ptr) {
 	void *p;
 	RListIter *iter;
