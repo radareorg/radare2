@@ -108,7 +108,7 @@ public class RCore {
 		public uint64 offset;
 		public uint64 size;
 		public int rwx;
-		public int fd;
+		public RIO.Desc fd;
 	}
 
 	[CCode (cname="RCoreAsmHit", free_function="", ref_function="", unref_function="")]

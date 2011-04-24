@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2010 pancake <@nopcode.org> */
+/* radare - LGPL - Copyright 2007-2011 pancake <@nopcode.org> */
 
 #include "rasc.h"
 #include "r_types.h"
@@ -40,8 +40,8 @@ static int show_helpline() {
 }
 
 static int show_help() {
-	show_helpline();
-	printf(
+	show_helpline ();
+	printf (
 	"  -l [port]    starts a syscall proxy server\n"
 	"  -A [n]       prefix shellcode with N A's (0x41)\n"
 	"  -N [n]       prefix shellcode with N nops (0x90)\n"
@@ -78,18 +78,18 @@ char *filetostr(char *file) {
         if (fd == NULL)
                 return NULL;
 
-        buf = (char *)malloc(size);
+        buf = (char *)malloc (size);
         buf[0]='\0';
-        for(i=0;!feof(fd);i++) {
+        for (i=0;!feof(fd);i++) {
                 if (i==size) {
                         size = size + BLOCK;
                         buf = realloc(buf, size);
                 }
-                fread(buf+i, 1, 1, fd);
+                fread (buf+i, 1, 1, fd);
         }
-        fclose(fd);
+        fclose (fd);
         if (buf[0]=='\0') {
-                free(buf);
+                free (buf);
                 return NULL;
         }
         return buf;
@@ -100,7 +100,7 @@ int otf_patch() {
 	/* on the fly patching */
 	if (scidx != -1) {
 		if (shellcodes[scidx].cmd) {
-			ptr = getenv("CMD");
+			ptr = getenv ("CMD");
 			if (ptr) {
 				strcpy((char*) (shellcode+shellcodes[scidx].cmd), ptr);
 				shellcode[shellcodes[scidx].cmd+strlen(ptr)]='\0';
@@ -109,7 +109,7 @@ int otf_patch() {
 			}
 		}
 		if (shellcodes[scidx].host) {
-			ptr = getenv("HOST");
+			ptr = getenv ("HOST");
 			if (ptr) {
 				int x,y,z,w;
 				sscanf(ptr,"%d.%d.%d.%d", &x,&y,&z,&w);
@@ -120,10 +120,10 @@ int otf_patch() {
 			}
 		}
 		if (shellcodes[scidx].port) {
-			ptr = getenv("PORT");
+			ptr = getenv ("PORT");
 			if (ptr) {
 				unsigned short port = atoi(ptr);
-				memcpy(shellcode+shellcodes[scidx].port,&port,2);
+				memcpy (shellcode+shellcodes[scidx].port,&port,2);
 			}
 		}
 	}
@@ -138,25 +138,24 @@ int otf_patch() {
 		output[off+2] = foo[2];
 		output[off+3] = foo[3];
 	}
-	
 	return 0;
 }
 
 int print_shellcode() {
-	int j=0,i=0;
+	int j=0, i=0;
 
 	if (!(SCSIZE)) {
-		printf("No shellcode defined\n");
+		printf ("No shellcode defined\n");
 		return 1;
 	}
 
 	if (SCSIZE>=BLOCK) {
-		printf("Dont overflow me\n");
+		printf ("Dont overflow me\n");
 		return 1;
 	}
 
 	/* prepare output buffer */
-	for(i=0;i<A;i++)
+	for (i=0;i<A;i++)
 		output[i] = 'A';
 	if (N%2) {
 		for(i=0;i<N;i++)
@@ -176,32 +175,32 @@ int print_shellcode() {
 		output[i*4+A+N+3] = (unsigned char)(j%256);
 	}
 	memcpy(output+A+N+E, shellcode, scsize);
-	for(i=0;i<C;i++)
+	for (i=0;i<C;i++)
 		output[i+A+E+N+scsize] = '\xCC';
 
 	/* patch addr and env */
-	otf_patch();
+	otf_patch ();
 
-	switch(hexa_print) {
+	switch (hexa_print) {
 	case 0: // raw
-		write(1, output, SCSIZE);
+		write (1, output, SCSIZE);
 		break;
 	case 1: // hexpairs
 		for(i=0;i<SCSIZE;i++)
 			printf("%02x", output[i]);
-		printf("\n");
+		printf ("\n");
 		break;
 	case 2: // C
-		printf("unsigned char shellcode[] = {  ");
+		printf ("unsigned char shellcode[] = {  ");
 		j = 0;
-		for(i=0;i<SCSIZE;i++) {
-			if (!(i%12)) printf("\n  ");
-			printf("0x%02x", output[i]);
+		for (i=0;i<SCSIZE;i++) {
+			if (!(i%12)) printf ("\n  ");
+			printf ("0x%02x", output[i]);
 			if (i+1!=SCSIZE+scsize)
-				printf(", ");
+				printf (", ");
 		}
-		printf("\n};\n");
-		fflush(stdout);
+		printf ("\n};\n");
+		fflush (stdout);
 		break;
 	case 3:
 		if (scsize == 0) {
@@ -232,8 +231,7 @@ int hex2int (unsigned char *val, unsigned char c) {
         return 1;
 }
 
-int hexpair2bin(const char *arg) // (0A) => 10 || -1 (on error)
-{
+int hexpair2bin(const char *arg) { // (0A) => 10 || -1 (on error)
 	unsigned char *ptr;
 	unsigned char c = '\0';
 	unsigned char d = '\0';
@@ -260,9 +258,9 @@ int hexpair2bin(const char *arg) // (0A) => 10 || -1 (on error)
 
 int load_shellcode_from_me(char *str) {
 	int i;
-	for(i=0;shellcodes[i].name;i++) {
-		if (!strcmp(shellcodes[i].name, str)) {
-			memcpy(shellcode, shellcodes[i].data, shellcodes[i].len);
+	for (i=0;shellcodes[i].name;i++) {
+		if (!strcmp (shellcodes[i].name, str)) {
+			memcpy (shellcode, shellcodes[i].data, shellcodes[i].len);
 			scsize = shellcodes[i].len;
 			scidx = i;
 //printf("Using %d bytes shellcode (%s) %02x %02x\n", shellcodes[i].len, shellcodes[i].desc,
@@ -273,34 +271,29 @@ int load_shellcode_from_me(char *str) {
 	return 0;
 }
 
+// XXX: return value is always 0??
 int load_shellcode_from_string(char *str) {
-	int i,j=1,ch,len;
-	char input2[1024];
-
-	// hexpairs to bin
-	strcpy(input2, str);
-	len = strlen(input2);
+	int i, j=1, ch, len;
+	char input2[BLOCK];
+	strncpy (input2, str, BLOCK-1);
+	len = strlen (input2);
 	input2[0] = '\0';
-	for(i=0;i<len;i+=j) {
+	for (i=0;i<len;i+=j) {
 		if (str[i]==' '||str[i]=='\t'||str[i]=='\n'||str[i]=='\r')
 			continue;
-		ch = hexpair2bin(str+i);
+		ch = hexpair2bin (str+i);
 		if (str[i+2]==' ')
 			j = 3;
 		else j = 2;
-
 		if (ch == -1)
 			break;
-
 		shellcode[scsize++]=ch;
 	}
 	shellcode[scsize] = '\0';
-	
 	return 0;
 }
 
-int file_type(char *str)
-{
+int file_type(char *str) {
 	if (!strcmp(str,"-"))
 		return 0; // stdin
 	if (!strcmp(str+strlen(str)-2,".s"))
@@ -308,15 +301,14 @@ int file_type(char *str)
 	return 2;
 }
 
-int load_shellcode_from_file(char *str)
-{
+int load_shellcode_from_file(char *str) {
 	char buf[1024];
 	char *ptr = NULL;
 
 	str[1024]='\0';
-	switch(file_type(str)) {
+	switch (file_type (str)) {
 	case 0: // stdin
-		printf("TODO\n");
+		fprintf (stderr, "TODO\n");
 		break;
 	case 1: // .s file (assembly
 		sprintf(buf, "gcc -nostdlib -o .x %s", str);
@@ -342,12 +334,12 @@ int main(int argc, char **argv) {
 	int c, listen = 0;
 
 	if (argc<2)
-		return show_helpline();
+		return show_helpline ();
 
-	while ((c = getopt(argc, argv, "a:VcC:ts:S:i:Ll:uhN:A:XxE:e")) != -1) {
+	while ((c = getopt (argc, argv, "a:VcC:ts:S:i:Ll:uhN:A:XxE:e")) != -1) {
 		switch( c ) {
 		case 't':
-			return test();
+			return test ();
 		case 'x':
 			// dump shellcode in hexa
 			hexa_print = 1;
@@ -357,10 +349,10 @@ int main(int argc, char **argv) {
 			hexa_print = 3;
 			break;
 		case 'C':
-			C = atoi(optarg);
+			C = atoi (optarg);
 			break;
 		case 'E':
-			E = atoi(optarg);
+			E = atoi (optarg);
 			break;
 			// dump shellcode in C
 		case 'e':
@@ -370,50 +362,50 @@ int main(int argc, char **argv) {
 			hexa_print = 2;
 			break;
 		case 'a':
-			sscanf(optarg, "%x@%x", (int*) &addr, (int*) &off);
+			sscanf (optarg, "%x@%x", (int*) &addr, (int*) &off);
 			if (!addr||!off)
-				sscanf(optarg, "0%x@%x", (int*) &addr, (int*) &off);
+				sscanf (optarg, "0%x@%x", (int*) &addr, (int*) &off);
 
 			if (!addr||!off) {
-				printf("Invalid argument for -a\n");
+				printf ("Invalid argument for -a\n");
 				return 1;
 			}
 			break;
 		case 'A':
-			A = atoi(optarg);
+			A = atoi (optarg);
 			break;
 		case 's':
-			load_shellcode_from_string(optarg);
+			load_shellcode_from_string (optarg);
 			break;
 		case 'S':
-			load_shellcode_from_file(optarg);
+			load_shellcode_from_file (optarg);
 			break;
 		case 'i':
-			if (!load_shellcode_from_me(optarg)) {
-				printf("Cannot find shellcode '%s'\n", optarg);
+			if (!load_shellcode_from_me (optarg)) {
+				printf ("Cannot find shellcode '%s'\n", optarg);
 				return 1;
 			}
 			break;
 		case 'N':
-			N = atoi(optarg);
+			N = atoi (optarg);
 			break;
 		case 'V':
-			printf("rasc2 "R2_VERSION"\n");
+			printf ("rasc2 "R2_VERSION"\n");
 			return 0;
 		case 'p':
 			// prefix the contents of this file
 			break;
 		case 'h':
-			return show_help();
+			return show_help ();
 		case 'l':
-			listen = atoi(optarg);
+			listen = atoi (optarg);
 			break;
 		case 'u':
-			printf("TODO: UDP support\n");
+			printf ("TODO: UDP support\n");
 			break;
 		case 'L':
-			for(c=0;shellcodes[c].name;c++) {
-				printf("%-20s  %3d   %s\n",
+			for (c=0;shellcodes[c].name;c++) {
+				printf ("%-20s  %3d   %s\n",
 					shellcodes[c].name,
 					shellcodes[c].len,
 					shellcodes[c].desc);
@@ -421,8 +413,6 @@ int main(int argc, char **argv) {
 			return 0;
 		}
 	}
-
-	print_shellcode();
-
+	print_shellcode ();
 	return 0;
 }

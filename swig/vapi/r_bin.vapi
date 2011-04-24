@@ -35,6 +35,7 @@ namespace Radare {
 		public RList<RBin.String> get_strings();
 		public RList<RBin.Symbol> get_symbols();
 		public RList<RBin.Reloc> get_relocs();
+		public RList<string> get_libs();
 		public RBin.Info get_info();
 		public int is_big_endian();
 		public int is_stripped();
