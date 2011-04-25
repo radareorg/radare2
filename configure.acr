@@ -64,9 +64,9 @@ IFEQ USEROSTYPE auto ; {
 
 ARG_WITHOUT WITHPIC pic do not build libr as a program independent location ;
 ARG_WITH WITHNONPIC nonpic build the library archives .a ;
-ARG_WITH LIBVERSION=? libversion specify different libversion ;
+ARG_WITH LIBVERSION=xxx libversion specify different libversion ;
 
-IFEQ LIBVERSION ? ; {
+IFEQ LIBVERSION xxx ; {
 	LIBVERSION = $VERSION ;
 }
 
