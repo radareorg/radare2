@@ -37,7 +37,6 @@ static struct r_bin_java_cp_item_t cp_null_item; // NOTE: must be initialized fo
 
 static unsigned short read_short(struct r_bin_java_obj_t *bin) {
 	unsigned short sh=0;
-
 	r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)&sh, 2);
 	return R_BIN_JAVA_SWAPUSHORT(sh);
 }
@@ -49,35 +48,37 @@ static struct r_bin_java_cp_item_t* get_cp(struct r_bin_java_obj_t *bin, int i) 
 }
 
 static int attributes_walk(struct r_bin_java_obj_t *bin, struct r_bin_java_attr_t *attr, int sz2, int fields) {
-	char buf[0xffff+1];
+	char buf[0xffff+1]; // that's kinda ugly :)
 	int sz3, sz4;
 	int j=0,k;
 	char *name;
 
-	for(j=0;j<sz2;j++) {
-		if (r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)buf, 6) != 6) {
+	for (j=0;j<sz2;j++) {
+		if (r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, 6) != 6) {
 			eprintf ("Cannot read 6 bytes in class file\n");
 			return R_FALSE;
 		}
 		attr->name_idx = R_BIN_JAVA_USHORT(buf,0);
-		attr->name = strdup((get_cp(bin, attr->name_idx-1))->value);
+		name = get_cp (bin, attr->name_idx-1)->value;
+		// XXX: if name is null.. wat?
+		attr->name = strdup (name?name:"");
 		name = (get_cp(bin, attr->name_idx-1))->value;//cp_items[R_BIN_JAVA_USHORT(buf,0)-1].value;
 		IFDBG printf("   %2d: Name Index: %d (%s)\n", j, attr->name_idx, name);
 		// TODO add comment with constant pool index
-		sz3 = R_BIN_JAVA_UINT(buf, 2);
+		sz3 = R_BIN_JAVA_UINT (buf, 2);
 		if (fields) {
 			attr->type = R_BIN_JAVA_TYPE_FIELD;
-			IFDBG printf("FIELD\n");
+			IFDBG printf ("FIELD\n");
 		} else if (sz3 > 0){
 			attr->length = sz3;
-			IFDBG printf("     Length: %d\n", sz3); //R_BIN_JAVA_UINT(buf, 2));
+			IFDBG printf ("     Length: %d\n", sz3); //R_BIN_JAVA_UINT(buf, 2));
 			if (!name) {
-				IFDBG printf("**ERROR ** Cannot identify attribute name into constant pool\n");
+				IFDBG printf ("**ERROR ** Cannot identify attribute name into constant pool\n");
 				continue;
 			}
 			if (!strcmp(name, "Code")) {
 				attr->type = R_BIN_JAVA_TYPE_CODE;
-				r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)buf, 8);
+				r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, 8);
 
 				attr->info.code.max_stack = R_BIN_JAVA_USHORT(buf, 0);
 				IFDBG printf("      Max Stack: %d\n", attr->info.code.max_stack);
@@ -92,7 +93,7 @@ static int attributes_walk(struct r_bin_java_obj_t *bin, struct r_bin_java_attr_
 				sz4 = read_short(bin);
 				attr->info.code.exception_table_length = sz4;
 				IFDBG printf("      Exception table length: %d\n", attr->info.code.exception_table_length);
-				for(k=0;k<sz4;k++) {
+				for (k=0;k<sz4;k++) {
 					r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)buf, 8);
 					attr->info.code.start_pc = R_BIN_JAVA_USHORT(buf,0);
 					IFDBG printf("       start_pc:   0x%04x\n", attr->info.code.start_pc);
@@ -106,9 +107,10 @@ static int attributes_walk(struct r_bin_java_obj_t *bin, struct r_bin_java_attr_
 				sz4 = (unsigned int)read_short(bin);
 				IFDBG printf("      code Attributes_count: %d\n", sz4);
 
-				if (sz4>0)
+				if (sz4>0) {
 					attr->attributes = malloc(sz4 * sizeof(struct r_bin_java_attr_t));
 					attributes_walk(bin, attr->attributes, sz4, fields);
+				}
 			} else
 			if (!strcmp(name, "LineNumberTable")) {
 				attr->type = R_BIN_JAVA_TYPE_LINENUM;
@@ -323,8 +325,10 @@ static int javasm_init(struct r_bin_java_obj_t *bin) {
 			IFDBG printf("    method Attributes Count: %d\n", sz2);
 			if (sz2 > 0) {
 				bin->methods[i].attributes = malloc(sz2 * sizeof(struct r_bin_java_attr_t));
-				for(j=0;j<sz2;j++)
-					attributes_walk(bin, &bin->methods[i].attributes[j], sz2, 0);
+				for(j=0;j<sz2;j++) {
+					if (!attributes_walk (bin, &bin->methods[i].attributes[j], sz2, 0))
+						return R_FALSE;
+				}
 			}
 		}
 	}
@@ -332,8 +336,7 @@ static int javasm_init(struct r_bin_java_obj_t *bin) {
 	return R_TRUE;
 }
 
-char* r_bin_java_get_version(struct r_bin_java_obj_t* bin)
-{
+char* r_bin_java_get_version(struct r_bin_java_obj_t* bin) {
 	return r_str_dup_printf("0x%02x%02x 0x%02x%02x",
 			bin->cf.major[1],bin->cf.major[0],
 			bin->cf.minor[1],bin->cf.minor[0]);
@@ -394,17 +397,12 @@ struct r_bin_java_str_t* r_bin_java_get_strings(struct r_bin_java_obj_t* bin) {
 }
 
 void* r_bin_java_free(struct r_bin_java_obj_t* bin) {
-	if (!bin)
-		return NULL;
-	if (bin->cp_items)
-		free(bin->cp_items);
-	if (bin->fields)
-		free(bin->fields);
-	if (bin->methods)
-		free(bin->methods);
-	if (bin->b)
-		r_buf_free(bin->b);
-	free(bin);
+	if (!bin) return NULL;
+	if (bin->cp_items) free (bin->cp_items);
+	if (bin->fields) free (bin->fields);
+	if (bin->methods) free (bin->methods);
+	if (bin->b) r_buf_free (bin->b);
+	free (bin);
 	return NULL;
 }
 
