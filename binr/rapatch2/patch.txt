@@ -1,0 +1,21 @@
+# This is an example file for rapatch
+
+#0x8048000  : mov eax, 33
+#0x8048005  # This is fucking awesome
+!echo ++ Patching binary
+. import.rdb
+
+0x8048000  "Hello World"
+0x8048200  223399
+entry0 {
+ 	printf@alias(${imp.printf});
+
+	main@global(128,128) {
+		printf("%d\n", 33);
+		printf("1234567890\n");
+		printf("hello world\n");
+		: mov eax,1
+		: int 0x80
+	}
+}
+#entry0+4 : nop;nop;nop
