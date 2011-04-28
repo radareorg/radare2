@@ -1,7 +1,17 @@
-all:
-	gcc rapatch.c `pkg-config --cflags --libs r_core`
+OBJ=rapatch.o
+BIN=rapatch2${EXT_EXE}
 
-a: all
+CFLAGS+=-I../../libr/include
+LDFLAGS+=-L../../libr/core -lr_core
+LDFLAGS+=-L../../libr/util -lr_util
+LDFLAGS+=-L../../libr/cons -lr_cons
+
+all: ${BIN}
+
+${BIN}: ${OBJ}
+	${CC} -o ${BIN} ${OBJ} ${CFLAGS} ${LDFLAGS}
+
+test: all
 	cp /bin/ls ls
 	./a.out ls patch.txt
 	./ls
