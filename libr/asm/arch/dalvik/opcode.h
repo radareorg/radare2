@@ -1,4 +1,4 @@
-/* radare - GPL3 - Copyright 2009-2010 */
+/* radare - LGPL - Copyright 2009-2010 */
 
 enum fmt_inst {
 	fmt00 = 0,					// None

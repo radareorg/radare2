@@ -262,6 +262,7 @@ extern RBinPlugin r_bin_plugin_pe64;
 extern RBinPlugin r_bin_plugin_mach0;
 extern RBinPlugin r_bin_plugin_mach064;
 extern RBinPlugin r_bin_plugin_java;
+extern RBinPlugin r_bin_plugin_dex;
 extern RBinPlugin r_bin_plugin_dummy;
 extern RBinXtrPlugin r_bin_xtr_plugin_fatmach0;
 extern RBinXtrPlugin r_bin_xtr_plugin_dyldcache;

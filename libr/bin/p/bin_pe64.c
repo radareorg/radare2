@@ -1,4 +1,4 @@
-/* radare - GPL3 - Copyright 2009-2010 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
 
 #define R_BIN_PE64 1
 #include "bin_pe.c"

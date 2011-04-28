@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2009-2011 */
+/* radare - LGPL - Copyright 2009-2011 */
 
 #include <stdio.h>
 #include <string.h>
