@@ -7,6 +7,7 @@
 #include <string.h>
 #include "fastcall.h"
 
+extern RSyscallItem syscalls_openbsd_x86[];
 extern RSyscallItem syscalls_linux_sh[];
 extern RSyscallItem syscalls_netbsd_x86[];
 extern RSyscallItem syscalls_linux_x86[];
@@ -81,8 +82,8 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
 			ctx->sysptr = syscalls_netbsd_x86;
 		else if (!strcmp (os, "freebsd"))
 			ctx->sysptr = syscalls_freebsd_x86;
-		//else if (!strcmp (os, "openbsd"))
-		//	ctx->sysptr = syscalls_openbsd_x86;
+		else if (!strcmp (os, "openbsd"))
+			ctx->sysptr = syscalls_openbsd_x86;
 		else if ((!strcmp (os, "darwin")) || (!strcmp (os, "macos")))
 			ctx->sysptr = syscalls_darwin_x86;
 		else if (!strcmp (os, "windows")) //win7
