@@ -141,7 +141,7 @@ R_API int r_flag_unset_i(RFlag *f, ut64 addr) {
 
 	r_list_foreach (f->flags, iter, item) {
 		if (item->offset == addr) {
-			r_list_unlink (f->flags, item);
+			r_list_delete (f->flags, iter);
 			return R_TRUE;
 		}
 	}
@@ -159,11 +159,11 @@ R_API int r_flag_unset(RFlag *f, const char *name) {
 	RListIter *iter;
 
 	if (name[0] == '*') {
-		r_list_foreach (f->flags, iter, item) {
-			r_list_unlink (f->flags, item);
-		}
+		r_list_destroy (f->flags);
 	} else {
 		item = r_flag_get (f, name);
+		// XXX: This is slow.. because get+unlink is traversing the linked list twice
+		// XXX: we must use a hashtable here
 		/* MARK: entrypoint to remove flags */
 		if (item) {
 #if USE_BTREE

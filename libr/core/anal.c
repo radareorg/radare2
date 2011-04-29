@@ -242,15 +242,21 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 	RAnalFcn *fcni;
-	RListIter *iter;
+	RListIter *iter, it;
 
 	if (addr == 0) {
 		r_list_destroy (core->anal->fcns);
 		if (!(core->anal->fcns = r_anal_fcn_list_new ()))
 			return R_FALSE;
-	} else r_list_foreach (core->anal->fcns, iter, fcni)
-			if (addr >= fcni->addr && addr < fcni->addr+fcni->size)
-				r_list_unlink (core->anal->fcns, fcni);
+	} else {
+		r_list_foreach (core->anal->fcns, iter, fcni) {
+			if (addr >= fcni->addr && addr < fcni->addr+fcni->size) {
+				it.n = iter->n;
+				r_list_delete (core->anal->fcns, iter);
+				iter = &it;
+			}
+		}
+	}
 	return R_TRUE;
 }
 

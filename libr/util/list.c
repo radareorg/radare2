@@ -60,6 +60,7 @@ R_API void r_list_join (RList *list1, RList *list2) {
 	}
 }
 
+// XXX r_list_delete_data == r_list_unlink !!!! this is conceptually wrong
 R_API boolt r_list_delete_data (RList *list, void *ptr) {
 	void *p;
 	RListIter *iter;
