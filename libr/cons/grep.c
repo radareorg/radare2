@@ -173,10 +173,25 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	return len;
 }
 
+static const char *gethtmlcolor(const char ptrch, const char *def) {
+	switch (ptrch) {
+	case '0': return "#000"; // BLACK
+	case '1': return "#f00"; // RED
+	case '2': return "#0f0"; // GREEN
+	case '3': return "#ff0"; // YELLOW
+	case '4': return "#00f"; // BLUE
+	case '5': return "#f0f"; // MAGENTA
+	case '6': return "#aaf"; // TURQOISE
+	case '7': return "#fff"; // WHITE
+	case '8': return "#777"; // GREY
+	case '9': break; // ???
+	}
+	return def;
+}
+
 // XXX: rename char *r_cons_filter_html(const char *ptr)
 R_API int r_cons_html_print(const char *ptr) {
 	const char *str = ptr;
-	int color = 0;
 	int esc = 0;
 	int len = 0;
 	int inv = 0;
@@ -208,106 +223,45 @@ R_API int r_cons_html_print(const char *ptr) {
 		} else 
 		if (esc == 2) {
 			if (ptr[0]=='2'&&ptr[1]=='J') {
-				ptr = ptr +1;
 				printf ("<hr />\n"); fflush(stdout);
+				ptr++;
 				esc = 0;
 				str = ptr;
 				continue;
 			} else
 			if (ptr[0]=='0'&&ptr[1]==';'&&ptr[2]=='0') {
-				ptr = ptr + 4;
 				r_cons_gotoxy (0,0);
+				ptr += 4;
 				esc = 0;
 				str = ptr;
 				continue;
 			} else
 			if (ptr[0]=='0'&&ptr[1]=='m') {
-				ptr = ptr + 1;
-				str = ptr + 1;
-				inv = 0;
-				esc = 0;
+				str = (++ptr) +1;
+				esc = inv = 0;
 				continue;
 				// reset color
 			} else
 			if (ptr[0]=='7'&&ptr[1]=='m') {
+				str = (++ptr) +1;
 				inv = 128;
-				ptr = ptr + 1;
-				str = ptr + 1;
 				esc = 0;
 				continue;
 				// reset color
 			} else
 			if (ptr[0]=='3' && ptr[2]=='m') {
-				color = 1;
-				switch(ptr[1]) {
-				case '0': // BLACK
-					printf ("<font color=black>"); fflush(stdout);
-					break;
-				case '1': // RED
-					printf ("<font color=red>"); fflush(stdout);
-					break;
-				case '2': // GREEN
-					printf ("<font color=green>"); fflush(stdout);
-					break;
-				case '3': // YELLOW
-					printf ("<font color=yellow>"); fflush(stdout);
-					break;
-				case '4': // BLUE
-					printf ("<font color=blue>"); fflush(stdout);
-					break;
-				case '5': // MAGENTA
-					printf ("<font color=magenta>"); fflush(stdout);
-					break;
-				case '6': // TURQOISE
-					printf ("<font color=#0ae>"); fflush(stdout);
-					break;
-				case '7': // WHITE
-					printf ("<font color=white>"); fflush(stdout);
-					break;
-				case '8': // GRAY
-					printf ("<font color=#777>"); fflush(stdout);
-					break;
-				case '9': // ???
-					break;
-				}
+				// TODO: honor inv here
+				printf ("<font color='%s'>", gethtmlcolor (ptr[1], "#000"));
+				fflush(stdout);
 				ptr = ptr + 1;
 				str = ptr + 2;
 				esc = 0;
 				continue;
 			} else
 			if (ptr[0]=='4' && ptr[2]=='m') {
-				/* background color */
-				switch (ptr[1]) {
-				case '0': // BLACK
-					printf ("<font style='background-color:#000'>"); fflush(stdout);
-					break;
-				case '1': // RED
-					printf ("<font style='background-color:#f00'>"); fflush(stdout);
-					break;
-				case '2': // GREEN
-					printf ("<font style='background-color:#0f0'>"); fflush(stdout);
-					break;
-				case '3': // YELLOW
-					printf ("<font style='background-color:#ff0'>"); fflush(stdout);
-					break;
-				case '4': // BLUE
-					printf ("<font style='background-color:#00f'>"); fflush(stdout);
-					break;
-				case '5': // MAGENTA
-					printf ("<font style='background-color:#f0f'>"); fflush(stdout);
-					break;
-				case '6': // TURQOISE
-					printf ("<font style='background-color:#aaf'>"); fflush(stdout);
-					break;
-				case '7': // WHITE
-					printf ("<font style='background-color:#fff'>"); fflush(stdout);
-					break;
-				case '8': // GRAY
-					printf ("<font style='background-color:#777'>"); fflush(stdout);
-					break;
-				case '9': // ???
-					break;
-				}
+				// TODO: USE INV HERE
+				printf ("<font style='background-color:%s'>", gethtmlcolor (ptr[1], "#fff"));
+				fflush(stdout);
 			}
 		} 
 		len++;

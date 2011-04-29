@@ -236,30 +236,26 @@ R_API void r_cons_visual_flush() {
 }
 
 R_API void r_cons_visual_write (char *buffer) {
+	const char *newline = "\n"Color_RESET;
 	int cols = I.columns;
 	int alen, lines = I.rows-1;
 	const char *endptr;
 	char *nl, *ptr = buffer;
+
 	while (lines && (nl = strchr (ptr, '\n'))) {
-		int clen, len = ((int)(size_t)(nl-ptr))+1;
+		int len = ((int)(size_t)(nl-ptr))+1;
 
 		*nl = 0;
 		alen = r_str_ansi_len (ptr);
-		clen = (int)(size_t)(endptr-ptr)-1;
 		*nl = '\n';
 
 		if (alen>cols) {
 			endptr = r_str_ansi_chrn (ptr, cols);
 			endptr++;
-			len = (endptr-ptr);//clen-1;
-			r_cons_write (ptr, len); //nl-ptr+1);
-			{
-			const char *newline = "\n"Color_RESET;
+			len = (endptr-ptr);
+			r_cons_write (ptr, len);
 			r_cons_write (newline, strlen (newline));
-			}
-		} else {
-			r_cons_write (ptr, len); //nl-ptr+1);
-		}
+		} else r_cons_write (ptr, len);
 		lines--;
 		ptr = nl+1;
 	}
