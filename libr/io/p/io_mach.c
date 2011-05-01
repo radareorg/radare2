@@ -62,8 +62,8 @@ static task_t pid_to_task(int pid) {
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	vm_size_t size = 0;
-        int err = vm_read_overwrite (RIOMACH_TASK (fd),
-		(unsigned int)io->off, len, (pointer_t)buf, &size);
+        int err = vm_read_overwrite (RIOMACH_TASK (fd->data),
+		(vm_offset_t)io->off, len, (pointer_t)buf, &size);
         if (err == -1) {
                 eprintf ("Cannot read\n");
                 return -1;
@@ -74,18 +74,56 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 static int mach_write_at(RIOMach *riom, const void *buff, int len, ut64 addr) {
         kern_return_t err;
 	task_t task = riom->task;
+
+/* get paVM_PROT_EXECUTEge perms */
+	int ret, _basic64[VM_REGION_BASIC_INFO_COUNT_64];
+	vm_region_basic_info_64_t basic64 = (vm_region_basic_info_64_t)_basic64;
+	mach_msg_type_number_t	infocnt;
+const int pagesize = 4096;
+vm_offset_t addrbase;
+	mach_port_t	objname;
+	vm_size_t size = pagesize;
+#if 0
+
+eprintf ("   0x%llx\n", addr);
+	infocnt = VM_REGION_BASIC_INFO_COUNT_64;
+addrbase = addr;
+size = len;
+	// intentionally use VM_REGION_BASIC_INFO and get up-converted
+	ret = vm_region_64 (task, &addrbase, &size, VM_REGION_BASIC_INFO_64,
+					 (vm_region_info_t)basic64, &infocnt, &objname);
+eprintf ("+ PERMS (%x) %llx\n", basic64->protection, addr);
+	if (ret == -1) {
+		eprintf ("Cant get vm region info\n");
+	}
+
+#endif
+/* get page perms */
+
         // XXX SHOULD RESTORE PERMS LATER!!!
-        //err = vm_protect (task, addr+(addr%4096), 4096, 0, VM_PROT_READ | VM_PROT_WRITE);
-        if (vm_protect (task, addr, len, 0, VM_PROT_READ | VM_PROT_WRITE) != KERN_SUCCESS)
-                eprintf ("cant change page perms to rw at 0x%"PFMT64x"\n", addr);
-        if (vm_write (task, (vm_address_t)(unsigned int)addr, // XXX not for 64 bits
-                	(pointer_t)buff, (mach_msg_type_number_t)len) != KERN_SUCCESS)
+        if (vm_protect (task, addr, len, 0, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE) != KERN_SUCCESS)
+		if (vm_protect (task, addr, len, 0, VM_PROT_READ | VM_PROT_WRITE) != KERN_SUCCESS)
+			if (vm_protect (task, addr, len, 0, VM_PROT_WRITE) != KERN_SUCCESS)
+				eprintf ("cant change page perms to rw at 0x%"PFMT64x" with len= %d\n", addr, len);
+        if (vm_write (task, (vm_address_t)addr,
+                	(vm_offset_t)buff, (mach_msg_type_number_t)len) != KERN_SUCCESS)
                 eprintf ("cant write on memory\n");
-        if (vm_protect (task, addr, len, 0, VM_PROT_READ | VM_PROT_EXECUTE) != KERN_SUCCESS) {
+
+#if 0
+eprintf ("addrbase: %x\n", addrbase);
+eprintf ("change prems to %x\n", basic64->protection);
+int prot = 0;
+if (basic64->protection & 1) prot |= VM_PROT_EXECUTE;
+if (basic64->protection & 2) prot |= VM_PROT_WRITE;
+if (basic64->protection & 4) prot |= VM_PROT_READ;
+printf ("%d vs %d\n", prot, basic64->protection);
+int prot = VM_PROT_READ | VM_PROT_EXECUTE;
+        if (vm_protect (task, addr, len, 0, prot) != KERN_SUCCESS) { //basic64->protection) != KERN_SUCCESS) {
         	eprintf ("Oops (0x%"PFMT64x") error (%s)\n", addr,
 			MACH_ERROR_STRING (err));
                 eprintf ("cant change page perms to rx\n");
 	}
+#endif
 	return len;
 }
 
@@ -180,7 +218,7 @@ static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static int __close(RIODesc *fd) {
-	int pid = RIOMACH_PID (fd);
+	int pid = RIOMACH_PID (fd->data);
 	R_FREE (fd->data);
 	return ptrace (PT_DETACH, pid, 0, 0);
 }

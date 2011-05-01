@@ -134,7 +134,7 @@ task_t pid_to_task(int pid) {
 		return old_task;
 
 	err = task_for_pid (mach_task_self(), (pid_t)pid, &task);
-	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID(task)) {
+	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
 		eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
 		eprintf ("Reason: 0x%x: %s\n", err, (char *)MACH_ERROR_STRING (err));
 		eprintf ("You probably need to add user to procmod group.\n"
@@ -272,16 +272,8 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	}
 	return 0;
 #elif __APPLE__
-        eprintf ("debug_contp: program is now running...\n");
- 
-	/* XXX */
-	/* only stopped with ptrace the first time */
-	//ptrace(PT_CONTINUE, pid, 0, 0);
-	ptrace (PT_DETACH, pid, 0, 0);
-	#if 0
-	task_resume (inferior_task); // ???
-	thread_resume (inferior_threads[0]);
-	#endif
+	ut64 rip = r_debug_reg_get (dbg, "pc");
+	ptrace (PT_CONTINUE, pid, rip, 0); // 0 = send no signal TODO !! implement somewhere else
         return 0;
 #elif __BSD__
 	ut64 pc = r_debug_reg_get (dbg, "pc");
@@ -508,17 +500,18 @@ static const char *r_debug_native_reg_profile() {
 	"gpr	rdi	.64	32	0\n"
 	"gpr	rsi	.64	40	0\n"
 	"gpr	rbp	.64	48	0\n"
-	"gpr	rsp	.64	56	0\n"
-	"gpr	r8	.64	64	0\n"
-	"gpr	r9	.64	72	0\n"
-	"gpr	r10	.64	80	0\n"
-	"gpr	r11	.64	88	0\n"
-	"gpr	r12	.64	96	0\n"
-	"gpr	r13	.64	104	0\n"
-	"gpr	r14	.64	112	0\n"
-	"gpr	r15	.64	120	0\n"
-	"gpr	rip	.64	128	0\n"
-	"gpr	rflags	.64	136	0	c1p.a.zstido.n.rv\n"
+// gap?
+	"gpr	rsp	.64	64	0\n"
+	"gpr	r8	.64	72	0\n"
+	"gpr	r9	.64	80	0\n"
+	"gpr	r10	.64	88	0\n"
+	"gpr	r11	.64	96	0\n"
+	"gpr	r12	.64	104	0\n"
+	"gpr	r13	.64	112	0\n"
+	"gpr	r14	.64	120	0\n"
+	"gpr	r15	.64	128	0\n"
+	"gpr	rip	.64	136	0\n"
+	"gpr	rflags	.64	144	0	c1p.a.zstido.n.rv\n"
 	"seg	cs	.64	144	0\n"
 	"seg	fs	.64	152	0\n"
 	"seg	gs	.64	160	0\n"
@@ -733,6 +726,12 @@ static RDebugPid *darwin_get_pid(int pid) {
 #undef MAXPID
 #define MAXPID 69999
 
+static RList *r_debug_native_tids(int pid) {
+	printf ("TODO: Threads: \n");
+	// T
+	return NULL;
+}
+
 static RList *r_debug_native_pids(int pid) {
 	RList *list = r_list_new ();
 #if __WINDOWS__
@@ -906,7 +905,7 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	CONTEXT ctx __attribute__ ((aligned (16)));
 	ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
 	if (!GetThreadContext (tid2handler (dbg->pid, dbg->tid), &ctx)) {
-		eprintf ("GetThreadContext: %x\n", (int)GetLastError());
+		eprintf ("GetThreadContext: %x\n", (int)GetLastError ());
 		return R_FALSE;
 	}
 	if (sizeof (CONTEXT) < size)
@@ -940,7 +939,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 	R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
         unsigned int gp_count = R_DEBUG_STATE_SZ; //sizeof (R_DEBUG_REG_T);
 
-	if (size<sizeof(R_DEBUG_REG_T)) {
+	if (size<sizeof (R_DEBUG_REG_T)) {
 		eprintf ("Small buffer passed to r_debug_read\n");
 		return R_FALSE;
 	}
@@ -950,10 +949,13 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
                 return R_FALSE;
         }
 
+int tid = dbg->tid;
+if (tid == dbg->pid)
+	tid = 0;
         if (inferior_thread_count>0) {
                 /* TODO: allow to choose the thread */
 		gp_count = R_DEBUG_STATE_SZ;
-                if (thread_get_state (inferior_threads[0], R_DEBUG_STATE_T,
+                if (thread_get_state (inferior_threads[tid], R_DEBUG_STATE_T,
 				(thread_state_t) regs, &gp_count) != KERN_SUCCESS) {
                         eprintf ("debug_getregs: Failed to get thread %d %d.error (%x). (%s)\n",
 				(int)pid, pid_to_task (pid), (int)ret, MACH_ERROR_STRING (ret));
@@ -963,7 +965,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
         } else eprintf ("There are no threads!\n");
         return sizeof (R_DEBUG_REG_T);
 #elif __linux__ || __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
-	int ret; 
+	int ret;
 	switch (type) {
 	case R_REG_TYPE_DRX:
 #ifdef __FreeBSD__
@@ -1541,6 +1543,7 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 	.attach = &r_debug_native_attach,
 	.detach = &r_debug_native_detach,
 	.pids = &r_debug_native_pids,
+	.tids = &r_debug_native_tids,
 	.threads = &r_debug_native_threads,
 	.wait = &r_debug_native_wait,
 	.kill = &r_debug_native_kill,

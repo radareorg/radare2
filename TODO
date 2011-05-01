@@ -5,6 +5,7 @@
 
 
 * Make r_io happy with RList
+* We need a 64 bit x86 assembler working!! nasm fails
 
 To wipe:
 ========

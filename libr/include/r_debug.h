@@ -150,6 +150,7 @@ typedef struct r_debug_plugin_t {
 	int (*select)(int pid, int tid);
 	RList *(*threads)(int pid);
 	RList *(*pids)(int pid);
+	RList *(*tids)(int pid);
 	RFList (*backtrace)(int count);
 	/* flow */
 	int (*step)(RDebug *dbg);
