@@ -286,17 +286,13 @@ R_API void r_file_mmap_free (RMmap *m) {
 
 R_API int r_file_mkstemp (const char *prefix, char **oname) {
 	int h;
-	const char *path;
+	const char *path = r_file_tmpdir ();
 	char *name = malloc (1024);
 #if __WINDOWS__
-	path = r_sys_getenv ("TEMP");
 	if (GetTempFileName (path, prefix, 0, name))
 		h = open (name, O_RDWR|O_EXCL);
 	else h = -1;
 #else
-	path = r_sys_getenv ("TMPDIR");
-	if (path==NULL)
-		path = "/tmp";
 	h = snprintf (name, 1024, "%s/%sXXXXXX", path, prefix);
 	if (h<1024)
 		h = mkstemp (name);
@@ -306,4 +302,16 @@ R_API int r_file_mkstemp (const char *prefix, char **oname) {
 	else free (name);
 
 	return h;
+}
+
+R_API const char *r_file_tmpdir() {
+	const char *path;
+#if __WINDOWS__
+	path = r_sys_getenv ("TEMP");
+	if (!path) path = "C:\\WINDOWS\\Temp\\";
+#else
+	path = r_sys_getenv ("TMPDIR");
+	if (!path) path = "/tmp";
+#endif
+	return path;
 }

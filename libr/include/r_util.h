@@ -346,6 +346,7 @@ R_API boolt r_file_rm(const char *file);
 R_API boolt r_file_exist(const char *str);
 R_API char *r_file_slurp_line(const char *file, int line, int context);
 R_API int r_file_mkstemp(const char *prefix, char **oname);
+R_API const char *r_file_tmpdir();
 
 R_API ut64 r_sys_now();
 R_API RList *r_sys_dir(const char *path);
