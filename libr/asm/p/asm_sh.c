@@ -1,4 +1,4 @@
-/* radare - GPL3 - Copyright 2010-2011 eloi<limited-entropy.com> */
+/* radare - LGPL - Copyright 2010-2011 eloi<limited-entropy.com> */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -42,7 +42,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	if (buf_global == NULL)
 		return 0;
 	va_start (ap, format);
- 	tmp = alloca (strlen (format)+strlen (buf_global)+2);
+	tmp = alloca (strlen (format)+strlen (buf_global)+2);
 	sprintf (tmp, "%s%s", buf_global, format);
 	vsprintf (buf_global, tmp, ap);
 	va_end (ap);

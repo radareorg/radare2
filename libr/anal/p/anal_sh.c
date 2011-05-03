@@ -1,4 +1,4 @@
-/* radare - GPL3 - Copyright 2010-2011 eloi<limited-entropy.com> */
+/* radare - LGPL - Copyright 2010-2011 eloi<limited-entropy.com> */
 
 #include <string.h>
 #include <r_types.h>

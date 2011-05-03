@@ -174,12 +174,12 @@ int print_shellcode() {
 		output[i*4+A+N+2] = (unsigned char)(j%256);
 		output[i*4+A+N+3] = (unsigned char)(j%256);
 	}
+	/* patch addr and env */
+	otf_patch ();
+
 	memcpy(output+A+N+E, shellcode, scsize);
 	for (i=0;i<C;i++)
 		output[i+A+E+N+scsize] = '\xCC';
-
-	/* patch addr and env */
-	otf_patch ();
 
 	switch (hexa_print) {
 	case 0: // raw
@@ -207,7 +207,7 @@ int print_shellcode() {
 			printf("No shellcode defined\n");
 			return 1;
 		} else {
-			void (*cb)() = (void *)&shellcode; cb(); 
+			void (*cb)() = (void *)&shellcode; cb();
 		}
 		break;
 	case 4:
@@ -223,7 +223,7 @@ int print_shellcode() {
 	return 0;
 }
 
-int hex2int (unsigned char *val, unsigned char c) {       
+int hex2int (unsigned char *val, unsigned char c) {
         if ('0' <= c && c <= '9')      *val = (unsigned char)(*val) * 16 + ( c - '0');
         else if (c >= 'A' && c <= 'F') *val = (unsigned char)(*val) * 16 + ( c - 'A' + 10);
         else if (c >= 'a' && c <= 'f') *val = (unsigned char)(*val) * 16 + ( c - 'a' + 10);
@@ -326,7 +326,7 @@ int load_shellcode_from_file(char *str) {
 		printf("File format not supported\n");
 		exit(1);
 	}
-	
+
 	return 0;
 }
 
