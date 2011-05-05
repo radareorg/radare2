@@ -10,8 +10,8 @@ int main (int argc, char ** argv) {
 		eprintf ("Use %s <cert>\n", argv[0]);
 		return 1;
 	}
-	s = r_socket_listen (PORT, 1, argv[1]);
-	if (s == NULL) {
+	s = r_socket_new (R_TRUE);
+	if (!r_socket_listen (s, PORT, argv[1])) {
 		eprintf ("Error, cant listen at port: %s\n", PORT);
 		return 1;
 	}

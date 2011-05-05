@@ -33,12 +33,14 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	*port = '\0';
-	_fd = r_socket_new (host, port+1, R_FALSE);
+	_fd = r_socket_new (R_FALSE);
 	if (_fd) {
-		riog = R_NEW (RIOGdb);
-		riog->fd = _fd;
-		riog->desc = gdbwrap_init (_fd->fd,NUM_REGS,4);
-		return r_io_desc_new (&r_io_plugin_gdb, _fd->fd, file, rw, mode, riog);
+		if (r_socket_connect_tcp (_fd, host, port+1)) {
+			riog = R_NEW (RIOGdb);
+			riog->fd = _fd;
+			riog->desc = gdbwrap_init (_fd->fd,NUM_REGS,4);
+			return r_io_desc_new (&r_io_plugin_gdb, _fd->fd, file, rw, mode, riog);
+		}
 	}
 	eprintf ("gdb.io.open: Cannot connect to host.\n");
 	return NULL;

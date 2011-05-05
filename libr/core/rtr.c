@@ -107,11 +107,15 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	file = file+1;
 	port = ptr;
 
+	fd = r_socket_new (R_FALSE);
+	if (!fd) {
+		eprintf("Error: Cannot create new socket\n");
+		return;
+	}
 	switch (proto) {
 	case RTR_PROT_RAP:
-		fd = r_socket_new (host, port, R_FALSE); //TODO: Use rap.ssl
-		if (fd == NULL) {
-			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
+		if (!r_socket_connect_tcp (fd, host, port)) { //TODO: Use rap.ssl
+			eprintf("Error: Cannot connect to '%s' (%s)\n", host, port);
 			return;
 		}
 		eprintf ("Connected to: %s at port %s\n", host, port);
@@ -132,16 +136,14 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		eprintf ("ok\n");
 		break;
 	case RTR_PROT_TCP:
-		fd = r_socket_new (host, port, R_FALSE); //TODO: Use rap.ssl
-		if (fd == NULL) {
-			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
+		if (!r_socket_connect_tcp (fd, host, port)) { //TODO: Use rap.ssl
+			eprintf("Error: Cannot connect to '%s' (%s)\n", host, port);
 			return;
 		}
 		eprintf ("Connected to: %s at port %s\n", host, port);
 		break;
 	case RTR_PROT_UDP:
-		fd = r_socket_udp_connect (host, port, R_FALSE); //TODO: Use rap.ssl
-		if (fd == NULL) {
+		if (!r_socket_connect_udp(fd, host, port)) { //TODO: Use rap.ssl
 			eprintf("Error: Cannot connect to '%s' (%s)\n", host, port);
 			return;
 		}

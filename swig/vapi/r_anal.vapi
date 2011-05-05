@@ -149,12 +149,12 @@ public class RAnal {
 		UNK,
 		NOP,
 		MOV,
-		TRAP, 
-		SWI,  
+		TRAP,
+		SWI,
 		UPUSH,
-		PUSH, 
-		POP,  
-		CMP,  
+		PUSH,
+		POP,
+		CMP,
 		ADD,
 		SUB,
 		MUL,
@@ -166,7 +166,7 @@ public class RAnal {
 		XOR,
 		NOT,
 		STORE,
-		LOAD, 
+		LOAD,
 		//LAST
 	}
 
@@ -182,9 +182,13 @@ public class RAnal {
 		public RList<RAnal.Op> ops;
 	}
 
+	public void bb (Block bb, uint64 addr, uint8 *buf, uint64 len, bool head);
+	public Block* bb_from_offset (uint64 addr);
+
 	[Compact]
 	[CCode (cprefix="r_anal_op_", cname="RAnalOp")]
 	public class Op {
+		public string mnemonic;
 		public uint64 addr;
 		public int type;
 		public int stackop;
@@ -268,7 +272,7 @@ public class RAnal {
 			public int type;
 			public string str;
 		}
-		
+
 		public RList<RMeta.Item> data;
 
 		[CCode (cname="int", cprefix="R_META_WHERE_")]
@@ -287,7 +291,7 @@ public class RAnal {
 			COMMENT
 		}
 
-		//public int count (RMeta.Type type, uint64 from, uint64 to, 
+		//public int count (RMeta.Type type, uint64 from, uint64 to,
 		//public string get_string(RMeta.Type, uint64 addr);
 		public bool @add(RMeta.Type type, uint64 from, uint64 size, string str);
 		public bool del(RMeta.Type type, uint64 from, uint64 size, string str);

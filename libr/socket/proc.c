@@ -49,7 +49,7 @@ R_API struct r_socket_proc_t *r_socket_proc_open(char *const argv[]) {
 		r_socket_proc_close (sp);
 		free (sp);
 		break;
-		//r_socket_block(sp, R_FALSE);
+		//r_socket_block_time (sp, R_FALSE, 0);
 	}
 	return sp;
 #else

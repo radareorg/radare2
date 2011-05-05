@@ -24,13 +24,9 @@
 
 #define BUFFER_SIZE 4096
 
-R_API RSocket *r_socket_new (const char *host, const char *port, int is_ssl) {
+R_API RSocket *r_socket_new (int is_ssl) {
 	RSocket *s = R_NEW (RSocket);
 	s->is_ssl = is_ssl;
-	if ((s->fd = r_socket_connect (host, port)) < 0) {
-		free (s);
-		return NULL;
-	}
 #if HAVE_LIB_SSL
 	if (is_ssl) {
 		s->sfd = NULL;
@@ -41,35 +37,100 @@ R_API RSocket *r_socket_new (const char *host, const char *port, int is_ssl) {
 			return NULL;
 		}
 		SSL_load_error_strings ();
-		s->ctx = SSL_CTX_new (SSLv23_client_method ());
-		if (s->ctx == NULL) {
-			r_socket_free (s);
-			return NULL;
-		}
-		s->sfd = SSL_new (s->ctx);
-		SSL_set_fd (s->sfd, s->fd);
-		if (SSL_connect (s->sfd) != 1) {
-			r_socket_free (s);
-			return NULL;
-		}
 	}
 #endif
 	return s;
 }
 
-R_API void r_socket_free (RSocket *s) {
-	r_socket_close (s);
+R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int proto) {
+	struct addrinfo hints, *res, *rp;
+	int gai;
+#if __WINDOWS__
+	WSADATA wsadata;
+	if (WSAStartup (MAKEWORD(1,1), &wsadata) == SOCKET_ERROR) {
+		eprintf ("Error creating socket.");
+		return R_FALSE;
+	}
+#elif __UNIX__
+	signal (SIGPIPE, SIG_IGN);
+#endif
+
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;		/* Allow IPv4 or IPv6 */
+	hints.ai_protocol = proto;
+	gai = getaddrinfo (host, port, &hints, &res);
+	if (gai != 0) {
+		eprintf ("Error in getaddrinfo: %s\n", gai_strerror (gai));
+		return R_FALSE;
+	}
+	for (rp = res; rp != NULL; rp = rp->ai_next) {
+		s->fd = socket (rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+		if (s->fd == -1)
+			continue;
+		if (connect (s->fd, rp->ai_addr, rp->ai_addrlen) != -1)
+			break;
+		close (s->fd);
+	}
+	if (rp == NULL) {
+		eprintf ("Could not connect\n");
+		return R_FALSE;
+	}
+	freeaddrinfo (res);
+#if HAVE_LIB_SSL
+	if (s->is_ssl) {
+		s->ctx = SSL_CTX_new (SSLv23_client_method ());
+		if (s->ctx == NULL) {
+			r_socket_free (s);
+			return R_FALSE;
+		}
+		s->sfd = SSL_new (s->ctx);
+		SSL_set_fd (s->sfd, s->fd);
+		if (SSL_connect (s->sfd) != 1) {
+			r_socket_free (s);
+			return R_FALSE;
+		}
+	}
+#endif
+	return R_TRUE;
+}
+
+R_API int r_socket_close (RSocket *s) {
+	int ret;
+#if __WINDOWS__
+	WSACleanup ();
+	ret = closesocket (s->fd);
+#else
+	shutdown (s->fd, SHUT_RDWR);
+	ret = close (s->fd);
+#endif
+#if HAVE_LIB_SSL
+	if (s->is_ssl && s->sfd)
+		SSL_shutdown (s->sfd);
+#endif
+	return ret;
+}
+
+R_API int r_socket_free (RSocket *s) {
+	int res = r_socket_close (s);
+#if HAVE_LIB_SSL
+	if (s->is_ssl) {
+		if (s->sfd)
+			SSL_free (s->sfd);
+		if (s->ctx)
+			SSL_CTX_free (s->ctx);
+	}
+#endif
 	free (s);
+	return res;
 }
 
 #if __UNIX__
-R_API RSocket *r_socket_unix_connect(const char *file) {
-	RSocket *s = R_NEW (RSocket);
+R_API int r_socket_unix_connect(RSocket *s, const char *file) {
 	struct sockaddr_un addr;
 	int sock = socket (PF_UNIX, SOCK_STREAM, 0);
 	if (sock < 0) {
 		free (s);
-		return NULL;
+		return R_FALSE;
 	}
 	// TODO: set socket options
 	addr.sun_family = AF_UNIX;
@@ -78,11 +139,11 @@ R_API RSocket *r_socket_unix_connect(const char *file) {
 	if (connect (sock, (struct sockaddr *)&addr, sizeof(addr))==-1) {
 		close (sock);
 		free (s);
-		return NULL;
+		return R_FALSE;
 	}
-	s->fd =sock;
+	s->fd = sock;
 	s->is_ssl = R_FALSE;
-	return s;
+	return R_TRUE;
 }
 
 R_API int r_socket_unix_listen(const char *file) {
@@ -116,100 +177,50 @@ R_API int r_socket_unix_listen(const char *file) {
 }
 #endif
 
-R_API int r_socket_connect(const char *host, const char *port) {
-	struct addrinfo hints, *res, *rp;
-	int s, gai;
-#if __WINDOWS__
-	WSADATA wsadata;
-	if (WSAStartup (MAKEWORD(1,1), &wsadata) == SOCKET_ERROR) {
-		eprintf ("Error creating socket.");
-		return -1;
-	}
-#elif __UNIX__
-	signal (SIGPIPE, SIG_IGN);
-#endif
-
-	memset(&hints, 0, sizeof(struct addrinfo));
-	hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
-	hints.ai_protocol = IPPROTO_TCP;          /* Any protocol */
-	gai = getaddrinfo (host, port, &hints, &res);
-	if (gai != 0) {
-		eprintf ("Error in getaddrinfo: %s\n", gai_strerror (gai));
-		return -1;
-	}
-	for (rp = res; rp != NULL; rp = rp->ai_next) {
-		s = socket (rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-		if (s == -1)
-			continue;
-		if (connect (s, rp->ai_addr, rp->ai_addrlen) != -1)
-			break;
-		close (s);
-	}
-	if (rp == NULL) {
-		eprintf ("Could not connect\n");
-		return -1;
-	}
-	freeaddrinfo (res);
-	return s;
-}
-
-R_API RSocket *r_socket_listen(const char *port, int is_ssl, const char *certfile) {
-	RSocket *s;
-	int fd;
+R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 	struct sockaddr_in sa;
 	struct linger linger = { 0 };
 
-	if ((fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP))<0)
-		return NULL;
+	if ((s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP))<0)
+		return R_FALSE;
 	linger.l_onoff = 1;
 	linger.l_linger = 1;
-	setsockopt (fd, SOL_SOCKET, SO_LINGER, (const char *) &linger, sizeof (linger));
+	setsockopt (s->fd, SOL_SOCKET, SO_LINGER, (const char *)&linger, sizeof (linger));
 	memset (&sa, 0, sizeof(sa));
 	sa.sin_family = AF_INET;
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
 	sa.sin_port = htons (atoi (port));
 
-	if (bind (fd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
-		close (fd);
-		return NULL;
+	if (bind (s->fd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
+		close (s->fd);
+		return R_FALSE;
 	}
 #if __UNIX_
 	signal (SIGPIPE, SIG_IGN);
 #endif
-	if (listen (fd, 1) < 0) {
-		close (fd);
-		return NULL;
+	if (listen (s->fd, 1) < 0) {
+		close (s->fd);
+		return R_FALSE;
 	}
-	s = R_NEW (RSocket);
-	s->fd = fd;
-	s->is_ssl = is_ssl;
 #if HAVE_LIB_SSL
-	if (is_ssl) {
-		s->sfd = NULL;
-		s->ctx = NULL;
-		s->bio = NULL;
-		if (!SSL_library_init ()) {
-			r_socket_free (s);
-			return NULL;
-		}
-		SSL_load_error_strings ();
+	if (s->is_ssl) {
 		s->ctx = SSL_CTX_new (SSLv23_method ());
 		if (s->ctx == NULL) {
 			r_socket_free (s);
-			return NULL;
+			return R_FALSE;
 		}
 		if (!SSL_CTX_use_certificate_chain_file (s->ctx, certfile)) {
 			r_socket_free (s);
-			return NULL;
+			return R_FALSE;
 		}
 		if (!SSL_CTX_use_PrivateKey_file (s->ctx, certfile, SSL_FILETYPE_PEM)) {
 			r_socket_free (s);
-			return NULL;
+			return R_FALSE;
 		}
 		SSL_CTX_set_verify_depth (s->ctx, 1);
 	}
 #endif
-	return s;
+	return R_TRUE;
 }
 
 R_API RSocket *r_socket_accept(RSocket *s) {
@@ -241,12 +252,20 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 	return sock;
 }
 
-R_API void r_socket_block(RSocket *s, int block) {
+R_API int r_socket_block_time (RSocket *s, int block, int sec) {
+	struct timeval sv;
 #if __UNIX__
 	fcntl (s->fd, F_SETFL, O_NONBLOCK, !block);
 #elif __WINDOWS__
 	ioctlsocket (s->fd, FIONBIO, (u_long FAR*)&block);
 #endif
+	if (sec > 0) {
+		sv.tv_sec = sec;
+		sv.tv_usec = 0;
+		if (setsockopt (s->fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&sv, sizeof (sv)) < 0)
+			return R_FALSE;
+	}
+	return R_TRUE;
 }
 
 R_API int r_socket_flush(RSocket *s) {
@@ -255,28 +274,6 @@ R_API int r_socket_flush(RSocket *s) {
 		return BIO_flush(s->bio);
 #endif
 	return R_TRUE;
-}
-
-R_API int r_socket_close(RSocket *s) {
-	int ret;
-#if __WINDOWS__
-	WSACleanup ();
-	ret = closesocket (s->fd);
-#else
-	shutdown (s->fd, SHUT_RDWR);
-	ret = close (s->fd);
-#endif
-#if HAVE_LIB_SSL
-	if (s->is_ssl) {
-		if (s->sfd) {
-			SSL_shutdown (s->sfd);
-			SSL_free (s->sfd);
-		}
-		if (s->ctx)
-			SSL_CTX_free (s->ctx);
-	}
-#endif
-	return ret;
 }
 
 // XXX: rewrite it to use select //
@@ -330,72 +327,6 @@ R_API char *r_socket_to_string(RSocket *s) {
 #else
 	return NULL;
 #endif
-}
-
-//XXX: Merge with r_new
-R_API RSocket *r_socket_udp_connect(const char *host, const char *port, int is_ssl) {
-	struct addrinfo hints, *res, *rp;
-	int s, gai;
-	RSocket *sock;
-
-#if __WINDOWS__
-	WSADATA wsadata;
-	if (WSAStartup (MAKEWORD (1,1), &wsadata) == SOCKET_ERROR) {
-		eprintf ("Error creating socket.");
-		return NULL;
-	}
-#elif __UNIX__
-	signal (SIGPIPE, SIG_IGN);
-#endif
-	memset(&hints, 0, sizeof(struct addrinfo));
-	hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
-	hints.ai_protocol = IPPROTO_UDP;          /* Any protocol */
-	gai = getaddrinfo (host, port, &hints, &res);
-	if (gai != 0) {
-		eprintf ("Error in getaddrinfo: %s\n", gai_strerror (gai));
-		return NULL;
-	}
-
-	for (rp = res; rp != NULL; rp = rp->ai_next) {
-		s = socket (rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-		if (s == -1)
-			continue;
-		if (connect (s, rp->ai_addr, rp->ai_addrlen) != -1)
-			break;
-		close (s);
-	}
-	if (rp == NULL) {
-		eprintf ("Could not connect\n");
-		return NULL;
-	}
-	freeaddrinfo (res);
-	sock = R_NEW (RSocket);
-	sock->fd = s;
-	sock->is_ssl = is_ssl;
-#if HAVE_LIB_SSL
-	if (is_ssl) {
-		sock->sfd = NULL;
-		sock->ctx = NULL;
-		sock->bio = NULL;
-		if (!SSL_library_init ()) {
-			r_socket_free (sock);
-			return NULL;
-		}
-		SSL_load_error_strings ();
-		sock->ctx = SSL_CTX_new (SSLv23_client_method ());
-		if (sock->ctx == NULL) {
-			r_socket_free (sock);
-			return NULL;
-		}
-		sock->sfd = SSL_new (sock->ctx);
-		SSL_set_fd (sock->sfd, sock->fd);
-		if (SSL_connect (sock->sfd) != 1) {
-			r_socket_free (sock);
-			return NULL;
-		}
-	}
-#endif
-	return sock;
 }
 
 /* Read/Write functions */

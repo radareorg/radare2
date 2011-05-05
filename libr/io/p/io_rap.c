@@ -151,14 +151,20 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		eprintf ("rap: listening at port %s\n", port);
 		rior = R_NEW (RIORap);
 		rior->listener = R_TRUE;
-		rior->client = rior->fd = r_socket_listen (port, R_FALSE, NULL);
+		rior->client = rior->fd = r_socket_new (R_FALSE);
 		if (rior->fd == NULL)
+			return NULL;
+		if (!r_socket_listen (rior->fd, port, NULL))
 			return NULL;
 // TODO: listen mode is broken.. here must go the root loop!!
 #warning TODO: implement rap:/:9999 listen mode
 		return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd, pathname, rw, mode, rior);
 	}
-	if ((rap_fd = r_socket_new (ptr, port, R_FALSE))==NULL) {
+	if ((rap_fd = r_socket_new (R_FALSE)) == NULL) {
+		eprintf ("Cannot create new socket\n");
+		return NULL;
+	}
+	if (r_socket_connect_tcp (rap_fd, ptr, port)) {
 		eprintf ("Cannot connect to '%s' (%d)\n", ptr, p);
 		return NULL;
 	}

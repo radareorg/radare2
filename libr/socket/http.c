@@ -4,7 +4,7 @@
 
 static char *r_socket_http_response (RSocket *s, int *code) {
 	char buf[32768];
-	char *p, *q;
+	char *p;
 	int i, len;
 
 	/* Read Header */
@@ -22,7 +22,7 @@ static char *r_socket_http_response (RSocket *s, int *code) {
 	p = strstr (buf, "Content-Length: ");
 	len = (p)?atoi (p+16):0;
 	/* Read Content */
-	len = r_socket_read_block (s, buf+i, len);
+	len = r_socket_read_block (s, (unsigned char *)buf+i, len);
 	r_socket_close (s);
 	return strdup (buf);
 }
@@ -50,9 +50,14 @@ R_API char *r_socket_http_get (const char *url, int *code) {
 		path = "";
 	else
 		*path++ = 0;
-	s = r_socket_new (host, port, ssl);
+	s = r_socket_new (ssl);
 	if (!s) {
-		printf ("Cannot connect\n");
+		printf ("Cannot create socket\n");
+		free (uri);
+		return NULL;
+	}
+	if (!r_socket_connect_tcp (s, host, port)) {
+		printf ("Cannot connect to %s:%s\n", host, port);
 		free (uri);
 		return NULL;
 	}
@@ -91,9 +96,14 @@ R_API char *r_socket_http_post (const char *url, const char *data, int *code) {
 		path = "";
 	else
 		*path++ = 0;
-	s = r_socket_new (host, port, ssl);
+	s = r_socket_new (ssl);
 	if (!s) {
-		printf ("Cannot connect\n");
+		printf ("Cannot create socket\n");
+		free (uri);
+		return NULL;
+	}
+	if (!r_socket_connect_tcp (s, host, port)) {
+		printf ("Cannot connect to %s:%s\n", host, port);
 		free (uri);
 		return NULL;
 	}
