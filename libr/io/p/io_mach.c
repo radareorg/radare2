@@ -72,10 +72,10 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 }
 
 static int mach_write_at(RIOMach *riom, const void *buff, int len, ut64 addr) {
-        kern_return_t err;
 	task_t task = riom->task;
-
+#if 0
 /* get paVM_PROT_EXECUTEge perms */
+        kern_return_t err;
 	int ret, _basic64[VM_REGION_BASIC_INFO_COUNT_64];
 	vm_region_basic_info_64_t basic64 = (vm_region_basic_info_64_t)_basic64;
 	mach_msg_type_number_t	infocnt;
@@ -83,7 +83,6 @@ const int pagesize = 4096;
 vm_offset_t addrbase;
 	mach_port_t	objname;
 	vm_size_t size = pagesize;
-#if 0
 
 eprintf ("   0x%llx\n", addr);
 	infocnt = VM_REGION_BASIC_INFO_COUNT_64;

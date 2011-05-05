@@ -85,6 +85,7 @@ int main(int argc, char **argv) {
 	ut64 seek = 0;
 	char file[1024];
 	char *cmdfile = NULL;
+	int is_gdb = R_FALSE;
 
 	if (argc<2)
 		return main_help (1);
@@ -148,7 +149,9 @@ int main(int argc, char **argv) {
 	if (debug) {
 		r_config_set (r.config, "io.va", "false"); // implicit?
 		r_config_set (r.config, "cfg.debug", "true");
-		strcpy (file, "dbg://");
+		is_gdb = (!memcmp (argv[optind], "gdb://", 6));
+		if (!is_gdb)
+			strcpy (file, "dbg://");
 		if (optind < argc) {
 			char *ptr = r_file_path (argv[optind]);
 			if (ptr) {
@@ -165,8 +168,13 @@ int main(int argc, char **argv) {
 		}
 
 		fh = r_core_file_open (&r, file, perms, 0LL);
-		// TODO: move into if (debug) ..
-		r_debug_use (r.dbg, "native");
+		if (fh != NULL) {
+			const char *arch = r_config_get (&r, "asm.arch");
+			// TODO: move into if (debug) ..
+eprintf ("ARCH = %s\n", arch);
+			if (is_gdb) r_debug_use (r.dbg, "gdb");
+			else r_debug_use (r.dbg, "native");
+		}
 	} else {
 		if (optind<argc) {
 			while (optind < argc)
@@ -213,7 +221,8 @@ int main(int argc, char **argv) {
 		int *p = r.file->fd->data;
 		int pid = *p; // 1st element in debugger's struct must be int
 		r_core_cmd (&r, "e io.ffio=true", 0);
-		r_core_cmd (&r, "dh native", 0);
+		if (is_gdb) r_core_cmd (&r, "dh gdb", 0);
+		else r_core_cmd (&r, "dh native", 0);
 		r_core_cmdf (&r, "dpa %d", pid);
 		r_core_cmdf (&r, "dp=%d", pid);
 		r_core_cmd (&r, ".dr*", 0);

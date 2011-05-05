@@ -212,7 +212,7 @@ static int r_debug_native_step(RDebug *dbg) {
 }
 
 // return thread id
-static int r_debug_native_attach(int pid) {
+static int r_debug_native_attach(RDebug *dbg, int pid) {
 	int ret = -1;
 #if __WINDOWS__
 	HANDLE hProcess = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
@@ -273,7 +273,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return 0;
 #elif __APPLE__
 	ut64 rip = r_debug_reg_get (dbg, "pc");
-	ptrace (PT_CONTINUE, pid, rip, 0); // 0 = send no signal TODO !! implement somewhere else
+	ptrace (PT_CONTINUE, pid, (void*)(size_t)rip, 0); // 0 = send no signal TODO !! implement somewhere else
         return 0;
 #elif __BSD__
 	ut64 pc = r_debug_reg_get (dbg, "pc");
@@ -1547,7 +1547,7 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 	.threads = &r_debug_native_threads,
 	.wait = &r_debug_native_wait,
 	.kill = &r_debug_native_kill,
-	.frames = &r_debug_native_frames,
+	.frames = &r_debug_native_frames, // rename to backtrace ?
 	.reg_profile = (void *)r_debug_native_reg_profile,
 	.reg_read = &r_debug_native_reg_read,
 	.reg_write = (void *)&r_debug_native_reg_write,

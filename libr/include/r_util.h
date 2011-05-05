@@ -152,55 +152,6 @@ typedef struct r_mixed_t {
 R_API RMmap *r_file_mmap (const char *file, boolt rw);
 R_API void r_file_mmap_free (RMmap *m);
 
-/* arch */
-// TODO: This must deprecate DEFAULT_ARCH??
-#if __i386__
-#define R_SYS_ARCH "x86"
-#define R_SYS_BITS R_SYS_BITS_32
-#elif __x86_64__
-#define R_SYS_ARCH "x86"
-#define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
-#elif __POWERPC__
-#define R_SYS_ARCH "ppc"
-#define R_SYS_BITS R_SYS_BITS_32
-#elif __arm__
-#define R_SYS_ARCH "arm"
-#define R_SYS_BITS R_SYS_BITS_32
-#elif __sparc__
-#define R_SYS_ARCH "sparc"
-#define R_SYS_BITS R_SYS_BITS_32
-#elif __mips__
-#define R_SYS_ARCH "mips"
-#define R_SYS_BITS R_SYS_BITS_32
-#else
-#define R_SYS_ARCH "unknown"
-#define R_SYS_BITS R_SYS_BITS_32
-#endif
-
-/* os */
-#if __APPLE__
-#define R_SYS_OS "darwin"
-#elif __linux__
-#define R_SYS_OS "linux"
-#elif __WIN32__ || __CYGWIN__ || MINGW32
-#define R_SYS_OS "windows"
-#elif __NetBSD__ 
-#define R_SYS_OS "netbsd"
-#elif __OpenBSD__
-#define R_SYS_OS "openbsd"
-#elif __FreeBSD__ || __FreeBSD_kernel__
-#define R_SYS_OS "freebsd"
-#else
-#define R_SYS_OS "unknown"
-#endif
-
-/* endian */
-#if LIL_ENDIAN
-#define R_SYS_ENDIAN "little"
-#else
-#define R_SYS_ENDIAN "big"
-#endif
-
 // TODO: find better names and write vapis 
 #define ut8p_b(x) ((x)[0])
 #define ut8p_bw(x) ((x)[0]|((x)[1]<<8))
@@ -349,6 +300,8 @@ R_API int r_file_mkstemp(const char *prefix, char **oname);
 R_API const char *r_file_tmpdir();
 
 R_API ut64 r_sys_now();
+R_API const char *r_sys_arch_str(int arch);
+R_API int r_sys_arch_id(const char *arch);
 R_API RList *r_sys_dir(const char *path);
 R_API void r_sys_perror(const char *fun);
 #if __WINDOWS__

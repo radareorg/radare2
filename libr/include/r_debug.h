@@ -101,6 +101,8 @@ typedef struct r_debug_tracepoint_t {
 } RDebugTracepoint;
 
 typedef struct r_debug_t {
+	int arch;
+	int bits; /// XXX: MUST SET ///
 	int pid;    /* selected process id */
 	int tid;    /* selected thread id */
 	int swstep; /* steps with software traps */
@@ -145,7 +147,7 @@ typedef struct r_debug_plugin_t {
 	ut64 arch;
 	/* life */
 	int (*startv)(int argc, char **argv);
-	int (*attach)(int pid);
+	int (*attach)(RDebug *dbg, int pid);
 	int (*detach)(int pid);
 	int (*select)(int pid, int tid);
 	RList *(*threads)(int pid);

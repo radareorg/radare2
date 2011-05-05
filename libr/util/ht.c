@@ -93,7 +93,10 @@ static const struct {
  * modified by the user.
  */
 static RHashTableEntry* r_hashtable_search(RHashTable *ht, ut32 hash) {
-	ut32 double_hash, hash_address = hash % ht->size;
+	ut32 double_hash, hash_address;
+	if (ht == NULL)
+		return NULL;
+	hash_address = hash % ht->size;
 	do {
 		RHashTableEntry *entry = ht->table + hash_address;
 		if (entry_is_free (entry))

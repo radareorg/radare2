@@ -50,7 +50,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		//eprintf("addr: %x inst: %x ofst: %d dest: %x fail:%x\n", op->addr, *ins, ofst, op->jump, op->fail);
 	} else
 	if (*ins == 0x9508) { // ret
-		//eprintf("fucking ret at addr: %x\n", addr);
+		//eprintf("ret at addr: %x\n", addr);
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->eob = R_TRUE;
 		//op->stackptr =

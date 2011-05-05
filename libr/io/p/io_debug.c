@@ -231,7 +231,7 @@ static int __plugin_open(struct r_io_t *io, const char *file) {
 	return R_FALSE;
 }
 
-static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
+static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char uri[1024];
 	if (__plugin_open (io, file)) {
 		int pid = atoi (file+6);

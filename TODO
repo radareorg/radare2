@@ -4,6 +4,8 @@
   |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
 
+* x86/32-x86/64 the -e asm.bits should
+* memset0 the op before calling the plugin analysis
 * Make r_io happy with RList
 * We need a 64 bit x86 assembler working!! nasm fails
 

@@ -335,3 +335,37 @@ R_API void r_sys_perror(const char *fun) {
 	LocalFree (lpDisplayBuf);
 #endif
 }
+
+R_API int r_sys_arch_id(const char *arch) {
+	if (!strcmp (arch, "x86")) return R_SYS_ARCH_X86;
+	if (!strcmp (arch, "arm")) return R_SYS_ARCH_ARM;
+	if (!strcmp (arch, "ppc")) return R_SYS_ARCH_PPC;
+	if (!strcmp (arch, "m68k")) return R_SYS_ARCH_M68K;
+	if (!strcmp (arch, "java")) return R_SYS_ARCH_JAVA;
+	if (!strcmp (arch, "mips")) return R_SYS_ARCH_MIPS;
+	if (!strcmp (arch, "sparc")) return R_SYS_ARCH_SPARC;
+	if (!strcmp (arch, "csr")) return R_SYS_ARCH_CSR;
+	if (!strcmp (arch, "msil")) return R_SYS_ARCH_MSIL;
+	if (!strcmp (arch, "objd")) return R_SYS_ARCH_OBJD;
+	if (!strcmp (arch, "bf")) return R_SYS_ARCH_BF;
+	if (!strcmp (arch, "sh")) return R_SYS_ARCH_SH;
+	if (!strcmp (arch, "avr")) return R_SYS_ARCH_AVR;
+	return 0;
+}
+
+R_API const char *r_sys_arch_str(int arch) {
+	if (arch & R_SYS_ARCH_X86) return "x86";
+	if (arch & R_SYS_ARCH_ARM) return "arm";
+	if (arch & R_SYS_ARCH_PPC) return "ppc";
+	if (arch & R_SYS_ARCH_M68K) return "m68k";
+	if (arch & R_SYS_ARCH_JAVA) return "java";
+	if (arch & R_SYS_ARCH_MIPS) return "mips";
+	if (arch & R_SYS_ARCH_SPARC) return "sparc";
+	if (arch & R_SYS_ARCH_CSR) return "csr";
+	if (arch & R_SYS_ARCH_MSIL) return "msil";
+	if (arch & R_SYS_ARCH_OBJD) return "objd";
+	if (arch & R_SYS_ARCH_BF) return "bf";
+	if (arch & R_SYS_ARCH_SH) return "sh";
+	if (arch & R_SYS_ARCH_AVR) return "avr";
+	return "none";
+}

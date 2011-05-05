@@ -149,7 +149,7 @@ typedef int (*RIOWriteAt)(RIO *io, ut64 addr, const ut8 *buf, int size);
 typedef struct r_io_bind_t {
 	int init;
 	RIO *io;
-	RIOSetFd set_fd;
+	RIOSetFd set_fd; // XXX : this is conceptually broken with the new RIODesc foo
 	RIOReadAt read_at;
 	RIOWriteAt write_at;
 } RIOBind;

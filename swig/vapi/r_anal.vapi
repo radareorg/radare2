@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2010-2011 pancake<@nopcode.org> */
 
 /* this vapi is broken as shit... we need to rename some stuff here ..
    if we can just avoid to use cname CCode attribute... */

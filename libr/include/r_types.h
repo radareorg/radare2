@@ -128,6 +128,71 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define PFMT64o "llo"
 #endif
 
+/* arch */
+#if __i386__
+#define R_SYS_ARCH "x86"
+#define R_SYS_BITS R_SYS_BITS_32
+#elif __x86_64__
+#define R_SYS_ARCH "x86"
+#define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
+#elif __POWERPC__
+#define R_SYS_ARCH "ppc"
+#define R_SYS_BITS R_SYS_BITS_32
+#elif __arm__
+#define R_SYS_ARCH "arm"
+#define R_SYS_BITS R_SYS_BITS_32
+#elif __sparc__
+#define R_SYS_ARCH "sparc"
+#define R_SYS_BITS R_SYS_BITS_32
+#elif __mips__
+#define R_SYS_ARCH "mips"
+#define R_SYS_BITS R_SYS_BITS_32
+#else
+#define R_SYS_ARCH "unknown"
+#define R_SYS_BITS R_SYS_BITS_32
+#endif
+
+enum {
+	R_SYS_ARCH_NONE = 0,
+	R_SYS_ARCH_X86 = 0x1,
+	R_SYS_ARCH_ARM = 0x2,
+	R_SYS_ARCH_PPC = 0x4,
+	R_SYS_ARCH_M68K = 0x8,
+	R_SYS_ARCH_JAVA = 0x10,
+	R_SYS_ARCH_MIPS = 0x20,
+	R_SYS_ARCH_SPARC = 0x40,
+	R_SYS_ARCH_CSR = 0x80,
+	R_SYS_ARCH_MSIL = 0x100,
+	R_SYS_ARCH_OBJD = 0x200,
+	R_SYS_ARCH_BF = 0x400,
+	R_SYS_ARCH_SH = 0x800,
+	R_SYS_ARCH_AVR = 0x1000
+};
+
+/* os */
+#if __APPLE__
+#define R_SYS_OS "darwin"
+#elif __linux__
+#define R_SYS_OS "linux"
+#elif __WIN32__ || __CYGWIN__ || MINGW32
+#define R_SYS_OS "windows"
+#elif __NetBSD__ 
+#define R_SYS_OS "netbsd"
+#elif __OpenBSD__
+#define R_SYS_OS "openbsd"
+#elif __FreeBSD__ || __FreeBSD_kernel__
+#define R_SYS_OS "freebsd"
+#else
+#define R_SYS_OS "unknown"
+#endif
+
+/* endian */
+#if LIL_ENDIAN
+#define R_SYS_ENDIAN "little"
+#else
+#define R_SYS_ENDIAN "big"
+#endif
+
 #endif
 
 // Usage: R_DEFINE_OBJECT(r_asm);

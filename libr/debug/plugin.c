@@ -48,6 +48,15 @@ R_API int r_debug_use(RDebug *dbg, const char *str) {
 			r_reg_set_profile_string (dbg->reg, p);
 		}
 	}
+	if (dbg->h && dbg->anal && dbg->anal->cur) {
+		const char *arch = dbg->anal->cur->name;
+		int archid = r_sys_arch_id (dbg->anal->cur->name);
+		if (dbg->h->arch & archid) {
+			dbg->arch = archid;
+			eprintf ("DebugUse: backend forced to use %s\n", arch);
+		} else eprintf ("DebugUse: arch not supported for this backend (%s) (%s)\n",
+				arch, dbg->h->name);
+	}
 	return (dbg->h != NULL);
 }
 

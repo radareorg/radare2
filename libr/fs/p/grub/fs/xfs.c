@@ -420,7 +420,7 @@ call_hook (grub_uint64_t ino, char *filename,
     return c->hook (filename,
 		  grub_xfs_mode_to_filetype (fdiro->inode.mode),
 		  fdiro, c->closure);
-  return NULL;
+  return 0;
 }
 
 static int
