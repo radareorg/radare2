@@ -24,6 +24,60 @@
 
 #define BUFFER_SIZE 4096
 
+#if __UNIX__
+static int r_socket_unix_connect(RSocket *s, const char *file) {
+	struct sockaddr_un addr;
+	int sock = socket (PF_UNIX, SOCK_STREAM, 0);
+	if (sock < 0) {
+		free (s);
+		return R_FALSE;
+	}
+	// TODO: set socket options
+	addr.sun_family = AF_UNIX;
+	strncpy (addr.sun_path, file, sizeof(addr.sun_path));
+
+	if (connect (sock, (struct sockaddr *)&addr, sizeof(addr))==-1) {
+		close (sock);
+		free (s);
+		return R_FALSE;
+	}
+	s->fd = sock;
+	s->is_ssl = R_FALSE;
+	return R_TRUE;
+}
+
+R_API int r_socket_unix_listen (RSocket *s, const char *file) {
+	struct sockaddr_un unix_name;
+	int sock = socket (PF_UNIX, SOCK_STREAM, 0);
+	if (sock <0)
+		return R_FALSE;
+	// TODO: set socket options
+	unix_name.sun_family = AF_UNIX;
+	strncpy (unix_name.sun_path, file, sizeof(unix_name.sun_path));
+
+	/* just to make sure there is no other socket file */
+	unlink (unix_name.sun_path);
+
+	if (bind (sock, (struct sockaddr *) &unix_name, sizeof (unix_name)) < 0) {
+		close (sock);
+		return R_FALSE;
+	}
+	signal (SIGPIPE, SIG_IGN);
+
+	/* change permissions */
+	if (chmod (unix_name.sun_path, 0777) != 0) {
+		close (sock);
+		return R_FALSE;
+	}
+	if (listen (sock, 1)) {
+		close (sock);
+		return R_FALSE;
+	}
+	s->fd = sock;
+	return R_TRUE;
+}
+#endif
+
 R_API RSocket *r_socket_new (int is_ssl) {
 	RSocket *s = R_NEW (RSocket);
 	s->is_ssl = is_ssl;
@@ -55,27 +109,32 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 	signal (SIGPIPE, SIG_IGN);
 #endif
 
-	memset(&hints, 0, sizeof(struct addrinfo));
-	hints.ai_family = AF_UNSPEC;		/* Allow IPv4 or IPv6 */
-	hints.ai_protocol = proto;
-	gai = getaddrinfo (host, port, &hints, &res);
-	if (gai != 0) {
-		eprintf ("Error in getaddrinfo: %s\n", gai_strerror (gai));
-		return R_FALSE;
+	if (proto != R_SOCKET_PROTO_UNIX) {
+		memset(&hints, 0, sizeof(struct addrinfo));
+		hints.ai_family = AF_UNSPEC;		/* Allow IPv4 or IPv6 */
+		hints.ai_protocol = proto;
+		gai = getaddrinfo (host, port, &hints, &res);
+		if (gai != 0) {
+			eprintf ("Error in getaddrinfo: %s\n", gai_strerror (gai));
+			return R_FALSE;
+		}
+		for (rp = res; rp != NULL; rp = rp->ai_next) {
+			s->fd = socket (rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+			if (s->fd == -1)
+				continue;
+			if (connect (s->fd, rp->ai_addr, rp->ai_addrlen) != -1)
+				break;
+			close (s->fd);
+		}
+		if (rp == NULL) {
+			eprintf ("Could not connect\n");
+			return R_FALSE;
+		}
+		freeaddrinfo (res);
+	} else {
+		if (r_socket_unix_connect (s, host) == R_FALSE)
+			return R_FALSE;
 	}
-	for (rp = res; rp != NULL; rp = rp->ai_next) {
-		s->fd = socket (rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-		if (s->fd == -1)
-			continue;
-		if (connect (s->fd, rp->ai_addr, rp->ai_addrlen) != -1)
-			break;
-		close (s->fd);
-	}
-	if (rp == NULL) {
-		eprintf ("Could not connect\n");
-		return R_FALSE;
-	}
-	freeaddrinfo (res);
 #if HAVE_LIB_SSL
 	if (s->is_ssl) {
 		s->ctx = SSL_CTX_new (SSLv23_client_method ());
@@ -123,59 +182,6 @@ R_API int r_socket_free (RSocket *s) {
 	free (s);
 	return res;
 }
-
-#if __UNIX__
-R_API int r_socket_unix_connect(RSocket *s, const char *file) {
-	struct sockaddr_un addr;
-	int sock = socket (PF_UNIX, SOCK_STREAM, 0);
-	if (sock < 0) {
-		free (s);
-		return R_FALSE;
-	}
-	// TODO: set socket options
-	addr.sun_family = AF_UNIX;
-	strncpy (addr.sun_path, file, sizeof(addr.sun_path));
-
-	if (connect (sock, (struct sockaddr *)&addr, sizeof(addr))==-1) {
-		close (sock);
-		free (s);
-		return R_FALSE;
-	}
-	s->fd = sock;
-	s->is_ssl = R_FALSE;
-	return R_TRUE;
-}
-
-R_API int r_socket_unix_listen(const char *file) {
-	struct sockaddr_un unix_name;
-	int sock = socket (PF_UNIX, SOCK_STREAM, 0);
-	if (sock <0)
-		return -1;
-	// TODO: set socket options
-	unix_name.sun_family = AF_UNIX;
-	strncpy (unix_name.sun_path, file, sizeof(unix_name.sun_path));
-
-	/* just to make sure there is no other socket file */
-	unlink (unix_name.sun_path);
-
-	if (bind (sock, (struct sockaddr *) &unix_name, sizeof (unix_name)) < 0) {
-		close (sock);
-		return -1;
-	}
-	signal (SIGPIPE, SIG_IGN);
-
-	/* change permissions */
-	if (chmod (unix_name.sun_path, 0777) != 0) {
-		close (sock);
-		return -1;
-	}
-	if (listen (sock, 1)) {
-		close (sock);
-		return -1;
-	}
-	return sock;
-}
-#endif
 
 R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 	struct sockaddr_in sa;

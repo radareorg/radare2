@@ -21,18 +21,22 @@ typedef struct r_socket_t {
 #endif
 } RSocket;
 
+#define R_SOCKET_PROTO_TCP IPPROTO_TCP
+#define R_SOCKET_PROTO_UDP IPPROTO_UDP
+#define R_SOCKET_PROTO_UNIX 0x1337
+
 #ifdef R_API
 R_API RSocket *r_socket_new_from_fd (int fd);
 R_API RSocket *r_socket_new (int is_ssl);
 R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int proto);
-#define r_socket_connect_tcp(a,b,c) r_socket_connect(a,b,c,IPPROTO_TCP)
-#define r_socket_connect_udp(a,b,c) r_socket_connect(a,b,c,IPPROTO_UDP)
+#define r_socket_connect_tcp(a,b,c) r_socket_connect(a,b,c,R_SOCKET_PROTO_TCP)
+#define r_socket_connect_udp(a,b,c) r_socket_connect(a,b,c,R_SOCKET_PROTO_UDP)
+#if __UNIX__
+#define r_socket_connect_unix(a,b) r_socket_connect(a,b,NULL,R_SOCKET_PROTO_UNIX)
+R_API int r_socket_unix_listen (RSocket *s, const char *file);
+#endif
 R_API int r_socket_close (RSocket *s);
 R_API int r_socket_free (RSocket *s);
-#if __UNIX__
-R_API int r_socket_unix_connect (RSocket *s, const char *file);
-R_API int r_socket_unix_listen (const char *file);
-#endif
 R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile);
 R_API RSocket *r_socket_accept (RSocket *s);
 R_API int r_socket_block_time (RSocket *s, int block, int sec);

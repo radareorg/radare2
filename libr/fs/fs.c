@@ -2,6 +2,7 @@
 
 #include <r_fs.h>
 #include "../config.h"
+#include "p/grub/include/grub/msdos_partition.h"
 
 static RFSPlugin *fs_static_plugins[] = { R_FS_STATIC_PLUGINS };
 
@@ -243,8 +244,44 @@ R_API RList *r_fs_partitions (RFS *fs, const char *ptype, ut64 delta) {
 	if (ptype&&*ptype)
 		eprintf ("Unknown partition type '%s'.\n", ptype);
 	eprintf ("Supported types:\n"
-		"  msdos, apple, sun, sunpc, amiga, bsdlabel, acorn, gpt\n");
+			"  msdos, apple, sun, sunpc, amiga, bsdlabel, acorn, gpt\n");
 	return NULL;
+}
+
+//TODO: Complete!!
+R_API const char *r_fs_partition_type (const char *part, int type) {
+	switch (type) {
+		case GRUB_PC_PARTITION_TYPE_FAT12:
+		case GRUB_PC_PARTITION_TYPE_FAT16_GT32M:
+		case GRUB_PC_PARTITION_TYPE_FAT16_LT32M:
+		case GRUB_PC_PARTITION_TYPE_FAT32:
+		case GRUB_PC_PARTITION_TYPE_FAT32_LBA:
+		case GRUB_PC_PARTITION_TYPE_FAT16_LBA:
+			return strdup ("fat");
+		case GRUB_PC_PARTITION_TYPE_EXT2FS:
+			return strdup ("ext2");
+		case GRUB_PC_PARTITION_TYPE_MINIX:
+		case GRUB_PC_PARTITION_TYPE_LINUX_MINIX:
+			return strdup ("minix");
+		case GRUB_PC_PARTITION_TYPE_NTFS:
+			return strdup ("ntfs");
+		case GRUB_PC_PARTITION_TYPE_EXTENDED:
+		case GRUB_PC_PARTITION_TYPE_LINUX_EXTENDED:
+			return strdup ("ext3");
+		case GRUB_PC_PARTITION_TYPE_HFS:
+			return strdup ("hfs");
+		case GRUB_PC_PARTITION_TYPE_WIN95_EXTENDED:
+		case GRUB_PC_PARTITION_TYPE_EZD:
+		case GRUB_PC_PARTITION_TYPE_VSTAFS:
+		case GRUB_PC_PARTITION_TYPE_FREEBSD:
+		case GRUB_PC_PARTITION_TYPE_OPENBSD:
+		case GRUB_PC_PARTITION_TYPE_NETBSD:
+		case GRUB_PC_PARTITION_TYPE_GPT_DISK:
+		case GRUB_PC_PARTITION_TYPE_LINUX_RAID:
+		case GRUB_PC_PARTITION_TYPE_NONE:
+		default:
+			return NULL;
+	}
 }
 
 R_API int r_fs_prompt (RFS *fs, char *root) {

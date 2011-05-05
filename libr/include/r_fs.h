@@ -53,7 +53,7 @@ typedef struct r_fs_plugin_t {
 } RFSPlugin;
 
 typedef struct r_fs_partition_t {
-	int number;	
+	int number;
 	ut64 start;
 	ut64 length;
 	int index;
@@ -87,6 +87,7 @@ R_API RFSRoot *r_fs_root_new (const char *path, ut64 delta);
 R_API void r_fs_root_free (RFSRoot *root);
 R_API RFSPartition *r_fs_partition_new(int num, ut64 start, ut64 length);
 R_API void r_fs_partition_free (RFSPartition *p);
+R_API const char *r_fs_partition_type (const char *part, int type);
 
 /* plugins */
 extern RFSPlugin r_fs_plugin_ext2;
