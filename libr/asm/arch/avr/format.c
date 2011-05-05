@@ -118,14 +118,20 @@ static int formatDisassembledOperand(char *strOperand, int operandNum, const dis
 			if ((fOptions.options & FORMAT_OPTION_ADDRESS_LABEL) && fOptions.addressLabelPrefix != NULL) { 
 				retVal = sprintf(strOperand, "%s%0*X", fOptions.addressLabelPrefix, fOptions.addressFieldWidth, dInstruction.address+dInstruction.operands[operandNum]+2);
 			} else {
+#if 0
 				/* Check if the operand is greater than 0 so we can print the + sign. */
 				if (dInstruction.operands[operandNum] > 0) {
-					retVal = sprintf(strOperand, "%s+%d", OPERAND_PREFIX_BRANCH_ADDRESS, dInstruction.operands[operandNum]);
+					//retVal = sprintf(strOperand, "%s+%d", OPERAND_PREFIX_BRANCH_ADDRESS, dInstruction.operands[operandNum]);
+					//retVal = sprintf(strOperand, "%s+%d (0x%08x)", OPERAND_PREFIX_BRANCH_ADDRESS, dInstruction.operands[operandNum],
+					//	dInstruction.address + dInstruction.operands[operandNum]);
+ 					retVal = sprintf(strOperand, "0x%x", dInstruction.address + dInstruction.operands[operandNum]);
 				} else {
 				/* Since the operand variable is signed, the negativeness of the distance
 				 * to the destination address has been taken care of in disassembleOperands() */
-					retVal = sprintf(strOperand, "%s%d", OPERAND_PREFIX_BRANCH_ADDRESS, dInstruction.operands[operandNum]);
+//					retVal = sprintf(strOperand, "%s%d", OPERAND_PREFIX_BRANCH_ADDRESS, dInstruction.operands[operandNum]);
 				}
+#endif
+				retVal = sprintf(strOperand, "0x%x", dInstruction.address + dInstruction.operands[operandNum]);
 			}
 			break;
 		case OPERAND_LONG_ABSOLUTE_ADDRESS:

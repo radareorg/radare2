@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 - pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011 - pancake<nopcode.org>, Roc Vallès vallesroc@gmail.com */
 
 #include <string.h>
 #include <r_types.h>
@@ -10,7 +10,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	ut16 *ins = (ut16*)buf;
 	if (op == NULL)
 		return 2;
-
+	memset (op, 0, sizeof (RAnalOp));
 	op->length = 2;
 	if (*ins == 0) {
 		op->type = R_ANAL_OP_TYPE_NOP;
@@ -26,16 +26,34 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		// TODO: calculate dest address
 	} else
 	if ((buf[1] & 0xf0 ) == 0xd0) {
+		op->addr=addr;
 		op->type = R_ANAL_OP_TYPE_CALL; // rcall (relative)
-		// TODO: calculate dest address
+		op->fail = (op->addr)+2;
+		short ofst = *ins<<4;
+		ofst>>=4;
+		ofst*=2;
+		op->jump=addr+ofst+2;
+		//eprintf("addr: %x inst: %x ofst: %d dest: %x fail:%x\n", op->addr, *ins, ofst, op->jump, op->fail);
 	} else
 	if ((buf[1] & 0xf0 ) == 0xf0) {
 		op->type = R_ANAL_OP_TYPE_CJMP; // breq
 		// TODO: calculate dest address
 	} else
-	if ((buf[1] & 0xf0 ) == 0xc0) {
+	if ((buf[1] & 0xf0 ) == 0xc0) { // rjmp (relative)
+		op->addr=addr;
 		op->type = R_ANAL_OP_TYPE_JMP;
-		// TODO: calculate dest address
+		op->fail = (op->addr)+2;
+		short ofst = *ins<<4;
+		ofst>>=4;
+		ofst*=2;
+		op->jump=addr+ofst+2;
+		//eprintf("addr: %x inst: %x ofst: %d dest: %x fail:%x\n", op->addr, *ins, ofst, op->jump, op->fail);
+	} else
+	if (*ins == 0x9508) { // ret
+		//eprintf("fucking ret at addr: %x\n", addr);
+		op->type = R_ANAL_OP_TYPE_RET;
+		op->eob = R_TRUE;
+		//op->stackptr =
 	} else op->type = R_ANAL_OP_TYPE_UNK;
 	return op->length;
 }
