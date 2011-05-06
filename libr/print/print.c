@@ -270,12 +270,12 @@ R_API void r_print_raw(RPrint *p, const ut8* buf, int len) {
 }
 
 R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
-	int i,j;
+	int i;
 	int inc = p->width/6;
 	p->printf ("#define _BUFFER_SIZE %d\n"
 		"unsigned char buffer[_BUFFER_SIZE] = {\n", len);
 	p->interrupt = 0;
-	for (j = i = 0; !p->interrupt && i < len;) {
+	for (i = 0; !p->interrupt && i < len;) {
 		r_print_byte (p, "0x%02x", i, str[i]);
 		if (++i<len) p->printf (", ");
 		if (!(i%inc)) p->printf ("\n");

@@ -110,6 +110,8 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int le
 struct r_anal_plugin_t r_anal_plugin_mips = {
 	.name = "mips",
 	.desc = "MIPS code analysis plugin",
+	.arch = R_SYS_ARCH_MIPS,
+	.bits = 32,
 	.init = NULL,
 	.fini = NULL,
 	.op = &mips_op,

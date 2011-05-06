@@ -516,6 +516,8 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 struct r_anal_plugin_t r_anal_plugin_x86_simple = {
 	.name = "x86.simple",
 	.desc = "X86 analysis plugin",
+	.arch = R_SYS_ARCH_X86,
+	.bits = 32,
 	.init = NULL,
 	.fini = NULL,
 	.op = &myop,

@@ -178,6 +178,8 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 
 struct r_anal_plugin_t r_anal_plugin_dalvik = {
 	.name = "dalvik",
+	.arch = R_SYS_ARCH_DALVIK,
+	.bits = 32,
 	.desc = "Dalvik (Android VM) bytecode analysis plugin",
 	.init = NULL,
 	.fini = NULL,

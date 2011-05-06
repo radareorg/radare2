@@ -1041,6 +1041,8 @@ static int set_reg_profile(RAnal *anal) {
 struct r_anal_plugin_t r_anal_plugin_x86 = {
 	.name = "x86",
 	.desc = "X86 analysis plugin (x86im backend)",
+	.arch = R_SYS_ARCH_X86,
+	.bits = 32,
 	.init = NULL,
 	.fini = NULL,
 	.op = &x86_op,

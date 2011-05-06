@@ -487,6 +487,8 @@ static int sh_set_reg_profile(RAnal* anal){
 struct r_anal_plugin_t r_anal_plugin_sh = {
 	.name = "sh",
 	.desc = "SH-4 code analysis plugin",
+	.arch = R_SYS_ARCH_SH,
+	.bits = 32,
 	.init = NULL,
 	.fini = NULL,
 	.op = &sh_op,

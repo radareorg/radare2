@@ -26,11 +26,19 @@ static int r_debug_gdb_step(RDebug *dbg) {
 	return R_TRUE;
 }
 
+#define REGSIZE_X86 64
 static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
-	ut8 *p = gdbwrap_readgenreg (desc);
+	int i;
+	// XXX: This is really broken. it only works for 32bit boxes and its hardcoded!
 	// TODO: allow gdbwrap to read regs on own buffer
-	memcpy (buf, p, size);
-	return R_TRUE;
+	ut8 *p = gdbwrap_readgenreg (desc);
+	desc->reg_size = 4;
+	for (i=0; i<(REGSIZE_X86/4); i++) {
+		ut32 p = (ut32)gdbwrap_getreg (desc, i);
+	//	eprintf ("%i %i %llx\n", i, i*4, p);
+		memcpy (buf+(i*4), &p, sizeof (ut32));
+	}
+	return REGSIZE_X86;
 }
 
 static int r_debug_gdb_reg_write(int pid, int tid, int type, const ut8 *buf, int size) {
@@ -71,12 +79,42 @@ static int r_debug_gdb_detach(int pid) {
 }
 
 static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
-	switch (dbg->arch) {
+	int arch = dbg->arch;
+	switch (arch) {
+	case R_SYS_ARCH_X86:
+	case R_SYS_ARCH_ARM:
+	case R_SYS_ARCH_SH:
+		break;
+	default:
+		arch = R_SYS_ARCH;
+		break;
+	}
+	switch (arch) {
 	case R_SYS_ARCH_X86:
 		return strdup (
 		"=pc	eip\n"
-		"gpr	eip	.32	0	0\n"
-		"gpr	eax	.32	8	0\n"
+		"=sp	esp\n"
+		"=bp	ebp\n"
+		"=a0	eax\n"
+		"=a1	ebx\n"
+		"=a2	ecx\n"
+		"=a3	edi\n"
+		"gpr	eax	.32	0	0\n"
+		"gpr	ecx	.32	4	0\n"
+		"gpr	edx	.32	8	0\n"
+		"gpr	ebx	.32	12	0\n"
+		"gpr	esp	.32	16	0\n"
+		"gpr	ebp	.32	20	0\n"
+		"gpr	esi	.32	24	0\n"
+		"gpr	edi	.32	28	0\n"
+		"gpr	eip	.32	32	0\n"
+		"gpr	eflags	.32	36	0\n"
+		"seg	cs	.32	40	0\n"
+		"seg	ss	.32	44	0\n"
+		"seg	ds	.32	48	0\n"
+		"seg	es	.32	52	0\n"
+		"seg	fs	.32	56	0\n"
+		"seg	gs	.32	60	0\n"
 		);
 	case R_SYS_ARCH_ARM:
 		return strdup (

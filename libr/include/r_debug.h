@@ -206,6 +206,7 @@ R_API RDebugPid *r_debug_pid_new(const char *path, int pid, char status, ut64 pc
 R_API RDebugPid *r_debug_pid_free(RDebugPid *pid);
 R_API RList *r_debug_pids(RDebug *dbg, int pid);
 
+R_API int r_debug_set_arch(RDebug *dbg, int arch, int bits);
 R_API int r_debug_use(struct r_debug_t *dbg, const char *str);
 R_API int r_debug_plugin_add(struct r_debug_t *dbg, struct r_debug_plugin_t *foo);
 R_API int r_debug_plugin_init(struct r_debug_t *dbg);

@@ -28,7 +28,7 @@ R_API RDebug *r_debug_new(int hard) {
 	RDebug *dbg = R_NEW (RDebug);
 	if (dbg) {
 		// R_SYS_ARCH
-		dbg->arch = 0; // 0 is native by default
+		dbg->arch = R_SYS_ARCH; // 0 is native by default
 		dbg->bits = R_SYS_BITS;
 		dbg->anal = NULL;
 		dbg->pid = -1;
@@ -83,7 +83,8 @@ R_API int r_debug_attach(RDebug *dbg, int pid) {
 R_API int r_debug_set_arch(RDebug *dbg, int arch, int bits) {
 	if (dbg && dbg->h) {
 		if (arch & dbg->h->arch) {
-			eprintf ("arch supported by debug backend\n");
+			eprintf ("arch supported by debug backend (%x)\n", arch);
+			dbg->arch = arch;
 			return R_TRUE;
 		}
 	}

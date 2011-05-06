@@ -47,6 +47,7 @@ void gdbwrap_setreg(gdbwrap_t *desc, ut32 idx, ut64 value){
 			fprintf(stderr,"Unsupported register size!");
 	}
 }
+
 ut64 gdbwrap_getreg(gdbwrap_t *desc, ut32 idx){
 	ut64 ret=-1;
 	if ( idx >= desc->num_registers){

@@ -74,6 +74,8 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 struct r_anal_plugin_t r_anal_plugin_avr = {
 	.name = "avr",
 	.desc = "AVR code analysis plugin",
+	.arch = R_SYS_ARCH_AVR,
+	.bits = 8|32,
 	.init = NULL,
 	.fini = NULL,
 	.op = &avr_op,

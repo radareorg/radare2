@@ -361,6 +361,8 @@ typedef int (*RAnalDiffEvalCallback)(RAnal *anal);
 typedef struct r_anal_plugin_t {
 	char *name;
 	char *desc;
+	int arch;
+	int bits;
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	RAnalOpCallback op;

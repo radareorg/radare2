@@ -30,6 +30,8 @@ R_API int r_debug_use(RDebug *dbg, const char *str) {
 		RDebugPlugin *h = list_entry (pos, RDebugPlugin, list);
 		if (h->name && !strcmp (str, h->name)) {
 			dbg->h = h;
+			if (dbg->anal && dbg->anal->cur)
+				r_debug_set_arch (dbg, dbg->anal->cur->arch, dbg->anal->cur->bits);
 			dbg->bp->breakpoint = dbg->h->breakpoint;
 			dbg->bp->user = dbg;
 		}
@@ -37,7 +39,7 @@ R_API int r_debug_use(RDebug *dbg, const char *str) {
 	if (dbg->h && dbg->h->reg_profile) {
 		char *p = dbg->h->reg_profile ();
 		if (p == NULL) {
-			eprintf ("Cannot retrieve reg profile from debug plugin\n");
+			eprintf ("Cannot retrieve reg profile from debug plugin (%s)\n", dbg->h->name);
 		} else {
 			free (dbg->reg->reg_profile_str);
 			dbg->reg->reg_profile_str = p;
@@ -47,15 +49,6 @@ R_API int r_debug_use(RDebug *dbg, const char *str) {
 				dbg->h->init (dbg);
 			r_reg_set_profile_string (dbg->reg, p);
 		}
-	}
-	if (dbg->h && dbg->anal && dbg->anal->cur) {
-		const char *arch = dbg->anal->cur->name;
-		int archid = r_sys_arch_id (dbg->anal->cur->name);
-		if (dbg->h->arch & archid) {
-			dbg->arch = archid;
-			eprintf ("DebugUse: backend forced to use %s\n", arch);
-		} else eprintf ("DebugUse: arch not supported for this backend (%s) (%s)\n",
-				arch, dbg->h->name);
 	}
 	return (dbg->h != NULL);
 }

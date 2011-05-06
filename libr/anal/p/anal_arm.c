@@ -271,6 +271,8 @@ static int set_reg_profile(RAnal *anal) {
 
 struct r_anal_plugin_t r_anal_plugin_arm = {
 	.name = "arm",
+	.arch = R_SYS_ARCH_ARM,
+	.bits = 32,
 	.desc = "ARM code analysis plugin",
 	.init = NULL,
 	.fini = NULL,

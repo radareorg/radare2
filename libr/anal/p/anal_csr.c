@@ -225,6 +225,8 @@ static int csr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 struct r_anal_plugin_t r_anal_plugin_csr = {
 	.name = "csr",
 	.desc = "CSR code analysis plugin",
+	.arch = R_SYS_ARCH_CSR,
+	.bits = 16,
 	.init = NULL,
 	.fini = NULL,
 	.op = &csr_op,
