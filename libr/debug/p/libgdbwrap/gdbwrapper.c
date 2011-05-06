@@ -241,8 +241,7 @@ static char          *gdbwrap_make_message(gdbwrap_t *desc, const char *query)
      not check the overlapping tho.*/
   if (strlen(query) < max_query_size && query != desc->packet)
     {
-      u_char ret;
-      ret = snprintf(desc->packet, desc->max_packet_size, "%s%s%s%.2x",
+      int ret = snprintf(desc->packet, desc->max_packet_size, "%s%s%s%.2x",
 		     GDBWRAP_BEGIN_PACKET, query, GDBWRAP_END_PACKET, checksum);
       ASSERT(ret > 0);
     }

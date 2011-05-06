@@ -152,6 +152,7 @@ int main(int argc, char **argv) {
 		is_gdb = (!memcmp (argv[optind], "gdb://", 6));
 		if (!is_gdb)
 			strcpy (file, "dbg://");
+		else *file = 0;
 		if (optind < argc) {
 			char *ptr = r_file_path (argv[optind]);
 			if (ptr) {
@@ -171,7 +172,6 @@ int main(int argc, char **argv) {
 		if (fh != NULL) {
 			const char *arch = r_config_get (&r, "asm.arch");
 			// TODO: move into if (debug) ..
-eprintf ("ARCH = %s\n", arch);
 			if (is_gdb) r_debug_use (r.dbg, "gdb");
 			else r_debug_use (r.dbg, "native");
 		}

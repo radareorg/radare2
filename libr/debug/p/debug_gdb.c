@@ -3,6 +3,7 @@
 #include <r_asm.h>
 #include <r_debug.h>
 #include "libgdbwrap/include/gdbwrapper.h"
+#include "libgdbwrap/gdbwrapper.c"
 
 /* XXX: hacky copypasta from io/p/io_gdb */
 typedef struct {
@@ -27,8 +28,9 @@ static int r_debug_gdb_step(RDebug *dbg) {
 
 static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	ut8 *p = gdbwrap_readgenreg (desc);
+	// TODO: allow gdbwrap to read regs on own buffer
 	memcpy (buf, p, size);
-	return size;
+	return R_TRUE;
 }
 
 static int r_debug_gdb_reg_write(int pid, int tid, int type, const ut8 *buf, int size) {
@@ -92,7 +94,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	return NULL;
 }
 
-struct r_debug_plugin_t r_dbg_plugin_gdb = {
+struct r_debug_plugin_t r_debug_plugin_gdb = {
 	.name = "gdb",
 	/* TODO: Add support for more architectures here */
 	.arch = R_SYS_ARCH_X86 | R_SYS_ARCH_ARM | R_SYS_ARCH_SH,

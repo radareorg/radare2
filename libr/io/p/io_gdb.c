@@ -21,7 +21,7 @@ static int __plugin_open(RIO *io, const char *file) {
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
-	char host[128], *port;
+	char host[128], *port, *p;
 	RSocket *_fd;
 	RIOGdb *riog;
 	if (!__plugin_open (io, file))
@@ -33,9 +33,12 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	*port = '\0';
+	port++;
+	p = strchr (port, '/');
+	if (p) *p=0;
 	_fd = r_socket_new (R_FALSE);
 	if (_fd) {
-		if (r_socket_connect_tcp (_fd, host, port+1)) {
+		if (r_socket_connect_tcp (_fd, host, port)) {
 			riog = R_NEW (RIOGdb);
 			riog->fd = _fd;
 			riog->desc = gdbwrap_init (_fd->fd, NUM_REGS, 4);
