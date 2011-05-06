@@ -21,32 +21,45 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	if (buf[1]>=0x18 && buf[1]<=0x1b) { // hacky
 		op->type = R_ANAL_OP_TYPE_SUB;
 	} else
-	if ((buf[1] & 0xf0 ) == 0x80) {
+	if (((buf[1] & 0xfe) == 0x94) && ((buf[0] & 0x0e)==0x0e)) {
+		op->addr = addr;
 		op->type = R_ANAL_OP_TYPE_CALL; // call (absolute)
-		// TODO: calculate dest address
+		op->fail = (op->addr)+4;
+		ut8 kbuf[2];
+		ut16 *k=&kbuf;
+		anal->iob.read_at (anal->iob.io, addr+2, kbuf, 2);
+		op->jump = *k*2;
+		//eprintf("addr: %x inst: %x dest: %x fail:%x\n", op->addr, *ins, op->jump, op->fail);
 	} else
-	if ((buf[1] & 0xf0 ) == 0xd0) {
-		op->addr=addr;
+	if ((buf[1] & 0xf0) == 0xd0) {
+		op->addr = addr;
 		op->type = R_ANAL_OP_TYPE_CALL; // rcall (relative)
 		op->fail = (op->addr)+2;
 		short ofst = *ins<<4;
 		ofst>>=4;
 		ofst*=2;
-		op->jump=addr+ofst+2;
+		op->jump = addr+ofst+2;
 		//eprintf("addr: %x inst: %x ofst: %d dest: %x fail:%x\n", op->addr, *ins, ofst, op->jump, op->fail);
 	} else
-	if ((buf[1] & 0xf0 ) == 0xf0) {
-		op->type = R_ANAL_OP_TYPE_CJMP; // breq
-		// TODO: calculate dest address
+	if (((buf[1] & 0xfe) == 0x94) && ((buf[0] & 0x0e)==0x0c)) {
+		ut8 kbuf[2];
+		ut16 *k = &kbuf;
+		op->addr = addr;
+		op->type = R_ANAL_OP_TYPE_CJMP; // breq, jmp (absolute)
+		op->fail = (op->addr)+4;
+		anal->iob.read_at (anal->iob.io, addr+2, kbuf, 2);
+		// TODO: check return value
+		op->jump = *k*2;
+		//eprintf("addr: %x inst: %x dest: %x fail:%x\n", op->addr, *ins, op->jump, op->fail);
 	} else
-	if ((buf[1] & 0xf0 ) == 0xc0) { // rjmp (relative)
+	if ((buf[1] & 0xf0) == 0xc0) { // rjmp (relative)
 		op->addr=addr;
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->fail = (op->addr)+2;
 		short ofst = *ins<<4;
 		ofst>>=4;
 		ofst*=2;
-		op->jump=addr+ofst+2;
+		op->jump = addr+ofst+2;
 		//eprintf("addr: %x inst: %x ofst: %d dest: %x fail:%x\n", op->addr, *ins, ofst, op->jump, op->fail);
 	} else
 	if (*ins == 0x9508) { // ret
