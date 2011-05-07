@@ -26,19 +26,19 @@ static int r_debug_gdb_step(RDebug *dbg) {
 	return R_TRUE;
 }
 
-#define REGSIZE_X86 64
 static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int i;
-	// XXX: This is really broken. it only works for 32bit boxes and its hardcoded!
+	
 	// TODO: allow gdbwrap to read regs on own buffer
 	ut8 *p = gdbwrap_readgenreg (desc);
-	desc->reg_size = 4;
-	for (i=0; i<(REGSIZE_X86/4); i++) {
-		ut32 p = (ut32)gdbwrap_getreg (desc, i);
-	//	eprintf ("%i %i %llx\n", i, i*4, p);
-		memcpy (buf+(i*4), &p, sizeof (ut32));
+
+	// TODO: bounds check!!!
+	for (i=0; i< desc->num_registers ; i++) {
+		ut64 p = (ut64)gdbwrap_getreg (desc, i);
+		eprintf ( " Register: %d , value: %#x\n",i,p);
+		memcpy (buf+(i*desc->reg_size), &p, desc->reg_size);
 	}
-	return REGSIZE_X86;
+	return desc->num_registers*desc->reg_size;
 }
 
 static int r_debug_gdb_reg_write(int pid, int tid, int type, const ut8 *buf, int size) {
@@ -63,7 +63,24 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 		if (!strcmp ("gdb", d->plugin->name)) {
 			RIOGdb *g = d->data;
 			desc = g->desc;
-			//desc = gdbwrap_init (pid , 9, 4); //Only x86
+			switch (dbg->arch){
+				 case R_SYS_ARCH_X86:
+					//TODO Support x86_64
+					//9 32bit regs for x86
+					desc->num_registers = 9;
+					desc->reg_size = 4;
+					break;
+				case R_SYS_ARCH_SH:
+					//28 32bit regs for sh4
+					desc->num_registers = 28;
+					desc->reg_size = 4;
+					break;
+				case R_SYS_ARCH_ARM:
+					//TODO Check ARM stubs and fill in
+					desc->num_registers = 16;
+					desc->reg_size = 4;
+					break;
+			}
 			eprintf ("SUCCESS: gdb attach with inferior gdb rio worked\n");
 		} else {
 			eprintf ("ERROR: Underlaying IO descriptor is not a GDB one..\n");
@@ -75,6 +92,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 static int r_debug_gdb_detach(int pid) {
 // XXX TODO PID must be a socket here !!1
 //	close (pid);
+	//XXX Maybe we should continue here?
 	return R_TRUE;
 }
 
@@ -124,9 +142,31 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 		);
 	case R_SYS_ARCH_SH:
 		return strdup (
-		"=pc	r15\n"
-		"gpr	eip	.32	0	0\n"
-		"gpr	eax	.32	8	0\n"
+			"=pc    pc\n"
+			"=sp    r15\n"
+			"=bp    r14\n"
+			"gpr	r0	.32	0	0\n"
+			"gpr	r1	.32	4	0\n"
+			"gpr	r2	.32	8	0\n"
+			"gpr	r3	.32	12	0\n"
+			"gpr	r4	.32	16	0\n"
+			"gpr	r5	.32	20	0\n"
+			"gpr	r6	.32	24	0\n"
+			"gpr	r7	.32	28	0\n"
+			"gpr	r8	.32	32	0\n"
+			"gpr	r9	.32	36	0\n"
+			"gpr	r10	.32	40	0\n"
+			"gpr	r11	.32	44	0\n"
+			"gpr	r12	.32	48	0\n"
+			"gpr	r13	.32	52	0\n"
+			"gpr	r14	.32	56	0\n"
+			"gpr	r15	.32	60	0\n"
+			"gpr	pc	.32	64	0\n"
+			"gpr	pr	.32	68	0\n"
+			"gpr	sr	.32	72	0\n"
+			"gpr	gbr	.32	76	0\n"
+			"gpr	mach	.32	80	0\n"
+			"gpr	macl	.32	84	0\n"
 		);
 	}
 	return NULL;
