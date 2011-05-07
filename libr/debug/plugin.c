@@ -37,7 +37,7 @@ R_API int r_debug_use(RDebug *dbg, const char *str) {
 		}
 	}
 	if (dbg->h && dbg->h->reg_profile) {
-		char *p = dbg->h->reg_profile ();
+		char *p = dbg->h->reg_profile (dbg);
 		if (p == NULL) {
 			eprintf ("Cannot retrieve reg profile from debug plugin (%s)\n", dbg->h->name);
 		} else {

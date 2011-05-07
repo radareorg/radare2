@@ -165,7 +165,7 @@ typedef struct r_debug_plugin_t {
 // XXX: specify, pid, tid, or RDebug ?
 	int (*reg_read)(struct r_debug_t *dbg, int type, ut8 *buf, int size);
 	int (*reg_write)(int pid, int tid, int type, const ut8 *buf, int size); //XXX struct r_regset_t regs);
-	char* (*reg_profile)();
+	char* (*reg_profile)(RDebug *dbg);
 	/* memory */
 	RList *(*map_get)(RDebug *dbg);
 	ut64 (*map_alloc)(RDebug *dbg, RDebugMap *map);

@@ -298,7 +298,7 @@ static int r_debug_native_wait(int pid) {
 }
 
 // TODO: why strdup here?
-static const char *r_debug_native_reg_profile() {
+static const char *r_debug_native_reg_profile(RDebug *dbg) {
 #if __WINDOWS__
 	return strdup (
 	"=pc	eip\n"
