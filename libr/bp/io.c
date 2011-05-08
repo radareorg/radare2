@@ -57,24 +57,27 @@ R_API int r_debug_bp_add(struct r_debug_t *dbg, ut64 addr, int size, int hw, int
 R_API int r_bp_restore(struct r_bp_t *bp, int set) {
 	RListIter *iter;
 	RBreakpointItem *b;
+	int handled;
 
 	r_list_foreach (bp->bps, iter, b) {
-		bp->breakpoint (bp->user, set, b->addr, b->hw, b->rwx);
+		if(bp->breakpoint)
+			handled = bp->breakpoint (bp->user, set, b->addr, b->hw, b->rwx);
+		else
+			handled = R_FALSE;
+		
+		/* write obytes from every breakpoint in r_bp if not handled by plugin */
+		if (!handled)
+			if (set) {
+				if (b->hw || !b->obytes)
+					eprintf ("hw breakpoints not supported yet\n");
+				else bp->iob.write_at (bp->iob.io, b->addr, b->obytes, b->size);
+			} else {
+				if (b->hw || !b->bbytes)
+					eprintf ("hw breakpoints not supported yet\n");
+				else bp->iob.write_at (bp->iob.io, b->addr, b->bbytes, b->size);
+			}
 	}
-	/* write obytes from every breakpoint in r_bp */
-	if (set) {
-		r_list_foreach (bp->bps, iter, b) {
-			if (b->hw || !b->obytes)
-				eprintf ("hw breakpoints not supported yet\n");
-			else bp->iob.write_at (bp->iob.io, b->addr, b->obytes, b->size);
-		}
-	} else {
-		r_list_foreach (bp->bps, iter, b) {
-			if (b->hw || !b->bbytes)
-				eprintf ("hw breakpoints not supported yet\n");
-			else bp->iob.write_at (bp->iob.io, b->addr, b->bbytes, b->size);
-		}
-	}
+	
 	return R_TRUE;
 }
 

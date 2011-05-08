@@ -35,7 +35,6 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	// TODO: bounds check!!!
 	for (i=0; i< desc->num_registers ; i++) {
 		ut64 p = (ut64)gdbwrap_getreg (desc, i);
-		eprintf ( " Register: %d , value: %#x\n",i,p);
 		memcpy (buf+(i*desc->reg_size), &p, desc->reg_size);
 	}
 	return desc->num_registers*desc->reg_size;
