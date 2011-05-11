@@ -15,11 +15,17 @@ typedef struct {
 #define RIOGDB_IS_VALID(x) (x && x->plugin==&r_io_plugin_gdb && x->data)
 #define NUM_REGS 28
 
+#define UNKNOWN -1
+#define UNSUPPORTED 0
+#define SUPPORTED 1
+
 /* TODO: The IO stuff must be communicated with the r_dbg */
 /* a transplant sometimes requires to change the IO */
 /* so, for here, we need r_io_plugin_gdb */
 /* TODO: rename to gdbwrap? */
 static gdbwrap_t *desc = NULL;
+static int support_sw_bp = UNKNOWN; 
+static int support_hw_bp = UNKNOWN;
 
 static int r_debug_gdb_step(RDebug *dbg) {
 	gdbwrap_stepi (desc);
@@ -27,22 +33,15 @@ static int r_debug_gdb_step(RDebug *dbg) {
 }
 
 static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
-	int i;
-	
-	// TODO: allow gdbwrap to read regs on own buffer
-	ut8 *p = gdbwrap_readgenreg (desc);
-
-	// TODO: bounds check!!!
-	for (i=0; i< desc->num_registers ; i++) {
-		ut64 p = (ut64)gdbwrap_getreg (desc, i);
-		memcpy (buf+(i*desc->reg_size), &p, desc->reg_size);
-	}
+	gdbwrap_readgenreg(desc);
+	gdbwrap_getreg_buffer(desc,buf,desc->reg_size*desc->num_registers);
 	return desc->num_registers*desc->reg_size;
 }
 
 static int r_debug_gdb_reg_write(int pid, int tid, int type, const ut8 *buf, int size) {
-	/* TODO */
-	return R_TRUE;
+	gdbwrap_setreg_buffer(desc,buf,desc->reg_size*desc->num_registers);
+	gdbwrap_shipallreg(desc);
+	return R_TRUE; // XXX Error check	
 }
 
 static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
@@ -59,8 +58,11 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 // XXX TODO PID must be a socket here !!1
 	RIODesc *d = dbg->iob.io->fd;
 	if (d && d->plugin && d->plugin->name) {
+		
 		if (!strcmp ("gdb", d->plugin->name)) {
 			RIOGdb *g = d->data;
+			support_sw_bp = UNKNOWN;
+			support_hw_bp = UNKNOWN;
 			desc = g->desc;
 			switch (dbg->arch){
 				 case R_SYS_ARCH_X86:
@@ -80,7 +82,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 					desc->reg_size = 4;
 					break;
 			}
-			eprintf ("SUCCESS: gdb attach with inferior gdb rio worked\n");
+			//eprintf ("SUCCESS: gdb attach with inferior gdb rio worked\n");
 		} else {
 			eprintf ("ERROR: Underlaying IO descriptor is not a GDB one..\n");
 		}
@@ -171,6 +173,29 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	return NULL;
 }
 
+static int r_debug_gdb_breakpoint (void *user, int type, ut64 addr, int hw, int rwx){
+	if (hw && support_hw_bp!=UNSUPPORTED) {
+		//TODO Implement gdb hw breakpoint
+		support_hw_bp = UNSUPPORTED;
+		return R_FALSE;
+	}
+
+	if (!hw && support_sw_bp!=UNSUPPORTED){
+		if(!type && gdbwrap_simplesetbp(desc,addr)){
+			support_sw_bp = SUPPORTED;
+			return R_TRUE;
+		} else if (type ) {
+			gdbwrap_simpledelbp(desc,addr);
+			return R_TRUE;
+		} else {
+			support_sw_bp = UNSUPPORTED;
+			return R_FALSE;
+		}
+		return support_sw_bp;
+	}
+	return R_FALSE;
+}
+
 struct r_debug_plugin_t r_debug_plugin_gdb = {
 	.name = "gdb",
 	/* TODO: Add support for more architectures here */
@@ -188,7 +213,7 @@ struct r_debug_plugin_t r_debug_plugin_gdb = {
 	.kill = NULL,
 	.frames = NULL,
 	.map_get = NULL,
-	.breakpoint = NULL,
+	.breakpoint = &r_debug_gdb_breakpoint,
 	.reg_read = &r_debug_gdb_reg_read,
 	.reg_write = &r_debug_gdb_reg_write,
 	.reg_profile = (void *)r_debug_gdb_reg_profile,

@@ -66,11 +66,13 @@ R_API RBreakpointItem *r_bp_get(RBreakpoint *bp, ut64 addr) {
 }
 
 R_API RBreakpointItem *r_bp_at_addr(RBreakpoint *bp, ut64 addr, int rwx) {
-	RListIter *iter;
+	int n = 0;
 	RBreakpointItem *b;
-	r_list_foreach(bp->bps, iter, b) {
-	//	eprintf ("---ataddr--- 0x%08"PFMT64x" %d %d\n", b->addr, b->size, b->recoil);
-		if (addr>=b->addr && addr<=b->addr+b->size && rwx&b->rwx)
+	RListIter *iter;
+	r_list_foreach (bp->bps, iter, b) {
+		// eprintf ("---ataddr--- 0x%08"PFMT64x" %d %d %x\n", b->addr, b->size, b->recoil, b->rwx);
+		//Check addr within range and provided rwx matches (or null)
+		if (addr>=b->addr && addr<=(b->addr+b->size) && (!rwx || rwx&b->rwx))
 			return b;
 	}
 	return NULL;

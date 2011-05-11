@@ -18,6 +18,7 @@ static int r_debug_recoil(RDebug *dbg) {
 			dbg->reason = R_DBG_REASON_BP;
 			r_reg_set_value (dbg->reg, ri, addr-recoil);
 			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_TRUE);
+			eprintf ("[BP Hit] Setting pc to 0x%"PFMT64x"\n", (addr-recoil));
 			ret = R_TRUE;
 		}
 	} else eprintf ("r_debug_recoil: Cannot get program counter\n");

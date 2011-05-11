@@ -68,10 +68,12 @@ R_API int r_bp_restore(struct r_bp_t *bp, int set) {
 		/* write obytes from every breakpoint in r_bp if not handled by plugin */
 		if (!handled)
 			if (set) {
+				eprintf("Setting bp at 0x%x\n", b->addr);
 				if (b->hw || !b->obytes)
 					eprintf ("hw breakpoints not supported yet\n");
 				else bp->iob.write_at (bp->iob.io, b->addr, b->obytes, b->size);
 			} else {
+				eprintf("Clearing bp at 0x%x\n", b->addr);
 				if (b->hw || !b->bbytes)
 					eprintf ("hw breakpoints not supported yet\n");
 				else bp->iob.write_at (bp->iob.io, b->addr, b->bbytes, b->size);
@@ -82,11 +84,12 @@ R_API int r_bp_restore(struct r_bp_t *bp, int set) {
 }
 
 R_API int r_bp_recoil(RBreakpoint *bp, ut64 addr) {
-	RBreakpointItem *b = r_bp_at_addr (bp, addr, 0xFFFFFF);
+	RBreakpointItem *b = r_bp_at_addr (bp, addr, 0); //XXX Don't care about rwx
+
 	if (b) {
-		eprintf("HIT AT ADDR 0x%"PFMT64x"\n", addr);
-		eprintf("  recoil = %d\n", b->recoil);
-		eprintf("  size = %d\n", b->size);
+		//eprintf("HIT AT ADDR 0x%"PFMT64x"\n", addr);
+		//eprintf("  recoil = %d\n", b->recoil);
+		//eprintf("  size = %d\n", b->size);
 		if (!b->hw && ((b->addr + b->size) == addr))
 			return b->recoil;
 	}

@@ -48,6 +48,20 @@ void gdbwrap_setreg(gdbwrap_t *desc, ut32 idx, ut64 value){
 	}
 }
 
+void gdbwrap_getreg_buffer(gdbwrap_t *desc, char *buf, ut32 size){
+	if ( desc->reg_size*desc->num_registers > size )
+		size = desc->reg_size*desc->num_registers;
+
+	//Just copy the output buffer
+	memcpy(buf,desc->regs,size);
+}
+
+void gdbwrap_setreg_buffer(gdbwrap_t *desc, char *buf , ut32 size){
+	if ( desc->reg_size*desc->num_registers > size )
+		size = desc->reg_size*desc->num_registers;
+	memcpy (desc->regs, buf, size);
+}
+
 ut64 gdbwrap_getreg(gdbwrap_t *desc, ut32 idx){
 	ut64 ret=-1;
 	if ( idx >= desc->num_registers){
@@ -746,7 +760,7 @@ void                 gdbwrap_setbp(gdbwrap_t *desc, la32 linaddr, void *datasave
  * It is possible that some gdb servers do not implement it, and we could
  * fall back to arch-specific methods then. 
  */
-void                 gdbwrap_simplesetbp(gdbwrap_t *desc, la32 linaddr)
+int                 gdbwrap_simplesetbp(gdbwrap_t *desc, la32 linaddr)
 {
   char *ret;
   char               packet[MSG_BUF];
@@ -755,10 +769,10 @@ void                 gdbwrap_simplesetbp(gdbwrap_t *desc, la32 linaddr)
 	   GDBWRAP_SEP_COMMA, linaddr, GDBWRAP_SEP_COMMA, 0x1);
   ret = gdbwrap_send_data(desc, packet);
   fprintf(stderr,"Received from gdb server: %s\n",ret); 
-  if ( !strncmp(ret,"$#00",4) ){
-	fprintf( stderr, "Breakpoint command not supported by gdb stub. Consider manually adding trap instructions instead.\n");
-  }
-
+  printf("Received from stub: %s\n",ret);
+  if ( ret[0]=='\0' )
+	return 0;
+  return 1;
 }
 
 void                 gdbwrap_simplesethwbp(gdbwrap_t *desc, la32 linaddr)
@@ -770,9 +784,9 @@ void                 gdbwrap_simplesethwbp(gdbwrap_t *desc, la32 linaddr)
 	   GDBWRAP_SEP_COMMA, linaddr, GDBWRAP_SEP_COMMA, 0x1);
   ret = gdbwrap_send_data(desc, packet);
   
-  if ( !strncmp(ret,"$#00",4) ){
-	fprintf( stderr, "HW breakpoint command not supported by gdb stub. Consider manually adding trap instructions instead.\n");
-  }
+  if (ret[0]=='\0')
+	return 0;
+  return 1;
 
 }
 
@@ -783,13 +797,17 @@ void                 gdbwrap_delbp(gdbwrap_t *desc, la32 linaddr, void *datasave
 }
 
 
-void                 gdbwrap_simpledelbp(gdbwrap_t *desc, la32 linaddr)
+int                 gdbwrap_simpledelbp(gdbwrap_t *desc, la32 linaddr)
 {
   char               packet[MSG_BUF];
+  char *ret;
 
   snprintf(packet, sizeof(packet), "%s%s%x%s%x", GDBWRAP_REMOVEBP,
 	   GDBWRAP_SEP_COMMA, linaddr, GDBWRAP_SEP_COMMA, 0x1);
-  gdbwrap_send_data(desc, packet);
+  ret = gdbwrap_send_data(desc, packet);
+  if(ret[0] == '\0')
+	return 0;
+  return 1;
 }
 
 void                 gdbwrap_simpledelhwbp(gdbwrap_t *desc, la32 linaddr)
@@ -972,31 +990,54 @@ void                 gdbwrap_writereg(gdbwrap_t *desc, ureg32 regnum, la32 val)
 }
 
 
+//This is ugly... 
+char *getfmt(ut32 size){
+	switch (size){
+		case 1:
+			return "%02x";
+		case 2:
+			return "%04x";
+		case 4:
+			return "%08x";
+		case 8:
+			return "%16x";
+		default:
+			return NULL;
+	}
+}
+
 /**
  * Ship all the registers to the server in only 1 query. This is used
  * when modifying multiple registers at once for example.
  */
 char                 *gdbwrap_shipallreg(gdbwrap_t *desc)
 {
-  ut8		     savedregs[sizeof(gdbwrap_gdbreg32)];
+  ut8		     *savedregs;
   char               *ret;
+  char		     *fmt;
   char               locreg[700];
   uint8_t            i;
 
   ASSERT(desc != NULL);
-  memcpy(savedregs, desc->regs, sizeof(gdbwrap_gdbreg32));
+  savedregs = (ut8 *)malloc(desc->num_registers*desc->reg_size);
+  ASSERT(savedregs!=NULL);
+  memcpy(savedregs, desc->regs, desc->num_registers*desc->reg_size);
+
+  fmt = getfmt(desc->reg_size);
 
   gdbwrap_readgenreg(desc);
   ret = gdbwrap_lastmsg(desc);
 
   /* We modify the 9 GPR only and we copy the rest from the gpr
      request. */
-  for (i = 0; i < 9; i++)
-    snprintf(locreg + i * 2 * sizeof(ureg32), 2 * sizeof(ureg32) + 1,
-	     "%08x", gdbwrap_little_endian(*(ut32 *)(savedregs + desc->reg_size*i)));
+  for (i = 0; i < desc->num_registers; i++)
+    snprintf(locreg + i * 2 * desc->reg_size, 2 * desc->reg_size + 1,
+	     fmt, gdbwrap_little_endian(*(ut32 *)(savedregs + desc->reg_size*i)));
   ASSERT(strlen(locreg) < desc->max_packet_size);
   memcpy(ret, locreg, strlen(locreg));
   snprintf(locreg, sizeof(locreg), "%s%s", GDBWRAP_WGENPURPREG, ret);
+
+  free(savedregs);
 
   return gdbwrap_send_data(desc, locreg);
 }

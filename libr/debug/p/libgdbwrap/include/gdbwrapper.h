@@ -91,9 +91,9 @@ char             *gdbwrap_own_command(gdbwrap_t *desc, char *command);
 ut8		 *gdbwrap_readgenreg(gdbwrap_t *desc);
 void             gdbwrap_continue(gdbwrap_t *desc);
 void             gdbwrap_setbp(gdbwrap_t *desc, la32 linaddr, void *datasaved);
-void             gdbwrap_simplesetbp(gdbwrap_t *desc, la32 linaddr);
+int		 gdbwrap_simplesetbp(gdbwrap_t *desc, la32 linaddr);
 void             gdbwrap_delbp(gdbwrap_t *desc, la32 linaddr, void *datasaved);
-void             gdbwrap_simpledelbp(gdbwrap_t *desc, la32 linaddr);
+int             gdbwrap_simpledelbp(gdbwrap_t *desc, la32 linaddr);
 char             *gdbwrap_readmem(gdbwrap_t *desc, la32 linaddr, unsigned bytes);
 void             gdbwrap_writemem(gdbwrap_t *desc, la32 linaddr, void *value,
 				  unsigned bytes);
@@ -106,6 +106,7 @@ char             *gdbwrap_remotecmd(gdbwrap_t *desc, char *cmd);
 u_char           gdbwrap_lasterror(gdbwrap_t *desc);
 gdbmemap_t       gdbwrap_memorymap_get();
 ut64		 gdbwrap_getreg(gdbwrap_t *desc, ut32 idx);
+void		 gdbwrap_getreg_buffer(gdbwrap_t *desc, char *buf, ut32 size);
 void		 gdbwrap_setreg(gdbwrap_t *desc, ut32 idx, ut64 value);
-
+void		 gdbwrap_setreg_buffer(gdbwrap_t *desc, char *buf, ut32 size);
 #endif
