@@ -42,16 +42,6 @@ static const char *r_cons_color_names[CONS_COLORS_SIZE+1] = {
 	"bgreen", "byellow", "bturqoise", "reset", "bgblack", "bgred", NULL
 };
 
-R_API void r_cons_invert(int set, int color) {
-	if (color) {
-		if (set) r_cons_strcat("\x1b[7m");
-		else r_cons_strcat("\x1b[27m");
-	} else {
-		if (set) r_cons_strcat("[");
-		else r_cons_strcat("]");
-	}
-}
-
 static const char *r_cons_colors[CONS_COLORS_SIZE+1] = {
 	Color_BLACK,      // 0
 	Color_GRAY,       // 1

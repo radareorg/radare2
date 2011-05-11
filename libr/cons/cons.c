@@ -344,3 +344,13 @@ R_API void r_cons_set_raw(int is_raw) {
 #endif
 	fflush (stdout);
 }
+
+R_API void r_cons_invert(int set, int color) {
+	if (color) {
+		if (set) r_cons_strcat("\x1b[7m");
+		else r_cons_strcat("\x1b[27m");
+	} else {
+		if (set) r_cons_strcat("[");
+		else r_cons_strcat("]");
+	}
+}
