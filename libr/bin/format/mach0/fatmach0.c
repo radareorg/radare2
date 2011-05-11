@@ -16,6 +16,8 @@ static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
 	bin->nfat_arch = bin->hdr.nfat_arch;
 	if (bin->hdr.magic != FAT_MAGIC || bin->nfat_arch == 0)
 		return R_FALSE;
+	if (bin->nfat_arch<1)
+		return R_FALSE;
 	if (!(bin->archs = malloc (bin->nfat_arch * sizeof (struct fat_arch)))) {
 		perror ("malloc (fat_arch)");
 		return R_FALSE;
@@ -35,7 +37,7 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 	if (bin->hdr.nfat_arch < 0 || idx < 0 || idx > bin->hdr.nfat_arch)
 		return NULL;
 	*narch = bin->hdr.nfat_arch;
-	if (!(ret = malloc (sizeof(struct r_bin_fatmach0_arch_t)))) {
+	if (!(ret = malloc (sizeof (struct r_bin_fatmach0_arch_t)))) {
 		perror ("malloc (ret)");
 		return NULL;
 	}
@@ -44,7 +46,7 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 		free (ret);
 		return NULL;
 	}
-	if (!(buf = malloc (bin->archs[idx].size))) {
+	if (!(buf = malloc (1+bin->archs[idx].size))) {
 		perror ("malloc (buf)");
 		free (ret);
 		return NULL;
@@ -86,11 +88,11 @@ struct r_bin_fatmach0_obj_t* r_bin_fatmach0_new(const char* file) {
 	struct r_bin_fatmach0_obj_t *bin;
 	ut8 *buf;
 
-	if (!(bin = malloc(sizeof(struct r_bin_fatmach0_obj_t))))
+	if (!(bin = malloc (sizeof (struct r_bin_fatmach0_obj_t))))
 		return NULL;
 	memset (bin, 0, sizeof (struct r_bin_fatmach0_obj_t));
 	bin->file = file;
-	if (!(buf = (ut8*)r_file_slurp(file, &bin->size))) 
+	if (!(buf = (ut8*)r_file_slurp (file, &bin->size))) 
 		return r_bin_fatmach0_free(bin);
 	bin->b = r_buf_new();
 	if (!r_buf_set_bytes(bin->b, buf, bin->size))

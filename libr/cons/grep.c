@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> nibble<develsec.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> nibble<develsec.org> */
 
 #include <r_cons.h>
 #include <r_util.h>
@@ -116,7 +116,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	free (tbuf);
 	free (tline);
 	if (cons->grep.counter) {
-		sprintf (cons->buffer, "%d\n", cons->lines);
+		snprintf (cons->buffer, cons->buffer_len, "%d\n", cons->lines);
 		cons->buffer_len = strlen (cons->buffer);;
 	}
 	return cons->lines;
@@ -127,7 +127,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	const char delims[6][2] = { "|", "/", "\\", ",", ";", "\t" };
 	char *in, *out, *tok = NULL;
 	int hit = cons->grep.neg;
-	int i, j;
+	int i, j, outlen = 0;
 
 	in = calloc (1, len+1);
 	out = calloc (1, len+2);
@@ -148,22 +148,30 @@ R_API int r_cons_grep_line(char *buf, int len) {
 				if (in[i] == delims[j][0])
 					in[i] = ' ';
 			for (i=0; i <= cons->grep.tokento; i++) {
-				if (i==0) tok = (char *)strtok (in, " ");
-				else tok = (char *)strtok (NULL, " ");
-				if (tok == NULL) {
+				tok = (char *) strtok (i?NULL:in, " ");
+				if (tok) {
+					if (i >= cons->grep.tokenfrom) {
+						int toklen = strlen (tok);
+						memcpy (out+outlen, tok, toklen);
+						memcpy (out+outlen+toklen, " ", 2);
+						outlen += toklen+1;
+					}
+				} else {
 					if (strlen (out) == 0) {
 						free (in);
 						free (out);
 						return -1;
 					} else break;
 				}
-				if (i >= cons->grep.tokenfrom) {
-					strcat (out, tok);
-					strcat (out, " ");
-				}
 			}
-			len = strlen (out) - 1;
+			outlen = outlen>0? outlen - 1: 0;
+			if (outlen>len) { // should never happen
+				eprintf ("r_cons_grep_line: wtf, how you reach this?\n");
+				return -1;
+			}
 			memcpy (buf, out, len);
+			len = outlen;
+			
 		}
 	} else len = 0;
 

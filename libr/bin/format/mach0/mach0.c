@@ -101,17 +101,17 @@ static int MACH0_(r_bin_mach0_parse_symtab)(struct MACH0_(r_bin_mach0_obj_t)* bi
 	}
 	if (st.strsize > 0 && st.strsize < bin->size && st.nsyms > 0) {
 		bin->nsymtab = st.nsyms;
-		if (!(bin->symstr = malloc(st.strsize))) {
+		if (!(bin->symstr = malloc (st.strsize))) {
 			perror("malloc (symstr)");
 			return R_FALSE;
 		}
 		bin->symstrlen = st.strsize;
-		if (r_buf_read_at(bin->b, st.stroff, (ut8*)bin->symstr, st.strsize) == -1) {
+		if (r_buf_read_at (bin->b, st.stroff, (ut8*)bin->symstr, st.strsize) == -1) {
 			eprintf("Error: read (symstr)\n");
 			R_FREE (bin->symstr);
 			return R_FALSE;
 		}
-		if (!(bin->symtab = malloc(bin->nsymtab * sizeof(struct MACH0_(nlist))))) {
+		if (!(bin->symtab = malloc (bin->nsymtab * sizeof (struct MACH0_(nlist))))) {
 			perror("malloc (symtab)");
 			return R_FALSE;
 		}
@@ -140,7 +140,7 @@ static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* 
 	}
 	bin->ntoc = bin->dysymtab.ntoc;
 	if (bin->ntoc > 0) {
-		if (!(bin->toc = malloc(bin->ntoc * sizeof(struct dylib_table_of_contents)))) {
+		if (!(bin->toc = malloc (bin->ntoc * sizeof(struct dylib_table_of_contents)))) {
 			perror("malloc (toc)");
 			return R_FALSE;
 		}
@@ -153,7 +153,7 @@ static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* 
 	}
 	bin->nmodtab = bin->dysymtab.nmodtab;
 	if (bin->nmodtab > 0) {
-		if (!(bin->modtab = malloc(bin->nmodtab * sizeof(struct MACH0_(dylib_module))))) {
+		if (!(bin->modtab = malloc (bin->nmodtab * sizeof(struct MACH0_(dylib_module))))) {
 			perror("malloc (modtab)");
 			return R_FALSE;
 		}

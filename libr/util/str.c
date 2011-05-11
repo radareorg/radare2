@@ -582,7 +582,9 @@ R_API int r_str_escape(char *buf) {
 R_API char *r_str_unscape(char *buf) {
 	char *ptr, *ret;
 	int len = strlen (buf);
-	ptr = ret = malloc (len*2);
+	ptr = ret = malloc (1+len*2);
+	if (ptr == NULL)
+		return NULL;
 	for (;*buf;buf++,ptr++) {
 		if (*buf=='\n') {
 			*ptr = '\\';
@@ -594,7 +596,7 @@ R_API char *r_str_unscape(char *buf) {
 			ptr++;
 			*ptr = 't';
 		} else
-		if (IS_PRINTABLE(*buf)) {
+		if (IS_PRINTABLE (*buf)) {
 			*ptr = *buf;
 		} else break;
 	}
