@@ -130,6 +130,7 @@ extern struct r_bp_plugin_t r_bp_plugin_x86;
 extern struct r_bp_plugin_t r_bp_plugin_arm;
 extern struct r_bp_plugin_t r_bp_plugin_mips;
 extern struct r_bp_plugin_t r_bp_plugin_ppc;
+extern struct r_bp_plugin_t r_bp_plugin_sh;
 #if 0
 extern struct r_bp_plugin_t r_bp_plugin_sparc;
 #endif
