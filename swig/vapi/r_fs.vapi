@@ -16,6 +16,8 @@ namespace Radare {
 		public RList<RFSFile> dir(string path);
 		public RList<RFSPartition> partitions (string ptype, uint64 delta);
 		public RList<RFSRoot> roots;
+		public int dir_dump (string path, string name);
+		public RList<string> find (string name, string glob);
 		public static unowned string partition_type (string part, int type);
 	}
 

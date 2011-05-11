@@ -77,6 +77,8 @@ R_API void r_fs_close (RFS* fs, RFSFile *file);
 R_API int r_fs_read (RFS* fs, RFSFile *file, ut64 addr, int len);
 R_API RFSFile *r_fs_slurp(RFS* fs, const char *path);
 R_API RList *r_fs_dir(RFS* fs, const char *path);
+R_API int r_fs_dir_dump (RFS* fs, const char *path, char *name);
+R_API RList *r_fs_find (RFS* fs, const char *name, const char *glob);
 R_API RList *r_fs_partitions(RFS* fs, const char *ptype, ut64 delta);
 R_API int r_fs_prompt (RFS *fs, char *root);
 

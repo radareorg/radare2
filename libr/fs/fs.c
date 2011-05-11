@@ -184,6 +184,89 @@ R_API RList *r_fs_dir(RFS* fs, const char *p) {
 	return ret;
 }
 
+R_API int r_fs_dir_dump (RFS* fs, const char *path, char *name) {
+	RList *list;
+	RListIter *iter;
+	RFSFile *file, *item;
+	char *str, *npath;
+
+	list = r_fs_dir (fs, path);
+	if (!r_sys_mkdir (name)) {
+		if (r_sys_mkdir_failed()) {
+			eprintf ("Cannot create \"%s\"\n", name);
+			return R_FALSE;
+		}
+	}
+	r_list_foreach (list, iter, file) {
+		if (!strcmp (file->name, ".") || !strcmp (file->name, ".."))
+			continue;
+		str = (char *) malloc (strlen (name) + strlen (file->name) + 2);
+		if (!str)
+			return R_FALSE;
+		strcpy (str, name);
+		strcat (str, "/");
+		strcat (str, file->name);
+		npath = malloc (strlen (path) + strlen (file->name) + 2);
+		if (!npath)
+			return R_FALSE;
+		strcpy (npath, path);
+		strcat (npath, "/");
+		strcat (npath, file->name);
+		if (file->type != R_FS_FILE_TYPE_DIRECTORY) {
+			item = r_fs_open (fs, npath);
+			if (item) {
+				r_fs_read (fs, item, 0, item->size);
+				r_file_dump (str, item->data, item->size);
+				r_fs_close (fs, item);
+			}
+		} else {
+			r_fs_dir_dump (fs, npath, str);
+			free (npath);
+		}
+		free (str);
+	}
+	return R_TRUE;
+}
+
+static void r_fs_find_aux (RFS* fs, const char *name, const char *glob, RList *list) {
+	RList *dirs;
+	RListIter *iter;
+	RFSFile *item;
+	char *found;
+
+	dirs = r_fs_dir (fs, name);
+	r_list_foreach (dirs, iter, item) {
+		if (!strcmp (item->name, glob)) {
+			found = (char *) malloc (strlen (name) + strlen (item->name) + 2);
+			if (!found)
+				break;
+			strcpy (found, name);
+			strcat (found, "/");
+			strcat (found, item->name);
+			r_list_append (list, found);
+		}
+		if (!strcmp (item->name, ".") || !strcmp (item->name, ".."))
+			continue;
+		if (item->type == R_FS_FILE_TYPE_DIRECTORY) {
+			found = (char *) malloc (strlen (name) + strlen (item->name) + 2);
+			if (!found)
+				break;
+			strcpy (found, name);
+			strcat (found, "/");
+			strcat (found, item->name);
+			r_fs_find_aux (fs, found, glob, list);
+			free (found);
+		}
+	}
+}
+
+R_API RList *r_fs_find (RFS* fs, const char *name, const char *glob) {
+	RList *list =  r_list_new ();
+	list->free = free;
+	r_fs_find_aux (fs, name, glob, list);
+	return list;
+}
+
 R_API RFSFile *r_fs_slurp(RFS* fs, const char *path) {
 	RFSFile *file = NULL;
 	RFSRoot *root = r_fs_root (fs, path);

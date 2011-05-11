@@ -1140,6 +1140,32 @@ static int cmd_mount(void *data, const char *_input) {
 			write (1, "\n", 1);
 		} else eprintf ("Cannot open file\n");
 		break;
+	case 'G':
+		input++;
+		if (*input == ' ')
+			input++;
+		ptr = strchr (input, ' ');
+		if (ptr)
+			*ptr++ = 0;
+		else
+			ptr = "./";
+		r_fs_dir_dump (core->fs, input, ptr);
+		break;
+	case 'f':
+		input++;
+		if (*input == ' ')
+			input++;
+		ptr = strchr (input, ' ');
+		if (ptr) {
+			*ptr++ = 0;
+			list = r_fs_find (core->fs, input, ptr);
+			r_list_foreach (list, iter, ptr) {
+				r_str_chop_path (ptr);
+				printf ("%s\n", ptr);
+			}
+			//XXX: r_list_destroy (list);
+		} else eprintf ("Unknown store path\n");
+		break;
 	case 's':
 		input++;
 		if (input[0]==' ')
@@ -1160,6 +1186,8 @@ static int cmd_mount(void *data, const char *_input) {
 		" my             ; yank contents of file into clipboard\n"
 		" mo /foo        ; get offset and size of given file\n"
 		" mg /foo        ; get contents of file dumped to disk (XXX?)\n"
+		" mG /foo /back  ; get contents of dir dumped to disk /back dir (XXX?)\n"
+		" mf /foo bar    ; search files with bar name in /foo path\n"
 		" md /           ; list directory contents for path\n"
 		" mp             ; list all supported partition types\n"
 		" mp msdos 0     ; show partitions in msdos format at offset 0\n"
