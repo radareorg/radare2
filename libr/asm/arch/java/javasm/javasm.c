@@ -298,13 +298,12 @@ int java_classdump(const char *file, int verbose) {
 	
 	cf.cp_count--;
 	V printf("ConstantPoolCount %d\n", cf.cp_count);
-	cp_items = malloc(sizeof(struct cp_item)*(cf.cp_count+1));
+	cp_items = malloc (sizeof (struct cp_item)*(cf.cp_count+1));
 	for(i=0;i<cf.cp_count;i++) {
 		struct constant_t *c;
-		fread(buf, 1, 1, fd);
-
+		fread (buf, 1, 1, fd);
 		c = NULL;
-		for(j=0;constants[j].name;j++) {
+		for (j=0; constants[j].name; j++) {
 			if (constants[j].tag == buf[0])  {
 				c = &constants[j];
 				break;

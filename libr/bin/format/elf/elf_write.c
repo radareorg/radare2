@@ -55,9 +55,9 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
 		if (!strcmp(&strtab[shdrp->sh_name], ".rel.plt")) {
 			Elf_(Rel) *rel, *relp;
-			rel = (Elf_(Rel) *)malloc(shdrp->sh_size);
+			rel = (Elf_(Rel) *)malloc (1+shdrp->sh_size);
 			if (rel == NULL) {
-				perror("malloc");
+				perror ("malloc");
 				return 0;
 			}
 			if (r_buf_read_at(bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1)
@@ -78,7 +78,7 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 			break;
 		} else if (!strcmp(&strtab[shdrp->sh_name], ".rela.plt")) {
 			Elf_(Rela) *rel, *relp;
-			rel = (Elf_(Rela) *)malloc(shdrp->sh_size);
+			rel = (Elf_(Rela) *)malloc (1+shdrp->sh_size);
 			if (rel == NULL) {
 				perror("malloc");
 				return 0;
@@ -153,7 +153,7 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 	/* XXX Check when delta is negative */
 	rest_size = bin->size - (rsz_offset + rsz_osize);
 
-	buf = (ut8 *)malloc (bin->size);
+	buf = (ut8 *)malloc (1+bin->size);
 	r_buf_read_at (bin->b, 0, (ut8*)buf, bin->size);
 	r_buf_set_bytes (bin->b, (ut8*)buf, (int)(rsz_offset+rsz_size+rest_size));
 
@@ -176,7 +176,7 @@ int Elf_(r_bin_elf_del_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 	for (i = 0; i < bin->ehdr.e_phnum; i++)
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
-			if (!(dyn = malloc (bin->phdr[i].p_filesz))) {
+			if (!(dyn = malloc (1+bin->phdr[i].p_filesz))) {
 				perror ("malloc (dyn)");
 				return R_FALSE;
 			}

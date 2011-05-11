@@ -458,7 +458,7 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return NULL;
 	for (i = 0; i < bin->ehdr.e_phnum; i++)
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
-			if (!(dyn = malloc (bin->phdr[i].p_filesz))) {
+			if (!(dyn = malloc (1+bin->phdr[i].p_filesz))) {
 				perror ("malloc (dyn)");
 				return NULL;
 			}
@@ -552,6 +552,8 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		else if (!strcmp (&bin->strtab[bin->shdr[i].sh_name], ".rela.plt"))
 			tsize = sizeof (Elf_(Rela));
 		else continue;
+		if (tsize <1)
+			return ret; // -1 ?
 		if ((rel = (Elf_(Rel) *)malloc ((int)(bin->shdr[i].sh_size / tsize) * sizeof (Elf_(Rel)))) == NULL) {
 			perror ("malloc (rel)");
 			return NULL;

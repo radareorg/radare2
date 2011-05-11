@@ -254,10 +254,12 @@ struct r_range_t *r_meta_ranges(RMeta *m)
 
 static void printmetaitem(RMeta *m, RMetaItem *d) {
 	char *str = r_str_unscape (d->str);
-	m->printf ("%s %d \"%s\" @ 0x%08"PFMT64x"\n",
-		r_meta_type_to_string (d->type),
-		(int)(d->to-d->from), str, d->from);
-	free (str);
+	if (str) {
+		m->printf ("%s %d \"%s\" @ 0x%08"PFMT64x"\n",
+			r_meta_type_to_string (d->type),
+			(int)(d->to-d->from), str, d->from);
+		free (str);
+	}
 }
 
 // TODO: Deprecate

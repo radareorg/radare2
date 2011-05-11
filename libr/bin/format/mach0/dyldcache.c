@@ -34,7 +34,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	if (bin->nlibs < 0 || idx < 0 || idx > bin->nlibs)
 		return NULL;
 	*nlib = bin->nlibs;
-	if (!(ret = malloc (sizeof(struct r_bin_dyldcache_lib_t)))) {
+	if (!(ret = malloc (sizeof (struct r_bin_dyldcache_lib_t)))) {
 		perror ("malloc (ret)");
 		return NULL;
 	}
@@ -153,7 +153,7 @@ void* r_bin_dyldcache_free(struct r_bin_dyldcache_obj_t* bin) {
 struct r_bin_dyldcache_obj_t* r_bin_dyldcache_new(const char* file) {
 	struct r_bin_dyldcache_obj_t *bin;
 	ut8 *buf;
-	if (!(bin = malloc(sizeof(struct r_bin_dyldcache_obj_t))))
+	if (!(bin = malloc (sizeof (struct r_bin_dyldcache_obj_t))))
 		return NULL;
 	memset (bin, 0, sizeof (struct r_bin_dyldcache_obj_t));
 	bin->file = file;

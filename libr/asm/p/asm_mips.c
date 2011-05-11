@@ -44,7 +44,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	if (buf_global == NULL || format == NULL)
 		return R_FALSE;
 	va_start (ap, format);
- 	tmp = malloc (strlen(format)+strlen(buf_global)+2);
+ 	tmp = malloc (strlen (format)+strlen (buf_global)+2);
 	if (tmp == NULL)
 		return R_FALSE;
 	sprintf (tmp, "%s%s", buf_global, format);

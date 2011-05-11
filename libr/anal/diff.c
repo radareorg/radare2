@@ -29,9 +29,9 @@ R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb) {
 	if (anal && anal->cur && anal->cur->fingerprint_bb)
 		return (anal->cur->fingerprint_bb (anal, bb));
 
-	if (!(bb->fingerprint = malloc (bb->size)))
+	if (!(bb->fingerprint = malloc (1+bb->size)))
 		return R_FALSE;
-	if (!(buf = malloc (bb->size))) {
+	if (!(buf = malloc (1+bb->size))) {
 		free (bb->fingerprint);
 		return 0;
 	}

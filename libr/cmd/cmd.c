@@ -10,6 +10,7 @@ R_API RCmd *r_cmd_new () {
 		INIT_LIST_HEAD (&cmd->lcmds);
 		for (i=0;i<255;i++)
 			cmd->cmds[i] = NULL;
+		cmd->nullcallback =
 		cmd->data = NULL;
 	}
 	r_cmd_plugin_init (cmd);

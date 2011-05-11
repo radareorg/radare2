@@ -13,7 +13,7 @@ char* r_bin_dex_get_version(struct r_bin_dex_obj_t* bin) {
 struct r_bin_dex_obj_t* r_bin_dex_new_buf(struct r_buf_t *buf) {
 	struct r_bin_dex_obj_t *bin;
 
-	if (!(bin = malloc(sizeof(struct r_bin_dex_obj_t))))
+	if (!(bin = malloc (sizeof (struct r_bin_dex_obj_t))))
 		return NULL;
 	memset (bin, 0, sizeof (struct r_bin_dex_obj_t));
 	bin->b = buf;

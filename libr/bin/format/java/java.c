@@ -108,7 +108,7 @@ static int attributes_walk(struct r_bin_java_obj_t *bin, struct r_bin_java_attr_
 				IFDBG printf("      code Attributes_count: %d\n", sz4);
 
 				if (sz4>0) {
-					attr->attributes = malloc(sz4 * sizeof(struct r_bin_java_attr_t));
+					attr->attributes = malloc(1+sz4 * sizeof(struct r_bin_java_attr_t));
 					attributes_walk(bin, attr->attributes, sz4, fields);
 				}
 			} else
@@ -177,7 +177,7 @@ static int javasm_init(struct r_bin_java_obj_t *bin) {
 	bin->cf.cp_count--;
 
 	IFDBG printf("ConstantPoolCount %d\n", bin->cf.cp_count);
-	bin->cp_items = malloc(sizeof(struct r_bin_java_cp_item_t)*(bin->cf.cp_count+1));
+	bin->cp_items = malloc (sizeof (struct r_bin_java_cp_item_t)*(bin->cf.cp_count+1));
 	for(i=0;i<bin->cf.cp_count;i++) {
 		struct constant_t *c;
 
@@ -274,7 +274,7 @@ static int javasm_init(struct r_bin_java_obj_t *bin) {
 	bin->fields_count = sz;
 	IFDBG printf("Fields count: %d\n", sz);
 	if (sz>0) {
-		bin->fields = malloc(sz * sizeof(struct r_bin_java_fm_t));
+		bin->fields = malloc (1+sz * sizeof(struct r_bin_java_fm_t));
 		for (i=0;i<sz;i++) {
 			r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)buf, 8);
 			bin->fields[i].flags = R_BIN_JAVA_USHORT(buf, 0);
@@ -289,7 +289,7 @@ static int javasm_init(struct r_bin_java_obj_t *bin) {
 			bin->fields[i].attr_count = sz2;
 			IFDBG printf("    field Attributes Count: %d\n", sz2);
 			if (sz2 > 0) {
-				bin->fields[i].attributes = malloc(sz2 * sizeof(struct r_bin_java_attr_t));
+				bin->fields[i].attributes = malloc(1+sz2 * sizeof(struct r_bin_java_attr_t));
 				for(j=0;j<sz2;j++)
 					attributes_walk(bin, &bin->fields[i].attributes[j], sz2, 1);
 			}
@@ -324,7 +324,7 @@ static int javasm_init(struct r_bin_java_obj_t *bin) {
 			bin->methods[i].attr_count = sz2;
 			IFDBG printf("    method Attributes Count: %d\n", sz2);
 			if (sz2 > 0) {
-				bin->methods[i].attributes = malloc(sz2 * sizeof(struct r_bin_java_attr_t));
+				bin->methods[i].attributes = malloc(1+sz2 * sizeof(struct r_bin_java_attr_t));
 				for(j=0;j<sz2;j++) {
 					if (!attributes_walk (bin, &bin->methods[i].attributes[j], sz2, 0))
 						return R_FALSE;
@@ -356,7 +356,7 @@ struct r_bin_java_sym_t* r_bin_java_get_symbols(struct r_bin_java_obj_t* bin) {
 	struct r_bin_java_sym_t *symbols;
 	int i, j, ctr = 0;
 
-	if ((symbols = malloc((bin->methods_count + 1) * sizeof(struct r_bin_java_sym_t))) == NULL)
+	if ((symbols = malloc ((bin->methods_count + 1) * sizeof(struct r_bin_java_sym_t))) == NULL)
 		return NULL;
 	for (i=0; i < bin->methods_count; i++) {
 		memcpy(symbols[ctr].name, bin->methods[i].name, R_BIN_JAVA_MAXSTR);
