@@ -181,9 +181,9 @@ static int r_debug_native_step(RDebug *dbg) {
 */
 	r_debug_native_continue (pid, dbg->tid, -1);
 #elif __APPLE__
-	debug_arch_x86_trap_set (dbg, 1);
+	//debug_arch_x86_trap_set (dbg, 1);
 	// TODO: not supported in all platforms. need dbg.swstep=
-	#if __arm__
+	#if 0 && __arm__
 	if (!dbg->swstep)
 		eprintf ("XXX hardware stepping is not supported in arm. set e dbg.swstep=true\n");
 	else eprintf ("XXX: software step is not implemented??\n");
@@ -191,7 +191,7 @@ static int r_debug_native_step(RDebug *dbg) {
 	#endif
 	//eprintf ("stepping from pc = %08x\n", (ut32)get_offset("eip"));
 	//ret = ptrace (PT_STEP, ps.tid, (caddr_t)get_offset("eip"), SIGSTOP);
-	ret = ptrace (PT_STEP, pid, (caddr_t)1, SIGTRAP); //SIGINT);
+	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0); //SIGINT);
 	if (ret != 0) {
 		perror ("ptrace-step");
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
@@ -221,7 +221,6 @@ static int r_debug_native_attach(RDebug *dbg, int pid) {
 	} else ret = -1;
 	ret = w32_first_thread (pid);
 #elif __APPLE__
-	// XXX: not necessary in X86??
 	ret = ptrace (PT_ATTACH, pid, 0, 0);
 	if (ret!=-1) {
 		perror ("ptrace(PT_ATTACH)");

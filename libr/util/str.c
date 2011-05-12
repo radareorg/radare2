@@ -576,7 +576,7 @@ R_API int r_str_escape(char *buf) {
 
 	//char *p = buf; while(*p) { eprintf("%d %c\n", *p, *p); p++; }
 	//eprintf("OLEN=%d (%s)\n", strlen(buf), buf);
-	return strlen(buf);
+	return i; //strlen (buf);
 }
 
 R_API char *r_str_unscape(char *buf) {

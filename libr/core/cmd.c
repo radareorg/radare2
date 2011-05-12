@@ -3204,10 +3204,11 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 }
 
 static int cmd_search(void *data, const char *input) {
+	char *inp;
 	RCore *core = (RCore *)data;
 	ut64 at, from, to;
 	//RIOSection *section;
-	int ret, dosearch = R_FALSE;
+	int i, len, ret, dosearch = R_FALSE;
 	int aes_search = R_FALSE;
 	ut32 n32;
 	ut8 *buf;
@@ -3225,11 +3226,10 @@ static int cmd_search(void *data, const char *input) {
 	}
 */
 	searchprefix = r_config_get (core->config, "search.prefix");
+	// TODO: get ranges from current IO section
 	/* XXX: Think how to get the section ranges here */
-	if (from == 0LL)
-		from = core->offset;
-	if (to == 0LL)
-		to = 0xFFFFFFFF; //core->file->size+0x8048000;
+	if (from == 0LL) from = core->offset;
+	if (to == 0LL) to = UT32_MAX; // XXX?
 
 	switch (*input) {
 	case 'a':
@@ -3299,11 +3299,17 @@ static int cmd_search(void *data, const char *input) {
 		}
 		break;
 	case ' ': /* search string */
+		inp = strdup (input+1);
+		len = r_str_escape (inp);
+		eprintf ("Searching %d bytes: ", len);
+		for (i=0; i<len; i++) eprintf ("%02x ", inp[i]);
+		eprintf ("\n");
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
 		r_search_kw_add (core->search, 
-			r_search_keyword_new_str (input+1, "", NULL));
+			r_search_keyword_new ((const ut8*)inp, len, NULL, 0, NULL));
+			//r_search_keyword_new_str (, "", NULL));
 		r_search_begin (core->search);
 		dosearch = 1;
 		break;
@@ -3372,7 +3378,7 @@ static int cmd_search(void *data, const char *input) {
 	default:
 		r_cons_printf (
 		"Usage: /[amx/] [arg]\n"
-		" / foo           ; search for string 'foo'\n"
+		" / foo\\x00       ; search for string 'foo\\0'\n"
 		" /w foo          ; search for wide string 'f\\0o\\0o\\0'\n"
 		" /e /E.F/i       ; match regular expression\n"
 		" /x ff0033       ; search for hex string\n"
@@ -3385,6 +3391,7 @@ static int cmd_search(void *data, const char *input) {
 		" //              ; repeat last search\n"
 		" ./ hello        ; search 'hello string' and import flags\n"
 		"Configuration:\n"
+		" e cmd.hit = x         ; command to execute on every search hit\n"
 		" e search.distance = 0 ; search string distance\n"
 		" e search.align = 4    ; only catch aligned search hits\n"
 		" e search.from = 0     ; start address\n"
@@ -3642,6 +3649,8 @@ static int cmd_open(void *data, const char *input) {
 		perm = core->file->rwx;
 		addr = 0; // XXX ? check file->map ?
 		path = strdup (core->file->uri);
+		if (r_config_get_i (core->config, "cfg.debug"))
+			r_debug_kill (core->dbg, R_FALSE, 9); // KILL
 		r_core_file_close (core, core->file);
 		file = r_core_file_open (core, path, perm, addr);
 		if (file) eprintf ("File %s reopened\n", path);
@@ -3653,7 +3662,7 @@ static int cmd_open(void *data, const char *input) {
 	default:
 		eprintf ("Usage: o[o-] [file] ([offset])\n"
 		" o                   ; list opened files\n"
-		" oo                  ; reopen current file (refork in debugger)\n"
+		" oo                  ; reopen current file (kill+fork in debugger)\n"
 		" o /bin/ls           ; open /bin/ls file\n"
 		" o /bin/ls 0x8048000 ; map file\n"
 		" o 4                 ; priorize io on fd 4 (bring to front)\n"
@@ -4662,6 +4671,7 @@ static int cmd_debug(void *data, const char *input) {
 				" dcf              continue until fork (TODO)\n"
 				" dct [len]        traptrace from curseek to len, no argument to list\n"
 				" dcu [addr]       continue until address\n"
+				" dcu [addr] [end] continue until given address range\n"
 				" dco [num]        step over N instructions\n"
 				" dcs [num]        continue until syscall\n"
 				" dcc              continue until call (use step into)\n"
@@ -4709,6 +4719,11 @@ static int cmd_debug(void *data, const char *input) {
 			/* TODO : use r_syscall here, to retrieve syscall info */
 			break;
 		case 'u':
+			ptr = strchr (input+3, ' ');
+			if (ptr) {
+				eprintf ("Continue until address range not yet implemented\n");
+				return 1;
+			}
 			addr = r_num_math (core->num, input+2);
 			if (addr) {
 				eprintf ("Continue until 0x%08"PFMT64x"\n", addr);

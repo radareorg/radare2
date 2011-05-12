@@ -4,8 +4,8 @@
   |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
 
+* Continue until offset range (dcu from to) ## implement
 * x86/32-x86/64 the -e asm.bits should
-* memset0 the op before calling the plugin analysis
 * Make r_io happy with RList
 * We need a 64 bit x86 assembler working!! nasm fails
 
@@ -271,6 +271,7 @@ Refactoring
  
 Future
 ======
+* memset0 the op before calling the plugin analysis -- not really that's a performance cost..
 * r_file_slurp should work fine for big files (not prio) r_file_slurp_buf?
   - mmap if supported - add r_file_mmap ?  - read file in blocks instead of the whole file in a single syscall
 * Realign flags when using project in debug mode
