@@ -3615,8 +3615,8 @@ static int cmd_open(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	RCoreFile *file;
 	ut64 addr;
-	char *ptr;
-	int num = -1;
+	char *ptr, *path;
+	int perm, num = -1;
 
 	switch (*input) {
 	case '\0':
@@ -3645,10 +3645,22 @@ static int cmd_open(void *data, const char *input) {
 			eprintf ("Unable to find filedescriptor %d\n", atoi (input+1));
 		r_core_block_read (core, 0);
 		break;
+	case 'o':
+		perm = core->file->rwx;
+		addr = 0; // XXX ? check file->map ?
+		path = strdup (core->file->uri);
+		r_core_file_close (core, core->file);
+		file = r_core_file_open (core, path, perm, addr);
+		if (file) eprintf ("File %s reopened\n", path);
+		else eprintf ("Cannot reopen '%s'\n", path);
+		// TODO: in debugger must select new PID
+		free (path);
+		break;
 	case '?':
 	default:
-		eprintf ("Usage: o [file] ([offset])\n"
+		eprintf ("Usage: o[o-] [file] ([offset])\n"
 		" o                   ; list opened files\n"
+		" oo                  ; reopen current file (refork in debugger)\n"
 		" o /bin/ls           ; open /bin/ls file\n"
 		" o /bin/ls 0x8048000 ; map file\n"
 		" o 4                 ; priorize io on fd 4 (bring to front)\n"

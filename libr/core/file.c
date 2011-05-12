@@ -102,12 +102,17 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	if ((info = r_bin_get_info (r->bin)) != NULL) {
 		r_config_set (r->config, "file.type", info->rclass);
 		r_config_set (r->config, "cfg.bigendian", info->big_endian?"true":"false");
-		r_config_set (r->config, "asm.os", info->os);
-		r_config_set (r->config, "asm.arch", info->arch);
-		r_config_set (r->config, "anal.plugin", info->arch);
-		snprintf (str, R_FLAG_NAME_SIZE, "%i", info->bits);
-		r_config_set (r->config, "asm.bits", str);
-		r_config_set (r->config, "asm.dwarf", R_BIN_DBG_STRIPPED (info->dbg_info)?"false":"true");
+		if (!strcmp (info->rclass, "fs")) {
+			r_config_set (r->config, "asm.arch", info->arch);
+			r_core_cmdf (r, "m %s /root 0", info->arch);
+		} else {
+			r_config_set (r->config, "asm.os", info->os);
+			r_config_set (r->config, "asm.arch", info->arch);
+			r_config_set (r->config, "anal.plugin", info->arch);
+			snprintf (str, R_FLAG_NAME_SIZE, "%i", info->bits);
+			r_config_set (r->config, "asm.bits", str);
+			r_config_set (r->config, "asm.dwarf", R_BIN_DBG_STRIPPED (info->dbg_info)?"false":"true");
+		}
 	}
 
 	// M -> Main

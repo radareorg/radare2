@@ -413,17 +413,24 @@ static int rabin_show_info() {
 		return R_FALSE;
 
 	if (rad) {
-		printf ("e file.type=%s\n"
-				"e cfg.bigendian=%s\n"
-				"e asm.os=%s\n"
-				"e asm.arch=%s\n"
-				"e anal.plugin=%s\n"
-				"e asm.bits=%i\n"
-				"e asm.dwarf=%s\n",
+		if (!strcmp (info->type, "fs")) {
+			printf ("e file.type=fs\n");
+			printf ("m %s /root 0\n", info->arch);
+		} else {
+			printf (
+			"e file.type=%s\n"
+			"e cfg.bigendian=%s\n"
+			"e asm.os=%s\n"
+			"e asm.arch=%s\n"
+			"e anal.plugin=%s\n"
+			"e asm.bits=%i\n"
+			"e asm.dwarf=%s\n",
 				info->rclass, info->big_endian?"true":"false", info->os,
 				info->arch, info->arch, info->bits,
 				R_BIN_DBG_STRIPPED (info->dbg_info)?"false":"true");
+		}
 	} else {
+		// if type is 'fs' show something different?
 		eprintf ("[File info]\n");
 		printf ("File=%s\n"
 				"Type=%s\n"
