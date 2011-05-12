@@ -191,6 +191,8 @@ R_API int r_fs_dir_dump (RFS* fs, const char *path, char *name) {
 	char *str, *npath;
 
 	list = r_fs_dir (fs, path);
+	if (!list)
+		return R_FALSE;
 	if (!r_sys_mkdir (name)) {
 		if (r_sys_mkdir_failed()) {
 			eprintf ("Cannot create \"%s\"\n", name);

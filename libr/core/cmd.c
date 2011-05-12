@@ -1129,19 +1129,6 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'g':
 		input++;
-		if (input[0]==' ')
-			input++;
-		file = r_fs_open (core->fs, input);
-		if (file) {
-			// XXX: dump to file or just pipe?
-			r_fs_read (core->fs, file, 0, file->size);
-			write (1, file->data, file->size);
-			r_fs_close (core->fs, file);
-			write (1, "\n", 1);
-		} else eprintf ("Cannot open file\n");
-		break;
-	case 'G':
-		input++;
 		if (*input == ' ')
 			input++;
 		ptr = strchr (input, ' ');
@@ -1149,7 +1136,14 @@ static int cmd_mount(void *data, const char *_input) {
 			*ptr++ = 0;
 		else
 			ptr = "./";
-		r_fs_dir_dump (core->fs, input, ptr);
+		file = r_fs_open (core->fs, input);
+		if (file) {
+			r_fs_read (core->fs, file, 0, file->size);
+			write (1, file->data, file->size);
+			r_fs_close (core->fs, file);
+			write (1, "\n", 1);
+		} else if (!r_fs_dir_dump (core->fs, input, ptr))
+			eprintf ("Cannot open file\n");
 		break;
 	case 'f':
 		input++;
@@ -1185,8 +1179,7 @@ static int cmd_mount(void *data, const char *_input) {
 		" m-/            ; umount given path (/)\n"
 		" my             ; yank contents of file into clipboard\n"
 		" mo /foo        ; get offset and size of given file\n"
-		" mg /foo        ; get contents of file dumped to disk (XXX?)\n"
-		" mG /foo /back  ; get contents of dir dumped to disk /back dir (XXX?)\n"
+		" mg /foo        ; get contents of file/dir dumped to disk (XXX?)\n"
 		" mf /foo bar    ; search files with bar name in /foo path\n"
 		" md /           ; list directory contents for path\n"
 		" mp             ; list all supported partition types\n"
