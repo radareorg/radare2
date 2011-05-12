@@ -15,11 +15,16 @@
 #include <stdarg.h>
 #include <sys/time.h>
 
+// TODO: FS or R_SYS_DIR ??
 #undef FS
 #if __WINDOWS__
 #define FS "\\"
+#define R_SYS_DIR "\\"
+#define R_SYS_HOME "USERPROFILE"
 #else
 #define FS "/"
+#define R_SYS_DIR "/"
+#define R_SYS_HOME "HOME"
 #endif
 
 /* provide a per-module debug-enabled feature */
