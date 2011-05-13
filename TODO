@@ -17,6 +17,7 @@ To wipe:
 
 To do:
 ======
+* Handle ^C in searches (at least)
 * libmagic internal :? -- find a decent implementation and adopt it
 * Ranged/scrollable zoom mode
 * Add r_cons_prompt () ... calling set_prompt + fgets -- this api needs cleanup
@@ -76,7 +77,6 @@ nibble
 capi_x
 ------
 * code analysis for msil
-* Fix avr/ppc code analysis // fix or use or what? :)
 
 earada
 ------
@@ -106,7 +106,6 @@ earada
 
 	CORE
 	----
-	- Handle ^C in searches (at least)
 	- Add support for DEX file format
 	- display filesize info instead of virtual space address limit
 
