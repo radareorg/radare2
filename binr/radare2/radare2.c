@@ -170,7 +170,7 @@ int main(int argc, char **argv) {
 
 		fh = r_core_file_open (&r, file, perms, 0LL);
 		if (fh != NULL) {
-			const char *arch = r_config_get (&r, "asm.arch");
+			//const char *arch = r_config_get (r.config, "asm.arch");
 			// TODO: move into if (debug) ..
 			if (is_gdb) r_debug_use (r.dbg, "gdb");
 			else r_debug_use (r.dbg, "native");

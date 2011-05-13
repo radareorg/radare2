@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -63,13 +63,11 @@ R_API int r_lib_dl_close(void *handler) {
 /* ---- */
 
 R_API RLib *r_lib_new(const char *symname) {
-	RLib *lib;
-	
-	lib = R_NEW (RLib);
+	RLib *lib = R_NEW (RLib);
 	if (lib) {
 		r_lib_debug_enabled = r_sys_getenv ("R_DEBUG")?R_TRUE:R_FALSE;
-		INIT_LIST_HEAD (&lib->handlers);
-		INIT_LIST_HEAD (&lib->plugins);
+		lib->handlers = r_list_new ();
+		lib->plugins = r_list_new ();
 		strncpy (lib->symname, symname, sizeof (lib->symname)-1);
 	}
 	return lib;
@@ -100,9 +98,9 @@ R_API int r_lib_run_handler(RLib *lib, RLibPlugin *plugin, RLibStruct *symbol) {
 }
 
 R_API RLibHandler *r_lib_get_handler(RLib *lib, int type) {
-	struct list_head *pos;
-	list_for_each_prev (pos, &lib->handlers) {
-		RLibHandler *h = list_entry (pos, RLibHandler, list);
+	RLibHandler *h;
+	RListIter *iter;
+	r_list_foreach (lib->handlers, iter, h) {
 		if (h->type == type)
 			return h;
 	}
@@ -110,14 +108,14 @@ R_API RLibHandler *r_lib_get_handler(RLib *lib, int type) {
 }
 
 R_API R_API int r_lib_close(RLib *lib, const char *file) {
-	struct list_head *pos;
-	list_for_each_prev (pos, &lib->plugins) {
-		RLibPlugin *h = list_entry(pos, RLibPlugin, list);
-		if ((file==NULL || (!strcmp(file, h->file))) && h->handler->destructor != NULL) {
-			int ret = h->handler->destructor(h, h->handler->user, h->data);
-			free(h->file);
-			list_del(&h->list);
-			free(h);
+	RLibPlugin *p;
+	RListIter *iter;
+	r_list_foreach (lib->plugins, iter, p) {
+		if ((file==NULL || (!strcmp(file, p->file))) && p->handler->destructor != NULL) {
+			int ret = p->handler->destructor (p, p->handler->user, p->data);
+			free (p->file);
+			r_list_delete (lib->plugins, iter);
+			free (p);
 			return ret;
 		}
 	}
@@ -145,18 +143,18 @@ static int samefile(const char *a, const char *b) {
 				len = strlen (ptr+1) + 1;
 				memmove (ptr, ptr+1, len);
 			}
-		} while(ptr);
-		ret = strcmp(sa,sb)?R_FALSE:R_TRUE;
+		} while (ptr);
+		ret = strcmp (sa,sb)? R_FALSE: R_TRUE;
 	}
 
-	free(sa);
-	free(sb);
+	free (sa);
+	free (sb);
 	return ret;
 }
 
 R_API int r_lib_open(RLib *lib, const char *file) {
 	RLibPlugin *p;
-	struct list_head *pos;
+	RListIter *iter;
 	RLibStruct *stru;
 	void * handler;
 	int ret;
@@ -179,28 +177,27 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 		return R_FAIL;
 	}
 
-	list_for_each_prev(pos, &lib->plugins) {
-		RLibPlugin *p = list_entry(pos, RLibPlugin, list);
-		if (samefile(file, p->file)) {
-			r_lib_dl_close(handler);
+	r_list_foreach (lib->plugins, iter, p) {
+		if (samefile (file, p->file)) {
+			r_lib_dl_close (handler);
 			return R_FAIL;
 		}
 	}
 
-	p = R_NEW(RLibPlugin);
+	p = R_NEW (RLibPlugin);
 	p->type = stru->type;
 	p->data = stru->data;
-	p->file = strdup(file);
+	p->file = strdup (file);
 	p->dl_handler = handler;
-	p->handler = r_lib_get_handler(lib, p->type);
+	p->handler = r_lib_get_handler (lib, p->type);
 	
-	ret = r_lib_run_handler(lib, p, stru);
+	ret = r_lib_run_handler (lib, p, stru);
 	if (ret == R_FAIL) {
 		IFDBG eprintf ("Library handler has failed for '%s'\n", file);
 		free (p->file);
 		free (p);
 		r_lib_dl_close (handler);
-	} else list_add (&p->list, &lib->plugins);
+	} else r_list_append (lib->plugins, p);
 
 	return ret;
 }
@@ -237,11 +234,11 @@ R_API int r_lib_add_handler(RLib *lib,
 	int (*dt)(RLibPlugin *, void *, void *),  /* destructor */
 	void *user)
 {
-	struct list_head *pos;
+	RLibHandler *h;
+	RListIter *iter;
 	RLibHandler *handler = NULL;
 
-	list_for_each_prev(pos, &lib->handlers) {
-		RLibHandler *h = list_entry(pos, RLibHandler, list);
+	r_list_foreach (lib->handlers, iter, h) {
 		if (type == h->type) {
 			IFDBG eprintf ("Redefining library handler constructor for %d\n", type);
 			handler = h;
@@ -249,13 +246,13 @@ R_API int r_lib_add_handler(RLib *lib,
 		}
 	}
 	if (handler == NULL) {
-		handler = R_NEW(RLibHandler);
+		handler = R_NEW (RLibHandler);
 		if (handler == NULL)
 			return R_FALSE;
 		handler->type = type;
-		list_add(&handler->list, &lib->handlers);
+		r_list_append (lib->handlers, handler);
 	}
-	strncpy(handler->desc, desc, sizeof(handler->desc));
+	strncpy (handler->desc, desc, sizeof (handler->desc));
 	handler->user = user;
 	handler->constructor = cb;
 	handler->destructor = dt;
@@ -264,12 +261,12 @@ R_API int r_lib_add_handler(RLib *lib,
 }
 
 R_API int r_lib_del_handler(RLib *lib, int type) {
-	struct list_head *pos;
+	RLibHandler *h;
+	RListIter *iter;
 	// TODO: remove all handlers for that type? or only one?
-	list_for_each_prev(pos, &lib->handlers) {
-		RLibHandler *h = list_entry(pos, RLibHandler, list);
+	r_list_foreach (lib->handlers, iter, h) {
 		if (type == h->type) {
-			list_del(&(h->list));
+			r_list_delete (lib->handlers, iter);
 			return R_TRUE;
 		}
 	}
@@ -278,7 +275,8 @@ R_API int r_lib_del_handler(RLib *lib, int type) {
 
 /* XXX _list methods must be deprecated before r2-1.0 */
 R_API void r_lib_list(RLib *lib) {
-	struct list_head *pos;
+	RListIter *iter;
+	RLibPlugin *p;
 #if 0
 	printf("Plugin Plugins:\n");
 	list_for_each_prev(pos, &lib->handlers) {
@@ -287,8 +285,7 @@ R_API void r_lib_list(RLib *lib) {
 	}
 #endif
 	//printf("Loaded plugins:\n");
-	list_for_each_prev(pos, &lib->plugins) {
-		RLibPlugin *p = list_entry(pos, RLibPlugin, list);
+	r_list_foreach (lib->plugins, iter, p) {
 		printf(" %5s %p %s \n", r_lib_types_get(p->type), p->handler->destructor, p->file);
 	}
 }

@@ -5,7 +5,7 @@
 // TODO: use 4 chars to idnetify plugin type
 
 #include "r_types.h"
-#include "list.h"
+#include "r_list.h"
 
 // rename to '.' ??
 #define R_LIB_SEPARATOR "."
@@ -28,7 +28,6 @@ typedef struct r_lib_plugin_t {
 	void *data; /* user pointer */
 	struct r_lib_handler_t *handler;
 	void *dl_handler; // DL HANDLER
-	struct list_head list;
 } RLibPlugin;
 
 /* store list of initialized plugin handlers */
@@ -38,7 +37,6 @@ typedef struct r_lib_handler_t {
 	void *user; /* user pointer */
 	int (*constructor)(struct r_lib_plugin_t *, void *user, void *data);
 	int (*destructor)(struct r_lib_plugin_t *, void *user, void *data);
-	struct list_head list;
 } RLibHandler;
 
 /* this structure should be pointed by the 'radare_plugin' symbol 
@@ -70,8 +68,8 @@ typedef struct r_lib_t {
 	/* only one handler per handler-id allowed */
 	/* this is checked in add_handler function */
 	char symname[32];
-	struct list_head plugins;
-	struct list_head handlers;
+	RList /*RLibPlugin*/ *plugins;
+	RList /*RLibHandler*/ *handlers;
 } RLib;
 
 #ifdef R_API

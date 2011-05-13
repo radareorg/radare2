@@ -78,8 +78,7 @@ static int bypassbp(RCore *core) {
 	r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
 	addr = r_debug_reg_get (core->dbg, "pc");
 	RBreakpointItem *bpi = r_bp_get (core->dbg->bp, addr);
-	if (!bpi)
-		return R_FALSE;
+	if (!bpi) return R_FALSE;
 	/* XXX 2 if libr/debug/debug.c:226 is enabled */
 	r_debug_step (core->dbg, 1);
 	return R_TRUE;
@@ -4720,8 +4719,17 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 'u':
 			ptr = strchr (input+3, ' ');
-			if (ptr) {
-				eprintf ("Continue until address range not yet implemented\n");
+			if (ptr) { // TODO: put '\0' in *ptr to avoid 
+				ut64 from, to, pc;
+				from = r_num_math (core->num, input+3);
+				to = r_num_math (core->num, ptr+1);
+				do {
+					r_debug_step (core->dbg, 1);
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+					pc = r_debug_reg_get (core->dbg, "pc");
+					eprintf ("Continue 0x%08"PFMT64x" > 0x%08"PFMT64x" < 0x%08"PFMT64x"\n",
+							from, pc, to);
+				} while (pc < from || pc > to);
 				return 1;
 			}
 			addr = r_num_math (core->num, input+2);

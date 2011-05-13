@@ -948,9 +948,9 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
                 return R_FALSE;
         }
 
-int tid = dbg->tid;
-if (tid == dbg->pid)
-	tid = 0;
+	int tid = dbg->tid;
+	if (tid == dbg->pid)
+		tid = 0;
         if (inferior_thread_count>0) {
                 /* TODO: allow to choose the thread */
 		gp_count = R_DEBUG_STATE_SZ;

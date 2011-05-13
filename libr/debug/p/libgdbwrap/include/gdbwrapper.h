@@ -106,7 +106,7 @@ char             *gdbwrap_remotecmd(gdbwrap_t *desc, char *cmd);
 u_char           gdbwrap_lasterror(gdbwrap_t *desc);
 gdbmemap_t       gdbwrap_memorymap_get();
 ut64		 gdbwrap_getreg(gdbwrap_t *desc, ut32 idx);
-void		 gdbwrap_getreg_buffer(gdbwrap_t *desc, char *buf, ut32 size);
+void		 gdbwrap_getreg_buffer(gdbwrap_t *desc, unsigned char *buf, ut32 size);
 void		 gdbwrap_setreg(gdbwrap_t *desc, ut32 idx, ut64 value);
-void		 gdbwrap_setreg_buffer(gdbwrap_t *desc, char *buf, ut32 size);
+void		 gdbwrap_setreg_buffer(gdbwrap_t *desc, const unsigned char *buf, ut32 size);
 #endif

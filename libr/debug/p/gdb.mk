@@ -9,6 +9,7 @@ ifeq (${OSTYPE},solaris)
 LDFLAGS+=-lsocket
 endif
 
+LDFLAGS+=-L../../util -lr_util
 
 OBJ_GDB=debug_gdb.o 
 #libgdbwrap/gdbwrapper.o
