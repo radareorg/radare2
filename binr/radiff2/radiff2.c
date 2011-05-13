@@ -49,11 +49,9 @@ static void diff_graph(RCore *c, RCore *c2, const char *arg) {
 
 static void diff_bins(RCore *c, RCore *c2) {
 	const char *match;
-	RList *fcns;
 	RListIter *iter;
 	RAnalFcn *f;
-
-	fcns = r_anal_get_fcns (c->anal);
+	RList *fcns = r_anal_get_fcns (c->anal);
 	r_list_foreach (fcns, iter, f) {
 		switch (f->type) {
 		case R_ANAL_FCN_TYPE_FCN:
@@ -87,11 +85,12 @@ static int show_help(int line) {
 	printf ("Usage: radiff2 [-nsdl] [file] [file]\n");
 	if (!line) printf (
 //		"  -l        diff lines of text\n"
-		"  -s        calculate text distance\n"
 		"  -c        count of changes\n"
-		"  -r        radare commands\n"
+		"  -C        graphdiff code\n"
 		"  -d        use delta diffing\n"
 		"  -g [sym]  graph diff\n"
+		"  -r        radare commands\n"
+		"  -s        calculate text distance\n"
 		"  -v        use vaddr\n"
 		"  -V        show version information\n");
 	return 1;
@@ -109,15 +108,13 @@ int main(int argc, char **argv) {
 	const char *addr = NULL;
 	RCore *c, *c2;
 	RDiff *d;
-	int o, delta = 0;
 	char *file, *file2;
 	ut8 *bufa, *bufb;
-	int sza, szb, rad = 0, va = 0;
-	int mode = MODE_DIFF;
-	int showcount = 0;
+	int o, sza, szb, rad = 0, va = 0, delta = 0;
+	int showcount = 0, mode = MODE_DIFF;
 	double sim;
 
-	while ((o = getopt (argc, argv, "Cvg:rhcdlsV")) != -1) {
+	while ((o = getopt (argc, argv, "Cvg:rhcdsV")) != -1) {
 		switch (o) {
 		case 'v':
 			va = 1;

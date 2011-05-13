@@ -66,7 +66,7 @@
 #include <grub/disk.h>
 #include <grub/dl.h>
 
-#include <strings.h>
+#include <string.h>
 #include <stdlib.h>
 
 #ifdef MM_DEBUG
