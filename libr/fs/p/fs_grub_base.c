@@ -46,7 +46,7 @@ static int dirhook (const char *filename, const struct grub_dirhook_info *info, 
 	return 0;
 }
 
-static RList *FSP(_dir)(RFSRoot *root, const char *path) {
+static RList *FSP(_dir)(RFSRoot *root, const char *path, int view) {
 	GrubFS *gfs = root->ptr;
 	if (root == NULL) {
 		return NULL;

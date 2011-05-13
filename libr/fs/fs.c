@@ -11,6 +11,7 @@ R_API RFS *r_fs_new () {
 	RFSPlugin *static_plugin;
 	RFS *fs = R_NEW (RFS);
 	if (fs) {
+		fs->view = R_FS_VIEW_NORMAL;
 		fs->roots = r_list_new ();
 		fs->roots->free = (RListFree)r_fs_root_free;
 		fs->plugins = r_list_new ();
@@ -178,7 +179,7 @@ R_API RList *r_fs_dir(RFS* fs, const char *p) {
 		else
 			dir = path + strlen (root->path);
 		if (!*dir) dir = "/";
-		ret = root->p->dir (root, dir);
+		ret = root->p->dir (root, dir, fs->view);
 	} else eprintf ("r_fs_dir: not mounted '%s'\n", path);
 	free (path);
 	return ret;
@@ -488,4 +489,8 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 	clearerr (stdin);
 	printf ("\n");
 	return R_TRUE;
+}
+
+R_API void r_fs_view (RFS *fs, int view) {
+	fs->view = view;
 }

@@ -241,6 +241,24 @@ static int config_tracetag_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_fsview_callback(void *user, void *data) {
+	int type = R_FS_VIEW_NORMAL;
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (!strcmp (node->value, "?")) {
+		eprintf ("Values: all|deleted|special\n");
+		return R_FALSE;
+	}
+	if (!strcmp (node->value, "all"))
+		type = R_FS_VIEW_ALL;
+	if (!strstr (node->value, "del"))
+		type |= R_FS_VIEW_DELETED;
+	if (!strstr (node->value, "spe"))
+		type |= R_FS_VIEW_SPECIAL;
+	r_fs_view (core->fs, type);
+	return R_TRUE;
+}
+
 static int config_scrprompt_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_line_singleton()->echo = node->i_value;
@@ -377,6 +395,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "dbg.swstep", "false", &config_swstep_callback);
 	r_config_set_cb (cfg, "dbg.trace", "true", &config_trace_callback);
 	r_config_set_cb (cfg, "dbg.trace.tag", "0xff", &config_tracetag_callback);
+	r_config_set_cb (cfg, "fs.view", "normal", &config_fsview_callback);
 	r_config_set (cfg, "cmd.hit", "");
 	r_config_set (cfg, "cmd.open", "");
 	r_config_set (cfg, "cmd.prompt", "");
@@ -589,6 +608,7 @@ R_API int r_core_config_init(RCore *core) {
 	snprintf(buf, 1023, "%s/.radare/rdb/", getenv("HOME"));
 	config_set("dir.project", buf); // ~/.radare/rdb/
 	config_set("dir.tmp", get_tmp_dir());
+	config_set_cb ("fs.view", "normal");
 	config_set("graph.color", "magic");
 	config_set("graph.split", "false"); // split blocks // SHOULD BE TRUE, but true algo is buggy
 	config_set("graph.jmpblocks", "true");
