@@ -9,6 +9,11 @@ R_API void r_io_section_init(RIO *io) {
 	io->sections = r_list_new ();
 }
 
+static int cmpaddr (void *_a, void *_b) {
+	RIOSection *a = _a, *b = _b;
+	return (a->vaddr > b->vaddr);
+}
+
 R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name) {
 	RIOSection *s = R_NEW (RIOSection);
 	s->offset = offset;
@@ -20,6 +25,7 @@ R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vs
 	if (name) strncpy (s->name, name, sizeof (s->name));
 	else *s->name = '\0';
 	r_list_append (io->sections, s);
+	r_list_sort (io->sections, cmpaddr);
 }
 
 R_API RIOSection *r_io_section_get_i(RIO *io, int idx) {
