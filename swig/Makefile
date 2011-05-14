@@ -59,31 +59,31 @@ vdoc_pkg:
 
 # TODO: unspaguetti this targets
 perl:
-	@-[ "`grep perl supported.langs`" ] && cd perl && make ; true
+	@-[ "`grep perl supported.langs`" ] && cd perl && ${MAKE} ; true
 
 python:
-	@-[ "`grep python supported.langs`" ] && cd python && make ; true
+	@-[ "`grep python supported.langs`" ] && cd python && ${MAKE} ; true
 
 ruby:
-	@-[ "`grep ruby supported.langs`" ] && cd ruby && make ; true
+	@-[ "`grep ruby supported.langs`" ] && cd ruby && ${MAKE} ; true
 
 lua:
-	@-[ "`grep lua supported.langs`" ] && cd lua && make ; true
+	@-[ "`grep lua supported.langs`" ] && cd lua && ${MAKE} ; true
 
 go:
 	@-[ -x "${GOBIN}/5g" -o -x "${GOBIN}/6g" -o -x "${GOBIN}/8g" ] && \
-	[ "`grep go supported.langs`" ] && cd go && make ; true
+	[ "`grep go supported.langs`" ] && cd go && ${MAKE} ; true
 
 java:
-	@-[ "`grep java supported.langs`" ] && cd java && make
+	@-[ "`grep java supported.langs`" ] && cd java && ${MAKE}
 
 test:
-	cd perl && make test
-	cd python && make test
-	cd ruby && make test
-	cd lua && make test
-	cd go && make test
-	cd java && make test
+	cd perl && ${MAKE} test
+	cd python && ${MAKE} test
+	cd ruby && ${MAKE} test
+	cd lua && ${MAKE} test
+	cd go && ${MAKE} test
+	cd java && ${MAKE} test
 
 install-python:
 	@# py2.6 in debian uses dist-packages, but site-packages in arch and osx..

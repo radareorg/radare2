@@ -1,0 +1,7 @@
+#!/bin/sh
+PYTHONS="python python2 python2.5 python2.6 python2.7 python2.8 python3"
+for a in ${PYTHONS} ; do
+	$a-config $@ | sed -e 's/-arch [^\s]*//g' | sed s,-Wstrict-prototypes,,g
+	[ $? = 0 ] && exit 0
+done
+exit 1

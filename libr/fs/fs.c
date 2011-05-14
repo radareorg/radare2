@@ -2,6 +2,7 @@
 
 #include <r_fs.h>
 #include "../config.h"
+#include <errno.h>
 #include "p/grub/include/grub/msdos_partition.h"
 
 static RFSPlugin *fs_static_plugins[] = { R_FS_STATIC_PLUGINS };
