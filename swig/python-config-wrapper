@@ -3,7 +3,8 @@
 # -- pancake
 
 # order matters here
-PCS="	python2-config
+PCS="	python-config
+	python2-config
 	python25-config
 	python2.5-config
 	python26-config
@@ -29,4 +30,4 @@ if [ "$1" = "-n" ]; then
 	exit 0
 fi
 
-${PYTHONCONFIG} $@ | sed -e s,-Wstrict-prototypes,,g 2>/dev/null
+${PYTHONCONFIG} $@ | sed -e 's/-arch [^\s]*//g' | sed s,-Wstrict-prototypes,,g 2>/dev/null

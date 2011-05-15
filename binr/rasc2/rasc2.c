@@ -177,7 +177,7 @@ int print_shellcode() {
 	/* patch addr and env */
 	otf_patch ();
 
-	memcpy(output+A+N+E, shellcode, scsize);
+	memcpy (output+A+N+E, shellcode, scsize);
 	for (i=0;i<C;i++)
 		output[i+A+E+N+scsize] = '\xCC';
 
@@ -256,11 +256,26 @@ int hexpair2bin(const char *arg) { // (0A) => 10 || -1 (on error)
 	return (int)c;
 }
 
+void cipher_memcpy(ut8 *dst, ut8 *src, int len) {
+	int i, n;
+	for (i=0; i<len; i++) {
+		n = src[i] & 0xf;
+		n = n==0xf?0:n+1;
+		dst[i] = n;
+		n = src[i] & 0xf0;
+		n>>=4;
+		n = n==0xf?0:n+1;
+		dst[i] |= n<<4;
+	}
+}
+
 int load_shellcode_from_me(char *str) {
 	int i;
-	for (i=0;shellcodes[i].name;i++) {
+	for (i=0; shellcodes[i].name; i++) {
 		if (!strcmp (shellcodes[i].name, str)) {
-			memcpy (shellcode, shellcodes[i].data, shellcodes[i].len);
+			//memcpy (shellcode, shellcodes[i].data, shellcodes[i].len);
+			/* cipher shit */
+			cipher_memcpy (shellcode, shellcodes[i].data, shellcodes[i].len);
 			scsize = shellcodes[i].len;
 			scidx = i;
 //printf("Using %d bytes shellcode (%s) %02x %02x\n", shellcodes[i].len, shellcodes[i].desc,
@@ -293,7 +308,7 @@ int load_shellcode_from_string(char *str) {
 	return 0;
 }
 
-int file_type(char *str) {
+static int file_type(char *str) {
 	if (!strcmp(str,"-"))
 		return 0; // stdin
 	if (!strcmp(str+strlen(str)-2,".s"))
@@ -301,30 +316,31 @@ int file_type(char *str) {
 	return 2;
 }
 
-int load_shellcode_from_file(char *str) {
+static int load_shellcode_from_file(char *str) {
 	char buf[1024];
 	char *ptr = NULL;
 
+	eprintf ("TODO: This is r1-dependant.. ugly . must dump all disasm\n");
 	str[1024]='\0';
 	switch (file_type (str)) {
 	case 0: // stdin
 		fprintf (stderr, "TODO\n");
 		break;
 	case 1: // .s file (assembly
-		sprintf(buf, "gcc -nostdlib -o .x %s", str);
-		system(buf);
-		system("rsc syms-dump .x | grep _start | cut -d : -f 2 | tee .y");
-		unlink(".x");
-		ptr = filetostr(".y");
-		unlink(".y");
+		sprintf (buf, "gcc -nostdlib -o .x %s", str);
+		system (buf);
+		system ("rsc syms-dump .x | grep _start | cut -d : -f 2 | tee .y");
+		unlink (".x");
+		ptr = filetostr (".y");
+		unlink (".y");
 		if (ptr) {
 			load_shellcode_from_string(ptr);
 			free(ptr);
 		}
 		break;
 	default:
-		printf("File format not supported\n");
-		exit(1);
+		eprintf ("File format not supported\n");
+		exit (1);
 	}
 
 	return 0;
