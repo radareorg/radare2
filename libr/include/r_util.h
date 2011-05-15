@@ -301,6 +301,7 @@ R_API int r_file_mkstemp(const char *prefix, char **oname);
 R_API const char *r_file_tmpdir();
 
 R_API ut64 r_sys_now();
+R_API int r_sys_crash_handler(const char *cmd);
 R_API const char *r_sys_arch_str(int arch);
 R_API int r_sys_arch_id(const char *arch);
 R_API RList *r_sys_dir(const char *path);
