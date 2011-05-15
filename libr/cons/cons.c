@@ -354,3 +354,24 @@ R_API void r_cons_invert(int set, int color) {
 		else r_cons_strcat("]");
 	}
 }
+
+/*
+  Enable/Disable scrolling in terminal:
+    FMI: cd libr/cons/t ; make ti ; ./ti
+  smcup: disable terminal scrolling (fullscreen mode)
+  rmcup: enable terminal scrolling (normal mode)
+*/
+R_API void r_cons_set_cup(int enable) {
+#if __UNIX__
+	if (enable) {
+		printf ("\x1b[?1049h"); // xterm
+		printf ("\x1b" "7\x1b[?47h"); // xterm-color
+	} else {
+		printf ("\x1b[?1049l"); // xterm
+		printf ("\x1b[?47l""\x1b""8"); // xterm-color
+	}
+	fflush (stdout);
+#else
+	/* not supported ? */
+#endif
+}

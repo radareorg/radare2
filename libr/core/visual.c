@@ -1197,6 +1197,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 
 	r_cons_singleton ()->data = core;
 	r_cons_singleton ()->event_resize = (RConsEvent)r_core_visual_refresh;
+	r_cons_set_cup (R_TRUE);
 
 	while (*input) {
 		if (!r_core_visual_cmd (core, input[0])) {
@@ -1204,6 +1205,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 			r_core_cmd (core, printfmt[R_ABS (printidx%NPF)], 0);
 			r_cons_visual_flush ();
 			r_cons_any_key ();
+			r_cons_set_cup (R_FALSE);
 			return 0;
 		}
 		input++;
@@ -1237,5 +1239,6 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	if (autoblocksize)
 		r_core_block_size (core, obs);
 	r_cons_singleton ()->teefile = teefile;
+	r_cons_set_cup (R_FALSE);
 	return 0;
 }

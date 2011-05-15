@@ -9,6 +9,8 @@ all: plugins.cfg
 	${MAKE} binr
 
 plugins.cfg:
+	@if [ ! -e config-user.mk ]; then echo ; \
+	echo "  Please, run ./configure first" ; echo ; exit 1 ; fi
 	./configure-plugins
 
 libr:
