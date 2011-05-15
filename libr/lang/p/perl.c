@@ -15,6 +15,7 @@
 #undef U32_MAX
 #undef U32_MIN
 
+#undef LIST_HEAD
 #include "r_core.h"
 static struct r_core_t *core = NULL;
 
