@@ -154,11 +154,33 @@ R_API void r_cons_clear() {
 	
 	if (!hStdout) {
 		hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
-		GetConsoleScreenBufferInfo (hStdout,&csbi);
+		GetConsoleScreenBufferInfo (hStdout, &csbi);
+		GetConsoleWindowInfo (hStdout, &csbi);
 	}
-	
 	FillConsoleOutputCharacter (hStdout, ' ',
 		csbi.dwSize.X * csbi.dwSize.Y, startCoords, &dummy);
+	// SHORT Width = Info.srWindow.Right - Info.srWindow.Left + 1 ;
+	//FillConsoleOutputAttribute (hStdout, ' ',
+	//	csbi.dwSize.X * csbi.dwSize.Y, startCoords, &dummy);
+	/*
+	for (SHORT N = Info.srWindow.Top ; N <= Info.srWindow.Bottom ; ++N) {
+		DWORD Chars ;
+		COORD Pos = { Info.srWindow.Left, N } ;
+		FillConsoleOutputCharacter(ConsoleHandle, ' ', Width, Pos, &Chars) ;
+		FillConsoleOutputAttribute(ConsoleHandle, attr, Width, Pos, &Chars) ;
+	}
+	// scroll //
+	CONSOLE_SCREEN_BUFFER_INFO Info
+	GetConsoleWindowInfo(ConsoleHandle, &Info) ;
+	CHAR_INFO space ;
+	space.Char.AsciiChar = ' ' ;
+	space.Attributes = attr ;
+	SHORT Height = Info.srWindow.Bottom - Info.srWindow.Top + 1 ;
+	COORD Origin = { Info.srWindow.Left, Info.srWindow.Top - Height } ;
+	ScrollConsoleScreenBuffer(ConsoleHandle, &Info.srWindow, NULL, Origin, &space) ;
+	COORD TopLeft = { Info.srWindow.Left, Info.srWindow.Top } ;
+	SetConsoleCursorPosition(ConsoleHandle, TopLeft) ;
+	*/
 #else
 	r_cons_strcat (Color_RESET"\x1b[2J");
 #endif
