@@ -154,11 +154,33 @@ R_API void r_cons_clear() {
 	
 	if (!hStdout) {
 		hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
-		GetConsoleScreenBufferInfo (hStdout,&csbi);
+		GetConsoleScreenBufferInfo (hStdout, &csbi);
+		GetConsoleWindowInfo (hStdout, &csbi);
 	}
-	
 	FillConsoleOutputCharacter (hStdout, ' ',
 		csbi.dwSize.X * csbi.dwSize.Y, startCoords, &dummy);
+	// SHORT Width = Info.srWindow.Right - Info.srWindow.Left + 1 ;
+	//FillConsoleOutputAttribute (hStdout, ' ',
+	//	csbi.dwSize.X * csbi.dwSize.Y, startCoords, &dummy);
+	/*
+	for (SHORT N = Info.srWindow.Top ; N <= Info.srWindow.Bottom ; ++N) {
+		DWORD Chars ;
+		COORD Pos = { Info.srWindow.Left, N } ;
+		FillConsoleOutputCharacter(ConsoleHandle, ' ', Width, Pos, &Chars) ;
+		FillConsoleOutputAttribute(ConsoleHandle, attr, Width, Pos, &Chars) ;
+	}
+	// scroll //
+	CONSOLE_SCREEN_BUFFER_INFO Info
+	GetConsoleWindowInfo(ConsoleHandle, &Info) ;
+	CHAR_INFO space ;
+	space.Char.AsciiChar = ' ' ;
+	space.Attributes = attr ;
+	SHORT Height = Info.srWindow.Bottom - Info.srWindow.Top + 1 ;
+	COORD Origin = { Info.srWindow.Left, Info.srWindow.Top - Height } ;
+	ScrollConsoleScreenBuffer(ConsoleHandle, &Info.srWindow, NULL, Origin, &space) ;
+	COORD TopLeft = { Info.srWindow.Left, Info.srWindow.Top } ;
+	SetConsoleCursorPosition(ConsoleHandle, TopLeft) ;
+	*/
 #else
 	r_cons_strcat (Color_RESET"\x1b[2J");
 #endif
@@ -353,4 +375,25 @@ R_API void r_cons_invert(int set, int color) {
 		if (set) r_cons_strcat("[");
 		else r_cons_strcat("]");
 	}
+}
+
+/*
+  Enable/Disable scrolling in terminal:
+    FMI: cd libr/cons/t ; make ti ; ./ti
+  smcup: disable terminal scrolling (fullscreen mode)
+  rmcup: enable terminal scrolling (normal mode)
+*/
+R_API void r_cons_set_cup(int enable) {
+#if __UNIX__
+	if (enable) {
+		printf ("\x1b[?1049h"); // xterm
+		printf ("\x1b" "7\x1b[?47h"); // xterm-color
+	} else {
+		printf ("\x1b[?1049l"); // xterm
+		printf ("\x1b[?47l""\x1b""8"); // xterm-color
+	}
+	fflush (stdout);
+#else
+	/* not supported ? */
+#endif
 }

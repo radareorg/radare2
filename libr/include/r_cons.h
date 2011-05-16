@@ -195,6 +195,7 @@ R_API int r_cons_grepbuf(char *buf, int len);
 
 R_API void r_cons_invert(int set, int color);
 R_API int r_cons_yesno(int def, const char *fmt, ...);
+R_API void r_cons_set_cup(int enable);
 #endif
 
 #endif

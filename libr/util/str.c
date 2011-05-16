@@ -107,6 +107,32 @@ static int hex2int (ut8 *val, ut8 c) {
 	return 0;
 }
 
+R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen) {
+	int n, i, j, k, ret, len;
+	len = strlen (str);
+	for (n=i=0; i<len; i+=8) {
+		ret = 0;
+		while (str[i]==' ')
+			str++;
+		if (i+7<len)
+		for (k=0, j=i+7; j>=i; j--, k++) {
+		// INVERSE for (k=0,j=i; j<i+8; j++,k++) {
+			if (str[j]==' ') {
+				//k--;
+				continue;
+			}
+	//		printf ("---> j=%d (%c) (%02x)\n", j, str[j], str[j]);
+			if (str[j]=='1') ret|=1<<k;
+			else if (str[j]!='0') return n;
+		}
+	//	printf ("-======> %02x\n", ret);
+		out[n++] = ret;
+		if (n==outlen)
+			return n;
+	}
+	return n;
+}
+
 R_API int r_str_rwx(const char *str) {
 	int ret = atoi (str);
 	if (!ret) {
@@ -147,23 +173,15 @@ R_API void r_str_case(char *str, int up) {
 	}
 }
 
-#if __WINDOWS__
-#define __ENV_HOME "USERPROFILE"
-#define __ENV_DIR "\\"
-#else
-#define __ENV_HOME "HOME"
-#define __ENV_DIR "/"
-#endif
-
 R_API char *r_str_home(const char *str) {
 	char *dst;
-	const char *home = r_sys_getenv (__ENV_HOME);
+	const char *home = r_sys_getenv (R_SYS_HOME);
 	if (home == NULL)
 		return NULL;
 	dst = (char *)malloc (strlen (home) + strlen (str)+2);
 	strcpy (dst, home);
 	if (str && *str) {
-		strcat (dst, __ENV_DIR);
+		strcat (dst, R_SYS_DIR);
 		strcat (dst, str);
 	}
 	return dst;
@@ -394,8 +412,7 @@ R_API const char *r_str_get(const char *str) {
 }
 
 R_API char *r_str_dup(char *ptr, const char *string) {
-	if (ptr)
-		free (ptr);
+	if (ptr) free (ptr);
 	ptr = strdup (string);
 	return ptr;
 }
@@ -576,7 +593,7 @@ R_API int r_str_escape(char *buf) {
 
 	//char *p = buf; while(*p) { eprintf("%d %c\n", *p, *p); p++; }
 	//eprintf("OLEN=%d (%s)\n", strlen(buf), buf);
-	return strlen(buf);
+	return i; //strlen (buf);
 }
 
 R_API char *r_str_unscape(char *buf) {

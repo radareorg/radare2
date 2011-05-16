@@ -28,12 +28,9 @@ lang_python.${EXT_SO}:
 	-L${HOME}/.wine/drive_c/Python27/libs -L../../core/ -lr_core \
 	${LDFLAGS_LIB} -shared -o lang_python.${EXT_SO} python.c -lpython27
 else
-PYCFLAGS=`python-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]*//g' | sed s,-Wstrict-prototypes,,g`
-PYCFLAGS+=`python2-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]*//g' | sed s,-Wstrict-prototypes,,g`
-PYCFLAGS+=`python2.5-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]*//g' | sed s,-Wstrict-prototypes,,g`
-PYLDFLAGS=`python-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]*//g' | sed s,-Wstrict-prototypes,,g`
-PYLDFLAGS+=`python2-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]*//g' | sed s,-Wstrict-prototypes,,g`
-PYLDFLAGS+=`python2.5-config --cflags 2>/dev/null | sed -e 's/-arch [^\s]*//g' | sed s,-Wstrict-prototypes,,g`
+PYCFG=../../../swig/python-config-wrapper
+PYCFLAGS=$(shell ${PYCFG} --cflags)
+PYLDFLAGS=$(shell ${PYCFG} --libs)
 
 lang_python.${EXT_SO}:
 	${CC} ${CFLAGS} ${PYCFLAGS} ${PYLDFLAGS} \

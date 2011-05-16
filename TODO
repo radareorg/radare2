@@ -5,7 +5,6 @@
 
 
 * x86/32-x86/64 the -e asm.bits should
-* memset0 the op before calling the plugin analysis
 * Make r_io happy with RList
 * We need a 64 bit x86 assembler working!! nasm fails
 
@@ -18,6 +17,7 @@ To wipe:
 
 To do:
 ======
+* Handle ^C in searches (at least)
 * libmagic internal :? -- find a decent implementation and adopt it
 * Ranged/scrollable zoom mode
 * Add r_cons_prompt () ... calling set_prompt + fgets -- this api needs cleanup
@@ -77,7 +77,6 @@ nibble
 capi_x
 ------
 * code analysis for msil
-* Fix avr/ppc code analysis // fix or use or what? :)
 
 earada
 ------
@@ -107,7 +106,6 @@ earada
 
 	CORE
 	----
-	- Handle ^C in searches (at least)
 	- Add support for DEX file format
 	- display filesize info instead of virtual space address limit
 
@@ -271,6 +269,7 @@ Refactoring
  
 Future
 ======
+* memset0 the op before calling the plugin analysis -- not really that's a performance cost..
 * r_file_slurp should work fine for big files (not prio) r_file_slurp_buf?
   - mmap if supported - add r_file_mmap ?  - read file in blocks instead of the whole file in a single syscall
 * Realign flags when using project in debug mode

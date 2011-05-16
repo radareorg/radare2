@@ -14,7 +14,7 @@ all: ${BIN}${EXT_EXE}
 ${BIN}${EXT_EXE}: ${BIN}.o ${OBJS}
 	${CC} -o ${BIN}${EXT_EXE} ${OBJS} ${BIN}.o ${LIBS} ${LDFLAGS}
 
-clean:
+clean: ${MYCLEAN}
 	-rm -f ${BIN} ${BIN}.o ${OBJS}
 
 mrproper: clean

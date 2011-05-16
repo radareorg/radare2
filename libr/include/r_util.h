@@ -276,6 +276,7 @@ R_API char *r_str_concatch(char *x, char y);
 R_API void r_str_case(char *str, int up);
 R_API void r_str_chop_path (char *s);
 
+R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen);
 R_API int r_hex_pair2bin(const char *arg);
 R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask);
 R_API int r_hex_str2bin(const char *in, ut8 *out);
@@ -300,6 +301,7 @@ R_API int r_file_mkstemp(const char *prefix, char **oname);
 R_API const char *r_file_tmpdir();
 
 R_API ut64 r_sys_now();
+R_API int r_sys_crash_handler(const char *cmd);
 R_API const char *r_sys_arch_str(int arch);
 R_API int r_sys_arch_id(const char *arch);
 R_API RList *r_sys_dir(const char *path);

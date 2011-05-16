@@ -23,9 +23,12 @@
 #include <grub/disk.h>
 #include <grub/fshelp.h>
 
+GRUB_EXPORT(grub_fshelp_view);
 GRUB_EXPORT(grub_fshelp_find_file);
 GRUB_EXPORT(grub_fshelp_log2blksize);
 GRUB_EXPORT(grub_fshelp_read_file);
+
+int grub_fshelp_view = 0;
 
 struct grub_fshelp_find_file_closure
 {

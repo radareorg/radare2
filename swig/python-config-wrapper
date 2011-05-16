@@ -2,8 +2,9 @@
 # python-config wrapper trying to fix the python versioning hell
 # -- pancake
 
-# order matters here
-PCS="	python2-config
+PCS="${PYTHON_CONFIG}
+	python-config
+	python2-config
 	python25-config
 	python2.5-config
 	python26-config
@@ -13,20 +14,21 @@ PCS="	python2-config
 	python28-config
 	python2.8-config
 	python-config"
-PYTHONCONFIG=""
+PYCFG=""
 
 for a in ${PCS} ; do
 	$a --help 2>/dev/null
 	if [ $? = 0 ]; then
-		PYTHONCONFIG=$a
+		PYCFG=$a
 		break
 	fi
 done
 
-[ -z "${PYTHONCONFIG}" ] && exit 1
+[ -z "${PYCFG}" ] && exit 1
 if [ "$1" = "-n" ]; then
-	echo ${PYTHONCONFIG}
+	echo ${PYCFG}
 	exit 0
 fi
 
-${PYTHONCONFIG} $@ | sed -e s,-Wstrict-prototypes,,g 2>/dev/null
+${PYCFG} $@ | sed -e 's/-arch [^\s]*//g' | \
+	sed s,-Wstrict-prototypes,,g 2>/dev/null

@@ -5,3 +5,6 @@ LDFLAGS=-L..
 #LIBS=../*.o ../../line/*.a ../../util/*.a
 
 include ../../rules.mk
+
+ti:
+	${CC} -o ti ti.c -lcurses

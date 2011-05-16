@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
 
 #include <r_util.h>
 
@@ -39,29 +39,31 @@ static int format_output (char mode, ut64 n) {
 }
 
 static int help () {
-	printf ("  int   ->  hex           ;  rax2 10\n"
-			"  hex   ->  int           ;  rax2 0xa\n"
-			"  -int  ->  hex           ;  rax2 -77\n"
-			"  -hex  ->  int           ;  rax2 0xffffffb3\n"
-			"  int   ->  bin           ;  rax2 b30\n"
-			"  bin   ->  int           ;  rax2 1010d\n"
-			"  float ->  hex           ;  rax2 3.33f\n"
-			"  hex   ->  float         ;  rax2 Fx40551ed8\n"
-			"  oct   ->  hex           ;  rax2 35o\n"
-			"  hex   ->  oct           ;  rax2 Ox12 (O is a letter)\n"
-			"  bin   ->  hex           ;  rax2 1100011b\n"
-			"  hex   ->  bin           ;  rax2 Bx63\n"
-			"  -e    swap endianness   ;  rax2 -e 0x33\n"
-			"  -s    swap hex to bin   ;  rax2 -s 43 4a 50\n"
-			"  -S    swap bin to hex   ;  rax2 -S C  J  P\n"
-			"  -V    version           ;  rax2 -V\n"
-			"  -h    help              ;  rax2 -h\n");
+	printf (
+		"  int   ->  hex           ;  rax2 10\n"
+		"  hex   ->  int           ;  rax2 0xa\n"
+		"  -int  ->  hex           ;  rax2 -77\n"
+		"  -hex  ->  int           ;  rax2 0xffffffb3\n"
+		"  int   ->  bin           ;  rax2 b30\n"
+		"  bin   ->  int           ;  rax2 1010d\n"
+		"  float ->  hex           ;  rax2 3.33f\n"
+		"  hex   ->  float         ;  rax2 Fx40551ed8\n"
+		"  oct   ->  hex           ;  rax2 35o\n"
+		"  hex   ->  oct           ;  rax2 Ox12 (O is a letter)\n"
+		"  bin   ->  hex           ;  rax2 1100011b\n"
+		"  hex   ->  bin           ;  rax2 Bx63\n"
+		"  -e    swap endianness   ;  rax2 -e 0x33\n"
+		"  -b    binstr -> bin     ;  rax2 -b 01000101 01110110\n"
+		"  -s    hexstr -> bin     ;  rax2 -s 43 4a 50\n"
+		"  -S    bin -> hexstr     ;  rax2 -S C  J  P\n"
+		"  -V    version           ;  rax2 -V\n"
+		"  -h    help              ;  rax2 -h\n");
 	return R_TRUE;
 }
 
 static int rax (char *str) {
 	float f;
-	char *buf, out_mode = '0';
+	char *p, *buf, out_mode = '0';
 	int i;
 
 	if (*str=='-') {
@@ -69,11 +71,14 @@ static int rax (char *str) {
 		case 's':
 			flags ^= 1;
 			break;
+		case 'e':
+			flags ^= 2;
+			break;
 		case 'S':
 			flags ^= 4;
 			break;
-		case 'e':
-			flags ^= 2;
+		case 'b':
+			flags ^= 8;
 			break;
 		case 'V':
 			printf ("rax2 v"R2_VERSION"\n");
@@ -89,9 +94,8 @@ static int rax (char *str) {
 	if (*str=='q')
 		return R_FALSE;
 	else
-	if (*str=='h' || *str=='?') {
+	if (*str=='h' || *str=='?')
 		return help ();
-	}
 
 	if (flags & 1) {
 		ut64 n = ((strlen (str))>>1)+1;
@@ -106,6 +110,15 @@ static int rax (char *str) {
 		for (i=0; str[i]; i++)
 			printf ("%02x", str[i]);
 		printf ("\n");
+		return R_TRUE;
+	}
+	if (flags & 8) {
+		int i, len;
+		ut8 buf[4096];
+		len = r_str_binstr2bin (str, buf, sizeof (buf));
+		if (len>0)
+			for (i=0; i<len; i++)
+				printf ("%c", buf[i]);
 		return R_TRUE;
 	}
 
@@ -133,13 +146,20 @@ static int rax (char *str) {
 		printf ("Fx%02x%02x%02x%02x\n", p[0], p[1], p[2], p[3]);
 		return R_TRUE;
 	}
-	return format_output (out_mode, r_num_math (NULL, str));
+	while ((p = strchr (str, ' '))) {
+		*p = 0;
+		format_output (out_mode, r_num_math (NULL, str));
+		str = p+1;
+	}
+	if (*str)
+		format_output (out_mode, r_num_math (NULL, str));
+	return 0;
 }
 
 static int use_stdin () {
-	char buf[1024];
+	char buf[4096]; // TODO: remove this limit
 	while (!feof (stdin)) {
-		fgets (buf, sizeof (buf)-1, stdin);
+		fgets (buf, sizeof (buf), stdin);
 		if (feof (stdin)) break;
 		buf[strlen (buf)-1] = '\0';
 		if (!rax (buf)) break;
@@ -148,11 +168,10 @@ static int use_stdin () {
 }
 
 int main (int argc, char **argv) {
-	int i=1;
-
+	int i;
 	if (argc == 1)
 		return use_stdin ();
-	for (;i<argc; i++)
+	for (i=1; i<argc; i++)
 		rax (argv[i]);
 	return 0;
 }

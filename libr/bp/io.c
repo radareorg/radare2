@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include <r_bp.h>
 #include "../config.h"
@@ -57,27 +57,22 @@ R_API int r_debug_bp_add(struct r_debug_t *dbg, ut64 addr, int size, int hw, int
 R_API int r_bp_restore(struct r_bp_t *bp, int set) {
 	RListIter *iter;
 	RBreakpointItem *b;
-	int handled;
 
 	r_list_foreach (bp->bps, iter, b) {
-		if(bp->breakpoint)
-			handled = bp->breakpoint (bp->user, set, b->addr, b->hw, b->rwx);
-		else
-			handled = R_FALSE;
-		
+		if (bp->breakpoint && bp->breakpoint (bp->user, set, b->addr, b->hw, b->rwx))
+			continue;
 		/* write obytes from every breakpoint in r_bp if not handled by plugin */
-		if (!handled)
-			if (set) {
-				eprintf("Setting bp at 0x%x\n", b->addr);
-				if (b->hw || !b->obytes)
-					eprintf ("hw breakpoints not supported yet\n");
-				else bp->iob.write_at (bp->iob.io, b->addr, b->obytes, b->size);
-			} else {
-				eprintf("Clearing bp at 0x%x\n", b->addr);
-				if (b->hw || !b->bbytes)
-					eprintf ("hw breakpoints not supported yet\n");
-				else bp->iob.write_at (bp->iob.io, b->addr, b->bbytes, b->size);
-			}
+		if (set) {
+			eprintf ("Setting bp at 0x%x\n", b->addr);
+			if (b->hw || !b->obytes)
+				eprintf ("hw breakpoints not supported yet\n");
+			else bp->iob.write_at (bp->iob.io, b->addr, b->obytes, b->size);
+		} else {
+			eprintf ("Clearing bp at 0x%x\n", b->addr);
+			if (b->hw || !b->bbytes)
+				eprintf ("hw breakpoints not supported yet\n");
+			else bp->iob.write_at (bp->iob.io, b->addr, b->bbytes, b->size);
+		}
 	}
 	
 	return R_TRUE;
@@ -85,7 +80,6 @@ R_API int r_bp_restore(struct r_bp_t *bp, int set) {
 
 R_API int r_bp_recoil(RBreakpoint *bp, ut64 addr) {
 	RBreakpointItem *b = r_bp_at_addr (bp, addr, 0); //XXX Don't care about rwx
-
 	if (b) {
 		//eprintf("HIT AT ADDR 0x%"PFMT64x"\n", addr);
 		//eprintf("  recoil = %d\n", b->recoil);

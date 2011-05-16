@@ -48,7 +48,7 @@ void gdbwrap_setreg(gdbwrap_t *desc, ut32 idx, ut64 value){
 	}
 }
 
-void gdbwrap_getreg_buffer(gdbwrap_t *desc, char *buf, ut32 size){
+void gdbwrap_getreg_buffer(gdbwrap_t *desc, unsigned char *buf, ut32 size){
 	if ( desc->reg_size*desc->num_registers > size )
 		size = desc->reg_size*desc->num_registers;
 
@@ -56,32 +56,28 @@ void gdbwrap_getreg_buffer(gdbwrap_t *desc, char *buf, ut32 size){
 	memcpy(buf,desc->regs,size);
 }
 
-void gdbwrap_setreg_buffer(gdbwrap_t *desc, char *buf , ut32 size){
-	if ( desc->reg_size*desc->num_registers > size )
+void gdbwrap_setreg_buffer(gdbwrap_t *desc, const unsigned char *buf , ut32 size){
+	if (desc->reg_size*desc->num_registers > size)
 		size = desc->reg_size*desc->num_registers;
 	memcpy (desc->regs, buf, size);
 }
 
 ut64 gdbwrap_getreg(gdbwrap_t *desc, ut32 idx){
-	ut64 ret=-1;
-	if ( idx >= desc->num_registers){
+	ut64 ret = -1;
+	if (idx >= desc->num_registers){
 		fprintf(stderr, "Wrong register index %d\n",idx);
-	}
-	switch( desc->reg_size ) {
-		case 1:
-			ret = *(desc->regs+idx);
-			break;
-		case 2:
-			ret = *(ut16 *)(desc->regs+idx*2);
-			break;
-		case 4:
-			ret = *(ut32 *)(desc->regs + idx*4 );
-			break;
-		case 8:
-			ret = *(ut64 *)(desc->regs + idx*8 );
-			break;
-		default:
-			fprintf(stderr,"Unsupported register size!");
+	} else
+	switch (desc->reg_size ) {
+	case 1: ret = *(desc->regs+idx);
+		break;
+	case 2: ret = *(ut16 *)(desc->regs+idx*2);
+		break;
+	case 4: ret = *(ut32 *)(desc->regs + idx*4 );
+		break;
+	case 8: ret = *(ut64 *)(desc->regs + idx*8 );
+		break;
+	default:
+		fprintf (stderr,"Unsupported register size!");
 	}
 	return ret;
 }
@@ -244,28 +240,23 @@ static uint8_t       gdbwrap_calc_checksum(gdbwrap_t *desc, const char *str)
 }
 
 
-static char          *gdbwrap_make_message(gdbwrap_t *desc, const char *query)
-{
-  uint8_t             checksum       = gdbwrap_calc_checksum(desc, query);
-  unsigned            max_query_size = (desc->max_packet_size -
-					strlen(GDBWRAP_BEGIN_PACKET)
-					- strlen(GDBWRAP_END_PACKET)
-					- sizeof(checksum));
+static char *gdbwrap_make_message(gdbwrap_t *desc, const char *query) {
+	uint8_t checksum = gdbwrap_calc_checksum(desc, query);
+	unsigned max_query_size = (desc->max_packet_size - strlen(GDBWRAP_BEGIN_PACKET)
+			- strlen(GDBWRAP_END_PACKET) - sizeof(checksum));
 
-  /* Sometimes C sucks... Basic source and destination checking. We do
-     not check the overlapping tho.*/
-  if (strlen(query) < max_query_size && query != desc->packet)
-    {
-      int ret = snprintf(desc->packet, desc->max_packet_size, "%s%s%s%.2x",
-		     GDBWRAP_BEGIN_PACKET, query, GDBWRAP_END_PACKET, checksum);
-      ASSERT(ret > 0);
-    }
-  else
-    {
-      ASSERT(FALSE);
-    }
-
-  return desc->packet;
+	/* Sometimes C sucks... Basic source and destination checking. We do
+	   not check the overlapping tho.*/
+	if (strlen(query) < max_query_size && query != desc->packet) {
+		int ret = snprintf(desc->packet, desc->max_packet_size, "%s%s%s%.2x",
+				GDBWRAP_BEGIN_PACKET, query, GDBWRAP_END_PACKET, checksum);
+		if (ret <1) {
+			fprintf (stderr, "snprintf failed\n");
+			return NULL;
+		}
+		return desc->packet;
+	}
+	return NULL;
 }
 
 
@@ -773,7 +764,7 @@ int                 gdbwrap_simplesetbp(gdbwrap_t *desc, la32 linaddr)
   return 1;
 }
 
-void                 gdbwrap_simplesethwbp(gdbwrap_t *desc, la32 linaddr)
+int gdbwrap_simplesethwbp(gdbwrap_t *desc, la32 linaddr)
 {
   char *ret;
   char               packet[MSG_BUF];

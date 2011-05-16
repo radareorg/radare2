@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 - pancake<nopcode.org>, Roc Vallès vallesroc@gmail.com */
+/* radare - LGPL - Copyright 2011 - pancake<nopcode.org>, Roc Vallès <vallesroc@gmail.com> */
 
 #include <string.h>
 #include <r_types.h>
@@ -7,10 +7,13 @@
 #include <r_anal.h>
 
 static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	short ofst;
+	ut8 kbuf[2];
+	ut16 *k = (ut16*)&kbuf;
 	ut16 *ins = (ut16*)buf;
+
 	if (op == NULL)
 		return 2;
-	memset (op, 0, sizeof (RAnalOp));
 	op->length = 2;
 	if (*ins == 0) {
 		op->type = R_ANAL_OP_TYPE_NOP;
@@ -25,8 +28,6 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->addr = addr;
 		op->type = R_ANAL_OP_TYPE_CALL; // call (absolute)
 		op->fail = (op->addr)+4;
-		ut8 kbuf[2];
-		ut16 *k=&kbuf;
 		anal->iob.read_at (anal->iob.io, addr+2, kbuf, 2);
 		op->jump = *k*2;
 		//eprintf("addr: %x inst: %x dest: %x fail:%x\n", op->addr, *ins, op->jump, op->fail);
@@ -35,15 +36,13 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->addr = addr;
 		op->type = R_ANAL_OP_TYPE_CALL; // rcall (relative)
 		op->fail = (op->addr)+2;
-		short ofst = *ins<<4;
+		ofst = *ins<<4;
 		ofst>>=4;
 		ofst*=2;
 		op->jump = addr+ofst+2;
 		//eprintf("addr: %x inst: %x ofst: %d dest: %x fail:%x\n", op->addr, *ins, ofst, op->jump, op->fail);
 	} else
 	if (((buf[1] & 0xfe) == 0x94) && ((buf[0] & 0x0e)==0x0c)) {
-		ut8 kbuf[2];
-		ut16 *k = &kbuf;
 		op->addr = addr;
 		op->type = R_ANAL_OP_TYPE_CJMP; // breq, jmp (absolute)
 		op->fail = (op->addr)+4;
@@ -56,7 +55,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->addr=addr;
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->fail = (op->addr)+2;
-		short ofst = *ins<<4;
+		ofst = *ins<<4;
 		ofst>>=4;
 		ofst*=2;
 		op->jump = addr+ofst+2;

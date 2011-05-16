@@ -11,21 +11,26 @@ static struct r_core_t r;
 static int main_help(int line) {
 	printf ("Usage: radare2 [-dwnLuvV] [-p prj] [-s addr] [-b bsz] [-e k=v] [file]\n");
 	if (!line) printf (
-		" -d          use 'file' as a program to debug\n"
-		" -w          open file in write mode\n"
-		" -n          do not run ~/.radare2rc\n"
-		" -v          nonverbose mode (no prompt)\n"
-		" -f          block size = file size\n"
-		" -p [prj]    set project file\n"
-		" -s [addr]   initial seek\n"
-		" -b [size]   initial block size\n"
-		" -i [file]   run script file\n"
-		" -V          show radare2 version\n"
-		" -l [lib]    load plugin file\n"
-		//" -t        load rabin2 info in thread\n"
-		" -L          list supported IO plugins\n"
-		" -u          unknown file size\n"
-		" -e k=v      evaluate config var\n");
+		" -d           use 'file' as a program to debug\n"
+		" -w           open file in write mode\n"
+		" -n           do not run ~/.radare2rc\n"
+		" -v           nonverbose mode (no prompt)\n"
+		" -f           block size = file size\n"
+		" -p [prj]     set project file\n"
+		" -s [addr]    initial seek\n"
+		" -b [size]    initial block size\n"
+		" -i [file]    run script file\n"
+		" -V           show radare2 version\n"
+		" -l [lib]     load plugin file\n"
+		//" -t         load rabin2 info in thread\n"
+		" -L           list supported IO plugins\n"
+		" -u           unknown file size\n"
+		" -e k=v       evaluate config var\n"
+		"Environment:\n"
+		" R_DEBUG      handle crash signal\n"
+		" LIBR_PLUGINS path to plugins directory\n"
+		" VAPIDIR      path to extra vapi directory\n"
+		);
 	return 0;
 }
 
@@ -86,6 +91,9 @@ int main(int argc, char **argv) {
 	char file[1024];
 	char *cmdfile = NULL;
 	int is_gdb = R_FALSE;
+
+	if (r_sys_getenv ("R_DEBUG"))
+		r_sys_crash_handler ("gdb --pid %d");
 
 	if (argc<2)
 		return main_help (1);
@@ -170,7 +178,7 @@ int main(int argc, char **argv) {
 
 		fh = r_core_file_open (&r, file, perms, 0LL);
 		if (fh != NULL) {
-			const char *arch = r_config_get (&r, "asm.arch");
+			//const char *arch = r_config_get (r.config, "asm.arch");
 			// TODO: move into if (debug) ..
 			if (is_gdb) r_debug_use (r.dbg, "gdb");
 			else r_debug_use (r.dbg, "native");

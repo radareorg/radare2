@@ -5,6 +5,7 @@
 
 /* plugin pointers */
 extern RDebugPlugin r_debug_plugin_native;
+extern RDebugPlugin r_debug_plugin_rap;
 extern RDebugPlugin r_debug_plugin_gdb;
 
 static RDebugPlugin *debug_static_plugins[] = 

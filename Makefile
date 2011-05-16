@@ -1,7 +1,7 @@
 include config-user.mk
 include global.mk
 
-PWD=`pwd`
+PWD=$(shell pwd)
 REMOTE=radare.org:/srv/http/radareorg/get/beta
 
 all: plugins.cfg
@@ -9,6 +9,8 @@ all: plugins.cfg
 	${MAKE} binr
 
 plugins.cfg:
+	@if [ ! -e config-user.mk ]; then echo ; \
+	echo "  Please, run ./configure first" ; echo ; exit 1 ; fi
 	./configure-plugins
 
 libr:
@@ -59,7 +61,7 @@ install-man:
 
 install-man-symlink:
 	mkdir -p ${PFX}/share/man/man1
-	cd man && for a in *.1 ; do ln -fs `pwd`/$$a ${PFX}/share/man/man1/$$a ; done
+	cd man && for a in *.1 ; do ln -fs ${PWD}/$$a ${PFX}/share/man/man1/$$a ; done
 	cd ${PFX}/share/man/man1 && ln -fs radare2.1 r2.1
 
 install-doc:
@@ -68,7 +70,7 @@ install-doc:
 
 install-doc-symlink:
 	${INSTALL_DIR} ${PFX}/share/doc/radare2
-	cd doc ; for a in * ; do ln -fs `pwd`/$$a ${PFX}/share/doc/radare2 ; done
+	cd doc ; for a in * ; do ln -fs ${PWD}/$$a ${PFX}/share/doc/radare2 ; done
 
 install: install-doc install-man
 	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
@@ -76,7 +78,7 @@ install: install-doc install-man
 
 install-pkgconfig-symlink:
 	@${INSTALL_DIR} ${PFX}/lib/pkgconfig
-	cd pkgcfg ; for a in *.pc ; do ln -fs $${PWD}/$$a ${PFX}/lib/pkgconfig/$$a ; done
+	cd pkgcfg ; for a in *.pc ; do ln -fs ${PWD}/$$a ${PFX}/lib/pkgconfig/$$a ; done
 
 symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink
 	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}

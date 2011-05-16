@@ -31,7 +31,7 @@ static void fs_posix_close(RFSFile *file) {
 	//fclose (file->ptr);
 }
 
-static RList *fs_posix_dir(RFSRoot *root, const char *path) {
+static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
 	char fullpath[4096];
 	RList *list;
 	struct stat st;
@@ -55,8 +55,9 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path) {
 	return list;
 }
 
-static void fs_posix_mount(RFSRoot *root) {
+static int fs_posix_mount(RFSRoot *root) {
 	root->ptr = NULL; // XXX: TODO
+	return R_TRUE;
 }
 
 static void fs_posix_umount(RFSRoot *root) {
@@ -69,7 +70,7 @@ struct r_fs_plugin_t r_fs_plugin_posix = {
 	.open = fs_posix_open,
 	.read = fs_posix_read,
 	.close = fs_posix_close,
-	.dir = fs_posix_dir,
+	.dir = &fs_posix_dir,
 	.mount = fs_posix_mount,
 	.umount = fs_posix_umount,
 };

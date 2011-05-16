@@ -66,9 +66,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return R_FALSE;
 }
 
-static int parse(struct r_parse_t *p, void *data, char *str)
-{
-	int i, len = strlen((char*)data);
+static int parse(struct r_parse_t *p, void *data, char *str) {
+	int i, len = strlen ((char*)data);
 	char w0[32];
 	char w1[32];
 	char w2[32];

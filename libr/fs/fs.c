@@ -2,6 +2,7 @@
 
 #include <r_fs.h>
 #include "../config.h"
+#include <errno.h>
 #include "p/grub/include/grub/msdos_partition.h"
 
 static RFSPlugin *fs_static_plugins[] = { R_FS_STATIC_PLUGINS };
@@ -11,6 +12,7 @@ R_API RFS *r_fs_new () {
 	RFSPlugin *static_plugin;
 	RFS *fs = R_NEW (RFS);
 	if (fs) {
+		fs->view = R_FS_VIEW_NORMAL;
 		fs->roots = r_list_new ();
 		fs->roots->free = (RListFree)r_fs_root_free;
 		fs->plugins = r_list_new ();
@@ -178,10 +180,95 @@ R_API RList *r_fs_dir(RFS* fs, const char *p) {
 		else
 			dir = path + strlen (root->path);
 		if (!*dir) dir = "/";
-		ret = root->p->dir (root, dir);
+		ret = root->p->dir (root, dir, fs->view);
 	} else eprintf ("r_fs_dir: not mounted '%s'\n", path);
 	free (path);
 	return ret;
+}
+
+R_API int r_fs_dir_dump (RFS* fs, const char *path, char *name) {
+	RList *list;
+	RListIter *iter;
+	RFSFile *file, *item;
+	char *str, *npath;
+
+	list = r_fs_dir (fs, path);
+	if (!list)
+		return R_FALSE;
+	if (!r_sys_mkdir (name)) {
+		if (r_sys_mkdir_failed()) {
+			eprintf ("Cannot create \"%s\"\n", name);
+			return R_FALSE;
+		}
+	}
+	r_list_foreach (list, iter, file) {
+		if (!strcmp (file->name, ".") || !strcmp (file->name, ".."))
+			continue;
+		str = (char *) malloc (strlen (name) + strlen (file->name) + 2);
+		if (!str)
+			return R_FALSE;
+		strcpy (str, name);
+		strcat (str, "/");
+		strcat (str, file->name);
+		npath = malloc (strlen (path) + strlen (file->name) + 2);
+		if (!npath)
+			return R_FALSE;
+		strcpy (npath, path);
+		strcat (npath, "/");
+		strcat (npath, file->name);
+		if (file->type != R_FS_FILE_TYPE_DIRECTORY) {
+			item = r_fs_open (fs, npath);
+			if (item) {
+				r_fs_read (fs, item, 0, item->size);
+				r_file_dump (str, item->data, item->size);
+				r_fs_close (fs, item);
+			}
+		} else {
+			r_fs_dir_dump (fs, npath, str);
+			free (npath);
+		}
+		free (str);
+	}
+	return R_TRUE;
+}
+
+static void r_fs_find_aux (RFS* fs, const char *name, const char *glob, RList *list) {
+	RList *dirs;
+	RListIter *iter;
+	RFSFile *item;
+	char *found;
+
+	dirs = r_fs_dir (fs, name);
+	r_list_foreach (dirs, iter, item) {
+		if (!strcmp (item->name, glob)) {
+			found = (char *) malloc (strlen (name) + strlen (item->name) + 2);
+			if (!found)
+				break;
+			strcpy (found, name);
+			strcat (found, "/");
+			strcat (found, item->name);
+			r_list_append (list, found);
+		}
+		if (!strcmp (item->name, ".") || !strcmp (item->name, ".."))
+			continue;
+		if (item->type == R_FS_FILE_TYPE_DIRECTORY) {
+			found = (char *) malloc (strlen (name) + strlen (item->name) + 2);
+			if (!found)
+				break;
+			strcpy (found, name);
+			strcat (found, "/");
+			strcat (found, item->name);
+			r_fs_find_aux (fs, found, glob, list);
+			free (found);
+		}
+	}
+}
+
+R_API RList *r_fs_find (RFS* fs, const char *name, const char *glob) {
+	RList *list =  r_list_new ();
+	list->free = free;
+	r_fs_find_aux (fs, name, glob, list);
+	return list;
 }
 
 R_API RFSFile *r_fs_slurp(RFS* fs, const char *path) {
@@ -403,4 +490,8 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 	clearerr (stdin);
 	printf ("\n");
 	return R_TRUE;
+}
+
+R_API void r_fs_view (RFS *fs, int view) {
+	fs->view = view;
 }

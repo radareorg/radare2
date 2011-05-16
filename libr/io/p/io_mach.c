@@ -39,8 +39,8 @@ typedef struct {
 	int pid;
 	task_t task;
 } RIOMach;
-#define RIOMACH_PID(x) (((RIOMach*)(x))->pid)
-#define RIOMACH_TASK(x) (((RIOMach*)(x))->task)
+#define RIOMACH_PID(x) (x?((RIOMach*)(x))->pid:-1)
+#define RIOMACH_TASK(x) (x?((RIOMach*)(x))->task:-1)
 
 #undef R_IO_NFDS
 #define R_IO_NFDS 2

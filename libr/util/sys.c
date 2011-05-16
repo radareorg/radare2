@@ -123,6 +123,64 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 #endif
 }
 
+static char *crash_handler_cmd = NULL;
+
+static void signal_handler(int signum) {
+	int len;
+	char *cmd;
+	if (!crash_handler_cmd)
+		return;
+	len = strlen (crash_handler_cmd)+32;
+	cmd = malloc (len);
+	snprintf (cmd, len, crash_handler_cmd, getpid ());
+	r_sys_backtrace ();
+	system (cmd);
+	exit (1);
+}
+
+static int checkcmd(const char *c) {
+	char oc = 0;
+	for (;*c;c++) {
+		if (oc == '%')
+			if (*c!='d' && *c!='%')
+				return 0;
+		oc = *c;
+	}
+	return 1;
+}
+
+R_API int r_sys_crash_handler(const char *cmd) {
+#if __UNIX__
+	struct sigaction sigact;
+	if (!checkcmd (cmd))
+		return R_FALSE;
+	free (crash_handler_cmd);
+	crash_handler_cmd = strdup (cmd);
+	sigact.sa_handler = signal_handler;
+	sigemptyset (&sigact.sa_mask);
+	sigact.sa_flags = 0;
+	sigaction (SIGINT, &sigact, (struct sigaction *)NULL);
+
+	sigaddset (&sigact.sa_mask, SIGSEGV);
+	sigaction (SIGSEGV, &sigact, (struct sigaction *)NULL);
+
+	sigaddset (&sigact.sa_mask, SIGBUS);
+	sigaction (SIGBUS, &sigact, (struct sigaction *)NULL);
+
+	sigaddset (&sigact.sa_mask, SIGQUIT);
+	sigaction (SIGQUIT, &sigact, (struct sigaction *)NULL);
+
+	sigaddset (&sigact.sa_mask, SIGHUP);
+	sigaction (SIGHUP, &sigact, (struct sigaction *)NULL);
+
+	sigaddset (&sigact.sa_mask, SIGKILL);
+	sigaction (SIGKILL, &sigact, (struct sigaction *)NULL);
+	return R_TRUE;
+#else
+	return R_FALSE;
+#endif
+}
+
 #if __WINDOWS__
 R_API const char *r_sys_getenv(const char *key) {
 	static char envbuf[1024];

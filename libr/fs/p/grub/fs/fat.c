@@ -17,7 +17,9 @@
  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <r_fs.h>
 #include <grub/fs.h>
+#include <grub/fshelp.h>
 #include <grub/disk.h>
 #include <grub/file.h>
 #include <grub/types.h>
@@ -536,6 +538,7 @@ grub_fat_iterate_dir (grub_disk_t disk, struct grub_fat_data *data,
 	}
 
       /* Check if this entry is valid.  */
+if (!(grub_fshelp_view & R_FS_VIEW_DELETED))
       if (dir.name[0] == 0xe5 || (dir.attr & ~GRUB_FAT_ATTR_VALID))
 	continue;
 
