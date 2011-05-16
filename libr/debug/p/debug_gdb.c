@@ -78,7 +78,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 					break;
 				case R_SYS_ARCH_ARM:
 					//TODO Check ARM stubs and fill in
-					desc->num_registers = 16;
+					desc->num_registers = 25;
 					desc->reg_size = 4;
 					break;
 			}
@@ -137,9 +137,40 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 		);
 	case R_SYS_ARCH_ARM:
 		return strdup (
-		"=pc	r15\n"
-		"gpr	eip	.32	0	0\n"
-		"gpr	eax	.32	8	0\n"
+			"=pc	r15\n"
+			"=sp	r14\n" // XXX
+			"=a0	r0\n"
+			"=a1	r1\n"
+			"=a2	r2\n"
+			"=a3	r3\n"
+			"gpr	lr	.32	56	0\n" // r14
+			"gpr	pc	.32	60	0\n" // r15
+			"gpr	r0	.32	0	0\n"
+			"gpr	r1	.32	4	0\n"
+			"gpr	r2	.32	8	0\n"
+			"gpr	r3	.32	12	0\n"
+			"gpr	r4	.32	16	0\n"
+			"gpr	r5	.32	20	0\n"
+			"gpr	r6	.32	24	0\n"
+			"gpr	r7	.32	28	0\n"
+			"gpr	r8	.32	32	0\n"
+			"gpr	r9	.32	36	0\n"
+			"gpr	r10	.32	40	0\n"
+			"gpr	r11	.32	44	0\n"
+			"gpr	r12	.32	48	0\n"
+			"gpr	r13	.32	52	0\n"
+			"gpr	r14	.32	56	0\n"
+			"gpr	r15	.32	60	0\n"
+			"gpr	f0	.32	64	0\n"
+			"gpr	f1	.32	68	0\n"
+			"gpr	f2	.32	72	0\n"
+			"gpr	f3	.32	76	0\n"
+			"gpr	f4	.32	80	0\n"
+			"gpr	f5	.32	84	0\n"
+			"gpr	f6	.32	88	0\n"
+			"gpr	f7	.32	92	0\n"
+			"gpr	fps	.32	96	0\n"
+			"gpr	cpsr	.32	100	0\n"
 		);
 	case R_SYS_ARCH_SH:
 		return strdup (

@@ -768,7 +768,7 @@ int                 gdbwrap_simplesetbp(gdbwrap_t *desc, la32 linaddr)
   snprintf(packet, sizeof(packet), "%s%s%x%s%x", GDBWRAP_INSERTBP,
 	   GDBWRAP_SEP_COMMA, linaddr, GDBWRAP_SEP_COMMA, 0x1);
   ret = gdbwrap_send_data(desc, packet);
-  if ( ret[0]=='\0' )
+  if ( ret!= NULL && ret[0]=='\0' )
 	return 0;
   return 1;
 }
@@ -803,7 +803,7 @@ int                 gdbwrap_simpledelbp(gdbwrap_t *desc, la32 linaddr)
   snprintf(packet, sizeof(packet), "%s%s%x%s%x", GDBWRAP_REMOVEBP,
 	   GDBWRAP_SEP_COMMA, linaddr, GDBWRAP_SEP_COMMA, 0x1);
   ret = gdbwrap_send_data(desc, packet);
-  if(ret[0] == '\0')
+  if(ret != NULL && ret[0] == '\0')
 	return 0;
   return 1;
 }
