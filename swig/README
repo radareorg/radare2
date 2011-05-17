@@ -1,7 +1,7 @@
 r2-swig notes
 =============
 
-The valaswig integration forces us to do some changes in the r2 API.
+The valabind integration forces us to do some changes in the r2 API.
 
 These api changes are for:
 
