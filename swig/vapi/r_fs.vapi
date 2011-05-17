@@ -8,7 +8,7 @@ namespace Radare {
 		public RFS();
 		public unowned RFSRoot? mount (string fstype, string path, uint64 delta);
 		public bool umount (string path);
-		public RFSRoot root (string path);
+		public RList<RFSRoot> root (string path);
 		public RFSFile open (string path);
 		public void close (RFSFile file);
 		public int read(RFSFile file, uint64 addr, int len);

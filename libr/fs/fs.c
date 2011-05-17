@@ -57,8 +57,12 @@ R_API void r_fs_del (RFS *fs, RFSPlugin *p) {
 /* mountpoint */
 R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path, ut64 delta) {
 	RFSPlugin *p;
-	RFSRoot *root = NULL;
+	RFSRoot *root;
+	RFSFile *file;
+	RList *list;
+	RListIter *iter;
 	char *str;
+	int len, lenstr;
 
 	if (path[0] != '/') {
 		eprintf ("r_fs_mount: invalid mountpoint\n");
@@ -70,6 +74,32 @@ R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path, ut64 d
 	}
 	str = strdup (path);
 	r_str_chop_path (str);
+	/* Check if path exists */
+	r_list_foreach (fs->roots, iter, root) {
+		len = strlen (root->path);
+		lenstr = strlen (str);
+		if (!strncmp (str, root->path, len)) {
+			if (len < lenstr && str[len] != '/')
+				continue;
+			else if (len > lenstr && root->path[lenstr] == '/')
+				continue;
+			eprintf ("r_fs_mount: Invalid mount point\n");
+			return NULL;
+		}
+	}
+	file = r_fs_open (fs, str);
+	if (file) {
+		r_fs_close (fs, file);
+		eprintf ("r_fs_mount: Invalid mount point\n");
+		return NULL;
+	} else {
+		list = r_fs_dir (fs, str);
+		if (!r_list_empty (list)) {
+			//XXX: list need free ??
+			eprintf ("r_fs_mount: Invalid mount point\n");
+			return NULL;
+		}
+	}
 	root = r_fs_root_new (str, delta);
 	root->p = p;
 	//memcpy (&root->iob, &fs->iob, sizeof (root->iob));
@@ -86,63 +116,74 @@ R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path, ut64 d
 	return root;
 }
 
-static inline int r_fs_match (const char *root, const char *path, int len, int olen) {
-	return ((len>olen) && (!strncmp (path, root, len)));
+static inline int r_fs_match (const char *root, const char *path, int len) {
+	return (!strncmp (path, root, len));
 }
 
 R_API int r_fs_umount (RFS* fs, const char *path) {
-	int olen = 0;
-        RFSRoot *root;
+	int len;
+	RFSRoot *root;
 	RListIter *iter, *riter = NULL;
-        r_list_foreach (fs->roots, iter, root) {
-		int len = strlen (root->path);
-		if (r_fs_match (path, root->path, len, olen)) {
-			olen = len;
+	r_list_foreach (fs->roots, iter, root) {
+		len = strlen (root->path);
+		if (r_fs_match (path, root->path, len)) {
 			riter = iter;
 		}
-        }
+	}
 	if (riter) {
 		r_list_delete (fs->roots, riter);
 		return R_TRUE;
 	}
-        return R_FALSE;
+	return R_FALSE;
 }
 
-R_API RFSRoot *r_fs_root (RFS *fs, const char *p) {
-	RFSRoot *root, *oroot = NULL;
+R_API RList *r_fs_root (RFS *fs, const char *p) {
+	RList *roots = r_list_new ();
+	RFSRoot *root;
 	RListIter *iter;
-	int olen = 0;
+	int len, olen;
 	char *path = strdup (p);
 	r_str_chop_path (path);
 	r_list_foreach (fs->roots, iter, root) {
-		int len = strlen (root->path);
-		if (r_fs_match (path, root->path, len, olen)) {
-			olen = len;
-			oroot = root;
+		len = strlen (root->path);
+		if (r_fs_match (path, root->path, len)) {
+			olen = strlen (path);
+			if (len == 1 || olen == len)
+				r_list_append (roots, root);
+			else if ( olen > len && path[len] == '/')
+				r_list_append (roots, root);
 		}
 	}
 	free (path);
-	return oroot;
+	return roots;
 }
 
 /* filez */
 R_API RFSFile *r_fs_open (RFS* fs, const char *p) {
 	RFSRoot *root;
+	RList *roots;
+	RListIter *iter;
+	RFSFile *f = NULL;
 	const char *dir;
 	char *path = strdup (p);
 	//r_str_chop_path (path);
-	root = r_fs_root (fs, path);
-	if (root && root->p && root->p->open) {
-		if (strlen (root->path) == 1)
-			dir = path;
-		else
-			dir = path + strlen (root->path);
-		RFSFile *f = root->p->open (root, dir);
-		free (path);
-		return f;
-	} else eprintf ("r_fs_open: null root->p->open\n");
+	roots = r_fs_root (fs, path);
+	if (!r_list_empty (roots)) {
+		r_list_foreach (roots, iter, root) {
+			if (root && root->p && root->p->open) {
+				if (strlen (root->path) == 1)
+					dir = path;
+				else
+					dir = path + strlen (root->path);
+				f = root->p->open (root, dir);
+				if (f)
+					break;
+			}
+		}
+	}
+	free (roots);
 	free (path);
-        return NULL;
+	return f;
 }
 
 // TODO: close or free?
@@ -168,20 +209,26 @@ R_API int r_fs_read (RFS* fs, RFSFile *file, ut64 addr, int len) {
 }
 
 R_API RList *r_fs_dir(RFS* fs, const char *p) {
-	RList *ret = NULL;
+	RList *roots, *ret = NULL;
 	RFSRoot *root;
+	RListIter *iter;
 	const char *dir;
 	char *path = strdup (p);
 	r_str_chop_path (path);
-	root = r_fs_root (fs, path);
-	if (root) {
-		if (strlen (root->path) == 1)
-			dir = path;
-		else
-			dir = path + strlen (root->path);
-		if (!*dir) dir = "/";
-		ret = root->p->dir (root, dir, fs->view);
-	} else eprintf ("r_fs_dir: not mounted '%s'\n", path);
+	roots = r_fs_root (fs, path);
+	r_list_foreach (roots, iter, root) {
+		if (root) {
+			if (strlen (root->path) == 1)
+				dir = path;
+			else
+				dir = path + strlen (root->path);
+			if (!*dir) dir = "/";
+			ret = root->p->dir (root, dir, fs->view);
+			if (ret)
+				break;
+		}
+	}
+	free (roots);
 	free (path);
 	return ret;
 }
@@ -273,17 +320,22 @@ R_API RList *r_fs_find (RFS* fs, const char *name, const char *glob) {
 
 R_API RFSFile *r_fs_slurp(RFS* fs, const char *path) {
 	RFSFile *file = NULL;
-	RFSRoot *root = r_fs_root (fs, path);
-	if (root && root->p) {
-		if (root->p->open && root->p->read && root->p->close) {
-			file = root->p->open (root, path);
-			if (file) root->p->read (file, 0, file->size); //file->data
-			else eprintf ("r_fs_slurp: cannot open file\n");
-		} else {
-			if (root->p->slurp) return root->p->slurp (root, path);
-			else eprintf ("r_fs_slurp: null root->p->slurp\n");
+	RFSRoot *root;
+	RList * roots = r_fs_root (fs, path);
+	RListIter *iter;
+	r_list_foreach (roots, iter, root) {
+		if (root && root->p) {
+			if (root->p->open && root->p->read && root->p->close) {
+				file = root->p->open (root, path);
+				if (file) root->p->read (file, 0, file->size); //file->data
+				else eprintf ("r_fs_slurp: cannot open file\n");
+			} else {
+				if (root->p->slurp) return root->p->slurp (root, path);
+				else eprintf ("r_fs_slurp: null root->p->slurp\n");
+			}
 		}
 	}
+	free (roots);
 	return file;
 }
 
@@ -382,7 +434,8 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 
 	if (root && *root) {
 		r_str_chop_path (root);
-		if (!r_fs_root (fs, root)) {
+		list = r_fs_root (fs, root);
+		if (r_list_empty (list)) {
 			printf ("Unknown root\n");
 			return R_FALSE;
 		}
