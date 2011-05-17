@@ -4,10 +4,10 @@ CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
 LANG_CXX!
-CHKPRG VALASWIG valaswig
+CHKPRG VALABIND valabind
 CHKPRG SWIG swig
 
-ARG_ENABLE DEVEL_MODE devel Enable development mode (use valaswig and swig) ;
+ARG_ENABLE DEVEL_MODE devel Enable development mode (use valabind and swig) ;
 ARG_WITH USERCC=gcc cc Define C compiler to use (gcc by default) ;
 ARG_WITH USERCXX=g++ cxx Define C++ compiler to use (g++ by default) ;
 ARG_WITH USEROSTYPE=auto ostype Choose OS type (gnulinux windows darwin) ;
@@ -33,4 +33,4 @@ PKGCFG! FOO FOO r_core
 
 SUBDIRS ./config.mk ;
 
-REPORT PREFIX HAVE_SWIG HAVE_VALASWIG DEVEL_MODE ;
+REPORT PREFIX HAVE_SWIG HAVE_VALABIND DEVEL_MODE ;

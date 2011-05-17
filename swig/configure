@@ -139,12 +139,15 @@ System types:
   --target=TARGET        configure for building compilers for TARGET [HOST]
 EOF2
 
-printf "\nOptional Features:
-  --enable-devel         Enable development mode (use valaswig and swig) 
+printf "
+Optional Features:
+  --enable-devel         Enable development mode (use valabind and swig) 
   --with-cc              Define C compiler to use (gcc by default)  (USERCC=gcc)
   --with-cxx             Define C++ compiler to use (g++ by default)  (USERCXX=g++)
-  --with-ostype          Choose OS type (gnulinux windows darwin)  (USEROSTYPE=auto)\n"
-printf "\nSome influential environment variables:
+  --with-ostype          Choose OS type (gnulinux windows darwin)  (USEROSTYPE=auto)
+"
+printf "
+Some influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
@@ -153,8 +156,10 @@ printf "\nSome influential environment variables:
               headers in a nonstandard directory <include dir>
   CPP         C preprocessor
   CXX         C++ compiler command
-  CXXFLAGS    C++ compiler flags\n"
-printf "\nReport bugs to: pancake <pancake@nopcode.org>"
+  CXXFLAGS    C++ compiler flags
+"
+printf "
+Report bugs to: pancake <pancake@nopcode.org>"
 echo ""
 exit 0
 }
@@ -253,7 +258,7 @@ parse_options $1
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C CXX CXXFLAGS HAVE_LANG_CXX HAVE_VALASWIG VALASWIG HAVE_SWIG SWIG DEVEL_MODE USERCC USERCXX USEROSTYPE FOO HAVE_PKGCFG_R_CORE"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C CXX CXXFLAGS HAVE_LANG_CXX HAVE_VALABIND VALABIND HAVE_SWIG SWIG DEVEL_MODE USERCC USERCXX USEROSTYPE FOO HAVE_PKGCFG_R_CORE"
 
 create_environ
 
@@ -302,25 +307,25 @@ echo "ERROR: ${CXX} cannot create executables" >&2 ;
 do_remove
 exit 1
  fi
-printf "checking for valaswig... "
-if [ -x "${VALASWIG}" ]; then
-FIND=${VALASWIG}
+printf "checking for valabind... "
+if [ -x "${VALABIND}" ]; then
+FIND=${VALABIND}
 else
 FIND=""
 for A in `echo ${PATH} | sed -e 's,:, ,g'`; do
-if [ -x "${A}/valaswig" ]; then
-        FIND="${A}/valaswig"
+if [ -x "${A}/valabind" ]; then
+        FIND="${A}/valabind"
         break;
 fi
 done
 fi
 if [ -n "${FIND}" ]; then 
  echo ${FIND}; 
- HAVE_VALASWIG=1
- VALASWIG=${FIND}
+ HAVE_VALABIND=1
+ VALABIND=${FIND}
 else
- HAVE_VALASWIG=0
- VALASWIG=valaswig
+ HAVE_VALABIND=0
+ VALABIND=valabind
  echo no ; fi
 printf "checking for swig... "
 if [ -x "${SWIG}" ]; then
@@ -414,7 +419,7 @@ done
 do_remove
 echo
 echo "Final report:"
-for A in  PREFIX HAVE_SWIG HAVE_VALASWIG DEVEL_MODE ; do # REPORT
+for A in  PREFIX HAVE_SWIG HAVE_VALABIND DEVEL_MODE ; do # REPORT
 eval VAL="\$${A}"
 [ -z "${VAL}" ] && VAL="(null)"
 echo " - ${A} = ${VAL}"

@@ -5,7 +5,7 @@
 
 LNG=$1
 MOD=$2
-VALASWIGFLAGS="" ; [ 1 = "${DIST}" ] && VALASWIGFLAGS="-C"
+VALABINDFLAGS="" ; [ 1 = "${DIST}" ] && VALABINDFLAGS="-C"
 if [ -z "${MOD}" ]; then
 	echo "Usage: ./libr-swig.sh [python] [r_foo]"
 	exit 1
@@ -17,6 +17,6 @@ cd ${LNG}
 
 echo "Build ${MOD} `pkg-config --libs ${MOD}`"
 
-valaswig-cc ${LNG} ${MOD} ${VALASWIGFLAGS} \
+valaswig-cc ${LNG} ${MOD} ${VALABINDFLAGS} \
 	-x --vapidir=../vapi ../vapi/${MOD} \
 	`pkg-config --cflags --libs ${MOD}`
