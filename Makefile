@@ -35,8 +35,8 @@ w32dist:
 
 w32beta: w32dist
 	scp radare2-w32-${VERSION}.zip ${REMOTE}
-	cd swig ; $(MAKE) w32dist
-	scp radare2-swig-w32-${VERSION}.zip ${REMOTE}
+	cd r2-bindings ; $(MAKE) w32dist
+	scp radare2-bindings-w32-${VERSION}.zip ${REMOTE}
 
 clean:
 	cd libr && ${MAKE} clean
@@ -96,16 +96,16 @@ purge:
 	rm -rf ${DESTDIR}/${PREFIX}/lib/radare2
 	rm -rf ${DESTDIR}/${PREFIX}/include/libr
 
-beta: dist swig-dist
+beta: dist r2-bindings-dist
 	scp ../radare2-${VERSION}.tar.gz ${REMOTE}
-	scp radare2-swig-${VERSION}.tar.gz ${REMOTE}
+	scp radare2-bindings-${VERSION}.tar.gz ${REMOTE}
 
-swig-dist:
-	cd swig && ${MAKE} dist
+r2-bindings-dist:
+	cd r2-bindings && ${MAKE} dist
 
 dist:
 	VERSION=${VERSION} ; \
-	FILES=`hg st -mc .| cut -c 3-|sed -e s,^,radare2-${VERSION}/, | grep -v swig | grep -v '/\.'` ; \
+	FILES=`hg st -mc .| cut -c 3-|sed -e s,^,radare2-${VERSION}/, | grep -v r2-bindings | grep -v '/\.'` ; \
 	cd .. && mv radare2 radare2-${VERSION} && \
 	tar czvf radare2-${VERSION}.tar.gz $${FILES} ;\
 	mv radare2-${VERSION} radare2
@@ -123,4 +123,4 @@ shot:
 
 include ${MKPLUGINS}
 
-.PHONY: all clean mrproper install symstall uninstall deinstall dist shot pkgcfg swig libr binr install-man
+.PHONY: all clean mrproper install symstall uninstall deinstall dist shot pkgcfg r2-bindings r2-bindings-dist libr binr install-man

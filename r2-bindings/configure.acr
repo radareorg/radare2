@@ -1,4 +1,4 @@
-PKGNAME radare2-swig
+PKGNAME radare2-bindings
 VERSION 0.7.1
 CONTACT pancake ; pancake@nopcode.org
 
