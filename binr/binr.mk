@@ -7,7 +7,7 @@ CFLAGS+=-DLIBDIR=\"${PREFIX}/lib\"
 
 LIBS=$(subst r_,-lr_,$(BINDEPS))
 LIBS+=$(subst r_,-L../../libr/,$(BINDEPS))
-LDFLAGS=${LIBS}
+LDFLAGS+=${LIBS}
 
 all: ${BIN}${EXT_EXE}
 

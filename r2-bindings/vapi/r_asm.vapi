@@ -72,18 +72,12 @@ public class RAsm {
 		//public void* free();
 	}
 
-	public int arch;
 	public int bits;
 	public bool big_endian;
 	public int syntax;
-	public int parser;
 	public uint64 pc;
-	public string buf_asm;
-	public string buf_hex;
-	public string buf_err;
-	public void *aux;
-
 	public RList<RAsm.Plugin> plugins;
+
 	public RAsm();
 	public bool use(string name);
 	public bool set_bits(int bits);

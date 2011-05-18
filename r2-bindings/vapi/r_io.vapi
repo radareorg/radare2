@@ -99,7 +99,7 @@ namespace Radare {
 		public void plugin_list();
 
 		/* maps */
-		[CCode (cname="RIOMap", cprefix="r_io_map_", free_function="")]
+		[CCode (cname="RIOMap", cprefix="r_io_map_", free_function="", unref_function)]
 		public class Map {
 			int fd;
 			int flags;
@@ -115,12 +115,13 @@ namespace Radare {
 		[Compact]
 		[CCode (cname="RIOSection", free_function="")]
 		public class Section {
-			string comment;
-			uint64 from;
-			uint64 to;
+			string name;
+			uint64 offset;
 			uint64 vaddr;
-			uint64 paddr;
+			uint64 size;
+			uint64 vsize;
 			int rwx; // TODO: use perms
+			int id;
 		}
 
 		public void section_list(uint64 addr, bool rad);

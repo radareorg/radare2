@@ -174,17 +174,17 @@ R_API int r_anal_var_access_add(RAnal *anal, RAnalVar *var, ut64 from, int set) 
 	RAnalVarAccess *acc, *acci;
 	RListIter *iter;
 
-    r_list_foreach(var->accesses, iter, acci)
-        if (acci->addr == from)
-            return R_TRUE;
-        if (!(acc = r_anal_var_access_new ()))
-            return R_FALSE;
+	r_list_foreach(var->accesses, iter, acci)
+		if (acci->addr == from)
+			return R_TRUE;
+	if (!(acc = r_anal_var_access_new ()))
+		return R_FALSE;
 
-    acc->addr = from;
-    acc->set = set;
-    r_list_append (var->accesses, acc);
+	acc->addr = from;
+	acc->set = set;
+	r_list_append (var->accesses, acc);
 
-    return R_TRUE;
+	return R_TRUE;
 }
 
 R_API int r_anal_var_access_del(RAnal *anal, RAnalVar *var, ut64 from) {

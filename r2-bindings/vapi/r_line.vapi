@@ -2,14 +2,14 @@
 
 namespace Radare {
 	[Compact]
-	[CCode (cheader_filename="r_lib.h", cprefix="r_lib_", cname="struct r_lib_t", free_function="r_lib_free")]
+	[CCode (cheader_filename="r_line.h", cprefix="r_line_")]
 	public class RLine {
 		public RLine(string symname);
-		public bool readline (int argc, char **argv);
+		public static bool readline (int argc, char **argv);
 
-		public bool hist_load (string file);
-		public bool hist_add (string line);
-		public bool hist_save (string file);
-		//public bool hist_label (string file);
+		public static bool hist_load (string file);
+		public static bool hist_add (string line);
+		public static bool hist_save (string file);
+		//public static bool hist_label (string file);
 	}
 }

@@ -10,6 +10,10 @@ CFLAGS+=-DLIBDIR=\"${PREFIX}/lib\"
 CFLAGS+=-DPREFIX=\"${PREFIX}\"
 LDFLAGS+=${DL_LIBS}
 
+ifeq ($(shell uname),OpenBSD)
+LDFLAGS+=-lpthread
+endif
+
 include ../rules.mk
 
 ifeq ($(HAVE_LIB_MAGIC),1)

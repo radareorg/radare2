@@ -76,7 +76,7 @@ public class Radare.RDebug {
 	//public RDebug.Tracepoint trace_add(uint64 addr, int size);
 	public bool trace_tag (int tag);
 
-	[CCode (cname="RDebugPid", free_function="r_debug_pid_free", cprefix="r_debug_pid_")]
+	[CCode (cname="RDebugPid", free_function="r_debug_pid_free", cprefix="r_debug_pid_", unref_function="")]
 	public class Pid {
 		public int pid;
 		public int status;
@@ -163,7 +163,6 @@ public class Radare.RDebug {
 	public int newstate;
 	public RDebug.Trace trace;
 	public bool stop_all_threads;
-	public string reg_profile;
 	public RReg reg;
 	public RAnal anal;
 

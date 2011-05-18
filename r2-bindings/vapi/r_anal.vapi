@@ -235,10 +235,8 @@ public class RAnal {
 	[Compact]
 	[CCode (cname="RAnalVarAccess")]
 	public class VarAccess {
-		public string name;
-		public int delta;
-		public int type;
-		public RList<RAnal.VarAccess> accessess;
+		public uint64 addr;
+		public bool @set;
 	}
 
 	[Compact]

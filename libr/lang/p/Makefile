@@ -30,7 +30,7 @@ lang_python.${EXT_SO}:
 else
 PYCFG=../../../swig/python-config-wrapper
 PYCFLAGS=$(shell ${PYCFG} --cflags)
-PYLDFLAGS=$(shell ${PYCFG} --libs)
+PYLDFLAGS=$(shell ${PYCFG} --libs) -L$(shell ${PYCFG} --prefix)/lib
 
 lang_python.${EXT_SO}:
 	${CC} ${CFLAGS} ${PYCFLAGS} ${PYLDFLAGS} \

@@ -36,26 +36,26 @@ public class Radare.RSearch {
 	public RList<Keyword> kws;
 
 	[Compact]
-	[CCode (cname="struct r_search_hit_t", free_function="free", cprefix="r_search_hit_")]
-	public class Hit {
-		public unowned Keyword k;
-		uint64 addr;
-	}
-
-	[Compact]
 	[CCode (cname="struct r_search_keyword_t", free_function="free", cprefix="r_search_keyword_")]
 	public class Keyword {
-		public unowned string keyword;
-		public unowned string binmask;
+		public string keyword;
+		public string binmask;
 		public uint8 *bin_keyword;
 		public uint8 *bin_binmask;
 		public int keyword_length;
 		public int binmask_length;
-		public int idx;
+		//public int idx;
 		public int count;
 
 		public Keyword.str (string str, string bmask, string data);
 		//public Keyword.hex (string str, string bmask, string data);
 		public Keyword (uint8 *s, int sl, uint8 *b, int bl, string data);
+	}
+
+	[Compact]
+	[CCode (cname="struct r_search_hit_t", free_function="free", cprefix="r_search_hit_")]
+	public class Hit {
+		public /*unowned*/ Keyword kw;
+		uint64 addr;
 	}
 }

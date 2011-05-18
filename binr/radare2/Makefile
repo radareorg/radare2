@@ -20,3 +20,7 @@ ifeq ($(HAVE_LIB_GMP),1)
 LDFLAGS+=-lgmp
 endif
 endif
+
+ifeq ($(uname),OpenBSD)
+LDFLAGS+=-pthread
+endif

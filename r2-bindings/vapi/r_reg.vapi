@@ -37,7 +37,7 @@ public class Radare.RReg {
 	[CCode (cname="struct r_reg_set_t", destroy_function="", free_function="" )]
 	public class Set {
 		public RReg.Arena arena;
-		public RList<RReg.Arena*> arenas;
+		//public RList<RReg.Arena*> arenas;
 		public RList<RReg.Item*> regs;
 	}
 

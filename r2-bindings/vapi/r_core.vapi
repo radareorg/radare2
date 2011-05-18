@@ -16,7 +16,6 @@ public class RCore {
 	public RAnal anal;
 	public RBin bin;
 	public RFS fs;
-	public RSyscall syscall;
 	public RParse parser;
 	public RLang lang;
 	public RSearch search;
@@ -105,9 +104,11 @@ public class RCore {
 		/* attributes */
 		public string uri;
 		public string filename;
-		public uint64 offset;
+		public uint64 seek;
 		public uint64 size;
+		public RIO.Map map;
 		public int rwx;
+		public bool dbg;
 		public RIO.Desc fd;
 	}
 

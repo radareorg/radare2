@@ -21,7 +21,8 @@ namespace Radare {
 		public class Plugin {
 			public string name;
 			public string desc;
-			public string help;
+			//public string *help;
+			// TODO: Add missing delegates
 		}
 
 		public Plugin cur;
