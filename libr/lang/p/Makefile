@@ -28,7 +28,7 @@ lang_python.${EXT_SO}:
 	-L${HOME}/.wine/drive_c/Python27/libs -L../../core/ -lr_core \
 	${LDFLAGS_LIB} -shared -o lang_python.${EXT_SO} python.c -lpython27
 else
-PYCFG=../../../swig/python-config-wrapper
+PYCFG=../../../r2-bindings/python-config-wrapper
 PYCFLAGS=$(shell ${PYCFG} --cflags)
 PYLDFLAGS=$(shell ${PYCFG} --libs) -L$(shell ${PYCFG} --prefix)/lib
 
