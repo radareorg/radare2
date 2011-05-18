@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyleft 2011
 # Author: pancake(at)nopcode.org
-# Wrapper for valaswig-cc
+# Wrapper for valabind-cc
 
 LNG=$1
 MOD=$2
@@ -13,10 +13,10 @@ fi
 mkdir -p ${LNG}
 cd ${LNG}
 
-#valaswig-cc ${LNG} ${MOD} -I../../libr/include ../../libr/vapi/${MOD}.vapi -l${MOD} -L../../libr/$(echo ${MOD} | sed -e s,r_,,)
+#valabind-cc ${LNG} ${MOD} -I../../libr/include ../../libr/vapi/${MOD}.vapi -l${MOD} -L../../libr/$(echo ${MOD} | sed -e s,r_,,)
 
 echo "Build ${MOD} `pkg-config --libs ${MOD}`"
 
-valaswig-cc ${LNG} ${MOD} ${VALABINDFLAGS} \
+valabind-cc ${LNG} ${MOD} ${VALABINDFLAGS} \
 	-x --vapidir=../vapi ../vapi/${MOD} \
 	`pkg-config --cflags --libs ${MOD}`
