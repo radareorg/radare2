@@ -17,6 +17,12 @@ w32:
 
 ifeq ($(DEVEL_MODE),1)
 %.${SOEXT}:
+ifeq (${LANG},cxx)
+	mod=`echo $@ | sed -e s,.${SOEXT},,` ; \
+	echo "MOD=$$mod" ; \
+	valabind --cxx -m $$mod --vapidir=../vapi $$mod && \
+	${CXX} -shared -fPIC -o $@ $${mod}.cxx `pkg-config --cflags --libs $$mod`
+else
 	@-test ../vapi/`echo $@|sed -e s,.${SOEXT},.vapi,` -nt ${LIBS_PFX}$@ ; \
 	if [ ! $$? = 0 ]; then \
 	  if [ ! -e ${LIBS_PFX}$@ ]; then \
@@ -28,6 +34,7 @@ ifeq ($(DEVEL_MODE),1)
 	[ $$? = 0 ] && \
 	  (cd .. && RELEASE=$(RELEASE) \
 		sh do-swig.sh ${LANG} `echo $@ | sed -e s,.${SOEXT},,`) ; true
+endif
 
 clean:
 	rm -f *.${SOEXT} r_*
@@ -48,7 +55,7 @@ else
 	esac ; fi ; true
 
 clean:
-	rm -f *.${SOEXT}
+	@rm -f *.${SOEXT} ; rm -rf *.dSYM
 endif
 
 test:

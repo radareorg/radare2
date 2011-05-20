@@ -1,4 +1,4 @@
-from r2.r_bin import *
+from r_bin import *
 b = RBin ()
 b.load("/bin/ls", None)
 baddr= b.get_baddr()

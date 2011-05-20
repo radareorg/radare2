@@ -1,6 +1,6 @@
 NAME=r_cmd
 OBJ=cmd.o plugin.o macro.o
-DEPS=r_util
+DEPS=r_util r_lib
 
 include ../config.mk
 

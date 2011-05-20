@@ -5,7 +5,7 @@ includedir=${prefix}/include
 
 Name: r_sign
 Description: radare foundation libraries
-Version: 
+Version: 0.7.1
 Requires:
-Libs: -L${libdir} -lr_sign
+Libs: -L${libdir} -lr_sign -lr_util -lr_anal
 Cflags: -I${includedir}/libr

@@ -38,7 +38,7 @@ namespace Radare {
 	}
 
 	[Compact]
-	[CCode (cheader_filename="r_fs.h", cname="struct r_fs_plugin_t", free_function="r_fs_plugin_free", cprefix="r_fs_plugin_", unref_function="" free_function="")]
+	[CCode (cheader_filename="r_fs.h", cname="struct r_fs_plugin_t", free_function="r_fs_plugin_free", cprefix="r_fs_plugin_", unref_function="", free_function="")]
 	public class RFSPlugin {
 		public string name;
 		public string desc;

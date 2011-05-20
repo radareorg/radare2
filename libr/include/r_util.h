@@ -212,10 +212,11 @@ R_API void r_num_irand();
 #define R_BETWEEN(x,y,z) (((x)>=(y)) && ((x)<=(z)))
 #define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
 #define strnull(x) (!x||!*x)
-#define iswhitechar(x) (x==' '||x=='\t'||x=='\n'||x=='\r')
-#define iswhitespace(x) (x==' '||x=='\t')
-#define isseparator(x) (x==' '||x=='\t'||x=='\n'||x=='\r'||x==' '|| \
-	x==','||x==';'||x==':'||x=='['||x==']'||x=='('||x==')'||x=='{'||x=='}')
+#define iswhitechar(x) ((x)==' '||(x)=='\t'||(x)=='\n'||(x)=='\r')
+#define iswhitespace(x) ((x)==' '||(x)=='\t')
+#define isseparator(x) ((x)==' '||(x)=='\t'||(x)=='\n'||(x)=='\r'||(x)==' '|| \
+		(x)==','||(x)==';'||(x)==':'||(x)=='['||(x)==']'|| \
+		(x)=='('||(x)==')'||(x)=='{'||(x)=='}')
 #define ishexchar(x) ((x>='0'&&x<='9') ||  (x>='a'&&x<='f') ||  (x>='A'&&x<='F')) {
 
 R_API void r_base64_encode(ut8 *bout, const ut8 *bin, int len);

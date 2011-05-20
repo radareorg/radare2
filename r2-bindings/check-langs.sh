@@ -1,9 +1,9 @@
 #!/bin/sh
-# Check bindings supported by valaswig
+# Check bindings supported by valabind
 # pancake // radare.org - 2010-2011
 
 SUP_LANGS=""
-LANGS="python perl ruby lua go java"
+LANGS="python perl ruby lua go java guile"
 [ -z "${CC}" ] && CC=gcc
 [ -z "${CXX}" ] && CXX=g++
 
@@ -24,16 +24,38 @@ if [ "$1" = "force-all" ]; then
   exit 0
 fi
 
-for a in ${LANGS}; do
-  printf "Checking $a support for valaswig... "
-  CC=${CC} CXX=${CXX} valaswig-cc --test $a
+echo "Checking valabind languages support..."
+valabind-cc --help > /dev/null 2>&1
+if [ $? = 0 ]; then
+  echo " - gir: yes"
+  echo " - v8gear: yes"
+  SUP_LANGS="gir gear ${SUP_LANGS}"
+  for a in ${LANGS}; do
+    printf " - $a: "
+    CC=${CC} CXX=${CXX} valabind-cc --test $a
+    if [ $? = 0 ]; then
+      echo yes
+      SUP_LANGS="$a ${SUP_LANGS}"
+    else
+      echo no
+    fi
+  done
+else
+  echo "WARNING: cannot find valabind"
+  echo " - gir: no"
+  echo " - v8gear: no"
+fi
+
+for a in valac g++ ; do
+  $a --help > /dev/null 2>&1
   if [ $? = 0 ]; then
-    echo yes
+    echo " - $a: yes"
     SUP_LANGS="$a ${SUP_LANGS}"
   else
-    echo no
+    echo " - $a: no"
   fi
 done
+
 
 :> supported.langs
 for a in ${SUP_LANGS}; do

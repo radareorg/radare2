@@ -2,7 +2,7 @@
 #
 # Script to configure "staticability" of plugins
 # author: pancake // nopcode
-# date: 2010-01-14
+# update: 2010-01-14
 #
 
 list () {

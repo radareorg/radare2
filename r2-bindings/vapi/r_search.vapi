@@ -1,6 +1,5 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
-//[Compact]
 [CCode (cheader_filename="r_types_base.h,r_list.h,r_search.h", cname="struct r_search_t", free_function="r_search_free", unref_function="r_search_free", cprefix="r_search_")]
 public class Radare.RSearch {
 	[CCode (cname="RSearchCallback", has_target="false")]

@@ -29,17 +29,17 @@ static void print_format_help(RPrint *p) {
 }
 
 /* TODO: needs refactoring */
-R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int len, const char *fmt) {
-	unsigned char buffer[256];
+R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const char *fmt) {
+	ut8 buffer[256];
 	int nargs, i, j, idx, times, otimes, endian;
 	char *args, *bracket, tmp, last = 0;
 	const char *arg = fmt;
-	const char *argend = arg+strlen(fmt);
-	ut64 addr = 0;
+	const char *argend = arg+strlen (fmt);
 	char namefmt[8];
+	ut64 addr = 0, seeki = 0;;
 	nargs = endian = i = j = 0;
 
-	while (*arg && *arg==' ') arg++;
+	while (*arg && iswhitechar (*arg)) arg++;
 	/* get times */
 	otimes = times = atoi (arg);
 	if (times > 0)
@@ -79,13 +79,13 @@ R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int le
 
 	/* go format */
 	i = 0;
-	if (times==0)
-		otimes = times = 1;
-	for(;times;times--) { // repeat N times
+	if (!times) otimes = times = 1;
+	for (;times;times--) { // repeat N times
 		const char * orig = arg;
 		if (otimes>1)
 			p->printf ("0x%08"PFMT64x" [%d] {\n", seek+i, otimes-times);
-		for(idx=0;arg<argend && idx<len;idx++, arg=arg+1) {
+		for (idx=0; arg<argend && i<len && idx<len; idx++, arg++) {
+			seeki = seek+i;
 			addr = 0LL;
 			if (endian)
 				 addr = (*(buf+i))<<24   | (*(buf+i+1))<<16 | *(buf+i+2)<<8 | *(buf+i+3);
@@ -96,16 +96,16 @@ R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int le
 			if (tmp == 0 && last != '*')
 				break;
 			/* skip chars */
-			switch(tmp) {
+			switch (tmp) {
 			case '*':
 				if (i<=0) break;
 				tmp = last;
-				arg = arg - 1;
+				arg--;
 				idx--;
 				goto feed_me_again;
 			case 'e': // tmp swap endian
 				idx--;
-				endian ^=1;
+				endian ^= 1;
 				continue;
 			case '.': // skip char
 				i++;
@@ -114,11 +114,11 @@ R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int le
 			case '?': // help
 				print_format_help (p);
 				idx--;
-				i=len; // exit
+				i = len; // exit
 				continue;
 			}
 			if (idx<nargs)
-				p->printf (namefmt, r_str_word_get0(args, idx));
+				p->printf (namefmt, r_str_word_get0 (args, idx));
 			/* cmt chars */
 			switch (tmp) {
 	#if 0
@@ -147,73 +147,73 @@ R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int le
 				memcpy (&doub, buf+i, sizeof (double));
 				p->printf ("%e = ", doub);
 				p->printf ("(double)");
-				i+=8;
+				i += 8;
 				}
 				break;
 			case 'q':
-				p->printf ("0x%08x = ", seek+i);
+				p->printf ("0x%08"PFMT64x" = ", seeki);
 				p->printf ("(qword)");
-				i+=8;
+				i += 8;
 				break;
 			case 'b':
-				p->printf ("0x%08x = ", seek+i);
+				p->printf ("0x%08"PFMT64x" = ", seeki);
 				p->printf ("%d ; 0x%02x ; '%c' ", 
-					buf[i], buf[i], IS_PRINTABLE(buf[i])?buf[i]:0);
+					buf[i], buf[i], IS_PRINTABLE (buf[i])?buf[i]:0);
 				i++;
 				break;
 			case 'B':
-				memset(buffer, '\0', 255);
+				memset (buffer, '\0', 255);
 				if (!p->iob.read_at) {
 					printf ("(cannot read memory)\n");
 					break;
 				} else p->iob.read_at (p->iob.io, (ut64)addr, buffer, 248);
-				p->printf ("0x%08x = ", seek+i);
-				for (j=0;j<10;j++) p->printf ("%02x ", buf[j]);
+				p->printf ("0x%08"PFMT64x" = ", seeki);
+				for (j=0; j<10; j++) p->printf ("%02x ", buf[j]);
 				p->printf(" ... (");
-				for (j=0;j<10;j++)
+				for (j=0; j<10; j++)
 					if (IS_PRINTABLE (buf[j]))
-						p->printf("%c", buf[j]);
-				p->printf(")");
-				i+=4;
+						p->printf ("%c", buf[j]);
+				p->printf (")");
+				i += 4;
 				break;
 			case 'i':
-				p->printf("0x%08x = ", seek+i);
-				p->printf("%d", addr);
-				i+=4;
+				p->printf ("0x%08"PFMT64x" = ", seeki);
+				p->printf ("%d", addr);
+				i += 4;
 				break;
 			case 'd':
-				p->printf("0x%08x = ", seek+i);
-				p->printf("0x%08x ", addr);
-				i+=4;
+				p->printf ("0x%08"PFMT64x" = ", seeki);
+				p->printf ("0x%08"PFMT64x" ", addr);
+				i += 4;
 				break;
 			case 'X': {
 				ut32 addr32 = (ut32)addr;
 				//char buf[128];
-				p->printf ("0x%08x = ", seek+i);
+				p->printf ("0x%08"PFMT64x" = ", seeki);
 				p->printf ("0x%08"PFMT64x" ", addr32);
 				//if (string_flag_offset(buf, (ut64)addr32, -1))
 				//	p->printf("; %s", buf);
-				i+=4;
+				i += 4;
 				} break;
 			case 'w':
 			case '1': // word (16 bits)
-				p->printf ("0x%08x = ", seek+i);
+				p->printf ("0x%08x = ", seeki);
 				if (endian)
-					 addr = (*(buf+i))<<8  | (*(buf+i+1));
+					 addr = (*(buf+i))<<8 | (*(buf+i+1));
 				else     addr = (*(buf+i+1))<<8 | (*(buf+i));
 				p->printf ("0x%04x ", addr);
 				break;
 			case 'z': // zero terminated string
-				p->printf ("0x%08x = ", seek+i);
-				for (;buf[i]&&i<len; i++) {
+				p->printf ("0x%08"PFMT64x" = ", seeki);
+				for (; buf[i]&&i<len; i++) {
 					if (IS_PRINTABLE (buf[i]))
 						p->printf ("%c", buf[i]);
 					else p->printf (".");
 				}
 				break;
 			case 'Z': // zero terminated wide string
-				p->printf ("0x%08x = ", seek+i);
-				for (;buf[i]&&i<len; i+=2) {
+				p->printf ("0x%08"PFMT64x" = ", seeki);
+				for (; buf[i]&&i<len; i+=2) {
 					if (IS_PRINTABLE (buf[i]))
 						p->printf ("%c", buf[i]);
 					else p->printf (".");
@@ -221,24 +221,30 @@ R_API void r_print_format(struct r_print_t *p, ut64 seek, const ut8* buf, int le
 				p->printf (" ");
 				break;
 			case 's':
-				p->printf ("0x%08x = ", seek+i);
+				p->printf ("0x%08"PFMT64x" = ", seeki);
 				memset (buffer, '\0', 255);
-				if (p->iob.read_at)
+				if (p->iob.read_at) {
 					p->iob.read_at (p->iob.io, (ut64)addr, buffer, 248);
-				else {
+				} else {
 					printf ("(cannot read memory)\n");
 					break;
 				}
-				p->printf ("0x%08x -> 0x%08x ", seek+i, addr);
+				p->printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" ", seeki, addr);
 				p->printf ("%s ", buffer);
-				i+=4;
+				i += 4;
 				break;
 			default:
 				/* ignore unknown chars */
 				break;
 			}
-		p->printf ("\n");
-		last = tmp;
+			if (p->offname) {
+				const char *s = p->offname (p->user, seeki);
+				if (s) p->printf ("@(%s)", s);
+				s = p->offname (p->user, addr);
+				if (s) p->printf ("*(%s)", s);
+			}
+			p->printf ("\n");
+			last = tmp;
 		}
 		if (otimes>1)
 			p->printf ("}\n");

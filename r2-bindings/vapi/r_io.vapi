@@ -99,7 +99,7 @@ namespace Radare {
 		public void plugin_list();
 
 		/* maps */
-		[CCode (cname="RIOMap", cprefix="r_io_map_", free_function="", unref_function)]
+		[CCode (cname="RIOMap", cprefix="r_io_map_", free_function="", unref_function="")]
 		public class Map {
 			int fd;
 			int flags;

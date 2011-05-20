@@ -5,7 +5,7 @@ includedir=${prefix}/include
 
 Name: r_reg
 Description: radare foundation libraries
-Version: 
+Version: 0.7.1
 Requires:
-Libs: -L${libdir} -lr_reg
+Libs: -L${libdir} -lr_reg -lr_util
 Cflags: -I${includedir}/libr

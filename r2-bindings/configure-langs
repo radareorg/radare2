@@ -1,0 +1,72 @@
+#!/bin/sh
+#
+# Script to choose which langs you want to build
+# author: pancake // nopcode
+# update: 2011-05-20
+#
+
+LANGS=""
+help () {
+  echo "Usage: ./configure-langs [options]"
+  echo "  --enable=python,perl"
+  echo "  --disable=java,ruby"
+  echo "  --list"
+  echo "Filter out supported.langs"
+}
+
+ENABLE=""
+DISABLE=""
+
+enable() {
+  if [ -n "${DISABLE}" ]; then
+    echo "Cannot use --enable and --disable"
+    exit 1
+  fi
+  ENABLE="${1/:/ }"
+  DISABLE=""
+}
+
+disable() {
+  if [ -n "${ENABLE}" ]; then
+    echo "Cannot use --enable and --disable"
+    exit 1
+  fi
+  ENABLE=""
+  DISABLE="${1/:/ }"
+}
+
+MODE=""
+DONOTHING=0
+while : ; do
+  [ -z "$1" ] && break
+  k=${1%=*} # key
+  v=${1#*=} # value
+  case "$k" in
+  "--enable") enable "$v" ; ;;
+  "--disable") disable "$v" ; ;;
+  "--list") cat supported.langs ; exit 0 ; ;;
+  "-h"|"--help") help ; exit 0 ; ;;
+  esac
+  shift
+done
+
+sh check-langs.sh
+if [ -n "${ENABLE}" ]; then
+	mv supported.langs .sl
+	cat .sl | grep -e `echo ${ENABLE} | sed -e 's/,/ -e/g'` > supported.langs
+	rm -f .sl
+fi
+if [ -n "${DISABLE}" ]; then
+	mv supported.langs .sl
+	cat .sl | grep -v -e `echo ${DISABLE} | sed -e 's/,/ -e/g'` > supported.langs
+	rm -f .sl
+fi
+
+echo "Supported langs:"
+cat supported.langs | sed -e 's,^, - ,'
+
+# check for python
+# check for perl
+:> langs.cfg
+
+exit 0

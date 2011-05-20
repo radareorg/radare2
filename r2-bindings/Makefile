@@ -1,15 +1,16 @@
 -include config.mk
 
-LANGS=python perl ruby lua go java vapi
+LANGS=python perl ruby lua go java guile gear
+
 W32PY="${HOME}/.wine/drive_c/Python27/"
 
 ifeq ($(DEVEL_MODE),1)
-all: supported.langs ruby perl python lua go
+all: supported.langs ruby perl python lua go gear
 supported.langs:
 	CC=${CC} CXX=${CXX} sh check-langs.sh
 else
 # compile more
-all: supported.langs python lua
+all: supported.langs python lua gear
 supported.langs:
 	CC=${CC} CXX=${CXX} sh check-langs.sh force-all
 endif
@@ -58,12 +59,18 @@ vdoc_pkg:
 	valadoc -o vdoc vapi/*.vapi
 	# rsync -avz vdoc/* pancake@radare.org:/srv/http/radareorg/vdoc/
 
+gear:
+	cd gear && ${MAKE}
+
 # TODO: unspaguetti this targets
 perl:
 	@-[ "`grep perl supported.langs`" ] && cd perl && ${MAKE} ; true
 
 python:
 	@-[ "`grep python supported.langs`" ] && cd python && ${MAKE} ; true
+
+guile:
+	@-[ "`grep guile supported.langs`" ] && cd guile && ${MAKE} ; true
 
 ruby:
 	@-[ "`grep ruby supported.langs`" ] && cd ruby && ${MAKE} ; true
@@ -83,6 +90,7 @@ test:
 	cd python && ${MAKE} test
 	cd ruby && ${MAKE} test
 	cd lua && ${MAKE} test
+	cd guile && ${MAKE} test
 	cd go && ${MAKE} test
 	cd java && ${MAKE} test
 
@@ -129,6 +137,9 @@ install-ruby:
 	done ; \
 	fi
 
+install-guile:
+	@echo TODO: install-guile
+
 install-perl:
 	# hack for slpm
 	@-if [ "`grep perl supported.langs`" ]; then \
@@ -170,7 +181,8 @@ oldtest:
 	python test.py
 
 clean:
-	for a in $(LANGS); do \
+	@for a in $(LANGS); do \
+		echo "Cleaning $$a " ; \
 		cd $$a ; ${MAKE} clean ; cd .. ; \
 	done
 

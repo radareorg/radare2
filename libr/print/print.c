@@ -9,6 +9,7 @@ R_API RPrint *r_print_new() {
 	if (p) {
 		strcpy (p->datefmt, "%d:%m:%Y %H:%M:%S %z");
 		p->user = NULL;
+		p->name = NULL;
 		r_io_bind_init (p->iob);
 		p->printf = printf;
 		p->interrupt = 0;
@@ -203,7 +204,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	if (step<1) step = 1;
 
 	switch(base) {
-	case 8: fmt = "%03x"; pre = " "; break;
+	case 8: fmt = "%03o"; pre = " "; break;
 	case 10: fmt = "%03d"; pre = " "; break;
 	}
 

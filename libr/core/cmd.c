@@ -3083,6 +3083,10 @@ static int cmd_write(void *data, const char *input) {
                         r_core_write_op (core, input+3, input[1]);
 			r_core_block_read (core, 0);
                         break;
+		case 'n':
+                        r_core_write_op (core, "ff", 'x');
+			r_core_block_read (core, 0);
+                        break;
                 case '\0':
                 case '?':
                 default:

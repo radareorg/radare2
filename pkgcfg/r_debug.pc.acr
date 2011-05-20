@@ -5,7 +5,7 @@ includedir=${prefix}/include
 
 Name: r_debug
 Description: radare foundation libraries
-Version: 0.2
+Version: 0.7.1
 Requires:
-Libs: -L${libdir} -lr_util -lr_debug -lr_reg -lr_bp -lr_anal
+Libs: -L${libdir} -lr_debug -lr_reg -lr_anal -lr_bp -lr_util -lr_io
 Cflags: -I${includedir}/libr

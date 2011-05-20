@@ -123,7 +123,6 @@ R_API void r_bp_traptrace_list(RBreakpoint *bp);
 R_API int r_bp_traptrace_at(RBreakpoint *bp, ut64 from, int len);
 R_API RList *r_bp_traptrace_new();
 R_API void r_bp_traptrace_enable(RBreakpoint *bp, int enable);
-#endif
 
 /* plugin pointers */
 extern struct r_bp_plugin_t r_bp_plugin_x86;
@@ -131,6 +130,7 @@ extern struct r_bp_plugin_t r_bp_plugin_arm;
 extern struct r_bp_plugin_t r_bp_plugin_mips;
 extern struct r_bp_plugin_t r_bp_plugin_ppc;
 extern struct r_bp_plugin_t r_bp_plugin_sh;
+#endif
 #if 0
 extern struct r_bp_plugin_t r_bp_plugin_sparc;
 #endif

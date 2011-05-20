@@ -242,13 +242,19 @@ static int __dbg_read(void *user, int pid, ut64 addr, ut8 *buf, int len)
 	return r_core_read_at(core, addr, buf, len);
 }
 
-static int __dbg_write(void *user, int pid, ut64 addr, const ut8 *buf, int len)
-{
+static int __dbg_write(void *user, int pid, ut64 addr, const ut8 *buf, int len) {
 	RCore *core = (RCore *)user;
 	// TODO: pid not used
 	return r_core_write_at(core, addr, buf, len);
 }
 #endif
+
+static const char *r_core_print_offname(void *p, ut64 addr) {
+	RCore *c = (RCore*)p;
+	RFlagItem *item = r_flag_get_i (c->flags, addr);
+	if (item) return item->name;
+	return NULL;
+}
 
 R_API int r_core_init(RCore *core) {
 	static int singleton = R_TRUE;
@@ -278,6 +284,8 @@ R_API int r_core_init(RCore *core) {
 		singleton = R_FALSE;
 	}
 	core->print = r_print_new ();
+	core->print->user = core;
+	core->print->offname = r_core_print_offname;
 	core->print->printf = (void *)r_cons_printf;
 	core->lang = r_lang_new ();
 	r_lang_define (core->lang, "RCore", "core", core);

@@ -20,13 +20,11 @@ namespace Radare {
 	}
 #endif
 
-	[CCode (cheader_filename="r_util.h", cprefix="r_str_", unref_function="")]
-	public static class RStr {
-		public static unowned string rwx_i (int rwx);
-	}
+//	[CCode (cheader_filename="r_util.h", cprefix="r_str_", unref_function="")]
 #if FAILFAIL
-	[CCode (cheader_filename="r_util.h", cprefix="r_str_")]
-	public static class RStr {
+	[CCode (cheader_filename="r_util.h", cprefix="r_str_", unref_function="")]
+	public class RStr {
+		public static unowned string rwx_i (int rwx);
 		public RStr(string arg);
 		public static int hash(string str);
 		public static int write(int fd, string str);
@@ -34,42 +32,42 @@ namespace Radare {
 		public static string rwx_i (int rwx);
 		public static void subchr(string str, int a, int b);
 		//public static string @bool(bool b);
-		public int int ansi_len(string str);
-		public int int ansi_filter(string str, int len);
+		public static int ansi_len(string str);
+		public static int ansi_filter(string str, int len);
 		//public static int writef(...);
 	}
 
 
 #endif
-	[CCode (cheader_filename="r_util.h", cprefix="r_file_")]
-	public static class RFile {
+	[CCode (cheader_filename="r_util.h", lower_case_cprefix="r_file_")]
+	namespace RFile {
 		public static string slurp(string file, out int osz=null);
 		public static string slurp_range(string file, uint64 off, int sz, out int osz=null);
 		public static int dump(string file, uint8 *buf, int len);
-		public static string basename (string path);
+		public static unowned string basename (string path);
 		public static string abspath(string path);
 		public static bool rm (string file);
 		public static bool exist (string file);
 		public static bool slurp_line (string file, int line, int ctx);
 		
 	}
-	[CCode (cheader_filename="r_util.h", cprefix="r_log_", free_function="")]
-	public static class RLog {
+	[CCode (cheader_filename="r_util.h", lower_case_cprefix="r_log_")]
+	namespace RLog {
 		public static void msg(string str);
 		public static void error(string str);
 		public static void file(string str);
 		public static void progress(string str, int pc);
 	}
 
-	[CCode (cheader_filename="r_util.h", cprefix="r_hex_", free_function="")]
-	public static class RHex {
+	[CCode (cheader_filename="r_util.h", lower_case_cprefix="r_hex_", free_function="")]
+	namespace RHex {
 		public static int str2bin (string input, uint8 *buf);
 		public static int bin2str (uint8 *buf, int len, out string str);
 		public static string bin2strdup (uint8 *buf, int len);
 	}
 
-	[CCode (cheader_filename="r_util.h", cprefix="r_sys_", free_function="")]
-	public static class RSystem {
+	[CCode (cheader_filename="r_util.h", lower_case_cprefix="r_sys_")]
+	namespace RSystem {
 		//public static const weak string OS;
 		//public static const weak string ARCH;
 		public static int sleep (int secs);
@@ -83,8 +81,8 @@ namespace Radare {
 		public static void backtrace();
 	}
 
-	[CCode (cname="RNum", cheader_filename="r_util.h", unref_function="", cprefix="r_num_", free_function="")]
-	public static class RNum {
+	[CCode (cname="RNum", cheader_filename="r_util.h", unref_function="", cprefix="r_num_", free_function="r_num_free")]
+	public class RNum {
 		public RNum(RNumCallback? cb=null, void *user=null);
 		public uint64 get(string str);
 		public uint64 math(string str);
@@ -94,7 +92,7 @@ namespace Radare {
 
 	[Compact]
 	[CCode (cname="RBuffer", cheader_filename="r_util.h", cprefix="r_buf_", free_function="r_buf_free")]
-	public static class RBuffer {
+	public class RBuffer {
 		public RBuffer();
 		public uint8 *buf;
 		public int read_at(uint64 addr, uint8 *buf, int len);

@@ -233,7 +233,7 @@ R_API RList *r_fs_dir(RFS* fs, const char *p) {
 	return ret;
 }
 
-R_API int r_fs_dir_dump (RFS* fs, const char *path, char *name) {
+R_API int r_fs_dir_dump (RFS* fs, const char *path, const char *name) {
 	RList *list;
 	RListIter *iter;
 	RFSFile *file, *item;
@@ -243,7 +243,7 @@ R_API int r_fs_dir_dump (RFS* fs, const char *path, char *name) {
 	if (!list)
 		return R_FALSE;
 	if (!r_sys_mkdir (name)) {
-		if (r_sys_mkdir_failed()) {
+		if (r_sys_mkdir_failed ()) {
 			eprintf ("Cannot create \"%s\"\n", name);
 			return R_FALSE;
 		}

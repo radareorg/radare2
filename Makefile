@@ -78,7 +78,7 @@ install: install-doc install-man
 
 install-pkgconfig-symlink:
 	@${INSTALL_DIR} ${PFX}/lib/pkgconfig
-	cd pkgcfg ; for a in *.pc ; do ln -fs ${PWD}/$$a ${PFX}/lib/pkgconfig/$$a ; done
+	cd pkgcfg ; for a in *.pc ; do ln -fs $${PWD}/$$a ${PFX}/lib/pkgconfig/$$a ; done
 
 symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink
 	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
