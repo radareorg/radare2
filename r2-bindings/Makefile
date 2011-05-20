@@ -1,16 +1,16 @@
 -include config.mk
 
-LANGS=python perl ruby lua go java guile gear
+LANGS=python perl ruby lua go java guile gear gir
 
 W32PY="${HOME}/.wine/drive_c/Python27/"
 
 ifeq ($(DEVEL_MODE),1)
-all: supported.langs ruby perl python lua go gear
+all: supported.langs ruby perl python lua go gear gir
 supported.langs:
 	CC=${CC} CXX=${CXX} sh check-langs.sh
 else
 # compile more
-all: supported.langs python lua gear
+all: supported.langs python lua gear gir
 supported.langs:
 	CC=${CC} CXX=${CXX} sh check-langs.sh force-all
 endif
@@ -84,6 +84,9 @@ go:
 
 java:
 	@-[ "`grep java supported.langs`" ] && cd java && ${MAKE}
+
+gir:
+	@-[ "`grep gir supported.langs`" ] && cd gir && ${MAKE}
 
 test:
 	cd perl && ${MAKE} test
