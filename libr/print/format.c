@@ -25,6 +25,7 @@ static void print_format_help(RPrint *p) {
 	" s - pointer to string\n"
 	" t - unix timestamp string\n"
 	" * - next char is pointer\n"
+	" + - toggle show flags for each offset\n"
 	" . - skip 1 byte\n");
 }
 
@@ -37,6 +38,7 @@ R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const c
 	const char *argend = arg+strlen (fmt);
 	char namefmt[8];
 	ut64 addr = 0, seeki = 0;;
+	int viewflags = 0;
 	nargs = endian = i = j = 0;
 
 	while (*arg && iswhitechar (*arg)) arg++;
@@ -103,6 +105,10 @@ R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const c
 				arg--;
 				idx--;
 				goto feed_me_again;
+			case '+':
+				idx--;
+				viewflags = !viewflags;
+				continue;
 			case 'e': // tmp swap endian
 				idx--;
 				endian ^= 1;
@@ -237,7 +243,7 @@ R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const c
 				/* ignore unknown chars */
 				break;
 			}
-			if (p->offname) {
+			if (viewflags && p->offname) {
 				const char *s = p->offname (p->user, seeki);
 				if (s) p->printf ("@(%s)", s);
 				s = p->offname (p->user, addr);
