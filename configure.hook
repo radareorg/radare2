@@ -1,3 +1,4 @@
 #!/bin/sh
 [ plugins.def.cfg -nt ./plugins.cfg ] && rm -f plugins.cfg
-[ ! -e plugins.cfg ] && ./configure-plugins
+[ ! -e plugins.cfg ] && ./configure-plugins $@
+r2-bindings/configure-langs $@

@@ -9,18 +9,19 @@ endif
 
 BINDEPS=
 
-LANGS=lang_python.${EXT_SO} lang_perl.${EXT_SO}
+LANGS=$(shell ./getlangs.sh ${EXT_SO})
+#LANGS=lang_python.${EXT_SO} lang_perl.${EXT_SO}
+
 #LANGS+=lang_ruby.so
 ifeq ($(HAVE_LIB_TCC),1)
 LANGS+=lang_tcc.${EXT_SO}
 endif
-
 ifeq ($(HAVE_LIB_LUA5_1),1)
 LANGS+=lang_lua.${EXT_SO}
 endif
 
 all: ${LANGS}
-	@true
+	@echo r_lang_plugins: ${LANGS}
 
 ifeq ($(OSTYPE),windows)
 lang_python.${EXT_SO}:
@@ -58,3 +59,4 @@ lang_perl.${EXT_SO}:
 
 clean:
 	-rm -f *.${EXT_SO} *.${EXT_AR} *.o
+	-rm -rf *.dSYM

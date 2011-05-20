@@ -50,7 +50,8 @@ while : ; do
   shift
 done
 
-sh check-langs.sh
+root=`dirname -- $0`
+sh $root/check-langs.sh
 if [ -n "${ENABLE}" ]; then
 	mv supported.langs .sl
 	cat .sl | grep -e `echo ${ENABLE} | sed -e 's/,/ -e/g'` > supported.langs
