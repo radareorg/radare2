@@ -9,7 +9,6 @@ R_API RPrint *r_print_new() {
 	if (p) {
 		strcpy (p->datefmt, "%d:%m:%Y %H:%M:%S %z");
 		p->user = NULL;
-		p->name = NULL;
 		r_io_bind_init (p->iob);
 		p->printf = printf;
 		p->interrupt = 0;

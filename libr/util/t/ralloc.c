@@ -10,8 +10,8 @@ int afun(const char *str, int iters) {
 	int ret;
 	char *ptr;
 	if (iters == 0) return 0;
-	ret = strlen(str)+1;
- 	ptr = alloca(ret);
+	ret = strlen (str)+1;
+ 	ptr = alloca (ret);
 	memcpy(ptr, str, ret);
 	return afun(str, iters-1);
 }
@@ -20,9 +20,9 @@ int fun(const char *str, int iters) {
 	int ret;
 	char *ptr;
 	if (iters == 0) return 0;
- 	ptr = (char *)r_alloca_str(str);
+ 	ptr = (char *)r_alloca_str (str);
 	ret = fun(str, iters-1);
-	return r_alloca_ret_i( ret );
+	return r_alloca_ret_i (ret);
 }
 
 /* malloc */

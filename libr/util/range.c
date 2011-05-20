@@ -81,7 +81,7 @@ R_API int r_range_add_from_string(RRange *rgs, const char *string) {
 	char *str = alloca (len);
 	char *p = str;
 	char *p2 = NULL;
-	RRangeItem *r;
+	RRangeItem *r = NULL;
 
 	memcpy (str, string, len);
 
@@ -117,6 +117,7 @@ R_API int r_range_add_from_string(RRange *rgs, const char *string) {
 		addr = r_num_get (NULL, p);
 		r = r_range_add (rgs, addr, addr+1, 1);
 	}
+	// check r != NULL?
 	return rgs->changed;
 }
 

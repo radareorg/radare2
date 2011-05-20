@@ -181,7 +181,7 @@ static int __waitpid(int pid) {
 
 static int fork_and_ptraceme(const char *cmd) {
 	char **argv;
-	int status, pid = -1;
+	int ret, status, pid = -1;
 
 	pid = vfork ();
 	switch (pid) {
@@ -212,7 +212,7 @@ static int fork_and_ptraceme(const char *cmd) {
 		return 0; // invalid pid // if exit is overriden.. :)
 	default:
 		/* XXX: clean this dirty code */
-                wait (&status);
+                ret = wait (&status);
                 if (WIFSTOPPED (status))
                         eprintf ("Process with PID %d started...\n", (int)pid);
 		if (WEXITSTATUS (status) == MAGIC_EXIT)
