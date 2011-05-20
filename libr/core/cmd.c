@@ -878,13 +878,13 @@ static void cmd_reg(RCore *core, const char *str) {
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 32, 1); // XXX detect which one is current usage
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 64, 1);
-		} else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
+		} //else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 		break;
 	case '\0':
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 32, 0);
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 64, 0);
-		} else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
+		} //else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 		break;
 	case ' ':
 		arg = strchr (str+1, '=');
@@ -4566,6 +4566,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			(int) r_num_math (core->num, input+2));
 		break;
 	default:
+		eprintf ("selected: %d %d\n", core->dbg->pid, core->dbg->tid);
 		r_debug_pid_list (core->dbg, core->dbg->pid);
 		break;
 	}

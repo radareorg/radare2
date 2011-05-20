@@ -6,8 +6,10 @@
 
 /* restore program counter after breakpoint hit */
 static int r_debug_recoil(RDebug *dbg) {
-	int recoil, ret = R_FALSE;
+	int recoil;
 	RRegItem *ri;
+	if (r_debug_is_dead (dbg))
+		return R_FALSE;
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
 	ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], -1);
 	if (ri) {
@@ -19,10 +21,10 @@ static int r_debug_recoil(RDebug *dbg) {
 			r_reg_set_value (dbg->reg, ri, addr-recoil);
 			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_TRUE);
 			eprintf ("[BP Hit] Setting pc to 0x%"PFMT64x"\n", (addr-recoil));
-			ret = R_TRUE;
+			return R_TRUE;
 		}
 	} else eprintf ("r_debug_recoil: Cannot get program counter\n");
-	return ret;
+	return R_FALSE;
 }
 
 R_API RDebug *r_debug_new(int hard) {
@@ -104,6 +106,8 @@ R_API ut64 r_debug_execute(struct r_debug_t *dbg, ut8 *buf, int len) {
 	ut8 *backup, *orig = NULL;
 	RRegItem *ri, *risp, *ripc;
 	ut64 rsp, rpc, ra0 = 0LL;
+	if (r_debug_is_dead (dbg))
+		return R_FALSE;
 	ripc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
 	risp = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
 	if (ripc) {
@@ -183,12 +187,18 @@ R_API int r_debug_stop_reason(RDebug *dbg) {
 /* Returns PID */
 R_API int r_debug_wait(RDebug *dbg) {
 	int ret = 0;
+	if (r_debug_is_dead (dbg))
+		return R_FALSE;
 	if (dbg && dbg->h && dbg->h->wait) {
 		dbg->reason = R_DBG_REASON_UNKNOWN;
 		ret = dbg->h->wait (dbg->pid);
 		dbg->reason = ret;
 		dbg->newstate = 1;
-		eprintf ("wait = %d\n", ret);
+		if (ret == -1) {
+			eprintf ("\n==> Process finished\n\n");
+			r_debug_select (dbg, -1, -1); //dbg->pid = -1;
+		}
+		//eprintf ("wait = %d\n", ret);
 		if (dbg->trace->enabled)
 			r_debug_trace_pc (dbg);
 	}
@@ -200,6 +210,8 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	ut8 buf[32];
 	RAnalOp op;
 	ut64 pc0, pc1, pc2;
+	if (r_debug_is_dead (dbg))
+		return R_FALSE;
 	pc0 = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	int ret = r_anal_op (dbg->anal, &op, pc0, buf, sizeof (buf));
 	pc1 = pc0 + op.length;
@@ -217,6 +229,8 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 }
 
 R_API int r_debug_step_hard(RDebug *dbg) {
+	if (r_debug_is_dead (dbg))
+		return R_FALSE;
 	if (!dbg->h->step (dbg))
 		return R_FALSE;
 	return r_debug_wait (dbg);
@@ -246,6 +260,8 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	RAnalOp op;
 	ut8 buf[64];
 	int ret = -1;
+	if (r_debug_is_dead (dbg))
+		return R_FALSE;
 	if (dbg->anal && dbg->reg) {
 		ut64 pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
@@ -267,11 +283,12 @@ R_API int r_debug_kill_setup(RDebug *dbg, int sig, int action) {
 
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	int ret = R_FALSE;
+	if (r_debug_is_dead (dbg))
+		return R_FALSE;
 	if (dbg && dbg->h && dbg->h->cont) {
 		r_bp_restore (dbg->bp, R_FALSE); // set sw breakpoints
 		ret = dbg->h->cont (dbg, dbg->pid, dbg->tid, sig);
-		if (dbg->h->wait)
-			ret = dbg->h->wait (dbg->pid);
+		r_debug_wait (dbg);
 		r_bp_restore (dbg->bp, R_TRUE); // unset sw breakpoints
 		r_debug_recoil (dbg);
 #if 0
@@ -300,6 +317,8 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 	RAnalOp op;
 	ut8 buf[64];
 	ut64 pc = 0;
+	if (r_debug_is_dead (dbg))
+		return R_FALSE;
 	if (dbg->anal) {
 		do {
 			if (over) ret = r_debug_step_over (dbg, 1);
@@ -321,10 +340,12 @@ R_API int r_debug_continue_until(struct r_debug_t *dbg, ut64 addr) {
 // TODO: use breakpoint+continue... more efficient
 	int n = 0;
 	ut64 pc = 0;
+	if (r_debug_is_dead (dbg))
+		return R_FALSE;
 	do {
 		if (pc !=0) r_debug_step (dbg, 1);
 		n++;
-	} while (pc != addr);
+	} while (pc != addr && !r_debug_is_dead (dbg));
 	return n;
 	//struct r_debug_bp_t *bp = r_debug_bp_add (dbg, addr);
 	//int ret = r_debug_continue(dbg);
@@ -336,6 +357,8 @@ R_API int r_debug_continue_until(struct r_debug_t *dbg, ut64 addr) {
 // XXX: this function uses 'oeax' which is linux-i386-specific
 R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc) {
 	int reg, ret = R_FALSE;
+	if (r_debug_is_dead (dbg))
+		return R_FALSE;
 	if (dbg && dbg->h) {
 		if (dbg->h->contsc) {
 			do {
@@ -398,4 +421,8 @@ R_API int r_debug_clone (RDebug *dbg) {
 	//if (dbg && dbg->h && dbg->h->frames)
 		//return dbg->h->frames (dbg);
 	return 0;
+}
+
+R_API int r_debug_is_dead (RDebug *dbg) {
+	return (dbg->pid == -1);
 }

@@ -20,6 +20,7 @@ public class Radare.RDebug {
 	[CCode (cname="r_debug_wait")]
 	public bool hold();
 
+	public bool is_dead();
 	public bool kill(bool thread, int sig);
 	public bool kill_setup(int sig, int action); // XXX must be uint64 action
 	public bool select (int pid, int tid);

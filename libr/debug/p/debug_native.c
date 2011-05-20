@@ -288,10 +288,18 @@ static int r_debug_native_wait(int pid) {
 #else
 	int ret, status = -1;
 	//printf ("prewait\n");
+	if (pid==-1)
+		return R_DBG_REASON_UNKNOWN;
 	ret = waitpid (pid, &status, 0);
 	//printf ("status=%d (return=%d)\n", status, ret);
 	// TODO: switch status and handle reasons here
-	status = R_DBG_REASON_UNKNOWN;
+	if (status == 0 || ret == -1) {
+		status = R_DBG_REASON_DEAD;
+	} else {
+		if (ret != pid)
+			status = R_DBG_REASON_NEW_PID;
+		else status = R_DBG_REASON_UNKNOWN;
+	}
 	return status;
 #endif
 }
@@ -944,7 +952,6 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 	}
         ret = task_threads (pid_to_task (pid), &inferior_threads, &inferior_thread_count);
         if (ret != KERN_SUCCESS) {
-                eprintf ("debug_getregs\n");
                 return R_FALSE;
         }
 

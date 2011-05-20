@@ -47,6 +47,7 @@ enum {
 };
 
 enum { // TODO: not yet used by r_debug
+	R_DBG_REASON_DEAD = -1,
 	R_DBG_REASON_UNKNOWN,
 	R_DBG_REASON_NEW_PID,
 	R_DBG_REASON_NEW_TID,
@@ -60,7 +61,6 @@ enum { // TODO: not yet used by r_debug
 	R_DBG_REASON_SIGNAL,
 	R_DBG_REASON_FPU,
 	R_DBG_REASON_BP,
-	R_DBG_REASON_DEAD
 };
 
 /* TODO: move to r_anal */
@@ -262,6 +262,7 @@ R_API int r_debug_map_sync(RDebug *dbg);
 /* backtrace */
 R_API RList *r_debug_frames (RDebug *dbg);
 
+R_API int r_debug_is_dead (RDebug *dbg);
 /* args XXX: weird food */
 R_API ut64 r_debug_arg_get (RDebug *dbg, int fast, int num);
 R_API int r_debug_arg_set (RDebug *dbg, int fast, int num, ut64 value);
