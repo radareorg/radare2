@@ -3192,9 +3192,16 @@ static int cmd_resize(void *data, const char *input) {
 
 static const char *cmdhit = NULL;
 static const char *searchprefix = NULL;
+static int searchcount = 0;
 
 static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
+	if (searchcount) {
+		if (!--searchcount) {
+			eprintf ("search.count reached\n");
+			return R_FALSE;
+		}
+	}
 	r_cons_printf ("f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,
 		kw->kwidx, kw->count, kw->keyword_length, addr);
 	if (!strnull (cmdhit)) {
@@ -3281,7 +3288,7 @@ static int cmd_search(void *data, const char *input) {
 		r_search_kw_add (core->search, 
 			r_search_keyword_new ((const ut8*)&n32, 4, NULL, 0, NULL));
 		r_search_begin (core->search);
-		dosearch = 1;
+		dosearch = R_TRUE;
 		break;
 	case 'w': /* search wide string */
 		if (input[1]==' ') {
@@ -3298,7 +3305,7 @@ static int cmd_search(void *data, const char *input) {
 			r_search_kw_add (core->search, 
 				r_search_keyword_new ((const ut8*)str, len*2, NULL, 0, NULL));
 			r_search_begin (core->search);
-			dosearch = 1;
+			dosearch = R_TRUE;
 		}
 		break;
 	case ' ': /* search string */
@@ -3314,7 +3321,7 @@ static int cmd_search(void *data, const char *input) {
 			r_search_keyword_new ((const ut8*)inp, len, NULL, 0, NULL));
 			//r_search_keyword_new_str (, "", NULL));
 		r_search_begin (core->search);
-		dosearch = 1;
+		dosearch = R_TRUE;
 		break;
 	case 'e': /* match regexp */
 		{
@@ -3331,9 +3338,9 @@ static int cmd_search(void *data, const char *input) {
 		r_search_kw_add (core->search, 
 			r_search_keyword_new_str (inp, opt, NULL));
 		r_search_begin (core->search);
-		dosearch = 1;
-		free(inp);
-		free(opt);
+		dosearch = R_TRUE;
+		free (inp);
+		free (opt);
 		}
 		break;
 	case 'x': /* search hex */
@@ -3343,7 +3350,7 @@ static int cmd_search(void *data, const char *input) {
 		r_search_kw_add (core->search, 
 			r_search_keyword_new_hexmask (input+2, NULL));
 		r_search_begin (core->search);
-		dosearch = 1;
+		dosearch = R_TRUE;
 		break;
 	case 'c': /* search asm */
 		{
@@ -3374,7 +3381,7 @@ static int cmd_search(void *data, const char *input) {
 					r_search_keyword_new_hexmask (kwd, NULL));
 			r_search_begin (core->search);
 			free (kwd);
-			dosearch = 1;
+			dosearch = R_TRUE;
 		}
 		}
 		break;
@@ -3403,6 +3410,9 @@ static int cmd_search(void *data, const char *input) {
 		break;
 	}
 	if (dosearch) {
+		searchcount = r_config_get_i (core->config, "search.count");
+		if (searchcount)
+			searchcount++;
 		if (core->search->n_kws>0 || aes_search) {
 			RSearchKeyword aeskw;
 			if (aes_search) {
@@ -3427,7 +3437,9 @@ static int cmd_search(void *data, const char *input) {
 				if (aes_search) {
 					int delta = r_search_aes_update (core->search, at, buf, ret);
 					if (delta != -1) {
-						r_search_hit_new (core->search, &aeskw, at+delta);
+						if (!r_search_hit_new (core->search, &aeskw, at+delta)) {
+							break;
+						}
 						aeskw.count++;
 					}
 				} else

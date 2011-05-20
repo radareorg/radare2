@@ -1,7 +1,10 @@
 #!/bin/sh
 e=$1
 #LANGS="python perl tcc lua ruby vala"
-LANGS=$(cat ../../../supported.langs | grep -e perl -e ruby -e python -e lua)
+l="../../../supported.langs"
+
+[ ! -f $l ] && exit 0
+LANGS=$(cat $l | grep -e perl -e ruby -e python -e lua)
 
 # check tcc
 echo "main(){}" > a.c

@@ -137,8 +137,9 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 				if (hit) {
 					kw->idx[j]++;
 					if (kw->idx[j] == kw->keyword_length) {
-						r_search_hit_new (s, kw, (ut64)
-							from+i-kw->keyword_length+1);
+						if (!r_search_hit_new (s, kw, (ut64)
+							from+i-kw->keyword_length+1))
+							return -1;
 						kw->idx[j] = 0;
 						//kw->idx[0] = 0;
 						kw->distance = 0;

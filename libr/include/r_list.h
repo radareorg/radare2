@@ -28,9 +28,9 @@ typedef struct r_oflist_t {
 
 #ifdef R_API
 #define r_list_foreach(list, it, pos) \
-	for (it = list->head; it && (pos = it->data); it = it->n)
+	if (list) for (it = list->head; it && (pos = it->data); it = it->n)
 #define r_list_foreach_prev(list, it, pos) \
-	for (it = list->tail; it && (pos = it->data); it = it->p)
+	if(list) for (it = list->tail; it && (pos = it->data); it = it->p)
 #define r_list_iterator(x) (x)?(x)->head:NULL
 #define r_list_empty(x) (x==NULL || (x->head==NULL && x->tail==NULL))
 #define r_list_head(x) x->head
