@@ -20,25 +20,20 @@ namespace Radare {
 	}
 #endif
 
-//	[CCode (cheader_filename="r_util.h", cprefix="r_str_", unref_function="")]
-#if FAILFAIL
-	[CCode (cheader_filename="r_util.h", cprefix="r_str_", unref_function="")]
-	public class RStr {
+	[CCode (cheader_filename="r_util.h", lower_case_cprefix="r_str_", unref_function="")]
+	namespace RStr {
 		public static unowned string rwx_i (int rwx);
-		public RStr(string arg);
+	//	public RStr(string arg);
 		public static int hash(string str);
 		public static int write(int fd, string str);
 		public static int rwx(string str);
-		public static string rwx_i (int rwx);
-		public static void subchr(string str, int a, int b);
+		public static void subchr(ref string str, int a, int b);
 		//public static string @bool(bool b);
 		public static int ansi_len(string str);
-		public static int ansi_filter(string str, int len);
+		public static int ansi_filter(ref string str, int len);
 		//public static int writef(...);
 	}
 
-
-#endif
 	[CCode (cheader_filename="r_util.h", lower_case_cprefix="r_file_")]
 	namespace RFile {
 		public static string slurp(string file, out int osz=null);

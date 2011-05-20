@@ -17,8 +17,9 @@
 
 /* empty classes */
 typedef struct { } RSystem;
-typedef struct { } RStr;
+//typedef struct { } RStr;
 typedef struct { } RLog;
+#define RStr char*
 
 typedef struct r_mem_pool_t {
 	ut8 **nodes;
