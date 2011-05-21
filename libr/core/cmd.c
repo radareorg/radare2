@@ -1418,7 +1418,7 @@ static int cmd_seek(void *data, const char *input) {
 	char *cmd, *p;
 	ut64 off;
 
-	if (input[0]=='r') {
+	if (*input=='r') {
 		if (input[1] && input[2]) {
 			off = r_debug_reg_get (core->dbg, input+2);
 			r_io_sundo_push (core->io);
@@ -1437,10 +1437,14 @@ static int cmd_seek(void *data, const char *input) {
 			r_core_block_read (core, 0);
 			break;
 		case '/':
-			r_core_cmdf (core, ".%s ; ? %s0_0 ; ?! s %s0_0",
-				input, "hit", "hit");
-			eprintf (".%s ; ? %s0_0 ; ?! s %s0_0\n",
-				input, "hit", "hit");
+			{
+			const char *pfx = r_config_get (core->config, "search.prefix");
+			int kwidx = (int)r_config_get_i (core->config, "search.kwidx")-1;
+			if (kwidx<0) kwidx=0;
+			//r_core_seek (core, off+1, 0);
+			eprintf ("s+1;.%s ; ? %s%d_0 ; ?! s %s%d_0\n", input, pfx, kwidx, pfx, kwidx);
+			r_core_cmdf (core, "s+1;.%s ; ? %s%d_0 ; ?! s %s%d_0", input, pfx, kwidx, pfx, kwidx);
+			}
 			break;
 		case '*':
 			r_io_sundo_list (core->io);
@@ -1505,7 +1509,8 @@ static int cmd_seek(void *data, const char *input) {
 			" s+ 512     ; seek 512 bytes forward\n"
 			" s- 512     ; seek 512 bytes backward\n"
 			" sa [[+-]a] [asz] ; seek asz (or bsize) aligned to addr\n"
-			" sf/sF      ; seek next/prev scr.fkey\n"
+			" sf|sF      ; seek next/prev scr.fkey\n"
+			" s/ DATA    ; search for next occurrence of 'DATA'\n"
 			" sb         ; seek aligned to bb start\n"
 			" sr pc      ; seek to register\n");
 			break;
@@ -3291,6 +3296,8 @@ static int cmd_search(void *data, const char *input) {
 
 	// TODO: repeat last search doesnt works for /a
 	from = r_config_get_i (core->config, "search.from");
+	if (from == UT64_MAX)
+		from = core->offset;
 	to = r_config_get_i (core->config, "search.to");
 	core->search->align = r_config_get_i (core->config, "search.align");
 	//TODO: handle section ranges if from&&to==0
@@ -3501,7 +3508,6 @@ static int cmd_search(void *data, const char *input) {
 		r_cons_printf ("fs hits\n");
 		core->search->inverse = inverse;
 		searchcount = r_config_get_i (core->config, "search.count");
-eprintf ("inverse = %d\n", core->search->inverse);
 		if (searchcount)
 			searchcount++;
 		if (core->search->n_kws>0 || aes_search) {

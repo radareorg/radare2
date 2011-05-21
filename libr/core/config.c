@@ -425,8 +425,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_i (cfg, "search.kwidx", 0);
 	r_config_set_i (cfg, "search.count", 0);
 	r_config_set (cfg, "search.prefix", "hit");
-	r_config_set_i (cfg, "search.from", 0);
-	r_config_set_i (cfg, "search.to", 0);
+	r_config_set_i (cfg, "search.from", UT64_MAX);
+	r_config_set_i (cfg, "search.to", UT64_MAX);
 	r_config_set_i (cfg, "search.distance", 0); // TODO: use i_cb here and remove code in cmd.c
 	r_config_set_i_cb (cfg, "search.align", 0, &config_searchalign_callback);
 	r_config_set (cfg, "search.asmstr", "true");

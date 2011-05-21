@@ -107,7 +107,7 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 		RSearchKeyword *kw;
 		r_list_foreach (s->kws, iter, kw) {
 			if (s->inverse && s->nhits>0) {
-				eprintf ("nhits = %d\n", s->nhits);
+				//eprintf ("nhits = %d\n", s->nhits);
 				return -1;
 			}
 			for (j=0; j<=kw->distance; j++) {
@@ -159,7 +159,6 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 						kw->distance = 0;
 						kw->count++;
 						count++;
-eprintf ("NTHIS JKSL +++\n");
 						//s->nhits++;
 					}
 				}
