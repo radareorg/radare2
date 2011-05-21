@@ -68,18 +68,17 @@ R_API RFlag * r_flag_free(RFlag *f) {
 R_API RFlag * r_flag_new() {
 	int i;
 	RFlag *f = R_NEW (RFlag);
-	if (f) {
-		f->flags = r_list_new ();
-		f->flags->free = free;
-		f->space_idx = -1;
-		f->space_idx2 = -1;
+	if (!f) return NULL;
+	f->flags = r_list_new ();
+	f->flags->free = free;
+	f->space_idx = -1;
+	f->space_idx2 = -1;
 #if USE_BTREE
-		btree_init (&f->tree);
-		btree_init (&f->ntree);
+	btree_init (&f->tree);
+	btree_init (&f->ntree);
 #endif
-		for (i=0; i<R_FLAG_SPACES_MAX; i++)
-			f->spaces[i] = NULL;
-	}
+	for (i=0; i<R_FLAG_SPACES_MAX; i++)
+		f->spaces[i] = NULL;
 	return f;
 }
 
@@ -135,7 +134,7 @@ R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 #endif
 }
 
-R_API int r_flag_unset_i(RFlag *f, ut64 addr) {
+R_API int r_flag_unset_i(RFlag *f, ut64 addr, RFlagItem *p) {
 	RFlagItem *item;
 	RListIter *iter;
 
@@ -154,7 +153,7 @@ R_API int r_flag_unset_i(RFlag *f, ut64 addr) {
 	return 0;
 }
 
-R_API int r_flag_unset(RFlag *f, const char *name) {
+R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p) {
 	RFlagItem *item;
 	RListIter *iter;
 
@@ -212,6 +211,9 @@ R_API int r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size, int dup)
 #else
 	RFlagItem *f; // Move to !BTREE section?
 	ut64 hash = r_str_hash64 (name);
+
+// THIS IS ULTRASLOW!
+// XXX: use hashtable here or gtfo
 	r_list_foreach (fo->flags, iter, f) {
 		//if (!strcmp(f->name, name)) {
 		if (hash == f->namehash) {
@@ -234,7 +236,7 @@ R_API int r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size, int dup)
 		flag = R_NEW (RFlagItem);
 		memset (flag,'\0', sizeof (RFlagItem));
 		flag->offset = addr;
-		r_flag_item_rename (flag, name);
+		r_flag_item_set_name (flag, name);
 #if USE_BTREE
 		btree_add (&fo->tree, flag, cmp);
 		btree_add (&fo->ntree, flag, ncmp);
@@ -253,7 +255,9 @@ R_API int r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size, int dup)
 	return R_FALSE;
 }
 
-R_API void r_flag_item_rename(RFlagItem *item, const char *name) {
+//R_API void r_flag_item_rename(RFlagItem *item, const char *name) {
+//}
+R_API void r_flag_item_set_name(RFlagItem *item, const char *name) {
 	int len;
 	strncpy (item->name, name, R_FLAG_NAME_SIZE);
 	len = R_MIN (R_FLAG_NAME_SIZE, strlen (r_str_chop (item->name)) + 1);

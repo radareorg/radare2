@@ -11,7 +11,7 @@ namespace Radare {
 		public uint64 size;
 		public uint64 offset;
 		public string cmd;
-		//public void rename(string name);
+		public void set_name(string name);
 	}
 
 	[Compact]

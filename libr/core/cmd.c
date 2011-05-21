@@ -2245,8 +2245,11 @@ static int cmd_flag(void *data, const char *input) {
 		}
 		break;
 	case '-':
-		if (input[1]) r_flag_unset (core->flags, input+1);
-		else r_flag_unset_i (core->flags, off);
+		if (input[1]) {
+			if (strchr (input+1, '*'))
+				r_flag_unset_glob (core->flags, input+1);
+			else r_flag_unset (core->flags, input+1, NULL);
+		} else r_flag_unset_i (core->flags, off, NULL);
 		break;
 	case 'S':
 		r_flag_sort (core->flags, (input[1]=='n'));
@@ -2279,8 +2282,9 @@ static int cmd_flag(void *data, const char *input) {
 				new = old;
 				item = r_flag_get_i (core->flags, core->offset);
 			}
-			if (item) r_flag_item_rename (item, new);
-			else eprintf ("Cannot find flag\n");
+			if (item) {
+				r_flag_rename (core->flags, item, new);
+			} else eprintf ("Cannot find flag\n");
 		}
 		break;
 	case '*':
@@ -3452,7 +3456,7 @@ static int cmd_search(void *data, const char *input) {
 	}
 	r_config_set_i (core->config, "search.kwidx", core->search->n_kws);
 	if (dosearch) {
-
+		r_cons_printf ("fs hits\n");
 		searchcount = r_config_get_i (core->config, "search.count");
 		if (searchcount)
 			searchcount++;

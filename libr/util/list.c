@@ -104,9 +104,11 @@ R_API void r_list_destroy (RList *list) {
 }
 
 R_API void r_list_free (RList *list) {
-	list->free = NULL;
-	r_list_destroy (list);
-	free (list);
+	if (list) {
+		list->free = NULL;
+		r_list_destroy (list);
+		free (list);
+	}
 }
 
 R_API RListIter *r_list_item_new (void *data) {
@@ -165,24 +167,25 @@ R_API int r_list_del_n(RList *list, int n) {
 	RListIter *it;
 	int i;
 
-	if (list)
-		for (it = list->head, i = 0; it && it->data; it = it->n, i++)
-			if (i == n) {
-				if (it->p == NULL && it->n == NULL) {
-					list->head = list->tail = NULL;
-				} else if (it->p == NULL) {
-					it->n->p = NULL;
-					list->head = it->n;
-				} else if (it->n == NULL) {
-					it->p->n = NULL;
-					list->tail = it->p;
-				} else {
-					it->p->n = it->n;
-					it->n->p = it->p;
-				}
-				free (it);
-				return R_TRUE;
+	if (!list)
+		return R_FALSE;
+	for (it = list->head, i = 0; it && it->data; it = it->n, i++)
+		if (i == n) {
+			if (it->p == NULL && it->n == NULL) {
+				list->head = list->tail = NULL;
+			} else if (it->p == NULL) {
+				it->n->p = NULL;
+				list->head = it->n;
+			} else if (it->n == NULL) {
+				it->p->n = NULL;
+				list->tail = it->p;
+			} else {
+				it->p->n = it->n;
+				it->n->p = it->p;
 			}
+			free (it);
+			return R_TRUE;
+		}
 	return R_FALSE;
 }
 

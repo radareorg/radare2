@@ -188,7 +188,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			}
 			break;
 		case 'd':
-			r_flag_unset (core->flags, fs2);
+			r_flag_unset (core->flags, fs2, NULL);
 			break;
 		case 'e':
 			/* TODO: prompt for addr, size, name */
@@ -527,7 +527,7 @@ static void function_rename(RCore *core, ut64 addr, const char *name) {
 
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		if (fcn->addr == addr) {
-			r_flag_unset (core->flags, fcn->name);
+			r_flag_unset (core->flags, fcn->name, NULL);
 			free (fcn->name);
 			fcn->name = strdup (name);
 			r_flag_set (core->flags, name, addr, fcn->size, 0);
@@ -814,7 +814,7 @@ R_API void r_core_visual_define (RCore *core) {
 		break;
 	case 'u':
 		r_meta_del (core->anal->meta, R_META_TYPE_ANY, off, 1, "");
-		r_flag_unset_i (core->flags, off);
+		r_flag_unset_i (core->flags, off, NULL);
 		r_anal_fcn_del (core->anal, off);
 		break;
 	case 'f':

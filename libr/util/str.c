@@ -668,6 +668,35 @@ R_API void r_str_filter(char *str, int len) {
 			str[i] = '.';
 }
 
+R_API int r_str_glob (const char *str, const char *glob) {
+	const char *p;
+	int glen = strlen (glob);
+	int slen = strlen (str);
+	if (*glob == '*') {
+		if (glob[glen-1] == '*') {
+			return r_mem_mem ((const ut8*)str, slen, (const ut8*)glob+1, glen-2) != 0;
+		}
+		if (slen<glen-2)
+			return R_FALSE;
+		p = str + slen - (glen-1);
+		return memcmp (p, glob+1, glen-1) == 0;
+	} else {
+		if (glob[glen-1] == '*') {
+			if (slen<glen-1)
+				return R_FALSE;
+			return memcmp (str, glob, glen-1) == 0;
+		} else {
+			char *p = strchr (glob, '*');
+			if (p) {
+				int a = (int)(size_t)(p-glob);
+				return ((!memcmp (str, glob, a)) && ( !memcmp (str+slen-a, glob+a+1, glen-a-1)))? 1: 0;
+			} else {
+				return !strcmp (str, glob);
+			}
+		}
+	}	
+}
+
 #define MAXARG 128
 R_API char **r_str_argv(const char *_str, int *_argc) {
 	int argc = 0;
