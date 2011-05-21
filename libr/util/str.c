@@ -694,7 +694,7 @@ R_API int r_str_glob (const char *str, const char *glob) {
 				return !strcmp (str, glob);
 			}
 		}
-	}	
+	}
 }
 
 #define MAXARG 128

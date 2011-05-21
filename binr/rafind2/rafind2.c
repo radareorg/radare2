@@ -93,8 +93,8 @@ static int rafind_open(char *file) {
 		list_for_each(pos, &(kws_head)) {
 			BoxedString *kw = list_entry(pos, BoxedString, list);
 			r_search_kw_add (rs, (hexstr)?
-				r_search_keyword_new_hex (kw->str, mask, NULL) : 
-				r_search_keyword_new_str (kw->str, mask, NULL));
+				r_search_keyword_new_hex (kw->str, mask, NULL) :
+				r_search_keyword_new_str (kw->str, mask, NULL, 0));
 			free (kw);
 		}
 	}

@@ -279,7 +279,51 @@ R_API int r_fs_dir_dump (RFS* fs, const char *path, const char *name) {
 	return R_TRUE;
 }
 
-static void r_fs_find_aux (RFS* fs, const char *name, const char *glob, RList *list) {
+static void r_fs_find_off_aux (RFS* fs, const char *name, ut64 offset, RList *list) {
+	RList *dirs;
+	RListIter *iter;
+	RFSFile *item, *file;
+	char *found;
+
+	dirs = r_fs_dir (fs, name);
+	r_list_foreach (dirs, iter, item) {
+		if (!strcmp (item->name, ".") || !strcmp (item->name, ".."))
+			continue;
+		if (item->type == R_FS_FILE_TYPE_DIRECTORY) {
+			found = (char *) malloc (strlen (name) + strlen (item->name) + 2);
+			if (!found)
+				break;
+			strcpy (found, name);
+			strcat (found, "/");
+			strcat (found, item->name);
+			r_fs_find_off_aux (fs, found, offset, list);
+			free (found);
+		} else {
+			found = (char *) malloc (strlen (name) + strlen (item->name) + 2);
+			if (!found)
+				break;
+			strcpy (found, name);
+			strcat (found, "/");
+			strcat (found, item->name);
+			file = r_fs_open (fs, found);
+			if (file) {
+				r_fs_read (fs, file, 0, file->size);
+				if (file->off == offset)
+					r_list_append (list, found);
+				r_fs_close (fs, file);
+			}
+		}
+	}
+}
+
+R_API RList *r_fs_find_off (RFS* fs, const char *name, ut64 off) {
+	RList *list =  r_list_new ();
+	list->free = free;
+	r_fs_find_off_aux (fs, name, off, list);
+	return list;
+}
+
+static void r_fs_find_name_aux (RFS* fs, const char *name, const char *glob, RList *list) {
 	RList *dirs;
 	RListIter *iter;
 	RFSFile *item;
@@ -287,7 +331,7 @@ static void r_fs_find_aux (RFS* fs, const char *name, const char *glob, RList *l
 
 	dirs = r_fs_dir (fs, name);
 	r_list_foreach (dirs, iter, item) {
-		if (!strcmp (item->name, glob)) {
+		if (r_str_glob (item->name, glob)) {
 			found = (char *) malloc (strlen (name) + strlen (item->name) + 2);
 			if (!found)
 				break;
@@ -305,16 +349,16 @@ static void r_fs_find_aux (RFS* fs, const char *name, const char *glob, RList *l
 			strcpy (found, name);
 			strcat (found, "/");
 			strcat (found, item->name);
-			r_fs_find_aux (fs, found, glob, list);
+			r_fs_find_name_aux (fs, found, glob, list);
 			free (found);
 		}
 	}
 }
 
-R_API RList *r_fs_find (RFS* fs, const char *name, const char *glob) {
+R_API RList *r_fs_find_name (RFS* fs, const char *name, const char *glob) {
 	RList *list =  r_list_new ();
 	list->free = free;
-	r_fs_find_aux (fs, name, glob, list);
+	r_fs_find_name_aux (fs, name, glob, list);
 	return list;
 }
 

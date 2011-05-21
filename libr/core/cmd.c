@@ -1148,18 +1148,46 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'f':
 		input++;
-		if (*input == ' ')
-			input++;
-		ptr = strchr (input, ' ');
-		if (ptr) {
-			*ptr++ = 0;
-			list = r_fs_find (core->fs, input, ptr);
-			r_list_foreach (list, iter, ptr) {
-				r_str_chop_path (ptr);
-				printf ("%s\n", ptr);
-			}
-			//XXX: r_list_destroy (list);
-		} else eprintf ("Unknown store path\n");
+		switch (*input) {
+			case '?':
+				r_cons_printf (
+				"Usage: mf[no] [...]\n"
+				" mfn /foo *.c       ; search files by name in /foo path\n"
+				" mfo /foo 0x5e91    ; search files by offset in /foo path\n"
+				);
+				break;
+			case 'n':
+				input++;
+				if (*input == ' ')
+					input++;
+				ptr = strchr (input, ' ');
+				if (ptr) {
+					*ptr++ = 0;
+					list = r_fs_find_name (core->fs, input, ptr);
+					r_list_foreach (list, iter, ptr) {
+						r_str_chop_path (ptr);
+						printf ("%s\n", ptr);
+					}
+					//XXX: r_list_destroy (list);
+				} else eprintf ("Unknown store path\n");
+				break;
+			case 'o':
+				input++;
+				if (*input == ' ')
+					input++;
+				ptr = strchr (input, ' ');
+				if (ptr) {
+					*ptr++ = 0;
+					ut64 off = r_num_math (core->num, ptr);
+					list = r_fs_find_off (core->fs, input, off);
+					r_list_foreach (list, iter, ptr) {
+						r_str_chop_path (ptr);
+						printf ("%s\n", ptr);
+					}
+					//XXX: r_list_destroy (list);
+				} else eprintf ("Unknown store path\n");
+				break;
+		}
 		break;
 	case 's':
 		input++;
@@ -1181,7 +1209,7 @@ static int cmd_mount(void *data, const char *_input) {
 		" my             ; yank contents of file into clipboard\n"
 		" mo /foo        ; get offset and size of given file\n"
 		" mg /foo        ; get contents of file/dir dumped to disk (XXX?)\n"
-		" mf /foo bar    ; search files with bar name in /foo path\n"
+		" mf[o|n]        ; serach files for given filename or for offset\n"
 		" md /           ; list directory contents for path\n"
 		" mp             ; list all supported partition types\n"
 		" mp msdos 0     ; show partitions in msdos format at offset 0\n"
