@@ -10,6 +10,7 @@ R_API RSearchKeyword* r_search_keyword_new(const ut8 *kw, int kwlen, const ut8 *
 			&& (bmlen < sizeof (k->binmask))) {
 		k = R_NEW (RSearchKeyword);
 		if (k != NULL) {
+			k->icase = 0;
 			memcpy (k->keyword, kw, kwlen);
 			k->keyword_length = kwlen;
 			memcpy (k->bin_keyword, kw, kwlen);
@@ -26,7 +27,7 @@ R_API RSearchKeyword* r_search_keyword_new(const ut8 *kw, int kwlen, const ut8 *
 	return k;
 }
 
-R_API RSearchKeyword* r_search_keyword_new_str(const char *kw, const char *bmhex, const char *data) {
+R_API RSearchKeyword* r_search_keyword_new_str(const char *kw, const char *bmhex, const char *data, int icase) {
 	RSearchKeyword *ks = NULL;
 	int bmlen = 0;
 	ut8 *bm = NULL;
@@ -41,6 +42,7 @@ R_API RSearchKeyword* r_search_keyword_new_str(const char *kw, const char *bmhex
 		}
 	}
 	ks = r_search_keyword_new ((ut8 *)kw, strlen (kw), bm, bmlen, data);
+	ks->icase = icase;
 	free (bm);
 	return ks;
 }

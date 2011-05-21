@@ -2,6 +2,7 @@
 
 #include <r_search.h>
 #include <r_list.h>
+#include <ctype.h>
 
 R_API RSearch *r_search_new(int mode) {
 	RSearch *s = R_NEW (RSearch);
@@ -119,6 +120,10 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 			for (j=0; j<=kw->distance; j++) {
 				ut8 ch = kw->bin_keyword[kw->idx[j]];
 				ut8 ch2 = buf[i];
+				if (kw->icase) {
+					ch = tolower (ch);
+					ch2 = tolower (ch2);
+				}
 				if (kw->binmask_length != 0 && kw->idx[j]<kw->binmask_length) {
 					ch &= kw->bin_binmask[kw->idx[j]];
 					ch2 &= kw->bin_binmask[kw->idx[j]];

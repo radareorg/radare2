@@ -12,7 +12,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 int main(int argc, char **argv) {
 	RSearch *rs = r_search_new (R_SEARCH_KEYWORD);
 	r_search_kw_add (rs, 
-		r_search_keyword_new_str ("lib", "", NULL));
+		r_search_keyword_new_str ("lib", "", NULL, 0));
 	r_search_set_callback (rs, &hit, buffer);
 	r_search_set_distance (rs, 0);
 	printf ("Distance: %d\n", rs->distance);
@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
 	/* test binmask */
 	rs = r_search_new (R_SEARCH_KEYWORD);
 	{
-		RSearchKeyword *kw = r_search_keyword_new_str ("lib", "ff00ff", NULL);
+		RSearchKeyword *kw = r_search_keyword_new_str ("lib", "ff00ff", NULL, 0);
 		printf ("Keyword (%02x %02x %02x)\n", kw->bin_binmask[0],
 			kw->bin_binmask[1], kw->bin_binmask[2]);
 		r_search_kw_add (rs, kw);

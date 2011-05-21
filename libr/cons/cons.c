@@ -31,10 +31,11 @@ static inline void r_cons_write (const char *buf, int len) {
 #endif
 }
 
-R_API void r_cons_strcat_justify (const char *str, int j) {
+R_API void r_cons_strcat_justify (const char *str, int j, char c) {
 	int i, o, len;
 	for (o=i=len=0; str[i]; i++, len++) {
 		if (str[i]=='\n') {
+			if (c) r_cons_memset (c, 1);
 			r_cons_memset (' ', j);
 			r_cons_memcat (str+o, len);
 			if (str[o+len] == '\n')
@@ -152,7 +153,7 @@ R_API void r_cons_gotoxy(int x, int y) {
                 hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
         SetConsoleCursorPosition (hStdout, coord);
 #else
-	r_cons_printf ("\x1b[%d;%dH", y, x);
+	r_cons_printf ("\x1b[%d;%dH\n", y, x);
 #endif
 }
 
@@ -248,9 +249,8 @@ R_API void r_cons_flush() {
 	if (tee&&*tee) {
 		FILE *d = fopen (tee, "a+");
 		if (d != NULL) {
-			if (I.buffer_len != fwrite (I.buffer, 1, I.buffer_len, d)) {
+			if (I.buffer_len != fwrite (I.buffer, 1, I.buffer_len, d))
 				eprintf ("r_cons_flush: fwrite: error (%s)\n", tee);
-			}
 			fclose (d);
 		}
 	}
@@ -276,25 +276,35 @@ R_API void r_cons_visual_flush() {
 R_API void r_cons_visual_write (char *buffer) {
 	const char *newline = "\n"Color_RESET;
 	int cols = I.columns;
-	int alen, lines = I.rows-1;
+	int alen, lines = I.rows;
 	const char *endptr;
 	char *nl, *ptr = buffer;
 
-	while (lines && (nl = strchr (ptr, '\n'))) {
+	while ((nl = strchr (ptr, '\n'))) {
 		int len = ((int)(size_t)(nl-ptr))+1;
 
 		*nl = 0;
 		alen = r_str_ansi_len (ptr);
 		*nl = '\n';
 
+		lines--;
 		if (alen>cols) {
 			endptr = r_str_ansi_chrn (ptr, cols);
 			endptr++;
 			len = (endptr-ptr);
+			if (lines>0) {
+				r_cons_write (ptr, len);
+				r_cons_write (newline, strlen (newline));
+			}
+		} else {
+			if (lines>0)
+				r_cons_write (ptr, len);
+		}
+		// TRICK for columns.. maybe buggy in w32
+		if (r_mem_mem ((const ut8*)ptr, len, (const ut8*)"\x1b[0;0H", 6)) {
+			lines = I.rows;
 			r_cons_write (ptr, len);
-			r_cons_write (newline, strlen (newline));
-		} else r_cons_write (ptr, len);
-		lines--;
+		}
 		ptr = nl+1;
 	}
 }
@@ -427,6 +437,6 @@ R_API void r_cons_column(int c) {
 	memcpy (b, I.buffer, I.buffer_len);
 	r_cons_reset ();
 	// align current buffer N chars right
-	r_cons_strcat_justify (b, c);
+	r_cons_strcat_justify (b, c, 0);
 	r_cons_gotoxy (0, 0);
 }

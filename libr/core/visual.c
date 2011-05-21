@@ -291,7 +291,7 @@ static void config_visual_hit_i(RCore *core, const char *name, int delta) {
 }
 
 /* Visually activate the config variable */
-static void config_visual_hit(RCore *core, const char *name) {
+static void config_visual_hit(RCore *core, const char *name, int editor) {
 	char buf[1024];
 	RConfigNode *node;
 
@@ -302,14 +302,20 @@ static void config_visual_hit(RCore *core, const char *name) {
 		node->i_value = !node->i_value;
 		node->value = r_str_dup (node->value, node->i_value?"true":"false");
 	} else {
-		// FGETS AND SO
-		r_cons_printf ("New value (old=%s): ", node->value);
-		r_cons_flush ();
-		r_cons_set_raw (0);
-		r_line_set_prompt (":> ");
-		r_cons_fgets (buf, sizeof (buf)-1, 0, 0);
-		r_cons_set_raw (1);
-		node->value = r_str_dup (node->value, buf);
+		if (editor) {
+			char * buf = r_core_editor (core, node->value);
+			node->value = r_str_dup (node->value, buf);
+			free (buf);
+		} else {
+			// FGETS AND SO
+			r_cons_printf ("New value (old=%s): \n", node->value);
+			r_cons_flush ();
+			r_cons_set_raw (0);
+			r_line_set_prompt (":> ");
+			r_cons_fgets (buf, sizeof (buf)-1, 0, 0);
+			r_cons_set_raw (1);
+			node->value = r_str_dup (node->value, buf);
+		}
 	}
 }
 
@@ -426,13 +432,14 @@ R_API void r_core_visual_config(RCore *core) {
 				config_visual_hit_i (core, fs2, -1);
 			continue;
 		case 'l':
+		case 'E': // edit value
 		case 'e': // edit value
 		case ' ':
 		case '\r':
 		case '\n': // never happens
 			if (menu == 1) {
 				if (fs2 != NULL)
-					config_visual_hit (core, fs2);
+					config_visual_hit (core, fs2, (ch=='E'));
 			} else {
 				r_flag_space_set (core->flags, fs);
 				menu = 1;
@@ -441,16 +448,17 @@ R_API void r_core_visual_config(RCore *core) {
 			}
 			break;
 		case '?':
-			r_cons_clear00();
-			r_cons_printf("\nVe: Visual Eval help:\n\n");
-			r_cons_printf(" q     - quit menu\n");
-			r_cons_printf(" j/k   - down/up keys\n");
-			r_cons_printf(" h/b   - go back\n");
-			r_cons_printf(" e/' ' - edit/toggle current variable\n");
-			r_cons_printf(" +/-   - increase/decrease numeric value\n");
-			r_cons_printf(" :     - enter command\n");
-			r_cons_flush();
-			r_cons_any_key();
+			r_cons_clear00 ();
+			r_cons_printf ("\nVe: Visual Eval help:\n\n");
+			r_cons_printf (" q     - quit menu\n");
+			r_cons_printf (" j/k   - down/up keys\n");
+			r_cons_printf (" h/b   - go back\n");
+			r_cons_printf (" e/' ' - edit/toggle current variable\n");
+			r_cons_printf (" E     - edit variable with 'cfg.editor' (vi?)\n");
+			r_cons_printf (" +/-   - increase/decrease numeric value\n");
+			r_cons_printf (" :     - enter command\n");
+			r_cons_flush ();
+			r_cons_any_key ();
 			break;
 		case ':':
 			r_cons_set_raw(0);
@@ -498,13 +506,13 @@ static void var_index_show(RAnal *anal, RAnalFcn *fcn, ut64 addr, int idx) {
 					r_cons_printf("...\n");
 					break;
 				}
-				if (idx == i) r_cons_printf(" * ");
-				else r_cons_printf("   ");
-				r_cons_printf("0x%08llx - 0x%08llx type=%s type=%s name=%s delta=%d array=%d\n",
+				if (idx == i) r_cons_printf (" * ");
+				else r_cons_printf ("   ");
+				r_cons_printf ("0x%08llx - 0x%08llx type=%s type=%s name=%s delta=%d array=%d\n",
 					v->addr, v->eaddr, r_anal_var_type_to_str (anal, v->type),
 					v->vartype, v->name, v->delta, v->array);
-				r_list_foreach(v->accesses, iter2, x) {
-					r_cons_printf("  0x%08llx %s\n", x->addr, x->set?"set":"get");
+				r_list_foreach (v->accesses, iter2, x) {
+					r_cons_printf ("  0x%08llx %s\n", x->addr, x->set?"set":"get");
 				}
 			}
 			i++;
@@ -563,7 +571,7 @@ R_API void r_core_visual_anal(RCore *core) {
 	int _option = 0;
 	int ch, level = 0;
 	char old[1024], *oprofile;
-	ut64 size, addr = core->offset;
+	ut64 addr = core->offset;
 	old[0]='\0';
 	RAnalFcn *fcn = r_anal_fcn_find (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 
@@ -1249,6 +1257,14 @@ static void r_core_visual_refresh (RCore *core) {
 	r_cons_get_size (NULL);
 	r_cons_clear00 ();
 	r_print_set_cursor (core->print, curset, ocursor, cursor);
+
+	vi = r_config_get (core->config, "cmd.cprompt");
+	if (vi && *vi) {
+		r_cons_printf ("\n[cmd.cprompt] %s\n", vi);
+		r_core_cmd (core, vi, 0);
+		r_cons_column (80);
+	}
+
 	r_core_visual_prompt (core, color);
 
 	vi = r_config_get (core->config, "cmd.vprompt");

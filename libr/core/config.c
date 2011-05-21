@@ -411,6 +411,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "cmd.hit", "");
 	r_config_set (cfg, "cmd.open", "");
 	r_config_set (cfg, "cmd.prompt", "");
+	r_config_set (cfg, "cmd.cprompt", "");
 	r_config_set (cfg, "cmd.vprompt", "");
 	r_config_set (cfg, "cmd.bp", "");
 	r_config_set_cb (cfg, "scr.tee", "", config_teefile_callback);
@@ -421,6 +422,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "scr.fkey", "function", &config_scrfkey_callback);
 	r_config_set (cfg, "scr.seek", "");
 	r_config_set_i_cb (cfg, "scr.cols", 16, &config_scrcols_callback);
+	r_config_set_i (cfg, "search.kwidx", 0);
 	r_config_set_i (cfg, "search.count", 0);
 	r_config_set (cfg, "search.prefix", "hit");
 	r_config_set_i (cfg, "search.from", 0);

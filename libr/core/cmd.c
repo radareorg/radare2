@@ -238,7 +238,7 @@ static int r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, 
 		if (show_comments)
 		if ((comment = r_meta_get_string (core->anal->meta, R_META_TYPE_COMMENT, at))) {
 			if (show_color) r_cons_strcat (Color_TURQOISE);
-			r_cons_strcat_justify (comment, strlen (refline) + 10);
+			r_cons_strcat_justify (comment, strlen (refline) + 5, ';');
 			if (show_color) r_cons_strcat (Color_RESET);
 			free (comment);
 		}
@@ -1431,6 +1431,12 @@ static int cmd_seek(void *data, const char *input) {
 			} else if (r_io_sundo (core->io))
 				r_core_seek (core, core->io->off, 0);
 			break;
+		case 'f':
+			r_core_seek_next (core, r_config_get (core->config, "scr.fkey"));
+			break;
+		case 'F':
+			r_core_seek_previous (core, r_config_get (core->config, "scr.fkey"));
+			break;
 		case 'a':
 			off = core->blocksize;
 			if (input[1]&&input[2]) {
@@ -1462,6 +1468,7 @@ static int cmd_seek(void *data, const char *input) {
 			" s+ 512     ; seek 512 bytes forward\n"
 			" s- 512     ; seek 512 bytes backward\n"
 			" sa [[+-]a] [asz] ; seek asz (or bsize) aligned to addr\n"
+			" sf/sF      ; seek next/prev scr.fkey\n"
 			" sb         ; seek aligned to bb start\n"
 			" sr pc      ; seek to register\n");
 			break;
@@ -3343,9 +3350,12 @@ static int cmd_search(void *data, const char *input) {
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
-		r_search_kw_add (core->search, 
-			r_search_keyword_new ((const ut8*)inp, len, NULL, 0, NULL));
-			//r_search_keyword_new_str (, "", NULL));
+		{
+		RSearchKeyword *skw;
+		skw = r_search_keyword_new ((const ut8*)inp, len, NULL, 0, NULL);
+		skw->icase = ignorecase;
+		r_search_kw_add (core->search, skw);
+		}
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
 		break;
@@ -3362,7 +3372,7 @@ static int cmd_search(void *data, const char *input) {
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
 		r_search_kw_add (core->search, 
-			r_search_keyword_new_str (inp, opt, NULL));
+			r_search_keyword_new_str (inp, opt, NULL, 0));
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
 		free (inp);
@@ -3465,11 +3475,13 @@ static int cmd_search(void *data, const char *input) {
 				if (r_cons_singleton ()->breaked)
 					break;
 				ret = r_io_read_at (core->io, at, buf, core->blocksize);
+/*
 				if (ignorecase) {
 					int i;
 					for (i=0; i<core->blocksize; i++)
 						buf[i] = tolower (buf[i]);
 				}
+*/
 				if (ret != core->blocksize)
 					break;
 				if (aes_search) {
@@ -3498,6 +3510,15 @@ static int cmd_eval(void *data, const char *input) {
 	switch (input[0]) {
 	case '\0':
 		r_config_list (core->config, NULL, 0);
+		break;
+	case 'e':
+		if (input[1]==' ') {
+			char *p;
+			const char *val = r_config_get (core->config, input+2);
+			p = r_core_editor (core, val);
+			r_str_subchr (p, '\n', ';');
+			r_config_set (core->config, input+2, p);
+		} else eprintf ("Usage: ee varname\n");
 		break;
 	case '!':
 		input = r_str_chop_ro(input+1);
@@ -4062,7 +4083,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		if (r_core_cmd_subst (core, cmd) == -1) 
 			return -1;
 		cmd = ptr+1;
-		r_cons_flush ();
+		//r_cons_flush ();
 	}
 
 	/* pipe console to shell process */
@@ -4192,9 +4213,10 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			ret = r_core_cmd_foreach (core, cmd, ptr+2);
 			//ret = -1; /* do not run out-of-foreach cmd */
 		} else {
-			if (!ptr[1] || r_core_seek (core, r_num_math (core->num, ptr+1), 1))
+			if (!ptr[1] || r_core_seek (core, r_num_math (core->num, ptr+1), 1)) {
+				r_core_block_read (core, 0);
 				ret = r_cmd_call (core->cmd, r_str_trim_head (cmd));
-			else ret = 0;
+			} else ret = 0;
 		}
 		if (ptr2) {
 			*ptr2 = ':';

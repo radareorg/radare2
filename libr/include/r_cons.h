@@ -167,7 +167,7 @@ R_API void r_cons_set_raw(int b);
 /* output */
 R_API void r_cons_printf(const char *format, ...);
 R_API void r_cons_strcat(const char *str);
-R_API void r_cons_strcat_justify (const char *str, int j);
+R_API void r_cons_strcat_justify (const char *str, int j, char c);
 R_API void r_cons_memcat(const char *str, int len);
 R_API void r_cons_newline();
 R_API void r_cons_filter();

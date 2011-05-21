@@ -14,6 +14,7 @@ R_API RPrint *r_print_new() {
 		p->interrupt = 0;
 		p->bigendian = 0;
 		p->width = 78;
+		p->cols = 16;
 		p->cur_enabled = R_FALSE;
 		p->cur = p->ocur = -1;
 		p->addrmod = 4;
@@ -149,17 +150,16 @@ R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 }
 
 R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len) {
-	int i, w = 0;
+	int i, w = p->cols*0.7;
 	p->printf ("#define _BUFFER_SIZE %d\n", len);
 	p->printf ("unsigned char buffer[%d] = {", len);
 	p->interrupt = 0;
-	for (i=0;!p->interrupt&&i<len;i++) {
-		if (!(w%p->width))
+	for (i=0; !p->interrupt && i<len; i++) {
+		if (!(i%w))
 			p->printf ("\n  ");
 		r_print_cursor (p, i, 1);
-		p->printf("0x%02x, ", buf[i]);
+		p->printf ("0x%02x, ", buf[i]);
 		r_print_cursor (p, i, 0);
-		w+=6;
 	}
 	p->printf ("};\n");
 }
