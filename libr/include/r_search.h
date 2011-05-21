@@ -51,8 +51,10 @@ typedef struct r_search_t {
 	void *user; /* user data */
 	RSearchCallback callback;
 	RList *hits;
+	int nhits;
 	RMemoryPool *pool;
 	int distance;
+	int inverse;
 	int align;
 	RSearchUpdate update;
 	RList *kws; // TODO: Use r_search_kw_new ()

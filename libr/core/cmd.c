@@ -3274,6 +3274,7 @@ static int cmd_search(void *data, const char *input) {
 	ut64 at, from, to;
 	//RIOSection *section;
 	int i, len, ret, dosearch = R_FALSE;
+	int inverse = R_FALSE;
 	int aes_search = R_FALSE;
 	int ignorecase = R_FALSE;
 	ut32 n32;
@@ -3297,7 +3298,13 @@ static int cmd_search(void *data, const char *input) {
 	if (from == 0LL) from = core->offset;
 	if (to == 0LL) to = UT32_MAX; // XXX?
 
+	reread:
 	switch (*input) {
+	case '!':
+		input++;
+		inverse = R_TRUE;
+		goto reread;
+		break;
 	case 'a':
 		if (input[1]==' ')
 			r_core_anal_search (core, from, to, r_num_math (core->num, input+2));
@@ -3411,9 +3418,6 @@ static int cmd_search(void *data, const char *input) {
 		free (opt);
 		}
 		break;
-	case '!':
-		eprintf ("TODO\n");
-		break;
 	case 'x': /* search hex */
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
@@ -3465,6 +3469,7 @@ static int cmd_search(void *data, const char *input) {
 		" /i foo          ; search for string 'foo' ignoring case\n"
 		" /e /E.F/i       ; match regular expression\n"
 		" /x ff0033       ; search for hex string\n"
+		" /!x 00          ; inverse hexa search (find first byte != 0x00)\n"
 		" /c jmp [esp]    ; search for asm code (see search.asmstr)\n"
 		" /A              ; search for AES expanded keys\n"
 		" /a sym.printf   ; analyze code referencing an offset\n"
@@ -3485,7 +3490,9 @@ static int cmd_search(void *data, const char *input) {
 	r_config_set_i (core->config, "search.kwidx", core->search->n_kws);
 	if (dosearch) {
 		r_cons_printf ("fs hits\n");
+		core->search->inverse = inverse;
 		searchcount = r_config_get_i (core->config, "search.count");
+eprintf ("inverse = %d\n", core->search->inverse);
 		if (searchcount)
 			searchcount++;
 		if (core->search->n_kws>0 || aes_search) {
@@ -3526,7 +3533,7 @@ static int cmd_search(void *data, const char *input) {
 					}
 				} else
 				if (r_search_update (core->search, &at, buf, ret) == -1) {
-					eprintf ("search: update read error\n");
+					eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 					break;
 				}
 			}
