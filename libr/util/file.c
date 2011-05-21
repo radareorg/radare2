@@ -79,7 +79,7 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 	if (rsz != sz)
 		eprintf ("r_file_slurp: fread: error\n");
 	fclose (fd);
-	ret[rsz]='\0';
+	ret[sz]='\0';
 	if (usz)
 		*usz = (ut32)sz;
 	return ret;

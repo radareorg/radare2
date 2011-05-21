@@ -17,6 +17,6 @@ pre:
 	@if [ ! -e libr_anal.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi
 
 plugins:
-	${MAKE} -C p all
+	@${MAKE} -C p all
 
 include ../rules.mk

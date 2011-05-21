@@ -515,7 +515,8 @@ _end:
 		fflush (stdout);
 	}
 
-	if (I.buffer.data[0]=='!' && I.buffer.data[1]=='\0') {
+	if (!memcmp (I.buffer.data, "!history", 8)) {
+	//if (I.buffer.data[0]=='!' && I.buffer.data[1]=='\0') {
 		r_line_hist_list ();
 		return r_line_nullstr;
 	}

@@ -76,6 +76,7 @@ typedef struct r_core_t {
 	int oobi_len;
 	ut8 *yank;
 	int yank_len;
+	boolt visual;
 	ut64 yank_off;
 	int interrupted; // XXX IS THIS DUPPED SOMEWHERE?
 	/* files */
@@ -121,6 +122,7 @@ R_API int r_core_config_init(struct r_core_t *core);
 R_API int r_core_prompt(RCore *r, int sync);
 R_API int r_core_prompt_exec(RCore *r);
 R_API int r_core_cmd(struct r_core_t *r, const char *cmd, int log);
+R_API char *r_core_editor (RCore *core, const char *str);
 // XXX void*?? must be RCore !
 R_API int r_core_cmdf(void *user, const char *fmt, ...);
 R_API int r_core_cmd0(void *user, const char *cmd);
@@ -129,6 +131,8 @@ R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd);
 R_API int r_core_cmd_file(struct r_core_t *core, const char *file);
 R_API int r_core_cmd_command(struct r_core_t *core, const char *command);
 R_API boolt r_core_seek(struct r_core_t *core, ut64 addr, boolt rb);
+R_API void r_core_seek_previous (RCore *core, const char *type);
+R_API void r_core_seek_next (RCore *core, const char *type);
 R_API int r_core_seek_align(struct r_core_t *core, ut64 align, int count);
 R_API int r_core_block_read(struct r_core_t *core, int next);
 R_API int r_core_block_size(struct r_core_t *core, ut32 bsize);

@@ -10,6 +10,7 @@
 #include "r_bp.h"
 
 #include <sys/types.h>
+#include <ctype.h>
 #include <stdarg.h>
 #if HAVE_LIB_MAGIC
 #include <magic.h>
@@ -122,7 +123,7 @@ static char *filter_refline(const char *str) {
 	if (p) p[0]=p[1]=' ';
 	p = strstr (s, "=<");
 	if (p) p[0]=p[1]=' ';
-	for (p=s;*p;p++) {
+	for (p=s; *p; p++) {
 		if (*p=='`') *p = '|';
 		if (*p=='-') *p = ' ';
 		if (*p=='=') *p = '|';
@@ -131,7 +132,7 @@ static char *filter_refline(const char *str) {
 }
 
 /* TODO: move to print/disasm.c */
-static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
+static int r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
 	RAnalCC cc = {0};
 	RAnalFcn *f = NULL;
 	int ret, idx, i, j, k, lines, ostackptr = 0, stackptr = 0;
@@ -171,6 +172,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 	int cursor, nb, nbytes = r_config_get_i (core->config, "asm.nbytes");
 	int lbytes = r_config_get_i (core->config, "asm.lbytes");
 	int linesopts = 0;
+	int lastfail = 0;
 	const char *pre = "  ";
 	
 	nb = (nbytes*2);
@@ -231,14 +233,13 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 		line = r_anal_reflines_str (core->anal, core->reflines, at, linesopts);
 		refline = filter_refline (line);
 
-		if (show_functions)
-			f = r_anal_fcn_find (core->anal, at, R_ANAL_FCN_TYPE_NULL);
-		else f = NULL;
+		f = show_functions? r_anal_fcn_find (core->anal, at, R_ANAL_FCN_TYPE_NULL): NULL;
+
 		if (show_comments)
 		if ((comment = r_meta_get_string (core->anal->meta, R_META_TYPE_COMMENT, at))) {
-			r_cons_strcat (refline);
-			r_cons_strcat ("        ");
-			r_cons_strcat (comment);
+			if (show_color) r_cons_strcat (Color_TURQOISE);
+			r_cons_strcat_justify (comment, strlen (refline) + 10);
+			if (show_color) r_cons_strcat (Color_RESET);
 			free (comment);
 		}
 		// TODO : line analysis must respect data types! shouldnt be interpreted as code
@@ -247,8 +248,9 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			ret = 1;
 			//eprintf ("** invalid opcode at 0x%08"PFMT64x" **\n",
 			//	core->assembler->pc + ret);
+			lastfail = 1;
 			continue;
-		}
+		} else lastfail = 0;
 		if (core->inc == 0)
 			core->inc = ret;
 		r_anal_op (core->anal, &analop, at, buf+idx, (int)(len-idx));
@@ -381,7 +383,7 @@ static void r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len,
 			char *str, pad[64];
 			char extra[64];
 			strcpy (extra, " ");
-flag = NULL; // HACK
+			flag = NULL; // HACK
 			if (!flag) {
 				str = strdup (asmop.buf_hex);
 				if (r_str_ansi_len (str) > nb) {
@@ -394,7 +396,6 @@ flag = NULL; // HACK
 				}
 				k = nb-r_str_ansi_len (str);
 				if (k<0) k = 0;
-				if (lbytes && str[strlen (str)-1]!='.') k++;
 				for (j=0; j<k; j++)
 					pad[j] = ' ';
 				pad[j] = 0;
@@ -575,6 +576,7 @@ flag = NULL; // HACK
 		}
 	}
 	free (osl);
+	return idx-lastfail;
 }
 
 static int cmd_project(void *data, const char *input) {
@@ -1406,6 +1408,12 @@ static int cmd_seek(void *data, const char *input) {
 			r_core_block_read (core, 0);
 			r_io_sundo_push (core->io);
 			break;
+		case '/':
+			r_core_cmdf (core, ".%s ; ? %s0_0 ; ?! s %s0_0",
+				input, "hit", "hit");
+			eprintf (".%s ; ? %s0_0 ; ?! s %s0_0\n",
+				input, "hit", "hit");
+			break;
 		case '*':
 			r_io_sundo_list (core->io);
 			break;
@@ -1945,7 +1953,9 @@ static int cmd_print(void *data, const char *input) {
 				*input, input+2);
 		return R_FALSE;
 	}
-	switch (input[0]) {
+
+	core->num->value = len;
+	switch (*input) {
 	case '%':
 		{
 			ut64 off = core->io->off;
@@ -1995,11 +2005,14 @@ static int cmd_print(void *data, const char *input) {
 				ut8 *block = malloc (f->size+1);
 				if (block) {
 					r_core_read_at (core, f->addr, block, f->size);
-					r_print_disasm (core->print, core, f->addr, block, f->size, 9999);
+					core->num->value = r_print_disasm (core->print, core, f->addr, block, f->size, 9999);
 					free (block);
 				}
 			} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
-		} if (l<0) {
+		}
+		//if (core->visual)
+		//	l = core->cons->rows-core->cons->lines;
+		if (l<0) {
 			RList *bwdhits;
 			RListIter *iter;
 			RCoreAsmHit *hit;
@@ -2010,20 +2023,23 @@ static int cmd_print(void *data, const char *input) {
 				if (bwdhits) {
 					r_list_foreach (bwdhits, iter, hit) {
 						r_core_read_at (core, hit->addr, block, core->blocksize);
-						r_print_disasm (core->print, core, hit->addr, block, core->blocksize, l);
+						core->num->value = r_print_disasm (core->print, core, hit->addr, block, core->blocksize, l);
 						r_cons_printf ("------\n");
 					}
 					r_list_free (bwdhits);
 				}
 				free (block);
 			}
-		} else r_print_disasm (core->print, core, core->offset, core->block, len, l);
+		} else {
+			core->num->value = r_print_disasm (core->print, core, core->offset, core->block, len, l);
+		}
 		break;
 	case 's':
 		if (input[1]=='p') {
 			int mylen = core->block[0];
 			// TODO: add support for 2-4 byte length pascal strings
 			r_print_string (core->print, core->offset, core->block+1, mylen, 0, 1, 0); //, 78, 1);
+			core->num->value = mylen;
 		} else r_print_string (core->print, core->offset, core->block, len, 0, 1, 0); //, 78, 1);
 		break;
 	case 'S':
@@ -3220,6 +3236,7 @@ static int cmd_search(void *data, const char *input) {
 	//RIOSection *section;
 	int i, len, ret, dosearch = R_FALSE;
 	int aes_search = R_FALSE;
+	int ignorecase = R_FALSE;
 	ut32 n32;
 	ut8 *buf;
 
@@ -3295,7 +3312,7 @@ static int cmd_search(void *data, const char *input) {
 			int len = strlen (input+2);
 			const char *p2;
 			char *p, *str = malloc ((len+1)*2);
-			for (p2=input+2,p=str; *p2; p+=2, p2++) {
+			for (p2=input+2, p=str; *p2; p+=2, p2++) {
 				p[0] = *p2;
 				p[1] = 0;
 			}
@@ -3308,8 +3325,17 @@ static int cmd_search(void *data, const char *input) {
 			dosearch = R_TRUE;
 		}
 		break;
+	case 'i':
+		if (input[1]!= ' ') {
+			eprintf ("Missing ' ' after /i\n");
+			return R_FALSE;
+		}
+		ignorecase = R_TRUE;
 	case ' ': /* search string */
-		inp = strdup (input+1);
+		inp = strdup (input+1+ignorecase);
+		if (ignorecase)
+			for (i=1; inp[i]; i++)
+				inp[i] = tolower (inp[i]);
 		len = r_str_escape (inp);
 		eprintf ("Searching %d bytes: ", len);
 		for (i=0; i<len; i++) eprintf ("%02x ", inp[i]);
@@ -3342,6 +3368,9 @@ static int cmd_search(void *data, const char *input) {
 		free (inp);
 		free (opt);
 		}
+		break;
+	case '!':
+		eprintf ("TODO\n");
 		break;
 	case 'x': /* search hex */
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
@@ -3390,6 +3419,8 @@ static int cmd_search(void *data, const char *input) {
 		"Usage: /[amx/] [arg]\n"
 		" / foo\\x00       ; search for string 'foo\\0'\n"
 		" /w foo          ; search for wide string 'f\\0o\\0o\\0'\n"
+		" /! ff           ; search for first occurrence not matching\n"
+		" /i foo          ; search for string 'foo' ignoring case\n"
 		" /e /E.F/i       ; match regular expression\n"
 		" /x ff0033       ; search for hex string\n"
 		" /c jmp [esp]    ; search for asm code (see search.asmstr)\n"
@@ -3409,7 +3440,9 @@ static int cmd_search(void *data, const char *input) {
 		" e search.asmstr = 0   ; search string instead of assembly\n");
 		break;
 	}
+	r_config_set_i (core->config, "search.kwidx", core->search->n_kws);
 	if (dosearch) {
+
 		searchcount = r_config_get_i (core->config, "search.count");
 		if (searchcount)
 			searchcount++;
@@ -3432,6 +3465,11 @@ static int cmd_search(void *data, const char *input) {
 				if (r_cons_singleton ()->breaked)
 					break;
 				ret = r_io_read_at (core->io, at, buf, core->blocksize);
+				if (ignorecase) {
+					int i;
+					for (i=0; i<core->blocksize; i++)
+						buf[i] = tolower (buf[i]);
+				}
 				if (ret != core->blocksize)
 					break;
 				if (aes_search) {
@@ -3755,17 +3793,36 @@ static int cmd_meta(void *data, const char *input) {
 	case 'f': /* formatted */
 		switch (input[1]) {
 		case '-':
-			if (input[2]==' ')
+			switch (input[2]) {
+			case '*':
+				core->num->value = r_meta_del (core->anal->meta, input[0], 0, UT64_MAX, NULL);
+				break;
+			case ' ':
 				addr = r_num_math (core->num, input+3);
-			r_meta_del (core->anal->meta, input[0], addr, addr+1, NULL);
+			default:
+				core->num->value = r_meta_del (core->anal->meta, input[0], addr, addr+1, NULL);
+				break;
+			}
 			break;
 		case '\0':
 		case '*':
 			r_meta_list (core->anal->meta, input[0]);
 			break;
+		case '!':
+			{
+				char *out, *comment = r_meta_get_string (core->anal->meta, R_META_TYPE_COMMENT, addr);
+				out = r_core_editor (core, comment);
+				//r_meta_add (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
+				r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
+				//r_meta_del (core->anal->meta, input[0], addr, addr+1, NULL);
+				r_meta_set_string (core->anal->meta, R_META_TYPE_COMMENT, addr, out);
+				free (out);
+				free (comment);
+			}
+			break;
 		default: {
 			char *t, *p, name[128];
-			int type = input[0];
+			int n, type = input[0];
 			t = strdup (input+2);
 			p = strchr (t, ' ');
 			if (p) {
@@ -3784,9 +3841,11 @@ static int cmd_meta(void *data, const char *input) {
 				else sprintf (name, "ptr_%08"PFMT64x"", addr);
 				}
 			}
-			addr_end = addr + atoi (input+1);
-			free (t);
+			n = atoi (input+1);
+			if (n==0) n = 1;
+			addr_end = addr + n;
 			r_meta_add (core->anal->meta, type, addr, addr_end, name);
+			free (t);
 			}
 		}
 		break;
@@ -3860,7 +3919,7 @@ static int cmd_meta(void *data, const char *input) {
 		" C*                     # List meta info in r2 commands\n"
 		" C-[@][ addr]           # delete metadata at given address\n"
 		" CL[-] [addr]           # show 'code line' information (bininfo)\n"
-		" CC [string]            # add comment\n"
+		" CC[-] [size] [string]  # add/remove comment. Use CC! to edit with $EDITOR\n"
 		" Cv[-] offset reg name  # add var substitution\n"
 		" Cs[-] [size] [[addr]]  # add string\n"
 		" Cd[-] [size]           # hexdump data\n"

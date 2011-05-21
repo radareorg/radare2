@@ -3,6 +3,7 @@
 #include "r_core.h"
 
 #define NPF 6
+static int blocksize = 0;
 static int printidx = 0;
 static const char *printfmt[] = { "x", "pd", "f tmp&&sr sp&&x 64&&dr=&&s-&&s tmp&&f-tmp&&pd", "p8", "pc", "ps" };
 static int autoblocksize = 1;
@@ -26,6 +27,16 @@ static void r_core_visual_mark(RCore *core, ut8 ch) {
 		marks_init = 1;
 	}
 	marks[ch] = core->offset;
+}
+
+static void visual_prompt (RCore *core) {
+	char buf[1024];
+	ut64 oseek = core->offset;
+	r_line_set_prompt (":> ");
+	r_cons_fgets (buf, sizeof (buf), 0, NULL);
+	r_core_cmd (core, buf, 0);
+	r_cons_any_key ();
+	if (curset) r_core_seek (core, oseek, 1);
 }
 
 static void r_core_visual_mark_seek(RCore *core, ut8 ch) {
@@ -54,7 +65,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 	int hit, i, j, ch;
 
 	for (;;) {
-		r_cons_gotoxy (0,0);
+		r_cons_gotoxy (0, 0);
 		r_cons_clear ();
 
 		if (menu) {
@@ -336,7 +347,7 @@ R_API void r_core_visual_config(RCore *core) {
 				if (old[0]=='\0') {
 					r_str_ccpy (old, bt->name, '.');
 					show = 1;
-				} else if (r_str_ccmp(old, bt->name, '.')) {
+				} else if (r_str_ccmp (old, bt->name, '.')) {
 					r_str_ccpy (old, bt->name, '.');
 					show = 1;
 				} else show = 0;
@@ -502,8 +513,22 @@ static void var_index_show(RAnal *anal, RAnalFcn *fcn, ut64 addr, int idx) {
 }
 
 // helper
-static ut64 var_functions_show(RCore *core, int idx) {
-	const char *mark = "";//nullstr;
+static void function_rename(RCore *core, ut64 addr, const char *name) {
+	RListIter *iter;
+	RAnalFcn *fcn;
+
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		if (fcn->addr == addr) {
+			r_flag_unset (core->flags, fcn->name);
+			free (fcn->name);
+			fcn->name = strdup (name);
+			r_flag_set (core->flags, name, addr, fcn->size, 0);
+			break;
+		}
+	}
+}
+
+static ut64 var_functions_show(RCore *core, int idx, int show) {
 	int i = 0;
 	ut64 seek = core->offset;
 	ut64 addr = core->offset;
@@ -518,13 +543,14 @@ static ut64 var_functions_show(RCore *core, int idx) {
 				r_cons_printf("...\n");
 				break;
 			}
-			if (seek > fcn->addr && seek < fcn->addr+fcn->size)
-				mark = "<SEEK IS HERE>";
-			else mark = "";
+			//if (seek >= fcn->addr && seek <= fcn->addr+fcn->size)
 			if (idx == i)
 				addr = fcn->addr;
-			r_cons_printf (" %c 0x%08llx (%s) %s\n", (idx==i)?'*':' ',
-				fcn->addr, fcn->name, mark);
+			if (show)
+				r_cons_printf ("%c%c 0x%08llx (%s)\n", 
+					(seek == fcn->addr)?'>':' ',
+					(idx==i)?'*':' ',
+					fcn->addr, fcn->name);
 		}
 		i++;
 	}
@@ -536,7 +562,7 @@ R_API void r_core_visual_anal(RCore *core) {
 	int option = 0;
 	int _option = 0;
 	int ch, level = 0;
-	char old[1024];
+	char old[1024], *oprofile;
 	ut64 size, addr = core->offset;
 	old[0]='\0';
 	RAnalFcn *fcn = r_anal_fcn_find (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
@@ -545,19 +571,29 @@ R_API void r_core_visual_anal(RCore *core) {
 		r_cons_gotoxy (0,0);
 		r_cons_clear ();
 		r_cons_printf ("Visual code analysis manipulation\n");
+
+		if (!level)
+			addr = var_functions_show (core, option, 0);
+
+		oprofile = strdup (r_config_get (core->config, "asm.profile"));
+		r_config_set (core->config, "asm.profile", "simple");
+		r_core_cmdf (core, "pd @ 0x%"PFMT64x":32", addr);
+		r_config_set (core->config, "asm.profile", oprofile);
+
+		r_cons_column (32);
 		switch (level) {
 		case 0:
-			r_cons_printf ("-[ functions ]------------------- \n"
-				"(a) add       (x)xrefs       (q)quit\n"
-				"(m) modify    (c)calls       (g)go\n"
-				"(d) delete    (v)variables\n");
-			addr = var_functions_show (core, option);
+			r_cons_printf ("-[ functions ]---------------- \n"
+				"(a) add     (x)xrefs    (q)quit\n"
+				"(m) modify  (c)calls    (g)go\n"
+				"(d) delete  (v)variables\n");
+			addr = var_functions_show (core, option, 1);
 			break;
 		case 1:
-			r_cons_printf ("-[ variables ]------------------- 0x%08llx\n"
-				"(a) add       (x)xrefs       (q)quit\n"
-				"(m) modify    (c)calls       (g)go\n"
-				"(d) delete    (v)variables\n", addr);
+			r_cons_printf ("-[ variables ]---------------- 0x%08llx\n"
+				"(a) add     (x)xrefs     (q)quit\n"
+				"(m) modify  (c)calls     (g)go\n"
+				"(d) delete  (v)variables\n", addr);
 			var_index_show (core->anal, fcn, addr, option);
 			break;
 		case 2:
@@ -580,9 +616,14 @@ R_API void r_core_visual_anal(RCore *core) {
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
+		case ':':
+			visual_prompt (core);
+			continue;
 		case 'a':
 			switch (level) {
 			case 0:
+eprintf ("TODO: Add new function manually\n");
+/*
 				r_cons_set_raw (R_FALSE);
 				r_line_set_prompt ("Address: ");
 				if (!r_cons_fgets (old, sizeof (old), 0, NULL)) break;
@@ -601,10 +642,20 @@ R_API void r_core_visual_anal(RCore *core) {
 				//XXX sprintf(cmd, "CF %lld @ 0x%08llx", size, addr);
 				// XXX r_core_cmd0(core, cmd);
 				r_cons_set_raw (R_TRUE);
+*/
 				break;
 			case 1:
 				break;
 			}
+			break;
+		case 'm':
+			r_cons_set_raw (R_FALSE);
+			r_line_set_prompt ("New name: ");
+			if (!r_cons_fgets (old, sizeof (old), 0, NULL)) break;
+			//old[strlen (old)-1] = 0;
+			function_rename (core, addr, old);
+		
+			r_cons_set_raw (R_TRUE);
 			break;
 		case 'd':
 			switch (level) {
@@ -655,10 +706,15 @@ R_API void r_core_visual_anal(RCore *core) {
 }
 #endif
 
-static void visual_next_foo (RCore *core) {
+R_API void r_core_seek_next(RCore *core, const char *type) {
 	RListIter *iter;
 	ut64 next = UT64_MAX;
-	const char *type = r_config_get (core->config, "scr.fkey");
+	if (strstr (type, "opc")) {
+		RAnalOp aop;
+		if (r_anal_op (core->anal, &aop, core->offset, core->block, core->blocksize))
+			next = core->offset + aop.length;
+		else eprintf ("Invalid opcode\n");
+	} else
 	if (strstr (type, "fun")) {
 		RAnalFcn *fcni;
 		r_list_foreach (core->anal->fcns, iter, fcni) {
@@ -685,10 +741,12 @@ static void visual_next_foo (RCore *core) {
 		r_core_seek (core, next, 1);
 }
 
-static void visual_previous_foo (RCore *core) {
+R_API void r_core_seek_previous (RCore *core, const char *type) {
 	RListIter *iter;
 	ut64 next = 0;
-	const char *type = r_config_get (core->config, "scr.fkey");
+	if (strstr (type, "opc")) {
+		eprintf ("TODO: r_core_seek_previous (opc)\n");
+	} else
 	if (strstr (type, "fun")) {
 		RAnalFcn *fcni;
 		r_list_foreach (core->anal->fcns, iter, fcni) {
@@ -765,7 +823,7 @@ R_API void r_core_visual_define (RCore *core) {
 R_API int r_core_visual_cmd(RCore *core, int ch) {
 	RAsmOp op;
 	char buf[4096];
-	int cols = core->print->cols;
+	int i, cols = core->print->cols;
 	ch = r_cons_arrow_to_hjkl (ch);
 
 	// do we need hotkeys for data references? not only calls?
@@ -792,10 +850,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_print_set_flags (core->print, flags);
 		break;
 	case 'f':
-		visual_next_foo (core);
+		r_core_seek_next (core, r_config_get (core->config, "scr.fkey"));
 		break;
 	case 'F':
-		visual_previous_foo (core);
+		r_core_seek_previous (core, r_config_get (core->config, "scr.fkey"));
 		break;
 	case 'a':
 		r_cons_printf ("Enter assembler opcodes separated with ';':\n");
@@ -892,7 +950,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'j':
 		if (curset) {
 			if (printidx == 1 || printidx == 2)
-				cols = r_asm_disassemble (core->assembler, &op, core->block, 32);
+				cols = r_asm_disassemble (core->assembler, &op, core->block+cursor, 32);
 			cursor += cols;
 			ocursor = -1;
 			{
@@ -931,7 +989,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'k':
 		if (curset) {
 			if (printidx == 1 || printidx == 2)
-				cols = r_asm_disassemble (core->assembler, &op, core->block, 32);
+				cols = 4; //r_asm_disassemble (core->assembler, &op, core->block, 32);
 			cursor -= cols;
 			ocursor = -1;
 			if (cursor<0) {
@@ -1056,32 +1114,44 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case '.':
 		r_core_cmd (core, "sr pc", 0); // XXX
 		break;
-	case ':': {
-		ut64 oseek = core->offset;
-		r_line_set_prompt (":> ");
-		r_cons_fgets (buf, sizeof (buf), 0, NULL);
-		r_core_cmd (core, buf, 0);
-		r_cons_any_key ();
-		if (curset) r_core_seek (core, oseek, 1);
-		}
+	case 'n':
+		r_core_seek (core, core->offset + (core->num->value/4), 1);
+		break;
+	case 'N':
+		r_core_seek (core, core->offset - (core->num->value/4), 1);
+		break;
+	case ':':
+		visual_prompt (core);
 		break;
 	case ';':
-		r_cons_printf ("Enter a comment: (prefix it with '-' to remove)\n");
+		r_cons_printf ("Enter a comment: ('-' to remove, '!' to use $EDITOR)\n");
 		r_cons_flush ();
 		r_cons_set_raw (R_FALSE);
 		strcpy (buf, "CC 0 ");
 		r_line_set_prompt ("comment: ");
-		if (r_cons_fgets (buf+5, 1000, 0, NULL) <0)
-			buf[0]='\0';
-		if (buf[0]) {
-			if (curset) r_core_seek (core, core->offset + cursor, 0);
+		i = strlen (buf);
+		if (r_cons_fgets (buf+i, sizeof (buf)-i-1, 0, NULL) >1) {
+			ut64 orig = core->offset;
+			ut64 addr = core->offset;
+			if (curset) {
+				addr += cursor;
+				r_core_seek (core, addr, 0);
+			}
+			switch (buf[i]) {
+			case '-':
+				strcpy (buf, "CC-");
+				break;
+			case '!':
+				strcpy (buf, "CC!");
+				break;
+			}
 			r_core_cmd (core, buf, 1);
-			if (curset) r_core_seek (core, core->offset - cursor, 1);
+			if (curset) r_core_seek (core, orig, 1);
 		}
 		r_cons_set_raw (R_TRUE);
 		break;
 	case 'B':
-		autoblocksize = autoblocksize?0:1;
+		autoblocksize = !autoblocksize;
 		if (autoblocksize)
 			obs = core->blocksize;
 		else r_core_block_size (core, obs);
@@ -1118,7 +1188,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" d[f?]   - define function, data, code, ..\n"
 		" x       - find xrefs for current offset\n"
 		" sS      - step / step over\n"
-		" t       - track flags (browse symbols, functions..\n"
+		" e       - edit eval configuration variables\n"
+		" t       - track flags (browse symbols, functions..)\n"
+		" v       - visual code analysis menu\n"
 		" fF      - seek next/prev function/flag/hit (scr.fkey)\n"
 		" B       - toggle automatic block size\n"
 		" uU      - undo/redo seek\n"
@@ -1157,9 +1229,9 @@ R_API void r_core_visual_prompt(RCore *core, int color) {
 		break;
 	}
 
-	if (core->file && core->file->filename) {
+	if (core->file && core->file->filename)
 		filename = core->file->filename;
-	} else filename = "";
+	else filename = "";
 
 	if (cursor<0) cursor = 0;
 	if (color) r_cons_strcat (Color_YELLOW);
@@ -1182,10 +1254,9 @@ static void r_core_visual_refresh (RCore *core) {
 	vi = r_config_get (core->config, "cmd.vprompt");
 	if (vi) r_core_cmd (core, vi, 0);
 
-	if (zoom)
-		r_core_cmd (core, "pZ", 0);
-	else
-		r_core_cmd (core, printfmt[R_ABS (printidx%NPF)], 0);
+	if (zoom) r_core_cmd (core, "pZ", 0);
+	else r_core_cmd (core, printfmt[R_ABS (printidx%NPF)], 0);
+	blocksize = core->num->value? core->num->value : core->blocksize;
 	r_cons_visual_flush ();
 }
 
@@ -1195,6 +1266,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	int ch;
 	obs = core->blocksize;
 
+	core->visual = R_TRUE;
 	r_cons_singleton ()->data = core;
 	r_cons_singleton ()->event_resize = (RConsEvent)r_core_visual_refresh;
 	r_cons_set_cup (R_TRUE);
@@ -1240,5 +1312,6 @@ R_API int r_core_visual(RCore *core, const char *input) {
 		r_core_block_size (core, obs);
 	r_cons_singleton ()->teefile = teefile;
 	r_cons_set_cup (R_FALSE);
+	core->visual = R_FALSE;
 	return 0;
 }

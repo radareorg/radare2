@@ -31,6 +31,22 @@ static inline void r_cons_write (const char *buf, int len) {
 #endif
 }
 
+R_API void r_cons_strcat_justify (const char *str, int j) {
+	int i, o, len;
+	for (o=i=len=0; str[i]; i++, len++) {
+		if (str[i]=='\n') {
+			r_cons_memset (' ', j);
+			r_cons_memcat (str+o, len);
+			if (str[o+len] == '\n')
+				r_cons_newline ();
+			o = i+1;
+			len = 0;
+		}
+	}
+	if (len>1)
+		r_cons_memcat (str+o, len);
+}
+
 R_API RCons *r_cons_singleton () {
 	return &I;
 }
@@ -306,6 +322,14 @@ R_API void r_cons_memcat(const char *str, int len) {
 	}
 }
 
+R_API void r_cons_memset(char ch, int len) {
+	if (len>0) {
+		palloc (len+1);
+		memset (I.buffer+I.buffer_len, ch, len+1);
+		I.buffer_len += len;
+	}
+}
+
 R_API void r_cons_strcat(const char *str) {
 	int len = strlen (str);
 	if (len>0)
@@ -396,4 +420,13 @@ R_API void r_cons_set_cup(int enable) {
 #else
 	/* not supported ? */
 #endif
+}
+
+R_API void r_cons_column(int c) {
+	char *b = malloc (I.buffer_len);
+	memcpy (b, I.buffer, I.buffer_len);
+	r_cons_reset ();
+	// align current buffer N chars right
+	r_cons_strcat_justify (b, c);
+	r_cons_gotoxy (0, 0);
 }

@@ -510,6 +510,7 @@ R_API RMeta *r_meta_new();
 R_API void r_meta_free(RMeta *m);
 R_API int r_meta_count(RMeta *m, int type, ut64 from, ut64 to);
 R_API char *r_meta_get_string(RMeta *m, int type, ut64 addr);
+R_API int r_meta_set_string(RMeta *m, int type, ut64 addr, const char *s);
 R_API int r_meta_del(RMeta *m, int type, ut64 from, ut64 size, const char *str);
 R_API int r_meta_add(RMeta *m, int type, ut64 from, ut64 size, const char *str);
 R_API struct r_meta_item_t *r_meta_find(RMeta *m, ut64 off, int type, int where);

@@ -259,6 +259,7 @@ static const char *r_core_print_offname(void *p, ut64 addr) {
 R_API int r_core_init(RCore *core) {
 	static int singleton = R_TRUE;
 	core->rtr_n = 0;
+	core->visual = R_FALSE;
 	core->ffio = 0;
 	core->oobi = NULL;
 	core->oobi_len = 0;
@@ -730,4 +731,19 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 		from += len;
 	}
 	return R_TRUE;
+}
+
+R_API char *r_core_editor (RCore *core, const char *str) {
+	char *name, *ret;
+	int len, fd = r_file_mkstemp ("r2editor", &name);
+	if (fd == -1)
+		return NULL;
+	if (str) write (fd, str, strlen (str));
+	close (fd);
+	r_sys_cmdf ("%s %s", r_config_get (core->config, "cfg.editor"), name);
+	ret = r_file_slurp (name, &len);
+	ret[len-1] = 0; // chop
+	r_file_rm (name);
+	free (name);
+	return ret;
 }

@@ -194,7 +194,7 @@ R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 			r_hashtable_insert (cfg->ht, node->hash, node);
 			r_list_append (cfg->nodes, node);
 			cfg->n_nodes++;
-		} else eprintf ("(locked: no new keys can be created)");
+		} else eprintf ("(locked: no new keys can be created)\n");
 	}
 
 	if (node && node->callback) {

@@ -167,10 +167,12 @@ R_API void r_cons_set_raw(int b);
 /* output */
 R_API void r_cons_printf(const char *format, ...);
 R_API void r_cons_strcat(const char *str);
+R_API void r_cons_strcat_justify (const char *str, int j);
 R_API void r_cons_memcat(const char *str, int len);
 R_API void r_cons_newline();
 R_API void r_cons_filter();
 R_API void r_cons_flush();
+R_API void r_cons_memset(char ch, int len);
 R_API void r_cons_visual_flush();
 R_API void r_cons_visual_write (char *buffer);
 
@@ -196,6 +198,7 @@ R_API int r_cons_grepbuf(char *buf, int len);
 R_API void r_cons_invert(int set, int color);
 R_API int r_cons_yesno(int def, const char *fmt, ...);
 R_API void r_cons_set_cup(int enable);
+R_API void r_cons_column(int c);
 #endif
 
 #endif

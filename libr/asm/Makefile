@@ -19,6 +19,6 @@ re:
 	sudo ${MAKE} install
 
 plugins:
-	cd p && ${MAKE} all
+	@cd p && ${MAKE} all
 
 include ../rules.mk

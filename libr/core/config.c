@@ -2,6 +2,15 @@
 
 #include <r_core.h>
 
+static int config_scrfkey_callback(void *user, void *data) {
+	RConfigNode *node = (RConfigNode*) data;
+	if (!strcmp (node->value, "help") || *node->value == '?') {
+		r_cons_printf ("scr.fkey = fun, hit, flag\n");
+		return R_FALSE;
+	}
+	return R_TRUE;
+}
+
 static int config_scrcols_callback(void *user, void *data) {
 	int c = R_MIN (128, R_MAX (((RConfigNode*)data)->i_value, 0));
 	((RCore *)user)->print->cols = c & ~1;
@@ -133,8 +142,8 @@ static int config_asmsyntax_callback(void *user, void *data) {
 
 static int asm_profile(RConfig *cfg, const char *profile) {
 	// TODO: Do a cleanup on those configurations
-	if (!strcmp(profile, "help")) {
-		eprintf("Available asm.profile:\n"
+	if (!strcmp (profile, "help") || *profile == '?') {
+		r_cons_printf ("Available asm.profile:\n"
 			" default, gas, smart, graph, debug, full, simple\n");
 		return R_FALSE;
 	} else if (!strcmp (profile, "default")) {
@@ -339,6 +348,7 @@ static int config_color_callback(void *user, void *data) {
 
 R_API int r_core_config_init(RCore *core) {
 	RConfig *cfg = cfg = core->config = r_config_new (core);
+	const char *p;
 	cfg->printf = r_cons_printf;
 
 	r_config_set (cfg, "dir.plugins", LIBDIR"/radare2/"R2_VERSION"/");
@@ -396,6 +406,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "dbg.trace", "true", &config_trace_callback);
 	r_config_set_cb (cfg, "dbg.trace.tag", "0xff", &config_tracetag_callback);
 	r_config_set_cb (cfg, "fs.view", "normal", &config_fsview_callback);
+	p = r_sys_getenv ("EDITOR");
+	r_config_set (cfg, "cfg.editor", p? p: "vi");
 	r_config_set (cfg, "cmd.hit", "");
 	r_config_set (cfg, "cmd.open", "");
 	r_config_set (cfg, "cmd.prompt", "");
@@ -406,7 +418,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "scr.color",
 		(core->print->flags&R_PRINT_FLAGS_COLOR)?"true":"false",
 		&config_color_callback);
-	r_config_set (cfg, "scr.fkey", "function");
+	r_config_set_cb (cfg, "scr.fkey", "function", &config_scrfkey_callback);
 	r_config_set (cfg, "scr.seek", "");
 	r_config_set_i_cb (cfg, "scr.cols", 16, &config_scrcols_callback);
 	r_config_set_i (cfg, "search.count", 0);
