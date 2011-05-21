@@ -1209,7 +1209,7 @@ static int cmd_mount(void *data, const char *_input) {
 		" my             ; yank contents of file into clipboard\n"
 		" mo /foo        ; get offset and size of given file\n"
 		" mg /foo        ; get contents of file/dir dumped to disk (XXX?)\n"
-		" mf[o|n]        ; serach files for given filename or for offset\n"
+		" mf[o|n]        ; search files for given filename or for offset\n"
 		" md /           ; list directory contents for path\n"
 		" mp             ; list all supported partition types\n"
 		" mp msdos 0     ; show partitions in msdos format at offset 0\n"
@@ -1421,8 +1421,8 @@ static int cmd_seek(void *data, const char *input) {
 	if (input[0]=='r') {
 		if (input[1] && input[2]) {
 			off = r_debug_reg_get (core->dbg, input+2);
-			r_core_seek (core, off, 1);
 			r_io_sundo_push (core->io);
+			r_core_seek (core, off, 1);
 		} else eprintf ("Usage: 'sr pc' ; seek to register\n");
 	} else
 	if (input[0]) { // && input[1]) {
@@ -1432,9 +1432,9 @@ static int cmd_seek(void *data, const char *input) {
 			input = input+1;
 		switch (input[0]) {
 		case ' ':
+			r_io_sundo_push (core->io);
 			r_core_seek (core, off, 1);
 			r_core_block_read (core, 0);
-			r_io_sundo_push (core->io);
 			break;
 		case '/':
 			r_core_cmdf (core, ".%s ; ? %s0_0 ; ?! s %s0_0",
@@ -1447,7 +1447,8 @@ static int cmd_seek(void *data, const char *input) {
 			break;
 		case '+':
 			if (input[1]!='\0') {
-				if (input[1]=='+') delta = core->blocksize; else delta = off;
+				delta = (input[1]=='+')? core->blocksize: off;
+				r_io_sundo_push (core->io);
 				r_core_seek_delta (core, delta);
 			} else if (r_io_sundo_redo (core->io))
 				r_core_seek (core, core->io->off, 0);
@@ -1455,14 +1456,20 @@ static int cmd_seek(void *data, const char *input) {
 		case '-':
 			if (input[1]!='\0') {
 				if (input[1]=='-') delta = -core->blocksize; else delta = -off;
+				r_io_sundo_push (core->io);
 				r_core_seek_delta (core, delta);
-			} else if (r_io_sundo (core->io))
-				r_core_seek (core, core->io->off, 0);
+			} else {
+				if (r_io_sundo (core->io)) {
+					r_core_seek (core, core->io->off, 0);
+				} else eprintf ("Cannot undo\n");
+			}
 			break;
 		case 'f':
+			r_io_sundo_push (core->io);
 			r_core_seek_next (core, r_config_get (core->config, "scr.fkey"));
 			break;
 		case 'F':
+			r_io_sundo_push (core->io);
 			r_core_seek_previous (core, r_config_get (core->config, "scr.fkey"));
 			break;
 		case 'a':
@@ -1479,9 +1486,11 @@ static int cmd_seek(void *data, const char *input) {
 				r_cmd_call (core->cmd, cmd);
 				free (cmd);
 			}
+			r_io_sundo_push (core->io);
 			r_core_seek_align (core, off, 0);
 			break;
 		case 'b':
+			r_io_sundo_push (core->io);
 			r_core_anal_bb_seek (core, off);
 			break;
 		case '?':

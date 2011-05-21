@@ -56,11 +56,16 @@ R_API void r_io_sundo_push(RIO *io) {
 		r_io_section_offset_to_vaddr (io, io->off) : io->off;
 	if (!io->undo.s_enable)
 		return;
+#if 0
 	if (io->undo.seek[io->undo.idx-1] == off)
 		return;
+#endif
 	io->undo.seek[io->undo.idx] = off;
-	if (++io->undo.idx==R_IO_UNDOS-1)
+	io->undo.idx++;
+	if (io->undo.idx==R_IO_UNDOS-1) {
 		io->undo.idx--;
+		eprintf ("undo limit reached\n");
+	}
 	if (io->undo.limit<io->undo.idx)
 		io->undo.limit = io->undo.idx;
 }
@@ -73,9 +78,9 @@ R_API void r_io_sundo_list(struct r_io_t *io) {
 	int i;
 	if (io->undo.idx>0) {
 		io->printf ("f undo_idx @ %d\n", io->undo.idx);
-		for(i=io->undo.idx-1;i!=0;i--)
+		for (i=io->undo.idx;i!=0;i--)
 			io->printf ("f undo_%d @ 0x%"PFMT64x"\n",
-				io->undo.idx-1-i, io->undo.seek[i-1]);
+				io->undo.idx-i, io->undo.seek[i-1]);
 	} else eprintf("-no seeks done-\n");
 }
 
@@ -83,12 +88,11 @@ R_API void r_io_sundo_list(struct r_io_t *io) {
 
 R_API void r_io_wundo_new(struct r_io_t *io, ut64 off, const ut8 *data, int len) {
 	struct r_io_undo_w_t *uw;
-
 	if (!io->undo.w_enable)
 		return;
-
 	/* undo write changes */
 	uw = R_NEW(struct r_io_undo_w_t);
+	if (!uw) return;
 	uw->set = R_TRUE;
 	uw->off = off;
 	uw->len = len;
