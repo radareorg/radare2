@@ -168,9 +168,12 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 
 	// z -> Strings
 	if ((list = r_bin_get_strings (r->bin)) != NULL) {
-		if (r_list_length (list) > 1024) {
+/*
+// load all strings ALWAYS!! rhashtable is fast
+		if (r_list_length (list) > 102400) {
 			eprintf ("rabin2: too many strings. not importing string info\n");
 		} else {
+*/
 			r_flag_space_set (r->flags, "strings");
 			r_list_foreach (list, iter, string) {
 				/* Jump the withespaces before the string */
@@ -182,7 +185,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 				r_flag_set (r->flags, str, va?baddr+string->rva:string->offset,
 						string->size, 0);
 			}
-		}
+		//}
 	}
 
 	// i -> Imports

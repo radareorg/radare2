@@ -97,9 +97,9 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			r_cons_printf ("\n Selected: %s\n\n", fs2);
 
 			switch (format) {
-			case 0: sprintf (cmd, "px @ %s:128", fs2); printidx = 0; break;
-			case 1: sprintf (cmd, "pd 12 @ %s:128", fs2); printidx = 1; break;
-			case 2: sprintf (cmd, "ps @ %s:128", fs2); printidx = 5; break;
+			case 0: sprintf (cmd, "px @ %s:64", fs2); printidx = 0; break;
+			case 1: sprintf (cmd, "pd 12 @ %s:64", fs2); printidx = 1; break;
+			case 2: sprintf (cmd, "ps @ %s:64", fs2); printidx = 5; break;
 			default: format = 0; continue;
 			}
 			if (*cmd) r_core_cmd (core, cmd, 0);

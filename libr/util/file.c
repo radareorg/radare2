@@ -284,6 +284,13 @@ R_API void r_file_mmap_free (RMmap *m) {
 	free (m);
 }
 
+R_API char *r_file_temp (const char *prefix) {
+	const char *path = r_file_tmpdir ();
+	char *name = malloc (strlen (prefix) + strlen (path) +32);
+	sprintf (name, "%s/%s.%"PFMT64x, path, prefix, r_sys_now ());
+	return name;
+}
+
 R_API int r_file_mkstemp (const char *prefix, char **oname) {
 	int h;
 	const char *path = r_file_tmpdir ();

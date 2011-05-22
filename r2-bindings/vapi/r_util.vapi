@@ -36,12 +36,13 @@ namespace Radare {
 
 	[CCode (cheader_filename="r_util.h", lower_case_cprefix="r_file_")]
 	namespace RFile {
+		public static bool rm(string file);
+		public static string temp(string prefix);
 		public static string slurp(string file, out int osz=null);
 		public static string slurp_range(string file, uint64 off, int sz, out int osz=null);
 		public static int dump(string file, uint8 *buf, int len);
 		public static unowned string basename (string path);
 		public static string abspath(string path);
-		public static bool rm (string file);
 		public static bool exist (string file);
 		public static bool slurp_line (string file, int line, int ctx);
 		
