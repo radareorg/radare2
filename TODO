@@ -4,6 +4,8 @@
   |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
 
+* Analyze this opcode:
+      0x100005e52    0       ff2518130000     jmp qword [rip+0x1318]
 * x86/32-x86/64 the -e asm.bits should
 * Make r_io happy with RList
 * We need a 64 bit x86 assembler working!! nasm fails

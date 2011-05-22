@@ -13,7 +13,7 @@ int main() {
 		"fun and nasty bubble\n"
 		"so i can enjoy tha time\n"
 		"dudu du dudu dah\n"
-		, 10);
+		, 10, 0);
 
 	r_cons_flush();
 

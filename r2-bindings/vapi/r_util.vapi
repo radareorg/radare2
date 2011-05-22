@@ -154,7 +154,7 @@ public class Radare.RRange {
 
 	[Compact]
 	[CCode (cname="struct r_range_item_t", cprefix="r_range_item_")]
-	public static struct Item {
+	public struct Item {
 		public uint64 fr;
 		public uint64 to;
 		public uint8 *data;
