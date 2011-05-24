@@ -224,6 +224,7 @@ R_API void r_base64_encode(ut8 *bout, const ut8 *bin, int len);
 R_API int r_base64_decode(ut8 *bout, const ut8 *bin, int len);
 /* strings */
 #define r_str_write(x,y) write (x, y, strlen(y))
+R_API void r_str_cpy(char *dst, const char *src);
 R_API int r_str_bits (char *strout, const ut8 *buf, int len, const char *bitz);
 R_API int r_str_rwx(const char *str);
 R_API void r_str_subchr (char *s, int a, int b);

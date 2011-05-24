@@ -312,11 +312,11 @@ R_API char *r_str_chop(char *str) {
 	while (*str && iswhitechar (*str))
 		str = str + 1;
 		
-	len = strlen(str);
+	len = strlen (str);
 	
 	if (len>0)
-	for (ptr = str+len-1;ptr!=str;ptr = ptr - 1) {
-		if (iswhitechar (ptr[0])) 
+	for (ptr = str+len-1; ptr!=str; ptr--) {
+		if (iswhitechar (*ptr)) 
 			*ptr = '\0';
 		else break;
 	}	       
@@ -325,25 +325,23 @@ R_API char *r_str_chop(char *str) {
 
 R_API char *r_str_trim_head(char *str) {
 	if (str)
-		while (*str && iswhitechar(*str)) 
+		while (*str && iswhitechar (*str)) 
 			str++;
 	return str;
 }
 
 R_API char *r_str_trim_tail(char *str) {
 	char *ptr = str;
-	if (str == NULL)
-		return NULL;
-	ptr += strlen(str)-1;
-	while ((ptr > str) && iswhitechar(*ptr)) {
+	if (str == NULL) return NULL;
+	if (!*str) return str;
+	ptr += strlen (str);
+	for (ptr--; (ptr > str) && iswhitechar (*ptr); ptr--)
 		*ptr = '\0';
-		ptr--;
-	}
 	return str;
 }
 
 R_API char *r_str_trim_head_tail(char *str) {
-	return r_str_trim_tail(r_str_trim_head(str));
+	return r_str_trim_tail (r_str_trim_head (str));
 }
 
 R_API char *r_str_trim(char *str) {
@@ -351,11 +349,18 @@ R_API char *r_str_trim(char *str) {
 	char *ptr;
 	if (str == NULL)
 		return NULL;
-	for (ptr=str, i=0;str[i];i++)
+	for (ptr=str, i=0;str[i]; i++)
 		if (!iswhitechar (str[i]))
 			*ptr++ = str[i];
 	*ptr='\0';
 	return str;
+}
+
+
+R_API void r_str_cpy(char *dst, const char *src) {
+	int i;
+	for (i=0; src[i]; i++)
+		dst[i] = src[i];
 }
 
 /* memccmp("foo.bar", "foo.cow, '.') == 0 */
@@ -697,6 +702,7 @@ R_API int r_str_glob (const char *str, const char *glob) {
 	}
 }
 
+// XXX: remove this limit .. use realloc
 #define MAXARG 128
 R_API char **r_str_argv(const char *_str, int *_argc) {
 	int argc = 0;

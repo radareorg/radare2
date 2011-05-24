@@ -94,8 +94,8 @@ static RList* classes (RBinArch *arch) {
 		return NULL;
 	ret->free = free;
 	for (i = 0; i < bin->header.class_size; i++) {
-		r_buf_read_at(bin->b, bin->header.class_offset, (ut8*)&entry,
-				bin->header.class_size * sizeof (struct dex_class_t));
+		r_buf_read_at (bin->b, (ut64) bin->header.class_offset, (ut8*)&entry,
+				sizeof (struct dex_class_t));
 		eprintf ("ut32 class_id = %08x;\n", entry.class_id);
 		eprintf ("ut32 access_flags = %08x;\n", entry.access_flags);
 		eprintf ("ut32 super_class = %08x;\n", entry.super_class);

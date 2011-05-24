@@ -375,8 +375,7 @@ static int r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, 
 			continue;
 		}
 		/* show cursor */
-		if (core->print->cur_enabled && 
-				cursor >= idx && cursor < (idx+asmop.inst_len))
+		if (core->print->cur_enabled && cursor >= idx && cursor < (idx+asmop.inst_len))
 			r_cons_printf ("* ");
 		else r_cons_printf ("  ");
 		if (show_bytes) {
@@ -1271,7 +1270,8 @@ static int cmd_yank(void *data, const char *input) {
 
 static int cmd_quit(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	switch (input[0]) {
+	if (input)
+	switch (*input) {
 	case '?':
 		r_cons_printf (
 		"Usage: q[!] [retvalue]\n"
@@ -4462,7 +4462,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		ocmd = cmd = malloc (len+8192);
 		if (ocmd == NULL)
 			return R_FALSE;
-		strcpy (cmd, cstr);
+		r_str_cpy (cmd, cstr);
 		cmd = r_str_trim_head_tail (cmd);
 
 		rep = atoi (cmd);

@@ -69,7 +69,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		r_cons_clear ();
 
 		if (menu) {
-			r_cons_printf ("\n Flags in flagspace '%s'. Press '?' for help.\n\n",
+			r_cons_printf ("Flags in flagspace '%s'. Press '?' for help.\n\n",
 			(core->flags->space_idx==-1)?"*":core->flags->spaces[core->flags->space_idx]);
 			hit = 0;
 			i = j = 0;
@@ -104,7 +104,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			}
 			if (*cmd) r_core_cmd (core, cmd, 0);
 		} else {
-			r_cons_printf ("\n Flag spaces:\n\n");
+			r_cons_printf ("Flag spaces:\n\n");
 			hit = 0;
 			for (j=i=0;i<R_FLAG_SPACES_MAX;i++) {
 				if (core->flags->spaces[i]) {
@@ -370,10 +370,10 @@ R_API void r_core_visual_config(RCore *core) {
 				option = j-1;
 				continue;
 			}
-			r_cons_printf("\n Sel:%s \n\n", fs);
+			r_cons_printf ("\n Sel:%s \n\n", fs);
 			break;
 		case 1: // flag selection
-			r_cons_printf("\n Eval variables: (%s)\n\n", fs);
+			r_cons_printf ("\n Eval variables: (%s)\n\n", fs);
 			hit = 0;
 			j = i = 0;
 			// TODO: cut -d '.' -f 1 | sort | uniq !!!
@@ -396,16 +396,16 @@ R_API void r_core_visual_config(RCore *core) {
 				continue;
 			}
 			if (fs2 != NULL)
-				r_cons_printf("\n Selected: %s\n\n", fs2);
+				r_cons_printf ("\n Selected: %s\n\n", fs2);
 		}
 
 		if (fs&&!memcmp (fs, "asm.", 4))
 			r_core_cmd (core, "pd 5", 0);
-		r_cons_flush();
-		ch = r_cons_readchar();
-		ch = r_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
+		r_cons_flush ();
+		ch = r_cons_readchar ();
+		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 
-		switch(ch) {
+		switch (ch) {
 		case 'j':
 			option++;
 			break;

@@ -1,4 +1,4 @@
-/* radare - Copyright 2009-2010 pancake+nibble */
+/* radare - Copyright 2009-2011 pancake+nibble */
 
 #include "r_core.h"
 #include "r_socket.h"

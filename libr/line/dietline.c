@@ -64,7 +64,7 @@ static int r_line_readchar() {
 R_API int r_line_hist_add(const char *line) {
 	if (I.history.top>=I.history.size)
 		I.history.top = I.history.index = 0; // workaround
-	if (*line) { // && I.history.index < I.history.size) {
+	if (line && *line) { // && I.history.index < I.history.size) {
 		I.history.data[I.history.top++] = strdup (line);
 		I.history.index = I.history.top;
 		return R_TRUE;

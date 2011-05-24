@@ -43,13 +43,13 @@ R_API void r_core_sysenv_end(RCore *core, const char *cmd) {
 R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	char buf[64], *ret;
 #if DISCUSS
-// EDITOR      cfg.editor (vim or so)
- CURSOR      cursor position (offset from curseek)
- COLOR       scr.color?1:0
- VERBOSE     cfg.verbose
-// only if cmd matches BYTES or BLOCK ?
- BYTES       hexpairs of current block
- BLOCK       temporally file with contents of current block
+	// EDITOR      cfg.editor (vim or so)
+	CURSOR      cursor position (offset from curseek)
+	COLOR       scr.color?1:0
+	VERBOSE     cfg.verbose
+	// only if cmd matches BYTES or BLOCK ?
+	BYTES       hexpairs of current block
+	BLOCK       temporally file with contents of current block
 #endif
 	if (!core->file)
 		return NULL;
@@ -75,21 +75,21 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 }
 
 R_API int r_core_bin_load(RCore *r, const char *file) {
-	RBinInfo *info;
-	RBinAddr *binmain;
-	RBinObj *obj;
-	RList *list;
-	RListIter *iter;
-	RBinAddr *entry;
+	int va = r->io->va || r->io->debug;
+	char str[R_FLAG_NAME_SIZE];
+	RBinSection *section;
 	RBinSymbol *symbol;
-	RBinReloc *reloc;
 	RBinString *string;
 	RBinImport *import;
-	RBinSection *section;
+	RBinAddr *binmain;
+	RBinReloc *reloc;
+	RListIter *iter;
+	RBinAddr *entry;
+	RBinInfo *info;
+	RBinObj *obj;
+	RList *list;
 	ut64 baddr;
-	int va = r->io->va || r->io->debug;
 	int i = 0;
-	char str[R_FLAG_NAME_SIZE];
 
 	if (file == NULL)
 		file = r->file->filename;
@@ -130,7 +130,8 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 					r->blocksize, 0);
 		}
 		/* Seek to the last entry point */
-		r_core_seek (r, va?baddr+entry->rva:entry->offset, 0);
+		if (entry)
+			r_core_seek (r, va?baddr+entry->rva:entry->offset, 0);
 	}
 
 	// s -> Symbols

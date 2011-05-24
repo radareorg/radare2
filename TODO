@@ -3,13 +3,31 @@
   |    <  V  . |  . V  .   <   _/ .-' _/|  ()  |
   |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
+CODENAME: #DRY
 
-* Proper support for MACH-O binaries
-* Analyze this opcode:
-      0x100005e52    0       ff2518130000     jmp qword [rip+0x1318]
-* x86/32-x86/64 the -e asm.bits should
-* Make r_io happy with RList
+[[ 0.8 ]] -- TODO
+* Tracing features for the debugger
 * We need a 64 bit x86 assembler working!! nasm fails
+* Proper support for MACH-O binaries
+  - rabin2 -f works? i think its used with '-a' 
+  - I think symbols are not correct .. (offset+disk)
+* If [0-9] keybindings in visual point to same address use same reference
+
+[[ 0.8 ]] -- BUGS to be fixed
+* Handle ^C in searches (at least)
+* Analyze this opcode: ff2518130000     jmp qword [rip+0x1318]
+
+[[ 0.8 ]] -- refactoring tasks
+* Make r_io happy with RList
+* Add r_cons_prompt () ... calling set_prompt + fgets -- this api needs cleanup
+  - set prompt, set line, fgets
+  - strict width in visual
+* Dupped javasm bin/asm
+* REFACTORING of disasm loop XDDDDD -1 (r2-0.8 plzz)
+  - arch dependent anal code must be removed from disasm loop +1
+
+
+------8<-------------------8<--------------------8<-----------------8<----------
 
 To wipe:
 ========
@@ -20,21 +38,13 @@ To wipe:
 
 To do:
 ======
-* Handle ^C in searches (at least)
 * libmagic internal :? -- find a decent implementation and adopt it
 * Ranged/scrollable zoom mode
-* Add r_cons_prompt () ... calling set_prompt + fgets -- this api needs cleanup
-  - strict width in visual
-* If [0-9] keybindings in visual point to same address use same reference
 * Honor string metadata for asmsteps ('jk' in visual)
-* Dupped javasm bin/asm
-* REFACTORING of disasm loop XDDDDD -1 (r2-0.8 plzz)
-  - arch dependent anal code must be removed from disasm loop +1
 
 pancake
 -------
 * check search multiple keywords and signatures
-* Visual disassembly cursor does not displays on scr.color=0
 * if console width > X place comments there (ash)
 * Implement BLOCK in r_core_sysenv_begin|end ()
 * Fix iterators for r_macro (test only?)
@@ -86,7 +96,7 @@ earada
 * p7 : 7bit encoding (sms)
 * Add print support for bitfields (pm b...)
 * Fix io_haret memory dump
-* r_socket
+* r_socket (already done?)
   - Add SSL support
   - http API in r_socket module
     - allow to get/post data/files with continue on plain/ssl

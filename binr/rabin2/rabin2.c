@@ -580,8 +580,7 @@ static int rabin_do_operation(const char *op) {
 			if (ptr2) {
 				if (!rabin_dump_symbols (r_num_math(NULL, ptr2)))
 					return R_FALSE;
-			} else 
-				if (!rabin_dump_symbols (0))
+			} else if (!rabin_dump_symbols (0))
 					return R_FALSE;
 		} else if (ptr[0]=='S') {
 			if (!ptr2)
@@ -751,8 +750,7 @@ int main(int argc, char **argv) {
 	if (action == ACTION_HELP || action == ACTION_UNK || file == NULL)
 		return rabin_show_help ();
 
-	if (!r_bin_load (bin, file, R_FALSE) &&
-		!r_bin_load (bin, file, R_TRUE)) {
+	if (!r_bin_load (bin, file, R_FALSE) && !r_bin_load (bin, file, R_TRUE)) {
 		eprintf ("r_bin: Cannot open '%s'\n", file);
 		return 1;
 	}
@@ -764,13 +762,13 @@ int main(int argc, char **argv) {
 			bits = r_num_math (NULL, ptr+1);
 		}
 	}
-	if (action&ACTION_LISTARCHS ||
-		((arch || bits || arch_name) &&
-		 !r_bin_set_arch (bin, arch, bits, arch_name))) {
-		r_bin_list_archs (bin);
-		free (arch);
-		r_bin_free (bin);
-		return 1;
+	if (action & ACTION_LISTARCHS && (arch || bits || arch_name)) {
+		if (!r_bin_set_arch (bin, arch, bits, arch_name)) {
+			r_bin_list_archs (bin);
+			free (arch);
+			r_bin_free (bin);
+			return 1;
+		}
 	}
 
 	if (action&ACTION_SECTIONS)
@@ -796,7 +794,7 @@ int main(int argc, char **argv) {
 	if (action&ACTION_SRCLINE)
 		rabin_show_srcline(at);
 	if (action&ACTION_EXTRACT)
-		rabin_extract ((arch==NULL&&arch_name==NULL&&bits==0));
+		rabin_extract ((arch==NULL && arch_name==NULL && bits==0));
 	if (op != NULL && action&ACTION_OPERATION)
 		rabin_do_operation (op);
 
