@@ -361,6 +361,7 @@ R_API void r_str_cpy(char *dst, const char *src) {
 	int i;
 	for (i=0; src[i]; i++)
 		dst[i] = src[i];
+	dst[i] = 0;
 }
 
 /* memccmp("foo.bar", "foo.cow, '.') == 0 */

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2010 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2008-2011 nibble<.ds@gmail.com> */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -226,6 +226,8 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		eprintf ("Error: read (entry)\n");
 		return 0;
 	}
+	// TODO: Use arch to identify arch before memcmp's
+
 	// MIPS
 	/* get .got, calculate offset of main symbol */
 	if (!memcmp (buf, "\x21\x00\xe0\x03\x01\x00\x11\x04\x00\x00\x00\x00", 12)) {
@@ -242,7 +244,11 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 	// X86
 #if R_BIN_ELF64
-	if (!memcmp (buf+29, "\x48\xc7\xc7", 3))
+	if (!memcmp (buf, "\x49\x89\xd9", 3) && buf[156] == 0xe8) {// openbsd
+		return (ut64)((int)(buf[157+0]+(buf[157+1]<<8)+
+		(buf[157+2]<<16)+(buf[157+3]<<24)))+ entry + 156 + 5;
+	}
+	if (!memcmp (buf+29, "\x48\xc7\xc7", 3)) // linux
 		return (ut64)((int)(buf[29+3]+(buf[29+4]<<8)+
 		(buf[29+5]<<16)+(buf[29+6]<<24)))-bin->baddr;
 #else

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 */
+/* radare - LGPL - Copyright 2009-2011 */
 /*   nibble<.ds@gmail.com> */
 /*   pancake<nopcode.org> */
 
@@ -17,6 +17,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 
 	INIT_LIST_HEAD (&(list->list));
 
+end -= 8; // XXX Fix some segfaults when r_anal backends are buggy
 	/* analyze code block */
 	while (ptr<end) {
 		if (nlines != -1 && --nlines == 0)
@@ -26,16 +27,17 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 			break;
 		int dt = data_type(config.seek+bsz);
 		if (dt != DATA_FUN && dt != DATA_CODE) {
-			ut64 sz = data_size(config.seek+bsz);
+			ut64 sz = data_size (config.seek+bsz);
 			if (sz > 0) {
-				ptr= ptr +sz;
-				bsz=bsz+sz;
+				ptr += sz;
+				bsz += sz;
 				continue;
 			}
 		}
 #endif
 
 		addr += sz;
+		// This can segflauta if opcode length and buffer check fails
 		sz = r_anal_op (anal, &op, addr, ptr, (int)(end-ptr));
 		if (sz > 0) {
 			/* store data */
@@ -58,7 +60,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 			}
 		} else sz = 1;
 	__next:
-		ptr = ptr + sz;
+		ptr += sz;
 	}
 	return list;
 }
