@@ -78,8 +78,8 @@ R_API int r_debug_attach(RDebug *dbg, int pid) {
 			//dbg->pid = pid;
 			//dbg->tid = ret;
 			r_debug_select (dbg, pid, ret); //dbg->pid, dbg->tid);
-		} else if (pid != -1)
-			eprintf ("Cannot attach to this pid\n");
+		}// else if (pid != -1)
+		//	eprintf ("Cannot attach to this pid %d\n", pid);
 	} else eprintf ("dbg->attach = NULL\n");
 	return ret;
 }
