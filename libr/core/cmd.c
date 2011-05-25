@@ -1566,13 +1566,15 @@ static int cmd_print(void *data, const char *input) {
 
 	/* TODO: Change also blocksize for 'pd'.. */
 	if (input[0] && input[1]) {
-		l = (int) r_num_math (core->num, input+(input[1]==' '?2:3));
-		/* except disasm and memoryfmt (pd, pm) */
-		if (input[0] != 'd' && input[0] != 'm') {
-			if (l>0) len = l;
-			if (l>tbs) r_core_block_size (core, l);
-			l = len;
-		}
+		if (input[2]) {
+			l = (int) r_num_math (core->num, input+(input[1]==' '?2:3));
+			/* except disasm and memoryfmt (pd, pm) */
+			if (input[0] != 'd' && input[0] != 'm') {
+				if (l>0) len = l;
+				if (l>tbs) r_core_block_size (core, l);
+				l = len;
+			}
+		} else l = 0;
 	} else l = len;
 
 	i = r_config_get_i (core->config, "cfg.maxbsize");
