@@ -76,7 +76,7 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 		} else dbg->printf (fmt, item->name, value, "\n");
 		n++;
 	}
-	if (n>0 && rad==2 && (!((n+1)%cols)))
+	if (n>0 && rad==2 && ((n%cols)))
 		dbg->printf ("\n");
 	return n;
 }

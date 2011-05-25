@@ -558,7 +558,7 @@ static const char *r_debug_native_reg_profile(RDebug *dbg) {
 	"gpr	rip	.64	128	0\n"
 	"gpr	rflags	.64	136	0	c1p.a.zstido.n.rv\n"
 	"seg	cs	.64	144	0\n"
-	"gpr	ss	.64	152	0\n"
+	"seg	ss	.64	152	0\n"
 	"seg	ds	.64	160	0\n"
 	"seg	es	.64	168	0\n"
 	"seg	fs	.64	176	0\n"
