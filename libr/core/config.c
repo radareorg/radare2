@@ -351,6 +351,7 @@ R_API int r_core_config_init(RCore *core) {
 	const char *p;
 	cfg->printf = r_cons_printf;
 
+	r_config_set (cfg, "dir.source", "");
 	r_config_set (cfg, "dir.plugins", LIBDIR"/radare2/"R2_VERSION"/");
 	/* anal */
 	r_config_set_i (cfg, "anal.depth", 50); // XXX: warn if depth is > 50 .. can be problematic

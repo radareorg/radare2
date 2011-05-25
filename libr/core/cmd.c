@@ -3527,6 +3527,42 @@ static int cmd_meta(void *data, const char *input) {
 			break;
 		}
 		break;
+	case 'l':
+		{
+		int num;
+		char *f, *p, *line, buf[4096];
+		f = strdup (input +2);
+		p = strchr (f, ':');
+		if (p) {
+			*p=0;
+			num = atoi (p+1);
+			line = r_file_slurp_line (input+2, num, 0);
+			if (!line) {
+				const char *dirsrc = r_config_get (core->config, "dir.source");
+				if (dirsrc && *dirsrc) {
+					f = r_str_concat (strdup (dirsrc), f);
+					line = r_file_slurp_line (f, num, 0);
+					
+				}
+				if (!line) {
+					eprintf ("Cannot slurp file\n");
+					return R_FALSE;
+				}
+			}
+			p = strchr (p+1, ' ');
+			if (p) {
+				snprintf (buf, sizeof (buf), "CC %s:%d %s @ %s",
+					f, num, line, p+1);
+			} else {
+				snprintf (buf, sizeof (buf), "\"CC %s:%d %s\"",
+					f, num, line);
+			}
+			r_core_cmd0 (core, buf);
+			free (line);
+			free (f);
+		}
+		}
+		break;
 	case 'L': // debug information of current offset
 		ret = r_bin_meta_get_line (core->bin, core->offset, file, 1023, &line);
 		if (ret) {
@@ -3680,6 +3716,7 @@ static int cmd_meta(void *data, const char *input) {
 		" C*                     # List meta info in r2 commands\n"
 		" C- [len] [@][ addr]    # delete metadata at given address range\n"
 		" CL[-] [addr]           # show 'code line' information (bininfo)\n"
+		" Cl  file:line [addr]   # add comment with line information\n"
 		" CC[-] [size] [string]  # add/remove comment. Use CC! to edit with $EDITOR\n"
 		" Cv[-] offset reg name  # add var substitution\n"
 		" Cs[-] [size] [[addr]]  # add string\n"

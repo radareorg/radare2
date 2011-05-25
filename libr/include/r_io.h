@@ -213,6 +213,7 @@ R_API int r_io_accept(RIO *io, int fd);
 R_API int r_io_shift(RIO *io, ut64 start, ut64 end, st64 move);
 
 /* io/cache.c */
+R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to);
 R_API void r_io_cache_commit(RIO *io);
 R_API void r_io_cache_enable(RIO *io, int read, int write);
 R_API void r_io_cache_init(RIO *io);

@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com> */
 
 /* TODO:
- * -L [lib]  dlopen library and show address
+ * -L [lib]  dlopen library and show addr
  */
 
 #include <stdio.h>
@@ -91,7 +91,7 @@ static int rabin_show_entrypoints() {
 		if (rad) {
 			printf ("f entry%i @ 0x%08"PFMT64x"\n", i, va?baddr+entry->rva:entry->offset);
 			printf ("s entry%i\n", i);
-		} else printf ("address=0x%08"PFMT64x" offset=0x%08"PFMT64x" baddr=0x%08"PFMT64x"\n",
+		} else printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" baddr=0x%08"PFMT64x"\n",
 				baddr+entry->rva, entry->offset, baddr);
 		i++;
 	}
@@ -112,7 +112,7 @@ static int rabin_show_main() {
 		printf ("f main @ 0x%08"PFMT64x"\n", va?baddr+binmain->rva:binmain->offset);
 	} else {
 		eprintf ("[Main]\n");
-		printf ("address=0x%08"PFMT64x" offset=0x%08"PFMT64x"\n",
+		printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x"\n",
 			baddr+binmain->rva, binmain->offset);
 	}
 	return R_TRUE;
@@ -202,7 +202,7 @@ static int rabin_show_relocs() {
 
 	r_list_foreach (relocs, iter, reloc) {
 		if (rad) printf ("f reloc.%s @ 0x%08"PFMT64x"\n", reloc->name, va?baddr+reloc->rva:reloc->offset);
-		else printf ("sym=%02i address=0x%08"PFMT64x" offset=0x%08"PFMT64x" type=0x%08x %s\n",
+		else printf ("sym=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" type=0x%08x %s\n",
 				reloc->sym, baddr+reloc->rva, reloc->offset, reloc->type, reloc->name);
 		i++;
 	}
@@ -243,7 +243,7 @@ static int rabin_show_imports() {
 							va?baddr+import->rva:import->offset, import->size, import->name);
 				printf ("f imp.%s @ 0x%08"PFMT64x"\n",
 						import->name, va?baddr+import->rva:import->offset);
-			} else printf ("address=0x%08"PFMT64x" offset=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
+			} else printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
 						   "hint=%03"PFMT64d" bind=%s type=%s name=%s\n",
 						   baddr+import->rva, import->offset,
 						   import->ordinal, import->hint,  import->bind,
@@ -297,8 +297,8 @@ static int rabin_show_symbols() {
 				printf ("f sym.%s %"PFMT64d" 0x%08"PFMT64x"\n",
 						symbol->name, symbol->size,
 						va?baddr+symbol->rva:symbol->offset);
-			} else printf ("address=0x%08"PFMT64x" offset=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
-						   "forwarder=%s size=%"PFMT64d" bind=%s type=%s name=%s\n",
+			} else printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
+						   "forwarder=%s sz=%"PFMT64d" bind=%s type=%s name=%s\n",
 						   baddr+symbol->rva, symbol->offset,
 						   symbol->ordinal, symbol->forwarder,
 						   symbol->size, symbol->bind, symbol->type, 
@@ -334,8 +334,8 @@ static int rabin_show_strings() {
 				"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
 				string->string, string->size, va?baddr+string->rva:string->offset,
 				string->size, va?baddr+string->rva:string->offset);
-		} else printf ("address=0x%08"PFMT64x" offset=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
-			"size=%"PFMT64d" section=%s string=%s\n",
+		} else printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
+			"sz=%"PFMT64d" section=%s string=%s\n",
 			baddr+string->rva, string->offset,
 			string->ordinal, string->size,
 			section?section->name:"unknown", string->string);
@@ -389,8 +389,8 @@ static int rabin_show_sections() {
 					R_BIN_SCN_WRITABLE (section->srwx)?'w':'-',
 					R_BIN_SCN_EXECUTABLE (section->srwx)?'x':'-',
 					section->name,va?baddr+section->rva:section->offset);
-			} else printf ("idx=%02i address=0x%08"PFMT64x" offset=0x%08"PFMT64x" size=%"PFMT64d" vsize=%"PFMT64d" "
-				"privileges=%c%c%c%c name=%s\n",
+			} else printf ("idx=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
+				"perm=%c%c%c%c name=%s\n",
 				i, baddr+section->rva, section->offset, section->size, section->vsize,
 				R_BIN_SCN_SHAREABLE (section->srwx)?'s':'-',
 				R_BIN_SCN_READABLE (section->srwx)?'r':'-',
@@ -480,9 +480,9 @@ static int rabin_show_fields() {
 			r_name_filter (field->name, sizeof (field->name));
 			printf ("f header.%s @ 0x%08"PFMT64x"\n",
 					field->name, va?baddr+field->rva:field->offset);
-			printf ("[%02i] address=0x%08"PFMT64x" offset=0x%08"PFMT64x" name=%s\n",
+			printf ("[%02i] addr=0x%08"PFMT64x" off=0x%08"PFMT64x" name=%s\n",
 					i, baddr+field->rva, field->offset, field->name);
-		} else printf ("idx=%02i address=0x%08"PFMT64x" offset=0x%08"PFMT64x" name=%s\n",
+		} else printf ("idx=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" name=%s\n",
 					   i, baddr+field->rva, field->offset, field->name);
 		i++;
 	}
