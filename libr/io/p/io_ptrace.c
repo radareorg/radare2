@@ -37,23 +37,17 @@ static int __waitpid(int pid) {
 #define debug_write_raw(x,y,z) ptrace(PTRACE_POKEDATA, x, y, z)
 #endif
 
-static int debug_os_read_at(int pid, void *buf, int sz, ut64 addr) {
-	unsigned long words = sz / sizeof (long);
-	unsigned long last = sz % sizeof (long);
-	long x, lr, s = 0;
-
-	if (sz<0 || addr==-1)
-		return -1; 
-	for (x=0; x<words; x++) {
-		((long *)buf)[x] = debug_read_raw (pid,
-			(void *)(&((long*)(long)addr)[x]));
-		s += sizeof (s);
-	}
+static int debug_os_read_at(int pid, ut32 *buf, int sz, ut64 addr) {
+	ut32 words = sz / sizeof (ut32);
+	ut32 last = sz % sizeof (ut32);
+	ut32 x, lr, *at = (int*)(size_t)addr;
+	if (sz<1 || addr==UT64_MAX)
+		return -1;
+	for (x=0; x<words; x++)
+		buf[x] = debug_read_raw (pid, (void*)(at++));
 	if (last) {
-		lr = debug_read_raw (pid, &((long*)(long)addr)[x]);
-		if (lr == -1) // && errno)
-			return s;
-		memcpy (&((long *)buf)[x], &lr, last) ;
+		lr = debug_read_raw (pid, at);
+		memcpy (buf+x, &lr, last) ;
 	}
 	return sz; 
 }
@@ -61,26 +55,24 @@ static int debug_os_read_at(int pid, void *buf, int sz, ut64 addr) {
 static int __read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int len) {
 	ut64 addr = io->off;
 	memset (buf, '\xff', len); // TODO: only memset the non-readed bytes
-	return debug_os_read_at (RIOPTRACE_PID (fd), buf, len, addr);
+	return debug_os_read_at (RIOPTRACE_PID (fd), (ut32*)buf, len, addr);
 }
 
-static int ptrace_write_at(int pid, const ut8 *buf, int sz, ut64 addr) {
-	long words = sz / sizeof(long);
-	long last = (sz - words*sizeof(long)) * 8;
-	long x, lr;
-
+static int ptrace_write_at(int pid, const ut32 *buf, int sz, ut64 addr) {
+	ut32 words = sz / sizeof (ut32);
+	ut32 last = sz % sizeof (ut32);
+	ut32 x, lr, *at = (int*)(size_t)addr;
+	if (sz<1 || addr==UT64_MAX)
+		return -1;
 	for (x=0; x<words; x++)
-		if (debug_write_raw (pid, &((long *)(long)addr)[x], ((long *)buf)[x]))
-			goto err;
+		debug_write_raw (pid, (void*)(at++), buf[x]);
 	if (last) {
-		lr = debug_read_raw (pid, &((long *)(long)addr)[x]);
-		lr = ((lr&(-1L<<last))|(((long *)buf)[x]&(~(-1L<<last))));
-		if (debug_write_raw (pid, (void*)((long)addr+(x*sizeof(void*))), (void*)lr))
-			goto err;
+		lr = debug_read_raw (pid, (void*)at);
+		memcpy (&lr, buf+x, last);
+		if (debug_write_raw (pid, (void*)at, (void*)lr))
+			return sz-last;
 	}
-	return sz;
-err:
-	return --x * sizeof(long) ;
+	return sz; 
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
@@ -138,13 +130,13 @@ static int __close(RIODesc *fd) {
 	return ptrace (PTRACE_DETACH, pid, 0, 0);
 }
 
-static int __system(struct r_io_t *io, RIODesc *fd, const char *cmd) {
+static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	RIOPtrace *iop = (RIOPtrace*)fd->data;
 	//printf("ptrace io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
 	if (!strcmp (cmd, "mem")) {
 		char b[128];
-		int ret = debug_os_read_at (iop->pid, b, 128, 0x8048500);
+		int ret = debug_os_read_at (iop->pid, (ut32*)b, 128, 0x8048500);
 		printf ("ret = %d , pid = %d\n", ret, iop->pid);
 		printf ("%x %x %x %x\n", b[0], b[1], b[2], b[3]);
 	} else

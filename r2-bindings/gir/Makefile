@@ -15,8 +15,13 @@ ifeq ($(HAVE_VALABIND),1)
 endif
 
 install:
-	cp r_asm.typelib /usr/lib/girepository-1.0/
-	cp r_asm.gir /usr/share/gir-1.0/
+	rm -f /usr/lib/girepository-1.0/RAsm-1.0.*
+	rm -f /usr/lib/girepository-1.0/r_asm-1.0.*
+	rm -f /usr/share/gir-1.0/RAsm-1.0.*
+	rm -f /usr/share/gir-1.0/r_asm-1.0.*
+	cp r_asm.typelib /usr/lib/girepository-1.0/r_asm-1.0.typelib
+	cp r_asm.gir /usr/share/gir-1.0/r_asm-1.0.gir
+	gjs test.js
 
 clean:
 	@rm -f *.gir *.typelib
