@@ -66,6 +66,7 @@ struct Elf_(r_bin_elf_obj_t) {
 	Elf_(Ehdr) ehdr;
 	Elf_(Phdr)* phdr;
 	Elf_(Shdr)* shdr;
+	Elf_(Shdr) *strtab_section;
 	char* strtab;
 	int bss;
 	int size;

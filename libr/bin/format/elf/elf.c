@@ -92,17 +92,15 @@ static int Elf_(r_bin_elf_init_shdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 }
 
 static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
-	Elf_(Shdr) *strtab_section;
-
 	if (!bin->shdr)
 		return  R_FALSE;
-	strtab_section = &bin->shdr[bin->ehdr.e_shstrndx];
-	if ((bin->strtab = (char *)malloc (strtab_section->sh_size)) == NULL) {
+	bin->strtab_section = &bin->shdr[bin->ehdr.e_shstrndx];
+	if ((bin->strtab = (char *)malloc (bin->strtab_section->sh_size)) == NULL) {
 		perror ("malloc");
 		return R_FALSE;
 	}
-	if (r_buf_read_at (bin->b, strtab_section->sh_offset, (ut8*)bin->strtab,
-				strtab_section->sh_size) == -1) {
+	if (r_buf_read_at (bin->b, bin->strtab_section->sh_offset, (ut8*)bin->strtab,
+				bin->strtab_section->sh_size) == -1) {
 		eprintf ("Error: read (strtab)\n");
 		R_FREE (bin->strtab);
 		return R_FALSE;
@@ -133,9 +131,12 @@ static ut64 Elf_(r_bin_elf_get_section_offset)(struct Elf_(r_bin_elf_obj_t) *bin
 	int i;
 	if (!bin->shdr || !bin->strtab)
 		return -1;
-	for (i = 0; i < bin->ehdr.e_shnum; i++)
+	for (i = 0; i < bin->ehdr.e_shnum; i++) {
+		if (bin->shdr[i].sh_name > bin->strtab_section->sh_size)
+			continue;
 		if (!strcmp (&bin->strtab[bin->shdr[i].sh_name], section_name))
 			return (ut64)bin->shdr[i].sh_offset;
+	}
 	return -1;
 }
 
@@ -510,7 +511,6 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	struct r_bin_elf_reloc_t *ret = NULL;
-	Elf_(Shdr) *strtab_section;
 	Elf_(Sym) *sym = NULL;
 	Elf_(Rel) *rel;
 	ut64 got_addr, got_offset;
@@ -527,12 +527,12 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		return NULL;
 	for (i = 0, nsym = 0; i < bin->ehdr.e_shnum; i++)
 		if (bin->shdr[i].sh_type == (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM)) {
-			strtab_section = &bin->shdr[bin->shdr[i].sh_link];
-			if ((strtab = (char *)malloc (8+strtab_section->sh_size)) == NULL) {
+			bin->strtab_section = &bin->shdr[bin->shdr[i].sh_link];
+			if ((strtab = (char *)malloc (8+bin->strtab_section->sh_size)) == NULL) {
 				perror ("malloc (syms strtab)");
 				return NULL;
 			}
-			if (r_buf_read_at (bin->b, strtab_section->sh_offset, (ut8*)strtab, strtab_section->sh_size) == -1) {
+			if (r_buf_read_at (bin->b, bin->strtab_section->sh_offset, (ut8*)strtab, bin->strtab_section->sh_size) == -1) {
 				eprintf ("Error: read (syms strtab)\n");
 				return NULL;
 			}
@@ -553,7 +553,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 			}
 		}
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
-		if (bin->shdr[i].sh_name > strtab_section->sh_size) {
+		if (bin->shdr[i].sh_name > bin->strtab_section->sh_size) {
 			perror ("Invalid shdr index in strtab\n");
 			continue;
 		}
@@ -588,7 +588,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		for (j =  0; j < nrel; j++) {
 			idx = ELF_R_SYM (rel[j].r_info);
 			if (idx < nsym) {
-				if (sym[idx].st_name > strtab_section->sh_size) {
+				if (sym[idx].st_name > bin->strtab_section->sh_size) {
 					perror ("Invalid shdr index in symbol\n");
 					continue;
 				}
@@ -833,14 +833,11 @@ struct r_bin_elf_field_t* Elf_(r_bin_elf_get_fields)(struct Elf_(r_bin_elf_obj_t
 void* Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin) {
 	if (!bin)
 		return NULL;
-	if (bin->phdr)
-		free (bin->phdr);
-	if (bin->shdr)
-		free (bin->shdr);
-	if (bin->strtab)
-		free (bin->strtab);
-	if (bin->b)
-		r_buf_free (bin->b);
+	free (bin->phdr);
+	free (bin->shdr);
+	free (bin->strtab);
+	free (bin->strtab_section);
+	r_buf_free (bin->b);
 	free (bin);
 	return NULL;
 }

@@ -49,11 +49,10 @@ R_API void r_flag_list(RFlag *f, int rad) {
 }
 
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
-	ut64 hash = r_str_hash64 (name);
-	RList *list = r_hashtable64_lookup (f->ht_name, hash);
+	RList *list = r_hashtable64_lookup (f->ht_name, r_str_hash64 (name));
 	if (list) {
 		RFlagItem *item = r_list_get_top (list);
-		if (item) return item;
+		return item;
 	}
 	return NULL;
 }
@@ -62,13 +61,14 @@ R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 	RList *list = r_hashtable64_lookup (f->ht_off, off);
 	if (list) {
 		RFlagItem *item = r_list_get_top (list);
-		if (item) return item;
+		return item;
 	}
 	return NULL;
 }
 
 R_API int r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int dup) {
 	RList *list2, *list;
+	dup = 0; // XXX: force nondup
 	if (dup) {
 		RFlagItem *item = R_NEW0 (RFlagItem);
 		item->space = f->space_idx;
@@ -91,8 +91,36 @@ R_API int r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int dup) {
 		}
 		r_list_append (list2, item);
 	} else {
-		RFlagItem *item = r_flag_get (f, name);
+		RListIter *iter2 = NULL;
+		RFlagItem *item2 = NULL, *item = r_flag_get (f, name);
 		if (item) {
+			RList *list2, *lol;
+			if (item->offset == off)
+				return R_TRUE;
+			/* remove old entry */
+			list2 = r_hashtable64_lookup (f->ht_off, item->offset);
+			if (list2 && off != item->offset)
+			r_list_foreach (list2, iter2, item2) {
+				if (item->namehash != item2->namehash)
+					continue;
+				/* append new entry in new place */
+				lol = r_hashtable64_lookup (f->ht_off, off);
+				if (lol == NULL) {
+					lol = r_list_new ();
+					r_hashtable64_insert (f->ht_off, off, lol);
+				} else eprintf ("reusing lol table\n");
+				r_list_append (lol, item);
+				//list2->free = NULL;
+				// XXX: MUST FIX DOUBLE EIP FLAG IN DEBUGGER
+				// XXX: This produces a segfault in the future XXX //
+				//r_list_split_iter (list2, iter2);
+				if (1 || r_list_empty (list2)) {
+					//r_list_free (list2);
+					r_hashtable64_remove (f->ht_off, item->offset);
+				}
+				break;
+			}
+			/* update new entry */
 			item->offset = off;
 			item->size = size;
 		} else {
@@ -149,8 +177,8 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 
 R_API int r_flag_unset_i(RFlag *f, ut64 off, RFlagItem *p) {
 	RFlagItem *item = r_flag_get_i (f, off);
+eprintf ("TODO: r_flag_unset_i\n");
 	if (item) {
-		
 		return R_TRUE;
 	}
 	return R_FALSE;
@@ -173,25 +201,49 @@ R_API int r_flag_unset_glob(RFlag *f, const char *glob) {
 	return n;
 }
 
+static void unflag(RFlag *f, ut64 namehash) {
+	RFlagItem *item;
+	RListIter *iter;
+	r_list_foreach (f->flags, iter, item) {
+		if (item->namehash == namehash) {
+			r_list_delete (f->flags, iter);
+			break;
+		}
+	}
+}
+
 R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p) {
 	ut64 off;
-	RFlagItem *item = p;
+	RListIter *iter2;
+	RFlagItem *item2, *item = p;
 	ut64 hash = r_str_hash64 (name);
 	RList *list2, *list = r_hashtable64_lookup (f->ht_name, hash);
-	if (list) {
+// list = name hash
+// list2 = off hash
+	if (list && list->head) {
 		if (!item) item = r_list_pop (list);
+		if (!item) return R_FALSE;
 		off = item->offset;
+
 		list2 = r_hashtable64_lookup (f->ht_off, off);
-		if (list2) r_list_delete_data (list2, p);
-		r_list_delete_data (list, p);
-		r_list_delete_data (f->flags, item);
+		if (list2) {
+			/* delete flag by name */
+			r_list_foreach (list2, iter2, item2) {
+				if (hash == item2->namehash) {
+					r_list_delete (list2, iter2);
+					break;
+				}
+			}
+			if (list2 && r_list_empty (list2)) {
+				r_list_free (list2);
+				r_hashtable64_remove (f->ht_off, off);
+			}
+		}
+		/* delete from f->flags list */
+		unflag (f, hash);
 		if (r_list_empty (list)) {
 			r_list_free (list);
 			r_hashtable64_remove (f->ht_name, hash);
-		}
-		if (r_list_empty (list2)) {
-			r_list_free (list2);
-			r_hashtable64_remove (f->ht_off, off);
 		}
 		return R_TRUE;
 	}

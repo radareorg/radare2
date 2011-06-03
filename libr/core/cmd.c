@@ -2336,6 +2336,12 @@ static int cmd_flag(void *data, const char *input) {
 	case '\0':
 		r_flag_list (core->flags, 0);
 		break;
+	case 'd':
+		if (input[1]==' ') {
+			RFlagItem *f = r_flag_get_i (core->flags, r_num_math (core->num, input+2));
+			if (f) r_cons_printf ("%s\n", f->name);
+		} else eprintf ("Usage: fd [off]\n");
+		break;
 	case '?':
 		r_cons_printf (
 		"Usage: f[?] [flagname]\n"
@@ -2344,6 +2350,7 @@ static int cmd_flag(void *data, const char *input) {
 		" f+name 12 @ 33   ; like above but creates new one if doesnt exist\n"
 		" f-name           ; remove flag 'name'\n"
 		" f-@addr          ; remove flag at address expression\n"
+		" fd addr          ; return flag+delta\n"
 		" f                ; list flags\n"
 		" f*               ; list flags in r commands\n"
 		" fr [old] [new]   ; rename flag\n"
