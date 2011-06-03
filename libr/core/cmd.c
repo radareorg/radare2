@@ -3991,8 +3991,8 @@ static int cmd_meta(void *data, const char *input) {
 	case '-':
 		if (input[1]!='*') {
 			if (input[1]==' ')
-				addr = r_num_math (core->num, input+2);
-			r_meta_del (core->anal->meta, R_META_TYPE_ANY, addr, 1, "");
+				i = r_num_math (core->num, input+2);
+			r_meta_del (core->anal->meta, R_META_TYPE_ANY, core->offset, i, "");
 		} else r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
 		break;
 	case '\0':
@@ -4000,7 +4000,7 @@ static int cmd_meta(void *data, const char *input) {
 		eprintf (
 		"Usage: C[-LCvsdfm?] [...]\n"
 		" C*                     # List meta info in r2 commands\n"
-		" C-[@][ addr]           # delete metadata at given address\n"
+		" C- [len] [@][ addr]    # delete metadata at given address range\n"
 		" CL[-] [addr]           # show 'code line' information (bininfo)\n"
 		" CC[-] [size] [string]  # add/remove comment. Use CC! to edit with $EDITOR\n"
 		" Cv[-] offset reg name  # add var substitution\n"

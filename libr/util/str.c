@@ -679,6 +679,8 @@ R_API int r_str_glob (const char *str, const char *glob) {
 	int glen = strlen (glob);
 	int slen = strlen (str);
 	if (*glob == '*') {
+		if (glob[1] == '\0')
+			return R_TRUE;
 		if (glob[glen-1] == '*') {
 			return r_mem_mem ((const ut8*)str, slen, (const ut8*)glob+1, glen-2) != 0;
 		}

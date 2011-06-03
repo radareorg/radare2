@@ -84,7 +84,7 @@ R_API int r_meta_del(RMeta *m, int type, ut64 from, ut64 size, const char *str) 
 		if (d->type == type || type == R_META_TYPE_ANY) {
 			if (str != NULL && !strstr (d->str, str))
 				continue;
-			if (size==UT64_MAX || (from >= d->from && from <= d->to)) {
+			if (size==UT64_MAX || (from+size >= d->from && from <= d->to+size)) {
 				free (d->str);
 				it.n = iter->n;
 				r_list_delete (m->data, iter);
