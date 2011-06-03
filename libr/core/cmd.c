@@ -344,7 +344,7 @@ static int r_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, 
 			// TODO: filter string (r_str_unscape)
 			{
 			char *out = r_str_unscape (mi->str);
-			r_cons_printf ("string (%"PFMT64d"): \"%s\"\n%s", mi->size, out, pre);
+			r_cons_printf ("string (%"PFMT64d"): \"%s\"\n", mi->size, out);
 			free (out);
 			}
 			ret = (int)mi->size;

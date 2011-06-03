@@ -21,6 +21,16 @@ R_API RFlag * r_flag_new() {
 }
 
 R_API RFlag * r_flag_free(RFlag *f) {
+	RFlagItem *item;
+	RListIter *iter;
+	r_list_foreach (f->flags, iter, item) {
+		RList *list = r_hashtable64_lookup (f->ht_name, item->namehash);
+		r_list_free (list);
+		list = r_hashtable64_lookup (f->ht_off, item->offset);
+		r_list_free (list);
+	}
+	r_hashtable64_free (f->ht_off);
+	r_hashtable64_free (f->ht_name);
 	r_list_free (f->flags);
 	free (f);
 	return NULL;
@@ -73,6 +83,7 @@ R_API int r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int dup) {
 		RFlagItem *item = R_NEW0 (RFlagItem);
 		item->space = f->space_idx;
 		r_list_append (f->flags, item);
+
 		r_flag_item_set_name (item, name);
 		item->offset = off;
 		item->size = size;
@@ -99,7 +110,7 @@ R_API int r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int dup) {
 				return R_TRUE;
 			/* remove old entry */
 			list2 = r_hashtable64_lookup (f->ht_off, item->offset);
-			if (list2 && off != item->offset)
+			if (list2)
 			r_list_foreach (list2, iter2, item2) {
 				if (item->namehash != item2->namehash)
 					continue;
@@ -110,6 +121,7 @@ R_API int r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int dup) {
 					r_hashtable64_insert (f->ht_off, off, lol);
 				} else eprintf ("reusing lol table\n");
 				r_list_append (lol, item);
+//printf ("BUGBUG: %s\n", item->name);
 				//list2->free = NULL;
 				// XXX: MUST FIX DOUBLE EIP FLAG IN DEBUGGER
 				// XXX: This produces a segfault in the future XXX //
@@ -124,13 +136,17 @@ R_API int r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int dup) {
 			item->offset = off;
 			item->size = size;
 		} else {
-			list = r_list_new ();
 			item = R_NEW0 (RFlagItem);
 			item->space = f->space_idx;
+
 			r_list_append (f->flags, item);
+
 			r_flag_item_set_name (item, name);
 			item->offset = off;
 			item->size = size;
+
+			list = r_hashtable64_lookup (f->ht_name, item->namehash);
+			if (!list) list = r_list_new ();
 			r_list_append (list, item);
 			r_hashtable64_insert (f->ht_name, item->namehash, list);
 
