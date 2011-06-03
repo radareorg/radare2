@@ -110,7 +110,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 #endif
 
 	if (proto != R_SOCKET_PROTO_UNIX) {
-		memset(&hints, 0, sizeof(struct addrinfo));
+		memset (&hints, 0, sizeof (struct addrinfo));
 		hints.ai_family = AF_UNSPEC;		/* Allow IPv4 or IPv6 */
 		hints.ai_protocol = proto;
 		gai = getaddrinfo (host, port, &hints, &res);
@@ -192,9 +192,9 @@ R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 	linger.l_onoff = 1;
 	linger.l_linger = 1;
 	setsockopt (s->fd, SOL_SOCKET, SO_LINGER, (const char *)&linger, sizeof (linger));
-	memset (&sa, 0, sizeof(sa));
+	memset (&sa, 0, sizeof (sa));
 	sa.sin_family = AF_INET;
-	sa.sin_addr.s_addr = htonl(INADDR_ANY);
+	sa.sin_addr.s_addr = htonl (INADDR_ANY);
 	sa.sin_port = htons (atoi (port));
 
 	if (bind (s->fd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {

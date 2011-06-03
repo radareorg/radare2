@@ -1,5 +1,5 @@
-/* radare - LGPL - Copyright 2008-2011 nibble<.ds@gmail.com> */
-
+/* radare - LGPL - Copyright 2008-2011 nibble<.ds@gmail.com>, pancake<nopcode.org> */
+// TODO: review the rest of strtab index out of range
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -553,6 +553,10 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 			}
 		}
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
+		if (bin->shdr[i].sh_name > strtab_section->sh_size) {
+			perror ("Invalid shdr index in strtab\n");
+			continue;
+		}
 		if (!strcmp (&bin->strtab[bin->shdr[i].sh_name], ".rel.plt"))
 			tsize = sizeof (Elf_(Rel));
 		else if (!strcmp (&bin->strtab[bin->shdr[i].sh_name], ".rela.plt"))
@@ -584,6 +588,10 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		for (j =  0; j < nrel; j++) {
 			idx = ELF_R_SYM (rel[j].r_info);
 			if (idx < nsym) {
+				if (sym[idx].st_name > strtab_section->sh_size) {
+					perror ("Invalid shdr index in symbol\n");
+					continue;
+				}
 				len = __strnlen (&strtab[sym[idx].st_name], ELF_STRING_LENGTH-1);
 				memcpy (ret[j].name, &strtab[sym[idx].st_name], len);
 			} else strncpy (ret[j].name, "unknown", ELF_STRING_LENGTH);
@@ -751,6 +759,10 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 				}
 				ret[ret_ctr].offset = (toffset >= bin->baddr ? toffset -= bin->baddr : toffset);
 				ret[ret_ctr].size = tsize;
+				if (sym[k].st_name > strtab_section->sh_size) {
+					perror ("index out of strtab range\n");
+					return NULL;
+				}
 				len = __strnlen (&strtab[sym[k].st_name], ELF_STRING_LENGTH-1);
 				memcpy (ret[ret_ctr].name, &strtab[sym[k].st_name], len);
 				ret[ret_ctr].ordinal = k;
