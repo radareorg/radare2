@@ -225,8 +225,12 @@ extern void ud_translate_intel(struct ud* u)
 	mkasm(u, "repne ");
 
   /* print the instruction mnemonic */
-  mkasm(u, "%s ", ud_lookup_mnemonic(u->mnemonic));
 
+  if (u->operand[0].type == UD_NONE) {
+    mkasm(u, "%s", ud_lookup_mnemonic(u->mnemonic));
+  } else {
+    mkasm(u, "%s ", ud_lookup_mnemonic(u->mnemonic));
+  }
   /* operand 1 */
   if (u->operand[0].type != UD_NONE) {
     int cast = 0;
