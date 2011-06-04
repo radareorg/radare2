@@ -1,0 +1,7 @@
+#!./rarun2
+program=./pp400
+arg0=10
+#stdin=x.input
+input=10\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n
+chdir=/tmp
+chroot=.
