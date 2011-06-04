@@ -282,21 +282,21 @@ static int cmd_zign(void *data, const char *input) {
 
 static int cmd_rap(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	switch (input[0]) {
+	switch (*input) {
 	case '\0':
-		r_core_rtr_list(core);
+		r_core_rtr_list (core);
 		break;
 	case '?':
-		r_core_rtr_help(core);
+		r_core_rtr_help (core);
 		break;
 	case '+':
-		r_core_rtr_add(core, input+1);
+		r_core_rtr_add (core, input+1);
 		break;
 	case '-':
-		r_core_rtr_remove(core, input+1);
+		r_core_rtr_remove (core, input+1);
 		break;
 	case '=':
-		r_core_rtr_session(core, input+1);
+		r_core_rtr_session (core, input+1);
 		break;
 	case '<':
 		r_core_rtr_pushout (core, input+1);
@@ -1444,6 +1444,10 @@ static int cmd_info(void *data, const char *input) {
 			r_cons_printf ("mode\t%s\n", r_str_rwx_i (core->file->rwx | dbg));
 			r_cons_printf ("block\t0x%x\n", core->blocksize);
 			r_cons_printf ("uri\t%s\n", core->file->uri);
+			if (core->bin->curxtr)
+				r_cons_printf ("packet\t%s\n", core->bin->curxtr->name);
+			if (core->bin->curxtr)
+				r_cons_printf ("format\t%s\n", core->bin->curarch.curplugin->name);
 			if (info) {
 				r_cons_printf ("file\t%s\n", info->file);
 				r_cons_printf ("type\t%s\n", info->type);
