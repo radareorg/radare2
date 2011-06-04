@@ -1436,10 +1436,22 @@ static int cmd_info(void *data, const char *input) {
 		break;
 	default:
 		if (core->file) {
-			r_cons_printf ("uri: %s\n", core->file->uri);
-			r_cons_printf ("fd: %d\n", core->file->fd->fd);
-			r_cons_printf ("filesize: 0x%x\n", core->file->size);
-			r_cons_printf ("blocksize: 0x%x\n", core->blocksize);
+			int dbg = r_config_get_i (core->config, "cfg.debug");
+			RBinInfo *info = r_bin_get_info (core->bin);
+			if (dbg) dbg = R_IO_WRITE|R_IO_EXEC;
+			r_cons_printf ("fd\t%d\n", core->file->fd->fd);
+			r_cons_printf ("size\t0x%x\n", core->file->size);
+			r_cons_printf ("mode\t%s\n", r_str_rwx_i (core->file->rwx | dbg));
+			r_cons_printf ("block\t0x%x\n", core->blocksize);
+			r_cons_printf ("uri\t%s\n", core->file->uri);
+			if (info) {
+				r_cons_printf ("file\t%s\n", info->file);
+				r_cons_printf ("type\t%s\n", info->type);
+				r_cons_printf ("os\t%s\n", info->os);
+				r_cons_printf ("arch\t%s\n", info->machine);
+				r_cons_printf ("bits\t%d\n", info->bits);
+				r_cons_printf ("endian\t%s\n", info->big_endian?"big":"little");
+			}
 		} else eprintf ("No selected file\n");
 	}
 	return 0;
