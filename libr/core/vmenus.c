@@ -575,7 +575,7 @@ R_API void r_core_visual_anal(RCore *core) {
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case ':':
-			visual_prompt (core);
+			r_core_visual_prompt (core);
 			continue;
 		case 'a':
 			switch (level) {

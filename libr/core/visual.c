@@ -39,7 +39,7 @@ static void r_core_visual_mark(RCore *core, ut8 ch) {
 	marks[ch] = core->offset;
 }
 
-static void visual_prompt (RCore *core) {
+R_API void r_core_visual_prompt (RCore *core) {
 	char buf[1024];
 	ut64 oseek = core->offset;
 	r_line_set_prompt (":> ");
@@ -352,7 +352,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_core_seek (core, core->offset - (core->num->value/4), 1);
 		break;
 	case ':':
-		visual_prompt (core);
+		r_core_visual_prompt (core);
 		break;
 	case ';':
 		r_cons_printf ("Enter a comment: ('-' to remove, '!' to use $EDITOR)\n");
@@ -443,7 +443,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 }
 
 // TODO: simplify R_ABS(printidx%NPF) into a macro, or just control negative values..
-R_API void r_core_visual_prompt(RCore *core, int color) {
+R_API void r_core_visual_title (RCore *core, int color) {
 	const char *filename;
 	/* automatic block size */
 	if (autoblocksize)
@@ -490,7 +490,7 @@ static void r_core_visual_refresh (RCore *core) {
 
 	vi = r_config_get (core->config, "cmd.vprompt");
 	if (vi) r_core_cmd (core, vi, 0);
-	r_core_visual_prompt (core, color);
+	r_core_visual_title (core, color);
 
 	if (zoom) r_core_cmd (core, "pZ", 0);
 	else r_core_cmd (core, printfmt[R_ABS (core->printidx%NPF)], 0);

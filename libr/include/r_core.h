@@ -223,6 +223,7 @@ R_API void r_core_seek_next(RCore *core, const char *type);
 R_API void r_core_seek_previous (RCore *core, const char *type);
 R_API void r_core_visual_define (RCore *core);
 R_API int r_core_visual_trackflags(RCore *core);
+R_API void r_core_visual_prompt (RCore *core);
 
 #endif
 
