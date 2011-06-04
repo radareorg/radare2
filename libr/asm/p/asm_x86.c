@@ -43,7 +43,7 @@ static int modify(RAsm *a, ut8 *buf, int field, ut64 val) {
 	return ret;
 }
 
-static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
+static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	static ud_t disasm_obj;
 
 	ud_init (&disasm_obj);

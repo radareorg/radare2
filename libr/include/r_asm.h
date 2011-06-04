@@ -83,7 +83,7 @@ typedef struct r_asm_plugin_t {
 	int *bits;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-	int (*disassemble)(RAsm *a, struct r_asm_op_t *op, ut8 *buf, ut64 len);
+	int (*disassemble)(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len);
 	int (*assemble)(RAsm *a, struct r_asm_op_t *op, const char *buf);
 	RAsmModifyCallback modify;
 	int (*set_subarch)(RAsm *a, const char *buf);
@@ -102,7 +102,7 @@ R_API int r_asm_set_bits(RAsm *a, int bits);
 R_API int r_asm_set_big_endian(RAsm *a, int boolean);
 R_API int r_asm_set_syntax(RAsm *a, int syntax);
 R_API int r_asm_set_pc(RAsm *a, ut64 pc);
-R_API int r_asm_disassemble(RAsm *a, struct r_asm_op_t *op, ut8 *buf, ut64 len);
+R_API int r_asm_disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len);
 R_API int r_asm_assemble(RAsm *a, struct r_asm_op_t *op, const char *buf);
 R_API struct r_asm_code_t* r_asm_mdisassemble(RAsm *a, ut8 *buf, ut64 len);
 R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, const char *hexstr);

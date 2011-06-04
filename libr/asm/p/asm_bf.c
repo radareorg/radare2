@@ -8,7 +8,7 @@
 #include <r_asm.h>
 
 
-static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, ut8 *buf, ut64 len) {
+static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len) {
 	char *buf_cp, *b;
 	int i;
 

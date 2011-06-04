@@ -58,7 +58,7 @@ R_API RNum *r_num_new(RNumCallback cb, void *ptr) {
 /* old get_offset */
 R_API ut64 r_num_get(RNum *num, const char *str) {
 	int i, j;
-	char lch;
+	char lch, len;
 	ut64 ret = 0LL;
 
 	for (;str[0]==' ';) str = str+1;
@@ -76,7 +76,8 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	if (str[0]=='0' && str[1]=='x') {
 		sscanf(str, "0x%"PFMT64x"", &ret);
 	} else {
-		lch = str[strlen(str)-1];
+		len = strlen (str);
+		lch = str[len>0?len-1:0];
 		switch (lch) {
 		case 'h': // hexa
 			sscanf(str, "%"PFMT64x"", &ret);

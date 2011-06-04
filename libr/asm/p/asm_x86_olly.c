@@ -9,7 +9,7 @@
 
 #include "x86/ollyasm/disasm.h"
 
-static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, ut8 *buf, ut64 len) {
+static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len) {
 	t_disasm disasm_obj;
 
 	op->inst_len = Disasm_olly(buf, len, a->pc, &disasm_obj, DISASM_FILE);

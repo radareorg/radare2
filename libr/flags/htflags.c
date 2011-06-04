@@ -37,7 +37,6 @@ R_API RFlag * r_flag_free(RFlag *f) {
 }
 
 
-/* */
 R_API void r_flag_list(RFlag *f, int rad) {
 	int fs = -1;
 	RListIter *iter;
@@ -122,14 +121,16 @@ R_API int r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int dup) {
 				} else eprintf ("reusing lol table\n");
 				r_list_append (lol, item);
 //printf ("BUGBUG: %s\n", item->name);
+#if 1
 				//list2->free = NULL;
 				// XXX: MUST FIX DOUBLE EIP FLAG IN DEBUGGER
 				// XXX: This produces a segfault in the future XXX //
 				//r_list_split_iter (list2, iter2);
-				if (1 || r_list_empty (list2)) {
+				if ( 1||r_list_empty (list2)) {
 					//r_list_free (list2);
 					r_hashtable64_remove (f->ht_off, item->offset);
 				}
+#endif
 				break;
 			}
 			/* update new entry */
@@ -257,7 +258,7 @@ R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p) {
 		}
 		/* delete from f->flags list */
 		unflag (f, hash);
-		if (r_list_empty (list)) {
+		if (list && r_list_empty (list)) {
 			r_list_free (list);
 			r_hashtable64_remove (f->ht_name, hash);
 		}

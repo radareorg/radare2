@@ -187,7 +187,7 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc) {
 	return R_TRUE;
 }
 
-R_API int r_asm_disassemble(RAsm *a, struct r_asm_op_t *op, ut8 *buf, ut64 len) {
+R_API int r_asm_disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len) {
 	int ret = 0;
 	if (a->cur && a->cur->disassemble)
 		ret = a->cur->disassemble(a, op, buf, len);

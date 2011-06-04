@@ -143,7 +143,7 @@ R_API int r_reg_arena_set(RReg *reg, int n, int copy) {
 		reg->regset[i].arena = a;
 		if (a->size != o->size) {
 			a->size = o->size;
-			a->bytes = realloc (a->bytes, a->size+1);
+			a->bytes = realloc (a->bytes, a->size+4);
 			if (!a->bytes) {
 				eprintf ("Cannot malloc %d in arena\n", a->size);
 				// XXX This is critical!

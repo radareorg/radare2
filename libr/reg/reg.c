@@ -68,6 +68,7 @@ R_API RReg *r_reg_free(RReg *reg) {
 
 R_API RReg *r_reg_new() {
 	int i;
+	RRegArena *arena;
 	RReg *reg = R_NEW (RReg);
 	reg->iters = 0;
 	reg->profile = NULL;
@@ -75,20 +76,18 @@ R_API RReg *r_reg_new() {
 	for (i=0; i<R_REG_NAME_LAST; i++)
 		reg->name[i] = NULL;
 	for (i=0; i<R_REG_TYPE_LAST; i++) {
-		reg->regset[i].pool = r_list_new ();
-		reg->regset[i].pool->free = (RListFree)r_reg_arena_free;
-		reg->regset[i].regs = r_list_new ();
-		reg->regset[i].regs->free = (RListFree)r_reg_item_free;
-		if (!(reg->regset[i].arena = r_reg_arena_new (0)))
-			return NULL;
+		arena = r_reg_arena_new (0);
+		if (!arena) return NULL;
+		reg->regset[i].arena = arena;
+		R_LIST_NEW (reg->regset[i].pool, r_reg_arena_free);
+		R_LIST_NEW (reg->regset[i].regs, r_reg_item_free);
 		r_list_append (reg->regset[i].pool, reg->regset[i].arena);
 	}
 	return reg;
 }
 
 static RRegItem *r_reg_item_new() {
-	RRegItem *item = R_NEW (RRegItem);
-	memset (item, 0, sizeof (RRegItem));
+	RRegItem *item = R_NEW0 (RRegItem);
 	return item;
 }
 
@@ -263,6 +262,8 @@ R_API ut64 r_reg_cmp(RReg *reg, RRegItem *item) {
 	int off = BITS2BYTES (item->offset);
 	RRegArena *src = r_list_head (reg->regset[item->type].pool)->data;
 	RRegArena *dst = r_list_head (reg->regset[item->type].pool)->n->data;
+	if (off+len>src->size) len = src->size-off;
+	if (off+len>dst->size) len = src->size-off;
 	if (memcmp (dst->bytes+off, src->bytes+off, len)) {
 		ut64 ret;
 		int ptr = !(reg->iters%2);

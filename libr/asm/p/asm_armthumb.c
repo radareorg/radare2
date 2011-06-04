@@ -9,7 +9,7 @@
 #include <r_asm.h>
 #include "../arch/arm/arm.h"
 
-static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
+static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	int *p = (int*)buf; // TODO : endian
 	op->buf_asm[0]='\0';
 	op->inst_len = armthumb_disassemble (op->buf_asm, (ut32)a->pc, *p);

@@ -50,7 +50,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	return 0;
 }
 
-static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, ut8 *buf, ut64 len) {
+static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len) {
 	static struct disassemble_info disasm_obj;
 	if (len<4)
 		return -1;

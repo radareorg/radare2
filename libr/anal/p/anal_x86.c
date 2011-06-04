@@ -794,7 +794,7 @@ static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 
 	if ((x86im_dec (&io,
 			anal->bits == 32 ? X86IM_IO_MODE_32BIT : X86IM_IO_MODE_64BIT,
-			(unsigned char*)data)) == X86IM_STATUS_SUCCESS) {
+			(ut8*)data)) == X86IM_STATUS_SUCCESS) {
 		if (io.len > len)
 			return 0;
 		x86im_fmt_format_name (&io, mnem);	

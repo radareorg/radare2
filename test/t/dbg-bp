@@ -1,0 +1,18 @@
+DEBUG=no
+#valgrind
+FILE=/bin/ls
+ARGS="-d"
+CMDS='
+.dr*
+db entry0
+.dr*
+dc
+.dr*
+db -entry0
+.dr*
+dc
+.dr*
+q
+'
+EXPECT=""
+. ../tests.sh

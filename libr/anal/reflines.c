@@ -110,7 +110,7 @@ R_API char* r_anal_reflines_str(RAnal *anal, RAnalRefline *list, ut64 addr, int 
 	if (anal->lineswidth>0) {
 		int len = strlen (str);
 		if (len>anal->lineswidth)
-			strcpy (str, str+len-anal->lineswidth);
+			r_str_cpy (str, str+len-anal->lineswidth);
 	}
 	return str;
 }

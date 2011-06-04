@@ -263,6 +263,8 @@ R_API int r_core_init(RCore *core) {
 	core->ffio = 0;
 	core->oobi = NULL;
 	core->oobi_len = 0;
+	core->printidx = 0;
+	core->cmdqueue = NULL;
 	core->yank = NULL;
 	core->reflines = NULL;
 	core->reflines2 = NULL;
@@ -283,6 +285,13 @@ R_API int r_core_init(RCore *core) {
 		//r_line_singleton()->user = (void *)core;
 		r_line_hist_load (".radare2_history");
 		singleton = R_FALSE;
+	}
+	core->blocksize = R_CORE_BLOCKSIZE;
+	core->block = (ut8*)malloc (R_CORE_BLOCKSIZE);
+	if (core->block == NULL) {
+		eprintf ("Cannot allocate %d bytes\n", R_CORE_BLOCKSIZE);
+		/* XXX memory leak */
+		return R_FALSE;
 	}
 	core->print = r_print_new ();
 	core->print->user = core;
@@ -314,13 +323,6 @@ R_API int r_core_init(RCore *core) {
 	core->files = r_list_new ();
 	core->files->free = (RListFree)r_core_file_free;
 	core->offset = 0LL;
-	core->blocksize = R_CORE_BLOCKSIZE;
-	core->block = (ut8*)malloc (R_CORE_BLOCKSIZE);
-	if (core->block == NULL) {
-		eprintf ("Cannot allocate %d bytes\n", R_CORE_BLOCKSIZE);
-		/* XXX memory leak */
-		return R_FALSE;
-	}
 	r_core_cmd_init (core);
 	core->flags = r_flag_new ();
 	core->dbg = r_debug_new (R_TRUE);
@@ -412,7 +414,7 @@ R_API int r_core_block_size(RCore *core, ut32 bsize) {
 	else if (bsize> R_CORE_BLOCKSIZE_MAX)
 		bsize = R_CORE_BLOCKSIZE_MAX;
 	else ret = R_TRUE;
-	core->block = realloc (core->block, bsize);
+	core->block = realloc (core->block, bsize+1);
 	if (core->block == NULL) {
 		eprintf ("Oops. cannot allocate that much (%u)\n", bsize);
 		core->block = malloc (R_CORE_BLOCKSIZE);

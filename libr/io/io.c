@@ -8,7 +8,7 @@
 //  --- check for EXEC perms in section (use cached read to accelerate)
 
 R_API struct r_io_t *r_io_new() {
-	RIO *io = R_NEW (struct r_io_t);
+	RIO *io = R_NEW (RIO);
 	if (!io) return NULL;
 	io->fd = NULL;
 	io->write_mask_fd = -1;
@@ -281,7 +281,7 @@ R_API int r_io_write_at(struct r_io_t *io, ut64 addr, const ut8 *buf, int len) {
 
 R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 	int posix_whence = SEEK_SET;
-	ut64 ret = -1;
+	ut64 ret = UT64_MAX;
 	switch (whence) {
 	case R_IO_SEEK_SET:
 		posix_whence = SEEK_SET;
@@ -312,7 +312,7 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 			ret = io->plugin->lseek (io, io->fd, offset, whence);
 		// XXX can be problematic on w32..so no 64 bit offset?
 		else ret = lseek (io->fd->fd, offset, posix_whence);
-		if (ret != -1) {
+		if (ret != UT64_MAX) {
 			io->off = ret;
 			// XXX this can be tricky.. better not to use this .. must be deprecated
 			// r_io_sundo_push (io);

@@ -108,6 +108,8 @@ typedef struct r_core_t {
 	int curasmstep;
 	RCoreAsmsteps asmsteps[R_CORE_ASMSTEPS];
 	ut64 asmqjmps[10];
+	// visual
+	int printidx;
 } RCore;
 
 typedef int (*RCoreSearchCallback)(RCore *core, ut64 from, ut8 *buf, int len);
@@ -191,6 +193,7 @@ R_API void r_core_asm_hit_free(void *_hit);
 R_API char* r_core_asm_search(RCore *core, const char *input, ut64 from, ut64 to);
 R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to);
 R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len);
+R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l);
 
 R_API int r_core_bin_load(RCore *r, const char *file);
 
@@ -212,6 +215,15 @@ R_API void r_core_rtr_add(RCore *core, const char *input);
 R_API void r_core_rtr_remove(RCore *core, const char *input);
 R_API void r_core_rtr_session(RCore *core, const char *input);
 R_API void r_core_rtr_cmd(RCore *core, const char *input);
+
+R_API void r_core_visual_define (RCore *core);
+R_API void r_core_visual_config(RCore *core);
+R_API void r_core_visual_anal(RCore *core);
+R_API void r_core_seek_next(RCore *core, const char *type);
+R_API void r_core_seek_previous (RCore *core, const char *type);
+R_API void r_core_visual_define (RCore *core);
+R_API int r_core_visual_trackflags(RCore *core);
+
 #endif
 
 #endif

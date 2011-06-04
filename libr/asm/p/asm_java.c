@@ -9,7 +9,7 @@
 
 #include <r_core.h>
 static const char *lastfile = NULL;
-static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
+static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	// XXX: crossmodule dependency
 	RCore *core = (RCore*)a->user;
 	if (core && core->file && lastfile != core->file->filename) {

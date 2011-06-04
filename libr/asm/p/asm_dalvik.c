@@ -9,7 +9,7 @@
 
 #include <dalvik/opcode.h>
 
-static int dalvik_disassemble (RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
+static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	int i = (int) buf[0];
 	int size = 0;
 	int vA, vB, vC;
