@@ -406,6 +406,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "dbg.trace", "true", &config_trace_callback);
 	r_config_set_cb (cfg, "dbg.trace.tag", "0xff", &config_tracetag_callback);
 	r_config_set_cb (cfg, "fs.view", "normal", &config_fsview_callback);
+	r_config_set (cfg, "bin.strings", "true"); 
 	p = r_sys_getenv ("EDITOR");
 	r_config_set (cfg, "cfg.editor", p? p: "vi");
 	r_config_set (cfg, "cmd.hit", "");

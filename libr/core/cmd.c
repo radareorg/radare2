@@ -2486,18 +2486,58 @@ static int cmd_anal(void *data, const char *input) {
 			free (o);
 		}
 		break;
+	case 'd':
+		{
+			int i, bits = r_config_get_i (core->config, "asm.bits");
+			char *p, *inp = strdup (input+2);
+			p = strchr (inp, ' ');
+			if (p) *p=0;
+			ut64 a = r_num_math (core->num, inp);
+			ut64 b = p?r_num_math (core->num, p+1):0;
+			free (inp);
+			switch (bits) {
+			case 32:
+				for (i=0; i<core->blocksize; i+=4) {
+					ut32 n;
+					memcpy (&n, core->block+i, sizeof(ut32));
+					if (n>=a && n<=b) {
+						r_cons_printf ("f trampoline.%x @ 0x%"PFMT64x"\n", n, core->offset+i);
+						r_cons_printf ("Cd 4 @ 0x%"PFMT64x":4\n", core->offset+i);
+						// TODO: add data xrefs
+					}
+				}
+				break;
+			case 64:
+				for (i=0; i<core->blocksize; i+=8) {
+					ut32 n;
+					memcpy (&n, core->block+i, sizeof(ut32));
+					if (n>=a && n<=b) {
+						r_cons_printf ("f trampoline.%"PFMT64x" @ 0x%"PFMT64x"\n", n, core->offset+i);
+						r_cons_printf ("Cd 8 @ 0x%"PFMT64x":8\n", core->offset+i);
+						// TODO: add data xrefs
+					}
+				}
+				break;
+			}
+		}
+		break;
 	default:
 		r_cons_printf (
-		"Usage: a[?obfrgtv]\n"
+		"Usage: a[?obdfrgtv]\n"
 		" aa              ; Analyze all (fcns + bbs)\n"
 		" ap              ; Find and analyze function preludes\n"
+		" ad [from] [to]  ; Analyze data pointers to (from-to)\n"
 		" as [num]        ; Analyze syscall using dbg.reg\n"
 		" ao[e?] [len]    ; Analyze Opcodes (or emulate it)\n"
 		" ab[?+-l*]       ; Analyze Basic blocks\n"
 		" af[?+-l*]       ; Analyze Functions\n"
 		" ar[?d-l*]       ; Manage refs/xrefs\n"
 		" ag[?f]          ; Output Graphviz code\n"
-		" at[trd+-*?] [.] ; Analyze execution Traces\n");
+		" at[trd+-*?] [.] ; Analyze execution Traces\n"
+		"Examples:\n"
+		" f ts @ `S*~text:0[3]`; f t @ section..text\n"
+		" f ds @ `S*~data:0[3]`; f d @ section..data\n"
+		" .ad t t+ts @ d:ds\n");
 		break;
 	}
 	if (tbs != core->blocksize)
@@ -3578,6 +3618,8 @@ static int cmd_meta(void *data, const char *input) {
 		if (input[1]!='*') {
 			if (input[1]==' ')
 				i = r_num_math (core->num, input+2);
+			else
+				i = r_num_math (core->num, input+1);
 			r_meta_del (core->anal->meta, R_META_TYPE_ANY, core->offset, i, "");
 		} else r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
 		break;

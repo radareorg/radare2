@@ -40,6 +40,7 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 			// copying so many bytes here..
 			memcpy (ptr->string, str, R_BIN_SIZEOF_STRINGS);
 			ptr->string[R_BIN_SIZEOF_STRINGS-1] = '\0';
+			r_name_filter (ptr->string, R_BIN_SIZEOF_STRINGS-1);
 			r_list_append (list, ptr);
 			ctr++;
 		}

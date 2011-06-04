@@ -192,7 +192,7 @@ R_API RMetaItem *r_meta_find(RMeta *m, ut64 off, int type, int where) {
 					it = d;
 				break;
 			case R_META_WHERE_HERE:
-				if (off>=d->from && (!off || (off<=d->to)))
+				if (off>=d->from && (!off || (off<d->to)))
 					it = d;
 				break;
 			case R_META_WHERE_NEXT:

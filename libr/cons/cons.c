@@ -26,7 +26,7 @@ static inline void r_cons_write (const char *buf, int len) {
 #else
 	if (write (I.fdout, buf, len) == -1) {
 		eprintf ("r_cons_write: write error\n");
-		exit (1);
+		//exit (1);
 	}
 #endif
 }

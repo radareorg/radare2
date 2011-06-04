@@ -140,7 +140,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 		r_flag_space_set (r->flags, "symbols");
 		r_list_foreach (list, iter, symbol) {
 			name = strdup (symbol->name);
-			r_flag_name_filter (name);
+			r_name_filter (name, 80);
 			snprintf (str, R_FLAG_NAME_SIZE, "sym.%s", name);
 			if (!strncmp (symbol->type,"OBJECT", 6))
 				r_meta_add (r->anal->meta, R_META_TYPE_DATA, va?baddr+symbol->rva:symbol->offset,
@@ -168,6 +168,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	}
 
 	// z -> Strings
+	if (r_config_get_i (r->config, "bin.strings"))
 	if ((list = r_bin_get_strings (r->bin)) != NULL) {
 /*
 // load all strings ALWAYS!! rhashtable is fast
@@ -181,7 +182,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 				for (i=0;*(string->string+i)==' ';i++);
 				r_meta_add (r->anal->meta, R_META_TYPE_STRING, va?baddr+string->rva:string->offset,
 					(va?baddr+string->rva:string->offset)+string->size, string->string+i);
-				r_flag_name_filter (string->string);
+				r_name_filter (string->string, 128);
 				snprintf (str, R_FLAG_NAME_SIZE, "str.%s", string->string);
 				r_flag_set (r->flags, str, va?baddr+string->rva:string->offset,
 						string->size, 0);
@@ -193,7 +194,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	if ((list = r_bin_get_imports (r->bin)) != NULL) {
 		r_flag_space_set (r->flags, "imports");
 		r_list_foreach (list, iter, import) {
-			r_flag_name_filter (import->name);
+			r_name_filter (import->name, 128);
 			snprintf (str, R_FLAG_NAME_SIZE, "imp.%s", import->name);
 			if (import->size)
 				if (!r_anal_fcn_add (r->anal, va?baddr+import->rva:import->offset,
@@ -209,7 +210,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	if ((list = r_bin_get_sections (r->bin)) != NULL) {
 		r_flag_space_set (r->flags, "sections");
 		r_list_foreach (list, iter, section) {
-			r_flag_name_filter (section->name);
+			r_name_filter (section->name, 128);
 			snprintf (str, R_FLAG_NAME_SIZE, "section.%s", section->name);
 			r_flag_set (r->flags, str, va?baddr+section->rva:section->offset,
 					section->size, 0);

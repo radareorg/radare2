@@ -53,8 +53,6 @@ R_API int r_flag_unset(struct r_flag_t *f, const char *name, RFlagItem *p);
 R_API int r_flag_unset_i(struct r_flag_t *f, ut64 addr, RFlagItem *p);
 R_API int r_flag_set(struct r_flag_t *fo, const char *name, ut64 addr, ut32 size, int dup);
 R_API int r_flag_sort(RFlag *f, int namesort);
-R_API int r_flag_name_check(const char *name);
-R_API int r_flag_name_filter(char *name);
 R_API void r_flag_item_set_name(RFlagItem *item, const char *name);
 R_API int r_flag_unset_glob(RFlag *f, const char *name);
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name);

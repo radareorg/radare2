@@ -2,7 +2,7 @@ include ../config.mk
 
 NAME=r_util
 OBJ=mem.o pool.o num.o str.o re.o hex.o file.o alloca.o range.o log.o
-OBJ+=prof.o cache.o sys.o buf.o w32-sys.o base64.o
+OBJ+=prof.o cache.o sys.o buf.o w32-sys.o base64.o name.o
 OBJ+=list.o flist.o ht.o ht64.o mixed.o btree.o
 
 # DO NOT BUILD r_big api (not yet used and its buggy)

@@ -216,6 +216,7 @@ int main(int argc, char **argv) {
 	} else eprintf ("Metadata loaded from 'file.project'\n");
 #endif
 
+	has_project = r_core_project_open (&r, r_config_get (r.config, "file.project"));
 	if (run_rc) {
 		char *homerc = r_str_home (".radare2rc");
 		r_core_bin_load (&r, NULL);
@@ -278,6 +279,8 @@ int main(int argc, char **argv) {
 		char *sha1 = strdup (r_config_get (r.config, "file.sha1"));
 		char *cmd = r_str_dup_printf (".!rahash2 -r %s", r.file->filename);
 		has_project = r_core_project_open (&r, r_config_get (r.config, "file.project"));
+		if (has_project)
+			r_config_set (r.config, "bin.strings", "false");
 		r_core_cmd (&r, cmd, 0);
 		nsha1 = r_config_get (r.config, "file.sha1");
 		npath = r_config_get (r.config, "file.path");

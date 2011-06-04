@@ -249,7 +249,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 				r_print_hexdump (core->print, at, buf+idx, mi->size-delta, 16, 1);
 			core->inc = 16;
 				core->print->flags |= R_PRINT_FLAGS_HEADER;
-				ret = (int)mi->size-delta;
+				ret = (int)mi->size; //-delta;
 				free (line);
 				free (refline);
 				line = refline = NULL;
