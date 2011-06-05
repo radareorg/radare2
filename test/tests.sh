@@ -6,7 +6,7 @@ rad=$(mktemp rad.XXXXXX)
 run_test() {
 	printf "Running ${NAME} ... \r"
 	echo "${CMDS}" > $rad
-	eval ${DBG} $r2 -n -v -i $rad ${ARGS} ${FILE} ${PIP}
+	eval ${DBG} $r2 -e scr.color=0 -n -v -i $rad ${ARGS} ${FILE} ${PIP}
 	if [ ! $? = 0 ]; then
 		printf "ERROR+"
 	fi
@@ -28,6 +28,7 @@ run_test() {
 PIP=">$out"
 case "${DEBUG}" in
 0|no)
+	DBG="cat $rad |"
 	DBG="echo q |"
 	;;
 1|yes|gdb)

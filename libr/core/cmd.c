@@ -4140,6 +4140,7 @@ R_API int r_core_cmd_file(RCore *core, const char *file) {
 					ret = R_FALSE;
 					break;
 				}
+				r_cons_flush ();
 				data = nl+1;
 			} while ((nl = strchr (data, '\n')));
 		}
