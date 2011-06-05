@@ -237,7 +237,7 @@ static int rabin_show_imports() {
 				printf ("%s\n", import->name);
 		} else {
 			if (rad) {
-				r_flag_name_filter (import->name);
+				r_name_filter (import->name, sizeof (import->name));
 				if (import->size) 
 					printf ("af+ 0x%08"PFMT64x" %"PFMT64d" imp.%s i\n",
 							va?baddr+import->rva:import->offset, import->size, import->name);
@@ -290,7 +290,7 @@ static int rabin_show_symbols() {
 					printf ("s 0x%08"PFMT64x"\n\"CC %s\"\n", symbol->offset, mn);
 					free (mn);
 				}
-				r_flag_name_filter (symbol->name);
+				r_name_filter (symbol->name, sizeof (symbol->name));
 				if (!strncmp (symbol->type,"OBJECT", 6))
 					printf ("Cd %"PFMT64d" @ 0x%08"PFMT64x"\n",
 							symbol->size, va?baddr+symbol->rva:symbol->offset);
@@ -329,7 +329,7 @@ static int rabin_show_strings() {
 	r_list_foreach (strings, iter, string) {
 		section = r_bin_get_section_at (bin, string->offset, 0);
 		if (rad) {
-			r_flag_name_filter (string->string);
+			r_name_filter (string->string, sizeof (string->string));
 			printf ("f str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
 				"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
 				string->string, string->size, va?baddr+string->rva:string->offset,
@@ -375,7 +375,7 @@ static int rabin_show_sections() {
 				printf ("%s\n", section->name);
 		} else {
 			if (rad) {
-				r_flag_name_filter (section->name);
+				r_name_filter (section->name, sizeof (section->name));
 				printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d\n",
 					section->offset, baddr+section->rva,
 					section->size, section->vsize, section->name, (int)section->srwx);
@@ -477,7 +477,7 @@ static int rabin_show_fields() {
 
 	r_list_foreach (fields, iter, field) {
 		if (rad) {
-			r_flag_name_filter (field->name);
+			r_name_filter (field->name, sizeof (field->name));
 			printf ("f header.%s @ 0x%08"PFMT64x"\n",
 					field->name, va?baddr+field->rva:field->offset);
 			printf ("[%02i] address=0x%08"PFMT64x" offset=0x%08"PFMT64x" name=%s\n",
