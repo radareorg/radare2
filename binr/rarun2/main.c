@@ -1,5 +1,6 @@
 /* radare2 - Copyleft 2011 - pancake<nopcode.org> */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -26,6 +27,8 @@ static void parseline (char *b) {
 	if (!e) return;
 	if (*b=='#') return;
 	*e++=0;
+	if (*e=='$') e = strdup (getenv (e));
+	if (e == NULL) return;
 	if (!strcmp (b, "program")) _program = strdup (e);
 	else if (!strcmp (b, "stdout")) _stdout = strdup (e);
 	else if (!strcmp (b, "stdin")) _stdin = strdup (e);

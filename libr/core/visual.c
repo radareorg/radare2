@@ -50,12 +50,76 @@ R_API void r_core_visual_prompt (RCore *core) {
 }
 
 
+static int visual_fkey(RCore *core, int ch) {
+	const char *cmd;
+	switch (ch) {
+	case R_CONS_KEY_F1:
+		cmd = r_config_get (core->config, "key.f1");
+		if (cmd && *cmd) return r_core_cmd0 (core, cmd); 
+		ch = '?';
+		break;
+	case R_CONS_KEY_F2:
+		cmd = r_config_get (core->config, "key.f2");
+		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
+		// TODO: toggle breakpoint
+		break;
+	case R_CONS_KEY_F3:
+		cmd = r_config_get (core->config, "key.f3");
+		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
+		// TODO: F3
+		break;
+	case R_CONS_KEY_F4:
+		cmd = r_config_get (core->config, "key.f4");
+		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
+		// TODO: F4
+	case R_CONS_KEY_F5:
+		cmd = r_config_get (core->config, "key.f5");
+		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
+		// TODO: F5
+	case R_CONS_KEY_F6:
+		cmd = r_config_get (core->config, "key.f6");
+		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
+		// TODO: F6
+		break;
+	case R_CONS_KEY_F7:
+		cmd = r_config_get (core->config, "key.f7");
+		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
+		ch = 's';
+		break;
+	case R_CONS_KEY_F8:
+		cmd = r_config_get (core->config, "key.f8");
+		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
+		// TODO: F8
+		break;
+	case R_CONS_KEY_F9:
+		cmd = r_config_get (core->config, "key.f9");
+		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
+		r_core_cmd0 (core, "dc");
+		break;
+	case R_CONS_KEY_F10:
+		cmd = r_config_get (core->config, "key.f10");
+		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
+		break;
+	case R_CONS_KEY_F11:
+		cmd = r_config_get (core->config, "key.f11");
+		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
+		break;
+	case R_CONS_KEY_F12:
+		cmd = r_config_get (core->config, "key.f12");
+		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
+		break;
+	}
+	return ch;
+}
+
 /* TODO: use r_cmd here in core->vcmd..optimize over 255 table */ 
 R_API int r_core_visual_cmd(RCore *core, int ch) {
 	RAsmOp op;
 	char buf[4096];
 	int i, cols = core->print->cols;
 	ch = r_cons_arrow_to_hjkl (ch);
+	ch = visual_fkey (core, ch);
+	if (ch<2) return 1;
 
 	// do we need hotkeys for data references? not only calls?
 	if (ch>='0'&&ch<='9') {

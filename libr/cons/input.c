@@ -4,7 +4,6 @@
 #include <string.h>
 
 R_API int r_cons_arrow_to_hjkl(int ch) {
-// TODO: Add support for F12
 	if (ch==0x1b) {
 		ch = r_cons_readchar ();
 		switch (ch) {
@@ -30,12 +29,18 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 				break;
 			case '2':
 				ch = r_cons_readchar ();
-				r_cons_readchar ();
 				switch (ch) {
-				case '0': ch = R_CONS_KEY_F9; break;
-				case '1': ch = R_CONS_KEY_F10; break;
-				case '3': ch = R_CONS_KEY_F11; break;
-				case '4': ch = R_CONS_KEY_F12; break;
+				case 0x7e:
+					ch = R_CONS_KEY_F12;
+					break;
+				default:
+					r_cons_readchar ();
+					switch (ch) {
+					case '0': ch = R_CONS_KEY_F9; break;
+					case '1': ch = R_CONS_KEY_F10; break;
+					case '3': ch = R_CONS_KEY_F11; break;
+					}
+					break;
 				}
 				break;
 			case '1':

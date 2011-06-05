@@ -443,6 +443,19 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "file.type", "");
 	r_config_set_i (cfg, "magic.depth", 100);
 	r_config_set (cfg, "rap.loop", "true");
+	/* fkeys */
+	r_config_set (cfg, "key.f1", ""); 
+	r_config_set (cfg, "key.f2", ""); 
+	r_config_set (cfg, "key.f3", ""); 
+	r_config_set (cfg, "key.f4", ""); 
+	r_config_set (cfg, "key.f5", ""); 
+	r_config_set (cfg, "key.f6", ""); 
+	r_config_set (cfg, "key.f7", ""); 
+	r_config_set (cfg, "key.f8", ""); 
+	r_config_set (cfg, "key.f9", ""); 
+	r_config_set (cfg, "key.f10", ""); 
+	r_config_set (cfg, "key.f11", ""); 
+	r_config_set (cfg, "key.f12", ""); 
 	/* zoom */
 	r_config_set_i (cfg, "zoom.maxsz", 512);
 	r_config_set_i (cfg, "zoom.from", 0);
