@@ -1,29 +1,31 @@
 # do not execute #
 . ../config.sh
 
+out=$(mktemp out.XXXXXX)
+rad=$(mktemp rad.XXXXXX)
 run_test() {
-	printf "Running ${NAME} ... "
-	echo "${CMDS}" > cmds.rad
-	eval ${DBG} $r2 -v -i cmds.rad ${ARGS} ${FILE} ${PIP}
+	printf "Running ${NAME} ... \r"
+	echo "${CMDS}" > $rad
+	eval ${DBG} $r2 -n -v -i $rad ${ARGS} ${FILE} ${PIP}
 	if [ ! $? = 0 ]; then
 		printf "ERROR+"
 	fi
-	if [ "$(cat cmds.out)" = "${EXPECT}" ]; then
-		echo "SUCCESS"
+	if [ "$(cat $out)" = "${EXPECT}" ]; then
+		echo "Running ${NAME} ... SUCCESS"
 	else
-		echo "FAIL"
-printf "\x1b[32m"
-echo "--"
-		cat cmds.out
-echo "--"
-echo "${EXPECT}"
-echo "--"
-printf "\x1b[0m"
+		echo "Running ${NAME} ... FAIL"
+		printf "\x1b[32m"
+		echo "--"
+		cat $out
+		echo "--"
+		echo "${EXPECT}"
+		echo "--"
+		printf "\x1b[0m"
 	fi
-	rm -f cmds.rad cmds.out
+	rm -f $out $rad
 }
 
-PIP=">cmds.out"
+PIP=">$out"
 case "${DEBUG}" in
 0|no)
 	DBG="echo q |"

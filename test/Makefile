@@ -1,6 +1,12 @@
 T=asm echo write undo redo math
 
-all:
-	@cd t ; for a in ${T} ; do ./$$a ; done
+all: ${T}
 
-.PHONY: all
+${T}:
+	@cd t ; ./$@
+	@#@cd t ; for a in ${T} ; do ./$$a ; done
+
+clean:
+	rm -f t/out.* t/rad.*
+
+.PHONY: all ${T} clean
