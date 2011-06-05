@@ -31,6 +31,8 @@ R_API ut64 r_io_sundo_last(struct r_io_t *io) {
 }
 
 R_API int r_io_sundo(struct r_io_t *io) {
+	if (io->undo.idx == io->undo.limit)
+		r_io_sundo_push (io);
 	io->undo.idx--;
 	if (io->undo.idx<0)
 		return io->undo.idx = 0;
@@ -40,11 +42,11 @@ R_API int r_io_sundo(struct r_io_t *io) {
 
 R_API int r_io_sundo_redo(struct r_io_t *io) {
 	if (io->undo.idx<io->undo.limit) {
-		io->undo.idx += 2;
+		io->undo.idx += 1;
 		if (io->undo.idx>=R_IO_UNDOS) {
-			io->undo.idx -= 2;
+			io->undo.idx -= 1;
 			return R_FALSE;
-		} else io->off = io->undo.seek[io->undo.idx];
+		} else io->off = io->undo.seek[io->undo.idx-1];
 		r_io_sundo(io);
 		return R_TRUE;
 	}
@@ -66,7 +68,7 @@ R_API void r_io_sundo_push(RIO *io) {
 		io->undo.idx--;
 		eprintf ("undo limit reached\n");
 	}
-	if (io->undo.limit<io->undo.idx)
+	//if (io->undo.limit<io->undo.idx)
 		io->undo.limit = io->undo.idx;
 }
 

@@ -80,6 +80,21 @@ typedef struct r_cons_t {
 // not needed anymoar
 //extern int (*r_cons_user_fgets)(char *buf, int len);
 
+#define R_CONS_KEY_F1 0xf1
+#define R_CONS_KEY_F2 0xf2
+#define R_CONS_KEY_F3 0xf3
+#define R_CONS_KEY_F4 0xf4
+#define R_CONS_KEY_F5 0xf5
+#define R_CONS_KEY_F6 0xf6
+#define R_CONS_KEY_F7 0xf7
+#define R_CONS_KEY_F8 0xf8
+#define R_CONS_KEY_F9 0xf9
+#define R_CONS_KEY_F10 0xfa
+#define R_CONS_KEY_F11 0xfb
+#define R_CONS_KEY_F12 0xfc
+
+#define R_CONS_KEY_ESC 0x1b
+
 /* plain colors */
 #define Color_BLACK    "\x1b[30m"
 #define Color_BGBLACK  "\x1b[40m"

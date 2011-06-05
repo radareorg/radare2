@@ -115,6 +115,10 @@ int main(int argc, char **argv) {
 	}
 	file = argv[1];
 	fd = fopen (file, "r");
+	if (!fd) {
+		fprintf (stderr, "Cannot open %s\n", file);
+		return 1;
+	}
 	for (;;) {
 		fgets (buf, sizeof (buf)-1, fd);
 		if (feof (fd)) break;

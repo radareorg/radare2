@@ -4,21 +4,89 @@
 #include <string.h>
 
 R_API int r_cons_arrow_to_hjkl(int ch) {
+// TODO: Add support for F12
 	if (ch==0x1b) {
 		ch = r_cons_readchar ();
-		if (ch==0x5b) {
-			// TODO: must also work in interactive visual write ascii mode
+		switch (ch) {
+		case 0x1b:
+			ch = 'q'; // XXX: must be 0x1b (R_CONS_KEY_ESC)
+			break;
+		case 0x4f: // function keys from f1 to f4
+			ch = r_cons_readchar ();
+			ch = 0xf1 + (ch&0xf);
+			break;
+		case 0:
+		case '[': // function keys (2)
 			ch = r_cons_readchar ();
 			switch (ch) {
-			case 0x35: ch='K'; break; // re.pag
-			case 0x36: ch='J'; break; // av.pag
-			case 0x41: ch='k'; break; // up
-			case 0x42: ch='j'; break; // down
-			case 0x43: ch='l'; break; // right
-			case 0x44: ch='h'; break; // left
-			case 0x3b: break;
-			default: ch = 0;
+			case '[':
+				switch (ch) {
+				case '2': ch = R_CONS_KEY_F11; break;
+				case 'A': ch = R_CONS_KEY_F1; break;
+				case 'B': ch = R_CONS_KEY_F2; break;
+				case 'C': ch = R_CONS_KEY_F3; break;
+				case 'D': ch = R_CONS_KEY_F4; break;
+				}
+				break;
+			case '2':
+				ch = r_cons_readchar ();
+				r_cons_readchar ();
+				switch (ch) {
+				case '0': ch = R_CONS_KEY_F9; break;
+				case '1': ch = R_CONS_KEY_F10; break;
+				case '3': ch = R_CONS_KEY_F11; break;
+				case '4': ch = R_CONS_KEY_F12; break;
+				}
+				break;
+			case '1':
+				ch = r_cons_readchar ();
+				switch (ch) {
+				case ':': // arrow+shift
+					ch = r_cons_readchar ();
+					ch = r_cons_readchar ();
+					switch (ch) {
+					case 'A': ch = 'K'; break;
+					case 'B': ch = 'J'; break;
+					case 'C': ch = 'L'; break;
+					case 'D': ch = 'H'; break;
+					}
+					break;
+/*
+				case '1': ch = R_CONS_KEY_F1; break;
+				case '2': ch = R_CONS_KEY_F2; break;
+				case '3': ch = R_CONS_KEY_F3; break;
+				case '4': ch = R_CONS_KEY_F4; break;
+*/
+				case '5': 
+					r_cons_readchar ();
+					ch = 0xf5;
+					break;
+				case '6': 
+					r_cons_readchar ();
+					ch = 0xf7;
+					break;
+				case '7': 
+					r_cons_readchar ();
+					ch = 0xf6;
+					break;
+				case '8': 
+					r_cons_readchar ();
+					ch = 0xf7;
+					break;
+				case '9': 
+					r_cons_readchar ();
+					ch = 0xf8;
+					break;
+				} // F9-F12 not yet supported!!
+				break;
+			case '5': ch='K'; break; // repag
+			case '6': ch='J'; break; // avpag
+			case 'A': ch='k'; break; // up
+			case 'B': ch='j'; break; // down
+			case 'C': ch='l'; break; // right
+			case 'D': ch='h'; break; // left
 			}
+			break;
 		}
 	}
 	return ch;

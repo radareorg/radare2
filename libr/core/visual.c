@@ -481,16 +481,16 @@ static void r_core_visual_refresh (RCore *core) {
 	r_cons_clear00 ();
 	r_print_set_cursor (core->print, curset, ocursor, cursor);
 
+	vi = r_config_get (core->config, "cmd.vprompt");
+	if (vi) r_core_cmd (core, vi, 0);
+	r_core_visual_title (core, color);
+
 	vi = r_config_get (core->config, "cmd.cprompt");
 	if (vi && *vi) {
 		r_cons_printf ("\n[cmd.cprompt] %s\n", vi);
 		r_core_cmd (core, vi, 0);
 		r_cons_column (80);
 	}
-
-	vi = r_config_get (core->config, "cmd.vprompt");
-	if (vi) r_core_cmd (core, vi, 0);
-	r_core_visual_title (core, color);
 
 	if (zoom) r_core_cmd (core, "pZ", 0);
 	else r_core_cmd (core, printfmt[R_ABS (core->printidx%NPF)], 0);

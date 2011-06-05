@@ -9,7 +9,7 @@
 static struct r_core_t r;
 
 static int main_help(int line) {
-	printf ("Usage: radare2 [-dwnLuvV] [-p prj] [-s addr] [-b bsz] [-e k=v] [file]\n");
+	printf ("Usage: radare2 [-dwnLvV] [-p prj] [-s addr] [-b bsz] [-e k=v] [file]\n");
 	if (!line) printf (
 		" -d           use 'file' as a program to debug\n"
 		" -w           open file in write mode\n"
@@ -24,10 +24,9 @@ static int main_help(int line) {
 		" -l [lib]     load plugin file\n"
 		//" -t         load rabin2 info in thread\n"
 		" -L           list supported IO plugins\n"
-		" -u           unknown file size\n"
 		" -e k=v       evaluate config var\n"
 		"Environment:\n"
-		" R_DEBUG      handle crash signal\n"
+		" R_DEBUG      if defined, show error messages and crash signal\n"
 		" LIBR_PLUGINS path to plugins directory\n"
 		" VAPIDIR      path to extra vapi directory\n"
 		);
@@ -146,9 +145,6 @@ int main(int argc, char **argv) {
 		case 'L':
 			list_io_plugins (r.io);
 			return 0;
-		case 'u':
-			eprintf ("TODO\n");
-			break;
 		default:
 			return 1;
 		}

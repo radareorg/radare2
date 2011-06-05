@@ -1080,6 +1080,10 @@ static int cmd_help(void *data, const char *input) {
 		n = r_num_math (core->num, input+1);
 		r_cons_printf ("%"PFMT64d" 0x%"PFMT64x"\n", n,n);
 		break;
+	case 'v':
+		n = r_num_math (core->num, input+2);
+		r_cons_printf ("0x%"PFMT64x"\n", n,n);
+		break;
 	case '=':
 		r_num_math (core->num, input+1);
 		break;
@@ -1177,7 +1181,8 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1]=='?') {
 			r_cons_printf (
 			"Usage: ?[?[?]] expression\n"
-			" ? eip-0x804800  ; calculate result for this math expr\n"
+			" ? eip-0x804800  ; show hex and dec result for this math expr\n"
+			" ?v eip-0x804800 ; show hex value of math expr\n"
 			" ?= eip-0x804800 ; same as above without user feedback\n"
 			" ?? [cmd]        ; ? == 0  run command when math matches\n"
 			" ?i prompt       ; prompt for number and store in $$?\n"
