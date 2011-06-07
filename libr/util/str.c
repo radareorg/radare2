@@ -676,8 +676,10 @@ R_API void r_str_filter(char *str, int len) {
 
 R_API int r_str_glob (const char *str, const char *glob) {
 	const char *p;
-	int glen = strlen (glob);
-	int slen = strlen (str);
+	int slen, glen;
+	if (!*str) return R_TRUE;
+	glen = strlen (glob);
+	slen = strlen (str);
 	if (*glob == '*') {
 		if (glob[1] == '\0')
 			return R_TRUE;
@@ -703,6 +705,7 @@ R_API int r_str_glob (const char *str, const char *glob) {
 			}
 		}
 	}
+	return R_FALSE; // statement never reached
 }
 
 // XXX: remove this limit .. use realloc

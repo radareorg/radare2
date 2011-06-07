@@ -1248,6 +1248,7 @@ static int cmd_help(void *data, const char *input) {
 		"Use '?""?""?' evaluation, special vars and scripting facilities\n"
 		"Append '?' to any char command to get detailed help\n"
 		"Suffix '@ addr[:bsize]' for a temporary seek and/or bsize\n"
+		"Suffix '@@ glob1 glob2i ..' space separated glob greps for flags to seek\n"
 		"Suffix '~string:linenumber[column]' to filter output\n"
 		);
 		break;
@@ -4013,6 +4014,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	default:
 		core->cmd->macro.counter = 0;
 		//while(str[i]) && !core->interrupted) {
+		// split by keywords
 		while (str[i]) {
 			j = i;
 			for (;str[j]&&str[j]==' ';j++); // skip spaces
@@ -4023,36 +4025,17 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			if (word == NULL)
 				break;
 			str[i] = ch;
-			if (strchr (word, '*')) {
-#if 0
+			{
 				/* for all flags in current flagspace */
-				list_for_each(pos, &flags) {
-					flag_t *flag = (flag_t *)list_entry(pos, flag_t, list);
-					//if (core->interrupted)
-					//	break;
-					/* filter per flag spaces */
-	//				if ((flag_space_idx != -1) && (flag->space != flag_space_idx))
-	//					continue;
-
-					core->offset = flag->offset;
-					radare_read(0);
-					cons_printf("; @@ 0x%08"PFMT64x" (%s)\n", core->offset, flag->name);
-					radare_cmd(cmd,0);
-				}
-#else
-				eprintf ("No flags foreach implemented\n");
-#endif
-			} else {
-				/* for all flags in current flagspace */
-				r_list_foreach (core->flags->flags, iter, flag) {
+				// XXX: dont ask why, but this only works with _prev..
+				r_list_foreach_prev (core->flags->flags, iter, flag) {
 					if (r_cons_singleton()->breaked)
 						break;
 					/* filter per flag spaces */
 					if ((core->flags->space_idx != -1) && (flag->space != core->flags->space_idx))
 						continue;
-					if (word[0]=='\0' || strstr(flag->name, word) != NULL) {
+					if (r_str_glob (flag->name, word)) {
 						r_core_seek (core, flag->offset, 1);
-						// TODO: Debug mode print
 						//r_cons_printf ("# @@ 0x%08"PFMT64x" (%s)\n", core->offset, flag->name);
 						r_core_cmd (core, cmd, 0);
 					}

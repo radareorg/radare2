@@ -5,6 +5,20 @@
 
 CODENAME: #DRY
 
+* TODO: Implement r_flag_unset_i () ftw
+
+** BUG **
+  * fix for indirect list manipulations -- looks like a similar problem with r_cons recusivity
+  - when you are iterating a list you CANT remove items from it
+  - this is..you CANT call r_core_cmd() while iterating flags unless you want to crash
+  - we probably need to queue the deletions and use a commit-like methodology
+  - this way we avoid duplications
+  RListBox *b = r_flag_get_list ();
+  r_list_foreach (b, iter, item) {
+    r_list_delete_iter_later (b, iter);
+  }
+  r_list_commit (b);
+
 [[ 0.8 ]] -- TODO
 * Tracing features for the debugger
 * We need a 64 bit x86 assembler working!! nasm fails

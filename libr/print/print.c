@@ -1,5 +1,4 @@
 /* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
-
 #include "r_cons.h"
 #include "r_print.h"
 #include "r_util.h"
@@ -220,10 +219,14 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	inc = p->cols;
 
 	if (p->flags & R_PRINT_FLAGS_HEADER) {
-		// only for color..too many options .. brbr
-		//p->printf(r_cons_palette[PAL_HEADER]);
+		ut32 opad = (ut32)(addr >> 32);
 		p->printf ("   offset   ");
+		while (opad>0) {
+			p->printf (" ");
+			opad >>= 4;
+		}
 		k = 0; // TODO: ??? SURE??? config.seek & 0xF;
+		/* extra padding for offsets > 8 digits */
 		for (i=0; i<inc; i++) {
 			p->printf (pre);
 			p->printf (" %c", hex[(i+k)%16]);
