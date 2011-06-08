@@ -3536,28 +3536,32 @@ static int cmd_meta(void *data, const char *input) {
 			}
 			break;
 		default: {
-			char *t, *p, name[128];
-			int n, type = input[0];
+			char *t, *p, name[256];
+			int n = 0, type = input[0];
 			t = strdup (input+2);
-			p = strchr (t, ' ');
-			if (p) {
-				*p = '\0';
-				strncpy (name, p+1, sizeof (name));
-			} else
-			switch (type) {
-			case 's':
-				// TODO: filter \n and so on :)
-				r_core_read_at (core, addr, (ut8*)name, sizeof (name));
-				break;
-			default:
-				{
-				RFlagItem *fi = r_flag_get_i (core->flags, addr);
-				if (fi) strncpy (name, fi->name, sizeof (name));
-				else sprintf (name, "ptr_%08"PFMT64x"", addr);
+			if (atoi (t)>0) {
+				p = strchr (t, ' ');
+				if (p) {
+					*p = '\0';
+					strncpy (name, p+1, sizeof (name));
+				} else switch (type) {
+				case 's':
+					// TODO: filter \n and so on :)
+					strncpy (name, t, sizeof (name));
+					r_core_read_at (core, addr, (ut8*)name, sizeof (name));
+					break;
+				default: {
+					RFlagItem *fi = r_flag_get_i (core->flags, addr);
+					if (fi) strncpy (name, fi->name, sizeof (name));
+					else sprintf (name, "ptr_%08"PFMT64x"", addr);
+					}
 				}
+				n = atoi (input+1);
+			} else {
+				p = NULL;
+				strncpy (name, t, sizeof (name));
 			}
-			n = atoi (input+1);
-			if (n==0) n = 1;
+			if (!n) n++;
 			addr_end = addr + n;
 			r_meta_add (core->anal->meta, type, addr, addr_end, name);
 			free (t);

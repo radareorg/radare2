@@ -5,7 +5,12 @@
 
 CODENAME: #DRY
 
-* TODO: Implement r_flag_unset_i () ftw
+TODO
+====
+* Implement r_flag_unset_i () ftw
+* libmagic internal :? -- find a decent implementation and adopt it
+* Ranged/scrollable zoom mode
+* Honor string metadata for asmsteps ('jk' in visual)
 
 ** BUG **
   * fix for indirect list manipulations -- looks like a similar problem with r_cons recusivity
@@ -50,11 +55,6 @@ To wipe:
  - linestyle?? for disassembly lines
  - remove libr/vm and libr/db
 
-To do:
-======
-* libmagic internal :? -- find a decent implementation and adopt it
-* Ranged/scrollable zoom mode
-* Honor string metadata for asmsteps ('jk' in visual)
 
 pancake
 -------
@@ -117,7 +117,6 @@ earada
 * refactor rap and raps
 * remove all uses of alloca() // mingw and grep reports them all :)
 * typedef all function pointers, like in r_bp
-* Implement case-insensitive search (e search.casematters ?) any better name? Use /i?
 * Implement /. to search using a file .. isnt zignatures about this?
 * Implement /p to search for patterns
   - implement it in r_core ?? or add r_io_bind support
@@ -126,21 +125,16 @@ earada
 
 0.7 release
 ===========
-	* GMP
-	  - big-ssl.c big-gmp.c ...
-	  - implement GMP in util/big.c
-	    - http://etutorials.org/Programming/secure+programming/Chapter+7.+Public+Key+Cryptography/7.5+Generating+a+Prime+Number+Testing+for+Primality/
+* GMP
+  - big-ssl.c big-gmp.c ...
+  - implement GMP in util/big.c
+    - http://etutorials.org/Programming/secure+programming/Chapter+7.+Public+Key+Cryptography/7.5+Generating+a+Prime+Number+Testing+for+Primality/
 
-	CORE
-	----
-	- Add support for DEX file format
-	- display filesize info instead of virtual space address limit
-
-	Assembler
-	---------
-	* Embed bits/arch/endian in a separated structure
-	  - So one can change from one arch to another with a pointer
-	  - Cool for defining ranges of memory
+Assembler
+---------
+* Embed bits/arch/endian in a separated structure
+  - So one can change from one arch to another with a pointer
+  - Cool for defining ranges of memory
 
 0.8: focus on debugger and UI
 =============================
@@ -149,7 +143,7 @@ earada
 * Reimplement or fix the delta diffing in C - first we need to do it for ired..
 * add support for .a files (r_fs supports cpio and ar archives...)
 * Implement rap:// upload/download protocol commands (maybe just system() with rsc2+wget?
-* code injection facilities? (wtf? insert,execute, restore)
+* code injection facilities? (wtf? insert, execute, restore)
 * Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
 * Record trace of register status for each function when running
   - r_reg_arena_copy();
@@ -165,10 +159,10 @@ earada
 * p7 - print 7bit encoded strings (SMS)
   - variant for stego print? LSB, MSB, ...
 * r_bin
-  - Take into account LOAD info for bin allocation
+  - Take into account LOAD info for bin allocation ??
 * r_anal
   - split r_anal API functions (too much args) _new, _add...
-* gdiff  
+* gdiff
   - graph based fingerprints? (cyclomatic complexity...)
 * rcore
   - do not allow to disassemble unaligned addresses (toggle)
