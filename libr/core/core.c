@@ -63,7 +63,7 @@ R_API RCore *r_core_new() {
 #define CMDS (sizeof (radare_argv)/sizeof(const char*))
 static const char *radare_argv[] = {
 	"?", 
-	"dH", "ds", "dso", "dsl", "dc", "dd", "dm", "db", "dp", "dr", 
+	"dH", "ds", "dso", "dsl", "dc", "dd", "dm", "db", "dp", "dr", "dcu",
 	"S", 
 	"s", "s+", "s++", "s-", "s--", "s*", "sa", "sb", "sr",
 	"!", "!!", 
@@ -163,13 +163,15 @@ printf ("FILEN %d\n", n);
 		} else
 		if ((!memcmp (line->buffer.data, "s ", 2)) ||
 		    (!memcmp (line->buffer.data, "b ", 2)) ||
+		    (!memcmp (line->buffer.data, "dcu ", 4)) ||
 		    (!memcmp (line->buffer.data, "/v ", 3)) ||
 		    (!memcmp (line->buffer.data, "f ", 2)) ||
 		    (!memcmp (line->buffer.data, "fr ", 3)) ||
 		    (!memcmp (line->buffer.data, "/a ", 3)) ||
 		    (!memcmp (line->buffer.data, "? ", 2))) {
 			int n, i = 0;
-			int sdelta = (line->buffer.data[1]==' ')?2:3;
+			int sdelta = (line->buffer.data[1]==' ')?2:
+				(line->buffer.data[2]==' ')?3:4;
 			n = strlen (line->buffer.data+sdelta);
 			r_list_foreach (core->flags->flags, iter, flag) {
 				if (!memcmp (flag->name, line->buffer.data+sdelta, n)) {

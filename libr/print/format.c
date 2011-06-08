@@ -19,7 +19,7 @@ static void print_format_help(RPrint *p) {
 	" q - quadword (8 bytes)\n"
 	" p - pointer reference\n"
 	" d - 0x%%08x hexadecimal value\n"
-	" X - 0x%%08x hexadecimal value and flag (fd @ addr)\n"
+	" x - 0x%%08x hexadecimal value and flag (fd @ addr)\n"
 	" z - \\0 terminated string\n"
 	" Z - \\0 terminated wide string\n"
 	" s - pointer to string\n"
@@ -37,7 +37,7 @@ R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const c
 	const char *arg = fmt;
 	const char *argend = arg+strlen (fmt);
 	char namefmt[8];
-	ut64 addr = 0, seeki = 0;;
+	ut64 addr = 0, addr64 = 0, seeki = 0;;
 	int viewflags = 0;
 	nargs = endian = i = j = 0;
 
@@ -92,7 +92,11 @@ R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const c
 			if (endian)
 				 addr = (*(buf+i))<<24   | (*(buf+i+1))<<16 | *(buf+i+2)<<8 | *(buf+i+3);
 			else     addr = (*(buf+i+3))<<24 | (*(buf+i+2))<<16 | *(buf+i+1)<<8 | *(buf+i);
-
+			if (endian)
+				 addr64 = (ut64)(*(buf+i))<<56 | (ut64)(*(buf+i+1))<<48 | (ut64)*(buf+i+2)<<40 | (ut64)(*(buf+i+3))<<32
+				 	| (*(buf+i+4))<<24 | (*(buf+i+5))<<16 | *(buf+i+6)<<8 | *(buf+i+7);
+			 else addr64 = ((ut64)(*(buf+i+7)))<<56 | (ut64)(*(buf+i+6))<<48 | (ut64)(*(buf+i+5))<<40 | (ut64)(*(buf+i+4))<<32
+				 	| (*(buf+i+3))<<24 | (*(buf+i+2))<<16 | *(buf+i+1)<<8 | *(buf+i);
 			tmp = *arg;
 		feed_me_again:
 			if (tmp == 0 && last != '*')
@@ -151,15 +155,16 @@ R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const c
 			case 'e': {
 				double doub;
 				memcpy (&doub, buf+i, sizeof (double));
-				p->printf ("%e = ", doub);
-				p->printf ("(double)");
+				p->printf ("0x%08"PFMT64x" = (double) ", seeki);
+				p->printf ("%e", doub);
 				i += 8;
 				}
 				break;
 			case 'q':
 				p->printf ("0x%08"PFMT64x" = ", seeki);
-				p->printf ("(qword)");
+				p->printf ("(qword) ");
 				i += 8;
+				p->printf ("0x%08"PFMT64x" ", addr64);
 				break;
 			case 'b':
 				p->printf ("0x%08"PFMT64x" = ", seeki);
@@ -189,10 +194,10 @@ R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const c
 				break;
 			case 'd':
 				p->printf ("0x%08"PFMT64x" = ", seeki);
-				p->printf ("0x%08"PFMT64x" ", addr);
+				p->printf ("%"PFMT64d" ", addr);
 				i += 4;
 				break;
-			case 'X': {
+			case 'x': {
 				ut32 addr32 = (ut32)addr;
 				//char buf[128];
 				p->printf ("0x%08"PFMT64x" = ", seeki);

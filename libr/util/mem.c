@@ -105,6 +105,25 @@ src |__________|_________|
 	r_mem_copybits (dst, src, nbits);
 }
 
+R_API ut64 r_mem_get_num(ut8 *b, int size, int endian) {
+        ut16 n16;
+        ut32 n32;
+        ut64 n64;
+        switch (size) {
+        case 1: return b[0];
+        case 2:
+                r_mem_copyendian (&n16, b, 2, endian);
+		return (ut64)n16;
+        case 4:
+                r_mem_copyendian (&n32, b, 4, endian);
+		return (ut64)n32;
+        case 8:
+                r_mem_copyendian (&n64, b, 8, endian);
+		return (ut64)n64;
+        }
+	return 0LL;
+}
+
 // TODO: SEE: R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) { .. dupped code?
 R_API int r_mem_set_num (ut8 *dest, int dest_size, ut64 num, int endian) {
 	int num4;

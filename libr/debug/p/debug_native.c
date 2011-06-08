@@ -499,15 +499,13 @@ static const char *r_debug_native_reg_profile(RDebug *dbg) {
 	"=a1	rbx\n"
 	"=a2	rcx\n"
 	"=a3	rdx\n"
-	"# no profile defined for x86-64\n"
-	"gpr	rax	.64	0	0\n"
-	"gpr	rbx	.64	8	0\n"
-	"gpr	rcx	.64	16	0\n"
-	"gpr	rdx	.64	24	0\n"
-	"gpr	rdi	.64	32	0\n"
-	"gpr	rsi	.64	40	0\n"
-	"gpr	rbp	.64	48	0\n"
-// gap?
+	"gpr	rax	.64	8	0\n"
+	"gpr	rbx	.64	16	0\n"
+	"gpr	rcx	.64	24	0\n"
+	"gpr	rdx	.64	32	0\n"
+	"gpr	rdi	.64	40	0\n"
+	"gpr	rsi	.64	48	0\n"
+	"gpr	rbp	.64	56	0\n"
 	"gpr	rsp	.64	64	0\n"
 	"gpr	r8	.64	72	0\n"
 	"gpr	r9	.64	80	0\n"
@@ -531,7 +529,9 @@ static const char *r_debug_native_reg_profile(RDebug *dbg) {
 	"drx	dr7	.32	28	0\n"
 #endif
 	);
-#elif __x86_64__
+#elif __x86_64__ 
+// XXX
+//&& __linux__
 	return strdup (
 	"=pc	rip\n"
 	"=sp	rsp\n"

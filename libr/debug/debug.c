@@ -266,7 +266,8 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 		ut64 pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
 		r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
-		if (op.type & R_ANAL_OP_TYPE_CALL) {
+		if (op.type & R_ANAL_OP_TYPE_CALL
+		   || op.type & R_ANAL_OP_TYPE_UCALL) {
 			ut64 bpaddr = pc + op.length;
 			r_bp_add_sw (dbg->bp, bpaddr, 1, R_BP_PROT_EXEC);
 			ret = r_debug_continue (dbg);

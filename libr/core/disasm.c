@@ -143,6 +143,42 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 		if (core->inc == 0)
 			core->inc = ret;
 		r_anal_op (core->anal, &analop, at, buf+idx, (int)(len-idx));
+		{
+			RAnalValue *src;
+			switch (analop.type) {
+			case R_ANAL_OP_TYPE_MOV:
+				src = analop.src[0];
+				if (src && src->memref>0 && src->reg) {
+				if (core->anal->reg && core->anal->reg->name) {
+					const char *pc = core->anal->reg->name[R_REG_NAME_PC];
+					RAnalValue *dst = analop.dst;
+					if (!strcmp (src->reg->name, pc)) {
+						RFlagItem *item;
+						ut8 b[8];
+						ut64 ptr = idx+addr+src->delta+analop.length;
+						ut64 off = 0LL;
+						r_core_read_at (core, ptr, b, src->memref);
+						off = r_mem_get_num (b, src->memref, 1);
+						item = r_flag_get_i (core->flags, off);
+						r_cons_printf ("; MOV %s = [0x%"PFMT64x"] = 0x%"PFMT64x" %s\n",
+								dst->reg->name, ptr, off, item?item->name: "");
+					}
+				}
+				}
+				break;
+			case R_ANAL_OP_TYPE_LEA:
+				src = analop.src[0];
+				if (src && src->reg && core->anal->reg && core->anal->reg->name) {
+					const char *pc = core->anal->reg->name[R_REG_NAME_PC];
+					RAnalValue *dst = analop.dst;
+					if (dst && dst->reg && !strcmp (src->reg->name, pc)) {
+						r_cons_printf ("; %s = 0x%"PFMT64x"\n",
+								dst->reg->name,
+								idx+addr+src->delta);
+					}
+				}
+			}
+		}
 		// Show xrefs
 		if (show_xrefs) {
 			RList *xrefs;

@@ -201,9 +201,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	const char *pre = "";
 	if (step<1) step = 1;
 
-	switch(base) {
+	switch (base) {
 	case 8: fmt = "%03o"; pre = " "; break;
 	case 10: fmt = "%03d"; pre = " "; break;
+	case 32: fmt = "0x%08x "; pre = " "; break;
+	case 64: fmt = "0x%016x "; pre = " "; break;
 	}
 
 	// TODO: Use base to change %03o and so on
@@ -213,11 +215,10 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		return;
 	}
 
-	inc = 2 + (int)((p->width-14)/4);
-	if (inc%2) inc++;
-	inc = 16;
 	inc = p->cols;
-
+	if (base==64) inc = p->cols/1.2;
+		
+	if (base<32)
 	if (p->flags & R_PRINT_FLAGS_HEADER) {
 		ut32 opad = (ut32)(addr >> 32);
 		p->printf ("   offset   ");
@@ -241,14 +242,26 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	p->interrupt = 0;
 	for (i=0; !p->interrupt && i<len; i+=inc) {
 		r_print_addr (p, addr+(i*step));
-		for (j=i;j<i+inc;j++) {
+		for (j=i; j<i+inc; j++) {
 			if (j>=len) {
-				if (j%2) p->printf ("   ");
-				else p->printf ("  ");
+				p->printf (j%2?"   ":"  ");
 				continue;
 			}
-			r_print_byte (p, fmt, j, buf[j]);
-			if (j%2) p->printf (" ");
+			if (base==32) {
+				ut32 n;
+				memcpy (&n, buf+j, sizeof (n));
+				p->printf ("0x%08x ", n);
+				j+=3;
+			} else
+			if (base==64) {
+				ut64 n;
+				memcpy (&n, buf+j, sizeof (n));
+				j+=4;
+				p->printf ("0x%016"PFMT64x" ", n);
+			} else {
+				r_print_byte (p, fmt, j, buf[j]);
+				if (j%2) p->printf (" ");
+			}
 		}
 		p->printf (" ");
 		for (j=i; j<i+inc; j++) {

@@ -1594,6 +1594,12 @@ static int cmd_print(void *data, const char *input) {
 		} else eprintf ("ERROR: Cannot malloc %d bytes\n", size);
 		}
 		break;
+	case 'w':
+		r_print_hexdump (core->print, core->offset, core->block, len, 32, 4);
+		break;
+	case 'q':
+		r_print_hexdump (core->print, core->offset, core->block, len, 64, 8);
+		break;
 	case 'D':
 	case 'd':
 		switch (input[1]) {
@@ -1824,6 +1830,7 @@ static int cmd_print(void *data, const char *input) {
 		" pb [len]     bitstream of N bytes\n"
 		" pd[ilf] [l]  disassemble N opcodes (see pd?)\n"
 		" pD [len]     disassemble N bytes\n"
+		" p[w|q] [len] word (32), qword (64) value dump\n"
 		" po [len]     octal dump of N bytes\n"
 		" pc [len]     output C format\n"
 		" pf [fmt]     print formatted data\n"
