@@ -732,7 +732,7 @@ R_API void r_core_seek_previous (RCore *core, const char *type) {
 }
 
 R_API void r_core_visual_define (RCore *core) {
-	int ch;
+	int ch, ntotal = 0;
 	ut64 off = core->offset;
 	ut8 *p = core->block;
 	int plen = core->blocksize;
@@ -745,6 +745,7 @@ R_API void r_core_visual_define (RCore *core) {
 		" d  - set as data\n"
 		" c  - set as code\n"
 		" s  - set string\n"
+		" S  - set strings in current block\n"
 		" f  - analyze function\n"
 		" u  - undefine metadata here\n"
 		" q  - quit/cancel operation\n"
@@ -755,10 +756,31 @@ R_API void r_core_visual_define (RCore *core) {
 	ch = r_cons_arrow_to_hjkl (r_cons_readchar ());
 
 	switch (ch) {
+	case 'S':
+		do {
+			char *name;
+			int n = r_str_nlen ((const char*)p+ntotal, plen-ntotal)+1;
+			name = malloc (n+10);
+			strcpy(name, "str.");
+			strncpy (name+4, (const char *)p+ntotal, n);
+			r_flag_set (core->flags, name, off, n, 0);
+			r_meta_add (core->anal->meta, R_META_TYPE_STRING,
+				off+ntotal, off+n+ntotal, (const char *)p+ntotal);
+			free (name);
+			if (n<2) break;
+			ntotal+= n;
+		} while (ntotal<core->blocksize);
+		break;
 	case 's':
 		{
+			char *name;
 			int n = r_str_nlen ((const char*)p, plen)+1;
+			name = malloc (n+10);
+			strcpy(name, "str.");
+			strncpy (name+4, (const char *)p, n);
+			r_flag_set (core->flags, name, off, n, 0);
 			r_meta_add (core->anal->meta, R_META_TYPE_STRING, off, off+n, (const char *)p);
+			free (name);
 		}
 		break;
 	case 'd': // TODO: check
