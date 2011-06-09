@@ -112,6 +112,7 @@ static int Elf_(r_bin_elf_init)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	bin->phdr = NULL;
 	bin->shdr = NULL;
 	bin->strtab = NULL;
+	bin->strtab_section = NULL;
 	if (!Elf_(r_bin_elf_init_ehdr) (bin)) {
 		eprintf ("Warning: File is not ELF\n");
 		return R_FALSE;
@@ -838,7 +839,7 @@ void* Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin) {
 	free (bin->phdr);
 	free (bin->shdr);
 	free (bin->strtab);
-	free (bin->strtab_section);
+	//free (bin->strtab_section);
 	r_buf_free (bin->b);
 	free (bin);
 	return NULL;
