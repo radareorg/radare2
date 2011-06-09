@@ -42,7 +42,7 @@ R_API RSearchKeyword* r_search_keyword_new_str(const char *kw, const char *bmhex
 		}
 	}
 	ks = r_search_keyword_new ((ut8 *)kw, strlen (kw), bm, bmlen, data);
-	ks->icase = icase;
+	if (ks) ks->icase = icase;
 	free (bm);
 	return ks;
 }
