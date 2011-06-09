@@ -639,6 +639,14 @@ R_API int r_str_ansi_len(const char *str) {
 	return len;
 }
 
+// TODO: support wide char strings
+R_API int r_str_nlen(const char *str, int n) {
+	int len = 0;
+	while (*str++ && n--)
+		len++;
+	return len;
+}
+
 R_API const char *r_str_ansi_chrn(const char *str, int n) {
 	int len, i, li;
 	for (li=i=len=0; str[i] && (n!=len); i++) {

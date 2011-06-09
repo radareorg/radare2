@@ -277,6 +277,7 @@ R_API char *r_str_sub(char *string, char *pat, char *rep, int global);
 R_API int r_str_escape(char *buf);
 R_API char *r_str_unscape(char *buf);
 R_API char *r_str_home(const char *str);
+R_API int r_str_nlen (const char *s, int n);
 R_API char *r_str_concat(char *ptr, const char *string);
 R_API char *r_str_concatf(char *ptr, const char *fmt, ...);
 R_API char *r_str_concatch(char *x, char y);

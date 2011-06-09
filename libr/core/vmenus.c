@@ -734,8 +734,13 @@ R_API void r_core_seek_previous (RCore *core, const char *type) {
 R_API void r_core_visual_define (RCore *core) {
 	int ch;
 	ut64 off = core->offset;
-	if (core->print->cur_enabled)
+	ut8 *p = core->block;
+	int plen = core->blocksize;
+	if (core->print->cur_enabled) {
 		off += core->print->cur;
+		p += core->print->cur;
+		plen -= core->print->cur;
+	}
 	r_cons_printf ("Define current block as:\n"
 		" d  - set as data\n"
 		" c  - set as code\n"
@@ -751,10 +756,10 @@ R_API void r_core_visual_define (RCore *core) {
 
 	switch (ch) {
 	case 's':
-		// detect type of string
-		// find EOS
-		// capture string value
-		r_meta_add (core->anal->meta, R_META_TYPE_STRING, off, off+core->blocksize, "");
+		{
+			int n = r_str_nlen ((const char*)p, plen)+1;
+			r_meta_add (core->anal->meta, R_META_TYPE_STRING, off, off+n, (const char *)p);
+		}
 		break;
 	case 'd': // TODO: check
 		r_meta_add (core->anal->meta, R_META_TYPE_DATA, off, off+core->blocksize, "");

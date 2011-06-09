@@ -35,7 +35,7 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 			str[matches] = '\0';
 			ptr->offset = i-matches;
 			ptr->rva = ptr->offset-from+scnrva;
-			ptr->size = matches;
+			ptr->size = matches+1;
 			ptr->ordinal = ctr;
 			// copying so many bytes here..
 			memcpy (ptr->string, str, R_BIN_SIZEOF_STRINGS);

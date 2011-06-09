@@ -172,9 +172,19 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 					const char *pc = core->anal->reg->name[R_REG_NAME_PC];
 					RAnalValue *dst = analop.dst;
 					if (dst && dst->reg && !strcmp (src->reg->name, pc)) {
-						r_cons_printf ("; %s = 0x%"PFMT64x"\n",
-								dst->reg->name,
-								idx+addr+src->delta);
+						int memref = core->assembler->bits/8;
+						RFlagItem *item;
+						ut8 b[8];
+						ut64 ptr = idx+addr+src->delta+analop.length;
+						ut64 off = 0LL;
+						r_core_read_at (core, ptr, b, memref);
+						off = r_mem_get_num (b, memref, 1);
+						item = r_flag_get_i (core->flags, off);
+						r_cons_printf ("; LEA %s = [0x%"PFMT64x"] = 0x%"PFMT64x" %s\n",
+								dst->reg->name, ptr, off, item?item->name: "");
+						//r_cons_printf ("; %s = 0x%"PFMT64x"\n",
+						//		dst->reg->name,
+						//		idx+addr+src->delta);
 					}
 				}
 			}
@@ -251,7 +261,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			r_cons_printf ("%02x:%04x ", tp?tp->times:0, tp?tp->count:0);
 		}
 		if (show_stackptr) {
-			r_cons_printf ("%3d%s  ", stackptr,
+			r_cons_printf ("%3d%s", stackptr,
 				analop.type==R_ANAL_OP_TYPE_CALL?">":
 				stackptr>ostackptr?"+":stackptr<ostackptr?"-":" ");
 			ostackptr = stackptr;
@@ -273,6 +283,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			free (out);
 			}
 			ret = (int)mi->size;
+i+=mi->size-1;
 			free (line);
 			free (refline);
 			line = refline = NULL;
@@ -301,8 +312,8 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 		}
 		/* show cursor */
 		if (core->print->cur_enabled && cursor >= idx && cursor < (idx+asmop.inst_len))
-			r_cons_printf ("* ");
-		else r_cons_printf ("  ");
+			r_cons_printf ("*");
+		else r_cons_printf (" ");
 		if (show_bytes) {
 			char *str, pad[64];
 			char extra[64];
