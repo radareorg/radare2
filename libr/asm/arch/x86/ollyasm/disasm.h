@@ -357,7 +357,7 @@ int    Assemble(char *cmd,ulong ip,t_asmmodel *model,int attempt,
          int constsize,char *errtext);
 int    Checkcondition(int code,ulong flags);
 int    Decodeaddress(ulong addr,char *symb,int nsymb,char *comment);
-ulong  Disasm(unsigned char *src,ulong srcsize,ulong srcip,
+ulong  Disasm(const unsigned char *src,ulong srcsize,ulong srcip,
          t_disasm *disasm,int disasmmode);
 ulong  Disassembleback(unsigned char *block,ulong base,ulong size,ulong ip,int n);
 ulong  Disassembleforward(unsigned char *block,ulong base,ulong size,ulong ip,int n);

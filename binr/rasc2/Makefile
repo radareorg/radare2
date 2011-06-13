@@ -6,8 +6,8 @@ OBJS=shellcodes.o test.o
 preall: shellcodes.c
 	${MAKE} all
 
-xorhex: xorhex.o
-	${CC} xorhex.o -o xorhex
+xorhex:
+	gcc xorhex.c -o xorhex
 
 shellcodes.c: xorhex
 	./xorhex < shellcodes.c.src > shellcodes.c

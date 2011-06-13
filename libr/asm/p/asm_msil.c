@@ -8,7 +8,7 @@
 #include <r_asm.h>
 #include "msil/demsil.c"
 
-static int arch_msil_disasm(char *str, unsigned char *buf, ut64 seek) {
+static int arch_msil_disasm(char *str, const ut8 *buf, ut64 seek) {
     ut32 n;
 
     DISASMSIL_OFFSET CodeBase = seek;

@@ -51,9 +51,9 @@ KERNOBJS=$(subst .c,.o,${KERNFILES})
 CFLAGS=-Iinclude -g -fPIC 
 CFLAGS+=-I../../../include -DGRUB_TARGET_NO_MODULES
 
-ifeq ($(OSTYPE),Darwin)
-CFLAGS+=-DAPPLE_CC
-endif
+#ifeq ($(OSTYPE),Darwin)
+#CFLAGS+=-DAPPLE_CC
+#endif
 
 BIN=test${EXT_EXE}
 

@@ -18,19 +18,16 @@ DisasMSIL is a free/open disasm engine for the Microsoft Intermediate Language (
 #define ut32 unsigned int
 #endif
 
-static ut32 hi_dword(ut64 Q)
-{
+static ut32 hi_dword(ut64 Q) {
 	ut64 qwBuf = Q >> 32;
 	return (ut32) qwBuf;
 }
 
-static ut32 lo_dword(ut64 Q)
-{
+static ut32 lo_dword(ut64 Q) {
 	return (ut32) Q;
 }
 
-int GetSingleMSILInstr(const u8 *pMemory, ut32 MemorySize, DISASMSIL_OFFSET CodeBase, ILOPCODE_STRUCT *ilop)
-{
+int GetSingleMSILInstr(const u8 *pMemory, ut32 MemorySize, DISASMSIL_OFFSET CodeBase, ILOPCODE_STRUCT *ilop) {
 	u8 *pCurInstr = (u8 *) pMemory;
 	DISASMSIL_OFFSET Base = CodeBase;
 	ut32 CurInstr;
@@ -1075,8 +1072,7 @@ getinstr:
 	return 1;
 }
 
-int DisasMSIL(const u8 *pMemory, ut32 MemorySize, DISASMSIL_OFFSET CodeBase, ILOPCODE_STRUCT *iloparray, ut32 nOpcodeStructs, ut32 *nDisassembledInstr)
-{
+int DisasMSIL(const u8 *pMemory, ut32 MemorySize, DISASMSIL_OFFSET CodeBase, ILOPCODE_STRUCT *iloparray, ut32 nOpcodeStructs, ut32 *nDisassembledInstr) {
 	const u8 *pCurMem = pMemory;
 	ut32 x, RemSize = MemorySize;
 	DISASMSIL_OFFSET CurBase = CodeBase;
@@ -1101,4 +1097,3 @@ int DisasMSIL(const u8 *pMemory, ut32 MemorySize, DISASMSIL_OFFSET CodeBase, ILO
 
 	return 1;
 }
-

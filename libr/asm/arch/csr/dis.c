@@ -562,7 +562,7 @@ static void own(struct state *s)
 }
 #endif
 
-static int arch_csr_disasm(char *str, unsigned char *buf, ut64 seek) {
+static int arch_csr_disasm(char *str, const unsigned char *buf, ut64 seek) {
 	struct state *s = get_state();
 	struct directive *d;
 	memset(s, 0, sizeof(*s));

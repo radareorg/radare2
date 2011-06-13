@@ -100,8 +100,8 @@ static int       nresult;              // Current length of disassembly
 static int       addcomment;           // Comment value of operand
 
 // Copy of input parameters of function Disasm()
-static unsigned char      *cmd;                 // Pointer to binary data
-static unsigned char      *pfixup;              // Pointer to possible fixups or NULL
+static const unsigned char *cmd;                // Pointer to binary data
+static const unsigned char *pfixup;             // Pointer to possible fixups or NULL
 static ulong              size;                 // Remaining size of the command buffer
 static t_disasm           *da;                  // Pointer to disassembly results
 static int                mode;                 // Disassembly mode (DISASM_xxx)
@@ -794,7 +794,7 @@ int Checkcondition(int code,ulong flags) {
   else return (cond==0);               // Invert condition
 };
 
-ulong Disasm(unsigned char *src,ulong srcsize,ulong srcip,
+ulong Disasm(const unsigned char *src,ulong srcsize,ulong srcip,
   t_disasm *disasm,int disasmmode) {
   int i,j,isprefix,is3dnow,repeated,operand,mnemosize,arg;
   ulong u,code;

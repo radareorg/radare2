@@ -2,6 +2,7 @@ RELEASE=1
 DESTDIR=
 
 COMPILER?=gcc
+#COMPILER=maemo
 #COMPILER=mingw32-gcc
 #tcc
 

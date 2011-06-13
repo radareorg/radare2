@@ -42,7 +42,7 @@ struct state {
 	char			*s_fname;
 	int			s_u;
 	unsigned int		s_labelno;
-	unsigned char *		s_buf;
+	const unsigned char *	s_buf;
 	struct directive	s_dirs;
 	struct label		s_labels;
 	FILE			*s_out;
@@ -52,7 +52,7 @@ struct state {
 	int			s_ff_quirk;
 };
 
-static int arch_csr_disasm(char *str, unsigned char *b, ut64 seek);
+static int arch_csr_disasm(char *str, const unsigned char *b, ut64 seek);
 
 #define MODE_MASK	3
 #define REG_SHIFT	2

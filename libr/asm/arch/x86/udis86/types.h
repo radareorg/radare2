@@ -177,8 +177,8 @@ struct ud
   FILE*			inp_file;
 #endif
   uint8_t		inp_ctr;
-  uint8_t*		inp_buff;
-  uint8_t*		inp_buff_end;
+  const uint8_t*	inp_buff;
+  const uint8_t*	inp_buff_end;
   uint8_t		inp_end;
   void			(*translator)(struct ud*);
   uint64_t		insn_offset;

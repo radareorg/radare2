@@ -5,7 +5,7 @@ deps="$@"
 [ -z "$deps" ] && exit 0
 
 getext() {
-	u=$(cat ../../config-user.mk| grep HOST_OS |cut -d = -f 2)
+	u=$(cat ../../config-user.mk| grep OSTYPE |cut -d = -f 2)
 	case $u in
 	windows)
 		echo dll

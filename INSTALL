@@ -21,6 +21,12 @@ WINDOWS
   $ ./configure --with-compiler=i486-mingw32-gcc --with-ostype=windows
   $ make
 
+MAEMO
+=====
+  $ ./configure --with-compiler=mad --with-ostype=gnulinux
+  $ make
+  $ make deb # TODO
+
 CONFIGURATION
 =============
 

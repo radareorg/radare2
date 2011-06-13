@@ -79,7 +79,7 @@ ud_get_user_opaque_data( struct ud * u )
  * =============================================================================
  */
 extern void 
-ud_set_input_buffer(register struct ud* u, uint8_t* buf, size_t len)
+ud_set_input_buffer(register struct ud* u, const uint8_t* buf, size_t len)
 {
   u->inp_hook = inp_buff_hook;
   u->inp_buff = buf;
