@@ -140,10 +140,10 @@ enum {
 	R_ANAL_STACK_SET,
 };
 
-typedef enum {
+enum {
 	R_ANAL_REFLINE_TYPE_STYLE = 1,
 	R_ANAL_REFLINE_TYPE_WIDE = 2,
-} _RAnalReflineType;
+};
 
 enum {
 	R_ANAL_RET_ERROR = -1,
@@ -330,7 +330,7 @@ typedef struct r_anal_var_type_t {
 	ut32 size;
 } RAnalVarType;
 
-enum {
+typedef enum {
 	R_ANAL_REF_TYPE_NULL = 0,
 	R_ANAL_REF_TYPE_CODE = 'c', // code ref
 	R_ANAL_REF_TYPE_CALL = 'C', // code ref (call)

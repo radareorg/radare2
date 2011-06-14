@@ -109,7 +109,10 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 	signal (SIGPIPE, SIG_IGN);
 #endif
 
-	if (proto != R_SOCKET_PROTO_UNIX) {
+	if (proto == R_SOCKET_PROTO_UNIX) {
+		if (!r_socket_unix_connect (s, host))
+			return R_FALSE;
+	} else {
 		memset (&hints, 0, sizeof (struct addrinfo));
 		hints.ai_family = AF_UNSPEC;		/* Allow IPv4 or IPv6 */
 		hints.ai_protocol = proto;
@@ -131,9 +134,6 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 			return R_FALSE;
 		}
 		freeaddrinfo (res);
-	} else {
-		if (r_socket_unix_connect (s, host) == R_FALSE)
-			return R_FALSE;
 	}
 #if HAVE_LIB_SSL
 	if (s->is_ssl) {
