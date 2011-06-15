@@ -12,4 +12,17 @@ CFLAGS_OPT0=-O0
 CFLAGS_OPT1=-O1
 CFLAGS_OPT2=-O2
 CFLAGS_OPT3=-O3
-CFLAGS_DEBUG=-g
+
+ifeq ($(OSTYPE),darwin)
+LDFLAGS_LIB=-dynamiclib
+LDFLAGS_SONAME=-Wl,-install_name,
+else
+LDFLAGS_LIB=-shared
+LDFLAGS_LIB+=-Dxx
+#Wl,-soname,lib${NAME}.${EXT_SO}.${VERSION}
+LDFLAGS_SONAME=-Dxx
+#Wl,-soname=
+endif
+
+CC_LIB=${CC} ${LDFLAGS_LIB} -o ${LIBSO}
+FLAGS_DEBUG=-g
