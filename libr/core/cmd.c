@@ -1606,11 +1606,28 @@ static int cmd_print(void *data, const char *input) {
 	case 'q':
 		r_print_hexdump (core->print, core->offset, core->block, len, 64, 8);
 		break;
+	case 'i': {
+		RAsmOp asmop;
+		int j, ret;
+		const ut8 *buf = core->block;
+		if (l==0) l = len;
+		for (i=j=0; i<core->blocksize && i<len; i+=ret,j++ ) {
+			ret = r_asm_disassemble (core->assembler, &asmop, buf+i, len-i);
+			if (ret<1) {
+				ret = 1;
+				//eprintf ("** invalid opcode at 0x%08"PFMT64x" **\n",
+				//	core->assembler->pc + ret);
+				printf ("???\n");
+			} else {
+				printf ("%s\n", asmop.buf_asm);
+			}
+		}
+		return 0;
+		}
 	case 'D':
 	case 'd':
 		switch (input[1]) {
-		case 'f':
-{
+		case 'f': {
 			RAnalFcn *f = r_anal_fcn_find (core->anal, core->offset,
 					R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 			if (f) {
@@ -1621,27 +1638,7 @@ static int cmd_print(void *data, const char *input) {
 					free (block);
 				}
 			} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
-}
-			break;
-		case 'i': {
-			RAsmOp asmop;
-			int j, ret;
-			const ut8 *buf = core->block;
-			if (l==0) l= len;
-			for (i=j=0; i<core->blocksize && j<l; i+=ret,j++ ) {
-				ret = r_asm_disassemble (core->assembler, &asmop, buf+i, len-i);
-				if (ret<1) {
-					ret = 1;
-					//eprintf ("** invalid opcode at 0x%08"PFMT64x" **\n",
-					//	core->assembler->pc + ret);
-					printf ("???\n");
-				} else {
-					printf ("%s\n", asmop.buf_asm);
-				}
-			}
-			return 0;
-			}
-			break;
+			} break;
 		case 'l':
 			{
 			RAsmOp asmop;
@@ -1834,7 +1831,8 @@ static int cmd_print(void *data, const char *input) {
 		" p6[de] [len] base64 decode/encode\n"
 		" p8 [len]     8bit hexpair list of bytes\n"
 		" pb [len]     bitstream of N bytes\n"
-		" pd[ilf] [l]  disassemble N opcodes (see pd?)\n"
+		" pi[f] [len]  show opcodes of N bytes\n"
+		" pd[lf] [l]   disassemble N opcodes (see pd?)\n"
 		" pD [len]     disassemble N bytes\n"
 		" p[w|q] [len] word (32), qword (64) value dump\n"
 		" po [len]     octal dump of N bytes\n"
