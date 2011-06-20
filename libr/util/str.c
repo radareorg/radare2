@@ -82,11 +82,12 @@ R_API void r_str_subchr (char *s, int a, int b) {
 R_API int r_str_bits (char *strout, const ut8 *buf, int len, const char *bitz) {
 	int i, j;
 	if (bitz) {
-		for (i=j=0; i<len && (!bitz||bitz[i]); i++)
+		for (i=j=0; i<len && (!bitz||bitz[i]); i++) {
 			if (i>0 && (i%8)==0)
 				buf++;
-	                if (*buf&(1<<i))
+	                if (*buf&(1<<(i%8)))
 				strout[j++] = toupper (bitz[i]);
+		}
 	} else {
 		for (i=j=0; i<len; i++) {
 			if (i>0 && (i%8)==0)

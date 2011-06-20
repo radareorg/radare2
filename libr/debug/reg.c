@@ -70,7 +70,7 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 		} else if (rad==3) {
 			if (diff) {
 				char woot[32];
-				snprintf (woot, sizeof(woot), " was 0x%08"PFMT64x"\n", diff);
+				snprintf (woot, sizeof (woot), " was 0x%08"PFMT64x"\n", diff);
 				dbg->printf (fmt, item->name, value, woot);
 			}
 		} else dbg->printf (fmt, item->name, value, "\n");
