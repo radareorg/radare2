@@ -209,15 +209,15 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 	RListIter *iter;
 	eprintf ("Breakpoint list:\n");
 	r_list_foreach (bp->bps, iter, b) {
-		bp->printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %d %c%c%c %s %s %s \"%s\"\n",
+		bp->printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %d %c%c%c %s %s %s cmd=\"%s\"\n",
 			b->addr, b->addr+b->size, b->size,
-			(b->rwx & R_BP_PROT_READ)?'r':'-',
-			(b->rwx & R_BP_PROT_WRITE)?'w':'-',
-			(b->rwx & R_BP_PROT_EXEC)?'x':'-',
-			b->hw?"hw":"sw",
-			b->trace?"trace":"break",
-			b->enabled?"enabled":"disabled",
-			b->data);
+			(b->rwx & R_BP_PROT_READ)? 'r': '-',
+			(b->rwx & R_BP_PROT_WRITE)? 'w': '-',
+			(b->rwx & R_BP_PROT_EXEC)? 'x': '-',
+			b->hw? "hw": "sw",
+			b->trace? "trace": "break",
+			b->enabled? "enabled": "disabled",
+			b->data? b->data: "");
 		/* TODO: Show list of pids and trace points, conditionals */
 		n++;
 	}
