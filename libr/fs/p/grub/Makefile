@@ -4,7 +4,13 @@ CC?=gcc
 RANLIB?=ranlib
 #CC?=gcc
 
-OSTYPE=$(shell uname -s)
+#OSTYPE=$(shell uname -s)
+include ../../../../config-user.mk
+ifeq (${OSTYPE},)
+all:
+	echo LE FAIL
+	exit 1
+endif
 
 KERNFILES=kern/file.c 
 KERNFILES+=kern/term.c kern/device.c
@@ -48,12 +54,14 @@ KERNFILES+=partmap/bsdlabel.c
 KERNFILES+=partmap/sunpc.c
 
 KERNOBJS=$(subst .c,.o,${KERNFILES})
-CFLAGS=-Iinclude -g -fPIC 
+CFLAGS+=-Iinclude -fPIC 
 CFLAGS+=-I../../../include -DGRUB_TARGET_NO_MODULES
+CFLAGS+=-g
 
-#ifeq ($(OSTYPE),Darwin)
-#CFLAGS+=-DAPPLE_CC
-#endif
+# This fixes a silly GNU gcc build problem in OSX - BLAME! :D
+ifeq ($(OSTYPE),darwin)
+CFLAGS+=-DAPPLE_CC
+endif
 
 BIN=test${EXT_EXE}
 

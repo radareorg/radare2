@@ -112,13 +112,13 @@ R_API ut64 r_mem_get_num(ut8 *b, int size, int endian) {
         switch (size) {
         case 1: return b[0];
         case 2:
-                r_mem_copyendian (&n16, b, 2, endian);
+                r_mem_copyendian ((ut8*)&n16, b, 2, endian);
 		return (ut64)n16;
         case 4:
-                r_mem_copyendian (&n32, b, 4, endian);
+                r_mem_copyendian ((ut8*)&n32, b, 4, endian);
 		return (ut64)n32;
         case 8:
-                r_mem_copyendian (&n64, b, 8, endian);
+                r_mem_copyendian ((ut8*)&n64, b, 8, endian);
 		return (ut64)n64;
         }
 	return 0LL;

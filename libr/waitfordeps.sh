@@ -5,7 +5,7 @@ deps="$@"
 [ -z "$deps" ] && exit 0
 
 getext() {
-	u=$(cat ../../config-user.mk| grep OSTYPE |cut -d = -f 2)
+	u=$(grep OSTYPE ../../config-user.mk| head -n 1 | cut -d = -f 2)
 	case $u in
 	windows)
 		echo dll
@@ -33,7 +33,7 @@ while [ $a = 0 ] ; do
 		fi
 	done
 	if [ $a = 0 ]; then
-		echo "[$cur] waiting for $libs"
+		echo "[$cur] waiting for $libs ($ext)"
 		count=$(($count-1))
 		if [ $count = 0 ]; then
 			echo "[$cur] Compilation failed"
