@@ -155,20 +155,8 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	/* check section permissions */
 	if (io->enforce_rwx && !(r_io_section_get_rwx (io, io->off) & R_IO_READ))
 		return -1;
-#if 0
-	if (io->cached) {
-		ret = r_io_cache_read (io, io->off, buf, len);
-		if (ret == len)
-			return len;
-		if (ret > 0) {
-			len -= ret;
-			buf += ret;
-		}
-		// partial reads
-		if (ret == len)
-			return len;
-	}
-#endif
+
+
 	off = io->off;
 	ret = -1;
 	if (io->plugin && io->plugin->read) {
@@ -178,6 +166,19 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	} else ret = read (io->fd->fd, buf, len);
 	if (ret>0 && ret<len)
 		memset (buf+ret, 0xff, len-ret);
+	if (io->cached) {
+		ret = r_io_cache_read (io, io->off, buf, len);
+		if (ret == len) {
+			return len;
+		}
+		if (ret > 0) {
+			len -= ret;
+			buf += ret;
+		}
+		// partial reads
+		if (ret == len)
+			return len;
+	}
 	// this must be before?? r_io_cache_read (io, io->off, buf, len);
 //	eprintf ("--RET-- %llx\n", r_io_seek (io, off, R_IO_SEEK_SET));
 

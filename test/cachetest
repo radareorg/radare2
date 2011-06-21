@@ -1,0 +1,13 @@
+e io.cache=1
+x
+wx 0102
+x
+wc
+!echo RESET
+wcr
+!echo LIST
+wc
+s+1
+x
+s-1
+x

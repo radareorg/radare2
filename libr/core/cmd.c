@@ -2621,18 +2621,47 @@ static int cmd_write(void *data, const char *input) {
 		switch (input[1]) {
 		case 'i':
 			r_io_cache_commit (core->io);
+			r_core_block_read (core, 1);
 			break;
 		case 'r':
 			r_io_cache_reset (core->io, R_TRUE);
+			r_core_block_read (core, 1);
+			break;
+		case '-':
+			if (input[2]=='*') {
+				r_io_cache_reset (core->io, R_TRUE);
+			} else
+			if (input[2]==' ') {
+				char *p = strchr (input+3, ' ');
+				ut64 to, from = core->offset;
+				if (p) {
+					*p = 0;
+					from = r_num_math (core->num, input+3);
+					to = r_num_math (core->num, input+3);
+					if (to<from) {
+						eprintf ("Invalid range (from>to)\n");
+						return 0;
+					}
+				} else {
+					from = r_num_math (core->num, input+3);
+					to = from + core->blocksize;
+				}
+				r_io_cache_invalidate (core->io, from, to);
+			} else {
+				eprintf ("Invalidate write cache at 0x%08"PFMT64x"\n", core->offset);
+				r_io_cache_invalidate (core->io, core->offset, core->offset+core->blocksize);
+			}
+			r_core_block_read (core, 1);
 			break;
 		case '?':
 			r_cons_printf (
 			"Usage: wc[ir*?]\n"
-			" wc       list all write changes\n"
-			" wc*      \"\" in radare commands\n"
-			" wcr      reset all write changes in cache\n"
-			" wci      commit write cache\n"
-			"NOTE: Needs io.cache=true\n");
+			" wc           list all write changes\n"
+			" wc- [a] [b]  remove write op at curseek or given addr\n"
+			" wc*          \"\" in radare commands\n"
+			" wcr          reset all write changes in cache\n"
+			" wci          commit write cache\n"
+			"NOTE: Requires 'e io.cache=true'\n");
 			break;
 		case '*':
 			r_io_cache_list (core->io, R_TRUE);

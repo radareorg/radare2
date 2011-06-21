@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
 
-// XXX This has been stolen from r_vm !!! we must adapt this
-// XXX to work with r_io correctly
+// TODO: USE RList here
 // r_io_cache_t has not been defined
 // TODO: implement a more inteligent way to store cached memory
 // TODO: define limit of max mem to cache
@@ -40,6 +39,7 @@ R_API void r_io_cache_reset(RIO *io, int set) {
 		RIOCache *c = list_entry (pos, RIOCache, list);
 		free (c->data);
 		free (c);
+		list_del (pos);
 	}
 	// is this necessary at all?
 	INIT_LIST_HEAD (&io->cache); 
@@ -47,12 +47,22 @@ R_API void r_io_cache_reset(RIO *io, int set) {
 
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 	int ret = R_FALSE;
-	/* TODO: Implement: invalidate ranged cached read ops between from/to */
+	struct list_head *pos, *n;
+	if (from<to)
+	list_for_each_safe(pos, n, &io->cache) {
+		RIOCache *c = list_entry (pos, RIOCache, list);
+		if (c->from >= from && c->to <= to) {
+			/* REMOVE ITEM */
+			free (c->data);
+			free (c);
+			list_del (pos);
+		}
+	}
 	return ret;
 }
 
 R_API int r_io_cache_list(RIO *io, int rad) {
-	int i;
+	int i, j = 0;
 	struct list_head *pos, *n;
 	list_for_each_safe (pos, n, &io->cache) {
 		RIOCache *c = list_entry (pos, RIOCache, list);
@@ -61,7 +71,13 @@ R_API int r_io_cache_list(RIO *io, int rad) {
 			for (i=0; i<c->size; i++)
 				io->printf ("%02x", c->data[i]);
 			io->printf (" @ 0x%08"PFMT64x"\n", c->from);
-		} else io->printf ("addr=0x%08"PFMT64x" size=%d\n", c->from, c->size);
+		} else {
+			io->printf ("idx=%d addr=0x%08"PFMT64x" size=%d ", j, c->from, c->size);
+			for (i=0; i<c->size; i++)
+				io->printf ("%02x", c->data[i]);
+			io->printf ("\n");
+		}
+		j++;
 	}
 	return R_FALSE;
 }
