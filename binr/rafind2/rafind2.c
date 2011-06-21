@@ -36,34 +36,35 @@ typedef struct {
 static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	int delta = addr-cur;
 	if (rad) {
-		printf("f hit%d_%d 0x%08"PFMT64x" ; %s\n", 0, kw->count, addr, curfile);
+		printf ("f hit%d_%d 0x%08"PFMT64x" ; %s\n", 0, kw->count, addr, curfile);
 	} else {
-		if (!kw->count) printf("; %s\n", kw->keyword);
-		printf("%s: %03d @ 0x%"PFMT64x"\n", curfile, kw->count, addr);
+		if (!kw->count) printf ("; %s\n", kw->keyword);
+		printf ("%s: %03d @ 0x%"PFMT64x"\n", curfile, kw->count, addr);
 		if (pr) {
-			r_print_hexdump(pr, addr, (ut8*)buffer+delta, 78, 16, R_TRUE);
-			r_cons_flush();
+			r_print_hexdump (pr, addr, (ut8*)buffer+delta, 78, 16, R_TRUE);
+			r_cons_flush ();
 		}
 	}
 	return 1;
 }
 
 static int show_help(char *argv0, int line) {
-	printf("Usage: %s [-Xnzh] [-f from] [-t to] [-s str] [-x hex] file ...\n", argv0);
+	printf ("Usage: %s [-Xnzh] [-f from] [-t to] [-[m|s|e] str] [-x hex] file ...\n", argv0);
 	if (line) return 0;
-	printf(
-	" -z        search for zero-terminated strings\n"
-	" -s [str]  search for zero-terminated strings (can be used multiple times)\n"
-	" -m [str]  set a mask\n"
-	" -x [hex]  search for hexpair string (909090) (can be used multiple times)\n"
-	" -f [from] start searching from address 'from'\n"
-	" -t [to]   stop search at address 'to'\n"
-	" -X        show hexdump of search results\n"
-	" -n        do not stop on read errors\n"
-	" -r        print using radare commands\n"
-	" -b        set block size\n"
-	" -h        show this help\n"
-	" -V        print version and exit\n"
+	printf (
+	" -z         search for zero-terminated strings\n"
+	" -s [str]   search for zero-terminated strings (can be used multiple times)\n"
+	" -e [regex] search for regular expression string matches\n"
+	" -x [hex]   search for hexpair string (909090) (can be used multiple times)\n"
+	" -m [str]   set a mask\n"
+	" -f [from]  start searching from address 'from'\n"
+	" -t [to]    stop search at address 'to'\n"
+	" -X         show hexdump of search results\n"
+	" -n         do not stop on read errors\n"
+	" -r         print using radare commands\n"
+	" -b         set block size\n"
+	" -h         show this help\n"
+	" -V         print version and exit\n"
 	);
 	return 0;
 }
@@ -79,7 +80,7 @@ static int rafind_open(char *file) {
 		return 1;
 	}
 
-	r_cons_new();
+	r_cons_new ();
 	rs = r_search_new (mode);
 	buffer = malloc (bsize);
 	if (buffer==NULL) {
@@ -124,25 +125,31 @@ static int rafind_open(char *file) {
 int main(int argc, char **argv) {
 	int c;
 
-	while ((c = getopt(argc, argv, "b:m:s:x:Xzf:t:rnhV")) != -1) {
-		BoxedString *kw = R_NEW(BoxedString);
-		INIT_LIST_HEAD(&(kw->list));
+	while ((c = getopt(argc, argv, "e:b:m:s:x:Xzf:t:rnhV")) != -1) {
+		BoxedString *kw = R_NEW (BoxedString);
+		INIT_LIST_HEAD (&(kw->list));
 
-		switch(c) {
+		switch (c) {
 		case 'r':
 			rad = 1;
 			break;
 		case 'n':
 			nonstop = 1;
 			break;
+		case 'e':
+			mode = R_SEARCH_REGEXP;
+			hexstr = 0;
+			kw->str = optarg;
+			list_add (&(kw->list), &(kws_head));
+			break;
 		case 's':
 			mode = R_SEARCH_KEYWORD;
 			hexstr = 0;
 			kw->str = optarg;
-			list_add(&(kw->list), &(kws_head));
+			list_add (&(kw->list), &(kws_head));
 			break;
 		case 'b':
-			bsize = r_num_math(NULL, optarg);
+			bsize = r_num_math (NULL, optarg);
 			break;
 		case 'z':
 			mode = R_SEARCH_STRING;

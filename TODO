@@ -5,15 +5,12 @@
 
 CODENAME: #DRY
 
-* implement regexp search in rafind2
-* review io.cache with 'wc' to support write patch
 * add support for sockets in rarun2
 
 TODO
 ====
 * Implement r_flag_unset_i () ftw
 * libmagic internal :? -- find a decent implementation and adopt it
-* Ranged/scrollable zoom mode
 * Honor string metadata for asmsteps ('jk' in visual)
 
 ** BUG **
@@ -52,9 +49,9 @@ TODO
 
 ------8<-------------------8<--------------------8<-----------------8<----------
 
+
 To wipe:
 ========
-* check iowrite
  - Move the content of libr/*/TODO here
  - linestyle?? for disassembly lines
  - remove libr/vm and libr/db
@@ -142,6 +139,7 @@ Assembler
 
 0.8: focus on debugger and UI
 =============================
+* Ranged/scrollable zoom mode
 * AES/RSA Key finding
   http://citp.princeton.edu/memory/code/ <- implement this stuff in r2
 * Reimplement or fix the delta diffing in C - first we need to do it for ired..
