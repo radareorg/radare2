@@ -152,6 +152,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 				if (core->anal->reg && core->anal->reg->name) {
 					const char *pc = core->anal->reg->name[R_REG_NAME_PC];
 					RAnalValue *dst = analop.dst;
+					if (dst && dst->reg && dst->reg->name)
 					if (!strcmp (src->reg->name, pc)) {
 						RFlagItem *item;
 						ut8 b[8];
