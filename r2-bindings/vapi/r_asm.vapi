@@ -47,9 +47,8 @@ public class RAsm {
 		public int[] bits;
 	}
 
-	[Compact]
 	[CCode (cname="RAsmOp", destroy_function="")]
-	public class Op {
+	public struct Op {
 		public int inst_len;
 		public uint8 *buf;
 		public string buf_asm;
@@ -60,7 +59,6 @@ public class RAsm {
 		public string get_asm();
 	}
 
-	[Compact]
 	[CCode (cname="RAsmCode", cprefix="r_asm_code_", free_function="r_asm_code_free")]
 	public class Code {
 		public int len;
@@ -85,7 +83,7 @@ public class RAsm {
 	public bool set_pc(uint64 addr);
 	public bool set_big_endian(bool big);
 	// TODO: Use Code? instead of op??
-	public int disassemble(out Op op, uint8 *buf, uint64 length);
+	public int disassemble(out Op op, uint8* buf, uint64 length);
 	public int assemble(out Op op, string buf);
 	public Code? mdisassemble(uint8 *buf, uint64 length);
 	public Code? mdisassemble_hexstr(string hexstr);
