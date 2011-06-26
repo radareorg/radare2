@@ -132,9 +132,10 @@ static int autocomplete(RLine *line) {
 				} else *p = 0;
 				p++;
 			}
-			if (p && !*p)
-				p = "";
-			n = strlen (p);
+			if (p) {
+				if (*p) n = strlen (p);
+				else p = "";
+			}
 #if 0
 printf ("DIR(%s)\n", path);
 printf ("FILE(%s)\n", p);
