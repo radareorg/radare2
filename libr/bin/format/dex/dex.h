@@ -44,6 +44,7 @@ struct r_bin_dex_obj_t {
 	const char* file;
 	struct r_buf_t* b;
 	struct dex_header_t header;
+	ut32 *strings;
 };
 
 struct r_bin_dex_str_t {

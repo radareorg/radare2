@@ -14,6 +14,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	int size = 0;
 	int vA, vB, vC;
 	char str[1024];
+	ut64 offset;
 
 	if (dalvik_opcodes[i].len <= len) {
 		strcpy (op->buf_asm, dalvik_opcodes[i].name);
@@ -118,7 +119,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 			sprintf (str, " %#08x", vA);
 			strcat (op->buf_asm, str);
 			break;
-		case fmtopvAvBpCCCC: //TEST without pc
+		case fmtopvAvBpCCCC:
 			vA = buf[1] & 0x0f;
 			vB = (buf[1] & 0xf0)>>4;
 			vC = (int) (buf[3] <<8 | buf[2]);
@@ -190,58 +191,99 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 			strcat (op->buf_asm, str);
 			break;
 		case fmtopvAAtBBBB:
-			//FIXME: strings & class & fieldmust be a dex(r_bin) section
 			vA = (int) buf[1];
 			vB = (buf[3]<<8) | buf[2];
-			if (buf[0] == 0x1a)
-				sprintf (str, " v%i, strings+%i", vA, vB);
-			else if (buf[0] == 0x1c || buf[0] == 0x1f || buf[0] == 0x22)
-				sprintf (str, " v%i, class+%i", vA, vB);
-			else
-				sprintf (str, " v%i, field+%i", vA, vB);
-
+			if (buf[0] == 0x1a) {
+				offset = r_asm_get_offset(a, 's', vB);
+				if (offset == -1)
+					sprintf (str, " v%i, string+%i", vA, vB);
+				else
+					sprintf (str, " v%i, 0x%"PFMT64x, vA, offset);
+			} else if (buf[0] == 0x1c || buf[0] == 0x1f || buf[0] == 0x22) {
+				offset = r_asm_get_offset(a, 'c', vB);
+				if (offset == -1)
+					sprintf (str, " v%i, class+%i", vA, vB);
+				else
+					sprintf (str, " v%i, 0x%"PFMT64x, vA, offset);
+			} else {
+				offset = r_asm_get_offset(a, 'f', vB);
+				if (offset == -1)
+					sprintf (str, " v%i, field+%i", vA, vB);
+				else
+					sprintf (str, " v%i, 0x%"PFMT64x, vA, offset);
+			}
 			strcat (op->buf_asm, str);
 			break;
-		case fmtoptopvAvBoCCCC: //FIXME: obj must be a dex(r_bin) section
+		case fmtoptopvAvBoCCCC:
 			vA = (buf[1] & 0x0f);
 			vB = (buf[1] & 0xf0)>>4;
 			vC = (buf[3]<<8) | buf[2];
-			sprintf (str, " v%i, v%i, [obj+%04x]", vA, vB, vC);
+			offset = r_asm_get_offset(a, 'o', vC);
+			if (offset == -1)
+				sprintf (str, " v%i, v%i, [obj+%04x]", vA, vB, vC);
+			else
+				sprintf (str, " v%i, v%i, [0x%"PFMT64x"]", vA, vB, offset);
 			strcat (op->buf_asm, str);
 			break;
-		case fmtopAAtBBBB: //FIXME: thing must be a dex(r_bin) section
+		case fmtopAAtBBBB:
 			vA = (int) buf[1];
 			vB = (buf[3]<<8) | buf[2];
-			sprintf (str, " v%i, thing+%i", vA, vB);
+			offset = r_asm_get_offset(a, 't', vB);
+			if (offset == -1)
+				sprintf (str, " v%i, thing+%i", vA, vB);
+			else
+				sprintf (str, " v%i, 0x%"PFMT64x, vA, offset);
 			strcat (op->buf_asm, str);
 			break;
-		case fmtopvAvBtCCCC: //FIXME: class & field must be a dex section
+		case fmtopvAvBtCCCC:
 			vA = (buf[1] & 0x0f);
 			vB = (buf[1] & 0xf0)>>4;
 			vC = (buf[3]<<8) | buf[2];
-			if (buf[0] == 0x20 || buf[0] == 0x23) //instance-of & new-array
-				sprintf (str, " v%i, v%i, class+%i", vA, vB, vC);
-			else
-				sprintf (str, " v%i, v%i, field+%i", vA, vB, vC);
+			if (buf[0] == 0x20 || buf[0] == 0x23) { //instance-of & new-array
+				offset = r_asm_get_offset(a, 'c', vC);
+				if (offset == -1)
+					sprintf (str, " v%i, v%i, class+%i", vA, vB, vC);
+				else
+					sprintf (str, " v%i, v%i, 0x%"PFMT64x, vA, vB, offset);
+			} else {
+				offset = r_asm_get_offset(a, 'f', vC);
+				if (offset == -1)
+					sprintf (str, " v%i, v%i, field+%i", vA, vB, vC);
+				else
+					sprintf (str, " v%i, v%i, 0x%"PFMT64x, vA, vB, offset);
+			}
 			strcat (op->buf_asm, str);
 			break;
-		case fmtopvAAtBBBBBBBB: //FIXME: string must be a dex(r_bin) section
+		case fmtopvAAtBBBBBBBB:
 			vA = (int) buf[1];
 			vB = (int) (buf[5]|(buf[4]<<8)|(buf[3]<<16)|(buf[2]<<24));
-			sprintf (str, " v%i, string+%i", vA, vB);
+			offset = r_asm_get_offset(a, 's', vB);
+			if (offset == -1)
+				sprintf (str, " v%i, string+%i", vA, vB);
+			else
+				sprintf (str, " v%i, 0x%"PFMT64x, vA, offset);
 			strcat (op->buf_asm, str);
 			break;
-		case fmtopvCCCCmBBBB: //FIXME: class must be a dex(r_bin) section
+		case fmtopvCCCCmBBBB:
 			vA = (int) buf[1];
 			vB = (buf[3]<<8) | buf[2];
 			vC = (buf[5]<<8) | buf[4];
-			if (buf[0] == 0x25) // filled-new-array/range
-				sprintf (str, " {v%i..v%i}, class+%i", vC, vC+vA-1, vB);
-			else
-				sprintf (str, " {v%i..v%i}, method+%i", vC, vC+vA-1, vB);
+			if (buf[0] == 0x25) { // filled-new-array/range
+				offset = r_asm_get_offset(a, 'c', vB);
+				if (offset == -1)
+					sprintf (str, " {v%i..v%i}, class+%i", vC, vC+vA-1, vB);
+				else
+					sprintf (str, " {v%i..v%i}, 0x%"PFMT64x, vC, vC+vA-1, offset);
+			} else {
+				offset = r_asm_get_offset(a, 'm', vB);
+				if (offset == -1)
+					sprintf (str, " {v%i..v%i}, method+%i", vC, vC+vA-1, vB);
+				else
+					sprintf (str, " {v%i..v%i}, 0x%"PFMT64x, vC, vC+vA-1, offset);
+			}
 			strcat (op->buf_asm, str);
 			break;
-		case fmtopvXtBBBB: //FIXME: class & method must be a dex(r_bin) section
+		case fmtopvXtBBBB:
 			vA = (int) (buf[1] & 0xf0)>>4;
 			vB = (buf[3]<<8) | buf[2];
 			switch (vA) {
@@ -263,10 +305,20 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 					sprintf (str, " {}");
 			}
 			strcat (op->buf_asm, str);
-			if (buf[0] == 0x24) // filled-new-array
-				sprintf (str, ", class+%i", vB);
-			else
-				sprintf (str, ", method+%i", vB);
+			if (buf[0] == 0x24) { // filled-new-array
+				offset = r_asm_get_offset(a, 'c', vB);
+				if (offset == -1)
+					sprintf (str, ", class+%i", vB);
+				else
+					sprintf (str, ", 0x%"PFMT64x, offset);
+			} else {
+				offset = r_asm_get_offset(a, 'm', vB);
+				if (offset == -1)
+					sprintf (str, ", method+%i", vB);
+				else
+					sprintf (str, ", 0x%"PFMT64x, offset);
+
+			}
 			strcat (op->buf_asm, str);
 			break;
 		case fmtoptinvokeI: // Any opcode has this formats

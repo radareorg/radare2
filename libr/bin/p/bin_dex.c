@@ -54,12 +54,12 @@ static RList* strings(RBinArch *arch) {
 	RList *ret = NULL;
 	RBinString *ptr = NULL;
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->bin_obj;
-	ut32 i, *string;
+	ut32 i;
 	char buf[6];
 	int len;
 
-	string = (ut32 *) malloc (bin->header.strings_size * sizeof (ut32));
-	r_buf_read_at(bin->b, bin->header.strings_offset, (ut8*)string,
+	bin->strings = (ut32 *) malloc (bin->header.strings_size * sizeof (ut32));
+	r_buf_read_at(bin->b, bin->header.strings_offset, (ut8*)bin->strings,
 			bin->header.strings_size * sizeof (ut32));
 	if (!(ret = r_list_new ()))
 		return NULL;
@@ -67,19 +67,19 @@ static RList* strings(RBinArch *arch) {
 	for (i = 0; i < bin->header.strings_size; i++) {
 		if (!(ptr = R_NEW (RBinString)))
 			break;
-		r_buf_read_at (bin->b, string[i], (ut8*)&buf, 6);
+		r_buf_read_at (bin->b, bin->strings[i], (ut8*)&buf, 6);
 		len = dex_read_uleb128 (buf);
 		//	len = R_BIN_SIZEOF_STRINGS-1;
 		if (len>0 && len < R_BIN_SIZEOF_STRINGS) {
-			r_buf_read_at(bin->b, string[i]+1, (ut8*)&ptr->string, len);
+			//FIXME: size its uleb128
+			r_buf_read_at(bin->b, bin->strings[i]+1, (ut8*)&ptr->string, len);
 			ptr->string[(int) len]='\0';
-			ptr->rva = ptr->offset = string[i]+1;
+			ptr->rva = ptr->offset = bin->strings[i];
 			ptr->size = len;
 			ptr->ordinal = i+1;
 			r_list_append (ret, ptr);
 		} else eprintf ("dex_read_uleb128: invalid read\n");
 	}
-	free (string);
 	return ret;
 }
 
@@ -96,6 +96,7 @@ static RList* classes (RBinArch *arch) {
 	for (i = 0; i < bin->header.class_size; i++) {
 		r_buf_read_at (bin->b, (ut64) bin->header.class_offset, (ut8*)&entry,
 				sizeof (struct dex_class_t));
+#if 0
 		eprintf ("ut32 class_id = %08x;\n", entry.class_id);
 		eprintf ("ut32 access_flags = %08x;\n", entry.access_flags);
 		eprintf ("ut32 super_class = %08x;\n", entry.super_class);
@@ -104,18 +105,34 @@ static RList* classes (RBinArch *arch) {
 		eprintf ("ut32 anotations_offset = %08x;\n", entry.anotations_offset);
 		eprintf ("ut32 class_data_offset = %08x;\n", entry.class_data_offset);
 		eprintf ("ut32 static_values_offset = %08x;\n", entry.static_values_offset);
+#endif
 	}
-	return ret;
+	return 0; //FIXME: This must be main offset
 }
 
+//TODO
 static int getoffset (RBinArch *arch, int type, int idx) {
 	struct r_bin_dex_obj_t *dex = arch->bin_obj;
+
 	switch (type) {
-	case 's': // symbol name
-		// dex->header.method_offset
-		return 0; // TODO: must be the offset to the ptr
+		case 'm': // methods
+			break;
+		case 'c': // class
+			break;
+		case 'f': // fields
+			break;
+		case 'o': // objects
+			break;
+		case 's': // strings
+			if (dex->header.strings_size > idx) {
+				printf ("Return 0x%x\n", dex->strings[idx]);
+				return dex->strings[idx];
+			}
+			break;
+		case 't': // things
+			break;
 	}
-	return 0;
+	return -1;
 }
 
 struct r_bin_plugin_t r_bin_plugin_dex = {
