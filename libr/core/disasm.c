@@ -53,6 +53,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int linesout = r_config_get_i (core->config, "asm.linesout");
 	int adistrick = r_config_get_i (core->config, "asm.middle"); // TODO: find better name
 	int show_offset = r_config_get_i (core->config, "asm.offset");
+	int show_flags = r_config_get_i (core->config, "asm.flags");
 	int show_bytes = r_config_get_i (core->config, "asm.bytes");
 	int show_comments = r_config_get_i (core->config, "asm.comments");
 	int show_stackptr = r_config_get_i (core->config, "asm.stackptr");
@@ -237,16 +238,18 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 				} else f = NULL;
 			} else r_cons_printf ("  ");
 		}
-		flag = r_flag_get_i (core->flags, at);
-		//if (flag && !show_bytes) {
-		if (flag) {
-			if (show_lines && refline)
-				r_cons_strcat (refline);
-			if (show_offset)
-				printoffset (at, show_color);
-			if (show_functions)
-				r_cons_printf ("%s:\n%s", flag->name, f?"| ":"  ");
-			else r_cons_printf ("%s:\n", flag->name);
+		if (show_flags) {
+			flag = r_flag_get_i (core->flags, at);
+			//if (flag && !show_bytes) {
+			if (flag) {
+				if (show_lines && refline)
+					r_cons_strcat (refline);
+				if (show_offset)
+					printoffset (at, show_color);
+				if (show_functions)
+					r_cons_printf ("%s:\n%s", flag->name, f?"| ":"  ");
+				else r_cons_printf ("%s:\n", flag->name);
+			}
 		}
 		if (show_lines && line)
 			r_cons_strcat (line);

@@ -28,7 +28,7 @@ R_API void r_cmd_macro_init(RCmdMacro *mac) {
 R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	struct list_head *pos;
 	struct r_cmd_macro_item_t *macro;
-	char buf[1024];
+	char buf[4096];
 	char *bufp;
 	char *pbody;
 	char *ptr;
@@ -37,7 +37,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	char *name, *args = NULL;
 
 	if (oname[0]=='\0') {
-		r_cmd_macro_list(mac);
+		r_cmd_macro_list (mac);
 		return 0;
 	}
 
@@ -49,12 +49,12 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 
 	pbody = strchr (name, ',');
 	if (pbody) {
-		pbody[0] = '\0';
-		pbody = pbody + 1;
+		*pbody = '\0';
+		pbody++;
 	}
 
 	if (name[strlen (name)-1]==')') {
-		eprintf ("No body?\n");
+		eprintf ("r_cmd_macro_add: missing macro body?\n");
 		free (name);
 		return -1;
 	}
@@ -78,7 +78,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		}
 	}
 	if (ptr)
-		*ptr=' ';
+		*ptr = ' ';
 	if (macro == NULL) {
 		macro = (struct r_cmd_macro_item_t *)malloc (sizeof(struct r_cmd_macro_item_t));
 		macro->name = strdup (name);
@@ -105,7 +105,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 				pbody[lidx]='\0';
 		}
 		strcpy (macro->code, pbody);
-		strcat (macro->code, ",");
+		//strcat (macro->code, ",");
 	} else {
 		for (;;) { // XXX input from mac->fd
 #if 0
@@ -115,7 +115,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 			}
 			fgets(buf, 1023, r_cons_stdin_fd);
 #endif
-			fgets (buf, 1023, stdin);
+			fgets (buf, sizeof (buf), stdin);
 			if (buf[0]==')')
 				break;
 			for (bufp=buf;*bufp==' '||*bufp=='\t';bufp=bufp+1);
@@ -125,7 +125,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 				strcat (macro->code, bufp);
 				break;
 			}
-			if (buf[0] != '\n')
+			if (*buf != '\n')
 				strcat (macro->code, bufp);
 		}
 	}

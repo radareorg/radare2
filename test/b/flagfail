@@ -9,7 +9,7 @@ f cow
 f-cow
 f-bar
 f-foo
-pd 1
+pi 1
 '
 EXPECT="nop
 mov eax, 0x21"

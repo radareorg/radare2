@@ -1608,21 +1608,17 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'i': {
 		RAsmOp asmop;
-		int j, ret;
+		int j, ret, err = 0;
 		const ut8 *buf = core->block;
 		if (l==0) l = len;
 		for (i=j=0; i<core->blocksize && i<len; i+=ret,j++ ) {
 			ret = r_asm_disassemble (core->assembler, &asmop, buf+i, len-i);
 			if (ret<1) {
-				ret = 1;
-				//eprintf ("** invalid opcode at 0x%08"PFMT64x" **\n",
-				//	core->assembler->pc + ret);
-				printf ("???\n");
-			} else {
-				printf ("%s\n", asmop.buf_asm);
-			}
+				err = 1;
+				r_cons_printf ("???\n");
+			} else r_cons_printf ("%s\n", asmop.buf_asm);
 		}
-		return 0;
+		return err;
 		}
 	case 'D':
 	case 'd':
@@ -3783,8 +3779,11 @@ static int cmd_macro(void *data, const char *input) {
 					break;
 			} while (ptr[strlen (ptr)-1] != ')');
 			ptr = buf;
+		} else {
+			buf = strdup (input);
+			buf[strlen (input)-1] = 0;
 		}
-		r_cmd_macro_add (&core->cmd->macro, ptr);
+		r_cmd_macro_add (&core->cmd->macro, buf);
 		free (buf);
 		break;
 	}
@@ -3833,18 +3832,22 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	cmd = r_str_trim_head_tail (cmd);
 
 	/* quoted / raw command */
-	if (cmd[0] =='.' && cmd[1] == '"') { /* interpret */
-		ret = r_cmd_call (core->cmd, cmd);
-		return ret;
-	}
-	if (cmd[0] == '"') {
+	switch (*cmd) {
+	case '.':
+		if (cmd[1] == '"') { /* interpret */
+			ret = r_cmd_call (core->cmd, cmd);
+			return ret;
+		}
+		break;
+	case '"':
 		if (cmd[len-1] != '"') {
 			eprintf ("parse: Missing ending '\"'\n");
 			return -1;
 		}
 		cmd[len-1]='\0';
-		ret = r_cmd_call (core->cmd, cmd+1);
-		return ret;
+		return r_cmd_call (core->cmd, cmd+1);
+	case '(':
+		return r_cmd_call (core->cmd, cmd);
 	}
 
 	/* comments */
