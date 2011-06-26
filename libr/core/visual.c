@@ -480,6 +480,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" pP      - rotate print modes\n"
 		" /*+-[]  - change block size, [] = resize scr.cols\n"
 		" cC      - toggle cursor and colors\n"
+		" gG      - go seek to begin and end of file (0-$s)\n"
 		" d[f?]   - define function, data, code, ..\n"
 		" x       - find xrefs for current offset\n"
 		" sS      - step / step over\n"
