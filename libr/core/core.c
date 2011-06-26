@@ -37,6 +37,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'j': return op.jump;
 		case 'f': return op.fail;
 		case 'r': return op.ref;
+		case 'l': return op.length;
 		case 'b': return core->blocksize;
 		case 's': return core->file->size;
 		case '?': return core->num->value;
@@ -276,7 +277,6 @@ R_API int r_core_init(RCore *core) {
 	core->num = r_num_new (&num_callback, core);
 	//core->num->callback = &num_callback;
 	//core->num->userptr = core;
-	core->cons = r_cons_singleton ();
 	core->curasmstep = 0;
 
 	/* initialize libraries */
@@ -289,6 +289,8 @@ R_API int r_core_init(RCore *core) {
 		r_line_hist_load (".radare2_history");
 		singleton = R_FALSE;
 	}
+	core->cons = r_cons_singleton ();
+	core->cons->num = core->num;
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8*)malloc (R_CORE_BLOCKSIZE);
 	if (core->block == NULL) {

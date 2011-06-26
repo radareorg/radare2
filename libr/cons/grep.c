@@ -32,10 +32,10 @@ R_API void r_cons_grep(const char *str) {
 	ptr3 = strchr (ptr, '['); // column number
 	if (ptr3) {
 		ptr3[0]='\0';
-		cons->grep.tokenfrom = atoi (ptr3+1);
+		cons->grep.tokenfrom = r_num_get (cons->num, ptr3+1);
 		ptr3 = strchr (ptr3+1, '-');
 		if (ptr3) {
-			cons->grep.tokento = atoi (ptr3+1);
+			cons->grep.tokento = r_num_get (cons->num, ptr3+1);
 			if (cons->grep.tokento == 0)
 				cons->grep.tokento = ST32_MAX;
 		} else cons->grep.tokento = cons->grep.tokenfrom;
@@ -46,8 +46,8 @@ R_API void r_cons_grep(const char *str) {
 	}
 	ptr2 = strchr (ptr, ':'); // line number
 	if (ptr2) {
-		ptr2[0]='\0';
-		cons->grep.line = atoi (ptr2+1);
+		*ptr2 = '\0';
+		cons->grep.line = r_num_get (cons->num, ptr2+1);
 		if (cons->grep.line<0)
 			cons->grep.line = -1;
 	}

@@ -1,8 +1,6 @@
 /* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
 
 #include <r_cons.h>
-#include <r_types.h>
-#include <r_util.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -100,6 +98,7 @@ R_API RCons *r_cons_new () {
 	I.buffer_sz = 0;
 	I.buffer_len = 0;
 	r_cons_get_size (NULL);
+	I.num = NULL;
 #if __UNIX__
 	tcgetattr (0, &I.term_buf);
 	memcpy (&I.term_raw, &I.term_buf, sizeof (I.term_raw));

@@ -3,7 +3,9 @@
 
 #define HAVE_DIETLINE 0
 
-#include "r_types.h"
+#include <r_types.h>
+#include <r_util.h>
+
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -67,6 +69,7 @@ typedef struct r_cons_t {
 #elif __WINDOWS__
 	LPDWORD term_raw, term_buf;
 #endif
+	RNum *num;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */

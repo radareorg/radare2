@@ -9,18 +9,18 @@
 static struct r_core_t r;
 
 static int main_help(int line) {
-	printf ("Usage: radare2 [-dwnLvV] [-p prj] [-s addr] [-b bsz] [-e k=v] [file]\n");
+	printf ("Usage: radare2 [-dwnLqv] [-p prj] [-s addr] [-b bsz] [-e k=v] [file]\n");
 	if (!line) printf (
 		" -d           use 'file' as a program to debug\n"
 		" -w           open file in write mode\n"
 		" -n           do not run ~/.radare2rc\n"
-		" -v           nonverbose mode (no prompt)\n"
+		" -q           quite mode (no prompt)\n"
 		" -f           block size = file size\n"
 		" -p [prj]     set project file\n"
 		" -s [addr]    initial seek\n"
 		" -b [size]    initial block size\n"
 		" -i [file]    run script file\n"
-		" -V           show radare2 version\n"
+		" -v           show radare2 version\n"
 		" -l [lib]     load plugin file\n"
 		//" -t         load rabin2 info in thread\n"
 		" -L           list supported IO plugins\n"
@@ -98,14 +98,14 @@ int main(int argc, char **argv) {
 		return main_help (1);
 	r_core_init (&r);
 
-	while ((c = getopt (argc, argv, "wfhe:ndvVs:p:b:Lui:l:"))!=-1) {
+	while ((c = getopt (argc, argv, "wfhe:ndqvs:p:b:Lui:l:"))!=-1) {
 		switch (c) {
 #if 0
 		case 't':
 			threaded = R_TRUE;
 			break;
 #endif
-		case 'v':
+		case 'q':
 			r_config_set (r.config, "scr.prompt", "false");
 			break;
 		case 'p':
@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
 		case 'n':
 			run_rc = 0;
 			break;
-		case 'V':
+		case 'v':
 			return main_version ();
 		case 'w':
 			perms = R_IO_READ | R_IO_WRITE;

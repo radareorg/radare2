@@ -871,9 +871,11 @@ static int cmd_section(void *data, const char *input) {
 	case '?':
 		r_cons_printf (
 		" S                ; list sections\n"
+		" S.               ; show current section name\n"
+		" S?               ; show this help message\n"
 		" S*               ; list sections (in radare commands)\n"
 		" S=               ; list sections (in nice ascii-art bars)\n"
-		" S [offset] [vaddr] [size] [vsize] [name] [rwx] ; adds new section\n"
+		" S [off] [vaddr] [sz] [vsz] [name] [rwx] ; add new section\n"
 		" S-[id|0xoff|*]   ; remove this section definition\n");
 		break;
 	case '-':
@@ -929,6 +931,24 @@ static int cmd_section(void *data, const char *input) {
 		break;
 	case '=':
 		r_io_section_list_visual (core->io, core->offset, core->blocksize);
+		break;
+	case '.':
+		{
+		ut64 o = core->offset;
+		RListIter *iter;
+		RIOSection *s;
+		if (core->io->va || core->io->debug)
+			o = r_io_section_vaddr_to_offset (core->io, o);
+		r_list_foreach (core->io->sections, iter, s) {
+			if (o>=s->offset && o<s->offset+s->size) {
+				r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
+					s->offset + s->vaddr,
+					s->offset + s->vaddr + s->size,
+					s->name);
+				break;
+			}
+		}
+		}
 		break;
 	case '\0':
 		r_io_section_list (core->io, core->offset, 0);
@@ -1024,6 +1044,14 @@ static int cmd_seek(void *data, const char *input) {
 			r_io_sundo_push (core->io);
 			r_core_anal_bb_seek (core, off);
 			break;
+		case 'n':
+			{
+			RAnalOp op;
+			int ret = r_anal_op (core->anal, &op,
+				core->offset, core->block, core->blocksize);
+			r_core_seek_delta (core, ret);
+			}
+			break;
 		case '?':
 			r_cons_printf (
 			"Usage: s[+-] [addr]\n"
@@ -1039,6 +1067,7 @@ static int cmd_seek(void *data, const char *input) {
 			" sf|sF      ; seek next/prev scr.fkey\n"
 			" s/ DATA    ; search for next occurrence of 'DATA'\n"
 			" sb         ; seek aligned to bb start\n"
+			" sn         ; seek to next opcode\n"
 			" sr pc      ; seek to register\n");
 			break;
 		}
@@ -1206,6 +1235,7 @@ static int cmd_help(void *data, const char *input) {
 			" $j  = jump address\n"
 			" $f  = address of next opcode\n"
 			" $r  = opcode reference pointer\n"
+			" $l  = opcode length\n"
 			" $e  = 1 if end of block, else 0\n"
 			" ${eval} = get value of eval variable\n"
 			" $?  = last comparision value\n");
@@ -3877,9 +3907,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	}
 
 	/* bool conditions */
-	ptr = strchr(cmd, '&');
-	while (ptr&&ptr[1]=='&') {
-		ptr[0]='\0';
+	ptr = strchr (cmd, '&');
+	while (ptr && ptr[1]=='&') {
+		*ptr = '\0';
 		ret = r_cmd_call (core->cmd, cmd);
 		if (ret == -1){
 			eprintf ("command error(%s)\n", cmd);
@@ -3935,7 +3965,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	/* pipe console to file */
 	ptr = strchr (cmd, '>');
 	if (ptr) {
-		ptr[0] = '\0';
+		*ptr = '\0';
 		str = r_str_trim_head_tail (ptr+1+(ptr[1]=='>'));
 		pipefd = r_cons_pipe_open (str, ptr[1]=='>');
 		ret = r_core_cmd_subst (core, cmd);
@@ -3952,11 +3982,12 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			eprintf ("parse: Missing '´' in expression.\n");
 			return -1;
 		} else {
-			ptr[0] = '\0';
-			ptr2[0] = '\0';
+			*ptr = '\0';
+			*ptr2 = '\0';
 			str = r_core_cmd_str (core, ptr+1);
-			for(i=0;str[i];i++)
-				if (str[i]=='\n') str[i]=' ';
+			for (i=0; str[i]; i++)
+				if (str[i]=='\n')
+					str[i]=' ';
 			cmd = r_str_concat (strdup (cmd), r_str_concat (str, ptr2+1));
 			ret = r_core_cmd_subst (core, cmd);
 			free (cmd);
@@ -3968,12 +3999,12 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	/* grep the content */
 	ptr = strchr (cmd, '~');
 	if (ptr) {
-		ptr[0]='\0';
+		*ptr = '\0';
 		r_cons_grep (ptr+1);
 	} else r_cons_grep (NULL);
 
 	/* seek commands */
-	if (cmd[0]!='('&& cmd[0]!='"')
+	if (*cmd!='(' && *cmd!='"')
 		ptr = strchr (cmd, '@');
 	else ptr = NULL;
 	if (ptr) {
