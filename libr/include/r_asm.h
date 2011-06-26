@@ -4,6 +4,7 @@
 #define _INCLUDE_R_ASM_H_
 
 #include <r_types.h>
+#include <r_bin.h> // only for binding, no hard dep required 
 #include <list.h>
 #include <r_util.h>
 
@@ -70,6 +71,7 @@ typedef struct r_asm_t {
 	void *user;
 	struct r_asm_plugin_t *cur;
 	RList *plugins;
+	RBinBind binb;
 } RAsm;
 
 typedef int (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);

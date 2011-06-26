@@ -89,6 +89,7 @@ R_API RAsm *r_asm_new() {
 	if (a) {
 		a->user = NULL;
 		a->cur = NULL;
+		a->binb.bin = NULL;
 		a->bits = 32;
 		a->big_endian = 0;
 		a->pc = 0;
@@ -418,4 +419,10 @@ R_API char *r_asm_op_get_hex(RAsmOp *op) {
 
 R_API char *r_asm_op_get_asm(RAsmOp *op) {
 	return strdup (op->buf_asm);
+}
+
+R_API int r_asm_get_offset(RAsm *a, int type, int idx) { // link to rbin
+	if (a && a->binb.bin && a->binb.get_offset)
+		return a->binb.get_offset (a->binb.bin, type, idx);
+	return -1;
 }

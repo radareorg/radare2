@@ -317,6 +317,7 @@ R_API int r_core_init(RCore *core) {
 	core->search = r_search_new (R_SEARCH_KEYWORD);
 	r_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
 	core->fs = r_fs_new ();
+	r_bin_bind (core->bin, &(core->assembler->binb));
 	r_io_bind (core->io, &(core->search->iob));
 	r_io_bind (core->io, &(core->print->iob));
 	r_io_bind (core->io, &(core->anal->iob));

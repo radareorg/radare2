@@ -108,6 +108,16 @@ static RList* classes (RBinArch *arch) {
 	return ret;
 }
 
+static int getoffset (RBinArch *arch, int type, int idx) {
+	struct r_bin_dex_obj_t *dex = arch->bin_obj;
+	switch (type) {
+	case 's': // symbol name
+		// dex->header.method_offset
+		return 0; // TODO: must be the offset to the ptr
+	}
+	return 0;
+}
+
 struct r_bin_plugin_t r_bin_plugin_dex = {
 	.name = "dex",
 	.desc = "dex format bin plugin",
@@ -129,6 +139,7 @@ struct r_bin_plugin_t r_bin_plugin_dex = {
 	.relocs = NULL,
 	.meta = NULL,
 	.write = NULL,
+	.get_offset = &getoffset
 };
 
 #ifndef CORELIB

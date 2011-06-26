@@ -391,6 +391,18 @@ R_API void r_bin_set_user_ptr(RBin *bin, void *user) {
 	bin->user = user;
 }
 
+static int getoffset (RBin *bin, int type, int idx) {
+	RBinArch *a = &bin->curarch;
+	if (a && a->curplugin && a->curplugin->get_offset)
+		return a->curplugin->get_offset (a, type, idx);
+	return -1;
+}
+
+R_API void r_bin_bind (RBin *bin, RBinBind *b) {
+	b->bin = bin;
+	b->get_offset = getoffset;
+}
+
 R_API RBinObj *r_bin_get_object(RBin *bin, int flags) {
 	int i;
 	RBinObj *obj = R_NEW (RBinObj);

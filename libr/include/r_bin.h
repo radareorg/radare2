@@ -37,6 +37,7 @@ enum {
 	R_BIN_NM_ANY=-1,
 };
 
+
 // XXX: isnt this a copy of Obj ?
 typedef struct r_bin_arch_t {
 	char *file;
@@ -77,7 +78,7 @@ typedef struct r_bin_xtr_plugin_t {
 	int (*extract)(RBin *bin, int idx);
 	int (*load)(RBin *bin);
 	int (*destroy)(RBin *bin);
-	struct list_head list;
+	struct list_head list; // TODO deprecate!!!
 } RBinXtrPlugin;
 
 typedef struct r_bin_plugin_t {
@@ -102,7 +103,8 @@ typedef struct r_bin_plugin_t {
 	int (*demangle_type)(const char *str);
 	struct r_bin_meta_t *meta;
 	struct r_bin_write_t *write;
-	struct list_head list;
+	int (*get_offset)(RBinArch *arch, int type, int idx);
+	struct list_head list; // TODO deprecate!!!
 } RBinPlugin;
 
 typedef struct r_bin_addr_t {
@@ -211,7 +213,16 @@ typedef struct r_bin_obj_t {
 // TODO: has_dbg_syms... maybe flags?
 } RBinObj;
 
+typedef int (*RBinGetOffset)(RBin *bin, int type, int idx);
+
+typedef struct r_bin_bind_t {
+	RBin *bin;
+	RBinGetOffset get_offset;
+} RBinBind;
+
+
 #ifdef R_API
+R_API void r_bin_bind(RBin *b, struct r_bin_bind_t *bnd);
 /* bin.c */
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo);
 R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
