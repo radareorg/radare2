@@ -187,10 +187,19 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_core_visual_anal (core);
 		break;
 	case 'g':
-		r_core_cmd (core, "s 0", 0);
+		if (core->io->va) {
+			ut64 offset = r_io_section_get_vaddr (core->io, 0);
+			r_core_seek (core, offset, 1);
+			r_io_sundo_push (core->io);
+		} else
+			r_core_cmd (core, "s 0", 0);
 		break;
 	case 'G':
-		r_core_seek (core, core->file->size-core->blocksize, 1);
+		if (core->io->va) {
+			ut64 offset = r_io_section_get_vaddr (core->io, core->file->size-core->blocksize);
+			r_core_seek (core, offset, 1);
+		} else
+			r_core_seek (core, core->file->size-core->blocksize, 1);
 		r_io_sundo_push (core->io);
 		//r_core_cmd(core, "s 0", 0);
 		break;

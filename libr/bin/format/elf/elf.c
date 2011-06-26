@@ -555,8 +555,8 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		}
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
 		if (bin->shdr[i].sh_name > bin->strtab_section->sh_size) {
-			eprintf ("Invalid shdr index in strtab %d/%d\n",
-				bin->shdr[i].sh_name, bin->strtab_section->sh_size);
+			eprintf ("Invalid shdr index in strtab %d/%"PFMT64d"\n",
+				bin->shdr[i].sh_name, (ut64) bin->strtab_section->sh_size);
 			continue;
 		}
 		if (!strcmp (&bin->strtab[bin->shdr[i].sh_name], ".rel.plt"))
@@ -591,8 +591,8 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 			idx = ELF_R_SYM (rel[j].r_info);
 			if (idx < nsym) {
 				if (sym[idx].st_name > bin->strtab_section->sh_size) {
-					eprintf ("Invalid symbol index in strtab %d/%d\n",
-							bin->shdr[i].sh_name, bin->strtab_section->sh_size);
+					eprintf ("Invalid symbol index in strtab %d/%"PFMT64d"\n",
+							bin->shdr[i].sh_name, (ut64) bin->strtab_section->sh_size);
 					continue;
 				}
 				len = __strnlen (&strtab[sym[idx].st_name], ELF_STRING_LENGTH-1);
