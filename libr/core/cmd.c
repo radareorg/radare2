@@ -4462,7 +4462,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 static int cmd_debug(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	struct r_anal_op_t analop;
-	int len, times, sig;
+	int len, times, sig, follow=0;
 	ut64 addr;
 	char *ptr;
 
@@ -4546,6 +4546,7 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 			}
 		}
+		follow = r_config_get_i (core->config, "dbg.follow");
 		break;
 	case 'b':
 		r_core_cmd_bp (core, input);
@@ -4689,6 +4690,7 @@ static int cmd_debug(void *data, const char *input) {
 			r_debug_continue (core->dbg);
 			checkbpcallback (core);
 		}
+		follow = r_config_get_i (core->config, "dbg.follow");
 		break;
 	case 'm':
 		cmd_dm (core, input+1);
@@ -4719,6 +4721,11 @@ static int cmd_debug(void *data, const char *input) {
 		" dt[r] [tag]    display instruction traces (dtr=reset)\n"
 		" dm             show memory maps\n");
 		break;
+	}
+	if (follow>0) {
+		ut64 pc = r_debug_reg_get (core->dbg, "pc");
+		if ((pc<core->offset) || (pc > (core->offset+follow)))
+			r_core_cmd0 (core, "sr pc");
 	}
 	return 0;
 }
