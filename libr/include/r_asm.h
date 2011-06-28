@@ -25,6 +25,10 @@
 #define R_ASM_ARCH_BF R_SYS_ARCH_BF
 #define R_ASM_ARCH_SH R_SYS_ARCH_SH
 
+#define R_ASM_GET_OFFSET(x,y,z) \
+	(x && x->binb.bin && x->binb.get_offset)? \
+		x->binb.get_offset (x->binb.bin, y, z): -1
+
 enum {
 	R_ASM_SYNTAX_NONE = 0,
 	R_ASM_SYNTAX_INTEL,

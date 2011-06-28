@@ -148,7 +148,6 @@ R_API int r_io_set_fdn(RIO *io, int fd) {
 }
 
 R_API int r_io_read(RIO *io, ut8 *buf, int len) {
-	ut64 off;
 	int ret;
 	if (io==NULL || io->fd == NULL)
 		return -1;
@@ -156,8 +155,6 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	if (io->enforce_rwx && !(r_io_section_get_rwx (io, io->off) & R_IO_READ))
 		return -1;
 
-
-	off = io->off;
 	ret = -1;
 	if (io->plugin && io->plugin->read) {
 		if (io->plugin->read != NULL)
@@ -312,7 +309,7 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 		if (io->plugin && io->plugin->lseek)
 			ret = io->plugin->lseek (io, io->fd, offset, whence);
 		// XXX can be problematic on w32..so no 64 bit offset?
-		else ret = lseek (io->fd->fd, offset, posix_whence);
+		else ret = (ut64)lseek (io->fd->fd, offset, posix_whence);
 		if (ret != UT64_MAX) {
 			io->off = ret;
 			// XXX this can be tricky.. better not to use this .. must be deprecated

@@ -66,11 +66,19 @@ R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 	return NULL;
 }
 
+#define R_FLAG_TEST 0
+
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 	RList *list = r_hashtable64_lookup (f->ht_off, off);
 	if (list) {
 		RFlagItem *item = r_list_get_top (list);
+#if R_FLAG_TEST
 		return item;
+#else
+		// XXX: hack, because some times the hashtable is poluted by ghost values
+		if (item->offset == off)
+			return item;
+#endif
 	}
 	return NULL;
 }
@@ -78,6 +86,7 @@ R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 R_API int r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int dup) {
 	RList *list2, *list;
 	dup = 0; // XXX: force nondup
+
 	if (dup) {
 		RFlagItem *item = R_NEW0 (RFlagItem);
 		item->space = f->space_idx;
@@ -113,33 +122,32 @@ R_API int r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int dup) {
 			r_list_foreach (list2, iter2, item2) {
 				if (item->namehash != item2->namehash)
 					continue;
-				/* append new entry in new place */
-				lol = r_hashtable64_lookup (f->ht_off, off);
-				if (lol == NULL) {
-					lol = r_list_new ();
-					r_hashtable64_insert (f->ht_off, off, lol);
-				} else eprintf ("reusing lol table\n");
-				r_list_append (lol, item);
-//printf ("BUGBUG: %s\n", item->name);
-#if 1
-				//list2->free = NULL;
-				// XXX: MUST FIX DOUBLE EIP FLAG IN DEBUGGER
-				// XXX: This produces a segfault in the future XXX //
-				//r_list_split_iter (list2, iter2);
-				if ( 1||r_list_empty (list2)) {
-					//r_list_free (list2);
-					r_hashtable64_remove (f->ht_off, item->offset);
+				if (item2->offset == item->offset) {
+					// r_list_delete (list2, iter2);
+					// delete without freeing contents
+					r_list_split_iter (list2, iter2);
+					free (iter2);
+					if (r_list_empty (list2)) {
+						r_list_free (list2);
+						r_hashtable64_remove (f->ht_off, item2->offset);
+						r_hashtable64_insert (f->ht_off, item2->offset, NULL);
+					}
+					break;
 				}
-#endif
-				break;
 			}
+
+			lol = r_hashtable64_lookup (f->ht_off, off);
+			if (lol == NULL) {
+				lol = r_list_new ();
+				r_hashtable64_insert (f->ht_off, off, lol);
+			}
+			r_list_append (lol, item);
 			/* update new entry */
 			item->offset = off;
 			item->size = size;
 		} else {
 			item = R_NEW0 (RFlagItem);
 			item->space = f->space_idx;
-
 			r_list_append (f->flags, item);
 
 			r_flag_item_set_name (item, name);
@@ -147,15 +155,18 @@ R_API int r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int dup) {
 			item->size = size;
 
 			list = r_hashtable64_lookup (f->ht_name, item->namehash);
-			if (!list) list = r_list_new ();
+			if (!list) {
+				list = r_list_new ();
+				r_hashtable64_insert (f->ht_name, item->namehash, list);
+			}
 			r_list_append (list, item);
-			r_hashtable64_insert (f->ht_name, item->namehash, list);
 
 			list2 = r_hashtable64_lookup (f->ht_off, off);
-			if (list2 == NULL)
+			if (list2 == NULL) {
 				list2 = r_list_new ();
+				r_hashtable64_insert (f->ht_off, off, list2);
+			}
 			r_list_append (list2, item);
-			r_hashtable64_insert (f->ht_off, off, list2);
 		}
 	}
 	return R_FALSE;
@@ -194,7 +205,7 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 
 R_API int r_flag_unset_i(RFlag *f, ut64 off, RFlagItem *p) {
 	RFlagItem *item = r_flag_get_i (f, off);
-eprintf ("TODO: r_flag_unset_i\n");
+	eprintf ("TODO: r_flag_unset_i\n");
 	if (item) {
 		return R_TRUE;
 	}
@@ -266,3 +277,27 @@ R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p) {
 	}
 	return R_FALSE;
 }
+
+#ifdef MYTEST
+int main () {
+	RFlagItem *i;
+	RFlag *f = r_flag_new ();
+	r_flag_set (f, "rip", 0xfff333999000LL, 1, 0);
+	r_flag_set (f, "rip", 0xfff333999002LL, 1, 0);
+r_flag_unset (f, "rip", NULL);
+	r_flag_set (f, "rip", 3, 4, 0);
+	r_flag_set (f, "rip", 4, 4, 0);
+	r_flag_set (f, "corwp", 300, 4, 0);
+	r_flag_set (f, "barp", 300, 4, 0);
+	r_flag_set (f, "rip", 3, 4, 0);
+	r_flag_set (f, "rip", 4, 4, 0);
+
+	i = r_flag_get (f, "rip");
+	if (i) printf ("nRIP: %p %llx\n", i, i->offset);
+	else printf ("nRIP: null\n");
+
+	i = r_flag_get_i (f, 0xfff333999000LL);
+	if (i) printf ("iRIP: %p %llx\n", i, i->offset);
+	else printf ("iRIP: null\n");
+}
+#endif

@@ -972,7 +972,7 @@ static int cmd_seek(void *data, const char *input) {
 			r_core_seek (core, off, 1);
 		} else eprintf ("Usage: 'sr pc' ; seek to register\n");
 	} else
-	if (input[0]) { // && input[1]) {
+	if (*input) {
 		st32 delta = (input[1]==' ')?2:1;
 		off = r_num_math (core->num, input + delta);
 		if (input[0]==' ' && (input[1]=='+'||input[1]=='-'))
@@ -4186,7 +4186,9 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	int rep, ret = R_FALSE;
 	char *cmd, *ocmd;
-	if (!cstr || !*cstr)
+	if (cstr==NULL)
+		return R_FALSE;
+	if (!*cstr)
 		return R_FALSE;
 	/* list cstr plugins */
 	if (!strcmp (cstr, ":")) {
