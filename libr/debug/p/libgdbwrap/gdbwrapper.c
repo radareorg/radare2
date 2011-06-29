@@ -1037,14 +1037,16 @@ void                gdbwrap_ctrl_c(gdbwrap_t *desc)
   u_char            sended = CTRL_C;
   int               rval;
 
+// TODO: check rval return values
   ASSERT(desc != NULL);
   desc->interrupted = TRUE;
   send(desc->fd, (void*)&sended, sizeof(u_char), 0);
   rval = recv(desc->fd, desc->packet, desc->max_packet_size, 0);
   gdbwrap_populate_reg(desc, desc->packet);
-  rval = send(desc->fd, GDBWRAP_COR_CHECKSUM, strlen(GDBWRAP_COR_CHECKSUM),
-	      0x0);
-  ASSERT(rval);
+  rval = send(desc->fd, GDBWRAP_COR_CHECKSUM, strlen(GDBWRAP_COR_CHECKSUM), 0x0);
+  if (rval != sz) {
+
+  }
 }
 
 

@@ -213,6 +213,8 @@ static int fork_and_ptraceme(const char *cmd) {
 	default:
 		/* XXX: clean this dirty code */
                 ret = wait (&status);
+		if (ret != pid)
+			eprintf ("Wait event received by different pid %d\n", ret);
                 if (WIFSTOPPED (status))
                         eprintf ("Process with PID %d started...\n", (int)pid);
 		if (WEXITSTATUS (status) == MAGIC_EXIT)

@@ -66,7 +66,6 @@ R_API RBreakpointItem *r_bp_get(RBreakpoint *bp, ut64 addr) {
 }
 
 R_API RBreakpointItem *r_bp_at_addr(RBreakpoint *bp, ut64 addr, int rwx) {
-	int n = 0;
 	RBreakpointItem *b;
 	RListIter *iter;
 	r_list_foreach (bp->bps, iter, b) {

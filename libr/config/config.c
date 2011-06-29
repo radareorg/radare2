@@ -164,14 +164,12 @@ R_API int r_config_rm(RConfig *cfg, const char *name) {
 }
 
 R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) {
-	ut64 oi;
 	char buf[128], *ov = NULL;
 	RConfigNode *node = r_config_node_get (cfg, name);
 
 	if (node) {
 		if (node->flags & CN_RO)
 			return NULL;
-		oi = node->i_value;
 		if (node->value)
 			ov = strdup (node->value);
 		else node->value = strdup("");

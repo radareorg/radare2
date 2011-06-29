@@ -87,7 +87,6 @@ int do_main() {
 	struct grub_file *file;
 	struct grub_fs *e2;
 	grub_err_t err;
-	struct grub_disk disk;
 
 	e2 = &grub_ext2_fs;
 	file = openimage (e2, IMGFILE);
@@ -127,6 +126,7 @@ printf ("fs = %d\n", (int)gfs->file->size);
 	gfs->file->fs->close (gfs->file);
 	gfs->file->fs->dir (gfs->file->device, "/", dirhook, 0);
 	grubfs_free (gfs);
+	return 0;
 }
 
 int main(int argc, char **argv) {

@@ -40,7 +40,7 @@ static int __waitpid(int pid) {
 static int debug_os_read_at(int pid, ut32 *buf, int sz, ut64 addr) {
 	ut32 words = sz / sizeof (ut32);
 	ut32 last = sz % sizeof (ut32);
-	ut32 x, lr, *at = (int*)(size_t)addr;
+	ut32 x, lr, *at = (ut32*)(size_t)addr;
 	if (sz<1 || addr==UT64_MAX)
 		return -1;
 	for (x=0; x<words; x++)
@@ -58,10 +58,11 @@ static int __read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int len) {
 	return debug_os_read_at (RIOPTRACE_PID (fd), (ut32*)buf, len, addr);
 }
 
-static int ptrace_write_at(int pid, const ut32 *buf, int sz, ut64 addr) {
+static int ptrace_write_at(int pid, const ut8 *pbuf, int sz, ut64 addr) {
+	ut32 *buf = (ut32*)pbuf;
 	ut32 words = sz / sizeof (ut32);
 	ut32 last = sz % sizeof (ut32);
-	ut32 x, lr, *at = (int*)(size_t)addr;
+	ut32 x, lr, *at = (ut32*)(size_t)addr;
 	if (sz<1 || addr==UT64_MAX)
 		return -1;
 	for (x=0; x<words; x++)

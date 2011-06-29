@@ -21,6 +21,7 @@ int fun(const char *str, int iters) {
 	char *ptr;
 	if (iters == 0) return 0;
  	ptr = (char *)r_alloca_str (str);
+	eprintf ("rallocstr %p\n", ptr);
 	ret = fun(str, iters-1);
 	return r_alloca_ret_i (ret);
 }

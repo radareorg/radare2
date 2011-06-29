@@ -40,6 +40,7 @@ static RCore* opencore(const char *f) {
 		return NULL;
 	}
 	r_core_bin_load (c, NULL);
+	// TODO: must enable io.va here if wanted .. r_config_set_i (c->config, "io.va", va);
 	return c;
 }
 
