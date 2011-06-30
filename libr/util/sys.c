@@ -208,7 +208,7 @@ R_API char *r_sys_getcwd(void) {
 R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, char **sterr) {
 	char *output, buffer[1024];
 	char *inputptr = (char *)input;
-	int pid, bytes = 0;
+	int pid, bytes = 0, status;
 	int sh_in[2], sh_out[2], sh_err[2];
 
 	if (len) *len = 0;
@@ -238,7 +238,6 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 		execl ("/bin/sh", "sh", "-c", cmd, (char*)NULL);
 		exit (1);
 	default:
-		{
 		output = calloc (1, 1024); // TODO: use malloc
 		if (!output)
 			return NULL;
@@ -286,11 +285,15 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 		close (sh_out[0]);
 		close (sh_err[0]);
 		close (sh_in[1]);
+		waitpid(pid, &status, 0);
+		if (status != 0) {
+			eprintf("%s: command returned !0\n", __func__);
+			return (NULL);
+		}
 
 		if (*output)
 			return output;
 		free (output);
-		}
 	}
 	return NULL;
 }
