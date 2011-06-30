@@ -59,7 +59,7 @@ public class RAsm {
 		public string get_asm();
 	}
 
-	[CCode (cname="RAsmCode", cprefix="r_asm_code_", free_function="r_asm_code_free")]
+	[CCode (cname="RAsmCode", cprefix="r_asm_code_", free_function="r_asm_code_free", unref_function="r_asm_code_free")]
 	public class Code {
 		public int len;
 		public uint8* buf;
