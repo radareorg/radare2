@@ -47,7 +47,8 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int filter = r_config_get_i (core->config, "asm.filter");
 	int varsub = r_config_get_i (core->config, "asm.varsub");
 	int show_lines = r_config_get_i (core->config, "asm.lines");
-	int show_dwarf = r_config_get_i (core->config, "asm.dwarf");
+#warning asm.dwarf is now marked as experimental and disabled
+	int show_dwarf = 0; // r_config_get_i (core->config, "asm.dwarf");
 	int show_linescall = r_config_get_i (core->config, "asm.linescall");
 	int show_trace = r_config_get_i (core->config, "asm.trace");
 	int linesout = r_config_get_i (core->config, "asm.linesout");
