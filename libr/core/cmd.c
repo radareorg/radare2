@@ -1261,6 +1261,7 @@ static int cmd_help(void *data, const char *input) {
 		" i [file]          ; get info about opened file\n"
 		" o [file] (addr)   ; open file at optional address\n"
 		" p?[len]           ; print current block with format and length\n"
+		" P[osi?]           ; project management utilities\n"
 		" V[vcmds]          ; enter visual mode (vcmds=visualvisual  keystrokes)\n"
 		" w[mode] [arg]     ; multiple write operations\n"
 		" x [len]           ; alias for 'px' (print hexadecimal)\n"
