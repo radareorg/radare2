@@ -116,7 +116,7 @@ static int cmd_project(void *data, const char *input) {
 	case 'i': free (r_core_project_info (core, input[1]?arg:str)); break;
 	default:
 		r_cons_printf (
-		"Usage: P[osi] [file]\n"
+		"Usage: P[?osi] [file]\n"
 		" Po [file]  open project\n"
 		" Ps [file]  save project\n"
 		" Pi [file]  info\n");

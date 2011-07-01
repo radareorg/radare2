@@ -1,0 +1,136 @@
+DEVELOPERS
+==========
+
+This file aims to describe an introduction for developers to work
+on the code base of radare2 project.
+
+CODE STYLE
+----------
+In order to contribute with patches or plugins we encourage you to
+use the same coding style as the rest of the code base.
+
+You may find some notes on this topic in doc/syntax
+
+MODULES
+-------
+The radare2 code base is modularized into different libraries that are
+found in libr/ directory. The binr/ directory contains the programs
+that use the libraries.
+
+It is possible to generate PIC/nonPIC builds of the libraries and also
+to create a single static library, so you can use a single library
+archive (.a) to link your programs and get your programs using radare
+framework libraries without depending on them.
+
+DEPENDENCIES
+------------
+radare can be built without any special dependency. It just requires
+a C compiler, a GNU make and a unix-like system.
+
+CROSSCOMPILATION
+----------------
+The instructions to crosscompile r2 to Windows are in doc/windows
+
+You may find other documents in doc/ explaining how to build it on iOS,
+linux-arm and others, but the procedure is like this:
+
+ - define CC
+ - use a different compiler profile with --with-compiler
+ - use a different OS with --with-ostype
+ - type make
+ - install in DESTDIR
+
+SOURCE REPOSITORY
+-----------------
+The source of radare can be found in two mercurial repositories.
+
+   hg clone http://radare.org/hg/radare2
+
+or in the mirror (not always in sync)
+
+   hg clone http://hg.youterm.com/radare2
+
+To get an up to date copy of the repository you should perform the
+following steps:
+
+   hg pull -u
+
+If you have conflicts in your local copy it's because you have modified
+files which are conflicting with the incomming patchsets. To get a clean
+source directory type the following command:
+
+   hg revert -a ; hg up
+
+There's also an hg extension that comes by default and must be enabled
+in .hgrc which is called 'purge' and works pretty better than the above
+solution:
+
+   hg purge
+
+COMPILATION
+-----------
+Inter-module rebuild dependencies are not handled automatically and
+require human interaction to recompile the affected modules.
+
+This is a common issue and can end up having outdated libraries trying
+to use deprecated structures which may result into segfaults.
+
+You have to make clean on the affected modules or just, if you are not
+sure enought that everything is ok just make clean the whole project.
+
+If you want to accelerate the build process after full make cleans
+you should use ccache in this way:
+
+  export CC="ccache gcc"
+
+INSTALLATION
+------------
+Developers use to modify the code, type make and then try.
+
+radare2 have a specific makefile target that allows you to install
+system wide but using symlinks instead of hard copies.
+
+This kind of installation is really helpful if you do lot of changes
+in the code for various reasons.
+
+  - only one install is required across multiple builds
+  - installation time is much faster
+
+REPORTING BUGS
+--------------
+If you notice any missfeature, issue, error, problem or you just
+don't know how to do something which is supossed to be covered
+by this framework.
+
+You should report it in our web page in the 'bugs' section.
+
+   http://www.radare.org/
+
+Otherwise, if you are looking for some more feedback I will
+encourage you to send an email to any of the emails enumerated
+in the AUTHORS file.
+
+Anyway, if you want to get even more feedback and discuss this
+in a public place we have a mailing list where many other
+people may help in order to find a solution.
+
+CONTRIBUTING WITH PATCHES
+-------------------------
+All the development happens in the mercurial repository. It is
+good that all patches can be applied against the hg tip (last
+commit in head repository).
+
+I can get patches in unidiff format like this:
+
+  hg diff > p
+
+If you are going to do a set of patches that may conflict with
+tip it is recommended to create a branch from tip, do your
+work and then export all those patchsets like this:
+
+  hg export -o patch.hg tip
+
+TODO: explain binary patchsets and how to dump a full branch
+
+
+--pancake
