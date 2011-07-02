@@ -557,7 +557,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 						free (str);
 					} else r_cons_printf ("unknown type '%c'\n", mi2->type);
 				}
-			} else r_cons_printf ("; err [0x%"PFMT64x"]", analop.ref);
+			}
 		}
 		if (show_comments && show_comment_right && comment) {
 			int c = r_cons_get_column ();

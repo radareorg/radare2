@@ -77,7 +77,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	if ((buf = malloc (len+1)) == NULL)
 		return R_FALSE;
 	{/* strip whitechars from the beggining */	
-	char *o = r_str_trim_head (data);
+	char *o = (char *)r_str_trim_head (data);
 	memcpy (buf, o, strlen (o)+1);
 	}
 

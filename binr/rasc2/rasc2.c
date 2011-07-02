@@ -188,8 +188,8 @@ int print_shellcode() {
 		return 1;
 	}
 
-	if (SCSIZE>=BLOCK) {
-		printf ("Dont overflow me\n");
+	if (SCSIZE+A+N+4>=BLOCK) {
+		eprintf ("TODO: add support for unlimitted buffers.\n");
 		return 1;
 	}
 

@@ -74,19 +74,21 @@ R_API RList *r_anal_xref_get(RAnal *anal, ut64 addr) {
 
 	if (!(ret = r_anal_ref_list_new ()))
 		return NULL;
-	r_list_foreach (anal->fcns, iter, fcni)
+	r_list_foreach (anal->fcns, iter, fcni) {
 		if (addr >= fcni->addr && addr < fcni->addr+fcni->size)
-			r_list_foreach (fcni->xrefs, iter2, refi)
-				if (refi->at == addr) {
-					if (!(ref = r_anal_ref_new ())) {
-						r_list_destroy (ret);
-						return NULL;
-					}
-					ref->addr = refi->addr;
-					ref->at = refi->at;
-					ref->type= refi->type;
-					r_list_append (ret, ref);
+		r_list_foreach (fcni->xrefs, iter2, refi) {
+			if (refi->at == addr) {
+				if (!(ref = r_anal_ref_new ())) {
+					r_list_destroy (ret);
+					return NULL;
 				}
+				ref->addr = refi->addr;
+				ref->at = refi->at;
+				ref->type= refi->type;
+				r_list_append (ret, ref);
+			}
+		}
+	}
 	r_list_foreach (anal->refs, iter2, refi)
 		if (refi->addr == addr) {
 			if (!(ref = r_anal_ref_new ())) {
