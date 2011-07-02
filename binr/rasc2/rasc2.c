@@ -21,7 +21,8 @@
 #include <windows.h>
 #endif
 
-#define BLOCK 4096
+// TODO: remove this limit
+#define BLOCK 32768
 static const char *ofile = NULL;
 static const char *encoder = NULL;
 static int scidx = -1;
@@ -135,12 +136,15 @@ int otf_patch() {
 	/* on the fly patching */
 	if (scidx != -1) {
 		if (shellcodes[scidx].cmd) {
+			// XXX: This is broken
 			ptr = getenv ("CMD");
 			if (ptr) {
-				strcpy((char*) (shellcode+shellcodes[scidx].cmd), ptr);
-				shellcode[shellcodes[scidx].cmd+strlen(ptr)]='\0';
-				if (strlen(ptr)>7)
-					scsize+=strlen(ptr)-7;
+				int srclen = strlen (ptr);
+				char *dst = (char*) (shellcode+shellcodes[scidx].cmd);
+				memcpy (dst, ptr, srclen);
+				shellcode[shellcodes[scidx].cmd+srclen]='\0';
+				if (strlen (ptr)>7)
+					scsize += strlen (ptr)-7;
 			}
 		}
 		if (shellcodes[scidx].host) {
@@ -201,13 +205,14 @@ int print_shellcode() {
 			output[i+A+1] = '\x48'; // dec eax
 		}
 	}
-	for(i=0,j='A'; i<E; i++,j++) {
+	for (i=0,j='A'; i<E; i++,j++) {
+		int idx = i*4;
 		if (j=='\n'||j=='\r')
 			j++;
-		output[i*4+A+N] = (ut8)(j%256);
-		output[i*4+A+N+1] = (ut8)(j%256);
-		output[i*4+A+N+2] = (ut8)(j%256);
-		output[i*4+A+N+3] = (ut8)(j%256);
+		output[idx+A+N]   = (ut8)(j%256);
+		output[idx+A+N+1] = (ut8)(j%256);
+		output[idx+A+N+2] = (ut8)(j%256);
+		output[idx+A+N+3] = (ut8)(j%256);
 	}
 	/* patch addr and env */
 	otf_patch ();
@@ -379,7 +384,7 @@ static int load_shellcode_from_file(char *str) {
 		fprintf (stderr, "TODO\n");
 		break;
 	case 1: // .s file (assembly
-		sprintf (buf, "gcc -nostdlib -o .x %s", str);
+		snprintf (buf, sizeof (buf), "gcc -nostdlib -o .x %s", str);
 		system (buf);
 		system ("rsc syms-dump .x | grep _start | cut -d : -f 2 | tee .y");
 		unlink (".x");

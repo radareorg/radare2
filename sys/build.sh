@@ -1,5 +1,9 @@
 #!/bin/sh
 
+MAKE=make
+gmake --help >/dev/null 2>&1
+[ $? = 0 ] && MAKE=gmake
+
 # find root
 cd `dirname $PWD/$0` ; cd ..
 
@@ -15,4 +19,4 @@ if [ -f config-user.mk ]; then
 	make mrproper > /dev/null 2>&1
 fi
 ./configure --prefix=/usr && \
-make -j 4
+${MAKE} -j 4

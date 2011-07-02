@@ -51,15 +51,19 @@ R_API const char *r_reg_get_name(RReg *reg, int role) {
 
 R_API void r_reg_free_internal(RReg *reg) {
 	int i;
-	for (i=0; i<R_REG_TYPE_LAST; i++)
+	for (i=0; i<R_REG_TYPE_LAST; i++) {
 		r_list_destroy (reg->regset[i].regs);
+		reg->regset[i].regs = NULL;
+	}
 }
 
 R_API RReg *r_reg_free(RReg *reg) {
 	if (reg) {
 		int i;
-		for (i=0; i<R_REG_TYPE_LAST; i++)
+		for (i=0; i<R_REG_TYPE_LAST; i++) {
 			r_list_destroy (reg->regset[i].pool);
+			reg->regset[i].pool = NULL;
+		}
 		r_reg_free_internal (reg);
 		free (reg);
 	}

@@ -1,5 +1,9 @@
 #!/bin/sh
 
+MAKE=make
+gmake --help >/dev/null 2>&1
+[ $? = 0 ] && MAKE=gmake
+
 # find root
 cd `dirname $PWD/$0` ; cd ..
 
@@ -10,4 +14,4 @@ elif [ -d .git ]; then
 	git pull
 fi
 
-./sys/build.sh && sudo make symstall
+./sys/build.sh && sudo ${MAKE} symstall
