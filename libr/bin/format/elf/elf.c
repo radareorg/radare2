@@ -496,6 +496,7 @@ int Elf_(r_bin_elf_get_bits)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 // TODO: must return const char * all those strings must be const char os[LINUX] or so
 char* Elf_(r_bin_elf_get_osabi_name)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	// XXX: this is wrong. openbsd bins are identified as linux ones.
 	switch (bin->ehdr.e_ident[EI_OSABI]) {
 	case ELFOSABI_NONE:       return strdup ("linux"); // sysv
 	case ELFOSABI_HPUX:       return strdup ("hpux");

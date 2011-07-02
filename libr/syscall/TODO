@@ -2,9 +2,6 @@
   - 0x378  :  lp1
     example:  outb(lp1,33); lp1<=33   lp1=>eax
    /dev/port: lseek 33, write 20
-* Pluggify! -- in plain text files
-  - import syscalls from file (ala r_reg)
-* Store in r_db.so we can query by string or syscall number in an optimal way
 * Add w32 0x2e syscall support
 * Added documentation string per-syscall in r_syscall_list_t
 * Merge it into r_debug .. aka r_debug_syscall

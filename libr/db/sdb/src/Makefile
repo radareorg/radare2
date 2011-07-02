@@ -1,5 +1,6 @@
 include ../config.mk
 #CFLAGS+=-DOLDFMT=1
+CFLAGS+=-g
 OBJ=alloc.o cdb.o buffer.o cdb_make.o ls.o ht.o sdb.o sdbn.o lock.o
 # This is hacky
 SOEXT=dylib

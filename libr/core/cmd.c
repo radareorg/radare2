@@ -2600,16 +2600,25 @@ static int cmd_anal(void *data, const char *input) {
 		switch (input[1]) {
 		case 'l':
 			if (input[2] == ' ') {
-				if (atoi (input+3)>0) {
-					RSyscallItem *si = r_syscall_get (core->anal->syscall, atoi (input+3), -1);
+				int n = atoi (input+3);
+				if (n>0) {
+					RSyscallItem *si = r_syscall_get (core->anal->syscall, n, -1);
 					if (si) r_cons_printf ("%s\n", si->name);
-					else eprintf ("Unknown syscall\n");
+					else eprintf ("Unknown syscall number\n");
 				} else {
 					int n = r_syscall_get_num (core->anal->syscall, input+3);
 					if (n != -1) r_cons_printf ("%d\n", n);
-					else eprintf ("Unknown syscall\n");
+					else eprintf ("Unknown syscall name\n");
 				}
-			} else r_syscall_list (core->anal->syscall);
+			} else {
+				RSyscallItem *si;
+				RListIter *iter;
+				RList *list = r_syscall_list (core->anal->syscall);
+				r_list_foreach (list, iter, si) {
+					r_cons_printf ("%s = 0x%02x.%d\n", si->name, si->swi, si->num);
+				}
+				r_list_free (list);
+			}
 			break;
 		case '\0': {
 			int a0 = (int)r_debug_reg_get (core->dbg, "oeax"); //XXX

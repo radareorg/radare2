@@ -9,6 +9,7 @@ F+= darwin-x86-64
 F+= netbsd-x86-32
 F+= freebsd-x86-32
 F+= openbsd-x86-32
+F+= openbsd-x86-64
 F+= windows-x86-32
 
 # XXX: use config.mk

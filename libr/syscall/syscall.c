@@ -16,6 +16,7 @@ R_API RSyscall* r_syscall_new() {
 		rs->fd = NULL;
 		rs->sysptr = NULL; //syscalls_linux_x86;
 		rs->sysport = sysport_x86;
+		rs->syspair = NULL;
 		rs->printf = (PrintfCallback)printf;
 		rs->regs = fastcall_x86;
 	}
@@ -85,8 +86,12 @@ R_API int r_syscall_setup_file(RSyscall *ctx, const char *path) {
 }
 
 R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char *s) {
-	RSyscallItem *si = R_NEW0 (RSyscallItem);
-	char *o = strdup (s);
+	RSyscallItem *si;
+	char *o;
+
+	if (!s) return NULL;
+	si = R_NEW0 (RSyscallItem);
+	o = strdup (s);
 
 	r_str_split (o, ',');
 
@@ -113,16 +118,33 @@ R_API void r_syscall_item_free(RSyscallItem *si) {
 	free (si);
 }
 
+static int getswi(RPair *p, int swi) {
+	char *def;
+	if (swi == -1) {
+		def = r_pair_get (p, "_");
+		if (def && *def) {
+			swi = r_num_get (NULL, def);
+			free (def);
+		} else swi = 0x80; // XXX hardcoded
+	}
+	return swi;
+}
+
 R_API RSyscallItem *r_syscall_get(RSyscall *ctx, int num, int swi) {
 	char *ret, *ret2, foo[32];
 	RSyscallItem *si;
 	if (!ctx->syspair)
 		return NULL;
-	snprintf (foo, sizeof (foo), "0x%x.%d", swi, num);
+	swi = getswi (ctx->syspair, swi);
+	snprintf (foo, sizeof (foo), "0x%02x.%d", swi, num);
 	ret = r_pair_get (ctx->syspair, foo);
+	if (ret == NULL)
+		return NULL;
 	ret2 = r_pair_get (ctx->syspair, ret);
+	if (ret2 == NULL)
+		return NULL;
+	si = r_syscall_item_new_from_string (ret, ret2);
 	free (ret);
-	si = r_syscall_item_new_from_string (foo, ret2);
 	free (ret2);
 	return si;
 }
@@ -141,27 +163,11 @@ R_API int r_syscall_get_num(RSyscall *ctx, const char *str) {
 	return i;
 }
 
-// we can probably wrap all this with r_list getters
-/* XXX: ugly iterator implementation */
-R_API RSyscallItem *r_syscall_get_n(RSyscall *ctx, int n) {
-	RList *l;
-	if (!ctx->syspair)
-		return NULL;
-	l = r_pair_list (ctx->syspair, NULL);
-// XXX: memory leak !!
-	return r_list_get_n (l, n);
-}
-
 R_API char *r_syscall_get_i(RSyscall *ctx, int num, int swi) {
 	char *ret, foo[32];
 	if (!ctx->syspair)
 		return NULL;
-	if (swi==-1) {
-		char *def = r_pair_get (ctx->syspair, "_");
-		if (def && *def) {
-			swi = r_num_get (NULL, def);
-		} else swi = 0x80; // XXX hardcoded
-	}
+	swi = getswi (ctx->syspair, swi);
 	snprintf (foo, sizeof (foo), "0x%x.%d", swi, num);
 	ret = r_pair_get (ctx->syspair, foo);
 	return ret;
@@ -176,11 +182,18 @@ R_API const char *r_syscall_get_io(RSyscall *ctx, int ioport) {
 	return NULL;
 }
 
-R_API void r_syscall_list(RSyscall *ctx) {
-	int i;
-// TODO: use r_pair here
-	for (i=0; ctx->sysptr[i].name; i++) {
-		ctx->printf ("%02x: %d = %s\n",
-			ctx->sysptr[i].swi, ctx->sysptr[i].num, ctx->sysptr[i].name);
+R_API RList *r_syscall_list(RSyscall *ctx) {
+	RListIter *iter;
+	RPairItem *o;
+	RList *list = r_pair_list (ctx->syspair, NULL);
+
+	RList *olist = r_list_new ();
+	olist->free = (RListFree)r_syscall_item_free;
+	r_list_foreach (list, iter, o) {
+		RSyscallItem *si = r_syscall_item_new_from_string (o->k, o->v);
+		if (!strchr (si->name, '.'))
+			r_list_append (olist, si);
 	}
+	r_list_free (list);
+	return olist;
 }

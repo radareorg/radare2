@@ -59,6 +59,8 @@ char *sdb_get (Sdb* s, const char *key) {
 	ut32 hash, pos, len;
 	SdbKv *kv;
 
+	if (!key)
+		return NULL;
 	hash = cdb_hashstr (key);
 	kv = (SdbKv*)ht_lookup (s->ht, hash);
 	if (kv) {

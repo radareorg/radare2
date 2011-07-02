@@ -70,10 +70,9 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os, int b
 R_API int r_syscall_setup_file(RSyscall *ctx, const char *path);
 R_API RSyscallItem *r_syscall_get(RSyscall *ctx, int num, int swi);
 R_API int r_syscall_get_num(RSyscall *ctx, const char *str);
-R_API RSyscallItem *r_syscall_get_n(RSyscall *ctx, int n); // broken iterator.. must remove
 R_API char *r_syscall_get_i(RSyscall *ctx, int num, int swi);
 R_API const char *r_syscall_reg(RSyscall *s, int idx, int num);
-R_API void r_syscall_list(RSyscall *ctx);
+R_API RList *r_syscall_list(RSyscall *ctx);
 #endif
 
 #endif
