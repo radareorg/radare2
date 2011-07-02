@@ -74,53 +74,52 @@ static int parse(struct r_parse_t *p, void *data, char *str) {
 	char w3[32];
 	char *buf, *ptr, *optr;
 
-	if ((buf = alloca(len+1)) == NULL)
+	// malloc can be slow here :?
+	if ((buf = malloc (len+1)) == NULL)
 		return R_FALSE;
-	memcpy(buf, (char*)data, len+1);
+	memcpy (buf, (char*)data, len+1);
 
-	if (buf[0]!='\0') {
+	if (*buf) {
 		w0[0]='\0';
 		w1[0]='\0';
 		w2[0]='\0';
 		w3[0]='\0';
-		ptr = strchr(buf, ' ');
+		ptr = strchr (buf, ' ');
 		if (ptr == NULL)
-			ptr = strchr(buf, '\t');
+			ptr = strchr (buf, '\t');
 		if (ptr) {
-			ptr[0]='\0';
-			for(ptr=ptr+1;ptr[0]==' ';ptr=ptr+1);
-			strcpy(w0, buf);
-			strcpy(w1, ptr);
+			*ptr = '\0';
+			for (++ptr; *ptr==' '; ptr++);
+			strcpy (w0, buf);
+			strcpy (w1, ptr);
 
 			optr=ptr;
-			ptr = strchr(ptr, ',');
+			ptr = strchr (ptr, ',');
 			if (ptr) {
-				ptr[0]='\0';
-				for(ptr=ptr+1;ptr[0]==' ';ptr=ptr+1);
-				strcpy(w1, optr);
-				strcpy(w2, ptr);
-				ptr = strchr(ptr, ',');
+				*ptr = '\0';
+				for (++ptr; *ptr==' '; ptr++);
+				strcpy (w1, optr);
+				strcpy (w2, ptr);
+				ptr = strchr (ptr, ',');
 				if (ptr) {
-					ptr[0]='\0';
-					for(ptr=ptr+1;ptr[0]==' ';ptr=ptr+1);
-					strcpy(w2, optr);
-					strcpy(w3, ptr);
+					*ptr = '\0';
+					for (++ptr; *ptr==' '; ptr++);
+					strcpy (w2, optr);
+					strcpy (w3, ptr);
 				}
 			}
 		}
 		{
 			const char *wa[] = { w0, w1, w2, w3 };
-			int nw=0;
-
-			for(i=0;i<4;i++) {
+			int nw = 0;
+			for (i=0; i<4; i++) {
 				if (wa[i][0] != '\0')
 				nw++;
 			}
-
-			replace(nw, wa, str);
+			replace (nw, wa, str);
 		}
 	}
-
+	free (buf);
 	return R_TRUE;
 }
 
@@ -149,9 +148,9 @@ static int filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str
 			continue;
 		}
 		r_list_foreach (f->flags, iter, flag) {
-			if (flag->offset == off) {
+			if (flag->offset == off && strchr (flag->name, '.')) {
 				*ptr = 0;
-				snprintf (str, len, "%s%s%s", data, flag->name, ptr2!=ptr?ptr2:"");
+				snprintf (str, len, "%s%s%s", data, flag->name, ptr2!=ptr? ptr2: "");
 				return R_TRUE;
 			}
 		}

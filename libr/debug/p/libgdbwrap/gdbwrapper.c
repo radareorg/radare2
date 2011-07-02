@@ -679,13 +679,13 @@ static void *gdbwrap_writememory(gdbwrap_t *desc, la32 linaddr, void *value, uns
 	char *rec, *packet = malloc(bytes + MSG_BUF);
 
 	if (!desc || !value)
-		return;
+		return NULL;
 	snprintf(packet, MSG_BUF, "%s%x%s%x%s", GDBWRAP_MEMWRITE,
 			linaddr, GDBWRAP_SEP_COMMA, bytes, GDBWRAP_SEP_COLON);
 	packetsize = strlen(packet);
 	if (packetsize>=MSG_BUF) {
 		fprintf (stderr, "Too big packet\n");
-		return;
+		return NULL;
 	}
 	/* GDB protocol expects the value we send to be a "Binary value", ie
 	   not converted to a char. */
