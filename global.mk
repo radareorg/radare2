@@ -19,6 +19,7 @@ VERSION=`date '+%Y%m%d'`
 endif
 
 PFX=${DESTDIR}${PREFIX}
+MDR=${DESTDIR}${MANDIR}
 
 LIBDIR=${PREFIX}/lib
 

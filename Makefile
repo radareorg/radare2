@@ -55,14 +55,14 @@ pkgcfg:
 	cd libr && ${MAKE} pkgcfg
 
 install-man:
-	mkdir -p ${PFX}/share/man/man1
-	for a in man/*.1 ; do ${INSTALL_MAN} $$a ${PFX}/share/man/man1 ; done
-	cd ${PFX}/share/man/man1 && ln -fs radare2.1 r2.1
+	mkdir -p ${MDR}/man1
+	for a in man/*.1 ; do ${INSTALL_MAN} $$a ${MDR}/man1 ; done
+	cd ${MDR}/man1 && ln -fs radare2.1 r2.1
 
 install-man-symlink:
-	mkdir -p ${PFX}/share/man/man1
-	cd man && for a in *.1 ; do ln -fs ${PWD}/$$a ${PFX}/share/man/man1/$$a ; done
-	cd ${PFX}/share/man/man1 && ln -fs radare2.1 r2.1
+	mkdir -p ${MDR}/man1
+	cd man && for a in *.1 ; do ln -fs ${PWD}/$$a ${MDR}/man1/$$a ; done
+	cd ${MDR}/man1 && ln -fs radare2.1 r2.1
 
 install-doc:
 	${INSTALL_DIR} ${PFX}/share/doc/radare2
