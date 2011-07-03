@@ -34,7 +34,9 @@ R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value) {
 R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, int length) {
 	if (b->buf)
 		free (b->buf);
-	if (!(b->buf = malloc (length)))
+	if (length<0)
+		return R_FALSE;
+	if (!(b->buf = malloc (length+1)))
 		return R_FALSE;
 	memcpy (b->buf, buf, length);
 	b->length = length;
