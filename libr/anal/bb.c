@@ -28,7 +28,8 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 		r_list_free (bb->ops);
 	if (bb->diff)
 		r_anal_diff_free (bb->diff);
-	bb->ops = bb->diff = NULL;
+	bb->ops = NULL;
+	bb->diff = NULL;
 	bb->fingerprint = NULL;
 	bb->cond = NULL;
 	free (bb);

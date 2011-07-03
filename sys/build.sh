@@ -16,7 +16,7 @@ fi
 
 # build
 if [ -f config-user.mk ]; then
-	make mrproper > /dev/null 2>&1
+	${MAKE} mrproper > /dev/null 2>&1
 fi
 ./configure --prefix=/usr && \
 ${MAKE} -j 4
