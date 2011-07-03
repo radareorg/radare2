@@ -2921,13 +2921,12 @@ static int cmd_write(void *data, const char *input) {
 
 static int cmd_resize(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	st64 delta=0;
+	ut64 oldsize, newsize;
+	st64 delta = 0;
 	int grow;
-	ut64 oldsize,newsize;
 
 	oldsize = core->file->size;
-
-	switch (input[0]) {
+	switch (*input) {
 	case ' ':
 		newsize = r_num_math (core->num, input+1);
 		break;
@@ -2939,8 +2938,8 @@ static int cmd_resize(void *data, const char *input) {
 	case '?':
 	default:
 		r_cons_printf (
-			"Usage: r[ size|+insert|-remove]\n"
-			" r size   set filesize to size, extending or truncating\n"
+			"Usage: r[+-][ size]\n"
+			" r size   expand or truncate file to given size\n"
 			" r-num    remove num bytes, move following data down\n"
 			" r+num    insert num bytes, move following data up\n");
 		return R_TRUE;

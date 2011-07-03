@@ -87,10 +87,10 @@ create_environ() {
 : ${SYSCONFDIR:=${SPREFIX}/etc}
 : ${LIBDIR:=${SPREFIX}/lib}
 : ${LIBEXECDIR:=${SPREFIX}/libexec}
-: ${DATADIR:=${SPREFIX}/share}
 : ${INCLUDEDIR:=${SPREFIX}/include}
-: ${INFODIR:=${SPREFIX}/info}
-: ${MANDIR:=${SPREFIX}/man}
+: ${DATADIR:=${SPREFIX}/share}
+: ${INFODIR:=${DATADIR}/info}
+: ${MANDIR:=${DATADIR}/man}
 : ${LOCALSTATEDIR:=${SPREFIX}/var}
 for A in `echo ${PATH} | sed -e 's,:, ,g'` ; do
   [ -e $A/ginstall ] && : ${INSTALL:=$A/ginstall} && break
@@ -145,7 +145,8 @@ System types:
   --target=TARGET        configure for building compilers for TARGET [HOST]
 EOF2
 
-printf "\nOptional Features:
+printf "
+Optional Features:
   --without-debugger     disable native debugger features 
   --without-ewf          disable EWF dependency 
   --without-gmp          disable GMP dependency 
@@ -155,16 +156,20 @@ printf "\nOptional Features:
   --with-ostype          Choose OS type ( gnulinux windows darwin )  (USEROSTYPE=auto)
   --without-pic          do not build libr as a program independent location 
   --with-nonpic          build the library archives .a 
-  --with-libversion      specify different libversion  (LIBVERSION=xxx)\n"
-printf "\nSome influential environment variables:
+  --with-libversion      specify different libversion  (LIBVERSION=xxx)
+"
+printf "
+Some influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
               nonstandard directory <lib dir>
   CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
               headers in a nonstandard directory <include dir>
-  CPP         C preprocessor\n"
-printf "\nReport bugs to: pancake <pancake@nopcode.org>"
+  CPP         C preprocessor
+"
+printf "
+Report bugs to: pancake <pancake@nopcode.org>"
 echo ""
 exit 0
 }
