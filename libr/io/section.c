@@ -89,7 +89,7 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len) {
 	ut64 min = -1;
 	ut64 max = -1;
 	ut64 mul;
-	int j, i, width = 50; //config.width-30;
+	int j, i, width = 30; //config.width-30;
 
 	seek = (io->va || io->debug) ? r_io_section_vaddr_to_offset (io, seek) : seek;
 	r_list_foreach (io->sections, iter, s) {

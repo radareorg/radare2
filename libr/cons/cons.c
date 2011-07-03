@@ -166,10 +166,10 @@ R_API void r_cons_clear_line() {
 #if __WINDOWS__
 	char white[1024];
 	memset (&white, ' ', sizeof (white));
-	if (I.columns<sizeof(white))
+	if (I.columns<sizeof (white))
 		white[I.columns] = 0;
 	else white[sizeof (white)] = 0; // HACK
-	printf ("%s\r", white);
+	printf ("\r%s\r", white);
 #else
 	printf ("\x1b[0K\r");
 #endif
