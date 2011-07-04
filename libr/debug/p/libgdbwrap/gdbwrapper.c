@@ -840,7 +840,7 @@ char *gdbwrap_shipallreg(gdbwrap_t *desc) {
 	int i;
 
 	if (desc == NULL)
-		return;
+		return NULL;
 	savedregs = (ut8 *)malloc (desc->num_registers*desc->reg_size);
 	if (savedregs==NULL)
 		return NULL;

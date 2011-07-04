@@ -6,8 +6,8 @@
 R_API int r_hash_pcprint(const ut8 *buffer, ut64 len) {
 	const ut8 *end = buffer + len;
 	int n;
-	for(n=0; buffer<end; buffer = buffer + 1)
-		if (IS_PRINTABLE(buffer[0]))
+	for(n=0; buffer<end; buffer++)
+		if (IS_PRINTABLE (*buffer))
 			n++;
 	return ((100*n)/len);
 }
@@ -28,15 +28,15 @@ R_API int r_hash_parity(const ut8 *buf, ut64 len) {
 R_API ut16 r_hash_xorpair(const ut8 *a, ut64 len) {
 	ut16 *b = (ut16 *)a;
 	ut16 result = 0;
-	for (len>>=1;len--;b=b+1)
-		result^=b[0];
+	for (len>>=1; len--; b++)
+		result ^= *b;
 	return result;
 }
 
 R_API ut8 r_hash_xor(const ut8 *b, ut64 len) {
 	ut8 res = 0;
-	for (;len--;b=b+1)
-		res^=b[0];
+	for (; len--; b++)
+		res ^= *b;
 	return res;
 }
 

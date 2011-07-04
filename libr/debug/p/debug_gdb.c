@@ -58,7 +58,6 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 // XXX TODO PID must be a socket here !!1
 	RIODesc *d = dbg->iob.io->fd;
 	if (d && d->plugin && d->plugin->name) {
-		
 		if (!strcmp ("gdb", d->plugin->name)) {
 			RIOGdb *g = d->data;
 			support_sw_bp = UNKNOWN;
@@ -215,7 +214,7 @@ static int r_debug_gdb_breakpoint (void *user, int type, ut64 addr, int hw, int 
 		if(!type && gdbwrap_simplesetbp(desc,addr)){
 			support_sw_bp = SUPPORTED;
 			return R_TRUE;
-		} else if (type ) {
+		} else if (type) {
 			gdbwrap_simpledelbp(desc,addr);
 			return R_TRUE;
 		} else {

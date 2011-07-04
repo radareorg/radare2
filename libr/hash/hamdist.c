@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2010
+ * Copyright (C) 2007-2011
  *       pancake <youterm.com>
  *
  * radare is free software; you can redistribute it and/or modify
