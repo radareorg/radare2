@@ -3616,7 +3616,11 @@ static int cmd_meta(void *data, const char *input) {
 	case 'm': /* magic */
 	case 'f': /* formatted */
 		switch (input[1]) {
+		case '?':
+			eprintf ("See C?\n");
+			break;
 		case '-':
+			addr = core->offset;
 			switch (input[2]) {
 			case '*':
 				core->num->value = r_meta_del (core->anal->meta, input[0], 0, UT64_MAX, NULL);
@@ -3624,7 +3628,7 @@ static int cmd_meta(void *data, const char *input) {
 			case ' ':
 				addr = r_num_math (core->num, input+3);
 			default:
-				core->num->value = r_meta_del (core->anal->meta, input[0], addr, addr+1, NULL);
+				core->num->value = r_meta_del (core->anal->meta, input[0], addr, 1, NULL);
 				break;
 			}
 			break;
@@ -3735,10 +3739,7 @@ static int cmd_meta(void *data, const char *input) {
 		}
 	case '-':
 		if (input[1]!='*') {
-			if (input[1]==' ')
-				i = r_num_math (core->num, input+2);
-			else
-				i = r_num_math (core->num, input+1);
+			i = r_num_math (core->num, input+((input[1]==' ')?2:1));
 			r_meta_del (core->anal->meta, R_META_TYPE_ANY, core->offset, i, "");
 		} else r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
 		break;
