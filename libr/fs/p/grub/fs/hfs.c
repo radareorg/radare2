@@ -835,7 +835,7 @@ grub_hfs_iterate_dir_node_found (struct grub_hfs_node *hnd,
 
       /* An entry was found.  */
       if (grub_be_to_cpu32 (ckey->parent_dir) == c->dir)
-	return c->hook?c->hook (rec, c->closure):NULL;
+	return c->hook?c->hook (rec, c->closure): 0;
     }
 
   return 0;

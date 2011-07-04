@@ -967,9 +967,11 @@ static int cmd_seek(void *data, const char *input) {
 
 	if (*input=='r') {
 		if (input[1] && input[2]) {
-			off = r_debug_reg_get (core->dbg, input+2);
-			r_io_sundo_push (core->io);
-			r_core_seek (core, off, 1);
+			if (core->io->debug) {
+				off = r_debug_reg_get (core->dbg, input+2);
+				r_io_sundo_push (core->io);
+				r_core_seek (core, off, 1);
+			} else eprintf ("cfg.debug is false\n");
 		} else eprintf ("Usage: 'sr pc' ; seek to register\n");
 	} else
 	if (*input) {
@@ -2853,7 +2855,7 @@ static int cmd_write(void *data, const char *input) {
                 case 'd':
                 case 'o':
                         if (input[2]!=' ') {
-                                eprintf ("Usage: 'wo%c 00 11 22'\n", input[1]);
+                                r_cons_printf ("Usage: 'wo%c 00 11 22'\n", input[1]);
                                 return 0;
                         }
                 case '2':
@@ -2869,21 +2871,24 @@ static int cmd_write(void *data, const char *input) {
                 case '?':
                 default:
                         r_cons_printf (
-                        "Usage: wo[xrlasmd] [hexpairs]\n"
-                        "Example: wox 90    ; xor cur block with 90\n"
-                        "Example: woa 02 03 ; add 2, 3 to all bytes of cur block\n"
+                        "Usage: wo[asmdxoArl24] [hexpairs] @ addr[:bsize]\n"
+                        "Example:\n"
+			"  wox 0x90   ; xor cur block with 0x90\n"
+                        "  wox 90     ; xor cur block with 0x90\n"
+                        "  wox 0x0203 ; xor cur block with 0203\n"
+                        "  woa 02 03  ; add [0203][0203][...] to curblk\n"
                         "Supported operations:\n"
-                        "  woa  addition            +=\n"
-                        "  wos  substraction        -=\n"
-                        "  wom  multiply            *=\n"
-                        "  wod  divide              /=\n"
-                        "  wox  xor                 ^=\n"
-                        "  woo  or                  |=\n"
-                        "  woA  and                 &=\n"
-                        "  wor  shift right         >>=\n"
-                        "  wol  shift left          <<=\n"
-                        "  wo2  2 byte endian swap  2=\n"
-                        "  wo4  4 byte endian swap  4=\n"
+                        "  woa  +=  addition\n"
+                        "  wos  -=  substraction\n"
+                        "  wom  *=  multiply\n"
+                        "  wod  /=  divide\n"
+                        "  wox  ^=  xor\n"
+                        "  woo  |=  or\n"
+                        "  woA  &=  and\n"
+                        "  wor  >>= shift right\n"
+                        "  wol  <<= shift left\n"
+                        "  wo2  2=  2 byte endian swap\n"
+                        "  wo4  4=  4 byte endian swap\n"
                         );
                         break;
                 }

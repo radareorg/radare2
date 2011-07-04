@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -56,18 +56,17 @@ R_API char *r_hex_bin2strdup(const ut8 *in, int len) {
 	}
 	return out;
 }
-/* char buf[1024]; int len = hexstr2binstr("0a 33 45", buf); */
-// XXX control out bytes
-// 0A 3B 4E A0
+
 R_API int r_hex_str2bin(const char *in, ut8 *out) {
 	unsigned int len = 0, j = 0;
 	const char *ptr;
-	ut8 c, d;
-	c = d = '\0';
+	ut8 c = 0, d = 0;
 
-	for (ptr = in; ;ptr = ptr + 1) {
+	if (!memcmp (in, "0x", 2))
+		in += 2;
+	for (ptr = in; ; ptr++) {
 		/* ignored chars */
-		if (ptr[0]==':' || ptr[0]=='\n' || ptr[0]=='\t' || ptr[0]=='\r' || ptr[0]==' ')
+		if (*ptr==':' || *ptr=='\n' || *ptr=='\t' || *ptr=='\r' || *ptr==' ')
 			continue;
 
 		if (j==2) {

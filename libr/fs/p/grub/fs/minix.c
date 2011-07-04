@@ -112,7 +112,6 @@ struct grub_minix_data
   int filename_size;
 };
 
-static grub_dl_t my_mod;
 
 static grub_err_t grub_minix_find_file (struct grub_minix_data *data,
 					const char *path);
