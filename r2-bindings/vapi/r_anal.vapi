@@ -200,6 +200,8 @@ public class RAnal {
 		public uint64 fail;
 		//public uint64 value;
 		//TODO public uint64 ref;
+		public Value src[3];
+		public Value dst;
 	}
 
 	[Compact]
