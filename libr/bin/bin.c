@@ -20,7 +20,7 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 	int i, matches = 0, ctr = 0;
 	RBinString *ptr = NULL;
 
-	if (to > arch->buf->length)
+	if (arch && arch->buf && to > arch->buf->length)
 		to = arch->buf->length;
 	if (to > 0xffffff) {
 		eprintf ("WARNING: bin_strings buffer is too big\n");
@@ -166,6 +166,7 @@ static void r_bin_init(RBin *bin) {
 	RListIter *it;
 	RBinXtrPlugin *xtr;
 
+	memset (&bin->curarch, 0, sizeof (bin->curarch));
 	bin->curxtr = NULL;
 	r_list_foreach (bin->binxtrs, it, xtr) {
 		if (xtr->check && xtr->check (bin)) {

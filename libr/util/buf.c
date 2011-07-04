@@ -29,7 +29,7 @@ R_API RBuffer *r_buf_new() {
 R_API RBuffer *r_buf_mmap (const char *file, int rw) {
 	RBuffer *b = r_buf_new ();
 	b->mmap = r_file_mmap (file, rw);
-	if (b->mmap) {
+	if (b->mmap && b->mmap->len>0) {
 		b->buf = b->mmap->buf;
 		b->length = b->mmap->len;
 	} else {
