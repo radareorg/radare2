@@ -28,6 +28,24 @@ struct dex_header_t {
 	ut32 data_offset;
 };
 
+struct dex_proto_t {
+	ut32 shorty_id;
+	ut32 return_type_id;
+	ut32 params_id;
+};
+
+struct dex_field_t {
+	ut8 class_id;
+	ut8 type_id;
+	ut32 name_id;
+};
+
+struct dex_method_t {
+	ut8 class_id;
+	ut8 proto_id;
+	ut32 name_id;
+};
+
 struct dex_class_t {
 	ut32 class_id;
 	ut32 access_flags;
@@ -41,10 +59,12 @@ struct dex_class_t {
 
 struct r_bin_dex_obj_t {
 	int size;
-	const char* file;
-	struct r_buf_t* b;
+	const char *file;
+	struct r_buf_t *b;
 	struct dex_header_t header;
 	ut32 *strings;
+	struct dex_method_t *methods;
+	struct dex_field_t *fields;
 };
 
 struct r_bin_dex_str_t {
@@ -56,7 +76,7 @@ struct r_bin_dex_str_t {
 };
 
 char* r_bin_dex_get_version(struct r_bin_dex_obj_t* bin);
-struct r_bin_dex_obj_t* r_bin_dex_new_buf(struct r_buf_t *buf);
+struct r_bin_dex_obj_t *r_bin_dex_new_buf(struct r_buf_t *buf);
 struct r_bin_dex_str_t *r_bin_dex_get_strings (struct r_bin_dex_obj_t* bin);
 
 int dex_read_uleb128 (const char *ptr);

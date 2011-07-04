@@ -2926,23 +2926,23 @@ static int cmd_resize(void *data, const char *input) {
 	int grow;
 
 	oldsize = core->file->size;
+	while (*input==' ')
+		input++;
 	switch (*input) {
-	case ' ':
-		newsize = r_num_math (core->num, input+1);
-		break;
-	case '+':
-	case '-':
-		delta = (st64)r_num_math (NULL, input);
-		newsize = oldsize + delta;
-		break;
-	case '?':
-	default:
-		r_cons_printf (
-			"Usage: r[+-][ size]\n"
-			" r size   expand or truncate file to given size\n"
-			" r-num    remove num bytes, move following data down\n"
-			" r+num    insert num bytes, move following data up\n");
-		return R_TRUE;
+		case '+':
+		case '-':
+			delta = (st64)r_num_math (NULL, input);
+			newsize = oldsize + delta;
+			break;
+		case '?':
+			r_cons_printf (
+					"Usage: r[+-][ size]\n"
+					" r size   expand or truncate file to given size\n"
+					" r-num    remove num bytes, move following data down\n"
+					" r+num    insert num bytes, move following data up\n");
+			return R_TRUE;
+		default:
+			newsize = r_num_math (core->num, input+1);
 	}
 
 	grow = (newsize > oldsize);

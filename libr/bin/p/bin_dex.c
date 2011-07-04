@@ -46,11 +46,11 @@ static RBinInfo * info(RBinArch *arch) {
 	strncpy (ret->arch, "dalvik", R_BIN_SIZEOF_STRINGS);
 	ret->bits = 32;
 	ret->big_endian= 0;
-	ret->dbg_info = 4 | 8; /* LineNums | Syms */
+	ret->dbg_info = 1 | 4 | 8; /* Stripped | LineNums | Syms */
 	return ret;
 }
 
-static RList* strings(RBinArch *arch) {
+static RList* strings (RBinArch *arch) {
 	RList *ret = NULL;
 	RBinString *ptr = NULL;
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->bin_obj;
@@ -58,9 +58,6 @@ static RList* strings(RBinArch *arch) {
 	char buf[6];
 	int len;
 
-	bin->strings = (ut32 *) malloc (bin->header.strings_size * sizeof (ut32));
-	r_buf_read_at(bin->b, bin->header.strings_offset, (ut8*)bin->strings,
-			bin->header.strings_size * sizeof (ut32));
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
@@ -71,14 +68,64 @@ static RList* strings(RBinArch *arch) {
 		len = dex_read_uleb128 (buf);
 		//	len = R_BIN_SIZEOF_STRINGS-1;
 		if (len>0 && len < R_BIN_SIZEOF_STRINGS) {
-			//FIXME: size its uleb128
-			r_buf_read_at(bin->b, bin->strings[i]+1, (ut8*)&ptr->string, len);
+			r_buf_read_at(bin->b, bin->strings[i]+dex_uleb128_len (buf),
+					(ut8*)&ptr->string, len);
 			ptr->string[(int) len]='\0';
 			ptr->rva = ptr->offset = bin->strings[i];
 			ptr->size = len;
 			ptr->ordinal = i+1;
 			r_list_append (ret, ptr);
 		} else eprintf ("dex_read_uleb128: invalid read\n");
+	}
+	return ret;
+}
+
+static RList* methods (RBinArch *arch) {
+	RList *ret = NULL;
+	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->bin_obj;
+	int i, j, len;
+	char buf[6];
+	RBinSymbol *ptr;
+
+	if (!(ret = r_list_new ()))
+		return NULL;
+	ret->free = free;
+	for (i = 0; i<bin->header.method_size; i++) {
+		if (!(ptr = R_NEW (RBinSymbol)))
+			break;
+		r_buf_read_at (bin->b, bin->strings[bin->methods[i].name_id], (ut8*)&buf, 6);
+		strncpy (ptr->name, "method.", 7);
+		len = dex_read_uleb128 (buf);
+		r_buf_read_at(bin->b, bin->strings[bin->methods[i].name_id]+
+				dex_uleb128_len (buf), (ut8*)&ptr->name+7, len);
+		ptr->name[(int) len+7]='\0';
+		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
+		ptr->rva = ptr->offset = bin->header.method_offset +
+			(sizeof (struct dex_method_t) * i);
+		ptr->size = sizeof (struct dex_method_t);
+		ptr->ordinal = i+1;
+		r_list_append (ret, ptr);
+	}
+	j=i;
+	for (i = 0; i<bin->header.fields_size; i++) {
+		if (!(ptr = R_NEW (RBinSymbol)))
+			break;
+		r_buf_read_at (bin->b, bin->strings[bin->fields[i].name_id], (ut8*)&buf, 6);
+		strncpy (ptr->name, "field.", 6);
+		len = dex_read_uleb128 (buf);
+		r_buf_read_at(bin->b, bin->strings[bin->fields[i].name_id]+
+				dex_uleb128_len (buf), (ut8*)&ptr->name+6, len);
+		ptr->name[(int) len+6]='\0';
+		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
+		ptr->rva = ptr->offset = bin->header.fields_offset +
+			(sizeof (struct dex_field_t) * i);
+		ptr->size = sizeof (struct dex_field_t);
+		ptr->ordinal = j+i+1;
+		r_list_append (ret, ptr);
 	}
 	return ret;
 }
@@ -104,7 +151,7 @@ static RList* classes (RBinArch *arch) {
 		eprintf ("ut32 source_file = %08x;\n", entry.source_file);
 		eprintf ("ut32 anotations_offset = %08x;\n", entry.anotations_offset);
 		eprintf ("ut32 class_data_offset = %08x;\n", entry.class_data_offset);
-		eprintf ("ut32 static_values_offset = %08x;\n", entry.static_values_offset);
+		eprintf ("ut32 static_values_offset = %08x;\n\n", entry.static_values_offset);
 #endif
 	}
 	return 0; //FIXME: This must be main offset
@@ -116,18 +163,20 @@ static int getoffset (RBinArch *arch, int type, int idx) {
 
 	switch (type) {
 		case 'm': // methods
+			if (dex->header.method_size > idx)
+				return dex->header.method_offset+(sizeof (struct dex_method_t)*idx);
 			break;
 		case 'c': // class
 			break;
 		case 'f': // fields
+			if (dex->header.fields_size > idx)
+				return dex->header.fields_offset+(sizeof (struct dex_field_t)*idx);
 			break;
 		case 'o': // objects
 			break;
 		case 's': // strings
-			if (dex->header.strings_size > idx) {
-				printf ("Return 0x%x\n", dex->strings[idx]);
+			if (dex->header.strings_size > idx)
 				return dex->strings[idx];
-			}
 			break;
 		case 't': // things
 			break;
@@ -147,7 +196,7 @@ struct r_bin_plugin_t r_bin_plugin_dex = {
 	.binsym = NULL,
 	.entries = &classes,
 	.sections = NULL,
-	.symbols = NULL,
+	.symbols = &methods,
 	.imports = NULL,
 	.strings = &strings,
 	.info = &info,

@@ -189,10 +189,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'g':
 		if (core->io->va) {
 			ut64 offset = r_io_section_get_vaddr (core->io, 0);
+			if (offset == -1)
+				offset = 0;
 			r_core_seek (core, offset, 1);
-			r_io_sundo_push (core->io);
 		} else
 			r_core_cmd (core, "s 0", 0);
+		r_io_sundo_push (core->io);
 		break;
 	case 'G':
 		if (core->io->va) {
