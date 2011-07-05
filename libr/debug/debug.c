@@ -15,12 +15,12 @@ static int r_debug_recoil(RDebug *dbg) {
 	if (ri) {
 		ut64 addr = r_reg_get_value (dbg->reg, ri);
 		recoil = r_bp_recoil (dbg->bp, addr);
-		eprintf ("Recoil at 0x%"PFMT64x" = %d\n", addr, recoil);
+		eprintf ("[R2] Breakpoint recoil at 0x%"PFMT64x" = %d\n", addr, recoil);
 		if (recoil) {
 			dbg->reason = R_DBG_REASON_BP;
 			r_reg_set_value (dbg->reg, ri, addr-recoil);
 			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_TRUE);
-			eprintf ("[BP Hit] Setting pc to 0x%"PFMT64x"\n", (addr-recoil));
+			//eprintf ("[BP Hit] Setting pc to 0x%"PFMT64x"\n", (addr-recoil));
 			return R_TRUE;
 		}
 	} else eprintf ("r_debug_recoil: Cannot get program counter\n");
@@ -169,9 +169,10 @@ R_API int r_debug_detach(struct r_debug_t *dbg, int pid) {
 }
 
 R_API int r_debug_select(RDebug *dbg, int pid, int tid) {
+	if (pid != dbg->pid || tid != dbg->tid)
+		eprintf ("r_debug_select: %d %d\n", pid, tid);
 	dbg->pid = pid;
 	dbg->tid = tid;
-	eprintf ("r_debug_select: %d %d\n", pid, tid);
 	return R_TRUE;
 }
 
