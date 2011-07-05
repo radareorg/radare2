@@ -50,6 +50,7 @@ public class RCore {
 	public unowned string disassemble_instr(uint64 addr, int l);
 	public unowned string disassemble_bytes(uint64 addr, int b);
 
+	public bool anal_all();
 	public int anal_search (uint64 from, uint64 to, uint64 ref);
 	public void anal_refs(uint64 addr, int gv);
 	public int anal_bb(RAnal.Fcn fcn, uint64 at, int head);

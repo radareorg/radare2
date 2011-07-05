@@ -2039,14 +2039,14 @@ static void cmd_syscall_do(RCore *core, int num) {
 #if 1
 /* TODO: Move into cmd_anal() */
 static void var_help() {
-	eprintf("Try afv?\n");
-	eprintf(" afv 12 int buffer[3]\n");
-	eprintf(" afv 12 byte buffer[1024]\n");
-	eprintf("Try af[aAv][gs] [delta] [[addr]]\n");
-	eprintf(" afag 0  = arg0 get\n");
-	eprintf(" afvs 12 = var12 set\n");
-	eprintf("a = arg, A = fastarg, v = var\n");
-	eprintf("TODO: [[addr]] is not yet implemented. use @\n");
+	eprintf("Try afv?\n"
+	" afv 12 int buffer[3]\n"
+	" afv 12 byte buffer[1024]\n"
+	"Try af[aAv][gs] [delta] [[addr]]\n"
+	" afag 0  = arg0 get\n"
+	" afvs 12 = var12 set\n"
+	"a = arg, A = fastarg, v = var\n"
+	"TODO: [[addr]] is not yet implemented. use @\n");
 }
 
 static int var_cmd(RCore *core, const char *str) {
@@ -2521,11 +2521,15 @@ static int cmd_anal(void *data, const char *input) {
 			if (strstr (arch, "x86")) {
 				switch (bits) {
 				case 32:
-					r_core_cmd0 (core, "./x 5589e5 && af @@ pre.");
+					r_core_cmd0 (core, "./x 5589e5");
+					r_core_cmd0 (core, "af @@ pre.");
 					break;
 				case 64:
-					r_core_cmd0 (core, "./x 554989e5 && af @@ pre.");
+					r_core_cmd0 (core, "./x 554989e5");
+					r_core_cmd0 (core, "af @@ pre.");
 					break;
+				default:
+					eprintf ("ap: Unsupported bits: %d\n", bits);
 				}
 			} else {
 				eprintf ("ap: Unsupported asm.arch and asm.bits\n");
