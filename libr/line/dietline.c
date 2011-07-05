@@ -168,7 +168,7 @@ R_API void r_line_autocomplete() {
 	int argc = 0;
 	char *p;
 	const char **argv = NULL;
-	int i, j, opt, len = 0;
+	int i, j, opt, plen, len = 0;
 	int cols = r_cons_get_size (NULL)*0.82;
 
 	/* prepare argc and argv */
@@ -179,16 +179,26 @@ R_API void r_line_autocomplete() {
 	} else opt = 0;
 
 	p = r_str_lchr (I.buffer.data, ' ');
-	p = p? p+1: I.buffer.data; //+I.buffer.length;
+	if (p) {
+		p++;
+		plen = (int)(size_t)(p-I.buffer.data);
+	} else {
+		p = I.buffer.data;
+		plen = sizeof (I.buffer.data);
+	}
 	/* autocomplete */
 	if (argc==1) {
-		strcpy (p, argv[0]);
-		I.buffer.index = I.buffer.length = strlen (I.buffer.data) + 1;
-		strcat (p, " ");
-		I.buffer.length = strlen (I.buffer.data); // XXX: already calculated ?? wtf
+		int largv0 = strlen (argv[0]);
+		if (largv0+3 < plen) {
+			memcpy (p, argv[0], largv0);
+			memcpy (p+largv0, " ", 2);
+			I.buffer.index = I.buffer.length = largv0 + 1;
+		}
 	} else
 	if (argc>0) {
 		if (*p) {
+			// TODO: do not use strdup here
+			// TODO: avoid overflow
 			char *root = strdup (argv[0]);
 			// try to autocomplete argument
 			for (i=0; i<argc; i++) {

@@ -285,10 +285,10 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 		return NULL;
 	if (!(acode->buf_asm = malloc (strlen (buf)+16)))
 		return r_asm_code_free (acode);
-	strcpy (acode->buf_asm, buf);
+	strncpy (acode->buf_asm, buf, sizeof (acode->buf_asm)-1);
 	if (!(acode->buf_hex = malloc (64)))
 		return r_asm_code_free (acode);
-	acode->buf_hex[0]=0;
+	*acode->buf_hex = 0;
 	if (!(acode->buf = malloc (64)))
 		return r_asm_code_free (acode);
 	lbuf = strdup (buf);

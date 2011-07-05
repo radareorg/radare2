@@ -374,7 +374,7 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	char prompt[32];
 	const char *cmdprompt = r_config_get (r->config, "cmd.prompt");
 
-	if (cmdprompt && cmdprompt[0])
+	if (cmdprompt && *cmdprompt)
 		ret = r_core_cmd (r, cmdprompt, 0);
 
 	if (!r_line_singleton()->echo)

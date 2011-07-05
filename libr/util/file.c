@@ -176,7 +176,7 @@ R_API char *r_file_slurp_line(const char *file, int line, int context) {
 			return NULL;
 		}
 		lines = line;
-		for (i=0;str[i]&&lines;i++)
+		for (i=0; str[i]&&lines; i++)
 			if (str[i]=='\n')
 				lines--;
 		ptr = str+i;
@@ -207,9 +207,9 @@ R_API boolt r_file_dump(const char *file, const ut8 *buf, int len) {
 
 R_API boolt r_file_rm(const char *file) {
 #if __WINDOWS__
-	return (DeleteFile (file)==0)? R_TRUE:R_FALSE;
+	return (DeleteFile (file)==0)? R_TRUE: R_FALSE;
 #else
-	return (unlink (file)==0)? R_TRUE:R_FALSE;
+	return (unlink (file)==0)? R_TRUE: R_FALSE;
 #endif
 }
 
@@ -285,9 +285,12 @@ R_API void r_file_mmap_free (RMmap *m) {
 }
 
 R_API char *r_file_temp (const char *prefix) {
+	int namesz;
+	char *name;
 	const char *path = r_file_tmpdir ();
-	char *name = malloc (strlen (prefix) + strlen (path) +32);
-	sprintf (name, "%s/%s.%"PFMT64x, path, prefix, r_sys_now ());
+	namesz = strlen (prefix) + strlen (path) + 32;
+	name = malloc (namesz);
+	snprintf (name, namesz, "%s/%s.%"PFMT64x, path, prefix, r_sys_now ());
 	return name;
 }
 
@@ -307,7 +310,6 @@ R_API int r_file_mkstemp (const char *prefix, char **oname) {
 #endif
 	if (oname && h!=-1) *oname = name;
 	else free (name);
-
 	return h;
 }
 

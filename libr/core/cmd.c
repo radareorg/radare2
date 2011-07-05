@@ -2125,6 +2125,71 @@ static int var_cmd(RCore *core, const char *str) {
 }
 #endif
 
+static int preludecnt = 0;
+static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
+	RCore *core = (RCore *)user;
+	int depth = r_config_get_i (core->config, "anal.depth");
+	eprintf ("ap: Found function prelude at 0x%08llx\n", addr);
+	r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
+	preludecnt++;
+	return R_TRUE;
+}
+
+static void search_preludes(RCore *core, const ut8 *buf, int blen, const ut8 *mask, int mlen) {
+	int ret;
+	ut64 at, from, to;
+	ut8 *b = (ut8 *)malloc (core->blocksize);
+// TODO: handle sections ?
+	r_search_reset (core->search, R_SEARCH_KEYWORD);
+	r_search_kw_add (core->search, 
+		r_search_keyword_new (buf, blen, mask, mlen, NULL));
+	r_search_begin (core->search);
+	r_search_set_callback (core->search, &__prelude_cb_hit, core);
+	preludecnt = 0;
+	from = core->offset;
+	to = core->offset+0xffffff; // XXX
+	for (at = from; at < to; at += core->blocksize) {
+		if (r_cons_singleton ()->breaked)
+			break;
+		ret = r_io_read_at (core->io, at, b, core->blocksize);
+		if (ret != core->blocksize)
+			break;
+		if (r_search_update (core->search, &at, b, ret) == -1) {
+			eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
+			break;
+		}
+	}
+	eprintf ("Analized %d functions based on preludes\n", preludecnt);
+	free (b);
+}
+
+R_API r_core_search_preludes(RCore *core) {
+	const char *arch = r_config_get (core->config, "asm.arch");
+	int bits = r_config_get_i (core->config, "asm.bits");
+	// TODO: this is x86 only
+	// TODO: allow interruptible search
+	char *o = strdup (r_config_get (core->config, "search.prefix"));
+	r_config_set (core->config, "search.prefix", "pre.");
+	r_flag_space_set (core->flags, "preludes");
+	if (strstr (arch, "x86")) {
+		switch (bits) {
+		case 32:
+			search_preludes (core, "\x55\x89\xe5", 3, NULL, 0);
+			break;
+		case 64:
+			search_preludes (core, "\x55\x48\x89\xe5", 3, NULL, 0);
+			//r_core_cmd0 (core, "./x 554989e5");
+			break;
+		default:
+			eprintf ("ap: Unsupported bits: %d\n", bits);
+		}
+	} else {
+		eprintf ("ap: Unsupported asm.arch and asm.bits\n");
+	}
+	r_config_set (core->config, "search.prefix", o);
+	free (o);
+}
+
 static int cmd_anal(void *data, const char *input) {
 	const char *ptr;
 	RCore *core = (RCore *)data;
@@ -2510,34 +2575,7 @@ static int cmd_anal(void *data, const char *input) {
 		r_core_anal_all (core);
 		break;
 	case 'p':
-		{
-			const char *arch = r_config_get (core->config, "asm.arch");
-			int bits = r_config_get_i (core->config, "asm.bits");
-			// TODO: this is x86 only
-			// TODO: allow interruptible search
-			char *o = strdup (r_config_get (core->config, "search.prefix"));
-			r_config_set (core->config, "search.prefix", "pre.");
-			r_core_cmd0 (core, "fs preludes");
-			if (strstr (arch, "x86")) {
-				switch (bits) {
-				case 32:
-					r_core_cmd0 (core, "./x 5589e5");
-					r_core_cmd0 (core, "af @@ pre.");
-					break;
-				case 64:
-					//r_core_cmd0 (core, "./x 554989e5");
-					r_core_cmd0 (core, "./x 554889e5"); // OSX
-					r_core_cmd0 (core, "af @@ pre.");
-					break;
-				default:
-					eprintf ("ap: Unsupported bits: %d\n", bits);
-				}
-			} else {
-				eprintf ("ap: Unsupported asm.arch and asm.bits\n");
-			}
-			r_config_set (core->config, "search.prefix", o);
-			free (o);
-		}
+		r_core_search_preludes (core);
 		break;
 	case 'd':
 		{

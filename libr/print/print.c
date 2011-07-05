@@ -110,18 +110,18 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 				memcat (d, "\x1b[7m");
 		}
 		if ((p->flags & R_PRINT_FLAGS_COLOR)) {
-			if (s[0]=='0' && s[1]=='0') { memcat (d, "\x1b[32m"); }
-			else if (s[0]=='7' && s[1]=='f') { memcat (d, "\x1b[33m"); }
-			else if (s[0]=='f' && s[1]=='f') { memcat (d, "\x1b[31m"); }
+			if (s[0]=='0' && s[1]=='0') { memcat (d, Color_GREEN); }
+			else if (s[0]=='7' && s[1]=='f') { memcat (d, Color_YELLOW); }
+			else if (s[0]=='f' && s[1]=='f') { memcat (d, Color_RED); }
 			else {
 				sscanf (s, "%02x", &ch);
 				if (IS_PRINTABLE (ch))
-					memcat (d, "\x1b[35m");
+					memcat (d, Color_MAGENTA);
 			}
 		}
 		memcpy (d, s, 2);
 	}
-	memcpy (d, "\x1b[0m", 5);
+	memcpy (d, Color_RESET, strlen (Color_RESET));
 	return dst;
 }
 
@@ -134,16 +134,16 @@ R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 	if (p->flags & R_PRINT_FLAGS_COLOR) {
 		char *pre = NULL;
 		switch (ch) {
-		case 0x00: pre = "\x1b[32m"; break;
-		case 0x7F: pre = "\x1b[33m"; break;
-		case 0xFF: pre = "\x1b[31m"; break;
+		case 0x00: pre = Color_GREEN; break;
+		case 0x7F: pre = Color_YELLOW; break;
+		case 0xFF: pre = Color_RED; break;
 		default:
 			if (IS_PRINTABLE (ch))
-				pre = "\x1b[35m";
+				pre = Color_MAGENTA;
 		}
 		if (pre) p->printf (pre);
 		p->printf (fmt, rch);
-		if (pre) p->printf ("\x1b[0m");
+		if (pre) p->printf (Color_RESET);
 	} else p->printf (fmt, rch);
 	r_print_cursor (p, idx, 0);
 }

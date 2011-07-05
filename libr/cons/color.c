@@ -128,7 +128,7 @@ R_API int r_cons_palette_init(const unsigned char *pal) {
 							continue;
 						}
 				//		printf("KEYWORD FOUND = %s (value = %c)\n", pal_names[j], pal[i+1]);
-						strcpy(r_cons_palette[j], r_cons_get_color(pal[i+1]));
+						strcpy (r_cons_palette[j], r_cons_get_color(pal[i+1]));
 					}
 				}
 			} else {

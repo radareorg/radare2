@@ -16,17 +16,15 @@ R_API int r_hex_to_byte(ut8 *val, ut8 c) {
 /* int byte = hexpair2bin("A0"); */
 // (0A) => 10 || -1 (on error)
 R_API int r_hex_pair2bin(const char *arg) {
-	unsigned char *ptr;
-	unsigned char c = '\0';
-	unsigned char d = '\0';
-	unsigned int  j = 0;
+	ut8 *ptr, c = 0, d = 0;
+	ut32 j = 0;
 
-	for (ptr = (unsigned char *)arg; ;ptr = ptr + 1) {
-		if (!*ptr || ptr[0]==' ' || j==2)
+	for (ptr = (ut8*)arg; ;ptr = ptr + 1) {
+		if (!*ptr || *ptr==' ' || j==2)
 			break;
 		d = c;
-		if (r_hex_to_byte (&c, ptr[0])) {
-			eprintf ("Invalid hexa string at char '%c'.\n", ptr[0]);
+		if (r_hex_to_byte (&c, *ptr)) {
+			eprintf ("Invalid hexa string at char '%c'.\n", *ptr);
 			return -1;
 		}
 		c |= d;
@@ -113,12 +111,12 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 
 R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 	ut8 *ptr;
-	int len;
-	strcpy ((char*)out, in);
+	int len, ilen = strlen (in)+1;
+	memcpy (out, in, ilen);
 	for (ptr=out; *ptr; ptr++) if (*ptr=='.') *ptr = '0';
 	len = r_hex_str2bin ((char*)out, out);
 	if (len != -1) {
-		strcpy ((char*)mask, in);
+		memcpy (mask, in, ilen);
 		for (ptr=mask; *ptr; ptr++) *ptr = (*ptr=='.')?'0':'f';
 		len = r_hex_str2bin ((char*)mask, mask);
 	}
@@ -130,15 +128,15 @@ R_API st64 r_hex_bin_truncate (ut64 in, int n) {
 	case 1:
 		if ((in&UT8_GT0))
 			return UT64_8U|in;
-		else return in&UT8_MAX;
+		return in&UT8_MAX;
 	case 2: 
 		if ((in&UT16_GT0))
 			return UT64_16U|in;
-		else return in&UT16_MAX;
+		return in&UT16_MAX;
 	case 4: 
 		if ((in&UT32_GT0))
 			return UT64_32U|in;
-		else return in&UT32_MAX;
+		return in&UT32_MAX;
 	case 8:
 		return in&UT64_MAX;
 	}

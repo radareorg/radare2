@@ -71,7 +71,7 @@ R_API void r_str_subchr (char *s, int a, int b) {
 	while (*s) {
 		if (*s==a) {
 			if (b) *s = b;
-			else strcpy (s, s+1);
+			else memmove (s, s+1, strlen (s+1)+1);
 		}
 		s++;
 	}
@@ -160,30 +160,32 @@ R_API const char *r_str_rwx_i(int rwx) {
 }
 
 R_API const char *r_str_bool(int b) {
-	if (b) return "true";
-	return "false";
+	return b? "true": "false";
 }
 
 R_API void r_str_case(char *str, int up) {
 	if (up) {
-		while(*str)
+		while (*str)
 			*str = tolower (*str);
 	} else {
-		while(*str)
+		while (*str)
 			*str = toupper (*str);
 	}
 }
 
 R_API char *r_str_home(const char *str) {
+	int lhome, lstr;
 	char *dst;
 	const char *home = r_sys_getenv (R_SYS_HOME);
 	if (home == NULL)
 		return NULL;
-	dst = (char *)malloc (strlen (home) + strlen (str)+2);
-	strcpy (dst, home);
+	lhome = strlen (home);
+	lstr = strlen (str);
+	dst = (char *)malloc (lhome + lstr + 2);
+	memcpy (dst, home, lhome+1);
 	if (str && *str) {
-		strcat (dst, R_SYS_DIR);
-		strcat (dst, str);
+		memcpy (dst+lhome, R_SYS_DIR, strlen (R_SYS_DIR));
+		memcpy (dst+lhome+strlen (R_SYS_DIR), str, lstr+1);
 	}
 	return dst;
 }
@@ -191,14 +193,14 @@ R_API char *r_str_home(const char *str) {
 /* XXX Fix new hash algo*/
 R_API ut64 r_str_hash64(const char *str) {
 	ut64 ret = 0;
-	for (;*str; str++)
+	for (; *str; str++)
 		ret ^= (ret<<7 | *str);
 	return ret;
 }
 
 R_API ut32 r_str_hash(const char *str) {
 	ut32 ret = 0;
-	for (;*str; str++)
+	for (; *str; str++)
 		ret ^= (ret<<7 | *str);
 	return ret;
 }
@@ -481,18 +483,22 @@ R_API void *r_str_free(void *ptr) {
 	return NULL;
 }
 
+#if 0
+// XXX: unused
 R_API int r_str_inject(char *begin, char *end, char *str, int maxlen) {
+	int slen = strlen (str);
 	int len = strlen (end)+1;
 	char *tmp;
-	if (maxlen > 0 && ((strlen (begin)-(end-begin)+strlen (str)) > maxlen))
+	if (maxlen > 0 && ((strlen (begin)-(end-begin)+slen) > maxlen))
 		return 0;
 	tmp = malloc (len);
 	memcpy (tmp, end, len);
-	strcpy (begin, str);
-	strcat (begin, tmp);
+	memcpy (begin, str, slen);
+	memcpy (begin+slen, tmp, len);
 	free (tmp);
 	return 1;
 }
+#endif
 
 /* unstable code (taken from GNU) */
 /*------------------------------------------------*/
@@ -571,13 +577,13 @@ R_API int r_str_escape(char *buf) {
 			continue;
 		if (buf[i+1]=='e') {
 			buf[i] = 0x1b;
-			strcpy (buf+i+1, buf+i+2);
+			memmove (buf+i+1, buf+i+2, strlen (buf+i+2)+1);
 		} else if (buf[i+1]=='r') {
 			buf[i] = 0x0d;
-			strcpy (buf+i+1, buf+i+2);
+			memmove (buf+i+1, buf+i+2, strlen (buf+i+2)+1);
 		} else if (buf[i+1]=='n') {
 			buf[i] = 0x0a;
-			strcpy (buf+i+1, buf+i+2);
+			memmove (buf+i+1, buf+i+2, strlen (buf+i+2)+1);
 		} else if (buf[i+1]=='x') {
 			err = ch2 = ch = 0;
 			if (!buf[i+2] || !buf[i+3]) {
@@ -591,7 +597,7 @@ R_API int r_str_escape(char *buf) {
 				return 0;
 			}
 			buf[i] = (ch<<4)+ch2;
-			strcpy (buf+i+1, buf+i+4);
+			memmove (buf+i+1, buf+i+4, strlen (buf+i+4)+1);
 		} else {
 			eprintf ("'\\x' expected.\n");
 			return 0;
@@ -733,7 +739,7 @@ R_API char **r_str_argv(const char *_str, int *_argc) {
 		case '"':
 			if (escape) {
 				escape = 0;
-				strcpy (ptr, ptr+1);
+				memmove (ptr, ptr+1, strlen (ptr+1)+1);
 			} else {
 				if (quote) {
 					*ptr = '\0';
