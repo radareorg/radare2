@@ -2525,7 +2525,8 @@ static int cmd_anal(void *data, const char *input) {
 					r_core_cmd0 (core, "af @@ pre.");
 					break;
 				case 64:
-					r_core_cmd0 (core, "./x 554989e5");
+					//r_core_cmd0 (core, "./x 554989e5");
+					r_core_cmd0 (core, "./x 554889e5"); // OSX
 					r_core_cmd0 (core, "af @@ pre.");
 					break;
 				default:
