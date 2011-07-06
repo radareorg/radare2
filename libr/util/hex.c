@@ -34,24 +34,24 @@ R_API int r_hex_pair2bin(const char *arg) {
 }
 
 R_API int r_hex_bin2str(const ut8 *in, int len, char *out) {
-	int i;
+	int i, idx;
 	char tmp[5];
-	out[0]='\0';
-	for (i=0; i<len; i++)  {
+	for (idx=i=0; i<len; i++,idx+=2)  {
 		snprintf (tmp, sizeof (tmp), "%02x", in[i]);
-		strcat (out, tmp);
+		memcpy (out+idx, tmp, 2);
 	}
+	out[idx] = 0;
 	return len;
 }
 
 R_API char *r_hex_bin2strdup(const ut8 *in, int len) {
-	int i;
+	int i, idx;
 	char tmp[5], *out = malloc ((len+1)*2);
-	out[0]='\0';
-	for (i=0; i<len; i++)  {
+	for (i=idx=0; i<len; i++, idx+=2)  {
 		snprintf (tmp, sizeof (tmp), "%02x", in[i]);
-		strcat (out, tmp);
+		memcpy (out+idx, tmp, 2);
 	}
+	out[idx] = 0;
 	return out;
 }
 

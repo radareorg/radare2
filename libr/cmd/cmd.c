@@ -90,15 +90,21 @@ R_API int r_cmd_call(struct r_cmd_t *cmd, const char *input) {
 R_API int r_cmd_call_long(struct r_cmd_t *cmd, const char *input) {
 	char *inp;
 	struct list_head *pos;
-	int inplen = strlen(input)+1;
+	int ret, inplen = strlen (input)+1;
 
 	list_for_each_prev (pos, &cmd->lcmds) {
 		RCmdLongItem *c = list_entry (pos, struct r_cmd_long_item_t, list);
 		if (inplen>=c->cmd_len && !r_str_cmp (input, c->cmd, c->cmd_len)) {
-			inp = alloca(inplen);
-			strcpy (inp, c->cmd_short);
-			strcat (inp, input+c->cmd_len);
-			return r_cmd_call (cmd, inp);
+			int lcmd = strlen (c->cmd_short);
+			int linp = strlen (input+c->cmd_len);
+			inp = malloc (lcmd+linp+2); // TODO: use static buffer with R_CMD_MAXLEN
+			if (inp == NULL)
+				return -1;
+			memcpy (inp, c->cmd_short, lcmd);
+			memcpy (inp+lcmd, input+c->cmd_len, linp+1);
+			ret = r_cmd_call (cmd, inp);
+			free (inp);
+			return ret;
 		}
 	}
 	return -1;

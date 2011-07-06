@@ -3347,7 +3347,7 @@ static inline void
 d_append_num (struct d_print_info *dpi, long l)
 {
   char buf[25];
-  sprintf (buf,"%ld", l);
+  snprintf (buf,sizeof (buf), "%ld", l);
   d_append_string (dpi, buf);
 }
 
@@ -4946,7 +4946,7 @@ __cxa_demangle (const char *mangled_name, char *output_buffer,
     {
       if (strlen (demangled) < *length)
 	{
-	  strcpy (output_buffer, demangled);
+	  strncpy (output_buffer, demangled, *length);
 	  free (demangled);
 	  demangled = output_buffer;
 	}

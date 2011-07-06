@@ -16,7 +16,7 @@ OBJ=bin.o bin_meta.o bin_write.o demangle.o ${STATIC_OBJS}
 OBJ+=mangling/cxx/cp-demangle.o
 
 pre:
-	if [ ! -e libr_bin.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi
+	@if [ ! -e libr_bin.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi
 
 plugins:
 	cd p && ${MAKE} all

@@ -663,7 +663,7 @@ static const char *r_debug_native_reg_profile(RDebug *dbg) {
 #if __APPLE__
 // XXX
 static RDebugPid *darwin_get_pid(int pid) {
-	int foo, nargs, mib[3];
+	int psnamelen, foo, nargs, mib[3];
 	size_t size, argmax = 2048;
 	char *curr_arg, *start_args, *iter_args, *end_args;
 	char *procargs = NULL;
@@ -735,16 +735,18 @@ static RDebugPid *darwin_get_pid(int pid) {
 	curr_arg = iter_args;
 	start_args = iter_args; //reset start position to beginning of cmdline
 	foo = 1;
-	psname[0] = 0;
+	*psname = 0;
 	while (iter_args < end_args && nargs > 0) {
 		if (*iter_args++ == '\0') {
+			int alen = strlen (curr_arg);
 			if (foo) {
-				strcpy (psname, curr_arg);
+				memcpy (psname, curr_arg, alen+1);
 				foo = 0;
 			} else {
-				strcat (psname, " ");
-				strcat (psname, curr_arg);
+				psname[psnamelen] = ' ';
+				memcpy (psname+psnamelen+1, curr_arg, alen+1);
 			}
+			psnamelen += alen;
 			//printf("arg[%i]: %s\n", iter_args, curr_arg);
 			/* Fetch next argument */
 			curr_arg = iter_args;
@@ -931,9 +933,9 @@ static RList *r_debug_native_threads(int pid) {
 				int tgid = atoi (ptr+5);
 				if (tgid != pid)
 					continue;
-				read (fd, cmdline, sizeof(cmdline)-1);
-				sprintf (cmdline, "thread_%d", thid++);
-				cmdline[sizeof(cmdline)-1] = '\0';
+				read (fd, cmdline, sizeof (cmdline)-1);
+				snprintf (cmdline, sizeof (cmdline), "thread_%d", thid++);
+				cmdline[sizeof (cmdline)-1] = '\0';
 				r_list_append (list, r_debug_pid_new (cmdline, i, 's', 0));
 			}
 		}
@@ -1152,8 +1154,6 @@ static const char * unparse_inheritance (vm_inherit_t i) {
 // TODO: this loop MUST be cleaned up
 static RList *darwin_dbg_maps (RDebug *dbg) {
 	RDebugMap *mr;
-	RList *list = r_list_new ();
-
 	char buf[128];
 	int i, print;
 	kern_return_t kret;
@@ -1164,9 +1164,10 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 	mach_msg_type_number_t count;
 	int nsubregions = 0;
 	int num_printed = 0;
-	// XXX: wrong for 64bits
 	size_t address = 0;
 	task_t task = pid_to_task (dbg->pid);
+	RList *list = r_list_new ();
+	// XXX: wrong for 64bits
 /*
 	count = VM_REGION_BASIC_INFO_COUNT_64;
 	kret = mach_vm_region (pid_to_task (dbg->pid), &address, &size, VM_REGION_BASIC_INFO_64,
@@ -1217,7 +1218,7 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 
 		#define xwr2rwx(x) ((x&1)<<2) && (x&2) && ((x&4)>>2)
 		if (print) {
-			sprintf (buf, "%s %02x %s/%s/%s",
+			snprintf (buf, sizeof (buf), "%s %02x %s/%s/%s",
 					r_str_rwx_i (xwr2rwx (prev_info.max_protection)), i,
 					unparse_inheritance (prev_info.inheritance),
 					prev_info.shared ? "shar" : "priv",
@@ -1286,7 +1287,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 #if __sun
 	char path[1024];
 	/* TODO: On solaris parse /proc/%d/map */
-	sprintf (path, "pmap %d > /dev/stderr", ps.tid);
+	snprintf (path, sizeof (path)-1, "pmap %d > /dev/stderr", ps.tid);
 	system (path);
 #else
 	RDebugMap *map;
@@ -1301,9 +1302,9 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 	}
 
 #if __FreeBSD__
-	sprintf (path, "/proc/%d/map", dbg->pid);
+	snprintf (path, sizeof (path), "/proc/%d/map", dbg->pid);
 #else
-	sprintf (path, "/proc/%d/maps", dbg->pid);
+	snprintf (path, sizeof (path), "/proc/%d/maps", dbg->pid);
 #endif
 	fd = fopen (path, "r");
 	if (!fd) {
@@ -1326,7 +1327,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 			&region[2], &region2[2], &ign, &ign,
 			unkstr, perms, &ign, &ign);
 		pos_c = strchr (line, '/');
-		if (pos_c) strcpy (path, pos_c);
+		if (pos_c) strncpy (path, pos_c, sizeof (path)-1);
 		else path[0]='\0';
 #else
 		sscanf (line, "%s %s %s %s %s %s",
@@ -1338,13 +1339,13 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 
 		pos_c[-1] = (char)'0';
 		pos_c[ 0] = (char)'x';
-		strcpy (region2, pos_c-1);
+		strncpy (region2, pos_c-1, sizeof (region2));
 #endif // __FreeBSD__
 		region[0] = region2[0] = '0';
 		region[1] = region2[1] = 'x';
 
 		if (!*path)
-			sprintf (path, "unk%d", unk++);
+			snprintf (path, sizeof (path), "unk%d", unk++);
 
 		perm = 0;
 		for(i = 0; perms[i] && i < 4; i++)

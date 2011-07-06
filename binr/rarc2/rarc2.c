@@ -118,7 +118,7 @@ static void rcc_pushstr(char *str, int filter) {
 			default: dotrim = 0; break;
 			}
 			if (dotrim)
-				strcpy (str+i+1, str+i+2); // Add STRBCPY macro
+				memmove (str+i+1, str+i+2, strlen (str+i+2));
 		}
 	}
 
@@ -184,7 +184,8 @@ char *mk_var(char *out, const char *_str, int delta) {
 			}
 		} else
 		if (!memcmp (str+1, "reg", 3)) {
-			sprintf (out, "%%%s", emit->regs (atoi (str+4)));
+			// XXX: can overflow if out is small
+			snprintf (out, 32, "%%%s", emit->regs (atoi (str+4)));
 		} else {
 			ret = str; /* TODO: show error, invalid var name? */
 			eprintf ("FUCKED UP\n");
@@ -197,7 +198,7 @@ char *mk_var(char *out, const char *_str, int delta) {
 		str++;
 		len = strlen (str)-1;
 		str[len]='\0';
-		sprintf (foo, ".fix%d", nargs*16); /* XXX FIX DELTA !!!1 */
+		snprintf (foo, sizeof (foo)-1, ".fix%d", nargs*16); /* XXX FIX DELTA !!!1 */
 		dstvar = strdup (foo);
 		rcc_pushstr (str, mustfilter);
 		ret = mk_var (out, foo, 0);

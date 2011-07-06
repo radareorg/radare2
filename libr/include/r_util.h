@@ -15,15 +15,23 @@
 #include <openssl/bn.h>
 #endif
 
-#define R_REFCTR_CLASS(x) int refctr;void (*ref_free)(x)=x;
-#define R_REFCTR_REF(x) x->refctr++;
+// TODO: use lowercase here?
+#define R_REFCTR_CLASS int refctr;void (*ref_free)(x)
+#define R_REFCTR_INIT(x,y) x->refctr=0;x->ref_free=y
+#define R_REFCTR_REF(x) x->refctr++
 #define R_REFCTR_UNREF(x) if (--x->refctr<=0) x->ref_free(x)
 
 #if 0
 typedef struct {
-	R_REFCTR_CLASS(r_foo_free);
+	R_REFCTR_CLASS;
 } Foo;
 
+Foo *r_foo_new () {
+	Foo *f = R_NEW(Foo)
+	R_REFCTR_INIT (f, r_foo_free);
+	...
+	return f;
+}
 Foo *foo = r_foo_new (Foo)
 R_REFCTR_REF (foo)
 R_REFCTR_UNREF (foo)

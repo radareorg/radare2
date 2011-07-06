@@ -159,55 +159,55 @@ static int javasm_init(struct r_bin_java_obj_t *bin) {
 
 	/* Initialize cp_null_item */
 	cp_null_item.tag = -1;
-	strcpy(cp_null_item.name, "(null)");
-	cp_null_item.value = strdup("(null)");
+	strncpy (cp_null_item.name, "(null)", sizeof (cp_null_item.name)-1);
+	cp_null_item.value = strdup ("(null)");
 
 	/* start parsing */
-	r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)&bin->cf, 10); //sizeof(struct r_bin_java_classfile_t), 1, bin->fd);
-	if (memcmp(bin->cf.cafebabe, "\xCA\xFE\xBA\xBE", 4)) {
+	r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)&bin->cf, 10); //sizeof(struct r_bin_java_classfile_t), 1, bin->fd);
+	if (memcmp (bin->cf.cafebabe, "\xCA\xFE\xBA\xBE", 4)) {
 		fprintf(stderr, "Invalid header\n");
 		return R_FALSE;
 	}
 
-	bin->cf.cp_count = R_BIN_JAVA_SWAPUSHORT(bin->cf.cp_count);
+	bin->cf.cp_count = R_BIN_JAVA_SWAPUSHORT (bin->cf.cp_count);
 	if (bin->cf.major[0]==bin->cf.major[1] && bin->cf.major[0]==0) {
 		fprintf(stderr, "This is a MachO\n");
 		return R_FALSE;
 	}
 	bin->cf.cp_count--;
 
-	IFDBG printf("ConstantPoolCount %d\n", bin->cf.cp_count);
+	IFDBG printf ("ConstantPoolCount %d\n", bin->cf.cp_count);
 	bin->cp_items = malloc (sizeof (struct r_bin_java_cp_item_t)*(bin->cf.cp_count+1));
 	for(i=0;i<bin->cf.cp_count;i++) {
 		struct constant_t *c;
 
-		r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)buf, 1);
+		r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, 1);
 
 		c = NULL;
-		for(j=0;constants[j].name;j++) {
+		for (j=0;constants[j].name;j++) {
 			if (constants[j].tag == buf[0])  {
 				c = &constants[j];
 				break;
 			}
 		}
 		if (c == NULL) {
-			fprintf(stderr, "Invalid tag '%d' at offset 0x%08"PFMT64x"\n",
-				buf[0], (ut64)bin->b->cur);
+			fprintf (stderr, "Invalid tag '%d' at offset 0x%08"PFMT64x"\n",
+				*buf, (ut64)bin->b->cur);
 			return R_FALSE;
 		}
-		IFDBG printf(" %3d %s: ", i+1, c->name);
+		IFDBG printf (" %3d %s: ", i+1, c->name);
 
 		/* store constant pool item */
-		strcpy(bin->cp_items[i].name, c->name);
+		strncpy (bin->cp_items[i].name, c->name, sizeof (bin->cp_items[i].name)-1);
 		bin->cp_items[i].ord = i+1;
 		bin->cp_items[i].tag = c->tag;
 		bin->cp_items[i].value = NULL; // no string by default
 		bin->cp_items[i].off = bin->b->cur-1;
 
 		/* read bytes */
-		switch(c->tag) {
+		switch (c->tag) {
 		case 1: // Utf8 string
-			r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)buf, 2);
+			r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, 2);
 			sz = R_BIN_JAVA_USHORT (buf, 0);
 			bin->cp_items[i].length = sz;
 			bin->cp_items[i].off += 3;
@@ -311,7 +311,7 @@ static int javasm_init(struct r_bin_java_obj_t *bin) {
 			bin->methods[i].name = strdup((get_cp(bin, R_BIN_JAVA_USHORT(buf, 2)-1))->value);
 #else
 			bin->methods[i].name = malloc (1024);
-			sprintf (bin->methods[i].name, "%s%s",
+			snprintf (bin->methods[i].name, 1023, "%s%s",
 				(get_cp(bin, R_BIN_JAVA_USHORT(buf, 2)-1))->value,
 				(get_cp(bin, R_BIN_JAVA_USHORT(buf, 2)))->value);
 #endif

@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
 	int fullfile = 0;
 	ut32 bsize = 0;
 	ut64 seek = 0;
-	char file[1024];
+	char file[4096];
 	char *cmdfile = NULL;
 	int is_gdb = R_FALSE;
 
@@ -151,12 +151,12 @@ int main(int argc, char **argv) {
 	}
 
 	if (debug) {
+		int filelen = 0;
 		r_config_set (r.config, "io.va", "false"); // implicit?
 		r_config_set (r.config, "cfg.debug", "true");
 		is_gdb = (!memcmp (argv[optind], "gdb://", 6));
-		if (!is_gdb)
-			strcpy (file, "dbg://");
-		else *file = 0;
+		if (is_gdb) *file = 0;
+		else memcpy (file, "dbg://", 7);
 		if (optind < argc) {
 			char *ptr = r_file_path (argv[optind]);
 			if (ptr) {
@@ -166,10 +166,23 @@ int main(int argc, char **argv) {
 			}
 		}
 		while (optind < argc) {
-			strcat (file, argv[optind]);
-			strcat (file, " ");
-			if (++optind != argc)
-				strcat (file, " ");
+			int largv = strlen (argv[optind]);
+			if (filelen+largv+1>=sizeof (file)) {
+				eprintf ("Too long arguments\n");
+				return 1;
+			}
+			memcpy (file+filelen, argv[optind], largv);
+			filelen += largv;
+			if (filelen+6>=sizeof (file)) {
+				eprintf ("Too long arguments\n");
+				return 1;
+			}
+			memcpy (file+filelen, " ", 2);
+			filelen += 2;
+			if (++optind != argc) {
+				memcpy (file+filelen, " ", 2);
+				filelen += 2;
+			}
 		}
 
 		fh = r_core_file_open (&r, file, perms, 0LL);

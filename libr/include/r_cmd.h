@@ -7,6 +7,7 @@
 
 #define MACRO_LIMIT 1024
 #define MACRO_LABELS 20
+#define R_CMD_MAXLEN 4096
 
 #define r_cmd_callback(x) int (*x)(void *data, const char *input)
 #define r_cmd_nullcallback(x) int (*x)(void *data);
@@ -20,6 +21,7 @@ typedef struct r_cmd_macro_item_t {
 	char *name;
 	char *args;
 	char *code;
+	int codelen;
 	int nargs;
 	struct list_head list;
 } RCmdMacroItem;

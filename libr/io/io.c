@@ -63,14 +63,13 @@ R_API int r_io_redirect(struct r_io_t *io, const char *file) {
 R_API RIODesc *r_io_open_as(struct r_io_t *io, const char *urihandler, const char *file, int flags, int mode) {
 	RIODesc *ret;
 	char *uri;
-	int urilen = strlen (urihandler);
-	uri = malloc (strlen (urihandler)+strlen (file)+5);
+	int urilen, hlen = strlen (urihandler);
+	urilen = hlen + strlen (file)+5;
+	uri = malloc (urilen);
 	if (uri == NULL)
 		return NULL;
-	if (urilen>0)
-		sprintf (uri, "%s://", urihandler);
-	else *uri = '\0';
-	strcpy (uri+urilen, file);
+	if (hlen>0) snprintf (uri, urilen, "%s://%s", urihandler, file);
+	else strncpy (uri, file, urilen);
 	ret = r_io_open (io, uri, flags, mode);
 	free (uri);
 	return ret;
