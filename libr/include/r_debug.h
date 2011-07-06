@@ -157,7 +157,7 @@ typedef struct r_debug_plugin_t {
 	/* flow */
 	int (*step)(RDebug *dbg);
 	int (*cont)(RDebug *dbg, int pid, int tid, int sig);
-	int (*wait)(int pid);
+	int (*wait)(RDebug *dbg, int pid);
 	int (*kill)(RDebug *dbg, boolt thread, int sig);
 	int (*contsc)(RDebug *dbg, int pid, int sc);
 	RList* (*frames)(RDebug *dbg);

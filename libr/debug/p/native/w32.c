@@ -253,9 +253,10 @@ static int debug_exception_event (unsigned long code) {
 		eprintf ("unknown exception\n");
 		break;
 	}
+	return 0;
 }
 
-static int w32_dbg_wait(int pid) {
+static int w32_dbg_wait(RDebug *dbg, int pid) {
 	DEBUG_EVENT de;
 	int tid, next_event = 0;
 	unsigned int code;
@@ -286,7 +287,7 @@ static int w32_dbg_wait(int pid) {
 				    pid, w32_h2t (de.u.CreateProcessInfo.
 					    hProcess),
 				 de.u.CreateProcessInfo.lpStartAddress);
-			r_debug_native_continue (pid, tid, -1);
+			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			ret = R_DBG_REASON_NEW_PID;
 			break;
@@ -299,37 +300,37 @@ static int w32_dbg_wait(int pid) {
 		case CREATE_THREAD_DEBUG_EVENT:
 			eprintf ("(%d) created thread (0x%x)\n",
 			pid, de.u.CreateThread.lpStartAddress);
-			r_debug_native_continue (pid, tid, -1);
+			r_debug_native_continue (dbg, pid, tid, -1);
 			ret = R_DBG_REASON_NEW_TID;
 			next_event = 1;
 			break;
 		case EXIT_THREAD_DEBUG_EVENT:
 			eprintf("EXIT_THREAD\n");
-			r_debug_native_continue (pid, tid, -1);
+			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			ret = R_DBG_REASON_EXIT_TID;
 			break;
 		case LOAD_DLL_DEBUG_EVENT:
 			eprintf("(%d) Loading %s library at 0x%x\n",
 				pid, "", de.u.LoadDll.lpBaseOfDll);
-			r_debug_native_continue (pid, tid, -1);
+			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			ret = R_DBG_REASON_NEW_LIB;
 			break;
 		case UNLOAD_DLL_DEBUG_EVENT:
 			eprintf ("UNLOAD_DLL\n");
-			r_debug_native_continue (pid, tid, -1);
+			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			ret = R_DBG_REASON_EXIT_LIB;
 			break;
 		case OUTPUT_DEBUG_STRING_EVENT:
 			eprintf("OUTPUT_DBUG_STING\n");
-			r_debug_native_continue (pid, tid, -1);
+			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			break;
 		case RIP_EVENT:
 			eprintf("RIP_EVENT\n");
-			r_debug_native_continue (pid, tid, -1);
+			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			// XXX unknown ret = R_DBG_REASON_TRAP;
 			break;

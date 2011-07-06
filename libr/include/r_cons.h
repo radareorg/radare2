@@ -19,6 +19,7 @@
 #endif
 #if __WINDOWS__
 #include <windows.h>
+#include <wincon.h>
 #endif
 
 /* constants */

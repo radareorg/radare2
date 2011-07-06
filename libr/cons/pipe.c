@@ -13,7 +13,11 @@ R_API int r_cons_pipe_open(const char *file, int append) {
 		eprintf ("Cannot open file '%s'\n", file);
 		return -1;
 	} else eprintf ("%s created\n", file);
+#if __WINDOWS__
+	backup_fd = 4096;
+#else
 	backup_fd = getdtablesize () - (fd-2);
+#endif
 	if (dup2 (1, backup_fd) == -1) {
 		eprintf ("Cannot dup stdout to %d\n", backup_fd);
 		return -1;

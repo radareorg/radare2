@@ -9,7 +9,7 @@ Crosscompilation
 
   ArchLinux
   ---------
-  ./configure --without-gmp --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows --without-magic
+  ./configure --without-gmp --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows --without-magic --without-ssl
   make
   make w32dist
 

@@ -12,7 +12,7 @@ R_API int r_cons_w32_print(ut8 *ptr) {
 	int inv = 0;
 
 	if (ptr && hConsole)
-	for (;ptr[0]; ptr = ptr + 1) {
+	for (; *ptr; ptr++) {
 		if (ptr[0] == 0x1b) {
 			write (1, str, ptr-str);
 			esc = 1;
@@ -39,9 +39,9 @@ R_API int r_cons_w32_print(ut8 *ptr) {
 				continue;
 			} else
 			if (ptr[0]=='0'&&ptr[1]==';'&&ptr[2]=='0') {
-				r_cons_gotoxy (0,0);
+				r_cons_gotoxy (0, 0);
 				esc = 0;
-				ptr = ptr + 4;
+				ptr += 4;
 				str = ptr + 1;
 				continue;
 			} else
@@ -51,7 +51,7 @@ R_API int r_cons_w32_print(ut8 *ptr) {
 				bg = 0;
 				inv = 0;
 				esc = 0;
-				ptr = ptr + 1;
+				ptr++;
 				str = ptr + 1;
 				continue;
 				// reset color

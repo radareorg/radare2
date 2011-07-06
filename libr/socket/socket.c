@@ -97,18 +97,38 @@ R_API RSocket *r_socket_new (int is_ssl) {
 }
 
 R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int proto) {
-	struct addrinfo hints, *res, *rp;
-	int gai;
 #if __WINDOWS__
+	struct sockaddr_in sa;
+	struct hostent *he;
 	WSADATA wsadata;
-	if (WSAStartup (MAKEWORD(1,1), &wsadata) == SOCKET_ERROR) {
+	if (WSAStartup (MAKEWORD (1, 1), &wsadata) == SOCKET_ERROR) {
 		eprintf ("Error creating socket.");
 		return R_FALSE;
 	}
-#elif __UNIX__
-	signal (SIGPIPE, SIG_IGN);
-#endif
+	s->fd = socket (AF_INET, SOCK_STREAM, 0);
+	if (s->fd == -1)
+		return R_FALSE;
 
+	memset (&sa, 0, sizeof(sa));
+	sa.sin_family = AF_INET;
+	he = (struct hostent *)gethostbyname (host);
+	if (he == (struct hostent*)0) {
+		close (s->fd);
+		return R_FALSE;
+	}
+
+	sa.sin_addr = *((struct in_addr *)he->h_addr);
+	sa.sin_port = htons (atoi (port));
+
+	if (connect (s->fd, (const struct sockaddr*)&sa, sizeof (struct sockaddr))) {
+		close (s->fd);
+		return R_FALSE;
+	}
+	return R_TRUE;
+#elif __UNIX__
+	int gai;
+	struct addrinfo hints, *res, *rp;
+	signal (SIGPIPE, SIG_IGN);
 	if (proto == R_SOCKET_PROTO_UNIX) {
 		if (!r_socket_unix_connect (s, host))
 			return R_FALSE;
@@ -135,6 +155,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 		}
 		freeaddrinfo (res);
 	}
+#endif
 #if HAVE_LIB_SSL
 	if (s->is_ssl) {
 		s->ctx = SSL_CTX_new (SSLv23_client_method ());
@@ -297,7 +318,6 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 #elif __WINDOWS__
 	fd_set rfds;
 	struct timeval tv;
-	int retval;
 	if (s->fd==-1)
 		return -1;
 	FD_ZERO(&rfds);

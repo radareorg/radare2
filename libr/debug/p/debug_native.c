@@ -179,7 +179,7 @@ static int r_debug_native_step(RDebug *dbg) {
 	regs.EFlags |= 0x100;
 	r_debug_native_reg_write (pid, dbg->tid, R_REG_TYPE_GPR, &regs, sizeof (regs));
 */
-	r_debug_native_continue (pid, dbg->tid, -1);
+	r_debug_native_continue (dbg, pid, dbg->tid, -1);
 #elif __APPLE__
 	//debug_arch_x86_trap_set (dbg, 1);
 	// TODO: not supported in all platforms. need dbg.swstep=
@@ -282,9 +282,9 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 #endif
 }
 
-static int r_debug_native_wait(int pid) {
+static int r_debug_native_wait(RDebug *dbg, int pid) {
 #if __WINDOWS__
-	return w32_dbg_wait (pid);
+	return w32_dbg_wait (dbg, pid);
 #else
 	int ret, status = -1;
 	//printf ("prewait\n");

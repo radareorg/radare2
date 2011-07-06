@@ -171,7 +171,7 @@ R_API void r_cons_clear() {
 	if (!hStdout) {
 		hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
 		GetConsoleScreenBufferInfo (hStdout, &csbi);
-		GetConsoleWindowInfo (hStdout, &csbi);
+		//GetConsoleWindowInfo (hStdout, &csbi);
 	}
 	FillConsoleOutputCharacter (hStdout, ' ',
 		csbi.dwSize.X * csbi.dwSize.Y, startCoords, &dummy);
@@ -264,7 +264,7 @@ R_API void r_cons_visual_flush() {
 		return;
 /* TODO: this ifdef must go in the function body */
 #if __WINDOWS__
-	r_cons_w32_print (I.buffer);
+	r_cons_w32_print ((ut8*)I.buffer);
 #else
 	r_cons_visual_write (I.buffer);
 #endif

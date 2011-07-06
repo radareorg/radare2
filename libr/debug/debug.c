@@ -193,7 +193,7 @@ R_API int r_debug_wait(RDebug *dbg) {
 		return R_FALSE;
 	if (dbg && dbg->h && dbg->h->wait) {
 		dbg->reason = R_DBG_REASON_UNKNOWN;
-		ret = dbg->h->wait (dbg->pid);
+		ret = dbg->h->wait (dbg, dbg->pid);
 		dbg->reason = ret;
 		dbg->newstate = 1;
 		if (ret == -1) {

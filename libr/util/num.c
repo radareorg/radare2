@@ -157,9 +157,10 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 	ut64 ret = 0LL;
 	char op = '+';
 	int len = strlen (str)+1;
-	char *p, *s = alloca (len);
+	char *p, *s, *os = malloc (len+1);
 	char *group;
 
+	s = os;
 	memcpy (s, str, len);
 	for (; *s==' '; s++);
 	p = s;
@@ -167,7 +168,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 	do {
 		group = strchr (p, '(');
 		if (group) {
-			group[0]='\0';
+			group[0] = '\0';
 			ret = r_num_op (op, ret, r_num_math_internal (num, p));
 			for (; p<group; p+=1) {
 				switch (*p) {
@@ -182,7 +183,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 					break;
 				}
 			}
-			group[0]='(';
+			group[0] = '(';
 			p = group+1;
 			if (r_str_delta (p, '(', ')')<0) {
 				char *p2 = strchr (p, '(');
@@ -199,6 +200,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 
 	if (num != NULL)
 		num->value = ret;
+	free (os);
 	return ret;
 }
 

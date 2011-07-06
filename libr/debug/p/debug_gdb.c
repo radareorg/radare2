@@ -49,7 +49,7 @@ static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return R_TRUE;
 }
 
-static int r_debug_gdb_wait(int pid) {
+static int r_debug_gdb_wait(RDebug *dbg, int pid) {
 	/* do nothing */
 	return R_TRUE;
 }
