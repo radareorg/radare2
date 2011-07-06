@@ -2810,24 +2810,32 @@ static int cmd_write(void *data, const char *input) {
 		}
 		break;
 	case 'a':
-		{
-		RAsmCode *acode;
-		/* XXX ULTRAUGLY , needs fallback support in rasm */
-		r_asm_use (core->assembler, "x86.olly");
-		r_asm_set_pc (core->assembler, core->offset);
-		if (input[1]==' ') input=input+1;
-		acode = r_asm_massemble (core->assembler, input+1);
-		if (acode) {
-			if (r_config_get_i (core->config, "scr.prompt"))
-			eprintf ("Written %d bytes (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
-			r_core_write_at (core, core->offset, acode->buf, acode->len);
-			WSEEK (core, acode->len);
-			r_asm_code_free (acode);
-			r_core_block_read (core, 0);
-			r_asm_use (core->assembler, "x86"); /* XXX */
-			r_core_block_read (core, 0);
-		}
-		}
+		if (input[1]==' ') {
+			RAsmCode *acode;
+			r_asm_set_pc (core->assembler, core->offset);
+			acode = r_asm_massemble (core->assembler, input+1);
+			if (acode) {
+				if (r_config_get_i (core->config, "scr.prompt"))
+				eprintf ("Written %d bytes (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
+				r_core_write_at (core, core->offset, acode->buf, acode->len);
+				WSEEK (core, acode->len);
+				r_asm_code_free (acode);
+				r_core_block_read (core, 0);
+			}
+		} else
+		if (input[1]=='f' && input[2]==' ') {
+			RAsmCode *acode;
+			r_asm_set_pc (core->assembler, core->offset);
+			acode = r_asm_assemble_file (core->assembler, input+3);
+			if (acode) {
+				if (r_config_get_i (core->config, "scr.prompt"))
+				eprintf ("Written %d bytes (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
+				r_core_write_at (core, core->offset, acode->buf, acode->len);
+				WSEEK (core, acode->len);
+				r_asm_code_free (acode);
+				r_core_block_read (core, 0);
+			} else eprintf ("Cannot assemble file\n");
+		} else eprintf ("Wrong argument\n");
 		break;
 	case 'b':
 		{
@@ -2952,12 +2960,13 @@ static int cmd_write(void *data, const char *input) {
 			" wr 10        Write 10 random bytes\n"
 			" ww foobar    write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'\n"
 			" wa push ebp  write opcode, separated by ';' (use '\"' around the command)\n"
+			" waf file     assemble file and write bytes\n"
 			" wA r 0       alter/modify opcode at current seek (see wA?)\n"
 			" wb 010203    fill current block with cyclic hexpairs\n"
 			" wc[ir*?]     write cache commit/reset/list\n"
 			" wx 9090      write two intel nops\n"
 			" wv eip+34    write 32-64 bit value\n"
-			" wo[] hex     write in block with operation. 'wo?' fmi\n"
+			" wo? hex     write in block with operation. 'wo?' fmi\n"
 			" wm f0ff      set binary mask hexpair to be used as cyclic write mask\n"
 			" wf file      write contents of file at current offset\n"
 			" wF file      write contents of hexpairs file here\n"

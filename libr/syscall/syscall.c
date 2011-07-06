@@ -134,7 +134,7 @@ R_API RSyscallItem *r_syscall_get(RSyscall *ctx, int num, int swi) {
 
 R_API int r_syscall_get_num(RSyscall *ctx, const char *str) {
 	int i;
-	for (i=0; ctx->sysptr[i].num;i++)
+	for (i=0; ctx->sysptr[i].name; i++)
 		if (!strcmp (str, ctx->sysptr[i].name))
 			return ctx->sysptr[i].num;
 	return 0;
@@ -144,14 +144,14 @@ R_API int r_syscall_get_num(RSyscall *ctx, const char *str) {
 /* XXX: ugly iterator implementation */
 R_API RSyscallItem *r_syscall_get_n(RSyscall *ctx, int n) {
 	int i;
-	for (i=0; ctx->sysptr[i].num && i!=n; i++)
+	for (i=0; ctx->sysptr[i].name && i!=n; i++)
 		return &ctx->sysptr[i];
 	return NULL;
 }
 
 R_API const char *r_syscall_get_i(RSyscall *ctx, int num, int swi) {
 	int i;
-	for (i=0; ctx->sysptr[i].num; i++) {
+	for (i=0; ctx->sysptr[i].name; i++) {
 		if (num == ctx->sysptr[i].num && \
 				(swi == -1 || swi == ctx->sysptr[i].swi))
 			return ctx->sysptr[i].name;
@@ -170,7 +170,7 @@ R_API const char *r_syscall_get_io(RSyscall *ctx, int ioport) {
 
 R_API void r_syscall_list(RSyscall *ctx) {
 	int i;
-	for (i=0; ctx->sysptr[i].num; i++) {
+	for (i=0; ctx->sysptr[i].name; i++) {
 		ctx->printf ("%02x: %d = %s\n",
 			ctx->sysptr[i].swi, ctx->sysptr[i].num, ctx->sysptr[i].name);
 	}

@@ -113,6 +113,7 @@ R_API int r_asm_assemble(RAsm *a, struct r_asm_op_t *op, const char *buf);
 R_API struct r_asm_code_t* r_asm_mdisassemble(RAsm *a, ut8 *buf, ut64 len);
 R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, const char *hexstr);
 R_API struct r_asm_code_t* r_asm_massemble(RAsm *a, const char *buf);
+R_API struct r_asm_code_t* r_asm_assemble_file(RAsm *a, const char *file);
 
 /* code.c */
 R_API RAsmCode *r_asm_code_new();

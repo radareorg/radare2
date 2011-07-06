@@ -207,9 +207,10 @@ R_API int r_asm_assemble(RAsm *a, struct r_asm_op_t *op, const char *buf) {
 		if (!a->cur->assemble) {
 			/* find callback if no assembler support in current plugin */
 			r_list_foreach (a->plugins, iter, h) {
-				if (h->arch && h->assemble && has_bits(h, a->bits)
-				&& !strcmp(a->cur->arch, h->arch)) {
-					ret = h->assemble(a, op, buf);
+				if (h->arch && h->assemble
+				&& has_bits (h, a->bits)
+				&& !strcmp (a->cur->arch, h->arch)) {
+					ret = h->assemble (a, op, buf);
 					break;
 				}
 			}
@@ -269,6 +270,15 @@ R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, const char *hexstr) {
 	ret = r_asm_mdisassemble (a, buf, len);
 	free (buf);
 	return ret;
+}
+
+R_API RAsmCode* r_asm_assemble_file(RAsm *a, const char *file) {
+	RAsmCode *ac;
+	char *f = r_file_slurp (file, NULL);
+	if (!f) return NULL;
+	ac = r_asm_massemble (a, f);
+	free (f);
+	return ac;
 }
 
 R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {

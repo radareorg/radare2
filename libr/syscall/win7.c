@@ -1226,5 +1226,6 @@ RSyscallItem syscalls_win7_x86[] = {
 	{ "NtUserMagSetContextInformation", 0x2e, 0x1335, 4 },
 	{ "NtUserMagGetContextInformation", 0x2e, 0x1336, 4 },
 	{ "NtUserHwndQueryRedirectionInfo", 0x2e, 0x1337, 4 },
-	{ "NtUserHwndSetRedirectionInfo", 0x2e, 0x1338, 4 }
+	{ "NtUserHwndSetRedirectionInfo", 0x2e, 0x1338, 4 },
+	{ NULL }
 };

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009, 2010 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009, 2011 nibble<.ds@gmail.com> */
 
 namespace Radare {
 [Compact]
@@ -88,6 +88,7 @@ public class RAsm {
 	public Code? mdisassemble(uint8 *buf, uint64 length);
 	public Code? mdisassemble_hexstr(string hexstr);
 	public Code? massemble(string buf);
+	public Code? assemble_file(string file);
 
 	/* TODO: not directy defined here */
 	public void free();

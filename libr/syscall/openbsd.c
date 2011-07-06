@@ -191,4 +191,5 @@ RSyscallItem syscalls_openbsd_x86[] = {
   { "fhstatfs", 0x80, 309, 2 },
   { "setrtable", 0x80, 310, 1 },
   { "getrtable", 0x80, 311, 0 },
+  { NULL }
 };
