@@ -454,12 +454,15 @@ R_API void r_str_writef(int fd, const char *fmt, ...) {
  * return: the pointer ptr resized to string size.
  */
 R_API char *r_str_concat(char *ptr, const char *string) {
+	int slen, plen;
 	if (ptr == NULL)
 		return strdup (string);
-	ptr = realloc (ptr, strlen (string)+strlen (ptr)+1);
+	plen = strlen (ptr);
+	slen = strlen (string);
+	ptr = realloc (ptr, slen + plen + 1);
 	if (ptr == NULL)
 		return NULL;
-	strcat (ptr, string);
+	memcpy (ptr+plen, string, slen+1);
 	return ptr;
 }
 

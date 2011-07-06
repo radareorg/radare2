@@ -209,16 +209,16 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		ret[0] = '\0';
 		break;
 	case R_ANAL_OP_TYPE_NOP:
-		sprintf (ret, "nop");
+		memcpy (ret, "nop", 4);
 		break;
 	case R_ANAL_OP_TYPE_RET:
-		sprintf (ret, "ret");
+		memcpy (ret, "ret", 4);
 		break;
 	case R_ANAL_OP_TYPE_LEAVE:
-		sprintf (ret, "leave");
+		memcpy (ret, "leave", 6);
 		break;
 	default:
-		sprintf (ret, "// ?");
+		memcpy (ret, "// ?", 5);
 		break;
 	}
 	free (r0);

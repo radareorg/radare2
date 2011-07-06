@@ -3000,6 +3000,7 @@
 #define X86IM_IO_SET_MODE_32BIT(x)                      ( (x)->mode |= X86IM_IO_MODE_32BIT )
 #define X86IM_IO_SET_MODE_64BIT(x)                      ( (x)->mode |= X86IM_IO_MODE_64BIT )
 
+// XXX: This is not fucking portable. at least not standard, and not supported by GCC
 #pragma pack( push, 1 )
 
 typedef struct _x86im_instr_object                      // x86 decoded/generated instruction:

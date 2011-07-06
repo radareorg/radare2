@@ -68,7 +68,7 @@ static RList* strings (RBinArch *arch) {
 		len = dex_read_uleb128 (buf);
 		//	len = R_BIN_SIZEOF_STRINGS-1;
 		if (len>0 && len < R_BIN_SIZEOF_STRINGS) {
-			r_buf_read_at(bin->b, bin->strings[i]+dex_uleb128_len (buf),
+			r_buf_read_at (bin->b, bin->strings[i]+dex_uleb128_len (buf),
 					(ut8*)&ptr->string, len);
 			ptr->string[(int) len]='\0';
 			ptr->rva = ptr->offset = bin->strings[i];

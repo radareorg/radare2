@@ -70,7 +70,7 @@ static int ptrace_write_at(int pid, const ut8 *pbuf, int sz, ut64 addr) {
 	if (last) {
 		lr = debug_read_raw (pid, (void*)at);
 		memcpy (&lr, buf+x, last);
-		if (debug_write_raw (pid, (void*)at, (void*)lr))
+		if (debug_write_raw (pid, (void*)at, lr))
 			return sz-last;
 	}
 	return sz; 

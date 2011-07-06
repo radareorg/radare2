@@ -40,7 +40,7 @@ R_API void r_anal_cc_reset (RAnalCC *cc) {
 R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 	RSyscallItem *si;
 	RAnalFcn *fcn;
-	char str[1024], buf[32];
+	char str[1024], buf[64];
 	int i, eax = 0; // eax = arg0
 
 	str[0] = 0;
@@ -63,11 +63,11 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 				const char *reg = r_syscall_reg (anal->syscall, i+1, si->args);
 				item = r_reg_get (anal->reg, reg, R_REG_TYPE_GPR);
 				if (item) {
-					sprintf (buf, "0x%"PFMT64x, r_reg_get_value (anal->reg, item));
-					strcat (str, buf);
+					snprintf (buf, sizeof (buf), "0x%"PFMT64x, r_reg_get_value (anal->reg, item));
+					strcat (str, buf); // XXX: do not use strcat
 				} else eprintf ("Unknown reg '%s'\n", reg);
 				if (i<si->args-1)
-					strcat (str, ",");
+					strcat (str, ","); // XXX: do not use strcat
 			}
 			strcat (str, ")");
 		} else snprintf (str, sizeof (str), "syscall[0x%x][%d]=?", (int)cc->jump, eax);

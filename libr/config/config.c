@@ -170,22 +170,22 @@ R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 	if (node) {
 		if (node->flags & CN_RO)
 			return NULL;
-		if (node->value)
+		if (node->value) {
+			free (node->value);
 			ov = strdup (node->value);
-		else node->value = strdup("");
-		free (node->value);
+		}
 		if (node->flags & CN_BOOL) {
-			node->value = strdup(i?"true":"false");
+			node->value = strdup (i? "true": "false");
 		} else {
-			sprintf (buf, "%"PFMT64d"", i); //0x%08lx", i);
-			node->value = strdup(buf);
+			snprintf (buf, sizeof (buf)-1, "%"PFMT64d, i);
+			node->value = strdup (buf);
 		}
 		//node->flags = CN_RW | CN_INT;
 		node->i_value = i;
 	} else {
 		if (!cfg->lock) {
-			if (i<1024) sprintf (buf, "%"PFMT64d"", i);
-			else sprintf (buf, "0x%08"PFMT64x"", i);
+			if (i<1024) snprintf (buf, sizeof (buf), "%"PFMT64d"", i);
+			else snprintf (buf, sizeof (buf), "0x%08"PFMT64x"", i);
 			node = r_config_node_new (name, buf);
 			node->flags = CN_RW | CN_OFFT;
 			node->i_value = i;

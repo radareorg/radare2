@@ -71,7 +71,7 @@ R_API char *r_anal_cond_to_string(RAnalCond *cond) {
 	val0 = r_anal_value_to_string (cond->arg[0]);
 	val1 = r_anal_value_to_string (cond->arg[1]);
 	if (val0) {
-		if (R_ANAL_COND_SINGLE(cond)) {
+		if (R_ANAL_COND_SINGLE (cond)) {
 			if ( (out = malloc (strlen (val0) + 10)) )
 				sprintf (out, "%s%s", cnd, val0);
 		} else if ( (out = malloc (strlen (val0) + strlen (val1)+10)) )
@@ -84,7 +84,7 @@ R_API char *r_anal_cond_to_string(RAnalCond *cond) {
 
 R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op) {
 	RAnalCond *cond;
-	if (!(cond = r_anal_cond_new()))
+	if (!(cond = r_anal_cond_new ()))
 		return NULL;
 	//v->reg[0] = op->src[0];
 	//v->reg[1] = op->src[1];
