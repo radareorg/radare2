@@ -1,11 +1,10 @@
 include ../../../config.mk
-
-CC?=gcc
-RANLIB?=ranlib
 #CC?=gcc
 
 #OSTYPE=$(shell uname -s)
 include ../../../../config-user.mk
+CC?=gcc
+RANLIB?=ranlib
 ifeq (${OSTYPE},)
 all:
 	echo LE FAIL

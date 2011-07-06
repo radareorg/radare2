@@ -25,6 +25,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <r_util.h>
 
 //#define DATADIR "/usr/share/"
 #define RSCDATADIR LIBDIR"/radare/bin"
@@ -69,8 +70,10 @@ static void rsc_show() {
 static const char *get_path_for(const char *name) {
 	struct stat st;
 	char path[1024];
-	char lpath[1024];
 	char pathfile[1024];
+#if __UNIX__
+	char lpath[1024];
+#endif
 
 	snprintf (path, sizeof (path), "%s", get_home_dir ());
 	snprintf (pathfile, sizeof (pathfile), "%s/%s", path, name);
@@ -80,7 +83,12 @@ static const char *get_path_for(const char *name) {
 	}
 
 	snprintf (pathfile, sizeof (pathfile), RSCDATADIR"/%s", name);
-
+#if __WINDOWS__
+	if (stat (pathfile, &st)!=-1) {
+		strncpy (gbuf, path, sizeof (gbuf));
+		return gbuf;
+	}
+#else
 	if (readlink (pathfile, lpath, sizeof (lpath) == -1)) {
 		strncpy (gbuf, lpath, sizeof (gbuf));
 		return gbuf;
@@ -94,11 +102,9 @@ static const char *get_path_for(const char *name) {
 	// is symlink
 	if (lstat (pathfile, &st) == 0) {
 		strcpy (gbuf, RSCDATADIR);
-printf ("FOUnd\n");
 		return gbuf;
 	}
-
-printf ("jklsaf\n");
+#endif
 	return NULL;
 }
 
