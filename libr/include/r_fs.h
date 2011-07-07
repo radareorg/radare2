@@ -67,6 +67,12 @@ typedef struct r_fs_partition_t {
 #define R_FS_FILE_TYPE_SPECIAL 's'
 #define R_FS_FILE_TYPE_MOUNT 'm'
 
+typedef struct r_fs_partition_type_t {
+	const char *name;
+	void *ptr;
+} RFSPartitionType;
+#define R_FS_PARTITIONS_LENGTH (int)(sizeof (partitions)/sizeof(RFSPartitionType)-1)
+
 enum {
 	R_FS_VIEW_NORMAL = 0,
 	R_FS_VIEW_DELETED = 1,
@@ -102,6 +108,7 @@ R_API void r_fs_root_free (RFSRoot *root);
 R_API RFSPartition *r_fs_partition_new(int num, ut64 start, ut64 length);
 R_API void r_fs_partition_free (RFSPartition *p);
 R_API const char *r_fs_partition_type (const char *part, int type);
+R_API const char *r_fs_partition_type_get (int n);
 
 /* plugins */
 extern RFSPlugin r_fs_plugin_ext2;

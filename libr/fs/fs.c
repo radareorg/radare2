@@ -393,30 +393,36 @@ static int parhook (struct grub_disk *disk, struct grub_partition *par, void *cl
 	return 0;
 }
 
-R_API RList *r_fs_partitions (RFS *fs, const char *ptype, ut64 delta) {
-	struct grub_partition_map *gpm = NULL;
-	if (!strcmp (ptype, "msdos"))
-		gpm = &grub_msdos_partition_map;
-	else if (!strcmp (ptype, "apple"))
-		gpm = &grub_apple_partition_map;
-	else if (!strcmp (ptype, "sun"))
-		gpm = &grub_sun_partition_map;
-	else if (!strcmp (ptype, "sunpc"))
-		gpm = &grub_sun_pc_partition_map;
-	else if (!strcmp (ptype, "amiga"))
-		gpm = &grub_amiga_partition_map;
-	else if (!strcmp (ptype, "bsdlabel"))
-		gpm = &grub_bsdlabel_partition_map;
+static RFSPartitionType partitions[] = {
+	{ "msdos", &grub_msdos_partition_map },
+	{ "apple", &grub_apple_partition_map },
+	{ "sun", &grub_sun_partition_map },
+	{ "sunpc", &grub_sun_pc_partition_map },
+	{ "amiga", &grub_amiga_partition_map },
+	{ "bsdlabel", &grub_bsdlabel_partition_map },
+	{ "gpt", &grub_gpt_partition_map },
 // XXX: In BURG all bsd partition map are in bsdlabel
-//	else if (!strcmp (ptype, "openbsdlabel"))
-//		gpm = &grub_openbsdlabel_partition_map;
-//	else if (!strcmp (ptype, "netbsdlabel"))
-//		gpm = &grub_netbsdlabel_partition_map;
-//	else if (!strcmp (ptype, "acorn"))
-//		gpm = &grub_acorn_partition_map;
-	else if (!strcmp (ptype, "gpt"))
-		gpm = &grub_gpt_partition_map;
+	//{ "openbsdlabel", &grub_openbsd_partition_map },
+	//{ "netbsdlabel", &grub_netbsd_partition_map },
+	//{ "acorn", &grub_acorn_partition_map },
+	{ NULL }
+};
 
+R_API const char *r_fs_partition_type_get (int n) {
+	if (n<0 || n>=R_FS_PARTITIONS_LENGTH)
+		return NULL;
+	return partitions[n].name;
+}
+
+R_API RList *r_fs_partitions (RFS *fs, const char *ptype, ut64 delta) {
+	int i;
+	struct grub_partition_map *gpm = NULL;
+	for (i=0; partitions[i].name; i++) {
+		if (!strcmp (ptype, partitions[i].name)) {
+			gpm = partitions[i].ptr;
+			break;
+		}
+	}
 	if (gpm) {
 		list = r_list_new ();
 		list->free = (RListFree)r_fs_partition_free;
@@ -426,8 +432,10 @@ R_API RList *r_fs_partitions (RFS *fs, const char *ptype, ut64 delta) {
 	}
 	if (ptype&&*ptype)
 		eprintf ("Unknown partition type '%s'.\n", ptype);
-	eprintf ("Supported types:\n"
-			"  msdos, apple, sun, sunpc, amiga, bsdlabel, acorn, gpt\n");
+	eprintf ("Supported types:\n");
+	for (i=0; partitions[i].name; i++)
+		eprintf (" %s", partitions[i].name);
+	eprintf ("\n");
 	return NULL;
 }
 
