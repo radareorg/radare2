@@ -1568,6 +1568,7 @@ static int cmd_print(void *data, const char *input) {
 	ut32 tbs = core->blocksize;
 
 	/* TODO: Change also blocksize for 'pd'.. */
+l = len;
 	if (input[0] && input[1]) {
 		if (input[2]) {
 			l = (int) r_num_math (core->num, input+(input[1]==' '?2:3));
@@ -1577,7 +1578,7 @@ static int cmd_print(void *data, const char *input) {
 				if (l>tbs) r_core_block_size (core, l);
 				l = len;
 			}
-		} else l = 0;
+		}// else l = 0;
 	} else l = len;
 
 	i = r_config_get_i (core->config, "cfg.maxbsize");

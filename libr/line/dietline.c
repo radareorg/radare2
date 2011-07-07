@@ -181,7 +181,7 @@ R_API void r_line_autocomplete() {
 	p = r_str_lchr (I.buffer.data, ' ');
 	if (p) {
 		p++;
-		plen = (int)(size_t)(p-I.buffer.data);
+		plen = sizeof (I.buffer.data)-(int)(size_t)(p-I.buffer.data);
 	} else {
 		p = I.buffer.data;
 		plen = sizeof (I.buffer.data);
@@ -189,10 +189,10 @@ R_API void r_line_autocomplete() {
 	/* autocomplete */
 	if (argc==1) {
 		int largv0 = strlen (argv[0]);
-		if (largv0+3 < plen) {
+		if (11 || largv0+3 < plen) {
 			memcpy (p, argv[0], largv0);
 			memcpy (p+largv0, " ", 2);
-			I.buffer.index = I.buffer.length = largv0 + 1;
+			I.buffer.length = I.buffer.index = I.buffer.length + largv0 + 1;
 		}
 	} else
 	if (argc>0) {

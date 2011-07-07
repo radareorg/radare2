@@ -462,7 +462,8 @@ i+=mi->size-1;
 		if (!r_anal_cc_update (core->anal, &cc, &analop)) {
 			if (show_functions) {
 				char *ccstr = r_anal_cc_to_string (core->anal, &cc);
-				if (show_color) r_cons_printf ("\n%s%s   "Color_TURQOISE"; %s"Color_RESET, pre, refline, ccstr);
+				if (show_color)
+					r_cons_printf ("\n%s%s   "Color_TURQOISE"; %s"Color_RESET, pre, refline, ccstr);
 				else r_cons_printf ("\n%s%s    ; %s", pre, refline, ccstr);
 				free (ccstr);
 			}
