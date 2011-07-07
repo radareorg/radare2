@@ -257,11 +257,11 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 		if (ptr[0]=='?' && ptr[1]=='!' && ptr[2] != '?') {
 			if (mac->num && mac->num->value != 0) {
 				char *label = ptr + 3;
-				for(;label[0]==' '||label[0]=='.';label=label+1);
+				for(; *label==' '||*label=='.'; label++);
 		//		eprintf("===> GOTO %s\n", label);
 				/* goto label ptr+3 */
-				for(i=0;i<*labels_n;i++) {
-					if (!strcmp(label, labels[i].name))
+				for (i=0;i<*labels_n;i++) {
+					if (!strcmp (label, labels[i].name))
 						return labels[i].ptr;
 				}
 				return NULL;
@@ -271,11 +271,11 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 		if (ptr[0]=='?' && ptr[1]=='?' && ptr[2] != '?') {
 			if (mac->num->value == 0) {
 				char *label = ptr + 3;
-				for(;label[0]==' '||label[0]=='.';label=label+1);
+				for (;label[0]==' '||label[0]=='.'; label++);
 		//		eprintf("===> GOTO %s\n", label);
 				/* goto label ptr+3 */
-				for(i=0;i<*labels_n;i++) {
-					if (!strcmp(label, labels[i].name))
+				for (i=0;i<*labels_n;i++) {
+					if (!strcmp (label, labels[i].name))
 						return labels[i].ptr;
 				}
 				return NULL;
@@ -292,13 +292,12 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 		//	eprintf("===> ADD LABEL(%s)\n", ptr);
 			if (i == 0) {
 				strncpy (labels[*labels_n].name, ptr, 64);
-				labels[*labels_n].ptr = ptr+strlen(ptr)+1;
+				labels[*labels_n].ptr = ptr+strlen (ptr)+1;
 				*labels_n = *labels_n + 1;
 			}
 		}
 		return ptr + strlen (ptr)+1;
 	}
-
 	return ptr;
 }
 

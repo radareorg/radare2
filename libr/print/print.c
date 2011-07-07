@@ -121,7 +121,7 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 		}
 		memcpy (d, s, 2);
 	}
-	memcpy (d, Color_RESET, strlen (Color_RESET));
+	memcpy (d, Color_RESET, strlen (Color_RESET)+1);
 	return dst;
 }
 
