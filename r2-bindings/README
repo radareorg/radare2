@@ -1,5 +1,17 @@
-r2-swig notes
-=============
+r2-bindings
+===========
+
+If you compile from the repo you need valabind and pass the --enable-devel
+
+  ./configure --prefix=/usr --enable-devel
+
+You can select the languages you want to compile with --enable={list-of-langs}
+
+  ../configure --prefix=/usr --enable-devel --enable=python
+
+
+NOTES
+=====
 
 The valabind integration forces us to do some changes in the r2 API.
 

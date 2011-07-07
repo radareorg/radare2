@@ -70,4 +70,6 @@ cat supported.langs | sed -e 's,^, - ,'
 # check for perl
 :> langs.cfg
 
+echo "Supported langs: $(cat supported.langs)"
+
 exit 0

@@ -3,7 +3,7 @@
 [CCode (cheader_filename="r_flags.h,r_list.h,r_types_base.h", cprefix="r_flag_", lower_case_cprefix="r_flag_")]
 namespace Radare {
 	[Compact]
-	[CCode (cname="struct r_flag_item_t", free_function="free")]
+	[CCode (cprefix="r_flag_item_", cname="struct r_flag_item_t", free_function="free")]
 	public class RFlagItem {
 		public string name;
 		public uint64 namehash;
@@ -23,11 +23,11 @@ namespace Radare {
 		public void list(bool rad);
 		public RFlagItem get(string name);
 		public RFlagItem get_i(uint64 addr);
-		public bool unset(string name);
+		public bool unset(string name, RFlagItem? item);
+		public bool unset_i(uint64 addr, RFlagItem? item);
 		public bool sort(int namesort);
-		public static bool name_check(string name);
+		//public static bool name_check(string name);
 		//public static bool name_filter(string name);
-		public bool unset_i(uint64 addr);
 		public void set(string name, uint64 addr, int size=1, bool dup=false);
 
 		public void space_list();

@@ -64,29 +64,29 @@ gear:
 
 # TODO: unspaguetti this targets
 perl:
-	@-[ "`grep perl supported.langs`" ] && cd perl && ${MAKE} ; true
+	@-[ "`grep perl supported.langs`" ] && ( cd perl && ${MAKE} ) || true
 
 python:
-	@-[ "`grep python supported.langs`" ] && cd python && ${MAKE} ; true
+	@-[ "`grep python supported.langs`" ] && ( cd python && ${MAKE} ) || true
 
 guile:
-	@-[ "`grep guile supported.langs`" ] && cd guile && ${MAKE} ; true
+	@-[ "`grep guile supported.langs`" ] && ( cd guile && ${MAKE} ) || true
 
 ruby:
-	@-[ "`grep ruby supported.langs`" ] && cd ruby && ${MAKE} ; true
+	@-[ "`grep ruby supported.langs`" ] && ( cd ruby && ${MAKE} ) || true
 
 lua:
-	@-[ "`grep lua supported.langs`" ] && cd lua && ${MAKE} ; true
+	@-[ "`grep lua supported.langs`" ] && ( cd lua && ${MAKE} ) || true
 
 go:
 	@-[ -x "${GOBIN}/5g" -o -x "${GOBIN}/6g" -o -x "${GOBIN}/8g" ] && \
-	[ "`grep go supported.langs`" ] && cd go && ${MAKE} ; true
+	[ "`grep go supported.langs`" ] && ( cd go && ${MAKE} ) || true
 
 java:
-	@-[ "`grep java supported.langs`" ] && cd java && ${MAKE}
+	@-[ "`grep java supported.langs`" ] && ( cd java && ${MAKE} ) || true
 
 gir:
-	@-[ "`grep gir supported.langs`" ] && cd gir && ${MAKE}
+	@-[ "`grep gir supported.langs`" ] && ( cd gir && ${MAKE} ) || true
 
 test:
 	cd perl && ${MAKE} test
