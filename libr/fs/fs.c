@@ -356,7 +356,7 @@ static void r_fs_find_name_aux (RFS* fs, const char *name, const char *glob, RLi
 }
 
 R_API RList *r_fs_find_name (RFS* fs, const char *name, const char *glob) {
-	RList *list =  r_list_new ();
+	RList *list = r_list_new ();
 	list->free = free;
 	r_fs_find_name_aux (fs, name, glob, list);
 	return list;
@@ -368,15 +368,16 @@ R_API RFSFile *r_fs_slurp(RFS* fs, const char *path) {
 	RList * roots = r_fs_root (fs, path);
 	RListIter *iter;
 	r_list_foreach (roots, iter, root) {
-		if (root && root->p) {
-			if (root->p->open && root->p->read && root->p->close) {
-				file = root->p->open (root, path);
-				if (file) root->p->read (file, 0, file->size); //file->data
-				else eprintf ("r_fs_slurp: cannot open file\n");
-			} else {
-				if (root->p->slurp) return root->p->slurp (root, path);
-				else eprintf ("r_fs_slurp: null root->p->slurp\n");
-			}
+		if (!root || !root->p)
+			continue;
+		if (root->p->open && root->p->read && root->p->close) {
+			file = root->p->open (root, path);
+			if (file) root->p->read (file, 0, file->size); //file->data
+			else eprintf ("r_fs_slurp: cannot open file\n");
+		} else {
+			if (root->p->slurp)
+				return root->p->slurp (root, path);
+			eprintf ("r_fs_slurp: null root->p->slurp\n");
 		}
 	}
 	free (roots);
@@ -430,11 +431,12 @@ R_API RList *r_fs_partitions (RFS *fs, const char *ptype, ut64 delta) {
 	if (gpm) {
 		list = r_list_new ();
 		list->free = (RListFree)r_fs_partition_free;
+		grubfs_bind_io (NULL, 0);
 		struct grub_disk *disk = grubfs_disk (&fs->iob);
 		gpm->iterate (disk, parhook, 0);
 		return list;
 	}
-	if (ptype&&*ptype)
+	if (ptype && *ptype)
 		eprintf ("Unknown partition type '%s'.\n", ptype);
 	eprintf ("Supported types:\n");
 	for (i=0; partitions[i].name; i++)

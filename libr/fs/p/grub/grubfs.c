@@ -21,8 +21,7 @@ static grub_err_t read_foo (struct grub_disk *disk, grub_disk_addr_t sector, gru
 		const int blocksize = 512; // unhardcode 512
 		int ret;
 		RIOBind *iob = disk->data;
-		if (bio)
-			iob = bio;
+		if (bio) iob = bio;
 		//printf ("io %p\n", file->root->iob.io);
 		ret = iob->read_at (iob->io, delta+(blocksize*sector),
 			(ut8*)buf, size*blocksize);

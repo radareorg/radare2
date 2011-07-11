@@ -63,12 +63,15 @@ static RList *FSP(_dir)(RFSRoot *root, const char *path, int view) {
 static int do_nothing (const char *a, const struct grub_dirhook_info *b, void *c) { return 0; }
 
 static int FSP(_mount)(RFSRoot *root) {
+	int ret;
 	GrubFS *gfs = grubfs_new (&FSIPTR, &root->iob);
 	root->ptr = gfs;
 	grubfs_bind_io (&root->iob, root->delta);
 	// XXX: null hook seems to be problematic on some filesystems
 	//return gfs->file->fs->dir (gfs->file->device, "/", NULL, 0)? R_FALSE:R_TRUE;
-	return gfs->file->fs->dir (gfs->file->device, "/", do_nothing, 0)? R_FALSE:R_TRUE;
+	ret = gfs->file->fs->dir (gfs->file->device, "/", do_nothing, 0)? R_FALSE:R_TRUE;
+	grubfs_bind_io (NULL, root->delta);
+	return ret;
 }
 
 static void FSP(_umount)(RFSRoot *root) {
