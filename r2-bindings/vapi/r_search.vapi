@@ -46,7 +46,7 @@ public class Radare.RSearch {
 		//public int idx;
 		public int count;
 
-		public Keyword.str (string str, string bmask, string data, bool icase);
+		public Keyword.str (string str, string bmask, string data, bool icase = false);
 		//public Keyword.hex (string str, string bmask, string data);
 		public Keyword (uint8 *s, int sl, uint8 *b, int bl, string data);
 	}
