@@ -47,7 +47,7 @@ public class RAsm {
 		public int[] bits;
 	}
 
-	[CCode (cname="RAsmOp", destroy_function="")]
+	[CCode (cname="RAsmOp", destroy_function="", unref_function="")]
 	public class Op {
 		public int inst_len;
 		public uint8 *buf;
