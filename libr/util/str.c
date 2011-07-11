@@ -37,6 +37,8 @@ R_API void r_str_chop_path (char *s) {
 				*dst = *src;
 				dst++;
 			}
+		} else if (*src == '/' && *(src+1) == '.' && (*(src+2) == '/' || *(src+2) == '\0')) {
+			src++;
 		} else if (*src != '/' || *(src-1) != '/') {
 			*dst = *src;
 			dst++;

@@ -180,6 +180,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'e':
 		r_core_visual_config (core);
 		break;
+	case 'M':
+		r_core_visual_mounts (core);
+		break;
 	case 't':
 		r_core_visual_trackflags (core);
 		break;
@@ -503,6 +506,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" uU      - undo/redo seek\n"
 		" yY      - copy and paste selection\n"
 		" mK/'K   - mark/go to Key (any key)\n"
+		" M       - show mount points\n"
 		" :cmd    - run radare command\n"
 		" ;[-]cmt - add/remove comment\n"
 		" .       - seek to program counter\n"

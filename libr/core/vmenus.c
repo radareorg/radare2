@@ -439,6 +439,186 @@ R_API void r_core_visual_config(RCore *core) {
 	}
 }
 
+R_API void r_core_visual_mounts (RCore *core) {
+	RList *list;
+	RListIter *iter;
+	RFSFile *file;
+	RFSPartition *part, *entry;
+	int i, ch, option, mode, partition, dir;
+	char path[4096], buf[1024], *root = NULL;
+	const char *n, *p;
+
+	dir = partition = option = mode = 0;
+	for (;;) {
+		/* Clear */
+		r_cons_gotoxy (0,0);
+		r_cons_clear ();
+
+		/* Show */
+		if (mode == 0) {
+			r_cons_printf ("Partitions:\n\n");
+			n = r_fs_partition_type_get (partition);
+			list = r_fs_partitions (core->fs, n, 0);
+			i = 0;
+			if (list) {
+				r_list_foreach (list, iter, part) {
+					if (option == i++) {
+						entry = part;
+						r_cons_printf (" > ");
+					} else {
+						r_cons_printf ("   ");
+					}
+					r_cons_printf ("%d %02x 0x%010"PFMT64x" 0x%010"PFMT64x"\n",
+							part->number, part->type,
+							part->start, part->start+part->length);
+				}
+				r_list_free (list);
+			} else r_cons_printf ("Cannot read partition\n");
+		} else if (mode == 1) {
+			r_cons_printf ("Types:\n\n");
+			for(i=0;;i++) {
+				n = r_fs_partition_type_get (i);
+				if (!n) break;
+				r_cons_printf ("%s%s\n", (i==partition)?" > ":"   ", n);
+			}
+		} else {
+			if (root) {
+				list = r_fs_dir (core->fs, path);
+				if (list) {
+					i = 0;
+					r_list_foreach (list, iter, file) {
+						r_cons_printf ("%s%c %s\n", (dir == i++)?" > ":"   ",
+								file->type, file->name);
+					}
+					r_list_free (list);
+				} else r_cons_printf ("Cannot open '%s' directory\n", root);
+			} else r_cons_printf ("Root undefined\n");
+		}
+		r_cons_flush ();
+
+		/* Ask for option */
+		ch = r_cons_readchar ();
+		ch = r_cons_arrow_to_hjkl (ch);
+		switch (ch) {
+			case '\r':
+			case '\n':
+				if (mode == 0) {
+					n = r_fs_partition_type_get (partition);
+					list = r_fs_partitions (core->fs, n, 0);
+					if (!list) {
+						r_cons_printf ("Unknown partition\n");
+						r_cons_any_key ();
+						r_cons_flush ();
+						break;
+					}
+					part = r_list_get_n (list, option);
+					if (!part) {
+						r_cons_printf ("Unknown partition\n");
+						r_cons_any_key ();
+						r_cons_flush ();
+						break;
+					}
+					p = r_fs_partition_type (n, part->type);
+					if (p) {
+						if (r_fs_mount (core->fs, p, "/root", part->start)) {
+							if (root)
+								free (root);
+							root = strdup ("/root");
+							strncpy (path, root, sizeof (path));
+							mode = 2;
+						} else {
+							r_cons_printf ("Cannot mount partition\n");
+							r_cons_flush ();
+							r_cons_any_key ();
+						}
+					} else {
+						r_cons_printf ("Unknown partition type\n");
+						r_cons_flush ();
+						r_cons_any_key ();
+					}
+				} else if (mode == 2){
+					r_str_chop_path (path);
+					strncat (path, "/", sizeof (path)-strlen (path));
+					list = r_fs_dir (core->fs, path);
+					file = r_list_get_n (list, dir);
+					if (file) {
+						if (file->type == 'd') {
+							strncat (path, file->name, sizeof (path)-strlen (path));
+							r_str_chop_path (path);
+							if (memcmp (root, path, strlen (root)-1))
+								strncpy (path, root, sizeof (path));
+											} else {
+							/* Seek to offset */
+							r_fs_umount (core->fs, root);
+							return;
+						}
+					} else {
+						r_cons_printf ("Unknown file\n");
+						r_cons_flush ();
+						r_cons_any_key ();
+					}
+				}
+				break;
+			case 'k':
+				if (mode == 0) {
+					if (option > 0)
+						option--;
+				} else if (mode == 1) {
+					if (partition > 0)
+						partition--;
+				} else {
+					if (dir>0)
+						dir--;
+				}
+				break;
+			case 'j':
+				if (mode == 0) {
+					n = r_fs_partition_type_get (partition);
+					list = r_fs_partitions (core->fs, n, 0);
+					if (option < r_list_length (list)-1)
+						option++;
+				} else if (mode == 1) {
+					if (partition < r_fs_partition_get_size ()-1)
+						partition++;
+				} else {
+					dir++;
+				}
+				break;
+			case 't':
+				mode = 1;
+				break;
+			case 'b':
+				if (mode == 2 && root)
+					r_fs_umount (core->fs, root);
+				mode = 0;
+				break;
+			case '?':
+				r_cons_clear00 ();
+				r_cons_printf ("\nVM: Visual Mount points help:\n\n");
+				r_cons_printf (" q     - quit menu\n");
+				r_cons_printf (" j/k   - down/up keys\n");
+				r_cons_printf (" p     - list partitions\n");
+				r_cons_printf (" t     - choose partition type\n");
+				r_cons_printf (" b     - back\n");
+				r_cons_printf (" r     - define new root\n");
+				r_cons_printf (" ?     - show this help\n");
+				r_cons_flush ();
+				r_cons_any_key ();
+				break;
+			case ':':
+				r_cons_set_raw (0);
+				r_line_set_prompt (":> ");
+				r_cons_fgets (buf, sizeof (buf)-1, 0, 0);
+				r_cons_set_raw (1);
+				r_core_cmd (core, buf, 1);
+				r_cons_any_key ();
+				break;
+			case 'q':
+				return;
+		}
+	}
+}
+
 #if 1
 static void var_index_show(RAnal *anal, RAnalFcn *fcn, ut64 addr, int idx) {
 	int i = 0;
