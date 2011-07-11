@@ -69,7 +69,7 @@ static const char *radare_argv[] = {
 	"s", "s+", "s++", "s-", "s--", "s*", "sa", "sb", "sr",
 	"!", "!!", 
 	"#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5", 
-	"#!python",
+	"#!python", "#!perl", "#!vala",
 	"V",
 	"aa", "ab", "af", "ar", "ag", "at", "av", "a?", 
 	"e", "e-", "e*", "e!",
@@ -86,7 +86,7 @@ static const char *radare_argv[] = {
 	"y", "yy", "y?",
 	"wx", "ww", "wf", "w?",
 	"p6d", "p6e", "p8", "pb", "pc", "pd", "pD", "px", "pX", "po",
-	"pm", "pr", "pt", "ps", "pz", "pr >", "pu", "pU", "p?",
+	"pm", "pr", "pt", "ps", "pz", "pu", "pU", "p?",
 	NULL
 };
 
@@ -128,9 +128,8 @@ static int autocomplete(RLine *line) {
 			}
 			p = r_str_lchr (path, '/');
 			if (p) {
-				if (p==path) {
-					path = "/"; // path[1]=0;
-				} else *p = 0;
+				if (p==path) path = "/";
+				else *p = 0;
 				p++;
 			}
 			if (p) {

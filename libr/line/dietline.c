@@ -97,13 +97,10 @@ static int r_line_hist_down() {
 }
 
 R_API int r_line_hist_list() {
-	int i = 0;
+	int i;
 	if (I.history.data != NULL)
-	for (i=0; i<I.history.size; i++) {
-		if (I.history.data[i] == NULL)
-			break;
+	for (i=0; i<I.history.size && I.history.data[i]; i++)
 		printf ("%.3d  %s\n", i, I.history.data[i]);
-	}
 	return i;
 }
 
@@ -126,8 +123,7 @@ R_API int r_line_hist_load(const char *file) {
 
 	// XXX dupped shitty code.. see hist_save ()
 	snprintf (buf, sizeof (buf)-1, "%s/%s", r_sys_getenv ("HOME"), file);
-	fd = fopen (buf, "r");
-	if (fd == NULL)
+	if (!(fd = fopen (buf, "r")))
 		return R_FALSE;
 
 	fgets (buf, sizeof (buf)-1, fd);
@@ -189,10 +185,10 @@ R_API void r_line_autocomplete() {
 	/* autocomplete */
 	if (argc==1) {
 		int largv0 = strlen (argv[0]);
-		if (11 || largv0+3 < plen) {
+		if (largv0+3 < plen) {
 			memcpy (p, argv[0], largv0);
 			memcpy (p+largv0, " ", 2);
-			I.buffer.length = I.buffer.index = I.buffer.length + largv0 + 1;
+			I.buffer.length = I.buffer.index = strlen (I.buffer.data);
 		}
 	} else
 	if (argc>0) {
