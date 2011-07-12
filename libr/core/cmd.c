@@ -1647,10 +1647,10 @@ l = len;
 		int j, ret, err = 0;
 		const ut8 *buf = core->block;
 		if (l==0) l = len;
-		for (i=j=0; i<core->blocksize && i<len; i+=ret,j++ ) {
-			ret = r_asm_disassemble (core->assembler, &asmop, buf+i, len-i);
+		for (i=j=0; i<core->blocksize && j<len; i+=ret,j++ ) {
+			ret = r_asm_disassemble (core->assembler, &asmop, buf+i, core->blocksize-i);
 			if (ret<1) {
-				err = 1;
+				ret = err = 1;
 				r_cons_printf ("???\n");
 			} else r_cons_printf ("%s\n", asmop.buf_asm);
 		}
@@ -3222,8 +3222,8 @@ static int cmd_search(void *data, const char *input) {
 			RList *hits;
 			if ((hits = r_core_asm_strsearch (core, input+2, from, to))) {
 				r_list_foreach (hits, iter, hit) {
-					r_cons_printf ("f %s_%i @ 0x%08"PFMT64x"   # %s (%i)\n",
-						searchprefix, count, hit->addr, hit->code, hit->len);
+					r_cons_printf ("f %s_%i @ 0x%08"PFMT64x"   # %i: %s\n",
+						searchprefix, count, hit->addr, hit->len, hit->code);
 					count++;
 				}
 				r_list_destroy (hits);
