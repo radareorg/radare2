@@ -121,6 +121,9 @@ R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const c
 				i++;
 				idx--;
 				continue;
+			case 'p':
+				tmp = (sizeof (void*)==8)? 'q': 'x';
+				break;
 			case '?': // help
 				print_format_help (p);
 				idx--;
