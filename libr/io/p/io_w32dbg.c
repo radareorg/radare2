@@ -24,7 +24,7 @@ extern int errno;
 
 static int debug_os_read_at(RIOW32Dbg *dbg, void *buf, int len, ut64 addr) {
 	DWORD ret;
-        ReadProcessMemory (dbg->pi.hProcess, (PCVOID)(ULONG)addr, buf, len, &ret);
+        ReadProcessMemory (dbg->pi.hProcess, (void*)(size_t)addr, buf, len, &ret);
 //	if (len != ret)
 //		eprintf ("Cannot read 0x%08llx\n", addr);
 	return len; // XXX: Handle read correctly and not break r2 shell

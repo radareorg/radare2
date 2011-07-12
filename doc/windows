@@ -31,6 +31,10 @@ Crosscompilation
   make w32dist
 
 
+Windows x86-64
+==============
+  ./configure --without-gmp --with-compiler=x86_64-w64-mingw32-gcc --with-ostype=windows --host=x86_64-unknown-windows --without-magic --without-ssl
+
 
 Python bindings:
 ================
