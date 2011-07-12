@@ -2172,7 +2172,7 @@ R_API int r_core_search_preludes(RCore *core) {
 	ut64 to = core->offset+0xffffff; // hacky!
 	// TODO: this is x86 only
 	if (prelude && *prelude) {
-		char *kw = malloc (strlen (prelude));
+		ut8 *kw = malloc (strlen (prelude));
 		int kwlen = r_hex_str2bin (prelude, kw);
 		ret = r_core_search_prelude (core, from, to, kw, kwlen, NULL, 0);
 		free (kw);
@@ -2180,10 +2180,10 @@ R_API int r_core_search_preludes(RCore *core) {
 	if (strstr (arch, "x86")) {
 		switch (bits) {
 		case 32:
-			ret = r_core_search_prelude (core, from, to, "\x55\x89\xe5", 3, NULL, 0);
+			ret = r_core_search_prelude (core, from, to, (const ut8 *)"\x55\x89\xe5", 3, NULL, 0);
 			break;
 		case 64:
-			ret = r_core_search_prelude (core, from, to, "\x55\x48\x89\xe5", 3, NULL, 0);
+			ret = r_core_search_prelude (core, from, to, (const ut8 *)"\x55\x48\x89\xe5", 3, NULL, 0);
 			//r_core_cmd0 (core, "./x 554989e5");
 			break;
 		default:
