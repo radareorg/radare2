@@ -612,7 +612,6 @@ grub_jfs_find_file (struct grub_jfs_data *data, const char *path)
   char fpath[grub_strlen (path)];
   char *name = fpath;
   char *next;
-  unsigned int pos = 0;
   struct grub_jfs_diropen *diro;
 
   grub_strncpy (fpath, path, grub_strlen (path) + 1);
@@ -674,8 +673,6 @@ grub_jfs_find_file (struct grub_jfs_data *data, const char *path)
 
 	  if (!next)
 	    return 0;
-
-	  pos = 0;
 
 	  name = next;
 	  next = grub_strchr (name, '/');

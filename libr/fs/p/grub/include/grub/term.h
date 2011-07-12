@@ -16,6 +16,8 @@
  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <grub/list.h>
+
 #ifndef GRUB_TERM_HEADER
 #define GRUB_TERM_HEADER	1
 
