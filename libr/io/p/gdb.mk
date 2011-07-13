@@ -32,7 +32,8 @@ LINKFLAGS+=-L../../util -lr_util
 LINKFLAGS+=-L.. -L../../lib -lr_lib -lr_io 
 endif
 ifeq (${HAVE_LIB_SSL},1)
-LINKFLAGS+=-lssl -lcrypto
+CFLAGS+=${SSL_CFLAGS}
+LINKFLAGS+=${SSL_LDFLAGS}
 endif
 
 # TODO : link against gdbwrapper

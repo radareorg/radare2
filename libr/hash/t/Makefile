@@ -4,7 +4,8 @@ include ../../config.mk
 BINDEPS=r_io r_hash r_util r_socket
 LIBS=-lm
 ifeq (${HAVE_LIB_SSL},1)
-LDFLAGS+=-lssl -lcrypto
+CFLAGS+=${SSL_CFLAGS}
+LDFLAGS+=${SSL_LDFLAGS}
 endif
 
 all: hello${EXT_EXE}

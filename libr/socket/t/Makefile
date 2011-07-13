@@ -5,7 +5,8 @@ BIN=serverssl
 BINDEPS=r_socket
 
 ifeq (${HAVE_LIB_SSL},1)
-LDFLAGS+=-lssl -lcrypto
+CFLAGS+=${SSL_CFLAGS}
+LDFLAGS+=${SSL_LDFLAGS}
 endif
 
 include ../../rules.mk

@@ -11,7 +11,8 @@ LDPATH+=../../socket/libr_socket.a
 LDPATH+=../../lib/libr_lib.a
 endif
 ifeq (${HAVE_LIB_SSL},1)
-LDPATH+=-lssl -lcrypto
+CFLAGS+=${SSL_CFLAGS}
+LDPATH+=${SSL_LDFLAGS}
 endif
 
 all: map${EXT_EXE} cat${EXT_EXE} read4${EXT_EXE}
