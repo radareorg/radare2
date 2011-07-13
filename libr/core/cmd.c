@@ -1668,6 +1668,7 @@ l = len;
 					r_core_read_at (core, f->addr, block, f->size);
 					core->num->value = r_core_print_disasm (core->print, core, f->addr, block, f->size, 9999);
 					free (block);
+					return 0;
 				}
 			} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
 			} break;
