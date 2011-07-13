@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2009-2011 // nibble<.ds@gmail.com>, pancake<nopcode.org> */
 
 #include "r_core.h"
-#include "r_hash.h"
 
 #include <sys/types.h>
 #include <ctype.h>

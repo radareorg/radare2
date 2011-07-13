@@ -346,6 +346,7 @@ static int config_color_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+#define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	RConfig *cfg = cfg = core->config = r_config_new (core);
 	const char *p;
@@ -400,6 +401,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "cfg.fortunes", "true");
 	r_config_set_i (cfg, "cfg.maxbsize", 524288);
 	r_config_set (cfg, "cfg.wseek", "false");
+	r_config_set_i (cfg, "cfg.hashlimit", SLURP_LIMIT);
 
 	r_config_set_i (cfg, "dbg.follow", 32);
 	r_config_set (cfg, "dbg.backend", "native");

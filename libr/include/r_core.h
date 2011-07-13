@@ -19,6 +19,7 @@
 #include "r_flags.h"
 #include "r_config.h"
 #include "r_bin.h"
+#include "r_hash.h"
 #include "r_socket.h"
 
 #define R_CORE_CMD_EXIT -2
@@ -196,6 +197,7 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len);
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l);
 
 R_API int r_core_bin_load(RCore *r, const char *file);
+R_API int r_core_hash_load(RCore *r, const char *file);
 
 /* gdiff.c */
 R_API int r_core_gdiff(RCore *c, RCore *c2);

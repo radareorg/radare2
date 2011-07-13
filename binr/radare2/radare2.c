@@ -278,26 +278,22 @@ int main(int argc, char **argv) {
 	}
 	r_core_seek (&r, r.offset, 1); // read current block
 
-	/* XXX: find better solution.. files > 10MB does not hash */
-	#define SLURP_LIMIT (10*1024*1024)
 	/* check if file.sha1 has changed */
-	if (r.file->size < SLURP_LIMIT) // TODO: configure this in cfg.hashlimit // 
 	if (!strstr (r.file->uri, "://")) {
 		const char *npath, *nsha1;
 		char *path = strdup (r_config_get (r.config, "file.path"));
 		char *sha1 = strdup (r_config_get (r.config, "file.sha1"));
-		char *cmd = r_str_dup_printf (".!rahash2 -r %s", r.file->filename);
 		has_project = r_core_project_open (&r, r_config_get (r.config, "file.project"));
 		if (has_project)
 			r_config_set (r.config, "bin.strings", "false");
-		r_core_cmd (&r, cmd, 0);
+		if (r_core_hash_load (&r, r.file->filename) == R_FALSE)
+			eprintf ("ERROR: Cannot generate hashes\n");
 		nsha1 = r_config_get (r.config, "file.sha1");
 		npath = r_config_get (r.config, "file.path");
 		if (sha1 && *sha1 && strcmp (sha1, nsha1))
 			eprintf ("WARNING: file.sha1 change: %s => %s\n", sha1, nsha1);
 		if (path && *path && strcmp (path, npath))
 			eprintf ("WARNING: file.path change: %s => %s\n", path, npath);
-		r_str_free (cmd);
 		free (sha1);
 		free (path);
 	}

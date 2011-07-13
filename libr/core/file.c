@@ -325,3 +325,40 @@ R_API int r_core_file_close_fd(RCore *core, int fd) {
 	}
 	return R_FALSE;
 }
+
+R_API int r_core_hash_load(RCore *r, const char *file) {
+	const ut8 *buf = NULL;
+	int i, buf_len = 0;
+	const ut8 *md5, *sha1;
+	char hash[128], *p;
+	RHash *ctx;
+	ut64 limit;
+
+	limit = r_config_get_i (r->config, "cfg.hashlimit");
+	if (r->file->size > limit)
+		return R_FALSE;
+	buf = (const ut8*)r_file_slurp (file, &buf_len);
+	if (buf==NULL)
+		return R_FALSE;
+	ctx = r_hash_new (R_TRUE, R_HASH_MD5);
+	md5 = r_hash_do_md5 (ctx, buf, buf_len);
+	p = hash;
+	for (i=0; i<R_HASH_SIZE_MD5; i++) {
+		sprintf (p, "%02x", md5[i]);
+		p+=2;
+	}
+	*p=0;
+	r_config_set (r->config, "file.md5", hash);
+	r_hash_free (ctx);
+	ctx = r_hash_new (R_TRUE, R_HASH_SHA1);
+	sha1 = r_hash_do_sha1 (ctx, buf, buf_len);
+	p = hash;
+	for (i=0; i<R_HASH_SIZE_SHA1;i++) {
+		sprintf (p, "%02x", sha1[i]);
+		p+=2;
+	}
+	*p=0;
+	r_config_set (r->config, "file.sha1", hash);
+	r_hash_free (ctx);
+	return R_TRUE;
+}
