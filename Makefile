@@ -61,7 +61,7 @@ install-man:
 
 install-man-symlink:
 	mkdir -p ${MDR}/man1
-	cd man && for a in *.1 ; do ln -fs ${PWD}/$$a ${MDR}/man1/$$a ; done
+	cd man && for a in *.1 ; do ln -fs ${PWD}/man/$$a ${MDR}/man1/$$a ; done
 	cd ${MDR}/man1 && ln -fs radare2.1 r2.1
 
 install-doc:
@@ -95,6 +95,8 @@ purge:
 	rm -rf ${DESTDIR}/${PREFIX}/lib/libr_*
 	rm -rf ${DESTDIR}/${PREFIX}/lib/radare2
 	rm -rf ${DESTDIR}/${PREFIX}/include/libr
+	cd man ; for a in *.1 ; do rm -f ${MDR}/man1/$$a ; done
+	rm -f ${MDR}/man1/r2.1
 
 beta: dist r2-bindings-dist
 	scp ../radare2-${VERSION}.tar.gz ${REMOTE}
