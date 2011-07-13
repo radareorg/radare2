@@ -71,7 +71,7 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 			free (dbg);
 			return NULL;
 		}
-		return r_io_desc_new (&r_io_plugin_w32dbg, -1, file, R_TRUE, 0, dbg);
+		RETURN_IO_DESC_NEW (&r_io_plugin_w32dbg, -1, file, R_TRUE, 0, dbg);
 	}
 	return NULL;
 }

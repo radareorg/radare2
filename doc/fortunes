@@ -17,7 +17,7 @@ Deltify your life with radare
 Manipulate the filedescriptors of the child with '!fd'
 Trace until system calls with !contsc
 Remotely open files or debug processes with radare listen://:9999/dbg:///bin/ls
-Check your IO plugins with radare -L
+Check your IO plugins with r2 -L
 Find cross-reference in raw binaries using external 'xrefs' tool.
 Change the size of the file with the 'r' (resize) command
 Calculate checksums for the current block with the commands starting with '#' (#md5, #crc32, #all, ..)

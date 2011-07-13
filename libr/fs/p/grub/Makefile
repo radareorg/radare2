@@ -1,9 +1,8 @@
 include ../../../config.mk
 #CC?=gcc
-
+CC?=gcc
 #OSTYPE=$(shell uname -s)
 include ../../../../config-user.mk
-CC?=gcc
 RANLIB?=ranlib
 ifeq (${OSTYPE},)
 all:

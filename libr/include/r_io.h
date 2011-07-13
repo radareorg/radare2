@@ -173,6 +173,26 @@ typedef struct r_io_cache_t {
 	struct list_head list;
 } RIOCache;
 
+// XXX: HACK this must be io->desc_new() maybe?
+#define RETURN_IO_DESC_NEW(fplugin,ffd,fname,fflags,mode,fdata) { \
+	RIODesc *desc = R_NEW (RIODesc); \
+	if (desc != NULL) { \
+		desc->state = R_IO_DESC_TYPE_OPENED; \
+		desc->name = strdup (fname); \
+		if (desc->name != NULL) { \
+			desc->plugin = fplugin; \
+			desc->flags = fflags; \
+			if (ffd == -1) desc->fd = (int) (((size_t) desc) & 0xffffff); \
+			else desc->fd = ffd; \
+			desc->data = fdata; \
+		} else { \
+			free (desc); \
+			desc = NULL; \
+		} \
+	} \
+	return desc; \
+}
+
 #ifdef R_API
 #define r_io_bind_init(x) memset(&x,0,sizeof(x))
 

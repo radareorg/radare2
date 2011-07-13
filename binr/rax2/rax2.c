@@ -153,7 +153,7 @@ static int rax (char *str) {
 	}
 	if (*str)
 		format_output (out_mode, r_num_math (NULL, str));
-	return 0;
+	return R_TRUE;
 }
 
 static int use_stdin () {
