@@ -4,7 +4,7 @@ ARGS=""
 CMDS='
 "wa nop;mov eax,33"
 e asm.profile=simple
-pdi 2
+pi 2
 '
 EXPECT="nop
 mov eax, 0x21"
