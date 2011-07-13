@@ -1,12 +1,19 @@
 # config.mk.tail
 
+# libr/*
 -include ../../config-user.mk
 -include ../../global.mk
 -include ../../mk/${COMPILER}.mk
 
+# libr/*/p
 -include ../../../config-user.mk
 -include ../../../global.mk
 -include ../../../mk/${COMPILER}.mk
+
+# libr/fs/p/grub
+-include ../../../../config-user.mk
+-include ../../../../global.mk
+-include ../../../../mk/${COMPILER}.mk
 
 CFLAGS+=-DUSE_RIO=${USE_RIO}
 CFLAGS+=${CFLAGS_APPEND}

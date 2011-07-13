@@ -12,8 +12,8 @@
 #define ut32 unsigned int
 #define st32 int
 #define ut16 unsigned short
-#define ut8  unsigned char
-#define st8  char
+#define ut8 unsigned char
+#define st8 char
 typedef int boolt;
 /*
 #undef boolt

@@ -19,7 +19,7 @@ static int r_bin_dyldcache_apply_patch (struct r_buf_t* buf, ut32 data, ut64 off
 	return r_buf_write_at (buf, offset, (ut8*)&data, sizeof (data));
 }
 
-#define NZ_OFFSET(x) if(x > 0) r_bin_dyldcache_apply_patch (dbuf, x - linkedit_offset, (ut64)((unsigned long)&x - (unsigned long)data))
+#define NZ_OFFSET(x) if(x > 0) r_bin_dyldcache_apply_patch (dbuf, x - linkedit_offset, (ut64)((size_t)&x - (size_t)data))
 
 /* TODO: Needs more testing and ERROR HANDLING */
 struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj_t* bin, int idx, int *nlib) {
@@ -72,10 +72,10 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 		r_buf_append_bytes (dbuf, (ut8*)lc, lc->cmdsize);
 	}
 	/* Write segments */
-	for(cmd = linkedit_offset = 0, cmdptr = data + sizeof(struct mach_header); cmd < mh->ncmds; cmd++) {
+	for (cmd = linkedit_offset = 0, cmdptr = data + sizeof(struct mach_header); cmd < mh->ncmds; cmd++) {
 		struct load_command *lc = (struct load_command *)cmdptr;
 		cmdptr += lc->cmdsize;
-		switch(lc->cmd) {
+		switch (lc->cmd) {
 		case LC_SEGMENT:
 			{
 			/* Write segment and patch offset */
@@ -84,19 +84,20 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 			if (seg->fileoff+seg->filesize > bin->b->length)
 				t = bin->b->length - seg->fileoff;
 			r_buf_append_bytes (dbuf, bin->b->buf+seg->fileoff, t);
-			r_bin_dyldcache_apply_patch (dbuf, dbuf->length, (ut64)((unsigned long)&seg->fileoff - (unsigned long)data));
+			r_bin_dyldcache_apply_patch (dbuf, dbuf->length,
+				(ut64)((size_t)&seg->fileoff - (size_t)data));
 			/* Patch section offsets */
 			int sect_offset = seg->fileoff - libsz;
 			libsz = dbuf->length;
-			if(!strcmp(seg->segname, "__LINKEDIT")) {
+			if (!strcmp(seg->segname, "__LINKEDIT"))
 				linkedit_offset = sect_offset;
-			}
-			if(seg->nsects > 0) {
+			if (seg->nsects > 0) {
 				struct section *sects = (struct section *)((ut8 *)seg + sizeof(struct segment_command));
 				int nsect;
-				for(nsect = 0; nsect < seg->nsects; nsect++) {
+				for (nsect = 0; nsect < seg->nsects; nsect++) {
 					if(sects[nsect].offset > libsz) {
-						r_bin_dyldcache_apply_patch (dbuf, sects[nsect].offset - sect_offset, (ut64)((unsigned long)&sects[nsect].offset - (unsigned long)data));
+						r_bin_dyldcache_apply_patch (dbuf, sects[nsect].offset - sect_offset,
+							(ut64)((size_t)&sects[nsect].offset - (size_t)data));
 					}
 				}
 			}
@@ -105,30 +106,30 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 		case LC_SYMTAB:
 			{
 			struct symtab_command *st = (struct symtab_command *)lc;
-			NZ_OFFSET(st->symoff);
-			NZ_OFFSET(st->stroff);
+			NZ_OFFSET (st->symoff);
+			NZ_OFFSET (st->stroff);
 			}
 			break;
 		case LC_DYSYMTAB:
 			{
 			struct dysymtab_command *st = (struct dysymtab_command *)lc;
-			NZ_OFFSET(st->tocoff);
-			NZ_OFFSET(st->modtaboff);
-			NZ_OFFSET(st->extrefsymoff);
-			NZ_OFFSET(st->indirectsymoff);
-			NZ_OFFSET(st->extreloff);
-			NZ_OFFSET(st->locreloff);
+			NZ_OFFSET (st->tocoff);
+			NZ_OFFSET (st->modtaboff);
+			NZ_OFFSET (st->extrefsymoff);
+			NZ_OFFSET (st->indirectsymoff);
+			NZ_OFFSET (st->extreloff);
+			NZ_OFFSET (st->locreloff);
 			}
 			break;
 		case LC_DYLD_INFO:
 		case LC_DYLD_INFO_ONLY:
 			{
 			struct dyld_info_32 *st = (struct dyld_info_32 *)lc;
-			NZ_OFFSET(st->rebase_off);
-			NZ_OFFSET(st->bind_off);
-			NZ_OFFSET(st->weak_bind_off);
-			NZ_OFFSET(st->lazy_bind_off);
-			NZ_OFFSET(st->export_off);
+			NZ_OFFSET (st->rebase_off);
+			NZ_OFFSET (st->bind_off);
+			NZ_OFFSET (st->weak_bind_off);
+			NZ_OFFSET (st->lazy_bind_off);
+			NZ_OFFSET (st->export_off);
 			}
 			break;
 		}

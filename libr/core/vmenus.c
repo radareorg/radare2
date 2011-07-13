@@ -443,7 +443,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 	RList *list;
 	RListIter *iter;
 	RFSFile *file;
-	RFSPartition *part, *entry;
+	RFSPartition *part;
 	int i, ch, option, mode, partition, dir, delta = 7;
 	char *str, path[4096], buf[1024], *root = NULL;
 	const char *n, *p;
@@ -463,12 +463,9 @@ R_API void r_core_visual_mounts (RCore *core) {
 			if (list) {
 				r_list_foreach (list, iter, part) {
 					if ((option-delta <= i) && (i <= option+delta)) {
-						if (option == i) {
-							entry = part;
+						if (option == i)
 							r_cons_printf (" > ");
-						} else {
-							r_cons_printf ("   ");
-						}
+						else r_cons_printf ("   ");
 						r_cons_printf ("%d %02x 0x%010"PFMT64x" 0x%010"PFMT64x"\n",
 								part->number, part->type,
 								part->start, part->start+part->length);
@@ -508,11 +505,8 @@ R_API void r_core_visual_mounts (RCore *core) {
 			strncat (path, "/", sizeof (path)-strlen (path));
 			list = r_fs_dir (core->fs, path);
 			file = r_list_get_n (list, dir);
-			if (file) {
-				if (file->type != 'd') {
-					r_core_cmdf (core, "x @ 0x%"PFMT64x":32", file->off);
-				}
-			}
+			if (file && file->type != 'd')
+				r_core_cmdf (core, "x @ 0x%"PFMT64x":32", file->off);
 			*str='\0';
 		}
 		r_cons_flush ();
@@ -800,14 +794,14 @@ R_API void r_core_visual_anal(RCore *core) {
 			addr = var_functions_show (core, option, 1);
 			break;
 		case 1:
-			r_cons_printf ("-[ variables ]---------------- 0x%08llx\n"
+			r_cons_printf ("-[ variables ]---------------- 0x%08"PFMT64x"\n"
 				"(a) add     (x)xrefs     (q)quit\n"
 				"(m) modify  (c)calls     (g)go\n"
 				"(d) delete  (v)variables\n", addr);
 			var_index_show (core->anal, fcn, addr, option);
 			break;
 		case 2:
-			r_cons_printf ("-[ calls ]----------------------- 0x%08llx (TODO)\n", addr);
+			r_cons_printf ("-[ calls ]----------------------- 0x%08"PFMT64x" (TODO)\n", addr);
 #if 0
 			sprintf(old, "aCf@0x%08llx", addr);
 			cons_flush();
@@ -815,8 +809,8 @@ R_API void r_core_visual_anal(RCore *core) {
 #endif
 			break;
 		case 3:
-			r_cons_printf ("-[ xrefs ]----------------------- 0x%08llx\n", addr);
-			sprintf (old, "arl~0x%08llx", addr);
+			r_cons_printf ("-[ xrefs ]----------------------- 0x%08"PFMT64x"\n", addr);
+			sprintf (old, "arl~0x%08"PFMT64x, addr);
 			r_core_cmd0 (core, old);
 			//cons_printf("\n");
 			break;
