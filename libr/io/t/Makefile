@@ -7,7 +7,11 @@ LDPATH+=-lr_io -lr_util -lr_lib -lr_socket
 else
 LDPATH=../../io/libr_io.a
 LDPATH+=../../util/libr_util.a
+LDPATH+=../../socket/libr_socket.a
 LDPATH+=../../lib/libr_lib.a
+endif
+ifeq (${HAVE_LIB_SSL},1)
+LDPATH+=-lssl -lcrypto
 endif
 
 all: map${EXT_EXE} cat${EXT_EXE} read4${EXT_EXE}

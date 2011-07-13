@@ -1,0 +1,1 @@
+./configure --prefix=/usr --with-nonpic --without-pic

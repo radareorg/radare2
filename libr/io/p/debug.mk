@@ -5,9 +5,22 @@ TARGET_IODBG=io_debug.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_IODBG}
 
+
+ifeq (${WITHPIC},0)
+LINKFLAGS=../../socket/libr_socket.a
+LINKFLAGS+=../../util/libr_util.a
+LINKFLAGS+=../../lib/libr_lib.a
+LINKFLAGS+=../../io/libr_io.a
+else
+LINKFLAGS=-L../../socket -lr_socket
+LINKFLAGS+=-L../../lib -lr_lib
+LINKFLAGS+=-L../../util -lr_util
+LINKFLAGS+=-L.. -L../../lib -lr_lib -lr_io 
+endif
+ifeq (${HAVE_LIB_SSL},1)
+LINKFLAGS+=-lssl -lcrypto
+endif
+
 ${TARGET_IODBG}: ${OBJ_IODBG}
-	${CC} ${CFLAGS} -o ${TARGET_IODBG} ${LDFLAGS_LIB} \
-		-shared \
-		${LDFLAGS_LINKPATH}../../lib -L../../lib -lr_lib \
-		${LDFLAGS_LINKPATH}../../util -L../../util -lr_util \
-		${LDFLAGS_LINKPATH}.. -L.. -lr_io ${OBJ_IODBG}
+	${CC} -shared -o ${TARGET_IODBG} ${CFLAGS} ${LDFLAGS_LIB} \
+		${LINKFLAGS} ${LDFLAGS_LINKPATH}.. -L.. -lr_io ${OBJ_IODBG}

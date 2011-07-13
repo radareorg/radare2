@@ -24,7 +24,7 @@ static gdbwrapworld_t gdbwrapworld;
 
 /******************** Internal functions ********************/
 
-void gdbwrap_setreg(gdbwrap_t *desc, ut32 idx, ut64 value){
+IRAPI void gdbwrap_setreg(gdbwrap_t *desc, ut32 idx, ut64 value){
 	if (idx >= desc->num_registers) {
 		fprintf (stderr, "Wrong register index %d\n", idx);
 		return;
@@ -43,20 +43,20 @@ void gdbwrap_setreg(gdbwrap_t *desc, ut32 idx, ut64 value){
 	}
 }
 
-void gdbwrap_getreg_buffer(gdbwrap_t *desc, unsigned char *buf, ut32 size) {
+IRAPI void gdbwrap_getreg_buffer(gdbwrap_t *desc, unsigned char *buf, ut32 size) {
 	if (desc->reg_size*desc->num_registers > size)
 		size = desc->reg_size*desc->num_registers;
 	//Just copy the output buffer
 	memcpy (buf,desc->regs,size);
 }
 
-void gdbwrap_setreg_buffer(gdbwrap_t *desc, const unsigned char *buf, ut32 size) {
+IRAPI void gdbwrap_setreg_buffer(gdbwrap_t *desc, const unsigned char *buf, ut32 size) {
 	if (desc->reg_size*desc->num_registers > size)
 		size = desc->reg_size*desc->num_registers;
 	memcpy (desc->regs, buf, size);
 }
 
-ut64 gdbwrap_getreg(gdbwrap_t *desc, ut32 idx) {
+IRAPI ut64 gdbwrap_getreg(gdbwrap_t *desc, ut32 idx) {
 	ut64 ret = -1;
 	if (idx >= desc->num_registers) {
 		fprintf (stderr, "Wrong register index %d\n",idx);
@@ -417,7 +417,7 @@ static char *gdbwrap_send_data(gdbwrap_t *desc, const char *query) {
  * Returns the last signal. We return the signal number or 0 if no
  * signal was returned.
  **/
-unsigned int gdbwrap_lastsignal(gdbwrap_t *desc) {
+IRAPI unsigned int gdbwrap_lastsignal(gdbwrap_t *desc) {
 	unsigned int ret = 0;
 	char *lastmsg = gdbwrap_lastmsg(desc);
 
@@ -429,7 +429,7 @@ unsigned int gdbwrap_lastsignal(gdbwrap_t *desc) {
 	return ret;
 }
 
-u_char gdbwrap_lasterror(gdbwrap_t *desc) {
+IRAPI u_char gdbwrap_lasterror(gdbwrap_t *desc) {
 	u_char ret = 0;
 	char *lastmsg = gdbwrap_lastmsg (desc);
 	/* When we receive a packet starting with GDBWRAP_SIGNAL_RECV, the
@@ -439,23 +439,23 @@ u_char gdbwrap_lasterror(gdbwrap_t *desc) {
 	return ret;
 }
 
-Bool gdbwrap_is_active(gdbwrap_t *desc) {
+IRAPI Bool gdbwrap_is_active(gdbwrap_t *desc) {
 	return desc->is_active? TRUE: FALSE;
 }
 
 /* If the last command is not supported, we return TRUE. */
-Bool gdbwrap_cmdnotsup(gdbwrap_t *desc) {
+IRAPI Bool gdbwrap_cmdnotsup(gdbwrap_t *desc) {
 	char *lastmsg = gdbwrap_lastmsg(desc);
 	if (lastmsg && lastmsg[0] == GDBWRAP_NULL_CHAR)
 		return TRUE;
 	return FALSE;
 }
 
-Bool gdbwrap_erroroccured(gdbwrap_t *desc) {
+IRAPI Bool gdbwrap_erroroccured(gdbwrap_t *desc) {
 	return desc->erroroccured;
 }
 
-unsigned int gdbwrap_atoh(const char * str, unsigned size) {
+IRAPI unsigned int gdbwrap_atoh(const char * str, unsigned size) {
 	unsigned int i, hex;
 	for (i = 0, hex = 0; i < size; i++) {
 		if (str != NULL && str[i] >= 'a' && str[i] <= 'f')
@@ -471,12 +471,12 @@ unsigned int gdbwrap_atoh(const char * str, unsigned size) {
  * Set/Get the gdbwrapworld variable. It's not mandatory to use the
  * other functions, but sometimes a global variable is required.
  */
-gdbwrapworld_t gdbwrap_current_set(gdbwrap_t *world) {
+IRAPI gdbwrapworld_t gdbwrap_current_set(gdbwrap_t *world) {
 	gdbwrapworld.gdbwrapptr = world;
 	return gdbwrapworld;
 }
 
-gdbwrap_t *gdbwrap_current_get(void) {
+IRAPI gdbwrap_t *gdbwrap_current_get(void) {
 	return gdbwrapworld.gdbwrapptr;
 }
 
@@ -485,7 +485,7 @@ gdbwrap_t *gdbwrap_current_get(void) {
  * the string that get the replies from server.
  *
  */
-gdbwrap_t *gdbwrap_init(int fd, ut32 num_regs, ut32 reg_size) {
+IRAPI gdbwrap_t *gdbwrap_init(int fd, ut32 num_regs, ut32 reg_size) {
 	gdbwrap_t *desc;
 	if (fd == -1)
 		return NULL;
@@ -513,7 +513,7 @@ gdbwrap_t *gdbwrap_init(int fd, ut32 num_regs, ut32 reg_size) {
 	return desc;
 }
 
-void gdbwrap_close(gdbwrap_t *desc) {
+IRAPI void gdbwrap_close(gdbwrap_t *desc) {
 	if (desc == NULL) {
 		free (desc->packet);
 		free (desc->regs);
@@ -526,7 +526,7 @@ void gdbwrap_close(gdbwrap_t *desc) {
  * memory for packets if necessary.
  *
  */
-void gdbwrap_hello(gdbwrap_t *desc) {
+IRAPI void gdbwrap_hello(gdbwrap_t *desc) {
 	char *received = NULL;
 	char *result = NULL;
 	unsigned int previousmax  = 0;
@@ -559,13 +559,13 @@ void gdbwrap_hello(gdbwrap_t *desc) {
 /**
  * Send a "disconnect" command to the server and free the packet.
  */
-void gdbwrap_bye(gdbwrap_t *desc) {
+IRAPI void gdbwrap_bye(gdbwrap_t *desc) {
 	if (desc)
 		gdbwrap_send_data(desc, GDBWRAP_DISCONNECT);
 	printf("\nThx for using gdbwrap :)\n");
 }
 
-void gdbwrap_reason_halted(gdbwrap_t *desc) {
+IRAPI void gdbwrap_reason_halted(gdbwrap_t *desc) {
 	char *r = gdbwrap_send_data(desc, GDBWRAP_WHY_HALTED);
 	if (gdbwrap_is_active (desc))
 		gdbwrap_populate_reg (desc, r);
@@ -577,7 +577,7 @@ void gdbwrap_reason_halted(gdbwrap_t *desc) {
  * cannot reuse the gdbwrap_populate_reg. We receive a poorly
  * documented bulk message when sending the "g" query.
  */
-ut8 *gdbwrap_readgenreg(gdbwrap_t *desc) {
+IRAPI ut8 *gdbwrap_readgenreg(gdbwrap_t *desc) {
 	int i;
 	ureg32 regvalue;
 	char *rec = gdbwrap_send_data (desc, GDBWRAP_GENPURPREG);
@@ -596,7 +596,7 @@ ut8 *gdbwrap_readgenreg(gdbwrap_t *desc) {
 }
 
 
-void gdbwrap_continue(gdbwrap_t *desc) {
+IRAPI void gdbwrap_continue(gdbwrap_t *desc) {
 	if (gdbwrap_is_active (desc)) {
 		char *rec = gdbwrap_send_data (desc, GDBWRAP_CONTINUE);
 		if (rec != NULL && gdbwrap_is_active (desc))
@@ -609,7 +609,7 @@ void gdbwrap_continue(gdbwrap_t *desc) {
  * 0xcc in replacement. The usual command to set a bp is not supported
  * by the gdbserver.
  */
-void gdbwrap_setbp(gdbwrap_t *desc, la32 linaddr, void *datasaved) {
+IRAPI void gdbwrap_setbp(gdbwrap_t *desc, la32 linaddr, void *datasaved) {
 	unsigned int atohresult;
 	u_char bp = 0xcc;
 	char *ret;
@@ -638,7 +638,7 @@ int gdbwrap_simplesetbp(gdbwrap_t *desc, la32 linaddr) {
 	return (ret && ret[0])?1:0;
 }
 
-int gdbwrap_simplesethwbp(gdbwrap_t *desc, la32 linaddr) {
+IRAPI int gdbwrap_simplesethwbp(gdbwrap_t *desc, la32 linaddr) {
 	char *ret, packet[MSG_BUF];
 	snprintf (packet, sizeof (packet), "%s%s%x%s%x", GDBWRAP_INSERTHWBP,
 			GDBWRAP_SEP_COMMA, linaddr, GDBWRAP_SEP_COMMA, 0x1);
@@ -646,11 +646,11 @@ int gdbwrap_simplesethwbp(gdbwrap_t *desc, la32 linaddr) {
 	return (ret && ret[0])?1:0;
 }
 
-void gdbwrap_delbp(gdbwrap_t *desc, la32 linaddr, void *datasaved) {
+IRAPI void gdbwrap_delbp(gdbwrap_t *desc, la32 linaddr, void *datasaved) {
 	gdbwrap_writemem(desc, linaddr, datasaved, sizeof(u_char));
 }
 
-int gdbwrap_simpledelbp(gdbwrap_t *desc, la32 linaddr) {
+IRAPI int gdbwrap_simpledelbp(gdbwrap_t *desc, la32 linaddr) {
 	char *ret, packet[MSG_BUF];
 	snprintf (packet, sizeof(packet), "%s%s%x%s%x", GDBWRAP_REMOVEBP,
 			GDBWRAP_SEP_COMMA, linaddr, GDBWRAP_SEP_COMMA, 0x1);
@@ -660,14 +660,14 @@ int gdbwrap_simpledelbp(gdbwrap_t *desc, la32 linaddr) {
 	return 1;
 }
 
-void gdbwrap_simpledelhwbp(gdbwrap_t *desc, la32 linaddr) {
+IRAPI void gdbwrap_simpledelhwbp(gdbwrap_t *desc, la32 linaddr) {
 	char packet[MSG_BUF];
 	snprintf (packet, sizeof (packet), "%s%s%x%s%x", GDBWRAP_REMOVEHWBP,
 			GDBWRAP_SEP_COMMA, linaddr, GDBWRAP_SEP_COMMA, 0x1);
 	gdbwrap_send_data (desc, packet);
 }
 
-char *gdbwrap_readmem(gdbwrap_t *desc, la32 linaddr, unsigned bytes) {
+IRAPI char *gdbwrap_readmem(gdbwrap_t *desc, la32 linaddr, unsigned bytes) {
 	char packet[MSG_BUF];
 	snprintf (packet, sizeof (packet), "%s%x%s%x", GDBWRAP_MEMCONTENT,
 			linaddr, GDBWRAP_SEP_COMMA, bytes);
@@ -726,17 +726,13 @@ static void *gdbwrap_writememory2(gdbwrap_t *desc, la32 linaddr, void *value, un
 }
 
 
-void                 gdbwrap_writemem(gdbwrap_t *desc, la32 linaddr,
-				       void *value, unsigned bytes)
-{
+IRAPI void gdbwrap_writemem(gdbwrap_t *desc, la32 linaddr, void *value, unsigned bytes) {
   static u_char      choice = 0;
 
   if (bytes)
     {
-      do
-	{
-	  switch (choice)
-	    {
+      do {
+	  switch (choice) {
 	      case 0:
 		gdbwrap_writememory(desc, linaddr, value, bytes);
 		if (gdbwrap_cmdnotsup(desc))
@@ -750,10 +746,10 @@ void                 gdbwrap_writemem(gdbwrap_t *desc, la32 linaddr,
 		break;
 
 	      default:
-		fprintf(stderr, "[W] Write to memory not supported.\n");
+		fprintf (stderr, "[W] Write to memory not supported.\n");
 		break;
 	    }
-	} while (gdbwrap_cmdnotsup(desc) && choice < 2);
+	} while (gdbwrap_cmdnotsup (desc) && choice < 2);
     }
 }
 
@@ -793,7 +789,7 @@ static void gdbwrap_writeregister2(gdbwrap_t *desc, ureg32 regNum, la32 val) {
 }
 
 
-void gdbwrap_writereg(gdbwrap_t *desc, ureg32 regnum, la32 val) {
+IRAPI void gdbwrap_writereg(gdbwrap_t *desc, ureg32 regnum, la32 val) {
 	static u_char choice = 0;
 
 	do {
@@ -820,7 +816,7 @@ void gdbwrap_writereg(gdbwrap_t *desc, ureg32 regnum, la32 val) {
 }
 
 //This is ugly... 
-char *getfmt(ut32 size){
+static char *getfmt(ut32 size){
 	switch (size){
 	case 1: return "%02x";
 	case 2: return "%04x";
@@ -834,7 +830,7 @@ char *getfmt(ut32 size){
  * Ship all the registers to the server in only 1 query. This is used
  * when modifying multiple registers at once for example.
  */
-char *gdbwrap_shipallreg(gdbwrap_t *desc) {
+IRAPI char *gdbwrap_shipallreg(gdbwrap_t *desc) {
 	ut8 *savedregs;
 	char *ret, *fmt, locreg[700];
 	int i;
@@ -868,8 +864,7 @@ char *gdbwrap_shipallreg(gdbwrap_t *desc) {
 	return gdbwrap_send_data (desc, locreg);
 }
 
-
-void gdbwrap_ctrl_c(gdbwrap_t *desc) {
+IRAPI void gdbwrap_ctrl_c(gdbwrap_t *desc) {
 	u_char            sended = CTRL_C;
 	int rval;
 	if (desc == NULL)
@@ -892,7 +887,7 @@ void gdbwrap_ctrl_c(gdbwrap_t *desc) {
  * process_pid is omited, then we apply to the current process
  * (default behavior).
  */
-void gdbwrap_signal(gdbwrap_t *desc, int signal) {
+IRAPI void gdbwrap_signal(gdbwrap_t *desc, int signal) {
 	char *rec, signalpacket[MSG_BUF];
 	if (desc == NULL)
 		return;
@@ -901,10 +896,9 @@ void gdbwrap_signal(gdbwrap_t *desc, int signal) {
 	rec = gdbwrap_send_data (desc, signalpacket);
 }
 
-void gdbwrap_stepi(gdbwrap_t *desc) {
+IRAPI void gdbwrap_stepi(gdbwrap_t *desc) {
 	char *rec;
-	if (desc == NULL)
-		return;
+	if (desc != NULL) return;
 	rec = gdbwrap_send_data (desc, GDBWRAP_STEPI);
 	if (gdbwrap_is_active (desc))
 		gdbwrap_populate_reg (desc, rec);
@@ -918,7 +912,7 @@ void gdbwrap_stepi(gdbwrap_t *desc) {
  * (in char).
  * @param: cmd the command to send, in clear text.
  **/
-char *gdbwrap_remotecmd(gdbwrap_t *desc, char *cmd) {
+IRAPI char *gdbwrap_remotecmd(gdbwrap_t *desc, char *cmd) {
 	char signalpacket[MSG_BUF], cmdcpy[MSG_BUF], *ret;
 	uint8_t i, rval;
 	if (desc == NULL || cmd == NULL)
@@ -948,12 +942,12 @@ char *gdbwrap_remotecmd(gdbwrap_t *desc, char *cmd) {
  * and return the information parsed on a gdbmemap_t.
  *
  */
-gdbmemap_t gdbwrap_memorymap_get(gdbwrap_t *desc) {
+IRAPI gdbmemap_t gdbwrap_memorymap_get(gdbwrap_t *desc) {
 	char qXfer_msg[30], *received = NULL;
 	gdbmemap_t result;
-	snprintf (qXfer_msg, sizeof(qXfer_msg), "%s::%d,%d",
+	snprintf (qXfer_msg, sizeof (qXfer_msg), "%s::%d,%d",
 			GDBWRAP_MEMORYMAP_READ, 0, 0xfff);
-	received = gdbwrap_send_data(desc, qXfer_msg);
+	received = gdbwrap_send_data (desc, qXfer_msg);
 	if (received != NULL) {
 		//XXX: parse it and return gdbmemap_t
 	}

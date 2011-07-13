@@ -3,6 +3,10 @@
 
 /* File to include to use the wrapper. */
 
+#ifndef IRAPI
+#define IRAPI
+#endif
+
 #include "r_types.h"
 #if __UNIX__
 #include <netinet/in.h>
@@ -75,38 +79,37 @@ typedef struct
   gdbwrap_t *gdbwrapptr;
 } gdbwrapworld_t;
 
-Bool             gdbwrap_erroroccured(gdbwrap_t *desc);
-Bool             gdbwrap_cmdnotsup(gdbwrap_t *desc);
-unsigned         gdbwrap_atoh(const char * str, unsigned size);
-unsigned         gdbwrap_lastsignal(gdbwrap_t *desc);
-Bool             gdbwrap_is_active(gdbwrap_t *desc);
-gdbwrapworld_t   gdbwrap_current_set(gdbwrap_t *world);
-gdbwrap_t        *gdbwrap_current_get(void);
-gdbwrap_t        *gdbwrap_init(int fd, ut32 num, ut32 size);
-void             gdbwrap_close(gdbwrap_t *desc);
-void             gdbwrap_hello(gdbwrap_t *desc);
-void             gdbwrap_bye(gdbwrap_t *desc);
-void             gdbwrap_reason_halted(gdbwrap_t *desc);
-char             *gdbwrap_own_command(gdbwrap_t *desc, char *command);
-ut8		 *gdbwrap_readgenreg(gdbwrap_t *desc);
-void             gdbwrap_continue(gdbwrap_t *desc);
-void             gdbwrap_setbp(gdbwrap_t *desc, la32 linaddr, void *datasaved);
-int		 gdbwrap_simplesetbp(gdbwrap_t *desc, la32 linaddr);
-void             gdbwrap_delbp(gdbwrap_t *desc, la32 linaddr, void *datasaved);
-int             gdbwrap_simpledelbp(gdbwrap_t *desc, la32 linaddr);
-char             *gdbwrap_readmem(gdbwrap_t *desc, la32 linaddr, unsigned bytes);
-void             gdbwrap_writemem(gdbwrap_t *desc, la32 linaddr, void *value,
-				  unsigned bytes);
-void             gdbwrap_writereg(gdbwrap_t *desc, ureg32 regnum, la32 val);
-char             *gdbwrap_shipallreg(gdbwrap_t *desc);
-void             gdbwrap_ctrl_c(gdbwrap_t *desc);
-void             gdbwrap_signal(gdbwrap_t *desc, int signal);
-void             gdbwrap_stepi(gdbwrap_t *desc);
-char             *gdbwrap_remotecmd(gdbwrap_t *desc, char *cmd);
-u_char           gdbwrap_lasterror(gdbwrap_t *desc);
-gdbmemap_t       gdbwrap_memorymap_get();
-ut64		 gdbwrap_getreg(gdbwrap_t *desc, ut32 idx);
-void		 gdbwrap_getreg_buffer(gdbwrap_t *desc, unsigned char *buf, ut32 size);
-void		 gdbwrap_setreg(gdbwrap_t *desc, ut32 idx, ut64 value);
-void		 gdbwrap_setreg_buffer(gdbwrap_t *desc, const unsigned char *buf, ut32 size);
+IRAPI Bool             gdbwrap_erroroccured(gdbwrap_t *desc);
+IRAPI Bool             gdbwrap_cmdnotsup(gdbwrap_t *desc);
+IRAPI unsigned         gdbwrap_atoh(const char * str, unsigned size);
+IRAPI unsigned         gdbwrap_lastsignal(gdbwrap_t *desc);
+IRAPI Bool             gdbwrap_is_active(gdbwrap_t *desc);
+IRAPI gdbwrapworld_t   gdbwrap_current_set(gdbwrap_t *world);
+IRAPI gdbwrap_t        *gdbwrap_current_get(void);
+IRAPI gdbwrap_t        *gdbwrap_init(int fd, ut32 num, ut32 size);
+IRAPI void             gdbwrap_close(gdbwrap_t *desc);
+IRAPI void             gdbwrap_hello(gdbwrap_t *desc);
+IRAPI void             gdbwrap_bye(gdbwrap_t *desc);
+IRAPI void             gdbwrap_reason_halted(gdbwrap_t *desc);
+IRAPI char             *gdbwrap_own_command(gdbwrap_t *desc, char *command);
+IRAPI ut8		 *gdbwrap_readgenreg(gdbwrap_t *desc);
+IRAPI void             gdbwrap_continue(gdbwrap_t *desc);
+IRAPI void             gdbwrap_setbp(gdbwrap_t *desc, la32 linaddr, void *datasaved);
+IRAPI int		 gdbwrap_simplesetbp(gdbwrap_t *desc, la32 linaddr);
+IRAPI void             gdbwrap_delbp(gdbwrap_t *desc, la32 linaddr, void *datasaved);
+IRAPI int             gdbwrap_simpledelbp(gdbwrap_t *desc, la32 linaddr);
+IRAPI char             *gdbwrap_readmem(gdbwrap_t *desc, la32 linaddr, unsigned bytes);
+IRAPI void             gdbwrap_writemem(gdbwrap_t *desc, la32 linaddr, void *value, unsigned bytes);
+IRAPI void             gdbwrap_writereg(gdbwrap_t *desc, ureg32 regnum, la32 val);
+IRAPI char             *gdbwrap_shipallreg(gdbwrap_t *desc);
+IRAPI void             gdbwrap_ctrl_c(gdbwrap_t *desc);
+IRAPI void             gdbwrap_signal(gdbwrap_t *desc, int signal);
+IRAPI void             gdbwrap_stepi(gdbwrap_t *desc);
+IRAPI char             *gdbwrap_remotecmd(gdbwrap_t *desc, char *cmd);
+IRAPI u_char           gdbwrap_lasterror(gdbwrap_t *desc);
+IRAPI gdbmemap_t       gdbwrap_memorymap_get();
+IRAPI ut64 gdbwrap_getreg(gdbwrap_t *desc, ut32 idx);
+IRAPI void gdbwrap_getreg_buffer(gdbwrap_t *desc, unsigned char *buf, ut32 size);
+IRAPI void gdbwrap_setreg(gdbwrap_t *desc, ut32 idx, ut64 value);
+IRAPI void gdbwrap_setreg_buffer(gdbwrap_t *desc, const unsigned char *buf, ut32 size);
 #endif

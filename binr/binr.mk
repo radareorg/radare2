@@ -5,9 +5,14 @@ include ../../libr/config.mk
 CFLAGS+=-I../../libr/include
 CFLAGS+=-DLIBDIR=\"${PREFIX}/lib\"
 
+ifeq ($(WITHPIC),1)
 LIBS=$(subst r_,-lr_,$(BINDEPS))
 LIBS+=$(subst r_,-L../../libr/,$(BINDEPS))
-LDFLAGS+=${LIBS}
+else
+PFXDLIBS=$(addsuffix .a,${BINDEPS})
+XXXLIBS+=$(subst r_,../../libr/XXX/libr_,$(PFXDLIBS))
+LIBS+=$(shell echo ${XXXLIBS} | sed -e 's,XXX/libr_\([^\. ]*\),\1/libr_\1,g')
+endif
 
 all: ${BIN}${EXT_EXE}
 

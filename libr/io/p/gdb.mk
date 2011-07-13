@@ -9,6 +9,7 @@ CFLAGS+=-I../debug/p/libgdbwrap/include
 # /
 CFLAGS+=-I../../debug/p/libgdbwrap/
 CFLAGS+=-I../../debug/p/libgdbwrap/include
+#GDBWRAPFILES=../../debug/p/libgdbwrap/gdbwrapper.c
 
 # copypasted from socket/Makefile
 # on solaris only
@@ -19,13 +20,22 @@ endif
 ifeq (${OSTYPE},windows)
 LDFLAGS=-lwsock32
 endif
+ifeq (${WITHPIC},0)
+LINKFLAGS=../../socket/libr_socket.a
+LINKFLAGS+=../../util/libr_util.a
+LINKFLAGS+=../../lib/libr_lib.a
+LINKFLAGS+=../../io/libr_io.a
+else
+LINKFLAGS=-L../../socket -lr_socket
+LINKFLAGS+=-L../../lib -lr_lib
+LINKFLAGS+=-L../../util -lr_util
+LINKFLAGS+=-L.. -L../../lib -lr_lib -lr_io 
+endif
+ifeq (${HAVE_LIB_SSL},1)
+LINKFLAGS+=-lssl -lcrypto
+endif
 
 # TODO : link against gdbwrapper
 ${TARGET_GDB}: ${OBJ_GDB}
-	${CC} ${OBJ_GDB} ${CFLAGS} ${LDFLAGS} \
-		-I../debug/p/libgdbwrap/ \
-		-I../debug/p/libgdbwrap/include \
-		-shared -o ${TARGET_GDB} ${LDFLAGS_LIB} \
-		${LDFLAGS_LINKPATH}../../socket -L../../socket -lr_socket \
-		${LDFLAGS_LINKPATH}../../util -L../../util -lr_util \
-		${LDFLAGS_LINKPATH}.. -L.. -L../../lib -lr_lib -lr_io \
+	${CC} -shared -o ${TARGET_GDB} ${OBJ_GDB} ${CFLAGS} ${LDFLAGS} \
+		${GDBWRAPFILES} ${LINKFLAGS} ${LDFLAGS_LIB}

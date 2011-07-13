@@ -4,8 +4,11 @@
 #include <r_lib.h>
 #include <r_socket.h>
 #include <r_util.h>
+////#include "../../debug/p/libgdbwrap/include/gdbwrapper.h"
+#define IRAPI static
+#include <gdbwrapper.h>
 #include "../../debug/p/libgdbwrap/gdbwrapper.c"
-#include "../../debug/p/libgdbwrap/interface.c"
+//#include "../../debug/p/libgdbwrap/interface.c"
 
 typedef struct {
 	RSocket *fd;
@@ -81,14 +84,14 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		int i;
 		gdbwrap_readgenreg (RIOGDB_DESC (fd));
 		for (i=0; i<NUM_REGS; i++){
-		    ut32 v = gdbwrap_getreg (RIOGDB_DESC(fd),i) & 0xFFFFFFFF;
+		    ut32 v = gdbwrap_getreg (RIOGDB_DESC (fd), i) & 0xFFFFFFFF;
 		    printf ("Reg #%d - %#x\n", i, v);
 		}
-	} else if ( !strcmp(cmd,"stepi") ) {
+	} else if (!strcmp (cmd, "stepi")) {
 		gdbwrap_stepi (RIOGDB_DESC (fd));
-	} else if ( !strcmp(cmd,"cont") ) {
+	} else if (!strcmp (cmd, "cont")) {
 		gdbwrap_continue (RIOGDB_DESC (fd));
-	} else if (!strncmp (cmd,"bp", 2) && r_str_word_count (cmd)==2) {
+	} else if (!strncmp (cmd, "bp", 2) && r_str_word_count (cmd)==2) {
 		char *saddr = strrchr (cmd, ' '); //Assuming only spaces as separator, get last space
 		if (saddr) {
 			int addr;
