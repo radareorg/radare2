@@ -22,9 +22,16 @@ CHKLIB magic
 ARG_WITHOUT HAVE_MAGIC magic disable magic dependency ;
 IFNOT HAVE_MAGIC { HAVE_LIB_MAGIC = 0 ; }
 
+CHKLIB ssl
 PKGCFG SSL_CFLAGS SSL_LDFLAGS openssl
 ARG_WITHOUT HAVE_OPENSSL ssl disable openssl dependency ;
-IFNOT SSL_LDFLAGS { HAVE_OPENSSL = 0 ; }
+IFNULL SSL_LDFLAGS { 
+	IFNOT HAVE_LIB_SSL {
+		HAVE_OPENSSL = 0 ;
+	}{
+		SSL_LDFLAGS = -lssl ;
+	}
+}
 
 CHKLIB lua5.1
 CHKLIB tcc
@@ -78,30 +85,31 @@ REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_GMP HAVE_OPENSSL HAVE_LIB_TCC
  pkgcfg/r_db.pc
 ))
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))
-SUBDIRS ./config-user.mk libr/include/r_userconf.h
- pkgcfg/r_io.pc
- pkgcfg/r_asm.pc
- pkgcfg/r_bin.pc
- pkgcfg/r_anal.pc
- pkgcfg/r_hash.pc
- pkgcfg/r_cons.pc
- pkgcfg/r_diff.pc
- pkgcfg/r_core.pc
- pkgcfg/r_lang.pc
- pkgcfg/r_socket.pc
- pkgcfg/r_debug.pc
- pkgcfg/r_reg.pc
- pkgcfg/r_cmd.pc
- pkgcfg/r_config.pc
- pkgcfg/r_flags.pc
- pkgcfg/r_line.pc
- pkgcfg/r_syscall.pc
- pkgcfg/r_sign.pc
- pkgcfg/r_util.pc
- pkgcfg/r_search.pc
- pkgcfg/r_bp.pc
- pkgcfg/r_lib.pc
- pkgcfg/r_parse.pc
- pkgcfg/r_print.pc
- pkgcfg/r_fs.pc
+SUBDIRS ./config-user.mk
+	libr/include/r_userconf.h
+	pkgcfg/r_io.pc
+	pkgcfg/r_asm.pc
+	pkgcfg/r_bin.pc
+	pkgcfg/r_anal.pc
+	pkgcfg/r_hash.pc
+	pkgcfg/r_cons.pc
+	pkgcfg/r_diff.pc
+	pkgcfg/r_core.pc
+	pkgcfg/r_lang.pc
+	pkgcfg/r_socket.pc
+	pkgcfg/r_debug.pc
+	pkgcfg/r_reg.pc
+	pkgcfg/r_cmd.pc
+	pkgcfg/r_config.pc
+	pkgcfg/r_flags.pc
+	pkgcfg/r_line.pc
+	pkgcfg/r_syscall.pc
+	pkgcfg/r_sign.pc
+	pkgcfg/r_util.pc
+	pkgcfg/r_search.pc
+	pkgcfg/r_bp.pc
+	pkgcfg/r_lib.pc
+	pkgcfg/r_parse.pc
+	pkgcfg/r_print.pc
+	pkgcfg/r_fs.pc
 ;
