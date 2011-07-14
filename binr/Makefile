@@ -12,7 +12,9 @@ all:
 
 install:
 	mkdir -p ${PFX}/bin
-	for a in ${BINS} ; do ${INSTALL_PROGRAM} $$a/$$a ${PFX}/bin ; done
+	pwd
+	for a in ${BINS} ; do ${INSTALL_PROGRAM} $$a/$$a ${PFX}/bin/$$a ; done
+	#for a in ${BINS} ; do cp -f $$a/$$a ${PFX}/bin/$$a ; done
 	# rarc2
 	cp -f rarc2/rarc2 ${PFX}/bin
 	cp -f rarc2/rarc2-tool ${PFX}/bin

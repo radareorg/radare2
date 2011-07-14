@@ -1,0 +1,26 @@
+  Build for maemo6 (Harmattan) N9 - N950
+========================================
+
+* Install QtSDK 
+
+  - http://qt.nokia.com/downloads/
+
+* Configure mad (maemo development environment)
+
+  cd /usr/bin ; sudo ln -fs $HOME/QtSDK/Madde/bin/mad
+  mad set harmattan-nokia-meego-api
+  mad sh
+
+* Compile
+
+  ./configure --without-ssl --prefix=/usr
+  make
+
+* Create the package
+
+  cd maemo
+  make
+
+* Install the package
+
+   dpkg -i radare2-*.deb

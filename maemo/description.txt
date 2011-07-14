@@ -1,0 +1,3 @@
+Advanced command line hexadecimal editor
+radare is a command line hexadecimal editor with advanced features like
+hashing, overlap of structures, visual mode, different view modes, scripts..

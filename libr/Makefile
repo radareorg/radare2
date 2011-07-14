@@ -31,7 +31,7 @@ install-pkgconfig:
 
 install-includes:
 	@${INSTALL_DIR} ${PFX}/include/libr
-	(cd include && ${INSTALL_DATA} * ${PFX}/include/libr)
+	(cd include && for a in *.h ; do ${INSTALL_DATA} $$a ${PFX}/include/libr ; done)
 
 install-symlink:
 	mkdir -p ${PFX}/bin
