@@ -327,7 +327,7 @@ R_API int r_sys_cmd (const char *str) {
 	/* freebsd system() is broken */
 	int fds[2];
 	int st,pid;
-	char *argv[] = { "/bin/sh", "-c", input, NULL};
+	char *argv[] = { "/bin/sh", "-c", str, NULL};
 	pipe (fds);
 	/* not working ?? */
 	//pid = rfork(RFPROC|RFCFDG);

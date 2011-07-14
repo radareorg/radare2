@@ -1019,7 +1019,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 	{
 		// TODO
 		struct dbreg dbr;
-		ret = ptrace (PTRACE_GETDBREGS, pid, &dbr, sizeof (dbr));
+		ret = ptrace (PT_GETDBREGS, pid, &dbr, sizeof (dbr));
 		if (ret != 0)
 			return R_FALSE;
 		// XXX: maybe the register map is not correct, must review
@@ -1074,7 +1074,7 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 	// XXX use switch or so
 	if (type == R_REG_TYPE_DRX) {
 #ifdef __FreeBSD__
-		return (0 == ptrace (PTRACE_SETDBREGS, dbg->pid, buf, sizeof (struct dbreg)));
+		return (0 == ptrace (PT_SETDBREGS, dbg->pid, buf, sizeof (struct dbreg)));
 #elif __linux__
 		{
 		int i;
@@ -1279,6 +1279,10 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 
 static RList *r_debug_native_map_get(RDebug *dbg) {
 	RList *list = NULL;
+#if __FreeBSD__
+	int ign;
+	char unkstr[128];
+#endif 
 #if __APPLE__
 	list = darwin_dbg_maps (dbg);
 #elif __WINDOWS__
