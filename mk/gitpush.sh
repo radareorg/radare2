@@ -1,4 +1,7 @@
 #!/bin/sh
+# pancake script to sync a git repo from a mercurial one
+# hg-git seems broken as long as git is more restrictive in author names
+# so... i just rewrote it from scratch to push commits by blocks
 
 GITDIR=radare2.git
 GITPUSH=git+ssh://git@github.com/radare/${GITDIR}
@@ -6,7 +9,7 @@ GITPULL=git://github.com/radare/${GITDIR}
 
 getgittip() {
 	cd ${GITDIR}
-	git log -1 | tail -n 1 | sed -e 's/.*r2:hg:\(.*\) .*/\1/'
+	git log -1|tail -n1 |awk -F 'r2:hg:' '{print $2}'
 	cd ..
 }
 gethgtip() {
@@ -34,9 +37,9 @@ if [ "${GIT_HG_TIP}" = "${HG_TIP}" ]; then
 	echo "Nothing to push"
 else
 	echo "Preparing hg to git..."
-	hg log -v -r ${HG_TIP} -r ${GIT_HG_TIP} > /tmp/commitmsg
+	hg log -v -r ${HG_TIP} -r $((${GIT_HG_TIP}+1)) > /tmp/commitmsg
 	echo >> /tmp/commitmsg
-	echo "Imported from r2:hg:${HG_TIP}" >> /tmp/commitmsg
+	echo "mk/gitpush.sh: imported from r2:hg:${HG_TIP}" >> /tmp/commitmsg
 
 	cd ${GITDIR}
 	rm -rf *
@@ -45,7 +48,7 @@ else
 	rm -rf tmpdir
 	DELETED=$(git status | grep deleted |cut -d : -f 2)
 	git add *
-	git rm ${DELETED}
+	[ -n "${DELETED}" ] && git rm ${DELETED}
 	git commit -F /tmp/commitmsg
 	git push ${GITPUSH}
 fi
