@@ -13,6 +13,9 @@ plugins.cfg:
 	echo "  Please, run ./configure first" ; echo ; exit 1 ; fi
 	./configure-plugins
 
+gitpush:
+	sh mk/gitpush.sh
+
 libr:
 	cd libr && ${MAKE} all
 
