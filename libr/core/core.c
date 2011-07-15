@@ -424,7 +424,12 @@ R_API int r_core_block_size(RCore *core, ut32 bsize) {
 		eprintf ("Oops. cannot allocate that much (%u)\n", bsize);
 		core->block = malloc (R_CORE_BLOCKSIZE);
 		core->blocksize = R_CORE_BLOCKSIZE;
+		if (core->block == NULL) {
+			eprintf ("Panic in the heap!\n");
+			exit (1);
+		}
 	} else core->blocksize = bsize;
+	memset (core->block, 0xff, core->blocksize);
 	r_core_block_read (core, 0);
 	return ret;
 }

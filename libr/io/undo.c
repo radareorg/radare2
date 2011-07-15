@@ -66,7 +66,7 @@ R_API void r_io_sundo_push(RIO *io) {
 	io->undo.idx++;
 	if (io->undo.idx==R_IO_UNDOS-1) {
 		io->undo.idx--;
-		eprintf ("undo limit reached\n");
+		//eprintf ("undo limit reached\n");
 	}
 	//if (io->undo.limit<io->undo.idx)
 		io->undo.limit = io->undo.idx;
