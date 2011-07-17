@@ -13,7 +13,7 @@
 
 * Compile
 
-  ./configure --without-ssl --prefix=/usr
+  ./configure --without-ssl --prefix=/usr --with-little-endian
   make
 
 * Create the package

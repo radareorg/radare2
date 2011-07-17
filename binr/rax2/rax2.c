@@ -6,7 +6,7 @@ static int flags = 0;
 
 static int format_output (char mode, ut64 n);
 static int help ();
-static int rax (char *str);
+static int rax (char *str, int last);
 static int use_stdin ();
 
 static int format_output (char mode, ut64 n) {
@@ -61,7 +61,7 @@ static int help () {
 	return R_TRUE;
 }
 
-static int rax (char *str) {
+static int rax (char *str, int last) {
 	float f;
 	char *p, *buf, out_mode = '0';
 	int i;
@@ -89,6 +89,8 @@ static int rax (char *str) {
 			printf ("Usage: rax2 [options] [expression]\n");
 			return help ();
 		}
+		if (last)
+			return use_stdin ();
 		return R_TRUE;
 	} else
 	if (*str=='q')
@@ -102,7 +104,7 @@ static int rax (char *str) {
 		buf = malloc (sizeof (char) * n);
 		memset (buf, '\0', n);
 		n = r_hex_str2bin (str, (ut8*)buf);
-		printf ("%s\n", buf);
+		write (1, buf, n);
 		free (buf);
 		return R_TRUE;
 	}
@@ -162,7 +164,7 @@ static int use_stdin () {
 		fgets (buf, sizeof (buf), stdin);
 		if (feof (stdin)) break;
 		buf[strlen (buf)-1] = '\0';
-		if (!rax (buf)) break;
+		if (!rax (buf, 0)) break;
 	}
 	return 0;
 }
@@ -172,6 +174,6 @@ int main (int argc, char **argv) {
 	if (argc == 1)
 		return use_stdin ();
 	for (i=1; i<argc; i++)
-		rax (argv[i]);
+		rax (argv[i], (i+1)==argc);
 	return 0;
 }

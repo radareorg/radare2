@@ -576,18 +576,23 @@ static int rabin_do_operation(const char *op) {
 	case 'd':
 		if (!ptr)
 			goto _rabin_do_operation_error;
-		if (ptr[0]=='s') {
+		switch (*ptr) {
+		case 's':
 			if (ptr2) {
 				if (!rabin_dump_symbols (r_num_math(NULL, ptr2)))
 					return R_FALSE;
 			} else if (!rabin_dump_symbols (0))
 					return R_FALSE;
-		} else if (ptr[0]=='S') {
+			break;
+		case 'S':
 			if (!ptr2)
 				goto _rabin_do_operation_error;
 			if (!rabin_dump_sections (ptr2))
 				return R_FALSE;
-		} else goto _rabin_do_operation_error;
+			break;
+		default:
+			goto _rabin_do_operation_error;
+		}
 		break;
 	case 'r':
 		r_bin_wr_scn_resize (bin, ptr, r_num_math (NULL, ptr2));
@@ -715,6 +720,8 @@ int main(int argc, char **argv) {
 		case 'O':
 			op = optarg;
 			action |= ACTION_OPERATION;
+			if (optind==argc)
+				return rabin_do_operation (op);
 			break;
 		case 'o':
 			output = optarg;
