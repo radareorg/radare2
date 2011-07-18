@@ -8,5 +8,4 @@ ALL_TARGETS+=${TARGET_X86}
 CFLAGS+=-D__X86IM_USE_FMT__
 
 ${TARGET_X86}: ${OBJ_X86}
-	${CC} -shared ${CFLAGS} -o anal_x86.${EXT_SO} ${OBJ_X86}
-	@#strip -s anal_x86.${EXT_SO}
+	${CC} $(call libname,anal_x86) ${CFLAGS} -o anal_x86.${EXT_SO} ${OBJ_X86}

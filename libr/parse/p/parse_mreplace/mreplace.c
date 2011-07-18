@@ -64,7 +64,6 @@ char *mreplace(char *string, char *se,char *rep) {
     	regex_t    	re;
 	size_t     	nmatch = 16;
 	regmatch_t 	pm[nmatch];
-	char		*p;
 	unsigned long	offset = 0;
 	char		field[16];
 	char		*res;
@@ -78,7 +77,6 @@ char *mreplace(char *string, char *se,char *rep) {
 	search = memStringReserve(se,INPUTLINE_BUFFER_REPLACE_SIZE);
 
 	sreplace(search->address,"\\d","[0-9]",1,INPUTLINE_BUFFER_REPLACE_SIZE);
-	p=(char*)string;
 
 #if MDEBUG2
 	sData=strdup(string);
@@ -105,8 +103,7 @@ char *mreplace(char *string, char *se,char *rep) {
 			(int)(size_t)(pm[0].rm_eo - pm[0].rm_so), &string[pm[0].rm_so]);//,&string[pm[0].rm_so]);
 #if MDEBUG3
 		printf("------->> found \"%s\" length => %d offset[%d]\n",
-			found->address,
-			strlen(temp->address),offset);
+			found->address, strlen(temp->address),offset);
 #endif
 		sreplace(temp->address+offset,found->address,rep,0,INPUTLINE_BUFFER_REPLACE_SIZE-offset);
 		for(i=1;i<nmatch;i++){

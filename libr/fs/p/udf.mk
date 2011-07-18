@@ -9,4 +9,4 @@ TARGET_UDF=fs_udf.${EXT_SO}
 ALL_TARGETS+=${TARGET_UDF}
 
 ${TARGET_UDF}: ${OBJ_UDF}
-	${CC} ${LDFLAGS} ${CFLAGS} -o ${TARGET_UDF} ${OBJ_UDF} ${EXTRA}
+	${CC} $(call libname,fs_udf) ${LDFLAGS} ${CFLAGS} -o ${TARGET_UDF} ${OBJ_UDF} ${EXTRA}

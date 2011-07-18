@@ -9,4 +9,4 @@ TARGET_UFS=fs_ufs.${EXT_SO}
 ALL_TARGETS+=${TARGET_UFS}
 
 ${TARGET_UFS}: ${OBJ_UFS}
-	${CC} ${LDFLAGS} ${CFLAGS} -o ${TARGET_UFS} ${OBJ_UFS} ${EXTRA}
+	${CC} $(call libname,fs_ufs) ${LDFLAGS} ${CFLAGS} -o ${TARGET_UFS} ${OBJ_UFS} ${EXTRA}

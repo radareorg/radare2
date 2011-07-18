@@ -215,7 +215,7 @@ API int armthumb_disassemble(char *buf, unsigned long pc, unsigned int ins) {
 		case 4: imm *= 2; mask = 0xFFFF; break;
 		default: mask = 0xFF; break;
                 }
-                sprintf(buf, "%s %s, [%s, #%d]", op, regname(Rd), regname(Rn), imm);
+                sprintf(buf, "%s %s, [%s, #%d]", op, regname(Rd), regname(Rn), imm&mask);
                 //if (op_code & 1) this->load_reference(r[Rn]+imm, Rd, mask);
                 //else this->store_reference(r[Rn]+imm, r[Rd], mask);
                 // Load & Store, format 2

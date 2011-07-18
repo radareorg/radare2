@@ -1,4 +1,9 @@
 -include config.mk
+ifneq ($(shell tar --help|grep gnu.org),)
+TAR=tar -czv --format=posix -f
+else
+TAR=tar -czvf
+endif
 
 LANGS=python perl ruby lua go java guile gear gir
 
@@ -43,7 +48,7 @@ dist:
 	CXXFILES=`cd .. ; find swig | grep -e cxx$$ -e py$$ | sed -e "s,swig/,$${PKG}/,"` ; \
 	cd .. && mv swig $${PKG} && \
 	echo $$FILES ; \
-	tar czvf $${PKG}.tar.gz $${FILES} $${CXXFILES} ; \
+	${TAR} $${PKG}.tar.gz $${FILES} $${CXXFILES} ; \
 	mv $${PKG} swig
 
 # TODO: valadoc

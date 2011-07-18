@@ -18,4 +18,4 @@ TARGET_RAP=debug_rap.${EXT_SO}
 ALL_TARGETS+=${TARGET_RAP}
 
 ${TARGET_RAP}: ${OBJ_RAP}
-	${CC} -shared ${OBJ_RAP} ${CFLAGS} ${LDFLAGS} -o ${TARGET_RAP}
+	${CC} $(call libname,debug_rap) ${OBJ_RAP} ${CFLAGS} ${LDFLAGS} -o ${TARGET_RAP}

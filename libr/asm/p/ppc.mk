@@ -8,4 +8,4 @@ TARGET_PPC=asm_ppc.${EXT_SO}
 ALL_TARGETS+=${TARGET_PPC}
 
 ${TARGET_PPC}: ${OBJ_PPC}
-	${CC} ${LDFLAGS} ${CFLAGS} -o asm_ppc.${EXT_SO} ${OBJ_PPC}
+	${CC} $(call libname,asm_ppc) ${LDFLAGS} ${CFLAGS} -o asm_ppc.${EXT_SO} ${OBJ_PPC}

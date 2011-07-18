@@ -6,4 +6,4 @@ TARGET_X86=bp_x86.${EXT_SO}
 ALL_TARGETS+=${TARGET_X86}
 
 ${TARGET_X86}: ${OBJ_X86}
-	${CC} -shared ${CFLAGS} -o ${TARGET_X86} ${OBJ_X86}
+	${CC} $(call libname,bp_x86) ${CFLAGS} -o ${TARGET_X86} ${OBJ_X86}

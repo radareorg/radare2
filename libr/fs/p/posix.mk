@@ -6,4 +6,4 @@ TARGET_POSIX=fs_posix.${EXT_SO}
 ALL_TARGETS+=${TARGET_POSIX}
 
 ${TARGET_POSIX}: ${OBJ_POSIX}
-	${CC} ${LDFLAGS} ${CFLAGS} -o ${TARGET_POSIX} ${OBJ_POSIX} ${EXTRA}
+	${CC} $(call libname,fs_posix) ${LDFLAGS} ${CFLAGS} -o ${TARGET_POSIX} ${OBJ_POSIX} ${EXTRA}

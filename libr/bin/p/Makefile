@@ -1,8 +1,7 @@
 include ../../config.mk
 
-#include ../../../config-user.mk
 CFLAGS=-I../../include -I../format/ -Wall -fPIC
-CFLAGS+=${LDFLAGS_LIB}
+#CFLAGS+=${LDFLAGS_LIB}
 #CFLAGS=$CCLIB_SHARED
 CFLAGS+=-L../../util -lr_util
 

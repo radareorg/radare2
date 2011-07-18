@@ -5,5 +5,4 @@ ALL_TARGETS+=${TARGET_MREPLACE}
 STATIC_OBJ+=${OBJ_MREPLACE}
 
 ${TARGET_MREPLACE}: ${OBJ_MREPLACE}
-	${CC} -shared ${CFLAGS} -o ${TARGET_MREPLACE} ${OBJ_MREPLACE}
-	@#strip -s asm_dummy.${EXT_SO}
+	${CC} $(call libname,parse_mreplace) ${CFLAGS} -o ${TARGET_MREPLACE} ${OBJ_MREPLACE}

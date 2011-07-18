@@ -9,4 +9,4 @@ TARGET_XFS=fs_xfs.${EXT_SO}
 ALL_TARGETS+=${TARGET_XFS}
 
 ${TARGET_XFS}: ${OBJ_XFS}
-	${CC} ${LDFLAGS} ${CFLAGS} -o ${TARGET_XFS} ${OBJ_XFS} ${EXTRA}
+	${CC} $(call libname,fs_xfs) ${LDFLAGS} ${CFLAGS} -o ${TARGET_XFS} ${OBJ_XFS} ${EXTRA}

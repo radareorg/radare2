@@ -38,5 +38,5 @@ endif
 
 # TODO : link against gdbwrapper
 ${TARGET_GDB}: ${OBJ_GDB}
-	${CC} -shared -o ${TARGET_GDB} ${OBJ_GDB} ${CFLAGS} ${LDFLAGS} \
+	${CC} $(call libname,io_gdb) -o ${TARGET_GDB} ${OBJ_GDB} ${CFLAGS} ${LDFLAGS} \
 		${GDBWRAPFILES} ${LINKFLAGS} ${LDFLAGS_LIB}

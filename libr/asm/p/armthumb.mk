@@ -7,4 +7,5 @@ TARGET_ARMTHUMB=asm_armthumb.${EXT_SO}
 ALL_TARGETS+=${TARGET_ARMTHUMB}
 
 ${TARGET_ARMTHUMB}: ${OBJ_ARMTHUMB}
-	${CC} ${LDFLAGS} ${CFLAGS} -o asm_armthumb.${EXT_SO} ${OBJ_ARMTHUMB}
+	${CC} $(call libname,asm_armthumb) ${LDFLAGS} \
+		${CFLAGS} -o asm_armthumb.${EXT_SO} ${OBJ_ARMTHUMB}

@@ -9,4 +9,4 @@ TARGET_SFS=fs_sfs.${EXT_SO}
 ALL_TARGETS+=${TARGET_SFS}
 
 ${TARGET_SFS}: ${OBJ_SFS}
-	${CC} ${LDFLAGS} ${CFLAGS} -o ${TARGET_SFS} ${OBJ_SFS} ${EXTRA}
+	${CC} $(call libname,fs_sfs) ${LDFLAGS} ${CFLAGS} -o ${TARGET_SFS} ${OBJ_SFS} ${EXTRA}

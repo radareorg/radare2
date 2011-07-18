@@ -6,5 +6,4 @@ TARGET_MACH0=bin_mach0.${EXT_SO}
 ALL_TARGETS+=${TARGET_MACH0}
 
 ${TARGET_MACH0}: ${OBJ_MACH0}
-	${CC} -shared ${CFLAGS} -o ${TARGET_MACH0} ${OBJ_MACH0}
-	@#strip -s ${TARGET_MACH0}
+	${CC} $(call libname,bin_mach0) ${CFLAGS} -o ${TARGET_MACH0} ${OBJ_MACH0}

@@ -29,7 +29,7 @@ Command layout is: <repeat><command><bytes>@<offset>.\  For example: 3x20@0x33 w
 Press 'c' in visual mode to toggle the cursor mode
 You can "copy/paste" bytes using the cursor in visual mode 'c' and using the 'y' and 'Y' keys
 Move around the bytes with hjkl! Arrow keys are not portable and are less productive to use
-Seek at relative offsets with 'seek +<offset>' or 'seek -<offset>'
+Seek at relative offsets with 's +<offset>' or 's -<offset>'
 Invert the block bytes using the 'I' key in visual mode
 Switch between print modes using the 'p' and 'P' keys in visual mode
 In soviet russia radare debugs you!

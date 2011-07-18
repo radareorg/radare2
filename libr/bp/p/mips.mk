@@ -6,4 +6,4 @@ TARGET_MIPS=bp_mips.${EXT_SO}
 ALL_TARGETS+=${TARGET_MIPS}
 
 ${TARGET_MIPS}: ${OBJ_MIPS}
-	${CC} -shared ${CFLAGS} -o ${TARGET_MIPS} ${OBJ_MIPS}
+	${CC} $(call libname,bp_mips) ${CFLAGS} -o ${TARGET_MIPS} ${OBJ_MIPS}

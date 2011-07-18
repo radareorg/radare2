@@ -5,6 +5,7 @@
 
 CODENAME: #DRY
 
+* Move mandpage from man/ to binr/*/?
 * add support for sockets in rarun2
 
 TODO

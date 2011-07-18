@@ -7,4 +7,4 @@ TARGET_MSIL=asm_msil.${EXT_SO}
 ALL_TARGETS+=${TARGET_MSIL}
 
 ${TARGET_MSIL}: ${OBJ_MSIL}
-	${CC} ${LDFLAGS} ${CFLAGS} -o asm_msil.${EXT_SO} ${OBJ_MSIL}
+	${CC} $(call libname,asm_msil) ${LDFLAGS} ${CFLAGS} -o asm_msil.${EXT_SO} ${OBJ_MSIL}

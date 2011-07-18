@@ -1,6 +1,11 @@
 include config-user.mk
 include global.mk
 
+ifneq ($(shell tar --help|grep gnu.org),)
+TAR=tar -czv --format=posix -f
+else
+TAR=tar -czvf
+endif
 PWD=$(shell pwd)
 REMOTE=radare.org:/srv/http/radareorg/get/beta
 
@@ -112,7 +117,7 @@ dist:
 	VERSION=${VERSION} ; \
 	FILES=`hg st -mc .| cut -c 3-|sed -e s,^,radare2-${VERSION}/, | grep -v r2-bindings | grep -v '/\.'` ; \
 	cd .. && mv radare2 radare2-${VERSION} && \
-	tar czvf radare2-${VERSION}.tar.gz $${FILES} ;\
+	${TAR} radare2-${VERSION}.tar.gz $${FILES} ;\
 	mv radare2-${VERSION} radare2
 
 pub:
@@ -122,7 +127,7 @@ shot:
 	DATE=`date '+%Y%m%d'` ; \
 	FILES=`hg status -mc|cut -c 3-|sed -e s,^,radare2-$${DATE}/,`; \
 	cd .. && mv radare2 radare2-$${DATE} && \
-	tar czvf radare2-$${DATE}.tar.gz $${FILES} ;\
+	${TAR} radare2-$${DATE}.tar.gz $${FILES} ;\
 	mv radare2-$${DATE} radare2 && \
 	scp radare2-$${DATE}.tar.gz radare.org:/srv/http/radareorg/get/shot
 

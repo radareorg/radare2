@@ -21,4 +21,4 @@ LINKFLAGS+=${SSL_LDFLAGS}
 endif
 
 ${TARGET_HARET}: ${OBJ_HARET}
-	${CC} -shared ${CFLAGS} -o ${TARGET_HARET} ${OBJ_HARET} ${LINKFLAGS}
+	${CC} $(call libname,io_haret) ${CFLAGS} -o ${TARGET_HARET} ${OBJ_HARET} ${LINKFLAGS}

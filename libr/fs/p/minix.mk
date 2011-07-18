@@ -9,4 +9,4 @@ TARGET_MINIX=fs_minix.${EXT_SO}
 ALL_TARGETS+=${TARGET_MINIX}
 
 ${TARGET_MINIX}: ${OBJ_MINIX}
-	${CC} ${LDFLAGS} ${CFLAGS} -o ${TARGET_MINIX} ${OBJ_MINIX} ${EXTRA}
+	${CC} $(call libname,fs_minix) ${LDFLAGS} ${CFLAGS} -o ${TARGET_MINIX} ${OBJ_MINIX} ${EXTRA}

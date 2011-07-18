@@ -5,4 +5,4 @@ TARGET_W32DBG=io_w32dbg.${EXT_SO}
 ALL_TARGETS+=${TARGET_W32DBG}
 
 ${TARGET_W32DBG}: ${OBJ_W32DBG}
-	${CC} -shared ${CFLAGS} -o ${TARGET_W32DBG} ${OBJ_W32DBG}
+	${CC} $(call libname,io_w32dbg) ${CFLAGS} -o ${TARGET_W32DBG} ${OBJ_W32DBG}

@@ -9,4 +9,4 @@ TARGET_FAT=fs_fat.${EXT_SO}
 ALL_TARGETS+=${TARGET_FAT}
 
 ${TARGET_FAT}: ${OBJ_FAT}
-	${CC} ${LDFLAGS} ${CFLAGS} -o ${TARGET_FAT} ${OBJ_FAT} ${EXTRA}
+	${CC} $(call libname,fs_fat) ${LDFLAGS} ${CFLAGS} -o ${TARGET_FAT} ${OBJ_FAT} ${EXTRA}

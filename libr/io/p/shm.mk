@@ -15,4 +15,4 @@ LINKFLAGS+=-L.. -L../../lib -lr_lib -lr_io
 endif
 
 ${TARGET_SHM}: ${OBJ_SHM}
-	${CC} -shared ${CFLAGS} -o ${TARGET_SHM} ${OBJ_SHM} ${LINKFLAGS}
+	${CC} $(call libname,io_shm) ${CFLAGS} -o ${TARGET_SHM} ${OBJ_SHM} ${LINKFLAGS}

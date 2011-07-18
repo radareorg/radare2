@@ -367,7 +367,7 @@ int java_classdump(const char *file, int verbose) {
 	check_eof(fd);
 	V printf("Access flags: 0x%04x\n", cf2.access_flags);
 	this_class = r_ntohs(cf2.this_class);
-	V printf("This class: %d\n", cf2.this_class);
+	V printf("This class: %d\n", this_class);
 	check_eof(fd);
 	//printf("This class: %d (%s)\n", ntohs(cf2.this_class), cp_items[ntohs(cf2.this_class)-1].value); // XXX this is a double pointer !!1
 	//printf("Super class: %d (%s)\n", ntohs(cf2.super_class), cp_items[ntohs(cf2.super_class)-1].value);

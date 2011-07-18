@@ -14,4 +14,4 @@ TARGET_X86=asm_x86.${EXT_SO}
 ALL_TARGETS+=${TARGET_X86}
 
 ${TARGET_X86}: ${OBJ_X86}
-	${CC} ${LDFLAGS} ${CFLAGS} -o ${TARGET_X86} ${OBJ_X86}
+	${CC} $(call libname,asm_x86) ${LDFLAGS} ${CFLAGS} -o ${TARGET_X86} ${OBJ_X86}

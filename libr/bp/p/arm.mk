@@ -6,4 +6,4 @@ TARGET_ARM=bp_arm.${EXT_SO}
 ALL_TARGETS+=${TARGET_ARM}
 
 ${TARGET_ARM}: ${OBJ_ARM}
-	${CC} -shared ${CFLAGS} -o ${TARGET_ARM} ${OBJ_ARM}
+	${CC} $(call libname,bp_arm) ${CFLAGS} -o ${TARGET_ARM} ${OBJ_ARM}

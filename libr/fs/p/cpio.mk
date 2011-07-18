@@ -9,4 +9,4 @@ TARGET_CPIO=fs_cpio.${EXT_SO}
 ALL_TARGETS+=${TARGET_CPIO}
 
 ${TARGET_CPIO}: ${OBJ_CPIO}
-	${CC} ${LDFLAGS} ${CFLAGS} -o ${TARGET_CPIO} ${OBJ_CPIO} ${EXTRA}
+	${CC} $(call libname,fs_cpio) ${LDFLAGS} ${CFLAGS} -o ${TARGET_CPIO} ${OBJ_CPIO} ${EXTRA}

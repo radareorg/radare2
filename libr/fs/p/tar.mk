@@ -9,4 +9,4 @@ TARGET_TAR=fs_tar.${EXT_SO}
 ALL_TARGETS+=${TARGET_TAR}
 
 ${TARGET_TAR}: ${OBJ_TAR}
-	${CC} ${LDFLAGS} ${CFLAGS} -o ${TARGET_TAR} ${OBJ_TAR} ${EXTRA}
+	${CC} $(call libname,fs_tar) ${LDFLAGS} ${CFLAGS} -o ${TARGET_TAR} ${OBJ_TAR} ${EXTRA}

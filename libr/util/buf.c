@@ -69,10 +69,8 @@ R_API int r_buf_append_bytes(RBuffer *b, const ut8 *buf, int length) {
 
 static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, int write) {
 	int end;
-	if (addr == R_BUF_CUR)
-		addr = b->cur;
-	else addr -= b->base;
-	if (addr > b->length)
+	addr = (addr==R_BUF_CUR)? b->cur: addr-b->base;
+	if (dst == NULL || addr > b->length)
 		return -1;
  	end = (int)(addr+len);
 	if (end > b->length)

@@ -48,7 +48,7 @@ public class RAsm {
 	}
 
 	[CCode (cname="RAsmOp", destroy_function="", unref_function="")]
-	public class Op {
+	public struct Op {
 		public int inst_len;
 		public uint8 *buf;
 		public string buf_asm;

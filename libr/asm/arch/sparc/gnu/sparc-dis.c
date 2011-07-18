@@ -999,6 +999,7 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 	  if (opcode->flags & (F_UNBR|F_CONDBR|F_JSR))
 	    {
 		/* FIXME -- check is_annulled flag.  */
+	        if (is_annulled) { /* do nothing */ }
 	      if (opcode->flags & F_UNBR)
 		info->insn_type = dis_branch;
 	      if (opcode->flags & F_CONDBR)

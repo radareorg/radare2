@@ -6,7 +6,7 @@ ALL_TARGETS+=${TARGET_PTRACE}
 
 ${TARGET_PTRACE}: ${OBJ_PTRACE}
 	${CC} ${CFLAGS} -o ${TARGET_PTRACE} ${LDFLAGS_LIB} \
-		-shared \
+		$(call libname,io_ptrace) \
 		${LDFLAGS_LINKPATH}../../util -L../../util -lr_util \
 		${LDFLAGS_LINKPATH}.. -L.. -L../../lib -lr_lib -lr_io \
 		${OBJ_PTRACE}

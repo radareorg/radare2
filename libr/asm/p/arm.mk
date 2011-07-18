@@ -8,4 +8,4 @@ TARGET_ARM=asm_arm.${EXT_SO}
 ALL_TARGETS+=${TARGET_ARM}
 
 ${TARGET_ARM}: ${OBJ_ARM}
-	${CC} ${LDFLAGS} ${CFLAGS} -o asm_arm.${EXT_SO} ${OBJ_ARM}
+	${CC} $(call libname,asm_arm) ${LDFLAGS} ${CFLAGS} -o asm_arm.${EXT_SO} ${OBJ_ARM}

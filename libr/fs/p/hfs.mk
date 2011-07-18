@@ -9,4 +9,4 @@ TARGET_HFS=fs_hfs.${EXT_SO}
 ALL_TARGETS+=${TARGET_HFS}
 
 ${TARGET_HFS}: ${OBJ_HFS}
-	${CC} ${LDFLAGS} ${CFLAGS} -o ${TARGET_HFS} ${OBJ_HFS} ${EXTRA}
+	${CC} $(call libname,fs_hfs) ${LDFLAGS} ${CFLAGS} -o ${TARGET_HFS} ${OBJ_HFS} ${EXTRA}

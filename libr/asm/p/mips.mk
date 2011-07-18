@@ -9,4 +9,4 @@ ALL_TARGETS+=${TARGET_MIPS}
 STATIC_OBJ+=${OBJ_MIPS}
 
 ${TARGET_MIPS}: ${OBJ_MIPS}
-	${CC} ${LDFLAGS} ${CFLAGS} -o ${TARGET_MIPS} ${OBJ_MIPS}
+	${CC} $(call libname,asm_mips) ${LDFLAGS} ${CFLAGS} -o ${TARGET_MIPS} ${OBJ_MIPS}

@@ -6,5 +6,4 @@ TARGET_DEX=bin_dex.${EXT_SO}
 ALL_TARGETS+=${TARGET_DEX}
 
 ${TARGET_DEX}: ${OBJ_DEX}
-	${CC} -shared ${CFLAGS} -o ${TARGET_DEX} ${OBJ_DEX}
-	@#strip -s ${TARGET_DEX}
+	${CC} $(call libname,bin_dex) -shared ${CFLAGS} -o ${TARGET_DEX} ${OBJ_DEX}
