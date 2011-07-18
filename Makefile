@@ -1,7 +1,7 @@
 include config-user.mk
 include global.mk
 
-ifneq ($(shell tar --help|grep gnu.org),)
+ifneq ($(shell tar --help 2>/dev/null|grep gnu.org),)
 TAR=tar -czv --format=posix -f
 else
 TAR=tar -czvf
