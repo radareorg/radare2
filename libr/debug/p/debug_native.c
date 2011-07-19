@@ -197,6 +197,12 @@ static int r_debug_native_step(RDebug *dbg) {
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
 		ret = R_FALSE; /* do not wait for events */
 	} else ret = R_TRUE;
+#elif __FreeBSD__
+	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0);
+	if (ret != 0) {
+		perror ("native-singlestep");
+		ret = R_FALSE;
+	} else ret = R_TRUE;
 #else // linux
 	ut32 addr = 0; /* should be eip */
 	//ut32 data = 0;
@@ -220,7 +226,7 @@ static int r_debug_native_attach(RDebug *dbg, int pid) {
 		ret = w32_first_thread (pid);
 	} else ret = -1;
 	ret = w32_first_thread (pid);
-#elif __APPLE__
+#elif __APPLE__ || __FreeBSD__
 	ret = ptrace (PT_ATTACH, pid, 0, 0);
 	if (ret!=-1) {
 		perror ("ptrace(PT_ATTACH)");
@@ -238,7 +244,7 @@ static int r_debug_native_attach(RDebug *dbg, int pid) {
 static int r_debug_native_detach(int pid) {
 #if __WINDOWS__
 	return w32_detach (pid)? 0 : -1;
-#elif __APPLE__
+#elif __APPLE__ || __FreeBSD__
 	return ptrace (PT_DETACH, pid, NULL, 0);
 #else
 	return ptrace (PTRACE_DETACH, pid, NULL, NULL);
@@ -399,7 +405,7 @@ static const char *r_debug_native_reg_profile(RDebug *dbg) {
 	"gpr	mq	.32	152	0\n"
 	"gpr	vrsave	.32	156	0\n"
 	);
-#elif __i386__ && __OpenBSD__
+#elif __i386__ && (__OpenBSD__ || __NetBSD__)
 	return strdup (
 	"=pc	eip\n"
 	"=sp	esp\n"
@@ -408,16 +414,32 @@ static const char *r_debug_native_reg_profile(RDebug *dbg) {
 	"=a1	ebx\n"
 	"=a2	ecx\n"
 	"=a3	edi\n"
-// TODO: add ax, al, ah, ...
 	"gpr	eax	.32	0	0\n"
+	"gpr	ax	.16	0	0\n"
+	"gpr	ah	.8	0	0\n"
+	"gpr	al	.8	1	0\n"
 	"gpr	ecx	.32	4	0\n"
+	"gpr	cx	.16	4	0\n"
+	"gpr	ch	.8	4	0\n"
+	"gpr	cl	.8	5	0\n"
 	"gpr	edx	.32	8	0\n"
+	"gpr	dx	.16	8	0\n"
+	"gpr	dh	.8	8	0\n"
+	"gpr	dl	.8	9	0\n"
 	"gpr	ebx	.32	12	0\n"
+	"gpr	bx	.16	12	0\n"
+	"gpr	bh	.8	12	0\n"
+	"gpr	bl	.8	13	0\n"
 	"gpr	esp	.32	16	0\n"
+	"gpr	sp	.16	16	0\n"
 	"gpr	ebp	.32	20	0\n"
+	"gpr	bp	.16	20	0\n"
 	"gpr	esi	.32	24	0\n"
+	"gpr	si	.16	24	0\n"
 	"gpr	edi	.32	28	0\n"
+	"gpr	di	.16	28	0\n"
 	"gpr	eip	.32	32	0\n"
+	"gpr	ip	.16	32	0\n"
 	"gpr	eflags	.32	36	0	c1p.a.zstido.n.rv\n"
 	"seg	cs	.32	40	0\n"
 	"seg	ss	.32	44	0\n"
@@ -426,7 +448,53 @@ static const char *r_debug_native_reg_profile(RDebug *dbg) {
 	"seg	fs	.32	56	0\n"
 	"seg	gs	.32	60	0\n"
 // TODO: implement flags like in linux --those flags are wrong
-
+	);
+#elif __i386__ && __FreeBSD__
+	return strdup (
+	"=pc	eip\n"
+	"=sp	esp\n"
+	"=bp	ebp\n"
+	"=a0	eax\n"
+	"=a1	ebx\n"
+	"=a2	ecx\n"
+	"=a3	edi\n"
+	"seg	fs	.32	0	0\n"
+	"seg	es	.32	4	0\n"
+	"seg	ds	.32	8	0\n"
+	"gpr	edi	.32	12	0\n"
+	"gpr	di	.16	12	0\n"
+	"gpr	esi	.32	16	0\n"
+	"gpr	si	.16	16	0\n"
+	"gpr	ebp	.32	20	0\n"
+	"gpr	bp	.16	20	0\n"
+	"gpr	isp	.32	24	0\n"
+	"gpr	ebx	.32	28	0\n"
+	"gpr	bx	.16	28	0\n"
+	"gpr	bh	.8	28	0\n"
+	"gpr	bl	.8	29	0\n"
+	"gpr	edx	.32	32	0\n"
+	"gpr	dx	.16	32	0\n"
+	"gpr	dh	.8	32	0\n"
+	"gpr	dl	.8	33	0\n"
+	"gpr	ecx	.32	36	0\n"
+	"gpr	cx	.16	36	0\n"
+	"gpr	ch	.8	36	0\n"
+	"gpr	cl	.8	37	0\n"
+	"gpr	eax	.32	40	0\n"
+	"gpr	ax	.16	40	0\n"
+	"gpr	ah	.8	40	0\n"
+	"gpr	al	.8	41	0\n"
+	"gpr	trapno	.32	44	0\n"
+	"gpr	err	.32	48	0\n"
+	"gpr	eip	.32	52	0\n"
+	"gpr	ip	.16	52	0\n"
+	"seg	cs	.32	56	0\n"
+	"gpr	eflags	.32	60	0	c1p.a.zstido.n.rv\n"
+	"gpr	esp	.32	64	0\n"
+	"gpr	sp	.16	64	0\n"
+	"seg	ss	.32	68	0\n"
+	"seg	gs	.32	72	0\n"
+// TODO: implement flags like in linux --those flags are wrong
 	);
 #elif __i386__
 	return strdup (
@@ -529,7 +597,7 @@ static const char *r_debug_native_reg_profile(RDebug *dbg) {
 	"drx	dr7	.32	28	0\n"
 #endif
 	);
-#elif __x86_64__  && __OpenBSD__
+#elif __x86_64__  && (__OpenBSD__ || __NetBSD__)
 	return strdup (
 	"=pc	rip\n"
 	"=sp	rsp\n"
@@ -569,6 +637,43 @@ static const char *r_debug_native_reg_profile(RDebug *dbg) {
 	"drx	dr3	.32	12	0\n"
 	"drx	dr6	.32	24	0\n"
 	"drx	dr7	.32	28	0\n"
+	);
+#elif __x86_64__  && __FreeBSD__
+	return strdup (
+	"=pc	rip\n"
+	"=sp	rsp\n"
+	"=bp	rbp\n"
+	"=a0	rax\n"
+	"=a1	rbx\n"
+	"=a2	rcx\n"
+	"=a3	rdx\n"
+	"# no profile defined for x86-64\n"
+	"gpr	r15	.64	0	0\n"
+	"gpr	r14	.64	8	0\n"
+	"gpr	r13	.64	16	0\n"
+	"gpr	r12	.64	24	0\n"
+	"gpr	r11	.64	32	0\n"
+	"gpr	r10	.64	40	0\n"
+	"gpr	r9	.64	48	0\n"
+	"gpr	r8	.64	56	0\n"
+	"gpr	rdi	.64	64	0\n"
+	"gpr	rsi	.64	72	0\n"
+	"gpr	rbp	.64	80	0\n"
+	"gpr	rbx	.64	88	0\n"
+	"gpr	rdx	.64	96	0\n"
+	"gpr	rcx	.64	104	0\n"
+	"gpr	rax	.64	112	0\n"
+	"gpr	trapno	.32	120	0\n"
+	"seg	fs	.16	124	0\n"
+	"seg	gs	.16	128	0\n"
+	"gpr	err	.32	130	0\n"
+	"seg	es	.16	134	0\n"
+	"seg	ds	.16	136	0\n"
+	"gpr	rip	.64	138	0\n"
+	"seg	cs	.64	142	0\n"
+	"gpr	rflags	.64	150	0	c1p.a.zstido.n.rv\n"
+	"gpr	rsp	.64	158	0\n"
+	"seg	ss	.64	166	0\n"
 	);
 #elif __x86_64__ && __linux__
 	return strdup (
@@ -1046,8 +1151,10 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 		R_DEBUG_REG_T regs;
 		memset (&regs, 0, sizeof (regs));
 		memset (buf, 0, size);
-#if __NetBSD__ || __FreeBSD__ || __OpenBSD__
+#if __NetBSD__ || __OpenBSD__
 		ret = ptrace (PTRACE_GETREGS, pid, &regs, sizeof (regs));
+#elif __FreeBSD__
+		ret = ptrace(PT_GETREGS, pid, (caddr_t)&regs, 0);
 #elif __linux__ && __powerpc__
 		ret = ptrace (PTRACE_GETREGS, pid, &regs, NULL);
 #else
@@ -1074,7 +1181,7 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 	// XXX use switch or so
 	if (type == R_REG_TYPE_DRX) {
 #ifdef __FreeBSD__
-		return (0 == ptrace (PT_SETDBREGS, dbg->pid, buf, sizeof (struct dbreg)));
+		return (0 == ptrace (PT_SETDBREGS, pid, buf, sizeof (struct dbreg)));
 #elif __linux__
 		{
 		int i;

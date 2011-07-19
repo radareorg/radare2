@@ -189,9 +189,11 @@ static int fork_and_ptraceme(const char *cmd) {
 		perror ("fork_and_ptraceme");
 		break;
 	case 0:
+#if __APPLE__
+		signal (SIGTRAP, SIG_IGN); //NEED BY STEP 
+#endif
 #if __APPLE__ || __BSD__
 /* we can probably remove this #if..as long as PT_TRACE_ME is redefined for OSX in r_debug.h */
-		signal (SIGTRAP, SIG_IGN); // SINO NO FUNCIONA EL STEP
 		signal (SIGABRT, inferior_abort_handler);
 		if (ptrace (PT_TRACE_ME, 0, 0, 0) != 0) {
 #else
