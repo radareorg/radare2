@@ -132,5 +132,20 @@ work and then export all those patchsets like this:
 
 TODO: explain binary patchsets and how to dump a full branch
 
+HOW TO RELEASE 
+--------------
+
+ - Set RELEASE=1 in global.mk and r2-bindings/config.mk.acr
+
+  == RADARE2
+   - bump revision
+   - ./configure
+   - make dist
+
+  == R2-BINDINGS
+   - ./configure --enable-devel
+   - make
+   - make dist
+
 
 --pancake

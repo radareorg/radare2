@@ -1,10 +1,16 @@
 #!/bin/sh
 
+pfx=$1
+if [ -z "$pfx" ]; then
+	echo "Usage: ./env.sh [path-to-prefix]"
+	exit 1
+fi
+
 new_env='
-LIBR_PLUGINS=$PWD/prefix/lib/radare2
-PATH=$PATH:$PWD/prefix/bin
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/prefix/lib
-DYLD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/prefix/lib
+LIBR_PLUGINS=${pfx}/lib/radare2
+PATH=$pfx/bin:${PATH}
+LD_LIBRARY_PATH=$pfx/lib:$LD_LIBRARY_PATH
+DYLD_LIBRARY_PATH=$pfx/lib:$LD_LIBRARY_PATH
 PKG_CONFIG_PATH=$PWD/libr/
 '
 
