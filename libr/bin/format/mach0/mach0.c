@@ -49,8 +49,7 @@ static int MACH0_(r_bin_mach0_init_hdr)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	return R_TRUE;
 }
 
-static int MACH0_(r_bin_mach0_parse_seg)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off)
-{
+static int MACH0_(r_bin_mach0_parse_seg)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off) {
 	int seg, sect, len;
 
 	seg = bin->nsegs - 1;
@@ -64,13 +63,13 @@ static int MACH0_(r_bin_mach0_parse_seg)(struct MACH0_(r_bin_mach0_obj_t)* bin, 
 	len = r_buf_fread_at (bin->b, off, (ut8*)&bin->segs[seg], bin->endian?"2I16c8I":"2i16c8i", 1);
 #endif
 	if (len == -1) {
-		eprintf("Error: read (seg)\n");
+		eprintf ("Error: read (seg)\n");
 		return R_FALSE;
 	}
 	if (bin->segs[seg].nsects > 0) {
 		sect = bin->nsects;
 		bin->nsects += bin->segs[seg].nsects;
-		if (!(bin->sects = realloc(bin->sects, bin->nsects * sizeof(struct MACH0_(section))))) {
+		if (!(bin->sects = realloc (bin->sects, bin->nsects * sizeof (struct MACH0_(section))))) {
 			perror("realloc (sects)");
 			return R_FALSE;
 		}
@@ -82,15 +81,14 @@ static int MACH0_(r_bin_mach0_parse_seg)(struct MACH0_(r_bin_mach0_obj_t)* bin, 
 				(ut8*)&bin->sects[sect], bin->endian?"16c16c9I":"16c16c9i", bin->nsects - sect);
 #endif
 		if (len == -1) {
-			eprintf("Error: read (sects)\n");
+			eprintf ("Error: read (sects)\n");
 			return R_FALSE;
 		}
 	}
 	return R_TRUE;
 }
 
-static int MACH0_(r_bin_mach0_parse_symtab)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off)
-{
+static int MACH0_(r_bin_mach0_parse_symtab)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off) {
 	struct symtab_command st;
 	int len;
 
@@ -129,8 +127,7 @@ static int MACH0_(r_bin_mach0_parse_symtab)(struct MACH0_(r_bin_mach0_obj_t)* bi
 	return R_TRUE;
 }
 
-static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off)
-{
+static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off) {
 	int len;
 
 	len = r_buf_fread_at(bin->b, off, (ut8*)&bin->dysymtab, bin->endian?"20I":"20i", 1);
@@ -186,8 +183,7 @@ static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* 
 	return R_TRUE;
 }
 
-static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off)
-{
+static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off) {
 	int len = -1;
 
 	len = r_buf_fread_at(bin->b, off, (ut8*)&bin->thread, bin->endian?"4I":"4i", 1);
@@ -248,8 +244,7 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 	return R_TRUE;
 }
 
-static int MACH0_(r_bin_mach0_parse_dylib)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off)
-{
+static int MACH0_(r_bin_mach0_parse_dylib)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off) {
 	struct dylib_command dl;
 	int lib, len;
 
@@ -270,8 +265,7 @@ static int MACH0_(r_bin_mach0_parse_dylib)(struct MACH0_(r_bin_mach0_obj_t)* bin
 	return R_TRUE;
 }
 
-static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
-{
+static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	struct load_command lc = {0, 0};
 	ut64 off = 0LL;
 	int i, len;
@@ -315,8 +309,7 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 	return R_TRUE;
 }
 
-static int MACH0_(r_bin_mach0_init)(struct MACH0_(r_bin_mach0_obj_t)* bin)
-{
+static int MACH0_(r_bin_mach0_init)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	if (!MACH0_(r_bin_mach0_init_hdr)(bin)) {
 		eprintf ("Warning: File is not MACH0\n");
 		return R_FALSE;
@@ -326,8 +319,7 @@ static int MACH0_(r_bin_mach0_init)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 	return R_TRUE;
 }
 
-void* MACH0_(r_bin_mach0_free)(struct MACH0_(r_bin_mach0_obj_t)* bin)
-{
+void* MACH0_(r_bin_mach0_free)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	if (!bin)
 		return NULL;
 	if (bin->segs)
@@ -352,8 +344,7 @@ void* MACH0_(r_bin_mach0_free)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 	return NULL;
 }
 
-struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new)(const char* file)
-{
+struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new)(const char* file) {
 	struct MACH0_(r_bin_mach0_obj_t) *bin;
 	ut8 *buf;
 
@@ -372,8 +363,7 @@ struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new)(const char* file)
 	return bin;
 }
 
-struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new_buf)(struct r_buf_t *buf)
-{
+struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new_buf)(struct r_buf_t *buf) {
 	struct MACH0_(r_bin_mach0_obj_t) *bin;
 
 	if (!(bin = malloc(sizeof(struct MACH0_(r_bin_mach0_obj_t)))))
@@ -386,11 +376,10 @@ struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new_buf)(struct r_buf_t *bu
 	return bin;
 }
 
-struct r_bin_mach0_section_t* MACH0_(r_bin_mach0_get_sections)(struct MACH0_(r_bin_mach0_obj_t)* bin)
-{
+struct r_bin_mach0_section_t* MACH0_(r_bin_mach0_get_sections)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	struct r_bin_mach0_section_t *sections;
 	char segname[17], sectname[17];
-	int i;
+	int i, j;
 
 	if (!bin->sects)
 		return NULL;
@@ -405,7 +394,13 @@ struct r_bin_mach0_section_t* MACH0_(r_bin_mach0_get_sections)(struct MACH0_(r_b
 		segname[16] = sectname[16] = '\0';
 		memcpy(segname, bin->sects[i].segname, 16);
 		memcpy(sectname, bin->sects[i].sectname, 16);
-		snprintf(sections[i].name, R_BIN_MACH0_STRING_LENGTH, "%s:%s", segname, sectname);
+		for (j=0;j<bin->nsegs;j++) {
+			if (!strcmp (bin->segs[j].segname, segname)) {
+				sections[i].srwx = bin->segs[j].initprot;
+				break;
+			}
+		}
+		snprintf (sections[i].name, sizeof (sections[i].name), "%s.%s", segname, sectname);
 		sections[i].last = 0;
 	}
 	sections[i].last = 1;
@@ -440,8 +435,7 @@ struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin
 			if (stridx>=0 && stridx<bin->symstrlen)
 				symstr = (char*)bin->symstr+stridx;
 			else symstr = "???";
-			strncpy(symbols[j].name, symstr,
-R_BIN_MACH0_STRING_LENGTH);
+			strncpy (symbols[j].name, symstr, R_BIN_MACH0_STRING_LENGTH);
 			symbols[j].last = 0;
 		}
 	}
@@ -449,8 +443,7 @@ R_BIN_MACH0_STRING_LENGTH);
 	return symbols;
 }
 
-static void MACH0_(r_bin_mach0_parse_import)(struct MACH0_(r_bin_mach0_obj_t)* bin, struct r_bin_mach0_import_t *import, int idx, int lazy)
-{
+static void MACH0_(r_bin_mach0_parse_import)(struct MACH0_(r_bin_mach0_obj_t)* bin, struct r_bin_mach0_import_t *import, int idx, int lazy) {
 	char sectname[17];
 	int i, j, sym, nsyms, wordsize, stridx;
 	const char *symstr;
@@ -506,8 +499,7 @@ static void MACH0_(r_bin_mach0_parse_import)(struct MACH0_(r_bin_mach0_obj_t)* b
 	}
 }
 
-struct r_bin_mach0_import_t* MACH0_(r_bin_mach0_get_imports)(struct MACH0_(r_bin_mach0_obj_t)* bin)
-{
+struct r_bin_mach0_import_t* MACH0_(r_bin_mach0_get_imports)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	struct r_bin_mach0_import_t *imports;
 	int i, j;
 
@@ -524,8 +516,7 @@ struct r_bin_mach0_import_t* MACH0_(r_bin_mach0_get_imports)(struct MACH0_(r_bin
 	return imports;
 }
 
-struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bin_mach0_obj_t)* bin)
-{
+struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	struct r_bin_mach0_addr_t *entry;
 	int i;
 
@@ -546,8 +537,7 @@ struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bi
 	return entry;
 }
 
-struct r_bin_mach0_lib_t* MACH0_(r_bin_mach0_get_libs)(struct MACH0_(r_bin_mach0_obj_t)* bin)
-{
+struct r_bin_mach0_lib_t* MACH0_(r_bin_mach0_get_libs)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	struct r_bin_mach0_lib_t *libs;
 	int i;
 
@@ -564,13 +554,11 @@ struct r_bin_mach0_lib_t* MACH0_(r_bin_mach0_get_libs)(struct MACH0_(r_bin_mach0
 	return libs;
 }
 
-ut64 MACH0_(r_bin_mach0_get_baddr)(struct MACH0_(r_bin_mach0_obj_t)* bin)
-{
+ut64 MACH0_(r_bin_mach0_get_baddr)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	return UT64_MIN;
 }
 
-char* MACH0_(r_bin_mach0_get_class)(struct MACH0_(r_bin_mach0_obj_t)* bin)
-{
+char* MACH0_(r_bin_mach0_get_class)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 #if R_BIN_MACH064
 	return r_str_dup_printf ("MACH064");
 #else
@@ -578,8 +566,7 @@ char* MACH0_(r_bin_mach0_get_class)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 #endif
 }
 
-int MACH0_(r_bin_mach0_get_bits)(struct MACH0_(r_bin_mach0_obj_t)* bin)
-{
+int MACH0_(r_bin_mach0_get_bits)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 #if R_BIN_MACH064
 	return 64;
 #else
@@ -587,27 +574,26 @@ int MACH0_(r_bin_mach0_get_bits)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 #endif
 }
 
-int MACH0_(r_bin_mach0_is_big_endian)(struct MACH0_(r_bin_mach0_obj_t)* bin)
-{
+int MACH0_(r_bin_mach0_is_big_endian)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	return bin->endian;
 }
 
 char* MACH0_(r_bin_mach0_get_cputype)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	switch (bin->hdr.cputype) {
-	case CPU_TYPE_VAX: 		return r_str_dup_printf ("vax");
+	case CPU_TYPE_VAX: 	return r_str_dup_printf ("vax");
 	case CPU_TYPE_MC680x0:	return r_str_dup_printf ("mc680x0");
 	case CPU_TYPE_I386:
 	case CPU_TYPE_X86_64:	return r_str_dup_printf ("x86");
 	case CPU_TYPE_MC88000:	return r_str_dup_printf ("mc88000");
 	case CPU_TYPE_MC98000:	return r_str_dup_printf ("mc98000");
-	case CPU_TYPE_HPPA:		return r_str_dup_printf ("hppa");
-	case CPU_TYPE_ARM:		return r_str_dup_printf ("arm");
+	case CPU_TYPE_HPPA:	return r_str_dup_printf ("hppa");
+	case CPU_TYPE_ARM:	return r_str_dup_printf ("arm");
 	case CPU_TYPE_SPARC:	return r_str_dup_printf ("sparc");
-	case CPU_TYPE_MIPS:		return r_str_dup_printf ("mips");
-	case CPU_TYPE_I860:		return r_str_dup_printf ("i860");
+	case CPU_TYPE_MIPS:	return r_str_dup_printf ("mips");
+	case CPU_TYPE_I860:	return r_str_dup_printf ("i860");
 	case CPU_TYPE_POWERPC:
 	case CPU_TYPE_POWERPC64:return r_str_dup_printf ("ppc");
-	default:				return r_str_dup_printf ("unknown");
+	default:		return r_str_dup_printf ("unknown");
 	}
 }
 
@@ -615,88 +601,88 @@ char* MACH0_(r_bin_mach0_get_cpusubtype)(struct MACH0_(r_bin_mach0_obj_t)* bin) 
 	switch (bin->hdr.cputype) {
 	case CPU_TYPE_VAX:
 		switch (bin->hdr.cpusubtype) {
-		case CPU_SUBTYPE_VAX_ALL:		return r_str_dup_printf ("all");
-		case CPU_SUBTYPE_VAX780:		return r_str_dup_printf ("vax780");
-		case CPU_SUBTYPE_VAX785:		return r_str_dup_printf ("vax785");
-		case CPU_SUBTYPE_VAX750:		return r_str_dup_printf ("vax750");
-		case CPU_SUBTYPE_VAX730:		return r_str_dup_printf ("vax730");
-		case CPU_SUBTYPE_UVAXI:			return r_str_dup_printf ("uvaxI");
-		case CPU_SUBTYPE_UVAXII:		return r_str_dup_printf ("uvaxII");
-		case CPU_SUBTYPE_VAX8200:		return r_str_dup_printf ("vax8200");
-		case CPU_SUBTYPE_VAX8500:		return r_str_dup_printf ("vax8500");
-		case CPU_SUBTYPE_VAX8600:		return r_str_dup_printf ("vax8600");
-		case CPU_SUBTYPE_VAX8650:		return r_str_dup_printf ("vax8650");
-		case CPU_SUBTYPE_VAX8800:		return r_str_dup_printf ("vax8800");
-		case CPU_SUBTYPE_UVAXIII:		return r_str_dup_printf ("uvaxIII");
-		default:						return r_str_dup_printf ("Unknown vax subtype");
+		case CPU_SUBTYPE_VAX_ALL:	return r_str_dup_printf ("all");
+		case CPU_SUBTYPE_VAX780:	return r_str_dup_printf ("vax780");
+		case CPU_SUBTYPE_VAX785:	return r_str_dup_printf ("vax785");
+		case CPU_SUBTYPE_VAX750:	return r_str_dup_printf ("vax750");
+		case CPU_SUBTYPE_VAX730:	return r_str_dup_printf ("vax730");
+		case CPU_SUBTYPE_UVAXI:		return r_str_dup_printf ("uvaxI");
+		case CPU_SUBTYPE_UVAXII:	return r_str_dup_printf ("uvaxII");
+		case CPU_SUBTYPE_VAX8200:	return r_str_dup_printf ("vax8200");
+		case CPU_SUBTYPE_VAX8500:	return r_str_dup_printf ("vax8500");
+		case CPU_SUBTYPE_VAX8600:	return r_str_dup_printf ("vax8600");
+		case CPU_SUBTYPE_VAX8650:	return r_str_dup_printf ("vax8650");
+		case CPU_SUBTYPE_VAX8800:	return r_str_dup_printf ("vax8800");
+		case CPU_SUBTYPE_UVAXIII:	return r_str_dup_printf ("uvaxIII");
+		default:			return r_str_dup_printf ("Unknown vax subtype");
 		}
 	case CPU_TYPE_MC680x0:
 		switch (bin->hdr.cpusubtype) {
-		case CPU_SUBTYPE_MC68030:		return r_str_dup_printf ("mc68030");
-		case CPU_SUBTYPE_MC68040:		return r_str_dup_printf ("mc68040");
+		case CPU_SUBTYPE_MC68030:	return r_str_dup_printf ("mc68030");
+		case CPU_SUBTYPE_MC68040:	return r_str_dup_printf ("mc68040");
 		case CPU_SUBTYPE_MC68030_ONLY:	return r_str_dup_printf ("mc68030 only");
-		default:						return r_str_dup_printf ("Unknown mc680x0 subtype");
+		default:			return r_str_dup_printf ("Unknown mc680x0 subtype");
 		}
 	case CPU_TYPE_I386:
 		switch (bin->hdr.cpusubtype) {
-		case CPU_SUBTYPE_386: 				return r_str_dup_printf ("386");
-		case CPU_SUBTYPE_486: 				return r_str_dup_printf ("486");
-		case CPU_SUBTYPE_486SX: 			return r_str_dup_printf ("486sx");
-		case CPU_SUBTYPE_PENT: 				return r_str_dup_printf ("Pentium");
-		case CPU_SUBTYPE_PENTPRO: 			return r_str_dup_printf ("Pentium Pro");
+		case CPU_SUBTYPE_386: 			return r_str_dup_printf ("386");
+		case CPU_SUBTYPE_486: 			return r_str_dup_printf ("486");
+		case CPU_SUBTYPE_486SX: 		return r_str_dup_printf ("486sx");
+		case CPU_SUBTYPE_PENT: 			return r_str_dup_printf ("Pentium");
+		case CPU_SUBTYPE_PENTPRO: 		return r_str_dup_printf ("Pentium Pro");
 		case CPU_SUBTYPE_PENTII_M3: 		return r_str_dup_printf ("Pentium 3 M3");
 		case CPU_SUBTYPE_PENTII_M5: 		return r_str_dup_printf ("Pentium 3 M5");
-		case CPU_SUBTYPE_CELERON: 			return r_str_dup_printf ("Celeron");
+		case CPU_SUBTYPE_CELERON: 		return r_str_dup_printf ("Celeron");
 		case CPU_SUBTYPE_CELERON_MOBILE:	return r_str_dup_printf ("Celeron Mobile");
-		case CPU_SUBTYPE_PENTIUM_3:			return r_str_dup_printf ("Pentium 3");
+		case CPU_SUBTYPE_PENTIUM_3:		return r_str_dup_printf ("Pentium 3");
 		case CPU_SUBTYPE_PENTIUM_3_M:		return r_str_dup_printf ("Pentium 3 M");
 		case CPU_SUBTYPE_PENTIUM_3_XEON:	return r_str_dup_printf ("Pentium 3 Xeon");
-		case CPU_SUBTYPE_PENTIUM_M:			return r_str_dup_printf ("Pentium Mobile");
-		case CPU_SUBTYPE_PENTIUM_4:			return r_str_dup_printf ("Pentium 4");
+		case CPU_SUBTYPE_PENTIUM_M:		return r_str_dup_printf ("Pentium Mobile");
+		case CPU_SUBTYPE_PENTIUM_4:		return r_str_dup_printf ("Pentium 4");
 		case CPU_SUBTYPE_PENTIUM_4_M:		return r_str_dup_printf ("Pentium 4 M");
-		case CPU_SUBTYPE_ITANIUM:			return r_str_dup_printf ("Itanium");
-		case CPU_SUBTYPE_ITANIUM_2:			return r_str_dup_printf ("Itanium 2");
-		case CPU_SUBTYPE_XEON:				return r_str_dup_printf ("Xeon");
-		case CPU_SUBTYPE_XEON_MP:			return r_str_dup_printf ("Xeon MP");
-		default:							return r_str_dup_printf ("Unknown i386 subtype");
+		case CPU_SUBTYPE_ITANIUM:		return r_str_dup_printf ("Itanium");
+		case CPU_SUBTYPE_ITANIUM_2:		return r_str_dup_printf ("Itanium 2");
+		case CPU_SUBTYPE_XEON:			return r_str_dup_printf ("Xeon");
+		case CPU_SUBTYPE_XEON_MP:		return r_str_dup_printf ("Xeon MP");
+		default:				return r_str_dup_printf ("Unknown i386 subtype");
 		}
 	case CPU_TYPE_X86_64:
 		switch (bin->hdr.cpusubtype) {
-		case CPU_SUBTYPE_X86_64_ALL:		return r_str_dup_printf ("x86 64 all");
-		case CPU_SUBTYPE_X86_ARCH1:			return r_str_dup_printf ("x86 arch 1");
-		default:							return r_str_dup_printf ("Unknown x86 subtype");
+		case CPU_SUBTYPE_X86_64_ALL:	return r_str_dup_printf ("x86 64 all");
+		case CPU_SUBTYPE_X86_ARCH1:	return r_str_dup_printf ("x86 arch 1");
+		default:			return r_str_dup_printf ("Unknown x86 subtype");
 		}
 	case CPU_TYPE_MC88000:
 		switch (bin->hdr.cpusubtype) {
 		case CPU_SUBTYPE_MC88000_ALL:	return r_str_dup_printf ("all");
-		case CPU_SUBTYPE_MC88100:		return r_str_dup_printf ("mc88100");
-		case CPU_SUBTYPE_MC88110:		return r_str_dup_printf ("mc88110");
-		default:						return r_str_dup_printf ("Unknown mc88000 subtype");
+		case CPU_SUBTYPE_MC88100:	return r_str_dup_printf ("mc88100");
+		case CPU_SUBTYPE_MC88110:	return r_str_dup_printf ("mc88110");
+		default:			return r_str_dup_printf ("Unknown mc88000 subtype");
 		}
 	case CPU_TYPE_MC98000:
 		switch (bin->hdr.cpusubtype) {
 		case CPU_SUBTYPE_MC98000_ALL:	return r_str_dup_printf ("all");
-		case CPU_SUBTYPE_MC98601:		return r_str_dup_printf ("mc98601");
-		default:						return r_str_dup_printf ("Unknown mc98000 subtype");
+		case CPU_SUBTYPE_MC98601:	return r_str_dup_printf ("mc98601");
+		default:			return r_str_dup_printf ("Unknown mc98000 subtype");
 		}
 	case CPU_TYPE_HPPA:
 		switch (bin->hdr.cpusubtype) {
-		case CPU_SUBTYPE_HPPA_7100:		return r_str_dup_printf ("hppa7100");
+		case CPU_SUBTYPE_HPPA_7100:	return r_str_dup_printf ("hppa7100");
 		case CPU_SUBTYPE_HPPA_7100LC:	return r_str_dup_printf ("hppa7100LC");
-		default:						return r_str_dup_printf ("Unknown hppa subtype");
+		default:			return r_str_dup_printf ("Unknown hppa subtype");
 		}
 	case CPU_TYPE_ARM:
 		switch (bin->hdr.cpusubtype) {
-		default:						return r_str_dup_printf ("Unknown arm subtype");
+		default:			return r_str_dup_printf ("Unknown arm subtype");
 		}
 	case CPU_TYPE_SPARC:
 		switch (bin->hdr.cpusubtype) {
 		case CPU_SUBTYPE_SPARC_ALL:		return r_str_dup_printf ("all");
-		default:						return r_str_dup_printf ("Unknown sparc subtype");
+		default:				return r_str_dup_printf ("Unknown sparc subtype");
 		}
 	case CPU_TYPE_MIPS:
 		switch (bin->hdr.cpusubtype) {
-		case CPU_SUBTYPE_MIPS_ALL:		return r_str_dup_printf ("all");
+		case CPU_SUBTYPE_MIPS_ALL:	return r_str_dup_printf ("all");
 		case CPU_SUBTYPE_MIPS_R2300:	return r_str_dup_printf ("r2300");
 		case CPU_SUBTYPE_MIPS_R2600:	return r_str_dup_printf ("r2600");
 		case CPU_SUBTYPE_MIPS_R2800:	return r_str_dup_printf ("r2800");
@@ -704,13 +690,13 @@ char* MACH0_(r_bin_mach0_get_cpusubtype)(struct MACH0_(r_bin_mach0_obj_t)* bin) 
 		case CPU_SUBTYPE_MIPS_R2000:	return r_str_dup_printf ("r2000");
 		case CPU_SUBTYPE_MIPS_R3000a:	return r_str_dup_printf ("r3000a");
 		case CPU_SUBTYPE_MIPS_R3000:	return r_str_dup_printf ("r3000");
-		default:						return r_str_dup_printf ("Unknown mips subtype");
+		default:			return r_str_dup_printf ("Unknown mips subtype");
 		}
 	case CPU_TYPE_I860:
 		switch (bin->hdr.cpusubtype) {
-		case CPU_SUBTYPE_I860_ALL:		return r_str_dup_printf ("all");
-		case CPU_SUBTYPE_I860_860:		return r_str_dup_printf ("860");
-		default:						return r_str_dup_printf ("Unknown i860 subtype");
+		case CPU_SUBTYPE_I860_ALL:	return r_str_dup_printf ("all");
+		case CPU_SUBTYPE_I860_860:	return r_str_dup_printf ("860");
+		default:			return r_str_dup_printf ("Unknown i860 subtype");
 		}
 	case CPU_TYPE_POWERPC:
 	case CPU_TYPE_POWERPC64:
@@ -728,7 +714,7 @@ char* MACH0_(r_bin_mach0_get_cpusubtype)(struct MACH0_(r_bin_mach0_obj_t)* bin) 
 		case CPU_SUBTYPE_POWERPC_7400:	return r_str_dup_printf ("7400");
 		case CPU_SUBTYPE_POWERPC_7450:	return r_str_dup_printf ("7450");
 		case CPU_SUBTYPE_POWERPC_970:	return r_str_dup_printf ("970");
-		default:						return r_str_dup_printf ("Unknown ppc subtype");
+		default:			return r_str_dup_printf ("Unknown ppc subtype");
 		}
 	default:
 		return r_str_dup_printf ("Unknown cputype");
@@ -745,8 +731,8 @@ char* MACH0_(r_bin_mach0_get_filetype)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	case MH_DYLIB:		return r_str_dup_printf ("Dynamically bound shared library");
 	case MH_DYLINKER:	return r_str_dup_printf ("Dynamic link editor");
 	case MH_BUNDLE:		return r_str_dup_printf ("Dynamically bound bundle file");
-	case MH_DYLIB_STUB: return r_str_dup_printf ("Shared library stub for static linking (no sections)");
+	case MH_DYLIB_STUB:	return r_str_dup_printf ("Shared library stub for static linking (no sections)");
 	case MH_DSYM:		return r_str_dup_printf ("Companion file with only debug sections");
-	default:			return r_str_dup_printf ("Unknown");
+	default:		return r_str_dup_printf ("Unknown");
 	}
 }

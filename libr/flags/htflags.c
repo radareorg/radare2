@@ -177,6 +177,7 @@ R_API void r_flag_item_set_name(RFlagItem *item, const char *name) {
 	strncpy (item->name, name, R_FLAG_NAME_SIZE);
 	len = R_MIN (R_FLAG_NAME_SIZE, strlen (r_str_chop (item->name)) + 1);
 	memmove (item->name, r_str_chop (item->name), len);
+	r_name_filter (item->name, 0);
 	item->name[R_FLAG_NAME_SIZE-1]='\0';
 	item->namehash = r_str_hash64 (item->name);
 }

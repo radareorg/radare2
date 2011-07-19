@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<@nopcode.org> */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -60,7 +60,7 @@ static RList* sections(RBinArch *arch) {
 		ptr->vsize = sections[i].size;
 		ptr->offset = sections[i].offset;
 		ptr->rva = sections[i].addr;
-		ptr->srwx = 0;
+		ptr->srwx = sections[i].srwx;
 		r_list_append (ret, ptr);
 	}
 	free (sections);

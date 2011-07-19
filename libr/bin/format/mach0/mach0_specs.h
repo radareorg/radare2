@@ -484,7 +484,7 @@ union lc_str {
 struct segment_command { /* for 32-bit architectures */
 	ut32	cmd;		/* LC_SEGMENT */
 	ut32	cmdsize;	/* includes sizeof section structs */
-	char		segname[16];	/* segment name */
+	char	segname[16];	/* segment name */
 	ut32	vmaddr;		/* memory address of this segment */
 	ut32	vmsize;		/* memory size of this segment */
 	ut32	fileoff;	/* file offset of this segment */
@@ -504,7 +504,7 @@ struct segment_command { /* for 32-bit architectures */
 struct segment_command_64 { /* for 64-bit architectures */
 	ut32	cmd;		/* LC_SEGMENT_64 */
 	ut32	cmdsize;	/* includes sizeof section_64 structs */
-	char		segname[16];	/* segment name */
+	char	segname[16];	/* segment name */
 	ut64	vmaddr;		/* memory address of this segment */
 	ut64	vmsize;		/* memory size of this segment */
 	ut64	fileoff;	/* file offset of this segment */

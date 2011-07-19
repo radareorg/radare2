@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010 nibble at develsec.org */
+/* radare - LGPL - Copyright 2010-2011 nibble at develsec.org */
 
 #include <r_types.h>
 #include "mach0_specs.h"
@@ -21,6 +21,7 @@ struct r_bin_mach0_section_t {
 	ut64 size;
 	ut32 align;
 	ut32 flags;
+	int srwx;
 	char name[R_BIN_MACH0_STRING_LENGTH];
 	int last;
 };
@@ -52,7 +53,6 @@ struct r_bin_mach0_lib_t {
 	char name[R_BIN_MACH0_STRING_LENGTH];
 	int last;
 };
-
 #endif
 
 struct MACH0_(r_bin_mach0_obj_t) {
@@ -83,10 +83,10 @@ struct MACH0_(r_bin_mach0_obj_t) {
 	char (*libs)[R_BIN_MACH0_STRING_LENGTH];
 	int nlibs;
 	int size;
-    ut64 baddr;
-    ut64 entry;
+	ut64 baddr;
+	ut64 entry;
 	int	endian;
-    const char* file;
+	const char* file;
 	struct r_buf_t* b;
 };
 

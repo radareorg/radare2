@@ -52,8 +52,8 @@ R_API int r_name_filter(char *name, int maxlen) {
 	int i;
 	char *oname;
 	name = oname = r_str_trim (name);
-	for (i=0; *name!='\0'; name = name +1,i++) {
-		if (i>maxlen) {
+	for (i=0; *name!='\0'; name++, i++) {
+		if (maxlen && i>maxlen) {
 			name[0] = '\0';
 			break;
 		}
