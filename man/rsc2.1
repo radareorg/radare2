@@ -1,0 +1,36 @@
+.Dd July 15, 2011
+.Dt RSC2 1
+.Os
+.Sh NAME
+.Nm rsc
+.Nd Helper utility for launching radare libexec scripts
+.Sh SYNOPSIS
+.Nm rsc
+.Op Fl lh
+.Op scriptname
+.Op -h
+.Sh DESCRIPTION
+rsc allows you to execute multiple utilities included with radare placed in ~/.radare/scripts or ${prefix}/libexec/radare/.
+.Bl -tag -width Fl
+.It Fl l
+List all available scripts found in the libexec directory.
+.It Fl h
+Show usage help message.
+.El
+.Sh SEE ALSO
+.Pp
+.Xr rahash2(1) ,
+.Xr rabin2(1) ,
+.Xr rafind2(1) ,
+.Xr radare2(1) ,
+.Xr radiff2(1) ,
+.Xr ranal2(1) ,
+.Xr rasm2(1) ,
+.Xr rax2(1) ,
+.Xr rarc2(1) ,
+.Xr rarc2-tool(1) ,
+.Xr rasc2(1) ,
+.Sh AUTHORS
+.Pp
+pancake <pancake@nopcode.org>
+.Pp

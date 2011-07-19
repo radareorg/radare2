@@ -43,13 +43,13 @@ w32dist:
 	cd .. ; zip -r $(DSTNAME).zip $(DSTNAME)
 
 dist:
-	PKG=radare2-swig-${VERSION} ; \
-	FILES=`cd .. ; hg st -mac . | grep swig | grep -v '/\.' | sed -e "s,swig/,$${PKG}/," | cut -c 3-` ; \
-	CXXFILES=`cd .. ; find swig | grep -e cxx$$ -e py$$ | sed -e "s,swig/,$${PKG}/,"` ; \
-	cd .. && mv swig $${PKG} && \
+	PKG=r2-bindings-${VERSION} ; \
+	FILES=`cd .. ; hg st -mac . | grep r2-bindings | grep -v '/\.' | sed -e "s,r2-bindings/,$${PKG}/," | cut -c 3-` ; \
+	CXXFILES=`cd .. ; find r2-bindings | grep -e cxx$$ -e py$$ | sed -e "s,r2-bindings/,$${PKG}/,"` ; \
+	cd .. && mv r2-bindings $${PKG} && \
 	echo $$FILES ; \
 	${TAR} $${PKG}.tar.gz $${FILES} $${CXXFILES} ; \
-	mv $${PKG} swig
+	mv $${PKG} r2-bindings
 
 # TODO: valadoc
 vdoc:
