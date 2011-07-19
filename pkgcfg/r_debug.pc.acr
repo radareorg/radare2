@@ -1,11 +1,11 @@
 prefix=@PREFIX@
 exec_prefix=${prefix}
-libdir=${exec_prefix}/lib
+libdir=@LIBDIR@
 includedir=${prefix}/include
 
 Name: r_debug
 Description: radare foundation libraries
-Version: 0.7.1
+Version: @VERSION@
 Requires:
 Libs: -L${libdir} -lr_debug -lr_reg -lr_anal -lr_bp -lr_util -lr_io
 Cflags: -I${includedir}/libr
