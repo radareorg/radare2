@@ -8,7 +8,6 @@ ALL_TARGETS=
 DEBUGS=native.mk gdb.mk
 include $(DEBUGS)
 
-#all: pre ${ALL_TARGETS}
 all: ${ALL_TARGETS}
 	@true
 

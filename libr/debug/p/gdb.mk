@@ -10,6 +10,10 @@ LDFLAGS+=-lsocket
 endif
 
 LDFLAGS+=-L../../util -lr_util
+LDFLAGS+=-L../../anal -lr_anal
+LDFLAGS+=-L../../reg -lr_reg
+LDFLAGS+=-L../../bp -lr_bp
+LDFLAGS+=-L../../io -lr_io
 
 OBJ_GDB=debug_gdb.o 
 #libgdbwrap/gdbwrapper.o
