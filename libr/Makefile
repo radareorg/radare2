@@ -2,9 +2,10 @@ include ../global.mk
 include config.mk
 
 PREFIX?=${PWD}/../prefix
-PFX=${DESTDIR}${PREFIX}
+PFX=${DESTDIR}/${PREFIX}
+LFX=${DESTDIR}/${LIBDIR}
+IFX=${DESTDIR}/${INCLUDEDIR}
 PWD=`pwd`
-#PREFIX=${PFX}
 
 # Libraries
 LIBLIST=util socket cons line lib io lang flags bin hash config syscall cmd
@@ -26,31 +27,31 @@ pkgcfg:
 	# TODO: Magically generate libr.pc.acr here using LIBLIST and so :)
 
 install-pkgconfig:
-	@${INSTALL_DIR} ${PFX}/lib/pkgconfig
-	for a in ../pkgcfg/*.pc ; do ${INSTALL_DATA} $$a ${PFX}/lib/pkgconfig ; done
+	@${INSTALL_DIR} ${LFX}/pkgconfig
+	for a in ../pkgcfg/*.pc ; do ${INSTALL_DATA} $$a ${LFX}/pkgconfig ; done
 
 install-includes:
-	@${INSTALL_DIR} ${PFX}/include/libr
-	(cd include && for a in *.h ; do ${INSTALL_DATA} $$a ${PFX}/include/libr ; done)
+	@${INSTALL_DIR} ${IFX}/libr
+	(cd include && for a in *.h ; do ${INSTALL_DATA} $$a ${IFX}/libr ; done)
 
 install-symlink:
 	mkdir -p ${PFX}/bin
-	mkdir -p ${PFX}/include
-	mkdir -p ${PFX}/lib/pkgconfig
-	mkdir -p ${PFX}/lib/radare2/${VERSION}
-	rm -rf ${PFX}/include/libr && ln -fs ${PWD}/include ${PFX}/include/libr
+	mkdir -p ${IFX}
+	mkdir -p ${LFX}/pkgconfig
+	mkdir -p ${LFX}/radare2/${VERSION}
+	rm -rf ${IFX}/libr && ln -fs ${PWD}/include ${IFX}/libr
 	cd ../pkgcfg && for a in *.pc ; do \
 		if [ -e ${PWD}/../pkgcfg/$${a} ] ; then \
-			ln -fs ${PWD}/../pkgcfg/$${a} ${PFX}/lib/pkgconfig/$${a} ; \
+			ln -fs ${PWD}/../pkgcfg/$${a} ${LFX}/pkgconfig/$${a} ; \
 		fi ; \
 	done
 	for a in ${LIBLIST} ; do \
-		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_SO} ${PFX}/lib/libr_$${a}.${EXT_SO} ; \
-		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_SO} ${PFX}/lib/libr_$${a}.${EXT_SO}.${LIBVERSION} ; \
-		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_AR} ${PFX}/lib/libr_$${a}.${EXT_AR} ; \
+		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_SO} ${LFX}/libr_$${a}.${EXT_SO} ; \
+		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_SO} ${LFX}/libr_$${a}.${EXT_SO}.${LIBVERSION} ; \
+		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_AR} ${LFX}/libr_$${a}.${EXT_AR} ; \
 		for b in $${a}/p/*.${EXT_SO} ; do \
 			if [ -e ${PWD}/$${b} ] ; then \
-				ln -fs ${PWD}/$${b} ${PFX}/lib/radare2/${VERSION}/ ; \
+				ln -fs ${PWD}/$${b} ${LFX}/radare2/${VERSION}/ ; \
 			fi ; \
 		done ; \
 	done
@@ -58,59 +59,59 @@ install-symlink:
 install: install-includes install-pkgconfig
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
 	# libraries
-	@${INSTALL_DIR} ${PFX}/lib
+	@${INSTALL_DIR} ${LFX}
 	@for a in `find * -type f | grep -e '\.${EXT_SO}$$' | grep -v lib/t | grep lib | grep -v /p/` ; do \
 	  b=`echo $$a|cut -d / -f 2`; \
-	  echo " ${PFX}/lib/$$b.${LIBVERSION}"; \
-	  ${INSTALL_LIB} $$a ${PFX}/lib/$$b.${LIBVERSION} ; \
-	  ( cd ${PFX}/lib ; ln -fs $$b.${LIBVERSION} $$b.0 ; ln -fs $$b.0 $$b ); \
+	  echo " ${LFX}/$$b.${LIBVERSION}"; \
+	  ${INSTALL_LIB} $$a ${LFX}/$$b.${LIBVERSION} ; \
+	  ( cd ${LFX} ; ln -fs $$b.${LIBVERSION} $$b.0 ; ln -fs $$b.0 $$b ); \
 	done
 	# object archives
 	@for a in `find * -type f | grep -e '\.a$$' | grep -v fs/p` ; do \
-	  echo " ${PFX}/lib/$$a"; ${INSTALL_DATA} $$a ${PFX}/lib ; done
+	  echo " ${LFX}/$$a"; ${INSTALL_DATA} $$a ${LFX} ; done
 	# plugins
-	@${INSTALL_DIR} ${PFX}/lib/radare2/${VERSION}
+	@${INSTALL_DIR} ${LFX}/radare2/${VERSION}
 	@for a in `find */p -perm -u+x -type f | grep -v exe | grep -v dll | grep ${EXT_SO}`; \
-	  do echo " ${PFX}/lib/radare2/${VERSION}/$$a"; \
-	${INSTALL_DATA} $$a ${PFX}/lib/radare2/${VERSION} ; done
-	@echo "lang/p/radare.* ${PFX}/lib/radare2/${VERSION}"
-	${INSTALL_DATA} lang/p/radare.* ${PFX}/lib/radare2/${VERSION}
+	  do echo " ${LFX}/radare2/${VERSION}/$$a"; \
+	${INSTALL_DATA} $$a ${LFX}/radare2/${VERSION} ; done
+	@echo "lang/p/radare.* ${DESTDIR}/${PFX}/${LIBDIR}/radare2/${VERSION}"
+	${INSTALL_DATA} lang/p/radare.* ${LFX}/radare2/${VERSION}
 
 deinstall uninstall:
 	# libraries
 	-@for a in `find * | grep -e '\.${EXT_SO}$$' | grep -v 'lib/t' | grep lib` ; do \
 	a=`echo $$a | awk -F / '{ print $$NF; }'`; \
-	echo ${PFX}/lib/$$a ; rm -f ${PFX}/lib/$$a ; done
+	echo ${LFX}/$$a ; rm -f ${LFX}/$$a ; done
 	# object archives
 	-@for a in `find * | grep -e '\.a$$'` ; do \
 	a=`echo $$a | awk -F / '{ print $$NF; }'`; \
-	echo ${PFX}/lib/$$a ; rm -f ${PFX}/lib/$$a ; done
+	echo ${LFX}/$$a ; rm -f ${LFX}/$$a ; done
 	# includes
-	-(cd include && for a in * ; do rm -f ${PFX}/libr/$$a ; done)
+	-(cd include && for a in * ; do rm -f ${IFX}/libr/$$a ; done)
 	# programs
 	-@for a in `find */t -perm -u+x -type f | grep 2`; do \
 	a=`echo $$a|awk -F / '{ print $$NF; }'`; \
 	echo ${PFX}/bin/$$a ; rm -f ${PFX}/bin/$$a ; done
 	# plugins
 	-@for a in `find */p -perm -u+x -type f`; do \
-	a="${PFX}/lib/radare2/${VERSION}/`echo $$a|awk -F / '{ print $$NF; }'`"; \
+	a="${LFX}/radare2/${VERSION}/`echo $$a|awk -F / '{ print $$NF; }'`"; \
 	echo $$a ; rm -f $$a ; done
-	rm -rf ${PFX}/lib/radare2/${VERSION}
-	rm -f ${PFX}/lib/pkgconfig/libr.pc
-	rm -f ${PFX}/lib/pkgconfig/r_*.pc
+	rm -rf ${LFX}/radare2/${VERSION}
+	rm -f ${LFX}/pkgconfig/libr.pc
+	rm -f ${LFX}/pkgconfig/r_*.pc
 	# test programs
 	rm -rf ${PFX}/bin/libr-test
 	# TODO: use for a in LIBLIST (like in binr/Makefile)
-	rm -rf ${PFX}/include/libr
-	rm -rf ${PFX}/lib/libr_*.so.${LIBVERSION}
-	rm -rf ${PFX}/lib/libr_*.so.0
-	rm -rf ${PFX}/lib/libr_*.so
-	rm -rf ${PFX}/lib/libr_*.a
-	rm -rf ${PFX}/lib/libr2.so*
-	rm -rf ${PFX}/lib/libr2.a
-	rm -rf ${PFX}/lib/libr.so*
-	rm -rf ${PFX}/lib/libr.a
-	rm -rf ${PFX}/share/doc/radare2
+	rm -rf ${IFX}/libr
+	rm -rf ${LFX}/libr_*.so.${LIBVERSION}
+	rm -rf ${LFX}/libr_*.so.0
+	rm -rf ${LFX}/libr_*.so
+	rm -rf ${LFX}/libr_*.a
+	rm -rf ${LFX}/libr2.so*
+	rm -rf ${LFX}/libr2.a
+	rm -rf ${LFX}/libr.so*
+	rm -rf ${LFX}/libr.a
+	rm -rf ${DESTDIR}${DATADIR}/share/doc/radare2
 	@echo libr aka radare2 has been uninstalled from PREFIX=${PFX}
 
 clean:

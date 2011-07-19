@@ -85,8 +85,8 @@ install: install-doc install-man
 	cd binr && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
 install-pkgconfig-symlink:
-	@${INSTALL_DIR} ${PFX}/lib/pkgconfig
-	cd pkgcfg ; for a in *.pc ; do ln -fs $${PWD}/$$a ${PFX}/lib/pkgconfig/$$a ; done
+	@${INSTALL_DIR} ${DESTDIR}/${LIBDIR}/pkgconfig
+	cd pkgcfg ; for a in *.pc ; do ln -fs $${PWD}/$$a ${DESTDIR}/${LIBDIR}/pkgconfig/$$a ; done
 
 symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink
 	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
@@ -100,15 +100,15 @@ deinstall uninstall:
 	@echo
 
 purge:
-	rm -rf ${DESTDIR}/${PREFIX}/lib/libr_*
-	rm -rf ${DESTDIR}/${PREFIX}/lib/radare2
-	rm -rf ${DESTDIR}/${PREFIX}/include/libr
+	rm -rf ${DESTDIR}/${LIBDIR}/libr_*
+	rm -rf ${DESTDIR}/${LIBDIR}/radare2
+	rm -rf ${DESTDIR}/${INCLUDEDIR}/libr
 	cd man ; for a in *.1 ; do rm -f ${MDR}/man1/$$a ; done
 	rm -f ${MDR}/man1/r2.1
 
 beta: dist r2-bindings-dist
 	scp ../radare2-${VERSION}.tar.gz ${REMOTE}
-	scp radare2-bindings-${VERSION}.tar.gz ${REMOTE}
+	scp r2-bindings-${VERSION}.tar.gz ${REMOTE}
 
 r2-bindings-dist:
 	cd r2-bindings && ${MAKE} dist

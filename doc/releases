@@ -50,5 +50,21 @@ Before any release we have to:
    simplificable use cases of the API for every module.
 
 FUTURE
+------
 
  - Commands should be handled in a structural way, not by a bunch of switch/cases
+
+HOW TO RELEASE 
+--------------
+
+ - Set RELEASE=1 in global.mk and r2-bindings/config.mk.acr
+
+  == RADARE2
+   - bump revision
+   - ./configure
+   - make dist
+
+  == R2-BINDINGS
+   - ./configure --enable-devel
+   - make
+   - make dist

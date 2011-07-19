@@ -28,10 +28,10 @@
 #include <r_util.h>
 
 //#define DATADIR "/usr/share/"
-#define RSCDATADIR LIBDIR"/radare/bin"
+#define RSCDATADIR LIBDIR"/radare2/bin"
 
 static void rsc_help() {
-	printf ("Usage: rsc [-l] [script] [-h]\n");
+	printf ("Usage: rsc2 [-l] [script] [-h]\n");
 	printf ("RSCDATADIR="RSCDATADIR"\n");
 }
 
@@ -122,7 +122,7 @@ static int rsc_run(int argc, const char **argv) {
 
 	for (i=2;i<argc;i++) {
 		strncat (buf, "\"", sizeof (buf));
-		strncat (buf, argv[i], sizeof (buf));
+		strncat (buf, argv[i], sizeof (buf)-4);
 		strncat (buf, "\" ", sizeof (buf));
 	}
 	// printf("system('%s')\n", buf);
