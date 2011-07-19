@@ -1,3 +1,2 @@
-Advanced command line hexadecimal editor
-radare is a command line hexadecimal editor with advanced features like
-hashing, overlap of structures, visual mode, different view modes, scripts..
+Advanced command line debugger and hexadecimal editor
+It is composed by an hexadecimal editor (radare) with a wrapped IO layer supporting multiple backends for local/remote files, accessing filesystems, debugger (osx,bsd,linux,w32), stream analyzer, assembler/disassembler (rasm) for x86,arm,ppc,m68k,java,msil,sparc code analysis modules and scripting facilities. A bindiffer named radiff, base converter (rax), shellcode development helper (rasc), a binary information extracter supporting (pe, mach0, elf, class, ...) named rabin, and a block-based hash utility called rahash. 

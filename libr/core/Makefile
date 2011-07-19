@@ -7,7 +7,7 @@ DEPS+=r_reg r_search r_syscall r_sign r_diff r_socket r_fs
 OBJ=core.o cmd.o file.o config.o visual.o io.o yank.o libs.o
 OBJ+=anal.o project.o gdiff.o asm.o rtr.o vmenus.o disasm.o
 
-CFLAGS+=-DLIBDIR=\"${PREFIX}/lib\"
+CFLAGS+=-DLIBDIR=\"${LIBDIR}\"
 CFLAGS+=-DPREFIX=\"${PREFIX}\"
 LDFLAGS+=${DL_LIBS}
 
