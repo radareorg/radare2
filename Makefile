@@ -1,8 +1,8 @@
 include config-user.mk
 include global.mk
 
-ifneq ($(shell tar --help 2>/dev/null|grep gnu.org),)
-TAR=tar -czv --format=posix -f
+ifneq ($(shell bsdtar -h 2>/dev/null|grep bsdtar),)
+TAR=bsdtar czvf
 else
 TAR=tar -czvf
 endif
