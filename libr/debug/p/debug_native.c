@@ -24,7 +24,7 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 #include <sys/types.h>
 #include <sys/wait.h>
 #define R_DEBUG_REG_T struct reg
-#if defined (__KFBSD__)
+#if __KFBSD__
 #include <sys/sysctl.h>
 #include <sys/user.h>
 #endif
@@ -201,7 +201,7 @@ static int r_debug_native_step(RDebug *dbg) {
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
 		ret = R_FALSE; /* do not wait for events */
 	} else ret = R_TRUE;
-#elif __KFBSD__
+#elif __BSD__ 
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0);
 	if (ret != 0) {
 		perror ("native-singlestep");
@@ -248,7 +248,7 @@ static int r_debug_native_attach(RDebug *dbg, int pid) {
 static int r_debug_native_detach(int pid) {
 #if __WINDOWS__
 	return w32_detach (pid)? 0 : -1;
-#elif __APPLE__ || __KFBSD__
+#elif __APPLE__ || __BSD__
 	return ptrace (PT_DETACH, pid, NULL, 0);
 #else
 	return ptrace (PTRACE_DETACH, pid, NULL, NULL);
@@ -1124,7 +1124,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 	int ret;
 	switch (type) {
 	case R_REG_TYPE_DRX:
-#ifdef __KFBSD__
+#if __KFBSD__
 	{
 		// TODO
 		struct dbreg dbr;
@@ -1184,7 +1184,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, int size) {
 	// XXX use switch or so
 	if (type == R_REG_TYPE_DRX) {
-#ifdef __KFBSD__
+#if __KFBSD__
 		return (0 == ptrace (PT_SETDBREGS, pid, (caddr_t)buf, sizeof (struct dbreg)));
 #elif __linux__
 		{
