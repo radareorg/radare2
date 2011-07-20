@@ -24,7 +24,7 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 #include <sys/types.h>
 #include <sys/wait.h>
 #define R_DEBUG_REG_T struct reg
-#if defined (__FreeBSD__)
+#if defined (__KFBSD__)
 #include <sys/sysctl.h>
 #include <sys/user.h>
 #endif
@@ -201,7 +201,7 @@ static int r_debug_native_step(RDebug *dbg) {
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
 		ret = R_FALSE; /* do not wait for events */
 	} else ret = R_TRUE;
-#elif __FreeBSD__
+#elif __KFBSD__
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0);
 	if (ret != 0) {
 		perror ("native-singlestep");
@@ -230,7 +230,7 @@ static int r_debug_native_attach(RDebug *dbg, int pid) {
 		ret = w32_first_thread (pid);
 	} else ret = -1;
 	ret = w32_first_thread (pid);
-#elif __APPLE__ || __FreeBSD__
+#elif __APPLE__ || __KFBSD__
 	ret = ptrace (PT_ATTACH, pid, 0, 0);
 	if (ret!=-1) {
 		perror ("ptrace(PT_ATTACH)");
@@ -248,7 +248,7 @@ static int r_debug_native_attach(RDebug *dbg, int pid) {
 static int r_debug_native_detach(int pid) {
 #if __WINDOWS__
 	return w32_detach (pid)? 0 : -1;
-#elif __APPLE__ || __FreeBSD__
+#elif __APPLE__ || __KFBSD__
 	return ptrace (PT_DETACH, pid, NULL, 0);
 #else
 	return ptrace (PTRACE_DETACH, pid, NULL, NULL);
@@ -453,7 +453,7 @@ static const char *r_debug_native_reg_profile(RDebug *dbg) {
 	"seg	gs	.32	60	0\n"
 // TODO: implement flags like in linux --those flags are wrong
 	);
-#elif __i386__ && __FreeBSD__
+#elif __i386__ && __KFBSD__
 	return strdup (
 	"=pc	eip\n"
 	"=sp	esp\n"
@@ -642,7 +642,7 @@ static const char *r_debug_native_reg_profile(RDebug *dbg) {
 	"drx	dr6	.32	24	0\n"
 	"drx	dr7	.32	28	0\n"
 	);
-#elif __x86_64__  && __FreeBSD__
+#elif __x86_64__  && __KFBSD__
 	return strdup (
 	"=pc	rip\n"
 	"=sp	rsp\n"
@@ -1120,11 +1120,11 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
                 }
         } else eprintf ("There are no threads!\n");
         return sizeof (R_DEBUG_REG_T);
-#elif __linux__ || __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
+#elif __linux__ || __sun || __NetBSD__ || __KFBSD__ || __OpenBSD__
 	int ret;
 	switch (type) {
 	case R_REG_TYPE_DRX:
-#ifdef __FreeBSD__
+#ifdef __KFBSD__
 	{
 		// TODO
 		struct dbreg dbr;
@@ -1157,7 +1157,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 		memset (buf, 0, size);
 #if __NetBSD__ || __OpenBSD__
 		ret = ptrace (PTRACE_GETREGS, pid, &regs, sizeof (regs));
-#elif __FreeBSD__
+#elif __KFBSD__
 		ret = ptrace(PT_GETREGS, pid, (caddr_t)&regs, 0);
 #elif __linux__ && __powerpc__
 		ret = ptrace (PTRACE_GETREGS, pid, &regs, NULL);
@@ -1184,7 +1184,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, int size) {
 	// XXX use switch or so
 	if (type == R_REG_TYPE_DRX) {
-#ifdef __FreeBSD__
+#ifdef __KFBSD__
 		return (0 == ptrace (PT_SETDBREGS, pid, (caddr_t)buf, sizeof (struct dbreg)));
 #elif __linux__
 		{
@@ -1214,7 +1214,7 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 		if (sizeof (R_DEBUG_REG_T) < size)
 			size = sizeof (R_DEBUG_REG_T);
 		return (ret != 0) ? R_FALSE: R_TRUE;
-#elif __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
+#elif __sun || __NetBSD__ || __KFBSD__ || __OpenBSD__
 		int ret = ptrace (PTRACE_SETREGS, pid, (void*)(size_t)buf, sizeof (R_DEBUG_REG_T));
 		if (sizeof (R_DEBUG_REG_T) < size)
 			size = sizeof (R_DEBUG_REG_T);
@@ -1388,7 +1388,7 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 }
 #endif
 
-#if __FreeBSD__ || __FreeBSD_kernel__
+#if __KFBSD__
 static RList *r_debug_native_sysctl_map (RDebug *dbg) {
 	int mib[4];
 	size_t len;
@@ -1500,7 +1500,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 		pos_c[-1] = (char)'0';
 		pos_c[ 0] = (char)'x';
 		strncpy (region2, pos_c-1, sizeof (region2));
-#endif // __FreeBSD__
+#endif // __KFBSD__
 		region[0] = region2[0] = '0';
 		region[1] = region2[1] = 'x';
 

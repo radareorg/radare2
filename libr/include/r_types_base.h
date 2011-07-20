@@ -1,12 +1,6 @@
 #ifndef _INCLUDE_R_TYPES_BASE_H_
 #define _INCLUDE_R_TYPES_BASE_H_
 
-/* hack to make kfreebsd port simple */
-#if __FreeBSD_kernel__
-#undef __FreeBSD__
-#define __FreeBSD__ 1
-#endif
-
 #define ut64 unsigned long long
 #define st64 long long
 #define ut32 unsigned int

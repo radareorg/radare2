@@ -6,7 +6,7 @@
 #include <r_debug.h> /* only used for BSD PTRACE redefinitions */
 
 #if __linux__ ||  __APPLE__ || __WINDOWS__ || \
-	__NetBSD__ || __FreeBSD__ || __OpenBSD__
+	__NetBSD__ || __KFBSD__ || __OpenBSD__
 #define DEBUGGER_SUPPORTED 1
 #else
 #define DEBUGGER_SUPPORTED 0

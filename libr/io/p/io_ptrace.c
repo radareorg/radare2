@@ -29,7 +29,7 @@ static int __waitpid(int pid) {
 	return (waitpid (pid, &st, 0) != -1);
 }
 
-#if __OpenBSD__
+#if __OpenBSD__ || __KFBSD__
 #define debug_read_raw(x,y) ptrace(PTRACE_PEEKTEXT, (pid_t)(x), (caddr_t)(y), 0)
 #define debug_write_raw(x,y,z) ptrace(PTRACE_POKEDATA, (pid_t)(x), (caddr_t)(y), (int)(size_t)(z))
 #else
