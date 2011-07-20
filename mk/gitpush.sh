@@ -6,6 +6,10 @@
 GITDIR=radare2.git
 GITPUSH=git+ssh://git@github.com/radare/${GITDIR}
 GITPULL=git://github.com/radare/${GITDIR}
+controlc() {
+	echo "^C ignored.. wait or you will do nasty things"
+}
+trap controlc 2
 
 getgittip() {
 	cd ${GITDIR}
