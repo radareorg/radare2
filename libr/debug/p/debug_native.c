@@ -24,6 +24,10 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 #include <sys/types.h>
 #include <sys/wait.h>
 #define R_DEBUG_REG_T struct reg
+#if __FreeBSD__
+#include <sys/sysctl.h>
+#include <sys/user.h>
+#endif
 
 #elif __APPLE__
 
@@ -256,7 +260,7 @@ static int r_debug_native_continue_syscall(RDebug *dbg, int pid, int num) {
 	return ptrace (PTRACE_SYSCALL, pid, 0, 0);
 #elif __BSD__
 	ut64 pc = r_debug_reg_get (dbg, "pc");
-	return ptrace (PTRACE_SYSCALL, pid, pc, 0);
+	return ptrace (PTRACE_SYSCALL, pid, (void*)(size_t)pc, 0);
 #else
 	eprintf ("TODO: continue syscall not implemented yet\n");
 	return -1;
@@ -282,7 +286,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
         return 0;
 #elif __BSD__
 	ut64 pc = r_debug_reg_get (dbg, "pc");
-	return ptrace (PTRACE_CONT, pid, (void*)(size_t)pc, data);
+	return ptrace (PTRACE_CONT, pid, (void*)(size_t)pc, (int)data);
 #else
 	return ptrace (PTRACE_CONT, pid, NULL, data);
 #endif
@@ -1124,7 +1128,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 	{
 		// TODO
 		struct dbreg dbr;
-		ret = ptrace (PT_GETDBREGS, pid, &dbr, sizeof (dbr));
+		ret = ptrace (PT_GETDBREGS, pid, (caddr_t)&dbr, sizeof (dbr));
 		if (ret != 0)
 			return R_FALSE;
 		// XXX: maybe the register map is not correct, must review
@@ -1181,7 +1185,7 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 	// XXX use switch or so
 	if (type == R_REG_TYPE_DRX) {
 #ifdef __FreeBSD__
-		return (0 == ptrace (PT_SETDBREGS, pid, buf, sizeof (struct dbreg)));
+		return (0 == ptrace (PT_SETDBREGS, pid, (caddr_t)buf, sizeof (struct dbreg)));
 #elif __linux__
 		{
 		int i;
@@ -1211,7 +1215,7 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 			size = sizeof (R_DEBUG_REG_T);
 		return (ret != 0) ? R_FALSE: R_TRUE;
 #elif __sun || __NetBSD__ || __FreeBSD__ || __OpenBSD__
-		int ret = ptrace (PTRACE_SETREGS, pid, buf, sizeof (R_DEBUG_REG_T));
+		int ret = ptrace (PTRACE_SETREGS, pid, (void*)(size_t)buf, sizeof (R_DEBUG_REG_T));
 		if (sizeof (R_DEBUG_REG_T) < size)
 			size = sizeof (R_DEBUG_REG_T);
 		return (ret != 0) ? R_FALSE: R_TRUE;
@@ -1384,6 +1388,48 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 }
 #endif
 
+#if __FreeBSD__
+static RList *r_debug_native_sysctl_map (RDebug *dbg) {
+	int mib[4];
+	size_t len;
+	char *buf, *bp, *eb;
+	struct kinfo_vmentry *kve;
+	RList *list = NULL;
+	RDebugMap *map;
+
+	len = 0;
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_PROC;
+	mib[2] = KERN_PROC_VMMAP;
+	mib[3] = dbg->pid;
+
+	if (sysctl(mib, 4, NULL, &len, NULL, 0) != 0)
+		return NULL;
+	len = len * 4 / 3;
+	buf = malloc(len);
+	if (buf == NULL)
+		return (NULL);
+	if (sysctl(mib, 4, buf, &len, NULL, 0) != 0) {
+		free (buf);
+		return NULL;
+	}
+	bp = buf;
+	eb = buf + len;
+	list = r_list_new ();
+	while (bp < eb) {
+		kve = (struct kinfo_vmentry *)(uintptr_t)bp;
+		map = r_debug_map_new (kve->kve_path, kve->kve_start,
+				kve->kve_end, kve->kve_protection, 0);
+		if (map == NULL)
+			break;
+		r_list_append (list, map);
+		bp += kve->kve_structsize;
+	}
+	free (buf);
+	return list;
+}
+#endif
+
 static RList *r_debug_native_map_get(RDebug *dbg) {
 	RList *list = NULL;
 #if __FreeBSD__
@@ -1413,6 +1459,9 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 	}
 
 #if __FreeBSD__
+	list = r_debug_native_sysctl_map (dbg);
+	if (list != NULL)
+		return list;
 	snprintf (path, sizeof (path), "/proc/%d/map", dbg->pid);
 #else
 	snprintf (path, sizeof (path), "/proc/%d/maps", dbg->pid);
