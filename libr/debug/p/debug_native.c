@@ -6,6 +6,8 @@
 #include <r_reg.h>
 #include <r_lib.h>
 #include <signal.h>
+#include <sys/types.h>
+#include <sys/param.h>
 
 #if DEBUGGER
 static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig);

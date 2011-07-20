@@ -138,8 +138,8 @@ Fine tuning of the installation directories:
   --localstatedir=DIR    modifiable single-machine data [PREFIX/var]
   --libdir=DIR           object code libraries [EPREFIX/lib]
   --includedir=DIR       C header files [PREFIX/include]
-  --infodir=DIR          info documentation [PREFIX/info]
-  --mandir=DIR           man documentation [PREFIX/man]
+  --infodir=DIR          info documentation [DATADIR/info]
+  --mandir=DIR           man documentation [DATADIR/man]
 
 System types:
   --build=BUILD          configure for building on BUILD [guessed]
