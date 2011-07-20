@@ -19,12 +19,12 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 #define R_DEBUG_REG_T CONTEXT
 #include "native/w32.c"
 
-#elif __OpenBSD__ || __NetBSD__ || __FreeBSD__
+#elif __BSD__
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #define R_DEBUG_REG_T struct reg
-#if __FreeBSD__
+#if defined (__FreeBSD__)
 #include <sys/sysctl.h>
 #include <sys/user.h>
 #endif
@@ -1388,7 +1388,7 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 }
 #endif
 
-#if __FreeBSD__
+#if __FreeBSD__ || __FreeBSD_kernel__
 static RList *r_debug_native_sysctl_map (RDebug *dbg) {
 	int mib[4];
 	size_t len;
@@ -1432,7 +1432,7 @@ static RList *r_debug_native_sysctl_map (RDebug *dbg) {
 
 static RList *r_debug_native_map_get(RDebug *dbg) {
 	RList *list = NULL;
-#if __FreeBSD__
+#if __KFBSD__
 	int ign;
 	char unkstr[128];
 #endif 
@@ -1458,7 +1458,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 		return NULL;
 	}
 
-#if __FreeBSD__
+#if __KFBSD__
 	list = r_debug_native_sysctl_map (dbg);
 	if (list != NULL)
 		return list;
@@ -1476,12 +1476,12 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 
 	while (!feof (fd)) {
 		line[0]='\0';
-		fgets (line, 1023, fd);
+		fgets (line, sizeof (line)-1, fd);
 		if (line[0]=='\0')
 			break;
 		path[0]='\0';
 		line[strlen (line)-1]='\0';
-#if __FreeBSD__
+#if __KFBSD__
 		// 0x8070000 0x8072000 2 0 0xc1fde948 rw- 1 0 0x2180 COW NC vnode /usr/bin/gcc
 		sscanf (line, "%s %s %d %d 0x%s %3s %d %d",
 			&region[2], &region2[2], &ign, &ign,

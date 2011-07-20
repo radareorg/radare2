@@ -74,8 +74,15 @@ typedef void (*PrintfCallback)(const char *str, ...);
 // TODO: fix this to make it crosscompile-friendly: R_SYS_OSTYPE ?
 /* operating system */
 #undef __BSD__
+#undef __KFBSD__
 #undef __UNIX__
 #undef __WINDOWS__
+
+#if defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
+#define __KFBSD__ 1
+#else
+#define __KFBSD__ 0
+#endif
 
 #if defined(__linux__) || defined(__APPLE__) || defined(__GNU__)
   #define __BSD__ 0

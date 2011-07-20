@@ -87,7 +87,11 @@ deinstall uninstall:
 	a=`echo $$a | awk -F / '{ print $$NF; }'`; \
 	echo ${LFX}/$$a ; rm -f ${LFX}/$$a ; done
 	# includes
-	-(cd include && for a in * ; do rm -f ${IFX}/libr/$$a ; done)
+	-if [ -h ${IFX}/libr ]; then \
+		rm -f ${IFX}/libr ; \
+	else \
+		(cd include && for a in * ; do rm -f ${IFX}/libr/$$a ; done) ; \
+	fi
 	# programs
 	-@for a in `find */t -perm -u+x -type f | grep 2`; do \
 	a=`echo $$a|awk -F / '{ print $$NF; }'`; \
