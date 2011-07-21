@@ -2514,7 +2514,17 @@ static int cmd_anal(void *data, const char *input) {
 	case 's':
 		switch (input[1]) {
 		case 'l':
-			r_syscall_list (core->anal->syscall);
+			if (input[2] == ' ') {
+				if (atoi (input+3)>0) {
+					RSyscallItem *si = r_syscall_get (core->anal->syscall, atoi (input+3), -1);
+					if (si) r_cons_printf ("%s\n", si->name);
+					else eprintf ("Unknown syscall\n");
+				} else {
+					int n = r_syscall_get_num (core->anal->syscall, input+3);
+					if (n != -1) r_cons_printf ("%d\n", n);
+					else eprintf ("Unknown syscall\n");
+				}
+			} else r_syscall_list (core->anal->syscall);
 			break;
 		case '\0': {
 			int a0 = (int)r_debug_reg_get (core->dbg, "oeax"); //XXX
@@ -2526,10 +2536,12 @@ static int cmd_anal(void *data, const char *input) {
 		default:
 		case '?':
 			r_cons_printf (
-			"Usage: as[?]\n"
-			" as       Display syscall and arguments\n"
-			" as 4     Show syscall 4 based on asm.os\n"
-			" asl      List of syscalls by asm.os and asm.arch\n");
+			"Usage: as[l?]\n"
+			" as         Display syscall and arguments\n"
+			" as 4       Show syscall 4 based on asm.os and current regs/mem\n"
+			" asl        List of syscalls by asm.os and asm.arch\n"
+			" asl close  Returns the syscall number for close\n"
+			" asl 4      Returns the name of the syscall number 4\n");
 			break;
 		}
 		break;
@@ -4666,12 +4678,20 @@ static int cmd_debug(void *data, const char *input) {
 			checkbpcallback (core);
 			break;
 		case 's':
-			sig = r_num_math (core->num, input+2);
-			eprintf ("Continue until syscall %d\n", sig);
-			r_reg_arena_swap (core->dbg->reg, R_TRUE);
-			r_debug_continue_syscall (core->dbg, sig);
-			checkbpcallback (core);
-			/* TODO : use r_syscall here, to retrieve syscall info */
+			if (input[2]==' ') {
+				sig = r_num_math (core->num, input+3);
+				if (sig <= 0) {
+					sig = r_syscall_get_num (core->anal->syscall, input+3);
+					if (sig == -1) {
+						eprintf ("Unknown syscall number\n");
+						return 0;
+					}
+				}
+				eprintf ("Running child until syscall %d\n", sig);
+				r_reg_arena_swap (core->dbg->reg, R_TRUE);
+				r_debug_continue_syscall (core->dbg, sig);
+				checkbpcallback (core);
+			} else eprintf ("Usage: dcs [syscall-name-or-number]\n");
 			break;
 		case 'u':
 			ptr = strchr (input+3, ' ');
