@@ -2,7 +2,7 @@
 #include "r_syscall.h"
 
 int main() {
-	int i, num = 4;
+	int i, num = 3;
 	RSyscall *ctx = r_syscall_new ();
 	r_syscall_setup (ctx, "x86", "linux");
 

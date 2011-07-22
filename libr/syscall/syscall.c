@@ -37,7 +37,6 @@ R_API void r_syscall_free(RSyscall *ctx) {
 
 /* return fastcall register argument 'idx' for a syscall with 'num' args */
 R_API const char *r_syscall_reg(RSyscall *s, int idx, int num) {
-	num--; idx--; // arg 1 = index 0
 	if (num<0 || num>=R_SYSCALL_ARGS || idx<0 || idx>=R_SYSCALL_ARGS)
 		return NULL;
 	return s->regs[num].arg[idx];
