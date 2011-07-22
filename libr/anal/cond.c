@@ -72,10 +72,14 @@ R_API char *r_anal_cond_to_string(RAnalCond *cond) {
 	val1 = r_anal_value_to_string (cond->arg[1]);
 	if (val0) {
 		if (R_ANAL_COND_SINGLE (cond)) {
-			if ( (out = malloc (strlen (val0) + 10)) )
-				sprintf (out, "%s%s", cnd, val0);
-		} else if ( (out = malloc (strlen (val0) + strlen (val1)+10)) )
-			sprintf (out, "%s %s %s", val0, cnd, val1);
+			int val0len = strlen (val0) + 10;
+			if ((out = malloc (val0len)))
+				snprintf (out, val0len, "%s%s", cnd, val0);
+		} else {
+			int val0len = strlen (val0) + strlen (val1)+10;
+			if ((out = malloc (val0len)))
+				snprintf (out, val0len, "%s %s %s", val0, cnd, val1);
+		}
 	}
 	free (val0);
 	free (val1);

@@ -15,6 +15,13 @@
 #if __BSD__
 #include <machine/reg.h>
 
+/* hakish hack to hack the openbsd/sparc64 hack */
+#undef reg
+#undef fpreg
+#undef fpstate
+#undef trapframe
+#undef rwindow
+
 #define PTRACE_PEEKTEXT PT_READ_I
 #define PTRACE_POKETEXT PT_WRITE_I
 #define PTRACE_PEEKDATA PT_READ_D

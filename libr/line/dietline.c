@@ -247,7 +247,7 @@ R_API char *r_line_readline() {
 	const char *gcomp_line = "";
 	static int gcomp_idx = 0;
 	static int gcomp = 0;
-	char buf[10];
+	signed char buf[10];
 	int ch, i; /* grep completion */
 
 	I.buffer.index = I.buffer.length = 0;
