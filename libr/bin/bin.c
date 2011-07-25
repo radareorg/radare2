@@ -357,10 +357,26 @@ R_API RBin* r_bin_new() {
 	return bin;
 }
 
-R_API int r_bin_set_arch(RBin *bin, const char *arch, int bits, const char *name) {
+// TODO: handle ARCH and BITS
+R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name) {
+	struct list_head *pos;
+
+	list_for_each_prev(pos, &bin->bins) {
+		RBinPlugin *h = list_entry (pos, RBinPlugin, list);
+		if (!strcmp (name, h->name)) {
+			bin->curarch.curplugin = h;
+// TODO: set bits and name
+			return R_TRUE;
+		}
+	}
+	return R_FALSE;
+}
+
+// TODO: rename to r_bin_select
+R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name) {
 	int i;
 	for (i = 0; i < bin->narch; i++) {
-		r_bin_set_archidx (bin, i);
+		r_bin_select_idx (bin, i);
 		if (!bin->curarch.info || !bin->curarch.file ||
 			(arch && !strstr (bin->curarch.info->arch, arch)) ||
 			(bits && bits != bin->curarch.info->bits) ||
@@ -371,7 +387,8 @@ R_API int r_bin_set_arch(RBin *bin, const char *arch, int bits, const char *name
 	return R_FALSE;
 }
 
-R_API int r_bin_set_archidx(RBin *bin, int idx) {
+// TODO: rename to r_bin_select_idx
+R_API int r_bin_select_idx(RBin *bin, int idx) {
 	r_bin_free_items (bin);
 	if (r_bin_extract (bin, idx))
 		return r_bin_init_items (bin, R_FALSE);
@@ -381,7 +398,7 @@ R_API int r_bin_set_archidx(RBin *bin, int idx) {
 R_API void r_bin_list_archs(RBin *bin) {
 	int i;
 	for (i = 0; i < bin->narch; i++)
-		if (r_bin_set_archidx (bin, i) && bin->curarch.info)
+		if (r_bin_select_idx (bin, i) && bin->curarch.info)
 			printf ("%03i %s %s_%i (%s)\n", i, bin->curarch.file,
 					bin->curarch.info->arch, bin->curarch.info->bits,
 					bin->curarch.info->machine);
@@ -401,6 +418,13 @@ static int getoffset (RBin *bin, int type, int idx) {
 R_API void r_bin_bind (RBin *bin, RBinBind *b) {
 	b->bin = bin;
 	b->get_offset = getoffset;
+}
+
+R_API RBuffer *r_bin_create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
+	RBinArch *a = &bin->curarch;
+	if (a && a->curplugin && a->curplugin->create)
+		return a->curplugin->create (bin, code, codelen, data, datalen);
+	return NULL;
 }
 
 R_API RBinObj *r_bin_get_object(RBin *bin, int flags) {

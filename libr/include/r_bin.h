@@ -104,6 +104,7 @@ typedef struct r_bin_plugin_t {
 	struct r_bin_meta_t *meta;
 	struct r_bin_write_t *write;
 	int (*get_offset)(RBinArch *arch, int type, int idx);
+	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
 	struct list_head list; // TODO deprecate!!!
 } RBinPlugin;
 
@@ -253,10 +254,12 @@ R_API int r_bin_has_dbg_linenums (RBin *bin);
 R_API int r_bin_has_dbg_syms (RBin *bin);
 R_API int r_bin_has_dbg_relocs (RBin *bin);
 R_API RBin* r_bin_new();
-R_API int r_bin_set_arch(RBin *bin, const char *arch, int bits, const char *name);
-R_API int r_bin_set_archidx(RBin *bin, int idx);
+R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name);
+R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name);
+R_API int r_bin_select_idx(RBin *bin, int idx);
 R_API void r_bin_list_archs(RBin *bin);
 R_API void r_bin_set_user_ptr(RBin *bin, void *user);
+R_API RBuffer *r_bin_create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
 /* bin_meta.c */
 R_API int r_bin_meta_get_line(RBin *bin, ut64 addr, char *file, int len, int *line);
 R_API char *r_bin_meta_get_source_line(RBin *bin, ut64 addr);

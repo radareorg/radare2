@@ -33,6 +33,7 @@
 #define ACTION_EXTRACT   0x1000
 #define ACTION_RELOCS    0x2000
 #define ACTION_LISTARCHS 0x4000
+#define ACTION_CREATE    0x8000
 
 static struct r_lib_t *l;
 static struct r_bin_t *bin = NULL;
@@ -42,36 +43,38 @@ static int va = R_FALSE;
 static ut64 gbaddr = 0LL;
 static char* file = NULL;
 static char* output = "out";
+static char* create = NULL;
 static ut64 at = 0LL;
 static char *name = NULL;
 
 static int rabin_show_help() {
 	printf ("rabin2 [options] [file]\n"
-		" -A               List archs\n"
-		" -a [arch_bits]   Set arch\n"
-		" -f [str]         Select sub-bin named str\n"
-		" -b [addr]        Override baddr\n"
-		" -e               Entrypoint\n"
-		" -M               Main\n"
-		" -i               Imports (symbols imported from libraries)\n"
-		" -s               Symbols (exports)\n"
-		" -S               Sections\n"
-		" -z               Strings\n"
-		" -I               Binary info\n"
-		" -H               Header fields\n"
-		" -l               Linked libraries\n"
-		" -R               Relocations\n"
-		" -O [str]         Write/Extract operations (str=help for help)\n"
-		" -o [str]         Output file/folder for write operations (out by default)\n"
-		" -r               radare output\n"
-		" -v               Use vaddr in radare output\n"
-		" -m [addr]        Show source line at addr\n"
-		" -L               List supported bin plugins\n"
-		" -@ [addr]        Show section, symbol or import at addr\n"
-		" -n [str]         Show section, symbol or import named str\n"
-		" -x               Extract bins contained in file\n"
-		" -V               Show version information\n"
-		" -h               This help\n");
+		" -A              list archs\n"
+		" -a [arch_bits]  set arch\n"
+		" -b [addr]       override baddr\n"
+		" -c [fmt:C:D]    create [fmt] binary with Code and Data hexpairs (see -a)\n"
+		" -e              entrypoint\n"
+		" -f [str]        select sub-bin named str\n"
+		" -i              imports (symbols imported from libraries)\n"
+		" -s              symbols (exports)\n"
+		" -S              sections\n"
+		" -M              main (show address of main symbol)\n"
+		" -z              strings\n"
+		" -I              binary info\n"
+		" -H              header fields\n"
+		" -l              linked libraries\n"
+		" -R              relocations\n"
+		" -O [str]        write/extract operations (str=help for help)\n"
+		" -o [str]        output file/folder for write operations (out by default)\n"
+		" -r              radare output\n"
+		" -v              use vaddr in radare output\n"
+		" -m [addr]       show source line at addr\n"
+		" -L              list supported bin plugins\n"
+		" -@ [addr]       show section, symbol or import at addr\n"
+		" -n [str]        show section, symbol or import named str\n"
+		" -x              extract bins contained in file\n"
+		" -V              show version information\n"
+		" -h              this help\n");
 	return 1;
 }
 
@@ -105,13 +108,13 @@ static int rabin_show_entrypoints() {
 
 static int rabin_show_main() {
 	RBinAddr *binmain;
-	ut64 baddr = gbaddr?gbaddr:r_bin_get_baddr (bin);
+	ut64 baddr = gbaddr? gbaddr: r_bin_get_baddr (bin);
 
 	if ((binmain = r_bin_get_sym (bin, R_BIN_SYM_MAIN)) == NULL)
 		return R_FALSE;
 	if (rad) {
 		printf ("fs symbols\n");
-		printf ("f main @ 0x%08"PFMT64x"\n", va?baddr+binmain->rva:binmain->offset);
+		printf ("f main @ 0x%08"PFMT64x"\n", va? baddr+binmain->rva: binmain->offset);
 	} else {
 		eprintf ("[Main]\n");
 		printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x"\n",
@@ -127,7 +130,7 @@ static int rabin_extract(int all) {
 	// XXX: Wrong for w32 (/)
 	if (all) {
 		for (i=0; i<bin->narch; i++) {
-			r_bin_set_archidx (bin, i);
+			r_bin_select_idx (bin, i);
 			if (bin->curarch.info == NULL) {
 				eprintf ("No extract info found.\n");
 			} else {
@@ -199,17 +202,21 @@ static int rabin_show_relocs() {
 	if ((relocs = r_bin_get_relocs (bin)) == NULL)
 		return R_FALSE;
 
-	if (rad) printf ("fs relocs\n");
-	else eprintf ("[Relocations]\n");
-
-	r_list_foreach (relocs, iter, reloc) {
-		if (rad) printf ("f reloc.%s @ 0x%08"PFMT64x"\n", reloc->name, va?baddr+reloc->rva:reloc->offset);
-		else printf ("sym=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" type=0x%08x %s\n",
+	if (rad) {
+		printf ("fs relocs\n");
+		r_list_foreach (relocs, iter, reloc) {
+			printf ("f reloc.%s @ 0x%08"PFMT64x"\n", reloc->name, va?baddr+reloc->rva:reloc->offset);
+			i++;
+		}
+	} else {
+		eprintf ("[Relocations]\n");
+		r_list_foreach (relocs, iter, reloc) {
+			printf ("sym=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" type=0x%08x %s\n",
 				reloc->sym, baddr+reloc->rva, reloc->offset, reloc->type, reloc->name);
-		i++;
+			i++;
+		}
+		eprintf ("\n%i relocations\n", i);
 	}
-
-	if (!rad) eprintf ("\n%i relocations\n", i);
 
 	return R_TRUE;
 }
@@ -665,13 +672,17 @@ int main(int argc, char **argv) {
 		r_lib_opendir (l, LIBDIR"/radare2/");
 	}
 
-	while ((c = getopt (argc, argv, "Af:a:B:b:Mm:n:@:VisSzIHelRwO:o:rvLhx")) != -1) {
+	while ((c = getopt (argc, argv, "Af:a:B:b:c:Mm:n:@:VisSzIHelRwO:o:rvLhx")) != -1) {
 		switch(c) {
 		case 'A':
 			action |= ACTION_LISTARCHS;
 			break;
 		case 'a':
 			if (optarg) arch = strdup (optarg);
+			break;
+		case 'c':
+			action = ACTION_CREATE;
+			create = strdup (optarg);
 			break;
 		case 'f':
 			if (optarg) arch_name = strdup (optarg);
@@ -759,10 +770,6 @@ int main(int argc, char **argv) {
 	if (action == ACTION_HELP || action == ACTION_UNK || file == NULL)
 		return rabin_show_help ();
 
-	if (!r_bin_load (bin, file, R_FALSE) && !r_bin_load (bin, file, R_TRUE)) {
-		eprintf ("r_bin: Cannot open '%s'\n", file);
-		return 1;
-	}
 	if (arch) {
 		char *ptr;
 		ptr = strchr (arch, '_');
@@ -771,8 +778,48 @@ int main(int argc, char **argv) {
 			bits = r_num_math (NULL, ptr+1);
 		}
 	}
+	if (action & ACTION_CREATE) {
+		RBuffer *b;
+		int datalen, codelen;
+		ut8 *data = NULL, *code = NULL;
+		char *p2, *p = strchr (create, ':');
+		if (!p) {
+			eprintf ("Invalid format for -c flag. Use 'format:codehexpair:datahexpair'\n");
+			return 1;
+		}
+		*p++ = 0;
+		p2 = strchr (p, ':');
+		if (p2) {
+			// has data
+			*p2++ = 0;
+			data = malloc (strlen (p2));
+			datalen = r_hex_str2bin (p2, data);
+		}
+		code = malloc (strlen (p));
+		codelen = r_hex_str2bin (p, code);
+		if (!arch) arch = "x86";
+		if (!bits) bits = 32;
+
+		if (!r_bin_use_arch (bin, arch, bits, create)) {
+			eprintf ("Cannot set arch\n");
+			return 1;
+		}
+		b = r_bin_create (bin, code, codelen, data, datalen);
+		if (b) {
+			if (r_file_dump (file, b->buf, b->length))
+				eprintf ("dumped %d bytes in '%s'\n", b->length, file);
+			else eprintf ("error dumping into a.out\n");
+			r_buf_free (b);
+		} else eprintf ("Cannot create binary for this format '%s'.\n", create);
+		r_bin_free (bin);
+		return 0;
+	}
+	if (!r_bin_load (bin, file, R_FALSE) && !r_bin_load (bin, file, R_TRUE)) {
+		eprintf ("r_bin: Cannot open '%s'\n", file);
+		return 1;
+	}
 	if (action & ACTION_LISTARCHS && (arch || bits || arch_name)) {
-		if (!r_bin_set_arch (bin, arch, bits, arch_name)) {
+		if (!r_bin_select (bin, arch, bits, arch_name)) {
 			r_bin_list_archs (bin);
 			free (arch);
 			r_bin_free (bin);

@@ -190,6 +190,154 @@ static int check(RBinArch *arch) {
 	return R_FALSE;
 }
 
+#if 0
+typedef struct r_bin_create_t {
+	int arch;
+	ut8 *code;
+	int codelen;
+	ut8 *data;
+	int datalen;
+} RBinCreate;
+#endif
+
+static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
+	ut32 filesize, codeva, datava;
+	ut32 ncmds, cmdsize, magiclen, headerlen;
+	ut32 p_codefsz, p_codeva, p_codesz, p_codepa;
+	ut32 p_datafsz, p_datava, p_datasz, p_datapa;
+	ut32 p_cmdsize, p_entry, p_tmp;
+	ut32 baddr = 0x1000;
+	RBuffer *buf = r_buf_new ();
+
+#define B(x,y) r_buf_append_bytes(buf,(const ut8*)x,y)
+#define D(x) r_buf_append_ut32(buf,x)
+#define Z(x) r_buf_append_nbytes(buf,x)
+#define W(x,y,z) r_buf_write_at(buf,x,(const ut8*)y,z)
+#define WZ(x,y) p_tmp=buf->length;Z(x);W(p_tmp,y,strlen(y))
+
+	/* MACH0 HEADER */
+	B ("\xce\xfa\xed\xfe", 4); // header
+	D (7); // cpu type (x86)
+	D (3); // subtype (i386-all)
+	D (2); // filetype (executable)
+
+
+	if (data && datalen>0) {
+		ncmds = 3;
+		cmdsize = 0;
+	} else {
+		ncmds = 2;
+		cmdsize = 0;
+	}
+	
+	/* COMMANDS */
+	D (ncmds); // ncmds
+	p_cmdsize = buf->length;
+	D (-1); // cmdsize
+	D (0); // flags
+	magiclen = buf->length;
+
+	/* TEXT SEGMENT */
+	D (1);   // cmd.LC_SEGMENT
+	D (124); // sizeof (cmd)
+	WZ (16, "__TEXT");
+	D (baddr); // vmaddr
+	D (0x1000); // vmsize XXX
+	D (0); // fileoff
+	p_codefsz = buf->length;
+	D (-1); // filesize
+	D (7); // maxprot
+	D (5); // initprot
+	D (1); // nsects
+	D (0); // flags
+	WZ (16, "__text");
+	WZ (16, "__TEXT");
+	p_codeva = buf->length; // virtual address
+	D (-1);
+	p_codesz = buf->length; // size of code (end-start)
+	D (-1);
+	p_codepa = buf->length; // code - baddr
+	D (-1); //_start-0x1000);
+	D (2); // align
+	D (0); // reloff
+	D (0); // nrelocs
+	D (0); // flags
+	D (0); // reserved
+	D (0);
+
+	if (data && datalen>0) {
+		/* DATA SEGMENT */
+		D (1);   // cmd.LC_SEGMENT
+		D (124); // sizeof (cmd)
+		p_tmp = buf->length;
+		Z (16);
+		W (p_tmp, "__TEXT", 6); // segment name
+		D (0x2000); // vmaddr
+		D (0x1000); // vmsize
+		D (0); // fileoff
+		p_datafsz = buf->length;
+		D (-1); // filesize
+		D (6); // maxprot
+		D (6); // initprot
+		D (1); // nsects
+		D (0); // flags
+
+		WZ (16, "__data");
+		WZ (16, "__DATA");
+
+		p_datava = buf->length;
+		D (-1);
+		p_datasz = buf->length;
+		D (-1);
+		p_datapa = buf->length;
+		D (-1); //_start-0x1000);
+		D (2); // align
+		D (0); // reloff
+		D (0); // nrelocs
+		D (0); // flags
+		D (0); // reserved
+		D (0);
+	}
+
+	/* THREAD STATE */
+	D (5); // LC_UNIXTHREAD
+	D (80); // sizeof (cmd)
+	D (1); // i386-thread-state
+	D (16); // thread-state-count
+	p_entry = buf->length + (10*sizeof (ut32));
+	Z (16 * sizeof (ut32));
+
+	headerlen = buf->length - magiclen;
+
+	codeva = buf->length + baddr;
+	datava = buf->length + codelen + baddr;
+	W (p_entry, &codeva, 4); // set PC
+
+	/* fill header variables */
+	W (p_cmdsize, &headerlen, 4);
+	filesize = magiclen + headerlen + codelen + datalen;
+	// TEXT SEGMENT //
+	W (p_codefsz, &filesize, 4);
+	W (p_codeva, &codeva, 4);
+	W (p_codesz, &codelen, 4);
+	p_tmp = codeva - baddr;
+	W (p_codepa, &p_tmp, 4);
+
+	B (code, codelen);
+
+	if (data && datalen>0) {
+		/* append data */
+		W (p_datafsz, &filesize, 4);
+		W (p_datava, &datava, 4);
+		W (p_datasz, &datalen, 4);
+		p_tmp = datava - baddr;
+		W (p_datapa, &p_tmp, 4);
+		B (data, datalen);
+	}
+
+	return buf;
+}
+
 struct r_bin_plugin_t r_bin_plugin_mach0 = {
 	.name = "mach0",
 	.desc = "mach0 bin plugin",
@@ -211,6 +359,7 @@ struct r_bin_plugin_t r_bin_plugin_mach0 = {
 	.relocs = NULL,
 	.meta = NULL,
 	.write = NULL,
+	.create = &create,
 };
 
 #ifndef CORELIB
