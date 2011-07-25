@@ -1767,6 +1767,47 @@ static int r_debug_native_bp(void *user, int add, ut64 addr, int hw, int rwx) {
 	return R_FALSE;
 }
 
+#if __KFBSD__
+#include <sys/un.h>
+#include <arpa/inet.h>
+static void addr_to_string(struct sockaddr_storage *ss, char *buffer, int buflen) {
+	char buffer2[INET6_ADDRSTRLEN];
+	struct sockaddr_in6 *sin6;
+	struct sockaddr_in *sin;
+	struct sockaddr_un *sun;
+
+	switch (ss->ss_family) {
+	case AF_LOCAL:
+		sun = (struct sockaddr_un *)ss;
+		if (strlen (sun->sun_path) == 0)
+			strlcpy(buffer, "-", buflen);
+		else
+			strlcpy(buffer, sun->sun_path, buflen);
+		break;
+
+	case AF_INET:
+		sin = (struct sockaddr_in *)ss;
+		snprintf(buffer, buflen, "%s:%d", inet_ntoa(sin->sin_addr),
+		    ntohs(sin->sin_port));
+		break;
+
+	case AF_INET6:
+		sin6 = (struct sockaddr_in6 *)ss;
+		if (inet_ntop(AF_INET6, &sin6->sin6_addr, buffer2,
+		    sizeof(buffer2)) != NULL)
+			snprintf(buffer, buflen, "%s.%d", buffer2,
+			    ntohs(sin6->sin6_port));
+		else
+			strlcpy(buffer, "-", sizeof(buffer));
+		break;
+
+	default:
+		strlcpy(buffer, "", buflen);
+		break;
+	}
+}
+#endif
+
 static RList *r_debug_desc_native_list (int pid) {
 	RList *ret;
 	RDebugDesc *desc;
@@ -1774,7 +1815,7 @@ static RList *r_debug_desc_native_list (int pid) {
 #if __KFBSD__
 	int mib[4];
 	size_t len;
-	char *buf, *bp, *eb;
+	char *buf, *bp, *eb, *str, path[1024];
 	struct kinfo_file *kve;
 
 	len = 0;
@@ -1803,22 +1844,41 @@ static RList *r_debug_desc_native_list (int pid) {
 			bp += kve->kf_structsize;
 			if (kve->kf_fd < 0) // Skip root and cwd. We need it ??
 				continue;
-			switch (kve->kf_vnode_type) {
-				case KF_VTYPE_VREG: type = 'r'; break;
-				case KF_VTYPE_VDIR: type = 'd'; break;
-				case KF_VTYPE_VBLK: type = 'b'; break;
-				case KF_VTYPE_VCHR: type = 'c'; break;
-				case KF_VTYPE_VLNK: type = 'l'; break;
-				case KF_VTYPE_VSOCK: type = 's'; break;
-				case KF_VTYPE_VFIFO: type = 'f'; break;
-				case KF_VTYPE_VBAD: type = 'x'; break;
-				case KF_VTYPE_VNON:
-				case KF_VTYPE_UNKNOWN:
+			str = kve->kf_path;
+			switch (kve->kf_type) {
+				case KF_TYPE_VNODE: type = 'v'; break;
+				case KF_TYPE_SOCKET:
+					type = 's';
+					if (kve->kf_sock_domain == AF_LOCAL) {
+						struct sockaddr_un *sun =
+							(struct sockaddr_un *)&kve->kf_sa_local;
+						if (sun->sun_path[0] != 0)
+							addr_to_string (&kve->kf_sa_local, path, sizeof (path));
+						else
+							addr_to_string (&kve->kf_sa_peer, path, sizeof (path));
+					} else {
+						addr_to_string (&kve->kf_sa_local, path, sizeof (path));
+						strlcat (path, " ", sizeof (path));
+						addr_to_string (&kve->kf_sa_peer, path + strlen (path),
+								sizeof (path));
+					}
+					str = path;
+					break;
+				case KF_TYPE_PIPE: type = 'p'; break;
+				case KF_TYPE_FIFO: type = 'f'; break;
+				case KF_TYPE_KQUEUE: type = 'k'; break;
+				case KF_TYPE_CRYPTO: type = 'c'; break;
+				case KF_TYPE_MQUEUE: type = 'm'; break;
+				case KF_TYPE_SHM: type = 'h'; break;
+				case KF_TYPE_PTS: type = 't'; break;
+				case KF_TYPE_SEM: type = 'e'; break;
+				case KF_TYPE_NONE:
+				case KF_TYPE_UNKNOWN:
 				default: type = '-'; break;
 			}
 			perm = (kve->kf_flags & KF_FLAG_READ)?R_IO_READ:0;
 			perm |= (kve->kf_flags & KF_FLAG_WRITE)?R_IO_WRITE:0;
-			desc = r_debug_desc_new (kve->kf_fd, kve->kf_path, perm, type,
+			desc = r_debug_desc_new (kve->kf_fd, str, perm, type,
 					kve->kf_offset);
 			if (desc == NULL)
 				break;
