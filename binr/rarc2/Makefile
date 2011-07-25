@@ -14,6 +14,11 @@ config.h:
 rarc2${EXT_EXE}: ${OBJS}
 	${CC} ${LDFLAGS} -I. ${OBJS} -o rarc2${EXT_EXE}
 
+osx:
+	./rarc2 -ax86 osxtest.r > osxtest.asm
+	rasm2 -a x86.olly -f osxtest.asm > osxtest.hex
+	rabin2 -c mach0:$(shell cat osxtest.hex) osxtest
+
 test:
 	# only works with att mode
 	./rarc2 t/hello.r > t/hello.S

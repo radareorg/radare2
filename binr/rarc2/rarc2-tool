@@ -1,7 +1,6 @@
 #!/bin/sh
-# pancake / nopcode.org
+# radare2 -- 2010-2011 -- pancake / nopcode.org
 # TODO: execute in this way? rasc -s $bytes -X
-# TODO: use rasm2 instead of gas
 
 [ -z "${ARCH}" ] && ARCH=`rarc2 -A`
 [ -z "${CC}" ] && CC=gcc
@@ -19,29 +18,45 @@ compile() {
 help() {
 	cat << EOF
 Usage: rarc2-tool [-flag] [file]
-   -b  dump bytes
-   -n  use nasm
-   -x  execute
-   -c  compile against libc
-   -S  only generate .S file
+   -b       dump bytes
+   -n       use nasm instead of gas
+   -x       execute
+   -c [elf,mach0,pe] - select output format (-r is implicit)
+   -r       use intel syntax and rasm2 to display hexpairs
+   -c       compile against libc
+   -S       only generate .S file
 ARCH: environ to set architecture: arm, x86, x64
 EOF
 	exit 1
 }
 
-while getopts nbSxc o ; do
+while getopts rnbSxc: o ; do
 	[ "$o" = "?" ] && help
-	eval $o=1
+	case "$o" in
+	c) r=1; c="$OPTARG" ;;
+	*) eval $o=1 ;;
+	esac
 done
 
 shift $((${OPTIND}-1))
 
 if [ -n "`echo $@`" ]; then
-	if [ -n "$n" ]; then
+	if [ -n "$r" ]; then
+		RF=""
+		ARCH=x86
+		n=1
+	elif [ -n "$n" ]; then
 		RF=""
 	fi
 	compile $@
-	if [ -n "$n" ]; then
+	if [ -n "$c" ]; then
+		# rasm2 and rabin2
+		rasm2 -a x86.olly -f .a.S > .a.x
+		rabin2 -a x86_32 -c $c:$(cat .a.x) $1.out
+	elif [ -n "$r" ]; then
+		rasm2 -a x86.olly -f .a.S
+	elif [ -n "$n" ]; then
+		# nasm
 		cat .a.S | grep -v '^#' | sed -e 's, ptr , ,g' | \
 			grep -v 'intel_syntax' | \
 			sed -e 's|^\.||' | \
@@ -51,8 +66,8 @@ if [ -n "`echo $@`" ]; then
 		mv .a.S2 .a.S
 		nasm -f elf .a.S
 		ld -e main .a.o -o .a.out
-	#	exit 0
 	else
+		# gcc (default)
 		if [ -n "$c" ]; then
 			${CC} .a.S -o .a.out
 		else
@@ -70,7 +85,7 @@ if [ -n "`echo $@`" ]; then
 			fi
 		fi
 	fi
-	rm -f .a.S .a.out
+	rm -f .a.S .a.x .a.out
 else
 	help
 fi

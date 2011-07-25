@@ -422,6 +422,8 @@ R_API void r_bin_bind (RBin *bin, RBinBind *b) {
 
 R_API RBuffer *r_bin_create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
 	RBinArch *a = &bin->curarch;
+	if (codelen<0) codelen = 0;
+	if (datalen<0) datalen = 0;
 	if (a && a->curplugin && a->curplugin->create)
 		return a->curplugin->create (bin, code, codelen, data, datalen);
 	return NULL;
