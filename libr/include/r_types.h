@@ -117,8 +117,9 @@ typedef void (*PrintfCallback)(const char *str, ...);
 
 #define eprintf(x,y...) fprintf(stderr,x,##y)
 
-#define R_MAX(x,y) (x>y)?x:y
-#define R_MIN(x,y) (x>y)?y:x
+#define R_ROUND(x,y) ((x)%(y))? (x)+((y)-((x)%(y))): (x)
+#define R_MAX(x,y) ((x)>(y))?x:y
+#define R_MIN(x,y) ((x)>(y))?y:x
 #define R_ABS(x) (((x)<0)?-(x):(x))
 #define R_BTW(x,y,z) (((x)>=(y))&&((y)<=(z)))?y:x
 
