@@ -779,6 +779,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	if (action & ACTION_CREATE) {
+		// TODO: move in a function outside
 		RBuffer *b;
 		int datalen, codelen;
 		ut8 *data = NULL, *code = NULL;
@@ -806,9 +807,10 @@ int main(int argc, char **argv) {
 		}
 		b = r_bin_create (bin, code, codelen, data, datalen);
 		if (b) {
-			if (r_file_dump (file, b->buf, b->length))
+			if (r_file_dump (file, b->buf, b->length)) {
 				eprintf ("dumped %d bytes in '%s'\n", b->length, file);
-			else eprintf ("error dumping into a.out\n");
+				r_file_chmod (file, "+x", 0);
+			} else eprintf ("error dumping into a.out\n");
 			r_buf_free (b);
 		} else eprintf ("Cannot create binary for this format '%s'.\n", create);
 		r_bin_free (bin);
