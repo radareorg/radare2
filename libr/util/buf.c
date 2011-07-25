@@ -73,7 +73,23 @@ R_API int r_buf_append_nbytes(RBuffer *b, int length) {
 	return R_TRUE;
 }
 
+R_API int r_buf_append_ut16(RBuffer *b, ut16 n) {
+	if (!(b->buf = realloc (b->buf, b->length+sizeof (n))))
+		return R_FALSE;
+	memcpy (b->buf+b->length, &n, sizeof (n));
+	b->length += sizeof (n);
+	return R_TRUE;
+}
+
 R_API int r_buf_append_ut32(RBuffer *b, ut32 n) {
+	if (!(b->buf = realloc (b->buf, b->length+sizeof (n))))
+		return R_FALSE;
+	memcpy (b->buf+b->length, &n, sizeof (n));
+	b->length += sizeof (n);
+	return R_TRUE;
+}
+
+R_API int r_buf_append_ut64(RBuffer *b, ut64 n) {
 	if (!(b->buf = realloc (b->buf, b->length+sizeof (n))))
 		return R_FALSE;
 	memcpy (b->buf+b->length, &n, sizeof (n));

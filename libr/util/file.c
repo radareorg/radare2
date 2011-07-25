@@ -324,3 +324,9 @@ R_API const char *r_file_tmpdir() {
 #endif
 	return path;
 }
+
+R_API int r_file_chmod (const char *file, int mod) {
+#if __UNIX__
+	return chmod (file, mod);
+#endif
+}
