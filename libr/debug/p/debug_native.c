@@ -1493,7 +1493,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 	int i, perm, unk = 0;
 	char *pos_c;
 	char path[1024], line[1024];
-	char region[100], region2[100], perms[5], null[16];
+	char region[100], region2[100], perms[5];
 	FILE *fd;
 	if (dbg->pid == -1) {
 		eprintf ("r_debug_native_map_get: No selected pid (-1)\n");
@@ -1532,6 +1532,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 		if (pos_c) strncpy (path, pos_c, sizeof (path)-1);
 		else path[0]='\0';
 #else
+		char null[16];
 		sscanf (line, "%s %s %s %s %s %s",
 			&region[2], perms,  null, null, null, path);
 
@@ -1733,7 +1734,9 @@ static int r_debug_native_kill(RDebug *dbg, boolt thread, int sig) {
 #endif
 }
 
+struct r_debug_desc_plugin_t r_debug_desc_plugin_native;
 static int r_debug_native_init(RDebug *dbg) {
+	dbg->h->desc = r_debug_desc_plugin_native;
 #if __WINDOWS__
 	return w32_dbg_init ();
 #else
@@ -1763,6 +1766,121 @@ static int r_debug_native_bp(void *user, int add, ut64 addr, int hw, int rwx) {
 #endif
 	return R_FALSE;
 }
+
+static RList *r_debug_desc_native_list (int pid) {
+	RList *ret;
+	RDebugDesc *desc;
+	int perm, type;
+#if __KFBSD__
+	int mib[4];
+	size_t len;
+	char *buf, *bp, *eb;
+	struct kinfo_file *kve;
+
+	len = 0;
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_PROC;
+	mib[2] = KERN_PROC_FILEDESC;
+	mib[3] = pid;
+
+	if (sysctl(mib, 4, NULL, &len, NULL, 0) != 0)
+		return NULL;
+	len = len * 4 / 3;
+	buf = malloc(len);
+	if (buf == NULL)
+		return (NULL);
+	if (sysctl(mib, 4, buf, &len, NULL, 0) != 0) {
+		free (buf);
+		return NULL;
+	}
+	bp = buf;
+	eb = buf + len;
+	ret = r_list_new ();
+	if (ret) {
+		ret->free = (RListFree) r_debug_desc_free;
+		while (bp < eb) {
+			kve = (struct kinfo_file *)(uintptr_t)bp;
+			bp += kve->kf_structsize;
+			if (kve->kf_fd < 0) // Skip root and cwd. We need it ??
+				continue;
+			switch (kve->kf_vnode_type) {
+				case KF_VTYPE_VREG: type = 'r'; break;
+				case KF_VTYPE_VDIR: type = 'd'; break;
+				case KF_VTYPE_VBLK: type = 'b'; break;
+				case KF_VTYPE_VCHR: type = 'c'; break;
+				case KF_VTYPE_VLNK: type = 'l'; break;
+				case KF_VTYPE_VSOCK: type = 's'; break;
+				case KF_VTYPE_VFIFO: type = 'f'; break;
+				case KF_VTYPE_VBAD: type = 'x'; break;
+				case KF_VTYPE_VNON:
+				case KF_VTYPE_UNKNOWN:
+				default: type = '-'; break;
+			}
+			perm = (kve->kf_flags & KF_FLAG_READ)?R_IO_READ:0;
+			perm |= (kve->kf_flags & KF_FLAG_WRITE)?R_IO_WRITE:0;
+			desc = r_debug_desc_new (kve->kf_fd, kve->kf_path, perm, type,
+					kve->kf_offset);
+			if (desc == NULL)
+				break;
+			r_list_append (ret, desc);
+		}
+	}
+	free (buf);
+#elif __linux__
+	char path[1024], file[2048], buf[1024];
+	struct dirent *de;
+	DIR *dd;
+	struct stat st;
+
+	snprintf (path, sizeof (path), "/proc/%i/fd/", pid);
+	dd = opendir(path);
+	if (dd==NULL) {
+		printf("Cannot open /proc\n");
+		return NULL;
+	}
+
+	ret = r_list_new ();
+	if (ret) {
+		ret->free = (RListFree) r_debug_desc_free;
+		while((de = (struct dirent *)readdir(dd))) {
+			if (de->d_name[0]=='.')
+				continue;
+			strncpy (file, path, sizeof (file));
+			strncat (file, de->d_name, sizeof (file));
+			memset (buf, 0, sizeof (buf));
+			readlink(file, buf, sizeof (buf));
+			type = perm = 0;
+			if (stat(file, &st) != -1) {
+				type = st.st_mode & S_IFIFO  ? 'P':
+					st.st_mode & S_IFSOCK ? 'S':
+					st.st_mode & S_IFCHR  ? 'C':'-';
+			}
+			if (lstat(path, &st) != -1) {
+				if (st.st_mode & S_IRUSR)
+					perm |= R_IO_READ;
+				if (st.st_mode & S_IWUSR)
+					perm |= R_IO_WRITE;
+			}
+			//TODO: Offset
+			desc = r_debug_desc_new (atoi (de->d_name), buf, perm, type, 0);
+			if (desc == NULL)
+				break;
+			r_list_append (ret, desc);
+		}
+		closedir(dd);
+	}
+#endif
+	return ret;
+}
+
+static int r_debug_desc_native_open (const char *path) {
+	return 0;
+}
+
+struct r_debug_desc_plugin_t r_debug_desc_plugin_native = {
+	.open = r_debug_desc_native_open,
+	.list = r_debug_desc_native_list,
+};
 
 struct r_debug_plugin_t r_debug_plugin_native = {
 	.name = "native",

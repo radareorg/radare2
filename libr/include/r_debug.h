@@ -86,6 +86,14 @@ typedef struct r_debug_map_t {
 	int user;
 } RDebugMap;
 
+typedef struct r_debug_desc_t {
+	int fd;
+	char *path;
+	int perm;
+	int type;
+	ut64 off;
+} RDebugDesc;
+
 typedef struct r_debug_trace_t {
 	RList *traces;
 	int count;
@@ -143,7 +151,7 @@ typedef struct r_debug_desc_plugin_t {
 	int (*write)(int fd, ut64 addr, int len);
 	int (*seek)(int fd, ut64 addr);
 	int (*dup)(int fd, int newfd);
-	RList* (*list)();
+	RList* (*list)(int pid);
 } RDebugDescPlugin;
 
 /* TODO: pass dbg and user data pointer everywhere */
@@ -248,6 +256,8 @@ R_API void r_debug_map_free(RDebugMap *map);
 R_API void r_debug_map_list(RDebug *dbg, ut64 addr);
 
 /* descriptors */
+R_API RDebugDesc *r_debug_desc_new (int fd, char* path, int perm, int type, int off);
+R_API void r_debug_desc_free (RDebugDesc *p);
 R_API int r_debug_desc_open(RDebug *dbg, const char *path);
 R_API int r_debug_desc_close(RDebug *dbg, int fd);
 R_API int r_debug_desc_dup(RDebug *dbg, int fd, int newfd);

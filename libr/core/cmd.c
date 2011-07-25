@@ -4555,13 +4555,12 @@ static int cmd_debug(void *data, const char *input) {
 		} else r_debug_trace_list (core->dbg, -1);
 		break;
 	case 'd':
-		eprintf ("TODO: dd: file descriptors\n");
 		switch (input[1]) {
-		case 0:
-			// r_debug_desc_list()
+		case '\0':
+			r_debug_desc_list (core->dbg, 0);
 			break;
 		case '*':
-			// r_debug_desc_list(1)
+			r_debug_desc_list (core->dbg, 1);
 			break;
 		case 's':
 			// r_debug_desc_seek()
@@ -4580,6 +4579,13 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case ' ':
 			// open file
+			break;
+		case '?':
+		default:
+			r_cons_printf ("Usage: dd[*sdrw-?]\n"
+				" dd       list filedescriptors\n"
+				" dd*      list filedescriptors (in radare commands)\n"
+				" dd?      show this help\n");
 			break;
 		}
 		break;

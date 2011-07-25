@@ -4,6 +4,26 @@
 
 #include <r_debug.h>
 
+R_API RDebugDesc *r_debug_desc_new (int fd, char* path, int perm, int type, int off) {
+	RDebugDesc *desc = R_NEW (RDebugDesc);
+	if (desc) {
+		desc->fd = fd;
+		desc->path = strdup (path);
+		desc->perm = perm;
+		desc->type = type;
+		desc->off = off;
+	}
+	return desc;
+}
+
+R_API void r_debug_desc_free (RDebugDesc *p) {
+	if (p) {
+		if (p->path)
+			free (p->path);
+		free (p);
+	}
+}
+
 R_API int r_debug_desc_open(RDebug *dbg, const char *path) {
 	if (dbg && dbg->h && dbg->h->desc.open)
 		return dbg->h->desc.open (path);
@@ -42,8 +62,25 @@ R_API int r_debug_desc_write(RDebug *dbg, int fd, ut64 addr, int len) {
 
 R_API int r_debug_desc_list(RDebug *dbg, int rad) {
 	int count = 0;
-	// callback or rlist? i would prefer rlist here..
-	//RList *list = dbg->h->desc.list ();
-	// TODO: loop here
+	RList *list;
+	RListIter *iter;
+	RDebugDesc *p;
+
+	if (rad) {
+		if (dbg && dbg->printf)
+			dbg->printf ("TODO \n");
+	} else {
+		if (dbg && dbg->h && dbg->h->desc.list) {
+			list = dbg->h->desc.list (dbg->pid);
+			r_list_foreach (list, iter, p) {
+				dbg->printf ("%i 0x%"PFMT64x" %c%c%c %s\n", p->fd, p->off,
+						(p->perm & R_IO_READ)?'r':'-',
+						(p->perm & R_IO_WRITE)?'w':'-',
+						p->type, p->path);
+			}
+			r_list_destroy (list);
+			free (list);
+		}
+	}
 	return count;
 }
