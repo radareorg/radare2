@@ -4,6 +4,7 @@
 #include <r_core.h>
 
 static ut32 count = 0;
+static int useva = R_TRUE;
 
 static int cb(RDiff *d, void *user, RDiffOp *op) {
 	int i, rad = (int)(size_t)user;
@@ -13,12 +14,13 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 	}
 	if (rad) {
 		// TODO
+		eprintf ("TODO: radiff2: cb in radare output format\n");
 	} else {
 		printf ("0x%08"PFMT64x" ", op->a_off);
 		for (i = 0;i<op->a_len;i++)
 			printf ("%02x", op->a_buf[i]);
 		printf (" => ");
-		for (i = 0;i<op->b_len;i++)
+		for (i=0; i<op->b_len; i++)
 			printf ("%02x", op->b_buf[i]);
 		printf (" 0x%08"PFMT64x"\n", op->b_off);
 	}
@@ -33,7 +35,7 @@ static void diffrow(ut64 addr, const char *name, ut64 addr2, const char *name2, 
 
 static RCore* opencore(const char *f) {
 	RCore *c = r_core_new ();
-	r_config_set_i (c->config, "io.va", R_TRUE);
+	r_config_set_i (c->config, "io.va", useva);
 	r_config_set_i (c->config, "anal.split", R_TRUE);
 	if (r_core_file_open (c, f, 0, 0) == NULL) {
 		r_core_free (c);
@@ -89,11 +91,11 @@ static int show_help(int line) {
 		"  -c        count of changes\n"
 		"  -C        graphdiff code\n"
 		"  -d        use delta diffing\n"
-		"  -g [sym]  graph diff\n"
-		"  -r        radare commands\n"
-		"  -s        calculate text distance\n"
-		"  -v        use vaddr\n"
-		"  -V        show version information\n");
+		"  -g [sym]  graph diff of given symbol\n"
+		"  -r        output in radare commands\n"
+		"  -s        compute text distance\n"
+		"  -p        use physical addressing (io.va=0)\n"
+		"  -v        show version information\n");
 	return 1;
 }
 
@@ -111,14 +113,14 @@ int main(int argc, char **argv) {
 	RDiff *d;
 	char *file, *file2;
 	ut8 *bufa, *bufb;
-	int o, sza, szb, rad = 0, va = 0, delta = 0;
+	int o, sza, szb, rad = 0, delta = 0;
 	int showcount = 0, mode = MODE_DIFF;
 	double sim;
 
-	while ((o = getopt (argc, argv, "Cvg:rhcdsV")) != -1) {
+	while ((o = getopt (argc, argv, "Cpg:rhcdsv")) != -1) {
 		switch (o) {
-		case 'v':
-			va = 1;
+		case 'p':
+			useva = R_FALSE;
 			break;
 		case 'r':
 			rad = 1;
@@ -146,7 +148,7 @@ int main(int argc, char **argv) {
 //		case 'l':
 //			mode = MODE_LOCS;
 //			break;
-		case 'V':
+		case 'v':
 			printf ("radiff2 v"R2_VERSION"\n");
 			return 0;
 		default:

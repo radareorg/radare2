@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com> */
 
 #include <stdio.h>
 #include <string.h>
@@ -33,7 +33,7 @@ static int rasm_show_help() {
 		" -C           Output in C format\n"
 		" -L           List supported asm plugins\n"
 		" -e           Use big endian\n"
-		" -V           Show version information\n"
+		" -v           Show version information\n"
 		" If '-l' value is greater than output length, output is padded with nops\n"
 		" If the last argument is '-' reads from stdin\n");
 	return 0;
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
 		return rasm_show_help ();
 
 	r_asm_use (a, "x86"); // XXX: do not harcode default arch
-	while ((c = getopt (argc, argv, "CeVa:b:s:do:Bl:hLf:")) != -1) {
+	while ((c = getopt (argc, argv, "Ceva:b:s:do:Bl:hLf:")) != -1) {
 		switch (c) {
 		case 'f':
 			file = optarg;
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
 		case 'e':
 			r_asm_set_big_endian (a, R_TRUE);
 			break;
-		case 'V':
+		case 'v':
 			printf ("rasm2 v"R2_VERSION"\n");
 			return 0;
 		case 'h':

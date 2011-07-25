@@ -1,6 +1,8 @@
 /* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com> */
 
 /* TODO:
+ * Use -v to show version information.. not -V .. like the rest of tools
+ *  --- needs sync with callers and so on..
  * -L [lib]  dlopen library and show addr
  */
 
