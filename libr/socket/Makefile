@@ -8,6 +8,10 @@ CFLAGS+=${SSL_CFLAGS}
 LDFLAGS+=${SSL_LDFLAGS}
 endif
 
+# OSX 10.7 (lion)
+ifeq (${OSTYPE},darwin)
+LDFLAGS+=-lcrypto
+endif
 # on solaris only
 ifeq (${OSTYPE},solaris)
 LDFLAGS+=-lsocket
