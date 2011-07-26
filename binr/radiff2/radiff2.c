@@ -3,6 +3,15 @@
 #include <r_diff.h>
 #include <r_core.h>
 
+enum {
+	MODE_DIFF,
+	MODE_DIST,
+	MODE_LOCS,
+	MODE_CODE,
+	MODE_GRAPH,
+	MODE_COLS
+};
+
 static ut32 count = 0;
 static int useva = R_TRUE;
 
@@ -85,7 +94,7 @@ static void diff_bins(RCore *c, RCore *c2) {
 }
 
 static int show_help(int line) {
-	printf ("Usage: radiff2 [-nsdl] [file] [file]\n");
+	printf ("Usage: radiff2 [-cCdrspv] [-g sym] [file] [file]\n");
 	if (!line) printf (
 //		"  -l        diff lines of text\n"
 		"  -c        count of changes\n"
@@ -99,13 +108,29 @@ static int show_help(int line) {
 	return 1;
 }
 
-enum {
-	MODE_DIFF,
-	MODE_DIST,
-	MODE_LOCS,
-	MODE_CODE,
-	MODE_GRAPH,
-};
+static void dump_cols (ut8 *a, int as, ut8 *b, int bs) {
+	ut32 sz = R_MIN (as, bs);
+	ut32 i, j;
+	printf ("  offset     1 2 3 4 5 6 7 8             1 2 3 4 5 6 7 8\n");
+	for (i=0; i<sz; i++) {
+		char dch = (memcmp (a+i, b+i, 8))? ' ': '!';
+		printf ("0x%08x%c ", i, dch);
+		for (j=0; j<8; j++)
+			printf ("%02x", a[i+j]);
+		printf (" ");
+		for (j=0; j<8; j++)
+                	printf ("%c", IS_PRINTABLE (a[i+j])?a[i+j]:'.');
+		printf ("   ");
+		for (j=0; j<8; j++)
+			printf ("%02x", b[i+j]);
+		printf (" ");
+		for (j=0; j<8; j++)
+                	printf ("%c", IS_PRINTABLE (b[i+j])? b[i+j]:'.');
+		printf ("\n");
+	}
+	if (as != bs)
+		printf ("...\n");
+}
 
 int main(int argc, char **argv) {
 	const char *addr = NULL;
@@ -117,7 +142,7 @@ int main(int argc, char **argv) {
 	int showcount = 0, mode = MODE_DIFF;
 	double sim;
 
-	while ((o = getopt (argc, argv, "Cpg:rhcdsv")) != -1) {
+	while ((o = getopt (argc, argv, "Cpg:rhcdsvx")) != -1) {
 		switch (o) {
 		case 'p':
 			useva = R_FALSE;
@@ -144,6 +169,9 @@ int main(int argc, char **argv) {
 			break;
 		case 's':
 			mode = MODE_DIST;
+			break;
+		case 'x':
+			mode = MODE_COLS;
 			break;
 //		case 'l':
 //			mode = MODE_LOCS;
@@ -186,6 +214,9 @@ int main(int argc, char **argv) {
 	}
 
 	switch (mode) {
+	case MODE_COLS:
+		dump_cols (bufa, sza, bufb, szb);
+		break;
 	case MODE_DIFF:
 		d = r_diff_new (0LL, 0LL);
 		r_diff_set_delta (d, delta);

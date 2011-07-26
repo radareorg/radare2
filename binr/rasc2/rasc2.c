@@ -70,7 +70,21 @@ static int show_help() {
 	//printf("  -P          push file and remote execute\n");
 	//printf("  -u          use UDP\n");
 	return 0;
+}
 
+int encode (const char *encoder, ut8 *dst, int dstlen, ut8 *src, int srclen) {
+	if (!strcmp (encoder, "xor")) {
+		// Find valid 
+		const ut8 *call_pop = "\xe8\xfb\xff\xff";
+		const ut8 *pop_ebx  = "\x5b";
+		const ut8 *xor_ecx_ecx = "\x31\xc9";
+		// decode:
+		
+		// pop ebx
+	} else {
+		eprintf ("Encoders: xor\n");
+		exit (0);
+	}
 }
 
 char *filetostr(char *file) {
@@ -180,7 +194,11 @@ int print_shellcode() {
 	/* patch addr and env */
 	otf_patch ();
 
-	memcpy (output+A+N+E, shellcode, scsize);
+	if (encoder) {
+		ut8 blob[BLOCK]
+		scsize = encode (encoder, blob, sizeof (blob), shellcode, scsize);
+		memcpy (output+A+N+E, blob, scsize);
+	} else memcpy (output+A+N+E, shellcode, scsize);
 	for (i=0; i<C; i++)
 		output[i+A+E+N+scsize] = '\xCC';
 

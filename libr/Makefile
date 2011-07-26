@@ -9,7 +9,7 @@ PWD=`pwd`
 
 # Libraries
 LIBLIST=util socket cons line lib io lang flags bin hash config syscall cmd
-LIBLIST+=reg asm diff anal print parse search bp sign debug fs core
+LIBLIST+=reg asm diff anal print parse search egg bp sign debug fs core
 #DEPRECATED APIS : LIBLIST+=th crypto
 # sysproxy ... common wat du?
 

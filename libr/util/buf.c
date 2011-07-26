@@ -51,7 +51,9 @@ R_API int r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, int length) {
 }
 
 R_API char *r_buf_to_string(RBuffer *b) {
-	char *s = malloc (b->length+1);
+	char *s;
+	if (!b) return strdup ("");
+	s = malloc (b->length+1);
 	memcpy (s, b->buf, b->length);
 	s[b->length] = 0;
 	return s;
