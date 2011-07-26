@@ -75,9 +75,9 @@ static int show_help() {
 int encode (const char *encoder, ut8 *dst, int dstlen, ut8 *src, int srclen) {
 	if (!strcmp (encoder, "xor")) {
 		// Find valid 
-		const ut8 *call_pop = "\xe8\xfb\xff\xff";
-		const ut8 *pop_ebx  = "\x5b";
-		const ut8 *xor_ecx_ecx = "\x31\xc9";
+		//const ut8 *call_pop = "\xe8\xfb\xff\xff";
+		//const ut8 *pop_ebx  = "\x5b";
+		//const ut8 *xor_ecx_ecx = "\x31\xc9";
 		// decode:
 		
 		// pop ebx
@@ -85,6 +85,7 @@ int encode (const char *encoder, ut8 *dst, int dstlen, ut8 *src, int srclen) {
 		eprintf ("Encoders: xor\n");
 		exit (0);
 	}
+	return 0;
 }
 
 char *filetostr(char *file) {
@@ -195,7 +196,7 @@ int print_shellcode() {
 	otf_patch ();
 
 	if (encoder) {
-		ut8 blob[BLOCK]
+		ut8 blob[BLOCK];
 		scsize = encode (encoder, blob, sizeof (blob), shellcode, scsize);
 		memcpy (output+A+N+E, blob, scsize);
 	} else memcpy (output+A+N+E, shellcode, scsize);
