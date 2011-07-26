@@ -95,8 +95,8 @@ R_API void r_egg_alloc(REgg *egg, int n) {
 	// add esp, n
 }
 
-R_API REggLabel *r_egg_label(REgg *egg, const char *name) {
-	return NULL;
+R_API void r_egg_label(REgg *egg, const char *name) {
+	r_egg_printf (egg, "%s:\n", name);
 }
 
 R_API void r_egg_raw(REgg *egg, const ut8 *b, int len) {
@@ -152,10 +152,12 @@ R_API int r_egg_compile(REgg *egg) {
 
 		code = r_buf_to_string (egg->buf);
 		asmcode = r_asm_massemble (egg->rasm, code);
-		r_buf_append_bytes (egg->bin, asmcode->buf, asmcode->len);
-		// LEAK r_asm_code_free (asmcode);
+		if (asmcode) {
+			r_buf_append_bytes (egg->bin, asmcode->buf, asmcode->len);
+			// LEAK r_asm_code_free (asmcode);
+		}
 		free (code);
-		return R_TRUE;
+		return (asmcode != NULL);
 	}
 	return R_FALSE;
 }

@@ -4,6 +4,8 @@ int main() {
 	int i;
 	RBuffer *b;
 	REgg *egg = r_egg_new ();
+
+	r_egg_setup (egg, "arm", 32, 0, 0);
 	r_egg_include (egg, "test.r", 0);
 	r_egg_compile (egg);
 
