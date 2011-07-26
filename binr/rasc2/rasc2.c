@@ -20,17 +20,18 @@
 #endif
 
 #define BLOCK 4096
-int execute = 0;
-int scidx = -1;
-int hexa_print = 0;
-unsigned long off = 0, addr = 0;
-unsigned char shellcode[BLOCK];
-unsigned char output[BLOCK];
+static const char *ofile = NULL;
+static const char *encoder = NULL;
+static int scidx = -1;
+static int hexa_print = 0;
+static ut32 off = 0, addr = 0;
+static ut8 shellcode[BLOCK];
+static ut8 output[BLOCK];
 
 /* sizes */
-int A=0, N=0;
-int C=0, E=0;
-int scsize = 0;
+static int A=0, N=0;
+static int C=0, E=0;
+static int scsize = 0;
 #define SCSIZE N+A+C+E+scsize
 
 static int show_helpline() {
@@ -55,6 +56,8 @@ static int show_help() {
 	"  -c           output in C format\n"
 	"  -e           output in escapped string\n"
 	"  -x           output in hexpairs format\n"
+	"  -O [encoder] select output encoder (fmi: -O help)\n"
+	"  -o [file]    select output file\n"
 	"  -X           execute shellcode\n"
 	"  -t           test current platform\n"
 	"  -V           show version information\n"
@@ -130,7 +133,7 @@ int otf_patch() {
 	/* patch return address */
 	if (addr != 0) {
 		/* TODO: swapping endian for addr (-e) */
-		unsigned char *foo = (unsigned char *)&addr;
+		ut8 *foo = (ut8 *)&addr;
 		if (off<0) off = 0;
 		if (off>SCSIZE) off = SCSIZE-4;
 		output[off+0] = foo[0];
@@ -158,86 +161,94 @@ int print_shellcode() {
 	for (i=0;i<A;i++)
 		output[i] = 'A';
 	if (N%2) {
-		for(i=0;i<N;i++)
+		for (i=0; i<N; i++)
 			output[i+A] = '\x90';
 	} else {
-		for(i=0;i<N;i+=2) {
+		for (i=0; i<N; i+=2) {
 			output[i+A]   = '\x40'; // inc eax
 			output[i+A+1] = '\x48'; // dec eax
 		}
 	}
-	for(i=0,j='A';i<E;i++,j++) {
+	for(i=0,j='A'; i<E; i++,j++) {
 		if (j=='\n'||j=='\r')
 			j++;
-		output[i*4+A+N] = (unsigned char)(j%256);
-		output[i*4+A+N+1] = (unsigned char)(j%256);
-		output[i*4+A+N+2] = (unsigned char)(j%256);
-		output[i*4+A+N+3] = (unsigned char)(j%256);
+		output[i*4+A+N] = (ut8)(j%256);
+		output[i*4+A+N+1] = (ut8)(j%256);
+		output[i*4+A+N+2] = (ut8)(j%256);
+		output[i*4+A+N+3] = (ut8)(j%256);
 	}
 	/* patch addr and env */
 	otf_patch ();
 
 	memcpy (output+A+N+E, shellcode, scsize);
-	for (i=0;i<C;i++)
+	for (i=0; i<C; i++)
 		output[i+A+E+N+scsize] = '\xCC';
 
+	if (ofile) {
+		int fd;
+		unlink (ofile);
+		fd = open (ofile, O_RDWR | O_CREAT, 0755);
+		dup2 (fd, 1);
+	}
 	switch (hexa_print) {
 	case 0: // raw
 		write (1, output, SCSIZE);
 		break;
 	case 1: // hexpairs
-		for(i=0;i<SCSIZE;i++)
-			printf("%02x", output[i]);
+		for (i=0; i<SCSIZE; i++)
+			printf ("%02x", output[i]);
 		printf ("\n");
 		break;
 	case 2: // C
-		printf ("unsigned char shellcode[] = {  ");
+		printf ("ut8 shellcode[] = {  ");
 		j = 0;
-		for (i=0;i<SCSIZE;i++) {
+		for (i=0; i<SCSIZE; i++) {
 			if (!(i%12)) printf ("\n  ");
 			printf ("0x%02x", output[i]);
 			if (i+1!=SCSIZE+scsize)
 				printf (", ");
 		}
 		printf ("\n};\n");
-		fflush (stdout);
 		break;
 	case 3:
 		if (scsize == 0) {
 			printf("No shellcode defined\n");
 			return 1;
 		} else {
-			void (*cb)() = (void *)&shellcode; cb();
+			void (*cb)() = (void *)&shellcode;
+			cb();
 		}
 		break;
 	case 4:
-		printf("\"");
+		printf ("\"");
 		j = 0;
-		for(i=0;i<SCSIZE;i++) {
-			printf("\\x%02x", output[i]);
+		for (i=0;i<SCSIZE;i++) {
+			printf ("\\x%02x", output[i]);
 		}
-		printf("\"\n");
-		fflush(stdout);
+		printf ("\"\n");
 		break;
 	}
+	fflush (stdout);
+	if (ofile)
+		close (1);
 	return 0;
 }
 
-int hex2int (unsigned char *val, unsigned char c) {
-        if ('0' <= c && c <= '9')      *val = (unsigned char)(*val) * 16 + ( c - '0');
-        else if (c >= 'A' && c <= 'F') *val = (unsigned char)(*val) * 16 + ( c - 'A' + 10);
-        else if (c >= 'a' && c <= 'f') *val = (unsigned char)(*val) * 16 + ( c - 'a' + 10);
+int hex2int (ut8 *val, ut8 c) {
+        if ('0' <= c && c <= '9')      *val = (ut8)(*val) * 16 + ( c - '0');
+        else if (c >= 'A' && c <= 'F') *val = (ut8)(*val) * 16 + ( c - 'A' + 10);
+        else if (c >= 'a' && c <= 'f') *val = (ut8)(*val) * 16 + ( c - 'a' + 10);
         else return 0;
         return 1;
 }
 
 int hexpair2bin(const char *arg) { // (0A) => 10 || -1 (on error)
-	unsigned char *ptr;
-	unsigned char c = '\0';
-	unsigned char d = '\0';
-	unsigned int  j = 0;
+	ut8 *ptr;
+	ut8 c = '\0';
+	ut8 d = '\0';
+	unsigned int j = 0;
 
-	for (ptr = (unsigned char *)arg; ;ptr = ptr + 1) {
+	for (ptr = (ut8 *)arg; ; ptr++) {
 		if (ptr[0]==' '||ptr[0]=='\t'||ptr[0]=='\n'||ptr[0]=='\r')
 			continue;
 		if (!IS_PRINTABLE(ptr[0]))
@@ -352,8 +363,17 @@ int main(int argc, char **argv) {
 	if (argc<2)
 		return show_helpline ();
 
-	while ((c = getopt (argc, argv, "a:VcC:ts:S:i:Ll:uhN:A:XxE:e")) != -1) {
-		switch( c ) {
+	while ((c = getopt (argc, argv, "a:VcC:ts:S:i:Ll:uhN:A:XxE:eo:O:")) != -1) {
+		switch (c) {
+		case 'o':
+			// output file
+			ofile = optarg;
+			break;
+		case 'O':
+			// output encoder
+			eprintf ("TODO: no encoders implemented yet\n");
+			encoder = optarg;
+			break;
 		case 't':
 			return test ();
 		case 'x':

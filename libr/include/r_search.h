@@ -13,6 +13,7 @@ enum {
 	R_SEARCH_STRING,
 	R_SEARCH_XREFS,
 	R_SEARCH_AES,
+	R_SEARCH_DELTAKEY,
 	R_SEARCH_LAST
 };
 
@@ -91,6 +92,7 @@ R_API int r_search_set_blocksize(RSearch *s, ut32 bsize);
 // TODO: is this an internal API?
 R_API int r_search_mybinparse_update(void *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_aes_update(void *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_deltakey_update(void *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_strings_update(void *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_regexp_update(void *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_xrefs_update(void *s, ut64 from, const ut8 *buf, int len);

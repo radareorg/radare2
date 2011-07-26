@@ -7,7 +7,7 @@ PFX=${DESTDIR}/${PREFIX}
 BFX=${DESTDIR}/${BINDIR}
 LFX=${DESTDIR}/${LIBDIR}
 
-BINS=rax2 rasm2 rabin2 rahash2 radiff2 radare2 rafind2 rarc2 ranal2 rasc2
+BINS=rax2 rasm2 rabin2 rahash2 radiff2 radare2 rafind2 rarc2 ranal2 rasc2 rarun2
 #rsc2
 
 all:

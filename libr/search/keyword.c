@@ -1,28 +1,26 @@
-/* radare - LGPL - Copyright 2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2011 pancake<nopcode.org> */
 
 #include <r_search.h>
 
 R_API RSearchKeyword* r_search_keyword_new(const ut8 *kw, int kwlen, const ut8 *bm, int bmlen, const char *data) {
-	RSearchKeyword *k = NULL;
+	RSearchKeyword *k;
+	if (kwlen<1 || bmlen<0 || (kwlen >=sizeof (k->keyword)) || (bmlen >= sizeof (k->binmask)))
+		return NULL;
 	if (bm == NULL)
 		bm = (const ut8*) "";
-	if (kwlen>0 && bmlen>=0 && (kwlen < sizeof (k->keyword))
-			&& (bmlen < sizeof (k->binmask))) {
-		k = R_NEW (RSearchKeyword);
-		if (k != NULL) {
-			k->icase = 0;
-			memcpy (k->keyword, kw, kwlen);
-			k->keyword_length = kwlen;
-			memcpy (k->bin_keyword, kw, kwlen);
-			if (bm && bmlen>0) {
-				//memcpy (k->binmask, bm, bmlen);
-				// XXX Fix this conversion.. r_hex_str.. ?
-				snprintf (k->binmask, sizeof (k->binmask),
-					"%02x%02x%02x..", bm[0], bm[1], bm[2]);
-				memcpy (k->bin_binmask, bm, bmlen);
-				k->binmask_length = bmlen;
-			} else k->binmask[0] = k->binmask_length = 0;
-		}
+	if ((k = R_NEW (RSearchKeyword))) {
+		k->icase = 0;
+		memcpy (k->keyword, kw, kwlen);
+		k->keyword_length = kwlen;
+		memcpy (k->bin_keyword, kw, kwlen);
+		if (bm && bmlen>0) {
+			//memcpy (k->binmask, bm, bmlen);
+			// XXX Fix this conversion.. r_hex_str.. ?
+			snprintf (k->binmask, sizeof (k->binmask),
+				"%02x%02x%02x..", bm[0], bm[1], bm[2]);
+			memcpy (k->bin_binmask, bm, bmlen);
+			k->binmask_length = bmlen;
+		} else k->binmask[0] = k->binmask_length = 0;
 	}
 	return k;
 }
@@ -74,8 +72,7 @@ R_API RSearchKeyword* r_search_keyword_new_hexmask(const char *kwstr, const char
 		kw = malloc (len);
 		bm = malloc (len);
 		if (kw != NULL && bm != NULL) {
-			len = r_hex_str2binmask (kwstr, (ut8*)kw, (ut8*)bm);
-			if (len>0)
+			if ((len = r_hex_str2binmask (kwstr, (ut8*)kw, (ut8*)bm))>0)
 				ks = r_search_keyword_new (kw, len, bm, len, data);
 		}
 		free (kw);

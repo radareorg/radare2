@@ -53,6 +53,7 @@ R_API int r_search_set_mode(RSearch *s, int mode) {
 	case R_SEARCH_REGEXP: s->update = r_search_regexp_update; break;
 	case R_SEARCH_AES: s->update = r_search_aes_update; break;
 	case R_SEARCH_STRING: s->update = r_search_strings_update; break;
+	case R_SEARCH_DELTAKEY: s->update = r_search_deltakey_update; break;
 	}
 	if (s->update || mode == R_SEARCH_PATTERN) {
 		s->mode = mode;
@@ -93,6 +94,43 @@ R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
 	hit->addr = addr;
 	r_list_append (s->hits, hit);
 	return R_TRUE;
+}
+
+R_API int r_search_deltakey_update(void *_s, ut64 from, const ut8 *buf, int len) {
+	RListIter *iter;
+	unsigned char pch = 0;
+	int i, j, count = 0;
+	RSearch *s = (RSearch*)_s;
+
+	for (i=0; i<len; i++) {
+		RSearchKeyword *kw;
+		r_list_foreach (s->kws, iter, kw) {
+			for (j=0; j<=kw->distance; j++) {
+				char ch = kw->bin_keyword[kw->idx[j]]; // signed char
+				ut8 ch2 = buf[i];
+				/* no icase in delta keys */
+				/* no binmask in delta keys */
+				/* no inverse support for delta keys */
+				if (pch+ch == ch2) {
+					kw->idx[j]++;
+					if (kw->idx[j] == kw->keyword_length) {
+						if (!r_search_hit_new (s, kw, (ut64)
+							from+i-kw->keyword_length+1))
+							return -1;
+						kw->idx[j] = 0;
+						//kw->idx[0] = 0;
+						kw->distance = 0;
+						kw->count++;
+						count++;
+						//s->nhits++;
+					}
+				}
+				pch = ch2;
+			}
+		}
+		count = 0;
+	}
+	return count;
 }
 
 // TODO: move into a plugin */

@@ -3,9 +3,12 @@
   |    <  V  . |  . V  .   <   _/ .-' _/|  ()  |
   |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
-CODENAME: #DRY
+====[[ 0.9 ]]====
+* Implement r_search_xrefs()
+* Test r_search_delta()
+* radiff2 -x show two column diff
+* Support for proper analyze of TinyPE binaries
 
-* Move mandpage from man/ to binr/*/?
 * add support for sockets in rarun2
 
 TODO
@@ -44,7 +47,7 @@ TODO
   - set prompt, set line, fgets
   - strict width in visual
 * Dupped javasm bin/asm
-* REFACTORING of disasm loop XDDDDD -1 (r2-0.8 plzz)
+* REFACTORING of disasm loop XDDDDD -1 (r2-0.9 plzz)
   - arch dependent anal code must be removed from disasm loop +1
 
 
@@ -53,6 +56,7 @@ TODO
 
 To wipe:
 ========
+ - Move mandpage from man/ to binr/*/?
  - Move the content of libr/*/TODO here
  - linestyle?? for disassembly lines
  - remove libr/vm and libr/db

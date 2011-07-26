@@ -13,3 +13,8 @@
 * Added support for negated searchs (find until no keyword matches)
   - per keyword
   - useful to find the end of a \xff block
+
+Delta key search
+================
+search: /d 1011
+matchs: 405061

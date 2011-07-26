@@ -221,9 +221,9 @@ static int check(RBinArch *arch) {
 	return ret;
 }
 
+/* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
-	ut32 p_start, p_opthdr, p_sections, p_lsrlc, n;
-	ut32 hdrsize;
+	ut32 hdrsize, p_start, p_opthdr, p_sections, p_lsrlc, n;
 	ut32 baddr = 0x400000;
 	RBuffer *buf = r_buf_new ();
 
@@ -238,24 +238,21 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	B ("PE\x00\x00", 4);
 	H (0x14c);
 	H (1);
-p_start = buf->length;
-/* code */
-B ("\x6a\x2a\x58\xc3", 4); // ret 42
-ut32 filesize = 97; // XXX HACK
-p_start = filesize;
+	D (0); // nothing
+	p_start = 97; // HACK this is filesize
 
 	D (0);
 	D (0);
-p_lsrlc = buf->length;
+	p_lsrlc = buf->length;
 	H (-1); // sections-opthdr
 	H (0x103);
 	// opthdr:
-p_opthdr = buf->length;
+	p_opthdr = buf->length;
 	H (0x10b);
 	B ("\x08\x00", 2);
-p_sections = buf->length;
-n = p_sections-p_opthdr;
-W (p_lsrlc, &n, 4);
+	p_sections = buf->length;
+	n = p_sections-p_opthdr;
+	W (p_lsrlc, &n, 4);
 	// sections:
 	D (R_ROUND (codelen, 4));
 	D (0);
@@ -273,14 +270,14 @@ W (p_lsrlc, &n, 4);
 	H (4);
 	H (0);
 	D (0);
-hdrsize = 100;
+	hdrsize = 100;
 	D (R_ROUND (hdrsize, 4)+R_ROUND (codelen, 4));
 	D (R_ROUND (hdrsize, 4));
 	D (0);
 	B ("\x02", 1);
-//hdrsize = filesize; // 97
-//printf ("FILESIZE = %d\n", buf->length);
-B (code, codelen);
+	//hdrsize = filesize; // 97
+	//printf ("FILESIZE = %d\n", buf->length);
+	B (code, codelen);
 
 	if (data && datalen>0) {
 		//ut32 data_section = buf->length;

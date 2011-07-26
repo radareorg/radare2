@@ -133,7 +133,7 @@ static int cmd_zign(void *data, const char *input) {
 	int i, fd = -1, len;
 	char *ptr, *name;
 
-	switch (input[0]) {
+	switch (*input) {
 	case 'g':
 		if (input[1]==' ' && input[2]) {
 			ptr = strchr (input+2, ' ');
@@ -3214,6 +3214,13 @@ static int cmd_search(void *data, const char *input) {
 		free (opt);
 		}
 		break;
+	case 'd': /* search delta key */
+		r_search_reset (core->search, R_SEARCH_DELTAKEY);
+		r_search_kw_add (core->search, 
+			r_search_keyword_new_hexmask (input+2, NULL));
+		r_search_begin (core->search);
+		dosearch = R_TRUE;
+		break;
 	case 'x': /* search hex */
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
@@ -3265,6 +3272,7 @@ static int cmd_search(void *data, const char *input) {
 		" /i foo          ; search for string 'foo' ignoring case\n"
 		" /e /E.F/i       ; match regular expression\n"
 		" /x ff0033       ; search for hex string\n"
+		" /d 101112       ; search for a deltified sequence of bytes\n"
 		" /!x 00          ; inverse hexa search (find first byte != 0x00)\n"
 		" /c jmp [esp]    ; search for asm code (see search.asmstr)\n"
 		" /A              ; search for AES expanded keys\n"
