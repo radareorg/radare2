@@ -99,6 +99,11 @@ R_API void r_egg_label(REgg *egg, const char *name) {
 	r_egg_printf (egg, "%s:\n", name);
 }
 
+R_API void r_egg_math (REgg *egg) {//, char eq, const char *vs, char type, const char *sr
+	// TODO
+	//e->mathop (egg, op, type, eq, p);
+}
+
 R_API void r_egg_raw(REgg *egg, const ut8 *b, int len) {
 }
 
@@ -175,4 +180,8 @@ R_API char *r_egg_get_source(REgg *egg) {
 
 R_API char *r_egg_get_assembly(REgg *egg) {
 	return r_buf_to_string (egg->buf);
+}
+
+R_API void r_egg_append(REgg *egg, const char *src) {
+	r_buf_append_bytes (egg->src, (const ut8*)src, strlen (src));
 }

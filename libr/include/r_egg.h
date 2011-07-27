@@ -67,6 +67,7 @@ R_API RBuffer *r_egg_get_bin(REgg *egg);
 R_API char *r_egg_get_source(REgg *egg);
 R_API RBuffer *r_egg_get_bin(REgg *egg);
 R_API char *r_egg_get_assembly(REgg *egg);
+R_API void r_egg_append(REgg *egg, const char *src);
 
 /* lang.c */
 R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta);

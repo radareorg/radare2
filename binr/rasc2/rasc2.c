@@ -74,13 +74,27 @@ static int show_help() {
 
 int encode (const char *encoder, ut8 *dst, int dstlen, ut8 *src, int srclen) {
 	if (!strcmp (encoder, "xor")) {
-		// Find valid 
-		//const ut8 *call_pop = "\xe8\xfb\xff\xff";
-		//const ut8 *pop_ebx  = "\x5b";
-		//const ut8 *xor_ecx_ecx = "\x31\xc9";
-		// decode:
-		
-		// pop ebx
+		ut8 key = 33;
+		// Find valid xor key
+		// length is key here
+		const ut8 *xordec =
+			// TODO: setup ecx here
+			"\xe8\xff\xff\xff\xff" // call $$+4
+			"\xc1" // ffc1 = inc ecx
+			"\x5e" // pop esi
+			"\x30\x4c\x0e\x07" // xor [esi+ecx+7], cl
+			"\xe2\xfa"; // loop xoresi
+		int xordeclen = strlen (xordec);
+		if (srclen+xordeclen>=dstlen) {
+			eprintf ("encode: too long");
+			return 0;
+		}
+		memcpy (dst, xordec, xordeclen);
+		for (i=0;i<srclen; i++) {
+			dst[xordeclen+i] = src[i] ^ i; // XXX
+		}
+		memcpy (dst+xordeclen, src, srclen);
+		return srclen + xordeclen;
 	} else {
 		eprintf ("Encoders: xor\n");
 		exit (0);
@@ -89,7 +103,7 @@ int encode (const char *encoder, ut8 *dst, int dstlen, ut8 *src, int srclen) {
 }
 
 char *filetostr(char *file) {
-        FILE *fd = fopen(file,"r");
+        FILE *fd = fopen (file,"r");
         char *buf;
         int i, size = BLOCK;
 
@@ -98,10 +112,10 @@ char *filetostr(char *file) {
 
         buf = (char *)malloc (size);
         buf[0]='\0';
-        for (i=0;!feof(fd);i++) {
+        for (i=0; !feof (fd); i++) {
                 if (i==size) {
                         size = size + BLOCK;
-                        buf = realloc(buf, size);
+                        buf = realloc (buf, size);
                 }
                 fread (buf+i, 1, 1, fd);
         }
@@ -130,7 +144,7 @@ int otf_patch() {
 			ptr = getenv ("HOST");
 			if (ptr) {
 				int x,y,z,w;
-				sscanf(ptr,"%d.%d.%d.%d", &x,&y,&z,&w);
+				sscanf (ptr,"%d.%d.%d.%d", &x,&y,&z,&w);
 				shellcode[shellcodes[scidx].host+3]=x;
 				shellcode[shellcodes[scidx].host+2]=y;
 				shellcode[shellcodes[scidx].host+1]=z;

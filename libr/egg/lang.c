@@ -555,13 +555,13 @@ static void rcc_next(REgg *egg) {
 		int vs = 'l';
 		char type, *eq, *ptr = elem;
 		elem[elem_n] = '\0';
-		while (isspace (ptr[0])) ptr=ptr+1; /* skip spaces */
+		while (isspace (ptr[0])) ptr++; /* skip spaces */
 		if (*ptr) {
 			eq = strchr (ptr, '=');
 			if (eq) {
 				char str2[64], *p, ch = *(eq-1);
 				*eq = '\0';
-				for (eq=eq+1; *eq==' '; eq++);
+				for (eq++; *eq==' '; eq++);
 				p = r_egg_mkvar (egg, str2, ptr, 0);
 				vs = varsize;
 				if (IS_VAR (eq)) {

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// XXX: only for x86
 int swallow_redpill () {
 	unsigned char m[2+4], rpill[] = "\x0f\x01\x0d\x00\x00\x00\x00\xc3";
 	*((unsigned*)&rpill[3]) = (unsigned long int) m;
