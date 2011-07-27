@@ -73,6 +73,7 @@ static int show_help() {
 }
 
 int encode (const char *encoder, ut8 *dst, int dstlen, ut8 *src, int srclen) {
+	int i;
 	if (!strcmp (encoder, "xor")) {
 		ut8 key = 33;
 		// Find valid xor key
