@@ -396,7 +396,6 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 			} else { /* Instruction */
 				if (acode->equs) {
 					char *str = r_asm_code_equ_replace (acode, strdup (ptr_start));
-eprintf ("******* %s -> %s\n", ptr_start, str);
 					ret = r_asm_assemble (a, &op, str);
 					free (str);
 				} else ret = r_asm_assemble (a, &op, ptr_start);
