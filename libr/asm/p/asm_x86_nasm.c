@@ -46,6 +46,7 @@ RAsmPlugin r_asm_plugin_x86_nasm = {
 	.name = "x86.nasm",
 	.desc = "X86 nasm assembler plugin",
 	.arch = "x86",
+	// NOTE: 64bits is not supported on OSX's nasm :(
 	.bits = (int[]){ 16, 32, 64, 0 },
 	.init = NULL,
 	.fini = NULL,

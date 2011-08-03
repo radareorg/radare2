@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #if __UNIX__
+#include <sys/mman.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #endif
@@ -73,19 +74,19 @@ static int show_help() {
 }
 
 int encode (const char *encoder, ut8 *dst, int dstlen, ut8 *src, int srclen) {
-	int i;
+	int xordeclen, i;
 	if (!strcmp (encoder, "xor")) {
-		ut8 key = 33;
+		//ut8 key = 33;
 		// Find valid xor key
 		// length is key here
-		const ut8 *xordec =
+		const ut8 *xordec = (const ut8*)
 			// TODO: setup ecx here
 			"\xe8\xff\xff\xff\xff" // call $$+4
 			"\xc1" // ffc1 = inc ecx
 			"\x5e" // pop esi
 			"\x30\x4c\x0e\x07" // xor [esi+ecx+7], cl
 			"\xe2\xfa"; // loop xoresi
-		int xordeclen = strlen (xordec);
+		xordeclen = strlen ((const char *)xordec);
 		if (srclen+xordeclen>=dstlen) {
 			eprintf ("encode: too long");
 			return 0;
@@ -249,8 +250,16 @@ int print_shellcode() {
 			printf("No shellcode defined\n");
 			return 1;
 		} else {
+			ut8 *ptr = malloc (4096);
 			void (*cb)() = (void *)&shellcode;
+			memcpy (ptr, shellcode, strlen ((const char *)shellcode));
+#if __UNIX__
+			mprotect (ptr, 4096, PROT_READ|PROT_EXEC); // rx must be ok
+			mprotect (ptr, 4096, PROT_READ|PROT_WRITE|PROT_EXEC); // try rwx
+#endif
+			cb = (void*)ptr;
 			cb();
+			free (ptr);
 		}
 		break;
 	case 4:
