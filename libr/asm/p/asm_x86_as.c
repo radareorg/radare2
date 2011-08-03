@@ -23,6 +23,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			".ascii \"ENDMARK\"\n",
 			syntaxstr, a->bits, buf); // a->pc ??
 	write (ifd, asm_buf, len);
+	//write (1, asm_buf, len);
 	close (ifd);
 
 	if (!r_sys_cmdf ("as %s -o %s", ipath, opath)) {
@@ -41,7 +42,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			else len = 0;
 		}
 	} else {
-		eprintf ("Error running 'as'\n");
+		eprintf ("Error running: as %s -o %s", ipath, opath);
 		len = 0;
 	}
 

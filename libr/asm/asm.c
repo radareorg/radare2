@@ -16,14 +16,14 @@ static int r_asm_pseudo_align(struct r_asm_op_t *op, char *input) {
 	return 0;
 }
 
-static int r_asm_pseudo_string(struct r_asm_op_t *op, char *input) {
+static int r_asm_pseudo_string(struct r_asm_op_t *op, char *input, int zero) {
 	int len = strlen(input)-1;
 	// TODO: if not starting with '"'.. give up
 	if (input[len]=='"')
 		input[len] = 0;
 	if (*input=='"')
 		input++;
-	len = r_str_escape (input)+1;
+	len = r_str_escape (input)+zero;
 	r_hex_bin2str ((ut8*)input, len, op->buf_hex);
 	strncpy ((char*)op->buf, input, R_ASM_BUFSIZE);
 	return len;
@@ -355,7 +355,9 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				else if (!memcmp (ptr, ".att_syntax", 10)) 
 					a->syntax = R_ASM_SYNTAX_ATT;
 				else if (!memcmp (ptr, ".string ", 8))
-					ret = r_asm_pseudo_string (&op, ptr+8);
+					ret = r_asm_pseudo_string (&op, ptr+8, 1);
+				else if (!memcmp (ptr, ".ascii ", 7))
+					ret = r_asm_pseudo_string (&op, ptr+7, 0);
 				else if (!memcmp (ptr, ".align", 7))
 					ret = r_asm_pseudo_align (&op, ptr+7);
 				else if (!memcmp (ptr, ".arch ", 6))
@@ -394,6 +396,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 			} else { /* Instruction */
 				if (acode->equs) {
 					char *str = r_asm_code_equ_replace (acode, strdup (ptr_start));
+eprintf ("******* %s -> %s\n", ptr_start, str);
 					ret = r_asm_assemble (a, &op, str);
 					free (str);
 				} else ret = r_asm_assemble (a, &op, ptr_start);

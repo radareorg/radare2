@@ -187,7 +187,7 @@ R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian) {
 //R_DOC r_mem_mem: Finds the needle of nlen size into the haystack of hlen size
 //R_UNIT printf("%s\n", r_mem_mem("food is pure lame", 20, "is", 2));
 R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen) {
-	int i, until = hlen-nlen;
+	int i, until = hlen-nlen+1;
 	for (i=0; i<until; i++) {
 		if (!memcmp (haystack+i, needle, nlen))
 			return haystack+i;

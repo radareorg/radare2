@@ -4,9 +4,7 @@
 #include <r_asm.h>
 
 R_API RAsmCode *r_asm_code_new() {
-	RAsmCode *acode;
-	
-	acode = R_NEW (RAsmCode);
+	RAsmCode *acode = R_NEW (RAsmCode);
 	if (acode) {
 		acode->len = 0;
 		acode->equs = NULL;
@@ -59,7 +57,7 @@ R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str) {
 		iter = r_list_iterator (code->equs);
 		while (r_list_iter_next (iter)) {
 			RAsmEqu *equ = r_list_iter_get (iter);
-			str = r_str_sub (str, equ->key, equ->value, R_TRUE);
+			str = r_str_replace (str, equ->key, equ->value, R_TRUE);
 		}
 	}
 	return str;

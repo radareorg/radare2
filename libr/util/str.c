@@ -488,71 +488,31 @@ R_API void *r_str_free(void *ptr) {
 	return NULL;
 }
 
-#if 0
-// XXX: unused
-R_API int r_str_inject(char *begin, char *end, char *str, int maxlen) {
+R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
+	int off;
+	int klen = strlen (key);
+	int vlen = strlen (val);
 	int slen = strlen (str);
-	int len = strlen (end)+1;
-	char *tmp;
-	if (maxlen > 0 && ((strlen (begin)-(end-begin)+slen) > maxlen))
-		return 0;
-	tmp = malloc (len);
-	memcpy (tmp, end, len);
-	memcpy (begin, str, slen);
-	memcpy (begin+slen, tmp, len);
-	free (tmp);
-	return 1;
-}
-#endif
-
-/* unstable code (taken from GNU) */
-/*------------------------------------------------*/
-
-// FROM bash::stringlib
-#define RESIZE_MALLOCED_BUFFER(str,cind,room,csize,sincr) \
-	if ((cind) + (room) >= csize) { \
-		while ((cind) + (room) >= csize) \
-		csize += (sincr); \
-		str = realloc (str, csize); \
+	char *old, *p = str;
+	for (;;) {
+		p = (char *)r_mem_mem (
+			(const ut8*)str, slen,
+			(const ut8*)key, klen);
+		if (p) {
+			old = strdup (p+klen);
+			slen += (vlen-klen)+1;
+			off = (int)(size_t)(p-str);
+			str = realloc (str, slen);
+			p = str+off;
+			memcpy (p, val, vlen);
+			memcpy (p+vlen, old, strlen (old));
+			p[vlen] = 0;
+			free (old);
+			if (g) continue;
+			else break;
+		} else break;
 	}
-
-/* Replace occurrences of PAT with REP in STRING.  If GLOBAL is non-zero,
-   replace all occurrences, otherwise replace only the first.
-   This returns a new string; the caller should free it. */
-
-static int strsub_memcmp (char *string, char *pat, int len) {
-	int res;
-	for (res = 0; len-->0; pat++) {
-		if (*pat!='?')
-			res += *string - *pat;
-		string++;
-	}
-	return res;
-}
-
-// TODO: rename r_str_replace
-R_API char *r_str_sub(char *string, char *pat, char *rep, int global) {
-	int patlen, templen, tempsize, repl, i;
-	char *temp, *r;
-
-	patlen = strlen (pat);
-	for (temp = (char *)NULL, i = templen = tempsize = 0, repl = 1; string[i]; ) {
-		if (repl && !strsub_memcmp (string + i, pat, patlen)) {
-			RESIZE_MALLOCED_BUFFER (temp, templen, patlen, tempsize, 4096); //UGLY HACK (patlen * 2));
-			if (temp == NULL)
-				break;
-			for (r = rep; *r; )
-				temp[templen++] = *r++;
-			i += patlen;
-			repl = (global != 0);
-		} else {
-			RESIZE_MALLOCED_BUFFER (temp, templen, 1, tempsize, 4096); // UGLY HACK 16);
-			temp[templen++] = string[i++];
-		}
-	}
-	if (temp)
-		temp[templen] = '\0';
-	return (temp);
+	return str;
 }
 
 R_API char *r_str_clean(char *str) {
