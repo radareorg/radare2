@@ -154,6 +154,10 @@ int main(int argc, char **argv) {
 		int filelen = 0;
 		r_config_set (r.config, "io.va", "false"); // implicit?
 		r_config_set (r.config, "cfg.debug", "true");
+		if (optind>=argc) {
+			eprintf ("No program given to -d\n");
+			return 1;
+		}
 		is_gdb = (!memcmp (argv[optind], "gdb://", 6));
 		if (is_gdb) *file = 0;
 		else memcpy (file, "dbg://", 7);
