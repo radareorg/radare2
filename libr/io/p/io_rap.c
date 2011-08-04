@@ -164,7 +164,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		eprintf ("Cannot create new socket\n");
 		return NULL;
 	}
-	if (r_socket_connect_tcp (rap_fd, ptr, port)) {
+	if (r_socket_connect_tcp (rap_fd, ptr, port) == R_FALSE) {
 		eprintf ("Cannot connect to '%s' (%d)\n", ptr, p);
 		return NULL;
 	}
@@ -188,6 +188,15 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		}
 		r_mem_copyendian ((ut8 *)&i, (ut8*)buf+1, 4, ENDIAN);
 		if (i>0) eprintf ("ok\n");
+
+		/* Read meta info */
+		r_socket_read (rap_fd, (ut8 *)&i, 4);
+		while (i>0) {
+			r_socket_read (rap_fd, (ut8 *)&buf, i);
+			buf[i]=0;
+			io->core_cmd_cb (io->user, buf);
+			r_socket_read (rap_fd, (ut8 *)&i, 4);
+		}
 	} else return NULL;
 	return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd, pathname, rw, mode, rior);
 }
@@ -235,12 +244,12 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 
 struct r_io_plugin_t r_io_plugin_rap = {
 	.name = "rap",
-        .desc = "radare network protocol (rap://:port rap://host:port/file)",
+	.desc = "radare network protocol (rap://:port rap://host:port/file)",
 	.listener = rap__listener,
-        .open = rap__open,
-        .close = rap__close,
+	.open = rap__open,
+	.close = rap__close,
 	.read = rap__read,
-        .plugin_open = rap__plugin_open,
+	.plugin_open = rap__plugin_open,
 	.lseek = rap__lseek,
 	.system = rap__system,
 	.write = rap__write,

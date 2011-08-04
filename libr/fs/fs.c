@@ -268,12 +268,13 @@ R_API int r_fs_dir_dump (RFS* fs, const char *path, const char *name) {
 			if (item) {
 				r_fs_read (fs, item, 0, item->size);
 				r_file_dump (str, item->data, item->size);
+				free (item->data);
 				r_fs_close (fs, item);
 			}
 		} else {
 			r_fs_dir_dump (fs, npath, str);
-			free (npath);
 		}
+		free (npath);
 		free (str);
 	}
 	return R_TRUE;
@@ -583,7 +584,12 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 				r_fs_read (fs, file, 0, file->size);
 				r_file_dump (input, file->data, file->size);
 				r_fs_close (fs, file);
-			} else printf ("Cannot open file\n");
+			} else {
+				input -= 2; //OMFG!!!! O_O
+				memcpy (input, "./", 2);
+				if (!r_fs_dir_dump (fs, str, input))
+					printf ("Cannot open file\n");
+			}
 		} else if (!memcmp (buf, "help", 4) || !strcmp (buf, "?")) {
 			eprintf (
 			"Commands:\n"

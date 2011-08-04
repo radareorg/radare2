@@ -33,11 +33,11 @@
 
 #define IO_MAP_N 128
 typedef struct r_io_map_t {
-        int fd;
+	int fd;
 	int flags;
-        ut64 delta;
-        ut64 from;
-        ut64 to;
+	ut64 delta;
+	ut64 from;
+	ut64 to;
 } RIOMap;
 
 typedef struct r_io_desc_t {
@@ -108,6 +108,9 @@ typedef struct r_io_t {
 	RList *maps; /*<RIOMap>*/
 	RList *desc;
 	struct list_head cache;
+	//XXX: Need by rap
+	void *user;
+	int (*core_cmd_cb)(void *user, const char *str);
 } RIO;
 
 //struct r_io_plugin_fd_t {

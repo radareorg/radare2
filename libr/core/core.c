@@ -9,6 +9,11 @@
 
 static int endian = 1; // XXX HACK
 
+int core_cmd_callback (void *user, const char *cmd) {
+	RCore *core = (RCore *)user;
+	return r_core_cmd0 (core, cmd);
+}
+
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RCore *core = (RCore *)userptr; // XXX ?
 	RFlagItem *flag;
@@ -314,6 +319,8 @@ R_API int r_core_init(RCore *core) {
 	core->bin = r_bin_new ();
 	r_bin_set_user_ptr (core->bin, core);
 	core->io = r_io_new ();
+	core->io->user = (void *)core;
+	core->io->core_cmd_cb = core_cmd_callback;
 	core->sign = r_sign_new ();
 	core->search = r_search_new (R_SEARCH_KEYWORD);
 	r_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
@@ -502,6 +509,7 @@ R_API int r_core_serve(RCore *core, RIODesc *file) {
 	ut64 x;
 	RSocket *c, *fd;
 	RIORap *rior;
+	RListIter *iter;
 
 	rior = (RIORap *)file->data;
 	if (rior == NULL|| rior->fd == NULL) {
@@ -510,7 +518,8 @@ R_API int r_core_serve(RCore *core, RIODesc *file) {
 	}
 	fd = rior->fd;
 
-	eprintf ("RAP Server started (rap.loop=%s)\n", r_config_get (core->config, "rap.loop"));
+	eprintf ("RAP Server started (rap.loop=%s)\n",
+			r_config_get (core->config, "rap.loop"));
 #if __UNIX__
 	// XXX: ugly workaround
 	signal (SIGINT, SIG_DFL);
@@ -526,10 +535,8 @@ reaccept:
 		}
 
 		eprintf ("rap: client connected\n");
-		//r_io_accept (core->io, c->fd); //FIXME: Useless ??
 		for (;;) {
-			i = r_socket_read (c, &cmd, 1);
-			if (i==0) {
+			if (!r_socket_read (c, &cmd, 1)) {
 				eprintf ("rap: connection closed\n");
 				if (r_config_get_i (core->config, "rap.loop")) {
 					eprintf ("rap: waiting for new connection\n");
@@ -554,6 +561,7 @@ reaccept:
 					ptr[cmd] = 0;
 					file = r_core_file_open (core, (const char *)ptr, R_IO_READ, 0); // XXX: write mode?
 					if (file) {
+						r_core_bin_load (core, NULL);
 						file->map = r_io_map_add (core->io, file->fd->fd, R_IO_READ, 0, 0, file->size);
 						pipefd = core->file->fd->fd;
 						eprintf ("(flags: %hhd) len: %hhd filename: '%s'\n",
@@ -567,6 +575,59 @@ reaccept:
 				buf[0] = RMT_OPEN | RMT_REPLY;
 				r_mem_copyendian (buf+1, (ut8 *)&pipefd, 4, !endian);
 				r_socket_write (c, buf, 5);
+
+				/* Write meta info */
+				RMetaItem *d;
+				r_list_foreach (core->anal->meta->data, iter, d) {
+					if (d->type == R_META_TYPE_COMMENT)
+						snprintf ((char *)buf, sizeof (buf), "%s %s @ 0x%08"PFMT64x,
+							r_meta_type_to_string (d->type), d->str, d->from);
+					else
+						snprintf ((char *)buf, sizeof (buf),
+							"%s %d %s @ 0x%08"PFMT64x,
+							r_meta_type_to_string (d->type),
+							(int)(d->to-d->from), d->str, d->from);
+					i = strlen ((char *)buf);
+					r_socket_write (c, (ut8 *)&i, 4);
+					r_socket_write (c, buf, i);
+				}
+#if 0
+				RIOSection *s;
+				r_list_foreach_prev (core->io->sections, iter, s) {
+					snprintf ((char *)buf, sizeof (buf),
+							"S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d",
+							s->offset, s->vaddr, s->size, s->vsize, s->name, s->rwx);
+					i = strlen ((char *)buf);
+					r_socket_write (c, (ut8 *)&i, 4);
+					r_socket_write (c, buf, i);
+				}
+#endif
+				int fs = -1;
+				RFlagItem *flag;
+				r_list_foreach_prev (core->flags->flags, iter, flag) {
+					if (fs == -1 || flag->space != fs) {
+						fs = flag->space;
+						snprintf ((char *)buf, sizeof (buf),
+								"fs %s", r_flag_space_get_i (core->flags, fs));
+						i = strlen ((char *)buf);
+						r_socket_write (c, (ut8 *)&i, 4);
+						r_socket_write (c, buf, i);
+					}
+					snprintf ((char *)buf, sizeof (buf),
+									"f %s %"PFMT64d" 0x%08"PFMT64x,
+									flag->name, flag->size, flag->offset);
+						i = strlen ((char *)buf);
+						r_socket_write (c, (ut8 *)&i, 4);
+						r_socket_write (c, buf, i);
+				}
+
+				snprintf ((char *)buf, sizeof (buf), "s 0x%"PFMT64x, core->offset);
+				i = strlen ((char *)buf);
+				r_socket_write (c, (ut8 *)&i, 4);
+				r_socket_write (c, buf, i);
+
+				i = 0;
+				r_socket_write (c, (ut8 *)&i, 4);
 				free (ptr);
 				break;
 			case RMT_READ:
@@ -582,7 +643,7 @@ reaccept:
 					ptr[0] = RMT_READ|RMT_REPLY;
 					if (i>RMT_MAX)
 						i = RMT_MAX;
-					if (i>core->blocksize) 
+					if (i>core->blocksize)
 						r_core_block_size (core, i);
 					r_mem_copyendian (ptr+1, (ut8 *)&i, 4, !endian);
 					memcpy (ptr+5, core->block, i); //core->blocksize);
