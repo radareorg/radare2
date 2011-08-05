@@ -1,0 +1,74 @@
+#!/bin/sh
+
+foo() {
+	A=$(rasm2 -a x86.as -b ${BITS} "$1")
+	B=$(rasm2 -a x86.nz -b ${BITS} "$1")
+	if [ "${A}" = "${B}" ]; then
+		echo "$1       OK"
+	else
+		echo "$1       FAILED"
+	fi
+	echo "     as: ${A}"
+	echo "     nz: ${B}"
+}
+
+if [ -n "$1" ]; then
+	foo "$1"
+	exit 0
+fi
+
+BITS=32
+if [ 0 = 1 ]; then
+foo "xor eax,eax"
+foo "xor ebx,eax"
+foo "xor eax,ebx"
+foo "xor esp,esp"
+foo "xor esi,ebp"
+
+foo "add eax, 3"
+foo "sub ebx, 3"
+foo "sub ebx, -3"
+
+foo "sub eax, ebx" 
+foo "sub eax, eax" 
+foo "sub ebx, eax" 
+
+foo "add [eax], eax" 
+foo "sub [ebx], eax" 
+foo "sub [ebx], eax" 
+foo "add [eax], eax" 
+
+foo "xor [eax], eax" 
+
+foo "mov eax, 3"
+foo "mov ebx, eax"
+foo "mov eax, eax"
+foo "mov eax, ebx"
+
+foo "mov [eax], eax"
+foo "mov [eax], ebx"
+foo "mov [ebx], eax"
+
+foo "mov eax, [eax]"
+foo "mov eax, [ebx]"
+foo "mov ebx, [eax]"
+
+foo "inc eax"
+foo "inc esi"
+foo "dec esi"
+foo "dec eax"
+fi
+
+foo "mov [eax+eax], eax"
+foo "mov [eax+eax], ebx"
+foo "mov [eax+eax], ecx"
+foo "mov [eax+eax], eax"
+foo "mov [eax+ebx], ebx"
+foo "mov [eax+2], ebx"
+foo "mov [33], ebx"
+foo "sub esi,-334"
+
+BITS=64
+foo "test rcx, rcx"
+foo "mov rax, 3"
+foo "xor rax, rax"
