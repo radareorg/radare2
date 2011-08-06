@@ -311,6 +311,7 @@ static void r_fs_find_off_aux (RFS* fs, const char *name, ut64 offset, RList *li
 				r_fs_read (fs, file, 0, file->size);
 				if (file->off == offset)
 					r_list_append (list, found);
+				free (file->data);
 				r_fs_close (fs, file);
 			}
 		}
@@ -563,6 +564,7 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 			if (file) {
 				r_fs_read (fs, file, 0, file->size);
 				write (1, file->data, file->size);
+				free (file->data);
 				r_fs_close (fs, file);
 			} else eprintf ("Cannot open file\n");
 		} else if (!memcmp (buf, "mount", 5)) {
@@ -583,6 +585,7 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 			if (file) {
 				r_fs_read (fs, file, 0, file->size);
 				r_file_dump (input, file->data, file->size);
+				free (file->data);
 				r_fs_close (fs, file);
 			} else {
 				input -= 2; //OMFG!!!! O_O
