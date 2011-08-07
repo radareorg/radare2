@@ -107,7 +107,9 @@ R_API void r_egg_math (REgg *egg) {//, char eq, const char *vs, char type, const
 R_API void r_egg_raw(REgg *egg, const ut8 *b, int len) {
 }
 
+// r_egg_block (egg, FRAME | IF | ELSE | ENDIF | FOR | WHILE, sz)
 R_API void r_egg_if(REgg *egg, const char *reg, char cmp, int v) {
+//	egg->depth++;
 }
 
 R_API void r_egg_printf(REgg *egg, const char *fmt, ...) {
@@ -128,21 +130,21 @@ R_API int r_egg_compile(REgg *egg) {
 		r_egg_lang_parsechar (egg, *b);
 	}
 	// TODO: call r_asm 
-	if (egg->emit == &emit_x86) {
+	if (egg->emit == &emit_x86 || egg->emit == &emit_x64) {
 		RAsmCode *asmcode;
 		char *code;
 		//rasm2
-		r_asm_use (egg->rasm, "x86.olly");
+		r_asm_use (egg->rasm, "x86.nz");
 		r_asm_set_bits (egg->rasm, egg->bits);
 		r_asm_set_big_endian (egg->rasm, 0);
 		r_asm_set_syntax (egg->rasm, R_ASM_SYNTAX_INTEL);
 
 		code = r_buf_to_string (egg->buf);
 		asmcode = r_asm_massemble (egg->rasm, code);
-		if (asmcode) {
+		if (asmcode && asmcode->len > 0) {
 			r_buf_append_bytes (egg->bin, asmcode->buf, asmcode->len);
 			// LEAK r_asm_code_free (asmcode);
-		}
+		} else eprintf ("fail assembling\n");
 		free (code);
 		return (asmcode != NULL);
 	} else
