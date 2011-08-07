@@ -11,6 +11,7 @@ R_API REgg *r_egg_new () {
 	egg->buf = r_buf_new ();
 	egg->bin = r_buf_new ();
 	egg->emit = &emit_x86;
+	egg->syscall = r_syscall_new ();
 	egg->rasm = r_asm_new ();
 	egg->bits = 0;
 	egg->endian = 0;
@@ -31,14 +32,15 @@ R_API void r_egg_reset (REgg *egg) {
 
 R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const char *os) {
 	egg->emit = NULL;
-	// TODO: os ignored
 	if (!strcmp (arch, "x86")) {
 		switch (bits) {
 		case 32:
+			r_syscall_setup (egg->syscall, arch, os);
 			egg->emit = &emit_x86;
 			egg->bits = bits;
 			break;
 		case 64:
+			r_syscall_setup (egg->syscall, arch, os);
 			egg->emit = &emit_x64;
 			egg->bits = bits;
 			break;
@@ -48,6 +50,7 @@ R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const c
 		switch (bits) {
 		case 16:
 		case 32:
+			r_syscall_setup (egg->syscall, arch, os);
 			egg->emit = &emit_arm;
 			egg->bits = bits;
 			egg->endian = endian;
@@ -88,7 +91,12 @@ R_API void r_egg_load(REgg *egg, const char *code, int format) {
 }
 
 R_API void r_egg_syscall(REgg *egg, const char *arg, ...) {
-	/* TODO */
+	RSyscallItem *item = r_syscall_get (egg->syscall,
+		r_syscall_get_num (egg->syscall, arg), -1);
+	if (!strcmp (arg, "close")) {
+		//egg->emit->syscall_args ();
+	}
+	egg->emit->syscall (egg, item->num);
 }
 
 R_API void r_egg_alloc(REgg *egg, int n) {

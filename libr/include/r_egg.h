@@ -3,6 +3,7 @@
 
 #include <r_asm.h>
 #include <r_util.h>
+#include <r_syscall.h>
 
 typedef struct r_egg_t {
 	RBuffer *src;
@@ -10,6 +11,7 @@ typedef struct r_egg_t {
 	RBuffer *bin;
 	RList *list;
 	RAsm *rasm;
+	RSyscall *syscall;
 	struct r_egg_emit_t *emit;
 	int endian;
 	int bits;
@@ -23,7 +25,7 @@ typedef struct r_egg_emit_t {
 	void (*call)(REgg *egg, const char *addr, int ptr);
 	//void (*sc)(int num);
 	void (*frame)(REgg *egg, int sz);
-	char* (*syscall)(REgg *egg, int num);
+	char *(*syscall)(REgg *egg, int num);
 	void (*trap)(REgg *egg);
 	void (*frame_end)(REgg *egg, int sz, int ctx);
 	void (*comment)(REgg *egg, const char *fmt, ...);

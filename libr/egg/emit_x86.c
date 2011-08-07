@@ -28,7 +28,8 @@
 static char *regs[] = R_GP;
 
 static char *emit_syscall (REgg *egg, int num) {
-	if (attsyntax) return strdup (": mov $`.arg`, %"R_AX"\n: int $0x80\n");
+	if (attsyntax) 
+		return strdup (": mov $`.arg`, %"R_AX"\n: int $0x80\n");
 	return strdup (": mov "R_AX", `.arg`\n: int 0x80\n");
 }
 
@@ -79,9 +80,14 @@ static void emit_syscall_args(REgg *egg, int nargs) {
 	for (j=0; j<nargs; j++) {
 		k = j*R_SZ;
 		if (attsyntax)
-		r_egg_printf (egg, "  mov %d(%%"R_SP"), %%%s\n", k, regs[j+1]);
-		else
-		r_egg_printf (egg, "  mov %s, dword ptr ["R_SP"%c%d]\n", regs[j+1], k>0?'+':' ', k);
+			r_egg_printf (egg, "  mov %d(%%"R_SP"), %%%s\n", k, regs[j+1]);
+		else {
+			if (k>0)
+				r_egg_printf (egg, "  mov %s, ["R_SP"+%d]\n", regs[j+1], k);
+			else if (k<0)
+				r_egg_printf (egg, "  mov %s, ["R_SP"%d]\n", regs[j+1], k);
+			else r_egg_printf (egg, "  mov %s, ["R_SP"]\n", regs[j+1]);
+		}
 	}
 }
 
@@ -172,8 +178,16 @@ static void emit_get_var (REgg *egg, int type, char *out, int idx) {
 		}
 	} else {
 		switch (type) {
-		case 0: sprintf (out, "dword ptr ["R_BP"%c%d]", idx>0?' ':'+', -idx); break; /* variable */
-		case 1: sprintf(out, "dword ptr ["R_SP"%c%d]", idx>0?'+':' ', idx); break; /* argument */
+		case 0:  /* variable */
+			if (idx>0) sprintf (out, "["R_BP"+%d]", idx);
+			else if (idx<0) sprintf (out, "["R_BP"%d]", idx);
+			else sprintf (out, "["R_BP"]");
+			break;
+		case 1: /* argument */
+			if (idx>0) sprintf (out, "["R_SP"+%d]", idx);
+			else if (idx<0) sprintf (out, "["R_SP"%d]", idx);
+			else sprintf (out, "["R_SP"]");
+			break;
 		}
 	}
 }
@@ -187,7 +201,7 @@ static void emit_load_ptr(REgg *egg, const char *dst) {
 	//eprintf ("emit_load_ptr: HACK\n");
 	// XXX: 32/64bit care
 	if (attsyntax) r_egg_printf (egg, "  leal %d(%%"R_BP"), %%"R_AX"\n", d);
-	else r_egg_printf (egg, "  leal "R_AX", dword ptr ["R_BP"+%d]\n", d);
+	else r_egg_printf (egg, "  leal "R_AX", ["R_BP"+%d]\n", d);
 	//r_egg_printf (egg, "  movl %%"R_BP", %%"R_AX"\n");
 	//r_egg_printf (egg, "  addl $%d, %%"R_AX"\n", d);
 }
@@ -285,9 +299,11 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 		if (eq == NULL) eq = R_AX;
 		if (p == NULL) p = R_AX;
 	// TODO: 
+#if 0
 		eprintf ("TYPE = %c\n", type);
 		eprintf ("  %s%c %c%s, %s\n", op, vs, type, eq, p);
 		eprintf ("  %s %s, [%s]\n", op, p, eq);
+#endif
 		if (type == '*') r_egg_printf (egg, "  %s %s, [%s]\n", op, p, eq);
 		else r_egg_printf (egg, "  %s %s, %s\n", op, p, eq);
 	}

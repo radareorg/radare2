@@ -52,7 +52,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	if (!strcmp (op, "hang") || !strcmp (str, "jmp $$")) {
 		data[l++] = 0xeb;
 		data[l++] = 0xfe;
-		return 2;
+		return l;
 	}
  	arg = strchr (op, ' ');
 	if (arg) {
@@ -133,12 +133,9 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		} else
 		if (!strcmp (op, "test")) {
 			int arg0 = getreg (arg);
-			if (a->bits==64) {
+			if (a->bits==64)
 				data[l++] = 0x48;
-				data[l++] = 0x85;
-			} else {
-				data[l++] = 0x85;
-			}
+			data[l++] = 0x85;
 			data[l++] = 0xc0 | (arg0<<3) | getreg (arg2);
 			return l;
 		} else
@@ -157,7 +154,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				data[l++] = '\xff';
 				data[l] = getreg (arg) | 0xd0;
 				if (data[l] == 0xff) {
-					eprintf ("Invalid argument for 'call'\n");
+					eprintf ("Invalid argument for 'call' (%s)\n", arg);
 					return 0;
 				}
 				l++;
@@ -178,9 +175,33 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			data[l++] = 0x48 | getreg (arg);
 			return l;
 		} else if (!strcmp (op, "push")) {
-			ut64 dst = r_num_math (NULL, arg);
+			char *delta;
+			ut64 dst;
 			ut32 addr = dst;
 			ut8 *ptr = (ut8 *)&addr;
+
+			if (*arg=='[') {
+				arg++;
+				delta = strchr (arg, '+');
+				if (delta) {
+					*delta++ = 0;
+					data[l++] = 0xff;
+					data[l++] = 0x70 | getreg (arg);
+					data[l++] = getnum (delta);
+				} else {
+					int r = getreg (arg);
+					data[l++] = 0xff;
+					if (r==4) { //ESP
+						data[l++] = 0x34;
+						data[l++] = 0x24;
+					} else if (r== 5) { // EBP
+						data[l++] = 0x75;
+						data[l++] = 0;
+					} else data[l++] = 0x30 | r;
+				}
+				return l;
+			}
+			dst = r_num_math (NULL, arg);
 			if (!isnum (arg)) {
 				ut8 ch = getreg (arg) | 0x50;
 				if (ch == 0xff) {
@@ -197,7 +218,30 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			data[l++] = ptr[3];
 			return 5;
 		} else if (!strcmp (op, "pop")) {
-			ut64 dst = r_num_math (NULL, arg);
+			char *delta;
+			ut64 dst;
+			if (*arg=='[') {
+				arg++;
+				delta = strchr (arg, '+');
+				if (delta) {
+					*delta++ = 0;
+					data[l++] = 0x8f;
+					data[l++] = 0x40 | getreg (arg);
+					data[l++] = delta? getnum (delta): 0;
+				} else {
+					int r = getreg (arg);
+					data[l++] = 0x8f;
+					if (r==4) { //ESP
+						data[l++] = 0x04;
+						data[l++] = 0x24;
+					} else if (r==5) { // EBP
+						data[l++] = 0x45;
+						data[l++] = 0;
+					} else data[l++] = r;
+				}
+				return l;
+			}
+			dst = r_num_math (NULL, arg);
 			if (dst == 0) {
 				data[l++] = getreg (arg) | 0x58;
 				return l;
@@ -233,6 +277,10 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			ut8 *ptr = (ut8 *)&addr;
 			dst = r_num_math (NULL, arg2);
 			addr = dst;
+			if (!arg || !arg2) {
+				eprintf ("No args for mov?\n");
+				return 0;
+			}
 
 			if (*arg=='[') {
 				arg++;
@@ -286,7 +334,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			}
 
 			if (isnum (arg2)) {
-				data[l++]=0xb8;
+				data[l++] = 0xb8;
 				data[l++] = ptr[0];
 				data[l++] = ptr[1];
 				data[l++] = ptr[2];

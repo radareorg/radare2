@@ -10,13 +10,38 @@ foo() {
 	fi
 }
 
+BITS=32
 if [ -n "$1" ]; then
 	foo "$1"
 	exit 0
 fi
 
-BITS=32
 echo "==> Running 32bit tests..."
+
+foo "leal eax, 0x804900"
+exit 0
+
+foo "pop [eax]"
+foo "pop [esp]"
+foo "pop [ebp]"
+foo "pop [edi]"
+foo "pop [esi]"
+foo "pop [ecx]"
+
+foo "push [eax]"
+foo "push [esp]"
+foo "push [ebp]"
+foo "push [edi]"
+foo "push [esi]"
+foo "push [ecx]"
+exit 0
+foo "pop [eax]"
+foo "push [eax]"
+foo "push [ebp+4]"
+foo "push [eax+8]"
+foo "pop [ebp+4]"
+foo "pop [eax+4]"
+exit 0
 
 
 if true ; then

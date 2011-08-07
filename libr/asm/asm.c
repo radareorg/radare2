@@ -383,6 +383,10 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				} else if (!memcmp (ptr, ".org ", 5)) {
 					ret = r_asm_pseudo_org (a, ptr+5);
 					off = a->pc;
+				} else if (!memcmp (ptr, ".text", 5)) {
+					acode->code_offset = a->pc;
+				} else if (!memcmp (ptr, ".data", 5)) {
+					acode->data_offset = a->pc;
 				} else {
 					eprintf ("Unknown keyword (%s)\n", ptr);
 					return r_asm_code_free (acode);

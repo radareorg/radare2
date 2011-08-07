@@ -62,6 +62,20 @@ static int stackfixed = 0;
 static int oc = '\n';
 static int mode = NORMAL;
 
+static const char *skipspaces(const char *s) {
+	for(;*s;s++)
+		switch (*s) {
+		case '\n':
+		case '\r':
+		case '\t':
+		case ' ':
+			break;
+		default:
+			return s;
+		}
+	return s;
+}
+
 #define SYNTAX_ATT 0
 #if SYNTAX_ATT
 #define FRAME_FMT ".LC%d_%d_frame%d"
@@ -254,7 +268,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 		len = strlen (str)-1;
 		str[len]='\0';
 		snprintf (foo, sizeof (foo)-1, ".fix%d", nargs*16); /* XXX FIX DELTA !!!1 */
-		dstvar = strdup (foo);
+		dstvar = strdup (skipspaces (foo));
 		rcc_pushstr (egg, str, mustfilter);
 		ret = r_egg_mkvar (egg, out, foo, 0);
 	}
@@ -262,18 +276,20 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	return ret;
 }
 
-static void rcc_fun(REgg *egg, char *str) {
+static void rcc_fun(REgg *egg, const char *str) {
 	char *ptr, *ptr2;
+	str = skipspaces (str);
 	if (context) {
 		ptr = strchr(str, '=');
 		if (ptr) {
 			*ptr = '\0';
 			free (dstvar);
-			dstvar = strdup (str);
+			dstvar = strdup (skipspaces (str));
 			for (ptr2=ptr+1; isspace (*ptr2); ptr2++);
 			if (*ptr2)
 				callname = strdup (ptr+1);
 		} else {
+			str = skipspaces (str);
 			egg->emit->comment (egg, "rcc_fun %d (%s)", context, str);
 			free (callname);
 			callname = strdup (str);
@@ -289,7 +305,7 @@ static void rcc_fun(REgg *egg, char *str) {
 			if (strstr (ptr+1, "syscall")) {
 				if (str[0]) {
 					mode = SYSCALL;
-					dstvar = strdup (str);
+					dstvar = strdup (skipspaces (str));
 				} else {
 					mode = INLINE;
 					free (syscallbody);
@@ -297,23 +313,23 @@ static void rcc_fun(REgg *egg, char *str) {
 					dstval = syscallbody;
 					R_FREE (dstvar);
 					ndstval = 0;
-					syscallbody[0] = '\0';
+					*syscallbody = '\0';
 				}
 			} else
 			if (strstr(ptr+1, "alias")) {
 				mode = ALIAS;
-				dstvar = strdup (str);
+				dstvar = strdup (skipspaces (str));
 			} else
 			if (strstr(ptr+1, "data")) {
 				mode = DATA;
 				ndstval = 0;
-				dstvar = strdup (str);
+				dstvar = strdup (skipspaces (str));
 				dstval = malloc (4096);
 			} else
 			if (strstr (ptr+1, "inline")) {
 				mode = INLINE;
 				free (dstvar);
-				dstvar = strdup (str);
+				dstvar = strdup (skipspaces (str));
 				dstval = malloc (4096);
 				ndstval = 0;
 			} else r_egg_printf (egg, "\n.%s %s\n%s:\n", ptr+1, str, str);
@@ -400,8 +416,8 @@ static int parsedatachar(REgg *egg, char c) {
 				j = (stackframe)? stackframe:1;
 				/* emit label */
 				r_egg_printf (egg, "%s:\n", dstvar);
-				for(i=1;i<=j;i++) {
-					if (str[0]=='"')
+				for (i=1; i<=j; i++) {
+					if (*str=='"')
 						r_egg_printf (egg, ".ascii %s%s\n", dstval, (i==j)?"\"\\x00\"":"");
 					else r_egg_printf (egg, ".long %s\n", dstval);
 				}
@@ -445,8 +461,8 @@ static int parseinlinechar(REgg *egg, char c) {
 			if (dstval != NULL && dstvar != NULL) {
 				dstval[ndstval]='\0';
 				//printf(" /* END OF INLINE (%s)(%s) */\n", dstvar, dstval);
-				inlines[ninlines].name = strdup (dstvar);
-				inlines[ninlines].body = strdup (dstval);
+				inlines[ninlines].name = strdup (skipspaces (dstvar));
+				inlines[ninlines].body = strdup (skipspaces (dstval));
 				ninlines++;
 				R_FREE (dstvar);
 				R_FREE (dstval);
@@ -460,20 +476,21 @@ static int parseinlinechar(REgg *egg, char c) {
 
 /* TODO: split this function into several ones..quite long fun */
 static void rcc_next(REgg *egg) {
+	const char *ocn;
 	REggEmit *e = egg->emit;
 	char *p, buf[64];
 	int i;
 
 	docall = 1;
 	if (callname) {
-		char *str, *ocn, *ptr = strchr (callname, '=');
+		char *str, *ptr = strchr (callname, '=');
 		if (ptr) {
 			*ptr = '\0';
 			ocn = ptr+1;
 		}
-		for (ocn=callname; *ocn==' '; ocn++);
+		ocn = skipspaces (callname);
 		str = r_egg_mkvar (egg, buf, ocn, 0);
-		if (ocn[0]=='.')
+		if (*ocn=='.')
 			e->call (egg, str, 1);
 		else
 		if (!strcmp (str, "while")) {
@@ -555,13 +572,13 @@ static void rcc_next(REgg *egg) {
 		int vs = 'l';
 		char type, *eq, *ptr = elem;
 		elem[elem_n] = '\0';
-		while (isspace (ptr[0])) ptr++; /* skip spaces */
+		ptr = skipspaces (ptr);
 		if (*ptr) {
 			eq = strchr (ptr, '=');
 			if (eq) {
 				char str2[64], *p, ch = *(eq-1);
 				*eq = '\0';
-				for (eq++; *eq==' '; eq++);
+				eq = skipspaces (eq+1);
 				p = r_egg_mkvar (egg, str2, ptr, 0);
 				vs = varsize;
 				if (IS_VAR (eq)) {

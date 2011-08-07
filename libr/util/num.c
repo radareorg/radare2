@@ -132,8 +132,7 @@ R_API ut64 r_num_op(char op, ut64 a, ut64 b) {
 R_API static ut64 r_num_math_internal(RNum *num, char *s) {
 	ut64 ret = 0LL;
 	char *p = s;
-	int i, nop, op='\0';
-
+	int i, nop, op = 0;
 	for (i=0; s[i]; i++) {
 		switch (s[i]) {
 		case '+':
@@ -156,9 +155,13 @@ R_API static ut64 r_num_math_internal(RNum *num, char *s) {
 R_API ut64 r_num_math(RNum *num, const char *str) {
 	ut64 ret = 0LL;
 	char op = '+';
-	int len = strlen (str)+1;
-	char *p, *s, *os = malloc (len+1);
+	int len;
+	char *p, *s, *os;
 	char *group;
+	if (!str) return 0LL;
+
+	len = strlen (str)+1;
+	os = malloc (len+1);
 
 	s = os;
 	memcpy (s, str, len);

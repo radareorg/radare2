@@ -59,6 +59,8 @@ typedef struct r_asm_code_t {
 	char *buf_hex;
 	char *buf_asm;
 	RList *equs; // TODO: must be a hash
+	ut64 code_offset;
+	ut64 data_offset;
 } RAsmCode;
 
 // TODO: Must use Hashtable instead of this hack
