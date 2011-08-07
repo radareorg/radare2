@@ -8,7 +8,7 @@ BIN=hi ptr ret hello shell loop input inline syscall data sub if dump bytedump a
 
 all: top ${BIN}
 
-clean:
+mrproper clean:
 	rm -f ${BIN} *.S
 
 run:

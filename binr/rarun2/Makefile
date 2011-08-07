@@ -4,7 +4,7 @@ OBJ=main.o
 all: ${OBJ}
 	${CC} -o ${BIN} ${OBJ}
 
-clean:
+mrproper clean:
 	rm -f ${BIN} ${OBJ}
 
 .PHONY: all clean

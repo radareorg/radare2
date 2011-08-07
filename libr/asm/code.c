@@ -11,6 +11,8 @@ R_API RAsmCode *r_asm_code_new() {
 		acode->buf_asm = NULL;
 		acode->buf_hex = NULL;
 		acode->buf = NULL;
+		acode->code_offset = 0LL;
+		acode->data_offset = 0LL;
 	}
 	return acode;
 }
