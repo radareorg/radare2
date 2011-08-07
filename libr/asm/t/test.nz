@@ -4,12 +4,10 @@ foo() {
 	A=$(rasm2 -a x86.as -b ${BITS} "$1")
 	B=$(rasm2 -a x86.nz -b ${BITS} "$1")
 	if [ "${A}" = "${B}" ]; then
-		echo "$1       OK"
+		printf "OK       %12s.as %12s.nz %20s\n" "$A" "$B" "$1"
 	else
-		echo "$1       FAILED"
+		printf "FAILED   %12s.as %12s.nz %20s\n" "$A" "$B" "$1"
 	fi
-	echo "     as: ${A}"
-	echo "     nz: ${B}"
 }
 
 if [ -n "$1" ]; then
@@ -18,7 +16,16 @@ if [ -n "$1" ]; then
 fi
 
 BITS=32
-if [ 0 = 1 ]; then
+echo "==> Running 32bit tests..."
+
+
+if true ; then
+foo "mov eax, 0x8049000"
+# foo "call 0x804800";
+foo "jmp ecx"
+foo "call ebx"
+foo "ret"
+
 foo "xor eax,eax"
 foo "xor ebx,eax"
 foo "xor eax,ebx"
@@ -40,15 +47,6 @@ foo "add [eax], eax"
 
 foo "xor [eax], eax" 
 
-foo "mov eax, 3"
-foo "mov ebx, eax"
-foo "mov eax, eax"
-foo "mov eax, ebx"
-
-foo "mov [eax], eax"
-foo "mov [eax], ebx"
-foo "mov [ebx], eax"
-
 foo "mov eax, [eax]"
 foo "mov eax, [ebx]"
 foo "mov ebx, [eax]"
@@ -57,18 +55,68 @@ foo "inc eax"
 foo "inc esi"
 foo "dec esi"
 foo "dec eax"
-fi
+
+foo "mov eax, 3"
+foo "mov ebx, eax"
+foo "mov eax, eax"
+foo "mov eax, ebx"
+
+foo "mov [eax], eax"
+foo "mov [eax], ebx"
+foo "mov [ebx], eax"
+foo "mov eax, [ebx]"
+
+# XX can be compressed
+# foo "mov [33], eax"
+foo "mov [33], ecx"
+foo "mov [33], edx"
+foo "mov [33], ebx"
+foo "mov [33], esp"
+foo "mov [33], ebp"
+foo "mov [33], esi"
+foo "mov [33], edi"
+
+foo "sub esi,-334"
+foo "add esi,-334"
 
 foo "mov [eax+eax], eax"
+foo "mov [eax+ebx], eax"
+foo "mov [eax+ecx], eax"
+foo "mov [ebx+eax], eax"
 foo "mov [eax+eax], ebx"
 foo "mov [eax+eax], ecx"
 foo "mov [eax+eax], eax"
 foo "mov [eax+ebx], ebx"
 foo "mov [eax+2], ebx"
-foo "mov [33], ebx"
-foo "sub esi,-334"
+foo "mov [ebx+2], ebx"
+fi
 
+# 64 bit tests #
+# ============ #
 BITS=64
+echo "==> Running 64bit tests..."
+
+if true ; then
+foo "mov eax, [esi]"
 foo "test rcx, rcx"
 foo "mov rax, 3"
+foo "mov rbx, 3"
+foo "mov rbx, rax"
+foo "mov rsi, rbx"
+foo "mov [rsi], rbx"
+
 foo "xor rax, rax"
+foo "xor [rax], rax" 
+foo "xor [rsi], rbx"
+
+foo "call rbx"
+foo "jmp rbx"
+foo "ret"
+foo "syscall"
+foo "pop rax"
+foo "mov rax, 33"
+foo "add rax, rcx"
+foo "add rax, 44"
+foo "sub rax, rbx"
+foo "sub rax, 44"
+fi

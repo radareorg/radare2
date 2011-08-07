@@ -9,11 +9,25 @@
 static ut8 getreg(const char *str) {
 	int i;
 	const char *regs[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", NULL };
-	if (str)
-		for (i=0; regs[i]; i++)
-			if (!memcmp (regs[i], str, strlen (regs[i])))
-				return i;
+	const char *regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", NULL };
+	if (!str)
+		return 0xff;
+	for (i=0; regs[i]; i++)
+		if (!memcmp (regs[i], str, strlen (regs[i])))
+			return i;
+	for (i=0; regs64[i]; i++)
+		if (!memcmp (regs64[i], str, strlen (regs64[i])))
+			return i;
 	return 0xff;
+}
+
+static int getnum(const char *s) {
+	if (*s=='0' && s[1]=='x') {
+		int n;
+		sscanf (s+2, "%x", &n);
+		return n;
+	}
+	return atoi (s);
 }
 
 static int isnum(const char *str) {
@@ -61,10 +75,23 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				eprintf ("Invalid syntax\n");
 				return 0;
 			}
+			if (a->bits == 64)
+				data[l++] = 0x48;
 			if (isnum (arg2)) {
-				data[l++] = 0x83;
-				data[l++] = pfx | getreg (arg);
-				data[l++] = atoi (arg2);
+				int num = getnum (arg2);
+				if (num>127 || num<-127) {
+					ut8 *ptr = (ut8 *)&num;
+					data[l++] = 0x81;
+					data[l++] = pfx | getreg (arg);
+					data[l++] = ptr[0];
+					data[l++] = ptr[1];
+					data[l++] = ptr[2];
+					data[l++] = ptr[3];
+				} else {
+					data[l++] = 0x83;
+					data[l++] = pfx | getreg (arg);
+					data[l++] = num;
+				}
 			} else {
 				data[l++] = 0x01;
 				data[l++] = pfx | getreg (arg2)<<3 | getreg (arg);
@@ -81,10 +108,23 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				eprintf ("Invalid syntax\n");
 				return 0;
 			}
+			if (a->bits == 64)
+				data[l++] = 0x48;
 			if (isnum (arg2)) {
-				data[l++] = 0x83;
-				data[l++] = 0xe8 | getreg (arg);
-				data[l++] = atoi (arg2);
+				int num = getnum (arg2);
+				if (num>127 || num<-127) {
+					ut8 *ptr = (ut8*) &num;
+					data[l++] = 0x81;
+					data[l++] = 0xe8 | getreg (arg);
+					data[l++] = ptr[0];
+					data[l++] = ptr[1];
+					data[l++] = ptr[2];
+					data[l++] = ptr[3];
+				} else {
+					data[l++] = 0x83;
+					data[l++] = 0xe8 | getreg (arg);
+					data[l++] = getnum (arg2);
+				}
 			} else {
 				data[l++] = 0x29;
 				data[l++] = pfx | getreg (arg2)<<3 | getreg (arg);
@@ -92,8 +132,14 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			return l;
 		} else
 		if (!strcmp (op, "test")) {
-			data[l++] = 0x85;
-			data[l++] = 0xc0 | getreg (arg)<<3 | getreg (arg2);
+			int arg0 = getreg (arg);
+			if (a->bits==64) {
+				data[l++] = 0x48;
+				data[l++] = 0x85;
+			} else {
+				data[l++] = 0x85;
+			}
+			data[l++] = 0xc0 | (arg0<<3) | getreg (arg2);
 			return l;
 		} else
 		if (!strcmp (op, "int")) {
@@ -159,22 +205,29 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			eprintf ("Invalid pop syntax\n");
 			return 0;
 		} else if (!strcmp (op, "xor")) {
-			int pfx;
+			int pfx, arg0;
 			if (*arg=='[') {
 				arg++;
 				pfx = 0;
 			} else pfx = 0xc0;
-			data[l++] = 0x31;
-			if (isnum (arg2)) {
-				data[l++] = getreg (arg) | 0xf0;
-				data[l++] = atoi (arg2);
-				return l;
+			arg0 = getreg (arg);
+			if (a->bits==64) {
+				data[l++] = 0x48;
+				data[l++] = 0x31; // NOTE: 0x33 is also a valid encoding for xor.. polimorfi?
+				data[l++] = arg0 | (getreg(arg2)<<3) | pfx;
+			} else {
+				data[l++] = 0x31;
+				if (isnum (arg2)) {
+					data[l++] = arg0 | 0xf0;
+					data[l++] = getnum (arg2);
+				} else {
+					data[l++] = arg0 | (getreg (arg2)<<3) | pfx;
+				}
 			}
-			data[l] = getreg (arg);
-			data[l++] |= (getreg (arg2)<<3) | pfx;
 			return l;
 		} else if (!strcmp (op, "mov")) {
-			int pfx;
+			char *delta = NULL;
+			int pfx, arg0;
 			ut64 dst;
 			ut32 addr;
 			ut8 *ptr = (ut8 *)&addr;
@@ -183,16 +236,54 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 
 			if (*arg=='[') {
 				arg++;
+				delta = strchr (arg, '+');
+				if (delta) {
+					*delta++ = 0;
+				}
 				pfx = 0;
 			} else pfx = 0xc0;
 
 			if (*arg2=='[') {
 				arg2++;
-				data[l++] = 0x8b;
-				data[l++] = getreg (arg)<<3 | getreg (arg2);
+				if (a->bits == 64)  {
+					data[l++] = 0x67;
+					data[l++] = 0x8b;
+					data[l++] = getreg (arg)<<3 | getreg (arg2);
+				} else {
+					data[l++] = 0x8b;
+					data[l++] = getreg (arg)<<3 | getreg (arg2);
+				}
 				return l;
 				pfx = 0;
-			} else pfx = 0xc0;
+			} //else pfx = 0xc0;
+			arg0 = getreg (arg); // hack to make is64 work
+			if (isnum (arg)) {
+				int num = getnum (arg);
+				ut8 *ptr = (ut8 *)&num;
+				data[l++] = 0x89;
+				data[l++] = (getreg (arg2)<<3) |5;
+				data[l++] = ptr[0];
+				data[l++] = ptr[1];
+				data[l++] = ptr[2];
+				data[l++] = ptr[3];
+				return l;
+			}
+			if (a->bits==64) {
+				if (isnum (arg2)) {
+					data[l++] = 0x48;
+					data[l++] = 0xc7;
+					data[l++] = arg0 | pfx;
+					data[l++] = ptr[0];
+					data[l++] = ptr[1];
+					data[l++] = ptr[2];
+					data[l++] = ptr[3];
+					return l;
+				}
+				data[l++] = 0x48;
+				data[l++] = 0x89;
+				data[l++] = arg0 | (getreg (arg2)<<3) | pfx;
+				return l;
+			}
 
 			if (isnum (arg2)) {
 				data[l++]=0xb8;
@@ -203,7 +294,17 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				return l;
 			} else {
 				data[l++] = 0x89;
-				data[l++] = getreg (arg2)<<3 | getreg (arg);
+				if (delta) {
+					if (isnum (delta)){
+						data[l++] = 0x58 | getreg (arg);
+						data[l++] = getnum (delta);
+					} else {
+						data[l++] = getreg (arg2)<<3 | 0x4;
+						data[l++] = (getreg (delta)<<3 ) | getreg (arg);
+					}
+				} else {
+					data[l++] = getreg (arg2)<<3 | getreg (arg) | pfx;
+				}
 			}
 			return l;
 		} else if (!strcmp (op, "jmp")) {
@@ -266,11 +367,11 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		} else
 		if (!strcmp (op, "jnz")) {
 			ut64 dst = r_num_math (NULL, arg) - offset;
-
-			if (dst>-0x80 && dst<0x7f) {
-				dst-=2;
+			int num = getnum (arg);
+			if (num>-127 && num<127) {
+				num-=2;
 				data[l++]='\x75';
-				data[l++]=(char)dst;
+				data[l++]=(char)num;
 				return l;
 			} else {
 				data[l++]=0x0f;
