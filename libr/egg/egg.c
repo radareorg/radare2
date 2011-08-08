@@ -23,6 +23,11 @@ R_API char *r_egg_to_string (REgg *egg) {
 }
 
 R_API void r_egg_free (REgg *egg) {
+	r_buf_free (egg->src);
+	r_buf_free (egg->buf);
+	r_buf_free (egg->bin);
+	r_asm_free (egg->rasm);
+	r_syscall_free (egg->syscall);
 	free (egg);
 }
 
@@ -130,14 +135,7 @@ R_API void r_egg_printf(REgg *egg, const char *fmt, ...) {
 	va_end (ap);
 }
 
-R_API int r_egg_compile(REgg *egg) {
-	const char *b = (const char *)egg->src->buf;
-	if (!b || !egg->emit)
-		return R_FALSE;
-	for (;*b;b++) {
-		r_egg_lang_parsechar (egg, *b);
-	}
-	// TODO: call r_asm 
+R_API int r_egg_assemble(REgg *egg) {
 	if (egg->emit == &emit_x86 || egg->emit == &emit_x64) {
 		RAsmCode *asmcode;
 		char *code;
@@ -175,6 +173,16 @@ R_API int r_egg_compile(REgg *egg) {
 		return (asmcode != NULL);
 	}
 	return R_FALSE;
+}
+
+R_API int r_egg_compile(REgg *egg) {
+	const char *b = (const char *)egg->src->buf;
+	if (!b || !egg->emit)
+		return R_FALSE;
+	for (;*b;b++)
+		r_egg_lang_parsechar (egg, *b);
+	// TODO: handle errors here
+	return R_TRUE;
 }
 
 R_API RBuffer *r_egg_get_bin(REgg *egg) {

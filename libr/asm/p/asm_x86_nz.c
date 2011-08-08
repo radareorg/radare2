@@ -41,6 +41,9 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	int l = 0;
 
 	strncpy (op, str, sizeof (op)-1);
+	arg = strstr (op, "dword ptr");
+	if (arg) strcpy (arg, arg+strlen ("dword ptr"));
+
 	if (!memcmp (op, "rep ", 4)) {
 		data[l++] = 0xf3;
 		memmove (op, op+4, strlen (op+4)+1);
@@ -57,7 +60,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
  	arg = strchr (op, ' ');
 	if (arg) {
 		*arg = '\0';
-		arg++;
+		for (arg++; *arg==' '; arg++);
 	}
 	if (arg) {
 		char *arg2 = strchr (arg, ',');
@@ -130,6 +133,35 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				data[l++] = pfx | getreg (arg2)<<3 | getreg (arg);
 			}
 			return l;
+		} else
+		if (!strcmp (op, "cmp")) {
+			int arg0 = getreg (arg);
+			int arg1 = getreg (arg2);
+			if (a->bits==64)
+				data[l++] = 0x48;
+			if (isnum (arg2)) { // reg, num
+				int n = atoi (arg2);
+				if (n>127 || n<-127) {
+					ut8 *ptr = (ut8 *)&n;
+					data[l++] = 0x81;
+					data[l++] = 0xf8 | arg0;
+					//data[l++] = 0x50 | arg0;
+					data[l++] = ptr[0];
+					data[l++] = ptr[1];
+					data[l++] = ptr[2];
+					data[l++] = ptr[3];
+				} else {
+					data[l++] = 0x83;
+					data[l++] = 0xc0 | arg0 | (arg1<<3);
+					data[l++] = atoi (arg2);
+				}
+				return l;
+			} else // reg, reg
+			if (arg0 != 0xff && arg1 != 0xff) {
+				data[l++] = 0x39;
+				data[l++] = 0xc0 | arg0 | (arg1<<3);
+				return l;
+			}
 		} else
 		if (!strcmp (op, "test")) {
 			int arg0 = getreg (arg);
@@ -334,7 +366,13 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			}
 
 			if (isnum (arg2)) {
-				data[l++] = 0xb8;
+				if (delta) {
+					data[l++] = 0xc7;
+					data[l++] = 0x40 | getreg (arg);
+					data[l++] = 0x04;
+				} else {
+					data[l++] = 0xb8;
+				}
 				data[l++] = ptr[0];
 				data[l++] = ptr[1];
 				data[l++] = ptr[2];
@@ -399,7 +437,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				/* relative address */
 				addr -= 2;
 				addr -= offset;
-				data[l++] = '\xeb';
+				data[l++] = 0xeb;
 				data[l++] = (char)dst;
 				return l;
 			} else {
@@ -418,8 +456,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			int num = getnum (arg);
 			if (num>-127 && num<127) {
 				num-=2;
-				data[l++]='\x75';
-				data[l++]=(char)num;
+				data[l++] = 0x75;
+				data[l++] = (char)num;
 				return l;
 			} else {
 				data[l++]=0x0f;
@@ -434,8 +472,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 
 			if (dst>-0x80 && dst<0x7f) {
 				dst-=2;
-				data[l++]='\x74';
-				data[l++]=(char)dst;
+				data[l++] = 0x74;
+				data[l++] = (char)dst;
 				return l;
 			} else {
 				data[l++]=0x0f;
@@ -447,30 +485,30 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		}
 	} else {
 		if (!strcmp (op, "leave")) {
-			data[l++]='\xc9';
+			data[l++] = 0xc9;
 		} else
 		if (!strcmp (op, "syscall")) {
-			data[l++]='\x0f';
-			data[l++]='\x05';
+			data[l++] = 0x0f;
+			data[l++] = 0x05;
 		} else
 		if (!strcmp (op, "ret")) {
-			data[l++]='\xc3';
+			data[l++] = 0xc3;
 		} else
 		if (!strcmp (op, "ret0")) {
 			memcpy (data+l, "\x31\xc0\xc3", 3);
 			l += 3;
 		} else
 		if (!strcmp(op, "int3")) {
-			data[l++]='\xcc';
+			data[l++] = 0xcc;
 		} else
 		if (!strcmp (op, "pusha")) {
-			data[l++]='\x60';
+			data[l++] = 0x60;
 		} else
 		if (!strcmp (op, "popa")) {
 			data[l++] = 0x61;
 		} else
 		if (!strcmp (op, "nop")) {
-			data[l++]='\x90';
+			data[l++] = 0x90;
 		}
 		return l;
 	}

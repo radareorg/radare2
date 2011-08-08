@@ -3,10 +3,11 @@
 foo() {
 	A=$(rasm2 -a x86.as -b ${BITS} "$1")
 	B=$(rasm2 -a x86.nz -b ${BITS} "$1")
+	D=$(rasm2 -b ${BITS} -d "$A")
 	if [ "${A}" = "${B}" ]; then
-		printf "OK       %12s.as %12s.nz %20s\n" "$A" "$B" "$1"
+		printf "OK       %12s.as %12s.nz %20s = $D\n" "$A" "$B" "$1"
 	else
-		printf "FAILED   %12s.as %12s.nz %20s\n" "$A" "$B" "$1"
+		printf "FAILED   %12s.as %12s.nz %20s = $D\n" "$A" "$B" "$1"
 	fi
 }
 
@@ -18,9 +19,10 @@ fi
 
 echo "==> Running 32bit tests..."
 
-foo "leal eax, 0x804900"
-exit 0
+#foo "leal eax, 0x804900"
 
+if true ; then
+foo "mov dword ptr[esi+4], 33"
 foo "pop [eax]"
 foo "pop [esp]"
 foo "pop [ebp]"
@@ -34,15 +36,13 @@ foo "push [ebp]"
 foo "push [edi]"
 foo "push [esi]"
 foo "push [ecx]"
-exit 0
 foo "pop [eax]"
 foo "push [eax]"
 foo "push [ebp+4]"
 foo "push [eax+8]"
 foo "pop [ebp+4]"
 foo "pop [eax+4]"
-exit 0
-
+fi
 
 if true ; then
 foo "mov eax, 0x8049000"
@@ -114,6 +114,13 @@ foo "mov [eax+eax], eax"
 foo "mov [eax+ebx], ebx"
 foo "mov [eax+2], ebx"
 foo "mov [ebx+2], ebx"
+
+foo "cmp eax, ebx"
+foo "cmp eax, 33"
+foo "cmp ebx, eax"
+foo "cmp edx, esi"
+foo "test edx, esi"
+foo "test eax, ebx"
 fi
 
 # 64 bit tests #
@@ -144,4 +151,11 @@ foo "add rax, rcx"
 foo "add rax, 44"
 foo "sub rax, rbx"
 foo "sub rax, 44"
+
+foo "cmp rax, rbx"
+foo "cmp rax, 33"
+foo "cmp rbx, rax"
+foo "cmp rdx, rsi"
+foo "test rdx, rsi"
+foo "test rax, rbx"
 fi

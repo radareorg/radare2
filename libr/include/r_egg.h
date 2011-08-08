@@ -64,6 +64,7 @@ R_API void r_egg_raw(REgg *egg, const ut8 *b, int len);
 R_API void r_egg_if(REgg *egg, const char *reg, char cmp, int v);
 R_API void r_egg_printf(REgg *egg, const char *fmt, ...);
 R_API int r_egg_compile(REgg *egg);
+R_API int r_egg_assemble(REgg *egg);
 R_API RBuffer *r_egg_get_bin(REgg *egg);
 //R_API int r_egg_dump (REgg *egg, const char *file) { }
 R_API char *r_egg_get_source(REgg *egg);

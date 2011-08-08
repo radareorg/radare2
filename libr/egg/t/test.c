@@ -33,6 +33,7 @@ int main(int argc, char **argv) {
 	r_egg_setup (egg, arch, bits, 0, 0);
 	r_egg_include (egg, argv[optind], 0);
 	r_egg_compile (egg);
+	r_egg_assemble (egg);
 	//r_egg_setup (egg, "x86", 32, 0, 0);
 	//r_egg_setup (egg, "x86", 64, 0, 0);
 

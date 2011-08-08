@@ -29,7 +29,7 @@ enum {
 	SYSCALLBODY,
 	LAST
 };
-// XXX
+// XXX : globals are ugly
 static int nsyscalls = 0;
 static char *syscallbody = NULL;
 static int commentmode = 0;
@@ -63,7 +63,7 @@ static int oc = '\n';
 static int mode = NORMAL;
 
 static const char *skipspaces(const char *s) {
-	for(;*s;s++)
+	for (;*s;s++)
 		switch (*s) {
 		case '\n':
 		case '\r':
@@ -254,7 +254,9 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 		} else
 		if (!memcmp (str+1, "reg", 3)) {
 			// XXX: can overflow if out is small
-			snprintf (out, 32, "%%%s", e->regs (egg, atoi (str+4)));
+			if (attsyntax)
+				snprintf (out, 32, "%%%s", e->regs (egg, atoi (str+4)));
+			else snprintf (out, 32, "%s", e->regs (egg, atoi (str+4)));
 		} else {
 			ret = str; /* TODO: show error, invalid var name? */
 			eprintf ("FUCKED UP\n");
@@ -572,13 +574,13 @@ static void rcc_next(REgg *egg) {
 		int vs = 'l';
 		char type, *eq, *ptr = elem;
 		elem[elem_n] = '\0';
-		ptr = skipspaces (ptr);
+		ptr = (char*)skipspaces (ptr);
 		if (*ptr) {
 			eq = strchr (ptr, '=');
 			if (eq) {
 				char str2[64], *p, ch = *(eq-1);
 				*eq = '\0';
-				eq = skipspaces (eq+1);
+				eq = (char*) skipspaces (eq+1);
 				p = r_egg_mkvar (egg, str2, ptr, 0);
 				vs = varsize;
 				if (IS_VAR (eq)) {

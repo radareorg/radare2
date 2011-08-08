@@ -52,7 +52,7 @@ static int rabin_show_help() {
 		" -A              list archs\n"
 		" -a [arch_bits]  set arch\n"
 		" -b [addr]       override baddr\n"
-		" -c [fmt:C:D]    create [fmt] binary with Code and Data hexpairs (see -a)\n"
+		" -c [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
 		" -e              entrypoint\n"
 		" -f [str]        select sub-bin named str\n"
 		" -i              imports (symbols imported from libraries)\n"

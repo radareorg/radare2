@@ -19,10 +19,6 @@ exit@inline()
 	: int 0x80
 }
 
-: .data
-: str:
-: .string "ftw\n"
-: .text
 
 strlen@alias(0);
 /*
@@ -38,3 +34,7 @@ main@global(128)
 	write($1, $str, .var0);
 	exit($0);
 }
+
+: .data
+: str:
+: .string "ftw\n"

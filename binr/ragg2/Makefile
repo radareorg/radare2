@@ -1,0 +1,8 @@
+BIN=ragg2
+BINDEPS=r_egg r_syscall r_asm r_util
+
+include ../binr.mk
+
+ifeq ($(WITHNONPIC),1)
+LDFLAGS+=${DL_LIBS}
+endif

@@ -157,7 +157,7 @@ int otf_patch() {
 			ptr = getenv ("PORT");
 			if (ptr) {
 				unsigned short port = atoi(ptr);
-				memcpy (shellcode+shellcodes[scidx].port,&port,2);
+				memcpy (shellcode+shellcodes[scidx].port, &port, 2);
 			}
 		}
 	}
@@ -252,7 +252,7 @@ int print_shellcode() {
 		} else {
 			ut8 *ptr = malloc (4096);
 			void (*cb)() = (void *)&shellcode;
-			memcpy (ptr, shellcode, strlen ((const char *)shellcode));
+			memcpy (ptr, shellcode, SCSIZE);
 #if __UNIX__
 			mprotect (ptr, 4096, PROT_READ|PROT_EXEC); // rx must be ok
 			mprotect (ptr, 4096, PROT_READ|PROT_WRITE|PROT_EXEC); // try rwx
