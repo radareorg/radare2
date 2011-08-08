@@ -525,8 +525,16 @@ static void rcc_next(REgg *egg) {
 					docall = 0;
 					e->comment (egg, "syscall");
 					r_egg_lang_parsechar (egg, '\n'); /* FIX parsing issue */
-					for (; *p; p++)
-						r_egg_lang_parsechar (egg, *p);
+					if (p) {
+						for (; *p; p++)
+							r_egg_lang_parsechar (egg, *p);
+					} else {
+						// XXX: This is linux-x86-specific
+						const char *p = "\n : mov eax, `.arg`\n : int 0x80\n";
+						for (; *p; p++)
+							r_egg_lang_parsechar (egg, *p);
+						eprintf ("TODO: must use r_syscall api here\n");
+					}
 					docall = 0;
 					break;
 				}

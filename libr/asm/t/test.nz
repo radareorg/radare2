@@ -19,7 +19,28 @@ fi
 
 echo "==> Running 32bit tests..."
 
+BITS=64
+foo "test rdx, rsi"
+foo "test rax, rbx"
+BITS=32
+foo "test edx, esi"
+foo "test eax, ebx"
+
+
 #foo "leal eax, 0x804900"
+foo "mov eax, [esp]"
+foo "mov eax, [ebx]"
+foo "mov eax, [esi]"
+foo "mov eax, [ebp]"
+foo "mov eax, [eax+4]"
+foo "mov eax, [esp+4]"
+foo "mov eax, esp"
+
+foo "mov eax, 1"
+foo "mov ebx, 1"
+foo "mov ecx, 1"
+foo "mov eax, [esp]"
+
 
 if true ; then
 foo "mov dword ptr[esi+4], 33"

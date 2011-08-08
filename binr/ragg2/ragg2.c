@@ -93,7 +93,12 @@ int main(int argc, char **argv) {
 			if (feof (stdin)) break;
 			r_egg_load (egg, buf, 0);
 		}
-	} else r_egg_include (egg, argv[optind], 0);
+	} else {
+		if (!r_egg_include (egg, argv[optind], 0)) {
+			eprintf ("Cannot open '%s'\n", argv[optind]);
+			return 1;
+		}
+	}
 	r_egg_compile (egg);
 	//printf ("src (%s)\n", r_egg_get_source (egg));
 	if (show_asm)

@@ -1,6 +1,6 @@
 include ../../config.mk
 
-BINDEPS=r_egg r_util
+BINDEPS=r_egg r_util r_asm r_syscall
 
 CFLAGS+=-DVERSION=\"${VERSION}\"
 CFLAGS+=-g -I../../include
