@@ -57,6 +57,7 @@ R_API void r_egg_free (REgg *egg);
 R_API void r_egg_reset (REgg *egg);
 R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const char *os);
 R_API int r_egg_include(REgg *egg, const char *file, int format);
+R_API void r_egg_load(REgg *egg, const char *code, int format);
 R_API void r_egg_syscall(REgg *egg, const char *arg, ...);
 R_API void r_egg_alloc(REgg *egg, int n);
 R_API void r_egg_label(REgg *egg, const char *name);
