@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2010-2011 pancake<@nopcode.org> */
 
 #include <r_egg.h>
 
@@ -74,6 +74,16 @@ static const char *skipspaces(const char *s) {
 			return s;
 		}
 	return s;
+}
+
+static char *trim(char *s) {
+	char *o;
+	for (o=s; *s; s++)
+		if (isspace (*s)) {
+			*s = 0;
+			break;
+		}
+	return o;
 }
 
 #define SYNTAX_ATT 0
@@ -281,19 +291,20 @@ static void rcc_fun(REgg *egg, const char *str) {
 	char *ptr, *ptr2;
 	str = skipspaces (str);
 	if (context) {
-		ptr = strchr(str, '=');
+		ptr = strchr (str, '=');
 		if (ptr) {
 			*ptr = '\0';
 			free (dstvar);
 			dstvar = strdup (skipspaces (str));
 			ptr2 = (char *)skipspaces(ptr+1);
-			if (*ptr2)
-				callname = strdup (skipspaces (ptr+1));
+			if (*ptr2) {
+				callname = trim (strdup (skipspaces (ptr+1)));
+			}
 		} else {
 			str = skipspaces (str);
-			egg->emit->comment (egg, "rcc_fun %d (%s)", context, str);
 			free (callname);
-			callname = strdup (skipspaces (str));
+			callname = trim (strdup (skipspaces (str)));
+			egg->emit->comment (egg, "rcc_fun %d (%s)", context, callname);
 		}
 	} else {
 		ptr = strchr (str, '@');
@@ -396,7 +407,7 @@ static int parsedatachar(REgg *egg, char c) {
 		/* capture value between parenthesis foo@data(NNN) { ... } */
 		if (c==')') {
 			stackframe = atoi (dstval);
-			ndstval=0;
+			ndstval = 0;
 		} else dstval[ndstval++] = c;
 		return 0;
 	}
@@ -408,9 +419,7 @@ static int parsedatachar(REgg *egg, char c) {
 			slurp = 0;
 			mode = NORMAL;
 			/* register */
-			if (dstval == NULL || dstvar == NULL) {
-				eprintf ("FUCK FUCK\n");
-			} else {
+			if (dstval != NULL && dstvar != NULL) {
 				dstval[ndstval]='\0';
 				egg->emit->comment (egg, "data (%s)(%s)size=(%d)\n",
 					dstvar, dstval, stackframe);
@@ -430,7 +439,7 @@ static int parsedatachar(REgg *egg, char c) {
 				ndstval = 0;
 				context = 0;
 				return 1;
-			}
+			} else eprintf ("FUCK FUCK\n");
 		}
 	}
 	dstval[ndstval++] = c;
@@ -487,6 +496,7 @@ static void rcc_next(REgg *egg) {
 
 	docall = 1;
 	if (callname) {
+		callname = trim (callname);
 		char *str, *ptr = strchr (callname, '=');
 		if (ptr) {
 			*ptr = '\0';

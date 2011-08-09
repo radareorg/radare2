@@ -57,6 +57,7 @@ static int help () {
 		"  -s    hexstr -> bin     ;  rax2 -s 43 4a 50\n"
 		"  -S    bin -> hexstr     ;  rax2 -S C  J  P\n"
 		"  -V    version           ;  rax2 -V\n"
+		"  -x    hash string       ;  rax2 -x linux osx\n"
 		"  -h    help              ;  rax2 -h\n");
 	return R_TRUE;
 }
@@ -79,6 +80,9 @@ static int rax (char *str, int last) {
 			break;
 		case 'b':
 			flags ^= 8;
+			break;
+		case 'x':
+			flags ^= 16;
 			break;
 		case 'V':
 			printf ("rax2 v"R2_VERSION"\n");
@@ -121,6 +125,11 @@ static int rax (char *str, int last) {
 		if (len>0)
 			for (i=0; i<len; i++)
 				printf ("%c", buf[i]);
+		return R_TRUE;
+	}
+	if (flags & 16) {
+		int h = r_str_hash (str);
+		printf ("%s 0x%x\n", str, h);
 		return R_TRUE;
 	}
 

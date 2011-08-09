@@ -1,7 +1,9 @@
 BIN=rarun2
 OBJ=main.o
 
-all: ${OBJ}
+all: ${BIN}
+
+${BIN}: ${OBJ}
 	${CC} -o ${BIN} ${OBJ}
 
 mrproper clean:

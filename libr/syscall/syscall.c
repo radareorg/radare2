@@ -52,6 +52,7 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
 		// ignored
 		return R_TRUE;
 	}
+	// TODO: use r_str_hash.. like in r_egg
 	if (!strcmp (arch, "mips")) {
 		ctx->regs = fastcall_mips;
 		if (!strcmp (os, "linux"))
@@ -66,7 +67,7 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
 		if (!strcmp (os, "linux"))
 			ctx->sysptr = syscalls_linux_arm;
 		else
-		if (!strcmp (os, "macos") || !strcmp (os, "darwin"))
+		if (!strcmp (os, "macos") || !strcmp (os, "darwin") || !strcmp (os, "osx"))
 			ctx->sysptr = syscalls_darwin_arm;
 		else {
 			eprintf ("r_syscall_setup: Unknown OS '%s'\n", os);
@@ -83,9 +84,9 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
 			ctx->sysptr = syscalls_freebsd_x86;
 		else if (!strcmp (os, "openbsd"))
 			ctx->sysptr = syscalls_openbsd_x86;
-		else if ((!strcmp (os, "darwin")) || (!strcmp (os, "macos")))
+		else if ((!strcmp (os, "darwin")) || (!strcmp (os, "macos")) || (!strcmp (os, "osx")))
 			ctx->sysptr = syscalls_darwin_x86;
-		else if (!strcmp (os, "windows")) //win7
+		else if (!strcmp (os, "windows") || (!strcmp (os, "w32"))) //win7
 			ctx->sysptr = syscalls_win7_x86;
 		else {
 			eprintf ("r_syscall_setup: Unknown os '%s'\n", os);

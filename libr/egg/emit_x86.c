@@ -94,6 +94,23 @@ static void emit_syscall_args(REgg *egg, int nargs) {
 static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int j) {
 	char *p, str2[64];
 	int i, oj = j;
+	for (i=4; i<oj; i+=4) {
+		/* XXX endian and 32/64bit issues */
+		int *n = (int *)(str+i-4);
+		p = r_egg_mkvar (egg, str2, dstvar, i);
+		if (attsyntax) r_egg_printf (egg, "  movl $0x%x, %s\n", *n, p);
+		else r_egg_printf (egg, "  mov %s, 0x%x\n", p, *n);
+		j -= 4;
+	}
+	p = r_egg_mkvar (egg, str2, dstvar, j);
+	if (attsyntax) r_egg_printf (egg, "  lea %s, %%"R_AX"\n", p);
+	else r_egg_printf (egg, "  lea "R_AX", %s\n", p);
+	p = r_egg_mkvar (egg, str2, dstvar, 0);
+	if (attsyntax) r_egg_printf (egg, "  mov %%"R_AX", %s\n", p);
+	else r_egg_printf (egg, "  mov %s, "R_AX"\n", p);
+#if 0
+	char *p, str2[64];
+	int i, oj = j;
 	for (i=0; i<oj; i+=4) {
 		/* XXX endian and 32/64bit issues */
 		int *n = (int *)(str+i);
@@ -108,6 +125,7 @@ static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int 
 	p = r_egg_mkvar (egg, str2, dstvar, 0);
 	if (attsyntax) r_egg_printf (egg, "  mov %%"R_AX", %s\n", p);
 	else r_egg_printf (egg, "  mov %s, "R_AX"\n", p);
+#endif
 }
 
 static void emit_call(REgg *egg, const char *str, int atr) {
@@ -159,15 +177,17 @@ static void emit_get_while_end (REgg *egg, char *str, const char *ctxpush, const
 }
 
 static void emit_while_end (REgg *egg, const char *labelback) {
+#if 0
 	if (attsyntax) {
 		r_egg_printf (egg, "  pop %%"R_AX"\n");
 		r_egg_printf (egg, "  cmp $0, %%"R_AX"\n"); // XXX MUST SUPPORT != 0 COMPARE HERE
 		r_egg_printf (egg, "  jnz %s\n", labelback);
 	} else {
+#endif
 		r_egg_printf (egg, "  pop "R_AX"\n");
 		r_egg_printf (egg, "  test "R_AX", "R_AX"\n"); // XXX MUST SUPPORT != 0 COMPARE HERE
 		r_egg_printf (egg, "  jnz %s\n", labelback);
-	}
+//	}
 }
 
 static void emit_get_var (REgg *egg, int type, char *out, int idx) {
@@ -228,7 +248,7 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 			arg = e+1;
 			op = "jne";
 		} else {
-			arg = "$0";
+			arg = attsyntax? "$0": "0";
 			if (n) op = "jnz";
 			else op ="jz";
 		}
@@ -241,7 +261,7 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 		r_egg_printf (egg, "  cmp%c %s, %%"R_AX"\n", sz, p);
 	} else {
 		r_egg_printf (egg, "  pop "R_AX"\n"); /* TODO: add support for more than one arg get arg0 */
-		r_egg_printf (egg, "  cmp %s, "R_AX"\n", p);
+		r_egg_printf (egg, "  cmp "R_AX", %s\n", p);
 	}
 	// if (context>0)
 	r_egg_printf (egg, "  %s %s\n", op, dst);
