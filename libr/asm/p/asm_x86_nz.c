@@ -168,7 +168,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			if (a->bits==64)
 				data[l++] = 0x48;
 			data[l++] = 0x85;
-			data[l++] = 0xc0 | arg0 | getreg (arg2)<<3;
+			data[l++] = 0xc0 | arg0<<3 | getreg (arg2);
 			return l;
 		} else
 		if (!strcmp (op, "int")) {
@@ -303,9 +303,54 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				}
 			}
 			return l;
+		} else if (!strcmp (op, "lea")) {
+			if (!arg || !arg2) {
+				eprintf ("No args for lea?\n");
+				return 0;
+			}
+			data[l++] = 0x8d;
+			if (*arg2=='[') {
+				int r = getreg(arg);
+				int r2 = getreg(arg2+1);
+				arg2++;
+				if (isnum (arg2)) {
+					ut64 n = getnum (arg2);
+					ut32 n32 = (ut32)n;
+					ut8 *ptr;
+					data[l++] = 0x05 | getreg (arg)<<3;
+					ptr = (ut8*)&n32;
+					data[l++] = ptr[0];
+					data[l++] = ptr[1];
+					data[l++] = ptr[2];
+					data[l++] = ptr[3];
+				} else {
+					char *p= strchr (arg2, '+');
+					if (!p) p = strchr (arg2, '-');
+					if (p) {
+						*p++ = 0;
+						int n = getnum (p);
+						if (n>127 || n<-127) {
+							// TODO
+						} else {
+							data[l++] = 0x40 | getreg (arg)<<3 | getreg (arg2);
+							data[l++] = n;
+						}
+					} else {
+						if (r2==4) { //ESP
+							data[l++] = r<<3 | r2;
+							data[l++] = 0x24;
+						} else if (r2== 5) { // EBP
+							data[l++] = 0x5d;
+							data[l++] = 0;
+						} else data[l++] = r<<3 | r2;
+					}
+				}
+			} else eprintf ("Invalid args for lea?\n");
+			return l;
 		} else if (!strcmp (op, "mov")) {
 			char *delta = NULL;
 			int pfx, arg0;
+			int argk = (*arg == '[');
 			ut64 dst;
 			ut32 addr;
 			ut8 *ptr;
@@ -317,9 +362,10 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				return 0;
 			}
 
-			if (*arg=='[') {
+			if (argk) {
 				arg++;
 				delta = strchr (arg, '+');
+				//if (!delta) delta = strchr (arg, '-'); // XXX: TODO: handle negative off
 				if (delta) {
 					*delta++ = 0;
 				}
@@ -392,11 +438,33 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 
 			if (isnum (arg2)) {
 				if (delta) {
+					int n = getnum (delta);
 					data[l++] = 0xc7;
-					data[l++] = 0x40 | getreg (arg);
-					data[l++] = 0x04;
+					if (n>127 || n<-127) {
+						ut8 *ptr = (ut8 *)&n;
+						data[l++] = 0x80 | getreg (arg);
+						data[l++] = ptr[0];
+						data[l++] = ptr[1];
+						data[l++] = ptr[2];
+						data[l++] = ptr[3];
+					} else {
+						data[l++] = 0x40 | getreg (arg);
+						data[l++] = getnum (delta); //getreg (arg2);
+					}
 				} else {
-					data[l++] = 0xb8 | getreg (arg);
+					if (argk) {
+						int r = getreg (arg);
+						data[l++] = 0xc7;
+						if (r==4) { //ESP
+							data[l++] = 0x04;
+							data[l++] = 0x24;
+						} else if (r== 5) { // EBP
+							data[l++] = 0x75;
+							data[l++] = 0;
+						} else  data[l++] = r;
+					} else {
+						data[l++] = 0xb8 | getreg (arg);
+					}
 				}
 				data[l++] = ptr[0];
 				data[l++] = ptr[1];
@@ -407,7 +475,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				data[l++] = 0x89;
 				if (delta) {
 					if (isnum (delta)){
-						data[l++] = 0x58 | getreg (arg);
+						data[l++] = 0x40 | getreg (arg) | getreg (arg2)<<3;
 						data[l++] = getnum (delta);
 					} else {
 						data[l++] = getreg (arg2)<<3 | 0x4;
@@ -537,7 +605,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		}
 		return l;
 	}
-	eprintf ("Unknown opcode\n");
+	eprintf ("Unknown opcode (%s)\n", op);
 	return 0;
 }
 

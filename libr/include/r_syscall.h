@@ -32,6 +32,7 @@ typedef struct r_syscall_t {
 	RSyscallRegs *regs;
 	RSyscallItem *sysptr;
 	RSyscallPort *sysport;
+	// TODO: deprecate
 	PrintfCallback printf;
 } RSyscall;
 

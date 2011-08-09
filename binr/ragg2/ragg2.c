@@ -7,6 +7,7 @@ static int usage () {
 	eprintf ("ragg2 [options] [file|-]\n");
 	eprintf (" -a [x86|arm]    select architecture\n");
 	eprintf (" -b [32|64]      register size\n");
+	eprintf (" -k [linux|osx]  operating system's kernel\n");
 	eprintf (" -f [format]     output format (raw, pe, elf, mach0)\n");
 	eprintf (" -o [file]       output file\n");
 	eprintf (" -s              show assembler\n");
@@ -35,6 +36,7 @@ static int create (const char *format, const char *arch, int bits, const ut8 *co
 
 int main(int argc, char **argv) {
 	const char *arch = "x86";
+	const char *os = R_EGG_OS_NAME;
 	char *format = "raw";
 	int show_execute = 0;
 	int show_hex = 1;
@@ -44,7 +46,7 @@ int main(int argc, char **argv) {
 	RBuffer *b;
 	REgg *egg = r_egg_new ();
 
-        while ((c = getopt (argc, argv, "ha:b:f:o:sxX")) != -1) {
+        while ((c = getopt (argc, argv, "ha:b:f:o:sxXk:")) != -1) {
                 switch (c) {
 		case 'a':
 			arch = optarg;
@@ -65,10 +67,14 @@ int main(int argc, char **argv) {
 			break;
 		case 'f':
 			format = optarg;
+			show_asm = 0;
 			break;
 		case 's':
 			show_asm = 1;
 			show_hex = 0;
+			break;
+		case 'k':
+			os = optarg;
 			break;
 		case 'x':
 			show_hex = 1;
@@ -85,7 +91,7 @@ int main(int argc, char **argv) {
 	if (optind == argc)
 		return usage ();
 
-	r_egg_setup (egg, arch, bits, 0, NULL);
+	r_egg_setup (egg, arch, bits, 0, os);
 	if (!strcmp (argv[optind], "-")) {
 		char buf[1024];
 		for (;;) {

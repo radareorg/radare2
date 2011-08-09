@@ -15,7 +15,29 @@ typedef struct r_egg_t {
 	struct r_egg_emit_t *emit;
 	int endian;
 	int bits;
+	ut32 os;
 } REgg;
+
+#define R_EGG_OS_LINUX 0xcd21ce66
+#define R_EGG_OS_OSX 0x1bf9e4
+#define R_EGG_OS_DARWIN 0x5e417f87
+#define R_EGG_OS_MACOS 0xdc208773
+#define R_EGG_OS_W32 0x1dd9f6
+#define R_EGG_OS_WINDOWS 0xc9f3d7f
+
+#if __APPLE__
+#define R_EGG_OS_DEFAULT R_EGG_OS_OSX
+#define R_EGG_OS_NAME "osx"
+#define R_EGG_FORMAT_DEFAULT "mach0"
+#elif __WINDOWS__
+#define R_EGG_OS_DEFAULT R_EGG_OS_W32
+#define R_EGG_OS_NAME "w32"
+#define R_EGG_FORMAT_DEFAULT "pe"
+#else
+#define R_EGG_OS_DEFAULT R_EGG_OS_LINUX
+#define R_EGG_OS_NAME "linux"
+#define R_EGG_FORMAT_DEFAULT "elf"
+#endif
 
 typedef struct r_egg_emit_t {
 	const char *arch;

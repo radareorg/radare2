@@ -37,6 +37,7 @@ R_API void r_egg_reset (REgg *egg) {
 
 R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const char *os) {
 	egg->emit = NULL;
+	egg->os = os? r_str_hash (os): R_EGG_OS_DEFAULT;
 	if (!strcmp (arch, "x86")) {
 		switch (bits) {
 		case 32:
@@ -179,8 +180,10 @@ R_API int r_egg_compile(REgg *egg) {
 	const char *b = (const char *)egg->src->buf;
 	if (!b || !egg->emit)
 		return R_FALSE;
-	for (;*b;b++)
+	for (;*b;b++) {
 		r_egg_lang_parsechar (egg, *b);
+		// XXX: some parse fail errors are false positives :(
+	}
 	// TODO: handle errors here
 	return R_TRUE;
 }

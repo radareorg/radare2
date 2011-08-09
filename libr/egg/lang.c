@@ -101,7 +101,7 @@ static char *get_frame_label(int type) {
 static char *get_end_frame_label(REgg *egg) {
 	static char label[128];
 	/* THIS IS GAS_ONLY */
-	snprintf (label, sizeof (label), FRAME_END_FMT,
+	snprintf (label, sizeof (label)-1, FRAME_END_FMT,
 		nfunctions, nbrackets, context-1);
 	return label;
 }
@@ -124,7 +124,7 @@ static void rcc_element(REgg *egg, char *str) {
 		nargs = 0;
 		while (p) {
 			*p = '\0';
-			for (p=p+1; *p==' '; p=p+1);
+			p = (char *)skipspaces (p+1);
 			rcc_pusharg (egg, p);
 			p = strrchr (str, ',');
 		}
@@ -173,7 +173,7 @@ static void rcc_pushstr(REgg *egg, char *str, int filter) {
 	REggEmit *e = egg->emit;
 
         e->comment (egg, "encode %s string (%s) (%s)",
-                filter?"filtered":"unfiltered", str, callname);
+                filter? "filtered": "unfiltered", str, callname);
 
         if (filter)
         for (i=0; str[i]; i++) {
@@ -204,8 +204,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	if (_str == NULL)
 		return NULL; /* fix segfault, but not badparsing */
 	/* XXX memory leak */
- 	ret = str = strdup (_str);
-	while (*str==' ') str++; /* skip spaces ...also tabs isspace()? */
+ 	ret = str = strdup (skipspaces (_str));
 	//if (num || str[0]=='0') { sprintf(out, "$%d", num); ret = out; }
 	if ( (q = strchr (str, ':')) ) {
 		*q = '\0';
@@ -287,14 +286,14 @@ static void rcc_fun(REgg *egg, const char *str) {
 			*ptr = '\0';
 			free (dstvar);
 			dstvar = strdup (skipspaces (str));
-			for (ptr2=ptr+1; isspace (*ptr2); ptr2++);
+			ptr2 = (char *)skipspaces(ptr+1);
 			if (*ptr2)
-				callname = strdup (ptr+1);
+				callname = strdup (skipspaces (ptr+1));
 		} else {
 			str = skipspaces (str);
 			egg->emit->comment (egg, "rcc_fun %d (%s)", context, str);
 			free (callname);
-			callname = strdup (str);
+			callname = strdup (skipspaces (str));
 		}
 	} else {
 		ptr = strchr (str, '@');
@@ -338,12 +337,14 @@ static void rcc_fun(REgg *egg, const char *str) {
 		} else r_egg_printf (egg, "\n%s:\n", str);
 	}
 }
+
 static void rcc_context(REgg *egg, int delta) {
 	REggEmit *emit = egg->emit;
 	char str[64];
 
 	context += delta;
 	lastctxdelta = delta;
+
 	if (context == 0 && delta < 0) {
 		emit->frame_end (egg, stackframe+stackfixed, nbrackets);
 		if (mode == NORMAL) /* XXX : commenting this makes hello.r unhappy! TODO: find a cleaner alternative */
@@ -473,6 +474,7 @@ static int parseinlinechar(REgg *egg, char c) {
 		}
 	}
 	dstval[ndstval++] = c;
+	dstval[ndstval]=0;
 	return 0;
 }
 
@@ -529,11 +531,21 @@ static void rcc_next(REgg *egg) {
 						for (; *p; p++)
 							r_egg_lang_parsechar (egg, *p);
 					} else {
-						// XXX: This is linux-x86-specific
-						const char *p = "\n : mov eax, `.arg`\n : int 0x80\n";
-						for (; *p; p++)
-							r_egg_lang_parsechar (egg, *p);
-						eprintf ("TODO: must use r_syscall api here\n");
+						char p[512], *q;
+						switch (egg->os) {
+						case R_EGG_OS_LINUX:
+							strcpy (p, "\n : mov eax, `.arg`\n : int 0x80\n");
+							break;
+						case R_EGG_OS_OSX:
+						case R_EGG_OS_MACOS:
+						case R_EGG_OS_DARWIN:
+							snprintf (p, sizeof (p),
+								"\n : mov eax, `.arg`\n : push eax\n : int 0x80\n add esp, %d",
+								(nargs+1)*(egg->bits/8));
+							break;
+						}
+						for (q=p; *q; q++)
+							r_egg_lang_parsechar (egg, *q);
 					}
 					docall = 0;
 					break;

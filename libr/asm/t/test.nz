@@ -18,14 +18,25 @@ if [ -n "$1" ]; then
 fi
 
 echo "==> Running 32bit tests..."
+foo "mov dword ptr [eax], 0x6f77206f"
+foo "mov dword ptr [esp], 3"
+foo "mov dword ptr [eax], 3"
 
-BITS=64
-foo "test rdx, rsi"
-foo "test rax, rbx"
-BITS=32
-foo "test edx, esi"
-foo "test eax, ebx"
+foo "mov dword ptr [eax+4], 3"
+foo "mov eax, 0x8049000"
+#exit 0
 
+foo "mov dword ptr[esi+4], 33"
+foo "mov [eax+eax], eax"
+foo "mov [eax+ebx], eax"
+foo "mov [eax+ecx], eax"
+foo "mov [ebx+eax], eax"
+foo "mov [eax+eax], ebx"
+foo "mov [eax+eax], ecx"
+foo "mov [eax+eax], eax"
+foo "mov [eax+ebx], ebx"
+foo "mov [eax+2], ebx"
+foo "mov [ebx+2], ebx"
 
 #foo "leal eax, 0x804900"
 foo "mov eax, [esp]"
@@ -40,10 +51,68 @@ foo "mov eax, 1"
 foo "mov ebx, 1"
 foo "mov ecx, 1"
 foo "mov eax, [esp]"
+foo "mov dword ptr [ebp+16], 0x6f77206f"
+foo "mov dword ptr [eax+16], 0x6f77206f"
+foo "mov dword ptr [ebp+450], 0x6f77206f"
+foo "mov dword ptr [eax+450], 0x6f77206f"
+#foo "mov [ebp+16], 0x6f77206f"
+#exit 0
+foo "mov [eax], eax"
+foo "mov [ebx], eax"
+foo "mov [eax], ebx"
+foo "mov [eax+4], eax"
+foo "mov [ebp+4], eax"
+foo "mov [ebp+4], ebx"
+foo "mov [ebp+4], ecx"
+foo "mov [eax+4], ecx"
+
+foo "mov eax, [eax]"
+foo "mov eax, [ebx]"
+foo "mov ebx, [eax]"
+
+foo "mov eax, 3"
+foo "mov ebx, eax"
+foo "mov eax, eax"
+foo "mov eax, ebx"
+
+foo "mov [eax], eax"
+foo "mov [eax], ebx"
+foo "mov [ebx], eax"
+foo "mov eax, [ebx]"
+
+# XX can be compressed
+# foo "mov [33], eax"
+foo "mov [33], ecx"
+foo "mov [33], edx"
+foo "mov [33], ebx"
+foo "mov [33], esp"
+foo "mov [33], ebp"
+foo "mov [33], esi"
+foo "mov [33], edi"
+
+
+foo "lea eax, [eax]"
+foo "lea eax, [ecx]"
+foo "lea eax, [esp]"
+foo "lea eax, [eax+4]"
+foo "lea ebx, [eax+4]"
+foo "lea eax, [ebx+4]"
+foo "lea ebx, [ebp]"
+foo "lea eax, [4]"
+foo "lea ebx, [4]"
+
+
+BITS=64
+foo "test rdx, rsi"
+foo "test rax, rbx"
+BITS=32
+foo "test edx, esi"
+foo "test eax, ebx"
+
+
 
 
 if true ; then
-foo "mov dword ptr[esi+4], 33"
 foo "pop [eax]"
 foo "pop [esp]"
 foo "pop [ebp]"
@@ -66,7 +135,6 @@ foo "pop [eax+4]"
 fi
 
 if true ; then
-foo "mov eax, 0x8049000"
 # foo "call 0x804800";
 foo "jmp ecx"
 foo "call ebx"
@@ -93,48 +161,15 @@ foo "add [eax], eax"
 
 foo "xor [eax], eax" 
 
-foo "mov eax, [eax]"
-foo "mov eax, [ebx]"
-foo "mov ebx, [eax]"
-
 foo "inc eax"
 foo "inc esi"
 foo "dec esi"
 foo "dec eax"
 
-foo "mov eax, 3"
-foo "mov ebx, eax"
-foo "mov eax, eax"
-foo "mov eax, ebx"
-
-foo "mov [eax], eax"
-foo "mov [eax], ebx"
-foo "mov [ebx], eax"
-foo "mov eax, [ebx]"
-
-# XX can be compressed
-# foo "mov [33], eax"
-foo "mov [33], ecx"
-foo "mov [33], edx"
-foo "mov [33], ebx"
-foo "mov [33], esp"
-foo "mov [33], ebp"
-foo "mov [33], esi"
-foo "mov [33], edi"
 
 foo "sub esi,-334"
 foo "add esi,-334"
 
-foo "mov [eax+eax], eax"
-foo "mov [eax+ebx], eax"
-foo "mov [eax+ecx], eax"
-foo "mov [ebx+eax], eax"
-foo "mov [eax+eax], ebx"
-foo "mov [eax+eax], ecx"
-foo "mov [eax+eax], eax"
-foo "mov [eax+ebx], ebx"
-foo "mov [eax+2], ebx"
-foo "mov [ebx+2], ebx"
 
 foo "cmp eax, ebx"
 foo "cmp eax, 33"
