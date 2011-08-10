@@ -4,23 +4,22 @@
 #include <getopt.h>
 
 static int usage () {
-	eprintf ("ragg2 [options] [file|-]\n");
-	eprintf (" -a [x86|arm]    select architecture\n");
-	eprintf (" -b [32|64]      register size\n");
-	eprintf (" -k [linux|osx]  operating system's kernel\n");
-	eprintf (" -f [format]     output format (raw, pe, elf, mach0)\n");
-	eprintf (" -o [file]       output file\n");
-	eprintf (" -s              show assembler\n");
-	eprintf (" -x              show hexpairs (enabled by default)\n");
-	eprintf (" -X              execute\n");
-	eprintf (" -h              show this help\n");
+	eprintf ("ragg2 [options] [file|-]\n"
+	" -a [x86|arm]    select architecture\n"
+	" -b [32|64]      register size\n"
+	" -k [linux|osx]  operating system's kernel\n"
+	" -f [format]     output format (raw, pe, elf, mach0)\n"
+	" -o [file]       output file\n"
+	" -s              show assembler\n"
+	" -x              show hexpairs (enabled by default)\n"
+	" -X              execute\n"
+	" -h              show this help\n");
 	return 1;
 }
 
 static int create (const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
 	RBin *bin = r_bin_new ();
 	RBuffer *b;
-
 	if (!r_bin_use_arch (bin, arch, bits, format)) {
 		eprintf ("Cannot set arch\n");
 		return 1;

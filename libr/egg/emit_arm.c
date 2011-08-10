@@ -18,6 +18,10 @@ static char *regs[] = R_GP;
 static int lastarg = 0;
 static char lastargs[16][32];
 
+static void emit_init (REgg *egg) {
+	/* TODO */
+}
+
 static char *emit_syscall (REgg *egg, int num) {
 	return strdup (": mov "R_AX", `.arg`\n: svc 0x8000\n");
 }
@@ -232,6 +236,7 @@ REggEmit EMIT_NAME = {
 	.arch = R_ARCH,
 	.size = R_SZ,
 	.call = emit_call,
+	.init = emit_init,
 	.equ = emit_equ,
 	.regs = emit_regs,
 	//.sc = emit_sc,

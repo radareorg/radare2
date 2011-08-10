@@ -2,10 +2,18 @@ R=../ragg2
 
 all:
 	${MAKE} hello
+	#${MAKE} foo
+
+foo:
+	rabin2 -c mach0:`rasm2 -a x86.nz -f hello.s` a.out
+
+bla:
+	${MAKE} hello
 
 hello:
 	rm -f a.out
 	$R -s hello.r | tee hello.s
+	$R -x hello.r | tee hello.x
 	$R -f mach0 -o a.out hello.r
 	-./a.out ; RET=$$? ; if [ $$RET = 0 ]; then echo It Works ; else echo Oops.. Fail ; fi
 

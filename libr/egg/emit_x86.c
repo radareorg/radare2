@@ -27,24 +27,44 @@
 
 static char *regs[] = R_GP;
 
-static char *emit_syscall (REgg *egg, int num) {
+static void emit_init (REgg *egg) {
+	if (attsyntax) r_egg_printf (egg, "mov %esp, %ebp\n");
+	else r_egg_printf (egg, "mov ebp, esp\n");
+}
+
+static char *emit_syscall (REgg *egg, int nargs) {
+	char p[512];
 	if (attsyntax) 
 		return strdup (": mov $`.arg`, %"R_AX"\n: int $0x80\n");
-	return strdup (": mov "R_AX", `.arg`\n: int 0x80\n");
+	switch (egg->os) {
+	case R_EGG_OS_LINUX:
+		strcpy (p, "\n : mov eax, `.arg`\n : int 0x80\n");
+		break;
+	case R_EGG_OS_OSX:
+	case R_EGG_OS_MACOS:
+	case R_EGG_OS_DARWIN:
+		snprintf (p, sizeof (p),
+			"\n : mov eax, `.arg`\n : push eax\n : int 0x80\n : add esp, %d\n",
+			4); //(nargs+2)*(egg->bits/8));
+		break;
+	default:
+		return NULL;
+	}
+	return strdup (p);
 }
 
 static void emit_frame (REgg *egg, int sz) {
-	if (sz>0) {
-		if (attsyntax)
-			r_egg_printf (egg, 
-			"  push %%"R_BP"\n"
-			"  mov %%"R_SP", %%"R_BP"\n"
-			"  sub $%d, %%"R_SP"\n", sz);
-		else r_egg_printf (egg, 
-			"  push "R_BP"\n"
-			"  mov "R_BP", "R_SP"\n"
-			"  sub "R_SP", %d\n", sz);
-	}
+	if (sz<1)
+		return;
+	if (attsyntax)
+		r_egg_printf (egg, 
+		"  push %%"R_BP"\n"
+		"  mov %%"R_SP", %%"R_BP"\n"
+		"  sub $%d, %%"R_SP"\n", sz);
+	else r_egg_printf (egg, 
+		"  push "R_BP"\n"
+		"  mov "R_BP", "R_SP"\n"
+		"  sub "R_SP", %d\n", sz);
 }
 
 static void emit_frame_end (REgg *egg, int sz, int ctx) {
@@ -91,7 +111,7 @@ static void emit_syscall_args(REgg *egg, int nargs) {
 	}
 }
 
-static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int j) {
+static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 	char *p, str2[64];
 	int i, oj = j;
 	for (i=4; i<oj; i+=4) {
@@ -102,6 +122,12 @@ static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int 
 		else r_egg_printf (egg, "  mov %s, 0x%x\n", p, *n);
 		j -= 4;
 	}
+	/* zero */
+	p = r_egg_mkvar (egg, str2, dstvar, i);
+	if (attsyntax) r_egg_printf (egg, "  movl $0, %s\n", p);
+	else r_egg_printf (egg, "  mov %s, 0\n", p);
+
+	/* store pointer */
 	p = r_egg_mkvar (egg, str2, dstvar, j);
 	if (attsyntax) r_egg_printf (egg, "  lea %s, %%"R_AX"\n", p);
 	else r_egg_printf (egg, "  lea "R_AX", %s\n", p);
@@ -336,6 +362,7 @@ static const char* emit_regs(REgg *egg, int idx) {
 REggEmit EMIT_NAME = {
 	.arch = R_ARCH,
 	.size = R_SZ,
+	.init = emit_init,
 	.call = emit_call,
 	.equ = emit_equ,
 	.regs = emit_regs,
@@ -348,7 +375,7 @@ REggEmit EMIT_NAME = {
 	.restore_stack = emit_restore_stack,
 	.get_result = emit_get_result,
 	.syscall_args = emit_syscall_args,
-	.set_string = emit_set_string,
+	.set_string = emit_string,
 	.get_var = emit_get_var,
 	.while_end = emit_while_end,
 	.get_while_end = emit_get_while_end,

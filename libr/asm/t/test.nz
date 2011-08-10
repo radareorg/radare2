@@ -17,6 +17,35 @@ if [ -n "$1" ]; then
 	exit 0
 fi
 
+foo "sub dword ptr [eax], 1"
+foo "add dword ptr [eax], 1"
+foo "add dword ptr [ebx], 1"
+foo "add dword ptr [ebp+4], 1"
+foo "add dword ptr [ebp+8], 1"
+
+foo "add dword ptr [esp+8], 1"
+foo "add dword ptr [eax+8], 1"
+foo "add eax, 1"
+foo "add dword ptr [ebx+8], 1"
+
+#exit 
+
+foo "sub dword ptr [ebx], 1"
+foo "sub eax, 666"
+foo "sub ebx, 666"
+foo "sub ecx, 666"
+foo "sub eax, 3"
+foo "sub dword ptr [eax], 666"
+foo "sub dword ptr [eax+4], 666"
+
+
+foo "sub dword ptr [ebp+4], 1"
+foo "mov dword ptr [ebp+4], 1"
+foo "mov dword ptr [eax+4], 1"
+foo "mov dword ptr [eax+4], 666"
+foo "mov dword ptr [eax], 666"
+
+
 echo "==> Running 32bit tests..."
 foo "mov dword ptr [eax], 0x6f77206f"
 foo "mov dword ptr [esp], 3"

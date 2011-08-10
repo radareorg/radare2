@@ -3,6 +3,9 @@
   |    <  V  . |  . V  .   <   _/ .-' _/|  ()  |
   |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
+* Cant set register values in OSX debugger
+  - This is probably because we are using the 32bit binary on 64bit dbg
+
 ====[[ 0.9 ]]====
 * rax2 hex->bin doesnt works for hex values (rax2 Bx1d) (it is just dec->bin O_o)
 * Implement r_search_xrefs()

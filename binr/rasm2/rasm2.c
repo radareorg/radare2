@@ -54,7 +54,7 @@ static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin) {
 		data = (ut8*)buf;
 	} else {
 		for (; *ptr; ptr++)
-			if (ptr[0]!= ' ' && ptr[0]!= '\n' && ptr[0]!= '\r')
+			if (*ptr!=' ' && *ptr!='\n' && *ptr!='\r')
 				if (!(++word%2)) clen++;
 		data = alloca (clen);
 		if (r_hex_str2bin (buf, data)==-1)
@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
 		int length;
 		if (!strcmp (file, "-")) {
 			char buf[R_ASM_BUFSIZE]; // TODO: Fix this limitation
-			ret = fread (buf, 1, R_ASM_BUFSIZE, stdin);
+			ret = fread (buf, 1, sizeof (buf)-1, stdin);
 			if (ret == R_ASM_BUFSIZE)
 				eprintf ("WARNING: Cannot slurp more from stdin\n");
 			if (ret>=0)
@@ -222,10 +222,10 @@ int main(int argc, char *argv[]) {
 		if (!strcmp (argv[optind], "-")) {
 			char buf[R_ASM_BUFSIZE];
 			for (;;) {
-				fgets (buf, R_ASM_BUFSIZE, stdin);
+				fgets (buf, sizeof (buf)-1, stdin);
 				if ((!bin || !dis) && feof (stdin))
 					break;
-				if (!bin || !dis) buf[strlen(buf)-1]='\0';
+				if (!bin || !dis) buf[strlen (buf)-1]='\0';
 				if (dis) ret = rasm_disasm (buf, offset, len, ascii, bin);
 				else ret = rasm_asm (buf, offset, len, bin);
 				idx += ret;

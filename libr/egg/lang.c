@@ -344,7 +344,10 @@ static void rcc_fun(REgg *egg, const char *str) {
 				dstvar = strdup (skipspaces (str));
 				dstval = malloc (4096);
 				ndstval = 0;
-			} else r_egg_printf (egg, "\n.%s %s\n%s:\n", ptr+1, str, str);
+			} else {
+				egg->emit->init (egg);
+				r_egg_printf (egg, "\n.%s %s\n%s:\n", ptr+1, str, str);
+			}
 		} else r_egg_printf (egg, "\n%s:\n", str);
 	}
 }
@@ -541,21 +544,12 @@ static void rcc_next(REgg *egg) {
 						for (; *p; p++)
 							r_egg_lang_parsechar (egg, *p);
 					} else {
-						char p[512], *q;
-						switch (egg->os) {
-						case R_EGG_OS_LINUX:
-							strcpy (p, "\n : mov eax, `.arg`\n : int 0x80\n");
-							break;
-						case R_EGG_OS_OSX:
-						case R_EGG_OS_MACOS:
-						case R_EGG_OS_DARWIN:
-							snprintf (p, sizeof (p),
-								"\n : mov eax, `.arg`\n : push eax\n : int 0x80\n add esp, %d",
-								(nargs+1)*(egg->bits/8));
-							break;
-						}
-						for (q=p; *q; q++)
-							r_egg_lang_parsechar (egg, *q);
+						char *q, *s = e->syscall (egg, nargs);
+						if (s) {
+							for (q=s; *q; q++)
+								r_egg_lang_parsechar (egg, *q);
+							free (s);
+						} else eprintf ("Cant get @syscall payload\n");
 					}
 					docall = 0;
 					break;
@@ -671,7 +665,7 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 		}
 	}
 
-	if(commentmode) {
+	if (commentmode) {
 		if (c=='/' && oc == '*')
 			commentmode = 0;
 		return 0;

@@ -44,6 +44,7 @@ typedef struct r_egg_emit_t {
 	int size; /* in bytes.. 32bit arch is 4, 64bit is 8 .. */
 	//const char *syscall_body;
 	const char* (*regs)(REgg *egg, int idx);
+	void (*init)(REgg *egg);
 	void (*call)(REgg *egg, const char *addr, int ptr);
 	//void (*sc)(int num);
 	void (*frame)(REgg *egg, int sz);

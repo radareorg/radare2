@@ -66,13 +66,22 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		char *arg2 = strchr (arg, ',');
 		if (arg2) {
 			*arg2 = 0;
+			//arg2 = skipspaces (arg2+1);
 			for (arg2++; *arg2==' '; arg2++);
 		}
 		if (!strcmp (op, "add")) {
 			int pfx;
 			if (*arg=='[') {
+				char *delta = strchr (arg+1, '+');
 				arg++;
 				pfx = 0;
+				if (delta) {
+					data[l++] = 0x83;
+					data[l++] = 0x40 | getreg (arg); // XXX: hardcoded
+					data[l++] = getnum (delta+1);
+					data[l++] = getnum (arg2);
+					return l;
+				}
 			} else pfx = 0xc0;
 			if (arg2 == NULL) {
 				eprintf ("Invalid syntax\n");
@@ -102,10 +111,32 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			return l;
 		} else
 		if (!strcmp (op, "sub")) {
+			int parg0 = 0;
 			int pfx;
 			if (*arg=='[') {
+				char *delta = strchr (arg+1, '+');
 				arg++;
+				parg0 = 1;
 				pfx = 0;
+				if (delta) {
+					int n = getnum (arg2);
+					if (n>127 || n<-127) {
+						ut8 *ptr = (ut8 *)&n;
+						data[l++] = 0x81;
+						data[l++] = 0x68; //pfx | getreg (arg);
+						data[l++] = getnum (delta+1); //0x04;
+						data[l++] = ptr[0];
+						data[l++] = ptr[1];
+						data[l++] = ptr[2];
+						data[l++] = ptr[3];
+					} else {
+						data[l++] = 0x83;
+						data[l++] = 0x6d; // XXX hardcoded
+						data[l++] = getnum (delta+1);
+						data[l++] = getnum (arg2);
+					}
+					return l;
+				}
 			} else pfx = 0xc0;
 			if (arg2 == NULL) {
 				eprintf ("Invalid syntax\n");
@@ -117,15 +148,38 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				int num = getnum (arg2);
 				if (num>127 || num<-127) {
 					ut8 *ptr = (ut8*) &num;
-					data[l++] = 0x81;
-					data[l++] = 0xe8 | getreg (arg);
-					data[l++] = ptr[0];
-					data[l++] = ptr[1];
-					data[l++] = ptr[2];
-					data[l++] = ptr[3];
+					if (parg0) {
+						data[l++] = 0x81;
+						//data[l++] = 0xe8 | getreg (arg);
+						data[l++] = 0x28 | getreg (arg);
+						data[l++] = ptr[0];
+						data[l++] = ptr[1];
+						data[l++] = ptr[2];
+						data[l++] = ptr[3];
+					} else {
+						int r = getreg (arg);
+						if (r==0) { // eax
+							data[l++] = 0x2d;
+							data[l++] = ptr[0];
+							data[l++] = ptr[1];
+							data[l++] = ptr[2];
+							data[l++] = ptr[3];
+						} else {
+							data[l++] = 0x81;
+							data[l++] = 0xe8 | getreg (arg);
+							data[l++] = ptr[0];
+							data[l++] = ptr[1];
+							data[l++] = ptr[2];
+							data[l++] = ptr[3];
+						}
+					}
 				} else {
 					data[l++] = 0x83;
-					data[l++] = 0xe8 | getreg (arg);
+					if (parg0) {
+						data[l++] = 0x28 | getreg (arg);
+					} else {
+						data[l++] = 0xe8 | getreg (arg);
+					}
 					data[l++] = getnum (arg2);
 				}
 			} else {
