@@ -9,6 +9,7 @@ static int usage () {
 	" -b [32|64]      register size\n"
 	" -k [linux|osx]  operating system's kernel\n"
 	" -f [format]     output format (raw, pe, elf, mach0)\n"
+	" -F              output native format (osx=mach0, linux=elf, ..)\n"
 	" -o [file]       output file\n"
 	" -s              show assembler\n"
 	" -x              show hexpairs (enabled by default)\n"
@@ -45,7 +46,7 @@ int main(int argc, char **argv) {
 	RBuffer *b;
 	REgg *egg = r_egg_new ();
 
-        while ((c = getopt (argc, argv, "ha:b:f:o:sxXk:")) != -1) {
+        while ((c = getopt (argc, argv, "ha:b:f:o:sxXk:F")) != -1) {
                 switch (c) {
 		case 'a':
 			arch = optarg;
@@ -63,6 +64,16 @@ int main(int argc, char **argv) {
 					dup2 (fd, 1);
 				} else eprintf ("Cannot open '%s'\n", optarg);
 			}
+			break;
+		case 'F':
+#if __APPLE__
+			format = "mach0";
+#elif __WINDOWS__
+			format = "pe";
+#else
+			format = "elf";
+#endif
+			show_asm = 0;
 			break;
 		case 'f':
 			format = optarg;
