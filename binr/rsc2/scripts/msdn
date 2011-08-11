@@ -14,6 +14,6 @@ PRINT=0
 echo "$DUMP" | while read LINE; do
 	[[ "$LINE" = *"Send comments about this topic to Microsoft"* ]] && PRINT=0
 	[[ $PRINT -eq 1 ]] && echo "$LINE"
-	[[ "$LINE" = *"$QUERY Minimize"* ]] && PRINT=1
+	[[ "$LINE" = *"Expand Minimize"* ]] && PRINT=1
 done | less
 

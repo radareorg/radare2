@@ -1,7 +1,9 @@
 #!/bin/sh
 
+AS=x86.as
+
 foo() {
-	A=$(rasm2 -a x86.as -b ${BITS} "$1")
+	A=$(rasm2 -a ${AS} -b ${BITS} "$1")
 	B=$(rasm2 -a x86.nz -b ${BITS} "$1")
 	D=$(rasm2 -b ${BITS} -d "$A")
 	if [ "${A}" = "${B}" ]; then
@@ -16,6 +18,14 @@ if [ -n "$1" ]; then
 	foo "$1"
 	exit 0
 fi
+
+AS=x86.olly
+foo 'call 0x8049100'
+foo 'jmp 0x8049200'
+foo 'jb 0x8049300'
+exit 0
+
+AS=x86.as
 
 foo "sub dword ptr [eax], 1"
 foo "add dword ptr [eax], 1"

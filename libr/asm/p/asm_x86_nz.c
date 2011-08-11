@@ -6,6 +6,11 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
+#if 0
+	Add support for AND, OR, ..
+        0x100000ec5    1    4883e4f0         and rsp, 0xfffffffffffffff0
+#endif
+
 static ut8 getreg(const char *str) {
 	int i;
 	const char *regs[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", NULL };
@@ -22,6 +27,8 @@ static ut8 getreg(const char *str) {
 }
 
 static int getnum(const char *s) {
+	if (*s=='$')
+		s++;
 	if (*s=='0' && s[1]=='x') {
 		int n;
 		sscanf (s+2, "%x", &n);
@@ -596,6 +603,24 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				data[l++] = ptr[2];
 				data[l++] = ptr[3];
 				return l;
+			}
+		} else
+		if (!strcmp (op, "jb")) {
+			ut64 dst = r_num_math (NULL, arg) - offset;
+			int d, num = getnum (arg);
+			d = num - a->pc;
+			//if (num>-127 && num<127) {
+			if (d>-127 && d<127) {
+				d-=2;
+				data[l++] = 0x72;
+				data[l++] = (char)d;
+				return l;
+			} else {
+				data[l++]=0x0f;
+				data[l++]=0x82;
+				dst -= 6;
+				memcpy (data+l, &dst, 4);
+				return l+4;
 			}
 		} else
 		if (!strcmp (op, "jnz")) {

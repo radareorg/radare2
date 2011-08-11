@@ -28,6 +28,7 @@
 static char *regs[] = R_GP;
 
 static void emit_init (REgg *egg) {
+// TODO: add 'andb rsp, 0xf0'
 	if (attsyntax) r_egg_printf (egg, "mov %esp, %ebp\n");
 	else r_egg_printf (egg, "mov ebp, esp\n");
 }

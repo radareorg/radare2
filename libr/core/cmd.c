@@ -2855,10 +2855,16 @@ static int cmd_write(void *data, const char *input) {
 		int len = strlen (input);
 		ut8 *buf = alloca (len);
 		len = r_hex_str2bin (input+1, buf);
-		r_mem_copyloop (core->block, buf, core->blocksize, len);
-		r_core_write_at (core, core->offset, core->block, core->blocksize);
-		WSEEK (core, core->blocksize);
-		r_core_block_read (core, 0);
+		if (len > 0) {
+			r_mem_copyloop (core->block, buf, core->blocksize, len);
+			r_core_write_at (core, core->offset, core->block, core->blocksize);
+			WSEEK (core, core->blocksize);
+			r_core_block_read (core, 0);
+		} else {
+			eprintf ("Wrong argument\n");
+		}
+		break;
+
 		}
 		break;
 	case 'm':
