@@ -6,6 +6,8 @@
 * Cant set register values in OSX debugger
   - This is probably because we are using the 32bit binary on 64bit dbg
 
+* rahash2 -f (full file)
+
 ====[[ 0.9 ]]====
 * rax2 hex->bin doesnt works for hex values (rax2 Bx1d) (it is just dec->bin O_o)
 * Implement r_search_xrefs()

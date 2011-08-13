@@ -605,6 +605,79 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				return l;
 			}
 		} else
+// SPAGUETTI
+		if (!strcmp (op, "jle")) {
+			ut64 dst = r_num_math (NULL, arg) - offset;
+			int d, num = getnum (arg);
+			d = num - a->pc;
+			//if (num>-127 && num<127) {
+			if (d>-127 && d<127) {
+				d-=2;
+				data[l++] = 0x7e;
+				data[l++] = (char)d;
+				return l;
+			} else {
+				data[l++]=0x0f;
+				data[l++]=0x8e;
+				dst -= 6;
+				memcpy (data+l, &dst, 4);
+				return l+4;
+			}
+		} else
+		if (!strcmp (op, "jl")) {
+			ut64 dst = r_num_math (NULL, arg) - offset;
+			int d, num = getnum (arg);
+			d = num - a->pc;
+			//if (num>-127 && num<127) {
+			if (d>-127 && d<127) {
+				d-=6;
+				data[l++] = 0x7c;
+				data[l++] = (char)d;
+				return l;
+			} else {
+				data[l++]=0x0f;
+				data[l++]=0x8c;
+				dst -= 6;
+				memcpy (data+l, &dst, 4);
+				return l+4;
+			}
+		} else
+		if (!strcmp (op, "jg")) {
+			ut64 dst = r_num_math (NULL, arg) - offset;
+			int d, num = getnum (arg);
+			d = num - a->pc;
+			//if (num>-127 && num<127) {
+			if (d>-127 && d<127) {
+				d-=2;
+				data[l++] = 0x7f;
+				data[l++] = (char)d;
+				return l;
+			} else {
+				data[l++]=0x0f;
+				data[l++]=0x8f;
+				dst -= 6;
+				memcpy (data+l, &dst, 4);
+				return l+4;
+			}
+		} else
+		if (!strcmp (op, "jge")) {
+			ut64 dst = r_num_math (NULL, arg) - offset;
+			int d, num = getnum (arg);
+			d = num - a->pc;
+			//if (num>-127 && num<127) {
+			if (d>-127 && d<127) {
+				d-=2;
+				data[l++] = 0x7d;
+				data[l++] = (char)d;
+				return l;
+			} else {
+				data[l++]=0x0f;
+				data[l++]=0x8d;
+				dst -= 6;
+				memcpy (data+l, &dst, 4);
+				return l+4;
+			}
+		} else
 		if (!strcmp (op, "jb")) {
 			ut64 dst = r_num_math (NULL, arg) - offset;
 			int d, num = getnum (arg);
@@ -623,8 +696,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				return l+4;
 			}
 		} else
-		if (!strcmp (op, "jnz")) {
-			ut64 dst = r_num_math (NULL, arg) - offset;
+		if (!strcmp (op, "jnz") || !strcmp (op, "jne")) {
+			ut32 dst = r_num_math (NULL, arg) - offset;
 			int num = getnum (arg);
 			if (num>-127 && num<127) {
 				num-=2;
@@ -639,9 +712,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				return l+4;
 			}
 		} else
-		if (!strcmp (op, "jz")) {
-			ut64 dst = r_num_math (NULL, arg) - offset;
-
+		if (!strcmp (op, "jz") || !strcmp (op, "je")) {
+			ut32 dst = getnum (arg) - offset;
 			if (dst>-0x80 && dst<0x7f) {
 				dst-=2;
 				data[l++] = 0x74;

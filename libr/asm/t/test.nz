@@ -18,11 +18,24 @@ if [ -n "$1" ]; then
 	foo "$1"
 	exit 0
 fi
-
 AS=x86.olly
+foo 'jl 0x8049300'
+foo 'jl 0x8048010'
+foo 'jle 0x8049300'
+foo 'jle 0x8048010'
+foo 'jg 0x8049300'
+foo 'jge 0x8049300'
+foo 'jge 0x8048010'
+exit 0
+
 foo 'call 0x8049100'
 foo 'jmp 0x8049200'
+echo "UNSIGNED"
 foo 'jb 0x8049300'
+foo 'ja 0x8049300'
+echo "SIGNED"
+foo 'jl 0x8049300'
+foo 'jg 0x8049300'
 exit 0
 
 AS=x86.as
@@ -147,9 +160,6 @@ foo "test rax, rbx"
 BITS=32
 foo "test edx, esi"
 foo "test eax, ebx"
-
-
-
 
 if true ; then
 foo "pop [eax]"

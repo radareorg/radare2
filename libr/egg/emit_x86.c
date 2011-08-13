@@ -257,17 +257,28 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 	char *p, str[64];
 	char *arg = NULL;
 	char *op = "jz";
+	int signed_value = 1; // XXX: add support for signed/unsigned variables
 	/* NOTE that jb/ja are inverted to fit cmp opcode */
 	if (b) {
 		*b = '\0';
-		if (e) op = "jae";
-		else op = "ja";
+		if (signed_value) {
+			if (e) op = "jge";
+			else op = "jg";
+		} else {
+			if (e) op = "jae";
+			else op = "ja";
+		}
 		arg = b+1;
 	} else
 	if (g) {
 		*g = '\0';
-		if (e) op = "jbe";
-		else op = "jb";
+		if (signed_value) {
+			if (e) op = "jle";
+			else op = "jl";
+		} else {
+			if (e) op = "jbe";
+			else op = "jb";
+		}
 		arg = g+1;
 	}
 	if (arg == NULL) {

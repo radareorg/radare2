@@ -101,8 +101,10 @@ static char *get_frame_label(int type) {
 	int nb = nbrackets;
 	int ct = context;
 	/* TODO: this type hack to substruct nb and ctx looks weird */
+#if 1
 	if (type == 1) nb--; else
 	if (type == 2) ct--;
+#endif
 	/* THIS IS GAS_ONLY */
 	snprintf (label, sizeof (label), FRAME_FMT, nf, nb, ct);
 	return label;
@@ -110,9 +112,9 @@ static char *get_frame_label(int type) {
 
 static char *get_end_frame_label(REgg *egg) {
 	static char label[128];
-	/* THIS IS GAS_ONLY */
 	snprintf (label, sizeof (label)-1, FRAME_END_FMT,
 		nfunctions, nbrackets, context-1);
+	//snprintf (label, sizeof (label)-1, "frame_end_%d_%d", nfunctions, nbrackets);
 	return label;
 }
 
@@ -448,6 +450,7 @@ static int parsedatachar(REgg *egg, char c) {
 	dstval[ndstval++] = c;
 	return 0;
 }
+
 static int parseinlinechar(REgg *egg, char c) {
 	static int inlinectr = 0;
 
