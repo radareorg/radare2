@@ -713,6 +713,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			}
 		} else
 		if (!strcmp (op, "jz") || !strcmp (op, "je")) {
+			if (isnum (arg)) {
 			ut32 dst = getnum (arg) - offset;
 			if (dst>-0x80 && dst<0x7f) {
 				dst-=2;

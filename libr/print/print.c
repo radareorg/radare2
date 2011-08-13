@@ -299,15 +299,21 @@ R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
 	p->printf (" };\n");
 }
 
+// HACK :D
+static RPrint staticp = {
+	.printf = printf
+};
+
 /* TODO: handle screen width */
 // TODO: use stderr here?
 R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
-        int tmp, cols = (_cols==-1)?78:_cols;
+        int i, cols = (_cols==-1)? 78: _cols;
+	if (!p) p = &staticp;
         (pc<0)?pc=0:(pc>100)?pc=100:0;
         p->printf ("%4d%% [", pc);
         cols -= 15;
-        for (tmp=cols*pc/100;tmp;tmp--) p->printf ("#");
-        for (tmp=cols-(cols*pc/100);tmp;tmp--) p->printf ("-");
+        for (i=cols*pc/100;i;i--) p->printf ("#");
+        for (i=cols-(cols*pc/100);i;i--) p->printf ("-");
         p->printf ("]");
 }
 
