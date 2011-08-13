@@ -42,6 +42,7 @@ static int isnum(const char *str) {
 }
 
 static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
+	ut32 dst32;
 	ut64 offset = a->pc;
 	ut8 *data = ao->buf;
 	char *arg, op[128];
@@ -625,24 +626,27 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			}
 		} else
 		if (!strcmp (op, "jl")) {
-			ut64 dst = r_num_math (NULL, arg) - offset;
 			int d, num = getnum (arg);
+			if (!isnum (arg))
+				return 0;
+			dst32 = r_num_math (NULL, arg) - offset;
 			d = num - a->pc;
-			//if (num>-127 && num<127) {
 			if (d>-127 && d<127) {
-				d-=6;
+				d-=2;
 				data[l++] = 0x7c;
 				data[l++] = (char)d;
 				return l;
 			} else {
 				data[l++]=0x0f;
 				data[l++]=0x8c;
-				dst -= 6;
-				memcpy (data+l, &dst, 4);
+				dst32 -= 6;
+				memcpy (data+l, &dst32, 4);
 				return l+4;
 			}
 		} else
 		if (!strcmp (op, "jg")) {
+			if (!isnum (arg))
+				return 0;
 			ut64 dst = r_num_math (NULL, arg) - offset;
 			int d, num = getnum (arg);
 			d = num - a->pc;
@@ -679,7 +683,9 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			}
 		} else
 		if (!strcmp (op, "jb")) {
-			ut64 dst = r_num_math (NULL, arg) - offset;
+			if (!isnum (arg))
+				return 0;
+			dst32 = r_num_math (NULL, arg) - offset;
 			int d, num = getnum (arg);
 			d = num - a->pc;
 			//if (num>-127 && num<127) {
@@ -691,13 +697,16 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			} else {
 				data[l++]=0x0f;
 				data[l++]=0x82;
-				dst -= 6;
-				memcpy (data+l, &dst, 4);
+				dst32 -= 6;
+				memcpy (data+l, &dst32, 4);
 				return l+4;
 			}
 		} else
 		if (!strcmp (op, "jnz") || !strcmp (op, "jne")) {
-			ut32 dst = r_num_math (NULL, arg) - offset;
+			ut32 dst;
+			if (!isnum (arg))
+				return 0;
+			dst = r_num_math (NULL, arg) - offset;
 			int num = getnum (arg);
 			if (num>-127 && num<127) {
 				num-=2;
@@ -713,18 +722,19 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			}
 		} else
 		if (!strcmp (op, "jz") || !strcmp (op, "je")) {
-			if (isnum (arg)) {
-			ut32 dst = getnum (arg) - offset;
-			if (dst>-0x80 && dst<0x7f) {
-				dst-=2;
+			if (!isnum (arg))
+				return 0;
+			dst32 = getnum (arg) - offset;
+			if (dst32>-0x80 && dst32<0x7f) {
+				dst32-=2;
 				data[l++] = 0x74;
-				data[l++] = (char)dst;
+				data[l++] = (char)dst32;
 				return l;
 			} else {
-				data[l++]=0x0f;
-				data[l++]=0x84;
-				dst-=6;
-				memcpy (data+l,&dst,4);
+				data[l++] = 0x0f;
+				data[l++] = 0x84;
+				dst32-=6;
+				memcpy (data+l, &dst32, 4);
 				return l+4;
 			}
 		}

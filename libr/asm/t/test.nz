@@ -19,6 +19,7 @@ if [ -n "$1" ]; then
 	exit 0
 fi
 AS=x86.olly
+foo 'jl patata'
 foo 'jl 0x8049300'
 foo 'jl 0x8048010'
 foo 'jle 0x8049300'
