@@ -12,8 +12,9 @@ bla:
 
 hello:
 	rm -f a.out
-	$R -s hello.r | tee hello.s
-	$R -x hello.r | tee hello.x
+	$R -s hello.r -o hello.s
+	cat hello.s
+	$R -x hello.r
 	$R -F -o a.out hello.r
 	#-./a.out ; RET=$$? ; if [ $$RET = 0 ]; then echo It Works ; else echo Oops.. Fail ; fi
 

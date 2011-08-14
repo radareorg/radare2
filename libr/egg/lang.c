@@ -380,14 +380,14 @@ static void rcc_context(REgg *egg, int delta) {
 			g = strchr (elem, '>');
 			e = strchr (elem, '=');
 			n = strchr (elem, '!');
-			if (strstr (callname, "while")) {
+			if (!strcmp (callname, "while")) {
 				emit->get_while_end (egg, str, ctxpush[context-1], get_frame_label (2));
 				free (endframe);
 				endframe = strdup (str);
 				free (callname);
 				callname = strdup ("if");
 			}
-			if (strstr (callname, "if")) {
+			if (!strcmp (callname, "if")) {
 				emit->branch (egg, b, g, e, n, varsize, get_end_frame_label (egg));
 				if (context>0) {
 					/* XXX .. */
@@ -430,7 +430,7 @@ static int parsedatachar(REgg *egg, char c) {
 					dstvar, dstval, stackframe);
 				r_egg_printf (egg, ".data\n");
 				for (str=dstval; isspace (*str); str++);
-				j = (stackframe)? stackframe:1;
+				j = (stackframe)? stackframe: 1;
 				/* emit label */
 				r_egg_printf (egg, "%s:\n", dstvar);
 				for (i=1; i<=j; i++) {

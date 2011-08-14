@@ -42,9 +42,9 @@ int main(int argc, char **argv) {
 	int show_hex = 1;
 	int show_asm = 0;
 	int bits = 32;
-	int c, i;
 	RBuffer *b;
-	REgg *egg = r_egg_new ();
+	REgg *egg;
+	int c, i;
 
         while ((c = getopt (argc, argv, "ha:b:f:o:sxXk:F")) != -1) {
                 switch (c) {
@@ -101,6 +101,7 @@ int main(int argc, char **argv) {
 	if (optind == argc)
 		return usage ();
 
+	egg = r_egg_new ();
 	r_egg_setup (egg, arch, bits, 0, os);
 	if (!strcmp (argv[optind], "-")) {
 		char buf[1024];
@@ -120,10 +121,14 @@ int main(int argc, char **argv) {
 	if (show_asm)
 		printf ("%s\n", r_egg_get_assembly (egg));
 	if (show_hex || show_execute) {
-		r_egg_assemble (egg);
+		if (!r_egg_assemble (egg)) {
+			eprintf ("r_egg_assemble: invalid assembly\n");
+			goto fail;
+		}
 		b = r_egg_get_bin (egg);
 		if (b == NULL) {
-			eprintf ("Cannot assemble egg :(\n");
+			eprintf ("r_egg_get_bin: invalid egg :(\n");
+			goto fail;
 		} else {
 			if (show_execute) {
 				// TODO
@@ -143,12 +148,14 @@ int main(int argc, char **argv) {
 				create (format, arch, bits, b->buf, b->length);
 				break;
 			default:
-				eprintf ("Unknown format\n");
-				r_egg_free (egg);
-				return 1;
+				eprintf ("unknown executable format (%s)\n", format);
+				goto fail;
 			}
 		}
 	}
 	r_egg_free (egg);
 	return 0;
+fail:
+	r_egg_free (egg);
+	return 1;
 }

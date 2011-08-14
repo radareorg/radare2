@@ -18,6 +18,8 @@ if [ -n "$1" ]; then
 	foo "$1"
 	exit 0
 fi
+
+if true ; then
 AS=x86.olly
 foo 'jl patata'
 foo 'jl 0x8049300'
@@ -27,7 +29,6 @@ foo 'jle 0x8048010'
 foo 'jg 0x8049300'
 foo 'jge 0x8049300'
 foo 'jge 0x8048010'
-exit 0
 
 foo 'call 0x8049100'
 foo 'jmp 0x8049200'
@@ -37,9 +38,17 @@ foo 'ja 0x8049300'
 echo "SIGNED"
 foo 'jl 0x8049300'
 foo 'jg 0x8049300'
-exit 0
+
+fi
 
 AS=x86.as
+
+BITS=64
+foo "test rdx, rsi"
+foo "test rax, rbx"
+BITS=32
+foo "test edx, esi"
+foo "test eax, ebx"
 
 foo "sub dword ptr [eax], 1"
 foo "add dword ptr [eax], 1"

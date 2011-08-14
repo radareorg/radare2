@@ -6,10 +6,33 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
+static int getnum(const char *s);
+static int isnum(const char *str);
+static ut8 getreg(const char *s);
 #if 0
 	Add support for AND, OR, ..
         0x100000ec5    1    4883e4f0         and rsp, 0xfffffffffffffff0
 #endif
+static int jop (ut64 addr, ut8 *data, ut8 a, ut8 b, const char *arg) {
+	ut32 dst32;
+	int l = 0;
+	int d, num = getnum (arg);
+	if (!isnum (arg))
+		return 0;
+	dst32 = num - addr;
+	d = num - addr;
+	if (d>-127 && d<127) {
+		d-=2;
+		data[l++] = a;
+		data[l++] = (char)d;
+		return 2;
+	}
+	data[l++] = 0x0f;
+	data[l++] = b;
+	dst32 -= 6;
+	memcpy (data+l, &dst32, 4);
+	return 6;
+}
 
 static ut8 getreg(const char *str) {
 	int i;
@@ -42,7 +65,6 @@ static int isnum(const char *str) {
 }
 
 static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
-	ut32 dst32;
 	ut64 offset = a->pc;
 	ut8 *data = ao->buf;
 	char *arg, op[128];
@@ -56,6 +78,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		data[l++] = 0xf3;
 		memmove (op, op+4, strlen (op+4)+1);
 	}
+
 	if (!strcmp (str, "call $$")) {
 		memcpy (data, "\xE8\xFF\xFF\xFF\xFF\xC1", 6);
 		return 6;
@@ -230,7 +253,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			if (a->bits==64)
 				data[l++] = 0x48;
 			data[l++] = 0x85;
-			data[l++] = 0xc0 | arg0<<3 | getreg (arg2);
+			//data[l++] = 0xc0 | arg0<<3 | getreg (arg2);
+			data[l++] = 0xc0 | getreg (arg2)<<3 | arg0; //getreg (arg2);
 			return l;
 		} else
 		if (!strcmp (op, "int")) {
@@ -608,135 +632,28 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		} else
 // SPAGUETTI
 		if (!strcmp (op, "jle")) {
-			ut64 dst = r_num_math (NULL, arg) - offset;
-			int d, num = getnum (arg);
-			d = num - a->pc;
-			//if (num>-127 && num<127) {
-			if (d>-127 && d<127) {
-				d-=2;
-				data[l++] = 0x7e;
-				data[l++] = (char)d;
-				return l;
-			} else {
-				data[l++]=0x0f;
-				data[l++]=0x8e;
-				dst -= 6;
-				memcpy (data+l, &dst, 4);
-				return l+4;
-			}
+			return jop (a->pc, data, 0x7e, 0x8e, arg);
 		} else
 		if (!strcmp (op, "jl")) {
-			int d, num = getnum (arg);
-			if (!isnum (arg))
-				return 0;
-			dst32 = r_num_math (NULL, arg) - offset;
-			d = num - a->pc;
-			if (d>-127 && d<127) {
-				d-=2;
-				data[l++] = 0x7c;
-				data[l++] = (char)d;
-				return l;
-			} else {
-				data[l++]=0x0f;
-				data[l++]=0x8c;
-				dst32 -= 6;
-				memcpy (data+l, &dst32, 4);
-				return l+4;
-			}
+			return jop (a->pc, data, 0x7c, 0x8c, arg);
 		} else
 		if (!strcmp (op, "jg")) {
-			if (!isnum (arg))
-				return 0;
-			ut64 dst = r_num_math (NULL, arg) - offset;
-			int d, num = getnum (arg);
-			d = num - a->pc;
-			//if (num>-127 && num<127) {
-			if (d>-127 && d<127) {
-				d-=2;
-				data[l++] = 0x7f;
-				data[l++] = (char)d;
-				return l;
-			} else {
-				data[l++]=0x0f;
-				data[l++]=0x8f;
-				dst -= 6;
-				memcpy (data+l, &dst, 4);
-				return l+4;
-			}
+			return jop (a->pc, data, 0x7f, 0x8f, arg);
 		} else
 		if (!strcmp (op, "jge")) {
-			ut64 dst = r_num_math (NULL, arg) - offset;
-			int d, num = getnum (arg);
-			d = num - a->pc;
-			//if (num>-127 && num<127) {
-			if (d>-127 && d<127) {
-				d-=2;
-				data[l++] = 0x7d;
-				data[l++] = (char)d;
-				return l;
-			} else {
-				data[l++]=0x0f;
-				data[l++]=0x8d;
-				dst -= 6;
-				memcpy (data+l, &dst, 4);
-				return l+4;
-			}
+			return jop (a->pc, data, 0x7d, 0x8d, arg);
+		} else
+		if (!strcmp (op, "ja")) {
+			return jop (a->pc, data, 0x77, 0x87, arg);
 		} else
 		if (!strcmp (op, "jb")) {
-			if (!isnum (arg))
-				return 0;
-			dst32 = r_num_math (NULL, arg) - offset;
-			int d, num = getnum (arg);
-			d = num - a->pc;
-			//if (num>-127 && num<127) {
-			if (d>-127 && d<127) {
-				d-=2;
-				data[l++] = 0x72;
-				data[l++] = (char)d;
-				return l;
-			} else {
-				data[l++]=0x0f;
-				data[l++]=0x82;
-				dst32 -= 6;
-				memcpy (data+l, &dst32, 4);
-				return l+4;
-			}
+			return jop (a->pc, data, 0x72, 0x82, arg);
 		} else
 		if (!strcmp (op, "jnz") || !strcmp (op, "jne")) {
-			ut32 dst;
-			if (!isnum (arg))
-				return 0;
-			dst = r_num_math (NULL, arg) - offset;
-			int num = getnum (arg);
-			if (num>-127 && num<127) {
-				num-=2;
-				data[l++] = 0x75;
-				data[l++] = (char)num;
-				return l;
-			} else {
-				data[l++]=0x0f;
-				data[l++]=0x85;
-				dst -= 6;
-				memcpy (data+l, &dst, 4);
-				return l+4;
-			}
+			return jop (a->pc, data, 0x75, 0x85, arg);
 		} else
 		if (!strcmp (op, "jz") || !strcmp (op, "je")) {
-			if (!isnum (arg))
-				return 0;
-			dst32 = getnum (arg) - offset;
-			if (dst32>-0x80 && dst32<0x7f) {
-				dst32-=2;
-				data[l++] = 0x74;
-				data[l++] = (char)dst32;
-				return l;
-			} else {
-				data[l++] = 0x0f;
-				data[l++] = 0x84;
-				dst32-=6;
-				memcpy (data+l, &dst32, 4);
-				return l+4;
-			}
+			return jop (a->pc, data, 0x74, 0x84, arg);
 		}
 	} else {
 		if (!strcmp (op, "leave")) {
