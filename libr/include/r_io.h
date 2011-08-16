@@ -16,7 +16,7 @@
 
 #define R_IO_NFDS 32
 
-#define RMT_MAX 1024
+#define RMT_MAX    4096
 #define RMT_OPEN   0x01
 #define RMT_READ   0x02
 #define RMT_WRITE  0x03

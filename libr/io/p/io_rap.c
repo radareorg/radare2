@@ -29,6 +29,7 @@ static int rap__write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int count)
 	memcpy (tmp+5, buf, count);
 
 	ret = r_socket_write (s, tmp, count+5);
+	r_socket_flush (s);
 	if (r_socket_read (s, tmp, 5) != 5) { // TODO read_block?
 		eprintf ("rap__write: error\n");
 		ret = -1;
@@ -59,6 +60,7 @@ static int rap__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
 	tmp[0] = RMT_READ;
 	r_mem_copyendian (tmp+1, (ut8*)&count, 4, ENDIAN);
 	r_socket_write (s, tmp, 5);
+	r_socket_flush (s);
 
 	// recv
 	ret = r_socket_read (s, tmp, 5);
@@ -104,6 +106,7 @@ static ut64 rap__lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) 
 	tmp[1] = (ut8)whence;
 	r_mem_copyendian (tmp+2, (ut8*)&offset, 8, ENDIAN);
 	r_socket_write (s, &tmp, 10);
+	r_socket_flush (s);
 	// get reply
 	ret = r_socket_read_block (s, (ut8*)&tmp, 9);
 	if (ret!=9)
@@ -117,7 +120,7 @@ static ut64 rap__lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) 
 }
 
 static int rap__plugin_open(struct r_io_t *io, const char *pathname) {
-	return (!memcmp (pathname, "rap://", 6));
+	return (!memcmp (pathname,"rap://",6))||(!memcmp (pathname,"raps://",7));
 }
 
 static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int mode) {
@@ -126,11 +129,12 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 	const char *ptr;
 	char *file, *port;
 	char buf[1024];
-	int i, p, listenmode;
+	int i, p, listenmode, is_ssl;
 
 	if (!rap__plugin_open (io, pathname))
 		return NULL;
-	ptr = pathname + 6;
+	is_ssl = (!memcmp (pathname, "raps://", 7));
+	ptr = pathname + ((is_ssl)?7:6);
 	if (!(port = strchr (ptr, ':'))) {
 		eprintf ("rap: wrong uri\n");
 		return NULL;
@@ -148,19 +152,26 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 			return NULL;
 		}
 		//TODO: Handle ^C signal (SIGINT, exit); // ???
-		eprintf ("rap: listening at port %s\n", port);
+		eprintf ("rap: listening at port %s ssl %s\n", port, (is_ssl)?"on":"off");
 		rior = R_NEW (RIORap);
 		rior->listener = R_TRUE;
-		rior->client = rior->fd = r_socket_new (R_FALSE);
+		rior->client = rior->fd = r_socket_new (is_ssl);
 		if (rior->fd == NULL)
 			return NULL;
-		if (!r_socket_listen (rior->fd, port, NULL))
-			return NULL;
+		if (is_ssl) {
+			if (file && *file) {
+				if (!r_socket_listen (rior->fd, port, file))
+					return NULL;
+			} else return NULL;
+		} else {
+			if (!r_socket_listen (rior->fd, port, NULL))
+				return NULL;
+		}
 // TODO: listen mode is broken.. here must go the root loop!!
 #warning TODO: implement rap:/:9999 listen mode
 		return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd, pathname, rw, mode, rior);
 	}
-	if ((rap_fd = r_socket_new (R_FALSE)) == NULL) {
+	if ((rap_fd = r_socket_new (is_ssl)) == NULL) {
 		eprintf ("Cannot create new socket\n");
 		return NULL;
 	}
@@ -179,9 +190,10 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		buf[2] = (ut8)strlen (file);
 		memcpy (buf+3, file, buf[2]);
 		r_socket_write (rap_fd, buf, 3+buf[2]);
+		r_socket_flush (rap_fd);
 		// read
 		eprintf ("waiting... ");
-		r_socket_read (rap_fd, (ut8*)buf, 5);
+		r_socket_read_block (rap_fd, (ut8*)buf, 5);
 		if (buf[0] != (char)(RMT_OPEN|RMT_REPLY)) {
 			free (rior);
 			return NULL;
@@ -190,12 +202,14 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		if (i>0) eprintf ("ok\n");
 
 		/* Read meta info */
-		r_socket_read (rap_fd, (ut8 *)&i, 4);
+		r_socket_read (rap_fd, (ut8 *)&buf, 4);
+		r_mem_copyendian ((ut8 *)&i, (ut8*)buf, 4, ENDIAN);
 		while (i>0) {
 			r_socket_read (rap_fd, (ut8 *)&buf, i);
 			buf[i]=0;
 			io->core_cmd_cb (io->user, buf);
-			r_socket_read (rap_fd, (ut8 *)&i, 4);
+			r_socket_read (rap_fd, (ut8 *)&buf, 4);
+			r_mem_copyendian ((ut8 *)&i, (ut8*)buf, 4, ENDIAN);
 		}
 	} else return NULL;
 	return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd, pathname, rw, mode, rior);
@@ -209,35 +223,47 @@ static int rap__listener(RIODesc *fd) {
 
 static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	RSocket *s = RIORAP_FD (fd);
-	ut8 buf[1024];
+	ut8 buf[RMT_MAX];
 	char *ptr;
 	int ret, i, j = 0;
 
 	// send
-	buf[0] = RMT_SYSTEM;
+	buf[0] = RMT_CMD;
 	i = strlen (command);
+	if (i>RMT_MAX) {
+		eprintf ("Command too long\n");
+		return -1;
+	}
 	r_mem_copyendian (buf+1, (ut8*)&i, 4, ENDIAN);
 	memcpy (buf+5, command, i);
 	r_socket_write (s, buf, i+5);
+	r_socket_flush (s);
 
 	// read
 	ret = r_socket_read_block (s, buf, 5);
 	if (ret != 5)
 		return -1;
-	if (buf[0] != (RMT_SYSTEM | RMT_REPLY)) {
+	if (buf[0] != (RMT_CMD | RMT_REPLY)) {
 		eprintf ("Unexpected system reply\n");
 		return -1;
 	}
-	r_mem_copyendian ((ut8*)&i, buf+1, 4, !ENDIAN);
+	r_mem_copyendian ((ut8*)&i, buf+1, 4, ENDIAN);
 	if (i == -1)
 		return -1;
-	if (i>RMT_MAX)
+	ret = 0;
+	if (i>RMT_MAX) {
+		ret = i-RMT_MAX;
 		i = RMT_MAX;
+	}
 	ptr = (char *)malloc (i);
 	if (ptr) {
 		r_socket_read_block (s, (ut8*)ptr, i);
 		j = write (1, ptr, i);
 		free (ptr);
+	}
+	/* Clean */
+	if (ret > 0) {
+		ret -= r_socket_read (s, (ut8*)buf, RMT_MAX);
 	}
 	return i-j;
 }
