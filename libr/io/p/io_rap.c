@@ -225,10 +225,15 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	RSocket *s = RIORAP_FD (fd);
 	ut8 buf[RMT_MAX];
 	char *ptr;
-	int ret, i, j = 0;
+	int op, ret, i, j = 0;
 
 	// send
-	buf[0] = RMT_CMD;
+	if (*command=='!') {
+		op = RMT_SYSTEM;
+		command++;
+	} else
+		op = RMT_CMD;
+	buf[0] = op;
 	i = strlen (command);
 	if (i>RMT_MAX) {
 		eprintf ("Command too long\n");
@@ -243,7 +248,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	ret = r_socket_read_block (s, buf, 5);
 	if (ret != 5)
 		return -1;
-	if (buf[0] != (RMT_CMD | RMT_REPLY)) {
+	if (buf[0] != (op | RMT_REPLY)) {
 		eprintf ("Unexpected system reply\n");
 		return -1;
 	}

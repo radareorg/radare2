@@ -779,7 +779,7 @@ reaccept:
 
 				// send
 				ptr[0] = (RMT_SYSTEM | RMT_REPLY);
-				r_mem_copyendian ((ut8*)ptr+1, (ut8*)&i, 4, endian);
+				r_mem_copyendian ((ut8*)ptr+1, (ut8*)&i, 4, !endian);
 				if (i<0)i=0;
 				r_socket_write (c, ptr, i+5);
 				r_socket_flush (c);
