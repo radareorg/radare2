@@ -126,87 +126,87 @@ R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
 
 R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	RAnalFcn *f;
-	int retsz = 128;
-	char *cstr, *ret = malloc (128);
+	char ret[128];
+	char *cstr;
 	char *r0 = r_anal_value_to_string (op->dst);
 	char *a0 = r_anal_value_to_string (op->src[0]);
 	char *a1 = r_anal_value_to_string (op->src[1]);
 
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_MOV:
-		snprintf (ret, retsz, "%s = %s", r0, a0);
+		snprintf (ret, sizeof (ret), "%s = %s", r0, a0);
 		break;
 	case R_ANAL_OP_TYPE_CJMP:
 		{
 		RAnalBlock *bb = r_anal_bb_from_offset (anal, op->addr);
 		if (bb) {
 			cstr = r_anal_cond_to_string (bb->cond);
-			snprintf (ret, retsz, "if (%s) goto 0x%"PFMT64x, cstr, op->jump);
+			snprintf (ret, sizeof (ret), "if (%s) goto 0x%"PFMT64x, cstr, op->jump);
 			free (cstr);
-		} else snprintf (ret, retsz, "if (%s) goto 0x%"PFMT64x, "unk", op->jump);
+		} else snprintf (ret, sizeof (ret), "if (%s) goto 0x%"PFMT64x, "unk", op->jump);
 		}
 		break;
 	case R_ANAL_OP_TYPE_JMP:
-		snprintf (ret, retsz, "goto 0x%"PFMT64x, op->jump);
+		snprintf (ret, sizeof (ret), "goto 0x%"PFMT64x, op->jump);
 		break;
 	case R_ANAL_OP_TYPE_UJMP:
-		snprintf (ret, retsz, "goto %s", r0);
+		snprintf (ret, sizeof (ret), "goto %s", r0);
 		break;
 	case R_ANAL_OP_TYPE_PUSH:
 	case R_ANAL_OP_TYPE_UPUSH:
-		snprintf (ret, retsz, "push %s", a0);
+		snprintf (ret, sizeof (ret), "push %s", a0);
 		break;
 	case R_ANAL_OP_TYPE_POP:
-		snprintf (ret, retsz, "pop %s", r0);
+		snprintf (ret, sizeof (ret), "pop %s", r0);
 		break;
 	case R_ANAL_OP_TYPE_UCALL:
-		snprintf (ret, retsz, "%s()", r0);
+		snprintf (ret, sizeof (ret), "%s()", r0);
 		break;
 	case R_ANAL_OP_TYPE_CALL:
 		f = r_anal_fcn_find (anal, op->jump, R_ANAL_FCN_TYPE_NULL);
-		if (f) snprintf (ret, retsz, "%s()", f->name);
-		else  snprintf (ret, retsz, "0x%"PFMT64x"()", op->jump);
+		if (f) snprintf (ret, sizeof (ret), "%s()", f->name);
+		else  snprintf (ret, sizeof (ret), "0x%"PFMT64x"()", op->jump);
 		break;
 	case R_ANAL_OP_TYPE_ADD:
 		if (a1 == NULL || !strcmp (a0, a1))
-			snprintf (ret, retsz, "%s += %s", r0, a0);
-		else snprintf (ret, retsz, "%s = %s + %s", r0, a0, a1);
+			snprintf (ret, sizeof (ret), "%s += %s", r0, a0);
+		else snprintf (ret, sizeof (ret), "%s = %s + %s", r0, a0, a1);
 		break;
 	case R_ANAL_OP_TYPE_SUB:
 		if (a1 == NULL || !strcmp (a0, a1))
-			snprintf (ret, retsz, "%s -= %s", r0, a0);
-		else snprintf (ret, retsz, "%s = %s - %s", r0, a0, a1);
+			snprintf (ret, sizeof (ret), "%s -= %s", r0, a0);
+		else snprintf (ret, sizeof (ret), "%s = %s - %s", r0, a0, a1);
 		break;
 	case R_ANAL_OP_TYPE_MUL:
 		if (a1 == NULL || !strcmp (a0, a1))
-			snprintf (ret, retsz, "%s *= %s", r0, a0);
-		else snprintf (ret, retsz, "%s = %s * %s", r0, a0, a1);
+			snprintf (ret, sizeof (ret), "%s *= %s", r0, a0);
+		else snprintf (ret, sizeof (ret), "%s = %s * %s", r0, a0, a1);
 		break;
 	case R_ANAL_OP_TYPE_DIV:
 		if (a1 == NULL || !strcmp (a0, a1))
-			snprintf (ret, retsz, "%s /= %s", r0, a0);
-		else snprintf (ret, retsz, "%s = %s / %s", r0, a0, a1);
+			snprintf (ret, sizeof (ret), "%s /= %s", r0, a0);
+		else snprintf (ret, sizeof (ret), "%s = %s / %s", r0, a0, a1);
 		break;
 	case R_ANAL_OP_TYPE_AND:
 		if (a1 == NULL || !strcmp (a0, a1))
-			snprintf (ret, retsz, "%s &= %s", r0, a0);
-		else snprintf (ret, retsz, "%s = %s & %s", r0, a0, a1);
+			snprintf (ret, sizeof (ret), "%s &= %s", r0, a0);
+		else snprintf (ret, sizeof (ret), "%s = %s & %s", r0, a0, a1);
 		break;
 	case R_ANAL_OP_TYPE_OR:
 		if (a1 == NULL || !strcmp (a0, a1))
-			snprintf (ret, retsz, "%s |= %s", r0, a0);
-		else snprintf (ret, retsz, "%s = %s | %s", r0, a0, a1);
+			snprintf (ret, sizeof (ret), "%s |= %s", r0, a0);
+		else snprintf (ret, sizeof (ret), "%s = %s | %s", r0, a0, a1);
 		break;
 	case R_ANAL_OP_TYPE_XOR:
 		if (a1 == NULL || !strcmp (a0, a1))
-			snprintf (ret, retsz, "%s ^= %s", r0, a0);
-		else snprintf (ret, retsz, "%s = %s ^ %s", r0, a0, a1);
+			snprintf (ret, sizeof (ret), "%s ^= %s", r0, a0);
+		else snprintf (ret, sizeof (ret), "%s = %s ^ %s", r0, a0, a1);
 		break;
 	case R_ANAL_OP_TYPE_LEA:
-		snprintf (ret, retsz, "%s -> %s", r0, a0);
+		snprintf (ret, sizeof (ret), "%s -> %s", r0, a0);
 		break;
 	case R_ANAL_OP_TYPE_CMP:
-		ret[0] = '\0';
+		memcpy (ret, ";", 2);
 		break;
 	case R_ANAL_OP_TYPE_NOP:
 		memcpy (ret, "nop", 4);
@@ -218,11 +218,13 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		memcpy (ret, "leave", 6);
 		break;
 	default:
-		memcpy (ret, "// ?", 5);
-		break;
+		free (r0);
+		free (a0);
+		free (a1);
+		return NULL;
 	}
 	free (r0);
 	free (a0);
 	free (a1);
-	return ret;
+	return strdup (ret);
 }

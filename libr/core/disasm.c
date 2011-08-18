@@ -404,9 +404,10 @@ i+=mi->size-1;
 			}
 		}
 		if (decode) {
+			char *tmpopstr = r_anal_op_to_string (core->anal, &analop);
 			// TODO: Use data from code analysis..not raw analop here
 			// if we want to get more information
-			opstr = r_anal_op_to_string (core->anal, &analop);
+			opstr = (tmpopstr)? tmpopstr: strdup (asmop.buf_asm);
 		} else if (pseudo) {
 			r_parse_parse (core->parser, asmop.buf_asm, str);
 			opstr = str;
