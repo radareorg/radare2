@@ -23,7 +23,7 @@ namespace Radare {
 		public int wr_output (string filename);
 
 		public int load(string file, bool dummy);
-		public int create(uint8 *code, int codelen, uint8 *data, int datalen);
+		public RBuffer create(uint8 *code, int codelen, uint8 *data, int datalen);
 		public int use_arch(string arch, int bits, string name);
 		public int select(string arch, int bits, string name);
 		public int select_idx(int idx);

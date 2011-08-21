@@ -5,7 +5,7 @@ OBJ=lib.o
 include ../config.mk
 
 # XXX only for linux
-CFLAGS+=-Wall -DLIBR_PLUGINS=\"${PREFIX}/lib/radare2\"
+CFLAGS+=-Wall -DLIBR_PLUGINS=\"${LIBDIR}/radare2\"
 
 LDFLAGS+=${DL_LIBS}
 

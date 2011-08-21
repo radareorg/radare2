@@ -1,7 +1,7 @@
 include ../../config.mk
 
 BINDEPS=r_lib r_bin r_flags r_util r_cons
-CFLAGS+=-DLIBDIR=\"${PREFIX}/lib\"
+CFLAGS+=-DLIBDIR=\"${LIBDIR}\"
 LIBS+=${DL_LIBS}
 
 LDPATH=-L.. -L../../util

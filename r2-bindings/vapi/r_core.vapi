@@ -45,7 +45,7 @@ public class RCore {
 
 	public string op_str(uint64 addr);
 	public RAnal.Op op_anal(uint64 addr);
-	public RAsm.Op disassemble(uint64 addr);
+	public RAsm.Op* disassemble(uint64 addr); // memory leak here
 
 	public unowned string disassemble_instr(uint64 addr, int l);
 	public unowned string disassemble_bytes(uint64 addr, int b);
@@ -125,6 +125,7 @@ public class RCore {
 		// public static RList<RCoreAsmHit> AsmHit.list();
 	}
 
+	[CCode (cname="RCoreSearchCallback")]
 	public delegate int SearchCallback (uint64 from, uint8 *buf, int len);
 	public bool search_cb(uint64 from, uint64 to, SearchCallback cb);
 

@@ -3,7 +3,7 @@ include ../../libr/config.mk
 .PHONY: all clean
 
 CFLAGS+=-I../../libr/include
-CFLAGS+=-DLIBDIR=\"${PREFIX}/lib\"
+CFLAGS+=-DLIBDIR=\"${LIBDIR}\"
 
 ifeq ($(WITHPIC),1)
 LIBS=$(subst r_,-lr_,$(BINDEPS))

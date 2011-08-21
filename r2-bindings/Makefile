@@ -126,9 +126,10 @@ install-lua:
 	fi
 
 install-go:
-	@if [ -n "${GOROOT}" -a -n "${GOOS}" -a -n "${GOARCH}" ]; then \
-	echo "Installing r2 modules in ${GOROOT}/pkg/${GOOS}_${GOARCH}" ; \
-	cp -f go/*.a go/*.${SOEXT} ${GOROOT}/pkg/${GOOS}_${GOARCH} ; \
+	@. ./go/goenv.sh ; \
+	if [ -n "$${GOROOT}" -a -n "$${GOOS}" -a -n "$${GOARCH}" ]; then \
+	echo "Installing r2 modules in $${GOROOT}/pkg/$${GOOS}_$${GOARCH}" ; \
+	cp -f go/*.a go/*.${SOEXT} $${GOROOT}/pkg/$${GOOS}_$${GOARCH} ; \
 	else \
 	echo "You have to set the following vars: GOROOT, GOOS and GOARCH" ; \
 	fi
