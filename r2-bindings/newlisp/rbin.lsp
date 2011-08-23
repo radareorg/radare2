@@ -4,7 +4,10 @@
 ;  --pancake'2011
 
 (context 'Rbin)
-(set 'RBINLIB "/usr/lib/libr_bin.so")
+(if (= ostype "OSX")
+	(set 'RBINLIB "/usr/lib/libr_bin.dylib")
+	(set 'RBINLIB "/usr/lib/libr_bin.so")
+)
 ; from r_bin
 (import RBINLIB "r_bin_new")
 (import RBINLIB "r_bin_free")
