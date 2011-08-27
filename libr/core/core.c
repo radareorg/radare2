@@ -371,6 +371,25 @@ R_API RCore *r_core_free(RCore *c) {
 	free (c);
 	return NULL;
 }
+R_API void r_core_prompt_loop(RCore *r) {
+	int ret;
+	do { 
+		if (r_core_prompt (r, R_FALSE)<1)
+			break;
+//			if (lock) r_th_lock_enter (lock);
+		if ((ret = r_core_prompt_exec (r))==-1)
+			eprintf ("Invalid command\n");
+/*			if (lock) r_th_lock_leave (lock);
+		if (rabin_th && !r_th_wait_async (rabin_th)) {
+			eprintf ("rabin thread end \n");
+			r_th_free (rabin_th);
+			r_th_lock_free (lock);
+			lock = NULL;
+			rabin_th = NULL;
+		}
+*/
+	} while (ret != R_CORE_CMD_EXIT);
+}
 
 R_API int r_core_prompt(RCore *r, int sync) {
 	static char *prevcmd = NULL;

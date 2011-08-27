@@ -306,6 +306,8 @@ int main(int argc, char **argv) {
 		r_core_cmd_file (&r, cmdfile);
 
 	for (;;) {
+		r_core_prompt_loop (&r);
+#if 0
 		do { 
 			if (r_core_prompt (&r, R_FALSE)<1)
 				break;
@@ -322,6 +324,7 @@ int main(int argc, char **argv) {
 			}
 */
 		} while (ret != R_CORE_CMD_EXIT);
+#endif
 
 		if (debug) {
 			if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {

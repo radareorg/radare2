@@ -124,6 +124,7 @@ R_API struct r_core_t *r_core_free(struct r_core_t *c);
 R_API int r_core_config_init(struct r_core_t *core);
 R_API int r_core_prompt(RCore *r, int sync);
 R_API int r_core_prompt_exec(RCore *r);
+R_API void r_core_prompt_loop(RCore *r);
 R_API int r_core_cmd(struct r_core_t *r, const char *cmd, int log);
 R_API char *r_core_editor (RCore *core, const char *str);
 // XXX void*?? must be RCore !

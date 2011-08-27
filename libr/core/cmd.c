@@ -3413,18 +3413,28 @@ static int cmd_eval(void *data, const char *input) {
 		r_core_config_init (core);
 		eprintf ("BUG: 'e-' command locks the eval hashtable. patches are welcome :)\n");
 		break;
+	case '+':
+		r_config_list (core->config, input[1]?input+1:NULL, 2);
+		break;
 	case '*':
 		r_config_list (core->config, NULL, 1);
 		break;
 	case '?':
+		if (input+1 && input+2) {
+			const char *desc = r_config_desc (core->config, input+1, NULL);
+			if (desc) r_cons_strcat (desc);
+		} else
 		r_cons_printf (
 		"Usage: e[?] [var[=value]]\n"
-		"  e     ; list config vars\n"
-		"  e-    ; reset config vars\n"
-		"  e*    ; dump config vars in r commands\n"
-		"  e!a   ; invert the boolean value of 'a' var\n"
-		"  e a   ; get value of var 'a'\n"
-		"  e a=b ; set var 'a' the 'b' value\n");
+		"  e?           ; show this help\n"
+		"  e?asm.bytes  ; show description\n"
+		"  e            ; list config vars\n"
+		"  e+           ; list config vars with description\n"
+		"  e-           ; reset config vars\n"
+		"  e*           ; dump config vars in r commands\n"
+		"  e!a          ; invert the boolean value of 'a' var\n"
+		"  e a          ; get value of var 'a'\n"
+		"  e a=b        ; set var 'a' the 'b' value\n");
 		//r_cmd_help(core->cmd, "e");
 		break;
 	case ' ':

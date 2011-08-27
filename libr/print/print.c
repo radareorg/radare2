@@ -123,6 +123,7 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 	}
 	if ((p->flags & R_PRINT_FLAGS_COLOR))
 		memcpy (d, Color_RESET, strlen (Color_RESET)+1);
+	*d = 0;
 	return dst;
 }
 

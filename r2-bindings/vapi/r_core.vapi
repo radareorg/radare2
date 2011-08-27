@@ -28,6 +28,7 @@ public class RCore {
 	public bool loadlibs();
 	/* commands */
 	public int prompt(bool sync);
+	public void prompt_loop ();
 	public int prompt_exec();
 	//[CCode (PrintfFormat)]
 	//public int cmdf(...);
