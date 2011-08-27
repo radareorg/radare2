@@ -77,6 +77,7 @@ static const char *radare_argv[] = {
 	"#!python", "#!perl", "#!vala",
 	"V",
 	"aa", "ab", "af", "ar", "ag", "at", "av", "a?", 
+	"aga", "agc", "agd", "agl", "agfl",
 	"e", "e-", "e*", "e!",
 	"i", "ii", "iI", "is", "iS", "iz",
 	"q", 
@@ -84,7 +85,7 @@ static const char *radare_argv[] = {
 	"m", "m*", "ml", "m-", "my", "mg", "md", "mp", "m?",
 	"o", "o-",
 	"x",
-	".",
+	".", ".!", ".(", "./",
 	"r", "r+", "r-",
 	"b", "bf", "b?",
 	"/", "//", "/a", "/c", "/m", "/x", "/v",
@@ -168,6 +169,12 @@ printf ("FILEN %d\n", n);
 			//free (path);
 		} else
 		if ((!memcmp (line->buffer.data, "s ", 2)) ||
+		    (!memcmp (line->buffer.data, "ag ", 3)) ||
+		    (!memcmp (line->buffer.data, "aga ", 4)) ||
+		    (!memcmp (line->buffer.data, "agc ", 4)) ||
+		    (!memcmp (line->buffer.data, "agl ", 4)) ||
+		    (!memcmp (line->buffer.data, "agd ", 4)) ||
+		    (!memcmp (line->buffer.data, "agfl ", 5)) ||
 		    (!memcmp (line->buffer.data, "b ", 2)) ||
 		    (!memcmp (line->buffer.data, "dcu ", 4)) ||
 		    (!memcmp (line->buffer.data, "/v ", 3)) ||

@@ -152,13 +152,12 @@ R_API int r_anal_fcn_del(RAnal *anal, ut64 addr) {
 		r_list_free (anal->fcns);
 		if (!(anal->fcns = r_anal_fcn_list_new ()))
 			return R_FALSE;
-	} else {
-		r_list_foreach (anal->fcns, iter, fcni) {
-			if (addr >= fcni->addr && addr < fcni->addr+fcni->size) {
-				it.n = iter->n;
-				r_list_delete (anal->fcns, iter);
-				iter = &it;
-			}
+	} else
+	r_list_foreach (anal->fcns, iter, fcni) {
+		if (addr >= fcni->addr && addr < fcni->addr+fcni->size) {
+			it.n = iter->n;
+			r_list_delete (anal->fcns, iter);
+			iter = &it;
 		}
 	}
 	return R_TRUE;

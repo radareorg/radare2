@@ -121,9 +121,9 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 		}
 		memcpy (d, s, 2);
 	}
-	if ((p->flags & R_PRINT_FLAGS_COLOR))
+	if ((p->flags & R_PRINT_FLAGS_COLOR) || p->cur_enabled)
 		memcpy (d, Color_RESET, strlen (Color_RESET)+1);
-	*d = 0;
+	else *d = 0;
 	return dst;
 }
 

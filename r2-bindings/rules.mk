@@ -36,6 +36,9 @@ else
 		sh do-swig.sh ${LANG} `echo $@ | sed -e s,.${SOEXT},,`) ; true
 endif
 
+install:
+	cd .. ; ${MAKE} install-${LANG}
+
 clean:
 	rm -f *.${SOEXT} r_*
 else

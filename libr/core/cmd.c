@@ -4160,7 +4160,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		*ptr = '\0';
 		ptr++;
 	}
-	r_cons_grep (NULL);
+	r_cons_grep (ptr);
 
 	/* seek commands */
 	if (*cmd!='(' && *cmd!='"')
