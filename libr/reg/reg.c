@@ -218,7 +218,7 @@ R_API int r_reg_set_profile(RReg *reg, const char *profile) {
  		// XXX we must define this varname in r_lib.h /compiletime/
 		base = r_sys_getenv ("LIBR_PLUGINS");
 		if (base) {
-			file = r_str_concat (strdup (base), profile);
+			file = r_str_concat (base, profile);
 			str = r_file_slurp (file, NULL);
 			free (file);
 		}

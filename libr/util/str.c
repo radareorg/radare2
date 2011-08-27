@@ -178,7 +178,7 @@ R_API void r_str_case(char *str, int up) {
 R_API char *r_str_home(const char *str) {
 	int lhome, lstr;
 	char *dst;
-	const char *home = r_sys_getenv (R_SYS_HOME);
+	char *home = r_sys_getenv (R_SYS_HOME);
 	if (home == NULL)
 		return NULL;
 	lhome = strlen (home);

@@ -21,10 +21,13 @@ static int r_vala_file(RLang *lang, const char *file) {
 	}
 
 	vapidir = r_sys_getenv ("VAPIDIR");
-	if (vapidir && *vapidir)
-		snprintf (buf, sizeof (buf), "valac --vapidir=%s --pkg r_core -C %s",
-			vapidir, name);
-	else sprintf (buf, "valac --pkg r_core -C %s", name);
+	if (vapidir) {
+		if (*vapidir) {
+			snprintf (buf, sizeof (buf), "valac --vapidir=%s --pkg r_core -C %s",
+				vapidir, name);
+		}
+		free (vapidir);
+	} else sprintf (buf, "valac --pkg r_core -C %s", name);
 	if (system (buf) != 0)
 		return R_FALSE;
 	p = strstr (name, ".vala"); if (p) *p=0;

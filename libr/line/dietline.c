@@ -121,7 +121,9 @@ R_API int r_line_hist_load(const char *file) {
 	char buf[R_LINE_BUFSIZE];
 	FILE *fd;
 
+	// TODO: use r_str_home()
 	// XXX dupped shitty code.. see hist_save ()
+	// XXX memory leak here
 	snprintf (buf, sizeof (buf)-1, "%s/%s", r_sys_getenv ("HOME"), file);
 	if (!(fd = fopen (buf, "r")))
 		return R_FALSE;

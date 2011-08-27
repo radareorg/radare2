@@ -37,6 +37,7 @@ namespace Radare {
 	[CCode (cheader_filename="r_util.h", lower_case_cprefix="r_file_")]
 	namespace RFile {
 		public static bool rm(string file);
+		public static string tmpdir();
 		public static string temp(string prefix);
 		public static string slurp(string file, out int osz=null);
 		public static string slurp_range(string file, uint64 off, int sz, out int osz=null);
@@ -68,7 +69,7 @@ namespace Radare {
 		//public static const weak string ARCH;
 		public static int sleep (int secs);
 		public static int usleep (int usecs);
-		public static unowned string getenv (string key);
+		public static string getenv (string key);
 		public static bool setenv (string key, string val);
 		//public static string cmd_str_full(string str, string input = "", out int len = null, out string sterr = null);
 		public static int cmd (string command);

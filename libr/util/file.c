@@ -51,12 +51,14 @@ R_API char *r_file_path(const char *bin) {
 				snprintf (file, 1023, "%s/%s", str, bin);
 				if (r_file_exist (file)) {
 					free (path);
+					free (path_env);
 					return strdup (file);
 				}
 				str = ptr+1;
 			}
 		} while (ptr);
-	} else return strdup (bin);
+	}
+	free (path_env);
 	free (path);
 	return strdup (bin);
 }
@@ -287,16 +289,17 @@ R_API void r_file_mmap_free (RMmap *m) {
 R_API char *r_file_temp (const char *prefix) {
 	int namesz;
 	char *name;
-	const char *path = r_file_tmpdir ();
+	char *path = r_file_tmpdir ();
 	namesz = strlen (prefix) + strlen (path) + 32;
 	name = malloc (namesz);
 	snprintf (name, namesz, "%s/%s.%"PFMT64x, path, prefix, r_sys_now ());
+	free (path);
 	return name;
 }
 
 R_API int r_file_mkstemp (const char *prefix, char **oname) {
 	int h;
-	const char *path = r_file_tmpdir ();
+	char *path = r_file_tmpdir ();
 	char *name = malloc (1024);
 #if __WINDOWS__
 	if (GetTempFileName (path, prefix, 0, name))
@@ -310,17 +313,17 @@ R_API int r_file_mkstemp (const char *prefix, char **oname) {
 #endif
 	if (oname && h!=-1) *oname = name;
 	else free (name);
+	free (path);
 	return h;
 }
 
-R_API const char *r_file_tmpdir() {
-	const char *path;
+R_API char *r_file_tmpdir() {
 #if __WINDOWS__
-	path = r_sys_getenv ("TEMP");
-	if (!path) path = "C:\\WINDOWS\\Temp\\";
+	char *path = r_sys_getenv ("TEMP");
+	if (!path) path = strdup ("C:\\WINDOWS\\Temp\\");
 #else
-	path = r_sys_getenv ("TMPDIR");
-	if (!path) path = "/tmp";
+	char *path = r_sys_getenv ("TMPDIR");
+	if (!path) path = strdup ("/tmp");
 #endif
 	return path;
 }
