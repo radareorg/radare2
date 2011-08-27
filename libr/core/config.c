@@ -103,7 +103,7 @@ static int config_cfgdatefmt_callback(void *user, void *data) {
 static int config_analplugin_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		r_anal_list (core->anal);
 		return R_FALSE;
 	} else if (!r_anal_use (core->anal, node->value)) {
@@ -250,6 +250,13 @@ static int config_tracetag_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_cmdrepeat_callback(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->cmdrepeat = node->i_value;
+	return R_TRUE;
+}
+
 static int config_fsview_callback(void *user, void *data) {
 	int type = R_FS_VIEW_NORMAL;
 	RCore *core = (RCore *) user;
@@ -370,8 +377,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "asm.arch", R_SYS_ARCH, &config_asmarch_callback);
 	// XXX: not portable
 	r_parse_use (core->parser, "x86.pseudo");
-	r_config_set_cb (cfg, "asm.parser", "x86.pseudo",
-		&config_asmparser_callback);
+	r_config_set_cb (cfg, "asm.parser", "x86.pseudo", &config_asmparser_callback);
 	r_config_set_i_cb (cfg, "asm.bits", 32, &config_asmbits_callback);
 	r_config_set (cfg, "asm.bytes", "true"); 
 	r_config_desc (cfg, "asm.bytes", "Display the bytes of each instruction");
@@ -386,6 +392,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "asm.varsub", "true");
 	r_config_set (cfg, "asm.trace", "true");
 	r_config_set (cfg, "asm.decode", "false"); 
+	r_config_desc (cfg, "asm.decode", "Use code analysis as a disassembler"); 
 	r_config_set (cfg, "asm.offset", "true"); 
 	r_config_set (cfg, "asm.lines", "true");
 	r_config_set (cfg, "asm.linesout", "true");
@@ -421,8 +428,11 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "bin.strings", "true"); 
 	p = r_sys_getenv ("EDITOR");
 	r_config_set (cfg, "cfg.editor", p? p: "vi");
+	free (p);
 	r_config_set (cfg, "cmd.hit", "");
 	r_config_set (cfg, "cmd.open", "");
+	r_config_set_cb (cfg, "cmd.repeat", "true", &config_cmdrepeat_callback);
+	r_config_desc (cfg, "cmd.repeat", "Alias newline (empty command) as '..'");
 	r_config_set (cfg, "cmd.prompt", "");
 	r_config_set (cfg, "cmd.cprompt", "");
 	r_config_set (cfg, "cmd.vprompt", "");
@@ -634,7 +644,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* dir.monitor */
 	ptr = getenv("MONITORPATH");
 	if (ptr == NULL) {
-		sprintf(buf, "%s/.radare/monitor/", getenv("HOME"));
+		sprintf(buf, "%s/.radare/monitor/", ("HOME"));
 		ptr = (const char *)&buf;
 	}
 	config_set("dir.monitor", ptr);

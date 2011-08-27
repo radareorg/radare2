@@ -3,6 +3,7 @@
   |    <  V  . |  . V  .   <   _/ .-' _/|  ()  |
   |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
+* Function resolve should not tresspass all
 * Cant set register values in OSX debugger
   - This is probably because we are using the 32bit binary on 64bit dbg
 

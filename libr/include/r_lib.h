@@ -86,6 +86,7 @@ R_API int r_lib_run_handler(struct r_lib_t *lib, struct r_lib_plugin_t *plugin, 
 R_API struct r_lib_handler_t *r_lib_get_handler(struct r_lib_t *lib, int type);
 R_API int r_lib_open(struct r_lib_t *lib, const char *file);
 R_API int r_lib_opendir(struct r_lib_t *lib, const char *path);
+R_API char *r_lib_path(const char *libname);
 R_API void r_lib_list(struct r_lib_t *lib);
 R_API int r_lib_add_handler(struct r_lib_t *lib, int type, const char *desc, int (*cb)(struct r_lib_plugin_t *,void *, void *), int (*dt)(struct r_lib_plugin_t *, void *, void *), void *user );
 R_API int r_lib_del_handler(struct r_lib_t *lib, int type);

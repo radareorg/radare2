@@ -191,10 +191,10 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 			if (r_str_delta (p, '(', ')')<0) {
 				char *p2 = strchr (p, '(');
 				if (p2 != NULL) {
-					p2[0]='\0';
+					*p2 = '\0';
 					ret = r_num_op (op, ret, r_num_math_internal (num, p));
 					ret = r_num_op (op, ret, r_num_math (num, p2+1));
-					p =p2+1; 
+					p = p2+1; 
 					continue;
 				} else eprintf ("WTF!\n");
 			} else ret = r_num_op (op, ret, r_num_math_internal (num, p));
@@ -228,7 +228,7 @@ R_API int r_num_to_bits (char *out, ut64 num) {
 	if (out) {
 		for (i=0; i<size; i++)
 			out[size-1-i] = (num>>i&1)? '1': '0';
-		out[size]='\0'; //Maybe not nesesary?
+		out[size] = '\0'; //Maybe not nesesary?
 	}
 	return size;
 }

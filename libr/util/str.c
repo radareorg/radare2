@@ -189,6 +189,7 @@ R_API char *r_str_home(const char *str) {
 		memcpy (dst+lhome, R_SYS_DIR, strlen (R_SYS_DIR));
 		memcpy (dst+lhome+strlen (R_SYS_DIR), str, lstr+1);
 	}
+	free (home);
 	return dst;
 }
 
@@ -216,10 +217,10 @@ R_API int r_str_delta(char *p, char a, char b) {
 R_API int r_str_word_set0(char *str) {
 	int i;
 	char *p;
-	if (str[0]=='\0')
+	if (!*str)
 		return 0;
 	/* TODO: sync with r1 code */
-	for (i=1,p=str; p[0]; p++)
+	for (i=1, p=str; *p; p++)
 		if (*p==' ') {
 			i++;
 			*p='\0';

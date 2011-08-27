@@ -337,7 +337,7 @@ R_API boolt r_file_rm(const char *file);
 R_API boolt r_file_exist(const char *str);
 R_API char *r_file_slurp_line(const char *file, int line, int context);
 R_API int r_file_mkstemp(const char *prefix, char **oname);
-R_API const char *r_file_tmpdir();
+R_API char *r_file_tmpdir();
 
 R_API ut64 r_sys_now();
 R_API int r_sys_crash_handler(const char *cmd);
@@ -355,7 +355,7 @@ R_API void r_sys_perror(const char *fun);
 R_API int r_sys_rmkdir(const char *dir);
 R_API int r_sys_sleep(int secs);
 R_API int r_sys_usleep(int usecs);
-R_API const char *r_sys_getenv(const char *key);
+R_API char *r_sys_getenv(const char *key);
 R_API int r_sys_setenv(const char *key, const char *value);
 R_API char *r_sys_getcwd();
 R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, char **sterr);
@@ -431,7 +431,6 @@ R_API void r_big_div_ut(RNumBig *a, RNumBig *b, ut32 c);
 R_API int r_big_divisible_ut(RNumBig *n, ut32 v);
 R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b);
 #endif
-
 
 R_API RHashTable* r_hashtable_new(void);
 R_API void r_hashtable_free(RHashTable *ht);

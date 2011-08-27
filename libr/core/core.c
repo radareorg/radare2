@@ -9,7 +9,7 @@
 
 static int endian = 1; // XXX HACK
 
-int core_cmd_callback (void *user, const char *cmd) {
+static int core_cmd_callback (void *user, const char *cmd) {
 	RCore *core = (RCore *)user;
 	return r_core_cmd0 (core, cmd);
 }
@@ -272,7 +272,9 @@ R_API int r_core_init(RCore *core) {
 	core->oobi = NULL;
 	core->oobi_len = 0;
 	core->printidx = 0;
+	core->lastcmd = NULL;
 	core->cmdqueue = NULL;
+	core->cmdrepeat = R_TRUE;
 	core->yank = NULL;
 	core->reflines = NULL;
 	core->reflines2 = NULL;
@@ -392,9 +394,7 @@ R_API void r_core_prompt_loop(RCore *r) {
 }
 
 R_API int r_core_prompt(RCore *r, int sync) {
-	static char *prevcmd = NULL;
 	int ret;
-	char *cmd;
 	char line[1024];
 	char prompt[32];
 	const char *cmdprompt = r_config_get (r->config, "cmd.prompt");
@@ -406,28 +406,17 @@ R_API int r_core_prompt(RCore *r, int sync) {
 		*prompt = 0;
 #if __UNIX__
 	else if (r_config_get_i (r->config, "scr.color"))
-		sprintf (prompt, Color_YELLOW"[0x%08"PFMT64x"]> "Color_RESET, r->offset);
+		snprintf (prompt, sizeof (prompt),
+			Color_YELLOW"[0x%08"PFMT64x"]> "Color_RESET, r->offset);
 #endif
 	else sprintf (prompt, "[0x%08"PFMT64x"]> ", r->offset);
 	r_line_singleton()->prompt = prompt;
 	ret = r_cons_fgets (line, sizeof (line), 0, NULL);
-	if (ret == -2)
-		return R_CORE_CMD_EXIT;
-	if (ret == -1)
-		return R_FALSE;
-	if (strcmp (line, ".")) {
-		free (prevcmd);
-		prevcmd = strdup (line);
-		cmd = line;
-	} else cmd = prevcmd;
-	if (sync) {
-		ret = r_core_cmd (r, r->cmdqueue, R_TRUE);
-		r_cons_flush ();
-	} else {
-		r->cmdqueue = cmd;
-		ret = R_TRUE;
-	}
-	return ret;
+	if (ret == -2) return R_CORE_CMD_EXIT;
+	if (ret == -1) return R_FALSE;
+	if (sync) return r_core_prompt_exec (r);
+	r->cmdqueue = line;
+	return R_TRUE;
 }
 
 R_API int r_core_prompt_exec(RCore *r) {

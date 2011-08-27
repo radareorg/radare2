@@ -87,13 +87,13 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 		b = r_buf_new ();
 		if (r_core_read_at (core, addr, buf, sizeof (buf))) {
 			b->base = addr;
-			r_buf_set_bytes (b, buf, 4096);
+			r_buf_set_bytes (b, buf, sizeof (buf));
 		} else return NULL;
 	} else {
 		if (addr < b->base || addr > b->base+b->length-32) {
 			if (r_core_read_at (core, addr, buf, sizeof (buf))) {
 				b->base = addr;
-				r_buf_set_bytes (b, buf, 4096);
+				r_buf_set_bytes (b, buf, sizeof (buf));
 			} else return NULL;
 		}
 	}
@@ -824,10 +824,12 @@ static int cmd_quit(void *data, const char *input) {
 static int cmd_interpret(void *data, const char *input) {
 	char *str, *ptr, *eol;
 	RCore *core = (RCore *)data;
-	switch (input[0]) {
+	switch (*input) {
 	case '\0':
-		/* repeat last command */
-		/* NOTE: Plugind in r_core_cmd with ugly strcmp */
+		r_core_cmd_repeat (core, 0);
+		break;
+	case '.': // same as \n
+		r_core_cmd_repeat (core, 1);
 		break;
 	case ' ':
 		if (!r_core_cmd_file (core, input+1))
@@ -844,6 +846,8 @@ static int cmd_interpret(void *data, const char *input) {
 	case '?':
 		r_cons_printf (
 		"Usage: . [file] | [!command] | [(macro)]\n"
+		" .                 ; repeat last command backward\n"
+		" ..                ; repeat last command forward (same as \\n)\n"
 		" . foo.rs          ; interpret r script\n"
 		" .!rabin -ri $FILE ; interpret output of command\n"
 		" .(foo 1 2 3)      ; run macro 'foo' with args 1, 2, 3\n"
@@ -853,8 +857,9 @@ static int cmd_interpret(void *data, const char *input) {
 		ptr = str = r_core_cmd_str (core, input);
 		for (;;) {
 			eol = strchr (ptr, '\n');
-			if (eol) eol[0]='\0';
-			r_core_cmd (core, ptr, 0);
+			if (eol) *eol = '\0';
+			if (*ptr)
+			r_core_cmd0 (core, ptr);
 			if (!eol) break;
 			ptr = eol+1;
 		}
@@ -866,7 +871,7 @@ static int cmd_interpret(void *data, const char *input) {
 
 static int cmd_section(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	switch (input[0]) {
+	switch (*input) {
 	case '?':
 		r_cons_printf (
 		" S                ; list sections\n"
@@ -1482,7 +1487,7 @@ static int cmd_cmp(void *data, const char *input) {
 
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	char buf[1024];
+	char *out, buf[1024];
 	switch (*input) {
 	case 's':
 	case 'i':
@@ -1490,14 +1495,34 @@ static int cmd_info(void *data, const char *input) {
 	case 'e':
 	case 'S':
 	case 'z':
-		snprintf (buf, sizeof (buf), "rabin2 -%c%s%s '%s'", input[0],
-			input[1]=='*'?"r":"", core->io->va?"v":"", core->file->filename);
-		r_sys_cmd (buf);
+		snprintf (buf, sizeof (buf), "rabin2 -%c%s%s '%s'", *input,
+			input[1]=='*'? "r": "", core->io->va? "v": "", core->file->filename);
+		out = r_sys_cmd_str (buf, NULL, 0);
+		if (out && *out)
+			r_cons_strcat (out);
+		break;
+	case 'a':
+		if (input[1]=='*') {
+			cmd_info (core, "I*");
+			cmd_info (core, "e*");
+			cmd_info (core, "i*");
+			cmd_info (core, "s*");
+			cmd_info (core, "S*");
+			cmd_info (core, "z*");
+		} else {
+			cmd_info (core, "I");
+			cmd_info (core, "e");
+			cmd_info (core, "i");
+			cmd_info (core, "s");
+			cmd_info (core, "S");
+			cmd_info (core, "z");
+		}
 		break;
 	case '?':
 		r_cons_printf (
-		"Usage: i[eiIsSz]*      ; get info from opened file (rabin2)\n"
-		"; Append a '*' to get the output in radare commands\n"
+		"Usage: i[aeiIsSz]*      ; get info from opened file (rabin2)\n"
+		"NOTE: Append a '*' to get the output in radare commands\n"
+		" ia    ; show all info (imports, exports, sections..)\n"
 		" ii    ; imports\n"
 		" iI    ; binary info\n"
 		" ie    ; entrypoint\n"
@@ -2117,7 +2142,7 @@ static int var_cmd(RCore *core, const char *str) {
 		}
 
 		/* Variable access CFvs = set fun var */
-		switch(str[1]) {
+		switch (str[1]) {
 		case '\0': r_anal_var_list (core->anal, fcn, 0, 0); return 0;
 		case '?': var_help(); return 0;
 		case '.': r_anal_var_list (core->anal, fcn, core->offset, 0); return 0;
@@ -3992,8 +4017,6 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	char *ptr, *ptr2, *str;
 	int i, len = strlen (cmd), pipefd, ret;
 
-	if (!*cmd || cmd[0]=='\0')
-		return 0;
 	cmd = r_str_trim_head_tail (cmd);
 
 	/* quoted / raw command */
@@ -4018,13 +4041,13 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	/* comments */
 	if (*cmd!='#') {
 		ptr = strrchr (cmd, '#');
-		if (ptr) ptr[0]='\0';
+		if (ptr) *ptr = '\0';
 	}
 
 	/* multiple commands */
 	ptr = strrchr (cmd, ';');
 	if (ptr) {
-		ptr[0]='\0';
+		*ptr = '\0';
 		if (r_core_cmd_subst (core, cmd) == -1) 
 			return -1;
 		cmd = ptr+1;
@@ -4034,7 +4057,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	/* pipe console to shell process */
 	ptr = strchr (cmd, '|');
 	if (ptr) {
-		ptr[0] = '\0';
+		*ptr = '\0';
 		cmd = r_str_clean (cmd);
 		if (*cmd) r_core_cmd_pipe (core, cmd, ptr+1);
 		else r_io_system (core->io, ptr+1);
@@ -4046,11 +4069,11 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	while (ptr && ptr[1]=='&') {
 		*ptr = '\0';
 		ret = r_cmd_call (core->cmd, cmd);
-		if (ret == -1){
+		if (ret == -1) {
 			eprintf ("command error(%s)\n", cmd);
 			return ret;
 		}
-		for (cmd=ptr+2;cmd&&cmd[0]==' ';cmd=cmd+1);
+		for (cmd=ptr+2; cmd && *cmd==' '; cmd++);
 		ptr = strchr (cmd, '&');
 	}
 
@@ -4064,7 +4087,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			/* this is a bit mess */
 			const char *oprompt = r_line_singleton ()->prompt;
 			oprompt = ">";
-			for (str=ptr+2; str[0]==' '; str=str+1);
+			for (str=ptr+2; str[0]==' '; str++);
 			eprintf ("==> Reading from stdin until '%s'\n", str);
 			free (core->oobi);
 			core->oobi = malloc (1);
@@ -4087,7 +4110,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			}
 			r_line_singleton ()->prompt = oprompt;
 		} else {
-			for (str=ptr+1;str[0]== ' ';str=str+1);
+			for (str=ptr+1; *str== ' ';str++);
 			eprintf ("SLURPING FILE '%s'\n", str);
 			core->oobi = (ut8*)r_file_slurp (str, &core->oobi_len);
 			if (core->oobi == NULL)
@@ -4135,8 +4158,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	ptr = strchr (cmd, '~');
 	if (ptr) {
 		*ptr = '\0';
-		r_cons_grep (ptr+1);
-	} else r_cons_grep (NULL);
+		ptr++;
+	}
+	r_cons_grep (NULL);
 
 	/* seek commands */
 	if (*cmd!='(' && *cmd!='"')
@@ -4178,7 +4202,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 }
 
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
-	int i=0,j;
+	int i, j;
 	char ch;
 	char *word = NULL;
 	char *str, *ostr;
@@ -4207,14 +4231,13 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		/* foreach list of items */
 		each = str+1;
 		do {
-			while (each[0]==' ')
-				each = each+1;
+			while (*each==' ') each++;
 			if (!*each) break;
 			str = strchr (each, ' ');
 			if (str) {
-				str[0]='\0';
+				*str = '\0';
 				addr = r_num_math (core->num, each);
-				str[0]=' ';
+				*str = ' ';
 			} else addr = r_num_math (core->num, each);
 			eprintf ("; 0x%08"PFMT64x":\n", addr);
 			each = str+1;
@@ -4228,7 +4251,8 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			char cmd2[1024];
 			// TODO: use controlc() here
 			// XXX whats this 999 ?
-			for(core->cmd->macro.counter=0;i<999;core->cmd->macro.counter++) {
+			i = 0;
+			for (core->cmd->macro.counter=0;i<999;core->cmd->macro.counter++) {
 				r_cmd_macro_call (&core->cmd->macro, each+2);
 				if (core->cmd->macro.brk_value == NULL)
 					break;
@@ -4265,6 +4289,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		core->cmd->macro.counter = 0;
 		//while(str[i]) && !core->interrupted) {
 		// split by keywords
+		i = 0;
 		while (str[i]) {
 			j = i;
 			for (;str[j]&&str[j]==' ';j++); // skip spaces
@@ -4323,8 +4348,10 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	char *cmd, *ocmd;
 	if (cstr==NULL)
 		return R_FALSE;
-	if (!*cstr)
-		return R_FALSE;
+	if (log && *cstr && *cstr!='.') {
+		free (core->lastcmd);
+		core->lastcmd = strdup (cstr);
+	}
 	/* list cstr plugins */
 	if (!strcmp (cstr, ":")) {
 		RListIter *iter = r_list_iterator (core->cmd->plist);
@@ -4905,7 +4932,7 @@ R_API int r_core_cmd_buffer(void *user, const char *buf) {
 	optr = str;
 	ptr = strchr (str, '\n');
 	while (ptr) {
-		ptr[0]='\0';
+		*ptr = '\0';
 		r_core_cmd (user, optr, 0);
 		optr = ptr+1;
 		ptr = strchr (str, '\n');
@@ -4922,7 +4949,7 @@ R_API int r_core_cmdf(void *user, const char *fmt, ...) {
 	va_start (ap, fmt);
 	vsnprintf (string, sizeof (string), fmt, ap);
 	ret = r_core_cmd ((RCore *)user, string, 0);
-	va_end(ap);
+	va_end (ap);
 	return ret;
 }
 
@@ -4940,17 +4967,47 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	} else {
 		r_cons_filter ();
 		const char *static_str = r_cons_get_buffer ();
-		retstr = strdup (static_str?static_str:"");
+		retstr = strdup (static_str? static_str: "");
 		r_cons_reset ();
 	}
 	return retstr;
 }
 
-void r_core_cmd_init(RCore *core) {
+R_API void r_core_cmd_repeat(RCore *core, int next) {
+	// Alias for ".."
+	if (core->lastcmd)
+	switch (*core->lastcmd) {
+	case 'd': // debug
+		r_core_cmd0 (core, core->lastcmd);
+		switch (core->lastcmd[1]) {
+		case 's':
+		case 'c':
+			r_core_cmd0 (core, "sr pc && pd 1");
+		}
+		break;
+	case 'p': // print
+	case 'x':
+		r_core_cmd0 (core, next? "s++": "s--");
+		r_core_cmd0 (core, core->lastcmd);
+		break;
+	}
+}
+
+static int r_core_cmd_nullcallback(void *data) {
+	RCore *core = (RCore*) data;
+	if (core->cmdrepeat) {
+		r_core_cmd_repeat (core, 1);
+		return 1;
+	}
+	return 0;
+}
+
+R_API void r_core_cmd_init(RCore *core) {
 	core->cmd = r_cmd_new ();
 	core->cmd->macro.num = core->num;
 	core->cmd->macro.user = core;
 	core->cmd->macro.cmd = r_core_cmd0;
+	core->cmd->nullcallback = r_core_cmd_nullcallback;
 	r_cmd_set_data (core->cmd, core);
 	r_cmd_add (core->cmd, "x",        "alias for px", &cmd_hexdump);
 	r_cmd_add (core->cmd, "mount",    "mount filesystem", &cmd_mount);

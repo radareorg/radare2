@@ -68,17 +68,16 @@ R_API int r_cmd_call(struct r_cmd_t *cmd, const char *input) {
 	RListIter *iter;
 	RCmdPlugin *cp;
 	
-	iter = r_list_iterator (cmd->plist);
-	while (r_list_iter_next (iter)) {
-		cp = (RCmdPlugin*) r_list_iter_get (iter);
-		if (cp->call (cmd->data, input))
-			return R_TRUE;
-	}
-	
-	if (input == NULL || input[0] == '\0') {
+	if (!input || !*input) {
 		if (cmd->nullcallback != NULL)
-			cmd->nullcallback (cmd->data);
+			ret = cmd->nullcallback (cmd->data);
 	} else {
+		iter = r_list_iterator (cmd->plist);
+		while (r_list_iter_next (iter)) {
+			cp = (RCmdPlugin*) r_list_iter_get (iter);
+			if (cp->call (cmd->data, input))
+				return R_TRUE;
+		}
 		c = cmd->cmds[(ut8)input[0]];
 		if (c && c->callback)
 			ret = c->callback (cmd->data, input+1);

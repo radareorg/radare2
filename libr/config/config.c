@@ -30,19 +30,17 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 		pfx = "e ";
 	case 0:
 		r_list_foreach (cfg->nodes, iter, node) {
-			if (str) {
-				if (!strncmp (str, node->name, len))
-					cfg->printf ("%s%s = %s\n", pfx,
-						node->name, node->value);
-			} else cfg->printf ("%s%s = %s\n", pfx, node->name, node->value);
+			if (!str || (str && (!strncmp (str, node->name, len))))
+				cfg->printf ("%s%s = %s\n", pfx,
+					node->name, node->value);
 		}
 		break;
 	case 2:
 		r_list_foreach (cfg->nodes, iter, node) {
-			if (str) {
+			if (!str || (str && (!strncmp (str, node->name, len))))
 				if (!strncmp (str, node->name, len))
-					cfg->printf ("%20s: %s\n", node->name, node->desc?node->desc:"");
-			} else cfg->printf ("%20s = %s\n", node->name, node->desc?node->desc:"");
+					cfg->printf ("%20s: %s\n", node->name,
+						node->desc?node->desc:"");
 		}
 		break;
 	}

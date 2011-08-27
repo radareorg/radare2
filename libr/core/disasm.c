@@ -121,9 +121,13 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	for (lines=i=idx=ret=0; idx < len && lines < l; idx+=ret,i++, lines++) {
 		ut64 at = addr + idx;
 		r_asm_set_pc (core->assembler, at);
-		line = r_anal_reflines_str (core->anal, core->reflines, at, linesopts);
-		refline = filter_refline (line);
-
+		if (show_lines) {
+			line = r_anal_reflines_str (core->anal, core->reflines, at, linesopts);
+			refline = filter_refline (line);
+		} else {
+			line = NULL;
+			refline = "";
+		}
 		f = show_functions? r_anal_fcn_find (core->anal, at, R_ANAL_FCN_TYPE_NULL): NULL;
 
 		if (show_comments)

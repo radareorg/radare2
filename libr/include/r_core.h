@@ -103,6 +103,8 @@ typedef struct r_core_t {
 	RSign *sign;
 	RFS *fs;
 	char *cmdqueue;
+	char *lastcmd;
+	int cmdrepeat;
 	ut64 inc;
 	int rtr_n;
 	RCoreRtrHost rtr_host[RTR_MAX_HOSTS];
@@ -126,6 +128,7 @@ R_API int r_core_prompt(RCore *r, int sync);
 R_API int r_core_prompt_exec(RCore *r);
 R_API void r_core_prompt_loop(RCore *r);
 R_API int r_core_cmd(struct r_core_t *r, const char *cmd, int log);
+R_API void r_core_cmd_repeat(RCore *core, int next);
 R_API char *r_core_editor (RCore *core, const char *str);
 // XXX void*?? must be RCore !
 R_API int r_core_cmdf(void *user, const char *fmt, ...);

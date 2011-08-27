@@ -65,9 +65,10 @@ end -= 8; // XXX Fix some segfaults when r_anal backends are buggy
 	return list;
 }
 
+// TODO: this is TOO SLOW. do not iterate over all reflines or gtfo
 /* umf..this should probably be outside this file */
 R_API char* r_anal_reflines_str(RAnal *anal, RAnalRefline *list, ut64 addr, int opts) {
-	struct r_anal_refline_t *ref;
+	RAnalRefline *ref;
 	struct list_head *pos;
 	int dir = 0;
 	char ch = ' ', *str = NULL;

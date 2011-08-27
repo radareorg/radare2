@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 namespace Radare {
 	[Compact]
@@ -7,6 +7,7 @@ namespace Radare {
 		public RLib (string symname);
 		public bool close(string file);
 		public int opendir(string path);
+		public static string? path(string libname);
 		//public string types_get(int idx);
 
 		/* lowlevel api */

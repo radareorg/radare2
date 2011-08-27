@@ -62,6 +62,37 @@ R_API int r_lib_dl_close(void *handler) {
 
 /* ---- */
 
+R_API char *r_lib_path(const char *libname) {
+	char *next, *path0, libpath[1024];
+#if __APPLE__
+	char *env = r_sys_getenv ("DYLD_LIBRARY_PATH");
+	const char *ext = ".dylib";
+	env = r_str_concat (env, ":/lib:/usr/lib:/usr/local/lib");
+#elif __UNIX__
+	char *env = r_sys_getenv ("LD_LIBRARY_PATH");
+	const char *ext = ".so";
+	env = r_str_concat (env, ":/lib:/usr/lib:/usr/local/lib");
+#else
+	char *env = strdup (".:../../../../../../../windows/system32");
+	const char *ext = ".dll";
+#endif
+	if (!env) env = strdup (".");
+	path0 = env;
+	do {
+		next = strchr (path0, ':');
+		if (next) *next = 0;
+		snprintf (libpath, sizeof (libpath), "%s/%s%s", path0, libname, ext);
+		//eprintf ("--> %s\n", libpath);
+		if (r_file_exist (libpath)) {
+			free (env);
+			return strdup (libpath);
+		}
+		path0 = next+1;
+	} while (next);
+	free (env);
+	return NULL;
+}
+
 R_API RLib *r_lib_new(const char *symname) {
 	RLib *lib = R_NEW (RLib);
 	if (lib) {
@@ -289,4 +320,3 @@ R_API void r_lib_list(RLib *lib) {
 		printf(" %5s %p %s \n", r_lib_types_get(p->type), p->handler->destructor, p->file);
 	}
 }
-
