@@ -974,11 +974,45 @@ static int cmd_seek(void *data, const char *input) {
 		} else eprintf ("Usage: 'sr pc' ; seek to register\n");
 	} else
 	if (*input) {
-		st32 delta = (input[1]==' ')?2:1;
+		st32 delta = (input[1]==' ')? 2: 1;
 		off = r_num_math (core->num, input + delta);
 		if (input[0]==' ' && (input[1]=='+'||input[1]=='-'))
-			input = input+1;
-		switch (input[0]) {
+			input++;
+		switch (*input) {
+		case 'C':
+			if (input[1]==' ') {
+				int n = 0;
+				RListIter *iter;
+				RMetaItem *d, *item = NULL;
+				/* seek to comment */
+				r_list_foreach (core->anal->meta->data, iter, d) {
+					if (d->type == R_META_TYPE_COMMENT) {
+						if (strstr (d->str, input+2)) {
+							if (n==1) {
+								r_cons_printf ("0x%08"PFMT64x"  %s\n", item->from, item->str);
+								r_cons_printf ("0x%08"PFMT64x"  %s\n", d->from, d->str);
+							} else if (n>1) {
+								r_cons_printf ("0x%08"PFMT64x"  %s\n", d->from, d->str);
+							}
+							item = d;
+							n++;
+						}
+					}
+				}
+				switch (n) {
+				case 0:
+					eprintf ("No matching comments\n");
+					break;
+				case 1:
+					r_cons_printf ("0x%08"PFMT64x"  %s\n", item->from, item->str);
+					r_io_sundo_push (core->io);
+					r_core_seek (core, off, 1);
+					r_core_block_read (core, 0);
+					break;
+				}
+				
+			} else eprintf ("Usage: sC comment grep\n");
+			break;
 		case ' ':
 			r_io_sundo_push (core->io);
 			r_core_seek (core, off, 1);
@@ -1069,6 +1103,7 @@ static int cmd_seek(void *data, const char *input) {
 			" s/ DATA    ; search for next occurrence of 'DATA'\n"
 			" sb         ; seek aligned to bb start\n"
 			" sn         ; seek to next opcode\n"
+			" sC str     ; seek to comment matching given string\n"
 			" sr pc      ; seek to register\n");
 			break;
 		}
@@ -1615,6 +1650,7 @@ l = len;
 		}
 		break;
 	case '=':
+		eprintf ("TODO: use zoom.byte to display entropy. like rahash2 -a entropy -b 32 /bin/ls\n");
 		for (i=0; i<core->blocksize; i++) {
 			int pc = (core->block[i]*100)/255;
 			r_print_addr (core->print, core->offset+i);

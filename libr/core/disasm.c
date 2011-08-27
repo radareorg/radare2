@@ -255,10 +255,10 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 		if (show_lines && line)
 			r_cons_strcat (line);
 		if (show_offset) {
-			if (at == dest)
+			if (show_color && (at == dest))
 				r_cons_invert (R_TRUE, R_TRUE);
 			printoffset (at, show_color);
-			if (at == dest)
+			if (show_color && (at == dest))
 				r_cons_printf (Color_RESET);
 		}
 		if (show_trace) {

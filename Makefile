@@ -115,7 +115,7 @@ r2-bindings-dist:
 
 dist:
 	VERSION=${VERSION} ; \
-	FILES=`hg st -mc .| cut -c 3-|sed -e s,^,radare2-${VERSION}/, | grep -v r2-bindings | grep -v '/\.'` ; \
+	FILES=`hg manifest | grep -v r2-bindings | sed -e s,^,radare2-${VERSION}/,` ; \
 	cd .. && mv radare2 radare2-${VERSION} && \
 	${TAR} radare2-${VERSION}.tar.gz $${FILES} ;\
 	mv radare2-${VERSION} radare2
@@ -125,7 +125,7 @@ pub:
 
 shot:
 	DATE=`date '+%Y%m%d'` ; \
-	FILES=`hg status -mc|cut -c 3-|sed -e s,^,radare2-$${DATE}/,`; \
+	FILES=`hg manifest | sed -e s,^,radare2-${DATE}/,` ; \
 	cd .. && mv radare2 radare2-$${DATE} && \
 	${TAR} radare2-$${DATE}.tar.gz $${FILES} ;\
 	mv radare2-$${DATE} radare2 && \

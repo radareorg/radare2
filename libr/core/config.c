@@ -274,6 +274,12 @@ static int config_scrprompt_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_scrint_callback(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_cons_singleton()->is_interactive = node->i_value;
+	return R_TRUE;
+}
+
 static int config_teefile_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton()->teefile = node->value;
@@ -420,6 +426,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "cmd.cprompt", "");
 	r_config_set (cfg, "cmd.vprompt", "");
 	r_config_set (cfg, "cmd.bp", "");
+	r_config_set_cb (cfg, "scr.interactive", "true", config_scrint_callback);
 	r_config_set_cb (cfg, "scr.tee", "", config_teefile_callback);
 	r_config_set_cb (cfg, "scr.prompt", "true", &config_scrprompt_callback);
 	r_config_set_cb (cfg, "scr.color",
