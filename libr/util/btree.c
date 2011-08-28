@@ -13,7 +13,7 @@ R_API struct btree_node *btree_remove(struct btree_node *p, BTREE_DEL(del)) {
 		if (p->left!=NULL) {
 			f = p;
 			rp = p->right;
-			while(rp->left!=NULL) {
+			while (rp->left!=NULL) {
 				f = rp;
 				rp = rp->left;
 			}

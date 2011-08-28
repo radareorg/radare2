@@ -49,7 +49,7 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 	case 'e': // entropy
 		ret = (ut8) (r_hash_entropy_fraction (bufz, size)*255);
 		break;
-	case 'h': //head
+	case 'h': // head
 	default:
 		ret = *bufz;
 	}
@@ -1783,7 +1783,11 @@ l = len;
 			// TODO: add support for 2-4 byte length pascal strings
 			r_print_string (core->print, core->offset, core->block+1, mylen, 0, 1, 0); //, 78, 1);
 			core->num->value = mylen;
-		} else r_print_string (core->print, core->offset, core->block, len, 0, 1, 0); //, 78, 1);
+		} else 
+		if (input[1]==' ') {
+			len = r_num_math (core->num, input+2);
+			r_print_string (core->print, core->offset, core->block, len, 0, 0, 0); //, 78, 1);
+		} else r_print_string (core->print, core->offset, core->block+1, len, 0, 1, 0); //, 78, 1);
 		break;
 	case 'S':
 		r_print_string (core->print, core->offset, core->block, len, 1, 1, 0); //, 78, 1);

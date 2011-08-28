@@ -3,15 +3,21 @@
   |    <  V  . |  . V  .   <   _/ .-' _/|  ()  |
   |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
-* Function resolve should not tresspass all
+0.8.2
+=====
+* shell encoder
+* mach0 for osx64
+* pZ and p= are just silly or broken wtf sftu .. they need love
+* r_anal_find_fcn() is O(N). should be O(1)
+
 * Cant set register values in OSX debugger
   - This is probably because we are using the 32bit binary on 64bit dbg
+* Add support for OSX/Lion (PIE bins)
 
 * Add -f/-t in rahash2 to define ranges
   - Add support for large files in rahash2
 
 ====[[ 0.9 ]]====
-* rax2 hex->bin doesnt works for hex values (rax2 Bx1d) (it is just dec->bin O_o)
 * Implement r_search_xrefs()
 * Test r_search_delta()
 * radiff2 -x show two column diff

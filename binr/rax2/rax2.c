@@ -138,9 +138,6 @@ static int rax (char *str, int last) {
 	} else if (str[0]=='b') {
 		out_mode = 'B';
 		str++;
-	} else if (str[strlen(str)-1]=='d') {
-		out_mode = 'I';
-		str[strlen(str)-1] = 'b';
 	} else if (str[0]=='F' && str[1]=='x') {
 		out_mode = 'F';
 		*str = '0';
@@ -150,6 +147,9 @@ static int rax (char *str, int last) {
 	} else if (str[0]=='O' && str[1]=='x') {
 		out_mode = 'O';
 		*str = '0';
+	} else if (str[strlen(str)-1]=='d') {
+		out_mode = 'I';
+		str[strlen(str)-1] = 'b';
 	//TODO: Move print into format_output
 	} else if (str[strlen(str)-1]=='f') {
 		unsigned char *p = (unsigned char *)&f;
