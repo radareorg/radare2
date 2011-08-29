@@ -292,7 +292,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			free (out);
 			}
 			ret = (int)mi->size;
-i+=mi->size-1;
+		i += mi->size-1;
 			free (line);
 			free (refline);
 			line = refline = NULL;
@@ -456,6 +456,7 @@ i+=mi->size-1;
 			ret -= middle;
 			r_cons_printf (" ;  *middle* %d", ret);
 		}
+#
 		if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
 			RAsmOp ao; /* disassemble for the vm .. */
 			int os = core->assembler->syntax;

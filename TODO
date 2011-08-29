@@ -5,30 +5,43 @@
 
 0.8.2
 =====
+* add support for sockets in rarun2
+* libmagic internal :? -- find a decent implementation and adopt it
 * shell encoder
+  - get x86-64 one from twitter
 * mach0 for osx64
 * pZ and p= are just silly or broken wtf sftu .. they need love
 * r_anal_find_fcn() is O(N). should be O(1)
+  - var r = RHashTable<RList>()
+    var l = r.add ("0x8048000-0x8049000", new RList ())
+    l.append (ReferenceTo (fcn)
+* search for antidebug/disasm tricks opcodes
+  - allows to find interesting points to analyze
 
+BOTTLENECKS:
+============
+* rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
+* Add -f/-t in rahash2 to define ranges
+  - Add support for large files in rahash2
+  - Do not use slurp (must work for big files too!)
+
+OSX
+===
 * Cant set register values in OSX debugger
   - This is probably because we are using the 32bit binary on 64bit dbg
 * Add support for OSX/Lion (PIE bins)
-
-* Add -f/-t in rahash2 to define ranges
-  - Add support for large files in rahash2
+* Proper support for MACH-O binaries
+  - rabin2 -f works? i think its used with '-a' 
+  - I think symbols are not correct .. (offset+disk)
 
 ====[[ 0.9 ]]====
-* Implement r_search_xrefs()
 * Test r_search_delta()
-* radiff2 -x show two column diff
 * Support for proper analyze of TinyPE binaries
 
-* add support for sockets in rarun2
 
 TODO
 ====
 * Implement r_flag_unset_i () ftw
-* libmagic internal :? -- find a decent implementation and adopt it
 * Honor string metadata for asmsteps ('jk' in visual)
 
 ** BUG **
@@ -43,19 +56,15 @@ TODO
   }
   r_list_commit (b);
 
-[[ 0.8 ]] -- TODO
-* Tracing features for the debugger
-* We need a 64 bit x86 assembler working!! nasm fails
-* Proper support for MACH-O binaries
-  - rabin2 -f works? i think its used with '-a' 
-  - I think symbols are not correct .. (offset+disk)
+ -- TODO
+* Tracing support for the debugger
 * If [0-9] keybindings in visual point to same address use same reference
 
-[[ 0.8 ]] -- BUGS to be fixed
+ -- BUGS to be fixed
 * Handle ^C in searches (at least)
 * Analyze this opcode: ff2518130000     jmp qword [rip+0x1318]
 
-[[ 0.8 ]] -- refactoring tasks
+ -- refactoring tasks
 * Make r_io happy with RList
 * Add r_cons_prompt () ... calling set_prompt + fgets -- this api needs cleanup
   - set prompt, set line, fgets
@@ -70,7 +79,7 @@ TODO
 
 To wipe:
 ========
- - Move manpages from man/ to binr/*/?
+ - Move manpages from man/ to binr/*/? (harder to maintain?)
  - Move the content of libr/*/TODO here
  - linestyle?? for disassembly lines
  - remove libr/vm and libr/db
@@ -82,17 +91,15 @@ pancake
 * if console width > X place comments there (ash)
 * Implement BLOCK in r_core_sysenv_begin|end ()
 * Fix iterators for r_macro (test only?)
-* search for antidebug/disasm tricks opcodes
-  - allows to find interesting points to analyze
 
 nibble
 ------
 * Do not show XREF info if in the same function?
 * r_anal
-  - Code analysis (detect when an argument is a flagmask or enum and display text format) (ollydbg)
+  - Code analysis (detect when an argument is a flagmask or
+    enum and display text format) (ollydbg)
 * r_bin
   - PE: native subsystem? http://radare.org/get/w32/mrxnet.tgz
-* rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
 * Fix RAnalCond
 * code analysis must resolve jump tables
 * allow to hook r_asm_disassemble and assemble with custom callbacks
@@ -124,6 +131,7 @@ nibble
 capi_x
 ------
 * code analysis for msil
+* mach0-create for x86-64
 
 earada
 ------
@@ -143,12 +151,11 @@ earada
 * Implement search and replace /s
   - insert or append? (see r1 cfg vars)
 
-0.7 release
-===========
-* GMP
-  - big-ssl.c big-gmp.c ...
-  - implement GMP in util/big.c
-    - http://etutorials.org/Programming/secure+programming/Chapter+7.+Public+Key+Cryptography/7.5+Generating+a+Prime+Number+Testing+for+Primality/
+Big number support
+==================
+* big-ssl.c big-gmp.c ...
+* implement GMP in util/big.c
+  - http://etutorials.org/Programming/secure+programming/Chapter+7.+Public+Key+Cryptography/7.5+Generating+a+Prime+Number+Testing+for+Primality/
 
 Assembler
 ---------
