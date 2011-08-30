@@ -211,8 +211,7 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 
 R_API int r_reg_set_profile(RReg *reg, const char *profile) {
 	int ret = R_FALSE;
-	const char *base;
-	char *str, *file;
+	char *base, *str, *file;
 	/* TODO: append .regs extension to filename */
 	if ((str = r_file_slurp (profile, NULL))==NULL) {
  		// XXX we must define this varname in r_lib.h /compiletime/

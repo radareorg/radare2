@@ -301,7 +301,6 @@ R_API void r_str_filter(char *str, int len);
 
 R_API int r_str_re_match(const char *str, const char *reg);
 R_API int r_str_re_replace(const char *str, const char *reg, const char *sub);
-R_API char *r_str_sub(char *string, char *pat, char *rep, int global);
 R_API int r_str_escape(char *buf);
 R_API char *r_str_unscape(char *buf);
 R_API char *r_str_home(const char *str);

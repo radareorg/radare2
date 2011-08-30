@@ -362,7 +362,7 @@ static int config_color_callback(void *user, void *data) {
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	RConfig *cfg = cfg = core->config = r_config_new (core);
-	const char *p;
+	char *p;
 	cfg->printf = r_cons_printf;
 
 	r_config_set (cfg, "dir.source", "");
