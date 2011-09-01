@@ -113,11 +113,14 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 #endif
 		}
 	}
-	// TODO: make anal->reflines implicit
-	free (core->reflines); // TODO: leak
-	free (core->reflines2); // TODO: leak
-	core->reflines = r_anal_reflines_get (core->anal, addr, buf, len, -1, linesout, show_linescall);
-	core->reflines2 = r_anal_reflines_get (core->anal, addr, buf, len, -1, linesout, 1);
+	if (show_lines) {
+		// TODO: make anal->reflines implicit
+		free (core->reflines); // TODO: leak
+		free (core->reflines2); // TODO: leak
+		core->reflines = r_anal_reflines_get (core->anal, addr, buf, len, -1, linesout, show_linescall);
+		core->reflines2 = r_anal_reflines_get (core->anal, addr, buf, len, -1, linesout, 1);
+	} else core->reflines = core->reflines2 = NULL;
+
 	for (lines=i=idx=ret=0; idx < len && lines < l; idx+=ret,i++, lines++) {
 		ut64 at = addr + idx;
 		r_asm_set_pc (core->assembler, at);
@@ -126,7 +129,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			refline = filter_refline (line);
 		} else {
 			line = NULL;
-			refline = "";
+			refline = strdup ("");
 		}
 		f = show_functions? r_anal_fcn_find (core->anal, at, R_ANAL_FCN_TYPE_NULL): NULL;
 

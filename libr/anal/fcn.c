@@ -216,10 +216,10 @@ R_API int r_anal_fcn_split_bb(RAnalFcn *fcn, RAnalBlock *bb, ut64 addr) {
 	RAnalOp *opi;
 	RListIter *iter;
 
-	r_list_foreach (fcn->bbs, iter, bbi)
+	r_list_foreach (fcn->bbs, iter, bbi) {
 		if (addr == bbi->addr)
 			return R_ANAL_RET_DUP;
-		else if (addr > bbi->addr && addr < bbi->addr + bbi->size) {
+		if (addr > bbi->addr && addr < bbi->addr + bbi->size) {
 			r_list_append (fcn->bbs, bb);
 			bb->addr = addr;
 			bb->size = bbi->addr + bbi->size - addr;
@@ -249,6 +249,7 @@ R_API int r_anal_fcn_split_bb(RAnalFcn *fcn, RAnalBlock *bb, ut64 addr) {
 			}
 			return R_ANAL_RET_END;
 		}
+	}
 	return R_ANAL_RET_NEW;
 }
 
@@ -313,21 +314,26 @@ R_API RAnalVar *r_anal_fcn_get_var(RAnalFcn *fs, int num, int type) {
 R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFcn* fs) {
 	int i;
 	char *sign;
+	RAnalVar *arg, *ret;
 	if (fs->type != R_ANAL_FCN_TYPE_FCN || fs->type != R_ANAL_FCN_TYPE_SYM)
 		return NULL;
-	RAnalVar *arg, *ret = r_anal_fcn_get_var (fs, 0, R_ANAL_VAR_TYPE_RET);
-	if (ret) sign = r_str_newf ("%s %s (", ret->name, fs->name);
-	else sign = r_str_newf ("void %s (", fs->name);
-	for (i=0;;i++) {
+	ret = r_anal_fcn_get_var (fs, 0, R_ANAL_VAR_TYPE_RET);
+	sign = ret? r_str_newf ("%s %s (", ret->name, fs->name):
+		r_str_newf ("void %s (", fs->name);
+	for (i=0; ; i++) {
 		if (!(arg = r_anal_fcn_get_var (fs, i,
-						R_ANAL_VAR_TYPE_ARG|R_ANAL_VAR_TYPE_ARGREG)))
+				R_ANAL_VAR_TYPE_ARG|R_ANAL_VAR_TYPE_ARGREG)))
 			break;
 		if (arg->array>1) {
-			if (i) sign = r_str_concatf (sign, ", %s %s:%02x[%d]", arg->vartype, arg->name, arg->delta, arg->array);
-			else sign = r_str_concatf (sign, "%s %s:%02x[%d]", arg->vartype, arg->name, arg->delta, arg->array);
+			if (i) sign = r_str_concatf (sign, ", %s %s:%02x[%d]",
+				arg->vartype, arg->name, arg->delta, arg->array);
+			else sign = r_str_concatf (sign, "%s %s:%02x[%d]",
+				arg->vartype, arg->name, arg->delta, arg->array);
 		} else {
-			if (i) sign = r_str_concatf (sign, ", %s %s:%02x", arg->vartype, arg->name, arg->delta);
-			else sign = r_str_concatf (sign, "%s %s:%02x", arg->vartype, arg->name, arg->delta);
+			if (i) sign = r_str_concatf (sign, ", %s %s:%02x",
+				arg->vartype, arg->name, arg->delta);
+			else sign = r_str_concatf (sign, "%s %s:%02x",
+				arg->vartype, arg->name, arg->delta);
 		}
 	}
 	return (sign = r_str_concatf (sign, ");"));

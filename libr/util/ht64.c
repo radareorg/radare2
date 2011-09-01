@@ -189,7 +189,7 @@ R_API boolt r_hashtable64_insert(RHashTable64 *ht, ut64 hash, void *data) {
 		if (double_hash == 0)
 			double_hash = 1;
 		hash_address = (hash_address + double_hash) % ht->size;
-	} while (hash_address != hash % ht->size);
+	} while (hash_address != (hash % ht->size));
 
 	/* We could hit here if a required resize failed. An unchecked-malloc
 	 * application could ignore this result.

@@ -5,6 +5,7 @@
 
 0.8.2
 =====
+* Make ht64.c include ht.c
 * add support for sockets in rarun2
 * libmagic internal :? -- find a decent implementation and adopt it
 * shell encoder
