@@ -1119,7 +1119,7 @@ static int cmd_seek(void *data, const char *input) {
 static int cmd_help(void *data, const char *input) {
 	int i;
 	RCore *core = (RCore *)data;
-	char out[65];
+	char out[128];
 	ut64 n;
 	switch (input[0]) {
 	case 'b':
@@ -1147,8 +1147,18 @@ static int cmd_help(void *data, const char *input) {
 		} else eprintf ("Whitespace expected after '?b'\n");
 		break;
 	case ' ':
+		{
+		ut32 n32;
+		float f;
 		n = r_num_math (core->num, input+1);
-		r_cons_printf ("%"PFMT64d" 0x%"PFMT64x"\n", n,n);
+		n32 = (ut32)n;
+		memcpy (&f, &n32, sizeof (f));
+		/* decimal, hexa, octal */
+		r_cons_printf ("%"PFMT64d" 0x%"PFMT64x" 0%"PFMT64o" ", n, n, n);
+		/* binary and floating point */
+		r_str_bits (out, (const ut8*)&n, sizeof (n), NULL);
+		r_cons_printf ("%s %f\n", out, f);
+		}
 		break;
 	case 'v':
 		n = r_num_math (core->num, input+2);
