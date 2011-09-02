@@ -556,8 +556,10 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 	  {
 	    const char *s;
 
+#if 0
 	    if (opcode->args[0] != ',')
 	      (*info->fprintf_func) (stream, " ");
+#endif
 
 	    for (s = opcode->args; *s != '\0'; ++s)
 	      {
@@ -603,7 +605,7 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 		    (*info->fprintf_func) (stream, "0");
 		    break;
 
-#define	reg(n)	(*info->fprintf_func) (stream, "%%%s", reg_names[n])
+ #define	reg(n)	(*info->fprintf_func) (stream, "%%%s", reg_names[n])
 		  case '1':
 		  case 'r':
 		    reg (X_RS1 (insn));

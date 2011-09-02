@@ -37,13 +37,12 @@ static void print_address(bfd_vma address, struct disassemble_info *info) {
 
 static int buf_fprintf(void *stream, const char *format, ...) {
 	va_list ap;
-	char *tmp;
+	char tmp[1024];
 	if (buf_global == NULL)
 		return 0;
 	va_start (ap, format);
- 	tmp = alloca (strlen (format)+strlen (buf_global)+2);
-	sprintf (tmp, "%s%s", buf_global, format);
-	vsprintf (buf_global, tmp, ap);
+	vsnprintf (tmp, sizeof (tmp), format, ap);
+	strcat (buf_global, tmp);
 	va_end (ap);
 	return 0;
 }
