@@ -205,6 +205,8 @@ R_API int r_cons_html_print(const char *ptr) {
 	int inv = 0;
 	int tmp;
 
+	if (!ptr)
+		return 0;
 	for (;ptr[0]; ptr = ptr + 1) {
 		if (ptr[0] == '\n') {
 			printf ("<br />");
