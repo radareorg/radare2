@@ -376,6 +376,7 @@ static int rabin_show_sections() {
 	r_list_foreach (sections, iter, section) {
 		if (name && strcmp (section->name, name))
 			continue;
+		r_name_filter (section->name, sizeof (section->name));
 		if (at) {
 			if ((section->size != 0 &&
 				((baddr+section->rva <= at && baddr+section->rva+section->size > at) ||
@@ -384,7 +385,6 @@ static int rabin_show_sections() {
 				printf ("%s\n", section->name);
 		} else {
 			if (rad) {
-				r_name_filter (section->name, sizeof (section->name));
 				printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d\n",
 					section->offset, baddr+section->rva,
 					section->size, section->vsize, section->name, (int)section->srwx);
