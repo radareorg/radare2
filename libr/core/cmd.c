@@ -1963,7 +1963,7 @@ static int cmd_flag(void *data, const char *input) {
 	ut64 off = core->offset;
 	memcpy (str, input+1, len);
 
-	switch (input[0]) {
+	switch (*input) {
 	case '+':
 		r_flag_set (core->flags, str, off, core->blocksize, 1);
 		break;
@@ -3113,17 +3113,24 @@ static int cmd_resize(void *data, const char *input) {
 static const char *cmdhit = NULL;
 static const char *searchprefix = NULL;
 static int searchcount = 0;
+static int searchflags = 0;
 
 static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
+/*
 	if (searchcount) {
 		if (!--searchcount) {
 			eprintf ("search.count reached\n");
 			return R_FALSE;
 		}
 	}
-	r_cons_printf ("f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,
-		kw->kwidx, kw->count, kw->keyword_length, addr);
+*/
+	searchcount++;
+	if (searchflags)
+		r_core_cmdf (core, "f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,
+			kw->kwidx, kw->count, kw->keyword_length, addr);
+	else r_cons_printf ("f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,
+			kw->kwidx, kw->count, kw->keyword_length, addr);
 	if (!strnull (cmdhit)) {
 		ut64 here = core->offset;
 		r_core_seek (core, addr, R_FALSE);
@@ -3145,12 +3152,19 @@ static int cmd_search(void *data, const char *input) {
 	ut32 n32;
 	ut8 *buf;
 
-	// TODO: repeat last search doesnt works for /a
-	from = r_config_get_i (core->config, "search.from");
-	if (from == UT64_MAX)
+	/* obey temporary seek if defined '/x 8080 @ addr:len' */
+	if (core->tmpseek) {
 		from = core->offset;
-	to = r_config_get_i (core->config, "search.to");
+		to = core->offset + core->blocksize;
+	} else {
+		// TODO: repeat last search doesnt works for /a
+		from = r_config_get_i (core->config, "search.from");
+		if (from == UT64_MAX)
+			from = core->offset;
+		to = r_config_get_i (core->config, "search.to");
+	}
 	core->search->align = r_config_get_i (core->config, "search.align");
+	searchflags = r_config_get_i (core->config, "search.flags");
 	//TODO: handle section ranges if from&&to==0
 /*
 	section = r_io_section_get (core->io, core->offset);
@@ -3359,12 +3373,14 @@ static int cmd_search(void *data, const char *input) {
 		" e search.align = 4    ; only catch aligned search hits\n"
 		" e search.from = 0     ; start address\n"
 		" e search.to = 0       ; end address\n"
-		" e search.asmstr = 0   ; search string instead of assembly\n");
+		" e search.asmstr = 0   ; search string instead of assembly\n"
+		" e search.flags = true ; if enabled store flags on keyword hits\n");
 		break;
 	}
 	r_config_set_i (core->config, "search.kwidx", core->search->n_kws);
 	if (dosearch) {
-		r_cons_printf ("fs hits\n");
+		if (!searchflags)
+			r_cons_printf ("fs hits\n");
 		core->search->inverse = inverse;
 		searchcount = r_config_get_i (core->config, "search.count");
 		if (searchcount)
@@ -3413,6 +3429,9 @@ static int cmd_search(void *data, const char *input) {
 			}
 			r_cons_break_end ();
 			free (buf);
+			if (searchflags && searchcount>0)
+				r_cons_printf ("%s%d_%d\n",
+					searchprefix, core->search->n_kws-1, searchcount-1);
 		} else eprintf ("No keywords defined\n");
 	}
 	return R_TRUE;
@@ -3434,7 +3453,7 @@ static int cmd_eval(void *data, const char *input) {
 		} else eprintf ("Usage: ee varname\n");
 		break;
 	case '!':
-		input = r_str_chop_ro(input+1);
+		input = r_str_chop_ro (input+1);
 		if (!r_config_swap (core->config, input))
 			eprintf ("r_config: '%s' is not a boolean variable.\n", input);
 		break;
@@ -3442,29 +3461,34 @@ static int cmd_eval(void *data, const char *input) {
 		r_core_config_init (core);
 		eprintf ("BUG: 'e-' command locks the eval hashtable. patches are welcome :)\n");
 		break;
-	case '+':
-		r_config_list (core->config, input[1]?input+1:NULL, 2);
-		break;
 	case '*':
 		r_config_list (core->config, NULL, 1);
 		break;
 	case '?':
-		if (input+1 && input+2) {
-			const char *desc = r_config_desc (core->config, input+1, NULL);
-			if (desc) r_cons_strcat (desc);
-		} else
-		r_cons_printf (
-		"Usage: e[?] [var[=value]]\n"
-		"  e?           ; show this help\n"
-		"  e?asm.bytes  ; show description\n"
-		"  e            ; list config vars\n"
-		"  e+           ; list config vars with description\n"
-		"  e-           ; reset config vars\n"
-		"  e*           ; dump config vars in r commands\n"
-		"  e!a          ; invert the boolean value of 'a' var\n"
-		"  e a          ; get value of var 'a'\n"
-		"  e a=b        ; set var 'a' the 'b' value\n");
-		//r_cmd_help(core->cmd, "e");
+		switch (input[1]) {
+		case '?':
+			r_config_list (core->config, NULL, 2);
+			break;
+		default:
+			if (input[2]) {
+				const char *desc = r_config_desc (core->config, input+1, NULL);
+				if (desc) r_cons_strcat (desc);
+				r_cons_newline ();
+			}
+			break;
+		case 0:
+			r_cons_printf (
+			"Usage: e[?] [var[=value]]\n"
+			"  e?           ; show this help\n"
+			"  e?asm.bytes  ; show description\n"
+			"  e??          ; list config vars with description\n"
+			"  e            ; list config vars\n"
+			"  e-           ; reset config vars\n"
+			"  e*           ; dump config vars in r commands\n"
+			"  e!a          ; invert the boolean value of 'a' var\n"
+			"  e a          ; get value of var 'a'\n"
+			"  e a=b        ; set var 'a' the 'b' value\n");
+		}
 		break;
 	case ' ':
 		r_config_eval (core->config, input+1);
@@ -4170,6 +4194,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (*cmd!='(' && *cmd!='"')
 		ptr = strchr (cmd, '@');
 	else ptr = NULL;
+	core->tmpseek = ptr? R_TRUE: R_FALSE;
 	if (ptr) {
 		ut64 tmpoff, tmpbsz;
 		char *ptr2 = strchr (ptr+1, ':');

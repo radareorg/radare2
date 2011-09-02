@@ -77,6 +77,7 @@ typedef struct r_core_t {
 	int oobi_len;
 	ut8 *yank;
 	int yank_len;
+	int tmpseek;
 	boolt visual;
 	ut64 yank_off;
 	int interrupted; // XXX IS THIS DUPPED SOMEWHERE?

@@ -447,6 +447,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "scr.seek", "");
 	r_config_set_i_cb (cfg, "scr.cols", 16, &config_scrcols_callback);
 	r_config_set_i (cfg, "search.kwidx", 0);
+	r_config_set (cfg, "search.flags", "true");
+	r_config_desc (cfg, "search.flags", "If enabled all search results are flagged, else just printed r2 commands");
 	r_config_set_i (cfg, "search.count", 0);
 	r_config_set (cfg, "search.prefix", "hit");
 	r_config_set_i (cfg, "search.from", UT64_MAX);
