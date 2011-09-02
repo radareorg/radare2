@@ -277,9 +277,15 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 
 R_API void r_print_bytes(RPrint *p, const ut8* buf, int len, const char *fmt) {
 	int i;
-	for (i=0; i<len; i++)
-		p->printf (fmt, buf[i]);
-	p->printf ("\n");
+	if (p) {
+		for (i=0; i<len; i++)
+			p->printf (fmt, buf[i]);
+		p->printf ("\n");
+	} else {
+		for (i=0; i<len; i++)
+			printf (fmt, buf[i]);
+		printf ("\n");
+	}
 }
 
 R_API void r_print_raw(RPrint *p, const ut8* buf, int len) {

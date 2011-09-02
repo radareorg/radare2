@@ -123,13 +123,12 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 	return i;
 }
 
-static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin)
-{
+static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!(bin->dos_header = malloc(sizeof(PE_(image_dos_header))))) {
-		perror("malloc (dos header)");
+		perror ("malloc (dos header)");
 		return R_FALSE;
 	}
-	if (r_buf_read_at(bin->b, 0, (ut8*)bin->dos_header, sizeof(PE_(image_dos_header))) == -1) {
+	if (r_buf_read_at (bin->b, 0, (ut8*)bin->dos_header, sizeof(PE_(image_dos_header))) == -1) {
 		eprintf("Error: read (dos header)\n");
 		return R_FALSE;
 	}
@@ -141,38 +140,36 @@ static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin)
 		perror("malloc (nt header)");
 		return R_FALSE;
 	}
-	if (r_buf_read_at(bin->b, bin->dos_header->e_lfanew,
+	if (r_buf_read_at (bin->b, bin->dos_header->e_lfanew,
 				(ut8*)bin->nt_headers, sizeof(PE_(image_nt_headers))) == -1) {
-		eprintf("Error: read (dos header)\n");
+		eprintf ("Error: read (dos header)\n");
 		return R_FALSE;
 	}
-	if (strncmp((char*)&bin->dos_header->e_magic, "MZ", 2) ||
-		strncmp((char*)&bin->nt_headers->Signature, "PE", 2))
+	if (strncmp ((char*)&bin->dos_header->e_magic, "MZ", 2) ||
+		strncmp ((char*)&bin->nt_headers->Signature, "PE", 2))
 		return R_FALSE;
 	return R_TRUE;
 }
 
-static int PE_(r_bin_pe_init_sections)(struct PE_(r_bin_pe_obj_t)* bin)
-{
+static int PE_(r_bin_pe_init_sections)(struct PE_(r_bin_pe_obj_t)* bin) {
 	int sections_size = sizeof(PE_(image_section_header)) * bin->nt_headers->file_header.NumberOfSections;
 	if (sections_size > bin->size) {
-		eprintf("Invalid NumberOfSections value\n");
+		eprintf ("Invalid NumberOfSections value\n");
 		return R_FALSE;
 	}
-	if (!(bin->section_header = malloc(sections_size))) {
-		perror("malloc (section header)");
+	if (!(bin->section_header = malloc (sections_size))) {
+		perror ("malloc (section header)");
 		return R_FALSE;
 	}
-	if (r_buf_read_at(bin->b, bin->dos_header->e_lfanew + sizeof(PE_(image_nt_headers)),
+	if (r_buf_read_at (bin->b, bin->dos_header->e_lfanew + sizeof (PE_(image_nt_headers)),
 				(ut8*)bin->section_header, sections_size) == -1) {
-		eprintf("Error: read (import directory)\n");
+		eprintf ("Error: read (import directory)\n");
 		return R_FALSE;
 	}
 	return R_TRUE;
 }
 
-static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin)
-{
+static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 	PE_(image_data_directory) *data_dir_import = &bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_IMPORT];
 	PE_(image_data_directory) *data_dir_delay_import = &bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT];
 	PE_DWord import_dir_offset = PE_(r_bin_pe_rva_to_offset)(bin, data_dir_import->VirtualAddress);
@@ -421,25 +418,27 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin)
 		perror("malloc (libs)");
 		return NULL;
 	}
-	for (i = j = 0; i < import_dirs_count; i++, j++) {
-		if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->import_directory[i].Name),
-				(ut8*)libs[j].name, PE_STRING_LENGTH) == -1) {
-			eprintf("Error: read (libs - import dirs)\n");
-			return NULL;
+	if (bin->import_directory) {
+		for (i = j = 0; i < import_dirs_count; i++, j++) {
+			if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->import_directory[i].Name),
+					(ut8*)libs[j].name, PE_STRING_LENGTH) == -1) {
+				eprintf("Error: read (libs - import dirs)\n");
+				return NULL;
+			}
+			if (PE_(r_bin_pe_rva_to_offset)(bin, bin->import_directory[i].Characteristics) == 0 &&
+				PE_(r_bin_pe_rva_to_offset)(bin, bin->import_directory[i].FirstThunk) == 0)
+				break;
 		}
-		if (PE_(r_bin_pe_rva_to_offset)(bin, bin->import_directory[i].Characteristics) == 0 &&
-			PE_(r_bin_pe_rva_to_offset)(bin, bin->import_directory[i].FirstThunk) == 0)
-			break;
-	}
-	for (i = 0; i < delay_import_dirs_count; i++, j++) {
-		if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->delay_import_directory[i].Name),
-				(ut8*)libs[j].name, PE_STRING_LENGTH) == -1) {
-			eprintf("Error: read (libs - delay import dirs)\n");
-			return NULL;
+		for (i = 0; i < delay_import_dirs_count; i++, j++) {
+			if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->delay_import_directory[i].Name),
+					(ut8*)libs[j].name, PE_STRING_LENGTH) == -1) {
+				eprintf("Error: read (libs - delay import dirs)\n");
+				return NULL;
+			}
+			if (PE_(r_bin_pe_rva_to_offset)(bin, bin->delay_import_directory[i].DelayImportNameTable) == 0 &&
+				PE_(r_bin_pe_rva_to_offset)(bin, bin->delay_import_directory[i].DelayImportAddressTable) == 0)
+				break;
 		}
-		if (PE_(r_bin_pe_rva_to_offset)(bin, bin->delay_import_directory[i].DelayImportNameTable) == 0 &&
-			PE_(r_bin_pe_rva_to_offset)(bin, bin->delay_import_directory[i].DelayImportAddressTable) == 0)
-			break;
 	}
 	for (i = 0; i < j; i++) {
 		libs[i].name[PE_STRING_LENGTH-1] = '\0';
@@ -616,8 +615,7 @@ int PE_(r_bin_pe_get_bits)(struct PE_(r_bin_pe_obj_t)* bin)
 	return bits;
 }
 
-int PE_(r_bin_pe_get_section_alignment)(struct PE_(r_bin_pe_obj_t)* bin)
-{
+int PE_(r_bin_pe_get_section_alignment)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return bin->nt_headers->optional_header.SectionAlignment;
 }
 
@@ -628,11 +626,11 @@ struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)
 	int i, sections_count = bin->nt_headers->file_header.NumberOfSections;
 
 	if ((sections = malloc((sections_count + 1) * sizeof(struct r_bin_pe_section_t))) == NULL) {
-		perror("malloc (sections)");
+		perror ("malloc (sections)");
 		return NULL;
 	}
 	for (i = 0; i < sections_count; i++) {
-		memcpy(sections[i].name, shdr[i].Name, PE_IMAGE_SIZEOF_SHORT_NAME);
+		memcpy (sections[i].name, shdr[i].Name, PE_IMAGE_SIZEOF_SHORT_NAME);
 		sections[i].name[PE_IMAGE_SIZEOF_SHORT_NAME-1] = '\0';
 		sections[i].rva = shdr[i].VirtualAddress;
 		sections[i].size = shdr[i].SizeOfRawData;

@@ -20,7 +20,9 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 	int i, matches = 0, ctr = 0;
 	RBinString *ptr = NULL;
 
-	for(i = from; i < to; i++) { 
+	if (to > arch->buf->length)
+		to = arch->buf->length;
+	for (i = from; i < to; i++) { 
 		if ((IS_PRINTABLE (arch->buf->buf[i])) && matches < R_BIN_SIZEOF_STRINGS-1) {
 			str[matches] = arch->buf->buf[i];
 			matches++;
