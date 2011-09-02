@@ -9,6 +9,7 @@
 
 extern RSyscallItem syscalls_openbsd_x86[];
 extern RSyscallItem syscalls_linux_sh[];
+extern RSyscallItem syscalls_linux_sparc[];
 extern RSyscallItem syscalls_netbsd_x86[];
 extern RSyscallItem syscalls_linux_x86[];
 extern RSyscallItem syscalls_linux_mips[];
@@ -61,6 +62,14 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
 			eprintf ("r_syscall_setup: Unknown arch '%s'\n", arch);
 			return R_FALSE;
 		}
+	} else
+	if (!strcmp (arch, "sparc")) {
+		if (!strcmp (os, "linux"))
+			ctx->sysptr = syscalls_linux_sparc;
+		else
+		if (!strcmp (os, "openbsd"))
+			ctx->sysptr = syscalls_linux_sparc; //XXX
+		else return R_FALSE;
 	} else
 	if (!strcmp (arch, "arm")) {
 		ctx->regs = fastcall_arm;

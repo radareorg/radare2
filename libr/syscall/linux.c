@@ -142,3 +142,48 @@ RSyscallItem syscalls_linux_mips[] = {
 	{ "exit_group", 4000+252, 252, 1},
 	{ NULL }
 };
+
+// TODO: needs to be implemented
+#if 0
+#define SP_TRAP_SOLARIS 0x88         /* Solaris System Call */
+#define SP_TRAP_NETBSD  0x89         /* NetBSD System Call */
+#define SP_TRAP_LINUX   0x90         /* Linux System Call */
+#define LINUX_32BIT_SYSCALL_TRAP 0x10 /* linux ok ?? -- http://www.48bits.com/papers/sparc_shellcodes.txt */
+#endif
+
+RSyscallItem syscalls_linux_sparc[] = {
+	{ "exit", 0x10, 1, 1, "i" },
+	{ "fork", 0x10, 2, 0, NULL },
+	{ "read", 0x10, 3, 3, "ipi" },
+	{ "write", 0x10, 4, 3, "izi" },
+	{ "open", 0x10, 5, 3, "zxx" },
+	{ "close", 0x10, 6, 1, "i" },
+	{ "waitpid", 0x10, 7, 3, "ipx"},
+	{ "creat", 0x10, 8, 2, "zx" },
+	{ "link", 0x10, 9, 2, "zz" },
+	{ "unlink", 0x10, 10, 1, "z" },
+	{ "execve", 0x10, 11, 3, "zzz" }, // XXX this is char**
+	{ "chdir", 0x10, 12, 1, "z" },
+	{ "getpid", 0x10, 20, 0, NULL},
+	{ "setuid", 0x10, 23, 1, "i" },
+	{ "getuid", 0x10, 24, 0, NULL },
+	{ "ptrace", 0x10, 26, 4 },
+	{ "utime", 0x10, 30, 2 },
+	{ "access", 0x10, 33, 2 },
+	{ "kill", 0x10, 37,2 },
+	{ "dup", 0x10, 41, 2 },
+	{ "brk", 0x10, 45, 1 },
+	{ "signal", 0x10, 48, 2 },
+	{ "ioctl", 0x10, 54, 3 },
+	{ "mmap", 0x10, 90, 6 },
+	{ "munmap", 0x10, 91, 1 },
+	{ "socketcall", 0x10, 102, 2 },
+	{ "sigreturn", 0x10, 119, 1 },
+	{ "clone", 0x10, 120, 4 },
+	{ "mprotect", 0x10, 125, 3},
+	{ "rt_sigaction", 0x10, 174, 3},
+	{ "rt_sigprocmask", 0x10, 175, 3},
+	{ "sysctl", 0x10, 149, 1 },
+	{ "mmap2", 0x10, 192, 6},
+	{ NULL }
+};
