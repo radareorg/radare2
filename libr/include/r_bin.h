@@ -269,6 +269,7 @@ R_API int r_bin_wr_rpath_del(RBin *bin);
 R_API int r_bin_wr_output(RBin *bin, const char *filename);
 
 /* plugin pointers */
+extern RBinPlugin r_bin_plugin_any;
 extern RBinPlugin r_bin_plugin_fs;
 extern RBinPlugin r_bin_plugin_elf;
 extern RBinPlugin r_bin_plugin_elf64;

@@ -88,7 +88,7 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 	arch->curplugin = NULL;
 	list_for_each (pos, &bin->bins) {
 		RBinPlugin *h = list_entry (pos, RBinPlugin, list);
-		if ((dummy && !strncmp (h->name, "dummy", 5)) || 
+		if ((dummy && !strncmp (h->name, "any", 5)) || 
 			(!dummy && (h->check && h->check (&bin->curarch)))) {
 			bin->curarch.curplugin = h;
 			break;

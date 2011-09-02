@@ -8,7 +8,7 @@ CFLAGS+=-L../../util -lr_util
 foo: all
 
 ALL_TARGETS=
-FORMATS=elf.mk elf64.mk pe.mk pe64.mk mach0.mk mach064.mk fatmach0.mk dyldcache.mk java.mk dex.mk fs.mk
+FORMATS=any.mk elf.mk elf64.mk pe.mk pe64.mk mach0.mk mach064.mk fatmach0.mk dyldcache.mk java.mk dex.mk fs.mk
 include $(FORMATS)
 
 all: ${ALL_TARGETS}
