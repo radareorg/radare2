@@ -6,6 +6,7 @@ LANG_C!
 LANG_CXX!
 CHKPRG VALABIND valabind
 CHKPRG SWIG swig
+CHKPRG GIRCOMPILER g-ir-compiler
 
 ARG_ENABLE DEVEL_MODE devel Enable development mode (use valabind and swig) ;
 ARG_WITH USERCC=gcc cc Define C compiler to use (gcc by default) ;
@@ -33,4 +34,4 @@ PKGCFG! FOO FOO r_core
 
 SUBDIRS ./config.mk ;
 
-REPORT PREFIX HAVE_SWIG HAVE_VALABIND DEVEL_MODE ;
+REPORT PREFIX HAVE_SWIG HAVE_VALABIND HAVE_GIRCOMPILER DEVEL_MODE ;

@@ -130,8 +130,8 @@ Fine tuning of the installation directories:
   --localstatedir=DIR    modifiable single-machine data [PREFIX/var]
   --libdir=DIR           object code libraries [EPREFIX/lib]
   --includedir=DIR       C header files [PREFIX/include]
-  --infodir=DIR          info documentation [DATADIR/info]
-  --mandir=DIR           man documentation [DATADIR/man]
+  --infodir=DIR          info documentation [PREFIX/info]
+  --mandir=DIR           man documentation [PREFIX/man]
 
 System types:
   --build=BUILD          configure for building on BUILD [guessed]
@@ -253,7 +253,7 @@ parse_options $1
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C CXX CXXFLAGS HAVE_LANG_CXX HAVE_VALABIND VALABIND HAVE_SWIG SWIG DEVEL_MODE USERCC USERCXX USEROSTYPE FOO HAVE_PKGCFG_R_CORE"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS LDFLAGS HAVE_LANG_C CXX CXXFLAGS HAVE_LANG_CXX HAVE_VALABIND VALABIND HAVE_SWIG SWIG HAVE_GIRCOMPILER GIRCOMPILER DEVEL_MODE USERCC USERCXX USEROSTYPE FOO HAVE_PKGCFG_R_CORE"
 
 create_environ
 
@@ -342,6 +342,26 @@ else
  HAVE_SWIG=0
  SWIG=swig
  echo no ; fi
+printf "checking for g-ir-compiler... "
+if [ -x "${GIRCOMPILER}" ]; then
+FIND=${GIRCOMPILER}
+else
+FIND=""
+for A in `echo ${PATH} | sed -e 's,:, ,g'`; do
+if [ -x "${A}/g-ir-compiler" ]; then
+        FIND="${A}/g-ir-compiler"
+        break;
+fi
+done
+fi
+if [ -n "${FIND}" ]; then 
+ echo ${FIND}; 
+ HAVE_GIRCOMPILER=1
+ GIRCOMPILER=${FIND}
+else
+ HAVE_GIRCOMPILER=0
+ GIRCOMPILER=g-ir-compiler
+ echo no ; fi
 if [ "$USEROSTYPE" = "auto" ]; then
 if [ "$HOST_OS" = "linux" ]; then
 USEROSTYPE="gnulinux"
@@ -414,7 +434,7 @@ done
 do_remove
 echo
 echo "Final report:"
-for A in  PREFIX HAVE_SWIG HAVE_VALABIND DEVEL_MODE ; do # REPORT
+for A in  PREFIX HAVE_SWIG HAVE_VALABIND HAVE_GIRCOMPILER DEVEL_MODE ; do # REPORT
 eval VAL="\$${A}"
 [ -z "${VAL}" ] && VAL="(null)"
 echo " - ${A} = ${VAL}"

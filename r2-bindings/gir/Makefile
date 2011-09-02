@@ -5,7 +5,7 @@ include ../libs.mk
 all: ${LIBS}
 
 ${LIBS}:
-ifeq ($(HAVE_VALABIND),1)
+ifeq ($(HAVE_VALABIND)$(HAVE_GIRCOMPILER),11)
 	@PKG=`echo $@|sed -e s,.gir,,` ; \
 	VAPI=`echo $@|sed -e s,.gir,.vapi,` ; \
 	DEPS="$$(cat ../vapi/$${PKG}.deps 2>/dev/null | awk '{print "--pkg "$$1}')" ; \
