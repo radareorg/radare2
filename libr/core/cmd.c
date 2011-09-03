@@ -1234,9 +1234,9 @@ static int cmd_help(void *data, const char *input) {
 				step = r_num_math (core->num, p2+1);
 			} else step = 1;
 			to = r_num_math (core->num, p+1);
-			for (;from<=to;from+=step)
+			for (;from<=to; from+=step)
 				r_cons_printf ("%"PFMT64d" ", from);
-			r_cons_newline();
+			r_cons_newline ();
 		}
 		}
 		break;
@@ -1322,13 +1322,14 @@ static int cmd_help(void *data, const char *input) {
 		" /[xmp/]           ; search for bytes, regexps, patterns, ..\n"
 		" ![cmd]            ; run given command as in system(3)\n"
 		" = [cmd]           ; run this command via rap://\n"
+		" (macro arg0 arg1) ; define scripting macros\n"
 		" #[algo] [len]     ; calculate hash checksum of current block\n"
 		" .[ file|!cmd|cmd|(macro)]  ; interpret as radare cmds\n"
-		" :command          ; list or execute a plugin command\n"
-		" (macro arg0 arg1) ; define scripting macros\n"
+		" :                 ; list all command plugins\n"
 		" q [ret]           ; quit program with a return value\n"
 		"Use '?""?""?' evaluation, special vars and scripting facilities\n"
 		"Append '?' to any char command to get detailed help\n"
+		"Prefix with number to repeat command N times (f.ex: 3x)\n"
 		"Suffix '@ addr[:bsize]' for a temporary seek and/or bsize\n"
 		"Suffix '@@ glob1 glob2i ..' space separated glob greps for flags to seek\n"
 		"Suffix '~string:linenumber[column]' to filter output\n"
@@ -2710,10 +2711,9 @@ static int cmd_anal(void *data, const char *input) {
 		" ad [from] [to]  ; Analyze data pointers to (from-to)\n"
 		" as [num]        ; Analyze syscall using dbg.reg\n"
 		" ao[e?] [len]    ; Analyze Opcodes (or emulate it)\n"
-		" ab[?+-l*]       ; Analyze Basic blocks\n"
-		" af[?+-l*]       ; Analyze Functions\n"
-		" ar[?d-l*]       ; Manage refs/xrefs\n"
-		" ag[?f]          ; Output Graphviz code\n"
+		" af[bcsl?+-*]    ; Analyze Functions\n"
+		" ar[?ld-*]       ; Manage refs/xrefs\n"
+		" ag[?acgdlf]     ; Output Graphviz code\n"
 		" at[trd+-*?] [.] ; Analyze execution Traces\n"
 		"Examples:\n"
 		" f ts @ `S*~text:0[3]`; f t @ section..text\n"
@@ -2875,7 +2875,7 @@ static int cmd_write(void *data, const char *input) {
 		str = str+1;
 		len = (len-1)<<1;
 		tmp = alloca (len);
-		for (i=0;i<len;i++) {
+		for (i=0; i<len; i++) {
 			if (i%2) tmp[i] = 0;
 			else tmp[i] = str[i>>1];
 		}
@@ -3295,7 +3295,7 @@ static int cmd_search(void *data, const char *input) {
 		char *res = r_str_lchr (inp+1, inp[0]);
 		char *opt = NULL;
 		if (res > inp) {
-			opt = strdup(res+1);
+			opt = strdup (res+1);
 			res[1]='\0';
 		}
 		r_search_reset (core->search, R_SEARCH_REGEXP);
@@ -4391,7 +4391,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		free (core->lastcmd);
 		core->lastcmd = strdup (cstr);
 	}
-	/* list cstr plugins */
+	/* list r_cmd plugins */
 	if (!strcmp (cstr, ":")) {
 		RListIter *iter = r_list_iterator (core->cmd->plist);
 		while (r_list_iter_next (iter)) {

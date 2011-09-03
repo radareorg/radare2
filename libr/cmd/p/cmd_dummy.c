@@ -13,6 +13,7 @@ static int call(void *user, const char *cmd) {
 
 struct r_cmd_plugin_t r_cmd_plugin_dummy = {
 	.name = "dummy",
+	.desc = "test plugin. use **dummy** to execute",
 	.call = call,
 };
 
