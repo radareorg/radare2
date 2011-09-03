@@ -12,6 +12,7 @@
 
 ====[[ 0.8.2 ]]====
 
+* Rename r_hashtable -> r_ht
 * Add 'S' subcommand to display section size and get by perms rwx
 * mach0pie
 * memset0 the op before calling the plugin analysis -- not really that's a performance cost..

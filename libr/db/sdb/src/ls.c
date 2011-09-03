@@ -1,0 +1,84 @@
+/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
+
+#include <string.h>
+#include "ls.h"
+
+R_API void ls_delete (SdbList *list, SdbListIter *iter) {
+	if (iter==NULL) {
+		printf ("ls_delete: null iter?\n");
+		return;
+	}
+list->free = free; // XXX HACK
+	ls_split_iter (list, iter);
+	if (list->free && iter->data) {
+		list->free (iter->data);
+		iter->data = NULL;
+	}
+	free (iter);
+}
+
+R_API SdbList *ls_new() {
+	SdbList *list = R_NEW (SdbList);
+	list->head = NULL;
+	list->tail = NULL;
+	list->free = NULL;
+	return list;
+}
+
+R_API void ls_split_iter (SdbList *list, SdbListIter *iter) {
+	if (list->head == iter) list->head = iter->n;
+	if (list->tail == iter) list->tail = iter->p;
+	if (iter->p) iter->p->n = iter->n;
+	if (iter->n) iter->n->p = iter->p;
+}
+
+R_API void ls_destroy (SdbList *list) {
+	SdbListIter *it;
+	if (list) {
+		it = list->head;
+		while (it) {
+			SdbListIter *next = it->n;
+			ls_delete (list, it);
+			it = next;
+		//	free (it);
+		}
+		list->head = list->tail = NULL;
+	}
+	//free (list);
+}
+
+R_API void ls_free (SdbList *list) {
+	list->free = NULL;
+	ls_destroy (list);
+	free (list);
+}
+
+// XXX: Too slow?
+R_API SdbListIter *ls_append(SdbList *list, void *data) {
+	SdbListIter *new = NULL;
+	if (data) {
+		new = R_NEW (SdbListIter);
+		if (list->tail)
+			list->tail->n = new;
+		new->data = data;
+		new->p = list->tail;
+		new->n = NULL;
+		list->tail = new;
+		if (list->head == NULL)
+			list->head = new;
+	}
+	return new;
+}
+
+R_API SdbListIter *ls_prepend(SdbList *list, void *data) {
+	SdbListIter *new = R_NEW (SdbListIter);
+	if (list->head)
+		list->head->p = new;
+	new->data = data;
+	new->n = list->head;
+	new->p = NULL;
+	list->head = new;
+	if (list->tail == NULL)
+		list->tail = new;
+	return new;
+}

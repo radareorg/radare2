@@ -12,7 +12,7 @@ ifneq ($(NAME),)
 ALL?=
 CFLAGS+=-I../include
 
-all: $(ALL)
+all: $(PRE) $(ALL)
 	@$(MAKE) real_all
 
 real_all: ${EXTRA_TARGETS} ${LIBSO} ${LIBAR}

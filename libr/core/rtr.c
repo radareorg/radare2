@@ -19,7 +19,7 @@ R_API void r_core_rtr_help(RCore *core) {
 }
 
 R_API void r_core_rtr_pushout(RCore *core, const char *input) {
-	int fd = atoi(input);
+	int fd = atoi (input);
 	const char *cmd = NULL;
 	char *str = NULL;
 	if (fd) {
@@ -90,7 +90,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		host = input;
 	}
 	while (*host&&iswhitechar(*host))
-		host = host + 1;
+		host++;
 
 	if (!(ptr = strchr (host, ':'))) {
 		eprintf ("Error: Port is not specified\n");
@@ -109,13 +109,13 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 
 	fd = r_socket_new (R_FALSE);
 	if (!fd) {
-		eprintf("Error: Cannot create new socket\n");
+		eprintf ("Error: Cannot create new socket\n");
 		return;
 	}
 	switch (proto) {
 	case RTR_PROT_RAP:
 		if (!r_socket_connect_tcp (fd, host, port)) { //TODO: Use rap.ssl
-			eprintf("Error: Cannot connect to '%s' (%s)\n", host, port);
+			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
 			return;
 		}
 		eprintf ("Connected to: %s at port %s\n", host, port);
@@ -193,11 +193,13 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 
 	if (input[0] >= '0' && input[0] <= '9') {
 		fd = r_num_math (core->num, input);
-		for (rtr_n = 0; rtr_host[rtr_n].fd->fd != fd && rtr_n < RTR_MAX_HOSTS; rtr_n++);
+		//for (rtr_n = 0; rtr_host[rtr_n].fd->fd != fd && rtr_n < RTR_MAX_HOSTS; rtr_n++);
 	}
 
 	for (;;) {
-		snprintf (prompt, sizeof (prompt), "fd:%d> ", rtr_host[rtr_n].fd->fd);
+		if (rtr_host[rtr_n].fd)
+			snprintf (prompt, sizeof (prompt),
+				"fd:%d> ", rtr_host[rtr_n].fd->fd);
 		r_line_singleton ()->prompt = prompt;
 		if ((r_cons_fgets (buf, sizeof (buf), 0, NULL))) {
 			if (*buf == 'q')
@@ -218,9 +220,11 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	int i, cmd_len, fd = atoi (input);
 
 	if (fd != 0) {
-		for (rtr_n = 0; rtr_host[rtr_n].fd->fd != fd && rtr_n < RTR_MAX_HOSTS; rtr_n++);
+		if (rtr_host[rtr_n].fd)
+			for (rtr_n = 0; rtr_host[rtr_n].fd->fd != fd
+				&& rtr_n < RTR_MAX_HOSTS; rtr_n++);
 		if (!(cmd = strchr (input, ' '))) {
-			eprintf("Error\n");
+			eprintf ("Error\n");
 			return;
 		}
 	} else cmd = input;
@@ -256,7 +260,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	}
 	cmd_output = malloc (cmd_len);
 	if (!cmd_output) {
-		eprintf("Error: Allocating cmd output\n");
+		eprintf ("Error: Allocating cmd output\n");
 		return;
 	}
 	r_socket_read (rtr_host[rtr_n].fd, (ut8*)cmd_output, cmd_len);

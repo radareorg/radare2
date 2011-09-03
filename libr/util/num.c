@@ -55,6 +55,7 @@ R_API RNum *r_num_new(RNumCallback cb, void *ptr) {
 	return num;
 }
 
+// TODO: try to avoid the use of sscanf
 /* old get_offset */
 R_API ut64 r_num_get(RNum *num, const char *str) {
 	int i, j;
@@ -78,6 +79,8 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	} else {
 		len = strlen (str);
 		lch = str[len>0?len-1:0];
+		if (*str=='0' && lch != 'b' && lch != 'h')
+			lch = 'o';
 		switch (lch) {
 		case 'h': // hexa
 			sscanf (str, "%"PFMT64x"", &ret);

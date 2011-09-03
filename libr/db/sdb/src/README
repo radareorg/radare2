@@ -1,0 +1,9 @@
+$ sdb test.db user=foo pass=bar
+$ sdb test.db user
+foo
+$ sdb test.db user=jiji
+$ sdb test.db user
+jiji
+$ sdb test.db
+user=foo
+pass=bar

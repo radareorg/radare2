@@ -263,6 +263,7 @@ R_API char *r_str_ichr(char *str, char chr) {
 	return str;
 }
 
+// find last char
 R_API char *r_str_lchr(char *str, char chr) {
 	int len = strlen (str)+1;
 	for (;len>=0;len--)

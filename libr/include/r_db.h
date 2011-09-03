@@ -1,4 +1,16 @@
+#ifndef _INCLUDE_DB_R_
+#define _INCLUDE_DB_R_
+
 #include "r_types.h"
+#include "r_util.h"
+
+// TODO: add support for network. (udp). memcache, with hooks
+typedef struct r_pair_t {
+	char *dir;
+	RHashTable *ht;
+	RList *dbs;
+} RPair;
+
 #define R_DB_KEYS 256
 
 typedef struct r_db_block_t {
@@ -7,7 +19,7 @@ typedef struct r_db_block_t {
 } RDatabaseBlock;
 
 #define R_DB_INDEXOF(type, member) \
-  (int)((type *)((unsigned long)(&((type *)0)->member)))
+  (int)((size_t)((&((type *)0)->member)))
 
 typedef struct r_db_t {
 	int id_min;
@@ -52,6 +64,7 @@ R_API int r_db_add_id(struct r_db_t *db, int off, int size);
 R_API int r_db_add(struct r_db_t *db, void *b);
 R_API int r_db_add_unique(struct r_db_t *db, void *b);
 R_API void **r_db_get(struct r_db_t *db, int key, const ut8 *b);
+R_API void *r_db_get_cur(void **ptr);
 R_API int r_db_delete(struct r_db_t *db, const void *b);
 R_API void **r_db_get_next(void **ptr);
 R_API struct r_db_iter_t *r_db_iter(struct r_db_t *db, int key, const ut8 *b);
@@ -63,4 +76,6 @@ R_API struct r_db_iter_t *r_db_iter_free(struct r_db_iter_t *iter);
 R_API int r_db_free(struct r_db_t *db);
 R_API int r_db_push(struct r_db_t *db, const ut8 *b);
 R_API ut8 *r_db_pop(struct r_db_t *db);
+#endif
+
 #endif

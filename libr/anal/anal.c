@@ -171,12 +171,13 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 	RAnalBlock *bbi;
 	RAnalFcn *fcni;
 	RListIter *iter, *iter2;
-	VERBOSE_ANAL eprintf("bbtraced\n"); // XXX Debug msg
-	r_list_foreach (anal->fcns, iter, fcni)
+	VERBOSE_ANAL eprintf ("bbtraced\n"); // XXX Debug msg
+	r_list_foreach (anal->fcns, iter, fcni) {
 		r_list_foreach (fcni->bbs, iter2, bbi) {
 			if (addr>=bbi->addr && addr<(bbi->addr+bbi->size)) {
 				bbi->traced = R_TRUE;
 				break;
 			}
 		}
+	}
 }

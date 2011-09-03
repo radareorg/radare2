@@ -125,7 +125,7 @@ R_API void **r_db_get_next(void **ptr) {
 }
 
 /* TODO: MOVE AS DEFINE IN r_db.h */
-R_API void **r_db_get_cur(void **ptr) {
+R_API void *r_db_get_cur(void **ptr) {
 	return ptr[0];
 }
 

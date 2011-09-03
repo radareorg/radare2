@@ -306,6 +306,11 @@ typedef struct r_anal_fcn_t {
 	RList *xrefs;
 } RAnalFcn;
 
+typedef struct r_anal_fcn_store_t {
+	RHashTable64 *h;
+	RList *l;
+} RAnalFcnStore;
+
 typedef struct r_anal_var_access_t {
 	ut64 addr;
 	int set;
