@@ -443,74 +443,100 @@ struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin
 	return symbols;
 }
 
-static void MACH0_(r_bin_mach0_parse_import)(struct MACH0_(r_bin_mach0_obj_t)* bin, struct r_bin_mach0_import_t *import, int idx, int lazy) {
+static int MACH0_(r_bin_mach0_parse_import_stub)(struct MACH0_(r_bin_mach0_obj_t)* bin, struct r_bin_mach0_import_t *import, int idx) {
 	char sectname[17];
-	int i, j, sym, nsyms, wordsize, stridx;
+	int i, j, nsyms, stridx;
 	const char *symstr;
 
 	import->offset = 0LL;
 	import->addr = 0LL;
 	import->name[0] = '\0';
-	if (lazy) {
-		for (i = 0; i < bin->nsects; i++) {
-			sectname[16] = '\0';
-			memcpy(sectname, bin->sects[i].sectname, 16);
-			if ((bin->sects[i].flags & SECTION_TYPE) == S_SYMBOL_STUBS &&
-				bin->sects[i].reserved1 >= 0 && bin->sects[i].reserved2 > 0) {
-				nsyms = (int)(bin->sects[i].size / bin->sects[i].reserved2);
-				for (j = 0; j < nsyms; j++) {
-					if (bin->sects[i].reserved1 + j >= bin->nindirectsyms)
-						continue;
-					if (idx != bin->indirectsyms[bin->sects[i].reserved1 + j])
-						continue;
-					import->type = R_BIN_MACH0_IMPORT_TYPE_FUNC;
-					import->offset = bin->sects[i].offset + j * bin->sects[i].reserved2;
-					import->addr = bin->sects[i].addr + j * bin->sects[i].reserved2;
-					snprintf (import->name, R_BIN_MACH0_STRING_LENGTH, "%s:%s",
-							sectname, (char*)bin->symstr+bin->symtab[idx].n_un.n_strx);
-				}
-				break;
-			}
-		}
-	} else {
-		wordsize = (int)(MACH0_(r_bin_mach0_get_bits)(bin)/8);
-		for (i = 0; i < bin->nsects; i++) {
-			sectname[16] = '\0';
-			memcpy(sectname, bin->sects[i].sectname, 16);
-			if ((bin->sects[i].flags & SECTION_TYPE) == S_NON_LAZY_SYMBOL_POINTERS &&
-				bin->sects[i].reserved1 >= 0) {
-				for (j=0, sym=-1; bin->sects[i].reserved1+j < bin->nindirectsyms; j++)
-					if (idx == bin->indirectsyms[bin->sects[i].reserved1 + j]) {
-						sym = j;
-						break;
-					}
-				import->type = R_BIN_MACH0_IMPORT_TYPE_OBJECT;
-				import->offset = sym == -1 ? 0 : bin->sects[i].offset + sym * wordsize;
-				import->addr = sym == -1 ? 0 : bin->sects[i].addr + sym * wordsize;
+	for (i = 0; i < bin->nsects; i++) {
+		sectname[16] = '\0';
+		memcpy(sectname, bin->sects[i].sectname, 16);
+		if ((bin->sects[i].flags & SECTION_TYPE) == S_SYMBOL_STUBS &&
+			bin->sects[i].reserved1 >= 0 && bin->sects[i].reserved2 > 0) {
+			nsyms = (int)(bin->sects[i].size / bin->sects[i].reserved2);
+			for (j = 0; j < nsyms; j++) {
+				if (bin->sects[i].reserved1 + j >= bin->nindirectsyms)
+					continue;
+				if (idx != bin->indirectsyms[bin->sects[i].reserved1 + j])
+					continue;
+				import->type = R_BIN_MACH0_IMPORT_TYPE_FUNC;
+				import->offset = bin->sects[i].offset + j * bin->sects[i].reserved2;
+				import->addr = bin->sects[i].addr + j * bin->sects[i].reserved2;
 				stridx = bin->symtab[idx].n_un.n_strx;
 				if (stridx>=0 && stridx<bin->symstrlen)
 					symstr = (char *)bin->symstr+stridx;
 				else symstr = "???";
 				snprintf (import->name, R_BIN_MACH0_STRING_LENGTH, "%s:%s",
-						sym == -1 ? "" : sectname, symstr);
-				break;
+						sectname, symstr);
+				return R_TRUE;
 			}
 		}
 	}
+	return R_FALSE;
+}
+
+static int MACH0_(r_bin_mach0_parse_import_ptr)(struct MACH0_(r_bin_mach0_obj_t)* bin, struct r_bin_mach0_import_t *import, int idx, int lazy) {
+	char sectname[17];
+	int i, j, sym, wordsize, stridx;
+	ut32 stype;
+	const char *symstr;
+
+	import->offset = 0LL;
+	import->addr = 0LL;
+	import->name[0] = '\0';
+	wordsize = (int)(MACH0_(r_bin_mach0_get_bits)(bin)/8);
+	if (lazy)
+		stype = S_LAZY_SYMBOL_POINTERS;
+	else stype = S_NON_LAZY_SYMBOL_POINTERS;
+	for (i = 0; i < bin->nsects; i++) {
+		sectname[16] = '\0';
+		memcpy(sectname, bin->sects[i].sectname, 16);
+		if ((bin->sects[i].flags & SECTION_TYPE) == stype &&
+			bin->sects[i].reserved1 >= 0) {
+			for (j=0, sym=-1; bin->sects[i].reserved1+j < bin->nindirectsyms; j++)
+				if (idx == bin->indirectsyms[bin->sects[i].reserved1 + j]) {
+					sym = j;
+					break;
+				}
+			import->type = R_BIN_MACH0_IMPORT_TYPE_OBJECT;
+			import->offset = sym == -1 ? 0 : bin->sects[i].offset + sym * wordsize;
+			import->addr = sym == -1 ? 0 : bin->sects[i].addr + sym * wordsize;
+			stridx = bin->symtab[idx].n_un.n_strx;
+			if (stridx>=0 && stridx<bin->symstrlen)
+				symstr = (char *)bin->symstr+stridx;
+			else symstr = "???";
+			snprintf (import->name, R_BIN_MACH0_STRING_LENGTH, "%s:%s",
+					sym == -1 ? "" : sectname, symstr);
+			return R_TRUE;
+		} 
+	}
+	return R_FALSE;
 }
 
 struct r_bin_mach0_import_t* MACH0_(r_bin_mach0_get_imports)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	struct r_bin_mach0_import_t *imports;
-	int i, j;
+	int i, j, ret;
 
 	if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms)
 		return NULL;
-	if (!(imports = malloc((bin->dysymtab.nundefsym + 1) * sizeof(struct r_bin_mach0_import_t))))
+	/* It's necessary to alloc nundefsym*2 because each import has stub+ptr */
+	if (!(imports = malloc((bin->dysymtab.nundefsym * 2 + 1) * sizeof(struct r_bin_mach0_import_t))))
 		return NULL;
-	for (i = 0, j = bin->dysymtab.iundefsym; i < bin->dysymtab.nundefsym; i++, j++) {
-		MACH0_(r_bin_mach0_parse_import)(bin, &imports[i], j,
+	for (i = 0, j = bin->dysymtab.iundefsym; j < bin->dysymtab.iundefsym + bin->dysymtab.nundefsym; j++) {
+		ret = MACH0_(r_bin_mach0_parse_import_stub)(bin, &imports[i], j);
+		if (ret) {
+			imports[i].last = 0;
+			i = i + 1;
+		}
+		ret = MACH0_(r_bin_mach0_parse_import_ptr)(bin, &imports[i], j,
 				((bin->symtab[j].n_desc & REFERENCE_TYPE) == REFERENCE_FLAG_UNDEFINED_LAZY));
-		imports[i].last = 0;
+		if (ret) {
+			imports[i].last = 0;
+			i = i + 1;
+		}
 	}
 	imports[i].last = 1;
 	return imports;
