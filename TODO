@@ -3,25 +3,34 @@
   |    <  V  . |  . V  .   <   _/ .-' _/|  ()  |
   |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
-0.8.2
-=====
+====[[ 0.9 ]]====
+
+* Test r_search_delta()
+* libmagic internal :? -- find a decent implementation and adopt it
+
+------8<-------------------8<--------------------8<-----------------8<----------
+
+====[[ 0.8.2 ]]====
+
+* Add 'S' subcommand to display section size and get by perms rwx
+* mach0pie
+* memset0 the op before calling the plugin analysis -- not really that's a performance cost..
+* Handle ^C as an alias for '.' command
 * search.kwidx must be search.lastidx or search.idx ?
 * Make ht64.c include ht.c
 * add support for sockets in rarun2
-* libmagic internal :? -- find a decent implementation and adopt it
-* shell encoder
-  - get x86-64 one from twitter
-* mach0 for osx64
+* shell encoder - get x86-64 one from twitter
+* RBinCreate:
+  - mach0 create for osx64 and darwin-arm
+  - elf create for linux-ARM
 * pZ and p= are just silly or broken wtf sftu .. they need love
+
+BOTTLENECKS:
+============
 * r_anal_find_fcn() is O(N). should be O(1)
   - var r = RHashTable<RList>()
     var l = r.add ("0x8048000-0x8049000", new RList ())
     l.append (ReferenceTo (fcn)
-* search for antidebug/disasm tricks opcodes
-  - allows to find interesting points to analyze
-
-BOTTLENECKS:
-============
 * rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
 * Add -f/-t in rahash2 to define ranges
   - Add support for large files in rahash2
@@ -35,10 +44,6 @@ OSX
 * Proper support for MACH-O binaries
   - rabin2 -f works? i think its used with '-a' 
   - I think symbols are not correct .. (offset+disk)
-
-====[[ 0.9 ]]====
-* Test r_search_delta()
-* Support for proper analyze of TinyPE binaries
 
 
 TODO
@@ -58,13 +63,12 @@ TODO
   }
   r_list_commit (b);
 
- -- TODO
 * Tracing support for the debugger
+  - "e cmd.trace=dr=;.dr*;pd 2@eip"
+  - dca sym.main imp.printf
 * If [0-9] keybindings in visual point to same address use same reference
 
- -- BUGS to be fixed
 * Handle ^C in searches (at least)
-* Analyze this opcode: ff2518130000     jmp qword [rip+0x1318]
 
  -- refactoring tasks
 * Make r_io happy with RList
@@ -75,8 +79,6 @@ TODO
 * REFACTORING of disasm loop XDDDDD -1 (r2-0.9 plzz)
   - arch dependent anal code must be removed from disasm loop +1
 
-
-------8<-------------------8<--------------------8<-----------------8<----------
 
 
 To wipe:
@@ -93,9 +95,13 @@ pancake
 * if console width > X place comments there (ash)
 * Implement BLOCK in r_core_sysenv_begin|end ()
 * Fix iterators for r_macro (test only?)
+  - search for antidebug/disasm tricks opcodes
+    - allows to find interesting points to analyze
 
 nibble
 ------
+* Analyze this opcode: ff2518130000     jmp qword [rip+0x1318]
+* Support for proper analyze of TinyPE binaries
 * Do not show XREF info if in the same function?
 * r_anal
   - Code analysis (detect when an argument is a flagmask or
@@ -280,21 +286,12 @@ Questions
 * Only use uppercase KMG for Kilo,Mega,Giga in r_num? - 'g' is for double
 * radare2.c:217 . find name for maxfilesize to hash
 * r_list_foreach_prev is buggy, review and remove..
-* make symstall in swig/ ?
+* make symstall in r2-bindings/ ?
 * What about rsc2 ? deprecate, maintain? cleanup from 1? build? install?
 * Add deltified offset in PC? +10, +30 ... asm.reladdr
 * regio not implemented // it is really necessary? imho no..
 * distribute 'spp' with 'rarc2' ? imho no
 
-
-Bindings
-========
-* generate accessors from valaswig ? why?
-* Script plugins
- - We should enable r_lib to implement plugins in any
-   scripting language, so we can for example prepare
-   a .c stub interface for python/perl/ruby/..
-   - this requires a swig bridge
 
 Refactoring
 ===========
@@ -320,7 +317,6 @@ Refactoring
  
 Future
 ======
-* memset0 the op before calling the plugin analysis -- not really that's a performance cost..
 * r_file_slurp should work fine for big files (not prio) r_file_slurp_buf?
   - mmap if supported - add r_file_mmap ?  - read file in blocks instead of the whole file in a single syscall
 * Realign flags when using project in debug mode

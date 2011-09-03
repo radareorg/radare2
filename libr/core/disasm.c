@@ -479,6 +479,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			r_anal_cc_reset (&cc);
 		}
 
+		if (core->visual)
 		switch (analop.type) {
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:

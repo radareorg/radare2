@@ -1506,11 +1506,13 @@ static int cmd_info(void *data, const char *input) {
 	case 'e':
 	case 'S':
 	case 'z':
-		snprintf (buf, sizeof (buf), "rabin2 -%c%s%s '%s'", *input,
-			input[1]=='*'? "r": "", core->io->va? "v": "", core->file->filename);
-		out = r_sys_cmd_str (buf, NULL, 0);
-		if (out && *out)
-			r_cons_strcat (out);
+		if (core->file) {
+			snprintf (buf, sizeof (buf), "rabin2 -%c%s%s '%s'", *input,
+				input[1]=='*'? "r": "", core->io->va? "v": "", core->file->filename);
+			out = r_sys_cmd_str (buf, NULL, 0);
+			if (out && *out)
+				r_cons_strcat (out);
+		}
 		break;
 	case 'a':
 		if (input[1]=='*') {
@@ -4768,6 +4770,7 @@ static int cmd_debug(void *data, const char *input) {
 				" dc?              show this help\n"
 				" dc               continue execution of all childs\n"
 				" dcf              continue until fork (TODO)\n"
+				" dca [sym] [sym]. continue at every hit on any given symbol\n"
 				" dct [len]        traptrace from curseek to len, no argument to list\n"
 				" dcu [addr]       continue until address\n"
 				" dcu [addr] [end] continue until given address range\n"
@@ -4781,6 +4784,9 @@ static int cmd_debug(void *data, const char *input) {
 				"TODO: dcu/dcr needs dbg.untilover=true??\n"
 				"TODO: same for only user/libs side, to avoid steping into libs\n"
 				"TODO: support for threads?\n");
+			break;
+		case 'a':
+			eprintf ("TODO: dca\n");
 			break;
 		case 'c':
 			r_reg_arena_swap (core->dbg->reg, R_TRUE);

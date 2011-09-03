@@ -14,18 +14,37 @@ static int cmpaddr (void *_a, void *_b) {
 	return (a->vaddr > b->vaddr);
 }
 
+R_API RIOSection *r_io_section_get_name(RIO *io, const char *name) {
+	RListIter *iter;
+	RIOSection *s;
+	r_list_foreach (io->sections, iter, s) {
+		if (!strcmp (name, s->name))
+			return s;
+	}
+	return NULL;
+}
+
 R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name) {
-	RIOSection *s = R_NEW (RIOSection);
+	int update = 0;
+	RIOSection *s = r_io_section_get_name (io, name);
+	if (s == NULL)
+		s = R_NEW (RIOSection);
+	else update = 1;
 	s->offset = offset;
 	s->id = io->next_section_id++;
 	s->vaddr = vaddr;
 	s->size = size;
 	s->vsize = vsize;
 	s->rwx = rwx;
-	if (name) strncpy (s->name, name, sizeof (s->name));
-	else *s->name = '\0';
-	r_list_append (io->sections, s);
-	r_list_sort (io->sections, cmpaddr);
+	if (!update) {
+		if (name) strncpy (s->name, name, sizeof (s->name));
+		else *s->name = '\0';
+		//r_list_append (io->sections, s);
+		r_list_add_sorted (io->sections, s, cmpaddr);
+	} else {
+		// This is a bottleneck.. the sorting must be done at append time
+		r_list_sort (io->sections, cmpaddr);
+	}
 }
 
 R_API RIOSection *r_io_section_get_i(RIO *io, int idx) {

@@ -50,6 +50,8 @@ static int config_iova_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->io->va = node->i_value;
+	// reload symbol information
+	r_core_cmd0 (core, ".ia*");
 	return R_TRUE;
 }
 
