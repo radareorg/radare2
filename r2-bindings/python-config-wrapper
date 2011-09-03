@@ -17,7 +17,7 @@ PCS="${PYTHON_CONFIG}
 PYCFG=""
 
 for a in ${PCS} ; do
-	$a --help 2>/dev/null
+	$a --help >/dev/null 2>&1
 	if [ $? = 0 ]; then
 		PYCFG=$a
 		break

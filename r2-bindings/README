@@ -1,3 +1,96 @@
+
+   ===============
+  =               =
+  =  R2-Bindings  =  Language bindings for r2 api
+  =               =
+   ===============   --pancake
+
+
+
+Description
+===========
+
+This directory contains the code necessary to use the r2 api from your
+favourite language.
+
+It supports a large list of programming languages:
+
+  - Vala, Genie, Java, Go, Python, Ruby, Perl, LUA, NewLisp, Guile
+
+And some other experimental bindings are for:
+
+  - V8Gear, GIR, C++
+
+This package also contains the vdoc/ subdirectory which contains the
+rules used to generate all interactive html documentation found at:
+
+   http://radare.org/vdoc
+
+
+Dependencies
+============
+
+To build r2-bindings from repositoryyou need the following programs installed:
+
+  * swig: enables support for python, perl, lua, java and many other
+  * vala: if you want to have Vala or Genie bindings
+  * valabind: required only in developer mode (not release tarball)
+
+Release tarballs come with all the pregenerated .cxx files, so you have
+no extra dependencies apart from the language libraries and C++ compiler.
+
+To get install all dependencies do the following steps in order:
+
+  * Install swig and mercurial from repository
+    (ensure you don't have vala installed from package)
+
+       arch$ sudo pacman -S swig mercurial git
+       deb$ sudo apt-get install swig mercurial
+
+  * Install latest release of Vala from tarball
+
+      http://live.gnome.org/Vala
+
+      ./configure --prefix=/usr
+      make
+      sudo make install
+  
+  * Clone vala compiler from git repository:
+
+      $ git clone git://git.gnome.org/vala
+      $ cd vala
+      $ sh autogen.sh --prefix=/usr
+      $ make
+      $ sudo make install
+
+  * Fetch valabind from the repository:
+ 
+      $ hg clone http://hg.youterm.com/valabind
+      $ cd valabind
+      $ make
+      $ sudo make install PREFIX=/usr
+
+
+To keep bindings up-to-date
+===========================
+
+When changes are done in libr an ABI break can occur. The bindings will require
+to be recompiled to work again.
+
+It's recommendable to keep your system always up to date, and upgrade vala
+and valabind from git/hg.
+
+   $ cd vala
+   $ git pull
+   $ make
+   $ sudo make install
+
+   $ cd ../valabind
+   $ hg pull -u
+   $ make
+   $ sudo make install PREFIX=/usr
+
+
 r2-bindings
 ===========
 
@@ -7,11 +100,24 @@ If you compile from the repo you need valabind and pass the --enable-devel
 
 You can select the languages you want to compile with --enable={list-of-langs}
 
-  ../configure --prefix=/usr --enable-devel --enable=python
+  ./configure --prefix=/usr --enable-devel --enable=python
 
 
-NOTES
-=====
+PYTHON
+======
+
+To select the version of python to compile for use the PYTHON_CONFIG
+environment variable as follows:
+
+  $ ./configure --prefix=/usr --enable-devel
+  $ cd python
+  $ PYTHON_CONFIG=python2.7-config make
+  $ su -
+  # PYTHON_CONFIG=python2.7-config make install
+
+
+RANDOM NOTES
+===========
 
 The valabind integration forces us to do some changes in the r2 API.
 
