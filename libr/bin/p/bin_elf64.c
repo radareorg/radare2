@@ -62,14 +62,14 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	Q (-1); // p_filesz
 	p_fs2 = buf->length;
 	Q (-1); // p_memsz
-	Q (0x1000); // p_align
+	Q (0x200000); // p_align
 
 	/* Calc fields */
 	ehdrsz = p_phdr;
 	phdrsz = buf->length - p_phdr;
 	code_pa = buf->length;
 	code_va = code_pa + baddr;
-	phoff = p_phdr; //0x34
+	phoff = p_phdr;
 	filesize = code_pa + codelen + datalen;
 
 	/* Write fields */
@@ -80,10 +80,8 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	W (p_fs, &filesize, 8);
 	W (p_fs2, &filesize, 8);
 
-	code_va = baddr; // hack
-	W (p_vaddr, &code_va, 8);
-	code_pa = baddr; // hack
-	W (p_paddr, &code_pa, 8);
+	W (p_vaddr, &baddr, 8);
+	W (p_paddr, &baddr, 8);
 
 	/* Append code */
 	B (code, codelen);
