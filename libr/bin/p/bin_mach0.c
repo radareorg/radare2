@@ -150,9 +150,9 @@ static RBinInfo* info(RBinArch *arch) {
 	char *str;
 	RBinInfo *ret = NULL;
 
-	if((ret = R_NEW (RBinInfo)) == NULL)
+	if ((ret = R_NEW (RBinInfo)) == NULL)
 		return NULL;
-	memset(ret, '\0', sizeof (RBinInfo));
+	memset (ret, '\0', sizeof (RBinInfo));
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
 	if ((str = MACH0_(r_bin_mach0_get_class) (arch->bin_obj))) {
@@ -161,8 +161,8 @@ static RBinInfo* info(RBinArch *arch) {
 	}
 	strncpy(ret->rclass, "mach0", R_BIN_SIZEOF_STRINGS);
 	/* TODO get os*/
-	strncpy(ret->os, "macos", R_BIN_SIZEOF_STRINGS);
-	strncpy(ret->subsystem, "macos", R_BIN_SIZEOF_STRINGS);
+	strncpy (ret->os, "darwin", R_BIN_SIZEOF_STRINGS);
+	strncpy (ret->subsystem, "darwin", R_BIN_SIZEOF_STRINGS);
 	if ((str = MACH0_(r_bin_mach0_get_cputype) (arch->bin_obj))) {
 		strncpy (ret->arch, str, R_BIN_SIZEOF_STRINGS);
 		free (str);

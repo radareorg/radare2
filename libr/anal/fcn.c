@@ -265,7 +265,7 @@ R_API int r_anal_fcn_overlap_bb(RAnalFcn *fcn, RAnalBlock *bb) {
 			bb->jump = bbi->addr;
 			bb->fail = -1;
 			bb->conditional = R_FALSE;
-			if (bbi->type&R_ANAL_BB_TYPE_HEAD) {
+			if (bbi->type & R_ANAL_BB_TYPE_HEAD) {
 				bb->type = R_ANAL_BB_TYPE_HEAD;
 				bbi->type = bbi->type^R_ANAL_BB_TYPE_HEAD;
 			} else bb->type = R_ANAL_BB_TYPE_BODY;

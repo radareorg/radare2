@@ -5,6 +5,7 @@ F+= linux-arm-32
 F+= linux-mips-32
 F+= linux-sparc-32
 F+= darwin-x86-32
+F+= darwin-x86-64
 F+= netbsd-x86-32
 F+= freebsd-x86-32
 F+= openbsd-x86-32
@@ -34,13 +35,13 @@ linux-x86-32.sdb:
 	${MAKE}
 
 install: linux-x86-32.sdb
-	mkdir -p ${PREFIX}/lib/radare2/syscall
-	cp -f *.sdb ${PREFIX}/lib/radare2/syscall
+	mkdir -p ${DESTDIR}${PREFIX}/lib/radare2/syscall
+	cp -f *.sdb ${DESTDIR}${PREFIX}/lib/radare2/syscall
 
 CWD=$(shell pwd)
 symstall install-symlink: linux-x86-32.sdb
-	mkdir -p ${PREFIX}/lib/radare2/syscall
-	for a in *.sdb ; do ln -fs ${CWD}/$$a ${PREFIX}/lib/radare2/syscall/$$a ; done
+	mkdir -p ${DESTDIR}${PREFIX}/lib/radare2/syscall
+	for a in *.sdb ; do ln -fs ${CWD}/$$a ${DESTDIR}${PREFIX}/lib/radare2/syscall/$$a ; done
 
 uninstall:
 	rm -rf ${PREFIX}/lib/radare2/syscall

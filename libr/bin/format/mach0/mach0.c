@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010 nibble at develsec.org */
+/* radare - LGPL - Copyright 2010-2011 nibble at develsec.org */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -323,24 +323,24 @@ void* MACH0_(r_bin_mach0_free)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	if (!bin)
 		return NULL;
 	if (bin->segs)
-		free(bin->segs);
+		free (bin->segs);
 	if (bin->sects)
-		free(bin->sects);
+		free (bin->sects);
 	if (bin->symtab)
-		free(bin->symtab);
+		free (bin->symtab);
 	if (bin->symstr)
-		free(bin->symstr);
+		free (bin->symstr);
 	if (bin->indirectsyms)
 		free (bin->indirectsyms);
 	if (bin->toc)
-		free(bin->toc);
+		free (bin->toc);
 	if (bin->modtab)
-		free(bin->modtab);
+		free (bin->modtab);
 	if (bin->libs)
 		free (bin->libs);
 	if (bin->b)
-		r_buf_free(bin->b);
-	free(bin);
+		r_buf_free (bin->b);
+	free (bin);
 	return NULL;
 }
 
