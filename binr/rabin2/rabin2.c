@@ -17,23 +17,24 @@
 #include <r_flags.h>
 #include <r_util.h>
 
-#define ACTION_UNK       0x0000
-#define ACTION_ENTRIES   0x0001
-#define ACTION_IMPORTS   0x0002
-#define ACTION_SYMBOLS   0x0004
-#define ACTION_SECTIONS  0x0008
-#define ACTION_INFO      0x0010
-#define ACTION_OPERATION 0x0020
-#define ACTION_HELP      0x0040
-#define ACTION_STRINGS   0x0080
-#define ACTION_FIELDS    0x0100
-#define ACTION_LIBS      0x0200
-#define ACTION_SRCLINE   0x0400
-#define ACTION_MAIN      0x0800
-#define ACTION_EXTRACT   0x1000
-#define ACTION_RELOCS    0x2000
-#define ACTION_LISTARCHS 0x4000
-#define ACTION_CREATE    0x8000
+#define ACTION_UNK       0x00000
+#define ACTION_ENTRIES   0x00001
+#define ACTION_IMPORTS   0x00002
+#define ACTION_SYMBOLS   0x00004
+#define ACTION_SECTIONS  0x00008
+#define ACTION_INFO      0x00010
+#define ACTION_OPERATION 0x00020
+#define ACTION_HELP      0x00040
+#define ACTION_STRINGS   0x00080
+#define ACTION_FIELDS    0x00100
+#define ACTION_LIBS      0x00200
+#define ACTION_SRCLINE   0x00400
+#define ACTION_MAIN      0x00800
+#define ACTION_EXTRACT   0x01000
+#define ACTION_RELOCS    0x02000
+#define ACTION_LISTARCHS 0x04000
+#define ACTION_CREATE    0x08000
+#define ACTION_PATCH     0x10000
 
 static struct r_lib_t *l;
 static struct r_bin_t *bin = NULL;
@@ -46,6 +47,92 @@ static char* output = "out";
 static char* create = NULL;
 static ut64 at = 0LL;
 static char *name = NULL;
+static char *patch = NULL;
+
+#include <r_core.h>
+static int rabin_patch (const char *file, const char *patch) {
+	char *p, *p2, *q, str[200];
+	ut64 noff;
+	RCore *core;
+	FILE *fd;
+	fd = fopen (patch, "r");
+	if (fd==NULL) {
+		eprintf ("Cannot open patch file\n");
+		return 1;
+	}
+
+	core = r_core_new ();
+	r_core_file_open (core, file, 2, 0LL);
+	//r_core_cmdf (core, ".!rabin2 -revSIsi %s", file);
+	r_core_cmd0 (core, ".ia*");
+	r_cons_flush ();
+
+	while (!feof (fd)) {
+		fgets (str, sizeof (str), fd);
+		if (*str=='#' || *str=='\n' || *str=='\r')
+			continue;
+		if (*str=='.' || *str=='!') {
+			r_core_cmd0 (core, str);
+			continue;
+		}
+		p = strchr (str+1, ' ');
+		if (p) {
+			*p=0;
+			for (++p;*p==' ';p++);
+			switch (*p) {
+			case '{': {
+				FILE *fw = fopen ("out.rarc", "w");
+				char *off = strdup (str);
+				while (!feof (fd)) {
+					fgets (str, sizeof (str), fd);
+// TODO: replace ${..}
+					if (*str=='}')
+						break;
+					if ((q=strstr (str, "${"))) {
+						char *end = strchr (q+2,'}');
+						if (end) {
+							*q = *end = 0;
+							noff = r_num_math (core->num, q+2);
+							fwrite (str, strlen (str), 1, fw);
+							fprintf (fw, "0x%08llx", noff);
+							fwrite (end+1, strlen (end+1), 1, fw);
+						}
+					} else fwrite (str, strlen (str), 1, fw);
+				}
+				fclose (fw);
+#if 0
+// XXX: use API here
+#endif
+				r_sys_cmd ("rarc2 < out.rarc > out.rasm");
+				
+				noff = r_num_math (core->num, off);
+				r_sys_cmdf ( "rasm2 -o 0x%llx -a x86.olly "
+					"-f out.rasm | tee out.hex", noff);
+				r_core_cmdf (core, "s %s", off);
+				r_core_cmd0 (core, "wF out.hex");
+				free (off);
+				}
+				break;
+			case '"':
+				p2 = strchr (p+1,'"');
+				if (p2) *p2=0;
+				r_core_cmdf (core, "s %s", str);
+				r_core_cmdf (core, "\" %s\"", p+1);
+				break;
+			case ':':
+				r_core_cmdf (core, "s %s", str);
+				r_core_cmdf (core, "wa %s", p);
+				break;
+			default:
+				r_core_cmdf (core, "s %s", str);
+				r_core_cmdf (core, "wx %s", p);
+				break;
+			}
+		}
+	}
+	fclose (fd);
+	return 0;
+}
 
 static int rabin_show_help() {
 	printf ("rabin2 [options] [file]\n"
@@ -53,6 +140,7 @@ static int rabin_show_help() {
 		" -a [arch_bits]  set arch\n"
 		" -b [addr]       override baddr\n"
 		" -c [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
+		" -p [patchfile]  patch file (see man rabin2)\n"
 		" -e              entrypoint\n"
 		" -f [str]        select sub-bin named str\n"
 		" -i              imports (symbols imported from libraries)\n"
@@ -672,7 +760,7 @@ int main(int argc, char **argv) {
 		r_lib_opendir (l, LIBDIR"/radare2/");
 	}
 
-	while ((c = getopt (argc, argv, "Af:a:B:b:c:Mm:n:@:VisSzIHelRwO:o:rvLhx")) != -1) {
+	while ((c = getopt (argc, argv, "Af:a:B:b:c:Mm:n:@:VisSzIHelRwO:o:p:rvLhx")) != -1) {
 		switch(c) {
 		case 'A':
 			action |= ACTION_LISTARCHS;
@@ -686,6 +774,10 @@ int main(int argc, char **argv) {
 			break;
 		case 'f':
 			if (optarg) arch_name = strdup (optarg);
+			break;
+		case 'p':
+			action = ACTION_PATCH;
+			patch = optarg;
 			break;
 		case 'B':
 			bits = r_num_math (NULL, optarg);
@@ -769,6 +861,9 @@ int main(int argc, char **argv) {
 	file = argv[optind];
 	if (action == ACTION_HELP || action == ACTION_UNK || file == NULL)
 		return rabin_show_help ();
+	if (action & ACTION_PATCH) {
+		return rabin_patch (file, patch);
+	}
 
 	if (arch) {
 		char *ptr;

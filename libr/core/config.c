@@ -126,7 +126,9 @@ static int config_asmos_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (!r_syscall_setup (core->anal->syscall, 
-			r_config_get (core->config, "asm.arch"), node->value))
+			r_config_get (core->config, "asm.arch"),
+			node->value,
+			core->anal->bits))
 		eprintf ("asm.os: Cannot setup syscall os/arch for '%s'\n", node->value);
 	return R_TRUE;
 }
@@ -317,7 +319,8 @@ static int config_asmarch_callback(void *user, void *data) {
 		eprintf ("asm.arch: cannot find (%s)\n", node->value);
 	r_config_set (core->config, "anal.plugin", node->value);
 	if (!r_syscall_setup (core->anal->syscall, node->value,
-			r_config_get (core->config, "asm.os")))
+			r_config_get (core->config, "asm.os"),
+			core->anal->bits))
 		eprintf ("asm.arch: Cannot setup syscall os/arch for '%s'\n", node->value);
 	return R_TRUE;
 }

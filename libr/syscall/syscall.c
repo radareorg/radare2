@@ -43,7 +43,7 @@ R_API const char *r_syscall_reg(RSyscall *s, int idx, int num) {
 	return s->regs[num].arg[idx];
 }
 
-R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
+R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os, int bits) {
 	if (os == NULL)
 		os = R_SYS_OS;
 	if (arch == NULL)
@@ -85,6 +85,7 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os) {
 	} else
 	if (!strcmp (arch, "x86")) {
 		ctx->regs = fastcall_x86;
+// TODO: use bits
 		if (!strcmp (os, "linux"))
 			ctx->sysptr = syscalls_linux_x86;
 		else if (!strcmp (os, "netbsd"))
@@ -131,8 +132,35 @@ R_API int r_syscall_setup_file(RSyscall *ctx, const char *path) {
 	return 0;
 }
 
+R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char *s) {
+	RSyscallItem *si = R_NEW0 (RSyscallItem);
+	char *o = strdup (s);
+
+	r_str_split (o, ',');
+
+	si->name = strdup (name);
+	si->swi = r_num_get (NULL, r_str_word_get0 (o, 0));
+	si->num = r_num_get (NULL, r_str_word_get0 (o, 1));
+	si->args = r_num_get (NULL, r_str_word_get0 (o, 2));
+	si->sargs = strdup (r_str_word_get0 (o, 3));
+	free (o);
+	return si;
+}
+
+R_API void r_syscall_item_free(RSyscallItem *si) {
+	free (si->name);
+	free (si->sargs);
+	free (si);
+}
+
 R_API RSyscallItem *r_syscall_get(RSyscall *ctx, int num, int swi) {
 	int i;
+#if 0
+char *s = r_pair_getf ("0x%x.%d", swi, num);
+if (s) {
+	return parsesyscall(s);
+}
+#endif
 	for (i=0; ctx->sysptr[i].name; i++) {
 		if (num == ctx->sysptr[i].num && \
 				(swi == -1 || swi == ctx->sysptr[i].swi))

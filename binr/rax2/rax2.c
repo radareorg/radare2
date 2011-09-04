@@ -129,7 +129,7 @@ static int rax (char *str, int last) {
 	}
 	if (flags & 16) {
 		int h = r_str_hash (str);
-		printf ("%s 0x%x\n", str, h);
+		printf ("0x%x\n", h);
 		return R_TRUE;
 	}
 

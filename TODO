@@ -12,6 +12,8 @@
 
 ====[[ 0.8.2 ]]====
 
+* rax2 to not change base (always hexa?)
+
 * Rename r_hashtable -> r_ht
 * Add 'S' subcommand to display section size and get by perms rwx
 * mach0pie
@@ -24,7 +26,6 @@
 * RBinCreate:
   - mach0 create for osx64 and darwin-arm
   - elf create for linux-ARM
-* pZ and p= are just silly or broken wtf sftu .. they need love
 
 BOTTLENECKS:
 ============
@@ -43,7 +44,6 @@ OSX
   - This is probably because we are using the 32bit binary on 64bit dbg
 * Proper support for MACH-O binaries
   - rabin2 -f works? i think its used with '-a' 
-  - I think symbols are not correct .. (offset+disk)
 
 
 TODO

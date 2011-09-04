@@ -1,0 +1,4 @@
+syscall=0x80,0,4
+exit=0x80,1,1,i
+fork=0x80,2,0
+read=0x80,3,3,ipi

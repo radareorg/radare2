@@ -1,5 +1,7 @@
 BIN=rabin2
 BINDEPS=r_bin r_cons r_util r_lib r_flags
+# rapatch deps
+BINDEPS+=r_core
 
 include ../binr.mk
 

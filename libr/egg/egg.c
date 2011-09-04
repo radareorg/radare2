@@ -41,12 +41,12 @@ R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const c
 	if (!strcmp (arch, "x86")) {
 		switch (bits) {
 		case 32:
-			r_syscall_setup (egg->syscall, arch, os);
+			r_syscall_setup (egg->syscall, arch, os, bits);
 			egg->emit = &emit_x86;
 			egg->bits = bits;
 			break;
 		case 64:
-			r_syscall_setup (egg->syscall, arch, os);
+			r_syscall_setup (egg->syscall, arch, os, bits);
 			egg->emit = &emit_x64;
 			egg->bits = bits;
 			break;
@@ -56,7 +56,7 @@ R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const c
 		switch (bits) {
 		case 16:
 		case 32:
-			r_syscall_setup (egg->syscall, arch, os);
+			r_syscall_setup (egg->syscall, arch, os, bits);
 			egg->emit = &emit_arm;
 			egg->bits = bits;
 			egg->endian = endian;

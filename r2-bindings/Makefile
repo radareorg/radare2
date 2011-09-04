@@ -1,4 +1,7 @@
 -include config.mk
+PYTHON2_CONFIG=python2.7-config
+PYTHON3_CONFIG=python3.2-config
+
 ifneq ($(shell bsdtar -h 2>/dev/null|grep bsdtar),)
 TAR=bsdtar czvf
 else
@@ -70,6 +73,12 @@ gear:
 # TODO: unspaguetti this targets
 perl:
 	@-[ "`grep perl supported.langs`" ] && ( cd perl && ${MAKE} ) || true
+
+python2:
+	@-[ "`grep python supported.langs`" ] && ( cd python && ${MAKE} PYTHON_CONFIG=${PYTHON2_CONFIG}) || true
+
+python3:
+	@-[ "`grep python supported.langs`" ] && ( cd python && ${MAKE} PYTHON_CONFIG=${PYTHON3_CONFIG}) || true
 
 python:
 	@-[ "`grep python supported.langs`" ] && ( cd python && ${MAKE} ) || true

@@ -13,7 +13,7 @@ typedef struct r_syscall_regs_t {
 } RSyscallRegs;
 
 typedef struct r_syscall_item_t {
-	const char *name;
+	const char *name; // XXX drop const
 	int swi;
 	int num;
 	int args;
@@ -59,9 +59,12 @@ typedef struct r_syscall_arch_plugin_t {
 } RSyscallArchPlugin;
 
 #ifdef R_API
+R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char *s);
+R_API void r_syscall_item_free(RSyscallItem *si);
+
 R_API RSyscall *r_syscall_new();
 R_API void r_syscall_free(RSyscall *ctx);
-R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os);
+R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os, int bits);
 R_API int r_syscall_setup_file(RSyscall *ctx, const char *path);
 R_API RSyscallItem *r_syscall_get(RSyscall *ctx, int num, int swi);
 R_API int r_syscall_get_num(RSyscall *ctx, const char *str);
