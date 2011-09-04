@@ -816,14 +816,22 @@ int main(int argc, char **argv) {
 		r_bin_free (bin);
 		return 0;
 	}
+
 	if (!r_bin_load (bin, file, R_FALSE) && !r_bin_load (bin, file, R_TRUE)) {
 		eprintf ("r_bin: Cannot open '%s'\n", file);
 		return 1;
 	}
-	if (action & ACTION_LISTARCHS && (arch || bits || arch_name)) {
+
+	if (action & ACTION_LISTARCHS) {
+		r_bin_list_archs (bin);
+		return 0;
+	}
+
+	if (arch || bits || arch_name) {
 		if (!r_bin_select (bin, arch, bits, arch_name)) {
 			r_bin_list_archs (bin);
 			free (arch);
+			free (arch_name);
 			r_bin_free (bin);
 			return 1;
 		}

@@ -359,16 +359,15 @@ R_API RBin* r_bin_new() {
 	return bin;
 }
 
-static RBinInfo userinfo;
-
 // TODO: handle ARCH and BITS
 R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name) {
 	struct list_head *pos;
 
-	bin->curarch.info = &userinfo;
-	memset (&userinfo, 0, sizeof (userinfo));
-	strncpy (userinfo.arch, arch, sizeof (userinfo.arch));
-	userinfo.bits = bits;
+	if (!bin->curarch.info)
+		bin->curarch.info = R_NEW (RBinInfo);
+	memset (bin->curarch.info, 0, sizeof (RBinInfo));
+	strncpy (bin->curarch.info->arch, arch, R_BIN_SIZEOF_STRINGS);
+	bin->curarch.info->bits = bits;
 
 	list_for_each_prev(pos, &bin->bins) {
 		RBinPlugin *h = list_entry (pos, RBinPlugin, list);
