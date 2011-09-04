@@ -4,7 +4,7 @@ all: hex fmt
 
 BIN=hex
 OBJ=hex.o
-BINDEPS=r_cons r_line r_print r_util r_anal r_asm r_reg r_syscall r_diff
+BINDEPS=r_cons r_line r_print r_util r_anal r_asm r_reg r_syscall r_diff r_db
 
 fmt${EXT_EXE}: fmt.o
 	${CC} -I../../include fmt.o -L../../util -lr_util ${LDFLAGS} -o fmt${EXT_EXE}
