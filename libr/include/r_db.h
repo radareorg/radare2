@@ -7,6 +7,8 @@
 // TODO: add support for network. (udp). memcache, with hooks
 typedef struct r_pair_t {
 	char *dir;
+	char *file;
+	void *sdb;
 	RHashTable *ht;
 	RList *dbs;
 } RPair;
@@ -66,6 +68,7 @@ R_API RPairItem *r_pair_item_new ();
 R_API void r_pair_item_free (RPairItem*);
 
 R_API RPair *r_pair_new ();
+R_API RPair *r_pair_new_from_file (const char *file);
 R_API void r_pair_free (RPair *p);
 R_API void r_pair_delete (RPair *p, const char *name);
 R_API char *r_pair_get (RPair *p, const char *name);

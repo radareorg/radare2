@@ -4,6 +4,7 @@
 #define _INCLUDE_R_SYSCALL_H_
 
 #include <r_types.h>
+#include <r_db.h>
 #include <list.h>
 
 #define R_SYSCALL_ARGS 6
@@ -32,6 +33,7 @@ typedef struct r_syscall_t {
 	RSyscallRegs *regs;
 	RSyscallItem *sysptr;
 	RSyscallPort *sysport;
+	RPair *syspair;
 	// TODO: deprecate
 	PrintfCallback printf;
 } RSyscall;
@@ -69,7 +71,7 @@ R_API int r_syscall_setup_file(RSyscall *ctx, const char *path);
 R_API RSyscallItem *r_syscall_get(RSyscall *ctx, int num, int swi);
 R_API int r_syscall_get_num(RSyscall *ctx, const char *str);
 R_API RSyscallItem *r_syscall_get_n(RSyscall *ctx, int n); // broken iterator.. must remove
-R_API const char *r_syscall_get_i(RSyscall *ctx, int num, int swi); // XXX const char *
+R_API char *r_syscall_get_i(RSyscall *ctx, int num, int swi);
 R_API const char *r_syscall_reg(RSyscall *s, int idx, int num);
 R_API void r_syscall_list(RSyscall *ctx);
 #endif

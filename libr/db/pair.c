@@ -2,8 +2,6 @@
 
 #include <r_db.h>
 #include <r_util.h>
-//#undef UT32_MAX
-//#undef UT64_MAX
 #include "sdb/src/sdb.h"
 
 /*
@@ -14,15 +12,29 @@ var out = p.get ("foo")
 
 R_API RPair *r_pair_new () {
 	RPair *p = R_NEW0 (RPair);
+	p->file = NULL;
+	p->sdb = NULL;
 	p->ht = r_hashtable_new ();
 	p->dbs = r_list_new ();
 	p->dbs->free = (RListFree)sdb_free;
 	return p;
 }
 
+R_API RPair *r_pair_new_from_file (const char *file) {
+	RPair *p = r_pair_new ();
+	p->file = strdup (file);
+	p->sdb = sdb_new (file, 0);
+	return p;
+}
+
 R_API void r_pair_free (RPair *p) {
+	if (p==NULL) return;
 	r_hashtable_free (p->ht);
 	r_list_destroy (p->dbs);
+	if (p->file) {
+		free (p->file);
+		sdb_free (p->sdb);
+	}
 	free (p->dir);
 	free (p);
 }
@@ -52,7 +64,6 @@ static Sdb *pair_sdb_new(RPair *p, const char *dom, ut32 hdom) {
 		r_sys_rmkdir (p->dir);
 		r_sys_chdir (p->dir);
 	}
-
 	sdb = sdb_new (dom, 0);
 	if (old) {
 		r_sys_chdir (old);
@@ -66,9 +77,12 @@ static Sdb *pair_sdb_new(RPair *p, const char *dom, ut32 hdom) {
 R_API char *r_pair_get (RPair *p, const char *name) {
 	Sdb *sdb;
 	ut32 hdom;
-	char *dom, *key, *okey = strdup (name);
+	char *dom, *key, *okey;
 
-	key = okey;
+	if (p->file)
+		return sdb_get (p->sdb, name);
+
+	key = okey = strdup (name);
 	dom = r_str_lchr (okey, '.');
 	if (dom) {
 		char *tmp = okey;
@@ -88,8 +102,13 @@ R_API char *r_pair_get (RPair *p, const char *name) {
 R_API void r_pair_set (RPair *p, const char *name, const char *value) {
 	Sdb *sdb;
 	ut32 hdom;
-	char *dom, *key = strdup (name);
+	char *dom, *key;
 
+	if (p->file) {
+		sdb_set (p->sdb, name, value);
+		return;
+	}
+	key = strdup (name);
 	dom = r_str_lchr (key, '.');
 	if (dom) {
 		char *okey = key;
@@ -105,8 +124,13 @@ R_API void r_pair_set (RPair *p, const char *name, const char *value) {
 }
 
 R_API RList *r_pair_list (RPair *p, const char *domain) {
-	ut32 hdom = r_str_hash (domain);
-	Sdb *s = r_hashtable_lookup (p->ht, hdom);
+	Sdb *s;
+	if (p->file) {
+		s = p->sdb;
+	} else {
+		ut32 hdom = r_str_hash (domain);
+		s = r_hashtable_lookup (p->ht, hdom);
+	}
 	if (s) {
 		RList *list = r_list_new ();
 		char key[SDB_KEYSIZE];
@@ -138,9 +162,6 @@ R_API void r_pair_set_sync_dir (RPair *p, const char *dir) {
 	p->dir = strdup (dir);
 }
 
-// use sync dir
-//R_API void r_pair_load (RPair *p) { /* TODO */ }
-
 R_API void r_pair_reset (RPair *p) {
 	Sdb *s;
 	RListIter *iter;
@@ -152,6 +173,10 @@ R_API void r_pair_sync (RPair *p) {
 	Sdb *s;
 	char *old = NULL;
 	RListIter *iter;
+	if (p->file) {
+		sdb_sync (p->sdb);
+		return;
+	}
 	if (p->dir) {
 		old = r_sys_getdir ();
 		r_sys_rmkdir (p->dir);

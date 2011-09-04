@@ -2,29 +2,19 @@
 
 #include <r_types.h>
 #include <r_util.h>
+#include <r_db.h>
 #include <r_syscall.h>
 #include <stdio.h>
 #include <string.h>
 #include "fastcall.h"
 
-extern RSyscallItem syscalls_openbsd_x86[];
-extern RSyscallItem syscalls_linux_sh[];
-extern RSyscallItem syscalls_linux_sparc[];
-extern RSyscallItem syscalls_netbsd_x86[];
-extern RSyscallItem syscalls_linux_x86[];
-extern RSyscallItem syscalls_linux_mips[];
-extern RSyscallItem syscalls_linux_arm[];
-extern RSyscallItem syscalls_freebsd_x86[];
-extern RSyscallItem syscalls_darwin_x86[];
-extern RSyscallItem syscalls_darwin_arm[];
-extern RSyscallItem syscalls_win7_x86[];
 extern RSyscallPort sysport_x86[];
 
 R_API RSyscall* r_syscall_new() {
 	RSyscall *rs = R_NEW (RSyscall);
 	if (rs) {
 		rs->fd = NULL;
-		rs->sysptr = syscalls_linux_x86;
+		rs->sysptr = NULL; //syscalls_linux_x86;
 		rs->sysport = sysport_x86;
 		rs->printf = (PrintfCallback)printf;
 		rs->regs = fastcall_x86;
@@ -44,78 +34,40 @@ R_API const char *r_syscall_reg(RSyscall *s, int idx, int num) {
 }
 
 R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os, int bits) {
+	char file[64];
+
+#define SYSCALLPATH "lib/radare2/syscall"
 	if (os == NULL)
 		os = R_SYS_OS;
 	if (arch == NULL)
 		arch = R_SYS_ARCH;
-	/// XXX: spaghetti here
 	if (!strcmp (os, "any")) {
 		// ignored
 		return R_TRUE;
 	}
-	// TODO: use r_str_hash.. like in r_egg
 	if (!strcmp (arch, "mips")) {
 		ctx->regs = fastcall_mips;
-		if (!strcmp (os, "linux"))
-			ctx->sysptr = syscalls_linux_mips;
-		else {
-			eprintf ("r_syscall_setup: Unknown arch '%s'\n", arch);
-			return R_FALSE;
-		}
-	} else
-	if (!strcmp (arch, "sparc")) {
-		if (!strcmp (os, "linux"))
-			ctx->sysptr = syscalls_linux_sparc;
-		else
-		if (!strcmp (os, "openbsd"))
-			ctx->sysptr = syscalls_linux_sparc; //XXX
-		else return R_FALSE;
 	} else
 	if (!strcmp (arch, "arm")) {
 		ctx->regs = fastcall_arm;
-		if (!strcmp (os, "linux"))
-			ctx->sysptr = syscalls_linux_arm;
-		else
-		if (!strcmp (os, "macos") || !strcmp (os, "darwin") || !strcmp (os, "osx"))
-			ctx->sysptr = syscalls_darwin_arm;
-		else {
-			eprintf ("r_syscall_setup: Unknown OS '%s'\n", os);
-			return R_FALSE;
-		}
 	} else
 	if (!strcmp (arch, "x86")) {
 		ctx->regs = fastcall_x86;
-// TODO: use bits
-		if (!strcmp (os, "linux"))
-			ctx->sysptr = syscalls_linux_x86;
-		else if (!strcmp (os, "netbsd"))
-			ctx->sysptr = syscalls_netbsd_x86;
-		else if (!strcmp (os, "freebsd"))
-			ctx->sysptr = syscalls_freebsd_x86;
-		else if (!strcmp (os, "openbsd"))
-			ctx->sysptr = syscalls_openbsd_x86;
-		else if ((!strcmp (os, "darwin")) || (!strcmp (os, "macos")) || (!strcmp (os, "osx")))
-			ctx->sysptr = syscalls_darwin_x86;
-		else if (!strcmp (os, "windows") || (!strcmp (os, "w32"))) //win7
-			ctx->sysptr = syscalls_win7_x86;
-		else {
-			eprintf ("r_syscall_setup: Unknown os '%s'\n", os);
-			return R_FALSE;
-		}
 	} else
-	if (!strcmp (arch,"sh")){
+	if (!strcmp (arch,"sh")) {
 		ctx->regs = fastcall_sh;
-		if (!strcmp (os, "linux"))
-			ctx->sysptr = syscalls_linux_sh;
-		else {
-			eprintf ("r_syscall_setup: Unknown os '%s'\n",os);
-			return R_FALSE;
-		}
-	
-	} else {
-		eprintf ("r_syscall_setup: Unknown os/arch '%s'/'%s'\n", os, arch);
+	}
+
+	snprintf (file, sizeof (file), PREFIX"/%s/%s-%s-%d.sdb", 
+		SYSCALLPATH, os, arch, bits);
+	if (!r_file_exist (file)) {
+		eprintf ("Cannot find '%s'\n", file);
 		return R_FALSE;
 	}
+
+	r_pair_free (ctx->syspair);
+	ctx->syspair = r_pair_new_from_file (file);
+
 	if (ctx->fd)
 		fclose (ctx->fd);
 	ctx->fd = NULL;
@@ -138,6 +90,14 @@ R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char 
 
 	r_str_split (o, ',');
 
+/*
+	return r_syscall_item_new (name, 
+			r_num_get (NULL, r_str_word_get0 (o, 0)),
+			r_num_get (NULL, r_str_word_get0 (o, 1)),
+			r_num_get (NULL, r_str_word_get0 (o, 2)),
+			r_str_word_get0 (o, 3));
+*/
+
 	si->name = strdup (name);
 	si->swi = r_num_get (NULL, r_str_word_get0 (o, 0));
 	si->num = r_num_get (NULL, r_str_word_get0 (o, 1));
@@ -154,46 +114,57 @@ R_API void r_syscall_item_free(RSyscallItem *si) {
 }
 
 R_API RSyscallItem *r_syscall_get(RSyscall *ctx, int num, int swi) {
-	int i;
-#if 0
-char *s = r_pair_getf ("0x%x.%d", swi, num);
-if (s) {
-	return parsesyscall(s);
-}
-#endif
-	for (i=0; ctx->sysptr[i].name; i++) {
-		if (num == ctx->sysptr[i].num && \
-				(swi == -1 || swi == ctx->sysptr[i].swi))
-			return &ctx->sysptr[i];
-	}
-	return NULL;
+	char *ret, *ret2, foo[32];
+	RSyscallItem *si;
+	if (!ctx->syspair)
+		return NULL;
+	snprintf (foo, sizeof (foo), "0x%x.%d", swi, num);
+	ret = r_pair_get (ctx->syspair, foo);
+	ret2 = r_pair_get (ctx->syspair, ret);
+	free (ret);
+	si = r_syscall_item_new_from_string (foo, ret2);
+	free (ret2);
+	return si;
 }
 
 R_API int r_syscall_get_num(RSyscall *ctx, const char *str) {
+	char *o;
 	int i;
-	for (i=0; ctx->sysptr[i].name; i++)
-		if (!strcmp (str, ctx->sysptr[i].name))
-			return ctx->sysptr[i].num;
-	return 0;
+	if (!ctx->syspair)
+		return 0;
+	o = r_pair_get (ctx->syspair, str);
+	if (o && *o) {
+		r_str_split (o, ',');
+		i = r_num_get (NULL, r_str_word_get0 (o, 1));
+	}
+	free (o);
+	return i;
 }
 
 // we can probably wrap all this with r_list getters
 /* XXX: ugly iterator implementation */
 R_API RSyscallItem *r_syscall_get_n(RSyscall *ctx, int n) {
-	int i;
-	for (i=0; ctx->sysptr[i].name && i!=n; i++)
-		return &ctx->sysptr[i];
-	return NULL;
+	RList *l;
+	if (!ctx->syspair)
+		return NULL;
+	l = r_pair_list (ctx->syspair, NULL);
+// XXX: memory leak !!
+	return r_list_get_n (l, n);
 }
 
-R_API const char *r_syscall_get_i(RSyscall *ctx, int num, int swi) {
-	int i;
-	for (i=0; ctx->sysptr[i].name; i++) {
-		if (num == ctx->sysptr[i].num && \
-				(swi == -1 || swi == ctx->sysptr[i].swi))
-			return ctx->sysptr[i].name;
+R_API char *r_syscall_get_i(RSyscall *ctx, int num, int swi) {
+	char *ret, foo[32];
+	if (!ctx->syspair)
+		return NULL;
+	if (swi==-1) {
+		char *def = r_pair_get (ctx->syspair, "_");
+		if (def && *def) {
+			swi = r_num_get (NULL, def);
+		} else swi = 0x80; // XXX hardcoded
 	}
-	return NULL;
+	snprintf (foo, sizeof (foo), "0x%x.%d", swi, num);
+	ret = r_pair_get (ctx->syspair, foo);
+	return ret;
 }
 
 R_API const char *r_syscall_get_io(RSyscall *ctx, int ioport) {
@@ -207,6 +178,7 @@ R_API const char *r_syscall_get_io(RSyscall *ctx, int ioport) {
 
 R_API void r_syscall_list(RSyscall *ctx) {
 	int i;
+// TODO: use r_pair here
 	for (i=0; ctx->sysptr[i].name; i++) {
 		ctx->printf ("%02x: %d = %s\n",
 			ctx->sysptr[i].swi, ctx->sysptr[i].num, ctx->sysptr[i].name);
