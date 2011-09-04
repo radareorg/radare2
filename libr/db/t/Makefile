@@ -4,7 +4,10 @@ include ../../config.mk
 
 all: test${EXT_EXE}
 
-test${EXT_EXE}:
+test.o: test.c
+	@echo nothing
+
+test${EXT_EXE}: test.o
 	${CC} -g -I ../../include test.c -L.. -lr_db -lr_util -L../../util -o test${EXT_EXE}
 
 clean:

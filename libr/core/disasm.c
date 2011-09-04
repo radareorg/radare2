@@ -147,11 +147,16 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			//eprintf ("** invalid opcode at 0x%08"PFMT64x" **\n",
 			//	core->assembler->pc + ret);
 			lastfail = 1;
-			continue;
+			strcpy (asmop.buf_asm, "invalid");
+			sprintf (asmop.buf_hex, "%02x", buf[idx]);
+			//continue;
 		} else lastfail = 0;
 		if (core->inc == 0)
 			core->inc = ret;
-		r_anal_op (core->anal, &analop, at, buf+idx, (int)(len-idx));
+
+		if (lastfail)
+			memset (&analop, 0, sizeof (analop));
+		else r_anal_op (core->anal, &analop, at, buf+idx, (int)(len-idx));
 		{
 			RAnalValue *src;
 			switch (analop.type) {

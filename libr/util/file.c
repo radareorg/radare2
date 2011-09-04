@@ -27,14 +27,17 @@ R_API boolt r_file_exist(const char *str) {
 }
 
 R_API char *r_file_abspath(const char *file) {
+	char *ret = NULL;
+	char *cwd = r_sys_getdir ();
 #if __UNIX__
-	if (file[0] != '/')
-		return r_str_dup_printf ("%s/%s", r_sys_getcwd (), file);
+	if (cwd && *file != '/')
+		ret = r_str_dup_printf ("%s/%s", cwd, file);
 #elif __WINDOWS__
-	if (!strchr (file, ':'))
-		return r_str_dup_printf ("%s/%s", r_sys_getcwd (), file);
+	if (cwd && !strchr (file, ':'))
+		ret = r_str_dup_printf ("%s/%s", cwd, file);
 #endif
-	return strdup (file);
+	free (cwd);
+	return ret? ret: strdup (file);
 }
 
 R_API char *r_file_path(const char *bin) {

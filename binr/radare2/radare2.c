@@ -211,7 +211,9 @@ int main(int argc, char **argv) {
 	}
 
 	if (fh == NULL) {
-		eprintf ("Cannot open file.\n");
+		if (perms & R_IO_WRITE)
+			eprintf ("Cannot open file for writing.\n");
+		else eprintf ("Cannot open file.\n");
 		return 1;
 	}
 	if (r.file == NULL) // no given file

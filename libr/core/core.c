@@ -50,7 +50,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'o': return core->io->off;
 		}
 	}
-	if (str[0]>'A') {
+	if (*str>'A') {
 		if ((flag = r_flag_get (core->flags, str))) {
 			ret = flag->offset;
 			*ok = R_TRUE;
@@ -76,7 +76,7 @@ static const char *radare_argv[] = {
 	"#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5", 
 	"#!python", "#!perl", "#!vala",
 	"V",
-	"aa", "ab", "af", "ar", "ag", "at", "av", "a?", 
+	"aa", "ab", "af", "ar", "ag", "at", "a?", 
 	"aga", "agc", "agd", "agl", "agfl",
 	"e", "e-", "e*", "e!",
 	"i", "ii", "iI", "is", "iS", "iz",
@@ -128,7 +128,7 @@ static int autocomplete(RLine *line) {
 			int n, i = 0;
 			int sdelta = 2; //(line->buffer.data[1]==' ')?2:3;
 			if (!line->buffer.data[sdelta]) {
-				path = r_sys_getcwd ();
+				path = r_sys_getdir ();
 			} else {
 				path = strdup (line->buffer.data+sdelta);
 			}
@@ -380,6 +380,7 @@ R_API RCore *r_core_free(RCore *c) {
 	free (c);
 	return NULL;
 }
+
 R_API void r_core_prompt_loop(RCore *r) {
 	int ret;
 	do { 

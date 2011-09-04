@@ -56,8 +56,25 @@ while (r_db_iter_next(it)) {
 }
 #endif
 
+typedef struct r_pair_item_t {
+	char *k, *v;
+} RPairItem;
+
 
 #ifdef R_API
+R_API RPairItem *r_pair_item_new ();
+R_API void r_pair_item_free (RPairItem*);
+
+R_API RPair *r_pair_new ();
+R_API void r_pair_free (RPair *p);
+R_API void r_pair_delete (RPair *p, const char *name);
+R_API char *r_pair_get (RPair *p, const char *name);
+R_API void r_pair_set (RPair *p, const char *name, const char *value);
+R_API RList *r_pair_list (RPair *p, const char *domain);
+R_API void r_pair_set_sync_dir (RPair *p, const char *dir);
+R_API void r_pair_load (RPair *p);
+R_API void r_pair_sync (RPair *p);
+/* */
 R_API struct r_db_t *r_db_new();
 R_API struct r_db_block_t *r_db_block_new();
 R_API int r_db_add_id(struct r_db_t *db, int off, int size);

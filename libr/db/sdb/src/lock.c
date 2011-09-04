@@ -6,7 +6,10 @@
 static char buf[128];
 
 const char *sdb_lockfile(const char *f) {
-	int len = strlen (f);
+	int len;
+	if (!f || !*f)
+		return NULL;
+	len = strlen (f);
 	if (len+10>sizeof buf)
 		return NULL;
 	memcpy (buf, f, len);
