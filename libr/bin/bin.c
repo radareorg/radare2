@@ -360,6 +360,8 @@ R_API RBin* r_bin_new() {
 }
 
 // TODO: handle ARCH and BITS
+/* arch and bits are implicit in the plugin name, do we really need
+ * to overwrite bin->curarch.info? */
 R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name) {
 	struct list_head *pos;
 
