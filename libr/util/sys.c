@@ -181,30 +181,30 @@ R_API int r_sys_crash_handler(const char *cmd) {
 #endif
 }
 
-#if __WINDOWS__
 R_API char *r_sys_getenv(const char *key) {
+#if __WINDOWS__
 	static char envbuf[1024];
 	envbuf[0] = 0;
 	GetEnvironmentVariable (key, (LPSTR)&envbuf, sizeof (envbuf));
 	// TODO: handle return value of GEV
-	return strdup (envbuf);
-}
+	return *envbuf? strdup (envbuf): NULL;
 #else
-R_API char *r_sys_getenv(const char *key) {
 	char *b = getenv (key);
-	if (b) return strdup (b);
-	return NULL;
+	return b? strdup (b): NULL;
+#endif
 }
-#endif
 
-R_API char *r_sys_getcwd(void) {
-#if __UNIX__
-	return getcwd (NULL, 0);
-#elif __WINDOWS__
-	return _getcwd (NULL, 0);
+R_API char *r_sys_getdir(void) {
+#if __WINDOWS__
+	char *cwd = _getcwd (NULL, 0);
 #else
-#warning TODO: r_sys_getcwd
+	char *cwd = getcwd (NULL, 0);
 #endif
+	return cwd? strdup (cwd): NULL;
+}
+
+R_API int r_sys_chdir(const char *s) {
+	return chdir (s)==0;
 }
 
 #if __UNIX__
@@ -288,9 +288,9 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 		close (sh_out[0]);
 		close (sh_err[0]);
 		close (sh_in[1]);
-		waitpid(pid, &status, 0);
+		waitpid (pid, &status, 0);
 		if (status != 0) {
-			eprintf("%s: command returned !0\n", __func__);
+			eprintf ("%s: command returned !0\n", __func__);
 			return (NULL);
 		}
 

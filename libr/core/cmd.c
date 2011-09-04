@@ -68,10 +68,11 @@ static int checkbpcallback(RCore *core) {
 }
 
 static int bypassbp(RCore *core) {
+	RBreakpointItem *bpi;
 	ut64 addr;
 	r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
 	addr = r_debug_reg_get (core->dbg, "pc");
-	RBreakpointItem *bpi = r_bp_get (core->dbg->bp, addr);
+	bpi = r_bp_get (core->dbg->bp, addr);
 	if (!bpi) return R_FALSE;
 	/* XXX 2 if libr/debug/debug.c:226 is enabled */
 	r_debug_step (core->dbg, 1);
@@ -156,9 +157,8 @@ static int cmd_zign(void *data, const char *input) {
 						name = flag->name;
 						r_cons_printf ("zb %s ", name);
 						len = (fcni->size>sizeof (buf))?sizeof (buf):fcni->size;
-						for (i=0; i<len; i++) {
+						for (i=0; i<len; i++)
 							r_cons_printf ("%02x", buf[i]);
-						}
 						r_cons_newline ();
 					} else eprintf ("Unnamed function at 0x%08"PFMT64x"\n", fcni->addr);
 				} else eprintf ("Cannot read at 0x%08"PFMT64x"\n", fcni->addr);
@@ -253,7 +253,7 @@ static int cmd_zign(void *data, const char *input) {
 		break;
 	case '\0':
 	case '*':
-		r_sign_list (core->sign, (input[0]=='*'));
+		r_sign_list (core->sign, (*input=='*'));
 		break;
 	default:
 	case '?':
@@ -1688,13 +1688,12 @@ l = len;
 		}
 		break;
 	case '=':
-		eprintf ("TODO: use zoom.byte to display entropy. like rahash2 -a entropy -b 32 /bin/ls\n");
-		for (i=0; i<core->blocksize; i++) {
-			int pc = (core->block[i]*100)/255;
-			r_print_addr (core->print, core->offset+i);
-			r_cons_printf ("%02x", core->block[i]);
-			r_print_progressbar (core->print, pc, 70);
-			r_cons_newline ();
+		/* TODO: Reimplement using API */ {
+			char *out = r_sys_cmd_strf ("rahash2 -a entropy -b 512 '%s'", core->file->filename);
+			if (out) {
+				r_cons_strcat (out);
+				free (out);
+			}
 		}
 		break;
 	case 'b':
@@ -1916,8 +1915,14 @@ l = len;
 		} else {
 			char *oldzoom = NULL;
 			ut64 maxsize = r_config_get_i (core->config, "zoom.maxsz");
-			ut64 from = r_config_get_i (core->config, "zoom.from");
-			ut64 to = r_config_get_i (core->config, "zoom.to");
+			ut64 from, to;
+			int oldva = core->io->va;
+
+			from = 0;
+			core->io->va = 0;
+			to = r_io_size (core->io);
+			from = r_config_get_i (core->config, "zoom.from");
+			to = r_config_get_i (core->config, "zoom.to");
 			if (input[1] != '\0' && input[1] != ' ') {
 				oldzoom = strdup (r_config_get (core->config, "zoom.byte"));
 				if (!r_config_set (core->config, "zoom.byte", input+1)) {
@@ -1932,12 +1937,14 @@ l = len;
 				r_config_set (core->config, "zoom.byte", oldzoom);
 				free (oldzoom);
 			}
+			if (oldva)
+				core->io->va = oldva;
 		}
 		break;
 	default:
 		r_cons_printf (
 		"Usage: p[fmt] [len]\n"
-		" p= [len]     print byte percentage bars\n"
+		" p=           show entropy bars of full file\n"
 		" p6[de] [len] base64 decode/encode\n"
 		" p8 [len]     8bit hexpair list of bytes\n"
 		" pb [len]     bitstream of N bytes\n"

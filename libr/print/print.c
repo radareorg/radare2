@@ -178,7 +178,7 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int wide
 			// TODO: some ascii can be bypassed here
 			p->printf ("%%%02x", buf[i]);
 		} else {
-			if (IS_PRINTABLE (buf[i]))
+			if (buf[i]=='\n' || IS_PRINTABLE (buf[i]))
 				p->printf ("%c", buf[i]);
 			else p->printf ("\\x%02x", buf[i]);
 		}

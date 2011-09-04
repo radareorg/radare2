@@ -41,7 +41,6 @@ OSX
 ===
 * Cant set register values in OSX debugger
   - This is probably because we are using the 32bit binary on 64bit dbg
-* Add support for OSX/Lion (PIE bins)
 * Proper support for MACH-O binaries
   - rabin2 -f works? i think its used with '-a' 
   - I think symbols are not correct .. (offset+disk)
