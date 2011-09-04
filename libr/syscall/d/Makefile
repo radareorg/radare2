@@ -37,7 +37,7 @@ install: linux-x86-32.sdb
 	cp -f *.sdb ${PREFIX}/lib/radare2/syscall
 
 CWD=$(shell pwd)
-symstall install-symlink:
+symstall install-symlink: linux-x86-32.sdb
 	mkdir -p ${PREFIX}/lib/radare2/syscall
 	for a in *.sdb ; do ln -fs ${CWD}/$$a ${PREFIX}/lib/radare2/syscall/$$a ; done
 

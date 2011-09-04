@@ -83,6 +83,7 @@ static int analyze(RAnal *anal, RAnalOp *op, ut64 offset, ut8* buf, int len) {
 			printf ("value:    0x%08"PFMT64x"\n", op->value);
 		printf ("stackop:  %s\n", stackop);
 		printf ("stackptr: %"PFMT64d"\n", op->stackptr);
+		printf ("decode str: %s\n", r_anal_op_to_string (anal, op));
 		printf ("--\n");
 		free (optype);
 		free (stackop);
