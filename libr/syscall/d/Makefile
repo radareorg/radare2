@@ -15,13 +15,20 @@ F+= windows-x86-32
 PREFIX?=/usr
 DESTDIR?=
 
+F_SDB=$(addsuffix .sdb,$F)
+
 SDB=../../db/sdb/src/sdb
 
 all: ${SDB}
-	@for a in ${F} ; do \
-		echo " SDB $$a.sdb" ; \
-		sh gen.sh < $$a | ${SDB} $$a.sdb = ; \
-	done
+	@${MAKE} compile
+
+compile: ${F_SDB}
+
+linux-x86-32.sdb: linux-x86-32
+
+%.sdb:%
+	@echo "  SDB $<"
+	@sh gen.sh < $< | ${SDB} $<.sdb =
 
 clean:
 	rm -f *.sdb
@@ -31,15 +38,12 @@ ${SDB}:
 
 .PHONY: all clean install install-symlink symstall
 
-linux-x86-32.sdb:
-	${MAKE}
-
-install: linux-x86-32.sdb
+install: ${F_SDB}
 	mkdir -p ${DESTDIR}${PREFIX}/lib/radare2/syscall
 	cp -f *.sdb ${DESTDIR}${PREFIX}/lib/radare2/syscall
 
 CWD=$(shell pwd)
-symstall install-symlink: linux-x86-32.sdb
+symstall install-symlink: ${F_SDB}
 	mkdir -p ${DESTDIR}${PREFIX}/lib/radare2/syscall
 	for a in *.sdb ; do ln -fs ${CWD}/$$a ${DESTDIR}${PREFIX}/lib/radare2/syscall/$$a ; done
 

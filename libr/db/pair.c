@@ -190,3 +190,10 @@ R_API void r_pair_sync (RPair *p) {
 		free (old);
 	}
 }
+
+R_API char* r_pair_serialize(RPair *p, const char *fmt, void *ptr) {
+	
+}
+
+R_API int r_pair_deserialize(RPair *p, ut8 *out, const char *fmt, const char *ptr) {
+}

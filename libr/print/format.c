@@ -58,7 +58,7 @@ R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const c
 		arg = end + 1;
 	}
 
-	if (arg[0]=='\0') {
+	if (*arg=='\0') {
 		print_format_help (p);
 		return;
 	}
@@ -71,22 +71,24 @@ R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const c
 		nargs = r_str_word_set0 (args+1);
 		if (nargs == 0)
 			R_FREE (args);
-		for (i=0;i<nargs;i++) {
+		for (i=0; i<nargs; i++) {
 			int len = strlen (r_str_word_get0 (args+1, i));
 			if (len>maxl) maxl = len;
 		}
 		l++;
-		sprintf (namefmt, "%%%ds : ", maxl);
+		snprintf (namefmt, sizeof (namefmt), "%%%ds : ", maxl);
 	}
 
 	/* go format */
 	i = 0;
 	if (!times) otimes = times = 1;
-	for (;times;times--) { // repeat N times
+	for (; times; times--) { // repeat N times
 		const char * orig = arg;
 		if (otimes>1)
 			p->printf ("0x%08"PFMT64x" [%d] {\n", seek+i, otimes-times);
-		for (idx=0; arg<argend && i<len && idx<len; idx++, arg++) {
+		idx = 0;
+		arg = orig;
+		for (idx=0; arg<argend && *arg; idx++, arg++) {
 			seeki = seek+i;
 			addr = 0LL;
 			if (endian)
@@ -130,6 +132,8 @@ R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const c
 				i = len; // exit
 				continue;
 			}
+			if (otimes>1)
+				p->printf ("   ");
 			if (idx<nargs)
 				p->printf (namefmt, r_str_word_get0 (args, idx));
 			/* cmt chars */

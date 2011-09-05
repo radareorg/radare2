@@ -14,7 +14,7 @@ typedef struct r_syscall_regs_t {
 } RSyscallRegs;
 
 typedef struct r_syscall_item_t {
-	const char *name; // XXX drop const
+	char *name;
 	int swi;
 	int num;
 	int args;
