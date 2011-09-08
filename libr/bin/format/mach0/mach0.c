@@ -673,6 +673,8 @@ char* MACH0_(r_bin_mach0_get_cpusubtype)(struct MACH0_(r_bin_mach0_obj_t)* bin) 
 		default:				return r_str_dup_printf ("Unknown i386 subtype");
 		}
 	case CPU_TYPE_X86_64:
+//bin->hdr.cpusubtype &= 0xff; // HACK to avoid 0x80000000
+// TODO: handle 0x80000000 type
 		switch (bin->hdr.cpusubtype) {
 		case CPU_SUBTYPE_X86_64_ALL:	return r_str_dup_printf ("x86 64 all");
 		case CPU_SUBTYPE_X86_ARCH1:	return r_str_dup_printf ("x86 arch 1");

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
 
 #include <r_util.h>
 #include <stdlib.h>
@@ -20,7 +20,7 @@ R_API int r_mem_eq(ut8 *a, ut8 *b, int len) {
 }
 
 R_API void r_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize) {
-	int i=0,j;
+	int i=0, j;
 	while (i<dsize)
 		for (j=0; j<osize && i<dsize;j++)
 			dest[i++] = orig[j];
@@ -154,22 +154,22 @@ R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian) {
         } else
 	switch (size) {
 	case 1:
-		dest[0] = orig[0];
+		*dest = *orig;
 		break;
 	case 2:
-		buffer[0] = orig[0];
+		*buffer = *orig;
 		dest[0] = orig[1];
 		dest[1] = buffer[0];
 		break;
 	case 4:
-		memcpy(buffer, orig, 4);
+		memcpy (buffer, orig, 4);
 		dest[0] = buffer[3];
 		dest[1] = buffer[2];
 		dest[2] = buffer[1];
 		dest[3] = buffer[0];
 		break;
 	case 8:
-		memcpy(buffer, orig, 8);
+		memcpy (buffer, orig, 8);
 		dest[0] = buffer[7];
 		dest[1] = buffer[6];
 		dest[2] = buffer[5];

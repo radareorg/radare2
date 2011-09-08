@@ -245,7 +245,6 @@ R_API void r_list_add_sorted(RList *list, void *data, RListComparator cmp) {
 R_API void *r_list_get_n(RList *list, int n) {
 	RListIter *it;
 	int i;
-
 	if (list)
 	for (it = list->head, i = 0; it && it->data; it = it->n, i++)
 		if (i == n)

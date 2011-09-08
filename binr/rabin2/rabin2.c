@@ -137,7 +137,7 @@ static int rabin_patch (const char *file, const char *patch) {
 static int rabin_show_help() {
 	printf ("rabin2 [options] [file]\n"
 		" -A              list archs\n"
-		" -a [arch_bits]  set arch\n"
+		" -a [arch_bits]  set arch (x86_32, arm_32, x86_64)\n"
 		" -b [addr]       override baddr\n"
 		" -c [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
 		" -p [patchfile]  patch file (see man rabin2)\n"

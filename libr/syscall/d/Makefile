@@ -12,9 +12,7 @@ F+= openbsd-x86-32
 F+= openbsd-x86-64
 F+= windows-x86-32
 
-# XXX: use config.mk
-PREFIX?=/usr
-DESTDIR?=
+include ../../../config-user.mk
 
 F_SDB=$(addsuffix .sdb,$F)
 
@@ -40,13 +38,13 @@ ${SDB}:
 .PHONY: all clean install install-symlink symstall
 
 install: ${F_SDB}
-	mkdir -p ${DESTDIR}${PREFIX}/lib/radare2/syscall
-	cp -f *.sdb ${DESTDIR}${PREFIX}/lib/radare2/syscall
+	mkdir -p ${DESTDIR}${PREFIX}/lib/radare2/${VERSION}/syscall
+	cp -f *.sdb ${DESTDIR}${PREFIX}/lib/radare2/${VERSION}/syscall
 
 CWD=$(shell pwd)
 symstall install-symlink: ${F_SDB}
-	mkdir -p ${DESTDIR}${PREFIX}/lib/radare2/syscall
-	for a in *.sdb ; do ln -fs ${CWD}/$$a ${DESTDIR}${PREFIX}/lib/radare2/syscall/$$a ; done
+	mkdir -p ${DESTDIR}${PREFIX}/lib/radare2/${VERSION}/syscall
+	for a in *.sdb ; do ln -fs ${CWD}/$$a ${DESTDIR}${PREFIX}/lib/radare2/${VERSION}/syscall/$$a ; done
 
 uninstall:
 	rm -rf ${PREFIX}/lib/radare2/syscall

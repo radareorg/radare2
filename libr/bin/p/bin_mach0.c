@@ -207,7 +207,12 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	ut32 p_datafsz, p_datava, p_datasz, p_datapa;
 	ut32 p_cmdsize, p_entry, p_tmp;
 	ut32 baddr = 0x1000;
+	int is_arm = !strcmp (bin->curarch.info->arch, "arm");
 	RBuffer *buf = r_buf_new ();
+	if (bin->curarch.info->bits == 64) {
+		eprintf ("TODO: Please use mach064 instead of mach0\n");
+		return 0;
+	}
 
 #define B(x,y) r_buf_append_bytes(buf,(const ut8*)x,y)
 #define D(x) r_buf_append_ut32(buf,x)
@@ -217,10 +222,15 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 
 	/* MACH0 HEADER */
 	B ("\xce\xfa\xed\xfe", 4); // header
-	D (7); // cpu type (x86)
-	D (3); // subtype (i386-all)
+	if (is_arm) {
+		D (12); // cpu type (arm)
+		D (3); // subtype (all?)
+	} else {
+		/* x86-32 */
+		D (7); // cpu type (x86)
+		D (3); // subtype (i386-all)
+	}
 	D (2); // filetype (executable)
-
 
 	if (data && datalen>0) {
 		ncmds = 3;
@@ -302,10 +312,20 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	/* THREAD STATE */
 	D (5); // LC_UNIXTHREAD
 	D (80); // sizeof (cmd)
-	D (1); // i386-thread-state
-	D (16); // thread-state-count
-	p_entry = buf->length + (10*sizeof (ut32));
-	Z (16 * sizeof (ut32));
+	if (is_arm) {
+		/* arm */
+		D (1); // i386-thread-state
+		D (17); // thread-state-count
+		p_entry = buf->length + (16*sizeof (ut32));
+		Z (17 * sizeof (ut32));
+		// mach0-arm has one byte more
+	} else {
+		/* x86-32 */
+		D (1); // i386-thread-state
+		D (16); // thread-state-count
+		p_entry = buf->length + (10*sizeof (ut32));
+		Z (16 * sizeof (ut32));
+	}
 
 	headerlen = buf->length - magiclen;
 

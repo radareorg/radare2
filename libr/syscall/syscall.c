@@ -37,7 +37,7 @@ R_API const char *r_syscall_reg(RSyscall *s, int idx, int num) {
 R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os, int bits) {
 	char file[64];
 
-#define SYSCALLPATH "lib/radare2/syscall"
+#define SYSCALLPATH "lib/radare2/"R2_VERSION"/syscall"
 	if (os == NULL)
 		os = R_SYS_OS;
 	if (arch == NULL)

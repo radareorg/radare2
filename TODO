@@ -5,8 +5,8 @@
 
 ====[[ 0.9 ]]====
 
-* Fix identification of OS.. which is not OSABI
-  - more work maybe?
+* Remove/deprecate libr/vm
+* Ensure current OS identification is correct for ELF
 * Test r_search_delta()
 * libmagic internal :? -- find a decent implementation and adopt it
 
@@ -17,12 +17,11 @@
 * rax2 to not change base (always hexa?)
 
 * Rename r_hashtable -> r_ht
+  - Make ht64.c include ht.c
 * Add 'S' subcommand to display section size and get by perms rwx
-* mach0pie
 * memset0 the op before calling the plugin analysis -- not really that's a performance cost..
 * Handle ^C as an alias for '.' command
 * search.kwidx must be search.lastidx or search.idx ?
-* Make ht64.c include ht.c
 * add support for sockets in rarun2
 * shell encoder - get x86-64 one from twitter
 * RBinCreate:

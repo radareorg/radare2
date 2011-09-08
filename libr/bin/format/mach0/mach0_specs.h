@@ -937,7 +937,7 @@ struct x86_thread_state32 {
 	ut32	es;
 	ut32	fs;
 	ut32	gs;
-} ;
+};
 
 struct x86_thread_state64 {
 	ut64	rax;
