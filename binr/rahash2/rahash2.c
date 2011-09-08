@@ -24,7 +24,7 @@ static int do_hash_internal(RHash *ctx, ut64 from, int hash, const ut8 *buf, int
 			double e = r_hash_entropy (buf, len);
 			printf ("0x%08"PFMT64x"-0x%08"PFMT64x" %10f: ", 
 				from, from+len, e);
-			r_print_progressbar (NULL, 17 * e, 60);
+			r_print_progressbar (NULL, 12.5 * e, 60);
 			printf ("\n");
 		} else {
 			printf ("0x%08"PFMT64x"-0x%08"PFMT64x" %s: ", 

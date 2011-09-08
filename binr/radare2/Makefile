@@ -17,8 +17,12 @@ osxsign:
 ifeq ($(WITHNONPIC),1)
 LDFLAGS+=${DL_LIBS} -lm
 LDFLAGS+=../../libr/fs/p/grub/libgrubfs.a
+LDFLAGS+=../../libr/db/sdb/src/libsdb.a
 ifeq ($(HAVE_LIB_GMP),1)
 LDFLAGS+=-lgmp
+endif
+ifeq ($(HAVE_LIB_MAGIC),1)
+LDFLAGS+=-lmagic
 endif
 endif
 

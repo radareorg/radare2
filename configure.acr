@@ -93,6 +93,7 @@ REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_GMP HAVE_OPENSSL HAVE_LIB_TCC
 SUBDIRS ./config-user.mk
 	libr/include/r_userconf.h
 	pkgcfg/r_io.pc
+	pkgcfg/r_db.pc
 	pkgcfg/r_asm.pc
 	pkgcfg/r_bin.pc
 	pkgcfg/r_anal.pc

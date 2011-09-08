@@ -30,12 +30,12 @@ else
 ifneq ($(DEPS),)
 #LDFLAGS+=`echo "${DEPS} " | perl -ne 's,r_([^ ]*),../$$1/libr_$$1.a,g; print'`
 #OK#LDFLAGS+=`echo $DEPS | awk '{gsub(/r_([^ ]*)/,"../&/lib&.a");gsub(/\/r_/,"\/");print}'`
-LDFLAGS+=$(shell echo $DEPS | awk '{gsub(/r_([^ ]*)/,"../&/lib&.a");gsub(/\/r_/,"\/");print}')
+LDFLAGS+=$(shell echo ${DEPS} | awk '{gsub(/r_([^ ]*)/,"../&/lib&.a");gsub(/\/r_/,"\/");print}')
 endif
 ifneq ($(BINDEPS),)
 #LDFLAGS+=`echo "${BINDEPS} " | if [ -d ../../libr ]; then perl -ne 's,r_([^ ]*),../../libr/$$1/libr_$$1.a,g; print' ; else perl -ne 's,r_([^ ]*),../../$$1/libr_$$1.a,g; print' ; fi `
 #OK#LDFLAGS+=`echo "${BINDEPS} " | if [ -d ../../libr ]; then echo $BINDEPS | awk '{gsub(/r_([^ ]*)/,"../../libr/&/lib&.a");gsub(/\/r_/,"\/");print}' ; else awk '{gsub(/r_([^ ]*)/,"../../&/lib&.a");gsub(/\/r_/,"\/");print}'; fi`
-LDFLAGS+=$(shell echo "${BINDEPS} " | if [ -d ../../libr ]; then echo $BINDEPS | awk '{gsub(/r_([^ ]*)/,"../../libr/&/lib&.a");gsub(/\/r_/,"\/");print}' ; else awk '{gsub(/r_([^ ]*)/,"../../&/lib&.a");gsub(/\/r_/,"\/");print}'; fi)
+LDFLAGS+=$(shell echo "${BINDEPS} " | if [ -d ../../libr ]; then awk '{gsub(/r_([^ ]*)/,"../../libr/&/lib&.a");gsub(/\/r_/,"\/");print}' ; else awk '{gsub(/r_([^ ]*)/,"../../&/lib&.a");gsub(/\/r_/,"\/");print}'; fi)
 endif
 endif
 
