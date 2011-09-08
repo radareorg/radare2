@@ -389,6 +389,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "asm.lbytes", "true"); 
 	r_config_set (cfg, "asm.middle", "false"); // jump in the middle because of antidisasm tricks
 	r_config_set (cfg, "asm.comments", "true");
+	r_config_set (cfg, "asm.case", "false");
 	r_config_set (cfg, "asm.stackptr", "true");
 	r_config_set (cfg, "asm.dwarf", "false");
 	r_config_set_i (cfg, "asm.nbytes", 8);
@@ -405,7 +406,6 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "asm.lineswide", "false");
 	r_config_set_i_cb (cfg, "asm.lineswidth", 10, &config_asmlineswidth_callback);
 	r_config_set (cfg, "asm.linescall", "false");
-	r_config_set (cfg, "asm.offset", "true"); 
 	r_config_set_cb (cfg, "asm.os", R_SYS_OS, &config_asmos_callback);
 	r_config_set (cfg, "asm.pseudo", "false");  // DEPRECATED ???
 	r_config_set_cb (cfg, "asm.syntax", "intel", &config_asmsyntax_callback);
@@ -493,20 +493,12 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "zoom.byte", "h", &config_zoombyte_callback);
 	/* TODO cmd */
 #if 0
-
-//	node->callback = &config_arch_callback;
-	config_set("asm.comments", "true"); // show comments in disassembly
 	config_set_i("asm.cmtmargin", 10); // show comments in disassembly
 	config_set_i("asm.cmtlines", 0); // show comments in disassembly
-	config_set("asm.case", "false"); // uppercase = true
-	config_set("asm.objdump", "objdump -m i386 --target=binary -D");
-	config_set("asm.offset", "true"); // show offset
 	config_set("asm.section", "true");
-	config_set("asm.stackptr", "true");
 	config_set("asm.reladdr", "false"); // relative offset
-	config_set_i("asm.nbytes", 8); // show hex bytes
-	config_set("asm.bytes", "true"); // show hex bytes
 	config_set("asm.jmpflags", "false");
+
 	config_set("asm.flags", "true");
 	config_set("asm.flagsall", "true");
 	config_set("asm.functions", "true");
@@ -514,8 +506,6 @@ R_API int r_core_config_init(RCore *core) {
 	config_set_i("asm.nlines", 6); // show left ref lines
 	config_set("asm.lineswide", "false"); // show left ref lines
 	config_set("asm.trace", "false"); // trace counter
-	config_set("asm.linesout", "false"); // show left ref lines
-	config_set("asm.linestyle", "false"); // foreach / prev
 	config_set("asm.split", "true"); // split code blocks
 	config_set("asm.splitall", "false"); // split code blocks
 	config_set("asm.size", "false"); // opcode size
@@ -678,42 +668,6 @@ R_API int r_core_config_init(RCore *core) {
 	config_set("graph.offset", "true");
 	config_set("graph.render", "cairo");    // aalib/ncurses/text
 	config_set("graph.layout", "default");  // graphviz
-
-	/* gui */
-	config_set("gui.top", "gtk-topbar");  // graphviz
-	config_set("gui.tabs", "gtk-prefs");  // graphviz
-	config_set("gui.left", "scriptedit gtk-actions");  // graphviz
-	config_set("gui.right", "gtk-hello");  // graphviz
-	config_set("gui.bottom", "gtk-hello");  // graphviz
-
-
-	node = config_set("scr.palette", cons_palette_default);
-	node->callback = &config_palette_callback;
-	cons_palette_init(config_get("scr.palette"));
-#define config_set_scr_pal(x,y) \
-	node = config_set("scr.pal."x"", y); \
-	node->callback = &config_palette_callback; \
-	node->callback(node);
-	config_set_scr_pal("prompt","yellow")
-		config_set_scr_pal("default","white")
-		config_set_scr_pal("changed","green")
-		config_set_scr_pal("jumps","green")
-		config_set_scr_pal("calls","green")
-		config_set_scr_pal("push","green")
-		config_set_scr_pal("trap","red")
-		config_set_scr_pal("cmp","yellow")
-		config_set_scr_pal("ret","red")
-		config_set_scr_pal("nop","gray")
-		config_set_scr_pal("metadata","gray")
-		config_set_scr_pal("header","green")
-		config_set_scr_pal("printable","bwhite")
-		config_set_scr_pal("lines0","white")
-		config_set_scr_pal("lines1","yellow")
-		config_set_scr_pal("lines2","bwhite")
-		config_set_scr_pal("address","green")
-		config_set_scr_pal("ff","red")
-		config_set_scr_pal("00","white")
-		config_set_scr_pal("7f","magenta")
 
 	config_set("scr.grephigh", "");
 	node = config_set("scr.buf", "false");

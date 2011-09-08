@@ -42,6 +42,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 
 	// TODO: All those options must be print flags
 	int show_color = r_config_get_i (core->config, "scr.color");
+	int acase = r_config_get_i (core->config, "asm.case");
 	int decode = r_config_get_i (core->config, "asm.decode");
 	int pseudo = r_config_get_i (core->config, "asm.pseudo");
 	int filter = r_config_get_i (core->config, "asm.filter");
@@ -151,6 +152,8 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			sprintf (asmop.buf_hex, "%02x", buf[idx]);
 			//continue;
 		} else lastfail = 0;
+		if (acase)
+			r_str_case (asmop.buf_asm, 1);
 		if (core->inc == 0)
 			core->inc = ret;
 

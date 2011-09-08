@@ -494,8 +494,18 @@ int Elf_(r_bin_elf_get_bits)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 }
 
+static inline int needle(struct Elf_(r_bin_elf_obj_t) *bin, const char *s) {
+	return r_mem_mem ((const ut8*)bin->shstrtab, bin->shstrtab_size,
+			(const ut8*)s, strlen (s)) != NULL;
+}
+
 // TODO: must return const char * all those strings must be const char os[LINUX] or so
 char* Elf_(r_bin_elf_get_osabi_name)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	/* Hack to identify OS */
+	if (needle (bin, "openbsd")) return strdup ("openbsd");
+	if (needle (bin, "netbsd")) return strdup ("netbsd");
+	if (needle (bin, "freebsd")) return strdup ("freebsd");
+	if (needle (bin, "GNU")) return strdup ("linux");
 	// XXX: this is wrong. openbsd bins are identified as linux ones.
 	switch (bin->ehdr.e_ident[EI_OSABI]) {
 	case ELFOSABI_NONE:       return strdup ("linux"); // sysv
@@ -510,6 +520,7 @@ char* Elf_(r_bin_elf_get_osabi_name)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case ELFOSABI_MODESTO:    return strdup ("modesto");
 	case ELFOSABI_OPENBSD:    return strdup ("openbsd");
 	case ELFOSABI_STANDALONE: return strdup ("standalone");
+	case ELFOSABI_ARM_AEABI:
 	case ELFOSABI_ARM:        return strdup ("arm");
 	default:                  return r_str_dup_printf ("<unknown: %x>", bin->ehdr.e_ident[EI_OSABI]);
 	}

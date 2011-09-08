@@ -167,11 +167,11 @@ R_API const char *r_str_bool(int b) {
 
 R_API void r_str_case(char *str, int up) {
 	if (up) {
-		while (*str)
-			*str = tolower (*str);
-	} else {
-		while (*str)
+		for (;*str;str++)
 			*str = toupper (*str);
+	} else {
+		for (;*str; str++)
+			*str = tolower (*str);
 	}
 }
 

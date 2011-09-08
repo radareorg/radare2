@@ -5,6 +5,8 @@
 
 ====[[ 0.9 ]]====
 
+* Fix identification of OS.. which is not OSABI
+  - more work maybe?
 * Test r_search_delta()
 * libmagic internal :? -- find a decent implementation and adopt it
 
