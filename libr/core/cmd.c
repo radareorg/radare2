@@ -5,9 +5,6 @@
 #include <sys/types.h>
 #include <ctype.h>
 #include <stdarg.h>
-#if HAVE_LIB_MAGIC
-#include <magic.h>
-#endif
 
 static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size) {
 	RCore *core = (RCore *) user;
@@ -1573,10 +1570,9 @@ static int cmd_info(void *data, const char *input) {
 }
 
 static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, int v) {
-#if HAVE_LIB_MAGIC
 	char *fmt, *q, *p;
 	const char *str;
-	magic_t ck;
+	r_magic_t ck;
 
 	if (depth--<0)
 		return;
@@ -1584,13 +1580,13 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth,
 		r_core_seek (core, addr, R_TRUE);
 	if (*file == ' ') file++;
 	if (!*file) file = NULL;
-	ck = magic_open (0);
-	if (magic_load (ck, file) == -1) {
-		eprintf ("r_core_magic(\"%s\") %s\n", file, magic_error (ck));
+	ck = r_magic_open (0);
+	if (r_magic_load (ck, file) == -1) {
+		eprintf ("r_core_magic(\"%s\") %s\n", file, r_magic_error (ck));
 		return;
 	}
 	if (v) r_cons_printf ("# pm %s @ 0x%"PFMT64x"\n", file?file:"", addr);
-	str = magic_buffer (ck, core->block, core->blocksize);
+	str = r_magic_buffer (ck, core->block, core->blocksize);
 	if (str) {
 		if (!v && !strcmp (str, "data"))
 			return;
@@ -1620,10 +1616,7 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth,
 		}
 		free (p);
 	}
-	magic_close (ck);
-#else
-	eprintf ("r_core_magic: Compiled without magic :(\n");
-#endif
+	r_magic_close (ck);
 }
 
 static void r_core_magic(RCore *core, const char *file, int v) {
@@ -3236,8 +3229,6 @@ static int cmd_search(void *data, const char *input) {
 		dosearch = R_TRUE;
 		break;
 	case 'm':
-#if HAVE_LIB_MAGIC
-		/* XXX: This is pretty sloow */
 		dosearch = R_FALSE;
 		if (input[1]==' ') {
 			const char *file = input+2;
@@ -3247,9 +3238,6 @@ static int cmd_search(void *data, const char *input) {
 				r_core_magic (core, file, R_FALSE);
 			}
 		} else eprintf ("Usage: /m [file]\n");
-#else
-		eprintf ("r_core_magic: Compiled without magic :(\n");
-#endif
 		break;
 	case 'p':
 		{

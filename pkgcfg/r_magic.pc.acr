@@ -1,0 +1,11 @@
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=@LIBDIR@
+includedir=${prefix}/include
+
+Name: r_magic
+Description: radare foundation libraries
+Version: @VERSION@
+Requires:
+Libs: -L${libdir} -lr_magic
+Cflags: -I${includedir}/libr

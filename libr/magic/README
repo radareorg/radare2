@@ -1,0 +1,8 @@
+This implementation of file(1) has been taken from OpenBSD,
+I have removed the elf part which reduces more than 1KLOC.
+I have also cleaned up the code in order to fix some warnings
+and integrate with r2 syntax. magic_ api is now r_magic_
+
+   --pancake
+
+$ cvs -d anoncvs@anoncvs.ca.openbsd.org:/cvs get src/usr.bin/file

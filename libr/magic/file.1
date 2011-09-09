@@ -1,0 +1,500 @@
+.\" $OpenBSD: file.1,v 1.33 2010/10/28 21:32:54 jmc Exp $
+.\" $FreeBSD: src/usr.bin/file/file.1,v 1.16 2000/03/01 12:19:39 sheldonh Exp $
+.\"
+.\" Copyright (c) Ian F. Darwin 1986-1995.
+.\" Software written by Ian F. Darwin and others;
+.\" maintained 1995-present by Christos Zoulas and others.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice immediately at the beginning of the file, without modification,
+.\"    this list of conditions, and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE FOR
+.\" ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.Dd $Mdocdate: October 28 2010 $
+.Dt FILE 1
+.Os
+.Sh NAME
+.Nm file
+.Nd determine file type
+.Sh SYNOPSIS
+.Nm
+.Bk -words
+.Op Fl 0bCcehikLNnprsvz
+.Op Fl -help
+.Op Fl -mime-encoding
+.Op Fl -mime-type
+.Op Fl F Ar separator
+.Op Fl f Ar namefile
+.Op Fl m Ar magicfiles
+.Ar file
+.Ek
+.Sh DESCRIPTION
+The
+.Nm
+utility tests each argument in an attempt to classify it.
+There are three sets of tests, performed in this order:
+filesystem tests, magic tests, and language tests.
+The first test that succeeds causes the file type to be printed.
+.Pp
+The type printed will usually contain one of the words
+.Em text
+(the file contains only
+printing characters and a few common control
+characters and is probably safe to read on an
+ASCII terminal),
+.Em executable
+(the file contains the result of compiling a program
+in a form understandable to some
+.Ux
+kernel or another),
+or
+.Em data
+meaning anything else (data is usually
+.Dq binary
+or non-printable).
+Exceptions are well-known file formats (core files, tar archives)
+that are known to contain binary data.
+When modifying magic files or the program itself, make sure to
+.Em preserve these keywords .
+Users depend on knowing that all the readable files in a directory
+have the word
+.Dq text
+printed.
+Don't do as Berkeley did and change
+.Dq shell commands text
+to
+.Dq shell script .
+.Pp
+The filesystem tests are based on examining the return from a
+.Xr stat 2
+system call.
+The program checks to see if the file is empty,
+or if it's some sort of special file.
+Any known file types,
+such as sockets, symbolic links, and named pipes (FIFOs),
+are intuited if they are defined in
+the system header file
+.Aq Pa sys/stat.h .
+.Pp
+The magic tests are used to check for files with data in
+particular fixed formats.
+The canonical example of this is a binary executable (compiled program)
+a.out file, whose format is defined in
+.Aq Pa elf.h ,
+.Aq Pa a.out.h ,
+and possibly
+.Aq Pa exec.h
+in the standard include directory.
+These files have a
+.Dq magic number
+stored in a particular place
+near the beginning of the file that tells the
+.Ux
+operating system
+that the file is a binary executable, and which of several types thereof.
+The concept of a
+.Dq magic
+has been applied by extension to data files.
+Any file with some invariant identifier at a small fixed
+offset into the file can usually be described in this way.
+The information identifying these files is read from the magic file
+.Pa /etc/magic .
+In addition, if
+.Pa $HOME/.magic.mgc
+or
+.Pa $HOME/.magic
+exists, it will be used in preference to the system magic files.
+.Pp
+If a file does not match any of the entries in the magic file,
+it is examined to see if it seems to be a text file.
+ASCII, ISO-8859-x, non-ISO 8-bit extended-ASCII character sets
+(such as those used on Macintosh and IBM PC systems),
+UTF-8-encoded Unicode, UTF-16-encoded Unicode, and EBCDIC
+character sets can be distinguished by the different
+ranges and sequences of bytes that constitute printable text
+in each set.
+If a file passes any of these tests, its character set is reported.
+ASCII, ISO-8859-x, UTF-8, and extended-ASCII files are identified
+as
+.Dq text
+because they will be mostly readable on nearly any terminal;
+UTF-16 and EBCDIC are only
+.Dq character data
+because, while
+they contain text, it is text that will require translation
+before it can be read.
+In addition,
+.Nm
+will attempt to determine other characteristics of text-type files.
+If the lines of a file are terminated by CR, CRLF, or NEL, instead
+of the Unix-standard LF, this will be reported.
+Files that contain embedded escape sequences or overstriking
+will also be identified.
+.Pp
+Once
+.Nm
+has determined the character set used in a text-type file,
+it will
+attempt to determine in what language the file is written.
+The language tests look for particular strings (cf.\&
+.Aq Pa names.h )
+that can appear anywhere in the first few blocks of a file.
+For example, the keyword
+.Em .br
+indicates that the file is most likely a
+troff input file, just as the keyword
+.Em struct
+indicates a C program.
+These tests are less reliable than the previous
+two groups, so they are performed last.
+The language test routines also test for some miscellany
+(such as
+.Xr tar 1
+archives).
+.Pp
+Any file that cannot be identified as having been written
+in any of the character sets listed above is simply said to be
+.Dq data .
+.Sh OPTIONS
+.Bl -tag -width indent
+.It Fl 0 , -print0
+Output a null character
+.Sq \e0
+after the end of the filename.
+Nice to
+.Xr cut 1
+the output.
+This does not affect the separator which is still printed.
+.It Fl b , -brief
+Do not prepend filenames to output lines (brief mode).
+.It Fl C , -compile
+Write a
+.Pa magic.mgc
+output file that contains a pre-parsed version of the magic file or directory.
+.It Fl c , -checking-printout
+Cause a checking printout of the parsed form of the magic file.
+This is usually used in conjunction with the
+.Fl m
+flag to debug a new magic file before installing it.
+.It Fl e , -exclude Ar testname
+Exclude the test named in
+.Ar testname
+from the list of tests made to determine the file type.
+Valid test names are:
+.Bl -tag -width compress
+.It apptype
+Check for
+.Dv EMX
+application type (only on EMX).
+.It ascii
+Check for various types of ASCII files.
+.It compress
+Don't look for, or inside, compressed files.
+.It elf
+Don't print elf details.
+.It fortran
+Don't look for fortran sequences inside ASCII files.
+.It soft
+Don't consult magic files.
+.It tar
+Don't examine tar files.
+.It token
+Don't look for known tokens inside ASCII files.
+.It troff
+Don't look for troff sequences inside ASCII files.
+.El
+.It Fl F , -separator Ar separator
+Use the specified string as the separator between the filename and the
+file result returned.
+Defaults to
+.Sq \&: .
+.It Fl f , -files-from Ar namefile
+Read the names of the files to be examined from
+.Ar namefile
+(one per line)
+before the argument list.
+Either
+.Ar namefile
+or at least one filename argument must be present;
+to test the standard input, use
+.Sq -
+as a filename argument.
+.It Fl h , -no-dereference
+Causes symlinks not to be followed.
+This is the default if the environment variable
+.Dv POSIXLY_CORRECT
+is not defined.
+.It Fl -help
+Print a help message and exit.
+.It Fl i , -mime
+Causes the file command to output mime type strings rather than the more
+traditional human readable ones.
+Thus it may say
+.Dq text/plain charset=us-ascii
+rather than
+.Dq ASCII text .
+In order for this option to work,
+.Nm
+changes the way it handles files recognized by the command itself
+(such as many of the text file types, directories etc.),
+and makes use of an alternative
+.Dq magic
+file.
+See also
+.Sx FILES ,
+below.
+.It Fl -mime-encoding , -mime-type
+Like
+.Fl i ,
+but print only the specified element(s).
+.It Fl k , -keep-going
+Don't stop at the first match, keep going.
+Subsequent matches will have the string
+.Dq "\[rs]012\- "
+prepended.
+(If a newline is required, see the
+.Fl r
+option.)
+.It Fl L , -dereference
+Causes symlinks to be followed;
+analogous to the option of the same name in
+.Xr ls 1 .
+This is the default if the environment variable
+.Dv POSIXLY_CORRECT
+is defined.
+.It Fl m , -magic-file Ar magicfiles
+Specify an alternate list of files and directories containing magic.
+This can be a single item, or a colon-separated list.
+If a compiled magic file is found alongside a file or directory,
+it will be used instead.
+.It Fl N , -no-pad
+Don't pad filenames so that they align in the output.
+.It Fl n , -no-buffer
+Force stdout to be flushed after checking each file.
+This is only useful if checking a list of files.
+It is intended to be used by programs that want filetype output from a pipe.
+.It Fl p , -preserve-date
+On systems that support
+.Xr utime 3
+or
+.Xr utimes 2 ,
+attempt to preserve the access time of files analyzed, to pretend that
+.Nm
+never read them.
+.It Fl r , -raw
+Don't translate unprintable characters to \eooo.
+Normally
+.Nm
+translates unprintable characters to their octal representation.
+.It Fl s , -special-files
+Normally,
+.Nm
+only attempts to read and determine the type of argument files which
+.Xr stat 2
+reports are ordinary files.
+This prevents problems, because reading special files may have peculiar
+consequences.
+Specifying the
+.Fl s
+option causes
+.Nm
+to also read argument files which are block or character special files.
+This is useful for determining the filesystem types of the data in raw
+disk partitions, which are block special files.
+This option also causes
+.Nm
+to disregard the file size as reported by
+.Xr stat 2
+since on some systems it reports a zero size for raw disk partitions.
+.It Fl v , -version
+Print the version of the program and exit.
+.It Fl z , -uncompress
+Try to look inside compressed files.
+.El
+.Sh ENVIRONMENT
+The environment variable
+.Dv MAGIC
+can be used to set the default magic file name.
+If that variable is set, then
+.Nm
+will not attempt to open
+.Pa $HOME/.magic .
+.Nm
+adds
+.Dq .mgc
+to the value of this variable as appropriate.
+The environment variable
+.Dv POSIXLY_CORRECT
+controls whether
+.Nm
+will attempt to follow symlinks or not.
+If set, then
+.Nm
+follows symlinks; otherwise it does not.
+This is also controlled by the
+.Fl L
+and
+.Fl h
+options.
+.Sh FILES
+.Bl -tag -width /etc/magic -compact
+.It Pa /etc/magic
+default list of magic numbers
+.El
+.Sh EXIT STATUS
+.Ex -std file
+.Sh SEE ALSO
+.Xr hexdump 1 ,
+.Xr od 1 ,
+.Xr strings 1 ,
+.Xr magic 5
+.Sh STANDARDS CONFORMANCE
+This program is believed to exceed the System V Interface Definition
+of FILE(CMD), as near as one can determine from the vague language
+contained therein.
+Its behavior is mostly compatible with the System V program of the same name.
+This version knows more magic, however, so it will produce
+different (albeit more accurate) output in many cases.
+.\" URL: http://www.opengroup.org/onlinepubs/009695399/utilities/file.html
+.Pp
+The one significant difference
+between this version and System V
+is that this version treats any whitespace
+as a delimiter, so that spaces in pattern strings must be escaped.
+For example,
+.Bd -literal -offset indent
+\*(Gt10	string	language impress\ 	(imPRESS data)
+.Ed
+.Pp
+in an existing magic file would have to be changed to
+.Bd -literal -offset indent
+\*(Gt10	string	language\e impress	(imPRESS data)
+.Ed
+.Pp
+In addition, in this version, if a pattern string contains a backslash,
+it must be escaped.
+For example
+.Bd -literal -offset indent
+0	string		\ebegindata	Andrew Toolkit document
+.Ed
+.Pp
+in an existing magic file would have to be changed to
+.Bd -literal -offset indent
+0	string		\e\ebegindata	Andrew Toolkit document
+.Ed
+.Pp
+SunOS releases 3.2 and later from Sun Microsystems include a
+.Nm
+command derived from the System V one, but with some extensions.
+This version differs from Sun's only in minor ways.
+It includes the extension of the
+.Sq &
+operator, used as,
+for example,
+.Bd -literal -offset indent
+\*(Gt16	long&0x7fffffff	\*(Gt0		not stripped
+.Ed
+.Sh HISTORY
+There has been a
+.Nm
+command in every
+.Ux
+since at least Research Version 4
+(man page dated November, 1973).
+The System V version introduced one significant major change:
+the external list of magic types.
+This slowed the program down slightly but made it a lot more flexible.
+.Pp
+This program, based on the System V version,
+was written by Ian Darwin
+without looking at anybody else's source code.
+.Pp
+John Gilmore revised the code extensively, making it better than
+the first version.
+Geoff Collyer found several inadequacies
+and provided some magic file entries.
+Contributions by the `&' operator by Rob McMahon, 1989.
+.Pp
+Guy Harris, made many changes from 1993 to the present.
+.Pp
+Primary development and maintenance from 1990 to the present by
+Christos Zoulas.
+.Pp
+Altered by Chris Lowth, 2000:
+Handle the
+.Fl i
+option to output mime type strings, using an alternative
+magic file and internal logic.
+.Pp
+Altered by Eric Fischer, July, 2000,
+to identify character codes and attempt to identify the languages
+of non-ASCII files.
+.Pp
+Altered by Reuben Thomas, 2007 to 2008, to improve MIME
+support and merge MIME and non-MIME magic, support directories as well
+as files of magic, apply many bug fixes and improve the build system.
+.Pp
+The list of contributors to the
+.Dq magic
+directory (magic files)
+is too long to include here.
+You know who you are; thank you.
+Many contributors are listed in the source files.
+.Sh BUGS
+.Pp
+There must be a better way to automate the construction of the Magic
+file from all the glop in Magdir.
+What is it?
+.Pp
+.Nm
+uses several algorithms that favor speed over accuracy,
+thus it can be misled about the contents of
+text
+files.
+.Pp
+The support for text files (primarily for programming languages)
+is simplistic, inefficient and requires recompilation to update.
+.Pp
+The list of keywords in
+.Pa ascmagic
+probably belongs in the Magic file.
+This could be done by using some keyword like
+.Sq *
+for the offset value.
+.Pp
+Complain about conflicts in the magic file entries.
+Make a rule that the magic entries sort based on file offset rather
+than position within the magic file?
+.Pp
+The program should provide a way to give an estimate
+of
+.Dq how good
+a guess is.
+We end up removing guesses (e.g.
+.Dq From\
+as first 5 chars of file) because
+they are not as good as other guesses (e.g.\&
+.Dq Newsgroups:
+versus
+.Dq Return-Path: ) .
+Still, if the others don't pan out, it should be possible to use the
+first guess.
+.Pp
+This manual page, and particularly this section, is too long.

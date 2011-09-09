@@ -8,7 +8,7 @@ IFX=${DESTDIR}/${INCLUDEDIR}
 PWD=`pwd`
 
 # Libraries
-LIBLIST=util socket db cons line lib io lang flags bin hash config syscall
+LIBLIST=util magic socket db cons line lib io lang flags bin hash config syscall
 LIBLIST+=cmd reg asm diff anal print parse search egg bp sign debug fs core
 #DEPRECATED APIS : LIBLIST+=th crypto
 # sysproxy ... common wat du?

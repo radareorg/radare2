@@ -42,7 +42,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 
 	// TODO: All those options must be print flags
 	int show_color = r_config_get_i (core->config, "scr.color");
-	int acase = r_config_get_i (core->config, "asm.case");
+	int acase = r_config_get_i (core->config, "asm.ucase");
 	int decode = r_config_get_i (core->config, "asm.decode");
 	int pseudo = r_config_get_i (core->config, "asm.pseudo");
 	int filter = r_config_get_i (core->config, "asm.filter");

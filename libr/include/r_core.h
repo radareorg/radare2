@@ -2,6 +2,7 @@
 #define _INCLUDE_R_CORE_H_
 
 #include "r_types.h"
+#include "r_magic.h"
 #include "r_io.h"
 #include "r_fs.h"
 #include "r_lib.h"
