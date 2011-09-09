@@ -2756,6 +2756,14 @@ static int cmd_write(void *data, const char *input) {
 	wseek = r_config_get_i (core->config, "cfg.wseek");
 	memcpy (str, input+1, len);
 	switch (*input) {
+	case 'p':
+		if (input[1]==' ' && input[2]) {
+			r_core_patch (core, input+2);
+		} else {
+			eprintf ("Usage: wp [rapatch-file]\n"
+			         "TODO: rapatch format documentation here\n");
+		}
+		break;
 	case 'r':
 		off = r_num_math (core->num, input+1);
 		len = (int)off;
@@ -3082,7 +3090,8 @@ static int cmd_write(void *data, const char *input) {
 			" wm f0ff      set binary mask hexpair to be used as cyclic write mask\n"
 			" wf file      write contents of file at current offset\n"
 			" wF file      write contents of hexpairs file here\n"
-			" wt file      write current block to file\n");
+			" wt file      write current block to file\n"
+			" wp file      apply radare patch file. See wp? fmi\n");
 			//TODO: add support for offset+seek
 			// " wf file o s ; write contents of file from optional offset 'o' and size 's'.\n"
 		break;

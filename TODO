@@ -6,7 +6,8 @@
 ====[[ 0.9 ]]====
 
 * Remove/deprecate libr/vm
-* Ensure current OS identification is correct for ELF
+* Merge libr/db inside libr/util ?
+* Ensure current OS identification is correct for ELF .. freebsd bin
 * Test r_search_delta()
 * libmagic internal :? -- find a decent implementation and adopt it
 

@@ -9,7 +9,7 @@
 static struct r_core_t r;
 
 static int main_help(int line) {
-	printf ("Usage: radare2 [-dwnLqv] [-p prj] [-s addr] [-b bsz] [-e k=v] [file]\n");
+	printf ("Usage: radare2 [-dwnLqv] [-P patch] [-p prj] [-s addr] [-b bsz] [-e k=v] [file]\n");
 	if (!line) printf (
 		" -d           use 'file' as a program to debug\n"
 		" -w           open file in write mode\n"
@@ -17,6 +17,7 @@ static int main_help(int line) {
 		" -q           quite mode (no prompt)\n"
 		" -f           block size = file size\n"
 		" -p [prj]     set project file\n"
+		" -P [file]    apply rapatch file and quit\n"
 		" -s [addr]    initial seek\n"
 		" -b [size]    initial block size\n"
 		" -i [file]    run script file\n"
@@ -79,6 +80,7 @@ int main(int argc, char **argv) {
 	RThread *rabin_th = NULL;
 */
 	RCoreFile *fh = NULL;
+	const char *patchfile = NULL;
 	//int threaded = R_FALSE;
 	int has_project = R_FALSE;
  	int ret, c, perms = R_IO_READ;
@@ -98,7 +100,7 @@ int main(int argc, char **argv) {
 		return main_help (1);
 	r_core_init (&r);
 
-	while ((c = getopt (argc, argv, "wfhe:ndqvs:p:b:Lui:l:"))!=-1) {
+	while ((c = getopt (argc, argv, "wfhe:ndqvs:p:b:Lui:l:P:"))!=-1) {
 		switch (c) {
 #if 0
 		case 't':
@@ -110,6 +112,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'p':
 			r_config_set (r.config, "file.project", optarg);
+			break;
+		case 'P':
+			patchfile = optarg;
 			break;
 		case 'i':
 			cmdfile = optarg;
@@ -307,6 +312,9 @@ int main(int argc, char **argv) {
 	if (cmdfile)
 		r_core_cmd_file (&r, cmdfile);
 
+	if (patchfile) {
+		r_core_patch (&r, patchfile);
+	} else
 	for (;;) {
 		r_core_prompt_loop (&r);
 #if 0
