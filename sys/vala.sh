@@ -29,7 +29,7 @@ if [ -d vala ]; then
 else
 	git clone git://git.gnome.org/vala
 fi
-sh autogen.sh --prefix=/usr
-make
+sh autogen.sh --prefix=/usr && \
+make -j 4 && \
 sudo make install
 cd ..
