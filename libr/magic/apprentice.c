@@ -76,7 +76,7 @@
 #endif
 
 struct r_magic_entry {
-	struct magic *mp;	
+	struct r_magic *mp;	
 	uint32_t cont_count;
 	uint32_t max_count;
 };
@@ -86,7 +86,7 @@ const size_t file_nformats = FILE_NAMES_SIZE;
 const char *file_names[FILE_NAMES_SIZE];
 const size_t file_nnames = FILE_NAMES_SIZE;
 
-static int getvalue(struct r_magic_set *ms, struct magic *, const char **, int);
+static int getvalue(struct r_magic_set *ms, struct r_magic *, const char **, int);
 static int hextoint(int);
 static const char *getstr(struct r_magic_set *, const char *, char *, int,
     int *, int);
@@ -96,26 +96,26 @@ static int parse_mime(struct r_magic_set *, struct r_magic_entry **, uint32_t *,
     const char *);
 static void eatsize(const char **);
 static int apprentice_1(struct r_magic_set *, const char *, int, struct mlist *);
-static size_t apprentice_r_magic_strength(const struct magic *);
+static size_t apprentice_r_magic_strength(const struct r_magic *);
 static int apprentice_sort(const void *, const void *);
-static int apprentice_load(struct r_magic_set *, struct magic **, uint32_t *,
+static int apprentice_load(struct r_magic_set *, struct r_magic **, uint32_t *,
     const char *, int);
-static void byteswap(struct magic *, uint32_t);
-static void bs1(struct magic *);
+static void byteswap(struct r_magic *, uint32_t);
+static void bs1(struct r_magic *);
 static uint16_t swap2(uint16_t);
 static uint32_t swap4(uint32_t);
 static uint64_t swap8(uint64_t);
 static void mkdbname(const char *, char **, int);
-static int apprentice_map(struct r_magic_set *, struct magic **, uint32_t *,
+static int apprentice_map(struct r_magic_set *, struct r_magic **, uint32_t *,
     const char *);
-static int apprentice_compile(struct r_magic_set *, struct magic **, uint32_t *,
+static int apprentice_compile(struct r_magic_set *, struct r_magic **, uint32_t *,
     const char *);
 static int check_format_type(const char *, int);
-static int check_format(struct r_magic_set *, struct magic *);
+static int check_format(struct r_magic_set *, struct r_magic *);
 static int get_op(char);
 
 static size_t maxmagic = 0;
-static size_t magicsize = sizeof(struct magic);
+static size_t magicsize = sizeof(struct r_magic);
 
 static const char usg_hdr[] = "cont\toffset\ttype\topcode\tmask\tvalue\tdesc";
 static const char mime_marker[] = "!:mime";
@@ -244,7 +244,7 @@ static int
 apprentice_1(struct r_magic_set *ms, const char *fn, int action,
     struct mlist *mlist)
 {
-	struct magic *magic = NULL;
+	struct r_magic *magic = NULL;
 	uint32_t nmagic = 0;
 	struct mlist *ml;
 	int rv = -1;
@@ -302,7 +302,7 @@ apprentice_1(struct r_magic_set *ms, const char *fn, int action,
 }
 
 void
-file_delmagic(struct magic *p, int type, size_t entries)
+file_delmagic(struct r_magic *p, int type, size_t entries)
 {
 	if (p == NULL)
 		return;
@@ -377,7 +377,7 @@ file_apprentice(struct r_magic_set *ms, const char *fn, int action)
  * Get weight of this magic entry, for sorting purposes.
  */
 static size_t
-apprentice_r_magic_strength(const struct magic *m)
+apprentice_r_magic_strength(const struct r_magic *m)
 {
 #define MULT 10
 	size_t val = 2 * MULT;	/* baseline strength */
@@ -503,7 +503,7 @@ apprentice_sort(const void *a, const void *b)
 }
 
 static void
-set_test_type(struct magic *mstart, struct magic *m)
+set_test_type(struct r_magic *mstart, struct r_magic *m)
 {
 	switch (m->type) {
 	case FILE_BYTE:
@@ -612,7 +612,7 @@ load_1(struct r_magic_set *ms, int action, const char *fn, int *errs,
  * const char *fn: name of magic file or directory
  */
 static int
-apprentice_load(struct r_magic_set *ms, struct magic **magicp, uint32_t *nmagicp,
+apprentice_load(struct r_magic_set *ms, struct r_magic **magicp, uint32_t *nmagicp,
     const char *fn, int action)
 {
 	int errs = 0;
@@ -743,7 +743,7 @@ out:
  * extend the sign bit if the comparison is to be signed
  */
 uint64_t
-file_signextend(struct r_magic_set *ms, struct magic *m, uint64_t v)
+file_signextend(struct r_magic_set *ms, struct r_magic *m, uint64_t v)
 {
 	if (!(m->flag & UNSIGNED)) {
 		switch(m->type) {
@@ -810,7 +810,7 @@ file_signextend(struct r_magic_set *ms, struct magic *m, uint64_t v)
 }
 
 static int
-string_modifier_check(struct r_magic_set *ms, struct magic *m)
+string_modifier_check(struct r_magic_set *ms, struct r_magic *m)
 {
 	if ((ms->flags & R_MAGIC_CHECK) == 0)
 		return 0;
@@ -970,7 +970,7 @@ parse(struct r_magic_set *ms, struct r_magic_entry **mentryp, uint32_t *nmentryp
 #endif
 	size_t i;
 	struct r_magic_entry *me;
-	struct magic *m;
+	struct r_magic *m;
 	const char *l = line;
 	char *t;
 	int op;
@@ -999,7 +999,7 @@ parse(struct r_magic_set *ms, struct r_magic_entry **mentryp, uint32_t *nmentryp
 		}
 		me = &(*mentryp)[*nmentryp - 1];
 		if (me->cont_count == me->max_count) {
-			struct magic *nm;
+			struct r_magic *nm;
 			size_t cnt = me->max_count + ALLOC_CHUNK;
 			if ((nm = realloc(me->mp, sizeof(*nm) * cnt)) == NULL) {
 				file_oomem(ms, sizeof(*nm) * cnt);
@@ -1343,7 +1343,7 @@ parse_mime(struct r_magic_set *ms, struct r_magic_entry **mentryp,
 {
 	size_t i;
 	const char *l = line;
-	struct magic *m;
+	struct r_magic *m;
 	struct r_magic_entry *me;
 
 	if (*nmentryp == 0) {
@@ -1509,7 +1509,7 @@ check_format_type(const char *ptr, int type)
  * the type of the magic.
  */
 static int
-check_format(struct r_magic_set *ms, struct magic *m)
+check_format(struct r_magic_set *ms, struct r_magic *m)
 {
 	char *ptr;
 
@@ -1565,7 +1565,7 @@ check_format(struct r_magic_set *ms, struct magic *m)
  * just after the number read.  Return 0 for success, non-zero for failure.
  */
 static int
-getvalue(struct r_magic_set *ms, struct magic *m, const char **p, int action)
+getvalue(struct r_magic_set *ms, struct r_magic *m, const char **p, int action)
 {
 	int slen;
 
@@ -1874,7 +1874,7 @@ eatsize(const char **p)
  * handle a compiled file.
  */
 static int
-apprentice_map(struct r_magic_set *ms, struct magic **magicp, uint32_t *nmagicp,
+apprentice_map(struct r_magic_set *ms, struct r_magic **magicp, uint32_t *nmagicp,
     const char *fn)
 {
 	int fd;
@@ -1941,7 +1941,7 @@ apprentice_map(struct r_magic_set *ms, struct magic **magicp, uint32_t *nmagicp,
 		    VERSIONNO, dbname, version);
 		goto error1;
 	}
-	*nmagicp = (uint32_t)(st.st_size / sizeof(struct magic));
+	*nmagicp = (uint32_t)(st.st_size / sizeof(struct r_magic));
 	if (*nmagicp > 0)
 		(*nmagicp)--;
 	(*magicp)++;
@@ -1975,7 +1975,7 @@ static const uint32_t ar[] = {
  * handle an mmaped file.
  */
 static int
-apprentice_compile(struct r_magic_set *ms, struct magic **magicp,
+apprentice_compile(struct r_magic_set *ms, struct r_magic **magicp,
     uint32_t *nmagicp, const char *fn)
 {
 	int fd;
@@ -1997,14 +1997,14 @@ apprentice_compile(struct r_magic_set *ms, struct magic **magicp,
 		goto out;
 	}
 
-	if (lseek(fd, (off_t)sizeof(struct magic), SEEK_SET)
-	    != sizeof(struct magic)) {
+	if (lseek(fd, (off_t)sizeof(struct r_magic), SEEK_SET)
+	    != sizeof(struct r_magic)) {
 		file_error(ms, errno, "error seeking `%s'", dbname);
 		goto out;
 	}
 
-	if (write(fd, *magicp, (sizeof(struct magic) * *nmagicp)) 
-	    != (ssize_t)(sizeof(struct magic) * *nmagicp)) {
+	if (write(fd, *magicp, (sizeof(struct r_magic) * *nmagicp)) 
+	    != (ssize_t)(sizeof(struct r_magic) * *nmagicp)) {
 		file_error(ms, errno, "error writing `%s'", dbname);
 		goto out;
 	}
@@ -2040,7 +2040,7 @@ mkdbname(const char *fn, char **buf, int strip)
  * Byteswap an mmap'ed file if needed
  */
 static void
-byteswap(struct magic *magic, uint32_t nmagic)
+byteswap(struct r_magic *magic, uint32_t nmagic)
 {
 	uint32_t i;
 	for (i = 0; i < nmagic; i++)
@@ -2112,7 +2112,7 @@ swap8(uint64_t sv)
  * byteswap a single magic entry
  */
 static void
-bs1(struct magic *m)
+bs1(struct r_magic *m)
 {
 	m->cont_level = swap2(m->cont_level);
 	m->offset = swap4((uint32_t)m->offset);

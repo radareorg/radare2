@@ -45,7 +45,7 @@
 
 #ifndef COMPILE_ONLY
 void
-file_mdump(struct magic *m)
+file_mdump(struct r_magic *m)
 {
 	static const char optyp[] = { FILE_OPS };
 

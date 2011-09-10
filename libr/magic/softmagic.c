@@ -37,21 +37,21 @@
 #include <time.h>
 
 
-static int match(struct r_magic_set *, struct magic *, uint32_t,
+static int match(struct r_magic_set *, struct r_magic *, uint32_t,
     const unsigned char *, size_t, int);
 static int mget(struct r_magic_set *, const unsigned char *,
-    struct magic *, size_t, unsigned int);
-static int magiccheck(struct r_magic_set *, struct magic *);
-static int32_t mprint(struct r_magic_set *, struct magic *);
+    struct r_magic *, size_t, unsigned int);
+static int magiccheck(struct r_magic_set *, struct r_magic *);
+static int32_t mprint(struct r_magic_set *, struct r_magic *);
 static void mdebug(uint32_t, const char *, size_t);
 static int mcopy(struct r_magic_set *, union VALUETYPE *, int, int,
     const unsigned char *, uint32_t, size_t, size_t);
-static int mconvert(struct r_magic_set *, struct magic *);
+static int mconvert(struct r_magic_set *, struct r_magic *);
 static int print_sep(struct r_magic_set *, int);
-static void cvt_8(union VALUETYPE *, const struct magic *);
-static void cvt_16(union VALUETYPE *, const struct magic *);
-static void cvt_32(union VALUETYPE *, const struct magic *);
-static void cvt_64(union VALUETYPE *, const struct magic *);
+static void cvt_8(union VALUETYPE *, const struct r_magic *);
+static void cvt_16(union VALUETYPE *, const struct r_magic *);
+static void cvt_32(union VALUETYPE *, const struct r_magic *);
+static void cvt_64(union VALUETYPE *, const struct r_magic *);
 
 /*
  * Macro to give description string according to whether we want plain
@@ -104,7 +104,7 @@ file_softmagic(struct r_magic_set *ms, const unsigned char *buf, size_t nbytes, 
  *	so that higher-level continuations are processed.
  */
 static int
-match(struct r_magic_set *ms, struct magic *magic, uint32_t nmagic,
+match(struct r_magic_set *ms, struct r_magic *magic, uint32_t nmagic,
     const unsigned char *s, size_t nbytes, int mode)
 {
 	uint32_t magindex = 0;
@@ -119,7 +119,7 @@ match(struct r_magic_set *ms, struct magic *magic, uint32_t nmagic,
 
 	for (magindex = 0; magindex < nmagic; magindex++) {
 		int flush;
-		struct magic *m = &magic[magindex];
+		struct r_magic *m = &magic[magindex];
 
 		if ((m->flag & BINTEST) != mode) {
 			/* Skip sub-tests */
@@ -276,7 +276,7 @@ match(struct r_magic_set *ms, struct magic *magic, uint32_t nmagic,
 }
 
 static int
-check_fmt(struct r_magic_set *ms, struct magic *m)
+check_fmt(struct r_magic_set *ms, struct r_magic *m)
 {
 	regex_t rx;
 	int rc;
@@ -317,7 +317,7 @@ strndup(const char *str, size_t n)
 #endif /* HAVE_STRNDUP */
 
 static int32_t
-mprint(struct r_magic_set *ms, struct magic *m)
+mprint(struct r_magic_set *ms, struct r_magic *m)
 {
 	uint64_t v;
 	float vf;
@@ -573,25 +573,25 @@ mprint(struct r_magic_set *ms, struct magic *m)
 		p->fld = ~p->fld \
 
 static void
-cvt_8(union VALUETYPE *p, const struct magic *m)
+cvt_8(union VALUETYPE *p, const struct r_magic *m)
 {
 	DO_CVT(b, (uint8_t));
 }
 
 static void
-cvt_16(union VALUETYPE *p, const struct magic *m)
+cvt_16(union VALUETYPE *p, const struct r_magic *m)
 {
 	DO_CVT(h, (uint16_t));
 }
 
 static void
-cvt_32(union VALUETYPE *p, const struct magic *m)
+cvt_32(union VALUETYPE *p, const struct r_magic *m)
 {
 	DO_CVT(l, (uint32_t));
 }
 
 static void
-cvt_64(union VALUETYPE *p, const struct magic *m)
+cvt_64(union VALUETYPE *p, const struct r_magic *m)
 {
 	DO_CVT(q, (uint64_t));
 }
@@ -614,13 +614,13 @@ cvt_64(union VALUETYPE *p, const struct magic *m)
 		} \
 
 static void
-cvt_float(union VALUETYPE *p, const struct magic *m)
+cvt_float(union VALUETYPE *p, const struct r_magic *m)
 {
 	DO_CVT2(f, (float));
 }
 
 static void
-cvt_double(union VALUETYPE *p, const struct magic *m)
+cvt_double(union VALUETYPE *p, const struct r_magic *m)
 {
 	DO_CVT2(d, (double));
 }
@@ -631,7 +631,7 @@ cvt_double(union VALUETYPE *p, const struct magic *m)
  * (unless you have a better idea)
  */
 static int
-mconvert(struct r_magic_set *ms, struct magic *m)
+mconvert(struct r_magic_set *ms, struct r_magic *m)
 {
 	union VALUETYPE *p = &ms->ms_value;
 
@@ -884,7 +884,7 @@ mcopy(struct r_magic_set *ms, union VALUETYPE *p, int type, int indir,
 
 static int
 mget(struct r_magic_set *ms, const unsigned char *s,
-    struct magic *m, size_t nbytes, unsigned int cont_level)
+    struct r_magic *m, size_t nbytes, unsigned int cont_level)
 {
 	uint32_t offset = ms->offset;
 	uint32_t count = m->str_range;
@@ -1505,7 +1505,7 @@ file_strncmp16(const char *a, const char *b, size_t len, uint32_t flags)
 }
 
 static int
-magiccheck(struct r_magic_set *ms, struct magic *m)
+magiccheck(struct r_magic_set *ms, struct r_magic *m)
 {
 	uint64_t l = m->value.q;
 	uint64_t v;

@@ -1,0 +1,17 @@
+CONFIG
+README
+a
+all.sh
+clean.sh
+full-uninstall.sh
+gtkaml.sh
+install.sh
+mingw32-deps.sh
+mingw32.sh
+python-deps.sh
+python.sh
+swig.sh
+uninstall.sh
+update.sh
+vala.sh
+valabind.sh

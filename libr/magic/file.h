@@ -68,16 +68,16 @@ int file_ascmagic(struct r_magic_set *, const unsigned char *, size_t);
 int file_is_tar(struct r_magic_set *, const unsigned char *, size_t);
 int file_softmagic(struct r_magic_set *, const unsigned char *, size_t, int);
 struct mlist *file_apprentice(struct r_magic_set *, const char *, int);
-ut64 file_signextend(struct r_magic_set *, struct magic *,
+ut64 file_signextend(struct r_magic_set *, struct r_magic *,
     ut64);
-void file_delmagic(struct magic *, int type, size_t entries);
+void file_delmagic(struct r_magic *, int type, size_t entries);
 void file_badread(struct r_magic_set *);
 void file_badseek(struct r_magic_set *);
 void file_oomem(struct r_magic_set *, size_t);
 void file_error(struct r_magic_set *, int, const char *, ...);
 void file_magerror(struct r_magic_set *, const char *, ...);
 void file_magwarn(struct r_magic_set *, const char *, ...);
-void file_mdump(struct magic *);
+void file_mdump(struct r_magic *);
 void file_showstr(FILE *, const char *, size_t);
 size_t file_mbswidth(const char *);
 const char *file_getbuffer(struct r_magic_set *);

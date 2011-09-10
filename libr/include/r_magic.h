@@ -53,7 +53,7 @@
 #define FILE_CHECK	1
 #define FILE_COMPILE	2
 
-struct magic {
+struct r_magic {
 	/* Word 1 */
 	ut16 cont_level;	/* level of ">" */
 	ut8 flag;
@@ -218,7 +218,7 @@ struct magic {
 
 /* list of magic entries */
 struct mlist {
-	struct magic *magic;		/* array of magic entries */
+	struct r_magic *magic;		/* array of magic entries */
 	ut32 nmagic;			/* number of entries in array */
 	int mapped;  /* allocation type: 0 => apprentice_file
 		      *                  1 => apprentice_map + malloc

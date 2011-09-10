@@ -9,7 +9,7 @@ Crosscompilation
 
   ArchLinux
   ---------
-  ./configure --without-gmp --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows --without-magic --without-ssl
+  ./configure --without-gmp --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows --without-ssl
   make
   make w32dist
 
@@ -26,7 +26,7 @@ Crosscompilation
   Ubuntu
   ------
   sudo apt-get install mingw32
-  ./configure --without-gmp --with-compiler=i586-mingw32msvc-gcc  --with-ostype=windows --host=i586-unknown-windows --without-magic
+  ./configure --without-gmp --with-compiler=i586-mingw32msvc-gcc  --with-ostype=windows --host=i586-unknown-windows
   make
   make w32dist
 
