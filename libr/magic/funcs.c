@@ -74,7 +74,7 @@ out:
 /*VARARGS*/
 static void
 file_error_core(struct r_magic_set *ms, int error, const char *f, va_list va,
-    uint32_t lineno)
+    ut32 lineno)
 {
 	/* Only the first error is ok */
 	if (ms->haderr)
@@ -209,9 +209,9 @@ file_reset(struct r_magic_set *ms)
 #define OCTALIFY(n, o)	\
 	/*LINTED*/ \
 	(void)(*(n)++ = '\\', \
-	*(n)++ = (((uint32_t)*(o) >> 6) & 3) + '0', \
-	*(n)++ = (((uint32_t)*(o) >> 3) & 7) + '0', \
-	*(n)++ = (((uint32_t)*(o) >> 0) & 7) + '0', \
+	*(n)++ = (((ut32)*(o) >> 6) & 3) + '0', \
+	*(n)++ = (((ut32)*(o) >> 3) & 7) + '0', \
+	*(n)++ = (((ut32)*(o) >> 0) & 7) + '0', \
 	(o)++)
 
 const char *

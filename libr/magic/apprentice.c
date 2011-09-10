@@ -77,8 +77,8 @@
 
 struct r_magic_entry {
 	struct r_magic *mp;	
-	uint32_t cont_count;
-	uint32_t max_count;
+	ut32 cont_count;
+	ut32 max_count;
 };
 
 int file_formats[FILE_NAMES_SIZE];
@@ -90,25 +90,25 @@ static int getvalue(struct r_magic_set *ms, struct r_magic *, const char **, int
 static int hextoint(int);
 static const char *getstr(struct r_magic_set *, const char *, char *, int,
     int *, int);
-static int parse(struct r_magic_set *, struct r_magic_entry **, uint32_t *,
+static int parse(struct r_magic_set *, struct r_magic_entry **, ut32 *,
     const char *, size_t, int);
-static int parse_mime(struct r_magic_set *, struct r_magic_entry **, uint32_t *,
+static int parse_mime(struct r_magic_set *, struct r_magic_entry **, ut32 *,
     const char *);
 static void eatsize(const char **);
 static int apprentice_1(struct r_magic_set *, const char *, int, struct mlist *);
 static size_t apprentice_r_magic_strength(const struct r_magic *);
 static int apprentice_sort(const void *, const void *);
-static int apprentice_load(struct r_magic_set *, struct r_magic **, uint32_t *,
+static int apprentice_load(struct r_magic_set *, struct r_magic **, ut32 *,
     const char *, int);
-static void byteswap(struct r_magic *, uint32_t);
+static void byteswap(struct r_magic *, ut32);
 static void bs1(struct r_magic *);
-static uint16_t swap2(uint16_t);
-static uint32_t swap4(uint32_t);
-static uint64_t swap8(uint64_t);
+static ut16 swap2(ut16);
+static ut32 swap4(ut32);
+static ut64 swap8(ut64);
 static void mkdbname(const char *, char **, int);
-static int apprentice_map(struct r_magic_set *, struct r_magic **, uint32_t *,
+static int apprentice_map(struct r_magic_set *, struct r_magic **, ut32 *,
     const char *);
-static int apprentice_compile(struct r_magic_set *, struct r_magic **, uint32_t *,
+static int apprentice_compile(struct r_magic_set *, struct r_magic **, ut32 *,
     const char *);
 static int check_format_type(const char *, int);
 static int check_format(struct r_magic_set *, struct r_magic *);
@@ -245,7 +245,7 @@ apprentice_1(struct r_magic_set *ms, const char *fn, int action,
     struct mlist *mlist)
 {
 	struct r_magic *magic = NULL;
-	uint32_t nmagic = 0;
+	ut32 nmagic = 0;
 	struct mlist *ml;
 	int rv = -1;
 	int mapped;
@@ -566,7 +566,7 @@ set_test_type(struct r_magic *mstart, struct r_magic *m)
  */
 static void
 load_1(struct r_magic_set *ms, int action, const char *fn, int *errs,
-   struct r_magic_entry **marray, uint32_t *marraycount)
+   struct r_magic_entry **marray, ut32 *marraycount)
 {
 	char line[BUFSIZ];
 	size_t lineno = 0;
@@ -612,12 +612,12 @@ load_1(struct r_magic_set *ms, int action, const char *fn, int *errs,
  * const char *fn: name of magic file or directory
  */
 static int
-apprentice_load(struct r_magic_set *ms, struct r_magic **magicp, uint32_t *nmagicp,
+apprentice_load(struct r_magic_set *ms, struct r_magic **magicp, ut32 *nmagicp,
     const char *fn, int action)
 {
 	int errs = 0;
 	struct r_magic_entry *marray;
-	uint32_t marraycount, i, mentrycount = 0, starttest;
+	ut32 marraycount, i, mentrycount = 0, starttest;
 	char subfn[MAXPATHLEN];
 	struct stat st;
 	DIR *dir;
@@ -742,8 +742,8 @@ out:
 /*
  * extend the sign bit if the comparison is to be signed
  */
-uint64_t
-file_signextend(struct r_magic_set *ms, struct r_magic *m, uint64_t v)
+ut64
+file_signextend(struct r_magic_set *ms, struct r_magic *m, ut64 v)
 {
 	if (!(m->flag & UNSIGNED)) {
 		switch(m->type) {
@@ -915,7 +915,7 @@ get_cond(const char *l, const char **t)
 }
 
 static int
-check_cond(struct r_magic_set *ms, int cond, uint32_t cont_level)
+check_cond(struct r_magic_set *ms, int cond, ut32 cont_level)
 {
 	int last_cond;
 	last_cond = ms->c.li[cont_level].last_cond;
@@ -962,11 +962,11 @@ check_cond(struct r_magic_set *ms, int cond, uint32_t cont_level)
  * parse one line from magic file, put into magic[index++] if valid
  */
 static int
-parse(struct r_magic_set *ms, struct r_magic_entry **mentryp, uint32_t *nmentryp, 
+parse(struct r_magic_set *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, 
     const char *line, size_t lineno, int action)
 {
 #ifdef ENABLE_CONDITIONALS
-	static uint32_t last_cont_level = 0;
+	static ut32 last_cont_level = 0;
 #endif
 	size_t i;
 	struct r_magic_entry *me;
@@ -974,7 +974,7 @@ parse(struct r_magic_set *ms, struct r_magic_entry **mentryp, uint32_t *nmentryp
 	const char *l = line;
 	char *t;
 	int op;
-	uint32_t cont_level;
+	ut32 cont_level;
 
 	cont_level = 0;
 
@@ -1062,7 +1062,7 @@ parse(struct r_magic_set *ms, struct r_magic_entry **mentryp, uint32_t *nmentryp
 			file_magwarn(ms, "relative offset at level 0");
 
 	/* get offset, then skip over it */
-	m->offset = (uint32_t)strtoul(l, &t, 0);
+	m->offset = (ut32)strtoul(l, &t, 0);
         if (l == t)
 		if (ms->flags & R_MAGIC_CHECK)
 			file_magwarn(ms, "offset `%s' invalid", l);
@@ -1185,10 +1185,10 @@ parse(struct r_magic_set *ms, struct r_magic_entry **mentryp, uint32_t *nmentryp
 	m->num_mask = 0;
 	if ((op = get_op(*l)) != -1) {
 		if (!IS_STRING(m->type)) {
-			uint64_t val;
+			ut64 val;
 			++l;
 			m->mask_op |= op;
-			val = (uint64_t)strtoull(l, &t, 0);
+			val = (ut64)strtoull(l, &t, 0);
 			l = t;
 			m->num_mask = file_signextend(ms, m, val);
 			eatsize(&l);
@@ -1339,7 +1339,7 @@ parse(struct r_magic_set *ms, struct r_magic_entry **mentryp, uint32_t *nmentryp
  */
 static int
 parse_mime(struct r_magic_set *ms, struct r_magic_entry **mentryp,
-    uint32_t *nmentryp, const char *line)
+    ut32 *nmentryp, const char *line)
 {
 	size_t i;
 	const char *l = line;
@@ -1613,7 +1613,7 @@ getvalue(struct r_magic_set *ms, struct r_magic *m, const char **p, int action)
 		if (m->reln != 'x') {
 			char *ep;
 			m->value.q = file_signextend(ms, m,
-			    (uint64_t)strtoull(*p, &ep, 0));
+			    (ut64)strtoull(*p, &ep, 0));
 			*p = ep;
 			eatsize(p);
 		}
@@ -1874,13 +1874,13 @@ eatsize(const char **p)
  * handle a compiled file.
  */
 static int
-apprentice_map(struct r_magic_set *ms, struct r_magic **magicp, uint32_t *nmagicp,
+apprentice_map(struct r_magic_set *ms, struct r_magic **magicp, ut32 *nmagicp,
     const char *fn)
 {
 	int fd;
 	struct stat st;
-	uint32_t *ptr;
-	uint32_t version;
+	ut32 *ptr;
+	ut32 version;
 	int needsbyteswap;
 	char *dbname = NULL;
 	void *mm = NULL;
@@ -1922,7 +1922,7 @@ apprentice_map(struct r_magic_set *ms, struct r_magic **magicp, uint32_t *nmagic
 	*magicp = mm;
 	(void)close(fd);
 	fd = -1;
-	ptr = (uint32_t *)(void *)*magicp;
+	ptr = (ut32 *)(void *)*magicp;
 	if (*ptr != MAGICNO) {
 		if (swap4(*ptr) != MAGICNO) {
 			file_error(ms, 0, "bad magic in `%s'");
@@ -1941,7 +1941,7 @@ apprentice_map(struct r_magic_set *ms, struct r_magic **magicp, uint32_t *nmagic
 		    VERSIONNO, dbname, version);
 		goto error1;
 	}
-	*nmagicp = (uint32_t)(st.st_size / sizeof(struct r_magic));
+	*nmagicp = (ut32)(st.st_size / sizeof(struct r_magic));
 	if (*nmagicp > 0)
 		(*nmagicp)--;
 	(*magicp)++;
@@ -1968,7 +1968,7 @@ error2:
 	return -1;
 }
 
-static const uint32_t ar[] = {
+static const ut32 ar[] = {
     MAGICNO, VERSIONNO
 };
 /*
@@ -1976,7 +1976,7 @@ static const uint32_t ar[] = {
  */
 static int
 apprentice_compile(struct r_magic_set *ms, struct r_magic **magicp,
-    uint32_t *nmagicp, const char *fn)
+    ut32 *nmagicp, const char *fn)
 {
 	int fd;
 	char *dbname;
@@ -2040,9 +2040,9 @@ mkdbname(const char *fn, char **buf, int strip)
  * Byteswap an mmap'ed file if needed
  */
 static void
-byteswap(struct r_magic *magic, uint32_t nmagic)
+byteswap(struct r_magic *magic, ut32 nmagic)
 {
-	uint32_t i;
+	ut32 i;
 	for (i = 0; i < nmagic; i++)
 		bs1(&magic[i]);
 }
@@ -2050,12 +2050,12 @@ byteswap(struct r_magic *magic, uint32_t nmagic)
 /*
  * swap a short
  */
-static uint16_t
-swap2(uint16_t sv)
+static ut16
+swap2(ut16 sv)
 {
-	uint16_t rv;
-	uint8_t *s = (uint8_t *)(void *)&sv; 
-	uint8_t *d = (uint8_t *)(void *)&rv; 
+	ut16 rv;
+	ut8 *s = (ut8 *)(void *)&sv; 
+	ut8 *d = (ut8 *)(void *)&rv; 
 	d[0] = s[1];
 	d[1] = s[0];
 	return rv;
@@ -2064,12 +2064,12 @@ swap2(uint16_t sv)
 /*
  * swap an int
  */
-static uint32_t
-swap4(uint32_t sv)
+static ut32
+swap4(ut32 sv)
 {
-	uint32_t rv;
-	uint8_t *s = (uint8_t *)(void *)&sv; 
-	uint8_t *d = (uint8_t *)(void *)&rv; 
+	ut32 rv;
+	ut8 *s = (ut8 *)(void *)&sv; 
+	ut8 *d = (ut8 *)(void *)&rv; 
 	d[0] = s[3];
 	d[1] = s[2];
 	d[2] = s[1];
@@ -2080,12 +2080,12 @@ swap4(uint32_t sv)
 /*
  * swap a quad
  */
-static uint64_t
-swap8(uint64_t sv)
+static ut64
+swap8(ut64 sv)
 {
-	uint64_t rv;
-	uint8_t *s = (uint8_t *)(void *)&sv; 
-	uint8_t *d = (uint8_t *)(void *)&rv; 
+	ut64 rv;
+	ut8 *s = (ut8 *)(void *)&sv; 
+	ut8 *d = (ut8 *)(void *)&rv; 
 #if 0
 	d[0] = s[3];
 	d[1] = s[2];
@@ -2115,9 +2115,9 @@ static void
 bs1(struct r_magic *m)
 {
 	m->cont_level = swap2(m->cont_level);
-	m->offset = swap4((uint32_t)m->offset);
-	m->in_offset = swap4((uint32_t)m->in_offset);
-	m->lineno = swap4((uint32_t)m->lineno);
+	m->offset = swap4((ut32)m->offset);
+	m->in_offset = swap4((ut32)m->in_offset);
+	m->lineno = swap4((ut32)m->lineno);
 	if (IS_STRING(m->type)) {
 		m->str_range = swap4(m->str_range);
 		m->str_flags = swap4(m->str_flags);

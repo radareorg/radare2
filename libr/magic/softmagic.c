@@ -37,15 +37,15 @@
 #include <time.h>
 
 
-static int match(struct r_magic_set *, struct r_magic *, uint32_t,
+static int match(struct r_magic_set *, struct r_magic *, ut32,
     const unsigned char *, size_t, int);
 static int mget(struct r_magic_set *, const unsigned char *,
     struct r_magic *, size_t, unsigned int);
 static int magiccheck(struct r_magic_set *, struct r_magic *);
 static int32_t mprint(struct r_magic_set *, struct r_magic *);
-static void mdebug(uint32_t, const char *, size_t);
+static void mdebug(ut32, const char *, size_t);
 static int mcopy(struct r_magic_set *, union VALUETYPE *, int, int,
-    const unsigned char *, uint32_t, size_t, size_t);
+    const unsigned char *, ut32, size_t, size_t);
 static int mconvert(struct r_magic_set *, struct r_magic *);
 static int print_sep(struct r_magic_set *, int);
 static void cvt_8(union VALUETYPE *, const struct r_magic *);
@@ -104,10 +104,10 @@ file_softmagic(struct r_magic_set *ms, const unsigned char *buf, size_t nbytes, 
  *	so that higher-level continuations are processed.
  */
 static int
-match(struct r_magic_set *ms, struct r_magic *magic, uint32_t nmagic,
+match(struct r_magic_set *ms, struct r_magic *magic, ut32 nmagic,
     const unsigned char *s, size_t nbytes, int mode)
 {
-	uint32_t magindex = 0;
+	ut32 magindex = 0;
 	unsigned int cont_level = 0;
 	int need_separator = 0;
 	int returnval = 0; /* if a match is found it is set to 1*/
@@ -319,7 +319,7 @@ strndup(const char *str, size_t n)
 static int32_t
 mprint(struct r_magic_set *ms, struct r_magic *m)
 {
-	uint64_t v;
+	ut64 v;
 	float vf;
 	double vd;
 	int64_t t = 0;
@@ -328,7 +328,7 @@ mprint(struct r_magic_set *ms, struct r_magic *m)
 
   	switch (m->type) {
   	case FILE_BYTE:
-		v = file_signextend(ms, m, (uint64_t)p->b);
+		v = file_signextend(ms, m, (ut64)p->b);
 		switch (check_fmt(ms, m)) {
 		case -1:
 			return -1;
@@ -349,7 +349,7 @@ mprint(struct r_magic_set *ms, struct r_magic *m)
   	case FILE_SHORT:
   	case FILE_BESHORT:
   	case FILE_LESHORT:
-		v = file_signextend(ms, m, (uint64_t)p->h);
+		v = file_signextend(ms, m, (ut64)p->h);
 		switch (check_fmt(ms, m)) {
 		case -1:
 			return -1;
@@ -371,18 +371,18 @@ mprint(struct r_magic_set *ms, struct r_magic *m)
   	case FILE_BELONG:
   	case FILE_LELONG:
   	case FILE_MELONG:
-		v = file_signextend(ms, m, (uint64_t)p->l);
+		v = file_signextend(ms, m, (ut64)p->l);
 		switch (check_fmt(ms, m)) {
 		case -1:
 			return -1;
 		case 1:
-			if (asprintf(&buf, "%u", (uint32_t)v) < 0)
+			if (asprintf(&buf, "%u", (ut32)v) < 0)
 				return -1;
 			if (file_printf(ms, R_MAGIC_DESC, buf) == -1)
 				return -1;
 			break;
 		default:
-			if (file_printf(ms, R_MAGIC_DESC, (uint32_t) v) == -1)
+			if (file_printf(ms, R_MAGIC_DESC, (ut32) v) == -1)
 				return -1;
 			break;
 		}
@@ -393,7 +393,7 @@ mprint(struct r_magic_set *ms, struct r_magic *m)
   	case FILE_BEQUAD:
   	case FILE_LEQUAD:
 		v = file_signextend(ms, m, p->q);
-		if (file_printf(ms, R_MAGIC_DESC, (uint64_t) v) == -1)
+		if (file_printf(ms, R_MAGIC_DESC, (ut64) v) == -1)
 			return -1;
 		t = ms->offset + sizeof(int64_t);
   		break;
@@ -439,19 +439,19 @@ mprint(struct r_magic_set *ms, struct r_magic *m)
 	case FILE_QDATE:
 	case FILE_BEQDATE:
 	case FILE_LEQDATE:
-		if (file_printf(ms, R_MAGIC_DESC, file_fmttime((uint32_t)p->q, 1))
+		if (file_printf(ms, R_MAGIC_DESC, file_fmttime((ut32)p->q, 1))
 		    == -1)
 			return -1;
-		t = ms->offset + sizeof(uint64_t);
+		t = ms->offset + sizeof(ut64);
 		break;
 
 	case FILE_QLDATE:
 	case FILE_BEQLDATE:
 	case FILE_LEQLDATE:
-		if (file_printf(ms, R_MAGIC_DESC, file_fmttime((uint32_t)p->q, 0))
+		if (file_printf(ms, R_MAGIC_DESC, file_fmttime((ut32)p->q, 0))
 		    == -1)
 			return -1;
-		t = ms->offset + sizeof(uint64_t);
+		t = ms->offset + sizeof(ut64);
 		break;
 
   	case FILE_FLOAT:
@@ -575,25 +575,25 @@ mprint(struct r_magic_set *ms, struct r_magic *m)
 static void
 cvt_8(union VALUETYPE *p, const struct r_magic *m)
 {
-	DO_CVT(b, (uint8_t));
+	DO_CVT(b, (ut8));
 }
 
 static void
 cvt_16(union VALUETYPE *p, const struct r_magic *m)
 {
-	DO_CVT(h, (uint16_t));
+	DO_CVT(h, (ut16));
 }
 
 static void
 cvt_32(union VALUETYPE *p, const struct r_magic *m)
 {
-	DO_CVT(l, (uint32_t));
+	DO_CVT(l, (ut32));
 }
 
 static void
 cvt_64(union VALUETYPE *p, const struct r_magic *m)
 {
-	DO_CVT(q, (uint64_t));
+	DO_CVT(q, (ut64));
 }
 
 #define DO_CVT2(fld, cast) \
@@ -691,11 +691,11 @@ mconvert(struct r_magic_set *ms, struct r_magic *m)
 	case FILE_BEQUAD:
 	case FILE_BEQDATE:
 	case FILE_BEQLDATE:
-		p->q = (uint64_t)
-		    (((uint64_t)p->hq[0]<<56)|((uint64_t)p->hq[1]<<48)|
-		     ((uint64_t)p->hq[2]<<40)|((uint64_t)p->hq[3]<<32)|
-		     ((uint64_t)p->hq[4]<<24)|((uint64_t)p->hq[5]<<16)|
-		     ((uint64_t)p->hq[6]<<8)|((uint64_t)p->hq[7]));
+		p->q = (ut64)
+		    (((ut64)p->hq[0]<<56)|((ut64)p->hq[1]<<48)|
+		     ((ut64)p->hq[2]<<40)|((ut64)p->hq[3]<<32)|
+		     ((ut64)p->hq[4]<<24)|((ut64)p->hq[5]<<16)|
+		     ((ut64)p->hq[6]<<8)|((ut64)p->hq[7]));
 		cvt_64(p, m);
 		return 1;
 	case FILE_LESHORT:
@@ -712,11 +712,11 @@ mconvert(struct r_magic_set *ms, struct r_magic *m)
 	case FILE_LEQUAD:
 	case FILE_LEQDATE:
 	case FILE_LEQLDATE:
-		p->q = (uint64_t)
-		    (((uint64_t)p->hq[7]<<56)|((uint64_t)p->hq[6]<<48)|
-		     ((uint64_t)p->hq[5]<<40)|((uint64_t)p->hq[4]<<32)|
-		     ((uint64_t)p->hq[3]<<24)|((uint64_t)p->hq[2]<<16)|
-		     ((uint64_t)p->hq[1]<<8)|((uint64_t)p->hq[0]));
+		p->q = (ut64)
+		    (((ut64)p->hq[7]<<56)|((ut64)p->hq[6]<<48)|
+		     ((ut64)p->hq[5]<<40)|((ut64)p->hq[4]<<32)|
+		     ((ut64)p->hq[3]<<24)|((ut64)p->hq[2]<<16)|
+		     ((ut64)p->hq[1]<<8)|((ut64)p->hq[0]));
 		cvt_64(p, m);
 		return 1;
 	case FILE_MELONG:
@@ -730,30 +730,30 @@ mconvert(struct r_magic_set *ms, struct r_magic *m)
 		cvt_float(p, m);
 		return 1;
 	case FILE_BEFLOAT:
-		p->l =  ((uint32_t)p->hl[0]<<24)|((uint32_t)p->hl[1]<<16)|
-			((uint32_t)p->hl[2]<<8) |((uint32_t)p->hl[3]);
+		p->l =  ((ut32)p->hl[0]<<24)|((ut32)p->hl[1]<<16)|
+			((ut32)p->hl[2]<<8) |((ut32)p->hl[3]);
 		cvt_float(p, m);
 		return 1;
 	case FILE_LEFLOAT:
-		p->l =  ((uint32_t)p->hl[3]<<24)|((uint32_t)p->hl[2]<<16)|
-			((uint32_t)p->hl[1]<<8) |((uint32_t)p->hl[0]);
+		p->l =  ((ut32)p->hl[3]<<24)|((ut32)p->hl[2]<<16)|
+			((ut32)p->hl[1]<<8) |((ut32)p->hl[0]);
 		cvt_float(p, m);
 		return 1;
 	case FILE_DOUBLE:
 		cvt_double(p, m);
 		return 1;
 	case FILE_BEDOUBLE:
-		p->q =  ((uint64_t)p->hq[0]<<56)|((uint64_t)p->hq[1]<<48)|
-			((uint64_t)p->hq[2]<<40)|((uint64_t)p->hq[3]<<32)|
-			((uint64_t)p->hq[4]<<24)|((uint64_t)p->hq[5]<<16)|
-			((uint64_t)p->hq[6]<<8) |((uint64_t)p->hq[7]);
+		p->q =  ((ut64)p->hq[0]<<56)|((ut64)p->hq[1]<<48)|
+			((ut64)p->hq[2]<<40)|((ut64)p->hq[3]<<32)|
+			((ut64)p->hq[4]<<24)|((ut64)p->hq[5]<<16)|
+			((ut64)p->hq[6]<<8) |((ut64)p->hq[7]);
 		cvt_double(p, m);
 		return 1;
 	case FILE_LEDOUBLE:
-		p->q =  ((uint64_t)p->hq[7]<<56)|((uint64_t)p->hq[6]<<48)|
-			((uint64_t)p->hq[5]<<40)|((uint64_t)p->hq[4]<<32)|
-			((uint64_t)p->hq[3]<<24)|((uint64_t)p->hq[2]<<16)|
-			((uint64_t)p->hq[1]<<8) |((uint64_t)p->hq[0]);
+		p->q =  ((ut64)p->hq[7]<<56)|((ut64)p->hq[6]<<48)|
+			((ut64)p->hq[5]<<40)|((ut64)p->hq[4]<<32)|
+			((ut64)p->hq[3]<<24)|((ut64)p->hq[2]<<16)|
+			((ut64)p->hq[1]<<8) |((ut64)p->hq[0]);
 		cvt_double(p, m);
 		return 1;
 	case FILE_REGEX:
@@ -768,7 +768,7 @@ mconvert(struct r_magic_set *ms, struct r_magic *m)
 
 
 static void
-mdebug(uint32_t offset, const char *str, size_t len)
+mdebug(ut32 offset, const char *str, size_t len)
 {
 	(void) fprintf(stderr, "mget @%d: ", offset);
 	file_showstr(stderr, str, len);
@@ -778,7 +778,7 @@ mdebug(uint32_t offset, const char *str, size_t len)
 
 static int
 mcopy(struct r_magic_set *ms, union VALUETYPE *p, int type, int indir,
-    const unsigned char *s, uint32_t offset, size_t nbytes, size_t linecnt)
+    const unsigned char *s, ut32 offset, size_t nbytes, size_t linecnt)
 {
 	/*
 	 * Note: FILE_SEARCH and FILE_REGEX do not actually copy
@@ -886,8 +886,8 @@ static int
 mget(struct r_magic_set *ms, const unsigned char *s,
     struct r_magic *m, size_t nbytes, unsigned int cont_level)
 {
-	uint32_t offset = ms->offset;
-	uint32_t count = m->str_range;
+	ut32 offset = ms->offset;
+	ut32 count = m->str_range;
 	union VALUETYPE *p = &ms->ms_value;
 
 	if (mcopy(ms, p, m->type, m->flag & INDIR, s, offset, nbytes, count) == -1)
@@ -1430,8 +1430,8 @@ mget(struct r_magic_set *ms, const unsigned char *s,
 	return 1;
 }
 
-static uint64_t
-file_strncmp(const char *s1, const char *s2, size_t len, uint32_t flags)
+static ut64
+file_strncmp(const char *s1, const char *s2, size_t len, ut32 flags)
 {
 	/*
 	 * Convert the source args to unsigned here so that (1) the
@@ -1441,7 +1441,7 @@ file_strncmp(const char *s1, const char *s2, size_t len, uint32_t flags)
 	 */
 	const unsigned char *a = (const unsigned char *)s1;
 	const unsigned char *b = (const unsigned char *)s2;
-	uint64_t v;
+	ut64 v;
 
 	/*
 	 * What we want here is v = strncmp(s1, s2, len),
@@ -1492,8 +1492,8 @@ file_strncmp(const char *s1, const char *s2, size_t len, uint32_t flags)
 	return v;
 }
 
-static uint64_t
-file_strncmp16(const char *a, const char *b, size_t len, uint32_t flags)
+static ut64
+file_strncmp16(const char *a, const char *b, size_t len, ut32 flags)
 {
 	/*
 	 * XXX - The 16-bit string compare probably needs to be done
@@ -1507,8 +1507,8 @@ file_strncmp16(const char *a, const char *b, size_t len, uint32_t flags)
 static int
 magiccheck(struct r_magic_set *ms, struct r_magic *m)
 {
-	uint64_t l = m->value.q;
-	uint64_t v;
+	ut64 l = m->value.q;
+	ut64 v;
 	float fl, fv;
 	double dl, dv;
 	int matched;
@@ -1674,7 +1674,7 @@ magiccheck(struct r_magic_set *ms, struct r_magic *m)
 			(void)regerror(rc, &rx, errmsg, sizeof(errmsg));
 			file_magerror(ms, "regex error %d, (%s)",
 			    rc, errmsg);
-			v = (uint64_t)-1;
+			v = (ut64)-1;
 		}
 		else {
 			regmatch_t pmatch[1];
@@ -1709,12 +1709,12 @@ magiccheck(struct r_magic_set *ms, struct r_magic *m)
 				(void)regerror(rc, &rx, errmsg, sizeof(errmsg));
 				file_magerror(ms, "regexec error %d, (%s)",
 				    rc, errmsg);
-				v = (uint64_t)-1;
+				v = (ut64)-1;
 				break;
 			}
 			regfree(&rx);
 		}
-		if (v == (uint64_t)-1)
+		if (v == (ut64)-1)
 			return -1;
 		break;
 	}

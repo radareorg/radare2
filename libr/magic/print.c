@@ -146,13 +146,13 @@ file_mdump(struct r_magic *m)
 		case FILE_LEQDATE:
 		case FILE_BEQDATE:
 			(void)fprintf(stderr, "%s,",
-			    file_fmttime((uint32_t)m->value.q, 1));
+			    file_fmttime((ut32)m->value.q, 1));
 			break;
 		case FILE_QLDATE:
 		case FILE_LEQLDATE:
 		case FILE_BEQLDATE:
 			(void)fprintf(stderr, "%s,",
-			    file_fmttime((uint32_t)m->value.q, 0));
+			    file_fmttime((ut32)m->value.q, 0));
 			break;
 		case FILE_FLOAT:
 		case FILE_BEFLOAT:
@@ -196,7 +196,7 @@ file_magwarn(struct r_magic_set *ms, const char *f, ...)
 }
 
 const char *
-file_fmttime(uint32_t v, int local)
+file_fmttime(ut32 v, int local)
 {
 	char *pp;
 	time_t t = (time_t)v;
