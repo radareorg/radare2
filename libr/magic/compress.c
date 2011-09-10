@@ -233,8 +233,8 @@ file_pipe2file(struct r_magic_set *ms, int fd, const void *startbuf,
 	char buf[4096];
 	int r, tfd;
 
-	(void)strlcpy(buf, "/tmp/file.XXXXXX", sizeof buf);
-	tfd = mkstemp(buf);
+	strncpy (buf, "/tmp/file.XXXXXX", sizeof (buf));
+	tfd = mkstemp (buf);
 	r = errno;
 	(void)unlink(buf);
 	errno = r;

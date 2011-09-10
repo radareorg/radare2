@@ -131,7 +131,7 @@ free_mlist(struct mlist *mlist)
 
 	for (ml = mlist->next; ml != mlist;) {
 		struct mlist *next = ml->next;
-		struct magic *mg = ml->magic;
+		struct r_magic *mg = ml->magic;
 		file_delmagic(mg, ml->mapped, ml->nmagic);
 		free(ml);
 		ml = next;

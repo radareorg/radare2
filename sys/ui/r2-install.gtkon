@@ -1,0 +1,18 @@
+Window $Main using=Gtk {
+	VBox {
+		Label label="hello world";
+		HBox {
+			Button label="Install";
+			Button label="Update";
+			Button label="Deinstall";
+		}
+	}
+-{
+	public static void main(string[] args) {
+		Gtk.init (ref args);
+		var m = new Main ();
+		m.show_all();
+		Gtk.main();
+	}
+}-
+}

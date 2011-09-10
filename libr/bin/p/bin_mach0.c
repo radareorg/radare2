@@ -202,7 +202,7 @@ typedef struct r_bin_create_t {
 
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
 	ut32 filesize, codeva, datava;
-	ut32 ncmds, cmdsize, magiclen, headerlen;
+	ut32 ncmds, cmdsize, magiclen;
 	ut32 p_codefsz, p_codeva, p_codesz, p_codepa;
 	ut32 p_datafsz, p_datava, p_datasz, p_datapa;
 	ut32 p_cmdsize, p_entry, p_tmp;
@@ -327,15 +327,15 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 		Z (16 * sizeof (ut32));
 	}
 
-	headerlen = buf->length - magiclen;
+	cmdsize = buf->length - magiclen;
 
 	codeva = buf->length + baddr;
 	datava = buf->length + codelen + baddr;
 	W (p_entry, &codeva, 4); // set PC
 
 	/* fill header variables */
-	W (p_cmdsize, &headerlen, 4);
-	filesize = magiclen + headerlen + codelen + datalen;
+	W (p_cmdsize, &cmdsize, 4);
+	filesize = magiclen + cmdsize + codelen + datalen;
 	// TEXT SEGMENT //
 	W (p_codefsz, &filesize, 4);
 	W (p_codeva, &codeva, 4);
