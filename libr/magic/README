@@ -6,3 +6,5 @@ and integrate with r2 syntax. magic_ api is now r_magic_
    --pancake
 
 $ cvs -d anoncvs@anoncvs.ca.openbsd.org:/cvs get src/usr.bin/file
+
+* understand and document how conditional works

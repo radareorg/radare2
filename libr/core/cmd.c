@@ -1576,17 +1576,23 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth,
 	const char *fmt;
 	char *q, *p;
 	const char *str;
-	r_magic_t ck;
+	static RMagic *ck = NULL;
+	static char *oldfile = NULL;
 
 	if (--depth<0)
 		return;
 	if (addr != core->offset)
 		r_core_seek (core, addr, R_TRUE);
-	if (*file == ' ') file++;
-	if (!*file) file = NULL;
-	ck = r_magic_open (0);
-	if (r_magic_load (ck, MAGICPATH) == -1) {
-		eprintf ("failed r_magic_load ("MAGICPATH") %s\n", r_magic_error (ck));
+	if (file) {
+		if (*file == ' ') file++;
+		if (!*file) file = NULL;
+	}
+	if (!oldfile || (file && strcmp (file, oldfile))) {
+		// TODO: Move RMagic into RCore
+		r_magic_free (ck);
+		ck = r_magic_new (0);
+		if (r_magic_load (ck, MAGICPATH) == -1)
+			eprintf ("failed r_magic_load ("MAGICPATH") %s\n", r_magic_error (ck));
 	}
 	if (file)
 	if (r_magic_load (ck, file) == -1) {
@@ -1606,6 +1612,7 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth,
 				*q = '\n';
 				strcpy (q+1, q+((q[2]==' ')? 3: 2));
 			}
+		// TODO: This must be a callback .. move this into RSearch?
 		r_cons_printf ("0x%08"PFMT64x" %d %s\n", addr, magicdepth-depth, p);
 		// walking childs
 		for (q=p; *q; q++) {
@@ -1625,7 +1632,6 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth,
 		}
 		free (p);
 	}
-	r_magic_close (ck);
 }
 
 static void r_core_magic(RCore *core, const char *file, int v) {
@@ -1698,11 +1704,9 @@ l = len;
 			}
 		}
 		break;
-	case 'b':
-		{
-		char *buf;
-		int size = core->blocksize * 8;
-		buf = malloc (size);
+	case 'b': {
+		const int size = len*8;
+		char *buf = malloc (size+1);
 		if (buf) {
 			r_str_bits (buf, core->block, size, NULL);
 			r_cons_printf ("%s\n", buf);
@@ -1795,13 +1799,13 @@ l = len;
 		if (input[1]=='p') {
 			int mylen = core->block[0];
 			// TODO: add support for 2-4 byte length pascal strings
-			r_print_string (core->print, core->offset, core->block+1, mylen, 0, 1, 0); //, 78, 1);
+			r_print_string (core->print, core->offset, core->block, mylen, 0, 1, 0); //, 78, 1);
 			core->num->value = mylen;
 		} else 
 		if (input[1]==' ') {
 			len = r_num_math (core->num, input+2);
 			r_print_string (core->print, core->offset, core->block, len, 0, 0, 0); //, 78, 1);
-		} else r_print_string (core->print, core->offset, core->block+1, len, 0, 1, 0); //, 78, 1);
+		} else r_print_string (core->print, core->offset, core->block, len, 0, 1, 0); //, 78, 1);
 		break;
 	case 'S':
 		r_print_string (core->print, core->offset, core->block, len, 1, 1, 0); //, 78, 1);
@@ -3248,15 +3252,14 @@ static int cmd_search(void *data, const char *input) {
 		break;
 	case 'm':
 		dosearch = R_FALSE;
-		if (input[1]==' ') {
-			const char *file = input+2;
+		if (input[1]==' ' || input[1]=='\0') {
+			const char *file = input[1]? input+2: NULL;
 			ut64 addr = from;
 			r_cons_break (NULL, NULL);
 			for (; addr<to; addr++) {
 				if (r_cons_singleton ()->breaked)
 					break;
-				r_core_seek (core, addr, R_TRUE);
-				r_core_magic (core, file, R_FALSE);
+				r_core_magic_at (core, file, addr, 99, R_FALSE);
 			}
 			r_cons_break_end();
 		} else eprintf ("Usage: /m [file]\n");
@@ -4393,6 +4396,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					if (r_str_glob (flag->name, word)) {
 						r_core_seek (core, flag->offset, 1);
 						//r_cons_printf ("# @@ 0x%08"PFMT64x" (%s)\n", core->offset, flag->name);
+						r_cons_printf ("0x%08"PFMT64x"  ", core->offset);
 						r_core_cmd (core, cmd, 0);
 					}
 				}

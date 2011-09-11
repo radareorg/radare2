@@ -5,11 +5,13 @@
 
 ====[[ 0.9 ]]====
 
+* Optimize /m
+  - do not read each block byte per byte
+  - do not show repeated consecutive hits
+* Handle ^C in searches (at least)
 * Remove/deprecate libr/vm
 * Merge libr/db inside libr/util ?
-* Ensure current OS identification is correct for ELF .. freebsd bin
 * Test r_search_delta()
-* libmagic internal :? -- find a decent implementation and adopt it
 
 ------8<-------------------8<--------------------8<-----------------8<----------
 
@@ -26,8 +28,9 @@
 * add support for sockets in rarun2
 * shell encoder - get x86-64 one from twitter
 * RBinCreate:
-  - mach0 create for osx64 and darwin-arm
-  - elf create for linux-ARM
+  - mach0 create for darwin-ppc
+  - pe64
+  - plan9 bins
 
 BOTTLENECKS:
 ============
@@ -46,7 +49,6 @@ OSX
   - This is probably because we are using the 32bit binary on 64bit dbg
 * Proper support for MACH-O binaries
   - rabin2 -f works? i think its used with '-a' 
-
 
 TODO
 ====
@@ -70,7 +72,6 @@ TODO
   - dca sym.main imp.printf
 * If [0-9] keybindings in visual point to same address use same reference
 
-* Handle ^C in searches (at least)
 
  -- refactoring tasks
 * Make r_io happy with RList

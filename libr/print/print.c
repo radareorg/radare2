@@ -170,7 +170,7 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int wide
 	//if (p->flags & R_PRINT_FLAGS_OFFSET)
 		// r_print_addr(p, seek);
 	p->interrupt = 0;
-	for (i=0;!p->interrupt&&i<len;i++) {
+	for (i=0; !p->interrupt && i<len; i++) {
 		if (zeroend && buf[i]=='\0')
 			break;
 		r_print_cursor (p, i, 1);

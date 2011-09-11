@@ -52,23 +52,20 @@
 #define ISSPC(x) ((x) == ' ' || (x) == '\t' || (x) == '\r' || (x) == '\n' \
 		  || (x) == 0x85 || (x) == '\f')
 
-static int looks_ascii(const unsigned char *, size_t, unichar *, size_t *);
-static int looks_utf8_with_BOM(const unsigned char *, size_t, unichar *,
+static int looks_ascii(const ut8 *, size_t, unichar *, size_t *);
+static int looks_utf8_with_BOM(const ut8 *, size_t, unichar *,
     size_t *);
-int file_looks_utf8(const unsigned char *, size_t, unichar *, size_t *);
-static int looks_ucs16(const unsigned char *, size_t, unichar *, size_t *);
-static int looks_latin1(const unsigned char *, size_t, unichar *, size_t *);
-static int looks_extended(const unsigned char *, size_t, unichar *, size_t *);
-static void from_ebcdic(const unsigned char *, size_t, unsigned char *);
-static int ascmatch(const unsigned char *, const unichar *, size_t);
-static unsigned char *encode_utf8(unsigned char *, size_t, unichar *, size_t);
+int file_looks_utf8(const ut8 *, size_t, unichar *, size_t *);
+static int looks_ucs16(const ut8 *, size_t, unichar *, size_t *);
+static int looks_latin1(const ut8 *, size_t, unichar *, size_t *);
+static int looks_extended(const ut8 *, size_t, unichar *, size_t *);
+static void from_ebcdic(const ut8 *, size_t, ut8 *);
+static int ascmatch(const ut8 *, const unichar *, size_t);
+static ut8 *encode_utf8(ut8 *, size_t, unichar *, size_t);
 
-
-int
-file_ascmagic(struct r_magic_set *ms, const unsigned char *buf, size_t nbytes)
-{
+int file_ascmagic(RMagic *ms, const ut8 *buf, size_t nbytes) {
 	size_t i;
-	unsigned char *nbuf = NULL, *utf8_buf = NULL, *utf8_end;
+	ut8 *nbuf = NULL, *utf8_buf = NULL, *utf8_end;
 	unichar *ubuf = NULL;	
 	size_t ulen, mlen;
 	const struct names *p;
@@ -200,7 +197,7 @@ file_ascmagic(struct r_magic_set *ms, const unsigned char *buf, size_t nbytes)
 
 		/* compare the word thus isolated against the token list */
 		for (p = names; p < names + NNAMES; p++) {
-			if (ascmatch((const unsigned char *)p->name, ubuf + i,
+			if (ascmatch((const ut8 *)p->name, ubuf + i,
 			    end - i)) {
 				subtype = types[p->type].human;
 				subtype_mime = types[p->type].mime;
@@ -232,7 +229,6 @@ subtype_identified:
 			n_nel++;
 			last_line_end = i;
 		}
-
 		/* If this line is _longer_ than MAXLINELEN, remember it. */
 		if (i > last_line_end + MAXLINELEN)
 			has_long_lines = 1;
@@ -343,30 +339,19 @@ subtype_identified:
 	}
 	rv = 1;
 done:
-	if (nbuf)
-		free(nbuf);
-	if (ubuf)
-		free(ubuf);
-	if (utf8_buf)
-		free(utf8_buf);
-
+	free (nbuf);
+	free (ubuf);
+	free (utf8_buf);
 	return rv;
 }
 
-static int
-ascmatch(const unsigned char *s, const unichar *us, size_t ulen)
-{
+static int ascmatch(const ut8 *s, const unichar *us, size_t ulen) {
 	size_t i;
-
 	for (i = 0; i < ulen; i++) {
 		if (s[i] != us[i])
 			return 0;
 	}
-
-	if (s[i])
-		return 0;
-	else
-		return 1;
+	return s[i]? 0: 1;
 }
 
 /*
@@ -448,62 +433,40 @@ static char text_chars[256] = {
 	I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I   /* 0xfX */
 };
 
-static int
-looks_ascii(const unsigned char *buf, size_t nbytes, unichar *ubuf,
-    size_t *ulen)
-{
+static int looks_ascii(const ut8 *buf, size_t nbytes, unichar *ubuf, size_t *ulen) {
 	size_t i;
-
 	*ulen = 0;
-
 	for (i = 0; i < nbytes; i++) {
 		int t = text_chars[buf[i]];
-
 		if (t != T)
 			return 0;
-
 		ubuf[(*ulen)++] = buf[i];
 	}
-
 	return 1;
 }
 
-static int
-looks_latin1(const unsigned char *buf, size_t nbytes, unichar *ubuf, size_t *ulen)
-{
+static int looks_latin1(const ut8 *buf, size_t nbytes, unichar *ubuf, size_t *ulen) {
 	size_t i;
-
 	*ulen = 0;
 
 	for (i = 0; i < nbytes; i++) {
 		int t = text_chars[buf[i]];
-
 		if (t != T && t != I)
 			return 0;
-
 		ubuf[(*ulen)++] = buf[i];
 	}
-
 	return 1;
 }
 
-static int
-looks_extended(const unsigned char *buf, size_t nbytes, unichar *ubuf,
-    size_t *ulen)
-{
+static int looks_extended(const ut8 *buf, size_t nbytes, unichar *ubuf, size_t *ulen) {
 	size_t i;
-
 	*ulen = 0;
-
 	for (i = 0; i < nbytes; i++) {
 		int t = text_chars[buf[i]];
-
 		if (t != T && t != I && t != X)
 			return 0;
-
 		ubuf[(*ulen)++] = buf[i];
 	}
-
 	return 1;
 }
 
@@ -511,52 +474,52 @@ looks_extended(const unsigned char *buf, size_t nbytes, unichar *ubuf,
  * Encode Unicode string as UTF-8, returning pointer to character
  * after end of string, or NULL if an invalid character is found.
  */
-static unsigned char *
-encode_utf8(unsigned char *buf, size_t len, unichar *ubuf, size_t ulen)
+static ut8 *
+encode_utf8(ut8 *buf, size_t len, unichar *ubuf, size_t ulen)
 {
 	size_t i;
-	unsigned char *end = buf + len;
+	ut8 *end = buf + len;
 
 	for (i = 0; i < ulen; i++) {
 		if (ubuf[i] <= 0x7f) {
 			if (end - buf < 1)
 				return NULL;
-			*buf++ = (unsigned char)ubuf[i];
+			*buf++ = (ut8)ubuf[i];
 		} else if (ubuf[i] <= 0x7ff) {
 			if (end - buf < 2)
 				return NULL;
-			*buf++ = (unsigned char)((ubuf[i] >> 6) + 0xc0);
-			*buf++ = (unsigned char)((ubuf[i] & 0x3f) + 0x80);
+			*buf++ = (ut8)((ubuf[i] >> 6) + 0xc0);
+			*buf++ = (ut8)((ubuf[i] & 0x3f) + 0x80);
 		} else if (ubuf[i] <= 0xffff) {
 			if (end - buf < 3)
 				return NULL;
-			*buf++ = (unsigned char)((ubuf[i] >> 12) + 0xe0);
-			*buf++ = (unsigned char)(((ubuf[i] >> 6) & 0x3f) + 0x80);
-			*buf++ = (unsigned char)((ubuf[i] & 0x3f) + 0x80);
+			*buf++ = (ut8)((ubuf[i] >> 12) + 0xe0);
+			*buf++ = (ut8)(((ubuf[i] >> 6) & 0x3f) + 0x80);
+			*buf++ = (ut8)((ubuf[i] & 0x3f) + 0x80);
 		} else if (ubuf[i] <= 0x1fffff) {
 			if (end - buf < 4)
 				return NULL;
-			*buf++ = (unsigned char)((ubuf[i] >> 18) + 0xf0);
-			*buf++ = (unsigned char)(((ubuf[i] >> 12) & 0x3f) + 0x80);
-			*buf++ = (unsigned char)(((ubuf[i] >>  6) & 0x3f) + 0x80);
-			*buf++ = (unsigned char)((ubuf[i] & 0x3f) + 0x80);
+			*buf++ = (ut8)((ubuf[i] >> 18) + 0xf0);
+			*buf++ = (ut8)(((ubuf[i] >> 12) & 0x3f) + 0x80);
+			*buf++ = (ut8)(((ubuf[i] >>  6) & 0x3f) + 0x80);
+			*buf++ = (ut8)((ubuf[i] & 0x3f) + 0x80);
 		} else if (ubuf[i] <= 0x3ffffff) {
 			if (end - buf < 5)
 				return NULL;
-			*buf++ = (unsigned char)((ubuf[i] >> 24) + 0xf8);
-			*buf++ = (unsigned char)(((ubuf[i] >> 18) & 0x3f) + 0x80);
-			*buf++ = (unsigned char)(((ubuf[i] >> 12) & 0x3f) + 0x80);
-			*buf++ = (unsigned char)(((ubuf[i] >>  6) & 0x3f) + 0x80);
-			*buf++ = (unsigned char)((ubuf[i] & 0x3f) + 0x80);
+			*buf++ = (ut8)((ubuf[i] >> 24) + 0xf8);
+			*buf++ = (ut8)(((ubuf[i] >> 18) & 0x3f) + 0x80);
+			*buf++ = (ut8)(((ubuf[i] >> 12) & 0x3f) + 0x80);
+			*buf++ = (ut8)(((ubuf[i] >>  6) & 0x3f) + 0x80);
+			*buf++ = (ut8)((ubuf[i] & 0x3f) + 0x80);
 		} else if (ubuf[i] <= 0x7fffffff) {
 			if (end - buf < 6)
 				return NULL;
-			*buf++ = (unsigned char)((ubuf[i] >> 30) + 0xfc);
-			*buf++ = (unsigned char)(((ubuf[i] >> 24) & 0x3f) + 0x80);
-			*buf++ = (unsigned char)(((ubuf[i] >> 18) & 0x3f) + 0x80);
-			*buf++ = (unsigned char)(((ubuf[i] >> 12) & 0x3f) + 0x80);
-			*buf++ = (unsigned char)(((ubuf[i] >>  6) & 0x3f) + 0x80);
-			*buf++ = (unsigned char)((ubuf[i] & 0x3f) + 0x80);
+			*buf++ = (ut8)((ubuf[i] >> 30) + 0xfc);
+			*buf++ = (ut8)(((ubuf[i] >> 24) & 0x3f) + 0x80);
+			*buf++ = (ut8)(((ubuf[i] >> 18) & 0x3f) + 0x80);
+			*buf++ = (ut8)(((ubuf[i] >> 12) & 0x3f) + 0x80);
+			*buf++ = (ut8)(((ubuf[i] >>  6) & 0x3f) + 0x80);
+			*buf++ = (ut8)((ubuf[i] & 0x3f) + 0x80);
 		} else /* Invalid character */
 			return NULL;
 	}
@@ -575,9 +538,7 @@ encode_utf8(unsigned char *buf, size_t len, unichar *ubuf, size_t ulen)
  * If ubuf is non-NULL on entry, text is decoded into ubuf, *ulen;
  * ubuf must be big enough!
  */
-int
-file_looks_utf8(const unsigned char *buf, size_t nbytes, unichar *ubuf, size_t *ulen)
-{
+int file_looks_utf8(const ut8 *buf, size_t nbytes, unichar *ubuf, size_t *ulen) {
 	size_t i;
 	int n;
 	unichar c;
@@ -646,20 +607,13 @@ done:
  * BOM, return -1; otherwise return the result of looks_utf8 on the
  * rest of the text.
  */
-static int
-looks_utf8_with_BOM(const unsigned char *buf, size_t nbytes, unichar *ubuf,
-    size_t *ulen)
-{
+static int looks_utf8_with_BOM(const ut8 *buf, size_t nbytes, unichar *ubuf, size_t *ulen) {
 	if (nbytes > 3 && buf[0] == 0xef && buf[1] == 0xbb && buf[2] == 0xbf)
 		return file_looks_utf8(buf + 3, nbytes - 3, ubuf, ulen);
-	else
-		return -1;
+	return -1;
 }
 
-static int
-looks_ucs16(const unsigned char *buf, size_t nbytes, unichar *ubuf,
-    size_t *ulen)
-{
+static int looks_ucs16(const ut8 *buf, size_t nbytes, unichar *ubuf, size_t *ulen) {
 	int bigend;
 	size_t i;
 
@@ -670,8 +624,7 @@ looks_ucs16(const unsigned char *buf, size_t nbytes, unichar *ubuf,
 		bigend = 0;
 	else if (buf[0] == 0xfe && buf[1] == 0xff)
 		bigend = 1;
-	else
-		return 0;
+	else return 0;
 
 	*ulen = 0;
 
@@ -680,16 +633,13 @@ looks_ucs16(const unsigned char *buf, size_t nbytes, unichar *ubuf,
 
 		if (bigend)
 			ubuf[(*ulen)++] = buf[i + 1] + 256 * buf[i];
-		else
-			ubuf[(*ulen)++] = buf[i] + 256 * buf[i + 1];
+		else ubuf[(*ulen)++] = buf[i] + 256 * buf[i + 1];
 
 		if (ubuf[*ulen - 1] == 0xfffe)
 			return 0;
-		if (ubuf[*ulen - 1] < 128 &&
-		    text_chars[(size_t)ubuf[*ulen - 1]] != T)
+		if (ubuf[*ulen - 1] < 128 && text_chars[(size_t)ubuf[*ulen - 1]] != T)
 			return 0;
 	}
-
 	return 1 + bigend;
 }
 
@@ -720,7 +670,7 @@ looks_ucs16(const unsigned char *buf, size_t nbytes, unichar *ubuf,
  * between old-style and internationalized examples of text.
  */
 
-static unsigned char ebcdic_to_ascii[] = {
+static ut8 ebcdic_to_ascii[] = {
   0,   1,   2,   3, 156,   9, 134, 127, 151, 141, 142,  11,  12,  13,  14,  15,
  16,  17,  18,  19, 157, 133,   8, 135,  24,  25, 146, 143,  28,  29,  30,  31,
 128, 129, 130, 131, 132,  10,  23,  27, 136, 137, 138, 139, 140,   5,   6,   7,
@@ -754,7 +704,7 @@ static unsigned char ebcdic_to_ascii[] = {
  * cases for the NEL character can be taken out of the code.
  */
 
-static unsigned char ebcdic_1047_to_8859[] = {
+static ut8 ebcdic_1047_to_8859[] = {
 0x00,0x01,0x02,0x03,0x9C,0x09,0x86,0x7F,0x97,0x8D,0x8E,0x0B,0x0C,0x0D,0x0E,0x0F,
 0x10,0x11,0x12,0x13,0x9D,0x0A,0x08,0x87,0x18,0x19,0x92,0x8F,0x1C,0x1D,0x1E,0x1F,
 0x80,0x81,0x82,0x83,0x84,0x85,0x17,0x1B,0x88,0x89,0x8A,0x8B,0x8C,0x05,0x06,0x07,
@@ -777,12 +727,8 @@ static unsigned char ebcdic_1047_to_8859[] = {
 /*
  * Copy buf[0 ... nbytes-1] into out[], translating EBCDIC to ASCII.
  */
-static void
-from_ebcdic(const unsigned char *buf, size_t nbytes, unsigned char *out)
-{
+static void from_ebcdic(const ut8 *buf, size_t nbytes, ut8 *out) {
 	size_t i;
-
-	for (i = 0; i < nbytes; i++) {
+	for (i = 0; i < nbytes; i++)
 		out[i] = ebcdic_to_ascii[buf[i]];
-	}
 }

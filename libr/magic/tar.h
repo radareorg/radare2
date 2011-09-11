@@ -44,13 +44,13 @@
  * A "record" is a piece of info that we care about.
  * Typically many "record"s fit into a "block".
  */
-#define	RECORDSIZE	512
-#define	NAMSIZ	100
+#define	RECORDSIZE 512
+#define	NAMSIZ 100
 #define	TUNMLEN	32
 #define	TGNMLEN	32
 
 union record {
-	char		charptr[RECORDSIZE];
+	char charptr[RECORDSIZE];
 	struct header {
 		char	name[NAMSIZ];
 		char	mode[8];

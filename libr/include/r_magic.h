@@ -7,44 +7,21 @@
 #define MAGIC "/etc/magic"
 #endif
 
-#ifndef ENABLE_CONDITIONALS
-#define ENABLE_CONDITIONALS 1
-#endif
-
 #ifdef __EMX__
 #define PATHSEP	';'
 #else
 #define PATHSEP	':'
 #endif
 
-#define public
-
-#ifndef __GNUC_PREREQ__
-#ifdef __GNUC__
-#define	__GNUC_PREREQ__(x, y)						\
-	((__GNUC__ == (x) && __GNUC_MINOR__ >= (y)) ||			\
-	 (__GNUC__ > (x)))
-#else
-#define	__GNUC_PREREQ__(x, y)	0
-#endif
-#endif
-
-#ifndef MIN
-#define	MIN(a,b)	(((a) < (b)) ? (a) : (b))
-#endif
-
-#ifndef MAX
-#define	MAX(a,b)	(((a) > (b)) ? (a) : (b))
-#endif
-
+/* limits */
 #ifndef HOWMANY
 # define HOWMANY (256 * 1024)	/* how much of the file to look at */
 #endif
-#define MAXMAGIS 8192		/* max entries in any one magic file
-				   or directory */
-#define MAXDESC	64		/* max leng of text description/MIME type */
+#define MAXDESC 64
+#define MAXMAGIS 8192		/* max entries in any one magic file or directory */
 #define MAXstring 32		/* max leng of "string" types */
 
+/* constants */
 #define MAGICNO		0xF11E041C
 #define VERSIONNO	5
 #define FILE_MAGICSIZE	(32 * 6)
@@ -133,13 +110,8 @@ struct r_magic {
 	/* Word 3 */
 	ut8 in_op;		/* operator for indirection */
 	ut8 mask_op;	/* operator for mask */
-#ifdef ENABLE_CONDITIONALS
 	ut8 cond;		/* conditional type */
 	ut8 dummy2;	
-#else
-	ut8 dummy2;	
-	ut8 dummy3;	
-#endif
 
 #define				FILE_OPS	"&|^+-*/%"
 #define				FILE_OPAND	0
@@ -157,12 +129,10 @@ struct r_magic {
 #define				FILE_OPINVERSE	0x40
 #define				FILE_OPINDIRECT	0x80
 
-#ifdef ENABLE_CONDITIONALS
 #define				COND_NONE	0
 #define				COND_IF		1
 #define				COND_ELIF	2
 #define				COND_ELSE	3
-#endif /* ENABLE_CONDITIONALS */
 
 	/* Word 4 */
 	ut32 offset;	/* offset to magic number */
@@ -215,7 +185,6 @@ struct r_magic {
 #define STRING_IGNORE_CASE		(STRING_IGNORE_LOWERCASE|STRING_IGNORE_UPPERCASE)
 #define STRING_DEFAULT_RANGE		100
 
-
 /* list of magic entries */
 struct mlist {
 	struct r_magic *magic;		/* array of magic entries */
@@ -257,10 +226,8 @@ struct r_magic_set {
 		struct level_info {
 			st32 off;
 			int got_match;
-#ifdef ENABLE_CONDITIONALS
 			int last_match;
 			int last_cond;	/* used for error checking by parse() */
-#endif
 		} *li;
 	} c;
 	struct out {
@@ -286,26 +253,27 @@ struct r_magic_set {
 	   strings matched in files can be longer than MAXstring */
 	union VALUETYPE ms_value;	/* either number or string */
 };
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct r_magic_set *r_magic_t;
+typedef struct r_magic_set RMagic;
 
-R_API r_magic_t r_magic_open(int);
-R_API void r_magic_close(r_magic_t);
+R_API RMagic* r_magic_new();
+R_API void r_magic_free(RMagic*);
 
-R_API const char *r_magic_file(r_magic_t, const char *);
-R_API const char *r_magic_descriptor(r_magic_t, int);
-R_API const char *r_magic_buffer(r_magic_t, const void *, size_t);
+R_API const char *r_magic_file(RMagic*, const char *);
+R_API const char *r_magic_descriptor(RMagic*, int);
+R_API const char *r_magic_buffer(RMagic*, const void *, size_t);
 
-R_API const char *r_magic_error(r_magic_t);
-R_API int r_magic_setflags(r_magic_t, int);
+R_API const char *r_magic_error(RMagic*);
+R_API void r_magic_setflags(RMagic*, int);
 
-R_API int r_magic_load(r_magic_t, const char *);
-R_API int r_magic_compile(r_magic_t, const char *);
-R_API int r_magic_check(r_magic_t, const char *);
-R_API int r_magic_errno(r_magic_t);
+R_API int r_magic_load(RMagic*, const char *);
+R_API int r_magic_compile(RMagic*, const char *);
+R_API int r_magic_check(RMagic*, const char *);
+R_API int r_magic_errno(RMagic*);
 
 #ifdef __cplusplus
 };

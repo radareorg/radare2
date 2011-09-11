@@ -43,17 +43,13 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
-#ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>
-#endif
-#if defined(HAVE_SYS_TIME_H)
 #include <sys/time.h>
-#endif
+
 #if defined(HAVE_ZLIB_H) && defined(HAVE_LIBZ)
 #define BUILTIN_DECOMPRESS
 #include <zlib.h>
 #endif
-
 
 static const struct {
 	const char magic[8];
@@ -79,7 +75,6 @@ static size_t ncompr = sizeof(compr) / sizeof(compr[0]);
 
 #define NODATA ((size_t)~0)
 
-
 static ssize_t swrite(int, const void *, size_t);
 static size_t uncompressbuf(struct r_magic_set *, int, size_t,
     const unsigned char *, unsigned char **, size_t);
@@ -88,10 +83,7 @@ static size_t uncompressgzipped(struct r_magic_set *, const unsigned char *,
     unsigned char **, size_t);
 #endif
 
-int
-file_zmagic(struct r_magic_set *ms, int fd, const char *name,
-    const unsigned char *buf, size_t nbytes)
-{
+int file_zmagic(RMagic *ms, int fd, const char *name, const ut8 *buf, size_t nbytes) {
 	unsigned char *newbuf = NULL;
 	size_t i, nsz;
 	int rv = 0;
@@ -137,9 +129,7 @@ error:
 /*
  * `safe' write for sockets and pipes.
  */
-static ssize_t
-swrite(int fd, const void *buf, size_t n)
-{
+static ssize_t swrite(int fd, const void *buf, size_t n) {
 	int rv;
 	size_t rn = n;
 
@@ -158,13 +148,10 @@ swrite(int fd, const void *buf, size_t n)
 	return rn;
 }
 
-
 /*
  * `safe' read for sockets and pipes.
  */
-ssize_t
-sread(int fd, void *buf, size_t n, int canbepipe)
-{
+ssize_t sread(int fd, void *buf, size_t n, int canbepipe) {
 	int rv, cnt;
 #ifdef FIONREAD
 	int t = 0;
@@ -210,7 +197,7 @@ sread(int fd, void *buf, size_t n, int canbepipe)
 
 nocheck:
 	do
-		switch ((rv = read(fd, buf, n))) {
+		switch ((rv = read (fd, buf, n))) {
 		case -1:
 			if (errno == EINTR)
 				continue;
@@ -226,10 +213,7 @@ nocheck:
 	return rn;
 }
 
-int
-file_pipe2file(struct r_magic_set *ms, int fd, const void *startbuf,
-    size_t nbytes)
-{
+int file_pipe2file(RMagic *ms, int fd, const void *startbuf, size_t nbytes) {
 	char buf[4096];
 	int r, tfd;
 
@@ -244,13 +228,11 @@ file_pipe2file(struct r_magic_set *ms, int fd, const void *startbuf,
 		return -1;
 	}
 
-	if (swrite(tfd, startbuf, nbytes) != (ssize_t)nbytes)
-		r = 1;
-	else {
-		while ((r = sread(fd, buf, sizeof(buf), 1)) > 0)
-			if (swrite(tfd, buf, (size_t)r) != r)
+	if (swrite (tfd, startbuf, nbytes) == (ssize_t)nbytes) {
+		while ((r = sread (fd, buf, sizeof (buf), 1)) > 0)
+			if (swrite (tfd, buf, (size_t)r) != r)
 				break;
-	}
+	} else r = 1;
 
 	switch (r) {
 	case -1:
@@ -268,13 +250,13 @@ file_pipe2file(struct r_magic_set *ms, int fd, const void *startbuf,
 	 * tmpfile will delete the file, but any open descriptors
 	 * can still access the phantom inode.
 	 */
-	if ((fd = dup2(tfd, fd)) == -1) {
+	if ((fd = dup2 (tfd, fd)) == -1) {
 		file_error(ms, errno, "could not dup descriptor for temp file");
 		return -1;
 	}
-	(void)close(tfd);
-	if (lseek(fd, (off_t)0, SEEK_SET) == (off_t)-1) {
-		file_badseek(ms);
+	close (tfd);
+	if (lseek (fd, (off_t)0, SEEK_SET) == (off_t)-1) {
+		file_badseek (ms);
 		return -1;
 	}
 	return fd;
@@ -287,10 +269,7 @@ file_pipe2file(struct r_magic_set *ms, int fd, const void *startbuf,
 #define FNAME		(1 << 3)
 #define FCOMMENT	(1 << 4)
 
-static size_t
-uncompressgzipped(struct r_magic_set *ms, const unsigned char *old,
-    unsigned char **newch, size_t n)
-{
+static size_t uncompressgzipped(struct r_magic_set *ms, const unsigned char *old, unsigned char **newch, size_t n) {
 	unsigned char flg = old[3];
 	size_t data_start = 10;
 	z_stream z;
@@ -352,10 +331,7 @@ uncompressgzipped(struct r_magic_set *ms, const unsigned char *old,
 }
 #endif
 
-static size_t
-uncompressbuf(struct r_magic_set *ms, int fd, size_t method,
-    const unsigned char *old, unsigned char **newch, size_t n)
-{
+static size_t uncompressbuf(RMagic *ms, int fd, size_t method, const unsigned char *old, unsigned char **newch, size_t n) {
 	int fdin[2], fdout[2];
 	int r;
 
@@ -391,19 +367,14 @@ uncompressbuf(struct r_magic_set *ms, int fd, size_t method,
 		if (compr[method].silent)
 			(void)close(2);
 #endif
-
 		(void)execvp(compr[method].argv[0],
 		    (char *const *)(intptr_t)compr[method].argv);
-#ifdef DEBUG
-		(void)fprintf(stderr, "exec `%s' failed (%s)\n",
-		    compr[method].argv[0], strerror(errno));
-#endif
-		exit(1);
+		eprintf("exec `%s' failed (%s)\n", compr[method].argv[0], strerror (errno));
+		exit (1);
 		/*NOTREACHED*/
 	case -1:
-		file_error(ms, errno, "could not fork");
+		file_error (ms, errno, "could not fork");
 		return NODATA;
-
 	default: /* parent */
 		(void) close(fdout[1]);
 		if (fd == -1) {
@@ -414,63 +385,51 @@ uncompressbuf(struct r_magic_set *ms, int fd, size_t method,
 			 */
 			switch (fork()) {
 			case 0: /* child */
-				(void)close(fdout[0]);
-				if (swrite(fdin[1], old, n) != (ssize_t)n) {
-#ifdef DEBUG
-					(void)fprintf(stderr,
-					    "Write failed (%s)\n",
-					    strerror(errno));
-#endif
-					exit(1);
+				(void)close (fdout[0]);
+				if (swrite (fdin[1], old, n) != (ssize_t)n) {
+					eprintf ("Write failed (%s)\n", strerror(errno));
+					exit (1);
 				}
 				exit(0);
 				/*NOTREACHED*/
-
 			case -1:
-#ifdef DEBUG
-				(void)fprintf(stderr, "Fork failed (%s)\n",
-				    strerror(errno));
-#endif
-				exit(1);
+				perror ("fork");
+				exit (1);
 				/*NOTREACHED*/
-
 			default:  /* parent */
 				break;
 			}
-			(void) close(fdin[1]);
+			(void) close (fdin[1]);
 			fdin[1] = -1;
 		}
 
-		if ((*newch = (unsigned char *) malloc(HOWMANY + 1)) == NULL) {
+		if ((*newch = (unsigned char *) malloc (HOWMANY + 1)) == NULL) {
 #ifdef DEBUG
-			(void)fprintf(stderr, "Malloc failed (%s)\n",
-			    strerror(errno));
+			eprintf ("Malloc failed (%s)\n", strerror (errno));
 #endif
 			n = 0;
 			goto err;
 		}
 		if ((r = sread(fdout[0], *newch, HOWMANY, 0)) <= 0) {
 #ifdef DEBUG
-			(void)fprintf(stderr, "Read failed (%s)\n",
-			    strerror(errno));
+			eprintf ("Read failed (%s)\n", strerror (errno));
 #endif
-			free(*newch);
+			free (*newch);
 			n = 0;
-			newch[0] = '\0';
+			*newch = '\0';
 			goto err;
-		} else {
-			n = r;
-		}
+		} else n = r;
  		/* NUL terminate, as every buffer is handled here. */
  		(*newch)[n] = '\0';
 err:
 		if (fdin[1] != -1)
-			(void) close(fdin[1]);
-		(void) close(fdout[0]);
+			(void) close (fdin[1]);
+		(void) close (fdout[0]);
 #ifdef WNOHANG
-		while (waitpid(-1, NULL, WNOHANG) != -1)
+		while (waitpid (-1, NULL, WNOHANG) != -1)
 			continue;
 #else
+		// XXX. MUST specify PID
 		(void)wait(NULL);
 #endif
 		return n;

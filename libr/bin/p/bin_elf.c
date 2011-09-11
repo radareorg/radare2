@@ -279,8 +279,12 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	ut32 p_ehdrsz, p_phdrsz;
 	ut16 ehdrsz, phdrsz;
 	ut32 p_vaddr, p_paddr, p_fs, p_fs2;
-	ut32 baddr = 0x8048000;
+	ut32 baddr;
+	int is_arm = !strcmp (bin->curarch.info->arch, "arm");
 	RBuffer *buf = r_buf_new ();
+	if (is_arm)
+		baddr = 0x40000;
+	else baddr = 0x8048000;
 
 #define B(x,y) r_buf_append_bytes(buf,(const ut8*)x,y)
 #define D(x) r_buf_append_ut32(buf,x)
@@ -291,9 +295,12 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 
 	B ("\x7F" "ELF" "\x01\x01\x01\x00", 8);
 	Z (8);
-//0x10:
-	H (2);
-	H (3);
+	H (2); // ET_EXEC
+	if (is_arm)
+		H (40); // e_machne = EM_ARM
+	else
+		H (3); // e_machne = EM_I386
+
 	D (1);
 	p_start = buf->length;
 	D (-1); // _start

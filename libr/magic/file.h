@@ -86,10 +86,8 @@ ssize_t sread(int, void *, size_t, int);
 int file_check_mem(struct r_magic_set *, unsigned int);
 int file_looks_utf8(const unsigned char *, size_t, unichar *, size_t *);
 
-#ifndef COMPILE_ONLY
 extern const char *file_names[];
 extern const size_t file_nnames;
-#endif
 
 #ifndef HAVE_STRERROR
 extern int sys_nerr;

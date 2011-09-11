@@ -40,41 +40,40 @@
 /*
  * Like printf, only we append to a buffer.
  */
-int
-file_printf(struct r_magic_set *ms, const char *fmt, ...)
-{
+int file_printf(RMagic *ms, const char *fmt, ...) {
 	va_list ap;
 	int ret;
 
-	va_start(ap, fmt);
+	va_start (ap, fmt);
 	ret = file_vprintf (ms, fmt, ap);
-	va_end(ap);
+	va_end (ap);
 	return ret;
 }
 
 // copypasta to fix an OPENBSDBUG
-int
-file_vprintf(struct r_magic_set *ms, const char *fmt, va_list ap) 
-{
+int file_vprintf(RMagic *ms, const char *fmt, va_list ap) {
+	va_list ap2;
 	int len;
 	char *buf, *newstr;
 
-	len = vasprintf(&buf, fmt, ap);
+	va_copy (ap2, ap);
+	len = vasprintf (&buf, fmt, ap2);
+	va_end (ap2);
 	if (len < 0)
 		goto out;
 
 	if (ms->o.buf != NULL) {
-		len = asprintf(&newstr, "%s%s", ms->o.buf, buf);
+		len = asprintf (&newstr, "%s%s", ms->o.buf, buf);
 		free(buf);
 		if (len < 0)
 			goto out;
-		free(ms->o.buf);
+		free (ms->o.buf);
 		buf = newstr;
 	}
 	ms->o.buf = buf;
 	return 0;
 out:
-	file_error(ms, errno, "vasprintf failed");
+	file_error (ms, errno, "vasprintf failed");
 	return -1;
 }
 
@@ -82,72 +81,55 @@ out:
  * error - print best error message possible
  */
 /*VARARGS*/
-static void
-file_error_core(struct r_magic_set *ms, int error, const char *f, va_list va,
-    ut32 lineno)
-{
+static void file_error_core(RMagic *ms, int error, const char *f, va_list va, ut32 lineno) {
 	/* Only the first error is ok */
 	if (ms->haderr)
 		return;
 	if (lineno != 0) {
 		free(ms->o.buf);
 		ms->o.buf = NULL;
-		file_printf(ms, "line %u: ", lineno);
+		file_printf (ms, "line %u: ", lineno);
 	}
 	// OPENBSDBUG
-        file_vprintf(ms, f, va);
+        file_vprintf (ms, f, va);
 	if (error > 0)
-		file_printf(ms, " (%s)", strerror(error));
+		file_printf (ms, " (%s)", strerror(error));
 	ms->haderr++;
 	ms->error = error;
 }
 
 /*VARARGS*/
-void
-file_error(struct r_magic_set *ms, int error, const char *f, ...)
-{
+void file_error(RMagic *ms, int error, const char *f, ...) {
 	va_list va;
-	va_start(va, f);
-	file_error_core(ms, error, f, va, 0);
-	va_end(va);
+	va_start (va, f);
+	file_error_core (ms, error, f, va, 0);
+	va_end (va);
 }
 
 /*
  * Print an error with magic line number.
  */
 /*VARARGS*/
-void
-file_magerror(struct r_magic_set *ms, const char *f, ...)
-{
+void file_magerror(RMagic *ms, const char *f, ...) {
 	va_list va;
-	va_start(va, f);
-	file_error_core(ms, 0, f, va, ms->line);
-	va_end(va);
+	va_start (va, f);
+	file_error_core (ms, 0, f, va, ms->line);
+	va_end (va);
 }
 
-void
-file_oomem(struct r_magic_set *ms, size_t len)
-{
-	file_error(ms, errno, "cannot allocate %zu bytes", len);
+void file_oomem(RMagic *ms, size_t len) {
+	file_error (ms, errno, "cannot allocate %zu bytes", len);
 }
 
-void
-file_badseek(struct r_magic_set *ms)
-{
-	file_error(ms, errno, "error seeking");
+void file_badseek(RMagic *ms) {
+	file_error (ms, errno, "error seeking");
 }
 
-void
-file_badread(struct r_magic_set *ms)
-{
-	file_error(ms, errno, "error reading");
+void file_badread(RMagic *ms) {
+	file_error (ms, errno, "error reading");
 }
 
-#ifndef COMPILE_ONLY
-int
-file_buffer(struct r_magic_set *ms, int fd, const char *inname, const void *buf,
-    size_t nb)
-{
+int file_buffer(RMagic *ms, int fd, const char *inname, const void *buf, size_t nb) {
 	int m;
 	int mime = ms->flags & R_MAGIC_MIME;
 
@@ -164,19 +146,6 @@ file_buffer(struct r_magic_set *ms, int fd, const char *inname, const void *buf,
 			return -1;
 		return 1;
 	}
-
-#ifdef __EMX__
-	if ((ms->flags & R_MAGIC_NO_CHECK_APPTYPE) == 0 && inname) {
-		switch (file_os2_apptype(ms, inname, buf, nb)) {
-		case -1:
-			return -1;
-		case 0:
-			break;
-		default:
-			return 1;
-		}
-	}
-#endif
 
 	/* try compression stuff */
 	if ((ms->flags & R_MAGIC_NO_CHECK_COMPRESS) != 0 ||
@@ -202,13 +171,10 @@ file_buffer(struct r_magic_set *ms, int fd, const char *inname, const void *buf,
 	}
 	return m;
 }
-#endif
 
-int
-file_reset(struct r_magic_set *ms)
-{
+int file_reset(RMagic *ms) {
 	if (ms->mlist == NULL) {
-		file_error(ms, 0, "no magic files loaded");
+		file_error (ms, 0, "no magic files loaded");
 		return -1;
 	}
 	ms->o.buf = NULL;
@@ -225,9 +191,7 @@ file_reset(struct r_magic_set *ms)
 	*(n)++ = (((ut32)*(o) >> 0) & 7) + '0', \
 	(o)++)
 
-const char *
-file_getbuffer(struct r_magic_set *ms)
-{
+const char * file_getbuffer(RMagic *ms) {
 	char *pbuf, *op, *np;
 	size_t psize, len;
 
@@ -288,36 +252,29 @@ file_getbuffer(struct r_magic_set *ms)
 			return ms->o.pbuf;
 	}
 #endif
-
 	for (np = ms->o.pbuf, op = ms->o.buf; *op; op++) {
-		if (isprint((unsigned char)*op)) {
+		if (isprint ((ut8)*op)) {
 			*np++ = *op;	
 		} else {
-			OCTALIFY(np, op);
+			OCTALIFY (np, op);
 		}
 	}
 	*np = '\0';
 	return ms->o.pbuf;
 }
 
-int
-file_check_mem(struct r_magic_set *ms, unsigned int level)
-{
-	size_t len;
-
+int file_check_mem(RMagic *ms, unsigned int level) {
 	if (level >= ms->c.len) {
-		len = (ms->c.len += 20) * sizeof(*ms->c.li);
-		ms->c.li = (ms->c.li == NULL) ? malloc(len) :
-		    realloc(ms->c.li, len);
+		size_t len = (ms->c.len += 20) * sizeof (*ms->c.li);
+		ms->c.li = (ms->c.li == NULL) ? malloc (len) :
+		    realloc (ms->c.li, len);
 		if (ms->c.li == NULL) {
-			file_oomem(ms, len);
+			file_oomem (ms, len);
 			return -1;
 		}
 	}
 	ms->c.li[level].got_match = 0;
-#ifdef ENABLE_CONDITIONALS
 	ms->c.li[level].last_match = 0;
 	ms->c.li[level].last_cond = COND_NONE;
-#endif /* ENABLE_CONDITIONALS */
 	return 0;
 }

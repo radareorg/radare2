@@ -102,6 +102,7 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	bin->strtab_size = bin->strtab_section->sh_size;
 	if ((bin->strtab = (char *)malloc (bin->strtab_section->sh_size)) == NULL) {
 		perror ("malloc");
+		bin->shstrtab = NULL;
 		return R_FALSE;
 	}
 	bin->shstrtab = bin->strtab;
@@ -109,6 +110,7 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 				bin->strtab_section->sh_size) == -1) {
 		eprintf ("Error: read (strtab)\n");
 		R_FREE (bin->strtab);
+		bin->shstrtab = NULL;
 		return R_FALSE;
 	}
 	return R_TRUE;
@@ -495,8 +497,10 @@ int Elf_(r_bin_elf_get_bits)(struct Elf_(r_bin_elf_obj_t) *bin) {
 }
 
 static inline int needle(struct Elf_(r_bin_elf_obj_t) *bin, const char *s) {
-	return r_mem_mem ((const ut8*)bin->shstrtab, bin->shstrtab_size,
-			(const ut8*)s, strlen (s)) != NULL;
+	if (bin->shstrtab)
+		return r_mem_mem ((const ut8*)bin->shstrtab, bin->shstrtab_size,
+				(const ut8*)s, strlen (s)) != NULL;
+	return 0;
 }
 
 // TODO: must return const char * all those strings must be const char os[LINUX] or so

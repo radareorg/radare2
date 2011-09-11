@@ -44,37 +44,32 @@
 #include <sys/types.h>
 #include "tar.h"
 
-#define	isodigit(c)	( ((c) >= '0') && ((c) <= '7') )
-
-static int is_tar(const unsigned char *, size_t);
-static int from_oct(int, const char *);	/* Decode octal number */
-
 static const char tartype[][32] = {
 	"tar archive",
 	"POSIX tar archive",
 	"POSIX tar archive (GNU)",
 };
 
-int
-file_is_tar(struct r_magic_set *ms, const unsigned char *buf, size_t nbytes)
-{
-	/*
-	 * Do the tar test first, because if the first file in the tar
-	 * archive starts with a dot, we can confuse it with an nroff file.
-	 */
-	int tar = is_tar(buf, nbytes);
-	int mime = ms->flags & R_MAGIC_MIME;
-
-	if (tar < 1 || tar > 3)
-		return 0;
-
-	if (mime == R_MAGIC_MIME_ENCODING)
-		return 0;
-
-	if (file_printf(ms, mime ? "application/x-tar" :
-	    tartype[tar - 1]) == -1)
-		return -1;
-	return 1;
+/*
+ * Quick and dirty octal conversion.
+ *
+ * Result is -1 if the field is invalid (all blank, or nonoctal).
+ */
+#define	isodigit(c)	( ((c) >= '0') && ((c) <= '7') )
+static int from_oct(int digs, const char *where) {
+	int value = 0;
+	while (isspace ((ut8)*where)) {	/* Skip spaces */
+		where++;
+		if (--digs <= 0)
+			return -1;		/* All blank field */
+	}
+	while (digs > 0 && isodigit(*where)) {	/* Scan til nonoctal */
+		value = (value << 3) | (*where++ - '0');
+		--digs;
+	}
+	if (digs > 0 && *where && !isspace((ut8)*where))
+		return -1;			/* Ended on non-space/nul */
+	return value;
 }
 
 /*
@@ -84,69 +79,52 @@ file_is_tar(struct r_magic_set *ms, const unsigned char *buf, size_t nbytes)
  *	2 for Unix Std (POSIX) tar file,
  *	3 for GNU tar file.
  */
-static int
-is_tar(const unsigned char *buf, size_t nbytes)
-{
+static int is_tar(const ut8 *buf, size_t nbytes) {
 	const union record *header = (const union record *)(const void *)buf;
-	int	i;
-	int	sum, recsum;
-	const char	*p;
+	int i, sum, recsum;
+	const char *p;
 
 	if (nbytes < sizeof(union record))
 		return 0;
 
-	recsum = from_oct(8,  header->header.chksum);
+	recsum = from_oct (8, header->header.chksum);
 
 	sum = 0;
 	p = header->charptr;
 	for (i = sizeof(union record); --i >= 0;) {
 		/*
-		 * We cannot use unsigned char here because of old compilers,
+		 * We cannot use ut8 here because of old compilers,
 		 * e.g. V7.
 		 */
 		sum += 0xFF & *p++;
 	}
 
 	/* Adjust checksum to count the "chksum" field as blanks. */
-	for (i = sizeof(header->header.chksum); --i >= 0;)
+	for (i = sizeof header->header.chksum; --i >= 0;)
 		sum -= 0xFF & header->header.chksum[i];
-	sum += ' '* sizeof header->header.chksum;	
-
-	if (sum != recsum)
-		return 0;	/* Not a tar archive */
-	
-	if (strcmp(header->header.magic, GNUTMAGIC) == 0) 
+	sum += ' ' * sizeof header->header.chksum;	
+	if (sum != recsum) return 0;	/* Not a tar archive */
+	if (strcmp (header->header.magic, GNUTMAGIC) == 0) 
 		return 3;		/* GNU Unix Standard tar archive */
-	if (strcmp(header->header.magic, TMAGIC) == 0) 
+	if (strcmp (header->header.magic, TMAGIC) == 0) 
 		return 2;		/* Unix Standard tar archive */
-
 	return 1;			/* Old fashioned tar archive */
 }
 
+int file_is_tar(RMagic *ms, const ut8 *buf, size_t nbytes) {
+	/*
+	 * Do the tar test first, because if the first file in the tar
+	 * archive starts with a dot, we can confuse it with an nroff file.
+	 */
+	int tar = is_tar(buf, nbytes);
+	int mime = ms->flags & R_MAGIC_MIME;
 
-/*
- * Quick and dirty octal conversion.
- *
- * Result is -1 if the field is invalid (all blank, or nonoctal).
- */
-static int
-from_oct(int digs, const char *where)
-{
-	int	value;
-
-	while (isspace((unsigned char)*where)) {	/* Skip spaces */
-		where++;
-		if (--digs <= 0)
-			return -1;		/* All blank field */
-	}
-	value = 0;
-	while (digs > 0 && isodigit(*where)) {	/* Scan til nonoctal */
-		value = (value << 3) | (*where++ - '0');
-		--digs;
-	}
-
-	if (digs > 0 && *where && !isspace((unsigned char)*where))
-		return -1;			/* Ended on non-space/nul */
-
-	return value;
+	if (tar < 1 || tar > 3)
+		return 0;
+	if (mime == R_MAGIC_MIME_ENCODING)
+		return 0;
+	if (file_printf (ms, mime ? "application/x-tar" :
+	    tartype[tar - 1]) == -1)
+		return -1;
+	return 1;
 }

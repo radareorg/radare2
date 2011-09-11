@@ -39,38 +39,22 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#ifdef RESTORE_TIME
-# if (__COHERENT__ >= 0x420)
-#  include <sys/utime.h>
-# else
-#  ifdef USE_UTIMES
-#   include <sys/time.h>
-#  else
-#   include <utime.h>
-#  endif
-# endif
-#endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>	/* for read() */
-#endif
-#ifdef HAVE_LOCALE_H
-#include <locale.h>
 #endif
 #ifdef HAVE_WCHAR_H
 #include <wchar.h>
 #endif
 
 #include <getopt.h>
+// TODO: drop support for getopt-long
 #ifndef HAVE_GETOPT_LONG
 int getopt_long(int argc, char * const *argv, const char *optstring, const struct option *longopts, int *longindex);
 #endif
 
 #include <netinet/in.h>		/* for byte swapping */
-
 #include "patchlevel.h"
-
 
 #ifdef S_IFLNK
 #define SYMLINKFLAG "Lh"
@@ -103,17 +87,13 @@ static void unwrap(char *);
 static void usage(void);
 static void help(void);
 
-int main(int, char *[]);
 static void process(const char *, int);
 static void load(const char *, int);
-
 
 /*
  * main - parse arguments and handle options
  */
-int
-main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 	int c;
 	size_t i;
 	int action = 0, didsomefiles = 0, errflg = 0;
@@ -148,19 +128,9 @@ main(int argc, char *argv[])
 		{ "tokens",	R_MAGIC_NO_CHECK_TOKENS },
 	};
 
-	/* makes islower etc work for other langs */
-	(void)setlocale(LC_CTYPE, "");
-
-#ifdef __EMX__
-	/* sh-like wildcard expansion! Shouldn't hurt at least ... */
-	_wildcard(&argc, &argv);
-#endif
-
 	magicfile = default_magicfile;
-	if ((usermagic = getenv("MAGIC")) != NULL)
-		magicfile = usermagic;
-	else
-		if ((home = getenv("HOME")) != NULL) {
+	if ((usermagic = getenv ("MAGIC")) == NULL) {
+		if ((home = getenv ("HOME")) != NULL) {
 			size_t len = strlen(home) + sizeof(hmagic);
 			if ((usermagic = malloc(len)) != NULL) {
 				(void)strlcpy(usermagic, home, len);
@@ -171,12 +141,12 @@ main(int argc, char *argv[])
 					magicfile = usermagic;
 			}
 		}
+	} else magicfile = usermagic;
 
 #ifdef S_IFLNK
 	flags |= getenv("POSIXLY_CORRECT") ? R_MAGIC_SYMLINK : 0;
 #endif
-	while ((c = getopt_long(argc, argv, OPTSTRING, long_options,
-	    &longindex)) != -1)
+	while ((c = getopt_long(argc, argv, OPTSTRING, long_options, &longindex)) != -1)
 		switch (c) {
 		case 0 :
 			switch (longindex) {
@@ -216,7 +186,6 @@ main(int argc, char *argv[])
 			else
 				flags |= nv[i].value;
 			break;
-			
 		case 'f':
 			if(action)
 				usage();
@@ -242,11 +211,6 @@ main(int argc, char *argv[])
 		case 'N':
 			++nopad;
 			break;
-#if defined(HAVE_UTIME) || defined(HAVE_UTIMES)
-		case 'p':
-			flags |= R_MAGIC_PRESERVE_ATIME;
-			break;
-#endif
 		case 'r':
 			flags |= R_MAGIC_RAW;
 			break;
@@ -276,36 +240,32 @@ main(int argc, char *argv[])
 			break;
 		}
 
-	if (errflg) {
+	if (errflg)
 		usage();
-	}
 
-	switch(action) {
+	switch (action) {
 	case FILE_CHECK:
 	case FILE_COMPILE:
-		magic = r_magic_open(flags|R_MAGIC_CHECK);
+		magic = r_magic_new (flags|R_MAGIC_CHECK);
 		if (magic == NULL) {
-			(void)fprintf(stderr, "%s: %s\n", __progname,
-			    strerror (errno));
+			eprintf ("%s: %s\n", __progname, strerror (errno));
 			return 1;
 		}
 		c = action == FILE_CHECK ? r_magic_check(magic, magicfile) :
-		    r_magic_compile(magic, magicfile);
+			r_magic_compile(magic, magicfile);
 		if (c == -1) {
-			(void)fprintf(stderr, "%s: %s\n", __progname,
-			    r_magic_error (magic));
+			eprintf ("%s: %s\n", __progname, r_magic_error (magic));
 			return -1;
 		}
 		return 0;
 	default:
-		load(magicfile, flags);
+		load (magicfile, flags);
 		break;
 	}
 
 	if (optind == argc) {
-		if (!didsomefiles) {
+		if (!didsomefiles)
 			usage();
-		}
 	} else {
 		size_t j, wid, nw;
 		for (wid = 0, j = (size_t)optind; j < (size_t)argc; j++) {
@@ -317,43 +277,36 @@ main(int argc, char *argv[])
 		 * If bflag is only set twice, set it depending on
 		 * number of files [this is undocumented, and subject to change]
 		 */
-		if (bflag == 2) {
+		if (bflag == 2)
 			bflag = optind >= argc - 1;
-		}
 		for (; optind < argc; optind++)
 			process(argv[optind], wid);
 	}
 
 	c = magic->haderr ? 1 : 0;
-	r_magic_close(magic);
+	r_magic_free (magic);
 	return c;
 }
 
 
-static void
-/*ARGSUSED*/
-load(const char *m, int flags)
-{
+static void load(const char *m, int flags) {
 	if (magic || m == NULL)
 		return;
-	magic = r_magic_open(flags);
+	magic = r_magic_new (flags);
 	if (magic == NULL) {
-		(void)fprintf(stderr, "%s: %s\n", __progname, strerror (errno));
-		exit(1);
+		eprintf ("%s: %s\n", __progname, strerror (errno));
+		exit (1);
 	}
 	if (r_magic_load(magic, magicfile) == -1) {
-		(void)fprintf(stderr, "%s: %s\n",
-		    __progname, r_magic_error (magic));
-		exit(1);
+		eprintf ("%s: %s\n", __progname, r_magic_error (magic));
+		exit (1);
 	}
 }
 
 /*
  * unwrap -- read a file of filenames, do each one.
  */
-static void
-unwrap(char *fn)
-{
+static void unwrap(char *fn) {
 	char buf[MAXPATHLEN];
 	FILE *f;
 	int wid = 0, cwid;
@@ -367,38 +320,33 @@ unwrap(char *fn)
 			    __progname, fn, strerror (errno));
 			exit(1);
 		}
-
 		while (fgets(buf, sizeof(buf), f) != NULL) {
 			buf[strcspn(buf, "\n")] = '\0';
 			cwid = file_mbswidth(buf);
 			if (cwid > wid)
 				wid = cwid;
 		}
-
 		rewind(f);
 	}
 
-	while (fgets(buf, sizeof(buf), f) != NULL) {
-		buf[strcspn(buf, "\n")] = '\0';
-		process(buf, wid);
-		if(nobuffer)
-			(void)fflush(stdout);
+	while (fgets (buf, sizeof (buf), f) != NULL) {
+		buf[strcspn (buf, "\n")] = '\0';
+		process (buf, wid);
+		if (nobuffer)
+			fflush (stdout);
 	}
-
-	(void)fclose(f);
+	fclose (f);
 }
 
 /*
  * Called for each input file on the command line (or in a list of files)
  */
-static void
-process(const char *inname, int wid)
-{
+static void process(const char *inname, int wid) {
 	const char *type;
-	int std_in = strcmp(inname, "-") == 0;
+	int std_in = strcmp (inname, "-") == 0;
 
 	if (wid > 0 && !bflag) {
-		(void)printf("%s", std_in ? "/dev/stdin" : inname);
+		(void)printf ("%s", std_in ? "/dev/stdin" : inname);
 		if (nulsep)
 			(void)putc('\0', stdout);
 		else
@@ -409,14 +357,11 @@ process(const char *inname, int wid)
 
 	type = r_magic_file(magic, std_in ? NULL : inname);
 	if (type == NULL)
-		(void)printf("ERROR: %s\n", r_magic_error (magic));
-	else
-		(void)printf("%s\n", type);
+		(void)printf ("ERROR: %s\n", r_magic_error (magic));
+	else (void)printf ("%s\n", type);
 }
 
-size_t
-file_mbswidth(const char *s)
-{
+size_t file_mbswidth(const char *s) {
 #if defined(HAVE_WCHAR_H) && defined(HAVE_MBRTOWC) && defined(HAVE_WCWIDTH)
 	size_t bytesconsumed, old_n, n, width = 0;
 	mbstate_t state;
@@ -443,30 +388,25 @@ file_mbswidth(const char *s)
 			if (w > 0)
 				width += w;
 		}
-
 		s += bytesconsumed, n -= bytesconsumed;
 	}
 	return width;
 #else
-	return strlen(s);
+	return strlen (s);
 #endif
 }
 
-static void
-usage(void)
-{
-	(void)fprintf(stderr, USAGE, __progname, __progname);
-	(void)fputs("Try `file --help' for more information.\n", stderr);
-	exit(1);
+static void usage(void) {
+	eprintf (USAGE, __progname, __progname);
+	fputs ("Try `file --help' for more information.\n", stderr);
+	exit (1);
 }
 
-static void
-help(void)
-{
+static void help(void) {
 	(void)fputs(
-"Usage: file [OPTION...] [FILE...]\n"
-"Determine type of FILEs.\n"
-"\n", stderr);
+		"Usage: file [OPTION...] [FILE...]\n"
+		"Determine type of FILEs.\n"
+		"\n", stderr);
 #define OPT(shortname, longname, opt, doc)      \
         fprintf(stderr, "  -%c, --" longname doc, shortname);
 #define OPT_LONGONLY(longname, opt, doc)        \
