@@ -23,7 +23,6 @@
 #define HAVE_STRERROR
 #define HAVE_VSNPRINTF
 #define HAVE_SNPRINTF
-#undef HAVE_STRNDUP
 #define HAVE_STRTOF
 
 /* Compiler issues */

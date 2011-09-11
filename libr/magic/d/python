@@ -1,0 +1,20 @@
+#	$OpenBSD: python,v 1.2 2008/05/08 01:40:57 chl Exp $
+
+#------------------------------------------------------------------------------
+# python:  file(1) magic for python
+#
+# From: David Necas <yeti@physics.muni.cz>
+# often the module starts with a multiline string
+0	string		"""	a python script text executable
+# MAGIC as specified in Python/import.c (1.5 to 2.3.0a)
+# 20121  ( YEAR - 1995 ) + MONTH  + DAY (little endian followed by "\r\n"
+0	belong		0x994e0d0a	python 1.5/1.6 byte-compiled
+0	belong		0x87c60d0a	python 2.0 byte-compiled
+0	belong		0x2aeb0d0a	python 2.1 byte-compiled
+0	belong		0x2ded0d0a	python 2.2 byte-compiled
+0	belong		0x3bf20d0a	python 2.3 byte-compiled
+0	belong		0x6df20d0a	python 2.4 byte-compiled
+0	belong		0xb3f20d0a	python 2.5 byte-compiled
+
+0	string/b  #!\ /usr/bin/python	python script text executable
+

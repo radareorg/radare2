@@ -1,0 +1,38 @@
+#	$OpenBSD: gimp,v 1.1 2004/06/03 03:14:20 tedu Exp $
+
+#------------------------------------------------------------------------------
+# GIMP Gradient: file(1) magic for the GIMP's gradient data files
+# by Federico Mena <federico@nuclecu.unam.mx>
+
+0       string          GIMP\ Gradient  GIMP gradient data
+
+#------------------------------------------------------------------------------
+# XCF:  file(1) magic for the XCF image format used in the GIMP developed
+#       by Spencer Kimball and Peter Mattis
+#       ('Bucky' LaDieu, nega@vt.edu)
+
+0	string		gimp\ xcf	GIMP XCF image data,
+>9	string		file		version 0,
+>9	string		v		version
+>>10	string		>\0		%s,
+>14	belong		x		%lu x
+>18	belong		x		%lu,
+>22     belong          0               RGB Color
+>22     belong          1               Greyscale
+>22     belong          2               Indexed Color
+>22	belong		>2		Unknown Image Type.
+
+#------------------------------------------------------------------------------
+# XCF:  file(1) magic for the patterns used in the GIMP, developed
+#       by Spencer Kimball and Peter Mattis
+#       ('Bucky' LaDieu, nega@vt.edu)
+
+20      string          GPAT            GIMP pattern data,
+>24     string          x               %s
+
+#------------------------------------------------------------------------------
+# XCF:  file(1) magic for the brushes used in the GIMP, developed
+#       by Spencer Kimball and Peter Mattis
+#       ('Bucky' LaDieu, nega@vt.edu)
+
+20      string          GIMP            GIMP brush data

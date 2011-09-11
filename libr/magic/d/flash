@@ -1,0 +1,22 @@
+#	$OpenBSD: flash,v 1.3 2009/04/24 18:54:34 chl Exp $
+
+#------------------------------------------------------------------------------
+# flash:	file(1) magic for Macromedia Flash file format
+#
+# See
+#
+#	http://www.macromedia.com/software/flash/open/
+#
+0	string		FWS		Macromedia Flash data,
+>3	byte		x		version %d
+!:mime	application/x-shockwave-flash
+0	string		CWS		Macromedia Flash data (compressed),
+!:mime	application/x-shockwave-flash
+>3	byte		x		version %d
+# From: Cal Peake <cp@absolutedigital.net>
+0	string		FLV		Macromedia Flash Video
+!:mime	video/x-flv
+
+#
+# From Dave Wilson
+0	string AGD4\xbe\xb8\xbb\xcb\x00	Macromedia Freehand 9 Document

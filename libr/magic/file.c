@@ -286,14 +286,14 @@ main(int argc, char *argv[])
 		magic = r_magic_open(flags|R_MAGIC_CHECK);
 		if (magic == NULL) {
 			(void)fprintf(stderr, "%s: %s\n", __progname,
-			    strerror(errno));
+			    strerror (errno));
 			return 1;
 		}
 		c = action == FILE_CHECK ? r_magic_check(magic, magicfile) :
 		    r_magic_compile(magic, magicfile);
 		if (c == -1) {
 			(void)fprintf(stderr, "%s: %s\n", __progname,
-			    r_magic_error(magic));
+			    r_magic_error (magic));
 			return -1;
 		}
 		return 0;
@@ -338,12 +338,12 @@ load(const char *m, int flags)
 		return;
 	magic = r_magic_open(flags);
 	if (magic == NULL) {
-		(void)fprintf(stderr, "%s: %s\n", __progname, strerror(errno));
+		(void)fprintf(stderr, "%s: %s\n", __progname, strerror (errno));
 		exit(1);
 	}
 	if (r_magic_load(magic, magicfile) == -1) {
 		(void)fprintf(stderr, "%s: %s\n",
-		    __progname, r_magic_error(magic));
+		    __progname, r_magic_error (magic));
 		exit(1);
 	}
 }
@@ -364,7 +364,7 @@ unwrap(char *fn)
 	} else {
 		if ((f = fopen(fn, "r")) == NULL) {
 			(void)fprintf(stderr, "%s: Cannot open `%s' (%s).\n",
-			    __progname, fn, strerror(errno));
+			    __progname, fn, strerror (errno));
 			exit(1);
 		}
 
@@ -409,7 +409,7 @@ process(const char *inname, int wid)
 
 	type = r_magic_file(magic, std_in ? NULL : inname);
 	if (type == NULL)
-		(void)printf("ERROR: %s\n", r_magic_error(magic));
+		(void)printf("ERROR: %s\n", r_magic_error (magic));
 	else
 		(void)printf("%s\n", type);
 }

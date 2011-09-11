@@ -301,7 +301,7 @@ R_API char *r_line_readline() {
 		if (I.echo)
 			printf ("\r\x1b[2K\r"); //%*c\r", columns, ' ');
 #endif
-		switch (buf[0]) {
+		switch (*buf) {
 		//case -1: // ^D
 		//	return NULL;
 		case 0: // control-space
@@ -315,7 +315,7 @@ R_API char *r_line_readline() {
 			break;
 		case 3: // ^C 
 			if (I.echo)
-				printf ("\n^C\n");
+				printf ("^C\n");
 			I.buffer.index = I.buffer.length = 0;
 			*I.buffer.data = '\0';
 			goto _end;

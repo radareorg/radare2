@@ -1,0 +1,162 @@
+#	$OpenBSD: jpeg,v 1.4 2009/04/24 18:54:34 chl Exp $
+
+#------------------------------------------------------------------------------
+# JPEG images
+# SunOS 5.5.1 had
+#
+#	0	string		\377\330\377\340	JPEG file
+#	0	string		\377\330\377\356	JPG file
+#
+# both of which turn into "JPEG image data" here.
+#
+0	beshort		0xffd8		JPEG image data
+!:mime	image/jpeg
+>6	string		JFIF		\b, JFIF standard
+# The following added by Erik Rossen <rossen@freesurf.ch> 1999-09-06
+# in a vain attempt to add image size reporting for JFIF.  Note that these
+# tests are not fool-proof since some perfectly valid JPEGs are currently
+# impossible to specify in magic(4) format.
+# First, a little JFIF version info:
+>>11	byte		x		\b %d.
+>>12	byte		x		\b%02d
+# Next, the resolution or aspect ratio of the image:
+#>>13	byte		0		\b, aspect ratio
+#>>13	byte		1		\b, resolution (DPI)
+#>>13	byte		2		\b, resolution (DPCM)
+#>>4	beshort		x		\b, segment length %d
+# Next, show thumbnail info, if it exists:
+>>18	byte		!0		\b, thumbnail %dx
+>>>19	byte		x		\b%d
+
+# EXIF moved down here to avoid reporting a bogus version number,
+# and EXIF version number printing added.
+#   - Patrik R=E5dman <patrik+file-magic@iki.fi>
+>6	string		Exif		\b, EXIF standard
+# Look for EXIF IFD offset in IFD 0, and then look for EXIF version tag in EXIF IFD.
+# All possible combinations of entries have to be enumerated, since no looping
+# is possible. And both endians are possible...
+# The combinations included below are from real-world JPEGs.
+# Little-endian
+>>12	string		II		
+# IFD 0 Entry #5:
+>>>70	leshort		0x8769          
+# EXIF IFD Entry #1:
+>>>>(78.l+14)	leshort	0x9000		
+>>>>>(78.l+23)	byte	x		%c
+>>>>>(78.l+24)	byte	x		\b.%c
+>>>>>(78.l+25)	byte	!0x30		\b%c
+# IFD 0 Entry #9:
+>>>118	leshort		0x8769          
+# EXIF IFD Entry #3:
+>>>>(126.l+38)	leshort	0x9000		
+>>>>>(126.l+47)	byte	x		%c
+>>>>>(126.l+48)	byte	x		\b.%c
+>>>>>(126.l+49)	byte	!0x30		\b%c
+# IFD 0 Entry #10
+>>>130	leshort		0x8769          
+# EXIF IFD Entry #3:
+>>>>(138.l+38)	leshort	0x9000		
+>>>>>(138.l+47)	byte	x		%c
+>>>>>(138.l+48)	byte	x		\b.%c
+>>>>>(138.l+49)	byte	!0x30		\b%c
+# EXIF IFD Entry #4:
+>>>>(138.l+50)	leshort	0x9000		
+>>>>>(138.l+59)	byte	x		%c
+>>>>>(138.l+60)	byte	x		\b.%c
+>>>>>(138.l+61)	byte	!0x30		\b%c
+# EXIF IFD Entry #5:
+>>>>(138.l+62)	leshort	0x9000		
+>>>>>(138.l+71)	byte	x		%c
+>>>>>(138.l+72)	byte	x		\b.%c
+>>>>>(138.l+73)	byte	!0x30		\b%c
+# IFD 0 Entry #11
+>>>142	leshort		0x8769          
+# EXIF IFD Entry #3:
+>>>>(150.l+38)	leshort	0x9000		
+>>>>>(150.l+47)	byte	x		%c
+>>>>>(150.l+48)	byte	x		\b.%c
+>>>>>(150.l+49)	byte	!0x30		\b%c
+# EXIF IFD Entry #4:
+>>>>(150.l+50)	leshort	0x9000		
+>>>>>(150.l+59)	byte	x		%c
+>>>>>(150.l+60)	byte	x		\b.%c
+>>>>>(150.l+61)	byte	!0x30		\b%c
+# EXIF IFD Entry #5:
+>>>>(150.l+62)	leshort	0x9000		
+>>>>>(150.l+71)	byte	x		%c
+>>>>>(150.l+72)	byte	x		\b.%c
+>>>>>(150.l+73)	byte	!0x30		\b%c
+# Big-endian
+>>12	string		MM		
+# IFD 0 Entry #9:
+>>>118	beshort		0x8769          
+# EXIF IFD Entry #1:
+>>>>(126.L+14)	beshort	0x9000		
+>>>>>(126.L+23)	byte	x		%c
+>>>>>(126.L+24)	byte	x		\b.%c
+>>>>>(126.L+25)	byte	!0x30		\b%c
+# EXIF IFD Entry #3:
+>>>>(126.L+38)	beshort	0x9000		
+>>>>>(126.L+47)	byte	x		%c
+>>>>>(126.L+48)	byte	x		\b.%c
+>>>>>(126.L+49)	byte	!0x30		\b%c
+# IFD 0 Entry #10
+>>>130	beshort		0x8769          
+# EXIF IFD Entry #3:
+>>>>(138.L+38)	beshort	0x9000		
+>>>>>(138.L+47)	byte	x		%c
+>>>>>(138.L+48)	byte	x		\b.%c
+>>>>>(138.L+49)	byte	!0x30		\b%c
+# EXIF IFD Entry #5:
+>>>>(138.L+62)	beshort	0x9000		
+>>>>>(138.L+71)	byte	x		%c
+>>>>>(138.L+72)	byte	x		\b.%c
+>>>>>(138.L+73)	byte	!0x30		\b%c
+# IFD 0 Entry #11
+>>>142	beshort		0x8769          
+# EXIF IFD Entry #4:
+>>>>(150.L+50)	beshort	0x9000		
+>>>>>(150.L+59)	byte	x		%c
+>>>>>(150.L+60)	byte	x		\b.%c
+>>>>>(150.L+61)	byte	!0x30		\b%c
+# Here things get sticky.  We can do ONE MORE marker segment with
+# indirect addressing, and that's all.  It would be great if we could
+# do pointer arithemetic like in an assembler language.  Christos?
+# And if there was some sort of looping construct to do searches, plus a few
+# named accumulators, it would be even more effective...
+# At least we can show a comment if no other segments got inserted before:
+>(4.S+5)	byte		0xFE
+>>(4.S+8)	string		>\0		\b, comment: "%s"
+#>(4.S+5)	byte		0xFE		\b, comment
+#>>(4.S+6)	beshort		x		\b length=%d
+#>>(4.S+8)	string		>\0		\b, "%s"
+# Or, we can show the encoding type (I've included only the three most common)
+# and image dimensions if we are lucky and the SOFn (image segment) is here:
+>(4.S+5)	byte		0xC0		\b, baseline
+>>(4.S+6)	byte		x		\b, precision %d
+>>(4.S+7)	beshort		x		\b, %dx
+>>(4.S+9)	beshort		x		\b%d
+>(4.S+5)	byte		0xC1		\b, extended sequential
+>>(4.S+6)	byte		x		\b, precision %d
+>>(4.S+7)	beshort		x		\b, %dx
+>>(4.S+9)	beshort		x		\b%d
+>(4.S+5)	byte		0xC2		\b, progressive
+>>(4.S+6)	byte		x		\b, precision %d
+>>(4.S+7)	beshort		x		\b, %dx
+>>(4.S+9)	beshort		x		\b%d
+# I've commented-out quantisation table reporting.  I doubt anyone cares yet.
+#>(4.S+5)	byte		0xDB		\b, quantisation table
+#>>(4.S+6)	beshort		x		\b length=%d
+#>14	beshort		x		\b, %d x
+#>16	beshort		x		\b %d
+
+# HSI is Handmade Software's proprietary JPEG encoding scheme
+0	string		hsi1		JPEG image data, HSI proprietary
+
+# From: David Santinoli <david@santinoli.com>
+0	string		\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A\x87\x0A	JPEG 2000 image data
+
+# Type: JPEG 2000 codesream
+# From: Mathieu Malaterre <mathieu.malaterre@gmail.com>
+0	belong		0xff4fff51						JPEG 2000 codestream
+45	beshort		0xff52

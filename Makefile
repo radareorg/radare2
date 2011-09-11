@@ -84,6 +84,7 @@ install: install-doc install-man
 	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd libr/syscall/d ; ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd libr/magic ; ${MAKE} install-data PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
 install-pkgconfig-symlink:
 	@${INSTALL_DIR} ${DESTDIR}/${LIBDIR}/pkgconfig
@@ -93,6 +94,7 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd libr/syscall/d ; ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd libr/magic ; ${MAKE} install-symlink-data PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
 deinstall uninstall:
 	cd libr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}

@@ -1,0 +1,58 @@
+#	$OpenBSD: perl,v 1.3 2009/04/24 18:54:34 chl Exp $
+
+#------------------------------------------------------------------------------
+# perl:  file(1) magic for Larry Wall's perl language.
+#
+# The `eval' lines recognizes an outrageously clever hack.
+# Keith Waclena <keith@cerberus.uchicago.edu>
+# Send additions to <perl5-porters@perl.org>
+0	search/1/b	#!\ /bin/perl			Perl script text executable
+!:mime	application/x-perl
+0	search/1	eval\ "exec\ /bin/perl		Perl script text
+!:mime	application/x-perl
+0	search/1/b	#!\ /usr/bin/perl		Perl script text executable
+!:mime	application/x-perl
+0	search/1	eval\ "exec\ /usr/bin/perl	Perl script text
+!:mime	application/x-perl
+0	search/1/b	#!\ /usr/local/bin/perl		Perl script text executable
+!:mime	application/x-perl
+0	search/1	eval\ "exec\ /usr/local/bin/perl	Perl script text
+!:mime	application/x-perl
+0	search/1	eval\ '(exit\ $?0)'\ &&\ eval\ 'exec	Perl script text
+!:mime	application/x-perl
+
+
+# by Dmitry V. Levin and Alexey Tourbin
+# check the first line
+0	search/1	package
+0	regex		\^package[\ \t]+[A-Za-z_]
+>0	regex		\^package[\ \t]+[0-9A-Za-z_:]+\ *;	Perl5 module source text
+# not 'p', check other lines
+0	search/1	!p
+>0	regex		\^package[\ \t]+[0-9A-Za-z_:]+\ *;
+>>0	regex		\^1\ *;|\^(use|sub|my)\ .*[(;{=]	Perl5 module source text
+
+
+
+# Perl POD documents
+# From: Tom Hukins <tom@eborcom.com>
+0	search/1/B	\=pod\n		Perl POD document text
+0	search/1/B	\n\=pod\n	Perl POD document text
+0	search/1/B	\=head1\ 	Perl POD document text
+0	search/1/B	\n\=head1\ 	Perl POD document text
+0	search/1/B	\=head2\ 	Perl POD document text
+0	search/1/B	\n\=head2\ 	Perl POD document text
+
+# Perl Storable data files.
+0	string	perl-store	perl Storable (v0.6) data
+>4	byte	>0	(net-order %d)
+>>4	byte	&01	(network-ordered)
+>>4	byte	=3	(major 1)
+>>4	byte	=2	(major 1)
+
+0	string	pst0	perl Storable (v0.7) data
+>4	byte	>0
+>>4	byte	&01	(network-ordered)
+>>4	byte	=5	(major 2)
+>>4	byte	=4	(major 2)
+>>5	byte	>0	(minor %d)

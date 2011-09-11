@@ -6,6 +6,9 @@
 #include <ctype.h>
 #include <stdarg.h>
 
+static int magicdepth = 99; //XXX: do not use global var here
+#define MAGICPATH PREFIX"/lib/radare2/"R2_VERSION"/magic"
+
 static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size) {
 	RCore *core = (RCore *) user;
 	int j, ret = 0;
@@ -1570,22 +1573,27 @@ static int cmd_info(void *data, const char *input) {
 }
 
 static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, int v) {
-	char *fmt, *q, *p;
+	const char *fmt;
+	char *q, *p;
 	const char *str;
 	r_magic_t ck;
 
-	if (depth--<0)
+	if (--depth<0)
 		return;
 	if (addr != core->offset)
 		r_core_seek (core, addr, R_TRUE);
 	if (*file == ' ') file++;
 	if (!*file) file = NULL;
 	ck = r_magic_open (0);
+	if (r_magic_load (ck, MAGICPATH) == -1) {
+		eprintf ("failed r_magic_load ("MAGICPATH") %s\n", r_magic_error (ck));
+	}
+	if (file)
 	if (r_magic_load (ck, file) == -1) {
-		eprintf ("r_core_magic(\"%s\") %s\n", file, r_magic_error (ck));
+		eprintf ("failed r_magic_load (\"%s\") %s\n", file, r_magic_error (ck));
 		return;
 	}
-	if (v) r_cons_printf ("# pm %s @ 0x%"PFMT64x"\n", file?file:"", addr);
+	//if (v) r_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, file? file: "", addr);
 	str = r_magic_buffer (ck, core->block, core->blocksize);
 	if (str) {
 		if (!v && !strcmp (str, "data"))
@@ -1596,9 +1604,9 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth,
 		for (q=p; *q; q++)
 			if (q[0]=='\\' && q[1]=='n') {
 				*q = '\n';
-				strcpy (q+1, q+((q[2]==' ')?3:2));
+				strcpy (q+1, q+((q[2]==' ')? 3: 2));
 			}
-		r_cons_printf ("%s\n", p);
+		r_cons_printf ("0x%08"PFMT64x" %d %s\n", addr, magicdepth-depth, p);
 		// walking childs
 		for (q=p; *q; q++) {
 			switch (*q) {
@@ -1610,7 +1618,8 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth,
 				if (!memcmp (q+1, "0x", 2))
 					sscanf (q+3, "%"PFMT64x, &addr);
 				else sscanf (q+1, "%"PFMT64d, &addr);
-				r_core_magic_at (core, fmt, addr, depth, v);
+				if (!*fmt) fmt = file;
+				r_core_magic_at (core, fmt, addr, depth, 1);
 				*q = '@';
 			}
 		}
@@ -1620,9 +1629,9 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth,
 }
 
 static void r_core_magic(RCore *core, const char *file, int v) {
-	int depth = r_config_get_i (core->config, "magic.depth");
 	ut64 addr = core->offset;
-	r_core_magic_at (core, file, addr, depth, v);
+	magicdepth = r_config_get_i (core->config, "magic.depth"); // TODO: do not use global var here
+	r_core_magic_at (core, file, addr, magicdepth, v);
 	if (addr != core->offset)
 		r_core_seek (core, addr, R_TRUE);
 }
@@ -1798,7 +1807,16 @@ l = len;
 		r_print_string (core->print, core->offset, core->block, len, 1, 1, 0); //, 78, 1);
 		break;
 	case 'm':
-		r_core_magic (core, input+1, R_TRUE);
+		if (input[1]=='?') {
+			r_cons_printf ("Usage: pm [file|directory]\n"
+				" r_magic will use given file/dir as reference\n"
+				" output of those magic can contain expressions like:\n"
+				"   foo@0x40   # use 'foo' magic file on address 0x40\n"
+				"   @0x40      # use current magic file on address 0x40\n"
+				"   \\n         # append newline\n"
+				" MAGICPATH = "MAGICPATH"\n"
+				);
+		} else r_core_magic (core, input+1, R_TRUE);
 		break;
 	case 'u':
 		r_print_string (core->print, core->offset, core->block, len, 0, 1, 1); //, 78, 1);
@@ -1948,7 +1966,7 @@ l = len;
 		" po [len]     octal dump of N bytes\n"
 		" pc [len]     output C format\n"
 		" pf [fmt]     print formatted data\n"
-		" pm [magic]   print libmagic data\n"
+		" pm [magic]   print libmagic data (pm? for more information)\n"
 		" ps [len]     print string\n"
 		" psp          print pascal string\n"
 		" pS [len]     print wide string\n"
@@ -3233,10 +3251,14 @@ static int cmd_search(void *data, const char *input) {
 		if (input[1]==' ') {
 			const char *file = input+2;
 			ut64 addr = from;
+			r_cons_break (NULL, NULL);
 			for (; addr<to; addr++) {
+				if (r_cons_singleton ()->breaked)
+					break;
 				r_core_seek (core, addr, R_TRUE);
 				r_core_magic (core, file, R_FALSE);
 			}
+			r_cons_break_end();
 		} else eprintf ("Usage: /m [file]\n");
 		break;
 	case 'p':
@@ -3420,6 +3442,7 @@ static int cmd_search(void *data, const char *input) {
 			/* TODO: handle last block of data */
 			/* TODO: handle ^C */
 			/* TODO: launch search in background support */
+			// REMOVE OLD FLAGS r_core_cmdf (core, "f-%s*", r_config_get (core->config, "search.prefix"));
 			buf = (ut8 *)malloc (core->blocksize);
 			r_search_set_callback (core->search, &__cb_hit, core);
 			cmdhit = r_config_get (core->config, "cmd.hit");
@@ -4269,7 +4292,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 
 	oseek = core->offset;
 	ostr = str = strdup(each);
-	//radare_controlc();
+	//r_cons_break();
 
 	switch (each[0]) {
 	case '?':
@@ -4303,10 +4326,13 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	case '.':
 		if (each[1]=='(') {
 			char cmd2[1024];
-			// TODO: use controlc() here
+			// TODO: use r_cons_break() here
 			// XXX whats this 999 ?
 			i = 0;
+			r_cons_break (NULL, NULL);
 			for (core->cmd->macro.counter=0;i<999;core->cmd->macro.counter++) {
+				if (r_cons_singleton ()->breaked)
+					break;
 				r_cmd_macro_call (&core->cmd->macro, each+2);
 				if (core->cmd->macro.brk_value == NULL)
 					break;
@@ -4318,6 +4344,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				r_core_cmd (core, cmd2, 0);
 				i++;
 			}
+			r_cons_break_end();
 		} else {
 			char buf[1024];
 			char cmd2[1024];

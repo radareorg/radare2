@@ -121,12 +121,14 @@ static int autocomplete(RLine *line) {
 			line->completion.argv = tmp_argv;
 		} else
 		if ((!memcmp (line->buffer.data, "o ", 2)) ||
-		     !memcmp (line->buffer.data, ". ", 2)) {
+		     !memcmp (line->buffer.data, ". ", 2) ||
+		     !memcmp (line->buffer.data, "pm ", 3) ||
+		     !memcmp (line->buffer.data, "/m ", 3)) {
 			// XXX: SO MANY FUCKING MEMORY LEAKS
 			char *str, *p, *path;
 			RList *list;
 			int n, i = 0;
-			int sdelta = 2; //(line->buffer.data[1]==' ')?2:3;
+			int sdelta = (line->buffer.data[1]==' ')?2:3;
 			if (!line->buffer.data[sdelta]) {
 				path = r_sys_getdir ();
 			} else {
@@ -135,19 +137,33 @@ static int autocomplete(RLine *line) {
 			p = r_str_lchr (path, '/');
 			if (p) {
 				if (p==path) path = "/";
-				else *p = 0;
+				else if (p!=path+1)
+					*p = 0;
 				p++;
 			}
 			if (p) {
 				if (*p) n = strlen (p);
 				else p = "";
 			}
+			if (*path=='~') {
+				char *lala = r_str_home (path+1);
+				free (path);
+				path = lala;
+			} else if (*path!='.' && *path!='/') {
+				char *o = malloc (strlen (path)+4);
+				memcpy (o, "./", 3);
+				p = o+3;
+				n = strlen (path);
+				memcpy (o+3, path, strlen (path)+1);
+				free (path);
+				path = o;
+			}
 #if 0
 printf ("DIR(%s)\n", path);
 printf ("FILE(%s)\n", p);
 printf ("FILEN %d\n", n);
 #endif
- 			list = r_sys_dir (path);
+ 			list = p? r_sys_dir (path):NULL;
 			if (list) {
 				char buf[4096];
 				r_list_foreach (list, iter, str) {
@@ -161,6 +177,7 @@ printf ("FILEN %d\n", n);
 							break;
 					}
 				}
+				r_list_free (list);
 				// XXX LEAK r_list_destroy (list);
 			} else eprintf ("\nInvalid directory\n");
 			tmp_argv[i] = NULL;

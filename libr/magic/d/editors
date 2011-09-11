@@ -1,0 +1,18 @@
+#	$OpenBSD: editors,v 1.2 2008/05/08 01:40:57 chl Exp $
+
+#------------------------------------------------------------------------------
+# T602 editor documents 
+# by David Necas <yeti@physics.muni.cz>
+0	string	@CT\ 	T602 document data,
+>4	string	0	Kamenicky
+>4	string	1	CP 852
+>4	string	2	KOI8-CS
+>4	string	>2	unknown encoding
+
+# Vi IMproved Encrypted file 
+# by David Necas <yeti@physics.muni.cz>
+0	string	VimCrypt~	Vim encrypted file data
+# Vi IMproved Swap file
+# by Sven Wegener <swegener@gentoo.org>
+0	string	b0VIM\ 		Vim swap file
+>&0	string	>\0		\b, version %s

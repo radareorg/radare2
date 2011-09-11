@@ -1,0 +1,251 @@
+#	$OpenBSD: linux,v 1.6 2009/04/24 18:54:34 chl Exp $
+
+#------------------------------------------------------------------------------
+# linux:  file(1) magic for Linux files
+#
+# Values for Linux/i386 binaries, from Daniel Quinlan <quinlan@yggdrasil.com>
+# The following basic Linux magic is useful for reference, but using
+# "long" magic is a better practice in order to avoid collisions.
+#
+# 2	leshort		100		Linux/i386
+# >0	leshort		0407		impure executable (OMAGIC)
+# >0	leshort		0410		pure executable (NMAGIC)
+# >0	leshort		0413		demand-paged executable (ZMAGIC)
+# >0	leshort		0314		demand-paged executable (QMAGIC)
+#
+0	lelong		0x00640107	Linux/i386 impure executable (OMAGIC)
+>16	lelong		0		\b, stripped
+0	lelong		0x00640108	Linux/i386 pure executable (NMAGIC)
+>16	lelong		0		\b, stripped
+0	lelong		0x0064010b	Linux/i386 demand-paged executable (ZMAGIC)
+>16	lelong		0		\b, stripped
+0	lelong		0x006400cc	Linux/i386 demand-paged executable (QMAGIC)
+>16	lelong		0		\b, stripped
+#
+0	string		\007\001\000	Linux/i386 object file
+>20	lelong		>0x1020		\b, DLL library
+# Linux-8086 stuff:
+0	string		\01\03\020\04	Linux-8086 impure executable
+>28	long		!0		not stripped
+0	string		\01\03\040\04	Linux-8086 executable
+>28	long		!0		not stripped
+#
+0	string		\243\206\001\0	Linux-8086 object file
+#
+0	string		\01\03\020\20	Minix-386 impure executable
+>28	long		!0		not stripped
+0	string		\01\03\040\20	Minix-386 executable
+>28	long		!0		not stripped
+# core dump file, from Bill Reynolds <bill@goshawk.lanl.gov>
+216	lelong		0421		Linux/i386 core file
+>220	string		>\0		of '%s'
+>200	lelong		>0		(signal %d)
+#
+# LILO boot/chain loaders, from Daniel Quinlan <quinlan@yggdrasil.com>
+# this can be overridden by the DOS executable (COM) entry
+2	string		LILO		Linux/i386 LILO boot/chain loader
+#
+# PSF fonts, from H. Peter Anvin <hpa@yggdrasil.com>
+0	leshort		0x0436		Linux/i386 PC Screen Font data,
+>2	byte		0		256 characters, no directory,
+>2	byte		1		512 characters, no directory,
+>2	byte		2		256 characters, Unicode directory,
+>2	byte		3		512 characters, Unicode directory,
+>3	byte		>0		8x%d
+# Linux swap file, from Daniel Quinlan <quinlan@yggdrasil.com>
+4086	string		SWAP-SPACE	Linux/i386 swap file
+# From: Jeff Bailey <jbailey@ubuntu.com>
+# Linux swap file with swsusp1 image, from Jeff Bailey <jbailey@ubuntu.com>
+4076	string		SWAPSPACE2S1SUSPEND	Linux/i386 swap file (new style) with SWSUSP1 image
+# according to man page of mkswap (8) March 1999
+4086	string		SWAPSPACE2	Linux/i386 swap file (new style)
+>0x400	long		x		%d (4K pages)
+>0x404	long		x		size %d pages
+>>4086	string		SWAPSPACE2	
+>>>1052	string		>\0		Label %s
+# ECOFF magic for OSF/1 and Linux (only tested under Linux though)
+#
+#	from Erik Troan (ewt@redhat.com) examining od dumps, so this
+#		could be wrong
+#      updated by David Mosberger (davidm@azstarnet.com) based on
+#      GNU BFD and MIPS info found below.
+#
+0	leshort		0x0183		ECOFF alpha
+>24	leshort		0407		executable
+>24	leshort		0410		pure
+>24	leshort		0413		demand paged
+>8	long		>0		not stripped
+>8	long		0		stripped
+>23	leshort		>0		- version %ld.
+#
+# Linux kernel boot images, from Albert Cahalan <acahalan@cs.uml.edu>
+# and others such as Axel Kohlmeyer <akohlmey@rincewind.chemie.uni-ulm.de>
+# and Nicolás Lichtmaier <nick@debian.org>
+# All known start with: b8 c0 07 8e d8 b8 00 90 8e c0 b9 00 01 29 f6 29
+# Linux kernel boot images (i386 arch) (Wolfram Kleff)
+514	string		HdrS		Linux kernel
+>510	leshort		0xAA55		x86 boot executable
+>>518	leshort		>=0x200
+>>529	byte		0		zImage,
+>>>529	byte		1		bzImage,
+>>>(526.s+0x200) string	>\0		version %s,
+>>498	leshort		1		RO-rootFS,
+>>498	leshort		0		RW-rootFS,
+>>508	leshort		>0		root_dev 0x%X,
+>>502	leshort		>0		swap_dev 0x%X,
+>>504	leshort		>0		RAMdisksize %u KB,
+>>506	leshort		0xFFFF		Normal VGA
+>>506	leshort		0xFFFE		Extended VGA
+>>506	leshort		0xFFFD		Prompt for Videomode
+>>506	leshort		>0		Video mode %d
+# This also matches new kernels, which were caught above by "HdrS".
+0		belong	0xb8c0078e	Linux kernel
+>0x1e3		string	Loading		version 1.3.79 or older
+>0x1e9		string	Loading		from prehistoric times
+
+# System.map files - Nicolás Lichtmaier <nick@debian.org>
+8	search/1	\ A\ _text	Linux kernel symbol map text
+
+# LSM entries - Nicolás Lichtmaier <nick@debian.org>
+0	search/1	Begin3	Linux Software Map entry text
+0	search/1	Begin4	Linux Software Map entry text (new format)
+
+# From Matt Zimmerman, enhanced for v3 by Matthew Palmer
+0	belong	0x4f4f4f4d	User-mode Linux COW file
+>4	belong	<3		\b, version %d
+>>8	string	>\0		\b, backing file %s
+>4	belong	>2		\b, version %d
+>>32	string	>\0		\b, backing file %s
+
+############################################################################
+# Linux kernel versions
+
+0		string		\xb8\xc0\x07\x8e\xd8\xb8\x00\x90	Linux
+>497		leshort		0		x86 boot sector
+>>514		belong		0x8e	of a kernel from the dawn of time!
+>>514		belong		0x908ed8b4	version 0.99-1.1.42
+>>514		belong		0x908ed8b8	for memtest86
+
+>497		leshort		!0		x86 kernel
+>>504		leshort		>0		RAMdisksize=%u KB
+>>502		leshort		>0		swap=0x%X
+>>508		leshort		>0		root=0x%X
+>>>498		leshort		1		\b-ro
+>>>498		leshort		0		\b-rw
+>>506		leshort		0xFFFF		vga=normal
+>>506		leshort		0xFFFE		vga=extended
+>>506		leshort		0xFFFD		vga=ask
+>>506		leshort		>0		vga=%d
+>>514		belong		0x908ed881	version 1.1.43-1.1.45
+>>514		belong		0x15b281cd
+>>>0xa8e	belong		0x55AA5a5a	version 1.1.46-1.2.13,1.3.0
+>>>0xa99	belong		0x55AA5a5a	version 1.3.1,2
+>>>0xaa3	belong		0x55AA5a5a	version 1.3.3-1.3.30
+>>>0xaa6	belong		0x55AA5a5a	version 1.3.31-1.3.41
+>>>0xb2b	belong		0x55AA5a5a	version 1.3.42-1.3.45
+>>>0xaf7	belong		0x55AA5a5a	version 1.3.46-1.3.72
+>>514		string		HdrS
+>>>518		leshort		>0x1FF
+>>>>529		byte		0		\b, zImage
+>>>>529		byte		1		\b, bzImage
+>>>>(526.s+0x200) string 	>\0		\b, version %s
+
+# Linux boot sector thefts.
+0		belong		0xb8c0078e	Linux
+>0x1e6		belong		0x454c4b53	ELKS Kernel
+>0x1e6		belong		!0x454c4b53	style boot sector
+
+############################################################################
+# Linux 8086 executable
+0	lelong&0xFF0000FF 0xC30000E9	Linux-Dev86 executable, headerless
+>5	string		.		
+>>4	string		>\0		\b, libc version %s
+
+0	lelong&0xFF00FFFF 0x4000301	Linux-8086 executable
+>2	byte&0x01	!0		\b, unmapped zero page
+>2	byte&0x20	0		\b, impure
+>2	byte&0x20	!0
+>>2	byte&0x10	!0		\b, A_EXEC
+>2	byte&0x02	!0		\b, A_PAL
+>2	byte&0x04	!0		\b, A_NSYM
+>2	byte&0x08	!0		\b, A_STAND
+>2	byte&0x40	!0		\b, A_PURE
+>2	byte&0x80	!0		\b, A_TOVLY
+>28     long            !0              \b, not stripped
+>37	string		.		
+>>36	string		>\0		\b, libc version %s
+
+# 0	lelong&0xFF00FFFF 0x10000301	ld86 I80386 executable
+# 0	lelong&0xFF00FFFF 0xB000301	ld86 M68K executable
+# 0	lelong&0xFF00FFFF 0xC000301	ld86 NS16K executable
+# 0	lelong&0xFF00FFFF 0x17000301	ld86 SPARC executable
+
+# SYSLINUX boot logo files (from 'ppmtolss16' sources)
+# http://syslinux.zytor.com/
+#
+0	lelong	=0x1413f33d		SYSLINUX' LSS16 image data
+>4	leshort	x			\b, width %d
+>6	leshort	x			\b, height %d
+
+0	string	OOOM			User-Mode-Linux's Copy-On-Write disk image
+>4	belong	x			version %d
+
+# SE Linux policy database
+# From: Mike Frysinger <vapier@gentoo.org>
+0	lelong	0xf97cff8c		SE Linux policy
+>16	lelong	x			v%d
+>20	lelong	1			MLS
+>24	lelong	x			%d symbols
+>28	lelong	x			%d ocons
+
+# Linux Logical Volume Manager (LVM) 
+# Emmanuel VARAGNAT <emmanuel.varagnat@guzu.net>
+#
+# System ID, UUID and volume group name are 128 bytes long
+# but they should never be full and initialized with zeros...
+#
+# LVM1
+#
+0x0	string	HM\001		LVM1 (Linux Logical Volume Manager), version 1
+>0x12c	string	>\0		, System ID: %s
+
+0x0	string	HM\002		LVM1 (Linux Logical Volume Manager), version 2
+>0x12c	string	>\0		, System ID: %s
+
+#  LVM2
+#
+# It seems that the label header can be in one the four first sector
+# of the disk... (from _find_labeller in lib/label/label.c of LVM2)
+#
+# 0x200 seems to be the common case
+
+0x218		 string	LVM2\ 001	LVM2 (Linux Logical Volume Manager)
+# read the offset to add to the start of the header, and the header
+# start in 0x200
+>(0x214.l+0x200) string	>\0		, UUID: %s
+
+0x018		 string	LVM2\ 001	LVM2 (Linux Logical Volume Manager)
+>(0x014.l)	 string	>\0		, UUID: %s
+
+0x418		 string	LVM2\ 001	LVM2 (Linux Logical Volume Manager)
+>(0x414.l+0x400) string	>\0		, UUID: %s
+
+0x618		 string	LVM2\ 001	LVM2 (Linux Logical Volume Manager)
+>(0x614.l+0x600) string	>\0		, UUID: %s
+
+# SE Linux policy database
+0	lelong	0xf97cff8c		SE Linux policy
+>16	lelong	x			v%d
+>20	lelong	1			MLS
+>24	lelong	x			%d symbols
+>28	lelong	x			%d ocons
+
+# LUKS: Linux Unified Key Setup, On-Disk Format, http://luks.endorphin.org/spec
+# Anthon van der Neut (anthon@mnt.org)
+0	string	LUKS\xba\xbe	LUKS encrypted file,
+>6	beshort x		ver %d
+>8	string	x		[%s,
+>40	string	x		%s,
+>72	string	x		%s]
+>168	string	x		UUID: %s
+

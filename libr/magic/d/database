@@ -1,0 +1,245 @@
+#	$OpenBSD: database,v 1.6 2009/04/24 18:54:34 chl Exp $
+
+#------------------------------------------------------------------------------
+# database:  file(1) magic for various databases
+#
+# extracted from header/code files by Graeme Wilford (eep2gw@ee.surrey.ac.uk)
+#
+#
+# GDBM magic numbers
+#  Will be maintained as part of the GDBM distribution in the future.
+#  <downsj@teeny.org>
+0	belong	0x13579ace	GNU dbm 1.x or ndbm database, big endian
+!:mime	application/x-gdbm
+0	lelong	0x13579ace	GNU dbm 1.x or ndbm database, little endian
+!:mime	application/x-gdbm
+0	string	GDBM		GNU dbm 2.x database
+!:mime	application/x-gdbm
+#
+# Berkeley DB
+#
+# Ian Darwin's file /etc/magic files: big/little-endian version.
+#
+# Hash 1.85/1.86 databases store metadata in network byte order.
+# Btree 1.85/1.86 databases store the metadata in host byte order.
+# Hash and Btree 2.X and later databases store the metadata in host byte order.
+
+0	long	0x00061561	Berkeley DB
+!:mime	application/x-dbm
+>8	belong	4321
+>>4	belong	>2		1.86
+>>4	belong	<3		1.85
+>>4	belong	>0		(Hash, version %d, native byte-order)
+>8	belong	1234
+>>4	belong	>2		1.86
+>>4	belong	<3		1.85
+>>4	belong	>0		(Hash, version %d, little-endian)
+
+0	belong	0x00061561	Berkeley DB
+>8	belong	4321
+>>4	belong	>2		1.86
+>>4	belong	<3		1.85
+>>4	belong	>0		(Hash, version %d, big-endian)
+>8	belong	1234
+>>4	belong	>2		1.86
+>>4	belong	<3		1.85
+>>4	belong	>0		(Hash, version %d, native byte-order)
+
+0	long	0x00053162	Berkeley DB 1.85/1.86
+>4	long	>0		(Btree, version %d, native byte-order)
+0	belong	0x00053162	Berkeley DB 1.85/1.86
+>4	belong	>0		(Btree, version %d, big-endian)
+0	lelong	0x00053162	Berkeley DB 1.85/1.86
+>4	lelong	>0		(Btree, version %d, little-endian)
+
+12	long	0x00061561	Berkeley DB
+>16	long	>0		(Hash, version %d, native byte-order)
+12	belong	0x00061561	Berkeley DB
+>16	belong	>0		(Hash, version %d, big-endian)
+12	lelong	0x00061561	Berkeley DB
+>16	lelong	>0		(Hash, version %d, little-endian)
+
+12	long	0x00053162	Berkeley DB
+>16	long	>0		(Btree, version %d, native byte-order)
+12	belong	0x00053162	Berkeley DB
+>16	belong	>0		(Btree, version %d, big-endian)
+12	lelong	0x00053162	Berkeley DB
+>16	lelong	>0		(Btree, version %d, little-endian)
+
+12	long	0x00042253	Berkeley DB
+>16	long	>0		(Queue, version %d, native byte-order)
+12	belong	0x00042253	Berkeley DB
+>16	belong	>0		(Queue, version %d, big-endian)
+12	lelong	0x00042253	Berkeley DB
+>16	lelong	>0		(Queue, version %d, little-endian)
+
+# From Max Bowsher.
+12	long	0x00040988	Berkeley DB
+>16	long	>0		(Log, version %d, native byte-order)
+12	belong	0x00040988	Berkeley DB 
+>16	belong	>0		(Log, version %d, big-endian)
+12	lelong	0x00040988	Berkeley DB
+>16	lelong	>0		(Log, version %d, little-endian)
+
+#
+#
+# Round Robin Database Tool by Tobias Oetiker <oetiker@ee.ethz.ch>
+0	string	RRD		RRDTool DB
+>4	string	x		version %s
+#----------------------------------------------------------------------
+# ROOT: file(1) magic for ROOT databases
+#
+0       string  root\0  ROOT file
+>4      belong  x       Version %d
+>33     belong  x       (Compression: %d)
+
+# XXX: Weak magic.
+# Alex Ott <ott@jet.msk.su>
+## Paradox file formats
+#2	  leshort	0x0800	Paradox 
+#>0x39	  byte		3	v. 3.0 
+#>0x39	  byte		4	v. 3.5 
+#>0x39	  byte		9	v. 4.x 
+#>0x39	  byte		10	v. 5.x 
+#>0x39	  byte		11	v. 5.x 
+#>0x39	  byte		12	v. 7.x 
+#>>0x04	  byte		0	indexed .DB data file 
+#>>0x04	  byte		1	primary index .PX file 
+#>>0x04	  byte		2	non-indexed .DB data file 
+#>>0x04	  byte		3	non-incrementing secondary index .Xnn file 
+#>>0x04	  byte		4	secondary index .Ynn file 
+#>>0x04	  byte		5	incrementing secondary index .Xnn file 
+#>>0x04	  byte		6	non-incrementing secondary index .XGn file 
+#>>0x04	  byte		7	secondary index .YGn file 
+#>>>0x04	  byte		8	incrementing secondary index .XGn file 
+
+## XBase database files
+#0      byte       0x02	
+#>8     leshort	  >0
+#>>12   leshort    0	FoxBase 
+#!:mime	application/x-dbf
+#>>>0x04	lelong		0		(no records)
+#>>>0x04	lelong		>0		(%ld records)
+#
+#0      byte       0x03	
+#!:mime	application/x-dbf
+#>8     leshort	  >0
+#>>12   leshort    0	FoxBase+, FoxPro, dBaseIII+, dBaseIV, no memo 
+#>>>0x04	lelong		0		(no records)
+#>>>0x04	lelong		>0		(%ld records)
+#
+#0      byte       0x04	
+#!:mime	application/x-dbf
+#>8     leshort	  >0
+#>>12   leshort    0	dBASE IV no memo file 
+#>>>0x04	lelong		0		(no records)
+#>>>0x04	lelong		>0		(%ld records)
+#
+#0      byte       0x05	
+#!:mime	application/x-dbf
+#>8     leshort	  >0
+#>>12   leshort    0	dBASE V no memo file 
+#>>>0x04	lelong		0		(no records)
+#>>>0x04	lelong		>0		(%ld records)
+#
+#0      byte       0x30
+#!:mime	application/x-dbf
+#>8     leshort	  >0
+#>>12   leshort    0	Visual FoxPro 
+#>>>0x04	lelong		0		(no records)
+#>>>0x04	lelong		>0		(%ld records)
+#
+#0      byte       0x43
+#!:mime	application/x-dbf
+#>8     leshort	  >0
+#>>12   leshort    0	FlagShip with memo var size 
+#>>>0x04	lelong		0		(no records)
+#>>>0x04	lelong		>0		(%ld records)
+#
+#0      byte       0x7b
+#!:mime	application/x-dbf
+#>8     leshort	  >0
+#>>12   leshort    0	dBASEIV with memo 
+#>>>0x04	lelong		0		(no records)
+#>>>0x04	lelong		>0		(%ld records)
+#
+#0      byte       0x83	
+#!:mime	application/x-dbf
+#>8     leshort	  >0
+#>>12   leshort    0	FoxBase+, dBaseIII+ with memo 
+#>>>0x04	lelong		0		(no records)
+#>>>0x04	lelong		>0		(%ld records)
+#
+#0      byte       0x8b
+#!:mime	application/x-dbf
+#>8     leshort	  >0
+#>>12   leshort    0	dBaseIV with memo 
+#>>>0x04	lelong		0		(no records)
+#>>>0x04	lelong		>0		(%ld records)
+#
+#0      byte       0x8e	
+#!:mime	application/x-dbf
+#>8     leshort	  >0
+#>>12   leshort    0	dBaseIV with SQL Table 
+#>>>0x04	lelong		0		(no records)
+#>>>0x04	lelong		>0		(%ld records)
+#
+#0      byte       0xb3
+#!:mime	application/x-dbf
+#>8     leshort	  >0
+#>>12   leshort    0	FlagShip with .dbt memo 
+#>>>0x04	lelong		0		(no records)
+#>>>0x04	lelong		>0		(%ld records)
+#
+#0      byte       0xf5
+#!:mime	application/x-dbf
+#>8     leshort	  >0
+#>>12   leshort    0	FoxPro with memo 
+#>>>0x04	lelong		0		(no records)
+#>>>0x04	lelong		>0		(%ld records)
+#
+#0	leshort		0x0006		DBase 3 index file
+
+# MS Access database
+4	string	Standard\ Jet\ DB	Microsoft Access Database
+!:mime	application/x-msaccess
+
+# TDB database from Samba et al - Martin Pool <mbp@samba.org>
+0	string	TDB\ file		TDB database
+>32	lelong	0x2601196D		version 6, little-endian
+>>36	lelong	x			hash size %d bytes
+
+# SE Linux policy database
+0       lelong  0xf97cff8c      SE Linux policy
+>16     lelong  x               v%d
+>20     lelong  1      MLS
+>24     lelong  x       %d symbols
+>28     lelong  x       %d ocons
+
+# ICE authority file data (Wolfram Kleff)
+2	string		ICE		ICE authority data
+
+# X11 Xauthority file (Wolfram Kleff)
+10	string		MIT-MAGIC-COOKIE-1	X11 Xauthority data
+11	string		MIT-MAGIC-COOKIE-1	X11 Xauthority data
+12	string		MIT-MAGIC-COOKIE-1	X11 Xauthority data
+13	string		MIT-MAGIC-COOKIE-1	X11 Xauthority data
+14	string		MIT-MAGIC-COOKIE-1	X11 Xauthority data
+15	string		MIT-MAGIC-COOKIE-1	X11 Xauthority data
+16	string		MIT-MAGIC-COOKIE-1	X11 Xauthority data
+17	string		MIT-MAGIC-COOKIE-1	X11 Xauthority data
+18	string		MIT-MAGIC-COOKIE-1	X11 Xauthority data
+
+# From: Maxime Henrion <mux@FreeBSD.org>
+# PostgreSQL's custom dump format, Maxime Henrion <mux@FreeBSD.org>
+0	string		PGDMP		PostgreSQL custom database dump
+>5	byte		x		- v%d
+>6	byte		x		\b.%d
+>5	beshort		<=0x100		\b-0
+>5	beshort		>0x100
+>>7	byte		x		\b-%d
+
+# Type: Advanced Data Format (ADF) database
+# URL:  http://www.grc.nasa.gov/WWW/cgns/adf/
+# From: Nicolas Chauvat <nicolas.chauvat@logilab.fr>
+0	string	@(#)ADF\ Database	CGNS Advanced Data Format

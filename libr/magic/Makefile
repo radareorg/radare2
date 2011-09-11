@@ -15,3 +15,12 @@ libfile.a:
 BIN=file${EXT_EXE}
 ${BIN}:
 	${CC} -I../include ${CFLAGS} ${SRC} file.c -o ${BIN}
+
+install-data: ${F_SDB}
+	mkdir -p ${DESTDIR}${PREFIX}/lib/radare2/${VERSION}/magic
+	cp -f d/* ${DESTDIR}${PREFIX}/lib/radare2/${VERSION}/magic
+
+CWD=$(shell pwd)
+symstall-data install-symlink-data: ${F_SDB}
+	mkdir -p ${DESTDIR}${PREFIX}/lib/radare2/${VERSION}/magic
+	cd d ; for a in * ; do ln -fs ${CWD}/d/$$a ${DESTDIR}${PREFIX}/lib/radare2/${VERSION}/magic/$$a ; done

@@ -1,0 +1,132 @@
+#	$OpenBSD: sun,v 1.4 2008/05/08 01:40:57 chl Exp $
+
+#------------------------------------------------------------------------------
+# sun:  file(1) magic for Sun machines
+#
+# Values for big-endian Sun (MC680x0, SPARC) binaries on pre-5.x
+# releases.  (5.x uses ELF.)
+#
+0	belong&077777777	0600413		sparc demand paged
+>0	byte		&0x80
+>>20	belong		<4096		shared library
+>>20	belong		=4096		dynamically linked executable
+>>20	belong		>4096		dynamically linked executable
+>0	byte		^0x80		executable
+>16	belong		>0		not stripped
+
+0	belong&077777777	0600410		sparc pure
+>0	byte		&0x80		dynamically linked executable
+>0	byte		^0x80		executable
+>16	belong		>0		not stripped
+
+0	belong&077777777	0600407		sparc
+>0	byte		&0x80		dynamically linked executable
+>0	byte		^0x80		executable
+>16	belong		>0		not stripped
+
+0	belong&077777777	0400413		mc68020 demand paged
+>0	byte		&0x80
+>>20	belong		<4096		shared library
+>>20	belong		=4096		dynamically linked executable
+>>20	belong		>4096		dynamically linked executable
+>0	byte		^0x80		executable
+>16	belong		>0		not stripped
+
+0	belong&077777777	0400410		mc68020 pure
+>0	byte		&0x80		dynamically linked executable
+>0	byte		^0x80		executable
+>16	belong		>0		not stripped
+
+0	belong&077777777	0400407		mc68020
+>0	byte		&0x80		dynamically linked executable
+>0	byte		^0x80		executable
+>16	belong		>0		not stripped
+
+0	belong&077777777	0200413		mc68010 demand paged
+>0	byte		&0x80
+>>20	belong		<4096		shared library
+>>20	belong		=4096		dynamically linked executable
+>>20	belong		>4096		dynamically linked executable
+>0	byte		^0x80		executable
+>16	belong		>0		not stripped
+
+0	belong&077777777	0200410		mc68010 pure
+>0	byte		&0x80		dynamically linked executable
+>0	byte		^0x80		executable
+>16	belong		>0		not stripped
+
+0	belong&077777777	0200407		mc68010
+>0	byte		&0x80		dynamically linked executable
+>0	byte		^0x80		executable
+>16	belong		>0		not stripped
+
+# reworked these to avoid anything beginning with zero becoming "old sun-2"
+0	belong		0407		old sun-2 executable
+>16	belong		>0		not stripped
+0	belong		0410		old sun-2 pure executable
+>16	belong		>0		not stripped
+0	belong		0413		old sun-2 demand paged executable
+>16	belong		>0		not stripped
+
+#
+# Core files.  "SPARC 4.x BCP" means "core file from a SunOS 4.x SPARC
+# binary executed in compatibility mode under SunOS 5.x".
+#
+0	belong		0x080456	SunOS core file
+>4	belong		432		(SPARC)
+>>132	string		>\0		from '%s'
+>>116	belong		=3		(quit)
+>>116	belong		=4		(illegal instruction)
+>>116	belong		=5		(trace trap)
+>>116	belong		=6		(abort)
+>>116	belong		=7		(emulator trap)
+>>116	belong		=8		(arithmetic exception)
+>>116	belong		=9		(kill)
+>>116	belong		=10		(bus error)
+>>116	belong		=11		(segmentation violation)
+>>116	belong		=12		(bad argument to system call)
+>>116	belong		=29		(resource lost)
+>>120	belong		x		(T=%dK,
+>>124	belong		x		D=%dK,
+>>128	belong		x		S=%dK)
+>4	belong		826		(68K)
+>>128	string		>\0		from '%s'
+>4	belong		456		(SPARC 4.x BCP)
+>>152	string		>\0		from '%s'
+# Sun SunPC
+0	long		0xfa33c08e	SunPC 4.0 Hard Disk
+0	string		#SUNPC_CONFIG	SunPC 4.0 Properties Values
+# Sun snoop (see RFC 1761, which describes the capture file format).
+#
+0	string		snoop		Snoop capture file
+>8	belong		>0		- version %ld
+>12	belong		0		(IEEE 802.3)
+>12	belong		1		(IEEE 802.4)
+>12	belong		2		(IEEE 802.5)
+>12	belong		3		(IEEE 802.6)
+>12	belong		4		(Ethernet)
+>12	belong		5		(HDLC)
+>12	belong		6		(Character synchronous)
+>12	belong		7		(IBM channel-to-channel adapter)
+>12	belong		8		(FDDI)
+>12	belong		9		(Unknown)
+
+# Microsoft ICM color profile
+36	string		acspMSFT	Microsoft ICM Color Profile
+# Sun KCMS
+36	string		acsp		Kodak Color Management System, ICC Profile
+
+#---------------------------------------------------------------------------
+# The following entries have been tested by Duncan Laurie <duncan@sun.com> (a
+# lead Sun/Cobalt developer) who agrees that they are good and worthy of
+# inclusion.
+
+# Boot ROM images for Sun/Cobalt Linux server appliances
+0       string  Cobalt\ Networks\ Inc.\nFirmware\ v     Paged COBALT boot rom
+>38     string x        V%.4s
+
+# New format for Sun/Cobalt boot ROMs is annoying, it stores the version code
+# at the very end where file(1) can't get it.
+0       string CRfs     COBALT boot rom data (Flat boot rom or file system)
+
+

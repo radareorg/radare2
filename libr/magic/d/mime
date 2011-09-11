@@ -1,0 +1,9 @@
+#	$OpenBSD: mime,v 1.2 2008/05/08 01:40:57 chl Exp $
+
+#------------------------------------------------------------------------------
+# mime:  file(1) magic for MIME encoded files
+#
+0	string		Content-Type:\ 
+>14	string		>\0		%s
+0	string		Content-Type:
+>13	string		>\0		%s

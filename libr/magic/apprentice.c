@@ -1902,9 +1902,9 @@ apprentice_map(struct r_magic_set *ms, struct r_magic **magicp, ut32 *nmagicp,
 	}
 
 #ifdef QUICK
-	if ((mm = mmap(0, (size_t)st.st_size, PROT_READ|PROT_WRITE,
+	if ((mm = mmap(0, (size_t)st.st_size, PROT_READ, //OPENBSDBUG  |PROT_WRITE,
 	    MAP_PRIVATE|MAP_FILE, fd, (off_t)0)) == MAP_FAILED) {
-		file_error(ms, errno, "cannot map `%s'", dbname);
+		file_error(ms, errno, "cannot map `%s'"); //, dbname);
 		goto error1;
 	}
 #define RET	2
@@ -1913,7 +1913,7 @@ apprentice_map(struct r_magic_set *ms, struct r_magic **magicp, ut32 *nmagicp,
 		file_oomem(ms, (size_t)st.st_size);
 		goto error1;
 	}
-	if (read(fd, mm, (size_t)st.st_size) != (size_t)st.st_size) {
+	if (read (fd, mm, (size_t)st.st_size) != (size_t)st.st_size) {
 		file_badread(ms);
 		goto error1;
 	}
@@ -1923,9 +1923,11 @@ apprentice_map(struct r_magic_set *ms, struct r_magic **magicp, ut32 *nmagicp,
 	(void)close(fd);
 	fd = -1;
 	ptr = (ut32 *)(void *)*magicp;
+
 	if (*ptr != MAGICNO) {
 		if (swap4(*ptr) != MAGICNO) {
-			file_error(ms, 0, "bad magic in `%s'");
+		//OPENBSDBUG file_error(ms, 0, "bad magic in `%s'");
+			file_error(ms, 0, "bad magic in `%s'", dbname);
 			goto error1;
 		}
 		needsbyteswap = 1;
@@ -1935,6 +1937,7 @@ apprentice_map(struct r_magic_set *ms, struct r_magic **magicp, ut32 *nmagicp,
 		version = swap4(ptr[1]);
 	else
 		version = ptr[1];
+
 	if (version != VERSIONNO) {
 		file_error(ms, 0, "File %d.%d supports only %d version magic "
 		    "files. `%s' is version %d", FILE_VERSION_MAJOR, patchlevel,

@@ -59,6 +59,7 @@ int file_buffer(struct r_magic_set *, int, const char *, const void *,
 int file_fsmagic(struct r_magic_set *, const char *, struct stat *);
 int file_pipe2file(struct r_magic_set *, int, const void *, size_t);
 int file_printf(struct r_magic_set *, const char *, ...);
+int file_vprintf(struct r_magic_set *, const char *, va_list ap); // OPENBSDBUG
 int file_reset(struct r_magic_set *);
 int file_tryelf(struct r_magic_set *, int, const unsigned char *,
     size_t);

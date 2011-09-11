@@ -1,0 +1,298 @@
+#	$OpenBSD: sniffer,v 1.5 2008/05/08 01:40:57 chl Exp $
+
+#------------------------------------------------------------------------------
+# sniffer:  file(1) magic for packet capture files
+#
+# From: guy@alum.mit.edu (Guy Harris)
+#
+
+#
+# Microsoft Network Monitor 1.x capture files.
+#
+0	string		RTSS		NetMon capture file
+>5	byte		x		- version %d
+>4	byte		x		\b.%d
+>6	leshort		0		(Unknown)
+>6	leshort		1		(Ethernet)
+>6	leshort		2		(Token Ring)
+>6	leshort		3		(FDDI)
+>6	leshort		4		(ATM)
+
+#
+# Microsoft Network Monitor 2.x capture files.
+#
+0	string		GMBU		NetMon capture file
+>5	byte		x		- version %d
+>4	byte		x		\b.%d
+>6	leshort		0		(Unknown)
+>6	leshort		1		(Ethernet)
+>6	leshort		2		(Token Ring)
+>6	leshort		3		(FDDI)
+>6	leshort		4		(ATM)
+
+#
+# Network General Sniffer capture files.
+# Sorry, make that "Network Associates Sniffer capture files."
+# Sorry, make that "Network General old DOS Sniffer capture files."
+#
+0	string		TRSNIFF\ data\ \ \ \ \032	Sniffer capture file
+>33	byte		2		(compressed)
+>23	leshort		x		- version %d
+>25	leshort		x		\b.%d
+>32	byte		0		(Token Ring)
+>32	byte		1		(Ethernet)
+>32	byte		2		(ARCNET)
+>32	byte		3		(StarLAN)
+>32	byte		4		(PC Network broadband)
+>32	byte		5		(LocalTalk)
+>32	byte		6		(Znet)
+>32	byte		7		(Internetwork Analyzer)
+>32	byte		9		(FDDI)
+>32	byte		10		(ATM)
+
+#
+# Cinco Networks NetXRay capture files.
+# Sorry, make that "Network General Sniffer Basic capture files."
+# Sorry, make that "Network Associates Sniffer Basic capture files."
+# Sorry, make that "Network Associates Sniffer Basic, and Windows
+# Sniffer Pro", capture files."
+# Sorry, make that "Network General Sniffer capture files."
+#
+0	string		XCP\0		NetXRay capture file
+>4	string		>\0		- version %s
+>44	leshort		0		(Ethernet)
+>44	leshort		1		(Token Ring)
+>44	leshort		2		(FDDI)
+>44	leshort		3		(WAN)
+>44	leshort		8		(ATM)
+>44	leshort		9		(802.11)
+
+#
+# "libpcap" capture files.
+# (We call them "tcpdump capture file(s)" for now, as "tcpdump" is
+# the main program that uses that format, but there are other programs
+# that use "libpcap", or that use the same capture file format.)
+#
+0	ubelong		0xa1b2c3d4	tcpdump capture file (big-endian)
+>4	beshort		x		- version %d
+>6	beshort		x		\b.%d
+>20	belong		0		(No link-layer encapsulation
+>20	belong		1		(Ethernet
+>20	belong		2		(3Mb Ethernet
+>20	belong		3		(AX.25
+>20	belong		4		(ProNET
+>20	belong		5		(CHAOS
+>20	belong		6		(Token Ring
+>20	belong		7		(BSD ARCNET
+>20	belong		8		(SLIP
+>20	belong		9		(PPP
+>20	belong		10		(FDDI
+>20	belong		11		(RFC 1483 ATM
+>20	belong		12		(raw IP
+>20	belong		13		(BSD/OS SLIP
+>20	belong		14		(BSD/OS PPP
+>20	belong		19		(Linux ATM Classical IP
+>20	belong		50		(PPP or Cisco HDLC
+>20	belong		51		(PPP-over-Ethernet
+>20	belong		99		(Symantec Enterprise Firewall
+>20	belong		100		(RFC 1483 ATM
+>20	belong		101		(raw IP
+>20	belong		102		(BSD/OS SLIP
+>20	belong		103		(BSD/OS PPP
+>20	belong		104		(BSD/OS Cisco HDLC
+>20	belong		105		(802.11
+>20	belong		106		(Linux Classical IP over ATM
+>20	belong		107		(Frame Relay
+>20	belong		108		(OpenBSD loopback
+>20	belong		109		(OpenBSD IPsec encrypted
+>20	belong		112		(Cisco HDLC
+>20	belong		113		(Linux "cooked"
+>20	belong		114		(LocalTalk
+>20	belong		117		(OpenBSD PFLOG
+>20	belong		119		(802.11 with Prism header
+>20	belong		122		(RFC 2625 IP over Fibre Channel
+>20	belong		123		(SunATM
+>20	belong		127		(802.11 with radiotap header
+>20	belong		129		(Linux ARCNET
+>20	belong		138		(Apple IP over IEEE 1394
+>20	belong		140		(MTP2
+>20	belong		141		(MTP3
+>20	belong		143		(DOCSIS
+>20	belong		144		(IrDA
+>20	belong		147		(Private use 0
+>20	belong		148		(Private use 1
+>20	belong		149		(Private use 2
+>20	belong		150		(Private use 3
+>20	belong		151		(Private use 4
+>20	belong		152		(Private use 5
+>20	belong		153		(Private use 6
+>20	belong		154		(Private use 7
+>20	belong		155		(Private use 8
+>20	belong		156		(Private use 9
+>20	belong		157		(Private use 10
+>20	belong		158		(Private use 11
+>20	belong		159		(Private use 12
+>20	belong		160		(Private use 13
+>20	belong		161		(Private use 14
+>20	belong		162		(Private use 15
+>20	belong		163		(802.11 with AVS header
+>16	belong		x		\b, capture length %d)
+0	ulelong		0xa1b2c3d4	tcpdump capture file (little-endian)
+>4	leshort		x		- version %d
+>6	leshort		x		\b.%d
+>20	lelong		0		(No link-layer encapsulation
+>20	lelong		1		(Ethernet
+>20	lelong		2		(3Mb Ethernet
+>20	lelong		3		(AX.25
+>20	lelong		4		(ProNET
+>20	lelong		5		(CHAOS
+>20	lelong		6		(Token Ring
+>20	lelong		7		(ARCNET
+>20	lelong		8		(SLIP
+>20	lelong		9		(PPP
+>20	lelong		10		(FDDI
+>20	lelong		11		(RFC 1483 ATM
+>20	lelong		12		(raw IP
+>20	lelong		13		(BSD/OS SLIP
+>20	lelong		14		(BSD/OS PPP
+>20	lelong		19		(Linux ATM Classical IP
+>20	lelong		50		(PPP or Cisco HDLC
+>20	lelong		51		(PPP-over-Ethernet
+>20	lelong		99		(Symantec Enterprise Firewall
+>20	lelong		100		(RFC 1483 ATM
+>20	lelong		101		(raw IP
+>20	lelong		102		(BSD/OS SLIP
+>20	lelong		103		(BSD/OS PPP
+>20	lelong		104		(BSD/OS Cisco HDLC
+>20	lelong		105		(802.11
+>20	lelong		106		(Linux Classical IP over ATM
+>20	lelong		107		(Frame Relay
+>20	lelong		108		(OpenBSD loopback
+>20	lelong		109		(OpenBSD IPsec encrypted
+>20	lelong		112		(Cisco HDLC
+>20	lelong		113		(Linux "cooked"
+>20	lelong		114		(LocalTalk
+>20	lelong		117		(OpenBSD PFLOG
+>20	lelong		119		(802.11 with Prism header
+>20	lelong		122		(RFC 2625 IP over Fibre Channel
+>20	lelong		123		(SunATM
+>20	lelong		127		(802.11 with radiotap header
+>20	lelong		129		(Linux ARCNET
+>20	lelong		138		(Apple IP over IEEE 1394
+>20	lelong		140		(MTP2
+>20	lelong		141		(MTP3
+>20	lelong		143		(DOCSIS
+>20	lelong		144		(IrDA
+>20	lelong		147		(Private use 0
+>20	lelong		148		(Private use 1
+>20	lelong		149		(Private use 2
+>20	lelong		150		(Private use 3
+>20	lelong		151		(Private use 4
+>20	lelong		152		(Private use 5
+>20	lelong		153		(Private use 6
+>20	lelong		154		(Private use 7
+>20	lelong		155		(Private use 8
+>20	lelong		156		(Private use 9
+>20	lelong		157		(Private use 10
+>20	lelong		158		(Private use 11
+>20	lelong		159		(Private use 12
+>20	lelong		160		(Private use 13
+>20	lelong		161		(Private use 14
+>20	lelong		162		(Private use 15
+>20	lelong		163		(802.11 with AVS header
+>16	lelong		x		\b, capture length %d)
+
+#
+# "libpcap"-with-Alexey-Kuznetsov's-patches capture files.
+# (We call them "tcpdump capture file(s)" for now, as "tcpdump" is
+# the main program that uses that format, but there are other programs
+# that use "libpcap", or that use the same capture file format.)
+#
+0	ubelong		0xa1b2cd34	extended tcpdump capture file (big-endian)
+>4	beshort		x		- version %d
+>6	beshort		x		\b.%d
+>20	belong		0		(No link-layer encapsulation
+>20	belong		1		(Ethernet
+>20	belong		2		(3Mb Ethernet
+>20	belong		3		(AX.25
+>20	belong		4		(ProNET
+>20	belong		5		(CHAOS
+>20	belong		6		(Token Ring
+>20	belong		7		(ARCNET
+>20	belong		8		(SLIP
+>20	belong		9		(PPP
+>20	belong		10		(FDDI
+>20	belong		11		(RFC 1483 ATM
+>20	belong		12		(raw IP
+>20	belong		13		(BSD/OS SLIP
+>20	belong		14		(BSD/OS PPP
+>16	belong		x		\b, capture length %d)
+0	ulelong		0xa1b2cd34	extended tcpdump capture file (little-endian)
+>4	leshort		x		- version %d
+>6	leshort		x		\b.%d
+>20	lelong		0		(No link-layer encapsulation
+>20	lelong		1		(Ethernet
+>20	lelong		2		(3Mb Ethernet
+>20	lelong		3		(AX.25
+>20	lelong		4		(ProNET
+>20	lelong		5		(CHAOS
+>20	lelong		6		(Token Ring
+>20	lelong		7		(ARCNET
+>20	lelong		8		(SLIP
+>20	lelong		9		(PPP
+>20	lelong		10		(FDDI
+>20	lelong		11		(RFC 1483 ATM
+>20	lelong		12		(raw IP
+>20	lelong		13		(BSD/OS SLIP
+>20	lelong		14		(BSD/OS PPP
+>16	lelong		x		\b, capture length %d)
+
+#
+# AIX "iptrace" capture files.
+#
+0	string		iptrace\ 1.0	"iptrace" capture file
+0	string		iptrace\ 2.0	"iptrace" capture file
+
+#
+# Novell LANalyzer capture files.
+#
+0	leshort		0x1001		LANalyzer capture file
+0	leshort		0x1007		LANalyzer capture file
+
+#
+# HP-UX "nettl" capture files.
+#
+0	string		\x54\x52\x00\x64\x00	"nettl" capture file
+
+#
+# RADCOM WAN/LAN Analyzer capture files.
+#
+0	string		\x42\xd2\x00\x34\x12\x66\x22\x88	RADCOM WAN/LAN Analyzer capture file
+
+#
+# NetStumbler log files.  Not really packets, per se, but about as
+# close as you can get.  These are log files from NetStumbler, a
+# Windows program, that scans for 802.11b networks.
+#
+0	string		NetS		NetStumbler log file
+>8	lelong		x		\b, %d stations found
+
+#
+# EtherPeek/AiroPeek "version 9" capture files.
+#
+0	string		\177ver		EtherPeek/AiroPeek capture file
+
+#
+# Visual Networks traffic capture files.
+#
+0	string		\x05VNF		Visual Networks traffic capture file
+
+#
+# Network Instruments Observer capture files.
+#
+0	string		ObserverPktBuffe	Network Instruments Observer capture file
+
+#
+# Files from Accellent Group's 5View products.
+#
+0	string		\xaa\xaa\xaa\xaa	5View capture file

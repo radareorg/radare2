@@ -1,0 +1,16 @@
+#	$OpenBSD: pdf,v 1.4 2009/04/24 18:54:34 chl Exp $
+
+#------------------------------------------------------------------------------
+# pdf:  file(1) magic for Portable Document Format
+#
+
+0	string		%PDF-		PDF document
+!:mime	application/pdf
+>5	byte		x		\b, version %c
+>7	byte		x		\b.%c
+
+# From: Nick Schmalenberger <nick@schmalenberger.us>
+# Forms Data Format
+0       string          %FDF-           FDF document
+>5      byte            x               \b, version %c
+>7      byte            x               \b.%c

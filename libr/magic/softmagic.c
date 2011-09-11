@@ -297,11 +297,8 @@ check_fmt(struct r_magic_set *ms, struct r_magic *m)
 	}
 }
 
-#ifndef HAVE_STRNDUP
-char * strndup(const char *, size_t);
-
 char *
-strndup(const char *str, size_t n)
+strdupn(const char *str, size_t n)
 {
 	size_t len;
 	char *copy;
@@ -314,7 +311,6 @@ strndup(const char *str, size_t n)
 	copy[len] = '\0';
 	return copy;
 }
-#endif /* HAVE_STRNDUP */
 
 static int32_t
 mprint(struct r_magic_set *ms, struct r_magic *m)
@@ -500,7 +496,7 @@ mprint(struct r_magic_set *ms, struct r_magic *m)
 		char *cp;
 		int rval;
 
-		cp = strndup((const char *)ms->search.s, ms->search.rm_len);
+		cp = strdupn((const char *)ms->search.s, ms->search.rm_len);
 		if (cp == NULL) {
 			file_oomem(ms, ms->search.rm_len);
 			return -1;
