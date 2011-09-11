@@ -44,28 +44,12 @@ int
 file_printf(struct r_magic_set *ms, const char *fmt, ...)
 {
 	va_list ap;
-	int len;
-	char *buf, *newstr;
+	int ret;
 
 	va_start(ap, fmt);
-	len = vasprintf(&buf, fmt, ap);
-	if (len < 0)
-		goto out;
+	ret = file_vprintf (ms, fmt, ap);
 	va_end(ap);
-
-	if (ms->o.buf != NULL) {
-		len = asprintf(&newstr, "%s%s", ms->o.buf, buf);
-		free(buf);
-		if (len < 0)
-			goto out;
-		free(ms->o.buf);
-		buf = newstr;
-	}
-	ms->o.buf = buf;
-	return 0;
-out:
-	file_error(ms, errno, "vasprintf failed");
-	return -1;
+	return ret;
 }
 
 // copypasta to fix an OPENBSDBUG

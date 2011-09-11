@@ -257,6 +257,7 @@ apprentice_1(struct r_magic_set *ms, const char *fn, int action,
 		return -1;
 	}
 
+	ms->file = fn; // fix use of ms->file before being initialized
 	if (action == FILE_COMPILE) {
 		rv = apprentice_load(ms, &magic, &nmagic, fn, action);
 		if (rv != 0)
