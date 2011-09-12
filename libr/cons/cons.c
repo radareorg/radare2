@@ -322,6 +322,13 @@ R_API void r_cons_printf(const char *format, ...) {
 	} else r_cons_strcat (format);
 }
 
+R_API int r_cons_get_column() {
+	char *line = strrchr (I.buffer, '\n');
+	if (!line) line = I.buffer;
+	I.buffer[I.buffer_len] = 0;
+	return r_str_ansi_len (line);
+}
+
 /* final entrypoint for adding stuff in the buffer screen */
 R_API void r_cons_memcat(const char *str, int len) {
 	if (len>0) {

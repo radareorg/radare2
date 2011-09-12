@@ -1,11 +1,11 @@
 prefix=@PREFIX@
 exec_prefix=${prefix}
-libdir=${exec_prefix}/lib
+libdir=@LIBDIR@
 includedir=${prefix}/include
 
 Name: r_db
 Description: radare foundation libraries
-Version: 
+Version: @VERSION@
 Requires:
 Libs: -L${libdir} -lr_db -lr_util
 Cflags: -I${includedir}/libr

@@ -66,7 +66,17 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int linesopts = 0;
 	int lastfail = 0;
 	const char *pre = "  ";
+	int show_comment_right = 0;
+	int ocols = 0;
 	
+
+	if (show_lines) ocols += 10;
+	if (show_offset) ocols += 14;
+	if (show_bytes) ocols += 20;
+	if (show_trace) ocols += 8;
+	if (show_stackptr) ocols += 4;
+	/* disasm */ ocols += 20;
+
 	nb = (nbytes*2);
 	core->inc = 0;
 
@@ -134,12 +144,27 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 		}
 		f = show_functions? r_anal_fcn_find (core->anal, at, R_ANAL_FCN_TYPE_NULL): NULL;
 
-		if (show_comments)
-		if ((comment = r_meta_get_string (core->anal->meta, R_META_TYPE_COMMENT, at))) {
-			if (show_color) r_cons_strcat (Color_TURQOISE);
-			r_cons_strcat_justify (comment, strlen (refline) + 5, ';');
-			if (show_color) r_cons_strcat (Color_RESET);
-			free (comment);
+	/* show comment at right? */
+		show_comment_right = 0;
+		if (show_comments) {
+			comment = r_meta_get_string (core->anal->meta, R_META_TYPE_COMMENT, at);
+			if (comment) {
+				int maxclen = strlen (comment)+10;
+				if (ocols+maxclen < core->cons->columns) {
+					if (comment && *comment && strlen (comment)<maxclen) {
+						char *p = strchr (comment, '\n');
+						if (p && !strchr (p+1, '\n')) // more than one line?
+							show_comment_right = 1;
+					}
+				}
+				if (!show_comment_right) {
+					if (show_color) r_cons_strcat (Color_TURQOISE);
+					r_cons_strcat_justify (comment, strlen (refline) + 5, ';');
+					if (show_color) r_cons_strcat (Color_RESET);
+					free (comment);
+					comment = NULL;
+				}
+			}
 		}
 		// TODO : line analysis must respect data types! shouldnt be interpreted as code
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx);
@@ -267,8 +292,9 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 				else r_cons_printf ("%s:\n", flag->name);
 			}
 		}
-		if (show_lines && line)
+		if (show_lines && line) {
 			r_cons_strcat (line);
+		}
 		if (show_offset) {
 			if (show_color && (at == dest))
 				r_cons_invert (R_TRUE, R_TRUE);
@@ -467,7 +493,6 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			ret -= middle;
 			r_cons_printf (" ;  *middle* %d", ret);
 		}
-#
 		if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
 			RAsmOp ao; /* disassemble for the vm .. */
 			int os = core->assembler->syntax;
@@ -523,7 +548,19 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 				}
 			} else r_cons_printf ("; err [0x%"PFMT64x"]", analop.ref);
 		}
-		r_cons_newline ();
+		if (show_comment_right) {
+			if (show_comments && comment) {
+				int c = r_cons_get_column ();
+				if (c<ocols)
+					r_cons_memset(' ',ocols-c);
+				r_cons_strcat ("  ; ");
+				if (show_color) r_cons_strcat (Color_TURQOISE);
+		//		r_cons_strcat_justify (comment, strlen (refline) + 5, ';');
+r_cons_strcat (comment);
+				if (show_color) r_cons_strcat (Color_RESET);
+				free (comment);
+			} else r_cons_newline ();
+		} else r_cons_newline ();
 		if (line) {
 			if (show_lines && analop.type == R_ANAL_OP_TYPE_RET) {
 				if (strchr (line, '>'))

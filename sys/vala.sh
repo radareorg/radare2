@@ -6,6 +6,13 @@ cd `dirname $PWD/$0`
 mkdir -p _work
 cd _work
 
+ccache --help 2>&1 > /dev/null
+if [ $? = 0 ]; then
+	[ -z "${CC}" ] && CC=gcc
+	CC="ccache ${CC}"
+	export CC
+fi
+
 valac --help 2>&1 >/dev/null
 if [ ! $? = 0 ]; then
 	# must install from tarball
@@ -24,10 +31,11 @@ fi
 
 if [ -d vala ]; then
 	cd vala
-	sudo make uninstall
+	#sudo make uninstall
 	git pull
 else
 	git clone git://git.gnome.org/vala
+	cd vala
 fi
 sh autogen.sh --prefix=/usr && \
 make -j 4 && \

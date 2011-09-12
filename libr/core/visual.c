@@ -449,7 +449,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_cons_printf ("Enter a comment: ('-' to remove, '!' to use $EDITOR)\n");
 		r_cons_flush ();
 		r_cons_set_raw (R_FALSE);
-		strcpy (buf, "CC 0 ");
+		strcpy (buf, "CC ");
 		r_line_set_prompt ("comment: ");
 		i = strlen (buf);
 		if (r_cons_fgets (buf+i, sizeof (buf)-i-1, 0, NULL) >1) {

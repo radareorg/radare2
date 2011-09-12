@@ -6,6 +6,7 @@
 ====[[ 0.9 ]]====
 
 * Optimize /m
+  - search only using given file, not loading default library
   - do not read each block byte per byte
   - do not show repeated consecutive hits
 * Handle ^C in searches (at least)
@@ -82,21 +83,19 @@ TODO
 * REFACTORING of disasm loop XDDDDD -1 (r2-0.9 plzz)
   - arch dependent anal code must be removed from disasm loop +1
 
-
-
 To wipe:
 ========
  - Move manpages from man/ to binr/*/? (harder to maintain?)
  - Move the content of libr/*/TODO here
  - linestyle?? for disassembly lines
  - remove libr/vm and libr/db
+ - imho we should not implement this:
+   - Implement BLOCK in r_core_sysenv_begin|end ()
 
 
 pancake
 -------
 * check search multiple keywords and signatures
-* if console width > X place comments there (ash)
-* Implement BLOCK in r_core_sysenv_begin|end ()
 * Fix iterators for r_macro (test only?)
   - search for antidebug/disasm tricks opcodes
     - allows to find interesting points to analyze
