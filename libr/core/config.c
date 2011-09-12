@@ -389,6 +389,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "asm.lbytes", "true"); 
 	r_config_set (cfg, "asm.middle", "false"); // jump in the middle because of antidisasm tricks
 	r_config_set (cfg, "asm.comments", "true");
+	r_config_set (cfg, "asm.cmtright", "true");
+	r_config_desc (cfg, "asm.cmtright", "show comments at right of disassembly if they fit in screen");
 	r_config_set (cfg, "asm.ucase", "false");
 	r_config_set (cfg, "asm.stackptr", "true");
 	r_config_set (cfg, "asm.dwarf", "false");

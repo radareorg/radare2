@@ -62,16 +62,19 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int show_xrefs = r_config_get_i (core->config, "asm.xrefs");
 	int show_functions = r_config_get_i (core->config, "asm.functions");
 	int cursor, nb, nbytes = r_config_get_i (core->config, "asm.nbytes");
+	int show_comment_right_default = r_config_get_i (core->config, "asm.cmtright");
 	int lbytes = r_config_get_i (core->config, "asm.lbytes");
 	int linesopts = 0;
 	int lastfail = 0;
 	const char *pre = "  ";
 	int show_comment_right = 0;
 	int ocols = 0;
+	int lcols = 0;
 	
 
 	if (show_lines) ocols += 10;
 	if (show_offset) ocols += 14;
+	lcols = ocols+2;
 	if (show_bytes) ocols += 20;
 	if (show_trace) ocols += 8;
 	if (show_stackptr) ocols += 4;
@@ -149,17 +152,25 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 		if (show_comments) {
 			comment = r_meta_get_string (core->anal->meta, R_META_TYPE_COMMENT, at);
 			if (comment) {
-				int maxclen = strlen (comment)+10;
+				int linelen, maxclen = strlen (comment)+5;
+				linelen = maxclen;
+				if (show_comment_right_default)
 				if (ocols+maxclen < core->cons->columns) {
 					if (comment && *comment && strlen (comment)<maxclen) {
 						char *p = strchr (comment, '\n');
-						if (p && !strchr (p+1, '\n')) // more than one line?
-							show_comment_right = 1;
+						if (p) {
+							linelen = p-comment;
+							if (!strchr (p+1, '\n')) // more than one line?
+								show_comment_right = 1;
+						}
 					}
 				}
 				if (!show_comment_right) {
+					int mycols = lcols;
+					if (mycols + linelen + 10 > core->cons->columns)
+						mycols = 0;
 					if (show_color) r_cons_strcat (Color_TURQOISE);
-					r_cons_strcat_justify (comment, strlen (refline) + 5, ';');
+					r_cons_strcat_justify (comment, mycols, ';');
 					if (show_color) r_cons_strcat (Color_RESET);
 					free (comment);
 					comment = NULL;
@@ -548,18 +559,17 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 				}
 			} else r_cons_printf ("; err [0x%"PFMT64x"]", analop.ref);
 		}
-		if (show_comment_right) {
-			if (show_comments && comment) {
-				int c = r_cons_get_column ();
-				if (c<ocols)
-					r_cons_memset(' ',ocols-c);
-				r_cons_strcat ("  ; ");
-				if (show_color) r_cons_strcat (Color_TURQOISE);
-		//		r_cons_strcat_justify (comment, strlen (refline) + 5, ';');
-r_cons_strcat (comment);
-				if (show_color) r_cons_strcat (Color_RESET);
-				free (comment);
-			} else r_cons_newline ();
+		if (show_comments && show_comment_right && comment) {
+			int c = r_cons_get_column ();
+			if (c<ocols)
+				r_cons_memset (' ',ocols-c);
+			if (show_color) r_cons_strcat (Color_TURQOISE);
+			r_cons_strcat ("  ; ");
+	//		r_cons_strcat_justify (comment, strlen (refline) + 5, ';');
+			r_cons_strcat (comment);
+			if (show_color) r_cons_strcat (Color_RESET);
+			free (comment);
+			comment = NULL;
 		} else r_cons_newline ();
 		if (line) {
 			if (show_lines && analop.type == R_ANAL_OP_TYPE_RET) {

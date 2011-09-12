@@ -33,8 +33,11 @@ R_API void r_cons_strcat_justify (const char *str, int j, char c) {
 	int i, o, len;
 	for (o=i=len=0; str[i]; i++, len++) {
 		if (str[i]=='\n') {
-			if (c) r_cons_memset (c, 1);
 			r_cons_memset (' ', j);
+			if (c) {
+				r_cons_memset (c, 1);
+				r_cons_memset (' ', 1);
+			}
 			r_cons_memcat (str+o, len);
 			if (str[o+len] == '\n')
 				r_cons_newline ();

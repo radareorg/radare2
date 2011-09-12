@@ -49,7 +49,6 @@ R_API void r_core_visual_prompt (RCore *core) {
 	if (curset) r_core_seek (core, oseek, 1);
 }
 
-
 static int visual_fkey(RCore *core, int ch) {
 	const char *cmd;
 	switch (ch) {
