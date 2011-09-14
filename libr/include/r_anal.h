@@ -11,6 +11,7 @@
 #include <r_util.h>
 #include <r_syscall.h>
 
+// TODO: Remove this define? /cc @nibble_ds
 #define VERBOSE_ANAL if(0)
 
 /* meta */
@@ -159,6 +160,7 @@ typedef struct r_anal_t {
 	int split;
 	void *user;
 	RList *fcns;
+	RListRange *fcnstore;
 	RList *refs;
 	RList *vartypes;
 	RMeta *meta;
@@ -279,7 +281,8 @@ enum {
 	R_ANAL_FCN_TYPE_FCN = 1,
 	R_ANAL_FCN_TYPE_LOC = 2,
 	R_ANAL_FCN_TYPE_SYM = 4,
-	R_ANAL_FCN_TYPE_IMP = 8
+	R_ANAL_FCN_TYPE_IMP = 8,
+	R_ANAL_FCN_TYPE_ROOT = 16  /* matching flag */
 };
 
 #define R_ANAL_VARSUBS 32
@@ -379,6 +382,16 @@ typedef struct r_anal_plugin_t {
 	RAnalDiffEvalCallback diff_eval;
 	struct list_head list;
 } RAnalPlugin;
+
+/* --------- */ /* REFACTOR */ /* ---------- */
+R_API RListRange* r_listrange_new ();
+R_API void r_listrange_free(RListRange *s);
+R_API void r_listrange_add(RListRange *s, RAnalFcn *f);
+R_API void r_listrange_del(RListRange *s, RAnalFcn *f);
+R_API void r_listrange_resize(RListRange *s, RAnalFcn *f, int newsize);
+R_API RAnalFcn *r_listrange_find_in_range(RListRange* s, ut64 addr);
+R_API RAnalFcn *r_listrange_find_root(RListRange* s, ut64 addr);
+/* --------- */ /* REFACTOR */ /* ---------- */
 
 #ifdef R_API
 /* anal.c */

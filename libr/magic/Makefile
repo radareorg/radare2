@@ -1,6 +1,7 @@
 include ../config.mk
 
 NAME=r_magic
+DEPS=r_util
 CFLAGS+=-I.
 CFLAGS+=-DHAVE_CONFIG_H
 OBJ=apprentice.o ascmagic.o compress.o fsmagic.o funcs.o is_tar.o magic.o print.o softmagic.o

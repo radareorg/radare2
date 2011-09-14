@@ -1587,11 +1587,11 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth,
 		if (*file == ' ') file++;
 		if (!*file) file = NULL;
 	}
-	if (!oldfile || (file && strcmp (file, oldfile))) {
+	if (!oldfile || ck==NULL || (file && strcmp (file, oldfile))) {
 		// TODO: Move RMagic into RCore
 		r_magic_free (ck);
 		ck = r_magic_new (0);
-		if (r_magic_load (ck, MAGICPATH) == -1)
+		if ((file && *file) && (r_magic_load (ck, MAGICPATH) == -1))
 			eprintf ("failed r_magic_load ("MAGICPATH") %s\n", r_magic_error (ck));
 	}
 	if (file)

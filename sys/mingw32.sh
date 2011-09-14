@@ -5,7 +5,8 @@ if [ -x /usr/bin/pacman ]; then
 	./configure --without-gmp --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows --without-ssl && \
 	make -j 4 && \
 	make w32dist
-elif [ `uname`= Darwin ]; then
+elif [ `uname` = Darwin ]; then
+	make clean
 	./configure --without-gmp --with-compiler=i386-mingw32-gcc --with-ostype=windows --host=i386-unknown-windows --without-ssl && \
 	make -j 4 && \
 	make w32dist

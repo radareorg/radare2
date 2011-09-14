@@ -31,6 +31,7 @@
  */
 
 #include "file.h"
+#include "r_regex.h"
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -255,21 +256,21 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 }
 
 static int check_fmt(RMagic *ms, struct r_magic *m) {
-	regex_t rx;
+	RRegex rx;
 	int rc;
 
 	if (strchr (R_MAGIC_DESC, '%') == NULL)
 		return 0;
 
-	rc = regcomp (&rx, "%[-0-9\\.]*s", REG_EXTENDED|REG_NOSUB);
+	rc = r_regex_comp (&rx, "%[-0-9\\.]*s", R_REGEX_EXTENDED|R_REGEX_NOSUB);
 	if (rc) {
 		char errmsg[512];
-		(void)regerror (rc, &rx, errmsg, sizeof(errmsg));
+		r_regex_error (rc, &rx, errmsg, sizeof (errmsg));
 		file_magerror (ms, "regex error %d, (%s)", rc, errmsg);
 		return -1;
 	} else {
-		rc = regexec (&rx, R_MAGIC_DESC, 0, 0, 0);
-		regfree (&rx);
+		rc = r_regex_exec (&rx, R_MAGIC_DESC, 0, 0, 0);
+		r_regex_free (&rx);
 		return !rc;
 	}
 }
@@ -1300,25 +1301,25 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 	}
 	case FILE_REGEX: {
 		int rc;
-		regex_t rx;
+		RRegex rx;
 		char errmsg[512];
 
 		if (ms->search.s == NULL)
 			return 0;
 
 		l = 0;
-		rc = regcomp(&rx, m->value.s,
-		    REG_EXTENDED|REG_NEWLINE|
-		    ((m->str_flags & STRING_IGNORE_CASE) ? REG_ICASE : 0));
+		rc = r_regex_comp (&rx, m->value.s,
+		    R_REGEX_EXTENDED|R_REGEX_NEWLINE|
+		    ((m->str_flags & STRING_IGNORE_CASE) ? R_REGEX_ICASE : 0));
 		if (rc) {
-			(void)regerror(rc, &rx, errmsg, sizeof(errmsg));
+			(void)r_regex_error(rc, &rx, errmsg, sizeof(errmsg));
 			file_magerror(ms, "regex error %d, (%s)",
 			    rc, errmsg);
 			v = (ut64)-1;
 		} else {
-			regmatch_t pmatch[1];
-#ifndef REG_STARTEND
-#define	REG_STARTEND	0
+			RRegexMatch pmatch[1];
+#ifndef R_REGEX_STARTEND
+#define	R_REGEX_STARTEND	0
 			size_t l = ms->search.s_len - 1;
 			char c = ms->search.s[l];
 			((char *)(intptr_t)ms->search.s)[l] = '\0';
@@ -1326,8 +1327,8 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 			pmatch[0].rm_so = 0;
 			pmatch[0].rm_eo = ms->search.s_len;
 #endif
-			rc = regexec (&rx, (const char *)ms->search.s, 1, pmatch, REG_STARTEND);
-#if REG_STARTEND == 0
+			rc = r_regex_exec (&rx, (const char *)ms->search.s, 1, pmatch, R_REGEX_STARTEND);
+#if R_REGEX_STARTEND == 0
 			((char *)(intptr_t)ms->search.s)[l] = c;
 #endif
 			switch (rc) {
@@ -1338,17 +1339,17 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 				    (size_t)(pmatch[0].rm_eo - pmatch[0].rm_so);
 				v = 0;
 				break;
-			case REG_NOMATCH:
+			case R_REGEX_NOMATCH:
 				v = 1;
 				break;
 			default:
-				(void)regerror(rc, &rx, errmsg, sizeof(errmsg));
+				(void)r_regex_error(rc, &rx, errmsg, sizeof(errmsg));
 				file_magerror(ms, "regexec error %d, (%s)",
 				    rc, errmsg);
 				v = (ut64)-1;
 				break;
 			}
-			regfree(&rx);
+			r_regex_fini (&rx);
 		}
 		if (v == (ut64)-1)
 			return -1;

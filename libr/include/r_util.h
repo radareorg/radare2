@@ -3,6 +3,7 @@
 
 #include <r_types.h>
 #include <btree.h>
+#include <r_regex.h>
 #include <r_list.h> // radare linked list
 #include <r_flist.h> // radare fixed pointer array iterators
 #include <list.h> // kernel linked list
@@ -53,6 +54,11 @@ typedef struct r_mem_pool_t {
 	int poolsize;
 	int poolcount;
 } RMemoryPool;
+
+typedef struct r_mem_pool_factory_t {
+	int limit;
+	RMemoryPool **pools;
+} RPoolFactory;
 
 typedef struct r_buf_t {
 	ut8 *buf;
@@ -171,6 +177,13 @@ typedef struct r_mixed_t {
 } RMixed;
 
 
+/* TODO : THIS IS FROM See libr/anal/fcnstore.c for refactoring info */
+typedef struct r_list_range_t {
+	RHashTable64 *h;
+	RList *l;
+	//RListComparator c;
+} RListRange;
+
 #ifdef R_API
 
 R_API RMmap *r_file_mmap (const char *file, boolt rw);
@@ -205,10 +218,21 @@ R_API int r_buf_fwrite_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int
 R_API void r_buf_free(RBuffer *b);
 
 R_API ut64 r_mem_get_num(ut8 *b, int size, int endian);
-R_API struct r_mem_pool_t* r_mem_pool_deinit(struct r_mem_pool_t *pool);
-R_API struct r_mem_pool_t *r_mem_pool_new(int nodesize, int poolsize, int poolcount);
-R_API struct r_mem_pool_t *r_mem_pool_free(struct r_mem_pool_t *pool);
-R_API void* r_mem_pool_alloc(struct r_mem_pool_t *pool);
+
+/* MEMORY POOL */
+R_API RMemoryPool* r_mem_pool_deinit(struct r_mem_pool_t *pool);
+R_API RMemoryPool *r_mem_pool_new(int nodesize, int poolsize, int poolcount);
+R_API RMemoryPool *r_mem_pool_free(struct r_mem_pool_t *pool);
+R_API void* r_mem_pool_alloc(RMemoryPool *pool);
+
+/* FACTORY POOL */
+R_API RPoolFactory *r_poolfactory_instance();
+R_API void r_poolfactory_init (int limit);
+R_API RPoolFactory* r_poolfactory_new(int limit);
+R_API void *r_poolfactory_alloc(RPoolFactory *pf, int nodesize);
+R_API void r_poolfactory_stats(RPoolFactory *pf);
+R_API void r_poolfactory_free(RPoolFactory *pf);
+
 R_API int r_mem_count(const ut8 **addr);
 R_API RCache* r_cache_new();
 R_API void r_cache_free(struct r_cache_t *c);

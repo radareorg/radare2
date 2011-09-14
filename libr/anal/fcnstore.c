@@ -1,60 +1,101 @@
+/* radare - LGPL - Copyright 2011 -- pancake<nopcode.org> */
 /* this file contains a test implementation of the ~O(1) function search */
+
+// TODO: REFACTOR: This must be a generic data structure named RListRange
+// TODO: We need a standard struct named Surface1D {.addr, .size}, so we can
+// simplify all this by just passing the offset of the field of the given ptr
+// TODO: RListComparator does not supports *user
 
 #define RANGEBITS 10
 #define RANGE (1<<RANGEBITS)
 #include <r_anal.h>
 
-RAnalFcnStore* hl_new() {
-	RAnalFcnStore *s = R_NEW (RAnalFcnStore);
-	s->h = r_hashtable64_new();
-	s->l = r_list_new();
+static int cmpfun(void *a, void *b) {
+	RAnalFcn *fa = (RAnalFcn*)a;
+	RAnalFcn *fb = (RAnalFcn*)b;
+	// TODO: swap sort order here or wtf?
+	return (fb->addr - fa->addr);
+}
+
+R_API RListRange* r_listrange_new () {
+	RListRange *s = R_NEW (RListRange);
+	s->h = r_hashtable64_new ();
+	s->l = r_list_new ();
 	return s;
 }
 
-static inline ut64 hl_key(ut64 addr) {
+static inline ut64 r_listrange_key(ut64 addr) {
 	return (addr >> RANGEBITS);
 }
 
-static inline ut64 hl_next(ut64 addr) {
+static inline ut64 r_listrange_next(ut64 addr) {
 	return (addr + RANGE);
 }
 
-void hl_free(RAnalFcnStore *s) {
+R_API void r_listrange_free(RListRange *s) {
 	r_hashtable64_free (s->h);
 	r_list_destroy (s->l);
 	free (s);
 }
 
-static int cmpfun(void *a, void *b) {
-	// TODO
-	return 0;
-}
-
-void hl_add(RAnalFcnStore *s, RAnalFcn *f) {
+R_API void r_listrange_add(RListRange *s, RAnalFcn *f) {
 	ut64 addr;
 	RList *list;
 	ut64 from = f->addr;
 	ut64 to = f->addr + f->size;
-	for (addr = from; addr<to; addr = hl_next (addr)) {
-		list = r_hashtable64_lookup (s->h, hl_key (addr));
-		if (!list) list = r_list_new ();
-		if (!r_list_contains (list, f)) // double rainbow :(
+	for (addr = from; addr<to; addr = r_listrange_next (addr)) {
+		ut32 key = r_listrange_key (addr);
+		list = r_hashtable64_lookup (s->h, key);
+		if (list) {
+			if (!r_list_contains (list, f))
 			r_list_add_sorted (list, f, cmpfun);
+		} else {
+			list = r_list_new ();
+			r_list_add_sorted (list, f, cmpfun);
+			r_hashtable64_insert (s->h, key, list);
+		}
 	}
+	r_list_add_sorted (s->l, f, cmpfun);
 }
 
-void hl_del(RAnalFcnStore *s, RAnalFcn *f) {
-	// TODO
-	
+R_API void r_listrange_del(RListRange *s, RAnalFcn *f) {
+	RList *list;
+	ut64 addr, from, to;
+	if (!f) return;
+	from = f->addr;
+	to = f->addr + f->size;
+	for (addr = from; addr<to; addr = r_listrange_next (addr)) {
+		list = r_hashtable64_lookup (s->h, r_listrange_key (addr));
+		if (list) r_list_delete_data (list, f);
+	}
+	r_list_delete_data (s->l, f);
 }
 
-RAnalFcn *hl_find(RAnalFcnStore* s, ut64 addr) {
+R_API void r_listrange_resize(RListRange *s, RAnalFcn *f, int newsize) {
+	r_listrange_del (s, f);
+	f->size = newsize;
+	r_listrange_add (s, f);
+}
+
+R_API RAnalFcn *r_listrange_find_in_range(RListRange* s, ut64 addr) {
 	RAnalFcn *f;
 	RListIter *iter;
-	RList *list = r_hashtable64_lookup (s->h, hl_key (addr));
+	RList *list = r_hashtable64_lookup (s->h, r_listrange_key (addr));
 	if (list)
 	r_list_foreach (list, iter, f) {
-		if (addr >= f->addr && (addr < f->addr+f->size))
+		if (R_BETWEEN (f->addr, addr, f->addr+f->size))
+			return f;
+	}
+	return NULL;
+}
+
+R_API RAnalFcn *r_listrange_find_root(RListRange* s, ut64 addr) {
+	RAnalFcn *f;
+	RListIter *iter;
+	RList *list = r_hashtable64_lookup (s->h, r_listrange_key (addr));
+	if (list)
+	r_list_foreach (list, iter, f) {
+		if (addr == f->addr)
 			return f;
 	}
 	return NULL;
@@ -62,7 +103,7 @@ RAnalFcn *hl_find(RAnalFcnStore* s, ut64 addr) {
 
 #if 0
 main() {
-	RHashTable64 *h = hl_new();
-	hl_add (h, f1);
+	RHashTable64 *h = r_listrange_new();
+	r_listrange_add (h, f1);
 }
 #endif

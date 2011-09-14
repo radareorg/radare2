@@ -1,8 +1,7 @@
-/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
 
 #include "r_search.h"
-#if __UNIX__
-#include <regex.h>
+#include <r_regex.h>
 
 R_API int r_search_regexp_update(void *_s, ut64 from, const ut8 *buf, int len) {
 	RSearch *s = (RSearch*)_s;
@@ -16,27 +15,28 @@ R_API int r_search_regexp_update(void *_s, ut64 from, const ut8 *buf, int len) {
 
 	RSearchKeyword *kw;
 	r_list_foreach (s->kws, iter, kw) {
-		int reflags = REG_EXTENDED;
+		int reflags = R_REGEX_EXTENDED;
 		int ret, delta = 0;
-		regmatch_t matches[10];
-		regex_t compiled;
+		RRegexMatch matches[10];
+		RRegex compiled;
 
+// TODO: memory leak with compiled foo
 		if (strchr (kw->binmask, 'i'))
-			reflags |= REG_ICASE;
+			reflags |= R_REGEX_ICASE;
 
-		if (regcomp (&compiled, kw->keyword, reflags)) {
+		if (r_regex_comp (&compiled, kw->keyword, reflags)) {
 			eprintf ("Cannot compile '%s' regexp\n",kw->keyword);
 			return -1;
 		}
 		foo:
-		ret = regexec (&compiled, buffer+delta, 1, matches, 0);
+		ret = r_regex_exec (&compiled, buffer+delta, 1, matches, 0);
 		if (ret) return 0;
 		do {
 			r_search_hit_new (s, kw, (ut64)(from+matches[0].rm_so+delta));
 			delta += matches[0].rm_so+1;
 			kw->count++;
 			count++;
-		} while (!regexec (&compiled, buffer+delta, 1, matches, 0));
+		} while (!r_regex_exec (&compiled, buffer+delta, 1, matches, 0));
 		if (delta == 0)
 			return 0;
 
@@ -52,11 +52,3 @@ R_API int r_search_regexp_update(void *_s, ut64 from, const ut8 *buf, int len) {
 	}
 	return count;
 }
-#else
-
-R_API int r_search_regexp_update(void *_s, ut64 from, const ut8 *buf, int len) {
-	eprintf ("r_search_regexp_update: unimplemented for this platform\n");
-	return -1;
-}
-
-#endif

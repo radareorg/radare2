@@ -32,6 +32,7 @@ R_API RAnal *r_anal_new() {
 	anal->reg = r_reg_new ();
 	anal->lineswidth = 0;
 	anal->fcns = r_anal_fcn_list_new ();
+	anal->fcnstore = r_listrange_new ();
 	anal->refs = r_anal_ref_list_new ();
 	anal->vartypes = r_anal_var_type_list_new ();
 	r_anal_set_bits (anal, 32);
@@ -50,11 +51,10 @@ R_API RAnal *r_anal_new() {
 
 R_API RAnal *r_anal_free(RAnal *anal) {
 	if (anal) {
-		/* TODO: Free a->anals here */
-		if (anal->fcns)
-			r_list_free (anal->fcns);
-		if (anal->vartypes)
-			r_list_free (anal->vartypes);
+		/* TODO: Free anals here */
+		r_listrange_free (anal->fcnstore);
+		r_list_free (anal->fcns);
+		r_list_free (anal->vartypes);
 	}
 	free (anal);
 	return NULL;
@@ -95,8 +95,7 @@ R_API int r_anal_use(RAnal *anal, const char *name) {
 }
 
 R_API int r_anal_set_reg_profile(RAnal *anal) {
-	if (anal)
-	if (anal->cur && anal->cur->set_reg_profile)
+	if (anal && anal->cur && anal->cur->set_reg_profile)
 		return anal->cur->set_reg_profile (anal);
 	return R_FALSE;
 }

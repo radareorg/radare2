@@ -1,0 +1,5 @@
+Based on the OpenBSD's regex implementation
+
+Modified to be portable (now compiles on windows, linux and *bsd including darwin)
+
+cvs -qd anoncvs@anoncvs.ca.openbsd.org:/cvs get -P src/lib/libc/regex

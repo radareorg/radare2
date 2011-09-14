@@ -7,6 +7,6 @@
 # -- pancake
 acr -p
 if [ -n "$1" ]; then
-  echo "./configure $@"
-  ./configure $@
+	echo "./configure $@"
+	./configure $@
 fi
