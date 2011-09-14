@@ -151,7 +151,7 @@ struct r_magic {
 	/* Word 4 */
 	ut32 offset;	/* offset to magic number */
 	/* Word 5 */
-	int32_t in_offset;	/* offset from indirection */
+	ut32 in_offset;	/* offset from indirection */
 	/* Word 6 */
 	ut32 lineno;	/* line number in magic file */
 	/* Word 7,8 */
