@@ -18,7 +18,7 @@ public class Radare.RSyscall {
 	public void setup_file(string file);
 	public unowned Item get(int num, int swi);
 	public int get_num(string str);
-	public unowned Item get_n(int num);
+	//public unowned Item get_n(int num);
 	public unowned string get_i(int num, int swi);
 	public void list();
 }

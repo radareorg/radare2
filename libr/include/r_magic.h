@@ -21,6 +21,20 @@
 #define MAXMAGIS 8192		/* max entries in any one magic file or directory */
 #define MAXstring 32		/* max leng of "string" types */
 
+/* define this outside to fix build for g++ */
+union VALUETYPE {
+	ut8 b;
+	ut16 h;
+	ut32 l;
+	ut64 q;
+	ut8 hs[2];	/* 2 bytes of a fixed-endian "short" */
+	ut8 hl[4];	/* 4 bytes of a fixed-endian "long" */
+	ut8 hq[8];	/* 8 bytes of a fixed-endian "quad" */
+	char s[MAXstring];	/* the search string or regex pattern */
+	float f;
+	double d;
+};		/* either number or string */
+
 /* constants */
 #define MAGICNO		0xF11E041C
 #define VERSIONNO	5
@@ -153,18 +167,7 @@ struct r_magic {
 #define str_flags _u._s._flags
 
 	/* Words 9-16 */
-	union VALUETYPE {
-		ut8 b;
-		ut16 h;
-		ut32 l;
-		ut64 q;
-		ut8 hs[2];	/* 2 bytes of a fixed-endian "short" */
-		ut8 hl[4];	/* 4 bytes of a fixed-endian "long" */
-		ut8 hq[8];	/* 8 bytes of a fixed-endian "quad" */
-		char s[MAXstring];	/* the search string or regex pattern */
-		float f;
-		double d;
-	} value;		/* either number or string */
+	union VALUETYPE value;
 	/* Words 17..31 */
 	char desc[MAXDESC];	/* description */
 	/* Words 32..47 */

@@ -383,6 +383,8 @@ typedef struct r_anal_plugin_t {
 	struct list_head list;
 } RAnalPlugin;
 
+
+#ifdef R_API
 /* --------- */ /* REFACTOR */ /* ---------- */
 R_API RListRange* r_listrange_new ();
 R_API void r_listrange_free(RListRange *s);
@@ -392,8 +394,6 @@ R_API void r_listrange_resize(RListRange *s, RAnalFcn *f, int newsize);
 R_API RAnalFcn *r_listrange_find_in_range(RListRange* s, ut64 addr);
 R_API RAnalFcn *r_listrange_find_root(RListRange* s, ut64 addr);
 /* --------- */ /* REFACTOR */ /* ---------- */
-
-#ifdef R_API
 /* anal.c */
 R_API RAnal *r_anal_new();
 R_API RAnal *r_anal_free(RAnal *r);
