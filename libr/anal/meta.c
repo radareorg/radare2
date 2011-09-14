@@ -285,6 +285,7 @@ static void printmetaitem(RMeta *m, RMetaItem *d) {
 	if (str) {
 		if (d->type=='s' && !*str)
 			return;
+		r_str_sanitize (str);
 		m->printf ("%s %d %s @ 0x%08"PFMT64x"\n",
 			r_meta_type_to_string (d->type),
 			(int)(d->to-d->from), str, d->from);

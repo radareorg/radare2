@@ -1,11 +1,17 @@
 /* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
+#define USE_THREADS 1
+
 #include <r_core.h>
-//#include <r_th.h>
 #include <r_io.h>
 #include <stdio.h>
 #include <getopt.h>
 
+#if USE_THREADS
+#include <r_th.h>
+static char *rabin_cmd = NULL;
+static int threaded = 0;
+#endif
 static struct r_core_t r;
 
 static int main_help(int line) {
@@ -23,7 +29,9 @@ static int main_help(int line) {
 		" -i [file]    run script file\n"
 		" -v           show radare2 version\n"
 		" -l [lib]     load plugin file\n"
-		//" -t         load rabin2 info in thread\n"
+#if USE_THREADS
+		" -t         load rabin2 info in thread\n"
+#endif
 		" -L           list supported IO plugins\n"
 		" -e k=v       evaluate config var\n"
 		"Environment:\n"
@@ -51,7 +59,7 @@ static int list_io_plugins(RIO *io) {
 
 // Load the binary information from rabin2
 // TODO: use thread to load this, split contents line, per line and use global lock
-#if 0
+#if USE_THREADS
 static int rabin_delegate(RThread *th) {
 	if (rabin_cmd && r_file_exist (r.file->filename)) {
 		char *nptr, *ptr, *cmd = r_sys_cmd_str (rabin_cmd, NULL, NULL);
@@ -75,10 +83,10 @@ static int rabin_delegate(RThread *th) {
 #endif
 
 int main(int argc, char **argv) {
-/*
+#if USE_THREADS
 	RThreadLock *lock = NULL;
 	RThread *rabin_th = NULL;
-*/
+#endif
 	RCoreFile *fh = NULL;
 	const char *patchfile = NULL;
 	//int threaded = R_FALSE;
@@ -100,9 +108,13 @@ int main(int argc, char **argv) {
 		return main_help (1);
 	r_core_init (&r);
 
-	while ((c = getopt (argc, argv, "wfhe:ndqvs:p:b:Lui:l:P:"))!=-1) {
+	while ((c = getopt (argc, argv, "wfhe:ndqvs:p:b:Lui:l:P:"
+#if USE_THREADS
+"t"
+#endif
+			))!=-1) {
 		switch (c) {
-#if 0
+#if USE_THREADS
 		case 't':
 			threaded = R_TRUE;
 			break;
@@ -224,22 +236,25 @@ int main(int argc, char **argv) {
 	if (r.file == NULL) // no given file
 		return 1;
 	//if (!has_project && run_rc) {
-#if 0
+#if USE_THREADS
 	if (run_rc) {
-		rabin_cmd = r_str_dup_printf ("rabin2 -rSIeMzisR%s %s",
-			(debug||r.io->va)?"v":"", r.file->filename);
 		if (threaded) {
+			rabin_cmd = r_str_dup_printf ("rabin2 -rSIeMzisR%s %s",
+					(debug||r.io->va)?"v":"", r.file->filename);
 			/* TODO: only load data if no project is used */
 			lock = r_th_lock_new ();
 			rabin_th = r_th_new (&rabin_delegate, lock, 0);
-		} else rabin_delegate (NULL);
+		} //else rabin_delegate (NULL);
 	} else eprintf ("Metadata loaded from 'file.project'\n");
 #endif
 
 	has_project = r_core_project_open (&r, r_config_get (r.config, "file.project"));
 	if (run_rc) {
 		char *homerc = r_str_home (".radare2rc");
-		r_core_bin_load (&r, NULL);
+#if USE_THREADS
+		if (!rabin_th)	
+#endif
+			r_core_bin_load (&r, NULL);
 		if (homerc) {
 			r_core_cmd_file (&r, homerc);
 			free (homerc);
@@ -316,15 +331,14 @@ int main(int argc, char **argv) {
 		r_core_patch (&r, patchfile);
 	} else
 	for (;;) {
-		r_core_prompt_loop (&r);
-#if 0
+#if USE_THREADS
 		do { 
 			if (r_core_prompt (&r, R_FALSE)<1)
 				break;
-//			if (lock) r_th_lock_enter (lock);
+			if (lock) r_th_lock_enter (lock);
 			if ((ret = r_core_prompt_exec (&r))==-1)
 				eprintf ("Invalid command\n");
-/*			if (lock) r_th_lock_leave (lock);
+			if (lock) r_th_lock_leave (lock);
 			if (rabin_th && !r_th_wait_async (rabin_th)) {
 				eprintf ("rabin thread end \n");
 				r_th_free (rabin_th);
@@ -332,8 +346,9 @@ int main(int argc, char **argv) {
 				lock = NULL;
 				rabin_th = NULL;
 			}
-*/
 		} while (ret != R_CORE_CMD_EXIT);
+#else
+		r_core_prompt_loop (&r);
 #endif
 
 		if (debug) {

@@ -13,9 +13,10 @@ static int r_name_validate_char(const char ch) {
 	case '&':
 	case ';':
 	case ':':
+	case '~':
+	case '"':
 	case '>':
 	case '<':
-	case '"':
 	case '#':
 	case '%':
 	case '(':
@@ -54,12 +55,12 @@ R_API int r_name_filter(char *name, int maxlen) {
 	name = oname = r_str_trim (name);
 	for (i=0; *name!='\0'; name++, i++) {
 		if (maxlen && i>maxlen) {
-			name[0] = '\0';
+			*name = '\0';
 			break;
 		}
 		if (!r_name_validate_char (*name)) {
 			r_str_ccpy (name, name+1, 0);
-			name = name -1;
+			name--;
 		}
 	}
 	return r_name_check (oname);

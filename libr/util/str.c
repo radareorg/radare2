@@ -591,6 +591,23 @@ R_API int r_str_escape(char *buf) {
 	return i; //strlen (buf);
 }
 
+R_API void r_str_sanitize(char *c) {
+	for (;*c; c++) {
+		switch (*c) {
+		case '~':
+		case '|':
+		case ';':
+		case '#':
+		case '@':
+		case '&':
+		case '<':
+		case '>':
+			strcpy (c, c+1);
+			break;
+		}
+	}
+}
+
 R_API char *r_str_unscape(char *buf) {
 	char *ptr, *ret;
 	int len = strlen (buf);
@@ -613,6 +630,7 @@ R_API char *r_str_unscape(char *buf) {
 		} else break;
 	}
 	*ptr = 0;
+r_str_sanitize (ret);
 	return ret;
 }
 
