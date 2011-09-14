@@ -3201,6 +3201,7 @@ static int cmd_search(void *data, const char *input) {
 	int inverse = R_FALSE;
 	int aes_search = R_FALSE;
 	int ignorecase = R_FALSE;
+	ut64 n64;
 	ut32 n32;
 	ut8 *buf;
 
@@ -3272,6 +3273,17 @@ static int cmd_search(void *data, const char *input) {
 				r_search_pattern (core->search, from, to);
 			} else eprintf ("Invalid pattern size (must be >0)\n");
 		}
+		break;
+	case 'q':
+		r_search_reset (core->search, R_SEARCH_KEYWORD);
+		r_search_set_distance (core->search, (int)
+			r_config_get_i (core->config, "search.distance"));
+		n64 = (ut32)r_num_math (core->num, input+1);
+// TODO: Add support for /v4 /v8 /v2
+		r_search_kw_add (core->search, 
+			r_search_keyword_new ((const ut8*)&n64, 8, NULL, 0, NULL));
+		r_search_begin (core->search);
+		dosearch = R_TRUE;
 		break;
 	case 'v':
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
@@ -3415,6 +3427,7 @@ static int cmd_search(void *data, const char *input) {
 		" /m magicfile    ; search for matching magic file (use blocksize)\n"
 		" /p patternsize  ; search for pattern of given size\n"
 		" /v num          ; look for a asm.bigendian 32bit value\n"
+		" /q num          ; look for a asm.bigendian 64bit value\n"
 		" //              ; repeat last search\n"
 		" ./ hello        ; search 'hello string' and import flags\n"
 		"Configuration:\n"

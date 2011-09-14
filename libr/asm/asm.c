@@ -325,7 +325,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 			for (ptr_start = buf_token; *ptr_start &&
 				isseparator (*ptr_start); ptr_start++);
 			ptr = strchr (ptr_start, '#'); /* Comments */
-			if (ptr && !R_BETWEEN (ptr[1],'0','9'))
+			if (ptr && !R_BETWEEN ('0', ptr[1], '9'))
 				*ptr = '\0';
 			if (stage == 2) {
 				r_asm_set_pc (a, a->pc + ret);

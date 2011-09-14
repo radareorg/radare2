@@ -7,6 +7,7 @@
 // TODO: RListComparator does not supports *user
 
 #define RANGEBITS 10
+// 1024
 #define RANGE (1<<RANGEBITS)
 #include <r_anal.h>
 
@@ -25,7 +26,12 @@ R_API RListRange* r_listrange_new () {
 }
 
 static inline ut64 r_listrange_key(ut64 addr) {
-	return (addr >> RANGEBITS);
+	const ut64 KXOR = 0x18abc3e127d549ac;
+	ut64 key = addr & 0xfffffffffffff400;
+	key ^= KXOR;
+	//eprintf ("%llx = %llx\n", addr, key);
+	return key;
+	//return (addr >> RANGEBITS);
 }
 
 static inline ut64 r_listrange_next(ut64 addr) {
@@ -44,14 +50,16 @@ R_API void r_listrange_add(RListRange *s, RAnalFcn *f) {
 	ut64 from = f->addr;
 	ut64 to = f->addr + f->size;
 	for (addr = from; addr<to; addr = r_listrange_next (addr)) {
-		ut32 key = r_listrange_key (addr);
+		ut64 key = r_listrange_key (addr);
 		list = r_hashtable64_lookup (s->h, key);
 		if (list) {
 			if (!r_list_contains (list, f))
-			r_list_add_sorted (list, f, cmpfun);
+			//r_list_add_sorted (list, f, cmpfun);
+			r_list_append (list, f);
 		} else {
 			list = r_list_new ();
-			r_list_add_sorted (list, f, cmpfun);
+			//r_list_add_sorted (list, f, cmpfun);
+			r_list_append (list, f);
 			r_hashtable64_insert (s->h, key, list);
 		}
 	}

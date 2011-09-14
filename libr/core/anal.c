@@ -169,6 +169,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 	if (depth < 0)
 		return R_FALSE;
+#warning This must be optimized to use the fcnstore api
 	r_list_foreach (core->anal->fcns, iter, fcni)
 		if (at == fcni->addr) { /* Function already analyzed */
 			if (from != -1) {
@@ -230,6 +231,8 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				ref->type = reftype;
 				r_list_append (fcn->xrefs, ref);
 			}
+			// XXX: this looks weird
+			r_anal_fcn_insert (core->anal, fcn);
 			r_list_append (core->anal->fcns, fcn);
 			r_list_foreach (fcn->refs, iter, refi)
 				if (refi->addr != -1)

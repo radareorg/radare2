@@ -262,7 +262,7 @@ R_API int r_num_rand(int max);
 R_API void r_num_irand();
 
 /* TODO ..use as uppercase maybe? they are macros! */
-#define R_BETWEEN(x,y,z) (((x)>=(y)) && ((x)<=(z)))
+#define R_BETWEEN(x,y,z) (((y)>=(x)) && ((y)<=(z)))
 #define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
 #define strnull(x) (!x||!*x)
 #define iswhitechar(x) ((x)==' '||(x)=='\t'||(x)=='\n'||(x)=='\r')

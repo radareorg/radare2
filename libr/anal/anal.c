@@ -10,10 +10,11 @@ static RAnalPlugin *anal_static_plugins[] =
 	{ R_ANAL_STATIC_PLUGINS };
 
 static RAnalVarType anal_default_vartypes[] =
-	{{ "char",  "b",  1 },
+	{{ "char",  "c",  1 },
 	 { "byte",  "b",  1 },
-	 { "int",   "d",  4 },
+	 { "int",   "i",  4 },
 	 { "int32", "d",  4 },
+	 { "int64", "q",  8 },
 	 { "dword", "x",  4 },
 	 { "float", "f",  4 },
 	 { NULL,    NULL, 0 }};
@@ -157,9 +158,11 @@ R_API RList *r_anal_get_fcns(RAnal *anal) {
 	return anal->fcns;
 }
 
+/* XXX: Move this function into fcn.c !!! */
 R_API RAnalFcn *r_anal_get_fcn_at(RAnal *anal, ut64 addr) {
 	RAnalFcn *fcni;
 	RListIter *iter;
+eprintf ("DEPRECATED: get-at\n");
 	r_list_foreach (anal->fcns, iter, fcni)
 		if (fcni->addr == addr)
 			return fcni;

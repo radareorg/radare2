@@ -7,6 +7,7 @@
 
 /* work in progress */
 #define USE_NEW_FCN_STORE 0
+/* faster retrival, slower storage */
 
 R_API RAnalFcn *r_anal_fcn_new() {
 	RAnalFcn *fcn = R_NEW (RAnalFcn);
@@ -116,6 +117,15 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, 
 	return fcn->size;
 }
 
+R_API int r_anal_fcn_insert(RAnal *anal, RAnalFcn *fcn) {
+#if USE_NEW_FCN_STORE
+	r_listrange_add (anal->fcnstore, fcn);
+#else
+	r_list_append (anal->fcns, fcn);
+#endif
+	return R_TRUE;
+}
+
 R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size, const char *name, int type, RAnalDiff *diff) {
 	int append = 0;
 	RAnalFcn *fcn = r_anal_fcn_find (anal, addr, R_ANAL_FCN_TYPE_ROOT);
@@ -136,19 +146,19 @@ R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size, const char *name, in
 		if (diff->name)
 			fcn->diff->name = strdup (diff->name);
 	}
-#if USE_NEW_FCN_STORE
-	if (append) r_listrange_add (anal->fcnstore, fcn);
-#else
-	if (append) r_list_append (anal->fcns, fcn);
-#endif
-	return R_TRUE;
+	return append? r_anal_fcn_insert (anal, fcn): R_TRUE;
 }
 
 R_API int r_anal_fcn_del(RAnal *anal, ut64 addr) {
 	if (addr == 0) {
+#if USE_NEW_FCN_STORE
+		r_listrange_free (anal->fcnstore);
+		anal->fcnstore = r_listrange_new ();
+#else
 		r_list_free (anal->fcns);
 		if (!(anal->fcns = r_anal_fcn_list_new ()))
 			return R_FALSE;
+#endif
 	} else {
 #if USE_NEW_FCN_STORE
 		// XXX: must only get the function if starting at 0?
@@ -173,7 +183,7 @@ R_API RAnalFcn *r_anal_fcn_find(RAnal *anal, ut64 addr, int type) {
 	int root = type & R_ANAL_FCN_TYPE_ROOT;
 #if USE_NEW_FCN_STORE
 	// TODO: type is ignored here? wtf.. we need more work on fcnstore
-	if (root) r_listrange_find_root (anal->fcnstore, addr);
+	if (root) return r_listrange_find_root (anal->fcnstore, addr);
 	return r_listrange_find_in_range (anal->fcnstore, addr);
 #else
 	RAnalFcn *fcn, *ret = NULL;
