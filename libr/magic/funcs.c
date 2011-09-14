@@ -54,17 +54,26 @@ int file_printf(RMagic *ms, const char *fmt, ...) {
 int file_vprintf(RMagic *ms, const char *fmt, va_list ap) {
 	va_list ap2;
 	int len;
+	char cbuf[4096];
 	char *buf, *newstr;
+	int buflen;// = strlen (buf);
 
 	va_copy (ap2, ap);
-	len = vasprintf (&buf, fmt, ap2);
+	len = vsnprintf (cbuf, sizeof (cbuf), fmt, ap2);
 	va_end (ap2);
 	if (len < 0)
 		goto out;
+	cbuf[len] = 0;
+	buf = strdup (cbuf);
 
+	buflen = len;
 	if (ms->o.buf != NULL) {
-		len = asprintf (&newstr, "%s%s", ms->o.buf, buf);
-		free(buf);
+		int obuflen = strlen (ms->o.buf);
+		len = obuflen+buflen+1;
+		newstr = malloc (len);
+		memcpy (newstr, ms->o.buf, obuflen);
+		memcpy (newstr+obuflen, buf, buflen);
+		free (buf);
 		if (len < 0)
 			goto out;
 		free (ms->o.buf);
@@ -147,6 +156,7 @@ int file_buffer(RMagic *ms, int fd, const char *inname, const void *buf, size_t 
 		return 1;
 	}
 
+#if 0
 	/* try compression stuff */
 	if ((ms->flags & R_MAGIC_NO_CHECK_COMPRESS) != 0 ||
 	    (m = file_zmagic(ms, fd, inname, buf, nb)) == 0) {
@@ -169,6 +179,7 @@ int file_buffer(RMagic *ms, int fd, const char *inname, const void *buf, size_t 
 		}
 	    }
 	}
+#endif
 	return m;
 }
 

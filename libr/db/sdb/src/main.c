@@ -17,6 +17,7 @@ static void terminate(int sig) {
 	exit (0);
 }
 
+#if USE_MMAN
 static void syncronize(int sig) {
 	// TODO: must be in sdb_sync() or wat?
 	Sdb *n;
@@ -25,6 +26,7 @@ static void syncronize(int sig) {
 	sdb_free (s);
 	s = n;
 }
+#endif
 
 static int sdb_dump (const char *db) {
 	char k[SDB_KEYSIZE];
@@ -74,12 +76,12 @@ static void runline (Sdb *s, const char *cmd) {
 	case '+': // inc
 		n = sdb_inc (s, cmd, 1);
 		save = 1;
-		printf ("%lld\n", n);
+		printf ("%"ULLFMT"d\n", n);
 		break;
 	case '-': // dec
 		n = sdb_inc (s, cmd, -1);
 		save = 1;
-		printf ("%lld\n", n);
+		printf ("%"ULLFMT"d\n", n);
 		break;
 	default:
 		if ((eq = strchr (cmd, '='))) {
@@ -115,8 +117,10 @@ int main(int argc, char **argv) {
 	if (argc == 2)
 		return sdb_dump (argv[1]);
 
+#if USE_MMAN
 	signal (SIGINT, terminate);
 	signal (SIGHUP, syncronize);
+#endif
 
 	if (!strcmp (argv[2], "=")) {
 		createdb (argv[1]);

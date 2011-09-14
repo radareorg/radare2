@@ -8,6 +8,14 @@
 
 #define KVLSZ 4
 
+#if __WIN32__ || __CYGWIN__ || MINGW32
+#define ULLFMT "I64"
+#define USE_MMAN 0
+#else
+#define ULLFMT "ll"
+#define USE_MMAN 1
+#endif
+
 // GTFO!
 int getkvlen(int fd, ut32 *klen, ut32 *vlen);
 #define CDB_HASHSTART 5381

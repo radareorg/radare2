@@ -48,7 +48,11 @@
 #include <unistd.h>	/* for read() */
 #endif
 
+#if __UNIX__
 #include <netinet/in.h>		/* for byte swapping */
+#else
+#undef O_NONBLOCK
+#endif
 
 #include "patchlevel.h"
 
@@ -126,7 +130,9 @@ static const char * file_or_fd(RMagic *ms, const char *inname, int fd) {
 		int flags = O_RDONLY|O_BINARY;
 
 		if (stat (inname, &sb) == 0 && S_ISFIFO (sb.st_mode)) {
+#if O_NONBLOCK
 			flags |= O_NONBLOCK;
+#endif
 			ispipe = 1;
 		}
 		errno = 0;
@@ -148,11 +154,13 @@ static const char * file_or_fd(RMagic *ms, const char *inname, int fd) {
 	/*
 	 * try looking at the first HOWMANY bytes
 	 */
+#ifdef O_NONBLOCK
 	if (ispipe) {
 		ssize_t r = 0;
 
-		while ((r = sread(fd, (void *)&buf[nbytes],
-		    (size_t)(HOWMANY - nbytes), 1)) > 0) {
+		//while ((r = sread(fd, (void *)&buf[nbytes],
+		while ((r = read(fd, (void *)&buf[nbytes],
+		    (size_t)(HOWMANY - nbytes))) > 0) {
 			nbytes += r;
 			if (r < PIPE_BUF) break;
 		}
@@ -166,11 +174,14 @@ static const char * file_or_fd(RMagic *ms, const char *inname, int fd) {
 		}
 
 	} else {
+#endif
 		if ((nbytes = read(fd, (char *)buf, HOWMANY)) == -1) {
 			file_error(ms, errno, "cannot read `%s'", inname);
 			goto done;
 		}
+#ifdef O_NONBLOCK
 	}
+#endif
 
 	(void)memset(buf + nbytes, 0, SLOP); /* NUL terminate */
 	if (file_buffer(ms, fd, inname, buf, (size_t)nbytes) == -1)

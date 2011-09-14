@@ -2,8 +2,11 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/mman.h>
 #include "cdb.h"
+
+#if USE_MMAN
+#include <sys/mman.h>
+#endif
 
 int getkvlen(int fd, ut32 *klen, ut32 *vlen) {
 	char buf[4];
@@ -28,7 +31,11 @@ ut32 cdb_hash(const char *buf, ut32 len) {
 
 void cdb_free(struct cdb *c) {
 	if (!c->map) return;
+#if USE_MMAN
 	munmap (c->map, c->size);
+#else
+	free (c->map);
+#endif
 	c->map = NULL;
 }
 
@@ -42,7 +49,12 @@ void cdb_init(struct cdb *c, int fd) {
 	cdb_findstart (c);
 	c->fd = fd;
 	if (!fstat (fd, &st) && st.st_size != UT32_MAX) {
+#if USE_MMAN
 		char *x = mmap (0, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+#else
+		char *x = malloc (st.st_size);
+		read (fd, x, st.st_size); // TODO: handle return value
+#endif
 		if (x + 1) {
 			c->size = st.st_size;
 			c->map = x;

@@ -92,7 +92,7 @@ static void bs1(struct r_magic *);
 static ut16 swap2(ut16);
 static ut32 swap4(ut32);
 static ut64 swap8(ut64);
-static void mkdbname(const char *, char **, int);
+static char *mkdbname(const char *, int);
 static int apprentice_map(RMagic *, struct r_magic **, ut32 *, const char *);
 static int apprentice_compile(RMagic *, struct r_magic **, ut32 *, const char *);
 static int check_format_type(const char *, int);
@@ -1656,7 +1656,7 @@ static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, co
 	char *dbname = NULL;
 	void *mm = NULL;
 
-	mkdbname (fn, &dbname, 0);
+	dbname = mkdbname (fn, 0);
 	if (dbname == NULL)
 		goto error2;
 
@@ -1754,7 +1754,7 @@ static int apprentice_compile(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp
 	char *dbname;
 	int rv = -1;
 
-	mkdbname(fn, &dbname, 1);
+	dbname = mkdbname(fn, 1);
 
 	if (dbname == NULL) 
 		goto out;
@@ -1792,18 +1792,26 @@ static const char ext[] = ".mgc";
 /*
  * make a dbname
  */
-static void mkdbname(const char *fn, char **buf, int strip) {
+static char *mkdbname(const char *fn, int strip) {
+	char *buf;
+	int fnlen, extlen;
 	if (strip) {
 		const char *p;
 		if ((p = strrchr(fn, '/')) != NULL)
 			fn = ++p;
 	}
+	fnlen = strlen (fn);
+	extlen = strlen (ext);
+	buf = malloc (fnlen + extlen);
+	memcpy (buf, fn, fnlen);
+	memcpy (buf+fnlen, ext, extlen);
+	buf[fnlen+extlen] = 0;
 
-	(void)asprintf(buf, "%s%s", fn, ext);
-	if (*buf && strlen(*buf) > MAXPATHLEN) {
-		free(*buf);
-		*buf = NULL;
+	if (buf && strlen (buf) > MAXPATHLEN) {
+		free(buf);
+		return NULL;
 	}
+	return buf;
 }
 
 /*

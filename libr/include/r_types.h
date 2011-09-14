@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <sys/time.h>
+#include <fcntl.h> /* for O_RDONLY */
 
 // TODO: FS or R_SYS_DIR ??
 #undef FS

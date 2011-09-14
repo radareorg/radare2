@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
 
 #include <r_util.h>
-#if __UNIX__
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,6 +26,7 @@ R_API int r_file_chmod (const char *file, const char *mod, int recursive) {
 #endif
 }
 
+#if __UNIX__
 /* copied from sbase/chmod.c (suckless.org) */
 int chmodr(const char *path, int rflag) {
 	struct stat st;

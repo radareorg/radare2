@@ -58,8 +58,10 @@ int main(int argc, char **argv) {
 			{
 				int fd = open (optarg, O_RDWR|O_CREAT, 0644);
 				if (fd != -1) {
+#if __UNIX__
 					if (*format != 'r')
 						fchmod (fd, 0755);
+#endif
 					close (1);
 					dup2 (fd, 1);
 				} else eprintf ("Cannot open '%s'\n", optarg);

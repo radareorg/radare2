@@ -303,9 +303,13 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		case -1:
 			return -1;
 		case 1:
-			if (asprintf(&buf, "%c", (ut8)v) < 0)
+			buf = malloc (2);
+			if (snprintf (buf, 2, "%c", (ut8)v)<0) {
 				return -1;
-			if (file_printf(ms, R_MAGIC_DESC, buf) == -1)
+				free (buf);
+			}
+			if (file_printf (ms, R_MAGIC_DESC, buf) == -1)
+				free (buf);
 				return -1;
 			break;
 		default:
@@ -318,15 +322,20 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
   	case FILE_SHORT:
   	case FILE_BESHORT:
   	case FILE_LESHORT:
-		v = file_signextend(ms, m, (ut64)p->h);
-		switch (check_fmt(ms, m)) {
+		v = file_signextend (ms, m, (ut64)p->h);
+		switch (check_fmt (ms, m)) {
 		case -1:
 			return -1;
 		case 1:
-			if (asprintf(&buf, "%hu", (unsigned short)v) < 0)
+			buf = malloc (32);
+			if (snprintf (buf, 32, "%hu", (unsigned short)v) < 0) {
+				free (buf);
 				return -1;
-			if (file_printf(ms, R_MAGIC_DESC, buf) == -1)
+			}
+			if (file_printf(ms, R_MAGIC_DESC, buf) == -1) {
+				free (buf);
 				return -1;
+			}
 			break;
 		default:
 			if (file_printf(ms, R_MAGIC_DESC, (unsigned short) v) == -1)
@@ -344,10 +353,15 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		case -1:
 			return -1;
 		case 1:
-			if (asprintf(&buf, "%u", (ut32)v) < 0)
+			buf = malloc (32);
+			if (snprintf (buf, 32, "%u", (ut32)v) < 0) {
+				free (buf);
 				return -1;
-			if (file_printf(ms, R_MAGIC_DESC, buf) == -1)
+			}
+			if (file_printf(ms, R_MAGIC_DESC, buf) == -1) {
+				free (buf);
 				return -1;
+			}
 			break;
 		default:
 			if (file_printf(ms, R_MAGIC_DESC, (ut32) v) == -1)
@@ -424,10 +438,15 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		case -1:
 			return -1;
 		case 1:
-			if (asprintf(&buf, "%g", vf) < 0)
+			buf = malloc (32);
+			if (snprintf (buf, 32, "%g", vf) < 0) {
+				free (buf);
 				return -1;
-			if (file_printf(ms, R_MAGIC_DESC, buf) == -1)
+			}
+			if (file_printf (ms, R_MAGIC_DESC, buf) == -1) {
+				free (buf);
 				return -1;
+			}
 			break;
 		default:
 			if (file_printf(ms, R_MAGIC_DESC, vf) == -1)
@@ -444,10 +463,15 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		case -1:
 			return -1;
 		case 1:
-			if (asprintf(&buf, "%g", vd) < 0)
+			buf = malloc (32);
+			if (snprintf (buf, 32, "%g", vd) < 0) {
+				free (buf);
 				return -1;
-			if (file_printf(ms, R_MAGIC_DESC, buf) == -1)
+			}
+			if (file_printf (ms, R_MAGIC_DESC, buf) == -1) {
+				free (buf);
 				return -1;
+			}
 			break;
 		default:
 			if (file_printf(ms, R_MAGIC_DESC, vd) == -1)

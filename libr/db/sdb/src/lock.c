@@ -27,6 +27,11 @@ int sdb_lock(const char *s) {
 	return 1;
 }
 
+void sdb_lock_wait(const char *s) {
+	while (!sdb_lock (s))
+		usleep (100); // hack
+}
+
 void sdb_unlock(const char *s) {
 	unlink (s);
 }

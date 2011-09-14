@@ -1,20 +1,23 @@
 include ../config.mk
 #CFLAGS+=-DOLDFMT=1
-CFLAGS+=-g
 OBJ=alloc.o cdb.o buffer.o cdb_make.o ls.o ht.o sdb.o sdbn.o lock.o
 # This is hacky
 SOEXT=dylib
 #SOEXT=so
 ARCH=$(shell uname -m)
+RANLIB?=ranlib
+EXEXT=
+
+BIN=sdb${EXEXT}
 
 .PHONY: all libsdb.${SOEXT} clean wcl syms
 
-all: libsdb.a sdb
+all: libsdb.a ${BIN}
 
 libsdb.a: ${OBJ}
 	@#ar qf libasb.a ${OBJ}
 	ar -r libsdb.a ${OBJ}
-	ranlib libsdb.a
+	${RANLIB} libsdb.a
 
 libsdb.${SOEXT}:
 	${CC} -o $@ $(subst .o,.c,${OBJ}) -fPIC -shared -arch ${ARCH}
@@ -42,8 +45,8 @@ syms:
 
 main.c:
 
-sdb: libsdb.a main.c
-	${CC} ${CFLAGS} -o sdb main.c libsdb.a
+${BIN}: libsdb.a main.c
+	${CC} ${CFLAGS} -o ${BIN} *.c
 
 wcl:
 	wc -l `echo ${OBJ}|sed -e 's,\.o,.c,g'`

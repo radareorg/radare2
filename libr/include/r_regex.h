@@ -16,6 +16,7 @@ typedef struct r_regmatch_t {
 	off_t rm_eo;		/* end of match */
 } RRegexMatch;
 
+typedef int regoff_t;
 
 /* regcomp() flags */
 #define	R_REGEX_BASIC	0000

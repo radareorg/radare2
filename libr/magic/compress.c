@@ -33,6 +33,7 @@
  *	uncompress(method, old, n, newch) - uncompress old into new, 
  *					    using method, return sizeof new
  */
+#if 0
 #include "file.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,9 +43,13 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/time.h>
+#if __UNIX__
 #include <sys/ioctl.h>
 #include <sys/wait.h>
-#include <sys/time.h>
+#endif
+
+#undef FIONREAD
 
 #if defined(HAVE_ZLIB_H) && defined(HAVE_LIBZ)
 #define BUILTIN_DECOMPRESS
@@ -435,3 +440,4 @@ err:
 		return n;
 	}
 }
+#endif

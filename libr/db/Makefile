@@ -17,7 +17,9 @@ sdbclean:
 
 sdb/src/libsdb.a:
 	#cd sdb/src ; ${MAKE} CFLAGS=-fPIC libsdb.a
-	cd sdb/src ; ${MAKE} CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
+	cd sdb/src ; ${MAKE} \
+		RANLIB="${RANLIB}" \
+		CC="${CC}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
 
 .PHONY: sdb-sync
 SYNCFILES=sdb.hg/README sdb.hg/config.mk sdb.hg/src

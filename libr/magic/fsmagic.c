@@ -58,9 +58,13 @@
 #undef HAVE_MAJOR
 
 static int bad_link(RMagic *ms, int err, char *buf) {
-	char *errfmt = (err == ELOOP)?
+#ifdef ELOOP
+	const char *errfmt = (err == ELOOP)?
 		"symbolic link in a loop":
 		"broken symbolic link to `%s'";
+#else
+	const char *errfmt = "broken symbolic link to `%s'";
+#endif
 	if (ms->flags & R_MAGIC_ERROR) {
 		file_error (ms, err, errfmt, buf);
 		return -1;
