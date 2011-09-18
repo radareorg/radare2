@@ -32,8 +32,7 @@ static const uchar Rcon[30] =
 //Expand a user-supplied key material into a session key.
 // key        - The 128/192/256-bit user-key to use.
 
-void aes_expkey(uchar *key, unsigned expkey[2][Nr+1][Nb])
-{
+void aes_expkey(uchar *key, unsigned expkey[2][Nr+1][Nb]) {
 unsigned tk[Nk], tt; 
 int idx = 0, t = 0;
 int i, j, r;
@@ -289,15 +288,13 @@ uchar out[16];
 
 typedef unsigned long long __int64;
 
-unsigned long long rd_clock ()
-{
+unsigned long long rd_clock () {
 	unsigned long long dwBoth;
 	__asm__ volatile(".byte 0x0f, 0x31" : "=A"(dwBoth)); 
 	return dwBoth;
 }
 
-void certify ()
-{
+void certify () {
 	unsigned expkey[2][Nr + 1][Nb], idx, diff;
 	__int64 start, stop;
 
@@ -330,13 +327,12 @@ void certify ()
 	printf ("\n");
 }
 
-void decrypt (char *mykey, char *name)
-{
+void decrypt (char *mykey, char *name) {
 	unsigned expkey[2][Nr + 1][Nb];
 	FILE *fd = fopen (name, "rb");
 	int ch, idx = 0;
 
-	strncpy (key, mykey, sizeof(key));
+	strncpy (key, mykey, sizeof (key)-1);
 	aes_expkey (key, expkey);
 
 	while( ch = getc(fd), ch != EOF ) {
@@ -358,7 +354,7 @@ void encrypt (char *mykey, char *name)
 	FILE *fd = fopen (name, "rb");
 	int ch, idx = 0;
 
-	strncpy (key, mykey, sizeof(key));
+	strncpy (key, mykey, sizeof (key)-1);
 	aes_expkey (key, expkey);
 
 	while( ch = getc(fd), ch != EOF ) {

@@ -33,15 +33,15 @@ static RBinInfo* info(RBinArch *arch) {
 	if (!(ret = R_NEW (RBinInfo)))
 		return NULL;
 	memset (ret, '\0', sizeof (RBinInfo));
-	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->type, "fs", sizeof (ret->type)); // asm.arch
-	strncpy (ret->bclass, "1.0", sizeof (ret->bclass));
-	strncpy (ret->rclass, "fs", sizeof (ret->rclass)); // file.type
-	strncpy (ret->os, "any", sizeof (ret->os));
-	strncpy (ret->subsystem, "unknown", sizeof (ret->subsystem));
-	strncpy (ret->machine, "any", sizeof (ret->machine));
-	strncpy (ret->arch, fsname (arch), sizeof (ret->arch));
+	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS-1);
+	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS-1);
+	strncpy (ret->type, "fs", sizeof (ret->type)-1); // asm.arch
+	strncpy (ret->bclass, "1.0", sizeof (ret->bclass)-1);
+	strncpy (ret->rclass, "fs", sizeof (ret->rclass)-1); // file.type
+	strncpy (ret->os, "any", sizeof (ret->os)-1);
+	strncpy (ret->subsystem, "unknown", sizeof (ret->subsystem)-1);
+	strncpy (ret->machine, "any", sizeof (ret->machine)-1);
+	strncpy (ret->arch, fsname (arch), sizeof (ret->arch)-1);
 	ret->bits = 32;
 	ret->big_endian = 0;
 	ret->dbg_info = 0;

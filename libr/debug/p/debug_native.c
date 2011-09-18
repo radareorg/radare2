@@ -1542,7 +1542,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 
 		pos_c[-1] = (char)'0';
 		pos_c[ 0] = (char)'x';
-		strncpy (region2, pos_c-1, sizeof (region2));
+		strncpy (region2, pos_c-1, sizeof (region2)-1);
 #endif // __KFBSD__
 		region[0] = region2[0] = '0';
 		region[1] = region2[1] = 'x';
@@ -1905,8 +1905,8 @@ static RList *r_debug_desc_native_list (int pid) {
 		while((de = (struct dirent *)readdir(dd))) {
 			if (de->d_name[0]=='.')
 				continue;
-			strncpy (file, path, sizeof (file));
-			strncat (file, de->d_name, sizeof (file));
+			strncpy (file, path, sizeof (file)-1);
+			strncat (file, de->d_name, sizeof (file)-1);
 			memset (buf, 0, sizeof (buf));
 			readlink(file, buf, sizeof (buf));
 			type = perm = 0;

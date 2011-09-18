@@ -137,7 +137,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	/* Fill r_bin_dyldcache_lib_t ret */
 	ret->b = dbuf;
 	libname = (char*)(bin->b->buf+libpath);
-	strncpy (ret->path, libname, sizeof (ret->path));
+	strncpy (ret->path, libname, sizeof (ret->path)-1);
 	ret->size = libsz;
 	return ret;
 }

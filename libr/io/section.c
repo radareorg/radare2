@@ -37,7 +37,7 @@ R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vs
 	s->vsize = vsize;
 	s->rwx = rwx;
 	if (!update) {
-		if (name) strncpy (s->name, name, sizeof (s->name));
+		if (name) strncpy (s->name, name, sizeof (s->name)-1);
 		else *s->name = '\0';
 		//r_list_append (io->sections, s);
 		r_list_add_sorted (io->sections, s, cmpaddr);

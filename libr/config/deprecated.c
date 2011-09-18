@@ -151,13 +151,13 @@ void config_visual_menu()
 				cons_any_key();
 				break;
 			case ':':
-				cons_set_raw(0);
+				cons_set_raw (0);
 #if HAVE_LIB_READLINE
-				char *ptr = readline(VISUAL_PROMPT);
+				char *ptr = readline (VISUAL_PROMPT);
 				if (ptr) {
-					strncpy(cmd, ptr, sizeof(cmd));
-					radare_cmd(cmd, 1);
-					free(ptr);
+					strncpy (cmd, ptr, sizeof (cmd)-1);
+					radare_cmd (cmd, 1);
+					free (ptr);
 				}
 #else
 				cmd[0]='\0';

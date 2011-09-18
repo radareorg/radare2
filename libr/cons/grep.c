@@ -27,7 +27,7 @@ R_API void r_cons_grep(const char *str) {
 		str++;
 	}
 
-	strncpy (buf, str, sizeof (buf));
+	strncpy (buf, str, sizeof (buf)-1);
 	ptr = buf;
 	ptr3 = strchr (ptr, '['); // column number
 	if (ptr3) {
@@ -57,10 +57,7 @@ R_API void r_cons_grep(const char *str) {
 		do {
 			optr = ptr;
 			ptr = strchr (ptr, ','); // grep keywords
-			if (ptr) {
-				ptr[0] = '\0';
-				ptr = ptr+1;
-			}
+			if (ptr) *ptr++ = '\0';
 			// TODO: check if keyword > 64
 			strncpy (cons->grep.strings[cons->grep.nstrings], optr, 63);
 			cons->grep.nstrings++;

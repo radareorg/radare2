@@ -283,7 +283,7 @@ R_API int r_lib_add_handler(RLib *lib,
 		handler->type = type;
 		r_list_append (lib->handlers, handler);
 	}
-	strncpy (handler->desc, desc, sizeof (handler->desc));
+	strncpy (handler->desc, desc, sizeof (handler->desc)-1);
 	handler->user = user;
 	handler->constructor = cb;
 	handler->destructor = dt;

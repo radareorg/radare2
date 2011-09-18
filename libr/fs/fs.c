@@ -532,7 +532,7 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 			eprintf ("%s\n", path);
 		} else if (!memcmp (buf, "cd ", 3)) {
 			char opath[4096];
-			strncpy (opath, path, sizeof (opath));
+			strncpy (opath, path, sizeof (opath)-1);
 			input = buf+3;
 			while (*input == ' ')
 				input++;

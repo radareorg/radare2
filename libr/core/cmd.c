@@ -3900,23 +3900,23 @@ static int cmd_meta(void *data, const char *input) {
 				p = strchr (t, ' ');
 				if (p) {
 					*p = '\0';
-					strncpy (name, p+1, sizeof (name));
+					strncpy (name, p+1, sizeof (name)-1);
 				} else switch (type) {
 				case 's':
 					// TODO: filter \n and so on :)
-					strncpy (name, t, sizeof (name));
+					strncpy (name, t, sizeof (name)-1);
 					r_core_read_at (core, addr, (ut8*)name, sizeof (name));
 					break;
 				default: {
 					RFlagItem *fi = r_flag_get_i (core->flags, addr);
-					if (fi) strncpy (name, fi->name, sizeof (name));
+					if (fi) strncpy (name, fi->name, sizeof (name)-1);
 					else sprintf (name, "ptr_%08"PFMT64x"", addr);
 					}
 				}
 				n = atoi (input+1);
 			} else {
 				p = NULL;
-				strncpy (name, t, sizeof (name));
+				strncpy (name, t, sizeof (name)-1);
 			}
 			if (!n) n++;
 			addr_end = addr + n;
@@ -3971,8 +3971,8 @@ static int cmd_meta(void *data, const char *input) {
 					if (pattern && varsub)
 					for (i = 0; i < R_ANAL_VARSUBS; i++)
 						if (f->varsubs[i].pat[0] == '\0' || !strcmp (f->varsubs[i].pat, pattern)) {
-							strncpy (f->varsubs[i].pat, pattern, 1024);
-							strncpy (f->varsubs[i].sub, varsub, 1024);
+							strncpy (f->varsubs[i].pat, pattern, 1023);
+							strncpy (f->varsubs[i].sub, varsub, 1023);
 							break;
 						}
 				} else eprintf ("Error: Function not found\n");

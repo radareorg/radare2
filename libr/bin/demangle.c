@@ -99,10 +99,10 @@ R_API char *r_bin_demangle (RBin *bin, const char *str) {
 #ifdef TEST
 main() {
 	char *out, str[128];
-	strncpy (str, "_Z1hic", sizeof (str));
-	strncpy (str, "main(Ljava/lang/String;I)V", sizeof (str));
-	strncpy (str, "main([Ljava/lang/String;)V", sizeof (str));
-	strncpy (str, "foo([III)Ljava/lang/Polla;", sizeof (str));
+	strncpy (str, "_Z1hic", sizeof (str)-1);
+	strncpy (str, "main(Ljava/lang/String;I)V", sizeof (str)-1);
+	strncpy (str, "main([Ljava/lang/String;)V", sizeof (str)-1);
+	strncpy (str, "foo([III)Ljava/lang/Polla;", sizeof (str)-1);
 	//out = cplus_demangle_v3 (str, flags);
 	out = r_bin_demangle_java (str); //, flags);
 	printf ("INPUT (%s)\n", str);

@@ -32,10 +32,10 @@ R_API int r_cmd_add_long(RCmd *cmd, const char *lcmd, const char *scmd, const ch
 	RCmdLongItem *item = R_NEW (RCmdLongItem);
 	if (item == NULL)
 		return R_FALSE;
-	strncpy (item->cmd, lcmd, sizeof (item->cmd));
-	strncpy (item->cmd_short, scmd, sizeof (item->cmd_short));
+	strncpy (item->cmd, lcmd, sizeof (item->cmd)-1);
+	strncpy (item->cmd_short, scmd, sizeof (item->cmd_short)-1);
 	item->cmd_len = strlen (lcmd);
-	strncpy (item->desc, desc, sizeof (item->desc));
+	strncpy (item->desc, desc, sizeof (item->desc)-1);
 	list_add (&(item->list), &(cmd->lcmds));
 	return R_TRUE;
 }
@@ -49,8 +49,8 @@ R_API int r_cmd_add(RCmd *c, const char *cmd, const char *desc, r_cmd_callback(c
 		item = R_NEW (RCmdItem);
 		c->cmds[idx] = item;
 	}
-	strncpy (item->cmd, cmd, sizeof (item->cmd));
-	strncpy (item->desc, desc, sizeof (item->desc));
+	strncpy (item->cmd, cmd, sizeof (item->cmd)-1);
+	strncpy (item->desc, desc, sizeof (item->desc)-1);
 	item->callback = cb;
 	return R_TRUE;
 }

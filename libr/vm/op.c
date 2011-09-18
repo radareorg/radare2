@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
 
 #include "r_vm.h"
 
@@ -6,8 +6,8 @@ R_API int r_vm_op_add(struct r_vm_t *vm, const char *op, const char *str) {
 	RVmOp *o = R_NEW (RVmOp);
 	if (o == NULL)
 		return -1;
-	strncpy(o->opcode, op, sizeof(o->opcode));
-	strncpy(o->code, str, sizeof(o->code));
+	strncpy (o->opcode, op, sizeof (o->opcode)-1);
+	strncpy (o->code, str, sizeof (o->code)-1);
 	list_add_tail(&(o->list), &vm->ops);
 	return 0;
 }

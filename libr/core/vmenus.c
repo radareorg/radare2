@@ -417,7 +417,7 @@ R_API void r_core_visual_config(RCore *core) {
 			{
 			char *ptr = readline(VISUAL_PROMPT);
 			if (ptr) {
-				strncpy(cmd, ptr, sizeof (cmd));
+				strncpy(cmd, ptr, sizeof (cmd)-1);
 				r_core_cmd(core, cmd, 1);
 				free(ptr);
 			}
@@ -502,7 +502,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 		if (mode==2) {
 			r_str_chop_path (path);
 			str = path + strlen (path);
-			strncat (path, "/", sizeof (path)-strlen (path));
+			strncat (path, "/", sizeof (path)-strlen (path)-1);
 			list = r_fs_dir (core->fs, path);
 			file = r_list_get_n (list, dir);
 			if (file && file->type != 'd')
@@ -540,7 +540,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 							if (root)
 								free (root);
 							root = strdup ("/root");
-							strncpy (path, root, sizeof (path));
+							strncpy (path, root, sizeof (path)-1);
 							mode = 2;
 						} else {
 							r_cons_printf ("Cannot mount partition\n");
@@ -554,15 +554,15 @@ R_API void r_core_visual_mounts (RCore *core) {
 					}
 				} else if (mode == 2){
 					r_str_chop_path (path);
-					strncat (path, "/", sizeof (path)-strlen (path));
+					strncat (path, "/", sizeof (path)-strlen (path)-1);
 					list = r_fs_dir (core->fs, path);
 					file = r_list_get_n (list, dir);
 					if (file) {
 						if (file->type == 'd') {
-							strncat (path, file->name, sizeof (path)-strlen (path));
+							strncat (path, file->name, sizeof (path)-strlen (path)-1);
 							r_str_chop_path (path);
 							if (memcmp (root, path, strlen (root)-1))
-								strncpy (path, root, sizeof (path));
+								strncpy (path, root, sizeof (path)-1);
 						} else {
 							r_core_cmdf (core, "s 0x%"PFMT64x, file->off);
 							r_fs_umount (core->fs, root);
@@ -631,14 +631,14 @@ R_API void r_core_visual_mounts (RCore *core) {
 				if (mode == 2){
 					r_str_chop_path (path);
 					str = path + strlen (path);
-					strncat (path, "/", sizeof (path)-strlen (path));
+					strncat (path, "/", sizeof (path)-strlen (path)-1);
 					list = r_fs_dir (core->fs, path);
 					file = r_list_get_n (list, dir);
 					if (file) {
-						strncat (path, file->name, sizeof (path)-strlen (path));
+						strncat (path, file->name, sizeof (path)-strlen (path)-1);
 						r_str_chop_path (path);
 						if (memcmp (root, path, strlen (root)-1))
-							strncpy (path, root, sizeof (path));
+							strncpy (path, root, sizeof (path)-1);
 						file = r_fs_open (core->fs, path);
 						if (file) {
 							r_fs_read (core->fs, file, 0, file->size);
@@ -1007,7 +1007,7 @@ R_API void r_core_visual_define (RCore *core) {
 			char *name;
 			int n = r_str_nlen ((const char*)p+ntotal, plen-ntotal)+1;
 			name = malloc (n+10);
-			strcpy(name, "str.");
+			strcpy (name, "str.");
 			strncpy (name+4, (const char *)p+ntotal, n);
 			r_flag_set (core->flags, name, off, n, 0);
 			r_meta_add (core->anal->meta, R_META_TYPE_STRING,
@@ -1022,7 +1022,7 @@ R_API void r_core_visual_define (RCore *core) {
 			char *name;
 			int n = r_str_nlen ((const char*)p, plen)+1;
 			name = malloc (n+10);
-			strcpy(name, "str.");
+			strcpy (name, "str.");
 			strncpy (name+4, (const char *)p, n);
 			r_flag_set (core->flags, name, off, n, 0);
 			r_meta_add (core->anal->meta, R_META_TYPE_STRING, off, off+n, (const char *)p);

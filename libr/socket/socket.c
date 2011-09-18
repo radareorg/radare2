@@ -34,7 +34,7 @@ static int r_socket_unix_connect(RSocket *s, const char *file) {
 	}
 	// TODO: set socket options
 	addr.sun_family = AF_UNIX;
-	strncpy (addr.sun_path, file, sizeof(addr.sun_path));
+	strncpy (addr.sun_path, file, sizeof (addr.sun_path)-1);
 
 	if (connect (sock, (struct sockaddr *)&addr, sizeof(addr))==-1) {
 		close (sock);
@@ -53,7 +53,7 @@ R_API int r_socket_unix_listen (RSocket *s, const char *file) {
 		return R_FALSE;
 	// TODO: set socket options
 	unix_name.sun_family = AF_UNIX;
-	strncpy (unix_name.sun_path, file, sizeof(unix_name.sun_path));
+	strncpy (unix_name.sun_path, file, sizeof (unix_name.sun_path)-1);
 
 	/* just to make sure there is no other socket file */
 	unlink (unix_name.sun_path);

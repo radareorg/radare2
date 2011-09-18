@@ -222,7 +222,7 @@ int file_pipe2file(RMagic *ms, int fd, const void *startbuf, size_t nbytes) {
 	char buf[4096];
 	int r, tfd;
 
-	strncpy (buf, "/tmp/file.XXXXXX", sizeof (buf));
+	strncpy (buf, "/tmp/file.XXXXXX", sizeof (buf)-1);
 	tfd = mkstemp (buf);
 	r = errno;
 	(void)unlink(buf);
