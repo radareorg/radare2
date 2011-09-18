@@ -10,7 +10,7 @@ elif [ -d .git ]; then
 	git pull
 fi
 
-ccache --help 2>&1 > /dev/null
+ccache --help > /dev/null 2>&1
 if [ $? = 0 ]; then
 	[ -z "${CC}" ] && CC=gcc
 	CC="ccache ${CC}"
@@ -18,7 +18,9 @@ if [ $? = 0 ]; then
 fi
 
 # build
-make mrproper && \
+if [ -f config-user.mk ]; then
+	make mrproper
+fi
 ./configure --prefix=/usr && \
 make -j 4 && \
 sudo make symstall

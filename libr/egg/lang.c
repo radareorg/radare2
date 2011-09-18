@@ -401,7 +401,7 @@ static void rcc_context(REgg *egg, int delta) {
 static int parsedatachar(REgg *egg, char c) {
 	static int inlinectr = 0;
 	char *str;
-	int i,j;
+	int i, j;
 
 	/* skip until '{' */
 	if (c == '{') { /* XXX: repeated code!! */

@@ -77,18 +77,19 @@ struct r_bin_java_fm_t {
 	struct r_bin_java_attr_t *attributes;
 };
 
-struct r_bin_java_obj_t {
+typedef struct r_bin_java_obj_t {
 	struct r_bin_java_classfile_t cf;
 	struct r_bin_java_classfile2_t cf2;
 	struct r_bin_java_cp_item_t *cp_items;
-	unsigned int fields_count;
+	ut32 fields_count;
 	struct r_bin_java_fm_t *fields;
-	unsigned int methods_count;
+	ut32 methods_count;
 	struct r_bin_java_fm_t *methods;
 	int size;
-    const char* file;
-	struct r_buf_t* b;
-};
+	const char* file;
+	struct r_buf_t*b;
+	int midx;
+} RBinJavaObj;
 
 struct r_bin_java_sym_t {
 	char name[R_BIN_JAVA_MAXSTR];

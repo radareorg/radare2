@@ -62,7 +62,7 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os, int b
 	snprintf (file, sizeof (file), PREFIX"/%s/%s-%s-%d.sdb", 
 		SYSCALLPATH, os, arch, bits);
 	if (!r_file_exist (file)) {
-		eprintf ("Cannot find '%s'\n", file);
+		eprintf ("r_syscall_setup: Cannot find '%s'\n", file);
 		return R_FALSE;
 	}
 

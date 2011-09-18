@@ -8,7 +8,7 @@
 #include "java/java.h"
 
 static int load(RBinArch *arch) {
-	if(!(arch->bin_obj = r_bin_java_new_buf(arch->buf)))
+	if (!(arch->bin_obj = r_bin_java_new_buf (arch->buf)))
 		return R_FALSE;
 	return R_TRUE;
 }
@@ -107,7 +107,7 @@ static RBinInfo* info(RBinArch *arch) {
 	strncpy (ret->machine, "Java VM", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->arch, "java", R_BIN_SIZEOF_STRINGS);
 	ret->bits = 32;
-	ret->big_endian= 0;
+	ret->big_endian = 0;
 	ret->dbg_info = 4 | 8; /* LineNums | Syms */
 	return ret;
 }
@@ -121,7 +121,7 @@ static int check(RBinArch *arch) {
 		r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
 		if (off > 0 && off < arch->buf->length) {
 			memmove (arch->buf->buf, arch->buf->buf+off, 4);
-			if (!memcmp (arch->buf->buf, "\xce\xfa\xed\xfe", 4) ||
+			if (	!memcmp (arch->buf->buf, "\xce\xfa\xed\xfe", 4) ||
 				!memcmp (arch->buf->buf, "\xfe\xed\xfa\xce", 4) ||
 				!memcmp (arch->buf->buf, "\xfe\xed\xfa\xcf", 4) ||
 				!memcmp (arch->buf->buf, "\xcf\xfa\xed\xfe", 4))

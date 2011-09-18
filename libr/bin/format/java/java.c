@@ -14,6 +14,7 @@
 #include <r_types.h>
 #include <r_util.h>
 
+//#define IFDBG if(1)
 static struct constant_t {
 	char *name;
 	int tag;
@@ -33,21 +34,21 @@ static struct constant_t {
 	{ NULL, 0, 0 }
 };
 
-static struct r_bin_java_cp_item_t cp_null_item; // NOTE: must be initialized for safe use
+static struct r_bin_java_cp_item_t cp_null_item = {0}; // NOTE: must be initialized for safe use
 
-static unsigned short read_short(struct r_bin_java_obj_t *bin) {
-	unsigned short sh=0;
-	r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)&sh, 2);
+static unsigned short read_short(RBinJavaObj *bin) {
+	ut16 sh = 0;
+	r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)&sh, 2);
 	return R_BIN_JAVA_SWAPUSHORT(sh);
 }
 
-static struct r_bin_java_cp_item_t* get_cp(struct r_bin_java_obj_t *bin, int i) {
+static struct r_bin_java_cp_item_t* get_cp(RBinJavaObj *bin, int i) {
 	if (i<0||i>bin->cf.cp_count)
 		return &cp_null_item;
 	return &bin->cp_items[i];
 }
 
-static int attributes_walk(struct r_bin_java_obj_t *bin, struct r_bin_java_attr_t *attr, int sz2, int fields) {
+static int attributes_walk(RBinJavaObj *bin, struct r_bin_java_attr_t *attr, int sz2, int fields) {
 	char buf[0xffff+1]; // that's kinda ugly :)
 	int sz3, sz4;
 	int j=0,k;
@@ -61,7 +62,7 @@ static int attributes_walk(struct r_bin_java_obj_t *bin, struct r_bin_java_attr_
 		attr->name_idx = R_BIN_JAVA_USHORT(buf,0);
 		name = get_cp (bin, attr->name_idx-1)->value;
 		// XXX: if name is null.. wat?
-		attr->name = strdup (name?name:"");
+		attr->name = strdup (name? name: "");
 		name = (get_cp(bin, attr->name_idx-1))->value;//cp_items[R_BIN_JAVA_USHORT(buf,0)-1].value;
 		IFDBG printf("   %2d: Name Index: %d (%s)\n", j, attr->name_idx, name);
 		// TODO add comment with constant pool index
@@ -112,34 +113,55 @@ static int attributes_walk(struct r_bin_java_obj_t *bin, struct r_bin_java_attr_
 					attributes_walk(bin, attr->attributes, sz4, fields);
 				}
 			} else
-			if (!strcmp(name, "LineNumberTable")) {
+			if (!strcmp (name, "LineNumberTable")) {
 				attr->type = R_BIN_JAVA_TYPE_LINENUM;
-				sz4 = (unsigned int)read_short(bin);
+				sz4 = (unsigned int)read_short (bin);
 				attr->info.linenum.table_length = sz4;
 				IFDBG printf("     Table Length: %d\n", attr->info.linenum.table_length);
-				for(k=0;k<sz4;k++) {
-					r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)buf, 4);
-					attr->info.linenum.start_pc = R_BIN_JAVA_USHORT(buf, 0);
-					IFDBG printf("     %2d: start_pc:    0x%04x\n", k, attr->info.linenum.start_pc);
-					attr->info.linenum.line_number = R_BIN_JAVA_USHORT(buf, 2);
-					IFDBG printf("         line_number: %d\n", attr->info.linenum.line_number);
+eprintf ("line.%d.sym=%s\n", bin->midx, bin->methods[bin->midx].name);
+				for (k=0; k<sz4; k++) {
+					r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, 4);
+					attr->info.linenum.start_pc = R_BIN_JAVA_USHORT (buf, 0);
+					//eprintf ("     %2d: start_pc:    0x%04x\n", k, attr->info.linenum.start_pc);
+					attr->info.linenum.line_number = R_BIN_JAVA_USHORT (buf, 2);
+					//eprintf ("         line_number: %d\n", attr->info.linenum.line_number);
+					eprintf ("line.%d.%d.%d=0x%x\n", bin->midx, k,
+							attr->info.linenum.line_number,
+							attr->info.linenum.start_pc);
 				}
 			} else
-			if (!strcmp(name, "StackMapTable")) {
-				r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)buf, 2); // XXX: this is probably wrong
+			if (!strcmp (name, "StackMapTable")) {
+				r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, 2); // XXX: this is probably wrong
 				//printf("     StackMapTable: %d\n", USHORT(buf, 0));
 			} else
-			if (!strcmp(name, "ConstantValue")) {
+			if (!strcmp (name, "LocalVariableTable")) {
+				int i;
+				ut32 lvtl = (ut32)read_short (bin);
+eprintf ("local.%d.sym=%s\n", bin->midx, bin->methods[bin->midx].name);
+				for (i=0; i<lvtl; i++) {
+					int start_pc = read_short (bin);
+					int length = read_short (bin);
+					int name_idx = read_short (bin);
+					int desc_idx = read_short (bin);
+					int index = read_short (bin);
+
+					const char *name = get_cp (bin, name_idx-1)->value;
+					const char *desc = get_cp (bin, desc_idx-1)->value;
+eprintf ("local.%d.%d.type=%s\n", bin->midx, i, desc);
+eprintf ("local.%d.%d.name=%s\n", bin->midx, i, name);
+				}
+			} else
+			if (!strcmp (name, "ConstantValue")) {
 				attr->type = R_BIN_JAVA_TYPE_CONST;
-				r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)buf, 2);
+				r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, 2);
 	#if 0
 				printf("     Name Index: %d\n", R_BIN_JAVA_USHORT(buf, 0)); // %s\n", R_BIN_JAVA_USHORT(buf, 0), cp_items[R_BIN_JAVA_USHORT(buf,0)-1].value);
 				printf("     AttributeLength: %d\n", R_BIN_JAVA_UINT(buf, 2));
 	#endif
 				attr->info.const_value_idx = R_BIN_JAVA_USHORT(buf, 0);
-				IFDBG printf("     ConstValueIndex: %d\n", attr->info.const_value_idx);
+				IFDBG printf ("     ConstValueIndex: %d\n", attr->info.const_value_idx);
 			} else {
-				IFDBG fprintf(stderr, "** ERROR ** Unknown section '%s'\n", name);
+				eprintf ("** ERROR ** Unknown section '%s'\n", name);
 				return R_FALSE;
 			}
 		}
@@ -147,10 +169,10 @@ static int attributes_walk(struct r_bin_java_obj_t *bin, struct r_bin_java_attr_
 	return R_TRUE;
 }
 
-static int javasm_init(struct r_bin_java_obj_t *bin) {
+static int javasm_init(RBinJavaObj *bin) {
 	unsigned short sz, sz2;
 	char buf[0x9999];
-	int i,j;
+	int i, j;
 
 	/* Initialize structs */
 	bin->cp_items = NULL;
@@ -184,7 +206,7 @@ static int javasm_init(struct r_bin_java_obj_t *bin) {
 		r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, 1);
 
 		c = NULL;
-		for (j=0;constants[j].name;j++) {
+		for (j=0; constants[j].name; j++) {
 			if (constants[j].tag == buf[0])  {
 				c = &constants[j];
 				break;
@@ -212,20 +234,20 @@ static int javasm_init(struct r_bin_java_obj_t *bin) {
 			bin->cp_items[i].length = sz;
 			bin->cp_items[i].off += 3;
 			if (sz > 0)
-				r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)buf, sz);
+				r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, sz);
 			buf[sz] = '\0';
 			break;
 		default:
-			r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)buf, c->len);
+			r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, c->len);
 		}
 
-		memcpy(bin->cp_items[i].bytes, buf, 5);
+		memcpy (bin->cp_items[i].bytes, buf, 5);
 
 		/* parse value */
 		switch (c->tag) {
 		case 1:
-			IFDBG printf("%s\n", buf);
-			bin->cp_items[i].value = strdup(buf);
+			// eprintf ("%s\n", buf);
+			bin->cp_items[i].value = strdup (buf);
 			break;
 		case 5:
 		case 6:
@@ -248,14 +270,14 @@ static int javasm_init(struct r_bin_java_obj_t *bin) {
 			IFDBG printf("descriptor = %d\n", R_BIN_JAVA_USHORT(buf,2));
 			break;
 		default:
-			printf("%d\n", R_BIN_JAVA_UINT(buf, 40));
+			printf ("%d\n", R_BIN_JAVA_UINT (buf, 40));
 		}
 	}
 
-	r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)&bin->cf2, sizeof(struct r_bin_java_classfile2_t));
-	IFDBG printf("Access flags: 0x%04x\n", bin->cf2.access_flags);
+	r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)&bin->cf2, sizeof(struct r_bin_java_classfile2_t));
+	IFDBG printf ("Access flags: 0x%04x\n", bin->cf2.access_flags);
 	bin->cf2.this_class = R_BIN_JAVA_SWAPUSHORT(bin->cf2.this_class);
-	IFDBG printf("This class: %d\n", bin->cf2.this_class);
+	IFDBG printf ("This class: %d\n", bin->cf2.this_class);
 	//printf("This class: %d (%s)\n", R_BIN_JAVA_SWAPUSHORT(bin->cf2.this_class), bin->cp_items[R_BIN_JAVA_SWAPUSHORT(bin->cf2.this_class)-1].value); // XXX this is a double pointer !!1
 	//printf("Super class: %d (%s)\n", R_BIN_JAVA_SWAPUSHORT(bin->cf2.super_class), bin->cp_items[R_BIN_JAVA_SWAPUSHORT(bin->cf2.super_class)-1].value);
 	sz = read_short(bin);
@@ -280,7 +302,7 @@ static int javasm_init(struct r_bin_java_obj_t *bin) {
 			bin->fields[i].flags = R_BIN_JAVA_USHORT(buf, 0);
 			IFDBG printf("%2d: Access Flags: %d\n", i, bin->fields[i].flags);
 			bin->fields[i].name_idx = R_BIN_JAVA_USHORT(buf, 2);
-			bin->fields[i].name = strdup((get_cp(bin, R_BIN_JAVA_USHORT(buf,2)-1))->value);
+			bin->fields[i].name = r_str_dup (NULL, (get_cp (bin, R_BIN_JAVA_USHORT(buf,2)-1))->value);
 			IFDBG printf("    Name Index: %d (%s)\n", bin->fields[i].name_idx, bin->fields[i].name);
 			bin->fields[i].descriptor_idx = R_BIN_JAVA_USHORT(buf, 4);
 			bin->fields[i].descriptor = NULL;
@@ -308,24 +330,26 @@ static int javasm_init(struct r_bin_java_obj_t *bin) {
 			IFDBG printf("%2d: Access Flags: %d\n", i, bin->methods[i].flags);
 			bin->methods[i].name_idx = R_BIN_JAVA_USHORT(buf, 2);
 #if OLD
-			bin->methods[i].name = strdup((get_cp(bin, R_BIN_JAVA_USHORT(buf, 2)-1))->value);
+			bin->methods[i].name = r_str_dup (NULL, (get_cp(bin, R_BIN_JAVA_USHORT(buf, 2)-1))->value);
 #else
 			bin->methods[i].name = malloc (1024);
+// XXX: can null ptr here
 			snprintf (bin->methods[i].name, 1023, "%s%s",
-				(get_cp(bin, R_BIN_JAVA_USHORT(buf, 2)-1))->value,
-				(get_cp(bin, R_BIN_JAVA_USHORT(buf, 2)))->value);
+				(get_cp (bin, R_BIN_JAVA_USHORT(buf, 2)-1))->value,
+				(get_cp (bin, R_BIN_JAVA_USHORT(buf, 2)))->value);
 #endif
+bin->midx = i;
 			IFDBG printf("    Name Index: %d (%s)\n", bin->methods[i].name_idx, bin->methods[i].name);
 			bin->methods[i].descriptor_idx = R_BIN_JAVA_USHORT(buf, 4);
-			bin->methods[i].descriptor = strdup((get_cp(bin, R_BIN_JAVA_USHORT(buf, 4)-1))->value);
+			bin->methods[i].descriptor = r_str_dup (NULL, (get_cp(bin, R_BIN_JAVA_USHORT(buf, 4)-1))->value);
 			IFDBG printf("    Descriptor Index: %d (%s)\n", bin->methods[i].descriptor_idx, bin->methods[i].descriptor);
 
 			sz2 = R_BIN_JAVA_USHORT(buf, 6);
 			bin->methods[i].attr_count = sz2;
 			IFDBG printf("    method Attributes Count: %d\n", sz2);
 			if (sz2 > 0) {
-				bin->methods[i].attributes = malloc(1+sz2 * sizeof(struct r_bin_java_attr_t));
-				for(j=0;j<sz2;j++) {
+				bin->methods[i].attributes = malloc (1+sz2 * sizeof (struct r_bin_java_attr_t));
+				for (j=0; j<sz2; j++) {
 					if (!attributes_walk (bin, &bin->methods[i].attributes[j], sz2, 0))
 						return R_FALSE;
 				}
@@ -336,13 +360,13 @@ static int javasm_init(struct r_bin_java_obj_t *bin) {
 	return R_TRUE;
 }
 
-char* r_bin_java_get_version(struct r_bin_java_obj_t* bin) {
+char* r_bin_java_get_version(RBinJavaObj* bin) {
 	return r_str_dup_printf("0x%02x%02x 0x%02x%02x",
 			bin->cf.major[1],bin->cf.major[0],
 			bin->cf.minor[1],bin->cf.minor[0]);
 }
 
-ut64 r_bin_java_get_entrypoint(struct r_bin_java_obj_t* bin) {
+ut64 r_bin_java_get_entrypoint(RBinJavaObj* bin) {
 	int i, j;
 	for (i=0; i < bin->methods_count; i++)
 		if (!strcmp(bin->methods[i].name, "<init>"))
@@ -352,7 +376,7 @@ ut64 r_bin_java_get_entrypoint(struct r_bin_java_obj_t* bin) {
 	return 0;
 }
 
-struct r_bin_java_sym_t* r_bin_java_get_symbols(struct r_bin_java_obj_t* bin) {
+struct r_bin_java_sym_t* r_bin_java_get_symbols(RBinJavaObj* bin) {
 	struct r_bin_java_sym_t *symbols;
 	int i, j, ctr = 0;
 
@@ -373,7 +397,7 @@ struct r_bin_java_sym_t* r_bin_java_get_symbols(struct r_bin_java_obj_t* bin) {
 	return symbols;
 }
 
-struct r_bin_java_str_t* r_bin_java_get_strings(struct r_bin_java_obj_t* bin) {
+struct r_bin_java_str_t* r_bin_java_get_strings(RBinJavaObj* bin) {
 	struct r_bin_java_str_t *strings = NULL;
 	int i, ctr = 0;
 
@@ -396,7 +420,7 @@ struct r_bin_java_str_t* r_bin_java_get_strings(struct r_bin_java_obj_t* bin) {
 	return strings;
 }
 
-void* r_bin_java_free(struct r_bin_java_obj_t* bin) {
+void* r_bin_java_free(RBinJavaObj* bin) {
 	if (!bin) return NULL;
 	if (bin->cp_items) free (bin->cp_items);
 	if (bin->fields) free (bin->fields);
@@ -406,34 +430,31 @@ void* r_bin_java_free(struct r_bin_java_obj_t* bin) {
 	return NULL;
 }
 
-struct r_bin_java_obj_t* r_bin_java_new(const char* file) {
-	struct r_bin_java_obj_t *bin;
+RBinJavaObj* r_bin_java_new(const char* file) {
+	RBinJavaObj *bin;
 	ut8 *buf;
 
-	if (!(bin = malloc(sizeof(struct r_bin_java_obj_t))))
+	if (!(bin = malloc(sizeof(RBinJavaObj))))
 		return NULL;
-	memset (bin, 0, sizeof (struct r_bin_java_obj_t));
+	memset (bin, 0, sizeof (RBinJavaObj));
 	bin->file = file;
 	if (!(buf = (ut8*)r_file_slurp(file, &bin->size))) 
 		return r_bin_java_free(bin);
-	bin->b = r_buf_new();
+	bin->b = r_buf_new ();
 	if (!r_buf_set_bytes(bin->b, buf, bin->size))
 		return r_bin_java_free(bin);
 	free (buf);
-	if (!javasm_init(bin))
+	if (!javasm_init (bin))
 		return r_bin_java_free(bin);
 	return bin;
 }
 
-struct r_bin_java_obj_t* r_bin_java_new_buf(struct r_buf_t *buf) {
-	struct r_bin_java_obj_t *bin;
-
-	if (!(bin = malloc(sizeof(struct r_bin_java_obj_t))))
-		return NULL;
-	memset (bin, 0, sizeof (struct r_bin_java_obj_t));
+RBinJavaObj* r_bin_java_new_buf(struct r_buf_t *buf) {
+	RBinJavaObj *bin = R_NEW0 (RBinJavaObj);
+	if (!bin) return NULL;
 	bin->b = buf;
 	bin->size = buf->length;
-	if (!javasm_init(bin))
+	if (!javasm_init (bin))
 		return r_bin_java_free(bin);
 	return bin;
 }

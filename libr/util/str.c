@@ -441,6 +441,7 @@ R_API const char *r_str_get(const char *str) {
 
 R_API char *r_str_dup(char *ptr, const char *string) {
 	if (ptr) free (ptr);
+	if (!string) return NULL;
 	ptr = strdup (string);
 	return ptr;
 }
@@ -449,11 +450,11 @@ R_API char *r_str_dup(char *ptr, const char *string) {
 R_API char *r_str_dup_printf(const char *fmt, ...) {
 	char *ret;
 	va_list ap;
-	va_start(ap, fmt);
+	va_start (ap, fmt);
 	if ((ret = malloc (1024)) == NULL)
 		return NULL;
 	vsnprintf (ret, 1024, fmt, ap);
-	va_end(ap);
+	va_end (ap);
 	return ret;
 }
 
@@ -489,7 +490,7 @@ R_API char *r_str_concatf(char *ptr, const char *fmt, ...) {
 	char string[1024];
 	va_list ap;
 	va_start (ap, fmt);
-	vsnprintf (string, 1023, fmt, ap);
+	vsnprintf (string, sizeof (string), fmt, ap);
 	ptr = r_str_concat (ptr, string);
 	va_end (ap);
 	return ptr;

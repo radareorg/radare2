@@ -1,6 +1,8 @@
 /* radare - LGPL - Copyright 2009-2011 pancake<@nopcode.org> */
 
 namespace Radare {
+	[CCode (cname="R2_VERSION")]
+	const string R2_VERSION;
 #if 0
 	[Compact]
 	[CCode (cheader_filename="r_util.h", cprefix="r_hex_")]

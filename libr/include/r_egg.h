@@ -18,6 +18,7 @@ typedef struct r_egg_t {
 	ut32 os;
 } REgg;
 
+/* XXX: this may fail in different arches */
 #define R_EGG_OS_LINUX 0xcd21ce66
 #define R_EGG_OS_OSX 0x1bf9e4
 #define R_EGG_OS_DARWIN 0x5e417f87
@@ -27,11 +28,11 @@ typedef struct r_egg_t {
 
 #if __APPLE__
 #define R_EGG_OS_DEFAULT R_EGG_OS_OSX
-#define R_EGG_OS_NAME "osx"
+#define R_EGG_OS_NAME "darwin"
 #define R_EGG_FORMAT_DEFAULT "mach0"
 #elif __WINDOWS__
 #define R_EGG_OS_DEFAULT R_EGG_OS_W32
-#define R_EGG_OS_NAME "w32"
+#define R_EGG_OS_NAME "windows"
 #define R_EGG_FORMAT_DEFAULT "pe"
 #else
 #define R_EGG_OS_DEFAULT R_EGG_OS_LINUX

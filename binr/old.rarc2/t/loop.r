@@ -1,3 +1,6 @@
+puts@global() {
+	/* do nothing */
+}
 main@global(128)
 {
 	.var0 = 3;
@@ -6,9 +9,7 @@ main@global(128)
 		puts(.var4);
 		.var0 -= 1;
 	} while(.var0);
-:
-: /* comment */
-:
+	/* comment */
 	.var0 = 3;
 	.var4 = "coconut";
 	while(.var0) {
@@ -17,3 +18,4 @@ main@global(128)
 	}
 	0;
 }
+

@@ -218,8 +218,8 @@ static int attributes_walk(FILE *fd, int sz2, int fields, int verbose) {
 
 				fread(buf, UINT(buf, 4), 1, fd); // READ CODE
 				sz = read_short(fd);
-				printf("      Exception table length: %d\n", sz);
-				for(k=0;k<sz;k++) {
+				V printf("      Exception table length: %d\n", sz);
+				for (k=0;k<sz;k++) {
 					fread(buf, 8, 1, fd);
 					V printf("       start_pc:   0x%04x\n", USHORT(buf,0));
 					V printf("       end_pc:     0x%04x\n", USHORT(buf,2));
@@ -244,6 +244,17 @@ static int attributes_walk(FILE *fd, int sz2, int fields, int verbose) {
 			if (!strcmp(name, "StackMapTable")) {
 				fread (buf, 2, 1, fd);
 				V printf("     StackMapTable: %d\n", USHORT(buf, 0));
+			} else
+			if (!strcmp (name, "LocalVariableTable")) {
+				int i;
+				ut32 lvtl = (ut32)read_short (fd);
+				for (i=0; i<lvtl; i++) {
+					int start_pc = start_pc = read_short (fd);
+					int length = length = read_short (fd);
+					int name_idx = name_idx = read_short (fd);
+					int desc_idx = desc_idx = read_short (fd);
+					int index = index = read_short (fd);
+				}
 			} else
 			if (!strcmp(name, "ConstantValue")) {
 				fread(buf, 2, 1, fd);
@@ -297,9 +308,9 @@ int java_classdump(const char *file, int verbose) {
 	}
 	
 	cf.cp_count--;
-	V printf("ConstantPoolCount %d\n", cf.cp_count);
+	V printf ("ConstantPoolCount %d\n", cf.cp_count);
 	cp_items = malloc (sizeof (struct cp_item)*(cf.cp_count+1));
-	for(i=0;i<cf.cp_count;i++) {
+	for (i=0;i<cf.cp_count;i++) {
 		struct constant_t *c;
 		fread (buf, 1, 1, fd);
 		c = NULL;
@@ -310,7 +321,7 @@ int java_classdump(const char *file, int verbose) {
 			}
 		}
 		if (c == NULL) {
-			fprintf(stderr, "Invalid tag '%d'\n", buf[0]);
+			eprintf ("Invalid tag '%d'\n", buf[0]);
 			return 0;
 		}
 		V printf(" %3d %s: ", i+1, c->name);
@@ -339,7 +350,7 @@ int java_classdump(const char *file, int verbose) {
 		/* parse value */
 		switch(c->tag) {
 		case 1:
-			printf ("%s\n", buf);
+			V printf ("%s\n", buf);
 			cp_items[i].value = strdup(buf);
 			break;
 		case 7:
@@ -363,21 +374,21 @@ int java_classdump(const char *file, int verbose) {
 		}
 	}
 
-	fread(&cf2, sizeof(struct classfile2), 1, fd);
+	fread (&cf2, sizeof (struct classfile2), 1, fd);
 	check_eof(fd);
 	V printf("Access flags: 0x%04x\n", cf2.access_flags);
 	this_class = r_ntohs(cf2.this_class);
-	V printf("This class: %d\n", this_class);
-	check_eof(fd);
+	V printf ("This class: %d\n", this_class);
+	check_eof (fd);
 	//printf("This class: %d (%s)\n", ntohs(cf2.this_class), cp_items[ntohs(cf2.this_class)-1].value); // XXX this is a double pointer !!1
 	//printf("Super class: %d (%s)\n", ntohs(cf2.super_class), cp_items[ntohs(cf2.super_class)-1].value);
-	sz = read_short(fd);
-	V printf("Interfaces count: %d\n", sz);
+	sz = read_short (fd);
+	V printf ("Interfaces count: %d\n", sz);
 	if (sz>0) {
-		fread(buf, sz*2, 1, fd);
-		sz = read_short(fd);
-		for(i=0;i<sz;i++) {
-			fprintf(stderr, "interfaces: TODO\n");
+		fread (buf, sz*2, 1, fd);
+		sz = read_short (fd);
+		for (i=0; i<sz; i++) {
+			eprintf ("interfaces: TODO\n");
 		}
 	}
 
@@ -409,7 +420,7 @@ int java_classdump(const char *file, int verbose) {
 			V printf("    Descriptor Index: %d (%s)\n", USHORT(buf, 4), get_cp(USHORT(buf, 4)-1)->value);
 
 			sz2 = USHORT(buf, 6);
-			printf("    method Attributes Count: %d\n", sz2);
+			V printf("    method Attributes Count: %d\n", sz2);
 			attributes_walk(fd, sz2, 0, verbose);
 		}
 	}
