@@ -2,6 +2,9 @@
 
 #include <r_util.h>
 #include <stdlib.h>
+#if __UNIX__
+#include <sys/mman.h>
+#endif
 
 // TODO: find better name (r_mem_length()); is this used somewhere?
 R_API int r_mem_count(const ut8 **addr) {

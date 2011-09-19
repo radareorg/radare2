@@ -191,7 +191,7 @@ R_API int r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b,
 		ut32 *distance, double *similarity) {
 	int i, j, cost, tmin, **m;
 
-	if (la < 1 || lb < 1)
+	if (!a || !b || la < 1 || lb < 1)
 		return R_FALSE;
 
 	if ((m = malloc ((la+1) * sizeof(int*))) == NULL)
