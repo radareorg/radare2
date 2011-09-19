@@ -111,10 +111,13 @@ test:
 	cd go && ${MAKE} test
 	cd java && ${MAKE} test
 
+PYTHON_VERSION?=`python --version 2>&1 | cut -d ' ' -f 2 | cut -d . -f 1,2`
+
 install-python:
 	@# py2.6 in debian uses dist-packages, but site-packages in arch and osx..
+	echo "Using python version: ${PYTHON_VERSION}"
 	@if [ "`grep python supported.langs`" ]; then \
-	a=python`python --version 2>&1 | cut -d ' ' -f 2 | cut -d . -f 1,2` ; \
+	a=python${PYTHON_VERSION} ; \
 	echo "Installing $$a/site-packages r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2" ; \
 	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2 ; \
 	touch ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2/__init__.py ; \
