@@ -135,6 +135,19 @@ static int retdemangle(const char *str) {
 	return R_BIN_NM_JAVA;
 }
 
+static RBinAddr* binsym(RBinArch *arch, int sym) {
+	RBinAddr *ret = NULL;
+	switch (sym) {
+	case R_BIN_SYM_MAIN:
+		if (!(ret = R_NEW (RBinAddr)))
+			return NULL;
+		memset (ret, '\0', sizeof (RBinAddr));
+		ret->offset = ret->rva = r_bin_java_get_main (arch->bin_obj);
+		break;
+	}
+	return ret;
+}
+
 struct r_bin_plugin_t r_bin_plugin_java = {
 	.name = "java",
 	.desc = "java bin plugin",
@@ -144,7 +157,7 @@ struct r_bin_plugin_t r_bin_plugin_java = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
-	.binsym = NULL,
+	.binsym = binsym,
 	.entries = &entries,
 	.sections = NULL,
 	.symbols = &symbols,

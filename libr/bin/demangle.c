@@ -17,6 +17,7 @@ R_API char *r_bin_demangle_java(const char *str) {
 	if (!ptr)
 		return NULL;
 	buf = r_buf_new ();
+	if (!buf) return NULL;
 	r_buf_append_bytes (buf, (const ut8*)str, (int)(size_t)(ptr-str));
 	r_buf_append_bytes (buf, (const ut8*)" (", 2);
 	while (*str) {

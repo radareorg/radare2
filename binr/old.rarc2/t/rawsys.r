@@ -2,6 +2,8 @@
 # syscall implementation example
 #
 
+goto(main);
+
 # 32 bits
 write@syscall(4);
 exit@syscall(1);

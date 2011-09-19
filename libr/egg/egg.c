@@ -4,6 +4,7 @@
 extern REggEmit emit_x86;
 extern REggEmit emit_x64;
 extern REggEmit emit_arm;
+extern REggEmit emit_trace;
 
 R_API REgg *r_egg_new () {
 	REgg *egg = R_NEW0 (REgg);
@@ -62,8 +63,20 @@ R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const c
 			egg->endian = endian;
 			break;
 		}
+	} else
+	if (!strcmp (arch, "trace")) {
+		//r_syscall_setup (egg->syscall, arch, os, bits);
+		egg->emit = &emit_trace;
+		egg->bits = bits;
+		egg->endian = endian;
 	}
-	return (egg->emit != NULL);
+	if (egg->emit) {
+		if (egg->emit->init) {
+			egg->emit->init (egg);
+		}
+		return 1;
+	}
+	return 0;
 }
 
 R_API int r_egg_include(REgg *egg, const char *file, int format) {

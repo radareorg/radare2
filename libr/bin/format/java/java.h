@@ -108,6 +108,7 @@ struct r_bin_java_str_t {
 
 char* r_bin_java_get_version(struct r_bin_java_obj_t* bin);
 ut64 r_bin_java_get_entrypoint(struct r_bin_java_obj_t* bin);
+ut64 r_bin_java_get_main(struct r_bin_java_obj_t* bin);
 struct r_bin_java_sym_t* r_bin_java_get_symbols(struct r_bin_java_obj_t* bin);
 struct r_bin_java_str_t* r_bin_java_get_strings(struct r_bin_java_obj_t* bin);
 void* r_bin_java_free(struct r_bin_java_obj_t* bin);

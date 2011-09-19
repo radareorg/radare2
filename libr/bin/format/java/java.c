@@ -139,11 +139,11 @@ eprintf ("line.%d.sym=%s\n", bin->midx, bin->methods[bin->midx].name);
 				ut32 lvtl = (ut32)read_short (bin);
 eprintf ("local.%d.sym=%s\n", bin->midx, bin->methods[bin->midx].name);
 				for (i=0; i<lvtl; i++) {
-					int start_pc = read_short (bin);
-					int length = read_short (bin);
-					int name_idx = read_short (bin);
-					int desc_idx = read_short (bin);
-					int index = read_short (bin);
+					int start_pc = start_pc = read_short (bin);
+					int length = length = read_short (bin);
+					int name_idx = name_idx = read_short (bin);
+					int desc_idx = desc_idx = read_short (bin);
+					int index = index = read_short (bin);
 
 					const char *name = get_cp (bin, name_idx-1)->value;
 					const char *desc = get_cp (bin, desc_idx-1)->value;
@@ -366,10 +366,20 @@ char* r_bin_java_get_version(RBinJavaObj* bin) {
 			bin->cf.minor[1],bin->cf.minor[0]);
 }
 
+ut64 r_bin_java_get_main(RBinJavaObj* bin) {
+	int i, j;
+	for (i=0; i < bin->methods_count; i++)
+		if (!strcmp(bin->methods[i].name, "main([Ljava/lang/String;)V"))
+			for (j=0; j < bin->methods[i].attr_count; j++)
+				if (bin->methods[i].attributes[j].type == R_BIN_JAVA_TYPE_CODE)
+					return (ut64)bin->methods[i].attributes->info.code.code_offset;
+	return 0;
+}
+
 ut64 r_bin_java_get_entrypoint(RBinJavaObj* bin) {
 	int i, j;
 	for (i=0; i < bin->methods_count; i++)
-		if (!strcmp(bin->methods[i].name, "<init>"))
+		if (!strcmp(bin->methods[i].name, "<init>()V"))
 			for (j=0; j < bin->methods[i].attr_count; j++)
 				if (bin->methods[i].attributes[j].type == R_BIN_JAVA_TYPE_CODE)
 					return (ut64)bin->methods[i].attributes->info.code.code_offset;

@@ -29,7 +29,9 @@ enum {
 	SYSCALLBODY,
 	LAST
 };
+
 // XXX : globals are ugly
+static int pushargs = 0;
 static int nsyscalls = 0;
 static char *syscallbody = NULL;
 static int commentmode = 0;
@@ -62,6 +64,30 @@ static int stackfixed = 0;
 static int oc = '\n';
 static int mode = NORMAL;
 
+static char *trim(char *s) {
+	char *o;
+	for (o=s; *s; s++)
+		if (isspace (*s)) {
+			*s = 0;
+			break;
+		}
+	return o;
+}
+
+static void rcc_set_callname(const char *s) {
+	free (callname);
+	callname = NULL;
+	nargs = 0;
+	while (*s==' '||*s=='\t') s++; // skip prefixed spaces (should never happen)
+	callname = trim (strdup (s));
+	pushargs = !((!strcmp (s, "goto")) || (!strcmp (s, "break")));
+}
+
+static void rcc_reset_callname() {
+	R_FREE (callname);
+	nargs = 0;
+}
+
 static const char *skipspaces(const char *s) {
 	for (;*s;s++)
 		switch (*s) {
@@ -74,16 +100,6 @@ static const char *skipspaces(const char *s) {
 			return s;
 		}
 	return s;
-}
-
-static char *trim(char *s) {
-	char *o;
-	for (o=s; *s; s++)
-		if (isspace (*s)) {
-			*s = 0;
-			break;
-		}
-	return o;
 }
 
 #define SYNTAX_ATT 0
@@ -120,10 +136,12 @@ static char *get_end_frame_label(REgg *egg) {
 
 static void rcc_pusharg(REgg *egg, char *str) {
 	REggEmit *e = egg->emit;
-	char buf[64], *p = r_egg_mkvar (egg, buf, str, 0);
+	char buf[64], *p;
+	p = r_egg_mkvar (egg, buf, str, 0);
 	ctxpush[context] = strdup (p); // INDEX IT WITH NARGS OR CONTEXT?!?
 	nargs++;
-	e->push_arg (egg, varxs, nargs, p);
+	if (pushargs)
+		e->push_arg (egg, varxs, nargs, p);
 	//ctxpush[context+nbrackets] = strdup(str); // use nargs??? (in callname)
 }
 
@@ -231,6 +249,9 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 		REggEmit *e = egg->emit;
 		ret = out;
 		idx = atoi (str+4) + delta + e->size;
+		if (!memcmp (str+1, "ret", 3)) {
+			strcpy (out, e->retvar);
+		} else
 		if (!memcmp (str+1, "fix", 3)) {
 			e->get_var (egg, 0, out, idx-stackfixed);
 			//sprintf(out, "%d(%%"R_BP")", -(atoi(str+4)+delta+R_SZ-stackfixed));
@@ -253,14 +274,12 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 				}
 			} else {
 				/* TODO: return size of syscall */
-				if (callname==NULL) {
-					eprintf ("NO CALLNAME'%s'\n", callname);
-				} else {
+				if (callname) {
 					for (i=0; i<nsyscalls; i++)
 						if (!strcmp (syscalls[i].name, callname))
 							return syscalls[i].arg;
 					eprintf ("Unknown arg for syscall '%s'\n", callname);
-				}
+				} else eprintf ("NO CALLNAME '%s'\n", callname);
 			}
 		} else
 		if (!memcmp (str+1, "reg", 3)) {
@@ -291,33 +310,34 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 
 static void rcc_fun(REgg *egg, const char *str) {
 	char *ptr, *ptr2;
+	REggEmit *e = egg->emit;
 	str = skipspaces (str);
 	if (context) {
 		ptr = strchr (str, '=');
 		if (ptr) {
-			*ptr = '\0';
+			*ptr++ = '\0';
 			free (dstvar);
 			dstvar = strdup (skipspaces (str));
-			ptr2 = (char *)skipspaces(ptr+1);
+			ptr2 = (char *)skipspaces(ptr);
 			if (*ptr2) {
-				callname = trim (strdup (skipspaces (ptr+1)));
+				rcc_set_callname (skipspaces (ptr));
 			}
 		} else {
 			str = skipspaces (str);
 			free (callname);
-			callname = trim (strdup (skipspaces (str)));
+			rcc_set_callname (skipspaces (str));
 			egg->emit->comment (egg, "rcc_fun %d (%s)", context, callname);
 		}
 	} else {
 		ptr = strchr (str, '@');
 		if (ptr) {
-			ptr[0]='\0';
+			*ptr++ = '\0';
 			mode = NORMAL;
-			if (strstr (ptr+1, "fastcall")) {
+			if (strstr (ptr, "fastcall")) {
 				/* TODO : not yet implemented */
 			} else
-			if (strstr (ptr+1, "syscall")) {
-				if (str[0]) {
+			if (strstr (ptr, "syscall")) {
+				if (*str) {
 					mode = SYSCALL;
 					dstvar = strdup (skipspaces (str));
 				} else {
@@ -330,27 +350,40 @@ static void rcc_fun(REgg *egg, const char *str) {
 					*syscallbody = '\0';
 				}
 			} else
-			if (strstr(ptr+1, "alias")) {
+			if (strstr (ptr, "include")) {
+				eprintf ("TODO: include directive\n");
+			} else
+			if (strstr (ptr, "alias")) {
 				mode = ALIAS;
 				dstvar = strdup (skipspaces (str));
 			} else
-			if (strstr(ptr+1, "data")) {
+			if (strstr (ptr, "data")) {
 				mode = DATA;
 				ndstval = 0;
 				dstvar = strdup (skipspaces (str));
 				dstval = malloc (4096);
 			} else
-			if (strstr (ptr+1, "inline")) {
+			if (strstr (ptr, "inline")) {
 				mode = INLINE;
 				free (dstvar);
 				dstvar = strdup (skipspaces (str));
 				dstval = malloc (4096);
 				ndstval = 0;
 			} else {
-				egg->emit->init (egg);
-				r_egg_printf (egg, "\n.%s %s\n%s:\n", ptr+1, str, str);
+				if (*ptr)
+					r_egg_printf (egg, "\n.%s %s\n", ptr, str);
+				r_egg_printf (egg, "%s:\n", str);
 			}
-		} else r_egg_printf (egg, "\n%s:\n", str);
+		} else {
+			//e->jmp (egg, ctxpush[context], 0);
+			if (context>0) {
+				eprintf ("LABEL %d\n", context);
+				r_egg_printf (egg, "\n%s:\n", str);
+			} else {
+				// goto()
+				e->jmp (egg, str, 0);
+			}
+		}
 	}
 }
 
@@ -367,32 +400,29 @@ static void rcc_context(REgg *egg, int delta) {
 			stackframe = 0;
 		mode = NORMAL;
 	} else {
+		/* conditional block */
 		if (callname) {
 			/* TODO: this must be an array */
-			char *b = NULL; /* below */
-			char *g = NULL; /* greater */
-			char *e = NULL; /* equal */
-			char *n = NULL; /* negate */
-			/* conditional block */
+			char *b, *g, *e, *n;
 			emit->comment (egg, "cond frame %s (%s)", callname, elem);
 			/* TODO: simplify with a single for */
-			b = strchr (elem, '<');
-			g = strchr (elem, '>');
-			e = strchr (elem, '=');
-			n = strchr (elem, '!');
+			b = strchr (elem, '<'); /* below */
+			g = strchr (elem, '>'); /* greater */
+			e = strchr (elem, '='); /* equal */
+			n = strchr (elem, '!'); /* negate */
 			if (!strcmp (callname, "while")) {
 				emit->get_while_end (egg, str, ctxpush[context-1], get_frame_label (2));
 				free (endframe);
 				endframe = strdup (str);
 				free (callname);
-				callname = strdup ("if");
+				rcc_set_callname ("if");
 			}
 			if (!strcmp (callname, "if")) {
 				emit->branch (egg, b, g, e, n, varsize, get_end_frame_label (egg));
 				if (context>0) {
 					/* XXX .. */
 				} else eprintf ("FUCKING CASE\n");
-				R_FREE (callname);
+				rcc_reset_callname ();
 			} else eprintf ("Unknown statement (%s)(%s)\n", callname, elem);
 		}
 	}
@@ -497,13 +527,26 @@ static int parseinlinechar(REgg *egg, char c) {
 static void rcc_next(REgg *egg) {
 	const char *ocn;
 	REggEmit *e = egg->emit;
-	char *p, buf[64];
+	char *str, *p, *ptr, buf[64];
 	int i;
 
 	docall = 1;
 	if (callname) {
-		callname = trim (callname);
-		char *str, *ptr = strchr (callname, '=');
+		if (!strcmp (callname, "goto")) {
+			if (nargs != 1) {
+				eprintf ("Invalid number of arguments for goto()\n");
+				return;
+			} 
+			e->jmp (egg, ctxpush[context], 0);
+			rcc_reset_callname ();
+			return;
+		}
+		if (!strcmp (callname, "break")) {
+			e->trap (egg);
+			rcc_reset_callname ();
+			return;
+		}
+		ptr = strchr (callname, '=');
 		if (ptr) {
 			*ptr = '\0';
 			ocn = ptr+1;
@@ -595,8 +638,7 @@ static void rcc_next(REgg *egg) {
 			else e->get_result (egg, buf);
 			R_FREE (dstvar);
 		}
-		R_FREE (callname);
-		nargs = 0;
+		rcc_reset_callname ();
 	} else {
 		int vs = 'l';
 		char type, *eq, *ptr = elem;
@@ -623,7 +665,14 @@ static void rcc_next(REgg *egg) {
 				} else type = '$';
 				vs = 'l'; // XXX: add support for != 'l' size
 				e->mathop (egg, ch, vs, type, eq, p);
-			} else e->mathop (egg, '=', vs, '$', ptr, NULL);
+			} else {
+				if (!strcmp (ptr, "break")) { // handle 'break;'
+					e->trap (egg);
+					rcc_reset_callname ();
+				} else {
+					e->mathop (egg, '=', vs, '$', ptr, NULL);
+				}
+			}
 		}
 	}
 }

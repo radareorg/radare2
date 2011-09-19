@@ -162,6 +162,13 @@ static void emit_call(REgg *egg, const char *str, int atr) {
 	} else r_egg_printf (egg, "  call %s\n", str);
 }
 
+static void emit_jmp(REgg *egg, const char *str, int atr) {
+	if (atr) {
+		if (attsyntax) r_egg_printf (egg, "  jmp *%s\n", str);
+		else r_egg_printf (egg, "  jmp [%s]\n", str);
+	} else r_egg_printf (egg, "  jmp %s\n", str);
+}
+
 static void emit_arg (REgg *egg, int xs, int num, const char *str) {
 	int d = atoi (str);
 	if (!attsyntax && (*str=='$'))
@@ -372,9 +379,11 @@ static const char* emit_regs(REgg *egg, int idx) {
 }
 
 REggEmit EMIT_NAME = {
+	.retvar = R_AX,
 	.arch = R_ARCH,
 	.size = R_SZ,
 	.init = emit_init,
+	.jmp = emit_jmp,
 	.call = emit_call,
 	.equ = emit_equ,
 	.regs = emit_regs,

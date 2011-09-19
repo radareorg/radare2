@@ -11,6 +11,7 @@ static int usage () {
 	" -f [format]     output format (raw, pe, elf, mach0)\n"
 	" -F              output native format (osx=mach0, linux=elf, ..)\n"
 	" -o [file]       output file\n"
+	" -O              use default output file (filename without extension or a.out)\n"
 	" -s              show assembler\n"
 	" -x              show hexpairs (enabled by default)\n"
 	" -X              execute\n"
@@ -34,6 +35,19 @@ static int create (const char *format, const char *arch, int bits, const ut8 *co
 	return 0;
 }
 
+int openfile (const char *f, int x) {
+	int fd = open (f, O_RDWR|O_CREAT, 0644);
+	if (fd == -1) return -1;
+#if __UNIX__
+	if (x) fchmod (fd, 0755);
+#endif
+	ftruncate (fd, 0);
+	close (1);
+	dup2 (fd, 1);
+	return fd;
+}
+#define ISEXEC (*format!='r')
+
 int main(int argc, char **argv) {
 	const char *arch = "x86";
 	const char *os = R_EGG_OS_NAME;
@@ -42,30 +56,29 @@ int main(int argc, char **argv) {
 	int show_hex = 1;
 	int show_asm = 0;
 	int bits = 32;
+	const char *ofile = NULL;
+	int ofileauto = 0;
 	RBuffer *b;
 	REgg *egg;
 	int c, i;
 
-        while ((c = getopt (argc, argv, "ha:b:f:o:sxXk:F")) != -1) {
+        while ((c = getopt (argc, argv, "ha:b:f:o:sxXk:FO")) != -1) {
                 switch (c) {
 		case 'a':
 			arch = optarg;
+			if (!strcmp (arch, "trace")) {
+				show_asm = 1;
+				show_hex = 0;
+			}
 			break;
 		case 'b':
 			bits = atoi (optarg);
 			break;
 		case 'o':
-			{
-				int fd = open (optarg, O_RDWR|O_CREAT, 0644);
-				if (fd != -1) {
-#if __UNIX__
-					if (*format != 'r')
-						fchmod (fd, 0755);
-#endif
-					close (1);
-					dup2 (fd, 1);
-				} else eprintf ("Cannot open '%s'\n", optarg);
-			}
+			ofile = optarg;
+			break;
+		case 'O':
+			ofileauto = 1;
 			break;
 		case 'F':
 #if __APPLE__
@@ -102,6 +115,29 @@ int main(int argc, char **argv) {
 
 	if (optind == argc)
 		return usage ();
+
+	/* create output file if needed */
+	if (ofileauto) {
+		int fd;
+		char *o, *p = strdup (argv[optind]);
+		if ( (o = strchr (p, '.')) ) {
+			*o = 0;
+			fd = openfile (p, ISEXEC);
+		} else {
+			fd = openfile ("a.out", ISEXEC);
+		}
+		free (p);
+		if (fd == -1) {
+			eprintf ("cannot open file '%s'\n", optarg);
+			exit (1);
+		}
+	}
+	if (ofile) {
+		if (openfile (ofile, ISEXEC) == -1) {
+			eprintf ("cannot open file '%s'\n", optarg);
+			return 1;
+		}
+	}
 
 	egg = r_egg_new ();
 	r_egg_setup (egg, arch, bits, 0, os);
