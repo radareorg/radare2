@@ -178,9 +178,9 @@ static int r_debug_native_step(RDebug *dbg) {
 	int ret = R_FALSE;
 	int pid = dbg->pid;
 #if __WINDOWS__
-	CONTEXT regs __attribute__ ((aligned (16)));
 	/* set TRAP flag */
 /*
+	CONTEXT regs __attribute__ ((aligned (16)));
 	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR, &regs, sizeof (regs));
 	regs.EFlags |= 0x100;
 	r_debug_native_reg_write (pid, dbg->tid, R_REG_TYPE_GPR, &regs, sizeof (regs));
@@ -319,6 +319,7 @@ static int r_debug_native_wait(RDebug *dbg, int pid) {
 // TODO: why strdup here?
 static const char *r_debug_native_reg_profile(RDebug *dbg) {
 #if __WINDOWS__
+if (dbg->bits == 32) {
 	return strdup (
 	"=pc	eip\n"
 	"=sp	esp\n"
@@ -355,6 +356,45 @@ static const char *r_debug_native_reg_profile(RDebug *dbg) {
 	"seg	ss	.32	200	0\n"
 	/* +512 bytes for maximum supoprted extension extended registers */
 	);
+} else {
+	// XXX. this is wrong
+	return strdup (
+	"=pc	rip\n"
+	"=sp	rsp\n"
+	"=bp	rbp\n"
+	"=a0	rax\n"
+	"=a1	rbx\n"
+	"=a2	rcx\n"
+	"=a3	rdi\n"
+	"drx	dr0	.32	4	0\n"
+	"drx	dr1	.32	8	0\n"
+	"drx	dr2	.32	12	0\n"
+	"drx	dr3	.32	16	0\n"
+	"drx	dr6	.32	20	0\n"
+	"drx	dr7	.32	24	0\n"
+	/* floating save area 4+4+4+4+4+4+4+80+4 = 112 */
+	"seg	gs	.32	132	0\n"
+	"seg	fs	.32	136	0\n"
+	"seg	es	.32	140	0\n"
+	"seg	ds	.32	144	0\n"
+	"gpr	rdi	.32	156	0\n"
+	"gpr	rsi	.32	160	0\n"
+	"gpr	rbx	.32	164	0\n"
+	"gpr	rdx	.32	168	0\n"
+	"gpr	rcx	.32	172	0\n"
+	"gpr	rax	.32	176	0\n"
+	"gpr	rbp	.32	180	0\n"
+	"gpr	rsp	.32	196	0\n"
+	"gpr	rip	.32	184	0\n"
+	"seg	cs	.32	184	0\n"
+	"seg	ds	.32	152	0\n"
+	"seg	gs	.32	140	0\n"
+	"seg	fs	.32	144	0\n"
+	"gpr	rflags	.32	192	0	c1p.a.zstido.n.rv\n" // XXX must be flg
+	"seg	ss	.32	200	0\n"
+	/* +512 bytes for maximum supoprted extension extended registers */
+	);
+}
 #elif __linux__ && __MIPS__
 	return strdup (
 	"=pc	r0\n"
@@ -1702,17 +1742,18 @@ static RList *r_debug_native_frames(RDebug *dbg) {
 static int r_debug_native_kill(RDebug *dbg, boolt thread, int sig) {
 #if __WINDOWS__
 	// TODO: implement thread support signaling here
-	HANDLE hProcess; // XXX
+	eprintf ("TODO: r_debug_native_kill\n");
 #if 0
-    static uint WM_CLOSE = 0x10;
-    static bool CloseWindow(IntPtr hWnd) {
-	hWnd = FindWindowByCaption (0, "explorer");
-        SendMessage(hWnd, WM_CLOSE, NULL, NULL);
-	CloseWindow(hWnd);
-        return true;
-    }
-#endif
+	HANDLE hProcess; // XXX
+	static uint WM_CLOSE = 0x10;
+	static bool CloseWindow(IntPtr hWnd) {
+		hWnd = FindWindowByCaption (0, "explorer");
+		SendMessage(hWnd, WM_CLOSE, NULL, NULL);
+		CloseWindow(hWnd);
+		return true;
+	}
 	TerminateProcess (hProcess, 1);
+#endif
 	return R_FALSE;
 #else
 	int ret = R_FALSE;
@@ -1809,9 +1850,10 @@ static void addr_to_string(struct sockaddr_storage *ss, char *buffer, int buflen
 #endif
 
 static RList *r_debug_desc_native_list (int pid) {
-	RList *ret;
+	RList *ret = NULL;
 	RDebugDesc *desc;
 	int perm, type;
+// TODO: windows
 #if __KFBSD__
 	int mib[4];
 	size_t len;

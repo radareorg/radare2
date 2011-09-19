@@ -90,7 +90,7 @@ return (0);
 1897 } CONTEXT;
 #endif
 
-BOOL WINAPI DebugActiveProcessStop(DWORD dwProcessId);
+//BOOL WINAPI DebugActiveProcessStop(DWORD dwProcessId);
 static void (*gmbn)(HANDLE, HMODULE, LPTSTR, int) = NULL;
 static int (*gmi)(HANDLE, HMODULE, LPMODULEINFO, int) = NULL;
 static BOOL WINAPI (*w32_detach)(DWORD) = NULL;
@@ -99,27 +99,37 @@ static HANDLE WINAPI (*w32_dbgbreak)(HANDLE) = NULL;
 static DWORD WINAPI (*w32_getthreadid)(HANDLE) = NULL; // Vista
 static DWORD WINAPI (*w32_getprocessid)(HANDLE) = NULL; // XP
 
+static void r_str_wtoc(char* d, const WCHAR* s) {
+	int i = 0;
+	while (s[i] != '\0') {
+		d[i] = (char)s[i];
+		++i;
+	}
+	d[i] = 0;
+}
+
 static void print_lasterr(const char *str) {
 	/* code from MSDN, :? */
 	LPWSTR pMessage = L"%1!*.*s! %4 %5!*s!";
 	DWORD_PTR pArgs[] = { (DWORD_PTR)4, (DWORD_PTR)2, (DWORD_PTR)L"Bill",  // %1!*.*s!
 		(DWORD_PTR)L"Bob",                                                // %4
 		(DWORD_PTR)6, (DWORD_PTR)L"Bill" };                               // %5!*s!
-	const DWORD size = 100+1;
-	WCHAR buffer[size];
+	WCHAR buffer[200];
+	char cbuffer[100];
 	if (!FormatMessage (FORMAT_MESSAGE_FROM_STRING |
 				FORMAT_MESSAGE_ARGUMENT_ARRAY,
 				pMessage,
 				0,  // ignored
 				0,  // ignored
 				(LPTSTR)&buffer,
-				size-1,
+				sizeof (buffer)-1,
 				(va_list*)pArgs)) {
 		eprintf ("(%s): Format message failed with 0x%x\n",
-			r_str_get (str), GetLastError());
+			r_str_get (str), (ut32)GetLastError ());
 		return;
 	}
-	eprintf ("print_lasterr: %s ::: %s\n", r_str_get (str), r_str_get (buffer));
+	r_str_wtoc (cbuffer, buffer);
+	eprintf ("print_lasterr: %s ::: %s\n", r_str_get (str), r_str_get (cbuffer));
 }
 
 
@@ -151,14 +161,14 @@ static int w32_dbg_init() {
 	gmi = (int (*)(HANDLE, HMODULE, LPMODULEINFO, int))
 		GetProcAddress (lib, "GetModuleInformation");
 
-	if(w32_detach == NULL || w32_openthread == NULL || w32_dbgbreak == NULL || 
+	if (w32_detach == NULL || w32_openthread == NULL || w32_dbgbreak == NULL || 
 	   gmbn == NULL || gmi == NULL) {
 		// OOPS!
-		eprintf("debug_init_calls:\n"
-			"DebugActiveProcessStop: 0x%x\n"
-			"OpenThread: 0x%x\n"
-			"DebugBreakProcess: 0x%x\n"
-			"GetThreadId: 0x%x\n",
+		eprintf ("debug_init_calls:\n"
+			"DebugActiveProcessStop: 0x%p\n"
+			"OpenThread: 0x%p\n"
+			"DebugBreakProcess: 0x%p\n"
+			"GetThreadId: 0x%p\n",
 			w32_detach, w32_openthread, w32_dbgbreak, w32_getthreadid);
 		return R_FALSE;
 	}
@@ -186,7 +196,7 @@ inline static int w32_h2t(HANDLE h) {
 		return w32_getthreadid (h);
 	if (w32_getprocessid != NULL) // >= Windows XP1
 		return w32_getprocessid (h);
-	return (int)h; // XXX broken
+	return (int)(size_t)h; // XXX broken
 }
 
 static inline int w32_h2p(HANDLE h) {
@@ -283,7 +293,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 		/* get kind of event */
 		switch (code) {
 		case CREATE_PROCESS_DEBUG_EVENT:
-			eprintf ("(%d) created process (%d:0x%x)\n",
+			eprintf ("(%d) created process (%d:%p)\n",
 				    pid, w32_h2t (de.u.CreateProcessInfo.
 					    hProcess),
 				 de.u.CreateProcessInfo.lpStartAddress);
@@ -298,20 +308,19 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			ret = R_DBG_REASON_EXIT_PID;
 			break;
 		case CREATE_THREAD_DEBUG_EVENT:
-			eprintf ("(%d) created thread (0x%x)\n",
-			pid, de.u.CreateThread.lpStartAddress);
+			eprintf ("(%d) created thread (%p)\n", pid, de.u.CreateThread.lpStartAddress);
 			r_debug_native_continue (dbg, pid, tid, -1);
 			ret = R_DBG_REASON_NEW_TID;
 			next_event = 1;
 			break;
 		case EXIT_THREAD_DEBUG_EVENT:
-			eprintf("EXIT_THREAD\n");
+			eprintf ("EXIT_THREAD\n");
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			ret = R_DBG_REASON_EXIT_TID;
 			break;
 		case LOAD_DLL_DEBUG_EVENT:
-			eprintf("(%d) Loading %s library at 0x%x\n",
+			eprintf ("(%d) Loading %s library at %p\n",
 				pid, "", de.u.LoadDll.lpBaseOfDll);
 			r_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
@@ -367,13 +376,13 @@ static RList *w32_dbg_maps() {
 	LPBYTE page;
 	char *mapname = NULL;
 	/* DEPRECATED */
-	char PeHeader[1024];
+	ut8 PeHeader[1024];
 	MODULEINFO ModInfo;
 	IMAGE_DOS_HEADER *dos_header;
 	IMAGE_NT_HEADERS *nt_headers;
 	IMAGE_SECTION_HEADER *SectionHeader;
 	int NumSections, i;
-	DWORD ret_len;
+	SIZE_T ret_len;
 	RDebugMap *mr;
 	RList *list = r_list_new ();
 
@@ -424,9 +433,8 @@ static RList *w32_dbg_maps() {
 
 					for (i=0; i<NumSections; i++) {
 						mr = r_debug_map_new (mapname,
-							SectionHeader->VirtualAddress + page,
-							SectionHeader->VirtualAddress + page
-								+ SectionHeader->Misc.VirtualSize,
+							(ut64)(size_t) (SectionHeader->VirtualAddress + page),
+							(ut64)(size_t) (SectionHeader->VirtualAddress + page + SectionHeader->Misc.VirtualSize),
 							SectionHeader->Characteristics, // XXX?
 							0);
 						if (mr == NULL)
@@ -456,7 +464,8 @@ static RList *w32_dbg_maps() {
 #endif
 			page +=  mbi.RegionSize; 
 		} else {
-			mr = r_debug_map_new ("unk", page, page+mbi.RegionSize, mbi.Protect, 0);
+			mr = r_debug_map_new ("unk", (ut64)(size_t)(page), 
+				(ut64)(size_t)(page+mbi.RegionSize), mbi.Protect, 0);
 			if (mr == NULL) {
 				eprintf ("Cannot create r_debug_map_new\n");
 				// XXX leak
@@ -545,7 +554,6 @@ err_load_th:
 // XXX hacky
 RList *w32_pids (int pid, RList *list) {
         HANDLE th; 
-        HANDLE thid; 
         THREADENTRY32 te32;
         int ret = -1; 
         te32.dwSize = sizeof (THREADENTRY32);

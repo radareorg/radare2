@@ -11,6 +11,7 @@ F+= freebsd-x86-32
 F+= openbsd-x86-32
 F+= openbsd-x86-64
 F+= windows-x86-32
+F+= windows-x86-64
 
 include ../../../config-user.mk
 
