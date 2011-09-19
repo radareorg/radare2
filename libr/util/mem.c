@@ -205,3 +205,29 @@ R_API int r_mem_unpack(const ut8 *buf) {
 	// TODO: copy this from r_buf??
 	return R_TRUE;
 }
+
+R_API int r_mem_protect(void *ptr, int size, const char *prot) {
+#if __UNIX__
+	int p = 0;
+	if (strchr (prot, 'x')) p |= PROT_EXEC;
+	if (strchr (prot, 'r')) p |= PROT_READ;
+	if (strchr (prot, 'w')) p |= PROT_WRITE;
+	if (mprotect (ptr, size, p)==-1)
+		return R_FALSE;
+#elif __WINDOWS__
+	int r, w, x;
+	DWORD p = PAGE_NOACCESS;
+	r = strchr (prot, 'r')? 1: 0; 
+	w = strchr (prot, 'w')? 1: 0;
+	x = strchr (prot, 'x')? 1: 0;;
+	if (w && x) return R_FALSE;
+	if (x) p = PAGE_EXECUTE_READ;
+	else if (w) p = PAGE_READWRITE;
+	else if (r) p = PAGE_READONLY;
+	if (!VirtualProtect (ptr, size, p, NULL))
+		return R_FALSE;
+#else
+	#warning Unknown platform
+#endif
+	return R_TRUE;
+}

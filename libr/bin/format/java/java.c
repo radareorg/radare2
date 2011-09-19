@@ -1,6 +1,6 @@
 // XXX this is dupped in r_asm and r_bin :O
 /*
- * Copyright (C) 2007, 2008, 2009, 2010-2011
+ * Copyright (C) 2007-2011
  *       pancake <youterm.com>, nibble <develsec.org>
  */
 
@@ -54,7 +54,7 @@ static int attributes_walk(RBinJavaObj *bin, struct r_bin_java_attr_t *attr, int
 	int j=0,k;
 	char *name;
 
-	for (j=0;j<sz2;j++) {
+	for (j=0; j<sz2; j++) {
 		if (r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, 6) != 6) {
 			eprintf ("Cannot read 6 bytes in class file\n");
 			return R_FALSE;
@@ -77,7 +77,7 @@ static int attributes_walk(RBinJavaObj *bin, struct r_bin_java_attr_t *attr, int
 				IFDBG printf ("**ERROR ** Cannot identify attribute name into constant pool\n");
 				continue;
 			}
-			if (!strcmp(name, "Code")) {
+			if (!strcmp (name, "Code")) {
 				attr->type = R_BIN_JAVA_TYPE_CODE;
 				r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, 8);
 
@@ -171,7 +171,7 @@ eprintf ("local.%d.%d.name=%s\n", bin->midx, i, name);
 
 static int javasm_init(RBinJavaObj *bin) {
 	unsigned short sz, sz2;
-	char buf[0x9999];
+	char buf[0x4096];
 	int i, j;
 
 	/* Initialize structs */
@@ -187,7 +187,9 @@ static int javasm_init(RBinJavaObj *bin) {
 	/* start parsing */
 	r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)&bin->cf, 10); //sizeof(struct r_bin_java_classfile_t), 1, bin->fd);
 	if (memcmp (bin->cf.cafebabe, "\xCA\xFE\xBA\xBE", 4)) {
-		fprintf(stderr, "Invalid header\n");
+		eprintf ("javasm_init: Invalid header (%02x %02x %02x %02x)\n",
+				bin->cf.cafebabe[0], bin->cf.cafebabe[1],
+				bin->cf.cafebabe[2], bin->cf.cafebabe[3]);
 		return R_FALSE;
 	}
 
@@ -233,9 +235,13 @@ static int javasm_init(RBinJavaObj *bin) {
 			sz = R_BIN_JAVA_USHORT (buf, 0);
 			bin->cp_items[i].length = sz;
 			bin->cp_items[i].off += 3;
-			if (sz > 0)
+			if (sz>=0 && sz<sizeof (buf)) {
 				r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, sz);
-			buf[sz] = '\0';
+				buf[sz] = '\0';
+			} else {
+				eprintf ("Invalid utf8 length %d\n", sz);
+				buf[0] = 0;
+			}
 			break;
 		default:
 			r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, c->len);
@@ -254,7 +260,7 @@ static int javasm_init(RBinJavaObj *bin) {
 			i += 2;
 			break;
 		case 7:
-			IFDBG printf("%d\n", R_BIN_JAVA_USHORT(buf,0));
+			IFDBG eprintf ("%d\n", R_BIN_JAVA_USHORT (buf,0));
 			break;
 		case 8:
 			IFDBG printf("string ptr %d\n", R_BIN_JAVA_USHORT(buf, 0));
@@ -441,30 +447,28 @@ void* r_bin_java_free(RBinJavaObj* bin) {
 }
 
 RBinJavaObj* r_bin_java_new(const char* file) {
-	RBinJavaObj *bin;
 	ut8 *buf;
-
-	if (!(bin = malloc(sizeof(RBinJavaObj))))
-		return NULL;
-	memset (bin, 0, sizeof (RBinJavaObj));
+	RBinJavaObj *bin = R_NEW0 (RBinJavaObj);
 	bin->file = file;
-	if (!(buf = (ut8*)r_file_slurp(file, &bin->size))) 
-		return r_bin_java_free(bin);
+	if (!(buf = (ut8*)r_file_slurp (file, &bin->size))) 
+		return r_bin_java_free (bin);
 	bin->b = r_buf_new ();
-	if (!r_buf_set_bytes(bin->b, buf, bin->size))
-		return r_bin_java_free(bin);
+	if (!r_buf_set_bytes (bin->b, buf, bin->size))
+		return r_bin_java_free (bin);
 	free (buf);
 	if (!javasm_init (bin))
-		return r_bin_java_free(bin);
+		return r_bin_java_free (bin);
 	return bin;
 }
 
-RBinJavaObj* r_bin_java_new_buf(struct r_buf_t *buf) {
+RBinJavaObj* r_bin_java_new_buf(RBuffer *buf) {
 	RBinJavaObj *bin = R_NEW0 (RBinJavaObj);
 	if (!bin) return NULL;
 	bin->b = buf;
 	bin->size = buf->length;
+	// seek backward
+	buf->cur = 0;
 	if (!javasm_init (bin))
-		return r_bin_java_free(bin);
+		return r_bin_java_free (bin);
 	return bin;
 }

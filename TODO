@@ -13,12 +13,13 @@
 * Remove/deprecate libr/vm
 * Merge libr/db inside libr/util ?
 * Test r_search_delta()
+* Dupped javasm bin/asm -- must merge
 
 ------8<-------------------8<--------------------8<-----------------8<----------
 
-====[[ 0.8.2 ]]====
+====[[ 0.8.6 ]]====
 
-* rax2 to not change base (always hexa?)
+* rax2 -k by default?
 
 * Rename r_hashtable -> r_ht
   - Make ht64.c include ht.c
@@ -79,7 +80,6 @@ TODO
 * Add r_cons_prompt () ... calling set_prompt + fgets -- this api needs cleanup
   - set prompt, set line, fgets
   - strict width in visual
-* Dupped javasm bin/asm
 * REFACTORING of disasm loop XDDDDD -1 (r2-0.9 plzz)
   - arch dependent anal code must be removed from disasm loop +1
 

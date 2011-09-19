@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <r_util.h>
 
 static char *_arg0 = NULL;
 static char *_arg1 = NULL;
@@ -13,7 +14,7 @@ static char *_program = NULL;
 static char *_stdin = NULL;
 static char *_stdout = NULL;
 static char *_stderr = NULL;
-static char *_chdir = NULL;
+static char *_chgdir = NULL;
 static char *_chroot = NULL;
 static char *_preload = NULL;
 static char *_setuid = NULL;
@@ -27,13 +28,13 @@ static void parseline (char *b) {
 	if (!e) return;
 	if (*b=='#') return;
 	*e++=0;
-	if (*e=='$') e = strdup (getenv (e));
+	if (*e=='$') e = r_sys_getenv (e);
 	if (e == NULL) return;
 	if (!strcmp (b, "program")) _program = strdup (e);
 	else if (!strcmp (b, "stdout")) _stdout = strdup (e);
 	else if (!strcmp (b, "stdin")) _stdin = strdup (e);
 	else if (!strcmp (b, "input")) _input = strdup (e);
-	else if (!strcmp (b, "chdir")) _chdir = strdup (e);
+	else if (!strcmp (b, "chdir")) _chgdir = strdup (e);
 	else if (!strcmp (b, "chroot")) _chroot = strdup (e);
 	else if (!strcmp (b, "preload")) _preload = strdup (e);
 	else if (!strcmp (b, "setuid")) _setuid = strdup (e);
@@ -48,11 +49,12 @@ static void parseline (char *b) {
 		char *v = strchr (e, '=');
 		if (v) {
 			*v++=0;
-			setenv (e, v, 1);
+			r_sys_setenv (e, v);
 		}
 	}
 }
 
+#if __UNIX__
 static void parseinput (char *s) {
 	if (!*s) return;
 	while (*s++) {
@@ -62,6 +64,7 @@ static void parseinput (char *s) {
 		}
 	}
 }
+#endif
 
 static int runfile () {
 	int ret;
@@ -84,8 +87,9 @@ static int runfile () {
 		close (2);
 		dup2 (f, 2);
 	}
-	if (_chdir) chdir (_chdir);
+	if (_chgdir) chdir (_chgdir);
 	if (_chroot) chdir (_chroot);
+#if __UNIX__
 	if (_setuid) setuid (atoi (_setuid));
 	if (_seteuid) seteuid (atoi (_seteuid));
 	if (_setgid) setgid (atoi (_setgid));
@@ -97,11 +101,12 @@ static int runfile () {
 		parseinput (_input);
 		write (f2[1], _input, strlen (_input));
 	}
+#endif
 	if (_preload) {
 #if __APPLE__
-		setenv ("DYLD_PRELOAD", _preload, 1);
+		r_sys_setenv ("DYLD_PRELOAD", _preload);
 #else
-		setenv ("LD_PRELOAD", _preload, 1);
+		r_sys_setenv ("LD_PRELOAD", _preload);
 #endif
 	}
 	ret = execl (_program, _program, _arg0, NULL);

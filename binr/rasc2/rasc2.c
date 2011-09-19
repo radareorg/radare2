@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <r_util.h>
 
 #if __UNIX__
 #include <sys/mman.h>
@@ -253,21 +254,18 @@ int print_shellcode() {
 			ut8 *ptr = malloc (4096);
 			void (*cb)() = (void *)&shellcode;
 			memcpy (ptr, shellcode, SCSIZE);
-#if __UNIX__
-			mprotect (ptr, 4096, PROT_READ|PROT_EXEC); // rx must be ok
-			mprotect (ptr, 4096, PROT_READ|PROT_WRITE|PROT_EXEC); // try rwx
-#endif
+			r_mem_protect (ptr, 4096, "rx");
+			r_mem_protect (ptr, 4096, "rwx"); // try, ignore if fail
 			cb = (void*)ptr;
-			cb();
+			cb ();
 			free (ptr);
 		}
 		break;
 	case 4:
 		printf ("\"");
 		j = 0;
-		for (i=0;i<SCSIZE;i++) {
+		for (i=0;i<SCSIZE;i++)
 			printf ("\\x%02x", output[i]);
-		}
 		printf ("\"\n");
 		break;
 	}

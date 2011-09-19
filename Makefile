@@ -99,7 +99,7 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 deinstall uninstall:
 	cd libr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-	cd libr/db/d && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd libr/syscall/d && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	@echo
 	@echo "Run 'make purge' to also remove installed files from previous versions of r2"
 	@echo

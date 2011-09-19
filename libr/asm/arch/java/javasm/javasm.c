@@ -84,21 +84,21 @@ static int java_resolve(int idx, char *str) {
 	if (idx<0||idx>cf.cp_count)
 		return 1;
 	if (cp_items) {
-	if((!strcmp (cp_items[idx].name, "MethodRef"))
-	|| (!strcmp (cp_items[idx].name, "FieldRef"))) {
-		int class = USHORT (get_cp(idx)->bytes,0);
-		//int namet = USHORT(get_cp(idx)->bytes,2);
-		char *class_str = get_cp(USHORT(get_cp(class)->bytes,0)-1)->value;
-		char *namet_str = get_cp(USHORT(get_cp(class)->bytes,2)-1)->value;
-		//char *namet_str = get_cp(namet)->value;
-		sprintf (str, "%s %s", class_str, namet_str);
-	} else
-	if (!strcmp (cp_items[idx].name, "String")) {
-		sprintf(str, "\"%s\"", get_cp(USHORT(get_cp(idx)->bytes,0)-1)->value);
-	} else
-	if (!strcmp(cp_items[idx].name, "Utf8")) {
-		sprintf (str, "\"%s\"", get_cp(idx)->value);
-	} else sprintf (str, "0x%04x", USHORT(get_cp(idx)->bytes,0));
+		if ((!strcmp (cp_items[idx].name, "MethodRef"))
+		|| (!strcmp (cp_items[idx].name, "FieldRef"))) {
+			int class = USHORT (get_cp(idx)->bytes,0);
+			//int namet = USHORT(get_cp(idx)->bytes,2);
+			char *class_str = get_cp(USHORT(get_cp(class)->bytes,0)-1)->value;
+			char *namet_str = get_cp(USHORT(get_cp(class)->bytes,2)-1)->value;
+			//char *namet_str = get_cp(namet)->value;
+			sprintf (str, "%s %s", class_str, namet_str);
+		} else
+		if (!strcmp (cp_items[idx].name, "String")) {
+			sprintf(str, "\"%s\"", get_cp(USHORT(get_cp(idx)->bytes,0)-1)->value);
+		} else
+		if (!strcmp(cp_items[idx].name, "Utf8")) {
+			sprintf (str, "\"%s\"", get_cp(idx)->value);
+		} else sprintf (str, "0x%04x", USHORT(get_cp(idx)->bytes,0));
 	} else strcpy (str, "(null)");
 	return 0;
 }
@@ -292,9 +292,9 @@ int java_classdump(const char *file, int verbose) {
 	javasm_init();
 
 	/* start parsing */
-	fread(&cf, 10, 1, fd); //sizeof(struct classfile), 1, fd);
-	if (memcmp(cf.cafebabe, "\xCA\xFE\xBA\xBE", 4)) {
-		fprintf(stderr, "Invalid header\n");
+	fread (&cf, 10, 1, fd); //sizeof(struct classfile), 1, fd);
+	if (memcmp (cf.cafebabe, "\xCA\xFE\xBA\xBE", 4)) {
+		fprintf(stderr, "java_classdump: Invalid header\n");
 		return -1;
 	}
 

@@ -1,5 +1,5 @@
 BIN=rasc2
-DEPS=
+BINDEPS=r_util
 MYCLEAN=myclean
 OBJS=shellcodes.o test.o
 
