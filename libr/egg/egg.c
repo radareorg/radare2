@@ -33,7 +33,11 @@ R_API void r_egg_free (REgg *egg) {
 }
 
 R_API void r_egg_reset (REgg *egg) {
-	// XXX: memory leak
+	r_egg_lang_include_init (egg);
+	r_buf_free (egg->src);
+	r_buf_free (egg->buf);
+	egg->src = r_buf_new ();
+	egg->buf = r_buf_new ();
 }
 
 R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const char *os) {
@@ -71,9 +75,8 @@ R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const c
 		egg->endian = endian;
 	}
 	if (egg->emit) {
-		if (egg->emit->init) {
+		if (egg->emit->init)
 			egg->emit->init (egg);
-		}
 		return 1;
 	}
 	return 0;

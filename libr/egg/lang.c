@@ -27,6 +27,7 @@ enum {
 	INLINE,
 	SYSCALL,
 	SYSCALLBODY,
+	GOTO,
 	LAST
 };
 
@@ -34,6 +35,8 @@ enum {
 static int pushargs = 0;
 static int nsyscalls = 0;
 static char *syscallbody = NULL;
+static char *includefile = NULL;
+static char *setenviron = NULL;
 static int commentmode = 0;
 static int varsize = 'l';
 static int varxs = 0;
@@ -64,28 +67,57 @@ static int stackfixed = 0;
 static int oc = '\n';
 static int mode = NORMAL;
 
-static char *trim(char *s) {
-	char *o;
-	for (o=s; *s; s++)
-		if (isspace (*s)) {
-			*s = 0;
-			break;
+static char *find_include(const char *prefix, const char *file) {
+	char *pfx, *ret, *env = r_sys_getenv (R_EGG_INCDIR_ENV);
+	//eprintf ("find_include (%s,%s)\n", prefix, file);
+	if (!prefix) prefix = "";
+	else if (*prefix=='$') {
+		char *out = r_sys_getenv (prefix+1);
+		pfx = out? out: strdup ("");
+	} else pfx = strdup (prefix);
+
+	if (env) {
+		char *str, *ptr = strchr (env, ':');
+	//	eprintf ("MUST FIND IN PATH (%s)\n", env);
+		str = env;
+		while (str) {
+			if (ptr) {
+				*ptr = 0;
+			}
+			ret = r_str_concatf (NULL, "%s/%s", pfx, file);
+			{
+				char *filepath = r_str_concatf (NULL, "%s/%s/%s", str, pfx, file);
+				// eprintf ("try (%s)\n", filepath);
+				if (r_file_exist (filepath)) {
+					free (env);
+					free (pfx);
+					return filepath;
+				}
+				free (filepath);
+			}
+			if (!ptr) break;
+			str = ptr+1;
+			ptr = strchr (str, ':');
 		}
-	return o;
+		free (env);
+	} else ret = r_str_concatf (NULL, "%s/%s", pfx, file);
+	free (pfx);
+	return ret;
 }
 
-static void rcc_set_callname(const char *s) {
-	free (callname);
-	callname = NULL;
-	nargs = 0;
-	while (*s==' '||*s=='\t') s++; // skip prefixed spaces (should never happen)
-	callname = trim (strdup (s));
-	pushargs = !((!strcmp (s, "goto")) || (!strcmp (s, "break")));
+R_API void r_egg_lang_include_path (REgg *egg, const char *path) {
+	char *env = r_sys_getenv (R_EGG_INCDIR_ENV);
+	if (!env || !*env) {
+		r_egg_lang_include_init (egg);
+		env = r_sys_getenv (R_EGG_INCDIR_ENV);
+	}
+	env = r_str_concatf (NULL, "%s:%s", path, env);
+	r_sys_setenv (R_EGG_INCDIR_ENV, env);
+	free (env);
 }
 
-static void rcc_reset_callname() {
-	R_FREE (callname);
-	nargs = 0;
+R_API void r_egg_lang_include_init (REgg *egg) {
+	r_sys_setenv (R_EGG_INCDIR_ENV, ".:"R_EGG_INCDIR_PATH);
 }
 
 static const char *skipspaces(const char *s) {
@@ -100,6 +132,29 @@ static const char *skipspaces(const char *s) {
 			return s;
 		}
 	return s;
+}
+
+static char *trim(char *s) {
+	char *o;
+	for (o=s; *s; s++)
+		if (isspace (*s)) {
+			*s = 0;
+			break;
+		}
+	return o;
+}
+
+static void rcc_set_callname(const char *s) {
+	free (callname);
+	callname = NULL;
+	nargs = 0;
+	callname = trim (strdup (skipspaces (s)));
+	pushargs = !((!strcmp (s, "goto")) || (!strcmp (s, "break")));
+}
+
+static void rcc_reset_callname() {
+	R_FREE (callname);
+	nargs = 0;
 }
 
 #define SYNTAX_ATT 0
@@ -152,6 +207,8 @@ static void rcc_element(REgg *egg, char *str) {
 
 	if (context) {
 		nargs = 0;
+		if (mode == GOTO)
+			mode = NORMAL; // XXX
 		while (p) {
 			*p = '\0';
 			p = (char *)skipspaces (p+1);
@@ -180,6 +237,10 @@ static void rcc_element(REgg *egg, char *str) {
 			syscalls[nsyscalls].arg = strdup (str);
 			nsyscalls++;
 			R_FREE (dstvar);
+			break;
+		case GOTO:
+			elem[elem_n] = 0;
+			e->jmp (egg, elem, 0);
 			break;
 		default:
 			p = strchr (str, ',');
@@ -333,6 +394,12 @@ static void rcc_fun(REgg *egg, const char *str) {
 		if (ptr) {
 			*ptr++ = '\0';
 			mode = NORMAL;
+			if (strstr (ptr, "env")) {
+				//eprintf ("SETENV (%s)\n", str);
+				free (setenviron);
+				setenviron = strdup (skipspaces (str));
+				slurp = 0;
+			} else
 			if (strstr (ptr, "fastcall")) {
 				/* TODO : not yet implemented */
 			} else
@@ -351,7 +418,9 @@ static void rcc_fun(REgg *egg, const char *str) {
 				}
 			} else
 			if (strstr (ptr, "include")) {
-				eprintf ("TODO: include directive\n");
+				free (includefile);
+				includefile = strdup (skipspaces (str));
+				slurp = 0;
 			} else
 			if (strstr (ptr, "alias")) {
 				mode = ALIAS;
@@ -377,11 +446,16 @@ static void rcc_fun(REgg *egg, const char *str) {
 		} else {
 			//e->jmp (egg, ctxpush[context], 0);
 			if (context>0) {
+				// WTF?
 				eprintf ("LABEL %d\n", context);
 				r_egg_printf (egg, "\n%s:\n", str);
 			} else {
-				// goto()
-				e->jmp (egg, str, 0);
+				if (!strcmp (str, "goto")) {
+					mode = GOTO;
+				} else {
+					// call() // or maybe jmp?
+					e->call (egg, str, 0);
+				}
 			}
 		}
 	}
@@ -414,7 +488,6 @@ static void rcc_context(REgg *egg, int delta) {
 				emit->get_while_end (egg, str, ctxpush[context-1], get_frame_label (2));
 				free (endframe);
 				endframe = strdup (str);
-				free (callname);
 				rcc_set_callname ("if");
 			}
 			if (!strcmp (callname, "if")) {
@@ -530,6 +603,38 @@ static void rcc_next(REgg *egg) {
 	char *str, *p, *ptr, buf[64];
 	int i;
 
+	if (setenviron) {
+		elem[elem_n-1] = 0;
+		r_sys_setenv (setenviron, elem);
+		R_FREE (setenviron);
+		return;
+	}
+	if (includefile) {
+		char *p, *q, *path;
+		// TODO: add support for directories
+		elem[elem_n-1] = 0;
+		path = find_include (elem, includefile);
+		if (!path) {
+			eprintf ("Cannot find include file '%s'\n", elem);
+			return;
+		}
+		free (includefile);
+		includefile = NULL;
+		rcc_reset_callname ();
+		p = q = r_file_slurp (path, NULL);
+		if (p) {
+			int oline = ++line;
+			elem[0] = 0; // TODO: this must be a separate function
+			elem_n = 0;
+			line = 0;
+			for (; *p; p++)
+				r_egg_lang_parsechar (egg, *p);
+			free (q);
+			line = oline;
+		} else eprintf ("Cannot find '%s'\n", path);
+		free (path);
+		return;
+	}
 	docall = 1;
 	if (callname) {
 		if (!strcmp (callname, "goto")) {
@@ -686,8 +791,10 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 	}
 	/* comments */
 	if (skipline) {
-		if (c != '\n')
+		if (c != '\n') {
+			oc = c;
 			return 0;
+		}
 		skipline = 0; 
 	}
 	if (mode == DATA)
@@ -710,6 +817,7 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 					quotelinevar = 1;
 				} else r_egg_printf (egg, "%c", c);
 			}
+			oc = c;
 			return 0;
 		} else {
 			r_egg_printf (egg, "\n");
@@ -720,6 +828,7 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 	if (commentmode) {
 		if (c=='/' && oc == '*')
 			commentmode = 0;
+		oc = c;
 		return 0;
 	} else if (c=='*' && oc == '/')
 		commentmode = 1;
@@ -782,6 +891,7 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 		case '/':
 			if (oc == '/')
 				skipline = 1;
+			else elem[elem_n++] = c;
 			break;
 		default:
 			elem[elem_n++] = c;

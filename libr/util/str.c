@@ -471,6 +471,7 @@ R_API void r_str_writef(int fd, const char *fmt, ...) {
 }
 
 /*
+ * first argument must be allocated
  * return: the pointer ptr resized to string size.
  */
 R_API char *r_str_concat(char *ptr, const char *string) {
@@ -487,7 +488,7 @@ R_API char *r_str_concat(char *ptr, const char *string) {
 }
 
 R_API char *r_str_concatf(char *ptr, const char *fmt, ...) {
-	char string[1024];
+	char string[4096];
 	va_list ap;
 	va_start (ap, fmt);
 	vsnprintf (string, sizeof (string), fmt, ap);

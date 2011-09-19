@@ -5,6 +5,9 @@
 #include <r_util.h>
 #include <r_syscall.h>
 
+#define R_EGG_INCDIR_ENV "EGG_INCDIR"
+#define R_EGG_INCDIR_PATH PREFIX"/lib/radare2/"R2_VERSION"/egg"
+
 typedef struct r_egg_t {
 	RBuffer *src;
 	RBuffer *buf;
@@ -102,5 +105,7 @@ R_API void r_egg_append(REgg *egg, const char *src);
 /* lang.c */
 R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta);
 R_API int r_egg_lang_parsechar(REgg *egg, char c);
+R_API void r_egg_lang_include_path (REgg *egg, const char *path);
+R_API void r_egg_lang_include_init (REgg *egg);
 #endif
 #endif

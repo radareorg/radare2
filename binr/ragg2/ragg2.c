@@ -12,6 +12,7 @@ static int usage () {
 	" -F              output native format (osx=mach0, linux=elf, ..)\n"
 	" -o [file]       output file\n"
 	" -O              use default output file (filename without extension or a.out)\n"
+	" -I              add include path\n"
 	" -s              show assembler\n"
 	" -x              show hexpairs (enabled by default)\n"
 	" -X              execute\n"
@@ -59,10 +60,10 @@ int main(int argc, char **argv) {
 	const char *ofile = NULL;
 	int ofileauto = 0;
 	RBuffer *b;
-	REgg *egg;
 	int c, i;
+	REgg *egg = r_egg_new ();
 
-        while ((c = getopt (argc, argv, "ha:b:f:o:sxXk:FO")) != -1) {
+        while ((c = getopt (argc, argv, "ha:b:f:o:sxXk:FOI:")) != -1) {
                 switch (c) {
 		case 'a':
 			arch = optarg;
@@ -79,6 +80,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'O':
 			ofileauto = 1;
+			break;
+		case 'I':
+			r_egg_lang_include_path (egg, optarg);
 			break;
 		case 'F':
 #if __APPLE__
@@ -129,17 +133,16 @@ int main(int argc, char **argv) {
 		free (p);
 		if (fd == -1) {
 			eprintf ("cannot open file '%s'\n", optarg);
-			exit (1);
+			goto fail;
 		}
 	}
 	if (ofile) {
 		if (openfile (ofile, ISEXEC) == -1) {
 			eprintf ("cannot open file '%s'\n", optarg);
-			return 1;
+			goto fail;
 		}
 	}
 
-	egg = r_egg_new ();
 	r_egg_setup (egg, arch, bits, 0, os);
 	if (!strcmp (argv[optind], "-")) {
 		char buf[1024];
@@ -151,7 +154,7 @@ int main(int argc, char **argv) {
 	} else {
 		if (!r_egg_include (egg, argv[optind], 0)) {
 			eprintf ("Cannot open '%s'\n", argv[optind]);
-			return 1;
+			goto fail;
 		}
 	}
 	r_egg_compile (egg);
