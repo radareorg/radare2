@@ -1,0 +1,35 @@
+The sys farm
+============
+
+[ config ]
+  - project name
+  - script list
+
+[ daemon ]
+  farm/r2/linux
+  farm/r2/osx
+  farm/r2/maemo
+  farm/r2/mingw32
+  farm/r2/mingw64
+  - find updates in src
+
+[ build ]
+  - execute all build targets to generate output results
+    project/date-revision-buildtype
+  - out/r2/20110923-3948-linux.log
+  - dist/r2/20110923-3948-linux/radare2-r3948.tar.gz
+
+[ dist ]
+  - generate distribution tarball, debian package or zip
+
+[ push ]
+  - push -f to remove remote data?
+  - use rsync to upload build results
+
+[ web ] - php?
+  - parse pushed results
+  - allow download of dist
+  - useful for snapshots
+  - grep for warnings 
+  - count errors
+  - view build logs

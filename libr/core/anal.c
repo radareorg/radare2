@@ -233,7 +233,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			}
 			// XXX: this looks weird
 			r_anal_fcn_insert (core->anal, fcn);
-			r_list_append (core->anal->fcns, fcn);
+			//r_list_append (core->anal->fcns, fcn);
 			r_list_foreach (fcn->refs, iter, refi)
 				if (refi->addr != -1)
 					r_core_anal_fcn (core, refi->addr, refi->at, refi->type, depth-1);

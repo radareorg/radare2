@@ -5,6 +5,10 @@
 
 ====[[ 0.9 ]]====
 
+* r_anal_find_fcn() is O(N). should be O(1)
+  - var r = RHashTable<RList>()
+    var l = r.add ("0x8048000-0x8049000", new RList ())
+    l.append (ReferenceTo (fcn)
 * Optimize /m
   - search only using given file, not loading default library
   - do not read each block byte per byte
@@ -36,10 +40,6 @@
 
 BOTTLENECKS:
 ============
-* r_anal_find_fcn() is O(N). should be O(1)
-  - var r = RHashTable<RList>()
-    var l = r.add ("0x8048000-0x8049000", new RList ())
-    l.append (ReferenceTo (fcn)
 * rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
 * Add -f/-t in rahash2 to define ranges
   - Add support for large files in rahash2

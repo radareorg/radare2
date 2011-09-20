@@ -1,4 +1,4 @@
-/* pancake // nopcode.org 2010-2011 -- arm emiter */
+/* pancake // nopcode.org 2011 -- trace emiter */
 
 #include <r_egg.h>
 #define attsyntax 0
