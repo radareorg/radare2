@@ -113,11 +113,17 @@ static void emit_syscall_args(REgg *egg, int nargs) {
 }
 
 static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
-	char *p, str2[64];
-	int i, oj = j;
-	for (i=4; i<oj; i+=4) {
+	char *p, *s, str2[64];
+	int i, len, oj = j;
+
+	len = strlen (str);
+	s = malloc (len+4);
+	memcpy (s, str, len);
+	memset (s+len, 0, 4);
+
+	for (i=4; i<=oj; i+=4) {
 		/* XXX endian and 32/64bit issues */
-		int *n = (int *)(str+i-4);
+		int *n = (int *)(s+i-4);
 		p = r_egg_mkvar (egg, str2, dstvar, i);
 		if (attsyntax) r_egg_printf (egg, "  movl $0x%x, %s\n", *n, p);
 		else r_egg_printf (egg, "  mov %s, 0x%x\n", p, *n);
@@ -129,7 +135,7 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 	else r_egg_printf (egg, "  mov %s, 0\n", p);
 
 	/* store pointer */
-	p = r_egg_mkvar (egg, str2, dstvar, j);
+	p = r_egg_mkvar (egg, str2, dstvar, j+4);
 	if (attsyntax) r_egg_printf (egg, "  lea %s, %%"R_AX"\n", p);
 	else r_egg_printf (egg, "  lea "R_AX", %s\n", p);
 	p = r_egg_mkvar (egg, str2, dstvar, 0);
@@ -153,6 +159,7 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 	if (attsyntax) r_egg_printf (egg, "  mov %%"R_AX", %s\n", p);
 	else r_egg_printf (egg, "  mov %s, "R_AX"\n", p);
 #endif
+	free (s);
 }
 
 static void emit_call(REgg *egg, const char *str, int atr) {
@@ -225,24 +232,27 @@ static void emit_while_end (REgg *egg, const char *labelback) {
 }
 
 static void emit_get_var (REgg *egg, int type, char *out, int idx) {
+	// TODO: deprecate or gtfo
 	if (attsyntax) {
 		switch (type) {
 		case 0: sprintf (out, "%d(%%"R_BP")", -idx); break; /* variable */
-		case 1: sprintf(out, "%d(%%"R_SP")", idx); break; /* argument */
+		case 1: sprintf (out, "%d(%%"R_SP")", idx); break; /* argument */
 		}
-	} else {
-		switch (type) {
-		case 0:  /* variable */
-			if (idx>0) sprintf (out, "["R_BP"+%d]", idx);
-			else if (idx<0) sprintf (out, "["R_BP"%d]", idx);
-			else sprintf (out, "["R_BP"]");
-			break;
-		case 1: /* argument */
-			if (idx>0) sprintf (out, "["R_SP"+%d]", idx);
-			else if (idx<0) sprintf (out, "["R_SP"%d]", idx);
-			else sprintf (out, "["R_SP"]");
-			break;
-		}
+		return;
+	}
+	switch (type) {
+	case 0:  /* variable */
+		if (idx>0) sprintf (out, "["R_BP"+%d]", idx);
+		else if (idx<0) sprintf (out, "["R_BP"%d]", idx);
+		else strcpy (out, "["R_BP"]");
+		break;
+	case 1: /* argument */
+// OMG WE CANT stuff found in relative address in stack in the stack
+idx = 8; // HACK to make arg0, arg4, ... work
+		if (idx>0) sprintf (out, "["R_SP"+%d]", idx);
+		else if (idx<0) sprintf (out, "["R_SP"%d]", idx);
+		else strcpy (out, "["R_SP"]");
+		break;
 	}
 }
 

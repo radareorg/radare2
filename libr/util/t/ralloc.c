@@ -4,7 +4,8 @@
 #include <r_util.h>
 #include <stdio.h>
 
-#define TIMES 299999
+//#define TIMES 299999
+#define TIMES 9999
 
 int afun(const char *str, int iters) {
 	int ret;

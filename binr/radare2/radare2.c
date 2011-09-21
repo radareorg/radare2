@@ -30,7 +30,7 @@ static int main_help(int line) {
 		" -v           show radare2 version\n"
 		" -l [lib]     load plugin file\n"
 #if USE_THREADS
-		" -t         load rabin2 info in thread\n"
+		" -t           load rabin2 info in thread\n"
 #endif
 		" -L           list supported IO plugins\n"
 		" -e k=v       evaluate config var\n"

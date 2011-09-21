@@ -1,5 +1,6 @@
-/* radare - LGPL - Copyright 2010 pancake <@nopcode.org> */
+/* radare - LGPL - Copyright 2010-2011 pancake <@nopcode.org> */
 
+// XXX: forced free?? We need RFlist struct here
 #include <r_types.h>
 //#include <r_flist.h>
 // NOTE: reimplemnetation of r_flist in C (if no R_API defined)

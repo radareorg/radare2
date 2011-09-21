@@ -4,7 +4,7 @@
 
 #define NPF 6
 static int blocksize = 0;
-static const char *printfmt[] = { "x", "pd", "f tmp;sr sp;x 64;dr=;s-;s tmp;f-tmp;pd", "p8", "pc", "ps" };
+static const char *printfmt[] = { "x", "pd", "f tmp;sr sp;pw 64;dr=;s-;s tmp;f-tmp;pd", "p8", "pc", "ps" };
 static int autoblocksize = 1;
 static int obs = 0;
 

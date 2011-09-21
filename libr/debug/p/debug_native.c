@@ -319,7 +319,7 @@ static int r_debug_native_wait(RDebug *dbg, int pid) {
 // TODO: why strdup here?
 static const char *r_debug_native_reg_profile(RDebug *dbg) {
 #if __WINDOWS__
-if (dbg->bits == 32) {
+if (dbg->bits & R_SYS_BITS_32) {
 	return strdup (
 	"=pc	eip\n"
 	"=sp	esp\n"
@@ -570,7 +570,7 @@ if (dbg->bits == 32) {
 	"seg	gs	.32	72	0\n"
 // TODO: implement flags like in linux --those flags are wrong
 	);
-#elif __i386__
+#elif __i386__ && __linux__
 	return strdup (
 	"=pc	eip\n"
 	"=sp	esp\n"
@@ -632,7 +632,34 @@ if (dbg->bits == 32) {
 	"drx	dr6	.32	24	0\n"
 	"drx	dr7	.32	28	0\n"
 	);
-#elif __x86_64__ && __APPLE__
+#elif __APPLE__
+if (dbg->bits & R_SYS_BITS_32) {
+	return strdup (
+	"=pc	eip\n"
+	"=sp	esp\n"
+	"=bp	ebp\n"
+	"=a0	eax\n"
+	"=a1	ebx\n"
+	"=a2	ecx\n"
+	"=a3	edi\n"
+	"gpr	eax	.32	8	0\n"
+	"gpr	ebx	.32	12	0\n"
+	"gpr	ecx	.32	16	0\n"
+	"gpr	edx	.32	20	0\n"
+	"gpr	edi	.32	24	0\n"
+	"gpr	esi	.32	28	0\n"
+	"gpr	ebp	.32	32	0\n"
+	"gpr	esp	.32	36	0\n"
+	"seg	ss	.32	40	0\n"
+	"gpr	eflags	.32	44	0	c1p.a.zstido.n.rv\n"
+	"gpr	eip	.32	48	0\n"
+	"seg	cs	.32	52	0\n"
+	"seg	ds	.32	56	0\n"
+	"seg	es	.32	60	0\n"
+	"seg	fs	.32	64	0\n"
+	"seg	gs	.32	68	0\n"
+	);
+} else if (dbg->bits == R_SYS_BITS_64) {
 	return strdup (
 	"=pc	rip\n"
 	"=sp	rsp\n"
@@ -671,6 +698,7 @@ if (dbg->bits == 32) {
 	"drx	dr7	.32	28	0\n"
 #endif
 	);
+} else eprintf ("invalid bit size\n");
 #elif __x86_64__  && (__OpenBSD__ || __NetBSD__)
 	return strdup (
 	"=pc	rip\n"

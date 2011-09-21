@@ -50,6 +50,14 @@ BITS=32
 foo "test edx, esi"
 foo "test eax, ebx"
 
+
+foo "push [ebp+4]"
+foo "push [esp+4]"
+foo "push [ebx+4]"
+foo "push [esi+4]"
+foo "push [eax+8]"
+# exit 0
+
 foo "sub dword ptr [eax], 1"
 foo "add dword ptr [eax], 1"
 foo "add dword ptr [ebx], 1"

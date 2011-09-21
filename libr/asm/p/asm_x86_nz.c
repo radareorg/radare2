@@ -302,9 +302,12 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				arg++;
 				delta = strchr (arg, '+');
 				if (delta) {
+					int r = getreg (arg);
 					*delta++ = 0;
 					data[l++] = 0xff;
-					data[l++] = 0x70 | getreg (arg);
+					data[l++] = 0x70 | r;
+					if (r==4)
+						data[l++]=0x24; // wtf
 					data[l++] = getnum (delta);
 				} else {
 					int r = getreg (arg);

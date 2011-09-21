@@ -1,17 +1,18 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 #include "r_util.h"
 
-int main() {
+void test_flist () {
+	int i;
 	void **it = r_flist_new (3);
 	char *pos = NULL;
 
-	r_flist_set(it, 0, strdup ("foo"));
-	r_flist_set(it, 1, strdup ("bar"));
-	r_flist_set(it, 2, strdup ("cow"));
+	for (i=0;i<9999;i++) {
+		r_flist_set (it, i, "foo");
+	}
 
 	r_flist_delete (it, 1);
 
-	r_flist_foreach(it, pos) {
+	r_flist_foreach (it, pos) {
 		printf("%s\n", pos);
 	}
 
@@ -19,3 +20,8 @@ int main() {
 
 	return 0;
 }
+
+int main() {
+	test_flist();
+}
+

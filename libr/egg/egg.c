@@ -223,8 +223,12 @@ R_API void r_egg_append(REgg *egg, const char *src) {
 	r_buf_append_bytes (egg->src, (const ut8*)src, strlen (src));
 }
 
-// TODO: accept arguments
+/* JIT : TODO: accept arguments here */
 R_API int r_egg_run(REgg *egg) {
-	/* JIT */
-	return 0;
+	int ret, (*ptr)() = malloc (egg->bin->length);
+	memcpy (ptr, egg->bin->buf, egg->bin->length);
+	r_mem_protect (ptr, egg->bin->length, "rx");
+	ret = ptr ();
+	free (ptr);
+	return ret;
 }
