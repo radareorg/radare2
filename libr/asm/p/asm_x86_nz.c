@@ -100,6 +100,20 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			//arg2 = skipspaces (arg2+1);
 			for (arg2++; *arg2==' '; arg2++);
 		}
+		if (!strcmp (op, "xchg")) {
+			if (arg2) {
+				if (*arg == '[' || *arg2=='[') {
+					eprintf ("xchg with memory access not yet implemented\n");
+				} else {
+					data[l++] = 0x87;
+					data[l++] = 0xc0 | getreg (arg) | getreg (arg2)<<3;
+					return l;
+				}
+			} else {
+				eprintf ("xchg expects 2 arguments\n");
+				return 0;
+			}
+		} else
 		if (!strcmp (op, "add")) {
 			int pfx;
 			if (*arg=='[') {

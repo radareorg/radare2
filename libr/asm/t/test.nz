@@ -19,6 +19,16 @@ if [ -n "$1" ]; then
 	exit 0
 fi
 
+AS=x86.olly
+foo 'xchg eax,eax'
+foo 'xchg eax,esp'
+foo 'xchg eax,ebx'
+foo 'xchg ecx,ebp'
+foo 'xchg ecx,ecx'
+foo 'xchg ebx,ecx'
+foo 'xchg ecx,ebx'
+# exit 0
+
 if true ; then
 AS=x86.olly
 foo 'jl patata'

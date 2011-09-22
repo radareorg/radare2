@@ -6,7 +6,7 @@
 R_API int r_hash_pcprint(const ut8 *buffer, ut64 len) {
 	const ut8 *end = buffer + len;
 	int n;
-	for(n=0; buffer<end; buffer++)
+	for (n=0; buffer<end; buffer++)
 		if (IS_PRINTABLE (*buffer))
 			n++;
 	return ((100*n)/len);
@@ -15,7 +15,7 @@ R_API int r_hash_pcprint(const ut8 *buffer, ut64 len) {
 R_API int r_hash_parity(const ut8 *buf, ut64 len) {
 	const ut8 *end = buf+len;
 	ut32 ones = 0;
-	for(;buf<end;buf++) {
+	for (;buf<end;buf++) {
 		ut8 x = buf[0];
 		ones += ((x&128)?1:0) + ((x&64)?1:0) + ((x&32)?1:0) + ((x&16)?1:0) +
 			((x&8)?1:0) + ((x&4)?1:0) + ((x&2)?1:0) + ((x&1)?1:0);
