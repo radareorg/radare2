@@ -414,7 +414,7 @@ struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin
 
 	if (!bin->symtab || !bin->symstr)
 		return NULL;
-	if (!(symbols = malloc((bin->dysymtab.nextdefsym + bin->dysymtab.nlocalsym + 1) * sizeof(struct r_bin_mach0_symbol_t))))
+	if (!(symbols = malloc ((bin->dysymtab.nextdefsym + bin->dysymtab.nlocalsym + 1) * sizeof(struct r_bin_mach0_symbol_t))))
 		return NULL;
 	for (s = j = 0; s < 2; s++) {
 		if (s == 0) {
@@ -763,4 +763,20 @@ char* MACH0_(r_bin_mach0_get_filetype)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	case MH_DSYM:		return r_str_dup_printf ("Companion file with only debug sections");
 	default:		return r_str_dup_printf ("Unknown");
 	}
+}
+
+ut64 MACH0_(r_bin_mach0_get_main)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
+	ut64 addr = 0LL;
+	struct r_bin_mach0_symbol_t *symbols;
+	int i;
+
+	if (!(symbols = MACH0_(r_bin_mach0_get_symbols) (bin)))
+		return 0;
+	for (i = 0; !symbols[i].last; i++)
+		if (!strcmp (symbols[i].name, "_main")) {
+			addr = symbols[i].addr;
+			break;
+		}
+	free (symbols);
+	return addr;
 }

@@ -142,7 +142,7 @@ static int debug_attach(int pid) {
         task_t task = pid_to_task (pid);
         if (task == -1)
                 return -1;
-        eprintf ("; pid = %d\ntask= %d\n", pid, task);
+        eprintf ("pid: %d\ntask: %d\n", pid, task);
 #if 0
 	// TODO : move this code into debug
         if (task_threads (task, &inferior_threads, &inferior_thread_count)

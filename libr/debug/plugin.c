@@ -32,7 +32,7 @@ R_API int r_debug_use(RDebug *dbg, const char *str) {
 		if (h->name && !strcmp (str, h->name)) {
 			dbg->h = h;
 			if (dbg->anal && dbg->anal->cur)
-				r_debug_set_arch (dbg, dbg->anal->cur->arch, dbg->anal->cur->bits);
+				r_debug_set_arch (dbg, dbg->anal->cur->arch, dbg->bits);
 			dbg->bp->breakpoint = dbg->h->breakpoint;
 			dbg->bp->user = dbg;
 		}

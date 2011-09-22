@@ -165,6 +165,19 @@ D(0x80000003); // unknown subtype issue
 	return buf;
 }
 
+static RBinAddr* binsym(RBinArch *arch, int sym) {
+	RBinAddr *ret = NULL;
+	switch (sym) {
+	case R_BIN_SYM_MAIN:
+		if (!(ret = R_NEW (RBinAddr)))
+			return NULL;
+		memset (ret, '\0', sizeof (RBinAddr));
+		ret->offset = ret->rva = MACH0_(r_bin_mach0_get_main) (arch->bin_obj);
+		break;
+	}
+	return ret;
+}
+
 struct r_bin_plugin_t r_bin_plugin_mach064 = {
 	.name = "mach064",
 	.desc = "mach064 bin plugin",
@@ -174,7 +187,7 @@ struct r_bin_plugin_t r_bin_plugin_mach064 = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
-	.binsym = NULL,
+	.binsym = binsym,
 	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,

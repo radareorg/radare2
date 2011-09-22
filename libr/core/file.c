@@ -118,7 +118,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	// M -> Main
 	r_flag_space_set (r->flags, "symbols");
 	if ((binmain = r_bin_get_sym (r->bin, R_BIN_SYM_MAIN)) != NULL)
-		r_flag_set (r->flags, "main", va?baddr+binmain->rva:binmain->offset,
+		r_flag_set (r->flags, "main", va? baddr+binmain->rva: binmain->offset,
 				r->blocksize, 0);
 
 	// e -> Entrypoints
@@ -126,12 +126,12 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	if ((list = r_bin_get_entries (r->bin)) != NULL) {
 		r_list_foreach (list, iter, entry) {
 			snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i++);
-			r_flag_set (r->flags, str, va?baddr+entry->rva:entry->offset,
+			r_flag_set (r->flags, str, va? baddr+entry->rva: entry->offset,
 					r->blocksize, 0);
 		}
 		/* Seek to the last entry point */
 		if (entry)
-			r_core_seek (r, va?baddr+entry->rva:entry->offset, 0);
+			r_core_seek (r, va? baddr+entry->rva: entry->offset, 0);
 	}
 
 	// s -> Symbols
@@ -143,13 +143,15 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 			r_name_filter (name, 80);
 			snprintf (str, R_FLAG_NAME_SIZE, "sym.%s", name);
 			if (!strncmp (symbol->type,"OBJECT", 6))
-				r_meta_add (r->anal->meta, R_META_TYPE_DATA, va?baddr+symbol->rva:symbol->offset,
-				(va?baddr+symbol->rva:symbol->offset)+symbol->size, name);
-			r_flag_set (r->flags, str, va?baddr+symbol->rva:symbol->offset,
+				r_meta_add (r->anal->meta, R_META_TYPE_DATA,
+					va? baddr+symbol->rva: symbol->offset,
+					(va? baddr+symbol->rva: symbol->offset)+symbol->size, name);
+			r_flag_set (r->flags, str, va? baddr+symbol->rva: symbol->offset,
 						symbol->size, 0);
 			dname = r_bin_demangle (r->bin, symbol->name);
 			if (dname) {
-				r_meta_add (r->anal->meta, R_META_TYPE_COMMENT, va?baddr+symbol->rva:symbol->offset,
+				r_meta_add (r->anal->meta, R_META_TYPE_COMMENT,
+					va? baddr+symbol->rva: symbol->offset,
 					symbol->size, dname);
 				free (dname);
 			}
