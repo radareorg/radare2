@@ -429,6 +429,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);
 R_API RAnalFcn *r_anal_fcn_new();
 R_API RAnalFcn *r_anal_fcn_find(RAnal *anal, ut64 addr, int type);
 R_API RList *r_anal_fcn_list_new();
+R_API int r_anal_fcn_insert(RAnal *anal, RAnalFcn *fcn);
 R_API void r_anal_fcn_free(void *fcn);
 R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr,
 		ut8 *buf, ut64 len, int reftype);

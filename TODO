@@ -3,8 +3,29 @@
   |    <  V  . |  . V  .   <   _/ .-' _/|  ()  |
   |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
 
+------8<-------------------8<--------------------8<-----------------8<----------
+
+====[[ 0.8.6 ]]====
+
+* shell encoder - get x86-64 one from twitter
+  - http://funoverip.net/2011/09/simple-shellcode-obfuscation/
+* enhace r_egg.. not usable til 0.9
+* rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
+* Add -f/-t in rahash2 to define ranges
+  - Add support for large files in rahash2
+  - Do not use slurp (must work for big files too!)
+* build farm
+
 ====[[ 0.9 ]]====
 
+OSX
+===
+* Proper support for MACH-O binaries
+  - rabin2 -f works? i think its used with '-a' 
+
+Other stuff
+===========
+* rax2 -k by default?
 * r_anal_find_fcn() is O(N). should be O(1)
   - var r = RHashTable<RList>()
     var l = r.add ("0x8048000-0x8049000", new RList ())
@@ -18,12 +39,8 @@
 * Merge libr/db inside libr/util ?
 * Test r_search_delta()
 * Dupped javasm bin/asm -- must merge
+* Implement differential distance signature search
 
-------8<-------------------8<--------------------8<-----------------8<----------
-
-====[[ 0.8.6 ]]====
-
-* rax2 -k by default?
 
 * Rename r_hashtable -> r_ht
   - Make ht64.c include ht.c
@@ -32,24 +49,11 @@
 * Handle ^C as an alias for '.' command
 * search.kwidx must be search.lastidx or search.idx ?
 * add support for sockets in rarun2
-* shell encoder - get x86-64 one from twitter
-  - http://funoverip.net/2011/09/simple-shellcode-obfuscation/
 * RBinCreate:
   - mach0 create for darwin-ppc
   - pe64
   - plan9 bins
 
-BOTTLENECKS:
-============
-* rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
-* Add -f/-t in rahash2 to define ranges
-  - Add support for large files in rahash2
-  - Do not use slurp (must work for big files too!)
-
-OSX
-===
-* Proper support for MACH-O binaries
-  - rabin2 -f works? i think its used with '-a' 
 
 TODO
 ====

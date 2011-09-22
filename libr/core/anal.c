@@ -35,29 +35,29 @@ static char *r_core_anal_graph_label(RCore *core, struct r_anal_bb_t *bb, int op
 		cmdstr = r_core_cmd_str (core, cmd);
 	}
 	if (cmdstr) {
-		if (!(str = malloc(strlen(cmdstr)*2)))
+		if (!(str = malloc (strlen(cmdstr)*2)))
 			return NULL;
-		for(i=j=0;cmdstr[i];i++,j++) {
-			switch(cmdstr[i]) {
+		for(i=j=0; cmdstr[i]; i++,j++) {
+			switch (cmdstr[i]) {
 			case 0x1b:
 				/* skip ansi chars */
-				for(i++;cmdstr[i]&&cmdstr[i]!='m'&&cmdstr[i]!='H'&&cmdstr[i]!='J';i++);
+				for (i++; cmdstr[i] && cmdstr[i]!='m' && cmdstr[i]!='H' && cmdstr[i]!='J'; i++);
 				j--;
 				break;
 			case '"':
-				str[j]='\\';
-				str[++j]='"';
+				str[j] = '\\';
+				str[++j] = '"';
 				break;
 			case '\n':
 			case '\r':
-				str[j]='\\';
-				str[++j]='l';
+				str[j] = '\\';
+				str[++j] = 'l';
 				break;
 			default:
-				str[j]=cmdstr[i];
+				str[j] = cmdstr[i];
 			}
 		}
-		str[j]='\0';
+		str[j] = '\0';
 		free (cmdstr);
 	}
 	return str;
@@ -82,13 +82,18 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFcn *fcn, int opts) {
 		}
 		if ((str = r_core_anal_graph_label (core, bbi, opts))) {
 			if (opts & R_CORE_ANAL_GRAPHDIFF) {
-				r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" [color=\"%s\", label=\"%s\"]\n",
+				r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" [color=\"%s\","
+					" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
 					fcn->addr, bbi->addr, 
-					bbi->diff->type==R_ANAL_DIFF_TYPE_MATCH?"lightgray":
-					bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"yellow":"red",str);
+					bbi->diff->type==R_ANAL_DIFF_TYPE_MATCH? "lightgray":
+					bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH? "yellow": "red", str,
+					fcn->name, bbi->addr);
 			} else {
-				r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" [color=\"%s\", label=\"%s\"]\n",
-					fcn->addr, bbi->addr, bbi->traced?"yellow":"lightgray",str);
+				r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" ["
+					"URL=\"%s/0x%08"PFMT64x"\" color=\"%s\", label=\"%s\"]\n",
+					fcn->addr, bbi->addr, 
+					fcn->name, bbi->addr,
+					bbi->traced?"yellow":"lightgray", str);
 			}
 			r_cons_flush ();
 			free (str);
@@ -104,7 +109,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFcn *fcn, ut64 at, int head) {
 	int ret = R_ANAL_RET_NEW, buflen, bblen = 0;
 	int split = core->anal->split;
 
-	if (!(bb = r_anal_bb_new()))
+	if (!(bb = r_anal_bb_new ()))
 		return R_FALSE;
 	if (split) ret = r_anal_fcn_split_bb (fcn, bb, at);
 	else r_list_foreach (fcn->bbs, iter, bbi)
@@ -264,19 +269,23 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 }
 
 R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv) {
+	int showhdr = 0;
 	RListIter *iter, *iter2;
 	RAnalRef *fcnr;
 	RAnalFcn *fcni;
 
-	if (gv) r_cons_printf ("digraph code {\n"
-		"\tgraph [bgcolor=white];\n"
-		"\tnode [color=lightgray, style=filled shape=box"
-		" fontname=\"Courier\" fontsize=\"8\"];\n");
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (addr != 0 && addr != fcni->addr)
 			continue;
 		if (!gv) r_cons_printf ("0x%08"PFMT64x"\n", fcni->addr);
 		r_list_foreach (fcni->refs, iter2, fcnr) {
+			if (!showhdr) {
+				if (gv) r_cons_printf ("digraph code {\n"
+					"\tgraph [bgcolor=white];\n"
+					"\tnode [color=lightgray, style=filled shape=box"
+					" fontname=\"Courier\" fontsize=\"8\"];\n");
+				showhdr = 1;
+			}
 			// TODO: display only code or data refs?
 			RFlagItem *flag = r_flag_get_i (core->flags, fcnr->addr);
 			if (gv) r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
@@ -287,7 +296,8 @@ R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv) {
 			else r_cons_printf (" - 0x%08"PFMT64x" (%c)\n", fcnr->addr, fcnr->type);
 		}
 	}
-	r_cons_printf ("}\n");
+	if (showhdr && gv)
+		r_cons_printf ("}\n");
 }
 
 static void fcn_list_bbs(RAnalFcn *fcn) {
@@ -318,7 +328,6 @@ static void fcn_list_bbs(RAnalFcn *fcn) {
 	}
 	r_cons_flush ();
 }
-
 
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	RAnalFcn *fcni;
@@ -397,10 +406,14 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	RAnalFcn *fcni;
 	RListIter *iter;
-	int reflines = r_config_get_i (core->config, "asm.lines");
-	int bytes = r_config_get_i (core->config, "asm.bytes");
-	int dwarf = r_config_get_i (core->config, "asm.dwarf");
+	int reflines, bytes, dwarf;
 
+	if (r_list_empty (core->anal->fcns))
+		return R_FALSE;
+
+	reflines = r_config_get_i (core->config, "asm.lines");
+	bytes = r_config_get_i (core->config, "asm.bytes");
+	dwarf = r_config_get_i (core->config, "asm.dwarf");
 	r_config_set_i (core->config, "asm.lines", 0);
 	r_config_set_i (core->config, "asm.bytes", 0);
 	r_config_set_i (core->config, "asm.dwarf", 0);
@@ -426,11 +439,8 @@ static int r_core_anal_followptr(RCore *core, ut64 at, ut64 ptr, ut64 ref, int c
 	int wordsize, endian;
 
 	if (ptr == ref) {
-		if (code)
-			r_cons_printf ("ar 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
-					(ut64)ref, (ut64)at);
-		else r_cons_printf ("ard 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
-					(ut64)ref, (ut64)at);
+		if (code) r_cons_printf ("ar 0x%08"PFMT64x" 0x%08"PFMT64x"\n", (ut64)ref, (ut64)at);
+		else r_cons_printf ("ard 0x%08"PFMT64x" 0x%08"PFMT64x"\n", (ut64)ref, (ut64)at);
 		return R_TRUE;
 	}
 	if (depth < 1)
@@ -512,8 +522,7 @@ R_API int r_core_anal_ref_list(RCore *core, int rad) {
 
 		}
 	r_list_foreach (core->anal->refs, iter2, refi) {
-		if (rad)
-			r_cons_printf ("ar%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n", 
+		if (rad) r_cons_printf ("ar%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n", 
 					refi->type==R_ANAL_REF_TYPE_DATA?"d":"",
 					refi->at, refi->addr);
 		else r_cons_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" (%c)\n", 
