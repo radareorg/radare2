@@ -27,11 +27,11 @@ pkgcfg:
 	# TODO: Magically generate libr.pc.acr here using LIBLIST and so :)
 
 install-pkgconfig:
-	@${INSTALL_DIR} ${LFX}/pkgconfig
+	${INSTALL_DIR} ${LFX}/pkgconfig
 	for a in ../pkgcfg/*.pc ; do ${INSTALL_DATA} $$a ${LFX}/pkgconfig ; done
 
 install-includes:
-	@${INSTALL_DIR} ${IFX}/libr
+	${INSTALL_DIR} ${IFX}/libr
 	(cd include && for a in *.h ; do ${INSTALL_DATA} $$a ${IFX}/libr ; done)
 
 install-symlink:

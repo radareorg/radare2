@@ -1,3 +1,7 @@
+
+LANG=C
+export LANG
+
 # helpers
 minutes() { echo $(($1*60)); }
 hours() { echo $(($1*60*60)); }
@@ -8,7 +12,6 @@ hhmm() { echo $((`hours $1`+`minutes $2`)); }
 SLEEP=`hhmm 0 30`
 
 PACKAGE=radare2
-LOGDIR=log
 
 REMOTEDIR=""
 [ -f ~/.r2farmrc ] && . ~/.r2farmrc

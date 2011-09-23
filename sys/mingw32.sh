@@ -1,4 +1,7 @@
 #!/bin/sh
+# find root
+cd `dirname $PWD/$0` ; cd ..
+#TODO: add support for ccache
 
 if [ -x /usr/bin/pacman ]; then
 	make clean

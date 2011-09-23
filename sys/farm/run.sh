@@ -8,19 +8,19 @@ revision() {
 }
 
 tstamp() {
-	date +%Y%m%d-%h
+	date +%Y%m%d-%H
 }
 
 logfile() {
-	echo "${LOGDIR}/${PACKAGE}-`tstamp`-`revision`-$1"
+	echo "log/${PACKAGE}-`tstamp`-`revision`-$1"
 }
 
-mkdir -p farm/${LOGDIR}
+mkdir -p farm/log
 for a in ${TARGETS} ; do
 	L=farm/`logfile $a`
 	echo "= $a" | tee $L.log
 	./${a}.sh 2>&1 | tee -a $L.log
 	echo $? > $L.ret
 done
-echo $revision > farm/last-revision
+echo `revision` > farm/last-revision
 exit 0
