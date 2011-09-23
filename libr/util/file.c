@@ -23,7 +23,7 @@ R_API boolt r_file_exist(const char *str) {
 	struct stat buf;
 	if (stat (str, &buf)==-1)
 		return R_FALSE;
-	return (S_ISREG (buf.st_mode))?R_TRUE:R_FALSE;
+	return (S_ISREG (buf.st_mode))? R_TRUE: R_FALSE;
 }
 
 R_API char *r_file_abspath(const char *file) {
@@ -50,14 +50,14 @@ R_API char *r_file_path(const char *bin) {
 		do {
 			ptr = strchr (str, ':');
 			if (ptr) {
-				ptr[0]='\0';
-				snprintf (file, 1023, "%s/%s", str, bin);
+				*ptr = '\0';
+				snprintf (file, sizeof (file), "%s/%s", str, bin);
 				if (r_file_exist (file)) {
 					free (path);
 					free (path_env);
 					return strdup (file);
 				}
-				str = ptr+1;
+				str = ptr + 1;
 			}
 		} while (ptr);
 	}
@@ -173,7 +173,7 @@ R_API char *r_file_slurp_line(const char *file, int line, int context) {
 	char *ptr = NULL, *str = r_file_slurp (file, &sz);
 	// TODO: Implement context
 	if (str) {
-		for (i=0;str[i];i++)
+		for (i=0; str[i]; i++)
 			if (str[i]=='\n')
 				lines++;
 		if (line > lines) {
@@ -224,7 +224,7 @@ R_API RMmap *r_file_mmap (const char *file, boolt rw) {
 #if __WINDOWS__
 	int fd = open (file, 0);
 #else
-	int fd = open (file, rw?O_RDWR:O_RDONLY);
+	int fd = open (file, rw? O_RDWR: O_RDONLY);
 #endif
 	if (fd != -1) {
 		m = R_NEW (RMmap);

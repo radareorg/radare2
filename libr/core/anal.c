@@ -334,10 +334,12 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	struct r_anal_ref_t *refi;
 	struct r_anal_var_t *vari;
 	RListIter *iter, *iter2;
+	ut64 addr = r_num_math (core->num, input+1);
 
 	r_list_foreach (core->anal->fcns, iter, fcni)
-		if (((input == NULL || input[0] == '\0') && fcni->type!=R_ANAL_FCN_TYPE_LOC) ||
-			!strcmp (fcni->name, input+1)) {
+		if (((input == NULL || *input == '\0') && fcni->type!=R_ANAL_FCN_TYPE_LOC)
+			 || fcni->addr == addr
+			 || !strcmp (fcni->name, input+1)) {
 			if (!rad) {
 				r_cons_printf ("[0x%08"PFMT64x"] size=%"PFMT64d" name=%s",
 						fcni->addr, fcni->size, fcni->name);

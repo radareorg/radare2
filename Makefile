@@ -36,7 +36,8 @@ w32:
 w32dist:
 	rm -rf radare2-w32-${VERSION} w32dist
 	mkdir w32dist
-	for a in `find binr libr | grep -e exe$$ -e dll$$`; do cp $$a w32dist ; done
+	for a in `find libr | grep -e dll$$`; do cp $$a w32dist ; done
+	for a in `find binr | grep -e exe$$`; do cp $$a w32dist ; done
 	rm w32dist/plugin.dll
 	mv w32dist radare2-w32-${VERSION}
 	zip -r radare2-w32-${VERSION}.zip radare2-w32-${VERSION}

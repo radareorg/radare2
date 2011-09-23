@@ -7,14 +7,18 @@
 
 ====[[ 0.8.6 ]]====
 
+* implement 'ax' to get/set xrefs (better than afl <addr>)
+* add 'pdb' command, print disassembled basic block (like pdf, but for bb)
 * shell encoder - get x86-64 one from twitter
   - http://funoverip.net/2011/09/simple-shellcode-obfuscation/
+
 * enhace r_egg.. not usable til 0.9
+
 * rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
+
 * Add -f/-t in rahash2 to define ranges
   - Add support for large files in rahash2
   - Do not use slurp (must work for big files too!)
-* build farm
 
 ====[[ 0.9 ]]====
 
@@ -25,6 +29,7 @@ OSX
 
 Other stuff
 ===========
+* code analysis for msil
 * rax2 -k by default?
 * r_anal_find_fcn() is O(N). should be O(1)
   - var r = RHashTable<RList>()
@@ -140,11 +145,6 @@ nibble
         - check all strings
      2nd level:
         - basic block level diffing (output in graph mode)
-
-capi_x
-------
-* code analysis for msil
-* mach0-create for x86-64
 
 earada
 ------

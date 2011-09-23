@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <getopt.h>
+/* r2 api */
+#include <r_io.h>
 #include <r_hash.h>
 #include <r_util.h>
 #include <r_print.h>
@@ -12,7 +14,7 @@ static int do_hash_internal(RHash *ctx, ut64 from, int hash, const ut8 *buf, int
 	int i, dlen;
 	const char *hname = r_hash_name (hash);
 	dlen = r_hash_calculate (ctx, hash, buf, len);
-	if (!dlen)
+	if (!dlen || rad == 2)
 		return 0;
 	if (rad) {
 		printf ("e file.%s=", hname);
@@ -37,29 +39,38 @@ static int do_hash_internal(RHash *ctx, ut64 from, int hash, const ut8 *buf, int
 	return 1;
 }
 
-static int do_hash(const char *algo, const ut8 *buf, int len, int bsize, int rad) {
+static int do_hash(const char *algo, RIO *io, int bsize, int rad) {
+	ut8 *buf;
 	RHash *ctx;
-	ut64 j;
+	ut64 j, fsize;
 	int i;
 	ut64 algobit = r_hash_name_to_bits (algo);
 	if (algobit == R_HASH_NONE) {
 		eprintf ("Invalid hashing algorithm specified\n");
 		return 1;
 	}
-	if (bsize>len)
-		bsize = len;
+	fsize = r_io_size (io);
+	if (bsize == 0 || bsize > fsize)
+		bsize = fsize;
+	if (fsize == -1LL) {
+		eprintf ("Unknown file size\n");
+		return 1;
+	}
+	buf = malloc (bsize+1);
 	ctx = r_hash_new (R_TRUE, algobit);
 	/* iterate over all algorithm bits */
 	for (i=1; i<0x800000; i<<=1) {
 		if (algobit & i) {
-			for (j=0; j<len; j+= bsize) {
-				if (j+bsize<len)
-					do_hash_internal (ctx, j, i, buf+j, bsize, rad);
-				else do_hash_internal (ctx, j, i, buf+j, len-j, rad);
+			for (j=0; j<fsize; j+=bsize) {
+				r_io_read_at (io, j, buf, bsize);
+				if (j+bsize<fsize)
+					do_hash_internal (ctx, j, i, buf, bsize, rad);
+				else do_hash_internal (ctx, j, i, buf, fsize-j, rad); // finish him!
 			}
 		}
 	} 
 	r_hash_free (ctx);
+	free (buf);
 	return 0;
 }
 
@@ -78,6 +89,7 @@ static int do_help(int line) {
 }
 
 int main(int argc, char **argv) {
+	RIO *io;
 	const char *algo = "md5,sha1"; /* default hashing algorithm */
 	const ut8 *buf = NULL;
 	int c, buf_len = 0;
@@ -106,11 +118,14 @@ int main(int argc, char **argv) {
 			return do_help (0);
 		}
 	}
-	if (optind<argc)
-		buf = (const ut8*)r_file_slurp (argv[optind], &buf_len);
-	if (buf == NULL)
+
+	if (optind>=argc)
 		return do_help (1);
-	if (bsize == 0)
-		bsize = buf_len;
-	return do_hash (algo, buf, buf_len, bsize, rad);
+
+	io = r_io_new ();
+	if (!r_io_open (io, argv[optind], 0, 0)) {
+		eprintf ("Cannot open '%s'\n", argv[optind]);
+		return 1;
+	}
+	return do_hash (algo, io, bsize, rad);
 }
