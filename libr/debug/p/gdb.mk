@@ -27,4 +27,4 @@ TARGET_GDB=debug_gdb.${EXT_SO}
 ALL_TARGETS+=${TARGET_GDB}
 
 ${TARGET_GDB}: ${OBJ_GDB}
-	${CC} $(call libname,debug_gdb) ${OBJ_GDB} ${CFLAGS} ${LDFLAGS} -o ${TARGET_GDB}
+	${CC_LIB} ${TARGET_GDB} $(call libname,debug_gdb) ${OBJ_GDB} ${CFLAGS} ${LDFLAGS}

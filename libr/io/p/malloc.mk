@@ -15,4 +15,4 @@ LINKFLAGS+=-L.. -L../../lib -lr_lib -lr_io
 endif
 
 ${TARGET_MALLOC}: ${OBJ_MALLOC}
-	${CC} $(call libname,io_malloc) ${CFLAGS} -o ${TARGET_MALLOC} ${OBJ_MALLOC} ${LINKFLAGS}
+	${CC_LIB} $(call libname,io_malloc) ${CFLAGS} -o ${TARGET_MALLOC} ${OBJ_MALLOC} ${LINKFLAGS}

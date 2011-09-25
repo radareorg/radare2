@@ -12,7 +12,7 @@ all: hello${EXT_EXE}
 
 hello${EXT_EXE}: hello.o
 	@#${CC} -I../../include hello.o -Wl,-R.. -L.. -L../../io -L../../util -L../../lib -lr_util -lr_lib -lr_hash -lr_io -o hello
-	${CC} hello.o ${CFLAGS} ${LDFLAGS} -o hello${EXT_EXE}
+	${CC} -lm hello.o ${CFLAGS} ${LDFLAGS} -o hello${EXT_EXE}
 
 myclean:
 	rm -f hello${EXT_EXE} hello.o ${BIN}

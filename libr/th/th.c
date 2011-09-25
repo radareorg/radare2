@@ -65,7 +65,11 @@ R_API int r_th_kill(struct r_th_t *th, int force) {
 	r_th_break(th);
 	r_th_wait(th);
 #if HAVE_PTHREAD
+#ifdef __ANDROID__
+	kill (th->tid, 9);
+#else
 	pthread_cancel (th->tid);
+#endif
 #endif
 	return 0;
 }

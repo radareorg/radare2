@@ -4,16 +4,16 @@
 #include <dirent.h>
 #include <r_types.h>
 #include <r_util.h>
-#if __UNIX__
-#include <sys/wait.h>
-#include <sys/stat.h>
-#include <errno.h>
-#include <signal.h>
-#if __linux__
-#include <execinfo.h>
+#if __linux__ && __GNU_LIBRARY__
+# include <execinfo.h>
 #endif
+#if __UNIX__
+# include <sys/wait.h>
+# include <sys/stat.h>
+# include <errno.h>
+# include <signal.h>
 #elif __WINDOWS__
-#include <io.h>
+# include <io.h>
 #endif
 
 /* TODO: import stuff fron bininfo/p/bininfo_addr2line */

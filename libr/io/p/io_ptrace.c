@@ -22,7 +22,9 @@ typedef struct {
 
 #undef R_IO_NFDS
 #define R_IO_NFDS 2
+#ifndef __ANDROID__
 extern int errno;
+#endif
 
 static int __waitpid(int pid) {
 	int st = 0;
@@ -101,6 +103,9 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 			ret = 0;
 		else
 		if (ret == -1) {
+#ifdef __ANDROID__
+		eprintf ("ptrace_attach: Operation not permitted\n");
+#else
 			switch (errno) {
 			case EPERM:
 				ret = pid;
@@ -111,6 +116,7 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 				eprintf ("ERRNO: %d (EINVAL)\n", errno);
 				break;
 			}
+#endif
 		} else
 		if (__waitpid (pid))
 			ret = pid;

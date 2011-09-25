@@ -15,4 +15,4 @@ LINKFLAGS+=-L.. -L../../lib -lr_lib -lr_io
 endif
 
 ${TARGET_MACH}: ${OBJ_MACH}
-	${CC} $(call libname,io_mach) ${CFLAGS} -o ${TARGET_MACH} ${OBJ_MACH} ${LINKFLAGS}
+	${CC_LIB} $(call libname,io_mach) ${CFLAGS} -o ${TARGET_MACH} ${OBJ_MACH} ${LINKFLAGS}

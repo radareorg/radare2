@@ -85,7 +85,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define __KFBSD__ 0
 #endif
 
-#if defined(__linux__) || defined(__APPLE__) || defined(__GNU__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__)
   #define __BSD__ 0
   #define __UNIX__ 1
 #endif

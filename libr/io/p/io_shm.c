@@ -4,6 +4,11 @@
 #include "r_lib.h"
 #include <sys/types.h>
 
+#ifdef __ANDROID__
+#undef __UNIX__
+#define __UNIX__ 0
+#endif
+
 #if __UNIX__
 #include <sys/ipc.h>
 #include <sys/shm.h>

@@ -1,11 +1,12 @@
-CC=mad gcc
-RANLIB=mad gcc
+#CC=arm-linux-androideabi-gcc
+CC=ndk-gcc
+RANLIB=arm-linux-androideabi-ranlib
 ONELIB=0
-OSTYPE=gnulinux
+OSTYPE=android
 LINK=
-CC_AR=echo ar -r ${LIBAR}
+CC_AR=arm-linux-androideabi-ar -r ${LIBAR}
 PICFLAGS=
-CFLAGS+=${PICFLAGS} -MD
+CFLAGS+=${PICFLAGS}
 CC_LIB=${CC} -shared -o
 CFLAGS_INCLUDE=-I
 LDFLAGS_LINK=-l

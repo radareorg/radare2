@@ -1,0 +1,23 @@
+To build r2 for android you need to install the NDK:
+
+  sys/android-shell.sh
+  ./configure --with-compiler=android --with-ostype=android --without-ssl --prefix=/data/radare2 --without-pic --with-nonpic
+  make -j 4
+
+To compile for android-x86
+
+  export NDK_ARCH=x86
+
+To package:
+
+  mkdir 
+  make install DESTDIR=/usr
+
+Build farm
+
+  See sys/android-shell.sh and sys/android-build.sh
+
+Environment:
+
+   NDK_ARCH=arm|x86
+   STATIC_BUILD=0|1

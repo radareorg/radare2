@@ -22,6 +22,8 @@
 
 ====[[ 0.9 ]]====
 
+* Implement hex:// io :D like malloc but initialized.. use malloc here?
+
 OSX
 ===
 * Proper support for MACH-O binaries

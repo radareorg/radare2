@@ -46,7 +46,8 @@ syms:
 main.c:
 
 ${BIN}: libsdb.a main.c
-	${CC} ${CFLAGS} -o ${BIN} *.c
+	gcc -DVERSION=\"${VERSION}\" -o ${BIN} *.c
+	#${CC} ${CFLAGS} -o ${BIN} *.c
 
 wcl:
 	wc -l `echo ${OBJ}|sed -e 's,\.o,.c,g'`

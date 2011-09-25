@@ -75,6 +75,13 @@ EXT_SO=dylib
 EXT_EXE=
 TH_LIBS=-lpthread
 endif
+ifeq (${OSTYPE},android)
+CFLAGS+=-D__UNIX__=1
+EXT_AR=a
+EXT_SO=so
+EXT_EXE=
+TH_LIBS=
+endif
 
 ifeq (${EXT_SO},)
 all:

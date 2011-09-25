@@ -1,0 +1,45 @@
+#!/bin/sh
+# android gcc wrapper
+if [ -n "${NDK_ARCH}" ]; then
+	ARCH=${NDK_ARCH}
+else
+	ARCH=arm
+	ARCH=x86
+fi
+
+#------------------------------------------#
+
+PROGDIR=`dirname $0`
+PROGDIR=`cd $PROGDIR && pwd`
+
+OS=`uname | tr 'A-Z' 'a-z'`
+
+if [ "${ARCH}" = "arm" ]; then
+ANDROID_SDK_VERSION=8
+NDKPFX=${ARCH}-linux-androideabi
+else
+NDKPFX=i686-android-linux
+ANDROID_SDK_VERSION=9 #x86
+fi
+
+PLATFORM=android-${ANDROID_SDK_VERSION}
+
+PLATFORM_PATH=${PROGDIR}/platforms/${PLATFORM}/arch-${ARCH}/usr/
+NDK_BINS=`echo ${PROGDIR}/toolchains/${ARCH}-*/prebuilt/${OS}-x86/bin`
+CFLAGS=-I${PLATFORM_PATH}/include
+LDFLAGS=-L${PLATFORM_PATH}/lib
+LDFLAGS="${LDFLAGS} -nostdlib"
+LDFLAGS="${LDFLAGS} -lc -ldl"
+LDFLAGS="${LDFLAGS} -Wl,-dynamic-linker=/system/bin/linker"
+
+if [ -z "`echo $@ | grep shared`" ]; then
+LDFLAGS="${LDFLAGS} ${PLATFORM_PATH}/lib/crtbegin_dynamic.o"
+fi
+CC=${NDKPFX}-gcc
+EXT_SO=so
+
+export PATH=${NDK_BINS}:$PATH
+export EXT_SO CC CFLAGS LDFLAGS PATH
+
+#echo ${CC} ${CFLAGS} ${LDFLAGS} $@
+${CC} ${CFLAGS} ${LDFLAGS} $@

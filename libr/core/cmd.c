@@ -1255,7 +1255,7 @@ static int cmd_help(void *data, const char *input) {
 		r_prof_start (&prof);
 		r_core_cmd (core, input+1, 0);
 		r_prof_end (&prof);
-		core->num->value = (ut64)prof.result;
+		core->num->value = (ut64)(int)prof.result;
 		eprintf ("%lf\n", prof.result);
 		} break;
 	case '?': // ???

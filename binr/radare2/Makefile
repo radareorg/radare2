@@ -15,6 +15,9 @@ osxsign:
 	sudo chown root:procmod radare2
 	sudo chmod g+s radare2
 
+ifeq ($(OSTYPE),android)
+LDFLAGS+=${DL_LIBS} -lm
+endif
 ifeq ($(WITHNONPIC),1)
 LDFLAGS+=${DL_LIBS} -lm
 LDFLAGS+=../../libr/fs/p/grub/libgrubfs.a

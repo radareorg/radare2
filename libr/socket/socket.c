@@ -19,7 +19,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/socket.h>
-#include <sys/fcntl.h>
+//#include <sys/fcntl.h>
 #endif
 
 #define BUFFER_SIZE 4096

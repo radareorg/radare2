@@ -139,7 +139,7 @@ void file_badread(RMagic *ms) {
 }
 
 int file_buffer(RMagic *ms, int fd, const char *inname, const void *buf, size_t nb) {
-	int m;
+	int m = 0;
 	int mime = ms->flags & R_MAGIC_MIME;
 
 	if (nb == 0) {

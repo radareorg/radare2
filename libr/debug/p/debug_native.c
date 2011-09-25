@@ -99,12 +99,16 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 #define DEBUGGER 0
 #warning No debugger support for SunOS yet
 
+
 #elif __linux__
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/user.h>
 #include <limits.h>
+#ifdef __ANDROID__
+# define R_DEBUG_REG_T struct user_regs
+#else
+#include <sys/user.h>
 # if __i386__ || __x86_64__
 # define R_DEBUG_REG_T struct user_regs_struct
 # elif __arm__
@@ -113,6 +117,7 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 #include <sys/ucontext.h>
 typedef unsigned long mips64_regs_t [4096];
 # define R_DEBUG_REG_T mips64_regs_t
+#endif
 # endif
 #else // OS
 
@@ -1244,6 +1249,9 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 		// XXX: maybe the register map is not correct, must review
 	}
 #elif __linux__
+#ifdef __ANDROID__
+	return R_FALSE;
+#else
 	{
 		int i;
 		for (i=0; i<7; i++) { // DR0-DR7
@@ -1254,6 +1262,7 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 			memcpy (buf+(i*4), &ret, 4);
 		}
 	}
+#endif
 #else
 		return R_FALSE;
 #endif
@@ -1262,6 +1271,8 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 	case R_REG_TYPE_FLG:
 	case R_REG_TYPE_GPR:
 		{
+#undef R_DEBUG_REG_T
+#define R_DEBUG_REG_T struct pt_regs
 		R_DEBUG_REG_T regs;
 		memset (&regs, 0, sizeof (regs));
 		memset (buf, 0, size);
@@ -1297,6 +1308,8 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 #if __KFBSD__
 		return (0 == ptrace (PT_SETDBREGS, pid, (caddr_t)buf, sizeof (struct dbreg)));
 #elif __linux__
+// XXX: this android check is only for arm
+#ifndef __ANDROID__
 		{
 		int i;
 		ut32 *val = (ut32 *)buf;
@@ -1307,6 +1320,9 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 			//	return R_FALSE;
 		}
 		}
+#else
+return R_FALSE;
+#endif
 #else
 		eprintf ("TODO: add support for write DRX registers\n");
 		return R_FALSE;
