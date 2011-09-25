@@ -555,7 +555,6 @@ IRAPI void gdbwrap_hello(gdbwrap_t *desc) {
 	desc->packet[desc->max_packet_size] = GDBWRAP_NULL_CHAR;
 }
 
-
 /**
  * Send a "disconnect" command to the server and free the packet.
  */
@@ -753,7 +752,6 @@ IRAPI void gdbwrap_writemem(gdbwrap_t *desc, la32 linaddr, void *value, unsigned
     }
 }
 
-
 /**
  * Write a specific register. This command seems not to be supported
  * by the gdbserver. See gdbwrap_writereg2.
@@ -767,7 +765,6 @@ static void gdbwrap_writeregister(gdbwrap_t *desc, ureg32 regNum, la32 val) {
 	}
 }
 
-
 static void gdbwrap_writeregister2(gdbwrap_t *desc, ureg32 regNum, la32 val) {
 	unsigned int offset; // XXX 32 bit only? wtf
 	char *ret, locreg[700];
@@ -776,18 +773,17 @@ static void gdbwrap_writeregister2(gdbwrap_t *desc, ureg32 regNum, la32 val) {
 	offset = 2 * regNum * sizeof (ureg32);
 
 	// XXX: this assert looks broken
-	ASSERT(desc != NULL && (regNum < sizeof(gdbwrap_gdbreg32) / sizeof(ureg32)) &&
+	ASSERT (desc != NULL && (regNum < sizeof(gdbwrap_gdbreg32) / sizeof(ureg32)) &&
 			offset + 2 * sizeof(ureg32) < desc->max_packet_size);
-	reg = gdbwrap_readgenreg(desc);
-	ret = gdbwrap_lastmsg(desc);
-	ASSERT(reg != NULL && ret != NULL);
+	reg = gdbwrap_readgenreg (desc);
+	ret = gdbwrap_lastmsg (desc);
+	ASSERT (reg != NULL && ret != NULL);
 
-	snprintf(locreg, sizeof(locreg), "%08x", gdbwrap_little_endian(val));
-	memcpy(ret + offset, locreg, 2 * sizeof(ureg32));
-	snprintf(locreg, sizeof(locreg), "%s%s", GDBWRAP_WGENPURPREG, ret);
+	snprintf (locreg, sizeof(locreg), "%08x", gdbwrap_little_endian(val));
+	memcpy (ret + offset, locreg, 2 * sizeof (ureg32));
+	snprintf (locreg, sizeof(locreg), "%s%s", GDBWRAP_WGENPURPREG, ret);
 	gdbwrap_send_data(desc, locreg);
 }
-
 
 IRAPI void gdbwrap_writereg(gdbwrap_t *desc, ureg32 regnum, la32 val) {
 	static u_char choice = 0;
@@ -894,6 +890,9 @@ IRAPI void gdbwrap_signal(gdbwrap_t *desc, int signal) {
 	snprintf (signalpacket, sizeof (signalpacket), "%s;C%.2x",
 			GDBWRAP_CONTINUEWITH, signal);
 	rec = gdbwrap_send_data (desc, signalpacket);
+	if (rec == NULL) {
+		fprintf (stderr, "gdbwrap_signal: error sending data\n");
+	}
 }
 
 IRAPI void gdbwrap_stepi(gdbwrap_t *desc) {
@@ -932,6 +931,10 @@ IRAPI char *gdbwrap_remotecmd(gdbwrap_t *desc, char *cmd) {
 	if (ret != NULL && gdbwrap_atoh (ret + strlen(ret) - 2, BYTE_IN_CHAR) == 0xa) {
 		gdbwrap_send_ack (desc);
 		rval = recv (desc->fd, cmdcpy, sizeof (cmdcpy), 0);
+		if (rval <1) {
+			fprintf (stderr, "read error\n");
+			return NULL;
+		}
 	}
 
 	return ret;

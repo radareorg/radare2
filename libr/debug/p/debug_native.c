@@ -121,6 +121,9 @@ typedef unsigned long mips64_regs_t [4096];
 # endif
 #else // OS
 
+//#undef R_DEBUG_REG_T
+//#define R_DEBUG_REG_T struct pt_regs
+
 #warning Unsupported debugging platform
 #undef DEBUGGER
 #define DEBUGGER 0
@@ -1271,8 +1274,6 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 	case R_REG_TYPE_FLG:
 	case R_REG_TYPE_GPR:
 		{
-#undef R_DEBUG_REG_T
-#define R_DEBUG_REG_T struct pt_regs
 		R_DEBUG_REG_T regs;
 		memset (&regs, 0, sizeof (regs));
 		memset (buf, 0, size);
