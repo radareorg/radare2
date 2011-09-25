@@ -99,8 +99,8 @@ R_API int r_debug_set_arch(RDebug *dbg, int arch, int bits) {
 			dbg->arch = arch;
 			return R_TRUE;
 		}
-		eprintf ("arch (%s) not supported by debug backend (%s)\n",
-			r_sys_arch_str (arch), dbg->h);
+		eprintf ("arch (%s, %d) not supported by debug backend\n",
+			r_sys_arch_str (arch), bits);
 	}
 	return R_FALSE;
 }

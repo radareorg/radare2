@@ -20,5 +20,7 @@ TARGETS="
 	build
 	bindist
 	mingw32
+	android-arm
+	android-x86
 "
 # mingw64 maemo

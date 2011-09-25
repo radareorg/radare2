@@ -44,9 +44,7 @@ for a in log/*.html ; do
 	n=$(echo $f | sed -e 's,.html,,' | sed -e 's,-, ,g')
 	warnings=$(cat $l|grep warning: |wc -l)
 	errors=$(cat $l|grep error: |wc -l)
-	echo "<h2><a href=$f>$n</a></h2>" >> log/index.html
-	echo "<h3>&nbsp;&nbsp;&nbsp;warnings: $warnings</h3>" >> log/index.html
-	echo "<h3>&nbsp;&nbsp;&nbsp;errors: $errors</h3>" >> log/index.html
+	echo "<h2><a href=$f>$n</a> (w:$warnings e:$errors)</h2>" >> log/index.html
 done
 
 cat <<EOF >> log/index.html

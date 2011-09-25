@@ -127,7 +127,7 @@ typedef grub_uint64_t	grub_disk_addr_t;
    (grub_uint16_t) ((_x << 8) | (_x >> 8)); \
 })
 
-#if defined(__GNUC__) && (__GNUC__ > 3) && (__GNUC__ > 4 || __GNUC_MINOR__ >= 3) && defined(GRUB_TARGET_I386)
+#if !defined(__ANDROID__) && defined(__GNUC__) && (__GNUC__ > 3) && (__GNUC__ > 4 || __GNUC_MINOR__ >= 3) && defined(GRUB_TARGET_I386)
 static inline grub_uint32_t grub_swap_bytes32(grub_uint32_t x)
 {
 	return __builtin_bswap32(x);

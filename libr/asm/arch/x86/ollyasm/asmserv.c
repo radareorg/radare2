@@ -714,8 +714,10 @@ int Printfloat4(char *s,float f) {
     k=sprintf(s,"+NAN "LFMT08,*(ulong *)&f);
   else if ((*(ulong *)&f & 0xFF800000L)==0xFF800000L)
     k=sprintf(s,"-NAN "LFMT08,*(ulong *)&f);
+#if 0
   else if (f==0.0)                     // By default, 0 is printed without
     k=sprintf(s,"0.0");                // decimal point, which I don't want.
+#endif
   else
     k=sprintf(s,"%#.7g",f);
   return k;

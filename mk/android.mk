@@ -1,9 +1,11 @@
 #CC=arm-linux-androideabi-gcc
 CC=ndk-gcc
+#RANLIB=ndk-ranlib
 RANLIB=arm-linux-androideabi-ranlib
 ONELIB=0
 OSTYPE=android
 LINK=
+#CC_AR=ndk-ar -r ${LIBAR}
 CC_AR=arm-linux-androideabi-ar -r ${LIBAR}
 PICFLAGS=
 CFLAGS+=${PICFLAGS}

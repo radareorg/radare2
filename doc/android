@@ -1,3 +1,7 @@
+Install NDK in archlinux x86-64
+ - Enable multilib repo in pacman.conf
+ - pacman -S lib32-glibc lib32-zlib
+
 To build r2 for android you need to install the NDK:
 
   sys/android-shell.sh

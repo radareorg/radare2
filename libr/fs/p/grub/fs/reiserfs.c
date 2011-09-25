@@ -239,7 +239,8 @@ struct grub_reiserfs_data
 static enum grub_reiserfs_item_type
 grub_reiserfs_get_key_v2_type (const struct grub_reiserfs_key *key)
 {
-  switch (grub_le_to_cpu64 (key->u.v2.offset_type) >> 60)
+  unsigned long long o = grub_le_to_cpu64 (key->u.v2.offset_type);
+  switch ((int)(o>>60))
     {
     case 0:
       return GRUB_REISERFS_STAT;
