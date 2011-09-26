@@ -12,7 +12,7 @@
 
 # These fields are used to build the control file.
 PACKAGE = radare2
-VERSION = 0.8.1
+VERSION = 0.8.5
 ARCH = armel
 SECTION = user/shell
 PRIORITY = optional

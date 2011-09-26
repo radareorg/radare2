@@ -1,4 +1,6 @@
 #!/bin/sh
+cd `dirname $PWD/$0` 
+./bins.sh
 
 # gen htmls
 for a in log/*.log ; do
@@ -49,18 +51,25 @@ cat <<EOF > log/index.html
 <title>r2 build farm</title>
 <body style=background-color:black;color:white;font-family:Verdana>
 <h1>r2 build farm</h1>
+<h2>bins</h2>
 EOF
+(cd log/bin && 
+for a in * ; do
+	echo "<h3><a href='bin/$a'>$a</a></h3>" >> ../index.html
+done
+)
 
-for a in log/*.html ; do
+echo "<h2>bins</h2>" >> log/index.html
+for a in `ls -rt log/*.log | tac`; do
 	[ $a = log/index.html ] && continue
-	f=$(echo $a | sed -e 's,log/,,')
-	l=log/$(echo $f | sed -e 's,.html,.log,')
-	ft=log/$(echo $f | sed -e 's,.html,.time,')
-	n=$(echo $f | sed -e 's,.html,,' | sed -e 's,-, ,g')
+	f=$(echo $a | sed -e 's,log/,,' -e s,.log,,)
+	l=log/$f.log
+	ft=log/$f.time
+	n=$(echo $f|sed -e 's,-, ,g')
 	t=$(cat $ft |grep real|awk '{print $2}')
 	warnings=$(cat $l|grep warning: |wc -l)
 	errors=$(cat $l|grep error: |wc -l)
-	echo "<h2><a href=$f>$n</a> (<font color=yellow>w:</font>$warnings <font color=red>e:</font>$errors $t)</h2>" >> log/index.html
+	echo "<h3><a href=$f.html>$n</a> (<font color=yellow>w:</font>$warnings <font color=red>e:</font>$errors $t)</h3>" >> log/index.html
 done
 
 cat <<EOF >> log/index.html

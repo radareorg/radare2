@@ -6,15 +6,21 @@ OS=`uname|tr 'A-Z' 'a-z'`
 [ "${OS}" = darwin ] && OS=mac
 
 # TODO: autodetect or gtfo
-SDK=${HOME}/Downloads/android-sdk-${OS}_x86
-NDK=${HOME}/Downloads/android-ndk-r6b
+if [ -f ~/.r2androidrc ]; then
+	. ~/.r2androidrc
+else
+	SDK=${HOME}/Downloads/android-sdk-${OS}_x86
+	NDK=${HOME}/Downloads/android-ndk-r6b
+fi
 
 if [ ! -d "${SDK}" ]; then 
 	echo "Cannot find Android SDK ${SDK}"
+	echo "Edit ~/.r2androidrc"
 	exit 1
 fi
 if [ ! -d "${NDK}" ]; then
 	echo "Cannot find Android NDK ${NDK}"
+	echo "Edit ~/.r2androidrc"
 	exit 1
 fi
 

@@ -1,3 +1,5 @@
+r2 on android
+=============
 Install NDK in archlinux x86-64
  - Enable multilib repo in pacman.conf
  - pacman -S lib32-glibc lib32-zlib
@@ -20,6 +22,9 @@ To package:
 Build farm
 
   See sys/android-shell.sh and sys/android-build.sh
+
+  sys/android-shell.sh sys/android-build.sh arm-static
+
 
 Environment:
 
