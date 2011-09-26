@@ -55,11 +55,12 @@ cat <<EOF > log/index.html
 EOF
 (cd log/bin && 
 for a in * ; do
-	echo "<h3><a href='bin/$a'>$a</a></h3>" >> ../index.html
+	s=$(du -hs $a |awk '{print $1}')
+	echo "<h3><a href='bin/$a'>$a</a> ($s)</h3>" >> ../index.html
 done
 )
 
-echo "<h2>bins</h2>" >> log/index.html
+echo "<h2>builds</h2>" >> log/index.html
 for a in `ls -rt log/*.log | tac`; do
 	[ $a = log/index.html ] && continue
 	f=$(echo $a | sed -e 's,log/,,' -e s,.log,,)
