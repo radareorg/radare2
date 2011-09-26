@@ -313,14 +313,21 @@ R_API void r_cons_visual_write (char *buffer) {
 
 R_API void r_cons_printf(const char *format, ...) {
 	int len;
-	char buf[CONS_BUFSZ];
 	va_list ap;
 
 	if (strchr (format, '%')) {
 		va_start (ap, format);
+#if OLD
+	char buf[CONS_BUFSZ];
 		len = vsnprintf (buf, CONS_BUFSZ-1, format, ap);
 		if (len>0)
 			r_cons_memcat (buf, len);
+#else
+		palloc (MOAR); // use proper palloc here
+		len = vsnprintf (I.buffer+I.buffer_len, I.buffer_sz-I.buffer_len-1, format, ap);
+		if (len>0)
+			I.buffer_len += len;
+#endif
 		va_end (ap);
 	} else r_cons_strcat (format);
 }
