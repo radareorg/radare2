@@ -6,4 +6,4 @@ TARGET_PE=bin_pe.${EXT_SO}
 ALL_TARGETS+=${TARGET_PE}
 
 ${TARGET_PE}: ${OBJ_PE}
-	${CC_LIB} ${TARGET_PE} $(call libname,bin_pe) ${CFLAGS} ${OBJ_PE}
+	${CC} $(call libname,bin_pe) ${CFLAGS} ${OBJ_PE}

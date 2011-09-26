@@ -20,8 +20,8 @@ fi
 
 NDKPATH_ARM=`echo ${NDK}/toolchains/arm-*/prebuilt/${OS}-x86/bin/`
 NDKPATH_X86=`echo ${NDK}/toolchains/x86-*/prebuilt/${OS}-x86/bin/`
-INCDIR=${NDK}/platforms/android-8/arch-arm/usr/include/
-CFLAGS=-I${INCDIR}
+#INCDIR=${NDK}/platforms/android-8/arch-arm/usr/include/
+#CFLAGS=-I${INCDIR}
 
 PATH=$SDK/tools:$SDK/platform-tools:$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:$PATH
 export PATH

@@ -5,4 +5,4 @@ ALL_TARGETS+=${TARGET_MREPLACE}
 STATIC_OBJ+=${OBJ_MREPLACE}
 
 ${TARGET_MREPLACE}: ${OBJ_MREPLACE}
-	${CC_LIB} ${TARGET_MREPLACE} $(call libname,parse_mreplace) ${CFLAGS} ${OBJ_MREPLACE}
+	${CC} $(call libname,parse_mreplace) ${CFLAGS} ${OBJ_MREPLACE}

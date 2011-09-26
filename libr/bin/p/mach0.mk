@@ -6,4 +6,4 @@ TARGET_MACH0=bin_mach0.${EXT_SO}
 ALL_TARGETS+=${TARGET_MACH0}
 
 ${TARGET_MACH0}: ${OBJ_MACH0}
-	${CC_LIB} ${TARGET_MACH0} $(call libname,bin_mach0) ${CFLAGS} ${OBJ_MACH0}
+	${CC} $(call libname,bin_mach0) ${CFLAGS} ${OBJ_MACH0}

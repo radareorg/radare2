@@ -15,11 +15,23 @@ logfile() {
 	echo "log/${PACKAGE}-`tstamp`-`revision`-$1"
 }
 
+getcpu() {
+	uname -a
+	cat /proc/cpuinfo | grep "model name" | head -n1
+	printf "cpus: "
+	cat /proc/cpuinfo | grep processor | tail -n 1 | awk '{print $3}'
+	printf "bogomips: "
+	cat /proc/cpuinfo | grep bogomips | tail -n 1 | awk '{print $3}'
+}
+
 mkdir -p farm/log
 for a in ${TARGETS} ; do
 	L=farm/`logfile $a`
+	T=$L.time
+	C=$L.cpu
+	getcpu > $C
 	echo "= $a" | tee $L.log
-	./${a}.sh 2>&1 | tee -a $L.log
+	(time ./${a}.sh 2>&1 | tee -a $L.log) 2> $T
 	echo $? > $L.ret
 done
 echo `revision` > farm/last-revision

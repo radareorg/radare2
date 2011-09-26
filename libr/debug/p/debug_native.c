@@ -106,7 +106,8 @@ static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, 
 #include <sys/wait.h>
 #include <limits.h>
 #ifdef __ANDROID__
-# define R_DEBUG_REG_T struct user_regs
+// #if __arm__
+# define R_DEBUG_REG_T struct pt_regs
 #else
 #include <sys/user.h>
 # if __i386__ || __x86_64__
@@ -121,8 +122,6 @@ typedef unsigned long mips64_regs_t [4096];
 # endif
 #else // OS
 
-//#undef R_DEBUG_REG_T
-//#define R_DEBUG_REG_T struct pt_regs
 
 #warning Unsupported debugging platform
 #undef DEBUGGER
@@ -218,11 +217,11 @@ static int r_debug_native_step(RDebug *dbg) {
 		ret = R_FALSE;
 	} else ret = R_TRUE;
 #else // linux
-	ut32 addr = 0; /* should be eip */
+	ut64 addr = 0; /* should be eip */
 	//ut32 data = 0;
 	//printf("NATIVE STEP over PID=%d\n", pid);
 	addr = r_debug_reg_get (dbg, "pc");
-	ret = ptrace (PTRACE_SINGLESTEP, pid, addr, 0); //addr, data);
+	ret = ptrace (PTRACE_SINGLESTEP, pid, (void*)(size_t)addr, 0); //addr, data);
 	if (ret == -1) {
 		perror ("native-singlestep");
 		ret = R_FALSE;
@@ -1337,7 +1336,7 @@ return R_FALSE;
 	//	eprintf ("EFLAGS =%x\n", ctx.EFlags);
 		return SetThreadContext (tid2handler (pid, tid), &ctx)? R_TRUE: R_FALSE;
 #elif __linux__
-		int ret = ptrace (PTRACE_SETREGS, pid, 0, buf);
+		int ret = ptrace (PTRACE_SETREGS, pid, 0, (void*)buf);
 		if (sizeof (R_DEBUG_REG_T) < size)
 			size = sizeof (R_DEBUG_REG_T);
 		return (ret != 0) ? R_FALSE: R_TRUE;

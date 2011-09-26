@@ -778,6 +778,9 @@ static void gdbwrap_writeregister2(gdbwrap_t *desc, ureg32 regNum, la32 val) {
 	reg = gdbwrap_readgenreg (desc);
 	ret = gdbwrap_lastmsg (desc);
 	ASSERT (reg != NULL && ret != NULL);
+	if (reg == NULL) {
+		fprintf (stderr, "gdbwrap_writeregister: Fail\n");
+	}
 
 	snprintf (locreg, sizeof(locreg), "%08x", gdbwrap_little_endian(val));
 	memcpy (ret + offset, locreg, 2 * sizeof (ureg32));

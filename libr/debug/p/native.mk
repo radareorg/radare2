@@ -6,7 +6,7 @@ TARGET_PTRACE=debug_native.${EXT_SO}
 ALL_TARGETS+=${TARGET_PTRACE}
 
 ${TARGET_PTRACE}: ${OBJ_PTRACE}
-	${CC_LIB} ${TARGET_PTRACE} $(call libname,debug_native) ${CFLAGS} \
+	${CC} $(call libname,debug_native) ${CFLAGS} \
 		${LDFLAGS_LINKPATH}.. -L.. \
 		${LDFLAGS_LINKPATH}../../lib -L../../lib -lr_lib \
 		${LDFLAGS_LINKPATH}../../io -L../../io -lr_io \
