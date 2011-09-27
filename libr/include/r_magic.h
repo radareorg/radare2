@@ -263,6 +263,7 @@ extern "C" {
 
 typedef struct r_magic_set RMagic;
 
+#ifdef R_API
 R_API RMagic* r_magic_new();
 R_API void r_magic_free(RMagic*);
 
@@ -277,6 +278,7 @@ R_API int r_magic_load(RMagic*, const char *);
 R_API int r_magic_compile(RMagic*, const char *);
 R_API int r_magic_check(RMagic*, const char *);
 R_API int r_magic_errno(RMagic*);
+#endif
 
 #ifdef __cplusplus
 };

@@ -18,4 +18,5 @@ cd r2-bindings
 cd python
 make clean
 make
-sudo make install PYTHON_VERSION=${PYTHON_VERSION}
+[ ! "$1" = --no-install ] && \
+	sudo make install PYTHON_VERSION=${PYTHON_VERSION}
