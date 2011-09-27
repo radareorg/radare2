@@ -70,20 +70,22 @@ typedef struct r_hash_t {
 
 #ifdef R_API
 /* OO */
-R_API struct r_hash_t *r_hash_new(int rst, int flags);
-R_API void r_hash_free(struct r_hash_t *ctx);
+R_API RHash *r_hash_new(int rst, int flags);
+R_API void r_hash_free(RHash *ctx);
 
 /* methods */
-R_API const ut8 *r_hash_do_md4(struct r_hash_t *ctx, const ut8 *input, ut32 len);
-R_API const ut8 *r_hash_do_md5(struct r_hash_t *ctx, const ut8 *input, ut32 len);
-R_API const ut8 *r_hash_do_sha1(struct r_hash_t *ctx, const ut8 *input, ut32 len);
-R_API const ut8 *r_hash_do_sha256(struct r_hash_t *ctx, const ut8 *input, ut32 len);
-R_API const ut8 *r_hash_do_sha384(struct r_hash_t *ctx, const ut8 *input, ut32 len);
-R_API const ut8 *r_hash_do_sha512(struct r_hash_t *ctx, const ut8 *input, ut32 len);
+R_API const ut8 *r_hash_do_md4(RHash *ctx, const ut8 *input, ut32 len);
+R_API const ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, ut32 len);
+R_API const ut8 *r_hash_do_sha1(RHash *ctx, const ut8 *input, ut32 len);
+R_API const ut8 *r_hash_do_sha256(RHash *ctx, const ut8 *input, ut32 len);
+R_API const ut8 *r_hash_do_sha384(RHash *ctx, const ut8 *input, ut32 len);
+R_API const ut8 *r_hash_do_sha512(RHash *ctx, const ut8 *input, ut32 len);
 
 /* static methods */
+R_API const char *r_hash_name(int bit);
 R_API ut64 r_hash_name_to_bits(const char *name);
-R_API int r_hash_calculate(struct r_hash_t *ctx, int algobit, const ut8 *input, ut32 len);
+R_API int r_hash_size(int bit);
+R_API int r_hash_calculate(RHash *ctx, int algobit, const ut8 *input, ut32 len);
 
 /* checksums */
 /* XXX : crc16 should use 0 as arg0 by default */
@@ -95,13 +97,16 @@ R_API ut8 r_hash_xor(const ut8 *b, ut64 len);
 R_API ut16 r_hash_xorpair(const ut8 *a, ut64 len);
 R_API int r_hash_parity(const ut8 *buf, ut64 len);
 R_API ut8 r_hash_mod255(const ut8 *b, ut64 len);
-R_API const char *r_hash_name(int bit);
 
 /* analysis */
 R_API ut8  r_hash_hamdist(const ut8 *buf, int len);
 R_API double r_hash_entropy(const ut8 *data, ut64 len);
 R_API double r_hash_entropy_fraction(const ut8 *data, ut64 len);
 R_API int r_hash_pcprint(const ut8 *buffer, ut64 len);
+
+/* lifecycle */
+R_API void r_hash_do_begin(RHash *ctx, int flags);
+R_API void r_hash_do_end(RHash *ctx, int flags);
 #endif
 
 #endif

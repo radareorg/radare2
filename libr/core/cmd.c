@@ -1738,6 +1738,19 @@ l = len;
 	case 'D':
 	case 'd':
 		switch (input[1]) {
+		case 'b': {
+			RAnalBlock *b = r_anal_bb_from_offset (core->anal, core->offset);
+			if (b) {
+				ut8 *block = malloc (b->size+1);
+				if (block) {
+					r_core_read_at (core, b->addr, block, b->size);
+					core->num->value = r_core_print_disasm (core->print, core, b->addr, block, b->size, 9999);
+					free (block);
+					return 0;
+				}
+			} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
+			} break;
+			break;
 		case 'f': {
 			RAnalFcn *f = r_anal_fcn_find (core->anal, core->offset,
 					R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
@@ -1767,9 +1780,12 @@ l = len;
 			break;
 		case '?':
 			eprintf ("Usage: pd[f|i|l] [len] @ [addr]\n");
+			//TODO: eprintf ("  pdr  : disassemble resume\n");
+			eprintf ("  pdb  : disassemble basic block\n");
 			eprintf ("  pdf  : disassemble function\n");
 			eprintf ("  pdi  : disassemble only instruction\n");
 			eprintf ("  pdl  : show instruction sizes\n");
+return 0;
 			break;
 		}
 		//if (core->visual)
@@ -2311,6 +2327,29 @@ static int cmd_anal(void *data, const char *input) {
 	}
 
 	switch (input[0]) {
+	case 'x':
+		switch (input[1]) {
+		case 'c':
+		case 'd':
+		case 'C':
+			// add meta xref
+			eprintf ("TODO: not yet implemented\n");
+			break;
+		case '-':
+			// remove meta xref
+			eprintf ("TODO: not yet implemented\n");
+			break;
+		default:
+		case '?':
+			r_cons_printf (
+			"Usage: ax[cCd?] [arg]\n"
+			" axc sym.main+0x38 sym.printf   ; add code ref"
+			" axC sym.main sym.puts          ; add call ref"
+			" axd sym.main str.helloworld    ; add data ref"
+			" ax- sym.main str.helloworld    ; remove reference");
+			break;
+		}
+		break;
 	case 'o':
 		if (input[1] == '?') {
 			r_cons_printf (
@@ -2740,15 +2779,16 @@ static int cmd_anal(void *data, const char *input) {
 	default:
 		r_cons_printf (
 		"Usage: a[?obdfrgtv]\n"
-		" aa              ; Analyze all (fcns + bbs)\n"
-		" ap              ; Find and analyze function preludes\n"
-		" ad [from] [to]  ; Analyze data pointers to (from-to)\n"
-		" as [num]        ; Analyze syscall using dbg.reg\n"
-		" ao[e?] [len]    ; Analyze Opcodes (or emulate it)\n"
-		" af[bcsl?+-*]    ; Analyze Functions\n"
-		" ar[?ld-*]       ; Manage refs/xrefs\n"
-		" ag[?acgdlf]     ; Output Graphviz code\n"
-		" at[trd+-*?] [.] ; Analyze execution Traces\n"
+		" aa               ; Analyze all (fcns + bbs)\n"
+		" ap               ; Find and analyze function preludes\n"
+		" ad [from] [to]   ; Analyze data pointers to (from-to)\n"
+		" as [num]         ; Analyze syscall using dbg.reg\n"
+		" ax[-cCd] [f] [t] ; manage code/call/data xrefs\n"
+		" ao[e?] [len]     ; Analyze Opcodes (or emulate it)\n"
+		" af[bcsl?+-*]     ; Analyze Functions\n"
+		" ar[?ld-*]        ; Manage refs/xrefs\n"
+		" ag[?acgdlf]      ; Output Graphviz code\n"
+		" at[trd+-*?] [.]  ; Analyze execution Traces\n"
 		"Examples:\n"
 		" f ts @ `S*~text:0[3]`; f t @ section..text\n"
 		" f ds @ `S*~data:0[3]`; f d @ section..data\n"
