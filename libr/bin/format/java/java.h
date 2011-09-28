@@ -89,11 +89,13 @@ typedef struct r_bin_java_obj_t {
 	const char* file;
 	struct r_buf_t*b;
 	int midx;
+	int fsym;
+	int fsymsz;
 } RBinJavaObj;
 
 struct r_bin_java_sym_t {
 	char name[R_BIN_JAVA_MAXSTR];
-	ut64 offset;
+	ut64 offset; // XXX: ut64 is too much
 	ut64 size;
 	int last;
 };

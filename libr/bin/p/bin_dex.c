@@ -30,9 +30,8 @@ static RBinInfo * info(RBinArch *arch) {
 	RBinInfo *ret = NULL;
 	char *version;
 
-	if (!(ret = R_NEW (RBinInfo)))
+	if (!(ret = R_NEW0 (RBinInfo)))
 		return NULL;
-	memset (ret, '\0', sizeof (RBinInfo));
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->type, "DEX CLASS", R_BIN_SIZEOF_STRINGS);
@@ -75,7 +74,7 @@ static RList* strings (RBinArch *arch) {
 			ptr->size = len;
 			ptr->ordinal = i+1;
 			r_list_append (ret, ptr);
-		} else eprintf ("dex_read_uleb128: invalid read\n");
+		} //else eprintf ("dex_read_uleb128: invalid read\n");
 	}
 	return ret;
 }
@@ -84,7 +83,7 @@ static RList* methods (RBinArch *arch) {
 	RList *ret = NULL;
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->bin_obj;
 	int i, j, len;
-	char buf[6];
+	char *name, buf[6];
 	RBinSymbol *ptr;
 
 	if (!(ret = r_list_new ()))
@@ -94,11 +93,19 @@ static RList* methods (RBinArch *arch) {
 		if (!(ptr = R_NEW (RBinSymbol)))
 			break;
 		r_buf_read_at (bin->b, bin->strings[bin->methods[i].name_id], (ut8*)&buf, 6);
-		strncpy (ptr->name, "method.", 7);
 		len = dex_read_uleb128 (buf);
-		r_buf_read_at(bin->b, bin->strings[bin->methods[i].name_id]+
-				dex_uleb128_len (buf), (ut8*)&ptr->name+7, len);
-		ptr->name[(int) len+7]='\0';
+
+		name = malloc (len);
+		if (!name) {
+			eprintf ("error malloc string length %d\n", len);
+			break;
+		}
+		r_buf_read_at (bin->b, bin->strings[bin->methods[i].name_id]+
+				dex_uleb128_len (buf), (ut8*)name, len);
+		snprintf (ptr->name, sizeof (ptr->name), "method.%d.%s", 
+				bin->methods[i].class_id, name);
+		free (name);
+
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
@@ -108,16 +115,24 @@ static RList* methods (RBinArch *arch) {
 		ptr->ordinal = i+1;
 		r_list_append (ret, ptr);
 	}
-	j=i;
+	j = i;
 	for (i = 0; i<bin->header.fields_size; i++) {
 		if (!(ptr = R_NEW (RBinSymbol)))
 			break;
 		r_buf_read_at (bin->b, bin->strings[bin->fields[i].name_id], (ut8*)&buf, 6);
-		strncpy (ptr->name, "field.", 6);
+
 		len = dex_read_uleb128 (buf);
-		r_buf_read_at(bin->b, bin->strings[bin->fields[i].name_id]+
-				dex_uleb128_len (buf), (ut8*)&ptr->name+6, len);
-		ptr->name[(int) len+6]='\0';
+		name = malloc (len);
+		if (!name) {
+			eprintf ("error malloc string length %d\n", len);
+			break;
+		}
+		r_buf_read_at (bin->b, bin->strings[bin->fields[i].name_id]+
+				dex_uleb128_len (buf), (ut8*)name, len);
+		snprintf (ptr->name, sizeof (ptr->name), "field.%d.%s", 
+			bin->fields[i].class_id, name);
+		free (name);
+
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
@@ -141,17 +156,33 @@ static RList* classes (RBinArch *arch) {
 		return NULL;
 	ret->free = free;
 	for (i = 0; i < bin->header.class_size; i++) {
-		r_buf_read_at (bin->b, (ut64) bin->header.class_offset, (ut8*)&entry,
+		r_buf_read_at (bin->b, (ut64) bin->header.class_offset
+				+ (sizeof (struct dex_class_t)*i), (ut8*)&entry,
 				sizeof (struct dex_class_t));
-#if 0
-		eprintf ("ut32 class_id = %08x;\n", entry.class_id);
-		eprintf ("ut32 access_flags = %08x;\n", entry.access_flags);
-		eprintf ("ut32 super_class = %08x;\n", entry.super_class);
-		eprintf ("ut32 interfaces_offset = %08x;\n", entry.interfaces_offset);
-		eprintf ("ut32 source_file = %08x;\n", entry.source_file);
-		eprintf ("ut32 anotations_offset = %08x;\n", entry.anotations_offset);
-		eprintf ("ut32 class_data_offset = %08x;\n", entry.class_data_offset);
-		eprintf ("ut32 static_values_offset = %08x;\n\n", entry.static_values_offset);
+	//	r_list_append
+		// TODO: implement sections.. each section specifies a class boundary
+#if 1
+		//eprintf ("ut32 class_id = %d;\n", entry.class_id);
+{
+		int len = 100;
+		char *name = malloc (len);
+		if (!name) {
+			eprintf ("error malloc string length %d\n", len);
+			break;
+		}
+		r_buf_read_at (bin->b, bin->strings[entry.source_file],
+				(ut8*)name, len);
+		//snprintf (ptr->name, sizeof (ptr->name), "field.%s.%d", name, i);
+		eprintf ("class.%s=%d\n", name[0]==12?name+1:name, entry.class_id);
+		free (name);
+}
+		eprintf ("# access_flags = %x;\n", entry.access_flags);
+		eprintf ("# super_class = %d;\n", entry.super_class);
+		eprintf ("# interfaces_offset = %08x;\n", entry.interfaces_offset);
+		//eprintf ("ut32 source_file = %08x;\n", entry.source_file);
+		eprintf ("# anotations_offset = %08x;\n", entry.anotations_offset);
+		eprintf ("# class_data_offset = %08x;\n", entry.class_data_offset);
+		eprintf ("# static_values_offset = %08x;\n\n", entry.static_values_offset);
 #endif
 	}
 	return 0; //FIXME: This must be main offset
@@ -184,6 +215,54 @@ static int getoffset (RBinArch *arch, int type, int idx) {
 	return -1;
 }
 
+static RList* sections(RBinArch *arch) {
+	RList *ret = NULL;
+	RBinSection *ptr = NULL;
+	struct r_bin_java_sym_t *s = NULL;
+	RList *ml;
+	RListIter *iter;
+
+	int ns, fsymsz = 0;
+	int fsym = 0;
+	RBinSymbol *m;
+	ml = methods (arch);
+	r_list_foreach (ml, iter, m) {
+		if (fsym == 0 || m->offset<fsym)
+			fsym = m->offset;
+		ns = m->offset + m->size;
+		if (ns>fsymsz)
+			fsymsz = ns;
+	}
+	if (fsym == 0)
+		return NULL;
+	if (!(ret = r_list_new ()))
+		return NULL;
+	ret->free = free;
+	if ((ptr = R_NEW (RBinSection))) {
+		strcpy (ptr->name, "code");
+		ptr->size = ptr->vsize = fsymsz;
+		ptr->offset = ptr->rva = fsym;
+		ptr->srwx = 4|1;
+		r_list_append (ret, ptr);
+	}
+	if ((ptr = R_NEW (RBinSection))) {
+		strcpy (ptr->name, "constpool");
+		ptr->size = ptr->vsize = fsym;
+		ptr->offset = ptr->rva = 0;
+		ptr->srwx = 4;
+		r_list_append (ret, ptr);
+	}
+	if ((ptr = R_NEW (RBinSection))) {
+		strcpy (ptr->name, "data");
+		ptr->offset = ptr->rva = fsymsz+fsym;
+		ptr->size = ptr->vsize = arch->buf->length - ptr->rva;
+		ptr->srwx = 4|2;
+		r_list_append (ret, ptr);
+	}
+	free (s);
+	return ret;
+}
+
 struct r_bin_plugin_t r_bin_plugin_dex = {
 	.name = "dex",
 	.desc = "dex format bin plugin",
@@ -194,11 +273,11 @@ struct r_bin_plugin_t r_bin_plugin_dex = {
 	.check = &check,
 	.baddr = &baddr,
 	.binsym = NULL,
-	.entries = &classes,
-	.sections = NULL,
-	.symbols = &methods,
+	.entries = classes,
+	.sections = sections,
+	.symbols = methods,
 	.imports = NULL,
-	.strings = &strings,
+	.strings = strings,
 	.info = &info,
 	.fields = NULL,
 	.libs = NULL,

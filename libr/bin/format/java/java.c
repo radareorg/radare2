@@ -235,7 +235,7 @@ static int javasm_init(RBinJavaObj *bin) {
 			sz = R_BIN_JAVA_USHORT (buf, 0);
 			bin->cp_items[i].length = sz;
 			bin->cp_items[i].off += 3;
-			if (sz>=0 && sz<sizeof (buf)) {
+			if (sz<sizeof (buf)) {
 				r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, sz);
 				buf[sz] = '\0';
 			} else {
@@ -341,12 +341,12 @@ static int javasm_init(RBinJavaObj *bin) {
 			bin->methods[i].name = malloc (1024);
 // XXX: can null ptr here
 			snprintf (bin->methods[i].name, 1023, "%s%s",
-				(get_cp (bin, R_BIN_JAVA_USHORT(buf, 2)-1))->value,
-				(get_cp (bin, R_BIN_JAVA_USHORT(buf, 2)))->value);
+				(get_cp (bin, R_BIN_JAVA_USHORT (buf, 2)-1))->value,
+				(get_cp (bin, R_BIN_JAVA_USHORT (buf, 2)))->value);
 #endif
 bin->midx = i;
 			IFDBG printf("    Name Index: %d (%s)\n", bin->methods[i].name_idx, bin->methods[i].name);
-			bin->methods[i].descriptor_idx = R_BIN_JAVA_USHORT(buf, 4);
+			bin->methods[i].descriptor_idx = R_BIN_JAVA_USHORT (buf, 4);
 			bin->methods[i].descriptor = r_str_dup (NULL, (get_cp(bin, R_BIN_JAVA_USHORT(buf, 4)-1))->value);
 			IFDBG printf("    Descriptor Index: %d (%s)\n", bin->methods[i].descriptor_idx, bin->methods[i].descriptor);
 
@@ -394,21 +394,29 @@ ut64 r_bin_java_get_entrypoint(RBinJavaObj* bin) {
 
 struct r_bin_java_sym_t* r_bin_java_get_symbols(RBinJavaObj* bin) {
 	struct r_bin_java_sym_t *symbols;
-	int i, j, ctr = 0;
+	int ns, i, j, ctr = 0;
 
 	if ((symbols = malloc ((bin->methods_count + 1) * sizeof(struct r_bin_java_sym_t))) == NULL)
 		return NULL;
+	bin->fsym = 0;
+	bin->fsymsz = 0;
 	for (i=0; i < bin->methods_count; i++) {
-		memcpy(symbols[ctr].name, bin->methods[i].name, R_BIN_JAVA_MAXSTR);
+		memcpy (symbols[ctr].name, bin->methods[i].name, R_BIN_JAVA_MAXSTR);
 		symbols[ctr].name[R_BIN_JAVA_MAXSTR-1] = '\0';
 		for (j=0; j < bin->methods[i].attr_count; j++)
 			if (bin->methods[i].attributes[j].type == R_BIN_JAVA_TYPE_CODE) {
 				symbols[ctr].offset = (ut64)bin->methods[i].attributes->info.code.code_offset;
 				symbols[ctr].size = bin->methods[i].attributes->info.code.code_length;
 				symbols[ctr].last = 0;
+				if (bin->fsym == 0 || symbols[ctr].offset<bin->fsym)
+					bin->fsym = symbols[ctr].offset;
+				ns = symbols[ctr].offset + symbols[ctr].size;
+				if (ns>bin->fsymsz)
+					bin->fsymsz = ns;
 				ctr++;
 			}
 	}
+	bin->fsymsz -= bin->fsym;
 	symbols[ctr].last = 1;
 	return symbols;
 }

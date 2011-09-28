@@ -539,6 +539,9 @@ R_API int r_meta_list(RMeta *m, int type);
 R_API void r_meta_item_free(void *_item);
 R_API RMetaItem *r_meta_item_new(int type);
 
+R_API int r_anal_fcn_xref_add (RAnal *anal, RAnalFcn *fcn, ut64 at, ut64 addr, int type);
+R_API int r_anal_fcn_xref_del (RAnal *anal, RAnalFcn *fcn, ut64 at, ut64 addr, int type);
+
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_csr;
 extern RAnalPlugin r_anal_plugin_avr;

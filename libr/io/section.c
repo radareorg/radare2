@@ -109,7 +109,8 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len) {
 				else
 					io->printf("-");
 			}
-			io->printf ("| 0x%08"PFMT64x" %s\n", s->offset+s->size, s->name);
+			io->printf ("| 0x%08"PFMT64x" %s %s\n", s->offset+s->size, 
+				r_str_rwx_i (s->rwx), s->name);
 			i++;
 		}
 		/* current seek */
@@ -119,7 +120,7 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len) {
 				io->printf (
 					((j*mul)+min >= seek &&
 					 (j*mul)+min <= seek+len)
-					?"#":"-");
+					?"^":"-");
 			}
 			io->printf ("| 0x%08"PFMT64x"\n", seek+len);
 		}

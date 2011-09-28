@@ -22,6 +22,7 @@
 
 ====[[ 0.9 ]]====
 
+* Add support for classes (useful for c++, dex, objc, ...)
 * Implement hex:// io :D like malloc but initialized.. use malloc here?
 
 OSX

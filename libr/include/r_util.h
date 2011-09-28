@@ -256,8 +256,8 @@ R_API const ut8 *r_mem_mem (const ut8 *haystack, int hlen, const ut8 *needle, in
 #define r_num_abs(x) x>0?x:-x
 R_API void r_num_minmax_swap(ut64 *a, ut64 *b);
 R_API void r_num_minmax_swap_i(int *a, int *b); // XXX this can be a cpp macro :??
-R_API ut64 r_num_math(struct r_num_t *num, const char *str);
-R_API ut64 r_num_get(struct r_num_t *num, const char *str);
+R_API ut64 r_num_math(RNum *num, const char *str);
+R_API ut64 r_num_get(RNum *num, const char *str);
 R_API int r_num_to_bits(char *out, ut64 num);
 R_API int r_num_rand(int max);
 R_API void r_num_irand();

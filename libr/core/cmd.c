@@ -2329,24 +2329,66 @@ static int cmd_anal(void *data, const char *input) {
 	switch (input[0]) {
 	case 'x':
 		switch (input[1]) {
-		case 'c':
-		case 'd':
-		case 'C':
-			// add meta xref
-			eprintf ("TODO: not yet implemented\n");
+		case '\0':
+		case ' ':
+			// list xrefs from current address
+			{
+				ut64 addr = input[1]?  r_num_math (core->num, input+1): core->offset;
+				RAnalFcn *fcn = r_anal_fcn_find (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+				if (fcn) {
+					RAnalRef *ref;
+					RListIter *iter;
+					r_list_foreach (fcn->refs, iter, ref) {
+						r_cons_printf ("%c 0x%08"PFMT64x" -> 0x%08"PFMT64x"\n",
+							ref->type, ref->at, ref->addr);
+					}
+				} else eprintf ("Cant find function\n");
+			}
 			break;
-		case '-':
-			// remove meta xref
-			eprintf ("TODO: not yet implemented\n");
+		case 'c': // add meta xref
+		case 'd':
+		case 'C': {
+				char *p;
+				ut64 a, b;
+				RAnalFcn *fcn;
+				char *mi = strdup (input);
+				if (mi && mi[2]==' ' && (p=strchr (mi+3, ' '))) {
+					*p = 0;
+					a = r_num_math (core->num, mi+2);
+					b = r_num_math (core->num, p+1);
+					fcn = r_anal_fcn_find (core->anal, a, R_ANAL_FCN_TYPE_ROOT);
+					if (fcn) {
+						r_anal_fcn_xref_add (core->anal, fcn, a, b, input[1]);
+					} else eprintf ("Cannot add reference to non-function\n");
+				} else eprintf ("Usage: ax[cCd?] [src] [dst]\n");
+				free (mi);
+			}
+			break;
+		case '-': {
+				char *p;
+				ut64 a, b;
+				RAnalFcn *fcn;
+				char *mi = strdup (input);
+				if (mi && mi[2]==' ' && (p=strchr (mi+3, ' '))) {
+					*p = 0;
+					a = r_num_math (core->num, mi+2);
+					b = r_num_math (core->num, p+1);
+					fcn = r_anal_fcn_find (core->anal, a, R_ANAL_FCN_TYPE_ROOT);
+					if (fcn) {
+						r_anal_fcn_xref_del (core->anal, fcn, a, b, -1);
+					} else eprintf ("Cannot del reference to non-function\n");
+				} else eprintf ("Usage: ax- [src] [dst]\n");
+				free (mi);
+			}
 			break;
 		default:
 		case '?':
 			r_cons_printf (
-			"Usage: ax[cCd?] [arg]\n"
-			" axc sym.main+0x38 sym.printf   ; add code ref"
-			" axC sym.main sym.puts          ; add call ref"
-			" axd sym.main str.helloworld    ; add data ref"
-			" ax- sym.main str.helloworld    ; remove reference");
+			"Usage: ax[-cCd?] [src] [dst]\n"
+			" axc sym.main+0x38 sym.printf   ; add code ref\n"
+			" axC sym.main sym.puts          ; add call ref\n"
+			" axd sym.main str.helloworld    ; add data ref\n"
+			" ax- sym.main str.helloworld    ; remove reference\n");
 			break;
 		}
 		break;
@@ -3981,7 +4023,7 @@ static int cmd_meta(void *data, const char *input) {
 				r_list_foreach (core->anal->fcns, iter, f)
 					memset (f->varsubs, 0, sizeof(f->varsubs));
 			}
-}
+			}
 			break;
 		case '*':
 			{

@@ -44,9 +44,36 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	free (fcn);
 }
 
+R_API int r_anal_fcn_xref_add (RAnal *anal, RAnalFcn *fcn, ut64 at, ut64 addr, int type) {
+	RAnalRef *ref;
+	if (!fcn || !anal)
+		return R_FALSE;
+	if (!(ref = r_anal_ref_new ()))
+		return R_FALSE;
+	ref->type = type;
+	ref->at = at;
+	ref->addr = addr;
+	// TODO: ensure we are not dupping xrefs
+	r_list_append (fcn->refs, ref);
+	return R_TRUE;
+}
+
+R_API int r_anal_fcn_xref_del (RAnal *anal, RAnalFcn *fcn, ut64 at, ut64 addr, int type) {
+	RAnalRef *ref;
+	RListIter *iter;
+	r_list_foreach (fcn->xrefs, iter, ref) {
+		if ((type != -1 || type == ref->type)  &&
+			(at == 0LL || at == ref->at) &&
+			(addr == 0LL || addr == ref->addr)) {
+				r_list_delete (fcn->xrefs, iter);
+				return R_TRUE;
+		}
+	}
+	return R_FALSE;
+}
+
 R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
 	RAnalOp op;
-	RAnalRef *ref;
 	char *varname;
 	int oplen, idx = 0;
 	if (fcn->addr == -1)
@@ -98,17 +125,10 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, 
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
-			/* TODO: loc's should end with jmp too? */
-			if (!(ref = r_anal_ref_new ())) {
-				eprintf ("Error: new (ref)\n");
+			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump,
+					op.type == R_ANAL_OP_TYPE_CALL?
+					R_ANAL_REF_TYPE_CALL : R_ANAL_REF_TYPE_CODE))
 				return R_ANAL_RET_ERROR;
-			}
-			ref = R_NEW (RAnalRef);
-			ref->type = op.type == R_ANAL_OP_TYPE_CALL?
-				R_ANAL_REF_TYPE_CALL : R_ANAL_REF_TYPE_CODE;
-			ref->at = op.addr;
-			ref->addr = op.jump;
-			r_list_append (fcn->refs, ref);
 			break;
 		case R_ANAL_OP_TYPE_RET:
 			return R_ANAL_RET_END;

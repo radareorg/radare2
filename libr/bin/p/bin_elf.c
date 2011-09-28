@@ -24,10 +24,14 @@ static ut64 baddr(RBinArch *arch) {
 static RBinAddr* binsym(RBinArch *arch, int sym) {
 	RBinAddr *ret = NULL;
 	switch (sym) {
-	case R_BIN_SYM_MAIN:
-		if (!(ret = R_NEW (RBinAddr)))
+	case R_BIN_SYM_ENTRY:
+		if (!(ret = R_NEW0 (RBinAddr)))
 			return NULL;
-		memset (ret, '\0', sizeof (RBinAddr));
+		ret->offset = ret->rva = Elf_(r_bin_elf_get_entry_offset) (arch->bin_obj);
+		break;
+	case R_BIN_SYM_MAIN:
+		if (!(ret = R_NEW0 (RBinAddr)))
+			return NULL;
 		ret->offset = ret->rva = Elf_(r_bin_elf_get_main_offset) (arch->bin_obj);
 		break;
 	}

@@ -3,6 +3,7 @@
 #include "dex.h"
 
 char* r_bin_dex_get_version(struct r_bin_dex_obj_t* bin) {
+	// TODO: ripe!!! pas
 	char *version = malloc (8);
 	memset (version, 0, 8);
 	memcpy (version, bin->b->buf+4, 3);
@@ -17,23 +18,22 @@ struct r_bin_dex_obj_t* r_bin_dex_new_buf(struct r_buf_t *buf) {
 	memset (bin, 0, sizeof (struct r_bin_dex_obj_t));
 	bin->b = buf;
 	bin->size = buf->length;
+	// XXX: this is not endian safe
 	r_buf_read_at (bin->b, 0, (ut8*)&bin->header, sizeof (struct dex_header_t));
 
 	bin->strings = (ut32 *) malloc (bin->header.strings_size * sizeof (ut32) + 1);
-	r_buf_read_at(bin->b, bin->header.strings_offset, (ut8*)bin->strings,
+	r_buf_read_at (bin->b, bin->header.strings_offset, (ut8*)bin->strings,
 			bin->header.strings_size * sizeof (ut32));
 
 	bin->methods = (struct dex_method_t *) malloc (bin->header.method_size *
 			sizeof (struct dex_method_t) + 1);
-	r_buf_read_at(bin->b, bin->header.method_offset, (ut8*)bin->methods,
+	r_buf_read_at (bin->b, bin->header.method_offset, (ut8*)bin->methods,
 			bin->header.method_size * sizeof (struct dex_method_t));
 
 	bin->fields = (struct dex_field_t *) malloc (bin->header.fields_size *
 			sizeof (struct dex_field_t) + 1);
-	r_buf_read_at(bin->b, bin->header.fields_offset, (ut8*)bin->fields,
+	r_buf_read_at (bin->b, bin->header.fields_offset, (ut8*)bin->fields,
 			bin->header.fields_size * sizeof (struct dex_field_t));
-
-
 	return bin;
 }
 
