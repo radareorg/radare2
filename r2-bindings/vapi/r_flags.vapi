@@ -3,7 +3,7 @@
 [CCode (cheader_filename="r_flags.h,r_list.h,r_types_base.h", cprefix="r_flag_", lower_case_cprefix="r_flag_")]
 namespace Radare {
 	[Compact]
-	[CCode (cprefix="r_flag_item_", cname="struct r_flag_item_t", free_function="free")]
+	[CCode (cprefix="r_flag_item_", cname="RFlagItem", free_function="")]
 	public class RFlagItem {
 		public string name;
 		public uint64 namehash;
@@ -15,7 +15,7 @@ namespace Radare {
 	}
 
 	[Compact]
-	[CCode (cname="struct r_flag_t", free_function="r_flag_free", cprefix="r_flag_")]
+	[CCode (cname="RFlag", free_function="r_flag_free", cprefix="r_flag_")]
 	public class RFlag {
 		public int space_idx;
 		public RFlag();
