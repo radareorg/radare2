@@ -127,12 +127,27 @@ public class RList<G> {
 	public unowned G pop();
 }
 
-//[Compact]
+[Compact]
 [CCode (cprefix="r_list_iter_", cheader_filename="r_list.h", cname="struct r_list_iter_t")]
 public class RListIter<G> {
-	public bool next();
+        public RListIter<G> n;
+        public RListIter<G> p;
+        public G data;
+
 //	public G @free(G arg);
+/*
+	public bool next();
 	public unowned G get();
+*/
+
+	[ReturnsModifiedPointer, CCode (cname = "_vala_r_list_iter_next")]
+	public bool next() {
+		return (bool)this.n;
+	}
+	[CCode (cname = "_vala_r_list_iter_get")]
+	public G get () {
+		return this.data;
+	}
 }
 
 [Compact]
